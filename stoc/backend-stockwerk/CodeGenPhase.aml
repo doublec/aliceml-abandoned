@@ -367,6 +367,15 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateStm (ReturnStm (_, ProdExp (_, labelIdVec)), env) =
 	    O.Return (O.TupArgs (Vector.map (fn (_, id) => lookup (env, id))
 				 labelIdVec))
+	  | translateStm (ReturnStm (_, PrimAppExp (_, name, ids)), env) =
+	    O.AppPrim (name, translateIds (ids, env), NONE)
+	  | translateStm (ReturnStm (_, VarAppExp (_, id, args)), env) =
+	    O.AppVar (lookup (env, id),
+		      translateArgs translateId (args, env), NONE)
+	  | translateStm (ReturnStm (_, FunAppExp (_, id, _, args)), env) =
+	    (*--** translate to AppConst *)
+	    O.AppVar (lookup (env, id),
+		      translateArgs translateId (args, env), NONE)
 	  | translateStm (ReturnStm (_, exp), env) =
 	    let
 		val id = fresh env
@@ -412,7 +421,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateExp (PrimAppExp (_, name, ids), id, instr, env) =
 	    O.AppPrim (name, translateIds (ids, env), SOME (O.IdDef id, instr))
 	  | translateExp (VarAppExp (_, id, args), id', instr, env) =
-	    (*--** also generate tail calls *)
 	    let
 		val (returnArgs, instr) =
 		    case detup (instr, id') of
