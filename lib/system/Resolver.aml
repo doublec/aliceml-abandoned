@@ -115,27 +115,27 @@ structure Resolver: RESOLVER =
 			    VAR (String.implode prefix)::parse suffix
 		      | NONE => raise Syntax
 
-		exception Failure
+		exception MatchFailure
 
 		structure StringMap = MkHashImpMap(String)
 
 		fun match ([TEXT cs'], cs, _) =
-		    if cs = cs' then () else raise Failure
+		    if cs = cs' then () else raise MatchFailure
 		  | match (TEXT cs'::rest, cs, env) =
 		    (case dropPrefix (cs', cs) of
 			 SOME cr => match (rest, cr, env)
-		       | NONE => raise Failure)
+		       | NONE => raise MatchFailure)
 		  | match ([VAR x], cs, env) = StringMap.insert (env, x, cs)
 		  | match (VAR x::TEXT cs'::rest, cs, env) =
 		    (case position cs' cs of
 			 SOME (prefix, suffix) =>
 			     (StringMap.insert (env, x, prefix);
 			      match (rest, suffix, env))
-		       | NONE => raise Failure)
+		       | NONE => raise MatchFailure)
 		  | match (nil, cs, env) =
 		    (case cs of
 			 nil => ()
-		       | _::_ => raise Failure)
+		       | _::_ => raise MatchFailure)
 		  | match (_, _, _) = raise Assert.failure
 
 		fun instantiate (p, env) =
@@ -152,7 +152,7 @@ structure Resolver: RESOLVER =
 		    in
 			(match (p1, String.explode (Url.toStringRaw url), env);
 			 SOME (Url.fromString (instantiate (p2, env))))
-			handle (Failure | Url.Malformed) => NONE
+			handle (MatchFailure | Url.Malformed) => NONE
 		    end
 
 		fun prefix (s1, s2) =
