@@ -1,2 +1,5 @@
 %.o: %.cc
 	$(CXX) -I. -I$(TOPDIR) $(CXXFLAGS) -c $< -o $@
+
+%.s: %.cc
+	$(CXX) -I. -I$(TOPDIR) $(CXXFLAGS) -S $< -o $@
