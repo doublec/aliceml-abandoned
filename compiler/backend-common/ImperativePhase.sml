@@ -18,6 +18,10 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	open I
 	open Prebound
 
+	val id_false = Id(Source.nowhere, stamp_false, ExId "false")
+	val id_true = Id(Source.nowhere, stamp_true,  ExId "true")
+	val id_Match = Id(Source.nowhere, stamp_Match, ExId "Match")
+
 	(* State *)
 
 	local

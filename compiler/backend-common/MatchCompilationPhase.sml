@@ -20,6 +20,18 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	open SimplifyMatch
 	open Prebound
 
+	val id_false = Id(Source.nowhere, stamp_false, ExId "false")
+	val id_true = Id(Source.nowhere, stamp_true,  ExId "true")
+	val id_ref = Id(Source.nowhere, stamp_ref,   ExId "ref")
+	val id_Match = Id(Source.nowhere, stamp_Match, ExId "Match")
+	val id_Bind = Id(Source.nowhere, stamp_Bind,  ExId "Bind")
+
+	val longid_false = ShortId(Source.nowhere, id_false)
+	val longid_true = ShortId(Source.nowhere, id_true)
+	val longid_ref = ShortId(Source.nowhere, id_ref)
+	val longid_Match = ShortId(Source.nowhere, id_Match)
+	val longid_Bind = ShortId(Source.nowhere, id_Bind)
+
 	structure FieldLabelSort =
 	    MakeLabelSort(type 'a t = lab * longid
 			  fun get (Lab (_, s), _) = s)
@@ -37,7 +49,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	fun makeRaise (coord, longid) =
 	    O.RaiseExp (coord, O.VarExp (coord, longid))
 
-	fun share exp = 
+	fun share exp =
 	    O.SharedExp (O.coordOf exp, exp, ref O.backendInfoDummy)
 
 	fun makeShared (exp, ref 0) =
