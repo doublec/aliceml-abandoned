@@ -84,10 +84,10 @@ DEFINE1(Unsafe_makeTuple) {
   RETURN(tuple->ToWord());
 } END
 
-DEFINE2(Unsafe_selTuple) {
-  DECLARE_TUPLE(tuple, x0);
-  DECLARE_INT(index, x1);
-  RETURN(tuple->Sel(index));
+DEFINE2(Unsafe_selRecord) {
+  DECLARE_RECORD(record, x0);
+  DECLARE_UNIQUE_STRING(label, x1);
+  RETURN(record->PolySel(label));
 } END
 
 void PrimitiveTable::RegisterUnsafe() {
@@ -101,5 +101,5 @@ void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.makeClosure", Unsafe_makeClosure, 2);
   Register("Unsafe.makeTaggedValue", Unsafe_makeTaggedValue, 2);
   Register("Unsafe.makeTuple", Unsafe_makeTuple, 1);
-  Register("Unsafe.selTuple", Unsafe_selTuple, 2);
+  Register("Unsafe.selRecord", Unsafe_selRecord, 2);
 }
