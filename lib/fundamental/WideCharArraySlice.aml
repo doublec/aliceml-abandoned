@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2003
+ *   Andreas Rossberg, 2003-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive      from "Pervasive"
-import structure CharArraySlice   from "CharArraySlice"
-import signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
+import structure __pervasive                  from "Pervasive"
+import __primitive structure CharArraySlice   from "CharArraySlice"
+import __primitive signature MONO_ARRAY_SLICE from "MONO_ARRAY_SLICE-sig"
 
 structure WideCharArraySlice : MONO_ARRAY_SLICE = CharArraySlice

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure __pervasive from "Pervasive"
-import structure Int         from "Int"
-import signature INTEGER     from "INTEGER-sig"
+import structure __pervasive         from "Pervasive"
+import __primitive structure Int     from "Int"
+import __primitive signature INTEGER from "INTEGER-sig"
 
 structure FixedInt : INTEGER = Int

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,8 +15,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import structure Char        from "Char"
-import signature CHAR        from "CHAR-sig"
+import structure __pervasive      from "Pervasive"
+import __primitive structure Char from "Char"
+import __primitive signature CHAR from "CHAR-sig"
 
 structure WideChar : CHAR = Char

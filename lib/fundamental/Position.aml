@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import structure Int         from "Int"
-import signature INTEGER     from "INTEGER-sig"
+import structure __pervasive         from "Pervasive"
+import __primitive structure Int     from "Int"
+import __primitive signature INTEGER from "INTEGER-sig"
 
 structure Position : INTEGER = Int

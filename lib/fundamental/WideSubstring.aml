@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import structure Substring   from "Substring"
-import signature SUBSTRING   from "SUBSTRING-sig"
+import structure __pervasive           from "Pervasive"
+import __primitive structure Substring from "Substring"
+import __primitive signature SUBSTRING from "SUBSTRING-sig"
 
 structure WideSubstring : SUBSTRING = Substring
