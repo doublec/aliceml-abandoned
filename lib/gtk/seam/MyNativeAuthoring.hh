@@ -1,6 +1,8 @@
 #ifndef _MY_NATIVE_AUTHORING_HH_
 #define _MY_NATIVE_AUTHORING_HH_
 
+#include "Alice.hh"
+
 #ifndef DEFINE5
 #define DEFINE5(name)					\
   static Interpreter::Result name() {			\
@@ -150,7 +152,7 @@
     word x13= Scheduler::currentArgs[13];               
 #define DEFINE15(name)					\
   static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 14);			\
+    Assert(Scheduler::nArgs == 15);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
@@ -170,7 +172,7 @@
     word x14= Scheduler::currentArgs[14];               
 #define DEFINE16(name)					\
   static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 14);			\
+    Assert(Scheduler::nArgs == 16);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
@@ -191,7 +193,7 @@
     word x15= Scheduler::currentArgs[15];               
 #define DEFINE17(name)					\
   static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == 14);			\
+    Assert(Scheduler::nArgs == 17);			\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];		\
@@ -212,29 +214,14 @@
     word x15= Scheduler::currentArgs[15];               \
     word x16= Scheduler::currentArgs[16];               
 
-#define DECLARE_UNMANAGED_POINTER(pointer, x)                    \
-  DECLARE_TUPLE(pointer##__tup,x);                               \
-  word pointer##__tmp = pointer##__tup->Sel(0);                  \
-  void *pointer = NULL;                                          \
-  if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
-        { REQUEST(pointer##__tmp); }                             \
-  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }
-
-#define DECLARE_UNMANAGED_POINTER_TYPE(pointer, type, x)         \
-  DECLARE_TUPLE(pointer##__tup,x);                               \
-  int type = Store::WordToInt(pointer##__tup->Sel(1));           \
-  word pointer##__tmp = pointer##__tup->Sel(0);                  \
-  void *pointer = NULL;                                          \
-  if (Store::WordToTransient(pointer##__tmp) != INVALID_POINTER) \
-        { REQUEST(pointer##__tmp); }                             \
-  else { pointer = Store::WordToUnmanagedPointer(pointer##__tmp); }
-
-
+// macro for "normal" unmanaged C pointers (that are simply used
+// as words in Alice)
 //#define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
 //  void *pointer = NULL;                                             \
 //  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
 //  else { pointer = Store::WordToUnmanagedPointer(x); }     
 
+#define DECLARE_ENUM DECLARE_INT
 #define DECLARE_CSTRING(str,x)                           \
   DECLARE_STRING(str##__temp,x);                         \
   char *str = str##__temp->ExportC();
@@ -249,7 +236,8 @@
      a[a##__iter] = a##__value;                          \
   }
 
-#define DECLARE_ENUM DECLARE_CDOUBLE
+#define RETURN_TUPLE0() RETURN_UNIT
+#define RETURN_TUPLE1 RETURN
 
 #define RETURN_TUPLE2(y0,y1)                             \
   Tuple *result = Tuple::New(2);                         \
@@ -290,6 +278,12 @@
   result->Init(4,y4);                                    \
   result->Init(5,y5);                                    \
   RETURN(result->ToWord());
+
+#define INT_TO_WORD(i) Store::IntToWord(i)
+#define REAL_TO_WORD(r) Real::New(r)->ToWord()
+#define STRING_TO_WORD(s) String::New( \
+                            reinterpret_cast<const char *>(s))->ToWord()
+#define ENUM_TO_WORD INT_TO_WORD
 
 inline word PointerToObject(void *p, int type) {
   Tuple *t = Tuple::New(2);

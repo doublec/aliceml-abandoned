@@ -15,16 +15,15 @@ word push_front(word list, word value) {
 ///////////////////////////////////////////////////////////////////////
 
 DEFINE0(NativeGtkCore_null) {
-  word w = PointerToObject(NULL,TYPE_UNKNOWN);
-  RETURN(w);
+  RETURN(PointerToObject(NULL,TYPE_UNKNOWN));
 } END
 
 DEFINE0(NativeGtkCore_gtkTrue) {
-  RETURN(Store::IntToWord(TRUE));
+  RETURN(INT_TO_WORD(TRUE));
 } END
 
 DEFINE0(NativeGtkCore_gtkFalse) {
-  RETURN(Store::IntToWord(FALSE));
+  RETURN(INT_TO_WORD(FALSE));
 } END
 
 inline void print_type(char *s, void *obj) {
@@ -50,7 +49,7 @@ inline void refObject(void *p, int type) {
 }
 
 DEFINE1(NativeGtkCore_refObject) {
-  DECLARE_UNMANAGED_POINTER_TYPE(p,type,x0);
+  DECLARE_OBJECT_WITH_TYPE(p,type,x0);
   //!  g_message("reffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
   refObject(p,type);  
   RETURN(x0);
@@ -77,12 +76,12 @@ inline void unrefObject(word o) {
 }
 
 DEFINE1(NativeGtkCore_hasSignals) {
-  DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   RETURN(BOOL_TO_WORD(type == TYPE_GTK_OBJECT));
 } END
 
 DEFINE1(NativeGtkCore_printObject) {
-  DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
   RETURN_UNIT;
 } END
@@ -106,34 +105,34 @@ inline word PointerToObjectRegister(void *p, int type) {
 static inline word GdkScrollDirectionToDatatype(GdkScrollDirection dir) {
   enum { SCROLL_DOWN, SCROLL_LEFT, SCROLL_RIGHT, SCROLL_UP };
   switch (dir) {
-  case GDK_SCROLL_UP: return Store::IntToWord(SCROLL_UP);
-  case GDK_SCROLL_DOWN: return Store::IntToWord(SCROLL_DOWN);
-  case GDK_SCROLL_LEFT: return Store::IntToWord(SCROLL_LEFT);
+  case GDK_SCROLL_UP: return INT_TO_WORD(SCROLL_UP);
+  case GDK_SCROLL_DOWN: return INT_TO_WORD(SCROLL_DOWN);
+  case GDK_SCROLL_LEFT: return INT_TO_WORD(SCROLL_LEFT);
   }
-  return Store::IntToWord(SCROLL_RIGHT);
+  return INT_TO_WORD(SCROLL_RIGHT);
 }
 
 static inline word GdkCrossingModeToDatatype(GdkCrossingMode mode) {
   enum { CROSSING_GRAB, CROSSING_NORMAL, CROSSING_UNGRAB };
   switch (mode) {
-  case GDK_CROSSING_NORMAL: return Store::IntToWord(CROSSING_NORMAL);
-  case GDK_CROSSING_GRAB: return Store::IntToWord(CROSSING_GRAB);
+  case GDK_CROSSING_NORMAL: return INT_TO_WORD(CROSSING_NORMAL);
+  case GDK_CROSSING_GRAB: return INT_TO_WORD(CROSSING_GRAB);
   }
-  return Store::IntToWord(CROSSING_UNGRAB);
+  return INT_TO_WORD(CROSSING_UNGRAB);
 }
 
 static inline word GdkNotifyTypeToDatatype(GdkNotifyType type) {
   enum { NOTIFY_ANCESTOR, NOTIFY_INFERIOR, NOTIFY_NONLINEAR, 
 	 NOTIFY_NONLINEAR_VIRTUAL, NOTIFY_UNKNOWN, NOTIFY_VIRTUAL };
   switch (type) {
-  case GDK_NOTIFY_ANCESTOR: return Store::IntToWord(NOTIFY_ANCESTOR);
-  case GDK_NOTIFY_VIRTUAL: return Store::IntToWord(NOTIFY_VIRTUAL);
-  case GDK_NOTIFY_INFERIOR: return Store::IntToWord(NOTIFY_INFERIOR);
-  case GDK_NOTIFY_NONLINEAR: return Store::IntToWord(NOTIFY_NONLINEAR);
+  case GDK_NOTIFY_ANCESTOR: return INT_TO_WORD(NOTIFY_ANCESTOR);
+  case GDK_NOTIFY_VIRTUAL: return INT_TO_WORD(NOTIFY_VIRTUAL);
+  case GDK_NOTIFY_INFERIOR: return INT_TO_WORD(NOTIFY_INFERIOR);
+  case GDK_NOTIFY_NONLINEAR: return INT_TO_WORD(NOTIFY_NONLINEAR);
   case GDK_NOTIFY_NONLINEAR_VIRTUAL: 
-    return Store::IntToWord(NOTIFY_NONLINEAR_VIRTUAL);
+    return INT_TO_WORD(NOTIFY_NONLINEAR_VIRTUAL);
   }
-  return Store::IntToWord(NOTIFY_UNKNOWN);
+  return INT_TO_WORD(NOTIFY_UNKNOWN);
 }
 
 static inline word GdkVisibilityStateToDatatype(GdkVisibilityState state) {
@@ -141,20 +140,20 @@ static inline word GdkVisibilityStateToDatatype(GdkVisibilityState state) {
 	  VISIBILITY_UNOBSCURED };
   switch (state) {
   case GDK_VISIBILITY_FULLY_OBSCURED: 
-    return Store::IntToWord(VISIBILITY_FULLY_OBSCURED);
-  case GDK_VISIBILITY_PARTIAL: return Store::IntToWord(VISIBILITY_PARTIAL);
+    return INT_TO_WORD(VISIBILITY_FULLY_OBSCURED);
+  case GDK_VISIBILITY_PARTIAL: return INT_TO_WORD(VISIBILITY_PARTIAL);
   }
-  return Store::IntToWord(VISIBILITY_UNOBSCURED);
+  return INT_TO_WORD(VISIBILITY_UNOBSCURED);
 }
 
 static inline word ExposeEvent(GdkEvent* event, int label) {
   GdkEventExpose *ev = reinterpret_cast<GdkEventExpose*>(event);
   TagVal *t = TagVal::New(label, 8);
-  t->Init(0, Store::IntToWord((ev->area).height));
-  t->Init(1, Store::IntToWord((ev->area).width));
-  t->Init(2, Store::IntToWord((ev->area).x));
-  t->Init(3, Store::IntToWord((ev->area).y));
-  t->Init(4, Store::IntToWord(ev->count));
+  t->Init(0, INT_TO_WORD((ev->area).height));
+  t->Init(1, INT_TO_WORD((ev->area).width));
+  t->Init(2, INT_TO_WORD((ev->area).x));
+  t->Init(3, INT_TO_WORD((ev->area).y));
+  t->Init(4, INT_TO_WORD(ev->count));
   t->Init(5, PointerToObjectRegister(ev->region,TYPE_UNKNOWN));
   t->Init(6, BOOL_TO_WORD(ev->send_event));
   t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
@@ -165,46 +164,46 @@ static inline word MotionEvent(GdkEvent* event, int label) {
   GdkEventMotion *ev = reinterpret_cast<GdkEventMotion*>(event);
   TagVal *t = TagVal::New(label, 10);
   t->Init(0, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
-  t->Init(1, Store::IntToWord(ev->is_hint));
+  t->Init(1, INT_TO_WORD(ev->is_hint));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
-  t->Init(3, Store::IntToWord(ev->state));
-  t->Init(4, Store::IntToWord(ev->time));
+  t->Init(3, INT_TO_WORD(ev->state));
+  t->Init(4, INT_TO_WORD(ev->time));
   t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
-  t->Init(6, Real::New(ev->x)->ToWord());
-  t->Init(7, Real::New(ev->x_root)->ToWord());
-  t->Init(8, Real::New(ev->y)->ToWord());
-  t->Init(9, Real::New(ev->y_root)->ToWord());
+  t->Init(6, REAL_TO_WORD(ev->x));
+  t->Init(7, REAL_TO_WORD(ev->x_root));
+  t->Init(8, REAL_TO_WORD(ev->y));
+  t->Init(9, REAL_TO_WORD(ev->y_root));
   return t->ToWord();
 }
 
 static inline word ButtonEvent(GdkEvent* event, int label) {
   GdkEventButton *ev = reinterpret_cast<GdkEventButton*>(event);
   TagVal *t = TagVal::New(label, 10);
-  t->Init(0, Store::IntToWord(ev->button));
+  t->Init(0, INT_TO_WORD(ev->button));
   t->Init(1, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
-  t->Init(3, Store::IntToWord(ev->state));
+  t->Init(3, INT_TO_WORD(ev->state));
   //  g_message("%d", ev->time);
-  t->Init(4, Store::IntToWord(ev->time));
+  t->Init(4, INT_TO_WORD(ev->time));
   t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
-  t->Init(6, Real::New(ev->x)->ToWord());
-  t->Init(7, Real::New(ev->x_root)->ToWord());
-  t->Init(8, Real::New(ev->y)->ToWord());
-  t->Init(9, Real::New(ev->y_root)->ToWord());
+  t->Init(6, REAL_TO_WORD(ev->x));
+  t->Init(7, REAL_TO_WORD(ev->x_root));
+  t->Init(8, REAL_TO_WORD(ev->y));
+  t->Init(9, REAL_TO_WORD(ev->y_root));
   return t->ToWord();
 }
 
 static inline word KeyEvent(GdkEvent* event, int label) {
   GdkEventKey *ev = reinterpret_cast<GdkEventKey*>(event);
   TagVal *t = TagVal::New(label, 9);
-  t->Init(0, Store::IntToWord(ev->group));
-  t->Init(1, Store::IntToWord(ev->hardware_keycode));
-  t->Init(2, Store::IntToWord(ev->keyval));
-  t->Init(3, Store::IntToWord(ev->length));
+  t->Init(0, INT_TO_WORD(ev->group));
+  t->Init(1, INT_TO_WORD(ev->hardware_keycode));
+  t->Init(2, INT_TO_WORD(ev->keyval));
+  t->Init(3, INT_TO_WORD(ev->length));
   t->Init(4, BOOL_TO_WORD(ev->send_event));
-  t->Init(5, Store::IntToWord(ev->state));
-  t->Init(6, String::New(ev->string)->ToWord());
-  t->Init(7, Store::IntToWord(ev->time));
+  t->Init(5, INT_TO_WORD(ev->state));
+  t->Init(6, STRING_TO_WORD(ev->string));
+  t->Init(7, INT_TO_WORD(ev->time));
   t->Init(8, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
@@ -216,15 +215,15 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(1, BOOL_TO_WORD(ev->focus));
   t->Init(2, GdkCrossingModeToDatatype(ev->mode));
   t->Init(3, BOOL_TO_WORD(ev->send_event));
-  t->Init(4, Store::IntToWord(ev->state));
+  t->Init(4, INT_TO_WORD(ev->state));
   t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_G_OBJECT));
   //  g_message("%d", ev->time);
-  t->Init(6, Store::IntToWord(ev->time));
+  t->Init(6, INT_TO_WORD(ev->time));
   t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
-  t->Init(8, Real::New(ev->x)->ToWord());
-  t->Init(9, Real::New(ev->x_root)->ToWord());
-  t->Init(10, Real::New(ev->y)->ToWord());
-  t->Init(11, Real::New(ev->y_root)->ToWord());
+  t->Init(8, REAL_TO_WORD(ev->x));
+  t->Init(9, REAL_TO_WORD(ev->x_root));
+  t->Init(10, REAL_TO_WORD(ev->y));
+  t->Init(11, REAL_TO_WORD(ev->y_root));
   return t->ToWord();
 }
 
@@ -240,12 +239,12 @@ static inline word FocusEvent(GdkEvent* event, int label) {
 static inline word ConfigureEvent(GdkEvent* event, int label) {
   GdkEventConfigure *ev = reinterpret_cast<GdkEventConfigure*>(event);
   TagVal *t = TagVal::New(label, 6);
-  t->Init(0, Store::IntToWord(ev->height));
+  t->Init(0, INT_TO_WORD(ev->height));
   t->Init(1, BOOL_TO_WORD(ev->send_event));
-  t->Init(2, Store::IntToWord(ev->width));
+  t->Init(2, INT_TO_WORD(ev->width));
   t->Init(3, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
-  t->Init(4, Store::IntToWord(ev->x));
-  t->Init(5, Store::IntToWord(ev->y));
+  t->Init(4, INT_TO_WORD(ev->x));
+  t->Init(5, INT_TO_WORD(ev->y));
   return t->ToWord();
 }
 
@@ -272,13 +271,13 @@ static inline word ScrollEvent(GdkEvent* event, int label) {
   t->Init(0, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
   t->Init(1, GdkScrollDirectionToDatatype(ev->direction));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
-  t->Init(3, Store::IntToWord(ev->state));
-  t->Init(4, Store::IntToWord(ev->time));
+  t->Init(3, INT_TO_WORD(ev->state));
+  t->Init(4, INT_TO_WORD(ev->time));
   t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
-  t->Init(6, Real::New(ev->x)->ToWord());
-  t->Init(7, Real::New(ev->x_root)->ToWord());
-  t->Init(8, Real::New(ev->y)->ToWord());
-  t->Init(9, Real::New(ev->y_root)->ToWord());
+  t->Init(6, REAL_TO_WORD(ev->x));
+  t->Init(7, REAL_TO_WORD(ev->x_root));
+  t->Init(8, REAL_TO_WORD(ev->y));
+  t->Init(9, REAL_TO_WORD(ev->y_root));
   return t->ToWord();
 }
 
@@ -404,7 +403,7 @@ word create_object(GType t, gpointer p) {
 void sendArgsToStream(gint connid, guint n_param_values, 
 		      const GValue *param_values) {
 
-  word paramlist = Store::IntToWord(Types::nil);
+  word paramlist = INT_TO_WORD(Types::nil);
   gpointer widget = NULL;
 
   for (int i = n_param_values-1; i >= 0; i--) {
@@ -421,63 +420,59 @@ void sendArgsToStream(gint connid, guint n_param_values,
     switch(G_VALUE_TYPE(val)) {
     case G_TYPE_CHAR:   
       value = create_param(INT, 
-		   Store::IntToWord(static_cast<int>(g_value_get_char(val))));
+		   INT_TO_WORD(static_cast<int>(g_value_get_char(val))));
       break;
     case G_TYPE_UCHAR:  
       value = create_param(INT, 
-                 Store::IntToWord(static_cast<int>(g_value_get_uchar(val))));
+                 INT_TO_WORD(static_cast<int>(g_value_get_uchar(val))));
       break;
     case G_TYPE_BOOLEAN:
       value = create_param(BOOL, BOOL_TO_WORD(g_value_get_boolean(val)));
       break;
     case G_TYPE_INT:    
-      value = create_param(INT, Store::IntToWord(g_value_get_int(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_int(val)));
       break;
     case G_TYPE_UINT:   
-      value = create_param(INT, Store::IntToWord(g_value_get_uint(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_uint(val)));
       break;
     case G_TYPE_LONG:   
-      value = create_param(INT, Store::IntToWord(g_value_get_long(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_long(val)));
       break;
     case G_TYPE_ULONG:  
-      value = create_param(INT, Store::IntToWord(g_value_get_ulong(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_ulong(val)));
       break;
     case G_TYPE_INT64:  
-      value = create_param(INT, Store::IntToWord(g_value_get_int64(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_int64(val)));
       break;
     case G_TYPE_UINT64: 
-      value = create_param(INT, Store::IntToWord(g_value_get_uint64(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_uint64(val)));
       break;
     case G_TYPE_ENUM:   
-      value = create_param(INT, Store::IntToWord(g_value_get_enum(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_enum(val)));
       break;
     case G_TYPE_FLAGS:  
-      value = create_param(INT, Store::IntToWord(g_value_get_flags(val)));
+      value = create_param(INT, INT_TO_WORD(g_value_get_flags(val)));
       break;
     case G_TYPE_FLOAT:  
-      value = create_param(REAL, Real::New(g_value_get_float(val))->ToWord());
+      value = create_param(REAL, REAL_TO_WORD(g_value_get_float(val)));
       break;
     case G_TYPE_DOUBLE: 
-      value = create_param(REAL, Real::New(g_value_get_double(val))->ToWord());
+      value = create_param(REAL, REAL_TO_WORD(g_value_get_double(val)));
       break;
     case G_TYPE_STRING: 
-     value = create_param(STRING, 
-			  String::New(g_value_get_string(val))->ToWord());
+     value = create_param(STRING, STRING_TO_WORD(g_value_get_string(val)));
       break;
     default:
-      //g_print("NAFT AS POINTER: %p\n", g_value_peek_pointer(val));
       if (i==0)
 	widget = g_value_peek_pointer(val);
-      else {
-	//g_print("** %d\n", ((GdkEvent*)g_value_peek_pointer(val))->type); 
+      else
 	value = create_object(G_VALUE_TYPE(val), g_value_peek_pointer(val));
-      }
     }
     if (!widget) paramlist = push_front(paramlist,value);
   }
   
   Tuple *tup = Tuple::New(3);
-  tup->Init(0,Store::IntToWord(connid));
+  tup->Init(0,INT_TO_WORD(connid));
   tup->Init(1,PointerToObjectRegister(widget,TYPE_GTK_OBJECT));
   tup->Init(2,paramlist);
   
@@ -503,7 +498,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
 }
 
 DEFINE3(NativeGtkCore_signalConnect) {
-  DECLARE_UNMANAGED_POINTER(obj,x0);
+  DECLARE_OBJECT(obj,x0);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
 
@@ -516,11 +511,11 @@ DEFINE3(NativeGtkCore_signalConnect) {
   g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
 			     generic_marshaller);
   
-  RETURN(Store::IntToWord(static_cast<int>(connid)));
+  RETURN(INT_TO_WORD(static_cast<int>(connid)));
 } END
 
 DEFINE2(NativeGtkCore_signalDisconnect) {
-  DECLARE_UNMANAGED_POINTER(obj,x0);
+  DECLARE_OBJECT(obj,x0);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_disconnect(G_OBJECT(obj), static_cast<gulong>(handler_id));
   RETURN_UNIT;
@@ -541,14 +536,14 @@ public:
   void Finalize(word value) {
     void *p = Store::WordToUnmanagedPointer((Tuple::FromWord(value))->Sel(0));
     //g_message("finalizing %p (%d)", p, value);
-    unrefObject(value);
+    //unrefObject(value);
     g_message("finalized %p (%d)", p, value);
   }
 };
 
 DEFINE1(NativeGtkCore_weakMapAdd) {
   // x0 = (pointer, type)
-  DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("adding Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   WeakMap::FromWord(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
   //!  g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
@@ -557,7 +552,7 @@ DEFINE1(NativeGtkCore_weakMapAdd) {
 
 DEFINE1(NativeGtkCore_weakMapIsMember) {
   // x0 = (pointer, type)
-  DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("is member? Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN(BOOL_TO_WORD
 	 (WeakMap::FromWord(weakDict)->IsMember(Tuple::FromWord(x0)->Sel(0))));
@@ -576,10 +571,10 @@ DEFINE3(NativeGtkCore_signalMapAdd) {
   // x0 = connid to add, x1 = callback-fn, x2 = object
   Map::FromWord(signalMap)->Put(x0,x1);
 
-  DECLARE_UNMANAGED_POINTER(p,x2);
+  DECLARE_OBJECT(p,x2);
   word key = Store::UnmanagedPointerToWord(p);
   Map* sm2 = Map::FromWord(signalMap2);
-  word ids = sm2->CondGet(key, Store::IntToWord(Types::nil));
+  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
   sm2->Put(key, push_front(ids,x0));
   RETURN_UNIT;
 } END
@@ -597,10 +592,10 @@ DEFINE2(NativeGtkCore_signalMapCondGet) {
 
 DEFINE1(NativeGtkCore_signalMapGetConnIds) {
   // x0 = object
-  DECLARE_UNMANAGED_POINTER(p,x0);
+  DECLARE_OBJECT(p,x0);
   word key = Store::UnmanagedPointerToWord(p);
   Map* sm2 = Map::FromWord(signalMap2);
-  word ids = sm2->CondGet(key, Store::IntToWord(Types::nil));
+  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
   sm2->Remove(key);
   RETURN(ids);
 } END

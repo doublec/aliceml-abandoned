@@ -97,9 +97,9 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		  | inDeclare (ELLIPSES true)     = "DECLARE_ELLIPSES"
 		  | inDeclare (ELLIPSES false)    = "DECLARE_VALIST"
 		  | inDeclare BOOL                = "DECLARE_BOOL"
-		  | inDeclare (POINTER _)         = "DECLARE_UNMANAGED_POINTER"
+		  | inDeclare (POINTER _)         = "DECLARE_OBJECT"
 		  | inDeclare (STRING _)          = "DECLARE_CSTRING"
-		  | inDeclare (FUNCTION _)        = "DECLARE_UNMANAGED_POINTER"
+		  | inDeclare (FUNCTION _)        = "DECLARE_OBJECT"
 		  | inDeclare (ENUMREF _)         = "DECLARE_ENUM"
 		  | inDeclare (TYPEREF (_,t))     = inDeclare t
 		  | inDeclare _                   = "DECLARE_UNKNWON";
@@ -116,28 +116,13 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 			[wrIndent, "DECLARE_GLIST(", name, ",x", xcinc(), ",", 
 			 ctype, ",", funprefix ctype, ",", inDeclare t, ");\n"]
 		  | inDeclLine (t,name) =
-		    let
-			val i = xcinc()
-			val d = [wrIndent,inDeclare(t),"(",name,",x",i,");\n"]
-(*			val c = if getAliceType t <> "object" then nil else
-			        case t of
-				    POINTER t' => 
-				      [wrIndent,"CHECK_TYPE(",
-				       name,",\"",getCType(t'),"\",\"",
- 	                               Util.computeWrapperName(space,funName),
-				       "\",",i,");\n"]
-				  | _ => nil*)
-		    in
-			d
-		    end
+			[wrIndent,inDeclare(t),"(",name,",x",xcinc(),");\n"]
 	    end
 
 	    (* declaration of output arguments *)
 	    local
-		fun outInit (NUMERIC _)      = " = 0"
-		  | outInit BOOL             = " = false"
-		  | outInit (POINTER _)      = " = NULL"
-		  | outInit (STRING _)       = " = NULL"
+		fun outInit (NUMERIC _)      = " = 4711"
+		  | outInit BOOL             = " = true"
 		  | outInit (TYPEREF (_,t))  = outInit t
 		  | outInit _                = ""
 	    in
@@ -199,29 +184,26 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    if ret = VOID then arglist else (OUT, "ret", ret)::arglist
 		val (_,outs) = splitInOuts (alwithret, doinout)
 
-		fun retConv (NUMERIC(_,false,_)) n="Store::IntToWord("^n^")"
-		  | retConv (NUMERIC(_,true ,_)) n="Real::New("^n^")->ToWord()"
-		  | retConv BOOL       n="BOOL_TO_WORD("^n^")"
-		  | retConv(POINTER p) n=
+		fun retConv (NUMERIC(_,false,_)) n = "INT_TO_WORD("^n^")"
+		  | retConv (NUMERIC(_,true ,_)) n = "REAL_TO_WORD("^n^")"
+		  | retConv BOOL                 n = "BOOL_TO_WORD("^n^")"
+		  | retConv (POINTER p)          n =
 		         "PointerToObject("^n^","^(getTypeInfo p)^")"
-                  | retConv (STRING _) n="String::New(reinterpret_cast<"^
-		                         "const char *>("^n^"))->ToWord()"
-		  | retConv (LIST(tname,STRING _))n=tname^"ToStringList("^n^")"
-		  | retConv (LIST(tname,_))       n=tname^"ToObjectList("^n^")"
-		  | retConv (FUNCTION _) n = 
+                  | retConv (STRING _)           n ="STRING_TO_WORD("^n^")"
+		  | retConv(LIST(tname,STRING _))n =tname^"ToStringList("^n^")"
+		  | retConv(LIST(tname,_))       n =tname^"ToObjectList("^n^")"
+		  | retConv (FUNCTION _)         n =
 			 "PointerToObject((void*)("^n^"),0)"
-		  | retConv (TYPEREF(_,t)) n = retConv t n
-		  | retConv (ENUMREF _) n    = "Real::New("^n^")->ToWord()"
-		  | retConv _ n = n
+		  | retConv (TYPEREF(_,t))       n = retConv t n
+		  | retConv (ENUMREF _)          n = "ENUM_TO_WORD("^n^")"
+		  | retConv _                    n = n
   
 		fun makeOutArg (_,name,t) = retConv t name
 		val retList = Util.makeTuple ", " "" (map makeOutArg outs)
 	    in
-		val retLine = wrIndent::
- 	           (case length outs of
-		       0 => ["RETURN_UNIT;\n"]
-		     | 1 => ["RETURN(",retList,");\n"]
-		     | i => ["RETURN_TUPLE",Int.toString i,"(",retList,");\n"])
+		val retLine = 
+		    [wrIndent, "RETURN_TUPLE",Int.toString (length outs),
+		               "(",retList,");\n"]
 	    end
 
             (* end line *)

@@ -36,8 +36,8 @@ DEFINE0(NativeGtk_treeStoreNew) {
 } END
 
 DEFINE3(NativeGtk_treeModelGetStringAt) {
-  DECLARE_UNMANAGED_POINTER(mod, x0);
-  DECLARE_UNMANAGED_POINTER(path, x1);
+  DECLARE_OBJECT(mod, x0);
+  DECLARE_OBJECT(path, x1);
   DECLARE_INT(col, x2);
   GtkTreeModel *model = static_cast<GtkTreeModel*>(mod);
   gchar *result = "";
@@ -48,11 +48,11 @@ DEFINE3(NativeGtk_treeModelGetStringAt) {
     if (G_VALUE_TYPE(val) == G_TYPE_STRING)
       result = g_value_dup_string(val);
   }
-  RETURN(String::New(reinterpret_cast<const char *>(result))->ToWord());
+  RETURN(STRING_TO_WORD(result));
 } END
 
 DEFINE1(NativeGtk_treeViewGetSelectedString) {
-  DECLARE_UNMANAGED_POINTER(t, x0);
+  DECLARE_OBJECT(t, x0);
   GtkTreeView *tree = static_cast<GtkTreeView*>(t);
   GtkTreeIter iter;
   GValue val;
@@ -66,7 +66,7 @@ DEFINE1(NativeGtk_treeViewGetSelectedString) {
       result = g_value_dup_string(&val);
       g_value_unset(&val);
   }
-  RETURN(String::New(reinterpret_cast<const char*>(result))->ToWord());
+  RETURN(STRING_TO_WORD(result));
 } END
 
 #endif

@@ -140,9 +140,13 @@ struct
 
 	fun parseEnum tid memlist =
 	let
-	    fun parseMember (m:Ast.member,v) = (Symbol.name(#name m),v)
+	    (* isValidInt tests whether can be converted to Int31
+	       should be tested later, in TypeManager.checkItem? *)
+	    fun isValid (_,v) = (LargeInt.toInt v ; true) handle _ => false   
+	    fun parseMember (m:Ast.member,v) = (Symbol.name(#name m), v)
+	    val memlist' = List.filter isValid memlist
 	in
-	    ENUM (findEnumName tid, map parseMember memlist)
+	    ENUM (findEnumName tid, map parseMember memlist')
 	end
 
 	fun parseTypeDef typeName ctype = ALIAS (typeName, convType ctype)

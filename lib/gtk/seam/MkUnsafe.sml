@@ -106,7 +106,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    fun convArgs toNative (_,vname, t) =
 	       (case removeTypeRefs t of
 		    ENUMREF ename =>
-			(if toNative then ename^"ToReal" else "RealTo"^ename)
+			(if toNative then ename^"ToInt" else "IntTo"^ename)
 			^" "^vname
 		  | POINTER t'    =>
 			if toNative 

@@ -7,7 +7,7 @@
 #include <libgnomecanvas/libgnomecanvas.h>
 
 DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
-  DECLARE_UNMANAGED_POINTER(points,x0);
+  DECLARE_OBJECT(points,x0);
   DECLARE_INT(num,x1);
   DECLARE_INT(value,x2);
   (static_cast<GnomeCanvasPoints*>(points))->coords[num] = value;
@@ -15,7 +15,7 @@ DEFINE3(NativeGnomeCanvas_pointsSetCoords) {
 } END
 
 DEFINE2(NativeGnomeCanvas_itemNew) {
-  DECLARE_UNMANAGED_POINTER(parent,x0);
+  DECLARE_OBJECT(parent,x0);
   DECLARE_INT(type,x1);
   GnomeCanvasItem *ret = gnome_canvas_item_new(
 		           static_cast<GnomeCanvasGroup*>(parent), 

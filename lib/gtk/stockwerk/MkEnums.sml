@@ -43,22 +43,22 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	    val memnames = map (fn (name,_) => name) members
 	in
 	   [sigIndent,"datatype ",name," = ",mt memnames,"\n",
-	    "(**)",sigIndent,"val ",name,"ToReal : ",name," -> real\n",
-	    "(**)",sigIndent,"val RealTo",name," : real -> ",name,"\n\n"]
+	    "(**)",sigIndent,"val ",name,"ToInt : ",name," -> int\n",
+	    "(**)",sigIndent,"val IntTo",name," : int -> ",name,"\n\n"]
 	end
 
 	fun wrapperEntry (name, members) =
 	let
 	    val mt = Util.makeTuple " | " ""
 	    val memnames = map (fn (name,_) => name) members
-	    val e2r = map (fn (name,num) => name^" => "^num^".0") members
-	    val r2e = (map (fn (name,num) => num^".0 => "^name)
+	    val e2r = map (fn (name,num) => name^" => "^num) members
+	    val r2e = (map (fn (name,num) => num^" => "^name)
 		       (Util.removeDuplicates (fn (x,y) => #2x = #2y) members))
 		   @(if null members then nil else ["_ => "^(#1(hd members))])
 	in
 	   [wrIndent,"datatype ",name," = ",mt memnames,"\n",
-	    wrIndent,"val ",name,"ToReal = fn ",mt e2r,"\n",
-	    wrIndent,"val RealTo",name," = fn ",mt r2e,"\n\n"]
+	    wrIndent,"val ",name,"ToInt = fn ",mt e2r,"\n",
+	    wrIndent,"val IntTo",name," = fn ",mt r2e,"\n\n"]
 	end
 
 	(* SIGNATURE AND WRAPPER ENTRIES *)

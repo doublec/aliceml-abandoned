@@ -68,42 +68,43 @@ struct
 	in  
 	    if (Util.checkPrefix "object" s orelse Util.checkPrefix "arg" s)
 		then "'"^s 
-	        else case removeTypeRefs t of (ENUMREF _) => "real" | _ => s
+	        else case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
 	end
       
     local
-	fun isOutArg' (t as (POINTER (NUMERIC _)))      = true
-	  | isOutArg' (POINTER (POINTER (STRUCTREF _))) = true
-	  | isOutArg' (POINTER (ENUMREF _))             = true
-	  | isOutArg' (POINTER (STRING _))              = true
-	  | isOutArg' _                                 = false
+	fun isOutArg (t as (POINTER (NUMERIC _)))      = true
+	  | isOutArg (POINTER (POINTER (STRUCTREF _))) = true
+	  | isOutArg (POINTER (ENUMREF _))             = true
+	  | isOutArg (POINTER (STRING _))              = true
+	  | isOutArg _                                 = false
     in
-	fun isOutArg t = isOutArg' (removeTypeRefs t)
+	(* splits arglist in inArgs and outArgs *)
+	(* where outArgs lose their POINTERs *)
+	fun splitArgTypes arglist =
+	let
+	    val arglist' = List.filter (fn VOID => false | _ => true) arglist
+	    fun makeArg (t,num) = 
+		let 
+		    val at = if isOutArg (removeTypeRefs t) then OUT else IN
+		in  
+		    if at = IN
+			then (at, "in"^num, t)
+			else (at, "out"^num, (case t of 
+			                        POINTER x => x 
+					      | _         => t) )
+		end
+	in
+	    ListPair.map makeArg (arglist', 
+				  List.tabulate(length arglist',Int.toString))
+	end
+
+        (* declares all argumens as inArgs (needed for get/set field funs) *)
+	fun splitArgTypesNoOuts arglist =
+	    ListPair.map (fn (num,t) => (IN, "in"^num, t))
+	            (List.tabulate (length arglist,Int.toString), arglist)
     end
 
-    (* splits ret and arglist in inArgs and outArgs *)
-    (* where outArgs lose their POINTERs *)
-    fun splitArgTypes arglist =
-    let
-	val aname = fn IN => "in" | OUT => "out"
-	val rp = fn (POINTER t) => t | t => t
-	fun makeArg (t,num) = 
-	let 
-	    val at = if isOutArg t then OUT else IN
-	in  
-	    (at, (aname at) ^ num, if at=IN then t else rp t)
-        end
-
-       	val arglist' = List.filter (fn VOID => false | _ => true) arglist
-    in
-	ListPair.map makeArg (arglist', 
-			      List.tabulate(length arglist',Int.toString))
-    end
-
-    fun splitArgTypesNoOuts arglist =
-	ListPair.map (fn (num,t) => (IN, "in"^num, t))
-		     (List.tabulate (length arglist,Int.toString), arglist)
-
+    (* splits an arg list into an IN arg list and an OUT arg list *)
     fun splitInOuts (l,doinout) =
 	(List.filter (fn (IN,_,_) => true | _ => doinout) l,
 	 List.filter (fn (IN,_,_) => false | _ => true) l)
@@ -180,10 +181,9 @@ val wac = ref 0
 	              Util.cutPrefix ("_"^(Util.spaceEnumPrefix space), sname)
 	val stype = POINTER (STRUCTREF sname')
     in
-	if get then
-	    (sname'^"_get_field_"^mname, mtype, [stype])
-	else
-	    (sname'^"_set_field_"^mname, VOID, [stype, mtype])
+	if get 
+	    then (sname'^"_get_field_"^mname, mtype, [stype])
+  	    else (sname'^"_set_field_"^mname, VOID, [stype, mtype])
     end
 
     fun getEnumSpace name = 

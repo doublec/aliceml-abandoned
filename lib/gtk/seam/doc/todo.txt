@@ -6,13 +6,15 @@
 4. Quellcode aufraeumen
 5. Dokumentation
 
+- Enum-LargeInt-Ueberpruefung sollte in TypeManager.sml erfolgen
+
 * aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
 * Transient from finalStream funktioniert nicht -> finalStream abgeschafft
 
 * install -C ?
 * Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
 * Kernroutinen aus NativeGtkSpecial in eigene DLL tun
-- Komponenten auf hinreichende Modularisierung ueberpruefen
+X Komponenten auf hinreichende Modularisierung ueberpruefen
 
 
 Garbage Collection:
