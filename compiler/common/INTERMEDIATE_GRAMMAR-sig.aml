@@ -37,6 +37,7 @@ signature INTERMEDIATE =
 	  LitExp    of info * lit
 	| VarExp    of info * longid
 	| ConExp    of info * longid * exp option
+	| RefExp    of info * exp option
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 			(* all labels distinct *)
@@ -66,6 +67,7 @@ signature INTERMEDIATE =
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
 			(* pat present iff longid has arguments *)
+	| RefPat    of info * pat
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)
 			(* all labels distinct *)
@@ -82,8 +84,8 @@ signature INTERMEDIATE =
 	  ValDec    of info * pat * exp * bool (* recursive *)
 	  		(* if dec is recursive, then
 			 * (1) pat may not contain WithPat
-			 * (2) exp may only contain
-			 *     LitExp, VarExp, ConExp, TupExp, RecExp, FunExp *)
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RecExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
 
 

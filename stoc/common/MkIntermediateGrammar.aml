@@ -38,6 +38,7 @@ functor Intermediate(type info
 	  LitExp    of info * lit
 	| VarExp    of info * longid
 	| ConExp    of info * longid * exp option
+	| RefExp    of info * exp option
 	| TupExp    of info * exp list
 	| RecExp    of info * exp field list
 			(* all labels distinct *)
@@ -67,6 +68,7 @@ functor Intermediate(type info
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
 			(* pat present iff longid has arguments *)
+	| RefPat    of info * pat
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)
 			(* all labels distinct *)
@@ -83,8 +85,8 @@ functor Intermediate(type info
 	  ValDec    of info * pat * exp * bool (* recursive *)
 	  		(* if dec is recursive, then
 			 * (1) pat may not contain WithPat
-			 * (2) exp may only contain
-			 *     LitExp, VarExp, ConExp, TupExp, RecExp, FunExp *)
+			 * (2) exp may only contain LitExp, VarExp, ConExp,
+			 *     RefExp, TupExp, RecExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
 
 
@@ -131,6 +133,7 @@ functor Intermediate(type info
     fun info_exp(LitExp(i,_))		= i
       | info_exp(VarExp(i,_))		= i
       | info_exp(ConExp(i,_,_))		= i
+      | info_exp(RefExp(i,_))		= i
       | info_exp(TupExp(i,_))		= i
       | info_exp(RecExp(i,_))		= i
       | info_exp(SelExp(i,_))		= i
@@ -154,6 +157,7 @@ functor Intermediate(type info
       | info_pat(LitPat(i,_))		= i
       | info_pat(VarPat(i,_))		= i
       | info_pat(ConPat(i,_,_))		= i
+      | info_pat(RefPat(i,_))		= i
       | info_pat(TupPat(i,_))		= i
       | info_pat(RecPat(i,_,_))		= i
       | info_pat(AsPat(i,_,_))		= i
