@@ -20,6 +20,8 @@ import
    Pickle(load) at 'Pickle.ozf'
    PrimitiveTable(importOzModule)
    Scheduler(object)
+require
+   Helper(construct: Construct)
 export
    Link
 define
@@ -68,12 +70,6 @@ define
 	 OzModule = {ModuleManager link(url: AliceHome#Key#'.ozf' $)}
 	 Module = {PrimitiveTable.importOzModule OzModule.module}
 	 ModuleTable.{VirtualString.toAtom Key} := NONE#Module
-      end
-   end
-
-   fun {Construct Args}
-      case Args of arg(X) then X
-      [] args(...) then {Adjoin Args tuple}
       end
    end
 
