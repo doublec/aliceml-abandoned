@@ -22,7 +22,7 @@ AliceConcreteCode *AliceConcreteCode::New(TagVal *abstractCode) {
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, SIZE);
   Chunk *name =
-    Store::DirectWordToChunk(AliceLanguageLayer::functionTransformName);
+    Store::DirectWordToChunk(AliceLanguageLayer::TransformNames::function);
   Transform *transform = Transform::New(name, abstractCode->ToWord());
   concreteCode->Init(ABSTRACT_CODE_POS, abstractCode->ToWord());
   concreteCode->Init(TRANSFORM_POS, transform->ToWord());
