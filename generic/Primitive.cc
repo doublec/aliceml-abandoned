@@ -97,7 +97,7 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter,
       // Deconstruct has set Scheduler::currentData as a side-effect
       return Interpreter::REQUEST;
     } else {
-      Assert(Scheduler::nArgs == arity);
+      Assert(Scheduler::nArgs == interpreter->arity);
       return interpreter->function(taskStack);
     }
   }
