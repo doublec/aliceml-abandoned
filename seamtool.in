@@ -3,6 +3,7 @@
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
+libseam=@libseam@
 
 if [ $# -lt 1 ]; then
     echo "usage: $0 [--verbose|-v] (makedepend|c++|ld) <option> ..." >&2
@@ -27,10 +28,10 @@ cmd() {
 
 case "$mode" in
     makedepend)
-	cmd @CXX@ -M @DEFS@ -I@includedir@/seam @INCLUDES@ @CPPFLAGS@ "$@"
+	cmd @CXX@ -M @DEFS@ -I@includedir@ @INCLUDES@ @CPPFLAGS@ "$@"
 	;;
     c++)
-	cmd @CXX@ @DEFS@ -I@includedir@/seam @INCLUDES@ @CPPFLAGS@ \
+	cmd @CXX@ @DEFS@ -I@includedir@ @INCLUDES@ @CPPFLAGS@ \
 	    @CXXFLAGS@ "$@"
 	;;
     ld)
@@ -59,8 +60,8 @@ case "$mode" in
 		    ;;
 	    esac
 	done
-	libs="$libs @bindir@/seam.dll"
-	cmd @CXX@ -shared $ldflags -o $outputfile $fileargs $libs
+	cmd @CXX@ -shared $ldflags -o $outputfile $fileargs $libs\
+	    -L@libdir@ $libseam
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2
