@@ -21,14 +21,15 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	type id = int
 
-	type outstream = BinIO.outstream * id ref * id StringMap.t
+	type outstream =
+	     BinIO.outstream * id ref * id StringMap.t * int ref
 
-	fun inc (_, r as ref id, _) = (r := id + 1; id)
+	fun inc (_, r as ref id, _, _) = (r := id + 1; id)
 
-	fun lookupString ((_, _, stringMap), s) =
+	fun lookupString ((_, _, stringMap, _), s) =
 	    StringMap.lookup (stringMap, s)
 
-	fun insertString ((_, _, stringMap), s, id) =
+	fun insertString ((_, _, stringMap, _), s, id) =
 	    StringMap.insertDisjoint (stringMap, s, id)
 
 	type label = int
@@ -43,7 +44,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	val tREF       = Word8.fromInt 6
 	val tTRANSFORM = Word8.fromInt 7
 
-	fun outputByte ((outstream, _, _), w) = BinIO.output1 (outstream, w)
+	fun outputByte ((outstream, _, _, _), w) = BinIO.output1 (outstream, w)
 
 	fun outputUInt (q, i) =
 	    if i >= 0x80 then
@@ -53,29 +54,34 @@ structure PrimPickle :> PRIM_PICKLE =
 	    else raise Crash.Crash "PrimPickle.outputUInt"
 
 	fun openOut name: outstream =
-	    (BinIO.openOut name, ref 0, StringMap.new ())
+	    (BinIO.openOut name, ref 0, StringMap.new (), ref 1)
+
+	fun done (_, _, _, r as ref n) = r := n - 1
+	fun more ((_, _, _, r as ref n), m) = r := n - 1 + fromInt m
 
 	fun outputInt (q, i) =
-	    if i >= 0 then (outputByte (q, tPOSINT); outputUInt (q, i))
-	    else (outputByte (q, tNEGINT); outputUInt (q, ~(i + 1)))
+	    if i >= 0 then (done q; outputByte (q, tPOSINT); outputUInt (q, i))
+	    else (done q; outputByte (q, tNEGINT); outputUInt (q, ~(i + 1)))
 
 	fun outputChunk (q, bytes) =
-	    (outputByte (q, tCHUNK);
+	    (done q; outputByte (q, tCHUNK);
 	     outputUInt (q, fromInt (Vector.length bytes));
 	     Vector.app (fn b => outputByte (q, b)) bytes; inc q)
 
 	fun outputBlock (q, label, size) =
-	    (outputByte (q, tBLOCK); outputUInt (q, label);
-	     outputUInt (q, fromInt size); inc q)
+	    (more (q, size); outputByte (q, tBLOCK);
+	     outputUInt (q, label); outputUInt (q, fromInt size); inc q)
 
 	fun outputTuple (q, size) =
-	    (outputByte (q, tTUPLE); outputUInt (q, fromInt size); inc q)
+	    (more (q, size); outputByte (q, tTUPLE);
+	     outputUInt (q, fromInt size); inc q)
 
 	fun outputClosure (q, size) =
-	    (outputByte (q, tCLOSURE); outputUInt (q, fromInt size); inc q)
+	    (more (q, size); outputByte (q, tCLOSURE);
+	     outputUInt (q, fromInt size); inc q)
 
 	fun outputReference (q, id) =
-	    (outputByte (q, tREF); outputUInt (q, id))
+	    (done q; outputByte (q, tREF); outputUInt (q, id))
 
 	fun outputString (q, s) =
 	    case lookupString (q, s) of
@@ -85,7 +91,7 @@ structure PrimPickle :> PRIM_PICKLE =
 			val id = inc q
 		    in
 			insertString (q, s, id);
-			outputByte (q, tCHUNK);
+			done q; outputByte (q, tCHUNK);
 			outputUInt (q, fromInt (String.size s));
 			CharVector.app
 			(fn c => outputByte (q, Word8.fromInt (Char.ord c))) s;
@@ -96,8 +102,20 @@ structure PrimPickle :> PRIM_PICKLE =
 	    let
 		val id = inc q
 	    in
-		outputByte (q, tTRANSFORM); outputString (q, name); id
+		more (q, 2); outputByte (q, tTRANSFORM);
+		outputString (q, name); id
 	    end
 
-	fun closeOut (outstream, _, _) = BinIO.closeOut outstream
+	fun closeOut (outstream, _, _, ref n) =
+	    (BinIO.closeOut outstream;
+	     if n = 0 then ()
+	     else
+		 let
+		     exception PickleSize
+		 in
+		     TextIO.output
+			 (TextIO.stdErr,
+			  "pickle size off by " ^ toString n ^ "\n");
+		     raise PickleSize
+		 end)
     end
