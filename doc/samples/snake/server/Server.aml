@@ -10,11 +10,14 @@
 *)
 
 import structure Protocol       from "../common/Protocol"
+import structure Color          from "../common/Color"
+import structure Pos            from "../common/Pos"
+import val ispawn               from "../common/ISpawn"
+
 import structure Participant    from "Participant"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
 import structure MkHashImpMap   from "x-alice:/lib/data/MkHashImpMap"
 import structure Arena          from "Arena"
-import structure Pos            from "../common/Pos"
 import structure Snake          from "Snake"
 import structure Config         from "Config"
 import structure Remote         from "x-alice:/lib/distribution/Remote"
@@ -56,7 +59,6 @@ struct
 
     structure PMap      = MkHashImpMap (Int)
 
-   
     
     fun tabulateStream (n, f) =
         let
@@ -186,7 +188,7 @@ struct
                calls to finish.
              *)
             fun invokeSeveral (clients, f, a) = 
-                List.app (fn c => spawn (invoke (c, f, a))) clients 
+                List.app (fn c => ispawn invoke (c, f, a)) clients 
                
 
             (* [withParticipant def (procName, id, f) returns a function which 
@@ -238,8 +240,8 @@ struct
                                                 [(name, color)]);
                                 (* inform the NEW player of the other 
                                    already connected players *)
-                                spawn (invoke (part, #playersJoined, 
-                                        List.map Part.nameNColor players));
+                                ispawn invoke (part, #playersJoined, 
+                                        List.map Part.nameNColor players);
                                 true
                             end
                         |   NONE => false   
@@ -260,9 +262,8 @@ struct
                             (Part.state part) := Part.WATCHING (ref ~1);
                             (* inform the NEW player of the other 
                                already connected players *)
-                            spawn (invoke (part, #playersJoined, 
-                                    List.map Part.nameNColor players));
-                            ()
+                            ispawn invoke (part, #playersJoined, 
+                                    List.map Part.nameNColor players)
                         end
                 ))
 
@@ -528,6 +529,7 @@ fun test () =
                     (dummyClient, 
                 { Config.defaultSingle where tick = Time.fromSeconds 3 } )
     in
+        #play server ("bene", Color.fromString "red");    
         valOf (#startGame server) ();
         (ticket, server)
     end

@@ -1,0 +1,22 @@
+(* Alice Snake 2.0 - ispawn functions
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+fun ispawn f a =
+    (* spawn application and error handler.
+       return unit (directly)
+     *)
+    (spawn ((f a) 
+      handle e => 
+        (TextIO.output (TextIO.stdErr, 
+            "ispawn failed with exception " ^ exnName e ^ "\n");
+         OS.Process.exit OS.Process.failure));
+    ())
+     

@@ -11,22 +11,29 @@
 
 import structure PPValue        from "x-alice:/lib/system/PPValue"
 import structure PrettyPrint    from "x-alice:/lib/utility/PrettyPrint"
+import structure Stream         from "x-alice:/lib/data/Stream"
 
 local
-    fun log'' (t, part, value) =
+    structure P = PrettyPrint
+
+    val (stream, messages)    = Stream.stream () 
+
+    fun logger []   = ()
+    |   logger (msg :: msgs) =
+        (P.output (TextIO.stdErr, msg, 70); logger msgs)
+
+    val _ = spawn logger messages
+
+in
+    fun log' t (part, value) = 
         let
-            structure P = PrettyPrint
             val cb      = P.^/^
             val c       = P.^^
             val format  = { depth = 256, width = 512, prec = 4 }
         in
-            P.output (TextIO.stdErr, c (cb (c (P.text part, P.text ":"), 
-                PPValue.ppVal' t format value), P.text "\n"), 70)
+            Stream.send (stream, c (cb (c (P.text part, P.text ":"),
+                PPValue.ppVal' t format value), P.text "\n"))
         end
-
-    val lock = Lock.lock ()
-in
-    fun log' t = Lock.sync lock (fn (p, v) => log'' (t, p, v))
 end
 
 __overload 'a log : string * 'a -> unit = log'
