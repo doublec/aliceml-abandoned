@@ -70,7 +70,6 @@ struct
     (* Simple objects *)
 
     fun ppLab l		= text(Label.toString l)
-    fun ppCon (k,_,p)	= PPPath.ppPath p
 
     fun varToString(isBound, n) =
 	let
@@ -82,7 +81,7 @@ struct
 	end
 
 
-    (* Kinds *)
+  (* Kinds *)
 
     (* Precedence:
      *	0 : arrow (ty1 -> ty2)
@@ -91,16 +90,24 @@ struct
 
     fun ppKind k = fbox(below(ppKindPrec 0 k))
 
-    and ppKindPrec p  STAR		= text "*"
-      | ppKindPrec p (ARROW(k1,k2))	= 
-	let
-	    val doc = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
-	in
-	    parenPrec p (0, doc)
-	end
+    and ppKindPrec p k =
+	if isSingKind k then
+	    text "<" ^^ ppTyp(asSingKind k) ^^ text ">"
+	else if isExtKind k then
+	    text "#+"
+	else if isStarKind k then
+	    text "#"
+	else if isArrowKind k then
+	    let
+		val (k1,k2) = asArrowKind k
+		val doc     = ppKindPrec 1 k1 ^/^ text "->" ^/^ ppKindPrec 0 k2
+	    in
+		parenPrec p (0, doc)
+	    end
+	else
+	    raise Assert.failure
 
-
-    (* Types *)
+  (* Types *)
 
     (* Precedence:
      *  0 : kind annotation (ty : kind)
@@ -110,7 +117,8 @@ struct
      *	4 : constructed type (tyseq tycon)
      *)
 
-    fun ppTyp t =
+    and ppTyp t = ppTyp' [] t
+    and ppTyp' ps t =
 	let
 	    val m = Map.new()
 	    val a = ref 0
@@ -140,13 +148,25 @@ struct
 		else if isUnknown t then
 		    let
 			val k   = kind t
-			val t'  = Type.fromCanonical(Type.canonical t)
-			val doc = text("'" ^ Int.toString(Type.hash t'))
+			val t'  = fromCanonical(canonical t)
+			val doc = text("'" ^ Int.toString(hash t'))
 		    in
-			if k = STAR
+			if isStarKind k
 			then doc
 			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
 		    end
+		else if isVar t then
+		    let
+			val k   = kind t
+			val doc = ppVar false ^^	(* unbound! *)
+				  text("'" ^ Int.toString(hash t))
+		    in
+			if isStarKind k
+			then doc
+			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
+		    end
+		else if isAbs t then
+		    PPPath.ppPath' ps (asAbs t)
 		else if isArrow t then
 		    let
 			val (t1,t2) = asArrow t
@@ -169,17 +189,6 @@ struct
 		    brace(fbox(below(ppRow(",", ":", asProd t))))
 		else if isSum t then
 		    brack(fbox(below(ppRow(" |", "of", asSum t))))
-		else if isVar t then
-		    let
-			val k   = kind t
-			val doc = ppVar false	(* unbound! *)
-		    in
-			if k = STAR
-			then doc
-			else parenPrec p (0, doc ^/^ text ":" ^/^ ppKind k)
-		    end
-		else if isCon t then
-		    ppCon(asCon t)
 		else if isAll t then
 		    let
 			val (a,t1) = asAll t
@@ -190,7 +199,7 @@ struct
 		    end
 *)
 		    in
-			Map.insert(m, canonical(inVar a), ppVar true);
+			Map.insert(m, canonical(var a), ppVar true);
 			ppTyp t1
 		    end
 		else if isExist t then
@@ -246,9 +255,9 @@ struct
 		    else empty
 		else
 		    let
-			val (l,t) = headRow r
+			val (l,t) = hdRow r
 			val  doc  = ppField(ann,l,t)
-			val  r'   = tailRow r
+			val  r'   = tlRow r
 		    in
 			if isEmptyRow r' andalso not unknown
 			then doc
@@ -273,7 +282,7 @@ struct
 		let
 		    val doc = ppVar true
 		in
-		    Map.insert(m, canonical(inVar a), doc);
+		    Map.insert(m, canonical(var a), doc);
 		    abox(
 			hbox(
 			    text s ^/^
