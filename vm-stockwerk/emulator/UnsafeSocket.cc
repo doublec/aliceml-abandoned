@@ -30,7 +30,7 @@ static char *ExportCString(String *s) {
 
 static int setNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
-#ifdef _MSV_VER
+#if defined(__MINGW32__) || defined(_MSC_VER)
   return ioctlsocket(sock, FIONBIO, &arg);
 #else
   return ioctl(sock, FIONBIO, &arg);
@@ -194,7 +194,7 @@ DEFINE2(UnsafeSocket_output) {
 DEFINE1(UnsafeSocket_close) {
   DECLARE_INT(sock, x0);
 
-#ifdef _MSC_VER
+#if defined(__MINGW32__) || defined(_MSC_VER)
   closesocket(sock);
 #else
   close(sock);

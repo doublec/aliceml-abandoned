@@ -14,7 +14,7 @@
 #pragma implementation "emulator/Guid.hh"
 #endif
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #endif
 #include <unistd.h>
@@ -37,7 +37,7 @@ Guid *Guid::New() {
   Tuple *tuple = Tuple::New(4);
   tuple->Init(0, Store::IntToWord(static_cast<int>(getpid())));
   tuple->Init(1, Store::IntToWord(static_cast<int>(time(0))));
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(_MSC_VER)
   SYSTEMTIME st;
   GetSystemTime(&st);
   FILETIME ft;

@@ -13,7 +13,7 @@
 #include "emulator/Authoring.hh"
 
 static inline int GetPlatform() {
-#if defined(__CYGWIN32__) || defined(__MINGW32__)
+#if defined(__CYGWIN32__) || defined(__MINGW32__) || defined(_MSC_VER)
   return 1;
 #else
   return 0;
