@@ -462,7 +462,7 @@ inline void Store::GC(word &root, const u_int gen) {
 static u_int gcCounter = 0;
 #endif
 
-void Store::DoGC(word &root) {
+void Store::DoGCWithoutFinalize(word &root) {
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "GC Nb %d...\n", gcCounter++);
   std::fflush(stderr);
@@ -527,13 +527,7 @@ void Store::DoGC(word &root) {
   }
   // Clear GC Flag
   StatusWord::ClearStatus(GCStatus());
-  // Perform Finalization
-  Set *set = finSet;
-  for (u_int i = set->GetSize(); i--;) {
-    Finalization *handler =
-      (Finalization *) Store::DirectWordToUnmanagedPointer(set->GetArg(i--));
-    handler->Finalize(set->GetArg(i));
-  }
+  // TODO: Reenable gc/no gc benchmarking (needs to include finalization time)
 #if defined(STORE_PROFILE) || defined(STORE_NOGCBENCH)
   end_t  = Time::GetElapsedMicroseconds();
   sum_t += (end_t - start_t);
@@ -548,6 +542,20 @@ void Store::DoGC(word &root) {
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "done.\n");
 #endif
+}
+
+void Store::DoFinalize() {
+  Set *set = finSet;
+  for (u_int i = set->GetSize(); i--;) {
+    Finalization *handler =
+      (Finalization *) Store::DirectWordToUnmanagedPointer(set->GetArg(i--));
+    handler->Finalize(set->GetArg(i));
+  }
+}
+
+void Store::DoGC(word &root) {
+  DoGCWithoutFinalize(root);
+  DoFinalize();
 }
 
 void Store::SetGCParams(u_int mem_free, u_int mem_tolerance) {
@@ -637,10 +645,10 @@ static void PrintLocatePath() {
   std::fprintf(stderr, "\n");
 }
 
-static bool IsAlive(HeapChunk **roots, char *p) {
+static bool IsAlive(Heap *roots, char *p) {
   if (p != NULL) {
     for (u_int i = 0; i < STORE_GENERATION_NUM - 1; i++) {
-      HeapChunk *chunk = roots[i];
+      HeapChunk *chunk = roots[i].GetChain();
       while (chunk != NULL) {
 	if (p >= chunk->GetBase() && (p < chunk->GetTop()))
 	  return true;
@@ -651,7 +659,7 @@ static bool IsAlive(HeapChunk **roots, char *p) {
   return false;
 }
 
-static void Verify(HeapChunk **roots, word x) {
+static void Verify(Heap *roots, word x) {
   AssertStore(depth < MAX_ITERATION_STEPS);
   AssertStore(size < MAX_ITERATION_STEPS);
   if (PointerOp::IsInt(x)) {
@@ -694,7 +702,11 @@ static void Verify(HeapChunk **roots, word x) {
     }
     BlockLabel l = p->GetLabel();
     if (l != CHUNK_LABEL) {
-      u_int size = p->GetSize();
+      u_int size;
+      if (l == DYNAMIC_LABEL)
+	size = ((DynamicBlock *) p)->GetActiveSize();
+      else
+	size = p->GetSize();
       for (u_int i = size; i--;) {
   	word item = p->GetArg(i);
   	path[depth++] = i;
@@ -743,7 +755,6 @@ static void Locate(word x, word v) {
 }
 
 void Store::VerifyGC(word root) {
-  curChunk->SetTop(chunkTop);
   InitVerify();
   rootWord = root;
   Verify(roots, root);

@@ -81,6 +81,8 @@ public:
   static void CloseStore();
 
   // GC Related Functions
+  static void DoGCWithoutFinalize(word &root);
+  static void DoFinalize();
   static void DoGC(word &root);
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);

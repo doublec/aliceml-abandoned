@@ -32,8 +32,7 @@
 #include "generic/Profiler.hh"
 #endif
 
-word Scheduler::root;
-ThreadQueue *Scheduler::threadQueue;
+word Scheduler::wThreadQueue;
 Thread *Scheduler::currentThread;
 TaskStack *Scheduler::currentTaskStack;
 word *Scheduler::stackTop;
@@ -48,9 +47,8 @@ word Scheduler::currentData;
 Backtrace *Scheduler::currentBacktrace;
 
 void Scheduler::Init() {
-  threadQueue = ThreadQueue::New();
-  root = Store::IntToWord(0);
-  RootSet::Add(root);
+  wThreadQueue = ThreadQueue::New()->ToWord();
+  RootSet::Add(wThreadQueue);
 #if PROFILE
   gcTime = 0.0;
 #endif
@@ -104,7 +102,9 @@ inline void Scheduler::FlushThread() {
 
 int Scheduler::Run() {
   while (true) {
-    while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
+    while ((currentThread =
+	    ThreadQueue::FromWordDirect(wThreadQueue)->Dequeue()) !=
+	   INVALID_POINTER) {
       SwitchToThread();
       for (bool nextThread = false; !nextThread; ) {
 	StackFrame *frame = GetFrame();
@@ -123,7 +123,7 @@ int Scheduler::Run() {
 	  break;
 	case Worker::PREEMPT:
 	  FlushThread();
-	  threadQueue->Enqueue(currentThread);
+	  ThreadQueue::FromWordDirect(wThreadQueue)->Enqueue(currentThread);
 	  nextThread = true;
 	  break;
 	case Worker::SUSPEND:
@@ -215,11 +215,9 @@ int Scheduler::Run() {
 #if PROFILE
 	double beforeGC = Profiler::SampleTime();
 #endif
-	threadQueue->Purge();
+	ThreadQueue::FromWordDirect(wThreadQueue)->Purge();
 	IOHandler::Purge();
-	root = threadQueue->ToWord();
 	RootSet::DoGarbageCollection();
-	threadQueue = ThreadQueue::FromWordDirect(root);
 #if PROFILE
 	double afterGC = Profiler::SampleTime();
 	gcTime += (afterGC - beforeGC);

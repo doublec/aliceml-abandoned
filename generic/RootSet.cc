@@ -96,10 +96,13 @@ void RootSet::Remove(word &root) {
   set->Remove(root);
 }
 
+// Finalization needs access to root set variables (e.g. Gtk destroy events)
+// Therefore, we need to delay finalization upon root set update.
 void RootSet::DoGarbageCollection() {
   set->PreGC();
   word w = set->ToWord();
-  Store::DoGC(w);
+  Store::DoGCWithoutFinalize(w);
   set = Set::FromWordDirect(w);
   set->PostGC();
+  Store::DoFinalize();
 }

@@ -30,8 +30,8 @@ class Backtrace;
 
 class SeamDll Scheduler {
 private:
-  static word root;
-  static ThreadQueue *threadQueue;
+  // ThreadQueue is root
+  static word wThreadQueue;
   static Thread *currentThread;
 
   static void SwitchToThread();
@@ -69,7 +69,7 @@ public:
   // Scheduler Thread Functions
   static Thread *NewThread(u_int nArgs, word args) {
     Thread *thread = Thread::New(nArgs, args);
-    threadQueue->Enqueue(thread);
+    ThreadQueue::FromWordDirect(wThreadQueue)->Enqueue(thread);
     return thread;
   }
   static Thread *NewThread(word closure, u_int nArgs, word args) {
@@ -80,7 +80,7 @@ public:
   static void ScheduleThread(Thread *thread) {
     //--** precondition: must not be scheduled
     Assert(thread->GetState() == Thread::RUNNABLE);
-    threadQueue->Enqueue(thread);
+    ThreadQueue::FromWordDirect(wThreadQueue)->Enqueue(thread);
   }
   static void WakeupThread(Thread *thread) {
     Assert(thread->GetState() == Thread::BLOCKED);
@@ -92,7 +92,7 @@ public:
     thread->Suspend();
     thread->Purge();
     if (thread->GetState() == Thread::RUNNABLE)
-      threadQueue->Remove(thread);
+      ThreadQueue::FromWordDirect(wThreadQueue)->Remove(thread);
   }
   static void ResumeThread(Thread *thread) {
     if (thread->IsSuspended()) {
