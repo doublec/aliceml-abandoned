@@ -1,0 +1,77 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure Search    from "x-alice:/lib/gecode/Search"
+import structure Print     from "x-alice:/lib/system/Print"
+
+fun photo space =
+    let
+	open FD
+
+	val s_prefs = #[(0,2), (1,4), (2,3), 
+			(2,4), (3,0), (4,3),
+			(4,0), (4,1)]
+	val small = {n_names=5, n_prefs=8, prefs=s_prefs}
+	val spec = small
+	val pos = rangeVec(space,
+			   #n_names spec,
+			   (0,(#n_names spec)-1))
+	val sat = range(space, (0, #n_prefs spec))
+	val ful = Vector.map
+	    (fn c => intvar2boolvar(space, c))
+	    (intvarVec (space, #n_prefs spec, #[(0,1)]))
+
+	val eq = Vector.tabulate ((#n_prefs spec)+1,
+            fn n => 
+	       if n=(#n_prefs spec) then
+		   (~1, sat)
+	       else
+		   (1, boolvar2intvar (Vector.sub(ful, n))))
+
+	fun better(s1, s2) =
+	    relI(s1, sat, GR, Reflect.value(s2, sat))
+    in
+	Vector.appi (fn (i,(pa, pb)) =>
+			let
+			    val b = Vector.map
+				(fn c => intvar2boolvar(space, c))
+				(intvarVec (space, 2, #[(0,1)]))
+			in
+			    Reified.linear(space,
+				    #[(1, Vector.sub(pos, pb)),
+				      (~1, Vector.sub(pos, pa))],
+				    EQ, 1, Vector.sub(b, 0), DEF);
+			    Reified.linear(space,
+				    #[(1, Vector.sub(pos, pa)),
+				      (~1, Vector.sub(pos, pb))],
+				    EQ, 1, Vector.sub(b, 1), DEF);
+			    exor(space,
+				     Vector.sub(b, 0),
+				     Vector.sub(b, 1),
+				     Vector.sub(ful, i))
+			end) (#prefs spec);
+
+	linear(space, eq, EQ, 0, DEF);
+	distinct(space, pos, DEF);
+	rel(space, Vector.sub(pos, 0), LE,
+	    Vector.sub(pos, 1));
+	branch(space, pos, B_NONE, B_MIN);
+
+	((pos, sat), better)
+    end
+
+val (SOME (sol, (pos, sat))) = Search.searchBest photo
+val s = Vector.map (fn v => FD.Reflect.value(sol,v)) pos
+val _ = Print.printVal s
+val _ = print "\n"
+val _ = OS.Process.exit OS.Process.success
