@@ -55,7 +55,7 @@ final public class DMLConVal implements DMLValue {
 
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
 	if (this.constructor == DMLConstants.reference)
-	    DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+	    DMLConstants.runtimeError.apply(new DMLString("cannot pickle referencev")).raise();
 	else
 	    out.defaultWriteObject();
     }
