@@ -222,7 +222,17 @@ namespace Alice {
 		}
 	    }
 	    public override Object Await() {
-		throw new Exception(Prebound.Hole_Hole);
+		lock (this) {
+		    if (Ref == null) {
+			throw new Exception(Prebound.Hole_Hole);
+		    }
+		    if (Ref is Transient) {
+			return ((Transient) Ref).Await();
+		    }
+		    else {
+			return Ref;
+		    }
+		}
 	    }
 	    public Object AwaitInternal() {
 		lock (this) {
