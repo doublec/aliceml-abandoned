@@ -29,7 +29,7 @@ structure GuiMain =
     struct
         (* Buffers *)
 
-        val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
+        val clipboard = Gtk.clipboardGet(Gdk.atomIntern("PRIMARY", false))
         datatype active_view = COMPILER | STDSTREAMS | BUFFER of Gtk.object
         val curtextview = ref COMPILER
 
