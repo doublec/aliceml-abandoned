@@ -38,16 +38,18 @@ INSTALLFILES_LIBRARY_0 = \
 	char.html command-line.html \
 	future.html \
 	general.html \
-	hole.html \
-	ieee-real.html imperative-io.html integer.html io.html \
+	hashable.html hole.html \
+	ieee-real.html imp-map.html imp-set.html imperative-io.html \
+	integer.html io.html \
 	list.html list-pair.html lock.html \
-	math.html mono-array.html mono-array-slice.html mono-vector.html \
-	mono-vector-slice.html \
-	option.html os.html os-file-sys.html os-io.html os-path.html \
-	os-process.html \
+	map.html math.html mono-array.html mono-array-slice.html \
+	mono-vector.html mono-vector-slice.html \
+	option.html ordered.html os.html os-file-sys.html os-io.html \
+	os-path.html os-process.html \
 	package.html pair.html pickle.html prim-io.html promise.html \
 	real.html ref.html \
-	stream-io.html string.html string-cvt.html substring.html \
+	set.html stack.html stamp.html stream-io.html string.html \
+	string-cvt.html substring.html \
 	text.html text-io.html text-stream-io.html time.html toplevel.html \
 	unix.html \
 	vector.html vector-pair.html vector-slice.html \
