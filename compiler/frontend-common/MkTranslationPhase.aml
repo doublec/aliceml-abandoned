@@ -152,6 +152,12 @@ struct
     fun typ_fix E	= typ(E, modlab_fixity, typlab_fix)
     fun typ_assoc E	= typ(E, modlab_fixity, typlab_assoc)
 
+    val lab_package	= Label.fromString "Package__"
+    fun typ_package(E,t)= Type.sum(Type.extendRow(lab_package,
+				Type.apply(typ_strict,
+					   Type.tuple #[t,typ_inf E]),
+				Type.emptyRow()))
+
 
   (* Transformation of type info *)
 
@@ -335,6 +341,10 @@ struct
 	O.TupExp(typInfo(r, Type.tuple(Vector.map (#typ o O.infoExp) es)), es)
     fun trVector(r, t, es) =
 	O.VecExp(typInfo(r, Type.apply(typ_vec, t)), es)
+
+    fun trSel(r, n, e) =
+	O.SelExp(typInfo(r, Vector.sub(Type.asTuple(#typ(O.infoExp e)), n-1)),
+		 O.Lab(nonInfo r, Label.fromInt n), e)
 
     fun trAssoc(E, r, Fixity.LEFT)    = accessFix(E, lab_left)
       | trAssoc(E, r, Fixity.RIGHT)   = accessFix(E, lab_right)
@@ -552,7 +562,7 @@ struct
       | trExp(E, I.HandleExp(i,e,ms))	= O.HandleExp(i,trExp(E,e),trMats(E,ms))
       | trExp(E, I.AnnExp(i,e,t))	= trExp(E,e)
       | trExp(E, I.LetExp(i,ds,e))	= O.LetExp(i, trDecs(E,ds), trExp(E,e))
-      | trExp(E, I.PackExp(i,m))	= trMod(E,m)
+      | trExp(E, I.PackExp(i,m,j))	= trPackExp(E,i,m,j)
 
     and trExpRow(E, I.Row(i,fs,_))	= trExpFlds(E,fs)
     and trExpFlds(E, fs)		= Vector.map (trExpFld E) fs
@@ -584,6 +594,35 @@ struct
 			   in O.Fld(i, l', O.SelExp(i',l',e')) :: fs end
 	in
 	    trUpdExp'(tr',i,e',r',fs')
+	end
+
+    and trPackExp(E,i,m,j) =
+	(* [pack m :> j] = let x1 = [j]; x2 = [m :> x1]
+	 *                 in seal Package__(x2, x1) *)
+	let
+	    val r   = #region i
+
+	    val e1' = trInf(E,j)
+	    val i1' = O.infoExp e1'
+	    val z1  = Stamp.new()
+	    val x1' = O.Id(i1', z1, Name.InId)
+	    val d1' = O.ValDec(origInfo(r,Aux), idToPat x1', e1')
+
+	    val i1  = I.infoInf j
+	    val x1  = I.Id(i1, z1, Name.InId)
+	    val j1  = I.ConInf(i1, I.ShortId(i1,x1))
+
+	    val e2' = trOpaqCoerceMod(E, r, m, idToExp x1', #inf i1)
+	    val i2' = O.infoExp e2'
+	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
+	    val d2' = O.ValDec(origInfo(r,Aux), idToPat x2', e2')
+
+	    val e3' = O.TagExp(typInfo(r,typ_package(E,#typ i2')),
+			       O.Lab(nonInfo r, lab_package),
+			       trTuple(r, #[idToExp x2', idToExp x1']))
+	    val e'  = O.SealExp(i, e3')
+	in
+	    O.LetExp(O.infoExp e', #[d1',d2'], e')
 	end
 
 
@@ -696,15 +735,36 @@ struct
 
       | trMod(E, I.SealMod(i,m,j)) =
 	(* [m :> j] = let x1 = [m]; x2 = [j] in seal [x1 : j1 :> x2 = j2] *)
-	trOpaqCoerceMod(E,i,m,j)
+	trOpaqCoerceMod(E,#region i,m,trInf(E,j),#inf i)
 
       | trMod(E, I.LetMod(i,ds,m)) =
 	(* [let decs in m] = let [decs] in [m] *)
 	O.LetExp(trModInfo(E,i), trDecs(E,ds), trMod(E,m))
 
       | trMod(E, I.UnpackMod(i,e,j)) =
-	(* [unpack e : j] = e *)
-	trExp(E,e)
+	(* [unpack e : j] = let Package__(x1,x2) = unseal [e]
+	 *                  in Inf.match(x2,[j]); x1
+	 *)
+	let
+	    val r   = #region i
+	    val t1  = infToTyp(E, #inf(I.infoInf j))
+	    val i'  = typInfo(r, Type.tuple #[t1, typ_inf E])
+	    val e1' = O.UnsealExp(i', trExp(E,e))
+	    val x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
+	    val x2' = O.Id(typInfo(r,typ_inf E), Stamp.new(), Name.InId)
+	    val p'  = O.TagPat(typInfo(r,typ_package(E,t1)),
+			       O.Lab(nonInfo r, lab_package),
+			       O.TupPat(i', #[idToPat x1', idToPat x2']))
+	    val d'  = O.ValDec(origInfo(r,Aux), p', e1')
+	    val xx1 = idToExp x1'
+	    val e'  = if not(!Switches.Language.supportRtt) then xx1 else
+		      O.SeqExp(O.infoExp xx1,
+			       callInf(E, lab_match,
+				       trTuple(r, #[idToExp x2',trInf(E,j)])),
+			       xx1)
+	in
+	    O.LetExp(O.infoExp e', #[d'], e')
+	end
 
       | trMod(E, I.PrimMod(i,"ByNeed",j)) =
 	(* [prim "ByNeed" : (interface I; module F : any -> I) -> I]
@@ -818,109 +878,6 @@ struct
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
 
-      | trMod(E, I.PrimMod(i,"Pack",j)) =
-	(* [prim "Pack" : (interface I; module X : I) -> (x : package)]
-	 * = fun {[X]=x1,[I]=x2} ->
-	 *   let (x3,_) = Inf.instance(Path.invent(), x2) in
-	 *   {[x'] = seal (CoerceOpaq (???,x3) x1, x3)}
-	 *)
-	(*UNFINISHED: sealing of RTTs*)
-	(let
-	    val  i'      = trModInfo(E,i)
-	    val  r       = #region i'
-	    val  i0'     = nonInfo r
-	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isModName, t1)
-	    val (l2,t12) = findFld(isInfName, t1)
-	    val (l3,t21) = findFld(isValName, t2)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'      = O.ProdPat(typInfo(r,t1),
-				#[O.Fld(i0', O.Lab(i0',l1), idToPat x1'),
-				  O.Fld(i0', O.Lab(i0',l2), idToPat x2')])
-	in
-	    if not(!Switches.Language.supportRtt) then
-		let
-		    val  e1' = O.SealExp(typInfo(r,t21), 
-				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
-					 #[idToExp x1', idToExp x2']))
-		    val  e'  = O.ProdExp(typInfo(r,t2),
-				#[O.Fld(i0', O.Lab(i0',l3), e1')])
-		in
-		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
-		end
-	    else
-		let
-		    val  x3' = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-		    val  d'  = O.ValDec(origInfo(r,Aux),
-				O.TupPat(typInfo(r, Type.tuple #[typ_inf E,
-								 typ_rea E]),
-					 #[idToPat x3',
-					   O.JokPat(typInfo(r, typ_rea E))]),
-				callInf(E, lab_instance,
-				   trTuple(r, #[trPath'(E, r), idToExp x2'])))
-		    val  e1' = O.SealExp(typInfo(r,t21), 
-				O.TupExp(typInfo(r,Type.tuple #[t11,t12]),
-					 #[idToExp x1', idToExp x3']))
-		    val  i2  = typInfo(r,t2)
-		    val  e2' = O.ProdExp(i2, #[O.Fld(i0', O.Lab(i0',l3), e1')])
-		    val  e'  = O.LetExp(i2, #[d'], e2')
-		in
-		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
-		end
-	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
-
-      | trMod(E, I.PrimMod(i,"Unpack",j)) =
-	(* [prim "Unpack" : (x : package; interface I) -> I]
-	 * = fn {[x]=x1,[S]=x2} ->
-	 *   let (x11,x12) = unseal x1 in
-	 *   Inf.match(x12,x2);
-	 *   x11
-	 *)
-	(let
-	    val  i'      = trModInfo(E,i)
-	    val  r       = #region i'
-	    val  i0'     = nonInfo r
-	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isValName, t1)
-	    val (l2,t12) = findFld(isInfName, t1)
-	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
-	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
-	    val  p'      = O.ProdPat(typInfo(r,t1),
-				#[O.Fld(i0', O.Lab(i0',l1), idToPat x1'),
-				  O.Fld(i0', O.Lab(i0',l2), idToPat x2')])
-
-	    val  i1'     = typInfo(r, Type.tuple #[t2, typ_inf E])
-	    val  i2'     = typInfo(r, t2)
-	    val  x11'    = O.Id(i2', Stamp.new(), Name.InId)
-	    val  x12'    = O.Id(typInfo(r, typ_inf E), Stamp.new(), Name.InId)
-	    val  p1'     = O.TupPat(i1', #[idToPat x11', idToPat x12'])
-	    val  e1'     = O.UnsealExp(i1', idToExp x1')
-	    val  d'      = O.ValDec(origInfo(r,Aux), p1', e1')
-	in
-	    if not(!Switches.Language.supportRtt) then
-		let
-
-		    val  e1' = idToExp x11'
-		    val  e'  = O.LetExp(i2', #[d'], e1')
-		in
-		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
-		end
-	    else
-		let
-		    val  e1'  = callInf(E, lab_match,
-				  trTuple(r, #[idToExp x12', idToExp x2']))
-		    val  e2'  = idToExp x11'
-		    val  e'   = O.LetExp(i2', #[d'], O.SeqExp(i2', e1', e2'))
-		in
-		    O.FunExp(i', #[O.Mat(nonInfo r, p', e')])
-		end
-	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
-
       | trMod(E, I.PrimMod(i,s,j)) =
 	(* [prim s : j] = prim s *)
 	O.PrimExp(trModInfo(E,i), s)
@@ -996,7 +953,7 @@ struct
 		 end
 	end
 
-    and trOpaqCoerceMod(E,i,m,j) =
+    and trOpaqCoerceMod(E,r,m,e2',j2) =
 	(* [m :> j] = let val x1 = [m]
 	 *                val x2 = lazy [j]
 	 *            in seal [x1 : j1 :> x2 = j2]
@@ -1004,16 +961,15 @@ struct
 	if not(!Switches.Language.supportRtt) then
 	    let
 		val j1  = #inf(I.infoMod m)
-		val j2  = #inf i
 		val j2' = Inf.narrow(j1,j2)
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(#region i,"match5\n");raise e)
+(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match5\n");raise e)
 	    in
-		O.SealExp(trModInfo(E,i), trTransCoerceMod(E, #region i, m,j2'))
+		O.SealExp(typInfo(r,infToTyp(E,j2)),
+			  trTransCoerceMod(E,r,m,j2'))
 	    end
 	else let
-	    val r   = #region i
 	    val i0  = origInfo(r,Aux)
-	    val i'  = trModInfo(E,i)
+	    val i'  = typInfo(r,infToTyp(E,j2))
 
 	    val e1' = trMod(E,m)
 	    val i1  = O.infoExp e1'
@@ -1021,11 +977,9 @@ struct
 	    val x1  = O.ShortId(i1, x1')
 	    val j1  = #inf(I.infoMod m)
 
-	    val e2' = trInf(E,j)
 	    val i2  = typInfo(r, typ_inf E)
 	    val x2' = O.Id(i2, Stamp.new(), Name.InId)
 	    val x2  = O.ShortId(i2, x2')
-	    val j2  = #inf i
 	    val j2' = Inf.narrow(j1,j2)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match1\n");raise e)
 	in
@@ -1180,9 +1134,7 @@ struct
 				 let
 				     val e51 = callInf(E, lab_asArrow,
 						       longidToExp x2)
-				     val l   = Label.fromInt 3
-				     val e52 = O.SelExp(typInfo(r, typ_inf E),
-							O.Lab(i',l), e51)
+				     val e52 = trSel(r,3,e51)
 				     val e5  = trLazy e52
 				     (*UNFINISHED: realise *)
 				     val d2  = O.ValDec(i'', idToPat x5', e5)
@@ -1452,11 +1404,6 @@ struct
 	    trBindTyp(E, lab_exist, i,x,t, Type.kindVar a)
 	end
 
-      | trTyp'(E, I.PackTyp(i,j)) =
-	(* [pack j] = Type.pack[j] *)
-	(*UNFINISHED*)
-	unfinished (#region i) "trTyp" "runtime package types"
-
       | trTyp'(E, I.SingTyp(i,y)) =
 	(* [sing y] = Type.sing[y] *)
 	(*UNFINISHED*)
@@ -1530,7 +1477,7 @@ struct
 	    (* [j]_E = fail *)
 	    O.FailExp(trInfInfo(E, I.infoInf j))
 	else
-	    trInf'(E, j)
+	    trInf'(E,j)
 
     and trInf'(E, I.TopInf(i)) =
 	(* [any]_E = Inf.top() *)
@@ -1549,13 +1496,16 @@ struct
 	end
 
       | trInf'(E, I.ConInf(i,y)) =
-	(* [y]_E = [y]_E *)
-	(let
-	    val y' = trInflongid(E,y)
+	(* [y]_E = #1(Inf.instance(Path.invent(), [y]_E)) *)
+	let
+	    val r   = #region i
+	    val e2' = longidToExp(trInflongid(E,y))
+		      handle VirtualModule => trVirtInflongid(E,y)
+	    val e1' = callPath(E, lab_invent, trUnit r)
+	    val e'  = callInf(E, lab_instance, trTuple(r, #[e1',e2']))
 	in
-	    O.VarExp(O.infoLongid y', y')
+	    trSel(r,1,e')
 	end
-	handle VirtualModule => trVirtInflongid(E,y))
 
       | trInf'(E, I.SigInf(i,ss)) =
 	(* [sig ss end]_E = let val s = Inf.emptySig()
@@ -1931,8 +1881,6 @@ struct
 	   I.ArrTyp(i, renameTyp map t1, renameTyp map t2)
       | renameTyp map (I.AllTyp(i,a,t))   = I.AllTyp(i,a, renameTyp map t)
       | renameTyp map (I.ExTyp(i,a,t))    = I.ExTyp(i,a, renameTyp map t)
-      | renameTyp map (I.PackTyp(i,j))    =
-	   unfinished (#region i) "renameTyp" "package type"
 
     and renameRow map (I.Row(i,fs,b)) = I.Row(i,Vector.map (renameFld map) fs,b)
     and renameFld map (I.Fld(i,a,t))  = I.Fld(i, a, renameTyp map t)
