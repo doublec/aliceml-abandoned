@@ -229,26 +229,31 @@ define
 	      end
 	 {Emulate tag(AppConst Op IdRefArgs IdDefArgsInstrOpt)
 	  Closure L TaskStack}
-      [] tag(!AppConst Op IdRefArgs IdDefArgsInstrOpt) then Args in
-	 %% construct argument:
-	 case IdRefArgs of tag(!OneArg IdRef) then
-	    Args = arg(case IdRef of tag(!Local Id) then L.Id
-		       [] tag(!Global I) then Closure.(I + 2)
-		       end)
-	 [] tag(!TupArgs IdRefs) then N in
-	    N = {Width IdRefs}
-	    Args = {MakeTuple args N}
-	    for J in 1..N do
-	       Args.J = case IdRefs.J of tag(!Local Id) then L.Id
-			[] tag(!Global K) then Closure.(K + 2)
-			end
+      [] tag(!AppConst Op0 IdRefArgs IdDefArgsInstrOpt) then Args in
+	 case {Deref Op0} of Transient=transient(_) then NewFrame in
+	    NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+	    request(Transient args() NewFrame|TaskStack)
+	 elseof Op then
+	    %% construct argument:
+	    case IdRefArgs of tag(!OneArg IdRef) then
+	       Args = arg(case IdRef of tag(!Local Id) then L.Id
+			  [] tag(!Global I) then Closure.(I + 2)
+			  end)
+	    [] tag(!TupArgs IdRefs) then N in
+	       N = {Width IdRefs}
+	       Args = {MakeTuple args N}
+	       for J in 1..N do
+		  Args.J = case IdRefs.J of tag(!Local Id) then L.Id
+			   [] tag(!Global K) then Closure.(K + 2)
+			   end
+	       end
 	    end
-	 end
-	 case IdDefArgsInstrOpt of !NONE then   % tail call
-	    continue(Args {Op.1.1.pushCall Op TaskStack})
-	 [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
-	    NewFrame = frame(Me IdDefArgs NextInstr Closure L)
-	    continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
+	    case IdDefArgsInstrOpt of !NONE then   % tail call
+	       continue(Args {Op.1.1.pushCall Op TaskStack})
+	    [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
+	       NewFrame = frame(Me IdDefArgs NextInstr Closure L)
+	       continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
+	    end
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then R0 in
 	 R0 = case IdRef of tag(!Local Id2) then L.Id2
@@ -479,7 +484,7 @@ define
    end
 
    fun {PushCall Closure TaskStack}
-      case Closure of closure(function(_ _ NL IdDefArgs BodyInstr) ...) then
+      case Closure of closure(function(_ _ _ NL IdDefArgs BodyInstr) ...) then
 	 L = {NewArray 0 NL - 1 uninitialized}
       in
 	 frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
