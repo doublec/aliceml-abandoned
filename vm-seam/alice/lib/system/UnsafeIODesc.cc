@@ -322,7 +322,7 @@ DEFINE1(UnsafeIODesc_openOut) {
   RETURN(IODesc::NewFromHandle(IODesc::DIR_WRITER, name, hFile)->ToWord());
 #else
   int fd = open(name->ExportC(), O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK,
-		S_IRWXU | S_IRWXG | S_IRWXO);
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   if (fd == -1) RAISE_SYS_ERR();
   RETURN(IODesc::NewFromFD(IODesc::DIR_WRITER, name, fd)->ToWord());
 #endif
@@ -339,7 +339,7 @@ DEFINE1(UnsafeIODesc_openAppend) {
   RETURN(IODesc::NewFromHandle(IODesc::DIR_WRITER, name, hFile)->ToWord());
 #else
   int fd = open(name->ExportC(), O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK,
-		S_IRWXU | S_IRWXG | S_IRWXO);
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   if (fd == -1) RAISE_SYS_ERR();
   RETURN(IODesc::NewFromFD(IODesc::DIR_WRITER, name, fd)->ToWord());
 #endif
