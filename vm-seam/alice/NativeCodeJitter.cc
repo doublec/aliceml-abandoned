@@ -38,24 +38,6 @@ static inline u_int GetInArity(Vector *args) {
   return nArgs;
 }
 
-// to be used by GetActualIdRefs only
-static word actualIdRefVector;
-
-static inline Vector *GetActualIdRefs(TagVal *actualArgs) {
-  switch (AbstractCode::GetArgs(actualArgs)) {
-  case AbstractCode::OneArg:
-    {
-      Vector *actualIdRefs = Vector::FromWordDirect(actualIdRefVector);
-      actualIdRefs->Init(0, actualArgs->Sel(0));
-      return actualIdRefs;
-    }
-  case AbstractCode::TupArgs:
-    return Vector::FromWordDirect(actualArgs->Sel(0));
-  default:
-    Error("invalid args tag");
-  }
-}
-
 namespace Outline {
   namespace Backtrace {
     static ::Backtrace *New(::StackFrame *frame) {
@@ -364,7 +346,7 @@ public:
 		  Tuple **resAssignment,
 		  TagVal *abstractCode) {
     u_int nLocals = Vector::FromWordDirect(abstractCode->Sel(2))->GetLength();
-    Vector *liveness  = Vector::FromWordDirect(abstractCode->Sel(5));
+    Vector *liveness  = Vector::FromWordDirect(abstractCode->Sel(6));
     Tuple *assignment = Tuple::New(nLocals);
     u_int size        = liveness->GetLength();
     ActiveSet::Reset();
@@ -1130,6 +1112,7 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
 } 
 
 word NativeCodeJitter::CompileContinuation(TagVal *idDefsInstrOpt,
+					   u_int outArity,
 					   u_int nLocals) {
   JIT_LOG_MESG("non-tail call\n");
   Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
@@ -1137,7 +1120,8 @@ word NativeCodeJitter::CompileContinuation(TagVal *idDefsInstrOpt,
   word contPC        = Store::IntToWord(GetRelativePC());
   Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
   u_int calleeArity  = GetInArity(idDefs);
-  CompileCCC(calleeArity);
+  if (calleeArity != outArity)
+    CompileCCC(calleeArity);
   StoreResults(calleeArity, idDefs);
   CompileBranch(TagVal::FromWordDirect(idDefsInstr->Sel(1)), nLocals);
   jit_patch(docall);
@@ -1248,9 +1232,10 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   u_int isDirectIn   = Store::DirectWordToInt(pc->Sel(2));
   bool request       = true;
   CallInfo info;
-  info.mode    = NORMAL_CALL;
-  info.pc      = Store::DirectWordToInt(initialPC);
-  info.nLocals = 0;
+  info.mode     = NORMAL_CALL;
+  info.pc       = Store::DirectWordToInt(initialPC);
+  info.nLocals  = 0;
+  info.outArity = INVALID_INT;
   if (closure != INVALID_POINTER) {
     word wConcreteCode         = closure->GetConcreteCode();
     ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
@@ -1260,7 +1245,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
       info.closure = ImmediateEnv::Register(closure->ToWord());
       if (SkipCCC(isDirectIn, actualArgs, currentArgs))
 	info.pc = Store::DirectWordToInt(initialNoCCCPC);
-      info.nLocals = currentNLocals;
+      info.nLocals  = currentNLocals;
+      info.outArity = currentOutArity;
       request = false;
       goto check_request;
     } else if (concreteCode != INVALID_POINTER) {
@@ -1268,6 +1254,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
       void *cFunction          = (void *) interpreter->GetCFunction();
       u_int calleeArity        = interpreter->GetInArity(concreteCode);
       u_int actualArity        = GetInArity(actualArgs);
+      info.outArity = interpreter->GetOutArity(concreteCode);
       if (interpreter == NativeCodeInterpreter::self) {
 	NativeConcreteCode *nativeCode =
 	  STATIC_CAST(NativeConcreteCode *, concreteCode);
@@ -1332,7 +1319,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  u_int i1 = ImmediateEnv::Register(closure->ToWord());
 	  ImmediateSel(JIT_V1, JIT_V2, i1);
 	  if (idDefsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefsInstrOpt));
+	    SetRelativePC(CompileContinuation(idDefsInstrOpt, info.outArity));
 	    KillVariables();
 	  }
 	  else {
@@ -1346,7 +1333,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  RETURN();
 #else
 	  if (idDefsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefsInstrOpt));
+	    SetRelativePC(CompileContinuation(idDefsInstrOpt, info.outArity));
 	    KillVariables();
 	    DirectCall(interpreter);
 	  } else {
@@ -1420,7 +1407,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
   word contPC;
   if (idDefsInstrOpt != INVALID_POINTER)
-    contPC = CompileContinuation(idDefsInstrOpt, info.nLocals);
+    contPC = CompileContinuation(idDefsInstrOpt, info.outArity, info.nLocals);
   if (request) {
     word instrPC  = Store::IntToWord(GetRelativePC());
     u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
@@ -1653,6 +1640,7 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   abstractCode->Init(3, template_->Sel(3));
   abstractCode->Init(4, template_->Sel(4));
   abstractCode->Init(5, template_->Sel(5));
+  abstractCode->Init(6, template_->Sel(6));
   // Construct concrete code from abstract code:
   word wConcreteCode =
     AliceLanguageLayer::concreteCodeConstructor(abstractCode);
@@ -1674,10 +1662,10 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
 
 // Specialize of id * idRef vector * template * instr
 // where   template = Template of coord * int * string vector *
-//                    idDef args * instr * liveness
+//                    idDef args * outArity option * instr * liveness
 // abstractCode =
 //    Function of coord * value option vector * string vector *
-//                idDef args * instr * liveness
+//                idDef args * outArity option * instr * liveness
 // Design options: call NativeCodeConctructor directly or use
 // AliceLanguageLayer::concreteCodeConstructor
 TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
@@ -1702,6 +1690,8 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   TagVal_Put(JIT_V1, 4, JIT_R0);
   TagVal_Sel(JIT_R0, JIT_V0, 5);
   TagVal_Put(JIT_V1, 5, JIT_R0);
+  TagVal_Sel(JIT_R0, JIT_V0, 6);
+  TagVal_Put(JIT_V1, 6, JIT_R0);
   jit_popr_ui(JIT_V0); // Restore V0
   jit_pushr_ui(JIT_V1); // Save abstractCode
   // Create Substitution (value option vector)
@@ -2641,11 +2631,9 @@ void NativeCodeJitter::Init(u_int codeSize) {
     word wCFunction = Store::UnmanagedPointerToWord(cFunction);
     inlineMap->Put(wCFunction, Store::IntToWord(inlines[i++].tag));
   }
-  codeBufferSize    = codeSize;
-  inlineTable       = inlineMap->ToWord();
-  actualIdRefVector = Vector::New(1)->ToWord();
+  codeBufferSize = codeSize;
+  inlineTable    = inlineMap->ToWord();
   RootSet::Add(inlineTable);
-  RootSet::Add(actualIdRefVector);
 }
 
 // NativeCodeJitter Constructor
@@ -2659,7 +2647,7 @@ NativeCodeJitter::~NativeCodeJitter() {
 }
 
 // Function of coord * value option vector * string vector *
-//             idDef args * instr * liveness
+//             idDef args * outArity option * instr * liveness
 NativeConcreteCode *
 NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
@@ -2708,6 +2696,9 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   currentConcreteCode = concreteCode;
   currentStack        = 0;
   currentArgs         = Vector::FromWord(abstractCode->Sel(3));
+  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
+  currentOutArity = ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
+		     Store::DirectWordToInt(outArityOpt->Sel(0)));
   TableAllocator allocator(currentNLocals);
   tableAllocator      = &allocator;
   livenessTable       = tableAllocator->AllocTable();
@@ -2735,10 +2726,8 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
     globalSubst->Init(i, subst->ToWord());
   }
   // Compile function body
-  CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(4)));
+  CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
   Chunk *code = CopyCode(start);
-  // Clear Helper Vector
-  Vector::FromWordDirect(actualIdRefVector)->Init(0, Store::IntToWord(0));
   // Export ConcreteCode
   return NativeConcreteCode::NewInternal(abstractCode, code,
 					 ImmediateEnv::ExportEnv(),

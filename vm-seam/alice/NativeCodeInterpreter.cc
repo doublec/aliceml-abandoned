@@ -153,6 +153,17 @@ u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   return nArgs;
 }
 
+u_int NativeCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
+  Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
+  NativeConcreteCode *nativeConcreteCode =
+    STATIC_CAST(NativeConcreteCode *, concreteCode);
+  Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
+  TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
+  return ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
+	  Store::DirectWordToInt(outArityOpt->Sel(0)));
+}
+
 const char *NativeCodeInterpreter::Identify() {
   return "NativeCodeInterpreter";
 }

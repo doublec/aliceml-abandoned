@@ -41,6 +41,7 @@ public:
   virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual u_int GetOutArity(ConcreteCode *concreteCode);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
