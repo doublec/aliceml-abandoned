@@ -74,9 +74,37 @@
   </P>
 
   <P>
-    Both these operations are in the top-level environment and can thus be
-    used unqualified.
+    Concurrent and by-need futures are in fact supported more directly
+    through two basic expression forms:
   </P>
+
+  <TABLE>
+    <TR>
+      <TD> <I>exp</I> </TD>
+      <TD align="center">::=</TD>
+      <TD> ... </TD>
+      <TD> </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>lazy</TT> <I>exp</I> </TD>
+      <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lazy expression </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>spawn</TT> <I>exp</I> </TD>
+      <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;concurrent expression </TD>
+    </TR>
+  </TABLE>
+
+  <P>
+    The aforementioned functions are thus defined as
+  </P>
+
+  <PRE>
+	fun byneed f = lazy f()
+	fun concur f = spawn f()
+  </PRE>
 
   <P>
     Finally, the operation
