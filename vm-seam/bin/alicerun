@@ -1,14 +1,28 @@
 #!/bin/sh
 
-howcalled=$0
+set -e
 
-if test -z "${STOCKHOME}"
-then
-  dir=`dirname $howcalled`
-  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+find_in () {
+    local search_for=$1 found_in=""
+    shift
+    for d in $@; do
+	if test -f $d/${search_for} -o -h $d/${search_for}; then
+	    found_in=$d && break
+	fi
+    done
+    if test -z "${found_in}"; then
+	echo "Error: Could not find ${search_for} in either of" >&2
+	for d in $@; do echo "  $d" >&2; done
+	exit 1
+    fi
+    echo ${found_in}
+}
+
+if test -z "${STOCKHOME}"; then
+    STOCKHOME=$(find_in stow.exe /usr/share/alice $(dirname $(dirname $0)))
 fi
 
-case `uname -s` in
+case $(uname) in
     CYGWIN*)
 	sep=\;
 	STOCKHOME=`cygpath -w "$STOCKHOME"`
@@ -20,9 +34,14 @@ esac
 
 ALICE_LOAD=pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.stc${sep}pattern=x-alice:/?{x}="$STOCKHOME"/?{x}.dll${sep}pattern=?{x}=?{x}.stc${sep}pattern=?{x}=?{x}.dll
 
+if [ ! -z "$ALICE_EXTRA_LOAD" ]
+then
+    ALICE_LOAD=$ALICE_EXTRA_LOAD${SEP}$ALICE_LOAD
+fi
+
 export STOCKHOME ALICE_LOAD
 
-#(echo "break Base.cc:22"; echo tty /dev/pts/5; echo run "$@"; cat) |
+#(echo "break Base.cc:22"; echo tty /dev/pts/3; echo run "$@"; cat) |
 #exec gdb -nw "$STOCKHOME"/stow.exe
 
 exec "$STOCKHOME"/stow.exe "$@"
