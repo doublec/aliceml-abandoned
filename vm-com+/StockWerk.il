@@ -46,6 +46,8 @@
     .field static public initonly class StockWerk.StockWert cons
     .field static public initonly class StockWerk.StockWert ref
     .field static public initonly class StockWerk.StockWert unit
+    .field static public initonly class StockWerk.StockWert Assembler$UnknownMember
+    .field static public initonly class StockWerk.StockWert Assembler$UnknownType
     .field static public initonly class StockWerk.StockWert Component$Component
     .field static public initonly class StockWerk.StockWert General$Bind
     .field static public initonly class StockWerk.StockWert General$Chr
@@ -69,6 +71,7 @@
     .field static public initonly class StockWerk.StockWert show
     .field static public initonly class StockWerk.StockWert eq
     .field static public initonly class StockWerk.StockWert ne
+    .field static public initonly class StockWerk.StockWert cast
     .field static public initonly class StockWerk.StockWert Application$exit
     .field static public initonly class StockWerk.StockWert Application$getArgs
     .field static public initonly class StockWerk.StockWert Array$array
@@ -76,6 +79,38 @@
     .field static public initonly class StockWerk.StockWert Array$length
     .field static public initonly class StockWerk.StockWert Array$sub
     .field static public initonly class StockWerk.StockWert Array$update
+    .field static public initonly class StockWerk.StockWert Assembler$beginCatchBlock
+    .field static public initonly class StockWerk.StockWert Assembler$beginExceptionBlock
+    .field static public initonly class StockWerk.StockWert Assembler$constructorDeclareLocal
+    .field static public initonly class StockWerk.StockWert Assembler$constructorGetILGenerator
+    .field static public initonly class StockWerk.StockWert Assembler$createLabel
+    .field static public initonly class StockWerk.StockWert Assembler$createType
+    .field static public initonly class StockWerk.StockWert Assembler$defineConstructor
+    .field static public initonly class StockWerk.StockWert Assembler$defineField
+    .field static public initonly class StockWerk.StockWert Assembler$defineMethod
+    .field static public initonly class StockWerk.StockWert Assembler$defineStaticMethod
+    .field static public initonly class StockWerk.StockWert Assembler$defineType
+    .field static public initonly class StockWerk.StockWert Assembler$endExceptionBlock
+    .field static public initonly class StockWerk.StockWert Assembler$emit
+    .field static public initonly class StockWerk.StockWert Assembler$emitConstructor
+    .field static public initonly class StockWerk.StockWert Assembler$emitField
+    .field static public initonly class StockWerk.StockWert Assembler$emitFloat32
+    .field static public initonly class StockWerk.StockWert Assembler$emitInt8
+    .field static public initonly class StockWerk.StockWert Assembler$emitInt16
+    .field static public initonly class StockWerk.StockWert Assembler$emitInt32
+    .field static public initonly class StockWerk.StockWert Assembler$emitLabel
+    .field static public initonly class StockWerk.StockWert Assembler$emitMethod
+    .field static public initonly class StockWerk.StockWert Assembler$emitString
+    .field static public initonly class StockWerk.StockWert Assembler$emitType
+    .field static public initonly class StockWerk.StockWert Assembler$emitUnsignedInt8
+    .field static public initonly class StockWerk.StockWert Assembler$getConstructor
+    .field static public initonly class StockWerk.StockWert Assembler$getField
+    .field static public initonly class StockWerk.StockWert Assembler$getMethod
+    .field static public initonly class StockWerk.StockWert Assembler$getType
+    .field static public initonly class StockWerk.StockWert Assembler$invoke
+    .field static public initonly class StockWerk.StockWert Assembler$markLabel
+    .field static public initonly class StockWerk.StockWert Assembler$methodDeclareLocal
+    .field static public initonly class StockWerk.StockWert Assembler$methodGetILGenerator
     .field static public initonly class StockWerk.StockWert Char$chr
     .field static public initonly class StockWerk.StockWert Char$isDigit
     .field static public initonly class StockWerk.StockWert Char$isHexDigit
@@ -164,6 +199,12 @@
       ldstr "()"
       call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ldstr "Assembler.UnknownMember"
+      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownMember
+      ldstr "Assembler.UnknownType"
+      call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownType
       ldstr "Component.Component"
       call class StockWerk.NongenericConstructor StockWerk.NongenericConstructor::Make(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Component$Component
@@ -240,6 +281,70 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Array$sub
       newobj instance void StockWerk.Builtins.Array$update::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Array$update
+      newobj instance void StockWerk.Builtins.Assembler$beginCatchBlock::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$beginCatchBlock
+      newobj instance void StockWerk.Builtins.Assembler$beginExceptionBlock::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$beginExceptionBlock
+      newobj instance void StockWerk.Builtins.Assembler$constructorDeclareLocal::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$constructorDeclareLocal
+      newobj instance void StockWerk.Builtins.Assembler$constructorGetILGenerator::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$constructorGetILGenerator
+      newobj instance void StockWerk.Builtins.Assembler$createLabel::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$createLabel
+      newobj instance void StockWerk.Builtins.Assembler$createType::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$createType
+      newobj instance void StockWerk.Builtins.Assembler$defineConstructor::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$defineConstructor
+      newobj instance void StockWerk.Builtins.Assembler$defineField::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$defineField
+      newobj instance void StockWerk.Builtins.Assembler$defineMethod::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$defineMethod
+      newobj instance void StockWerk.Builtins.Assembler$defineStaticMethod::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$defineStaticMethod
+      newobj instance void StockWerk.Builtins.Assembler$defineType::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$defineType
+      newobj instance void StockWerk.Builtins.Assembler$endExceptionBlock::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$endExceptionBlock
+      newobj instance void StockWerk.Builtins.Assembler$emit::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emit
+      newobj instance void StockWerk.Builtins.Assembler$emitConstructor::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitConstructor
+      newobj instance void StockWerk.Builtins.Assembler$emitField::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitField
+      newobj instance void StockWerk.Builtins.Assembler$emitFloat32::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitFloat32
+      newobj instance void StockWerk.Builtins.Assembler$emitInt8::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitInt8
+      newobj instance void StockWerk.Builtins.Assembler$emitInt16::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitInt16
+      newobj instance void StockWerk.Builtins.Assembler$emitInt32::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitInt32
+      newobj instance void StockWerk.Builtins.Assembler$emitLabel::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitLabel
+      newobj instance void StockWerk.Builtins.Assembler$emitMethod::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitMethod
+      newobj instance void StockWerk.Builtins.Assembler$emitString::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitString
+      newobj instance void StockWerk.Builtins.Assembler$emitType::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitType
+      newobj instance void StockWerk.Builtins.Assembler$emitUnsignedInt8::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$emitUnsignedInt8
+      newobj instance void StockWerk.Builtins.Assembler$getConstructor::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$getConstructor
+      newobj instance void StockWerk.Builtins.Assembler$getField::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$getField
+      newobj instance void StockWerk.Builtins.Assembler$getMethod::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$getMethod
+      newobj instance void StockWerk.Builtins.Assembler$getType::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$getType
+      newobj instance void StockWerk.Builtins.Assembler$invoke::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$invoke
+      newobj instance void StockWerk.Builtins.Assembler$markLabel::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$markLabel
+      newobj instance void StockWerk.Builtins.Assembler$methodDeclareLocal::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$methodDeclareLocal
+      newobj instance void StockWerk.Builtins.Assembler$methodGetILGenerator::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$methodGetILGenerator
       newobj instance void StockWerk.Builtins.Char$isDigit::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isDigit
       newobj instance void StockWerk.Builtins.Char$isHexDigit::.ctor()
@@ -343,6 +448,68 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$future
       newobj instance void StockWerk.Builtins.Transient$promise::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Transient$promise
+      ret
+    }
+  }
+
+  .class sealed Util extends System.Object {
+    .method public static int32 TestList(class StockWerk.StockWert&) {
+      .locals(int32, class StockWerk.ConVal, class StockWerk.Tuple2, class StockWerk.StockWert, class StockWerk.StockWert)
+      ldc.i4.0
+      stloc.0
+      ldnull
+      stloc.s 2
+      ldarg.0
+      ldind.ref
+    loop:
+      dup
+      isinst StockWerk.ConVal
+      brfalse.s testNil
+      castclass StockWerk.ConVal
+      stloc.1
+      ldloc.1
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      dup
+      isinst StockWerk.Tuple2
+      brtrue.s isTuple
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      stloc.3
+      ldloc.1
+      ldloc.3
+      stfld class StockWerk.StockWert StockWerk.ConVal::Val
+      ldloc.3
+    isTuple:
+      castclass StockWerk.Tuple2
+      stloc.2
+      ldloc.0
+      ldc.i4.1
+      add
+      stloc.0
+      ldloc.2
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      br.s loop
+    testNil:
+      dup
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::nil
+      beq.s isNil
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      stloc.3
+      ldloc.2
+      brnull.s head
+      ldloc.2
+      ldloc.3
+      stfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      ldloc.3
+      br.s loop
+    head:
+      ldarg.0
+      ldloc.3
+      stind.ref
+      ldloc.3
+      br.s loop
+    isNil:
+      pop
+      ldloc.0
       ret
     }
   }
@@ -2583,6 +2750,18 @@
     }
   }
 
+  .class sealed cast extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      ldarg.1
+      ret
+    }
+  }
+
   .class sealed Application$exit extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
@@ -2811,6 +2990,1910 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$beginCatchBlock extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      callvirt instance void System.Reflection.Emit.ILGenerator::BeginCatchBlock(class System.Type)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$beginExceptionBlock extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      callvirt instance value class System.Reflection.Emit.Label System.Reflection.Emit.ILGenerator::BeginExceptionBlock()
+      pop
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$constructorDeclareLocal extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ConstructorBuilder
+      ldarg.2
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance value class System.Reflection.Emit.LocalToken System.Reflection.Emit.ConstructorBuilder::DeclareLocal(class System.Type)
+      pop
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$constructorGetILGenerator extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ConstructorBuilder
+      call instance class System.Reflection.Emit.ILGenerator System.Reflection.Emit.ConstructorBuilder::GetILGenerator()
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$createLabel extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      callvirt instance value class System.Reflection.Emit.Label System.Reflection.Emit.ILGenerator::CreateLabel()
+      box System.Reflection.Emit.Label
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$createType extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.TypeBuilder
+      call instance class System.Type System.Reflection.Emit.TypeBuilder::CreateType()
+      pop
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$defineConstructor extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Reflection.DescriptorInfo, int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+      ldarga.s 2
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+      ldloc.1
+      ldc.i4.1   // public
+      newobj instance void System.Reflection.DescriptorInfo::.ctor(int32, value class System.Reflection.MethodAttributes)
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.2
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      isinst StockWerk.ForeignObject
+      brtrue.s isForeignObject
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+    isForeignObject:
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance void System.Reflection.DescriptorInfo::SetArgument(int32, class System.Type)
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.TypeBuilder
+      ldc.i4.1   // public
+      ldloc.0
+      call instance class System.Reflection.Emit.ConstructorBuilder System.Reflection.Emit.TypeBuilder::DefineConstructor(value class System.Reflection.MethodAttributes, class System.Reflection.DescriptorInfo)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$defineField extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.TypeBuilder
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      ldc.i4.1   // public
+      call instance class System.Reflection.Emit.FieldBuilder System.Reflection.Emit.TypeBuilder::DefineField(class System.String, class System.Type, value class System.Reflection.FieldAttributes)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$defineMethod extends StockWerk.Procedure4 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure4::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Reflection.DescriptorInfo, int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse testTransient2
+      ldarga.s 3
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+    retry4:
+      ldarg.s 4
+      isinst StockWerk.ForeignObject
+      brfalse testTransient4
+      ldloc.1
+      ldc.i4.1   // public
+      newobj instance void System.Reflection.DescriptorInfo::.ctor(int32, value class System.Reflection.MethodAttributes)
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.3
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      isinst StockWerk.ForeignObject
+      brtrue.s isForeignObject
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+    isForeignObject:
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance void System.Reflection.DescriptorInfo::SetArgument(int32, class System.Type)
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldloc.0
+      ldarg.s 4
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance void System.Reflection.DescriptorInfo::SetReturnType(class System.Type)
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.TypeBuilder
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldloc.0
+      call instance class System.Reflection.Emit.MethodBuilder System.Reflection.Emit.TypeBuilder::DefineMethod(class System.String, class System.Reflection.DescriptorInfo)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br retry2
+    testTransient4:
+      ldarg.s 4
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.s 4
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 4
+      br retry4
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$defineStaticMethod extends StockWerk.Procedure4 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure4::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply4(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Reflection.DescriptorInfo, int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse testTransient2
+      ldarga.s 3
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+    retry4:
+      ldarg.s 4
+      isinst StockWerk.ForeignObject
+      brfalse testTransient4
+      ldloc.1
+      ldc.i4.s 0x11   // public static
+      newobj instance void System.Reflection.DescriptorInfo::.ctor(int32, value class System.Reflection.MethodAttributes)
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.3
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      isinst StockWerk.ForeignObject
+      brtrue.s isForeignObject
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+    isForeignObject:
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance void System.Reflection.DescriptorInfo::SetArgument(int32, class System.Type)
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldloc.0
+      ldarg.s 4
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance void System.Reflection.DescriptorInfo::SetReturnType(class System.Type)
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.TypeBuilder
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldloc.0
+      call instance class System.Reflection.Emit.MethodBuilder System.Reflection.Emit.TypeBuilder::DefineMethod(class System.String, class System.Reflection.DescriptorInfo)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br retry2
+    testTransient4:
+      ldarg.s 4
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.s 4
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 4
+      br retry4
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$defineType extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Type[], int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse testTransient3
+      ldnull
+      call class System.Reflection.Emit.ModuleBuilder System.Reflection.Emit.ModuleBuilder::GetDynamicModule(class System.String)
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldc.i4 0x101   // public sealed class
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      callvirt instance class System.Reflection.Emit.TypeBuilder System.Reflection.Emit.ModuleBuilder::DefineType(class System.String namespace, class System.String name, value class System.TypeAttributes attr, class System.Type parent)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$endExceptionBlock extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      callvirt instance void System.Reflection.Emit.ILGenerator::EndExceptionBlock()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emit extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitConstructor extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.ConstructorInfo
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, class System.Reflection.ConstructorInfo)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitField extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.FieldInfo
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, class System.Reflection.FieldInfo)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitFloat32 extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Real
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Real
+      ldfld float32 StockWerk.Real::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, float32)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitInt8 extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Int
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, int8)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitInt16 extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Int
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, int16)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitInt32 extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Int
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, int32)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitLabel extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      unbox System.Reflection.Emit.Label
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, value class System.Reflection.Emit.Label)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitMethod extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.MethodInfo
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, class System.Reflection.MethodInfo)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitString extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.String
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, class System.String)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitType extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, class System.Type)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$emitUnsignedInt8 extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Int
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      callvirt instance void System.Reflection.Emit.ILGenerator::Emit(int16, unsigned int8)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$getConstructor extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Type[], int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+      ldarga.s 2
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+      ldloc.1
+      newarr class System.Type
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.2
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      isinst StockWerk.ForeignObject
+      brtrue.s isForeignObject
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+    isForeignObject:
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      stelem.ref
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      ldloc.0
+      call instance class System.Reflection.ConstructorInfo System.Type::GetConstructor(class System.Type[] types)
+      dup
+      brfalse.s unknownMember
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    unknownMember:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownMember
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$getField extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      call instance class System.Reflection.FieldInfo System.Type::GetField(class System.String name)
+      dup
+      brfalse.s unknownMember
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    unknownMember:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownMember
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$getMethod extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(class System.Type[], int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse testTransient1
+      ldarga.s 3
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+      ldloc.1
+      newarr class System.Type
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.3
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      dup
+      isinst StockWerk.ForeignObject
+      brtrue.s isForeignObject
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+    isForeignObject:
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      stelem.ref
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldloc.0
+      call instance class System.Reflection.MethodInfo System.Type::GetMethod(class System.String, class System.Type[] types)
+      dup
+      brfalse.s unknownMember
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    unknownMember:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownMember
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$markLabel extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.ILGenerator
+      ldarg.2
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      unbox System.Reflection.Emit.Label
+      callvirt instance void System.Reflection.Emit.ILGenerator::MarkLabel(value class System.Reflection.Emit.Label)
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$getType extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      call class System.Type System.Type::GetType(class System.String)
+      dup
+      brfalse.s unknownType
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    unknownType:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Assembler$UnknownType
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$invoke extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+      .locals(value class System.Variant[], int32, int32, class StockWerk.StockWert)
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse testTransient1
+      ldarga.s 2
+      call int32 StockWerk.Util::TestList(class StockWerk.StockWert&)
+      stloc.1
+      ldloc.1
+      newarr value class System.Variant
+      stloc.0
+      ldc.i4.0
+      stloc.2
+      ldarg.2
+      stloc.3
+    loop:
+      ldloc.1
+      ldloc.2
+      beq.s done
+      ldloc.0
+      ldloc.2
+      ldloc.3
+      castclass StockWerk.ConVal
+      ldfld class StockWerk.StockWert StockWerk.ConVal::Val
+      castclass StockWerk.Tuple2
+      dup
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value2
+      stloc.3
+      ldfld class StockWerk.StockWert StockWerk.Tuple2::Value1
+      newobj instance void System.Variant::.ctor(class System.Object)
+      stelem.ref
+      ldloc.2
+      ldc.i4.1
+      add
+      stloc.2
+      br.s loop
+    done:
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.MethodInfo
+      ldnull
+      ldloc.0
+      call instance value class System.Variant System.Reflection.MethodInfo::Invoke(class System.Object, value class System.Variant[])
+      pop
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$methodDeclareLocal extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.MethodBuilder
+      ldarg.2
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Type
+      call instance value class System.Reflection.Emit.LocalToken System.Reflection.Emit.MethodBuilder::DeclareLocal(class System.Type)
+      pop
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Assembler$methodGetILGenerator extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.Reflection.Emit.MethodBuilder
+      call instance class System.Reflection.Emit.ILGenerator System.Reflection.Emit.MethodBuilder::GetILGenerator()
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::General$TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
