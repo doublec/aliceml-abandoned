@@ -92,7 +92,7 @@
 PREFIX = /opt/stockhausen-devel
 
 STOC0 = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
-	sml @SMLload=../../stoc/stoc-mozart
+	sml @SMLload=../../bootstrap/stoc-mozart
 STOC1 = build1/install/bin/stoc
 STOC2 = build2/install/bin/stoc
 
