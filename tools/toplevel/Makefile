@@ -55,6 +55,7 @@ install: all
 
 clean:
 	rm -f *.alc
+	(cd easteregg; make clean)
 
 distclean: clean
 	rm -f Makefile.depend
