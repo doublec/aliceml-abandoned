@@ -19,6 +19,8 @@ import
 export
    Object
 define
+   %--** add another thread that checks for preemption
+
    class Scheduler
       attr QueueHd: unit QueueTl: unit CurrentThread: unit
       meth init() Empty in
