@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     Chunk *bootUrl  = NewChunk("lib/system/Boot"); BootLinker::Print(bootUrl);
     word module     = BootLinker::Link(bootUrl);
     Tuple *tuple    = Tuple::FromWord(module);
-    Assert(tuple->GetWidth() == 1);
+    tuple->AssertWidth(1);
     Scheduler::NewThread(tuple->Sel(0), // Module Closure
 			 Interpreter::OneArg(rootUrl->ToWord()),
 			 TaskStack::New());

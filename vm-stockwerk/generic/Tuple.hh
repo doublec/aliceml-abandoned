@@ -36,9 +36,8 @@ public:
     Assert(b->GetLabel() == TUPLE_LABEL);
     return static_cast<Tuple *>(b);
   }
-
-  u_int GetWidth() {
-    return GetSize();
+  void AssertWidth(u_int n) {
+    Assert(Store::SizeToBlockSize(n) == GetSize());
   }
   void Init(u_int index, word value) {
     InitArg(index, value);

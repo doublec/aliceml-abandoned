@@ -123,6 +123,7 @@ inline void PushState(TaskStack *taskStack,
 		      TagVal *pc,
 		      Closure *globalEnv,
 		      Environment *localEnv) {
+  //--** formalArgs should only be constructed once
   TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
   formalArgs->Init(0, Vector::New(0)->ToWord());
   PushState(taskStack, interpreter, pc, globalEnv, localEnv, formalArgs);
@@ -154,24 +155,25 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack, word closure) {
   Closure *cl = Closure::FromWord(closure);
   ConcreteCode *concreteCode = ConcreteCode::FromWord(cl->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == this);
-  // datatype function = Function of int * int * idDef args * instr
+  // datatype function = Function of coord * int * int * idDef args * instr
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(this,
-			   function->Sel(3),
+			   function->Sel(4),
 			   cl,
-			   Environment::New(Store::WordToInt(function->Sel(1))),
-			   function->Sel(2));
+			   Environment::New(Store::WordToInt(function->Sel(2))),
+			   function->Sel(3));
   taskStack->PushFrame(frame->ToWord());
 }
 
-void AbstractCodeInterpreter::PurgeFrame(TaskStack *taskStack) {
-  return; // to be done
+void AbstractCodeInterpreter::PurgeFrame(TaskStack *) {
+  return; // trivial, since we interpret Kill statements
 }
 
 Interpreter::Result
 AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
-  AbstractCodeFrame *frame = AbstractCodeFrame::FromWord(taskStack->GetFrame());
+  AbstractCodeFrame *frame =
+    AbstractCodeFrame::FromWord(taskStack->GetFrame());
   Assert(frame != INVALID_POINTER && frame->GetInterpreter() == this);
   TagVal *pc            = frame->GetPC();
   Closure *globalEnv    = frame->GetClosure();
@@ -181,26 +183,32 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
   switch (Pickle::GetArgs(formalArgs)) {
   case Pickle::OneArg:
     {
-      word formalId = formalArgs->Sel(0);
-      localEnv->Add(formalId, Interpreter::Construct(args));
+      TagVal *idDef = TagVal::FromWord(formalArgs->Sel(0));
+      if (idDef != INVALID_POINTER) // IdDef id
+	localEnv->Add(idDef->Sel(0), Interpreter::Construct(args));
     }
     break;
   case Pickle::TupArgs:
     {
-      Vector *formalIds = Vector::FromWord(formalArgs->Sel(0));
+      Vector *formalIdDefs = Vector::FromWord(formalArgs->Sel(0));
       word deconstructed_args = Interpreter::Deconstruct(args);
-      if (deconstructed_args == Store::IntToWord(0)) {
+      Block *p = Store::WordToBlock(deconstructed_args);
+      if (p == INVALID_POINTER) {
+	// Scheduler::currentData has been set by Interpreter::Deconstruct
 	return Interpreter::REQUEST;
       }
-      Block *p = Store::WordToBlock(deconstructed_args);
-      u_int nargs = p->GetSize();
+      u_int nargs = p->GetSize(); //--** not exact
       // Internal Assertion
       formalArgs->AssertWidth(nargs);
       for (u_int i = nargs; i--; ) {
-	localEnv->Add(formalIds->Sub(i), p->GetArg(i));
+	TagVal *idDef = TagVal::FromWord(formalIdDefs->Sub(i));
+	if (idDef != INVALID_POINTER) // IdDef id
+	  localEnv->Add(idDef->Sel(0), p->GetArg(i));
       }
     }
     break;
+  default:
+    Error("AbstractCodeInterpreter::Run: invalid formalArgs");
   }
   taskStack->PopFrame(); // Discard Frame
   // Execution
@@ -244,23 +252,11 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::PutCon: // of id * con * idRef vector * instr
+    case Pickle::PutCon: // of id * idRef * idRef vector * instr
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(2));
 	u_int nargs = idRefs->GetLength();
-	TagVal *conBlock = TagVal::FromWord(pc->Sel(1));
-	word suspendWord;
-	switch (Pickle::GetCon(conBlock)) {
-	case Pickle::Con:
-	  suspendWord = localEnv->Lookup(conBlock->Sel(0));
-	  break;
-	case Pickle::StaticCon:
-	  suspendWord = conBlock->Sel(0);
-	  break;
-	default:
-	  Error("AbstractInterpreter::Run: invalid con tag");
-	  break;
-	}
+	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Constructor *constructor = Constructor::FromWord(suspendWord);
 	if (constructor == INVALID_POINTER) SUSPEND(suspendWord);
 	ConVal *conVal = ConVal::New(constructor, nargs);
@@ -307,7 +303,6 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       {
 	Vector *idRefs = Vector::FromWord(pc->Sel(1));
 	u_int nglobals = idRefs->GetLength();
-	//--** needs to be adapted to unpickling transformers
 	Closure *closure = Closure::New(pc->Sel(2), nglobals);
 	for (u_int i = nglobals; i--; )
 	  closure->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
@@ -317,47 +312,47 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Pickle::AppPrim: // of value * idRef vector * (idDef * instr) option
       {
-	TagVal *instrOpt = TagVal::FromWord(pc->Sel(3));
-	if (instrOpt != INVALID_POINTER) { // SOME instr
+	TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
+	if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
 	  // Save our state for return
-	  Vector *formalIds = Vector::New(1);
-	  formalIds->Init(0, pc->Sel(0));
+	  Tuple *idDefInstr = Tuple::FromWord(idDefInstrOpt->Sel(0));
+	  Vector *formalIdDefs = Vector::New(1);
+	  formalIdDefs->Init(0, idDefInstr->Sel(0));
 	  TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
-	  formalArgs->Init(0, formalIds->ToWord());
-	  PushState(taskStack, this, TagVal::FromWord(instrOpt->Sel(0)),
+	  formalArgs->Init(0, formalIdDefs->ToWord());
+	  PushState(taskStack, this, TagVal::FromWord(idDefInstr->Sel(1)),
 		    globalEnv, localEnv, formalArgs);
 	}
 	// Push a call frame for the primitive
-	taskStack->PushCall(pc->Sel(1));
-	Vector *actualIdRefs = Vector::FromWord(pc->Sel(2));
+	taskStack->PushCall(pc->Sel(0));
+	Vector *actualIdRefs = Vector::FromWord(pc->Sel(1));
 	u_int nargs  = actualIdRefs->GetLength();
 	Block *pargs = Interpreter::TupArgs(nargs);
 	for (u_int i = nargs; i--; ) {
-	  pargs->InitArg(i,
-			 GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv));
+	  word arg = GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
+	  pargs->InitArg(i, arg);
 	}
 	Scheduler::currentArgs = pargs->ToWord();
 	return Interpreter::CONTINUE;
       }
       break;
     case Pickle::AppVar: // of idRef * idRef args * (idDef args * instr) option
-      //--** adapt to new representation
       {
-	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
-	Closure *closure = Closure::FromWord(suspendWord);
-	if (closure == INVALID_POINTER) SUSPEND(suspendWord);
-	TagVal *instrOpt = TagVal::FromWord(pc->Sel(3));
-	if (instrOpt != INVALID_POINTER) { // SOME instr
+	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
+	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
 	  // Save our state for return
-	  PushState(taskStack, this, TagVal::FromWord(instrOpt->Sel(0)),
-		    globalEnv, localEnv, TagVal::FromWord(pc->Sel(0)));
+	  Tuple *idDefArgsInstr = Tuple::FromWord(idDefArgsInstrOpt->Sel(0));
+	  PushState(taskStack, this,
+		    TagVal::FromWord(idDefArgsInstr->Sel(1)),
+		    globalEnv, localEnv,
+		    TagVal::FromWord(idDefArgsInstr->Sel(0)));
 	}
-	taskStack->PushCall(closure->ToWord());
-	TagVal *actualArgs = TagVal::FromWord(pc->Sel(2));
+	taskStack->PushCall(GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	TagVal *actualArgs = TagVal::FromWord(pc->Sel(1));
 	switch (Pickle::GetArgs(actualArgs)) {
 	case Pickle::OneArg:
 	  Scheduler::currentArgs =
-	    Interpreter::OneArg(GetIdRef(actualArgs->Sel(0), 
+	    Interpreter::OneArg(GetIdRef(actualArgs->Sel(0),
 					 globalEnv, localEnv));
 	  return Interpreter::CONTINUE;
 	case Pickle::TupArgs:
@@ -377,8 +372,38 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
       break;
     case Pickle::AppConst:
       // of value * idRef args * (idDef args * instr) option
+      //--** avoid code duplication with AppVar
       {
-	//--** AppConst not implemented yet
+	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
+	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
+	  // Save our state for return
+	  Tuple *idDefArgsInstr = Tuple::FromWord(idDefArgsInstrOpt->Sel(0));
+	  PushState(taskStack, this,
+		    TagVal::FromWord(idDefArgsInstr->Sel(1)),
+		    globalEnv, localEnv,
+		    TagVal::FromWord(idDefArgsInstr->Sel(0)));
+	}
+	taskStack->PushCall(pc->Sel(0)); //--** only difference to AppVar
+	TagVal *actualArgs = TagVal::FromWord(pc->Sel(1));
+	switch (Pickle::GetArgs(actualArgs)) {
+	case Pickle::OneArg:
+	  Scheduler::currentArgs =
+	    Interpreter::OneArg(GetIdRef(actualArgs->Sel(0),
+					 globalEnv, localEnv));
+	  return Interpreter::CONTINUE;
+	case Pickle::TupArgs:
+	  {
+	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
+	    u_int nargs  = actualIdRefs->GetLength();
+	    Block *pargs = Interpreter::TupArgs(nargs);
+	    for (u_int i = nargs; i--; ) {
+	      pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
+					 globalEnv, localEnv));
+	    }
+	    Scheduler::currentArgs = pargs->ToWord();
+	    return Interpreter::CONTINUE;
+	  }
+	}
       }
       break;
     case Pickle::GetRef: // of id * idRef * instr
@@ -401,7 +426,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	} else {
 	  Tuple *tuple = Tuple::FromWord(suspendWord);
 	  if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
-	  Assert(tuple->GetWidth() == idDefs->GetLength());
+	  tuple->AssertWidth(idDefs->GetLength());
 	  for (u_int i = nargs; i--; ) {
 	    TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
 	    if (idDef != INVALID_POINTER) // IdDef id

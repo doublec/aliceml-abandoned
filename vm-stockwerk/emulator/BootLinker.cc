@@ -284,7 +284,7 @@ Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
     // imports = (string * sign) vector
     Tuple *t = Tuple::FromWord(imports->Sub(i));
     Assert(t != INVALID_POINTER);
-    Assert(t->GetWidth() == 2);
+    t->AssertWidth(2);
     word key2 = BootLinker::ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
     ModuleEntry *entry =
       ModuleEntry::FromWord(BootLinker::GetModuleTable()->GetItem(key2));
@@ -374,7 +374,7 @@ Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
     for (u_int i = iv->GetLength(); i--;) {
       Tuple *t = Tuple::FromWord(iv->Sub(i));
       Assert(t != INVALID_POINTER);
-      Assert(t->GetWidth() == 2);
+      t->AssertWidth(2);
       Chunk *key2 =
 	Store::WordToChunk(BootLinker::ResolveUrl(key,
 						Store::WordToChunk(t->Sel(0))));
