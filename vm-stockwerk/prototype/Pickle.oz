@@ -31,26 +31,38 @@ import
 export
    Unpickle
 define
+   %% Tags:
    POSINT    = 0
    NEGINT    = 1
    CHUNK     = 2
    BLOCK     = 3
-   CLOSURE   = 4
-   REF       = 5
-   TRANSFORM = 6
+   TUPLE     = 4
+   CLOSURE   = 5
+   REF       = 6
+   TRANSFORM = 7
 
-%   AlicePrimitive = {ByteString.make 'Alice.primitive'}
-%   AliceFunction  = {ByteString.make 'Alice.function'}
+   %% Block Labels:
+   ARRAY        = 0
+   CELL         = 1
+   CONSTRUCTOR  = 2
+   CON_VAL      = 3
+   GLOBAL_STAMP = 4
+   VECTOR       = 5
+   LabelOffset  = 6
 
-%   fun {ApplyTransforms X}
-%      %--** recurse
-%      case X of 'TRANSFORM'('Alice.primitive' tag(0 Name)) then
-%	 Primitives.table.Name
-%      [] 'TRANSFORM'('Alice.function' tag(!Function NG NL IdDefArgs Instr))
-%      then function(NG NL IdDefArgs Instr)
-%      else X
+   fun {ApplyTransform F X}
+%      thread
+	 case F of 'Alice.primitive' then
+	    case X of tag(0 Name) then
+	       Primitives.table.{VirtualString.toAtom Name}
+	    end
+	 [] 'Alice.function' then
+	    case X of tag(0 NG NL IdDefArgs Instr)
+	    then function(NG NL IdDefArgs Instr)
+	    end
+	 end
 %      end
-%   end
+   end
 
    proc {ReadFile File ?VS} F in
       F = {New Open.file init(name: File flags: [read])}
@@ -74,7 +86,7 @@ define
       end
       meth Remember(X) N in
 	 N = @Counter
-	 @Dict.N = X
+	 @Dict.N := X
 	 Counter <- N + 1
       end
       meth Lookup(N $)
@@ -86,6 +98,7 @@ define
 	 [] !NEGINT    then ~(PickleParser, ParseUInt($))
 	 [] !CHUNK     then PickleParser, ParseChunk($)
 	 [] !BLOCK     then PickleParser, ParseBlock($)
+	 [] !TUPLE     then PickleParser, ParseTuple($)
 	 [] !CLOSURE   then PickleParser, ParseClosure($)
 	 [] !TRANSFORM then PickleParser, ParseTransform($)
 	 [] !REF       then PickleParser, ParseReference($)
@@ -105,7 +118,7 @@ define
       end
       meth ParseChunk(?Chunk) Size in
 	 PickleParser, ParseUInt(?Size)
-	 Chunk = {ByteString.make for _ in 1..Size collect: C do
+	 Chunk = {ByteString.make for I in 1..Size collect: C do
 				     {C PickleParser, Next($)}
 				  end}
 	 PickleParser, Remember(Chunk)
@@ -114,9 +127,34 @@ define
 	 PickleParser, Remember(T)
 	 PickleParser, ParseUInt(?Label)
 	 PickleParser, ParseUInt(?Size)
-	 T = {MakeTuple block Size + 1}
-	 T.1 = Label
-	 for I in 2..Size + 1 do
+	 case Label
+	 of !ARRAY then fail   %--**
+	 [] !CELL then fail   %--**
+	 [] !CONSTRUCTOR then fail   %--**
+	 [] !CON_VAL then fail   %--**
+	 [] !GLOBAL_STAMP then fail   %--**
+	 [] !VECTOR then RealSize in
+	    PickleParser, ParsePickle(?RealSize)
+	    T = {MakeTuple vector RealSize}
+	    for I in 1..RealSize do
+	       PickleParser, ParsePickle(?T.I)
+	    end
+	    for I in RealSize+1..Size-1 do
+	       PickleParser, ParsePickle(_)
+	    end
+	 else
+	    T = {MakeTuple tag Size + 1}
+	    T.1 = Label - LabelOffset
+	    for I in 2..Size + 1 do
+	       PickleParser, ParsePickle(?T.I)
+	    end
+	 end
+      end
+      meth ParseTuple(?T) Size in
+	 PickleParser, Remember(T)
+	 PickleParser, ParseUInt(?Size)
+	 T = {MakeTuple tuple Size}
+	 for I in 1..Size do
 	    PickleParser, ParsePickle(?T.I)
 	 end
       end
@@ -130,9 +168,9 @@ define
       end
       meth ParseTransform(?Transform) F X in
 	 PickleParser, Remember(Transform)
-	 Transform = transform(F X)
 	 PickleParser, ParsePickle(?F)
 	 PickleParser, ParsePickle(?X)
+	 Transform = {ApplyTransform {VirtualString.toAtom F} X}
       end
       meth ParseReference($)
 	 PickleParser, Lookup(PickleParser, ParseUInt($) $)
