@@ -161,7 +161,24 @@ define
 	 {Pickle.saveWithCells X Filename '' 9}
       catch error(dp(generic 'pickle:resources' _ Args) ...) then
 	 for Y in {List.toRecord '#' Args}.'Resources' do
-	    {Wait Y}
+	    case {Value.status Y} of free then {Wait Y}
+	    [] kinded(_) then {Wait Y}
+	    [] future then {Wait Y}
+	    [] det(int) then skip
+	    [] det(float) then skip
+	    [] det(record) then skip
+	    [] det(tuple) then skip
+	    [] det(atom) then skip
+	    [] det(name) then skip
+	    [] det(procedure) then skip
+	    [] det(cell) then skip
+	    [] det(byteString) then skip
+	    [] det(bitString) then skip
+	    [] det(array) then skip
+	    [] det(bitArray) then skip
+	    [] det('class') then skip
+	    else {Exception.raiseError alice(SitedException)}
+	    end
 	 end
 	 {Save X Filename}
       end
