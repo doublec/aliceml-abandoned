@@ -14,12 +14,20 @@ functor
 import
    Parser(virtualString) at 'x-oz://boot/Parser'
    Open(text pipe)
-   System(showInfo)
+   System(showInfo showError)
    Compiler(engine interface)
 export
    TranslateFile
 define
-   class TextPipe from Open.pipe Open.text end
+   class TextPipe from Open.pipe Open.text
+      meth get($)
+	 case TextPipe, getS($) of S=&[|_ then S#'\n'
+	 elseof S then
+	    {System.showError S}
+	    TextPipe, get($)
+	 end
+      end
+   end
 
    local
       fun {Trans X}
@@ -53,7 +61,7 @@ define
       Pipe = {New TextPipe
 	      init(cmd: 'sml-cm'
 		   args: ['@SMLload=../top/stoc-frontend' File])}
-      {Pipe getS(?S)}
+      {Pipe get(?S)}
       {Pipe close()}
       S
    end
