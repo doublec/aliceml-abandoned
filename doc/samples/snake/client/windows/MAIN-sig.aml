@@ -1,0 +1,57 @@
+(* Alice Snake 2.0 - TextWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk            from "GtkSupport"
+import structure Gdk            from "GtkSupport"
+
+import structure Pos            from "../../common/Pos"
+import structure Protocol       from "../../common/Protocol"
+import structure Highscore      from "../../common/Highscore"
+
+
+signature MAIN =
+sig
+
+    type mainwindow_type
+
+    type start_client_cb = mainwindow_type -> unit
+
+    type start_server_cb = mainwindow_type -> unit
+
+    type start_single_cb = mainwindow_type -> unit
+
+    type turn_cb         = Protocol.direction -> string option
+
+    type change_view_cb  = Protocol.view_hint -> string option
+	
+    type quit_cb         = unit -> unit
+
+    type give_up_cb      = mainwindow_type -> string option
+
+    val mkMainWindow :   start_client_cb * start_server_cb * start_single_cb * 
+	                                turn_cb * change_view_cb * 
+					give_up_cb * quit_cb -> mainwindow_type
+
+    val gameMode :       mainwindow_type -> unit
+
+    val getWindow :      mainwindow_type -> Gtk.object
+
+    val levelStart :     mainwindow_type * Protocol.level_info -> unit
+
+    val levelTick :      mainwindow_type * Highscore.points list option * 
+	                               Protocol.diff list * Pos.pos option * 
+                                                              Time.time -> unit
+ 
+    val levelCountDown : mainwindow_type * int -> unit
+
+    val gameFinished :   mainwindow_type * Highscore.highscore -> unit
+
+end

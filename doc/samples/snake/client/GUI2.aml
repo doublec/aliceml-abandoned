@@ -310,7 +310,8 @@ struct
 	    LEVEL_RUNNING => Main.levelCountDown (#mainWindow gui, n)
 	  |  _ => raise Error "Error, while sending levelCountdown signal")
 
-
+    (* a textWindow will be shown and 
+        the mainWindow is resetted in START mode *)
     fun gameFinished (gui : gui, score) = 
 	(case !(#state gui) of
 	    LEVEL_RUNNING => ((#state gui) := INITIAL;
