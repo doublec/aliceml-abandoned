@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)
+INCLUDES = -I$(top_srcdir) $(LTDLINCL)
 
 genericincludedir = '${pkgincludedir}/generic'
 

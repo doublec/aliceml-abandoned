@@ -1,5 +1,5 @@
 SUBDIRS = libltdl store adt generic
-INCLUDES = $(INCLTDL)
+INCLUDES = $(LTDLINCL)
 
 # SEAM library
 
