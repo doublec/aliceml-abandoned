@@ -57,7 +57,7 @@ mod . submod (*Here!*) . subsub
 _file_
 _line_</PRE>
 
-<P>Occurances of these keywords are replaced by the file name and the line number of their respective occurance in the source file. For example,</P>
+<P>Occurrences of these keywords are replaced by the file name and the line number of their respective occurrence in the source file. For example,</P>
 
 <PRE class=code>
 print ("Error in file " ^ _file_ ", line " ^ Int.toString _line_ ^ "\n")</PRE>
@@ -431,7 +431,7 @@ val l = rec xs => 1::2::xs</PRE>
   </TR>
 </TABLE>
 
-<P>Here, <TT>_line_</TT> will be on the same line where the <TT>assert</TT> keyword occured.</P>
+<P>Here, <TT>_line_</TT> will be on the same line where the <TT>assert</TT> keyword occurred.</P>
 
 <P>Assertions can be assigned an explicit level by appending a digit to the <TT>assert</TT> keyword. Such assertions can be controlled via the <A href="compiler.html#options"><TT>--assert</TT></A> compiler switch that specifies the assertion level (0-9) of the compiled code. Any assertion that has a level annotation higher then that assertion level will be disabled. Note that level 0 assertions cannot be disabled. An unannotated assertion defaults to level 0.</P>
 
