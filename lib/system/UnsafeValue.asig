@@ -20,12 +20,12 @@ signature UNSAFE_VALUE_COMPONENT =
     sig
 	structure UnsafeValue:
 	    sig
-		val cast: 'value -> 'a
-		val proj: 'value * Label.t vector * int -> 'value
-		val tag: 'value * Label.t vector -> Label.t
-		val projTagged: 'value * Label.t vector * int -> 'value
-		val con: 'value -> 'value * Type.t
-		val projConstructed: 'value * Label.t vector * int -> 'value
-		val conName: 'value -> Name.t
+		val cast: 'a_value -> 'a
+		val proj: 'prod_value * Label.t vector * int -> 'value
+		val tag: 'sum_value * Label.t vector -> Label.t
+		val projTagged: 'sum_value * Label.t vector * int -> 'value
+		val con: 'ext_value -> 'con_value * Type.t
+		val projConstructed: 'ext_value * Label.t vector * int -> 'value
+		val conName: 'con_value -> Name.t
 	    end
     end
