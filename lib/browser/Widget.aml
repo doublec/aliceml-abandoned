@@ -1021,10 +1021,9 @@ struct
 	val _ = (windowSetTitle (window, "Alice Inspector")
 		 ; windowSetDefaultSize(window, 600,500)
 		 ;signalConnect (window, "delete-event", DeleteWindow)
-(*  		 ;setSelectionMenuSensitive (bar,false)   *)
-(*  		 ;menuBarAppend(bar,busyButton) *)
-(*  		 ;menuBarAppend(bar,stopButton) *)
-(*  		 ;menuItemRightJustify(stopButton)  *)
+(*		 ;menuBarAppend(bar,busyButton) *)
+		 ;menuBarAppend(bar,stopButton)
+		 ;menuItemRightJustify(stopButton) 
 		 ;containerAdd(window,createVBox[(bar,
 						  false 
 						  ,false,
@@ -1034,7 +1033,8 @@ struct
 						 (* Gtk.FILL *) true,0),
 						 (status, 
 						  false ,
-						  false  ,0)]))
+						  false  ,0)])
+  		 ;setSelectionMenuSensitive (bar,false))
 (*  		 ;signalConnect(window,"event",handleWindowEvent)) *)
 
 

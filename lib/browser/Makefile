@@ -56,3 +56,4 @@ distclean: clean
 install: LinkedInspector.stc
 	install -d $(INSTALLTO)
 	install -c -m444 LinkedInspector.stc $(INSTALLTO)/Inspector.stc
+	install -c -m444 stop.xbm $(INSTALLTO)/stop.xbm

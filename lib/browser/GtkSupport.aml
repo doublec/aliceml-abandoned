@@ -13,6 +13,7 @@
  *
  *)
 
+import structure Url         from "x-alice:/lib/system/Url"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
@@ -55,10 +56,11 @@ structure GtkSupport =
 	val adjustmentGetFieldValue = Gtk.adjustmentGetFieldValue
 	val layoutFreeze = Gtk.layoutFreeze
 	val layoutThaw = Gtk.layoutThaw
-	val menuBarAppend = fn (_, _) => ()
+	val menuBarAppend = Gtk.menuShellAppend
 	val menuItemNewWithLabel = Gtk.menuItemNewWithLabel
-	val menuItemRightJustify = fn _ => ()
-	val menuBarInsert = fn (_, _, _) => ()
+	fun menuItemRightJustify item =
+	    Gtk.menuItemSetRightJustified (item, true)
+
 	    
 	(************ GnomeCanvas Primitives ********************)
 	(************ GnomeCanvas Instruktionen *****************)
@@ -375,7 +377,17 @@ structure GtkSupport =
 			     (widgetSetSensitive(button,false);button)
 			 end
 
-	val stopButton = menuButton "stop"
+	val stopButton =
+	    let
+		val urlString = "x-alice:/tools/stop.xbm"
+		val fileName  = Url.toLocalFile (Url.fromString urlString)
+		val image     = Gtk.imageNewFromFile fileName
+		val button    = Gtk.imageMenuItemNew ()
+	    in
+		Gtk.imageMenuItemSetImage (button, image);
+		button
+	    end
+
 	val busyButton = menuButton "busy"
 		     
 	fun stopButtonSetActive b = widgetSetSensitive(stopButton,b)

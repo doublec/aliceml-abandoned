@@ -54,7 +54,6 @@ signature GTK_SUPPORT =
 	val menuBarAppend:           tag * tag -> unit
 	val menuItemNewWithLabel:    string -> tag
 	val menuItemRightJustify:    tag -> unit
-	val menuBarInsert:           tag * tag * int -> unit
 
 	(** GtkCanvas Primitives **)
 
@@ -134,9 +133,6 @@ signature GTK_SUPPORT =
 	
 	val stopButton: tag
 	val stopButtonSetActive: bool -> unit
-
-	val busyButton: tag
-	val busyButtonSetActive: bool -> unit
 
 	val createTextWindow: unit -> (string -> unit)
 	    
