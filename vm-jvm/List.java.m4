@@ -1,16 +1,12 @@
 package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
-/** TODO: foldr
- */
+
 final public class List {
-    final private static class Nil extends Name implements DMLList{
-	Nil(java.lang.String n) { super(n); }
-    }
-    final public static Name nil = new Nil("List.nil");
-    final public static Constructor cons = new Constructor("List.cons");
+    final public static UniqueName nil = new UniqueName("List.nil");
+    final public static UniqueConstructor cons = new UniqueConstructor("List.cons");
     /** <code>exception Empty</code>*/
-    final public static Name Empty = new Name("List.Empty");
+    final public static UniqueName Empty = new UniqueName("List.Empty");
 
     final public static class IsNull extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -36,7 +32,7 @@ final public class List {
 		length++;
 		l = ((Cons) l).cdr.request();
 	    }
-	    if (l instanceof Nil)
+	    if (l==nil)
 		return new Int(length);
 	    else
 		return error("argument not DMLList",val);
@@ -360,7 +356,7 @@ final public class List {
 		    fun.apply(lc.car);
 		    l = lc.cdr.request();
 		}
-		if (l instanceof Nil)
+		if (l==nil)
 		    return Constants.dmlunit;
 		else
 		    return error("argument not DMLList",val);
