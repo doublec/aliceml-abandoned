@@ -17,7 +17,6 @@ import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 import structure Color          from "../../common/Color"
 import structure Config         from "../../server/Config"
 import structure Protocol       from "../../common/Protocol"
-import structure HighscoreIO    from "../../server/HighscoreIO"
 import structure Highscore      from "../../common/Highscore"
 
 import structure ArenaWidget    from "ArenaWidget"
@@ -35,7 +34,7 @@ open Ctrl
 
 
 (* converts a Highscore.highscore into a string 
-   differentated by newlines *)
+   differentiated by newlines *)
 fun highscoreToString score =
     let
 	fun toString' ({name, color, points,
@@ -52,6 +51,7 @@ fun highscoreToString score =
 	toString ()
     end
 
+(* creates a string from a given time with format: h : m : s *)
   fun timeToString t =
     let
 	val time    = Time.toSeconds t
@@ -71,16 +71,14 @@ struct
 
     (* the modes in which the window can exists *)
     datatype mode = START | GAME
-
     val mode = ref START
 
     (* initialising the canvas widget *)
     val arena = ArenaWidget.initialize ()
     val canvas = ArenaWidget.toObject arena
 
-    (* the menu bar items whose sensitivity get 
+    (* the menu bar items which sensitivity get 
      changed some times *)
-    val menuScoreItem  = Gtk.menuItemNewWithLabel "Highscore"
     val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
     val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
 
@@ -88,7 +86,7 @@ struct
     val separator1  = Gtk.vseparatorNew ()
     val pointsLabel = Gtk.labelNew ""
 
-    (* the remaining level time and it's box *)
+    (* the countdown time label *)
     val timeLabel = Gtk.labelNew ""
 
     (* the box where time and points are in *)
@@ -96,53 +94,50 @@ struct
     val rightHBox      = Gtk.hboxNew (false, 10)
 
 
-	(* one of the main prcedures. resets the window
-	 in START mode and also the sensitivity of menu bar *)
+    (* one of the main procedures. resets the window
+      in START mode and also the sensitivity of the menubar *)
     fun reset' () =
 	(Gtk.widgetSetSensitive (menuGiveUpItem, false);
 	 Gtk.widgetSetSensitive (menuMenuItem, true);
-	 Gtk.widgetSetSensitive (menuScoreItem, true);
 	 Gtk.widgetHide canvas;
 	 Gtk.widgetHide rightHBox;
 	 mode := START)
 
 
-    (* resets window and also shows Text when needed *)
+    (* resets window and also shows [msg] when needed *)
     fun reset NONE = reset' ()
       | reset (SOME (title, msg)) =
 	(Text.mkTextWindow (title, msg); reset' ())
 
 
 
-    (* initializing the procedures from model_game *)
+    (* initializing the procedures for modelGame *)
     val turn'       = ref (fn d => ())
     val changeView' = ref (fn h => ())
     val giveUp'     = ref (fn () => ())
     val disconnect' = ref (fn () => ())
 
     (* calling the procedure gameMode turns main window in GAME mode,
-     by setting and fullfilling guiGame and updating 
-     functionality *)
+     by setting and fullfilling guiGame and updating functionality *)
     fun gameMode ({disconnect}, {turn, changeView, giveUp},
-		   guiGame) =
+		   guiGameP) =
 	let
 	    fun gameFinished h = 
-		    (reset (SOME ("Highscore", highscoreToString h));
-		     HighscoreIO.save h)
+		    (reset (SOME ("Highscore", highscoreToString h)))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
-	    val oldNumber = ref (Gtk.null ())
-	    val color  = Gdk.allocColor (0, 65535, 65535)
-
-		
+	    val oldNumber   = ref (Gtk.null ())
+	    val color       = Gdk.allocColor (65535, 65535, 65535)
 	    fun countdown 0 = if !oldNumber <> Gtk.null ()
 				  then Gtk.objectDestroy (!oldNumber)
 			      else ()
 	      | countdown n =
 		let
+		    val _      = ArenaWidget.changeView (arena, (0, 0))
+		    val root   = GtkCanvas.root canvas
 		    val num    = Int.toString n
-		    val font   = "-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*"
+		    val font   = "-*-times-bold-*-*-*-120-*-*-*-*-*-*-*"
 		    val x      = 300.0
 		    val y      = 250.0
 		    val anchor = Gtk.ANCHOR_CENTER
@@ -152,8 +147,9 @@ struct
 				  ("y", GtkCanvas.DOUBLE y),
 				  ("fill_color_gdk", GtkCanvas.OBJECT color),
 				  ("anchor", GtkCanvas.INT anchor)]
-		    val root = GtkCanvas.root canvas
-		    val num = GtkCanvas.itemNew (root, GtkCanvas.TEXT, args)
+
+		    val num    = GtkCanvas.itemNew (root, GtkCanvas.TEXT, args)
+
 		in
 		    if !oldNumber <> Gtk.null ()
 			then Gtk.objectDestroy (!oldNumber)
@@ -168,7 +164,9 @@ struct
 		    Gtk.labelSetText (timeLabel, timeStr)
 		end
 
-	    fun updatePoints plist = 
+	    (* updates the pointsLabel. different points are separated
+	     by newlines *)
+	    fun updatePoints plist =
 		let
 		    fun toString' (({name, 
 				    color, 
@@ -200,11 +198,10 @@ struct
 	    mode := GAME;
 	    Gtk.widgetSetSensitive (menuGiveUpItem, true);
 	    Gtk.widgetSetSensitive (menuMenuItem, false);
-	    Gtk.widgetSetSensitive (menuScoreItem, false);
 	    Gtk.widgetShow canvas;
 	    Gtk.widgetShow rightHBox;
-	    assert (Future.isFuture $ Promise.future guiGame) 
-	    do Promise.fulfill (guiGame, {startLevel, update, countdown, 
+	    assert (Future.isFuture $ Promise.future guiGameP) 
+	    do Promise.fulfill (guiGameP, {startLevel, update, countdown, 
 					  updatePoints, headPosition,
 					  tick,
 					  gameFinished});
@@ -250,8 +247,6 @@ struct
 	    val menuMenuSingle = Gtk.menuItemNewWithLabel "Single-Player"
 	    val menuMenuClient = Gtk.menuItemNewWithLabel "Multi-Player Client"
 	    val menuMenuServer = Gtk.menuItemNewWithLabel "Multi-Player Server"
-	    val menuOpenScore  = Gtk.menuItemNewWithLabel "open Highscore"
-	    val menuResetScore = Gtk.menuItemNewWithLabel "reset Highscore"
 	    val menuQuit       = Gtk.menuItemNewWithLabel "Quit"
 	    val menuQuitItem   = Gtk.menuItemNewWithLabel "Quit"
 
@@ -267,16 +262,7 @@ struct
 		ServerSettings.mkServerSettings ({startServer},
 						       {reset, gameMode}))
 
-	    (* opens the highscore window *)
-	    fun openHighscore () = 
-		let
-		    val h = HighscoreIO.load ()
-		in
-		    Text.mkTextWindow ("Highscore", highscoreToString h) 
-		end
-
-	    fun resetHighscore () = HighscoreIO.save Highscore.empty
-
+            (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
 		case startServer (SOME ("Player", Color.fromString "yellow"), 
 				  Config.defaultSingle) of
@@ -295,20 +281,21 @@ struct
 			end
 		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
 
+	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval =
 		  if !mode = GAME
 		      then
 			  case Gdk.keyvalName keyval of
-			        "Up"      => (!turn') Protocol.UP
-			    |   "Down"    => (!turn') Protocol.DOWN
-			    |   "Right"   => (!turn') Protocol.RIGHT
-			    |   "Left"    => (!turn') Protocol.LEFT
-			    | ("q" | "Q") => (!changeView') Protocol.PREV
-			    | ("w" | "W") => (!changeView') Protocol.NEXT
+			        "Up"      => !turn' Protocol.UP
+			    |   "Down"    => !turn' Protocol.DOWN
+			    |   "Right"   => !turn' Protocol.RIGHT
+			    |   "Left"    => !turn' Protocol.LEFT
+			    | ("q" | "Q") => !changeView' Protocol.PREV
+			    | ("w" | "W") => !changeView' Protocol.NEXT
 			    |   _         => ()
 		  else ()
 
-
+	    (* catches the canvas events *)
 	    fun canvasEvent [Gtk.EVENT event] = 
 		(case event of
 		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
@@ -322,22 +309,26 @@ struct
 	    Gtk.windowSetDefaultSize (mainWindow, 800, 500);
 	    Gtk.windowSetPosition (mainWindow, Gtk.WIN_POS_CENTER);
 	    
+	    (* building the menubar *)
 	    Gtk.menuAppend (menuMenu, menuMenuSingle);
 	    Gtk.menuAppend (menuMenu, menuMenuClient);
 	    Gtk.menuAppend (menuMenu, menuMenuServer);
-	    Gtk.menuAppend (menuHighscore, menuOpenScore);
-	    Gtk.menuAppend (menuHighscore, menuResetScore);
 	    Gtk.menuAppend (menuLeave, menuGiveUpItem);
 	    Gtk.menuAppend (menuLeave, menuQuit);
 
+	    Gtk.menuItemSetSubmenu (menuMenuItem, menuMenu);
+	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
+
+	    Gtk.menuBarAppend (menuBar, menuMenuItem);
+	    Gtk.menuBarAppend (menuBar, menuQuitItem);
+
+	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
+
+	    (* just signalconnecting *)
 	    Gtk.signalConnect (mainWindow, "event",
 			       canvasEvent);
 	    Gtk.signalConnect (mainWindow, "delete-event", 
 			       fn _ => mainQuit ());
-	    Gtk.signalConnect (menuOpenScore, "activate", 
-			       fn _ => openHighscore ());
-	    Gtk.signalConnect (menuResetScore, "activate",
-			       fn _ => resetHighscore ());
 	    Gtk.signalConnect (menuMenuSingle, "activate", 
 			       fn _ => startSinglePlayer ());
 	    Gtk.signalConnect (menuMenuClient, "activate", 
@@ -348,16 +339,6 @@ struct
 			       fn _ => mainQuit ());
 	    Gtk.signalConnect (menuGiveUpItem, "activate",
 			       fn _ => (!giveUp') ());
-
-	    Gtk.menuItemSetSubmenu (menuMenuItem, menuMenu);
-	    Gtk.menuItemSetSubmenu (menuScoreItem, menuHighscore);
-	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
-
-	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
-
-	    Gtk.menuBarAppend (menuBar, menuMenuItem);
-	    Gtk.menuBarAppend (menuBar, menuScoreItem);
-	    Gtk.menuBarAppend (menuBar, menuQuitItem);
 	    
 	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 5);
 	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 5);
