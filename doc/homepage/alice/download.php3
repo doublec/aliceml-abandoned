@@ -1,8 +1,5 @@
 <?php include("macros.php3"); ?>
-
 <?php heading("Alice Download", "download") ?>
-
-  <BR><BR><BR><BR>
 
 <?php section("current", "release") ?>
 

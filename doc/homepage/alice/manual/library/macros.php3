@@ -78,14 +78,13 @@
 	$bar .= "_";
     };
 
-    echo("<BR><H2><A name=" . $tag . "><SUP><TT>________&nbsp;</TT></SUP>" .
-	 ucfirst($name) .
-	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></A></H2>");
+    echo("<BR><H2><SUP><TT>________&nbsp;</TT></SUP>" .
+	 "<A name=" . $tag . ">" . ucfirst($name) . "</A>" .
+	 "<SUP><TT>&nbsp;" . $bar . "</TT></SUP></H2>");
   };
 
   function subsection($tag, $name)
   {
-    echo("<H3><A name=" . $tag . ">" . ucfirst($name) . "&nbsp;" . $bar .
-	 "</A></H3>");
+    echo("<H3><A name=" . $tag . ">" . ucfirst($name) . "</A></H3>");
   };
 ?>

@@ -26,7 +26,7 @@ and its features:</P>
 </UL>
 
 
-<?php section("sml", "standard ml") ?>
+<?php section("sml", "standard ML") ?>
 
 <P>Alice ML is an extension of the
 <A href="http://cm.bell-labs.com/cm/cs/what/smlnj/sml.html">Standard ML</A> language (SML).

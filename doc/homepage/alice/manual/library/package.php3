@@ -15,17 +15,9 @@
     system of ML with a dimension of dynamic typing: unpacking a package
     performs a dynamic type check. That basic mechanism is used to make safe
     all kinds of dynamic operations, particularly exchange of
-    higher-order data structures between different processes, or export to
-    a file system (pickling).
-  </P>
-
-  <P>
-    <B>TODO:</B> explanation, examples
-  </P>
-
-  <P>
-    The package mechanism makes essential use of the higher-order features
-    of the module system, in particular nested signatures.
+    higher-order data structures between different processes (see structure <A
+    href="remote.php3"><TT>Remote</TT></A>), or export to
+    a file system (<A href="pickle.php3">pickling</A>).
   </P>
 
   <P>
@@ -56,7 +48,6 @@
 
 	type mismatch = Inf.mismatch
 	exception Mismatch of mismatch
-	exception MismatchVal
 
 	functor Pack (signature S  structure X : S) : (val package : package)
 	functor Unpack (val package : package  signature S) : S
@@ -94,8 +85,7 @@
     </DD>
 
     <DT>
-      <TT>exception Mismatch of mismatch</TT> <BR>
-      <TT>exception MismatchVal</TT>
+      <TT>exception Mismatch of mismatch</TT>
     </DT>
     <DD>
       <P>Raised upon failed attempts to unpack a package.</P>
@@ -141,7 +131,7 @@
       <P>Tries to unpack the value package <TT><I>package</I></TT>.
       If the type of the package is <TT><I>t</I></TT>, returns a structure
       containing the encapsulated value as its only field.
-      Otherwise, the exception <TT>MismatchVal</TT> will be raised.</P>
+      Otherwise, the exception <TT>Mismatch</TT> will be raised.</P>
     </DD>
   </DL>
 

@@ -60,6 +60,8 @@ programming language (SML), as defined in</P>
 
   <LI> <A href="pickling.php3">Pickling:</A>
   <UL>
+    <LI> <A href="pickling.php3#semantics">persistent values</A> </LI>
+    <LI> <A href="pickling.php3#export">exporting and importing modules</A> </LI>
   </UL>
   </LI>
 

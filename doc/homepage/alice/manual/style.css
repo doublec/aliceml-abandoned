@@ -1,6 +1,5 @@
 BODY {
 	background:	url(bg.gif) repeat-y white;
-	position:	relative;
 	margin-left:	210px;
 	margin-right:	10px;
 }
@@ -67,7 +66,7 @@ H1 {
 }
 
 H2 {
-	margin-left:	-80px;
+	margin-left:	-60px;
 	text-align:	left;
 	font-family:	arial, helvetica, sans-serif;
 	font-size:	130%;

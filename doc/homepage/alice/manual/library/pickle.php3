@@ -26,7 +26,8 @@
     Pickles may contain stateful values, like references or arrays. Pickling
     a stateful data structure implies a copying semantics: each time the
     value is unpickled, a fresh copy of all contained stateful values will be
-    created.
+    created. Sharing between stateful object is maintained inside a pickle,
+    though.
   </P>
 
   <P>
@@ -35,7 +36,7 @@
     modules containing creating such values).
     Any attempt to pickle a value whose closure contains sited values will
     result in an <TT>Io</TT> exception being raised, with the exception
-    <TT>Component.Sited</TT> indicating the cause.
+    <TT>Sited</TT> indicating the cause.
   </P>
 
   <P>See also:
@@ -55,6 +56,8 @@
   <PRE>
     signature PICKLE =
     sig
+	exception Sited
+
 	val extension : string
 
 	val save :    string * package -> unit
@@ -74,11 +77,22 @@
 
   <DL>
     <DT>
+      <TT>exception Sited</TT>
+    </DT>
+    <DD>
+      <P>used by the <TT>save</TT> operation to indicate
+	that a first-class component contains sited data structures.  This
+	exception is never raised directly; it only appears as the <TT
+	>cause</TT> of an <TT><A href="io.php3">IO.Io</A></TT> exception.
+	Equal to <TT>Component.Sited</TT>.</P>
+    </DD>
+
+    <DT>
       <TT>extension</TT>
     </DT>
     <DD>
       <P>The default file name extension used for pickle files on the host
-      system.</P>
+      system. Equal to <TT>Component.extension</TT>.</P>
     </DD>
 
     <DT>
@@ -95,9 +109,13 @@
       <TT>load <I>name</I></TT>
     </DT>
     <DD>
-      <P>Loads a package from the file named <TT><I>name</I></TT>.
-      Raises <TT>IO.Io</TT> if reading the pickle fails. Particular causes
-      for failure may be that file is corrupt, i.e. not a valid pickle file.</P>
+      <P>Loads a package from the file denoted by the URI <TT><I>name</I></TT>.
+      The pickle is located and loaded as a component, via the function <A
+      href="component.php3#load"><TT>Component.load</TT></A>.
+      Raises <TT>IO.Io</TT> if reading or evaluating the component fails.
+      Particular causes
+      for failure may be that file is corrupt, i.e. not a valid pickle file.
+      This is indicated by the exception <TT>Component.Corrupt</TT>.</P>
     </DD>
 
     <DT>

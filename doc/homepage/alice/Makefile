@@ -16,7 +16,7 @@ INSTALLFILES_DOWNLOAD_0 = \
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps opaque.ps
 INSTALLFILES_MANUAL_0 = \
-	style.css macros.php3 menu.php3 logo-small.gif logo-large.gif \
+	style.css macros.php3 menu.php3 bg.gif logo-small.gif logo-large.gif \
 	index.php3 features.php3 \
 	language.php3 futures.php3 types.php3 modules.php3 sugar.php3 \
 	threads.php3 components.php3 \
@@ -25,7 +25,7 @@ INSTALLFILES_MANUAL_0 = \
 	explorer.php3 interop.php3 examples.php3 tour.php3 \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
-	macros.php3 menu.php3 \
+	macros.php3 menu.php3 bg.gif \
 	index.php3 \
 	alt.php3 array.php3 array-slice.php3 \
 	bin-io.php3 bool.php3 byneed.php3 byte.php3 \
@@ -92,8 +92,10 @@ $(PREFIX)/alice.gif: \
 	../../../misc/logo/alice-strikethrough-shadow-blue-254x80.gif
 	install -c -m 444 $< $@
 
-$(PREFIX)/manual/alice.gif: \
-	../../../misc/logo/alice-strikethrough-shadow-blue-190x60.gif
+# Netscape workaround:
+$(PREFIX)/bg.gif: manual/bg.gif
+	install -c -m 444 $< $@
+$(PREFIX)/manual/library/bg.gif: manual/bg.gif
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/%-devel.tgz:

@@ -50,8 +50,8 @@
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
 
-	val <A href="#offer">offer</A> : <A href="package.php3#package">Package.t</A> -> ticket
-	val <A href="#take">take</A> : ticket -> <A href="package.php3#package">Package.t</A>
+	val <A href="#offer">offer</A> : <A href="package.php3#package">package</A> -> ticket
+	val <A href="#take">take</A> : ticket -> <A href="package.php3#package">package</A>
 
 	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
 	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S

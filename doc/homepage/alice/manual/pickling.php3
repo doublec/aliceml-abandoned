@@ -1,259 +1,131 @@
 <?php include("macros.php3"); ?>
-
 <?php heading("Pickling", "pickling") ?>
-
 
 
 <?php section("overview", "overview") ?>
 
-  <P>
-    A major feature of Alice is <I>pickling</I>, the ability to
-    make almost arbitrary user data structures persistent. This includes
-    higher-order data, i.e. functions. But it does not stop there, as
-    Alice even allows pickling of complete modules.
-  </P>
-
-  <P>
-    Pickling is type-safe in Alice: a pickle in fact is a
-    <A href="package.php3">package</A>, a pair of a value and its type.
-    Types are checked during unpickling.
-  </P>
+<P>A <EM>pickle</EM> is a serialized and closed representation of a value,
+stored in a file. Pickles can be used to exchange arbitrary data structures
+between processes. Pickles may contain higher-order values (i.e. functions) as
+well as complete module (e.g. abstract type implementations). Pickling is
+type-safe: a pickle in fact is a <A href="packages.php3">package</A>, a pair of
+a value and its type. Types are checked during unpickling.</P>
 
 
 <?php section("semantics", "semantics") ?>
 
-  <P>
-    Most Alice values can be pickled. There are some semantic implications
-    and necessary restrictions, though. We distinguish three sorts of values:
-  </P>
+<P>Most values can be pickled. There are some semantic implications
+and necessary restrictions, though. We distinguish three sorts of values:</P>
 
-  <UL>
-    <LI> <I>Functional</I>
-	 values do not contain any stateful objects. They can be
-	 freely pickled and unpickled. After putting a functional object in
-	 a pickle and reextracting it it is indistinguishable from the original
-	 object.
+<UL>
+<LI> <I>Functional</I>
+     values do not contain any stateful objects. They can be
+     freely pickled and unpickled. After putting a functional object in
+     a pickle and reextracting it it is indistinguishable from the original
+     object. </LI>
 
-    <LI> <I>Stateful</I>
-	 values do contain objects like references or arrays. Stateful
-	 data can also be pickled freely. However, pickling of stateful objects
-	 has a copying semantics: each time such an object is extracted from
-	 a pickle a fresh copy of the object is created. Sharing between
-	 stateful object is maintained inside a pickle, though.
+<LI> <I>Stateful</I>
+     values do contain mutable objects like references or arrays. Stateful
+     data can also be pickled freely. However, pickling of stateful objects
+     has a copying semantics: each time such an object is extracted from
+     a pickle a fresh copy of the object is created. Sharing between
+     stateful object is maintained inside a pickle, though. </LI>
 
-    <LI> <I>Sited</I>
-	 objects are connected to a parent process. They refer to certain
-	 resources that are not available outside the process. An example
-	 is the input stream of an open file.
-	 Consequently, sited objects may not be pickled.
-	 Any attempt to pickle values containing sited objects will result
-	 in a runtime exception.
-  </UL>
+<LI> <I>Sited</I>
+     objects are connected to a parent process. They refer to
+     resources that are not available outside the process. Examples
+     are input streams of open files or first-class threads.
+     Sited objects may not be pickled.
+     Any attempt to pickle values containing sited objects will result
+     in a runtime exception. </LI>
+</UL>
 
-  <P>
-    Note that higher-order values (ie. function closures) may contain
-    stateful or sited data without showing in their type. Moreover,
-    functions that create sited objects are also sited. Special care
-    has to be taken to avoid runtime errors from attempts of pickling
-    such objects. This is particularly true when pickling modules.
-  </P>
+<P>Higher-order values (i.e. function closures) may contain stateful or sited
+data without showing in their type. Moreover, functions that create sited
+objects are also sited. Special care has to be taken to avoid runtime errors
+from attempts of pickling such objects. This is particularly important when
+pickling modules.</P>
 
-  <P>
-    <A href="futures.php3">Futures</A> are never pickled. Instead, the
-    pickling operation will block on all unavailable futures that are
-    contained in the value to be pickled. In the case of by-need futures
-    this of course will force evaluation. A failed future will cause an
-    exception, respectively.
-  </P>
+<P><A href="futures.php3">Futures</A> are not pickled. Instead, the pickling
+operation will <A href="futures.php3#request">request</A> all futures that
+contained in the closure of the value to be pickled.</P>
 
 
-<?php section("use", "use") ?>
+<?php section("export", "exporting and importing modules") ?>
 
-  <P>
-    Very similar to <A href="packages.php3">packages</A>,
-    the pickling service is available through a structure
-    <TT>Pickle</TT> which contains several higher-order functors:
-  </P>
+<P>Pickling is available through the structure <A
+href="library/pickle.php3"><TT>Pickle</TT></A>. The canonical operation to
+create a pickle is the operation</P>
 
-  <PRE>
-	structure Pickle :
-	sig
-	    exception Sited
-	    exception Corrupt
+<PRE class=code>
+save : string * package -> unit</PRE>
 
-	    val extension : string
+<P>For example, the <TT>Int</TT> module can be exported as a pickle as
+follows:</P>
 
-	    functor Save(val file : string signature S structure X : S) : any
-	    functor Load(val file : string signature S) : S
+<PRE class=code>
+Pickle.save("Int." ^ Pickle.extension, pack Int :> INTEGER)</PRE>
 
-	    (* ... *)
-	end
-  </PRE>
+<P>The package will be written into a file with the specified name. The string
+<TT>Pickle.extension</TT> gives the file extension usually used for pickles on
+the target platform. If the module contained references to any sited
+objects, an <A href="library/io.php3"><TT>IO.Io</TT></A> exception would be
+raised, with <TT>Sited</TT> indicating the cause of the
+failure (<TT>Int</TT> is not sited, however).</P>
 
-  <P>
-    By applying the <TT>Save</TT> functor a module can be written as
-    a pickle. For example:
-  </P>
+<P>The inverse operation is unpickling. For example:</P>
 
-  <PRE>
-	structure _ = Pickle.Save(val file = "UrlPickle." ^ Pickle.extension
-				  structure X = Url
-	                          signature S = URL)
-  </PRE>
+<PRE class=code>
+structure Int' = unpack Pickle.load("Int." ^ Pickle.extension) : INTEGER</PRE>
 
-  <P>
-    This functor application will write the structure <TT>Url</TT> into
-    a file with the specified name (the string <TT>Pickle.extension</TT>
-    gives the file extension usually used for pickles on the target platform).
-    The result signature <TT>any</TT> of the functor indicates that it
-    does not return a useful result, we thus use a wildcard in the
-    declaration.
-  </P>
-
-  <P>
-    Just as for the <TT>Pack</TT> operation for
-    <A href="packages.php3">packages</A>, the signature passed to the
-    <TT>Save</TT> functor is the most specific signature that can
-    be expected when the pickle is loaded again.
-    Specifying a signature that is less specific
-    than the actual module type implies abstraction taking place.
-  </P>
-
-  <P>
-    If the Url module contained references to any sited objects,
-    the functor would raise the exception <TT>Sited</TT> to
-    indicate failure (<TT>Url</TT> is not sited, however).
-  </P>
-
-  <P>
-    The inverse operation to saving is loading. For example:
-  </P>
-
-  <PRE>
-	structure Url' = Pickle.Load(val file = "UrlPickle." ^ Pickle.extension
-	                             signature S = URL)
-  </PRE>
-
-  <P>
-    If loading is successful, <TT>Url'</TT> will be bound to a structure
-    with signature <TT>URL</TT>.
-  </P>
-
-  <P>
-    Loading of a pickle may fail for several reasons. There may be
-    an ordinary I/O error, in which case an <TT>IO.Io</TT> exeption will occur.
-    The pickle format may be erroneous, which causes a <TT>Corrupt</TT>
-    exception. Or the pickles's signature may not match the one passed
-    to the <TT>Load</TT> functor. In that case, the exception
-    <TT>Package.Mismatch</TT> will be raised.
-  </P>
+<P>If unpickling is successful, <TT>Int'</TT> will be accessible as a structure
+with signature <TT>INTEGER</TT>. Loading of a pickle may fail with an
+<A href="library/io.php3"><TT>IO.Io</TT></A> exception.</P>
 
 
-<?php section("values", "pickling values") ?>
+<?php subsection("export-sharing", "sharing") ?>
 
-  <P>
-    For convenience, two short-hand functors are available for
-    dealing with plain core values:
-  </P>
+<P>Pickled modules can contain abstract types. Sometimes it is
+necessary to express sharing between abstract types of different
+pickles. The way to deal with this is using appropriate type constraints upon
+unpacking the loaded package. For example, consider an abstract datatype</P>
 
-  <PRE>
-	structure Pickle :
-	sig
-	    (* ... *)
+<PRE class=code>
+signature T =
+sig
+    type t
+    val mk : int -> t
+    val f : t -> int
+end</PRE>
 
-	    functor SaveVal(val file: string type t val x: t) : any
-	    functor LoadVal(val file: string type t) : (val x: t)
-	end
-  </PRE>
+<P>that is stored in a pickle <TT>p1</TT>. Another pickle <TT>p2</TT> contains
+a value of that type. Both can be loaded and used together:</P>
 
-  <P>
-    Files created with the <TT>SaveVal</TT> functor are ordinary
-    pickles with signature
-  </P>
+<PRE class=code>
+structure T = unpack p1 : T
+structure V = unpack p2 : (val x : T.t)
 
-  <PRE>
-	sig  type t  val x : t  end
-  </PRE>
+val n = T.f V.x
+</PRE>
 
-  <P>
-    The <TT>LoadVal</TT> functor simply assumes a pickle of the same
-    type and returns the contained value <TT>x</TT>.
-  </P>
+<P>See also the section on <A
+href="packages.php3#package-sharing">sharing across packages</A>.</P>
 
 
-<?php section("sharing", "sharing") ?>
+<?php section("components", "unpickling components") ?>
 
-  <P>
-    Pickled modules can contain abstract types. Sometimes it is
-    necessary to express sharing between abstract types of different
-    pickles. The way to deal with this is the usual one in SML: by
-    using appropriate <TT>where</TT> specifications. For example,
-    consider two data structures of some abstract type. Imagine
-    that they are stored in two different pickles, both having a
-    signature like:
-  </P>
+<P>Pickles are closely related to <A href="components.php3">components</A>.
+In fact, a pickle is a special case of a component, and arbitrary
+components may be loaded as pickles.</P>
 
-  <PRE>
-	signature S =
-	sig
-	    type t
-	    val x : t
-	    val f : t -> int
-	end
-  </PRE>
+<P>A pickle is an <I>evaluated</I> component (and we will use both terms
+as synonyms in the following). An evaluated component only
+contains the fully evaluated export, it will not be executed during
+load. This particularly means that loading it will neither generate
+any side effects, nor produce new generative entities like types or
+exceptions. An evaluated component does not import any other component.</P>
 
-  <P>
-    You don't have any knowledge of the representation of type <TT>t</TT>
-    - they may even be abstract - but both pickles should contain the
-    same type, so that they are compatible. To load the pickles, the
-    following declarations can then be used:
-  </P>
-
-  <PRE>
-	structure X1 = Pickle.Load(val file = file1 signature S = S)
-	structure X2 = Pickle.Load(val file = file2
-				   signature S = S where type t = X1.t)
-  </PRE>
-
-  <P>
-    The latter application enforces, that the second pickle
-    is compatible to the first. If loading succeeds, it is guaranteed
-    that this is in fact the case, otherwise a <TT>Package.Mismatch</TT>
-    exception will occur. Statically, the types <TT>X1.t</TT> and <TT>X2.t</TT>
-    are the same, which allows us two perform something like
-  </P>
-
-  <PRE>
-	val n = X2.f(X1.x)
-  </PRE>
-
-  <P class=note>
-    A current <A href="packages.php3#limitations">implementation limitation</A>
-    in the treatment of runtime types of Alice may lead to
-    unexpected results in connection with sharing, if the signatures passed
-    to the <TT>Save</TT> functor are not specified carefully.
-  </P>
-
-
-<?php section("components", "components") ?>
-
-  <P>
-    Pickles are closely related to <A href="components.php3">components</A>.
-    In fact, a pickle is a special case of a component, and arbitrary
-    components may be loaded as pickles!
-  </P>
-
-  <P>
-    A pickle is an <I>evaluated</I> component (and we will use both terms
-    as synonyms in the following). Such a component only
-    contains the fully evaluated export, it will not be executed during
-    load. This in particularly means that loading it will neither generate
-    any side effects, nor produce new generative entities like types or
-    exceptions.
-    An evaluated component also does not import any other component.
-  </P>
-
-  <P>
+<P>
     A pickle is a component that just contains a module <TT>X</TT>
     which is the one passed to the <TT>Save</TT> functor. If necessary,
     you can thus import a pickle through an import announcement.
@@ -273,7 +145,8 @@
 
   <P>
     Note that execution
-    causes the creation of new generative types. So if a non-pickle
+    causes the creation of new <A href="packages.php3#dynamic">generative
+    types</A>. So if a non-pickle
     component is loaded twice, any generative type contained in
     its export will be incompatible between both instances.
     Similarly for exceptions.
