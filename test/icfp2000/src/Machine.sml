@@ -85,44 +85,42 @@ struct
   (* Surface wrappers *)
 
     fun p1half x = (x + 1.0)/2.0
+    fun clamped surface (i,u,v) = surface(i, clamp u, clamp v)
 
     fun mkPlane surface =
 	Renderer.Plane
-	    (fn Renderer.PlaneSurface => fn(u,v,_) =>
-(print("[plane surface] u=" ^ Real.toString u ^ ", v=" ^ Real.toString v ^ "\n")
-	     surface(0,u,v))
-)
+	    (fn Renderer.PlaneSurface => fn(u,_,v) => surface(0,u,v))
 
     fun mkSphere surface =	(*UNFINISHED*)
 	Renderer.Sphere
-	    (fn Renderer.SphereSurface => fn(x,y,z) => surface(0,x,x))
+	    (fn Renderer.SphereSurface => fn(x,y,z) => clamped surface (0,x,x))
 
     fun mkCube surface =
 	Renderer.Cube
-	    (fn Renderer.CubeFront  => (fn(u,v,_) => surface(0,u,v))
-	      | Renderer.CubeBack   => (fn(u,v,_) => surface(1,u,v))
-	      | Renderer.CubeLeft   => (fn(_,v,u) => surface(2,u,v))
-	      | Renderer.CubeRight  => (fn(_,v,u) => surface(3,u,v))
-	      | Renderer.CubeTop    => (fn(u,_,v) => surface(4,u,v))
-	      | Renderer.CubeBottom => (fn(u,_,v) => surface(5,u,v))
+	    (fn Renderer.CubeFront  => (fn(u,v,_) => clamped surface (0,u,v))
+	      | Renderer.CubeBack   => (fn(u,v,_) => clamped surface (1,u,v))
+	      | Renderer.CubeLeft   => (fn(_,v,u) => clamped surface (2,u,v))
+	      | Renderer.CubeRight  => (fn(_,v,u) => clamped surface (3,u,v))
+	      | Renderer.CubeTop    => (fn(u,_,v) => clamped surface (4,u,v))
+	      | Renderer.CubeBottom => (fn(u,_,v) => clamped surface (5,u,v))
 	    )
 
     fun mkCylinder surface =
 	Renderer.Cylinder
 	    (fn Renderer.CylinderSide =>
-		    (fn(x,y,z) => surface(0,x,x)) (*UNFINISHED*)
+		    (fn(x,y,z) => clamped surface (0,x,x)) (*UNFINISHED*)
 	      | Renderer.CylinderTop =>
-		    (fn(x,_,z) => surface(1, p1half x, p1half z))
+		    (fn(x,_,z) => clamped surface (1, p1half x, p1half z))
 	      | Renderer.CylinderBottom =>
-		    (fn(x,_,z) => surface(2, p1half x, p1half z))
+		    (fn(x,_,z) => clamped surface (2, p1half x, p1half z))
 	    )
 
     fun mkCone surface =
 	Renderer.Cone
 	    (fn Renderer.ConeSide =>
-		    (fn(x,y,z) => surface(0,x,x)) (*UNFINISHED*)
+		    (fn(x,y,z) => clamped surface (0,x,x)) (*UNFINISHED*)
 	      | Renderer.ConeBase =>
-		    (fn(x,_,z) => surface(1, p1half x, p1half z))
+		    (fn(x,_,z) => clamped surface (1, p1half x, p1half z))
 	    )
 
 
@@ -299,8 +297,7 @@ struct
 		    in fn _ => result end
 		| _ =>
 		    fn(i,u,v) =>
-			case eval(env, [RealV(clamp v), RealV(clamp u), IntV i],
-				  code)
+			case eval(env, [RealV v, RealV u, IntV i], code)
 			of [RealV n, RealV ks, RealV kd, PointV rgb] =>
 				{ color    = Color.color rgb
 				, diffuse  = kd
