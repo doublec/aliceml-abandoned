@@ -52,7 +52,7 @@ define
       [] 'LastIdRef'(Id) then 'LastIdRef'({TrId Id})
       [] 'Lit'(_) then IdRef
       [] 'Prim'(String) then 'Prim'({VirtualString.toAtom String})
-      [] 'Value'(_) then IdRef
+      [] 'Value'(_ _) then IdRef
       end
    end
 
