@@ -27,8 +27,6 @@ import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import signature SIMPLIFY_MATCH       from "SIMPLIFY_MATCH-sig"
 
-import "../../lib/system/TextIO"
-
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
 	structure I = IntermediateGrammar
@@ -778,24 +776,28 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    let
 		val trueMap' = testMapInsert (trueMap, pos, test)
 		val falseMap' = testMapInsert (falseMap, pos, test)
+		val canTakeThen = consistent (trueMap', falseMap, pos)
+		val canTakeElse = consistent (trueMap, falseMap', pos)
 	    in
-print(posToString pos ^": "^testToString test^"\n");
-		if consistent (trueMap, falseMap', pos) then
-		    check (trueMap, falseMap', conts, elseGraph)
-		else if consistent (trueMap', falseMap, pos) then
-		    check (trueMap', falseMap, elseGraph::conts, thenGraph)
-		else
-		    raise Inconsistent (trueMap', falseMap)
+		case (canTakeThen, canTakeElse) of
+		    (false, false) =>
+			raise Inconsistent (trueMap', falseMap)
+		  | (true, false) =>
+			check (trueMap', falseMap, elseGraph::conts, thenGraph)
+		  | (false, true) =>
+			check (trueMap, falseMap', conts, elseGraph)
+		  | (true, true) =>
+			(check (trueMap, falseMap', conts, elseGraph);
+			 check (trueMap', falseMap, nil, thenGraph))
 	    end
 	  | check (trueMap, falseMap, conts, Leaf (_, _)) = ()
-	  | check (trueMap, falseMap, conts, Fail) =
-	    (case conts of
-		 nil => raise Crash.Crash "SimplifyMatch.checkExhaustiveness 1"
-	       | graph::conts' => check (trueMap, falseMap, conts', graph))
+	  | check (trueMap, falseMap, nil, Fail) = ()	(* pruned *)
+	  | check (trueMap, falseMap, graph::conts, Fail) =
+		check (trueMap, falseMap, conts, graph)
 	  | check (trueMap, falseMap, conts, Default) =
 		raise NonExhaustive (trueMap, falseMap)
 	  | check (trueMap, falseMap, conts, Unreachable _) =
-	    raise Crash.Crash "SimplifyMatch.checkExhaustiveness 2"
+		raise Crash.Crash "SimplifyMatch.checkExhaustiveness"
 
 	fun checkExhaustiveness graph =
 	    check (PosMap.empty, PosMap.empty, nil, graph)
@@ -836,24 +838,12 @@ print(posToString pos ^": "^testToString test^"\n");
 				    checkExhaustiveness graph
 			    handle Inconsistent (trueMap, falseMap) =>
 				   Error.warn' (region, "match is inconsistent")
-before
-(
-print("inconsistent:\n"^graphToString (graph, 0) ^ "\nT[" ^ testMapToString trueMap ^
-				"]\nF[" ^ testMapToString falseMap ^ "]\n")
-;ignore (TextIO.inputLine TextIO.stdIn))
 			         | NonExhaustive (trueMap, falseMap) =>
 				   Error.warn' (region,
 						"match is not exhaustive, \
 						\because e.g.\n    " ^
 						sample (nil, trueMap, falseMap)
 						^ "\nis not covered")
-(*
-before
-(
-print("nonexhaustive:\n"^graphToString (graph, 0) ^ "\nT[" ^ testMapToString trueMap ^
-				"]\nF[" ^ testMapToString falseMap ^ "]\n")
-;ignore (TextIO.inputLine TextIO.stdIn))
-*)
 			    val _ = propagateFails (graph, defaultGraph,
 						    defaultGraph)
 			    val graph' = optimizeGraph graph
