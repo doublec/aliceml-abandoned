@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#ifndef __ALICE__JITTER_GENERIC_DATA_HH__
-#define __ALICE__JITTER_GENERIC_DATA_HH__
+#ifndef __GENERIC__JITTER_GENERIC_DATA_HH__
+#define __GENERIC__JITTER_GENERIC_DATA_HH__
 
 #if defined(INTERFACE)
-#pragma interface "alice/JitterGenericData.hh"
+#pragma interface "generic/JitterGenericData.hh"
 #endif
 
 #include "store/JITStore.hh"
