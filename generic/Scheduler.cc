@@ -38,6 +38,9 @@ Thread *Scheduler::currentThread;
 TaskStack *Scheduler::currentTaskStack;
 word *Scheduler::stackTop;
 word *Scheduler::stackMax;
+#if PROFILE
+double Scheduler::gcTime;
+#endif
 
 u_int Scheduler::nArgs;
 word Scheduler::currentArgs[Scheduler::maxArgs];
@@ -48,6 +51,9 @@ void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
   root = Store::IntToWord(0);
   RootSet::Add(root);
+#if PROFILE
+  gcTime = 0.0;
+#endif
 }
 
 inline void Scheduler::SwitchToThread() {
@@ -206,11 +212,18 @@ int Scheduler::Run() {
 	}
       }
       if (Store::NeedGC()) {
+#if PROFILE
+	double beforeGC = Profiler::SampleTime();
+#endif
 	threadQueue->Purge();
 	IOHandler::Purge();
 	root = threadQueue->ToWord();
 	RootSet::DoGarbageCollection();
 	threadQueue = ThreadQueue::FromWordDirect(root);
+#if PROFILE
+	double afterGC = Profiler::SampleTime();
+	gcTime += (afterGC - beforeGC);
+#endif
       }
       IOHandler::Poll();
       if (SignalHandler::GetSignalStatus())

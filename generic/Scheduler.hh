@@ -47,6 +47,9 @@ public:
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or exception
   static Backtrace *currentBacktrace; // Backtrace
+#if PROFILE
+  static double gcTime;
+#endif
   // Scheduler Static Constructor
   static void Init();
 
