@@ -21,6 +21,16 @@
 
 #include "generic/Interpreter.hh"
 
+class PrimitiveArity : public Interpreter {
+protected:
+  u_int arity;
+public:
+  PrimitiveArity(u_int _arity) : arity(_arity) {}
+  u_int GetArity() {
+    return arity;
+  }
+};
+
 class Primitive {
 public:
   typedef Interpreter::Result (*function)();
@@ -32,6 +42,7 @@ public:
 
   // Push a new primitive frame and call primitive directly
   static Interpreter::Result Execute(Interpreter *interpreter);
+  static Interpreter::Result ExecuteNoCCC(Interpreter *interpreter);
 };
 
 #endif

@@ -48,19 +48,22 @@ public:
 };
 
 // PrimitiveInterpreter: An interpreter that runs primitives
-class PrimitiveInterpreter: public Interpreter {
+class PrimitiveInterpreter: public PrimitiveArity {
 private:
   const char *name;
   Primitive::function function;
   word frame;
-  u_int arity;
   bool sited;
 public:
   PrimitiveInterpreter(const char *_name, Primitive::function _function,
-		       u_int _arity, bool _sited):
-    name(_name), function(_function), arity(_arity), sited(_sited) {
+		       u_int _arity, bool _sited): PrimitiveArity(_arity),
+    name(_name), function(_function), sited(_sited) {
+    primitive = true;
     frame = PrimitiveFrame::New(this)->ToWord();
     RootSet::Add(frame);
+  }
+  Primitive::function GetFunction() {
+    return function;
   }
   static Interpreter::Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
@@ -165,4 +168,12 @@ Interpreter::Result Primitive::Execute(Interpreter *interpreter) {
     static_cast<PrimitiveInterpreter *>(interpreter);
   Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
   return PrimitiveInterpreter::Run(primitive);
+}
+
+Interpreter::Result Primitive::ExecuteNoCCC(Interpreter *interpreter) {
+  PrimitiveInterpreter *primitive =
+    static_cast<PrimitiveInterpreter *>(interpreter);
+  Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
+  Primitive::function function = primitive->GetFunction();
+  return function();
 }
