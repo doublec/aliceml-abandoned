@@ -17,6 +17,12 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
+ifdef LIGHTNING
+EXTRA_SRCS = NativeConcreteCode.cc NativeCodeInterpreter.cc NativeCodeJitter.cc
+else
+EXTRA_SRCS =
+endif
+
 PRIMITIVE_MODULES = \
 	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
 	List Math Option Real Ref String Thread UniqueString Unsafe Vector Word
@@ -32,7 +38,8 @@ SOURCES = \
 	$(LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
 	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
 	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
-	AliceLanguageLayer.cc
+	AliceLanguageLayer.cc \
+	$(EXTRA_SRCS)
 
 OBJS = $(SOURCES:%.cc=%.o)
 
