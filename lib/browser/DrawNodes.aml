@@ -54,7 +54,7 @@ struct
 				    !Settings.fontname)
 		 ;getStatus(node) := Types.CLEAN
 		 ;f(node,x,y)
-		 ;(x+String.length(getRep(node)),y))
+		 ;(x+String.size(getRep(node)),y))
 	    end
 
     (* drawLimit *)
@@ -155,7 +155,7 @@ struct
 			  val (x2,y2) = draw (content,
 					      new_x,0,f)
 		      in
-			  (x + String.length(#rep(r)) +   
+			  (x + String.size(#rep(r)) +   
 			   Layout.get_xdim(content),
 			   y + Layout.get_ydim(n)-1)
 		      end )

@@ -152,7 +152,7 @@ struct
 		    then let val xdim = if isSimple (!(#content(r)))
 			                orelse !(#counter(r)) = 1 
 					    then f (!(#content(r))) 
-					else String.length(#rep(r)) + 
+					else String.size(#rep(r)) + 
 					     f (!(#content(r)))
 			     val ydim =  g (!(#content(r)))
 			 in (#width(r) := xdim  
