@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Name		from "Name"
 import structure Label		from "Label"
 import structure Path		from "Path"
 import structure Fixity		from "Fixity"
@@ -21,7 +20,6 @@ import structure PervasiveType	from "PervasiveType"
 
 structure RTT =
 struct
-    structure Name          = Name
     structure Label         = Label
     structure Path          = Path
     structure Fixity        = Fixity
