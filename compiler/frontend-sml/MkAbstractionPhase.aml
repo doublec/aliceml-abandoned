@@ -240,6 +240,16 @@ struct
 	    ) dec varids
 
 
+    fun renameVarids E =
+	List.map (fn(O.Id(i, _, name)) =>
+		  let
+		      val stamp' = Stamp.new()
+		  in
+		      insertVar(E, TyVar.fromString(Name.toString name),
+				   (i, stamp'));
+		      O.Id(i, stamp', name)
+		  end)
+
     fun lookupIdStatus(E, vid') =
 	case lookupVal(E, vid')
 	  of NONE             => V
@@ -1992,8 +2002,7 @@ struct
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
 		val  i_typid      = O.infoId typid'
-		val  contyp'      = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
-		val  typ'         = apptyp(List.map varToTyp varids', contyp')
+		val  typ'         = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
 		val (flds',decs') = trConBindo (E,E'',varids',typ')
 					       (SOME conbind)
 		val  _            = deleteScope E
@@ -2039,8 +2048,14 @@ struct
 		val (typ11',k)       = trTyo E tyo
 		val  vallab'         = idToLab valid2'
 		val  field'          = O.Field(i, vallab', typ11')
+		(* elaborate type again with fresh varids *)
+		val  _               = insertScope E
+		val  varids1'        = renameVarids E varids'
+		val (typ11',k)       = trTyo E tyo
+		val  typ12'          = apptyp(List.map varToTyp varids1', typ')
 		val  typ1'           = conarrowtyp E (O.infoTyp typ',
-						      typ11', typ', k)
+						      typ11', typ12', k)
+		val  _               = deleteScope E
 		val  exp1'           = O.LabExp(i, vallab', typ1')
 		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
 		val  exp2'           =
@@ -2062,8 +2077,7 @@ struct
 		; insertDisjointVal(E', vid',  (i', stamp2, T k))
 		) handle CollisionVal _ => error(i', E.ConBindDuplicate vid');
 		trConBindo' (E,E',varids',typ', field'::acc1,
-			     dec2' :: vardec(varids', dec1') :: acc2) conbindo
-	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
+			     dec2' :: vardec(varids1', dec1') :: acc2) conbindo
 	   end
 
     and trDconBindo' (E,E',acc) =
@@ -2666,8 +2680,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
 		val  i_typid       = O.infoId typid'
-		val  contyp'       = O.ConTyp(i_typid,O.ShortId(i_typid,typid'))
-		val  typ'          = apptyp(List.map varToTyp varids', contyp')
+		val  typ'          = O.ConTyp(i_typid,O.ShortId(i_typid,typid'))
 		val (flds',specs') = trConDesco (E,E',varids',typ')
 						(SOME condesc)
 		val  _             = deleteScope E
@@ -2710,25 +2723,33 @@ struct
 	   let
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
-		val (typ11',k)       = trTyo E tyo
 		val  vallab'         = idToLab valid2'
+		val (typ11',k)       = trTyo E tyo
 		val  field'          = O.Field(i, vallab', typ11')
-		val  typ1'           = alltyp(varids',
-					      conarrowtyp E
-						(O.infoTyp typ', typ11',typ',k))
+		(* elaborate type again with fresh varids *)
+		val  _               = insertScope E
+		val  varids1'        = renameVarids E varids'
+		val (typ11',k)       = trTyo E tyo
+		val  typ12'          = apptyp(List.map varToTyp varids1', typ')
+		val  typ1'           = alltyp(varids1',
+					      conarrowtyp E (O.infoTyp typ',
+							     typ11', typ12', k))
 		val  spec1'          = O.ValSpec(i, valid1', typ1')
-		val  typ2'           = alltyp(varids',
+		val  varids2'        = renameVarids E varids'
+		val (typ11',k)       = trTyo E tyo
+		val  typ12'          = apptyp(List.map varToTyp varids2', typ')
+		val  typ2'           = alltyp(varids2',
 					      if k = 0 then typ' else
 					      O.ArrTyp(O.infoTyp typ',
-						       typ11', typ'))
+						       typ11', typ12'))
 		val  spec2'          = O.ValSpec(i, valid2', typ2')
+		val  _               = deleteScope E
 	   in
 		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E', vid',  (i', stamp2, T k))
 		) handle CollisionVal _ => error(i', E.ConDescDuplicate vid');
 		trConDesco' (E,E',varids',typ', field'::acc1,
 			     spec2'::spec1'::acc2) condesco
-	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
@@ -2750,6 +2771,12 @@ struct
 					      conarrowtyp E (O.infoTyp typ12',
 							     typ11', typ12',k))
 		val  spec1'          = O.ValSpec(i, valid1', typ1')
+		(* elaborate type again with fresh varids *)
+		val  _               = insertScope E
+		val (varids',typ12') = trTyVarSeqLongTyCon E
+						(tyvarseq, longtycon)
+		val (typ11',k)       = trTyo E tyo
+		val  _               = deleteScope E
 		val  typ2'           = alltyp(varids',
 					      if k = 0 then typ12' else
 					      O.ArrTyp(O.infoTyp typ12',
@@ -2760,7 +2787,6 @@ struct
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
 		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
-	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 	 | SOME(EQUALDconDesc(_, _, vid as VId(i',vid'), _, longvid,
@@ -2785,7 +2811,6 @@ struct
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.SpecVIdDuplicate vid');
 		trDconDesco' (E, spec2'::spec1'::acc) dcondesco
-	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
@@ -3142,8 +3167,7 @@ struct
 		val  _            = insertScope E
 		val  varids'      = trTyVarSeq E tyvarseq
 		val  i_typid      = O.infoId typid'
-		val  contyp'      = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
-		val  typ'         = apptyp(List.map varToTyp varids', contyp')
+		val  typ'         = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
 		val (flds',imps') = trConItemo (E,E'',varids',typ')
 					       (SOME conitem)
 		val  _            = deleteScope E
@@ -3174,18 +3198,27 @@ struct
 	   let
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
-		val (typ11',k)       = trTyo E tyo
 		val  vallab'         = idToLab valid2'
+		val (typ11',k)       = trTyo E tyo
 		val  field'          = O.Field(i, vallab', typ11')
-		val  typ1'           = alltyp(varids',
-					      conarrowtyp E
-						(O.infoTyp typ', typ11',typ',k))
+		(* elaborate type again with fresh varids *)
+		val  _               = insertScope E
+		val  varids1'        = renameVarids E varids'
+		val (typ11',k)       = trTyo E tyo
+		val  typ12'          = apptyp(List.map varToTyp varids1', typ')
+		val  typ1'           = alltyp(varids1',
+					      conarrowtyp E (O.infoTyp typ',
+							     typ11', typ12', k))
 		val  imp1'           = O.ValImp(i, valid1', O.SomeDesc(i,typ1'))
-		val  typ2'           = alltyp(varids',
+		val  varids2'        = renameVarids E varids'
+		val (typ11',k)       = trTyo E tyo
+		val  typ12'          = apptyp(List.map varToTyp varids2', typ')
+		val  typ2'           = alltyp(varids2',
 					      if k = 0 then typ' else
 					      O.ArrTyp(O.infoTyp typ',
-						       typ11', typ'))
+						       typ11', typ12'))
 		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
+		val  _               = deleteScope E
 	   in
 		case lookupVal(E', vid')
 		  of SOME(_,_,T _) => ()
@@ -3196,7 +3229,6 @@ struct
 		) handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
 		trConItemo' (E,E',varids',typ', field'::acc1,
 			     imp2'::imp1'::acc2) conitemo
-	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 
