@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure Test from "Test"
+
+signature REPORT =
+sig
+	val report: TextIO.outstream -> Test.result -> unit
+
+	val run: TextIO.outstream -> Test.config -> Test.test_suite -> unit
+	val runAll: TextIO.outstream -> Test.config -> Test.test_suite list -> unit
+end

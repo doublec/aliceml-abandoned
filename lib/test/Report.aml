@@ -1,0 +1,39 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import structure Test from "Test"
+import signature REPORT from "REPORT-sig"
+
+structure Report :> REPORT =
+struct
+    open Test
+    
+    fun fmtFail out (_, FAIL_ASSERT (str, line, col)) = 
+	TextIO.output (out, str ^ "[" ^ Int.toString line ^ ":" ^ 
+			    Int.toString col ^ "]: assert failed\n")
+      | fmtFail out (_, FAIL_EXN name) =
+	TextIO.output (out, "exception " ^ exnName name ^ " raised\n")
+      | fmtFail out (_, FAIL_TIMEOUT) =
+	TextIO.output (out, "timeout expired\n")
+
+    fun report out { name, passed, failed, failures } =
+        if failed = 0 then 
+	    TextIO.output (out, name ^ ": all testcases succeded.\n")
+        else
+	    (TextIO.output (out, name ^ ": " ^ Int.toString failed ^ " of " ^ 
+			    Int.toString (passed+failed) ^ " testcases failed.\n");
+	    List.app (fmtFail out) failures)
+
+    fun run out cfg = report out o (Test.run cfg)
+    
+    fun runAll out cfg = List.app (run out cfg) 
+end
+

@@ -1,0 +1,81 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+import signature TEST from "TEST-sig"
+import structure MkSeparate from "MkSeparate"
+
+structure Test :> TEST =
+struct
+    type test_case = unit -> unit
+
+    type test_suite = string * test_case list
+    
+    datatype failure = 
+        FAIL_EXN of exn 		(* Exception raised *)
+    |	FAIL_ASSERT of string * int * int				 
+    |	FAIL_TIMEOUT 
+
+    type result = {
+	    name: string,
+	    passed: int,
+	    failed: int,
+	    failures: (test_case * failure) list
+    }
+
+    type config = {
+	    timeout: Time.time,
+	    separate: bool
+    }
+    
+    val defaultConfig = { timeout = Time.fromSeconds 60, separate = false }
+
+    exception Assert of string * int * int
+
+    fun executeTC (cfg:config) f = 
+	    (case Future.awaitEither (f (), Future.alarm (#timeout cfg)) of
+		FST () => NONE
+	    |	SND () => SOME (FAIL_TIMEOUT)
+	    ) handle Assert t	=> SOME (FAIL_ASSERT t)
+		    |	e	=> SOME (FAIL_EXN e)
+
+    fun executeSepTC (cfg:config) tc = 
+	let
+	    structure Sep = MkSeparate (val host = "localhost" 
+					type arg = test_case
+					type res = failure option
+					val f 	 = executeTC cfg)
+	in
+	    Sep.execute tc
+	end
+		    
+    fun combine (executeTC: test_case -> failure option) (tc, res:result) =
+        case executeTC tc of
+            NONE	=>  { res where passed = #passed res + 1 } 
+        |   SOME f	=>  { res where failed = #failed res + 1, failures=  (tc, f) :: #failures res }
+    
+    fun run cfg (name, testcases) = 
+        let val res = List.foldl (combine (if #separate cfg then executeSepTC cfg else executeTC cfg))
+					    { name = name, passed = 0, failed = 0, failures = [] } testcases
+	in
+	    { res where failures = List.rev (#failures res) }
+	end
+
+    (********************** Basic asserts **********************)
+
+    fun assert expr = if expr then () else raise Assert ("", 0, 0)
+
+    fun assertExnWith exnp f = if (f (); false) handle e => exnp e then () else raise Assert ("", 0, 0) 
+
+    fun assertExn eWanted = assertExnWith (fn e => e = eWanted) 
+
+end
+
+
