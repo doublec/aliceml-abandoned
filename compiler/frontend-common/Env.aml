@@ -31,11 +31,11 @@ structure Env :> ENV =
 
     (* Conversions *)
 
-    fun asVal(VAL x) = x | asVal _ = raise Crash.crash "Env.asVal: inconsistent"
-    fun asTyp(TYP x) = x | asTyp _ = raise Crash.crash "Env.asTyp: inconsistent"
-    fun asVar(VAR x) = x | asVar _ = raise Crash.crash "Env.asVar: inconsistent"
-    fun asMod(MOD x) = x | asMod _ = raise Crash.crash "Env.asMod: inconsistent"
-    fun asInf(INF x) = x | asInf _ = raise Crash.crash "Env.asInf: inconsistent"
+    fun asVal(VAL x) = x | asVal _ = raise Crash.Crash "Env.asVal: inconsistent"
+    fun asTyp(TYP x) = x | asTyp _ = raise Crash.Crash "Env.asTyp: inconsistent"
+    fun asVar(VAR x) = x | asVar _ = raise Crash.Crash "Env.asVar: inconsistent"
+    fun asMod(MOD x) = x | asMod _ = raise Crash.Crash "Env.asMod: inconsistent"
+    fun asInf(INF x) = x | asInf _ = raise Crash.Crash "Env.asInf: inconsistent"
 
     fun appVal f (x, VAL y) = f(x,y) | appVal f _ = ()
     fun appTyp f (x, TYP y) = f(x,y) | appTyp f _ = ()

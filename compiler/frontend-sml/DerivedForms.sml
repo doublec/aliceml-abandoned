@@ -22,6 +22,26 @@
  *	==>
  *	include longsigid_1 ; ... ; include longsigid_n
  *   - derived forms for primitive declarations similar to specifications:
+ *   - where constraints have been made a derived form of intersection:
+ *	sigexp where type tyvarseq strid_1....strid_n.tycon = ty
+ *	==>
+ *      sigexp where sig structure strid_1 :
+ *			...
+ *			   sig structure strid_n :
+ *			      sig type tyvarseq tycon = ty end
+ *			   end
+ *			...
+ *		     end
+ *
+ *	sigexp where strid_1....strid_n.strid = longstrid
+ *	==>
+ *      sigexp where sig structure strid_1 :
+ *			...
+ *			   sig structure strid_n :
+ *			      sig structure strid = longstrid end
+ *			   end
+ *			...
+ *		     end
  *
  * We did NOT introduce a sharing signature ... and signature ... derived form
  * similar to types, because we consider that one completely broken.
@@ -50,6 +70,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     structure Grammar = InputGrammar
     structure G       = Grammar
+    structure E       = ParsingError
 
     type Info      = Grammar.Info
 
@@ -144,7 +165,7 @@ structure DerivedForms :> DERIVED_FORMS =
     fun equalTyVar(G.TyVar(_,tyvar1), G.TyVar(_,tyvar2)) = tyvar1 = tyvar2
 
     fun lookupTyCon(tycon, G.NEWTypBind(i, tyvarseq, tycon', typbind_opt)) =
-	    Error.error(i, "invalid type binding inside withtype")
+	    E.error(i, E.WithtypeInvalid)
 
       | lookupTyCon(tycon, G.EQUALTypBind(_,tyvarseq,tycon', ty, typbind_opt)) =
 	    if equalTyCon(tycon, tycon') then
@@ -164,7 +185,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	      | loop([], _) =
 		    ty
 	      | loop(_, []) =
-		    Error.error(i, "type sequence has wrong arity")
+		    E.error(i, E.WithtypeArityMismatch)
 	in
 	    loop(tyvars, tys)
 	end

@@ -12,13 +12,13 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun idToField(x' as O.Id(i,_,O.ExId s)) =
 	    O.Field(i, O.Lab(i,s), O.VarExp(i, O.ShortId(i, x')))
 
-      | idToField _ = Crash.crash "TranslationPhase.idToField: internal id"
+      | idToField _ = raise Crash.Crash"TranslationPhase.idToField: internal id"
 
     fun idToDec(x' as O.Id(i, z, O.ExId s), y) =
 	    O.ValDec(i, O.VarPat(i, O.Id(i, z, O.ExId s)),
 			O.AppExp(i, O.SelExp(i, O.Lab(i,s)), O.VarExp(i,y)))
 
-      | idToDec _ = Crash.crash "TranslationPhase.idToDec: internal id"
+      | idToDec _ = raise Crash.Crash "TranslationPhase.idToDec: internal id"
 
 
     (* Curry-convert expressions *)
@@ -307,7 +307,8 @@ UNFINISHED: obsolete after bootstrapping:
       | trSpec y (I.VarSpec(i,x,s),ds') = trSpec y (s, ds')
       | trSpec y (I.RecSpec(i,ss), ds')	= trSpecs(ss, y, ds')
       | trSpec y (I.LocalSpec(i,ss),ds')= ds'
-      | trSpec y (I.ExtSpec(i,j),  ds')	= Crash.crash "Translation: ExtSpec"
+      | trSpec y (I.ExtSpec(i,j),  ds')	=
+		raise Crash.Crash "Translation: ExtSpec"
 
     and trCons'(cs, y, ds')		=
 	List.foldr (fn(c as I.Con(i,x,ts), ds') =>

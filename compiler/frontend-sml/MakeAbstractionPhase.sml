@@ -1,52 +1,30 @@
-(*
- * To do:
- * - where
- * - sharing
- * - represent fixity declarations in abstract grammar for signature matching
- *)
-
 structure AbstractionPhase :> ABSTRACTION_PHASE =
   struct
 
     structure I   = InputGrammar
     structure O   = AbstractGrammar
+    structure E   = AbstractionError
     structure Env = BindEnv
 
     open I
     open Env
 
 
-    (* Error handling *)
+  (* Error handling *)
 
-    val error = Error.error
-    val warn  = Error.warn
+    val error = E.error
+    val warn  = E.warn
 
-    fun errorLab  (s1, Lab  (i,x), s2)	= error(i, s1 ^   Lab.toString x ^ s2)
-    fun errorVId  (s1, VId  (i,x), s2)	= error(i, s1 ^   VId.toString x ^ s2)
-    fun errorTyCon(s1, TyCon(i,x), s2)	= error(i, s1 ^ TyCon.toString x ^ s2)
-    fun errorTyVar(s1, TyVar(i,x), s2)	= error(i, s1 ^ TyVar.toString x ^ s2)
-    fun errorStrId(s1, StrId(i,x), s2)	= error(i, s1 ^ StrId.toString x ^ s2)
-    fun errorSigId(s1, SigId(i,x), s2)	= error(i, s1 ^ SigId.toString x ^ s2)
-    fun errorFunId(s1, FunId(i,x), s2)	= error(i, s1 ^ FunId.toString x ^ s2)
-
-    fun errorVId'(s1, E, vid', s2) =
-	errorVId(s1, VId((#1 o Option.valOf o lookupVal)(E, vid'), vid'), s2)
-
-    fun warnLab  (s1, Lab  (i,x), s2)	= warn(i, s1 ^   Lab.toString x ^ s2)
-    fun warnVId  (s1, VId  (i,x), s2)	= warn(i, s1 ^   VId.toString x ^ s2)
-    fun warnTyCon(s1, TyCon(i,x), s2)	= warn(i, s1 ^ TyCon.toString x ^ s2)
-    fun warnTyVar(s1, TyVar(i,x), s2)	= warn(i, s1 ^ TyVar.toString x ^ s2)
-    fun warnStrId(s1, StrId(i,x), s2)	= warn(i, s1 ^ StrId.toString x ^ s2)
-    fun warnSigId(s1, SigId(i,x), s2)	= warn(i, s1 ^ SigId.toString x ^ s2)
-    fun warnFunId(s1, FunId(i,x), s2)	= warn(i, s1 ^ FunId.toString x ^ s2)
+    fun errorVId(E, vid', Error) =
+	error((#1 o Option.valOf o lookupVal)(E, vid'), Error vid')
 
 
-    (* Miscellanous helpers *)
+  (* Miscellanous helpers *)
 
     fun prebound E =
 	case lookupStr(E, StrId.fromString "")
 	  of SOME x => x
-	   | NONE   => Crash.crash "AbstractionPhase: prebounds not found"
+	   | NONE   => raise Crash.Crash "AbstractionPhase: prebounds not found"
 
     fun stamp_prebound E = #2 (prebound E)
     fun Env_prebound   E = #3 (prebound E)
@@ -54,7 +32,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun inventId i = O.Id(i, Stamp.new(), O.InId)
 
     fun idToLab(O.Id(i, stamp, O.ExId s)) = O.Lab(i, s)
-      | idToLab _ = raise Fail "idToLab: InId encountered"
+      | idToLab _ = raise Crash.Crash "idToLab: InId encountered"
 
     fun longidToMod(O.ShortId(i, id))         = O.VarMod(i, id)
       | longidToMod(O.LongId(i, longid, lab)) =
@@ -100,7 +78,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Constants and identifiers *)
+  (* Constants and identifiers *)
 
     fun toFunName s   = "$" ^ s
     fun fromFunName s = String.extract(s,1,NONE)
@@ -119,58 +97,58 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val (_,stamp) =
 		case lookupVar(E, tyvar')
 		  of SOME xx => xx
-		   | NONE    => errorTyVar("unbound type variable ", tyvar, "")
+		   | NONE    => error(i, E.TyVarUnbound tyvar')
 	in
 	    O.Id(i, stamp, O.ExId(TyVar.toString tyvar'))
 	end
 
-    fun trId (lookup,infoId,idId,toString,error,class) E id =
+    fun trId (lookup,infoId,idId,toString,Unbound) E id =
 	let
+	    val i   = infoId id
 	    val id' = idId id
-	    val (_,stamp,x) =
-		case lookup(E, id')
-		  of SOME xx => xx
-		   | NONE    => error("unknown " ^ class ^ " ", id, "")
+	    val (_,stamp,x) = case lookup(E, id')
+				of SOME xx => xx
+				 | NONE    => error(i, Unbound id')
 	in
-	    ( O.Id(infoId id, stamp, O.ExId(toString id')), x )
+	    ( O.Id(i, stamp, O.ExId(toString id')), x )
 	end
 
-    val trVId   = trId(lookupVal, infoVId, idVId,
-			VId.toString, errorVId, "value")
+    val trVId   = trId(lookupVal, infoVId, idVId, VId.toString, E.VIdUnbound)
     val trTyCon = trId(lookupTy, infoTyCon, idTyCon,
-			TyCon.toString, errorTyCon, "type")
+			TyCon.toString, E.TyConUnbound)
     val trStrId = trId(lookupStr, infoStrId, idStrId,
-			StrId.toString, errorStrId, "structure")
+			StrId.toString, E.StrIdUnbound)
     val trSigId = trId(lookupSig, infoSigId, idSigId,
-			SigId.toString, errorSigId, "signature")
+			SigId.toString, E.SigIdUnbound)
     val trFunId = trId(lookupFun, infoFunId, idFunId,
-			toFunName o FunId.toString, errorFunId, "functor")
+			toFunName o FunId.toString, E.FunIdUnbound)
 
 
-    fun trId_bind (lookup,infoId,idId,toString,warn,class) E id =
+    fun trId_bind (lookup,infoId,idId,toString,Shadowed) E id =
 	let
+	    val i     = infoId id
 	    val id'   = idId id
 	    val name  = toString id'
 	    val stamp = Stamp.new()
-	    val  _    = if not(Option.isSome(lookup(E, id'))) then () else
-			   warn(class ^ " ", id, " shadows previous one")
+	    val _     = if not(Option.isSome(lookup(E, id'))) then () else
+			   warn(i, Shadowed id')
 	in
-	    ( O.Id(infoId id, stamp, O.ExId name), stamp )
+	    ( O.Id(i, stamp, O.ExId name), stamp )
 	end
 
 
     val trTyVar_bind = trId_bind(lookupVar, infoTyVar, idTyVar, TyVar.toString,
-				 warnTyVar, "type variable")
+				 E.TyVarShadowed)
     val trVId_bind   = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
-				 warnVId, "value")
+				 E.VIdShadowed)
     val trTyCon_bind = trId_bind(lookupTy,  infoTyCon, idTyCon, TyCon.toString,
-				 warnTyCon, "type")
+				 E.TyConShadowed)
     val trStrId_bind = trId_bind(lookupStr, infoStrId, idStrId, StrId.toString,
-				 warnStrId, "structure")
+				 E.StrIdShadowed)
     val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
-				 warnSigId, "signature")
+				 E.SigIdShadowed)
     val trFunId_bind = trId_bind(lookupFun, infoFunId, idFunId,
-				toFunName o FunId.toString, warnFunId,"functor")
+				toFunName o FunId.toString, E.FunIdShadowed)
 
 
     (* With polymorphic recursion we could avoid the following code
@@ -206,7 +184,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',x) = trId E id
 	   in
 		if O.stamp id' = stamp_prebound E then
-		    error(i, "invalid use of pseudo structure")
+		    error(i, E.PreboundFirstClass)
 		else
 		    ( O.ShortId(i,id'), x )
 	   end
@@ -229,7 +207,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Calculate sets of unguarded explicit type variables [Section 4.6] *)
+  (* Calculate sets of unguarded explicit type variables [Section 4.6] *)
 
     fun ? tyvarsX E  NONE    = []
       | ? tyvarsX E (SOME x) = tyvarsX E x
@@ -434,7 +412,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Expressions *)
+  (* Expressions *)
 
     and trAtExp E =
 	fn SCONAtExp(i, scon)		=> O.LitExp(i, trSCon E scon)
@@ -490,7 +468,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val i1'    = Source.over(i', infoExp exp)
 		val field' = O.Field(i1', trLab E lab, trExp E exp)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
-			     errorLab("duplicate label ", lab, " in record")
+				error(i', E.ExpRowLabDuplicate lab')
 		val O.Row(_,fields',_) = trExpRowo E exprowo
 	   in
 		O.Row(i, field'::fields', false)
@@ -544,7 +522,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Matches and patterns *)
+  (* Matches and patterns *)
 
     and trMatcho  E matcho = List.rev(trMatcho' (E,[]) matcho)
     and trMatcho'(E,acc) =
@@ -582,8 +560,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		     * We have to reuse the stamp found there.
 		     *)
 		    val _ = if Option.isSome(lookupScopeVal(E', vid')) then
-			       errorVId("duplicate variable ", vid,
-					" in pattern or binding group")
+			       error(i', E.PatVIdDuplicate vid')
 			    else ()
 		    val (id',stamp) =
 			case lookupVal(E', vid')
@@ -600,8 +577,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   (case trLongVId E longvid
 	      of (longid', C _) => O.ConPat(i, longid', [])
 	       | (longid', R)   => O.RefPat(i, O.JokPat(i)) (* BUG: HACK! *)
-	       | (longid', V)   =>
-		 error(i, "non-constructor long identifier in pattern")
+	       | (longid', V)   => error(i, E.PatLongVIdVar)
 	   )
 	 | RECORDAtPat(i, patrowo) =>
 	   let
@@ -620,8 +596,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val pat'  = trPat (E,E') (List.hd pats)
 		val pats' = trAltPats (E,E') (List.tl pats)
 		val  _    = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E',vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		O.AltPat(i, pat'::pats')
 	   end
@@ -639,7 +614,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val i1'    = Source.over(i', infoPat pat)
 		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
-			     errorLab("duplicate label ", lab, " in record")
+				error(i', E.PatRowLabDuplicate lab')
 		val O.Row(_,fields',dots') = trPatRowo (E,E') patrowo
 	   in
 		O.Row(i, field'::fields', dots')
@@ -661,8 +636,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E', vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		O.GuardPat(i, pat', exp')
 	   end
@@ -676,11 +650,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val decs'= trValBindo (E,E') (SOME valbind)
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("pattern variable ", E', vid',
-					  " rebound inside value binding")
+				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E', vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		O.WithPat(i, pat', decs')
 	   end
@@ -702,11 +674,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _   = deleteScope E
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("pattern variable ", E', vid',
-					  " rebound inside value binding")
+				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E', vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		O.WithPat(i, pat', [O.RecDec(infoFvalBind fvalbind, decs')])
 	   end
@@ -724,8 +694,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		   | O.RefPat(i', O.JokPat _) =>  (* BUG: a real hack! *)
 			O.RefPat(i, pat2')
 
-		   | _ =>
-			error(i, "non-constructor application in pattern")
+		   | _ => error(i, E.AppPatNonCon)
 	   end
 
 	 | ATPATPat(i, atpat) => trAtPat (E,E') atpat
@@ -743,12 +712,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val pat' = trPat (E,E') pat
 	    val E''  = splitScope E'
 	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
-			  error(infoPat pat, "inconsistent pattern alternative")
+			  error(infoPat pat, E.AltPatInconsistent)
 	    val _    = Env.appiScopeVals
 			    (fn(vid,_) =>
 				if Option.isSome(lookupVal(E'',vid)) then ()
-				else error(infoPat pat, "inconsistent pattern\
-							\ alternative")
+				else error(infoPat pat, E.AltPatInconsistent)
 			    ) E'
 	in
 	    pat'
@@ -756,7 +724,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Types *)
+  (* Types *)
 
     and trTy E =
 	fn TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
@@ -800,7 +768,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val i1'    = Source.over(i', infoTy ty)
 		val field' = O.Field(i1', trLab E lab, trTy E ty)
 		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
-			     errorLab("duplicate label ", lab, " in record")
+				error(i', E.TyRowLabDuplicate lab')
 		val O.Row(_,fields',_) = trTyRowo E tyrowo
 	   in
 		O.Row(i, field'::fields', false)
@@ -818,7 +786,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val (id',stamp) = trTyVar_bind E tyvar
 	    val  _          = insertDisjointVar(E, tyvar', (i, stamp))
 			      handle CollisionVar _ =>
-				errorTyVar("duplicate type variable ", tyvar,"")
+				error(i, E.TyVarSeqDuplicate tyvar')
 	in
 	    id'
 	end
@@ -830,7 +798,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trValSeqTyVar E (tyvar as TyVar(i, tyvar')) =
 	if Option.isSome(lookupVar(E, tyvar')) then
-	    errorTyVar("duplicate or shadowing type variable ", tyvar, "")
+	    error(i, E.ValTyVarSeqDuplicate tyvar')
 	else
 	let
 	    val (id',stamp) = trTyVar_bind E tyvar
@@ -869,7 +837,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Declarations *)
+  (* Declarations *)
 
     and trDec  E dec  = List.rev(trDec' (E,[]) dec)
     and trDec'(E,acc) =
@@ -1218,7 +1186,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Value bindings *)
+  (* Value bindings *)
 
     and trValBindo (E,E') valbindo = List.rev(trValBindo' (E,E',[]) valbindo)
     and trValBindo'(E,E',acc) =
@@ -1280,7 +1248,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Function bindings *)
+  (* Function bindings *)
 
     and trFvalBindo_lhs (E,E') fvalbindo =
 	    List.rev(trFvalBindo_lhs' (E,E',[]) fvalbindo)
@@ -1302,8 +1270,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _ = trFmatcho_lhs (E,vid) fmatcho
 		val _ = insertDisjointVal(E', vid', (i',stamp,V))
 			handle CollisionVal _ =>
-			       errorVId("duplicate function ", vid,
-					" in binding group")
+			       error(i', E.FnBindDuplicate vid')
 	   in
 		id'
 	   end
@@ -1312,13 +1279,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn NONE => ()
 	 | SOME(Match(i, fmrule, fmatcho)) =>
 	   let
-		val vid2 = trFmrule_lhs E fmrule
+		val vid2 as VId(i',vid2') = trFmrule_lhs E fmrule
 	   in
 		if idVId vid1 = idVId vid2 then
 		    trFmatcho_lhs (E,vid1) fmatcho
 		else
-		    errorVId("inconsistent function name ", vid2,
-			     " in function clause")
+		    error(i', E.FnBindNameInconsistent vid2')
 	   end
 
     and trFmrule_lhs E (Mrule(i, fpat, exp)) =
@@ -1332,7 +1298,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | ( NONPat(i,_)
 	   | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_)
-	   | WITHFUNPat(i,_,_) )	=> error(i, "invalid function pattern")
+	   | WITHFUNPat(i,_,_) )	=> error(i, E.FnBindPatInvalid)
 
     and trFappPat_lhs E =
 	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
@@ -1340,11 +1306,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | fpat				=> trFpat_lhs E fpat
 
     and trFatPat_lhs E =
-	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(_, vid'))) =>
+	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(i', vid'))) =>
 	   (case lookupIdStatus(E, vid')
 	      of  V        => vid
-	       | (R | C _) =>
-		 errorVId("rebinding data constructor ", vid, " as value")
+	       | (R | C _) => error(i', E.FnBindNameCon vid')
 	   )
 
 	 | ALTAtPat(i, fpats) =>
@@ -1353,19 +1318,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val vid as VId(_,vid') = List.hd vids
 	   in
 		case List.find (fn(VId(_,vid'')) => vid'<>vid'') (List.tl vids)
-		  of NONE =>
-			vid
-
-		   | SOME vid2 =>
-			errorVId("inconsistent function name ", vid2,
-				 " in function clause")
+		  of NONE                => vid
+		   | SOME(VId(i',vid2')) =>
+			error(i', E.FnBindNameInconsistent vid2')
 	   end
 
 	 | PARAtPat(i, fpat) =>
 		trFpat_lhs E fpat
 
 	 | atpat =>
-		error(infoAtPat atpat, "no function name in function clause")
+		error(infoAtPat atpat, E.FnBindNameMissing)
 
     and trFpats_lhs E = List.map(trFpat_lhs E)
 
@@ -1414,8 +1376,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (match',arity') = trFmrule_rhs E fmrule
 	   in
 		if arity <> arity' then
-		    error(infoMrule fmrule, "inconsistent number of arguments \
-					    \in function clause")
+		    error(infoMrule fmrule, E.FnBindArityInconsistent)
 		else
 		    trFmatcho_rhs' (E, arity, match'::acc) fmatcho
 	   end
@@ -1451,15 +1412,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E', vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		( O.GuardPat(i, pat', exp'), arity, typs' )
 	   end
 
 	 | ( NONPat(i,_) | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
-		error(i,"invalid function pattern")
+		error(i, E.FnBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
 	fn fpat as APPPat _ =>
@@ -1483,20 +1443,17 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				    ) ([],[],[]) pat'aritytyps's
 		val  _ = mergeDisjointScope E'
 			 handle CollisionVal vid' =>
-				errorVId'("duplicate variable ", E',vid',
-					  " in pattern or binding group")
+				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
 		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
 		  of NONE => ( O.AltPat(i, pat'::pats'), arity, typs' @ typs'' )
 		   | SOME(pat',_,_) =>
-			error(O.infoPat pat', "inconsistent number of \
-					      \arguments in function clause")
+			error(O.infoPat pat', E.FnBindArityInconsistent)
 	   end
 
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
-	 | LONGVIDAtPat(i,_,_)	=> error(i, "no arguments in function clause")
-	 | fatpat		=> error(infoAtPat fatpat,
-					 "invalid function pattern")
+	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FnBindArityZero)
+	 | fatpat		=> error(infoAtPat fatpat, E.FnBindPatInvalid)
 
     and trAltFpats_rhs (E,E') = List.map(trAltFpat_rhs (E,E'))
 
@@ -1506,12 +1463,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val pat'aritytyps' = trFpat_rhs (E,E') fpat
 	    val E''  = splitScope E'
 	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
-			  error(infoPat fpat,"inconsistent pattern alternative")
+			  error(infoPat fpat, E.AltPatInconsistent)
 	    val _    = Env.appiVals
 			    (fn(vid,_) =>
 				if Option.isSome(lookupVal(E'',vid)) then ()
-				else error(infoPat fpat, "inconsistent pattern\
-							 \ alternative")
+				else error(infoPat fpat, E.AltPatInconsistent)
 			    ) E'
 	in
 	    pat'aritytyps'
@@ -1521,22 +1477,22 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAppliedFpat_rhs (E,E') =
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trAppliedFappPat_rhs (E,E') (Infix.pat (infEnv E) fpat)
-	 | fpat => error(infoPat fpat, "invalid function pattern")
+	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
 
     and trAppliedFappPat_rhs (E,E') =
 	fn ATPATPat(i, fatpat)	  => trAppliedFatPat_rhs (E,E') fatpat
 	 | APPPat(i, fpat, atpat) => trAppliedFappPat_rhs (E,E') fpat
 				     @ [trAtPat (E,E') atpat]
-	 | fpat => error(infoPat fpat, "invalid function pattern")
+	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
 
     and trAppliedFatPat_rhs (E,E') =
 	fn LONGVIDAtPat _	=> []
 	 | PARAtPat(i, fpat)	=> trAppliedFpat_rhs (E,E') fpat
-	 | fatpat => error(infoAtPat fatpat, "invalid function pattern")
+	 | fatpat => error(infoAtPat fatpat, E.FnBindPatInvalid)
 
 
 
-    (* Type and constructor bindings *)
+  (* Type and constructor bindings *)
 
     and trTypBindo' (E,E',acc) =
 	fn NONE => acc
@@ -1550,10 +1506,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
 		val dec'        = O.DatDec(i, id', funtyp')
-		val _ = insertDisjointTy(E', tycon', (i', stamp, Env.new()))
-			handle CollisionTy _ =>
-			       errorTyCon("duplicate type construtor ", tycon,
-					  " in binding group")
+		val _           = insertDisjointTy(E', tycon',
+						  (i', stamp, Env.new()))
+				  handle CollisionTy _ =>
+				      error(i', E.TypBindDuplicate tycon')
 	   in
 		trTypBindo' (E,E', dec'::acc) typbindo
 	   end
@@ -1569,10 +1525,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', typ')
 		val dec'        = O.TypDec(i', id', funtyp')
-		val _ = insertDisjointTy(E', tycon', (i', stamp, Env.new()))
-			handle CollisionTy _ =>
-			       errorTyCon("duplicate type construtor ", tycon,
-					  " in binding group")
+		val _           = insertDisjointTy(E', tycon',
+						   (i', stamp, Env.new()))
+				  handle CollisionTy _ =>
+				      error(i', E.TypBindDuplicate tycon')
 	   in
 		trTypBindo' (E,E', dec'::acc) typbindo
 	   end
@@ -1586,10 +1542,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val TyCon(i',tycon') = tycon
 		val (id',stamp)      = trTyCon_bind E tycon
-		val  _  = insertDisjointTy(E', tycon', (i', stamp, Env.new()))
-			  handle CollisionTy _ =>
-				 errorTyCon("duplicate type constructor ",
-					     tycon, " in binding group")
+		val  _               = insertDisjointTy(E', tycon',
+							(i', stamp, Env.new()))
+				       handle CollisionTy _ =>
+					   error(i', E.DatBindDuplicate tycon')
 	   in
 		trDatBindo_lhs (E,E') datbindo
 	   end
@@ -1611,9 +1567,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _         = deleteScope E
 		val funtyp'   = funtyp(ids', O.SumTyp(i', cons'))
 		val dec'      = O.DatDec(i, id', funtyp')
-		val  _        = unionDisjoint(E',E'') handle CollisionVal vid' =>
-				errorVId'("duplicate data constructor ",
-					  E'', vid', " in binding group")
+		val  _        = unionDisjoint(E',E'')
+				handle CollisionVal vid' =>
+				    errorVId(E'', vid', E.DatBindConDuplicate)
 	   in
 		trDatBindo_rhs' (E,E', dec'::acc) datbindo
 	   end
@@ -1645,8 +1601,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  k          = List.length typs'
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					    " in datatype binding")
+				      error(i', E.ConBindDuplicate vid')
 	   in
 		trConBindo' (E,E', con'::acc) conbindo
 	   end
@@ -1668,8 +1623,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  k          = List.length typs'
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					    " in binding group")
+				      error(i', E.DconBindDuplicate vid')
 	   in
 		trDconBindo' (E,E', vardec(ids', dec')::acc) dconbindo
 	   end
@@ -1681,15 +1635,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',stamp)  = trVId_bind E vid
 		val (longid',is) = trLongVId E longvid
 		val  _           = if is <> V then () else
-				      error(i, "non-constructor on constructor \
-					       \binding right hand side")
+				      error(i, E.DconBindNonCon)
 		val  con'        = O.Con(i', id', [])
 		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
 		val  dec'        = O.ConDec(i, con', typ')
 		val  _           = insertDisjointVal(E', vid', (i', stamp, is))
 				   handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					  " in binding group")
+				       error(i', E.DconBindDuplicate vid')
 	   in
 		trDconBindo' (E,E', dec'::acc) dconbindo
 	   end
@@ -1710,7 +1662,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-    (* Structure, signature, and functor bindings *)
+  (* Structure, signature, and functor bindings *)
 
     and trStrBindo' (E,E',acc) =
 	fn NONE => acc
@@ -1723,8 +1675,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  dec'       = O.ModDec(i, id', mod')
 		val  _          = insertDisjointStr(E', strid', (i',stamp,E''))
 				  handle CollisionStr _ =>
-				   errorStrId("duplicate structure name ",strid,
-					      " in binding group")
+				      error(i', E.StrBindDuplicate strid')
 	   in
 		trStrBindo' (E,E', dec'::acc) strbindo
 	   end
@@ -1741,8 +1692,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  dec'       = O.InfDec(i, id', inf')
 		val  _          = insertDisjointSig(E', sigid', (i',stamp,E''))
 				  handle CollisionSig _ =>
-				  errorSigId("duplicate signature name ", sigid,
-					     " in binding group")
+				      error(i', E.SigBindDuplicate sigid')
 	   in
 		trSigBindo' (E,E', dec'::acc) sigbindo
 	   end
@@ -1766,15 +1716,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  dec'         = O.ModDec(i, id1', funmod')
 		val  _            = insertDisjointFun(E',funid', (i1,stamp1,E1))
 				    handle CollisionFun _ =>
-				    errorFunId("duplicate functor name ", funid,
-					       " in binding group")
+				        error(i1, E.FnBindDuplicate funid')
 	   in
 		trFunBindo' (E,E', dec'::acc) funbindo
 	   end
 
 
 
-    (* Structure expressions *)
+  (* Structure expressions *)
 
     and trStrExp E =
 	fn STRUCTStrExp(i, dec) =>
@@ -1830,7 +1779,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    (* Signatures and specifications *)
+  (* Signatures and specifications *)
 
     and trSigExp E =
 	fn ANYSigExp(i) =>
@@ -1897,10 +1846,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  longido'    = case longid'
 				     of O.LongId(_,longid',_) => SOME longid'
 				      | O.ShortId _           => NONE
-		val _ = insertDisjointTy(E, tycon', (i', stamp, E'))
-			handle CollisionTy _ =>
-			errorTyCon("duplicate type constructor ", tycon,
-				   " in signature") ;
+		val  _           = insertDisjointTy(E, tycon', (i', stamp, E'))
+				   handle CollisionTy _ =>
+				       error(i', E.SpecTyConDuplicate tycon')
 	   in
 		foldiVals (trOpenSpecVal (E,i,longido'))
 		 (O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid'))::acc)
@@ -1924,18 +1872,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (inf',E') = trSigExp E sigexp
 		val _ =
 		    unionDisjoint(E,E')
-		    handle CollisionInf vid' =>
-			errorVId("duplicate fixity specification for \
-				 \identifier ", VId(i,vid'), " in signature")
-		     | CollisionVal vid' =>
-			errorVId("duplicate value or constructor ",
-				 VId(i,vid'), " in signature")
-		     | CollisionTy tycon' =>
-			errorTyCon("duplicate type constructor ",
-				   TyCon(i,tycon'), " in signature")
-		     | CollisionStr strid' =>
-			errorStrId("duplicate structure ",
-				   StrId(i,strid'), " in signature")
+		    handle CollisionInf x => error(i, E.SpecFixDuplicate x)
+			 | CollisionVal x => error(i, E.SpecVIdDuplicate x)
+			 | CollisionTy  x => error(i, E.SpecTyConDuplicate x)
+			 | CollisionStr x => error(i, E.SpecStrIdDuplicate x)
+			 | CollisionSig x => error(i, E.SpecSigIdDuplicate x)
+			 | CollisionFun x => error(i, E.SpecFunIdDuplicate x)
 	   in
 		O.ExtSpec(i, inf') :: acc
 	   end
@@ -1946,11 +1888,32 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SEQSpec(i, spec1, spec2) =>
 		trSpec' (E, trSpec' (E,acc) spec1) spec2
 
-	 | ( SHARINGTYPESpec(i, spec, _)
-	   | SHARINGSIGNATURESpec(i, spec, _)
-	   | SHARINGSpec(i, spec, _) ) =>
-		(* UNFINISHED *)
-		trSpec' (E,acc) spec
+	 | SHARINGTYPESpec(i, spec, longtycons) =>
+	   let
+		val specs'   = trSpec E spec
+		val longids' = List.map (#1 o trLongTyCon E) longtycons
+		val rspecs'  = List.rev(Sharing.shareTyp(specs', longids'))
+	   in
+		rspecs' @ acc
+	   end
+
+	 | SHARINGSIGNATURESpec(i, spec, longsigids) =>
+	   let
+		val specs'   = trSpec E spec
+		val longids' = List.map (#1 o trLongSigId E) longsigids
+		val rspecs'  = List.rev(Sharing.shareSig(specs', longids'))
+	   in
+		rspecs' @ acc
+	   end
+
+	 | SHARINGSpec(i, spec, longstrids) =>
+	   let
+		val specs'   = trSpec E spec
+		val longids' = List.map (#1 o trLongStrId E) longstrids
+		val rspecs'  = List.rev(Sharing.shareStr(specs', longids'))
+	   in
+		rspecs' @ acc
+	   end
 
 	 | PREBOUNDSpec(i, strid as StrId(i',strid')) =>
 	   let
@@ -1975,25 +1938,19 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | INFIXSpec(i, n, vid as VId(i',vid')) =>
 		(insertDisjointInf(E, vid', (i', SOME(Infix.LEFT, n)))
-		 handle CollisionInf vid' =>
-			errorVId("duplicate fixity specification for \
-				 \identifier ", vid, " in signature")
+		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
 		; acc
 		)
 
 	 | INFIXRSpec(i, n, vid as VId(i',vid')) =>
 		(insertDisjointInf(E, vid', (i', SOME(Infix.RIGHT, n)))
-		 handle CollisionInf vid' =>
-			errorVId("duplicate fixity specification for \
-				 \identifier ", vid, " in signature")
+		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
 		; acc
 		)
 
 	 | NONFIXSpec(i, vid as VId(i',vid')) =>
 		(insertDisjointInf(E, vid', (i', NONE))
-		 handle CollisionInf vid' =>
-			errorVId("duplicate fixity specification for \
-				 \identifier ", vid, " in signature")
+		 handle CollisionInf vid' => error(i', E.SpecFixDuplicate vid')
 		; acc
 		)
 
@@ -2010,8 +1967,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val typ'    = O.SingTyp(i, longid')
 	    val _       = insertDisjointVal(E, vid', (i,stamp2,is))
 			  handle CollisionVal _ =>
-			  error(i, "duplicate value or constructor " ^
-				   VId.toString vid' ^ " in signature")
+			      error(i, E.SpecVIdDuplicate vid')
 	in
 	    (case is
 	       of V => O.ValSpec(i, id2', typ')
@@ -2022,7 +1978,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
-    (* Descriptions *)
+  (* Descriptions *)
 
     and trValDesco' (E,acc) =
 	fn NONE => acc
@@ -2038,8 +1994,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.ValSpec(i, id', typ')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
-				     errorVId("duplicate value or constructor ",
-					      vid, " in signature")
+				      error(i', E.SpecVIdDuplicate vid')
 	   in
 		trValDesco' (E, spec'::acc) valdesco
 	   end
@@ -2057,10 +2012,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
 		val spec'       = O.DatSpec(i, id', funtyp')
-		val _ = insertDisjointTy(E, tycon', (i', stamp, Env.new()))
-			handle CollisionTy _ =>
-			       errorTyCon("duplicate type construtor ", tycon,
-					  " in signature")
+		val _           = insertDisjointTy(E, tycon',
+						   (i', stamp, Env.new()))
+				  handle CollisionTy _ =>
+				      error(i', E.SpecTyConDuplicate tycon')
 	   in
 		trTypDesco' (E, spec'::acc) typdesco
 	   end
@@ -2076,10 +2031,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', typ')
 		val spec'       = O.TypSpec(i, id', funtyp')
-		val _ = insertDisjointTy(E, tycon', (i', stamp, Env.new()))
-			handle CollisionTy _ =>
-			       errorTyCon("duplicate type construtor ", tycon,
-					  " in signature")
+		val _           = insertDisjointTy(E, tycon',
+						   (i', stamp, Env.new()))
+				  handle CollisionTy _ =>
+				      error(i', E.SpecTyConDuplicate tycon')
 	   in
 		trTypDesco' (E, spec'::acc) typdesco
 	   end
@@ -2093,10 +2048,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val TyCon(i',tycon') = tycon
 		val (id',stamp)      = trTyCon_bind E tycon
-		val _  = insertDisjointTy(E, tycon', (i', stamp, Env.new()))
-			 handle CollisionTy _ =>
-				errorTyCon("duplicate type constructor ",
-					   tycon, " in signature")
+		val _                = insertDisjointTy(E, tycon',
+						        (i', stamp, Env.new()))
+				       handle CollisionTy _ =>
+					 error(i', E.SpecTyConDuplicate tycon')
 	   in
 		trDatDesco_lhs E datdesco
 	   end
@@ -2117,8 +2072,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val funtyp'  = funtyp(ids', O.SumTyp(i', cons'))
 		val spec'    = O.DatSpec(i, id', funtyp')
 		val _        = unionDisjoint(E,E') handle CollisionVal vid' =>
-				errorVId'("duplicate value or constructor ",
-					  E', vid', " in signature")
+				   errorVId(E', vid', E.SpecVIdDuplicate)
 	   in
 		trDatDesco_rhs' (E, spec'::acc) datdesco
 	   end
@@ -2150,8 +2104,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  k          = List.length typs'
 		val  _          = insertDisjointVal(E', vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					    " in datatype binding")
+				      error(i', E.ConDescDuplicate vid')
 	   in
 		trConDesco' (E,E', con'::acc) condesco
 	   end
@@ -2174,8 +2127,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.ConSpec(i', con', typ')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, C k))
 				  handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					    " in signature")
+				      error(i', E.SpecVIdDuplicate vid')
 	   in
 		trDconDesco' (E, varspec(ids', spec')::acc) dcondesco
 	   end
@@ -2187,15 +2139,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',stamp)  = trVId_bind E vid
 		val (longid',is) = trLongVId E longvid
 		val  _           = if is <> V then () else
-				   error(i, "non-constructor on constructor \
-					    \description right hand side")
+				   error(i, E.DconDescNonCon)
 		val  con'        = O.Con(i', id', [])
 		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
 		val  spec'       = O.ConSpec(i', con', typ')
 		val  _           = insertDisjointVal(E, vid', (i', stamp, is))
 				   handle CollisionVal _ =>
-				   errorVId("duplicate data constructor ", vid,
-					    " in signature")
+				       error(i', E.SpecVIdDuplicate vid')
 	   in
 		trDconDesco' (E, spec'::acc) dcondesco
 	   end
@@ -2213,8 +2163,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.ModSpec(i, id', inf')
 		val  _          = insertDisjointStr(E, strid', (i', stamp, E'))
 				  handle CollisionStr strid' =>
-				     errorStrId("duplicate structure ",
-						strid, " in signature")
+				      error(i', E.SpecStrIdDuplicate strid')
 	   in
 		trStrDesco' (E, spec'::acc) strdesco
 	   end
@@ -2242,8 +2191,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'       = O.ModSpec(i, id', inf')
 		val  _           = insertDisjointStr(E, strid', (i', stamp, E''))
 				   handle CollisionStr strid' =>
-				     errorStrId("duplicate structure ",
-						strid, " in signature")
+				       error(i', E.SpecStrIdDuplicate strid')
 	   in
 		trStrDesco' (E, spec'::acc) strdesco
 	   end
@@ -2258,10 +2206,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (id',stamp) = trSigId_bind E sigid
 		val  inf'       = O.AbsInf(i')
 		val  spec'      = O.InfSpec(i', id', inf')
-		val _ = insertDisjointSig(E, sigid', (i', stamp, Env.new()))
-			handle CollisionTy _ =>
-			       errorSigId("duplicate signature name ", sigid,
-					  " in signature")
+		val  _          = insertDisjointSig(E, sigid',
+						    (i', stamp, Env.new()))
+				  handle CollisionSig _ =>
+				      error(i', E.SpecSigIdDuplicate sigid')
 	   in
 		trSigDesco' (E, spec'::acc) sigdesco
 	   end
@@ -2274,8 +2222,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.InfSpec(i', id', inf')
 		val  _          = insertDisjointSig(E, sigid', (i', stamp, E'))
 				  handle CollisionSig _ =>
-				  errorSigId("duplicate signature name ", sigid,
-					     " in binding group")
+				      error(i', E.SpecSigIdDuplicate sigid')
 	   in
 		trSigDesco' (E, spec'::acc) sigdesco
 	   end
@@ -2300,15 +2247,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'        = O.ModSpec(i, id1', inf')
 		val  _            = insertDisjointFun(E, funid', (i1,stamp1,E2))
 				    handle CollisionFun _ =>
-				    errorFunId("duplicate functor name ", funid,
-					       " in binding group")
+					error(i1, E.SpecFunIdDuplicate funid')
 	   in
 		trFunDesco' (E, spec'::acc) fundesco
 	   end
 
 
 
-    (* Programs *)
+  (* Programs and components *)
 
     fun trProgramo  E programo = List.rev(trProgramo' (E,[]) programo)
     and trProgramo'(E,acc) =
@@ -2321,9 +2267,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trProgramo' (E,acc') programo
 	   end
 
-
-
-    (* Components *)
 
     fun trComponent E (Component(i, imp, programo)) =
 	let

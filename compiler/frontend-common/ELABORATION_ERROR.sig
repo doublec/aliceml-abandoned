@@ -62,7 +62,7 @@ signature ELABORATION_ERROR =
     datatype warning =
 	  NotGeneralized	of id * typ
 
-    val error :	Source.position * error -> 'a
-    val warn :	Source.position * warning -> unit
+    val error :	Source.region * error -> 'a
+    val warn :	Source.region * warning -> unit
 
   end

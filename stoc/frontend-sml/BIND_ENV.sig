@@ -9,7 +9,7 @@ signature BIND_ENV =
     type SigId = SigId.t
     type FunId = FunId.t
 
-    type Info  = Source.position
+    type Info  = Source.region
     type stamp = AbstractGrammar.stamp
 
     datatype InfAssoc  = datatype Infix.Assoc

@@ -1,6 +1,8 @@
 structure ElaborationError :> ELABORATION_ERROR =
   struct
 
+  (* Pretty printer *)
+
     open PrettyPrint
     open PPMisc
 
@@ -8,6 +10,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 
     val par = paragraph
 
+  (* Types *)
 
     type lab    = Lab.t
     type typ    = Type.t
@@ -71,19 +74,21 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  NotGeneralized	of id * typ
 
 
-    (* Pretty printing *)
+  (* Pretty printing *)
+
+    fun ppQuoted s	= "`" ^ s ^ "'"
 
     fun ppLab'(AbstractGrammar.Lab(_,l)) = l
 
     fun ppId'(AbstractGrammar.Id(_,_,name)) = Name.toString name
-    fun ppId x = "`" ^ ppId' x ^ "'"
+    fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
       | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
-    fun ppLongid y = "`" ^ ppLongid' y ^ "'"
+    fun ppLongid y = ppQuoted(ppLongid' y)
 
 
-    fun ppLab l = "`" ^ Lab.toString l ^ "'"
+    fun ppLab l = ppQuoted(Lab.toString l)
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
@@ -320,11 +325,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    nest(break ^^ below(PPType.ppTyp t))
 	)
 
+  (* Export *)
 
-    fun errorToString err = PrettyPrint.toString(ppError err, 75)
+    fun errorToString e   = PrettyPrint.toString(ppError e, 75)
     fun warningToString w = PrettyPrint.toString(ppWarning w, 75)
 
-    fun error(i, err) = Error.error(i, errorToString err)
-    fun warn(i, w)    = Error.warn(i, warningToString w)
+    fun error(region, e)  = Error.error(region, errorToString e)
+    fun warn(region, w)   = Error.warn(region, warningToString w)
 
   end

@@ -427,6 +427,8 @@ val _=print "\n"
 	    val  _       = insertScope E
 	    val  s       = Inf.empty()
 	    val  decs'   = elabDecs(E, s, decs)
+(*DEBUG*)
+val _ = Inf.strengthenSig(Path.fromLab(Lab.fromString "?let"), s)
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (t,exp') = elabExp(E, exp)
 	    val  _       = deleteScope E
@@ -847,10 +849,10 @@ val _=print "\n"
 	end
 
       | elabTyp(E, I.AbsTyp(i)) =
-	Crash.crash "Elab.elabTyp: AbsTyp"
+	raise Crash.Crash "Elab.elabTyp: AbsTyp"
 
       | elabTyp(E, I.ExtTyp(i)) =
-	Crash.crash "Elab.elabTyp: ExtTyp"
+	raise Crash.Crash "Elab.elabTyp: ExtTyp"
 
 
     and elabCon(E, I.Con(i, id as I.Id(i', stamp, name), typs)) =
@@ -962,11 +964,14 @@ val _=print "\n"
 
     and elabModId_bind(E, p, j, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
+val _ = if false then "" else let
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert module " ^ x ^ "(" ^ Stamp.toString stamp ^ ") :\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
+in ""(*TextIO.inputLine TextIO.stdIn*) end
+*)
 	    (*UNFINISHED: use punning: *)
 	    val _ = insertMod(E, stamp, {id=id, path=p, inf=j})
 	in
@@ -1072,10 +1077,31 @@ val _=print "\n"
 				 Inf.asArrow(Inf.instance j1)
 			      else
 				 error(I.infoMod mod1, E.AppModFunMismatch j1)
+(*DEBUG
+val _ = (
+print "#### Application ####\n\
+\#### j_param =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j11, 75);
+print "\n\
+\#### j_arg =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
+print "\n"
+)*)
 	    val  p2         = case elabMod_path(E, mod2)
 				of SOME(p2,_) => p2
+(*DEBUG*)
+| NONE => Path.fromLab(Lab.fromString "?arg")(*
 				 | NONE       => Path.invent()
+*)
 	    val  _          = Inf.strengthen(p2, j2)
+(*val _ = (
+print "#### p_arg = ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p2, 75);
+print "\n\
+\#### j_arg' =\n";
+PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 75);
+print "\n"
+)*)
 	    val  rea        = Inf.match(j2,j11)
 			      handle Inf.Mismatch mismatch =>
 				  error(i, E.AppModArgMismatch mismatch)
@@ -1116,6 +1142,8 @@ val _=print "\n"
 	    val  s       = Inf.empty()
 	    val  decs'   = elabDecs(E, s, decs)
 	    val  p       = Path.invent()
+(*DEBUG*)
+val p = Path.fromLab(Lab.fromString "?let")
 	    val  _       = Inf.strengthenSig(Path.invent(), s)
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = deleteScope E
@@ -1145,6 +1173,9 @@ val _=print "\n"
 	      end
 	)
 
+      | elabMod_path(E, I.AnnMod(_, mod, inf))=
+	    elabMod_path(E, mod)
+
       | elabMod_path _ = NONE
 
 
@@ -1152,11 +1183,12 @@ val _=print "\n"
 
     and elabInfId_bind(E, p, j, id as I.Id(i, stamp, name)) =
 	let
-(*DEBUG*)
+(*DEBUG
 val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- insert interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
+*)
 	    (*UNFINISHED: use punning: *)
 	    val _ = insertInf(E, stamp, {id=id, path=p, inf=j})
 	in
@@ -1301,6 +1333,8 @@ print "\n\
       | elabInf(E, I.SingInf(i, mod)) =
 	let
 	    val (j,mod') = elabMod(E, mod)
+(*DEBUG*)
+val _ = Inf.strengthen(Path.fromLab(Lab.fromString "?singleton"), j)
 	    val  _       = Inf.strengthen(Path.invent(), j)
 (*DEBUG
 val _ = (
@@ -1321,7 +1355,7 @@ print "\n\
 	end
 
       | elabInf(E, I.AbsInf(i)) =
-	    Crash.crash "Elab.elabInf: AbsInf"
+	    raise Crash.Crash "Elab.elabInf: AbsInf"
 
 
     and elabInfRep(E, p, buildKind, I.AbsInf(i)) =
@@ -1443,10 +1477,10 @@ val _=print "\n"
 	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
 	    val (j,mod') = elabMod(E, mod)
 	    val  _       = Inf.strengthen(p, j)
-	    val  id'     = elabModId_bind(E, p, j, id)
 	    val  p'      = case elabMod_path(E, mod)
 			     of SOME (p',_) => p'
 			      | NONE        => p
+	    val  id'     = elabModId_bind(E, p', j, id)
 	    val  _       = Inf.extendMod(s, p, j, SOME p')
 	in
 	    O.ModDec(nonInfo(i), id', mod')
@@ -1494,6 +1528,8 @@ val _=print "\n"
 	    val s'    = Inf.empty()
 	    val decs' = elabDecs(E, s', decs)
 	    val p     = Path.invent()
+(*DEBUG*)
+val p = Path.fromLab(Lab.fromString "?local")
 	    val _     = Inf.strengthenSig(p, s')
 	in
 	    O.LocalDec(nonInfo(i), decs')
@@ -1619,11 +1655,11 @@ val _=print "\n"
 	    val (l,ts,con') = elabConRep(E, s, t, con)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
-	    val  d          = case typ
+	    val  od         = case typ
 				of I.SingTyp(_, longid) =>
-					SOME(elabValLongid_path(E, longid))
+					SOME(SOME(elabValLongid_path(E,longid)))
 				 | _ => NONE
-	    val  _          = appVals (generaliseVal (E, s, SOME d, true)) E'
+	    val  _          = appVals (generaliseVal (E, s, od, true)) E'
 	in
 	    O.ConSpec(nonInfo(i), con', typ')
 	end
@@ -1684,14 +1720,14 @@ print "\n\
 \#### End Mod Spec ####\n"
 )*)
 	    (* UNFINISHED: revert renaming of paths somehow *)
-	    val  id'     = elabModId_bind(E, p, j', id)
-	    val  d       = case inf
+	    val (p',d)   = case inf
 			     of I.SingInf(i', mod) =>
 				(case elabMod_path(E, mod)
-				   of NONE       => error(i', E.SingInfPath)
-				    | SOME (p,_) => SOME p
+				   of NONE        => error(i', E.SingInfPath)
+				    | SOME (p',_) => (p', SOME p')
 				)
-			      | _ => NONE
+			      | _ => (p, NONE)
+	    val  id'     = elabModId_bind(E, p', j', id)
 	    val  _       = Inf.extendMod(s, p, j, d)
 	in
 	    O.ModSpec(nonInfo(i), id', inf')
@@ -1737,6 +1773,8 @@ print "\n\
 	    val s'     = Inf.empty()
 	    val specs' = elabSpecs(E, s, specs)
 	    val p      = Path.invent()
+(*DEBUG*)
+val p = Path.fromLab(Lab.fromString "?localSpec")
 	    val _      = Inf.strengthenSig(p, s')
 	in
 	    O.LocalSpec(nonInfo(i), specs')

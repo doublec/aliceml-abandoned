@@ -4,6 +4,7 @@ structure ParsingPhase :> PARSING_PHASE =
     (* Import *)
 
     structure Grammar = InputGrammar
+    structure E       = ParsingError
 
 
     (* Build Yacc parser *)
@@ -11,13 +12,15 @@ structure ParsingPhase :> PARSING_PHASE =
     structure LrVals = LrVals(structure Token        = LrParser.Token
 			      structure DerivedForms = DerivedForms)
 
-    structure LexerError = LexerError(structure Tokens = LrVals.Tokens)
+    structure LexerError = LexerError(structure Tokens = LrVals.Tokens
+				      type error       = ParsingError.error)
 
     structure Lexer  = Lexer (structure Tokens     = LrVals.Tokens
 			      structure LexerError = LexerError)
 
     structure Lexer' = CountPosLexer(structure Lexer      = Lexer
-				     structure LexerError = LexerError)
+				     structure LexerError = LexerError
+				     val error            = ParsingError.error)
 
     structure Parser = Join  (structure LrParser   = LrParser
 			      structure ParserData = LrVals.ParserData
@@ -37,7 +40,7 @@ structure ParsingPhase :> PARSING_PHASE =
 
 	    val lexer = Parser.makeLexer yyinput
 
-	    fun onError(s, pos1, pos2) = Error.error((pos1,pos2), s)
+	    fun onError(s, pos1, pos2) = E.error((pos1,pos2), E.SyntaxError s)
 	in
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end

@@ -21,6 +21,26 @@
  *	==>
  *	include longsigid_1 ; ... ; include longsigid_n
  *   - derived forms for primitive declarations similar to specifications:
+ *   - where constraints have been made a derived form of intersection:
+ *	sigexp where type tyvarseq strid_1....strid_n.tycon = ty
+ *	==>
+ *      sigexp where sig structure strid_1 :
+ *			...
+ *			   sig structure strid_n :
+ *			      sig type tyvarseq tycon = ty end
+ *			   end
+ *			...
+ *		     end
+ *
+ *	sigexp where strid_1....strid_n.strid = longstrid
+ *	==>
+ *      sigexp where sig structure strid_1 :
+ *			...
+ *			   sig structure strid_n :
+ *			      sig structure strid = longstrid end
+ *			   end
+ *			...
+ *		     end
  *
  * We did NOT introduce a sharing signature ... and signature ... derived form
  * similar to types, because we consider that one completely broken.

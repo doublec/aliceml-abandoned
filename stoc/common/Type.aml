@@ -96,8 +96,8 @@ structure TypePrivate =
   (* Kind inference *)
 
     fun rangeKind(ARROW(k1,k2))	= k2
-      | rangeKind  _		= Crash.crash "Type.rangeKind: kind mismatch"
-
+      | rangeKind  _		= raise Crash.Crash "Type.rangeKind: \
+						    \kind mismatch"
 
     fun kind(ref t')		= kind' t'
 
@@ -128,7 +128,7 @@ structure TypePrivate =
       | app1'(( TUP ts ), f)		= List.app f ts
       | app1'(( ROW r
 	      | SUM r ), f)		= appRow(r,f)
-      | app1'(( MARK _ ), f)		= Crash.crash "Type.app: bypassed MARK"
+      | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
     and appRow(FLD(_,ts,r), f)		= ( List.app f ts ; appRow(r,f) )
       | appRow(_, f)			= ()
@@ -147,7 +147,7 @@ structure TypePrivate =
       | foldl1'(( TUP ts ), f, a)	= List.foldl f a ts
       | foldl1'(( ROW r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
-      | foldl1'(( MARK _ ), f, a)	= Crash.crash"Type.foldl: bypassed MARK"
+      | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
 
     and foldlRow(FLD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
       | foldlRow(_, f, a)		= a
@@ -239,12 +239,12 @@ structure TypePrivate =
 	      | clone'(APP(t1,t2))	= APP(clone t1, clone t2)
 	      | clone'(REC t)		= REC(clone t)
 (*DEBUG*)
-| clone'(LINK _) = Crash.crash "Type.clone: LINK"
-| clone'(MARK _) = Crash.crash "Type.clone: MARK"
-| clone'(HOLE _) = Crash.crash "Type.clone: HOLE"
-| clone'(VAR _)  = Crash.crash "Type.clone: VAR"
+| clone'(LINK _) = raise Crash.Crash "Type.clone: LINK"
+| clone'(MARK _) = raise Crash.Crash "Type.clone: MARK"
+| clone'(HOLE _) = raise Crash.Crash "Type.clone: HOLE"
+| clone'(VAR _)  = raise Crash.Crash "Type.clone: VAR"
 (*
-	      | clone' _		= Crash.crash "Type.clone"
+	      | clone' _		= raise Crash.Crash "Type.clone"
 *)
 	    and cloneRow(FLD(l,ts,r))	= FLD(l, List.map clone ts, cloneRow r)
 	      | cloneRow r		= r
@@ -283,7 +283,7 @@ structure TypePrivate =
 			; t := (if r then REC else LINK) t11
 			; reduce t
 			)
-		    | _ => Crash.crash "Type.reduceApp"
+		    | _ => raise Crash.Crash "Type.reduceApp"
 		)
 	      | reduceApp(ref(LINK t11), r) =
 		    reduceApp(follow t11, r)
@@ -630,13 +630,13 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recur unifyPair (tt1,tt2)
 
 		       | (ALL(a1,t11), ALL(a2,t21)) =>
-			 Crash.crash "Type.unify: universal quantification"
+			 raise Crash.Crash "Type.unify: universal quantifier"
 
 		       | (EX(a1,t11), EX(a2,t21)) =>
-			 Crash.crash "Type.unify: existential quantification"
+			 raise Crash.Crash "Type.unify: existential quantifier"
 
 		       | (LAM(a1,t11), LAM(a2,t21)) =>
-			 Crash.crash "Type.unify: abstraction"
+			 raise Crash.Crash "Type.unify: abstraction"
 
 		       | _ => raise Unify(t1,t2)
 		end

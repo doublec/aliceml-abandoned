@@ -45,6 +45,8 @@ is
 
     LEXER_ERROR.sig
     LexerError.sml
+    PARSING_ERROR.sig
+    ParsingError.sml
 
     Lexer.lex
     CountPosLexer.sml
@@ -69,8 +71,13 @@ is
     BIND_ENV0.sig
     BindEnv0.sml
 
+    ABSTRACTION_ERROR.sig
+    AbstractionError.sml
+
     INFIX.sig
     Infix.sml
+    SHARING.sig
+    Sharing.sml
 
     ABSTRACTION_PHASE.sig
     AbstractionPhase.sml

@@ -234,10 +234,10 @@ text "@" ^^*)
 		end
 
 	      | ppTypPrec' p (HOLE _) =
-		    Crash.crash "PPType.ppTyp: bypassed HOLE"
+		    raise Crash.Crash "PPType.ppTyp: bypassed HOLE"
 
 	      | ppTypPrec' p (REC _) =
-		    Crash.crash"PPType.ppTyp: bypassed REC"
+		    raise Crash.Crash "PPType.ppTyp: bypassed REC"
 
 
 	    and ppRow NIL		= empty

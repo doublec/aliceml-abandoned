@@ -35,10 +35,13 @@
 
     open Misc
     open Tokens
-    open LexerError
+
+    structure E = ParsingError
+
+    val error = LexerError.error
 
 
-    (* Types to match structure LEXER.UserDeclaration *)
+  (* Types to match structure LEXER.UserDeclaration *)
 
     type ('a,'b) token = ('a,'b) Tokens.token
     type pos           = int
@@ -46,20 +49,20 @@
     type lexresult     = (svalue, pos) token
 
 
-    (* Handling nested comments *)
+  (* Handling nested comments *)
 
     val nesting = ref 0		(* non-reentrant side-effect way :-P *)
 
 
     fun eof() =
 	if !nesting = 0 then
-	    raise EOF(fn i => Tokens.EOF i)
+	    raise LexerError.EOF(fn i => Tokens.EOF i)
 	else
-	    raise EOF(fn i => error(i, UnclosedComment))
+	    raise LexerError.EOF(fn i => error(i, E.UnclosedComment))
 
 
 
-    (* Some helpers to create tokens *)
+  (* Some helpers to create tokens *)
 
     open Tokens
 
@@ -86,7 +89,7 @@
 
 
 
-    (* Convert identifiers and constants *)
+  (* Convert identifiers and constants *)
 
     datatype radix = datatype StringCvt.radix
 
@@ -106,7 +109,7 @@
 	   |   _  => toInt'(s, DEC, i)
 
     and toInt'(s,b,i) = Option.valOf(StringCvt.scanString (LargeInt.scan b) s)
-			handle Overflow => error(i, IntTooLarge)
+			handle Overflow => error(i, E.IntTooLarge)
 
     fun toWord(s,i) =
 	case (String.sub(s,1), String.sub(s,2))
@@ -115,10 +118,10 @@
 	   |            _            => toWord'(String.extract(s,2,NONE), DEC,i)
 
     and toWord'(s,b,i) = Option.valOf(StringCvt.scanString (LargeWord.scan b) s)
-			 handle Overflow => error(i, WordTooLarge)
+			 handle Overflow => error(i, E.WordTooLarge)
 
     fun toReal(s,i)    = Option.valOf(StringCvt.scanString LargeReal.scan s)
-			 handle Overflow => error(i, RealTooLarge)
+			 handle Overflow => error(i, E.RealTooLarge)
 
 
     fun toString(s,i) =
@@ -126,7 +129,7 @@
             fun base(s,b,m) =
 		WideChar.chr(Option.valOf(StringCvt.scanString (Int.scan b) s))
 		handle (Chr | Overflow) =>
-			 error(i, EscapeCharTooLarge m)
+			 error(i, E.EscapeCharTooLarge m)
 
 	    fun dec s     = base(s, DEC, false)
 	    fun unicode s = base(s, HEX, true)
@@ -163,8 +166,8 @@
 				  end
 			      else if Char.isSpace c then
 				   gap(k+1, cs)
-			      else Crash.crash "Lexer.toString: \
-					       \invalid escape sequence"
+			      else raise Crash.Crash "Lexer.toString: \
+						     \invalid escape sequence"
 
 	    and gap(k, cs) =
 		    if String.sub(s,k) = #"\\" then
@@ -185,7 +188,7 @@
 	    if WideString.size ss' = 1 then
 		WideString.sub(ss', 0)
 	    else
-		error(i, CharLengthInvalid ss')
+		error(i, E.CharLengthInvalid ss')
 	end
 
 %%
@@ -193,7 +196,8 @@
 
 %header	( functor Lexer(structure Tokens:     Parser_TOKENS
 			structure LexerError: LEXER_ERROR
-			  where type token = (Tokens.svalue,int) Tokens.token));
+			  where type token = (Tokens.svalue,int) Tokens.token
+			  where type error = ParsingError.error));
 
 %s COMMENT;
 
@@ -348,6 +352,6 @@
   <COMMENT>"\n"		=> ( continue() );
 
 
-  <INITIAL>"\""		=> ( error'(yypos, yytext, InvalidString) );
+  <INITIAL>"\""		=> ( error'(yypos, yytext, E.InvalidString) );
   <INITIAL>.		=> ( error'(yypos, yytext,
-				    InvalidChar(String.sub(yytext,0))) );
+				    E.InvalidChar(String.sub(yytext,0))) );

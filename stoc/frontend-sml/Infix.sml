@@ -8,27 +8,23 @@
 structure Infix :> INFIX =
   struct
 
-    (* Import *)
+  (* Import *)
 
     structure Grammar = InputGrammar
+    structure E       = ParsingError
 
     open Grammar
 
+    val error = E.error
 
-    (* Type definitions *)
+
+  (* Type definitions *)
 
     datatype Assoc = LEFT | RIGHT
 
     type InfStatus = (Assoc * int) option
 
     type InfEnv    = VId.t -> InfStatus
-
-
-    (* Helper for error messages *)
-
-    val error				= Error.error
-    fun errorVId(s, VId(I,vid))		= error(I, s ^ VId.toString vid)
-
 
 
     (* Categorisation of atomic expressions and patterns *)
@@ -60,13 +56,13 @@ structure Infix :> INFIX =
 
     fun flattenExp'(ATEXPExp(i,atexp))   = atexp :: []
       | flattenExp'(APPExp(i,exp,atexp)) = atexp :: flattenExp' exp
-      | flattenExp' _ = Crash.crash "Infix.flattenExp: invalid expression"
+      | flattenExp' _ = raise Crash.Crash "Infix.flattenExp: invalid expression"
 
     fun flattenExp exp = List.rev(flattenExp' exp)
 
     fun flattenPat'(ATPATPat(i,atpat))   = atpat :: []
       | flattenPat'(APPPat(i,pat,atpat)) = atpat :: flattenPat' pat
-      | flattenPat' _ = Crash.crash "Infix.flattenPat: invalid pattern"
+      | flattenPat' _ = raise Crash.Crash "Infix.flattenPat: invalid pattern"
 
     fun flattenPat pat = List.rev(flattenPat' pat)
 
@@ -145,8 +141,12 @@ structure Infix :> INFIX =
 		    (* shift *)
 		    loop(INFIX(q2)::s, i')
 		else if a1 <> a2 then
-		    error(Source.over(infoVId vid1, infoVId vid2),
-			  "conflicting infix associativity")
+		    let
+		        val VId(i1,vid1') = vid1
+		        val VId(i2,vid2') = vid2
+		    in
+			error(Source.over(i1,i2), E.AssocConflict(vid1',vid2'))
+		    end
 		else if a1 = LEFT then
 		    (* reduce infix application *)
 		    loop(NONFIX(infapply(x1, vid1, x2))::s', i)
@@ -154,16 +154,16 @@ structure Infix :> INFIX =
 		    (* shift *)
 		    loop(INFIX(q2)::s, i')
 
-	      | loop(INFIX(a,p,vid)::s', []) =
-		    errorVId("misplaced infix identifier ", vid)
+	      | loop(INFIX(a,p,VId(i,vid'))::s', []) =
+		    error(i, E.InfixMisplaced vid')
 
-	      | loop(INFIX(x)::s', INFIX(a,p,vid)::i') =
-		    errorVId("misplaced infix identifier ", vid)
+	      | loop(INFIX(x)::s', INFIX(a,p,VId(i,vid'))::i') =
+		    error(i, E.InfixMisplaced vid')
 
-	      | loop([], INFIX(a,p,vid)::i') =
-		    errorVId("misplaced infix identifier ", vid)
+	      | loop([], INFIX(a,p,VId(i,vid'))::i') =
+		    error(i, E.InfixMisplaced vid')
 
-	      | loop _ = Crash.crash "Infix.parse: inconsistency"
+	      | loop _ = raise Crash.Crash "Infix.parse: inconsistency"
 
 	    val x' = loop([], List.map (categorise IE) (flatten x))
 	in

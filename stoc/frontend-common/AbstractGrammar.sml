@@ -1,1 +1,1 @@
-structure AbstractGrammar = MakeAbstractGrammar(type info = Source.position)
+structure AbstractGrammar = MakeAbstractGrammar(type info = Source.region)

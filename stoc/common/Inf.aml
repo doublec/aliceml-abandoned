@@ -225,7 +225,7 @@ structure InfPrivate =
 		( j := LINK j12
 		; reduce j
 		)
-	    | _ => Crash.crash "Type.reduceApp"
+	    | _ => raise Crash.Crash "Type.reduceApp"
 	)
       | reduceApp(j, j1, p, j2) = ()
 
@@ -780,7 +780,7 @@ structure InfPrivate =
 	    matchKind(l, k1, k2) ;
 	    matchInfDef(l, d1, d2)
 	end
-      | matchItem' _ = raise Crash.crash "Inf.matchItem"
+      | matchItem' _ = raise Crash.Crash "Inf.matchItem"
 
     and matchTyp(l,t1,t2) =
 	if Type.matches(t1,t2) then () else
@@ -897,13 +897,13 @@ structure InfPrivate =
 	      | pair1(b, INF(x1,k1,d1), INF(x2,k2,d2)) =
 		    pairDef(#inf_rea rea, pathToInf k1, b, x1, d1, x2, d2)
 	      | pair1 _ =
-		    raise Crash.crash "Inf.intersectSig: pairing"
+		    raise Crash.Crash "Inf.intersectSig: pairing"
 
 	    and pair(m1, [], pairs, left) = ( List.rev pairs, List.rev left )
 	      | pair(m1, item2::items, pairs, left) =
 		case Map.lookup(m1, (itemSpace item2, itemLab item2))
 		  of NONE => pair(m1, items, pairs, item2::left)
-		   | SOME [] => raise Crash.crash "Inf.intersectSig: lookup"
+		   | SOME [] => raise Crash.Crash "Inf.intersectSig: lookup"
 		   | SOME(item1::_) =>
 		     (* Nested structures are already realised.
 		      * We would loop during realisation if we inserted
@@ -968,7 +968,7 @@ structure InfPrivate =
 	in
 	    INF(x1,k,d)
 	end
-      | intersectItem' _ = raise Crash.crash "Inf.intersectItem"
+      | intersectItem' _ = raise Crash.Crash "Inf.intersectItem"
 
     and intersectTyp(l,t1,t2) =
 	( Type.intersect(t1,t2) ; t1 )
@@ -1015,15 +1015,15 @@ structure InfPrivate =
 
       | intersect'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.crash "Inf.intersect: ARR"
+	    raise Crash.Crash "Inf.intersect: ARR"
 
       | intersect'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.crash "Inf.intersect: LAM"
+	    raise Crash.Crash "Inf.intersect: LAM"
 
       | intersect'(rea, j1 as ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.crash "Inf.intersect: APP"
+	    raise Crash.Crash "Inf.intersect: APP"
 
       | intersect'(rea, ref(LINK j1), j2) = intersect'(rea, j1, j2)
       | intersect'(rea, j1, ref(LINK j2)) = intersect'(rea, j1, j2)

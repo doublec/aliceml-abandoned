@@ -2,23 +2,11 @@ signature LEXER_ERROR =
   sig
 
     type token
+    type error
 
-    datatype error =
-	  UnclosedComment
-	| InvalidChar of char
-	| InvalidString
-	| IntTooLarge
-	| WordTooLarge
-	| RealTooLarge
-	| CharLengthInvalid of string
-	| EscapeCharTooLarge of bool
+    exception Error of (int * int) * error
+    exception EOF   of (int * int) -> token
 
-    exception Error of Source.pos * error
-    exception EOF of Source.pos -> token
-
-    val nowhere :	Source.pos
-    val error :		Source.pos * error -> 'a
-
-    val toString :	error -> string
+    val error :	(int * int) * error -> 'a
 
   end

@@ -1,19 +1,11 @@
-signature LEXER_ERRORS =
-  sig
-    type error
-    type token
-    exception Error of Source.pos * error
-    exception EOF of Source.pos -> token
-    val toString: error -> string
-  end
-
 functor CountPosLexer(
 	structure Lexer: LEXER
 	where type UserDeclarations.pos = int
 	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
-	structure LexerError: LEXER_ERRORS
+	structure LexerError: LEXER_ERROR
 	where type token =
 		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
+	val error : Source.region * LexerError.error -> 'a
 ) : LEXER =
   struct
 
@@ -84,7 +76,7 @@ functor CountPosLexer(
 		    LrParser.Token.TOKEN(term, (svalue, pos1', pos2'))
 		end
 		handle LexerError.Error(position, e) =>
-		    Error.error(transform position, LexerError.toString e)
+		    error(transform position, e)
 	end
 
   end

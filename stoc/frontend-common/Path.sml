@@ -30,13 +30,13 @@ structure PathPrivate =
     fun path pln		= ref(DOT pln)
 
     fun toLab(ref(PLAIN n))	= Lab.fromName n
-      | toLab _			= raise Crash.crash "Path.toLab"
+      | toLab _			= raise Crash.Crash "Path.toLab"
 
     fun isDot(ref(DOT _))	= true
       | isDot _			= false
 
     fun asDot(ref(DOT pln))	= pln
-      | asDot _			= raise Crash.crash "Path.asDot"
+      | asDot _			= raise Crash.Crash "Path.asDot"
 
 
   (* Ordering and hashing *)
@@ -77,7 +77,7 @@ structure PathPrivate =
 		  | NONE    =>
 		case !p1
 		 of p' as PLAIN _ => ref p'
-		  | DOT(_,l,_)    => fromLab l
+		  | DOT(p,l,n)    => ref(DOT(clone p, l, n))
 	in
 	    clone p
 	end

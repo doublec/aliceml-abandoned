@@ -1,7 +1,7 @@
 structure BindEnv :> BIND_ENV =
   struct
 
-    type Info  = Source.position
+    type Info  = Source.region
     type stamp = AbstractGrammar.stamp
 
 
