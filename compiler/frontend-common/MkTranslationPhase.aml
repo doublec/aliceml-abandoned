@@ -174,6 +174,7 @@ struct
     fun ikindToKind k = Type.starKind()
 
     fun infToTyp(E,j) =
+	Future.byneed(fn() =>
 	case Inf.Map.lookup(infHash, j) of
 	  SOME t => t
 	| NONE   =>
@@ -183,6 +184,7 @@ struct
 		Inf.Map.insert(infHash, j, t);
 		t
 	    end
+	)
 
     and infToTyp'(E,j) =
 	case Inf.inspect j
@@ -2174,16 +2176,19 @@ struct
 
     and trAnn E (I.ImpAnn(i,is,u), (xjus',ds')) =
 	let
-	    val r    = #region i
-	    val s    = #sign i
-	    val t    = Type.unknown(Type.starKind())
-		       (* to allow import of pervasive *)
-	    val i'   = typInfo(r,t)
-	    val x'   = O.Id(i', Stamp.new(), Name.InId)
-	    val ds'' = trImps(E, is, O.ShortId(i',x'), ds')
-	    val _    = Type.unify(t, infToTyp(E, Inf.sign s))
+	    val r      = #region i
+	    val j      = Future.byneed(fn() => Inf.sign(#sign i))
+	    val isPerv = (TranslationEnv.lookupPervasive E; false)
+			 handle TranslationEnv.Pervasive => true
+	    val t'     = infToTyp(E,j)
+	    val t      = if isPerv then Type.unknown(Type.starKind()) else t'
+			 (* to allow import of pervasive *)
+	    val i'     = typInfo(r,t)
+	    val x'     = O.Id(i', Stamp.new(), Name.InId)
+	    val ds''   = trImps(E, is, O.ShortId(i',x'), ds')
 	in
-	    ( (x',Inf.sign s,u)::xjus', ds'' )
+	    if isPerv then Type.unify(t',t) else ();
+	    ( (x',j,u)::xjus', ds'' )
 	end
 
     and trImps(E, is, y, ds')             = Vector.foldl (trImp (E,y)) ds' is
@@ -2210,8 +2215,10 @@ struct
 	    val  fs'         = Vector.map (idToFld (fn x' => x')) ids'
 	    val  s           = #sign i
 	in
-	    Inf.compressSig s;
-	    Vector.app (fn(x,j,u) => Inf.compress j) xjus';
+	    if !Switches.Language.retainFullImport then () else
+	    ( Inf.compressSig s
+	    ; Vector.app (fn(x,j,u) => Inf.compress j) xjus'
+	    );
 	    ( xjus', ds', fs', Inf.sign s )
 	end
 

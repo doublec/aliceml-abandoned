@@ -1366,7 +1366,7 @@ TextIO.print "\n";
 
     and elabInfid_bind(E, p, j, infid as I.Id(i, stamp, name)) =
 	let
-	    val j' = Inf.abbrev(Inf.con(p, Inf.kind j), j)
+	    val j' = Future.byneed(fn() => Inf.abbrev(Inf.con(p,Inf.kind j), j))
 	    val u  = ref false
 	    val _  = Env.insertInf(E, stamp, {id=infid, path=p, inf=j', use=u})
 	in
@@ -1569,6 +1569,14 @@ TextIO.print "\n";
 	    ( j, true, O.AbsInf(infInfo(i,j)) )
 	end
 
+      | elabInfRep(E, p, mkKind, I.ConInf(i, inflongid)) =
+	(* avoid instantiation for mere rebindings *)
+	let
+	    val (j,inflongid') = elabInflongid(E, inflongid)
+	in
+	    ( j, false, O.ConInf(infInfo(i,j), inflongid') )
+	end
+
       | elabInfRep(E, p, mkKind, inf) =
 	let
 	    val (j,inf') = elabInf(E, NONE, inf)
@@ -1647,7 +1655,8 @@ TextIO.print "\n";
 	    val  p           = elabNewPath(po, I.name infid)
 	    val (j,gen,inf') = elabInfRep(E, p, General.id, inf)
 	    val (j',infid')  = elabInfid_bind(E, p, j, infid)
-	    val  k           = (if gen then Inf.kind else Inf.singKind) j'
+	    val  k           = Future.byneed(fn() =>
+			       (if gen then Inf.kind else Inf.singKind) j')
 	    val  _           = Inf.extendInf(s, p, k)
 (*DEBUG
 val _ = (
@@ -2098,7 +2107,7 @@ TextIO.print "\n";
 		case desc
 		 of I.NoDesc(i')       => (k1, j1, O.NoDesc(infInfo(i',j1)))
 		  | I.SomeDesc(i',inf) =>
-		    let				
+		    let
 			val (j2,_,inf') = elabInfRep(E, p, General.id, inf)
 			val  k2         = Inf.kind j2
 		    in
@@ -2201,13 +2210,16 @@ TextIO.print "\n";
 	let
 	    val UE     = UseEnv.new()
 	    val imps'' = stripImps(E, UE, imps')
-	    val sign'  = Inf.narrowSigExt(sign, stripSig(UE,sign))
-(*DEBUG*) handle e => raise e
 	in
-	    if Vector.length imps'' = 0 then
-		NONE
-	    else
-		SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url))
+	    if UseEnv.isEmpty UE then NONE else (* avoid requesting sign! *)
+	    let
+		val sign' = Inf.narrowSigExt(sign, stripSig(UE,sign))
+(*DEBUG*) handle e => raise e
+	    in
+		if Vector.length imps'' = 0
+		then NONE
+		else SOME(O.ImpAnn({region=region, sign=sign'}, imps'', url))
+	    end
 	end
 
     and stripImps(E, UE, imps') =
