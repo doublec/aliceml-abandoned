@@ -11,8 +11,8 @@
  *
  *)
 
-import structure Space from "x-alice:/lib/constraints/Space.ozf"
-import signature SEARCH from "x-alice:/lib/constraints/SEARCH.ozf"
+import structure Space from "Space"
+import signature SEARCH from "SEARCH-sig"
 
 structure Search :> SEARCH =
     struct
