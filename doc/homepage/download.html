@@ -58,7 +58,7 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <UL>
   <LI>Add <TT>deb http://www.ps.uni-sb.de/alice/download/debian
-  testing</TT> to your <TT>sources.list</TT>. You need to apt-get the
+  testing</TT> to your <TT>/etc/apt/sources.list</TT>. You need to apt-get the
   package <TT>alice-runtime</TT>.</LI>
   <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
   source packages. Please note that we cannot provide a source package
@@ -94,8 +94,8 @@ applications. The Alice packages depend on the gtk libraries, libxml2,
 and libgmp.</P>
 
 <P>
-Please install <A HREF="download/fink">all the packages for
-darwin-powerpc</A> using the dpkg command-line tool.
+Please add <TT>deb http://www.ps.uni-sb.de/alice/download/fink ./</TT>
+to your <TT>/sw/etc/apt/sources.list</TT>.
 </P>
 
 <?php subsection("license", "License") ?>
