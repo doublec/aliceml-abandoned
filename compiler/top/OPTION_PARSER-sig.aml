@@ -13,6 +13,8 @@
 signature OPTION_PARSER =
     sig
 	val helpText: string
+        val version: string
+        val copyright: string
 
 	val parse: string list -> string list
     end

@@ -23,15 +23,29 @@ local
 in
     structure MakeDepend :> MAKE_DEPEND =
 	struct
-	    fun usage s =
-		(TextIO.output (TextIO.stdErr,
-				"alicedep: " ^ s ^ "\n\
-			        \Usage: alicedep \
+            fun version () =
+                (TextIO.print "alicedep 0.9.3\n\n\
+                              \Copyright (C) 2003  Programming Systems Lab.\n\
+                              \See the source for copying conditions.\n";
+                 OS.Process.success)
+
+	    fun usage(s, flag) =
+		(TextIO.output (if flag then TextIO.stdErr
+                                else TextIO.stdOut,
+                                (if flag then
+                                     "alicedep: "^s^"\n"
+                                 else "")^
+				"Usage: alicedep \
 			        \[--mozart|--seam|--dotnet] \
 				\<file> ...\n");
-		 OS.Process.failure)
+		 if flag then OS.Process.failure
+                 else OS.Process.success)
 
-	    fun depend ("--mozart"::args) =
+            fun depend (("--help"|"-h"|"-?")::_) =
+                usage("", false)
+              | depend ("--version"::_) =
+                version ()
+	      | depend ("--mozart"::args) =
 		SMLToMozartMakeDepend.depend args
 	      | depend ("--seam"::args) =
 		SMLToSeamMakeDepend.depend args
@@ -46,6 +60,6 @@ in
 		  | "dotnet" =>
 			SMLToDotNetMakeDepend.depend args
 		  | _ =>
-			usage "unknown runtime environment"
+			usage("unknown runtime environment", true)
 	end
 end

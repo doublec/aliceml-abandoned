@@ -16,65 +16,72 @@ import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
 functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
-	val version = "Build " ^
-			(*TODO Date.toString(Date.fromTimeLocal(Time.now()))*)
-			"2003/??/??"
+	val version = "0.9.3"
+        val copyright = "Copyright (c) 1999-2004 Programming Systems Lab, Saarland University,\n" ^
+                        "and the individual authors"
 
 	val helpText =
-	    "Gobal options:\n\
-	    \\t--(no-)recursive-compilation\n\
+            "Options:\n\
+	    \Gobal options:\n\
+	    \\t--recursive-compilation \n\
 	    \\t\tCompile imported components recursively if necessary.\n\
-	    \\t--(no-)trace-component-access\n\
+	    \\t--trace-component-access\n\
 	    \\t\tTrace component loads and saves by the compiler.\n\
 	    \Warning options:\n\
-	    \\t--(no-)warn-conventions\n\
+	    \\t--warn-conventions\n\
 	    \\t\tWhether to warn about naming convention violations.\n\
-	    \\t--(no-)warn-shadowing\n\
+	    \\t--warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
-	    \\t--(no-)warn-unused-import\n\
+	    \\t--warn-unused-import\n\
 	    \\t\tWhether to warn about unused imports.\n\
 	    \Language options:\n\
 	    \\t--assert <int>\n\
 	    \\t\tSpecify assertion level for compiled code.\n\
-	    \\t--(no-)retain-full-import\n\
+	    \\t--retain-full-import\n\
 	    \\t\tWhether to reduce import signatures to the entities used.\n\
-	    \\t--(no-)reexport-import\n\
+	    \\t--reexport-import\n\
 	    \\t\tMake imported entities part of the component.\n\
 	    \\t--dependency-file <dependency file>|-\n\
 	    \\t\tSpecify file containing dependencies for missing imports.\n\
 	    \\t--implicit-import-file <import file>|-\n\
 	    \\t\tSpecify file containing implicit import announcements.\n\
-	    \\t--(no-)rtt\n\
+	    \\t--rtt\n\
 	    \\t\tWhether to generate code for runtime types.\n\
-	    \\t--(no-)silent-fail\n\
+	    \\t--silent-fail\n\
 	    \\t\tWhether FailExp's should be translated to failed futures.\n\
 	    \Debug options:\n\
 	    \\t--version\n\
 	    \\t\tPrint compiler version.\n\
-	    \\t--(no-)dryrun\n\
+	    \\t--dryrun\n\
 	    \\t\tCompile standard input, not writing any output.\n\
-	    \\t--(no-)dump-phases\n\
+	    \\t--dump-phases\n\
 	    \\t\tTrace the running phases.\n\
-	    \\t--(no-)dump-abstraction-result\n\
+	    \\t--dump-abstraction-result\n\
 	    \\t\tDump abstract representation.\n\
-	    \\t--(no-)dump-elaboration-result\n\
+	    \\t--dump-elaboration-result\n\
 	    \\t\tDump abstract representation after elaboration.\n\
-	    \\t--(no-)dump-elaboration-sig\n\
+	    \\t--dump-elaboration-sig\n\
 	    \\t\tDump component signatures after elaboration.\n\
-	    \\t--(no-)dump-intermediate\n\
+	    \\t--dump-intermediate\n\
 	    \\t\tDump intermediate representation.\n\
-	    \\t--(no-)check-intermediate\n\
+	    \\t--check-intermediate\n\
 	    \\t\tType-check intermediate representation.\n\
-	    \\t--(no-)dump-flattening-result\n\
+	    \\t--dump-flattening-result\n\
 	    \\t\tDump flat representation after flattening.\n\
-	    \\t--(no-)dump-value-propagation-context\n\
+	    \\t--dump-value-propagation-context\n\
 	    \\t\tDump environment after value propagation.\n\
-	    \\t--(no-)dump-value-propagation-result\n\
+	    \\t--dump-value-propagation-result\n\
 	    \\t\tDump flat representation after value propagation.\n\
-	    \\t--(no-)dump-liveness-analysis-result\n\
+	    \\t--dump-liveness-analysis-result\n\
 	    \\t\tDump flat representation after liveness analysis.\n\
-	    \\t--(no-)dump-target\n\
-	    \\t\tDump target code representation.\n"
+	    \\t--dump-target\n\
+	    \\t\tDump target code representation.\n\
+            \Inverting options:\n\
+            \\tEvery option can be prefixed with no-, e.g.\n\
+            \\t--no-dump-target\n\
+            \\n\
+            \Report bugs using our online bug-tracking system:\n\
+            \http://www.ps.uni-sb.de/alice/bugzilla/\n"
 
 	open Switches
 
@@ -110,10 +117,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false
 
-	fun parse ("--version"::rest) =
-	    (TextIO.output (TextIO.stdOut, version ^ "\n");
-	     parse rest)
-	  | parse ("--dependency-file"::file::rest) =
+	fun parse ("--dependency-file"::file::rest) =
 	    (Language.dependencyFiles := file::(!Language.dependencyFiles);
 	     parse rest)
 	  | parse ("--implicit-import-file"::file::rest) =

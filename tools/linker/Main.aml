@@ -44,12 +44,16 @@ structure Main :> MAIN =
 	    (TextIO.output (TextIO.stdErr, "alicelink: " ^ s);
 	     OS.Process.failure)
 
+        fun version () =
+            (TextIO.output (TextIO.stdOut, "alicelink 0.0.0\n");
+             OS.Process.success)
 	fun usage (SOME s, status) =
-	    (TextIO.output (TextIO.stdErr, "alicelink: " ^ s ^ "\n");
+	    (TextIO.output (if status then TextIO.stdErr else TextIO.stdOut,
+                            "alicelink: " ^ s ^ "\n");
 	     usage (NONE, status))
 	  | usage (NONE, status) =
 	    (TextIO.output
-	     (TextIO.stdErr,
+	     (if status then TextIO.stdErr else TextIO.stdOut,
 	      "Usage: alicelink [<option> ...] <root url> [<option> ...]\n\n\
 	      \Options:\n\
 	      \-?, -h, --help, --usage\n\
@@ -67,10 +71,10 @@ structure Main :> MAIN =
 	      \--rewrite FROM=TO,...,FROM=TO\n\
 	      \    Rewrite imports URLs of the output component.\n\
 	      \    FROM and TO are patterns; ?{x} denotes a variable.\n");
-	     status)
+	     if status then OS.Process.failure else OS.Process.success)
 
-	fun help () = usage (NONE, OS.Process.success)
-	fun usageError s = usage (SOME s, OS.Process.failure)
+	fun help () = usage (NONE, false)
+	fun usageError s = usage (SOME s, true)
 
 	fun ppInfOpt NONE = PrettyPrint.text "[no signature]"
 	  | ppInfOpt (SOME inf) =
@@ -159,6 +163,7 @@ structure Main :> MAIN =
 	      | NONE => raise Syntax
 
 	fun main (("-h"|"-?"|"--help"|"--usage")::_) = help ()
+          | main (("--version")::_) = version ()
 	  | main (("-v"|"--verbose")::rest) = (verbose := true; main rest)
 	  | main (("-d"|"--dumpsig")::rest) = (dumpsig := true; main rest)
 	  | main ("--no-type-check"::rest) = (typeCheck := false; main rest)

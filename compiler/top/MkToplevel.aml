@@ -30,8 +30,11 @@ functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER) :
 struct
     structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
 
-    fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
-						OptionParser.helpText)
+    fun usage fail = TextIO.output(if fail then
+                                       TextIO.stdErr
+                                   else TextIO.stdOut,
+                                   "Usage: alice [options]\n" ^
+				   OptionParser.helpText)
 
     val banner     = "Alice 0.9.3 (Stockhausen Operette 3 Remix 3)\n"
     val prompt     = "- "
@@ -128,9 +131,15 @@ struct
 		     loop context)
 	end
 
-    fun main'(_::_) = (usage(); OS.Process.failure)
+    fun main'(("--help"|"-h"|"-?")::_) = (usage false; OS.Process.success)
+      | main'("--version"::_) =
+	(TextIO.output (TextIO.stdOut, "alice "^OptionParser.version ^ "\n\n");
+         TextIO.output (TextIO.stdOut, OptionParser.copyright ^ "\n");
+         OS.Process.success)
+      | main'(_::_) = (usage true; OS.Process.failure)
       | main' nil =
 	let
+            val _ = TextIO.print banner;
 	    open RecursiveCompiler.Switches
 	    val context = evalString (false, "",
 				      RecursiveCompiler.Context.empty)
@@ -152,7 +161,6 @@ struct
 	     OS.Process.failure)
 	else
 	    let
-		val _ = TextIO.print banner
 		open RecursiveCompiler.Switches
 	    in
 		defaults ();
@@ -161,7 +169,7 @@ struct
 		Language.reexportImport := true;
 		Language.retainFullImport := true;
 		Global.traceComponentAccess := true;
-		main'(OptionParser.parse arguments)
+                main' (OptionParser.parse arguments)
 	    end
 	    handle exn =>
 		(TextIO.output(TextIO.stdErr,

@@ -58,14 +58,17 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 
 	structure OptionParser = MkOptionParser (RecursiveCompiler.Switches)
 
-	fun usage () =
+	fun usage fail =
 	    TextIO.output
-	    (TextIO.stdErr,
-	     "Usage:\n\
-	      \\talicec [<option> ...] [-c|-x] <input file> \
+	    (if fail then TextIO.stdErr else TextIO.stdOut,
+	     "Usage: alicec [<option> ...] [-c|-x] <input file> \
 	      \[-o <output file>]\n" ^ OptionParser.helpText)
 
-	fun main' ["--dryrun"] =
+        fun main' ("--version"::_) =
+	    (TextIO.output (TextIO.stdOut, "alicec "^OptionParser.version ^ "\n\n");
+             TextIO.output (TextIO.stdOut, OptionParser.copyright ^ "\n");
+             OS.Process.success)
+          | main' ["--dryrun"] =
 	    let
 		val s = TextIO.inputAll TextIO.stdIn
 	    in
@@ -76,6 +79,8 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	  | main' ["--print-component-extension"] =
 	    (TextIO.print (Component.extension ^ "\n");
 	     OS.Process.success)
+          | main' (("--help"|"-h"|"-?")::_) =
+            (usage false; OS.Process.success)
 	  | main' ([infile] | ["-c", infile]) =
 	    main_c (infile, basename infile ^ "." ^ extension)
 	  | main' ["-x", infile] =
@@ -84,13 +89,14 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    main_c (infile, outfile)
 	  | main' ["-x", infile, "-o", outfile] =
 	    main_x (infile, outfile)
-	  | main' _ = (usage (); OS.Process.failure)
+	  | main' _ = (usage true; OS.Process.failure)
 
 	fun defaults () = (* override defaults from MkSwitches here *)
 	    RecursiveCompiler.Switches.Language.implicitImportFile :=
 		SOME "x-alice:/alicec.import"
 
 	fun main arguments =
-	    (defaults (); main' (OptionParser.parse arguments))
-	    handle RecursiveCompiler.Error => OS.Process.failure
+	    (defaults ();
+             main' (OptionParser.parse arguments))
+	     handle RecursiveCompiler.Error => OS.Process.failure
     end
