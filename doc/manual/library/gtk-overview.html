@@ -3,7 +3,7 @@
 <?php heading("Gtk Library", "gtk\nlibrary") ?>
 
   <P>
-    This manual describes the GTK+ 1.2 language binding for Alice.
+    This manual describes the GTK+ 2.2 language binding for Alice.
   </P>
   <P>
     <A href="http://www.gtk.org">GTK+</A> is a widget set that allows to
@@ -84,14 +84,14 @@
   <P>
     causes <TT>callback</TT> to be invoked each time 
     <TT>signal</TT> is emitted on <TT>widget</TT>.  The result <TT>id</TT>
-    is a unique identifier which can be used to manually emit
-    the signal or to remove the handler.
+    is a unique identifier which can be used to manually remove the handler.
   <P><B>Callbacks.</B>
     Callbacks are defined as functions:
   <PRE>
-   fun myCallBack args = ...</PRE>
+   fun myCallBack (object, args) = ...</PRE>
   <P>
-    where <TT>args</TT> is a list of the arguments associated with the signal.
+    where <TT>object</TT> denotes the object and 
+    <TT>args</TT> is the list of the arguments associated with the signal.
   <P><B>Low-level Events.</B>
     In addition to the high-level signals described above, there is a set
     of events that reflect the X Window System event mechanism (simulated on
@@ -161,11 +161,9 @@
     This chapter describes the details of how the C API is mapped to Alice.
     This knowledge is required when you want to make use of the original
     <A HREF="http://www.gtk.org/api/">reference documentation</A>.
-    (For the GTK Canvas, the documentation is at
-    <A HREF="http://developer.gnome.org/doc/API/libgnomeui/">
-    http://developer.gnome.org/doc/API/libgnomeui/</A>;
-    only look at the <TT>GnomeCanvas</TT>, <TT>GnomeCanvasItem</TT> and
-    <TT>GnomeCanvasGroup</TT> widgets.)
+    (For the GnomeCanvas, the documentation can be found
+    <A HREF="http://developer.gnome.org/doc/API/2.0/libgnomecanvas/index.html">
+    here</A>.
   </P>
 
 <?php subsection("modules", "Modules"); ?>
@@ -177,8 +175,8 @@
            from "x-alice://lib/gtk/Gdk"</TT>
    <LI><TT>structure <A HREF="gtk.html">Gtk</A>
            from 'x-alice://lib/gtk/Gtk'</TT>
-   <LI><TT>structure <A HREF="gtk-canvas.html">GtkCanvas</A>
-            from 'x-alice://lib/gtk/GtkCanvas'</TT>
+   <LI><TT>structure <A HREF="gnome-canvas.html">GnomeCanvas</A>
+            from 'x-alice://lib/gtk/GnomeCanvas'</TT>
   </UL>
   <P>
     Each module represents a namespace.  The corresponding API constants
@@ -192,17 +190,26 @@
     to methods by example.  Consider the C API for <TT>GtkButton</TT>,
     which is derived from <TT>GtkBin</TT>:
   <PRE>
-    struct _GtkButton {
-      GtkBin bin;
-      GtkWidget *child;
-      guint in_button : 1;
-      guint button_down : 1;
-      guint relief : 2;
+    struct _GtkButton { 
+      GtkBin bin; 
+      GdkWindow *event_window; 
+      gchar *label_text; 
+      guint activate_timeout; 
+      guint constructed : 1; 
+      guint in_button : 1; 
+      guint button_down : 1; 
+      guint relief : 2; 
+      guint use_underline : 1; 
+      guint use_stock : 1; 
+      guint depressed : 1; 
+      guint depress_on_activate : 1; 
     };
 
     /* constructors */
     GtkWidget *gtk_button_new();
     GtkWidget *gtk_button_new_with_label(const gchar *label);
+    GtkWidget *gtk_button_new_from_stock(const gchar *stock_id);
+    GtkWidget *gtk_button_new_with_mnemonic(const gchar *label);
 
     /* signal emitters */
     void gtk_button_pressed(GtkButton *button);
@@ -213,19 +220,44 @@
 
     /* attribute accessors */
     void gtk_button_set_relief(GtkButton *button, GtkReliefStyle newstyle);
-    GtkReliefStyle gtk_button_get_relief(GtkButton *button);</PRE>
+    GtkReliefStyle gtk_button_get_relief(GtkButton *button);
+    void gtk_button_set_label(GtkButton *button, const gchar *label);
+    const gchar *gtk_button_get_label(GtkButton *button);
+    void gtk_button_set_use_underline(Gtkbutton *button, gboolean use_underline);
+    gboolean gtk_button_get_use_underline(GtkButton *button);
+    void gtk_button_set_use_stock(GtkButton *button, gboolean use_stock);
+    gboolean gtk_button_get_use_stock(GtkButton *button);</PRE>
 You will find these functions as part of the <TT>Gtk</TT> structure:
   <PRE>
    (* accessors *)
-   val buttonGetFieldBin : object -> object
-   val buttonGetFieldChild : object -> object
+   val buttonGetFieldEventWindow : object -> object
+   val buttonSetFieldEventWindow : object * object -> unit
+   val buttonGetFieldLabelText : object -> string
+   val buttonSetFieldLabelText : object * string -> unit
+   val buttonGetFieldActivateTimeout : object -> int
+   val buttonSetFieldActivateTimeout : object * int -> unit
+   val buttonGetFieldConstructed : object -> int
+   val buttonSetFieldConstructed : object * int -> unit
    val buttonGetFieldInButton : object -> int
+   val buttonSetFieldInButton : object * int -> unit
    val buttonGetFieldButtonDown : object -> int
+   val buttonSetFieldButtonDown : object * int -> unit
    val buttonGetFieldRelief : object -> int
+   val buttonSetFieldRelief : object * int -> unit
+   val buttonGetFieldUseUnderline : object -> int
+   val buttonSetFieldUseUnderline : object * int -> unit
+   val buttonGetFieldUseStock : object -> int
+   val buttonSetFieldUseStock : object * int -> unit
+   val buttonGetFieldDepressed : object -> int
+   val buttonSetFieldDepressed : object * int -> unit
+   val buttonGetFieldDepressedOnActivate : object -> int
+   val buttonSetFieldDepressOnActivate : object * int -> unit
 
    (* constructors *)
    val buttonNew : unit -> object
    val buttonNewWithLabel : string -> object
+   val buttonNewFromStock : string -> object
+   val buttonNewWithMnemonic : string -> object
 
    (* signal emitters *)
    val buttonPressed : object -> unit
@@ -235,8 +267,14 @@ You will find these functions as part of the <TT>Gtk</TT> structure:
    val buttonLeave : object -> unit
 
    (* attribute accessors *)
-   val buttonSetRelief : object * int -> unit
-   val buttonGetRelief : object -> int</PRE>
+   val buttonSetRelief : object * GtkEnums.GtkReliefStyle -> unit
+   val buttonGetRelief : object -> GtkEnums.GtkReliefStyle
+   val buttonSetLabel : object * string -> unit
+   val buttonGetLabel : object -> string
+   val buttonSetUseUnderline : object * bool -> unit
+   val buttonGetUseUnderline : object -> bool
+   val buttonSetUseStock : object * bool -> unit
+   val buttonGetUseStock : object -> bool</PRE>
   <P><B>General Scheme.</B>
     The general scheme is that all underscored identifiers are translated to
     use camel-casing.  Since functions belong to a module,
@@ -268,7 +306,7 @@ You will find these functions as part of the <TT>Gtk</TT> structure:
     <TR><TD><TT>gchar*</TT>, <TT>guchar*</TT><Td><TT>string</TT>
     <TR><TD><TT>gchar*[]</TT>, <TT>guchar*[]</TT>
     <Td><TT>string list</TT>
-    <TR><TD><TT>GdkEvent*</TT><Td><TT>Gdk.event</TT>
+    <TR><TD><TT>GdkEvent*</TT><Td><TT>Gtk.object</TT>
     <TR><TD><TT>GList*</TT><Td><TT>Gtk.object list</TT>
     <TR><TD><TT>double[4]</TT><Td><TT>real list</TT>
     <TR><TD>all other pointers (i.e., <TT>GtkWidget*</TT>)
@@ -280,15 +318,19 @@ You will find these functions as part of the <TT>Gtk</TT> structure:
     whenever possible.
   </P>
   <P><B>Flags.</B>
-    Flags are translated to integer constants.  In general, several
-    constants can be combined using addition (<TT>op+</TT>).
+    Flags are translated to enumeration datypes, together with conversion
+    functions from and to integer, respectively.
   </P>
   <P><B>Inout Arguments.</B>
     The <TT>int*</TT> and <TT>double*</TT>
     types are considered to be <EM>inout</EM> arguments.
-    They are mapped to a <TT>XIn</TT> and <TT>XOut</TT> pair
-    where <TT>XIn</TT> is given as a function argument and
-    and <TT>XOut</TT> is returned by the function after invokation.
+    A function that uses inout arguments,  is available in two flavors,
+    namely a pure out version with default in arguments and a real inout version.
+    The first is denoted by the plain function name, whereas the latter is
+    denoted by name'. For example, the function
+    <TT>void gtk_widget_get_size_request(GtkWidget *,int *, int *)</TT> is
+    available as <TT>val widgetGetSizeRequest : object -> int * int</TT> and
+    <TT>val widgetGetSizeRequest : object * int * int -> int * int</TT>.
   <P><B>Gdk Events.</B>
     The records carried by constructors of the <TT>Gdk.event</TT> type
     represent the structs contained in the <TT>GdkEvent</TT> union.
