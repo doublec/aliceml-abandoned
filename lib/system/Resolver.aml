@@ -12,7 +12,7 @@
 
 import structure Assert        from "../utility/Assert"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure Url           from "../utility/Url"
+import structure Url           from "Url"
 import structure Config        from "Config"
 import structure BinIO         from "BinIO"
 import structure TextIO        from "TextIO"
@@ -50,7 +50,10 @@ structure Resolver: RESOLVER =
 		    end
 
 		val default =
-		    ("default", fn s => SOME (expandUrl (Url.fromString s)))
+		    ("default",
+		     fn s =>
+			SOME (expandUrl (Url.fromString s))
+			handle Url.Malformed => NONE)
 
 		fun root s =
 		    let
@@ -61,7 +64,7 @@ structure Resolver: RESOLVER =
 			    in
 				if Url.isAbsolutePath rel then NONE
 				else SOME (expandUrl (Url.resolve base rel))
-			    end
+			    end handle Url.Malformed => NONE
 		    in
 			("root " ^ s, f)
 		    end
@@ -96,7 +99,7 @@ structure Resolver: RESOLVER =
 				    SOME (expandUrl (Url.resolve
 							 base (cacheUrl url)))
 				else NONE
-			    end
+			    end handle Url.Malformed => NONE
 		    in
 			("cache " ^ s, f)
 		    end
@@ -164,7 +167,7 @@ structure Resolver: RESOLVER =
 		    in
 			(match (p1, String.explode s, env);
 			 SOME (Url.fromString (instantiate (p2, env))))
-			handle Failure => NONE
+			handle (Failure | Url.Malformed) => NONE
 		    end
 
 		fun prefix (s1, s2) =
@@ -182,6 +185,8 @@ structure Resolver: RESOLVER =
 		    in
 			("pattern " ^ s1 ^ " -> " ^ s2, pattern' (p1, p2))
 		    end
+
+		fun custom (name, f) = ("custom", fn s => f s handle _ => NONE)
 
 		val sep = Config.pathSeparator
 
