@@ -192,7 +192,8 @@
   <P>For this reason, export signatures must first be provided for Oz
     functors before they can be imported into Alice components.  This
     will be shown by an example.</P>
-  <P>Assume the following Oz functor is stored at URL <TT>F.ozf</TT>:</P>
+  <P>Assume the following Oz functor is stored at URL
+    <TT>UntypedF.ozf</TT>:</P>
   <PRE>
         functor
         import
@@ -203,19 +204,19 @@
            fun {Show X} {System.show X} unit end
         end</PRE>
   <P>To import this component into Alice, we would write a signature
-    file <TT>F.sig</TT> containing:</P>
+    file <TT>F.asig</TT> containing:</P>
   <PRE>
         signature F_COMPONENT =
             sig
                 val show: 'a -> unit
             end</PRE>
-  <P>The Oz functor <TT>F.ozf</TT> can now be combined with the signature
-    at <TT>F.sig</TT> into a typed component <TT>TypedF.ozf</TT> by invoking
-    the Stockhausen compiler thus:</P>
-  <PRE>        stoc --replacesign F.ozf F.sig TypedF.ozf</PRE>
+  <P>The Oz functor <TT>UntypedF.ozf</TT> can now be combined with the
+    signature at <TT>F.asig</TT> into a typed component <TT>F.ozf</TT> by
+    invoking the Stockhausen compiler thus:</P>
+  <PRE>        stoc --replacesign UntypedF.ozf F.asig F.ozf</PRE>
   <P>We can now import the component into Alice using an import announcement
     of the form</P>
-  <PRE>        import val show from "TypedF.ozf"</PRE>
+  <PRE>        import val show from "F"</PRE>
   <P>Note that the name of the signature is ignored.</P>
   <P>If the signature does not truthfully describe the Oz component,
     run-time type exceptions will be raised.</P>
