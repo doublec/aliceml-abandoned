@@ -11,12 +11,18 @@
  *   $Revision$
  *)
 
-import structure UnsafeUnix from "UnsafeUnix"
-import signature UNIX       from "UNIX-sig"
+import structure IODesc           from "IODesc"
+import structure IO               from "IO"
+import structure TextPrimIO       from "TextPrimIO"
+import structure TextIO           from "TextIO"
+import structure MkTextTranslator from "MkTextTranslator"
+import structure UnsafeUnix       from "UnsafeUnix"
+import signature UNIX             from "UNIX-sig"
 
 structure Unix :> UNIX =
     struct
-	type ('a,'b) proc
+        (* TODO: How to implement binstreams? *)
+	type ('a,'b) proc = TextIO.instream * TextIO.outstream
 	type signal
 
 	datatype exit_status =
@@ -26,4 +32,25 @@ structure Unix :> UNIX =
 	  | W_STOPPED of signal
 
 	open UnsafeUnix
+
+	structure TextTranslator =
+	    MkTextTranslator(structure PrimIO = TextPrimIO)
+
+	fun textReader obj = TextTranslator.translateReader (TextPrimIO.RD obj)
+	fun textWriter obj = TextTranslator.translateWriter
+				(TextPrimIO.augmentWriter (TextPrimIO.WR obj))
+
+	val execute =
+	    fn (cmd, args) =>
+	       let
+		   val streams = execute (cmd, args)
+		   val (instream, outstream) = streamsOf streams
+		   val reader = textReader (IODesc.mkReader instream)
+		   val writer = textWriter (IODesc.mkWriter outstream)
+	       in
+		   (TextIO.mkInstream (TextIO.StreamIO.mkInstream
+					   (reader, CharVector.fromList nil)),
+		    TextIO.mkOutstream (TextIO.StreamIO.mkOutstream
+					    (writer, IO.LINE_BUF)))
+	       end
     end
