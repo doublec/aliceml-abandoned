@@ -11,7 +11,7 @@ DEBUG = 0
 VERSION = 1.0.1
 
 GECODEDIR = /opt/gecode
-SQLITEDIR = /usr
+SQLITEDIR = /opt/seam-support
 LIBXMLDIR = /usr
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
@@ -136,6 +136,9 @@ clean-seam: clean-common
 	(cd tools/toplevel && make distclean) || exit 1
 	(cd tools/lex && make distclean) || exit 1
 	(cd tools/yacc && make distclean) || exit 1
+	(cd lib/gecode/ && make distclean) || exit 1
+	(cd lib/gecode/search-factory && make distclean) || exit 1
+	(cd lib/gecode/distributed-search && make distclean) || exit 1
 
 clean-common:
 	(cd bootstrap && make clean) || exit 1
