@@ -306,8 +306,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    Error.error (#region (infoPat pat), "pattern never matches")
 
 	fun parseRow row =
-	    if Type.isEmptyRow row then nil
-	    else Type.hdRow row::parseRow (Type.tlRow row)
+	    case Type.inspectRow row of
+		(Type.EmptyRow | Type.UnknownRow) => nil
+	      | Type.FieldRow(label, typ, row') => (label, typ)::parseRow row'
 
 	fun getField (Fld (_, _, pat)) = pat
 
@@ -347,13 +348,13 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | preprocess (I.ProdPat (info, patFlds)) =
 	    let
-		val typ = #typ info
+		val row = Type.asProd (Type.unroll (#typ info))
 		val labelTypList =
-		    if Type.isTuple' typ then
+		    if Type.isTupleRow row then
 			Vector.foldri (fn (i, typ, rest) =>
 				       (Label.fromInt (i + 1), typ)::rest)
-			nil (Type.asTuple' typ, 0, NONE)
-		    else parseRow (Type.asProd' typ)
+			nil (Type.asTupleRow row, 0, NONE)
+		    else parseRow row
 		fun adjoin (labelTyp as (label, _), patFlds as
 			    (Fld (_, Lab (_, label'), _)::rest)) =
 		    if label = label' then patFlds
