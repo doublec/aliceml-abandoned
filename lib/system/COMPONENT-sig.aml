@@ -1,31 +1,37 @@
 (*
- * Authors:
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt, 2001
  *
  * Last change:
- *   $Date$Author$
+ *   $Date$ $Author$
  *   $Revision$
  *)
 
-(* The Komponist *)
+import structure Url               from "../utility/Url"
+import structure Reflect           from "Reflect"
+import structure Signature         from "Signature"
+import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
-import structure Url       from "../../lib/utility/Url"
-import signature SIGNATURE from "SIGNATURE-sig"
-
-signature COMPOSER =
+signature COMPONENT =
     sig
-	structure Sig: SIGNATURE
+	type component
+	type t = component
 
+	exception Sited
 	exception Corrupt
-	exception Conflict
 
-	(*--** this is preliminary *)
-	val sign:	Url.t -> Sig.t option
-	val enterSign:	Url.t * Sig.t -> unit	(* [Conflict] *)
+	val extension: string
 
-	val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
+	functor Create(signature S
+		       structure X: S): (val component: component)
+
+	val create: Signature.t option * Reflect.value -> component (*--** unsafe! *)
+	val load: Url.t -> component                    (* IO.Io, Corrupt *)
+	val save: string * component -> unit            (* IO.Io, Sited *)
+	val sign: component -> Signature.t option
+
+	functor MkManager(): COMPONENT_MANAGER where type component = component
     end

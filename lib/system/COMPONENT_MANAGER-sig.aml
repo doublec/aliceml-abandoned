@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2001
+ *
+ * Last change:
+ *   $Date$ $Author$
+ *   $Revision$
+ *)
+
+import structure Url       from "../utility/Url"
+import structure Reflect   from "Reflect"
+
+signature COMPONENT_MANAGER =
+    sig
+	exception Conflict
+	exception Mismatch
+
+	type component
+
+	functor Eval(val url: Url.t
+		     val component: component
+		     signature S): S                   (* Mismatch *)
+
+	functor Link(val url: Url.t
+		     signature S): S
+
+	functor Enter(val url: Url.t
+		      signature S
+		      structure X: S): any             (* Conflict *)
+
+	val eval: Url.t * component -> Reflect.value
+	val link: Url.t -> component
+	val enter: Url.t * component -> unit           (* Conflict *)
+	val lookup: Url.t -> component option
+
+	val start: Url.t -> unit
+    end
