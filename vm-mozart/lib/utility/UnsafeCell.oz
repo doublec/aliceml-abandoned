@@ -42,11 +42,11 @@ define
       end
    end
 
-   proc {Delete Es C Es2 X}
+   proc {Remove Es C Es2 X}
       case Es
       of nil then Es2 = unit
       [] E|Er andthen E.1 == C then Es2 = Er X = E.2
-      [] E|Er then Es3 in {Delete Er C Es3 X}
+      [] E|Er then Es3 in {Remove Er C Es3 X}
       			  Es2 = case Es3
 				of unit then unit
 				[] _ then E|Es3
@@ -91,7 +91,7 @@ define
       'clone':      Dictionary.clone
       'size':       fun {$ M} {Size M} end
       'isEmpty':    fun {$ M} {Size M} == 0 end
-      'deleteAll':  fun {$ M}
+      'removeAll':  fun {$ M}
 			{Dictionary.removeAll M}
 			{ResetSize M}
 			unit
@@ -110,7 +110,7 @@ define
 			K  = {Key C}
 			Es = if {Dictionary.member M K}
 			     then Es = {Dictionary.get M K} X0 in
-			          case {Delete Es C $ X0}
+			          case {Remove Es C $ X0}
 				  of unit then {IncSize M 1} C#X|Es
 				  [] Es2 then case {Procedure.arity F}
 					      of 4 then {F C X0 X}
@@ -124,11 +124,11 @@ define
 			unit
 		    end
 
-      'deleteWith': fun {$ F M C}
+      'removeWith': fun {$ F M C}
 			K = {Key C}
 		    in
 			if {Dictionary.member M K}
-			then case {Delete {Dictionary.get M K} C $ _}
+			then case {Remove {Dictionary.get M K} C $ _}
 			     of unit then {F C _}
 			     [] nil then {IncSize M ~1} {Dictionary.remove M K}
 			     [] Es then {IncSize M ~1} {Dictionary.put M K Es}
