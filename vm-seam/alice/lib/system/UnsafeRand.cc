@@ -11,6 +11,7 @@
 //
 
 #include <cstdlib>
+#include "generic/Tuple.hh"
 #include "alice/primitives/Authoring.hh"
 
 DEFINE0(UnsafeRand_rand) {

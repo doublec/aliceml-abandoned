@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "generic/Tuple.hh"
 #include "alice/primitives/Authoring.hh"
 
 DEFINE1(UnsafeValue_cast) {

@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include "generic/Tuple.hh"
 #include "generic/RootSet.hh"
 #include "generic/BootLinker.hh"
 #include "generic/Unpickler.hh"
