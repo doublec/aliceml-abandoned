@@ -1,5 +1,7 @@
 package de.uni_sb.ps.dml.runtime;
 
+import de.uni_sb.ps.dml.builtin.DMLArray;
+
 final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;
@@ -73,19 +75,32 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     }
 
     /** LVar/Future werden durch ihren Inhalt ersetzt. Falls @field waitforbind true ist,
-	wird gewartet, bis die logische Variable gebunden ist. Falls @field waitforbind false ist
-	und die logische Variable ungebunden, wirft LVar.writeObject eine Exception. */
+     *  wird gewartet, bis die logische Variable gebunden ist. Falls @field waitforbind false ist
+     *  und die logische Variable ungebunden, wirft LVar.writeObject eine Exception.
+     *  Array und Thread sollen immer Exception werfen, Reference ebenfalls.
+    */
 
     final protected java.lang.Object replaceObject(java.lang.Object obj) {
-	if (obj instanceof LVar)
-	    try {
+	try {
+	    if (obj instanceof LVar) {
 		if (waitforbind)
 		    obj = ((LVar) obj).request();
 		else
 		    obj = ((LVar) obj).getValue();
-	    } catch (java.rmi.RemoteException r) {
-		System.err.println(r);
-	    }
-	return obj;
+		return obj;
+	    } else if (obj instanceof DMLArray) {
+		return Constants.
+		    runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle DMLArray")).raise();
+	    } else if (obj instanceof Thread) {
+		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle Thread")).raise();
+	    } else if (obj instanceof Reference) {
+		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle Reference")).raise();
+	    } else
+		return obj;
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return null;
+	}
     }
 }
