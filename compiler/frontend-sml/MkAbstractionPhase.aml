@@ -470,13 +470,22 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	       | (longid', R) =>
 		 O.RefExp(i)
 	   )
-	 | RECORDAtExp(i, exprowo)	=>
+	 | RECORDAtExp(i, exprowo) =>
 	   let
 		val  _   = insertScope E
 		val row' = trExpRowo E exprowo
 		val  _   = deleteScope E
 	   in
 		O.RowExp(i, row')
+	   end
+	 | UPDATEAtExp(i, atexp, exprow) =>
+	   let
+		val exp' = trAtExp E atexp
+		val  _   = insertScope E
+		val row' = trExpRowo E (SOME exprow)
+		val  _   = deleteScope E
+	   in
+		O.CompExp(i, exp', O.RowExp(infoExpRow exprow, row'))
 	   end
 	 | HASHAtExp(i, lab)		=> O.SelExp(i, trLab E lab)
 	 | TUPLEAtExp(i, exps)		=> O.TupExp(i, trExps E exps)

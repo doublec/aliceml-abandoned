@@ -3,6 +3,7 @@
  *
  * Extensions and modifications to core language:
  *   - unified dec and topdec (i.e. top declarations can appear in let)
+ *   - record update expressions
  *   - vector expressions and patterns
  *   - generalized layered patterns
  *   - alternative patterns
@@ -87,6 +88,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	  SCONAtExp      of Info * SCon
 	| LONGVIDAtExp   of Info * Op * LongVId
 	| RECORDAtExp    of Info * ExpRow option
+	| UPDATEAtExp    of Info * AtExp * ExpRow
 	| HASHAtExp      of Info * Lab
 	| TUPLEAtExp     of Info * Exp list
 	| VECTORAtExp    of Info * Exp list
@@ -337,6 +339,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoAtExp(SCONAtExp(I,_))			= I
       | infoAtExp(LONGVIDAtExp(I,_,_))			= I
       | infoAtExp(RECORDAtExp(I,_))			= I
+      | infoAtExp(UPDATEAtExp(I,_,_))			= I
       | infoAtExp(HASHAtExp(I,_))			= I
       | infoAtExp(TUPLEAtExp(I,_))			= I
       | infoAtExp(VECTORAtExp(I,_))			= I

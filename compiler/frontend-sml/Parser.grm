@@ -5,6 +5,8 @@
 (*										*)
 (* Extensions:									*)
 (*   - allow = to be bound as vid (in a pattern it must be prefixed by op)	*)
+(*   - record update expressions:						*)
+(*	  atexp ::= { atexp where exprow }					*)
 (*   - vector expressions and patterns:						*)
 (*	  atexp ::= #[ exp_1 , ... , exp_n ] 	(n>=0)				*)
 (*	  atpat ::= #[ pat_1 , ... , pat_n ]	(n>=0)				*)
@@ -523,11 +525,16 @@
 
   atexp:
 	  scon		( SCONAtExp(I(sconleft,sconright), scon) )
-	| OP_opt longvid
-			( LONGVIDAtExp(I(OP_optleft,longvidright),
-				       OP_opt, longvid) )
+	| longvid
+			( LONGVIDAtExp(I(longvidleft,longvidright),
+				       SANSOp, longvid) )
+	| OP longvid
+			( LONGVIDAtExp(I(OPleft,longvidright),
+				       WITHOp, longvid) )
 	| LBRACE exprow_opt RBRACE
 			( RECORDAtExp(I(LBRACEleft,RBRACEright), exprow_opt) )
+	| LBRACE atexp WHERE exprow RBRACE
+			( UPDATEAtExp(I(LBRACEleft,RBRACEright), atexp, exprow))
 	| HASH lab	( HASHAtExp(I(HASHleft,labright), lab) )
 	| LPAR RPAR	( UNITAtExp(I(LPARleft,RPARright)) )
 	| LPAR exp_COMMA_list2 RPAR

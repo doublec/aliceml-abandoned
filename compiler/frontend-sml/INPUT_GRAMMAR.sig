@@ -3,6 +3,7 @@
  *
  * Extensions and modifications to core language:
  *   - unified dec and topdec (i.e. top declarations can appear in let)
+ *   - record update expressions
  *   - vector expressions and patterns
  *   - generalized layered patterns
  *   - alternative patterns
@@ -87,6 +88,7 @@ signature INPUT_GRAMMAR =
 	  SCONAtExp      of Info * SCon
 	| LONGVIDAtExp   of Info * Op * LongVId
 	| RECORDAtExp    of Info * ExpRow option
+	| UPDATEAtExp    of Info * AtExp * ExpRow
 	| HASHAtExp      of Info * Lab
 	| TUPLEAtExp     of Info * Exp list
 	| VECTORAtExp    of Info * Exp list
