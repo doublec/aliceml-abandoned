@@ -1,9 +1,10 @@
 %%%
 %%% Authors:
 %%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Thorsten Brunklaus, 2000
+%%%   Thorsten Brunklaus and Andreas Rossberg, 2000-2001
 %%%
 %%% Last Change:
 %%%   $Date$ by $Author$
@@ -27,6 +28,18 @@ define
    end
    fun {InspectNFun N V}
       {Inspector.inspectN N V}
+      unit
+   end
+   fun {InspectType X}
+      {Inspector.inspect X.'$t'}
+      unit
+   end
+   fun {InspectSig X}
+      {Inspector.inspect {X.'$S$' unit}}
+      unit
+   end
+   fun {InspectStruct X}
+      {Inspector.inspect X.'X$'}
       unit
    end
    fun {ConfigureFun K V}
@@ -237,8 +250,8 @@ define
    %% Create Inspector Interface
    AliceInspector = 'Inspector'('inspect'      : InspectFun
 				'inspectN'     : InspectNFun
-				'InspectType$' : InspectFun
-				'InspectSig$'  : InspectFun
-				'Inspect$'     : fun {$ S X} {InspectFun X} end
+				'InspectType$' : InspectType
+				'InspectSig$'  : InspectSig
+				'Inspect$'     : InspectStruct
 				'configure'    : ConfigureFun)
 end
