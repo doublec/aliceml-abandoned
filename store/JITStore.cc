@@ -97,10 +97,8 @@ static void CompileRegister(u_int Reg) {
 //
 void JITStore::InitLoggging() {
 #if defined(JIT_STORE_DEBUG)
-  if ((execLog = fopen("execlog.txt", "w")) == NULL) {
-    fprintf(stderr, "unable to open exec log\n");
-    exit(1);
-  }
+  if ((execLog = fopen("execlog.txt", "w")) == NULL)
+    Error("unable to open exec log");
 #endif
 }
 
