@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000
+//   Thorsten Brunklaus, 2000-2001
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -72,7 +72,7 @@ static inline int CompareBlocks(Block *a, Block *b) {
 
 inline u_int WeakDictionary::IncKey(u_int key, u_int size) {
   key += INC_STEP;
-  if (key > size) {
+  if (key >= size) {
     key -= size;
   }
 
@@ -169,7 +169,7 @@ WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, 
 
   Block *p      = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
-  u_int percent = (u_int) (1 + (size * FILL_RATIO));
+  u_int percent = (u_int) (size * FILL_RATIO); // former 1 +
 
   if (handler == INVALID_POINTER) {
     p->InitArg(HANDLER_POS, Store::IntToWord(0));
@@ -183,7 +183,7 @@ WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size, 
   p->InitArg(TYPE_POS, Store::IntToWord(type));
   p->InitArg(TABLE_POS, arr->ToWord());
   
-  for (u_int i = 1; i <= size; i++) {
+  for (u_int i = size; i--;) {
     arr->InitArg(i, HashNode::New()->ToWord());
   }
   
