@@ -358,12 +358,7 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	  | initStm (EndTryStm (_, body), set) = initBody (body, set)
 	  | initStm (EndHandleStm (_, body), set) = initBody (body, set)
 	  | initStm (TestStm (_, _, tests, body), set) =
-	    let
-		val set' = StampSet.clone set
-	    in
-		initTests (tests, set');
-		initBody (body, set)
-	    end
+	    (initTests (tests, set); initBody (body, set))
 	  | initStm (SharedStm ({liveness = ref (Kill _), ...}, _, _), _) = ()
 	  | initStm (SharedStm (_, body, _), set) = initBody (body, set)
 	  | initStm (ReturnStm (_, exp), _) = initExp exp
@@ -371,23 +366,36 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	    initBody (valOf bodyOpt, set)
 	  | initStm (ExportStm (_, _), _) = ()
 	and initTests (LitTests litBodyVec, set) =
-	    Vector.app (fn (_, body) => initBody (body, set)) litBodyVec
+	    Vector.app (fn (_, body) => initBody (body, StampSet.clone set))
+	    litBodyVec
 	  | initTests (TagTests tagBodyVec, set) =
 	    Vector.app (fn (_, _, conArgs, body) =>
-			(case conArgs of
-			     SOME args => processArgs (args, set, insDef)
-			   | NONE => ();
-			 initBody (body, set))) tagBodyVec
+			let
+			    val set' = StampSet.clone set
+			in
+			    case conArgs of
+				SOME args => processArgs (args, set', insDef)
+			      | NONE => ();
+			    initBody (body, set')
+			end) tagBodyVec
 	  | initTests (ConTests conBodyVec, set) =
 	    Vector.app (fn (_, conArgs, body) =>
-			(case conArgs of
-			     SOME args => processArgs (args, set, insDef)
-			   | NONE => ();
-			 initBody (body, set))) conBodyVec
+			let
+			    val set' = StampSet.clone set
+			in
+			    case conArgs of
+				SOME args => processArgs (args, set', insDef)
+			      | NONE => ();
+			    initBody (body, set')
+			end) conBodyVec
 	  | initTests (VecTests vecBodyVec, set) =
 	    Vector.app (fn (idDefs, body) =>
-			(insDefVec (set, idDefs);
-			 initBody (body, set))) vecBodyVec
+			let
+			    val set' = StampSet.clone set
+			in
+			    insDefVec (set', idDefs);
+			    initBody (body, set')
+			end) vecBodyVec
 	and initExp (FunExp (_, _, _, args, body)) =
 	    let
 		val set = StampSet.new ()
