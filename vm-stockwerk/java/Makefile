@@ -16,7 +16,7 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 JAVA_LANG_SOURCES = \
-	Class.cc Object.cc Throwable.cc System.cc ClassLoader.cc \
+	Class.cc Object.cc String.cc Throwable.cc System.cc ClassLoader.cc \
 	Float.cc Double.cc StrictMath.cc
 JAVA_IO_SOURCES = \
 	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \

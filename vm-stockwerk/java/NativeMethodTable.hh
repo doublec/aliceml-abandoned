@@ -42,6 +42,7 @@ private:
   static void Dump(JavaString *className); //--** for testing
   static void java_lang_Class(JavaString *className);
   static void java_lang_Object(JavaString *className);
+  static void java_lang_String(JavaString *className);
   static void java_lang_Throwable(JavaString *className);
   static void java_lang_System(JavaString *className);
   static void java_lang_ClassLoader(JavaString *className);
