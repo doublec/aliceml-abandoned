@@ -22,7 +22,6 @@
 #include "generic/Transients.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
-#include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 
 // LazyCompile Frame
@@ -116,7 +115,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
 						    word nbLocals,
 						    word skipCCCPC) {
   ConcreteCode *concreteCode =
-    (ConcreteCode *) ConcreteCode::New(NativeCodeInterpreter::self, SIZE);
+    ConcreteCode::New(NativeCodeInterpreter::self, SIZE);
   Chunk *name =
     Store::DirectWordToChunk(AliceLanguageLayer::TransformNames::function);
   Transform *transform = Transform::New(name, abstractCode->ToWord());
@@ -125,7 +124,7 @@ NativeConcreteCode *NativeConcreteCode::NewInternal(TagVal *abstractCode,
   concreteCode->Init(IMMEDIATE_ENV_POS, immediateEnv);
   concreteCode->Init(NLOCALS_POS, nbLocals);
   concreteCode->Init(SKIP_CCC_PC_POS, skipCCCPC);
-  return (NativeConcreteCode *) concreteCode;
+  return static_cast<NativeConcreteCode *>(concreteCode);
 }
 
 word NativeConcreteCode::New(TagVal *abstractCode) {
