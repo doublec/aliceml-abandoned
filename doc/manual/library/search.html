@@ -1,0 +1,126 @@
+<?php include("macros.php3"); ?>
+<?php heading("The SEARCH signature", "The <TT>SEARCH</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature SEARCH
+    functor MkSearch (TreeNode : TREENODE) :> SEARCH
+  </PRE>
+
+  <P>
+    The <TT>SEARCH</TT> signature provides a functional interface to search in constraint programming.
+    The <TT>MkSearch</TT> functor provides an implementation of this interface
+    based on tree nodes.
+  </P>
+
+  <P>See also:
+    <A href="treenodes.html"><TT>TREENODE</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature SEARCH from "x-alice:/lib/gecode/search-factory/SEARCH-sig"
+    import functor MkSearch from "x-alice:/lib/gecode/search-factory/MkSearch"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature SEARCH =
+    sig
+        type path
+        exception NotAssigned
+    
+        val nextSolved :        unit -> Space.space option
+        val isFinished :        unit -> bool
+        val getOneSolution :    (Space.space -> 'a) -> 'a option
+        val getAllSolutions :   (Space.space -> 'a) -> 'a list
+        val getUnexploredPath : unit -> path option
+        val stopSearch :        unit -> unit
+        val init :              path -> unit
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type path</TT>
+    </DT>
+    <DD>
+      <P>The type of paths in the search tree (abstract).</P>
+    </DD>
+
+    <DT>
+      <TT>exception NotAssigned</TT>
+    </DT>
+    <DD>
+      <P>Raised by <TT>getOneSolution</TT> or <TT>getAllSolutions</TT> when 
+        trying to read the solution of a solved space which is under-specified.</P>
+    </DD>
+
+    <DT>
+      <TT>nextSolved ()</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>NONE</TT> if the search is finished, <TT>SOME <I>s</I></TT> otherwise
+      where <I>s</I> is a solved space.</P>
+    </DD>
+
+    <DT>
+      <TT>isFinished ()</TT>
+    </DT>
+    <DD>
+      <P>Indicates if the search is finished, that is, if the whole search tree has been explored.</P>
+    </DD>
+
+    <DT>
+      <TT>getOneSolution <I>read</I></TT>
+    </DT>
+    <DD>
+      <P>Finds the next solved space, and use the function <I>read</I> to extract a solution.
+         In case of Branch and Bound search, the solution is better than previous ones,
+         so that the best solution is the last solution.
+         Raises <TT>NotAssigned</TT> if the constraint variables accessed by read are not
+         fully determined.</P>
+    </DD>
+
+    <DT>
+      <TT>getAllSolutions <I>read</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a list of all the solution of the search tree, using the function <I>read</I>
+         to extract them from solved spaces.
+         In case of Branch and Bound search, the first element of the list is the best solution
+         (the list may contain many elements, though).
+         Raises <TT>NotAssigned</TT> if the constraint variables accessed by read are not
+         fully determined.</P>
+    </DD>
+
+    <DT>
+      <TT>getUnexploredPath ()</TT>
+    </DT>
+    <DD>
+      <P>Returns a path in tree corresponding to some unexplored node (the highest available in the tree).
+         Thread-safe.</P>
+    </DD>
+
+    <DT>
+      <TT>stopSearch ()</TT>
+    </DT>
+    <DD>
+      <P>Stops the search (thread-safe).</P>
+    </DD>
+
+    <DT>
+      <TT>init <I>path</I></TT>
+    </DT>
+    <DD>
+      <P>Optional: sets the top node of the search, which is the root-node by default.
+         Raises Fail if the search has already begun and is not finished yet. </P>
+    </DD>
+
+  </DL>
+
+<?php footing() ?>
