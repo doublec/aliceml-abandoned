@@ -163,6 +163,8 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
     return localEnv->Lookup(tagVal->Sel(0));
   case AbstractCode::Global:
     return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
+  case AbstractCode::Immediate:
+    return tagVal->Sel(0);
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
@@ -201,7 +203,7 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
-#if 0 //--** hack
+#if 1 //--** hack
   if (frame->IsHandlerFrame()) {
     std::fprintf(stderr, "executing unexpected handler:\n");
     taskStack->Dump();
@@ -257,12 +259,6 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	for (u_int i = kills->GetLength(); i--; )
 	  localEnv->Kill(kills->Sub(i));
 	pc = TagVal::FromWord(pc->Sel(1));
-      }
-      break;
-    case AbstractCode::PutConst: // of id * value * instr
-      {
-	localEnv->Add(pc->Sel(0), pc->Sel(1));
-	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
     case AbstractCode::PutVar: // of id * idRef  * instr
