@@ -97,7 +97,7 @@ structure Http :> HTTP =
 	fun readRequest socket =
 	    let
 		val requestLine = readLine socket
-		val rl =
+		val {method, uri, protocol} =
 		    case String.tokens (fn c => c = #" ") requestLine of
 			[method, requestURI, protocol] =>
 			    {method, uri = requestURI, protocol}
@@ -107,11 +107,10 @@ structure Http :> HTTP =
 		val headers = readHeaders socket
 		val body = readBody (socket, headers)
 	    in
-		{method = #method rl,
-		 uri = Url.fromString (#uri rl)
+		{method,
+		 uri = Url.fromString uri
 		       handle Url.Malformed => raise Format,
-		 protocol = #protocol rl,
-		 headers, body}
+		 protocol, headers, body}
 	    end
 
 	fun parseResponseLine s =
