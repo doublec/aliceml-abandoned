@@ -33,6 +33,9 @@ public:
   static u_int SignalStatus() {
     return (1 << SIGNAL_HANDLER_SIGNAL_ARRIVED_STATUS);
   }
+  static u_int GetSignalStatus() {
+    return StatusWord::GetStatus(SignalHandler::SignalStatus());
+  }
   static void RegisterSignal(int signal, word closure);
   static Future *RegisterAlarm(u_int milliseconds);
   static void HandlePendingSignals();
