@@ -292,7 +292,8 @@ structure Renderer :> RENDERER =
 				   top - Real.fromInt y * delta,
 				   1.0)
 		    in
-			trace (base, dir, ambient, lights, scene, depth)
+			Color.clamp (trace (base, dir,
+					    ambient, lights, scene, depth))
 		    end
 	    in
 		render'

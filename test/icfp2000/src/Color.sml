@@ -7,6 +7,7 @@ signature COLOR =
 	val scale: real * color -> color
 	val add: color * color -> color
 	val prod: color * color -> color
+	val clamp: color -> color
     end
 
 
@@ -28,4 +29,8 @@ structure Color :> COLOR =
 	fun prod ({red = r1, green = g1, blue = b1},
 		  {red = r2, green = g2, blue = b2}): color =
 	    {red = r1 * r2, green = g1 * g2, blue = b1 * b2}
+
+	fun clamp {red, green, blue} =
+	    {red = clamp' red, green = clamp' green, blue = clamp' blue}
+	and clamp' x = if x < 0.0 then 0.0 else if x > 1.0 then 1.0 else x
     end
