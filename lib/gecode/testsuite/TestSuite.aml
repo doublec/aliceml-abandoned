@@ -212,7 +212,7 @@ structure TestSuite :
 						else acc
 			end
 		
-			fun countTernaryVerifier(max,v) = countTernaryVerifier1(IntInf.fromInt max, (zero,zero,zero), v, zero)
+			fun countTernaryVerifier(max,v) = countTernaryVerifier1(IntInf.<<(one, Word.fromInt max), (zero,zero,zero), v, zero)
 		
 			fun countBinaryVerifier1 (max, (a,b), v, acc) =
 			let
@@ -223,9 +223,31 @@ structure TestSuite :
 					else acc
 			end
 		
-			fun countBinaryVerifier(max,v) = countBinaryVerifier1(IntInf.fromInt max, (zero,zero), v, zero)
+			fun countBinaryVerifier(max,v) = countBinaryVerifier1(IntInf.<<(one, Word.fromInt max), (zero,zero), v, zero)
 		 
-		 
+		 	fun getInt(start,length,v)=
+		 		let
+		 			val shiftDown = IntInf.~>>(v,Word.fromInt start)
+		 		in
+		 			IntInf.andb(shiftDown, IntInf.<<(one,Word.fromInt length))
+		 		end
+		 	
+		 	fun sliceInt(max,n,v)=
+		 		Vector.tabulate (n,fn i=>getInt(i*max,max,v))
+		 	
+		 	fun countNaryOne1(max, n, v, x, y, acc)=
+	 			let
+	 				val acc = b2II(v(y,sliceInt(max,n,x))) +acc
+	 			in
+	 				if (x < IntInf.<<(one, Word.fromInt(max*n))) then 
+	 					countNaryOne1(max, n, v, x+one, y, acc)
+					else if (y < IntInf.<<(one,Word.fromInt(max))) then 
+							countNaryOne1(max, n, v, zero, y+one, acc)
+				 		else acc		 				
+	 			end
+
+
+		 	fun countNaryOne(max, n, v)= countNaryOne1(max, n, v, zero, zero, zero)
 
 
         (*
