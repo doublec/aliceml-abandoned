@@ -37,7 +37,7 @@
 #endif
 #include "alice/AliceLanguageLayer.hh"
 
-extern word UnsafeBrowser();
+extern word UnsafeBrowserSupport();
 extern word UnsafeConfig();
 extern word UnsafeIODesc();
 extern word UnsafeOS();
@@ -54,7 +54,7 @@ extern word UnsafeAddr();
 extern word UnsafeRemote();
 
 static NativeComponent nativeComponents[] = {
-  {"lib/system/UnsafeBrowser",      UnsafeBrowser},
+  {"lib/system/UnsafeBrowserSuport", UnsafeBrowserSuport},
   {"lib/system/UnsafeConfig",       UnsafeConfig},
   {"lib/system/UnsafeIODesc",       UnsafeIODesc},
   {"lib/system/UnsafeOS",           UnsafeOS},
