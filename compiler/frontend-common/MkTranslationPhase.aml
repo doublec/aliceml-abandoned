@@ -65,7 +65,7 @@ struct
 
     fun unfinished i funname casename =
 	Error.error(i, "Translation." ^ funname ^ ": " ^ casename ^
-		       " not implementeed yet")
+		       " not implemented yet")
 
   (* Helpers *)
 
