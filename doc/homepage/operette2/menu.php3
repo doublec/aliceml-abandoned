@@ -2,7 +2,6 @@
   <A href="index.php3">Home</A><BR>
   <BR>
   Alice, the Language:<BR>
-  <A href="laziness.php3">Laziness</A><BR>
   <A href="futures.php3">Futures</A><BR>
   <A href="threads.php3">Threads</A><BR>
   <A href="components.php3">Components</A><BR>

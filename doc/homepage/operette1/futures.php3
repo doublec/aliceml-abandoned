@@ -31,10 +31,10 @@
 
 		val await:	'a -> 'a
 		val awaitOne:	'a * 'b -> 'a
-<!--
+
 		val isFuture:	'a -> bool
 		val isFailed:	'a -> bool
--->	    end
+	    end
   </PRE>
 
   <P>
@@ -129,7 +129,6 @@
     exception, the future becomes failed.
   </P>
 
-<!--
   <P>
     The operation
   </P>
@@ -150,12 +149,12 @@
   <P>
     tests whether its argument is a failed future.
   </P>
--->
 
   <P class=note>
     Note: In Operette 1, failed futures are not supported, due to limitations
     of the Mozart virtual machine. Instead of raising the exception
     <TT>Future</TT>, all operations accessing a failed future will block.
+    Similarly, <TT>isFailed</TT> will always deliver <TT>false</TT>.
   </P>
 
 
@@ -230,5 +229,30 @@
     <TT>Promise</TT>.
   </P>
 
+
+
+<?php section("cell", "cells") ?>
+
+  <P>
+    For concurrent programming, there exists a concurrent variant of
+    ML references in the structure <TT>Cell</TT>:
+  </P>
+
+  <PRE>
+	structure Cell:
+	    sig
+		type 'a cell
+
+		val cell:	'a -> 'a cell
+		val exchange:	'a cell * 'a -> 'a
+	    end
+  </PRE>
+
+  <P>
+    The operation <TT>cell</TT> creates a new cell and initializes it with
+    the given value. With <TT>exchange</TT>, the content of a cell can be
+    replaced by a new value. The old value is returned. The <TT>exchange</TT>
+    operation is atomic, and can thus be used for synchronisation.
+  </P>
 
 <?php footing() ?>

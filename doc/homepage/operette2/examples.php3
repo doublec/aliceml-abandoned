@@ -14,8 +14,42 @@
   </P>
 
   <UL>
-    <LI> <A href="examples/streamadd.aml"><TT>streamadd.aml</TT></A>
+    <LI> <A href="examples/streamadd.aml"><TT>streamadd.aml</TT></A> </LI>
   </UL>
+
+
+<?php section("smolka", "futures et al.") ?>
+
+  <P>
+    Here are some small examples for concurrent programming with futures:
+  </P>
+
+  <UL>
+    <LI> <A href="examples/smolka.aml"><TT>smolka.aml</TT></A> </LI>
+  </UL>
+
+
+<?php section("interpreter", "interpreter") ?>
+
+  <P>
+    The following interpreter for a simple functional language adapted from
+    last semester's course "Programmierung" demonstrates
+    how a program can be divided into components:
+  </P>
+
+  <UL>
+    <LI> <A href="examples/interpreter/">Interpreter for F</A> </LI>
+    <LI> Everything as a <A href="examples/interpreter.tar"><TT>.tar</TT></A>
+         file </LI>
+  </UL>
+
+  <P>
+    Compile it with
+  </P>
+
+  <PRE>
+	stoc -x Main.aml -o interpr
+  </PRE>
 
 
 <?php footing() ?>

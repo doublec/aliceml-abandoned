@@ -42,9 +42,9 @@
   </P>
 
   <PRE>
-	fun enum n = n :: byneed(fn() => enum(n+1))
+	fun enumFrom n = byneed(fn() => n :: enumFrom(n+1))
 
-	val ns = enum 0
+	val ns = enumFrom 0
   </PRE>
 
   <P>
