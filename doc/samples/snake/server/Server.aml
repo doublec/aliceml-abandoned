@@ -142,6 +142,7 @@ struct
                         
                         fun try (rpc, event : event, chan, num) =
                             if num <= 0 then (
+                                print "removing not responding client\n";
                                 #disconnected event := true;
                                 Channel.destroy chan;
                                 false
@@ -195,7 +196,8 @@ struct
                                 val ev      = #event pd
                             in
                                 if Channel.length chan > 0 then
-                                    (#disconnected ev := true;
+                                    (print ("disconnecting SLOW client " ^ Int.toString id ^ "\n");
+                                     #disconnected ev := true;
                                      Channel.destroy chan)
                                 else ()
                             end)  partDescs
@@ -211,7 +213,7 @@ struct
                     val steps   = loop (partDescs, 0)
                 in
                     if steps > 0 then
-                        TextIO.output (TextIO.stdErr, 
+                        TextIO.output (TextIO.stdErr, "sync " ^ 
                             LargeInt.toString (syncStepTime * Int.toLarge steps) ^ "\n")
                     else ()
                 end
@@ -380,7 +382,10 @@ struct
                                      #changedView ev := NONE)
                             else ()
                         end 
-                    
+                   
+                    (* we really should use Time.now here. But as of
+                       know it's not yet available in alice. 
+                     *) 
                     (* estimated amount of time this game is running now *) 
                     val time        = Time.fromMilliseconds (ticks * 
                                         Time.toMilliseconds (#tick config))

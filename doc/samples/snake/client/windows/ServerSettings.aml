@@ -269,7 +269,8 @@ struct
 				    (Gtk.comboGetFieldEntry (colorCombo)))
 			    in
 				alreadyConn := [(name, color)];
-				startServer (SOME (name, color), config)
+                                print "start\n";
+				startServer (SOME (name, color), config) before print "end\n"
 			    end) handle Error.Error msg => SND msg
 
 		in

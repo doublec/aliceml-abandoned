@@ -95,20 +95,20 @@ struct
             
             val lock = Lock.lock ()
 
-            (*
             fun locked name f =
                 Lock.sync lock (fn a => 
-                      let   val _   = Inspector.inspect ("calling: " ^ name, a); 
+                      let   val _   = print ("calling: " ^ name); 
                             val res = f a
                         in
-                            Inspector.inspect ("leaving: " ^ name);
+                            print ("leaving: " ^ name);
                             res
                         end handle e => (
-                            Inspector.inspect ("leaving: " ^ name ^ " with exception", e);
+                            print ("leaving: " ^ name ^ " with exception " ^ exnName e);
                             raise e
                         ))
-            *)
+            (*
             fun locked name f = Lock.sync lock f 
+            *)
         in
             (* return locked but not yet proxied client interface! *)
             ({
