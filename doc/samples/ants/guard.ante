@@ -1,0 +1,23 @@
+val dontknow = nop
+
+val move_to_border =
+    repeat 3 (turn left) ++
+    loopx (fn exit =>
+        sense here home ifnot exit ++
+        move ifnot (repeat 2 (turn left)))
+
+val move_food_inside =
+    turn right ++ turn right ++
+    repeat 5 (move ifnot nop) ++
+    drop ++ goto "guard"
+    
+val step =
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++ 
+    sense rightahead home ifnot (turn right) ++
+    sense here food ifyes (pick ifnot nop ++ move_food_inside) ++
+    move ifnot dontknow    
+
+val ant =
+    proc "guard" move_to_border ++
+    loop step
