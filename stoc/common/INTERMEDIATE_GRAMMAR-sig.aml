@@ -49,7 +49,7 @@ signature INTERMEDIATE =
 	| IfExp     of info * exp * exp * exp
 	| WhileExp  of info * exp * exp
 	| SeqExp    of info * exp list
-	| CaseExp   of info * exp * match list * longid (* failure exception *)
+	| CaseExp   of info * exp * match list
 	| RaiseExp  of info * exp
 	| HandleExp of info * exp * id * exp
 	| LetExp    of info * dec list * exp
@@ -79,10 +79,11 @@ signature INTERMEDIATE =
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * id list * exp * bool (* recursive *)
-	  		(* - all ids distinct
-			 * - id list either empty
-			 *   or exp has appropriate tuple type *)
+	  ValDec    of info * pat * exp * bool (* recursive *)
+	  		(* if dec is recursive, then
+			 * (1) pat may not contain WithPat
+			 * (2) exp may only contain
+			 *     LitExp, VarExp, ConExp, TupExp, RecExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
 
 
