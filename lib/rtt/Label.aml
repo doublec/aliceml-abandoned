@@ -14,10 +14,9 @@ structure Label :> LABEL =
 				     | NONE   => ALPHA s
 
     fun fromName(Name.ExId s)	= ALPHA s
-      | fromName(Name.InId)	= ALPHA ""
+      | fromName(Name.InId)	= raise Domain
 
-    fun toName(ALPHA "")	= Name.InId
-      | toName(ALPHA s)		= Name.ExId s
+    fun toName(ALPHA s)		= Name.ExId s
       | toName(NUM n)		= Name.ExId(Int.toString n)
 
     fun toString(NUM n)		= Int.toString n
