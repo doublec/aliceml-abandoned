@@ -29,7 +29,7 @@ signature ENVIRONMENT =
 	val filename: t -> string
 	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
 	val fresh: t -> AbstractCodeGrammar.id
-	val lookup: t * FlatGrammar.id -> AbstractCodeGrammar.idRef
+	val lookup: t * FlatGrammar.idRef -> AbstractCodeGrammar.idRef
 	val lookupStamp: t * Stamp.t -> AbstractCodeGrammar.idRef option
 	val lookupShared: t * Stamp.t -> AbstractCodeGrammar.instr option
 	val declareShared: t * Stamp.t * AbstractCodeGrammar.instr -> unit
