@@ -44,7 +44,7 @@ static const char *TransLabel(BlockLabel l) {
   case BYNEED_LABEL:
     return "BYNEED";
   case HASHTABLE_LABEL:
-    return "HASHTABBLE";
+    return "HASHTABLE";
   case QUEUE_LABEL:
     return "QUEUE";
   case STACK_LABEL:
@@ -56,9 +56,13 @@ static const char *TransLabel(BlockLabel l) {
   case EMPTYARG_LABEL:
     return "EMPTYARG";
   case ONEARG_LABEL:
-    return "ONEARG_LABEL";
+    return "ONEARG";
   case TUPARGS_LABEL:
-    return "TUPARGS_LABEL";
+    return "TUPARGS";
+  case CLOSURE_LABEL:
+    return "CLOSURE";
+  case HANDLERBLOCK_LABEL:
+    return "HANDLER";
   default:
     return "UNKNOWN";
   }
@@ -68,42 +72,44 @@ static void Print(Chunk *c) {
   fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
 }
 
-static void PerformDump(word x, u_int index, u_int level) {
+static void PerformDump(word x, u_int index, u_int level, u_int depth) {
   word_data w;
-  if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
-    fprintf(stderr, "%*c(%d):TRANSIENT(%s)\n", level, ' ',
-	    index, TransLabel(w.pb->GetLabel()));
-    level += 2;
-    PerformDump(w.pb->GetArg(0), 0, level);
-    level -= 2;
-    fprintf(stderr, "%*cENDTRANSIENT\n", level , ' ');
+  if (depth > TaskStack::maxDepth) {
+    fprintf(stderr, "%*c...\n", level, ' ');
+  }
+  else if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
+    fprintf(stderr, "%*cTRANSIENT(%s)[%d]\n", level, ' ',
+	    TransLabel(w.pb->GetLabel()), index);
+    PerformDump(w.pb->GetArg(0), 0, level + 2, depth + 1);
+    fprintf(stderr, "%*cENDTRANSIENT\n", level, ' ');
   }
   else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
-    fprintf(stderr, "%*c(%d):CHUNK(%d)=", level, ' ',
-	    index, w.pc->GetSize());
+    fprintf(stderr, "%*cCHUNK(%d)[%d]=", level, ' ',
+	    w.pc->GetSize(), index);
     Print(w.pc);
   }
   else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
-    u_int size = w.pb->GetSize();
-    fprintf(stderr, "%*c(%d):BLOCK(%s=%d, %d)\n", level, ' ',
-	    index, TransLabel(w.pb->GetLabel()),
-	    w.pb->GetLabel(), size);
-    level += 2;
-    for (u_int i = 0; i < size; i++) {
-      PerformDump(w.pb->GetArg(i), i, level);
+    u_int size  = w.pb->GetSize();
+    fprintf(stderr, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
+	    TransLabel(w.pb->GetLabel()), w.pb->GetLabel(), size, index);
+    u_int showSize = (size <= TaskStack::maxWidth ? size : TaskStack::maxWidth);
+    for (u_int i = 0; i < showSize; i++) {
+      PerformDump(w.pb->GetArg(i), i, level + 2, depth + 1);
     }
-    level -= 2;
-    fprintf(stderr, "%*cENDBLOCK\n", level , ' ');
+    fprintf(stderr, "%*cENDBLOCK\n", level, ' ');
   }
   // Assume Int
   else {
     w.pi = Store::WordToInt(x);
-    fprintf(stderr, "%*c(%d):INT=%d\n", level, ' ', index, w.pi);
+    fprintf(stderr, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
   }
 }
 
+u_int TaskStack::maxWidth = 190;
+u_int TaskStack::maxDepth = 6;
+
 void TaskStack::Dump(word x) {
-  PerformDump(x, 0, 0);
+  PerformDump(x, 0, 0, 0);
 }
 
 void TaskStack::DumpTaskStack() {
