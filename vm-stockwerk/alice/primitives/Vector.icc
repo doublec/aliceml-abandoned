@@ -94,13 +94,13 @@ VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
   int n          = frame->GetNumElems();
   vector->Init(i, Interpreter::Construct(args));
   taskStack->PopFrame(); // Discard Frame
-  if ((i + 1) == n) {
+  if (++i == n) {
     Scheduler::currentArgs = Interpreter::OneArg(vector->ToWord());
     return Interpreter::CONTINUE;
   }
   else {
     VectorTabulateFrame *newFrame =
-      VectorTabulateFrame::New(this, vector, fun, (i + 1), n);
+      VectorTabulateFrame::New(this, vector, fun, i, n);
     taskStack->PushFrame(newFrame->ToWord());
     Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));
     return taskStack->PushCall(fun);
