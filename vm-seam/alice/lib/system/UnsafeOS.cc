@@ -58,7 +58,6 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
   HANDLE handle = FindFirstFile(buf, &findData);
   word entry;
   if (handle == INVALID_HANDLE_VALUE) {
-  {
     if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
     entry = Store::IntToWord(0);
   } else {
@@ -66,12 +65,14 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
   }
 
   String *dir = String::New(buf);
-  Cell *handleCell = Cell:New(Store::IntToWord(handle));
+  Cell *closedCell = Cell::New(Store::IntToWord(0));
+  Cell *handleCell = Cell::New(Store::UnmanagedPointerToWord(handle));
   Cell *entryCell = Cell::New(entry);
-  Tuple *tuple = Tuple::New(3);
-  tuple->Init(0, dir->ToWord());
-  tuple->Init(1, handleCell->ToWord());
-  tuple->Init(2, entryCell->ToWord());
+  Tuple *tuple = Tuple::New(4);
+  tuple->Init(0, closedCell->ToWord());
+  tuple->Init(1, dir->ToWord());
+  tuple->Init(2, handleCell->ToWord());
+  tuple->Init(3, entryCell->ToWord());
   RETURN(tuple->ToWord());
 #else
   DIR *d = opendir(name->ExportC());
@@ -84,8 +85,12 @@ DEFINE1(UnsafeOS_FileSys_openDir) {
 DEFINE1(UnsafeOS_FileSys_readDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DECLARE_TUPLE(tuple, x0);
-  HANDLE handle = Store::WordToInt(Cell::FromWord(tuple->GetArg(1))->Access());
-  Cell *entryCell = Cell::FromWord(tuple->GetArg(2));
+  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
+
+  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
   word entry = entryCell->Access();
   word newEntry;
 
@@ -94,8 +99,7 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
   }
 
   WIN32_FIND_DATA findData;
-  if (FindNextFile(handle, &findData) == FALSE)
-  {
+  if (FindNextFile(handle, &findData) == FALSE) {
     if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
     newEntry = Store::IntToWord(0);
   } else {
@@ -122,25 +126,33 @@ DEFINE1(UnsafeOS_FileSys_readDir) {
 DEFINE1(UnsafeOS_FileSys_rewindDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DECLARE_TUPLE(tuple, x0);
-  String *dir = String::FromWord(tuple->GetArg(0));
-  Cell *handleCell = Cell::FromWord(tuple->GetArg(1));
-  HANDLE handle = Store::WordToInt(handleCell->Access());
+  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  if (Store::WordToInt(closedCell->Access()) != 0) RAISE_SYS_ERR();
 
-  if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
+  String *dir = String::FromWord(tuple->Sel(1));
+  Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+  Cell *entryCell = Cell::FromWord(tuple->Sel(3));
+  HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
+
+  if (FindClose(handle) == FALSE) {
+    closedCell->Assign(Store::IntToWord(1));
+    RAISE_SYS_ERR();
+  }
 
   WIN32_FIND_DATA findData;
   handle = FindFirstFile(dir->ExportC(), &findData);
   word entry;
   if (handle == INVALID_HANDLE_VALUE) {
-  {
-    if (GetLastError() != ERROR_NO_MORE_FILES) RAISE_SYS_ERR();
+    if (GetLastError() != ERROR_NO_MORE_FILES) {
+      closedCell->Assign(Store::IntToWord(1));
+      RAISE_SYS_ERR();
+    }
     entry = Store::IntToWord(0);
   } else {
     entry = String::New(findData.cFileName)->ToWord();
   }
 
-  Cell *entryCell = Cell::FromWord(tuple->GetArg(2));
-  handleCell->Assign(Store::IntToWord(handle));
+  handleCell->Assign(Store::UnmanagedPointerToWord(handle));
   entryCell->Assign(entry);
 
   RETURN_UNIT;
@@ -155,9 +167,13 @@ DEFINE1(UnsafeOS_FileSys_rewindDir) {
 DEFINE1(UnsafeOS_FileSys_closeDir) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DECLARE_TUPLE(tuple, x0);
-  HANDLE handle = Store::WordToInt(Cell::FromWord(tuple->GetArg(1))->Access());
-
-  if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
+  Cell *closedCell = Cell::FromWord(tuple->Sel(0));
+  if (Store::WordToInt(closedCell->Access()) == 0) {
+    Cell *handleCell = Cell::FromWord(tuple->Sel(2));
+    HANDLE handle = Store::WordToUnmanagedPointer(handleCell->Access());
+    closedCell->Assign(Store::IntToWord(1));
+    if (FindClose(handle) == FALSE) RAISE_SYS_ERR();
+  }
   RETURN_UNIT;
 #else
   DECLARE_UNMANAGED_POINTER(d, x0);
