@@ -22,7 +22,7 @@ find_in () {
 if test -z "${ALICE_HOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    ALICE_HOME=$(find_in VMMain.ozf /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
+    ALICE_HOME=$(find_in VMMain.ozf /usr/share/alice-mozart "$PROGRAMFILES/Alice" "$dir")
 fi
 
 if test -z "${OZHOME}"; then
