@@ -49,7 +49,6 @@
 ../top/MakeEngine.sml
 ../top/SIGNATURE.sig
 ../top/COMPOSER.sig
-../top/Signature.sml
 ../common/Stamp.sml
 ../common/StampSet.sml
 ../common/StampMap.sml
@@ -162,5 +161,6 @@
 ../backend-com+/CodeStore.sml
 ../backend-com+/CODE_GEN_PHASE.sig
 ../backend-com+/CodeGenPhase.sml
+../top/Signature.sml
 ../top/MAIN.sig
 ../top/Main.sml
