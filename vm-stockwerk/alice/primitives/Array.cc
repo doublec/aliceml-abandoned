@@ -11,6 +11,7 @@
 //
 
 #define XArray Array
+#define XVector Vector
 #define REQUEST_ELEMS_INT 0
 
 #include "Array.icc"
