@@ -11,8 +11,8 @@
  *)
 
 import structure UnsafeValue  from "../system/UnsafeValue"
-import structure GlobalStamp  from "GlobalStamp"
-import functor   MkHashImpMap from "MkHashImpMap"
+import structure GlobalStamp  from "../data/GlobalStamp"
+import functor   MkHashImpMap from "../data/MkHashImpMap"
 import signature STAT         from "STAT-sig"
 
 structure Stat :> STAT =
@@ -24,11 +24,11 @@ struct
 
     structure Map = MkHashImpMap(GlobalStamp)
 
-    val map = Map.new() : value Map.t
+    val map = Map.map() : value Map.t
 
     fun stat x =
 	let
-	    val stamp = GlobalStamp.new()
+	    val stamp = GlobalStamp.stamp()
 	in
 	    Map.insertDisjoint(map, stamp, UnsafeValue.cast x);
 	    stamp
