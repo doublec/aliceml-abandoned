@@ -4,14 +4,14 @@ sig
     type operator
 
     datatype token =
-	  Operator    of operator
-	| Id          of id
-	| Binder      of id
-	| IntConst    of int
-	| RealConst   of real
-	| StringConst of string
-	| Array       of token list
-	| Function    of token list
+	  Operator of operator
+	| Id       of id
+	| Binder   of id
+	| Int      of int
+	| Real     of real
+	| String   of string
+	| Array    of token list
+	| Function of token list
 
     datatype program = Program of token list
 
@@ -97,50 +97,98 @@ struct
       | operator  _		= NONE
 
 
+  (* Transformations *)
+
+    fun transform(mat, matI, Renderer.Transform(mat', matI', obj)) =
+	    Renderer.Transform(Geometry.mulMat(mat, mat'),
+			       Geometry.mulMat(matI',matI), obj)
+      | transform(mat, matI, obj) = Renderer.Transform(mat, matI, obj)
+
+    fun translate(tx, ty, tz, obj) =
+	transform(Geometry.translationMat(tx, ty, tz),
+		  Geometry.translationMat(~tx, ~ty, ~tz), obj)
+    fun scale(sx, sy, sz, obj) =
+	transform(Geometry.scaleMat(sx, sy, sz),
+		  Geometry.scaleMat(1.0/sx, 1.0/sy, 1.0/sz), obj)
+
+    fun uscale(s, obj) = scale(s, s, s, obj)
+
+    fun rotateX(angle, obj) = transform(Geometry.rotationXMat angle,
+					Geometry.rotationXMat(~angle), obj)
+    fun rotateY(angle, obj) = transform(Geometry.rotationYMat angle,
+					Geometry.rotationYMat(~angle), obj)
+    fun rotateZ(angle, obj) = transform(Geometry.rotationZMat angle,
+					Geometry.rotationZMat(~angle), obj)
+
+  (* Surface wrappers *)
+
+    fun planeFace (Renderer.PlaneSurface) (u,v,_) = (0,u,v)
+
+    fun sphereFace (Renderer.SphereSurface) (x,y,z) = (0,x,x) (*UNFINISHED*)
+
+    fun cubeFace (Renderer.CubeFront)  (u,v,_) = (0,u,v)
+      | cubeFace (Renderer.CubeBack)   (u,v,_) = (1,u,v)
+      | cubeFace (Renderer.CubeLeft)   (_,u,v) = (2,u,v)
+      | cubeFace (Renderer.CubeRight)  (_,u,v) = (3,u,v)
+      | cubeFace (Renderer.CubeTop)    (u,_,v) = (4,u,v)
+      | cubeFace (Renderer.CubeBottom) (u,_,v) = (5,u,v)
+
+    fun cylinderFace (Renderer.CylinderSide)   (x,y,z) = (0,x,x) (*UNFINISHED*)
+      | cylinderFace (Renderer.CylinderTop)    (u,_,v) = (1,u,v)
+      | cylinderFace (Renderer.CylinderBottom) (u,_,v) = (2,u,v)
+
+    fun coneFace (Renderer.ConeSide) (x,y,z) = (0,x,x) (*UNFINISHED*)
+      | coneFace (Renderer.ConeBase) (u,_,v) = (1,u,v)
+
+
   (* Programs *)
 
     type id = string
 
     datatype token =
-	  Operator    of operator
-	| Id          of id
-	| Binder      of id
-	| IntConst    of int
-	| RealConst   of real
-	| StringConst of string
-	| Array       of token list
-	| Function    of token list
+	  Operator of operator
+	| Id       of id
+	| Binder   of id
+	| Int      of int
+	| Real     of real
+	| String   of string
+	| Array    of token list
+	| Function of token list
 
     datatype program = Program of token list
 
 
   (* Values *)
 
-    structure Env = BinaryMapFn(type ord_ky = id  val compare = String.compare)
+    structure Env = BinaryMapFn(type ord_key = id  val compare = String.compare)
 
     datatype value =
-	  Bool    of bool
-	| Int     of int
-	| Real    of real
-	| String  of string
-	| Closure of env * token list
-	| Vector  of value vector
-	| Point   of real * real * real
-	| Object  of Renderer.Object
-	| Light   of Renderer.Light
+	  BoolV    of bool
+	| IntV     of int
+	| RealV    of real
+	| StringV  of string
+	| ClosureV of env * token list
+	| ArrayV   of value vector
+	| PointV   of real * real * real
+	| ObjectV  of Renderer.object
+	| LightV   of Renderer.light
 
     withtype env = value Env.map
 
 
   (* Helpers *)
 
+    open Geometry
+
     fun degToRad r = r * Math.pi / 180.0
     fun radToDeg r = r * 180.0 / Math.pi
 
-    val unitMatrix = ( (1.0, 0.0, 0.0, 0.0)
-		     , (0.0, 1.0, 0.0, 0.0)
-		     , (0.0, 0.0, 1.0, 0.0)
-		     )
+    fun realToWord8 x = Word8.fromInt(Real.trunc(255.9 * x))
+    fun colorToPPMColor {red, green, blue} =
+	(realToWord8 red, realToWord8 green, realToWord8 blue)
+
+    fun loop(n,f)    = loop'(0,n,f)
+    and loop'(i,n,f) = if i = n then () else (f i; loop'(i+1, n, f))
 
 
   (* Evaluation *)
@@ -148,6 +196,27 @@ struct
     exception Error of string
 
     fun typeError() = raise Error "stack underflow or type error"
+
+    (* This has to be polymorphic, thus here... -- I WANT POLYREC!! *)
+    val evalFwd =
+	ref(NONE : (env * value list * token list -> value list) option)
+    fun evalPrimObj(ClosureV(env, code) :: stack, RenderObj, face) =
+	let
+	    (* UNFINISHED: do optimizations *)
+	    fun surface(i,u,v) =
+		case valOf(!evalFwd)(env, [RealV v, RealV u, IntV i], code) of
+		  [RealV n, RealV ks, RealV kd, PointV rgb] =>
+			{ color    = Color.color rgb
+			, diffuse  = kd
+			, specular = ks
+			, phong    = n
+			}
+		| _ => typeError()
+	in
+	    ObjectV(RenderObj(fn x => surface o face x)) :: stack
+	end
+      | evalPrimObj _ = typeError()
+
 
     fun run(Program code) =
 	ignore(eval(Env.empty, nil, code))
@@ -158,23 +227,24 @@ struct
     and eval(env, stack, nil)     = stack
       | eval(env, stack, v::code) =
 	case v of
-	  IntConst i    => eval(env, Int i :: stack, code)
-	| RealConst r   => eval(env, Real r :: stack, code)
-	| StringConst s => eval(env, String s :: stack, code)
-	| Binder x      => eval(Env.insert(env, x, hd stack), tl stack, code)
-	| Id x          => eval(env, valOf(Env.find(env, x)) :: stack, code)
-	| Function c    => eval(env, Closure(env, c) :: stack, code)
-	| Array c       => let val vs = List.rev(eval(env, nil, c)) in
-			    eval(env, Vector(Vector.fromList vs) :: stack, code)
-			   end
-	| Operator y    => let val stack' = evalOp(stack, y) in
+	  Int i      => eval(env, IntV i :: stack, code)
+	| Real r     => eval(env, RealV r :: stack, code)
+	| String s   => eval(env, StringV s :: stack, code)
+	| Binder x   => eval(Env.insert(env, x, hd stack), tl stack, code)
+	| Id x       => eval(env, valOf(Env.find(env, x)) :: stack, code)
+	| Function c => eval(env, ClosureV(env, c) :: stack, code)
+	| Array c    => let val vs = List.rev(eval(env, nil, c)) in
+			    eval(env, ArrayV(Vector.fromList vs) :: stack, code)
+			end
+	| Operator y => let val stack' = evalOp(y, stack) in
 			    eval(env, stack', code)
-			   end
+			end
 
-    and evalOp(Apply, Closure(env, code) :: stack) = eval(env, stack, code)
-      | evalOp(False, stack)                       = Bool false :: stack
-      | evalOp(True,  stack)                       = Bool true :: stack
-      | evalOp(If, Closure(env2,code2)::Closure(env1,code1)::Bool b :: stack) =
+    and evalOp(Apply, ClosureV(env, code) :: stack) = eval(env, stack, code)
+      | evalOp(False, stack)                        = BoolV false :: stack
+      | evalOp(True,  stack)                        = BoolV true :: stack
+      | evalOp(If, ClosureV(env2, code2) ::
+		   ClosureV(env1, code1) :: BoolV b :: stack) =
 	if b then eval(env1, stack, code1)
 	     else eval(env2, stack, code2)
 
@@ -183,7 +253,7 @@ struct
       | evalOp(AddI,  stack) = evalIntIntToInt  (stack, Int.+)
       | evalOp(SubI,  stack) = evalIntIntToInt  (stack, Int.-)
       | evalOp(NegI,  stack) = evalIntToInt     (stack, Int.~)
-      | evalOp(MulI,  stack) = evalIntIntToInt  (stack, Int.*)
+      | evalOp(MulI,  stack) = evalIntIntToInt  (stack, Int.* )
       | evalOp(DivI,  stack) = evalIntIntToInt  (stack, Int.quot)
       | evalOp(ModI,  stack) = evalIntIntToInt  (stack, Int.rem)
 
@@ -192,8 +262,8 @@ struct
       | evalOp(AddF,  stack) = evalRealRealToReal (stack, Real.+)
       | evalOp(SubF,  stack) = evalRealRealToReal (stack, Real.-)
       | evalOp(NegF,  stack) = evalRealToReal     (stack, Real.~)
-      | evalOp(MulF,  stack) = evalRealRealToReal (stack, Real.*)
-      | evalOp(DivF,  stack) = evalRealRealToReal (stack, Real.quot)
+      | evalOp(MulF,  stack) = evalRealRealToReal (stack, Real.* )
+      | evalOp(DivF,  stack) = evalRealRealToReal (stack, Real./)
 
       | evalOp(RealI, stack) = evalIntToReal  (stack, Real.fromInt)
       | evalOp(Floor, stack) = evalRealToInt  (stack, Real.floor)
@@ -207,13 +277,14 @@ struct
       | evalOp(Asin,  stack) = evalRealToReal (stack, degToRad o Math.asin)
       | evalOp(Acos,  stack) = evalRealToReal (stack, degToRad o Math.acos)
 
-      | evalOp(Point, Real(z)::Real(y)::Real(x)::stack) = Point(x,y,z) :: stack
-      | evalOp(GetX, Point(x,y,z) :: stack) = Real x :: stack
-      | evalOp(GetY, Point(x,y,z) :: stack) = Real y :: stack
-      | evalOp(GetZ, Point(x,y,z) :: stack) = Real z :: stack
+      | evalOp(Point, RealV z :: RealV y :: RealV x :: stack) =
+	    PointV(x,y,z) :: stack
+      | evalOp(GetX, PointV(x,y,z) :: stack) = RealV x :: stack
+      | evalOp(GetY, PointV(x,y,z) :: stack) = RealV y :: stack
+      | evalOp(GetZ, PointV(x,y,z) :: stack) = RealV z :: stack
 
-      | evalOp(Get,    Int i :: Array a :: stack) = Vector.sub(a, i) :: stack
-      | evalOp(Length, Array a :: stack)          = Vector.length a :: stack
+      | evalOp(Get,    IntV i :: ArrayV a :: stack) = Vector.sub(a, i) :: stack
+      | evalOp(Length, ArrayV a :: stack) = IntV(Vector.length a) :: stack
 
       | evalOp(Plane,    stack) = evalPrimObj(stack, Renderer.Plane, planeFace)
       | evalOp(Sphere,   stack) = evalPrimObj(stack, Renderer.Sphere,sphereFace)
@@ -232,33 +303,40 @@ struct
       | evalOp(RotateY,    stack) = evalTransformAngle(stack, rotateY)
       | evalOp(RotateZ,    stack) = evalTransformAngle(stack, rotateZ)
 
-      | evalOp(Light,      stack) = evalLight(stack, Renderer.Directional)
-      | evalOp(Light, Point(r,g,b) :: Point dir :: stack) =
-	    Light(Renderer.Directional({red=r, green=g, blue=b}, dir)) :: stack
-      | evalOp(Pointlight, stack) = evalLight(stack, Renderer.Point)
-      | evalOp(Spotlight,  stack) = evalSpotlight(stack, Renderer.Spot)
+      | evalOp(Light, PointV rgb :: PointV dir :: stack) =
+	    LightV(Renderer.Directional(Color.color rgb, normalizeVec dir))
+	    :: stack
+      | evalOp(Pointight, PointV rgb :: PointV pos :: stack) =
+	    LightV(Renderer.Point(Color.color rgb, pos)) :: stack
+      | evalOp(Spotlight, RealV exp :: RealV cutoff :: PointV rgb ::
+			  PointV at :: PointV pos :: stack) =
+	    LightV(Renderer.Spot(Color.color rgb, pos,at, degToRad cutoff, exp))
+	    :: stack
 
-      | evalOp(Render, String filename :: Int height :: Int width ::
-		       Real vision :: Int depth :: Object scene ::
-		       Array lights :: Point(r,g,b) :: stack) =
+      | evalOp(Render, StringV filename :: IntV height :: IntV width ::
+		       RealV vision :: IntV depth :: ObjectV scene ::
+		       ArrayV lights :: PointV rgb :: stack) =
 	let
-	    val file   = BinIO.openOut filename
-	    val header = "P6 # Helikopter\n" ^
-			 Int.toString width ^" "^ Int.toString height ^ " 255\n"
-	in
-	    BinIO.output(Word8Vector.tabulate(String.size header,
-		fn i => Word8.fromInt(Char.ord(String.sub(header, i)))));
-	    Renderer.render
-		{ ambient   = {red = r, green = g, blue = b}
-		, lights    = Vector.toList lights
+	    val file   = PPMFile.openOut(filename, width, height)
+	    val render = Renderer.mkRender
+		{ ambient   = Color.color rgb
+		, lights    = List.tabulate(Vector.length lights,
+					    fn i => case Vector.sub(lights, i)
+						      of LightV l => l
+						       | _ => typeError())
 		, scene     = scene
 		, vision    = degToRad vision
 		, width     = width
 		, height    = height
 		, depth     = depth
-		, outstream = file
-		};
-	    BinIO.closeOut file;
+		}
+	in
+	    loop(height, fn y =>
+		loop(width, fn x =>
+		    PPMFile.output1(file, colorToPPMColor(render(x,y)))
+		)
+	    );
+	    PPMFile.closeOut file;
 	    stack
 	end
 
@@ -266,72 +344,47 @@ struct
 
   (* Artihmetic Functions *)
 
-    and evalIntToInt(Int i :: stack, f)   = Int(f i) :: stack
-      | evalIntToInt _                    = typeError()
-    and evalIntToReal(Int i :: stack, f)  = Real(f i) :: stack
-      | evalIntToReal _                   = typeError()
-    and evalRealToInt(Real r :: stack, f) = Int(f r) :: stack
-      | evalRealToInt _                   = typeError()
-
-    and evalIntIntToInt(Int i2 :: Int i1 :: stack, f)    = Int(f(i1,i2))::stack
-      | evalIntIntToInt _                                = typeError()
-    and evalIntIntToBool(Int i2 :: Int i1 :: stack, f)   = Bool(f(i1,i2))::stack
-      | evalIntIntToBool _                               = typeError()
-    and evalRealRealToReal(Real(r2)::Real(r1)::stack, f) = Real(f(r1,r2))::stack
-      | evalRealRealToReal _                             = typeError()
-    and evalRealRealToBool(Real(r2)::Real(r1)::stack, f) = Bool(f(r1,r2))::stack
-      | evalRealRealToBool _                             = typeError()
-
-  (* Primitive Objects *)
-
-    and evalPrimObj(Closure(env, code) :: stack, RenderObj, face) =
-	let
-	    (* UNFINISHED: do optimizations *)
-	    fun surface(i,u,v) = 
-		case eval(env, [Real v, Real u, Int i], code) of
-		  [Real n, Real ks, Real kd, Point(r,g,b)] =>
-			{ color    = {red = r, green = g, blue = b}
-			, diffuse  = kd
-			, specular = ks
-			, phong    = n
-			}
-		| _ => typeError()
-	in
-	    Object(RenderObj(unitMatrix, unitMatrix, surface o face)) :: stack
-	end
-      | evalPrimObj _ = typeError()
+    and evalIntToInt(IntV i :: stack, f)		= IntV(f i) :: stack
+      | evalIntToInt _					= typeError()
+    and evalIntToReal(IntV i :: stack, f)		= RealV(f i) :: stack
+      | evalIntToReal _					= typeError()
+    and evalRealToInt(RealV r :: stack, f)		= IntV(f r) :: stack
+      | evalRealToInt _					= typeError()
+    and evalRealToReal(RealV r :: stack, f)		= RealV(f r) :: stack
+      | evalRealToReal _				= typeError()
+    and evalIntIntToInt(IntV n :: IntV m :: stack, f)	= IntV(f(m,n)) :: stack
+      | evalIntIntToInt _				= typeError()
+    and evalIntIntToBool(IntV n :: IntV m :: stack, f)	= BoolV(f(m,n)) :: stack
+      | evalIntIntToBool _				= typeError()
+    and evalRealRealToReal(RealV y :: RealV x :: stack, f)
+							= RealV(f(x,y)) :: stack
+      | evalRealRealToReal _				= typeError()
+    and evalRealRealToBool(RealV y :: RealV x :: stack, f)
+							= BoolV(f(x,y)) :: stack
+      | evalRealRealToBool _				= typeError()
 
   (* Constructive Objects *)
 
-    and evalConstrObj(Object obj2 :: Object obj1 :: stack, RenderConstr) =
-	    Object(RenderConstr(obj1, obj2)) :: stack
+    and evalConstrObj(ObjectV obj2 :: ObjectV obj1 :: stack, RenderConstr) =
+	    ObjectV(RenderConstr(obj1, obj2)) :: stack
       | evalConstrObj _ = typeError()
 
   (* Transformations *)
 
-    and evalTransformReal(Real r :: Object obj :: stack, transform) =
-	    Object(transform(obj, r)) :: stack
+    and evalTransformReal(RealV r :: ObjectV obj :: stack, transform) =
+	    ObjectV(transform(r, obj)) :: stack
       | evalTransformReal _ = typeError()
 
-    and evalTransformAngle(Real r :: Object obj :: stack, transform) =
-	    Object(transform(obj, degToRad r)) :: stack
+    and evalTransformAngle(RealV r :: ObjectV obj :: stack, transform) =
+	    ObjectV(transform(degToRad r, obj)) :: stack
       | evalTransformAngle _ = typeError()
 
-    and evalTransformVec(Real z :: Real y :: Real x :: Object obj :: stack,
+    and evalTransformVec(RealV z :: RealV y :: RealV x :: ObjectV obj :: stack,
 			 transform) =
-	    Object(transform(obj, x, y, z)) :: stack
+	    ObjectV(transform(x, y, z, obj)) :: stack
       | evalTransformVec _ = typeError()
 
-  (* Lights *)
+  (* Tie the knot *)
 
-    and evalLight(Point(r,g,b) :: Point pos :: stack, LightConstr) =
-	    Light(LightConstr({red = r, green = g, blue = b}, pos)) :: stack
-      | evalLight _ = typeError()
-
-    and evalSpotlight(Real exp :: Real cutoff :: Point(r,g,b) :: Point at ::
-		      Point pos :: stack, LightConstr) =
-	    Light(LightConstr({red = r, green = g, blue = b}, pos, at,
-			      degToRad cutoff, exp)) :: stack
-      | evalSpotlight _ = typeError()
-
+    val _ = evalFwd := SOME eval
 end

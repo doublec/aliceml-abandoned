@@ -50,6 +50,6 @@ token:
 						Error.error(BINDERleft,
 							"rebinding of operator")
 					)
-	| INTEGER			( Machine.IntConst INTEGER )
-	| REAL				( Machine.RealConst REAL )
-	| STRING			( Machine.StringConst STRING )
+	| INTEGER			( Machine.Int INTEGER )
+	| REAL				( Machine.Real REAL )
+	| STRING			( Machine.String STRING )
