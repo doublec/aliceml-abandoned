@@ -18,10 +18,10 @@ class IntVar {
 };
 
 class SetVar {
-  UBIter<SetVar> set_getUpperBound(void); set_getUpperBound;
-  LBIter<SetVar> set_getLowerBound(void); set_getLowerBound;
-  unsigned int upperBoundSize(void); set_getUpperBoundSize;
-  unsigned int lowerBoundSize(void); set_getLowerBoundSize;
+  LubIter<SetVar> set_getUpperBound(void); set_getUpperBound;
+  GlbIter<SetVar> set_getLowerBound(void); set_getLowerBound;
+  unsigned int lubSize(void); set_getUpperBoundSize;
+  unsigned int glbSize(void); set_getLowerBoundSize;
   unsigned int unknownSize(void); set_getUnknownSize;
   UnknownIter<SetVar> set_getUnknown(void); set_getUnknown;
   int cardMin(void); set_getCardinalityMin;
@@ -89,17 +89,7 @@ void assign(const IntVarArgs&, AvalSel); int_assign;
 // Branching
 void branch(const IntVarArgs&, BvarSel, BvalSel); int_branch;
 
-// Finite Set Variables / Constraints
-
-//UBIter<SetVar> getUpperBound(setvar); set_getUpperBound;
-//LBIter<SetVar> getLowerBound(setvar); set_getLowerBound;
-//Diff<UBIter<SetVar>, LBIter<SetVar> > getUnknown(setvar); set_getUnknown;
-//int set_getCardinalityMin(setvar);
-//int set_getCardinalityMax(setvar);
-//bool set_getAssigned(setvar);
-
-//unsigned int set_getUpperBoundSize(setvar);
-//unsigned int set_getLowerBoundSize(setvar);
+// Finite Set Propagators
 
 void include(SetVar, DomSpec&); set_lowerBound;
 void intersect(SetVar, DomSpec&); set_upperBound;
@@ -146,4 +136,3 @@ void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
 void selectSets(SetVar, const SetVarArgs&, IntVar); set_selectSets;
 
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel); set_branch;
-//void randomBranch(const SetVarArgs&, int); set_randomBranch;

@@ -45,8 +45,8 @@ struct
     | parseArg "SetBvalSel" = SetBvalSel
     | parseArg "SetBvarSel" = SetBvarSel
     | parseArg (s as ("VarRanges<IntVar>" |
-                         "UBIter<SetVar>" |
-                         "LBIter<SetVar>" |
+                         "LubIter<SetVar>" |
+                         "GlbIter<SetVar>" |
                          "UnknownIter<SetVar>" |
                          "I&"
                          )) = Iterator s
