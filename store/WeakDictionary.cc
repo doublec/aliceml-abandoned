@@ -15,6 +15,7 @@
 #endif
 #include "store/WeakDictionary.hh"
 
+#include <cstdio>
 #include <cstring>
 
 //
@@ -122,7 +123,7 @@ void WeakDictionary::Resize() {
   newsize = newp->GetSize();
   u_int percent = (u_int) (1 + (newsize * FILL_RATIO));
   SetPercent(percent);
-  ReplaceArg(TABLE_POS, newp->ToWord());
+  SetTable(newp->ToWord());
   // init the new table with zero
   for (u_int i = newsize; i--;) {
     newp->InitArg(i, Store::IntToWord(0));
@@ -217,11 +218,31 @@ word WeakDictionary::GetItem(word key) {
   return entry->GetValue(); // should raise invalid_key something
 }
 
+word WeakDictionary::CondGetItem(word key, word alternative) {
+  u_int hashed_key = HashKey(key);
+  word nodes       = GetEntry(hashed_key);
+  word prev        = Store::IntToWord(0);
+  HashNode *entry  = FindKey(key, nodes, prev);
+  return ((entry == NULL) ? alternative : entry->GetValue());
+}
+
+void WeakDictionary::Apply(item_apply func) {
+  Block *table = GetTable();
+  for (u_int i = table->GetSize(); i--;) {
+    word nodes = table->GetArg(i);
+    while (nodes != Store::IntToWord(0)) {
+      HashNode *node = HashNode::FromWordDirect(nodes);
+      func(node->GetKey(), node->GetValue());
+      nodes = node->GetNext();
+    }
+  }
+}
+
 //
 // BlockHashTable Methods
 //
-int BlockHashTable::nbTables;
 word BlockHashTable::tables;
+Finalization *BlockHashTable::handler;
 
 void BlockHashTable::Rehash() {
   Block *table = GetTable();

@@ -80,12 +80,47 @@ public:
   }
   static HashNode *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
-    Assert((p == INVALID_POINTER) ||
-	   ((p->GetLabel() == HASHNODE_LABEL) ||
-	    (p->GetLabel() == HANDLEDHASHNODE_LABEL)));
+    Assert((p->GetLabel() == HASHNODE_LABEL) ||
+	   (p->GetLabel() == HANDLEDHASHNODE_LABEL));
     return (HashNode *) p;
   }
 };
+
+class BTListNode : private Block {
+private:
+  static const u_int TABLE_POS = 0;
+  static const u_int NEXT_POS  = 1;
+  static const u_int SIZE      = 2;
+public:
+  using Block::ToWord;
+
+  word GetTable() {
+    return GetArg(TABLE_POS);
+  }
+  word GetNext() {
+    return GetArg(NEXT_POS);
+  }
+  static const u_int GetSize() {
+    return SIZE;
+  }
+  void Init(word table, word next) {
+    InitArg(TABLE_POS, table);
+    InitArg(NEXT_POS, next);
+  }
+  static BTListNode *New(word table, word next) {
+    Block *p = Store::AllocBlock(MIN_DATA_LABEL, SIZE);
+    p->InitArg(TABLE_POS, table);
+    p->InitArg(NEXT_POS, next);
+    return (BTListNode *) p;
+  }
+  static BTListNode *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == MIN_DATA_LABEL);
+    return (BTListNode *) p;
+  }
+};
+
+typedef void (*item_apply)(word key, word item);
 
 class WeakDictionary : private Block {
 public:
@@ -141,7 +176,7 @@ protected:
     return Store::DirectWordToBlock(GetArg(TABLE_POS));
   }
   void SetTable(word t) {
-    InitArg(TABLE_POS, t);
+    ReplaceArg(TABLE_POS, t);
   }
   word GetEntry(u_int i) {
     Assert(i < GetTableSize());
@@ -158,6 +193,8 @@ protected:
 
   int IsMember(word key);
   word GetItem(word key); // must be member
+  // returns alternative in case of failure
+  word CondGetItem(word key, word alternative); 
 
   static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size,
 			     Finalization *handler);
@@ -176,6 +213,9 @@ public:
   word GetItem(int key) {
     return GetItem(Store::IntToWord(key));
   }
+  word CondGetItem(int key, word alternative) {
+    return CondGetItem(Store::IntToWord(key), alternative);
+  }
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
@@ -192,6 +232,7 @@ public:
   bool IsEmpty() {
     return GetCounter() == 0;
   }
+  void Apply(item_apply func);
 
   static WeakDictionary *New(u_int size, Finalization *handler) {
     WeakDictionary *d =
@@ -222,7 +263,7 @@ class BlockHashTable : public WeakDictionary {
 protected:
   friend class Store;
   static word tables;
-  static int nbTables;
+  static Finalization *handler;
   void Rehash();
 public:
 
@@ -238,17 +279,19 @@ public:
   word GetItem(word key) {
     return WeakDictionary::GetItem(key); // must be member
   }
+  word CondGetItem(word key, word alternative) {
+    return WeakDictionary::CondGetItem(key, alternative);
+  }
 
   static void Init() {
-    nbTables = 0;
-    tables   = WeakDictionary::New(4, new BlockHashTableFinalizer())->ToWord();
+    tables  = Store::IntToWord(0);
+    handler = new BlockHashTableFinalizer();
   }
 
   static BlockHashTable *New(u_int size) {
-    Finalization *handler = new BlockHashTableFinalizer();
     BlockHashTable *t = (BlockHashTable *)
       WeakDictionary::New(WORD_KEY, BLOCKHASHTABLE_LABEL, size, handler);
-    WeakDictionary::FromWordDirect(tables)->InsertItem(nbTables++, t->ToWord());
+    tables = BTListNode::New(t->ToWord(), tables)->ToWord();
     return t;
   }
   static BlockHashTable *FromWord(word x) {
@@ -264,3 +307,4 @@ public:
 };
 
 #endif
+
