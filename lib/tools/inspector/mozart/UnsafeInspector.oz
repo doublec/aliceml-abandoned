@@ -78,6 +78,10 @@ define
 	    %% Arrow Stuff
 	 [] 'widthbitmap' then true
 	 [] 'depthbitmap' then true
+	    %% Abstract Type Stuff
+	 [] 'promise'     then true %% Promise
+	 [] 'package'     then true %% Package
+	 [] 'typeindicator' then true %% Type indicators (currently fd only)
 	 else false
 	 end
       end
@@ -132,7 +136,7 @@ define
       {Inspector.configure widgetTreeWidth 50}
       {Inspector.configure widgetTreeDepth 15}
       {Inspector.configure widgetTreeDisplayMode true}
-      {Inspector.configure widgetUseNodeSet 2} %% Can be 1 or 2
+      {Inspector.configure widgetUseNodeSet 1} %% Can be 1 or 2
       {Inspector.configure widgetNodesContainer TreeNodes}
       {Inspector.configure widgetNodeSets ((NormalNodes|RelationNodes)#
 					   (NormalIndNodes|RelationIndNodes))}
@@ -147,6 +151,8 @@ define
 			  cell          # 'Reference'
 			  constructor   # 'Constructor'
 			  typeindicator # 'Type Indicator'
+			  package       # 'Package'
+			  promise       # 'Promise'
 			  tuple         # 'Tuple'
 			  vector        # 'Vector'
 			  conval        # 'Constructed Value'
@@ -156,8 +162,8 @@ define
 			  future        # 'Future'
 			  fdint         # 'Finite-Domain-Variable'
 			  fset          # 'Finite-Set-Variable'
-			  variable      # 'Relation Variable'
-			  variableref   # 'Rel-Var Reference'
+			  variable      # 'Co-Reference Definition'
+			  variableref   # 'Co-Reference Usage'
 			  misc          # 'Miscellany'
 			  round         # 'Round Brackets'
 			  widthbitmap   # 'Width-Limit-Indicator'
@@ -183,7 +189,7 @@ define
       Purple = '#a020f0'
       Brown  = '#b886b0'
 
-      DefaultWidths = [1 5 10 0 ~1 ~5 ~10]
+      DefaultWidths = [1 10 25 100 0 ~1 ~10 ~25 100]
       DefaultDepths = [~1 0 1 2 3 4 5 10 20]
 
       DefaultActions = ['Reinspect'(reinspect)
@@ -191,7 +197,7 @@ define
       FunctionActions = {Append DefaultActions
 			 ['Inspect Closure'(InspectClosure)]}
       FutureActions = {Append DefaultActions
-		       ['Force Evaluation'(Wait)]}
+		       ['Force Evaluation'(proc {$ X} try {Wait X} catch _ then skip end end)]}
 
       proc {InspectClosure P}
 	 {Inspector.inspect {Debug.getGlobals P}}
@@ -202,6 +208,8 @@ define
 		      'STRING':           {NewCell Black}
 		      'HOLE':             {NewCell Brown}
 		      'FUTURE':           {NewCell Brown}
+		      'PROMISE':          {NewCell Red}
+		      'PACKAGE':          {NewCell Red}
 		      'CONSTRUCTOR':      {NewCell Blue}
 		      'TYPEINDICATOR':    {NewCell Red}
 		      'TUPLE':            {NewCell Black}
@@ -250,6 +258,8 @@ define
 			      'STRING':           textColor
 			      'CONSTRUCTOR':      constructorColor
 			      'TYPEINDICATOR':    typeindicatorColor
+			      'PROMISE':          promiseColor
+			      'PACKAGE':          packageColor
 			      'HOLE':             freeColor
 			      'FUTURE':           futureColor
 			      'TUPLE':            tupleColor
@@ -405,7 +415,7 @@ define
       {ForAll ['NUMBER' 'FUNCTION' 'STRING' 'HOLE' 'FUTURE' 'CONSTRUCTOR'
 	       'TUPLE' 'RECORD' 'LIST' 'VECTOR' 'RECORD_LABEL'
 	       'ALIAS_DEFINITION' 'ALIAS_REFERENCE' 'WIDTH_ARROW'
-	       'DEPTH_ARROW' 'PARENTHESES' 'MISC' 'TYPEINDICATOR']
+	       'DEPTH_ARROW' 'PARENTHESES' 'MISC' 'TYPEINDICATOR' 'PACKAGE' 'PROMISE']
        ConfigureColor}
       {ForAll ['NUMBER' 'FUNCTION' 'STRING' 'HOLE' 'FUTURE' 'CONSTRUCTOR'
 	       'REFERENCE' 'FD' 'FSET' 'TUPLE' 'RECORD' 'LIST'
