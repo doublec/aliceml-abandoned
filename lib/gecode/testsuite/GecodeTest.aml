@@ -14,6 +14,7 @@ import structure Report from "x-alice:/lib/test/Report"
 
 import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FS        from "x-alice:/lib/gecode/FS"
+import structure Print     from "x-alice:/lib/system/Print"
 
 structure GecodeTest :
   sig
@@ -35,10 +36,11 @@ structure GecodeTest :
   struct
 
   (* Generic search engine with verification *)
-  fun testVerify s v f =
+  fun testVerify (s,v,f,p) =
       let
-	  fun dfe (s,d) =
-	      case Space.status s of
+	  fun dfe (s) =(
+	  	  p s;
+	      (case Space.status s of
 		  Space.FAILED => (f (); Space.discard s)
 		| Space.SOLVED => ((*assert (v s);*)
 		                   Space.discard s)
@@ -48,16 +50,18 @@ structure GecodeTest :
 		  in
 		      Space.commit(s, 1);
 		      Space.commit(c, 2);
-		      (dfe (s,d+1));
-		      (dfe (c,d+1))
+		      (dfe s);
+		      (dfe c)
 		  end
+		 ))
 	in
-	    dfe (s,0)
+	    dfe (s)
 	end
 
   (* What to do when failure is found *)
-  fun testVerifySimple (s, v) = testVerify s v (fn () => assert false)	
-  fun testVerifyComplex (s, v) = testVerify s v (fn () => ())	
+  exception Error
+  fun testVerifySimple (s, v, p) = testVerify (s, v, (fn () => (print "Space failed!\n";raise Error)), p)	
+  fun testVerifyComplex (s, v, p) = testVerify (s, v, (fn () => ()), p)
 
   (* Translate propagator calling convention *)
   fun mkBinary prop = fn (s,#[a,b]) => prop(s,a,b) | _ => raise Subscript
@@ -73,9 +77,26 @@ structure GecodeTest :
       in
           Vector.app (fn v => FS.subset (space, v, top)) root;
           prop(space, root);
-	  FS.randomBranch(space, root, seed);
+	  FS.randomBranch(space, root, seed); 
+	  (*FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);*)
 	  (root, space)
       end
+	
+	
+	(* Space printer from root vector*)
+	fun setPrint root space = 
+		let
+			val rootLB = Vector.map (fn v=> FS.Reflect.lowerBound (space,v)) root
+			val rootUB = Vector.map (fn v=> FS.Reflect.upperBound (space,v)) root			
+		in
+			print "\nUpper bounds:";
+			Print.printVal rootUB;
+			print "\nLower bounds:";
+			Print.printVal rootLB;
+			print "\n"
+		end
+
+	fun fakePrint _ = ()
 
   (* Test case generation for binary set constraints *)
   fun binarySet (name, max, seeds, propagator, verifier) =
@@ -88,7 +109,8 @@ structure GecodeTest :
                                val v = verifier (case root of #[a,b] => (a,b)
                                                             | _ => raise Subscript)
                            in
-                               testVerifySimple (space, v)
+                               testVerifySimple (space, v, setPrint root)
+                               (*testVerifySimple (space, v, fakePrint) *)
                                before Space.discard space
                            end) seeds
       in
@@ -106,7 +128,7 @@ structure GecodeTest :
                                val v = verifier (case root of #[a,b,c] => (a,b,c)
                                                             | _ => raise Subscript)
                            in
-                               testVerifySimple (space, v)
+                               testVerifySimple (space, v, fakePrint)
                            end) seeds
       in
           (name, tests)
