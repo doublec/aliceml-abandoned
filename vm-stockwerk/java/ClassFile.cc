@@ -160,10 +160,10 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
     return GetArg(0);
   case CONSTANT_Long_unusable:
   case CONSTANT_Double_unusable:
-    return Store::IntToWord(0); // may never be referenced
+    return null; // may never be referenced
   case CONSTANT_NameAndType:
   case CONSTANT_Utf8:
-    return Store::IntToWord(0); // may only be referenced from constant pool
+    return null; // may only be referenced from constant pool
   default:
     Error("invalid constant pool tag");
   }
@@ -541,8 +541,7 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
     name = JavaString::FromWordDirect(nameEntry->GetArg(0));
   }
   u_int superIndex = GetU2(offset);
-  word super = superIndex?
-    runtimeConstantPool->Get(superIndex): Store::IntToWord(0);
+  word super = superIndex? runtimeConstantPool->Get(superIndex): null;
   //--** For an interface, super must always be the class java/lang/Object
   Table *interfaces = ParseInterfaces(offset, runtimeConstantPool);
   Table *fields = ParseFields(offset, constantPool, runtimeConstantPool);
