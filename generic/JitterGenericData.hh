@@ -155,6 +155,26 @@ namespace Generic {
       JITStore::InitArg(Ptr, BASE_SIZE + pos, Value);
     }
   };
+
+  class Byneed : public ::Transient {
+  public:
+    static void New(u_int Ptr) {
+      JITStore::AllocTransient(Ptr, BYNEED_LABEL);
+    }
+    static void InitClosure(u_int Ptr, u_int Closure) {
+      JITStore::InitArg(Ptr, REF_POS, Closure);
+    }
+  };
+
+  class Primitive {
+  public:
+    static void Return1(u_int Value) {
+      Assert(Value != JIT_R0);
+      Scheduler::PutZeroArg(Value);
+      jit_movi_ui(JIT_R0, ::Scheduler::ONE_ARG);
+      Scheduler::PutNArgs(JIT_R0);
+    }
+  };
 };
 
 #endif
