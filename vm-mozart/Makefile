@@ -410,10 +410,10 @@ $(BUILD1DIRS):
 	mkdir -p $@
 
 Rel1.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../|g' < $< > $@
+	sed 's|x-alice:/|../|g' < $< | tr '\n' ' ' > $@
 
 Rel2.import: lib/fundamental/Fundamental.import
-	sed 's|x-alice:/|../../|g' < $< > $@
+	sed 's|x-alice:/|../../|g' < $< | tr '\n' ' ' > $@
 
 build1/Build1.aml: Build1.aml
 	cp $< $@
