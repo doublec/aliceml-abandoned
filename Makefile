@@ -6,7 +6,6 @@ PWD := $(shell pwd)
 
 GLOBAL_PREFIX = /opt/stockhausen-devel
 PREFIX = $(PWD)/install
-TIMEDIR = $(PWD)/time
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
@@ -19,11 +18,25 @@ else
     WINDOWS = 0
 endif
 
+TIME = /usr/bin/time
+TIMEDIR = $(PWD)/time
+TIMEO = $(shell ($(TIME) -o /dev/null ls >/dev/null && echo "yes" ))
+ifeq ($(TIMEO),yes)
+    TIMECOMMAND1 = $(TIME) -po $(TIMEDIR)1
+    TIMECOMMAND2 =
+    TIMECOMMAND3 = $(TIME) -po $(TIMEDIR)3
+else
+    TIMECOMMAND1 =
+    TIMECOMMAND2 =
+    TIMECOMMAND3 =
+endif
+
 .PHONY: clean clean-common clean-mozart clean-seam \
 	install install-prelude install-common install-global install-mozart install-seam \
 	bootstrap-smlnj bootstrap-mozart bootstrap-seam build-seam \
 	libs-mozart libs-seam \
 	doc man
+
 
 ##
 ## Do it!
@@ -112,11 +125,11 @@ install-mozart: install-common bootstrap-mozart libs-mozart
 bootstrap-mozart:
 	unset ALICE_HOME ;\
 	(cd vm-mozart && make depend) || exit 1 ;\
-	(cd vm-mozart && /usr/bin/time -p 2>$(TIMEDIR)1 \
+	(cd vm-mozart && $(TIMECOMMAND1) \
 		make ALICEC_EXTRA_OPTS="$(OPTS1)" build1-install) || exit 1 ;\
-	(cd vm-mozart && \
+	(cd vm-mozart && $(TIMECOMMAND2) \
 		make ALICEC_EXTRA_OPTS="$(OPTS2)" build2-all) || exit 1 ;\
-	(cd vm-mozart && /usr/bin/time -p 2>$(TIMEDIR)3 \
+	(cd vm-mozart && $(TIMECOMMAND3) \
 		make ALICEC_EXTRA_OPTS="$(OPTS3)" build3-install) || exit 1 ;\
 	(cd vm-mozart && make PREFIX=$(PREFIX) install) || exit 1
 
@@ -148,12 +161,13 @@ bootstrap-seam: build-seam
 	unset ALICE_HOME ;\
 	export TIMEDIR ;\
 	(cd vm-seam && make -f Makefile.bootstrap depend) || exit 1 ;\
-	(cd vm-seam && /usr/bin/time -p 2>$(TIMEDIR)1 \
+	(cd vm-seam && $(TIMECOMMAND1) \
 		make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS1)" \
 			build1-install) || exit 1 ;\
-	(cd vm-seam && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS2)" \
+	(cd vm-seam && $(TIMECOMMAND2) \
+	        make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS2)" \
 			build2-install) || exit 1 ;\
-	(cd vm-seam && /usr/bin/time -p 2>$(TIMEDIR)3 \
+	(cd vm-seam && $(TIMECOMMAND3) \
 		make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$(OPTS3)" \
 			build3-install) || exit 1 ;\
 	(cd vm-seam && make -f Makefile.bootstrap install) || exit 1
