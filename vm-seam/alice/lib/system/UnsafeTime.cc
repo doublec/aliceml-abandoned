@@ -34,10 +34,10 @@ DEFINE0(UnsafeTime_now) {
 DEFINE0(UnsafeTime_now) {
   struct timeb tb;
   ftime (&tb);
-  BigInt *res	= BigInt::New ((double)tb.time);
-  BigInt *milli = BigInt::New ((double)tb.millitm);
-  mpz_mul_ui (res->big (), res->big (), 1000000UL);
-  mpz_addmul_ui (res->big (), tb.millitm, 1000UL); 
+  BigInt *res	= BigInt::New((double)tb.time);
+  BigInt *milli = BigInt::New((double)tb.millitm);
+  mpz_mul_ui (res->big(), res->big(), 1000000UL);
+  mpz_addmul_ui (res->big(), milli->big(), 1000UL); 
   RETURN_INTINF(res);
 } END
 
