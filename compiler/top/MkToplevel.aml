@@ -29,7 +29,7 @@ struct
 						OptionParser.helpText)
 
     val banner     = "Alice (Stockhausen Operette 2)\n"
-    val prompt     = "> "
+    val prompt     = "- "
     val contPrompt = "  "
 
     val useFiles: string list ref = ref nil
