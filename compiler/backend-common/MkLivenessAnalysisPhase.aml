@@ -115,13 +115,14 @@ structure LivenessAnalysisPhase1 :>
 	  | union (Orig set, lset') =
 	    union (Copy (StampSet.clone set), lset')
 
-	fun setInfo ({liveness = r as ref Unknown, ...}: stm_info, lset) =
+	fun setInfo ({liveness = ref (Use _), ...}: stm_info, _) =
+	    raise Crash.Crash "LivenessAnalysisPhase1.setInfo"
+	  | setInfo ({liveness, ...}: stm_info, lset) =
 	    let
 		val set = lazyValOf lset
 	    in
-		r := Use set; Orig set
+		liveness := Use set; Orig set
 	    end
-	  | setInfo (_, _) = raise Crash.Crash "LivenessAnalysisPhase1.setInfo"
 
 	fun scanBody (ValDec (info, idDef, exp)::stms) =
 	    setInfo (info, scanExp (exp, delDef (scanBody stms, idDef)))
