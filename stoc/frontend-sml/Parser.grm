@@ -409,6 +409,7 @@
 	(* Top nonterminal *)
 	| program			of Program
 	|    program_opt		of Program option
+	|    program_opt'		of Program option
 	| component			of Component
 	| import0			of Import
 	|    import1			of Import
@@ -1557,16 +1558,20 @@
 	  dec'
 	  		( DECProgram(I(dec'left,dec'right),
 				     dec', NONE) )
-	| dec' SEMICOLON program_opt
-	  		( DECProgram(I(dec'left,program_optright),
-				     dec', program_opt) )
-	| exp SEMICOLON program_opt
-	  		( EXPProgram(I(expleft,program_optright),
-				     exp, program_opt) )
+	| dec' SEMICOLON program_opt'
+	  		( DECProgram(I(dec'left,program_opt'right),
+				     dec', program_opt') )
+	| exp SEMICOLON program_opt'
+	  		( EXPProgram(I(expleft,program_opt'right),
+				     exp, program_opt') )
 
      program_opt:
-	  program	( SOME program )
-	| (*empty*)	( NONE )
+	  program		( SOME program )
+	| (*empty*)		( NONE )
+
+     program_opt':
+	  program_opt		( program_opt )
+	| SEMICOLON program_opt'( program_opt' )
 
 
 
