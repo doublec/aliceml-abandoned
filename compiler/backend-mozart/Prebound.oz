@@ -12,6 +12,7 @@
 
 functor
 import
+   BootValue(byNeedFail: ByNeedFail) at 'x-oz://boot/Value'
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootWord at 'x-oz://boot/Word'
 export
@@ -51,19 +52,6 @@ define
       end
    end
 
-   CStringTab =
-   cStringTab(&\\: "\\\\"
-	      &": "\\\""
-	      &?: "\\?"
-	      &': "\\'"
-	      &\a: "\\a"
-	      &\b: "\\b"
-	      &\t: "\\t"
-	      &\n: "\\n"
-	      &\v: "\\v"
-	      &\f: "\\f"
-	      &\r: "\\r")
-
    fun {ToOct C}
       C mod 8 + &0
    end
@@ -71,7 +59,7 @@ define
    Hex = hex(&0 &1 &2 &3 &4 &5 &6 &7 &8 &9 &a &b &c &d &e &f)
 
    fun {ToHex X}
-      if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16)
+      if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16 + 1)
    end
 
    BuiltinTable =
@@ -80,7 +68,7 @@ define
       '<>': Value.'\\='
       'Array.array':
 	 fun {$ N Init}
-	    if 0 =< N andthen N < BuiltinTable.'Array.maxSize' then
+	    if 0 =< N andthen N < BuiltinTable.'Array.maxLen' then
 	       {Array.new 0 N - 1 Init}
 	    else {Exception.raiseError BuiltinTable.'General.Size'} unit
 	    end
@@ -94,7 +82,7 @@ define
 	 end
       'Array.length':
 	 fun {$ A} {Array.high A} + 1 end
-      'Array.maxSize': 0x7FFFFFF
+      'Array.maxLen': 0x7FFFFFF
       'Array.sub':
 	 fun {$ A I}
 	    try
@@ -137,11 +125,19 @@ define
       'Char.toCString':
 	 fun {$ C}
 	    {ByteString.make
-	     case {CondSelect CStringTab C unit} of unit then
-		if {Char.isPrint C} then [C]
-		else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
-		end
-	     elseof S then S
+	     case C of &\\ then "\\\\"
+	     [] &" then "\\\""
+	     [] &? then "\\?"
+	     [] &' then "\\'"
+	     [] &\a then "\\a"
+	     [] &\b then "\\b"
+	     [] &\t then "\\t"
+	     [] &\n then "\\n"
+	     [] &\v then "\\v"
+	     [] &\f then "\\f"
+	     [] &\r then "\\r"
+	     elseif {Char.isPrint C} then [C]
+	     else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
 	     end}
 	 end
       'Char.toLower': Char.toLower
@@ -191,6 +187,8 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
+      'Int.maxInt': 'NONE'
+      'Int.minInt': 'NONE'
       'Int.mod':
 	 fun {$ X1 X2}
 	    try
@@ -199,6 +197,7 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
+      'Int.precision': 'NONE'
       'Int.toString':
 	 fun {$ I} {ByteString.make {Int.toString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
@@ -219,8 +218,28 @@ define
       'Real.>': Value.'>'
       'Real.<=': Value.'=<'
       'Real.>=': Value.'>='
+      'Real.ceil':
+	 fun {$ R}
+	    {FloatToInt {Ceil R}}
+	 end
       'Real.compare': NumberCompare
+      'Real.floor':
+	 fun {$ R}
+	    {FloatToInt {Floor R}}
+	 end
       'Real.fromInt': IntToFloat
+      'Real.precision': 52
+      'Real.realCeil': Ceil
+      'Real.realFloor': Floor
+      'Real.realRound': Round
+      'Real.realTrunc':
+	 fun {$ R}
+	    if R >= 0.0 then {Floor R} else {Ceil R} end
+	 end
+      'Real.round':
+	 fun {$ R}
+	    {FloatToInt {Round R}}
+	 end
       'Real.toString': FloatToString
       'Real.trunc':
 	 fun {$ R}
@@ -266,8 +285,6 @@ define
 	 fun {$ T E} {Thread.injectException T E} unit end
       'Thread.resume':
 	 fun {$ T} {Thread.resume T} unit end
-      'Thread.sleep':
-	 fun {$ N} {Delay N} unit end
       'Thread.spawn':
 	 fun {$ P} thread {P unit} end end
       'Thread.state':
@@ -285,10 +302,31 @@ define
       'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
       'Transient.Future': {NewUniqueName 'Transient.Future'}
       'Transient.Promise': {NewUniqueName 'Transient.Promise'}
+      'Transient.alarm':
+	 fun {$ X} {Alarm (X + 500) div 1000} end
       'Transient.await':
 	 fun {$ X} {Wait X} X end
+      'Transient.awaitOne':
+	 fun {$ X Y} {WaitOr X Y} X end
       'Transient.byNeed':
-	 fun {$ P} {ByNeed fun {$} {P unit} end} end
+	 fun {$ P}
+	    {ByNeed fun {$}
+		       try
+			  {P unit}
+		       catch E=error(E2 ...) then
+			  {ByNeedFail {Adjoin E 1 ByNeedException(E2)}}
+		       end
+		    end}
+	 end
+      'Transient.fail':
+	 fun {$ P X}
+	    try
+	       P = {ByNeedFail error(X)}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'Transient.Promise'}
+	    end
+	    unit
+	 end
       'Transient.fulfill':
 	 fun {$ P X}
 	    if {IsFree P} then
@@ -312,6 +350,7 @@ define
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#' Xs} end
+      'Vector.maxLen': 0x7FFFFFF
       'Vector.length': Width
       'Vector.sub':
 	 fun {$ V I}
@@ -351,7 +390,8 @@ define
       'Word.>>': BootWord.'>>'
       'Word.~>>': BootWord.'~>>'
       'Word.toString':
-	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end)
+	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
+      'Word.wordSize': 31)
 
    Env = env('false': false
 	     'true': true
