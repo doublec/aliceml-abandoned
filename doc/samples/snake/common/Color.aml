@@ -9,6 +9,8 @@
  *
  *)
 
+import signature COLOR from "COLOR-sig"
+
 structure Color :> COLOR = 
 struct
 
@@ -20,20 +22,20 @@ struct
 
     fun equal (f,s) = f = s
     
-    val all = [C("brown",,,),
-	       C("red",,,),
-	       C("blue",,,),
-	       C("green",,,),
-	       C("yellow",,,)]
+    val all = [C("brown",0.4,0.4,0.0),
+	       C("red",1.0,0.0,0.0),
+	       C("blue",0.0,0.0,1.0),
+	       C("green",0.0,1.0,0.0),
+	       C("yellow",1.0,1.0,0.0)]
     (** [all] is a list of all available colors *)
     
-    fun toString C(s,_,_,_) = s
+    fun toString (C(s,_,_,_)) = s
     (** [toString c] returns the [english] name of [c]. *)
  
     fun fromString s = 
-	if List.exists (fn x => toString x = s) all
-	    then x
-	else raise Unknown
+	case List.find (fn x => toString x = s) all of
+	    NONE    => raise Unknown
+	  | SOME(x) => x
 
     (** [fromString name] is the inverse operation of toString.
         In case you apply ofString to a invalid/unknown color name
