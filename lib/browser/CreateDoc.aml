@@ -22,6 +22,7 @@ import structure Types from "Types"
 import structure Helper from "Helper"
 import structure MkPathTable from "MkPathTable"
 import structure NewNode from "NewNode"
+import structure Settings from "Settings"
 import signature CREATE_DOC from "CREATE_DOC-sig"
 
 open Types Helper MkPathTable
@@ -40,7 +41,7 @@ struct
     (* createInt *)
     fun createInt (m_width,d,va,t) = 
 	let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
@@ -51,7 +52,7 @@ struct
     (* createString *)
     fun createString (m_width,d,va,t) = 
     let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	   then LIMIT{desc = descr, 
 		      sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
@@ -64,7 +65,7 @@ struct
     (* createChar *)
     fun createChar (m_width,d,va,t) = 
 	 let val descr = createValue(va,t,NO_ACTIONS)
-	 in if d > !(NewNode.max_depth)	
+	 in if d > !(Settings.max_depth)	
 		then LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	    else SIMPLE{desc = descr,
@@ -78,7 +79,7 @@ struct
     (* createWord *)
     fun createWord (m_width,d,va,t) = 
         let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)     
+	in if d > !(Settings.max_depth)     
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	   else let val int_w = Word.toInt(UnsafeValue.cast va : word)
@@ -92,7 +93,7 @@ struct
     (* createReal *)
     fun createReal (m_width,d,va,t) = 
         let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	   else SIMPLE{desc = descr,
@@ -103,7 +104,7 @@ struct
     (* createExn *)
     fun createExn (m_width,d,va,t) =
         let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
 	   else let val conname = UnsafeValue.conName(va)
@@ -119,7 +120,7 @@ struct
     (* createRef *)
     fun createRef (m_width,d,va,t) =
         let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val deref = !(UnsafeValue.cast(va))
@@ -137,7 +138,7 @@ struct
     (* createVector *)
     fun createVector (m_width,d,va,t) = 
 	let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val vec = castVector va
@@ -177,7 +178,7 @@ struct
     (* createArray *)
     fun createArray (m_width,d,va,t) = 
         let val descr = createValue(va,t,NO_ACTIONS)
-	in if d > !(NewNode.max_depth)
+	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
 	   else let val arr = castArray va
