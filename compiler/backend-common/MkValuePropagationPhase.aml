@@ -23,11 +23,9 @@
 import structure TextIO (*--**DEBUG*)    from "../../lib/system/TextIO"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Assert                  from "../../lib/utility/Assert"
-import signature HASH_KEY
-       structure FromEqHashKey           from "../../lib/utility/HASH_KEY-sig"
+import signature HASH_KEY                from "../../lib/utility/HASH_KEY-sig"
 import signature IMP_MAP                 from "../../lib/utility/IMP_MAP-sig"
 import structure MkHashImpMap            from "../../lib/utility/MkHashImpMap"
-import structure FromEqHashKey           from "../../lib/utility/HASH_KEY-sig"
 import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
 import structure Label                   from "../../lib/rtt/Label"
 import structure Crash                   from "../infrastructure/Crash"
@@ -138,7 +136,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	structure IdMap =
 	    MkHashScopedImpMap(type t = id
-			       val equals = idEq
+			       val equal = idEq
 			       fun hash (Id (_, stamp, _)) =
 				   Stamp.hash stamp)
 
@@ -321,7 +319,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     StampSet.deleteExistent (path, stamp))
 
 	    structure DepthFirstSearch =
-		MkDepthFirstSearch(structure Key = FromEqHashKey(Stamp)
+		MkDepthFirstSearch(structure Key = Stamp
 				   structure Map = StampMap)
 	in
 	    fun sortShared (body, stamp) =
