@@ -435,6 +435,13 @@ public:
   bool NeedsKill(u_int i) {
     return (Get(i) == KILL);
   }
+  void CloneFrom(u_int nbElems, LivenessTable *source) {
+    for (u_int i = nbElems; i--;)
+      this->Init(i, source->Sub(i));
+  }
+  void StoreFreeList(word tableList) {
+    this->Init(0, tableList);
+  }
   // LivenessTable Constructor
   static LivenessTable *New(u_int tableSize) {
     Array *table = Array::New(tableSize);
@@ -471,12 +478,11 @@ public:
     LivenessTable *clone = AllocTable();
     Assert(clone != INVALID_POINTER);
     Assert(clone->GetSize() == tableSize);
-    for (u_int i = tableSize; i--;)
-      static_cast<Array *>(clone)->Init(i, static_cast<Array *>(table)->Sub(i));
+    clone->CloneFrom(tableSize, table);
     return clone;
   }
   void FreeTable(LivenessTable *table) {
-    static_cast<Array *>(table)->Init(0, tableList);
+    table->StoreFreeList(tableList);
     tableList = table->ToWord();
   }
 };
