@@ -8,7 +8,7 @@ noinst_LTLIBRARIES = \
 libadt_la_SOURCES = \
 	ChunkMap.cc
 
-nobase_dist_adtinclude_HEADERS = \
+dist_adtinclude_HEADERS = \
 	ChunkMap.hh \
 	IntMap.hh \
 	Queue.hh \

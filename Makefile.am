@@ -38,9 +38,10 @@ bin_SCRIPTS = seamtool
 
 # Header files
 
-nobase_dist_pkginclude_HEADERS = \
+dist_pkginclude_HEADERS = \
 	Base.hh \
-	Seam.hh
+	Seam.hh \
+	libltdl/ltdl.h
 
 # Autoconf macros
 

@@ -31,7 +31,7 @@ libgeneric_la_SOURCES = \
 	Unpickler.cc \
 	Worker.cc
 
-nobase_dist_genericinclude_HEADERS = \
+dist_genericinclude_HEADERS = \
 	Authoring.hh \
 	Backtrace.hh \
 	BindFutureWorker.hh \
