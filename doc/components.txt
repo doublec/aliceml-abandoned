@@ -14,9 +14,9 @@ Syntactically, components are provided by introducing a new start symbol:
 Each compilation unit exports all items declared in the contained program. A
 compiled component is stored at a URL. It can be imported by other components
 through the use of import declarations. Import declarations consist of a
-specification (following the syntax used in signatures) of what entities to use
-and a URL. The exported bindings of the corresponding component must match
-the spec given, subject to the usual signature matching rules.
+specification (following the syntax used in signatures for now) of what
+entities to use and a URL. The exported bindings of the corresponding component
+must match the spec given, subject to the usual signature matching rules.
 
 Later we will provide special forms of import specifications that do not
 require giving type and interface annotations to mentioned value and module
