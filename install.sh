@@ -26,6 +26,6 @@ rm -f bootstrap/alicec-mozart.$PLATFORM bootstrap/alicedep.$PLATFORM
 PATH=$prefix/bin:$PATH
 export PATH
 unset STOCKHOME
-(cd lib/inspector && make all PREFIX=$prefix install) || exit 1
+(cd lib/inspector && make depend all PREFIX=$prefix install) || exit 1
 (cd lib/constraints && make all PREFIX=$prefix install) || exit 1
 (cd lib/gtk && make all PREFIX=$prefix install) || exit 1
