@@ -520,6 +520,7 @@ Chunk *BootLinker::MakeFileName(Chunk *key) {
 }
 
 word BootLinker::Link(Chunk *url) {
+  traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   TaskStack *taskStack = TaskStack::New();
   LoadInterpreter::PushFrame(taskStack, url);
   Scheduler::NewThread(Store::IntToWord(0), Interpreter::EmptyArg(), taskStack);
