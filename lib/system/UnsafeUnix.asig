@@ -11,9 +11,13 @@
  *   $Revision$
  *)
 
-import signature UNIX from "UNIX-sig"
+import structure TextIO from "TextIO"
 
-signature UNIX_COMPONENT =
+signature UNSAFE_UNIX_COMPONENT =
     sig
-	structure Unix: UNIX
+	structure UnsafeUnix:
+	    sig
+		val execute: string * string list -> 'proc
+		val streamsOf: 'proc -> TextIO.instream * TextIO.outstream
+	    end
     end
