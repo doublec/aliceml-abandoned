@@ -18,7 +18,7 @@
 #define DECLARE_WORD(w, x)			\
   DECLARE_INT(w, x);				\
   w &= static_cast<u_int>(-1) >> 1;
-#define RETURN_WORD(w) RETURN_INT(w)
+#define RETURN_WORD(w) RETURN_INT((w + w) / 2)
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
@@ -74,7 +74,7 @@ DEFINE2(Word_div) {
 } END
 
 DEFINE2(Word_fromIntQuote) { //--** should be fromInt (not Quote)
-  DECLARE_WORD(i, x1);
+  DECLARE_INT(i, x1);
   RETURN_WORD(i);
 } END
 
