@@ -121,12 +121,13 @@ struct
 				    color, 
 				    points, 
 				    gamePoints}, str) =
-			(name ^ ":  " 
+			(str ^ name ^ ":  " 
 			 ^ (Int.toString points) ^ "  /  " 
 			 ^ (Int.toString gamePoints) ^ "\n\n")
 		    fun toString () = List.foldl toString' "" plist
 		in
-		    Gtk.labelSetText (!pointsLabel, toString ())
+		   Inspector.inspect("MainWIndow", "pointsList", plist, toString ());
+	 Gtk.labelSetText (!pointsLabel, toString ())
 		end
 
 	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)

@@ -25,6 +25,7 @@ import structure Highscore      from "../common/Highscore"
 import structure HighscoreIO    from "HighscoreIO"
 import signature SERVER         from "SERVER-sig"
 import structure MkHeap         from "../common/MkHeap"
+import structure Inspector      from "x-alice:/lib/tools/Inspector"
 
 (*
 import val dummyClient          from "DummyClient"
@@ -320,15 +321,11 @@ struct
                             in
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
+                                Inspector.inspect ("Server:playersJoined", players, name, color);
                                 (* inform the other PLAYERs *)
                                 invokeSeveral (_file_, _line_) 
                                     (players, #playersJoined, [(name, color)]);
-                                (* inform the NEW player of the other 
-                                   already connected players *)
-                                ispawn (_file_, _line_) 
-                                    invoke (part, #playersJoined, 
-                                        List.map Part.nameNColor players);
-                                true
+                                    true
                             end
                         |   NONE => false   
                             (* no unused gates left :-( *)
@@ -568,8 +565,8 @@ struct
                                     Array2.update (oldArena, r, c, p)) diffOld
                    
                     (* estimated amount of time this game is running now *) 
-                    val time        = Time.fromSeconds (ticks * 
-                                        Time.toSeconds (#tick config))
+                    val time        = Time.fromMilliseconds (ticks * 
+                                        Time.toMilliseconds (#tick config))
                     val timeout     = #timeout config
                     (* amount of time left. *)
                     val timeLeft    = Time.fromSeconds (Int.max (0, 
@@ -750,6 +747,11 @@ struct
                 in
                     (* insert into participant map *)
                     PMap.insertDisjoint (participants, id, uc);
+                    (* inform the NEW player of the other 
+                       already connected players *)
+                    ispawn (_file_, _line_) 
+                        invoke (uc, #playersJoined, 
+                                List.map Part.nameNColor (allPlayers ()));
                     (* return adapted server interface.
                        NOTE: UCs are not allowed to call startGame
                         therefore startGame = NONE
@@ -763,7 +765,7 @@ struct
                         startGame   = NONE,
                         watch       = Remote.proxy (watch id)
                     })
-                end)
+              end)
             
         (* create PC representation *)
             val pc  =   Part.participant (pc_id, client)
