@@ -1,0 +1,14 @@
+val f1 = fn ((17 withval a = 127 end, 7) | (_, a)) => a
+
+val f2 = fn (b, f) =>
+	    (if b then f 1
+	     else f 2;
+	     f 3)
+
+val f3 = fn f =>
+	    let
+		val x = 1
+	    in
+		let val y = 2 in f (x, y) end
+		handle _ => ()
+	    end
