@@ -61,6 +61,8 @@
 
 template class BaseMap<IntKey>;
 
+
+// to be done: Understand Hack to solve linking problem
 #if DEBUGGER
 EventAccessor::~EventAccessor() {
   return;
