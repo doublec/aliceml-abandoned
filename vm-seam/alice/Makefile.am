@@ -34,13 +34,11 @@ pkginclude_HEADERS = \
 	Data.hh \
 	DebugEnvironment.hh \
 	Guid.hh \
+	JitterAliceData.hh \
+	JitterImmediateEnv.hh \
+	LazySelInterpreter.hh \
 	NativeCodeInterpreter.hh \
 	NativeCodeJitter.hh \
 	NativeConcreteCode.hh \
 	PrimitiveTable.hh \
 	Types.hh
-
-noinst_HEADERS = \
-	JitterAliceData.hh \
-	JitterImmediateEnv.hh \
-	LazySelInterpreter.hh
