@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999
+%%%   Leif Kornstaedt, 1999-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -13,8 +13,9 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
-   System(printInfo)
    Open(file text)
+   Property(get)
+   System(printInfo)
 export
    'TextIO$': TextIO
    Print
@@ -23,9 +24,21 @@ define
 
    class TextFile from Open.file Open.text end
 
+   ConvertLine = case {Property.get 'platform.os'} of win32 then
+		    fun {RemoveReturn S}
+		       case S of [&\r] then nil
+		       [] C|Cr then C|{RemoveReturn Cr}
+		       [] nil then nil
+		       end
+		    end
+		 in
+		    RemoveReturn
+		 else fun {$ S} S end
+		 end
+
    fun {TextIOInputAll F}
       case {F getS($)} of false then ""
-      [] S then S#'\n'#{TextIOInputAll F}
+      [] S then {ConvertLine S}#'\n'#{TextIOInputAll F}
       end
    end
 
@@ -58,7 +71,7 @@ define
       'inputLine':
 	 fun {$ F}
 	    case {F getS($)} of false then {ByteString.make ""}
-	    elseof S then {ByteString.make S#'\n'}
+	    elseof S then {ByteString.make {ConvertLine S}#'\n'}
 	    end
 	 end
       'closeIn':
