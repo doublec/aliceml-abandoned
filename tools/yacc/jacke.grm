@@ -25,7 +25,7 @@ fun lookup "bogus" = 10000
 (* others *)
   | DECINTRO of string | MLOP of string | MLKEY of string 
 
-%nonterm  start of A.parsetree list 
+%nonterm  start of (A.parsetree, string list) sum list 
 	| jackedec of A.parsetree 
 	| tokbinds of (string * string option) list 
 	| tokbind of string * string option 
@@ -34,8 +34,8 @@ fun lookup "bogus" = 10000
 	| parsbinds of (string*string option * string) list 
 	| parsbind of string * string option * string 
 	| bnfexp of A.bnfexp 
-	| exp 
-	| program of A.parsetree list
+	| exp of string list | explist of string list
+	| program of (A.parsetree,string list) sum list
    
 
 %pos int
@@ -62,11 +62,11 @@ fun lookup "bogus" = 10000
 (* the (somewhat incomplete and simplified) grammar *)
 
 start : program (rev program)
-(*	| ([])
-*)
-program : jackedec ([jackedec])
-	| exp ([])
-	| program jackedec (jackedec::program)
+	| ([])
+program : jackedec ([In1(jackedec)])
+	| exp ([In2 exp])
+	| program jackedec ((In1 jackedec)::program)
+	| program exp ((In2 exp)::program)
 
 jackedec : TOKEN tokbinds (A.TokenDec(rev tokbinds))
         | ASSOCL idlist (A.AssoclDec(rev idlist))
@@ -74,8 +74,8 @@ jackedec : TOKEN tokbinds (A.TokenDec(rev tokbinds))
 	| NONASSOC idlist (A.NonassocDec(rev idlist))
 	| RULE rulebinds (A.RuleDec(rev rulebinds))
 	| PARSER parsbinds (A.ParserDec(rev parsbinds))
-	| LOCAL jackedec IN jackedec END (A.AssoclDec[])
-	| DECINTRO exp (A.AssoclDec[])
+(*	| LOCAL jackedec IN jackedec END (A.AssoclDec[])
+	| DECINTRO exp (A.AssoclDec[])   (* todo *) *)
  
 tokbinds : tokbind ([tokbind])
 	| tokbind BAR tokbinds (tokbind::tokbinds)
@@ -104,18 +104,19 @@ bnfexp : SKIP (A.Skip)
 	| ID AS bnfexp (A.As(ID,bnfexp))
 	| bnfexp COMMA bnfexp (A.Seq([bnfexp1,bnfexp2]))
 	| bnfexp PREC ID (A.Prec(bnfexp,ID))
-	| bnfexp MAPSTO LPAREN exp RPAREN (A.Transform(bnfexp,[]))
+	| bnfexp MAPSTO LPAREN explist RPAREN (A.Transform(bnfexp,explist))
 	| bnfexp BAR bnfexp (A.Alt([bnfexp1,bnfexp2])) 
 
+explist : ([])
+	| explist exp (explist@exp)
 
-exp  : 	exp LET jackedec IN exp END ()
-	| exp LPAREN exp RPAREN ()
-	| exp LBRACE exp RBRACE ()
-	| exp STRING () 
-	| exp LBRACK exp RBRACK ()
-	| exp ID ()
-	| exp EQ ()
-	| exp COMMA ()
-	| exp MLKEY ()
-	| exp MLOP  ()
-	| ()
+exp  :  LPAREN exp RPAREN (")"::(exp@["("]))
+	| LBRACE exp RBRACE ("}"::(exp@["{"]))
+	| STRING (["\"",STRING,"\""]) 
+	| LBRACK exp RBRACK ("]"::(exp@["["]))
+	| ID ([ID])
+	| EQ (["="])
+	| COMMA ([","])
+	| MLKEY ([MLKEY])
+	| MLOP  ([MLOP])
+
