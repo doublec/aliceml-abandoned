@@ -16,33 +16,36 @@ structure Config :> CONFIG =
 struct
 
     type config = {
-	 timeout : Time.time,   (* after how many seconds a game has to end *)
-	 dimensions : int * int, 
+         tick :         Time.time,
+	 timeout :      Time.time,   (* after how many seconds a game has to end *)
+	 dimensions :   int * int, 
 		   (* the dimensions of the arenas created in the tounament *)
-	 goodie : int, (* the average amount of appearing goodies *)
-	 lives : int, (* the amount of lives a client has  in the tournament *)
-	 maxPlayer : int, 
+	 goodie :       int, (* the average amount of appearing goodies *)
+	 lives :        int, (* the amount of lives a client has  in the tournament *)
+	 maxPlayer :    int, 
 	      (* how many clients can actively participate in the tournament *)
 	 goodieFrequency : int (* how often goodies appear *)
 }
 
     val defaultSingle = 
 	{
-	 timeout = Time.fromSeconds 100,
-	 dimensions = (50,50),
-	 goodie = 5,
-	 lives = ~1,
-	 maxPlayer = 1,
+         tick           = Time.fromMilliseconds 100,
+	 timeout        = Time.fromSeconds 100,
+	 dimensions     = (50,50),
+	 goodie         = 5,
+	 lives          = ~1,
+	 maxPlayer      = 1,
 	 goodieFrequency = 1
 	 }
 
     val defaultMulti = 
 	{
-	 timeout = Time.fromSeconds 100,
-	 dimensions = (50,50),
-	 goodie = 5,
-	 lives = 5,
-	 maxPlayer = 16,
+         tick           = Time.fromMilliseconds 100,
+	 timeout        = Time.fromSeconds 100,
+	 dimensions     = (50,50),
+	 goodie         = 5,
+	 lives          = 5,
+	 maxPlayer      = 16,
 	 goodieFrequency = 3
 	 }
 

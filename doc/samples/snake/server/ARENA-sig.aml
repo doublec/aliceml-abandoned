@@ -29,6 +29,7 @@ sig
     
     val random :    config -> arena * (Pos.pos * Protocol.direction) list
 
+    val emptyCopy : arena -> arena
 
     val placeSnakes : arena * Snake.snake list -> 
             Snake.snake list * Snake.snake list

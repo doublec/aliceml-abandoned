@@ -53,7 +53,8 @@ struct
         disconnect:     unit -> unit,
 
         (* PRE GAME MODE *)
-        play:   string * Color.color -> unit,
+        play:   string * Color.color -> bool,
+       
         watch:  unit -> unit,
         
         (* PLAY MODE *)

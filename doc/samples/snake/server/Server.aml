@@ -16,7 +16,7 @@ import structure MkHashImpMap   from "x-alice:/lib/data/MkHashImpMap"
 import structure Arena          from "Arena"
 import structure Pos            from "../common/Pos"
 import structure Snake          from "Snake"
-
+import structure Config         from "Config"
 
 structure Server =
 struct
@@ -63,7 +63,10 @@ struct
         let
             structure Part  = Participant
             structure P     = Protocol
-            
+           
+            (* FIXME: don't use a fixed config *)
+            val config          = Config.defaultMulti   
+                                
             val levels          = (ref [] : (Arena.arena * 
                                             (Pos.pos * P.direction) list ref) list ref)
             
@@ -92,6 +95,11 @@ struct
                     (fn (_, (_, ref (Part.PLAYING _))) => true
                     |   (_, _)                    => false)
 
+            fun allConnected () = allParticipants
+                    (fn (_, (_, ref Part.DISCONNECTED)) => false
+                    |   (_, _)                           => true)
+                
+                
             val lock        = Lock.lock ()
             
             val timeout     = Time.fromMilliseconds 100
@@ -232,31 +240,27 @@ struct
             fun turn id = Lock.sync lock (
                 withParticipant () ("turn", id, fn (part, dir) => 
                     case ! (#2 part) of
-                        (non (Part.PLAYING _))  =>
-                        raise P.Protocol "Server: invalid call to turn"
-
-                    |   Part.PLAYING (state, _) =>
+                        Part.PLAYING (state, _) =>
                         (#nextDir state) := dir
+                    |   _                       =>
+                        raise P.Protocol "Server: invalid call to turn"
                 ))
 
 
             fun changeView id = Lock.sync lock (
                 withParticipant () ("changeView", id, fn (part, hint) => 
+                    (*TODO: implement *)
                     ()
                 ))
 
 
             fun giveUp id = Lock.sync lock (
                 withParticipant () ("giveUp", id, fn (part, ()) => 
+                    (*TODO: implement *)
                     ()
                 ))
 
 
-            val startGame = Lock.sync lock (fn () =>
-                    () 
-                )
-
-           
             val tick    = Lock.sync lock (fn (oldArena, newArena) =>
                 let
                     val players = allPlayers ()
@@ -277,13 +281,47 @@ struct
 
                     val changes = Arena.diff (oldArena, newArena)
                 in
-                    (* TODO: broadcast everything *)
+                    (* change state of participants whose snake died to DEAD. *)
                     
+                    (* inform the snakes *)
+                    
+                    (* change state of participants whose snake 
+                       finished to FINISHED *)
+                     
+                    (* inform the snakes *)
+
+                    (* broadcast changes *)
                     
                     (* swap old & new arena *)
                     (newArena, oldArena)
                 end)
+
+
+            fun ticker () = 
+                let
+                    val arena       = currentArena ()
+                    val oldArena    = Arena.emptyCopy arena
+                    
+                    fun loop (old, new) =
+                        let val (old, new) = tick (old, new)
+                        in
+                            Thread.sleep (#tick config);
+                            loop (old, new)
+                        end
+                in
+                    loop (oldArena, arena) 
+                end
+                            
                 
+            val startGame = Lock.sync lock (fn () => (
+                (* test wether there is any player at all... *)
+                (* send startGame signal *)
+
+                (* start tick signal sender *)
+                    spawn ticker ();
+                    ()
+                ))
+
 
             val connect = Lock.sync lock (fn client_interface =>
                 (* connect is only called by UCs. *)

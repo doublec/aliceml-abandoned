@@ -123,7 +123,14 @@ struct
 	in
             raise Fail "not yet implemented"
 	end
+    
+    fun emptyCopy a =
+        let val (rows, cols) = Array2.dimensions a
+        in
+            Array2.array (rows, cols, P.EMPTY)
+        end
 
+        
     fun removeSnakes (a,snakes) = 
 	let
 	    fun removeSnake s =

@@ -14,9 +14,12 @@
 signature CONFIG =
 sig
     type config = {
+        tick :         Time.time,
+        (* time between a tick signal *)
+
         timeout :      Time.time,   
-        (* after how many seconds a game has to end *)
-	 
+        (* timeout after that a level is ended *)
+        
         dimensions :   int * int, 
 	(* the dimensions of the arenas created in the tounament *)
 	 
