@@ -5,6 +5,7 @@ Stockwerk:
 -- non-blocking I/O (Pickle, UnsafeIO, UnsafeSocket, UnsafeComponent)
 -- globalize constructors
 -- what code annotations do we need for the JITter?
+-- alicedep uses .ozf, change to .stc
 
 Extended Basis Library:
 -- Future.byneed and Future.concur suspend on their argument
