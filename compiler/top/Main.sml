@@ -212,5 +212,6 @@ structure Main :> MAIN =
 	end
 
     val _ = Composer.setAcquisitionMethod acquireSign
+    val _ = Switches.printComponentSig := false
 
   end
