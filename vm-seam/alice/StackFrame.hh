@@ -55,4 +55,6 @@ static const FrameLabel LAZY_COMPILE_FRAME =
 static const FrameLabel FD_INPUT_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 16);
 
+static const FrameLabel REQUEST_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 17);
 #endif
