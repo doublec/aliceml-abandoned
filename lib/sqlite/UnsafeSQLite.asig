@@ -1,0 +1,25 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature UNSAFESQLITE_SIG =
+   sig
+       structure UnsafeSQLite : sig
+	   exception SQLError of string
+	   datatype res = BUSY | DONE
+			| ROW of string option vector * string vector
+	   val opendb : string -> 'db
+	   val closedb : 'db -> unit
+	   val compile : 'db * string -> 'vm
+	   val step : 'vm  -> res
+	   val finalize : 'vm -> unit
+       end
+   end

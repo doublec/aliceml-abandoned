@@ -1,0 +1,34 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure UnsafeSQLite from "UnsafeSQLite"
+import signature SQLITE from "SQLITE-sig"
+
+structure SQLite :> SQLITE = struct
+    type db
+
+    open UnsafeSQLite
+
+    fun query (db, sql) =
+	let
+	    val vm = compile(db, sql)
+	    fun lazy next () = 
+		     case step vm of
+			 BUSY => (Thread.sleep (Time.fromMilliseconds 
+						(Int.toLarge 100));
+				  next())
+		       | DONE => (finalize vm; nil)
+		       | ROW v => v :: next()
+	in
+	    next()
+	end
+end

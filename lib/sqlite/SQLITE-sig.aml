@@ -1,0 +1,20 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature SQLITE = sig
+    type db
+    exception SQLError of string
+
+    val opendb : string -> db
+    val closedb : db -> unit
+    val query : db * string -> (string option vector * string vector) list
+end
