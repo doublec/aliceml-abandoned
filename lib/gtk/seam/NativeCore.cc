@@ -305,11 +305,16 @@ static word create_object(GType t, gpointer p) {
 	value = GdkEventToDatatype(gdk_event_copy(static_cast<GdkEvent*>(p)));
       }
       else
-	if (g_type_is_a(t, GTK_OBJECT_TYPE))
-	  value = OBJECT_TO_WORD(p, TYPE_GTK_OBJECT);
-        else
-	  value = OBJECT_TO_WORD(p, (G_IS_OBJECT(p) ? TYPE_G_OBJECT 
-					                     : TYPE_UNKNOWN));
+        if (g_type_is_a(t, GTK_TYPE_TEXT_ITER)) {
+          tag = gtkINT;
+          value =
+            INT_TO_WORD(gtk_text_iter_get_offset(static_cast<GtkTextIter*>(p)));
+        } else
+          if (g_type_is_a(t, GTK_OBJECT_TYPE))
+            value = OBJECT_TO_WORD(p, TYPE_GTK_OBJECT);
+          else
+            value = OBJECT_TO_WORD(p, (G_IS_OBJECT(p) ? TYPE_G_OBJECT 
+                                                      : TYPE_UNKNOWN));
   return create_param(tag, value);
 }
 
@@ -421,7 +426,7 @@ static void generic_marshaller(GClosure *closure, GValue *return_value,
 static word SignalConnect(void *object, char *signalname, bool after) {
   gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-  				     GINT_TO_POINTER(userData), NULL);
+                                     GINT_TO_POINTER(userData), NULL);
   gulong connid = g_signal_connect_closure(G_OBJECT(object), signalname, 
 					   closure, after ? TRUE : FALSE); 
   g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
