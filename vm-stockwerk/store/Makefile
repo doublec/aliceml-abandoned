@@ -15,16 +15,16 @@ libstore.a: StoreConfig.hh $(OBJS)
 	ar rc libstore.a $(OBJS) || exit 1
 	ranlib libstore.a
 
-StoreConfig.hh: StoreConfig.exe
-	./StoreConfig.exe
+StoreConfig.hh: StoreConfig$(EXE)
+	./$<
 
-StoreConfig.exe: StoreConfig.o
-	$(CXX) $(CXXFLAGS) -o StoreConfig.exe StoreConfig.o
+StoreConfig$(EXE): StoreConfig.o
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(OBJS): StoreConfig.hh
 
 clean:
-	rm -f StoreConfig.o StoreConfig.exe
+	rm -f StoreConfig.o StoreConfig StoreConfig.exe
 	rm -f $(OBJS)
 
 veryclean: clean

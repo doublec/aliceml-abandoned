@@ -12,13 +12,13 @@ OBJS = \
 	builtins/libbuiltins.a datalayer/libdatalayer.a \
 	scheduler/libscheduler.a adt/libadt.a store/libstore.a
 
-LIBS = -lm #-lmsvcrt
+LIBS = $(EXTRA_LIBS)
 
 .PHONY: all-subdirs depend-local
 
-all: all-subdirs stow.exe
+all: all-subdirs stow$(EXE)
 
-stow.exe: $(OBJS)
+stow$(EXE): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 all-subdirs:
@@ -30,11 +30,11 @@ clean:
 
 veryclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS) stow.exe
+	rm -f $(OBJS) stow stow.exe
 
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) stow.exe Makefile.deps
+	rm -f $(OBJS) stow stow.exe Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps
