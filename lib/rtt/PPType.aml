@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Assert        from "../misc/Assert"
+import structure Assert        from "../utility/Assert"
 
 import structure Label         from "Label"
 import structure Path          from "Path"
@@ -18,8 +18,8 @@ import structure Type
        structure TypePrivate   from "Type"
 import structure PervasiveType from "PervasiveType"
 
-import structure PrettyPrint   from "../misc/PrettyPrint"
-import structure PPMisc        from "../misc/PPMisc"
+import structure PrettyPrint   from "../utility/PrettyPrint"
+import structure PPMisc        from "PPMisc"
 import structure PPPath        from "PPPath"
 import signature PP_TYPE       from "PP_TYPE-sig"
 

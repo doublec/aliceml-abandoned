@@ -15,8 +15,8 @@ import structure Label       from "Label"
 import structure Path
        structure PathPrivate from "Path"
 
-import structure PrettyPrint from "../misc/PrettyPrint"
-import structure PPMisc      from "../misc/PPMisc"
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure PPMisc      from "PPMisc"
 import signature PP_PATH     from "PP_PATH-sig"
 
 
