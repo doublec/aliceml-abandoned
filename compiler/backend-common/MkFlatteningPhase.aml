@@ -636,7 +636,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val argTyp = Type.tuple #[]
 		val strictTyp = Type.apply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
-		    TagExp (info, Lab (id_info info, PervasiveType.lab_false),
+		    TagExp (info, Lab ({region = region},
+				       PervasiveType.lab_false),
 			    StrictExp ({region = region, typ = strictTyp},
 				       TupExp ({region = region, typ = argTyp},
 					       #[])))
@@ -649,7 +650,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val argTyp = Type.tuple #[]
 		val strictTyp = Type.apply (PervasiveType.typ_strict, argTyp)
 		val exp3 =
-		    TagExp (info, Lab (id_info info, PervasiveType.lab_true),
+		    TagExp (info, Lab ({region = region},
+				       PervasiveType.lab_true),
 			    StrictExp ({region = region, typ = strictTyp},
 				       TupExp ({region = region, typ = argTyp},
 					       #[])))
@@ -739,7 +741,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			       typ = Type.arrow (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
-		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
+		    FunExp (funInfo, #[Mat ({region = region}, pat, exp)])
 		val (stms, idRef) = unfoldTerm (funExp, Goto rest)
 	    in
 		(r := SOME (f (O.PrimAppExp (#region info, "Future.byneed",
@@ -760,7 +762,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			       typ = Type.arrow (Type.tuple #[], typ)}
 		val pat = JokPat {region = region, typ = Type.tuple #[]}
 		val funExp =
-		    FunExp (funInfo, #[Mat (id_info info, pat, exp)])
+		    FunExp (funInfo, #[Mat ({region = region}, pat, exp)])
 		val (stms, idRef) = unfoldTerm (funExp, Goto rest)
 	    in
 		(r := SOME (f (O.PrimAppExp (#region info, "Future.concur",

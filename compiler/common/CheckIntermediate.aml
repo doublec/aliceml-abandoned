@@ -84,8 +84,9 @@ struct
 						ppDebugInfo d, 78)) d;
 	 raise Crash.Crash "intermediate inconsistency")
 
-    fun regionOfNonInfo {region}     = region	(* I want poly records :-( *)
-    fun regionOfTypInfo {region,typ} = region
+    fun regionOfNonInfo  {region}        = region  (* I want poly records :-( *)
+    fun regionOfTypInfo  {region,typ}    = region
+    fun regionOfOrigInfo {region,origin} = region
 
     fun check true  (i,s,d)  = ()
       | check false (i,s,d)  = fail(regionOfTypInfo i, s, d)
@@ -93,7 +94,7 @@ struct
     fun checked f x (i,s,d)  = f x handle _ => fail(regionOfTypInfo i, s, d)
 
     fun check' true  (i,s,d) = ()
-      | check' false (i,s,d) = fail(regionOfNonInfo i, s, d)
+      | check' false (i,s,d) = fail(regionOfOrigInfo i, s, d)
 
     fun checked' f x (i,s,d) = f x handle _ => fail(regionOfNonInfo i, s, d)
 
