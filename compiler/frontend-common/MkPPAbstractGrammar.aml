@@ -459,7 +459,7 @@ struct
 					    ppMod mod ^/^
 					    ppInf inf
 					  )
-      | ppMod(AbsMod(i, mod, inf))	= modtree "Abs" i (
+      | ppMod(SealMod(i, mod, inf))	= modtree "Seal" i (
 					    ppMod mod ^/^
 					    ppInf inf
 					  )
