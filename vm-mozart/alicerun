@@ -53,7 +53,7 @@ then
     ALICE_LOAD=$ALICE_LOAD${SEP}$ALICE_LOAD_SUFFIX
 fi
 
-OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
+OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${sep}$OZ_LOAD
 
 export STOCKHOME OZ_LOAD ALICE_LOAD
 
