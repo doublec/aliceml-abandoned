@@ -81,11 +81,15 @@
 	  | MID
 	  | MAX
 	    
+	(* Implementation dependent fd limits *)
+	val inf : int
+	val sup : int
+
 	(* Allocation Functions *)
-	val fd : domain option -> fd
-	val fdVec : int * domain -> fd vector
-	val range : int * int -> fd
-	val rangeVec : int * (int * int) -> fd vector
+	val fd : domain option -> fd (* Domain, Overflow *)
+	val fdVec : int * domain -> fd vector (* Domain, Overflow *)
+	val range : int * int -> fd (* Domain, Overflow *)
+	val rangeVec : int * (int * int) -> fd vector (* Domain, Overflow *)
 	val bin : unit -> bin
 	val binVec : int -> bin
 	    
@@ -157,9 +161,9 @@
 	structure Reified :
 	    sig
 		(* Reified Variable is returned *)
-		val fd : domain * bin -> fd
+		val fd : domain * bin -> fd (* Domain, Overflow *)
 		(* Reified Vector of Variables is returned *)
-		val fdVec : int * domain * bin -> fd vector
+		val fdVec : int * domain * bin -> fd vector (* Domain, Overflow *)
 		(* Same as in Oz *)
 		val card : int * bin vector * int * bin -> unit
 		val distance : fd * fd * relation * fd * bin -> unit
@@ -269,6 +273,20 @@
          finite domain variables. <TT>MIN</TT> denotes the minimal integer
          value, <TT>MAX</TT> denotes the maximal integer value and <TT>MID</TT>
          the medium value.
+    </P></DD>
+
+    <DT>
+      <TT>inf</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent lower bound of a fd variable.
+    </P></DD>
+
+    <DT>
+      <TT>sup</TT>
+    </DT>
+    <DD>
+      <P>denotes the implementation dependent upper bound of a fd variable.
     </P></DD>
 
     <DT>
