@@ -1866,12 +1866,36 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::MONITORENTER:
       {
-	Error("not implemented");
+	Object *object = Object::FromWord(frame->Pop());
+	if (object != INVALID_POINTER) {
+	  Lock *lock     = INVALID_POINTER; // to be done: object->GetLock();
+	  Future *future = lock->AcquireLock();
+	  if (future != INVALID_POINTER) {
+	    frame->Push(object->ToWord());
+	    REQUEST(future->ToWord());
+	  }
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
+	pc += 1;
       }
       break;
     case Instr::MONITOREXIT:
       {
-	Error("not implemented");
+	Object *object = Object::FromWord(frame->Pop());
+	if (object != INVALID_POINTER) {
+	  Lock *lock = INVALID_POINTER; // to be done: object->GetLock();
+	  // This is safe for verified code; otherwise
+	  // IllegalMonitorStateException might be raised
+	  lock->ReleaseLock();
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
+	pc += 1;
       }
       break;
     case Instr::MULTIANEWARRAY:
