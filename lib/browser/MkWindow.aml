@@ -418,12 +418,14 @@ struct
 		 Types.INTERPUNCT => 0
 	       |  Types.VALUE(r) => 
 		     postType("  " 
-			      ^ PrettyPrint.toString(PPType.ppTyp(#typ(r)),
-						     1000))
+			      ^String.extract( PrettyPrint.toString
+					      (PPType.ppTyp(#typ(r)),
+					       50), 0,SOME(50)))
 	       | Types.I_VALUE(r) =>
 		     postType("  " 
-			      ^ PrettyPrint.toString(PPInf.ppInf(#typ(r)),
-						     1000))
+			      ^ String.extract(PrettyPrint.toString
+					       (PPInf.ppInf(#typ(r)),
+						50),0,SOME(50)))
 		     ;())
 	 end
 	    
