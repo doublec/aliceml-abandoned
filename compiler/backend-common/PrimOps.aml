@@ -53,6 +53,11 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Char.isUpper", SOME Unary);
 		ins ("Char.toLower", SOME Unary);
 		ins ("Char.toUpper", SOME Unary);
+		ins ("CharVector.fromList", SOME Unary);
+		ins ("CharVector.maxLen", NONE);
+		ins ("CharVector.length", SOME Unary);
+		ins ("CharVector.sub", SOME (Tuple 2));
+		ins ("CharVector.tabulate", SOME (Tuple 2));
 		ins ("Future.alarm'", SOME Unary);
 		ins ("Future.await", SOME Unary);
 		ins ("Future.byneed", SOME Unary);
@@ -211,6 +216,11 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word8.toLargeWordX", SOME Unary);
 		ins ("Word8.wordSize", NONE);
 		ins ("Word8.xorb", SOME (Tuple 2));
+		ins ("Word8Vector.fromList", SOME Unary);
+		ins ("Word8Vector.maxLen", NONE);
+		ins ("Word8Vector.length", SOME Unary);
+		ins ("Word8Vector.sub", SOME (Tuple 2));
+		ins ("Word8Vector.tabulate", SOME (Tuple 2));
 		ins ("Word31.+", SOME (Tuple 2));
 		ins ("Word31.-", SOME (Tuple 2));
 		ins ("Word31.*", SOME (Tuple 2));
