@@ -15,7 +15,7 @@ import
    Open(file text)
    System(printInfo printError gcDo)
    Application(getArgs exit)
-   Property(get)
+   Property(get put)
    Pickle(load saveWithCells)
    CodeGen(translate)
 prepare
@@ -111,5 +111,6 @@ define
       {Loop File}
    end
 
+   {Property.put 'gc.free' 50}
    {Loop {New TextFile init(name: stdin flags: [read])}}
 end
