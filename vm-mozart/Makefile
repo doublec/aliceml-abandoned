@@ -414,8 +414,8 @@ build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
 
 build1/%.ozf: build1/%.aml
-	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation --rtt-level=no \
-		-c $< -o $@
+	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
+	--trace-component-access --rtt-level=no -c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \

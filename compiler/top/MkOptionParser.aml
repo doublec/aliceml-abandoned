@@ -10,17 +10,9 @@
  *   $Revision$
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES-sig"
-
-import
-    signature OPTION_PARSER
-from "OPTION_PARSER-sig"
+import structure TextIO        from "../../lib/system/TextIO"
+import signature SWITCHES      from "../infrastructure/SWITCHES-sig"
+import signature OPTION_PARSER from "OPTION_PARSER-sig"
 
 functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
     struct
@@ -32,6 +24,8 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    "Gobal options:\n\
 	    \\t--(no-)recursive-compilation\n\
 	    \\t\tCompile imported components recursively if necessary.\n\
+	    \\t--(no-)trace-component-access\n\
+	    \\t\tTrace component loads and saves by the compiler.\n\
 	    \Warning options:\n\
 	    \\t--(no-)warn-shadowing\n\
 	    \\t\tWhether to warn about shadowing of identifiers.\n\
@@ -92,6 +86,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 
 	val booleanSwitches =
 	    [("recursive-compilation", Global.recursiveCompilation),
+	     ("trace-component-access", Global.traceComponentAccess),
 	     ("warn-shadowing", Warn.shadowing),
 	     ("warn-unused-import", Warn.unusedImport),
 	     ("reexport-import", Language.reexportImport),

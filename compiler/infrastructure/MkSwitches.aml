@@ -21,6 +21,7 @@ struct
     structure Global =
     struct
 	val recursiveCompilation		= ref false
+	val traceComponentAccess		= ref false
     end
 
     structure Warn =
@@ -47,10 +48,10 @@ struct
 	val logOut				= logOut
 	val logWidth				= ref 79
 
-	val dumpPhases				= ref true
+	val dumpPhases				= ref false
 	val dumpAbstractionResult		= ref false
 	val dumpElaborationResult		= ref false
-	val dumpElaborationSig			= ref true
+	val dumpElaborationSig			= ref false
 	val dumpIntermediate			= ref false
 	val checkIntermediate			= ref false
 	val dumpFlatteningResult		= ref false

@@ -1,9 +1,11 @@
 (*
- * Author:
+ * Authors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2000-2001
+ *   Leif Kornstaedt, 2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,6 +19,7 @@ sig
     structure Global :
     sig
 	val recursiveCompilation :		bool ref
+	val traceComponentAccess :		bool ref
     end
 
     structure Warn :
