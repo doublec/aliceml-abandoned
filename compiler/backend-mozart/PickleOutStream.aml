@@ -15,7 +15,7 @@
  * pickle ::= sysletheader sysletheader sysletheader crc version term eof
  * sysletheader ::= 0x02
  * crc ::= <byte>*4 // LSB first; computed over the rest of the pickle
- * version ::= string // "3#2"
+ * version ::= string // "3#3"
  * string ::= number <byte>*number
  * number ::=
  *    <byte with bit 7 set>* <byte with bit 7 reset>
@@ -46,33 +46,14 @@
  * ref ::= 0x0A number
  *)
 
-import
-    structure Unsafe
-from "../../lib/system/Unsafe"   (*--** does not exist *)
-
-import
-    functor MkHashImpMap
-from "../../lib/utility/MkHashImpMap"
-
-import
-    structure StringHashKey
-from "../../lib/utility/StringHashKey"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure StringMap
-from "../infrastructure/StringMap"
-
-import
-    structure Crc
-from "Crc"
-
-import
-    signature PICKLE_OUT_STREAM
-from "PICKLE_OUT_STREAM-sig"
+import structure Unsafe            from "../../lib/system/Unsafe"
+	(*--** does not exist *)
+import structure MkHashImpMap      from "../../lib/utility/MkHashImpMap"
+import structure StringHashKey     from "../../lib/utility/StringHashKey"
+import structure Crash             from "../infrastructure/Crash"
+import structure StringMap         from "../infrastructure/StringMap"
+import structure Crc               from "Crc"
+import signature PICKLE_OUT_STREAM from "PICKLE_OUT_STREAM-sig"
 
 structure PickleOutStream :> PICKLE_OUT_STREAM =
     struct
@@ -81,7 +62,7 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	infix << ~>>
 
-	val versionString = "3#2"
+	val versionString = "3#3"
 
 	val SYSLETHEADER  = 0wx02: Word8.word
 
