@@ -39,7 +39,9 @@ typedef struct {
   struct jit_local_state jitl;
 } jit_state;
 
+#ifndef ALICE_USE_JITTER
 static jit_state 			_jit;
+#endif
 
 #define JIT_NOREG			(-1)
 
