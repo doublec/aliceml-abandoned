@@ -59,6 +59,7 @@ BindFutureWorker *BindFutureWorker::self;
 
 void BindFutureWorker::PushFrame(Thread *thread, Transient *future) {
   thread->PushFrame(BindFutureFrame::New(self, future)->ToWord());
+  thread->PushHandler(Store::IntToWord(0));
 }
 
 static inline bool IsCyclic(word x, Future *future) {
@@ -68,6 +69,7 @@ static inline bool IsCyclic(word x, Future *future) {
 Worker::Result BindFutureWorker::Run() {
   BindFutureFrame *frame =
     BindFutureFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Scheduler::PopHandler();
   Future *future = frame->GetFuture();
   future->ScheduleWaitingThreads();
   Construct();
@@ -85,7 +87,7 @@ Worker::Result BindFutureWorker::Run() {
   }
 }
 
-Worker::Result BindFutureWorker::Handle() {
+Worker::Result BindFutureWorker::Handle(word) {
   Future *future =
     BindFutureFrame::FromWordDirect(Scheduler::GetAndPopFrame())->GetFuture();
   future->ScheduleWaitingThreads();

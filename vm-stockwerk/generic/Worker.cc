@@ -79,9 +79,8 @@ void Worker::PurgeFrame(word) {
   return; // default: nothing to do
 }
 
-Worker::Result Worker::Handle() {
+Worker::Result Worker::Handle(word) {
   // default: pass the exception up the stack
-  Scheduler::currentBacktrace->Enqueue(Scheduler::GetAndPopFrame());
   return RAISE;
 }
 

@@ -1775,24 +1775,14 @@ TagVal *NativeCodeJitter::InstrReraise(TagVal *pc) {
   return INVALID_POINTER;
 }
 
-static void PushHandlerFrame(word codeFrame, word handlerFrame) {
-  Scheduler::PopFrame();
-  Scheduler::PushFrameNoCheck(handlerFrame);
-  Scheduler::PushFrame(codeFrame);
-}
-
 // Try of instr * idDef * idDef * instr
 TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   PrintPC("Try\n");
-  NativeCodeHandlerFrame::New(JIT_V1);
   u_int handlerPC = ImmediateEnv::Register(Store::IntToWord(0));
   ImmediateSel(JIT_R0, JIT_V2, handlerPC);
-  NativeCodeHandlerFrame::PutPC(JIT_V1, JIT_R0);
-  NativeCodeHandlerFrame::PutFrame(JIT_V1, JIT_V2);
   Prepare();
-  jit_pushr_ui(JIT_V1); // NativeCodeHandler Frame
-  jit_pushr_ui(JIT_V2); // NativeCode Frame
-  JITStore::Call(2, (void *) PushHandlerFrame);
+  jit_pushr_ui(JIT_R0); // Handler PC
+  JITStore::Call(1, (void *) ::Scheduler::PushHandler);
   Finish();
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
@@ -1810,17 +1800,11 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
-static void PopHandlerFrame() {
-  word frame = Scheduler::GetAndPopFrame();
-  Scheduler::PopFrame();
-  Scheduler::PushFrameNoCheck(frame);
-}
-
 // EndTry of instr
 TagVal *NativeCodeJitter::InstrEndTry(TagVal *pc) {
   PrintPC("EndTry\n");
   Prepare();
-  JITStore::Call(0, (void *) PopHandlerFrame);
+  JITStore::Call(0, (void *) ::Scheduler::PopHandler);
   Finish();
   return TagVal::FromWordDirect(pc->Sel(0));
 }

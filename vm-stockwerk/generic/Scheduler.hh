@@ -111,6 +111,12 @@ public:
   static void PopFrame() {
     nFrames--;
   }
+  static void PushHandler(word data) {
+    currentThread->PushHandler(nFrames - 1, data);
+  }
+  static void PopHandler() {
+    currentThread->PopHandler();
+  }
   static Worker::Result PushCall(word closure);
   // Other Scheduler Functions
   static u_int PreemptStatus() {

@@ -170,27 +170,18 @@ Worker::Result NativeCodeInterpreter::Run() {
   return execute(frame);
 }
 
-Worker::Result NativeCodeInterpreter::Handle() {
-  StackFrame *frame = StackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  if (frame->GetLabel() == NATIVE_CODE_HANDLER_FRAME) {
-    NativeCodeHandlerFrame *handlerFrame =
-      static_cast<NativeCodeHandlerFrame *>(frame);
-    NativeCodeFrame *codeFrame = handlerFrame->GetCodeFrame();
-    codeFrame->SetPC(handlerFrame->GetPC());
-    Tuple *package = Tuple::New(2);
-    word exn = Scheduler::currentData;
-    package->Init(0, exn);
-    package->Init(1, Scheduler::currentBacktrace->ToWord());
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = package->ToWord();
-    Scheduler::currentArgs[1] = exn;
-    Scheduler::PushFrameNoCheck(codeFrame->ToWord());
-    return Worker::CONTINUE;
-  }
-  else {
-    Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    return Worker::RAISE;
-  }
+Worker::Result NativeCodeInterpreter::Handle(word data) {
+  NativeCodeFrame *frame =
+    NativeCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  frame->SetPC(Store::DirectWordToInt(data));
+  Tuple *package = Tuple::New(2);
+  word exn = Scheduler::currentData;
+  package->Init(0, exn);
+  package->Init(1, Scheduler::currentBacktrace->ToWord());
+  Scheduler::nArgs = 2;
+  Scheduler::currentArgs[0] = package->ToWord();
+  Scheduler::currentArgs[1] = exn;
+  return Worker::CONTINUE;
 }
 
 u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {

@@ -39,7 +39,7 @@ public:
   virtual void PushCall(Closure *closure);
   // Execution
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   // Debugging
   virtual const char *Identify();

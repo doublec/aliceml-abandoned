@@ -39,7 +39,7 @@ public:
   static void PushFrame(Class *theClass, u_int nArgs, word args);
 
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   virtual const char *Identify();
   virtual void DumpFrame(word wFrame);
 };
@@ -93,17 +93,19 @@ void InitializeClassWorker::PushFrame(Class *theClass, u_int nArgs,
   InitializeClassFrame *frame =
     InitializeClassFrame::New(theClass, nArgs, args);
   Scheduler::PushFrame(frame->ToWord());
+  Scheduler::PushHandler(Store::IntToWord(0));
 }
 
 Worker::Result InitializeClassWorker::Run() {
   InitializeClassFrame *frame =
     InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Scheduler::PopHandler();
   frame->GetClass()->GetLock()->Release();
   frame->RestoreArgs();
   return CONTINUE;
 }
 
-Worker::Result InitializeClassWorker::Handle() {
+Worker::Result InitializeClassWorker::Handle(word) {
   InitializeClassFrame *frame =
     InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Class *theClass = frame->GetClass();

@@ -26,6 +26,7 @@
 #include "generic/BindFutureWorker.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/IOHandler.hh"
+#include "generic/Backtrace.hh"
 
 #if PROFILE
 #include "generic/Profiler.hh"
@@ -125,9 +126,14 @@ int Scheduler::Run() {
 #if PROFILE
 	    Profiler::SampleHeap();
 #endif
+	    u_int handler;
+	    word data;
+	    currentThread->GetHandler(handler, data);
+	    for (u_int i = nFrames - 1; i > handler; i--)
+	      currentBacktrace->Enqueue(GetAndPopFrame());
 	    frame = StackFrame::FromWordDirect(GetFrame());
 	    worker = frame->GetWorker();
-	    result = worker->Handle();
+	    result = worker->Handle(data);
 #if PROFILE
 	    Profiler::AddHeap(frame);
 #endif

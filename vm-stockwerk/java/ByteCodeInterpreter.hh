@@ -29,7 +29,7 @@ public:
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();

@@ -229,7 +229,7 @@ public:
   static void Release();
   
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
@@ -264,10 +264,12 @@ public:
 
 void UnlockWorker::PushFrame(Lock *lock) {
   Scheduler::PushFrame(UnlockFrame::New(UnlockWorker::self, lock)->ToWord());
+  Scheduler::PushHandler(Store::IntToWord(0));
 }
 
 void UnlockWorker::Release() {
   UnlockFrame *frame = UnlockFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Scheduler::PopHandler();
   Lock *lock = frame->GetLock();
   lock->Release();
 }
@@ -277,7 +279,7 @@ Worker::Result UnlockWorker::Run() {
   return Worker::CONTINUE;
 }
 
-Worker::Result UnlockWorker::Handle() {
+Worker::Result UnlockWorker::Handle(word) {
   Release();
   return Worker::RAISE;
 }
@@ -485,6 +487,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     else
       for (u_int i = Scheduler::nArgs; i--;)
 	frame->SetEnv(i, Scheduler::currentArgs[i]);
+    if (frame->GetExceptionTable()->GetCount() != 0)
+      Scheduler::PushHandler(Store::IntToWord(0));
     pc = frame->GetContPC();
   }
   else if (pc == -2) {
@@ -494,6 +498,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     else
       for (u_int i = 0; i < Scheduler::nArgs; i++)
 	frame->Push(Scheduler::currentArgs[i]);
+    if (frame->GetExceptionTable()->GetCount() != 0)
+      Scheduler::PopHandler();
     pc = frame->GetContPC();
   }
   while (true) {
@@ -2412,7 +2418,7 @@ Worker::Result ByteCodeInterpreter::Run() {
   }
 }
 
-Interpreter::Result ByteCodeInterpreter::Handle() {
+Interpreter::Result ByteCodeInterpreter::Handle(word) {
   ByteCodeFrame *frame = ByteCodeFrame::FromWordDirect(Scheduler::GetFrame());
   s_int pc             = frame->GetPC();
   Table *table         = frame->GetExceptionTable();

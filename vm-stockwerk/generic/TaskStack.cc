@@ -36,7 +36,7 @@ public:
   EmptyTaskWorker(): Worker() {}
   // Execution
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -47,7 +47,7 @@ Worker::Result EmptyTaskWorker::Run() {
   return Worker::TERMINATE;
 }
 
-Worker::Result EmptyTaskWorker::Handle() {
+Worker::Result EmptyTaskWorker::Handle(word) {
   if (Properties::atExn == Store::IntToWord(0)) {
     std::fprintf(stderr, "uncaught exception:\n");
     Debug::Dump(Scheduler::currentData);

@@ -127,6 +127,9 @@ public:
   TagVal *GetPC() {
     return TagVal::FromWordDirect(StackFrame::GetArg(PC_POS));
   }
+  void SetPC(TagVal *pc) {
+    StackFrame::ReplaceArg(PC_POS, pc->ToWord());
+  }
   Closure *GetClosure() {
     return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
   }
@@ -135,6 +138,9 @@ public:
   }
   TagVal *GetFormalArgs() {
     return TagVal::FromWord(StackFrame::GetArg(FORMAL_ARGS_POS));
+  }
+  void SetFormalArgs(word formalArgs) {
+    StackFrame::ReplaceArg(FORMAL_ARGS_POS, formalArgs);
   }
   // AbstractCodeFrame Constructor
   static AbstractCodeFrame *New(Interpreter *interpreter,
@@ -685,17 +691,17 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	formalIdDefs->Init(1, pc->Sel(2));
 	TagVal *formalArgs = TagVal::New(AbstractCode::TupArgs, 1);
 	formalArgs->Init(0, formalIdDefs->ToWord());
-	AbstractCodeHandlerFrame *frame =
-	  AbstractCodeHandlerFrame::New(this, pc->Sel(3), globalEnv, localEnv,
-					formalArgs->ToWord());
+	Tuple *exnData = Tuple::New(2);
+	exnData->Init(0, pc->Sel(3));
+	exnData->Init(1, formalArgs->ToWord());
 	Scheduler::PushFrame(frame->ToWord());
+	Scheduler::PushHandler(exnData->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
       break;
     case AbstractCode::EndTry: // of instr
       {
-	Assert(StackFrame::FromWordDirect(Scheduler::GetFrame())->GetLabel() ==
-	       ABSTRACT_CODE_HANDLER_FRAME);
+	Scheduler::PopHandler();
 	Scheduler::PopFrame();
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
@@ -971,27 +977,20 @@ Worker::Result AbstractCodeInterpreter::Run() {
   }
 }
 
-Worker::Result AbstractCodeInterpreter::Handle() {
+Worker::Result AbstractCodeInterpreter::Handle(word data) {
   AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  if (frame->IsHandlerFrame()) {
-    Tuple *package = Tuple::New(2);
-    word exn = Scheduler::currentData;
-    package->Init(0, exn);
-    package->Init(1, Scheduler::currentBacktrace->ToWord());
-    Scheduler::nArgs = 2;
-    Scheduler::currentArgs[0] = package->ToWord();
-    Scheduler::currentArgs[1] = exn;
-    AbstractCodeFrame *newFrame =
-      AbstractCodeFrame::New(self, frame->GetPC()->ToWord(),
-			     frame->GetClosure(), frame->GetLocalEnv(),
-			     frame->GetFormalArgs()->ToWord());
-    Scheduler::PushFrameNoCheck(newFrame->ToWord());
-    return Worker::CONTINUE;
-  } else {
-    Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    return Worker::RAISE;
-  }
+    AbstractCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  Tuple *package = Tuple::New(2);
+  word exn = Scheduler::currentData;
+  package->Init(0, exn);
+  package->Init(1, Scheduler::currentBacktrace->ToWord());
+  Scheduler::nArgs = 2;
+  Scheduler::currentArgs[0] = package->ToWord();
+  Scheduler::currentArgs[1] = exn;
+  Tuple *exnData = Tuple::FromWordDirect(data);
+  frame->SetPC(TagVal::FromWordDirect(exnData->Sel(0)));
+  frame->SetFormalArgs(exnData->Sel(1));
+  return Worker::CONTINUE;
 }
 
 u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
