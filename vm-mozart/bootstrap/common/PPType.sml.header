@@ -30,3 +30,7 @@ from "x-alice:/common/Type.ozf"
 import
     signature PP_TYPE
 from "x-alice:/common/PP_TYPE.ozf"
+
+import
+    structure PervasiveType
+from "x-alice:/common/PervasiveType.ozf"
