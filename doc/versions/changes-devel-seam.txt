@@ -106,7 +106,6 @@ Tools:
   - Type tooltips.
   - Inspection of modules.
   - Indicates sharing between references, futures, etc.
-  - Copy selection to clipboard.
   - User-defined layout for abstract types.
   - Many miscellaneous improvements to user interface.
 * Reimplemented explorer:
