@@ -1,0 +1,67 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature GC_SIG =
+   sig
+       structure UnsafeGecode : sig
+	   val makeSpace : unit -> 'space
+
+	   val intvar : 'space * int * int -> 'intvar
+	   val intvarR : 'space * int * int * 'boolvar -> 'intvar
+	   val boolvar : 'space -> 'boolvar
+
+	   val getMin : 'space * 'intvar -> int
+	   val getMax : 'space * 'intvar -> int
+
+	   val distinct : 'space * 'intvar vector * 'conlevel -> unit
+	   val distinctI : 'space * (int * 'intvar) vector * 'conlevel -> unit
+
+	   val rel : 'space * 'intvar * 'relation * 'intvar -> unit
+	   val relI : 'space * 'intvar * 'relation * 'int -> unit
+	   val relR : 'space * 'intvar * 'relation * 'intvar * 'boolvar -> unit
+	   val relIR : 'space * 'intvar * 'relation * 'int * 'boolvar -> unit
+	   val eq : 'space * 'intvar * 'intvar * 'conlevel -> unit
+	   val eqV : 'space * 'intvar vector * 'conlevel -> unit
+	   val eqR : 'space * 'intvar * 'intvar * 'boolvar * 'conlevel -> unit
+	   val eqVR : 'space * 'intvar vector * 'boolvar * 'conlevel -> unit
+
+	   val linear : 'space * (int * 'intvar) vector * 'relation * 
+			int * 'conlevel -> unit
+	   val linearR : 'space * (int * 'intvar) vector * 'relation * 
+			 int * 'boolvar * 'conlevel -> unit
+
+	   val bool_not : 'space * 'boolvar * 'boolvar -> unit
+	   val bool_and : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
+	   val bool_or  : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
+	   val bool_imp : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
+	   val bool_eq  : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
+	   val bool_xor : 'space * 'boolvar * 'boolvar * 'boolvar -> unit
+	   val bool_andV: 'space * 'boolvar vector * 'boolvar -> unit
+	   val bool_orV : 'space * 'boolvar vector * 'boolvar -> unit
+
+	   val branch : 'space * 'intvar vector * 
+			'b_var_sel * 'b_val_sel -> unit
+
+	   val getSearchEngine : 'space -> 'searchengine
+	   val next : 'searchengine -> 'space option
+
+	   val getSearchBestEngine : 'space -> 'searchbestengine
+	   val nextBest : 'searchbestengine -> 'searchbestresult
+
+	   val status  : 'space -> 'status
+	   val commit  : 'space * int -> unit
+	   val clone   : 'space -> 'space
+	   val discard : 'space -> unit
+	   val alive   : 'space -> unit
+
+       end
+   end

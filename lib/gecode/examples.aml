@@ -1,0 +1,164 @@
+import "Gecode"
+
+open Gecode
+
+fun queens n cl =
+    let
+	val s = makeSpace()
+
+	val v = Vector.tabulate (n, fn _ => intvar(s,0,n-1))
+	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
+	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
+
+	val _ = distinctI(s, v1, cl)
+	val _ = distinctI(s, v2, cl)
+	val _ = distinct(s, v, cl)
+
+	val _ = branch(s, v, B_SIZE_MIN, B_MIN)
+    in
+	(v, s)
+    end
+
+fun money cl = 
+    let
+	val space = makeSpace()
+
+	val v = Vector.tabulate (8, fn _ => intvar(space, 0,9))
+		
+	val s = Vector.sub(v, 0)
+	val e = Vector.sub(v, 1)
+	val n = Vector.sub(v, 2)
+	val d = Vector.sub(v, 3)
+	val m = Vector.sub(v, 4)
+	val o' = Vector.sub(v, 5)
+	val r = Vector.sub(v, 6)
+	val y = Vector.sub(v, 7)
+
+	val _ = relI(space, s, NQ, 0)
+	val _ = relI(space, m, NQ, 0)
+
+	val v1 = #[(1000,   s),
+		   (100,    e),
+		   (10,     n),
+		   (1,      d),
+
+		   (1000,   m),
+		   (100,    o'),
+		   (10,     r),
+		   (1,      e),
+
+		   (~10000, m),
+		   (~1000,  o'),
+		   (~100,   n),
+		   (~10,    e),
+		   (~1,     y)]
+	val _ = linear(space, v1, EQ, 0, cl)
+	val _ = distinct(space, v, cl)
+	val _ = branch(space, v, B_SIZE_MIN, B_MIN)
+    in
+	(v, space)
+    end
+
+fun photo () =
+    let
+	val space = makeSpace()
+
+	val s_prefs = #[(0,2), (1,4), (2,3), 
+			(2,4), (3,0), (4,3),
+			(4,0), (4,1)]
+	val small = {n_names=5, n_prefs=8, prefs=s_prefs}
+	val spec = small
+	val pos = Vector.tabulate (#n_names spec,
+				   fn n => intvar(space,0,
+						  (#n_names spec)-1))
+	val sat = intvar(space, 0, #n_prefs spec)
+	val ful = Vector.tabulate (#n_prefs spec,
+				   fn n => boolvar space)
+	val _ = Vector.appi (fn (i,(pa, pb)) =>
+          let
+	      val b = #[boolvar(space),
+			boolvar(space)]
+	  in
+	      linearR(space,
+		      #[(1, Vector.sub(pos, pb)),
+			(~1, Vector.sub(pos, pa))],
+		      EQ, 1, Vector.sub(b, 0), DEF);
+	      linearR(space,
+		      #[(1, Vector.sub(pos, pa)),
+			(~1, Vector.sub(pos, pb))],
+		      EQ, 1, Vector.sub(b, 1), DEF);
+	      bool_xor(space,
+		       Vector.sub(b, 0),
+		       Vector.sub(b, 1),
+		       Vector.sub(ful, i))
+	  end) (#prefs spec)
+
+	val eq = Vector.tabulate ((#n_prefs spec)+1,
+            fn n => 
+	       if n=(#n_prefs spec) then
+		   (~1, sat)
+	       else
+		   (1, boolvar2intvar (Vector.sub(ful, n))))
+	val _ = linear(space, eq, EQ, 0, DEF)
+
+	val _ = distinct(space, pos, DEF)
+	val _ = rel(space, Vector.sub(pos, 0), LE,
+		    Vector.sub(pos, 1))
+	val _ = branch(space, pos, B_NONE, B_MIN)
+
+	fun better(s1, s2) =
+	    relI(s1, sat, GR, getVal(s2, sat))
+    in
+	(pos, sat, better, space)
+    end
+
+fun for' f offset max 0 = (f (offset+max))
+  | for' f offset max n = (f (offset+max-n); for' f offset max (n-1))
+
+fun for f start max = if start>max then ()
+		      else for' f start (max-start) (max-start)
+
+fun golomb n cl =
+    let
+	val space = makeSpace()
+
+	fun diag(i,j) = (i*(2*n-i-1)) div 2 + j - i - 1
+
+
+	val nn = n*n
+	val dn = (n*n-n) div 2
+
+	val k = Vector.tabulate (n, fn _ => intvar(space, 0, nn))
+	val d = Vector.tabulate (dn, fn _ => intvar(space, 0, nn))
+
+	val _ = relI(space, Vector.sub(k, 0), EQ, 0)
+
+	fun innerLoop i =
+	    for (fn j => 
+		    linear(space,
+			   #[(1, Vector.sub(k,j)),
+			     (~1, Vector.sub(k,i)),
+			     (~1, Vector.sub(d, diag(i,j)))],
+			   EQ, 0, DEF))
+		(i+1) (n-1)
+	val _ = for innerLoop 0 (n-2)
+
+	val _ = for (fn i =>
+			rel(space,
+			    Vector.sub(k, i+1), GR,
+			    Vector.sub(k, i))) 0 (n-2)
+
+	val _ = distinct(space, d, cl)
+	val _ = if n>2 then
+		    rel(space,
+			Vector.sub(d, diag(0,1)), LE,
+			Vector.sub(d, diag(n-2, n-1)))
+		else ()
+	val _ = branch(space, k, B_MIN_MIN, B_MIN)
+
+	fun better(s1, s2) =
+	    relI(s1, Vector.sub(k, n-1), LE,
+		 getVal(s2, Vector.sub(k, n-1)))
+    in
+	(k, better, space)
+    end
