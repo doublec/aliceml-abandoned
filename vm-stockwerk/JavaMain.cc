@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -30,7 +30,6 @@
 #include "generic/Primitive.hh"
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
-#include "generic/BootLinker.hh"
 #include "generic/Properties.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
@@ -87,7 +86,7 @@ static int JavaMain(char *home, u_int argc, char *argv[]) {
   Unpickler::Init();
   Pickler::Init();
   // Set up Java Language Layer:
-  AliceLanguageLayer::Init();
+  AliceLanguageLayer::Init(); //--** needed for Alice exceptions
   JavaLanguageLayer::Init();
   // Setup Alice exceptions used in lower Layers:
   //--** should not be here
