@@ -1,20 +1,19 @@
 BOOTSTRAPDIR= ../../../bootstrap
 
 STOC     = alicec
-STOCOPTS =
+STOCOPTS = --dump-phases
 STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
 SRCS = hello.aml          \
        packbox.aml        \
-       widgets.aml        \
-       GtkBuilder-sig.aml \
-       GtkBuilder.aml     \
-       TextViewer.aml     \
-       move.aml           \
        canvas.aml         \
        scramble.aml       \
+       GtkBuilder-sig.aml \
+       GtkBuilder.aml     \
+       move.aml           \
+       widgets.aml        \
+       TextViewer.aml     \
        AliceTour.aml
-
 OBJS = $(SRCS:%.aml=%.ozf)
 
 %.ozf: %.aml

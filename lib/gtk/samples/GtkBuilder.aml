@@ -12,29 +12,32 @@
  *)
 
 import structure Inspector  from "x-alice:/lib/tools/Inspector"
-import structure GtkCore    from "x-alice:/lib/gtk/GtkCore"
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
-import structure Canvas     from "x-alice:/lib/gtk/Canvas"
+import structure GtkCanvas  from "x-alice:/lib/gtk/GtkCanvas"
 import signature GtkBuilder from "GtkBuilder-sig"
 
 local
-    open GtkCore
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
 in
     structure GtkBuilder :> GtkBuilder =
 	struct
 	    datatype GtkWidget =
 		Toplevel    of {title:string, border:int,
 				handler:GtkSignalHandler list, inner:GtkWidget}
-	      | HBox        of {homogeneous:bool, spacing:int, entries:GtkBoxEntry list}
-	      | VBox        of {homogeneous:bool, spacing:int, entries:GtkBoxEntry list}
+	      | HBox        of {homogeneous:bool, spacing:int,
+				entries:GtkBoxEntry list}
+	      | VBox        of {homogeneous:bool, spacing:int,
+				entries:GtkBoxEntry list}
 	      | Table       of {rows:int, columns:int, homogeneous:bool,
 				entries:GtkTableEntry list}
-	      | Frame       of {title:string, ftype:GtkFrameType, inner:GtkWidget}
-	      | AspectFrame of {title:string, xalign:real, yalign:real, ratio: real option,
+	      | Frame       of {title:string, ftype:GtkFrameType,
 				inner:GtkWidget}
-	      | Alignment   of {xalign:real, yalign:real, xscale:real, yscale:real,
-				inner:GtkWidget}
+	      | AspectFrame of {title:string, xalign:real, yalign:real,
+				ratio: real option, inner:GtkWidget}
+	      | Alignment   of {xalign:real, yalign:real,
+				xscale:real, yscale:real, inner:GtkWidget}
 	      | HPane       of {left:GtkWidget, right:GtkWidget}
 	      | VPane       of {up:GtkWidget, down:GtkWidget}
 	      | Adjustment  of {value:real, lower:real, upper:real, 
@@ -53,21 +56,20 @@ in
 	      | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	      | MenuBar     of {label:string, submenu:GtkMenuItem list} list
-	      | Window      of object
+	      | Window      of Gtk.object
 	    and GtkBoxEntry =
 		BoxSimple of GtkWidget
 	      | BoxStart  of bool * bool * int * GtkWidget
 	      | BoxEnd    of bool * bool * int * GtkWidget
 	    and GtkTableEntry =
 		TableSimple of {x:int, y:int, item:GtkWidget}
-	      | TableEntry  of {x1:int, x2:int, y1:int, y2:int, item:GtkWidget} 
+	      | TableEntry of {x1:int, x2:int, y1:int, y2:int, item:GtkWidget} 
 	    and GtkSignalHandler =
-		Handler         of string * (object -> unit)
-	      | FullHandler     of string * (object * object -> unit)
-	      | MenuHandler     of (object -> unit)
-	      | FullMenuHandler of (object * object -> unit)
+		Handler     of string * (arg list -> unit)
+	      | FullHandler of string * (Gtk.object * arg list -> unit)
 	    and GtkFrameType =
-		ShadowNone | ShadowIn | ShadowOut | ShadowEtchedIn | ShadowEtchedOut
+		ShadowNone | ShadowIn | ShadowOut
+	      | ShadowEtchedIn | ShadowEtchedOut
 	    and GtkButtonBoxStyle =
 		DefaultStyle | SpreadStyle | EdgeStyle | StartStyle | EndStyle
 	    and GtkMenuItem =
@@ -78,49 +80,62 @@ in
 		TreeItem of string
 	      | SubTree  of string * GtkTreeItem list
 	    and GtkCursorType =
-		X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP | BOAT | BOGOSITY |
-		BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER | BOTTOM_SIDE | BOTTOM_TEE |
-		BOX_SPIRAL | CENTER_PTR | CIRCLE | CLOCK | COFFEE_MUG | CROSS | CROSS_REVERSE |
-		CROSSHAIR | DIAMOND_CROSS | DOT | DOTBOX | DOUBLE_ARROW | DRAFT_LARGE |
-		DRAFT_SMALL | DRAPED_BOX | EXCHANGE | FLEUR | GOBBLER | GUMBY |
-		HAND1 | HAND2 | HEART | ICON | IRON_CROSS | LEFT_PTR | LEFT_SIDE | LEFT_TEE |
-		LEFTBUTTON | LL_ANGLE | LR_ANGLE | MAN | MIDDLEBUTTON | MOUSE | PENCIL | PIRATE |
-		PLUS | QUESTION_ARROW | RIGHT_PTR | RIGHT_SIDE | RIGHT_TEE | RIGHTBUTTON |
-		RTL_LOGO | SAILBOAT | SB_DOWN_ARROW | SB_H_DOUBLE_ARROW | SB_LEFT_ARROW |
-		SB_RIGHT_ARROW | SB_UP_ARROW | SHUTTLE | SIZING | SPIDER | SPRAYCAN |
-		STAR | TARGET | TCROSS | TOP_LEFT_ARROW | TOP_LEFT_CORNER | TOP_RIGHT_CORNER |
-		TOP_SIDE | TOP_TEE | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM
+		X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP
+	      | BOAT | BOGOSITY |
+		BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER
+	      | BOTTOM_SIDE | BOTTOM_TEE |
+		BOX_SPIRAL | CENTER_PTR | CIRCLE | CLOCK
+	      | COFFEE_MUG | CROSS | CROSS_REVERSE |
+		CROSSHAIR | DIAMOND_CROSS | DOT | DOTBOX
+	      | DOUBLE_ARROW | DRAFT_LARGE
+	      | DRAFT_SMALL | DRAPED_BOX | EXCHANGE | FLEUR | GOBBLER | GUMBY
+	      | HAND1 | HAND2 | HEART | ICON | IRON_CROSS
+	      | LEFT_PTR | LEFT_SIDE | LEFT_TEE
+	      | LEFTBUTTON | LL_ANGLE | LR_ANGLE | MAN | MIDDLEBUTTON
+	      | MOUSE | PENCIL | PIRATE
+	      | PLUS | QUESTION_ARROW | RIGHT_PTR | RIGHT_SIDE
+	      | RIGHT_TEE | RIGHTBUTTON
+	      | RTL_LOGO | SAILBOAT | SB_DOWN_ARROW | SB_H_DOUBLE_ARROW
+	      | SB_LEFT_ARROW | SB_RIGHT_ARROW | SB_UP_ARROW
+	      | SHUTTLE | SIZING | SPIDER | SPRAYCAN | STAR
+	      | TARGET | TCROSS | TOP_LEFT_ARROW
+	      | TOP_LEFT_CORNER | TOP_RIGHT_CORNER | TOP_SIDE | TOP_TEE
+	      | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM
 	    and CanvasItem =
-		Group     of {parent:object, x:real, y:real}
-	      | Lines     of {parent:object, coords:(int * int) list, width_pixels:int,
-			      fill_color:object}
-	      | Rectangle of {parent:object, x1:real, y1:real, x2:real, y2:real,
-			      fill_color:object, outline_color:object}
-	      | Ellipse   of {parent:object, x1:real, y1:real, x2:real, y2:real,
-			      fill_color:object, outline_color:object}
-	      | CText     of {parent:object, x:real, y:real, text:string, font: string,
-			      fill_color:object, anchor:int}
+		Group     of {parent:Gtk.object, x:real, y:real}
+	      | Lines     of {parent:Gtk.object, coords:(int * int) list,
+			      width_pixels:int,
+			      fill_color:Gtk.object}
+	      | Rectangle of {parent:Gtk.object, x1:real, y1:real,
+			      x2:real, y2:real,
+			      fill_color:Gtk.object, outline_color:Gtk.object}
+	      | Ellipse   of {parent:Gtk.object, x1:real, y1:real,
+			      x2:real, y2:real,
+			      fill_color:Gtk.object, outline_color:Gtk.object}
+	      | CText     of {parent:Gtk.object, x:real, y:real,
+			      text:string, font: string,
+			      fill_color:Gtk.object, anchor:int}
 	    (*
 	     * Helper Functions
 	     *)
 
-	    fun ConnectSignals(window, nil)                              = ()
-	      | ConnectSignals(window, Handler(signal, handler)::hs)     =
-		(signalConnect(window, signal, handler); ConnectSignals(window, hs))
-	      | ConnectSignals(window, FullHandler(signal, handler)::hs) =
-		(signalConnect(window, signal, fn event => handler(window, event));
-		 ConnectSignals(window, hs))
-	      | ConnectSignals(window, MenuHandler(handler)::hs) =
-		ConnectSignals(window, Handler("activate", handler)::hs)
-	      | ConnectSignals(window, FullMenuHandler(handler)::hs) =
-		ConnectSignals(window, FullHandler("activate", handler)::hs)
+	    fun B2I true  = 1
+	      | B2I false = 0
 
+	    fun ConnectSignals(window, nil)                          = ()
+	      | ConnectSignals(window, Handler(signal, handler)::hs) =
+		(Gtk.signalConnect(window, signal, handler);
+		 ConnectSignals(window, hs))
+	      | ConnectSignals(window, FullHandler(signal, handler)::hs) =
+		(Gtk.signalConnect(window, signal, fn e => handler(window, e));
+		 ConnectSignals(window, hs))
+		
 	    fun FrameTypeToInt ShadowNone      = Gtk.SHADOW_NONE
 	      | FrameTypeToInt ShadowIn        = Gtk.SHADOW_IN
 	      | FrameTypeToInt ShadowOut       = Gtk.SHADOW_OUT
 	      | FrameTypeToInt ShadowEtchedIn  = Gtk.SHADOW_ETCHED_IN
 	      | FrameTypeToInt ShadowEtchedOut = Gtk.SHADOW_ETCHED_OUT
-
+		
 	    fun ButtonStyleToInt DefaultStyle = Gtk.BUTTONBOX_DEFAULT_STYLE
 	      | ButtonStyleToInt SpreadStyle  = Gtk.BUTTONBOX_SPREAD
 	      | ButtonStyleToInt EdgeStyle    = Gtk.BUTTONBOX_EDGE
@@ -131,7 +146,8 @@ in
 	     * Interface Functions
 	     *)
 
-	    fun MakeToplevel({title=title, border=border, handler=handler, inner=desc}) =
+	    fun MakeToplevel({title=title, border=border,
+			      handler=handler, inner=desc}) =
 		let
 		    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 		    val child  = MakeWidget desc
@@ -144,27 +160,34 @@ in
 		     window)
 		end
 	    and MakeEntry (box, packer, (expand, fill, padding, desc)) =
-		packer (box, MakeWidget desc, expand, fill, padding)
+		packer (box, MakeWidget desc, B2I expand, B2I fill, padding)
 
 	    and MakeBoxEntry(box, BoxSimple dc)    =
 		MakeEntry(box, Gtk.boxPackStart, (false, false, 0, dc))
-	      | MakeBoxEntry(box, BoxStart params) = MakeEntry(box, Gtk.boxPackStart, params)
-	      | MakeBoxEntry(box, BoxEnd params)   = MakeEntry(box, Gtk.boxPackEnd, params)
-	    and MakeBox(packer, {homogeneous=homogeneous, spacing=space, entries=entries}) =
+	      | MakeBoxEntry(box, BoxStart params) =
+		MakeEntry(box, Gtk.boxPackStart, params)
+	      | MakeBoxEntry(box, BoxEnd params)   =
+		MakeEntry(box, Gtk.boxPackEnd, params)
+	    and MakeBox(packer, {homogeneous=homogeneous,
+				 spacing=space, entries=entries}) =
 		let
-		    val box = packer(homogeneous, space)
+		    val box = packer(B2I homogeneous, space)
 		in
 		    (app (fn entry => MakeBoxEntry(box, entry)) entries; box)
 		end
 	    and MakeTableEntry(table, TableSimple {x=x, y=y, item=desc}) =
-		MakeTableEntry(table, TableEntry {x1=x, x2=(x + 1), y1=y, y2=(y + 1), item=desc})
-	      | MakeTableEntry(table, TableEntry {x1=x1, x2=x2, y1=y1, y2=y2, item=desc}) =
+		MakeTableEntry(table, TableEntry
+			       {x1=x, x2=(x + 1), y1=y, y2=(y + 1), item=desc})
+	      | MakeTableEntry(table, TableEntry
+			       {x1=x1, x2=x2, y1=y1, y2=y2, item=desc}) =
 		Gtk.tableAttachDefaults(table, MakeWidget desc, x1, x2, y1, y2)
-	    and MakeTable({rows=rows, columns=columns, homogeneous=homogeneous, entries=entries}) =
+	    and MakeTable({rows=rows, columns=columns,
+			   homogeneous=homogeneous, entries=entries}) =
 		let
-		    val table = Gtk.tableNew(rows, columns, homogeneous)
+		    val table = Gtk.tableNew(rows, columns, B2I homogeneous)
 		in
-		    (app (fn entry => MakeTableEntry(table, entry)) entries; table)
+		    (app (fn entry => MakeTableEntry(table, entry)) entries;
+		     table)
 		end
 	    and MakeFrame ({title=title, ftype=ftype, inner=desc}) =
 		let
@@ -174,14 +197,19 @@ in
 		     Gtk.containerAdd(frame, MakeWidget desc);
 		     frame)
 		end
-	    and MakeAspectFrame {title=title, xalign=xa, yalign=ya, ratio=ropt, inner=desc} =
+	    and MakeAspectFrame {title=title, xalign=xa, yalign=ya,
+				 ratio=ropt, inner=desc} =
 		let
-		    val (r, ro) = (case ropt of NONE => (0.0, true) | SOME r => (r, false))
-		    val frame   = Gtk.aspectFrameNew(title, xa, ya, r, ro)
+		    val (r, ro) =
+			(case ropt of
+			     NONE   => (0.0, true)
+		           | SOME r => (r, false))
+		    val frame = Gtk.aspectFrameNew(title, xa, ya, r, B2I ro)
 		in
 		    (Gtk.containerAdd(frame, MakeWidget desc); frame)
 		end
-	    and MakeAlignment {xalign=xa, yalign=ya, xscale=xs, yscale=ys, inner=desc} =
+	    and MakeAlignment {xalign=xa, yalign=ya, xscale=xs,
+			       yscale=ys, inner=desc} =
 		let
 		    val align = Gtk.alignmentNew(xa, ya, xs, ys)
 		in
@@ -212,61 +240,51 @@ in
 		end
 	    and MakeCanvasGroup({parent=parent, x=x, y=y}) =
 		let
-		    val args = [va_string "x", va_float y, va_string "y", va_float y]
+		    val args = [("x", DOUBLE y), ("y", DOUBLE y)]
 		in
-		    Canvas.itemNew(parent, Canvas.groupGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.groupGetType (), args)
 		end
-	    and MakeCanvasPoints coords =
+	    and MakeCanvasLine({parent=parent, coords=coords,
+				width_pixels=width, fill_color=fill}) =
 		let
-		    val points = Canvas.pointsNew (List.length coords)
+		    val args = [("points", POINTS coords),
+				("fill_color_gdk", OBJECT fill),
+				("width_pixels", INT width)]
 		in
-		    (foldl (fn ((x, y), i) =>
-			    (Canvas.pointsPut(points, i, x);
-			     Canvas.pointsPut(points, (i + 1), y);
-			     (i + 2))) 0 coords;
-		     points)
+		    GtkCanvas.itemNew(parent, GtkCanvas.lineGetType (), args)
 		end
-	    and MakeCanvasLine({parent=parent, coords=coords, width_pixels=width,
-				fill_color=fill}) =
-		let
-		    val points = MakeCanvasPoints coords
-		    val args   = [va_string "points", va_object points,
-				  va_string "fill_color_gdk", va_object fill,
-				  va_string "width_pixels", va_int width]
-		    val item   = Canvas.itemNew(parent, Canvas.lineGetType (), args)
-		in
-		    (Canvas.pointsFree points; item)
-		end
-	    and MakeCanvasRectangle({parent=parent, x1=x1, y1=y1, x2=x2, y2=y2,
+	    and MakeCanvasRectangle({parent=parent,
+				     x1=x1, y1=y1, x2=x2, y2=y2,
 				     fill_color=fill, outline_color=outline}) =
 		let
-		    val args = [va_string "x1", va_float x1, va_string "y1", va_float y1,
-				va_string "x2", va_float x2, va_string "y2", va_float y2,
-				va_string "fill_color_gdk", va_object fill,
-				va_string "outline_color_gdk", va_object outline]
+		    val args = [("x1", DOUBLE x1), ("y1", DOUBLE y1),
+				("x2", DOUBLE x2), ("y2", DOUBLE y2),
+				("fill_color_gdk", OBJECT fill),
+				("outline_color_gdk", OBJECT outline)]
 		in
-		    Canvas.itemNew(parent, Canvas.rectGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.rectGetType (), args)
 		end
-	    and MakeCanvasEllipse({parent=parent, x1=x1, y1=y1, x2=x2, y2=y2,
+	    and MakeCanvasEllipse({parent=parent,
+				   x1=x1, y1=y1, x2=x2, y2=y2,
 				   fill_color=fill, outline_color=outline}) =
 		let
-		    val args = [va_string "x1", va_float x1, va_string "y1", va_float y1,
-				va_string "x2", va_float x2, va_string "y2", va_float y2,
-				va_string "fill_color_gdk", va_object fill,
-				va_string "outline_color_gdk", va_object outline]
+		    val args = [("x1", DOUBLE x1), ("y1", DOUBLE y1),
+				("x2", DOUBLE x2), ("y2", DOUBLE y2),
+				("fill_color_gdk", OBJECT fill),
+				("outline_color_gdk", OBJECT outline)]
 		in
-		    Canvas.itemNew(parent, Canvas.ellipseGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.ellipseGetType (), args)
 		end
 	    and MakeCanvasText({parent=parent, x=x, y=y, text=text, font=font,
 				fill_color=fill, anchor=anchor}) =
 		let
-		    val args = [va_string "text", va_string text,
-				va_string "font", va_string font,
-				va_string "x", va_float x, va_string "y", va_float y,
-				va_string "fill_color_gdk", va_object fill,
-				va_string "anchor", va_int anchor]
+		    val args = [("text", STRING text),
+				("font", STRING font),
+				("x", DOUBLE x), ("y", DOUBLE y),
+				("fill_color_gdk", OBJECT fill),
+				("anchor", INT anchor)]
 		in
-		    Canvas.itemNew(parent, Canvas.textGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.textGetType (), args)
 		end
 	    and MakeCanvasItem item =
 		(case item of
@@ -277,11 +295,12 @@ in
 		   | CText params     => MakeCanvasText params)
 	    and MakeCanvasWidget({width=width, height=height}) =
 		let
-		    val canvas = Canvas.new ()
+		    val canvas = GtkCanvas.new ()
 		in
 		    (Gtk.widgetSetUsize(canvas, width, height);
-		     Canvas.setScrollRegion(canvas, 0.0, 0.0,
-					    Real.fromInt width, Real.fromInt height);
+		     GtkCanvas.setScrollRegion(canvas, 0.0, 0.0,
+					       Real.fromInt width,
+					       Real.fromInt height);
 		     canvas)
 		end
 	    and MakeTextContents((text, _, _, _), nil)              = text
@@ -290,18 +309,19 @@ in
 		 MakeTextContents(pars, tr))
 	    and MakeTextWidget ({xdim=xdim, ydim=ydim, text=ts}) =
 		let
-		    val xa      = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
-		    val ya      = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
-		    val text    = Gtk.textNew(xa, ya)
-		    val font    = Gdk.fontLoad("8x13")
-		    val map     = Gdk.colormapGetSystem ()
-		    val black   = Gdk.allocateGdkColor(0, 0, 0)
-		    val white   = Gdk.allocateGdkColor(65535, 65535, 65535)
+		    val xa = Gtk.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+		    val ya = Gtk.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+		    val text  = Gtk.textNew(xa, ya)
+		    val font  = Gdk.fontLoad("8x13")
+		    val map   = Gdk.colormapGetSystem ()
+		    val black = Gdk.allocColor(0, 0, 0)
+		    val white = Gdk.allocColor(65535, 65535, 65535)
 		in
-		    (Gtk.textSetEditable(text, false);
-		     Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
-		     Gdk.colormapAllocColor(map, black, false, true);
-		     Gdk.colormapAllocColor(map, white, false, true);
+		    (Gtk.textSetEditable(text, 0);
+		     Gtk.widgetSetUsize(text,
+					Real.round xdim, Real.round ydim);
+		     Gdk.colormapAllocColor(map, black, 0, 1);
+		     Gdk.colormapAllocColor(map, white, 0, 1);
 		     MakeTextContents((text, font, black, white), ts))
 		end
 	    and MakeCalendar entries =
@@ -310,7 +330,7 @@ in
 		in
 		    (ConnectSignals(cal, entries); cal)
 		end
-	    and MakeNoteEntries (_, nil)                  = ()
+	    and MakeNoteEntries (_, nil)                             = ()
 	      | MakeNoteEntries (note, {label=title, note=desc}::es) =
 		let
 		    val label = Gtk.labelNew title
@@ -323,16 +343,19 @@ in
 		let
 		    val note = Gtk.notebookNew ()
 		in
-		    (Gtk.notebookSetShowTabs(note, showlabel); MakeNoteEntries(note, entries); note)
+		    (Gtk.notebookSetShowTabs(note, B2I showlabel);
+		     MakeNoteEntries(note, entries); note)
 		end
-	    and MakeTreeItems(tree, handler, nil)                       = ()
-	      | MakeTreeItems(tree, handler, (TreeItem title)::ir)      =
+	    and MakeTreeItems(tree, handler, nil)                  = ()
+	      | MakeTreeItems(tree, handler, (TreeItem title)::ir) =
 		let
 		    val item = Gtk.treeItemNewWithLabel title
 		in
 		    (Gtk.treeAppend(tree, item);
-		     signalConnect(item, "select", fn event => handler(title, "select"));
-		     signalConnect(item, "deselect", fn event => handler(title, "deselect"));
+		     Gtk.signalConnect(item, "select",
+				       fn event => handler(title, "select"));
+		     Gtk.signalConnect(item, "deselect",
+				       fn event => handler(title, "deselect"));
 		     MakeTreeItems(tree, handler, ir))
 		end
 	      | MakeTreeItems(tree, handler, (SubTree(title, sub))::ir) =
@@ -353,7 +376,8 @@ in
 		end
 	    and MakeButtonBoxEntries (box, nil)      = ()
 	      | MakeButtonBoxEntries (box, desc::br) =
-		(Gtk.containerAdd(box, MakeWidget desc); MakeButtonBoxEntries(box, br))
+		(Gtk.containerAdd(box, MakeWidget desc);
+		 MakeButtonBoxEntries(box, br))
 	    and MakeButtonBox (packer, (style, buttons)) =
 		let
 		    val box = packer ()
@@ -362,8 +386,8 @@ in
 		     MakeButtonBoxEntries(box, buttons);
 		     box)
 		end
-	    and MakeMenuEntries(menu, nil)                                = ()
-	      | MakeMenuEntries(menu, MenuItem(title, handlers)::er)      =
+	    and MakeMenuEntries(menu, nil)                           = ()
+	      | MakeMenuEntries(menu, MenuItem(title, handlers)::er) =
 		let
 		    val item = Gtk.menuItemNewWithLabel(title)
 		in
@@ -375,12 +399,12 @@ in
 		let
 		    val item = Gtk.checkMenuItemNewWithLabel(title)
 		in
-		    (Gtk.checkMenuItemSetShowToggle(item, true);
+		    (Gtk.checkMenuItemSetShowToggle(item, 1);
 		     ConnectSignals(item, handlers);
 		     Gtk.menuAppend(menu, item);
 		     MakeMenuEntries(menu, er))
 		end
-	      | MakeMenuEntries(menu, SubMenu(title, submenu)::er)         =
+	      | MakeMenuEntries(menu, SubMenu(title, submenu)::er) =
 		let
 		    val label = Gtk.menuItemNewWithLabel(title)
 		    val sub   = Gtk.menuNew ()
@@ -390,7 +414,7 @@ in
 		     MakeMenuEntries(sub, submenu);
 		     MakeMenuEntries(menu, er))
 		end
-	    and MakeMenuBarEntries (bar, nil)                = ()
+	    and MakeMenuBarEntries (bar, nil) = ()
 	      | MakeMenuBarEntries (bar, {label=title, submenu=items}::er) =
 		let
 		    val label = Gtk.menuItemNewWithLabel(title)
@@ -409,32 +433,36 @@ in
 		end
 	    and MakeArrowWidget {artyp=typ, arshadow=shadow} =
 		Gtk.arrowNew(typ, shadow)
-	    and MakeWidget (Toplevel params)         = MakeToplevel params
-	      | MakeWidget (HBox params)             = MakeBox(Gtk.hboxNew, params)
-	      | MakeWidget (VBox params)             = MakeBox(Gtk.vboxNew, params)
-	      | MakeWidget (Table params)            = MakeTable params
-	      | MakeWidget (Frame params)            = MakeFrame params
-	      | MakeWidget (AspectFrame params)      = MakeAspectFrame params
-	      | MakeWidget (Alignment params)        = MakeAlignment params
-	      | MakeWidget (HPane {left=l, right=r}) = MakePane(Gtk.hpanedNew, (l,r))
-	      | MakeWidget (VPane {up=u, down=d})    = MakePane(Gtk.vpanedNew, (u,d))
-	      | MakeWidget (Adjustment params)       = MakeAdjustment params
-	      | MakeWidget (AccelLabel title)        = Gtk.accelLabelNew(title)
-	      | MakeWidget (Label title)             = Gtk.labelNew(title)
-	      | MakeWidget (Arrow params)            = MakeArrowWidget params
-	      | MakeWidget (Entry {max=NONE})        = Gtk.entryNew ()
-	      | MakeWidget (Entry {max=SOME i})      = Gtk.entryNewWithMaxLength(i)
-	      | MakeWidget (Button params)           = MakeButton params
-	      | MakeWidget (CheckButton params)      = MakeCheckButton params
-	      | MakeWidget (Canvas params)           = MakeCanvasWidget params
-	      | MakeWidget (Text params)             = MakeTextWidget params
-	      | MakeWidget (Calendar params)         = MakeCalendar params
-	      | MakeWidget (Notebook params)         = MakeNotebook params
-	      | MakeWidget (Tree params)             = MakeTree params
-	      | MakeWidget (HButtonBox params)       = MakeButtonBox(Gtk.hbuttonBoxNew, params)
-	      | MakeWidget (VButtonBox params)       = MakeButtonBox(Gtk.vbuttonBoxNew, params)
-	      | MakeWidget (MenuBar params)          = MakeMenuBar params
-	      | MakeWidget (Window window)           = window
-	      | MakeWidget _                         = raise Subscript
+	    and MakeWidget (Toplevel params)    = MakeToplevel params
+	      | MakeWidget (HBox params)        = MakeBox(Gtk.hboxNew, params)
+	      | MakeWidget (VBox params)        = MakeBox(Gtk.vboxNew, params)
+	      | MakeWidget (Table params)       = MakeTable params
+	      | MakeWidget (Frame params)       = MakeFrame params
+	      | MakeWidget (AspectFrame params) = MakeAspectFrame params
+	      | MakeWidget (Alignment params)   = MakeAlignment params
+	      | MakeWidget (HPane {left=l, right=r}) =
+		MakePane(Gtk.hpanedNew, (l,r))
+	      | MakeWidget (VPane {up=u, down=d}) =
+		MakePane(Gtk.vpanedNew, (u,d))
+	      | MakeWidget (Adjustment params)  = MakeAdjustment params
+	      | MakeWidget (AccelLabel title)   = Gtk.accelLabelNew(title)
+	      | MakeWidget (Label title)        = Gtk.labelNew(title)
+	      | MakeWidget (Arrow params)       = MakeArrowWidget params
+	      | MakeWidget (Entry {max=NONE})   = Gtk.entryNew ()
+	      | MakeWidget (Entry {max=SOME i}) = Gtk.entryNewWithMaxLength(i)
+	      | MakeWidget (Button params)      = MakeButton params
+	      | MakeWidget (CheckButton params) = MakeCheckButton params
+	      | MakeWidget (Canvas params)      = MakeCanvasWidget params
+	      | MakeWidget (Text params)        = MakeTextWidget params
+	      | MakeWidget (Calendar params)    = MakeCalendar params
+	      | MakeWidget (Notebook params)    = MakeNotebook params
+	      | MakeWidget (Tree params)        = MakeTree params
+	      | MakeWidget (HButtonBox params)  =
+		MakeButtonBox(Gtk.hbuttonBoxNew, params)
+	      | MakeWidget (VButtonBox params) =
+		MakeButtonBox(Gtk.vbuttonBoxNew, params)
+	      | MakeWidget (MenuBar params) = MakeMenuBar params
+	      | MakeWidget (Window window)  = window
+	      | MakeWidget _                = raise Subscript
 	end
 end
