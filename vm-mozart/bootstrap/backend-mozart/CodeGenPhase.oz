@@ -78,8 +78,8 @@ define
 
    fun {TrArity Arity}
       case Arity of 'Unary' then unary
-      [] 'Tuple'(I) then tuple(I)
-      [] 'Record'(Labs) then record({Map Labs TrLab})
+      [] 'TupArity'(I) then tuple(I)
+      [] 'RecArity'(Labs) then record({Map Labs TrLab})
       end
    end
 
@@ -110,6 +110,9 @@ define
       [] 'ConTest'(Id) then conTest({TrId Id})
       [] 'ConAppTest'(Id Args) then
 	 conAppTest({TrId Id} {TrArgs Args})
+      [] 'StaticConTest'(Stamp) then staticConTest(Stamp)
+      [] 'StaticConAppTest'(Stamp Args) then
+	 staticConAppTest(Stamp {TrArgs Args})
       [] 'RefAppTest'(Id) then refAppTest({TrId Id})
       [] 'TupTest'(Ids) then tupTest({Map Ids TrId})
       [] 'RecTest'(LabIdList) then
@@ -176,6 +179,8 @@ define
 	 tagExp({TrInfo Info} {TrLab Lab} N {TrConArity ConArity})
       [] 'ConExp'(Info Id ConArity) then
 	 conExp({TrInfo Info} {TrId Id} {TrConArity ConArity})
+      [] 'StaticConExp'(Info Stamp ConArity) then
+	 staticConExp({TrInfo Info} Stamp {TrConArity ConArity})
       [] 'RefExp'(Info) then refExp({TrInfo Info})
       [] 'TupExp'(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
       [] 'RecExp'(Info LabIdList) then
@@ -194,6 +199,8 @@ define
 	 tagAppExp({TrInfo Info} {TrLab Lab} N {TrArgs Args})
       [] 'ConAppExp'(Info Id Args) then
 	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
+      [] 'StaticConAppExp'(Info Stamp Args) then
+	 staticConAppExp({TrInfo Info} Stamp {TrArgs Args})
       [] 'RefAppExp'(Info Id) then refAppExp({TrInfo Info} {TrId Id})
       [] 'SelAppExp'(Info Lab N Id) then
 	 selAppExp({TrInfo Info} {TrLab Lab} N {TrId Id})
