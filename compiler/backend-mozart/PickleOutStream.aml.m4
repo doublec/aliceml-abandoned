@@ -46,8 +46,7 @@
  * ref ::= 0x0A number
  *)
 
-import structure Unsafe            from "../../lib/system/Unsafe"
-	(*--** does not exist *)
+import structure Reflect           from "../../lib/system/Reflect"
 import structure Crash             from "../infrastructure/Crash"
 import structure StringMap         from "../infrastructure/StringMap"
 import structure Crc               from "Crc"
@@ -156,14 +155,8 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 
 	fun outputLargeReal (q, r) =
 	    let
-		val vec = Unsafe.blastWrite r
-		val mkIndex =
-		    case Word8Vector.sub (vec, 0) of
-			0wx33 => (fn i => Int.- (103, i))
-		      | 0wx00 => (fn i => Int.+ (i, 96))
-		      | _ => raise Match
-		fun f i =
-		    Word8.toLargeWord (Word8Vector.sub (vec, mkIndex i))
+		val vec = Reflect.realToVector r
+		fun f i = Word8.toLargeWord (Word8Vector.sub (vec, i))
 		val i1 = f 7 + (f 6 << 0w8) + (f 5 << 0w16) + (f 4 << 0w24)
 		val i2 = f 3 + (f 2 << 0w8) + (f 1 << 0w16) + (f 0 << 0w24)
 	    in
