@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Stamp         from "../infrastructure/Stamp"
+import structure Stamp         from "../common/Stamp"
 import structure FlatGrammar   from "../backend-common/FlatGrammar"
 import structure PickleGrammar from "PickleGrammar"
 

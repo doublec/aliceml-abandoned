@@ -10,11 +10,12 @@
  *   $Revision$
  *)
 
+import structure Reflect       from "../../lib/system/Reflect"
 import structure Crash         from "../infrastructure/Crash"
-import structure Unsafe        from "../../lib/system/Unsafe"   (*--** does not exist *)
+import structure Stamp         from "../common/Stamp"
 import structure StampMap      from "../common/StampMap"
 import structure PrimPickle    from "PrimPickle"
-import structure PickleGrammar from "PickeGrammar"
+import structure PickleGrammar from "PickleGrammar"
 import signature OUTPUT_PICKLE from "OUTPUT_PICKLE-sig"
 
 structure OutputPickle :> OUTPUT_PICKLE =
@@ -159,16 +160,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 
 	fun outputReal (context, r) =
 	    let
-		val vec = Unsafe.blastWrite r
-		val mkIndex =
-		    case Word8Vector.sub (vec, 0) of
-			0wx33 => (fn i => 103 - i)
-		      | 0wx00 => (fn i => i + 96)
-		      | _ => raise Crash.Crash "OutputPickle.outputReal"
+		val vec = Reflect.realToVector r
 	    in
 		outputChunk (context,
 			     Vector.tabulate
-			     (8, fn i => Word8Vector.sub (vec, mkIndex i)));
+			     (8, fn i => Vector.sub (vec, i)));
 		()
 	    end
 

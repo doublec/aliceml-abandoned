@@ -17,7 +17,7 @@ import structure EmptyContext   from "../infrastructure/EmptyContext"
 import structure Source         from "../infrastructure/Source"
 import structure StampSet       from "../common/StampSet"
 import structure FlatGrammar    from "../backend-common/FlatGrammar"
-import signature PickleGrammar  from "PickleGrammar"
+import structure PickleGrammar  from "PickleGrammar"
 import structure Environment    from "Environment"
 import signature CODE_GEN_PHASE from "CODE_GEN_PHASE-sig"
 

@@ -34,14 +34,14 @@ structure PrimPickle :> PRIM_PICKLE =
 	type label = int
 	type size = Int.int
 
-	val tPOSINT    = 0w0: Word8.word
-	val tNEGINT    = 0w1: Word8.word
-	val tCHUNK     = 0w2: Word8.word
-	val tBLOCK     = 0w3: Word8.word
-	val tTUPLE     = 0w4: Word8.word
-	val tCLOSURE   = 0w5: Word8.word
-	val tREF       = 0w6: Word8.word
-	val tTRANSFORM = 0w7: Word8.word
+	val tPOSINT    = Word8.fromInt 0
+	val tNEGINT    = Word8.fromInt 1
+	val tCHUNK     = Word8.fromInt 2
+	val tBLOCK     = Word8.fromInt 3
+	val tTUPLE     = Word8.fromInt 4
+	val tCLOSURE   = Word8.fromInt 5
+	val tREF       = Word8.fromInt 6
+	val tTRANSFORM = Word8.fromInt 7
 
 	fun outputByte ((outstream, _, _), w) = BinIO.output1 (outstream, w)
 

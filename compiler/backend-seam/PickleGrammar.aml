@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Stamp          from "../infrastructure/Stamp"
+import structure Stamp          from "../common/Stamp"
 import structure FlatGrammar    from "../backend-common/FlatGrammar"
 import signature PICKLE_GRAMMAR from "PICKLE_GRAMMAR-sig"
 
@@ -67,7 +67,7 @@ structure PickleGrammar :> PICKLE_GRAMMAR =
 	  | Try of instr * idDef * idDef * instr
 	  | EndTry of instr
 	  | EndHandle of instr
-	  | IntTest of idRef * (Int32.int * instr) vector * instr
+	  | IntTest of idRef * (LargeInt.int * instr) vector * instr
 	  | RealTest of idRef * (Real.real * instr) vector * instr
 	  | StringTest of idRef * (String.string * instr) vector * instr
 	  | WideStringTest of idRef * (WideString.string * instr) vector
