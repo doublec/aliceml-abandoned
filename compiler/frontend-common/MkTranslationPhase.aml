@@ -346,6 +346,20 @@ struct
 	O.SelExp(typInfo(r, Vector.sub(Type.asTuple(#typ(O.infoExp e)), n-1)),
 		 O.Lab(nonInfo r, Label.fromInt n), e)
 
+    fun trStrictExp e =
+	let
+	    val i = O.infoExp e
+	in
+	    O.StrictExp(typInfo(#region i, Type.apply(typ_strict, #typ i)), e)
+	end
+
+    fun trStrictPat p =
+	let
+	    val i = O.infoPat p
+	in
+	    O.StrictPat(typInfo(#region i, Type.apply(typ_strict, #typ i)), p)
+	end
+
     fun trAssoc(E, r, Fixity.LEFT)    = accessFix(E, lab_left)
       | trAssoc(E, r, Fixity.RIGHT)   = accessFix(E, lab_right)
       | trAssoc(E, r, Fixity.NEITHER) =	accessFix(E, lab_neither)
@@ -357,7 +371,8 @@ struct
       | trFix(E, r, Fixity.POSTFIX n) =
 	callFix(E, lab_postfix, trInt(r,n))
       | trFix(E, r, Fixity.INFIX(n,a)) =
-	callFix(E, lab_infix, trTuple(r, #[trInt(r,n), trAssoc(E,r,a)]))
+	callFix(E, lab_infix,
+		trStrictExp(trTuple(r, #[trInt(r,n), trAssoc(E,r,a)])))
 
     fun trLab(E, r, l) =
 	callLab(E, lab_fromString, trString(r, Label.toString l))
@@ -598,7 +613,7 @@ struct
 
     and trPackExp(E,i,m,j) =
 	(* [pack m :> j] = let x1 = [j]; x2 = [m :> x1]
-	 *                 in seal Package__(x2, x1) *)
+	 *                 in seal Package__(strict (x2, x1)) *)
 	let
 	    val r   = #region i
 
@@ -618,8 +633,8 @@ struct
 	    val d2' = O.ValDec(origInfo(r,Aux), idToPat x2', e2')
 
 	    val e3' = O.TagExp(typInfo(r,typ_package(E,#typ i2')),
-			       O.Lab(nonInfo r, lab_package),
-			       trTuple(r, #[idToExp x2', idToExp x1']))
+			O.Lab(nonInfo r, lab_package),
+			trStrictExp(trTuple(r, #[idToExp x2', idToExp x1'])))
 	    val e'  = O.SealExp(i, e3')
 	in
 	    O.LetExp(O.infoExp e', #[d1',d2'], e')
@@ -742,7 +757,7 @@ struct
 	O.LetExp(trModInfo(E,i), trDecs(E,ds), trMod(E,m))
 
       | trMod(E, I.UnpackMod(i,e,j)) =
-	(* [unpack e : j] = let Package__(x1,x2) = unseal [e]
+	(* [unpack e : j] = let Package__(strict (x1,x2)) = unseal [e]
 	 *                  in Inf.match(x2,[j]); x1
 	 *)
 	let
@@ -753,8 +768,8 @@ struct
 	    val x1' = O.Id(typInfo(r,t1), Stamp.new(), Name.InId)
 	    val x2' = O.Id(typInfo(r,typ_inf E), Stamp.new(), Name.InId)
 	    val p'  = O.TagPat(typInfo(r,typ_package(E,t1)),
-			       O.Lab(nonInfo r, lab_package),
-			       O.TupPat(i', #[idToPat x1', idToPat x2']))
+			O.Lab(nonInfo r, lab_package),
+			trStrictPat(O.TupPat(i', #[idToPat x1', idToPat x2'])))
 	    val d'  = O.ValDec(origInfo(r,Aux), p', e1')
 	    val xx1 = idToExp x1'
 	    val e'  = if not(!Switches.Language.supportRtt) then xx1 else
