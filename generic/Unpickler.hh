@@ -26,6 +26,7 @@ public:
 
   // Unpickler Static Constructor
   static void Init();
+  static void InitExceptions();
 
   typedef word (*handler)(word);
   static void RegisterHandler(Chunk *name, handler handler);
