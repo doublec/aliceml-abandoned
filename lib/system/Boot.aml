@@ -10,44 +10,7 @@
  *   $Revision$
  *)
 
-import structure Reflect           from "Reflect"
-import structure Url               from "Url"
-import structure Component         from "Component"
-import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
-import structure ComponentManager  from "ComponentManager"
+import structure Url              from "Url"
+import structure ComponentManager from "ComponentManager"
 
-fun boot url =
-    let
-	val componentManagerUrl =
-	    Url.fromString "x-alice:/lib/system/ComponentManager"
-(*
-	structure _ = ComponentManager.Enter(val url = componentManagerUrl
-					     signature S =
-						 (structure ComponentManager:
-						      COMPONENT_MANAGER
-						      where type component =
-								 Component.t)
-					     structure X =
-						 (structure ComponentManager =
-						      ComponentManager))
-*)
-	structure Str =
-	    Reflect.Reflect(signature S =
-				(structure ComponentManager: COMPONENT_MANAGER
-				     where type component = Component.t)
-			    structure X =
-				(structure ComponentManager =
-				     ComponentManager))
-	val component = Component.load componentManagerUrl
-(*
-	structure Sig = Reflect.ReflectSig(signature S =
-					       (structure ComponentManager:
-						    COMPONENT_MANAGER
-						    where type component =
-							       Component.t))
-*)
-	val component = Component.create (Component.inf component, Str.x)
-	val _ = ComponentManager.enter (componentManagerUrl, component)
-    in
-	ComponentManager.start (Url.fromString url)
-    end
+fun boot url = ComponentManager.start (Url.fromString url)
