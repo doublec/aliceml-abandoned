@@ -866,49 +866,12 @@ structure CodeGen =
 		    Multi (expCode (exp', curFun, curCls)) ::
 		    [Pop]
 
-	  | decCode (ExportStm (_,ids), curFun, curCls) =
-		    (* ExportStm of coord * id list *)
-		    (* 1. load Label[] *)
-		    (* 2. build Value[] *)
-		    (* 3. create Record *)
-		    (* Label[] are built statically! *)
-		    let
-			val arity = length ids
-			(* 1st *)
-			(* revert the list and create Labelstrings *)
-			fun ids2strings (Id (_,_,ExId l)::ids',s')=
-			    ids2strings (ids', l::s')
-			  | ids2strings (Id (_,stamp',InId)::ids',s') =
-			    ids2strings (ids', Stamp.toString stamp'::s')
-			  | ids2strings (nil, s') = s'
-
-			(* 2nd *)
-			 fun load (Id (_,stamp',_)::rs,j) =
-			     Dup ::
-			     atCodeInt j ::
-			     Comment "aload for record" ::
-			     Aload stamp' ::
-			     Aastore ::
-			     (load (rs,j+1))
-			   | load (nil,_) = nil
-			 (* 3rd *)
-		    in
-			(mainpickle := Stamp.new();
-			 [Comment "[Mainpickle ",
-			  New CRecord,
-			  Dup,
-			  Getstatic (RecordLabel.insert
-				     (ids2strings (ids, nil))),
-			  atCodeInt (Int.toLarge arity),
-			  Anewarray CVal,
-			  Multi (load (ids,0)),
-			  Invokespecial (CRecord,"<init>",
-					 ([Arraysig, Classsig CString,
-					   Arraysig, Classsig CVal],
-					  [Voidsig])),
-			  Astore (!mainpickle),
-			  Comment "Mainpickle ]"])
-		     end
+	  | decCode (ExportStm (_,exp'), curFun, curCls) =
+		    (mainpickle := Stamp.new();
+		     [Comment "[Mainpickle ",
+		      Multi (expCode (exp', curFun, curCls)),
+		      Astore (!mainpickle),
+		      Comment "Mainpickle ]"])
 
 	  | decCode (IndirectStm (_, ref (SOME body')), curFun, curCls) =
 		     decListCode (body', curFun, curCls)
@@ -1245,7 +1208,7 @@ structure CodeGen =
 		     end
 
 	  | expCode (RecExp(_, nil),_,_) =
-		     [Getstatic (CConstants^"/dmlunit", [Classsig CName])]
+		     Crash.crash "CodeGen.expCode: RecExp"
 
 	  | expCode (RecExp(_,labid),_,_) = createRecord (labid, nil)
 
@@ -1266,7 +1229,15 @@ structure CodeGen =
 	  | expCode (VarExp(_,id'), _, curCls) =
 		     [idCode (id', curCls)]
 
-	  | expCode (AdjExp _, _, _) = Crash.crash "seltsame operation adjexp"
+	  | expCode (AdjExp (_, id', id''), curFun, curCls) =
+		     [Getstatic (Literals.insert (StringLit "General.adjoin"),
+				 [Classsig CStr]),
+		      Invokestatic (CBuiltin, "getBuiltin",
+				    ([Classsig CStr], [Classsig CVal])),
+		      idCode (id', curCls),
+		      idCode (id'', curCls),
+		      Invokevirtual (CVal, "apply2", ([Classsig CVal, Classsig CVal],
+						      [Classsig CVal]))]
 
 	  | expCode (SelExp(_,lab'),_,_) =
 		     (case LargeInt.fromString lab' of

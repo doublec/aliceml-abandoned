@@ -341,13 +341,17 @@ structure ToJasmin =
 		    end
 
 		(* returns the maximum JVM register we use *)
-		fun max () = 8000 (* xxx *)
-		    (* IntHash.fold
-		    Int.max
-		    0
-		    (!(if !OPTIMIZE >= 1 then
-			   jvmto
-		       else to)) *)
+		fun max parms =
+		    if !OPTIMIZE =0 then
+			StampHash.fold
+			(fn (stamp', y) => Int.max (Stamp.hash stamp', y))
+			parms
+			(!to)
+		    else
+			IntHash.fold
+			Int.max
+			parms
+			(!jvmto)
 
 		(* fuses two stamps. Called on aload/astore pairs *)
 		fun fuse (x,u) =
@@ -1057,7 +1061,9 @@ structure ToJasmin =
 				   staticapply,
 				   io);
 				  TextIO.output(io,".limit locals "^
-						Int.toString(JVMreg.max ())
+						Int.toString(JVMreg.max
+							     (siglength parms)
+							     +1)
 						^"\n");
 				  TextIO.output(io,".end method\n\n")))
 		    end
