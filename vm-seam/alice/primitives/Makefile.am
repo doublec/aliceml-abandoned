@@ -33,7 +33,7 @@ libprimitives_a_SOURCES = \
 	Word31.cc \
 	Word32.cc
 
-EXTRA_DISTS = \
+EXTRA_DIST = \
 	Array.icc \
 	Word.icc \
 	Vector.icc

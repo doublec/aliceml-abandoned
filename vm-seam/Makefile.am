@@ -26,3 +26,13 @@ bin_SCRIPTS = \
 
 include_HEADERS = \
 	Alice.hh
+
+EXTRA_DIST = \
+	bin/alice \
+	bin/alicec \
+	bin/alicedep \
+	bin/alicelink \
+	bin/aliceremote \
+	bin/alicerun.in \
+	bin/alicetool.in \
+	bin/alice-config.in

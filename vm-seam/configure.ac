@@ -8,7 +8,7 @@ dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(Alice/SEAM, 0.0.20030716, alice@ps.uni-sb.de, alice)
+AC_INIT(Alice/SEAM, 1.0.0, alice@ps.uni-sb.de, alice)
 AC_CONFIG_SRCDIR(AliceMain.cc)
 AM_INIT_AUTOMAKE
 
@@ -60,10 +60,8 @@ AC_PATH_SEAM
 case $host_os in
     darwin*)
        DEFS="${DEFS}${DEFS:+ }-D_BSD_SOCKLEN_T_"
-       alicedll=""
        ;;
     *)
-       alicedll="${seamlibdir}/alice.dll"
        ;;
 esac
 
