@@ -156,7 +156,7 @@ define
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
 			       [Reg0 NameReg {State.cs newReg($)}]
 			       ThenVInstr0 ElseVInstr VTl)
-	    ThenVInstr0 = vInlineDot(_ Reg0 1 {GetReg Id2 State} false
+	    ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id2 State} false
 				     unit ThenVInstr)
 	 [] tupTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
