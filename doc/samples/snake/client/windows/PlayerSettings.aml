@@ -43,14 +43,18 @@ sig
 end =
 struct
 
+    type cancel_cb = unit -> unit
+
+    type ready_cb = (string * Color.color) option -> string option 
+
     datatype state = WAITING | SELECTING
 
     type player_settings_widget = {object       : Gtk.object,
 				   insertPlayer : string * Color.color -> unit,
-				   insertColor  : Color.color -> unit
+				   insertColor  : Color.color -> unit,
 				   removePlayer : string * Color.color -> unit,
 				   removeColor  : Color.color -> unit,
-				   state : state}
+				   state        : state ref}
 
     (* converts a Color.color into a Gdk.color *)
     fun colorToGdkColor (colormap, c) =
@@ -66,22 +70,22 @@ struct
     (* if client has pushed the reday-button yet, everything is ok and
        the game starts normally. if he has not, it will abort 
        by returning to MainWindow and showing an error message *)
-    fun gameStarted p = 
-	(quit p;
-	 if (#state p) <> WAITING
-	     then Text.mkTextWindow (parent, "ERROR!", 
+    fun gameStarted (p : player_settings_widget) = 
+	(Gtk.widgetDestroy (#object p);
+	 if !(#state p) <> WAITING
+	     then Text.mkTextWindow (#object p, "ERROR!", 
 				    "Sorry, game already started without you!")
-	 else ())
+	 else Gtk.null;())
 	
     (* call playersJoined when some players has joined the game *)
-    fun playersJoined (p, xs) = 
+    fun playersJoined (p : player_settings_widget, xs) = 
 	List.app (fn (n, c) => (#insertPlayer p (n, c);
 				#removeColor p c)) xs
 	
     (* call playerDisconnected when one player has disconnected *)
-    fun playerDisconnected (p, pl) = 
+    fun playerDisconnected (p : player_settings_widget, name, color) = 
 	(fn (n, c) => (#removePlayer p (n, c);
-		       #insertColor p c)) pl
+		       #insertColor p c)) (name, color)
 
 
     (* builds the player settings window *)
@@ -109,6 +113,8 @@ struct
 	    val readyButton    	= Gtk.buttonNewWithLabel "Ready "
 	    val cancelButton    = Gtk.buttonNewWithLabel "Cancel"
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
+
+	    val state = ref SELECTING
 
 	    val colormap = Gdk.colormapGetSystem ()
 	
@@ -164,13 +170,22 @@ struct
 		    Gtk.textWidgetInsert (playerText, text, color)
 		end
 
+	    val playerSettingsWindow = {object = playerSettings,
+					insertPlayer,
+					insertColor,
+					removePlayer,
+					removeColor,
+					state}
+
 
 
 	    (* the quit procedure. disconnects the client from the game
 	       and returns to the main window *)
-	    fun quit p = Gtk.widgetDestroy (#object p)
+	    fun quit (p : player_settings_widget) = 
+		                            Gtk.widgetDestroy (#object p)
 
-	    fun mainQuit () = (Gtk.widgetDestroy playerSettings;
+	    fun mainQuit (p : player_settings_widget) = 
+		              (Gtk.widgetDestroy (#object p);
 			       cancelCB ())
 
 	    (* called, if the client has changed the nameText widget.
@@ -202,7 +217,7 @@ struct
 	     FST game -> fulfilling the state and forbid to press
 	                 the button again
 	     SND errorMsg -> return to main window by showing error message *)
-	    fun okClickedCB spectator = 
+	    fun okClickedCB (p : player_settings_widget, spectator) = 
 		let
 		    val name  = Gtk.entryGetText nameText
 		    val color = 
@@ -211,8 +226,8 @@ struct
 
 		    fun return () = 
 			if Gtk.toggleButtonGetActive spectator
-			    then readyPSettingsCB NONE
-			else readyPSettingsCB (SOME (name, color))
+			    then readyCB NONE
+			else readyCB (SOME (name, color))
                     
 		in
 		    case return () of 
@@ -225,12 +240,12 @@ struct
 			       state := WAITING;
 			       if Gtk.toggleButtonGetActive spectator
 				   then ()
-			       else playersJoined [(name, color)];
+			       else playersJoined (p, [(name, color)]);
 			       Gtk.comboSetPopdownStrings (colorCombo, 
 						       [Color.toString color]))
 		     | SOME errorMsg => 
 			   (Text.mkTextWindow (parent, "ERROR!!", errorMsg);
-			    Gtk.widgetDestroy playerSettings)
+			    Gtk.widgetDestroy (#object p))
 		end
 
 	in
@@ -245,7 +260,7 @@ struct
 	    
 	    Gtk.signalConnect (playerSettings,
 			       "delete-event", 
-			       fn _ => mainQuit ());
+			       fn _ => mainQuit playerSettingsWindow);
 	    Gtk.signalConnect (spectatorCheckButton, 
 			       "clicked", 
 			       fn _ => 
@@ -257,10 +272,11 @@ struct
 			       fn _ => changedNameText ());
 	    Gtk.signalConnect (readyButton, 
 			       "clicked", 
-			       fn _ => okClickedCB spectatorCheckButton);
+			       fn _ => okClickedCB (playerSettingsWindow, 
+						    spectatorCheckButton));
 	    Gtk.signalConnect (cancelButton, 
 			       "clicked",
-			       fn _ => mainQuit ());
+			       fn _ => mainQuit playerSettingsWindow);
 	    
 	    (* setting some useful values *)
 	    Gtk.containerSetBorderWidth (playerSettings, 10);
@@ -302,11 +318,6 @@ struct
 
 	    Gtk.widgetShowAll playerSettings;
 
-	    {object = playerSettings,
-	     insertPlayer,
-	     removePlayer,
-	     insertColor,
-	     removeColor,
-	     state}
+	    playerSettingsWindow
 	end
 end

@@ -11,7 +11,7 @@
 
 import structure Gtk            from "GtkSupport"
 
-import structure Error          from "Error"
+import structure Text           from "Text"
 import structure PlayerSettings from "PlayerSettings"
 
 
@@ -32,6 +32,10 @@ struct
 
     type connection_widget = Gtk.object
 
+    type connect_cb = string -> string option
+
+    type cancel_cb  = unit -> unit
+
     fun mkConnectionWindow (parent, connectCB, cancelCB) = 
 	let
 
@@ -45,7 +49,7 @@ struct
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 	    val clientUrl       = Gtk.entryNew ()
 
-	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
+	    fun mainQuit obj = (Gtk.widgetDestroy obj;
 			       cancelCB ())
 		
 	    fun readUrl ()  = Gtk.entryGetText clientUrl
@@ -54,7 +58,7 @@ struct
 		(case connectCB ticket of
 		    NONE => Gtk.widgetDestroy connectToServer
 		  | SOME errorMsg => 
-			Text.mkTextWindow (parent, "ERROR!!", errorMsg))
+			(Text.mkTextWindow (parent, "ERROR!!", errorMsg);()))
 
 	in
 	    Gtk.widgetSetParentWindow (connectToServer, parent);
@@ -63,11 +67,11 @@ struct
 	    Gtk.windowSetPosition (connectToServer, Gtk.WIN_POS_CENTER);
 
 	    Gtk.signalConnect (connectToServer, "delete-event", 
-			       fn _ => mainQuit ());
+			       fn _ => mainQuit connectToServer);
 	    Gtk.signalConnect (okButton, "clicked", 
 			       fn _ => start (readUrl ()));
 	    Gtk.signalConnect (cancelButton, "clicked", 
-			       fn _ => mainQuit ());
+			       fn _ => mainQuit connectToServer);
 
 	    Gtk.entrySetText (clientUrl, "http://");
 	    Gtk.widgetGrabFocus clientUrl;

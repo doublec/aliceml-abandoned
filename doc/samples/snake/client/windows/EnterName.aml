@@ -15,7 +15,7 @@ import structure Gdk    from "GtkSupport"
 import structure Config from "../../common/Config"
 import structure Color  from "../../common/Color"
 
-import structure Error  from "Error"
+import structure Text  from "Text"
 
 
 structure EnterName :> 
@@ -30,6 +30,11 @@ sig
 
 end =
 struct
+
+    type ready_cb = (string * Color.color) option * Config.config ->
+	                                                       string option
+
+    type cancel_cb = unit -> unit
 
     val colormap = Gdk.colormapGetSystem ()
 
@@ -94,7 +99,8 @@ struct
 		in
 		    case result () of
 			NONE     => Gtk.widgetDestroy enterName
-		      | SOME msg => Text.mkTextWindow ("ERROR!", msg)
+		      | SOME msg => 
+			    (Text.mkTextWindow (parent, "ERROR!", msg);())
 		end
 
 	in

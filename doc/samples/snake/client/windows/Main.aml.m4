@@ -17,11 +17,12 @@ import structure Gdk            from "GtkSupport"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 import val log'                 from "../../common/Log"
 
+import structure Pos            from "../../common/Pos"
 import structure Color          from "../../common/Color"
 import structure Protocol       from "../../common/Protocol"
 import structure Highscore      from "../../common/Highscore"
 
-import structure Error          from "Error"
+import structure Text           from "Text"
 import structure EnterName      from "EnterName"
 import structure ArenaWidget    from "ArenaWidget"
 import structure RadarWidget    from "RadarWidget"
@@ -135,11 +136,18 @@ struct
 			    radar  : RadarWidget.radar_widget,
 			    timeLabel : Gtk.object,
 			    mode : mode,
-			    updatePoints : ,
-			    update : ,
-			    countdown : ,
-			    displayCountDown :,
-			    gameMode :  -> unit,
+			    updatePoints : Gtk.object -> unit,
+			    update : Protocol.diff list * Pos.pos * 
+	                             ArenaWidget.arena_widget * 
+	 			     RadarWidget.radar_widget -> unit,
+			    countdown : bool option * int * Gtk.object * 
+					ArenaWidget.arena_widget,
+			    displayCountDown : bool option ref,
+			    gameMode :  {mode : mode, 
+					 menuGiveUpItem : Gtk.object,
+					 menuMenuItem   : Gtk.object,
+					 canvas         : Gtk.object,
+					 rightHBox      : Gtk.object } -> unit,
 			    menuGiveUpItem : Gtk.object,
 			    menuMenuItem : Gtk.object,
 			    rightHBox : Gtk.object,
@@ -147,18 +155,18 @@ struct
 
     fun getWindow w = #object w
 
-    fun gameFinished (p, s) = TextWindow.mkTextWindow (p, "Highscore", 
-						       highscoreToString s)
+    fun gameFinished (p, s) = Text.mkTextWindow (p, "Highscore", 
+						 highscoreToString s)
 
     fun levelStart (p, levelInf) = 
 	(ArenaWidget.initLevel (#arena p, levelInf);
 	 RadarWidget.initLevel (#radar p, levelInf);
-	 Gtk.labelSet Text (#timeLabel p, ""))
+	 Gtk.labelSetText (#timeLabel p, ""))
 
     fun levelTick (p, points, diffs, pos, time) = 
 	(Gtk.labelSetText (#timeLabel, (timeToString time) ^ "\n");
 	 #update p (diffs, pos, #arena p, #radar p);
-	 Option.app (#updatePoints p) (pts, #pointsLabel p))
+	 Option.app (#updatePoints p) (points, #pointsLabel p))
 	
     fun levelCountDown (p, n) = 
 	             #countdown p (#displayCountDown p, n, #object p, #arena p)
@@ -171,7 +179,8 @@ struct
 				  
 		    
     (* builds the mainWindow, starting in START mode *)
-    fun mkMainWindow (startClientCB, startServerCB, startSingleCB, quitCB) = 
+    fun mkMainWindow (startClientCB, startServerCB, startSingleCB, 
+		      turnCB, changeViewCB, qiveUpCB, quitCB) = 
 	let
 	    val _ = log ("mkMainWindow", "starts")
 	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -286,11 +295,6 @@ struct
 		 Gtk.widgetSetSensitive (#menuMenuItem z, false);
 		 Gtk.widgetShow (#canvas z);
 		 Gtk.widgetShow (#rightHBox z);
-		 (* update procedures *)
-		 turn' := turn;
-		 changeView' := changeView;
-		 giveUp' := giveUp;
-		 disconnect' := disconnect;
 		 log ("gameMode", "ends"))
 
 	    val mainWindowWidget = {object = mainWindow,
@@ -322,17 +326,6 @@ struct
 	      | reset (SOME (title, msg)) = (Text.mkTextWindow (title, msg);
                                              reset' ())
 		
-
-	    (* initializing the procedures for modelGame *)
-	    val turn'       = ref (fn _ => ())
-	    val changeView' = ref (fn _ => ())
-	    val giveUp'     = ref (fn () => ())
-	    val disconnect' = ref (fn () => ())
-		
-
-
-
-
 
 	    (* the different behaviour by pressing the quit button *)
 	    fun mainQuit () = OS.Process.exit OS.Process.success 

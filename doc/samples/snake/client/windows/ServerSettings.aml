@@ -14,7 +14,7 @@ import structure Gtk        from "GtkSupport"
 import structure Color      from "../../common/Color"
 import structure Config     from "../../common/Config"
 
-import structure Error      from "Error"
+import structure Text       from "Text"
 import structure Wait       from "Wait"
 
 
@@ -37,13 +37,19 @@ sig
 end =
 struct
 
-    type server_settings_widget = {object : Gtk.object,
-				   alreadyConn : (string * Color.color) list}
+    type ready_cb = (string * Color.color) option * Config.config ->
+	                                                          string option
+
+    type cancel_cb = unit -> unit 
+
+    type server_settings_widget = 
+	          {object : Gtk.object,
+		   alreadyConn : (string * Color.color) list ref}
 	
 
-    fun alreadyConn s = !(#alreadyConn s)
+    fun alreadyConn (s : server_settings_widget) = !(#alreadyConn s)
 	
-    fun mkServerSettings (parent, readyCB, cancelCB) =
+    fun mkServerSettingsWindow (parent, readyCB, cancelCB) =
 	let
 
 	    val serverSettings     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -297,11 +303,11 @@ struct
 		    case return () of 
 			NONE => ()
 		      | SOME errorMsg => 
-			        Text.mkTextWindow (parent, "ERROR!", errorMsg)
+      	                  (Text.mkTextWindow (parent, "ERROR!", errorMsg);())
 		end
 
 	in
-	    Gtk.windowSetParent (serverSettings, parent);
+	    Gtk.widgetSetParentWindow (serverSettings, parent);
 	    Gtk.windowSetModal (serverSettings, true);
 	    Gtk.windowSetTitle (serverSettings, "Server Settings");
 	    Gtk.windowSetPosition (serverSettings, Gtk.WIN_POS_CENTER);
