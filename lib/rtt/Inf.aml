@@ -964,14 +964,18 @@ structure InfPrivate =
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
       | match'(rea, j1 as ref(FUN _), j2 as ref(FUN _)) =
-	( realise(rea, j2)
-	; case (instance j1, instance j2)
+	( case (instance j1, instance j2)
 	   of (ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =>
-	      ( match'(rea, j21, j11) handle Mismatch mismatch =>
-		    raise Mismatch(MismatchDom mismatch)
-	      ; match'(rea, j12, j22) handle Mismatch mismatch =>
-		    raise Mismatch(MismatchRan mismatch)
-	      )
+	      let
+		  val rea2 = emptyRea()
+	      in
+		  realise(rea, j21);
+	          match'(rea2, j21, j11) handle Mismatch mismatch =>
+			raise Mismatch(MismatchDom mismatch);
+		  realise(rea2, j12);
+		  match'(rea, j12, j22) handle Mismatch mismatch =>
+			raise Mismatch(MismatchRan mismatch)
+	      end
 	    | _ => raise Assert.failure
 	)
 
@@ -985,9 +989,9 @@ structure InfPrivate =
 	      raise Mismatch(IncompatibleArg(p1,p2))
 	)
 
-      | match'(rea, ref(LINK j1), j2)		= match'(rea, j1, j2)
-      | match'(rea, j1, ref(LINK j2))		= match'(rea, j1, j2)
-      | match'(rea, ref(ABBREV(_,j1)), j2)	= match'(rea, j1, j2)
+      | match'(rea, ref(LINK j1), j2)      = match'(rea, j1, j2)
+      | match'(rea, j1, ref(LINK j2))      = match'(rea, j1, j2)
+      | match'(rea, ref(ABBREV(_,j1)), j2) = match'(rea, j1, j2)
       | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
 	( match'(rea, j1, j22)
 (*	; j2 := ABBREV(j21,j1)
@@ -999,7 +1003,6 @@ structure InfPrivate =
     and matchSig(rea, s1 as (ref items1, _), s2 as (ref items2, _)) =
 	let
 	    val m1 = getMap s1
-	    val m2 = getMap s2
 	    val {val_rea, typ_rea, mod_rea, inf_rea} = rea
 
 	    fun pair(m1,      [],      pairs) = List.rev pairs
@@ -1045,7 +1048,7 @@ structure InfPrivate =
 
 	    val pairs = pair(m1, items2, [])
 	in
-	    realiseSig(rea, s2) ;
+	    realiseSig(rea, s2);
 	    List.app matchItem pairs
 	end
 
@@ -1196,7 +1199,6 @@ structure InfPrivate =
 			  s2 as (itemsr2 as ref items2, mor2)) =
 	let
 	    val m1 = getMap s1
-	    val m2 = getMap s2
 
 	    fun pairDef(rea', toZ, b, x1, NONE, x2, SOME z) =
 		    ( if b then PathMap.insert(rea', idPath x1, z) else ()
