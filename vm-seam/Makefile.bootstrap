@@ -308,7 +308,7 @@ COMPILERBACKENDSEAMSOURCES = \
 
 COMPILERTOPSOURCES0 = \
 	COMPILER-sig.aml MkCompiler.aml \
-	DEPENDECY-sig.aml Dependency.aml \
+	DEPENDENCY-sig.aml Dependency.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
