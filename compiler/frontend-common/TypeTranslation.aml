@@ -29,8 +29,8 @@ struct
 
     val typlab_kind	= typlab "kind"
     type kind		= Type.kind			(* verify *)
-    val typlab_typ	= typlab "t"
-    type typ		= Type.t			(* verify *)
+    val typlab_typ	= typlab "typ"
+    type typ		= Type.typ			(* verify *)
     val typlab_var	= typlab "var"
     type var		= Type.var			(* verify *)
     val typlab_row	= typlab "row"
