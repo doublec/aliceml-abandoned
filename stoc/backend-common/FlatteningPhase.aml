@@ -20,11 +20,27 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-	fun lookup (pos, (pos', id)::mappingRest) =
-	    if pos = pos' then id
-	    else lookup (pos, mappingRest)
-	  | lookup (pos, nil) =
-	    raise Crash.Crash "FlatteningPhase.lookup"
+	local
+	    fun lookup' (pos, (pos', id)::mappingRest) =
+		if pos = pos' then SOME id
+		else lookup' (pos, mappingRest)
+	      | lookup' (pos, nil) = NONE
+	in
+	    fun lookup (pos, mapping) =
+		case lookup' (pos, mapping) of
+		    SOME id => id
+		  | NONE => raise Crash.Crash "FlatteningPhase.lookup"
+
+	    fun adjoin (pos, mapping) =
+		case lookup' (pos, mapping) of
+		    SOME id => (O.IdDef id, mapping)
+		  | NONE =>
+			let
+			    val id = freshId {region = Source.nowhere}
+			in
+			    (O.IdDef id, (pos, id)::mapping)
+			end
+	end
 
 	fun mappingsToSubst (mapping0, mapping) =
 	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
@@ -44,27 +60,27 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	(* Matching conArity up with args *)
 
-	fun testArity (O.OneArg id, O.Unary, app, body) =
-	    app (O.OneArg (O.IdDef id), body)
-	  | testArity (O.OneArg id, O.TupArity n, app, body) =
+	fun testArity (args as O.OneArg _, O.Unary, app, body) =
+	    app (args, body)
+	  | testArity (O.OneArg idDef, O.TupArity n, app, body) =
 	    let
 		val ids =
 		    List.tabulate
 		    (n, fn _ => freshId {region = Source.nowhere})
 		val stm =
-		    O.ValDec (stm_info Source.nowhere, O.IdDef id,
+		    O.ValDec (stm_info Source.nowhere, idDef,
 			      O.TupExp ({region = Source.nowhere}, ids))
 	    in
 		app (O.TupArgs (List.map O.IdDef ids), stm::body)
 	    end
-	  | testArity (O.OneArg id, O.ProdArity labels, app, body) =
+	  | testArity (O.OneArg idDef, O.ProdArity labels, app, body) =
 	    let
 		val labelIdList =
 		    List.map (fn label =>
 			      (label, freshId {region = Source.nowhere}))
 		    labels
 		val stm =
-		    O.ValDec (stm_info Source.nowhere, O.IdDef id,
+		    O.ValDec (stm_info Source.nowhere, idDef,
 			      O.ProdExp ({region = Source.nowhere},
 					 labelIdList))
 		val labelIdDefList =
@@ -73,11 +89,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		app (O.ProdArgs labelIdDefList, stm::body)
 	    end
-	  | testArity (O.TupArgs ids, O.TupArity _, app, body) =
-	    app (O.TupArgs (List.map O.IdDef ids), body)
-	  | testArity (O.ProdArgs labelIdList, O.ProdArity _, app, body) =
-	    app (O.ProdArgs (List.map (fn (label, id) =>
-				       (label, O.IdDef id)) labelIdList), body)
+	  | testArity (args as O.TupArgs _, O.TupArity _, app, body) =
+	    app (args, body)
+	  | testArity (args as O.ProdArgs _, O.ProdArity _, app, body) =
+	    app (args, body)
 	  | testArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.testArity"
 
@@ -355,8 +370,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		      | (fields', LabelSort.Prod) =>
 			    O.ProdExp (id_info info, fields')
 	    in
-		r := SOME (f exp'::translateCont cont);
-		stms
+		r := SOME (f exp'::translateCont cont); stms
 	    end
 	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
 	    let
@@ -397,7 +411,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
-		val body = translateGraph (graph, mapping)
+		val (body, _) = translateGraph (graph, mapping)
 	    in
 		checkReachability consequents;
 		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
@@ -414,8 +428,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms', exp') =
 		    tagAppExp (id_info info, label, n, args, conArity)
 	    in
-		r := SOME (stms' @ f exp'::translateCont cont);
-		stms
+		r := SOME (stms' @ f exp'::translateCont cont); stms
 	    end
 	  | translateExp (AppExp (info, ConExp (info', longid, isNAry), exp2),
 			  f, cont) =
@@ -428,8 +441,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms', exp') =
 		    conAppExp (id_info info, O.Con id1, args, conArity)
 	    in
-		r := SOME (stms' @ f exp'::translateCont cont);
-		stms1 @ stms2
+		r := SOME (stms' @ f exp'::translateCont cont); stms1 @ stms2
 	    end
 	  | translateExp (AppExp (info, RefExp _, exp2), f, cont) =
 	    let
@@ -600,8 +612,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 	    in
-		r := SOME [O.RaiseStm (stm_info (#region info), id)];
-		stms
+		r := SOME [O.RaiseStm (stm_info (#region info), id)]; stms
 	    end
 	  | translateExp (HandleExp (info, exp, matches), f, cont) =
 	    let
@@ -693,8 +704,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val errStms = raisePrim (#region info, "General.Match")
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
-		r := SOME stms1;
-		stms
+		r := SOME stms1; stms
 	    end
 	and checkReachability consequents =
 	    List.app (fn (region, ref bodyOpt) =>
@@ -706,13 +716,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-
 		val r' = ref NONE
 		val rest' = [O.IndirectStm (stm_info region, r')]
 		val (errStms, raiseId) = unfoldTerm (raiseExp, Goto rest')
 		val (graph, consequents) = buildGraph (matches, errStms)
+		val (body, _) = translateGraph (graph, [(nil, id)])
 	    in
-		r := SOME (translateGraph (graph, [(nil, id)]));
+		r := SOME body;
 		r' := SOME (if isReraise then
 				[O.ReraiseStm (stm_info region, raiseId)]
 			    else [O.RaiseStm (stm_info region, raiseId)]);
@@ -733,8 +743,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     if isReraise then O.ReraiseStm (stm_info region, id')
 		     else O.RaiseStm (stm_info region, id')]
 		val (graph, consequents) = buildGraph (matches, errStms)
+		val (body, _) = translateGraph (graph, [(nil, id)])
 	    in
-		r := SOME (translateGraph (graph, [(nil, id)]));
+		r := SOME body;
 		checkReachability consequents;
 		stms
 	    end
@@ -742,73 +753,67 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Cooked (_, _))), mapping) =
 	    let
-		val stms =
-		    share (translateNode (pos, test, thenGraph, elseGraph,
-					  mapping))
+		val (body, mapping') =
+		    translateNode (pos, test, thenGraph, elseGraph, mapping)
+		val stms = share body
 	    in
-		status := Translated stms; stms
+		status := Translated stms; (stms, mapping')
 	    end
-	  | translateGraph (Node (_, _, _, _, ref (Translated stms)), _) = stms
-	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), _) =
+	  | translateGraph (Node (_, _, _, _, ref (Translated stms)),
+			    mapping) =
+	    (stms, mapping)
+	  | translateGraph (Leaf (stms, stmsOptRef as ref NONE), mapping) =
 	    let
 		val stms' = share stms
 	    in
-		stmsOptRef := SOME stms'; stms'
+		stmsOptRef := SOME stms'; (stms', mapping)
 	    end
-	  | translateGraph (Leaf (_, ref (SOME stms)), _) = stms
+	  | translateGraph (Leaf (_, ref (SOME stms)), mapping) =
+	    (stms, mapping)
 	  | translateGraph (_, _) =
 	    raise Crash.Crash "FlatteningPhase.translateGraph"
 	and translateNode (pos, RefAppTest _, thenGraph, _, mapping) =
 	    let
-		val id = freshId {region = Source.nowhere}
-		val mapping' =
-		    (LABEL (Label.fromString "ref")::pos, id)::mapping
-		val id' = lookup (pos, mapping)
-	    in
-		O.RefAppDec (stm_info Source.nowhere, O.IdDef id, id')::
-		translateGraph (thenGraph, mapping')
-	    end
-	  | translateNode (pos, TupTest typs, thenGraph, _, mapping) =
-	    let
-		val ids =
-		    List.map (fn _ => freshId {region = Source.nowhere}) typs
-		val mapping' =
-		    List.foldli
-		    (fn (i, id, mapping) =>
-		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
-		    mapping ids
+		val (idDef, mapping') =
+		    adjoin (LABEL (Label.fromString "ref")::pos, mapping)
 		val id = lookup (pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
 	    in
-		O.TupDec (stm_info Source.nowhere, List.map O.IdDef ids, id)::
-		translateGraph (thenGraph, mapping')
+		(O.RefAppDec (stm_info Source.nowhere, idDef, id)::thenBody,
+		 mapping'')
 	    end
-	  | translateNode (pos, ProdTest labelTypList, thenGraph, _, mapping) =
+	  | translateNode (pos, TupTest xs, thenGraph, _, mapping) =
 	    let
-		val labelIdList =
-		    List.map (fn (label, _) =>
-			      (label, freshId {region = Source.nowhere}))
-		    labelTypList
-		val mapping' =
-		    ListPair.foldr (fn ((label, _), (_, id), mapping) =>
-				    (LABEL label::pos, id)::mapping)
-		    mapping (labelTypList, labelIdList)
-		val labelIdDefList =
-		    List.map (fn (label, id) => (label, O.IdDef id))
-		    labelIdList
+		val (idDefs, mapping') = translateTupArgs (xs, pos, mapping)
 		val id = lookup (pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
 	    in
-		O.ProdDec (stm_info Source.nowhere, labelIdDefList, id)::
-		translateGraph (thenGraph, mapping')
+		(O.TupDec (stm_info Source.nowhere, idDefs, id)::thenBody,
+		 mapping'')
+	    end
+	  | translateNode (pos, ProdTest labelXList, thenGraph, _, mapping) =
+	    let
+		val (labelIdDefList, mapping') =
+		    translateProdArgs (labelXList, pos, mapping)
+		val id = lookup (pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
+	    in
+		(O.ProdDec (stm_info Source.nowhere, labelIdDefList, id)::
+		 thenBody, mapping'')
 	    end
 	  | translateNode (pos, LabTest (label, n, _), thenGraph, _, mapping) =
 	    let
-		val id = freshId {region = Source.nowhere}
-		val mapping' = ((LABEL label::pos), id)::mapping
+		val (idDef, mapping') = adjoin (LABEL label::pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
 	    in
-		O.ValDec (stm_info Source.nowhere, O.IdDef id,
-			  O.SelAppExp ({region = Source.nowhere}, label, n,
-				       lookup (pos, mapping)))::
-		translateGraph (thenGraph, mapping')
+		(O.ValDec (stm_info Source.nowhere, idDef,
+			   O.SelAppExp ({region = Source.nowhere}, label, n,
+					lookup (pos, mapping)))::thenBody,
+		 mapping'')
 	    end
 	  | translateNode (_, GuardTest (mapping0, exp),
 			   thenGraph, elseGraph, mapping) =
@@ -818,124 +823,153 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val subst = mappingsToSubst (mapping0, mapping)
 		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
-		val thenStms = translateGraph (thenGraph, mapping)
-		val elseStms = translateGraph (elseGraph, mapping)
+		val (thenStms, mapping') = translateGraph (thenGraph, mapping)
+		val (elseStms, mapping'') =
+		    translateGraph (elseGraph, mapping')
 		val errStms = raisePrim (#region info, "General.Match")
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
-		r := SOME stms1;
-		stms
+		r := SOME stms1; (stms, mapping'')
 	    end
 	  | translateNode (_, DecTest (mapping0, decs),
 			   thenGraph, _, mapping) =
 	    let
-		val thenStms = translateGraph (thenGraph, mapping)
+		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
 		val subst = mappingsToSubst (mapping0, mapping)
 		val cont = Decs (List.map (fn dec => substDec (dec, subst))
-				 decs, Goto thenStms)
+				 decs, Goto thenBody)
 	    in
-		translateCont cont
+		(translateCont cont, mapping')
 	    end
 	  | translateNode (pos, LitTest lit, thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
-		val body = translateGraph (thenGraph, mapping)
-		val tests = O.LitTests [(lit, body)]
+		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val tests = O.LitTests [(lit, thenBody)]
+		val (elseBody, mapping'') =
+		    translateGraph (elseGraph, mapping')
 	    in
-		[O.TestStm (stm_info Source.nowhere, id, tests,
-			    translateGraph (elseGraph, mapping))]
+		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		 mapping'')
 	    end
 	  | translateNode (pos, TagTest (label, n),
 			   thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
-		val body = translateGraph (thenGraph, mapping)
-		val tests = O.TagTests [(label, n, NONE, body)]
+		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val tests = O.TagTests [(label, n, NONE, thenBody)]
+		val (elseBody, mapping'') =
+		    translateGraph (elseGraph, mapping')
 	    in
-		[O.TestStm (stm_info Source.nowhere, id, tests,
-			    translateGraph (elseGraph, mapping))]
+		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		 mapping'')
 	    end
 	  | translateNode (pos, TagAppTest (label, n, args, conArity),
 			   thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
-		val (idArgs, mapping') =
-		    translateTypArgs (args, LABEL label::pos, mapping)
-		val body = translateGraph (thenGraph, mapping')
-		val tests = tagAppTest (label, n, idArgs, conArity, body)
+		val (idDefArgs, mapping') =
+		    translateArgs (args, LABEL label::pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
+		val tests =
+		    tagAppTest (label, n, idDefArgs, conArity, thenBody)
+		val (elseBody, mapping''') =
+		    translateGraph (elseGraph, mapping'')
 	    in
-		[O.TestStm (stm_info Source.nowhere, id, tests,
-			    translateGraph (elseGraph, mapping))]
+		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		 mapping''')
 	    end
 	  | translateNode (pos, ConTest longid,
 			   thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
 		val (stms, id', _) = translateLongid longid
-		val body = translateGraph (thenGraph, mapping)
-		val tests = O.ConTests [(O.Con id', NONE, body)]
+		val (thenBody, mapping') = translateGraph (thenGraph, mapping)
+		val tests = O.ConTests [(O.Con id', NONE, thenBody)]
+		val (elseBody, mapping'') =
+		    translateGraph (elseGraph, mapping')
 	    in
-		stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
-				   translateGraph (elseGraph, mapping))]
+		(stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
+				    elseBody)], mapping'')
 	    end
 	  | translateNode (pos, ConAppTest (longid, args, conArity),
 			   thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
 		val (stms, id', _) = translateLongid longid
-		val (idArgs, mapping') =
-		    translateTypArgs (args, longidToSelector longid::pos,
-				      mapping)
-		val body = translateGraph (thenGraph, mapping')
-		val tests = conAppTest (O.Con id', idArgs, conArity, body)
+		val (idDefArgs, mapping') =
+		    translateArgs (args, longidToSelector longid::pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
+		val tests =
+		    conAppTest (O.Con id', idDefArgs, conArity, thenBody)
+		val (elseBody, mapping''') =
+		    translateGraph (elseGraph, mapping'')
 	    in
-		stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
-				   translateGraph (elseGraph, mapping))]
+		(stms @ [O.TestStm (stm_info Source.nowhere, id, tests,
+				    elseBody)], mapping''')
 	    end
-	  | translateNode (pos, VecTest typs, thenGraph, elseGraph, mapping) =
+	  | translateNode (pos, VecTest xs, thenGraph, elseGraph, mapping) =
 	    let
 		val id = lookup (pos, mapping)
-		val ids =
-		    List.map (fn _ => freshId {region = Source.nowhere}) typs
-		val mapping' =
-		    List.foldli
-		    (fn (i, id, mapping) =>
-		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
-		    mapping ids
-		val body = translateGraph (thenGraph, mapping')
-		val tests = O.VecTests [(List.map O.IdDef ids, body)]
+		val (idDefs, mapping') = translateTupArgs (xs, pos, mapping)
+		val (thenBody, mapping'') =
+		    translateGraph (thenGraph, mapping')
+		val tests = O.VecTests [(idDefs, thenBody)]
+		val (elseBody, mapping''') =
+		    translateGraph (elseGraph, mapping'')
 	    in
-		[O.TestStm (stm_info Source.nowhere, id, tests,
-			    translateGraph (elseGraph, mapping))]
+		([O.TestStm (stm_info Source.nowhere, id, tests, elseBody)],
+		 mapping''')
 	    end
-	and translateTypArgs (O.OneArg typ, pos, mapping) =
+	and translateArgs (O.OneArg _, pos, mapping) =
 	    let
-		val id = freshId {region = Source.nowhere}
+		val (idDef, mapping') = adjoin (pos, mapping)
 	    in
-		(O.OneArg id, (pos, id)::mapping)
+		(O.OneArg idDef, mapping')
 	    end
-	  | translateTypArgs (O.TupArgs typs, pos, mapping) =
+	  | translateArgs (O.TupArgs xs, pos, mapping) =
 	    let
-		val ids =
-		    List.map (fn _ => freshId {region = Source.nowhere}) typs
+		val (idDefs, mapping') = translateTupArgs (xs, pos, mapping)
 	    in
-		(O.TupArgs ids,
-		 List.foldri
-		 (fn (i, id, mapping) =>
-		  (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
-		 mapping ids)
+		(O.TupArgs idDefs, mapping')
 	    end
-	  | translateTypArgs (O.ProdArgs labelTypList, pos, mapping) =
+	  | translateArgs (O.ProdArgs labelXList, pos, mapping) =
 	    let
-		val labelIdList =
-		    List.map (fn (label, _) =>
-			      (label, freshId {region = Source.nowhere}))
-		    labelTypList
+		val (labelIdDefList, mapping') =
+		    translateProdArgs (labelXList, pos, mapping)
 	    in
-		(O.ProdArgs labelIdList,
-		 List.foldr (fn ((label, id), mapping) =>
-			     (LABEL label::pos, id)::mapping)
-		 mapping labelIdList)
+		(O.ProdArgs labelIdDefList, mapping')
+	    end
+	and translateTupArgs (xs, pos, mapping) =
+	    let
+		val (idDefs, mapping') =
+		    List.foldri
+		    (fn (i, _, (idDefs, mapping)) =>
+		     let
+			 val (idDef, mapping') =
+			     adjoin (LABEL (Label.fromInt (i + 1))::pos,
+				     mapping)
+		     in
+			 (idDef::idDefs, mapping')
+		     end) (nil, mapping) xs
+	    in
+		(idDefs, mapping')
+	    end
+	and translateProdArgs (labelXList, pos, mapping) =
+	    let
+		val (labelIdDefList, mapping') =
+		    List.foldr
+		    (fn ((label, _), (labelIdDefList, mapping)) =>
+		     let
+			 val (idDef, mapping') =
+			     adjoin (LABEL label::pos, mapping)
+		     in
+			 ((label, idDef)::labelIdDefList, mapping')
+		     end) (nil, mapping) labelXList
+	    in
+		(labelIdDefList, mapping')
 	    end
 
 	fun translate () (desc, (imports, (exportExp, sign))) =
