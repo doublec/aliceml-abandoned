@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#ifndef __STOW_HH__
-#define __STOW_HH__
+#ifndef __STOCKWERK_HH__
+#define __STOCKWERK_HH__
 
 #define STOCKWERK_FOREIGN
 
