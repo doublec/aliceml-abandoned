@@ -40,7 +40,7 @@ int main(void) {
   word root;
 
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    memLimits[i] = (i + 1);
+    memLimits[i] = (i + 1) * STORE_MEMCHUNK_SIZE;
   }
 
   printf("SIZE_MASK is %x\n", StringToHexValue("00011111111111111110000000000000"));
@@ -60,18 +60,10 @@ int main(void) {
   //  p->InitArg(3, Store::AllocBlock((BlockLabel) 0, 1024)->ToWord());
 
   root = p->ToWord();
-#if defined(STORE_DEBUG)
-  Store::MemStat();
-  Store::ForceGCGen(0);
-  std::printf("GCing gen 0...\n");
-  Store::DoGC(root);
-  Store::MemStat();
-#else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
     Store::DoGC(root);
   }
-#endif
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
@@ -80,18 +72,10 @@ int main(void) {
     s->SlowPush(Store::IntToWord(i));
   }
 
-#if defined(STORE_DEBUG)
-  Store::MemStat();
-  std::printf("GCing gen 0,1...\n");
-  Store::ForceGCGen(1);
-  Store::DoGC(root);
-  Store::MemStat();
-#else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
     Store::DoGC(root);
   }
-#endif
 
   for (u_int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
@@ -99,17 +83,10 @@ int main(void) {
     std::printf("Popped: %d\n", v);
   }
 
-#if defined(STORE_DEBUG)
-  Store::ForceGCGen(STORE_GEN_OLDEST); // formerly 0
-  std::printf("GCing gen 0,1,2...\n");
-  Store::DoGC(root);
-  Store::MemStat();
-#else
   if (Store::NeedGC()) {
     std::printf("GCing..\n");
     Store::DoGC(root);
   }
-#endif
 
   if (Store::WordToBlock(root)->GetLabel() == (BlockLabel) 0) {
     std::printf("It Succeeded\n");
