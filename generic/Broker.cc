@@ -52,6 +52,9 @@ static void *LoadLanguageLayer(String *languageId) {
   ChunkMap *languageLayerTable = ChunkMap::FromWordDirect(wLanguageLayerTable);
   word wLanguageId = languageId->ToWord();
   if (languageLayerTable->IsMember(wLanguageId)) {
+    word w = languageLayerTable->Get(wLanguageId);
+    return Store::DirectWordToUnmanagedPointer(w);
+  } else {
     void *handle =
 #if defined(__MINGW32__) || defined(_MSC_VER)
       (void *) LoadLibrary(languageId->ExportC());
@@ -62,9 +65,6 @@ static void *LoadLanguageLayer(String *languageId) {
       languageLayerTable->Put(wLanguageId,
 			      Store::UnmanagedPointerToWord(handle));
     return handle;
-  } else {
-    word w = languageLayerTable->Get(wLanguageId);
-    return Store::DirectWordToUnmanagedPointer(w);
   }
 }
 
@@ -76,9 +76,9 @@ void Broker::Start(String *languageId, int argc, char *argv[]) {
   void (*Start)(int, char *[]) =
 #if defined(__MINGW32__) || defined(_MSC_VER)
     reinterpret_cast<void (*)(int, char *[])>
-    (GetProcAddress((HMODULE) handle, "Load"));
+    (GetProcAddress((HMODULE) handle, "Start"));
 #else
-    (void (*)(int, char *[])) dlsym(handle, "Load");
+    (void (*)(int, char *[])) dlsym(handle, "Start");
 #endif
   if (Start == NULL) {
     Error("could not start language layer");
