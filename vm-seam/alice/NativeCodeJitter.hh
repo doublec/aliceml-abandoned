@@ -28,7 +28,7 @@ class LivenessInformation;
 #endif
 
 typedef enum {
-  FUTURE_BYBEED,
+  FUTURE_BYNEED,
   CHAR_ORD,
   INT_OPPLUS,
   INT_OPMUL,
@@ -126,7 +126,7 @@ protected:
   static void CompileInstr(TagVal *pc);
   static Tuple *AllocateRegister(u_int nLocals, Tuple *liveness);
 public:
-  static word currentClosure; // Set by LazyCompile::Run 
+  static word currentConcreteCode; // Set by LazyCompile::Run 
   // NativeCodeJitter Static Constructor
   static void Init(u_int bufferSize);
   // NativeCodeJitter Methods

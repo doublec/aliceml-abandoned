@@ -15,12 +15,12 @@
 #endif
 
 #include "generic/StackFrame.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Closure.hh"
 #include "generic/Transform.hh"
 #include "generic/RootSet.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Transients.hh"
+#include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
@@ -58,17 +58,16 @@ public:
 //
 LazyCompileInterpreter *LazyCompileInterpreter::self;
 
-void LazyCompileInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
-  taskStack->PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
+void LazyCompileInterpreter::PushCall(Closure *closure) {
+  Scheduler::PushFrame(LazyCompileFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result LazyCompileInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result LazyCompileInterpreter::Run() {
   LazyCompileFrame *frame =
-    LazyCompileFrame::FromWordDirect(taskStack->GetFrame());
+    LazyCompileFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Closure *closure     = frame->GetClosure();
   TagVal *abstractCode = TagVal::FromWordDirect(closure->Sub(0));
-  taskStack->PopFrame(); // Discard Frame
-  NativeCodeJitter::currentClosure = closure->Sub(1);
+  NativeCodeJitter::currentConcreteCode = closure->Sub(1);
   Scheduler::nArgs          = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = NativeCodeJitter::Compile(abstractCode)->ToWord();
   return Interpreter::CONTINUE;
@@ -131,3 +130,14 @@ word NativeConcreteCode::New(TagVal *abstractCode) {
   return byneed;
 }
 
+void NativeConcreteCode::Disassemble(std::FILE *file) {
+  Transform *transform = Transform::FromWordDirect(Get(TRANSFORM_POS));
+  TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
+  fprintf(file, "Disassembling function at %s:%d.%d\n\n",
+	  String::FromWordDirect(coord->Sel(0))->ExportC(),
+	  Store::DirectWordToInt(coord->Sel(1)),
+	  Store::DirectWordToInt(coord->Sel(2)));
+  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+  AbstractCode::Disassemble(file, pc);
+}

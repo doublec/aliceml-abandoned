@@ -15,9 +15,9 @@
 #endif
 
 #include <cstdio>
-#include "generic/TaskStack.hh"
-#include "generic/Scheduler.hh"
 #include "generic/ConcreteCode.hh"
+#include "generic/StackFrame.hh"
+#include "generic/Scheduler.hh"
 #include "alice/LazySelInterpreter.hh"
 
 // LazySel Frame
@@ -59,22 +59,20 @@ public:
 LazySelInterpreter *LazySelInterpreter::self;
 
 void
-LazySelInterpreter::PushFrame(TaskStack *taskStack,
-			      word record, UniqueString *label) {
-  taskStack->PushFrame(LazySelFrame::New(self, record, label)->ToWord());
+LazySelInterpreter::PushFrame(word record, UniqueString *label) {
+  Scheduler::PushFrame(LazySelFrame::New(self, record, label)->ToWord());
 }
 
-void LazySelInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
-  PushFrame(taskStack, closure->Sub(0),
-	    UniqueString::FromWordDirect(closure->Sub(1)));
+void LazySelInterpreter::PushCall(Closure *closure) {
+  PushFrame(closure->Sub(0), UniqueString::FromWordDirect(closure->Sub(1)));
 }
 
-Interpreter::Result LazySelInterpreter::Run(TaskStack *taskStack) {
-  LazySelFrame *frame = LazySelFrame::FromWordDirect(taskStack->GetFrame());
+Interpreter::Result LazySelInterpreter::Run() {
+  LazySelFrame *frame = LazySelFrame::FromWordDirect(Scheduler::GetFrame());
   word record = frame->GetRecord();
   Transient *transient = Store::WordToTransient(record);
   if (transient == INVALID_POINTER) { // is determined
-    taskStack->PopFrame(); // Discard Frame
+    Scheduler::PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] =
       Record::FromWord(record)->PolySel(frame->GetLabel());

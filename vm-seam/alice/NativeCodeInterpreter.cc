@@ -15,7 +15,6 @@
 #endif
 
 #include <cstdio>
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Closure.hh"
@@ -39,8 +38,7 @@ protected:
   static const u_int CLOSURE_POS        = 2;
   static const u_int IMMEDIATE_ARGS_POS = 3;
   static const u_int NB_LOCAL_ARGS_POS  = 4;
-  static const u_int TASK_STACK_POS     = 5;
-  static const u_int BASE_SIZE          = 6;
+  static const u_int BASE_SIZE          = 5;
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
@@ -69,9 +67,6 @@ public:
   u_int GetNbLocals() {
     return Store::DirectWordToInt(StackFrame::GetArg(NB_LOCAL_ARGS_POS));
   }
-  TaskStack *GetTaskStack() {
-    return TaskStack::FromWordDirect(StackFrame::GetArg(TASK_STACK_POS));
-  }
   void InitLocalEnv(u_int index, word value) {
     StackFrame::InitArg(BASE_SIZE + index, value);
   }
@@ -81,8 +76,7 @@ public:
 			      Chunk *code,
 			      Closure *closure,
 			      Tuple *immediateArgs,
-			      int nbLocals,
-			      TaskStack *taskStack) {
+			      int nbLocals) {
     u_int frSize      = BASE_SIZE + nbLocals;
     StackFrame *frame = StackFrame::New(NATIVE_CODE_FRAME, interpreter, frSize);
     frame->InitArg(PC_POS, pc);
@@ -90,7 +84,6 @@ public:
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
     frame->InitArg(NB_LOCAL_ARGS_POS, Store::IntToWord(nbLocals));
-    frame->InitArg(TASK_STACK_POS, taskStack->ToWord());
     return static_cast<NativeCodeFrame *>(frame);
   }
   // NativeCodeFrame Untagging
@@ -135,8 +128,7 @@ NativeCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   return concreteCode->GetAbstractRepresentation();
 }
 
-void NativeCodeInterpreter::PushCall(TaskStack *taskStack,
-				     Closure *closure) {
+void NativeCodeInterpreter::PushCall(Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == this);
@@ -145,9 +137,8 @@ void NativeCodeInterpreter::PushCall(TaskStack *taskStack,
   Chunk *code          = concreteCode->GetNativeCode();
   Tuple *immediateArgs = concreteCode->GetImmediateArgs();
   frame = NativeCodeFrame::New(this, NativeCodeJitter::GetInitialPC(),
-			       code, closure, immediateArgs, nLocals,
-			       taskStack);
-  taskStack->PushFrame(frame->ToWord());
+			       code, closure, immediateArgs, nLocals);
+  Scheduler::PushFrame(frame->ToWord());
 }
 
 #if defined(ALICE_IMPLICIT_KILL)
@@ -172,9 +163,9 @@ void NativeCodeInterpreter::PurgeFrame(word frame) {
 }
 #endif
 
-Interpreter::Result NativeCodeInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result NativeCodeInterpreter::Run() {
   NativeCodeFrame *frame =
-    NativeCodeFrame::FromWordDirect(taskStack->GetFrame());
+    NativeCodeFrame::FromWordDirect(Scheduler::GetFrame());
 #if 0
   Block *p = (Block *) frame;
   if (!HeaderOp::IsChildish(p)) {
@@ -182,14 +173,13 @@ Interpreter::Result NativeCodeInterpreter::Run(TaskStack *taskStack) {
   }
 #endif
   Assert(frame->GetInterpreter() == this);
-  Assert(taskStack == frame->GetTaskStack());
   Chunk *code        = frame->GetCode();
   native_fun execute = (native_fun) code->GetBase();
   return execute(frame);
 }
 
-Interpreter::Result NativeCodeInterpreter::Handle(TaskStack *taskStack) {
-  StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
+Interpreter::Result NativeCodeInterpreter::Handle() {
+  StackFrame *frame = StackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   if (frame->GetLabel() == NATIVE_CODE_HANDLER_FRAME) {
     NativeCodeHandlerFrame *handlerFrame =
       static_cast<NativeCodeHandlerFrame *>(frame);
@@ -202,13 +192,11 @@ Interpreter::Result NativeCodeInterpreter::Handle(TaskStack *taskStack) {
     Scheduler::nArgs = 2;
     Scheduler::currentArgs[0] = package->ToWord();
     Scheduler::currentArgs[1] = exn;
-    taskStack->PopFrame();
-    taskStack->PushFrame(codeFrame->ToWord());
+    Scheduler::PushFrameNoCheck(codeFrame->ToWord());
     return Interpreter::CONTINUE;
   }
   else {
     Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-    taskStack->PopFrame();
     return Interpreter::RAISE;
   }
 }
@@ -308,3 +296,9 @@ String *NativeCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
   return MakeProfileName(nativeConcreteCode, "function");
 }
 #endif
+
+void DisassembleNative(Closure *closure) {
+  NativeConcreteCode *concreteCode =
+    NativeConcreteCode::FromWord(closure->GetConcreteCode());
+  concreteCode->Disassemble(stdout);
+}
