@@ -32,6 +32,8 @@ signature SYMTABLE =
     val isEmptyScope :	'a symtable -> bool
 
     val app :		(key * 'a -> unit) -> 'a symtable -> unit
+    val appScope :	(key * 'a -> unit) -> 'a symtable -> unit
     val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a symtable -> 'b
+    val foldScope :	((key * 'a) * 'b -> 'b) -> 'b -> 'a symtable -> 'b
 
   end

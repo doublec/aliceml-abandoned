@@ -35,11 +35,13 @@ functor Symtable(Key: HASH_KEY) :> SYMTABLE where type key = Key.t =
 
     fun lookupScope(ref ts, k)	= Hashtable.lookup(List.hd ts, k)
 
-    fun isEmpty(ref ts)		= List.all Hashtable.isEmpty ts
     fun isEmptyScope(ref ts)	= Hashtable.isEmpty(List.hd ts)
+    fun isEmpty(ref ts)		= List.all Hashtable.isEmpty ts
 
 
+    fun appScope f (ref ts)	= Hashtable.app f (List.hd ts)
     fun app f (ref ts)		= List.app (Hashtable.app f) (List.rev ts)
+    fun foldScope f b (ref ts)	= Hashtable.fold f b (List.hd ts)
     fun fold f b (ref ts)	= List.foldr (fn(t,b') => Hashtable.fold f b' t)
 					     b ts
 
