@@ -16,11 +16,23 @@ import structure PlayerSettings from "PlayerSettings"
 
 
 
-structure Connection = 
+structure Connection :> 
+sig 
+    
+    type connection_widget
+	
+    type connect_cb = string -> string option
+
+    type cancel_cb = unit -> unit
+
+    val mkConnectionWindow : Gtk.object * connect_cb * cancel_cb -> connection_widget
+
+end = 
 struct
 
+    type connection_widget = Gtk.object
 
-    fun mkConnectToServer ({connect}, {reset, gameMode}) =
+    fun mkConnectionWindow (parent, connectCB, cancelCB) = 
 	let
 
 	    val connectToServer = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -34,24 +46,17 @@ struct
 	    val clientUrl       = Gtk.entryNew ()
 
 	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
-			       reset NONE)
+			       cancelCB ())
 		
 	    fun readUrl ()  = Gtk.entryGetText clientUrl
 
 	    fun start ticket =
-		(Gtk.widgetDestroy connectToServer;
-		 let
-		     fun return () = 
-			 connect ticket handle Error.Error msg => SND msg
-		 in
-		     case return () of
-			 FST (mJoin, guiJoin) => 
-			     (PlayerSettings.mkPlayerSettings 
-			       (mJoin, guiJoin, {reset, gameMode}))
-		       | SND    errorMsg => reset (SOME ("ERROR!!", errorMsg))
-		 end)
-	
+		case connectCB ticket of
+		    NONE => Gtk.widgetDestroy connectToServer
+		  | SOME errorMsg => Text.mkTextWindow ("ERROR!!", errorMsg)
+
 	in
+	    Gtk.widgetSetParentWindow (connectToServer, parent);
 	    Gtk.windowSetModal (connectToServer, true);
 	    Gtk.windowSetTitle (connectToServer, "Connect to Server");
 	    Gtk.windowSetPosition (connectToServer, Gtk.WIN_POS_CENTER);

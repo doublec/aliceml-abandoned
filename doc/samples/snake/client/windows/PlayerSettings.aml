@@ -17,7 +17,14 @@ import structure Color from "../../common/Color"
 import structure Error from "Error"
 
 
-structure PlayerSettings =
+structure PlayerSettings :>
+sig 
+
+    type player_settings_widget
+
+    val mkPlayerSettings : 
+
+end =
 struct
 
     val colormap = Gdk.colormapGetSystem ()

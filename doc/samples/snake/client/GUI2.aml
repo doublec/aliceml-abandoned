@@ -72,7 +72,9 @@ struct
             (case #connect callbacks ticket of
                 NONE    =>  (* connection was successful ;-) *)
                 ( (* display player settings window *)
-                state := PLAYER_SETTINGS (PlayerSettings.mkPlayerSettings ...);
+                state := PLAYER_SETTINGS (PlayerSettings.mkPlayerSettings (MainWindow.getWindow mainWindow,
+									   cancelPSettingsCB (...),
+									   readyPSettingsCB (..)));
                 (* inform the connectionWindow that everything went well,
                    the window will close itself in this case *)
                 NONE)
@@ -91,13 +93,17 @@ struct
         |   _           => assert false
 
     (* menuItem `start server' pressed *)
-    and startServerCB state mainWindow =
+    and startServerCB state mainWindow = 
         
 
     (* menuItem `quit' pressed *)
     and quitCB state mainWindow =
 
 
-        
-        
+    fun playersJoined (gui: gui, players) =
+	case !(#state gui) of
+	    PLAYER_SETTINGS win =>
+		PlayerSettingsWindow.playersJoined (win, players)
+        |   WAIT w => analog
+        |   _      => raise Error 
 end    
