@@ -44,7 +44,8 @@ structure CodeStore :> CODE_STORE =
 	val namespace: dottedname ref = ref nil
 	val classes: (classAttrState * scope * classDeclsState) Map.t ref =
 	    ref (Map.new ())
-	val env: (class * IL.id * regState * instrsState) list ref = ref nil
+	val env: (class * IL.id * int * regState * instrsState) list ref =
+	    ref nil
 
 	val global = Stamp.new ()
 	val preboundScope =
@@ -69,7 +70,7 @@ structure CodeStore :> CODE_STORE =
 	fun init dottedname =
 	    (namespace := dottedname;
 	     classes := Map.new ();
-	     env := [(global, "main",
+	     env := [(global, "main", 0,
 		      (ScopedMap.copy preboundScope, ref 0, ref 0), ref nil)])
 
 	fun defineClass (stamp, extends, implements) =
@@ -117,22 +118,23 @@ structure CodeStore :> CODE_STORE =
 		List.foldl (fn (Id (_, stamp, _), i) =>
 			    (ScopedMap.insertDisjoint (scope, stamp, Arg i);
 			     i + 1)) 1 args;
-		env := (stamp, id, (scope, ref 0, ref 0), ref nil)::(!env)
+		env := (stamp, id, List.length args, (scope, ref 0, ref 0),
+			ref nil)::(!env)
 	    end
 
 	fun emit instr =
 	    case !env of
-		(_, _, _, instrsRef)::_ =>
+		(_, _, _, _, instrsRef)::_ =>
 		    instrsRef := instr::(!instrsRef)
 	      | nil => Crash.crash "CodeStore.emit"
 
 	local
 	    fun currentClosure () =
 		case !env of
-		    (stamp, _, _, _)::_ => className stamp
+		    (stamp, _, _, _, _)::_ => className stamp
 		  | _ => Crash.crash "CodeStore.currentClosure"
 
-	    fun lookup ((_, _, (scope, ri, _), _)::envr, stamp) =
+	    fun lookup ((_, _, _, (scope, ri, _), _)::envr, stamp) =
 		(case ScopedMap.lookup (scope, stamp) of
 		     SOME reg => reg
 		   | NONE =>
@@ -168,7 +170,7 @@ structure CodeStore :> CODE_STORE =
 
 	fun declareLocal (Id (_, stamp, _)) =
 	    case !env of
-		(_, _, (scope, _, ri), _)::_ =>
+		(_, _, _, (scope, _, ri), _)::_ =>
 		    (case ScopedMap.lookup (scope, stamp) of
 			 SOME (Loc i) => emit (Stloc i)
 		       | SOME _ => Crash.crash "CodeStore.declareLocal 1"
@@ -185,7 +187,7 @@ structure CodeStore :> CODE_STORE =
 
 	fun closeMethod () =
 	    case !env of
-		(stamp, id, (scope, _, ref n), ref instrs)::envr =>
+		(stamp, id, nargs, (scope, _, ref nlocs), ref instrs)::envr =>
 		    let
 			val (_, _, classDeclsRef) =
 			    Map.lookupExistent (!classes, stamp)
@@ -194,10 +196,11 @@ structure CodeStore :> CODE_STORE =
 			val _ = env := envr
 			val method =
 			    Method (id, (Public, Virtual),
-				    [StockWerk.StockWertTy],
+				    List.tabulate
+				    (nargs, fn _ => StockWerk.StockWertTy),
 				    StockWerk.StockWertTy,
 				    (List.tabulate
-				     (n, fn _ => StockWerk.StockWertTy),
+				     (nlocs, fn _ => StockWerk.StockWertTy),
 				     false), List.rev instrs)
 			val newClassDecls =
 			    ScopedMap.foldi
@@ -232,7 +235,7 @@ structure CodeStore :> CODE_STORE =
 		val _ = emit Ret
 		val mainMethod =
 		    case !env of
-			[(_, id, (_, _, ref n), ref instrs)] =>
+			[(_, id, 0, (_, _, ref n), ref instrs)] =>
 			    GlobalMethod
 			    (id, true, nil, VoidTy, true,
 			     (List.tabulate (n, fn _ => StockWerk.StockWertTy),
