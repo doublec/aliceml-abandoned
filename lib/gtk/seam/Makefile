@@ -24,9 +24,11 @@ ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
 INSTALL = install -C -v -m 666
 
-.PHONY: all generate compile depend docs clean veryclean distclean
+.PHONY: all full generate compile depend docs clean veryclean distclean
 
 all: compile
+
+full: generate depend compile docs
 
 #################################################
 
@@ -43,7 +45,7 @@ $(LASTGENERATE) generate: gtkclean.c $(GENERATOR)
 $(GENERATOR):
 	rm -f $(GENERATOR)
 	echo 'CM.make(); compile();' | $(SML)
-	test ! -e $(GENERATOR) || exit 1
+	test -e $(GENERATOR) || exit 1
 
 gtkclean.c:
 	(cd prepare ; $(MAKE) )
@@ -53,7 +55,7 @@ gtkclean.c:
 
 #################################################
 
-compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
+compile: depend $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 %.dll: %.o
 	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(LIBS)` $< -o $@
@@ -66,9 +68,7 @@ compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
 
 #################################################
 
-depend: Makefile.depend
-
-Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
+depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(LIBS)` \
 	    $(CPPSOURCES) > Makefile.depend
 	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
@@ -76,7 +76,7 @@ Makefile.depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
 	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
 #	alicedep --stockwerk $(ALICESOURCES) >> Makefile.depend
 
-include Makefile.depend
+-include Makefile.depend
 
 #################################################
 
@@ -99,7 +99,7 @@ veryclean: clean
 	rm -f $(NATIVES:%=%.dll)
 	rm -f $(NATIVES:%=%.dll.def)
 	rm -f Makefile.depend
-	find -type d | grep '/CM$' | xargs rm -fr
+	find -type d | grep '/CM$$' | xargs rm -fr
 	(cd prepare ; $(MAKE) clean )
 	(cd doc ; $(MAKE) clean )
 

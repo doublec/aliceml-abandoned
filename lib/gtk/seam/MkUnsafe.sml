@@ -39,6 +39,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "Modifications may get lost. *)\n\n",
 		 "import structure ",nativeName," from \"",nativeName, "\"\n",
 		 "import structure GtkTypes from \"GtkTypes\"\n",
+		 "import structure GtkCore  from \"GtkCore\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
 		 "import signature ", Util.strUpper(unsafeName), 
@@ -96,14 +97,19 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		        (if doinout then "'" else "")
 	    val argTypes = map removeTypeRefs (ret::(map (fn i=> #3i) arglist))
 	    val generateSimple =
-		not (List.exists (fn (ENUMREF _)=> true | _=> false) argTypes)
+		not (List.exists (fn (ENUMREF _) => true | 
+				     (POINTER _) => true | 
+					       _ => false) argTypes)
 	    val (ins, outs') = splitInOuts (arglist, doinout)
 	    val outs = if ret = VOID then outs' else (OUT,"ret",ret)::outs'
-	    fun convEnum toReal (_,vname, t) =
+	    fun convArgs toNative (_,vname, t) =
 	       (case removeTypeRefs t of
 		    ENUMREF ename =>
-			(if toReal then ename^"ToReal" else "RealTo"^ename)
+			(if toNative then ename^"ToReal" else "RealTo"^ename)
 			^" "^vname
+		  | POINTER _     =>
+			if toNative then vname else 
+			    ("GtkCore.addObject("^vname^",0)")
 	         | _ => vname)
 	in
 	    if generateSimple
@@ -117,9 +123,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 wrIndent, wrIndent, "let val (",
 		 Util.makeTuple ", " "x" (map (fn info => #2info) outs), 
 		 ") = ", nativeName, ".", wname, "(",
-		 Util.makeTuple ", " "" (map (convEnum true) ins), ")\n", 
+		 Util.makeTuple ", " "" (map (convArgs true) ins), ")\n", 
 		 wrIndent, wrIndent, "in (",
-		 Util.makeTuple ", " "x" (map (convEnum false) outs), ")\n",
+		 Util.makeTuple ", " "x" (map (convArgs false) outs), ")\n",
 		 wrIndent, wrIndent, "end\n"]
 	end	
 

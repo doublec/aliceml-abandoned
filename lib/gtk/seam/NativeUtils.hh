@@ -6,6 +6,21 @@
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
 
+
+static word wDict;
+
+static void AddObject(GtkObject *object) {
+  static s_int key     = 0;
+  WeakDictionary *dict = WeakDictionary::FromWordDirect(wDict);
+  dict->InsertItem(key++, Store::UnmanagedPointerToWord(object));
+}
+
+//  RootSet::Add(wDict);
+//  wDict = WeakDictionary::New(100, new GtkFinalize());
+
+
+
+
 typedef struct { 
   int initCount;   
   void (*func) (Record *record);
