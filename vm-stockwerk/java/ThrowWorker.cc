@@ -122,6 +122,7 @@ Worker::Result ThrowWorker::Run() {
   Assert(theClass != INVALID_POINTER);
   Object *object = Object::New(theClass);
   //--** invoke constructor method
+  Scheduler::PopFrame();
   Scheduler::currentData = object->ToWord();
   Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
   return RAISE;
