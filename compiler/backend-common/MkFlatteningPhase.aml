@@ -141,22 +141,13 @@ structure Simplify :> SIMPLIFY =
 
 	(* Construction of Test Trees Needing Backtracking *)
 
-	local
-	    fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
-
-	    fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
-	      | longidEq (LongId (_, longid1, id1), LongId (_, longid2, id2)) =
-		longidEq (longid1, longid2) andalso idEq (id1, id2)
-	      | longidEq (_, _) = false
-	in
-	    fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	      | testEq (NameTest longid1, NameTest longid2) =
-		longidEq (longid1, longid2)
-	      | testEq (ConTest longid1, ConTest longid2) =
-		longidEq (longid1, longid2)
-	      | testEq (RecTest arity1, RecTest arity2) = arity1 = arity2
-	      | testEq (_, _) = false
-	end
+	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
+	  | testEq (NameTest longid1, NameTest longid2) =
+	    longidEq (longid1, longid2)   (*--** too restrictive *)
+	  | testEq (ConTest longid1, ConTest longid2) =
+	    longidEq (longid1, longid2)   (*--** too restrictive *)
+	  | testEq (RecTest arity1, RecTest arity2) = arity1 = arity2
+	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
 	  | areParallelTests (LitTest _, RecTest _) = true
@@ -363,27 +354,121 @@ structure Simplify :> SIMPLIFY =
 		VarExp (coord, ShortId (coord, id))
 	    end
 
-(*
-	fun derec (WildPat _, _) = nil
-	  | derec (LitPat (_, _), _) =
-	  | derec (VarPat (_, id), exp) = [(id, exp)]
-	  | derec (ConPat (_, _, _), _) =
-	  | derec (RefPat (_, _), _) =
-	  | derec (TupPat (_, _), _) =
-	  | derec (RecPat (_, _, _), _) =
+	(*--** can this be improved? *)
+	structure ExpFieldSort =
+	    LabelSort(type t = exp field
+		      fun get (Field (_, Lab (_, s), _)) = s)
+	structure PatFieldSort =
+	    LabelSort(type t = pat field
+		      fun get (Field (_, Lab (_, s), _)) = s)
+
+	fun select (Field (_, Lab (_, s), x)::fieldr, s') =
+	    if s = s' then SOME x else select (fieldr, s')
+	  | select (nil, _) = NONE
+
+	fun isSubarity (xs as Field (_, Lab (_, s), _)::xr,
+			Field (_, Lab (_, s'), _)::yr) =
+	    if s = s' then isSubarity (xr, yr)
+	    else isSubarity (xs, yr)
+	  | isSubarity (nil, _) = true
+	  | isSubarity (_, nil) = false
+
+	fun derec (WildPat _, exp) = [(nil, exp)]
+	  | derec (LitPat (coord, lit1), LitExp (_, lit2)) =
+	    if lit1 = lit2 then nil
+	    else Error.error (coord, "pattern never matches")
+	  | derec (VarPat (_, id), exp) = [([id], exp)]
+	  | derec (ConPat (coord, longid1, NONE), ConExp (_, longid2, NONE)) =
+	    if longidEq (longid1, longid2) then nil   (*--** too restrictive *)
+	    else Error.error (coord, "pattern never matches")
+	  | derec (ConPat (coord, longid1, SOME pat),
+		   ConExp (_, longid2, SOME exp)) =
+	    if longidEq (longid1, longid2) then derec (pat, exp)
+	    else Error.error (coord, "pattern never matches")
+	  | derec (RefPat (_, pat), RefExp (_, SOME exp)) = derec (pat, exp)
+	  | derec (TupPat (coord, pats), TupExp (_, exps)) =
+	    if length pats = length exps then
+		ListPair.foldr (fn (pat, exp, rest) =>
+				derec (pat, exp) @ rest) nil (pats, exps)
+	    else Error.error (coord, "pattern never matches")
+	  | derec (TupPat (coord, pats), RecExp (_, expFields)) =
+	    (case ExpFieldSort.sort expFields of
+		 (_, ExpFieldSort.Tup n) =>
+		     if length pats = n then
+			 List.foldr (fn (Field (_, Lab (_, s), exp), rest) =>
+				     let
+					 val i = valOf (Int.fromString s) - 1
+				     in
+					 derec (List.nth (pats, i), exp) @ rest
+				     end) nil expFields
+		     else Error.error (coord, "pattern never matches")
+	       | (_, ExpFieldSort.Rec) =>
+		     Error.error (coord, "pattern never matches"))
+	  | derec (RecPat (coord, patFields, hasDots), TupExp (_, exps)) =
+	    let
+		val (patFields', arity) = PatFieldSort.sort patFields
+		val n = length exps
+	    in
+		if hasDots then
+		    if List.all (fn Field (_, Lab (_, s), _) =>
+				 case Int.fromString s of
+				     SOME i => i >= 1 andalso i <= n
+				   | NONE => false) patFields'
+		    then
+			Crash.crash
+			"Simplify.derec: not implemented 1"   (*--** *)
+		    else Error.error (coord, "pattern never matches")
+		else
+		    case arity of
+			PatFieldSort.Tup i =>
+			    if i = n then
+				ListPair.foldr
+				(fn (Field (_, _, pat), exp, rest) =>
+				 derec (pat, exp) @ rest) nil
+				(patFields', exps)
+			    else Error.error (coord, "pattern never matches")
+		      | PatFieldSort.Rec =>
+			    Error.error (coord, "pattern never matches")
+	    end
+	  | derec (RecPat (coord, patFields, hasDots), RecExp (_, expFields)) =
+	    let
+		val (patFields', _) = PatFieldSort.sort patFields
+		val (expFields', _) = ExpFieldSort.sort expFields
+	    in
+		if hasDots then
+		    if isSubarity (patFields', expFields') then
+			Crash.crash
+			"Simplify.derec: not implemented 2"   (*--** *)
+		    else Error.error (coord, "pattern never matches")
+		else
+		    if ListPair.all (fn (Field (_, Lab (_, s), _),
+					 Field (_, Lab (_, s'), _)) => s = s')
+			(patFields', expFields')
+		    then
+			ListPair.foldr (fn (Field (_, _, pat),
+					    Field (_, _, exp), rest) =>
+					derec (pat, exp) @ rest) nil
+			(patFields', expFields')
+		    else Error.error (coord, "pattern never matches")
+	    end
 	  | derec (AsPat (_, pat1, pat2), exp) =
-	    derec (pat1, exp) @ derec (pat2, exp)
-	  | derec (AltPat (_, _), _) =
-	  | derec (NegPat (_, _), _) =
-	  | derec (GuardPat (_, _, _), _) =
-	  | derec (WithPat (_, _, _), _) =
-*)
+	    Crash.crash "Simplify.derec: not implemented 3"   (*--** *)
+	  | derec (AltPat (coord, _), _) =
+	    Error.error (coord, "alternative pattern not allowed in let rec")
+	  | derec (NegPat (coord, _), _) =
+	    Error.error (coord, "negated pattern not allowed in let rec")
+	  | derec (GuardPat (coord, _, _), _) =
+	    Error.error (coord, "guard pattern not allowed in let rec")
+	  | derec (WithPat (coord, _, _), _) =
+	    Error.error (coord, "with pattern not allowed in let rec")
+	  | derec (pat, _) =
+	    Error.error (info_pat pat, "pattern never matches")
 
 	fun simplifyDec (ValDec (coord, VarPat (_, id), exp, false)) =
 	    (* this is needed to end recursion with introduced WithPats *)
 	    S.OneDec (coord, id, simplifyExp exp)
 	  | simplifyDec (ValDec (coord, VarPat (_, id), exp, true)) =
-	    S.RecDec (coord, [(id, simplifyExp exp)])
+	    S.RecDec (coord, [([id], simplifyExp exp)])
 	  | simplifyDec (ValDec (coord, pat, exp, false)) =
 	    let
 		val ids = patternVariablesOf pat
@@ -394,7 +479,9 @@ structure Simplify :> SIMPLIFY =
 			  simplifyCase (coord, exp, matches, longid_Bind))
 	    end
 	  | simplifyDec (ValDec (coord, pat, exp, true)) =
-	    Crash.crash "Simplify.simplifyDec: not implemented"   (*--** *)
+	    S.RecDec (coord,
+		      List.map (fn (ids, exp) => (ids, simplifyExp exp))
+		      (derec (pat, exp)))
 	  | simplifyDec (ConDec (coord, id, hasArgs)) =
 	    S.ConDec (coord, id, hasArgs)
 	and simplifyTerm (VarExp (_, longid)) = (NONE, longid)
@@ -567,7 +654,8 @@ structure Simplify :> SIMPLIFY =
 	    in
 		List.app (fn (coord, ref expOpt) =>
 			  case expOpt of
-			      NONE => Error.error (coord, "unreachable")
+			      NONE =>
+				  Error.error (coord, "unreachable expression")
 			    | SOME _ => ()) consequents;
 		case decOpt of
 		    NONE => exp'

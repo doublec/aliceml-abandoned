@@ -112,9 +112,10 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	  | outputDec (q, ValDec (coord, ids, exp)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputList outputId (q, ids); m q; outputExp (q, exp); r q)
-	  | outputDec (q, RecDec (coord, idExps)) =
+	  | outputDec (q, RecDec (coord, idsExps)) =
 	    (f (q, "recDec"); outputCoord (q, coord); m q;
-	     outputList (outputPair (outputId, outputExp)) (q, idExps); r q)
+	     outputList (outputPair (outputList outputId, outputExp))
+	     (q, idsExps); r q)
 	  | outputDec (q, ConDec (coord, id, hasArgs)) =
 	    (f (q, "conDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); r q)

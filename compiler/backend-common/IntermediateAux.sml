@@ -15,9 +15,14 @@ structure IntermediateAux :> INTERMEDIATEAUX =
 	structure Intermediate = PostTranslationIntermediate
 	open PostTranslationIntermediate
 
-	type subst = (id * id) list
-
 	fun freshId coord = Id (coord, Stamp.new (), InId)
+
+	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
+
+	fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
+	  | longidEq (LongId (_, longid1, id1), LongId (_, longid2, id2)) =
+	    longidEq (longid1, longid2) andalso idEq (id1, id2)
+	  | longidEq (_, _) = false
 
 	fun lookup ((Id (_, stamp, _), id')::subst, id0 as Id (_, stamp0, _)) =
 	    if stamp = stamp0 then id'
@@ -54,6 +59,8 @@ structure IntermediateAux :> INTERMEDIATEAUX =
 	in
 	    fun patternVariablesOf pat = patternVariablesOf' (pat, nil)
 	end
+
+	type subst = (id * id) list
 
 	fun substLongId (ShortId (coord, id), subst) =
 	    ShortId (coord, lookup (subst, id))
