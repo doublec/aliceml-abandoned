@@ -255,11 +255,11 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   return Interpreter::REQUEST;			\
 }
 
-#define CHECK_PREEMPT() {				\
-  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
-    return Interpreter::PREEMPT;			\
-  else							\
-    return Interpreter::CONTINUE;			\
+#define CHECK_PREEMPT() {			\
+  if (StatusWord::GetStatus() != 0)		\
+    return Interpreter::PREEMPT;		\
+  else						\
+    return Interpreter::CONTINUE;		\
 }
 
 Interpreter::Result AbstractCodeInterpreter::Run() {
