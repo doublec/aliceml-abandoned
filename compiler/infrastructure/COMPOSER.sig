@@ -12,6 +12,6 @@ signature COMPOSER =
   sig
     structure Sig: SIGNATURE
 
-    val sign:	url -> Sig.t
-    val start:	url -> unit
+    val sign:	Url.t -> Sig.t
+    val start:	Url.t -> unit
   end
