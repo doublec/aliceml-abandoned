@@ -14,7 +14,7 @@
 import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 
 import structure TextIO              from "../../lib/system/TextIO"
-import structure Signature           from "../../lib/system/Signature"
+import structure Assert              from "../../lib/utility/Assert"
 
 import structure InputGrammar        from "../frontend-sml/InputGrammar"
 import structure AbstractGrammar     from "../frontend-common/AbstractGrammar"
@@ -31,7 +31,8 @@ import functor MkFrontendCommon     from "../frontend-common/MkFrontendCommon"
 import functor MkBackendCommon      from "../backend-common/MkBackendCommon"
 import functor MkBackendMozart      from "../backend-mozart/MkBackendMozart"
 import functor MkCompiler           from "MkCompiler"
-import functor MkRecursiveCompiler  from "MkRecursiveCompiler"
+import functor MkRecursiveCompiler
+       type sig_loader              from "MkRecursiveCompiler"
 
 import functor MkParsingPhase       from "../frontend-sml/MkParsingPhase"
 import functor MkAbstractionPhase   from "../frontend-sml/MkAbstractionPhase"
@@ -67,23 +68,20 @@ structure Debug : DEBUG =
 
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSignRef: (Source.desc * Url.t -> Signature.t) ref =
-	    ref (fn _ => raise Crash.Crash
-				"SMLToMozartRecursiveCompiler.loadSignRef")
+	val acquireSigRef: sig_loader ref =
+	    ref (fn _ => raise Assert.failure)
 
-	fun loadSign(desc, url) = !acquireSignRef(desc, url)
-	fun loadPlainSign(desc, url) = Signature.toSig(loadSign(desc, url))
+	fun loadSig(desc, url) = !acquireSigRef(desc, url)
 
 	structure FrontendSML =
-	    MkFrontendSML(val loadSign = loadPlainSign
+	    MkFrontendSML(val loadSig = loadSig
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(val loadSign = loadPlainSign
+	    MkFrontendCommon(val loadSig = loadSig
 			     structure Switches = Switches)
 
-	structure BackendCommon = MkBackendCommon(val loadSign = loadSign
-						  structure Switches = Switches)
+	structure BackendCommon = MkBackendCommon(structure Switches = Switches)
 
 	structure BackendMozart =
 	    MkBackendMozart(structure ComponentManager = ComponentManager

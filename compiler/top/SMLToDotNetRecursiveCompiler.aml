@@ -12,10 +12,9 @@
  *)
 
 import structure TextIO              from "../../lib/system/TextIO"
-import structure Signature           from "../../lib/system/Signature"
 import structure ComponentManager    from "../../lib/system/ComponentManager"
 import structure Url                 from "../../lib/utility/Url"
-import structure Crash               from "../infrastructure/Crash"
+import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
 import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
@@ -24,30 +23,28 @@ import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
 import structure MkBackendDotNet     from "../backend-dotnet/MkBackendDotNet"
 import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
-import structure MkRecursiveCompiler from "MkRecursiveCompiler"
+import structure MkRecursiveCompiler
+                 type sig_loader     from "MkRecursiveCompiler"
 
 structure SMLToDotNetRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val acquireSignRef: (Source.desc * Url.t -> Signature.t) ref =
-	    ref (fn _ => raise Crash.Crash
-				"SMLToDotNetRecursiveCompiler.acquireSignRef")
+	val acquireSigRef: sig_loader ref =
+	    ref (fn _ => raise Assert.failure)
 
-	fun loadSign(desc, url) = !acquireSignRef(desc, url)
-	fun loadPlainSign(desc, url) = Signature.toSig(loadSign(desc, url))
+	fun loadSig(desc, url) = !acquireSigRef(desc, url)
 
 	structure FrontendSML =
-	    MkFrontendSML(val loadSign = loadPlainSign
+	    MkFrontendSML(val loadSig = loadSig
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(val loadSign = loadPlainSign
+	    MkFrontendCommon(val loadSig = loadSig
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(val loadSign = loadSign
-			    structure Switches = Switches)
+	    MkBackendCommon(structure Switches = Switches)
 
 	structure BackendDotNet =
 	    MkBackendDotNet(structure Switches = Switches)
@@ -64,7 +61,7 @@ structure SMLToDotNetRecursiveCompiler =
 				structure Compiler = Compiler
 				val extension = "dll")
 
-	val _ = acquireSignRef := RecursiveCompiler.acquireSign
+	val _ = acquireSigRef := RecursiveCompiler.acquireSig
     in
 	RecursiveCompiler
     end
