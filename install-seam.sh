@@ -30,12 +30,10 @@ case `uname -s` in
     CYGWIN*)
 	WINDOWS=1
 	SMLPLATFORM=x86-win32
-	CC="gcc -mno-cygwin"
 	;;
     *)
 	WINDOWS=0
 	SMLPLATFORM=x86-linux
-	CC=gcc
 	;;
 esac
 
