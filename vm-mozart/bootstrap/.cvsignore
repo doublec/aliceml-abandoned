@@ -1,4 +1,4 @@
-Base.aus Word.aus MLYacc.aus Misc.aus Error.aus Common.aus
+Base.aus Word.aus MLYacc.aus Misc.aus Error.aus Common.aus Top.aus
 FrontendCommon.aus
 FrontendSMLLexer.aus FrontendSML.aus FrontendSMLParser.aus FrontendSMLMain.aus
 BackendCommon.aus BackendMozart.aus Main.aus

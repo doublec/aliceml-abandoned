@@ -90,7 +90,16 @@ COMMON_FILES = \
 	$(STOC_DIR)/common/IntermediateGrammar.sml \
 	$(STOC_DIR)/common/PREBOUND.sig \
 	$(STOC_DIR)/common/MakePrebound.sml \
-	$(STOC_DIR)/common/Prebound.sml
+	$(STOC_DIR)/common/Prebound.sml \
+	$(STOC_DIR)/common/PREBOUND_TYPE.sig \
+	$(STOC_DIR)/common/PreboundType.sml
+
+TOP_FILES = \
+	Base.import \
+	Error.import \
+	$(STOC_DIR)/top/PHASE.sig \
+	$(STOC_DIR)/top/TARGET.sig \
+	$(STOC_DIR)/top/EmptyContext.sml
 
 FRONTEND_COMMON_FILES = \
 	Base.import \
@@ -99,6 +108,7 @@ FRONTEND_COMMON_FILES = \
 	Misc.import \
 	Error.import \
 	Common.import \
+	Top.import \
 	$(STOC_DIR)/frontend-common/StringMap.sml \
 	$(STOC_DIR)/frontend-common/FIXITY.sig \
 	$(STOC_DIR)/frontend-common/Fixity.sml \
@@ -128,6 +138,7 @@ FRONTEND_SML_FILES = \
 	Misc.import \
 	Error.import \
 	Common.import \
+	Top.import \
 	FrontendCommon.import \
 	$(STOC_DIR)/frontend-sml/LAB.sig \
 	$(STOC_DIR)/frontend-sml/Lab.sml \
@@ -194,23 +205,21 @@ BACKEND_COMMON_FILES = \
 	Misc.import \
 	Error.import \
 	Common.import \
-	$(STOC_DIR)/backend-common/DEBUG.sig \
-	$(STOC_DIR)/backend-common/Debug.sml \
 	$(STOC_DIR)/backend-common/LABEL_SORT.sig \
 	$(STOC_DIR)/backend-common/MakeLabelSort.sml \
 	$(STOC_DIR)/backend-common/LabelSort.sml \
-	$(STOC_DIR)/backend-common/IMPERATIVE_GRAMMAR.sig \
-	$(STOC_DIR)/backend-common/ImperativeGrammar.sml \
-	$(STOC_DIR)/backend-common/OUTPUT_IMPERATIVE_GRAMMAR.sig \
-	$(STOC_DIR)/backend-common/OutputImperativeGrammar.sml \
+	$(STOC_DIR)/backend-common/FLAT_GRAMMAR.sig \
+	$(STOC_DIR)/backend-common/FlatGrammar.sml \
+	$(STOC_DIR)/backend-common/OUTPUT_FLAT_GRAMMAR.sig \
+	$(STOC_DIR)/backend-common/OutputFlatGrammar.sml \
 	$(STOC_DIR)/backend-common/INTERMEDIATE_AUX.sig \
 	$(STOC_DIR)/backend-common/IntermediateAux.sml \
 	$(STOC_DIR)/backend-common/SIMPLIFY_MATCH.sig \
 	$(STOC_DIR)/backend-common/SimplifyMatch.sml \
 	$(STOC_DIR)/backend-common/SIMPLIFY_REC.sig \
 	$(STOC_DIR)/backend-common/SimplifyRec.sml \
-	$(STOC_DIR)/backend-common/MATCH_COMPILATION_PHASE.sig \
-	$(STOC_DIR)/backend-common/MatchCompilationPhase.sml \
+	$(STOC_DIR)/backend-common/FLATTENING_PHASE.sig \
+	$(STOC_DIR)/backend-common/FlatteningPhase.sml \
 	$(STOC_DIR)/backend-common/LIVENESS_ANALYSIS_PHASE.sig \
 	$(STOC_DIR)/backend-common/LivenessAnalysisPhase.sml
 
@@ -241,7 +250,7 @@ MAIN_FILES = \
 COMPONENTS = \
 	Base Word \
 	MLYacc \
-	Misc Error Common \
+	Misc Error Common Top \
 	FrontendCommon \
 	FrontendSML FrontendSMLLexer FrontendSMLParser FrontendSMLMain \
 	BackendCommon BackendMozart \
@@ -278,6 +287,8 @@ Error.aus: $(ERROR_FILES)
 	$(MERGE) $(ERROR_FILES) > $@
 Common.aus: $(COMMON_FILES)
 	$(MERGE) $(COMMON_FILES) > $@
+Top.aus: $(TOP_FILES)
+	$(MERGE) $(TOP_FILES) > $@
 FrontendCommon.aus: $(FRONTEND_COMMON_FILES)
 	$(MERGE) $(FRONTEND_COMMON_FILES) > $@
 FrontendSML.aus: $(FRONTEND_SML_FILES)

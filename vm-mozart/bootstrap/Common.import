@@ -53,4 +53,7 @@ structure IntermediateGrammar: INTERMEDIATE_GRAMMAR
 ###common/PREBOUND.sig
 structure Prebound: PREBOUND
 
+###common/PREBOUND_TYPE.sig
+structure PreboundType: PREBOUND_TYPE
+
 from "Common.ozf"
