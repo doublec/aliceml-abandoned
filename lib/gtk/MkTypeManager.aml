@@ -14,7 +14,6 @@
 import structure GtkTreeTypes from "GtkTreeTypes"
 import structure Util         from "Util"
 import signature TYPE_MANAGER from "TYPE_MANAGER-sig"
-import structure Debug        from "Debug"
 
 functor MkTypeManager(val types :
 			  GtkTreeTypes.tree_item list) :> TYPE_MANAGER =
