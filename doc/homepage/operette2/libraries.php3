@@ -99,7 +99,7 @@
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/command-line.html">CommandLine</A>
       </TT>
-      (import from <TT>"x-alice:/lib/CommandLine.ozf"</TT>)
+      (import from <TT>"x-alice:/lib/system/CommandLine"</TT>)
     </LI>
   </UL>
 
@@ -167,25 +167,25 @@
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/io.html">IO</A>
       </TT>
-      (import from <TT>"x-alice:/lib/IO.ozf"</TT>)
+      (import from <TT>"x-alice:/lib/system/IO"</TT>)
     </LI>
     <LI>
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/text-io.html">TextIO</A>
       </TT>
-      (import from <TT>"x-alice:/lib/TextIO.ozf"</TT>)
+      (import from <TT>"x-alice:/lib/system/TextIO"</TT>)
     </LI>
     <LI>
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/os-process.html">OS.Process</A>
       </TT>
-      (import <TT>OS</TT> from <TT>"x-alice:/lib/OS.ozf"</TT>)
+      (import <TT>OS</TT> from <TT>"x-alice:/lib/system/OS"</TT>)
     </LI>
     <LI>
       <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/unix.html">Unix</A>
       </TT>
-      (import from <TT>"x-alice:/lib/Unix.ozf"</TT>)
+      (import from <TT>"x-alice:/lib/system/Unix"</TT>)
     </LI>
   </UL>
 
@@ -202,7 +202,7 @@
   </P>
 
   <PRE>
-	import structure IO from "x-alice:/lib/IO.ozf"
+	import structure IO from "x-alice:/lib/system/IO"
   </PRE>
 
 
