@@ -1,0 +1,228 @@
+This is TeX, Version 3.14159 (Web2C 7.3.1) (format=latex 2003.1.10)  30 MAY 2003 13:38
+**Browser.tex
+(Browser.tex
+LaTeX2e <2000/06/01>
+Babel <v3.7h> and hyphenation patterns for american, french, german, ngerman, i
+talian, nohyphenation, loaded.
+(/usr/share/texmf/tex/latex/base/article.cls
+Document Class: article 2000/05/19 v1.4b Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/size12.clo
+File: size12.clo 2000/05/19 v1.4b Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf/tex/generic/german/german.sty v2.5e 1998-07-08
+Package: german 1998/07/08 v2.5e Support for writing german texts (br)
+\grmnU@D=\dimen103
+)
+(/usr/share/texmf/tex/latex/ntgclass/a4.sty
+Package: a4 1999/03/03 v1.2f A4 based page layout
+)
+(/usr/share/texmf/tex/latex/graphics/epsfig.sty
+Package: epsfig 1999/02/16 v1.7a (e)psfig emulation (SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 1999/02/16 v1.0l Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg)
+Package graphics Info: Driver file: dvips.def on input line 80.
+
+(/usr/share/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen104
+\Gin@req@width=\dimen105
+)
+\epsfxsize=\dimen106
+\epsfysize=\dimen107
+)
+No file Browser.aux.
+\openout1 = `Browser.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 5.
+LaTeX Font Info:    ... okay on input line 5.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 40.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 40.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 40.
+[1
+
+]
+
+LaTeX Warning: Citation `br:oz' on page 1 undefined on input line 64.
+
+File: 3stepsgui.ps Graphic file (type eps)
+<3stepsgui.ps> [1]
+Overfull \hbox (9.12076pt too wide) in paragraph at lines 157--161
+\OT1/cmr/m/n/12 Um die Wer-te in ei-ne ent-spre-chen-de Dar-stel-lung trans-for
+-mie-ren zu k[]onnen, ben[]otigt
+ []
+
+[2]
+Overfull \hbox (1.13055pt too wide) in paragraph at lines 171--178
+ [] \OT1/cmr/m/n/12 W[]ahrend struk-tu-rel-le Ty-pen die ben[]otig-te Struk-tu-
+r-in-for-ma-ti-on zu die-ser Trans-
+ []
+
+
+LaTeX Warning: Citation `op:pr' on page 3 undefined on input line 187.
+
+
+LaTeX Warning: Citation `ke:dr' on page 3 undefined on input line 212.
+
+File: cld.ps Graphic file (type eps)
+<cld.ps> [3]
+Underfull \hbox (badness 10000) in paragraph at lines 262--264
+
+ []
+
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 266--272
+
+ []
+
+
+Overfull \hbox (32.47739pt too wide) in paragraph at lines 265--274
+[]$[]$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 296--298
+
+ []
+
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 366--373
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 375--382
+
+ []
+
+
+Overfull \hbox (32.47739pt too wide) in paragraph at lines 374--384
+[]$[]$
+ []
+
+[6]
+File: transient1_bw.ps Graphic file (type eps)
+ <transient1_bw.ps> [7]
+File: transient2_bw.ps Graphic file (type eps)
+ <transient2_bw.ps>
+File: transient3_bw.ps Graphic file (type eps)
+ <transient3_bw.ps> [8]
+
+LaTeX Warning: Reference `intern' on page 9 undefined on input line 492.
+
+[9]
+File: baum_graph.eps Graphic file (type eps)
+ <baum_graph.eps>
+Underfull \hbox (badness 10000) in paragraph at lines 522--530
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 532--540
+
+ []
+
+
+Overfull \hbox (32.47739pt too wide) in paragraph at lines 531--542
+[]$[]$
+ []
+
+[10] [11]
+Overfull \hbox (0.50835pt too wide) in paragraph at lines 677--690
+\OT1/cmr/m/n/12 Der create-Mechanismus f[]uhrt die Ty-p-zer-le-gung je-weils so
+-lan-ge selbst[]andig durch,
+ []
+
+[12]
+File: lay.eps Graphic file (type eps)
+ <lay.eps>
+
+LaTeX Warning: Citation `br:oz' on page 13 undefined on input line 748.
+
+[13]
+File: transdict.eps Graphic file (type eps)
+ <transdict.eps>
+
+LaTeX Warning: Reference `inkr' on page 14 undefined on input line 795.
+
+
+Overfull \hbox (14.7082pt too wide) in paragraph at lines 791--796
+\OT1/cmr/m/n/12 wach-ten Tran-si-en-ten und ak-tua-li-siert die Dar-stel-lung. 
+Da-bei m[]ussen die Tranisenten-
+ []
+
+[14]
+File: inkrem1.eps Graphic file (type eps)
+ <inkrem1.eps>
+File: inkrem2.eps Graphic file (type eps)
+ <inkrem2.eps> [15]
+File: module_bw.ps Graphic file (type eps)
+ <module_bw.ps> [16]
+
+LaTeX Warning: Citation `mo:mo' on page 17 undefined on input line 898.
+
+
+LaTeX Warning: Citation `gr:gt' on page 17 undefined on input line 902.
+
+
+Underfull \hbox (badness 7504) in paragraph at lines 935--939
+[]\OT1/cmr/m/n/12 Robert Gra-bow-ski 2003. \OT1/cmr/m/it/12 Ei-ne Gtk-Schnittst
+elle f[]ur Ali-ce\OT1/cmr/m/n/12 . FoPra-
+ []
+
+[17] (Browser.aux)
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 783 strings out of 20887
+ 8588 string characters out of 197363
+ 59155 words of memory out of 350001
+ 3751 multiletter control sequences out of 10000+15000
+ 10245 words of font info for 36 fonts, out of 400000 for 1000
+ 14 hyphenation exceptions out of 10000
+ 32i,14n,23p,215b,370s stack positions out of 3000i,100n,1500p,50000b,4000s
+
+Output written on Browser.dvi (18 pages, 41304 bytes).
