@@ -212,7 +212,7 @@ class EnterFrame : private StackFrame {
 private:
   static const u_int KEY_POS  = 0;
   static const u_int SIGN_POS = 1;
-  static const u_int SIZE     = 1;
+  static const u_int SIZE     = 2;
 public:
   using Block::ToWord;
   // EnterFrame Accessors
