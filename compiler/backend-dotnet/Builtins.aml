@@ -11,12 +11,8 @@
  *)
 
 import
-    structure StringHashKey
-from "../../lib/utility/StringHashKey"
-
-import
-    structure MkHashImpMap
-from "../../lib/utility/MkHashImpMap"
+    structure StringMap
+from "../infrastructure/StringMap"
 
 import
     signature BUILTINS
@@ -24,7 +20,7 @@ from "BUILTINS-sig"
 
 structure Builtins :> BUILTINS =
     struct
-	structure Map = MkHashImpMap(StringHashKey)
+	structure Map = StringMap
 
 	val builtinTable =
 	    let

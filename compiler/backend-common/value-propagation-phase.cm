@@ -6,8 +6,7 @@ is
 
     ../../lib/utility/sources.cm
     ../../lib/rtt/name.cm
-    ../infrastructure/crash.cm
-    ../infrastructure/phase.cm
+    ../infrastructure/sources.cm
     ../common/id-stamp.cm
 
     flat-grammar.cm
