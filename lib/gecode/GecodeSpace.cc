@@ -14,8 +14,6 @@
 #include "GecodeSpace.hh"
 
 int GecodeSpace::new_intvar(DomSpec& ds) {
-  if (!enter()) return -1;
-
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
@@ -28,8 +26,6 @@ int GecodeSpace::new_intvar(DomSpec& ds) {
 }
 
 int GecodeSpace::new_boolvar(void) {
-  if (!enter()) return -1;
-
   if (noOfIntVars >= intArraySize) {
     EnlargeIntVarArray();
   }
@@ -44,8 +40,6 @@ int GecodeSpace::new_boolvar(void) {
 }
 
 void GecodeSpace::EnlargeIntVarArray(void) {
-  if (!enter()) return;
-
   IntVarArray na(this,intArraySize*2, 0,0);
   for (int i=noOfIntVars; i--;)
     na[i] = is[i];
@@ -60,8 +54,6 @@ void GecodeSpace::EnlargeIntVarArray(void) {
 // FS Variables
 
 int GecodeSpace::new_setvar(void) {
-  if (!enter()) return -1;
-
   if (noOfSetVars >= fsArraySize) {
     EnlargeSetVarArray();
   }
@@ -71,8 +63,6 @@ int GecodeSpace::new_setvar(void) {
 }
 
 void GecodeSpace::EnlargeSetVarArray(void) {
-  if (!enter()) return;
-
   SetVarArray na(this, fsArraySize*2);
   for (int i=noOfSetVars; i--;)
     na[i] = fss[i];

@@ -156,7 +156,7 @@ const BvalSel int2bvalsel[] =
     BVAL_SPLIT_MAX, BVAL_SPLIT_MIN
   };
 
-const RelType int2RelType[] =
+const RelType int2reltype[] =
   {
     REL_EQ, REL_GQ, REL_GR,
     REL_LE, REL_LQ, REL_NQ
@@ -282,7 +282,8 @@ DEFINE1(status) {
   DBGMSG("status");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  switch(s->status()) {
+  unsigned int alternatives;
+  switch(s->status(alternatives)) {
   case SS_BRANCH:
     DBGMSG("done");
     {
@@ -291,7 +292,7 @@ DEFINE1(status) {
       cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
       UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
       TagVal *t = TagVal::New(0, 2);
-      t->Init(0, Store::IntToWord(s->alternatives()));
+      t->Init(0, Store::IntToWord(alternatives));
       t->Init(1, cr->ToWord());
       RETURN(t->ToWord());
     }
@@ -313,7 +314,8 @@ DEFINE1(description) {
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
 
-  switch(s->status()) {
+  unsigned int dummy;
+  switch(s->status(dummy)) {
   case SS_BRANCH:
     break;
   default:
@@ -382,11 +384,12 @@ DEFINE1(fail) {
   DBGMSG("fail");
   DECLARE_SPACE(s, stamp, pstamp, x0);
   CHECK_SPACE(s);
-  if (!s->enter()) {
-    RAISE(UnsafeGecode::InvalidSpaceConstructor);
-  }
+//   if (!s->enter()) {
+//     RAISE(UnsafeGecode::InvalidSpaceConstructor);
+//   }
   fail();
   RETURN_UNIT;
 } END
 
 using namespace Iter::Ranges;
+using namespace Set;

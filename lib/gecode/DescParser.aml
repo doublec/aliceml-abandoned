@@ -28,10 +28,10 @@ struct
     | parseArg "BoolVar" = Var BoolVar
     | parseArg "SetVar" = Var SetVar
     | parseArg "DomSpec&" = DomSpec
-    | parseArg "reltype" = Rel
+    | parseArg "RelType" = Rel
     | parseArg "const IntVarArgs&" = Var (List IntVar)
     | parseArg "const IntArgs&" = IntArgs
-    | parseArg "conlevel" = ConLevel
+    | parseArg "ConLevel" = ConLevel
     | parseArg "const BoolVarArgs&" = Var (List BoolVar)
     | parseArg "const SetVarArgs&" = Var (List SetVar)
     | parseArg "BranchingDesc*" = Description

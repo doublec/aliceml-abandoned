@@ -191,10 +191,7 @@ structure Generator =
       let
           val args = putCommas (List.mapi getVarName inargs)
       in
-          (TextIO.output(f, "  if (!s->enter()) {\n" ^
-                            "    RAISE(UnsafeGecode::InvalidSpaceConstructor);\n" ^
-                            "  }\n");
-           case (class,outarg) of
+           (case (class,outarg) of
              (NONE, Void) =>
              TextIO.output(f, 
                            "  "^fname^"(s,"^args^");\n"^
@@ -338,7 +335,8 @@ structure Generator =
     | argToType add Space = (addMark add)^"space"
     | argToType add Status = (addMark add)^"status"
     | argToType add Description = (addMark add)^"description"
-    | argToType add (Other s) = (raise GeneratorError "argToType failed")
+    | argToType add (Other s) = (raise GeneratorError
+                                           ("argToType failed: "^s))
 
   fun putStars [a] = a
     | putStars nil = ""
