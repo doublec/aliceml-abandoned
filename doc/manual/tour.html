@@ -131,7 +131,7 @@ integers to integers. We can apply that function:</P>
 fac 12
 <I><SMALL>val it : int = 479001600</SMALL></I></PRE>
 
-<P>If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). For example:<P>
+<P>If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C. For example:<P>
 
 <PRE class=code>
 fun loop () = loop ()
@@ -140,7 +140,7 @@ loop ()
 &lt;Ctrl-C&gt;
 <I><SMALL>interrupted</SMALL></I></PRE>
 
-<P>Unlike with other ML systems, you can also put a computation into background instead of interrupting it, by pressing Ctrl-Z (Ctrl-D on Windows):</P>
+<P>Unlike with other ML systems, you can also put a computation into background instead of interrupting it, by pressing Ctrl-Z (Ctrl-Break on Windows):</P>
 
 <PRE class=code>
 loop ()
@@ -152,7 +152,7 @@ loop ()
 <P>The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.</P>
 
 <DIV class=note>
-<P><I>Note:</I> Under Windows, depending on the shell used, Ctrl characters may not work as expected. On Linux, certain command line editing tools like <TT>rlwrap</TT> might interfer with some of the Ctrl characters as well.</P>
+<P><I>Note:</I> Under Windows, depending on the shell used, Ctrl characters may not work as expected. We recommend using zsh under Cygwin, or the SML mode for Emacs. On Linux, certain command line editing tools like <TT>rlwrap</TT> might interfer with some of the Ctrl characters as well.</P>
 </DIV>
 
 <?php subsection("interactive-inspector", "The Inspector") ?>

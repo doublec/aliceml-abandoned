@@ -44,15 +44,15 @@ use : string -> unit</PRE>
 <P>which, given the name of an Alice source file, will process this file as if
 it had been fed as direct input.</P>
 
-<P>A computation can be interrupted using Ctrl-C (the Posix signal SIGINT, Ctrl-Break on Windows systems). Likewise, typed input can be discarded with Ctrl-C (Ctrl-Break on Windows).</P>
+<P>A computation can be interrupted using Ctrl-C (the Posix signal SIGINT). Likewise, typed input can be discarded with Ctrl-C.</P>
 
-<P>A running computation can also be put into background using Ctrl-Z (the Posix signal SIGTSTP, Ctrl-D on Windows), getting you back to the prompt. The computation will proceed concurrently. Intuitively, the effect is roughly as if the initial input had been prefixed with <A href="futures.html#spawn"><TT>spawn</TT></A>. However, it works for arbitrary inputs, particularly declarations.</P>
+<P>A running computation can also be put into background using Ctrl-Z (the Posix signal SIGTSTP, Ctrl-Break on Windows), getting you back to the prompt. The computation will proceed concurrently. Intuitively, the effect is roughly as if the initial input had been prefixed with <A href="futures.html#spawn"><TT>spawn</TT></A>. However, it works for arbitrary inputs, particularly declarations.</P>
 
 <P>An interactive session can be terminated by typing an end-of-file character
 (Ctrl-D on Unix systems, Ctrl-Z on Windows systems). Alternatively, the global function <TT>exit</TT> may be called.</P>
 
 <DIV class=note>
-<P><I>Note:</I> Depending on the shell used, the Ctrl sequences described above may not work as expected under Windows.
+<P><I>Note:</I> Depending on the shell used, the Ctrl sequences described above may not work as expected under Windows. We recommend using either zsh under Cygwin, or the SML mode for Emacs. A plain Windows command shell will also work. Bash and particularly tcsh are known to be problematic with respect to signal handling.
 </P>
 </DIV>
 
