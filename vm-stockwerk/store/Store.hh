@@ -4,115 +4,70 @@
 #include "base.hh"
 #include "memmanager.hh"
 #include "tuple.hh"
+#include "headerop.hh"
+#include "pointerop.hh"
 
 class Store : public MemManager {
 protected:
-  // class Helper;
-#include "helper.hh"
   static DynamicTuple *intgen_set;
+  static Tuple *CopyBlockToDst(Tuple *p, MemChain *dst);
   static void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *scan);
 public:
-  inline static void InitStore() {
-    MemManager::InitMemManager();
-    intgen_set = new DynamicTuple(64);
-  }
-  inline static t_label GenLabel(int l) {
+  static void InitStore();
+  // Type Access Functions
+  static t_label GenLabel(int l) {
     Assert((l > BYNEED) && (l <= MAX_LSIZE)); return (t_label) l;
   }
-  inline static t_size GenTSize(int s) {
+  static t_size GenTSize(int s) {
     Assert((s > INVALID_TSIZE)); return (t_size) s;
   }
-  inline static t_field GenTField(int f) {
+  static t_field GenTField(int f) {
     Assert(f > INVALID_FIELD); return (t_field) f;
   }
-  inline static b_pointer AllocTuple(t_label l, t_size s) {
+  // Allocation Functions
+  static Tuple *AllocTuple(t_label l, t_size s) {
     Assert(s > INVALID_TSIZE);
     if (s < HeaderDef::MAX_HBSIZE) {
-      b_pointer t = MemManager::Alloc(roots[0], (u_int) s + 1);
+      Tuple *t = MemManager::Alloc(roots[0], (u_int) s + 1);
       
-      Helper::EncodeHeader(t, l, s, 0);
+      HeaderOp::EncodeHeader(t, l, s, 0);
       return t;
     }
     else {
       char *t = (((char *) MemManager::Alloc(roots[0], (u_int) s + 1)) + 4);
       
-      Helper::EncodeHeader((b_pointer) t, l, (t_size) HeaderDef::MAX_HBSIZE, 0);
+      HeaderOp::EncodeHeader((Tuple *) t, l, (t_size) HeaderDef::MAX_HBSIZE, 0);
       ((u_int *) t)[-1] = (u_int) s;
       
-      return (b_pointer) t;
+      return (Tuple *) t;
     }
   }
-  inline static b_pointer AllocChunk(t_size s) {
+  static Tuple *AllocChunk(t_size s) {
     return Store::AllocTuple(CHUNK, s);
   }
-  inline static t_pointer AllocTransient(t_label l) {
-    return (t_pointer) Store::AllocTuple(l, TRANS_SIZE);
+  static Transient *AllocTransient(t_label l) {
+    return (Transient *) Store::AllocTuple(l, TRANS_SIZE);
   }
-  inline static word IntToWord(int v) {
-    return Helper::EncodeInt(v);
+  // Conversion Functions
+  static word IntToWord(int v) {
+    return PointerOp::EncodeInt(v);
   }
-  inline static t_label GetLabel(b_pointer v) {
-    Assert(v != INVALID_BPOINTER); return Helper::DecodeLabel(v);
+  static int WordToInt(word v) {
+    return PointerOp::DecodeInt(PointerOp::Deref(v));
   }
-  inline static t_size GetSize(b_pointer v) {
-    Assert(v != INVALID_BPOINTER); return Helper::DecodeSize(v);
+  static Tuple *WordToTuple(word v) {
+    return PointerOp::DecodeTuple(PointerOp::Deref(v));
   }
-  inline static word GetArg(b_pointer t, t_field f) {
-    Assert(t != INVALID_BPOINTER);
-    Assert((f > (t_field) INVALID_TSIZE));
-    Assert(f <= (t_field) Helper::DecodeSize(t));
-    return (word) ((u_int *) t)[(u_int) f];
-  }
-  inline static void SetArg(b_pointer t, t_field f, word v) {
-    Assert(t != INVALID_BPOINTER);
-    Assert(f > (t_field) INVALID_TSIZE);
-    Assert(f <= (t_field) Helper::DecodeSize(t));
-    ((word *) t)[(u_int) f] = v;
-  }
-  inline static void ReplaceArg(b_pointer t, t_field f, word v) {
-    Assert(t != INVALID_BPOINTER);
-    Assert(f > (t_field) INVALID_TSIZE);
-    Assert(f <= (t_field) Helper::DecodeSize(t));
-    
-    if (!Helper::IsInt(v) && (Helper::GetHeader(Helper::RemoveTag(v)) < Helper::GetHeader(t))) {
-      intgen_set->Add(BPointerToWord(t));
-    }
-    ((word *) t)[(u_int) f] = v;
-  }
-  inline static t_label GetLabel(t_pointer v) {
-    return GetLabel(Helper::TPointerToBPointer(v));
-  }
-  inline static word GetArg(t_pointer v, t_field f) {
-    return GetArg(Helper::TPointerToBPointer(v), f);
-  }
-  inline static void SetArg(t_pointer t, t_field f, word v) {
-    SetArg(Helper::TPointerToBPointer(t), f, v);
-  }
-  inline static void Bind(t_pointer t, word v) {
-    Helper::ShareBind(t, v, REF);
-  }
-  inline static void Cancelled(t_pointer t, word ex) {
-    Helper::ShareBind(t, ex, CANCELLED);
-  }
-  inline static word BPointerToWord(b_pointer p) {
-    return Helper::EncodeBPointer(p);
-  }
-  inline static word TPointerToWord(t_pointer p) {
-    return Helper::EncodeTPointer(p);
-  }
-  inline static b_pointer WordToBPointer(word v) {
-    return Helper::DecodeBPointer(Helper::Deref(v));
-  }
-  inline static t_pointer WordToTPointer(word v) {
-    return Helper::DecodeTPointer(Helper::Deref(v));
-  }
-  inline static int WordToInt(word v) {
-    return Helper::DecodeInt(Helper::Deref(v));
+  static Transient *WordToTransient(word v) {
+    return PointerOp::DecodeTransient(PointerOp::Deref(v));
   }
   static void DoGC(DynamicTuple *root_set, u_int gen);
 #ifdef DEBUG_CHECK
   static void MemStat();
 #endif
 };
+
+// Defined Store Values Classes
+#include "value.hh"
 
 #endif
