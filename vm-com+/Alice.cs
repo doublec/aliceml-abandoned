@@ -129,7 +129,7 @@ namespace Alice {
 	    }
 	}
 	public class Cell {
-	    Object Value;
+	    public Object Value;
 	    public Cell() {}
 	    public Cell(Object value) {
 		Value = value;

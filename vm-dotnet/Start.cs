@@ -10,13 +10,16 @@ class Start {
 	}
 	else {
 	    try {
+		Console.WriteLine("Try executing Main");
 		Alice.Builtins.Future_await.StaticApply(k.Import(args[0]));
+		Console.WriteLine("Finished executing Main");
 	    }
 	    catch (System.Reflection.TargetInvocationException e) {
 		System.Exception ei = e.InnerException;
 
 		if (ei is Alice.Values.Exception) {
 		    Alice.Values.Exception ai = (Alice.Values.Exception) ei;
+		    Console.WriteLine(ei.StackTrace.ToString());
 		    Console.Write("line ");
 		    Console.Write(ai.Line);
 		    Console.Write(": ");
