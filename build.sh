@@ -70,8 +70,10 @@ then
 	    echo "### - extracting the source" >&2
 	    tar xzf lightning-${lightningversion}.tar.gz
 	    cd lightning-${lightningversion} && (
-		echo "### - applying SEAM-specific patches" >&2
-		patch -p1 < ../lightning-${lightningversion}.seam.patch
+                if test -f "../lightning-${lightningversion}.seam.patch"; then
+		  echo "### - applying SEAM-specific patches" >&2
+		  patch -p1 < ../lightning-${lightningversion}.seam.patch
+                fi
 		echo "### - reconfiguring the source" >&2
 		mkdir -p "${SUPPORTDIR}/build/lightning" 2>/dev/null
 		cd "${SUPPORTDIR}/build/lightning" &&
