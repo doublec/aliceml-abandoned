@@ -25,19 +25,6 @@
 #define DECLARE_STANDARD_WORD(w, x) \
   DECLARE_WORDN(w, x, STANDARD_WORD_PRECISION)
 
-inline int mydiv(signed int a, signed int b) {
-  // This function is only here to bypass a constant folding bug in g++.
-  // If we define RETURN_WORD as
-  //   RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
-  // then RETURN_WORD(0x80000000) evaluates to RETURN_WORD(0x80000000)
-  // instead of RETURN_WORD(0).
-  return a / b;
-}
-
-// #define RETURN_LARGE_WORD(w)						\
-//   RETURN_INT(mydiv(static_cast<s_int>((w) * LARGE_WORD_NONBITS_EXP),	\
-// 		   LARGE_WORD_NONBITS_EXP))
-
 #define WORD32_WORD_TO_WORD_OP(name, op)        \
   DEFINE2(name) {				\
     DECLARE_WORD32(i, x0);			\

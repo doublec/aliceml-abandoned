@@ -26,6 +26,15 @@
 
 class Transform;
 
+inline int mydiv(signed int a, signed int b) {
+  // This function is only here to bypass a constant folding bug in g++.
+  // If we define RETURN_WORD as
+  //   RETURN_INT(STATIC_CAST(s_int, (w) * NONBITS_EXP) / NONBITS_EXP)
+  // then RETURN_WORD(0x80000000) evaluates to RETURN_WORD(0x80000000)
+  // instead of RETURN_WORD(0).
+  return a / b;
+}
+
 class AliceDll Alice {
 public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
@@ -379,7 +388,9 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    return Store::IntToWord(GetValue()[index]);
+    s_int i = GetValue()[index];
+    s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
   }
 };
 
@@ -414,7 +425,9 @@ public:
     Init(index, value);
   }
   word Sub(u_int index) {
-    return Store::IntToWord(GetValue()[index]);
+    s_int i = GetValue()[index];
+    s_int nonbits_exp = 1 << (STORE_WORD_WIDTH - 8);
+    return Store::IntToWord(mydiv(i * nonbits_exp, nonbits_exp));
   }
 };
 
