@@ -1,7 +1,9 @@
 CM
 Makefile.depend
 collect.x86-linux
-GTKWrapper.oz GTKExport.oz GTK.asig
-GDKWrapper.oz GDKExport.oz GDK.asig
+GtkCanvas.c
+GtkWrapper.oz GtkExport.oz Gtk.asig
+GdkWrapper.oz GdkExport.oz Gdk.asig
 CanvasWrapper.oz CanvasExport.oz Canvas.asig
+*.so-*
 *.ozf
