@@ -2673,7 +2673,7 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   	    Store::DirectWordToInt(coord1->Sel(1)),
 	    Store::DirectWordToInt(coord1->Sel(2)));
     fflush(stderr);
-    TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+    TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(5));
     AbstractCode::Disassemble(stderr, pc);
   }
 #endif

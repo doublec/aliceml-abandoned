@@ -18,7 +18,7 @@
 
 static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
-  "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
+  "EndHandle", "EndTry", "Entry", "Exit", "GetRef", "GetTup", "IntTest", "Kill",
   "LazyPolySel", "PutCon", "PutNew", "PutPolyRec", "PutRef", "PutTag", "PutTup",
   "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
   "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
@@ -95,11 +95,10 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 #define IDS               VECTOR(pc->Sel(operand++), Int);
 #define IDREF             IdRef(pc->Sel(operand++));
 #define IDREFS            VECTOR(pc->Sel(operand++), IdRef);
-#define IDREFARGS         ARGS(pc->Sel(operand++), IdRef);
 #define IDDEF             IdDef(pc->Sel(operand++));
 #define IDDEFS            VECTOR(pc->Sel(operand++), IdDef);
 #define IDDEFINSTROPT     OPT(pc->Sel(operand++), IdDefInstr);
-#define IDDEFARGSINSTROPT OPT(pc->Sel(operand++), IdDefArgsInstr);
+#define IDDEFSINSTROPT    OPT(pc->Sel(operand++), IdDefsInstr);
 #define LABEL             Label(pc->Sel(operand++));
 #define LABELS            VECTOR(pc->Sel(operand++), Label);
 #define INTINSTRVEC       VECTOR(pc->Sel(operand++), IntInstr);
@@ -184,9 +183,6 @@ private:
   void IdDefArgs(word w) {
     ARGS(w, IdDef);
   }
-  void IdDefArgsInstr(word w) {
-    TUPLE(w, IdDefArgs, Instr);
-  }
   void Label(word w) {
     std::fprintf(file, " %s",
 		 UniqueString::FromWordDirect(w)->ToString()->ExportC());
@@ -251,9 +247,9 @@ private:
     std::fprintf(file, " Template(");
     Value(templ->Sel(0));
     Int(templ->Sel(1));
-    VECTOR(templ->Sel(2), Value);
-    ARGS(templ->Sel(3), IdDef);
-    INTOPT(templ->Sel(4));
+    std::fprintf(file, " Debug Annotation\n");
+    VECTOR(templ->Sel(3), IdDef);
+    OPT(templ->Sel(4), Int);
     Instr(templ->Sel(5));
     std::fprintf(file, " )");
   }
@@ -330,7 +326,7 @@ void Disassembler::Start() {
     case AbstractCode::AppPrim:
       VALUE IDREFS IDDEFINSTROPT break;
     case AbstractCode::AppVar:
-      IDREF IDREFS INT IDDEFARGSINSTROPT break;
+      IDREF IDREFS INT IDDEFSINSTROPT break;
     case AbstractCode::GetRef:
       ID IDREF LASTINSTR break;
     case AbstractCode::GetTup:
@@ -346,6 +342,10 @@ void Disassembler::Start() {
     case AbstractCode::Try:
       INSTR IDDEF IDDEF INSTR break;
     case AbstractCode::EndTry:
+      LASTINSTR break;
+    case AbstractCode::Entry:
+      LASTINSTR break;
+    case AbstractCode::Exit:
       LASTINSTR break;
     case AbstractCode::EndHandle:
       LASTINSTR break;
@@ -368,7 +368,7 @@ void Disassembler::Start() {
     case AbstractCode::Shared:
       STAMP LASTINSTR break;
     case AbstractCode::Return:
-      IDREFARGS break;
+      IDREFS break;
     default:
       Error("AbstractCode::Disassemble: unknown instr tag");
     }
