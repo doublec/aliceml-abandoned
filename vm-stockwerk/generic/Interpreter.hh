@@ -15,8 +15,11 @@
 #ifndef __GENERIC__INTERPRETER_HH__
 #define __GENERIC__INTERPRETER_HH__
 
+#if defined(INTERFACE)
+#pragma interface "generic/Interpreter.hh"
+#endif
+
 #include "store/Store.hh"
-#include "generic/Tuple.hh"
 #include "generic/ConcreteRepresentationHandler.hh"
 
 class Closure;
@@ -28,7 +31,7 @@ class ConcreteCode;
 class String;
 #endif
 
-class Interpreter: public ConcreteRepresentationHandler {
+class DllExport Interpreter: public ConcreteRepresentationHandler {
 public:
   enum Result {
     CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
