@@ -646,7 +646,6 @@ INSTALL3TOOLSFILES = Linker.ozf Depend.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
-	$(INSTALL3BINFILES:%=build3/install/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%) \
@@ -767,9 +766,6 @@ build3/install/%.import: build3/%.import
 build3/install/COPYING: ../COPYING
 	install -c -m 444 $< $@
 
-build3/install/bin/%.bat: %.bat
-	install -c -m 444 $< $@
-
 build3/install/bin/%: %
 	install -c -m 555 $< $@
 
@@ -834,7 +830,6 @@ INSTALLDIRS = \
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
-	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
 	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%) \
@@ -850,9 +845,6 @@ $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
 
 $(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
 	install -c -m 555 $< $@
-
-$(INSTALL3BINFILES:%=$(PREFIX)/bin/%.bat): $(PREFIX)/bin/%.bat: %.bat
-	install -c -m 444 $< $@
 
 $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
