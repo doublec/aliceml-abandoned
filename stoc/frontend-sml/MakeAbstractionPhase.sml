@@ -1132,7 +1132,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
     and trFmrule_lhs E (Mrule(i, fpat, exp)) =
-	   trFappPat_lhs E fpat
+	   trFpat_lhs E fpat
 
     and trFpat_lhs E =
 	fn fpat as (ATPATPat _ | APPPat _) =>
