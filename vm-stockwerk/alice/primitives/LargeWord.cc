@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 void PrimitiveTable::RegisterLargeWord() {
   Register("LargeWord.wordSize", Store::IntToWord(INT_PRECISION));

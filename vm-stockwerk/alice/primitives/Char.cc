@@ -13,7 +13,7 @@
 //
 
 #include <ctype.h>
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 #define INT_INT_TO_BOOL_OP(name, op)	\
   DEFINE2(name) {			\

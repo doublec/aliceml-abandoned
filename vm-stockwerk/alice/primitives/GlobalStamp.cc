@@ -13,7 +13,7 @@
 #include <cstdio>
 #include "generic/Tuple.hh"
 #include "alice/Guid.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 static s_int counter = 0;
 

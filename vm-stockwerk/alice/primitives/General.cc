@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(General_exnName) {
   DECLARE_CONVAL(conVal, x0);

@@ -12,8 +12,7 @@
 //   $Revision$
 //
 
-#include <cstdio>
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 //--** on many architectures, overflow checks can be much more efficient
 

@@ -11,7 +11,7 @@
 //
 
 #include "generic/Transients.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE2(Hole_fail) {
   Transient *transient = Store::WordToTransient(x0);
