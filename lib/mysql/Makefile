@@ -12,6 +12,8 @@
 
 # Makefile for alice mysql binding
 
+INSTALLTO = `alice-config --alicelibdir`/mysql
+
 NATIVES = UnsafeMySQL
 
 SOURCES = UnsafeMySQL.cc
@@ -69,5 +71,9 @@ veryclean: clean
 
 depend:
 	alicedep *.aml > Makefile.depend
+
+install: all
+	install -d $(INSTALLTO)
+	install $(NATIVES:%=%.dll) $(TARGETS) $(INSTALLTO)
 
 -include Makefile.depend
