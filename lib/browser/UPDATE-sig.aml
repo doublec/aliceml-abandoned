@@ -25,37 +25,24 @@ in
 signature UPDATE = 
     sig
 
-        exception UpdateError
-
-	val update: 
-	    node * Reflect.value * 
-	    (Reflect.value * Type.t  * node * int * int -> node) * 
-	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
-
-        (* eigentlicher update-Mechanismus *)
-	val tell: Reflect.value * node list * 
-	          (Reflect.value * Type.t  * node * int * int -> node) * 
-		  (Reflect.value * Inf.t  * node * int * int -> node) 
-		  -> unit
-
         (* constraint watcher *) 
         val watcher: 
 	    'a  * Reflect.value * 
 	    (Reflect.value * Type.t  * node * int * int -> node) * 
-	    (Reflect.value * Inf.t  * node * int * int -> node)
+	    (Reflect.module * Inf.t  * node * int * int -> node)
 	    -> Thread.thread
 
 	val reinspect:
 	    node * (Reflect.value * Type.t * node * int * int -> node) * 
-	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
+	    (Reflect.module* Inf.t * node * int * int -> node) -> unit
 
 	val foldDepth: 
 	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
-	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
+	    (Reflect.module * Inf.t * node * int * int -> node) -> unit
 
 	val foldWidth: 
 	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
-	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
+	    (Reflect.module * Inf.t * node * int * int -> node) -> unit
 
        (* wird in Init bei "shrink" benoetigt *)
 	val findHighestDepth: node -> int
