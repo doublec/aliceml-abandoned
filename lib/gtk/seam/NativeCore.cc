@@ -18,10 +18,11 @@
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
 
-static word eventStream = 0;
-static word weakDict = 0;
-static word signalMap = 0;
-static word signalMap2 = 0;
+static word eventStream;
+static word weakDict;
+static word signalMap;
+static word signalMap2;
+static gboolean loaded = FALSE;
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -411,7 +412,6 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
 			gpointer, gpointer marshal_data) {
 
   gint connid = GPOINTER_TO_INT(marshal_data);
-  gint isDelete = GPOINTER_TO_INT(closure->data);
 
   //  g_print("event occured: %d\n", connid);
   //  g_print("delete?: %d\n", isDelete);
@@ -419,7 +419,9 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   sendArgsToStream(connid,n_param_values,param_values);
 
   if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
-    g_value_set_boolean(return_value, (isDelete != 0) ? TRUE : FALSE);
+    //    g_value_set_boolean(return_value, 
+    //          (GPOINTER_TO_INT(closure->data) != 0) ? TRUE : FALSE);
+    g_value_set_boolean(return_value, TRUE);
 }
 
 DEFINE3(NativeCore_signalConnect) {
@@ -427,10 +429,10 @@ DEFINE3(NativeCore_signalConnect) {
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
 
-  gint isDelete = !strcmp(signalname, "delete_event");
+  //gint isDelete = !strcmp(signalname, "delete_event");
 
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-  				     GINT_TO_POINTER(isDelete), NULL);
+  				     /*GINT_TO_POINTER(isDelete)*/NULL, NULL);
   gulong connid = g_signal_connect_closure(G_OBJECT(obj), signalname, 
 					closure, after ? TRUE : FALSE); 
   g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
@@ -549,7 +551,7 @@ DEFINE1(NativeCore_hasSignals) {
 // INIT AND MAIN LOOP FUNCTIONS
 
 DEFINE0(NativeCore_isLoaded) {
-  RETURN(BOOL_TO_WORD(signalMap != 0));
+  RETURN(BOOL_TO_WORD(loaded));
 } END
 
 
@@ -559,6 +561,7 @@ void __die(char *s) {
 }
 
 DEFINE0(NativeCore_init) {
+  loaded = TRUE;
   if (!signalMap) {
     signalMap = Map::New(256)->ToWord();
     RootSet::Add(signalMap);
