@@ -7,7 +7,7 @@
 ## Configuration Section
 ##
 
-LIGHTNING=1
+SEAM_HOME="$PROGRAMFILES/Seam"
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
@@ -16,6 +16,8 @@ OPTS3= # '--dump-phases' # --dump-intermediate'
 ##
 ## End of Configuration Section
 ##
+
+export SEAM_HOME
 
 if [ "$1" = "-global" ]
 then
@@ -39,43 +41,12 @@ case `uname -s` in
 	;;
 esac
 
-echo Trying to install Alice-on Seam to $prefix for platform $SUPPORTPLATFORM...
-
-
-##
-## Build Support Libraries: Lightning
-##
-SUPPORTDIR=`cd support && pwd`
-if [ "$LIGHTNING" -ne 0 ]
-then
-    if [ ! -f "$SUPPORTDIR/install/$SUPPORTPLATFORM/include/lightning.h" ]
-    then
-	mkdir -p "$SUPPORTDIR/build/$SUPPORTPLATFORM/lightning" 2>/dev/null
-	(
-	    cd "$SUPPORTDIR/build/$SUPPORTPLATFORM/lightning" &&
-	    CC=$CC "$SUPPORTDIR/lightning/configure" \
-		--prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
-	    make all install
-	) || exit 1
-    fi
-fi
-
-##
-## Build Support Libraries: zlib
-##
-if [ ! -f "$SUPPORTDIR/install/$SUPPORTPLATFORM/include/zlib.h" ]
-then
-    (
-	cd "$SUPPORTDIR/zlib" &&
-	CC=$CC ./configure --prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
-	make all install distclean
-    ) || exit 1
-fi
+echo Trying to install Alice-on-Seam to $prefix for platform $SUPPORTPLATFORM...
 
 ##
 ## Build Seam
 ##
-(cd vm-stockwerk && make WINDOWS=${WINDOWS} LIGHTNING=${LIGHTNING}) || exit 1
+(cd vm-seam && make WINDOWS=${WINDOWS}) || exit 1
 
 ##
 ## Compile the Bootstrap Compiler with SML/NJ
@@ -89,11 +60,11 @@ rm -f bootstrap/alicec-seam.$SMLPLATFORM #bootstrap/alicedep.$SMLPLATFORM
 unset ALICE_HOME
 TIMEDIR=`pwd`/time
 export TIMEDIR
-(cd vm-stockwerk && make -f Makefile.bootstrap depend) || exit 1
-(cd vm-stockwerk && /usr/bin/time -po ${TIMEDIR}1 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
-(cd vm-stockwerk && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
-(cd vm-stockwerk && /usr/bin/time -po ${TIMEDIR}3 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS3" build3-install) || exit 1
-(cd vm-stockwerk && make -f Makefile.bootstrap PREFIX=$prefix install) || exit 1
+(cd vm-seam && make -f Makefile.bootstrap depend) || exit 1
+(cd vm-seam && /usr/bin/time -po ${TIMEDIR}1 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
+(cd vm-seam && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
+(cd vm-seam && /usr/bin/time -po ${TIMEDIR}3 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS3" build3-install) || exit 1
+(cd vm-seam && make -f Makefile.bootstrap PREFIX=$prefix install) || exit 1
 
 ##
 ## Build Libraries
