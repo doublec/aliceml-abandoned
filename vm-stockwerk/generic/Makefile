@@ -1,4 +1,3 @@
-## -*- Makefile -*-
 ##
 ## Authors:
 ##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
@@ -18,71 +17,29 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-GENERICSRCS = \
-	RootSet.cc \
-	Outline.cc \
-	TaskStack.cc \
-	IOHandler.cc \
-	Scheduler.cc \
-	Transients.cc \
-	Interpreter.cc \
-	Guid.cc
+SOURCES = \
+	Outline.cc Debug.cc RootSet.cc Properties.cc TaskStack.cc \
+	IOHandler.cc Scheduler.cc Transients.cc Interpreter.cc \
+	Primitive.cc PushCallInterpreter.cc ByneedInterpreter.cc \
+	Unpickler.cc Pickler.cc BootLinker.cc
 
-SERVICESSRCS = \
-	PushCallInterpreter.cc \
-	ByneedInterpreter.cc \
-	Unpickler.cc \
-	Pickler.cc \
-	BootLinker.cc
+OBJS = $(SOURCES:%.cc=%.o)
 
-ALICESRCS = \
-	Alice.cc \
-	LazySelectionInterpreter.cc \
-	AbstractCodeInterpreter.cc
+all: libgeneric.a
 
-PRIMITIVES = \
-	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
-	List Math Option Real Ref String Thread Unsafe Vector Word
-PRIMITIVESSRCS = Primitive.cc PrimitiveTable.cc $(PRIMITIVES:%=%.cc)
-
-UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect Socket
-UNSAFE_UTILITY = MkRefMap
-UNSAFE_DISTRIBUTION = Remote
-UNSAFESSRCS = \
-	$(UNSAFE_SYSTEM:%=Unsafe%.cc) \
-	$(UNSAFE_UTILITY:%=Unsafe%.cc) \
-	$(UNSAFE_DISTRIBUTION:%=Unsafe%.cc)
-
-SRCS = \
-	$(GENERICSRCS) \
-	$(SERVICESSRCS) \
-	$(ALICESRCS) \
-	$(PRIMITIVESSRCS) \
-	$(UNSAFESSRCS) \
-	Debug.cc \
-	Base.cc \
-	Properties.cc \
-	Main.cc
-
-OBJS = $(SRCS:%.cc=%.o)
-
-all: $(OBJS)
-	$(LD) $(CXXFLAGS) -o stow.exe $(OBJS) \
-	-L$(TOPDIR)/adt -L$(TOPDIR)/store -ladt -lstore $(EXTRA_LIBS)
-
-store:
-	cd $(TOPDIR)/store && $(MAKE) distclean && $(MAKE)
-
-adt:
-	cd $(TOPDIR)/adt && $(MAKE) distclean && $(MAKE)
+libgeneric.a: $(OBJS)
+	ar rc libgeneric.a $(OBJS) || exit 1
+	ranlib libgeneric.a
 
 clean:
-	rm -rf stow.exe $(OBJS)
+	rm -f $(OBJS)
 
-distclean: clean
-	rm -rf *~
+veryclean: clean
+	rm -f libgeneric.a
 
-Makefile.depend: Makefile $(SRCS)
-	$(MAKEDEPEND) $(SRCS) > Makefile.depend
+distclean: veryclean
+
+Makefile.depend: Makefile $(SOURCES)
+	$(MAKEDEPEND) $(SOURCES) > Makefile.depend
 
 include Makefile.depend
