@@ -72,14 +72,14 @@ DEFINE1(FileSys_fileSize) {
 } END
 
 DEFINE0(FileSys_getDir) {
-  static u_int size = 1024;
-  static char *buf  = (char *) malloc(sizeof(char) * size);
-  while (getcwd(buf, size) == NULL) {
-    size = (size * 3) >> 2;
-    free(buf);
-    buf = (char *) malloc(sizeof(char) * size);
+  char buf[MAX_PATH];
+  if (getcwd(buf, MAX_PATH)) {
+    RETURN(String::New(buf)->ToWord());
   }
-  RETURN(String::New(buf)->ToWord());
+  else {
+    const char *err = "getDir: cannot get directory";
+    RAISE_SYS_ERR_EXCEPTION(String::New(err)->ToWord(), Store::IntToWord(0));
+  }
 } END
 
 DEFINE1(FileSys_mkDir) {
