@@ -41,7 +41,7 @@ if test $UNAME = "Linux"
   then
 	smlexesuffix=".x86-linux"
   else
-	smlexesuffix="."
+	smlexesuffix=".sparc-solaris"
 fi
 
 dnl Checks for libraries.
