@@ -6,9 +6,15 @@ struct
     fun cr s = s^"\n"
     fun blank i = if i<0 then "" else " "^(blank (i-1))
 
+    fun timeStamp () =
+	let val time = Time.fmt 0 (Time.now ())
+	in 
+	    time
+	end
+
     fun structureName () =
 	let val name = "JackeDeclarationsStruct__"
-	    val time = Time.fmt 0 (Time.now ())
+	    val time = timeStamp ()
 	in name^time
 	end
 
@@ -176,7 +182,8 @@ struct
 						   print=print,
 						   verbose=false}; !r)
 	    val structureName = structureName ()
-		
+	    val structureName2 = "rmConstrStatus"^(timeStamp())
+
 	    (* to be done: code for parser *)
 	    fun parserDecToString  [] = ""
 	      | parserDecToString  ((name,ty,sr)::ds) =
@@ -206,7 +213,13 @@ struct
 		in
 		    (currParser := !currParser + 1; cr s)
 		end
-	    
+
+	    val hack = 
+		"(* ---hack: remove constructor bindings in scope *)\n"
+		^"structure "^structureName2^" = \nstruct\n"
+		^(undoBinding termlist)^"end\n(* --- *)\n\n"
+	    val p = (A.MLCode [hack]) ::p
+ 
 	    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
 	      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
 	      | absSynToString _ (A.ParserDec l) = parserDecToString  l
@@ -226,8 +239,7 @@ struct
 		^(printToIntTokenFn (List.drop(termlist,parsers),stringToTerm))
 		^"\n(* semantic actions *)\n"
 		^"structure SAction =\nstruct\n"
-		^"(* ---hack: remove constructor bindings in scope *)\n"
-		^(undoBinding termlist)^"(* --- *)\n"
+		^"open "^structureName2^"\n"
 		^"exception exnAction of int\n"
 		^"val actions =\n    fn (i392,defPos,stack,()) =>\n"
 		^"        case (i392,stack) of\n"
