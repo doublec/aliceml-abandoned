@@ -1,3 +1,13 @@
-SOURCES=Main.aml REPORT-sig.aml Report.aml TEST-sig.aml Test.aml MkSeparate.aml Gen.aml GEN-sig.aml
+all:
+	(cd src; make)
+	(cd lib; make)
+	alicec Main.aml -o Main.alc
 
--include AliceMakefile
+clean:
+	(cd src; make clean)
+	(cd lib; make clean)
+	rm Main.alc
+
+depend:
+	(cd src; make depend)
+	(cd lib; make depend)

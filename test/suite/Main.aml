@@ -10,141 +10,18 @@
  *   $Revision$
  *)
 
-import structure Test        from "Test"
-import structure Report      from "Report"
-import structure Gen         from "Gen"
+import structure Report      from "src/Report"
+import structure Test        from "src/Test"
 
-import structure Random      from "x-alice:/lib/utility/Random"
-import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
-import structure PPValue     from "x-alice:/lib/system/PPValue"
-
-exception NotYetImplemented
-
-val printWidth = ref 80
-
-fun argToStr t x = PrettyPrint.toString(PPValue.ppVal t x, !printWidth)
-
-fun test' t f arg = (assert f arg) 
-                      handle e => raise Test.Error (e, argToStr t arg)
-
-__overload 'a test: ('a -> bool) -> 'a -> unit = test'
+import structure TestBool    from "lib/fundamental/Bool"
+import structure TestString  from "lib/fundamental/String"
+import structure TestGeneral from "lib/fundamental/General"
+import structure TestOption  from "lib/fundamental/Option"
 
 
-local (* the bool test suite *)
-
-    fun testNot () = 
-	(test (fn x => Bool.not x = false) true;
-	 test (fn x => Bool.not x = true) false)
-
-    fun testCompare () =
-        (test (fn x => Bool.compare x = LESS)    (false, true);
-	 test (fn x => Bool.compare x = GREATER) (true, false);
-	 test (fn x => Bool.compare x = EQUAL)   (true, true);
-	 test (fn x => Bool.compare x = EQUAL)   (false, false))
-
-    fun testEqual () =
-        (test (fn x => Bool.equal x = true)  (true, true);
-	 test (fn x => Bool.equal x = false) (true, false);
-	 test (fn x => Bool.equal x = true)  (false, false);
-         test (fn x => Bool.equal x = false) (false, true))
-
-    fun testToString () =
-	(test (fn x => Bool.toString x = "true")  true;
-	 test (fn x => Bool.toString x = "false") false)
-
-    fun testFromString () = 
-	(test (fn x => Bool.fromString x = SOME true)  "true";
-	 test (fn x => Bool.fromString x = SOME false) "false";
-         Gen.try 100 Gen.string (test (fn x => Bool.fromString x = NONE)))
-
-    fun testScan () = test (fn _ => raise NotYetImplemented) ()
-in
-    val testSuiteBool = ("Bool", [("testNot", testNot), 
-                                  ("testCompare", testCompare),
-                                  ("testEqual", testEqual),
-                                  ("testToString", testToString),
- 				  ("testFromString", testFromString), 
-	                          ("testScan", testScan)])
-end
-
-local
-
-    fun testIsSome () =
-	(test (fn x => Option.isSome x = true) (SOME 0);
-	 test (fn x => Option.isSome x = false) NONE)
-
-    fun testIsNone () =
-	(test (fn x => Option.isNone x = true) NONE;
-         test (fn x => Option.isNone x = false) (SOME 0))
-
-    fun testValOf () =
-	(test (fn x => Option.valOf x = 0) (SOME 0);
-	 test (fn x => (Option.valOf x handle Option.Option => true)) NONE)
-
-    fun testFilter () = assert raise NotYetImplemented
-
-    fun testJoin () = 
-	(assert Option.join (SOME (SOME 0)) = (SOME 0);
-	 assert Option.join (SOME NONE) = NONE)
-
-    fun testApp () = (Thread.sleep (Time.fromSeconds (Int.toLarge 20)))
-
-    fun testMap () = assert raise NotYetImplemented
-
-    fun testMapPart () = assert raise NotYetImplemented
-
-    fun testFold () = assert raise NotYetImplemented
-
-    fun testCompose () = assert raise NotYetImplemented
-
-    fun testComposePart () = assert raise NotYetImplemented
-
-in
-    val testSuiteOption = ("Option", [("testIsSome", testIsSome),
-				      ("testIsNone", testIsNone),
-				      ("testValOf", testValOf),
-				      ("testFilter", testFilter),
-				      ("testJoin", testJoin),
-				      ("testApp", testApp),
-				      ("testMap", testMap),
-				      ("testMapPart", testMapPart),
-				      ("testFold", testFold),
-				      ("testCompose", testCompose),
-				      ("testComposePart", testComposePart)])
-end
-
-
-local
-
-    fun testInverse () =
-	(assert General.inverse LESS = GREATER;
-	 assert General.inverse GREATER = LESS;
-	 assert General.inverse EQUAL = EQUAL)
-
-
-in
-    val testSuiteGeneral = ("General", [])
-end
-
-
-local
-
-    fun strGen0 _ = Gen.string 1
-    fun strGen1 _ = Gen.string (Option.valOf Int.maxInt - 1)
-    fun strGen2 _ = Gen.string (Random.int (String.maxSize + 1))
-    val allGenString = [strGen0, strGen1, strGen2]
-    val allGenStrFreq = [(12,strGen0), (18,strGen1), (4,strGen2)]
-
-    fun testSize () =
-	Gen.try 10 (*Gen.oneOfFreq allGenStrFreq*) strGen2 
-	   (fn s => assert true)
-in
-    val testSuiteString = ("String", [("testSize", testSize)])
-end
-
-
-val allTests = [testSuiteBool, testSuiteOption, (*testSuiteGeneral,*)
-	        testSuiteString]
+val allTests = [TestBool.suite, TestOption.suite, 
+		(*TestGeneral.suite,*) 
+		TestString.suite]
 
 
 fun runTests conf = 
@@ -157,7 +34,7 @@ fun start cfg =
 
 fun main () = 
     case CommandLine.arguments () of
-	 []                        => start Test.defaultConfig
+	 []                    => start Test.defaultConfig
        | [timeout, sep, more]  => start Test.defaultConfig
        | _ => ()
 
