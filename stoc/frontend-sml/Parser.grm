@@ -92,6 +92,8 @@
 (*   - sharing and where for signature:						*)
 (*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
 (*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
+(*   - programs:								*)
+(*	  program   ::= topdec							*)
 (*   - components:								*)
 (*	  component ::= ann <program>						*)
 (*	  ann       ::=	import imp from string					*)
@@ -2621,9 +2623,10 @@
   (* Components: Programs *)
 
   program:
-	  dec'
-	  		( DECProgram(I(dec'left,dec'right),
+	  dec' 		( DECProgram(I(dec'left,dec'right),
 				     dec', NONE) )
+	| exp  		( EXPProgram(I(expleft,expright),
+				     exp, NONE) )
 	| dec' SEMICOLON program_opt'
 	  		( DECProgram(I(dec'left,program_opt'right),
 				     dec', program_opt') )
