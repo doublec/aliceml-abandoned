@@ -25,7 +25,7 @@ LDLIBS = $(SUBDIRS:%=-L%) -lalice -lgeneric -ladt -lstore $(EXTRA_LIBS)
 
 .PHONY: all-subdirs depend-local
 
-all: all-subdirs stow.exe stow.dll
+all: all-subdirs $(TARGETS)
 
 stow.exe: $(OBJS) $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
@@ -41,7 +41,7 @@ all-subdirs:
 
 clean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
-	rm -f $(OBJS)
+	rm -f $(OBJS) stow.def
 
 veryclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
