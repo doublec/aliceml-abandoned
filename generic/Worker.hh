@@ -43,7 +43,7 @@ public:
   virtual void PurgeFrame(word wFrame);
   // Execution
   virtual Result Run() = 0;
-  virtual Result Handle();
+  virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word wFrame) = 0;

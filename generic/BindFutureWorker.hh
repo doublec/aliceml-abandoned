@@ -39,7 +39,7 @@ public:
   static void PushFrame(Thread *thread, Transient *future);
   // Execution
   virtual Result Run();
-  virtual Result Handle();
+  virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);

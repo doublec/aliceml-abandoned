@@ -17,6 +17,7 @@
 #pragma interface "generic/Thread.hh"
 #endif
 
+#include <cstring>
 #include "store/Store.hh"
 #include "generic/TaskStack.hh"
 
@@ -26,10 +27,11 @@ public:
   enum priority { HIGH, NORMAL, LOW };
   enum state { BLOCKED, RUNNABLE, TERMINATED };
 private:
+  static const u_int INITIAL_HANDLERS_SIZE = 10; // to be done
   enum {
     PRIORITY_POS, STATE_POS, IS_SUSPENDED_POS,
     TASK_STACK_POS, NFRAMES_POS, NARGS_POS, ARGS_POS,
-    FUTURE_POS, SIZE
+    FUTURE_POS, EXN_HANDLER_STACK_POS, SIZE
   };
 
   void SetState(state s) {
@@ -56,6 +58,12 @@ public:
     b->InitArg(NARGS_POS, nArgs);
     b->InitArg(ARGS_POS, args);
     b->InitArg(FUTURE_POS, 0);
+    DynamicBlock *exnHandlerStack =
+      Store::AllocDynamicBlock(INITIAL_HANDLERS_SIZE, 2);
+    // to be done: this belongs to TaskStack
+    exnHandlerStack->InitArg(0, 0);
+    exnHandlerStack->InitArg(1, Store::IntToWord(0));
+    b->InitArg(EXN_HANDLER_STACK_POS, exnHandlerStack->ToWord());
     return static_cast<Thread *>(b);
   }
   // Thread Untagging
@@ -129,6 +137,42 @@ public:
     Assert(nFrames < taskStack->GetSize());
     taskStack->ReplaceArg(nFrames++, frame);
     ReplaceArg(NFRAMES_POS, nFrames);
+  }
+  void PushHandler(u_int frame, word data) {
+    DynamicBlock *exnHandlerStack =
+      DynamicBlock::FromWordDirect(GetArg(EXN_HANDLER_STACK_POS));
+    u_int top  = exnHandlerStack->GetActiveSize();
+    u_int size = exnHandlerStack->GetSize();
+    if ((top + 2) >= size) {
+      u_int newSize = size * 3 / 2;
+      DynamicBlock *newExnHandlerStack = Store::AllocDynamicBlock(newSize, top);
+      std::memcpy(newExnHandlerStack->GetBase(), exnHandlerStack->GetBase(),
+		  size * sizeof(u_int));
+      ReplaceArg(EXN_HANDLER_STACK_POS, newExnHandlerStack->ToWord());
+      exnHandlerStack = newExnHandlerStack;
+    }
+    Assert((top + 2) < exnHandlerStack->GetSize());
+    exnHandlerStack->SetActiveSize(top + 2);
+    exnHandlerStack->ReplaceArg(top, frame);
+    exnHandlerStack->ReplaceArg(top + 1, data);
+  }
+  void PushHandler(word data) {
+    PushHandler(Store::DirectWordToInt(GetArg(NFRAMES_POS)) - 1, data);
+  }
+  void GetHandler(u_int &frame, word &data) {
+    DynamicBlock *exnHandlerStack =
+      DynamicBlock::FromWordDirect(GetArg(EXN_HANDLER_STACK_POS));
+    u_int top = exnHandlerStack->GetActiveSize();
+    Assert(top >= 2);
+    data  = exnHandlerStack->GetArg(top - 1);
+    frame = Store::DirectWordToInt(exnHandlerStack->GetArg(top - 2));
+    exnHandlerStack->SetActiveSize(top - 2);
+  }
+  void PopHandler() {
+    DynamicBlock *exnHandlerStack =
+      DynamicBlock::FromWordDirect(GetArg(EXN_HANDLER_STACK_POS));
+    Assert(exnHandlerStack->GetActiveSize() >= 2);
+    exnHandlerStack->SetActiveSize(exnHandlerStack->GetActiveSize() - 2);
   }
   void Purge() {
     u_int nFrames = Store::DirectWordToInt(GetArg(NFRAMES_POS));
