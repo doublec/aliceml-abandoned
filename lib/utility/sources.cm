@@ -1,4 +1,5 @@
 Group is
+	../../bootstrap/sources.cm
 
 	ASSERT-sig.aml
 	Assert.aml
