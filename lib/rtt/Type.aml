@@ -37,10 +37,52 @@ unification is non-obvious.
 On Thread Safety:
 
 To be appropriate for runtime typing, most operations have to be thread-safe.
-We conjecture that thread-safety is given for all operations as long as they
-don't operate on types containing holes. In the particular case of matching,
-which creates fresh holes, they are safe because they can never escape the
-thread.
+This is a nightmare since our types are complex imperative data structures!
+In particular, to maximise sharing, the equality check actually performs
+physical unification. We have the following approach:
+
+1. Any operations involving holes are inherently unsafe. No attempt has been
+made to make hole management thread-safe. Rationale: holes are used for three
+main purposes: (1) type-inference in the compiler, which is single-threaded
+(functions involved: unify and close); (2) construction of recursive types,
+where the hole is filled before the type is completed and becomes available to
+other threads (function: tie); (3) matching, which creates only short-lived
+holes that are not exchanged with other threads.
+
+2. We distinguish between: (1) observers, which only inspect or create types;
+and (2) mutators, which may modify existing (non-hole) types. The only mutators
+are the unify function and its helpers. Unification has to be safe if none of
+the types contains holes or none of the substructures containing holes is
+shared with other threads.
+
+3. We deal with concurrent mutators by using a global mutation lock. A mutator
+may only modify a structure after obtaining the lock. It must put the data
+structure into a consistent state before releasing the lock (in particular,
+binders and recursive types). While holding the lock, the mutator may not
+trigger any lazy suspensions, otherwise a deadlock may occur (imagine a
+component load is triggered, which needs to perform a type check, which may
+invoke unification...).
+
+4. To deal with concurrency between a mutator and observers, the mutator must
+also set up read locks before modifying anything. To keep the (very frequent)
+read accesses cheap we don't use explicit locking but implicit locking via
+futures (more precisely, holes). Before modifying any part of a structure, all
+parts to be modified have to be replaced by holes. This way, modifications
+appear atomic with respect to concurrent observers.
+
+5. As a consequence, node identity modulo links is unstable - a concurrent
+mutator may introduce new links any time (except when we are holding the
+mutation lock). When comparing physical node identity of a node with one
+visited before we must consider every link node in between, and not simply use
+`canonical' to chase down the link chain.
+
+6. For the same reason, we cannot perform path compression for links, because
+that would be a mutating operation that may make a concurrent process miss a
+node while testing for physical equality (most important cases: recognising a
+bound variable or a cycle).
+
+7. At the first bootstrapping iteration, the Lock and Hole modules are faked
+such that no locking occurs.
 
 On Kinds:
 
@@ -101,11 +143,16 @@ are wf, and
 	t = PROD r
 	t = SUM r
 	t = MU t'	and t' mu-wf
-	t = ALL(a,t')	and a = VAR _
-	t = EXIST(a,t')	and a = VAR _
-	t = LAMBDA(a,t') and a = VAR _ and t'* <> APPLY(t'',a) where a notin t''
+	t = ALL(a,t')	and a var-wf
+	t = EXIST(a,t')	and a var-wf
+	t = LAMBDA(a,t') and a var-wf and t'* <> APPLY(t'',a) where a notin t''
 	t = APPLY(t1,t2) and t1* <> LAMBDA _
 	t = ABBREV(t1,t2)
+
+and a is var-wf iff
+
+	t = VAR(k,_)	and k <> SING _
+	t = LINK t'	and t' var-wf
 
 and t is mu-wf iff it is wf and
 
@@ -164,7 +211,8 @@ import structure PathMap from "PathMap"
 import signature TYPE    from "TYPE-sig"
 
 (*DEBUG
-import fun print from "../system/TextIO"
+import structure Addr   from "../utility/Addr"
+import structure TextIO from "../system/TextIO"
 *)
 
 structure Type :> TYPE =
@@ -231,7 +279,9 @@ struct
     val sameKind	= Cell.equals
 
     fun fromCanonical t	= t
-    fun canonical t	= case content t of LINK t => canonical t | _ => t
+    fun canonical t	= case content t of LINK t' => canonical t' | _ => t
+			  (* Doing path compression here would destroy
+			   * thread-safety!! *)
 
     (* Almost everything in this module is mutually recursive. To avoid
      * confusing reordering and allow for easy tracing (see below) we use
@@ -254,32 +304,51 @@ struct
 
     (*DEBUG: The following allows tracing of all type nodes.
 
-    fun id t = Int.toString(hash t)
+    fun id t = Int.toString((*hash DEBUG*) Addr.addr t)
 
-    val rec typ'ToString =
-	fn LINK t	=> "LINK(" ^ id t ^ ")"
+    val rec typ'ToString = fn ads =>
+	fn t =>	if Hole.isHole t then "_" else
+	case t
+	of LINK t	=> "LINK(" ^ typ ads t ^ ")"
 	 | HOLE _	=> "HOLE"
 	 | VAR _	=> "VAR"
 	 | ABS(_,p)	=> "ABS(" ^ Label.toString(Path.toLab p) ^ "["
 				  ^ Int.toString(Path.hash p) ^ "])"
-	 | FUN(t1,t2)	=> "FUN(" ^ id t1 ^ "," ^ id t2 ^ ")"
-	 | PROD r	=> "PROD(" ^ rowToString r ^ ")"
-	 | SUM r	=> "SUM(" ^ rowToString r ^ ")"
-	 | MU t		=> "MU(" ^ id t ^ ")"
-	 | ALL(a,t)	=> "ALL(" ^ id a ^ "," ^ id t ^ ")"
-	 | EXIST(a,t)	=> "EXIST(" ^ id a ^ "," ^ id t ^ ")"
-	 | LAMBDA(a,t)	=> "LAMBDA(" ^ id a ^ "," ^ id t ^ ")"
-	 | APPLY(t1,t2)	=> "APPLY(" ^ id t1 ^ "," ^ id t2 ^ ")"
-	 | ABBREV(t1,t2) => "ABBREV(" ^ id t1 ^ "," ^ id t2 ^ ")"
+	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
+	 | PROD r	=> "PROD(" ^ rowToString ads r ^ ")"
+	 | SUM r	=> "SUM(" ^ rowToString ads r ^ ")"
+	 | MU t		=> "MU(" ^ typ ads t ^ ")"
+	 | ALL(a,t)	=> "ALL(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
+	 | EXIST(a,t)	=> "EXIST(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
+	 | LAMBDA(a,t)	=> "LAMBDA(" ^ typ ads a ^ "," ^ typ ads t ^ ")"
+	 | APPLY(t1,t2)	=> "APPLY(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
+	 | ABBREV(t1,t2) => "ABBREV(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 
-    and rowToString =
-	fn INDEXED ts   => String.separate "," (Vector.toList(Vector.map id ts))
-	 | NAMED(lts,d) => String.separate "," (List.map fieldToString lts @
+    and rowToString = fn ads =>
+	fn INDEXED ts   => String.separate "," (Vector.toList(Vector.map (typ ads) ts))
+	 | NAMED(lts,d) => String.separate "," (List.map (fieldToString ads) lts @
 				      (if Option.isNone d then [] else ["..."]))
-    and fieldToString =
-	fn (l,t)        => Label.toString l ^ ":" ^ id t
+    and fieldToString = fn ads =>
+	fn (l,t)        => Label.toString l ^ ":" ^ typ ads t
 
-    fun typToString t = id t ^ "=" ^ typ'ToString(content t)
+    and typ = fn ads => fn t => id t
+		(*DEBUG ^
+		(if List.contains ads (Addr.addr t) then ""
+		 else "=" ^ typ'ToString (Addr.addr t::ads) (content t)) *)
+
+    val rec kind'ToString = fn ads =>
+	fn STAR		=> "STAR"
+	 | EXT		=> "EXT"
+	 | ARROW(k1,k2)	=> "ARROW(" ^ kind ads k1 ^ "," ^ kind ads k2 ^ ")"
+	 | SING t	=> "SING(" ^ typ ads t ^ ")"
+
+    and kind = fn ads => fn k => id k
+		(*DEBUG ^
+		(if List.contains ads (Addr.addr k) then ""
+		 else "=" ^ kind'ToString (Addr.addr k::ads) (content k)) *)
+
+    fun typToString t  = id t ^ "=" ^ typ'ToString [] (content t)
+    fun kindToString k = id k ^ "=" ^ kind'ToString [] (content k)
 
     val currentFn = ref "external"
 
@@ -296,20 +365,22 @@ struct
 	let
 	    val t = new t'
 	in
-	    print("new " ^ id t ^ " = " ^ typ'ToString t' ^
-		  " by " ^ !currentFn ^ "\n");
+	    TextIO.print("new " ^ id t ^ " = " ^ typ'ToString [] t' ^
+			 " by " ^ !currentFn ^ "\n");
 	    t
 	end
 
     val replace = fn(t,t') =>
-	( print("replace " ^ id t ^ " = " ^ typ'ToString(content t) ^
-		" with " ^ typ'ToString t' ^ " by " ^ !currentFn ^ "\n");
+	( TextIO.print("replace " ^ id t ^ " = " ^ typ'ToString [] (content t) ^
+		       " with " ^ typ'ToString [] t' ^ " by " ^ !currentFn ^
+		       "\n");
 	  replace(t,t')
 	)
 
     val replace = fn(t1,t2') =>
 	let val t1' = content t1 in
 	    replace(t1,t2');
+	    if Hole.isHole t2' then () else
 	    if case (t1', t2')
 		 of (HOLE _, LAMBDA _)	=> false
 		  | ( (HOLE _, _)
@@ -319,7 +390,8 @@ struct
 		    | (VAR _, VAR _)
 		    | (MU _, MU _) )	=> true
 		  | _ => false
-	    then () else ( print "!!!!"; TextIO.inputLine TextIO.stdIn; () )
+	    then ()
+	    else ( TextIO.print "!!!!";TextIO.inputLine TextIO.stdIn; () )
 	end
     *)
 
@@ -479,7 +551,7 @@ struct
 	  of LAMBDA(a,t3) =>
 	     let
 		 val m   = Map.new()
-		 val _   = Map.insert(m, a, t2)
+		 val _   = Map.insert(m, canonical a, t2)
 		 val t3' = subst(m,t3)
 	     in
 		 case to of NONE    => t3'
@@ -634,12 +706,11 @@ struct
 
     exception Fix
 
-    fun fixLHS(t, to) =
+    fun fixLHS t =
 	case content t
-	  of LINK t1       => fixLHS(t1, to)
-	   | ABBREV(t1,t2) => fixLHS(t2, SOME(Option.getOpt(to, t1)))
-	   | HOLE _        => (t, to)
-	   | _             => raise Fix
+	  of (LINK t1 | ABBREV(_,t1)) => fixLHS t1
+	   | HOLE _                   => t
+	   | _                        => raise Fix
 
     fun fixRHS t =
 	case content t
@@ -649,13 +720,12 @@ struct
 
     fun tie(t1,t2) =
 	let
-	    val (t1',to) = fixLHS(t1, NONE)
-	    val  _       = fixRHS t2
-	    val  t2'     = mu' t2
+	    val t1' = fixLHS t1
+	    val _   = fixRHS t2
 	in
-	    if not(matchesKind(kind t2', kind t1')) then raise Fix else
-	    replace(t1', case to of NONE    => LINK t2'
-				  | SOME t3 => ABBREV(t3,t2'))
+	    if not(matchesKind(kind t2, kind t1'))
+	    then raise Fix
+	    else replace(t1', MU t2)
 	end
 
     val fix = Vector.app tie
@@ -734,7 +804,7 @@ struct
     fun asType' t =
 	case content t
 	  of (LINK t1 | ABBREV(_,t1))	=> asType' t1
-	   | MU t1			=> content t1
+	   | MU t1			=> asType' t1
 	   | t' as APPLY _		=> asTypeApply(t',t,[])
 	   | t'				=> t'
     and asTypeApply(t',t,ts) =
@@ -748,8 +818,8 @@ struct
 	   | _				=> t'
     and asTypeLambda(t',m,t,ts) =
 	case (content t, ts)
-	  of (_, [])			=> content(subst(m,t))
-	   | (LAMBDA(a,t1), t2::ts')	=> (Map.insert(m,a,t2);
+	  of (_, [])			=> asType'(subst(m,t))
+	   | (LAMBDA(a,t1), t2::ts')	=> (Map.insert(m,canonical a,t2);
 					    asTypeLambda(t',m,t1,ts'))
 	   | ((LINK t1|ABBREV(_,t1)),_)	=> asTypeLambda(t',m,t1,ts)
 	   |  _				=> t'
@@ -895,7 +965,8 @@ struct
 	   | MU t1		=> if not(hasFree(ref [t], mt,mk, rea, t1))
 				   then buildOld(mt, t)
 				   else let
-				       val t'  = buildNew(mt, t, new(MU t1))
+				       val t0' = unknown'(kind t1)
+				       val t'  = buildNew(mt, t, mu' t0')
 				       val t1' = build(mt,mk, rea, t1)
 				   in
 				       replace(t', MU t1'); t'
@@ -906,16 +977,30 @@ struct
     and buildBind(mt,mk, rea, t, toTyp, a,t1) =
 	let
 	    val t1  = canonical t1
-	    val t1' = case Map.lookup(mt,a)
-			of NONE    => build(mt,mk,rea,t1)
-			 | SOME a' => (Map.insert(mt,a,a);
-				       build(mt,mk,rea,t1)
-				       before Map.insert(mt,a,a'))
+	    val t1' = buildBind'(mt,mk,rea,a,t1)
 	in
 	    if Cell.equals(t1,t1')
 	    then buildOld(mt, t)
 	    else buildNew(mt, t, toTyp(a,t1'))
 	end
+
+    and buildBind'(mt,mk, rea, a,t1) =
+	(* Note that we have to be very careful about links in a!
+	 * We cannot simply use canonical a, because a may have been relinked
+	 * concurrently since we last visited it, so that canonical a is not in
+	 * our map, although we actually have shadowing! We thus have to check
+	 * any individual link.
+	 *)
+	case content a
+	  of VAR _   => build(mt,mk,rea,t1)
+	   | LINK a' =>
+		(case Map.lookup(mt,a)
+		  of NONE     => buildBind'(mt,mk,rea,a',t1)
+		   | SOME a'' => (Map.insert(mt,a,a);
+				  buildBind'(mt,mk,rea,a',t1)
+				  before Map.insert(mt,a,a''))
+		)
+	   | _ => raise Assert.failure
 
     and buildPair(mt,mk, rea, t, toTyp, t1,t2) =
 	let
@@ -1067,9 +1152,9 @@ struct
 	case content t
 	  of LINK t	=> instance'(m,t)
 	   | ABBREV(t1,t2) => instance'(m,t2)
-	   | ALL(a,t)	=> (Map.insert(m, a, unknown'(kind a));
+	   | ALL(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
 			    instance'(m,t))
-	   | EXIST(a,t)	=> (Map.insert(m, a, newVar'(kind a));
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
 			    instance'(m,t))
 	   | _		=> subst(m, t)
 
@@ -1078,9 +1163,9 @@ struct
 	case content t
 	  of LINK t	=> skolem'(m,t)
 	   | ABBREV(t1,t2) => skolem'(m,t2)
-	   | ALL(a,t)	=> (Map.insert(m, a, newVar'(kind a));
+	   | ALL(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
 			    instance'(m,t))
-	   | EXIST(a,t)	=> (Map.insert(m, a, unknown'(kind a));
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
 			    instance'(m,t))
 	   | _		=> subst(m, t)
 
@@ -1184,63 +1269,161 @@ struct
 
     (* Unification has to be thread-safe, at least in the absence of holes.
      * However, we want to maximise sharing and thus merge any types that have
-     * been discovered to be equal. We use the following algorithm:
+     * been discovered to be equal. We have to delay merging of any nodes
+     * representing types with free occurances of variables (or MU) until we
+     * know that we can merge the corresponding binders.
+     * We use the following algorithm:
      *
      * We maintain a map m that maps any bound variable or MU we encountered on
      * the current path from t1's root, to its counterpart in t2. When we see it
-     * again we simply lookup the counterpart and see if it is the same as the
-     * other type (modulo links that may have been introduced by concurrent
-     * threads in the meantime).
+     * again we simply lookup the counterpart. Likewise, we include any node
+     * containing free occurances of such variables.
      *
-     * Moreover, every step returns the list of types in the domain of m
-     * it encountered during traversal. If this list is empty we can safely
-     * merge the types because it does not contain free variables.
+     * Once the bodies of two binders or MUs are known to be equal we can
+     * merge the binders - and all nodes containing the bound variable. To
+     * deal with nested binders we actually maintain a stack of maps.
      *
-     * Note that it would be simpler if we used de Bruijn notation and syntactic
-     * mu - we would not need the map.
+     * Every unification returns the de Bruijn index of the farthest free
+     * variable in the left term. The corresponding mapping is entered into the
+     * respective map in the stack. An index of 0 indicates closedness, in
+     * which case we do not need to enter a mapping but can merge the terms
+     * immediately (we know that all subterms have already been merged).
+     *
+     * Note that we cannot simply merge binders without merging everything
+     * below, because that can lead to inconsistencies when there are nested
+     * MU binders. The simplest example would be unfication of two times two
+     * mutual recursive types:
+     *   t1 = MU [t2]		t1' = MU [t2']
+     *   t2 = MU [t1]		t2' = MU [t1']
+     * Here, simply setting t1 = LINK t1' would make t2 inconsistent (as if
+     * it had been unrolled once).
+     *
+     * Merging may happen concurrently to read access. To avoid other observer
+     * threads seeing inconsistent graphs when merging binders, the whole 
+     * term cycle is replaced by holes before modification. Furthermore, we
+     * need a lock to keep two separate threads from concurrent mutation
+     * - if both started putting in holes in the same cycle (but starting at
+     * different nodes) a deadlock would occur.
+     *
+     * Note that it would be a lot simpler if we used syntactic mu - without
+     * cycles, thread-safety is trivial. With de Bruijn notation and we would
+     * not even need the map.
      *)
 
-    fun merge(t1,t2,ts) =
-	(if List.null ts
-	 then replace(t1, LINK(canonical t2))
-	 else ();
-	 ts)
+    fun lookup(i,  [],   t)	= NONE
+      | lookup(i, m::ms, t)	= case Map.lookup(m,t)
+				    of NONE   => lookup(i+1,ms,t)
+				     | SOME t => SOME(t,i)
+    fun insert(1, m::ms, t1,t2)	= (case Map.lookup(m,t1)
+				    of NONE   => Map.insert(m, t1,t2)
+				     | SOME t => if Cell.equals(t,t2) then ()
+						 else insert(1, m::ms, t,t2)
+				  )
+      | insert(i, m::ms, t1,t2)	= insert(i-1, ms, t1, t2)
+      | insert(i,  [],   t1,t2)	= raise Assert.failure
+
+    val lock = Lock.lock()
+
+    fun merge'(t1,t2) =
+	let
+	    (* may have changed in the meantime... *)
+	    val t1 = canonical t1
+	    val t2 = canonical t2
+	in
+	    if Cell.equals(t1,t2) then () else replace(t1,LINK t2)
+	end
+
+    val merge' = Lock.sync lock merge'
+
+    fun merge(ms,t1,t2,0) = (merge'(t1,t2); 0)
+      | merge(ms,t1,t2,i) = (insert(i,ms,t1,t2); i)
+
+    fun mergeBind1'(t1,t2,ps) =
+	let
+	    open Hole	(* shadows replace with nop during bootstrapping *)
+	    (* may have changed in the meantime... *)
+	    val t1 = canonical t1
+	    val t2 = canonical t2
+	in
+	    if Cell.equals(t1,t2) then ps else (t1,t2)::ps
+	end
+
+    fun mergeBind2'(t1,t2) =
+	let
+	    open Hole	(* fakes fill using replace during bootstrapping *)
+	in
+	    replace(t1, hole())
+	end
+
+    fun mergeBind3'(t1,t2) =
+	let
+	    open Hole	(* fakes fill using replace during bootstrapping *)
+	in
+	    fill(content t1, LINK t2)
+	end
+
+    fun mergeBind' m =
+	let
+	    val ps = Map.foldi mergeBind1' [] m
+	in
+	    List.app mergeBind2' ps;
+	    List.app mergeBind3' ps
+	end
+
+    val mergeBind' = Lock.sync lock mergeBind'
+
+    fun mergeBind(m,ms,t1,t2,i) =
+	let
+	    val i' = i-1
+	in
+	    if i' > 0 then
+		let
+		   val m' = List.nth(ms,i'-1)
+		in
+		   Map.appi (fn(t1,t2) => Map.insert(m',t1,t2)) m;
+		   i'
+		end
+	    else
+		(mergeBind' m; 0)
+	end
 
     fun bind(mayBind,n1,t1,t2,k1) =
 	if mayBind andalso matchesKind(kind t2, k1) andalso not(isLambda t2)
-	then (liftAndCheck(n1,t1,t2) ; replace(t1, LINK(canonical t2)) ; [])
+	then (liftAndCheck(n1,t1,t2) ; replace(t1, LINK(canonical t2)) ; 0)
 	else raise Unify(t1,t2)
+	(*TODO: can we safely return 0 or do we have to max the level?*)
 
-    fun unify'(mayBind,m,t1,t2) =
-	if Cell.equals(t1,t2) then [] else
-	case Map.lookup(m,t1)
-	  of SOME t3 => (unifyBound(t3,t2) ; [t1])
+    fun unify'(mayBind,ms,t1,t2) =
+	if Cell.equals(t1,t2) then 0 else
+	case lookup(1,ms,t1)
+	  of SOME(t3,i) => Int.max(i, unify'(mayBind,ms,t3,t2))
+	   | NONE =>
+	case lookup(1,ms,t2)
+	  of SOME(t3,i) => Int.max(i, unify'(mayBind,ms,t1,t3))
 	   | NONE =>
 	case (content t1, content t2)
-	  of (LINK t11, _) => unify'(mayBind,m,t11,t2)
-	   | (_, LINK t21) => unify'(mayBind,m,t1,t21)
+	  of (LINK t11, _) => unify'(mayBind,ms,t11,t2)
+	   | (_, LINK t21) => unify'(mayBind,ms,t1,t21)
 
 	   | (HOLE(k1,n1), HOLE(k2,n2)) =>
-		(bind(mayBind,n1,t1,t2,k1)
-		 handle Unify _ => bind(mayBind,n2,t2,t1,k2)
+		(bind(mayBind,n1,t1,t2,k1) handle Unify _ =>
+		 bind(mayBind,n2,t2,t1,k2)
 		)
-	   | (HOLE(k1,n1), _) =>
-		bind(mayBind,n1,t1,t2,k1)
-	   | (_, HOLE(k2,n2)) =>
-		bind(mayBind,n2,t2,t1,k2)
+	   | (HOLE(k1,n1), _) => bind(mayBind,n1,t1,t2,k1)
+	   | (_, HOLE(k2,n2)) => bind(mayBind,n2,t2,t1,k2)
 
-	   | (ABBREV(t11,t12), _) => unify'(mayBind,m,t12,t2)
-	   | (_, ABBREV(t21,t22)) => unify'(mayBind,m,t1,t22)
+	   | (ABBREV(t11,t12), _) => unify'(mayBind,ms,t12,t2)
+	   | (_, ABBREV(t21,t22)) => unify'(mayBind,ms,t1,t22)
 
 	   | (ABS(k1,p1), ABS(k2,p2)) =>
 		if Path.equals(p1,p2) andalso equalsKind(k1,k2)
-		then merge(t1,t2,[])
+		then merge(ms,t1,t2,0)
 		else raise Unify(t1,t2)
 
 	   | ( (FUN(t11,t12), FUN(t21,t22))
-	     | (APPLY(t11,t12), APPLY(t21,t22)) )=>
-		merge(t1,t2, unify'(mayBind,m,t11,t21) @
-			     unify'(mayBind,m,t12,t22))
+	     | (APPLY(t11,t12), APPLY(t21,t22)) ) =>
+		merge(ms, t1,t2, Int.max(unify'(mayBind,ms,t11,t21),
+					 unify'(mayBind,ms,t12,t22)))
 
 	   | ( (t1' as PROD(r1), PROD(r2))
 	     | (t1' as SUM(r1), SUM(r2)) ) =>
@@ -1252,21 +1435,21 @@ struct
 		 * of row kind. *)
 		(case (r1, r2)
 		   of (INDEXED ts1, INDEXED ts2) =>
-			merge(t1,t2, unifyIndexed(mayBind,m, t1,t2, ts1,ts2))
+			merge(ms, t1,t2, unifyIndexed(mayBind,ms,t1,t2,ts1,ts2))
 		    | (NAMED(lts1,d1), INDEXED ts2) =>
-			merge(t1,t2,
-			      unifyIndexedRow'(mayBind,m, t1,t2, ts2, lts1,d1))
+			merge(ms, t1,t2,
+			      unifyIndexedRow(mayBind,ms, t1,t2, ts2, lts1,d1))
 			(* d1 will be deleted by merge (assuming there is no
 			 * binder delaying the merge). *)
 		    | (INDEXED ts1, NAMED(lts2,d2)) =>
-			merge(t2,t1,
-			      unifyIndexedRow'(mayBind,m, t2,t1, ts1, lts2,d2))
+			merge(ms, t2,t1,
+			      unifyIndexedRow(mayBind,ms, t2,t1, ts1, lts2,d2))
 			(* d2 will be deleted by merge (assuming there is no
 			 * binder delaying the merge). *)
 		    | (NAMED(lts1,d1), NAMED(lts2,d2)) =>
 			let
 			    val (lts,d,ts) =
-				unifyRow'(mayBind,m, t1,t2, lts1,d1,lts2,d2)
+				unifyRow(mayBind,ms, t1,t2, lts1,d1,lts2,d2)
 			    val CONS = case t1' of PROD _ => PROD | _ => SUM
 			in
 			    if mayBind andalso
@@ -1274,43 +1457,44 @@ struct
 			    then let val r' = CONS(NAMED(lts,d))
 				 in replace(t1,r'); replace(t2,r') end
 			    else ();
-			    merge(t1,t2,ts)
+			    merge(ms,t1,t2,ts)
 			end
 		)
 	   | (MU(t11), MU(t21)) =>
-		(Map.insert(m,t1,t2);
-		 merge(t1,t2, List.filter (fn t => not(Cell.equals(t,t1)))
-					  (unify'(mayBind,m,t11,t21)))
-		 before Map.delete(m,t1)
-		)
+		let
+		    val m = Map.new()
+		in
+		    Map.insert(m,t1,t2);
+		    mergeBind(m,ms, t1,t2, unify'(mayBind, m::ms, t11,t21))
+		end
 	   | ( (LAMBDA(a1,t11), LAMBDA(a2,t21))
 	     | (ALL(a1,t11), ALL(a2,t21))
 	     | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 		let
-		    val ao = Map.lookup(m,a1)
+		    val m  = Map.new()
+		    val a1 = canonical a1
+		    val a2 = canonical a2
 		in
-		    Map.insert(m,a1,a2);
-		    merge(t1,t2, List.filter (fn t => not(Cell.equals(t,a1)))
-					     (unify'(mayBind,m,t11,t21)))
-		    before (case ao of NONE    => Map.delete(m,a1)
-				     | SOME a' => Map.insert(m,a1,a'))
+		    Map.insert(m,t1,t2);
+		    mergeBind(m,ms, t1,t2,
+			      Int.max(unifyBoundVar(m,ms, a1,a2),
+				      unify'(mayBind, m::ms, t11,t21)))
 		end
 	   | _ => raise Unify(t1,t2)
 
-    and unifyBound(t3,t2) =
-	Cell.equals(t3,t2) orelse
-	case (content t3, content t2)
-	  of ((LINK t3 | ABBREV(_,t3)), _) => unifyBound(t3,t2)
-	   | (_, (LINK t2 | ABBREV(_,t2))) => unifyBound(t3,t2)
-	   | _ => raise Unify(t3,t2)
+    and unifyBoundVar(m,ms, a1,a2) =
+	if Cell.equals(a1,a2) then 0 else
+	case lookup(1,ms,a1)
+	  of SOME(a3,i) => Int.max(i+1, unifyBoundVar(m,ms, canonical a3, a2))
+	   | NONE       => (Map.insert(m,a1,a2) ; 1)
 
-    and unifyIndexed(mayBind,m, t1,t2, ts1,ts2) =
+    and unifyIndexed(mayBind,ms, t1,t2, ts1,ts2) =
 	if Vector.length ts1 = Vector.length ts2
-	then VectorPair.foldl (fn(t1,t2,ts) => unify'(mayBind,m,t1,t2) @ ts) []
-			      (ts1,ts2)
+	then VectorPair.foldl
+		(fn(t1,t2,i) => Int.max(i,unify'(mayBind,ms,t1,t2))) 0 (ts1,ts2)
 	else raise Unify(t1,t2)
 
-    and unifyIndexedRow'(mayBind,m, t1,t2, ts1, lts2,d2) =
+    and unifyIndexedRow(mayBind,ms, t1,t2, ts1, lts2,d2) =
 	let
 	    fun nth i  = Vector.sub(ts1, i)
 	    fun fail _ = raise Unify(t1,t2)
@@ -1318,23 +1502,23 @@ struct
 			 case d2 of NONE   => fail
 				  | SOME n => fn t => lift'(n,t)
 
-	    fun unifyFields(i, [], ts) =
-		    (Vector.appi (lift o #2) (ts1,i,NONE) ; ts)
-	      | unifyFields(i, lts2 as (l,t2)::lts2', ts) =
+	    fun unifyFields(i, [], j) =
+		    (Vector.appi (lift o #2) (ts1,i,NONE) ; j)
+	      | unifyFields(i, lts2 as (l,t2)::lts2', j) =
 		    if i = Vector.length ts1 then fail() else
 		    case Label.toInt l
 		      of NONE    => fail()
 		       | SOME i' =>
 		    case Int.compare(i,i'-1)
-		      of LESS    => (lift(nth i) ; unifyFields(i+1, lts2, ts))
+		      of LESS    => (lift(nth i) ; unifyFields(i+1, lts2, j))
 		       | GREATER => fail()	(* l might have been 0 *)
-		       | EQUAL   => let val ts' = unify'(mayBind, m, nth i, t2)
-				    in unifyFields(i+1, lts2', ts'@ts) end
+		       | EQUAL   => let val j' = unify'(mayBind,ms, nth i, t2)
+				    in unifyFields(i+1,lts2', Int.max(j,j')) end
 	in
-	    unifyFields(0, lts2, [])
+	    unifyFields(0, lts2, 0)
 	end
 
-    and unifyRow'(mayBind,m, t1,t2, lts1,d1, lts2,d2) =
+    and unifyRow(mayBind,ms, t1,t2, lts1,d1, lts2,d2) =
 	let
 	    fun fail t = raise Unify(t1,t2)
 	    fun lift d = if not mayBind then fail else
@@ -1343,43 +1527,44 @@ struct
 	    val lift1 = lift d1
 	    val lift2 = lift d2
 
-	    fun unifyFields([], [], lts, ts) = (List.rev lts, ts)
-	      | unifyFields([], (l,t)::lts2', lts, ts) =
-		    (lift1 t; unifyFields([], lts2', (l,t)::lts, ts))
-	      | unifyFields((l,t)::lts1', [], lts, ts) =
-		    (lift2 t; unifyFields(lts1', [], (l,t)::lts, ts))
+	    fun unifyFields([], [], lts, i) = (List.rev lts, i)
+	      | unifyFields([], (l,t)::lts2', lts, i) =
+		    (lift1 t; unifyFields([], lts2', (l,t)::lts, i))
+	      | unifyFields((l,t)::lts1', [], lts, i) =
+		    (lift2 t; unifyFields(lts1', [], (l,t)::lts, i))
 	      | unifyFields(lts1 as (l1,t1')::lts1',
-			    lts2 as (l2,t2')::lts2', lts, ts) =
+			    lts2 as (l2,t2')::lts2', lts, i) =
 		case Label.compare(l1,l2)
 		  of LESS =>
-			(lift2 t1'; unifyFields(lts1', lts2, (l1,t1')::lts, ts))
+			(lift2 t1'; unifyFields(lts1', lts2, (l1,t1')::lts, i))
 		   | GREATER =>
-			(lift1 t2'; unifyFields(lts1, lts2', (l2,t2')::lts, ts))
+			(lift1 t2'; unifyFields(lts1, lts2', (l2,t2')::lts, i))
 		   | EQUAL =>
-			let val ts' = unify'(mayBind,m,t1',t2')
-			in unifyFields(lts1', lts2', (l1,t1')::lts, ts'@ts) end
+			let val i' = unify'(mayBind,ms, t1',t2')
+			in unifyFields(lts1',lts2',(l1,t1')::lts, Int.max(i,i'))
+			end
 
-	    val (lts,ts) = unifyFields(lts1,lts2,[],[])
-	    val  d       = if Option.isSome d1 andalso Option.isSome d2
-			   then SOME(Int.min(Option.valOf d1, Option.valOf d2))
-			   else NONE
+	    val (lts,i) = unifyFields(lts1,lts2,[],0)
+	    val  d      = if Option.isSome d1 andalso Option.isSome d2
+			  then SOME(Int.min(Option.valOf d1, Option.valOf d2))
+			  else NONE
 	in
-	    (lts,d,ts)
+	    (lts,d,i)
 	end
 
-    val unify' = fn(mayBind,m,t1,t2) =>
-(*ASSERT assert List.null(unify'(mayBind,m,t1,t2)) => ()*)
-	if List.null(unify'(mayBind,m,t1,t2))
+    val unify' = fn(mayBind,ms,t1,t2) =>
+(*ASSERT assert unify'(mayBind,m,t1,t2) = 0 => ()*)
+	if unify'(mayBind,ms,t1,t2) = 0
 	then ()
 	else raise Assert.failure
 	  
 
   (* Equality, matching, and public interface to unification *)
 
-    fun unify(t1,t2) = unify'(true, Map.new(), t1, t2)
+    fun unify(t1,t2) = unify'(true, [], t1, t2)
 
     fun equals(t1,t2) =
-	(unify'(false, Map.new(), t1, t2) ; true) handle Unify _ => false
+	(unify'(false, [], t1, t2) ; true) handle Unify _ => false
 
     fun matches(t1,t2) =
 	let
