@@ -1,6 +1,6 @@
 SRCS   = Alice.cs
 OBJS   = Alice.dll
-ILOBJS = foo.dll
+ILOBJS = xxx.dll
 
 all: Start.cs $(OBJS) $(ILOBJS)
 	coolc -nologo -import:Alice.dll -assembly+ Start.cs

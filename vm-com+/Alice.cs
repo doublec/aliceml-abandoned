@@ -3,291 +3,297 @@ using System.Threading;
 using System.Reflection;
 using System.IO;
 
+using Alice;
+using Alice.Values;
+using Alice.Builtins;
+
 namespace Alice {
-    public class AliceArray {
-	public Object[] Value;
-	public AliceArray(Object[] Value) {
-	    this.Value = Value;
-	}
-    }
-    public abstract class Procedure {
-	public abstract Object Apply(Object a);
-	public virtual Object Apply() {
-	    return Apply(null);
-	}
-	public virtual Object Apply(Object a, Object b) {
-	    Object[] ar = new Object[2];
-	    ar[0] = a;
-	    ar[1] = b;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c) {
-	    Object[] ar = new Object[3];
-	    ar[0] = a; ar[1] = b; ar[2] = c;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d) {
-	    Object[] ar = new Object[4];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d, Object e) {
-	    Object[] ar = new Object[5];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f) {
-	    Object[] ar = new Object[6];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g) {
-	    Object[] ar = new Object[7];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h) {
-	    Object[] ar = new Object[8];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g; ar[7] = h;
-	    return Apply(a);
-	}
-	public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h, Object i) {
-	    Object[] ar = new Object[9];
-	    ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
-	    ar[6] = g; ar[7] = h; ar[8] = i;
-	    return Apply(a);
-	}
-	public override bool Equals(Object a) {
-	    return (this == (Procedure) a);
-	}
-    }
-    public abstract class Procedure0 : Procedure {
-	public override Object Apply(Object obj) {
-	    obj = CommonOp.Sync(obj);
-	    return Apply();
-	}
-    }
-    public abstract class Procedure2 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1]);
-	}
-    }
-    public abstract class Procedure3 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2]);
-	}
-    }
-    public abstract class Procedure4 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3]);
-	}
-    }
-    public abstract class Procedure5 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3], a[4]);
-	}
-    }
-    public abstract class Procedure6 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3], a[4], a[5]);
-	}
-    }
-    public abstract class Procedure7 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6]);
-	}
-    }
-    public abstract class Procedure8 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
-	}
-    }
-    public abstract class Procedure9 : Procedure {
-	public override Object Apply(Object obj) {
-	    Object[] a = (Object[]) CommonOp.Sync(obj);
-	    return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
-	}
-    }
-    class StreamWrapper {
-	public System.String name;
-	public Object stream;
-	public StreamWrapper(System.String name, Object stream) {
-	    this.name   = name;
-	    this.stream = stream;
-	}
-    }
-    public class Cell {
-	Object Value;
-	public Cell() {}
-	public Cell(Object value) {
-	    Value = value;
-	}
-	public void Assign(Object value) {
-	    Value = value;
-	}
-	public Object Access() {
-	    return Value;
-	}
-	public Object Exchange(Object value) {
-	    lock (this) {
-		Object oldval = Value;
-		
-		Value = value;
-		return oldval;
+    namespace Values {
+	public class Array {
+	    public Object[] Value;
+	    public Array(Object[] Value) {
+		this.Value = Value;
 	    }
 	}
-    }
-    public class AliceFuture : Procedure {
-	private Object Ref;
-	AliceFuture() {
-	    Ref = null;
+	public abstract class Procedure {
+	    public abstract Object Apply(Object a);
+	    public virtual Object Apply() {
+		return Apply(null);
+	    }
+	    public virtual Object Apply(Object a, Object b) {
+		Object[] ar = new Object[2];
+		ar[0] = a;
+		ar[1] = b;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c) {
+		Object[] ar = new Object[3];
+		ar[0] = a; ar[1] = b; ar[2] = c;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d) {
+		Object[] ar = new Object[4];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e) {
+		Object[] ar = new Object[5];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f) {
+		Object[] ar = new Object[6];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g) {
+		Object[] ar = new Object[7];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h) {
+		Object[] ar = new Object[8];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f; ar[6] = g; ar[7] = h;
+		return Apply(a);
+	    }
+	    public virtual Object Apply(Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h, Object i) {
+		Object[] ar = new Object[9];
+		ar[0] = a; ar[1] = b; ar[2] = c; ar[3] = d; ar[4] = e; ar[5] = f;
+		ar[6] = g; ar[7] = h; ar[8] = i;
+		return Apply(a);
+	    }
+	    public override bool Equals(Object a) {
+		return (this == (Procedure) a);
+	    }
 	}
-	public override Object Apply(Object obj) {
-	    return ((Procedure) Await()).Apply(obj);
+	public abstract class Procedure0 : Procedure {
+	    public override Object Apply(Object obj) {
+		obj = CommonOp.Sync(obj);
+		return Apply();
+	    }
 	}
-	public override object Apply(Object a, Object b) {
-	    return ((Procedure) Await()).Apply(a, b);
+	public abstract class Procedure2 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c) {
-	    return ((Procedure) Await()).Apply(a, b, c);
+	public abstract class Procedure3 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d) {
-	    return ((Procedure) Await()).Apply(a, b, c, d);
+	public abstract class Procedure4 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d, Object e) {
-	    return ((Procedure) Await()).Apply(a, b, c, d, e);
+	public abstract class Procedure5 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3], a[4]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d, Object e, Object f) {
-	    return ((Procedure) Await()).Apply(a, b, c, d, e, f);
+	public abstract class Procedure6 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3], a[4], a[5]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d, Object e,
-				     Object f, Object g) {
-	    return ((Procedure) Await()).Apply(a, b, c, d, e, f, g);
+	public abstract class Procedure7 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d, Object e,
-				     Object f, Object g, Object h) {
-	    return ((Procedure) Await()).Apply(a, b, c, d, e, f, g, h);
+	public abstract class Procedure8 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+	    }
 	}
-	public override object Apply(Object a, Object b, Object c, Object d, Object e,
-				     Object f, Object g, Object h, Object i) {
-	    return ((Procedure) Await()).Apply(a, b, c, d, e, f, g, h, i);
+	public abstract class Procedure9 : Procedure {
+	    public override Object Apply(Object obj) {
+		Object[] a = (Object[]) CommonOp.Sync(obj);
+		return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
+	    }
 	}
-	public virtual Object Await() {
-	    //  	    lock (this) {
-	    //  		if (Ref == null) {
-	    //  		    Wait();
-	    //  		}
-	    //  	    }
-	    return Ref;
+	class StreamWrapper {
+	    public System.String name;
+	    public Object stream;
+	    public StreamWrapper(System.String name, Object stream) {
+		this.name   = name;
+		this.stream = stream;
+	    }
 	}
-	public virtual Object Bind(Object o) {
-	    lock (this) {
-		if (Ref == null) {
-		    Ref = o;
+	public class Cell {
+	    Object Value;
+	    public Cell() {}
+	    public Cell(Object value) {
+		Value = value;
+	    }
+	    public void Assign(Object value) {
+		Value = value;
+	    }
+	    public Object Access() {
+		return Value;
+	    }
+	    public Object Exchange(Object value) {
+		lock (this) {
+		    Object oldval = Value;
+		
+		    Value = value;
+		    return oldval;
+		}
+	    }
+	}
+	public class Future : Procedure {
+	    private Object Ref;
+	    Future() {
+		Ref = null;
+	    }
+	    public override Object Apply(Object obj) {
+		return ((Procedure) Await()).Apply(obj);
+	    }
+	    public override object Apply(Object a, Object b) {
+		return ((Procedure) Await()).Apply(a, b);
+	    }
+	    public override object Apply(Object a, Object b, Object c) {
+		return ((Procedure) Await()).Apply(a, b, c);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d) {
+		return ((Procedure) Await()).Apply(a, b, c, d);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d, Object e) {
+		return ((Procedure) Await()).Apply(a, b, c, d, e);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d, Object e, Object f) {
+		return ((Procedure) Await()).Apply(a, b, c, d, e, f);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d, Object e,
+					 Object f, Object g) {
+		return ((Procedure) Await()).Apply(a, b, c, d, e, f, g);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d, Object e,
+					 Object f, Object g, Object h) {
+		return ((Procedure) Await()).Apply(a, b, c, d, e, f, g, h);
+	    }
+	    public override object Apply(Object a, Object b, Object c, Object d, Object e,
+					 Object f, Object g, Object h, Object i) {
+		return ((Procedure) Await()).Apply(a, b, c, d, e, f, g, h, i);
+	    }
+	    public virtual Object Await() {
+		//  	    lock (this) {
+		//  		if (Ref == null) {
+		//  		    Wait();
+		//  		}
+		//  	    }
+		return Ref;
+	    }
+	    public virtual Object Bind(Object o) {
+		lock (this) {
+		    if (Ref == null) {
+			Ref = o;
+		    }
+		    else {
+			throw new Exception(Prebound.Future_future);
+		    }
+		}
+		return Prebound.unit;
+	    }
+	}
+	public class TagVal {
+	    int Tag;
+	    public Object Value;
+	    public TagVal(int tag) {
+		Tag = tag;
+	    }
+	    public TagVal(int tag, Object value) {
+		Tag   = tag;
+		Value = value;
+	    }
+	    public int GetTag() {
+		return Tag;
+	    }
+	    public override bool Equals(Object a) {
+
+		if (a is TagVal) {
+		    TagVal ac = (TagVal) a;
+		    return ((Tag == ac.GetTag()) && (Value.Equals(ac.Value)));
 		}
 		else {
-		    throw new Exception(Prebound.Future.future);
+		    return false;
 		}
 	    }
-	    return Prebound.unit;
 	}
-    }
-    public class TagVal {
-	int Tag;
-	public Object Value;
-	public TagVal(int tag) {
-	    Tag = tag;
-	}
-	public TagVal(int tag, Object value) {
-	    Tag   = tag;
-	    Value = value;
-	}
-	public int GetTag() {
-	    return Tag;
-	}
-	public override bool Equals(Object a) {
-
-	    if (a is TagVal) {
-		TagVal ac = (TagVal) a;
-		return ((Tag == ac.GetTag()) && (Value.Equals(ac.Value)));
+	public class ConVal {
+	    Object Id;
+	    public Object Value;
+	    public ConVal(Object id) {
+		Id = CommonOp.Sync(id);
 	    }
-	    else {
-		return false;
+	    public ConVal(Object id, Object v) {
+		Id    = CommonOp.Sync(id);
+		Value = v;
+	    }
+	    public Object GetId() {
+		return Id;
+	    }
+	    public override bool Equals(Object a) {
+		if (a is ConVal) {
+		    ConVal ac = (ConVal) a;
+		    return (Id.Equals(ac.GetId()) && (Value.Equals(ac.Value)));
+		}
+		else {
+		    return false;
+		}
 	    }
 	}
-    }
-    public class ConVal {
-	Object Id;
-	public Object Value;
-	public ConVal(Object id) {
-	    Id = CommonOp.Sync(id);
-	}
-	public ConVal(Object id, Object v) {
-	    Id    = CommonOp.Sync(id);
-	    Value = v;
-	}
-	public Object GetId() {
-	    return Id;
-	}
-	public override bool Equals(Object a) {
-	    if (a is ConVal) {
-		ConVal ac = (ConVal) a;
-		return (Id.Equals(ac.GetId()) && (Value.Equals(ac.Value)));
-	    }
-	    else {
-		return false;
+	class RefConstructor : Procedure {
+	    public override Object Apply(Object obj) {
+		return new Cell(obj);
 	    }
 	}
-    }
-    class Ref : Procedure {
-	public override Object Apply(Object obj) {
-	    return new Alice.Cell(obj);
+	public class Exception : SystemException {
+	    public Object Value;
+	    public Exception(Object obj) {
+		Value = obj;
+	    }
 	}
-    }
-    public class Exception : SystemException {
-	public Object Value;
-	public Exception(Object obj) {
-	    Value = obj;
+	public class TagConstructor : Procedure {
+	    int Tag;
+	    public TagConstructor(int i) {
+		Tag = i;
+	    }
+	    public override Object Apply(Object x) {
+		return new TagVal(Tag, x);
+	    }
 	}
-    }
-    public class TagConstructor : Procedure {
-	int Tag;
-	public TagConstructor(int i) {
-	    Tag = i;
+	public class ConConstructor : Procedure {
+	    Object Id;
+	    public ConConstructor(Object id) {
+		Id = id;
+	    }
+	    public override Object Apply(Object x) {
+		return new ConVal(Id, x);
+	    }
 	}
-	public override Object Apply(Object x) {
-	    return new TagVal(Tag, x);
-	}
-    }
-    public class ConConstructor : Procedure {
-	Object Id;
-	public ConConstructor(Object id) {
-	    Id = id;
-	}
-	public override Object Apply(Object x) {
-	    return new ConVal(Id, x);
-	}
-    }
-    public class Selector : Procedure {
-	int Index;
-	public Selector(int i) {
-	    Index = i;
-	}
-	public override Object Apply(Object x) {
-	    return ((Object[]) CommonOp.Sync(x))[Index];
+	public class Selector : Procedure {
+	    int Index;
+	    public Selector(int i) {
+		Index = i;
+	    }
+	    public override Object Apply(Object x) {
+		return ((Object[]) CommonOp.Sync(x))[Index];
+	    }
 	}
     }
     class CommonOp {
 	public static Object Sync(Object obj) {
-	    if (obj is AliceFuture) {
-		return ((AliceFuture) obj).Await();
+	    if (obj is Future) {
+		return ((Future) obj).Await();
 	    }
 	    else {
 		return obj;
@@ -344,132 +350,132 @@ namespace Alice {
 	    return n;
 	}
     }
-    public class opeq : Procedure2 {
-	public static bool BothConVal(Object a, Object b) {
-	    return ((a is Alice.ConVal) && (b is Alice.ConVal));
-	}
-	public static bool BothTagVal(Object a, Object b) {
-	    return ((a is Alice.TagVal) && (b is Alice.TagVal));
-	}
-	public static Object StaticApply(Object a, Object b) {
-	    a = CommonOp.Sync(a);
-	    b = CommonOp.Sync(b);
+    namespace Builtins {
+	public class opeq : Procedure2 {
+	    public static bool BothConVal(Object a, Object b) {
+		return ((a is ConVal) && (b is ConVal));
+	    }
+	    public static bool BothTagVal(Object a, Object b) {
+		return ((a is TagVal) && (b is TagVal));
+	    }
+	    public static Object StaticApply(Object a, Object b) {
+		a = CommonOp.Sync(a);
+		b = CommonOp.Sync(b);
 
-	    if (a is Alice.AliceArray) {
-		return CommonOp.BtI(a == b);
-	    }
-	    else if (a is Alice.Cell) {
-		return CommonOp.BtI(a == b);
-	    }
-	    else if (BothConVal(a, b)) {
-		ConVal at = (ConVal) a;
-		ConVal bt = (ConVal) b;
-		return CommonOp.BtI((at.GetId() == bt.GetId()) &&
-				    CommonOp.ItB(StaticApply(at.Value, bt.Value)));
-	    }
-	    else if (BothTagVal(a, b)) {
-		TagVal at = (TagVal) a;
-		TagVal bt = (TagVal) b;
-		
-		return CommonOp.BtI((at.GetTag() == bt.GetTag()) &&
-				    CommonOp.ItB(StaticApply(at.Value, bt.Value)));
-	    }
-	    else if (a is System.Array) {
-		Object[] ar = (Object[]) a;
-		Object[] br = (Object[]) b;
-		int al      = ar.Length;
-
-		for (int i = 0; i < al; i++) {
-		    if (!CommonOp.ItB(StaticApply(ar[i], br[i]))) {
-			return (Int32) 0;
-		    }
+		if (a is Values.Array) {
+		    return CommonOp.BtI(a == b);
 		}
-		return (Int32) 1;
+		else if (a is Cell) {
+		    return CommonOp.BtI(a == b);
+		}
+		else if (BothConVal(a, b)) {
+		    ConVal at = (ConVal) a;
+		    ConVal bt = (ConVal) b;
+		    return CommonOp.BtI((at.GetId() == bt.GetId()) &&
+					CommonOp.ItB(StaticApply(at.Value, bt.Value)));
+		}
+		else if (BothTagVal(a, b)) {
+		    TagVal at = (TagVal) a;
+		    TagVal bt = (TagVal) b;
+		
+		    return CommonOp.BtI((at.GetTag() == bt.GetTag()) &&
+					CommonOp.ItB(StaticApply(at.Value, bt.Value)));
+		}
+		else if (a is System.Array) {
+		    Object[] ar = (Object[]) a;
+		    Object[] br = (Object[]) b;
+		    int al      = ar.Length;
+
+		    for (int i = 0; i < al; i++) {
+			if (!CommonOp.ItB(StaticApply(ar[i], br[i]))) {
+			    return (Int32) 0;
+			}
+		    }
+		    return (Int32) 1;
+		}
+		else if (a == null) {
+		    return (Int32) 1;
+		}
+		else {
+		    return CommonOp.BtI(a.Equals(b));
+		}
 	    }
-	    else if (a == null) {
-		return (Int32) 1;
-	    }
-	    else {
-		return CommonOp.BtI(a.Equals(b));
+	    public override Object Apply(Object a, Object b) {
+		return StaticApply(a, b);
 	    }
 	}
-	public override Object Apply(Object a, Object b) {
-	    return StaticApply(a, b);
-	}
-    }
-    public class opnoteq : Procedure2 {
-	public static Object StaticApply(Object a, Object b) {
-	    if ((int) opeq.StaticApply(a, b) == 0) {
-		return (Int32) 1;
+	public class opnoteq : Procedure2 {
+	    public static Object StaticApply(Object a, Object b) {
+		if ((int) opeq.StaticApply(a, b) == 0) {
+		    return (Int32) 1;
+		}
+		else {
+		    return (Int32) 0;
+		}
 	    }
-	    else {
-		return (Int32) 0;
+	    public override Object Apply(Object a, Object b) {
+		return StaticApply(a, b);
 	    }
 	}
-	public override Object Apply(Object a, Object b) {
-	    return StaticApply(a, b);
-	}
-    }
-    public class Array {
-	public class array : Procedure2 {
+	public class Array_array : Procedure2 {
 	    public static Object StaticApply(Object n, Object x) {
 		int elems  = (Int32) CommonOp.Sync(n);
 		Object[] a = new Object[elems];
-		
+	    
 		for (int i = 0; i < elems; i++) {
 		    a[i] = x;
 		}
-		return new AliceArray(a);
+		return new Values.Array(a);
 	    }
 	    public override Object Apply(Object n, Object x) {
 		return StaticApply(n, x);
 	    }
 	}
-	public class fromList : Procedure {
+	public class Array_fromList : Procedure {
 	    public static Object StaticApply(Object x) {
 		x = CommonOp.Sync(x);
 		int n      = ListOp.Length(x);
 		Object[] a = new Object[n];
-
+	    
 		for (int i = 0; i < n; i++) {
 		    a[i] = ListOp.Car(x);
 		    x    = ListOp.Cdr(x);
 		}
-		
-		return new AliceArray(a);
+	    
+		return new Values.Array(a);
 	    }
 	    public override Object Apply(Object x) {
 		return StaticApply(x);
 	    }
 	}
-	public class length : Procedure {
+	public class Array_length : Procedure {
 	    public static Object StaticApply(Object x) {
-		return ((AliceArray) CommonOp.Sync(x)).Value.Length;
+		return ((Values.Array) CommonOp.Sync(x)).Value.Length;
 	    }
 	    public override Object Apply(Object x) {
 		return StaticApply(x);
 	    }
 	}
-	public class sub : Procedure2 {
+	public class Array_sub : Procedure2 {
 	    public static Object StaticApply(Object a, Object i) {
 		try {
-		    return (((AliceArray) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(i)];
+		    return (((Values.Array) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(i)];
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Subscript);
+		    throw new Values.Exception(Prebound.General_Subscript);
 		}
 	    }
 	    public override Object Apply(Object a, Object i) {
 		return StaticApply(a, i);
 	    }
 	}
-	public class update : Procedure3 {
+	public class Array_update : Procedure3 {
 	    public static Object StaticApply(Object a, Object i, Object x) {
 		try {
-		    (((AliceArray) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(i)] = x;
+		    (((Values.Array) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(i)] = x;
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Subscript);
+		    throw new Values.Exception(Prebound.General_Subscript);
 		}
 		return Prebound.unit;
 	    }
@@ -477,9 +483,7 @@ namespace Alice {
 		return StaticApply(a, i, x);
 	    }
 	}
-    }
-    public class Char{
-	public class opless : Procedure2 {
+	public class Char_opless : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((System.Char) CommonOp.Sync(a)) <
 				     ((System.Char) CommonOp.Sync(b))));
@@ -488,7 +492,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreater : Procedure2 {
+	public class Char_opgreater : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((System.Char) CommonOp.Sync(a)) >
 				     ((System.Char) CommonOp.Sync(b))));
@@ -497,7 +501,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class oplessEq : Procedure2 {
+	public class Char_oplessEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((System.Char) CommonOp.Sync(a)) <=
 				     ((System.Char) CommonOp.Sync(b))));
@@ -506,7 +510,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreaterEq : Procedure2 {
+	public class Char_opgreaterEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((System.Char) CommonOp.Sync(a)) >=
 				     ((System.Char) CommonOp.Sync(b))));
@@ -515,7 +519,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class ord : Procedure {
+	public class Char_ord : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) ((int) (System.Char) CommonOp.Sync(a));
 	    }
@@ -523,7 +527,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class chr : Procedure {
+	public class Char_chr : Procedure {
 	    public static Object StaticApply(Object a) {
 		Int32 ca = (Int32) CommonOp.Sync(a);
 
@@ -531,14 +535,14 @@ namespace Alice {
 		    return (System.Char) ca;
 		}
 		else {
-		    throw new Exception(Prebound.General.Chr);
+		    throw new Values.Exception(Prebound.General_Chr);
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class isAlpha : Procedure {
+	public class Char_isAlpha : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsLetter(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -546,7 +550,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isAlphaNum : Procedure {
+	public class Char_isAlphaNum : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsLetterOrDigit(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -554,7 +558,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isDigit : Procedure {
+	public class Char_isDigit : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsDigit(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -562,7 +566,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isGraph : Procedure {
+	public class Char_isGraph : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.Char ca = (System.Char) CommonOp.Sync(a);
 		return CommonOp.BtI((System.Char.IsPrintable(ca)
@@ -572,7 +576,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isHexDigit : Procedure {
+	public class Char_isHexDigit : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.Char c = (System.Char) CommonOp.Sync(a);
 		
@@ -584,7 +588,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isLower : Procedure {
+	public class Char_isLower : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsLower(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -592,7 +596,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isPrint : Procedure {
+	public class Char_isPrint : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsPrintable(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -600,7 +604,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isPunct : Procedure {
+	public class Char_isPunct : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsPunctuation(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -608,7 +612,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isSpace : Procedure {
+	public class Char_isSpace : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsWhiteSpace(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -616,7 +620,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isUpper : Procedure {
+	public class Char_isUpper : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.BtI(System.Char.IsUpper(((System.Char) CommonOp.Sync(a))));
 	    }
@@ -624,7 +628,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toLower : Procedure {
+	public class Char_toLower : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (System.Char) System.Char.ToLower(((System.Char) CommonOp.Sync(a)));
 	    }
@@ -632,7 +636,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toUpper : Procedure {
+	public class Char_toUpper : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (System.Char) System.Char.ToUpper(((System.Char) CommonOp.Sync(a)));
 	    }
@@ -640,9 +644,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class General {
-	public class assign : Procedure2 {
+	public class General_assign : Procedure2 {
 	    public static Object StaticApply(Object c, Object v) {
 		((Cell) CommonOp.Sync(c)).Assign(v);
 		return Prebound.unit;
@@ -651,7 +653,7 @@ namespace Alice {
 		return StaticApply(c, v);
 	    }
 	}
-	public class exchange : Procedure2 {
+	public class General_exchange : Procedure2 {
 	    public static Object StaticApply(Object c, Object nv) {
 		return ((Cell) CommonOp.Sync(c)).Exchange(nv);
 	    }
@@ -659,7 +661,7 @@ namespace Alice {
 		return StaticApply(c, nw);
 	    }
 	}
-	public class exnName : Procedure {
+	public class General_exnName : Procedure {
 	    public static Object StaticApply(Object v) {
 		v = CommonOp.Sync(v);
 		if (v is ConVal) {
@@ -668,7 +670,7 @@ namespace Alice {
 		if (v is String) {
 		    return v;
 		}
-		else {// if (v is Guid) {
+		else {// if (v is Guid)
 		    return (System.String) ""; // to be determined
 		}
 	    }
@@ -676,9 +678,7 @@ namespace Alice {
 		return StaticApply(v);
 	    }
 	}
-    }
-    public class Future {
-	public class alarmQuote : Procedure {
+	public class Future_alarmQuote : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -686,7 +686,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class await : Procedure {
+	public class Future_await : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -694,7 +694,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class awaitOne : Procedure2 {
+	public class Future_awaitOne : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return a; // to be Determined
 	    }
@@ -702,7 +702,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class byneed : Procedure {
+	public class Future_byneed : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -710,7 +710,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class concur : Procedure {
+	public class Future_concur : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -718,7 +718,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class isFailed : Procedure {
+	public class Future_isFailed : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -726,7 +726,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class isFuture : Procedure {
+	public class Future_isFuture : Procedure {
 	    public static Object StaticApply(Object obj) {
 		return obj; // to be Determined
 	    }
@@ -734,9 +734,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-    }
-    public class GlobalStamp {
-	public class @new : Procedure0 {
+	public class GlobalStamp_new : Procedure0 {
 	    public static Object StaticApply() {
 		return new Guid();
 	    }
@@ -744,7 +742,7 @@ namespace Alice {
 		return StaticApply();
 	    }
 	}
-	public class fromString : Procedure {
+	public class GlobalStamp_fromString : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.Sync(a);
 	    }
@@ -752,7 +750,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toString : Procedure {
+	public class GlobalStamp_toString : Procedure {
 	    public static Object StaticApply(Object a) {
 		return CommonOp.Sync(a).ToString();
 	    }
@@ -760,26 +758,26 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class compare : Procedure2 {
+	public class GlobalStamp_compare : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		int val = System.String.Compare((System.String) CommonOp.Sync(a),
 						(System.String) CommonOp.Sync(b));
 
 		if (val < 0) {
-		    return Prebound.General.LESS;
+		    return Prebound.General_LESS;
 		}
 		else if (val == 0) {
-		    return Prebound.General.EQUAL;
+		    return Prebound.General_EQUAL;
 		}
 		else {
-		    return Prebound.General.GREATER;
+		    return Prebound.General_GREATER;
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class hash : Procedure {
+	public class GlobalStamp_hash : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) CommonOp.Sync(a).GetHashCode();
 	    }
@@ -787,9 +785,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Hole {
-	public class fail : Procedure2 {
+	public class Hole_fail : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		// to be determined
 		return a;
@@ -799,7 +795,7 @@ namespace Alice {
 	    }
 	
 	}
-	public class fill : Procedure2 {
+	public class Hole_fill : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		// to be determined
 		return a;
@@ -808,7 +804,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class future : Procedure {
+	public class Hole_future : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return a;
@@ -817,7 +813,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class hole : Procedure {
+	public class Hole_hole : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return a;
@@ -826,7 +822,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isFailed : Procedure {
+	public class Hole_isFailed : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) 0; // not implemented
 	    }
@@ -834,7 +830,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isFree : Procedure {
+	public class Hole_isFree : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return a;
@@ -843,9 +839,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Int {
-	public class opnegate : Procedure {
+	public class Int_opnegate : Procedure {
 	    public static Object StaticApply(Object a) {
 		try {
 		    int t = (int) CommonOp.Sync(a);
@@ -854,14 +848,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class opadd : Procedure2 {
+	public class Int_opadd : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -869,14 +863,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opsub : Procedure2 {
+	public class Int_opsub : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -884,14 +878,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opmul : Procedure2 {
+	public class Int_opmul : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -899,7 +893,7 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 		    
 	    }
@@ -907,7 +901,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opless : Procedure2 {
+	public class Int_opless : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((Int32) CommonOp.Sync(a)) < ((Int32) CommonOp.Sync(b))));
 	    }
@@ -915,7 +909,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreater : Procedure2 {
+	public class Int_opgreater : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((Int32) CommonOp.Sync(a)) > ((Int32) CommonOp.Sync(b))));
 	    }
@@ -923,7 +917,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class oplessEq : Procedure2 {
+	public class Int_oplessEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((Int32) CommonOp.Sync(a)) <= ((Int32) CommonOp.Sync(b))));
 	    }
@@ -931,7 +925,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreaterEq : Procedure2 {
+	public class Int_opgreaterEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((Int32) CommonOp.Sync(a)) >= ((Int32) CommonOp.Sync(b))));
 	    }
@@ -939,38 +933,38 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class abs : Procedure {
+	public class Int_abs : Procedure {
 	    public static Object StaticApply(Object a) {
 		try {
 		    return System.Math.Abs((Int32) CommonOp.Sync(a));
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class compare : Procedure2 {
+	public class Int_compare : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		Int32 ai = (Int32) CommonOp.Sync(a);
 		Int32 bi = (Int32) CommonOp.Sync(b);
 		if (ai == bi) {
-		    return Prebound.General.EQUAL;
+		    return Prebound.General_EQUAL;
 		}
 		else if (ai < bi) {
-		    return Prebound.General.LESS;
+		    return Prebound.General_LESS;
 		}
 		else {
-		    return Prebound.General.GREATER;
+		    return Prebound.General_GREATER;
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class div : Procedure2 {
+	public class Int_div : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		Int32 ai = (Int32) CommonOp.Sync(a);
 		Int32 bi = (Int32) CommonOp.Sync(b);
@@ -989,14 +983,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class mod : Procedure2 {
+	public class Int_mod : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    int ai = (Int32) CommonOp.Sync(a);
@@ -1026,27 +1020,27 @@ namespace Alice {
 		    }
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class quot : Procedure2 {
+	public class Int_quot : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    return (Int32) (((Int32) CommonOp.Sync(a)) / ((Int32) CommonOp.Sync(b)));
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class rem : Procedure2 {
+	public class Int_rem : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    Int32 ai = (Int32) CommonOp.Sync(a);
@@ -1055,14 +1049,14 @@ namespace Alice {
 		    return (Int32) (ai % bi);
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class toString : Procedure {
+	public class Int_toString : Procedure {
 	    public static Object StaticApply(Object a) {
 		return ((Int32) CommonOp.Sync(a)).ToString();
 	    }
@@ -1070,9 +1064,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Math {
-	public class acos : Procedure {
+	public class Math_acos : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Acos((double) CommonOp.Sync(a));
 	    }
@@ -1080,7 +1072,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class acosh : Procedure {
+	public class Math_acosh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
 		return (double) System.Math.Log(x + System.Math.Sqrt(x * x - 1.0));
@@ -1089,7 +1081,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class asin : Procedure {
+	public class Math_asin : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Asin((double) CommonOp.Sync(a));
 	    }
@@ -1097,7 +1089,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class asinh : Procedure {
+	public class Math_asinh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
 		return (double) System.Math.Log(x + System.Math.Sqrt(x * x + 1.0));
@@ -1106,7 +1098,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class atan : Procedure {
+	public class Math_atan : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Atan((double) CommonOp.Sync(a));
 	    }
@@ -1114,7 +1106,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class atanh : Procedure {
+	public class Math_atanh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
 		if (System.Math.Abs(x) > 1.0) {
@@ -1129,7 +1121,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class atan2 : Procedure2 {
+	public class Math_atan2 : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (double) System.Math.Atan2((double) CommonOp.Sync(a), (double) CommonOp.Sync(b));
 	    }
@@ -1137,7 +1129,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class cos : Procedure {
+	public class Math_cos : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Cos((double) CommonOp.Sync(a));
 	    }
@@ -1145,7 +1137,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class cosh : Procedure {
+	public class Math_cosh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double c = (double) CommonOp.Sync(a);
 		return (double) ((System.Math.Pow(System.Math.E, c) +
@@ -1155,7 +1147,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class exp : Procedure {
+	public class Math_exp : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Exp((double) CommonOp.Sync(a));
 	    }
@@ -1163,7 +1155,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class ln : Procedure {
+	public class Math_ln : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Log((double) CommonOp.Sync(a));
 	    }
@@ -1171,7 +1163,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class pow : Procedure2 {
+	public class Math_pow : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (double) System.Math.Pow((double) CommonOp.Sync(a),
 						(double) CommonOp.Sync(b));
@@ -1180,7 +1172,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class sin : Procedure {
+	public class Math_sin : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Sin((double) CommonOp.Sync(a));
 	    }
@@ -1188,7 +1180,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class sinh : Procedure {
+	public class Math_sinh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
 		return (double) ((System.Math.Pow(System.Math.E, x) -
@@ -1198,7 +1190,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class sqrt : Procedure {
+	public class Math_sqrt : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Sqrt((double) CommonOp.Sync(a));
 	    }
@@ -1206,7 +1198,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class tan : Procedure {
+	public class Math_tan : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Tan((double) CommonOp.Sync(a));
 	    }
@@ -1214,7 +1206,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class tanh : Procedure {
+	public class Math_tanh : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x   = (double) CommonOp.Sync(a);
 		double ex  = (double) System.Math.Pow(System.Math.E, x);
@@ -1225,9 +1217,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Real {
-	public class opnegate : Procedure {
+	public class Real_opnegate : Procedure {
 	    public static Object StaticApply(Object a) {
 		try {
 		    checked {
@@ -1235,14 +1225,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class opadd : Procedure2 {
+	public class Real_opadd : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -1251,14 +1241,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opsub : Procedure2 {
+	public class Real_opsub : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -1267,14 +1257,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opmul : Procedure2 {
+	public class Real_opmul : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -1283,14 +1273,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opdiv : Procedure2 {
+	public class Real_opdiv : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    checked {
@@ -1299,14 +1289,14 @@ namespace Alice {
 		    }
 		}
 		catch (System.OverflowException) {
-		    throw new Exception(Prebound.General.Overflow);
+		    throw new Values.Exception(Prebound.General_Overflow);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opless : Procedure2 {
+	public class Real_opless : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((double) CommonOp.Sync(a)) <
 				     ((double) CommonOp.Sync(b))));
@@ -1315,7 +1305,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreater : Procedure2 {
+	public class Real_opgreater : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((double) CommonOp.Sync(a)) >
 				     ((double) CommonOp.Sync(b))));
@@ -1324,7 +1314,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class oplessEq : Procedure2 {
+	public class Real_oplessEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((double) CommonOp.Sync(a)) <=
 				     ((double) CommonOp.Sync(b))));
@@ -1333,7 +1323,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreaterEq : Procedure2 {
+	public class Real_opgreaterEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI((((double) CommonOp.Sync(a)) >=
 				     ((double) CommonOp.Sync(b))));
@@ -1342,7 +1332,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class ceil : Procedure {
+	public class Real_ceil : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) System.Math.Ceil((double) CommonOp.Sync(a));
 	    }
@@ -1350,26 +1340,26 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class compare : Procedure2 {
+	public class Real_compare : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		double ai = (double) CommonOp.Sync(a);
 		double bi = (double) CommonOp.Sync(b);
 
 		if (ai == bi) {
-		    return Prebound.General.EQUAL;
+		    return Prebound.General_EQUAL;
 		}
 		else if (ai < bi) {
-		    return Prebound.General.LESS;
+		    return Prebound.General_LESS;
 		}
 		else {
-		    return Prebound.General.GREATER;
+		    return Prebound.General_GREATER;
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class floor : Procedure {
+	public class Real_floor : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) System.Math.Floor((double) CommonOp.Sync(a));
 	    }
@@ -1377,7 +1367,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class fromInt : Procedure {
+	public class Real_fromInt : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) ((Int32) CommonOp.Sync(a));
 	    }
@@ -1385,7 +1375,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class realCeil : Procedure {
+	public class Real_realCeil : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Ceil((double) CommonOp.Sync(a));
 	    }
@@ -1393,7 +1383,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class realFloor : Procedure {
+	public class Real_realFloor : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (double) System.Math.Floor((double) CommonOp.Sync(a));
 	    }
@@ -1401,7 +1391,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class realTrunc : Procedure {
+	public class Real_realTrunc : Procedure {
 	    public static Object StaticApply(Object a) {
 		double x = (double) CommonOp.Sync(a);
 		if (x >= 0.0) {
@@ -1415,7 +1405,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class rem : Procedure2 {
+	public class Real_rem : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    double ai = (double) CommonOp.Sync(a);
@@ -1425,7 +1415,7 @@ namespace Alice {
 		    return (double) (ai - (((Int64) (ai / bi)) * bi));
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 
 	    }
@@ -1433,7 +1423,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class round : Procedure {
+	public class Real_round : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) System.Math.Round((double) CommonOp.Sync(a));
 	    }
@@ -1441,7 +1431,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toString : Procedure {
+	public class Real_toString : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return ((double) CommonOp.Sync(a)).ToString();
@@ -1450,7 +1440,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class trunc : Procedure {
+	public class Real_trunc : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) ((double) CommonOp.Sync(a));
 	    }
@@ -1458,9 +1448,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class String {
-	public class append : Procedure2 {
+	public class String_append : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return System.String.Concat((System.String) CommonOp.Sync(a),
 					    (System.String) CommonOp.Sync(b));
@@ -1469,7 +1457,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opless : Procedure2 {
+	public class String_opless : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI(System.String.Compare((System.String) CommonOp.Sync(a),
 							  (System.String) CommonOp.Sync(b)) < 0);
@@ -1478,7 +1466,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreater : Procedure2 {
+	public class String_opgreater : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI(System.String.Compare((System.String) CommonOp.Sync(a),
 							  (System.String) CommonOp.Sync(b)) > 0);
@@ -1487,7 +1475,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class oplessEq : Procedure2 {
+	public class String_oplessEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI(System.String.Compare((System.String) CommonOp.Sync(a),
 							  (System.String) CommonOp.Sync(b)) <= 0);
@@ -1496,7 +1484,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opgreaterEq : Procedure2 {
+	public class String_opgreaterEq : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return CommonOp.BtI(System.String.Compare((System.String) CommonOp.Sync(a),
 							  (System.String) CommonOp.Sync(b)) >= 0);
@@ -1505,26 +1493,26 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class compare : Procedure2 {
+	public class String_compare : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		int v = System.String.Compare(CommonOp.Sync(a).ToString(),
 					      CommonOp.Sync(b).ToString());
 		
 		if (v < 0) {
-		    return Prebound.General.LESS;
+		    return Prebound.General_LESS;
 		}
 		else if (v == 0) {
-		    return Prebound.General.EQUAL;
+		    return Prebound.General_EQUAL;
 		}
 		else {
-		    return Prebound.General.GREATER;
+		    return Prebound.General_GREATER;
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class explode : Procedure {
+	public class String_explode : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.String s = (System.String) CommonOp.Sync(a);
 		int len         = s.Length;
@@ -1538,13 +1526,13 @@ namespace Alice {
 			head = ListOp.Cons((System.Char) s[len], head);
 		    }
 		    return head;
-	    }
+		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class implode : Procedure {
+	public class String_implode : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.Text.StringBuilder s = new System.Text.StringBuilder();
 		Object head                 = CommonOp.Sync(a);
@@ -1558,7 +1546,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class size : Procedure {
+	public class String_size : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) ((System.String) CommonOp.Sync(a)).Length;
 	    }
@@ -1566,21 +1554,21 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class sub : Procedure2 {
+	public class String_sub : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    return (System.Char)
 			((System.String) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Subscript);
+		    throw new Values.Exception(Prebound.General_Subscript);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class substring : Procedure3 {
+	public class String_substring : Procedure3 {
 	    public static Object StaticApply(Object a, Object b, Object c) {
 		try {
 		    char[] oa = ((System.String) CommonOp.Sync(a)).ToCharArray();
@@ -1596,14 +1584,14 @@ namespace Alice {
 		    return new System.String(na);
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Subscript);
+		    throw new Values.Exception(Prebound.General_Subscript);
 		}
 	    }
 	    public override Object Apply(Object a, Object b, Object c) {
 		return StaticApply(a, b, c);
 	    }
 	}
-	public class str : Procedure {
+	public class String_str : Procedure {
 	    public static Object StaticApply(Object a) {
 		return ((System.Char) CommonOp.Sync(a)).ToString();
 	    }
@@ -1611,9 +1599,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Thread {
-	public class Terminate : Procedure {
+	public class Thread_Terminate : Procedure {
 	    public static Object StaticApply(Object obj) {
 		((System.Threading.Thread) CommonOp.Sync(obj)).Stop();
 		return Prebound.unit;
@@ -1622,7 +1608,7 @@ namespace Alice {
 		return StaticApply(obj);
 	    }
 	}
-	public class current : Procedure {
+	public class Thread_current : Procedure {
 	    public static Object StaticApply(Object a) {
 		return System.Threading.Thread.CurrentThread;
 	    }
@@ -1630,7 +1616,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class isSuspended : Procedure {
+	public class Thread_isSuspended : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.Threading.Thread t = (System.Threading.Thread) CommonOp.Sync(a);
 		return CommonOp.BtI(t.ThreadState == System.Threading.ThreadState.Suspended);
@@ -1639,7 +1625,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class raiseIn : Procedure2 {
+	public class Thread_raiseIn : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		// to be determined
 		return a;
@@ -1648,7 +1634,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class resume : Procedure {
+	public class Thread_resume : Procedure {
 	    public static Object StaticApply(Object a) {
 		((System.Threading.Thread) CommonOp.Sync(a)).Resume();
 		return Prebound.unit;
@@ -1657,27 +1643,27 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class state : Procedure {
+	public class Thread_state : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.Threading.Thread t = (System.Threading.Thread) CommonOp.Sync(a);
 
 		if (t.IsAlive) {
-		    return Prebound.Thread.RUNNABLE;
+		    return Prebound.Thread_RUNNABLE;
 		}
 		else if (t.ThreadState == System.Threading.ThreadState.Suspended) {
 		    // to be determined
-		    return Prebound.Thread.BLOCKED;
+		    return Prebound.Thread_BLOCKED;
 		}
 		else if (t.ThreadState == System.Threading.ThreadState.Stopped) {
-		    return Prebound.Thread.TERMINATED;
+		    return Prebound.Thread_TERMINATED;
 		}
-		return Prebound.Thread.RUNNABLE;
+		return Prebound.Thread_RUNNABLE;
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class suspend : Procedure {
+	public class Thread_suspend : Procedure {
 	    public static Object StaticApply(Object a) {
 		((System.Threading.Thread) CommonOp.Sync(a)).Suspend();
 		return Prebound.unit;
@@ -1686,7 +1672,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class yield : Procedure {
+	public class Thread_yield : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return Prebound.unit;
@@ -1695,49 +1681,41 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Unsafe {
-	public class Array {
-	    public class sub : Procedure2 {
-		public static Object StaticApply(Object a, Object b) {
-		    return (((AliceArray) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(b)];
-		}
-		public override Object Apply(Object a, Object b) {
-		    return StaticApply(a, b);
-		}
+	public class Unsafe_Array_sub : Procedure2 {
+	    public static Object StaticApply(Object a, Object b) {
+		return (((Values.Array) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(b)];
 	    }
-	    public class update : Procedure3 {
-		public static Object StaticApply(Object a, Object b, Object c) {
-		    (((AliceArray) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(b)] = c;
-		    return Prebound.unit;
-		}
-		public override Object Apply(Object a, Object b, Object c) {
-		    return StaticApply(a, b, c);
-		}
+	    public override Object Apply(Object a, Object b) {
+		return StaticApply(a, b);
 	    }
 	}
-	public class String {
-	    public class sub : Procedure2 {
-		public static Object StaticApply(Object a, Object b) {
-		    return (System.Char)
-			((System.String) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
-		}
-		public override Object Apply(Object a, Object b) {
-		    return StaticApply(a, b);
-		}
+	public class Unsafe_Array_update : Procedure3 {
+	    public static Object StaticApply(Object a, Object b, Object c) {
+		(((Values.Array) CommonOp.Sync(a)).Value)[(Int32) CommonOp.Sync(b)] = c;
+		return Prebound.unit;
+	    }
+	    public override Object Apply(Object a, Object b, Object c) {
+		return StaticApply(a, b, c);
 	    }
 	}
-	public class Vector {
-	    public class sub : Procedure2 {
-		public static Object StaticApply(Object a, Object b) {
-		    return ((Object[]) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
-		}
-		public override Object Apply(Object a, Object b) {
-		    return StaticApply(a, b);
-		}
+	public class Unsafe_String_sub : Procedure2 {
+	    public static Object StaticApply(Object a, Object b) {
+		return (System.Char)
+		    ((System.String) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
+	    }
+	    public override Object Apply(Object a, Object b) {
+		return StaticApply(a, b);
 	    }
 	}
-	public class cast : Procedure {
+	public class Unsafe_Vector_sub : Procedure2 {
+	    public static Object StaticApply(Object a, Object b) {
+		return ((Object[]) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
+	    }
+	    public override Object Apply(Object a, Object b) {
+		return StaticApply(a, b);
+	    }
+	}
+	public class Unsafe_cast : Procedure {
 	    public static Object StaticApply(Object a) {
 		return a;
 	    }
@@ -1745,9 +1723,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class Vector {
-	public class fromList : Procedure {
+	public class Vector_fromList : Procedure {
 	    public static Object StaticApply(Object a) {
 		a = CommonOp.Sync(a);
 		int n       = ListOp.Length(a);
@@ -1762,7 +1738,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class length : Procedure {
+	public class Vector_length : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) ((Object[]) CommonOp.Sync(a)).Length;
 	    }
@@ -1770,22 +1746,20 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class sub : Procedure2 {
+	public class Vector_sub : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    return ((Object[]) CommonOp.Sync(a))[(Int32) CommonOp.Sync(b)];
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Subscript);
+		    throw new Values.Exception(Prebound.General_Subscript);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-    }
-    public class Word {
-	public class fromIntQuote : Procedure {
+	public class Word_fromIntQuote : Procedure {
 	    public static Object StaticApply(Object a) {
 		// to be determined
 		return a;
@@ -1794,7 +1768,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class fromInt : Procedure {
+	public class Word_fromInt : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) CommonOp.Sync(a);
 	    }
@@ -1802,7 +1776,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toInt : Procedure {
+	public class Word_toInt : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) CommonOp.Sync(a);
 	    }
@@ -1810,7 +1784,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class toIntX : Procedure {
+	public class Word_toIntX : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) CommonOp.Sync(a);
 	    }
@@ -1818,7 +1792,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class opadd : Procedure2 {
+	public class Word_opadd : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) + (Int32) CommonOp.Sync(b));
 	    }
@@ -1826,7 +1800,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opsub : Procedure2 {
+	public class Word_opsub : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) - (Int32) CommonOp.Sync(b));
 	    }
@@ -1834,7 +1808,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class opmul : Procedure2 {
+	public class Word_opmul : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) * (Int32) CommonOp.Sync(b));
 	    }
@@ -1842,20 +1816,20 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class div : Procedure2 {
+	public class Word_div : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    return (Int32) ((Int32) CommonOp.Sync(a) / (Int32) CommonOp.Sync(b));
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class mod : Procedure2 {
+	public class Word_mod : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
 		    int ai = (int) CommonOp.Sync(a);
@@ -1863,14 +1837,14 @@ namespace Alice {
 		    return (Int32) (ai - ((int) (ai / bi)));
 		}
 		catch (System.Exception) {
-		    throw new Exception(Prebound.General.Div);
+		    throw new Values.Exception(Prebound.General_Div);
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class orb : Procedure2 {
+	public class Word_orb : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) | (Int32) CommonOp.Sync(b));
 	    }
@@ -1878,7 +1852,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class xorb : Procedure2 {
+	public class Word_xorb : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) ^ (Int32) CommonOp.Sync(b));
 	    }
@@ -1886,7 +1860,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class andb : Procedure2 {
+	public class Word_andb : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) & (Int32) CommonOp.Sync(b));
 	    }
@@ -1894,7 +1868,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class notb : Procedure {
+	public class Word_notb : Procedure {
 	    public static Object StaticApply(Object a) {
 		return (Int32) (~(Int32) CommonOp.Sync(a));
 	    }
@@ -1902,7 +1876,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class shl : Procedure2 {
+	public class Word_shl : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((Int32) CommonOp.Sync(a) << (Int32) CommonOp.Sync(b));
 	    }
@@ -1910,7 +1884,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class shr : Procedure2 {
+	public class Word_shr : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((uint) CommonOp.Sync(a) >> (Int32) CommonOp.Sync(b));
 	    }
@@ -1918,7 +1892,7 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class arithshr : Procedure2 {
+	public class Word_arithshr : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		return (Int32) ((int) CommonOp.Sync(a) >> (Int32) CommonOp.Sync(b));
 		//		Int32 i = (Int32) CommonOp.Sync(a);
@@ -1929,55 +1903,49 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
-	public class toString : Procedure {
+	public class Word_toString : Procedure {
 	    public static Object StaticApply(Object a) {
-		return ((Int32) CommonOp.Sync(a)).ToString();
+		return ((Int32) CommonOp.Sync(a)).ToString(); // to be determined
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class OS {
-	public class Process {
-	    public class system : Procedure {
-		public static Object StaticApply(Object a) {
-		    // to be determined
-		    return a;
-		}
-		public override Object Apply(Object a) {
-		    return StaticApply(a);
-		}
+	public class OS_Process_system : Procedure {
+	    public static Object StaticApply(Object a) {
+		// to be determined
+		return a;
 	    }
-	    public class exit : Procedure {
-		public static Object StaticApply(Object obj) {
-		    Environment.Exit((Int32) CommonOp.Sync(obj));
-		    return Prebound.unit;
-		}
-		public override Object Apply(Object obj) {
-		    return StaticApply(obj);
-		}
-	    }
-	    public class getEnv : Procedure {
-		public static Object StaticApply(Object a) {
-		    try {
-			return new TagVal(1,
-					  (System.String)
-					  Environment.GetEnvironmentVariable((System.String)
-									     CommonOp.Sync(a)));
-		    }
-		    catch (System.Exception) {
-			return Prebound.Option.NONE;
-		    }
-		}
-		public override Object Apply(Object a) {
-		    return StaticApply(a);
-		}
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
 	    }
 	}
-    }
-    public class TextIO {
-	public class openIn : Procedure {
+	public class OS_Process_exit : Procedure {
+	    public static Object StaticApply(Object obj) {
+		Environment.Exit((Int32) CommonOp.Sync(obj));
+		return Prebound.unit;
+	    }
+	    public override Object Apply(Object obj) {
+		return StaticApply(obj);
+	    }
+	}
+	public class OS_Process_getEnv : Procedure {
+	    public static Object StaticApply(Object a) {
+		try {
+		    return new TagVal(1,
+				      (System.String)
+				      Environment.GetEnvironmentVariable((System.String)
+									 CommonOp.Sync(a)));
+		}
+		catch (System.Exception) {
+		    return Prebound.Option_NONE;
+		}
+	    }
+	    public override Object Apply(Object a) {
+		return StaticApply(a);
+	    }
+	}
+	public class TextIO_openIn : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.String name = "";
 		try {
@@ -1992,14 +1960,14 @@ namespace Alice {
 		    ar[0]       = e; // to be determined
 		    ar[1]       = "openIn";
 		    ar[2]       = name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class inputAll : Procedure {
+	public class TextIO_inputAll : Procedure {
 	    public static Object StaticApply(Object a) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamReader r        = (StreamReader) wrapper.stream;
@@ -2011,14 +1979,14 @@ namespace Alice {
 		    ar[0] = e; // to be determined
 		    ar[1] = "inputAll";
 		    ar[2] = wrapper.name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class inputLine : Procedure {
+	public class TextIO_inputLine : Procedure {
 	    static Char[] buf = new Char[4097];
 	    public static Object StaticApply(Object a) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
@@ -2040,14 +2008,14 @@ namespace Alice {
 		    ar[0]       = e; // to be determined
 		    ar[1]       = "inputLine";
 		    ar[2]       = wrapper.name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class closeIn : Procedure {
+	public class TextIO_closeIn : Procedure {
 	    public static Object StaticApply(Object a) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamReader r        = (StreamReader) wrapper.stream;
@@ -2059,7 +2027,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class openOut : Procedure {
+	public class TextIO_openOut : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.String name = "";
 		try {
@@ -2074,14 +2042,14 @@ namespace Alice {
 		    ar[0]       = e; // to be determined
 		    ar[1]       = "openOut";
 		    ar[2]       = name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-	public class output : Procedure2 {
+	public class TextIO_output : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamWriter  w       = (StreamWriter) wrapper.stream;
@@ -2094,14 +2062,14 @@ namespace Alice {
 		    ar[0] = e; // to be determined
 		    ar[1] = "output";
 		    ar[2] = wrapper.name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class output1 : Procedure2 {
+	public class TextIO_output1 : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamWriter  w       = (StreamWriter) wrapper.stream;
@@ -2114,14 +2082,14 @@ namespace Alice {
 		    ar[0] = e; // to be determined
 		    ar[1] = "output1";
 		    ar[2] = wrapper.name;
-		    throw new Exception(new ConVal(Prebound.IO.Io, ar));
+		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
 		}
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
 	    }
 	}
-	public class flushOut : Procedure {
+	public class TextIO_flushOut : Procedure {
 	    public static Object StaticApply(Object a) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamWriter w        = (StreamWriter) wrapper.stream;
@@ -2133,7 +2101,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class closeOut : Procedure {
+	public class TextIO_closeOut : Procedure {
 	    public static Object StaticApply(Object a) {
 		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
 		StreamWriter w        = (StreamWriter) wrapper.stream;
@@ -2145,18 +2113,16 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class print : Procedure {
+	public class TextIO_print : Procedure {
 	    public static Object StaticApply(Object a) {
-		Console.WriteLine((System.String) CommonOp.Sync(a));
+		Console.Write((System.String) CommonOp.Sync(a));
 		return Prebound.unit;
 	    }
 	    public override Object Apply(Object a) {
 		return StaticApply(a);
 	    }
 	}
-    }
-    public class CommandLine {
-	public class name : Procedure {
+	public class CommandLine_name : Procedure {
 	    public static Object StaticApply(Object a) {
 		return Environment.GetCommandLineArgs()[0];
 	    }
@@ -2164,7 +2130,7 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class arguments : Procedure {
+	public class CommandLine_arguments : Procedure {
 	    public static Object StaticApply(Object a) {
 		System.String[] args = Environment.GetCommandLineArgs();
 		int len              = args.Length;
@@ -2187,262 +2153,228 @@ namespace Alice {
     }
     public class Prebound {
 	public static Object unit = null;
-	public class Future {
-	    public static Object future = "Future.Future";
-	    public static Object alarmQuote = new Alice.Future.alarmQuote();
-	    public static Object await      = new Alice.Future.await();
-	    public static Object awaitOne   = new Alice.Future.awaitOne();
-	    public static Object byneed     = new Alice.Future.byneed();
-	    public static Object concur     = new Alice.Future.concur();
-	    public static Object isFailed   = new Alice.Future.isFailed();
-	    public static Object isFuture   = new Alice.Future.isFuture();
-	}
-	public class Bool {
-	    public static Object @false = (Int32) 0;
-	    public static Object @true  = (Int32) 1;
-	}
-	public class List {
-	    public static Object Empty = "List.Empty";
-	    public static Object nil   = (Int32) 1;
-	    public static Object cons  = (Int32) 0;
-	}
-	public class Array {
-	    public static Object array    = new Alice.Array.array();
-	    public static Object fromList = new Alice.Array.fromList();
-	    public static Object length   = new Alice.Array.length();
-	    public static Object sub      = new Alice.Array.sub();
-	    public static Object update   = new Alice.Array.update();
-	}
-	public class Char {
-	    public static Object opless      = new Alice.Char.opless();
-	    public static Object opgreater   = new Alice.Char.opgreater();
-	    public static Object oplessEq    = new Alice.Char.oplessEq();
-	    public static Object opgreaterEq = new Alice.Char.opgreaterEq();
-	    public static Object ord         = new Alice.Char.ord();
-	    public static Object chr         = new Alice.Char.chr();
-	    public static Object isAlpha     = new Alice.Char.isAlpha();
-	    public static Object isAlphaNum  = new Alice.Char.isAlphaNum();
-	    public static Object isDigit     = new Alice.Char.isDigit();
-	    public static Object isGraph     = new Alice.Char.isGraph();
-	    public static Object isHexDigit  = new Alice.Char.isHexDigit();
-	    public static Object isLower     = new Alice.Char.isLower();
-	    public static Object isPrint     = new Alice.Char.isPrint();
-	    public static Object isPunct     = new Alice.Char.isPunct();
-	    public static Object isSpace     = new Alice.Char.isSpace();
-	    public static Object isUpper     = new Alice.Char.isUpper();
-	    public static Object toLower     = new Alice.Char.toLower();
-	    public static Object toUpper     = new Alice.Char.toUpper();
-	}
-	public class General {
-	    public static Object Chr       = "General.Chr";
-	    public static Object Div       = "General.Div";
-	    public static Object Domain    = "General.Domain";
-	    public static Object Fail      = "General.Fail";
-	    public static Object Overflow  = "General.Overflow";
-	    public static Object Size      = "General.Size";
-	    public static Object Span      = "General.Span";
-	    public static Object Subscript = "General.Subscript";
-	    public static Object Match     = "General.Match";
-	    public static Object Bind      = "General.Bind";
-	    public static Object EQUAL     = (Int32) 0;
-	    public static Object LESS      = (Int32) 2;
-	    public static Object GREATER   = (Int32) 1;
-	    public static Object assign    = new Alice.General.assign();
-	    public static Object exchange  = new Alice.General.exchange();
-	    public static Object exnName   = new Alice.General.exnName();
-	    public static Object @ref      = new Alice.Ref();
-	}
-	public class Option {
-	    public static Object option  = "Option.Option";
-	    public static Object NONE    = (Int32) 0;
-	    public static Object SOME    = (Int32) 1;
-	}
-	public class GlobalStamp {
-	    public static Object @new       = new Alice.GlobalStamp.@new();
-	    public static Object fromString = new Alice.GlobalStamp.fromString();
-	    public static Object toString   = new Alice.GlobalStamp.toString();
-	    public static Object compare    = new Alice.GlobalStamp.compare();
-	    public static Object hash       = new Alice.GlobalStamp.hash();
-	}
-	public class Hole {
-	    public static Object hole     = "Hole.Hole";
-	    public static Object fail     = new Alice.Hole.fail();
-	    public static Object fill     = new Alice.Hole.fill();
-	    public static Object future   = new Alice.Hole.future();
-	    public static Object isFailed = new Alice.Hole.isFailed();
-	    public static Object isFree   = new Alice.Hole.isFree();
-	}
-	public class Int {
-	    public static Object minInt      = Int32.MinValue;
-	    public static Object maxInt      = Int32.MaxValue;
-	    public static Object precision   = (Int32) 32;
-	    public static Object opnegate    = new Alice.Int.opnegate();
-	    public static Object opadd       = new Alice.Int.opadd();
-	    public static Object opsub       = new Alice.Int.opsub();
-	    public static Object opmul       = new Alice.Int.opmul();
-	    public static Object opless      = new Alice.Int.opless();
-	    public static Object opgreater   = new Alice.Int.opgreater();
-	    public static Object oplessEq    = new Alice.Int.oplessEq();
-	    public static Object opgreaterEq = new Alice.Int.opgreaterEq();
-	    public static Object abs         = new Alice.Int.abs();
-	    public static Object compare     = new Alice.Int.compare();
-	    public static Object div         = new Alice.Int.div();
-	    public static Object mod         = new Alice.Int.mod();
-	    public static Object quot        = new Alice.Int.quot();
-	    public static Object rem         = new Alice.Int.rem();
-	    public static Object toString    = new Alice.Int.toString();
-	}
-	public class Math {
-	    public static Object e     = System.Math.E;
-	    public static Object pi    = System.Math.PI;
-	    public static Object acos  = new Alice.Math.acos();
-	    public static Object acosh = new Alice.Math.acosh();
-	    public static Object asin  = new Alice.Math.asin();
-	    public static Object asinh = new Alice.Math.asinh();
-	    public static Object atan  = new Alice.Math.atan();
-	    public static Object atanh = new Alice.Math.atanh();
-	    public static Object atan2 = new Alice.Math.atan2();
-	    public static Object cos   = new Alice.Math.cos();
-	    public static Object cosh  = new Alice.Math.cosh();
-	    public static Object exp   = new Alice.Math.exp();
-	    public static Object ln    = new Alice.Math.ln();
-	    public static Object pow   = new Alice.Math.pow();
-	    public static Object sin   = new Alice.Math.sin();
-	    public static Object sinh  = new Alice.Math.sinh();
-	    public static Object sqrt  = new Alice.Math.sqrt();
-	    public static Object tan   = new Alice.Math.tan();
-	    public static Object tanh  = new Alice.Math.tanh();
-	}
-	public class Real {
-	    public static Object negInf      = System.Double.NegativeInfinity;
-	    public static Object posInf      = System.Double.PositiveInfinity;
-	    public static Object opnegate    = new Alice.Real.opnegate();
-	    public static Object opadd       = new Alice.Real.opadd();
-	    public static Object opsub       = new Alice.Real.opsub();
-	    public static Object opmul       = new Alice.Real.opmul();
-	    public static Object opdiv       = new Alice.Real.opdiv();
-	    public static Object opless      = new Alice.Real.opless();
-	    public static Object opgreater   = new Alice.Real.opgreater();
-	    public static Object oplessEq    = new Alice.Real.oplessEq();
-	    public static Object opgreaterEq = new Alice.Real.opgreaterEq();
-	    public static Object ceil        = new Alice.Real.ceil();
-	    public static Object compare     = new Alice.Real.compare();
-	    public static Object floor       = new Alice.Real.floor();
-	    public static Object fromInt     = new Alice.Real.fromInt();
-	    public static Object realCeil    = new Alice.Real.realCeil();
-	    public static Object realFloor   = new Alice.Real.realFloor();
-	    public static Object realTrunc   = new Alice.Real.realTrunc();
-	    public static Object rem         = new Alice.Real.rem();
-	    public static Object round       = new Alice.Real.round();
-	    public static Object toString    = new Alice.Real.toString();
-	    public static Object trunc       = new Alice.Real.trunc();
-	}
-	public class String {
-	    public static Object maxSize     = Int32.MaxValue;
-	    public static Object append      = new Alice.String.append();
-	    public static Object opless      = new Alice.String.opless();
-	    public static Object opgreater   = new Alice.String.opgreater();
-	    public static Object oplessEq    = new Alice.String.oplessEq();
-	    public static Object opgreaterEq = new Alice.String.opgreaterEq();
-	    public static Object compare     = new Alice.String.compare();
-	    public static Object explode     = new Alice.String.explode();
-	    public static Object implode     = new Alice.String.implode();
-	    public static Object size        = new Alice.String.size();
-	    public static Object sub         = new Alice.String.sub();
-	    public static Object substring   = new Alice.String.substring();
-	    public static Object str         = new Alice.String.str();
-	}
-	public class Thread {
-	    public static Object RUNNABLE    = "Thread.RUNNABLE";
-	    public static Object BLOCKED     = "Thread.BLOCKED";
-	    public static Object TERMINATED  = "Thread.TERMINATED";
-	    public static Object Terminate   = new Alice.Thread.Terminate();
-	    public static Object current     = new Alice.Thread.current();
-	    public static Object isSuspended = new Alice.Thread.isSuspended();
-	    public static Object raiseIn     = new Alice.Thread.raiseIn();
-	    public static Object resume      = new Alice.Thread.resume();
-	    public static Object state       = new Alice.Thread.resume();
-	    public static Object suspend     = new Alice.Thread.suspend();
-	    public static Object yield       = new Alice.Thread.yield();
-	}
-	public class Word {
-	    public static Object fromIntQuote = new Alice.Word.fromIntQuote();
-	    public static Object fromInt      = new Alice.Word.fromInt();
-	    public static Object toInt        = new Alice.Word.toInt();
-	    public static Object toIntX       = new Alice.Word.toIntX();
-	    public static Object opadd        = new Alice.Word.opadd();
-	    public static Object opsub        = new Alice.Word.opsub();
-	    public static Object opmul        = new Alice.Word.opmul();
-	    public static Object div          = new Alice.Word.div();
-	    public static Object mod          = new Alice.Word.mod();
-	    public static Object orb          = new Alice.Word.orb();
-	    public static Object xorb         = new Alice.Word.xorb();
-	    public static Object andb         = new Alice.Word.andb();
-	    public static Object notb         = new Alice.Word.notb();
-	    public static Object shl          = new Alice.Word.shl();
-	    public static Object shr          = new Alice.Word.shr();
-	    public static Object arithshr     = new Alice.Word.arithshr();
-	    public static Object toString     = new Alice.Word.toString();
-	}
-	public class IO {
-	    public static Object Io = "IO.Io";
-	}
-	public class OS {
-	    public class Process {
-		public static Object success = (Int32) 0;
-		public static Object failure = (Int32) 1;
-		public static Object system  = new Alice.OS.Process.system();
-		public static Object exit    = new Alice.OS.Process.exit();
-		public static Object getEnv  = new Alice.OS.Process.getEnv();
-	    }
-	}
-	public class TextIO {
-	    public static Object stdIn =
-		new StreamWrapper("stdin",
-				  new StreamReader(new FileStream("stdin",
-								  FileMode.Open,
-								  FileAccess.Read)));
-	    public static Object stdOut =
-		new StreamWrapper("stdout",
-				  new StreamReader(new FileStream("stdout",
-								  FileMode.Open,
-								  FileAccess.Write)));
-	    public static Object stdErr =
-		new StreamWrapper("stderr",
-				  new StreamReader(new FileStream("stderr",
-								  FileMode.Open,
-								  FileAccess.Write)));
-	    public static Object openIn    = new Alice.TextIO.openIn();
-	    public static Object inputAll  = new Alice.TextIO.inputAll();
-	    public static Object inputLine = new Alice.TextIO.inputLine();
-	    public static Object closeIn   = new Alice.TextIO.closeIn();
-	    public static Object openOut   = new Alice.TextIO.openOut();
-	    public static Object output    = new Alice.TextIO.output();
-	    public static Object output1   = new Alice.TextIO.output1();
-	    public static Object flushOut  = new Alice.TextIO.flushOut();
-	    public static Object closeOut  = new Alice.TextIO.closeOut();
-	    public static Object print     = new Alice.TextIO.print();
-	}
-	public class Unsafe {
-	    public class Array {
-		public Object sub    = new Alice.Unsafe.Array.sub();
-		public Object update = new Alice.Unsafe.Array.update();
-	    }
-	    public class Vector {
-		public static Object sub = new Alice.Unsafe.Vector.sub();
-	    }
-	    public static Object cast = new Alice.Unsafe.cast();
-	}
-	public class Vector {
-	    public static Object fromList = new Alice.Vector.fromList();
-	    public static Object maxLen   = Int32.MaxValue;
-	    public static Object length   = new Alice.Vector.length();
-	    public static Object sub      = new Alice.Vector.sub();
-	}
-	public class CommandLine {
-	    public static Object name      = new Alice.CommandLine.name();
-	    public static Object arguments = new Alice.CommandLine.arguments();
-	}
+	public static Object Future_future = "Future.Future";
+	public static Object Future_alarmQuote = new Future_alarmQuote();
+	public static Object Future_await      = new Future_await();
+	public static Object Future_awaitOne   = new Future_awaitOne();
+	public static Object Future_byneed     = new Future_byneed();
+	public static Object Future_concur     = new Future_concur();
+	public static Object Future_isFailed   = new Future_isFailed();
+	public static Object Future_isFuture   = new Future_isFuture();
+
+	public static Object Bool_false = (Int32) 0;
+	public static Object Bool_true  = (Int32) 1;
+
+	public static Object List_Empty = "List.Empty";
+	public static Object List_nil   = (Int32) 1;
+	public static Object List_cons  = (Int32) 0;
+
+	public static Object Array_array    = new Array_array();
+	public static Object Array_fromList = new Array_fromList();
+	public static Object Array_length   = new Array_length();
+	public static Object Array_sub      = new Array_sub();
+	public static Object Array_update   = new Array_update();
+
+	public static Object Char_opless      = new Char_opless();
+	public static Object Char_opgreater   = new Char_opgreater();
+	public static Object Char_oplessEq    = new Char_oplessEq();
+	public static Object Char_opgreaterEq = new Char_opgreaterEq();
+	public static Object Char_ord         = new Char_ord();
+	public static Object Char_chr         = new Char_chr();
+	public static Object Char_isAlpha     = new Char_isAlpha();
+	public static Object Char_isAlphaNum  = new Char_isAlphaNum();
+	public static Object Char_isDigit     = new Char_isDigit();
+	public static Object Char_isGraph     = new Char_isGraph();
+	public static Object Char_isHexDigit  = new Char_isHexDigit();
+	public static Object Char_isLower     = new Char_isLower();
+	public static Object Char_isPrint     = new Char_isPrint();
+	public static Object Char_isPunct     = new Char_isPunct();
+	public static Object Char_isSpace     = new Char_isSpace();
+	public static Object Char_isUpper     = new Char_isUpper();
+	public static Object Char_toLower     = new Char_toLower();
+	public static Object Char_toUpper     = new Char_toUpper();
+
+	public static Object General_Chr       = "General.Chr";
+	public static Object General_Div       = "General.Div";
+	public static Object General_Domain    = "General.Domain";
+	public static Object General_Fail      = "General.Fail";
+	public static Object General_Overflow  = "General.Overflow";
+	public static Object General_Size      = "General.Size";
+	public static Object General_Span      = "General.Span";
+	public static Object General_Subscript = "General.Subscript";
+	public static Object General_Match     = "General.Match";
+	public static Object General_Bind      = "General.Bind";
+	public static Object General_EQUAL     = (Int32) 0;
+	public static Object General_LESS      = (Int32) 2;
+	public static Object General_GREATER   = (Int32) 1;
+	public static Object General_assign    = new General_assign();
+	public static Object General_exchange  = new General_exchange();
+	public static Object General_exnName   = new General_exnName();
+	public static Object General_ref      = new RefConstructor();
+
+	public static Object Option_option  = "Option.Option";
+	public static Object Option_NONE    = (Int32) 0;
+	public static Object Option_SOME    = (Int32) 1;
+
+	public static Object GlobalStamp_new        = new GlobalStamp_new();
+	public static Object GlobalStamp_fromString = new GlobalStamp_fromString();
+	public static Object GlobalStamp_toString   = new GlobalStamp_toString();
+	public static Object GlobalStamp_compare    = new GlobalStamp_compare();
+	public static Object GlobalStamp_hash       = new GlobalStamp_hash();
+
+	public static Object Hole_hole     = "Hole.Hole";
+	public static Object Hole_fail     = new Hole_fail();
+	public static Object Hole_fill     = new Hole_fill();
+	public static Object Hole_future   = new Hole_future();
+	public static Object Hole_isFailed = new Hole_isFailed();
+	public static Object Hole_isFree   = new Hole_isFree();
+
+	public static Object Int_minInt      = Int32.MinValue;
+	public static Object Int_maxInt      = Int32.MaxValue;
+	public static Object Int_precision   = (Int32) 32;
+	public static Object Int_opnegate    = new Int_opnegate();
+	public static Object Int_opadd       = new Int_opadd();
+	public static Object Int_opsub       = new Int_opsub();
+	public static Object Int_opmul       = new Int_opmul();
+	public static Object Int_opless      = new Int_opless();
+	public static Object Int_opgreater   = new Int_opgreater();
+	public static Object Int_oplessEq    = new Int_oplessEq();
+	public static Object Int_opgreaterEq = new Int_opgreaterEq();
+	public static Object Int_abs         = new Int_abs();
+	public static Object Int_compare     = new Int_compare();
+	public static Object Int_div         = new Int_div();
+	public static Object Int_mod         = new Int_mod();
+	public static Object Int_quot        = new Int_quot();
+	public static Object Int_rem         = new Int_rem();
+	public static Object Int_toString    = new Int_toString();
+
+	public static Object Math_e     = System.Math.E;
+	public static Object Math_pi    = System.Math.PI;
+	public static Object Math_acos  = new Math_acos();
+	public static Object Math_acosh = new Math_acosh();
+	public static Object Math_asin  = new Math_asin();
+	public static Object Math_asinh = new Math_asinh();
+	public static Object Math_atan  = new Math_atan();
+	public static Object Math_atanh = new Math_atanh();
+	public static Object Math_atan2 = new Math_atan2();
+	public static Object Math_cos   = new Math_cos();
+	public static Object Math_cosh  = new Math_cosh();
+	public static Object Math_exp   = new Math_exp();
+	public static Object Math_ln    = new Math_ln();
+	public static Object Math_pow   = new Math_pow();
+	public static Object Math_sin   = new Math_sin();
+	public static Object Math_sinh  = new Math_sinh();
+	public static Object Math_sqrt  = new Math_sqrt();
+	public static Object Math_tan   = new Math_tan();
+	public static Object Math_tanh  = new Math_tanh();
+
+	public static Object Real_negInf      = System.Double.NegativeInfinity;
+	public static Object Real_posInf      = System.Double.PositiveInfinity;
+	public static Object Real_opnegate    = new Real_opnegate();
+	public static Object Real_opadd       = new Real_opadd();
+	public static Object Real_opsub       = new Real_opsub();
+	public static Object Real_opmul       = new Real_opmul();
+	public static Object Real_opdiv       = new Real_opdiv();
+	public static Object Real_opless      = new Real_opless();
+	public static Object Real_opgreater   = new Real_opgreater();
+	public static Object Real_oplessEq    = new Real_oplessEq();
+	public static Object Real_opgreaterEq = new Real_opgreaterEq();
+	public static Object Real_ceil        = new Real_ceil();
+	public static Object Real_compare     = new Real_compare();
+	public static Object Real_floor       = new Real_floor();
+	public static Object Real_fromInt     = new Real_fromInt();
+	public static Object Real_realCeil    = new Real_realCeil();
+	public static Object Real_realFloor   = new Real_realFloor();
+	public static Object Real_realTrunc   = new Real_realTrunc();
+	public static Object Real_rem         = new Real_rem();
+	public static Object Real_round       = new Real_round();
+	public static Object Real_toString    = new Real_toString();
+	public static Object Real_trunc       = new Real_trunc();
+
+	public static Object String_maxSize     = Int32.MaxValue;
+	public static Object String_append      = new String_append();
+	public static Object String_opless      = new String_opless();
+	public static Object String_opgreater   = new String_opgreater();
+	public static Object String_oplessEq    = new String_oplessEq();
+	public static Object String_opgreaterEq = new String_opgreaterEq();
+	public static Object String_compare     = new String_compare();
+	public static Object String_explode     = new String_explode();
+	public static Object String_implode     = new String_implode();
+	public static Object String_size        = new String_size();
+	public static Object String_sub         = new String_sub();
+	public static Object String_substring   = new String_substring();
+	public static Object String_str         = new String_str();
+
+	public static Object Thread_RUNNABLE    = "Thread.RUNNABLE";
+	public static Object Thread_BLOCKED     = "Thread.BLOCKED";
+	public static Object Thread_TERMINATED  = "Thread.TERMINATED";
+	public static Object Thread_Terminate   = new Thread_Terminate();
+	public static Object Thread_current     = new Thread_current();
+	public static Object Thread_isSuspended = new Thread_isSuspended();
+	public static Object Thread_raiseIn     = new Thread_raiseIn();
+	public static Object Thread_resume      = new Thread_resume();
+	public static Object Thread_state       = new Thread_resume();
+	public static Object Thread_suspend     = new Thread_suspend();
+	public static Object Thread_yield       = new Thread_yield();
+
+	public static Object Word_fromIntQuote = new Word_fromIntQuote();
+	public static Object Word_fromInt      = new Word_fromInt();
+	public static Object Word_toInt        = new Word_toInt();
+	public static Object Word_toIntX       = new Word_toIntX();
+	public static Object Word_opadd        = new Word_opadd();
+	public static Object Word_opsub        = new Word_opsub();
+	public static Object Word_opmul        = new Word_opmul();
+	public static Object Word_div          = new Word_div();
+	public static Object Word_mod          = new Word_mod();
+	public static Object Word_orb          = new Word_orb();
+	public static Object Word_xorb         = new Word_xorb();
+	public static Object Word_andb         = new Word_andb();
+	public static Object Word_notb         = new Word_notb();
+	public static Object Word_shl          = new Word_shl();
+	public static Object Word_shr          = new Word_shr();
+	public static Object Word_arithshr     = new Word_arithshr();
+	public static Object Word_toString     = new Word_toString();
+
+	public static Object IO_Io = "IO.Io";
+
+	public static Object OS_Process_success = (Int32) 0;
+	public static Object OS_Process_failure = (Int32) 1;
+	public static Object OS_Process_system  = new OS_Process_system();
+	public static Object OS_Process_exit    = new OS_Process_exit();
+	public static Object OS_Process_getEnv  = new OS_Process_getEnv();
+
+	public static Object TextIO_stdIn =
+	    new StreamWrapper("stdin", System.Console.In);
+	public static Object TextIO_stdOut =
+	    new StreamWrapper("stdout", System.Console.Out);
+	public static Object TextIO_stdErr =
+	    new StreamWrapper("stderr", System.Console.Error);
+	public static Object TextIO_openIn    = new TextIO_openIn();
+	public static Object TextIO_inputAll  = new TextIO_inputAll();
+	public static Object TextIO_inputLine = new TextIO_inputLine();
+	public static Object TextIO_closeIn   = new TextIO_closeIn();
+	public static Object TextIO_openOut   = new TextIO_openOut();
+	public static Object TextIO_output    = new TextIO_output();
+	public static Object TextIO_output1   = new TextIO_output1();
+	public static Object TextIO_flushOut  = new TextIO_flushOut();
+	public static Object TextIO_closeOut  = new TextIO_closeOut();
+	public static Object TextIO_print     = new TextIO_print();
+
+	public Object Unsafe_Array_sub    = new Unsafe_Array_sub();
+	public Object Unsafe_Array_update = new Unsafe_Array_update();
+
+	public static Object Unsafe_Vector_sub = new Unsafe_Vector_sub();
+
+	public static Object Unsafe_cast = new Unsafe_cast();
+
+	public static Object Vector_fromList = new Vector_fromList();
+	public static Object Vector_maxLen   = Int32.MaxValue;
+	public static Object Vector_length   = new Vector_length();
+	public static Object Vector_sub      = new Vector_sub();
+	
+	public static Object CommandLine_name      = new CommandLine_name();
+	public static Object CommandLine_arguments = new CommandLine_arguments();
+	
     }
     public class Komponist {
 	static public Komponist global_k          = null;
