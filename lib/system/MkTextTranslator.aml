@@ -1,9 +1,10 @@
 (*
  * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,38 +25,54 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
     struct
 	structure PrimIO = PrimIO
 
-	fun translateReader (PrimIO.RD {name, chunkSize, readVec, readArr,
+	fun translateReader reader where (Config.platform <> Config.WIN32) =
+	    reader
+	  | translateReader (PrimIO.RD {name, chunkSize, readVec, readArr,
 					readVecNB, readArrNB, block, canInput,
 					avail, getPos, setPos, endPos,
 					verifyPos, close, ioDesc}) =
 	    let
-		(*--** result of trv/tra can be empty; confused with EOS *)
-		(*--** only translate CR NL to NL *)
-		fun trv v =
-		    String.implode (CharVector.foldr (fn (c, rest) =>
-							 if c = #"\r" then rest
-							 else c::rest) nil v)
-		fun tra (buf, i, n) = n - tra' (buf, i, i, i + n)
-		and tra' (buf, rd, wr, max) =
-		    if rd = max then rd - wr
+		fun tr (buf, i, n) = tr' (buf, i, i, i + n) - i
+		and tr' (buf, rd, wr, max) =
+		    if rd = max then wr else
+		    case CharArray.sub (buf, rd) of
+			#"\r" => trHaveCR (buf, rd + 1, wr, max)
+		      | c => (CharArray.update (buf, wr, c);
+			      tr' (buf, rd + 1, wr + 1, max))
+		and trHaveCR (buf, rd, wr, max) =
+		    if rd = max then
+			(CharArray.update (buf, wr, #"\r"); wr + 1)
 		    else
 			case CharArray.sub (buf, rd) of
-			    #"\r" => tra' (buf, rd + 1, wr, max)
-			  | c => (CharArray.update (buf, wr, c);
-				  tra' (buf, rd + 1, wr + 1, max))
+			    #"\n" => (CharArray.update (buf, wr, #"\n");
+				      tr' (buf, rd + 1, wr + 1, max))
+			  | #"\r" => (CharArray.update (buf, wr, #"\r");
+				      trHaveCR (buf, rd + 1, wr + 1, max))
+			  | c => (CharArray.update (buf, wr, #"\r");
+				  CharArray.update (buf, wr + 1, c);
+				  tr' (buf, rd + 1, wr + 2, max))
+		fun tra (sl, n) =
+		    let
+			val (buf, i, sz) = CharArraySlice.base sl
+		    in
+			tr (buf, i, n)
+		    end
+		fun trv v =
+		    let
+			val buf = CharArray.fromVector v
+			val n' = tr (buf, 0, CharArray.length buf)
+		    in
+			CharArraySlice.vector
+			(CharArraySlice.slice (buf, 0, SOME n'))
+		    end
+
 		val readVec =
 		    case readVec of
 			SOME f => SOME (fn n => trv (f n))
 		      | NONE => NONE
 		val readArr =
 		    case readArr of
-			SOME f => SOME (fn sl =>
-					let
-					    val (buf, i, sz) =
-						CharArraySlice.base sl
-					in
-					    tra (buf, i, f sl)
-					end)
+			SOME f => SOME (fn sl => tra (sl, f sl))
 		      | NONE => NONE
 		val readVecNB =
 		    case readVecNB of
@@ -67,14 +84,9 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 		val readArrNB =
 		    case readArrNB of
 			SOME f => SOME (fn sl =>
-					let
-					    val (buf, i, sz) =
-						CharArraySlice.base sl
-					in
 					   case f sl of
-					       SOME n => SOME (tra (buf, i, n))
-					     | NONE => NONE
-					end)
+					       SOME n => SOME (tra (sl, n))
+					     | NONE => NONE)
 		      | NONE => NONE
 	    in
 		PrimIO.RD {name, chunkSize, readVec, readArr, readVecNB,
@@ -82,7 +94,61 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 			   setPos, endPos, verifyPos, close, ioDesc}
 	    end
 
-	fun translateWriter writer where (Config.platform = Config.UNIX) =
+	fun translateWriter writer where (Config.platform <> Config.WIN32) =
 	    writer
-	  | translateWriter (writer as PrimIO.WR {...}) = writer (*--** *)
+	  | translateWriter (PrimIO.WR {name, chunkSize, writeVec, writeArr,
+					writeVecNB, writeArrNB, block,
+					canOutput, getPos, setPos, endPos,
+					verifyPos, close, ioDesc}) =
+	    let
+		fun tr (raw, sub, i, n) =
+		    let
+			val buf = CharArray.array (2 * n, #"\000")
+			val n' = tr' (raw, sub, buf, i, 0, i + n)
+		    in
+			CharArraySlice.slice (buf, 0, SOME n')
+		    end
+		and tr' (raw, sub, buf, rd, wr, max) =
+		    if rd = max then wr else
+		    case sub (raw, rd) of
+			#"\n" => (CharArray.update (buf, wr, #"\r");
+				  CharArray.update (buf, wr + 1, #"\n");
+				  tr' (raw, sub, buf, rd + 1, wr + 2, max))
+		      | c => (CharArray.update (buf, wr, c);
+			      tr' (raw, sub, buf, rd + 1, wr + 1, max))
+		fun tra sl =
+		    let
+			val (buf, i, sz) = CharArraySlice.base sl
+		    in
+			tr (buf, CharArray.sub, i, sz)
+		    end
+		fun trv sl =
+		    let
+			val (buf, i, sz) = CharVectorSlice.base sl
+			val sl' = tr (buf, CharVector.sub, i, sz)
+		    in
+			CharVectorSlice.full (CharArraySlice.vector sl')
+		    end
+
+		val writeVec =
+		    case writeVec of
+			SOME f => SOME (fn sl => f (trv sl))
+		      | NONE => NONE
+		val writeArr =
+		    case writeArr of
+			SOME f => SOME (fn sl => f (tra sl))
+		      | NONE => NONE
+		val writeVecNB =
+		    case writeVecNB of
+			SOME f => SOME (fn sl => f (trv sl))
+		      | NONE => NONE
+		val writeArrNB =
+		    case writeArrNB of
+			SOME f => SOME (fn sl => f (tra sl))
+		      | NONE => NONE
+	    in
+		PrimIO.WR {name, chunkSize, writeVec, writeArr, writeVecNB,
+			   writeArrNB, block, canOutput, getPos,
+			   setPos, endPos, verifyPos, close, ioDesc}
+	    end
     end
