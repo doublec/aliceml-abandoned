@@ -58,6 +58,8 @@ define
    BuiltinTable =
    builtinTable(
       'show': fun {$ X} {System.show X} '#' end
+      '=': fun {$ X#Y} X == Y end
+      ':=': fun {$ X#Y} {Assign X Y} '#' end
       '~': Number.'~'   %--** overloaded for word
       '+': fun {$ X1#X2} X1 + X2 end   %--** overloaded for word
       '-': fun {$ X1#X2} X1 - X2 end   %--** overloaded for word
@@ -195,8 +197,5 @@ define
 	     'nil': nil
 	     'cons': '::'
 	     'Match': Match
-	     'Bind': Bind
-	     'eq': fun {$ X#Y} X == Y end
-	     'assign': fun {$ X#Y} {Assign X Y} '#' end
-	     'builtin': fun {$ S} BuiltinTable.{VirtualString.toAtom S} end)
+	     'Bind': Bind)
 end
