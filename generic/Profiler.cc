@@ -121,17 +121,16 @@ double Profiler::SampleTime() {
   return (LargeIntToDouble(&buf) / precision);
 }
 #else
-#include <sys/times.h>
+#include <sys/time.h>
 
 static void InitTime() {
   return;
 }
 
 double Profiler::SampleTime() {
-  struct tms tms;
-  if (times(&tms) == (clock_t) -1)
-    Error("could not get time");
-  return (double) (tms.tms_utime + tms.tms_stime);
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return ((double)tv.tv_sec*1000000.0+(double)tv.tv_usec);
 }
 #endif
 
