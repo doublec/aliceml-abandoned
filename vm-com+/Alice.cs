@@ -338,7 +338,7 @@ namespace Alice {
 			}
 			catch (Values.Exception exn) {
 			    State = ByneedState.Failed;
-			    Ref = new ConVal(Prebound.Future_Future, exn);
+			    Ref = new ConVal(Prebound.Future_Future, exn.Value);
 			    throw new Exception(Ref);
 			}
 			return Ref;
@@ -827,14 +827,24 @@ namespace Alice {
 	    }
 	}
 	public class Future_alarmQuote : Procedure {
+	    class FutureClass {
+		Hole H;
+		int MS;
+		public FutureClass(Hole hole, int msecs) {
+		    H  = hole;
+		    MS = msecs;
+		}
+		public void Run() {
+		    Thread.Sleep((MS + 500) / 1000);
+		    H.Fill(Prebound.unit);
+		}
+	    }
 	    public static Object StaticApply(Object obj) {
 		Hole hole = new Hole();
 		int msecs = (Int32) CommonOp.Sync(obj);
-		//--** spawn a thread that does the following:
-		{
-		    Thread.Sleep((msecs + 500) / 1000);
-		    hole.Fill(Prebound.unit);
-		}
+		FutureClass fc = new FutureClass(hole, msecs);
+		
+		new Thread(new ThreadStart(fc.Run)).Start();
 		return new Future(hole);
 	    }
 	    public override Object Apply(Object obj) {
@@ -855,8 +865,30 @@ namespace Alice {
 	    }
 	}
 	public class Future_awaitOne : Procedure2 {
+	    class ThreadClass {
+		Object W;
+		Object N;
+		public ThreadClass(Object w, Object n) {
+		    W = w;
+		    N = n;
+		}
+		public void Run() {
+		    if (W is Transient) {
+			((Transient) W).Await();
+		    }
+		    Monitor.PulseAll(N);
+		}
+	    }
 	    public static Object StaticApply(Object a, Object b) {
-		return a; // to be Determined
+		Object n  = new Object();
+		Thread at = new Thread(new ThreadStart(new ThreadClass(a, n).Run));
+		Thread bt = new Thread(new ThreadStart(new ThreadClass(b, n).Run));
+		at.Start();
+		bt.Start();
+		Monitor.Wait(n);
+		at.Stop();
+		bt.Stop();
+		return a;
 	    }
 	    public override Object Apply(Object a, Object b) {
 		return StaticApply(a, b);
@@ -871,8 +903,27 @@ namespace Alice {
 	    }
 	}
 	public class Future_concur : Procedure {
+	    class FutureClass {
+		Hole H;
+		Procedure F;
+		public FutureClass(Hole h, Procedure f) {
+		    H = h;
+		    F = f;
+		}
+		public void Run() {
+		    try {
+			H.Fill(F.Apply());
+		    }
+		    catch (Values.Exception e) {
+			H.Fill(new FailedTransient(new ConVal(Prebound.Future_Future, e.Value)));
+		    }
+		}
+	    }
 	    public static Object StaticApply(Object obj) {
-		return obj; // to be Determined
+		Hole hole   = new Hole();
+		Procedure f = (Procedure) CommonOp.Sync(obj);
+		new Thread(new ThreadStart(new FutureClass(hole, f).Run)).Start();
+		return new Future(hole);
 	    }
 	    public override Object Apply(Object obj) {
 		return StaticApply(obj);
