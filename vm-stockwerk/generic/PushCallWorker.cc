@@ -11,13 +11,13 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "generic/PushCallInterpreter.hh"
+#pragma implementation "generic/PushCallWorker.hh"
 #endif
 
 #include <cstdio>
 #include "generic/Scheduler.hh"
 #include "generic/StackFrame.hh"
-#include "generic/PushCallInterpreter.hh"
+#include "generic/PushCallWorker.hh"
 
 // PushCall Frame
 class PushCallFrame: private StackFrame {
@@ -27,8 +27,8 @@ public:
   using Block::ToWord;
 
   // PushCallFrame Constructor
-  static PushCallFrame *New(Interpreter *interpreter, word closure) {
-    StackFrame *frame = StackFrame::New(PUSHCALL_FRAME, interpreter, SIZE);
+  static PushCallFrame *New(Worker *worker, word closure) {
+    StackFrame *frame = StackFrame::New(PUSHCALL_FRAME, worker, SIZE);
     frame->InitArg(CLOSURE_POS, closure);
     return static_cast<PushCallFrame *>(frame);
   }
@@ -46,28 +46,28 @@ public:
 };
 
 //
-// PushCallInterpreter Functions
+// PushCallWorker Functions
 //
-PushCallInterpreter *PushCallInterpreter::self;
+PushCallWorker *PushCallWorker::self;
 
-void PushCallInterpreter::PushFrame(word closure) {
+void PushCallWorker::PushFrame(word closure) {
   Scheduler::PushFrame(PushCallFrame::New(self, closure)->ToWord());
 }
 
-void PushCallInterpreter::PushFrame(Thread *thread, word closure) {
+void PushCallWorker::PushFrame(Thread *thread, word closure) {
   thread->PushFrame(PushCallFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result PushCallInterpreter::Run() {
+Worker::Result PushCallWorker::Run() {
   PushCallFrame *frame =
     PushCallFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   return Scheduler::PushCall(frame->GetClosure());
 }
 
-const char *PushCallInterpreter::Identify() {
-  return "PushCallInterpreter";
+const char *PushCallWorker::Identify() {
+  return "PushCallWorker";
 }
 
-void PushCallInterpreter::DumpFrame(word) {
+void PushCallWorker::DumpFrame(word) {
   std::fprintf(stderr, "Push Call\n");
 }
