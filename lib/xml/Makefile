@@ -1,8 +1,8 @@
 # Makefile for alice xml binding
 
 # Change this to reflect your installation directory
-INSTALLDIR = ../../install
-# INSTALLDIR = ../../vm-stockwerk/build3/install
+# INSTALLDIR = ../../install
+INSTALLDIR = ../../vm-stockwerk/build3/install
 
 
 ## No changes needed below this

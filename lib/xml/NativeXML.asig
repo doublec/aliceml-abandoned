@@ -15,10 +15,8 @@ signature ALICE_XML =
     sig
 	structure NativeAliceXML:
 	    sig
-		val parseFile : string -> 'xmlDocPtr
-		val freeDoc : 'xmlDocPtr -> unit
+		val parse : string -> 'xmlDocPtr
 		val isNull : 'xmlNodePtr -> bool
-		val docGetRootElement : 'xmlDocPtr -> 'xmlNodePtr
 		val children : 'xmlNodePtr -> 'xmlNodePtr
 		val parent : 'xmlNodePtr -> 'xmlNodePtr
 		val next : 'xmlNodePtr -> 'xmlNodePtr
@@ -27,6 +25,6 @@ signature ALICE_XML =
 		val name : 'xmlNodePtr -> string
 		val getProp : 'xmlNodePtr * string -> string option
 		val nodeListGetString :
-		    'xmlDocPtr * 'xmlNodePtr * int -> string option
+		    'xmlNodePtr * int -> string option
 	    end
     end

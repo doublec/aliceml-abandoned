@@ -14,64 +14,98 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 
+class XMLFinalizationSet: public FinalizationSet {
+public:
+  virtual void Finalize(word value);
+};
+
+static XMLFinalizationSet *xmlFinalizationSet;
+
+void XMLFinalizationSet::Finalize(word value) {
+  Tuple *b = Tuple::FromWordDirect(value);
+  word docptr = b->Sel(0);
+  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(docptr);
+  xmlFreeDoc(doc);
+}
+
 #define DECLARE_UNMANAGED_POINTER(pointer, x)                       \
   void *pointer = NULL;                                             \
   if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); } \
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 
-DEFINE1(xml_parseFile) {
+DEFINE1(xml_parse) {
   DECLARE_STRING(filename, x0);
   xmlDocPtr doc;
+  xmlNodePtr cur;
   doc = xmlParseFile(filename->ExportC());
-  RETURN(Store::UnmanagedPointerToWord(doc));
-} END
+  cur = xmlDocGetRootElement((xmlDocPtr) doc);
 
-DEFINE1(xml_freeDoc) {
-  DECLARE_UNMANAGED_POINTER(doc, x0);
-  xmlFreeDoc((xmlDocPtr) doc);
-  RETURN_UNIT;
+  Tuple *b = Tuple::New(1);
+  b->Init(0, Store::UnmanagedPointerToWord(doc));
+  xmlFinalizationSet->Register(b->ToWord());
+  Tuple *t = Tuple::New(2);
+  t->Init(0, b->ToWord());
+  t->Init(1, Store::UnmanagedPointerToWord(cur));
+
+  RETURN(t->ToWord());
 } END
 
 DEFINE1(xml_isNull) {
-  DECLARE_UNMANAGED_POINTER(ptr, x0);
-  RETURN_BOOL(ptr==NULL);
-} END
-
-DEFINE1(xml_docGetRootElement) {
-  DECLARE_UNMANAGED_POINTER(doc, x0);
-  xmlNodePtr cur = xmlDocGetRootElement((xmlDocPtr) doc);
-  RETURN(Store::UnmanagedPointerToWord(cur));
+  DECLARE_TUPLE(t, x0);
+  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(t->Sel(0));
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  RETURN_BOOL(node==NULL || doc==NULL);
 } END
 
 DEFINE1(xml_children) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  RETURN(Store::UnmanagedPointerToWord(((xmlNodePtr) cur)->children));
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  Tuple *c = Tuple::New(2);
+  c->Init(0, t->Sel(0));
+  c->Init(1, Store::UnmanagedPointerToWord(node->children));
+  RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_parent) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  RETURN(Store::UnmanagedPointerToWord(((xmlNodePtr) cur)->parent));
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  Tuple *c = Tuple::New(2);
+  c->Init(0, t->Sel(0));
+  c->Init(1, Store::UnmanagedPointerToWord(node->parent));
+  RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_next) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  RETURN(Store::UnmanagedPointerToWord(((xmlNodePtr) cur)->next));
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  Tuple *c = Tuple::New(2);
+  c->Init(0, t->Sel(0));
+  c->Init(1, Store::UnmanagedPointerToWord(node->next));
+  RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_prev) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  RETURN(Store::UnmanagedPointerToWord(((xmlNodePtr) cur)->prev));
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  Tuple *c = Tuple::New(2);
+  c->Init(0, t->Sel(0));
+  c->Init(1, Store::UnmanagedPointerToWord(node->prev));
+  RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_properties) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  RETURN(Store::UnmanagedPointerToWord(((xmlNodePtr) cur)->properties));
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+  Tuple *c = Tuple::New(2);
+  c->Init(0, t->Sel(0));
+  c->Init(1, Store::UnmanagedPointerToWord(node->properties));
+  RETURN(c->ToWord());
 } END
 
 DEFINE1(xml_name) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
-  xmlNodePtr node = (xmlNodePtr) cur;
-  
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+
   int len = strlen((const char*)node->name);
   int inlen = len;
 
@@ -83,14 +117,16 @@ DEFINE1(xml_name) {
   RETURN(retName->ToWord());
 } END
 
-DEFINE3(xml_nodeListGetString) {
-  DECLARE_UNMANAGED_POINTER(doc, x0);
-  DECLARE_UNMANAGED_POINTER(cur, x1);
-  DECLARE_INT(inLine, x2);
+DEFINE2(xml_nodeListGetString) {
+  DECLARE_TUPLE(t, x0);
+  xmlDocPtr doc = (xmlDocPtr)Store::WordToUnmanagedPointer(t->Sel(0));
+  xmlNodePtr node = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
+
+  DECLARE_INT(inLine, x1);
 
   xmlChar *key;
-  key = xmlNodeListGetString((xmlDocPtr) doc,
-			     (xmlNodePtr) cur,
+  key = xmlNodeListGetString(doc,
+			     node,
 			     inLine);
 
   if (key==NULL) {
@@ -110,7 +146,8 @@ DEFINE3(xml_nodeListGetString) {
 } END
 
 DEFINE2(xml_getProp) {
-  DECLARE_UNMANAGED_POINTER(cur, x0);
+  DECLARE_TUPLE(t, x0);
+  xmlNodePtr cur = (xmlNodePtr)Store::WordToUnmanagedPointer(t->Sel(1));
   DECLARE_STRING(name, x1);
 
   int len2 = name->GetSize();
@@ -149,15 +186,13 @@ DEFINE2(xml_getProp) {
 } END
 
 word InitComponent() {
-  Record *record = Record::New(12);
-  INIT_STRUCTURE(record, "NativeAliceXML", "parseFile",
-		 xml_parseFile, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "freeDoc",
-		 xml_freeDoc, 1);
+  Record *record = Record::New(10);
+  xmlFinalizationSet = new XMLFinalizationSet();
+
+  INIT_STRUCTURE(record, "NativeAliceXML", "parse",
+		 xml_parse, 1);
   INIT_STRUCTURE(record, "NativeAliceXML", "isNull",
 		 xml_isNull, 1);
-  INIT_STRUCTURE(record, "NativeAliceXML", "docGetRootElement",
-		 xml_docGetRootElement, 1);
   INIT_STRUCTURE(record, "NativeAliceXML", "children",
 		 xml_children, 1);
   INIT_STRUCTURE(record, "NativeAliceXML", "parent",
@@ -173,6 +208,6 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeAliceXML", "getProp",
 		 xml_getProp, 2);
   INIT_STRUCTURE(record, "NativeAliceXML", "nodeListGetString",
-		 xml_nodeListGetString, 3);
+		 xml_nodeListGetString, 2);
   RETURN_STRUCTURE("NativeAliceXML$", record);
 }

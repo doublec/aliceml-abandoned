@@ -2,31 +2,14 @@ import "NativeAliceXML"
 
 signature ALICE_XML =
     sig
-(*	type xmlDocPtr
-	type xmlNodePtr*)
+	type xmlNode
 
 	exception documentParsingError
 
 	infix />
-
-	type xmlNode
-
-(*	val parseFile : string -> xmlDocPtr
-	val freeDoc : xmlDocPtr -> unit
-	val isNull : xmlNodePtr -> bool
-	val docIsNull : xmlDocPtr -> bool
-	val docGetRootElement : xmlDocPtr -> xmlNodePtr
-	val children : xmlNodePtr -> xmlNodePtr
-	val parent : xmlNodePtr -> xmlNodePtr
-	val next : xmlNodePtr -> xmlNodePtr
-	val prev : xmlNodePtr -> xmlNodePtr
-	val properties : xmlNodePtr -> xmlNodePtr
-	val name : xmlNodePtr -> string
-	val getProp : xmlNodePtr * string -> string option
-	val nodeListGetString : xmlDocPtr * xmlNodePtr * int -> string option*)
+	fun /> : xmlNode * (xmlNode -> 'a) -> 'a
 
 	val parse : string -> xmlNode
-	fun /> : xmlNode * (xmlNode -> 'a) -> 'a
 	fun name : xmlNode -> string
 	fun children : xmlNode -> xmlNode list
 	fun null : xmlNode -> bool
@@ -38,55 +21,36 @@ signature ALICE_XML =
 
 structure AliceXML :> ALICE_XML =
     struct
-	type xmlDocPtr
-	type xmlNodePtr
+	type xmlNode
 
 	exception documentParsingError
 
-	type xmlNode = xmlDocPtr * xmlNodePtr
-
 	infix />
-
 	fun node /> f = f node
-
-	(*open NativeAliceXML*)
 
 	structure X = NativeAliceXML
 
-	fun getSiblingsList doc node acc =
+	fun getSiblingsList node acc =
 	    if X.isNull node then acc
 	    else
-		let
-		    val n = (doc, node)
-		in
-		    getSiblingsList doc (X.next node) (n::acc)
-		end
-
-	fun name (_, n) = X.name n
-	fun children (doc, n) = rev (getSiblingsList doc (X.children n) nil)
-	fun null (_, n) = X.isNull n
-	fun parent (doc, n) = (doc, X.parent n)
-	fun properties (doc, n) = rev (getSiblingsList doc (X.properties n) nil)
-	fun getProp (_, n) s = X.getProp(n, s)
-	fun getContent (doc, n) f = X.nodeListGetString(doc, X.children n, if f then 1 else 0)
+		getSiblingsList (X.next node) (node::acc)
 
 	fun parse filename =
 	    let
-		val doc = X.parseFile filename
+		val doc = X.parse filename
 	    in
 		if X.isNull doc then
 		    raise documentParsingError
 		else
-		    (doc, X.docGetRootElement doc)
+		    doc
 	    end
 
-(*	val parseFile = NativeAliceXML.parseFile
-	val freeDoc = NativeAliceXML.freeDoc
-	val isNull = NativeAliceXML.isNull
-	val docGetRootElement = NativeAliceXML.docGetRootElement
-	val childrenNode = NativeAliceXML.childrenNode
-	val next = NativeAliceXML.next
-	val name = NativeAliceXML.name
-	val getProp = NativeAliceXML.getProp
-	val nodeListGetString = NativeAliceXML.nodeListGetString*)
+	val name = X.name
+	fun children n = rev (getSiblingsList (X.children n) nil)
+	val null = X.isNull
+	val parent = X.parent
+	fun properties n = rev (getSiblingsList (X.properties n) nil)
+	fun getProp n s = X.getProp(n, s)
+	fun getContent n f = X.nodeListGetString(X.children n,
+						 if f then 1 else 0)
     end
