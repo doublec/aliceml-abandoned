@@ -12,11 +12,11 @@
 //   $Revision$
 //
 
-#ifndef __DATALAYER__ALICE_HH__
-#define __DATALAYER__ALICE_HH__
+#ifndef __ALICE__DATA_HH__
+#define __ALICE__DATA_HH__
 
 #if defined(INTERFACE)
-#pragma interface "datalayer/Alice.hh"
+#pragma interface "alice/Data.hh"
 #endif
 
 #include "store/Store.hh"
@@ -33,13 +33,12 @@ public:
     Constructor  = MIN_DATA_LABEL + 3,
     ConVal       = MIN_DATA_LABEL + 4,
     GlobalStamp  = MIN_DATA_LABEL + 5,
-    Tuple        = MIN_DATA_LABEL + 6,
-    Vector       = MIN_DATA_LABEL + 7,
-    VectorZero   = MIN_DATA_LABEL + 8,
-    FIRST_LABEL  = MIN_DATA_LABEL,
-    LAST_LABEL   = MIN_DATA_LABEL + 8,
+    Vector       = MIN_DATA_LABEL + 6,
+    VectorZero   = MIN_DATA_LABEL + 7,
+    FIRST_LABEL  = Array,
+    LAST_LABEL   = VectorZero,
 
-    MIN_TAG      = MIN_DATA_LABEL + 9,
+    MIN_TAG      = LAST_LABEL + 1,
     MAX_TAG      = MAX_DATA_LABEL
   };
 
@@ -304,36 +303,6 @@ public:
   }
 };
 
-class Tuple: private Block {
-public:
-  using Block::ToWord;
-
-  static Tuple *New(u_int n) {
-    return static_cast<Tuple *>(Store::AllocBlock(Alice::ToBlockLabel(Alice::Tuple), n));
-  }
-  static Tuple *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == Alice::ToBlockLabel(Alice::Tuple));
-    return static_cast<Tuple *>(b);
-  }
-  static Tuple *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Tuple));
-    return static_cast<Tuple *>(b);
-  }
-
-  u_int GetWidth() {
-    return GetSize();
-  }
-  void Init(u_int index, word value) {
-    InitArg(index + 1, value);
-  }
-  word Sel(u_int index) {
-    return GetArg(index + 1);
-  }
-};
-
 class UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *id) {
@@ -462,4 +431,4 @@ public:
   }
 };
 
-#endif __DATALAYER__ALICE_HH__
+#endif __ALICE__DATA_HH__

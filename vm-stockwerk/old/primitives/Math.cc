@@ -13,8 +13,7 @@
 //
 
 #include <cmath>
-
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 #define REAL_TO_REAL(name, op)					\
   DEFINE1(name) {						\
@@ -63,24 +62,24 @@ REAL_TO_REAL(Math_sqrt, std::sqrt);
 REAL_TO_REAL(Math_tan, std::tan);
 REAL_TO_REAL(Math_tanh, std::tanh);
 
-void Primitive::RegisterMath() {
-  Register("Math.acos", Math_acos, 1);
-  Register("Math.acosh", Math_acosh, 1);
-  Register("Math.asin", Math_asin, 1);
-  Register("Math.asinh", Math_asinh, 1);
-  Register("Math.atan", Math_atan, 1);
-  Register("Math.atanh", Math_atanh, 1);
+void PrimitiveTable::RegisterMath() {
+  Register("Math.acos", Math_acos, -1);
+  Register("Math.acosh", Math_acosh, -1);
+  Register("Math.asin", Math_asin, -1);
+  Register("Math.asinh", Math_asinh, -1);
+  Register("Math.atan", Math_atan, -1);
+  Register("Math.atanh", Math_atanh, -1);
   Register("Math.atan2", Math_atan2, 2);
-  Register("Math.cos", Math_cos, 1);
-  Register("Math.cosh", Math_cosh, 1);
+  Register("Math.cos", Math_cos, -1);
+  Register("Math.cosh", Math_cosh, -1);
   Register("Math.e", Real::New(2.71828182846)->ToWord());
-  Register("Math.exp", Math_exp, 1);
-  Register("Math.ln", Math_ln, 1);
+  Register("Math.exp", Math_exp, -1);
+  Register("Math.ln", Math_ln, -1);
   Register("Math.pi", Real::New(3.14159265359)->ToWord());
   Register("Math.pow", Math_pow, 2);
-  Register("Math.sin", Math_sin, 1);
-  Register("Math.sinh", Math_sinh, 1);
-  Register("Math.sqrt", Math_sqrt, 1);
-  Register("Math.tan", Math_tan, 1);
-  Register("Math.tanh", Math_tanh, 1);
+  Register("Math.sin", Math_sin, -1);
+  Register("Math.sinh", Math_sinh, -1);
+  Register("Math.sqrt", Math_sqrt, -1);
+  Register("Math.tan", Math_tan, -1);
+  Register("Math.tanh", Math_tanh, -1);
 }

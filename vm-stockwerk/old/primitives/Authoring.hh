@@ -10,78 +10,13 @@
 //   $Revision$
 //
 
-#ifndef __BUILTINS__AUTHORING_HH__
-#define __BUILTINS__AUTHORING_HH__
+#ifndef __ALICE__PRIMITIVES__AUTHORING_HH__
+#define __ALICE__PRIMITIVES__AUTHORING_HH__
 
-#include "scheduler/TaskStack.hh"
-#include "builtins/Primitive.hh"
-#include "builtins/GlobalPrimitives.hh"
+#include "generic/NativeTaskAuthoring.hh"
+#include "alice/Data.hh"
+#include "alice/primitives/PrimitiveTable.hh"
 
-#define DEFINE0(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {
-#define DEFINE1(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
-    word x0 = taskStack->GetWord(0);					\
-    taskStack->PopFrame(1);
-#define DEFINE2(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
-    word x0 = taskStack->GetWord(0);					\
-    word x1 = taskStack->GetWord(1);					\
-    taskStack->PopFrame(2);
-#define DEFINE3(name)							\
-  static Interpreter::Result name(TaskStack *taskStack) {		\
-    word x0 = taskStack->GetWord(0);					\
-    word x1 = taskStack->GetWord(1);					\
-    word x2 = taskStack->GetWord(2);					\
-    taskStack->PopFrame(3);
-#define END }
-
-#define RETURN(w) {							\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
-}
-#define RETURN_UNIT {							\
-  taskStack->PopFrame(1);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);		\
-}
-#define RETURN_INT(i) {							\
-  taskStack->PutInt(0, i);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
-}
-#define RETURN_BOOL(b) RETURN_INT(b);
-
-#define PREEMPT {							\
-  taskStack->PopFrame(1);						\
-  return Interpreter::Result(Interpreter::Result::PREEMPT, 0);		\
-}
-
-#define RAISE(w) {							\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::RAISE);		\
-}
-
-#define REQUEST(w) {							\
-  taskStack->PushFrame(1);						\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
-}
-#define REQUEST2(w1, w2) {						\
-  taskStack->PushFrame(2);						\
-  taskStack->PutWord(0, w1);						\
-  taskStack->PutWord(1, w2);						\
-  return Interpreter::Result(Interpreter::Result::REQUEST, 2);		\
-}
-
-#define TERMINATE							\
-  return Interpreter::Result(Interpreter::Result::TERMINATE);
-
-#define DECLARE_INT(i, x)						\
-  int i = Store::WordToInt(x);						\
-  if (i == INVALID_INT) { REQUEST(x); } else {}
-
-#define DECLARE_BLOCKTYPE(t, a, x)					\
-  t *a = t::FromWord(x);						\
-  if (a == INVALID_POINTER) { REQUEST(x); } else {}
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
@@ -107,4 +42,4 @@
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
-#endif __BUILTINS__AUTHORING_HH__
+#endif __ALICE__PRIMITIVES__AUTHORING_HH__

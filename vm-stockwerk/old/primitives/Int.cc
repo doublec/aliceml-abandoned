@@ -13,7 +13,7 @@
 //
 
 #include <cstdio>
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 //--** overflow checking missing everywhere
 
@@ -29,7 +29,7 @@
     DECLARE_INT(i, x0);				\
     DECLARE_INT(j, x1);				\
     if (j == 0)					\
-      RAISE(GlobalPrimitives::General_Div);	\
+      RAISE(PrimitiveTable::General_Div);	\
     RETURN_INT(i op j);				\
   } END
 
@@ -74,7 +74,7 @@ DEFINE2(Int_div) {
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   if (j == 0)
-    RAISE(GlobalPrimitives::General_Div);
+    RAISE(PrimitiveTable::General_Div);
   int b1 = i >= 0;
   int b2 = j >= 0;
   if (b1 == b2) {
@@ -90,7 +90,7 @@ DEFINE2(Int_mod) {
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   if (j == 0)
-    RAISE(GlobalPrimitives::General_Div);
+    RAISE(PrimitiveTable::General_Div);
   int c = i % j;
   if (c == 0) {
     RETURN_INT(c);
@@ -122,8 +122,8 @@ DEFINE1(Int_toString) {
   RETURN(String::New(buf)->ToWord());
 } END
 
-void Primitive::RegisterInt() {
-  Register("Int.~", Int_opnegate, 1);
+void PrimitiveTable::RegisterInt() {
+  Register("Int.~", Int_opnegate, -1);
   Register("Int.+", Int_opadd, 2);
   Register("Int.-", Int_opsub, 2);
   Register("Int.*", Int_opmul, 2);
@@ -131,7 +131,7 @@ void Primitive::RegisterInt() {
   Register("Int.>", Int_opgreater, 2);
   Register("Int.<=", Int_oplessEq, 2);
   Register("Int.>=", Int_opgreaterEq, 2);
-  Register("Int.abs", Int_abs, 1);
+  Register("Int.abs", Int_abs, -1);
   Register("Int.compare", Int_compare, 2);
   Register("Int.div", Int_div, 2);
   Register("Int.maxInt", Store::IntToWord(0x3FFFFFFF));
@@ -140,5 +140,5 @@ void Primitive::RegisterInt() {
   Register("Int.precision", Store::IntToWord(31));
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
-  Register("Int.toString", Int_toString, 1);
+  Register("Int.toString", Int_toString, -1);
 }

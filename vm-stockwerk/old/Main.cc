@@ -10,10 +10,11 @@
 //   $Revision$
 //
 
-#include "scheduler/RootSet.hh"
-#include "scheduler/Scheduler.hh"
-#include "builtins/Primitive.hh"
-#include "builtins/GlobalPrimitives.hh"
+#include "generic/RootSet.hh"
+#include "generic/Transients.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "alice/primitives/PrimitiveTable.hh"
 
 int main(int argc, char *argv[]) {
   u_int memLimits[STORE_GENERATION_NUM];
@@ -24,9 +25,10 @@ int main(int argc, char *argv[]) {
   Store::InitStore(memLimits);
 
   RootSet::Init();
+  Hole::Init();
+  TaskStack::Init();
   Scheduler::Init();
-  Primitive::Init();
-  GlobalPrimitives::Init();
+  PrimitiveTable::Init();
   //--** enqueue the ur-thread
   Scheduler::Run();
   exit(0);

@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(General_assign) {
   DECLARE_CELL(cell, x0);
@@ -29,7 +29,7 @@ DEFINE1(General_exnName) {
   RETURN(String::New("")->ToWord()); //--** to be determined
 } END
 
-void Primitive::RegisterGeneral() {
+void PrimitiveTable::RegisterGeneral() {
   Register("General.:=", General_assign, 2);
   RegisterUniqueConstructor("General.Bind");
   RegisterUniqueConstructor("General.Chr");
@@ -42,5 +42,5 @@ void Primitive::RegisterGeneral() {
   RegisterUniqueConstructor("General.Span");
   RegisterUniqueConstructor("General.Subscript");
   Register("General.exchange", General_exchange, 2);
-  Register("General.exnName", General_exnName, 1);
+  Register("General.exnName", General_exnName, -1);
 }

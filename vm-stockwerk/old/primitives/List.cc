@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
-void Primitive::RegisterList() {
+void PrimitiveTable::RegisterList() {
   RegisterUniqueConstructor("List.Empty");
 }

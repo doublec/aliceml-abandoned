@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(Unsafe_Array_sub) {
   DECLARE_ARRAY(array, x0);
@@ -43,10 +43,10 @@ DEFINE1(Unsafe_cast) {
   RETURN(x0);
 } END
 
-void Primitive::RegisterUnsafe() {
+void PrimitiveTable::RegisterUnsafe() {
   Register("Unsafe.Array.sub", Unsafe_Array_sub, 2);
   Register("Unsafe.Array.update", Unsafe_Array_update, 3);
   Register("Unsafe.String.sub", Unsafe_String_sub, 2);
   Register("Unsafe.Vector.sub", Unsafe_Vector_sub, 2);
-  Register("Unsafe.cast", Unsafe_cast, 1);
+  Register("Unsafe.cast", Unsafe_cast, -1);
 }

@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#include "scheduler/Transients.hh"
-#include "scheduler/Closure.hh"
-#include "scheduler/Interpreter.hh"
-#include "scheduler/Scheduler.hh"
-#include "builtins/Authoring.hh"
+#include "generic/Transients.hh"
+#include "generic/Closure.hh"
+#include "generic/TaskManager.hh"
+#include "generic/Scheduler.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
   RETURN_UNIT; //--** not implemented
@@ -51,23 +51,16 @@ DEFINE2(Future_awaitOne) {
 } END
 
 DEFINE1(Future_byneed) {
-  RETURN(Byneed::New(x0)->ToWord());
+  //--** this has to be redone: RETURN(Byneed::New(x0)->ToWord());
+  RETURN(x0);
 } END
 
 DEFINE1(Future_concur) {
-  word byneed = Byneed::New(x0)->ToWord();
+  //--** this has to be redone: word byneed = Byneed::New(x0)->ToWord();
+  word byneed = x0;
   Thread *thread = Thread::New(Scheduler::GetCurrentThread()->GetPriority());
   TaskStack *newTaskStack = thread->GetTaskStack();
-  // Push the exception handler and the mark:
-  word primitive = GlobalPrimitives::Internal_defaultHandler;
-  newTaskStack->PushCall(Closure::FromWordDirect(primitive));
-  newTaskStack->PushFrame(1);
-  newTaskStack->PutUnmanagedPointer(0, NULL);
-  // Push a task that terminates the thread after evaluation:
-  primitive = GlobalPrimitives::Internal_terminate;
-  newTaskStack->PushCall(Closure::FromWordDirect(primitive));
-  // Start the computation by requesting the by-need future:
-  primitive = GlobalPrimitives::Future_await;
+  word primitive = PrimitiveTable::Future_await;
   newTaskStack->PushCall(Closure::FromWordDirect(primitive));
   newTaskStack->PushFrame(2);
   newTaskStack->PutWord(1, byneed);
@@ -88,13 +81,13 @@ DEFINE1(Future_isFuture) {
 	      transient->GetLabel() == FUTURE_LABEL);
 } END
 
-void Primitive::RegisterFuture() {
+void PrimitiveTable::RegisterFuture() {
   RegisterUniqueConstructor("Future.Future");
-  Register("Future.alarm'", Future_alarmQuote, 1);
-  Register("Future.await", Future_await, 1);
+  Register("Future.alarm'", Future_alarmQuote, -1);
+  Register("Future.await", ::Future_await, -1);
   Register("Future.awaitOne", Future_awaitOne, 2);
-  Register("Future.byneed", Future_byneed, 1);
-  Register("Future.concur", Future_concur, 1);
-  Register("Future.isFailed", Future_isFailed, 1);
-  Register("Future.isFuture", Future_isFuture, 1);
+  Register("Future.byneed", Future_byneed, -1);
+  Register("Future.concur", Future_concur, -1);
+  Register("Future.isFailed", Future_isFailed, -1);
+  Register("Future.isFuture", Future_isFuture, -1);
 }

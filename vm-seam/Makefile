@@ -16,14 +16,12 @@ TOPDIR = .
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SUBDIRS = store adt scheduler datalayer builtins interpreter
+SUBDIRS = store adt generic alice
 
 SRCS = Base.cc Main.cc
 OBJS = \
 	$(SRCS:%.cc=%.o) \
-	interpreter/libinterpreter.a \
-	builtins/libbuiltins.a datalayer/libdatalayer.a \
-	scheduler/libscheduler.a adt/libadt.a store/libstore.a
+	alice/libalice.a generic/libgeneric.a adt/libadt.a store/libstore.a
 
 LIBS = $(EXTRA_LIBS)
 

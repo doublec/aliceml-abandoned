@@ -12,12 +12,12 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
   if (length < 0 || static_cast<u_int>(length) > Array::maxLen)
-    RAISE(GlobalPrimitives::General_Size);
+    RAISE(PrimitiveTable::General_Size);
   Array *array = Array::New(length);
   for (u_int i = length; i--; )
     array->Init(i, x1);
@@ -27,7 +27,7 @@ DEFINE2(Array_array) {
 DEFINE1(Array_fromList) {
   DECLARE_LIST(tagVal, length, x0);
   if (length > Array::maxLen)
-    RAISE(GlobalPrimitives::General_Size);
+    RAISE(PrimitiveTable::General_Size);
   Array *array = Array::New(length);
   u_int i = 0;
   while (tagVal != INVALID_POINTER) {
@@ -46,7 +46,7 @@ DEFINE2(Array_sub) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
   if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
-    RAISE(GlobalPrimitives::General_Subscript);
+    RAISE(PrimitiveTable::General_Subscript);
   RETURN(array->Sub(index));
 } END
 
@@ -54,15 +54,15 @@ DEFINE3(Array_update) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
   if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
-    RAISE(GlobalPrimitives::General_Subscript);
+    RAISE(PrimitiveTable::General_Subscript);
   array->Update(index, x2);
   RETURN_UNIT;
 } END
 
-void Primitive::RegisterArray() {
+void PrimitiveTable::RegisterArray() {
   Register("Array.array", Array_array, 2);
-  Register("Array.fromList", Array_fromList, 1);
-  Register("Array.length", Array_length, 1);
+  Register("Array.fromList", Array_fromList, -1);
+  Register("Array.length", Array_length, -1);
   Register("Array.maxLen", Store::IntToWord(Array::maxLen));
   Register("Array.sub", Array_sub, 2);
   Register("Array.update", Array_update, 3);

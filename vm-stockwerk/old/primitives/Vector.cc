@@ -12,12 +12,12 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE1(Vector_fromList) {
   DECLARE_LIST(tagVal, length, x0);
   if (length > Vector::maxLen)
-    RAISE(GlobalPrimitives::General_Size);
+    RAISE(PrimitiveTable::General_Size);
   Vector *vector = Vector::New(length);
   u_int i = 0;
   while (tagVal != INVALID_POINTER) {
@@ -36,7 +36,7 @@ DEFINE2(Vector_sub) {
   DECLARE_VECTOR(vector, x0);
   DECLARE_INT(index, x1);
   if (index < 0 || static_cast<u_int>(index) >= vector->GetLength())
-    RAISE(GlobalPrimitives::General_Subscript);
+    RAISE(PrimitiveTable::General_Subscript);
   RETURN(vector->Sub(index));
 } END
 
@@ -46,13 +46,13 @@ DEFINE2(Vector_tabulate) { // NON-ABSTRACT TASK STACK USE
   if (length == 0)
     RETURN(Vector::New(0)->ToWord());
   if (length < 0 || static_cast<u_int>(length) > Vector::maxLen)
-    RAISE(GlobalPrimitives::General_Size);
+    RAISE(PrimitiveTable::General_Size);
   taskStack->PushFrame(3 - 1); // overwrite the Interpreter slot
   taskStack->PutInt(0, 0); // start index
   taskStack->PutWord(1, Vector::New(length)->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->
-    PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
+    PushCall(Closure::FromWordDirect(PrimitiveTable::Vector_tabulate_cont));
   taskStack->PushCall(closure);
   taskStack->PushFrame(1); // RETURN_INT assumes a free slot
   RETURN_INT(0); // applying the closure for the first time
@@ -73,17 +73,17 @@ DEFINE1(Vector_tabulate_cont) { // NON-ABSTRACT TASK STACK USE
   taskStack->PutWord(1, vector->ToWord());
   taskStack->PutWord(2, closure->ToWord());
   taskStack->
-    PushCall(Closure::FromWordDirect(GlobalPrimitives::Vector_tabulate_cont));
+    PushCall(Closure::FromWordDirect(PrimitiveTable::Vector_tabulate_cont));
   taskStack->PushCall(closure);
   taskStack->PushFrame(1); // RETURN_INT assumes a free slot
   RETURN_INT(index); // applying the closure
 } END
 
-void Primitive::RegisterVector() {
-  Register("Vector.fromList", Vector_fromList, 1);
+void PrimitiveTable::RegisterVector() {
+  Register("Vector.fromList", Vector_fromList, -1);
   Register("Vector.maxLen", Store::IntToWord(Vector::maxLen));
-  Register("Vector.length", Vector_length, 1);
+  Register("Vector.length", Vector_length, -1);
   Register("Vector.sub", Vector_sub, 2);
   Register("Vector.tabulate", Vector_tabulate, 2);
-  Register("Vector.tabulate/cont", Vector_tabulate_cont, 1, 3);
+  Register("Vector.tabulate/cont", ::Vector_tabulate_cont, -1, 3);
 }

@@ -13,8 +13,8 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "datalayer/Alice.hh"
+#pragma implementation "alice/Data.hh"
 #endif
-#include "datalayer/Alice.hh"
+#include "alice/Data.hh"
 
 u_int GlobalStamp::hashCode = 0;

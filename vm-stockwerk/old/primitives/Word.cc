@@ -13,7 +13,7 @@
 //
 
 #include <cstdio>
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
@@ -53,7 +53,7 @@ DEFINE2(Word_div) {
   DECLARE_INT(i, x0);
   DECLARE_INT(j, x1);
   if (j == 0)
-    RAISE(GlobalPrimitives::General_Div);
+    RAISE(PrimitiveTable::General_Div);
   RETURN_INT(i / j);
 } END
 
@@ -74,7 +74,7 @@ WORD_WORD_TO_WORD_OP(Word_orb, |)
 DEFINE1(Word_toInt) {
   DECLARE_INT(i, x0);
   if (i < 0)
-    RAISE(GlobalPrimitives::General_Overflow);
+    RAISE(PrimitiveTable::General_Overflow);
   RETURN(x0);
 } END
 
@@ -93,7 +93,7 @@ DEFINE1(Word_toString) {
 
 WORD_WORD_TO_WORD_OP(Word_xorb, ^)
 
-void Primitive::RegisterWord() {
+void PrimitiveTable::RegisterWord() {
   Register("Word.+", Word_opadd, 2);
   Register("Word.-", Word_opsub, 2);
   Register("Word.*", Word_opmul, 2);
@@ -104,11 +104,11 @@ void Primitive::RegisterWord() {
   Register("Word.div", Word_div, 2);
   Register("Word.fromInt'", Word_fromIntQuote, 2);
   Register("Word.mod", Word_mod, 2);
-  Register("Word.notb", Word_notb, 1);
+  Register("Word.notb", Word_notb, -1);
   Register("Word.orb", Word_orb, 2);
-  Register("Word.toInt", Word_toInt, 1);
-  Register("Word.toIntX", Word_toIntX, 1);
-  Register("Word.toString", Word_toString, 1);
+  Register("Word.toInt", Word_toInt, -1);
+  Register("Word.toIntX", Word_toIntX, -1);
+  Register("Word.toString", Word_toString, -1);
   Register("Word.wordSize", Store::IntToWord(31));
   Register("Word.xorb", Word_xorb, 2);
 }

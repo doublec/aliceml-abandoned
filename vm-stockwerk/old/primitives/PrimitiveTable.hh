@@ -10,24 +10,22 @@
 //   $Revision$
 //
 
-#ifndef __BUILTINS__PRIMITIVE_HH__
-#define __BUILTINS__PRIMITIVE_HH__
+#ifndef __ALICE__PRIMITIVES__PRIMITIVE_TABLE_HH__
+#define __ALICE__PRIMITIVES__PRIMITIVE_TABLE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "builtins/Primitive.hh"
+#pragma interface "alice/primitives/PrimitiveTable.hh"
 #endif
 
-#include "adt/HashTable.hh"
-#include "datalayer/Alice.hh"
-#include "scheduler/Interpreter.hh"
+#include "generic/TaskManager.hh"
 
 class TaskStack;
 
-class Primitive {
+class PrimitiveTable {
 private:
   static word table;
 
-  typedef Interpreter::Result (*function)(TaskStack *);
+  typedef TaskManager::Result (*function)(TaskStack *);
 
   static void Register(const char *name, word value);
   static void Register(const char *name, function value, u_int arity);
@@ -35,7 +33,6 @@ private:
 		       u_int frameSize);
   static void RegisterUniqueConstructor(const char *name);
 
-  static void RegisterInternal();
   static void RegisterUnqualified();
   static void RegisterArray();
   static void RegisterChar();
@@ -54,8 +51,19 @@ private:
   static void RegisterVector();
   static void RegisterWord();
 public:
+  static word Future_Future;
+  static word Future_await;
+  static word General_Chr;
+  static word General_Div;
+  static word General_Overflow;
+  static word General_Size;
+  static word General_Subscript;
+  static word Hole_Cyclic;
+  static word Hole_Hole;
+  static word Vector_tabulate_cont;
+
   static void Init();
-  static word Lookup(String *name);
+  static word Lookup(Chunk *name);
 };
 
-#endif __BUILTINS__PRIMITIVE_HH__
+#endif __ALICE__PRIMITIVES__PRIMITIVE_TABLE_HH__

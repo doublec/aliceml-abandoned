@@ -13,8 +13,7 @@
 //
 
 #include <cstring>
-
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(String_opconcat) {
   DECLARE_STRING(string1, x0);
@@ -85,7 +84,7 @@ DEFINE1(String_explode) {
 DEFINE1(String_implode) {
   DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
   if (length > String::maxSize)
-    RAISE(GlobalPrimitives::General_Size);
+    RAISE(PrimitiveTable::General_Size);
   String *string = String::New(length);
   char *base = string->GetValue();
   u_int i = 1;
@@ -105,7 +104,7 @@ DEFINE2(String_sub) {
   DECLARE_STRING(string, x0);
   DECLARE_INT(index, x1);
   if (index < 0 || static_cast<u_int>(index) >= string->GetSize())
-    RAISE(GlobalPrimitives::General_Subscript);
+    RAISE(PrimitiveTable::General_Subscript);
   RETURN_INT(string->GetValue()[index]);
 } END
 
@@ -116,7 +115,7 @@ DEFINE3(String_substring) {
   int stringLength = string->GetSize();
   if (startIndex < 0 || sliceLength < 0 ||
       startIndex + sliceLength > stringLength)
-    RAISE(GlobalPrimitives::General_Subscript);
+    RAISE(PrimitiveTable::General_Subscript);
   String *substring = String::New(sliceLength);
   std::memcpy(substring->GetValue(),
 	      string->GetValue() + startIndex, sliceLength);
@@ -129,18 +128,18 @@ DEFINE1(String_str) {
   RETURN(String::New(&c, 1)->ToWord());
 } END
 
-void Primitive::RegisterString() {
+void PrimitiveTable::RegisterString() {
   Register("String.^", String_opconcat, 2);
   Register("String.<", String_opless, 2);
   Register("String.>", String_opgreater, 2);
   Register("String.<=", String_oplessEq, 2);
   Register("String.>=", String_opgreaterEq, 2);
   Register("String.compare", String_compare, 2);
-  Register("String.explode", String_explode, 1);
-  Register("String.implode", String_implode, 1);
+  Register("String.explode", String_explode, -1);
+  Register("String.implode", String_implode, -1);
   Register("String.maxSize", Store::IntToWord(String::maxSize));
-  Register("String.size", String_size, 1);
-  Register("String.sub", String_sub, 1);
+  Register("String.size", String_size, -1);
+  Register("String.sub", String_sub, -1);
   Register("String.substring", String_substring, 3);
-  Register("String.str", String_str, 1);
+  Register("String.str", String_str, -1);
 }

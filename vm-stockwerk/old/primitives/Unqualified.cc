@@ -12,9 +12,10 @@
 //   $Revision$
 //
 
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
-static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
+static TaskManager::Result Compare(TaskStack *taskStack, u_int frameSize,
+				   word x0, word x1) {
   Block *a = Store::WordToBlock(x0);
   Block *b = Store::WordToBlock(x1);
   if (a == INVALID_POINTER) { // a is Transient or int
@@ -32,8 +33,8 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
   // from here, both a and b are blocks
   BlockLabel label = a->GetLabel();
   switch (label) {
+  case TUPLE_LABEL:
   case Alice::ConVal:
-  case Alice::Tuple:
   case Alice::Vector:
   case Alice::VectorZero:
     {
@@ -41,9 +42,9 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
       if (b->GetSize() != size)
 	RETURN_BOOL(false);
       for (u_int i = 1; i <= size; i++) {
-	Interpreter::Result result =
-	  Compare(taskStack, a->GetArg(i), b->GetArg(i));
-	if (result.code == Interpreter::Result::CONTINUE) {
+	TaskManager::Result result =
+	  Compare(taskStack, frameSize, a->GetArg(i), b->GetArg(i));
+	if (result.code == TaskManager::Result::CONTINUE) {
 	  bool b = taskStack->GetInt(0);
 	  taskStack->PopFrame(1);
 	  if (!b) RETURN_BOOL(false);
@@ -72,17 +73,17 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
 }
 
 DEFINE2(opeq) {
-  return Compare(taskStack, x0, x1);
+  return Compare(taskStack, frameSize, x0, x1);
 } END
 
 DEFINE2(opnoteq) { // NON-ABSTRACT TASK STACK USE
-  Interpreter::Result result = Compare(taskStack, x0, x1);
-  if (result.code == Interpreter::Result::CONTINUE)
+  TaskManager::Result result = Compare(taskStack, frameSize, x0, x1);
+  if (result.code == TaskManager::Result::CONTINUE)
     taskStack->PutInt(0, !taskStack->GetInt(0));
   return result;
 } END
 
-void Primitive::RegisterUnqualified() {
+void PrimitiveTable::RegisterUnqualified() {
   Register("=", opeq, 2);
   Register("<>", opnoteq, 2);
 }

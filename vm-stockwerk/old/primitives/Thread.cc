@@ -10,10 +10,10 @@
 //   $Revision$
 //
 
-#include "scheduler/Closure.hh"
-#include "scheduler/Thread.hh"
-#include "scheduler/Scheduler.hh"
-#include "builtins/Authoring.hh"
+#include "generic/Closure.hh"
+#include "generic/Thread.hh"
+#include "generic/Scheduler.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE0(Thread_current) {
   RETURN(Scheduler::GetCurrentThread()->ToWord());
@@ -35,8 +35,8 @@ DEFINE2(Thread_raiseIn) {
       int nargs = otherTaskStack->GetInt(0);
       int frameSize = nargs == -1? 2: nargs + 1;
       otherTaskStack->PopFrame(frameSize);
-      otherTaskStack->
-	PushCall(Closure::FromWordDirect(GlobalPrimitives::Internal_raise));
+      //--**otherTaskStack->
+      //--**PushCall(Closure::FromWordDirect(PrimitiveTable::Internal_raise));
       otherTaskStack->PushFrame(2);
       otherTaskStack->PutWord(1, x1);
       otherTaskStack->PutInt(0, 1);
@@ -80,13 +80,13 @@ DEFINE0(Thread_yield) {
   PREEMPT;
 } END
 
-void Primitive::RegisterThread() {
+void PrimitiveTable::RegisterThread() {
   RegisterUniqueConstructor("Thread.Terminate");
   Register("Thread.current", Thread_current, 0);
-  Register("Thread.isSuspended", Thread_isSuspended, 1);
+  Register("Thread.isSuspended", Thread_isSuspended, -1);
   Register("Thread.raiseIn", Thread_raiseIn, 2);
-  Register("Thread.resume", Thread_resume, 1);
-  Register("Thread.state", Thread_state, 1);
-  Register("Thread.suspend", Thread_suspend, 1);
+  Register("Thread.resume", Thread_resume, -1);
+  Register("Thread.state", Thread_state, -1);
+  Register("Thread.suspend", Thread_suspend, -1);
   Register("Thread.yield", Thread_yield, 0);
 }

@@ -11,7 +11,7 @@
 //
 
 #include <cstdio>
-#include "builtins/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(GlobalStamp_compare) {
   DECLARE_GLOBAL_STAMP(globalStamp1, x0);
@@ -54,10 +54,10 @@ DEFINE1(GlobalStamp_toString) {
   }
 } END
 
-void Primitive::RegisterGlobalStamp() {
+void PrimitiveTable::RegisterGlobalStamp() {
   Register("GlobalStamp.compare", GlobalStamp_compare, 2);
-  Register("GlobalStamp.fromString", GlobalStamp_fromString, 1);
-  Register("GlobalStamp.hash", GlobalStamp_hash, 1);
+  Register("GlobalStamp.fromString", GlobalStamp_fromString, -1);
+  Register("GlobalStamp.hash", GlobalStamp_hash, -1);
   Register("GlobalStamp.new", GlobalStamp_new, 0);
-  Register("GlobalStamp.toString", GlobalStamp_toString, 1);
+  Register("GlobalStamp.toString", GlobalStamp_toString, -1);
 }
