@@ -58,12 +58,6 @@ define
       end
    end
 
-   fun {TrCon Con}
-      case Con of 'Con'(Id) then 'Con'({TrId Id})
-      [] 'StaticCon'(Stamp) then 'StaticCon'(Stamp)
-      end
-   end
-
    fun {TrArgs Args TrX}
       case Args of 'OneArg'(X) then 'OneArg'({TrX X})
       [] 'TupArgs'(Xs) then 'TupArgs'({Record.map Xs TrX})
@@ -120,8 +114,8 @@ define
 				       end})
 			[] 'ConTests'(ConBodyVec) then
 			   'ConTests'({Record.map ConBodyVec
-				       fun {$ Con#Args#Body}
-					  {TrCon Con}#{TrArgs Args TrIdDef}#
+				       fun {$ Id#Args#Body}
+					  {TrId Id}#{TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
 			[] 'VecTests'(VecBodyVec) then
@@ -160,8 +154,8 @@ define
       [] 'VarExp'(Info Id) then 'VarExp'({TrInfo Info} {TrId Id})
       [] 'TagExp'(Info Label N Args) then
 	 'TagExp'({TrInfo Info} {TrLabel Label} N {TrArgs Args TrId})
-      [] 'ConExp'(Info Con Args) then
-	 'ConExp'({TrInfo Info} {TrCon Con} {TrArgs Args TrId})
+      [] 'ConExp'(Info Id Args) then
+	 'ConExp'({TrInfo Info} {TrId Id} {TrArgs Args TrId})
       [] 'RefExp'(Info Id) then 'RefExp'({TrInfo Info} {TrId Id})
       [] 'TupExp'(Info Ids) then 'TupExp'({TrInfo Info} {Record.map Ids TrId})
       [] 'ProdExp'(Info LabelIdVec) then
