@@ -45,8 +45,6 @@ case $(uname) in
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
 	;;
     *)
-	LD_LIBRARY_PATH="${seamlibdir}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
-	export LD_LIBRARY_PATH
 	;;
 esac
 
@@ -71,4 +69,4 @@ export ALICE_HOME ALICE_LOAD
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
 #exec gdb seam
 
-exec seam alice "$@"
+exec seam "${seamlibdir}"/alice "$@"
