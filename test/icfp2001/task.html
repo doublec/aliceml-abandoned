@@ -1,9 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
             "http://www.w3.org/TR/REC-html40/loose.dtd">
 <HTML>
-<HEAD><TITLE>ICFP 2001 Programming Contest Challenge Task version 1</TITLE>
+<HEAD><TITLE>ICFP 2001 Programming Contest 
+Challenge Task 
+version 2</TITLE>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<META name="GENERATOR" content="hevea 1.05">
+<META name="GENERATOR" content="hevea 1.06-5 of 2000-09-09">
 </HEAD>
 <BODY >
 <!--HEVEA command line is: hevea task.tex -->
@@ -13,7 +15,9 @@
 <BR>
 <BR>
 
-<H1 ALIGN=center>ICFP 2001 Programming Contest<BR>Challenge Task<BR>version 1</H1>
+<H1 ALIGN=center>ICFP 2001 Programming Contest<BR>
+Challenge Task<BR>
+version 2</H1>
 
 <H3 ALIGN=center>Damien Doligez, Luc Maranget, Pierre Weis</H3>
 <DIV ALIGN=center><I>This document is also available as </I><A HREF="task.pdf"><I>PDF</I></A><I>, </I><A HREF="task.ps"><I>Postcript</I></A><I> and </I><A HREF="task.txt"><I>plain text</I></A><I>.</I></DIV><BR>
@@ -123,9 +127,41 @@ irrelevant where U&nbsp;=&nbsp;0.<BR>
 <!--TOC subsection BNF grammar-->
 
 <H3>2.3&nbsp;&nbsp; BNF grammar</H3><!--SEC END -->
-The BNF grammar of documents is given below.<BR><BR>
+The BNF grammar of documents is given below.<BR>
 <BR>
-<I>document</I> ::= <I>document document</I> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <I>textchar</I> * <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;B&gt;</CODE> <I>document</I> <CODE>&lt;/B&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;EM&gt;</CODE> <I>document</I> <CODE>&lt;/EM&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;I&gt;</CODE> <I>document</I> <CODE>&lt;/I&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;PL&gt;</CODE> <I>document</I> <CODE>&lt;/PL&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;S&gt;</CODE> <I>document</I> <CODE>&lt;/S&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;TT&gt;</CODE> <I>document</I> <CODE>&lt;/TT&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;U&gt;</CODE> <I>document</I> <CODE>&lt;/U&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;0&gt;</CODE> <I>document</I> <CODE>&lt;/0&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;1&gt;</CODE> <I>document</I> <CODE>&lt;/1&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;2&gt;</CODE> <I>document</I> <CODE>&lt;/2&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;3&gt;</CODE> <I>document</I> <CODE>&lt;/3&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;4&gt;</CODE> <I>document</I> <CODE>&lt;/4&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;5&gt;</CODE> <I>document</I> <CODE>&lt;/5&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;6&gt;</CODE> <I>document</I> <CODE>&lt;/6&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;7&gt;</CODE> <I>document</I> <CODE>&lt;/7&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;8&gt;</CODE> <I>document</I> <CODE>&lt;/8&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;9&gt;</CODE> <I>document</I> <CODE>&lt;/9&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;r&gt;</CODE> <I>document</I> <CODE>&lt;/r&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;g&gt;</CODE> <I>document</I> <CODE>&lt;/g&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;b&gt;</CODE> <I>document</I> <CODE>&lt;/b&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;c&gt;</CODE> <I>document</I> <CODE>&lt;/c&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;m&gt;</CODE> <I>document</I> <CODE>&lt;/m&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;y&gt;</CODE> <I>document</I> <CODE>&lt;/y&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;k&gt;</CODE> <I>document</I> <CODE>&lt;/k&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;w&gt;</CODE> <I>document</I> <CODE>&lt;/w&gt;</CODE><BR><BR><I>textchar</I> ::= any printable character except <CODE>&lt;</CODE> and <CODE>&gt;</CODE> <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CR | LF | TAB | SPC<BR>
+<BR>
+<BR>
+<BR>
+<I>document</I> ::= <I>document document</I> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <I>textchar</I> * <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;B&gt;</CODE> <I>document</I> <CODE>&lt;/B&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;EM&gt;</CODE> <I>document</I> <CODE>&lt;/EM&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;I&gt;</CODE> <I>document</I> <CODE>&lt;/I&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;PL&gt;</CODE> <I>document</I> <CODE>&lt;/PL&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;S&gt;</CODE> <I>document</I> <CODE>&lt;/S&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;TT&gt;</CODE> <I>document</I> <CODE>&lt;/TT&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;U&gt;</CODE> <I>document</I> <CODE>&lt;/U&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;0&gt;</CODE> <I>document</I> <CODE>&lt;/0&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;1&gt;</CODE> <I>document</I> <CODE>&lt;/1&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;2&gt;</CODE> <I>document</I> <CODE>&lt;/2&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;3&gt;</CODE> <I>document</I> <CODE>&lt;/3&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;4&gt;</CODE> <I>document</I> <CODE>&lt;/4&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;5&gt;</CODE> <I>document</I> <CODE>&lt;/5&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;6&gt;</CODE> <I>document</I> <CODE>&lt;/6&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;7&gt;</CODE> <I>document</I> <CODE>&lt;/7&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;8&gt;</CODE> <I>document</I> <CODE>&lt;/8&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;9&gt;</CODE> <I>document</I> <CODE>&lt;/9&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;r&gt;</CODE> <I>document</I> <CODE>&lt;/r&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;g&gt;</CODE> <I>document</I> <CODE>&lt;/g&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;b&gt;</CODE> <I>document</I> <CODE>&lt;/b&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;c&gt;</CODE> <I>document</I> <CODE>&lt;/c&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;m&gt;</CODE> <I>document</I> <CODE>&lt;/m&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;y&gt;</CODE> <I>document</I> <CODE>&lt;/y&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;k&gt;</CODE> <I>document</I> <CODE>&lt;/k&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | <CODE>&lt;w&gt;</CODE> <I>document</I> <CODE>&lt;/w&gt;</CODE><BR>
+<BR>
+<I>textchar</I> ::= any printable character except <CODE>&lt;</CODE> and <CODE>&gt;</CODE> <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | CR | LF | TAB | SPC<BR>
 <BR>
 <!--TOC section Specification-->
 
@@ -152,17 +188,17 @@ A property record has 8 fields:
 
 <DT><B>size</B><DD> an integer between 0 and 9 (included)
 
-<DT><B>color</B><DD> an element of {<I>r</I>, <I>g</I>, <I>b</I>, <I>c</I>, <I>m</I>, <I>y</I>, <I>b</I>, <I>w</I>}
+<DT><B>color</B><DD> an element of {<I>r</I>, <I>g</I>, <I>b</I>, <I>c</I>, <I>m</I>, <I>y</I>, <I>k</I>, <I>w</I>}
 </DL>To compute the meaning of a document given a current context (a
 context is a property record), consider the document as a 
 sequence of characters and tags. Treat each element of this sequence
 in turn as follows:
 <UL>
 <LI>
- if it is a printing character, output it, decorated by the current
+if it is a printing character, output it, decorated by the current
  context
 
-<LI> if it is a whitespace character, compute the current space context,
+<LI>if it is a whitespace character, compute the current space context,
  which is the current context modified in the
  following way: the <B>s</B>, <B>em</B>, <B>i</B>, and <B>b</B> flags are
  unset, and if <B>u</B> is
@@ -173,7 +209,7 @@ in turn as follows:
  a SPC decorated with the same space context then do nothing;
  otherwise, output a SPC decorated with the current space context.
 
-<LI> if it is an open tag, save the current context and change it
+<LI>if it is an open tag, save the current context and change it
  according to the tag name as follows:
  <DL COMPACT=compact>
 <DT>
@@ -199,7 +235,7 @@ in turn as follows:
 <DT><TT>r</TT>, <TT>g</TT>, <TT>b</TT>, etc.<DD> set <B>color</B> accordingly
  </DL>
 
-<LI> if it is a closing tag, restore the context that was saved at the
+<LI>if it is a closing tag, restore the context that was saved at the
  corresponding open tag
 </UL>The meaning of the document is the sequence of decorated characters
 output by the above algorithm.<BR>
@@ -274,10 +310,12 @@ For example, opportunities for optimisation include the following:<BR>
 <BR>
 <UL>
 <LI>
- <B>whitespace compression</B><BR>replacing a white space sequence with a single space or newline<BR>
+<B>whitespace compression</B><BR>
+replacing a white space sequence with a single space or newline<BR>
 <BR>
 
-<LI> <B>redundancy elimination</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>redundancy elimination</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;&lt;/B&gt;</TT></TD>
 </TR>
@@ -285,7 +323,8 @@ For example, opportunities for optimisation include the following:<BR>
 <TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;B&gt;foo&lt;/B&gt;&lt;/I&gt;</TT></TD>
 </TR></TABLE><BR>
 
-<LI> <B>overlap inversion</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>overlap inversion</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;bla bla&lt;/I&gt;&lt;/B&gt;&lt;TT&gt;&lt;I&gt;&lt;B&gt;foo bar&lt;/B&gt;&lt;/I&gt; truc&lt;/TT&gt;</TT></TD>
 </TR>
@@ -293,7 +332,8 @@ For example, opportunities for optimisation include the following:<BR>
 <TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;bla bla&lt;TT&gt;foo bar&lt;/TT&gt;&lt;/I&gt;&lt;/B&gt;&lt;TT&gt; truc&lt;/TT&gt;</TT></TD>
 </TR></TABLE><BR>
 
-<LI> <B>PL shortcut</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>PL shortcut</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt; bar &lt;TT&gt;&lt;S&gt;&lt;I&gt; gee&lt;/I&gt;&lt;/S&gt;&lt;/TT&gt;</TT></TD>
 </TR>
@@ -301,7 +341,8 @@ For example, opportunities for optimisation include the following:<BR>
 <TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;S&gt;&lt;TT&gt;foo&lt;PL&gt; bar &lt;/PL&gt; gee&lt;/TT&gt;&lt;/S&gt;&lt;/I&gt;</TT></TD>
 </TR></TABLE><BR>
 
-<LI> <B>whitespace simplification</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>whitespace simplification</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;B&gt;&lt;I&gt;&lt;r&gt;bla bla &lt;/r&gt; &lt;/I&gt; &lt;/B&gt; &lt;r&gt;&lt;I&gt; barfoo&lt;/I&gt;&lt;/r&gt;</TT></TD>
 </TR>
@@ -309,7 +350,8 @@ For example, opportunities for optimisation include the following:<BR>
 <TD ALIGN=left NOWRAP><TT>&lt;I&gt;&lt;r&gt;&lt;B&gt;bla bla &lt;/B&gt;barfoo&lt;/r&gt;&lt;/I&gt;</TT></TD>
 </TR></TABLE><BR>
 
-<LI> <B>EM elimination</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>EM elimination</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;S&gt; foo &lt;EM&gt; bar &lt;/EM&gt; &lt;/S&gt; &lt;EM&gt; &lt;EM&gt; foo &lt;/EM&gt; &lt;/EM&gt;.</TT></TD>
 </TR>
@@ -317,7 +359,8 @@ For example, opportunities for optimisation include the following:<BR>
 <TD ALIGN=left NOWRAP><TT>&lt;S&gt; foo bar&lt;/S&gt; foo .</TT></TD>
 </TR></TABLE><BR>
 
-<LI> <B>color nesting</B><BR><TABLE CELLSPACING=2 CELLPADDING=0>
+<LI><B>color nesting</B><BR>
+<TABLE CELLSPACING=2 CELLPADDING=0>
 <TR><TD ALIGN=left NOWRAP>changing</TD>
 <TD ALIGN=left NOWRAP><TT>&lt;r&gt;aaa&lt;/r&gt;&lt;g&gt;bbb&lt;/g&gt;&lt;b&gt;ccc&lt;/b&gt;&lt;g&gt;ddd&lt;/g&gt;&lt;r&gt;eee&lt;/r&gt;</TT></TD>
 </TR>
@@ -337,21 +380,21 @@ Note that the limit is real time (a.k.a wall-clock time), not CPU time.<BR>
 Your programs will be ranked according to the following criteria:
 <OL type=1>
 <LI>
- Correctness. Every program that crashes or gives the wrong
+Correctness. Every program that crashes or gives the wrong
 result (i.e. some output that is not equivalent to the input) on any
 one of our test inputs will be
 mercilessly eliminated from the competition.
 
-<LI> Stupidity. Every program that gives a result bigger than the
+<LI>Stupidity. Every program that gives a result bigger than the
 input on any of the inputs will also be eliminated.
 
-<LI> Output size. The remaining programs will be ranked according
+<LI>Output size. The remaining programs will be ranked according
 to the size of their outputs on a well-chosen set of inputs. The
 inputs will be generated using a variety of techniques such as hand-writing,
 translation from HTML, random generation. These inputs can be big
 (up to a few megabytes).
 
-<LI> Speed of optimisation. If the top programs are very close to
+<LI>Speed of optimisation. If the top programs are very close to
 each other using the previous criterion, we will use speed as a tie breaker.
 </OL><!--TOC section Online stuff-->
 
@@ -359,16 +402,16 @@ each other using the previous criterion, we will use speed as a tie breaker.
 The following Web pages may be of interest to you:
 <UL>
 <LI>
- Contest home page: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/</TT></A>
+Contest home page: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/</TT></A>
 
-<LI> FAQ: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/faq.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/faq.html</TT></A>
+<LI>FAQ: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/faq.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/faq.html</TT></A>
 
-<LI> News: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/news.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/news.html</TT></A>
+<LI>News: <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/news.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/news.html</TT></A>
 
-<LI> Document checker and equivalence tester:
+<LI>Document checker and equivalence tester:
  <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/validator.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/validator.html</TT></A>
 
-<LI> Procedure for submitting entries:
+<LI>Procedure for submitting entries:
  <A HREF="http://cristal.inria.fr/ICFP2001/prog-contest/procedure.html"><TT>http://cristal.inria.fr/ICFP2001/prog-contest/procedure.html</TT></A>
 </UL><!--TOC section Good luck-->
 
@@ -385,4 +428,3 @@ Have fun !<BR>
 </EM><A HREF="http://pauillac.inria.fr/~maranget/hevea/index.html"><EM>H</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>V</EM><EM><FONT SIZE=2><sup>E</sup></FONT></EM><EM>A</EM></A><EM>.
 </EM></BLOCKQUOTE></BODY>
 </HTML>
-
