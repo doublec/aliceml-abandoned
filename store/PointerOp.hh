@@ -37,6 +37,13 @@ public:
     return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ?
 		      ((char *) p - (u_int) BLKTAG) : INVALID_POINTER);
   }
+  static Chunk *DecodeChunk(word p) {
+    if (((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) {
+      Block *bp = (Block *) ((char *) p - (u_int) BLKTAG);
+      return (Chunk *) ((HeaderOp::DecodeLabel(bp) == CHUNK_LABEL) ? bp : INVALID_POINTER);
+    }
+    return (Chunk *) INVALID_POINTER;
+  }
   // Transient<->Word Conversion
   static word EncodeTransient(Transient *p) {
     AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) EMPTYTAG);
