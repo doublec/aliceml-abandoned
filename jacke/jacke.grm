@@ -112,7 +112,7 @@ bnfexp : SKIP (A.Skip)
 	| ID AS bnfexp (A.As(ID,bnfexp))
 	| bnfexp COMMA bnfexp (A.Seq([bnfexp1,bnfexp2]))
 	| bnfexp PREC ID (A.Prec(bnfexp,ID))
-	| bnfexp MAPSTO LPAREN explist RPAREN (A.Transform(bnfexp,rev explist))
+	| bnfexp MAPSTO LPAREN explist RPAREN (A.Transform(bnfexp,explist))
 	| bnfexp BAR bnfexp (A.Alt([bnfexp1,bnfexp2])) 
 
 explist : ([])

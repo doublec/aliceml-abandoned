@@ -13,15 +13,36 @@ struct
 	
     and parsetree =
 	TokenDec of (string * string option) list
-      | AssoclDec of string list
-      | AssocrDec of string list
-      | NonassocDec of string list
+      | AssoclDec of idlist
+      | AssocrDec of idlist
+      | NonassocDec of idlist
       | RuleDec of rule list
       | ParserDec of (string * string option * string) list
       | MLCode of string list
 	
     withtype 
 	rule = string * string option * bnfexp
+    and idlist = string list
+
+    exception MultipleDefinition of string
+
+
+    (* check that
+     0. at most one of nonassoc, assocr, assocl per token (* still missing *)
+     1. only one token declaration in program
+     2. only one rule declaration per rule name  (too strict ?) *)
+
+    fun checkAdmissibility p = 
+	let fun chk (NONE,env') (TokenDec t) = (SOME (), env')
+	      | chk (SOME (),env') (TokenDec t) = raise MultipleDefinition ("token")
+	      | chk (t,env') (RuleDec []) = (t,env')
+	      | chk (t,env') (RuleDec ((r,_,b)::rs)) = if List.exists (fn x =>x=r) env' then 
+	                                                   raise MultipleDefinition ("rule "^r)
+						       else chk (t,r::env') (RuleDec rs)
+	      | chk env _ = env
+	in (foldr (fn (p,(t,env')) => chk (t,env') p) (NONE,[]) p; true) 
+	end handle MultipleDefinition _ => false
+
 
 
 
@@ -37,10 +58,10 @@ struct
 	      | f ind (Alt (b::bs)) = (f ind b)^(f ind (Alt bs))
 	      | f ind (Prec (b,s)) = (indent ind)^"Prec\n"^(f (ind+4) b)^(indent (ind+4))^"Symbol ("^s^")\n"
 	      | f ind (Transform (b,s)) = (indent ind)^"Transform\n"^(f (ind+4) b)
-		                          ^(indent (ind+4))^(foldl (fn (s,b)=>s^" "^b) "\n" s) 
+		                          ^(indent (ind+4))^(foldr (fn (s,b)=>s^" "^b) "\n" s) 
 	      | f ind (Seq []) = ""
 	      | f ind (Seq (b::bs)) = (f ind b)^(f ind (Seq bs))
-	    fun g ind (TokenDec l) = (indent ind)^"TokenDec\n"^(indent (ind+4))^(foldl (fn ((s,_),b)=>s^" "^b) "\n" l)
+	    fun g ind (TokenDec l) = (indent ind)^"TokenDec\n"^(indent (ind+4))^(foldr (fn ((s,_),b)=>s^" "^b) "\n" l)
 	      | g ind (AssoclDec l) = (indent ind)^"AssoclDec\n"
 	      | g ind (AssocrDec l) = (indent ind)^"AssocrDec\n"
 	      | g ind (NonassocDec l) = (indent ind)^"NonassocDec\n"

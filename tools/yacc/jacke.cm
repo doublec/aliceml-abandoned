@@ -7,5 +7,6 @@ jacke.lex
 jacke.grm
 ErrorMsg.sml
 AbsSyn.sml
+NormalForm.sml
 jacke.sml
 
