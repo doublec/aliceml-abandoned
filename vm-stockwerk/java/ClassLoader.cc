@@ -130,6 +130,7 @@ Worker::Result BuildClassWorker::Run() {
   Scheduler::PopFrame();
   Scheduler::nArgs = Scheduler::ONE_ARG;
   Scheduler::currentArgs[0] = classInfo->Prepare()->ToWord();
+  //--** run static initializer <clinit>
   return Worker::CONTINUE;
 }
 
