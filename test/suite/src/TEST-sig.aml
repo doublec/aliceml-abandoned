@@ -1,0 +1,58 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature TEST =
+sig
+
+    exception Error of (exn * string)
+
+    exception NotYetImplemented
+
+    type test_case = string * (unit -> unit)
+
+    type test_suite = string * test_case list
+    
+    datatype failure =			       (* reason for failure *) 
+	FAIL_EXN of exn                        (* Exception raised *)
+    |	FAIL_ASSERT of string * int            (* file, line *)
+    |	FAIL_TIMEOUT
+
+    type result = {			  (* result of executing a testsuite *)
+	name: string,			  (* name of the testsuite *)
+	passed: int,			  (* number of successful testcases *)
+	failed: int,			  (* number of failed testcases *)
+	failures: (test_case * failure * string) list   
+                                          (* list of failed testcases, 
+                                            reason and sample values *)
+    }
+
+    type config = {
+	timeout: Time.time,		    (* if a testcase uses more 
+						    time it fails *)
+	separate: bool			    (* execute each testcase 
+                                                    in a separate process ? *)
+    }
+
+    val defaultConfig: config	      (* [= { timeout = Time.fromSeconds 10, 
+					      separate = false }] *)
+
+    val test: ('a -> bool) -> 'a -> unit
+
+    val run: config -> test_suite -> result
+    (* [execute cfg suite] executes all testcases of [suite] using
+       configuration [cfg].
+     * All testcases are executed independently of the outcome of 
+       previos testcases.
+     * In particular failure of a testcase doesn't prevent execution of 
+       the following testcases of the suite!
+     *)
+end

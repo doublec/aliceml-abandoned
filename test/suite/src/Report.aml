@@ -1,0 +1,65 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Test from "Test"
+import signature REPORT from "REPORT-sig"
+
+structure Report :> REPORT =
+struct
+
+    fun printSpc n = 
+	let
+	   fun print' (i, s) = if i = 0 then s else print' (i - 1,s ^ " ")
+	in
+	   print' (20 - String.size n, n)
+        end
+
+    fun printPts n = 
+	let
+	   fun print' (i, s) = if i = 0 then s else print' (i - 1,s ^ ".")
+	in
+	   print' (20 - String.size n, n)
+        end
+
+    fun fmtFail out ((n, _), Test.FAIL_ASSERT (str, line), sample) = 
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ str 
+                        ^ " at line: " ^ Int.toString line 
+                        ^ ": assert failed\n\t   " 
+                        ^ printSpc "with argument:"
+			^ sample ^ "\n")
+      | fmtFail out ((n, _), Test.FAIL_EXN name, sample) =
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "exception "
+                        ^ exnName name ^ " raised\n\t   " 
+			^ printSpc "with argument:" ^ sample ^ "\n")
+      | fmtFail out ((n, _), Test.FAIL_TIMEOUT, sample) =
+	TextIO.output (out, "\t" ^ printSpc (n ^ ":") ^ "timeout expired\n")
+
+    fun report out { name, passed, failed, failures } =
+	let
+	    val str = printPts name
+        in
+            if failed = 0
+	    then TextIO.output (out, "\n" ^ str ^ "ok\t\t(" 
+                                ^ Int.toString passed ^ ") passed\n")
+            else
+	 	(TextIO.output (out, "\n" ^ str ^ "FAILED\t("
+                                 ^ Int.toString passed ^ "/" 
+                                 ^ Int.toString (passed+failed) 
+                                 ^ ") passed\n");
+	    List.app (fmtFail out) failures)
+	end
+
+    fun run out cfg = report out o (Test.run cfg)
+
+    fun runAll out cfg = List.app (run out cfg)  
+end
+
