@@ -2,5 +2,5 @@ Group is
 
     make-recursive-compiler.cm
 
-    INTERACTIVE_TOPLEVEL.sig
-    MakeEmacsToplevel.sml
+    INTERACTIVE_TOPLEVEL-sig.aml
+    MkEmacsToplevel.aml
