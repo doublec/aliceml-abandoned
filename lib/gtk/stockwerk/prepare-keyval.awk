@@ -1,6 +1,6 @@
 # Gawk script to convert gdkkeysyms.h #defines into keyval datatype declaration
 # written by Benedikt Grundmann <bgrund@ps.uni-sb.de>
-# Last change by $author$ at $date$
+# Last change by $Author$ at $Date$
 
 BEGIN {
     # main file
