@@ -1,0 +1,85 @@
+<?php include("macros.php3"); ?>
+<?php heading("The OS.Path structure", "The <TT>OS.Path</TT> structure") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature OS_PATH
+    structure Path : OS_PATH
+  </PRE>
+
+  <P>
+    An extension of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-path.html"><TT>OS.Path</TT></A> structure.
+  </P>
+
+  <P>See also:
+    <A href="os.html"><TT>OS</TT></A>,
+    <A href="url.html"><TT>Url</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <P>
+    Imported implicitly.
+  </P>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature OS_PATH =
+    sig
+	exception Path
+	exception InvalidArc
+
+	val parentArc :     string
+	val currentArc :    string
+
+	val fromString :    string -> {isAbs : bool, vol : string, arcs : string list}
+	val toString :      {isAbs : bool, vol : string, arcs : string list} -> string
+
+	val validVolume :   {isAbs : bool, vol : string} -> bool
+	val getVolume :     string -> string
+	val getParent :     string -> string
+
+	val concat :        string * string -> string
+
+	val splitDirFile :  string -> {dir : string, file : string}
+	val joinDirFile :   {dir : string, file : string} -> string
+	val dir :           string -> string
+	val file :          string -> string
+
+	val splitBaseExt :  string -> {base : string, ext : string option}
+	val joinBaseExt :   {base : string, ext : string option} -> string
+	val base :          string -> string
+	val ext :           string -> string option
+
+	val mkCanonical :   string -> string
+	val isCanonical :   string -> bool
+
+	val mkAbsolute :    {path : string, relativeTo : string} -> string
+	val mkRelative :    {path : string, relativeTo : string} -> string
+	val isAbsolute :    string -> bool
+	val isRelative :    string -> bool
+	val isRoot :        string -> bool
+
+	val fromUnixPath :  string -> string
+	val toUnixPath :    string -> string
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <P>
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-path.html"><TT>OS.Path</TT></A> structure.
+  </P>
+
+  <P>
+    <I>Note:</I> Due to the platform independence of Alice the behaviour of
+    <TT>OS.Path</TT> is <EM>not</EM> dependent on the host operating system.
+    Instead, paths are always interpreted in a manner conforming to the
+    conventions of Unix-style operating systems.
+  </P>
+
+<?php footing() ?>
