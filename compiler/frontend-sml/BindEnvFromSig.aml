@@ -77,6 +77,9 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 					(* UNFINISHED: check that the
 					 * constructor actually constructs
 					 * the type in question. *)
+					(* UNFINISHED: what if the
+					 * constructors are actually hidden
+					 * by following members??? *)
 		in
 		    insertVal(E, vid, (I,x,is)) ;
 		    loop(Type.tailRow r)
