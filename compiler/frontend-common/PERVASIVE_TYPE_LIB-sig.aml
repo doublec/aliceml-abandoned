@@ -15,7 +15,5 @@ import structure Label from "../../lib/rtt/Label"
 signature PERVASIVE_TYPE_TRANSLATION =
 sig
     val modlab_pervasiveType :	Label.t
-
-    val lab_typ_ref :		Label.t
     val lab_lookup :		Label.t
 end
