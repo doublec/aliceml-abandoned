@@ -212,9 +212,9 @@ define
 	    'stdIn': {New Desc init({OS.fileDesc 'STDIN_FILENO'}
 				    {ByteString.make 'stdIn'} reader)}
 	    'stdOut': {New Desc init({OS.fileDesc 'STDOUT_FILENO'}
-				     {ByteString.make 'stdIn'} writer)}
-	    'stdErr': {New Desc init({OS.fileDesc 'STDERR_FILENO'}
 				     {ByteString.make 'stdOut'} writer)}
+	    'stdErr': {New Desc init({OS.fileDesc 'STDERR_FILENO'}
+				     {ByteString.make 'stdErr'} writer)}
 
 	    %% Creating file iodescs
 	    'openIn':
