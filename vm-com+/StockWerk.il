@@ -410,6 +410,8 @@
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.Promise::Ref
       ldarg.0
+      call instance void System.Object::NotifyAll()
+      ldarg.0
       call void System.CriticalSection::Exit(class System.Object)
       ret
     raise:
@@ -591,6 +593,8 @@
         ldarg.0
         ldc.i4 3
         stfld int32 StockWerk.ByNeed::State
+        ldarg.0
+        call instance void System.Object::NotifyAll()
         ldloc.0
         ret
       raiseFulfill:
