@@ -11,15 +11,15 @@
  *
  *)
 
-import structure Gtk         from "../Gtk"
-import structure Gdk         from "../Gdk"
-import structure GnomeCanvas from "../GnomeCanvas"
-import signature GtkBuilder  from "GtkBuilder-sig"
+import structure Gtk         from "Gtk"
+import structure Gdk         from "Gdk"
+import structure GnomeCanvas from "GnomeCanvas"
+import signature GTK_BUILDER from "GTK_BUILDER-sig"
 
 local
     datatype arg   = datatype Gtk.arg
 in
-    structure GtkBuilder :> GtkBuilder =
+    structure GtkBuilder :> GTK_BUILDER =
 	struct
 	    datatype GtkWidget =
 		Toplevel    of {title:string, border:int,
@@ -74,6 +74,7 @@ in
 		MenuItem      of string * GtkSignalHandler list
 	      | CheckMenuItem of string * GtkSignalHandler list
 	      | SubMenu       of string * GtkMenuItem list
+	      | MenuWidget    of Gtk.object
 	    and GtkTreeItem =
 		TreeItem of string
 	      | SubTree  of string * GtkTreeItem list
@@ -410,6 +411,9 @@ in
 		     MakeMenuEntries(sub, submenu);
 		     MakeMenuEntries(menu, er))
 		end
+	      | MakeMenuEntries(menu, MenuWidget(w)::er) =
+		(Gtk.menuShellAppend(menu, w);
+		 MakeMenuEntries(menu, er))
 	    and MakeMenuBarEntries (bar, nil) = ()
 	      | MakeMenuBarEntries (bar, {label=title, submenu=items}::er) =
 		let

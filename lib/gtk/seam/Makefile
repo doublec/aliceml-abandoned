@@ -26,9 +26,12 @@ OUTDIR = output
 # support file indicating last generator build
 LASTGENERATE = lastgenerate
 
+# GtkBuilder
+BUILDER = GTK_BUILDER-sig GtkBuilder
+
 # names of all files to compile
 CORE = CORE-sig.aml Core.aml
-MAINFILES = $(COMPS:%=%.aml)
+MAINFILES = $(COMPS:%=%.aml) $(BUILDER:%=%.aml)
 CPPSOURCES = $(NATIVECOMPS:%=%.cc) NativeCore.cc
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 

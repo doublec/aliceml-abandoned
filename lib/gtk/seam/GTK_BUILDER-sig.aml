@@ -11,12 +11,12 @@
  *
  *)
 
-import structure Gtk from "../Gtk"
+import structure Gtk from "Gtk"
 
 local
     datatype arg   = datatype Gtk.arg
 in
-    signature GtkBuilder =
+    signature GTK_BUILDER =
 	sig
 	    datatype GtkWidget =
 		Toplevel    of {title:string, border:int,
@@ -71,6 +71,7 @@ in
 		MenuItem      of string * GtkSignalHandler list
 	      | CheckMenuItem of string * GtkSignalHandler list
 	      | SubMenu       of string * GtkMenuItem list
+	      | MenuWidget    of Gtk.object
 	    and GtkTreeItem =
 		TreeItem of string
 	      | SubTree  of string * GtkTreeItem list
