@@ -18,7 +18,7 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SOURCES = \
-	Outline.cc Debug.cc RootSet.cc UniqueString.cc Properties.cc \
+	Outline.cc Debug.cc RootSet.cc UniqueString.cc \
 	StackFrame.cc TaskStack.cc IOHandler.cc IODesc.cc SignalHandler.cc \
 	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
 	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \

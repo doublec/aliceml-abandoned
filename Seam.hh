@@ -41,7 +41,6 @@
 #include "generic/Debug.hh"
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
-#include "generic/Properties.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
 #include "generic/IODesc.hh"

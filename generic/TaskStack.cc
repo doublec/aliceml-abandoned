@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2000-2002
+//   Leif Kornstaedt, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -24,7 +24,6 @@
 #include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
-#include "generic/Properties.hh"
 #include "generic/Debug.hh"
 
 #if PROFILE
@@ -59,14 +58,15 @@ Worker::Result EmptyTaskWorker::Run(StackFrame *sFrame) {
 }
 
 Worker::Result EmptyTaskWorker::Handle(word) {
-  if (Properties::atExn == Store::IntToWord(0)) {
+  if (TaskStack::uncaughtExceptionClosure == Store::IntToWord(0)) {
     std::fprintf(stderr, "uncaught exception:\n");
     Debug::Dump(Scheduler::currentData);
     std::fprintf(stderr, "backtrace:\n");
     Scheduler::currentBacktrace->Dump();
     return Worker::TERMINATE;
   } else {
-    return Scheduler::PushCall(Properties::atExn);
+    //--** support multiple actions
+    return Scheduler::PushCall(TaskStack::uncaughtExceptionClosure);
   }
 }
 
@@ -85,12 +85,16 @@ void EmptyTaskWorker::DumpFrame(StackFrame *) {
 // TaskStack Implementation
 word TaskStack::emptyTask;
 word TaskStack::emptyStack;
+word TaskStack::uncaughtExceptionClosure;
 
 void TaskStack::Init() {
   Worker *interpreter = new EmptyTaskWorker();
   emptyTask  = Store::UnmanagedPointerToWord(interpreter);
   emptyStack = Store::AllocBlock(MIN_DATA_LABEL, 1)->ToWord();
   RootSet::Add(emptyStack);
+
+  uncaughtExceptionClosure = Store::IntToWord(0);
+  RootSet::Add(uncaughtExceptionClosure);
 }
 
 void TaskStack::SetTop(u_int top) {
