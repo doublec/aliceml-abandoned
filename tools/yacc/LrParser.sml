@@ -40,7 +40,7 @@ structure LrParserEng :> LR_PARSER_ENG =
      open LrTable 
      open Token
 
-     val DEBUG = false
+     val DEBUG = true
      exception ParseError
 
       type ('a,'b) elem = (state * ('a * 'b * 'b))

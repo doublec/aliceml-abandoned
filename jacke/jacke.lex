@@ -164,6 +164,7 @@ string     = "\""({stringchar} | {gap})*"\"";
 <INITIAL>"~"    => (Tokens.UMINUS(yypos,yypos+1));
 <INITIAL>"->"   => (Tokens.MLOP("->",yypos,yypos+2));
 <INITIAL>"<>"   => (Tokens.MLOP("<>",yypos,yypos+2));
+<INITIAL>"_"   => (Tokens.MLOP("_",yypos,yypos+2));
 <INITIAL>"<"    => (Tokens.MLOP("<",yypos,yypos+1));
 <INITIAL>"<="   => (Tokens.MLOP("<=",yypos,yypos+2));
 <INITIAL>">"    => (Tokens.MLOP(">",yypos,yypos+1));
@@ -172,6 +173,7 @@ string     = "\""({stringchar} | {gap})*"\"";
 <INITIAL>"!"    => (Tokens.MLOP("!",yypos,yypos+1));
 <INITIAL>"@"    => (Tokens.MLOP("@",yypos,yypos+1));
 <INITIAL>"^"    => (Tokens.MLOP("=",yypos,yypos+1));
+<INITIAL>"."    => (Tokens.MLOP(".",yypos,yypos+1));
 
 
 <INITIAL>{alphanum} => (Tokens.ID(yytext,yypos,yypos+

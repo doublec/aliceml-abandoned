@@ -9,6 +9,10 @@ struct
     datatype translate = TRANSLATE of {grammar :G.grammar,
 				       stringToTerm :string -> G.term,
 				       stringToNonterm :string -> G.nonterm,
+				       parsers :int,
+				       (*termToString :int -> string,
+				       nontermToString :int -> string,
+				       parserSymbols : ?*)
 				       termlist :(string * string option) list,
 				       rules :A.rule list
 				       }
@@ -37,14 +41,14 @@ struct
     val start = "NewStartSymbol"    
     *)
 
+    (* tl: new tokens to distinguish between different parsers *) 
     fun mkTermDict tl l = 
 	let fun toDict i [] = []
 	      | toDict i (to::toks) = (to,i)::(toDict (i+1) toks)
 	    val t1 = toDict 0 (map (fn x => (x,NONE)) tl)
-	    (*    val t2 = toDict 0 ((eop,NONE)::t1) *)
 	    val t3 = List.concat(List.map (fn A.TokenDec t => toDict (List.length t1) t | _ => []) l)
 	in 
-	(* t2@t3 *) t3@t1
+	    t1@t3
 	end
 
     fun mkNontermDict l =
@@ -88,18 +92,20 @@ struct
     fun mkParsers l =
 	let val ps = List.concat (List.map (fn (A.ParserDec l) => l 
                                               | _ => []) l)
+	    val enum = List.tabulate (List.length ps, fn x => x)
+	    val enumParsers = ListPair.zip(ps,enum)
 	    fun toRule tl [] = (tl,[])
-	      | toRule tl ((pname,_,stsym)::l) =
+	      | toRule tl (((pname,_,stsym),pnum)::l) =
 		let val tok = newTokenname () 
 		    val (tl,rules) = toRule tl l
 		in (tok::tl,(N.start,NONE,A.Transform
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
 				     A.As(N.eop,A.Symbol(N.eop))],
-			      [stsym]))::rules)
+			      ["SValue.S"^(Int.toString pnum)^" ( "^ stsym^" )"]))::rules)
 		end
 	in
-	    toRule [] ps
+	    toRule [] enumParsers
 	end
 
     fun translateSeq td ntd = 
@@ -137,6 +143,7 @@ struct
 
     fun translate y = 
 	let val (ts,x1) = mkParsers y
+	    val parsers = List.length ts (* number of parsers in file *)
 	    val x = (A.RuleDec x1)::y
 	    val td = mkTermDict ts x
 	    val ntd = mkNontermDict x
@@ -169,7 +176,8 @@ struct
 		      stringToTerm = stringToTerm,
 		      stringToNonterm = stringToNonterm,
 		      termlist = termlist,
-		      rules = origRules
+		      rules = origRules,
+		      parsers = parsers
 		      }
 	end
     
