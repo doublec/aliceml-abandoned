@@ -645,6 +645,7 @@ signature SUBSTRING =
 
     type t = substring
 
+    val full :  string -> substring
     val equal :	substring * substring -> bool
     val hash :	substring -> int
 
@@ -655,6 +656,7 @@ structure Substring =
   struct
     open Substring
 
+    val full		= all
     fun hash ss		= String.hash(string ss)
     fun equal(ss, st)	= string ss = string st
 
@@ -662,6 +664,18 @@ structure Substring =
   end
 
 structure WideSubstring = Substring
+
+
+(*****************************************************************************
+ * CharVectorSlice
+ *****************************************************************************)
+
+structure CharVectorSlice =
+  struct
+    fun all f ss =
+	Substring.size ss = 0 orelse
+	f(Substring.sub(ss,0)) andalso all f (Substring.triml 1 ss)
+  end
 
 
 (*****************************************************************************
