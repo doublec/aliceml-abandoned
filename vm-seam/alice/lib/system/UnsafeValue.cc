@@ -115,6 +115,81 @@ void RequestInterpreter::PushCall(Closure *closure) {
 }
 
 //
+// CatchWorker
+//
+class CatchWorkerFrame : public StackFrame {
+protected:
+  enum { HANDLER_POS, SIZE };
+public:
+  static CatchWorkerFrame *New(Worker *worker, word wClosure) {
+    NEW_STACK_FRAME(frame, worker, SIZE);
+    frame->InitArg(HANDLER_POS, wClosure);
+    return STATIC_CAST(CatchWorkerFrame *, frame);
+  }
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
+  word GetHandler() {
+    return StackFrame::GetArg(HANDLER_POS);
+  }
+};
+
+class CatchWorker : public Worker {
+private:
+  CatchWorker() : Worker() {}
+public:
+  static CatchWorker *self;
+
+  static void Init() {
+    self = new CatchWorker();
+  }
+
+  static void PushFrame(word closure) {
+    CatchWorkerFrame::New(self, closure);
+  }
+
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
+  virtual Result Handle(word data);
+  virtual const char *Identify();
+  virtual void DumpFrame(StackFrame *sFrame);
+};
+
+u_int CatchWorker::GetFrameSize(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  return catchWorkerFrame->GetSize();
+}
+
+Worker::Result CatchWorker::Run(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  Scheduler::PopHandler();
+  Scheduler::PopFrame(catchWorkerFrame->GetSize());
+  return Worker::CONTINUE;
+}
+
+Worker::Result CatchWorker::Handle(word) {
+  StackFrame *sFrame = Scheduler::GetFrame();
+  Assert(sFrame->GetWorker() == this);
+  CatchWorkerFrame *catchWorkerFrame = STATIC_CAST(CatchWorkerFrame *, sFrame);
+  word handler = catchWorkerFrame->GetHandler();
+  Scheduler::PopFrame(catchWorkerFrame->GetSize());
+  Scheduler::nArgs          = 2;
+  Scheduler::currentArgs[0] = Scheduler::currentData;
+  Scheduler::currentArgs[1] = Scheduler::currentBacktrace->ToWord();
+  return Scheduler::PushCall(handler);
+}
+
+const char *CatchWorker::Identify() {
+  return "CatchWorker";
+}
+
+void CatchWorker::DumpFrame(StackFrame *) {
+  // TODO: Insert useful stuff
+}
+
+//
 // Primitives
 //
 DEFINE1(UnsafeValue_cast) {
@@ -387,9 +462,30 @@ DEFINE1(UnsafeValue_dumpBacktrace) {
   RETURN_UNIT;
 } END
 
+DEFINE2(UnsafeValue_catch) {
+  word handler = x0;
+  word closure = x1;
+  CatchWorker::PushFrame(handler);
+  word data = Store::IntToWord(0); // Unused
+  Scheduler::PushHandler(data);
+  Scheduler::nArgs = 1;
+  Scheduler::currentArgs[0] = Store::IntToWord(0); // Unit
+  return Scheduler::PushCall(closure);
+} END
+
+DEFINE2(UnsafeValue_reraise) {
+  word exn = x0;
+  word backtrace = x1;
+  Scheduler::nArgs            = 0;
+  Scheduler::currentData      = exn;
+  Scheduler::currentBacktrace = Backtrace::FromWord(backtrace);
+  return Worker::RAISE;
+} END
+
 AliceDll word UnsafeValue() {
   RequestInterpreter::Init();
-  Record *record = Record::New(23);
+  CatchWorker::Init();
+  Record *record = Record::New(25);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -436,5 +532,9 @@ AliceDll word UnsafeValue() {
 		 UnsafeValue_outArity, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "dumpBacktrace",
 		 UnsafeValue_dumpBacktrace, 1);
+  INIT_STRUCTURE(record, "UnsafeValue", "catch",
+		 UnsafeValue_catch, 2);
+  INIT_STRUCTURE_N(record, "UnsafeValue", "reraise",
+		   UnsafeValue_reraise, 2, 0);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
