@@ -66,7 +66,6 @@ private:
   static word keyQueue;
   static u_int numberOfEntries;
   static u_int traceFlag;
-  static char *aliceHome;
   static HashTable *GetComponentTable() {
     return HashTable::FromWordDirect(componentTable);
   }
@@ -87,7 +86,7 @@ public:
   static Chunk *MakeFileName(Chunk *key);
   static word Link(Chunk *url);
   // BootLinker Static Constructor
-  static void Init(char *home, prim_table *table);
+  static void Init(prim_table *table);
   static void Print(Chunk *c);
 };
 

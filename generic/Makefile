@@ -67,6 +67,7 @@ SRCS = $(GENERICSRCS) \
        $(UNSAFESSRCS) \
        $(INTERPRETERSRCS) \
        Base.cc \
+       Properties.cc \
        Main.cc
 
 OBJS = $(SRCS:%.cc=%.o)
