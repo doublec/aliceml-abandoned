@@ -64,14 +64,14 @@ structure BindEnv :> BIND_ENV =
     and      Sig = Info * stamp * Env
     and      Fun = Info * stamp * Env
 
-    fun unInfo(SOME(INF x)) = SOME x | unInfo _ = NONE
-    fun unFldo(SOME(FLD x)) = SOME x | unFldo _ = NONE
-    fun unVaro(SOME(VAR x)) = SOME x | unVaro _ = NONE
-    fun unValo(SOME(VAL x)) = SOME x | unValo _ = NONE
-    fun unTyo (SOME(TY  x)) = SOME x | unTyo  _ = NONE
-    fun unStro(SOME(STR x)) = SOME x | unStro _ = NONE
-    fun unSigo(SOME(SIG x)) = SOME x | unSigo _ = NONE
-    fun unFuno(SOME(FUN x)) = SOME x | unFuno _ = NONE
+    fun asInfo(SOME(INF x)) = SOME x | asInfo _ = NONE
+    fun asFldo(SOME(FLD x)) = SOME x | asFldo _ = NONE
+    fun asVaro(SOME(VAR x)) = SOME x | asVaro _ = NONE
+    fun asValo(SOME(VAL x)) = SOME x | asValo _ = NONE
+    fun asTyo (SOME(TY  x)) = SOME x | asTyo  _ = NONE
+    fun asStro(SOME(STR x)) = SOME x | asStro _ = NONE
+    fun asSigo(SOME(SIG x)) = SOME x | asSigo _ = NONE
+    fun asFuno(SOME(FUN x)) = SOME x | asFuno _ = NONE
 
     fun appInf f (INFIX id, INF x) = f(id,x) | appInf f _ = ()
     fun appFld f (LAB   id, FLD x) = f(id,x) | appFld f _ = ()
@@ -170,23 +170,23 @@ structure BindEnv :> BIND_ENV =
 					  handle Map.Collision(FUNID id) =>
 						 raise CollisionFun id
 
-    fun lookupInf(ENV E, id)		= unInfo(Map.lookup(E, INFIX id))
-    fun lookupFld(ENV E, id)		= unFldo(Map.lookup(E, LAB   id))
-    fun lookupVar(ENV E, id)		= unVaro(Map.lookup(E, TYVAR id))
-    fun lookupVal(ENV E, id)		= unValo(Map.lookup(E, VID   id))
-    fun lookupTy (ENV E, id)		= unTyo (Map.lookup(E, TYCON id))
-    fun lookupStr(ENV E, id)		= unStro(Map.lookup(E, STRID id))
-    fun lookupSig(ENV E, id)		= unSigo(Map.lookup(E, SIGID id))
-    fun lookupFun(ENV E, id)		= unFuno(Map.lookup(E, FUNID id))
+    fun lookupInf(ENV E, id)		= asInfo(Map.lookup(E, INFIX id))
+    fun lookupFld(ENV E, id)		= asFldo(Map.lookup(E, LAB   id))
+    fun lookupVar(ENV E, id)		= asVaro(Map.lookup(E, TYVAR id))
+    fun lookupVal(ENV E, id)		= asValo(Map.lookup(E, VID   id))
+    fun lookupTy (ENV E, id)		= asTyo (Map.lookup(E, TYCON id))
+    fun lookupStr(ENV E, id)		= asStro(Map.lookup(E, STRID id))
+    fun lookupSig(ENV E, id)		= asSigo(Map.lookup(E, SIGID id))
+    fun lookupFun(ENV E, id)		= asFuno(Map.lookup(E, FUNID id))
 
-    fun lookupScopeInf(ENV E, id)	= unInfo(Map.lookupScope(E, INFIX id))
-    fun lookupScopeFld(ENV E, id)	= unFldo(Map.lookupScope(E, LAB   id))
-    fun lookupScopeVar(ENV E, id)	= unVaro(Map.lookupScope(E, TYVAR id))
-    fun lookupScopeVal(ENV E, id)	= unValo(Map.lookupScope(E, VID   id))
-    fun lookupScopeTy (ENV E, id)	= unTyo (Map.lookupScope(E, TYCON id))
-    fun lookupScopeStr(ENV E, id)	= unStro(Map.lookupScope(E, STRID id))
-    fun lookupScopeSig(ENV E, id)	= unSigo(Map.lookupScope(E, SIGID id))
-    fun lookupScopeFun(ENV E, id)	= unFuno(Map.lookupScope(E, FUNID id))
+    fun lookupScopeInf(ENV E, id)	= asInfo(Map.lookupScope(E, INFIX id))
+    fun lookupScopeFld(ENV E, id)	= asFldo(Map.lookupScope(E, LAB   id))
+    fun lookupScopeVar(ENV E, id)	= asVaro(Map.lookupScope(E, TYVAR id))
+    fun lookupScopeVal(ENV E, id)	= asValo(Map.lookupScope(E, VID   id))
+    fun lookupScopeTy (ENV E, id)	= asTyo (Map.lookupScope(E, TYCON id))
+    fun lookupScopeStr(ENV E, id)	= asStro(Map.lookupScope(E, STRID id))
+    fun lookupScopeSig(ENV E, id)	= asSigo(Map.lookupScope(E, SIGID id))
+    fun lookupScopeFun(ENV E, id)	= asFuno(Map.lookupScope(E, FUNID id))
 
     fun appiInfs f (ENV E)		= Map.appi (appInf f) E
     fun appiFlds f (ENV E)		= Map.appi (appFld f) E

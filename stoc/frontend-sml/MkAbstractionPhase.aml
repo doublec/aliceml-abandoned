@@ -20,6 +20,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     (* Error handling *)
 
     val error = Error.error
+    val warn  = Error.error
 
     fun errorLab  (s1, Lab  (i,x), s2)	= error(i, s1 ^   Lab.toString x ^ s2)
     fun errorVId  (s1, VId  (i,x), s2)	= error(i, s1 ^   VId.toString x ^ s2)
@@ -31,6 +32,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     fun errorVId'(s1, E, vid', s2) =
 	errorVId(s1, VId((#1 o Option.valOf o lookupVal)(E, vid'), vid'), s2)
+
+    fun warnLab  (s1, Lab  (i,x), s2)	= warn(i, s1 ^   Lab.toString x ^ s2)
+    fun warnVId  (s1, VId  (i,x), s2)	= warn(i, s1 ^   VId.toString x ^ s2)
+    fun warnTyCon(s1, TyCon(i,x), s2)	= warn(i, s1 ^ TyCon.toString x ^ s2)
+    fun warnTyVar(s1, TyVar(i,x), s2)	= warn(i, s1 ^ TyVar.toString x ^ s2)
+    fun warnStrId(s1, StrId(i,x), s2)	= warn(i, s1 ^ StrId.toString x ^ s2)
+    fun warnSigId(s1, SigId(i,x), s2)	= warn(i, s1 ^ SigId.toString x ^ s2)
+    fun warnFunId(s1, FunId(i,x), s2)	= warn(i, s1 ^ FunId.toString x ^ s2)
 
 
     (* Miscellanous helpers *)
@@ -121,18 +130,30 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			toFunName o FunId.toString, errorFunId, "functor")
 
 
-    fun trId_bind (infoId,idId,toString) (E: Env) id =
-	let val stamp = Stamp.new() in
-	    ( O.Id(infoId id, stamp, O.ExId(toString(idId id))), stamp )
+    fun trId_bind (lookup,infoId,idId,toString,warn,class) E id =
+	let
+	    val id'   = idId id
+	    val name  = toString id'
+	    val stamp = Stamp.new()
+	    val  _    = if not(Option.isSome(lookup(E, id'))) then () else
+			   warn(class ^ " ", id, " shadows previous one")
+	in
+	    ( O.Id(infoId id, stamp, O.ExId name), stamp )
 	end
 
 
-    val trTyVar_bind = trId_bind(infoTyVar, idTyVar, TyVar.toString)
-    val trVId_bind'  = trId_bind(infoVId,   idVId,   VId.toString)
-    val trTyCon_bind = trId_bind(infoTyCon, idTyCon, TyCon.toString)
-    val trStrId_bind = trId_bind(infoStrId, idStrId, StrId.toString)
-    val trSigId_bind = trId_bind(infoSigId, idSigId, SigId.toString)
-    val trFunId_bind = trId_bind(infoFunId, idFunId, toFunName o FunId.toString)
+    val trTyVar_bind = trId_bind(lookupVar, infoTyVar, idTyVar, TyVar.toString,
+				 warnTyVar, "type variable")
+    val trVId_bind'  = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
+				 warnVId, "value")
+    val trTyCon_bind = trId_bind(lookupTy,  infoTyCon, idTyCon, TyCon.toString,
+				 warnTyCon, "type")
+    val trStrId_bind = trId_bind(lookupStr, infoStrId, idStrId, StrId.toString,
+				 warnStrId, "structure")
+    val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
+				 warnSigId, "signature")
+    val trFunId_bind = trId_bind(lookupFun, infoFunId, idFunId,
+				toFunName o FunId.toString, warnFunId,"functor")
 
     fun trVId_bind E (vid as VId(i,vid')) =
 	case VId.toString vid'
