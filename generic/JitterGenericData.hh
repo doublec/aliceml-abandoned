@@ -22,23 +22,13 @@
 #include "alice/JitterImmediateEnv.hh"
 
 namespace Generic {
-  class StackFrame : public ::StackFrame {
+  class TaskStack : public ::DynamicBlock {
   public:
-    static void New(u_int This,
-		    FrameLabel label, u_int size,
-		    Worker *worker) {
-      JITStore::AllocBlock(This, (BlockLabel) label, BASE_SIZE + size);
-      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
-      JITStore::InitArg(This, WORKER_POS, JIT_R0);
+    static void GetTop(u_int This, u_int Dest) {
+      JITStore::GetArg(Dest, This, ACTIVE_SIZE);
     }
-    static void Sel(u_int Dest, u_int This, u_int pos) {
-      JITStore::GetArg(Dest, This, BASE_SIZE + pos);
-    }
-    static void Put(u_int This, u_int pos, u_int Value) {
-      JITStore::InitArg(This, BASE_SIZE + pos, Value);
-    }
-    static void Replace(u_int This, u_int pos, u_int Value) {
-      JITStore::ReplaceArg(This, BASE_SIZE + pos, Value);
+    static void SetTop(u_int This, u_int Value) {
+      JITStore::InitArg(This, ACTIVE_SIZE, Value);
     }
   };
 
@@ -88,13 +78,102 @@ namespace Generic {
     static void SetCurrentBacktrace(u_int Value) {
       Put(&::Scheduler::currentBacktrace, Value);
     }
+    // Side Effect: Scratches JIT_R0, JIT_FP
+    static void PushFrame(u_int Dest, u_int size) {
+#if defined(JIT_ASSERT_INDEX)
+      JITStore::SaveAllRegs();
+      jit_movi_ui(JIT_R0, size);
+      jit_pushr_ui(JIT_R0);
+      JITStore::Call(1, (void *) ::Scheduler::PushFrame);
+      jit_sti_p(&JITStore::loadedWord, JIT_RET);
+      JITStore::RestoreAllRegs();
+      jit_ldi_p(Dest, &JITStore::loadedWord);
+#else
+      Assert(Dest != JIT_R0);
+      Assert(Dest != JIT_FP);
+      jit_insn *loop = jit_get_label();
+      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+      jit_addi_p(JIT_R0, JIT_R0, size * sizeof(word));
+      jit_ldi_p(JIT_FP, &::Scheduler::stackMax);
+      jit_insn *succeeded = jit_bltr_p(jit_forward(), JIT_R0, JIT_FP);
+      JITStore::Prepare();
+      JITStore::Call(0, (void *) ::Scheduler::EnlargeTaskStack);
+      JITStore::Finish();
+      drop_jit_jmpi(loop);
+      jit_patch(succeeded);
+      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
+      jit_movr_p(Dest, JIT_R0);
+      jit_subi_p(Dest, Dest, sizeof(word));
+#endif
+    }
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void GetFrame(u_int This) {
+#if defined(JIT_ASSERT_INDEX)
+      JITStore::SaveAllRegs();
+      JITStore::Call(0, (void *) ::Scheduler::GetFrame);
+      jit_sti_p(&JITStore::loadedWord, JIT_RET);
+      JITStore::RestoreAllRegs();
+      jit_ldi_p(This, &JITStore::loadedWord);
+#else
+      jit_ldi_p(This, &::Scheduler::stackTop);
+      jit_subi_p(This, This, sizeof(word));
+#endif
+    }
     // Side-Effect: Scratches JIT_R0
-    static void PopFrames(u_int n) {
-      jit_ldi_ui(JIT_R0, &::Scheduler::nFrames);
-      jit_subi_ui(JIT_R0, JIT_R0, n);
-      jit_sti_ui(&::Scheduler::nFrames, JIT_R0);
+//      static void PopFrame() {
+//  #if defined(JIT_ASSERT_INDEX)
+//        JITStore::SaveAllRegs();
+//        JITStore::Call(0, (void *) ::Scheduler::PopFrame);
+//        JITStore::RestoreAllRegs();
+//  #else
+//        JITStore::Prepare();
+//        JITStore::Call(0, (void *) ::Scheduler::PopFrame);
+//        JITStore::Finish();
+//  #endif
+//      }
+    static void PrintPopFrame(u_int size) {
+      fprintf(stderr, "NativeCode: Scheduler::PopFrame(%d)\n", size);
+      fflush(stderr);
+    }
+    static void SlowPopFrame() {
+      ::Scheduler::PopFrame();
+    }
+    static void PopFrame(u_int size) {
+      jit_ldi_p(JIT_R0, &::Scheduler::stackTop);
+      jit_subi_p(JIT_R0, JIT_R0, size * sizeof(word));
+      jit_sti_p(&::Scheduler::stackTop, JIT_R0);
     }
   };
+
+  class StackFrame : public ::StackFrame {
+  protected:
+    static void InitArg(u_int This, u_int index, u_int Value) {
+      s_int offset = (0 - (s_int) index) * sizeof(word);
+      jit_stxi_p(offset, This, Value);
+    }
+    static void GetArg(u_int Dest, u_int This, u_int index) {
+      s_int offset = (0 - (s_int) index) * sizeof(word);
+      jit_ldxi_p(Dest, This, offset);
+    }
+  public:
+    // Side Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This, u_int size, Worker *worker) {
+      u_int frSize = BASE_SIZE + size;
+      Scheduler::PushFrame(This, frSize);
+      jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+      InitArg(This, WORKER_POS, JIT_R0);
+    }
+    static void Sel(u_int Dest, u_int This, u_int pos) {
+      GetArg(Dest, This, BASE_SIZE + pos);
+    }
+    static void Put(u_int This, u_int pos, u_int Value) {
+      InitArg(This, BASE_SIZE + pos, Value);
+    }
+    static void Replace(u_int This, u_int pos, u_int Value) {
+      InitArg(This, BASE_SIZE + pos, Value);
+    }
+  };
+
 
   class Transform : public ::Transform {
   public:

@@ -21,7 +21,6 @@
 #pragma implementation "generic/ThreadQueue.hh"
 #pragma implementation "generic/Tuple.hh"
 #pragma implementation "generic/String.hh"
-#pragma implementation "generic/StackFrame.hh"
 #pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Pickle.hh"
 #pragma implementation "generic/Float.hh"

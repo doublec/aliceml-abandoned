@@ -15,9 +15,9 @@
 
 #define COUNT_LIMIT 5
 
-static u_int StringToHexValue(char *s) {
-  u_int l   = std::strlen(s) - 1;
-  u_int val = 0;
+static unsigned int StringToHexValue(char *s) {
+  unsigned int l   = std::strlen(s) - 1;
+  unsigned int val = 0;
 
   for (int i = l; i >= 0; i--) {
     if (s[l - i] == '1') {
@@ -35,11 +35,11 @@ void AssertOutline(const char *file, int line, const char *message) {
 #endif
 
 int main(void) {
-  u_int memLimits[STORE_GENERATION_NUM];
+  unsigned int memLimits[STORE_GENERATION_NUM];
   Block *p;
   word root;
 
-  for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
+  for (unsigned int i = 0; i < STORE_GENERATION_NUM; i++) {
     memLimits[i] = (i + 1) * STORE_MEMCHUNK_SIZE;
   }
 
@@ -67,7 +67,7 @@ int main(void) {
   std::printf("GCing..\n");
   //  Store::ForceGC(root, 0);
 
-  for (u_int i = 0; i <= COUNT_LIMIT; i++) {
+  for (unsigned int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
 
     std::printf("Pushing: %d\n", i);
@@ -81,7 +81,7 @@ int main(void) {
   std::printf("GCing..\n");
   //Store::ForceGC(root, 0);
 
-  for (u_int i = 0; i <= COUNT_LIMIT; i++) {
+  for (unsigned int i = 0; i <= COUNT_LIMIT; i++) {
     Stack *s = Stack::FromWord(Store::WordToBlock(root)->GetArg(0));
     int v    = Store::WordToInt(s->Pop());
     std::printf("Popped: %d\n", v);

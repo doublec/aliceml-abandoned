@@ -19,37 +19,43 @@
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
+// to be done: better solution without hacks
+#define POP_PRIM_SELF() \
+  StackFrame *prim_frame = Scheduler::GetFrame(); \
+  Worker *prim_self = prim_frame->GetWorker(); \
+  Scheduler::PopFrame(1); \
+  prim_self = prim_self;
+
+#define PUSH_PRIM_SELF() \
+  NEW_STACK_FRAME(self_frame, prim_self, 0); \
+  self_frame = self_frame;
+
 #define DEFINE0(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 0);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;
+    POP_PRIM_SELF();
 #define DEFINE1(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == Scheduler::ONE_ARG);	\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];
 #define DEFINE2(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 2);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];
 #define DEFINE3(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 3);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];
 #define DEFINE4(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 4);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -57,8 +63,7 @@
 #define DEFINE5(name)					\
   static Worker::Result name() {			\
     Assert(Scheduler::nArgs == 5);			\
-    word prim_self = Scheduler::GetAndPopFrame();	\
-    prim_self = prim_self;				\
+    POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
@@ -102,13 +107,16 @@
 
 #define RAISE(w) {						\
   Scheduler::currentData = w;					\
-  Scheduler::currentBacktrace = Backtrace::New(prim_self);	\
+  PUSH_PRIM_SELF() \
+  word prim_wFrame = self_frame->Clone(); \
+  Scheduler::PopFrame(); \
+  Scheduler::currentBacktrace = Backtrace::New(prim_wFrame); \
   return Worker::RAISE;						\
 }
 
 #define REQUEST(w) {				\
   Scheduler::currentData = w;			\
-  Scheduler::PushFrameNoCheck(prim_self);	\
+  PUSH_PRIM_SELF() \
   return Worker::REQUEST;			\
 }
 

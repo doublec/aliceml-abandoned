@@ -19,39 +19,43 @@
 #pragma interface "generic/TaskStack.hh"
 #endif
 
-class DllExport TaskStack: private Block {
-private:
-  static const u_int INITIAL_SIZE = 16; // to be checked
+class StackFrame;
 
-  static word emptyTask;
+class DllExport TaskStack: private DynamicBlock {
+private:
+  static const u_int INITIAL_SIZE = 20;
+  static word emptyTask, emptyStack;
 public:
   static const u_int initialNumberOfFrames = 1;
 
-  using Block::ToWord;
-  using Block::GetSize;
-  using Block::GetArg;
-  using Block::ReplaceArg;
+  using DynamicBlock::ToWord;
+  using DynamicBlock::GetSize;
+  using DynamicBlock::GetArg;
+  using DynamicBlock::ReplaceArg;
 
   static void Init();
 
-  static TaskStack *New(u_int size) {
-    Assert(size >= 2); // required for Enlarge to work correctly
-    Block *b = Store::AllocBlock(TASKSTACK_LABEL, size);
-    b->InitArg(0, emptyTask);
-    return static_cast<TaskStack *>(b);
+  u_int GetTop() {
+    return GetActiveSize();
   }
+  void SetTop(u_int top);
+
+  StackFrame *GetFrame(u_int index) {
+    return (StackFrame *) (GetBase() + (index + 1));
+  }
+
+  static TaskStack *New(u_int size);
   static TaskStack *New() {
     return New(INITIAL_SIZE);
   }
   static TaskStack *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == TASKSTACK_LABEL);
+    DynamicBlock *b = DynamicBlock::FromWordDirect(x);
     return static_cast<TaskStack *>(b);
   }
 
   TaskStack *Enlarge();
-  void Purge(u_int nFrames);
-  void Dump(u_int nFrames);
+  void Purge();
+  void Dump(u_int top);
 };
 
 #endif

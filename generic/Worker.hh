@@ -21,8 +21,8 @@
 
 #include "store/Store.hh"
 
-#if PROFILE
 class StackFrame;
+#if PROFILE
 class String;
 #endif
 
@@ -40,17 +40,18 @@ public:
   //   returns 0 iff deconstruction was immediately successful
   static u_int Deconstruct();
   // Frame Handling
-  virtual void PurgeFrame(word wFrame);
+  virtual u_int GetFrameSize(StackFrame *sFrame) = 0;
+  virtual void PurgeFrame(StackFrame *sFrame);
   // Execution
-  virtual Result Run() = 0;
+  virtual Result Run(StackFrame *sFrame) = 0;
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify() = 0;
-  virtual void DumpFrame(word wFrame) = 0;
+  virtual void DumpFrame(StackFrame *sFrame) = 0;
 #if PROFILE
   // Profiling
-  virtual word GetProfileKey(StackFrame *frame);
-  virtual String *GetProfileName(StackFrame *frame);
+  virtual word GetProfileKey(StackFrame *sFrame);
+  virtual String *GetProfileName(StackFrame *sFrame);
 #endif
 };
 

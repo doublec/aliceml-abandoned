@@ -30,18 +30,13 @@ class PrimitiveFrame: private StackFrame {
 private:
   enum { SIZE };
 public:
-  using Block::ToWord;
-
   // PrimitiveFrame Constructor
   static PrimitiveFrame *New(Worker *worker) {
-    StackFrame *frame = StackFrame::New(PRIMITIVE_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     return static_cast<PrimitiveFrame *>(frame);
   }
-  // PrimitiveFrame Untagging
-  static PrimitiveFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PRIMITIVE_FRAME);
-    return static_cast<PrimitiveFrame *>(p);
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
 };
 
@@ -50,22 +45,19 @@ class PrimitiveInterpreter: public Interpreter {
 private:
   const char *name;
   Interpreter::function function;
-  word frame;
   u_int arity;
 public:
   PrimitiveInterpreter(const char *_name, Interpreter::function _function,
 		       u_int _arity):
-    name(_name), function(_function), arity(_arity) {
-    frame = PrimitiveFrame::New(this)->ToWord();
-    RootSet::Add(frame);
-  }
+    name(_name), function(_function), arity(_arity) {}
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual Interpreter::function GetCFunction();
@@ -74,9 +66,6 @@ public:
 
   Interpreter::function GetFunction() {
     return function;
-  }
-  word GetFrame() {
-    return frame;
   }
 };
 
@@ -127,10 +116,16 @@ PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
 void PrimitiveInterpreter::PushCall(Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this); closure = closure;
-  Scheduler::PushFrame(GetFrame());
+  PrimitiveFrame::New(static_cast<Worker *>(this));
 }
 
-Worker::Result PrimitiveInterpreter::Run() {
+u_int PrimitiveInterpreter::GetFrameSize(StackFrame *sFrame) {
+  PrimitiveFrame *frame = static_cast<PrimitiveFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result PrimitiveInterpreter::Run(StackFrame *) {
   return Run(this);
 }
 
@@ -138,7 +133,7 @@ const char *PrimitiveInterpreter::Identify() {
   return name;
 }
 
-void PrimitiveInterpreter::DumpFrame(word) {
+void PrimitiveInterpreter::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "%s\n", name);
 }
 
@@ -166,9 +161,8 @@ word Primitive::MakeFunction(const char *name, Interpreter::function function,
 }
 
 Worker::Result Primitive::Execute(Interpreter *interpreter) {
-  PrimitiveInterpreter *primitive =
-    static_cast<PrimitiveInterpreter *>(interpreter);
-  Scheduler::PushFrame(primitive->GetFrame());
-  Interpreter::function function = primitive->GetFunction();
+  PrimitiveFrame::New(static_cast<Worker *>(interpreter));
+  Interpreter::function function = static_cast<PrimitiveInterpreter *>
+    (interpreter)->GetFunction();
   return function();
 }

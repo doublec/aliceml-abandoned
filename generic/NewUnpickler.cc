@@ -11,7 +11,7 @@
 //   $Revision$
 //
 
-#include "NewPickle.hh"
+#include "generic/NewPickle.hh"
 
 // Pickle Arguments
 class NewUnpickleArgs {
@@ -48,11 +48,12 @@ public:
   }
   // Frame Handling
   static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -61,10 +62,16 @@ public:
 NewInputWorker *NewInputWorker::self;
 
 void NewInputWorker::PushFrame() {
-  Scheduler::PushFrame(StackFrame::New(INPUT_FRAME, self, 0)->ToWord());
+  NEW_STACK_FRAME(frame, self, 0);
+  frame = frame; // Ignored
 }
 
-Worker::Result NewInputWorker::Run() {
+u_int NewInputWorker::GetFrameSize(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  return sFrame->GetSize();
+}
+
+Worker::Result NewInputWorker::Run(StackFrame *) {
   return NewUnpickleArgs::GetInputStream()->FillBuffer();
 }
 
@@ -72,7 +79,7 @@ const char *NewInputWorker::Identify() {
   return "NewInputWorker";
 }
 
-void NewInputWorker::DumpFrame(word) {
+void NewInputWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Fill Unpickling Buffer\n");
 }
 
@@ -82,18 +89,14 @@ class NewPickleUnpackFrame: private StackFrame {
 private:
   enum { SIZE };
 public:
-  using Block::ToWord;
-
   // NewPickleUnpackFrame Constructor
   static NewPickleUnpackFrame *New(Worker *worker) {
-    StackFrame *frame = StackFrame::New(PICKLE_UNPACK_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     return static_cast<NewPickleUnpackFrame *>(frame);
   }
-  // NewPickleUnpackFrame Untagging
-  static NewPickleUnpackFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PICKLE_UNPACK_FRAME);
-    return static_cast<NewPickleUnpackFrame *>(p);
+  // NewPickleUnpackFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
 };
 
@@ -110,11 +113,12 @@ public:
   }
   // Frame Handling
   static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -123,11 +127,19 @@ public:
 NewPickleUnpackWorker *NewPickleUnpackWorker::self;
 
 void NewPickleUnpackWorker::PushFrame() {
-  Scheduler::PushFrame(NewPickleUnpackFrame::New(self)->ToWord());
+  NewPickleUnpackFrame::New(self);
 }
 
-Worker::Result NewPickleUnpackWorker::Run() {
-  Scheduler::GetAndPopFrame();
+u_int NewPickleUnpackWorker::GetFrameSize(StackFrame *sFrame) {
+  NewPickleUnpackFrame *frame = static_cast<NewPickleUnpackFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result NewPickleUnpackWorker::Run(StackFrame *sFrame) {
+  NewPickleUnpackFrame *frame = static_cast<NewPickleUnpackFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Scheduler::PopFrame(frame->GetSize());
   word result = NewUnpickleArgs::GetResult();
 
   Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -139,7 +151,7 @@ const char *NewPickleUnpackWorker::Identify() {
   return "NewPickleUnpackWorker";
 }
 
-void NewPickleUnpackWorker::DumpFrame(word) {
+void NewPickleUnpackWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Unpack\n");
 }
 
@@ -148,18 +160,14 @@ class NewPickleLoadFrame: private StackFrame {
 private:
   enum { SIZE };
 public:
-  using Block::ToWord;
-
   // NewPickleLoadFrame Constructor
   static NewPickleLoadFrame *New(Worker *worker) {
-    StackFrame *frame = StackFrame::New(PICKLE_LOAD_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     return static_cast<NewPickleLoadFrame *>(frame);
   }
-  // NewPickleLoadFrame Untagging
-  static NewPickleLoadFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == PICKLE_LOAD_FRAME);
-    return static_cast<NewPickleLoadFrame *>(p);
+  // NewPickleLoadFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
 };
 
@@ -176,11 +184,12 @@ public:
   }
   // Frame Handling
   static void PushFrame();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 //
@@ -189,11 +198,19 @@ public:
 NewPickleLoadWorker *NewPickleLoadWorker::self;
 
 void NewPickleLoadWorker::PushFrame() {
-  Scheduler::PushFrame(NewPickleLoadFrame::New(self)->ToWord());
+  NewPickleLoadFrame::New(self);
 }
 
-Worker::Result NewPickleLoadWorker::Run() {
-  Scheduler::GetAndPopFrame();
+u_int NewPickleLoadWorker::GetFrameSize(StackFrame *sFrame) {
+  NewPickleLoadFrame *frame = static_cast<NewPickleLoadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result NewPickleLoadWorker::Run(StackFrame *sFrame) {
+  NewPickleLoadFrame *frame = static_cast<NewPickleLoadFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Scheduler::PopFrame(frame->GetSize());
   InputStream *is = NewUnpickleArgs::GetInputStream();
   is->Close();
   
@@ -208,7 +225,7 @@ const char *NewPickleLoadWorker::Identify() {
   return "NewPickleLoadWorker";
 }
 
-void NewPickleLoadWorker::DumpFrame(word) {
+void NewPickleLoadWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Load\n");
 }
 
@@ -216,14 +233,13 @@ void NewPickleLoadWorker::DumpFrame(word) {
 // UnpickleWorker Frame
 class NewUnpickleFrame: private StackFrame {
 private:
-  enum { TOP_POS, LOCALS_POS, SIZE };
+  enum { SIZE_POS, TOP_POS, LOCALS_POS, SIZE };
 public:
-  using Block::ToWord;
-
   // NewUnpickleFrame Constructor
   static NewUnpickleFrame *New(Worker *worker, int stackSize, int locals) {
-    StackFrame *frame = StackFrame::New(UNPICKLING_FRAME,
-					worker, SIZE+stackSize+locals+1);
+    u_int frSize = SIZE+stackSize+locals+1;
+    NEW_STACK_FRAME(frame, worker, frSize);
+    frame->InitArg(SIZE_POS, frame->GetSize() + frSize);
     frame->InitArg(TOP_POS, SIZE+locals);
     frame->InitArg(LOCALS_POS, locals);
     for (u_int i=locals; i--;) {
@@ -231,13 +247,10 @@ public:
     }
     return static_cast<NewUnpickleFrame *>(frame);
   }
-  // NewUnpickleFrame Untagging
-  static NewUnpickleFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == UNPICKLING_FRAME);
-    return static_cast<NewUnpickleFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return Store::DirectWordToInt(StackFrame::GetArg(SIZE_POS));
+  }
   void Push(word value);
   word Pop();
   word Top();
@@ -316,11 +329,12 @@ public:
   }
   // Frame Handling
   static void PushFrame(int, int);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 // The StoreAbstraction makes the business of transforming CONCRETE and 
@@ -421,9 +435,7 @@ public:
 NewUnpickleWorker *NewUnpickleWorker::self;
 
 void NewUnpickleWorker::PushFrame(int stackSize, int localsSize) {
-  Scheduler::PushFrame(NewUnpickleFrame::New(self, 
-					     stackSize, 
-					     localsSize)->ToWord());
+  NewUnpickleFrame::New(self, stackSize, localsSize);
 }
 
 // Unpickle Helpers
@@ -447,15 +459,23 @@ void NewUnpickleWorker::PushFrame(int stackSize, int localsSize) {
 
 #define NCORRUPT() {					\
   Scheduler::currentData = Unpickler::Corrupt;		\
+  StackFrame *frame = Scheduler::GetFrame();            \
   Scheduler::currentBacktrace =				\
-    Backtrace::New(Scheduler::GetAndPopFrame());	\
+    Backtrace::New(frame->Clone());	                \
+  Scheduler::PopFrame();                                \
   return Worker::RAISE;					\
 }
 
+u_int NewUnpickleWorker::GetFrameSize(StackFrame *sFrame) {
+  NewUnpickleFrame *frame = static_cast<NewUnpickleFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
 // Core Unpickling Function
-Worker::Result NewUnpickleWorker::Run() {
-  NewUnpickleFrame *frame =
-    NewUnpickleFrame::FromWordDirect(Scheduler::GetFrame());
+Worker::Result NewUnpickleWorker::Run(StackFrame *sFrame) {
+  NewUnpickleFrame *frame = static_cast<NewUnpickleFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
 
   InputStream *is = NewUnpickleArgs::GetInputStream();
 
@@ -571,7 +591,7 @@ Worker::Result NewUnpickleWorker::Run() {
     case NewPickle::ENDOFSTREAM:
       {
 	NewUnpickleArgs::SetResult(frame->Load(0));
-	Scheduler::PopFrame();
+	Scheduler::PopFrame(frame->GetSize());
 	NCONTINUE();
       }
       break;
@@ -587,7 +607,7 @@ Worker::Result NewUnpickleWorker::Run() {
     }
   }
 
-  Scheduler::PopFrame();
+  Scheduler::PopFrame(frame->GetSize());
   NCONTINUE();
 }
 
@@ -595,7 +615,6 @@ const char *NewUnpickleWorker::Identify() {
   return "NewUnpickleWorker";
 }
 
-void NewUnpickleWorker::DumpFrame(word frameWord) {
-  frameWord = frameWord;
+void NewUnpickleWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Unpickling\n");
 }

@@ -30,8 +30,8 @@ private:
   static const u_int INITIAL_HANDLERS_SIZE = 10; // to be done
   enum {
     PRIORITY_POS, STATE_POS, IS_SUSPENDED_POS,
-    TASK_STACK_POS, NFRAMES_POS, NARGS_POS, ARGS_POS,
-    FUTURE_POS, EXN_HANDLER_STACK_POS, SIZE
+    TASK_STACK_POS, NARGS_POS, ARGS_POS,
+    FUTURE_POS, EXN_HANDLER_STACK_POS, MAXIMAL_SIZE, SIZE
   };
 
   void SetState(state s) {
@@ -53,7 +53,6 @@ public:
     b->InitArg(PRIORITY_POS, NORMAL);
     b->InitArg(STATE_POS, RUNNABLE);
     b->InitArg(IS_SUSPENDED_POS, false);
-    b->InitArg(NFRAMES_POS, TaskStack::initialNumberOfFrames);
     b->InitArg(TASK_STACK_POS, TaskStack::New()->ToWord());
     b->InitArg(NARGS_POS, nArgs);
     b->InitArg(ARGS_POS, args);
@@ -64,7 +63,16 @@ public:
     exnHandlerStack->InitArg(0, 0);
     exnHandlerStack->InitArg(1, Store::IntToWord(0));
     b->InitArg(EXN_HANDLER_STACK_POS, exnHandlerStack->ToWord());
+    b->InitArg(MAXIMAL_SIZE, Store::IntToWord(0));
     return static_cast<Thread *>(b);
+  }
+  void SetMax(u_int max) {
+    u_int curMax = Store::DirectWordToInt(GetArg(MAXIMAL_SIZE));
+    if (max > curMax) {
+      ReplaceArg(MAXIMAL_SIZE, max);
+//        fprintf(stderr, "%d --> %d\n", curMax, max);
+//        fflush(stderr);
+    }
   }
   // Thread Untagging
   static Thread *FromWord(word x) {
@@ -88,17 +96,15 @@ public:
   bool IsSuspended() {
     return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
   }
-  TaskStack *GetTaskStack(u_int &nFrames) {
-    nFrames = Store::DirectWordToInt(GetArg(NFRAMES_POS));
+  TaskStack *GetTaskStack() {
     TaskStack *taskStack = TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
 #ifdef DEBUG_CHECK
     ReplaceArg(TASK_STACK_POS, 0);
 #endif
     return taskStack;
   }
-  void SetTaskStack(TaskStack *taskStack, u_int nFrames) {
+  void SetTaskStack(TaskStack *taskStack) {
     Assert(GetArg(TASK_STACK_POS) == Store::IntToWord(0));
-    ReplaceArg(NFRAMES_POS, nFrames);
     ReplaceArg(TASK_STACK_POS, taskStack->ToWord());
   }
   word GetArgs(u_int &nArgs) {
@@ -127,16 +133,24 @@ public:
   }
 
   // Task Stack Operations
-  void PushFrame(word frame) {
-    u_int nFrames = Store::DirectWordToInt(GetArg(NFRAMES_POS));
+  StackFrame *PushFrame(u_int size) {
     TaskStack *taskStack = TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
-    if (nFrames == taskStack->GetSize()) {
+    u_int top = taskStack->GetTop();
+    u_int newTop = top + size;
+    if (newTop >= taskStack->GetSize()) {
       taskStack = taskStack->Enlarge();
       ReplaceArg(TASK_STACK_POS, taskStack->ToWord());
     }
-    Assert(nFrames < taskStack->GetSize());
-    taskStack->ReplaceArg(nFrames++, frame);
-    ReplaceArg(NFRAMES_POS, nFrames);
+    Assert(newTop < taskStack->GetSize());
+    taskStack->SetTop(newTop);
+#if 0
+    StackFrame *p = taskStack->GetFrame(top);
+    for (u_int i = size; i--;)
+      ((word *) p)[i] = Store::deadWord;
+    return taskStack->GetFrame(newTop - 1);
+#else
+    return taskStack->GetFrame(newTop - 1);
+#endif
   }
   void PushHandler(u_int frame, word data) {
     DynamicBlock *exnHandlerStack =
@@ -157,7 +171,8 @@ public:
     exnHandlerStack->ReplaceArg(top + 1, data);
   }
   void PushHandler(word data) {
-    PushHandler(Store::DirectWordToInt(GetArg(NFRAMES_POS)) - 1, data);
+    TaskStack *taskStack = TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
+    PushHandler(taskStack->GetTop(), data);
   }
   void GetHandler(u_int &frame, word &data) {
     DynamicBlock *exnHandlerStack =
@@ -175,8 +190,7 @@ public:
     exnHandlerStack->SetActiveSize(exnHandlerStack->GetActiveSize() - 2);
   }
   void Purge() {
-    u_int nFrames = Store::DirectWordToInt(GetArg(NFRAMES_POS));
-    TaskStack::FromWordDirect(GetArg(TASK_STACK_POS))->Purge(nFrames);
+    TaskStack::FromWordDirect(GetArg(TASK_STACK_POS))->Purge();
   }
 };
 

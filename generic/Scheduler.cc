@@ -36,7 +36,8 @@ word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
 TaskStack *Scheduler::currentTaskStack;
-u_int Scheduler::nFrames;
+word *Scheduler::stackTop;
+word *Scheduler::stackMax;
 
 u_int Scheduler::nArgs;
 word Scheduler::currentArgs[Scheduler::maxArgs];
@@ -53,7 +54,10 @@ inline void Scheduler::SwitchToThread() {
   // Precondition: currentThread initialized
   Assert(currentThread->GetState() == Thread::RUNNABLE);
   Assert(!currentThread->IsSuspended());
-  currentTaskStack = currentThread->GetTaskStack(nFrames);
+  currentTaskStack = currentThread->GetTaskStack();
+  word *base = (word *) currentTaskStack->GetFrame(0);
+  stackTop = base + currentTaskStack->GetTop();
+  stackMax = base + currentTaskStack->GetSize();
   word args = currentThread->GetArgs(nArgs);
   Assert(nArgs == ONE_ARG || nArgs < maxArgs);
   switch (nArgs) {
@@ -72,7 +76,11 @@ inline void Scheduler::SwitchToThread() {
 }
 
 inline void Scheduler::FlushThread() {
-  currentThread->SetTaskStack(currentTaskStack, nFrames);
+  u_int top =
+    static_cast<u_int>(stackTop - (word *) currentTaskStack->GetFrame(0));
+  currentTaskStack->SetTop(top);
+  currentThread->SetTaskStack(currentTaskStack);
+  currentThread->SetMax(top);
   Assert(nArgs == ONE_ARG || nArgs < maxArgs);
   switch (nArgs) {
   case 0:
@@ -98,9 +106,9 @@ int Scheduler::Run() {
 #if PROFILE
 	Profiler::SampleHeap();
 #endif
-	StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
+	StackFrame *frame = GetFrame();
 	Worker *worker = frame->GetWorker();
-	Worker::Result result = worker->Run();
+	Worker::Result result = worker->Run(frame);
 #if PROFILE
 	Profiler::AddHeap(frame);
 #endif
@@ -129,9 +137,15 @@ int Scheduler::Run() {
 	    u_int handler;
 	    word data;
 	    currentThread->GetHandler(handler, data);
-	    for (u_int i = nFrames - 1; i > handler; i--)
-	      currentBacktrace->Enqueue(GetAndPopFrame());
-	    frame = StackFrame::FromWordDirect(GetFrame());
+	    word *handlerTop = (word *) currentTaskStack->GetFrame(0) + handler;
+	    // Unroll stack down to the handler frame
+	    // to be done: make configurable whether to have backtrace or not
+	    while (stackTop > handlerTop) {
+	      word wFrame = GetFrame()->Clone();
+	      currentBacktrace->Enqueue(wFrame);
+	      PopFrame();
+	    }
+	    frame  = GetFrame();
 	    worker = frame->GetWorker();
 	    result = worker->Handle(data);
 #if PROFILE
@@ -223,7 +237,7 @@ Worker::Result Scheduler::PushCall(word wClosure) {
       Assert(concreteCode != INVALID_POINTER);
       concreteCode->GetInterpreter()->PushCall(closure);
 #if PROFILE
-      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
+      StackFrame *frame = GetFrame();
       Profiler::IncCalls(frame);
 #endif
       if (StatusWord::GetStatus() != 0)

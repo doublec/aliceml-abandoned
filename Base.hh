@@ -28,7 +28,9 @@
 # endif
 #endif
 
+#include <cstdio>
 #include <cstdlib>
+#include <unistd.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 # if defined(STOCKWERK_FOREIGN)
@@ -44,14 +46,14 @@ DllExport void AssertOutline(const char *file, int line, const char *message);
 
 #define AssertBase(cond, message)				\
   if (!(cond)) {						\
-    AssertOutline(__FILE__, __LINE__, message); std::exit(1);	\
+    AssertOutline(__FILE__, __LINE__, message); exit(1);	\
   } else {}
 
 //--** should be removed
 #ifdef DEBUG_CHECK
 #define Assert(cond)						\
   if (!(cond)) {						\
-    AssertOutline(__FILE__, __LINE__, #cond); std::exit(1);	\
+    AssertOutline(__FILE__, __LINE__, #cond); exit(1);	\
   } else {}
 #else
 #define Assert(cond)
@@ -60,7 +62,7 @@ DllExport void AssertOutline(const char *file, int line, const char *message);
 DllExport void ErrorOutline(const char *file, int line, const char *message);
 
 #define Error(message) {					\
-  ErrorOutline(__FILE__, __LINE__, message); std::exit(1);	\
+  ErrorOutline(__FILE__, __LINE__, message); exit(1);	\
 }
 
 #endif

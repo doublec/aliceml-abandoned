@@ -17,6 +17,8 @@
 #endif
 
 #include <cstdio>
+#include "store/Store.hh"
+#include "store/GCHelper.hh"
 #include "generic/RootSet.hh"
 #include "generic/TaskStack.hh"
 #include "generic/Worker.hh"
@@ -34,15 +36,24 @@ class EmptyTaskWorker: public Worker {
 public:
   // EmptyTaskWorker Constructor
   EmptyTaskWorker(): Worker() {}
+  // Frame Handling
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
-Worker::Result EmptyTaskWorker::Run() {
+u_int EmptyTaskWorker::GetFrameSize(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  return sFrame->GetSize();
+}
+
+Worker::Result EmptyTaskWorker::Run(StackFrame *sFrame) {
+  Assert(sFrame->GetWorker() == this);
+  sFrame = sFrame; // Ignored
   Scheduler::nArgs = 0;
   return Worker::TERMINATE;
 }
@@ -63,18 +74,35 @@ const char *EmptyTaskWorker::Identify() {
   return "EmptyTaskWorker";
 }
 
-void EmptyTaskWorker::DumpFrame(word) {
+void EmptyTaskWorker::DumpFrame(StackFrame *) {
   return; // do nothing
 }
 
 // TaskStack Implementation
 word TaskStack::emptyTask;
+word TaskStack::emptyStack;
 
 void TaskStack::Init() {
   Worker *interpreter = new EmptyTaskWorker();
-  StackFrame *frame = StackFrame::New(BOTTOM_FRAME, interpreter);
-  emptyTask = frame->ToWord();
-  RootSet::Add(emptyTask);
+  emptyTask  = Store::UnmanagedPointerToWord(interpreter);
+  emptyStack = Store::AllocBlock(MIN_DATA_LABEL, 1)->ToWord();
+  RootSet::Add(emptyStack);
+}
+
+void TaskStack::SetTop(u_int top) {
+  SetActiveSize(top);
+  Block *p = (Block *) this;
+  if (!HeaderOp::IsChildish(p))
+    Store::AddToIntgenSet(p);
+}
+
+TaskStack *TaskStack::New(u_int size) {
+  Assert(size >= 4); // required for Enlarge to work correctly
+  DynamicBlock *b = Store::AllocDynamicBlock(size, 1);
+  // Create Empty Task
+  b->InitArg(0, emptyTask);
+  Store::AddToIntgenSet((Block *) b);
+  return static_cast<TaskStack *>(b);
 }
 
 TaskStack *TaskStack::Enlarge() {
@@ -82,30 +110,35 @@ TaskStack *TaskStack::Enlarge() {
   u_int newSize = size * 3 / 2;
   TaskStack *newTaskStack = TaskStack::New(newSize);
   std::memcpy(newTaskStack->GetBase(), GetBase(), size * sizeof(u_int));
+  Block *p = (Block *) this;
+  // Prevent scanning of old stack
+  if (HeaderOp::IsChildish(p))
+    GCHelper::MarkMoved(p, Store::DirectWordToBlock(emptyStack));
   return newTaskStack;
 }
 
-void TaskStack::Purge(u_int nFrames) {
+void TaskStack::Purge() {
   // Shrink stack to a reasonable size:
-  u_int size = GetSize();
-  Assert(nFrames <= size);
-  u_int newSize = nFrames + INITIAL_SIZE;
-  if (newSize < size) {
-    size = newSize;
-    HeaderOp::EncodeSize(this, size);
-  }
-  for (u_int i = nFrames; i < size; i++)
-    InitArg(i, 0);
+  // to be done: find policy here (when to shrink grown stacks)
   // Purge all frames:
-  for (u_int i = nFrames; i--; ) {
-    StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
-    frame->GetWorker()->PurgeFrame(frame->ToWord());
+  word *base = (word *) GetFrame(0);
+  word *top  = base + GetTop();
+  // to be done: maybe PurgeFrame should return frame size
+  while (top > base) {
+    StackFrame *frame = (StackFrame *) (top - 1);
+    Worker *worker = frame->GetWorker();
+    top -= worker->GetFrameSize(frame);
+    worker->PurgeFrame(frame);
   }
 }
 
-void TaskStack::Dump(u_int nFrames) {
-  for (u_int i = nFrames; i--; ) {
-    StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
-    frame->GetWorker()->DumpFrame(frame->ToWord());
+void TaskStack::Dump(u_int stackTop) {
+  word *base = (word *) GetFrame(0);
+  word *top  = base + stackTop;
+  while (top > base) {
+    StackFrame *frame = (StackFrame *) (top - 1);
+    Worker *worker = frame->GetWorker();
+    top -= worker->GetFrameSize(frame);
+    worker->DumpFrame(frame);
   }
 }

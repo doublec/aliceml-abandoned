@@ -19,6 +19,7 @@
 #pragma interface "generic/Scheduler.hh"
 #endif
 
+#include "generic/StackFrame.hh"
 #include "generic/Thread.hh"
 #include "generic/ThreadQueue.hh"
 #include "generic/PushCallWorker.hh"
@@ -40,8 +41,8 @@ public:
   static const u_int ONE_ARG = maxArgs + 1;
 
   // Scheduler public data
-  static u_int nFrames;               // Numer of frames on task stack
   static TaskStack *currentTaskStack; // Task stack
+  static word *stackTop, *stackMax;   // Task stack top and max
   static u_int nArgs;                 // Number of arguments
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or exception
@@ -93,26 +94,39 @@ public:
     }
   }
   // Scheduler Task Stack Functions
-  static void PushFrameNoCheck(word frame) {
-    Assert(nFrames < currentTaskStack->GetSize());
-    currentTaskStack->ReplaceArg(nFrames++, frame);
+  static void EnlargeTaskStack() {
+    u_int top =
+      static_cast<u_int>(stackTop - (word *) currentTaskStack->GetFrame(0));
+    currentTaskStack = currentTaskStack->Enlarge();
+    stackTop = (word *) currentTaskStack->GetFrame(top);
+    stackMax = (word *) currentTaskStack->GetFrame(currentTaskStack->GetSize());
   }
-  static void PushFrame(word frame) {
-    if (nFrames == currentTaskStack->GetSize())
-      currentTaskStack = currentTaskStack->Enlarge();
-    PushFrameNoCheck(frame);
+  static StackFrame *PushFrame(u_int size) {
+  loop:
+    word *top    = stackTop;
+    word *newTop = top + size;
+    if (newTop >= stackMax) {
+      Scheduler::EnlargeTaskStack();
+      goto loop;
+    }
+    stackTop = newTop;
+    return (StackFrame *) (newTop - 1);
   }
-  static word GetFrame() {
-    return currentTaskStack->GetArg(nFrames - 1);
+  static StackFrame *GetFrame() {
+    return (StackFrame *) (stackTop - 1);
   }
-  static word GetAndPopFrame() {
-    return currentTaskStack->GetArg(--nFrames);
+  // We need two PopFrame's: one for known frame size and generic
+  static void PopFrame(u_int size) {
+    stackTop -= size;
   }
   static void PopFrame() {
-    nFrames--;
+    StackFrame *frame = GetFrame();
+    u_int size = frame->GetWorker()->GetFrameSize(frame);
+    stackTop -= size;
   }
   static void PushHandler(word data) {
-    currentThread->PushHandler(nFrames - 1, data);
+    u_int top = stackTop - (word *) currentTaskStack->GetFrame(0);
+    currentThread->PushHandler(top, data);
   }
   static void PopHandler() {
     currentThread->PopHandler();

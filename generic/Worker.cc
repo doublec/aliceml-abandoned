@@ -75,7 +75,7 @@ u_int Worker::Deconstruct() {
 //
 // Worker virtual functions: default implementations
 //
-void Worker::PurgeFrame(word) {
+void Worker::PurgeFrame(StackFrame *) {
   return; // default: nothing to do
 }
 
