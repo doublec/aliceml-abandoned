@@ -20,6 +20,8 @@
 
 #include "store/Store.hh"
 
+typedef unsigned short u_wchar; //--**
+
 class JavaLabel {
 public:
   static const BlockLabel Array               = MIN_DATA_LABEL;
@@ -31,11 +33,30 @@ public:
   static const BlockLabel ClassInfo           = (BlockLabel) (Array + 6);
   static const BlockLabel Class               = (BlockLabel) (Array + 7);
   static const BlockLabel Object              = (BlockLabel) (Array + 8);
+  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 9);
 };
 
 static const word null = Store::IntToWord(0);
 
 class Class;
+
+class JavaString: private Chunk {
+public:
+  using Chunk::ToWord;
+
+  static JavaString *New(u_int length) {
+    return static_cast<JavaString *>
+      (Store::AllocChunk(sizeof(u_wchar) * length));
+  }
+  static JavaString *New(u_wchar *s, u_int length) {
+    JavaString *s = New(length);
+    std::memcpy(s->GetBase(), s, length * sizeof(u_wchar));
+    return s;
+  }
+  u_wchar *GetBase() {
+    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
+  }
+};
 
 class Array: private Block {
 protected:
@@ -224,5 +245,23 @@ public:
   u_int GetIndex();
 };
 
+class ConstantPool: private Block {
+private:
+  enum { SIZE_POS, BASE_SIZE };
+public:
+  static ConstantPool *New(u_int size) {
+    Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + SIZE);
+    b->InitArg(SIZE_POS, size);
+    return static_cast<ConstantPool *>(b);
+  }
+  void Init(u_int offset, word constant) {
+    Assert(offset >= 1 && offset <= Store::DirectWordToInt(GetArg(SIZE_POS)));
+    InitArg(offset - 1 + BASE_SIZE, constant);
+  }
+  word Get(u_int offset) {
+    Assert(offset >= 1 && offset <= Store::DirectWordToInt(GetArg(SIZE_POS)));
+    return GetArg(offset - 1 + BASE_SIZE);
+  }
+};
 
 #endif
