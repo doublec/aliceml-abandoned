@@ -38,6 +38,12 @@
    <PRE>
     val solution = searchOne (Space.space money)</PRE>
 
+   <P>
+     More sophisticated search engines are provided by the
+     structure
+     <TT><A HREF="http://www.ps.uni-sb.de/alice/manual/library/Search.php3">Search</A></TT>.
+    </P>
+
 <?php section("import", "import"); ?>
 
   <PRE>
