@@ -75,7 +75,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    DMLValue r = (DMLValue) in.readObject();
 	    fin.close(); in.close(); zip.close();
 	    if (showpickle) {
-		System.out.println(r);
+		System.out.println(r.toString(3));
 	    }
 	    if (showtime) {
 		time = System.currentTimeMillis();
