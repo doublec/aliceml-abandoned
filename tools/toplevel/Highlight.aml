@@ -126,7 +126,7 @@ struct
 	if nesting = 0 then
 	    scanPlain (ss, s, y, x, (COMMENT, y',x', y,x)::rs)
 	(* last character cannot end or start a comment *)
-	else if x = String.size s - 1 then
+	else if x >= String.size s - 1 then
 	    scanNLInner (scanComment nesting, ss, y', x', y, x, rs)
 	else let
 	    val c = String.sub (s, x)
