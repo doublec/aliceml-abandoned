@@ -1,0 +1,18 @@
+Source: seam
+Section: devel
+Priority: optional
+Build-Depends: debhelper (>= 4.0.0), zlib1g-dev
+Maintainer: Marco Kuhlmann <mk@debian.org>
+Standards-Version: 3.5.10
+
+Package: seam
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Simple Extendable Abstract Machine
+ This is an experimental package.
+
+Package: seam-dev
+Architecture: any
+Depends: seam (= ${Source-Version})
+Description: Simple Extendable Abstract Machine (development files)
+ This is an experimental package.
