@@ -19,6 +19,7 @@ import
 export
    atomLayoutObject        : AtomLayoutObject
    nameLayoutObject        : NameLayoutObject
+   nameGrLayoutObject      : NameGrLayoutObject
    procedureLayoutObject   : ProcedureLayoutObject
    byteStringLayoutObject  : ByteStringLayoutObject
    wordLayoutObject        : WordLayoutObject
@@ -34,6 +35,7 @@ define
       LayoutObjects = TreeNodes.'layout'
    in
       IntLayoutObject             = LayoutObjects.intLayoutObject
+      OzFreeGrLayoutObject        = LayoutObjects.freeGrLayoutObject
       OzProcedureLayoutObject     = LayoutObjects.procedureLayoutObject
       LabelTupleLayoutObject      = LayoutObjects.labelTupleLayoutObject
       LabelTupleIndLayoutObject   = LayoutObjects.labelTupleIndLayoutObject
@@ -67,12 +69,30 @@ define
 		     of false then type <- constructor 'false'
 		     [] true  then type <- constructor 'true'
 		     [] unit  then type <- tuple '()'
-		     else '<N:'#{System.printName Value}#'>'
+		     elsecase {System.printName Value}
+		     of ''   then '<N:>'
+		     [] Name then '<N:'#Name#'>'
 		     end
 	 LengthStr = PrintStr
       end
    end
 
+   class NameGrLayoutObject from OzFreeGrLayoutObject
+      meth createRep(PrintStr LengthStr)
+	 Value = @value
+      in
+	 PrintStr  = case Value
+		     of false then type <- constructor 'false'
+		     [] true  then type <- constructor 'true'
+		     [] unit  then type <- tuple '()'
+		     elsecase {System.printName Value}
+		     of ''   then '<N:>'
+		     [] Name then'<N:'#Name#'>'
+		     end
+	 LengthStr = PrintStr
+      end
+   end     
+   
    class ProcedureLayoutObject from OzProcedureLayoutObject
       meth createRep(PrintStr LengthStr)
 	 PrintStr  = 'fn'

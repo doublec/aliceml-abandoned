@@ -63,6 +63,7 @@ define
 		variableRef # [variableRef variableRef variableRef]
 
 		%% Atomic Nodes
+		nameGr      # [a(nameGr) a(nameGr) a(nameGr)]
 		cellGr      # [a(cellGr) labelTupleGr labelTupleGr]
 		cellGrInd   # [a(cellGr) labelTupleGrInd labelTupleGrInd]
 
