@@ -66,8 +66,8 @@ struct timeval *Store::sum_t;
 // Method Implementations
 //
 inline Block *Store::CloneBlock(Block *p, const u_int gen) {
-  u_int size  = HeaderOp::DecodeSize(p);
-  Block *newp = (Block *) Store::Alloc(gen, HeaderOp::DecodeLabel(p), size);
+  u_int size  = p->GetSize();
+  Block *newp = (Block *) Store::Alloc(gen, p->GetLabel(), size);
   std::memcpy(newp->GetBase(), p->GetBase(), size * sizeof(u_int));
   GCHelper::MarkMoved(p, newp);
   return newp;
@@ -145,7 +145,7 @@ inline void Store::FinalizeCheneyScan(HeapChunk *chunk, char *scan) {
   have_scan:
     while (scan < chunk->GetTop()) {
       Block *p   = (Block *) scan;
-      u_int size = HeaderOp::DecodeSize(p);
+      u_int size = p->GetSize();
       // Move scan pointer ahead
       scan += SIZEOF_BLOCK(size);
       // CHUNK_LABEL, WEAK_MAP_LABEL and DYNAMIC_LABEL are the largest
@@ -216,65 +216,44 @@ void Store::RegisterWeakDict(WeakMap *v) {
 }
 
 void Store::HandleInterGenerationalPointers(const u_int gen) {
-#if defined(STORE_GC__DEBUG)
+#if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "initial intgen_size is %d\n", intgenSet->GetSize());
 #endif
   Set *intgen_set = intgenSet;
   u_int size      = intgen_set->GetSize();
   intgen_set->Clear();
-  // Traverse intgen_set entries
+  // Traverse intgen_set entries (set reusage enforces upward traversal)
   for (u_int i = 0; i < size; i++) {
-    word p = PointerOp::Deref(intgen_set->GetArgUnchecked(i));
-    if (!PointerOp::IsInt(p)) {
-      Block *curp = PointerOp::RemoveTag(p);
-      // Block is no longer old but alive. It can't contain intgens any longer
-      if (GCHelper::AlreadyMoved(curp))
-	HeaderOp::ClearChildishFlag(GCHelper::GetForwardPtr(curp));
-      else {
-	u_int curgen = HeaderOp::DecodeGeneration(curp);
-	// Block is still old
-	if (curgen > gen) {
-	  u_int hasyoungptrs = 0;
-	  // Traverse intgen_set entry for young references
-	  // and remove reference chains
-	  for (u_int k = curp->GetSize(); k--;) {
-	    word fp = PointerOp::Deref(curp->GetArg(k));
-	    curp->InitArg(k, fp);
-	    if (!PointerOp::IsInt(fp)) {
-	      Block *curfp = PointerOp::RemoveTag(fp);
-	      // found young moved ptr
-	      if (GCHelper::AlreadyMoved(curfp)) {
-		hasyoungptrs = 1;
-		curfp = GCHelper::GetForwardPtr(curfp);
-		fp = PointerOp::EncodeTag(curfp, PointerOp::DecodeTag(fp));
-		curp->InitArg(k, fp);
-	      }
-	      // need to check ptrs age
-	      else {
-		u_int curfgen = HeaderOp::DecodeGeneration(curfp);
-		// found young ptr to be moved
-		if (curfgen <= gen) {
-		  hasyoungptrs = 1;
-		  curfp = CloneBlock(curfp, gen + 1); // dstGen = gen + 1
-		  fp = PointerOp::EncodeTag(curfp, PointerOp::DecodeTag(fp));
-		  curp->InitArg(k, fp);
-		}
-		// found young normal ptr
-		else if (curfgen < curgen)
-		  hasyoungptrs = 1;
-		// ptr is equal or older
-	      }
-	    }
+    word wEntry = PointerOp::Deref(intgen_set->GetArgUnchecked(i));
+    AssertStore(PointerOp::IsInt(wEntry) == 0);
+    Block *entry = PointerOp::RemoveTag(wEntry);
+    // entry is no longer old but alive
+    if (GCHelper::AlreadyMoved(entry))
+      HeaderOp::ClearChildishFlag(GCHelper::GetForwardPtr(entry));
+    else {
+      u_int entryGen = HeaderOp::DecodeGeneration(entry);
+      // entry is still old
+      if (entryGen > gen) {
+	// Traverse entry for young references
+	bool foundYoungPtrs = false;
+	for (u_int k = entry->GetSize(); k--;) {
+	  word wItem = PointerOp::Deref(entry->GetArg(k));
+	  if (PointerOp::IsInt(wItem))
+	    entry->InitArg(k, wItem);
+	  else {
+	    wItem = ForwardBlock(wItem, gen + 1);
+	    entry->InitArg(k, wItem);
+	    Block *p = PointerOp::RemoveTag(wItem);
+	    if (HeaderOp::DecodeGeneration(p) < entryGen)
+	      foundYoungPtrs = true;
 	  }
-	  // p contains young ptrs and remains within intgen_set
-	  if (hasyoungptrs)
-	    intgen_set->AddUnchecked(p);
-	  // p does not contain young ptrs any longer
-	  else
-	    HeaderOp::ClearChildishFlag(curp);
 	}
-	// block is garbage
+	if (foundYoungPtrs)
+	  intgen_set->AddUnchecked(wEntry);
+	else
+	  HeaderOp::ClearChildishFlag(entry);
       }
+      // entry is garbage
     }
   }
 #if defined(STORE_GC_DEBUG)
@@ -456,7 +435,7 @@ inline void Store::GC(word &root, const u_int gen) {
   // Handle Weak Dictionaries, if any (performs scanning itself)
   if (wkDictSet->GetSize() != 0)
     Store::HandleWeakDictionaries(gen);
-  // Rehash BlockHashTable Contents
+ // Rehash BlockHashTable Contents
   Map::RehashAll(gen);
 }
 
@@ -483,8 +462,9 @@ void Store::DoGC(word &root) {
   while ((gen > 0) && (roots[gen].GetSize()) <= roots[gen].GetLimit())
     gen--;
 #if defined(STORE_DEBUG)
-  std::fprintf(stderr, "GCing up to %d with %d set entries...\n", gen,
-	       Store::DirectWordToBlock(root)->GetSize());
+  std::fprintf(stderr, "GCing up to %d...\n", gen);
+  std::fprintf(stderr, "FinSet = %p is %d/%d\n", finSet,
+	       finSet->GetSize(), ((Block *) finSet)->GetSize());
   std::fflush(stderr);
 #endif
   switch (gen) {
@@ -493,11 +473,26 @@ void Store::DoGC(word &root) {
   case 1:
     GC(root, 2); break;
   case STORE_GEN_OLDEST:
-    // Major collection
-    intgenSet = (Set *) CloneBlock((Block *) intgenSet, STORE_GEN_OLDEST + 1);
-    wkDictSet = (Set *) CloneBlock((Block *) wkDictSet, STORE_GEN_OLDEST + 1);
-    finSet    = (Set *) CloneBlock((Block *) finSet, STORE_GEN_OLDEST + 1);
-    GC(root, STORE_GEN_OLDEST + 1);
+    {
+      // Major collection
+      intgenSet = (Set *) CloneBlock((Block *) intgenSet, STORE_GEN_OLDEST + 1);
+      wkDictSet = (Set *) CloneBlock((Block *) wkDictSet, STORE_GEN_OLDEST + 1);
+      finSet    = (Set *) CloneBlock((Block *) finSet, STORE_GEN_OLDEST + 1);
+      GC(root, STORE_GEN_OLDEST + 1);
+      // Calc limits for next major GC
+      // to be done: find appropriate heuristics
+      u_int usage = roots[STORE_GEN_OLDEST + 1].GetSize();
+      if (usage >= 35 * 1024 * 1024)
+	usage -= 35 * 1024 * 1024;
+      u_int wanted = min(roots[STORE_GEN_OLDEST].GetLimit(),
+			 usage * 4 + 35 * 1024 * 1024);
+      s_int block_size = STORE_MEMCHUNK_SIZE;
+      s_int block_dist = wanted % block_size;
+      if (block_dist > 0)
+	block_dist = block_size - block_dist;
+      wanted += min(block_dist, ((wanted * memTolerance) / 100));
+      roots[STORE_GEN_OLDEST + 1].SetLimit(wanted);
+    }
     break;
   default:
     GC(root, gen + 1);
@@ -505,22 +500,6 @@ void Store::DoGC(word &root) {
   // Release Collected regions
   for (u_int i = gen + 1; i--;)
     roots[i].Shrink();
-  // Calc limits for next major GC
-  // to be done: find appropriate heuristics
-  if (gen == STORE_GEN_OLDEST) {
-    u_int usage = roots[STORE_GEN_OLDEST].GetSize();
-    if (usage >= 35 * 1024 * 1024)
-      usage -= 35 * 1024 * 1024;
-    u_int wanted = min(roots[STORE_GEN_OLDEST].GetLimit(),
-		       usage * 4 + 35 * 1024 * 1024);
-    // Try to align them to block size
-    s_int block_size = STORE_MEMCHUNK_SIZE;
-    s_int block_dist = wanted % block_size;
-    if (block_dist > 0)
-      block_dist = block_size - block_dist;
-    wanted += min(block_dist, ((wanted * memTolerance) / 100));
-    roots[STORE_GEN_OLDEST].SetLimit(wanted);
-  }
   // Switch Semispaces
   if (gen == STORE_GEN_OLDEST) {
     Heap tmp = roots[STORE_GEN_OLDEST];
