@@ -132,7 +132,7 @@ define
    in
       {Inspector.configure widgetTreeWidth 50}
       {Inspector.configure widgetTreeDepth 15}
-      {Inspector.configure widgetTreeDisplayMode false}
+      {Inspector.configure widgetTreeDisplayMode true}
       {Inspector.configure widgetUseNodeSet 2} %% Can be 1 or 2
       {Inspector.configure widgetNodesContainer TreeNodes}
       {Inspector.configure widgetNodeSets ((NormalNodes|RelationNodes)#
