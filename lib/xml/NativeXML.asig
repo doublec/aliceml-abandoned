@@ -15,17 +15,17 @@ signature ALICE_XML =
     sig
 	structure NativeAliceXML:
 	    sig
-		val parse : string -> 'xmlDocPtr
-		val isNull : 'xmlNodePtr -> bool
-		val children : 'xmlNodePtr -> 'xmlNodePtr
-		val parent : 'xmlNodePtr -> 'xmlNodePtr
-		val next : 'xmlNodePtr -> 'xmlNodePtr
-		val prev : 'xmlNodePtr -> 'xmlNodePtr
-		val properties : 'xmlNodePtr -> 'xmlNodePtr
-		val name : 'xmlNodePtr -> string
-		val getType : 'xmlNodePtr -> 'xmlType
-		val getProp : 'xmlNodePtr * string -> string option
+		val parse : string -> 'xml_doc_ptr
+		val isNull : 'xml_node_ptr -> bool
+		val children : 'xml_node_ptr -> 'xml_node_ptr
+		val parent : 'xml_node_ptr -> 'xml_node_ptr
+		val next : 'xml_node_ptr -> 'xml_node_ptr
+		val prev : 'xml_node_ptr -> 'xml_node_ptr
+		val properties : 'xml_node_ptr -> 'xml_node_ptr
+		val name : 'xml_node_ptr -> string
+		val getType : 'xml_node_ptr -> 'xml_node_type
+		val getProp : 'xml_node_ptr * string -> string option
 		val nodeListGetString :
-		    'xmlNodePtr * int -> string option
+		    'xml_node_ptr * int -> string option
 	    end
     end

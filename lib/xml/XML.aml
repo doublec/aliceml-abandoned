@@ -2,11 +2,11 @@ import "NativeAliceXML"
 
 signature ALICE_XML =
     sig
-	type xmlNode
+	type xml_node
 
-	exception documentParsingError
+	exception DocumentParsingError
 
-	datatype xmlNodeType =
+	datatype xml_node_type =
 	    ATTRIBUTE_DECL
 	  | ATTRIBUTE_NODE
 	  | CDATA_SECTION_NODE
@@ -30,26 +30,26 @@ signature ALICE_XML =
 	  | XINCLUDE_START
 
 	infix />
-	fun /> : xmlNode * (xmlNode -> 'a) -> 'a
+	fun /> : xml_node * (xml_node -> 'a) -> 'a
 
-	val parse : string -> xmlNode
-	fun name : xmlNode -> string
-	fun children : xmlNode -> xmlNode list
-	fun null : xmlNode -> bool
-	fun parent : xmlNode -> xmlNode
-	fun properties : xmlNode -> xmlNode list
-	fun getType : xmlNode -> xmlNodeType
-	fun getProp : xmlNode -> string -> string option
-	fun getContent : xmlNode -> bool -> string option
+	val parse : string -> xml_node
+	fun name : xml_node -> string
+	fun children : xml_node -> xml_node list
+	fun null : xml_node -> bool
+	fun parent : xml_node -> xml_node
+	fun properties : xml_node -> xml_node list
+	fun getType : xml_node -> xml_node_type
+	fun getProp : xml_node -> string -> string option
+	fun getContent : xml_node -> bool -> string option
     end
 
 structure AliceXML :> ALICE_XML =
     struct
-	type xmlNode
+	type xml_node
 
-	exception documentParsingError
+	exception DocumentParsingError
 
-	datatype xmlNodeType =
+	datatype xml_node_type =
 	    ATTRIBUTE_DECL
 	  | ATTRIBUTE_NODE
 	  | CDATA_SECTION_NODE
@@ -87,7 +87,7 @@ structure AliceXML :> ALICE_XML =
 		val doc = X.parse filename
 	    in
 		if X.isNull doc then
-		    raise documentParsingError
+		    raise DocumentParsingError
 		else
 		    doc
 	    end
