@@ -1,0 +1,334 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Url from "x-alice:/lib/system/Url"
+
+structure PS :
+  sig
+    type pos = int*int
+    type color = {r:real,g:real,b:real}
+    datatype path =
+             Line of {a:pos,b:pos,outline:color}
+           | Rectangle of {c1:pos,c2:pos,
+                           outline:color,
+                           fill:color}
+           | Circle of {center:pos,
+                        radius:int,
+                        outline:color,
+                        fill:color}
+           | Diamond of {c1:pos,
+                         radius:int,
+                         outline:color,
+                         fill:color}
+           | Triangle of {c1:pos,c2:pos,c3:pos,
+                          outline:color,
+                          fill:color}
+
+    val emit : string * path list -> unit
+
+  end
+  =
+  struct
+    type pos = int*int
+    type color = {r:real,g:real,b:real}
+    datatype path =
+             Line of {a:pos,b:pos,outline:color}
+           | Rectangle of {c1:pos,c2:pos,
+                           outline:color,
+                           fill:color}
+           | Circle of {center:pos,
+                        radius:int,
+                        outline:color,
+                        fill:color}
+           | Diamond of {c1:pos,
+                         radius:int,
+                         outline:color,
+                         fill:color}
+           | Triangle of {c1:pos,c2:pos,c3:pos,
+                          outline:color,
+                          fill:color}
+
+    fun rToS x = (if x<0.0 then "-" else "")^(Real.toString (Real.abs x))
+    fun iToS x = (if x<0 then "-" else "")^(Int.toString (Int.abs x))
+
+    val scale = 0.72
+    val translateX = 306.0
+    val translateY = 396.0
+    val translateXAfterScale = 8.0*scale
+    val translateYAfterScale = ~56.0*scale
+
+    val translateX = translateX + translateXAfterScale
+    val translateY = translateY + translateYAfterScale
+    val translateXI = Real.round translateX
+    val translateYI = Real.round translateY
+    val translateXS = (rToS translateX)
+    val translateYS = (rToS translateY)
+    val scaleS = rToS scale
+
+    fun min(x,y) = if x<y then x else y
+    fun minX((p1x,_),(p2x,_)) = min(p1x,p2x)
+    fun minY((_,p1y),(_,p2y)) = min(p1y,p2y)
+    fun max(x,y) = if x>y then x else y
+    fun maxX((p1x,_),(p2x,_)) = max(p1x,p2x)
+    fun maxY((_,p1y),(_,p2y)) = max(p1y,p2y)
+    fun bbMin(p1,p2) = (minX(p1,p2), minY(p1,p2))
+    fun bbMax(p1,p2) = (maxX(p1,p2), maxY(p1,p2))
+    fun circleToSquare((px,py),r) = ((px-r,py-r),(px+r,py+r))
+    fun diamondToSquare((px,py),r) = ((px-r,py), (px+r,py+2*r))
+    fun triangleToSquare(c1,c2,c3) =
+        (bbMin(c1,bbMin(c2,c3)),bbMax(c1,bbMax(c2,c3)))
+
+    fun boundingBox ((minX,minY), (maxX,maxY)) nil = ((minX-5,minY-5),(maxX+5,maxY+5))
+      | boundingBox (min, max) ( (Line {a,b,outline})::dr) =
+        boundingBox (bbMin(min,bbMin(a,b)), bbMax(max,bbMax(a,b))) dr
+      | boundingBox (min, max) ( (Rectangle {c1,c2,outline,fill})::dr) =
+        boundingBox (bbMin(min,bbMin(c1,c2)), bbMax(max,bbMax(c1,c2))) dr
+      | boundingBox (min, max) ( (Circle {center,radius,outline,fill})::dr) =
+        let
+            val (c1,c2) = circleToSquare(center,radius)
+        in
+            boundingBox (bbMin(min,bbMin(c1,c2)), bbMax(max,bbMax(c1,c2))) dr
+        end
+      | boundingBox (min, max) ( (Diamond {c1,radius,outline,fill})::dr) =
+        let
+            val (c1,c2) = diamondToSquare(c1,radius)
+        in
+            boundingBox (bbMin(min,bbMin(c1,c2)), bbMax(max,bbMax(c1,c2))) dr
+        end
+      | boundingBox (min, max) ( (Triangle {c1,c2,c3,outline,fill})::dr) =
+        let
+            val (c1,c2) = triangleToSquare(c1,c2,c3)
+        in
+            boundingBox (bbMin(min,bbMin(c1,c2)), bbMax(max,bbMax(c1,c2))) dr
+        end
+
+    fun emitDrawing f (Line {a,b,outline}) =
+        let
+            val aXS = rToS (Real.fromInt (#1 a))
+            val aYS = rToS (Real.fromInt (#2 a))
+            val bXS = rToS (Real.fromInt (#1 b))
+            val bYS = rToS (Real.fromInt (#2 b))
+            val (orS,ogS,obS) = (rToS (#r outline),
+                                 rToS (#g outline),
+                                 rToS (#b outline))
+        in
+        TextIO.output(f,
+          "gsave\n"^
+          aXS^" "^aYS^" moveto\n"^
+          bXS^" "^bYS^" lineto\n"^
+          "0 setlinecap\n"^
+          "1 setlinejoin\n"^
+          "1 setlinewidth\n"^
+          "[] 0 setdash\n"^
+          orS^" "^ogS^" "^obS^" setrgbcolor AdjustColor\n"^
+          "stroke\n"^
+          "grestore\n"
+          )
+        end
+      | emitDrawing f (Rectangle {c1,c2,outline,fill}) =
+        let
+            val c1XS = rToS (Real.fromInt (#1 c1))
+            val c1YS = rToS (Real.fromInt (#2 c1))
+            val c2XS = rToS (Real.fromInt (#1 c2))
+            val c2YS = rToS (Real.fromInt (#2 c2))
+            val (orS,ogS,obS) = (rToS (#r outline),
+                                 rToS (#g outline),
+                                 rToS (#b outline))
+            val (frS,fgS,fbS) = (rToS (#r fill),
+                                 rToS (#g fill),
+                                 rToS (#b fill))
+        in
+        TextIO.output(f,
+          "gsave\n"^
+          c1XS^" "^c1YS^" moveto "^c1XS^" "^c2YS^" lineto "^
+          c2XS^" "^c2YS^" lineto "^c2XS^" "^c1YS^" lineto "^"closepath\n"^
+          frS^" "^fgS^" "^fbS^" setrgbcolor AdjustColor\n"^
+          "fill\n"^
+          c1XS^" "^c1YS^" moveto "^c1XS^" "^c2YS^" lineto "^
+          c2XS^" "^c2YS^" lineto "^c2XS^" "^c1YS^" lineto "^"closepath\n"^
+          "1 setlinejoin 1 setlinecap\n"^
+          "1 setlinewidth\n"^
+          "[] 0 setdash\n"^
+          orS^" "^ogS^" "^obS^" setrgbcolor AdjustColor\n"^
+          "stroke\n"^
+          "grestore\n"
+          )
+        end
+      | emitDrawing f (Circle {center,radius,outline,fill}) =
+        let
+            val centerXS = rToS (Real.fromInt (#1 center))
+            val centerYS = rToS (Real.fromInt (#2 center))
+            val radiusS  = rToS (Real.fromInt radius)
+            val (orS,ogS,obS) = (rToS (#r outline),
+                                 rToS (#g outline),
+                                 rToS (#b outline))
+            val (frS,fgS,fbS) = (rToS (#r fill),
+                                 rToS (#g fill),
+                                 rToS (#b fill))
+        in
+        TextIO.output(f,
+          "gsave\n"^
+          "matrix currentmatrix\n"^
+          centerXS^" "^centerYS^" translate "^radiusS^" "^radiusS^" scale 1 0 moveto 0 0 1 0 360 arc\n"^
+          "setmatrix\n"^
+          frS^" "^fgS^" "^fbS^" setrgbcolor AdjustColor\n"^
+          "fill\n"^
+          "matrix currentmatrix\n"^
+          centerXS^" "^centerYS^" translate "^radiusS^" "^radiusS^" scale 1 0 moveto 0 0 1 0 360 arc\n"^
+          "setmatrix\n"^
+          "0 setlinejoin 2 setlinecap\n"^
+          "1 setlinewidth\n"^
+          "[] 0 setdash\n"^
+          orS^" "^ogS^" "^obS^" setrgbcolor AdjustColor\n"^
+          "stroke\n"^
+          "grestore\n"
+          )
+        end
+      | emitDrawing f (Diamond {c1,radius,outline,fill}) =
+        let
+            val c1XS = rToS (Real.fromInt (#1 c1))
+            val c1YS = rToS (Real.fromInt (#2 c1))
+            val c2XS = rToS (Real.fromInt ((#1 c1)+radius))
+            val c2YS = rToS (Real.fromInt ((#2 c1)+radius))
+            val c3XS = c1XS
+            val c3YS = rToS (Real.fromInt ((#2 c1)+2*radius))
+            val c4XS = rToS (Real.fromInt ((#1 c1)-radius))
+            val c4YS = c2YS
+            val (orS,ogS,obS) = (rToS (#r outline),
+                                 rToS (#g outline),
+                                 rToS (#b outline))
+            val (frS,fgS,fbS) = (rToS (#r fill),
+                                 rToS (#g fill),
+                                 rToS (#b fill))
+        in
+        TextIO.output(f,
+          "gsave\n"^
+          c1XS^" "^c1YS^" moveto "^c2XS^" "^c2YS^" lineto "^
+          c3XS^" "^c3YS^" lineto "^c4XS^" "^c4YS^" lineto "^
+          c1XS^" "^c1YS^" lineto\n"^
+          frS^" "^fgS^" "^fbS^" setrgbcolor AdjustColor\n"^
+          "eofill\n"^
+          c1XS^" "^c1YS^" moveto "^c2XS^" "^c2YS^" lineto "^
+          c3XS^" "^c3YS^" lineto "^c4XS^" "^c4YS^" lineto "^
+          c1XS^" "^c1YS^" lineto\n"^
+          "1 setlinejoin 1 setlinecap\n"^
+          "1 setlinewidth\n"^
+          "[] 0 setdash\n"^
+          orS^" "^ogS^" "^obS^" setrgbcolor AdjustColor\n"^
+          "stroke\n"^
+          "grestore\n"
+          )
+        end
+      | emitDrawing f (Triangle {c1,c2,c3,outline,fill}) =
+        let
+            val c1XS = rToS (Real.fromInt (#1 c1))
+            val c1YS = rToS (Real.fromInt (#2 c1))
+            val c2XS = rToS (Real.fromInt (#1 c2))
+            val c2YS = rToS (Real.fromInt (#2 c2))
+            val c3XS = rToS (Real.fromInt (#1 c3))
+            val c3YS = rToS (Real.fromInt (#2 c3))
+            val (orS,ogS,obS) = (rToS (#r outline),
+                                 rToS (#g outline),
+                                 rToS (#b outline))
+            val (frS,fgS,fbS) = (rToS (#r fill),
+                                 rToS (#g fill),
+                                 rToS (#b fill))
+        in
+        TextIO.output(f,
+          "gsave\n"^
+          c1XS^" "^c1YS^" moveto "^c2XS^" "^c2YS^" lineto "^
+          c3XS^" "^c3YS^" lineto "^c1XS^" "^c1YS^" lineto\n"^
+          frS^" "^fgS^" "^fbS^" setrgbcolor AdjustColor\n"^
+          "eofill\n"^
+          c1XS^" "^c1YS^" moveto "^c2XS^" "^c2YS^" lineto "^
+          c3XS^" "^c3YS^" lineto "^c1XS^" "^c1YS^" lineto\n"^
+          "1 setlinejoin 1 setlinecap\n"^
+          "1 setlinewidth\n"^
+          "[] 0 setdash\n"^
+          orS^" "^ogS^" "^obS^" setrgbcolor AdjustColor\n"^
+          "stroke\n"^
+          "grestore\n"
+          )
+        end
+
+    fun emitHeader f =
+        TextIO.output(f,
+          "%%BeginSetup\n"^
+          "/CL 2 def\n"^
+          "%%EndSetup\n\n"^
+          "%%Page: 1 1\n"^
+          "save\n"^
+	  translateXS^" "^translateYS^" translate\n"^
+          scaleS^" "^scaleS^" scale\n"
+          )
+
+    fun emitFooter f =
+        TextIO.output(f,
+          "restore showpage\n\n"^
+          "%%Trailer\n"^
+          "end\n"^
+          "%%EOF\n"
+          )
+
+    fun copyProlog f =
+        let
+            val p = TextIO.openIn
+              (Url.toLocalFile (Url.fromString
+                                "x-alice:/lib/postscript/prolog.ps"))
+            fun cp () =
+                case TextIO.inputLine p of
+                    NONE => ()
+                  | SOME s => (TextIO.output(f, s);
+                               cp ())
+        in
+            cp ()
+        end
+
+    fun emitComments f (min:pos,max:pos) =
+        let
+            val bminXS = iToS (#1 min)
+            val bminYS = iToS (#2 min)
+            val bmaxXS = iToS (#1 max)
+            val bmaxYS = iToS (#2 max)
+        in
+            TextIO.output(f,
+              "%!PS-Adobe-3.0 EPSF-3.0\n"^
+              "%%Creator: Alice PS library\n"^
+              "%%For: Who knows?\n"^
+              "%%Title: figure\n"^
+              "%%CreationDate: Fri Jul 16 13:58:16 2004\n"^
+              "%%BoundingBox: "^bminXS^" "^bminYS^" "^bmaxXS^" "^bmaxYS^"\n"^
+              "%%Pages: 1\n"^
+              "%%DocumentData: Clean7Bit\n"^
+              "%%Orientation: Portrait\n"^
+              "%%EndComments\n\n"
+              )
+        end
+
+    fun emit (fileName, drawings) =
+        let
+            val f = TextIO.openOut fileName
+            val ((minX,minY),(maxX,maxY)) = boundingBox ((100000,100000),(0,0)) drawings
+            val minX = Real.round (Real.fromInt minX * scale + translateX)
+            val minY = Real.round (Real.fromInt minY * scale + translateY)
+            val maxX = Real.round (Real.fromInt maxX * scale + translateX)
+            val maxY = Real.round (Real.fromInt maxY * scale + translateY)
+            val (min,max) = ((minX,minY),(maxX,maxY))
+        in
+            emitComments f (min,max);
+            copyProlog f;
+            emitHeader f;
+            map (emitDrawing f) drawings;
+            emitFooter f;
+            TextIO.closeOut f
+        end
+  end
