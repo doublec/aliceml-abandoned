@@ -149,7 +149,7 @@ DEFINE1(Thread_suspend) {
 } END
 
 DEFINE0(Thread_yield) {
-  PREEMPT;
+  PREEMPT0;
 } END
 
 void PrimitiveTable::RegisterThread() {
