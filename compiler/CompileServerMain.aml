@@ -24,8 +24,8 @@ struct
 
     fun loop compile (connection as (socket,_,_)) =
 	case Socket.inputLine socket
-	  of ""   => ()
-	   | line =>
+	  of NONE      => ()
+	   | SOME line =>
 	case String.tokens Char.isSpace line
 	  of []         => loop compile connection
 	   | ["--exit"] => OS.Process.exit OS.Process.success

@@ -104,11 +104,11 @@ functor MkEngine(val cmd: unit -> string * string list
 	in
 	    fun parseResult proc =
 		case TextIO.inputLine (instream proc) of
-		    "\n" => nil
-		  | "" =>
+		    NONE =>
 			Error.error'
 			(Source.nowhere, "Ouch!! Subprocess crashed!")
-		  | s =>
+		  | SOME "\n" => nil
+		  | SOME s =>
 			case String.sub (s, 0) of
 			    #"%" => (TextIO.print s; parseResult proc)
 			  | _ =>
