@@ -126,7 +126,8 @@ struct
 		else if isUnknown t then
 		    let
 			val k   = kind t
-			val doc = ppVar false
+			val t'  = Type.fromCanonical(Type.canonical t)
+			val doc = text("'" ^ Int.toString(Type.hash t'))
 		    in
 			if k = STAR
 			then doc
@@ -157,7 +158,7 @@ struct
 		else if isVar t then
 		    let
 			val k   = kind t
-			val doc = ppVar false ^^ text "?"	(* unbound! *)
+			val doc = ppVar false	(* unbound! *)
 		    in
 			if k = STAR
 			then doc

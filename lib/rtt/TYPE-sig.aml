@@ -39,6 +39,7 @@ sig
 
     type canonical_typ
     val canonical : typ -> canonical_typ
+    val fromCanonical : canonical_typ -> typ
     structure Map : SIMPLE_IMP_MAP where type key = canonical_typ
 
 
@@ -193,5 +194,4 @@ sig
     val enterLevel :	unit -> unit
     val exitLevel :	unit -> unit
     val resetLevel :	unit -> unit
-
 end

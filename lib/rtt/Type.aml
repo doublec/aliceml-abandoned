@@ -160,6 +160,11 @@ struct
     val same				= op=
     fun hash(ref(_,z))			= Stamp.hash z
 
+    fun canonical(ref(LINK t,_))	= canonical t
+      | canonical t			= t
+
+    fun fromCanonical t			= t
+
 
     fun trace f s = f
 
@@ -382,9 +387,9 @@ struct
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(t' as ( CON _
 	      		     | VAR _ ))	= t'
-	      | clone'(ALL(a,t))	= ALL(dup a, clone t)
-	      | clone'(EXIST(a,t))	= EXIST(dup a, clone t)
-	      | clone'(LAMBDA(a,t))	= LAMBDA(dup a, clone t)
+	      | clone'(ALL(a,t))	= ALL(dup(canonical a), clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dup(canonical a), clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dup(canonical a), clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
@@ -580,9 +585,6 @@ struct
   (* Projections and extractions *)
 
     exception Type
-
-    fun canonical(ref(LINK t,_))	= canonical t
-      | canonical t			= t
 
     fun isAbbrev t			= isAbbrev'(typ' t)
     and isAbbrev'(LINK t)		= isAbbrev t
