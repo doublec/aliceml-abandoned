@@ -2,9 +2,6 @@ OBJS = Alice.dll stow.exe Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
 SIGS = IO.dll.sig OS.dll.sig TextIO.dll.sig CommandLine.dll.sig
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
-.il.dll:
-	ilasm -nologo -quiet -dll -out=$@ $<
-
 all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector
 
 stoc-com+.x86-win32: ../stoc/stoc-com+.x86-win32
@@ -29,8 +26,7 @@ Base.aml: ../lib/bootstrap/Bootstrap.aus
 	copy ..\lib\bootstrap\Bootstrap.aus Base.aml
 
 Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
-	stoc --noimplicitimport -c ../lib/bootstrap/Bootstrap.aus -o Base.il
-	ilasm /dll Base.il
+	stoc --noimplicitimport -c Base.aml -o $@
 
 IO.dll: IO.cs
 	csc -nologo -t:library IO.cs
@@ -68,8 +64,7 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Dialog.cs
 
 Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il
-	stoc -c Tools.aml -o Tools.il
-	ilasm /dll Tools.il
+	stoc -c Tools.aml -o $@
 
 clean:
 	@-del /f /q *~ *.pdb
