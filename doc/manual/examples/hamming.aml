@@ -1,33 +1,37 @@
-open Hole
+fun lazy
+    mapz f nil     = nil
+  | mapz f (x::xs) = f x :: mapz f xs
 
-fun nth (x::_, 0) = x
-  | nth (_::xr, i) = nth (xr, i - 1)
+fun lazy
+    mergez (x::xs, y::ys) =
+	(case Int.compare (x,y)
+	 of EQUAL   => x::mergez (xs,ys)
+	  | LESS    => x::mergez (xs,y::ys)
+	  | GREATER => y::mergez (x::xs,ys)
+	)
+  | mergez (_, _) = raise Empty
 
-fun map (f, xs) =
-    byneed (fn () =>
-	    case xs of
-		x::xr => f x::map (f, xr)
-	      | nil => raise Match)
+val rec hamming =
+    1::(lazy mergez (mapz (fn i => 2 * i) hamming,
+		     mergez (mapz (fn i => 3 * i) hamming,
+			     mapz (fn i => 5 * i) hamming)))
 
-fun merge (xs, ys) =
-    byneed (fn () =>
-	    case (xs, ys) of
-		(x::xr, y::yr) =>
-		    if x = y then x::merge (xr, yr)
-		    else if x < y then x::merge (xr, ys)
-		    else y::merge (xs, yr)
-	      | (_, _) => raise Match)
+val _ = print (Int.toString (List.nth (hamming, 1500)) ^ "\n")
+val _ = OS.Process.exit OS.Process.success
 
-val hamming =
+
+(* Note: Unfortunately, the following version using promises to tie the knot
+ * does not work currently, due to a bug in Mozart's implementation of
+ * unification. *)
+
+val hammingUsingPromises =
     let
-	val rest = hole ()
-	val hamming = 1::rest
+	open Promise
+	val rest = promise ()
+	val hamming = 1::future rest
     in
-	fill (rest, merge (map (fn i => 2 * i, hamming),
-			   merge (map (fn i => 3 * i, hamming),
-				  map (fn i => 5 * i, hamming))));
+	fulfill (rest, mergez (mapz (fn i => 2 * i) hamming,
+			       mergez (mapz (fn i => 3 * i) hamming,
+				       mapz (fn i => 5 * i) hamming))); 
 	hamming
     end
-
-val _ = Tools.print (List.nth (hamming, 1500))
-val _ = OS.Process.exit OS.Process.success
