@@ -31,7 +31,7 @@ Core language:
 + abstract type declarations (type t eqtype u)
 + open datatypes, turning exceptions into derived forms
 * existential types in datatypes
-* higher kind type variables (type ('a : _*_ -> _) t = (int,bool) 'a)
+* higher kind type variables (type ('a : . * . -> .) t = (int,bool) 'a)
 * specs as decs (semantics?)
 
 + prebound and primitive declarations for bootstrapping
@@ -57,4 +57,5 @@ Module language:
 * higher-order functors (functors in structures and signatures)
 * longids as path expressions
 * functor and top signatures
-* first-class structures/functors (how??)
+* first-class structures/functors (exp ::= pack strexp, strexp ::= unpack exp :
+sigexp)
