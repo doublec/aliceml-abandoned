@@ -1073,11 +1073,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	switch (type->GetLabel()) {
 	case JavaLabel::Class:
 	  {
-	    Class *classObj = static_cast<Class *>(type);
+	    Class *aClass = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
 	    if (p != INVALID_POINTER &&
 		(p->GetLabel() != JavaLabel::Object ||
-		 !Object::FromWordDirect(wObject)->IsInstanceOf(classObj))) {
+		 !Object::FromWordDirect(wObject)->IsInstanceOf(aClass))) {
 	      RAISE_VM_EXCEPTION(ClassCastException, "CHECKCAST");
 	    }
 	  }
@@ -1469,17 +1469,17 @@ Worker::Result ByteCodeInterpreter::Run() {
 	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
-	Class *classObj = fieldRef->GetClass();
-	Assert(classObj != INVALID_POINTER);
-	Lock *lock = classObj->GetLock();
+	Class *aClass = fieldRef->GetClass();
+	Assert(aClass != INVALID_POINTER);
+	Lock *lock = aClass->GetLock();
 	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
-	if (!classObj->IsInitialized()) {
+	if (!aClass->IsInitialized()) {
 	  frame->SetPC(pc);
-	  return classObj->RunInitializer();
+	  return aClass->RunInitializer();
 	}
-	word value = classObj->GetStaticField(fieldRef->GetIndex());
+	word value = aClass->GetStaticField(fieldRef->GetIndex());
 	lock->Release();
 	frame->Push(value);
 	if (fieldRef->GetNumberOfRequiredSlots() == 2) {
@@ -1829,11 +1829,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	switch (type->GetLabel()) {
 	case JavaLabel::Class:
 	  {
-	    Class *classObj = static_cast<Class *>(type);
+	    Class *aClass = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
 	    Assert(p != INVALID_POINTER);
 	    result = (p->GetLabel() == JavaLabel::Object &&
-		      Object::FromWordDirect(wObject)->IsInstanceOf(classObj));
+		      Object::FromWordDirect(wObject)->IsInstanceOf(aClass));
 	  }
 	  break;
 	case JavaLabel::PrimitiveType:
@@ -1910,8 +1910,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (object == INVALID_POINTER) {
 	  RAISE_VM_EXCEPTION(NullPointerException, "INVOKESPECIAL");
 	}
-	Class *classObj  = methodRef->GetClass();
-	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
+	Class *aClass  = methodRef->GetClass();
+	Closure *closure = aClass->GetVirtualMethod(methodRef->GetIndex());
 	return Scheduler::PushCall(closure->ToWord());
       }
       break;
@@ -1922,15 +1922,15 @@ Worker::Result ByteCodeInterpreter::Run() {
 	StaticMethodRef *methodRef = StaticMethodRef::FromWord(wMethodRef);
 	if (methodRef == INVALID_POINTER)
 	  REQUEST(wMethodRef);
-	Class *classObj = methodRef->GetClass();
-	Assert(classObj != INVALID_POINTER);
-	Lock *lock = classObj->GetLock();
+	Class *aClass = methodRef->GetClass();
+	Assert(aClass != INVALID_POINTER);
+	Lock *lock = aClass->GetLock();
 	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
-	if (!classObj->IsInitialized()) {
+	if (!aClass->IsInitialized()) {
 	  frame->SetPC(pc);
-	  return classObj->RunInitializer();
+	  return aClass->RunInitializer();
 	}
 	// Set continuation
 	frame->SetPC(-2);
@@ -1944,7 +1944,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  Scheduler::nArgs = nArgs;
 	for (u_int i = nArgs; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
-	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
+	Closure *closure = aClass->GetStaticMethod(methodRef->GetIndex());
 	UnlockWorker::PushFrame(lock);
 	return Scheduler::PushCall(closure->ToWord());
       }
@@ -2332,16 +2332,16 @@ Worker::Result ByteCodeInterpreter::Run() {
 	switch (type->GetLabel()) {
 	case JavaLabel::Class:
 	  {
-	    Class *classObj = static_cast<Class *>(type);
-	    Lock *lock = classObj->GetLock();
+	    Class *aClass = static_cast<Class *>(type);
+	    Lock *lock = aClass->GetLock();
 	    Future *future = lock->Acquire();
 	    if (future != INVALID_POINTER)
 	      REQUEST(future->ToWord());
-	    if (!classObj->IsInitialized()) {
+	    if (!aClass->IsInitialized()) {
 	      frame->SetPC(pc);
-	      return classObj->RunInitializer();
+	      return aClass->RunInitializer();
 	    }
-	    Object *object = Object::New(classObj);
+	    Object *object = Object::New(aClass);
 	    Assert(object != INVALID_POINTER);
 	    frame->Push(object->ToWord());
 	    lock->Release();
@@ -2449,22 +2449,22 @@ Worker::Result ByteCodeInterpreter::Run() {
 	StaticFieldRef *fieldRef = StaticFieldRef::FromWord(wFieldRef);
 	if (fieldRef == INVALID_POINTER)
 	  REQUEST(wFieldRef);
-	Class *classObj = fieldRef->GetClass();
-	Assert(classObj != INVALID_POINTER);
-	Lock *lock = classObj->GetLock();
+	Class *aClass = fieldRef->GetClass();
+	Assert(aClass != INVALID_POINTER);
+	Lock *lock = aClass->GetLock();
 	Future *future = lock->Acquire();
 	if (future != INVALID_POINTER)
 	  REQUEST(future->ToWord());
-	if (!classObj->IsInitialized()) {
+	if (!aClass->IsInitialized()) {
 	  frame->SetPC(pc);
-	  return classObj->RunInitializer();
+	  return aClass->RunInitializer();
 	}
 	if (fieldRef->GetNumberOfRequiredSlots() == 2) {
 	  DROP_SLOT();
 	} else {
 	  Assert(fieldRef->GetNumberOfRequiredSlots() == 1);
 	}
-	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
+	aClass->PutStaticField(fieldRef->GetIndex(), frame->Pop());
 	lock->Release();
 	pc += 3;
       }
