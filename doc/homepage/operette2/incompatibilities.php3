@@ -124,8 +124,8 @@
   </PRE>
 
   <P>
-    This is legal in SML'97 due to some artefact of the formal language
-    specification and would introduce a function named
+    Both these declarations are legal in SML'97 due to some artefact of the
+    formal language specification and would introduce a function named
     <TT>NONE</TT>, hiding the constructor status of <TT>NONE</TT>. In Alice it
     produces a type clash because it is interpreted as trying to match
     <TT>NONE</TT> with a lambda expression. This is consistent with SML'90 and
