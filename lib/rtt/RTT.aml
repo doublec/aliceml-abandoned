@@ -103,11 +103,7 @@ local
 	end
     end
     *)
-in
-    (* structure is named __pervasive to avoid spurious warnings during
-     * bootstrapping (about unavailable RTTs). *)
-    structure __pervasive =
-    struct
+
 	signature RTT =
 	sig
 	    structure Label :
@@ -238,7 +234,11 @@ in
 		val seal :		module * Inf.inf -> module
 	    end
 	end
-
+in
+    (* structure is named __pervasive to avoid spurious warnings during
+     * bootstrapping (about unavailable RTTs). *)
+    structure __pervasive =
+    struct
 	structure RTT : RTT =
 	struct
 	    structure Label         = Label
