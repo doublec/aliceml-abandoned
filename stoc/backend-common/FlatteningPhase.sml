@@ -635,6 +635,21 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		[O.HandleStm (stm_info (#region info), tryBody,
 			      O.IdDef catchId, catchBody, contBody, stamp)]
 	    end
+	  | translateExp (FailExp info, f, cont) =
+	    let
+		val region = #region info
+		val info' = {region = region}
+		val holeId = freshId info'
+		val exnId = freshId info'
+	    in
+		O.ValDec (stm_info region, O.IdDef holeId,
+			  O.PrimAppExp (info', "Hole.hole", nil))::
+		O.ValDec (stm_info region, O.IdDef exnId,
+			  O.PrimExp (info', "Hole.Hole"))::
+		O.ValDec (stm_info region, O.Wildcard,
+			  O.PrimAppExp (info', "Hole.fail", [holeId, exnId]))::
+		f (O.VarExp (info', holeId))::translateCont cont
+	    end
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE
