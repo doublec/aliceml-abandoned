@@ -1664,10 +1664,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case Instr::ALOAD:
 	case Instr::LLOAD:
 	  {
-	    unsigned char b1 = code[++pc];
-	    unsigned char b2 = code[++pc];
-	    u_int index      = ((b1 << 8) | b2);
-	    frame->Push(frame->GetEnv(index));
+	    frame->Push(frame->GetEnv(GET_POOL_INDEX()));
+	    pc += 2;
 	  }
 	  break;
 	case Instr::ISTORE:
@@ -1676,19 +1674,19 @@ Worker::Result ByteCodeInterpreter::Run() {
 	case Instr::LSTORE:
 	  {
 	    frame->SetEnv(GET_POOL_INDEX(), frame->Pop());
+	    pc += 2;
 	  }
 	  break;
 	case Instr::IINC:
 	  {
-	    unsigned char b1 = code[++pc];
-	    unsigned char b2 = code[++pc];
-	    u_int index      = ((b1 << 8) | b2);
-	    unsigned char c1 = code[++pc];
-	    unsigned char c2 = code[++pc];
+	    u_int index      = GET_POOL_INDEX();
+	    unsigned char c1 = code[pc + 3];
+	    unsigned char c2 = code[pc + 4];
 	    signed short inc = ((c1 << 8) | c2);
-	    int value        = Store::DirectWordToInt(frame->GetEnv(index));
+	    int value        = JavaInt::FromWord(frame->GetEnv(index));
 	    value += inc;
-	    frame->SetEnv(inc, Store::IntToWord(value));
+	    frame->SetEnv(index, JavaInt::ToWord(value));
+	    pc += 4;
 	  }
 	  break;
 	case Instr::RET:
