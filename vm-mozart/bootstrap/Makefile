@@ -99,6 +99,8 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/Env.sml \
 	$(STOC_DIR)/frontend-common/ENV0.sig \
 	$(STOC_DIR)/frontend-common/Env0.sml \
+	$(STOC_DIR)/frontend-common/PP_PATH.sig \
+	$(STOC_DIR)/frontend-common/PPPath.sml \
 	$(STOC_DIR)/frontend-common/PP_TYPE.sig \
 	$(STOC_DIR)/frontend-common/PPType.sml \
 	$(STOC_DIR)/frontend-common/ELABORATION_ERROR.sig \
