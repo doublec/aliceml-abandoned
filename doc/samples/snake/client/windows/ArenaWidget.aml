@@ -42,94 +42,91 @@ import structure Arena         from "../../server/Arena"
 *)
 
 
-fun colorConv n = Real.round (65535.0 * n)
-
-local
-
-    val colormap = Gdk.colormapGetSystem ()
-
-    structure CMap = MkRedBlackMap (Color)
-
-    fun conv c = 
-	let
-	    val (r, g, b) = Color.rgb c
-	    val color = Gdk.allocColor (colorConv r, colorConv g, colorConv b)
-	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
-	    color
-	end
-
-    fun convArena (r, g, b) = 
-	let
-	    val color = Gdk.allocColor (colorConv r, colorConv g, colorConv b)
-	in
-	    Gdk.colormapAllocColor (colormap, color, false, true);
-	    color
-	end
-
-    val map  = List.foldl (fn (c, map) =>
-			   CMap.insertDisjoint (map, c, conv c)) CMap.empty
-	Color.all
-	
-in
-    fun color c = CMap.lookupExistent (map, c);
-    val black    = convArena (0.0, 0.0, 0.0);
-    val green    = convArena (0.32, 0.66, 0.17);
-    val red      = convArena (1.0, 0.0, 0.0);
-    val white    = convArena (1.0, 1.0, 1.0)
-	
-end
-
-
-(* some values *)
-val cellSize     =  20
-val windowWidth  = 400
-val windowHeight = 300
-
-val backgroundColor = green
-
-structure P = Protocol
-
 
 structure ArenaWidget :> ARENAWIDGET =
 struct
 
-    type arena_field = Gtk.object * P.field
-	
-    type arena_widget = 
-	{
-	 canvas : Gtk.object,
-	 state  : arena_field Array2.array ref
-	 }
+    structure P = Protocol
 
+    (* some values *)
+    val cellSize      =  20
+    val windowWidth   = 400
+    val windowHeight  = 300
     val cellSize2     = cellSize     div 2
     val windowHeight2 = windowHeight div 2
     val windowWidth2  = windowWidth  div 2
 	
-    (* operations on fieldObjects list *)
-    val fieldObjects = ref []
 
-    fun resetFieldObjects () = fieldObjects := []
+    type arena_field = Gtk.object * P.field
+	
+    type item_cache  = (int * int * Gtk.object * P.field) list ref
 
-    fun putIntoFieldObjects (r, c, object, field) =
-	fieldObjects := (r, c, object, field) :: (!fieldObjects)
+    type arena_widget = 
+	{
+	 canvas    : Gtk.object,
+	 state     : arena_field Array2.array ref,
+	 itemCache : item_cache
+	 }
 
-    fun removeFromFieldObjects (r, c, object, field) = 
+    fun colorConv n = Real.round (65535.0 * n)
+	
+    local
+	
+	val colormap = Gdk.colormapGetSystem ()
+	    
+	structure CMap = MkRedBlackMap (Color)
+	    
+	fun conv c = 
+	    let
+		val (r, g, b) = Color.rgb c
+		val color = Gdk.allocColor (colorConv r, 
+					    colorConv g, 
+					    colorConv b)
+	    in
+		Gdk.colormapAllocColor (colormap, color, false, true);
+		color
+	    end
+
+	fun convArena (r, g, b) = 
+	    let
+		val color = Gdk.allocColor (colorConv r, 
+					    colorConv g, 
+					    colorConv b)
+	    in
+		Gdk.colormapAllocColor (colormap, color, false, true);
+		color
+	    end
+	
+	val map  = List.foldl (fn (c, map) =>
+			       CMap.insertDisjoint (map, c, conv c)) CMap.empty
+	    Color.all
+	    
+    in
+	fun color c = CMap.lookupExistent (map, c);
+	val black    = convArena (0.0, 0.0, 0.0);
+	val green    = convArena (0.32, 0.66, 0.17);
+	val red      = convArena (1.0, 0.0, 0.0);
+	val white    = convArena (1.0, 1.0, 1.0)
+	    
+    end
+
+    val backgroundColor = green
+
+    (* some procedures to work on item_cache *)
+    fun addToItemCache (r, c, object, field) ca =
+	ca := (r, c, object, field) :: !ca
+
+    fun removeFromItemCache (r, c, object, field) ca = 
 	let
 	    val newList = 
 		List.filter (fn (v, w, x, y) => 
 			     not(r = v andalso
 				 c = w andalso
-				 field = y)) (!fieldObjects)
+				 field = y)) (!ca)
 	in
-	    fieldObjects := newList
+	    ca := newList
 	end
 
-    val lock = Lock.lock ()
-
-    val resetFieldObjects      = Lock.sync lock resetFieldObjects
-    val putIntoFieldObjects    = Lock.sync lock putIntoFieldObjects
-    val removeFromFieldObjects = Lock.sync lock removeFromFieldObjects
 
     fun initialize () = 
         let
@@ -139,13 +136,15 @@ struct
             Gtk.layoutFreeze canvas;
 	    {
 	        canvas,
-	        state  = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY)))
+	        state     = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY))),
+		itemCache = ref nil
 	    }
         end
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
 	
-    fun initLevel ({canvas, state}, {dimensions = dim} : P.level_info) =
+    fun initLevel ({canvas, state, itemCache}, 
+		   {dimensions = dim} : P.level_info) =
 	let
 	    val (rows, cols) = dim
 	    val _ = GtkCanvas.setScrollRegion (canvas, 0.0, 0.0,
@@ -163,8 +162,8 @@ struct
 				    ("outline_color_gdk", Gtk.OBJECT green)])
 	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
 	in
-	    resetFieldObjects ();
-	    state  := arena
+	    state     := arena;
+	    itemCache := nil
 	end
 	
 
@@ -402,21 +401,18 @@ struct
 	end
 
 
-
-
-
-    fun changeField (object, oldField, r, c, field) = 
+    fun changeField (object, oldField, r, c, field) cache = 
 	(if object <> Gtk.null () orelse oldField <> P.EMPTY
-	     then (putIntoFieldObjects (r, c, object, oldField);
+	     then (addToItemCache (r, c, object, oldField) cache;
 		   GtkCanvas.itemHide object)
 	 else ();
-	 case List.find (fn (_, _, _, f) => f = field) (!fieldObjects) of
+	 case List.find (fn (_, _, _, f) => f = field) (!cache) of
 	     NONE                      => createNewFieldObj (r, c, field)
 	   | SOME (row, col, obj, fld) => 
-		 (removeFromFieldObjects (row, col, obj, fld);
+		 (removeFromItemCache (row, col, obj, fld) cache;
 		  moveFieldObjTo (obj, row, col, r, c, fld)))
 
-    fun insert arena canvas ((r, c), field) = 
+    fun insert cache arena canvas ((r, c), field) = 
 	let
 	    val (rows, cols) = Array2.dimensions arena
 	    val _ = assert 0 <= r andalso r < rows andalso
@@ -425,15 +421,15 @@ struct
 	in
 	    if f = field (* shouldn't happen normally *)
 		then ()
-	    else changeField (obj, f, r, c, field) arena canvas
+	    else changeField (obj, f, r, c, field) cache arena canvas
 	end
 
 
-    fun update ({canvas, state = ref arena}, difflist) =
+    fun update ({canvas, state = ref arena, itemCache}, difflist) =
 	let
             val root = GtkCanvas.root canvas
 	in
-	    List.app (insert arena root) difflist
+	    List.app (insert itemCache arena root) difflist
 	end 
 	
     fun arenaWidth (a:arena_widget) =

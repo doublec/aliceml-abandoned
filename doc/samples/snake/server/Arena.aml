@@ -270,29 +270,52 @@ struct
 
     val random = random 0 
         
+    (* some aiding procedures for placeSnakes *)
+    fun killHead (a, s) = 
+	let
+	    val (r, c) = Snake.head s
+	in
+	    Array2.update (a, r, c, P.EMPTY)
+	end
+
+    fun killBody (a, s, died) = 
+	let
+	    val body = Snake.body s
+	in
+	    died := s :: !died;
+	    List.app (fn (r, c) => Array2.update (a, r, c, P.EMPTY)) body
+	end
+
+
+    fun placeBody a died snake =
+	let
+	    val headP       = Snake.head snake
+	    val color       = Snake.color snake
+	    val body        = Snake.body snake
+	    fun thisSnake s = Color.equal (color, Snake.color s)
+	    (* have we already died? *)
+	    val dead = List.exists thisSnake (!died)
+		
+	    fun place [] = ()
+	      | place ((r, c) :: bodyRest) =
+		if (r, c) = headP then 
+		    (* ouch! our head has hit ourself! *)
+		    killBody (a, snake, died)
+		else
+		    (Array2.update (a, r, c, P.SNAKE_BODY color);
+		     place bodyRest)
+	in
+	    if dead 
+		then ()
+	    else place body
+	end
+
     fun placeSnakes (a, snakes) =
 	let
 	    val died    = ref nil
 	    val fin     = ref nil
             val eaters  = ref nil
-
-	    fun killHead s = 
-		let
-		    val (r, c) = Snake.head s
-		in
-		    Array2.update (a, r, c, P.EMPTY)
-		end
-
-	    fun killBody s = 
-		let
-		    val body = Snake.body s
-		in
-		    died := s :: !died;
-		    List.app 
-		        (fn (r, c) => 
-                            Array2.update (a, r, c, P.EMPTY)) body
-		end
-
+	    
 	    fun placeHead snake =
 		let
 		    val (r, c)     = Snake.head snake
@@ -318,54 +341,30 @@ struct
 								       color)) 
                 in
 		    if hit
-			then (killHead snake;
-			      killBody snake)
+			then (killHead (a, snake);
+			      killBody (a, snake, died))
 		    else 
 			case collObject of
-			 P.EMPTY    => place () 
-		       | P.GOODY n  => (Snake.eat (snake,n); 
-                                        place ();
-                                        eaters := snake :: !eaters)
-		       | P.WALL               => killBody snake
-                       | P.GATE (_, P.CLOSED) => killBody snake
+			 P.EMPTY              => place ()
+		       | P.GOODY n            => (Snake.eat (snake, n); 
+						  place ();
+						  eaters := snake :: !eaters)
+		       | P.WALL               => killBody (a, snake, died)
+                       | P.GATE (_, P.CLOSED) => killBody (a, snake, died)
 		       | P.GATE (col, P.OPEN) => 
                             if Color.equal (col, color)
 			        then (fin := snake :: !fin;
 				      Array2.update (a, r, c, collObject))
-			    else killBody snake
+			    else killBody (a, snake, died)
 		       | P.SNAKE_HEAD (_, col) => 
 				 if not (Color.equal (col, color))
-				     then killBody snake
+				     then killBody (a, snake, died)
 				 else ()
-		       |     _      => killBody snake
+		       |     _                 => killBody (a, snake, died)
 		end
-
-	    fun placeBody snake =
-		let
-                    val headP       = Snake.head snake
-		    val color       = Snake.color snake
-		    val body        = Snake.body snake
-		    fun thisSnake s = Color.equal (color, Snake.color s)
-                    (* have we already died? *)
-		    val dead = List.exists thisSnake (!died)
-		
-                    fun place [] = ()
-                      | place ((r, c) :: bodyRest) =
-                        if (r, c) = headP then 
-                            (* ouch! our head has hit ourself! *)
-                            killBody snake
-                        else
-                            (Array2.update (a, r, c, P.SNAKE_BODY color);
-                             place bodyRest)
-                in
-		    if dead 
-			then ()
-		    else place body
-		end
-		
 	in
 	    List.app placeHead snakes;
-	    List.app placeBody snakes;
+	    List.app (placeBody a died) snakes;
 	    {dead = !died, grown = !eaters, finished = !fin}
 	end
     
@@ -385,7 +384,7 @@ struct
 	end
 
         
-    fun removeSnakes (a,snakes) = 
+    fun removeSnakes (a, snakes) = 
 	let
 	    fun removeSnake s =
 		let
@@ -395,45 +394,45 @@ struct
                         Array2.update (a, r, c, P.EMPTY)) ps
 		end
 	in
-	    List.app (fn s => removeSnake s) snakes
+	    List.app removeSnake snakes
 	end
 
 
-    fun diff (old,new) =
+    (* some equation procedures for P.field types *)
+    fun goodyEqual (P.GOODY n1, 
+		    P.GOODY n2) = Int.equal (n1, n2)
+      | goodyEqual (_, _)       = false
+	
+    fun gateEqual (P.GATE (c1, s1),
+		   P.GATE (c2, s2)) =
+	(Color.equal (c1, c2) andalso s1 = s2)
+      | gateEqual (_, _)            = false
+	
+    fun headEqual (P.SNAKE_HEAD (d1, c1), 
+		   P.SNAKE_HEAD (d2, c2)) =
+	(Color.equal (c1, c2) andalso d1 = d2)
+      | headEqual (_, _)                  = false
+	
+    fun bodyEqual (P.SNAKE_BODY c1, 
+		   P.SNAKE_BODY c2) = 
+	Color.equal (c1, c2)
+      | bodyEqual (_, _)            = false
+
+    fun fieldEqual (P.WALL, P.WALL)   = true
+      | fieldEqual (P.EMPTY, P.EMPTY) = true
+      | fieldEqual (field1, field2)   =
+	(case field1 of
+	     P.GOODY      _ => goodyEqual (field1, field2)
+	   | P.GATE       _ => gateEqual  (field1, field2)
+	   | P.SNAKE_HEAD _ => headEqual  (field1, field2)
+	   | P.SNAKE_BODY _ => bodyEqual  (field1, field2)
+	   |       _        => false)
+
+    fun diff (old, new) =
         let
             val _   = assert Array2.dimensions old = Array2.dimensions new
 
             val (rows, cols) = Array2.dimensions old
-
-	    fun goodyEqual (P.GOODY n1, 
-			    P.GOODY n2) = Int.equal (n1, n2)
-	      | goodyEqual (_, _)       = false
-		
-	    fun gateEqual (P.GATE (c1, s1),
-			   P.GATE (c2, s2)) =
-		(Color.equal (c1, c2) andalso s1 = s2)
-	      | gateEqual (_, _)            = false
-
-	    fun headEqual (P.SNAKE_HEAD (d1, c1), 
-			   P.SNAKE_HEAD (d2, c2)) =
-		(Color.equal (c1, c2) andalso d1 = d2)
-	      | headEqual (_, _)                  = false
-
-	    fun bodyEqual (P.SNAKE_BODY c1, 
-			   P.SNAKE_BODY c2) = 
-		Color.equal (c1, c2)
-	      | bodyEqual (_, _)            = false
-
-	    fun fieldEqual (P.WALL, P.WALL)   = true
-	      | fieldEqual (P.EMPTY, P.EMPTY) = true
-	      | fieldEqual (field1, field2)   =
-		(case field1 of
-		    P.GOODY      _ => goodyEqual (field1, field2)
-		  | P.GATE       _ => gateEqual  (field1, field2)
-		  | P.SNAKE_HEAD _ => headEqual  (field1, field2)
-		  | P.SNAKE_BODY _ => bodyEqual  (field1, field2)
-		  |       _        => false)
-
 
             fun help ((r, c), xs) = 
                 assert 0 <= r andalso r <= rows andalso 
