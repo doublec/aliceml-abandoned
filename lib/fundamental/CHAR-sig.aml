@@ -38,8 +38,8 @@ sig
     val op < :		char * char -> bool
     val op <= :		char * char -> bool
     val op > :		char * char -> bool
-    val op >= :		char * char -> bool				(**)
-    val equal :		char * char -> bool
+    val op >= :		char * char -> bool
+    val equal :		char * char -> bool				(**)
     val compare :	char * char -> order
     val hash :		char -> int					(**)
 
