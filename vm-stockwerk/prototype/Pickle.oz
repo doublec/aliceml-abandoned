@@ -31,8 +31,10 @@ import
    System(eq)
    PrimitiveTable(values functions)
    AbstractCodeInterpreter(interpreter)
+require
+   Helper(deref: Deref)
 export
-   Unpack
+   %--**Unpack
    Load
    Pack
    Save
@@ -57,6 +59,10 @@ define
    VECTOR       = 5
    LabelOffset  = 6
 
+   %%-------------------------------------------------------------------
+   %% Unpickling
+   %%-------------------------------------------------------------------
+
    fun {ApplyTransform F X}
       %--** registration of transformers
       %--** implement using byneeds
@@ -76,156 +82,309 @@ define
       end
    end
 
-   class PickleParser
-      %--** implement as an interpreter
-      attr BS: unit Index: 0 Dict: unit Counter: unit
-      meth init(V ?X)
-	 BS <- {ByteString.make V}
-	 Index <- 0
-	 Dict <- {NewDictionary}
-	 Counter <- 0
-	 PickleParser, ParsePickle(?X)
+   class InputStreamBase
+      attr BufferHd: unit BufferTl: unit BufferPtr: unit
+      meth init() Empty in
+	 BufferHd <- Empty
+	 BufferTl <- Empty
+	 BufferPtr <- Empty
       end
-      meth Next($) I in
-	 I = @Index
-	 Index <- I + 1
-	 {ByteString.get @BS I}
-      end
-      meth Remember(X) N in
-	 N = @Counter
-	 @Dict.N := X
-	 Counter <- N + 1
-      end
-      meth Lookup(N $)
-	 @Dict.N
-      end
-      meth ParsePickle($)
-	 case PickleParser, Next($)
-	 of !POSINT    then PickleParser, ParseUInt($)
-	 [] !NEGINT    then ~(PickleParser, ParseUInt($) + 1)
-	 [] !CHUNK     then PickleParser, ParseChunk($)
-	 [] !BLOCK     then PickleParser, ParseBlock($)
-	 [] !TUPLE     then PickleParser, ParseTuple($)
-	 [] !CLOSURE   then PickleParser, ParseClosure($)
-	 [] !TRANSFORM then PickleParser, ParseTransform($)
-	 [] !REF       then PickleParser, ParseReference($)
+      meth getByte($)
+	 if {IsFree @BufferPtr} then eob
+	 elsecase @BufferPtr of C|Cr then
+	    BufferPtr <- Cr
+	    C
 	 end
       end
-      meth ParseUInt($) B in
-	 PickleParser, Next(?B)
-	 if B >= 0x80 then PickleParser, ParseUIntSub(B - 0x80 0x80 $)
-	 else B
-	 end
-      end
-      meth ParseUIntSub(X N $) B in
-	 PickleParser, Next(?B)
-	 if B >= 0x80 then
-	    PickleParser, ParseUIntSub(X + (B - 0x80) * N N * 0x80 $)
-	 else X + B * N
-	 end
-      end
-      meth ParseChunk(?Chunk) Size in
-	 PickleParser, ParseUInt(?Size)
-	 Chunk = {ByteString.make for I in 1..Size collect: C do
-				     {C PickleParser, Next($)}
-				  end}
-	 PickleParser, Remember(Chunk)
-      end
-      meth ParseBlock(?T) Label Size in
-	 PickleParser, Remember(T)
-	 PickleParser, ParseUInt(?Label)
-	 PickleParser, ParseUInt(?Size)
-	 case Label of !ARRAY then RealSize in
-	    PickleParser, ParsePickle(?RealSize)
-	    T = {NewArray 0 RealSize - 1 unit}
-	    for I in 1..RealSize do
-	       T.I := PickleParser, ParsePickle($)
-	    end
-%--** the following fails when debugging:
-%	    for I in RealSize+1..Size-1 do
-%	       PickleParser, ParsePickle(_)
-%	    end
-	 [] !CELL then
-	    T = {NewCell unit}
-	    {Assign T PickleParser, ParsePickle($)}
-	 [] !CONSTRUCTOR then
-	    T = {NewName}
-	    for I in 1..Size do
-	       PickleParser, ParsePickle(_)   %--**
-	    end
-	 [] !CON_VAL then
-	    T = {MakeTuple con Size}
-	    for I in 1..Size do
-	       PickleParser, ParsePickle(?T.I)
-	    end
-	 [] !GLOBAL_STAMP then fail   %--**
-	 [] !VECTOR then RealSize in
-	    PickleParser, ParsePickle(?RealSize)
-	    T = {MakeTuple vector RealSize}
-	    for I in 1..RealSize do
-	       PickleParser, ParsePickle(?T.I)
-	    end
-%--** the following fails when debugging:
-%	    for I in RealSize+1..Size-1 do
-%	       PickleParser, ParsePickle(_)
-%	    end
-	 else
-	    T = {MakeTuple tag Size + 1}
-	    T.1 = Label - LabelOffset
-	    for I in 2..Size + 1 do
-	       PickleParser, ParsePickle(?T.I)
+      meth getBytes(N $)
+	 if N == 0 then nil
+	 elsecase InputStreamBase, getByte($) of eob then eob
+	 elseof B then
+	    case InputStreamBase, getBytes(N - 1 $) of eob then eob
+	    elseof Bs then B|Bs
 	    end
 	 end
       end
-      meth ParseTuple(?T) Size in
-	 PickleParser, Remember(T)
-	 PickleParser, ParseUInt(?Size)
-	 T = {MakeTuple tuple Size}
-	 for I in 1..Size do
-	    PickleParser, ParsePickle(?T.I)
+      meth getUInt($)
+	 case InputStreamBase, getByte($) of eob then eob
+	 elseof B then
+	    if B >= 0x80 then
+	       InputStreamBase, GetUInt(B - 0x80 0x80 $)
+	    else B
+	    end
 	 end
       end
-      meth ParseClosure(?Closure) Size in
-	 PickleParser, Remember(Closure)
-	 PickleParser, ParseUInt(?Size)
-	 Closure = {MakeTuple closure Size}
-	 for I in 1..Size do
-	    PickleParser, ParsePickle(?Closure.I)
+      meth GetUInt(X N $)
+	 case InputStreamBase, getByte($) of eob then eob
+	 elseof B then
+	    if B >= 0x80 then
+	       InputStreamBase, GetUInt(X + (B - 0x80) * N N * 0x80 $)
+	    else X + B * N
+	    end
 	 end
       end
-      meth ParseTransform(?Transform) F X in
-	 PickleParser, Remember(Transform)
-	 PickleParser, ParsePickle(?F)
-	 PickleParser, ParsePickle(?X)
-	 Transform = {ApplyTransform {VirtualString.toAtom F} X}
+      meth commit()
+	 BufferHd <- @BufferPtr
       end
-      meth ParseReference($)
-	 PickleParser, Lookup(PickleParser, ParseUInt($) $)
+      meth appendToBuffer(Cs) NewTl in
+	 @BufferTl = {Append Cs NewTl}
+	 BufferTl <- NewTl
+	 BufferPtr <- @BufferHd
       end
    end
 
-   fun {Unpack V}
-      {New PickleParser init(V $) _}
-   end
-
-   proc {ReadFile File ?S} F in
-      F = {New Open.file init(name: File flags: [read])}
-      {F read(list: ?S size: all)}
-      {F close()}
-   end
-
-   fun {Load File}
-      {New PickleParser init({ReadFile File} $) _}
-   end
-
-   fun {Deref X}
-      case X of transient(TransientState) then
-	 case {Access TransientState} of ref(Y) then {Deref Y}
-	 else X
-	 end
-      else X
+   class FileInputStream from InputStreamBase
+      attr File
+      meth init(Name)
+	 InputStreamBase, init()
+	 File <- {New Open.file init(name: Name flags: [read])}
+      end
+      meth fillBuffer(Args TaskStack $)
+	 %--** blocking
+	 InputStreamBase, appendToBuffer({@File read(list: $)})
+	 continue(Args TaskStack.2)
+      end
+      meth close()
+	 {@File close()}
       end
    end
+
+   InputInterpreter =
+   inputInterpreter(
+      run:
+	 fun {$ Args=args(InputStream _ _) TaskStack}
+	    {InputStream fillBuffer(Args TaskStack $)}
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ _} 'Fill Unpickling Buffer' end)
+
+   TransformInterpreter =
+   transformInterpreter(
+      run:
+	 fun {$ Args transform(_ transient(TransientState) tuple(F X))|Rest}
+	    {Assign TransientState
+	     ref({ApplyTransform {VirtualString.toAtom F} X})}
+	    continue(Args Rest)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ _} 'Apply Transform' end)
+
+   proc {Set X I Y}
+      case {Value.type X} of array then
+	 if I =< {Array.high X} then X.I := Y end
+      [] cell then {Assign X Y}
+      [] name then skip   %--**
+      [] tuple then
+	 case {Label X} of con then X.(I + 1) = Y
+	 [] vector then
+	    if I < {Width X} then X.(I + 1) = Y end
+	 [] tag then X.(I + 2) = Y
+	 [] tuple then X.(I + 1) = Y
+	 [] closure then X.(I + 1) = Y
+	 end
+      end
+   end
+
+   fun {UnpickleInterpreterRun Args=args(InputStream Env Count) TaskStack}
+      case TaskStack of unpickling(_ X I N)|Rest then
+	 if I == N then continue(Args Rest)
+	 elsecase {InputStream getByte($)} of eob then
+	    continue(Args input(InputInterpreter)|TaskStack)
+	 [] !POSINT then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Y then
+	       {Set X I Y}
+	       {InputStream commit()}
+	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	    end
+	 [] !NEGINT then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Y then
+	       {Set X I ~(Y + 1)}
+	       {InputStream commit()}
+	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	    end
+	 [] !CHUNK then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Size then
+	       case {InputStream getBytes(Size $)} of eob then
+		  continue(Args input(InputInterpreter)|TaskStack)
+	       elseof Bs then Y in
+		  Y = {ByteString.make Bs}
+		  {Set X I Y}
+		  Env.Count := Y
+		  {InputStream commit()}
+		  continue(args(InputStream Env Count + 1)
+			   unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	       end
+	    end
+	 [] !BLOCK then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Label then
+	       case {InputStream getUInt($)} of eob then
+		  continue(Args input(InputInterpreter)|TaskStack)
+	       elseof Size then
+		  case Label of !ARRAY then
+		     case {InputStream getByte($)} of eob then
+			continue(Args input(InputInterpreter)|TaskStack)
+		     [] !POSINT then
+			case {InputStream getUInt($)} of eob then
+			   continue(Args input(InputInterpreter)|TaskStack)
+			elseof RealSize then Y in
+			   Y = {NewArray 0 RealSize - 1 unit}
+			   {Set X I Y}
+			   Env.Count := Y
+			   {InputStream commit()}
+			   continue(args(InputStream Env Count + 1)
+				    unpickling(UnpickleInterpreter Y 0
+					       Size - 1)|
+				    unpickling(UnpickleInterpreter X I + 1 N)|
+				    Rest)
+			end
+		     end
+		  [] !CELL then Y in
+		     Y = {NewCell unit}
+		     {Set X I Y}
+		     Env.Count := Y
+		     {InputStream commit()}
+		     continue(args(InputStream Env Count + 1)
+			      unpickling(UnpickleInterpreter Y 0 1)|
+			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+		  [] !CONSTRUCTOR then Y in
+		     Y = {NewName}
+		     {Set X I Y}
+		     Env.Count := Y
+		     {InputStream commit()}
+		     continue(args(InputStream Env Count + 1)
+			      unpickling(UnpickleInterpreter Y 0 Size)|
+			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+		  [] !CON_VAL then Y in
+		     Y = {MakeTuple con Size}
+		     {Set X I Y}
+		     Env.Count := Y
+		     {InputStream commit()}
+		     continue(args(InputStream Env Count + 1)
+			      unpickling(UnpickleInterpreter Y 0 Size)|
+			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+		  [] !GLOBAL_STAMP then fail   %--**
+		  [] !VECTOR then
+		     case {InputStream getByte($)} of eob then
+			continue(Args input(InputInterpreter)|TaskStack)
+		     [] !POSINT then
+			case {InputStream getUInt($)} of eob then
+			   continue(Args input(InputInterpreter)|TaskStack)
+			elseof RealSize then Y in
+			   Y = {MakeTuple vector RealSize}
+			   {Set X I Y}
+			   Env.Count := Y
+			   {InputStream commit()}
+			   continue(args(InputStream Env Count + 1)
+				    unpickling(UnpickleInterpreter
+					       Y 0 Size - 1)|
+				    unpickling(UnpickleInterpreter X I + 1 N)|
+				    Rest)
+			end
+		     end
+		  else Y in
+		     Y = {MakeTuple tag Size + 1}
+		     Y.1 = Label - LabelOffset
+		     {Set X I Y}
+		     Env.Count := Y
+		     {InputStream commit()}
+		     continue(args(InputStream Env Count + 1)
+			      unpickling(UnpickleInterpreter Y 0 Size)|
+			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+		  end
+	       end
+	    end
+	 [] !TUPLE then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Size then Y in
+	       Y = {MakeTuple tuple Size}
+	       {Set X I Y}
+	       Env.Count := Y
+	       {InputStream commit()}
+	       continue(args(InputStream Env Count + 1)
+			unpickling(UnpickleInterpreter Y 0 Size)|
+			unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	    end
+	 [] !CLOSURE then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Size then Y in
+	       Y = {MakeTuple closure Size}
+	       {Set X I Y}
+	       Env.Count := Y
+	       {InputStream commit()}
+	       continue(args(InputStream Env Count + 1)
+			unpickling(UnpickleInterpreter Y 0 Size)|
+			unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	    end
+	 [] !TRANSFORM then Y Y2 in
+	    Y = transient({NewCell hole(noFuture)})
+	    {Set X I Y}
+	    Env.Count := Y
+	    {InputStream commit()}
+	    Y2 = tuple(_ _)
+	    continue(args(InputStream Env Count + 1)
+		     unpickling(UnpickleInterpreter Y2 0 2)|
+		     transform(TransformInterpreter Y Y2)|
+		     unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	 [] !REF then
+	    case {InputStream getUInt($)} of eob then
+	       continue(Args input(InputInterpreter)|TaskStack)
+	    elseof Index then
+	       {Set X I Env.Index}
+	       {InputStream commit()}
+	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	    end
+	 end
+      end
+   end
+
+   UnpickleInterpreter =
+   unpickleInterpreter(
+      run: UnpickleInterpreterRun
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ unpickling(_ _ I N)} 'Unpickling Task '#I#' of '#N end)
+
+   PickleLoadInterpreter =
+   pickleLoadInterpreter(
+      run:
+	 fun {$ args(InputStream _ _) pickleLoad(_ X)|Rest}
+	    {InputStream close()}
+	    continue(arg(X.1) Rest)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ _} 'Pickle Load' end)
+
+   fun {Load Filename TaskStack} X in
+      X = tuple(_)
+      continue(args({New FileInputStream init(Filename)} {NewDictionary} 0)
+	       unpickling(UnpickleInterpreter X 0 1)|
+	       pickleLoad(PickleLoadInterpreter X)|TaskStack.2)
+   end
+
+   %%-------------------------------------------------------------------
+   %% Pickling
+   %%-------------------------------------------------------------------
 
    class OutputStreamBase
       meth putUInt(I)
