@@ -367,6 +367,12 @@ void PicklingInterpreter::PushFrame(TaskStack *taskStack, word data) {
   taskStack->PushFrame(PicklingFrame::New(self, data)->ToWord());
 }
 
+#define CONTINUE()					\
+  if (Scheduler::TestPreempt() || Store::NeedGC())	\
+    return Interpreter::PREEMPT;			\
+  else							\
+    return Interpreter::CONTINUE;
+
 Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   PicklingFrame *frame = PicklingFrame::FromWordDirect(taskStack->GetFrame());
   word x0              = frame->GetData();
@@ -386,7 +392,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       outputStream->PutByte(Tag::NEGINT);
       outputStream->PutUInt(-(i + 1));
     }
-    return Interpreter::CONTINUE;
+    CONTINUE();
   }
   // Search for already known value
   Seen *seen = PickleArgs::GetSeen();
@@ -395,7 +401,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
   if (ref != Seen::NOT_FOUND) {
     outputStream->PutByte(Tag::REF);
     outputStream->PutUInt(ref);
-    return Interpreter::CONTINUE;
+    CONTINUE();
   }
   // Handle new Block Value (non-abstract use)
   BlockLabel l = v->GetLabel();
@@ -407,7 +413,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       outputStream->PutUInt(c->GetSize());
       outputStream->PutBytes(c);
       seen->Add(v);
-      return Interpreter::CONTINUE;
+      CONTINUE();
     }
     break;
   case TUPLE_LABEL:
@@ -418,7 +424,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       seen->Add(v);
       for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      return Interpreter::CONTINUE;
+      CONTINUE();
     }
     break;
   case CLOSURE_LABEL:
@@ -429,7 +435,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       seen->Add(v);
       for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      return Interpreter::CONTINUE;
+      CONTINUE();
     }
     break;
   case HANDLERBLOCK_LABEL:
@@ -442,7 +448,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       } else {
 	Assert(block->GetLabel() == TRANSFORM_LABEL);
 	PicklingInterpreter::PushFrame(taskStack, block->ToWord());
-	return Interpreter::CONTINUE;
+	CONTINUE();
       }
     }
     break;
@@ -453,7 +459,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       seen->Add(v);
       PicklingInterpreter::PushFrame(taskStack, transform->GetArgument());
       PicklingInterpreter::PushFrame(taskStack, transform->GetName()->ToWord());
-      return Interpreter::CONTINUE;
+      CONTINUE();
     }
     break;
   default:
@@ -465,7 +471,7 @@ Interpreter::Result PicklingInterpreter::Run(TaskStack *taskStack) {
       seen->Add(v);
       for (u_int i = size; i--; )
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
-      return Interpreter::CONTINUE;
+      CONTINUE();
     }
   }
 }
