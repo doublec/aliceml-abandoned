@@ -11,4 +11,7 @@ is
 
     CODE.sig
     ENGINE.sig
+#if (!defined(structure Unix))
+    DummyUnix.sml
+#endif
     MakeEngine.sml
