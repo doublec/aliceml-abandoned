@@ -601,7 +601,7 @@ struct
 	    val  _   = insertScope E
 	    val ids' = ?unguardedTyVarsTy E ty_opt
 	    val  E'  = splitScope E
-	    val  _   = deleteScope E
+	    val  _   = removeScope E
 	    val  _   = union(E,E')
 	in
 	    ids' @ ?unguardedTyVarsEconBind E econbind_opt
@@ -742,7 +742,7 @@ struct
 	   let
 		val  _   = insertScope E
 		val row' = trExpRowo E exprowo
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	   in
 		O.ProdExp(i, row')
 	   end
@@ -751,7 +751,7 @@ struct
 		val exp' = trAtExp E atexp
 		val  _   = insertScope E
 		val row' = trExpRowo E (SOME exprow)
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	   in
 		O.UpdExp(i, exp', row')
 	   end
@@ -772,7 +772,7 @@ struct
 		val  _   = insertScope E
 		val dec' = trDec E dec
 		val exp' = trExp E exp
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	   in
 		O.LetExp(i, dec', exp')
 	   end
@@ -928,7 +928,7 @@ struct
 		val pat' = trPat (E,E') pat
 		val  _   = inheritScope(E,E')
 		val exp' = trExp E exp
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	in
 		O.Mat(i, pat', exp')
 	end
@@ -982,7 +982,7 @@ struct
 	   let
 		val  _   = insertScope E
 		val row' = trPatRowo (E,E') patrowo
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	   in
 		O.ProdPat(i, row')
 	   end
@@ -1040,7 +1040,7 @@ struct
 		val pat' = trPat (E,E') pat
 		val  _   = inheritScope(E, cloneScope E')
 		val exp' = trAtExp E atexp
-		val  _   = deleteScope E
+		val  _   = removeScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
@@ -1054,7 +1054,7 @@ struct
 		val  _   = inheritScope(E, cloneScope E')
 		val  _   = insertScope E'
 		val decs'= trValBindo (E,E') (SOME valbind)
-		val  _   = deleteScope E
+		val  _   = removeScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -1078,8 +1078,8 @@ struct
 					  O.VarPat(O.infoId valid', valid'),
 					  exp'))
 				(valids',exps')
-		val  _      = deleteScope E
-		val  _      = deleteScope E
+		val  _      = removeScope E
+		val  _      = removeScope E
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -1192,7 +1192,7 @@ struct
 	   let
 		val  _   = insertScope E
 		val row' = trTyRowo E tyrowo
-		val  _   = deleteScope E
+		val  _   = removeScope E
 	   in
 		O.ProdTyp(i, row')
 	   end
@@ -1309,7 +1309,7 @@ struct
 		val decs'   = (if List.null varids'
 			       then trValBindo'(E,E',acc)
 			       else trValBindo (E,E') ) (SOME valbind)
-		val  _      = deleteScope E
+		val  _      = removeScope E
 		val  _      = union(E,E')
 	   in
 		if List.null varids'
@@ -1327,7 +1327,7 @@ struct
 		val valids'' = trValTyVarSeq E tyvarseq @
 			       unguardedTyVarsFvalBind E fvalbind
 		val exps'    = trFvalBindo_rhs E (SOME fvalbind)
-		val  _       = deleteScope E
+		val  _       = removeScope E
 		val decs'    = VectorPair.map
 				(fn(valid',exp') =>
 				 O.ValDec(O.infoExp exp',
@@ -1421,7 +1421,7 @@ struct
 		val  _     = insertScope E
 		val decs2' = trDec' (E, O.LocalDec(i, decs1')::acc) dec2
 		val  E'    = splitScope E
-		val  _     = deleteScope E
+		val  _     = removeScope E
 		val  _     = union(E,E')
 	   in
 		decs2'
@@ -1483,7 +1483,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
 		val  typ'          = trTy E ty
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  pat'          = O.VarPat(i', valid')
 		val  exp'          = O.PrimExp(i, s, typ')
 		val  dec'          = O.ValDec(i, pat', exp')
@@ -1497,7 +1497,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
@@ -1509,7 +1509,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  dec'          = O.TypDec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
@@ -1523,7 +1523,7 @@ struct
 		val (valid',stamp2) = trConVId_bind E vid
 		val  _              = insertScope E
 		val  varid'         = trSeqTyVar E tyvar
-		val  _              = deleteScope E
+		val  _              = removeScope E
 		val  typ'           = reftyp E (i1', varToTyp varid')
 		val  dec1'          = O.TypDec(i, typid',
 						  O.FunTyp(i, varid', typ'))
@@ -1551,7 +1551,7 @@ struct
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq,longtycon)
 		val (typ11',k)       = trTyo (E,i') tyo
-		val  _               = deleteScope E
+		val  _               = removeScope E
 		val  typ1'           = conarrowtyp E (O.infoTyp typ12',
 					stricttyp E (typ11',k), typ12')
 		val  exp1'           = O.PrimExp(i, s, typ1')
@@ -1595,7 +1595,7 @@ struct
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats	(* ignore *)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  dec'          = O.InfDec(i', infid', O.PrimInf(i,s))
 		val  F             = ABSTR(self E, [], sigid', [])
 		val  _             = insertSig(E, sigid', (i', stamp, F))
@@ -1913,7 +1913,7 @@ struct
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
 		val  _                 = inheritScope(E,E')
 		val  exp'              = trExp E exp
-		val  _                 = deleteScope E
+		val  _                 = removeScope E
 	   in
 		( O.Mat(i, pat', annexp(exp',typs')), arity )
 	   end
@@ -1936,7 +1936,7 @@ struct
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
 		val  _   = inheritScope(E, cloneScope E')
 		val exp' = trAtExp E atexp
-		val  _   = deleteScope E
+		val  _   = removeScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.PatVIdDuplicate)
 	   in
@@ -1950,7 +1950,7 @@ struct
 		val  _   = inheritScope(E, cloneScope E')
 		val  _   = insertScope E'
 		val decs'= Vector.fromList(trValBindo (E,E') (SOME valbind))
-		val  _   = deleteScope E
+		val  _   = removeScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -1974,8 +1974,8 @@ struct
 					  O.VarPat(O.infoId valid', valid'),
 					  exp'))
 				(valids',exps')
-		val  _      = deleteScope E
-		val  _      = deleteScope E
+		val  _      = removeScope E
+		val  _      = removeScope E
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
 				errorVId(E', vid', E.WithPatVIdDuplicate)
 		val  _      = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -2071,7 +2071,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E', tycon',
@@ -2090,7 +2090,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
 		val (typ',_)       = trTyWithEnv E ty
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  dec'          = O.TypDec(i', typid', funtyp')
 		val  E''           = env()
@@ -2138,7 +2138,7 @@ struct
 		val  typ'         = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
 		val (flds',decs') = trConBindo (E,E'',tycon',varids',typ')
 					       (SOME conbind)
-		val  _            = deleteScope E
+		val  _            = removeScope E
 		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
 		val  dec'         = O.TypDec(i, typid', funtyp(varids',sumtyp'))
 		val  _            = unionDisjoint(E',E'')
@@ -2188,7 +2188,7 @@ struct
 			O.FunExp(i, #[O.Mat(i, patM', expM')])
 		     end
 		val  dec'          = O.ValDec(i, O.VarPat(i', valid'), exp')
-		val  _             = deleteScope E
+		val  _             = removeScope E
 	   in
 		insertDisjointVal(E', vid', (i', stamp, T(k,tycon',kty)))
 		handle CollisionVal _ => error(i', E.ConBindDuplicate vid');
@@ -2206,7 +2206,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  dec'          = O.TypDec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E', tycon',
@@ -2231,7 +2231,7 @@ struct
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)
 		val (typ11',k)       = trTyo (E,i') tyo
-		val  _               = deleteScope E
+		val  _               = removeScope E
 		val  typ1'           = conarrowtyp E (O.infoTyp typ12',
 					stricttyp E (typ11',k), typ12')
 		val  exp1'           = O.NewExp(i, typ1')
@@ -2357,7 +2357,7 @@ struct
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
 		val (inf',F)       = trSigExp E sigexp
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  dec'          = O.InfDec(i,infid',funinf(modid_infs',inf'))
 		val  _             = insertDisjointSig(E', sigid', (i',stamp,F))
 				     handle CollisionSig _ =>
@@ -2393,7 +2393,7 @@ struct
 		val  _       = insertScope E
 		val  decs'   = trDec E dec
 		val (mod',F) = trStrExp E strexp
-		val  _       = deleteScope E
+		val  _       = removeScope E
 	   in
 		( O.LetMod(i, decs', mod'), F )
 	   end
@@ -2434,7 +2434,7 @@ struct
 		val  _            = insertScope E
 		val (modid',inf') = trStrPat E strpat
 		val (mod',F')     = trStrExp E strexp
-		val  _            = deleteScope E
+		val  _            = removeScope E
 		val  F            = PARAM(O.stamp modid', F')
 	   in
 		( O.FunMod(i, modid', inf', mod'), F )
@@ -2496,7 +2496,7 @@ struct
 		val  _       = insertScope E
 		val  decs'   = trDec E dec
 		val (inf',F) = trSigExp E sigexp
-		val  _       = deleteScope E
+		val  _       = removeScope E
 	   in
 		( O.LetInf(i, decs', inf'), F )
 	   end
@@ -2521,7 +2521,7 @@ struct
 		val  _             = insertScope E
 		val (modid',inf1') = trStrPat E strpat
 		val (inf2',F2)     = trSigExp E sigexp
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  F             = PARAM(O.stamp modid', F2)
 	   in
 		( O.ArrInf(i, modid', inf1', inf2'), F )
@@ -2680,7 +2680,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  spec'         = O.TypSpec(i, typid', O.PrimTyp(i,s))
 		val  _             = insertTy(E, tycon', (i, stamp, env()))
 	   in
@@ -2692,7 +2692,7 @@ struct
 		val (infid',stamp) = trSigId_bind E sigid
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats	(* ignore *)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  spec'         = O.InfSpec(i', infid', O.PrimInf(i,s))
 		val  F             = ABSTR(self E, [], sigid', [])
 		val  _             = insertSig(E, sigid', (i',stamp,F))
@@ -2736,7 +2736,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
 		val  typ'          = alltyp(varids', trTy E ty)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  spec'         = O.ValSpec(i, valid', typ')
 		val  _             = insertDisjointVal(E, vid', (i', stamp, V))
 				     handle CollisionVal vid' =>
@@ -2769,7 +2769,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E, tycon',
@@ -2788,7 +2788,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
 		val (typ',_)       = trTyWithEnv E ty
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', typ')
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  E'            = env()
@@ -2837,7 +2837,7 @@ struct
 		val  typ'          = O.ConTyp(i_typid,O.ShortId(i_typid,typid'))
 		val (flds',specs') = trConDesco (E,E',tycon',varids',typ')
 						(SOME condesc)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  sumtyp'       = O.SumTyp(i', O.Row(i', flds', false))
 		val  spec'         = O.TypSpec(i, typid',
 						  funtyp(varids', sumtyp'))
@@ -2877,7 +2877,7 @@ struct
 					    O.ArrTyp(O.infoTyp typ',
 						     typ11', typ12'))
 		val  spec'         = O.ValSpec(i, valid', typ2')
-		val  _             = deleteScope E
+		val  _             = removeScope E
 	   in
 		insertDisjointVal(E', vid',  (i', stamp, T(k,tycon',kty)))
 		handle CollisionVal _ => error(i', E.ConDescDuplicate vid');
@@ -2895,7 +2895,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  spec'         = O.TypSpec(i, typid', funtyp')
 		val  _             = insertDisjointTy(E, tycon',
@@ -2919,7 +2919,7 @@ struct
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)
 		val (typ11',k)       = trTyo (E,i') tyo
-		val  _               = deleteScope E
+		val  _               = removeScope E
 		val  typ1'           = alltyp(varids',
 					      conarrowtyp E (O.infoTyp typ12',
 						stricttyp E (typ11',k), typ12'))
@@ -2929,7 +2929,7 @@ struct
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)
 		val (typ11',k)       = trTyo (E,i') tyo
-		val  _               = deleteScope E
+		val  _               = removeScope E
 		val  typ2'           = alltyp(varids',
 					      if k = NULLARY then typ12' else
 					      O.ArrTyp(O.infoTyp typ12',
@@ -3024,7 +3024,7 @@ struct
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
 		val  inf'          = funinf(modid_infs', O.AbsInf(i'))
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  spec'         = O.InfSpec(i', infid', inf')
 		val  F             = ABSTR(self E, [], sigid', [])
 		val  _             = insertDisjointSig(E, sigid', (i',stamp,F))
@@ -3043,7 +3043,7 @@ struct
 		val  modid_infs'   = trStrPats E strpats
 		val (inf',F)       = trSigExp E sigexp
 		val  inf''         = funinf(modid_infs', inf')
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  spec'         = O.InfSpec(i', infid', inf'')
 		val  _             = insertDisjointSig(E, sigid', (i',stamp,F))
 				     handle CollisionSig _ =>
@@ -3242,7 +3242,7 @@ struct
 		val  _             = insertScope E
 		val  varids'       = trAllTy E ty
 		val  typ'          = alltyp(varids', trTy E ty)
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  desc'         = O.SomeDesc(O.infoTyp typ', typ')
 		val  imp'          = O.ValImp(i, valid', desc')
 		val  is            = Future.byneed(fn() =>
@@ -3281,7 +3281,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',false))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
@@ -3350,7 +3350,7 @@ struct
 		val  typ'         = O.ConTyp(i_typid, O.ShortId(i_typid,typid'))
 		val (flds',imps') = trConItemo (E,E',E'',tycon',varids',typ')
 					       (SOME conitem)
-		val  _            = deleteScope E
+		val  _            = removeScope E
 		val  sumtyp'      = O.SumTyp(i', O.Row(i', flds', false))
 		val  desc'        = O.SomeDesc(i', funtyp(varids', sumtyp'))
 		val  imp'         = O.TypImp(i, typid', desc')
@@ -3390,7 +3390,7 @@ struct
 					    O.ArrTyp(O.infoTyp typ',
 						     typ11', typ12'))
 		val  imp'          = O.ValImp(i, valid', O.SomeDesc(i,typ2'))
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  is            =
 		     Future.byneed(fn() =>
 		     case lookupVal(E', vid')
@@ -3430,7 +3430,7 @@ struct
 		val (typid',stamp) = trTyCon_bind E tycon
 		val  _             = insertScope E
 		val  varids'       = trTyVarSeq E tyvarseq
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  funtyp'       = funtyp(varids', O.AbsTyp(i',true))
 		val  desc'         = O.SomeDesc(O.infoTyp funtyp', funtyp')
 		val  imp'          = O.TypImp(i, typid', desc')
@@ -3479,7 +3479,7 @@ struct
 		val (varids',typ12') = trTyVarSeqLongTyCon E
 						(tyvarseq, longtycon)
 		val (typ11',k)       = trTyo (E,i') tyo
-		val  _               = deleteScope E
+		val  _               = removeScope E
 		val  typ1'           = alltyp(varids',
 					      conarrowtyp E (O.infoTyp typ12',
 						stricttyp E (typ11',k), typ12'))
@@ -3570,7 +3570,7 @@ struct
 		val  _             = insertScope E
 		val  modid_infs'   = trStrPats E strpats
 		val  inf'          = funinf(modid_infs', O.AbsInf(i'))
-		val  _             = deleteScope E
+		val  _             = removeScope E
 		val  desc'         = O.SomeDesc(O.infoInf inf', inf')
 		val  imp'          = O.InfImp(i', infid', desc')
 		val  F             = Future.byneed(fn() =>
@@ -3670,7 +3670,7 @@ struct
 	    val  _             = union(E,E')
 	    val  decs2'        = trProgramo E programo
 	    val  E''           = splitScope E
-	    val  _             = deleteScope E
+	    val  _             = removeScope E
 	    val  _             = union(E,E'')
 	in
 	    O.Comp(i, anns', Vector.concat[decs1',decs2'])
