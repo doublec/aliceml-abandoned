@@ -27,8 +27,8 @@ sig
     exception Collision of stamp
     exception Pervasive
 
+    val empty :			env
     val env :			unit -> env
-    val new :			unit -> env
     val clone :			env -> env
 
     val insertMod :		env * stamp -> unit	(* Collision *)

@@ -2185,12 +2185,13 @@ struct
 	    ( xjus', ds', fs', Inf.sign s )
 	end
 
-    fun translate E (desc, comp) =
+    fun translate(desc, E, comp) =
 	let
 	    val _     = Inf.Map.deleteAll infHash
-	    val comp' = trComp(E, comp)
+	    val E'    = TranslationEnv.clone E
+	    val comp' = trComp(E', comp)
 	in
-	    comp'
+	    (E', comp')
 	end
 (*DEBUG
 handle Inf.Mismatch m =>
