@@ -4,6 +4,7 @@
 %}
 
 %token TK_DEFINE
+%token TK_BEGIN
 %token TK_LET
 %token TK_LAMBDA
 %token TK_IF
@@ -18,7 +19,7 @@
 
 start:		decls
 		{
-			$$ = anchor = (ConsCell::FromWord($1)->ToArray(T_DECLARR))->ToWord();
+			$$ = Parser::tree = (ConsCell::FromWord($1)->ToArray(T_DECLARR))->ToWord();
 		}
 ;
 
@@ -89,6 +90,10 @@ expr:		TK_ID
 			word exarr = ConsCell::FromWord($2)->ToArray(T_EXPRARR)->ToWord();
 
 			$$ = ApplicationNode::New(exarr)->ToWord();
+		}
+	|	TK_OPARENT TK_BEGIN exprlist TK_CPARENT
+		{
+			$$ = BeginNode::New($3)->ToWord();
 		}
 ;
 

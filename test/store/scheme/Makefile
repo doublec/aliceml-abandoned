@@ -7,13 +7,17 @@ FL     = flex
 BB     = bison
 BFLAGS = --verbose --debug --defines
 
-SRCS = Parser.cc  \
+SRCS = Parser.cc      \
+       Environment.cc \
+       Decorator.cc   \
        Interpreter.cc \
        Main.cc
 
 OBJS = lex.yy.o           \
        scheme.bison.tab.o \
        Parser.o           \
+       Environment.o      \
+       Decorator.o        \
        Interpreter.o      \
        Main.o
 
@@ -29,7 +33,9 @@ scheme.bison.tab.c: Nodes.hh scheme.bison
 lex.yy.c: Nodes.hh scheme.flex
 	$(FL) -I scheme.flex
 
+Environment.cc: Environment.hh
 Parser.cc: Parser.hh
+Decorator.cc: Decorator.hh
 
 clean:
 	rm -f scheme scheme.bison.tab.h scheme.bison.tab.c scheme.bison.output lex.yy.c $(OBJS)

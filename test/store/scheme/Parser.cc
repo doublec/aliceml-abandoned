@@ -9,19 +9,21 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
+#include "Nodes.hh"
 #include "Parser.hh"
 
-word anchor  = (word) 1;
-int line_num = 1;
-
+// Parser Error Handler
 void yyerror(char *s) {
-  std::fprintf(stderr, "%s: line %d: %s\n", "stdout", line_num, s);
+  std::fprintf(stderr, "line %d: %s\n", Parser::line, s);
   std::exit(0);
 }
 
-word parse(FILE *file_name) {
-  yyin = file_name;
-  yyparse();
+// Public Parser Interface
+word Parser::tree;
+int Parser::line;
 
-  return anchor;
+void Parser::Parse(FILE *file) {
+  line = 1;
+  yyin = file;
+  yyparse();
 }

@@ -16,6 +16,12 @@
 	()
 	(cons (f (car xs)) (map f (cdr xs))))))
 
+(define foldl
+  (lambda (f b xs)
+    (if (eq? xs ())
+	b
+	(foldl f (f (car xs) b) (cdr xs)))))
+
 (define foldr
   (lambda (f b xs)
     (if (eq? xs ())
@@ -28,11 +34,31 @@
 	ys
 	(cons (car xs) (app (cdr xs) ys)))))
 
+(define rev_iter
+  (lambda (xs p)
+    (if (eq? xs ())
+	(cons p ())
+	(let
+	    ((cp (rev_iter (cdr xs) (car xs))))
+	  (if (eq? p ())
+	      cp
+	      (cons p cp))))))
+
 (define rev
   (lambda (xs)
     (if (eq? xs ())
 	()
-	(append (rev (cdr xs)) (cons (car xs) ())))))
+	(app (rev (cdr xs)) (cons (car xs) ())))))
+
+(define make_list_iter
+  (lambda (n)
+    (if (= n 0)
+	()
+	(cons n (make_list_iter (- n 1))))))
+
+(define make_list
+  (lambda (n)
+    (rev (make_list_iter n))))
 
 (define xs (cons 1 (cons 2 (cons 3 ()))))
 
