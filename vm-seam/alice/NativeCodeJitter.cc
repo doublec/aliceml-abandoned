@@ -1908,7 +1908,7 @@ TagVal *NativeCodeJitter::InstrGetRef(TagVal *pc) {
 TagVal *NativeCodeJitter::InstrGetTup(TagVal *pc) {
   JIT_PRINT_PC("GetTup\n");
   word instrPC = Store::IntToWord(GetRelativePC());
-  u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
+  u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC); // awaits
   KillIdRef(pc->Sel(1));
   // to be done: move Tuple to JIT_V1?
   BindIdDefs(pc->Sel(0), Tuple, Tuple_Sel());
