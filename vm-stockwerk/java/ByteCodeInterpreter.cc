@@ -441,7 +441,6 @@ public:
 #define GET_POOL_INDEX() \
   ((code[pc + 1] << 8) | code[pc + 2])
 
-// to be done
 #define GET_POOL_VALUE(index) \
   (pool->Get(index))
 
@@ -512,7 +511,7 @@ void ByteCodeInterpreter::Init() {
 
 Transform *
 ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
-  return NULL; // to be done
+  return INVALID_POINTER; // to be done
 }
 
 void ByteCodeInterpreter::PushCall(Closure *closure) {
