@@ -348,6 +348,7 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
+      'String.sub\'': ByteString.get
       'String.substring':
 	 fun {$ S I J}
 	    try
