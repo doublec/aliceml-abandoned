@@ -39,6 +39,10 @@
     <LI> Andreas Rossberg:
 	 <A href="papers/opaque.ps">Opaque Types and Generativity</A>,
 	 Tech Report, 2002
+    <LI> Joachim Niehren, Jan Schwinghammer, Gert Smolka:
+	 <A href="/Papers/abstracts/lambdafut.html">Concurrent Computation in
+	 a Lambda Calculus with Futures</A>,
+	 Submitted, 2002
   </UL>
 
   <P>
