@@ -1,10 +1,15 @@
-package de.uni_sb.ps.DML.DMLBuiltin;
+package de.uni_sb.ps.dml.builtin;
 
-import de.uni_sb.ps.DML.DMLRuntime.*;
+import de.uni_sb.ps.dml.runtime.*;
 
 final public class Option {
     // datatype 'a option = NONE | SOME of 'a 
+    final public static DMLName NONE = new DMLName("Option.NONE");
+    final public static DMLConstructor SOME = new DMLConstructor("Option.SOME");
+
     // exception Option
+    final public static DMLName Option = new DMLName("Option.Option");
+
     // val getOpt : ('a option * 'a) -> 'a 
     // val isSome : 'a option -> bool 
     // val valOf : 'a option -> 'a 

@@ -1,6 +1,6 @@
-package de.uni_sb.ps.DML.DMLBuiltin;
+package de.uni_sb.ps.dml.builtin;
 
-import de.uni_sb.ps.DML.DMLRuntime.*;
+import de.uni_sb.ps.dml.runtime.*;
 
 final public class General {
     /** <code>datatype order = LESS | EQUAL | GREATER</code>*/
@@ -108,7 +108,7 @@ final public class General {
     final protected static class Ref extends DMLBuiltin {
 	final synchronized public DMLValue apply(DMLValue val) {
 	    // --> Tuple?
-	    return new DMLConVal(DMLConstants.reference,val);
+	    return new Reference(val);
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/
@@ -149,7 +149,7 @@ final public class General {
     final protected static DMLValue[] fromTuple
 	(DMLValue v, // Value-Tuple
 	 int ea,     // erwartete Anzahl Argumente
-	 String errMsg) {
+	 java.lang.String errMsg) {
 	v=v.request();
 	if (v instanceof DMLTuple) {
 	    DMLTuple t=(DMLTuple) v;
@@ -168,12 +168,12 @@ final public class General {
     }
 
     final protected static DMLValue error
-	(String msg, DMLValue v) {
+	(java.lang.String msg, DMLValue v) {
 	// sonst: Fehler
 	DMLValue[] err = {
 	    new DMLString(msg),
 	    v};
 	return DMLConstants.
-	    runtimeError.apply(new DMLTuple(err)).raise();
+	    runtimeError.apply(new Tuple(err)).raise();
     }
 }

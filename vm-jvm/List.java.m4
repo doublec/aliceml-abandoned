@@ -1,32 +1,37 @@
-package de.uni_sb.ps.DML.DMLBuiltin;
+package de.uni_sb.ps.dml.builtin;
 
-import de.uni_sb.ps.DML.DMLRuntime.*;
+import de.uni_sb.ps.dml.runtime.*;
 
 final public class List {
+    final private static class Nil extends DMLName implements DMLList{
+	Nil(java.lang.String n) { super(n); }
+    }
+    final public static DMLName nil = new Nil("List.nil");
+    final public static DMLConstructor cons = new DMLConstructor("List.cons");
     // exception Empty
     final public static DMLName Empty = new DMLName("List.Empty");
 
-    // val null : 'a list -> bool
-    final protected static class IsNull extends DMLBuiltin {
-	final public DMLValue apply(DMLValue val) {
-	    val=val.request();
-	    if (val instanceof DMLTuple) {
-		DMLTuple t=(DMLTuple) val;
-		if (t.getArity()!=1)
-		    return DMLConstants.runtimeError.apply(null).raise();
-		else {
-		    DMLValue l = t.getByIndex(0);
-		    if (l instanceof DMLList)
-			return ((DMLList) l).isNull();
-		    else
-			return DMLConstants.runtimeError.apply(null).raise();
-		}
-	    }
-	    else
-		return DMLConstants.runtimeError.apply(null).raise();
-	}
-    }
-    final public static IsNull isNull = new IsNull();
+//      // val null : 'a list -> bool
+//      final protected static class IsNull extends DMLBuiltin {
+//  	final public DMLValue apply(DMLValue val) {
+//  	    val=val.request();
+//  	    if (val instanceof DMLTuple) {
+//  		DMLTuple t=(DMLTuple) val;
+//  		if (t.getArity()!=1)
+//  		    return DMLConstants.runtimeError.apply(null).raise();
+//  		else {
+//  		    DMLValue l = t.getByIndex(0);
+//  		    if (l instanceof DMLList)
+//  			return ((DMLList) l).isNull();
+//  		    else
+//  			return DMLConstants.runtimeError.apply(null).raise();
+//  		}
+//  	    }
+//  	    else
+//  		return DMLConstants.runtimeError.apply(null).raise();
+//  	}
+//      }
+//      final public static IsNull isNull = new IsNull();
     // val length : 'a list -> int 
     // val @ : ('a list * 'a list) -> 'a list 
     // val hd : 'a list -> 'a 
