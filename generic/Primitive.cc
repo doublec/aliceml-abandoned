@@ -53,12 +53,16 @@ class PrimitiveInterpreter : public Interpreter {
 private:
   const char *name;
   Primitive::function function;
+  word frame;
   u_int arity;
   bool sited;
 public:
   PrimitiveInterpreter(const char *_name, Primitive::function _function,
 		       u_int _arity, bool _sited):
-    name(_name), function(_function), arity(_arity), sited(_sited) {}
+    name(_name), function(_function), arity(_arity), sited(_sited) {
+    frame = PrimitiveFrame::New(this)->ToWord();
+    RootSet::Add(frame);
+  }
   static Interpreter::Result Run(PrimitiveInterpreter *interpreter,
 				 TaskStack *taskStack);
   // Handler Methods
@@ -116,7 +120,7 @@ PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
 void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this); closure = closure;
-  taskStack->PushFrame(PrimitiveFrame::New(this)->ToWord());
+  taskStack->PushFrame(frame);
 }
 
 Interpreter::Result PrimitiveInterpreter::Run(TaskStack *taskStack) {
