@@ -23,10 +23,10 @@ namespace JITAlice {
       JITStore::AllocBlock(This, Alice::Cell, SIZE);
     }
     static void Put(u_int This, u_int Value) {
-      JITStore::InitArg(This, VAL_POS, Value);
+      JITStore::InitArg(This, VALUE_POS, Value);
     }
     static void Sel(u_int Dest, u_int This) {
-      JITStore::GetArg(Dest, This, VAL_POS);
+      JITStore::GetArg(Dest, This, VALUE_POS);
     }
   };
 
