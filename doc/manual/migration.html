@@ -1,15 +1,16 @@
-<!--mozart-->
 <?php include("macros.php3"); ?>
 
 <?php heading("Oz to Alice Migration",
 	      "oz-to-alice\nmigration") ?>
 
 <?php section("overview", "overview") ?>
-  <P>Alice's component system has a lot in common with that of Oz.  As
-    described in the <A href="interop.html">interoperability document</A>,
-    Alice components are actually mapped to Oz functors.  However, we want
-    to bring a number of differences to the attention of the prospective
-    Alice user who knows Oz.</P>
+  <P>Alice's component system has a lot in common with that of Oz.
+    <?php if ($platform != "stockwerk") { ?>
+    As described in the <A href="interop.html">interoperability document</A>,
+    Alice components are actually mapped to Oz functors.
+    <?php } ?>
+    However, we want to bring a number of differences to the attention
+    of the prospective Alice user who knows Oz.</P>
   <UL>
     <LI><A href="#resolvers">Resolvers</A>
     <LI><A href="#componentmanagers">Component managers</A>
@@ -25,28 +26,40 @@
     the value of the <TT>OZ_LOAD</TT> environment variable, Alice uses the
     environment variables <TT>ALICE_LOAD_PREFIX</TT> and
     <TT>ALICE_LOAD_SUFFIX</TT> instead.</P>
-  <P><TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the same
-    way that <TT>ozengine</TT> does.  Alice's resolving methods are defined
-    as follows:</P>
+  <P>
+    <?php if ($platform != "stockwerk") { ?>
+    <TT>alicerun</TT> initializes <TT>OZ_LOAD</TT>, unless set, in the same
+    way that <TT>ozengine</TT> does.
+    <?php } ?>
+    Alice's resolving methods are defined as follows:</P>
   <OL>
     <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
       before any of the following.</P>
+    <?php if ($platform == "stockwerk") { ?>
+    <LI><P>Otherwise, the URL is tried with the platform's default component
+      extension appended, which is <TT>.stc</TT>.</P>
+    <?php } else { ?>
     <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
       for compatibility with Oz.</P>
     <LI><P>Otherwise, the URL is tried with the platform's default component
       extension appended, which is <TT>.ozf</TT>.</P>
     <LI><P>If that fails, the URL is tried as-is, for compatibility
       with Oz.</P>
+    <?php } ?>
     <LI><P>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
       are tried at this point.</P>
   </OL>
 
 <?php section("componentmanagers", "component managers") ?>
-  <P>Alice provides its own <A href="library/component-manager.html"
+  <P>Alice provides <A href="library/component-manager.html"
     >component managers</A>, which are similar to Oz
     <A href="http://www.mozart-oz.org/documentation/system/node7.html"
-    >module managers</A>.  However, they have distinct implementations
-    and may behave differently.</P>
+    >module managers</A>.
+    <?php if ($platform != "stockwerk") { ?>
+    However, they have distinct implementations
+    and may behave differently.
+    <?php } ?>
+    </P>
   <UL>
     <LI><P>Alice component managers do perform type-checking at link time,
       as opposed to Oz module managers.</P>
@@ -72,13 +85,16 @@
   <P>There are, of course, a number of differences.  <TT>ozengine</TT>
     uses an Oz module manager, using the <TT>OZ_LOAD</TT> resolver,
     while <TT>alicerun</TT> uses an Alice component manager, using the
-    <TT>ALICE_LOAD</TT> resolver.  Because Alice component managers can
-    link Oz functors, Oz applications can be started by <TT>alicerun</TT>
-    without any change.  The converse, running Alice applications using
-    <TT>ozengine</TT>, however requires the <TT>OZ_LOAD</TT> environment
-    variable to be set to include all resolving methods enumerated
-    <A href="#resolvers">above</A> for <TT>ALICE_LOAD</TT>.  Note that
-    this loses link-time type-checking however.</P>
+    <TT>ALICE_LOAD</TT> resolver.
+    <?php if ($platform != "stockwerk") { ?>
+    Because Alice component managers can link Oz functors, Oz applications
+    can be started by <TT>alicerun</TT> without any change.  The converse,
+    running Alice applications using <TT>ozengine</TT>, however requires the
+    <TT>OZ_LOAD</TT> environment variable to be set to include all resolving
+    methods enumerated <A href="#resolvers">above</A> for <TT>ALICE_LOAD</TT>.
+    Note that this loses link-time type-checking however.
+    <?php } ?>
+  </P>
 
 <?php section("alicelink", "alicelink vs. ozl") ?>
   <P>Alice uses its own <A href="linker.html"><TT
@@ -123,7 +139,14 @@
     Alice, file extensions should always be omitted in component URLs such
     as in import announcements.  This is in contrast to Oz, which requires
     them.  Alice deviates from Oz for improved cross-platform compatibility.
-    The upcoming virtual machine for Alice uses a different file extension.</P>
+    <?php if ($platform == "stockwerk") { ?>
+    Different virtual machines for Alice use different file extensions.
+    For example, the Stockwerk-based Alice uses <TT>.stc</TT>, while the
+    Mozart-based Alice uses <TT>.ozf</TT>.
+    <?php } else { ?>
+    The upcoming virtual machine for Alice uses a different file extension.
+    <?php } ?>
+  </P>
   <P>Abstract types in components carry strong identities.  Consequently,
     clients require <B>recompilation</B> when the definition of an abstract
     type they use is recompiled.  This is different from Oz, where a recompiled
