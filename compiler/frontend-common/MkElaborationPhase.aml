@@ -247,23 +247,6 @@ struct
 	    ( t, O.LongId(typInfo(i,t), modlongid', vallab') )
 	end
 
-    and elabVallongid_path(E, I.ShortId(_, I.Id(_, stamp, _))) =
-	let
-	    val {path=p, use, ...} = Env.lookupVal(E, stamp)
-	in
-	    use := true;
-	    p
-	end
-
-      | elabVallongid_path(E, I.LongId(_, modlongid, I.Lab(_, l))) =
-	let
-	    val (s,_,use) = elabModlongid_sig(E, modlongid)
-	in
-	    if not(UseEnv.isPartial use) then () else
-		UseEnv.insertVal(UseEnv.inner use, l);
-	    Inf.lookupValPath(s, l)
-	end
-
 
   (* Expressions *)
 
@@ -1652,7 +1635,7 @@ struct
 			; Type.fill(qtyp,t) handle Type.Fill => ()
 			  (* may already be generalised through WithPat *)
 			; Env.insertVal(E, x, entry)
-			; Inf.extendVal(s, p, t, SOME p)
+			; Inf.extendVal(s, p, t)
 			)
 		    ) E'
 
@@ -1678,7 +1661,7 @@ struct
 			     (* may already be generalised through WithPat *)
 			     Env.insertVal(E, x, {id=id, path=p, use=u,
 						  typ=t', qtyp=t'});
-			     Inf.extendVal(s, p, t', SOME p)
+			     Inf.extendVal(s, p, t')
 			  end
 			 ) (xes,ts')
 	end
@@ -1753,13 +1736,9 @@ struct
 	let
 	    val (t0,qt,p,valid') = elabValid_bind(E, s, valid)
 	    val (t,typ')         = elabStarTyp(E, typ)
-	    val  d               = case typ
-				     of I.SingTyp(_, vallongid) =>
-					SOME(elabVallongid_path(E,vallongid))
-				      | _ => NONE
 	    val  _               = Type.fill(t0,t)
 	    val  _               = Type.fill(qt,t)
-	    val  _               = Inf.extendVal(s, p, t, d)
+	    val  _               = Inf.extendVal(s, p, t)
 	in
 	    O.ValSpec(nonInfo(i), valid', typ')
 	end
@@ -2233,10 +2212,10 @@ struct
 	(*UNFINISHED: this will not work for uninstantiated import sigs *)
 	if Inf.isValItem item then
 	    let
-		val (l,t,d) = Inf.asValItem item
+		val (l,t) = Inf.asValItem item
 	    in
 		if not(UseEnv.lookupVal(UE, l)) then () else
-		    Inf.extendVal(s', Inf.pathVal(s,l), t, d)
+		    Inf.extendVal(s', Inf.pathVal(s,l), t)
 	    end
 	else if Inf.isTypItem item then
 	    let

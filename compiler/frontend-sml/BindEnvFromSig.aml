@@ -226,10 +226,10 @@ struct
     and insertValItem (E,I,s) item =
 	if Inf.isValItem item then
 	    let
-		val (l,t,d) = Inf.asValItem item
-		val  name   = Label.toString l
-		val  vid    = vidFromLabel l
-		val  x      = Stamp.new()
+		val (l,t) = Inf.asValItem item
+		val  name = Label.toString l
+		val  vid  = vidFromLabel l
+		val  x    = Stamp.new()
 	    in
 		if String.sub(name,0) = #"'" then
 		    insertVal(E, vid, (I,x,V))

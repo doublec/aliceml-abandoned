@@ -23,23 +23,23 @@ sig
 
     val lab_empty :		Label.t
 
+    val lab_newFix :		Label.t
     val lab_newVal :		Label.t
     val lab_newTyp :		Label.t
     val lab_newMod :		Label.t
     val lab_newInf :		Label.t
-    val lab_newFix :		Label.t
 
+    val lab_extendFix :		Label.t
     val lab_extendVal :		Label.t
     val lab_extendTyp :		Label.t
     val lab_extendMod :		Label.t
     val lab_extendInf :		Label.t
-    val lab_extendFix :		Label.t
 
+    val lab_lookupFix :		Label.t
     val lab_lookupVal :		Label.t
     val lab_lookupTyp :		Label.t
     val lab_lookupMod :		Label.t
     val lab_lookupInf :		Label.t
-    val lab_lookupFix :		Label.t
 
     val lab_inTop :		Label.t
     val lab_inCon :		Label.t

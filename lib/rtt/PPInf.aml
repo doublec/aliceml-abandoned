@@ -154,7 +154,7 @@ struct
     and ppItem(item, doc) =
 	if isValItem item then
 	    let
-		val (l,t,d) = asValItem item
+		val (l,t) = asValItem item
 	    in
 		if String.sub(Label.toString l,0) = #"'" then
 		    doc
@@ -165,15 +165,7 @@ struct
 			) ^^
 			nest(break ^^
 			    abox(PPType.ppTyp t)
-			) (* ^^
-			(case d of NONE => empty | SOME p =>
-			    if Path.equals(p,lookupValPath(s,l)) then
-				empty
-			    else
-				nest(break ^^
-				    abox(text "=" ^/^ PPPath.ppPath p)
-				)
-			) *)
+			)
 		    ) ^/^ doc
 	    end
 	else if isTypItem item then

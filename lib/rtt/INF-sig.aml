@@ -37,13 +37,11 @@ sig
 
   (* Realisations *)
 
-    type val_rea = path PathMap.t
     type typ_rea = typ  PathMap.t
     type mod_rea = path PathMap.t
     type inf_rea = inf  PathMap.t
 
-    type rea	 = { val_rea : val_rea
-		   , typ_rea : typ_rea
+    type rea	 = { typ_rea : typ_rea
 		   , mod_rea : mod_rea
 		   , inf_rea : inf_rea
 		   }
@@ -89,7 +87,6 @@ sig
     val instance :	inf -> inf
     val singleton :	inf -> inf
     val realise :	rea  * inf -> unit
-    val realisePath :	mod_rea * inf -> unit
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit
 
@@ -120,17 +117,17 @@ sig
 
     val empty :		unit -> sign
 
+    val newFix :	sign * lab -> path
     val newVal :	sign * lab -> path
     val newTyp :	sign * lab -> path
     val newMod :	sign * lab -> path
     val newInf :	sign * lab -> path
-    val newFix :	sign * lab -> path
 
-    val extendVal :	sign * path *  typ  * path option -> unit
+    val extendFix :	sign * path * fix -> unit
+    val extendVal :	sign * path *  typ -> unit
     val extendTyp :	sign * path * tkind * typ  option -> unit
     val extendMod :	sign * path *  inf  * path option -> unit
     val extendInf :	sign * path *  kind * inf  option -> unit
-    val extendFix :	sign * path * fix -> unit
 
   (* Signature inspection *)
 
@@ -139,42 +136,35 @@ sig
 
     exception Item
 
+    val isFixItem :	item -> bool
     val isValItem :	item -> bool
     val isTypItem :	item -> bool
     val isModItem :	item -> bool
     val isInfItem :	item -> bool
-    val isFixItem :	item -> bool
 
-    val asValItem :	item -> lab *  typ  * path option	(* Item *)
+    val asFixItem :	item -> lab *  fix			(* Item *)
+    val asValItem :	item -> lab *  typ			(* Item *)
     val asTypItem :	item -> lab * tkind * typ  option	(* Item *)
     val asModItem :	item -> lab *  inf  * path option	(* Item *)
     val asInfItem :	item -> lab *  kind * inf  option	(* Item *)
-    val asFixItem :	item -> lab * fix			(* Item *)
 
   (* Signature lookup *)
 
     exception Lookup
 
-    val pathVal :	sign * lab -> path		(* Lookup *)
-    val pathTyp :	sign * lab -> path		(* Lookup *)
-    val pathMod :	sign * lab -> path		(* Lookup *)
-    val pathInf :	sign * lab -> path		(* Lookup *)
-    val pathFix :	sign * lab -> path		(* Lookup *)
-
+    val lookupFix :	sign * lab -> fix		(* Lookup *)
     val lookupVal :	sign * lab -> typ		(* Lookup *)
     val lookupTyp :	sign * lab -> typ		(* Lookup *)
     val lookupMod :	sign * lab -> inf		(* Lookup *)
     val lookupInf :	sign * lab -> inf		(* Lookup *)
-    val lookupFix :	sign * lab -> fix		(* Lookup *)
 
-    val lookupVal' :	sign * lab * int -> typ		(* Lookup *)
-    val lookupTyp' :	sign * lab * int -> typ		(* Lookup *)
-    val lookupMod' :	sign * lab * int -> inf		(* Lookup *)
-    val lookupInf' :	sign * lab * int -> inf		(* Lookup *)
-    val lookupFix' :	sign * lab * int -> fix		(* Lookup *)
-
-    val lookupValPath :	sign * lab -> path		(* Lookup *)
     val lookupModPath :	sign * lab -> path		(* Lookup *)
+
+    val pathFix :	sign * lab -> path		(* Lookup *)
+    val pathVal :	sign * lab -> path		(* Lookup *)
+    val pathTyp :	sign * lab -> path		(* Lookup *)
+    val pathMod :	sign * lab -> path		(* Lookup *)
+    val pathInf :	sign * lab -> path		(* Lookup *)
 
   (* Closure check *)
 
@@ -185,20 +175,19 @@ sig
   (* Matching and intersection *)
 
     datatype mismatch =
-	  MissingVal      of lab
+	  MissingFix      of lab
+	| MissingVal      of lab
 	| MissingTyp      of lab
 	| MissingMod      of lab
 	| MissingInf      of lab
-	| MissingFix      of lab
-	| ManifestVal     of lab * path option * path
 	| ManifestTyp     of lab * typ option * typ
 	| ManifestMod     of lab * path option * path
 	| ManifestInf     of lab * mismatch option
+	| MismatchFix     of lab * fix * fix
 	| MismatchVal     of lab * typ * typ
 	| MismatchTyp     of lab * tkind * tkind
 	| MismatchMod     of lab * mismatch
 	| MismatchInf     of lab * mismatch
-	| MismatchFix     of lab * fix * fix
 	| MismatchDom     of mismatch
 	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf

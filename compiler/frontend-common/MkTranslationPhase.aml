@@ -226,7 +226,7 @@ struct
     and itemToRow E (item,r) =
 	if Inf.isValItem item then
 	    let
-		val (a,t,d) = Inf.asValItem item
+		val (a,t) = Inf.asValItem item
 	    in
 		Type.extendRow(trValLabel a, t, r)
 	    end
@@ -398,7 +398,7 @@ struct
     fun trModInfo(E, {region,inf})	= {region=region, typ=infToTyp(E,inf)}
     fun trInfInfo(E, {region,inf})	= {region=region, typ=typ_inf E}
 
-    fun trVallab(I.Lab(i,a))		= O.Lab(i, trValLabel  a)
+    fun trVallab(I.Lab(i,a))		= O.Lab(i, trValLabel a)
     fun trTyplab(I.Lab(i,a))		= O.Lab(i, trTypLabel a)
     fun trModlab(I.Lab(i,a))		= O.Lab(i, trModLabel a)
     fun trInflab(I.Lab(i,a))		= O.Lab(i, trInfLabel a)
@@ -1174,14 +1174,14 @@ struct
 	    (* [x1 . val y:t1 :> x2 . val y:t2] = val y = x1.y
 	     *)
 	    let
-		val (a,_,_)  = Inf.asValItem item
-		val    t1    = Inf.lookupVal(s1,a)
-		val    t2    = Inf.lookupVal(s2',a)
-		val    i'    = nonInfo r
-		val    a'    = trValLabel a
-		val    l'    = O.Lab(i',a')
-		val    y1    = O.LongId(typInfo(r,t1), x1, l')
-		val    exp   = O.VarExp(typInfo(r,t2), y1)
+		val (a,_)  = Inf.asValItem item
+		val  t1    = Inf.lookupVal(s1,a)
+		val  t2    = Inf.lookupVal(s2',a)
+		val  i'    = nonInfo r
+		val  a'    = trValLabel a
+		val  l'    = O.Lab(i',a')
+		val  y1    = O.LongId(typInfo(r,t1), x1, l')
+		val  exp   = O.VarExp(typInfo(r,t2), y1)
 		val isntIdentity' = isntIdentity orelse not(Type.equals(t1,t2))
 	    in
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
@@ -1855,8 +1855,7 @@ struct
 			     trString(r0, Name.toString(I.name x)))
 	    val p' = callInf(E, lab_newVal, trTuple(r0, #[s',a']))
 	    val t' = trLazy(trTyp'(E,t))
-	    val o' = trNone(r, typ_path E)
-	    val e' = callInf(E, lab_extendVal, trTuple(r, #[s',p',t',o']))
+	    val e' = callInf(E, lab_extendVal, trTuple(r, #[s',p',t']))
 	    val d' = O.ValDec(nonInfo r, O.JokPat(O.infoExp e'), e')
 	in
 	    d' :: ds'

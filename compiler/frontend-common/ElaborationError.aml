@@ -185,7 +185,9 @@ struct
 	    ppMismatch' im
 	)
 
-    and ppMismatch'(Inf.MissingVal a) =
+    and ppMismatch'(Inf.MissingFix  a) =
+	    textpar["fixity","of",ppQuoted(ppLab a),"is","unspecified"]
+      | ppMismatch'(Inf.MissingVal a) =
 	    indent(textpar["val",ppLab a]) ^^
 	    textpar["is","missing"]
       | ppMismatch'(Inf.MissingTyp  a) =
@@ -197,13 +199,6 @@ struct
       | ppMismatch'(Inf.MissingInf  a) =
 	    indent(textpar["signature",ppLab a]) ^^
 	    textpar["is","missing"]
-      | ppMismatch'(Inf.MissingFix  a) =
-	    textpar["fixity","of",ppQuoted(ppLab a),"is","unspecified"]
-      | ppMismatch'(Inf.ManifestVal(a,po,p)) =
-	    indent(par([text"val",text(ppLab a)] @
-		(case po of NONE => [] | SOME p' => [text"=",ppPath p']))) ^^
-	    textpar["does","not","match","manifest","specification"] ^^
-	    indent(par[text"val",text(ppLab a),text"=",ppPath p])
       | ppMismatch'(Inf.ManifestTyp(a,to,t)) =
 	    indent(
 		case to of NONE => textpar["type",ppLab a]
@@ -223,6 +218,8 @@ struct
 	    textpar["does","not","match","manifest","specification,",
 		"because"] ^^
 	    ppMismatch' im
+      | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
+	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
       | ppMismatch'(Inf.MismatchVal(a,t1,t2)) =
 	    indent(par([text"val",text(ppLab a),text":",ppTyp t1])) ^^
 	    textpar["does","not","match"] ^^
@@ -248,8 +245,6 @@ struct
       | ppMismatch'(Inf.MismatchInf(a,im)) =
 	    indent(textpar["signature",ppLab a]) ^^
 	    textpar["is","incompatible"]
-      | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
-	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
       | ppMismatch'(Inf.MismatchDom im) =
 	    break ^^
 	    textpar["functor","argument","signature","is","too","restrictive,",

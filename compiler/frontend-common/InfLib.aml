@@ -52,6 +52,8 @@ struct
     val lab_empty	= vallab "empty"
     val _		= Inf.empty : unit -> sign		(* verify *)
 
+    val lab_newFix	= vallab "newFix"
+    val _		= Inf.newFix : sign * lab -> path	(* verify *)
     val lab_newVal	= vallab "newVal"
     val _		= Inf.newVal : sign * lab -> path	(* verify *)
     val lab_newTyp	= vallab "newTyp"
@@ -60,12 +62,11 @@ struct
     val _		= Inf.newMod : sign * lab -> path	(* verify *)
     val lab_newInf	= vallab "newInf"
     val _		= Inf.newInf : sign * lab -> path	(* verify *)
-    val lab_newFix	= vallab "newFix"
-    val _		= Inf.newFix : sign * lab -> path	(* verify *)
 
+    val lab_extendFix	= vallab "extendFix"
+    val _		= Inf.extendFix : sign * path * fix -> unit (* verify *)
     val lab_extendVal	= vallab "extendVal"
-    val _		= Inf.extendVal :
-			  sign * path * typ * path option -> unit (* verify *)
+    val _		= Inf.extendVal : sign * path * typ -> unit (* verify *)
     val lab_extendTyp	= vallab "extendTyp"
     val _		= Inf.extendTyp :
 			  sign * path * tkind * typ option -> unit (* verify *)
@@ -75,10 +76,9 @@ struct
     val lab_extendInf	= vallab "extendInf"
     val _		= Inf.extendInf :
 			  sign * path * kind * inf option -> unit (* verify *)
-    val lab_extendFix	= vallab "extendFix"
-    val _		= Inf.extendFix :
-			  sign * path * fix -> unit		(* verify *)
 
+    val lab_lookupFix	= vallab "lookupFix"
+    val _		= Inf.lookupFix : sign * lab -> fix	(* verify *)
     val lab_lookupVal	= vallab "lookupVal"
     val _		= Inf.lookupVal : sign * lab -> typ	(* verify *)
     val lab_lookupTyp	= vallab "lookupTyp"
@@ -87,8 +87,6 @@ struct
     val _		= Inf.lookupMod : sign * lab -> inf	(* verify *)
     val lab_lookupInf	= vallab "lookupInf"
     val _		= Inf.lookupInf : sign * lab -> inf	(* verify *)
-    val lab_lookupFix	= vallab "lookupFix"
-    val _		= Inf.lookupFix : sign * lab -> fix	(* verify *)
 
     val lab_inTop	= vallab "inTop"
     val _		= Inf.inTop : unit -> inf		(* verify *)

@@ -59,11 +59,11 @@ struct
 	| ABBREV of inf * inf			(* abbreviations *)
 
     and item' =
-	  VAL of id *  typ  * path def		(* value *)
+	  FIX of id *  fix			(* fixity *)
+	| VAL of id *  typ			(* value *)
 	| TYP of id * tkind * typ  def		(* type *)
 	| MOD of id *  inf  * path def		(* module *)
 	| INF of id *  kind * inf  def		(* interface *)
-	| FIX of id *  fix			(* fixity *)
 
     and kind' =					(* [kappa,k] *)
 	  GROUND				(* ordinary interface *)
@@ -82,19 +82,16 @@ struct
 
   (* Realisations *)
 
-    type val_rea = path PathMap.t
     type typ_rea = typ  PathMap.t
     type mod_rea = path PathMap.t
     type inf_rea = inf  PathMap.t
 
-    type rea	 = { val_rea : val_rea
-		   , typ_rea : typ_rea
+    type rea	 = { typ_rea : typ_rea
 		   , mod_rea : mod_rea
 		   , inf_rea : inf_rea
 		   }
 
-    fun newRea() = { val_rea = PathMap.new()
-		   , typ_rea = PathMap.new()
+    fun newRea() = { typ_rea = PathMap.new()
 		   , mod_rea = PathMap.new()
 		   , inf_rea = PathMap.new()
 		   } : rea
@@ -107,11 +104,11 @@ struct
     fun idIndex(p,l,n)		= n
 
     fun itemId(ref item')	= itemId' item'
-    and itemId'(VAL(x,_,_))	= x
+    and itemId'(FIX(x,_))	= x
+      | itemId'(VAL(x,_))	= x
       | itemId'(TYP(x,_,_))	= x
       | itemId'(MOD(x,_,_))	= x
       | itemId'(INF(x,_,_))	= x
-      | itemId'(FIX(x,_))	= x
 
     fun itemPath  item		= idPath(itemId item)
     fun itemPath' item'		= idPath(itemId' item')
@@ -119,11 +116,11 @@ struct
     fun itemIndex item		= idIndex(itemId item)
 
     fun itemSpace(ref item')	= itemSpace' item'
-    and itemSpace'(VAL _)	= VAL'
+    and itemSpace'(FIX _)	= FIX'
+      | itemSpace'(VAL _)	= VAL'
       | itemSpace'(TYP _)	= TYP'
       | itemSpace'(MOD _)	= MOD'
       | itemSpace'(INF _)	= INF'
-      | itemSpace'(FIX _)	= FIX'
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -162,19 +159,19 @@ struct
     fun empty()			= (ref [], ref NONE)
 
     fun newItem(s, l)		= Path.fromLab l
+    val newFix			= newItem
     val newVal			= newItem
     val newTyp			= newItem
     val newMod			= newItem
     val newInf			= newItem
-    val newFix			= newItem
 
     fun hideId (p,l,n)		= (p,l,n+1)
     fun hide item		= item := hide'(!item)
-    and hide'(VAL(x,t,d))	= VAL(hideId x, t, d)
+    and hide'(FIX(x,q))		= FIX(hideId x, q)
+      | hide'(VAL(x,t))		= VAL(hideId x, t)
       | hide'(TYP(x,k,d))	= TYP(hideId x, k, d)
       | hide'(MOD(x,j,d))	= MOD(hideId x, j, d)
       | hide'(INF(x,k,d))	= INF(hideId x, k, d)
-      | hide'(FIX(x,q))		= FIX(hideId x, q)
 
     fun extend(s as (itemsr,_), space, p, makeItem') =
 	let
@@ -187,11 +184,11 @@ struct
 			   (map, (space,l), [item])
 	end
 
-    fun extendVal(s,p,t,d)	= extend(s, VAL', p, fn x => VAL(x,t,d))
+    fun extendFix(s,p,q)	= extend(s, FIX', p, fn x => FIX(x,q))
+    fun extendVal(s,p,t)	= extend(s, VAL', p, fn x => VAL(x,t))
     fun extendTyp(s,p,k,d)	= extend(s, TYP', p, fn x => TYP(x,k,d))
     fun extendMod(s,p,j,d)	= extend(s, MOD', p, fn x => MOD(x,j,d))
     fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
-    fun extendFix(s,p,q)	= extend(s, FIX', p, fn x => FIX(x,q))
 
 
   (* Signature inspection *)
@@ -201,6 +198,8 @@ struct
     fun size s              = Map.size(getMap s)
     fun items(ref items, _) = List.filter (fn item => itemIndex item = 0) items
 
+    fun isFixItem(ref(FIX _))		= true
+      | isFixItem _			= false
     fun isValItem(ref(VAL _))		= true
       | isValItem _			= false
     fun isTypItem(ref(TYP _))		= true
@@ -209,10 +208,10 @@ struct
       | isModItem _			= false
     fun isInfItem(ref(INF _))		= true
       | isInfItem _			= false
-    fun isFixItem(ref(FIX _))		= true
-      | isFixItem _			= false
 
-    fun asValItem(ref(VAL(x,t,d)))	= (idLab x, t, d)
+    fun asFixItem(ref(FIX(x,q)))	= (idLab x, q)
+      | asFixItem _			= raise Item
+    fun asValItem(ref(VAL(x,t)))	= (idLab x, t)
       | asValItem _			= raise Item
     fun asTypItem(ref(TYP(x,k,d)))	= (idLab x, k, d)
       | asTypItem _			= raise Item
@@ -220,36 +219,30 @@ struct
       | asModItem _			= raise Item
     fun asInfItem(ref(INF(x,k,d)))	= (idLab x, k, d)
       | asInfItem _			= raise Item
-    fun asFixItem(ref(FIX(x,q)))	= (idLab x, q)
-      | asFixItem _			= raise Item
 
 
   (* Signature lookup *)
 
-    fun selectVal'(VAL(x, t, d))	= t
-      | selectVal' _			= raise Assert.failure
+    fun selectFix(FIX(x, f))		= f
+      | selectFix _			= raise Assert.failure
 
-    fun selectVal(VAL(x, t, SOME p))	= p
-      | selectVal(VAL(x, t, NONE))	= idPath x
+    fun selectVal(VAL(x, t))		= t
       | selectVal _			= raise Assert.failure
 
     fun selectTyp(TYP(x, k, SOME t))	= t
       | selectTyp(TYP(x, k, NONE))	= Type.inCon(k, Type.CLOSED, idPath x)
       | selectTyp _			= raise Assert.failure
 
-    fun selectMod'(MOD(x, j, d))	= j
-      | selectMod' _			= raise Assert.failure
-
-    fun selectMod(MOD(x, j, SOME p))	= p
-      | selectMod(MOD(x, j, NONE))	= idPath x
+    fun selectMod(MOD(x, j, d))		= j
       | selectMod _			= raise Assert.failure
 
     fun selectInf(INF(x, k, SOME j))	= j
       | selectInf(INF(x, k, NONE))	= ref(CON(k, idPath x))	(* inCon *)
       | selectInf _			= raise Assert.failure
 
-    fun selectFix(FIX(x, f))		= f
-      | selectFix _			= raise Assert.failure
+    fun selectModPath(MOD(x, j,SOME p))	= p
+      | selectModPath(MOD(x, j, NONE))	= idPath x
+      | selectModPath _			= raise Assert.failure
 
 
     exception Lookup
@@ -259,32 +252,19 @@ struct
 	  of SOME(item::items) => !item
 	   | _                 => raise Lookup
 
-    fun lookup' space (s,l,n) =
-	case Map.lookup(getMap s, (space,l))
-	  of SOME(item::items) =>
-		!(Option.valOf(List.find (fn item => itemIndex item = n) items))
-	   | _ => raise Lookup
-
+    fun pathFix args	= (itemPath' o lookup FIX') args
     fun pathVal args	= (itemPath' o lookup VAL') args
     fun pathTyp args	= (itemPath' o lookup TYP') args
     fun pathMod args	= (itemPath' o lookup MOD') args
     fun pathInf args	= (itemPath' o lookup INF') args
-    fun pathFix args	= (itemPath' o lookup FIX') args
 
-    fun lookupVal args	= (selectVal' o lookup VAL') args
-    fun lookupTyp args	= (selectTyp  o lookup TYP') args
-    fun lookupMod args	= (selectMod' o lookup MOD') args
-    fun lookupInf args	= (selectInf  o lookup INF') args
-    fun lookupFix args	= (selectFix  o lookup FIX') args
+    fun lookupFix args	= (selectFix o lookup FIX') args
+    fun lookupVal args	= (selectVal o lookup VAL') args
+    fun lookupTyp args	= (selectTyp o lookup TYP') args
+    fun lookupMod args	= (selectMod o lookup MOD') args
+    fun lookupInf args	= (selectInf o lookup INF') args
 
-    fun lookupVal' args	= (selectVal' o lookup' VAL') args
-    fun lookupTyp' args	= (selectTyp  o lookup' TYP') args
-    fun lookupMod' args	= (selectMod' o lookup' MOD') args
-    fun lookupInf' args	= (selectInf  o lookup' INF') args
-    fun lookupFix' args	= (selectFix  o lookup' FIX') args
-
-    fun lookupValPath args = (selectVal o lookup VAL') args
-    fun lookupModPath args = (selectMod o lookup MOD') args
+    fun lookupModPath args = (selectModPath o lookup MOD') args
 
 
   (* Strip signature maps *)
@@ -345,7 +325,7 @@ struct
 
     fun close (ref items, _) = List.app closeItem items
 
-    and closeItem(ref(VAL((p,l,n), t, d))) =
+    and closeItem(ref(VAL((p,l,n), t))) =
 	if Type.isClosed t then () else
 	    raise Unclosed(l,n,t)
       | closeItem _ = ()
@@ -430,15 +410,13 @@ struct
     and realiseSig(rea, (ref items, _))	=
 	    List.app (fn item => realiseItem(rea, item)) items
 
-    and realiseItem(rea, item as ref(VAL(x,t,d))) =
-	( realiseTyp(rea, t) ; item := VAL(x, t, realiseValDef(rea, d)))
-      | realiseItem(rea, ref(TYP(x,k,d))) =
-	  realiseTypDef(rea, d)
+    and realiseItem(rea, ref(FIX _))            = ()
+      | realiseItem(rea, item as ref(VAL(x,t))) = realiseTyp(rea, t)
+      | realiseItem(rea, ref(TYP(x,k,d)))       = realiseTypDef(rea, d)
       | realiseItem(rea, item as ref(MOD(x,j,d))) =
 	( realise(rea, j) ; item := MOD(x, j, realiseModDef(rea, d)) )
       | realiseItem(rea, ref(INF(x,k,d))) =
 	( realiseKind(rea, k) ; realiseInfDef(rea, d) )
-      | realiseItem(rea, ref(FIX _)) = ()
 
     and realiseCon(rea, kp as (k,p)) =
 	case PathMap.lookup(#inf_rea rea, p)
@@ -450,11 +428,8 @@ struct
     and replacePath(rea', p)		= case PathMap.lookup(rea', p)
 					    of NONE    => p
 					     | SOME p' => replacePath(rea', p')
-    and realisePathDef(rea', NONE  )	= NONE
-      | realisePathDef(rea', SOME p)	= SOME(replacePath(rea', p))
-
-    and realiseValDef(rea, d)		= realisePathDef(#val_rea rea, d)
-    and realiseModDef(rea, d)		= realisePathDef(#mod_rea rea, d)
+    and realiseModDef(rea, NONE  )	= NONE
+      | realiseModDef(rea, SOME p)	= SOME(replacePath(#mod_rea rea, p))
 
     and realiseTypDef(rea, NONE  )	= ()
       | realiseTypDef(rea, SOME t)	= realiseTyp(rea, t)
@@ -467,25 +442,7 @@ struct
 
   (* Instantiation *)
 
-    (*
-     * This is really ugly! To maintain sharing of types in signatures
-     * at signature instantiation we have to clone types with those special
-     * functions from the Type module. This implies that we cannot apply
-     * the path realisation build up during instantiation on-the-fly to
-     * types (types cloned by Type.cloneCont may not be touched before
-     * executing Type.cloneFinish). Consequently, we have to do a second
-     * walk over the interface to perform those realisations. :-(
-     *)
-
-    and instance j =
-	let
-	    val rea'       = PathMap.new()
-	    val cloneState = Type.cloneStart()
-	    val j1         = instanceInf(rea', cloneState, j)
-	in
-	    realisePath(rea', j1) ;
-	    j1
-	end
+    and instance j = instanceInf(PathMap.new(), Type.cloneStart(), j)
 
     and instanceInf (r,z, ref j')		= ref(instanceInf'(r,z,j'))
     and instanceInf'(r,z, LINK j)		= instanceInf'(r,z,!j)
@@ -539,111 +496,61 @@ struct
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun instanceItem(ref item') = instanceItem' item'
-
-	    and instanceItem'(VAL((p,l,n), t, d)) =
+	    and instanceItem'(FIX((p,l,n), q)) =
 		let
-		    val p'   = instancePath(r,p)
-		    val t'   = instanceTyp(r,z,t)
-		    val d'   = instancePathDef(r,d)
-		    val item = ref(VAL((p',l,n), t', d'))
+		    val p'    = instancePath(r,p)
+		    val item' = FIX((p',l,n), q)
 		in
-		    extendSig((VAL',l), item)
+		    extendSig((FIX',l), ref item')
 		end
-
+	      | instanceItem'(VAL((p,l,n), t)) =
+		let
+		    val p'    = instancePath(r,p)
+		    val t'    = instanceTyp(r,z,t)
+		    val item' = VAL((p',l,n), t')
+		in
+		    extendSig((VAL',l), ref item')
+		end
 	      | instanceItem'(TYP((p,l,n), k, d)) =
 		let
-		    val p'   = instancePath(r,p)
-		    val d'   = instanceTypDef(r,z,d)
-		    val item = ref(TYP((p',l,n), k, d'))
+		    val p'    = instancePath(r,p)
+		    val d'    = instanceTypDef(r,z,d)
+		    val item' = TYP((p',l,n), k, d')
 		in
-		    extendSig((TYP',l), item)
+		    extendSig((TYP',l), ref item')
 		end
-
 	      | instanceItem'(MOD((p,l,n), j, d)) =
 		let
-		    val p'   = instancePath(r,p)
-		    val j'   = instanceInf(r,z,j)
-		    val d'   = instancePathDef(r, d)
-		    val item = ref(MOD((p',l,n), j', d'))
+		    val p'    = instancePath(r,p)
+		    val j'    = instanceInf(r,z,j)
+		    val d'    = instanceModDef(r, d)
+		    val item' = MOD((p',l,n), j', d')
 		in
-		    extendSig((MOD',l), item)
+		    extendSig((MOD',l), ref item')
 		end
-
 	      | instanceItem'(INF((p,l,n), k, d)) =
 		let
-		    val p'   = instancePath(r,p)
-		    val k'   = instanceKind(r,z,k)
-		    val d'   = instanceInfDef(r,z,d)
-		    val item = ref(INF((p',l,n), k', d'))
+		    val p'    = instancePath(r,p)
+		    val k'    = instanceKind(r,z,k)
+		    val d'    = instanceInfDef(r,z,d)
+		    val item' = INF((p',l,n), k', d')
 		in
-		    extendSig((INF',l), item)
-		end
-
-	      | instanceItem'(FIX((p,l,n), q)) =
-		let
-		    val p'   = instancePath(r,p)
-		    val item = ref(FIX((p',l,n), q))
-		in
-		    extendSig((FIX',l), item)
+		    extendSig((INF',l), ref item')
 		end
 	in
 	    List.appr instanceItem items ;
 	    (itemsr, ref NONE)
 	end
 
-    and instancePathDef(rea, NONE  )	= NONE
-      | instancePathDef(rea, SOME p)	= SOME(replacePath(rea, p))
-
+    and instanceModDef(rea, NONE  )	= NONE
+      | instanceModDef(rea, SOME p)	= SOME(replacePath(rea, p))
     and instanceTypDef(r,z, NONE  )	= NONE
       | instanceTypDef(r,z, SOME t)	= SOME(instanceTyp(r,z,t))
-
     and instanceInfDef(r,z, NONE  )	= NONE
       | instanceInfDef(r,z, SOME j)	= SOME(instanceInf(r,z,j))
 
-    and instanceTyp(r,z, t)		= Type.cloneCont(z,t)
-					  (* Cannot do 
-						Type.realisePath(r,t')
-					     here! *)
-
-    and realisePath (rea', ref j')		= realisePath'(rea', j')
-    and realisePath'(rea', LINK j)		= realisePath(rea', j)
-      | realisePath'(rea', (TOP | CON _))	= ()
-      | realisePath'(rea', SIG s)		= realisePathSig(rea', s)
-      | realisePath'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
-						  ( realisePath(rea', j1)
-						  ; realisePath(rea', j2)
-						  )
-      | realisePath'(rea', APPLY(j1,p,j2))	= ( realisePath(rea', j1)
-						  ; realisePath(rea', j2)
-						  )
-
-    and realisePathKind (rea', ref k')		= realisePathKind'(rea', k')
-    and realisePathKind'(rea, GROUND)		= ()
-      | realisePathKind'(rea, DEP(_,j,k))	= ( realisePath(rea, j)
-						  ; realisePathKind(rea, k)
-						  )
-
-    and realisePathSig(rea', (ref items, _))	=
-	    List.app (fn item => realisePathItem(rea', item)) items
-
-    and realisePathItem(rea', ref item')	= realisePathItem'(rea', item')
-    and realisePathItem'(rea', VAL(x,t,d))	= realisePathTyp(rea', t)
-      | realisePathItem'(rea', TYP(x,k,d))	= realisePathTypDef(rea', d)
-      | realisePathItem'(rea', MOD(x,j,d))	= realisePath(rea', j)
-      | realisePathItem'(rea', INF(x,k,d))	= ( realisePathKind(rea', k)
-						  ; realisePathInfDef(rea', d)
-						  )
-      | realisePathItem'(rea', FIX _)		= ()
-
-    and realisePathCon(rea', (k,p))		= realisePathKind(rea', k)
-
-    and realisePathTypDef(rea', NONE  )		= ()
-      | realisePathTypDef(rea', SOME t)		= realisePathTyp(rea', t)
-
-    and realisePathInfDef(rea', NONE  )		= ()
-      | realisePathInfDef(rea', SOME j)		= realisePath(rea', j)
-
-    and realisePathTyp(rea', t)			= Type.realisePath(rea', t)
+    and instanceTyp(r,z, t)		= let val t' = Type.cloneCont(z,t)
+					  in Type.realisePath(r,t') ; t' end
 
 
 
@@ -687,16 +594,21 @@ struct
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun singletonItem(ref item') = singletonItem' item'
-
-	    and singletonItem'(VAL((p,l,n), t, d)) =
+	    and singletonItem'(FIX((p,l,n), q)) =
+		let
+		    val p'   = Path.clone p
+		    val item = ref(FIX((p',l,n), q))
+		in
+		    extendSig((FIX',l), item)
+		end
+	      | singletonItem'(VAL((p,l,n), t)) =
 		let
 		    val p'   = Path.clone p
 		    val t'   = singletonTyp(z,t)
-		    val item = ref(VAL((p',l,n), t', d))
+		    val item = ref(VAL((p',l,n), t'))
 		in
 		    extendSig((VAL',l), item)
 		end
-
 	      | singletonItem'(TYP((p,l,n), k, d)) =
 		let
 		    val p'   = Path.clone p
@@ -705,7 +617,6 @@ struct
 		in
 		    extendSig((TYP',l), item)
 		end
-
 	      | singletonItem'(MOD((p,l,n), j, d)) =
 		let
 		    val p'   = Path.clone p
@@ -714,7 +625,6 @@ struct
 		in
 		    extendSig((MOD',l), item)
 		end
-
 	      | singletonItem'(INF((p,l,n), k, d)) =
 		let
 		    val p'   = Path.clone p
@@ -723,14 +633,6 @@ struct
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
-		end
-
-	      | singletonItem'(FIX((p,l,n), q)) =
-		let
-		    val p'   = Path.clone p
-		    val item = ref(FIX((p',l,n), q))
-		in
-		    extendSig((FIX',l), item)
 		end
 	in
 	    List.appr singletonItem items ;
@@ -772,7 +674,9 @@ struct
 	    fun extendSig(space_l, item) = itemsr := item :: !itemsr
 
 	    fun cloneItem(ref item') = cloneItem' item'
-	    and cloneItem'(item' as VAL(x,t,d)) =
+	    and cloneItem'(item' as FIX(x,q)) =
+		    extendSig((FIX', idLab x), ref item')
+	      | cloneItem'(item' as VAL(x,t)) =
 		    extendSig((VAL', idLab x), ref item')
 	      | cloneItem'(item' as TYP(x,k,d)) =
 		    extendSig((TYP', idLab x), ref item')
@@ -784,8 +688,6 @@ struct
 		let val item' = INF(x, cloneKind k, Option.map clone d) in
 		    extendSig((INF', idLab x), ref item')
 		end
-	      | cloneItem'(item' as FIX(x,q)) =
-		    extendSig((FIX', idLab x), ref item')
 	in
 	    List.appr cloneItem items ;
 	    (itemsr, ref NONE)
@@ -864,20 +766,21 @@ struct
 						  ; strengthen(p,j2) )
       | strengthen(p, _)			= ()
 
-    and strengthenSig(p, (ref items, _)) =
-	    List.app (fn item => strengthenItem(p, item)) items
+    and strengthenSig(p, (ref items, _)) = List.app (strengthenItem p) items
 
-    and strengthenItem(p, item as ref item') =
-	    item := strengthenItem'(p, item')
-
-    and strengthenItem'(p, VAL(x,t,d)) =
+    and strengthenItem p item = item := strengthenItem'(p, !item)
+    and strengthenItem'(p, item' as FIX(x,q)) =
 	let
-	    val _  = strengthenId(p, x)
-	    val d' = strengthenPathDef(idPath x, d)
+	    val _ = strengthenId(p, x)
 	in
-	    VAL(x,t,d')
+	    item'
 	end
-
+      | strengthenItem'(p, item' as VAL(x,t)) =
+	let
+	    val _ = strengthenId(p, x)
+	in
+	    item'
+	end
       | strengthenItem'(p, TYP(x,k,d)) =
 	let
 	    val _  = strengthenId(p, x)
@@ -885,16 +788,14 @@ struct
 	in
 	    TYP(x,k,d')
 	end
-
       | strengthenItem'(p, MOD(x,j,d)) =
 	let
 	    val _  = strengthenId(p, x)
 	    val _  = strengthen(idPath x, j)
-	    val d' = strengthenPathDef(idPath x, d)
+	    val d' = strengthenModDef(idPath x, d)
 	in
 	    MOD(x,j,d')
 	end
-
       | strengthenItem'(p, INF(x,k,d)) =
 	let
 	    val _  = strengthenId(p, x)
@@ -903,21 +804,12 @@ struct
 	    INF(x,k,d')
 	end
 
-      | strengthenItem'(p, FIX(x,q)) =
-	let
-	    val _  = strengthenId(p, x)
-	in
-	    FIX(x,q)
-	end
-
     and strengthenId(p, (p',l,n))	= Path.strengthen(p,l,n, p')
 
-    and strengthenPathDef(p, NONE)	= SOME p
-      | strengthenPathDef(p, d)		= d
-
+    and strengthenModDef(p, NONE)	= SOME p
+      | strengthenModDef(p, d)		= d
     and strengthenTypDef(p, k, NONE)	= SOME(pathToTyp k p)
       | strengthenTypDef(p, k, d)	= d
-
     and strengthenInfDef(p, k, NONE)	= SOME(pathToInf k p)
       | strengthenInfDef(p, k, d)	= d
 
@@ -950,20 +842,19 @@ struct
   (* Matching *)
 
     datatype mismatch =
-	  MissingVal      of lab
+	  MissingFix      of lab
+	| MissingVal      of lab
 	| MissingTyp      of lab
 	| MissingMod      of lab
 	| MissingInf      of lab
-	| MissingFix      of lab
-	| ManifestVal     of lab * path option * path
 	| ManifestTyp     of lab * typ option * typ
 	| ManifestMod     of lab * path option * path
 	| ManifestInf     of lab * mismatch option
+	| MismatchFix     of lab * fix * fix
 	| MismatchVal     of lab * typ * typ
 	| MismatchTyp     of lab * tkind * tkind
 	| MismatchMod     of lab * mismatch
 	| MismatchInf     of lab * mismatch
-	| MismatchFix     of lab * fix * fix
 	| MismatchDom     of mismatch
 	| MismatchRan     of mismatch
 	| Incompatible    of inf * inf
@@ -1019,7 +910,7 @@ struct
     and matchSig(s1 as (ref items1, _), s2 as (ref items2, _)) =
 	let
 	    val m1 = getMap s1
-	    val rea as {val_rea, typ_rea, mod_rea, inf_rea} = newRea()
+	    val rea as {typ_rea, mod_rea, inf_rea} = newRea()
 
 	    fun pair(m1,      [],      pairs) = List.rev pairs
 	      | pair(m1, item2::items, pairs) =
@@ -1030,13 +921,13 @@ struct
 		in
 		    if Path.equals(p, itemPath item1) then () else
 		    case space
-		     of VAL' => PathMap.insert(val_rea, p, selectVal(!item1))
+		     of FIX' => ()
+		      | VAL' => ()
 		      | TYP' => PathMap.insert(typ_rea, p, selectTyp(!item1))
 		      | INF' => PathMap.insert(inf_rea, p, selectInf(!item1))
-		      | FIX' => ()
-		      | MOD' => let val p1 = selectMod(!item1)
-				    val j1 = selectMod'(!item1)
-				    val j2 = selectMod'(!item2)
+		      | MOD' => let val p1 = selectModPath(!item1)
+				    val j1 = selectMod(!item1)
+				    val j2 = selectMod(!item2)
 				in
 				    PathMap.insert(mod_rea, p, p1) ;
 				    matchNested(j1, j2)
@@ -1045,11 +936,11 @@ struct
 				end ;
 		    pair(m1, items, (item1,item2)::pairs)
 		end
-		handle Map.Lookup (VAL',l) => raise Mismatch(MissingVal l)
+		handle Map.Lookup (FIX',l) => raise Mismatch(MissingFix l)
+		     | Map.Lookup (VAL',l) => raise Mismatch(MissingVal l)
 		     | Map.Lookup (TYP',l) => raise Mismatch(MissingTyp l)
 		     | Map.Lookup (MOD',l) => raise Mismatch(MissingMod l)
 		     | Map.Lookup (INF',l) => raise Mismatch(MissingInf l)
-		     | Map.Lookup (FIX',l) => raise Mismatch(MissingFix l)
 
 	    (* Necessary to create complete realisation. *)
 	    and matchNested(ref(SIG s1), ref(SIG(ref items2,_))) =
@@ -1067,35 +958,38 @@ struct
 	    rea
 	end
 
-    and matchItem(ref(VAL(x1,t1,d1)), item2 as ref(VAL(x2,t2,d2))) =
+    and matchItem(ref(FIX(x1,q1)), item2 as ref(FIX(x2,q2))) =
 	let val l = idLab x2 in
-	    matchTyp(l, t1, t2) ;
-	    matchValDef(l, d1, d2) ;
-	    item2 := VAL(x1,t2,d1)
+	    matchFix(l, q1, q2)
+	end
+      | matchItem(ref(VAL(x1,t1)), item2 as ref(VAL(x2,t2))) =
+	let val l = idLab x2 in
+	    matchTyp(l, t1, t2);
+	    item2 := VAL(x1,t2)
 	end
       | matchItem(ref(item1' as TYP(x1,k1,d1)), item2 as ref(TYP(x2,k2,d2))) =
 	let val l = idLab x2 in
-	    matchTKind(l, k1, k2) ;
-	    matchTypDef(l, d1, d2) ;
+	    matchTKind(l, k1, k2);
+	    matchTypDef(l, d1, d2);
 	    item2 := item1'
 	end
       | matchItem(ref(MOD(x1,j1,d1)), item2 as ref(MOD(x2,j2,d2))) =
 	let val l = idLab x2 in
-	    matchInf(l, j1, j2) ;
-	    matchModDef(l, d1, d2) ;
+	    matchInf(l, j1, j2);
+	    matchModDef(l, d1, d2);
 	    item2 := MOD(x1,j2,d1)
 	end
       | matchItem(ref(item1' as INF(x1,k1,d1)), item2 as ref(INF(x2,k2,d2))) =
 	let val l = idLab x2 in
-	    matchKind(l, k1, k2) ;
-	    matchInfDef(l, d1, d2) ;
+	    matchKind(l, k1, k2);
+	    matchInfDef(l, d1, d2);
 	    item2 := item1'
 	end
-      | matchItem(ref(FIX(x1,q1)), item2 as ref(FIX(x2,q2))) =
-	let val l = idLab x2 in
-	    matchFix(l, q1, q2)
-	end
       | matchItem _ = raise Assert.failure
+
+    and matchFix(l,q1,q2) =
+	if q1 = q2 then () else
+	    raise Mismatch(MismatchFix(l,q1,q2))
 
     and matchTyp(l,t1,t2) =
 	if Type.matches(t1,t2) then () else
@@ -1113,20 +1007,6 @@ struct
 	(*UNFINISHED: match contravariant*)
 	equaliseKind(k1,k2) handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
-
-    and matchFix(l,q1,q2) =
-	if q1 = q2 then () else
-	    raise Mismatch(MismatchFix(l,q1,q2))
-
-
-    and matchValDef(l, _,    NONE)	= ()
-      | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
-      | matchValDef(l, SOME p1, SOME p2) =
-	    if Path.equals(p1,p2) then () else
-(*DEBUG*)
-()(*
-		raise Mismatch(ManifestVal(l, SOME p1, p2))
-*)
 
     and matchTypDef(l, _,    NONE)	= ()
       | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
@@ -1228,8 +1108,8 @@ struct
 			   else ()
 		    ; true )
 
-	    fun pair1(b, VAL(x1,t1,d1), VAL(x2,t2,d2)) =
-		    pairDef(#val_rea rea, pathToPath, b, x1, d1, x2, d2)
+	    fun pair1(b, FIX(x1,q1), FIX(x2,q2)) = true
+	      | pair1(b, VAL(x1,t1), VAL(x2,t2)) = true
 	      | pair1(b, TYP(x1,k1,d1), TYP(x2,k2,d2)) =
 		    pairDef(#typ_rea rea, pathToTyp k1, b, x1, d1, x2, d2)
 	      | pair1(b, MOD(x1,j1,d1), MOD(x2,j2,d2)) =
@@ -1237,8 +1117,6 @@ struct
 		    before pairNested(j1,j2)
 	      | pair1(b, INF(x1,k1,d1), INF(x2,k2,d2)) =
 		    pairDef(#inf_rea rea, pathToInf k1, b, x1, d1, x2, d2)
-	      | pair1(b, FIX(x1,q1), FIX(x2,q2)) =
-		    true
 	      | pair1 _ =
 		    raise Assert.failure
 
@@ -1282,13 +1160,19 @@ struct
     and intersectItem rea (item1 as ref item1', ref item2') =
 	    item1 := intersectItem'(rea, item1', item2')
 
-    and intersectItem'(rea, VAL(x1,t1,d1), VAL(x2,t2,d2)) =
+    and intersectItem'(rea, FIX(x1,q1), FIX(x2,q2)) =
+	let
+	    val l = idLab x1
+	    val q = intersectFix(l, q1, q2)
+	in
+	    FIX(x1,q)
+	end
+      | intersectItem'(rea, VAL(x1,t1), VAL(x2,t2)) =
 	let
 	    val l = idLab x1
 	    val t = intersectTyp(l, t1, t2)
-	    val d = intersectValDef(l, d1, d2)
 	in
-	    VAL(x1,t,d)
+	    VAL(x1,t)
 	end
       | intersectItem'(rea, TYP(x1,k1,d1), TYP(x2,k2,d2)) =
 	let
@@ -1314,14 +1198,11 @@ struct
 	in
 	    INF(x1,k,d)
 	end
-      | intersectItem'(rea, FIX(x1,q1), FIX(x2,q2)) =
-	let
-	    val l = idLab x1
-	    val q = intersectFix(l, q1, q2)
-	in
-	    FIX(x1,q)
-	end
       | intersectItem' _ = raise Assert.failure
+
+    and intersectFix(l,q1,q2) =
+	if q1 = q2 then q1 else
+	    raise Mismatch(MismatchFix(l,q1,q2))
 
     and intersectTyp(l,t1,t2) =
 	( Type.intersect(t1,t2) ; t1 )
@@ -1342,17 +1223,6 @@ struct
 	handle Mismatch mismatch =>
 	    raise Mismatch(MismatchInf(l, mismatch))
 
-    and intersectFix(l,q1,q2) =
-	if q1 = q2 then q1 else
-	    raise Mismatch(MismatchFix(l,q1,q2))
-
-
-    and intersectValDef(l, NONE,    NONE)	= NONE
-      | intersectValDef(l, SOME p1, NONE)	= SOME p1
-      | intersectValDef(l, NONE,    SOME p2)	= SOME p2
-      | intersectValDef(l, SOME p1, SOME p2)	=
-	    if Path.equals(p1,p2) then SOME p1 else
-		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
     and intersectTypDef(l, NONE,    NONE)	= NONE
       | intersectTypDef(l, SOME t1, NONE)	= SOME t1
