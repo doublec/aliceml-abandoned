@@ -104,8 +104,9 @@ ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam
 ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
 ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
 
-ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = --no-warn-conventions
+ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+
 
 ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = ALICE_HOME=build1/install build1/install/bin/alicelink
