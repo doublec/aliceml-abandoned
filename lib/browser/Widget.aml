@@ -863,8 +863,7 @@ struct
 	 end
    
  fun deleteNode Empty = ()
-   | deleteNode node  =   (Array.app deleteNode (getKids(node))
-	     ; objectDestroy(getGroup(node))
+   | deleteNode (Simple(r) as node)  =   ( objectDestroy(getGroup(node))
 	     ; (if not(Future.isDetermined(UnsafeValue.cast (getValue(getDesc(node)))))	
 	     then case Dictionaries.Transient.iterLookup
 		 (Dictionaries.transdict,fn (v,n) => 
@@ -874,11 +873,21 @@ struct
 			 (Dictionaries.transdict,i)
 		   | NONE => ()
 	       else ()) handle Match => ())
+     | deleteNode (RelNode(r) as node) = (deleteNode (getContent(node))
+					  ; objectDestroy(getGroup(node))) 
+     | deleteNode (RelRefNode(r)as node) = (objectDestroy(getGroup(node))) 
+     | deleteNode (Limit(r) as node) = objectDestroy(getGroup(node))
+     | deleteNode node =  ( Array.app deleteNode (getKids(node))
+			   ; objectDestroy(getGroup(node)))
    
 
     fun deleteNodeTree node = 
 	let 
-	    val dy = ~1 - get_ydim(node)
+	    val root_node = case getParent(node) of 
+		  Empty => node
+		| RelNode(r) => getParent(node)
+		| _ => Empty
+	    val dy = ~1 - get_ydim(root_node)
 	in
 	( deleteNode node
 	  ;case Dictionaries.Main.lookup(Dictionaries.maindict,getIndex(node))  
@@ -887,14 +896,14 @@ struct
 				 then objectDestroy(sep) 
 				     else ()
 	       | NONE => ()
-	 ;if getParent(node)=Empty 
+	 ;if not(root_node = Empty) 
 	      then (Dictionaries.Main.delete(Dictionaries.maindict,
-					    getIndex(node))
+					    getIndex(root_node))
 		    ;Dictionaries.RelMan.delete(Dictionaries.reldict,
-					    getIndex(node)))
+					    getIndex(root_node)))
 	  else ()
 	 ;incr_act_line(dy)
-	 ;Update.iterMove(dy,getIndex(node)+1))
+	 ;Update.iterMove(dy,getIndex(root_node)+1))
 	end
  
 (* Handelt Mouseclick *)
