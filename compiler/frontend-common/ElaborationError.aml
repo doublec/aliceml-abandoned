@@ -255,6 +255,7 @@ struct
 		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
+	    break ^^
 	    textpar["signature"] ^^
 	    indent(ppInf j1) ^^
 	    textpar["is","not","compatible","to"] ^^
