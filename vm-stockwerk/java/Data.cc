@@ -106,6 +106,7 @@ Worker::Result InitializeClassWorker::Handle() {
     InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
   Class *theClass = frame->GetClass();
   theClass->GetLock()->Release();
+  Scheduler::currentBacktrace->Dump();
   Error("static initializer raised an exception");
   //--** mark theClass as unusable (initialization failed)
   Scheduler::currentBacktrace->Enqueue(frame->ToWord());
