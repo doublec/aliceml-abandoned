@@ -88,7 +88,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | isId (O.Local id', id) = id' = id
 	  | isId (O.LastUseLocal id', id) = id' = id
 	  | isId (O.Global _, _) = false
-	  | isId (O.Toplevel _, _) = false
 
 	fun isIdInVec (idRefs, id) =
 	    Vector.exists (fn idRef => isId (idRef, id)) idRefs
@@ -100,7 +99,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | getLocal (O.Local id) = SOME id
 	  | getLocal (O.LastUseLocal id) = SOME id
 	  | getLocal (O.Global _) = NONE
-	  | getLocal (O.Toplevel _) = NONE
 
 	(*
 	 * Function `detup' tries to find out whether the value referenced
@@ -239,8 +237,6 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	  | mergeIdRefs (O.Local id, idRef as O.LastUseLocal id') =
 	    if id = id' then SOME idRef else NONE
 	  | mergeIdRefs (idRef as O.Global id, O.Global id') =
-	    if id = id' then SOME idRef else NONE
-	  | mergeIdRefs (idRef as O.Toplevel id, O.Toplevel id') =
 	    if id = id' then SOME idRef else NONE
 	  | mergeIdRefs (_, _) = NONE
 
@@ -482,9 +478,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    let
 		val isSpecialize =
 		    List.exists (fn IsToplevel => true | _ => false) flags
-		val _ =
-		    if isSpecialize then startSpecialize env
-		    else startClose env
+		val _ = startFn env
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
 		val liveness = Liveness.analyze (args', bodyInstr)
@@ -511,24 +505,14 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    case Vector.fromList (IdSet.fold op:: nil kills) of
 			#[] => instr
 		      | ids => O.Kill (ids, instr)
+		val template =
+		    O.Template (coord, Vector.length globalIdRefs,
+				localNames, args', bodyInstr, liveness)
 	    in
 		if isSpecialize then
-		    let
-			val template =
-			    O.Template (coord, Vector.length globalIdRefs,
-					localNames, args', bodyInstr, liveness)
-		    in
-			O.Specialize (id, globalIdRefs, template, instr)
-		    end
+		    O.Specialize (id, globalIdRefs, template, instr)
 		else
-		    let
-			val abstractCode =
-			    O.Function (coord, Vector.length globalIdRefs,
-					localNames, args', bodyInstr, liveness)
-			val concreteCode = V.concreteCode abstractCode
-		    in
-			O.Close (id, globalIdRefs, concreteCode, instr)
-		    end
+		    O.Close (id, globalIdRefs, template, instr)
 	    end
 	  | translateExp (PrimAppExp (_, name, idRefs), id, instr, env) =
 	    O.AppPrim (V.prim name, translateIdRefs (idRefs, env),
@@ -688,7 +672,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			       #[(idDefs, instr)], elseInstr)
 		val liveness = Liveness.analyze (args, bodyInstr)
 		val abstractCode =
-		    O.Function ((filename, 0, 0), 0, localNames,
+		    O.Function ((filename, 0, 0), #[], localNames,
 				args, bodyInstr, liveness)
 		val concreteCode = V.concreteCode abstractCode
 		val exportDesc =
