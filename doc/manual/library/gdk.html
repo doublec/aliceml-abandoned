@@ -148,1097 +148,1096 @@
 	      | POINTS of int list
 	      | EVENT  of event
 
-                    val allocColor : int * int * int -> object
-                    val colorContextNew : object * object -> object
-                    val colorContextNewMono : object * object -> object
-                    val colorContextFree : object -> unit
-                    val colorContextGetPixel : object * int * int * int * int -> int * int
-                    val colorContextGetPixels : object * object * object * object * int * object * int -> int
-                    val colorContextGetPixelsIncremental : object * object * object * object * int * int * object * int -> int * int
-                    val colorContextQueryColor : object * object -> int
-                    val colorContextQueryColors : object * object * int -> int
-                    val colorContextAddPalette : object * object * int -> int
-                    val colorContextInitDither : object -> unit
-                    val colorContextFreeDither : object -> unit
-                    val colorContextGetPixelFromPalette : object * object * object * object * int -> int * int
-                    val colorContextGetIndexFromPalette : object * int * int * int * int -> int * int * int * int * int
-                    val colormapNew : object * int -> object
-                    val colormapRef : object -> object
-                    val colormapUnref : object -> unit
-                    val colormapGetSystem : unit -> object
-                    val colormapGetSystemSize : unit -> int
-                    val colormapChange : object * int -> unit
-                    val colormapAllocColors : object * object * int * int * int * object -> int
-                    val colormapAllocColor : object * object * int * int -> int
-                    val colormapFreeColors : object * object * int -> unit
-                    val colormapGetVisual : object -> object
-                    val colorCopy : object -> object
-                    val colorFree : object -> unit
-                    val colorParse : string * object -> int
-                    val colorHash : object -> int
-                    val colorEqual : object * object -> int
-                    val colorsStore : object * object * int -> unit
-                    val colorsAlloc : object * int * object * int * object * int -> int
-                    val colorsFree : object * object * int * int -> unit
-                    val colorWhite : object * object -> int
-                    val colorBlack : object * object -> int
-                    val colorAlloc : object * object -> int
-                    val colorChange : object * object -> int
-                    val eventsPending : unit -> int
-                    val eventGet : unit -> object
-                    val eventPeek : unit -> object
-                    val eventGetGraphicsExpose : object -> object
-                    val eventPut : object -> unit
-                    val eventCopy : object -> object
-                    val eventFree : object -> unit
-                    val eventGetTime : object -> int
-                    val eventHandlerSet : object * object * object -> unit
-                    val setShowEvents : int -> unit
-                    val getShowEvents : unit -> int
-                    val addClientMessageFilter : int * object * object -> unit
-                    val fontListNew : string * int -> object * int
-                    val fontListFree : object -> unit
-                    val fontLoad : string -> object
-                    val fontsetLoad : string -> object
-                    val fontRef : object -> object
-                    val fontUnref : object -> unit
-                    val fontId : object -> int
-                    val fontEqual : object * object -> int
-                    val stringWidth : object * string -> int
-                    val textWidth : object * string * int -> int
-                    val textWidthWc : object * object * int -> int
-                    val charWidth : object * int -> int
-                    val charWidthWc : object * int -> int
-                    val stringMeasure : object * string -> int
-                    val textMeasure : object * string * int -> int
-                    val charMeasure : object * int -> int
-                    val stringHeight : object * string -> int
-                    val textHeight : object * string * int -> int
-                    val charHeight : object * int -> int
-                    val textExtents : object * string * int * int * int * int * int * int -> int * int * int * int * int
-                    val cursorNew : int -> object
-                    val textExtentsWc : object * object * int * int * int * int * int * int -> int * int * int * int * int
-                    val cursorNewFromPixmap : object * object * object * object * int * int -> object
-                    val stringExtents : object * string * int * int * int * int * int -> int * int * int * int * int
-                    val fontFullNameGet : object -> string
-                    val fontFullNameFree : string -> unit
-                    val cursorRef : object -> object
-                    val cursorUnref : object -> unit
-                    val dragContextNew : unit -> object
-                    val dragContextRef : object -> unit
-                    val dragContextUnref : object -> unit
-                    val dragStatus : object * int * int -> unit
-                    val dropReply : object * int * int -> unit
-                    val dropFinish : object * int * int -> unit
-                    val dragGetSelection : object -> int
-                    val dragBegin : object * object list -> object
-                    val dragGetProtocol : int * object -> int
-                    val dragFindWindow : object * object * int * int * object * object -> unit
-                    val dragMotion : object * object * int * int * int * int * int * int -> int
-                    val dragDrop : object * int -> unit
-                    val dragAbort : object * int -> unit
-                    val imReady : unit -> int
-                    val imBegin : object * object -> unit
-                    val imEnd : unit -> unit
-                    val imDecideStyle : int -> int
-                    val imSetBestStyle : int -> int
-                    val icNew : object * int -> object
-                    val icDestroy : object -> unit
-                    val icGetStyle : object -> int
-                    val icGetEvents : object -> int
-                    val icAttrNew : unit -> object
-                    val icAttrDestroy : object -> unit
-                    val icSetAttr : object * object * int -> int
-                    val icGetAttr : object * object * int -> int
-                    val imageNewBitmap : object * object * int * int -> object
-                    val imageNew : int * object * int * int -> object
-                    val imageBitmapNew : int * object * int * int -> object
-                    val imageGet : object * int * int * int * int -> object
-                    val imageRef : object -> object
-                    val imageUnref : object -> unit
-                    val imagePutPixel : object * int * int * int -> unit
-                    val imageGetPixel : object * int * int -> int
-                    val pixmapNew : object * int * int * int -> object
-                    val pixmapCreateOnSharedImage : object * object * object * int * int * int -> object
-                    val bitmapCreateFromData : object * string * int * int -> object
-                    val pixmapCreateFromData : object * string * int * int * int * object * object -> object
-                    val imlibInit : unit -> unit
-                    val pixmapCreateFromXpm : object * object * object * string -> object
-                    val imlibInitParams : object -> unit
-                    val imlibGetRenderType : unit -> int
-                    val pixmapColormapCreateFromXpm : object * object * object * object * string -> object
-                    val imlibSetRenderType : int -> unit
-                    val pixmapCreateFromXpmD : object * object * object * object -> object
-                    val imlibLoadColors : string -> int
-                    val pixmapColormapCreateFromXpmD : object * object * object * object * object -> object
-                    val imlibLoadImage : string -> object
-                    val imlibLoadAlpha : string -> object
-                    val imlibBestColorMatch : int * int * int -> int * int * int * int
-                    val imlibBestColorGet : object -> unit
-                    val atomIntern : string * int -> int
-                    val imlibRender : object * int * int -> int
-                    val imlibCopyImage : object -> object
-                    val imlibCopyMask : object -> object
-                    val gcNew : object -> object
-                    val atomName : int -> string
-                    val imlibMoveImage : object -> object
-                    val propertyGet : object * int * int * int * int * int * object * int * int * object -> int * int * int
-                    val imlibMoveMask : object -> object
-                    val gcAlloc : unit -> object
-                    val imlibDestroyImage : object -> unit
-                    val gcNewWithValues : object * object * int -> object
-                    val imlibKillImage : object -> unit
-                    val imlibFreeColors : unit -> unit
-                    val gcInit : object * object -> unit
-                    val imlibFreePixmap : object -> unit
-                    val imlibFreeBitmap : object -> unit
-                    val propertyChange : object * int * int * int * int * object * int -> unit
-                    val gcRef : object -> object
-                    val gcUnref : object -> unit
-                    val imlibGetImageBorder : object * object -> unit
-                    val propertyDelete : object * int -> unit
-                    val gcGetValues : object * object -> unit
-                    val imlibSetImageBorder : object * object -> unit
-                    val gcSetForeground : object * object -> unit
-                    val textPropertyToTextList : int * int * object * int * object -> int
-                    val imlibGetImageShape : object * object -> unit
-                    val gcSetBackground : object * object -> unit
-                    val gcSetFont : object * object -> unit
-                    val imlibSetImageShape : object * object -> unit
-                    val freeTextList : object -> unit
-                    val gcSetFunction : object * int -> unit
-                    val imlibSaveImageToEim : object * string -> int
-                    val stringToCompoundText : string * object * int * object * int -> int * int * int
-                    val gcSetFill : object * int -> unit
-                    val imlibAddImageToEim : object * string -> int
-                    val gcSetTile : object * object -> unit
-                    val imlibSaveImageToPpm : object * string -> int
-                    val freeCompoundText : object -> unit
-                    val gcSetStipple : object * object -> unit
-                    val imlibLoadFileToPixmap : string * object * object -> int
-                    val gcSetTsOrigin : object * int * int -> unit
-                    val imlibSetImageModifier : object * object -> unit
-                    val gcSetClipOrigin : object * int * int -> unit
-                    val gcSetClipMask : object * object -> unit
-                    val imlibSetImageRedModifier : object * object -> unit
-                    val gcSetClipRectangle : object * object -> unit
-                    val imlibSetImageGreenModifier : object * object -> unit
-                    val gcSetClipRegion : object * object -> unit
-                    val imlibSetImageBlueModifier : object * object -> unit
-                    val imlibGetImageModifier : object * object -> unit
-                    val regionNew : unit -> object
-                    val gcSetSubwindow : object * int -> unit
-                    val imlibGetImageRedModifier : object * object -> unit
-                    val regionDestroy : object -> unit
-                    val gcSetExposures : object * int -> unit
-                    val regionGetClipbox : object * object -> unit
-                    val imlibGetImageGreenModifier : object * object -> unit
-                    val regionEmpty : object -> int
-                    val imlibGetImageBlueModifier : object * object -> unit
-                    val gcSetLineAttributes : object * int * int * int * int -> unit
-                    val imlibSetImageRedCurve : object * object -> unit
-                    val regionEqual : object * object -> int
-                    val gcSetDashes : object * int * object * int -> unit
-                    val gcCopy : object * object -> unit
-                    val imlibSetImageGreenCurve : object * object -> unit
-                    val imlibSetImageBlueCurve : object * object -> unit
-                    val regionPointIn : object * int * int -> int
-                    val imlibGetImageRedCurve : object * object -> unit
-                    val regionRectIn : object * object -> int
-                    val imlibGetImageGreenCurve : object * object -> unit
-                    val regionPolygon : object * int * int -> object
-                    val imlibGetImageBlueCurve : object * object -> unit
-                    val imlibApplyModifiersToRgb : object -> unit
-                    val regionOffset : object * int * int -> unit
-                    val imlibChangedImage : object -> unit
-                    val imlibApplyImage : object * object -> unit
-                    val regionShrink : object * int * int -> unit
-                    val imlibPasteImage : object * object * int * int * int * int -> unit
-                    val regionUnionWithRect : object * object -> object
-                    val regionsIntersect : object * object -> object
-                    val imlibPasteImageBorder : object * object * int * int * int * int -> unit
-                    val imlibFlipImageHorizontal : object -> unit
-                    val regionsUnion : object * object -> object
-                    val imlibFlipImageVertical : object -> unit
-                    val regionsSubtract : object * object -> object
-                    val imlibRotateImage : object * int -> unit
-                    val regionsXor : object * object -> object
-                    val imlibCreateImageFromData : object * object * int * int -> object
-                    val imlibCloneImage : object -> object
-                    val imlibCloneScaledImage : object * int * int -> object
-                    val rgbInit : unit -> unit
-                    val imlibGetFallback : unit -> int
-                    val rgbXpixelFromRgb : int -> int
-                    val imlibSetFallback : int -> unit
-                    val imlibGetVisual : unit -> object
-                    val rgbGcSetForeground : object * int -> unit
-                    val imlibGetColormap : unit -> object
-                    val imlibGetSysconfig : unit -> string
-                    val rgbGcSetBackground : object * int -> unit
-                    val imlibCreateImageFromXpmData : object -> object
-                    val imlibDataToPixmap : object * object * object -> int
-                    val imlibCropImage : object * int * int * int * int -> unit
-                    val imlibSaveImage : object * string * object -> int
-                    val imlibCropAndCloneImage : object * int * int * int * int -> object
-                    val drawRgbImage : object * object * int * int * int * int * int * object * int -> unit
-                    val imlibCreateImageFromDrawable : object * object * int * int * int * int -> object
-                    val drawableAlloc : unit -> object
-                    val drawableGetType : object -> int
-                    val imlibInlinedPngToImage : object * int -> object
-                    val drawableSetData : object * string * object * object -> unit
-                    val drawRgbImageDithalign : object * object * int * int * int * int * int * object * int * int * int -> unit
-                    val drawableGetData : object * string -> unit
-                    val drawableGetSize : object * int * int -> int * int
-                    val imlibGetCacheInfo : int * int -> int * int
-                    val drawRgb32Image : object * object * int * int * int * int * int * object * int -> unit
-                    val drawableSetColormap : object * object -> unit
-                    val drawGrayImage : object * object * int * int * int * int * int * object * int -> unit
-                    val rgbCmapNew : object * int -> object
-                    val drawableGetColormap : object -> object
-                    val imlibSetCacheInfo : int * int -> unit
-                    val drawableGetVisual : object -> object
-                    val rgbCmapFree : object -> unit
-                    val drawableRef : object -> object
-                    val drawIndexedImage : object * object * int * int * int * int * int * object * int * object -> unit
-                    val drawableUnref : object -> unit
-                    val rgbDitherable : unit -> int
-                    val drawPoint : object * object * int * int -> unit
-                    val rgbSetVerbose : int -> unit
-                    val drawLine : object * object * int * int * int * int -> unit
-                    val drawRectangle : object * object * int * int * int * int * int -> unit
-                    val rgbSetInstall : int -> unit
-                    val drawArc : object * object * int * int * int * int * int * int * int -> unit
-                    val drawPolygon : object * object * int * object * int -> unit
-                    val rgbSetMinColors : int -> unit
-                    val drawString : object * object * object * int * int * string -> unit
-                    val drawText : object * object * object * int * int * string * int -> unit
-                    val rgbGetCmap : unit -> object
-                    val rgbGetVisual : unit -> object
-                    val drawTextWc : object * object * object * int * int * object * int -> unit
-                    val drawDrawable : object * object * object * int * int * int * int * int * int -> unit
-                    val drawImage : object * object * object * int * int * int * int * int * int -> unit
-                    val drawPoints : object * object * object * int -> unit
-                    val drawSegments : object * object * object * int -> unit
-                    val drawLines : object * object * object * int -> unit
-                    val selectionOwnerSet : object * int * int * int -> int
-                    val selectionOwnerGet : int -> object
-                    val selectionConvert : object * int * int * int -> unit
-                    val selectionPropertyGet : object * object * object * int -> int * int
-                    val selectionSendNotify : int * int * int * int * int -> unit
-                    val inputListDevices : unit -> object list
-                    val inputSetExtensionEvents : object * int * int -> unit
-                    val inputSetSource : int * int -> unit
-                    val inputSetMode : int * int -> int
-                    val inputSetAxes : int * object -> unit
-                    val inputSetKey : int * int * int * int -> unit
-                    val inputWindowGetPointer : object * int * real * real * real * real * real * object -> real * real * real * real * real
-                    val visualGetBestDepth : unit -> int
-                    val inputMotionEvents : object * int * int * int * int -> object * int
-                    val visualGetBestType : unit -> int
-                    val visualGetSystem : unit -> object
-                    val visualGetBest : unit -> object
-                    val visualGetBestWithDepth : int -> object
-                    val visualGetBestWithType : int -> object
-                    val visualGetBestWithBoth : int * int -> object
-                    val visualRef : object -> object
-                    val visualUnref : object -> unit
-                    val queryDepths : object * int -> int
-                    val queryVisualTypes : object * int -> int
-                    val listVisuals : unit -> object list
-                    val windowNew : object * object * int -> object
-                    val windowDestroy : object -> unit
-                    val windowAtPointer : int * int -> object * int * int
-                    val windowShow : object -> unit
-                    val windowHide : object -> unit
-                    val windowWithdraw : object -> unit
-                    val windowMove : object * int * int -> unit
-                    val windowResize : object * int * int -> unit
-                    val windowMoveResize : object * int * int * int * int -> unit
-                    val windowReparent : object * object * int * int -> unit
-                    val windowClear : object -> unit
-                    val windowClearArea : object * int * int * int * int -> unit
-                    val windowClearAreaE : object * int * int * int * int -> unit
-                    val windowRaise : object -> unit
-                    val windowLower : object -> unit
-                    val windowSetUserData : object * object -> unit
-                    val windowSetOverrideRedirect : object * int -> unit
-                    val windowAddFilter : object * object * object -> unit
-                    val windowRemoveFilter : object * object * object -> unit
-                    val windowShapeCombineMask : object * object * int * int -> unit
-                    val windowSetChildShapes : object -> unit
-                    val windowMergeChildShapes : object -> unit
-                    val windowIsVisible : object -> int
-                    val windowIsViewable : object -> int
-                    val windowSetStaticGravities : object * int -> int
-                    val windowSetHints : object * int * int * int * int * int * int * int -> unit
-                    val windowSetGeometryHints : object * object * int -> unit
-                    val setSmClientId : string -> unit
-                    val windowSetTitle : object * string -> unit
-                    val windowSetRole : object * string -> unit
-                    val windowSetTransientFor : object * object -> unit
-                    val windowSetBackground : object * object -> unit
-                    val windowSetBackPixmap : object * object * int -> unit
-                    val windowSetCursor : object * object -> unit
-                    val windowGetUserData : object * object -> unit
-                    val windowGetGeometry : object * int * int * int * int * int -> int * int * int * int * int
-                    val windowGetPosition : object * int * int -> int * int
-                    val windowGetOrigin : object * int * int -> int * int * int
-                    val windowGetDeskrelativeOrigin : object * int * int -> int * int * int
-                    val windowGetRootOrigin : object * int * int -> int * int
-                    val windowGetPointer : object * int * int * object -> object * int * int
-                    val windowGetParent : object -> object
-                    val windowGetToplevel : object -> object
-                    val windowGetChildren : object -> object list
-                    val windowGetEvents : object -> int
-                    val windowSetEvents : object * int -> unit
-                    val windowSetIcon : object * object * object * object -> unit
-                    val windowSetIconName : object * string -> unit
-                    val windowSetGroup : object * object -> unit
-                    val windowSetDecorations : object * int -> unit
-                    val windowSetFunctions : object * int -> unit
-                    val windowGetToplevels : unit -> object list
-                    val windowRegisterDnd : object -> unit
-                    val init : int * object -> int
-                    val initCheck : int * object -> int * int
-                    val exit : int -> unit
-                    val setLocale : unit -> string
-                    val errorTrapPush : unit -> unit
-                    val errorTrapPop : unit -> int
-                    val setUseXshm : int -> unit
-                    val getUseXshm : unit -> int
-                    val getDisplay : unit -> string
-                    val inputAddFull : int * int * object * object * object -> int
-                    val inputAdd : int * int * object * object -> int
-                    val inputRemove : int -> unit
-                    val pointerGrab : object * int * int * object * object * int -> int
-                    val pointerUngrab : int -> unit
-                    val keyboardGrab : object * int * int -> int
-                    val keyboardUngrab : int -> unit
-                    val pointerIsGrabbed : unit -> int
-                    val screenWidth : unit -> int
-                    val screenHeight : unit -> int
-                    val screenWidthMm : unit -> int
-                    val screenHeightMm : unit -> int
-                    val flush : unit -> unit
-                    val beep : unit -> unit
-                    val keyRepeatDisable : unit -> unit
-                    val keyRepeatRestore : unit -> unit
-                    val rectangleIntersect : object * object * object -> int
-                    val rectangleUnion : object * object * object -> unit
-                    val wcstombs : object -> string
-                    val mbstowcs : object * string * int -> int
-                    val eventSendClientmessageToall : object -> unit
-                    val eventSendClientMessage : object * int -> int
-                    val keyvalName : int -> string
-                    val keyvalFromName : string -> int
-                    val keyvalConvertCase : int * int * int -> int * int
-                    val keyvalToUpper : int -> int
-                    val keyvalToLower : int -> int
-                    val keyvalIsUpper : int -> int
-                    val keyvalIsLower : int -> int
-                    val threadsEnter : unit -> unit
-                    val threadsLeave : unit -> unit
-                    val pointGetFieldX : object -> int
-                    val pointGetFieldY : object -> int
-                    val eventExposeGetFieldType : object -> int
-                    val eventExposeGetFieldWindow : object -> object
-                    val eventExposeGetFieldSendEvent : object -> int
-                    val eventExposeGetFieldArea : object -> object
-                    val eventExposeGetFieldCount : object -> int
-                    val rectangleGetFieldX : object -> int
-                    val rectangleGetFieldY : object -> int
-                    val rectangleGetFieldWidth : object -> int
-                    val rectangleGetFieldHeight : object -> int
-                    val eventNoExposeGetFieldType : object -> int
-                    val eventNoExposeGetFieldWindow : object -> object
-                    val eventNoExposeGetFieldSendEvent : object -> int
-                    val segmentGetFieldX1 : object -> int
-                    val segmentGetFieldY1 : object -> int
-                    val segmentGetFieldX2 : object -> int
-                    val segmentGetFieldY2 : object -> int
-                    val eventVisibilityGetFieldType : object -> int
-                    val eventVisibilityGetFieldWindow : object -> object
-                    val eventVisibilityGetFieldSendEvent : object -> int
-                    val eventVisibilityGetFieldState : object -> int
-                    val eventMotionGetFieldType : object -> int
-                    val eventMotionGetFieldWindow : object -> object
-                    val eventMotionGetFieldSendEvent : object -> int
-                    val eventMotionGetFieldTime : object -> int
-                    val eventMotionGetFieldX : object -> real
-                    val eventMotionGetFieldY : object -> real
-                    val eventMotionGetFieldPressure : object -> real
-                    val eventMotionGetFieldXtilt : object -> real
-                    val eventMotionGetFieldYtilt : object -> real
-                    val eventMotionGetFieldState : object -> int
-                    val eventMotionGetFieldIsHint : object -> int
-                    val eventMotionGetFieldSource : object -> int
-                    val eventMotionGetFieldDeviceid : object -> int
-                    val eventMotionGetFieldXRoot : object -> real
-                    val eventMotionGetFieldYRoot : object -> real
-                    val colorGetFieldPixel : object -> int
-                    val colorGetFieldRed : object -> int
-                    val colorGetFieldGreen : object -> int
-                    val colorGetFieldBlue : object -> int
-                    val eventButtonGetFieldType : object -> int
-                    val eventButtonGetFieldWindow : object -> object
-                    val eventButtonGetFieldSendEvent : object -> int
-                    val eventButtonGetFieldTime : object -> int
-                    val eventButtonGetFieldX : object -> real
-                    val eventButtonGetFieldY : object -> real
-                    val eventButtonGetFieldPressure : object -> real
-                    val eventButtonGetFieldXtilt : object -> real
-                    val eventButtonGetFieldYtilt : object -> real
-                    val eventButtonGetFieldState : object -> int
-                    val eventButtonGetFieldButton : object -> int
-                    val eventButtonGetFieldSource : object -> int
-                    val eventButtonGetFieldDeviceid : object -> int
-                    val eventButtonGetFieldXRoot : object -> real
-                    val eventButtonGetFieldYRoot : object -> real
-                    val colormapGetFieldSize : object -> int
-                    val colormapGetFieldColors : object -> object
-                    val eventScrollGetFieldType : object -> int
-                    val eventScrollGetFieldWindow : object -> object
-                    val eventScrollGetFieldSendEvent : object -> int
-                    val eventScrollGetFieldTime : object -> int
-                    val eventScrollGetFieldX : object -> real
-                    val eventScrollGetFieldY : object -> real
-                    val eventScrollGetFieldPressure : object -> real
-                    val eventScrollGetFieldXtilt : object -> real
-                    val eventScrollGetFieldYtilt : object -> real
-                    val eventScrollGetFieldState : object -> int
-                    val eventScrollGetFieldDirection : object -> int
-                    val eventScrollGetFieldSource : object -> int
-                    val eventScrollGetFieldDeviceid : object -> int
-                    val eventScrollGetFieldXRoot : object -> real
-                    val eventScrollGetFieldYRoot : object -> real
-                    val cursorGetFieldType : object -> int
-                    val cursorGetFieldRefCount : object -> int
-                    val eventKeyGetFieldType : object -> int
-                    val eventKeyGetFieldWindow : object -> object
-                    val eventKeyGetFieldSendEvent : object -> int
-                    val eventKeyGetFieldTime : object -> int
-                    val eventKeyGetFieldState : object -> int
-                    val eventKeyGetFieldKeyval : object -> int
-                    val eventKeyGetFieldLength : object -> int
-                    val eventKeyGetFieldString : object -> string
-                    val fontGetFieldType : object -> int
-                    val fontGetFieldAscent : object -> int
-                    val fontGetFieldDescent : object -> int
-                    val eventFocusGetFieldType : object -> int
-                    val eventFocusGetFieldWindow : object -> object
-                    val eventFocusGetFieldSendEvent : object -> int
-                    val eventFocusGetFieldIn : object -> int
-                    val gCGetFieldDummyVar : object -> int
-                    val eventCrossingGetFieldType : object -> int
-                    val eventCrossingGetFieldWindow : object -> object
-                    val eventCrossingGetFieldSendEvent : object -> int
-                    val eventCrossingGetFieldSubwindow : object -> object
-                    val eventCrossingGetFieldTime : object -> int
-                    val eventCrossingGetFieldX : object -> real
-                    val eventCrossingGetFieldY : object -> real
-                    val eventCrossingGetFieldXRoot : object -> real
-                    val eventCrossingGetFieldYRoot : object -> real
-                    val eventCrossingGetFieldMode : object -> int
-                    val eventCrossingGetFieldDetail : object -> int
-                    val eventCrossingGetFieldFocus : object -> int
-                    val eventCrossingGetFieldState : object -> int
-                    val imageGetFieldType : object -> int
-                    val imageGetFieldVisual : object -> object
-                    val imageGetFieldByteOrder : object -> int
-                    val imageGetFieldWidth : object -> int
-                    val imageGetFieldHeight : object -> int
-                    val imageGetFieldDepth : object -> int
-                    val imageGetFieldBpp : object -> int
-                    val imageGetFieldBpl : object -> int
-                    val imageGetFieldMem : object -> object
-                    val regionGetFieldUserData : object -> object
-                    val eventConfigureGetFieldType : object -> int
-                    val eventConfigureGetFieldWindow : object -> object
-                    val eventConfigureGetFieldSendEvent : object -> int
-                    val eventConfigureGetFieldX : object -> int
-                    val eventConfigureGetFieldY : object -> int
-                    val eventConfigureGetFieldWidth : object -> int
-                    val eventConfigureGetFieldHeight : object -> int
-                    val visualGetFieldType : object -> int
-                    val visualGetFieldDepth : object -> int
-                    val visualGetFieldByteOrder : object -> int
-                    val visualGetFieldColormapSize : object -> int
-                    val visualGetFieldBitsPerRgb : object -> int
-                    val visualGetFieldRedMask : object -> int
-                    val visualGetFieldRedShift : object -> int
-                    val visualGetFieldRedPrec : object -> int
-                    val visualGetFieldGreenMask : object -> int
-                    val visualGetFieldGreenShift : object -> int
-                    val visualGetFieldGreenPrec : object -> int
-                    val visualGetFieldBlueMask : object -> int
-                    val visualGetFieldBlueShift : object -> int
-                    val visualGetFieldBluePrec : object -> int
-                    val eventPropertyGetFieldType : object -> int
-                    val eventPropertyGetFieldWindow : object -> object
-                    val eventPropertyGetFieldSendEvent : object -> int
-                    val eventPropertyGetFieldAtom : object -> int
-                    val eventPropertyGetFieldTime : object -> int
-                    val eventPropertyGetFieldState : object -> int
-                    val drawableGetFieldUserData : object -> object
-                    val eventSelectionGetFieldType : object -> int
-                    val eventSelectionGetFieldWindow : object -> object
-                    val eventSelectionGetFieldSendEvent : object -> int
-                    val eventSelectionGetFieldSelection : object -> int
-                    val eventSelectionGetFieldTarget : object -> int
-                    val eventSelectionGetFieldProperty : object -> int
-                    val eventSelectionGetFieldRequestor : object -> int
-                    val eventSelectionGetFieldTime : object -> int
-                    val eventProximityGetFieldType : object -> int
-                    val eventProximityGetFieldWindow : object -> object
-                    val eventProximityGetFieldSendEvent : object -> int
-                    val eventProximityGetFieldTime : object -> int
-                    val eventProximityGetFieldSource : object -> int
-                    val eventProximityGetFieldDeviceid : object -> int
-                    val eventClientGetFieldType : object -> int
-                    val eventClientGetFieldWindow : object -> object
-                    val eventClientGetFieldSendEvent : object -> int
-                    val eventClientGetFieldMessageType : object -> int
-                    val eventClientGetFieldDataFormat : object -> int
-                    val eventDNDGetFieldType : object -> int
-                    val eventDNDGetFieldWindow : object -> object
-                    val eventDNDGetFieldSendEvent : object -> int
-                    val eventDNDGetFieldContext : object -> object
-                    val eventDNDGetFieldTime : object -> int
-                    val eventDNDGetFieldXRoot : object -> int
-                    val eventDNDGetFieldYRoot : object -> int
-                    val colorContextGetFieldVisual : object -> object
-                    val colorContextGetFieldColormap : object -> object
-                    val colorContextGetFieldNumColors : object -> int
-                    val colorContextGetFieldMaxColors : object -> int
-                    val colorContextGetFieldNumAllocated : object -> int
-                    val colorContextGetFieldMode : object -> int
-                    val colorContextGetFieldNeedToFreeColormap : object -> int
-                    val colorContextGetFieldStdCmapAtom : object -> int
-                    val colorContextGetFieldClut : object -> object
-                    val colorContextGetFieldCmap : object -> object
-                    val colorContextGetFieldColorHash : object -> object
-                    val colorContextGetFieldPalette : object -> object
-                    val colorContextGetFieldNumPalette : object -> int
-                    val colorContextGetFieldFastDither : object -> object
-                    val colorContextGetFieldMaxEntry : object -> int
-                    val colorContextGetFieldBlackPixel : object -> int
-                    val colorContextGetFieldWhitePixel : object -> int
-                    val iCAttrGetFieldStyle : object -> int
-                    val iCAttrGetFieldClientWindow : object -> object
-                    val iCAttrGetFieldFocusWindow : object -> object
-                    val iCAttrGetFieldFilterEvents : object -> int
-                    val iCAttrGetFieldSpotLocation : object -> object
-                    val iCAttrGetFieldLineSpacing : object -> int
-                    val iCAttrGetFieldCursor : object -> object
-                    val iCAttrGetFieldPreeditFontset : object -> object
-                    val iCAttrGetFieldPreeditArea : object -> object
-                    val iCAttrGetFieldPreeditAreaNeeded : object -> object
-                    val iCAttrGetFieldPreeditForeground : object -> object
-                    val iCAttrGetFieldPreeditBackground : object -> object
-                    val iCAttrGetFieldPreeditPixmap : object -> object
-                    val iCAttrGetFieldPreeditColormap : object -> object
-                    val iCAttrGetFieldStatusFontset : object -> object
-                    val iCAttrGetFieldStatusArea : object -> object
-                    val iCAttrGetFieldStatusAreaNeeded : object -> object
-                    val iCAttrGetFieldStatusForeground : object -> object
-                    val iCAttrGetFieldStatusBackground : object -> object
-                    val iCAttrGetFieldStatusPixmap : object -> object
-                    val iCAttrGetFieldStatusColormap : object -> object
-                    val dragContextGetFieldProtocol : object -> int
-                    val dragContextGetFieldIsSource : object -> int
-                    val dragContextGetFieldSourceWindow : object -> object
-                    val dragContextGetFieldDestWindow : object -> object
-                    val dragContextGetFieldTargets : object -> object list
-                    val dragContextGetFieldActions : object -> int
-                    val dragContextGetFieldSuggestedAction : object -> int
-                    val dragContextGetFieldAction : object -> int
-                    val dragContextGetFieldStartTime : object -> int
-                    val gCValuesGetFieldForeground : object -> object
-                    val gCValuesGetFieldBackground : object -> object
-                    val gCValuesGetFieldFont : object -> object
-                    val gCValuesGetFieldFunction : object -> int
-                    val gCValuesGetFieldFill : object -> int
-                    val gCValuesGetFieldTile : object -> object
-                    val gCValuesGetFieldStipple : object -> object
-                    val gCValuesGetFieldClipMask : object -> object
-                    val gCValuesGetFieldSubwindowMode : object -> int
-                    val gCValuesGetFieldTsXOrigin : object -> int
-                    val gCValuesGetFieldTsYOrigin : object -> int
-                    val gCValuesGetFieldClipXOrigin : object -> int
-                    val gCValuesGetFieldClipYOrigin : object -> int
-                    val gCValuesGetFieldGraphicsExposures : object -> int
-                    val gCValuesGetFieldLineWidth : object -> int
-                    val gCValuesGetFieldLineStyle : object -> int
-                    val gCValuesGetFieldCapStyle : object -> int
-                    val gCValuesGetFieldJoinStyle : object -> int
-                    val imlibBorderGetFieldLeft : object -> int
-                    val imlibBorderGetFieldRight : object -> int
-                    val imlibBorderGetFieldTop : object -> int
-                    val imlibBorderGetFieldBottom : object -> int
-                    val imlibColorGetFieldR : object -> int
-                    val imlibColorGetFieldG : object -> int
-                    val imlibColorGetFieldB : object -> int
-                    val imlibColorGetFieldPixel : object -> int
-                    val imlibColorModifierGetFieldGamma : object -> int
-                    val imlibColorModifierGetFieldBrightness : object -> int
-                    val imlibColorModifierGetFieldContrast : object -> int
-                    val imlibImageGetFieldRgbWidth : object -> int
-                    val imlibImageGetFieldRgbHeight : object -> int
-                    val imlibImageGetFieldRgbData : object -> object
-                    val imlibImageGetFieldAlphaData : object -> object
-                    val imlibImageGetFieldFilename : object -> string
-                    val imlibImageGetFieldWidth : object -> int
-                    val imlibImageGetFieldHeight : object -> int
-                    val imlibImageGetFieldShapeColor : object -> object
-                    val imlibImageGetFieldBorder : object -> object
-                    val imlibImageGetFieldPixmap : object -> object
-                    val imlibImageGetFieldShapeMask : object -> object
-                    val imlibImageGetFieldCache : object -> int
-                    val imlibImageGetFieldMod : object -> object
-                    val imlibImageGetFieldRmod : object -> object
-                    val imlibImageGetFieldGmod : object -> object
-                    val imlibImageGetFieldBmod : object -> object
-                    val imlibImageGetFieldMap : object -> object
-                    val imlibImageGetFieldRefCount : object -> int
-                    val imlibImageGetFieldPixmaps : object -> object
-                    val imlibSaveInfoGetFieldQuality : object -> int
-                    val imlibSaveInfoGetFieldScaling : object -> int
-                    val imlibSaveInfoGetFieldXjustification : object -> int
-                    val imlibSaveInfoGetFieldYjustification : object -> int
-                    val imlibSaveInfoGetFieldPageSize : object -> int
-                    val imlibSaveInfoGetFieldColor : object -> object
-                    val imlibInitParamsGetFieldFlags : object -> int
-                    val imlibInitParamsGetFieldVisualid : object -> int
-                    val imlibInitParamsGetFieldPalettefile : object -> string
-                    val imlibInitParamsGetFieldSharedmem : object -> object
-                    val imlibInitParamsGetFieldSharedpixmaps : object -> object
-                    val imlibInitParamsGetFieldPaletteoverride : object -> object
-                    val imlibInitParamsGetFieldRemap : object -> object
-                    val imlibInitParamsGetFieldFastrender : object -> object
-                    val imlibInitParamsGetFieldHiquality : object -> object
-                    val imlibInitParamsGetFieldDither : object -> object
-                    val imlibInitParamsGetFieldImagecachesize : object -> int
-                    val imlibInitParamsGetFieldPixmapcachesize : object -> int
-                    val deviceKeyGetFieldKeyval : object -> int
-                    val deviceKeyGetFieldModifiers : object -> int
-                    val deviceInfoGetFieldDeviceid : object -> int
-                    val deviceInfoGetFieldName : object -> string
-                    val deviceInfoGetFieldSource : object -> int
-                    val deviceInfoGetFieldMode : object -> int
-                    val deviceInfoGetFieldHasCursor : object -> int
-                    val deviceInfoGetFieldNumAxes : object -> int
-                    val deviceInfoGetFieldAxes : object -> object
-                    val deviceInfoGetFieldNumKeys : object -> int
-                    val deviceInfoGetFieldKeys : object -> object
-                    val timeCoordGetFieldTime : object -> int
-                    val timeCoordGetFieldX : object -> real
-                    val timeCoordGetFieldY : object -> real
-                    val timeCoordGetFieldPressure : object -> real
-                    val timeCoordGetFieldXtilt : object -> real
-                    val timeCoordGetFieldYtilt : object -> real
-                    val eventAnyGetFieldType : object -> int
-                    val eventAnyGetFieldWindow : object -> object
-                    val eventAnyGetFieldSendEvent : object -> int
-                    val geometryGetFieldMinWidth : object -> int
-                    val geometryGetFieldMinHeight : object -> int
-                    val geometryGetFieldMaxWidth : object -> int
-                    val geometryGetFieldMaxHeight : object -> int
-                    val geometryGetFieldBaseWidth : object -> int
-                    val geometryGetFieldBaseHeight : object -> int
-                    val geometryGetFieldWidthInc : object -> int
-                    val geometryGetFieldHeightInc : object -> int
-                    val geometryGetFieldMinAspect : object -> real
-                    val geometryGetFieldMaxAspect : object -> real
-                    val windowAttrGetFieldTitle : object -> string
-                    val windowAttrGetFieldEventMask : object -> int
-                    val windowAttrGetFieldX : object -> int
-                    val windowAttrGetFieldY : object -> int
-                    val windowAttrGetFieldWidth : object -> int
-                    val windowAttrGetFieldHeight : object -> int
-                    val windowAttrGetFieldWclass : object -> int
-                    val windowAttrGetFieldVisual : object -> object
-                    val windowAttrGetFieldColormap : object -> object
-                    val windowAttrGetFieldWindowType : object -> int
-                    val windowAttrGetFieldCursor : object -> object
-                    val windowAttrGetFieldWmclassName : object -> string
-                    val windowAttrGetFieldWmclassClass : object -> string
-                    val windowAttrGetFieldOverrideRedirect : object -> int
-                    val LSB_FIRST : int
-                    val MSB_FIRST : int
-                    val FILTER_CONTINUE : int
-                    val FILTER_TRANSLATE : int
-                    val FILTER_REMOVE : int
-                    val SHIFT_MASK : int
-                    val LOCK_MASK : int
-                    val CONTROL_MASK : int
-                    val MOD1_MASK : int
-                    val MOD2_MASK : int
-                    val MOD3_MASK : int
-                    val MOD4_MASK : int
-                    val MOD5_MASK : int
-                    val BUTTON1_MASK : int
-                    val BUTTON2_MASK : int
-                    val BUTTON3_MASK : int
-                    val BUTTON4_MASK : int
-                    val BUTTON5_MASK : int
-                    val RELEASE_MASK : int
-                    val MODIFIER_MASK : int
-                    val INPUT_READ : int
-                    val INPUT_WRITE : int
-                    val INPUT_EXCEPTION : int
-                    val OK : int
-                    val ERROR : int
-                    val ERROR_PARAM : int
-                    val ERROR_FILE : int
-                    val ERROR_MEM : int
-                    val CC_MODE_UNDEFINED : int
-                    val CC_MODE_BW : int
-                    val CC_MODE_STD_CMAP : int
-                    val CC_MODE_TRUE : int
-                    val CC_MODE_MY_GRAY : int
-                    val CC_MODE_PALETTE : int
-                    val NOTHING : int
-                    val DELETE : int
-                    val DESTROY : int
-                    val EXPOSE : int
-                    val MOTION_NOTIFY : int
-                    val BUTTON_PRESS : int
-                    val TWO_BUTTON_PRESS : int
-                    val THREE_BUTTON_PRESS : int
-                    val BUTTON_RELEASE : int
-                    val KEY_PRESS : int
-                    val KEY_RELEASE : int
-                    val ENTER_NOTIFY : int
-                    val LEAVE_NOTIFY : int
-                    val FOCUS_CHANGE : int
-                    val CONFIGURE : int
-                    val MAP : int
-                    val UNMAP : int
-                    val PROPERTY_NOTIFY : int
-                    val SELECTION_CLEAR : int
-                    val SELECTION_REQUEST : int
-                    val SELECTION_NOTIFY : int
-                    val PROXIMITY_IN : int
-                    val PROXIMITY_OUT : int
-                    val DRAG_ENTER : int
-                    val DRAG_LEAVE : int
-                    val DRAG_MOTION : int
-                    val DRAG_STATUS : int
-                    val DROP_START : int
-                    val DROP_FINISHED : int
-                    val CLIENT_EVENT : int
-                    val VISIBILITY_NOTIFY : int
-                    val NO_EXPOSE : int
-                    val SCROLL : int
-                    val EXPOSURE_MASK : int
-                    val POINTER_MOTION_MASK : int
-                    val POINTER_MOTION_HINT_MASK : int
-                    val BUTTON_MOTION_MASK : int
-                    val BUTTON1_MOTION_MASK : int
-                    val BUTTON2_MOTION_MASK : int
-                    val BUTTON3_MOTION_MASK : int
-                    val BUTTON_PRESS_MASK : int
-                    val BUTTON_RELEASE_MASK : int
-                    val KEY_PRESS_MASK : int
-                    val KEY_RELEASE_MASK : int
-                    val ENTER_NOTIFY_MASK : int
-                    val LEAVE_NOTIFY_MASK : int
-                    val FOCUS_CHANGE_MASK : int
-                    val STRUCTURE_MASK : int
-                    val PROPERTY_CHANGE_MASK : int
-                    val VISIBILITY_NOTIFY_MASK : int
-                    val PROXIMITY_IN_MASK : int
-                    val PROXIMITY_OUT_MASK : int
-                    val SUBSTRUCTURE_MASK : int
-                    val SCROLL_MASK : int
-                    val ALL_EVENTS_MASK : int
-                    val VISIBILITY_UNOBSCURED : int
-                    val VISIBILITY_PARTIAL : int
-                    val VISIBILITY_FULLY_OBSCURED : int
-                    val SCROLL_UP : int
-                    val SCROLL_DOWN : int
-                    val SCROLL_LEFT : int
-                    val SCROLL_RIGHT : int
-                    val NOTIFY_ANCESTOR : int
-                    val NOTIFY_VIRTUAL : int
-                    val NOTIFY_INFERIOR : int
-                    val NOTIFY_NONLINEAR : int
-                    val NOTIFY_NONLINEAR_VIRTUAL : int
-                    val NOTIFY_UNKNOWN : int
-                    val CROSSING_NORMAL : int
-                    val CROSSING_GRAB : int
-                    val CROSSING_UNGRAB : int
-                    val PROPERTY_NEW_VALUE : int
-                    val PROPERTY_DELETE : int
-                    val FONT_FONT : int
-                    val FONT_FONTSET : int
-                    val NUM_GLYPHS : int
-                    val X_CURSOR : int
-                    val ARROW : int
-                    val BASED_ARROW_DOWN : int
-                    val BASED_ARROW_UP : int
-                    val BOAT : int
-                    val BOGOSITY : int
-                    val BOTTOM_LEFT_CORNER : int
-                    val BOTTOM_RIGHT_CORNER : int
-                    val BOTTOM_SIDE : int
-                    val BOTTOM_TEE : int
-                    val BOX_SPIRAL : int
-                    val CENTER_PTR : int
-                    val CIRCLE : int
-                    val CLOCK : int
-                    val COFFEE_MUG : int
-                    val CROSS : int
-                    val CROSS_REVERSE : int
-                    val CROSSHAIR : int
-                    val DIAMOND_CROSS : int
-                    val DOT : int
-                    val DOTBOX : int
-                    val DOUBLE_ARROW : int
-                    val DRAFT_LARGE : int
-                    val DRAFT_SMALL : int
-                    val DRAPED_BOX : int
-                    val EXCHANGE : int
-                    val FLEUR : int
-                    val GOBBLER : int
-                    val GUMBY : int
-                    val HAND1 : int
-                    val HAND2 : int
-                    val HEART : int
-                    val ICON : int
-                    val IRON_CROSS : int
-                    val LEFT_PTR : int
-                    val LEFT_SIDE : int
-                    val LEFT_TEE : int
-                    val LEFTBUTTON : int
-                    val LL_ANGLE : int
-                    val LR_ANGLE : int
-                    val MAN : int
-                    val MIDDLEBUTTON : int
-                    val MOUSE : int
-                    val PENCIL : int
-                    val PIRATE : int
-                    val PLUS : int
-                    val QUESTION_ARROW : int
-                    val RIGHT_PTR : int
-                    val RIGHT_SIDE : int
-                    val RIGHT_TEE : int
-                    val RIGHTBUTTON : int
-                    val RTL_LOGO : int
-                    val SAILBOAT : int
-                    val SB_DOWN_ARROW : int
-                    val SB_H_DOUBLE_ARROW : int
-                    val SB_LEFT_ARROW : int
-                    val SB_RIGHT_ARROW : int
-                    val SB_UP_ARROW : int
-                    val SB_V_DOUBLE_ARROW : int
-                    val SHUTTLE : int
-                    val SIZING : int
-                    val SPIDER : int
-                    val SPRAYCAN : int
-                    val STAR : int
-                    val TARGET : int
-                    val TCROSS : int
-                    val TOP_LEFT_ARROW : int
-                    val TOP_LEFT_CORNER : int
-                    val TOP_RIGHT_CORNER : int
-                    val TOP_SIDE : int
-                    val TOP_TEE : int
-                    val TREK : int
-                    val UL_ANGLE : int
-                    val UMBRELLA : int
-                    val UR_ANGLE : int
-                    val WATCH : int
-                    val XTERM : int
-                    val LAST_CURSOR : int
-                    val CURSOR_IS_PIXMAP : int
-                    val ACTION_DEFAULT : int
-                    val ACTION_COPY : int
-                    val ACTION_MOVE : int
-                    val ACTION_LINK : int
-                    val ACTION_PRIVATE : int
-                    val ACTION_ASK : int
-                    val DRAG_PROTO_MOTIF : int
-                    val DRAG_PROTO_XDND : int
-                    val DRAG_PROTO_ROOTWIN : int
-                    val DRAG_PROTO_NONE : int
-                    val DRAG_PROTO_WIN32_DROPFILES : int
-                    val DRAG_PROTO_OLE2 : int
-                    val IM_PREEDIT_AREA : int
-                    val IM_PREEDIT_CALLBACKS : int
-                    val IM_PREEDIT_POSITION : int
-                    val IM_PREEDIT_NOTHING : int
-                    val IM_PREEDIT_NONE : int
-                    val IM_PREEDIT_MASK : int
-                    val IM_STATUS_AREA : int
-                    val IM_STATUS_CALLBACKS : int
-                    val IM_STATUS_NOTHING : int
-                    val IM_STATUS_NONE : int
-                    val IM_STATUS_MASK : int
-                    val CAP_NOT_LAST : int
-                    val CAP_BUTT : int
-                    val CAP_ROUND : int
-                    val CAP_PROJECTING : int
-                    val IC_STYLE : int
-                    val IC_CLIENT_WINDOW : int
-                    val IC_FOCUS_WINDOW : int
-                    val IC_FILTER_EVENTS : int
-                    val IC_SPOT_LOCATION : int
-                    val IC_LINE_SPACING : int
-                    val IC_CURSOR : int
-                    val IC_PREEDIT_FONTSET : int
-                    val IC_PREEDIT_AREA : int
-                    val IC_PREEDIT_AREA_NEEDED : int
-                    val IC_PREEDIT_FOREGROUND : int
-                    val IC_PREEDIT_BACKGROUND : int
-                    val IC_PREEDIT_PIXMAP : int
-                    val IC_PREEDIT_COLORMAP : int
-                    val IC_STATUS_FONTSET : int
-                    val IC_STATUS_AREA : int
-                    val IC_STATUS_AREA_NEEDED : int
-                    val IC_STATUS_FOREGROUND : int
-                    val IC_STATUS_BACKGROUND : int
-                    val IC_STATUS_PIXMAP : int
-                    val IC_STATUS_COLORMAP : int
-                    val IC_ALL_REQ : int
-                    val IC_PREEDIT_AREA_REQ : int
-                    val IC_PREEDIT_POSITION_REQ : int
-                    val IC_STATUS_AREA_REQ : int
-                    val SOLID : int
-                    val TILED : int
-                    val STIPPLED : int
-                    val OPAQUE_STIPPLED : int
-                    val COPY : int
-                    val INVERT : int
-                    val XOR : int
-                    val CLEAR : int
-                    val AND : int
-                    val AND_REVERSE : int
-                    val AND_INVERT : int
-                    val NOOP : int
-                    val OR : int
-                    val EQUIV : int
-                    val OR_REVERSE : int
-                    val COPY_INVERT : int
-                    val OR_INVERT : int
-                    val NAND : int
-                    val SET : int
-                    val JOIN_MITER : int
-                    val JOIN_ROUND : int
-                    val JOIN_BEVEL : int
-                    val LINE_SOLID : int
-                    val LINE_ON_OFF_DASH : int
-                    val LINE_DOUBLE_DASH : int
-                    val CLIP_BY_CHILDREN : int
-                    val INCLUDE_INFERIORS : int
-                    val IMAGE_NORMAL : int
-                    val IMAGE_SHARED : int
-                    val IMAGE_FASTEST : int
-                    val IMAGE_SHARED_PIXMAP : int
-                    val GC_FOREGROUND : int
-                    val GC_BACKGROUND : int
-                    val GC_FONT : int
-                    val GC_FUNCTION : int
-                    val GC_FILL : int
-                    val GC_TILE : int
-                    val GC_STIPPLE : int
-                    val GC_CLIP_MASK : int
-                    val GC_SUBWINDOW : int
-                    val GC_TS_X_ORIGIN : int
-                    val GC_TS_Y_ORIGIN : int
-                    val GC_CLIP_X_ORIGIN : int
-                    val GC_CLIP_Y_ORIGIN : int
-                    val GC_EXPOSURES : int
-                    val GC_LINE_WIDTH : int
-                    val GC_LINE_STYLE : int
-                    val GC_CAP_STYLE : int
-                    val GC_JOIN_STYLE : int
-                    val PROP_MODE_REPLACE : int
-                    val PROP_MODE_PREPEND : int
-                    val PROP_MODE_APPEND : int
-                    val EVEN_ODD_RULE : int
-                    val WINDING_RULE : int
-                    val OVERLAP_RECTANGLE_IN : int
-                    val OVERLAP_RECTANGLE_OUT : int
-                    val OVERLAP_RECTANGLE_PART : int
-                    val WINDOW_ROOT : int
-                    val WINDOW_TOPLEVEL : int
-                    val WINDOW_CHILD : int
-                    val WINDOW_DIALOG : int
-                    val WINDOW_TEMP : int
-                    val DRAWABLE_PIXMAP : int
-                    val WINDOW_FOREIGN : int
-                    val RGB_DITHER_NONE : int
-                    val RGB_DITHER_NORMAL : int
-                    val RGB_DITHER_MAX : int
-                    val SELECTION_PRIMARY : int
-                    val SELECTION_SECONDARY : int
-                    val TARGET_BITMAP : int
-                    val TARGET_COLORMAP : int
-                    val TARGET_DRAWABLE : int
-                    val TARGET_PIXMAP : int
-                    val TARGET_STRING : int
-                    val EXTENSION_EVENTS_NONE : int
-                    val EXTENSION_EVENTS_ALL : int
-                    val EXTENSION_EVENTS_CURSOR : int
-                    val SOURCE_MOUSE : int
-                    val SOURCE_PEN : int
-                    val SOURCE_ERASER : int
-                    val SOURCE_CURSOR : int
-                    val SELECTION_TYPE_ATOM : int
-                    val SELECTION_TYPE_BITMAP : int
-                    val SELECTION_TYPE_COLORMAP : int
-                    val SELECTION_TYPE_DRAWABLE : int
-                    val SELECTION_TYPE_INTEGER : int
-                    val SELECTION_TYPE_PIXMAP : int
-                    val SELECTION_TYPE_WINDOW : int
-                    val SELECTION_TYPE_STRING : int
-                    val MODE_DISABLED : int
-                    val MODE_SCREEN : int
-                    val MODE_WINDOW : int
-                    val AXIS_IGNORE : int
-                    val AXIS_X : int
-                    val AXIS_Y : int
-                    val AXIS_PRESSURE : int
-                    val AXIS_XTILT : int
-                    val AXIS_YTILT : int
-                    val AXIS_LAST : int
-                    val VISUAL_STATIC_GRAY : int
-                    val VISUAL_GRAYSCALE : int
-                    val VISUAL_STATIC_COLOR : int
-                    val VISUAL_PSEUDO_COLOR : int
-                    val VISUAL_TRUE_COLOR : int
-                    val VISUAL_DIRECT_COLOR : int
-                    val INPUT_OUTPUT : int
-                    val INPUT_ONLY : int
-                    val WA_TITLE : int
-                    val WA_X : int
-                    val WA_Y : int
-                    val WA_CURSOR : int
-                    val WA_COLORMAP : int
-                    val WA_VISUAL : int
-                    val WA_WMCLASS : int
-                    val WA_NOREDIR : int
-                    val HINT_POS : int
-                    val HINT_MIN_SIZE : int
-                    val HINT_MAX_SIZE : int
-                    val HINT_BASE_SIZE : int
-                    val HINT_ASPECT : int
-                    val HINT_RESIZE_INC : int
-                    val DECOR_ALL : int
-                    val DECOR_BORDER : int
-                    val DECOR_RESIZEH : int
-                    val DECOR_TITLE : int
-                    val DECOR_MENU : int
-                    val DECOR_MINIMIZE : int
-                    val DECOR_MAXIMIZE : int
-                    val FUNC_ALL : int
-                    val FUNC_RESIZE : int
-                    val FUNC_MOVE : int
-                    val FUNC_MINIMIZE : int
-                    val FUNC_MAXIMIZE : int
-                    val FUNC_CLOSE : int
-
+            val allocColor : int * int * int -> object
+            val colorContextNew : object * object -> object
+            val colorContextNewMono : object * object -> object
+            val colorContextFree : object -> unit
+            val colorContextGetPixel : object * int * int * int * int -> int * int
+            val colorContextGetPixels : object * object * object * object * int * object * int -> int
+            val colorContextGetPixelsIncremental : object * object * object * object * int * int * object * int -> int * int
+            val colorContextQueryColor : object * object -> int
+            val colorContextQueryColors : object * object * int -> int
+            val colorContextAddPalette : object * object * int -> int
+            val colorContextInitDither : object -> unit
+            val colorContextFreeDither : object -> unit
+            val colorContextGetPixelFromPalette : object * object * object * object * int -> int * int
+            val colorContextGetIndexFromPalette : object * int * int * int * int -> int * int * int * int * int
+            val colormapNew : object * int -> object
+            val colormapRef : object -> object
+            val colormapUnref : object -> unit
+            val colormapGetSystem : unit -> object
+            val colormapGetSystemSize : unit -> int
+            val colormapChange : object * int -> unit
+            val colormapAllocColors : object * object * int * int * int * object -> int
+            val colormapAllocColor : object * object * int * int -> int
+            val colormapFreeColors : object * object * int -> unit
+            val colormapGetVisual : object -> object
+            val colorCopy : object -> object
+            val colorFree : object -> unit
+            val colorParse : string * object -> int
+            val colorHash : object -> int
+            val colorEqual : object * object -> int
+            val colorsStore : object * object * int -> unit
+            val colorsAlloc : object * int * object * int * object * int -> int
+            val colorsFree : object * object * int * int -> unit
+            val colorWhite : object * object -> int
+            val colorBlack : object * object -> int
+            val colorAlloc : object * object -> int
+            val colorChange : object * object -> int
+            val eventsPending : unit -> int
+            val eventGet : unit -> object
+            val eventPeek : unit -> object
+            val eventGetGraphicsExpose : object -> object
+            val eventPut : object -> unit
+            val eventCopy : object -> object
+            val eventFree : object -> unit
+            val eventGetTime : object -> int
+            val eventHandlerSet : object * object * object -> unit
+            val setShowEvents : int -> unit
+            val getShowEvents : unit -> int
+            val addClientMessageFilter : int * object * object -> unit
+            val fontListNew : string * int -> object * int
+            val fontListFree : object -> unit
+            val fontLoad : string -> object
+            val fontsetLoad : string -> object
+            val fontRef : object -> object
+            val fontUnref : object -> unit
+            val fontId : object -> int
+            val fontEqual : object * object -> int
+            val stringWidth : object * string -> int
+            val textWidth : object * string * int -> int
+            val textWidthWc : object * object * int -> int
+            val charWidth : object * int -> int
+            val charWidthWc : object * int -> int
+            val stringMeasure : object * string -> int
+            val textMeasure : object * string * int -> int
+            val charMeasure : object * int -> int
+            val stringHeight : object * string -> int
+            val textHeight : object * string * int -> int
+            val charHeight : object * int -> int
+            val textExtents : object * string * int * int * int * int * int * int -> int * int * int * int * int
+            val cursorNew : int -> object
+            val textExtentsWc : object * object * int * int * int * int * int * int -> int * int * int * int * int
+            val cursorNewFromPixmap : object * object * object * object * int * int -> object
+            val stringExtents : object * string * int * int * int * int * int -> int * int * int * int * int
+            val fontFullNameGet : object -> string
+            val fontFullNameFree : string -> unit
+            val cursorRef : object -> object
+            val cursorUnref : object -> unit
+            val dragContextNew : unit -> object
+            val dragContextRef : object -> unit
+            val dragContextUnref : object -> unit
+            val dragStatus : object * int * int -> unit
+            val dropReply : object * int * int -> unit
+            val dropFinish : object * int * int -> unit
+            val dragGetSelection : object -> int
+            val dragBegin : object * object list -> object
+            val dragGetProtocol : int * object -> int
+            val dragFindWindow : object * object * int * int * object * object -> unit
+            val dragMotion : object * object * int * int * int * int * int * int -> int
+            val dragDrop : object * int -> unit
+            val dragAbort : object * int -> unit
+            val imReady : unit -> int
+            val imBegin : object * object -> unit
+            val imEnd : unit -> unit
+            val imDecideStyle : int -> int
+            val imSetBestStyle : int -> int
+            val icNew : object * int -> object
+            val icDestroy : object -> unit
+            val icGetStyle : object -> int
+            val icGetEvents : object -> int
+            val icAttrNew : unit -> object
+            val icAttrDestroy : object -> unit
+            val icSetAttr : object * object * int -> int
+            val icGetAttr : object * object * int -> int
+            val imageNewBitmap : object * object * int * int -> object
+            val imageNew : int * object * int * int -> object
+            val imageBitmapNew : int * object * int * int -> object
+            val imageGet : object * int * int * int * int -> object
+            val imageRef : object -> object
+            val imageUnref : object -> unit
+            val imagePutPixel : object * int * int * int -> unit
+            val imageGetPixel : object * int * int -> int
+            val pixmapNew : object * int * int * int -> object
+            val pixmapCreateOnSharedImage : object * object * object * int * int * int -> object
+            val bitmapCreateFromData : object * string * int * int -> object
+            val pixmapCreateFromData : object * string * int * int * int * object * object -> object
+            val imlibInit : unit -> unit
+            val pixmapCreateFromXpm : object * object * object * string -> object
+            val imlibInitParams : object -> unit
+            val imlibGetRenderType : unit -> int
+            val pixmapColormapCreateFromXpm : object * object * object * object * string -> object
+            val imlibSetRenderType : int -> unit
+            val pixmapCreateFromXpmD : object * object * object * object -> object
+            val imlibLoadColors : string -> int
+            val pixmapColormapCreateFromXpmD : object * object * object * object * object -> object
+            val imlibLoadImage : string -> object
+            val imlibLoadAlpha : string -> object
+            val imlibBestColorMatch : int * int * int -> int * int * int * int
+            val imlibBestColorGet : object -> unit
+            val atomIntern : string * int -> int
+            val imlibRender : object * int * int -> int
+            val imlibCopyImage : object -> object
+            val imlibCopyMask : object -> object
+            val gcNew : object -> object
+            val atomName : int -> string
+            val imlibMoveImage : object -> object
+            val propertyGet : object * int * int * int * int * int * object * int * int * object -> int * int * int
+            val imlibMoveMask : object -> object
+            val gcAlloc : unit -> object
+            val imlibDestroyImage : object -> unit
+            val gcNewWithValues : object * object * int -> object
+            val imlibKillImage : object -> unit
+            val imlibFreeColors : unit -> unit
+            val gcInit : object * object -> unit
+            val imlibFreePixmap : object -> unit
+            val imlibFreeBitmap : object -> unit
+            val propertyChange : object * int * int * int * int * object * int -> unit
+            val gcRef : object -> object
+            val gcUnref : object -> unit
+            val imlibGetImageBorder : object * object -> unit
+            val propertyDelete : object * int -> unit
+            val gcGetValues : object * object -> unit
+            val imlibSetImageBorder : object * object -> unit
+            val gcSetForeground : object * object -> unit
+            val textPropertyToTextList : int * int * object * int * object -> int
+            val imlibGetImageShape : object * object -> unit
+            val gcSetBackground : object * object -> unit
+            val gcSetFont : object * object -> unit
+            val imlibSetImageShape : object * object -> unit
+            val freeTextList : object -> unit
+            val gcSetFunction : object * int -> unit
+            val imlibSaveImageToEim : object * string -> int
+            val stringToCompoundText : string * object * int * object * int -> int * int * int
+            val gcSetFill : object * int -> unit
+            val imlibAddImageToEim : object * string -> int
+            val gcSetTile : object * object -> unit
+            val imlibSaveImageToPpm : object * string -> int
+            val freeCompoundText : object -> unit
+            val gcSetStipple : object * object -> unit
+            val imlibLoadFileToPixmap : string * object * object -> int
+            val gcSetTsOrigin : object * int * int -> unit
+            val imlibSetImageModifier : object * object -> unit
+            val gcSetClipOrigin : object * int * int -> unit
+            val gcSetClipMask : object * object -> unit
+            val imlibSetImageRedModifier : object * object -> unit
+            val gcSetClipRectangle : object * object -> unit
+            val imlibSetImageGreenModifier : object * object -> unit
+            val gcSetClipRegion : object * object -> unit
+            val imlibSetImageBlueModifier : object * object -> unit
+            val imlibGetImageModifier : object * object -> unit
+            val regionNew : unit -> object
+            val gcSetSubwindow : object * int -> unit
+            val imlibGetImageRedModifier : object * object -> unit
+            val regionDestroy : object -> unit
+            val gcSetExposures : object * int -> unit
+            val regionGetClipbox : object * object -> unit
+            val imlibGetImageGreenModifier : object * object -> unit
+            val regionEmpty : object -> int
+            val imlibGetImageBlueModifier : object * object -> unit
+            val gcSetLineAttributes : object * int * int * int * int -> unit
+            val imlibSetImageRedCurve : object * object -> unit
+            val regionEqual : object * object -> int
+            val gcSetDashes : object * int * object * int -> unit
+            val gcCopy : object * object -> unit
+            val imlibSetImageGreenCurve : object * object -> unit
+            val imlibSetImageBlueCurve : object * object -> unit
+            val regionPointIn : object * int * int -> int
+            val imlibGetImageRedCurve : object * object -> unit
+            val regionRectIn : object * object -> int
+            val imlibGetImageGreenCurve : object * object -> unit
+            val regionPolygon : object * int * int -> object
+            val imlibGetImageBlueCurve : object * object -> unit
+            val imlibApplyModifiersToRgb : object -> unit
+            val regionOffset : object * int * int -> unit
+            val imlibChangedImage : object -> unit
+            val imlibApplyImage : object * object -> unit
+            val regionShrink : object * int * int -> unit
+            val imlibPasteImage : object * object * int * int * int * int -> unit
+            val regionUnionWithRect : object * object -> object
+            val regionsIntersect : object * object -> object
+            val imlibPasteImageBorder : object * object * int * int * int * int -> unit
+            val imlibFlipImageHorizontal : object -> unit
+            val regionsUnion : object * object -> object
+            val imlibFlipImageVertical : object -> unit
+            val regionsSubtract : object * object -> object
+            val imlibRotateImage : object * int -> unit
+            val regionsXor : object * object -> object
+            val imlibCreateImageFromData : object * object * int * int -> object
+            val imlibCloneImage : object -> object
+            val imlibCloneScaledImage : object * int * int -> object
+            val rgbInit : unit -> unit
+            val imlibGetFallback : unit -> int
+            val rgbXpixelFromRgb : int -> int
+            val imlibSetFallback : int -> unit
+            val imlibGetVisual : unit -> object
+            val rgbGcSetForeground : object * int -> unit
+            val imlibGetColormap : unit -> object
+            val imlibGetSysconfig : unit -> string
+            val rgbGcSetBackground : object * int -> unit
+            val imlibCreateImageFromXpmData : object -> object
+            val imlibDataToPixmap : object * object * object -> int
+            val imlibCropImage : object * int * int * int * int -> unit
+            val imlibSaveImage : object * string * object -> int
+            val imlibCropAndCloneImage : object * int * int * int * int -> object
+            val drawRgbImage : object * object * int * int * int * int * int * object * int -> unit
+            val imlibCreateImageFromDrawable : object * object * int * int * int * int -> object
+            val drawableAlloc : unit -> object
+            val drawableGetType : object -> int
+            val imlibInlinedPngToImage : object * int -> object
+            val drawableSetData : object * string * object * object -> unit
+            val drawRgbImageDithalign : object * object * int * int * int * int * int * object * int * int * int -> unit
+            val drawableGetData : object * string -> unit
+            val drawableGetSize : object * int * int -> int * int
+            val imlibGetCacheInfo : int * int -> int * int
+            val drawRgb32Image : object * object * int * int * int * int * int * object * int -> unit
+            val drawableSetColormap : object * object -> unit
+            val drawGrayImage : object * object * int * int * int * int * int * object * int -> unit
+            val rgbCmapNew : object * int -> object
+            val drawableGetColormap : object -> object
+            val imlibSetCacheInfo : int * int -> unit
+            val drawableGetVisual : object -> object
+            val rgbCmapFree : object -> unit
+            val drawableRef : object -> object
+            val drawIndexedImage : object * object * int * int * int * int * int * object * int * object -> unit
+            val drawableUnref : object -> unit
+            val rgbDitherable : unit -> int
+            val drawPoint : object * object * int * int -> unit
+            val rgbSetVerbose : int -> unit
+            val drawLine : object * object * int * int * int * int -> unit
+            val drawRectangle : object * object * int * int * int * int * int -> unit
+            val rgbSetInstall : int -> unit
+            val drawArc : object * object * int * int * int * int * int * int * int -> unit
+            val drawPolygon : object * object * int * object * int -> unit
+            val rgbSetMinColors : int -> unit
+            val drawString : object * object * object * int * int * string -> unit
+            val drawText : object * object * object * int * int * string * int -> unit
+            val rgbGetCmap : unit -> object
+            val rgbGetVisual : unit -> object
+            val drawTextWc : object * object * object * int * int * object * int -> unit
+            val drawDrawable : object * object * object * int * int * int * int * int * int -> unit
+            val drawImage : object * object * object * int * int * int * int * int * int -> unit
+            val drawPoints : object * object * object * int -> unit
+            val drawSegments : object * object * object * int -> unit
+            val drawLines : object * object * object * int -> unit
+            val selectionOwnerSet : object * int * int * int -> int
+            val selectionOwnerGet : int -> object
+            val selectionConvert : object * int * int * int -> unit
+            val selectionPropertyGet : object * object * object * int -> int * int
+            val selectionSendNotify : int * int * int * int * int -> unit
+            val inputListDevices : unit -> object list
+            val inputSetExtensionEvents : object * int * int -> unit
+            val inputSetSource : int * int -> unit
+            val inputSetMode : int * int -> int
+            val inputSetAxes : int * object -> unit
+            val inputSetKey : int * int * int * int -> unit
+            val inputWindowGetPointer : object * int * real * real * real * real * real * object -> real * real * real * real * real
+            val visualGetBestDepth : unit -> int
+            val inputMotionEvents : object * int * int * int * int -> object * int
+            val visualGetBestType : unit -> int
+            val visualGetSystem : unit -> object
+            val visualGetBest : unit -> object
+            val visualGetBestWithDepth : int -> object
+            val visualGetBestWithType : int -> object
+            val visualGetBestWithBoth : int * int -> object
+            val visualRef : object -> object
+            val visualUnref : object -> unit
+            val queryDepths : object * int -> int
+            val queryVisualTypes : object * int -> int
+            val listVisuals : unit -> object list
+            val windowNew : object * object * int -> object
+            val windowDestroy : object -> unit
+            val windowAtPointer : int * int -> object * int * int
+            val windowShow : object -> unit
+            val windowHide : object -> unit
+            val windowWithdraw : object -> unit
+            val windowMove : object * int * int -> unit
+            val windowResize : object * int * int -> unit
+            val windowMoveResize : object * int * int * int * int -> unit
+            val windowReparent : object * object * int * int -> unit
+            val windowClear : object -> unit
+            val windowClearArea : object * int * int * int * int -> unit
+            val windowClearAreaE : object * int * int * int * int -> unit
+            val windowRaise : object -> unit
+            val windowLower : object -> unit
+            val windowSetUserData : object * object -> unit
+            val windowSetOverrideRedirect : object * int -> unit
+            val windowAddFilter : object * object * object -> unit
+            val windowRemoveFilter : object * object * object -> unit
+            val windowShapeCombineMask : object * object * int * int -> unit
+            val windowSetChildShapes : object -> unit
+            val windowMergeChildShapes : object -> unit
+            val windowIsVisible : object -> int
+            val windowIsViewable : object -> int
+            val windowSetStaticGravities : object * int -> int
+            val windowSetHints : object * int * int * int * int * int * int * int -> unit
+            val windowSetGeometryHints : object * object * int -> unit
+            val setSmClientId : string -> unit
+            val windowSetTitle : object * string -> unit
+            val windowSetRole : object * string -> unit
+            val windowSetTransientFor : object * object -> unit
+            val windowSetBackground : object * object -> unit
+            val windowSetBackPixmap : object * object * int -> unit
+            val windowSetCursor : object * object -> unit
+            val windowGetUserData : object * object -> unit
+            val windowGetGeometry : object * int * int * int * int * int -> int * int * int * int * int
+            val windowGetPosition : object * int * int -> int * int
+            val windowGetOrigin : object * int * int -> int * int * int
+            val windowGetDeskrelativeOrigin : object * int * int -> int * int * int
+            val windowGetRootOrigin : object * int * int -> int * int
+            val windowGetPointer : object * int * int * object -> object * int * int
+            val windowGetParent : object -> object
+            val windowGetToplevel : object -> object
+            val windowGetChildren : object -> object list
+            val windowGetEvents : object -> int
+            val windowSetEvents : object * int -> unit
+            val windowSetIcon : object * object * object * object -> unit
+            val windowSetIconName : object * string -> unit
+            val windowSetGroup : object * object -> unit
+            val windowSetDecorations : object * int -> unit
+            val windowSetFunctions : object * int -> unit
+            val windowGetToplevels : unit -> object list
+            val windowRegisterDnd : object -> unit
+            val init : int * object -> int
+            val initCheck : int * object -> int * int
+            val exit : int -> unit
+            val setLocale : unit -> string
+            val errorTrapPush : unit -> unit
+            val errorTrapPop : unit -> int
+            val setUseXshm : int -> unit
+            val getUseXshm : unit -> int
+            val getDisplay : unit -> string
+            val inputAddFull : int * int * object * object * object -> int
+            val inputAdd : int * int * object * object -> int
+            val inputRemove : int -> unit
+            val pointerGrab : object * int * int * object * object * int -> int
+            val pointerUngrab : int -> unit
+            val keyboardGrab : object * int * int -> int
+            val keyboardUngrab : int -> unit
+            val pointerIsGrabbed : unit -> int
+            val screenWidth : unit -> int
+            val screenHeight : unit -> int
+            val screenWidthMm : unit -> int
+            val screenHeightMm : unit -> int
+            val flush : unit -> unit
+            val beep : unit -> unit
+            val keyRepeatDisable : unit -> unit
+            val keyRepeatRestore : unit -> unit
+            val rectangleIntersect : object * object * object -> int
+            val rectangleUnion : object * object * object -> unit
+            val wcstombs : object -> string
+            val mbstowcs : object * string * int -> int
+            val eventSendClientmessageToall : object -> unit
+            val eventSendClientMessage : object * int -> int
+            val keyvalName : int -> string
+            val keyvalFromName : string -> int
+            val keyvalConvertCase : int * int * int -> int * int
+            val keyvalToUpper : int -> int
+            val keyvalToLower : int -> int
+            val keyvalIsUpper : int -> int
+            val keyvalIsLower : int -> int
+            val threadsEnter : unit -> unit
+            val threadsLeave : unit -> unit
+            val pointGetFieldX : object -> int
+            val pointGetFieldY : object -> int
+            val eventExposeGetFieldType : object -> int
+            val eventExposeGetFieldWindow : object -> object
+            val eventExposeGetFieldSendEvent : object -> int
+            val eventExposeGetFieldArea : object -> object
+            val eventExposeGetFieldCount : object -> int
+            val rectangleGetFieldX : object -> int
+            val rectangleGetFieldY : object -> int
+            val rectangleGetFieldWidth : object -> int
+            val rectangleGetFieldHeight : object -> int
+            val eventNoExposeGetFieldType : object -> int
+            val eventNoExposeGetFieldWindow : object -> object
+            val eventNoExposeGetFieldSendEvent : object -> int
+            val segmentGetFieldX1 : object -> int
+            val segmentGetFieldY1 : object -> int
+            val segmentGetFieldX2 : object -> int
+            val segmentGetFieldY2 : object -> int
+            val eventVisibilityGetFieldType : object -> int
+            val eventVisibilityGetFieldWindow : object -> object
+            val eventVisibilityGetFieldSendEvent : object -> int
+            val eventVisibilityGetFieldState : object -> int
+            val eventMotionGetFieldType : object -> int
+            val eventMotionGetFieldWindow : object -> object
+            val eventMotionGetFieldSendEvent : object -> int
+            val eventMotionGetFieldTime : object -> int
+            val eventMotionGetFieldX : object -> real
+            val eventMotionGetFieldY : object -> real
+            val eventMotionGetFieldPressure : object -> real
+            val eventMotionGetFieldXtilt : object -> real
+            val eventMotionGetFieldYtilt : object -> real
+            val eventMotionGetFieldState : object -> int
+            val eventMotionGetFieldIsHint : object -> int
+            val eventMotionGetFieldSource : object -> int
+            val eventMotionGetFieldDeviceid : object -> int
+            val eventMotionGetFieldXRoot : object -> real
+            val eventMotionGetFieldYRoot : object -> real
+            val colorGetFieldPixel : object -> int
+            val colorGetFieldRed : object -> int
+            val colorGetFieldGreen : object -> int
+            val colorGetFieldBlue : object -> int
+            val eventButtonGetFieldType : object -> int
+            val eventButtonGetFieldWindow : object -> object
+            val eventButtonGetFieldSendEvent : object -> int
+            val eventButtonGetFieldTime : object -> int
+            val eventButtonGetFieldX : object -> real
+            val eventButtonGetFieldY : object -> real
+            val eventButtonGetFieldPressure : object -> real
+            val eventButtonGetFieldXtilt : object -> real
+            val eventButtonGetFieldYtilt : object -> real
+            val eventButtonGetFieldState : object -> int
+            val eventButtonGetFieldButton : object -> int
+            val eventButtonGetFieldSource : object -> int
+            val eventButtonGetFieldDeviceid : object -> int
+            val eventButtonGetFieldXRoot : object -> real
+            val eventButtonGetFieldYRoot : object -> real
+            val colormapGetFieldSize : object -> int
+            val colormapGetFieldColors : object -> object
+            val eventScrollGetFieldType : object -> int
+            val eventScrollGetFieldWindow : object -> object
+            val eventScrollGetFieldSendEvent : object -> int
+            val eventScrollGetFieldTime : object -> int
+            val eventScrollGetFieldX : object -> real
+            val eventScrollGetFieldY : object -> real
+            val eventScrollGetFieldPressure : object -> real
+            val eventScrollGetFieldXtilt : object -> real
+            val eventScrollGetFieldYtilt : object -> real
+            val eventScrollGetFieldState : object -> int
+            val eventScrollGetFieldDirection : object -> int
+            val eventScrollGetFieldSource : object -> int
+            val eventScrollGetFieldDeviceid : object -> int
+            val eventScrollGetFieldXRoot : object -> real
+            val eventScrollGetFieldYRoot : object -> real
+            val cursorGetFieldType : object -> int
+            val cursorGetFieldRefCount : object -> int
+            val eventKeyGetFieldType : object -> int
+            val eventKeyGetFieldWindow : object -> object
+            val eventKeyGetFieldSendEvent : object -> int
+            val eventKeyGetFieldTime : object -> int
+            val eventKeyGetFieldState : object -> int
+            val eventKeyGetFieldKeyval : object -> int
+            val eventKeyGetFieldLength : object -> int
+            val eventKeyGetFieldString : object -> string
+            val fontGetFieldType : object -> int
+            val fontGetFieldAscent : object -> int
+            val fontGetFieldDescent : object -> int
+            val eventFocusGetFieldType : object -> int
+            val eventFocusGetFieldWindow : object -> object
+            val eventFocusGetFieldSendEvent : object -> int
+            val eventFocusGetFieldIn : object -> int
+            val gCGetFieldDummyVar : object -> int
+            val eventCrossingGetFieldType : object -> int
+            val eventCrossingGetFieldWindow : object -> object
+            val eventCrossingGetFieldSendEvent : object -> int
+            val eventCrossingGetFieldSubwindow : object -> object
+            val eventCrossingGetFieldTime : object -> int
+            val eventCrossingGetFieldX : object -> real
+            val eventCrossingGetFieldY : object -> real
+            val eventCrossingGetFieldXRoot : object -> real
+            val eventCrossingGetFieldYRoot : object -> real
+            val eventCrossingGetFieldMode : object -> int
+            val eventCrossingGetFieldDetail : object -> int
+            val eventCrossingGetFieldFocus : object -> int
+            val eventCrossingGetFieldState : object -> int
+            val imageGetFieldType : object -> int
+            val imageGetFieldVisual : object -> object
+            val imageGetFieldByteOrder : object -> int
+            val imageGetFieldWidth : object -> int
+            val imageGetFieldHeight : object -> int
+            val imageGetFieldDepth : object -> int
+            val imageGetFieldBpp : object -> int
+            val imageGetFieldBpl : object -> int
+            val imageGetFieldMem : object -> object
+            val regionGetFieldUserData : object -> object
+            val eventConfigureGetFieldType : object -> int
+            val eventConfigureGetFieldWindow : object -> object
+            val eventConfigureGetFieldSendEvent : object -> int
+            val eventConfigureGetFieldX : object -> int
+            val eventConfigureGetFieldY : object -> int
+            val eventConfigureGetFieldWidth : object -> int
+            val eventConfigureGetFieldHeight : object -> int
+            val visualGetFieldType : object -> int
+            val visualGetFieldDepth : object -> int
+            val visualGetFieldByteOrder : object -> int
+            val visualGetFieldColormapSize : object -> int
+            val visualGetFieldBitsPerRgb : object -> int
+            val visualGetFieldRedMask : object -> int
+            val visualGetFieldRedShift : object -> int
+            val visualGetFieldRedPrec : object -> int
+            val visualGetFieldGreenMask : object -> int
+            val visualGetFieldGreenShift : object -> int
+            val visualGetFieldGreenPrec : object -> int
+            val visualGetFieldBlueMask : object -> int
+            val visualGetFieldBlueShift : object -> int
+            val visualGetFieldBluePrec : object -> int
+            val eventPropertyGetFieldType : object -> int
+            val eventPropertyGetFieldWindow : object -> object
+            val eventPropertyGetFieldSendEvent : object -> int
+            val eventPropertyGetFieldAtom : object -> int
+            val eventPropertyGetFieldTime : object -> int
+            val eventPropertyGetFieldState : object -> int
+            val drawableGetFieldUserData : object -> object
+            val eventSelectionGetFieldType : object -> int
+            val eventSelectionGetFieldWindow : object -> object
+            val eventSelectionGetFieldSendEvent : object -> int
+            val eventSelectionGetFieldSelection : object -> int
+            val eventSelectionGetFieldTarget : object -> int
+            val eventSelectionGetFieldProperty : object -> int
+            val eventSelectionGetFieldRequestor : object -> int
+            val eventSelectionGetFieldTime : object -> int
+            val eventProximityGetFieldType : object -> int
+            val eventProximityGetFieldWindow : object -> object
+            val eventProximityGetFieldSendEvent : object -> int
+            val eventProximityGetFieldTime : object -> int
+            val eventProximityGetFieldSource : object -> int
+            val eventProximityGetFieldDeviceid : object -> int
+            val eventClientGetFieldType : object -> int
+            val eventClientGetFieldWindow : object -> object
+            val eventClientGetFieldSendEvent : object -> int
+            val eventClientGetFieldMessageType : object -> int
+            val eventClientGetFieldDataFormat : object -> int
+            val eventDNDGetFieldType : object -> int
+            val eventDNDGetFieldWindow : object -> object
+            val eventDNDGetFieldSendEvent : object -> int
+            val eventDNDGetFieldContext : object -> object
+            val eventDNDGetFieldTime : object -> int
+            val eventDNDGetFieldXRoot : object -> int
+            val eventDNDGetFieldYRoot : object -> int
+            val colorContextGetFieldVisual : object -> object
+            val colorContextGetFieldColormap : object -> object
+            val colorContextGetFieldNumColors : object -> int
+            val colorContextGetFieldMaxColors : object -> int
+            val colorContextGetFieldNumAllocated : object -> int
+            val colorContextGetFieldMode : object -> int
+            val colorContextGetFieldNeedToFreeColormap : object -> int
+            val colorContextGetFieldStdCmapAtom : object -> int
+            val colorContextGetFieldClut : object -> object
+            val colorContextGetFieldCmap : object -> object
+            val colorContextGetFieldColorHash : object -> object
+            val colorContextGetFieldPalette : object -> object
+            val colorContextGetFieldNumPalette : object -> int
+            val colorContextGetFieldFastDither : object -> object
+            val colorContextGetFieldMaxEntry : object -> int
+            val colorContextGetFieldBlackPixel : object -> int
+            val colorContextGetFieldWhitePixel : object -> int
+            val iCAttrGetFieldStyle : object -> int
+            val iCAttrGetFieldClientWindow : object -> object
+            val iCAttrGetFieldFocusWindow : object -> object
+            val iCAttrGetFieldFilterEvents : object -> int
+            val iCAttrGetFieldSpotLocation : object -> object
+            val iCAttrGetFieldLineSpacing : object -> int
+            val iCAttrGetFieldCursor : object -> object
+            val iCAttrGetFieldPreeditFontset : object -> object
+            val iCAttrGetFieldPreeditArea : object -> object
+            val iCAttrGetFieldPreeditAreaNeeded : object -> object
+            val iCAttrGetFieldPreeditForeground : object -> object
+            val iCAttrGetFieldPreeditBackground : object -> object
+            val iCAttrGetFieldPreeditPixmap : object -> object
+            val iCAttrGetFieldPreeditColormap : object -> object
+            val iCAttrGetFieldStatusFontset : object -> object
+            val iCAttrGetFieldStatusArea : object -> object
+            val iCAttrGetFieldStatusAreaNeeded : object -> object
+            val iCAttrGetFieldStatusForeground : object -> object
+            val iCAttrGetFieldStatusBackground : object -> object
+            val iCAttrGetFieldStatusPixmap : object -> object
+            val iCAttrGetFieldStatusColormap : object -> object
+            val dragContextGetFieldProtocol : object -> int
+            val dragContextGetFieldIsSource : object -> int
+            val dragContextGetFieldSourceWindow : object -> object
+            val dragContextGetFieldDestWindow : object -> object
+            val dragContextGetFieldTargets : object -> object list
+            val dragContextGetFieldActions : object -> int
+            val dragContextGetFieldSuggestedAction : object -> int
+            val dragContextGetFieldAction : object -> int
+            val dragContextGetFieldStartTime : object -> int
+            val gCValuesGetFieldForeground : object -> object
+            val gCValuesGetFieldBackground : object -> object
+            val gCValuesGetFieldFont : object -> object
+            val gCValuesGetFieldFunction : object -> int
+            val gCValuesGetFieldFill : object -> int
+            val gCValuesGetFieldTile : object -> object
+            val gCValuesGetFieldStipple : object -> object
+            val gCValuesGetFieldClipMask : object -> object
+            val gCValuesGetFieldSubwindowMode : object -> int
+            val gCValuesGetFieldTsXOrigin : object -> int
+            val gCValuesGetFieldTsYOrigin : object -> int
+            val gCValuesGetFieldClipXOrigin : object -> int
+            val gCValuesGetFieldClipYOrigin : object -> int
+            val gCValuesGetFieldGraphicsExposures : object -> int
+            val gCValuesGetFieldLineWidth : object -> int
+            val gCValuesGetFieldLineStyle : object -> int
+            val gCValuesGetFieldCapStyle : object -> int
+            val gCValuesGetFieldJoinStyle : object -> int
+            val imlibBorderGetFieldLeft : object -> int
+            val imlibBorderGetFieldRight : object -> int
+            val imlibBorderGetFieldTop : object -> int
+            val imlibBorderGetFieldBottom : object -> int
+            val imlibColorGetFieldR : object -> int
+            val imlibColorGetFieldG : object -> int
+            val imlibColorGetFieldB : object -> int
+            val imlibColorGetFieldPixel : object -> int
+            val imlibColorModifierGetFieldGamma : object -> int
+            val imlibColorModifierGetFieldBrightness : object -> int
+            val imlibColorModifierGetFieldContrast : object -> int
+            val imlibImageGetFieldRgbWidth : object -> int
+            val imlibImageGetFieldRgbHeight : object -> int
+            val imlibImageGetFieldRgbData : object -> object
+            val imlibImageGetFieldAlphaData : object -> object
+            val imlibImageGetFieldFilename : object -> string
+            val imlibImageGetFieldWidth : object -> int
+            val imlibImageGetFieldHeight : object -> int
+            val imlibImageGetFieldShapeColor : object -> object
+            val imlibImageGetFieldBorder : object -> object
+            val imlibImageGetFieldPixmap : object -> object
+            val imlibImageGetFieldShapeMask : object -> object
+            val imlibImageGetFieldCache : object -> int
+            val imlibImageGetFieldMod : object -> object
+            val imlibImageGetFieldRmod : object -> object
+            val imlibImageGetFieldGmod : object -> object
+            val imlibImageGetFieldBmod : object -> object
+            val imlibImageGetFieldMap : object -> object
+            val imlibImageGetFieldRefCount : object -> int
+            val imlibImageGetFieldPixmaps : object -> object
+            val imlibSaveInfoGetFieldQuality : object -> int
+            val imlibSaveInfoGetFieldScaling : object -> int
+            val imlibSaveInfoGetFieldXjustification : object -> int
+            val imlibSaveInfoGetFieldYjustification : object -> int
+            val imlibSaveInfoGetFieldPageSize : object -> int
+            val imlibSaveInfoGetFieldColor : object -> object
+            val imlibInitParamsGetFieldFlags : object -> int
+            val imlibInitParamsGetFieldVisualid : object -> int
+            val imlibInitParamsGetFieldPalettefile : object -> string
+            val imlibInitParamsGetFieldSharedmem : object -> object
+            val imlibInitParamsGetFieldSharedpixmaps : object -> object
+            val imlibInitParamsGetFieldPaletteoverride : object -> object
+            val imlibInitParamsGetFieldRemap : object -> object
+            val imlibInitParamsGetFieldFastrender : object -> object
+            val imlibInitParamsGetFieldHiquality : object -> object
+            val imlibInitParamsGetFieldDither : object -> object
+            val imlibInitParamsGetFieldImagecachesize : object -> int
+            val imlibInitParamsGetFieldPixmapcachesize : object -> int
+            val deviceKeyGetFieldKeyval : object -> int
+            val deviceKeyGetFieldModifiers : object -> int
+            val deviceInfoGetFieldDeviceid : object -> int
+            val deviceInfoGetFieldName : object -> string
+            val deviceInfoGetFieldSource : object -> int
+            val deviceInfoGetFieldMode : object -> int
+            val deviceInfoGetFieldHasCursor : object -> int
+            val deviceInfoGetFieldNumAxes : object -> int
+            val deviceInfoGetFieldAxes : object -> object
+            val deviceInfoGetFieldNumKeys : object -> int
+            val deviceInfoGetFieldKeys : object -> object
+            val timeCoordGetFieldTime : object -> int
+            val timeCoordGetFieldX : object -> real
+            val timeCoordGetFieldY : object -> real
+            val timeCoordGetFieldPressure : object -> real
+            val timeCoordGetFieldXtilt : object -> real
+            val timeCoordGetFieldYtilt : object -> real
+            val eventAnyGetFieldType : object -> int
+            val eventAnyGetFieldWindow : object -> object
+            val eventAnyGetFieldSendEvent : object -> int
+            val geometryGetFieldMinWidth : object -> int
+            val geometryGetFieldMinHeight : object -> int
+            val geometryGetFieldMaxWidth : object -> int
+            val geometryGetFieldMaxHeight : object -> int
+            val geometryGetFieldBaseWidth : object -> int
+            val geometryGetFieldBaseHeight : object -> int
+            val geometryGetFieldWidthInc : object -> int
+            val geometryGetFieldHeightInc : object -> int
+            val geometryGetFieldMinAspect : object -> real
+            val geometryGetFieldMaxAspect : object -> real
+            val windowAttrGetFieldTitle : object -> string
+            val windowAttrGetFieldEventMask : object -> int
+            val windowAttrGetFieldX : object -> int
+            val windowAttrGetFieldY : object -> int
+            val windowAttrGetFieldWidth : object -> int
+            val windowAttrGetFieldHeight : object -> int
+            val windowAttrGetFieldWclass : object -> int
+            val windowAttrGetFieldVisual : object -> object
+            val windowAttrGetFieldColormap : object -> object
+            val windowAttrGetFieldWindowType : object -> int
+            val windowAttrGetFieldCursor : object -> object
+            val windowAttrGetFieldWmclassName : object -> string
+            val windowAttrGetFieldWmclassClass : object -> string
+            val windowAttrGetFieldOverrideRedirect : object -> int
+            val LSB_FIRST : int
+            val MSB_FIRST : int
+            val FILTER_CONTINUE : int
+            val FILTER_TRANSLATE : int
+            val FILTER_REMOVE : int
+            val SHIFT_MASK : int
+            val LOCK_MASK : int
+            val CONTROL_MASK : int
+            val MOD1_MASK : int
+            val MOD2_MASK : int
+            val MOD3_MASK : int
+            val MOD4_MASK : int
+            val MOD5_MASK : int
+            val BUTTON1_MASK : int
+            val BUTTON2_MASK : int
+            val BUTTON3_MASK : int
+            val BUTTON4_MASK : int
+            val BUTTON5_MASK : int
+            val RELEASE_MASK : int
+            val MODIFIER_MASK : int
+            val INPUT_READ : int
+            val INPUT_WRITE : int
+            val INPUT_EXCEPTION : int
+            val OK : int
+            val ERROR : int
+            val ERROR_PARAM : int
+            val ERROR_FILE : int
+            val ERROR_MEM : int
+            val CC_MODE_UNDEFINED : int
+            val CC_MODE_BW : int
+            val CC_MODE_STD_CMAP : int
+            val CC_MODE_TRUE : int
+            val CC_MODE_MY_GRAY : int
+            val CC_MODE_PALETTE : int
+            val NOTHING : int
+            val DELETE : int
+            val DESTROY : int
+            val EXPOSE : int
+            val MOTION_NOTIFY : int
+            val BUTTON_PRESS : int
+            val TWO_BUTTON_PRESS : int
+            val THREE_BUTTON_PRESS : int
+            val BUTTON_RELEASE : int
+            val KEY_PRESS : int
+            val KEY_RELEASE : int
+            val ENTER_NOTIFY : int
+            val LEAVE_NOTIFY : int
+            val FOCUS_CHANGE : int
+            val CONFIGURE : int
+            val MAP : int
+            val UNMAP : int
+            val PROPERTY_NOTIFY : int
+            val SELECTION_CLEAR : int
+            val SELECTION_REQUEST : int
+            val SELECTION_NOTIFY : int
+            val PROXIMITY_IN : int
+            val PROXIMITY_OUT : int
+            val DRAG_ENTER : int
+            val DRAG_LEAVE : int
+            val DRAG_MOTION : int
+            val DRAG_STATUS : int
+            val DROP_START : int
+            val DROP_FINISHED : int
+            val CLIENT_EVENT : int
+            val VISIBILITY_NOTIFY : int
+            val NO_EXPOSE : int
+            val SCROLL : int
+            val EXPOSURE_MASK : int
+            val POINTER_MOTION_MASK : int
+            val POINTER_MOTION_HINT_MASK : int
+            val BUTTON_MOTION_MASK : int
+            val BUTTON1_MOTION_MASK : int
+            val BUTTON2_MOTION_MASK : int
+            val BUTTON3_MOTION_MASK : int
+            val BUTTON_PRESS_MASK : int
+            val BUTTON_RELEASE_MASK : int
+            val KEY_PRESS_MASK : int
+            val KEY_RELEASE_MASK : int
+            val ENTER_NOTIFY_MASK : int
+            val LEAVE_NOTIFY_MASK : int
+            val FOCUS_CHANGE_MASK : int
+            val STRUCTURE_MASK : int
+            val PROPERTY_CHANGE_MASK : int
+            val VISIBILITY_NOTIFY_MASK : int
+            val PROXIMITY_IN_MASK : int
+            val PROXIMITY_OUT_MASK : int
+            val SUBSTRUCTURE_MASK : int
+            val SCROLL_MASK : int
+            val ALL_EVENTS_MASK : int
+            val VISIBILITY_UNOBSCURED : int
+            val VISIBILITY_PARTIAL : int
+            val VISIBILITY_FULLY_OBSCURED : int
+            val SCROLL_UP : int
+            val SCROLL_DOWN : int
+            val SCROLL_LEFT : int
+            val SCROLL_RIGHT : int
+            val NOTIFY_ANCESTOR : int
+            val NOTIFY_VIRTUAL : int
+            val NOTIFY_INFERIOR : int
+            val NOTIFY_NONLINEAR : int
+            val NOTIFY_NONLINEAR_VIRTUAL : int
+            val NOTIFY_UNKNOWN : int
+            val CROSSING_NORMAL : int
+            val CROSSING_GRAB : int
+            val CROSSING_UNGRAB : int
+            val PROPERTY_NEW_VALUE : int
+            val PROPERTY_DELETE : int
+            val FONT_FONT : int
+            val FONT_FONTSET : int
+            val NUM_GLYPHS : int
+            val X_CURSOR : int
+            val ARROW : int
+            val BASED_ARROW_DOWN : int
+            val BASED_ARROW_UP : int
+            val BOAT : int
+            val BOGOSITY : int
+            val BOTTOM_LEFT_CORNER : int
+            val BOTTOM_RIGHT_CORNER : int
+            val BOTTOM_SIDE : int
+            val BOTTOM_TEE : int
+            val BOX_SPIRAL : int
+            val CENTER_PTR : int
+            val CIRCLE : int
+            val CLOCK : int
+            val COFFEE_MUG : int
+            val CROSS : int
+            val CROSS_REVERSE : int
+            val CROSSHAIR : int
+            val DIAMOND_CROSS : int
+            val DOT : int
+            val DOTBOX : int
+            val DOUBLE_ARROW : int
+            val DRAFT_LARGE : int
+            val DRAFT_SMALL : int
+            val DRAPED_BOX : int
+            val EXCHANGE : int
+            val FLEUR : int
+            val GOBBLER : int
+            val GUMBY : int
+            val HAND1 : int
+            val HAND2 : int
+            val HEART : int
+            val ICON : int
+            val IRON_CROSS : int
+            val LEFT_PTR : int
+            val LEFT_SIDE : int
+            val LEFT_TEE : int
+            val LEFTBUTTON : int
+            val LL_ANGLE : int
+            val LR_ANGLE : int
+            val MAN : int
+            val MIDDLEBUTTON : int
+            val MOUSE : int
+            val PENCIL : int
+            val PIRATE : int
+            val PLUS : int
+            val QUESTION_ARROW : int
+            val RIGHT_PTR : int
+            val RIGHT_SIDE : int
+            val RIGHT_TEE : int
+            val RIGHTBUTTON : int
+            val RTL_LOGO : int
+            val SAILBOAT : int
+            val SB_DOWN_ARROW : int
+            val SB_H_DOUBLE_ARROW : int
+            val SB_LEFT_ARROW : int
+            val SB_RIGHT_ARROW : int
+            val SB_UP_ARROW : int
+            val SB_V_DOUBLE_ARROW : int
+            val SHUTTLE : int
+            val SIZING : int
+            val SPIDER : int
+            val SPRAYCAN : int
+            val STAR : int
+            val TARGET : int
+            val TCROSS : int
+            val TOP_LEFT_ARROW : int
+            val TOP_LEFT_CORNER : int
+            val TOP_RIGHT_CORNER : int
+            val TOP_SIDE : int
+            val TOP_TEE : int
+            val TREK : int
+            val UL_ANGLE : int
+            val UMBRELLA : int
+            val UR_ANGLE : int
+            val WATCH : int
+            val XTERM : int
+            val LAST_CURSOR : int
+            val CURSOR_IS_PIXMAP : int
+            val ACTION_DEFAULT : int
+            val ACTION_COPY : int
+            val ACTION_MOVE : int
+            val ACTION_LINK : int
+            val ACTION_PRIVATE : int
+            val ACTION_ASK : int
+            val DRAG_PROTO_MOTIF : int
+            val DRAG_PROTO_XDND : int
+            val DRAG_PROTO_ROOTWIN : int
+            val DRAG_PROTO_NONE : int
+            val DRAG_PROTO_WIN32_DROPFILES : int
+            val DRAG_PROTO_OLE2 : int
+            val IM_PREEDIT_AREA : int
+            val IM_PREEDIT_CALLBACKS : int
+            val IM_PREEDIT_POSITION : int
+            val IM_PREEDIT_NOTHING : int
+            val IM_PREEDIT_NONE : int
+            val IM_PREEDIT_MASK : int
+            val IM_STATUS_AREA : int
+            val IM_STATUS_CALLBACKS : int
+            val IM_STATUS_NOTHING : int
+            val IM_STATUS_NONE : int
+            val IM_STATUS_MASK : int
+            val CAP_NOT_LAST : int
+            val CAP_BUTT : int
+            val CAP_ROUND : int
+            val CAP_PROJECTING : int
+            val IC_STYLE : int
+            val IC_CLIENT_WINDOW : int
+            val IC_FOCUS_WINDOW : int
+            val IC_FILTER_EVENTS : int
+            val IC_SPOT_LOCATION : int
+            val IC_LINE_SPACING : int
+            val IC_CURSOR : int
+            val IC_PREEDIT_FONTSET : int
+            val IC_PREEDIT_AREA : int
+            val IC_PREEDIT_AREA_NEEDED : int
+            val IC_PREEDIT_FOREGROUND : int
+            val IC_PREEDIT_BACKGROUND : int
+            val IC_PREEDIT_PIXMAP : int
+            val IC_PREEDIT_COLORMAP : int
+            val IC_STATUS_FONTSET : int
+            val IC_STATUS_AREA : int
+            val IC_STATUS_AREA_NEEDED : int
+            val IC_STATUS_FOREGROUND : int
+            val IC_STATUS_BACKGROUND : int
+            val IC_STATUS_PIXMAP : int
+            val IC_STATUS_COLORMAP : int
+            val IC_ALL_REQ : int
+            val IC_PREEDIT_AREA_REQ : int
+            val IC_PREEDIT_POSITION_REQ : int
+            val IC_STATUS_AREA_REQ : int
+            val SOLID : int
+            val TILED : int
+            val STIPPLED : int
+            val OPAQUE_STIPPLED : int
+            val COPY : int
+            val INVERT : int
+            val XOR : int
+            val CLEAR : int
+            val AND : int
+            val AND_REVERSE : int
+            val AND_INVERT : int
+            val NOOP : int
+            val OR : int
+            val EQUIV : int
+            val OR_REVERSE : int
+            val COPY_INVERT : int
+            val OR_INVERT : int
+            val NAND : int
+            val SET : int
+            val JOIN_MITER : int
+            val JOIN_ROUND : int
+            val JOIN_BEVEL : int
+            val LINE_SOLID : int
+            val LINE_ON_OFF_DASH : int
+            val LINE_DOUBLE_DASH : int
+            val CLIP_BY_CHILDREN : int
+            val INCLUDE_INFERIORS : int
+            val IMAGE_NORMAL : int
+            val IMAGE_SHARED : int
+            val IMAGE_FASTEST : int
+            val IMAGE_SHARED_PIXMAP : int
+            val GC_FOREGROUND : int
+            val GC_BACKGROUND : int
+            val GC_FONT : int
+            val GC_FUNCTION : int
+            val GC_FILL : int
+            val GC_TILE : int
+            val GC_STIPPLE : int
+            val GC_CLIP_MASK : int
+            val GC_SUBWINDOW : int
+            val GC_TS_X_ORIGIN : int
+            val GC_TS_Y_ORIGIN : int
+            val GC_CLIP_X_ORIGIN : int
+            val GC_CLIP_Y_ORIGIN : int
+            val GC_EXPOSURES : int
+            val GC_LINE_WIDTH : int
+            val GC_LINE_STYLE : int
+            val GC_CAP_STYLE : int
+            val GC_JOIN_STYLE : int
+            val PROP_MODE_REPLACE : int
+            val PROP_MODE_PREPEND : int
+            val PROP_MODE_APPEND : int
+            val EVEN_ODD_RULE : int
+            val WINDING_RULE : int
+            val OVERLAP_RECTANGLE_IN : int
+            val OVERLAP_RECTANGLE_OUT : int
+            val OVERLAP_RECTANGLE_PART : int
+            val WINDOW_ROOT : int
+            val WINDOW_TOPLEVEL : int
+            val WINDOW_CHILD : int
+            val WINDOW_DIALOG : int
+            val WINDOW_TEMP : int
+            val DRAWABLE_PIXMAP : int
+            val WINDOW_FOREIGN : int
+            val RGB_DITHER_NONE : int
+            val RGB_DITHER_NORMAL : int
+            val RGB_DITHER_MAX : int
+            val SELECTION_PRIMARY : int
+            val SELECTION_SECONDARY : int
+            val TARGET_BITMAP : int
+            val TARGET_COLORMAP : int
+            val TARGET_DRAWABLE : int
+            val TARGET_PIXMAP : int
+            val TARGET_STRING : int
+            val EXTENSION_EVENTS_NONE : int
+            val EXTENSION_EVENTS_ALL : int
+            val EXTENSION_EVENTS_CURSOR : int
+            val SOURCE_MOUSE : int
+            val SOURCE_PEN : int
+            val SOURCE_ERASER : int
+            val SOURCE_CURSOR : int
+            val SELECTION_TYPE_ATOM : int
+            val SELECTION_TYPE_BITMAP : int
+            val SELECTION_TYPE_COLORMAP : int
+            val SELECTION_TYPE_DRAWABLE : int
+            val SELECTION_TYPE_INTEGER : int
+            val SELECTION_TYPE_PIXMAP : int
+            val SELECTION_TYPE_WINDOW : int
+            val SELECTION_TYPE_STRING : int
+            val MODE_DISABLED : int
+            val MODE_SCREEN : int
+            val MODE_WINDOW : int
+            val AXIS_IGNORE : int
+            val AXIS_X : int
+            val AXIS_Y : int
+            val AXIS_PRESSURE : int
+            val AXIS_XTILT : int
+            val AXIS_YTILT : int
+            val AXIS_LAST : int
+            val VISUAL_STATIC_GRAY : int
+            val VISUAL_GRAYSCALE : int
+            val VISUAL_STATIC_COLOR : int
+            val VISUAL_PSEUDO_COLOR : int
+            val VISUAL_TRUE_COLOR : int
+            val VISUAL_DIRECT_COLOR : int
+            val INPUT_OUTPUT : int
+            val INPUT_ONLY : int
+            val WA_TITLE : int
+            val WA_X : int
+            val WA_Y : int
+            val WA_CURSOR : int
+            val WA_COLORMAP : int
+            val WA_VISUAL : int
+            val WA_WMCLASS : int
+            val WA_NOREDIR : int
+            val HINT_POS : int
+            val HINT_MIN_SIZE : int
+            val HINT_MAX_SIZE : int
+            val HINT_BASE_SIZE : int
+            val HINT_ASPECT : int
+            val HINT_RESIZE_INC : int
+            val DECOR_ALL : int
+            val DECOR_BORDER : int
+            val DECOR_RESIZEH : int
+            val DECOR_TITLE : int
+            val DECOR_MENU : int
+            val DECOR_MINIMIZE : int
+            val DECOR_MAXIMIZE : int
+            val FUNC_ALL : int
+            val FUNC_RESIZE : int
+            val FUNC_MOVE : int
+            val FUNC_MINIMIZE : int
+            val FUNC_MAXIMIZE : int
+            val FUNC_CLOSE : int
 	end
   </PRE>
 
