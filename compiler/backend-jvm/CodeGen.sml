@@ -329,7 +329,7 @@ structure CodeGen =
 		val l=Register.get stamp'
 		val loc =
 		    if l = 1
-			then Register.assign(id', Register.nextFree())
+			then Register.assign(id', Register.new())
 		    else l
 	    in
 		(Lambda.pushFun id';
@@ -350,7 +350,7 @@ structure CodeGen =
 		local
 		    fun init ((id',exp'),akku) =
 			let
-			    val loc = Register.assign(id',Register.nextFree())
+			    val loc = Register.assign(id',Register.new())
 			    fun funList ((OneArg id'',_)::rest) =
 				let
 				    val className = classNameFromId id''
@@ -438,7 +438,7 @@ structure CodeGen =
 	  | decCode (ConDec (_, id' as Id(_, stamp', name'), hasArgs,_)) =
 	    (* ConDec of coord * id * bool *)
 	    let
-		val loc = Register.assign(id',Register.nextFree())
+		val loc = Register.assign(id',Register.new())
 	    in
 		if hasArgs then
 		    let
@@ -661,7 +661,7 @@ structure CodeGen =
 
 		  | testCode (ConTest (id'',SOME id''')) =
 		    let
-			val loc = Register.assign(id''',Register.nextFree())
+			val loc = Register.assign(id''',Register.new())
 			val _ = FreeVars.setFun (id''', Lambda.top())
 		    in
 			stampcode' ::
@@ -690,7 +690,7 @@ structure CodeGen =
 			  | stringids2strings (nil, s') = s'
 			fun bindit ((_,id'')::nil,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'', Lambda.top())
 			    in
 				atCodeInt i ::
@@ -700,7 +700,7 @@ structure CodeGen =
 			    end
 			  | bindit ((_,id'')::rest,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 			    in
 				Dup ::
@@ -738,7 +738,7 @@ structure CodeGen =
 		    let
 			fun bindit (id''::rest,i) =
 			    let
-				val loc = Register.assign(id'',Register.nextFree())
+				val loc = Register.assign(id'',Register.new())
 				val _ = FreeVars.setFun (id'',Lambda.top())
 				val b' = atCodeInt i ::
 				    Aaload ::
@@ -850,7 +850,7 @@ structure CodeGen =
 
 	  | decCode (HandleStm(_,body', id',body'')) =
 		    let
-			val loc = Register.assign (id', Register.nextFree())
+			val loc = Register.assign (id', Register.new())
 			val try   = Label.new()
 			val to = Label.pushANewHandle ()
 			val using = Label.new()
@@ -906,7 +906,7 @@ structure CodeGen =
 			     (load (rs,j+1))
 			   | load (nil,_) = nil
 			 (* 3rd *)
-			 val mp = Register.nextFree()
+			 val mp = Register.new()
 		    in
 			(mainpickle:=mp;
 			 [Comment "[Mainpickle ",
@@ -1110,7 +1110,9 @@ structure CodeGen =
 			 Label.push();
 			 Register.push();
 			 Class.push(className);
+			 InlineCode.enterFunction ();
 			 expCodeClass(lambda);
+			 InlineCode.leaveFunction ();
 			 Class.pop();
 			 Register.pop();
 			 Label.pop();
@@ -1195,7 +1197,7 @@ structure CodeGen =
 					  [Voidsig]))]
 		     end
 
-	       | expCode (VarExp(_,id')) =
+	  | expCode (VarExp(_,id')) =
 		     [idCode id']
 
 	  | expCode (AdjExp _) = raise Error "seltsame operation adjexp"
@@ -1215,44 +1217,26 @@ structure CodeGen =
 			      Invokespecial (CSelInt, "<init>",
 					     ([Intsig],[Voidsig]))])
 
-			| expCode (ConExp (_, id', _)) =
-		     [idCode id']
+	  | expCode (ConExp (_, id', _)) =
+			  [idCode id']
 
-		   | expCode (ConAppExp (_, id', id'')) =
+	  | expCode (ConAppExp (_, id', id'')) =
 		     [idCode id',
 		      idCode id'',
 		      Invokeinterface (CVal, "apply",
 				       ([Classsig CVal], [Classsig CVal]))]
 
-		   | expCode (SelAppExp (_, Lab (_,label'), id')) =
-		     let
-			 val afterthrow = Label.new ()
-		     in
-			 idCode id' ::
-			 Dup ::
-			 Instanceof CDMLTuple ::
-			 Ifne afterthrow ::
-			 Pop ::
-			 New CExWrap ::
-			 Dup ::
-			 Getstatic (Literals.insert
-				    (StringLit "Typfehler"),
-				    [Classsig CStr]) ::
-			 Invokespecial(CExWrap,"<init>",
-				       ([Classsig CVal],[Voidsig])) ::
-			 Athrow ::
-			 Label afterthrow ::
-			 Checkcast CDMLTuple ::
-			 (case LargeInt.fromString label' of
-			     NONE =>
-				 [Ldc (JVMString label'),
-				  Invokeinterface (CDMLTuple, "get",
-						   ([Classsig CString], [Classsig CVal]))]
-			   | SOME i =>
-				 [atCodeInt i,
-				  Invokeinterface (CDMLTuple, "get",
-						   ([Intsig], [Classsig CVal]))])
-		     end
+	  | expCode (SelAppExp (_, Lab (_,label'), id')) =
+		     (case LargeInt.fromString label' of
+			  NONE => (Ldc (JVMString label') ::
+				   idCode id' ::
+				   InlineCode.use InlineCode.SelAppString ::
+				   nil)
+			| SOME i => (atCodeInt i ::
+				     idCode id' ::
+				     InlineCode.use InlineCode.SelAppInt ::
+				     nil))
+
 	  | expCode e = raise Debug (Exp e)
 	and
     expCodeClass (OneArg id',body') =
@@ -1266,57 +1250,53 @@ structure CodeGen =
 			(Field ([FPublic],fieldNameFromStamp stamp', [Classsig CVal]))::
 			(fields stamps)
 		      | fields nil = nil
-		    fun vars (0, akku) = akku
-		      | vars (n, akku) =
-			vars (n-1,Var (n, "woaswoisi"^(Int.toString n),
-			      [Classsig CVal], alpha, omega)::akku)
 		in
 		    val fieldscode = fields freeVarList
-		    val bd = (*vars
-			(Register.max(), *)
-			 let
-			     val decs = decListCode body'
-			 in
-			     if !DEBUG >=2 then
-				 let
-				     val nodebug=Label.new()
-				 in
-				     Getstatic
-				     (Class.getCurrent()^"/DEBUG",
-				      [Boolsig])::
-				     Ifeq nodebug::
-				     Getstatic
-				     ("java/lang/System/out",
-				      [Classsig "java/io/PrintStream"])::
-				     Ldc (JVMString "Betrete: (")::
-				     Invokevirtual
-				     ("java/io/PrintStream",
-				      "print",([Classsig CObj],
-					       [Voidsig]))::
-				     Getstatic
-				     ("java/lang/System/out",
-				      [Classsig "java/io/PrintStream"])::
-				     Ldc (JVMString
-					  (nameFromId
-					   (Lambda.getOuterFun ())))::
-				     Invokevirtual
-				     ("java/io/PrintStream",
-				      "println",([Classsig CObj],
-						 [Voidsig]))::
-				     Comment "expCodeClass: Label nodebug" ::
-				     Label nodebug::
-				     decs
-				 end
-			     else decs
-			 end (*)*)
+		    val bd =
+			let
+			    val decs = decListCode body'
+			in
+			    if !DEBUG >=2 then
+				let
+				    val nodebug=Label.new()
+				in
+				    Getstatic
+				    (Class.getCurrent()^"/DEBUG",
+				     [Boolsig])::
+				    Ifeq nodebug::
+				    Getstatic
+				    ("java/lang/System/out",
+				     [Classsig "java/io/PrintStream"])::
+				    Ldc (JVMString "Betrete: (")::
+				    Invokevirtual
+				    ("java/io/PrintStream",
+				     "print",([Classsig CObj],
+					      [Voidsig]))::
+				    Getstatic
+				    ("java/lang/System/out",
+				     [Classsig "java/io/PrintStream"])::
+				    Ldc (JVMString
+					 (nameFromId
+					  (Lambda.getOuterFun ())))::
+				    Invokevirtual
+				    ("java/io/PrintStream",
+				     "println",([Classsig CObj],
+						[Voidsig]))::
+				    Comment "expCodeClass: Label nodebug" ::
+				    Label nodebug::
+				    decs
+				end
+			    else decs
+			end
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
 		val ap =
 		    (Label alpha::
 		     Multi bd ::
-		     normalReturn
-		     [Label omega,
-		      Areturn])
+		     Multi (normalReturn
+			    [Label omega,
+			     Areturn]) ::
+		     InlineCode.generate ())
 		val applY = Method ([MPublic],
 				    "apply",
 				    ([Classsig CVal], [Classsig CVal]),

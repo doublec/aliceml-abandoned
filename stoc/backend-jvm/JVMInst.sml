@@ -77,6 +77,7 @@ structure JVMInst =
 	  | Invokevirtual of classname * methodname * (ARG list * ARG list)
 	  | Ireturn
 	  | Istore of int
+	  | Jsr of label
 	  | Label of label
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
@@ -87,6 +88,7 @@ structure JVMInst =
 	  | Pop
 	  | Putfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Putstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
+	  | Ret of int
 	  | Return
 	  | Sipush of int
 	  | Swap

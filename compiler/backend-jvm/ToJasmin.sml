@@ -32,7 +32,7 @@ structure ToJasmin =
 	fun word32ToString i = LargeWord.toString i
 	fun realToString r = if Real.<(r,0.0) then "-"^Real.toString(~r) else Real.toString r
 
-	datatype jump = Got | Ret | IRet | ARet
+	datatype jump = Got | VRet | IRet | ARet | JSR of string | RET of int| Throw
 	datatype branchinst = Lab of string * bool | Jump of jump | Non
 	datatype registerOps = Load of (int * INSTRUCTION) | Store
 
@@ -58,9 +58,11 @@ structure ToJasmin =
 		case StringHash.lookup(!labelMerge, lab') of
 		    NONE => "goto "^lab'
 		  | SOME (Lab (lab'', _)) => directJump lab''
-		  | SOME (Jump Ret) => "return"
+		  | SOME (Jump VRet) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
+		  | SOME (Jump (RET reg)) => "ret "^Int.toString reg
+		  | SOME (Jump (JSR lab'')) => "jsr "^lab''
 		  | SOME _ => raise Match
 
 	    (* return the real label for this jump *)
@@ -238,7 +240,17 @@ structure ToJasmin =
 			Array.update(!regmap, 0, 0);
 			Array.update(!regmap, 1, 1);
 			Array.update(!jvmto, 1, Array.sub (!to, 1));
-			assign 2
+			if (Array.sub(!to, getOrigin 2)=0)
+			    then
+				assign 2
+			else
+			(* Register #2 is reserved for subroutine calls.
+			 This is not necessary, but makes lifeness analysis
+			 somewhat easier. *)
+			    (Array.update (!regmap, 2, 2);
+			     Array.update (!to, 2, Array.sub (!to, 0));
+			     Array.update (!jvmto, 2, Array.sub (!to, 0));
+			     assign 3)
 		    end
 
 		(* We remember the code position of labels. Needed for
@@ -323,30 +335,47 @@ structure ToJasmin =
 		    end
 		  | deadCode (Lab (lab', dropMode), Goto lab''::rest) =
 		    (LabelMerge.merge (lab', Lab (lab'', false));
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump Got, rest)
 		     else
 			 Goto lab'' ::
 			 deadCode (Jump Got, rest))
+		  | deadCode (Lab (lab', dropMode), Jsr lab''::rest) =
+		    (LabelMerge.merge (lab', Lab (lab'', false));
+		     Label lab' ::
+		     Jsr lab'' ::
+		     deadCode (Non, rest))
+		  | deadCode (Lab (lab', dropMode), Ret reg::rest) =
+		    let
+			val r = Jump (RET reg)
+		    in
+			(LabelMerge.merge (lab', r);
+			 if dropMode then
+			     deadCode (r, rest)
+			 else
+			     Label lab' ::
+			     Ret reg ::
+			     deadCode (r, rest))
+		    end
 		  | deadCode (Lab (lab', dropMode), Areturn::rest) =
 		    (LabelMerge.merge (lab', Jump ARet);
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump ARet, rest)
 		     else
 			 Label lab' ::
 			 Areturn ::
 			 deadCode (Jump ARet, rest))
 		  | deadCode (Lab (lab', dropMode), Return::rest) =
-		    (LabelMerge.merge (lab', Jump Ret);
-		     if !OPTIMIZE >= 4 andalso dropMode then
-			 deadCode (Jump Ret, rest)
+		    (LabelMerge.merge (lab', Jump VRet);
+		     if dropMode then
+			 deadCode (Jump VRet, rest)
 		     else
 			 Label lab' ::
 			 Return ::
-			 deadCode (Jump Ret, rest))
+			 deadCode (Jump VRet, rest))
 		  | deadCode (Lab (lab', dropMode), Ireturn::rest) =
 		    (LabelMerge.merge (lab', Jump IRet);
-		     if !OPTIMIZE >= 4 andalso dropMode then
+		     if dropMode then
 			 deadCode (Jump IRet, rest)
 		     else
 			 Label lab' ::
@@ -370,15 +399,23 @@ structure ToJasmin =
 		  | deadCode (Non, Label lab'::rest) =
 			 deadCode (Lab (lab', false), rest)
 		  | deadCode (Non, Goto lab''::rest) =
-			 Goto lab'' :: deadCode (Jump Got, rest)
+			 (LabelMerge.setReachable lab'';
+			  Goto lab'' ::
+			  deadCode (Jump Got, rest))
 		  | deadCode (Non, Areturn::rest) =
 			 Areturn :: deadCode (Jump ARet, rest)
 		  | deadCode (Non, Return::rest) =
-			 Return :: deadCode (Jump Ret, rest)
+			 Return :: deadCode (Jump VRet, rest)
 		  | deadCode (Non, Ireturn::rest) =
 			 Ireturn :: deadCode (Jump IRet, rest)
 		  | deadCode (Non, Athrow::rest) =
-			 Athrow :: deadCode (Jump Got, rest)
+			 Athrow :: deadCode (Jump Throw, rest)
+		  | deadCode (Non, (j as Jsr lab'')::rest) =
+			 (LabelMerge.setReachable lab'';
+			  j ::
+			  deadCode (Non, rest))
+		  | deadCode (Non, (r as Ret reg)::rest) =
+			 r :: deadCode (Jump (RET reg), rest)
 		  | deadCode (Non, c::rest) =
 			 ((case c of
 			       Ifacmpeq l' => LabelMerge.setReachable l'
@@ -413,6 +450,9 @@ structure ToJasmin =
 		  | prepareLifeness (Iload r::insts, pos) =
 		    (JVMreg.use(r, pos);
 		     prepareLifeness (insts,pos+1))
+		  | prepareLifeness (Ret r::insts, pos) =
+		    (JVMreg.use (r,pos);
+		     prepareLifeness (insts, pos+1))
 		  | prepareLifeness (Label l'::insts, pos) =
 		    (JVMreg.defineLabel (l', pos);
 		     prepareLifeness (insts,pos+1))
@@ -424,6 +464,9 @@ structure ToJasmin =
 
 		fun lifeness (Goto label'::insts, pos) =
 		    (JVMreg.addJump(pos, label');
+		     lifeness (insts, pos+1))
+		  | lifeness (Jsr label'::insts, pos) =
+		    (JVMreg.addJump (pos, label');
 		     lifeness (insts, pos+1))
 		  | lifeness (Ifacmpeq label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
@@ -619,6 +662,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,_)))          = ~(siglength arglist)
 	  | stackNeedInstruction Ireturn = ~1
 	  | stackNeedInstruction (Istore _) = ~1
+	  | stackNeedInstruction (Jsr _) = 1
 	  | stackNeedInstruction (Label _) = 0
 	  | stackNeedInstruction Lcmp = ~1
 	  | stackNeedInstruction (Ldc _) = 1 (* we don't use long and double! *)
@@ -628,6 +672,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Pop = ~1
 	  | stackNeedInstruction (Putfield _) = ~2
 	  | stackNeedInstruction (Putstatic _) = ~1
+	  | stackNeedInstruction (Ret _) = 0
 	  | stackNeedInstruction Return = 0
 	  | stackNeedInstruction (Sipush _) = 1
 	  | stackNeedInstruction Swap = 0
@@ -721,6 +766,7 @@ structure ToJasmin =
 			     "invokestatic "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
+	      | instructionToJasmin (Jsr l,_) = "jsr "^l
 	      | instructionToJasmin (Label l,_) = l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^String.toCString s^"\""
@@ -748,6 +794,7 @@ structure ToJasmin =
 			     desclist2string arg
 	      | instructionToJasmin (Putstatic(cn,arg),_) = "putstatic "^cn^" "^
 			     desclist2string arg
+	      | instructionToJasmin (Ret i, _) = "ret "^intToString i
 	      | instructionToJasmin (Return,_) = "return"
 	      | instructionToJasmin (Sipush i,_) = "sipush "^intToString i
 	      | instructionToJasmin (Swap,_) = "swap"
@@ -781,6 +828,8 @@ structure ToJasmin =
 		      | noStack Return = true
 		      | noStack Areturn = true
 		      | noStack Ireturn = true
+		      | noStack (Ret _) = true
+		      | noStack (Jsr _) = true
 		      | noStack _ = false
 
 		    fun recurse (i::is, need, max) =
@@ -810,6 +859,8 @@ structure ToJasmin =
 			      | Ifne label => LabelMerge.checkSizeAt (label, sizeAfter)
 			      | Ifnull label => LabelMerge.checkSizeAt (label, sizeAfter)
 			      | Ireturn => LabelMerge.leaveMethod (sizeAfter, is)
+			      | Jsr label => (LabelMerge.checkSizeAt (label, sizeAfter);
+					      need)
 			      | Label label =>
 				    (lastLabel := label;
 				     LabelMerge.checkSizeAt (label, sizeAfter))
@@ -818,6 +869,7 @@ structure ToJasmin =
 				    LabelMerge.checkSizeAt
 				    sizeAfter
 				    (label::labs)
+			      | Ret _ => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Return => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Tableswitch (_, labs, label) =>
 				    foldr

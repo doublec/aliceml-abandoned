@@ -95,14 +95,17 @@ structure Backend=
 	structure Register =
 	    struct
 		local
-		    val localscount = ref 1
+		    (* register #0 is reserved by JVM for "this" pointer,
+		     register #1 for formal parameter.
+		     We use register #2 for subroutines *)
+		    val localscount = ref 2
 		    val stack:(int * int StampHash.t) list ref = ref nil
 		    val register: int StampHash.t ref   = ref (StampHash.new ())
 		    val lambda  : int StampHash.t  = StampHash.new ()
 		    val fields  : string StampHash.t = StampHash.new ()
 		in
 		    (* Nummer des nächsten freien lokalen Registers der aktuellen Methode. *)
-		    fun nextFree () = (localscount := !localscount + 1;
+		    fun new () = (localscount := !localscount + 1;
 				       !localscount)
 
 		    (* Betreten bzw. Verlassen einer (Unter-) Funktion . *)
@@ -391,4 +394,96 @@ structure Backend=
 
 	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
 
+	structure InlineCode =
+	    struct
+		val SelAppString = 0
+		val SelAppInt = 1
+
+		val inline = ref [Array.array (2,false)]
+
+		fun enterFunction () =
+		    inline := (Array.array (2,0)::(!inline))
+
+		fun leaveFunction () =
+		    inline := tl (!inline)
+
+		fun label i = "inlineFcn"^Int.toString i
+
+		fun use fcn =
+		    let
+			val actArray = hd (!inline)
+		    in
+			Array.update (actArray, fcn,true);
+			Jsr (label fcn)
+		    end
+
+		fun generate () =
+		    let
+			fun inl 0 =
+			    let
+				val afterthrow = Label.new ()
+			    in
+				Label (label 0) ::
+				(* we always use (virtual) register #2 for return address *)
+				Astore 2 ::
+				Dup ::
+				Instanceof CDMLTuple ::
+				Ifne afterthrow ::
+				Pop ::
+				New CExWrap ::
+				Dup ::
+				Getstatic (Literals.insert
+					   (StringLit "type error."),
+					   [Classsig CStr]) ::
+				Invokespecial(CExWrap,"<init>",
+					      ([Classsig CVal],[Voidsig])) ::
+				Athrow ::
+				Label afterthrow ::
+				Checkcast CDMLTuple ::
+				Swap ::
+				Invokeinterface (CDMLTuple, "get",
+						 ([Classsig CString],
+						  [Classsig CVal])) ::
+				Ret 2 ::
+				nil
+			    end
+			  | inl 1 =
+			    let
+				val afterthrow = Label.new ()
+			    in
+				Label (label 1) ::
+				(* we always use (virtual) register #2 for return address *)
+				Astore 2 ::
+				Dup ::
+				Instanceof CDMLTuple ::
+				Ifne afterthrow ::
+				Pop ::
+				New CExWrap ::
+				Dup ::
+				Getstatic (Literals.insert
+					   (StringLit "type error."),
+					   [Classsig CStr]) ::
+				Invokespecial(CExWrap,"<init>",
+					      ([Classsig CVal],[Voidsig])) ::
+				Athrow ::
+				Label afterthrow ::
+				Checkcast CDMLTuple ::
+				Swap ::
+				Invokeinterface (CDMLTuple, "get",
+						 ([Intsig],
+						  [Classsig CVal])) ::
+				Ret 2 ::
+				nil
+			    end
+			  | inl _ = raise Match
+
+			fun gen (2, akku) = akku
+			  | gen (index, akku) =
+			    if Array.sub (hd (!inline), index) then
+				gen (index+1, akku)
+			    else gen (index+1, Multi akku :: inl index)
+		    in
+			gen (0, nil)
+		    end
+	    end
     end
