@@ -117,18 +117,18 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
-	fun genTestIntLit (dottedname, i, elseLabel) =
+	fun genTestInt (dottedname, ty, i, elseLabel) =
 	    (emit Dup; emit (Isinst dottedname); emit (B (FALSE, elseLabel));
 	     emit Dup; emit (Castclass dottedname);
-	     emit (Ldfld (dottedname, "Value", Int32Ty)); emit (LdcI4 i);
+	     emit (Ldfld (dottedname, "Value", ty)); emit (LdcI4 i);
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 
 	fun genTest (LitTest (WordLit w), elseLabel) =
-	    genTestIntLit (StockWerk.Word, LargeWord.toInt w, elseLabel)
+	    genTestInt (StockWerk.Word, Int32Ty, LargeWord.toInt w, elseLabel)
 	  | genTest (LitTest (IntLit i), elseLabel) =
-	    genTestIntLit (StockWerk.Int, Int.fromLarge i, elseLabel)
+	    genTestInt (StockWerk.Int, Int32Ty, Int.fromLarge i, elseLabel)
 	  | genTest (LitTest (CharLit c), elseLabel) =
-	    genTestIntLit (StockWerk.Char, Char.ord c, elseLabel)
+	    genTestInt (StockWerk.Char, CharTy, Char.ord c, elseLabel)
 	  | genTest (LitTest (StringLit s), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.String);
 	     emit (B (FALSE, elseLabel));
