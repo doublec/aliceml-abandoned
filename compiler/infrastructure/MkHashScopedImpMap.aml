@@ -22,10 +22,17 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     fun deleteScope r		= r := List.tl(!r)
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
 
-    fun mergeScope(r as ref ms)	= let val ms' = List.tl ms in
-				      ImpMap.union(List.hd ms', List.hd ms) ;
+
+    fun mergeScope' unionMap (r as ref ms)
+				= let val ms' = List.tl ms in
+				      unionMap(List.hd ms', List.hd ms) ;
 				      r := ms'
 				  end
+
+    fun mergeScope r		= mergeScope' ImpMap.union r
+    fun mergeDisjointScope r	= mergeScope' ImpMap.unionDisjoint r
+    fun mergeScopeWith f	= mergeScope'(ImpMap.unionWith f)
+    fun mergeScopeWithi f	= mergeScope'(ImpMap.unionWithi f)
 
 
     fun lookup'( [],   k)	= NONE

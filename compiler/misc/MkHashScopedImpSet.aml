@@ -22,10 +22,16 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
     fun deleteScope r		= r := List.tl(!r)
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
 
-    fun mergeScope(r as ref ss)	= let val ss' = List.tl ss in
-				      ImpSet.union(List.hd ss', List.hd ss) ;
+
+    fun mergeScope' unionSet (r as ref ss)
+				= let val ss' = List.tl ss in
+				      unionSet(List.hd ss', List.hd ss) ;
 				      r := ss'
 				  end
+
+    fun mergeScope r		= mergeScope' ImpSet.union r
+    fun mergeDisjointScope r	= mergeScope' ImpSet.unionDisjoint r
+    fun mergeScopeWith f	= mergeScope'(ImpSet.unionWith f)
 
 
     fun member'( [],   i)	= false
