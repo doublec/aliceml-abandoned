@@ -24,12 +24,11 @@ import type unit and bool and exn from "ToplevelTypes"
 signature HOLE =				(**)
 sig
     exception Hole
-    exception Cyclic
 
     val hole :		unit -> 'a
-    val future :	'a -> 'a
+    val future :	'a -> 'a		(* Hole *)
 
-    val fill :		'a * 'a  -> unit	(* Hole, Cyclic *)
+    val fill :		'a * 'a  -> unit	(* Hole, Future.Cyclic *)
     val fail :		'a * exn -> unit	(* Hole *)
 
     val isHole :	'a -> bool

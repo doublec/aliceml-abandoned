@@ -25,7 +25,6 @@ import signature HOLE             from "HOLE-sig"
 structure Hole : HOLE =					(**)
 struct
     __primitive exception Hole 				= "Hole.Hole"
-    __primitive exception Cyclic			= "Hole.Cyclic"
 
     __primitive val hole :	unit -> 'a		= "Hole.hole"
     __primitive val future :	'a -> 'a		= "Hole.future"
