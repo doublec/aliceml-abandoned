@@ -67,6 +67,7 @@ in
 		val exist = dummy
 		val lambda = dummy
 		val apply = dummy
+		val abbrev = dummy
 		val newVar = dummy
 		val kind = dummy
 		val unknownRow = dummy

@@ -1867,7 +1867,8 @@ struct
 
     and trLHSRecDec(env, map, I.TypDec(i, id, typ)) =
 	(* [type id = typ]_recl =
-	 *   $id' = __pervasive.Type.unknown k_typ
+	 *   $id' = __pervasive.Type.abbrev(__pervasive.Type.con(p_id, k_typ),
+	 *                                  __pervasive.Type.unknown k_typ)
 	 *)
 	let
 	    val r = #region i
@@ -1876,8 +1877,21 @@ struct
 		then (trTypid(env, id),
 		      O.FailExp(trTypInfo(env, I.infoTyp typ)))
 		else (#2(StampMap.lookupExistent(map, I.stamp id)),
+(*
 		      typExp(env, lab_unknown,
 			     kindExp(env, r, Type.kind(#typ(I.infoTyp typ)))))
+*)
+		      let
+			  val pathexp' = pathExp(env, r, I.name id)
+			  val kindexp' = kindExp(env, r,
+						 Type.kind(#typ(I.infoTyp typ)))
+			  val exp1' = typExp(env, lab_con,
+					     tupExp(r, #[pathexp', kindexp']))
+			  val exp2' = typExp(env, lab_unknown, kindexp')
+		      in
+			  typExp(env, lab_abbrev,
+				 tupExp(r, #[exp1', exp2']))
+		      end)
 	    val dec' = auxDec(id', exp')
 	in
 	    #[dec']
@@ -2103,8 +2117,15 @@ struct
 	let
 	    val r    = #region i
 	    val id'  = trTypid(env, id)
+(*
 	    val exp' = typExp(env, lab_unknown,
 			      kindExp(env, r, Type.kind(#typ(I.infoTyp typ))))
+*)
+	    val pathexp' = pathExp(env, r, I.name id)
+	    val kindexp' = kindExp(env, r, Type.kind(#typ(I.infoTyp typ)))
+	    val exp1' = typExp(env, lab_con, tupExp(r, #[pathexp', kindexp']))
+	    val exp2' = typExp(env, lab_unknown, kindexp')
+	    val exp' = typExp(env, lab_abbrev, tupExp(r, #[exp1', exp2']))
 	    val dec' = auxDec(id', exp')
 	in
 	    #[dec']

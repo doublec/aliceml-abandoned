@@ -82,6 +82,8 @@ struct
     val _		= Type.lambda : var * typ -> typ	(* verify *)
     val lab_apply	= vallab "apply"
     val _		= Type.apply : typ * typ -> typ		(* verify *)
+    val lab_abbrev	= vallab "abbrev"
+    val _		= Type.abbrev : typ * typ -> typ	(* verify *)
 
     val lab_newVar	= vallab "newVar"
     val _		= Type.newVar : kind * constraint -> var (* verify *)

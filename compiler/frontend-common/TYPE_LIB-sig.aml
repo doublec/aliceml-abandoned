@@ -41,6 +41,7 @@ sig
     val lab_exist :		Label.t
     val lab_lambda :		Label.t
     val lab_apply :		Label.t
+    val lab_abbrev :		Label.t
 
     val lab_newVar :		Label.t
     val lab_kind :		Label.t

@@ -113,6 +113,7 @@ local
 		val exist :		var * typ -> typ
 		val lambda :		var * typ -> typ
 		val apply :		typ * typ -> typ
+		val abbrev :		typ * typ -> typ
 
 		val newVar :		kind * constraint -> var
 		val kind :		typ -> kind
