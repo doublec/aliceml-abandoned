@@ -26,6 +26,11 @@
 #define Assert(Cond)
 #endif
 
+#define Error(s)							\
+  std::fprintf(stderr, "%s:%d error '%s'\n", __FILE__, __LINE__, s);	\
+  static_cast<char *>(NULL)[0] = 0;					\
+  exit(0);
+
 #include "types.hh"
 
 #endif
