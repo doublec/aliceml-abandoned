@@ -13,7 +13,7 @@
 signature IMP_SET =
 sig
     type item
-    type set
+    eqtype set
     type t = set
 
     exception Delete    of item
