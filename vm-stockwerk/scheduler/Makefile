@@ -3,7 +3,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-OBJS = Scheduler.o
+OBJS = Thread.o ThreadPool.o TaskStack.o Scheduler.o
 
 .PHONY: all header clean distclean
 
