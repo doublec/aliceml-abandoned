@@ -564,6 +564,8 @@ define
 		 end nil}
 	 Rec = {List.toRecord '#' Args}
 	 vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
+      [] 'PolyProdExp'(Info '#[]') then
+	 {TranslateExp 'TupExp'(Info '#[]') Reg VTl State}
       [] 'PolyProdExp'(Info LabelIdRefVec) then
 	 {TranslateExp 'ProdExp'(Info LabelIdRefVec) Reg VTl State}
       [] 'VecExp'(_ '#[]') then
