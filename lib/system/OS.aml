@@ -33,6 +33,8 @@ struct
 	datatype access_mode = A_READ | A_WRITE | A_EXEC
 
 	open UnsafeOS.FileSys
+	fun getApplicationConfigDir appName =
+	    UnsafeOS.FileSys.getApplicationConfigDir() ^ "Alice/" ^ appName
     end
 
     structure Process =

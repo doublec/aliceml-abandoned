@@ -351,6 +351,7 @@ DEFINE0(UnsafeOS_FileSys_getApplicationConfigDir) {
   hRes = SHGetMalloc(&palloc); 
   palloc->Free( (void*)pidl ); 
   palloc->Release();
+  strcat((char *) buffer->GetValue(), "\\");
   RETURN(String::New((char *) buffer->GetValue())->ToWord());
 #else
   char *envVal = std::getenv("HOME");
