@@ -45,8 +45,9 @@ class OS_Process_getEnv: Procedure {
 public class Execute {
     public static object Main(object obj) {
 	return new object[1] {
-	    new object[6] {                // Process$
+	    new object[7] {                // Process$
 		null,                      //--** Process$.$status
+		null,                      //--** Process$.atExn
 		new OS_Process_exit(),     // Process$.exit
 		1,                         // Process$.failure
 		new OS_Process_getEnv(),   // Process$.getEnv
