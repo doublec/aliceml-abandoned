@@ -85,8 +85,8 @@ bugs, they might not even build! You are basically on your own.</P>
 <?php subsection("cvs-info", "CVS information") ?>
 
 <PRE class=code>
-CVSROOT:  :pserver:anoncvs@cvs.ps.uni-sb.de:/services/ps/CVS
-Module:   stockhausen
+CVSROOT:  :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS
+Module:   alice
 Password: anoncvs</PRE>
 
 <P>The tag for the current release branch is:</P>
@@ -101,14 +101,14 @@ operette3</PRE>
 tools, libraries, and documentation) might look as follows:</P>
 
 <PRE class=code>
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/ps/CVS login
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS login
 (Logging in to anoncvs@cvs.ps.uni-sb.de)
 CVS password: anoncvs
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/ps/CVS get stockhausen</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get alice</PRE>
 
 <P>From the CVS repository you can also access the released version:</P>
 
 <PRE class=code>
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/ps/CVS get -r operette3 stockhausen</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r operette3 alice</PRE>
 
 <?php footing() ?>
