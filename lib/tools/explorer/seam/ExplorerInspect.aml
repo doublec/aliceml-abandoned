@@ -132,9 +132,9 @@ structure ExplorerInspect =
         end
      
     fun inspect t root s =
-	(Inspector.register (createFD s);
-	 Inspector.register (createBool s);
-	 Inspector.register (createFS s);
+	(Inspector.register2 (createFD s);
+	 Inspector.register2 (createBool s);
+	 Inspector.register2 (createFS s);
 	 Inspector.inspectVal t root)
 
   end
