@@ -72,7 +72,8 @@ signature BOOL =
     include BOOL
 
     type t = bool
-    val equal : bool * bool -> bool
+    val equal :   bool * bool -> bool
+    val compare : bool * bool -> order
   end
 
 
@@ -80,8 +81,11 @@ structure Bool : BOOL =
   struct
     open Bool
 
-    type t    = bool
-    val equal = op =
+    type t			= bool
+    val equal			= op =
+    fun compare(false,true)	= LESS
+      | compare(true,false)	= GREATER
+      | compare _		= EQUAL
   end
 
 
@@ -94,9 +98,12 @@ signature OPTION =
   sig
     include OPTION
 
-    type 'a t
+    type 'a t = 'a option
 
     val isNone :	'a option -> bool
+
+    val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool
+    val compare :	('a * 'a -> order) -> 'a option * 'a option -> order
 
     val app :		('a -> unit) -> 'a option -> unit
     val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b
@@ -107,16 +114,25 @@ structure Option : OPTION =
   struct
     open Option
 
-    type 'a t			= 'a option
+    type 'a t				= 'a option
 
-    fun isNone NONE		= true
-      | isNone  _		= false
+    fun isNone NONE			= true
+      | isNone  _			= false
 
-    fun app f  NONE		= ()
-      | app f (SOME x)		= f x
+    fun equal eq (NONE,   NONE)		= true
+      | equal eq (SOME x, SOME y)	= eq(x,y)
+      | equal eq _			= false
 
-    fun fold f b  NONE		= b
-      | fold f b (SOME a)	= f(a,b)
+    fun compare cmp (NONE,   NONE)	= EQUAL
+      | compare cmp (NONE,   SOME _)	= LESS
+      | compare cmp (SOME _, NONE)	= GREATER
+      | compare cmp (SOME x, SOME y)	= cmp(x,y)
+
+    fun app f  NONE			= ()
+      | app f (SOME x)			= f x
+
+    fun fold f b  NONE			= b
+      | fold f b (SOME a)		= f(a,b)
   end
 
 
@@ -139,6 +155,11 @@ signature PAIR =
     val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) pair -> ('c,'d) pair
     val mapFst :	('a -> 'c) -> ('a,'b) pair -> ('c,'b) pair
     val mapSnd :	('b -> 'c) -> ('a,'b) pair -> ('a,'c) pair
+
+    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
+			    ('a,'b) pair * ('a,'b) pair -> bool
+    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+			    ('a,'b) pair * ('a,'b) pair -> order
   end
 
 
@@ -157,6 +178,14 @@ structure Pair : PAIR =
     fun map (f,g) (x,y)	= (f x, g y)
     fun mapFst f  (x,y)	= (f x, y)
     fun mapSnd f  (x,y)	= (x, f y)
+
+    fun equal (equalX,equalY) ((x1,y1), (x2,y2)) =
+	equalX(x1,x2) andalso equalY(y1,y2)
+
+    fun compare (compareX,compareY) ((x1,y1), (x2,y2)) =
+	case compareX(x1,x2)
+	 of EQUAL => compareY(y1,y2)
+	  | other => other
   end
 
 
@@ -185,6 +214,11 @@ signature ALT =
     val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
     val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
     val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+
+    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
+			    ('a,'b) alt * ('a,'b) alt -> bool
+    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+			    ('a,'b) alt * ('a,'b) alt -> order
   end
 
 
@@ -223,6 +257,17 @@ structure Alt : ALT =
       | mapFst f (SND x)	= SND x
     fun mapSnd f (FST x)	= FST x
       | mapSnd f (SND x)	= SND(f x)
+
+    fun equal (equalX,equalY) =
+	fn (FST x1, FST x2)	=> equalX(x1,x2)
+	 | (SND y1, SND y2)	=> equalY(y1,y2)
+	 | _			=> false
+
+    fun compare (compareX,compareY) =
+	fn (FST x1, FST x2)	=> compareX(x1,x2)
+	 | (SND y1, SND y2)	=> compareY(y1,y2)
+	 | (FST _,  SND _ )	=> LESS
+	 | (SND _,  FST _ )	=> GREATER
   end
 
 
@@ -250,6 +295,9 @@ signature LIST =
 
     val contains :	''a list -> ''a -> bool
     val notContains :	''a list -> ''a -> bool
+
+    val equal :		('a * 'a -> bool) -> 'a list * 'a list -> bool
+    val compare :	('a * 'a -> order) -> 'a list * 'a list -> order
 
     val isSorted :	('a * 'a -> order) -> 'a list -> bool
     val sort :		('a * 'a -> order) -> 'a list -> 'a list
@@ -298,6 +346,20 @@ structure List : LIST =
       | contains'(y, x::xs)	= y = x orelse contains'(y,xs)
 
     fun notContains xs y	= Bool.not(contains'(y,xs))
+
+    fun equal  eq (xs,ys)	= equal'(eq,xs,ys)
+    and equal'(eq, [], [])	= true
+      | equal'(eq, x::xs,y::ys)	= eq(x,y) andalso equal'(eq,xs,ys)
+      | equal' _		= false
+
+    fun compare  cmp (xs,ys)	= compare'(cmp,xs,ys)
+    and compare'(cmp, [], [])	= EQUAL
+      | compare'(cmp, [], _ )	= LESS
+      | compare'(cmp, _,  [])	= GREATER
+      | compare'(cmp, x::xs, y::ys) =
+				  case cmp(x,y)
+				    of EQUAL => compare'(cmp,xs,ys)
+				     | other => other
 
     fun isSorted  compare xs	= isSorted'(compare, xs)
     and isSorted'(compare,(nil|_::nil))
@@ -748,6 +810,9 @@ signature VECTOR =
     val contains :	''a vector -> ''a -> bool
     val notContains :	''a vector -> ''a -> bool
 
+    val equal :		('a * 'a -> bool) -> 'a vector * 'a vector -> bool
+    val compare :	('a * 'a -> order) -> 'a vector * 'a vector -> order
+
     val isSorted :	('a * 'a -> order) -> 'a vector -> bool
     val sort :		('a * 'a -> order) -> 'a vector -> 'a vector
   end
@@ -804,6 +869,22 @@ structure Vector : VECTOR =
 				      if f x then SOME x
 					     else find'(f,v,i+1)
 				  end
+
+    fun equal  eq (v1,v2)	= length v1 = length v2 andalso
+				  equal'(eq,v1,v2,0)
+    and equal'(eq,v1,v2,i)	= i = length v1 orelse
+				  eq(sub(v1,i), sub(v2,i)) andalso
+				  equal'(eq,v1,v2,i+1)
+
+    fun compare  cmp (v1,v2)	= compare'(cmp,v1,v2,0)
+    and compare'(cmp,v1,v2,i)	= case (i = length v1, i = length v2)
+				    of (true,  true)  => EQUAL
+				     | (true,  false) => LESS
+				     | (false, true)  => GREATER
+				     | (false, false) =>
+				  case cmp(sub(v1,i), sub(v2,i))
+				    of EQUAL => compare'(cmp,v1,v2,i+1)
+				     | other => other
 
     fun sort compare		= sort'(List.sort compare)
     and sort' sortList v	= fromList(sortList(toList v))
@@ -961,6 +1042,9 @@ signature ARRAY =
     val exists :	('a -> bool) -> 'a array -> bool
     val find :		('a -> bool) -> 'a array -> 'a option
 
+    val equal :		('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
+    val compare :	('a * 'a -> order) -> 'a array * 'a array -> order
+
     val isSorted :	('a * 'a -> order) -> 'a array -> bool
     val sort :		('a * 'a -> order) -> 'a array -> unit
   end
@@ -1017,6 +1101,22 @@ structure Array : ARRAY =
 				      if f x then SOME x
 					     else find'(f,a,i+1)
 				  end
+
+    fun equal  eq (a1,a2)	= length a1 = length a2 andalso
+				  equal'(eq,a1,a2,0)
+    and equal'(eq,a1,a2,i)	= i = length a1 orelse
+				  eq(sub(a1,i), sub(a2,i)) andalso
+				  equal'(eq,a1,a2,i+1)
+
+    fun compare  cmp (a1,a2)	= compare'(cmp,a1,a2,0)
+    and compare'(cmp,a1,a2,i)	= case (i = length a1, i = length a2)
+				    of (true,  true)  => EQUAL
+				     | (true,  false) => LESS
+				     | (false, true)  => GREATER
+				     | (false, false) =>
+				  case cmp(sub(a1,i), sub(a2,i))
+				    of EQUAL => compare'(cmp,a1,a2,i+1)
+				     | other => other
 
     fun isSorted compare a	= isSorted'(compare,a,1)
     and isSorted'(compare,a,i)	= i >= length a orelse

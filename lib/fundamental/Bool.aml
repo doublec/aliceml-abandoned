@@ -14,21 +14,25 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import datatype bool         from "ToplevelTypes"
-import val op =              from "ToplevelValues"
-import signature BOOL        from "BOOL-sig"
+import structure __pervasive   from "Pervasive"
+import datatype bool and order from "ToplevelTypes"
+import val op =                from "ToplevelValues"
+import signature BOOL          from "BOOL-sig"
 
 structure Bool :> BOOL =
 struct
-    datatype bool	= datatype bool
-    type     t		= bool						(**)
+    datatype bool		= datatype bool
+    type     t			= bool					(**)
 
-    val equal		= op =
+    val equal			= op =					(**)
 
-    fun not true	= false
-      | not false	= true
+    fun compare(false,true)	= LESS					(**)
+      | compare(true,false)	= GREATER
+      | compare _		= EQUAL
 
-    fun toString true	= "true"
-      | toString false	= "false"
+    fun not true		= false
+      | not false		= true
+
+    fun toString true		= "true"
+      | toString false		= "false"
 end

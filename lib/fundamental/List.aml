@@ -170,6 +170,19 @@ struct
     and tabulate'(n,f,i,xs) where (i=n)	= rev xs
       | tabulate'(n,f,i,xs)		= tabulate'(n, f, i+1, f i :: xs)
 
+    fun equal  eq (xs,ys)		= equal'(eq,xs,ys)		(**)
+    and equal'(eq, [], [])		= true
+      | equal'(eq, x::xs, y::ys)	= eq(x,y) andalso equal'(eq,xs,ys)
+      | equal' _			= false
+
+    fun compare  cmp (xs,ys)		= compare'(cmp,xs,ys)		(**)
+    and compare'(cmp, [], [])		= EQUAL
+      | compare'(cmp, [], _ )		= LESS
+      | compare'(cmp, _,  [])		= GREATER
+      | compare'(cmp, x::xs, y::ys)	= case cmp(x,y)
+					    of EQUAL => compare'(cmp,xs,ys)
+					     | other => other
+
     fun isSorted  compare xs		= isSorted'(compare, xs)	(**)
     and isSorted'(compare,(nil|_::nil))	= true
       | isSorted'(compare, x1::(xs as x2::_))

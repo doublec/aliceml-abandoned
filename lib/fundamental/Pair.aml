@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,6 +15,7 @@
  *)
 
 import structure __pervasive from "Pervasive"
+import datatype order        from "ToplevelTypes"
 import signature PAIR        from "PAIR-sig"
 
 
@@ -33,4 +34,12 @@ struct
     fun map (f,g) (x,y)	= (f x, g y)
     fun mapFst f  (x,y)	= (f x, y)
     fun mapSnd f  (x,y)	= (x, f y)
+
+    fun equal (equalX,equalY) ((x1,y1), (x2,y2)) =
+	equalX(x1,x2) andalso equalY(y1,y2)
+
+    fun compare (compareX,compareY) ((x1,y1), (x2,y2)) =
+	case compareX(x1,x2)
+	 of EQUAL => compareY(y1,y2)
+	  | other => other
 end

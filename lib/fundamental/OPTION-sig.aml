@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import type unit and bool    from "ToplevelTypes"
+import structure __pervasive        from "Pervasive"
+import type unit and bool and order from "ToplevelTypes"
 
 
 signature OPTION =
@@ -24,6 +24,9 @@ sig
     type     'a t      = 'a option					(**)
 
     exception Option
+
+    val equal :		('a * 'a -> bool) -> 'a option * 'a option -> bool (**)
+    val compare :	('a * 'a -> order) -> 'a option * 'a option -> order (**)
 
     val getOpt :	'a option * 'a -> 'a
     val isSome :	'a option -> bool

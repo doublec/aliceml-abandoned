@@ -15,7 +15,7 @@
  *)
 
 import structure __pervasive from "Pervasive"
-import type string           from "ToplevelTypes"
+import type string and order from "ToplevelTypes"
 
 
 signature BOOL =
@@ -24,6 +24,7 @@ sig
     type     t    = bool						(**)
 
     val equal :		bool * bool -> bool				(**)
+    val compare :	bool * bool -> order				(**)
 
     val not :		bool -> bool
 

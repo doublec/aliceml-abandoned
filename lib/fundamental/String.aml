@@ -71,12 +71,12 @@ struct
     val equal			= op =
 
     fun collate  cmp (s1,s2)	= collate'(cmp,s1,s2,0)
-    and collate'(cmp,s1,s2,i) where (i = size s1)
-				= if size s1 = size s2 then EQUAL
-						       else LESS
-      | collate'(cmp,s1,s2,i) where (i = size s2)
-				= GREATER
-      | collate'(cmp,s1,s2,i)	= case cmp(sub'(s1,i), sub'(s2,i))
+    and collate'(cmp,s1,s2,i)	= case (i = size s1, i = size s2)
+				    of (true,  true)  => EQUAL
+				     | (true,  false) => LESS
+				     | (false, true)  => GREATER
+				     | (false, false) =>
+				  case cmp(sub'(s1,i), sub'(s2,i))
 				    of EQUAL => collate'(cmp,s1,s2,i+1)
 				     | other => other
 

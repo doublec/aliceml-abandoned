@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive from "Pervasive"
-import type unit and bool    from "ToplevelTypes"
+import structure __pervasive        from "Pervasive"
+import type unit and bool and order from "ToplevelTypes"
 
 
 signature ALT =								(**)
@@ -38,4 +38,9 @@ sig
     val map :		('a -> 'c) * ('b -> 'd) -> ('a,'b) alt -> ('c,'d) alt
     val mapFst :	('a -> 'c) -> ('a,'b) alt -> ('c,'b) alt
     val mapSnd :	('b -> 'c) -> ('a,'b) alt -> ('a,'c) alt
+
+    val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
+			    ('a,'b) alt * ('a,'b) alt -> bool
+    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+			    ('a,'b) alt * ('a,'b) alt -> order
 end

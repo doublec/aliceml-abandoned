@@ -125,6 +125,22 @@ struct
       | find'(f,v,i) withval x = sub'(v,i) where (f x)	= SOME x
       | find'(f,v,i)					= find'(f,v,i+1)
 
+    fun equal  eq (v1,v2)	= length v1 = length v2 andalso		(**)
+				  equal'(eq,v1,v2,0)
+    and equal'(eq,v1,v2,i)	= i = length v1 orelse
+				  eq(sub'(v1,i), sub'(v2,i)) andalso
+				  equal'(eq,v1,v2,i+1)
+
+    fun compare  cmp (v1,v2)	= compare'(cmp,v1,v2,0)			(**)
+    and compare'(cmp,v1,v2,i)	= case (i = length v1, i = length v2)
+				    of (true,  true)  => EQUAL
+				     | (true,  false) => LESS
+				     | (false, true)  => GREATER
+				     | (false, false) =>
+				  case cmp(sub'(v1,i), sub'(v2,i))
+				    of EQUAL => compare'(cmp,v1,v2,i+1)
+				     | other => other
+
     fun isSorted compare v	= isSorted'(compare,v,1)		(**)
     and isSorted'(compare,v,i)	= i >= length v orelse
 				  compare(sub(v,i-1), sub(v,i)) <> GREATER

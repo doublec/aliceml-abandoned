@@ -69,6 +69,9 @@ sig
     val exists :	('a -> bool) -> 'a array -> bool		(**)
     val find :		('a -> bool) -> 'a array -> 'a option		(**)
 
+    val equal :		('a * 'a -> bool) -> 'a array * 'a array -> bool (**)
+    val compare :	('a * 'a -> order) -> 'a array * 'a array -> order (**)
+
     val isSorted :	('a * 'a -> order) -> 'a array -> bool		(**)
     val sort :		('a * 'a -> order) -> 'a array -> unit		(**)
 end
