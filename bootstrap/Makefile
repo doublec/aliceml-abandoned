@@ -64,6 +64,7 @@ clean:
 	-rm -f *.ozf
 
 veryclean: clean
+	-rm -rf CM
 	-rm -f alicec-mozart.exe
 	-rm -f alicedep.*
 	-rm -f alicec-mozart.* alice-mozart.*
