@@ -79,8 +79,9 @@ struct
 	| DatBindDuplicate	of TyCon.t
 	| DatBindConDuplicate	of VId.t
 	| ConBindDuplicate	of VId.t
-	| DconBindDuplicate	of VId.t
-	| DconBindNonCon
+	| ExtBindDuplicate	of TyCon.t
+	| EconBindDuplicate	of VId.t
+	| EconBindNonCon
 	| StrBindDuplicate	of StrId.t
 	| SigBindDuplicate	of SigId.t
 	(* Structure expressions *)
@@ -93,7 +94,7 @@ struct
 	| SpecStrIdDuplicate	of StrId.t
 	| SpecSigIdDuplicate	of SigId.t
 	| ConDescDuplicate	of VId.t
-	| DconDescNonCon
+	| EconDescNonCon
 	(* Imports and items *)
 	| ImpFixDuplicate	of VId.t
 	| ImpVIdDuplicate	of VId.t
@@ -105,11 +106,12 @@ struct
 	| TypItemUnbound	of TyCon.t
 	| DatItemUnbound	of TyCon.t
 	| ConItemUnbound	of VId.t
-	| DconItemUnbound	of VId.t
+	| ExtItemUnbound	of TyCon.t
+	| EconItemUnbound	of VId.t
 	| StrItemUnbound	of StrId.t
 	| SigItemUnbound	of SigId.t
 	| ConItemNonCon		of VId.t
-	| DconItemNonCon	of VId.t
+	| EconItemNonCon	of VId.t
 	(* Sharing translation *)
 	| SharingExternalTy	of AbstractGrammar.typid
 	| SharingExternalSig	of AbstractGrammar.infid
@@ -238,9 +240,12 @@ struct
 	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
       | ppError(ConBindDuplicate vid) =
 	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
-      | ppError(DconBindDuplicate vid) =
+      | ppError(ExtBindDuplicate tycon) =
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","binding","group"])
+      | ppError(EconBindDuplicate vid) =
 	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
-      | ppError(DconBindNonCon) =
+      | ppError(EconBindNonCon) =
 	  textpar["non-constructor","on","constructor","binding",
 		  "right","hand","side"]
       | ppError(StrBindDuplicate strid) =
@@ -272,7 +277,7 @@ struct
 		  [ppSigId sigid,"in","signature"])
       | ppError(ConDescDuplicate vid) =
 	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
-      | ppError(DconDescNonCon) =
+      | ppError(EconDescNonCon) =
 	  textpar["non-constructor","on","constructor","description",
 		  "right","hand","side"]
       (* Imports and items *)
@@ -297,7 +302,9 @@ struct
 	  ppUnboundImport(classTyCon, tycon)
       | ppError(ConItemUnbound vid) =
 	  ppUnboundImport(classVId, vid)
-      | ppError(DconItemUnbound vid) =
+      | ppError(ExtItemUnbound tycon) =
+	  ppUnboundImport(classTyCon, tycon)
+      | ppError(EconItemUnbound vid) =
 	  ppUnboundImport(classVId, vid)
       | ppError(StrItemUnbound strid) =
 	  ppUnboundImport(classStrId, strid)
@@ -306,7 +313,7 @@ struct
       | ppError(ConItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
 		  "not","a","proper","constructor"]
-      | ppError(DconItemNonCon vid) =
+      | ppError(EconItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
 		  "not","a","proper","constructor"]
       (* Sharing translation *)
