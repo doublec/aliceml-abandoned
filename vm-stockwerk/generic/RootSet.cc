@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -11,11 +11,11 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/RootSet.hh"
+#pragma implementation "generic/RootSet.hh"
 #endif
 
-#include "emulator/RootSet.hh"
 #include "adt/Queue.hh"
+#include "generic/RootSet.hh"
 
 class Element: private Block {
 private:
