@@ -10,23 +10,11 @@
  *   $Revision$
  *)
 
+import signature RESOLVER_HANDLER from "RESOLVER_HANDLER-sig"
+
 signature RESOLVER =
     sig
-	structure Handler:
-	    sig
-		type handler
-		type t = handler
-
-		exception Syntax
-
-		val default: handler
-		val root: string -> handler
-		val cache: string -> handler
-		val prefix: string * string -> handler
-		val pattern: string * string -> handler    (* Syntax *)
-
-		val parse: string -> handler list          (* Syntax *)
-	    end
+	structure Handler: RESOLVER_HANDLER
 
 	type resolver
 	type t = resolver

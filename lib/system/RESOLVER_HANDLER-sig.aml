@@ -1,0 +1,27 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature RESOLVER_HANDLER =
+    sig
+	type handler
+	type t = handler
+
+	exception Syntax
+
+	val default: handler
+	val root: string -> handler
+	val cache: string -> handler
+	val prefix: string * string -> handler
+	val pattern: string * string -> handler    (* Syntax *)
+
+	val parse: string -> handler list          (* Syntax *)
+    end

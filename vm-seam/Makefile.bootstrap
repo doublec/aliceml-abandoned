@@ -174,9 +174,10 @@ LIBSYSTEMSOURCES0 = \
 	PICKLE-sig.aml Pickle.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
 	HTTP_CLIENT-sig.aml HttpClient.aml \
-	RESOLVER-sig.aml Resolver.aml URL_MAP-sig.aml UrlMap.aml \
-	COMPONENT_MANAGER-sig.aml ComponentManager.aml Boot.aml \
-	PP_VALUE-sig.aml PPValue.aml PP_COMPONENT-sig.aml PPComponent.aml
+	RESOLVER_HANDLER-sig.aml RESOLVER-sig.aml Resolver.aml \
+	URL_MAP-sig.aml UrlMap.aml COMPONENT_MANAGER-sig.aml \
+	ComponentManager.aml Boot.aml PP_VALUE-sig.aml PPValue.aml \
+	PP_COMPONENT-sig.aml PPComponent.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
