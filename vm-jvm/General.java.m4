@@ -255,6 +255,16 @@ final public class General {
     }
     _FIELD(General,neq);
 
+    _BUILTIN(Print) {
+	_APPLY(val) {
+	    System.out.println(val);
+	    return Constants.dmlunit;
+	}
+    }
+    _FIELD(General,print);
+    static {
+	Builtin.builtins.put("print",print);
+    }
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
 
