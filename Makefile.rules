@@ -13,8 +13,8 @@
 
 .PHONY: all clean veryclean distclean
 
-%.o: %.cc
+%.$(OBJEXT): %.cc
 	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
 
-%.s: %.cc
+%.$(OBJEXT): %.cc
 	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -S $< -o $@

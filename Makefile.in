@@ -23,7 +23,7 @@ include $(SRCTOP)/Makefile.rules
 SUBDIRS = generic adt store
 
 SOURCES = Base.cc InitSeam.cc SeamMain.cc
-OBJS = $(SOURCES:%.cc=%.o)
+OBJS = $(SOURCES:%.cc=%.$(OBJEXT))
 
 @SET_MAKE@
 
@@ -31,16 +31,16 @@ OBJS = $(SOURCES:%.cc=%.o)
 ## Enumerate seam.dll files
 ##
 STORE_SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc JITStore.cc
-STORE_OBJS = $(STORE_SOURCES:%.cc=store/%.o)
+STORE_OBJS = $(STORE_SOURCES:%.cc=store/%.$(OBJEXT))
 ADT_SOURCES = ChunkMap.cc Outline.cc
-ADT_OBJS = $(ADT_SOURCES:%.cc=adt/%.o)
+ADT_OBJS = $(ADT_SOURCES:%.cc=adt/%.$(OBJEXT))
 GENERIC_SOURCES = \
 	Outline.cc Debug.cc RootSet.cc UniqueString.cc \
 	StackFrame.cc TaskStack.cc IOHandler.cc IODesc.cc SignalHandler.cc \
 	Scheduler.cc Transients.cc Worker.cc Interpreter.cc \
 	Primitive.cc PushCallWorker.cc BindFutureWorker.cc \
 	Unpickler.cc Pickler.cc Profiler.cc Broker.cc
-GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.o)
+GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.$(OBJEXT))
 SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
 
 ##
@@ -91,10 +91,11 @@ all: seam.exe
 $(SUBDIRS): %:
 	(cd $@ && $(MAKE) all)
 
-seam.dll: Base.o InitSeam.o store adt generic
-	$(LD) $(LDFLAGS) -shared -o $@ Base.o InitSeam.o $(SEAM_OBJS) $(LIBS)
+seam.dll: Base.$(OBJEXT) InitSeam.$(OBJEXT) store adt generic
+	$(LD) $(LDFLAGS) -shared -o $@ Base.$(OBJEXT) InitSeam.$(OBJEXT) \
+	$(SEAM_OBJS) $(LIBS)
 
-seam.exe: SeamMain.o seam.dll
+seam.exe: SeamMain.$(OBJEXT) seam.dll
 	$(LD) $(LDFLAGS) -o $@ $< seam.dll
 
 clean: clean-local
