@@ -109,9 +109,11 @@ INSTALLFILES = \
 	$(INSTALLLIBFILES0:%=$(PREFIX)/lib/%)
 MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
-.PHONY: all install clean
+.PHONY: all install clean first
 
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
+
+first: $(ALLFILES)
 
 boot-%:
 	OZ_LOAD=prefix=x-alice\\:/=./:cache=$(OZHOME)/cache/ \
