@@ -16,7 +16,11 @@ import
    Property(get put)
    System(printError onToplevel)
    Error(registerFormatter printException)
-   BootComponent('boot': Boot) at 'lib/system/Boot'
+   OS(getEnv)
+   Module(manager)
+   DefaultURL(functorExt ozScheme nameToUrl)
+   URL(toString)
+   Pickle(load)
 define
    {Error.registerFormatter alice
     fun {$ E} T in
@@ -66,12 +70,93 @@ define
        end
     end}
 
+   Trace = case {OS.getEnv 'ALICE_TRACE_BOOT_LINKER'} of false then
+	      proc {$ _ _} skip end
+	   else
+	      proc {$ Prefix Key}
+		 {System.printError '[boot-linker] '#Prefix#' '#Key#'\n'}
+	      end
+	   end
+
+   ComponentTable = {NewDictionary}
+
+   AliceHome = case {OS.getEnv 'STOCKHOME'} of false then
+		  {System.printError 'alicerun: STOCKHOME not set\n'}
+		  {Application.exit 1}
+	       elseof S then S#'/'
+	       end
+
+   ModuleManager = {New Module.manager init()}
+
+   fun {Localize Key}
+      {VirtualString.toAtom AliceHome#Key#'.ozf'}
+   end
+
+   local
+      fun {ParentDir Base Offset}
+	 if Offset == 0 then Offset
+	 elsecase {ByteString.get Base Offset - 1} of &/ then Offset - 1
+	 else {ParentDir Base Offset - 1}
+	 end
+      end
+
+      fun {ResolveSub Base Rel Offset} Offset2 in
+	 Offset2 = {ParentDir Base Offset}
+	 case Rel of &.|&.|&/|Rest then {ResolveSub Base Rest Offset2}
+	 elseif Offset2 == 0 then Rel
+	 else {ByteString.slice Base 0 Offset2}#'/'#Rel
+	 end
+      end
+   in
+      fun {Resolve Base Rel}
+	 {VirtualString.toAtom
+	  case {VirtualString.toString Rel} of &x|&-|&o|&z|&:|_ then Rel
+	  elseof Rel2 then Base2 in
+	     Base2 = {ByteString.make Base}
+	     {ResolveSub Base2 Rel2 {ByteString.width Base2}}
+	  end}
+      end
+   end
+
+   proc {Link Key ?Mod}
+      {Trace loading Key}
+      case {Atom.toString Key} of &x|&-|&o|&z|&:|_ then
+	 Mod = {ModuleManager link(url: Key $)}
+	 {Trace entering Key}
+	 {Dictionary.put ComponentTable Key 'NONE'#Mod}
+      else F Imports in
+	 F = {Pickle.load {Localize Key}}
+	 {Trace linking Key}
+	 Imports = {Record.mapInd F.'import'
+		    fun {$ ModName Desc} Key2 in
+		       Key2 = case {CondSelect Desc 'from' unit} of unit then
+				 {VirtualString.toAtom
+				  {URL.toString
+				   {DefaultURL.nameToUrl ModName}}}
+			      elseof S then {Resolve Key S}
+			      end
+		       if {Dictionary.member ComponentTable Key2} then
+			  {Dictionary.get ComponentTable Key2}.2
+		       else {Link Key2}
+		       end
+		    end}
+	 {Trace applying Key}
+	 Mod = {F.apply {Adjoin Imports 'IMPORT'}}
+	 {Trace entering Key}
+	 {Dictionary.put ComponentTable Key
+	  case F.'export' of sig(Sig) andthen Sig \= unit then 'SOME'(Sig)
+	  else 'NONE'
+	  end#Mod}
+      end
+   end
+
    case {Application.getArgs plain} of Name|Rest then
       {Property.put 'alice.rootUrl' Name}
+      {Property.put 'alice.initialComponentTable' ComponentTable}
       {Property.put 'ozd.args' Rest}
       {Property.put 'errors.depth' 20}
       {Property.put 'errors.width' 10}
-      {Boot {ByteString.make Name} _}
+      {{Link 'lib/system/Boot'}.boot {ByteString.make Name} _}
    [] nil then
       {System.printError 'Usage: alicerun <name> <args> ...\n'}
       {Application.exit 2}
