@@ -303,14 +303,16 @@ struct
 		    val othersnakes = 
 			    List.filter (fn x => not (snake = x)) snakes
 		    val hit = hitSnake snake othersnakes
-		in
-		    Array2.update(a,r,c, P.SNAKE_HEAD(dir,color));
+		    
+                    fun place () = Array2.update(a,r,c, P.SNAKE_HEAD(dir,color)) 
+                in
 		    if hit
 			then killSnake snake
 		    else 
 			case collObject of
-			 P.EMPTY    => ()
+			 P.EMPTY    => place () 
 		       | P.GOODY n  => (Snake.eat (snake,n); 
+                                        place ();
                                         eaters := snake :: !eaters)
 		       | P.WALL     => killSnake snake
                        | P.GATE (_, P.CLOSED) => killSnake snake
