@@ -69,6 +69,7 @@ UNFINISHED: obsolete after bootstrapping:
 	| CaseExp   of exp_info * exp * match list	(* case switch *)
 	| RaiseExp  of exp_info * exp			(* exception raise *)
 	| HandleExp of exp_info * exp * match list	(* exception handler *)
+	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| LetExp    of exp_info * dec list * exp	(* local binding *)
 
     and 'a field = Field of 'a field_info * lab * 'a
@@ -155,6 +156,7 @@ UNFINISHED: obsolete after bootstrapping:
       | infoExp(CaseExp(i,_,_))		= i
       | infoExp(RaiseExp(i,_))		= i
       | infoExp(HandleExp(i,_,_))	= i
+      | infoExp(LazyExp(i,_))		= i
       | infoExp(LetExp(i,_,_))		= i
 
     fun infoField(Field(i,_,_))		= i
