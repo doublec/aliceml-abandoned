@@ -39,7 +39,7 @@
 inline int mydiv(signed int a, signed int b) {
   // This function is only here to bypass a constant folding bug in g++.
   // If we define RETURN_WORD as
-  //   RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
+  //   RETURN_INT(STATIC_CAST(s_int, (w) * NONBITS_EXP) / NONBITS_EXP)
   // then RETURN_WORD(0x80000000) evaluates to RETURN_WORD(0x80000000)
   // instead of RETURN_WORD(0).
   return a / b;
@@ -47,14 +47,14 @@ inline int mydiv(signed int a, signed int b) {
 
 #define DECLARE_WORDN(w, x, n)						\
   u_int w = Store::WordToInt(x);					\
-  if (static_cast<s_int>(w) == INVALID_INT) { REQUEST(x); } else {}	\
-  w &= static_cast<u_int>(-1) >> (STORE_WORD_WIDTH - n);
+  if (STATIC_CAST(s_int, w) == INVALID_INT) { REQUEST(x); } else {}	\
+  w &= STATIC_CAST(u_int, -1) >> (STORE_WORD_WIDTH - n);
 #define DECLARE_WORD(w, x) DECLARE_WORDN(w, x, WORD_PRECISION)
 #define DECLARE_LARGE_WORD(w, x) DECLARE_WORDN(w, x, LARGE_WORD_PRECISION)
 #define RETURN_WORD(w)							\
-  RETURN_INT(mydiv(static_cast<s_int>((w) * NONBITS_EXP), NONBITS_EXP))
+  RETURN_INT(mydiv(STATIC_CAST(s_int, (w) * NONBITS_EXP), NONBITS_EXP))
 #define RETURN_LARGE_WORD(w)						\
-  RETURN_INT(mydiv(static_cast<s_int>((w) * LARGE_WORD_NONBITS_EXP),	\
+  RETURN_INT(mydiv(STATIC_CAST(s_int, (w) * LARGE_WORD_NONBITS_EXP),	\
 		   LARGE_WORD_NONBITS_EXP))
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
@@ -110,7 +110,7 @@ DEFINE2(Word_oparithshr) {
   if (j > WORD_PRECISION - 1) j = WORD_PRECISION - 1; // see above
   //--** this implementation can be improved on many architectures
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_WORD((i >> j) | ~(static_cast<u_int>(-1) >> (j + NONBITS)));
+    RETURN_WORD((i >> j) | ~(STATIC_CAST(u_int, -1) >> (j + NONBITS)));
   } else {
     RETURN_WORD(i >> j);
   }
@@ -147,7 +147,7 @@ WORD_WORD_TO_WORD_OP(Word_orb, |)
 
 DEFINE1(Word_toInt) {
   DECLARE_WORD(i, x0);
-  if (i > static_cast<u_int>(MAX_VALID_INT))
+  if (i > STATIC_CAST(u_int, MAX_VALID_INT))
     RAISE(PrimitiveTable::General_Overflow);
   RETURN_INT(i);
 } END
@@ -155,7 +155,7 @@ DEFINE1(Word_toInt) {
 DEFINE1(Word_toIntX) {
   DECLARE_WORD(i, x0);
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_INT(i | ~(static_cast<u_int>(-1) >> NONBITS));
+    RETURN_INT(i | ~(STATIC_CAST(u_int, -1) >> NONBITS));
   } else {
     RETURN_INT(i);
   }
@@ -169,7 +169,7 @@ DEFINE1(Word_toLarge) {
 DEFINE1(Word_toLargeX) {
   DECLARE_WORD(i, x0);
   if (i & (1 << (WORD_PRECISION - 1))) {
-    RETURN_LARGE_WORD(i | ~(static_cast<u_int>(-1) >> NONBITS));
+    RETURN_LARGE_WORD(i | ~(STATIC_CAST(u_int, -1) >> NONBITS));
   } else {
     RETURN_LARGE_WORD(i);
   }
