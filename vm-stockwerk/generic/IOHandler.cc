@@ -14,7 +14,11 @@
 #pragma implementation "emulator/IOHandler.hh"
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <winsock.h>
+#else
 #include <sys/select.h>
+#endif
 
 #include "adt/Queue.hh"
 #include "emulator/IOHandler.hh"
