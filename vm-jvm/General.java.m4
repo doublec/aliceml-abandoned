@@ -355,19 +355,19 @@ final public class General {
 	Builtin.builtins.put("TextIO.print",print);
     }
 
-    _BUILTIN(Builtin) {
+    _BUILTIN(Bi) {
 	_APPLY(val) {
 	    if (val instanceof STRING) {
-		return Builtin.getBuiltin.(val);
+		return Builtin.getBuiltin((STRING) val);
 	    } else {
 		_error("argument not string",val);
 	    }
 	}
     }
-    _FIELD(General,builtin);
+    _FIELD(General,bi);
     static {
-	Builtin.builtins.put("builtin",builtin);
-	Builtin.builtins.put("General.builtin",builtin);
+	Builtin.builtins.put("builtin",bi);
+	Builtin.builtins.put("General.builtin",bi);
     }
     // val exnName : exn -> string
     // val exnMessage : exn -> string
