@@ -114,6 +114,7 @@ structure CodeGen =
 			  args);
 			 fV.exit();
 			 freeVarsFun idbodys')
+		      | freeVarsFun nil = ()
 		in
 		    freeVarsFun idbodys
 		end
@@ -818,11 +819,6 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 
-			fun tupOpt (id''::rest) =
-			    idCode id'' ::
-			    tupOpt rest
-			  | tupOpt nil = nil
-
 			val lgt = length ids
 		    in
 			if lgt = 0
@@ -834,43 +830,93 @@ structure CodeGen =
 			else
 			    stampcode' ::
 			    (if lgt >=2 andalso lgt <=4 then
-				 (case lgt of
-				      2 => Instanceof CTuple2 ::
-					  Ifeq elselabel ::
-					  stampcode' ::
-					  Checkcast CTuple2 ::
-					  Multi (tupOpt ids) ::
-					  Invokevirtual
-					  (CTuple2, "setContent",
-					   ([Classsig CVal,
-					     Classsig CVal],
-					    [Voidsig])) ::
-					  nil
-				    | 3 => Instanceof CTuple3 ::
-					  Ifeq elselabel ::
-					  stampcode' ::
-					  Checkcast CTuple3 ::
-					  Multi (tupOpt ids) ::
-					  Invokevirtual
-					  (CTuple3, "setContent",
-					   ([Classsig CVal,
-					     Classsig CVal,
-					     Classsig CVal],
-					    [Voidsig])) ::
-					  nil
-				    | 4 => Instanceof CTuple4 ::
-					  Ifeq elselabel ::
-					  stampcode' ::
-					  Checkcast CTuple4 ::
-					  Multi (tupOpt ids) ::
-					  Invokevirtual
-					  (CTuple4, "setContent",
-					   ([Classsig CVal,
-					     Classsig CVal,
-					     Classsig CVal,
-					     Classsig CVal],
-					    [Voidsig])) ::
-					  nil)
+				 let
+				     val i0 = hd ids
+				     val r0 = Register.assign
+					 (i0, Register.nextFree())
+				     val _ = FreeVars.setFun (i0, Lambda.top())
+				     val i1 = List.nth (ids, 1)
+				     val r1 = Register.assign
+					 (i1, Register.nextFree())
+				     val _ = FreeVars.setFun (i1, Lambda.top())
+				 in
+				     (case lgt of
+					  2 => Instanceof CTuple2 ::
+					      Ifeq elselabel ::
+					      stampcode' ::
+					      Checkcast CTuple2 ::
+					      Dup ::
+					      Invokevirtual
+					      (CTuple2, "get0",
+					       ([], [Classsig CVal])) ::
+					      Astore r0 ::
+					      Invokevirtual
+					      (CTuple2, "get1",
+					       ([], [Classsig CVal])) ::
+					      Astore r1 ::
+					      nil
+					| 3 => let
+						   val i2 = List.nth (ids, 2)
+						   val r2 = Register.assign
+						       (i2, Register.nextFree())
+						   val _ = FreeVars.setFun (i2, Lambda.top())
+					       in
+						   Instanceof CTuple3 ::
+						   Ifeq elselabel ::
+						   stampcode' ::
+						   Checkcast CTuple3 ::
+						   Dup ::
+						   Invokevirtual
+						   (CTuple3, "get0",
+						    ([], [Classsig CVal])) ::
+						   Astore r0 ::
+						   Dup ::
+						   Invokevirtual
+						   (CTuple3, "get1",
+						    ([], [Classsig CVal])) ::
+						   Astore r1 ::
+						   Invokevirtual
+						   (CTuple3, "get2",
+						    ([], [Classsig CVal])) ::
+						   Astore r2 ::
+						   nil
+					       end
+				    | 4 => let
+						   val i2 = List.nth (ids, 2)
+						   val r2 = Register.assign
+						       (i2, Register.nextFree())
+						   val _ = FreeVars.setFun (i2, Lambda.top())
+						   val i3 = List.nth (ids, 3)
+						   val r3 = Register.assign
+						       (i3, Register.nextFree())
+						   val _ = FreeVars.setFun (i3, Lambda.top())
+					       in
+						   Instanceof CTuple4 ::
+						   Ifeq elselabel ::
+						   stampcode' ::
+						   Checkcast CTuple4 ::
+						   Dup ::
+						   Invokevirtual
+						   (CTuple4, "get0",
+						    ([], [Classsig CVal])) ::
+						   Astore r0 ::
+						   Dup ::
+						   Invokevirtual
+						   (CTuple4, "get1",
+						    ([], [Classsig CVal])) ::
+						   Astore r1 ::
+						   Dup ::
+						   Invokevirtual
+						   (CTuple4, "get2",
+						    ([], [Classsig CVal])) ::
+						   Astore r2 ::
+						   Invokevirtual
+						   (CTuple4, "get3",
+						    ([], [Classsig CVal])) ::
+						   Astore r3 ::
+						   nil
+					   end)
+				 end
 			     else
 				 Instanceof CDMLTuple ::
 				 Ifeq elselabel ::
@@ -1077,10 +1123,11 @@ structure CodeGen =
 			     In diesem Fall kann apply nicht als statisch
 			     deklariert werden. *)
 			    (Lambda.noSapply ();
-			      Get [Aload 0,
-				   Getfield (Class.getCurrent()^"/"^
-					     (fieldNameFromStamp stamp'),
-					     [Classsig CVal])])
+			     Get [Comment ("FreeVars.getFun stamp' = "^Stamp.toString (FreeVars.getFun stamp')^"; Lambda.top = "^Stamp.toString (Lambda.top())),
+				  Aload 0,
+				  Getfield (Class.getCurrent()^"/"^
+					    (fieldNameFromStamp stamp'),
+					    [Classsig CVal])])
 	    end
 	and
 	    createTuple (ids, init) =
