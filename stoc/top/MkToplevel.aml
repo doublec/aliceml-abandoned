@@ -32,6 +32,16 @@ struct
     val prompt     = "> "
     val contPrompt = "  "
 
+    val useFiles: string list ref = ref nil
+
+    fun use filename =
+	let
+	    val new = Hole.hole ()
+	    val old = Ref.exchange (useFiles, new)
+	in
+	    Hole.fill (new, old @ [filename])
+	end
+
     fun readInput() =
 	case readInput' prompt of [] => NONE
 				| ss => SOME(String.concat ss)
@@ -50,20 +60,37 @@ struct
 		line :: readInput' contPrompt
 	end
 
-    fun eval(source, compilerContext, targetContext) =
+    fun eval compile (source, compilerContext, targetContext) =
 	let
-	    val (compilerContext, target) =
-		RecursiveCompiler.compileString compilerContext source
+	    val (compilerContext, target) = compile compilerContext source
 	in
 	    RecursiveCompiler.Target.apply targetContext target;
 	    (compilerContext, targetContext)
 	end
 	handle RecursiveCompiler.Error => (compilerContext, targetContext)
 
+    val evalString = eval RecursiveCompiler.compileString
+    val evalFile   = eval RecursiveCompiler.compileFile
+
     fun loop(compilerContext, targetContext) =
-	case readInput()
-	  of SOME source => loop(eval(source, compilerContext, targetContext))
-	   | NONE        => TextIO.print "\n"
+	case readInput() of
+	    SOME source =>
+		loopUses(evalString(source, compilerContext, targetContext))
+	  | NONE => TextIO.print "\n"
+    and loopUses (compilerContext, targetContext) =
+	let
+	    val new = Hole.hole ()
+	    val old = Ref.exchange (useFiles, new)
+	in
+	    case old of
+		filename::rest =>
+		    (Hole.fill (new, rest);
+		     loopUses (evalFile (filename,
+					 compilerContext, targetContext)))
+	      | nil =>
+		    (Hole.fill (new, nil);
+		     loop (compilerContext, targetContext))
+	end
 
     fun stot'(_::_) = (usage(); OS.Process.failure)
       | stot' nil =
@@ -72,8 +99,8 @@ struct
 	    val dumpSig = !Debug.dumpElaborationSig
 	    val _ = Debug.dumpElaborationSig := false
 	    val (compilerContext, targetContext) =
-		eval("", RecursiveCompiler.empty,
-			 RecursiveCompiler.Target.C.new())
+		evalString("", RecursiveCompiler.empty,
+			       RecursiveCompiler.Target.C.new())
 	in
 	    Debug.dumpElaborationSig := dumpSig;
 	    Language.implicitImport  := false;
