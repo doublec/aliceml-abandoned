@@ -31,15 +31,29 @@ functor MakeMain(structure Composer: COMPOSER'
 		source
 	    end
 
+	fun isBaseSource desc =
+	    let
+		val stockhome =
+		    case OS.Process.getEnv "STOCKHOME" of
+			SOME s => s
+		      | NONE => "x-alice:"
+	    in
+		case Source.url desc of
+		    SOME url =>
+			stockhome ^ "lib/Base.aml" = Url.toString url
+		  | NONE => false
+	    end
+
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
-	     if !Switches.defaultImport then
+	     if isBaseSource desc then s
+	     else if !Switches.defaultImport then
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
 			 String.map (fn #"\n" => #" " | c => c)
 			 (readFile (homedir ^ "/Default.import")) ^ "\n" ^ s
-		   | NONE =>
+		       | NONE =>
 			 (TextIO.print
 			  "### warning: Default.import not found\n"; s)
 	     else s)
@@ -115,6 +129,9 @@ functor MakeMain(structure Composer: COMPOSER'
 	      | (SOME "file", NONE) =>
 		    Url.toString (Url.setScheme (url, NONE))
 	      | (SOME "x-alice", NONE) =>
+		    (case OS.Process.getEnv "STOCKHOME" of
+			 SOME s => s
+		       | NONE => "") ^
 		    Url.toString (Url.setScheme (Url.makeRelativePath url,
 						 NONE))
 	      | _ => raise Crash.Crash "MakeMain.parseUrl"
