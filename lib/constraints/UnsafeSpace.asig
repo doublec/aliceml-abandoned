@@ -18,10 +18,11 @@ signature UNSAFE_SPACE_COMPONENT =
 		    val space : 'a
 
 		    val ask : 'a
+		    val askVerbose : 'a
 		    val clone : 'a
 		    val commit : 'a
 		    val inject : 'a
 		    val merge : 'a
-		    val eq : 'a
+		    val kill : 'a
 		end
     end

@@ -27,9 +27,20 @@ define
    end
    fun {AskFun S}
       case {Space.ask S}
-      of failed          then 'FAILED'
+      of merged          then 'MERGED'
+      [] failed          then 'FAILED'
       [] succeeded       then 'SUCCEEDED'
       [] alternatives(N) then 'ALTERNATIVES'(N)
+      end
+   end
+   fun {AskVerboseFun S}
+      case {Space.askVerbose S}
+      of suspended(F)        then 'VERBOSE_SUSPENDED'(F)
+      [] merged              then 'VERBOSE_MERGED'
+      [] failed              then 'VERBOSE_FAILED'
+      [] succeeded(stuck)    then 'VERBOSE_SUCCEEDED_STUCK'
+      [] succeeded(entailed) then 'VERBOSE_SUCCEEDED_ENTAILED'
+      [] alternatives(N)     then 'VERBOSE_ALTERNATIVES'(N)
       end
    end
    fun {CloneFun S}
@@ -51,16 +62,18 @@ define
    fun {MergeFun S}
       {Space.merge S}
    end
-   fun {EqFun A B}
-      A == B
+   fun {KillFun S}
+      {Space.kill S}
+      unit
    end
    
    %% Export Interface
-   UnsafeSpace = 'UnsafeSpace'('space'          : SpaceFun
-			       'ask'            : AskFun
-			       'clone'          : CloneFun
-			       'commit'         : CommitFun
-			       'inject'         : InjectFun
-			       'merge'          : MergeFun
-			       'eq'             : EqFun)
+   UnsafeSpace = 'UnsafeSpace'('space'      : SpaceFun
+			       'ask'        : AskFun
+			       'askVerbose' : AskVerboseFun
+			       'clone'      : CloneFun
+			       'commit'     : CommitFun
+			       'inject'     : InjectFun
+			       'merge'      : MergeFun
+			       'kill'       : KillFun)
 end
