@@ -1056,9 +1056,9 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  {
 	    Class *classObj = static_cast<Class *>(type);
 	    Block *p = Store::WordToBlock(wObject);
-	    Assert(p != INVALID_POINTER);
-	    if ((p->GetLabel() != JavaLabel::Object) ||
-		(!(Object::FromWordDirect(wObject)->IsInstanceOf(classObj)))) {
+	    if (p != INVALID_POINTER &&
+		(p->GetLabel() != JavaLabel::Object ||
+		 !Object::FromWordDirect(wObject)->IsInstanceOf(classObj))) {
 	      RAISE_VM_EXCEPTION(ClassCastException, "CHECKCAST");
 	    }
 	  }
@@ -1280,7 +1280,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::FCMPG:
       {
-	Error("not implemented");
+	Float *v2 = JavaFloat::FromWord(frame->Pop());
+	Float *v1 = JavaFloat::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 > v2));
+	pc += 1;
       }
       break;
     case Instr::FCMPL:
