@@ -55,6 +55,12 @@ define
       end
    end
 
+   fun {ImportList Xs}
+      case Xs of '::'(C#Cr) then C|{ImportList Cr}
+      [] nil then nil
+      end
+   end
+
    BuiltinTable =
    builtinTable(
       'show': fun {$ X} {System.show X} '#' end
@@ -146,10 +152,11 @@ define
       'Array.array':
 	 fun {$ N#Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
-	 fun {$ Xs} N A in
-	    N = {Length Xs}
+	 fun {$ Xs} Xs2 N A in
+	    Xs2 = {ImportList Xs}
+	    N = {Length Xs2}
 	    A = {Array.new 0 N - 1 unit}
-	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    {List.forAllInd Xs2 proc {$ I X} {Array.put A I - 1 X} end}
 	    A
 	 end
       'Array.length':
@@ -159,7 +166,7 @@ define
       'Array.update':
 	 fun {$ A#I#X} {Array.put A I X} '#' end
       'Vector.fromList':
-	 fun {$ Xs} {List.toTuple vector Xs} end
+	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
       'Vector.sub':
 	 fun {$ V I} V.(I + 1) end
       'TextIO.stdIn':
