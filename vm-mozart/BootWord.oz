@@ -12,7 +12,7 @@
 
 functor
 import
-   NativeWord at 'Word.so{native}'
+   NativeWord at '/home/kornstae/stockhausen/vm-mozart/Word.so{native}'
 export
    '$BootWord': BootWord
 define
