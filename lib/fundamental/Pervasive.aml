@@ -227,7 +227,7 @@ local
 		  and type Type.var	= var
 		  and type Type.typ	= typ
 		  and type Type.row	= row
-		  and type Type.tkind	= tkind
+		  and type Type.kind	= tkind
 		  and type Type.constraint = constraint
 		  and type Fixity.fix	= fix
 		  and type Fixity.assoc	= assoc
