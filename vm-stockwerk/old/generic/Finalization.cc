@@ -21,7 +21,7 @@ static const int initialSize = 19;
 
 void Finalization::Init() {
   dictionary =
-    WeakDictionary::New(initialSize, Store::IntToWord(0))->ToWord();
+    WeakDictionary::New(initialSize, INVALID_POINTER)->ToWord();
   RootSet::Add(dictionary);
   counter = 0;
 }

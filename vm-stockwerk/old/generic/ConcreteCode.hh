@@ -27,8 +27,7 @@ public:
   using Block::ToWord;
 
   static ConcreteCode *New(TaskManager *taskManager, u_int size) {
-    Block *b = Store::AllocBlockWithHandler(CONCRETECODE_LABEL, SIZE + size,
-					    taskManager->handler);
+    Block *b = Store::AllocBlockWithHandler(SIZE + size, taskManager->handler);
     b->InitArg(TASK_MANAGER_POS, Store::UnmanagedPointerToWord(taskManager));
     return static_cast<ConcreteCode *>(b);
   }
