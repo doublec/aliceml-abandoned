@@ -194,7 +194,7 @@ struct
 			) modules
 		in
 		    Promise.fulfill (p, mods);
-		    Vector.sub (mods, 0)
+		    Future.await (Vector.sub (mods, 0))
 		end
 	    val inf = avoid (bound, #4 (UrlMap.lookupExistent (includes, root)))
 	in
