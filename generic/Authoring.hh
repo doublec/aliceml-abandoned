@@ -25,7 +25,7 @@
     prim_self = prim_self;
 #define DEFINE1(name)					\
   static Interpreter::Result name() {			\
-    Assert(Scheduler::nArgs == ONE_ARG);		\
+    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);	\
     word prim_self = Scheduler::GetAndPopFrame();	\
     prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];
