@@ -3,60 +3,25 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure Label
-from "../../lib/rtt/Label"
-
-import
-    structure Type
-from "../../lib/rtt/Type"
-
-import
-    structure PervasiveType
-from "../../lib/rtt/PervasiveType"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Error
-from "../infrastructure/Error"
-
-import
-    signature INTERMEDIATE_GRAMMAR
-from "../common/INTERMEDIATE_GRAMMAR-sig"
-
-import
-    structure IntermediateGrammar
-from "../common/IntermediateGrammar"
-
-import
-    structure MkLabelSort
-from "MkLabelSort"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    structure IntermediateAux
-from "IntermediateAux"
-
-import
-    signature SIMPLIFY_REC
-from "SIMPLIFY_REC-sig"
+import structure Label                from "../../lib/rtt/Label"
+import structure Type                 from "../../lib/rtt/Type"
+import structure PervasiveType        from "../../lib/rtt/PervasiveType"
+import structure Crash                from "../infrastructure/Crash"
+import structure Source               from "../infrastructure/Source"
+import structure Error                from "../infrastructure/Error"
+import signature INTERMEDIATE_GRAMMAR from "../common/INTERMEDIATE_GRAMMAR-sig"
+import structure IntermediateGrammar  from "../common/IntermediateGrammar"
+import structure MkLabelSort          from "MkLabelSort"
+import structure FlatGrammar          from "FlatGrammar"
+import structure IntermediateAux      from "IntermediateAux"
+import signature SIMPLIFY_REC         from "SIMPLIFY_REC-sig"
 
 structure SimplifyRec :> SIMPLIFY_REC =
     struct
