@@ -13,7 +13,7 @@ fi
 
 case "$mode" in
     makedepend)
-	exec seamtool makedepend "$@"
+	exec seamtool -I$ALICE_HOME/include makedepend "$@"
 	;;
     c++)
 	exec seamtool -I$ALICE_HOME/include c++ "$@"
