@@ -36,7 +36,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val some = TAG 1
 
 		val idDef = TAG 0
-		val wildcard = 0: LargeInt.int
+		val wildcard = 1: LargeInt.int
 
 		val global = TAG 0
 		val local_ = TAG 1
