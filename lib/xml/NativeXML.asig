@@ -1,0 +1,32 @@
+(*
+ * Author:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2002
+ * 
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *) 
+
+signature ALICE_XML =
+    sig
+	structure NativeAliceXML:
+	    sig
+		val parseFile : string -> 'xmlDocPtr
+		val freeDoc : 'xmlDocPtr -> unit
+		val isNull : 'xmlNodePtr -> bool
+		val docGetRootElement : 'xmlDocPtr -> 'xmlNodePtr
+		val children : 'xmlNodePtr -> 'xmlNodePtr
+		val parent : 'xmlNodePtr -> 'xmlNodePtr
+		val next : 'xmlNodePtr -> 'xmlNodePtr
+		val prev : 'xmlNodePtr -> 'xmlNodePtr
+		val properties : 'xmlNodePtr -> 'xmlNodePtr
+		val name : 'xmlNodePtr -> string
+		val getProp : 'xmlNodePtr * string -> string option
+		val nodeListGetString :
+		    'xmlDocPtr * 'xmlNodePtr * int -> string option
+	    end
+    end
