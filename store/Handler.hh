@@ -17,7 +17,7 @@
 class Handler {
 public:
   virtual void PrepareForGC(Block *p) = 0;
-  virtual void Finalize(word value);
+  virtual void Finalize(word value) = 0;
 };
 
 #endif __STORE__HANDLER_HH__
