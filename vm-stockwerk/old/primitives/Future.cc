@@ -58,13 +58,13 @@ DEFINE1(Future_concur) {
 DEFINE1(Future_isFailed) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == CANCELLED);
+	      transient->GetLabel() == CANCELLED_LABEL);
 } END
 
 DEFINE1(Future_isFuture) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == FUTURE);
+	      transient->GetLabel() == FUTURE_LABEL);
 } END
 
 void Primitive::RegisterFuture() {

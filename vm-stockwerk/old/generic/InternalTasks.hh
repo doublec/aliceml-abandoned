@@ -19,7 +19,7 @@
 #pragma interface "builtins/GlobalPrimitives.hh"
 #endif
 
-#include "store/store.hh"
+#include "store/Store.hh"
 
 //
 // Note: Everything entered into this table must also be

@@ -34,12 +34,9 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
   BlockLabel label = a->GetLabel();
   switch (label) {
   case Alice::ConVal:
-  case Alice::Real:
-  case Alice::String:
   case Alice::Tuple:
   case Alice::Vector:
   case Alice::VectorZero:
-  case Alice::WideString:
     {
       u_int size = a->GetSize();
       if (b->GetSize() != size)
@@ -57,6 +54,8 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
       }
     }
     RETURN_BOOL(true);
+  case CHUNK_LABEL:
+    RETURN_BOOL(false); //--** implement
   default:
     if (label == b->GetLabel()) {
       RETURN_BOOL(a == b);

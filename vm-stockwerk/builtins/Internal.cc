@@ -21,7 +21,7 @@ DEFINE1(Internal_applyUnit) {
 DEFINE1(Internal_bind) {
   Transient *transient = Store::WordToTransient(taskStack->GetWord(0));
   taskStack->PopFrame(1);
-  transient->Become(REF, x0);
+  transient->Become(REF_LABEL, x0);
   RETURN(x0);
 } END
 
@@ -29,7 +29,7 @@ DEFINE1(Internal_byneedHandler) {
   ConVal *exn =
     ConVal::New(Constructor::FromWord(GlobalPrimitives::Future_Future), 1);
   exn->Init(0, x0);
-  Transient *result = Store::AllocTransient(CANCELLED);
+  Transient *result = Store::AllocTransient(CANCELLED_LABEL);
   result->InitArg(exn->ToWord());
   RETURN(result->ToWord());
 } END

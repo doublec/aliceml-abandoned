@@ -17,7 +17,7 @@
 #pragma interface "builtins/Primitive.hh"
 #endif
 
-#include "adt/Hashtable.hh"
+#include "adt/HashTable.hh"
 #include "datalayer/alicedata.hh"
 #include "scheduler/Interpreter.hh"
 

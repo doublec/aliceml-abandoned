@@ -15,18 +15,18 @@
 
 DEFINE2(Hole_fail) {
   Transient *transient = Store::WordToTransient(x0);
-  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(GlobalPrimitives::Hole_Hole);
   ConVal *exn = 
     ConVal::New(Constructor::FromWord(GlobalPrimitives::Future_Future), 1);
   exn->Init(0, x1);
-  transient->Become(CANCELLED, exn->ToWord());
+  transient->Become(CANCELLED_LABEL, exn->ToWord());
   RETURN_UNIT;
 } END
 
 DEFINE2(Hole_fill) {
   Transient *transient = Store::WordToTransient(x0);
-  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(GlobalPrimitives::Hole_Hole);
   if (!static_cast<Hole *>(transient)->Fill(x1))
     RAISE(GlobalPrimitives::Hole_Cyclic);
@@ -35,7 +35,7 @@ DEFINE2(Hole_fill) {
 
 DEFINE1(Hole_future) {
   Transient *transient = Store::WordToTransient(x0);
-  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE)
+  if (transient == INVALID_POINTER || transient->GetLabel() != HOLE_LABEL)
     RAISE(GlobalPrimitives::Hole_Hole);
   RETURN(static_cast<Hole *>(transient)->GetFuture()->ToWord());
 } END
@@ -47,13 +47,13 @@ DEFINE0(Hole_hole) {
 DEFINE1(Hole_isFailed) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == CANCELLED);
+	      transient->GetLabel() == CANCELLED_LABEL);
 } END
 
 DEFINE1(Hole_isHole) {
   Transient *transient = Store::WordToTransient(x0);
   RETURN_BOOL(transient != INVALID_POINTER &&
-	      transient->GetLabel() == HOLE);
+	      transient->GetLabel() == HOLE_LABEL);
 } END
 
 void Primitive::RegisterHole() {
