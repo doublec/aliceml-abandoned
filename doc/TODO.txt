@@ -100,6 +100,8 @@ steps 3 and 4):
 5. Provide a new place for all files formerly in lib/bootstrap. (LK)
 
    This means that TextIO.sig (et al.) are moved to lib/system.
+   The module Pickle.sig needs Url, which also should move to system.
+   Pickle itself should be renamed to UnsafePickle.
    The vm-mozart/bootstrap/Makefile needs to be adapted.
 
 6. Use fragmented library. (AR)
