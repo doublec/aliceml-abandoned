@@ -35,6 +35,7 @@
 #include "generic/Unpickler.hh"
 #include "generic/Pickle.hh"
 #include "generic/UniqueString.hh"
+#include "generic/Broker.hh"
 
 static word handlerTable;
 static const u_int initialHandlerTableSize = 7;
@@ -319,7 +320,21 @@ word ApplyTransform(String *name, word argument) {
       Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
     return handler(argument);
   } else {
-    Error("ApplyTransform: unknown transform");
+    u_char *p = name->GetValue();
+    u_int i = 0;
+    while (p[i] != '.') {
+      Assert(i < name->GetSize());
+      i++;
+    }
+    String *languageId = String::New(reinterpret_cast<char *>(p), i);
+    Broker::Load(languageId);
+    if (map->IsMember(name->ToWord())) {
+      Unpickler::handler handler = (Unpickler::handler)
+	Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
+      return handler(argument);
+    } else {
+      Error("ApplyTransform: unknown transform");
+    }
   }
 }
 
