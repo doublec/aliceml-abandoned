@@ -98,7 +98,12 @@ structure Tools :> TOOLS =
 	    "[|" ^ sep1 (fn y => toString (y, ty), cast x) ^ "|]"
 	  | toString' (x, VectorTy ty) =
 	    "#[" ^ sep1 (fn y => toString (y, ty), cast x) ^ "]"
-	  | toString' (x, ArrowTy _) = "<Fun>"
+	  | toString' (x, ArrowTy _) =
+	    (* Since we use `cast x' as a string, the System.Object::ToString
+	     * method is called on it, returning the procedure's class name -
+	     * this information can be helpful for debugging.
+	     *)
+	    "<Fun " ^ cast x ^ ">"
 
 	and toString (x, ty) where (Future.isFuture x) =
 		if Future.isFailed x then "<Failed>" else "<Future>"
