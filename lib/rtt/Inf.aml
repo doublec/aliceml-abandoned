@@ -1871,7 +1871,7 @@ TextIO.print "Inf.infimum done.\n")
 	    in
 		sign' s
 	    end
-(*
+(*TODO
 	  | (EXIST(p1,j11,j12), _) =>
 	    let
 		val j11' = build(instContext(c,p1), j11)
@@ -2112,13 +2112,34 @@ TextIO.print "\n";
       | infimumItem _ = assert false
 
     and infimumKind(c,k1,k2) =
-	(* TODO: contravariance in parameters *)
-	let
-	    val k1' = buildKind(instContext(c, InstTop), k1)
-	    val k2' = buildKind(instContext(c, InstTop), k2)
-	in
-	    (matchKind(k2',k1'); matchKind(k1',k2'); k1')
-	end
+	if Cell.equal(k1,k2) then k1 else
+	case (content k1, content k2)
+	 of (GROUND, GROUND) =>
+		k1
+	  | (SING _, GROUND) =>
+		k1
+	  | (GROUND, SING _) =>
+		k2
+	  | (SING j1, SING j2) =>
+	    ((match(j1,j2); match(j2,j1); k1) handle Mismatch m =>
+	     raise KindMismatch(IncompatibleInf m))
+(*TODO
+	  | (DEP(p1,j1,k12), DEP(p2,j2,k22)) =>
+	    let
+		val (j1',rea1)  = match(j2,j1) handle Mismatch m =>
+				  raise KindMismatch(MismatchKindDom m)
+		val  _          = PathMap.insertDisjoint(#mod_rea rea1,p1,(p2,j1'))
+		val (k22',rea2) = matchKind(realiseKind(rea1,k12), k22)
+				  handle KindMismatch m =>
+				    raise KindMismatch(MismatchKindRan m)
+	    in
+		if Cell.equal(k22,k22')
+		then (k2, rea2)
+		else (arrow'(p2,j2,k22'), rea2)
+	    end
+*)
+	  | _ =>
+		raise KindMismatch(IncompatibleKind(k1,k2))
 
 
   (* Tie forwarding knots *)
