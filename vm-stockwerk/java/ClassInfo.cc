@@ -38,7 +38,7 @@ Class *Class::New(ClassInfo *classInfo) {
   u_int nSuperVirtualMethods = super->GetNumberOfVirtualMethods();
   u_int nStaticMethods = 0, nVirtualMethods = nSuperVirtualMethods;
   for (i = methods->GetCount(); i--; ) {
-    MethodInfo *methodInfo = MethodInfo::FromWordDirect(fields->Get(i));
+    MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
     if (methodInfo->IsStatic())
       nStaticMethods++;
     else
@@ -50,9 +50,44 @@ Class *Class::New(ClassInfo *classInfo) {
   Block *superVirtualTable = super->GetVirtualTable();
   for (i = nSuperVirtualMethods; i--; )
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
-  //--** missing: fill new slots
-
-  return 0; //--** implement
+  Block *b = Store::AllocBlock(JavaLabel::Class,
+			       BASE_SIZE + nStaticFields + nStaticMethods);
+  b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
+  b->InitArg(NUMBER_OF_VIRTUAL_METHODS_POS, nVirtualMethods);
+  b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
+  b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
+  b->InitArg(LOCK_POS, Lock::New()->ToWord());
+  for (i = nStaticFields; i--; )
+    //--** initialization incorrect for long/float/double
+    b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
+  // Create method closures:
+  RuntimeConstantPool *runtimeConstantPool =
+    classInfo->GetRuntimeConstantPool();
+  nStaticMethods = 0, nVirtualMethods = 0;
+  for (i = methods->GetCount(); i--; ) {
+    //--** bind native methods
+    MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(i));
+    JavaByteCode *byteCode = methodInfo->GetByteCode();
+    if (byteCode != INVALID_POINTER) {
+      Closure *closure = Closure::New(byteCode->ToWord(), 1);
+      closure->Init(0, runtimeConstantPool->ToWord());
+      if (methodInfo->IsStatic()) {
+	b->InitArg(BASE_SIZE + nStaticFields + nStaticMethods,
+		   closure->ToWord());
+	nStaticMethods++;
+      } else {
+	virtualTable->InitArg(nSuperVirtualMethods + nVirtualMethods,
+			      closure->ToWord());
+	nVirtualMethods++;
+      }
+    } else {
+      if (methodInfo->IsStatic())
+	nStaticMethods++;
+      else
+	nVirtualMethods++;
+    }
+  }
+  return static_cast<Class *>(b);
 }
 
 Class *ClassInfo::Prepare() {

@@ -131,12 +131,14 @@ public:
 
   static MethodInfo *New(u_int accessFlags, JavaString *name,
 			 JavaString *descriptor) {
+    Assert((accessFlags & (ACC_NATIVE | ACC_ABSTRACT)) != 0);
     MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
     methodInfo->InitArg(BYTE_CODE_POS, 0);
     return methodInfo;
   }
   static MethodInfo *New(u_int accessFlags, JavaString *name,
 			 JavaString *descriptor, JavaByteCode *byteCode) {
+    Assert((accessFlags & (ACC_NATIVE | ACC_ABSTRACT)) == 0);
     MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
     methodInfo->InitArg(BYTE_CODE_POS, byteCode->ToWord());
     return methodInfo;
@@ -149,6 +151,9 @@ public:
 
   bool IsStatic() {
     return GetAccessFlags() & ACC_STATIC;
+  }
+  JavaByteCode *GetByteCode() {
+    return JavaByteCode::FromWord(GetArg(BYTE_CODE_POS));
   }
 };
 
@@ -170,7 +175,7 @@ protected:
     INTERFACES_POS, // Table(Class)
     FIELDS_POS, // Table(FieldInfo)
     METHODS_POS, // Table(MethodInfo)
-    CONSTANT_POOL_POS, // Table(word)
+    RUNTIME_CONSTANT_POOL_POS, // RuntimeConstantPool
     SIZE
   };
 private:
@@ -197,7 +202,7 @@ public:
     b->InitArg(INTERFACES_POS, interfaces->ToWord());
     b->InitArg(FIELDS_POS, fields->ToWord());
     b->InitArg(METHODS_POS, methods->ToWord());
-    b->InitArg(CONSTANT_POOL_POS, runtimeConstantPool->ToWord());
+    b->InitArg(RUNTIME_CONSTANT_POOL_POS, runtimeConstantPool->ToWord());
     return static_cast<ClassInfo *>(b);
   }
   static ClassInfo *FromWordDirect(word x) {
@@ -223,6 +228,10 @@ public:
   }
   Table *GetMethods() {
     return Table::FromWordDirect(GetArg(METHODS_POS));
+  }
+  RuntimeConstantPool *GetRuntimeConstantPool() {
+    word w = GetArg(RUNTIME_CONSTANT_POOL_POS);
+    return RuntimeConstantPool::FromWordDirect(w);
   }
 
   bool Verify();

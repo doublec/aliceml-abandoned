@@ -80,6 +80,9 @@ public:
     concreteCode->Init(EXCEPTION_TABLE_POS, exceptionTable->ToWord());
     return static_cast<JavaByteCode *>(concreteCode);
   }
+  static JavaByteCode *FromWord(word x) {
+    return static_cast<JavaByteCode *>(ConcreteCode::FromWord(x));
+  }
 
   u_int GetMaxStack() {
     return Store::DirectWordToInt(Get(MAX_STACK_POS));
