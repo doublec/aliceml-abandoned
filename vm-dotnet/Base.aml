@@ -349,7 +349,7 @@ structure String =
 	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
 
 	fun toCString s =
-		List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
+	    List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
 
 	fun implode l = concat (List.map str l)
 
