@@ -49,6 +49,9 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_CHECKED],
       AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DINTERFACE \
                                        -DDEBUG_CHECK \
                                        -DSTORE_DEBUG)
+      AC_DEFINE(INTERFACE)
+      AC_DEFINE(DEBUG_CHECK)
+      AC_DEFINE(STORE_DEBUG)
    else
       AC_MSG_RESULT(no)
    fi])dnl
@@ -284,7 +287,7 @@ AC_DEFUN(AC_PROG_SEAMTOOL,
    AC_SUBST(SEAMTOOL)
    AC_MSG_CHECKING(where to install SEAM extensions)
    if test "${SEAMTOOL}" != "none"; then
-      seamlibdir=$(${SEAMTOOL} config libdir)
+      seamlibdir=$(${SEAMTOOL} config seamlibdir)
    else
       seamlibdir='${libdir}/seam'
    fi
