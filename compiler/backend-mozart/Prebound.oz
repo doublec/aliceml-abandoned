@@ -142,6 +142,7 @@ define
       'Char.isSpace': Char.isSpace
       'Char.toCString':
 	 fun {$ C} {ByteString.make {ToCString C}} end
+      'Char.toLower': Char.toLower
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}

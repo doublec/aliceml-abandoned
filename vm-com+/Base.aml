@@ -325,6 +325,7 @@ structure Char =
 	__primitive val isDigit :    char -> bool = "Char.isDigit"
 	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive val isSpace :    char -> bool = "Char.isSpace"
+	__primitive val toLower :    char -> char = "Char.toLower"
 
 	__primitive val toCString :  char -> string = "Char.toCString"
     end
