@@ -16,9 +16,4 @@ signature LAB =
     val fromLargeInt:	LargeInt.int -> Lab
     val toString:	Lab          -> string
 
-    val equalsNum:	Lab * LargeInt.int -> bool
-
-    val compare:	Lab * Lab -> order
-
   end
-(*DEBUG*) where type Lab = string

@@ -99,9 +99,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newarr System.ObjectTy);
 	     Misc.List_appi (fn (i, (label, _)) =>
 			     (emit Dup; emit (LdcI4 i);
-			      case Label.toInt label of
+			      case Label.toLargeInt label of
 				  SOME i =>
-				      (emit (LdcI4 i);
+				      (emit (LdcI4 (LargeInt.toInt i));
+						(*--** *)
 				       emit (Newobj (System.Int32, [Int32Ty])))
 				| NONE =>
 				      emit (Ldstr (Label.toString label));
@@ -224,9 +225,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTest (LabTest (label, id), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Record);
 	     emit (B (FALSE, elseLabel));
-	     case Label.toInt label of
+	     case Label.toLargeInt label of
 		 SOME i =>
-		     (emit (LdcI4 i);
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
 		      emit (Call (true, StockWerk.StockWert, "CondSelect",
 				  [Int32Ty], StockWerk.StockWertTy)))
 	       | NONE =>
@@ -465,9 +466,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
 	  | genExp (SelExp (_, label), BOTH) =
-	    (case Label.toInt label of
+	    (case Label.toLargeInt label of
 		 SOME i =>
-		     (emit (LdcI4 i);
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
 		      emit (Newobj (StockWerk.IntSelector, [Int32Ty])))
 	       | NONE =>
 		     (emit (Ldstr (Label.toString label));
@@ -573,9 +574,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
 	  | genExp (SelAppExp (_, label, id), BOTH) =
 	    (emitId id;
-	     case Label.toInt label of
+	     case Label.toLargeInt label of
 		 SOME i =>
-		     (emit (LdcI4 i);
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
 		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
 				      StockWerk.StockWertTy)))
 	       | NONE =>

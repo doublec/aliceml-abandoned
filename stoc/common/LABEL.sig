@@ -9,10 +9,11 @@ signature LABEL =
 
     val fromString :	string -> lab
     val fromInt :	int    -> lab
+    val fromLargeInt :	LargeInt.int -> lab
     val fromName :	Name.t -> lab		(* Domain *)
     val toName :	lab    -> Name.t
     val toString :	lab    -> string
-    val toInt :		lab    -> int option
+    val toLargeInt :	lab    -> LargeInt.int option
 
     val compare :	lab * lab -> order
     val hash :		lab -> int

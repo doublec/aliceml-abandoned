@@ -23,6 +23,7 @@ Group is
     MakeHashScopedImpSet.sml
     MakeHashScopedImpMap.sml
     StringHashKey.sml
+    LargeIntHashKey.sml
 
     PRETTY_PRINT.sig
     PrettyPrint.sml

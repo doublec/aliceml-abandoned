@@ -110,8 +110,8 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
 	fun outputLabel (q, label) =
-	    case Label.toInt label of
-		SOME i => outputInt (q, i)
+	    case Label.toLargeInt label of
+		SOME n => outputLargeInt (q, n)
 	      | NONE => outputAtom (q, Label.toString label)
 
 	fun outputId (q, Id (info, stamp, name)) =
