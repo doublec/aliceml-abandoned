@@ -271,6 +271,10 @@ public:
 //
 int PNode::compareLabels(BlockLabel vl, BlockLabel wl) {
   if (vl==wl) return 0;
+  if (vl==CHUNK_LABEL)
+    return -1;
+  if (wl==CHUNK_LABEL)
+    return 1;
   if (vl<wl) return -1;
     return 1;
 }
