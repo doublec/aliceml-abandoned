@@ -27,10 +27,6 @@ import
 from "../../lib/utility/Url"
 
 import
-    structure Error
-from "../infrastructure/Error"
-
-import
     structure MkOptionParser
 from "MkOptionParser"
 
@@ -117,5 +113,5 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 
 	fun stoc arguments =
 	    (defaults (); stoc' (OptionParser.parse arguments))
-	    handle Error.Error (_, _) => OS.Process.failure
+	    handle RecursiveCompiler.Error => OS.Process.failure
     end
