@@ -341,7 +341,7 @@ structure IL :> IL =
 	  | outputTy (q, ValueClassTy dottedname) =
 	    (output (q, "value class "); outputDottedname (q, dottedname))
 	  | outputTy (q, ArrayTy ty) = (outputTy (q, ty); output (q, "[]"))
-	  | outputTy (q, CharTy) = output (q, "char")
+	  | outputTy (q, CharTy) = output (q, "wchar")
 	  | outputTy (q, VoidTy) = output (q, "void")
 	  | outputTy (q, BoolTy) = output (q, "bool")
 	  | outputTy (q, Int32Ty) = output (q, "int32")
