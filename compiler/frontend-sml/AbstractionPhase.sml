@@ -769,7 +769,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
 	   in
-		typvardecs(ids', [O.RecDec(i, decs')])
+		typvardecs(ids'', [O.RecDec(i, decs')])
 	   end
 
 	 | TYPEDec(i, typbind) =>
