@@ -1,7 +1,12 @@
 structure Main :> MAIN =
   struct
 
-    fun processString process source = process source
+    fun processString process source =
+	process source
+	handle exn as Crash.Crash message =>
+	    ( TextIO.output(TextIO.stdErr, "CRASH: " ^ message ^ "\n")
+	    ; raise exn
+	    )
 
     fun processFile process name =
 	let
