@@ -43,5 +43,5 @@ struct
 		ppPath p' ^^ text "." ^^ ppHiddenLab(n,l)
 	    end
 	else
-	    ppLab(toLab p)
+	    ppLab(toLab p) handle Domain => text "_"	(* may be InId *)
 end
