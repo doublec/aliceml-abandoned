@@ -21,8 +21,4 @@ sig
     
     val layout : Node.node -> int * int * int
 
-(* 	
-    val calcMaxXDim: Dictionaries.main * int -> int 
-    val setVisible: int * int -> unit  *)
-
 end

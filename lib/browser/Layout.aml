@@ -134,34 +134,6 @@ struct
 		end) 
       | layout (Empty) = (0,0,0) 
     
-(*    
-
-   (* calcMaxXDim *) 
-   fun calcMaxXDim (dict,i)  = 
-       if i > Dictionaries.Main.getHighestIndexAssigned(dict) 
-	   then 0
-       else 
-	   case Dictionaries.Main.lookup(dict,i) of
-	       NONE => calcMaxXDim(dict,i+1)
-	     | SOME  (node,_)  => Int.max( get_xdim(node)  ,calcMaxXDim(dict,i+1)) 
-		
-		
-    (* setVisible *) (*** nach Update!!! ***)
-    fun setVisible (x,y) = let
-			       val w = !Settings.fontWidth
-			       val h = !Settings.fontHeight
-			       val rx =  Real.fromInt(w * x)
-			       val ry =  Real.fromInt(h * y)
-			   in
-			       (if Real.> (rx,!(Settings.max_x)) 
-				    then Settings.max_x := rx 
-				else Settings.max_x := 
-				    Real.fromInt(w * 
-				    calcMaxXDim (Dictionaries.maindict,0))
-				    ; Settings.max_y 
-				    := Real.+(!Settings.max_y,ry))
-			   end  *)
-
 end
 
   
