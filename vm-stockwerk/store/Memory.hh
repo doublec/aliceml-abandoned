@@ -16,7 +16,6 @@
 #pragma interface "store/Memory.hh"
 #endif
 
-#include <cstdlib>
 #include <cstring>
 
 class MemChunk {
@@ -26,9 +25,11 @@ protected:
 
   void SetPrev(MemChunk *prv) { prev = prv; }
   void SetNext(MemChunk *nxt) { next = nxt; }
+  void Free(char *p);
+  char *Alloc(u_int size);
 public:
   MemChunk(MemChunk *root, u_int size) : prev(NULL) {
-    block = base = (char *) std::malloc(size + STORE_MEM_ALIGN);
+    block = base = MemChunk::Alloc(size + STORE_MEM_ALIGN);
     AssertStore(block != NULL);
     // Ensure Base Ptr Alignment
     base += (STORE_MEM_ALIGN - ((u_int) base & (STORE_MEM_ALIGN - 1)));
@@ -42,7 +43,7 @@ public:
   }
   ~MemChunk() {
     AssertStore(block != NULL);
-    std::free(block);
+    MemChunk::Free(block);
     if (prev != NULL) {
       prev->SetNext(next);
     }
