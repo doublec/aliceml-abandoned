@@ -59,7 +59,14 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	    MakeHashImpSet(type t = stamp
 			   val hash = Stamp.hash)
 
-	type info = coord * StampSet.t option ref
+	datatype livenessInfo =
+	    Unknown
+	  | LoopStart   (* internal *)
+	  | LoopEnd   (* internal *)
+	  | Use of StampSet.t   (* internal *)
+	  | Kill of StampSet.t
+
+	type info = coord * livenessInfo ref
 
 	datatype stm =
 	    ValDec of info * id * exp * isToplevel

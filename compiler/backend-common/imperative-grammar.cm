@@ -9,3 +9,6 @@ Group is
 
     OUTPUT_IMPERATIVE_GRAMMAR.sig
     OutputImperativeGrammar.sml
+
+    LIVENESS_ANALYSIS_PHASE.sig
+    LivenessAnalysisPhase.sml

@@ -62,6 +62,15 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		end
 	end
 
+	fun outputInfo (_, ref Unknown) = NULL
+	  | outputInfo (_, ref (Use set)) = SEQ [S "use ...", NL]
+	  | outputInfo (_, ref (Kill set)) =
+	    if StampSet.isEmpty set then NULL
+	    else
+		SEQ [S (StampSet.fold (fn (stamp, s) =>
+				       s ^ " " ^ Stamp.toString stamp)
+			"kill" set), NL]
+
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
 	  | outputLit (CharLit c) = "char " ^ Char.toCString c
@@ -149,7 +158,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, s, argsBodyList)) =
-	    SEQ [NL, S "fn ", IN,
+	    SEQ [NL, S "fn ",
 		 SEP (SEQ [NL, S "| "],
 		      List.map (fn (args, body) =>
 				SEQ [outputArgs args, S " =>", IN, NL,
@@ -166,7 +175,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]
-	and outputBody stms = SEP (NL, List.map outputStm stms)
+	and outputBody stms =
+	    SEP (NL,
+		 List.map (fn stm =>
+			   SEQ [outputInfo (infoStm stm), outputStm stm]) stms)
 
 	fun outputComponent (idStringList, _, body) =
 	    format (SEQ [SEQ (List.map

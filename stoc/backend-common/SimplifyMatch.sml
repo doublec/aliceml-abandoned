@@ -352,6 +352,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 (optimizeGraph graph, consequents))
 	    end
 
+	type bodyFun = unit -> O.body
+
 	local
 	    datatype args =
 		ONE
@@ -423,7 +425,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	      | process (_, _, _, _) = Crash.crash "SimplifyMatch.process 3"
 	in
-	    fun buildFunArgs (id, matches, errStms) =
+	    fun buildFunArgs (id, matches, errStmsFun) =
 		let
 		    val argsMatchesList =
 			(List.map (fn (args, matches) =>
@@ -434,7 +436,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    List.map (fn (args, matches) =>
 			      let
 				  val (graph, consequents) =
-				      buildGraph (matches, errStms)
+				      buildGraph (matches, errStmsFun ())
 			      in
 				  process (args, graph, consequents, id)
 			      end) argsMatchesList

@@ -43,7 +43,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	(* Translation *)
 
-	fun info coord = (coord, ref NONE)
+	fun info coord = (coord, ref O.Unknown)
 
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
@@ -486,7 +486,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    List.map (fn Match (_, pat, exp) =>
 			      (infoExp exp, pat,
 			       translateExp (exp, return, Goto nil))) matches
-		val errStms = [O.RaiseStm (info coord, id_Match)]
+		fun errStmsFun () = [O.RaiseStm (info coord, id_Match)]
 		val argsBodyList =
 		    List.map (fn (args, graph, mapping, consequents) =>
 			      let
@@ -494,11 +494,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      in
 				  checkReachability consequents;
 				  (args, stms)
-			      end) (buildFunArgs (id, matches', errStms))
+			      end) (buildFunArgs (id, matches', errStmsFun))
 	    in
 		case argsBodyList of
 		    (O.OneArg _, _)::_ => argsBodyList
-		  | _ => (O.OneArg id, errStms)::argsBodyList
+		  | _ => (O.OneArg id, errStmsFun ())::argsBodyList
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =

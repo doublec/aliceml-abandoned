@@ -34,7 +34,6 @@ signature IMPERATIVE_GRAMMAR =
 	type isToplevel = bool
 	type hasArgs = bool
 
-	(*--** annotate which identifiers are really used? *)
 	datatype test =
 	    LitTest of lit
 	  | ConTest of id * id option
@@ -57,7 +56,14 @@ signature IMPERATIVE_GRAMMAR =
 
 	structure StampSet: IMP_SET
 
-	type info = coord * StampSet.t option ref
+	datatype livenessInfo =
+	    Unknown
+	  | LoopStart   (* internal *)
+	  | LoopEnd   (* internal *)
+	  | Use of StampSet.t   (* internal *)
+	  | Kill of StampSet.t
+
+	type info = coord * livenessInfo ref
 
 	datatype stm =
 	    ValDec of info * id * exp * isToplevel

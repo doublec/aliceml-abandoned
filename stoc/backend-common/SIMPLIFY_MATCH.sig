@@ -46,6 +46,8 @@ signature SIMPLIFY_MATCH =
 	val buildGraph: (I.info * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
-	val buildFunArgs: I.id * (I.info * I.pat * O.body) list * O.body ->
+	type bodyFun = unit -> O.body
+
+	val buildFunArgs: I.id * (I.info * I.pat * O.body) list * bodyFun ->
 	    (O.id O.args * testGraph * mapping * consequent list) list
     end
