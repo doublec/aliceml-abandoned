@@ -234,16 +234,19 @@ structure ToJasmin =
 
 		(* returns the JVM register on which a stamp is mapped *)
 		fun get reg =
-		    let
-			val r = case StampHash.lookup (!regmap, getOrigin reg) of
-			    NONE => Stamp.hash reg
-			  | SOME v => v
-		    in
-			if !maxReg < r then maxReg := r else ();
-			vprint (3, "Accessing stamp "^Stamp.toString reg^" in "^
-				"JVM register "^Int.toString r^"\n");
-			r
-		    end
+		    if !OPTIMIZE < 1
+			then Stamp.hash reg
+		    else
+			let
+			    val r = case StampHash.lookup (!regmap, getOrigin reg) of
+				NONE => ~1
+			      | SOME v => v
+			in
+			    if !maxReg < r then maxReg := r else ();
+				vprint (3, "Accessing stamp "^Stamp.toString reg^" in "^
+					"JVM register "^Int.toString r^"\n");
+				r
+			end
 
 		(* returns Jasmin-code for astore/istore. May be pop for
 		 unread registers *)
