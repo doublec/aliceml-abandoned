@@ -456,7 +456,8 @@ structure Int :> INTEGER =
 
 	fun decval c = Char.ord c - Char.ord #"0"
 	fun hexval c =
-	    if #"0" <= c andalso c <= #"9" then Char.ord c - Char.ord #"0"
+	    if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
+	    then Char.ord c - Char.ord #"0"
 	    else (Char.ord c - Char.ord #"A" + 10) mod 32
 	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
 
@@ -464,7 +465,8 @@ structure Int :> INTEGER =
 	  | isBinDigit #"1" = true
 	  | isBinDigit _ = false
 
-	fun isOctDigit c = c >= #"0" andalso c <= #"7"
+	fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
+			   Char.ord c <= Char.ord #"7"
 
 	fun scan radix getc source =
 	    let
