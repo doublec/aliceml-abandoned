@@ -76,6 +76,7 @@ structure GuiMain =
                 evalSignal := SOME signalP;
 		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
                 else ();
+print ("["^text^"]");
 		spawn (Evaluator.eval (text, signal);
                        evalSignal := NONE)
 	    end
@@ -100,15 +101,43 @@ structure GuiMain =
             end
                                  | _ => ()
 
-        fun addNewlines(n, str) =
-            (String.tabulate(n,fn _ => #"\n")) ^ str
+        fun addSpace(line, col, str) =
+            String.tabulate(line-1, fn _ => #"\n") ^
+	    String.tabulate(col, fn _ => #" ") ^ str
+
+	fun getColFromOffset(iter, 0, col) = col
+	  | getColFromOffset(iter, offset, col) =
+	    let
+		val c = Gtk.textIterGetChar iter
+	    in
+		if c = Char.ord #"\t" then
+		    let
+			val tabjump = 8 - col mod 8
+		    in
+			Gtk.textIterForwardChar iter;
+			getColFromOffset(iter, offset-1, col+tabjump)
+		    end
+		else
+		    (Gtk.textIterForwardChar iter;
+		     getColFromOffset(iter, offset-1, col+1))
+	    end
+	fun getColumn iter =
+	    let
+		val line = Gtk.textIterGetLine iter
+		val offset = Gtk.textIterGetLineOffset iter
+		val iter' = Gtk.textIterCopy iter
+	    in
+		Gtk.textIterSetLine(iter', line);
+		getColFromOffset(iter', offset, 0)
+	    end
+	fun getLine iter = Gtk.textIterGetLine iter + 1
 
         fun feedSelection() =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
 
-		val (sel, startline, txt) =
+		val (sel, txt, line, col) =
 		    Lock.sync Core.lock
 		    (fn () =>
 		     let
@@ -117,18 +146,18 @@ structure GuiMain =
 		     in
 			 (Gtk.textBufferGetSelectionBounds(buf,
                                                            startiter,enditer),
-			  1 + Gtk.textIterGetLine startiter,
-			  Gtk.textBufferGetText(buf,
-						startiter, enditer, false))
+			  Gtk.textBufferGetText(buf, startiter, enditer, false),
+			  getLine startiter,
+			  getColumn startiter)
 		     end) ()
             in
                 if sel
-                then eval true (addNewlines(startline,
-					    Core.utf8ToLatin1 txt))
+                then eval true (addSpace(line, col,
+					 Core.utf8ToLatin1 txt))
                 else ()
             end
-                                 | _ => ()
-    
+           | _ => ()
+
         fun feedLine() =
             case (!curtextview) of BUFFER view =>
             let
@@ -142,12 +171,12 @@ structure GuiMain =
 		     in
 			 Gtk.textIterSetLineOffset(startiter, 0);
 			 Gtk.textIterForwardToLineEnd(enditer);
-			 (1 + Gtk.textIterGetLine startiter,
+			 (getLine startiter,
 			  Gtk.textBufferGetText(buf,
 						startiter, enditer, false))
 		     end) ()
-                val str = addNewlines(startline,
-                                      Core.utf8ToLatin1 str)
+                val str = addSpace(startline, 0,
+                                   Core.utf8ToLatin1 str)
             in
                 eval true str
             end
@@ -218,7 +247,7 @@ structure GuiMain =
             let
                 val buf = Gtk.textViewGetBuffer view
 
-		val (startline, str) = Lock.sync Core.lock
+		val (str, line, col) = Lock.sync Core.lock
 		    (fn () =>
 		     let
 		     val startiter = Gtk.textIterNew()
@@ -231,12 +260,12 @@ structure GuiMain =
 				  (start,endd)
 			      end
 		     in
-			 (Gtk.textIterGetLine startiter,
-			  Gtk.textBufferGetText(buf, startiter, enditer, false))
+			 (Gtk.textBufferGetText(buf, startiter, enditer, false),
+			  getLine startiter,
+			  getColumn startiter)
 		     end) ()
 
-                val str = addNewlines(startline,
-                                      Core.utf8ToLatin1 str)
+                val str = addSpace(line, col, Core.utf8ToLatin1 str)
             in
                 eval true (str^"\n")
             end
@@ -324,18 +353,16 @@ structure GuiMain =
         fun markSet (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
-		val (startline, offset) = Lock.sync Core.lock
+		val (line, col) = Lock.sync Core.lock
 		    (fn () =>
 		     let
 			 val iter = Gtk.textIterNew()
+			 val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
 		     in
-			 Gtk.textBufferGetIterAtMark(buf,iter,cursor);
-			 (1 + Gtk.textIterGetLine iter,
-			  Gtk.textIterGetLineOffset iter)
+			 (getLine iter, getColumn iter)
 		     end) ()
             in
-                Stream.send(OutputWriters.rowCol,
-                            (startline, offset))
+                Stream.send(OutputWriters.rowCol, (line, col))
             end
 
 	val notebookSwitchEventIdP = Promise.promise()
@@ -538,22 +565,40 @@ structure GuiMain =
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
                 val enditer = Gtk.textIterCopy startiter
+
+		exception Off
+		fun moveOffset(startiter, 0, pos) = ()
+		  | moveOffset(startiter, n, pos) =
+		    let
+			val c = Gtk.textIterGetChar startiter
+		    in
+			if c = Char.ord #"\n" then
+			    raise Off
+			else if c = Char.ord #"\t" then
+			    let
+				val tabjump = 8 - pos mod 8
+			    in
+				Gtk.textIterForwardChar startiter;
+				moveOffset(startiter, n-tabjump, pos+tabjump)
+			    end
+			else
+			    (Gtk.textIterForwardChar startiter;
+			     moveOffset(startiter, n-1, pos+1))
+		    end
             in
                 if row <= lineCount andalso
                    row' <= lineCount
                 then
                     (Gtk.textIterSetLine(startiter, row-1);
                      Gtk.textIterSetLine(enditer, row'-1);
-                     if col <= Gtk.textIterGetCharsInLine startiter andalso
-                        col' <= Gtk.textIterGetCharsInLine enditer then
-                         (Gtk.textIterSetLineOffset(startiter, col);
-                          Gtk.textIterSetLineOffset(enditer, col');
-                          Buffer.selectRange(buf, startiter, enditer);
-			  Buffer.scrollToCursor id;
-			  Gtk.notebookSetCurrentPage(Gui.notebook1,
-						     valOf (findPage id));
-                          Gtk.widgetGrabFocus (Buffer.getView id))
-                     else ())
+                     moveOffset(startiter, col, 0);
+                     moveOffset(enditer, col', 0);
+                     Buffer.selectRange(buf, enditer, startiter);
+		     Buffer.scrollToCursor id;
+		     Gtk.notebookSetCurrentPage(Gui.notebook1,
+						valOf (findPage id));
+                     Gtk.widgetGrabFocus (Buffer.getView id))
+                    handle Off => ()
                 else ()
             end) ()
 	    end
