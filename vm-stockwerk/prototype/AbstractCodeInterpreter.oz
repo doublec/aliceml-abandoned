@@ -299,7 +299,7 @@ define
 	 {Emulate TryInstr Closure L
 	  handler(Me IdDef1 IdDef2 HandleInstr Closure L)|TaskStack}
       [] tag(!EndTry NextInstr) then
-	 case TaskStack of handler(_ _ _ _ _)|Rest then
+	 case TaskStack of handler(_ _ _ _ _ _)|Rest then
 	    {Emulate NextInstr Closure L Rest}
 	 end
       [] tag(!EndHandle NextInstr) then
