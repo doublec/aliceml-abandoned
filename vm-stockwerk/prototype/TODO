@@ -61,7 +61,6 @@ Mozart:
 
 Alice-Postings:
 -- [Announcement] Prototype of the Alice VM (aka The Stockwerk)
--- [Problem] Concurrent Pickling of Stateful Data Structures
 -- [Problem] Run-time Signature Coertion
 -- [Problem] Compatibility of Static vs. Run-time Types
--- [Problem] Raising of Unevaluated Exceptions
+-- [Programming Methodology] Raising of Unevaluated Exceptions
