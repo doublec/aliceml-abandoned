@@ -48,14 +48,5 @@
 #include "generic/Unpickler.hh"
 #include "generic/Pickler.hh"
 #include "generic/Profiler.hh"
-#include "alice/Guid.hh"
-#include "alice/Data.hh"
-#include "alice/AbstractCode.hh"
-#include "alice/AbstractCodeInterpreter.hh"
-#include "alice/AliceConcreteCode.hh"
-#include "alice/NativeCodeInterpreter.hh"
-#include "alice/NativeConcreteCode.hh"
-#include "alice/PrimitiveTable.hh"
-#include "alice/AliceLanguageLayer.hh"
 
 #endif
