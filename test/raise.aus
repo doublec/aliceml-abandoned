@@ -1,0 +1,7 @@
+val print=builtin "TextIO.print"
+fun wirftwas _ = (3; 9; raise "Harharhar"; 77; 42)
+fun main _ =
+    ((wirftwas()) handle e => (print "Haeb's g'fange\n"; 17))
+
+; main () ;
+

@@ -1,0 +1,2 @@
+fn (f, g, x) =>
+while f x do g x

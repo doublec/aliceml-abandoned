@@ -1,0 +1,14 @@
+val it =
+    let
+	val (a, b) = (1, 2)
+    in
+	a + b
+    end
+
+; builtin "System.show" it ;
+
+datatype 'a option =
+    NONE
+  | SOME of 'a
+
+; builtin "System.show" (SOME 17) ;
