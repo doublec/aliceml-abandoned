@@ -24,12 +24,12 @@
 #define SEAM_LIGHTNING
 #include "lightning/lightning.h"
 
-#ifdef JIT_FP
-# define HAVE_JIT_FP 1
-# define JIT_MYFP    JIT_FP
+#ifndef JIT_FP
+#ifdef JIT_V3
+#define JIT_FP JIT_V3
 #else
-# define HAVE_JIT_FP 0
-# define JIT_MYFP    JIT_R1
+#error GNU Lightning 1.2pre or later needed
+#endif
 #endif
 
 // Encapsulate Lightning State
@@ -114,12 +114,10 @@ public:
     (void) jit_movi_p(JIT_R0, proc);
     jit_callr(JIT_R0);
     // TODO: Find correct platform test
-#if HAVE_JIT_FP
     if (nbArgs != 0) {
       // Remove arguments from the stack
       jit_addi_ui(JIT_SP, JIT_SP, nbArgs * sizeof(word));
     }
-#endif
     // Move the return value to JIT_R0
     jit_retval(JIT_R0);
     if (saveCallerSavedRegs) {
@@ -134,14 +132,10 @@ public:
     PushStack(JIT_V0);
     PushStack(JIT_V1);
     PushStack(JIT_V2);
-#if HAVE_JIT_FP
     PushStack(JIT_FP);
-#endif
   }
   void RestoreAllRegs() {
-#if HAVE_JIT_FP
     PopStack(JIT_FP);
-#endif
     PopStack(JIT_V2);
     PopStack(JIT_V1);
     PopStack(JIT_V0);
@@ -162,31 +156,21 @@ protected:
   // to be done: more efficient solution
   void Alloc(u_int Ptr, u_int size, u_int header) {
     Assert(Ptr != JIT_R0);
-    Assert(Ptr != JIT_MYFP);
-    if (Ptr == JIT_MYFP) {
-      Error("JITStore::Alloc: Ptr is JIT_R1\n");
-    }
-#if !HAVE_JIT_FP
-    PushStack(JIT_MYFP);
-#endif
     // Allocation Loop
     jit_insn *loop = jit_get_label();
     jit_ldi_p(JIT_R0, Store::roots);
     jit_ldr_p(Ptr, JIT_R0);
-    jit_movi_ui(JIT_MYFP, header);
-    jit_str_ui(Ptr, JIT_MYFP);
+    jit_movi_ui(JIT_FP, header);
+    jit_str_ui(Ptr, JIT_FP);
     jit_addi_p(Ptr, Ptr, size);
-    jit_ldxi_p(JIT_MYFP, JIT_R0, sizeof(word));
-    jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_MYFP);
+    jit_ldxi_p(JIT_FP, JIT_R0, sizeof(word));
+    jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_FP);
     Prepare(0);
     Finish((void *) JITStore::AllocHeapChunk);
     (void) jit_jmpi(loop);
     jit_patch(succeeded);
     jit_str_p(JIT_R0, Ptr);
     jit_subi_p(Ptr, Ptr, size);
-#if !HAVE_JIT_FP
-    PopStack(JIT_MYFP);
-#endif
   }
 public:
   // Input: word ptr
@@ -461,23 +445,13 @@ public:
   //
   // Dest = This->GetSize()
   void Block_GetSize(u_int Dest, u_int This) {
-    Assert(Dest != JIT_MYFP);
-    if (Dest == JIT_MYFP) {
-      Error("JITStore::Block_GetSize: Dest is JIT_R1\n");
-    }
-#if !HAVE_JIT_FP
-    PushStack(JIT_MYFP);
-#endif
     // Compute Size
     jit_ldr_ui(Dest, This);
-    jit_movr_ui(JIT_MYFP, Dest);
+    jit_movr_ui(JIT_FP, Dest);
     jit_andi_ui(Dest, Dest, SIZE_MASK);
     jit_rshi_ui(Dest, Dest, SIZE_SHIFT);
-    jit_andi_ui(JIT_MYFP, JIT_MYFP, SIZESHIFT_MASK);
-    jit_lshr_ui(Dest, Dest, JIT_MYFP);
-#if !HAVE_JIT_FP
-    PopStack(JIT_MYFP);
-#endif
+    jit_andi_ui(JIT_FP, JIT_FP, SIZESHIFT_MASK);
+    jit_lshr_ui(Dest, Dest, JIT_FP);
   }
   // Dest = This->GetLabel()
   void Block_GetLabel(u_int Dest, u_int This) {
