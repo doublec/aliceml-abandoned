@@ -716,7 +716,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 		val (returnArgs, instr) =
 		    case detup (instr, id) of
 			DECONSTRUCTED (idDefs, instr) =>
-			     (assert (Vector.length idDefs > 1);
+			     (assert (Vector.length idDefs <> 1);
 			      (idDefs, instr))
 		      | (USED | SIDE_EFFECTING | UNKNOWN) =>
 			    (#[(O.IdDef id)], instr)
