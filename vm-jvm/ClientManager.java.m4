@@ -1,3 +1,9 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 public class ClientManager extends java.rmi.server.UnicastRemoteObject implements CManager {

@@ -1,3 +1,9 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 /** Tuple-Darstellung in DML.

@@ -1,6 +1,13 @@
+/* $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
-public class Tuple3 implements DMLTuple {
+/** Special class for tuples with arity 3.
+ */
+final public class Tuple3 implements DMLTuple {
 
     protected DMLValue fst = null;
     protected DMLValue snd = null;

@@ -1,5 +1,13 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
+/** This is the InputStream used to read pickles.
+ */
 final public class PickleInputStream extends java.io.ObjectInputStream {
 
     public PickleInputStream() throws java.io.IOException {

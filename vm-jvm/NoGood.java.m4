@@ -1,5 +1,13 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
+/** The NoGood class is used to substitute Array and Threads in distribution.
+ */
 final public class NoGood implements DMLValue {
 
     private GName gName = null;

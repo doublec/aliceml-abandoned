@@ -1,10 +1,19 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
+/** This class is the representation of reference cells. It implements the
+ *  mobile protocol when used in an distributed environment.
+ */
 final public class Reference implements DMLConVal, DMLReference {
 
-    SManager mgr = null; // Homesite-Manager
+    SManager mgr = null;      // Homesite-Manager
     DMLValue content = null;
-    CManager cmgr = null;
+    CManager cmgr = null;     // Clientsite-Manager
 
     public Reference(DMLValue content) throws java.rmi.RemoteException {
 	this.content=content;

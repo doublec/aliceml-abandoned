@@ -1,8 +1,16 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 import de.uni_sb.ps.dml.builtin.DMLArray;
 import java.rmi.server.*;
 
+/** This is the OutputStream used to create pickles.
+ */
 final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;

@@ -1,9 +1,18 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 import java.io.*;
 import java.util.*;
 
-public class PickleClassLoader extends ClassLoader {
+/** This is the classloader used in conjunction with the pickle in/out streams
+ *  to load the classes of pickled objects.
+ */
+final public class PickleClassLoader extends ClassLoader {
 
     static public PickleClassLoader loader = new PickleClassLoader();
     static java.lang.String path = null;

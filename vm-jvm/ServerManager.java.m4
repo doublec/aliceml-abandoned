@@ -1,6 +1,14 @@
-package de.uni_sb.ps.dml.runtime;
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
 
-final public class ServerManager extends java.rmi.server.UnicastRemoteObject implements SManager {
+package de.uni_sb.ps.dml.runtime;
+/** This is the implementation of the server manager of a reference cell.
+ */
+final public class ServerManager extends java.rmi.server.UnicastRemoteObject
+    implements SManager {
 
     CManager contentOwner;
 
@@ -13,5 +21,4 @@ final public class ServerManager extends java.rmi.server.UnicastRemoteObject imp
 	contentOwner = iWantIt;
 	return val;
     }
-
 }

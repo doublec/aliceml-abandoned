@@ -1,6 +1,14 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
-public class Tuple4 implements DMLTuple {
+/** Special class for tuples with arity 4.
+ */
+final public class Tuple4 implements DMLTuple {
 
     protected DMLValue fst = null;
     protected DMLValue snd = null;

@@ -1,3 +1,9 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 final public class RecordArity implements java.io.Serializable {
@@ -6,17 +12,12 @@ final public class RecordArity implements java.io.Serializable {
     java.util.Hashtable hashtable=null;
 
     public RecordArity(Label[] labels) {
-	this(labels, new DMLValue[labels.length]);
-    }
+	hashtable = new java.util.Hashtable(); // size?
+	int l = labels.length;
+	this labels = labels;
 
-    public RecordArity(Label[] labels, DMLValue[] vals) {
-	super();
-	int i=0;
-	hashtable=new java.util.Hashtable();
-	this.labels = labels;
-
-	for(i=0; i<labels.length; i++) {
-	    hashtable.put(labels[i], new Integer(i));
+	for(int i=0; i<l; i++) {
+	    hashtable.put(labels[i],new Integer(i)); // really?
 	}
     }
 
@@ -34,13 +35,13 @@ final public class RecordArity implements java.io.Serializable {
     }
 
     final public boolean equals(java.lang.Object o) {
-	int i=0;
 	if (!(o instanceof RecordArity))
 	    return false;
 	RecordArity other = (RecordArity) o;
 	if (labels.length != other.labels.length)
 	    return false;
-	for(i=0; i<labels.length; i++) {
+	int l = labels.length;
+	for(int i=0; i<l; i++) {
 	    if (!labels[i].equals(other.getLabel(i)))
 		return false;
 	}
@@ -48,9 +49,9 @@ final public class RecordArity implements java.io.Serializable {
     }
 
     final public int hashCode() {
-	int i=0;
+	int l=labels.length;
 	int hc=0;
-	for(i=0; i<labels.length; i++)
+	for(i=0; i<l; i++)
 	    hc=(hc+labels[i].hashCode()%0x3fffffff)%0x3fffffff;
 	return hc;
     }

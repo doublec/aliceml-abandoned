@@ -1,5 +1,14 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
+/** This class represents DML records. Records have an RecordArity and some
+ *  associated values.
+ */
 final public class Record extends Tuple {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();

@@ -1,3 +1,9 @@
+/*
+ * $Date$
+ * $Revision$
+ * $Author$
+ */
+
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
@@ -39,13 +45,17 @@ public class Thread extends java.lang.Thread implements DMLValue {
      */
     public void run() {
 	DMLValue v = null;
+	DMLValue t = null;
 	try {
 	    v = fcn.apply(Constants.dmlunit);
 	    while(tail!=null) {
-		v=tail.apply(v);
+		t=tail;
+		tail=null;
+		v=t.apply(v);
 	    }
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
+	    r.printStackTrace();
 	}
     }
 
