@@ -312,7 +312,7 @@ structure Backend=
 		fun makefields () =
 		    StringListHash.fold
 		    (fn (number, fields) =>
-		     Field ([FPublic, FStatic, FFinal],
+		     Field ([FPublic, FStatic],
 			    fieldname number,
 			    [Arraysig, Classsig CLabel])::fields)
 		    nil
