@@ -81,7 +81,7 @@ public:
     int outsock = socket(AF_INET, type, 0);
     if (outsock < 0) {
       closesocket(newsock);
-      return  -1;
+      return -1;
     }
     sock_in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     // Do a connect and accept the connection
@@ -328,7 +328,9 @@ IODesc::result IODesc::Close() {
   case TYPE_CLOSED: break;
   case TYPE_FD:
     {
-      Interruptible(res0, closesocket(GetFD()));
+      int fd = GetFD();
+      IOHandler::Close(fd);
+      Interruptible(res0, closesocket(fd));
       if (res0) res = result_socket_error;
       break;
     }
@@ -337,9 +339,13 @@ IODesc::result IODesc::Close() {
     if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
     break;
   case TYPE_FORWARDED:
-    if (closesocket(GetFD())) res = result_socket_error;
-    if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
-    break;
+    {
+      int fd = GetFD();
+      IOHandler::Close(fd);
+      if (closesocket(fd)) res = result_socket_error;
+      if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
+      break;
+    }
 #endif
   }
   InitArg(FLAGS_POS, (flags & ~TYPE_MASK) | TYPE_CLOSED);

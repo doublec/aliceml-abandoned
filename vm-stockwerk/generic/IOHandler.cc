@@ -81,6 +81,19 @@ namespace {
     void Add(Entry *entry) {
       Enqueue(entry->ToWord());
     }
+    void Remove(int fd) {
+      u_int n = GetNumberOfElements();
+      for (u_int i = 0; i < n; i++) {
+	Entry *entry = Entry::FromWordDirect(GetNthElement(i));
+	if (entry->GetFD() == fd) {
+	  Future *future = entry->GetFuture();
+	  future->ScheduleWaitingThreads();
+	  future->Become(REF_LABEL, Store::IntToWord(0));
+	  Queue::RemoveNthElement(i);
+	  return;
+	}
+      }
+    }
     int EnterIntoFDSet(fd_set *fdSet) {
       int max = -1;
       FD_ZERO(fdSet);
@@ -132,11 +145,13 @@ void IOHandler::Poll() {
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
-  retry:
-    int ret = select(max + 1, &readFDs, &writeFDs, NULL, &timeout);
+    int ret = select(max + 1,
+		     maxRead == -1? NULL: &readFDs,
+		     maxWrite == -1? NULL: &writeFDs,
+		     NULL, &timeout);
     if (ret < 0) {
       if (GetLastError() == EINTR)
-	goto retry;
+	return;
       Error("IOHandler::Poll");
     } else if (ret > 0) {
       ReadableSet->Schedule(&readFDs);
@@ -151,26 +166,32 @@ void IOHandler::Block() {
   static fd_set readFDs, writeFDs;
   int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
   int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
-  int max = maxRead > maxWrite? maxRead: maxWrite;
   struct timeval *ptimeout = NULL;
-  // Timer Events and signals must be fulfilled; therefore wait on stdin
-  //--** to be done: better solution?
+  // select does not allow all wait sets to be empty - therefore
+  // always wait on stdin
+  //--** stdin can be closed!  We need a better solution.
+  //--** Should we create a socket (using socketpair) on which nothing is
+  //--** ever written just so that we can wait on it?
   if (defaultFD != -1)
     if (!FD_ISSET(defaultFD, &readFDs)) {
       FD_SET(defaultFD, &readFDs);
-      max = max > defaultFD? max: defaultFD;
+      maxRead = maxRead > defaultFD? maxRead: defaultFD;
     }
+  int max = maxRead > maxWrite? maxRead: maxWrite;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  // Windows sockets no longer support WSACancelBlockingCall
-  // Pending Events therefore require polling after some time
-  // to be done: better solution? notify via a socket?
+  // signals (such as timer events) do not interrupt the select call,
+  // therefore we must not block infinitely (so that signals are polled)
+  //--** better solution - notify via a socket?
   struct timeval timeout;
   timeout.tv_sec  = 0;
-  timeout.tv_usec = 10;
+  timeout.tv_usec = 100; // same as TIME_SLICE in SignalHandler.cc
   ptimeout = &timeout;
 #endif
   if (max >= 0) {
-    int ret = select(max + 1, &readFDs, &writeFDs, NULL, ptimeout);
+    int ret = select(max + 1,
+		     maxRead == -1? NULL: &readFDs,
+		     maxWrite == -1? NULL: &writeFDs,
+		     NULL, ptimeout);
     if (ret < 0) {
       if (GetLastError() == EINTR)
 	return;
@@ -265,4 +286,9 @@ Future *IOHandler::WaitWritable(int fd) {
   } else {
     return INVALID_POINTER;
   }
+}
+
+void IOHandler::Close(int fd) {
+  Set::FromWordDirect(Readable)->Remove(fd);
+  Set::FromWordDirect(Writable)->Remove(fd);
 }
