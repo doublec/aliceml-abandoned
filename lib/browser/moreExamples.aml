@@ -1,0 +1,120 @@
+import structure Reflect from "x-alice:/lib/system/Reflect";
+import structure UnsafeInspector from "UnsafeInspector";
+
+open UnsafeInspector;
+
+
+(*****************************************************************************)
+
+(********************************** 1 ****************************************)
+
+(* CYCLIC LIST WITH FUTURE *)
+
+val my_promise = Promise.promise();
+val my_future = Promise.future(my_promise);
+val my_list = 1::2::3::my_future
+
+(* type relection *)
+
+structure List = Reflect.ReflectType(type t = int list);
+
+(* inspection *)
+
+inspect(my_list,List.x);
+
+(* Update *)
+ 
+Promise.fulfill(my_promise,my_list);
+
+(*****************************************************************************)
+
+(********************************** 2 ****************************************)
+
+(* STRUCTURE GTK *)
+
+import signature GTK from "x-alice:/lib/gtk/GTK-sig";
+import structure Gtk from "x-alice:/lib/gtk/Gtk";
+
+(* type reflection *)
+
+structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
+structure T = Reflect.ReflectSig(signature S = GTK);
+
+(* inspection *)
+
+inspectMod (V.x,T.x);
+
+(*****************************************************************************)
+
+(********************************** 3 ****************************************)
+
+(* PACKAGE *)
+
+signature TEST =
+sig
+    type t
+    val test: string
+    val foo: string -> string
+    signature S
+end;
+structure Test = 
+struct
+    type t = string
+    val test = "hi"
+    fun foo str = str^"@"
+    signature S = sig
+		      val x : string
+		  end
+end;
+
+(* type reflection *)
+
+structure P = Package.Pack (signature S = TEST structure X = Test);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+(* inspection *)
+
+inspect(P.package,Pack.x);
+      
+(*****************************************************************************)
+
+(********************************** 4 ****************************************)
+
+(* VECTOR WITH PROMISES AND FUTURES *)
+
+val prom = Promise.promise(); 
+val fut = Promise.future(prom); 
+
+(* type reflection *)
+
+structure Vector =  Reflect.ReflectType 
+    (type t = (int * int Promise.promise) vector);
+  
+(* inspection *)
+
+inspect(#[(fut,prom),(fut,prom),(fut,prom),(fut,prom)],
+			Vector.x); 
+
+(* update *)
+
+Promise.fulfill(prom,44); 
+
+(*****************************************************************************)
+
+(********************************** 5 ****************************************)
+
+
+(*** STRUCTURAL AND TOKEN SIMILARITY ***)
+
+val my_list = [1,2,3];
+val my_list' = [1,2,3];
+val my_ref = ref 1;
+val my_ref' = ref 1
+
+structure Similarities =  Reflect.ReflectType
+              (type t = {first: int list * int list * int list,
+			 second: int ref * int ref * int ref * int ref});
+
+UnsafeInspector.inspect({first = (my_list,my_list,my_list'),
+			 second = (my_ref,my_ref',my_ref',my_ref')},
+			Similarities.x);
