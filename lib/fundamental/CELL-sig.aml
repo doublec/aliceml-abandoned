@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+
+
+signature CELL =				(**)
+sig
+    __eqeqtype 'a cell
+
+    val cell :		'a -> 'a cell
+    val exchange :	'a cell * 'a -> 'a
+end

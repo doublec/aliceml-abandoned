@@ -1,0 +1,39 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive      from "Pervasive"
+import type unit and bool and exn from "ToplevelTypes"
+import structure Time             from "Time"
+import structure Hole             from "Hole"
+import signature FUTURE           from "FUTURE-sig"
+
+
+structure Future : FUTURE =				(**)
+struct
+    __primitive exception Future of exn			= "Future.Future"
+    exception Cyclic = Hole.Cyclic
+
+    __primitive val concur :	(unit -> 'a) -> 'a	= "Future.concur"
+    __primitive val byneed :	(unit -> 'a) -> 'a	= "Future.byneed"
+    __primitive val alarm :	Time.time -> unit	= "Future.alarm'"
+
+    __primitive val await :	'a -> 'a		= "Future.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Future.awaitOne"
+
+    __primitive val isFuture :	'a -> bool		= "Future.isFuture"
+    __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+end
