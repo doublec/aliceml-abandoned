@@ -11,10 +11,6 @@ import
 from "x-alice:/infrastructure/Crash.ozf"
 
 import
-    structure Name
-from "x-alice:/common/Name.ozf"
-
-import
     structure Label
 from "x-alice:/common/Label.ozf"
 
