@@ -20,8 +20,6 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 
 AC_LANG(C++)
-AC_SUBST(INCLUDES)
-AC_SUBST(LIBS)
 
 dnl
 dnl  Linker Flags
@@ -30,7 +28,7 @@ AC_CACHE_CHECK([whether linker understands --export-dynamic],
   [seam_cv_ldflags_export_dynamic],
   [seam_save_LDFLAGS="$LDFLAGS"
    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-   AC_LINK_IFELSE(AC_LANG_PROGRAM(,),
+   AC_LINK_IFELSE(AC_LANG_PROGRAM([],[]),
 		  seam_cv_ldflags_export_dynamic=yes,
 		  seam_cv_ldflags_export_dynamic=no),
    LDFLAGS="$seam_save_LDFLAGS"])
@@ -48,7 +46,8 @@ dnl  Libraries
 dnl
 AC_CHECK_LIB(wsock32, main)
 AC_CHECK_LIB(dl, dlopen)
-AC_CHECK_LIB(m, fabs)
+
+AC_SUBST(INCLUDES)
 
 dnl
 dnl  zlib
