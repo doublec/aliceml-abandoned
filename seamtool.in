@@ -30,7 +30,8 @@ case "$mode" in
 	cmd @CXX@ -M @DEFS@ -I@includedir@/seam @INCLUDES@ @CPPFLAGS@ "$@"
 	;;
     c++)
-	cmd @CXX@ @DEFS@ -I@includedir@/seam @INCLUDES@ @CPPFLAGS@ "$@"
+	cmd @CXX@ @DEFS@ -I@includedir@/seam @INCLUDES@ @CPPFLAGS@ \
+	    @CXXFLAGS@ "$@"
 	;;
     ld)
 	outputfile=""
