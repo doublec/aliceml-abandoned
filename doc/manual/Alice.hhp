@@ -1,0 +1,17 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=Alice.chm
+Contents file=Alice.hhc
+Default topic=C:\Documents and Settings\Leif Kornstaedt\My Documents\devel\alice-doc\index.html
+Display compile progress=Yes
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Alice
+
+
+[FILES]
+C:\Documents and Settings\Leif Kornstaedt\My Documents\devel\alice-doc\index.html
+C:\Documents and Settings\Leif Kornstaedt\My Documents\devel\alice-doc\bg.gif
+
+[INFOTYPES]
+
