@@ -11,7 +11,6 @@
 %%%
 
 functor
-import Property(put) System(show)   %--**
 export
    interpreter: Me
 define
@@ -124,7 +123,6 @@ define
    end
 
    fun {Emulate Instr Closure L TaskStack}
-%--**{System.show emulating(Instr)}
       case Instr of tag(!Kill Ids NextInstr) then
 	 for I in 1..{Width Ids} do
 	    L.(Ids.I) := killed
