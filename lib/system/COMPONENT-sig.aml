@@ -35,7 +35,7 @@ signature COMPONENT =
 	functor Create(signature S
 		       structure X: S): (val component: component)
 
-	val create: Inf.t option * Reflect.value -> component
+	val create: Inf.t option * Reflect.module -> component
 	    (*--** unsafe! intended for use by lib/system/Boot.aml only *)
 	val load: Url.t -> component                      (* Io *)
 	val save: string * component -> unit              (* Io *)
