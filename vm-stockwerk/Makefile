@@ -28,15 +28,10 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) \
 
 .PHONY: all-subdirs depend-local
 
-all: all-subdirs $(TARGETS)
+all: all-subdirs stow.dll stow.exe java.exe
 
-ifdef WINDOWS
 stow.exe: Main.o stow.dll
 	$(LD) $(LDFLAGS) -o $@ Main.o stow.dll
-else
-stow.exe: Main.o $(OBJS) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ Main.o $(OBJS) $(LDLIBS)
-endif
 
 java.exe: Base.o InitSeam.o JavaMain.o $(LIBS)
 	$(LD) $(LDFLAGS) -o $@ Base.o InitSeam.o JavaMain.o $(LDLIBS)
