@@ -92,7 +92,7 @@ inline word PointerToObjectRegister(void *p, int type) {
   word obj = PointerToObject(p,type);
   WeakMap *wd = WeakMap::FromWord(weakDict);
   word w = Store::UnmanagedPointerToWord(p);
-  if (!wd->IsMember(w)) {
+  if (p && (!wd->IsMember(w))) {
     refObject(p,type);
     wd->Put(w,obj);
   }

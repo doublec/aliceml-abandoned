@@ -1,28 +1,137 @@
-MORE = -I ~/devel/alice/install/include
-CC = g++ `pkg-config --cflags --libs gtk+-2.0 libgnomecanvas-2.0` $(MORE)
+###
+# GTK+ 2.0 Bindings for Alice - Makefile
 
+# The generator creates full code for the following name spaces
+COMPS = Gdk Gtk GnomeCanvas
+COMPSCAP = GDK GTK GNOME_CANVAS
+
+# The generator creates only enum components for the following name spaces
+ENUMCOMPS = Pango
+ENUMCOMPSCAP = PANGO
+
+# The following native components will be compiled
+# (in addition to the generated ones)
+NATIVECOMPS = GtkCore
+
+# names of generated files
+ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
+	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
+UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
+NATIVES = $(COMPS:%=Native%) $(NATIVECOMPS:%=Native%)
+GENNATIVES = $(COMPS:%=Native%.asig) $(COMPS:%=Native%.cc)
+GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
+GENSIGS = $(COMPSCAP:%=%-sig.aml) 
+
+# temporary output directory
+OUTDIR = output
+
+# support file indicating last generator build
+LASTGENERATE = lastgenerate
+
+# names of all files to compile
+COMMON = GTK_TYPES-sig.aml GtkTypes.aml GTK_CORE-sig.aml GtkCore.aml
+MAINFILES = $(COMPS:%=%.aml)
+CPPSOURCES = $(NATIVES:%=%.cc)
+ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
+
+# executable names
+ifdef WINDOWS
+GENERATOR = GtkBinding.x86-win32.exe
+else
+GENERATOR = GtkBinding.x86-linux
+endif
+
+SML = sml
 ALICEC = alicec --dump-phases
-ALICEDEP = alicedep
-ALICERUN = alicerun
+ALICETOOL = alicetool
+INSTALL = install -C -v -m 666
+#INSTALL = install -v -m 644
+CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
-.PHONY: run all
+#################################################
 
-all: gtktest.stc
-	$(ALICERUN) gtktest
+.PHONY: all full generate compile depend docs clean veryclean distclean
 
-%: %.cc
-	$(CC) $< -o $@
+all: compile
+
+full: generate depend compile docs
+
+
+### SOURCE CODE GENERATION ######################
+
+$(GENFILES): $(LASTGENERATE)
+
+$(LASTGENERATE) generate: gtkclean.c $(GENERATOR)
+	if test ! -d $(OUTDIR) ; then mkdir $(OUTDIR) ; fi
+	$(SML) @SMLload=$(GENERATOR) $(OUTDIR)
+	$(INSTALL) $(GENFILES:%=$(OUTDIR)/%) .
+	rm -f $(OUTDIR)/*
+	rmdir $(OUTDIR)
+	touch $(LASTGENERATE)
+
+$(GENERATOR):
+	rm -f $(GENERATOR)
+	echo 'CM.make(); compile();' | $(SML)
+	test -e $(GENERATOR) || exit 1
+
+gtkclean.c:
+	(cd prepare ; $(MAKE) )
+
+%-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
+	gawk -f includesig.awk -v filename=includesig.awk $< > $@
+
+
+### COMPILATION #################################
+
+compile: $(NATIVES:%=%.dll) $(COMPS:%=%.stc)
+
+%.dll: %.o
+	$(ALICETOOL) -v ld -Wl,-S `pkg-config --libs $(CLIBS)` $< -o $@
+
+%.o: %.cc
+	$(ALICETOOL) -v cc `pkg-config --cflags $(CLIBS)` -c $< -o $@
 
 %.stc: %.aml
-	$(ALICEC) -c $< -o $@
+	$(ALICEC) $< -o $@
 
-depend: Makefile *.cc *.aml
-	$(CC) -M *.cc > Makefile.depend
-	$(ALICEDEP) *.aml >> Makefile.depend
+
+### DEPENDENCIES ################################
+
+depend: Makefile $(CPPSOURCES) $(ALICESOURCES)
+	gcc -M -I ../../../vm-stockwerk `pkg-config --cflags $(CLIBS)` \
+	    $(CPPSOURCES) > Makefile.depend
+	echo 'use "smldepend.sml"; depend("Makefile.depend","$$(GENERATOR)");'\
+                                                                   | $(SML)
+	gawk -f alicedepend.awk $(ALICESOURCES) >> Makefile.depend
+#	alicedep --stockwerk $(ALICESOURCES) >> Makefile.depend
 
 -include Makefile.depend
 
+
+### DOCUMENTATION ###############################
+
+docs:
+	(cd doc; $(MAKE) )
+
+
+### CLEAN #######################################
+
 clean:
-	rm -f *.o
+	rm -f $(GENERATOR)
+	rm -f $(GENFILES)
+	rm -f $(GENSIGS)
 	rm -f *.stc
-	rm -f test valisttest
+	rm -f *.o
+	rm -f *~
+	rm -f $(LASTGENERATE)
+
+veryclean: clean
+	rm -f gtkclean.c
+	rm -f $(NATIVES:%=%.dll)
+	rm -f $(NATIVES:%=%.dll.def)
+	rm -f Makefile.depend
+	find -type d | grep '/CM$$' | xargs rm -fr
+	(cd prepare ; $(MAKE) clean )
+	(cd doc ; $(MAKE) clean )
+
+distclean: veryclean
