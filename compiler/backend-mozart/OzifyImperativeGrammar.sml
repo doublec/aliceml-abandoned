@@ -21,9 +21,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	in
 	    fun gen () =
 		let
-		    val n = !count
+		    val n = !count + 1
 		in
-		    count := n + 1; n
+		    count := n; n
 		end
 	end
 
