@@ -50,10 +50,10 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 
 	fun startTop (filename, context) =
 	    {filename = filename, context = context,
-	     stack = ref nil, scope = ref (StampMap.new ()),
+	     stack = ref nil, scope = ref (StampMap.map ()),
 	     localIndex = ref 0, localNames = ref nil,
 	     globalIndex = ref 0, globalIds = ref nil,
-	     shared = StampMap.new ()}
+	     shared = StampMap.map ()}
 
 	fun endTop ({stack = ref nil, localNames = ref localNames,
 		     globalIds = ref nil, ...}: t) =
@@ -79,7 +79,7 @@ functor MkEnvironment(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 			     globalIds = !globalIds}
 	    in
 		stack := entry::(!stack);
-		scope := StampMap.new ();
+		scope := StampMap.map ();
 		localIndex := 0; localNames := nil;
 		globalIndex := 0; globalIds := nil
 	    end

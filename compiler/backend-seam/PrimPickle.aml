@@ -11,7 +11,7 @@
  *)
 
 import structure BinIO        from "../../lib/system/BinIO"
-import structure MkHashImpMap from "../../lib/utility/MkHashImpMap"
+import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 import structure Crash        from "../infrastructure/Crash"
 import structure StringMap    from "../infrastructure/StringMap"
 import signature PRIM_PICKLE  from "PRIM_PICKLE-sig"
@@ -59,8 +59,8 @@ structure PrimPickle :> PRIM_PICKLE =
 	fun openOut name: outstream =
 	    {stream = BinIO.openOut name,
 	     id = ref 0,
-	     stringMap = StringMap.new (),
-	     atomMap = AtomMap.new (),
+	     stringMap = StringMap.map (),
+	     atomMap = AtomMap.map (),
 	     expect = ref 1}
 
 	fun done ({expect = r as ref n, ...}: outstream) = r := n - 1

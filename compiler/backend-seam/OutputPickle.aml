@@ -436,6 +436,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputInstr (context, body); outputLiveness (context, liveness))
 
 	fun output (outstream, value) =
-	    outputValue ({outstream = outstream, shared = StampMap.new ()},
+	    outputValue ({outstream = outstream, shared = StampMap.map ()},
 			 value)
     end

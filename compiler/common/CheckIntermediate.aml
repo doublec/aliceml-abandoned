@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -124,7 +124,7 @@ struct
 	 *)
 	let
 	    val A   = Type.paths t1
-	    val rea = PathMap.new()
+	    val rea = PathMap.map()
 	    val _   = PathMap.appi
 			(fn(p,k) => if Type.isStarKind k
 				    then PathMap.insert(rea, p, Type.unknown k)
@@ -1069,7 +1069,7 @@ end
 	 *      |- import imps let decs in flds : s
 	 *)
 	let
-	    val E = Env.new()
+	    val E = Env.map()
 	in
 	    chImps E imps;
 	    chDecs E decs;

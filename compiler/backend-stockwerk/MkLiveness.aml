@@ -28,8 +28,8 @@ functor MkLiveness(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR): LIVENESS =
 
 	fun analyze (idDefArgs, instr) =
 	    let
-		val ranges = IntMap.new ()
-		val shared = StampSet.new ()
+		val ranges = IntMap.map ()
+		val shared = StampSet.set ()
 
 		fun lId (id, i) =
 		    (case IntMap.lookup (ranges, id) of
