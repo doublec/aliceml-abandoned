@@ -3,7 +3,7 @@
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus, 2000-2001
+ *   Thorsten Brunklaus, 2000
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -12,19 +12,20 @@
  *)
 
 import structure Inspector  from "x-alice:/lib/tools/Inspector"
-import structure GtkCore    from "x-alice:/lib/gtk/GtkCore"
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure Gdk        from "x-alice:/lib/gtk/Gdk"
 import structure GtkBuilder from "GtkBuilder"
 
 local
-    open GtkCore
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
+
     open GtkBuilder
 
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
-	    val stream = Cell.cell tail
+	    val stream = Ref.ref tail
 
 	    fun process s = (case s of
 				 nil   => ()
@@ -32,12 +33,12 @@ local
 	    fun send p =
 		let
 		    val newtail = Promise.promise ()
-		    val tail    = Cell.exchange(stream, newtail)
+		    val tail    = Ref.exchange(stream, newtail)
 		in
 		    Promise.fulfill(tail, p::(Promise.future newtail))
 		end
 	in
-	    (Thread.spawn (fn () => process(Promise.future tail));
+	    (spawn (process(Promise.future tail));
 	     send)
 	end
 
@@ -105,10 +106,9 @@ local
       | insertLines(pars, line::lr) =
 	(insertTokens(pars, lineToTokens (String.explode line)); insertLines(pars, lr))
 
-    val textcolor = ref (Gdk.allocateGdkColor(0xf0f0, 0x2020, 0xa0a0))
-    val curwin    = ref NONE : object option ref
+    val textcolor = ref (Gdk.allocColor(0xf0f0, 0x2020, 0xa0a0))
+    val curwin    = ref NONE : Gtk.object option ref
     val curfile   = ref ""
-
 
     fun fileToWindow (file) =
 	let
@@ -124,15 +124,15 @@ local
 
 	    val font  = Gdk.fontLoad("8x13")
 	    val map   = Gdk.colormapGetSystem ()
-	    val black = Gdk.allocateGdkColor(0, 0, 0)
-	    val white = Gdk.allocateGdkColor(65535, 65535, 65535)
+	    val black = Gdk.allocColor(0, 0, 0)
+	    val white = Gdk.allocColor(65535, 65535, 65535)
 	    val kcol  = !textcolor
 	in
 	    (Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
 	     Gtk.textSetAdjustments(text, xa, ya);
-	     Gdk.colormapAllocColor(map, black, false, true);
-	     Gdk.colormapAllocColor(map, white, false, true);
-	     Gdk.colormapAllocColor(map, kcol, false, true);
+	     Gdk.colormapAllocColor(map, black, 0, 1);
+	     Gdk.colormapAllocColor(map, white, 0, 1);
+	     Gdk.colormapAllocColor(map, kcol, 0, 1);
 	     insertLines((text, kcol, black, white, font), lines);
 	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
 	end
@@ -154,8 +154,8 @@ local
     local
 	val enter        = ref true
 	val fileSel      = Gtk.fileSelectionNew "Select File to view"
-	val okButton     = Gtk.fileSelectionGetOkButton fileSel
-	val cancelButton = Gtk.fileSelectionGetCancelButton fileSel
+	val okButton     = Gtk.fileSelectionGetFieldOkButton fileSel
+	val cancelButton = Gtk.fileSelectionGetFieldCancelButton fileSel
 
 	fun okHandler _ = serve
 	    (fn () =>
@@ -172,8 +172,8 @@ local
 	    serve (fn () => (Gtk.widgetUnmap fileSel;
 			     enter := true))
 
-	val _            = Gtk.signalConnect(okButton, "clicked", okHandler);
-	val _            = Gtk.signalConnect(cancelButton, "clicked", cancelHandler);
+	val _  = Gtk.signalConnect(okButton, "clicked", okHandler)
+	val _  = Gtk.signalConnect(cancelButton, "clicked", cancelHandler)
     in
 	fun readFileName () =
 	    (case !enter of
@@ -216,7 +216,7 @@ local
 	fun fromReal r =
 	    let
 		val rn = Real.*(r, 255.0)
-		val ri = valOf(Int.fromString(GtkCore.realToString rn))
+		val ri = valOf(Int.fromString(Real.toString rn))
 	    in
 		String.implode [numToHex(ri div 16), numToHex(ri mod 16)]
 	    end
@@ -224,10 +224,10 @@ local
 	fun okHandler _ = serve
 	    (fn () =>
 	     let
-		 val (r, g, b, _) = Gtk.colorSelectionGetColor colorSel
+		 val [r, g, b, _] = Gtk.colorSelectionGetColor colorSel
 		 val (ri, gi, bi) = (fromReal r, fromReal g, fromReal b)
-		 val color        = Gdk.allocateGdkColor(0, 0, 0)
-		 val colorString  = "RGB:" ^ ri ^ "/" ^ gi ^ "/" ^ bi
+		 val color        = Gdk.allocColor(0, 0, 0)
+		 val colorString  = "#" ^ ri ^ gi ^ bi
 	     in
 		 (textcolor := color;
 		  Gdk.colorParse(colorString, color);
@@ -241,11 +241,15 @@ local
 		       Gtk.widgetUnmap dialog))
 	    
 	val okButton     = Button("Ok", [Handler("clicked", okHandler)])
-	val cancelButton = Button("Cancel", [Handler("clicked", cancelHandler)])
+	val cancelButton = Button("Cancel",
+				  [Handler("clicked", cancelHandler)])
 	val bBox         = HButtonBox(EndStyle, [okButton, cancelButton])
-	val vBox         = VBox {homogeneous=false, spacing=4,
-				 entries=[BoxSimple (Window colorSel), BoxSimple bBox]}
-	val toplevel     = Toplevel {title="Select TextColor", border=4, handler=nil, inner=vBox}
+	val vBox         =
+	    VBox {homogeneous=false, spacing=4,
+		  entries=[BoxSimple (Window colorSel), BoxSimple bBox]}
+	val toplevel     =
+	    Toplevel {title="Select TextColor",
+		      border=4, handler=nil, inner=vBox}
     in
 	fun getTextColor () =
 	    (case !enter of
@@ -262,23 +266,31 @@ local
 
     fun openHandler _  = readFileName ()
     fun colorHandler _ = getTextColor ()
-    fun closeHandler _ = Gtk.signalEmit(Promise.future viewer, "destroy")
+    fun closeHandler _ = ()
+    (* Gtk.signalEmit(Promise.future viewer, "destroy") *)
 
-    val submenu = [MenuItem("Open...", [MenuHandler openHandler]),
-		   MenuItem("Textcolor...", [MenuHandler colorHandler]),
-		   MenuItem("Close", [MenuHandler closeHandler])]
+    val submenu = [MenuItem("Open...", [Handler("activate", openHandler)]),
+		   MenuItem("Textcolor...",
+			    [Handler("activate", colorHandler)]),
+		   MenuItem("Close", [Handler ("activate", closeHandler)])]
     val menu    = MenuBar([{label="File", submenu=submenu}])
-    val malign  = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0, inner=menu}
+    val malign  =
+	Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0, inner=menu}
 
     val _        = curfile := "TextViewer.aml"
     val twin     = fileToWindow "TextViewer.aml"
-    val twalign  = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0, inner=twin}
+    val twalign  =
+	Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0, inner=twin}
     val notebook = MakeWidget (Notebook(false, [{label="", note=twalign}]))
 
     val entries  = [BoxSimple malign, BoxSimple (Window notebook)]
     val topbox   = VBox {homogeneous=false, spacing=0,  entries=entries}
-    val dHandler = Handler("destroy", fn _ => OS.Process.exit OS.Process.success)
-    val toplevel = Toplevel {title="TextViewer", border=2, handler=[dHandler], inner=topbox}
+    val dHandler =
+	Handler("delete-event",
+		fn _ => OS.Process.exit OS.Process.success)
+    val toplevel =
+	Toplevel {title="TextViewer", border=2, handler=[dHandler],
+		  inner=topbox}
 in
     val _ = curwin := SOME notebook
     val _ = Promise.fulfill(viewer, MakeWidget toplevel)
