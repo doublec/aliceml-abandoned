@@ -501,13 +501,6 @@ u_int ImmediateEnv::index;
 u_int ImmediateEnv::size;
 Tuple *ImmediateEnv::values;
 
-void ImmediateEnv::Put(u_int index, u_int Value) {
-  jit_pushr_ui(JIT_V2);
-  NativeCodeFrame::GetImmediateArgs(JIT_V2, JIT_V2);
-  JITStore::ReplaceArg(JIT_V2, index, Value);
-  jit_popr_ui(JIT_V2);
-}
-
 //
 // NativeCodeJitter Variables
 //
@@ -906,6 +899,41 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
   }
 }
 
+u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
+  TagVal *tagVal = TagVal::FromWord(idRef);
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::Global)
+    tagVal = LookupSubst(Store::DirectWordToInt(tagVal->Sel(0)));
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::Local:
+  case AbstractCode::LastUseLocal:
+    {
+      u_int index = RefToIndex(tagVal->Sel(0));
+      Dest = LocalEnvSel(Dest, JIT_V2, index);
+      JITStore::SaveDeref(Dest);
+      return Dest;
+    }
+  case AbstractCode::Global:
+    GlobalEnvSel(Dest, JIT_V2, tagVal->Sel(0));
+      JITStore::SaveDeref(Dest);
+    return Dest;
+  case AbstractCode::Immediate:
+    {
+      word val = tagVal->Sel(0);
+      if (PointerOp::IsInt(val)) {
+	jit_movi_p(Dest, val);
+      }
+      else {
+	u_int i1 = ImmediateEnv::Register(val);
+	ImmediateSel(Dest, JIT_V2, i1);
+	JITStore::SaveDeref(Dest);
+      }
+    }
+    return Dest;
+  default:
+    Error("NativeCodeJitter::ReloadIdRef: invalid idRef Tag");
+  }
+}
+
 void NativeCodeJitter::KillVariables() {
   jit_movi_p(JIT_R0, Store::IntToWord(4711));
   for (u_int i = livenessTable->GetSize(); i--;)
@@ -951,15 +979,9 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
       // to be done: exploit immediate knowledge
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
-      u_int spill = 0;
-      if (x1 == JIT_V1) {
-	spill = ImmediateEnv::Register(Store::IntToWord(0));
-	ImmediateEnv::Put(spill, x1);
-      }
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      if (x1 == JIT_V1) {
-	ImmediateSel(JIT_R0, JIT_V2, spill);
-      }
+      if (x1 == JIT_V1)
+	x1 = ReloadIdRef(JIT_R0, actualIdRefs->Sub(0));
       else {
 	jit_movr_p(JIT_R0, x1);
       }
@@ -973,15 +995,9 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
       // to be done: exploit immediate knowledge
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
-      u_int spill = 0;
-      if (x1 == JIT_V1) {
-	spill = ImmediateEnv::Register(Store::IntToWord(0));
-	ImmediateEnv::Put(spill, x1);
-      }
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      if (x1 == JIT_V1) {
-	ImmediateSel(JIT_R0, JIT_V2, spill);
-      }
+      if (x1 == JIT_V1)
+	x1 = ReloadIdRef(JIT_R0, actualIdRefs->Sub(0));
       else {
 	jit_movr_p(JIT_R0, x1);
       }
@@ -995,15 +1011,9 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
       // to be done: exploit immediate knowledge
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
-      u_int spill = 0;
-      if (x1 == JIT_V1) {
-	spill = ImmediateEnv::Register(Store::IntToWord(0));
-	ImmediateEnv::Put(spill, x1);
-      }
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      if (x1 == JIT_V1) {
-	ImmediateSel(JIT_R0, JIT_V2, spill);
-      }
+      if (x1 == JIT_V1)
+	x1 = ReloadIdRef(JIT_R0, actualIdRefs->Sub(0));
       else {
 	jit_movr_p(JIT_R0, x1);
       }
@@ -1019,15 +1029,9 @@ u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
       // to be done: exploit immediate knowledge
       word instrPC = Store::IntToWord(GetRelativePC());
       u_int x1 = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
-      u_int spill = 0;
-      if (x1 == JIT_V1) {
-	spill = ImmediateEnv::Register(Store::IntToWord(0));
-	ImmediateEnv::Put(spill, x1);
-      }
       u_int x2 = LoadIdRef(JIT_V1, actualIdRefs->Sub(1), instrPC);
-      if (x1 == JIT_V1) {
-	ImmediateSel(JIT_R0, JIT_V2, spill);
-      }
+      if (x1 == JIT_V1)
+	x1 = ReloadIdRef(JIT_R0, actualIdRefs->Sub(0));
       else {
 	jit_movr_p(JIT_R0, x1);
       }
@@ -1974,28 +1978,26 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
 TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
   PrintPC("ConTest\n");
   word instrPC = Store::IntToWord(GetRelativePC());
-  u_int convalSlot = ImmediateEnv::Register(Store::IntToWord(0));
-  u_int constrSlot = ImmediateEnv::Register(Store::IntToWord(0));
   u_int ConVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
-  ImmediateEnv::Put(convalSlot, ConVal);
   JITStore::Block::GetLabel(JIT_R0, ConVal);
   jit_insn *nullary_constr = jit_bnei_ui(jit_forward(), JIT_R0, Alice::ConVal);
   // N-ary Constructor
   JITAlice::ConVal::GetConstructor(JIT_R0, ConVal);
-  ImmediateEnv::Put(constrSlot, JIT_R0);
   Vector *tests1 = Vector::FromWordDirect(pc->Sel(2));
   u_int nTests1  = tests1->GetLength();
   for (u_int i = 0; i < nTests1; i++) {
     Tuple *triple = Tuple::FromWordDirect(tests1->Sub(i));
     u_int constr = LoadIdRef(JIT_V1, triple->Sel(0), instrPC);
-    ImmediateSel(JIT_R0, JIT_V2, constrSlot);
+    // Reload conval and its constr
+    ConVal = ReloadIdRef(JIT_R0, pc->Sel(0));
+    JITAlice::ConVal::GetConstructor(JIT_R0, ConVal);
     jit_insn *next_test_ref = jit_bner_ui(jit_forward(), constr, JIT_R0);
     Vector *idDefs          = Vector::FromWordDirect(triple->Sel(1));
-    ImmediateSel(JIT_V1, JIT_V2, convalSlot);
+    ConVal                  = ReloadIdRef(JIT_V1, pc->Sel(0));
     for (u_int i = idDefs->GetLength(); i--;) {
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
       if (idDef != INVALID_POINTER) {
-	JITAlice::ConVal::Sel(JIT_R0, JIT_V1, i);
+	JITAlice::ConVal::Sel(JIT_R0, ConVal, i);
 	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
       }
       KillIdRef(pc->Sel(0)); // Some kills missing
@@ -2010,8 +2012,8 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
   for (u_int i = 0; i < nTests2; i++) {
     Tuple *pair = Tuple::FromWordDirect(tests2->Sub(i));
     u_int Constr = LoadIdRef(JIT_V1, pair->Sel(0), instrPC);
-    ImmediateSel(JIT_R0, JIT_V2, convalSlot);
-    jit_insn *next_test_ref = jit_bner_ui(jit_forward(), Constr, JIT_R0);
+    ConVal = ReloadIdRef(JIT_R0, pc->Sel(0));
+    jit_insn *next_test_ref = jit_bner_ui(jit_forward(), Constr, ConVal);
     KillIdRef(pc->Sel(0)); // Some kills missing
     CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
     jit_patch(next_test_ref);
