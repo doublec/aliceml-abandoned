@@ -225,7 +225,7 @@ define
 	 {SetValRep Info ValRep}
 	 {EnterValRep State Stamp ValRep}
 	 {EnterRegStamp State Reg Stamp}
-      [] valDec(_ Ids Exp) then ValRep in
+      [] valDec(_ Ids Exp) then ValRep V in
 	 {ForAll Ids
 	  proc {$ id(Info Stamp _)} ValRep in
 	     ValRep = _#_
@@ -233,29 +233,24 @@ define
 	     {SetValRep Info ValRep}
 	  end}
 	 ValRep = {AnnotateExp Exp State}
-	 case Ids of [id(Info Stamp _)] then
-	    {SetValRep Info {AddReg ValRep State}}
-	    {EnterRegStamp State {ValRepToReg ValRep} Stamp}
-	 else V in
-	    V = {ValRepToValue ValRep}
-	    if {Label V} == record andthen {IsTuple V}
-	       andthen {Width V} == {Length Ids}
-	    then
-	       {List.forAllInd Ids
-		proc {$ I id(Info Stamp _)}
-		   case V.I of ValRep=Reg#_ then
-		      {SetValRep Info ValRep}
-		      {EnterRegStamp State Reg Stamp}
-		   end
-		end}
-	    else
-	       {ForAll Ids
-		proc {$ id(Info Stamp _)} Reg in
-		   Reg = {NewReg State}
-		   {SetValRep Info Reg#top}
+	 V = {ValRepToValue ValRep}
+	 if {Label V} == record andthen {IsTuple V}
+	    andthen {Width V} == {Length Ids}
+	 then
+	    {List.forAllInd Ids
+	     proc {$ I id(Info Stamp _)}
+		case V.I of ValRep=Reg#_ then
+		   {SetValRep Info ValRep}
 		   {EnterRegStamp State Reg Stamp}
-		end}
-	    end
+		end
+	     end}
+	 else
+	    {ForAll Ids
+	     proc {$ id(Info Stamp _)} Reg in
+		Reg = {NewReg State}
+		{SetValRep Info Reg#top}
+		{EnterRegStamp State Reg Stamp}
+	     end}
 	 end
       end
    end
@@ -475,12 +470,11 @@ define
 		 Feature#{AnnotatePat Pat State unit#top}
 	      end}}
 	 end
-      [] asPat(_ id(_ Stamp _) Pat) then ValRep1 ValRep2 in
-	 ValRep1 = _#_
-	 {EnterValRep State Stamp ValRep1}
-	 ValRep2 = {AnnotatePat Pat State ValRep}
-	 ValRep1 = {AddReg {CombineValReps ValRep ValRep2} State}
-	 {ValRepToValue ValRep2}
+      [] asPat(_ Pat1 Pat2) then ValRep1 ValRep0 ValRep2 in
+	 ValRep1 = {AnnotatePat Pat1 State ValRep}
+	 ValRep0 = {CombineValReps ValRep ValRep1}
+	 ValRep2 = {AnnotatePat Pat2 State ValRep0}
+	 {ValRepToValue {CombineValReps ValRep0 ValRep2}}
       [] altPat(_ Pats) then
 	 case Pats of [Pat] then {AnnotatePat Pat State ValRep}
 	 else

@@ -43,7 +43,7 @@
 %%        |  conPat(<info> <long id> <optional pat>)
 %%        |  tupPat(<info> [<pat>])
 %%        |  recPat(<info> [<field pat>] <has dots>)
-%%        |  asPat(<info> <id> <pat>)
+%%        |  asPat(<info> <pat> <pat>)
 %%        |  altPat(<info> [<pat>])
 %%        |  negPat(<info> <pat>)
 %%        |  guardPat(<info> <pat> <exp>)
