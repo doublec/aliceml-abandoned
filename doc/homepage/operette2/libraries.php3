@@ -183,6 +183,12 @@
     </LI>
     <LI>
       <TT>structure
+      <A href="http://www.dina.kvl.dk/~sestoft/sml/os-file-sys.html">OS.FileSys</A>
+      </TT>
+      (import <TT>OS</TT> from <TT>"x-alice:/lib/system/OS"</TT>)
+    </LI>
+    <LI>
+      <TT>structure
       <A href="http://www.dina.kvl.dk/~sestoft/sml/unix.html">Unix</A>
       </TT>
       (import from <TT>"x-alice:/lib/system/Unix"</TT>)
