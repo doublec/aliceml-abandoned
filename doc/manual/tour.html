@@ -1033,11 +1033,11 @@ struct
 	    val n = valOf (Int.fromString (valOf (TextIO.inputLine TextIO.stdIn)))
 	in
 	    TextIO.print (Int.toString (Fac.fac n) ^ "\n"); 
-	    OS.Process.exit OS.Process.success
+	    OS.Process.success
 	end
-	handle _ => (TextIO.print "error\n"; OS.Process.exit OS.Process.failure)
+	handle _ => (TextIO.print "error\n"; OS.Process.failure)
 
-    val _ = main ()
+    val _ = OS.Process.exit (main ())
 end</PRE>
 
 <P>This component imports the structure from the previous component by using an
