@@ -78,7 +78,7 @@
     <LI> <TT>structure <A href="futures.php3#future">Future</A></TT> </LI>
     <LI> <TT>structure <A href="futures.php3#promise">Promise</A></TT> </LI>
     <LI> <TT>structure <A href="futures.php3#cell">Cell</A></TT> </LI>
-    <LI> <TT>structure <A href="threads.php3#sig">Thread</A></TT>
+    <LI> <TT>structure <A href="library/thread.php3">Thread</A></TT>
     <LI> <TT>structure <A href="packages.php3">Package</A></TT> </LI>
     <LI> <TT>functor <A href="laziness.php3#modules">ByNeed</A></TT> </LI>
   </UL>
