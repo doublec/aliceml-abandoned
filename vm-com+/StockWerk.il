@@ -980,15 +980,18 @@
     }
   }
 
-  .class sealed public Record extends StockWerk.Tuple {
+  .class sealed public Record extends StockWerk.StockWert {
     .field public initonly class StockWerk.RecordArity Arity
+    .field public initonly class StockWerk.StockWert[] Values
     .method public void .ctor(class StockWerk.RecordArity, class StockWerk.StockWert[]) {
       ldarg.0
-      ldarg.2
-      call instance void StockWerk.Tuple::.ctor(class StockWerk.StockWert[])
+      call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
       stfld class StockWerk.RecordArity StockWerk.Record::Arity
+      ldarg.0
+      ldarg.2
+      stfld class StockWerk.StockWert StockWerk.Tuple::Values
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
