@@ -5,14 +5,14 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE1(General_exnName) {
   RETURN(String::New("")->ToWord()); //--** to be determined

@@ -3,18 +3,18 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "emulator/Transients.hh"
-#include "emulator/Closure.hh"
-#include "emulator/ByneedInterpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Authoring.hh"
+#include "generic/Transients.hh"
+#include "generic/Closure.hh"
+#include "generic/ByneedInterpreter.hh"
+#include "generic/Scheduler.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE1(Future_alarmQuote) {
   Error("Future.alarm not implemented"); //--** to be done
