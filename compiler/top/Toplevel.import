@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -35,6 +35,7 @@ import functor MkRedBlackImpMap from "x-alice:/lib/data/MkRedBlackImpMap"
 import functor MkHashImpSet from "x-alice:/lib/data/MkHashImpSet"
 import functor MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 
+import structure Print' and Print from "x-alice:/lib/system/Print"
 import signature COMPONENT from "x-alice:/lib/system/COMPONENT-sig"
 import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 import signature CONFIG from "x-alice:/lib/system/CONFIG-sig"
@@ -107,3 +108,6 @@ __overload (int, word, Word8.t, real, char, string) as 'numtxt
 __overload (int, word, Word8.t, real, char, string) as 'numtxt
     op >= : 'numtxt * 'numtxt -> bool =
     (Int.>=, Word.>=, Word8.>=, Real.>=, Char.>=, String.>=)
+
+__overload 'a printVal :  'a -> unit = Print'.printVal'
+__overload 'a printType : 'a -> unit = Print'.printType'
