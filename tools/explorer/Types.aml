@@ -62,6 +62,10 @@ structure Types =
       tree:=newTree
     | setTree _ _ = ()
 
+  fun getTree (ref (SOME ({tree={tree=tree,...},...}:
+                          explorer_state))) = !tree
+    | getTree _ = raise Empty
+
   fun debug (ref (SOME ({debug=debug,...}: explorer_state))) = !debug
     | debug _ = false
 
