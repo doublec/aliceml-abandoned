@@ -17,8 +17,9 @@ signature EXPLORER_COMPONENT =
 	    sig
 		val exploreOne : (unit -> 'a) -> unit
 		val exploreOneBAB : (unit -> 'a) * ('a * 'a -> unit) -> unit
-		val exploreBest : (unit -> 'a) * ('a * 'a -> unit) -> unit
 		val exploreAll : (unit -> 'a) -> unit
+		val exploreAllBAB : (unit -> 'a) * ('a * 'a -> unit) -> unit
+		val exploreBest : (unit -> 'a) * ('a * 'a -> unit) -> unit
 	    end
 
 	structure Explorer : EXPLORER

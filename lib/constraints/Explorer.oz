@@ -47,6 +47,32 @@ define
        end}
       unit
    end
+   fun {ExploreAllFun P}
+      {Explorer.all
+       proc {$ R}
+	  R = case {Procedure.arity P}
+	      of 1 then {P}
+	      [] 2 then {P unit}
+	      end
+       end}
+      unit
+   end
+   fun {ExploreAllBABFun P O}
+      {Explorer.all
+       proc {$ R}
+	  R = case {Procedure.arity P}
+	      of 1 then {P}
+	      [] 2 then {P unit}
+	      end
+       end
+       proc {$ A B}
+	  _ = case {Procedure.arity O}
+	      of 2 then {O A#B}
+	      [] 3 then {O A B}
+	      end
+       end}
+      unit
+   end
    fun {ExploreBestFun P O}
       {Explorer.best
        proc {$ R}
@@ -63,16 +89,6 @@ define
        end}
       unit
    end
-   fun {ExploreAllFun P}
-      {Explorer.all
-       proc {$ R}
-	  R = case {Procedure.arity P}
-	      of 1 then {P}
-	      [] 2 then {P unit}
-	      end
-       end}
-      unit
-   end
 
    %% Change Default Explorer Bindings: add Inspector
    {Explorer.object delete(information all)}
@@ -85,6 +101,7 @@ define
    %% Create Explorer Interface
    AliceExplorer = 'Explorer'('exploreOne'    : ExploreOneFun
 			      'exploreOneBAB' : ExploreOneBABFun
-			      'exploreBest'   : ExploreBestFun
-			      'exploreAll'    : ExploreAllFun)
+			      'exploreAll'    : ExploreAllFun
+			      'exploreAllBAB' : ExploreAllBABFun
+			      'exploreBest'   : ExploreBestFun)
 end
