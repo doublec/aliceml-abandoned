@@ -202,4 +202,4 @@ public:
 #include "store/Value.hh"
 #include "store/WeakDictionary.hh"
 
-#endif __STORE__STORE_HH__
+#endif
