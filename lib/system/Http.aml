@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure Socket        from "x-alice:/lib/system/Socket"
-import structure StringHashKey from "x-alice:/lib/utility/StringHashKey"
-import structure MkHashImpMap  from "x-alice:/lib/utility/MkHashImpMap"
-import structure Url           from "x-alice:/lib/utility/Url"
+import structure Socket        from "Socket"
+import structure StringHashKey from "../utility/StringHashKey"
+import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure Url           from "../utility/Url"
 import signature HTTP          from "HTTP-sig"
 
 structure Http :> HTTP =
