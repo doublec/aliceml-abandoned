@@ -148,6 +148,8 @@ prepare
       'Char.isUpper': Char.isUpper
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
+      'CharVector.concat':
+	 fun {$ Ss} {ByteString.make {List.toTuple '#' Ss}} end
       'CharVector.fromList': ByteString.make
       'CharVector.maxLen': 0x1FFFFFFF
       'CharVector.length': ByteString.length
@@ -437,18 +439,7 @@ prepare
       'String.compare': StringCompare
       'String.explode': ByteString.toString
       'String.hash': StringHash
-      'String.implode': ByteString.make
       'String.maxSize': 0x7FFFFFFF
-      'String.size': ByteString.length
-      'String.sub':
-	 fun {$ S I}
-	    try
-	       {ByteString.get S I}
-	    catch system(kernel('ByteString.get' ...) ...) then
-	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
-	       unit
-	    end
-	 end
       'String.substring':
 	 fun {$ S I J}
 	    try
@@ -521,6 +512,17 @@ prepare
 	 fun {$ X} {Adjoin X '#'} end
       'Unsafe.selRecord':
 	 fun {$ T L} T.L end
+      'Vector.concat':
+	 fun {$ Vs} N V in
+	    N = {List.foldR Vs fun {$ V In} {Width V} + In end 0}
+	    V = {Tuple.make '#[]' N}
+	    N = {List.foldL Vs
+		 fun {$ In V0}
+		    {Record.forAllInd V0 proc {$ I X} V.(In + I) = X end}
+		    In + {Width V0}
+		 end 1}
+	    V
+	 end
       'Vector.fromList':
 	 fun {$ Xs} {List.toTuple '#[]' Xs} end
       'Vector.maxLen': 0x7FFFFFF
@@ -589,7 +591,45 @@ prepare
 	 fun {$ W} {BootWord.make 31 {BootWord.toIntX W}} end
       'Word8.wordSize': 31
       'Word8.xorb': BootWord.'xorb'
-
+      'Word8Array.array':
+	 fun {$ N Init}
+	    if 0 =< N andthen N < BuiltinTable.'Word8Array.maxLen' then
+	       {Array.new 0 N - 1 Init}
+	    else
+	       {Exception.raiseError alice(BuiltinTable.'General.Size')}
+	       unit
+	    end
+	 end
+      'Word8Array.fromList':
+	 fun {$ Xs} N A in
+	    N = {Length Xs}
+	    A = {Array.new 0 N - 1 unit}
+	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
+	    A
+	 end
+      'Word8Array.length':
+	 fun {$ A} {Array.high A} + 1 end
+      'Word8Array.maxLen': 0x7FFFFFF
+      'Word8Array.sub':
+	 fun {$ A I}
+	    try
+	       {Array.get A I}
+	    catch error(kernel(array ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	       unit
+	    end
+	 end
+      'Word8Array.update':
+	 fun {$ A I X}
+	    try
+	       {Array.put A I X}
+	    catch error(kernel(array ...) ...) then
+	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
+	    end
+	    unit
+	 end
+      'Word8Vector.concat':
+	 fun {$ Ss} {ByteString.make {List.toTuple '#' Ss}} end
       'Word8Vector.fromList':
 	 fun {$ Xs} {ByteString.make {List.map Xs BootWord.toInt}} end
       'Word8Vector.maxLen': 0x1FFFFFFF
