@@ -127,7 +127,7 @@ structure OutputWriters =
           then Gtk.textBufferApplyTagByName(buffer, "comment", startiter, enditer)
           else BufferHighlight.highlight(buffer, text, startOffset, false, ref false)
 
-      fun fillBuf (view, buffer, handler, tags, highlight, text) =
+      fun fillBuf (view, buffer, handler, tags, noed, highlight, text) =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
@@ -140,6 +140,8 @@ structure OutputWriters =
               Gtk.textBufferGetIterAtOffset (buffer, start, startOffset);
               app (fn t => Gtk.textBufferApplyTag(buffer, t, start, iter)) tags;
               highlight (buffer, text, startOffset, start, iter);
+	      Gtk.textBufferGetStartIter(buffer, start);
+              Gtk.textBufferApplyTag(buffer, noed, start, iter);
               Gtk.textBufferPlaceCursor(buffer,iter);
               Gtk.textViewScrollToMark(view,
                                        Gtk.textBufferGetInsert buffer,
@@ -188,9 +190,8 @@ structure OutputWriters =
 	val _ = Gdk.colormapAllocColor(cmap, white, false, true)
 	val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
 
-        fun progInInsert (stdInStream,noedit) (buf, [Gtk.INT off,
-                                            Gtk.STRING txt,
-                                            Gtk.INT size]) =
+        fun progInInsert (stdInStream,noedit,bold)
+		(buf, [Gtk.INT off, Gtk.STRING txt, Gtk.INT size]) =
             if String.sub(txt, String.size txt - 1) = #"\n" then
                 let
                     val enditer = Gtk.textIterNew()
@@ -204,7 +205,15 @@ structure OutputWriters =
                 in
                     Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
                 end
-            else ()
+            else
+                let
+                    val startiter = Gtk.textIterNew()
+		    val _ = Gtk.textBufferGetIterAtOffset(buf, startiter, off)
+                    val enditer = Gtk.textIterCopy startiter
+		    val _ = Gtk.textIterForwardChars(enditer, size)
+                in
+                    Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
+                end
           | progInInsert _ _ = () (* Gtk is crazy *)
 
         fun lastChar' iter =
@@ -290,12 +299,12 @@ structure OutputWriters =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
-              val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,...} = makeTags progBuf
-              val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,bold,...} = makeTags compilerBuf
+              val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,bold=pBold,...} = makeTags progBuf
+              val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,bold=cBold,...} = makeTags compilerBuf
               val pSig = Gtk.signalConnect(progBuf, "insert-text",
-                                           progInInsert (stdin, pNoEd))
+                                           progInInsert (stdin, pNoEd, pBold))
               val cSig = Gtk.signalConnect(compilerBuf, "insert-text",
-                                           compilerInsert (eval, cNoEd, bold));
+                                           compilerInsert (eval, cNoEd, cBold));
 
               fun forward (widget, buf, signal, noed, styles, highlights) =
 		  let
@@ -306,7 +315,7 @@ structure OutputWriters =
 					Char.ord (String.sub (text, 0)))
 			  else (
 			  fillBuf (widget, buf, signal,
-					 [Vector.sub (styles, mark), noed],
+					 [Vector.sub (styles, mark)], noed,
 					 Vector.sub (highlights, mark), text);
 				mark)
 		  in
