@@ -32,13 +32,15 @@ struct
       | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
+(*--** adapt to new exceptions *)
     val localize =
 	let
 	    val handlers =
 		case OS.Process.getEnv "ALICE_LOAD" of
 		    SOME s => Resolver.Handler.parse s
 		  | NONE => [Resolver.Handler.default]
-	    val resolver = Resolver.new ("load", handlers)
+	    val resolver =
+		Resolver.new {name = "load", handlers, memoize = true}
 	in
 	    Resolver.localize resolver
 	end
