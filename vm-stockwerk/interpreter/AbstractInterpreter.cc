@@ -41,12 +41,12 @@ ConcreteCode *BootstrapInterpreter::Prepare(word abstractCode) {
 //    #args + FORMAL_ARGS_POS: id args (to receive arguments)
 //
 
-#define FRAME_SIZE 5
-#define INTERPRETER_POS 0
-#define PC_POS 1
-#define GLOBAL_ENV_POS 2
-#define LOCAL_ENV_POS 3
-#define FORMAL_ARGS_POS 4
+static const u_int FRAME_SIZE = 5;
+static const u_int INTERPRETER_POS = 0;
+static const u_int PC_POS = 1;
+static const u_int GLOBAL_ENV_POS = 2;
+static const u_int LOCAL_ENV_POS = 3;
+static const u_int FORMAL_ARGS_POS = 4;
 
 void BootstrapInterpreter::PushCall(TaskStack *taskStack, word w) {
   Closure *closure = Closure::FromWord(w);
@@ -117,8 +117,8 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       word formalId = formalArgs->Sel(0);
       if (nargs == ~1) {
 	localEnv->Add(formalId, taskStack->GetWord(0));
-      } else if (nargs == 0) { // unit
-	localEnv->Add(formalId, Store::IntToWord(0));
+      } else if (nargs == 0) {
+	localEnv->Add(formalId, Store::IntToWord(0)); // unit
       } else { // construct
 	Tuple *tuple = Tuple::New(nslots);
 	for (u_int i = nslots; i--; )

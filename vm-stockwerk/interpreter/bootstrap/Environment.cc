@@ -12,10 +12,10 @@
 
 #include "interpreter/bootstrap/Environment.hh"
 
-#define ENTRY_SIZE 3
-#define ID_POS 0
-#define VALUE_POS 1
-#define CDR_POS 2
+static const u_int ENTRY_SIZE = 3;
+static const u_int ID_POS = 0;
+static const u_int VALUE_POS = 1;
+static const u_int CDR_POS = 2;
 
 void Environment::Add(word id, word value) {
   int stamp = Store::WordToInt(id);
