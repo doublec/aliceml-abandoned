@@ -58,10 +58,9 @@ typedef enum {
   MAX_STACK_FRAME = LAZY_COMPILE_FRAME
 } FrameLabel;
 
-class StackFrame : private Block {
+class StackFrame: private Block {
 protected:
-  static const u_int INTERPRETER_POS = 0;
-  static const u_int BASE_SIZE       = 1;
+  enum { INTERPRETER_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
