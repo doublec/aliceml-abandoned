@@ -30,17 +30,17 @@ sig
 
     val insertScope :		set -> unit
     val inheritScope :		set * set -> unit
-    val deleteScope :		set -> unit
-    val deleteAll :		set -> unit
+    val removeScope :		set -> unit
+    val removeAll :		set -> unit
     val splitScope :		set -> set
 
     val mergeScope :		set -> unit
     val mergeDisjointScope :	set -> unit			(* Collision *)
     val mergeScopeWith :	(item -> unit) -> set -> unit
 
-    val delete :		set * item -> unit
-    val deleteExistent :	set * item -> unit		(* Unknown *)
-    val deleteWith :		(item -> unit) -> set * item -> unit
+    val remove :		set * item -> unit
+    val removeExistent :	set * item -> unit		(* Unknown *)
+    val removeWith :		(item -> unit) -> set * item -> unit
 
     val insert :		set * item -> unit
     val insertDisjoint :	set * item -> unit		(* Collision *)

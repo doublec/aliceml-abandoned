@@ -32,9 +32,9 @@ struct
     fun clone(ref ss)		= ref(List.map ImpSet.clone ss)
     fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
     fun insertScope r		= r := ImpSet.set() :: !r
-    fun deleteScope r		= r := List.tl(!r)
-    fun deleteAll r		= r := [ImpSet.set()]
-    fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )
+    fun removeScope r		= r := List.tl(!r)
+    fun removeAll r		= r := [ImpSet.set()]
+    fun splitScope(r as ref ss)	= ( removeScope r ; ref[List.hd ss] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
     fun mergeScope' unionSet (r as ref ss)
@@ -73,9 +73,9 @@ struct
 							    | some => some
 				  in iter ss end
 
-    fun delete(ref ss, i)		= ImpSet.delete(List.hd ss, i)
-    fun deleteExistent(ref ss, i)	= ImpSet.deleteExistent(List.hd ss, i)
-    fun deleteWith f (ref ss, i)	= ImpSet.deleteWith f (List.hd ss, i)
+    fun remove(ref ss, i)		= ImpSet.remove(List.hd ss, i)
+    fun removeExistent(ref ss, i)	= ImpSet.removeExistent(List.hd ss, i)
+    fun removeWith f (ref ss, i)	= ImpSet.removeWith f (List.hd ss, i)
 
     fun insert(ref ss, i)		= ImpSet.insert(List.hd ss, i)
     fun insertDisjoint(ref ss, i)	= ImpSet.insertDisjoint(List.hd ss, i)

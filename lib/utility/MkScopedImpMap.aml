@@ -30,9 +30,9 @@ struct
     fun clone(ref ms)		= ref(List.map ImpMap.clone ms)
     fun cloneScope(ref ms)	= ref[ImpMap.clone(List.hd ms)]
     fun insertScope r		= r := ImpMap.map() :: !r
-    fun deleteScope r		= r := List.tl(!r)
-    fun deleteAll r		= r := [ImpMap.map()]
-    fun splitScope(r as ref ms)	= ( deleteScope r ; ref[List.hd ms] )
+    fun removeScope r		= r := List.tl(!r)
+    fun removeAll r		= r := [ImpMap.map()]
+    fun splitScope(r as ref ms)	= ( removeScope r ; ref[List.hd ms] )
     fun inheritScope(r,r')	= r := List.hd(!(splitScope r')) :: !r
 
     fun mergeScope' unionMap (r as ref ms)
@@ -93,9 +93,9 @@ struct
 							    | some => some
 				  in iter ms end
 
-    fun delete(ref ms, k)		= ImpMap.delete(List.hd ms, k)
-    fun deleteExistent(ref ms, k)	= ImpMap.deleteExistent(List.hd ms, k)
-    fun deleteWith f (ref ms, k)	= ImpMap.deleteWith f (List.hd ms, k)
+    fun remove(ref ms, k)		= ImpMap.remove(List.hd ms, k)
+    fun removeExistent(ref ms, k)	= ImpMap.removeExistent(List.hd ms, k)
+    fun removeWith f (ref ms, k)	= ImpMap.removeWith f (List.hd ms, k)
 
     fun insert(ref ms, k, a)		= ImpMap.insert(List.hd ms, k, a)
     fun insertDisjoint(ref ms, k, a)	= ImpMap.insertDisjoint(List.hd ms, k,a)

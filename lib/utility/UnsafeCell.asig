@@ -24,8 +24,8 @@ sig
 	    val clone :		'ab_map -> 'ab_map
 
 	    val insertWithi :	('a * 'b * 'b -> 'b) * 'ab_map * 'a_cell * 'b -> unit
-	    val deleteWith :	('a -> unit) * 'ab_map * 'a_cell -> unit
-	    val deleteAll :	'ab_map -> unit
+	    val removeWith :	('a -> unit) * 'ab_map * 'a_cell -> unit
+	    val removeAll :	'ab_map -> unit
 
 	    val lookup :	'ab_map * 'a_cell -> 'b option
 	    val isEmpty :	'ab_map -> bool

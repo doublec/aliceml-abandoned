@@ -29,8 +29,8 @@ sig
     val cloneScope :		'a map -> 'a map
 
     val insertScope :		'a map -> unit
-    val deleteScope :		'a map -> unit
-    val deleteAll :		'a map -> unit
+    val removeScope :		'a map -> unit
+    val removeAll :		'a map -> unit
     val inheritScope :		'a map * 'a map -> unit
     val splitScope :		'a map -> 'a map
 
@@ -39,9 +39,9 @@ sig
     val mergeScopeWith :	('a * 'a -> 'a) -> 'a map -> unit
     val mergeScopeWithi :	(key * 'a * 'a -> 'a) -> 'a map -> unit
 
-    val delete :		'a map * key -> unit
-    val deleteExistent :	'a map * key -> unit		(* Unknown *)
-    val deleteWith :		(key -> unit) -> 'a map * key -> unit
+    val remove :		'a map * key -> unit
+    val removeExistent :	'a map * key -> unit		(* Unknown *)
+    val removeWith :		(key -> unit) -> 'a map * key -> unit
 
     val insert :		'a map * key * 'a -> unit
     val insertDisjoint :	'a map * key * 'a -> unit	(* Collision *)
