@@ -36,7 +36,6 @@
 	datatype ref = datatype ref
 	type  'a t   = 'a ref
 
-	val new :      'a -> 'a ref
 	val ! :        'a ref -> 'a
 	val := :       'a ref * 'a -> unit
 	val :=: :      'a ref * 'a ref -> unit
@@ -59,15 +58,6 @@
     </DT>
     <DD>
       <P>The type of mutable references.</P>
-    </DD>
-
-    <DT>
-      <TT>new <I>s</I></TT>
-    </DT>
-    <DD>
-      <P>Creates a reference to the value <TT><I>a</I></TT>.
-      This function <TT>new</TT> is a synonym for the <TT>ref</TT>
-      constructor, for consistency with other mutable data structures.</P>
     </DD>
 
     <DT>

@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/list.html">Standard ML
-    Basis' <TT>List</TT></A> structure.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/list.html"><TT>List</TT></A> structure.
   </P>
 
   <P>See also:
@@ -51,30 +50,38 @@
 	val op @ :        'a list * 'a list -> 'a list
 	val revAppend :   'a list * 'a list -> 'a list
 	val concat :      'a list list -> 'a list
+	val tabulate :    int * (int -> 'a) -> 'a list
+	val index :       'a list -> (int * 'a) list
 
 	val app :         ('a -> unit) -> 'a list -> unit
 	val appr :        ('a -> unit) -> 'a list -> unit
-	val appi :        (int * 'a -> unit) -> 'a list -> unit
-	val appri :       (int * 'a -> unit) -> 'a list -> unit
 	val map :         ('a -> 'b) -> 'a list -> 'b list
-	val mapi :        (int * 'a -> 'b) -> 'a list -> 'b list
 	val mapPartial :  ('a -> 'b option) -> 'a list -> 'b list
+	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val all :         ('a -> bool) -> 'a list -> bool
+	val exists :      ('a -> bool) -> 'a list -> bool
 	val find :        ('a -> bool) -> 'a list -> 'a option
 	val filter :      ('a -> bool) -> 'a list -> 'a list
 	val partition :   ('a -> bool) -> 'a list -> 'a list * 'a list
-	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+
+	val appi :        (int * 'a -> unit) -> 'a list -> unit
+	val appri :       (int * 'a -> unit) -> 'a list -> unit
+	val mapi :        (int * 'a -> 'b) -> 'a list -> 'b list
+	val mapiPartial : (int * 'a -> 'b option) -> 'a list -> 'b list
 	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
 	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
-	val all :         ('a -> bool) -> 'a list -> bool
-	val exists :      ('a -> bool) -> 'a list -> bool
+	val alli :        (int * 'a -> bool) -> 'a list -> bool
+	val existsi :     (int * 'a -> bool) -> 'a list -> bool
+	val findi :       (int * 'a -> bool) -> 'a list -> (int * 'a) option
+	val filteri :     (int * 'a -> bool) -> 'a list -> (int * 'a) list
+	val partitioni :  (int * 'a -> bool) -> 'a list -> (int * 'a) list * (int * 'a) list
+
 	val contains :    ''a list -> ''a -> bool
 	val notContains : ''a list -> ''a -> bool
 
-	val tabulate :    int * (int -> 'a) -> 'a list
-
 	val equal :       ('a * 'a -> bool) -> 'a list * 'a list -> bool
-	val compare :     ('a * 'a -> order) -> 'a list * 'a list -> order
+	val collate :     ('a * 'a -> order) -> 'a list * 'a list -> order
 
 	val isSorted :    ('a * 'a -> order) -> 'a list -> bool
 	val sort :        ('a * 'a -> order) -> 'a list -> 'a list
@@ -84,9 +91,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/list.html">Standard ML
-    Basis' <TT>List</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/list.html"><TT>List</TT></A> structure.
   </P>
 
   <DL>
@@ -110,6 +116,14 @@
     </DD>
 
     <DT>
+      <TT>index <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Pairs each element of the list <TT><I>l</I></TT> with its index in
+      <TT><I>l</I></TT>, counting from 0, and returns the list of pairs.</P>
+    </DD>
+
+    <DT>
       <TT>appr <I>f</I> <I>l</I></TT>
     </DT>
     <DD>
@@ -121,21 +135,50 @@
       <TT>appi <I>f</I> <I>l</I></TT> <BR>
       <TT>appri <I>f</I> <I>l</I></TT> <BR>
       <TT>mapi <I>f</I> <I>l</I></TT> <BR>
+      <TT>mapiPartial <I>f</I> <I>l</I></TT> <BR>
       <TT>foldli <I>f</I> <I>b</I> <I>l</I></TT> <BR>
-      <TT>foldri <I>f</I> <I>b</I> <I>l</I></TT>
+      <TT>foldri <I>f</I> <I>b</I> <I>l</I></TT> <BR>
+      <TT>alli <I>f</I> <I>l</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>l</I></TT> <BR>
+      <TT>findi <I>f</I> <I>l</I></TT> <BR>
+      <TT>filteri <I>f</I> <I>l</I></TT> <BR>
+      <TT>partitioni <I>f</I> <I>l</I></TT>
     </DT>
     <DD>
       <P>Indexed versions of the functions <TT>app</TT>, <TT>appr</TT>,
-      <TT>map</TT>, <TT>foldl</TT> and <TT>foldr</TT>. The index of each element
+      <TT>map</TT>, <TT>mapPartial</TT>, <TT>foldl</TT>, <TT>foldr</TT>, <TT>all</TT>,
+      <TT>exists</TT>, <TT>find</TT>, <TT>filter</TT> and <TT>partition</TT>.
+      The index of each element
       (starting from 0) is passed to <TT><I>f</I></TT> as an additional
-      argument. In the case of <TT>appri</TT> and <TT>foldri</TT>, processing
-      starts at the highest index. The following equivalences hold:</P>
+      argument. For <TT>appri</TT> and <TT>foldri</TT>, processing
+      starts at the highest index. The functions <TT>findi</TT>,
+      <TT>filteri</TT> and <TT>partitioni</TT> return indices along with
+      the corresponding elements.
+      The following equivalences hold:</P>
       <PRE>
-        app <I>f l</I>     = appi (<I>f</I> o #2) <I>l</I>
-        appr <I>f l</I>    = appri (<I>f</I> o #2) <I>l</I>
-        map <I>f l</I>     = mapi (<I>f</I> o #2) <I>l</I>
-        foldl <I>f b l</I> = foldli (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I>
-        foldr <I>f b l</I> = foldri (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I></PRE>
+	appi <I>f l</I>        = app <I>f</I> (index <I>l</I>)
+	appri <I>f l</I>       = appr <I>f</I> (index <I>l</I>)
+	mapi <I>f l</I>        = map <I>f</I> (index <I>l</I>)
+	mapiPartial <I>f l</I> = mapPartial <I>f</I> (index <I>l</I>)
+	foldli <I>f b l</I>    = foldl (fn ((<I>i</I>,<I>a</I>),<I>b</I>) => <I>f</I>(<I>i</I>,<I>a</I>,<I>b</I>)) <I>b</I> (index <I>l</I>)
+	foldri <I>f b l</I>    = foldr (fn ((<I>i</I>,<I>a</I>),<I>b</I>) => <I>f</I>(<I>i</I>,<I>a</I>,<I>b</I>)) <I>b</I> (index <I>l</I>)
+	alli <I>f l</I>        = all <I>f</I> (index <I>l</I>)
+	existsi <I>f l</I>     = exists <I>f</I> (index <I>l</I>)
+	findi <I>f l</I>       = find <I>f</I> (index <I>l</I>)
+	filteri <I>f l</I>     = filter <I>f</I> (index <I>l</I>)
+	partitioni <I>f l</I>  = partition <I>f</I> (index <I>l</I>)
+
+        app <I>f l</I>         = appi (<I>f</I> o #2) <I>l</I>
+        appr <I>f l</I>        = appri (<I>f</I> o #2) <I>l</I>
+        map <I>f l</I>         = mapi (<I>f</I> o #2) <I>l</I>
+        mapPartial <I>f l</I>  = mapiPartial (<I>f</I> o #2) <I>l</I>
+        foldl <I>f b l</I>     = foldli (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I>
+        foldr <I>f b l</I>     = foldri (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) <I>b</I> <I>l</I>
+        all <I>f l</I>         = alli (<I>f</I> o #2) <I>l</I>
+        exists <I>f l</I>      = existsi (<I>f</I> o #2) <I>l</I>
+        find <I>f l</I>        = Option.map #2 (findi (<I>f</I> o #2) <I>l</I>)
+        filter <I>f l</I>      = map #2 (filteri (<I>f</I> o #2) <I>l</I>)
+        partition <I>f l</I>   = Pair.map (map #2, map #2) (partitioni (<I>f</I> o #2) <I>l</I>)</PRE>
     </DD>
 
     <DT>
@@ -156,19 +199,11 @@
     </DD>
 
     <DT>
-      <TT>equal <I>equal'</I> (<I>l1</I>, <I>l2</I>)</TT>
+      <TT>equal <I>eq</I> (<I>l1</I>, <I>l2</I>)</TT>
     </DT>
     <DD>
-      <P>Creates a specific equality function on lists given an equality on the
+      <P>Creates a customized equality function on lists given an equality on the
       element type.</P>
-    </DD>
-
-    <DT>
-      <TT>compare <I>compare'</I> (<I>l1</I>, <I>l2</I>)</TT>
-    </DT>
-    <DD>
-      <P>Creates an ordering function on lists, given a suitable ordering functions
-      for its element type. The order induced is lexicographic.</P>
     </DD>
 
     <DT>

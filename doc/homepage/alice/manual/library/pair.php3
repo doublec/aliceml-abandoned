@@ -102,7 +102,7 @@
     </DD>
 
     <DT>
-      <TT>equal (<I>equalFst</I>, <I>equalSnd</I>) (<I>p1</I>, <I>p2</I>)</TT>
+      <TT>equal (<I>eqFst</I>, <I>eqSnd</I>) (<I>p1</I>, <I>p2</I>)</TT>
     </DT>
     <DD>
       <P>Creates an equality function on pairs, given suitable equality functions
@@ -110,11 +110,11 @@
     </DD>
 
     <DT>
-      <TT>compare (<I>compareFst</I>, <I>compareSnd</I>) (<I>p1</I>, <I>p2</I>)</TT>
+      <TT>collate (<I>f</I>, <I>g</I>) (<I>p1</I>, <I>p2</I>)</TT>
     </DT>
     <DD>
-      <P>Creates an ordering function on pairs, given suitable ordering functions
-      for each component type. The order induced is the lexicographic one.</P>
+      <P>Performs lexicographic comparison of the two pairs using the given
+      orderings <TT><I>f</I></TT> and <TT><I>g</I></TT> on the component types.</P>
     </DD>
   </DL>
 

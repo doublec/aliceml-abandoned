@@ -10,9 +10,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/real.html">Standard ML
-    Basis' <TT>REAL</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/real.html"><TT>REAL</TT></A> signature.
   </P>
 
   <P>See also:
@@ -98,9 +97,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/real.html">Standard ML
-    Basis' <TT>REAL</TT></A> signature.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/real.html"><TT>REAL</TT></A> signature.
   </P>
 
   <P>
@@ -130,7 +128,7 @@
     </DT>
     <DD>
       <P>A type for representing floating point numbers. Note that, unlike in
-      the <A href="http://www.dina.kvl.dk/~sestoft/sml/real.html">Standard
+      the <A href="http://SML.sourceforge.net/Basis/real.html">Standard
       Basis</A>, <TT>real</TT> is an equality type. However, two reals
       compare as equal only if they have <EM>exactly</EM> the same
       representation. In particular, <TT>0.0 &lt;&gt; ~0.0</TT>. For
@@ -159,7 +157,7 @@
       to <TT><I>r</I></TT>. In the case of a tie, rounds to the nearest even
       integer. If <TT><I>r</I></TT> is NaN or an infinity, returns
       <TT><I>r</I></TT>. The lack of this function seems to be an oversight
-      in the <A href="http://www.dina.kvl.dk/~sestoft/sml/real.html">Standard
+      in the <A href="http://SML.sourceforge.net/Basis/real.html">Standard
       Basis</A>.</P>
     </DD>
   </DL>

@@ -5,7 +5,7 @@
 
   <P>
     These pages provide a reference to the Alice library. It extends the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/">Standard ML
+    <A href="http://SML.sourceforge.net/Basis/">Standard ML
     Basis library</A>. All modules from the Standard Basis and some basic
     Alice-specific structures are available
     by default and need not be imported explicitly. For all others, the
@@ -13,6 +13,17 @@
     URL of the necessary import announcement. Note that it is not necessary to
     import corresponding signatures, if they are never used explicitly.
   </P>
+
+<!--
+  <P>
+    <EM>Note:</EM> Most other SML implementations currently still implement
+    a <A href="http://www.dina.kvl.dk/~sestoft/sml/">previous version of the
+    Standard Basis library</A>. Some incompatible changes in the recent
+    version may thus cause some SML code ported from other systems to be
+    rejected by Alice. Watch out particularly for uses of array and vector
+    modules.
+  </P>
+-->
 
 <?php section("toplevel", "top-level") ?>
 
@@ -26,7 +37,9 @@
   <TABLE>
     <TR> <TD><A href="alt.php3">ALT</A></TD> </TR>
     <TR> <TD><A href="array.php3">ARRAY</A></TD> </TR>
+    <TR> <TD><A href="array-slice.php3">ARRAY_SLICE</A></TD> </TR>
     <TR> <TD><A href="bool.php3">BOOL</A></TD> </TR>
+    <TR> <TD><A href="byte.php3">BYTE</A></TD> </TR>
     <TR> <TD><A href="char.php3">CHAR</A></TD> </TR>
     <TR> <TD><A href="future.php3">FUTURE</A></TD> </TR>
     <TR> <TD><A href="general.php3">GENERAL</A></TD> </TR>
@@ -38,7 +51,9 @@
     <TR> <TD><A href="lock.php3">LOCK</A></TD> </TR>
     <TR> <TD><A href="math.php3">MATH</A></TD> </TR>
     <TR> <TD><A href="mono-array.php3">MONO_ARRAY</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.php3">MONO_ARRAY_SLICE</A></TD> </TR>
     <TR> <TD><A href="mono-vector.php3">MONO_VECTOR</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.php3">MONO_VECTOR_SLICE</A></TD> </TR>
     <TR> <TD><A href="option.php3">OPTION</A></TD> </TR>
     <TR> <TD><A href="package.php3">PACKAGE</A></TD> </TR>
     <TR> <TD><A href="pair.php3">PAIR</A></TD> </TR>
@@ -47,11 +62,13 @@
     <TR> <TD><A href="ref.php3">REF</A></TD> </TR>
     <TR> <TD><A href="string.php3">STRING</A></TD> </TR>
     <TR> <TD><A href="substring.php3">SUBSTRING</A></TD> </TR>
+    <TR> <TD><A href="text.php3">TEXT</A></TD> </TR>
     <TR> <TD><A href="thread.php3">THREAD</A></TD> </TR>
     <TR> <TD><A href="time.php3">TIME</A></TD> </TR>
     <TR> <TD><A href="unique-string.php3">UNIQUE_STRING</A></TD> </TR>
     <TR> <TD><A href="vector.php3">VECTOR</A></TD> </TR>
     <TR> <TD><A href="vector-pair.php3">VECTOR_PAIR</A></TD> </TR>
+    <TR> <TD><A href="vector-slice.php3">VECTOR_SLICE</A></TD> </TR>
     <TR> <TD><A href="word.php3">WORD</A></TD> </TR>
   </TABLE>
   </TT>
@@ -118,10 +135,14 @@
   <TABLE>
     <TR> <TD><A href="alt.php3">Alt</A></TD> </TR>
     <TR> <TD><A href="array.php3">Array</A></TD> </TR>
+    <TR> <TD><A href="array-slice.php3">ArraySlice</A></TD> </TR>
     <TR> <TD><A href="bool.php3">Bool</A></TD> </TR>
+    <TR> <TD><A href="byte.php3">Byte</A></TD> </TR>
     <TR> <TD><A href="char.php3">Char</A></TD> </TR>
     <TR> <TD><A href="mono-array.php3">CharArray</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.php3">CharArraySlice</A></TD> </TR>
     <TR> <TD><A href="mono-vector.php3">CharVector</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.php3">CharVectorSlice</A></TD> </TR>
     <TR> <TD><A href="future.php3">Future</A></TD> </TR>
     <TR> <TD><A href="general.php3">General</A></TD> </TR>
     <TR> <TD><A href="hole.php3">Hole</A></TD> </TR>
@@ -143,11 +164,13 @@
     <TR> <TD><A href="ref.php3">Ref</A></TD> </TR>
     <TR> <TD><A href="string.php3">String</A></TD> </TR>
     <TR> <TD><A href="substring.php3">Substring</A></TD> </TR>
+    <TR> <TD><A href="text.php3">Text</A></TD> </TR>
     <TR> <TD><A href="thread.php3">Thread</A></TD> </TR>
     <TR> <TD><A href="time.php3">Time</A></TD> </TR>
     <TR> <TD><A href="unique-string.php3">UniqueString</A></TD> </TR>
     <TR> <TD><A href="vector.php3">Vector</A></TD> </TR>
     <TR> <TD><A href="vector-pair.php3">VectorPair</A></TD> </TR>
+    <TR> <TD><A href="vector-slice.php3">VectorSlice</A></TD> </TR>
     <TR> <TD><A href="char.php3">WideChar</A></TD> </TR>
     <TR> <TD><A href="string.php3">WideString</A></TD> </TR>
     <TR> <TD><A href="substring.php3">WideSubstring</A></TD> </TR>
@@ -156,7 +179,9 @@
     <TR> <TD><A href="word.php3">Word8</A></TD> </TR>
     <TR> <TD><A href="word.php3">Word31</A></TD> </TR>
     <TR> <TD><A href="mono-array.php3">Word8Array</A></TD> </TR>
+    <TR> <TD><A href="mono-array-slice.php3">Word8ArraySlice</A></TD> </TR>
     <TR> <TD><A href="mono-vector.php3">Word8Vector</A></TD> </TR>
+    <TR> <TD><A href="mono-vector-slice.php3">Word8VectorSlice</A></TD> </TR>
   </TABLE>
   </TT>
 

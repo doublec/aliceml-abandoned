@@ -9,9 +9,9 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/unix.html">Standard ML
-    Basis' <TT>Unix</TT></A> structure.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/unix.html"><TT>Unix</TT></A>
+    structure.
   </P>
 
   <P>See also:
@@ -39,9 +39,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/unix.html">Standard ML
-    Basis' <TT>Unix</TT></A> structure.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/unix.html"><TT>Unix</TT></A> structure.
   </P>
 
   <P>

@@ -6,14 +6,13 @@
   <PRE>
     signature STRING
     structure String : STRING where type string = string
-                              where Char = Char
-    structure WideString : STRING where Char = WideChar
+                                and type char   = char
+    structure WideString : STRING where type char = WideChar.t
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/string.html">Standard ML
-    Basis' <TT>STRING</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/string.html"><TT>STRING</TT></A> signature.
   </P>
 
   <P>See also:
@@ -34,30 +33,29 @@
   <PRE>
     signature STRING =
     sig
-	type string
+	eqtype char
+	eqtype string
 	type t = string
-
-	structure Char :  CHAR
 
 	val maxSize :     int
 
 	val size :        string -> int
-	val str :         Char.char -> string
-	val sub :         string * int -> Char.char
+	val str :         char -> string
+	val sub :         string * int -> char
 	val substring :   string * int * int -> string
 	val extract :     string * int * int option -> string
 
 	val op ^ :        string * string -> string
 	val concat :      string list -> string
 	val concatWith :  string -> string list -> string
-	val implode :     Char.char list -> string
-	val explode :     string -> Char.char list
-	val tabulate :    int * (int -> Char.char) -> string
+	val implode :     char list -> string
+	val explode :     string -> char list
+	val tabulate :    int * (int -> char) -> string
 
-	val map :         (Char.char -> Char.char) -> string -> string
-	val translate :   (Char.char -> string) -> string -> string
-	val fields :      (Char.char -> bool) -> string -> string list
-	val tokens :      (Char.char -> bool) -> string -> string list
+	val map :         (char -> char) -> string -> string
+	val translate :   (char -> string) -> string -> string
+	val fields :      (char -> bool) -> string -> string list
+	val tokens :      (char -> bool) -> string -> string list
 
 	val op < :        string * string -> bool
 	val op > :        string * string -> bool
@@ -65,10 +63,12 @@
 	val op >= :       string * string -> bool
 	val equal :       string * string -> bool
 	val compare :     string * string -> order
-	val collate :     (Char.char * Char.char -> order) -> string * string -> order
+	val collate :     (char * char -> order) -> string * string -> order
+	val hash :        string -> int
+
 	val isPrefix :    string -> string -> bool
 	val isSuffix :    string -> string -> bool
-	val hash :        string -> int
+	val isSubstring : string -> string -> bool
 
 	val toWide :      string -> WideString.string
 	val fromWide :    WideString.string -> string
@@ -85,9 +85,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/string.html">Standard ML
-    Basis' <TT>STRING</TT></A> signature.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/string.html"><TT>STRING</TT></A> signature.
   </P>
 
   <DL>
@@ -96,14 +95,6 @@
     </DT>
     <DD>
       <P>A local synonym for type <TT>string</TT>.</P>
-    </DD>
-
-    <DT>
-      <TT>concatWith <I>s</I> <I>l</I></TT>
-    </DT>
-    <DD>
-      <P>Returns the concatenation of the strings in the list
-      <TT><I>l</I></TT> using the string <TT><I>s</I></TT> as a separator.</P>
     </DD>
 
     <DT>
@@ -131,15 +122,6 @@
     </DT>
     <DD>
       <P>A hash function for strings.</P>
-    </DD>
-
-    <DT>
-      <TT>isSuffix <I>s1</I> <I>s2</I></TT>
-    </DT>
-    <DD>
-      <P>Returns <TT>true</TT> if the string <TT><I>s1</I></TT> is a suffix
-      of the string <TT><I>s2</I></TT>. Note that the empty string is a
-      suffix of any string, and that a string is a suffix of itself.</P>
     </DD>
 
     <DT>

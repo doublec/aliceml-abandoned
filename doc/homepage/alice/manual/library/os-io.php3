@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/os-io.html">Standard ML
-    Basis' <TT>OS.IO</TT></A> structure.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-io.html"><TT>OS.IO</TT></A> structure.
   </P>
 
   <P>See also:
@@ -52,9 +51,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/os-io.html">Standard ML
-    Basis' <TT>OS.IO</TT></A> structure.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-io.html"><TT>OS.IO</TT></A> structure.
   </P>
 
   <P>

@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/text-stream-io.html">Standard ML
-    Basis' <TT>TEXT_STREAM_IO</TT></A> signature.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/text-stream-io.html"><TT>TEXT_STREAM_IO</TT></A> signature.
   </P>
 
   <P>See also:
@@ -69,9 +68,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/text-stream-io.html">Standard ML
-    Basis' <TT>TEXT_STREAM_IO</TT></A> signature.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/text-stream-io.html"><TT>TEXT_STREAM_IO</TT></A> signature.
   </P>
 
   <P>

@@ -5,9 +5,9 @@
 
   <P>
     This section describes the top-level environment, i.e. all items that
-    are available unqualified. It extends the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/top-level-chapter.html">Standard ML
-    Basis' top-level environment</A>.
+    are available unqualified. It extends the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/top-level-chapter.html">top-level
+    environment</A>.
   </P>
 
 <?php section("import", "import") ?>

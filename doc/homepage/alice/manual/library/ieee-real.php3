@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/ieee-float.html">Standard ML
-    Basis' <TT>IEEEReal</TT></A> structure.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/ieee-float.html"><TT>IEEEReal</TT></A> structure.
   </P>
 
   <P>See also:
@@ -32,8 +31,7 @@
 	 exception Unordered
 
 	 datatype real_order    = LESS | EQUAL | GREATER | UNORDERED
-	 datatype nan_mode      = QUIET | SIGNALLING
-	 datatype float_class   = NAN of nan_mode | INF | ZERO | NORMAL | SUBNORMAL
+	 datatype float_class   = NAN | INF | ZERO | NORMAL | SUBNORMAL
 	 datatype rounding_mode = TO_NEAREST | TO_NEGINF | TO_POSINF | TO_ZERO
 	 type decimal_approx    = {kind : float_class, sign : bool, digits : int list,  exp : int}
     end
@@ -42,9 +40,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/ieee-float.html">Standard ML
-    Basis' <TT>IEEEReal</TT></A> structure.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/ieee-float.html"><TT>IEEEReal</TT></A> structure.
   </P>
 
   <P>

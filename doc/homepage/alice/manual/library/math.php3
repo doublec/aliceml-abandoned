@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/math.html">Standard ML
-    Basis' <TT>MATH</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/math.html"><TT>MATH</TT></A> signature.
   </P>
 
   <P>See also:
@@ -59,9 +58,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/math.html">Standard ML
-    Basis' <TT>MATH</TT></A> signature.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/math.html"><TT>MATH</TT></A> signature.
   </P>
 
   <DL>

@@ -24,11 +24,9 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/prim-io.html">Standard ML
-    Basis' <TT>PRIM_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/prim-io-fn.html">
-    <TT>PrimIO</TT></A> functor.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/prim-io.html"><TT>PRIM_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/prim-io-fn.html"><TT>PrimIO</TT></A> functor.
   </P>
 
   <P>See also:
@@ -100,11 +98,9 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/prim-io.html">Standard ML
-    Basis' <TT>PRIM_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/prim-io-fn.html">
-    <TT>PrimIO</TT></A> functor.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/prim-io.html"><TT>PRIM_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/prim-io-fn.html"><TT>PrimIO</TT></A> functor.
   </P>
 
 <?php footing() ?>

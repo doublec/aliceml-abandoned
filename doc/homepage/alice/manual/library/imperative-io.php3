@@ -13,11 +13,9 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/imperative-io.html">Standard ML
-    Basis' <TT>IMPERATIVE_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/imperative-io-fn.html">
-    <TT>ImperativeIO</TT></A> functor.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/imperative-io.html"><TT>IMPERATIVE_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/imperative-io-fn.html"><TT>ImperativeIO</TT></A> functor.
   </P>
 
   <P>See also:
@@ -73,11 +71,9 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/imperative-io.html">Standard ML
-    Basis' <TT>IMPERATIVE_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/imperative-io-fn.html">
-    <TT>ImperativeIO</TT></A> functor.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/imperative-io.html"><TT>IMPERATIVE_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/imperative-io-fn.html"><TT>ImperativeIO</TT></A> functor.
   </P>
 
 <?php footing() ?>

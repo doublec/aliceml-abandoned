@@ -11,9 +11,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/integer.html">Standard ML
-    Basis' <TT>INTEGER</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/integer.html"><TT>INTEGER</TT></A> signature.
   </P>
 
   <P>See also:
@@ -76,9 +75,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/integer.html">Standard ML
-    Basis' <TT>INTEGER</TT></A> signature.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/integer.html"><TT>INTEGER</TT></A> signature.
   </P>
 
   <DL>
@@ -108,7 +106,7 @@
       <TT>scan <I>getc</I> <I>strm</I></TT>
     </DT>
     <DD>
-      <P>Like specified in the <A href="http://www.dina.kvl.dk/~sestoft/sml/integer.html#SIG:INTEGER.fromString:VAL">Standard ML
+      <P>Like specified in the <A href="http://SML.sourceforge.net/Basis/integer.html#SIG:INTEGER.fromString:VAL">Standard ML
       Basis</A>, except that underscores are allowed to separate digits.
       The <TT>scan</TT> function thus excepts the following formats:</P>
       <PRE>

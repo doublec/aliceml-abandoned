@@ -32,22 +32,26 @@
   <PRE>
     signature VECTOR_PAIR =
     sig
-	val zip :    'a vector * 'b vector -> ('a * 'b) vector
-	val unzip :  ('a * 'b) vector -> 'a vector * 'b vector
+	val zip :     'a vector * 'b vector -> ('a * 'b) vector
+	val unzip :   ('a * 'b) vector -> 'a vector * 'b vector
 
-	val app :    ('a * 'b -> unit) -> 'a vector * 'b vector -> unit
-	val appr :   ('a * 'b -> unit) -> 'a vector * 'b vector -> unit
-	val map :    ('a * 'b -> 'c) -> 'a vector * 'b vector -> 'c vector
-	val foldl :  ('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
-	val foldr :  ('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
-	val appi :   (int * 'a * 'b -> unit) -> 'a vector * 'b vector * int * int option -> unit
-	val appri :  (int * 'a * 'b -> unit) -> 'a vector * 'b vector * int * int option -> unit
-	val mapi :   (int * 'a * 'b -> 'c) -> 'a vector * 'b vector * int * int option -> 'c vector
-	val foldli : (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a vector * 'b vector * int * int option -> 'c
-	val foldri : (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a vector * 'b vector * int * int option -> 'c
-	val all :    ('a * 'b -> bool) -> 'a vector * 'b vector -> bool
-	val exists : ('a * 'b -> bool) -> 'a vector * 'b vector -> bool
-	val find :   ('a * 'b -> bool) -> 'a vector * 'b vector -> ('a * 'b) option
+	val app :     ('a * 'b -> unit) -> 'a vector * 'b vector -> unit
+	val appr :    ('a * 'b -> unit) -> 'a vector * 'b vector -> unit
+	val map :     ('a * 'b -> 'c) -> 'a vector * 'b vector -> 'c vector
+	val foldl :   ('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
+	val foldr :   ('a * 'b * 'c ->'c) -> 'c -> 'a vector * 'b vector -> 'c
+	val all :     ('a * 'b -> bool) -> 'a vector * 'b vector -> bool
+	val exists :  ('a * 'b -> bool) -> 'a vector * 'b vector -> bool
+	val find :    ('a * 'b -> bool) -> 'a vector * 'b vector -> ('a * 'b) option
+
+	val appi :    (int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
+	val appri :   (int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
+	val mapi :    (int * 'a * 'b -> 'c) -> 'a vector * 'b vector -> 'c vector
+	val foldli :  (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a vector * 'b vector -> 'c
+	val foldri :  (int * 'a * 'b * 'c -> 'c) -> 'c -> 'a vector * 'b vector -> 'c
+	val alli :    (int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+	val existsi : (int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+	val findi :   (int * 'a * 'b -> bool) -> 'a vector * 'b vector -> (int * 'a * 'b) option
     end
   </PRE>
 
@@ -117,27 +121,6 @@
     </DD>
 
     <DT>
-      <TT>appi <I>f</I> (<I>l1</I>, <I>l2</I>, <I>i</I>, <I>opt</I>)</TT> <BR>
-      <TT>appri <I>f</I> (<I>l1</I>, <I>l2</I>, <I>i</I>, <I>opt</I>)</TT> <BR>
-      <TT>mapi <I>f</I> (<I>l1</I>, <I>l2</I>, <I>i</I>, <I>opt</I>)</TT> <BR>
-      <TT>foldli <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>, <I>i</I>, <I>opt</I>)</TT> <BR>
-      <TT>foldri <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>, <I>i</I>, <I>opt</I>)</TT>
-    </DT>
-    <DD>
-      <P>Indexed versions of the functions <TT>app</TT>, <TT>appr</TT>,
-      <TT>map</TT>, <TT>foldl</TT> and <TT>foldr</TT>. The index of each element
-      is passed to <TT><I>f</I></TT> as an additional
-      argument. In the case of <TT>appri</TT> and <TT>foldri</TT>, processing
-      starts at the highest index. The following equivalences hold:</P>
-      <PRE>
-        app <I>f</I> (<I>l1</I>, <I>l2</I>)     = appi (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) (<I>l1</I>, <I>l2</I>, 0, NONE)
-        appr <I>f</I> (<I>l1</I>, <I>l2</I>)    = appri (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) (<I>l1</I>, <I>l2</I>, 0, NONE)
-        map <I>f</I> (<I>l1</I>, <I>l2</I>)     = mapi (fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)) (<I>l1</I>, <I>l2</I>, 0, NONE)
-        foldl <I>f b</I> (<I>l1</I>, <I>l2</I>) = foldli (fn (<I>i</I>,<I>a</I>,<I>b</I>,<I>c</I>) => <I>f</I>(<I>a</I>,<I>b</I>,<I>c</I>)) <I>b</I> (<I>l1</I>, <I>l2</I>, 0, NONE)
-        foldr <I>f b</I> (<I>l1</I>, <I>l2</I>) = foldri (fn (<I>i</I>,<I>a</I>,<I>b</I>,<I>c</I>) => <I>f</I>(<I>a</I>,<I>b</I>,<I>c</I>)) <I>b</I> (<I>l1</I>, <I>l2</I>, 0, NONE)</PRE>
-    </DD>
-
-    <DT>
       <TT>all <I>f</I> (<I>vec1</I>, <I>vec2</I>)</TT> <BR>
       <TT>exists <I>f</I> (<I>vec1</I>, <I>vec2</I>)</TT>
     </DT>
@@ -163,6 +146,40 @@
       ignored. The above expression is equivalent to:</P>
       <PRE>
          Vector.find <I>f</I> (zip (<I>vec1</I>, <I>vec2</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT>appi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>appri <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>mapi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldli <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>foldri <I>f</I> <I>b</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>alli <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>existsi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT> <BR>
+      <TT>findi <I>f</I> (<I>l1</I>, <I>l2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Indexed versions of the functions <TT>app</TT>, <TT>appr</TT>,
+      <TT>map</TT>, <TT>foldl</TT>, <TT>foldr</TT>, <TT>all</TT>,
+      <TT>exists</TT> and <TT>findi</TT>. The index of each element
+      is passed to <TT><I>f</I></TT> as an additional
+      argument. For <TT>appri</TT> and <TT>foldri</TT>, processing
+      starts at the highest index. In the case of success, <TT>findi</TT>
+      returns the index of the pair of elements found along with the respective
+      elements. The following equivalences hold:</P>
+      <PRE>
+        app <I>f</I> (<I>l1</I>, <I>l2</I>)     = appi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        appr <I>f</I> (<I>l1</I>, <I>l2</I>)    = appri (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        map <I>f</I> (<I>l1</I>, <I>l2</I>)     = mapi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        foldl <I>f b</I> (<I>l1</I>, <I>l2</I>) = foldli (<I>f</I> o <I>g2</I>) <I>b</I> (<I>l1</I>, <I>l2</I>)
+        foldr <I>f b</I> (<I>l1</I>, <I>l2</I>) = foldri (<I>f</I> o <I>g2</I>) <I>b</I> (<I>l1</I>, <I>l2</I>)</PRE>
+        all <I>f</I> (<I>l1</I>, <I>l2</I>)     = alli (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        exists <I>f</I> (<I>l1</I>, <I>l2</I>)  = existsi (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>)
+        find <I>f</I> (<I>l1</I>, <I>l2</I>)    = Option.map <I>g1</I> (foldri (<I>f</I> o <I>g1</I>) (<I>l1</I>, <I>l2</I>))</PRE>
+      <P>where</P>
+      <PRE>
+        <I>g1</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>) => <I>f</I>(<I>a</I>,<I>b</I>)
+        <I>g2</I> = fn (<I>i</I>,<I>a</I>,<I>b</I>,<I>c</I>) => <I>f</I>(<I>a</I>,<I>b</I>,<I>c</I>)<PRE>
     </DD>
   </DL>
 

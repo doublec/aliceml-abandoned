@@ -12,9 +12,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/word.html">Standard ML
-    Basis' <TT>WORD</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/word.html"><TT>WORD</TT></A> signature.
   </P>
 
   <P>See also:
@@ -55,6 +54,7 @@
 	val >> :            word * Word.word -> word
 	val ~>> :           word * Word.word -> word
 
+	val ~ :             word -> word
 	val + :             word * word -> word
 	val - :             word * word -> word
 	val * :             word * word -> word
@@ -82,9 +82,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/word.html">Standard ML
-    Basis' <TT>WORD</TT></A> signature.
+    Items not described here are as in the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/word.html"><TT>WORD</TT></A> signature.
   </P>
 
   <DL>
@@ -114,7 +113,7 @@
       <TT>scan <I>getc</I> <I>strm</I></TT>
     </DT>
     <DD>
-      <P>Like specified in the <A href="http://www.dina.kvl.dk/~sestoft/sml/word.html#SIG:WORD.fromString:VAL">Standard ML
+      <P>Like specified in the <A href="http://SML.sourceforge.net/Basis/word.html#SIG:WORD.fromString:VAL">Standard ML
       Basis</A>, except that underscores are allowed to separate digits.
       The <TT>scan</TT> function thus excepts the following formats:</P>
       <PRE>

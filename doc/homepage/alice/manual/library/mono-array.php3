@@ -10,14 +10,14 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/array.html">Standard ML
-    Basis' <TT>MONO_ARRAY</TT></A> signature.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/array.html"><TT>MONO_ARRAY</TT></A> signature.
   </P>
 
   <P>See also:
-    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
-    <A href="array.php3"><TT>Array</TT></A>
+    <A href="mono-array-slice.php3"><TT>MONO_ARRAY_SLICE</TT></A>,
+    <A href="array.php3"><TT>Array</TT></A>,
+    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>
   </P>
 
 <?php section("import", "import") ?>
@@ -31,60 +31,63 @@
   <PRE>
     signature MONO_ARRAY =
     sig
-	structure Vector : MONO_VECTOR
-
+	type elem
+	type vector
 	eqtype array
 	type t = array
-	type elem = Vector.elem
 
-	val maxLen :     int
+	val maxLen :      int
 
-	val array :      int * elem -> array
-	val new :        int * elem -> array
-	val fromList :   elem list -> array
-	val toList :     array -> elem list
-	val fromVector : Vector.vector -> array
-	val toVector :   array -> Vector.vector
-	val tabulate :   int * (int -> elem) -> array
+	val array :       int * elem -> array
+	val vector :      array -> vector
+	val fromList :    elem list -> array
+	val toList :      array -> elem list
+	val fromVector :  vector -> array
+	val toVector :    array -> vector
+	val tabulate :    int * (int -> elem) -> array
 
-	val length :     array -> int
-	val sub :        array * int -> elem
-	val update :     array * int * elem -> unit
-	val swap :       array * int * int -> unit
-	val rev :        array -> unit
-	val extract :    array * int * int option -> Vector.vector
-	val copy :       {di:int, dst:array, len:int option, si:int, src:array} -> unit
-	val copyVec :    {di:int, dst:array, len:int option, si:int, src:Vector.vector} -> unit
+	val length :      array -> int
+	val sub :         array * int -> elem
+	val update :      array * int * elem -> unit
+	val swap :        array * int * int -> unit
+	val rev :         array -> unit
+	val copy :        {src : array,  dst : array, di : int} -> unit
+	val copyVec :     {src : vector, dst : array, di : int} -> unit
 
-	val app :        (elem -> unit) -> array -> unit
-	val appr :       (elem -> unit) -> array -> unit
-	val modify :     (elem -> elem) -> array -> unit
-	val foldl :      (elem * 'a -> 'a) -> 'a -> array -> 'a
-	val foldr :      (elem * 'a -> 'a) -> 'a -> array -> 'a
-	val appi :       (int * elem -> unit) -> array * int * int option -> unit
-	val appri :      (int * elem -> unit) -> array * int * int option -> unit
-	val modifyi :    (int * elem -> elem) -> array * int * int option -> unit
-	val foldli :     (int * elem * 'a -> 'a) -> 'a -> array * int * int option -> 'a
-	val foldri :     (int * elem * 'a -> 'a) -> 'a -> array * int * int option -> 'a
+	val app :         (elem -> unit) -> array -> unit
+	val appr :        (elem -> unit) -> array -> unit
+	val modify :      (elem -> elem) -> array -> unit
+	val foldl :       (elem * 'a -> 'a) -> 'a -> array -> 'a
+	val foldr :       (elem * 'a -> 'a) -> 'a -> array -> 'a
+	val all :         (elem -> bool) -> array -> bool
+	val exists :      (elem -> bool) -> array -> bool
+	val find :        (elem -> bool) -> array -> elem option
 
-	val all :        (elem -> bool) -> array -> bool
-	val exists :     (elem -> bool) -> array -> bool
-	val find :       (elem -> bool) -> array -> elem option
+	val appi :        (int * elem -> unit) -> array -> unit
+	val appri :       (int * elem -> unit) -> array -> unit
+	val modifyi :     (int * elem -> elem) -> array -> unit
+	val foldli :      (int * elem * 'a -> 'a) -> 'a -> array -> 'a
+	val foldri :      (int * elem * 'a -> 'a) -> 'a -> array -> 'a
+	val alli :        (int * elem -> bool) -> array -> bool
+	val existsi :     (int * elem -> bool) -> array -> bool
+	val findi :       (int * elem -> bool) -> array -> (int * elem) option
 
-	val equal :      (elem * elem -> bool) -> array * array -> bool
-	val compare :    (elem * elem -> order) -> array * array -> order
+	val contains :    (elem * elem -> bool) -> array -> elem -> bool
+	val notContains : (elem * elem -> bool) -> array -> elem -> bool
 
-	val isSorted :   (elem * elem -> order) -> array -> bool
-	val sort :       (elem * elem -> order) -> array -> unit
+	val equal :       (elem * elem -> bool) -> array * array -> bool
+	val collate :     (elem * elem -> order) -> array * array -> order
+
+	val isSorted :    (elem * elem -> order) -> array -> bool
+	val sort :        (elem * elem -> order) -> array -> unit
     end
   </PRE>
 
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/mono-array.html">Standard ML
-    Basis' <TT>MONO_ARRAY</TT></A> signature.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/mono-array.html"><TT>MONO_ARRAY</TT></A> signature.
   </P>
 
   <DL>
@@ -93,15 +96,6 @@
     </DT>
     <DD>
       <P>A local synonym for type <TT>array</TT>.</P>
-    </DD>
-
-    <DT>
-      <TT>new (<I>n</I>, <I>init</I>)</TT>
-    </DT>
-    <DD>
-      <P>Creates a new array of size <TT><I>n</I></TT>, initialised with
-      value <TT><I>init</I></TT>. Synonym for funciton <TT>array</TT>, for
-      consistency with other mutable data structures.</P>
     </DD>
 
     <DT>
@@ -119,7 +113,8 @@
     <DD>
       <P>Creates a vector containing the same elements as the array
       <TT><I>arr</I></TT>. If <TT><I>arr</I></TT> contains more than
-      <TT>Vector.maxLen</TT> elements, then the <TT>Size</TT> exception is raised.</P>
+      <TT>Vector.maxLen</TT> elements, then the <TT>Size</TT> exception is
+      raised. Equivalent to <TT>vector <I>arr</I></TT>.</P>
     </DD>
 
     <DT>
@@ -149,8 +144,8 @@
     </DD>
 
     <DT>
-      <TT>appri <I>f</I> <I>slice</I></TT> <BR>
-      <TT>appr <I>f</I> <I>arr</I></TT>
+      <TT>appr <I>f</I> <I>arr</I></TT> <BR>
+      <TT>appri <I>f</I> <I>arr</I></TT>
     </DT>
     <DD>
       <P>Like <TT>appi</TT> and <TT>app</TT>, but apply <TT><I>f</I></TT> in
@@ -161,50 +156,43 @@
     </DD>
 
     <DT>
-      <TT>exists <I>f</I> <I>arr</I></TT>
+      <TT>alli <I>f</I> <I>arr</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>arr</I></TT>
     </DT>
     <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      array <TT><I>arr</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>true</TT>; returns <TT>true</TT> if such an
-      <TT><I>x</I></TT> exists and <TT>false</TT> otherwise.</P>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>arr</I>    = alli (<I>f</I> o #2) <I>arr</I>
+        exists <I>f</I> <I>arr</I> = existsi (<I>f</I> o #2) <I>arr</I></PRE>
     </DD>
 
     <DT>
-      <TT>all <I>f</I> <I>arr</I></TT>
+      <TT>contains <I>eq</I> <I>arr</I> <I>a</I></TT>
     </DT>
     <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      array <TT><I>arr</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>false</TT>; returns <TT>false</TT> if such an
-      <TT><I>x</I></TT> exists and <TT>true</TT> otherwise.
-      Equivalent to <TT>not(exists (not o <I>f</I>) <I>l</I>))</TT>.</P>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> occurs in the
+      array <TT><I>arr</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.</P>
     </DD>
 
     <DT>
-      <TT>find <I>f</I> <I>arr</I></TT>
+      <TT>notContains <I>eq</I> <I>arr</I> <I>a</I></TT>
     </DT>
     <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      array <TT><I>arr</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>true</TT>; returns <TT>SOME <I>x</I></TT> if such an
-      <TT><I>x</I></TT> exists and <TT>NONE</TT> otherwise.</P>
+      <P>Returns <TT>true</TT> if the element <TT><I>a</I></TT> does not occur in the
+      array <TT><I>arr</I></TT>, with respect to the element equality
+      <TT><I>eq</I></TT>; otherwise <TT>false</TT>.
+      Equivalent to <TT>not(contains <I>eq arr a</I>)</TT>.</P>
     </DD>
 
     <DT>
-      <TT>equal <I>equal'</I> (<I>arr1</I>, <I>arr2</I>)</TT>
+      <TT>equal <I>eq</I> (<I>arr1</I>, <I>arr2</I>)</TT>
     </DT>
     <DD>
       <P>Creates an equality function on arrays given an equality on the
       element type.</P>
-    </DD>
-
-    <DT>
-      <TT>compare <I>compare'</I> (<I>arr1</I>, <I>arr2</I>)</TT>
-    </DT>
-    <DD>
-      <P>Creates an ordering function on arrays, given a suitable ordering functions
-      for its element type. The order induced is lexicographic.</P>
     </DD>
 
     <DT>

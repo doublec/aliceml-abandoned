@@ -20,11 +20,9 @@
   </PRE>
 
   <P>
-    The
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/stream-io.html">Standard ML
-    Basis' <TT>PRIM_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/stream-io-fn.html">
-    <TT>StreamIO</TT></A> functor.
+    The Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/stream-io.html"><TT>PRIM_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/stream-io-fn.html"><TT>StreamIO</TT></A> functor.
   </P>
 
   <P>See also:
@@ -83,11 +81,9 @@
 <?php section("description", "description") ?>
 
   <P>
-    Like the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/stream-io.html">Standard ML
-    Basis' <TT>STREAM_IO</TT></A> signature and
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/stream-io-fn.html">
-    <TT>StreamIO</TT></A> functor.
+    Like the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/stream-io.html"><TT>STREAM_IO</TT></A> signature and
+    <A href="http://SML.sourceforge.net/Basis/stream-io-fn.html"><TT>StreamIO</TT></A> functor.
   </P>
 
   <P>

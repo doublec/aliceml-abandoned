@@ -31,13 +31,12 @@
   <PRE>
     signature UNIQUE_STRING =
     sig
-	structure String : STRING
-
+	eqtype string
 	eqtype unique_string
 	type t = unique_string
 
-	val unique :  String.string -> unique_string
-	val string :  unique_string -> String.string
+	val unique :  string -> unique_string
+	val string :  unique_string -> string
 
 	val equal :   unique_string * unique_string -> bool
 	val compare : unique_string * unique_string -> order

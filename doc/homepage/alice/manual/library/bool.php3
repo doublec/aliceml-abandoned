@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/bool.html">Standard ML
-    Basis' <TT>Bool</TT></A> structure.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/bool.html"><TT>Bool</TT></A> structure.
   </P>
 
   <P>
@@ -48,9 +47,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/bool.html">Standard ML
-    Basis' <TT>Bool</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/bool.html"><TT>Bool</TT></A> structure.
   </P>
 
   <DL>

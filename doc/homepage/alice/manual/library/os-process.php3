@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extension of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/os-process.html">Standard ML
-    Basis' <TT>OS.Process</TT></A> structure.
+    An extension of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-process.html"><TT>OS.Process</TT></A> structure.
   </P>
 
   <P>See also:
@@ -49,9 +48,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/os-process.html">Standard ML
-    Basis' <TT>OS.Process</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/os-process.html"><TT>OS.Process</TT></A> structure.
   </P>
 
   <P>

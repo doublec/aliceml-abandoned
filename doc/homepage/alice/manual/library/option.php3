@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/option.html">Standard ML
-    Basis' <TT>Option</TT></A> structure.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/option.html"><TT>Option</TT></A> structure.
   </P>
 
   <P>
@@ -63,9 +62,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/option.html">Standard ML
-    Basis' <TT>Option</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/option.html"><TT>Option</TT></A> structure.
   </P>
 
   <DL>
@@ -86,15 +84,6 @@
     </DD>
 
     <DT>
-      <TT>app <I>f</I> <I>opt</I></TT>
-    </DT>
-    <DD>
-      <P>Applies the function <TT><I>f</I></TT> to
-      <TT><I>v</I></TT> if <TT><I>opt</I></TT> is <TT>SOME <I>v</I></TT>, and
-      does nothing otherwise.</P>
-    </DD>
-
-    <DT>
       <TT>fold <I>f</I> <I>b</I> <I>opt</I></TT>
     </DT>
     <DD>
@@ -104,7 +93,7 @@
     </DD>
 
     <DT>
-      <TT>equal <I>equal'</I> (<I>opt1</I>, <I>opt2</I>)</TT>
+      <TT>equal <I>eq</I> (<I>opt1</I>, <I>opt2</I>)</TT>
     </DT>
     <DD>
       <P>Creates an equality function on options, given a suitable equality
@@ -112,18 +101,18 @@
     </DD>
 
     <DT>
-      <TT>compare <I>compare'</I> (<I>opt1</I>, <I>opt2</I>)</TT>
+      <TT>collate <I>f</I> (<I>opt1</I>, <I>opt2</I>)</TT>
     </DT>
     <DD>
-      <P>Creates an ordering function on options, given a suitable ordering
-      function on the constituent type. The constructed ordering is defined
+      <P>Performs comparison on options, given a suitable ordering
+      function <TT><I>f</I></TT> on the constituent type. The constructed ordering is defined
       as follows:</P>
       <PRE>
-      fun compare compare' =
+      fun collate f =
 	  fn (NONE,   NONE)   = EQUAL
 	   | (NONE,   SOME _) = LESS
 	   | (SOME _, NONE)   = GREATER
-	   | (SOME x, SOME y) = compare' (x, y)</PRE>
+	   | (SOME x, SOME y) = f (x, y)</PRE>
     </DD>
   </DL>
 

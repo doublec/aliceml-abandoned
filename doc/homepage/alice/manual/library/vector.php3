@@ -9,14 +9,14 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/vector.html">Standard ML
-    Basis' <TT>Vector</TT></A> structure.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/vector.html"><TT>Vector</TT></A> structure.
   </P>
 
   <P>See also:
-    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
+    <A href="vector-slice.php3"><TT>VectorSlice</TT></A>,
     <A href="vector-pair.php3"><TT>VectorPair</TT></A>,
+    <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
     <A href="array.php3"><TT>Array</TT></A>
   </P>
 
@@ -43,7 +43,6 @@
 	val length :      'a vector -> int
 	val sub :         'a vector * int -> 'a
 	val replace :     'a vector * int * 'a -> 'a vector
-	val extract :     'a vector * int * int option -> 'a vector
 	val concat :      'a vector list -> 'a vector
 	val rev :         'a vector -> 'a vector
 
@@ -52,20 +51,24 @@
 	val map :         ('a -> 'b) -> 'a vector -> 'b vector
 	val foldl :       ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
 	val foldr :       ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
-	val appi :        (int * 'a -> unit) -> 'a vector * int * int option -> unit
-	val appri :       (int * 'a -> unit) -> 'a vector * int * int option -> unit
-	val mapi :        (int * 'a -> 'b) -> 'a vector * int * int option -> 'b vector
-	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector * int * int option -> 'b
-	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector * int * int option -> 'b
-
 	val all :         ('a -> bool) -> 'a vector -> bool
 	val exists :      ('a -> bool) -> 'a vector -> bool
 	val find :        ('a -> bool) -> 'a vector -> 'a option
+
+	val appi :        (int * 'a -> unit) -> 'a vector -> unit
+	val appri :       (int * 'a -> unit) -> 'a vector -> unit
+	val mapi :        (int * 'a -> 'b) -> 'a vector -> 'b vector
+	val foldli :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val foldri :      (int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+	val alli :        (int * 'a -> bool) -> 'a vector -> bool
+	val existsi :     (int * 'a -> bool) -> 'a vector -> bool
+	val findi :       (int * 'a -> bool) -> 'a vector -> (int * 'a) option
+
 	val contains :    ''a vector -> ''a -> bool
 	val notContains : ''a vector -> ''a -> bool
 
 	val equal :       ('a * 'a -> bool) -> 'a vector * 'a vector -> bool
-	val compare :     ('a * 'a -> order) -> 'a vector * 'a vector -> order
+	val collate :     ('a * 'a -> order) -> 'a vector * 'a vector -> order
 
 	val isSorted :    ('a * 'a -> order) -> 'a vector -> bool
 	val sort :        ('a * 'a -> order) -> 'a vector -> 'a vector
@@ -75,9 +78,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/vector.html">Standard ML
-    Basis' <TT>Vector</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/vector.html"><TT>Vector</TT></A> structure.
   </P>
 
   <DL>
@@ -105,56 +107,28 @@
     </DD>
 
     <DT>
-      <TT>update (<I>vec</I>, <I>i</I>, <I>a</I>)</TT>
+      <TT>appr <I>f</I> <I>vec</I></TT> <BR>
+      <TT>appri <I>f</I> <I>vec</I></TT>
     </DT>
     <DD>
-      <P>Returns a new vector, identical to <TT><I>vec</I></TT>, except the
-      <I>i</I>th element is set to <TT><I>x</I></TT>. If <TT><I>i</I></TT> &lt; 0
-      or |<TT><I>vec</I></TT>| &lt;= <TT><I>i</I></TT>, then the Subscript
-      exception is raised.</P>
-    </DD>
-
-    <DT>
-      <TT>appri <I>f</I> <I>slice</I></TT> <BR>
-      <TT>appr <I>f</I> <I>vec</I></TT>
-    </DT>
-    <DD>
-      <P>Like <TT>appi</TT> and <TT>app</TT>, but apply <TT><I>f</I></TT> in
+      <P>Like <TT>app</TT> and <TT>appi</TT>, but apply <TT><I>f</I></TT> in
       right to left order (i.e., decreasing indices). The expression
-      <TT>app <I>f vec</I></TT> is equivalent to:</P>
+      <TT>appr <I>f vec</I></TT> is equivalent to:</P>
       <PRE>
-        appri (<I>f</I> o #2) (<I>vec</I>, 0, NONE)</PRE>
+        appri (<I>f</I> o #2) <I>vec</I></PRE>
     </DD>
 
     <DT>
-      <TT>exists <I>f</I> <I>vec</I></TT>
+      <TT>alli <I>f</I> <I>vec</I></TT> <BR>
+      <TT>existsi <I>f</I> <I>vec</I></TT>
     </DT>
     <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      vector <TT><I>vec</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>true</TT>; returns <TT>true</TT> if such an
-      <TT><I>x</I></TT> exists and <TT>false</TT> otherwise.</P>
-    </DD>
-
-    <DT>
-      <TT>all <I>f</I> <I>vec</I></TT>
-    </DT>
-    <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      vector <TT><I>vec</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>false</TT>; returns <TT>false</TT> if such an
-      <TT><I>x</I></TT> exists and <TT>true</TT> otherwise.
-      Equivalent to <TT>not(exists (not o <I>f</I>) <I>l</I>))</TT>.</P>
-    </DD>
-
-    <DT>
-      <TT>find <I>f</I> <I>vec</I></TT>
-    </DT>
-    <DD>
-      <P>Applies <TT><I>f</I></TT> to each element <TT><I>x</I></TT> of the
-      vector <TT><I>vec</I></TT>, from left to right, until <TT><I>f x</I></TT>
-      evaluates to <TT>true</TT>; returns <TT>SOME <I>x</I></TT> if such an
-      <TT><I>x</I></TT> exists and <TT>NONE</TT> otherwise.</P>
+      <P>Indexed versions of the functions <TT>all</TT> and <TT>exists</TT>.
+      The index of each element is passed to <TT><I>f</I></TT> as an additional
+      argument. The following equivalences hold:</P>
+      <PRE>
+        all <I>f</I> <I>vec</I>    = alli (<I>f</I> o #2) <I>vec</I>
+        exists <I>f</I> <I>vec</I> = existsi (<I>f</I> o #2) <I>vec</I></PRE>
     </DD>
 
     <DT>
@@ -175,19 +149,11 @@
     </DD>
 
     <DT>
-      <TT>equal <I>equal'</I> (<I>vec1</I>, <I>vec2</I>)</TT>
+      <TT>equal <I>eq</I> (<I>vec1</I>, <I>vec2</I>)</TT>
     </DT>
     <DD>
       <P>Creates an equality function on vectors given an equality on the
       element type.</P>
-    </DD>
-
-    <DT>
-      <TT>compare <I>compare'</I> (<I>vec1</I>, <I>vec2</I>)</TT>
-    </DT>
-    <DD>
-      <P>Creates an ordering function on vectors, given a suitable ordering functions
-      for its element type. The order induced is lexicographic.</P>
     </DD>
 
     <DT>

@@ -9,9 +9,8 @@
   </PRE>
 
   <P>
-    An extended version of the
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/time.html">Standard ML
-    Basis' <TT>Time</TT></A> structure.
+    An extended version of the Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/time.html"><TT>Time</TT></A> structure.
   </P>
 
 <?php section("import", "import") ?>
@@ -56,9 +55,8 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the 
-    <A href="http://www.dina.kvl.dk/~sestoft/sml/time.html">Standard ML
-    Basis' <TT>Time</TT></A> structure.
+    Items not described here are as in the  Standard ML Basis'
+    <A href="http://SML.sourceforge.net/Basis/time.html"><TT>Time</TT></A> structure.
   </P>
 
   <P>

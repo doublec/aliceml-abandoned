@@ -146,7 +146,7 @@
     </DD>
 
     <DT>
-      <TT>equal (<I>equalFst</I>, <I>equalSnd</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
+      <TT>equal (<I>eqFst</I>, <I>eqSnd</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
     </DT>
     <DD>
       <P>Creates an equality function on alternatives, given suitable equality
@@ -154,16 +154,17 @@
     </DD>
 
     <DT>
-      <TT>compare (<I>compareFst</I>, <I>compareSnd</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
+      <TT>collate (<I>f</I>, <I>g</I>) (<I>alt1</I>, <I>alt2</I>)</TT>
     </DT>
     <DD>
-      <P>Creates an ordering function on alternatives, given suitable ordering
-      functions for each constituent type. The constructed ordering is defined
+      <P>Performs comparison on alternatives, given suitable orderings
+      <TT><I>f</I></TT> and <TT><I>g</I></TT> for the respective
+      constituent types. The constructed ordering is defined
       as follows:</P>
       <PRE>
-      fun compare (compareFst, compareSnd) =
-	  fn (FST x1, FST x2) => compareFst (x1, x2)
-	   | (SND y1, SND y2) => compareSnd (y1, y2)
+      fun collate (f, g) =
+	  fn (FST x1, FST x2) => f (x1, x2)
+	   | (SND y1, SND y2) => g (y1, y2)
 	   | (FST _,  SND _ ) => LESS
 	   | (SND _,  FST _ ) => GREATER</PRE>
     </DD>
