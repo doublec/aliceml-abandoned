@@ -99,14 +99,12 @@ programming language (SML), as defined in</P>
   </LI>
 </UL>
 
-<P>You should also be aware of the</P>
+<P>You should also be aware of some</P>
 
 <UL>
-  <LI><A href="incompatibilities.php3">incompatibilities with SML</A></LI>
-  <LI><A href="limitations.php3">limitations</A></LI>
+  <LI><A href="incompatibilities.php3">incompatibilities with SML</A>,</LI>
+  <LI><A href="limitations.php3">limitations of the current implementation</A>.</LI>
 </UL>
-
-<P>observable in the current system.</P>
 
 
 <?php section("syntax", "syntax summary") ?>
