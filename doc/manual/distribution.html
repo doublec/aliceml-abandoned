@@ -116,6 +116,11 @@ the cloned argument to be transferred to <TT>f</TT>'s home site&nbsp;A,
 where <TT>f</TT> is applied and the result (or exception) cloned and
 transferred back to&nbsp;B.</P>
 
+<P>In order to conveniently create a <I>proxy module</I> where all functions are proxies in one go, a polymorphic library functor is provided:</P>
+
+<PRE class=code>
+Proxy : fct (signature S structure X : S) -> S</PRE>
+
 <?php subsection("proxies-example", "Example") ?>
 
 <P>As an example, say you want to provide a simple compute service.  The
@@ -134,10 +139,9 @@ available through the local web server.  We assume the local server's
 document root is <TT>/docroot/</TT>.</P>
 
 <PRE class=code>
-structure ComputeServer : COMPUTE_SERVER =
-struct
-    val apply = proxy (fn (f, x) => f x)
-end
+structure ComputeServer =
+    Remote.Proxy (signature S = COMPUTE_SERVER
+                  structure X = (fun apply (f,x) = f x))
 val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
 val _ = Pickle.save ("/docroot/computeServer",
 		     pack (val x = ticket) : (val x : string))</PRE>
@@ -173,8 +177,8 @@ Sited values.  In order to use these you would have to link them using
 
 <PRE class=code>
 Execute : fct (val host : string
-	       signature RESULT
-	       functor Start (ComponentManager : COMPONENT_MANAGER) : RESULT) -> RESULT</PRE>
+	       signature S
+	       functor F : COMPONENT_MANAGER -> S) -> S</PRE>
 
 <P>As an example, consider an application consisting of a manager and a number
 of identical worker sites, to parallelize a computation.  Say that the manager
@@ -219,14 +223,16 @@ signature WORKER =
 val remoteUrl = Url.fromString "x-alice:/lib/distribution/Remote"
 val textIOUrl = Url.fromString "x-alice:/lib/system/TextIO"
 
-functor MkWorker(ComponentManager : COMPONENT_MANAGER) : WORKER =
+functor MkWorker (ComponentManager : COMPONENT_MANAGER) : WORKER =
     struct
-	structure TextIO =
+	structure TextIOComp =
 	    ComponentManager.Link(val url = remoteUrl 
-				  signature S = TEXT_IO)
-	structure Remote = 
+				  signature S = (structure TextIO : TEXT_IO))
+	structure RemoteComp = 
 	    ComponentManager.Link(val url = textIOUrl
-                                  signature S = REMOTE)
+                                  signature S = (structure Remote : REMOTE))
+	open TextIOComp
+	open RemoteComp
 
 	val executeTask = Remote.proxy
 	    (fn f => ... RemoteDatabase.lookup ... TextIO.print ...)
@@ -235,9 +241,9 @@ val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
 val workers = List.map (fn oneHost =>
 			let
 			    structure Worker =
-				Execute(val host = oneHost
-					signature RESULT = WORKER
-					structure Start = MkWorker)
+				Execute (val host = oneHost
+					 signature S = WORKER
+					 structure Start = MkWorker)
 			in
 			    Worker.executeTask
 			end) hosts
