@@ -1,7 +1,6 @@
 Group
 
     structure SMLToMozartBatchCompiler
-    structure SMLToMozartEmacsToplevel
     structure SMLToComPlusBatchCompiler
     structure SMLToStockwerkBatchCompiler
     structure Debug
