@@ -20,9 +20,9 @@ structure Output :> OUTPUT =
 	 * prints with the output-function say a list separated by ","
 	 * where each item consists of s ^ 'one-string-from-the-list'
 	 *)
-	fun printIdListLl say s (id1::id2::is) = (say (s ^ id1 ^ ", ");
+	fun printIdListLl say s (id1::id2::is) = (say [s, id1, ", "];
 						printIdListLl say s (id2::is) )
-	  | printIdListLl say s [id]           = say (s ^ id)
+	  | printIdListLl say s [id]           = say [s, id]
 	  | printIdListLl  _  _  _             =
 	    oError("empty list in printIdList", (~1, ~1))
 
@@ -39,8 +39,8 @@ structure Output :> OUTPUT =
 	 * prints (with say) alternately a string from the list and the id,
 	 * the output ends with the last string from the list
 	 *)
-	fun printOneLb say id [s]     = say s
-	  | printOneLb say id (s::ss) = (say (s^id); printOneLb say id ss)
+	fun printOneLb say id [s]     = say [s]
+	  | printOneLb say id (s::ss) = (say [s, id]; printOneLb say id ss)
 	  | printOneLb  _  _  _       = ()
 			
 
@@ -48,11 +48,11 @@ structure Output :> OUTPUT =
 	 * help function for printAnnotLb
 	 *)
 	fun printOneAn say pIdList idList first id =
-	    (if !first then (first := false; say "fun ")
-	     else say "and ";
-	     say ("annot_" ^ id ^ " () = action_" ^ id ^ "((");
+	    (if !first then (first := false; say ["fun "])
+	     else say ["and "];
+	     say ["annot_", id, " () = action_", id, "(("];
 	     pIdList "annot_" idList;
-	     say "), 0, \"\", 0, 0)\n" )
+	     say ["), 0, \"\", 0, 0)\n"] )
 
 
 	(* printAnnotLb :
@@ -74,7 +74,7 @@ structure Output :> OUTPUT =
 	 *)
 	fun printMainLb say pOneLb (id::is) ss = (pOneLb id ss;
 						  printMainLb say pOneLb is ss)
-	  | printMainLb say  _      _        _ = say "\n"
+	  | printMainLb say  _      _        _ = say ["\n"]
 
 
 	(* printResultsLb :
@@ -83,10 +83,10 @@ structure Output :> OUTPUT =
 	fun printResultsLb say pIdList idList =
 	    let
 		fun printOne id =
-		    (say ("  val " ^ id ^ " = " ^ id
-			^ "(getChar, eof, strBuf, strBack, lexPos, lineNum, (");
+		    (say ["  val ", id, " = ", id,
+			  "(getChar, eof, strBuf, strBack, lexPos, lineNum, ("];
 		     pIdList "dummy_" idList;
-		     say "))\n")
+		     say ["))\n"])
 	    in
 		app printOne idList
 	    end
@@ -99,12 +99,11 @@ structure Output :> OUTPUT =
 	    let
 		val n = ref (num - 1)
 		fun printOne i =
-		    say ("fn getChar => #" ^ Int.toString i
-			 ^ " (build getChar)")
+		    say ["fn getChar => #", Int.toString i, " (build getChar)"]
 	    in
 		while !n > 0 do
 		    (printOne (num - !n);
-		     say ", ";
+		     say [", "];
 		     n := !n - 1);
 		printOne num
 	    end
@@ -156,10 +155,10 @@ structure Output :> OUTPUT =
 		val escape = if bigTable then escape16 else escape8
 		    
 	    in
-		(say (escape x);
+		(say [escape x];
 		 ++chars;
 		 if !chars mod modulo = 0
-		     then say ("\\\n  " ^ space ^ "\\")
+		     then say ["\\\n  ", space, "\\"]
 		 else ())
 	    end
 		
@@ -174,9 +173,9 @@ structure Output :> OUTPUT =
 		
 		val pretty = prettyOneTr say bigTable state chars
 	    in
-		say ("(*" ^ Int.toString state ^ "*)\034" );
+		say ["(*", Int.toString state, "*)\034"];
 		Vector.app pretty vec;
-		say "\034"
+		say ["\034"]
 	    end
 
 
@@ -192,15 +191,15 @@ structure Output :> OUTPUT =
 		maxState := state;
 		case stopt of
 		    NONE =>
-			(say ",\n  ";
+			(say [",\n  "];
 			 pOneTr (state, vec);
 			 pointList := (++ actPoint) :: (!pointList);
 			 printListTr say pOneTr maxState pointList actPoint
 		                     (xs,(!actPoint, state, vec)::ts)
 			 )
 		  | SOME (point, state', _ ) =>
-			(say ("\n  (*" ^ Int.toString state ^ " -> ");
-			      say (Int.toString state' ^ "*)");
+			(say ["\n  (*", Int.toString state, " -> ", 
+			      Int.toString state', "*)"];
 			      pointList := point :: (!pointList);
 			      printListTr say pOneTr maxState pointList actPoint
 			                  (xs, ts)
@@ -225,9 +224,9 @@ structure Output :> OUTPUT =
 		    end
 		
 	    in
-		(say (",");
-		 if !printedStates mod 10 = 0 then say "\n  " else ();
-		     say ( pretty p);
+		(say [","];
+		 if !printedStates mod 10 = 0 then say ["\n  "] else ();
+		     say [pretty p];
 		     ++ printedStates;
 		     printPointerTr say printedStates ps)
 	    end
@@ -260,19 +259,19 @@ structure Output :> OUTPUT =
 
 		val pPointTr = printPointerTr say printedStates
 	    in
-		say ("val table_" ^ lexid ^ " = \n  let\n");
+		say ["val table_", lexid, " = \n  let\n"];
 		
-		say ("  val dtran = [ \"\" (* unused state 0 *)");
+		say ["  val dtran = [ \"\" (* unused state 0 *)"];
 		pListTr (tranList, nil);
-		say ("]\n\n");
+		say ["]\n\n"];
 		
-		say ("  val pointer = [ 0 (* unused state 0 *)");
+		say ["  val pointer = [ 0 (* unused state 0 *)"];
 		pPointTr (rev( !pointList ) );
-		say ("]\n\n");
+		say ["]\n\n"];
 		
-		say ("  in\n  (Vector.fromList pointer, \
-		 \Vector.fromList dtran, ");
-		say ( Bool.toString bigTable ^ ")\n  end\n\n")
+		say ["  in\n  (Vector.fromList pointer, \
+		 \Vector.fromList dtran, "];
+		say [Bool.toString bigTable, ")\n  end\n\n"]
 	    end
 		
 		
@@ -296,21 +295,21 @@ structure Output :> OUTPUT =
 		
 		fun printOne state =
 		    case IntMap.find(finstates, state) of
-			SOME pos => say(pretty pos)
+			SOME pos => say [pretty pos]
 		      | NONE     => (++printedStates;
-				     say "0 (* unused state 0 *)" )
+				     say ["0 (* unused state 0 *)"] )
 			    
 	    in
-		say ("val final_" ^ lexid ^ " =\n  let\n");
-		
-		say "  val finlist = [";
+		say ["val final_", lexid, " =\n",
+		     "  let\n",
+		     "    val finlist = ["];
 		while ++maxState < numStates + !printedStates - 1 do
 		    (printOne (!maxState);
-		     say ",";
-		     if !maxState mod 10 = 0 then say "\n    " else () );
+		     say [","];
+		     if !maxState mod 10 = 0 then say ["\n    "] else () );
 		printOne (!maxState);
-		say "]\n";
-		say "  in\n  Vector.fromList finlist\n  end\n\n"
+		say ["]\n",
+		     "  in\n  Vector.fromList finlist\n  end\n\n"]
 	    end
 			
 
@@ -329,16 +328,17 @@ structure Output :> OUTPUT =
 			    !s
 		    end
 		fun oneAction (n, atexp) =
-		    (if !first then (first:=false; say "    ") else say "  | ";
-			 say (pretty n);
-			 say " => ";
-			     printAtexp atexp)
+		    (if !first then (first:=false; say ["    "])
+		     else say ["  | "];
+		     say [pretty n];
+		     say [" => "];
+		     printAtexp atexp)
 	    in
-		say ("fun action_" ^ lexid ^ " ((");
+		say ["fun action_", lexid, " (("];
 		pIdList "" idList;
-		say ("), pos, yytext, yyline, yycol) =\n  case pos of\n");
+		say ["), pos, yytext, yyline, yycol) =\n  case pos of\n"];
 		IntMap.appi oneAction atMap;
-		say "  |    _ => raise Domain\n"
+		say ["  |    _ => raise Domain\n"]
 	    end
 		
 	
@@ -348,7 +348,8 @@ structure Output :> OUTPUT =
 	 *)
 	fun printLexList (str, l::ls, autoMap) =
 	    let
-		fun say string = TextIO.output (str, string)
+		fun say (s :: ss) = (TextIO.output (str, s); say ss)
+		  | say  _ = ()
 
 		val pIdList = printIdListLl say
 
@@ -379,34 +380,35 @@ structure Output :> OUTPUT =
 
 		    in
 
-			say "\n\n(**** DECLARATION OF ";
+			say ["\n\n(**** DECLARATION OF "];
 			pIdList "" idList;
-			say " BEGIN ****)\n\n";
+			say [" BEGIN ****)\n\n"];
 
-			say "val (";
+			say ["val ("];
 			pIdList "" idList;
-			say ")=\nlet\n";
+			say [")=\nlet\n"];
 
 			printLexbindList (lbl, idList);
 
-			say "\n\n(*** some hack to fix type annotation \
-			 \problems (thanks to Andreas Rossberg) ***)\n\n";
+			say ["\n\n(*** some hack to fix type annotation \
+			 \problems (thanks to Andreas Rossberg) ***)\n\n"];
 			pAnLb idList;
-			say "\nfun annot f = (fn () => f (\
+			say ["\nfun annot f = (fn () => f (\
 			 \fn () => SOME #\" \", ref true, ref [], ref [], \
-			 \ref 0, ref 0, (";
+			 \ref 0, ref 0, ("];
 			pIdList "annot_" idList;
-			say ")); f)\n\n";
+			say [")); f)\n\n"];
 
 			pMainLb idList ["val ", " = annot (Lexer.lexer \
 			 \(table_", ", action_", ", final_", "))\n"];
 
-			say "fun build getChar =\n  let\n";
-			say "  val strBuf = ref []\n";
-			say "  val strBack = ref []\n";
-			say "  val eof = ref false\n";
-			say "  val lexPos = ref 0\n";
-			say "  val lineNum = ref 1\n\n";
+			say ["fun build getChar =\n",
+			     "  let\n",
+			     "  val strBuf = ref []\n",
+			     "  val strBack = ref []\n",
+			     "  val eof = ref false\n",
+			     "  val lexPos = ref 0\n",
+			     "  val lineNum = ref 1\n\n"];
 
 			pMainLb idList ["  val ref_", " = ref NONE\n"];
 
@@ -415,20 +417,20 @@ structure Output :> OUTPUT =
 
 			pResLb idList;
 
-			say "\n  in\n";
+			say ["\n  in\n"];
 			pMainLb idList ["  ref_", " := SOME ", ";\n"];
-			say "  (";
+			say ["  ("];
 			pIdList "" idList;
-			say ")\n  end\n";
+			say [")\n  end\n"];
 
-			say "in\n(";
+			say ["in\n("];
 			pFunLb (length idList);
-			say ")\nend\n";
+			say [")\nend\n"];
 
 
-			say "\n\n(**** DECLARATION OF ";
+			say ["\n\n(**** DECLARATION OF "];
 			pIdList "" idList;
-			say " END ****)\n\n"
+			say [" END ****)\n\n"]
 
 		    end
 		
@@ -446,18 +448,18 @@ structure Output :> OUTPUT =
 					lexid idList
 
 		    in
-			say ("\n(**** FINAL-STATES-TABLE of " ^ lexid
-			     ^ " ****)\n\n");
+			say ["\n(**** FINAL-STATES-TABLE of ", lexid,
+			      " ****)\n\n"];
 			pFinLbL finstates;
-			say ("\n(**** TRANSITION-TABLE of " ^ lexid
-			     ^ " ****)\n\n");
+			say ["\n(**** TRANSITION-TABLE of ", lexid,
+			     " ****)\n\n"];
 			pTransLbL dtran;
-			say ("\n(**** ACTION-TABLE of " ^ lexid ^ " ****)\n\n");
+			say ["\n(**** ACTION-TABLE of ", lexid, " ****)\n\n"];
 			pActLbL atMap;
-			say "\n\n";
+			say ["\n\n"];
 			printLexbindList (lbl, idList)
 		    end
-		  | printLexbindList ( _                             ) = ()
+		  | printLexbindList _  = ()
 
 
 		and printexp ( EXP (al, _ ) ) = printAtexpList al
@@ -468,11 +470,11 @@ structure Output :> OUTPUT =
 		  | printAtexpList         _ = ()
 		
 
-		and printAtexp ( ATEXP (s, _ )   ) = say (s ^ " " )
+		and printAtexp ( ATEXP (s, _ )   ) = say [s, " "]
 		  | printAtexp ( PAREXP (ls, _ ) ) =
-		    (say ( "( ");
+		    (say ["( "];
 		     printLexList (str, ls, autoMap);
-		     say ")\n")
+		     say [")\n"])
 		
 	    in
 		(printLex l; printLexList (str, ls, autoMap))
