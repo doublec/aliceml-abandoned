@@ -1,0 +1,9 @@
+Stockwerk:
+-- Closures need to remember their abstract representation.
+
+Mozart:
+-- Ozcar-Bug: wenn man ein 'unleash' macht und dabei eine
+   Exception geworfen wird, haelt der Debugger nicht im
+   Exception Handler (und zeigt sogar eine Selektion von
+   <N:VoidRegister>!).  Beispiel: ozd -E Main.ozf test/General,
+   steppen bis {ReadFile ...}, dann 'next'.
