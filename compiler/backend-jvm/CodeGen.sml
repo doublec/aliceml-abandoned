@@ -19,7 +19,7 @@ local
 
 in
     val rec
-	nextFreeLocal = fn () => (localscount := !localscount + 1; print ("Bla: "^(Int.toString (!localscount)));
+	nextFreeLocal = fn () => (localscount := !localscount + 1;
 				  if !localscount > !maxlocals then maxlocals := !localscount else ();
 				     !localscount)
     and
@@ -36,8 +36,6 @@ in
 	  | nil => raise Error("empty locals stack")
     and
 	maxLocals = fn () => ! maxlocals
-    val
-	batsch = print("FIDLL: "^Int.toString(!localscount))
 end
 
 (* Wie lautet die aktuelle Klasse, in der wir sind? Stack weil verschachtelte Lambdas. *)
@@ -106,9 +104,9 @@ and
 	      Invokeinterface (CVal, "request",([],Classsig CVal)),
 	      Dup,
 	      Getstatic (CConstants^"/dmlfalse",CConstructor0),
-	      Ifacmp falselabel,
+	      Ifacmpeq falselabel,
 	      Getstatic (CConstants^"/dmltrue",CConstructor0),
-	      Ifacmp truelabel,
+	      Ifacmpeq truelabel,
 	      New CException0,
 	      Dup,
 	      Getstatic CMatch,
@@ -180,7 +178,11 @@ and
 	end
 
      | (Case (exp, match)) =>
-	expCode(exp) @ matchCode(match)
+	[Comment "[ CASE EXP"] @
+	expCode(exp) @
+	[Comment "CASE EXP ] [CASE MATCH"] @
+	matchCode(match) @
+	[Comment "CASE MATCH ]"]
 
      | (Explist liste) =>
 	let
@@ -237,25 +239,32 @@ and
 	    val falselabel = aNewLabel()
 	    val endiflabel = aNewLabel()
 	in
-	    e1@
-	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
+	    [Comment "[ IFBED"] @
+	    e1 @
+	    [Comment "IFBED ] [ IFTEST",
+	     Invokeinterface (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Getstatic (CConstants^"/dmltrue",CConstructor0),
-	     Ifacmp truelabel,
+	     Ifacmpeq truelabel,
 	     Getstatic (CConstants^"/dmlfalse",CConstructor0),
-	     Ifacmp falselabel,
+	     Ifacmpeq falselabel,
 	     New CException0,
 	     Dup,
 	     Getstatic CMatch,
 	     Invokespecial (CException0,"<init>", ([Classsig CExName], Voidsig)),
 	     Athrow,
 	     Label truelabel,
-	     Pop]@
+	     Pop,
+	     Comment "IFTEST ]",
+	     Comment "[ IFCONS" ]@
 	    e2 @
-	    [Goto endiflabel,
-	     Label falselabel]@
+	    [Comment "IFCONS ]",
+	     Goto endiflabel,
+	     Label falselabel,
+	     Comment "[ IFALT"]@
 	    e3 @
-	    [Label endiflabel]
+	    [Comment "IFALT ]",
+	     Label endiflabel]
 	end
 
      | Let(declist,exp) =>
@@ -272,9 +281,9 @@ and
 		  Invokeinterface (CVal, "request", (nil, Classsig CVal)),
 		  Dup,
 		  Getstatic (CConstants^"/dmltrue",CConstructor0),
-		  Ifacmp truelabel,
+		  Ifacmpeq truelabel,
 		  Getstatic (CConstants^"/dmlfalse",CConstructor0),
-		  Ifacmp falselabel,
+		  Ifacmpeq falselabel,
 		  New CException0,
 		  Dup,
 		  Getstatic CMatch,
@@ -387,38 +396,63 @@ and
 					    [Aload (!wherever), Comment "Bound VId"]
 				      | _ => raise Error "invalid vid")
      | VId(Shortvid(vidname,Free)) =>
-	[Aload 0,
-	 Getfield (getCurrentClass()^vidname, CVal), Comment ("Free VId "^vidname)]
+	let
+	    val currentClass = getCurrentClass()
+	in
+	    if vidname = currentClass
+		then
+		    [Aload 0,
+		     Comment "selbstlader"]
+	    else
+		[Aload 0,
+		 Getfield (currentClass^"/"^vidname, CVal),
+		 Comment ("Free VId "^vidname)]
+	end
      | VId(Primitive(which)) =>
 	(case which of
 	     "+" => [Getstatic CPlus]
+	   | "=" => [Getstatic CEquals]
+	   | "not" => [Getstatic CNot]
+	   | "!" => [Getstatic CDeref]
+	   | ":=" => [Getstatic CAssign]
 	   | _ => raise Error "unimplemented primitive")
      | While(exp1,exp2) =>
 	let
 	    val beforelabel = aNewLabel()
 	    val truelabel   = aNewLabel()
 	    val falselabel  = aNewLabel()
+	    val i = nextFreeLocal()
+	    val h = nextFreeLocal()
 	    val e1 = expCode(exp1)
 	    val e2 = expCode(exp2)
 	in
-	    [Label beforelabel] @
+	    [Comment "[while bed",
+	     Getstatic (CConstants^"/dmlunit",CConstructor0),
+	     Astore h,
+	     Label beforelabel] @
 	    e1 @
-	    [Invokeinterface (CVal,"request",(nil,Classsig CVal)),
-	     Dup,
+	    [Comment "while bed ] [while typtest",
+	     Invokeinterface (CVal,"request",(nil,Classsig CVal)),
+	     Astore i,
+	     Aload i,
 	     Getstatic (CConstants^"/dmltrue",CConstructor0),
-	     Ifacmp truelabel,
+	     Ifacmpeq truelabel,
+	     Aload i,
 	     Getstatic (CConstants^"/dmlfalse",CConstructor0),
-	     Ifacmp falselabel,
+	     Ifacmpeq falselabel,
 	     New CException0,
 	     Dup,
 	     Getstatic CMatch,
 	     Invokespecial (CException0,"<init>",([Classsig CExName],Voidsig)),
 	     Athrow,
 	     Label truelabel,
-	     Pop] @
+	     Comment "while typtest] [while body"] @
 	    e2 @
-	    [Goto beforelabel,
-	     Label falselabel]
+	    [Astore h,
+	     Comment "while body]",
+	     Goto beforelabel,
+	     Label falselabel,
+	     Aload h]
 	end
 
      | _ => raise Error "Fußschuß"
@@ -445,7 +479,7 @@ and
 	     Dup,
 	     Getfield (CConstructor0^"/name",CString),
 	     Ldc (JVMString vidname),
-	     Invokevirtual (CString, "equals", ([Classsig CString],Intsig)),
+	     Invokevirtual (CString, "equals", ([Classsig CString],Boolsig)),
 	     Ifeq faillabel,
 	     Invokeinterface (CVal, "getContent", (nil, Classsig CVal))] @
 	    p @
@@ -469,7 +503,7 @@ and
 	     Dup,
 	     Getfield (CException0^"/name",CString),
 	     Ldc (JVMString vidname),
-	     Invokevirtual (CString, "equals", ([Classsig CString], Intsig)),
+	     Invokevirtual (CString, "equals", ([Classsig CString], Boolsig)),
 	     Ifeq faillabel,
 	     Invokeinterface (CVal, "getContent", ([], Classsig CVal))] @
 	    p @
@@ -504,7 +538,7 @@ and
   | Patscon (scon) =>
 	[Invokeinterface (CVal, "request", ([], Classsig CVal))] @
 	expCode(SCon scon) @
-	[Invokeinterface (CVal, "equals", ([Classsig CVal], Intsig))]
+	[Invokeinterface (CVal, "equals", ([Classsig CVal], Boolsig))]
 
   | Patvid (Shortvid vid) =>
 	(case vid of
@@ -513,11 +547,11 @@ and
 	   | (_, Bound def) => (case !def of
 				    Shortvid (_,Defining loc) =>
 					[Aload (!loc),
-					 Invokeinterface (CVal, "equals", ([Classsig CVal], Intsig))]
+					 Invokeinterface (CVal, "equals", ([Classsig CVal], Boolsig))]
 				  | _ => raise Error "patvid bound def")
 	   | (_, Free) => raise Error "patvid free"
 		 )
-
+  | Patwild => [Iconst 1]
   | _ => raise Error "patCode Patas"
 
 and
@@ -571,18 +605,20 @@ and
 		val p = patCode(pat)
 		val e = expCode(exp)
 	    in
+		[Comment "[ Rule",
+		 Aload speicherMich] @
 		p @
 		[Dup,
 		 Ifeq eigenerendlabel] @
 		e @
 		[Astore speicherMich,
 		 Label eigenerendlabel,
-		 Ifneq endlabel]
+		 Ifneq endlabel,
+		 Comment "Rule ]"]
 	    end
 	val rc = flatten (map ruleCode patexplist)
     in
 	[Comment "[ MRule",
-	 Aconst_null,
 	 Astore speicherMich] @
 	rc @
 	[New CException0,
@@ -596,7 +632,7 @@ and
     end
 
 and
-    Load = fn (JVMString name) => [Aload 0, Getfield ( getCurrentClass(), name)]
+    Load = fn (JVMString name) => [Aload 0, Getfield(getCurrentClass()^"/"^name,CVal)]
   | (JVMInt i) => [Aload i, Comment ("Load loc. Var")]
   | _ => raise Error("cannot load scrap")
 

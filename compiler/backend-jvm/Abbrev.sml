@@ -28,3 +28,7 @@ and CObj           = "java/lang/Object"
 and CString        = "java/lang/String"
 and CVector        = "java/util/Vector"
 and CPlus          = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_plus","de/uni_sb/ps/DML/DMLBuiltin/Plus")
+and CEquals        = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_equals","de/uni_sb/ps/DML/DMLBuiltin/Equals")
+and CNot           = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_not","de/uni_sb/ps/DML/DMLBuiltin/Not")
+and CDeref         = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_deref","de/uni_sb/ps/DML/DMLBuiltin/Deref")
+and CAssign        = ("de/uni_sb/ps/DML/DMLBuiltin/Primitives/primitive_assign","de/uni_sb/ps/DML/DMLBuiltin/Assign")

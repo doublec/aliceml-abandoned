@@ -1,3 +1,9 @@
+local
+    val linecount = ref 0
+in
+    val line = fn () => (linecount := !linecount + 1; Int.toString(!linecount))
+end
+
 val rec
     cAccessToString =
     fn CPublic::rest => "public "^cAccessToString rest
@@ -32,6 +38,7 @@ val descriptor2string = let
 			    val rec desclist2string =
 				fn (Classsig dl)::dls => "L"^dl^";"^(desclist2string dls)
 				 | Intsig::dls => "I"^(desclist2string dls)
+				 | Boolsig::dls => "Z"^(desclist2string dls)
 				 | Voidsig::dls => "V"^(desclist2string dls)
 				 | Floatsig::dls => "F"^(desclist2string dls)
 				 | Arraysig::dls => "["^(desclist2string dls)
@@ -57,11 +64,11 @@ local
 	 | Comment c => "\t; "^c
 	 | Dup => "dup"
 	 | Fconst i => if i=0 then "fconst_0" else if i=1 then "fconst_1" else "fconst_2"
-	 | Getfield(cn,f) => "getfield "^cn^" L"^f^";"
-	 | Getstatic(cn,f) => "getstatic "^cn^" L"^f^";"
+	 | Getfield(fieldn, ty) => "getfield "^fieldn^" L"^ty^";"
+	 | Getstatic(fieldn, ty) => "getstatic "^fieldn^" L"^ty^";"
 	 | Goto l => "goto "^l
 	 | Iconst i => if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
-	 | Ifacmp l => "ifacmp "^l
+	 | Ifacmpeq l => "if_acmpeq "^l
 	 | Ifeq l => "ifeq "^l
 	 | Ifneq l => "ifne "^l
 	 | Ifnull l => "ifnull "^l
@@ -77,8 +84,8 @@ local
 	 | Ldc(JVMInt i) => "ldc "^Int.toString i
 	 | New cn => "new "^cn
 	 | Pop => "pop"
-	 | Putfield(cn,f) => "putfield "^cn^" "^f
-	 | Putstatic(cn,f) => "putstatic "^cn^" "^f
+	 | Putfield(cn,f) => "putfield "^cn^" L"^f^";"
+	 | Putstatic(cn,f) => "putstatic "^cn^" L"^f^";"
 	 | Return => "return"
 	 | Sipush i => "sipush "^Int.toString i
 	 | Swap => "swap"
@@ -94,7 +101,7 @@ local
 in
     val rec
 	instructionsToJasmin =
-	fn i::is => (instructionToJasmin i)^"\n"^instructionsToJasmin is
+	fn i::is => ("\t\t.line "^line()^"\n")^(instructionToJasmin i)^"\n"^instructionsToJasmin is
 	 | nil => ""
 end
 
@@ -104,7 +111,7 @@ local
 	let
 	    val fcc = fAccessToString access
 	in
-	    ".field "^fcc^" "^fieldname^" "^classtype^"= null\n"
+	    ".field "^fcc^" "^fieldname^" L"^classtype^";\n"
 	end
 	 | Field(access,fieldname, Sonstwas i) =>
 	let

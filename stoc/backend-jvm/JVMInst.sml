@@ -4,6 +4,7 @@ and fieldname = string
 and methodname = string;
 datatype ARG =
     Arraysig
+  | Boolsig
   | Classsig of classname
   | Floatsig
   | Intsig
@@ -32,11 +33,11 @@ datatype
   | Comment of string
   | Dup
   | Fconst of int
-  | Getfield of classname * fieldname
-  | Getstatic of classname * fieldname
+  | Getfield of fieldname * classname
+  | Getstatic of fieldname * classname
   | Goto of label
   | Iconst of int
-  | Ifacmp of label
+  | Ifacmpeq of label
   | Ifeq  of label
   | Ifneq of label
   | Ifnull of label
