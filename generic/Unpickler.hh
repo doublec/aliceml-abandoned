@@ -20,7 +20,7 @@
 #include "generic/Interpreter.hh"
 #include "generic/String.hh"
 
-class Unpickler {
+class DllExport Unpickler {
 public:
   // Exceptions
   static word Corrupt;
