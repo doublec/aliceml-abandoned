@@ -15,6 +15,14 @@
 \newcommand{\AT}[2]{@^{#1}_{#2}}
 \newcommand{\CONVEX}{{\textsf{convex}}}
 \newcommand{\IMPLIES}{\Rightarrow}
+\newcommand{\DEPTH}{{\textsf{depth}}}
+\newcommand{\INTER}{\cap}
+\makeatletter
+\newcommand{\SEQUNION}{{%
+  \setbox0\hbox{$\cup$}%
+  \@tempdima\wd0\relax
+  \hbox{\raise 2.5pt\hbox to0pt{\hbox to\@tempdima{\hss\tiny$\prec$\hss}\hss}\box0}}}
+\makeatother
 \title{Progamming Contest}
 \setlength{\parskip}{\medskipamount}
 \begin{document}
@@ -149,5 +157,87 @@ tree as primary sort key, minimal element as secondary sort key, and
 tag as tertiary sort key.  It is easy to combine these keys together
 using an appropriate base, so that elements in $V$ must have strictly
 increasing sort keys\ldots\ I think!
+
+\section*{Breaking Symmetries.}
+Let's now consider some methods for breaking symmetries.
+
+\paragraph*{Depth Method.}
+Posing $E^*=E\uplus\SET{\ROOT}$, we introduce a function
+$\DEPTH:E^*\TO\NAT$ to represent the depth of an element in the tree
+representation:
+\begin{align*}
+\DEPTH(\ROOT) &= 0\\
+\DEPTH(w) &= 1+\DEPTH(\MOTHER(w))\qquad\text{for }w\in E
+\end{align*}
+As usual the latter equation translates into:
+\begin{gather*}
+\DEPTH(w) = 1+
+\TUP{\DEPTH(\ROOT),\DEPTH(w_1),\ldots,\DEPTH(w_{n_E})}[\MOTHER(w)]
+\end{gather*}
+for the obvious appropriate encoding of $E^*$.  Our first symmetry
+break is:
+\begin{gather*}
+\DEPTH(w_1)\leq\cdots\leq\DEPTH(w_{n_E})
+\end{gather*}
+in other words, elements are ordered by increasing depth.  Thus $w_1$
+will always be a child of $\ROOT$, and earlier elements are used for
+higher levels in the tree and later elements for deeper levels.
+
+\paragraph*{Sequenced Union Method.}
+A more clever method, is to say that the mother of an element must
+always precede it in the order $\ROOT \prec w_1 \prec \cdots \prec
+w_{n_E}$:
+\begin{gather*}
+\MOTHER(w)\prec w\qquad\text{for } w\in V
+\end{gather*}
+and additionally if $w$ is mother of $w'$ and $w''$ and
+$w'\prec w''$ then all the elements in $\DOWN(w')$ must precede all the
+elements in $\DOWN(w'')$.  For this, we introduce the functions
+$\DOWN_E:E\TO 2^E$, $\EQDOWN_E:E\TO 2^E$, and $\DAUGHTERS_E:E\TO 2^E$
+defined by:
+\begin{align*}
+\DOWN_E(w) &= E\INTER\DOWN(w)\\
+\EQDOWN_E(w) &= E\INTER\EQDOWN(w)\\
+\DAUGHTERS_E(w) &= E\INTER\DAUGHTERS(w)
+\end{align*}
+and the following constraint must be satisfied:
+\begin{gather*}
+\DOWN_E(w) =
+{\SEQUNION}\TUP{\EQDOWN_E(w_1),\ldots,\EQDOWN_E(w_{n_E})}[\DAUGHTERS_E(w)]
+\end{gather*}
+This is an application of the \emph{sequenced union selection}
+constraint.  It combines the \emph{union selection} constraint with
+the sequentiality constraint.
+
+Note that scope should also be constrained using the sequenced union
+selection constraint:
+\begin{gather*}
+\sigma(w) = {\SEQUNION}\TUP{\sigma(w_1),\ldots,\sigma(w_n)}[\DAUGHTERS(w)]
+\end{gather*}
+i.e.\ not only is the scope of the mother formed from the union of the
+scopes of its daughters, but these scopes must also occur in sequence
+according to the precedence order $\prec$ of elements (i.e.\ the
+indices used to encode them).
+
+\paragraph*{Stacking Method.}
+This last method is concerned with symmetries of the following kind:
+\begin{center}
+\verb+<B><I>...</I></B>+\linebreak
+\verb+<I><B>...</B></I>+
+\end{center}
+whenever $w$ is mother of a single child $w'$ then $w$ must be
+assigned a \emph{smaller} tag than $w'$.  Thus, here we must assume a
+total order $\prec$ on tags, and the constraint is:
+\begin{gather*}
+w=\MOTHER(w')\ \wedge\ |\DAUGHTERS(w)|=1\quad
+\IMPLIES\quad \tau(w)\preceq\tau(w')
+\end{gather*}
+For this to work, it must be the case that when switching the 2 tags
+is semantically significant then the configuration which does not
+satisfy the above constraint is redundant.  I don't know if this is
+the case.  Note that we used $\preceq$ rather than the stricter
+$\prec$ to allow for such stackings as \verb+<U><U>...</U></U>+.
+For this method to work, $\ROOT$ must be assigned some fictitious and lowest
+tag.
 
 \end{document}
