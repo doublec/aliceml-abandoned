@@ -94,15 +94,29 @@ struct
     fun dict2list dict = dict2list'(dict,0,nil)
 
     (* deletes all objects with specified key *)
-    fun delete  ((a,fill_count,_),key) = 
+    fun delete  ((a,fill_count,_) as dict,key) = 
 	let
 	    val slot = key mod Array.length(!a)
 	    val (drop,take) = List.partition 
 		(fn (i,v) => i = key) 
 		(Array.sub(!a,slot))
-	    val _ = fill_count := !fill_count - List.length(drop)
+	    val fill = (fill_count := !fill_count - List.length(drop);!fill_count)
 	in
-	    Array.update(!a,slot,take)
+	    (Array.update(!a,slot,take)
+	     ; if fill < (Array.length(!a) div 4)
+		   then
+		       let 
+			   val newsize = Array.length(!a) div 2
+			   val ins = fn (k,v) => insert(dict,(k,v))
+			   val b = !a
+		       in
+			   (a:= Array.array(newsize,[])
+			    ;fill_count := 0
+			    ; Array.app(fn slot  
+			       		   => (List.app ins  slot)) b)
+		       end
+	       else ())
+			       
 	end
 
     (* inserts and assigns new key *)
