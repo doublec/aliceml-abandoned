@@ -356,7 +356,7 @@ TOPINCLUDES0 = \
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
 	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh BaseMap.hh \
-	BaseMap.cc MapNode.hh
+	BaseMap.cc MapNode.hh Heap.hh
 ADTINCLUDES0 = \
 	IntMap.hh ChunkMap.hh Queue.hh Stack.hh
 GENERICINCLUDES0 = \
