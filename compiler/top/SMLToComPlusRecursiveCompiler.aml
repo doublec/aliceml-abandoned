@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-structure SMLToComPlusMain =
+structure SMLToComPlusRecursiveCompiler =
     let
 	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
@@ -46,6 +46,5 @@ structure SMLToComPlusMain =
 
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			  val executableHeader = "")
+	RecursiveCompiler
     end

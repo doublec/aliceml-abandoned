@@ -12,7 +12,7 @@
  *   $Revision$
  *)
 
-structure SMLToMozartMain =
+structure SMLToMozartRecursiveCompiler =
     let
 	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
@@ -52,7 +52,5 @@ structure SMLToMozartMain =
 
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			  val executableHeader =
-			      "#!/bin/sh\nexec stow $0 \"$@\"\n")
+	RecursiveCompiler
     end

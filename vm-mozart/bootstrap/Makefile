@@ -3,7 +3,7 @@
 ###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ###
 ### Copyright:
-###   Leif Kornstaedt, 2000-2001
+###   Leif Kornstaedt, 1999-2001
 ###
 ### Last change:
 ###   $Date$ by $Author$
@@ -102,9 +102,13 @@ BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
 BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
 
 TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	BATCH_COMPILER.sig MakeBatchCompiler.sml \
 	RECURSIVE_COMPILER.sig MakeRecursiveCompiler.sml \
-	SMLToMozartMain.sml Main.sml
+	SMLToMozartRecursiveCompiler.sml \
+	BATCH_COMPILER.sig MakeBatchCompiler.sml \
+	SMLToMozartBatchCompiler.sml StocMain.sml \
+	INTERACTIVE_TOPLEVEL.sig MakeEmacsToplevel.sml \
+	SMLToMozartEmacsToplevel.sml StotMain.sml \
+	Main.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \
@@ -114,8 +118,8 @@ ALLFILES = \
 	$(TOPFILES)
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
-INSTALLFILES0 = stow.ozf stoc.ozf Default.import
-INSTALLBINFILES0 = stoc stow stoc.bat stow.bat
+INSTALLFILES0 = stow.ozf stoc.ozf stot.ozf Default.import
+INSTALLBINFILES0 = stow stoc stot stow.bat stoc.bat
 INSTALLLIBFILES0 = Base.ozf $(NATIVESOURCES:%=%.ozf)
 INSTALLFILES = \
 	$(INSTALLFILES0:%=$(PREFIX)/%) \
@@ -125,7 +129,9 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 .PHONY: all install clean first
 
-all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
+all: $(ALLFILES) \
+	backend-mozart/CodeGenPhase.ozf \
+	top/Main.ozf stow.ozf stoc.ozf stot.ozf
 
 first: $(ALLFILES)
 
@@ -134,7 +140,11 @@ boot-%:
 
 bootstrap: lib/boot-Base.ozf boot-all
 
-stoc.ozf: top/Main.ozf
+stoc.ozf: top/StocMain.ozf
+	OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ \
+	$(OZL) -z9 --include=..,../../.. -v $< -o $@
+
+stot.ozf: top/StotMain.ozf
 	OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ \
 	$(OZL) -z9 --include=..,../../.. -v $< -o $@
 

@@ -23,7 +23,7 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (SMLToComPlusMain.stoc (getArgs ()))
+    fun main _ = OS.Process.exit (SMLToComPlusBatchCompiler.stoc (getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("../stoc-com+", main)
 end;

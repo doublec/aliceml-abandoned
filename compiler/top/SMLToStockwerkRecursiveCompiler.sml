@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-structure SMLToStockwerkMain =
+structure SMLToStockwerkRecursiveCompiler =
     let
 	structure Switches = MakeSwitches(val logOut = TextIO.stdOut)
 
@@ -48,7 +48,5 @@ structure SMLToStockwerkMain =
 
 	val _ = f := RecursiveCompiler.acquireSign
     in
-	MakeBatchCompiler(structure RecursiveCompiler = RecursiveCompiler
-			  val executableHeader =
-			      "#!/bin/sh\nexec stow $0 \"$@\"\n")
+	RecursiveCompiler
     end

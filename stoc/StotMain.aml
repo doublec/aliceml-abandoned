@@ -1,0 +1,28 @@
+(* -*- sml -*- *)
+
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2000
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import
+    structure OS
+from "../lib/OS"
+
+import
+    structure CommandLine
+from "../lib/CommandLine"
+
+import
+    structure SMLToMozartEmacsToplevel
+from "SMLToMozartEmacsToplevel"
+
+val _ =
+    OS.Process.exit (SMLToMozartEmacsToplevel.stot (CommandLine.arguments ()))

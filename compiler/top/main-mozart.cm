@@ -9,5 +9,6 @@ Group is
     make-batch-compiler.cm
     toplevel.cm
 
-    SMLToMozartMain.sml
+    SMLToMozartRecursiveCompiler.sml
+    SMLToMozartBatchCompiler.sml
     SMLToMozartEmacsToplevel.sml

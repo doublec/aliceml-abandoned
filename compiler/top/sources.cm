@@ -1,9 +1,9 @@
 Group
 
-    structure SMLToMozartMain
+    structure SMLToMozartBatchCompiler
     structure SMLToMozartEmacsToplevel
-    structure SMLToComPlusMain
-    structure SMLToStockwerkMain
+    structure SMLToComPlusBatchCompiler
+    structure SMLToStockwerkBatchCompiler
     structure Debug
 
 is

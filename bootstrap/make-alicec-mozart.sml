@@ -23,7 +23,7 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (SMLToMozartMain.stoc (getArgs ()))
+    fun main _ = OS.Process.exit (SMLToMozartBatchCompiler.stoc (getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("../stoc-mozart", main)
 end;

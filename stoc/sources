@@ -192,4 +192,5 @@ top/RECURSIVE_COMPILER.sig
 top/MakeRecursiveCompiler.sml
 top/BATCH_COMPILER.sig
 top/MakeBatchCompiler.sml
-top/SMLToMozartMain.sml
+top/SMLToMozartRecursiveCompiler.sml
+top/SMLToMozartBatchCompiler.sml

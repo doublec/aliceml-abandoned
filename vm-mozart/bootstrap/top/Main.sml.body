@@ -5,23 +5,12 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure OS
-from "../lib/OS"
-
-import
-    structure CommandLine
-from "../lib/CommandLine"
-
-import
-    structure SMLToMozartMain
-from "SMLToMozartMain"
-
-val _ = OS.Process.exit (SMLToMozartMain.stoc (CommandLine.arguments ()))
+import from "StocMain"
+import from "StotMain"
