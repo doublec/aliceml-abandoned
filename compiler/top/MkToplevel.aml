@@ -20,8 +20,6 @@ import structure Component            from "../../lib/system/Component"
 import structure PPComponent          from "../../lib/system/PPComponent"
 import structure PrettyPrint          from "../../lib/utility/PrettyPrint"
 
-import structure Crash                from "../infrastructure/Crash"
-import structure Error                from "../infrastructure/Error"
 import structure Target               from "../infrastructure/Target"
 import structure MkOptionParser       from "MkOptionParser"
 import signature RECURSIVE_COMPILER   from "RECURSIVE_COMPILER-sig"
@@ -91,9 +89,13 @@ struct
 		     context
 		 end
 	   | (_, Target.FOREIGN _) =>
-		 raise Crash.Crash
+		 raise RecursiveCompiler.Crash
 		     "MkToplevel.eval: cross-compilation not supported")
 	handle RecursiveCompiler.Error => context
+	     | RecursiveCompiler.Crash s =>
+		   (TextIO.output (TextIO.stdErr,
+				   "internal failure at " ^ s ^ "\n");
+		    context)   (*--** is this cool or what? *)
 	     | Component.Failure (_, Component.Eval exn) =>
 		   (TextIO.output (TextIO.stdErr,
 				   "uncaught exception " ^

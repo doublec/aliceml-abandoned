@@ -25,6 +25,7 @@ signature RECURSIVE_COMPILER =
 	val isCrossCompiler: bool
 
 	exception Error
+	exception Crash of string
 
 	val extension: string
 
