@@ -12,6 +12,8 @@
 
 (* Handling of internal inconsistencies. *)
 
+import signature CRASH from "CRASH-sig"
+
 structure Crash :> CRASH =
 struct
     exception Crash of string
