@@ -14,20 +14,20 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
-#define Interruptible(res, call) int res = call; res = res;
 #else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <errno.h>
 #define Interruptible(res, call)		\
   int res;					\
   do {						\
     res = call;					\
   } while (res < 0 && errno == EINTR);
+#define GetLastError() errno
 #endif
 
 #include "generic/RootSet.hh"
@@ -42,17 +42,47 @@
 #include "generic/Profiler.hh"
 #endif
 
-// Global OS.sysErr Exception
+static word wBufferString;
+
+//
+// Error Handling
+//
 static word SysErrConstructor;
 
-#define RAISE_SYS_ERR(a, b)						\
-  {									\
-    ConVal *conVal =							\
-      ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);	\
-    conVal->Init(0, a);							\
-    conVal->Init(1, b);							\
-    RAISE(conVal->ToWord());						\
-  }
+static String *ErrorCodeToString(int errorCode) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char *lpMsgBuf;
+  int n = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_IGNORE_INSERTS |
+			FORMAT_MESSAGE_FROM_SYSTEM |
+			FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, errorCode,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR) &lpMsgBuf, 0, NULL);
+  String *s;
+  if (!n) {
+    static char buffer[32];
+    std::sprintf(buffer, "Error code %d", errorCode);
+    s = String::New(buffer);
+  } else
+    s = String::New(lpMsgBuf, n);
+  LocalFree(lpMsgBuf);
+  return s;
+#else
+  return String::New(strerror(errorCode));
+#endif
+}
+
+static word MakeSysErr() {
+  TagVal *some = TagVal::New(1, 1); // SOME
+  some->Init(0, Store::IntToWord(GetLastError()));
+  ConVal *sysErr =
+    ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
+  sysErr->Init(0, ErrorCodeToString(GetLastError())->ToWord());
+  sysErr->Init(1, some->ToWord());
+  return sysErr->ToWord();
+}
+
+#define RAISE_SYS_ERR() RAISE(MakeSysErr())
 
 //
 // UnsafeOS.FileSys Structure
@@ -60,98 +90,145 @@ static word SysErrConstructor;
 
 DEFINE1(UnsafeOS_FileSys_chDir) {
   DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (SetCurrentDirectory(name->ExportC()) == FALSE) RAISE_SYS_ERR();
+#else
   Interruptible(res, chdir(name->ExportC()));
-  if (res) {
-    const char *err = "chDir: cannot change directory";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
+  if (res) RAISE_SYS_ERR();
+#endif
   RETURN_UNIT;
 } END
 
 DEFINE0(UnsafeOS_FileSys_getDir) {
-  char buf[MAX_PATH];
-  if (!getcwd(buf, MAX_PATH)) {
-    const char *err = "getDir: cannot get directory";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
+  String *buffer = String::FromWordDirect(wBufferString);
+  u_int size = buffer->GetSize();
+ retry:
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  u_int n = GetCurrentDirectory(size, (CHAR *) buffer->GetValue());
+  if (n == 0) RAISE_SYS_ERR();
+  if (n > size) {
+    size = n + 1;
+    buffer = String::New(size);
+    wBufferString = buffer->ToWord();
+    goto retry;
   }
-  RETURN(String::New(buf)->ToWord());
+#else
+  if (getcwd((char *) buffer->GetValue(), size) == NULL) {
+    if (errno != ERANGE) RAISE_SYS_ERR();
+    size = size * 3 / 2;
+    buffer = String::New(size);
+    wBufferString = buffer->ToWord();
+    goto retry;
+  }
+#endif
+  RETURN(String::New((char *) buffer->GetValue())->ToWord());
 } END
 
 DEFINE1(UnsafeOS_FileSys_mkDir) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int res = mkdir(name->ExportC());
+  if (CreateDirectory(name->ExportC(), NULL) == FALSE) RAISE_SYS_ERR();
 #else
   int res = mkdir(name->ExportC(),
 		  S_IRUSR | S_IWUSR | S_IXUSR |
 		  S_IRGRP | S_IWGRP | S_IXGRP |
 		  S_IROTH | S_IWOTH | S_IXOTH);
+  if (res) RAISE_SYS_ERR();
 #endif
-  if (res) {
-    const char *err = "mkDir: cannot create directory";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
   RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeOS_FileSys_isDir) {
   DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  DWORD attr = GetFileAttributes(name->ExportC());
+  if (attr == INVALID_FILE_ATTRIBUTES) RAISE_SYS_ERR();
+  RETURN_BOOL(attr & FILE_ATTRIBUTE_DIRECTORY);
+#else
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
-  if (res) {
-    const char *err = "isDir: cannot get file attributes";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
+  if (res) RAISE_SYS_ERR();
   RETURN_BOOL(S_ISDIR(info.st_mode));
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_fileSize) {
   DECLARE_STRING(name, x0);
+  //--** truncates the file size if not representable
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  HANDLE hFile =
+    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
+	       FILE_ATTRIBUTE_NORMAL, NULL);
+  if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
+  DWORD n = GetFileSize(hFile, NULL);
+  if (n == INVALID_FILE_SIZE) RAISE_SYS_ERR();
+  CloseHandle(hFile);
+  RETURN_INT(n);
+#else
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
-  if (res) {
-    const char *err = "fileSize: cannot get file size";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
+  if (res) RAISE_SYS_ERR();
   RETURN_INT(info.st_size);
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_modTime) {
   DECLARE_STRING(name, x0);
+  //--** the result will typically not be representable
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  HANDLE hFile =
+    CreateFile(name->ExportC(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
+	       FILE_ATTRIBUTE_NORMAL, NULL);
+  if (hFile == INVALID_HANDLE_VALUE) RAISE_SYS_ERR();
+  FILETIME fileTime;
+  if (GetFileTime(hFile, NULL, NULL, &fileTime) == FALSE) RAISE_SYS_ERR();
+  CloseHandle(hFile);
+  long long i = fileTime.dwHighDateTime;
+  i <<= 32;
+  i |= fileTime.dwLowDateTime;
+  RETURN_INT(i / 10);
+#else
   struct stat info;
   Interruptible(res, stat(name->ExportC(), &info));
-  if (res) {
-    const char *err = "modTime: cannot get file time";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
+  if (res) RAISE_SYS_ERR();
   RETURN_INT(info.st_mtime * 1000000);
+#endif
 } END
 
 DEFINE1(UnsafeOS_FileSys_remove) {
   DECLARE_STRING(name, x0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (DeleteFile(name->ExportC()) == FALSE) RAISE_SYS_ERR();
+#else
   Interruptible(res, unlink(name->ExportC()));
-  if (res) {
-    const char *err = "remove: cannot remove file";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
+  if (res) RAISE_SYS_ERR();
+#endif
   RETURN_UNIT;
 } END
 
 DEFINE0(UnsafeOS_FileSys_tmpName) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  char prefix[MAX_PATH];
-  DWORD ret = GetTempPath(sizeof(prefix),prefix);
-  if (ret == 0 || ret >= sizeof(prefix))
-    strcpy(prefix,"C:\\TEMP\\");
-  char s[MAX_PATH];
+  String *buffer = String::FromWordDirect(wBufferString);
+  u_int size = buffer->GetSize();
+ retry:
+  DWORD res = GetTempPath(size, (char *) buffer->GetValue());
+  if (res == 0) RAISE_SYS_ERR();
+  if (res > size) {
+    size = size * 3 / 2;
+    buffer = String::New(size);
+    wBufferString = buffer->ToWord();
+    goto retry;
+  }
+  String *name = String::New(res + 10);
+  char *s = (char *) name->GetValue();
   static int counter = 0;
   while (true) {
-    std::sprintf(s, "%salice%d", prefix, counter);
+    std::sprintf(s, "%salice%d", buffer->GetValue(), counter);
     counter = (counter++) % 10000;
-    if (access(s, F_OK))
+    if (GetFileAttributes(s) == INVALID_FILE_ATTRIBUTES)
       break;
   }
-  RETURN(String::New(s)->ToWord());
+  RETURN(name->ToWord());
 #else
   static const char path[] = "/tmp/aliceXXXXXX";
   String *s = String::New(path, sizeof(path));
@@ -241,21 +318,30 @@ static word UnsafeOS_Process() {
 
 DEFINE2(UnsafeOS_SysErr) {
   Constructor *ccVal = Constructor::FromWord(SysErrConstructor);
-  ConVal *conVal     = ConVal::New(ccVal, 2);
+  ConVal *conVal = ConVal::New(ccVal, 2);
   conVal->Init(0, x0);
   conVal->Init(1, x1);
   RETURN(conVal->ToWord());
+} END
+
+DEFINE1(UnsafeOS_errorMsg) {
+  DECLARE_INT(errorCode, x0);
+  RETURN(ErrorCodeToString(errorCode)->ToWord());
 } END
 
 word UnsafeOS() {
   SysErrConstructor =
     UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
   RootSet::Add(SysErrConstructor);
+  wBufferString = String::New(1024)->ToWord();
+  RootSet::Add(wBufferString);
 
-  Record *record = Record::New(4);
+  Record *record = Record::New(5);
   record->Init("'SysErr", SysErrConstructor);
   INIT_STRUCTURE(record, "UnsafeOS", "SysErr",
 		 UnsafeOS_SysErr, 2, true);
+  INIT_STRUCTURE(record, "UnsafeOS", "errorMsg",
+		 UnsafeOS_errorMsg, 1, true);
   record->Init("FileSys$", UnsafeOS_FileSys());
   record->Init("Process$", UnsafeOS_Process());
   RETURN_STRUCTURE("UnsafeOS$", record);
