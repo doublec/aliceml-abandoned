@@ -1,8 +1,0 @@
-Group is
-
-    ../../lib/rtt/interface.cm
-    ../infrastructure/composer.cm
-    ../infrastructure/signature.cm
-
-    Signature.aml
-    Composer.aml
