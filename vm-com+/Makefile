@@ -66,7 +66,7 @@ Dialog.dll: Dialog.cs Win32.dll Alice.dll
 Tools.dll: Tools.aml stoc-com+.x86-win32 Skeleton.il
 	stoc -c Tools.aml -o $@
 
-streams.dll: examples/streams.aml
+streams.dll: examples/streams.aml stoc-com+.x86-win32 Skeleton.il
 	stoc -c examples/streams.aml -o $@
 
 clean:
