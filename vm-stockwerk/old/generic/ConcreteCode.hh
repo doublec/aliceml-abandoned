@@ -35,12 +35,12 @@ public:
   }
   static ConcreteCode *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CONCRETECODE_LABEL);
+    Assert(b == INVALID_POINTER || b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<ConcreteCode *>(b);
   }
   static ConcreteCode *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CONCRETECODE_LABEL);
+    Assert(b->GetLabel() == HANDLERBLOCK_LABEL);
     return static_cast<ConcreteCode *>(b);
   }
 
