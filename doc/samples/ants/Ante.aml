@@ -1,0 +1,101 @@
+import signature ANTE from "ANTE-sig"
+
+structure Ante : ANTE =
+struct
+    open Promise
+
+    type marker		= int
+    datatype side	= left | right
+    datatype dir	= here | ahead | leftahead | rightahead
+    datatype condition	= friend | foe | friendwithfood | foewithfood |
+			  food | rock | marker of marker | foemarker |
+			  home | foehome
+
+    type label		= string
+    datatype yesno	= onyes | onno
+    datatype instr	= Fail | Concat of instr * instr |
+			  Goto of label | Label of label * instr |
+			  Mark of marker * instr | Unmark of marker * instr |
+			  Turn of side * instr | Move of instr * instr |
+			  Pick of instr * instr | Drop of instr |
+			  Sense of dir * condition * instr * instr |
+			  Flip of int * instr * instr
+    type stmt		= instr promise * int * instr
+
+
+  (* Label generator *)
+
+    val labcount = ref 0
+
+    fun freshlabel () =
+	"$" ^ Int.toString (!labcount) before (labcount := !labcount +1)
+
+
+  (* Treeification *)
+
+    exception Malformed of string
+
+    infixr ++
+    fun (p1,0,i1) ++ (p2,n2,i2) = (p2, n2, Concat(i1,i2))
+      | (p1,1,i1) ++ (p2,n2,i2) = (fulfill (p1,i2); (p2,n2,i1))
+      | (p1,_,i1) ++ (p2,n2,i2) =
+	let
+	    val l = freshlabel ()
+	in
+	    fulfill (p1, Goto l);
+	    (p2, n2, Concat(i1, Label(l,i2)))
+	end
+
+    fun fail ()		= (promise(), 0, Fail)
+    fun goto l		= (promise(), 0, Goto l)
+    fun cont ()		= let val p = promise() in (p, 1, future p) end
+
+    fun label l		= let val p = promise() in (p, 1, Label(l, future p)) end
+    fun mark m		= let val p = promise() in (p, 1, Mark(m, future p)) end
+    fun unmark m	= let val p = promise() in (p, 1, Unmark(m, future p)) end
+    fun turn s		= let val p = promise() in (p, 1, Turn(s, future p)) end
+    fun drop ()		= let val p = promise() in (p, 1, Drop(future p)) end
+
+    fun join f (p1,n1,i1) (p2,n2,i2) =
+	(fulfill (p2, future p1); (p1, n1+n2, f(i1,i2)))
+
+    fun move onyes b1 onno b2	= join Move b1 b2
+      | move onno  b1 onyes b2	= join Move b2 b1
+      | move _     _  _     _	= raise Malformed "move"
+
+    fun pick onyes b1 onno b2	= join Pick b1 b2
+      | pick onno  b1 onyes b2	= join Pick b2 b1
+      | pick _     _  _     _	= raise Malformed "pick"
+
+    fun sense d c onyes b1 onno b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b1 b2
+      | sense d c onno  b1 onyes b2	= join (fn (i1,i2) => Sense(d,c,i1,i2)) b2 b1
+      | sense _ _ _     _  _     _	= raise Malformed "sense"
+
+    fun flip n onyes b1 onno b2		= join (fn (i1,i2) => Flip(n,i1,i2)) b1 b2
+      | flip n onno  b1 onyes b2	= join (fn (i1,i2) => Flip(n,i1,i2)) b2 b1
+      | flip n _     _  _     _		= raise Malformed "flip"
+
+    fun flipn bs		= flipn' (List.length bs) bs
+    and flipn' _ []		= cont ()
+      | flipn' _ [b]		= b
+      | flipn' _ [b1,b2]	= flip 2 onyes b1 onno b2
+      | flipn' n (b::bs)	= flip n onyes b onno (flipn' (n-1) bs)
+end
+
+
+
+(*
+    fun continue k (Cont)		= k
+      | continue k (Fail)		= Fail
+      | continue k (Goto l)		= Goto l
+      | continue k (Label(l,k'))	= Label(l, continue k k')
+      | continue k (Mark(m,k'))		= Mark(m, continue k k')
+      | continue k (Unmark(m,k'))	= Unmark(m, continue k k')
+      | continue k (Turn(s,k'))		= Turn(s, continue k k')
+      | continue k (Move(k1,k2))	= Move(continue k k1, continue k k2)
+      | continue k (Pick(k1,k2))	= Pick(continue k k1, continue k k2)
+      | continue k (Drop k')		= Drop(continue k k')
+      | continue k (Sense(d,c,k1,k2))	= Sense(d, c, continue k k1,
+						      continue k k2)
+      | continue k (Flip(n,k1,k2))	= Flip(n,continue k k1, continue k k2)
+*)

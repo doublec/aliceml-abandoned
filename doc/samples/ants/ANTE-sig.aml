@@ -1,0 +1,35 @@
+signature ANTE =
+sig
+    type marker		= int
+    datatype side	= left | right
+    datatype dir	= here | ahead | leftahead | rightahead
+    datatype condition	= friend | foe | friendwithfood | foewithfood |
+			  food | rock | marker of marker | foemarker |
+			  home | foehome
+
+    datatype yesno	= onyes | onno
+    type label		= string
+    type stmt
+
+    exception Malformed of string
+
+    infixr ++
+    val ++	: stmt * stmt -> stmt
+
+    val goto	: label -> stmt
+    val cont	: unit -> stmt
+    val fail	: unit -> stmt
+
+    val label	: label -> stmt
+    val mark	: marker -> stmt
+    val unmark	: marker -> stmt
+    val turn	: side -> stmt
+    val drop	: unit -> stmt
+
+    val move	: yesno -> stmt -> yesno -> stmt -> stmt
+    val pick	: yesno -> stmt -> yesno -> stmt -> stmt
+    val sense	: dir -> condition -> yesno -> stmt -> yesno -> stmt -> stmt
+    val flip	: int -> yesno -> stmt -> yesno -> stmt -> stmt
+
+    val flipn	: stmt list -> stmt
+end
