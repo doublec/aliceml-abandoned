@@ -1,3 +1,5 @@
 Makefile.depend
 *.stc
 *.dll
+UnsafeGecode.asig
+UnsafeGecode.cc
