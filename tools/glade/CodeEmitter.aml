@@ -36,10 +36,11 @@ signature CODE_EMITTER =
       val newObject : document * 
 		      string * string * property list
 		      * string list * signal list
-		      * (string * string * string) list -> unit
+		      * (string * string * string) list
+                      * (string * string * string) option -> unit
       val attachChildren : document *
 			   string * string *
-			   (string * property list) list 
+			   (string * property list * (string * string * string) option) list 
 			   -> unit
       val attachSignals : document * string * string *
 			  string * signal list -> unit
@@ -654,16 +655,33 @@ structure CodeEmitter :> CODE_EMITTER =
 	    processAccelerators(doc, class, id, accel)
 	end
 	
-    fun newObject(doc, class, id, prop, access, sign, accel) =
-         newObject'(doc, class, cvtId(id), prop, access, sign, accel)
+    fun newInternalObject(doc, class, id, prop, access, sign,accel,
+                          "vbox", "GtkDialog", parentId) =
+        (output(doc, "val "^id^" = Gtk.dialogGetFieldVbox "^parentId^"\n");
+         output(doc, "val "^id^"_action_area = Gtk.dialogGetFieldActionArea");
+         processProperties(doc, class, id, prop);
+         processAccelerators(doc, class, id, accel))
+      | newInternalObject(doc, class, id, prop, access, sign,accel,
+                          "action_area", "GtkVBox", parentId) =
+        (output(doc, "val "^id^" = "^parentId^"_action_area\n");
+         processProperties(doc, class, id, prop);
+         processAccelerators(doc, class, id, accel))
+      | newInternalObject _ = raise CodeEmitterError "Unknown internal child"
+
+    fun newObject(doc, class, id, prop, access, sign, accel, NONE) =
+        newObject'(doc, class, cvtId(id), prop, access, sign, accel)
+      | newObject(doc, class, id, prop, access, sign, 
+                  accel, SOME (internalId, parentClass, parentId)) =
+        newInternalObject(doc, class, id, prop, access, sign, accel,
+                          internalId, parentClass, parentId)
 
     fun makeChildrenList children =
-	"["^(insertStr "," (List.map (fn (c,_) => c) children))^"]"
+	"["^(insertStr "," (List.map (fn (c,_,_) => c) children))^"]"
 
     (* Attach children to container etc. *)
-    fun attachBoxChild (doc,id) (c, nil) =
+    fun attachBoxChild (doc,id) (c, nil,_) =
 	output(doc, "val _ = Gtk.boxPackStart("^id^","^c^",true,true,0)\n")
-      | attachBoxChild (doc,id) (c, props) =
+      | attachBoxChild (doc,id) (c, props,_) =
 	let
 	    val (expand, psr) = getBoolProp(props, "expand")
 	    val (fill, psr)   = getBoolProp(psr, "fill")
@@ -677,15 +695,15 @@ structure CodeEmitter :> CODE_EMITTER =
 			"("^id^","^c^","^expand^","^
 			fill^","^padding^")\n")
 	end
-    fun attachFrameChild (doc,id) (c,nil) =
+    fun attachFrameChild (doc,id) (c,nil,_) =
 	output(doc, "val _ = Gtk.containerAdd("^id^","^c^")\n")
-      | attachFrameChild (doc,id) (c,props) =
+      | attachFrameChild (doc,id) (c,props,_) =
 	case getProp(props, "type") of
 	    (SOME "label_item", psr) =>
 	    output(doc, "val _ = Gtk.frameSetLabelWidget("^id^","^c^")\n")
 	  | _ =>
 	    output(doc, "val _ = Gtk.containerAdd("^id^","^c^")\n")
-    fun attachTableChild (doc, id) (c, props) =
+    fun attachTableChild (doc, id) (c, props,_) =
 	let
 	    val (left_attach, psr) = getIntProp(props, "left_attach")
 	    val (right_attach, psr) = getIntProp(psr, "right_attach")
@@ -697,7 +715,7 @@ structure CodeEmitter :> CODE_EMITTER =
 			top_attach^","^bottom_attach^
 			",Gtk.FILL,Gtk.FILL,0,0)\n")
 	end
-    fun attachFixedChild (doc, id) (c, props) =
+    fun attachFixedChild (doc, id) (c, props, _) =
 	let
 	    val (xpos, psr) = getIntProp(props, "x")
 	    val (ypos, psr) = getIntProp(psr, "y")
@@ -706,7 +724,7 @@ structure CodeEmitter :> CODE_EMITTER =
 			xpos^","^ypos^")\n")
 	end
     fun attachNotebookChildren(doc, id, _, nil) = ()
-      | attachNotebookChildren(doc, id, n, (c,props)::ps) =
+      | attachNotebookChildren(doc, id, n, (c,props,_)::ps) =
 	case getProp(props, "type") of
 	    (SOME "tab", psr) =>
 	    (output(doc,
@@ -723,7 +741,7 @@ structure CodeEmitter :> CODE_EMITTER =
 			    id^","^c^")\n");
 		attachNotebookChildren(doc, id, n, ps)
 	    end
-    fun attachPaneChildren(doc, class, id, [(c1,p1),(c2,p2)]) =
+    fun attachPaneChildren(doc, class, id, [(c1,p1,_),(c2,p2,_)]) =
 	let
 	    val (shrink1, psr1) = getBoolProp(p1, "shrink")
 	    val (resize1, psr1) = getBoolProp(psr1, "resize")
@@ -739,7 +757,7 @@ structure CodeEmitter :> CODE_EMITTER =
 	end
       | attachPaneChildren _ = raise CodeEmitterError "Pane must have exactly 2 children"
 
-    fun attachComboChildren(doc, id, [_,(l,_)]) =
+    fun attachComboChildren(doc, id, [_,(l,_,_)]) =
 	output(doc,
 	       "val _ = List.app "^
 	       "(fn c => Gtk.containerAdd(Gtk.comboGetFieldList "^id^","^
@@ -751,7 +769,7 @@ structure CodeEmitter :> CODE_EMITTER =
 			     | "GtkBox"), id, children) =
 	List.app (attachBoxChild(doc,id)) children
       | attachChildren'(doc, "GtkMenuItem", id, children) =
-	List.app (fn (c,_) =>
+	List.app (fn (c,_,_) =>
 		     output(doc, "val _ = Gtk.menuItemSetSubmenu("^
 				 cvtId(id)^","^cvtId(c)^")\n"))
 		 children
@@ -767,23 +785,23 @@ structure CodeEmitter :> CODE_EMITTER =
 	attachComboChildren(doc, id, children)
       | attachChildren'(doc, "GtkList", id, children) =
 	output(doc, "val "^id^" = ["^
-		    (insertStr "," (map (fn (x,y)=>x) children))^"]\n")
+		    (insertStr "," (map (fn (x,y,_)=>x) children))^"]\n")
       | attachChildren'(doc, class as ("GtkHPaned"|"GtkVPaned"),
 			id, children) =
 	attachPaneChildren(doc, class, id, children)
       | attachChildren'(doc, "GtkImageMenuItem", id, nil) = ()
-      | attachChildren'(doc, "GtkImageMenuItem", id, [(child,_)]) =
+      | attachChildren'(doc, "GtkImageMenuItem", id, [(child,_,_)]) =
 	output(doc, "val _ = Gtk.imageMenuItemSetImage("^id^","^child^")\n")
       | attachChildren'(_, "GtkImageMenuItem", _, _) =
 	raise CodeEmitterError "GtkImageMenuItem can have none or one child"
-      | attachChildren'(doc, "GtkOptionMenu", id, [(child,_)]) =
+      | attachChildren'(doc, "GtkOptionMenu", id, [(child,_,_)]) =
 	output(doc,
 	       "val _ = Gtk.optionMenuSetMenu("^id^","^
 	       child^")\n")
       | attachChildren'(doc, "GtkOptionMenu", id, _) =
 	raise CodeEmitterError "GtkOptionMenu requires exactly one child"
       | attachChildren'(_,_,_,nil) = ()
-      | attachChildren'(doc, class, id, [(child,_)]) =
+      | attachChildren'(doc, class, id, [(child,_,_)]) =
 	output(doc, "val _ = Gtk.containerAdd("^
 		    id^","^child^")\n")
       | attachChildren'(doc, class, id, children) =
@@ -791,7 +809,8 @@ structure CodeEmitter :> CODE_EMITTER =
 		    id^","^makeChildrenList children^")\n");
     fun attachChildren(doc, class, id, children) =
 	attachChildren'(doc, class, cvtId(id),
-			map (fn (i,v) => (cvtId i,v)) children)
+			map (fn (i,v,internal) => (cvtId i,v,internal))
+                            children)
 
     fun attachSignals(doc,str,class,id,nil) = ()
       | attachSignals(doc,str,class,id,(n,h,a)::sr) =

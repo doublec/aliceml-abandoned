@@ -81,7 +81,7 @@ structure Parser :> PARSER =
 	      parseAccelerators(doc,ps,parseAccelerator(doc,p)::acc)
 	  else (p::ps,acc)
 
-      fun parseWidget(doc, sigDoc, w) =
+      fun parseWidget(doc, sigDoc, w, internalChild) =
 	  let
 	      val class = valOf(getProp w "class")
 		  handle Option =>
@@ -93,24 +93,29 @@ structure Parser :> PARSER =
 	      val (next, acces)  = parseAccessibility(doc, next, nil)
 	      val (next, sign)   = parseSignals(doc, next, nil)
 	      val (next, accel)  = parseAccelerators(doc, next, nil)
-	      val _ = newObject(doc,class,id,prop,acces,sign,accel)
-	      val children = parseChildren(doc, sigDoc, next)
+	      val _ = newObject(doc,class,id,prop,acces,sign,
+                                accel,internalChild)
+	      val children = parseChildren(doc, sigDoc, class, id, next)
 	  in
 	      attachChildren(doc, class, id, children);
 	      attachSignals(sigDoc,getStructureName doc,class,id,sign);
 	      id
 	  end
-      and parseChildren(doc, _, nil) = nil
-	| parseChildren(doc, sigDoc, c::cr) =
+      and parseChildren(doc, _, _, _, nil) = nil
+	| parseChildren(doc, sigDoc, parentClass, parentId, c::cr) =
 	  if (c/>getType) = TEXT_NODE orelse
-          (c/>getType) = COMMENT_NODE then parseChildren(doc, sigDoc, cr)
+          (c/>getType) = COMMENT_NODE then
+              parseChildren(doc, sigDoc, parentClass, parentId, cr)
 	  else if (c/>name) = "child" then
 	      let
+                  val internalChild =
+                      Option.map (fn x => (x,parentClass,parentId))
+                                 (getProp c "internal-child")
 		  val wp = skipTextNodes (c/>children)
 		  val (child,next) =
 		      case wp of
 			  (w::wr) where ((w/>name)="widget") =>
-			  (parseWidget(doc, sigDoc, w), wr)
+			  (parseWidget(doc, sigDoc, w, internalChild), wr)
 			| (w::wr) where ((w/>name)="placeholder") =>
 			  ("placeholder", wr)
 			| _ => raise ParseError
@@ -132,8 +137,9 @@ structure Parser :> PARSER =
 			| _ => raise ParseError "packing or nothing expected"
 	      in
 		  case child of
-		      "placeholder" => parseChildren(doc, sigDoc, cr)
-		    | _ => (child, packing)::parseChildren(doc, sigDoc, cr)
+		      "placeholder" =>
+                      parseChildren(doc, sigDoc, parentClass, parentId, cr)
+		    | _ => (child, packing, internalChild)::parseChildren(doc, sigDoc, parentClass, parentId, cr)
 	      end
 	  else raise ParseError ("'child' expected, "^(c/>name)^" found.")
 
@@ -142,7 +148,7 @@ structure Parser :> PARSER =
 	  if (r/>getType) = TEXT_NODE orelse
           (r/>getType) = COMMENT_NODE then parseWidgets(doc, sigDoc, rr)
 	  else if (r/>name) = "widget" then
-	      parseWidget(doc,sigDoc,r)::parseWidgets(doc,sigDoc,rr)
+	      parseWidget(doc,sigDoc,r,NONE)::parseWidgets(doc,sigDoc,rr)
 	  else raise ParseError ("'widget' required, "^(r/>name)^" found")
 
       fun parseInterface(doc,sigDoc,root) =
