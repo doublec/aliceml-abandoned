@@ -1,7 +1,11 @@
 (* very simple (toplevel) grammar definition *)
-structure arithmetic =
-struct
+signature MYTOKEN =
+sig
+    token  PLUS | MINUS | TIMES | NUM of int
+end
 
+structure a =
+struct
     token PLUS | MINUS | TIMES | NUM of int
 
     assocl TIMES
@@ -20,10 +24,10 @@ struct
         parser eval2 = oper(* *)
     
     val lexer = 
-	let val t = [NUM 5, PLUS, NUM 3, TIMES, NUM (~2), EOP]
-	    fun f x = (x,1,1)
+	let val t = [NUM 5, PLUS, NUM 3, TIMES, NUM (~2)]
+	    fun f x = (SOME x,1,1)
 	    val t = ref (map f t)
 	in fn () =>
-	    let val h = hd (!t) in (t:=tl(!t); h)  end handle _ => (EOP,1,1)
+	    let val h = hd (!t) in (t:=tl(!t); h)  end handle _ => (NONE,1,1)
 	end
 end

@@ -28,6 +28,7 @@ struct
 
     val newTokenname = mkNewNamefunction "TOKEN" 675
     val newRulename = mkNewNamefunction "startrule" 675
+    val eop = "EOP"
 
     (* ML yacc assumes 
      - nonterms numbered 0,...,|nonterms|,
@@ -41,14 +42,21 @@ struct
     val start = "NewStartSymbol"    
     *)
 
-    (* tl: new tokens to distinguish between different parsers *) 
+    (* tl: new tokens to distinguish between different parsers *)
+    (* eop to the end *) 
     fun mkTermDict tl l = 
 	let fun toDict i [] = []
 	      | toDict i (to::toks) = (to,i)::(toDict (i+1) toks)
 	    val t1 = toDict 0 (map (fn x => (x,NONE)) tl)
-	    val t3 = List.concat(List.map (fn A.TokenDec t => toDict (List.length t1) t | _ => []) l)
+	    val parsers = List.length t1
+	    val t2 = t1@[((eop,NONE),parsers)]
+	    val t3 = List.filter (fn A.TokenDec _ => true | _ => false) l 
+	    val t3 = (List.last
+		 (List.map (fn A.TokenDec t => toDict (parsers+1) t  | _ => []) t3))
+	    fun pr ((s,_),i) = print ("("^s^","^(Int.toString i)^")")
+	    (* val _ = List.app pr (t2@t3) *)
 	in 
-	    t1@t3
+	    t2@t3
 	end
 
     fun mkNontermDict l =
@@ -101,7 +109,7 @@ struct
 		in (tok::tl,(N.start,NONE,A.Transform
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
-				     A.As(N.eop,A.Symbol(N.eop))],
+				     A.As(eop,A.Symbol(eop))],
 			      ["SValue.S"^(Int.toString pnum)^" ( "^ stsym^" )"]))::rules)
 		end
 	in
@@ -149,7 +157,7 @@ struct
 	    val ntd = mkNontermDict x
 	    val stringToSymbol = stringToSymbol td ntd
 	    val start = stringToNonterm ntd N.start
-	    val eop = [stringToTerm td N.eop]
+	    val eop = [stringToTerm td eop]
 	    val terms = List.length td
 	    val nonterms = List.length ntd
 	    val noshift = []

@@ -79,9 +79,9 @@ struct
 	    ^"\n"
 	end
 
-    fun printToIntTokenFn (terms,stringToTerm) =
-	let fun constrPat (t,NONE) = "("^t^",p1,p2)"
-	      | constrPat (t,SOME _) = "("^t^" a,p1,p2)"
+    fun printToIntTokenFn (terms,stringToTerm,parsers) =
+	let fun constrPat (t,NONE) = "(SOME ( "^t^" ),p1,p2)"
+	      | constrPat (t,SOME _) = "(SOME ("^t^" a),p1,p2)"
 	    fun constrInt (t,NONE) = t^" (fn () => ())"
 	      | constrInt (t,SOME _) = t^" (fn () => a)"
 	    fun constrCase (tok as (t,_)) = 
@@ -90,8 +90,9 @@ struct
 		^(Int.toString(case stringToTerm t of Grammar.T i => i))
 		^", (SValue."^(constrInt tok)
 		^", p1, p2))\n"
-	    fun cases [] = "" (* should not happen *)
-	      | cases [t] = constrCase t
+	    fun cases [] = "(NONE,p1,p2) => Token.TOKEN(LrTable.T "^
+		(Int.toString parsers)
+		^", (SValue.EOP (fn () => ()), p1, p2))\n" 
 	      | cases (t::ts) = (constrCase t)^"\n    | "^(cases ts)
 	in
 	    "\n(* lexer -> (unit -> (SValue.svalue, pos) Token.token),\n "
@@ -236,7 +237,8 @@ struct
 		^(printSValue (termlist,nontermlist,parsers))
 		^"end\n\n"
 		(* use only "real" tokens, not the ones for distinguishing between parsers *)
-		^(printToIntTokenFn (List.drop(termlist,parsers),stringToTerm))
+		^(printToIntTokenFn 
+		  (List.drop(termlist,parsers+1),stringToTerm,parsers))
 		^"\n(* semantic actions *)\n"
 		^"structure SAction =\nstruct\n"
 		^"open "^structureName2^"\n"

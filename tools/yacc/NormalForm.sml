@@ -12,11 +12,11 @@ struct
 
     val newRulename = mkNewNamefunction "rule" 0
     val newIdname = mkNewNamefunction "id" 0
-    val eop = "EOP"
     val start = "NewStartSymbol"    
 
-    (* last tokendec => datatype + eop *)
+    (* not used... last tokendec => datatype + eop *)
     local 
+	val eop = "EOP"
 	fun countTokenDecs p = 
 	    List.length(List.filter (fn (A.TokenDec l) => true | _ => false) p)
 	fun remove n [] = []
@@ -167,7 +167,7 @@ struct
 	end
 
     fun toNormalForm p =
-	let val p' = normTokenDec p
+	let (* val p' = normTokenDec p *) val p' = p
 	    val h = List.concat o (List.map normalize)
 	in 
 	    List.map (fn A.RuleDec l => A.RuleDec (h l) | x => x) p'
