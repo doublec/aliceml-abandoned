@@ -138,8 +138,9 @@ open GtkSupport Node Doc Color PervasiveType
 			     val found = (Array.foldl hor_funct (x,y)	
 					  (getKids(node)); NONE)
 				 handle NodeFound(n) => SOME(n)
+			  
 			 in
-			    justifyFound(node,found)
+			     justifyFound(node,found)
 			 end
 	    else NONE
 	    end

@@ -50,17 +50,6 @@ struct
     val incrActLine = ref (fn _ => ())
     val resize = ref (fn () => ()) 
 
-    val compList = 
-	let structure UnitList = Reflect.ReflectType(type t = unit list)
-	    val unitList = UnitList.x
-	in #1(Type.asApply(unitList))
-	end 
-    
-    fun isListType t = Type.isApply t 
-	               andalso let val typ = #1(Type.asApply(t)) 
-			       in Type.equal(typ,compList)
-			       end 
-
     val stopflag = ref false;
         
     (* max *)

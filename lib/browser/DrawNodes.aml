@@ -152,6 +152,7 @@ struct
     and drawContainer(n,x,y,upd) =  
 	let 
 	    val vertical = setsVertical(n)
+	    val _ = if vertical then Inspector.inspect(n) else () 
 	    val funct = if vertical 
 			    then (containerVerFunct upd)
 			else (containerHorFunct upd)

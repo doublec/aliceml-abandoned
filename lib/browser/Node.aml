@@ -13,6 +13,8 @@
  *
  *)
 
+import structure TextIO from "x-alice:/lib/system/TextIO"
+
 import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect" 
@@ -122,6 +124,18 @@ struct
 
     val relnumber = ref 0
 
+    val compList = 
+	let structure UnitList = Reflect.ReflectType(type t = unit list)
+	    val unitList = UnitList.x
+	in #1(Type.asApply(unitList))
+	end 
+    
+    fun isListType t = Type.isApply t 
+	               andalso let val typ = #1(Type.asApply(t)) 
+			       in Type.equal(typ,compList)
+			       end 
+
+
 (* Operationen auf value *)
 
     fun isValue (V _) = true
@@ -184,46 +198,55 @@ struct
 
     (* Test, ob Container vertikal anordnet *)
 
-    fun setsVertical n = case n of
+    fun setsVertical  n = 
+	case n of
 	Container(r) 
         => checkContKids (#kids(r),0)
-	   orelse ( case Array.sub(#kids(r),0) of
-		    Simple(rr) => String.equal("struct",#rep(rr))
-		  | _ => false )
-      | _ => false
-	                  			 
-    and checkContKids (a,i) = if i >=  Array.length(a) 
-				  then false
-			      else (case Array.sub(a,i) of
-				    Concat(r) 
-				    => if checkConcKids (#kids(r),0)
-	                                 then true
-				       else checkContKids (a,i+1)
-			   	  | RelNode(r) 
-			            => ( case !(#content(r)) of 
-					 Concat(rr)  
-					 => checkConcKids (#kids(rr),0) 
-					    orelse checkContKids (a,i+1) 
-				       | Container(rr) => true 
-				       | _ => checkContKids (a,i+1) ) 
-				  | _ => checkContKids (a,i+1) )
-
-    and checkConcKids (a,i) = if i >=  Array.length(a) 
-				  then false 
-			      else (case Array.sub(a,i) of
-				    Container(r) => true
-                                  | Concat(r) 
-				    => checkConcKids(#kids(r),0)
-				       orelse checkConcKids (a,i+1)
-				  | RelNode(r) 
-				    => ( case !(#content(r)) of 
-					 Concat(rr)  
-					 => checkConcKids (#kids(rr),0)  
-					    orelse checkConcKids (a,i+1) 
-				       | Container(rr) => true 
-				       | _ => checkConcKids (a,i+1) )
-                                  | _ => checkConcKids (a,i+1) )
-
+	orelse ( case Array.sub(#kids(r),0) of
+		Simple(rr) => String.equal("struct",#rep(rr))
+	      | _ => false )
+      | _ => false 
+	
+    and checkContKids (a,i) = 
+	if i >=  Array.length(a) 
+	    then false
+	else (case Array.sub(a,i) of
+		  Concat(r) 
+		  => checkConcKids (#kids(r),0)
+		  orelse checkContKids (a,i+1)
+		| Container(r) 
+		  => checkContKids (#kids(r),0)
+		  orelse checkContKids (a,i+1)
+		| RelNode(r) 
+		    => ( case !(#content(r)) of 
+			Concat(rr)  
+			=> checkConcKids (#kids(rr),0) 
+			   orelse checkContKids (a,i+1) 
+		      | Container(rr) => not(isListType(getTyp(#desc(rr))))
+					 orelse checkContKids(#kids(rr),0)
+					 handle Match => true 
+		      | _ => checkContKids (a,i+1) ) 
+		| _ => checkContKids (a,i+1) ) 
+	    
+    and checkConcKids (a,i) = 
+	if i >=  Array.length(a) 
+	    then false 
+	else (case Array.sub(a,i) of
+		  Container(r) => true
+		    | Concat(r) 
+		      => checkConcKids(#kids(r),0)
+		      orelse checkConcKids (a,i+1)
+		    | RelNode(r) 
+		      => ( case !(#content(r)) of 
+			  Concat(rr)  
+			  => checkConcKids (#kids(rr),0)  
+			  orelse checkConcKids (a,i+1) 
+			| Container(rr) => not(isListType(getTyp(#desc(rr))))
+					   orelse checkContKids(#kids(rr),0)
+					   handle Match => true
+			| _ => checkConcKids (a,i+1) )
+		    | _ => checkConcKids (a,i+1) )
+	      
     (* Rueckgabe des Inhalts bestimmter node-Felder *)
 
     fun getDesc n = case n of Simple(r) => #desc(r)

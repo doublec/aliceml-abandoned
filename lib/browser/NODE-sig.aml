@@ -126,6 +126,9 @@ sig
     val asValue: value -> Reflect.value
     val asModule: value -> Reflect.module
 
+    val compList : Type.t
+    val isListType: Type.t -> bool
+
     (* Operationen auf desc *)
 
     val createValue  :  Reflect.value * Type.t -> desc

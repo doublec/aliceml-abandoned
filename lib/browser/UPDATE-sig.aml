@@ -34,9 +34,6 @@ signature UPDATE =
 
 	val stopflag: bool ref
 
-	val compList : Type.t
-	val isListType: Type.t -> bool
-
 	val iterMove: int * int -> unit
 
         (* constraint watcher *) 
