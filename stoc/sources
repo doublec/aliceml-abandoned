@@ -1,4 +1,5 @@
 ../../lib/bootstrap/Bootstrap.aus
+../../lib/bootstrap/TextIO.aus
 /opt/smlnj/src/ml-yacc/lib/base.sig
 /opt/smlnj/src/ml-yacc/lib/join.sml
 /opt/smlnj/src/ml-yacc/lib/lrtable.sml
@@ -106,6 +107,8 @@
 ../backend-common/SimplifyRec.sml
 ../backend-common/MATCH_COMPILATION_PHASE.sig
 ../backend-common/MatchCompilationPhase.sml
+../backend-common/LIVENESS_ANALYSIS_PHASE.sig
+../backend-common/LivenessAnalysisPhase.sml
 ../backend-mozart/OZIFY_IMPERATIVE_GRAMMAR.sig
 ../backend-mozart/OzifyImperativeGrammar.sml
 ../backend-com+/IL.sig
