@@ -179,6 +179,8 @@ structure TextIO :> TEXT_IO =
 		    (TextStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
 	    end
 
+	fun outputSubstr (f, s) = output (f, Substring.string s)
+
 	val stdIn =
 	    let
 		val reader = mkReader (UnsafeIODesc.stdIn)

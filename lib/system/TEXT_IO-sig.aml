@@ -43,7 +43,7 @@ signature TEXT_IO =
 	val openString: string -> instream
 	val output: outstream * vector -> unit
 	val output1: outstream * elem -> unit
-(*	val outputSubstr: outstream * substring -> unit*)
+	val outputSubstr: outstream * substring -> unit
 	val flushOut: outstream -> unit
 	val closeOut: outstream -> unit
 	val mkOutstream: StreamIO.outstream -> outstream
