@@ -29,8 +29,8 @@ public:
   u_int GetSize() {
     return StackFrame::GetSize() + SIZE;
   }
-  Closure *GetClosure() {
-    return Closure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
+  LazyCompileClosure *GetClosure() {
+    return LazyCompileClosure::FromWordDirect(StackFrame::GetArg(CLOSURE_POS));
   }
   // LazyCompileFrame Constructor
   static LazyCompileFrame *New(Interpreter *interpreter,
@@ -66,13 +66,11 @@ u_int LazyCompileInterpreter::GetFrameSize(StackFrame *sFrame) {
 Worker::Result LazyCompileInterpreter::Run(StackFrame *sFrame) {
   LazyCompileFrame *frame = static_cast<LazyCompileFrame *>(sFrame);
   Assert(sFrame->GetWorker() == this);
-  Closure *closure = frame->GetClosure();
+  LazyCompileClosure *closure = frame->GetClosure();
   Scheduler::PopFrame(frame->GetSize());
-  TagVal *abstractCode = TagVal::FromWordDirect(closure->Sub(0));
-  Scheduler::nArgs          = Scheduler::ONE_ARG;
+  Scheduler::nArgs = Scheduler::ONE_ARG;
   NativeCodeJitter jitter;
-  Scheduler::currentArgs[0] =
-    jitter.Compile(closure->Sub(1), abstractCode)->ToWord();
+  Scheduler::currentArgs[0] = jitter.Compile(closure)->ToWord();
   return Worker::CONTINUE;
 }
 
@@ -91,15 +89,12 @@ void LazyCompileInterpreter::DumpFrame(StackFrame *) {
 //
 // LazyCompileClosure
 //
-class LazyCompileClosure : public Closure {
-public:
-  static LazyCompileClosure *New(TagVal *abstractCode);
-};
-
 LazyCompileClosure *LazyCompileClosure::New(TagVal *abstractCode) {
-  Closure *closure = Closure::New(LazyCompileInterpreter::concreteCode, 2);
-  closure->Init(0, abstractCode->ToWord());
-  // closure->Init(1, byneed) done in NativeConcreteCode::New
+  Closure *closure = Closure::New(LazyCompileInterpreter::concreteCode, SIZE);
+  closure->Init(ABSTRACT_CODE, abstractCode->ToWord());
+  // closure->Init(BYNEED_POS, byneed) done in NativeConcreteCode::New
+  closure->Init(N_LOCALS_POS, Store::IntToWord(-1));
+  closure->Init(ASSIGNMENT_POS, Store::IntToWord(0));
   return static_cast<LazyCompileClosure *>(closure);
 }
 

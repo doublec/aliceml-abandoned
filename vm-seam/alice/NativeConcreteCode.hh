@@ -22,6 +22,35 @@
 
 #if HAVE_LIGHTNING
 
+class LazyCompileClosure : public Closure {
+protected:
+  enum { ABSTRACT_CODE, BYNEED_POS, N_LOCALS_POS, ASSIGNMENT_POS, SIZE };
+public:
+  TagVal *GetAbstractCode() {
+    return TagVal::FromWordDirect(Sub(ABSTRACT_CODE));
+  }
+  word GetByneed() {
+    return Sub(BYNEED_POS);
+  }
+  s_int GetNLocals() {
+    return Store::DirectWordToInt(Sub(N_LOCALS_POS));
+  }
+  void SetNLocals(s_int nLocals) {
+    Update(N_LOCALS_POS, nLocals);
+  }
+  Tuple *GetAssignment() {
+    return Tuple::FromWordDirect(Sub(ASSIGNMENT_POS));
+  }
+  void SetAssignment(Tuple *assignment) {
+    Update(ASSIGNMENT_POS, assignment->ToWord());
+  }
+
+  static LazyCompileClosure *New(TagVal *abstractCode);
+  static LazyCompileClosure *FromWordDirect(word wClosure) {
+    return static_cast<LazyCompileClosure *>(Closure::FromWordDirect(wClosure));
+  }
+};
+
 class LazyCompileInterpreter : public Interpreter {
 private:
   LazyCompileInterpreter(): Interpreter() {}
@@ -85,12 +114,12 @@ public:
     ConcreteCode *concreteCode = ConcreteCode::FromWord(code);
     Assert(concreteCode == INVALID_POINTER ||
 	   concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return (NativeConcreteCode *) concreteCode;
+    return static_cast<NativeConcreteCode *>(concreteCode);
   }
   static NativeConcreteCode *FromWordDirect(word code) {
     ConcreteCode *concreteCode = ConcreteCode::FromWordDirect(code);
     Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-    return (NativeConcreteCode *) concreteCode;
+    return static_cast<NativeConcreteCode *>(concreteCode);
   }
 };
 

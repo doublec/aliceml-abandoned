@@ -282,6 +282,10 @@ DEFINE1(UnsafeOS_Process_terminate) {
 #if PROFILE
   Profiler::DumpInfo();
 #endif
+#if defined(JIT_APPLY_STATISTIC)
+  extern void DumpApplyStatistics();
+  DumpApplyStatistics();
+#endif
 #if HAVE_LIGHTNING && defined(INSTRUCTION_COUNTS)
   NativeCodeJitter::DumpInstructionCounts();
 #endif
