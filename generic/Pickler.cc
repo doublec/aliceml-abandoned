@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <zlib.h>
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
@@ -34,6 +35,8 @@
 #include "generic/Pickle.hh"
 
 #include "alice/Data.hh" //--** should not be here
+
+#define COMPRESSIONLEVEL "9"
 
 //
 // Stream Classes
@@ -87,8 +90,8 @@ public:
 
   static FileOutputStream *New(char *filename) {
     OutputStream *outputStream = OutputStream::New(FILE_OUTPUT_STREAM, SIZE);
-    FILE *f = std::fopen(filename, "wb");
-    outputStream->InitArg(FILE_POS, Store::UnmanagedPointerToWord(f));
+    gzFile file = gzopen(filename, "wb" COMPRESSIONLEVEL);
+    outputStream->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
     outputStream->InitArg(FINALIZATION_KEY_POS,
 			  finalizationSet->Register(outputStream->ToWord()));
     return static_cast<FileOutputStream *>(outputStream);
@@ -99,8 +102,8 @@ public:
     return static_cast<FileOutputStream *>(p);
   }
 
-  FILE *GetFile() {
-    return static_cast<FILE *>
+  gzFile GetFile() {
+    return static_cast<gzFile>
       (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
 
@@ -178,21 +181,21 @@ void OutputStream::PutBytes(Chunk *c) {
 
 // FileOutputStream Methods
 void FileOutputStreamFinalizationSet::Finalize(word value) {
-  std::fclose(FileOutputStream::FromWordDirect(value)->GetFile());
+  gzclose(FileOutputStream::FromWordDirect(value)->GetFile());
 }
 
 FileOutputStreamFinalizationSet *FileOutputStream::finalizationSet;
 
 void FileOutputStream::PutByte(u_char byte) {
-  std::fputc(byte, GetFile());
+  gzputc(GetFile(), byte);
 }
 
 void FileOutputStream::PutBytes(Chunk *c) {
-  std::fwrite(c->GetBase(), 1, c->GetSize(), GetFile());
+  gzwrite(GetFile(), c->GetBase(), c->GetSize());
 }
 
 word FileOutputStream::Close() {
-  std::fclose(GetFile());
+  gzclose(GetFile());
   u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
   finalizationSet->Unregister(key);
   return Store::IntToWord(0);

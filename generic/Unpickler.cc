@@ -20,6 +20,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <zlib.h>
 #include "adt/Stack.hh"
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
@@ -109,7 +110,7 @@ public:
   // InputStream Constructors
   static InputStream *NewFromFile(const char *filename) {
     InputStream *is = New(FILE_INPUT_STREAM, FILE_INPUT_STREAM_SIZE);
-    FILE *file = std::fopen(filename, "rb");
+    gzFile file = gzopen(filename, "rb");
     is->InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
     if (file != NULL) {
       Chunk *buffer =
@@ -137,9 +138,9 @@ public:
   }
 
   // InputStream Methods
-  FILE *GetFile() {
+  gzFile GetFile() {
     Assert(GetLabel() == (BlockLabel) FILE_INPUT_STREAM);
-    return static_cast<FILE *>
+    return static_cast<gzFile>
       (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
   bool IsEOB() {
@@ -189,7 +190,7 @@ public:
     switch ((IN_STREAM_TYPE) GetLabel()) {
     case FILE_INPUT_STREAM:
       {
-	std::fclose(GetFile());
+	gzclose(GetFile());
 	u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
 	finalizationSet->Unregister(key);
       }
@@ -230,9 +231,9 @@ public:
 	SetEOB(false);
 	// here bytes and size indicate the buffer to fill;
 	// tl still needs to be written back
-	FILE *file = GetFile();
-	u_int nread = std::fread(bytes, sizeof(u_char), size, file);
-	if (ferror(file)) {
+	gzFile file = GetFile();
+	int nread = gzread(file, bytes, size);
+	if (nread < 0) {
 	  Error("InputStream::FillBuffer"); //--** raise Io exception
 	} else if (nread == 0) { // at end of file: raise Corrupt exception
 	  Scheduler::currentData = Unpickler::Corrupt;
@@ -264,7 +265,7 @@ public:
 InputStreamFinalizationSet *InputStream::finalizationSet;
 
 void InputStreamFinalizationSet::Finalize(word value) {
-  std::fclose(InputStream::FromWordDirect(value)->GetFile());
+  gzclose(InputStream::FromWordDirect(value)->GetFile());
 }
 
 // Pickle Arguments
