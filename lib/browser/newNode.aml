@@ -404,7 +404,6 @@ struct
 		    val r = ref (la-1)
 		    val na = Array.array(1,EmptyNode)
 		    val cont = makeContNode (t,bracket,na,i,d)
-		    (* spaeter Breitenfilter! *)
 		    val labnode = makeLabelNode (EmptyNode,label,cont,0,d)
 		in (if d > !depth 
 			then limit
