@@ -25,6 +25,7 @@ public:
     static word primitiveFunction;
     static word function;
     static word constructor;
+    static word uniqueString;
   };
 
   static void Init();

@@ -19,7 +19,7 @@ include $(TOPDIR)/Makefile.rules
 
 PRIMITIVE_MODULES = \
 	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
-	List Math Option Real Ref String Thread Unsafe Vector Word
+	List Math Option Real Ref String Thread UniqueString Unsafe Vector Word
 LIB_SYSTEM_MODULES = \
 	Config IO OS CommandLine Component Debug Rand Reflect Socket
 LIB_UTILITY_MODULES = MkRefMap

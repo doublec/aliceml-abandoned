@@ -46,6 +46,7 @@ private:
   static void RegisterRef();
   static void RegisterString();
   static void RegisterThread();
+  static void RegisterUniqueString();
   static void RegisterUnsafe();
   static void RegisterVector();
   static void RegisterWord();

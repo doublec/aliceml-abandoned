@@ -18,11 +18,14 @@
 
 #include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
+#include "generic/Tuple.hh"
 #include "generic/Transform.hh"
 #include "generic/ConcreteRepresentationHandler.hh"
 #include "alice/Data.hh"
 #include "alice/Guid.hh"
 #include "alice/AliceLanguageLayer.hh"
+
+static const u_int initialTableSize = 16; // to be checked
 
 //
 // ConstructorHandler
@@ -42,15 +45,15 @@ Block *ConstructorHandler::GetAbstractRepresentation(Block *blockWithHandler) {
 // Constructor
 //
 
-word globalTable;
-static const u_int initialSize = 16; // to be checked
+static word constructorTable;
 
 ConcreteRepresentationHandler *Constructor::handler;
 
 void Constructor::Init() {
   handler = new ConstructorHandler();
-  globalTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
-  RootSet::Add(globalTable);
+  constructorTable =
+    HashTable::New(HashTable::BLOCK_KEY, initialTableSize)->ToWord();
+  RootSet::Add(constructorTable);
 }
 
 static Transform *MakeConstructorTransform(word name, word key) {
@@ -64,7 +67,7 @@ static Transform *MakeConstructorTransform(word name, word key) {
 
 Constructor *Constructor::New(word name, Block *guid) {
   Assert(guid != INVALID_POINTER);
-  HashTable *hashTable = HashTable::FromWordDirect(globalTable);
+  HashTable *hashTable = HashTable::FromWordDirect(constructorTable);
   word key = guid->ToWord();
   if (hashTable->IsMember(key)) {
     return Constructor::FromWordDirect(hashTable->GetItem(key));
@@ -82,6 +85,67 @@ Transform *Constructor::GetTransform() {
   if (transformWord == Store::IntToWord(0)) {
     Transform *transform =
       MakeConstructorTransform(Get(NAME_POS), Guid::New()->ToWord());
+    Replace(TRANSFORM_POS, transform->ToWord());
+    return transform;
+  } else {
+    return Transform::FromWordDirect(transformWord);
+  }
+}
+
+//
+// UniqueStringHandler
+//
+
+class UniqueStringHandler: public ConcreteRepresentationHandler {
+public:
+  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
+};
+
+Block *
+UniqueStringHandler::GetAbstractRepresentation(Block *blockWithHandler) {
+  UniqueString *uniqueString = static_cast<UniqueString *>(blockWithHandler);
+  return static_cast<Block *>(uniqueString->GetTransform());
+}
+
+//
+// UniqueString
+//
+
+static word uniqueStringTable;
+
+ConcreteRepresentationHandler *UniqueString::handler;
+
+void UniqueString::Init() {
+  handler = new UniqueStringHandler();
+  uniqueStringTable =
+    HashTable::New(HashTable::BLOCK_KEY, initialTableSize)->ToWord();
+  RootSet::Add(uniqueStringTable);
+}
+
+static Transform *MakeUniqueStringTransform(word string) {
+  Chunk *transformName = static_cast<Chunk *>
+    (String::FromWordDirect(AliceLanguageLayer::TransformNames::uniqueString));
+  return Transform::New(transformName, string);
+}
+
+UniqueString *UniqueString::New(String *string) {
+  HashTable *hashTable = HashTable::FromWordDirect(uniqueStringTable);
+  word key = string->ToWord();
+  if (hashTable->IsMember(key)) {
+    return UniqueString::FromWordDirect(hashTable->GetItem(key));
+  } else {
+    ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
+    b->Init(STRING_POS, key);
+    b->Init(TRANSFORM_POS, MakeUniqueStringTransform(key)->ToWord());
+    hashTable->InsertItem(key, b->ToWord());
+    return static_cast<UniqueString *>(b);
+  }
+}
+
+Transform *UniqueString::GetTransform() {
+  word transformWord = Get(TRANSFORM_POS);
+  if (transformWord == Store::IntToWord(0)) {
+    Transform *transform = MakeUniqueStringTransform(Get(STRING_POS));
     Replace(TRANSFORM_POS, transform->ToWord());
     return transform;
   } else {

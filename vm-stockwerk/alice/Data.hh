@@ -277,6 +277,37 @@ public:
   }
 };
 
+class UniqueString: private ConcreteRepresentation {
+private:
+  static const u_int STRING_POS = 0;
+  static const u_int TRANSFORM_POS = 1;
+  static const u_int SIZE = 2;
+  static ConcreteRepresentationHandler *handler;
+public:
+  using Block::ToWord;
+
+  static void Init();
+
+  static UniqueString *New(String *s);
+
+  String *ToString() {
+    return String::FromWordDirect(Get(STRING_POS));
+  }
+
+  static UniqueString *FromWord(word x) {
+    ConcreteRepresentation *b = ConcreteRepresentation::FromWord(x);
+    Assert(b == INVALID_POINTER || b->GetSize() == SIZE);
+    return static_cast<UniqueString *>(b);
+  }
+  static UniqueString *FromWordDirect(word x) {
+    ConcreteRepresentation *b = ConcreteRepresentation::FromWordDirect(x);
+    Assert(b->GetSize() == SIZE);
+    return static_cast<UniqueString *>(b);
+  }
+
+  Transform *GetTransform();
+};
+
 class Vector: private Block {
 private:
   static const u_int LENGTH_POS = 0;

@@ -66,6 +66,7 @@ void PrimitiveTable::Init() {
   RegisterRef();
   RegisterString();
   RegisterThread();
+  RegisterUniqueString();
   RegisterUnsafe();
   RegisterVector();
   RegisterWord();
