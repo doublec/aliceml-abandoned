@@ -185,7 +185,6 @@ protected:
   void SetRelativePC(word pc);
   // Calling Convention Conversion (Arity Raising)
   void CompileCCC(u_int calleeArity, bool update = false);
-  void StoreResults(u_int calleeArity, TagVal *idDefArgs);
   void StoreResults(u_int calleeArity, Vector *idDefs);
   // NativeCodeJitter Instruction Helpers
   u_int LoadIdRefKill(u_int Dest, word idRef);
@@ -200,7 +199,6 @@ protected:
   void LookupTestTable(u_int Key, u_int table, bool isInt = true);
   u_int InlinePrimitive(word wPrimitive, Vector *actualIdRefs);
   word CompileContinuation(TagVal *idDefArgsInstrOpt, u_int nLocals = 0);
-  void LoadArguments(TagVal *actualArgs);
   void LoadArguments(Vector *actualIdRefs);
   TagVal *CheckBoolTest(word pos, u_int Result, word next);
   TagVal *Apply(TagVal *pc, word wClosure);

@@ -32,17 +32,6 @@
 
 #if HAVE_LIGHTNING
 
-static inline u_int GetArity(TagVal *args) {
-  switch (AbstractCode::GetArgs(args)) {
-  case AbstractCode::OneArg:
-    return Scheduler::ONE_ARG;
-  case AbstractCode::TupArgs:
-    return Vector::FromWordDirect(args->Sel(0))->GetLength();
-  default:
-    Error("invalid args tag");
-  }
-}
-
 static inline u_int GetInArity(Vector *args) {
   Assert(args != INVALID_POINTER);
   u_int nArgs = args->GetLength();
@@ -875,34 +864,6 @@ void NativeCodeJitter::CompileCCC(u_int calleeArity, bool update) {
   }
 }
 
-void NativeCodeJitter::StoreResults(u_int calleeArity, TagVal *idDefArgs) {
-  switch (calleeArity) {
-  case Scheduler::ONE_ARG:
-    {
-      if (idDefArgs != INVALID_POINTER) {
-	TagVal *idDef = TagVal::FromWord(idDefArgs->Sel(0));
-	if (idDef != INVALID_POINTER)
-	  MoveMemValToLocalEnv(idDef->Sel(0), Scheduler_GetZeroArg());
-      }
-    }
-    break;
-  case 0:
-    // Request unit to be done
-    break;
-  default:
-    {
-      Vector *idDefs = Vector::FromWord(idDefArgs->Sel(0));
-      Scheduler_GetCurrentArgs(JIT_V1);
-      for (u_int i = calleeArity; i--;) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	if (idDef != INVALID_POINTER)
-	  MoveIndexValToLocalEnv(idDef->Sel(0), JIT_V1, i);
-      }
-    }
-    break;
-  }
-}
-
 void NativeCodeJitter::StoreResults(u_int calleeArity, Vector *idDefs) {
   switch (calleeArity) {
   case Scheduler::ONE_ARG:
@@ -1168,45 +1129,19 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
   return Result;
 } 
 
-word NativeCodeJitter::CompileContinuation(TagVal *idDefArgsInstrOpt,
+word NativeCodeJitter::CompileContinuation(TagVal *idDefsInstrOpt,
 					   u_int nLocals) {
   JIT_LOG_MESG("non-tail call\n");
-  Tuple *idDefArgsInstr = Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
-  jit_insn *docall      = jit_jmpi(jit_forward());
-  word contPC           = Store::IntToWord(GetRelativePC());
-  TagVal *idDefArgs     = TagVal::FromWordDirect(idDefArgsInstr->Sel(0));
-  u_int calleeArity     = GetArity(idDefArgs);
+  Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+  jit_insn *docall   = jit_jmpi(jit_forward());
+  word contPC        = Store::IntToWord(GetRelativePC());
+  Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
+  u_int calleeArity  = GetInArity(idDefs);
   CompileCCC(calleeArity);
-  StoreResults(calleeArity, idDefArgs);
-  CompileBranch(TagVal::FromWordDirect(idDefArgsInstr->Sel(1)), nLocals);
+  StoreResults(calleeArity, idDefs);
+  CompileBranch(TagVal::FromWordDirect(idDefsInstr->Sel(1)), nLocals);
   jit_patch(docall);
   return contPC;
-}
-
-void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
-  switch (AbstractCode::GetArgs(actualArgs)) {
-  case AbstractCode::OneArg:
-    {
-      jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
-      Scheduler_PutNArgs(JIT_R0);
-      u_int Reg = LoadIdRefKill(JIT_R0, actualArgs->Sel(0));
-      Scheduler_PutZeroArg(Reg);
-    }
-    break;
-  case AbstractCode::TupArgs:
-    {
-      Vector *actualIdRefs = Vector::FromWordDirect(actualArgs->Sel(0));
-      u_int nArgs          = actualIdRefs->GetLength();
-      jit_movi_ui(JIT_R0, nArgs);
-      Scheduler_PutNArgs(JIT_R0);
-      Scheduler_GetCurrentArgs(JIT_V1);
-      for (u_int i = nArgs; i--;) {
-	u_int Reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
-	Scheduler_PutArg(JIT_V1, i, Reg);
-      }
-    }
-    break;
-  }
 }
 
 void NativeCodeJitter::LoadArguments(Vector *actualIdRefs) {
@@ -1305,7 +1240,7 @@ void DumpApplyStatistics() {
 #define JIT_APPLY_COUNT(v)
 #endif
 
-// AppVar of idRef * idRef vector * bool * (idDef args * instr) option
+// AppVar of idRef * idRef vector * bool * (idDef vector * instr) option
 TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   JIT_APPLY_COUNT(applyCountedTotal);
   Closure *closure   = Closure::FromWord(wClosure);
@@ -1352,24 +1287,22 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	JIT_APPLY_COUNT(applyPrim);
 	if (((isDirectIn == Types::_true) || (calleeArity == actualArity)) &&
 	    inlineMap->IsMember(wCFunction)) {
-	  Vector *actualIdRefs = actualArgs;
-	  u_int Result         = InlinePrimitive(wCFunction, actualIdRefs);
-	  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
-	  if (idDefArgsInstrOpt != INVALID_POINTER) {
-	    Tuple *idDefArgsInstr =
-	      Tuple::FromWordDirect(idDefArgsInstrOpt->Sel(0));
-	    TagVal *idDefArgs =
-	      TagVal::FromWordDirect(idDefArgsInstr->Sel(0));
-	    calleeArity = GetArity(idDefArgs);
+	  Vector *actualIdRefs   = actualArgs;
+	  u_int Result           = InlinePrimitive(wCFunction, actualIdRefs);
+	  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
+	  if (idDefsInstrOpt != INVALID_POINTER) {
+	    Tuple *idDefsInstr = Tuple::FromWordDirect(idDefsInstrOpt->Sel(0));
+	    Vector *idDefs     = Vector::FromWordDirect(idDefsInstr->Sel(0));
+	    calleeArity        = GetInArity(idDefs);
 	    // to be done: Output CCC
 	    switch (calleeArity) {
 	    case Scheduler::ONE_ARG:
-	      if (idDefArgs != INVALID_POINTER) {
-		TagVal *idDef = TagVal::FromWord(idDefArgs->Sel(0));
+	      {
+		TagVal *idDef = TagVal::FromWord(idDefs->Sub(0));
 		if (idDef != INVALID_POINTER) {
 		  if (boolTest)
 		    return CheckBoolTest(idDef->Sel(0), Result,
-					 idDefArgsInstr->Sel(1));
+					 idDefsInstr->Sel(1));
 		  else
 		    LocalEnvPut(JIT_V2, idDef->Sel(0), Result);
 		}
@@ -1381,7 +1314,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	    default:
 	      Error("Apply: unable to inline multi return values\n");
 	    }
-	    return TagVal::FromWordDirect(idDefArgsInstr->Sel(1));
+	    return TagVal::FromWordDirect(idDefsInstr->Sel(1));
 	  } else {
 	    Primitive_Return1(Result);
 	    u_int size = NativeCodeFrame_GetFrameSize(currentNLocals);
@@ -1394,12 +1327,12 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  LoadArguments(actualArgs);
 	  if ((isDirectIn == Types::_false) && (calleeArity != actualArity))
 	    CompileCCC(calleeArity);
-	  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
+	  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
 #if PROFILE
 	  u_int i1 = ImmediateEnv::Register(closure->ToWord());
 	  ImmediateSel(JIT_V1, JIT_V2, i1);
-	  if (idDefArgsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefArgsInstrOpt));
+	  if (idDefsInstrOpt != INVALID_POINTER) {
+	    SetRelativePC(CompileContinuation(idDefsInstrOpt));
 	    KillVariables();
 	  }
 	  else {
@@ -1412,8 +1345,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	  JITStore::Finish((void *) Scheduler::PushCall);
 	  RETURN();
 #else
-	  if (idDefArgsInstrOpt != INVALID_POINTER) {
-	    SetRelativePC(CompileContinuation(idDefArgsInstrOpt));
+	  if (idDefsInstrOpt != INVALID_POINTER) {
+	    SetRelativePC(CompileContinuation(idDefsInstrOpt));
 	    KillVariables();
 	    DirectCall(interpreter);
 	  } else {
@@ -1484,10 +1417,10 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
  no_normal:
 #endif
  check_request:
-  TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(3));
+  TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
   word contPC;
-  if (idDefArgsInstrOpt != INVALID_POINTER)
-    contPC = CompileContinuation(idDefArgsInstrOpt, info.nLocals);
+  if (idDefsInstrOpt != INVALID_POINTER)
+    contPC = CompileContinuation(idDefsInstrOpt, info.nLocals);
   if (request) {
     word instrPC  = Store::IntToWord(GetRelativePC());
     u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
@@ -1501,7 +1434,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   }
   LoadArguments(actualArgs);
   KillIdRef(pc->Sel(0));
-  if (idDefArgsInstrOpt != INVALID_POINTER) {
+  if (idDefsInstrOpt != INVALID_POINTER) {
     SetRelativePC(contPC); // Store Continuation Address
     KillVariables();
     PushCall(&info);
@@ -2489,23 +2422,22 @@ TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
   }
 }
 
-// Return of idRef args
+// Return of idRef vector
 TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
   JIT_PRINT_PC("Return\n");
-  TagVal *returnArgs = TagVal::FromWordDirect(pc->Sel(0));
-  switch (AbstractCode::GetArgs(returnArgs)) {
-  case AbstractCode::OneArg:
+  Vector *returnIdRefs = Vector::FromWordDirect(pc->Sel(0));
+  u_int nArgs          = returnIdRefs->GetLength();
+  switch (nArgs) {
+  case 1:
     {
       jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
       Scheduler_PutNArgs(JIT_R0);
-      u_int Reg = LoadIdRefKill(JIT_R0, returnArgs->Sel(0));
+      u_int Reg = LoadIdRefKill(JIT_R0, returnIdRefs->Sub(0));
       Scheduler_PutZeroArg(Reg);
     }
     break;
-  case AbstractCode::TupArgs:
+  default:
     {
-      Vector *returnIdRefs = Vector::FromWordDirect(returnArgs->Sel(0));
-      u_int nArgs          = returnIdRefs->GetLength();
       if (nArgs < Scheduler::maxArgs) {
 	jit_movi_ui(JIT_R0, nArgs);
 	Scheduler_PutNArgs(JIT_R0);
@@ -2736,7 +2668,7 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if ((!strcmp(filename, "file:d:/cygwin/home/bruni/devel/alice/vm-seam/build3/lib/system/Url.aml")) && (Store::DirectWordToInt(coord1->Sel(1)) == 477)) {
+  if ((!strcmp(filename, "file:d:/cygwin/home/bruni/bug.aml")) && ((Store::DirectWordToInt(coord1->Sel(1)) == 11) || (Store::DirectWordToInt(coord1->Sel(1)) == 21))) {
     fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
   	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
   	    Store::DirectWordToInt(coord1->Sel(1)),
