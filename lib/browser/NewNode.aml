@@ -72,6 +72,8 @@ struct
 				(!Window.canvasroot,
 				 !Window.act_line)
 			in (MainDictionary.insertI(dict,(node,line)) ; node)
+			   (* Einfuegen in Dictionary und Rueckgabe der
+                              internen Darstellung *)
 			end
   
     (* createGraph *)
@@ -79,45 +81,48 @@ struct
 	;if !relmode (* Konstruktion im Relationsmodus *)
 	    then let val ind = if p = Empty then i else getAncIndex p
                      val relman = case RelManDictionary.lookup(reldict,ind)
-			 of SOME x => x
+			 of SOME x => x (* es existiert bereits ein Relationsmanager *)
 		       | NONE => []
 		     val desc = createValue(va,t,NO_ACTIONS) 
                      val str = "Ref"^Int.toString(!relnumber)
-                     val f = if !tokenmode
+                     val f = if !tokenmode (* token equality *)
 				 then fn x   
 				      => if getDesc(x) = INTERPUNCT  
 					     then false  
 					 else UnsafeValue.same
 					     (getValue(getDesc(x)),va)   
-			     else fn x   
+			     else (* structural equality *)
+				  fn x   
 				  => if getDesc(x) = INTERPUNCT  
 					 then false  
 				     else getValue(getDesc(x)) = va 
 		 in 
 		     (case List.find f relman of   
-		      NONE (* erstmalige Darstellung des Wertes *) 
+		      NONE (* erstmalige Darstellung des Wertes, da er noch nicht *) 
 		      => let val node = createRelNode (desc,Empty,p,i,d,
 						       str^" as ",
 						       relman,setGroup)
-			     val c = createUsualGraph (va,t,node,0,d) 
+			     val c = createUsualGraph (va,t,node,0,d) (* rekursiver Aufbau des Inhalts *)
 			     val actrelman = case 
 				 RelManDictionary.lookup(reldict,ind)
-				 of SOME x => x
+				 of SOME x => x (* gefundene node list im Relationsmanager *)
 			          | NONE => []
 			 in (setContent (node,c)   
 			     ; RelManDictionary.update(reldict,
 						       (ind,
-						[node]@actrelman))
+						node::actrelman)) 
+			     (* Anhaengen der neuen RelNode an den Relationsmanager *)
 			     ; node )
 			 end     
 		    | SOME n (* Wert bereits dargestellt - Referenzbildung *)
-		      => let val rep = ( case n of RelNode(rr) => #rep(rr)
+		      => let val rep = ( case n of RelNode(rr) => getRep(n) (* z.B. "Ref0 as " *)
 		                                 | _ => "_")
-			     val str = iterTake rep	
+			     val str = iterTake rep (* z.B. "Ref0" *)	
 			     val m = incrCounter n 
 			     val node = 
 				 if isSimple (getContent(n))
 				     then createUsualGraph (va,t,p,i,d)
+                                 (* Simples werden _immer_ normal dargestellt *)
 				 else 
 				     let val ri_rel = 
 					 case ReinspectedRelDict.lookup
@@ -127,6 +132,7 @@ struct
 					 of NONE => createRelRefNode (desc,p,i,
 								      d,str,m,
 								      setGroup)
+                                            (* einfache Erzeugung einer RelRefNode *)
 				          | SOME no 
 					    => if getDesc(no) = desc
 					           andalso getParent(no) = p
@@ -137,17 +143,17 @@ struct
 							 setGroup)
 					       else createRelRefNode
 						   (desc,p,i,d,str,m,
-						    setGroup)
-				     end
+						    setGroup)l
+				     end (* val node *)
 			     val actrelman = case 
 				 RelManDictionary.lookup(reldict,ind) 
 				 of SOME x => x
 			          | NONE => []
-			     val part = List.partition(fn x => x = n) actrelman
+                             val part = List.partition(fn x => x = n) actrelman
 			     val restlist = #2(part)
 			 in (RelManDictionary.update(reldict,
 						     (ind,
-						    m::restlist))
+						      m::restlist))
 			     ; node)
 			 end)
 		 end
@@ -160,7 +166,7 @@ struct
 	       then createFutureNode (va,t,p,i,d)
 	   else
 	   (case Type.inspect t of
-	    Type.Con path 
+	    Type.Con path  (* Pfadtyp *)
 	    => let val p_path = 
 		   if String.equal(Label.toString(Path.toLab(path)),
 				   "package")
@@ -172,24 +178,24 @@ struct
 			else path 
 	       in newPath (va,t,p,i,d,p_path)
 	       end
-	   | Type.Arrow _ 
+	   | Type.Arrow _  (* Funktion *)
 	     => if d > !max_depth
 		    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
 				      p,i,d,setGroup)
 		else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
 				   DEFAULT,setGroup)
-	   | Type.All(var,typ) 
+	   | Type.All(var,typ) (* Allquantor *)
 	     => createGraph (va,typ,p,i,d)
-	   | Type.Exist(var,typ) 
+	   | Type.Exist(var,typ)  (* Existenzquantor *)
 	     => createGraph (va,typ,p,i,d)
-	   | Type.Lambda(var,typ) 
+	   | Type.Lambda(var,typ) (* Abstraktion *)
 	     => raise  createGraph_unknownNode 
-           | Type.Apply(t1,t2)
+           | Type.Apply(t1,t2) 
              => (case unApply (Type.inspect(t)) of 
-                 (Type.Con path, ts) 
+                 (Type.Con path, ts) (* zusammengesetzter Pfadtyp *) 
 		  => let val p_path = 
 		         if String.equal(Label.toString(Path.toLab(path)),
-					 "promise")
+					 "promise") (* Promise *)
 			     then lookupPath(coreSign,"Promise","promise") 
 			 else path 
 		     in 
@@ -203,12 +209,14 @@ struct
 				   in queryDepthL (va,t,p,i,d,listdesc,
 						   listdescToNode)
 				   end
-			  else raise createGraph_unknownNode
+			  else raise createGraph_unknownNode (* unbekannt *)
 		       end)  
-	   | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
-	   | Type.Mu(sum) => createGraph (va,sum,p,i,d)
+	   | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd) 
+	     (* Record *)
+	   | Type.Mu(sum) => createGraph (va,sum,p,i,d) (* Rekursion *)
 	   | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
-	   | _ => raise  createGraph_unknownNode )
+	     (* Datentyp *) 
+	   | _ => raise  createGraph_unknownNode  (* unbekannt *) )
 	end
 		
 (* spezielle Behandlung von Listen *)
@@ -223,8 +231,8 @@ struct
 	       val inty = #2(Type.asApply(t))   
 	       val cont = createContainer (desc,p,i,d,na,setGroup)
 	       val nodearray = listElemArray(l,length,inty,cont,d+1,true)
-	       val future = createSimple (INTERPUNCT,cont,length,d+1,"_",
-					  DEFAULT,setGroup)
+	       val future = createSimple(INTERPUNCT,cont,length,d+1,"_",
+                                         DEFAULT,setGroup)
 	   in ( Array.update(na,length,future)
 	      ; copyArray(nodearray,na)
 	      ; cont )
@@ -241,7 +249,7 @@ struct
 			   val nodearray = listElemArray(l,length,inty,cont,
 							 d+1,b)
 			   val last = 
-			       if b 
+			       if b (* Breitenlimit ueberschritten *)
 				   then createLimit (INTERPUNCT,WIDTH_LIMIT,
 						     cont,length,d+1,setGroup)
 			       else createSimple (INTERPUNCT,cont,length,d+1,
@@ -298,7 +306,7 @@ struct
 
 
    
-(*
+(*** alte iterative Version:
     and listElemArray(list,length,listtyp,p,d,b) = 
 	let val rl = ref 0
 	    val na = Array.array(length,Empty)
@@ -577,46 +585,7 @@ and docToNode (doc,p,i,d) =
 
     (* docToNode *)
   (* old docToNode
-     
-
-and docToNode (doc,p,i,d) =
-        (case doc of
-         SIMPLE(r) 
-	   => let val color = 
-	             (case #desc(r) of 
-		      INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
-		                                   | " = " => EQU_COLOR
-						   | ("{" | "}" | "(" | ")"
-                                                          | "#[" | "]" )  
-						     => BRACK_COLOR
-						   | _ => LABEL_COLOR)
-		    | VALUE(rr) 
-		      => (case Type.inspect(#typ(rr)) of
-			  Type.Con path
-			  => (if Path.equal(path,PervasiveType.path_int)
-				  then INT_COLOR
-			      else
-			       if Path.equal(path,PervasiveType.path_real)
-				   then REAL_COLOR
-			       else 
-			        if Path.equal(path,PervasiveType.path_char)
-				    then CHAR_COLOR
-				else 
-				 if Path.equal(path,PervasiveType.path_string)
-				     then STR_COLOR
-				 else
-	                          if Path.equal(path,PervasiveType.path_word) 
-				      then WORD_COLOR
-				  else 
-				   if Path.equal(path,PervasiveType.path_exn)
-				       then EXN_COLOR
-				   else 
-				    if Path.equal(path,PervasiveType.path_ref)
-					then REF_COLOR
-				    else DEFAULT)
-			| _ => DEFAULT) ) 
-	      in createSimple (#desc(r),p,i,d,#rep(r),color,setGroup) 
-	      end  
+     ... 
         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
                             val concat = createConcat(#desc(r),p,i,d,na,
@@ -801,7 +770,8 @@ and docToNode (doc,p,i,d) =
 	     in ( Array.update(getKids(container),0,s_begin) 
 		 ; Array.update(getKids(container),a_length-1,s_end) 
                  ; if not(limited)
-		       then setItems (va,ilist,container,d,ilength) 
+		       then setItems (va,ilist,container,d,ilength)
+                   (* Erzeugung der Kindkonten *) 
 		   else let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
 						    container,a_length-2,d,
 						    setGroup)
@@ -911,6 +881,7 @@ and docToNode (doc,p,i,d) =
 	       val name = createSimple (INTERPUNCT,conc,1,d,
 					Label.toString(Path.toLab(path)),
 					LABEL_COLOR,setGroup)
+               (* Name der Signatur *)
 	   in ( Array.update(getKids(conc),0,s_sig)
 	       ; Array.update(getKids(conc),1,name)
 	       ; Array.update(getKids(p),i,conc)

@@ -195,7 +195,9 @@ struct
 	let
 	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
 	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
-	    val typ'  = if Type.isApply typ then #1(Type.asApply typ) else typ
+	    val typ'  = if Type.isApply typ 
+			    then #1(Type.asApply typ) 
+			else typ
 	in
 	    Type.asCon typ'
 	end

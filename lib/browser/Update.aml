@@ -46,11 +46,7 @@ struct
     exception UpdateError
      
     (* max *)
-    fun max (nil,f) = 0
-      | max ([x],f) = f(x)
-      | max (x::xr,f) = let val m = Int.max(f(x),f(hd(xr)) )
-			in Int.max(m, max(tl(xr),f) )
-			end 
+    fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs
 
     (* updateChild *)
     fun updateChild (p,i,n) = case p of
@@ -123,8 +119,9 @@ struct
 				       getDepth(n))
 		     | INTERPUNCT => (*
 			             f(va,(UnsafeValue.cast ()),p,index,
-				     getDepth(n)) *)  (* 25.10.2002 *) 
-			   raise UpdateError
+				     getDepth(n)) 
+				      *) 
+			             raise UpdateError
 	       val _ = updateChild(p,index,new)
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new
@@ -133,7 +130,7 @@ struct
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
 	   in ( setDazzled n
 	       ; Gtk.objectDestroy(getGroup(n))
-	       ; if !(Settings.relmode)
+	       ; if !(Settings.relmode) (* RELATIONSMODUS *)
 		     then ( RelManDictionary.delete(Dictionaries.reldict,ind)
 			   ; Settings.relnumber := 0 )
 		   (*  then let val rn_list = getRelNodeList node
@@ -145,15 +142,13 @@ struct
 					        | NONE => []
 				       in  ReinspectedRelDict.update
 					   (Dictionaries.ri_reldict,
-					    (ind, [n]@ri_rel))
+					    (ind, n::ri_rel))
 				       end) rn_list
 			  end  *)
 		 else ()  
                ; Layout.layout(node) 
-	       ; TextIO.print(" Layout done \n") 
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	       ; DrawNodes.draw(node,0,y_pos,true)
-	       ; TextIO.print(" Drawing done \n")  
+	       ; DrawNodes.draw(node,0,y_pos,true)  
 	       ; let val dy =  Helper.get_ydim(node) - old_ydim 
 		 in ( Window.incr_act_line dy 
 		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
@@ -173,7 +168,7 @@ struct
 		            andalso ( case getDesc(n) of
 				      VALUE(r) => va = #value(r)
 				    | I_VALUE(r) => va_inf = #value(r)
-				    | _ => raise UpdateError )
+				    | _ => false) (* vorher: raise UpdateError *)
 				then ( found := true
 				      ; setDazzled n)
 			    else ()
@@ -185,8 +180,7 @@ struct
 			    else array_map (g,getKids(anc)) )
 	   | Container(r) => ( f anc
 			     ; if !found then () 
-			   
-    else array_map (f,getKids(anc))
+			       else array_map (f,getKids(anc))
 			     ; if !found then ()
 			       else array_map (g,getKids(anc)) )
 	   | RelNode(r) => (f anc
@@ -233,7 +227,6 @@ struct
 			           : Reflect.value
 	in  Server.serve(fn () => 
 			 (update(n,va,f,g) 
-			  ; TextIO.print("REINSPECT: starte jetzt Window.resize()\n")
 			  ; !Window.resize()
 			  ; TextIO.print("REINSPECT: Window.resize() done :-)\n") ) )
 	end
@@ -243,7 +236,7 @@ struct
     and foldDepth (n,i,f,g) = 
 	Server.serve
 	(fn () => 
-	 let val _ = TextIO.print("FOLD_DEPTH: aufgerufen!\n")
+	 let val _ = TextIO.print("FOLD_DEPTH\n")
 	     val old_depth = !(Settings.max_depth)
 	 in 
 	     ( setDazzled n
@@ -260,7 +253,7 @@ struct
     and foldWidth (n,i,f,g) = 
 	Server.serve
 	(fn () => 
-	 let val _ = TextIO.print("FOLD_WIDTH: aufgerufen!\n")
+	 let val _ = TextIO.print("FOLD_WIDTH\n")
 	     val new_n = if not(getDesc(n) = INTERPUNCT) 
 			     then n
 			 else let val cp = getParent(n)
@@ -326,16 +319,16 @@ struct
 		 in  new_i := Int.max(i,test_i)
 		 end  
 		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
-			    #kids(r)) )
+			    getKids(n)) )
       |  _ => ()
 
     (* getRelNodeList *)
     and getRelNodeList n = case n of
         RelNode(r) => n::getRelNodeList(!(#content(r)))
-      | Concat(r) => Array.foldl (fn (n,l) => getRelNodeList(n)@l) 
-	             [] (#kids(r))
-      | Container(r) => Array.foldl (fn (n,l) => getRelNodeList(n)@l) 
-		        [] (#kids(r))
+      | Concat(r) => Array.foldl (fn (n,l) => l::getRelNodeList(n)) 
+	             [] (getKids(n))
+      | Container(r) => Array.foldl (fn (n,l) => l::getRelNodeList(n)) 
+		        [] (getKids(n))
       | _ => nil
    
 end (* struct *)
