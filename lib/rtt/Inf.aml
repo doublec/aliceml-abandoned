@@ -77,6 +77,7 @@ TODO:
 import structure Assert       from "../utility/Assert"
 import structure Cell         from "../utility/Cell"
 import functor   MkHashImpMap from "../utility/MkHashImpMap"
+import structure GlobalStamp  from "../utility/GlobalStamp"
 import structure Name         from "Name"
 import structure Label        from "Label"
 import structure Path         from "Path"
@@ -116,7 +117,7 @@ struct
     datatype inf' =
 	  TOP					(* top *)
 	| ABS    of kind * path			(* interface constructor *)
-	| SIG    of sign			(* signature *)
+	| SIG    of GlobalStamp.t * sign	(* signature *)
 	| THAT   of mod				(* singleton *)
 	| FUN    of path * inf * inf		(* arrow (functor) *)
 	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
@@ -320,7 +321,7 @@ struct
     fun isApply j	= case asInf j of APPLY _  => true | _ => false
 
     fun asAbs j		= case asInf j of ABS(k,p) => p | _ => raise Interface
-    fun asSig j		= case asInf j of SIG s    => s | _ => raise Interface
+    fun asSig j		= case asInf j of SIG(_,s) => s | _ => raise Interface
     fun asSing j	= case asInf j of THAT m   => m | _ => raise Interface
     fun asArrow j	= case asInf j of FUN x    => x | _ => raise Interface
     fun asLambda j	= case asInf j of LAMBDA x => x | _ => raise Interface
@@ -338,7 +339,7 @@ struct
     fun isArrow' j	= case asInf' j of FUN _    => true | _ => false
 
     fun asAbs' j	= case asInf' j of ABS(k,p) => p | _ => raise Interface
-    fun asSig' j	= case asInf' j of SIG s    => s | _ => raise Interface
+    fun asSig' j	= case asInf' j of SIG(_,s) => s | _ => raise Interface
     fun asArrow' j	= case asInf' j of FUN x    => x | _ => raise Interface
 
 
@@ -346,7 +347,7 @@ struct
 
     fun top'()		= new TOP
     fun abs'(k,p)	= new(ABS(k,p))
-    fun sign' s		= new(SIG s)
+    fun sign' s		= new(SIG(GlobalStamp.new(), s))
     fun arrow'(p,j1,j2)	= new(FUN(p,j1,j2))
 
     fun abbrev'(j1,j2)	= new(ABBREV(reduceAbbrevL j1, reduceAbbrevR j2))
@@ -571,7 +572,7 @@ struct
 	case content j
 	  of TOP		=> ()
 	   | ABS(k,p)		=> compressKind k
-	   | SIG s		=> compressSig s
+	   | SIG(_,s)		=> compressSig s
 	   | THAT(m,j)		=> compress j
 	   | ( FUN(_,j1,j2)
 	     | LAMBDA(_,j1,j2)
@@ -607,7 +608,7 @@ struct
     and closeInf j =
 	case content j
 	  of (TOP | ABS _)	=> ()
-	   | SIG s		=> close s
+	   | SIG(_,s)		=> close s
 	   | THAT(_,j1)		=> closeInf j1
 	   | ( FUN(_,j1,j2)
 	     | LAMBDA(_,j1,j2)
@@ -635,7 +636,7 @@ struct
 					     else buildNew(mj,j,abs'(k',p))
 					 end
 				   )
-	   | SIG s		=> buildSig(mj,mk,mt, rea, j, sign',s)
+	   | SIG(_,s)		=> buildSig(mj,mk,mt, rea, j, sign',s)
 	   | THAT m		=> buildSing(mj,mk,mt, rea, j, sing',m)
 	   | FUN(p,j1,j2)	=> buildBind(mj,mk,mt, rea, j, arrow',p,j1,j2)
 	   | LAMBDA(p,j1,j2)	=> buildBind(mj,mk,mt, rea, j, lambda',p,j1,j2)
@@ -831,7 +832,7 @@ struct
 	case content j
 	  of TOP	=> j
 	   | ABS _	=> j
-	   | SIG s	=> instanceSig(rea,p,j,s)
+	   | SIG(_,s)	=> instanceSig(rea,p,j,s)
 	   | THAT _	=> j
 	   | FUN _	=> j
 	   | LAMBDA _	=> j
@@ -1000,7 +1001,8 @@ TextIO.print "\n";
 		if Path.equals(p1,p2)
 		then (j2, newRea())
 		else raise Mismatch(Incompatible(j1,j2))
-	   | (SIG s1, SIG s2) =>
+	   | (SIG(z1,s1), SIG(z2,s2)) =>
+		if z1 = z2 then (j2, newRea()) else
 		if isNested then (matchSig(s1,s2,j2), dummyRea) else
 		let
 		    val rea  = matchRea(s1,s2)
@@ -1173,9 +1175,10 @@ TextIO.print "\n";
 		if Path.equals(p1,p2)
 		then j2
 		else raise Mismatch(Incompatible(j1,j2))
-	   | (SIG s1, SIG s2) =>
+	   | (SIG(z1,s1), SIG(z2,s2)) =>
 		(* s1 /\ s2 = ... *)
 		(*TODO: currently unidirectional only *)
+		if z1 = z2 then j2 else
 		if isNested then j1 else
 		let
 		    val rea  = matchRea(s2,s1)
