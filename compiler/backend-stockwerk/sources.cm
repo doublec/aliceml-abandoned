@@ -13,6 +13,7 @@ Group is
     OUTPUT_PICKLE-sig.aml
     OutputPickle.aml
     ENVIRONMENT-sig.aml
+    MkCodeGenContext.aml
     MkEnvironment.aml
     CODE_GEN_PHASE-sig.aml
     MkCodeGenPhase.aml
