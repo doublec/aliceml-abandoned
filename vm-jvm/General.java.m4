@@ -159,7 +159,10 @@ final public class General {
     _FIELD(General,wait);
 
     _BUILTIN(Lvar) {
-	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	final public DMLValue apply0() throws java.rmi.RemoteException {
+	    return new LVar();
+	}
+	_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(_) {
 	    return new LVar();
 	}
