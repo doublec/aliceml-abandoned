@@ -59,6 +59,11 @@
       <BR>from "x-alice:/lib/constraints/FD"</TT>
     </LI>
     <LI>
+      <TT><A name="linear">structure</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/linear.php3">Linear</A>
+      <BR>from "x-alice:/lib/constaints/Linear"</TT>
+    </LI>
+    <LI>
       <TT><A name="fs">structure</A>
       <A href="http://www.ps.uni-sb.de/alice/manual/library/fs.php3">FS</A>
       <BR>from "x-alice:/lib/constaints/FS"</TT>
@@ -72,11 +77,6 @@
       <TT><A name="search">structure</A>
       <A href="http://www.ps.uni-sb.de/alice/manual/library/search.php3">Search</A>
       <BR>from "x-alice:/lib/constaints/Search"</TT>
-    </LI>
-    <LI>
-      <TT><A name="linear">structure</A>
-      <A href="http://www.ps.uni-sb.de/alice/manual/library/linear.php3">Linear</A>
-      <BR>from "x-alice:/lib/constaints/Linear"</TT>
     </LI>
   </UL>
 
