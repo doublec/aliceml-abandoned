@@ -1,0 +1,187 @@
+(*
+ * Standard ML infix resolution
+ *
+ * Definition, section 2.6
+ *)
+
+
+functor Infix(structure Error:   ERROR where type position = Source.position
+	      structure Grammar: GRAMMAR_CORE where type Info = Error.position)
+:> INFIX where Grammar = Grammar
+= struct
+
+    (* Import *)
+
+    structure Grammar = Grammar
+
+    open Grammar
+
+    structure VId       = BasicObjects_Core.VId
+    type VId            = VId.Id
+
+    structure VIdFinMap = BinaryMapFn(type ord_key = VId
+				      val  compare = VId.compare)
+
+
+    (* Type definitions *)
+
+    datatype Assoc = LEFT | RIGHT
+
+    type InfStatus = Assoc * int
+
+    type InfEnv    = InfStatus VIdFinMap.map	(* "J" *)
+
+
+
+    (* Modifying infix environments *)
+
+    val empty = VIdFinMap.empty
+
+    fun assign(J, vids, infstatus) =
+	let
+	    fun insert(vid, J) = VIdFinMap.insert(J, vid, infstatus)
+	in
+	    List.foldl insert J vids
+	end
+
+    fun cancel(J, vids) =
+	let
+	    fun remove(vid, J) = #1(VIdFinMap.remove(J, vid))
+	in
+	    List.foldl remove J vids
+	end
+
+
+
+    (* Helper for error messages *)
+
+    val error				= Error.error
+    fun errorVId(VId(I,vid), s)		= error(I, s ^ VId.toString vid)
+
+
+
+    (* Categorisation of atomic expressions and patterns *)
+
+    datatype 'a FixityCategory = NONFIX of 'a
+			       | INFIX  of InfStatus * Grammar.VId
+
+    fun categoriseVId J (at, vid as VId(I,vid')) =
+	case VIdFinMap.find(J,vid')
+	  of NONE           => NONFIX(at)
+	   | SOME infstatus => INFIX(infstatus, vid)
+
+    fun categoriseLongVId J (at, SHORTLongId(I, vid)) =
+	    categoriseVId J (at, vid)
+      | categoriseLongVId J (at, longvid) = NONFIX(at)
+
+    fun categoriseAtExp J (atexp as LONGVIDAtExp(I, SANSOp, longvid)) =
+	    categoriseLongVId J (atexp, longvid)
+      | categoriseAtExp J (atexp) = NONFIX(atexp)
+
+    fun categoriseAtPat J (atpat as LONGVIDAtPat(I, SANSOp, longvid)) =
+	    categoriseLongVId J (atpat, longvid)
+      | categoriseAtPat J (atpat) = NONFIX(atpat)
+
+
+
+    (* Converting app expressions and patterns into atomic lists *)
+
+    fun flattenExp'(ATEXPExp(I,atexp))   = atexp :: []
+      | flattenExp'(APPExp(I,exp,atexp)) = atexp :: flattenExp' exp
+      | flattenExp' _ = Crash.crash "Infix.flattenExp: invalid expression"
+
+    fun flattenExp exp = List.rev(flattenExp' exp)
+
+    fun flattenPat'(ATPATPat(I,atpat))   = atpat :: []
+      | flattenPat'(APPPat(I,pat,atpat)) = atpat :: flattenPat' pat
+      | flattenPat' _ = Crash.crash "Infix.flattenPat: invalid pattern"
+
+    fun flattenPat pat = List.rev(flattenPat' pat)
+
+
+
+    (* Resolving infixed expressions and patterns *)
+
+    fun parse (ATXx,APPx,TUPLEAtX,LONGVIDAtX, info,info_At,categorise,flatten)
+	      J x =
+	let
+	    fun atomic(atx)  = ATXx(info_At atx, atx)
+
+	    fun apply(x,atx) = APPx(Source.over(info x, info_At atx), x, atx)
+
+	    fun pair(x1,x2)  = TUPLEAtX(Source.over(info x1, info x2), [x1,x2])
+
+	    fun infapply(x1,vid,x2) =
+		let
+		    val I_vid   = info_VId vid
+		    val longvid	= SHORTLongId(I_vid, vid)
+		    val exp	= ATXx(I_vid, LONGVIDAtX(I_vid,SANSOp,longvid))
+		    val atx	= pair(x1,x2)
+		in
+		    APPx(Source.between(info x1, info x2), x, atx)
+		end
+
+
+	    fun app(x, NONFIX(atx)::xs) = app(apply(x,atx), xs)
+	      | app other               = other
+
+	    fun inf(10, NONFIX(atx)::xs) = app(atomic(atx), xs)
+
+	      | inf(p, xs as NONFIX(atx)::_) =
+		let
+		    val result as (x,xs') = inf(p+1,xs)
+		in
+		   case xs'
+		     of INFIX((a,p'),vid)::_ => if p'= p then inftail(a,p,x,xs')
+							 else result
+		      | _                    => result
+		end
+
+	      | inf(_, INFIX(_,vid)::_) =
+		    errorVId(vid, "Misplaced infix identifier ")
+
+	      | inf(_, []) =
+		    (* Missing operands are caught in inftail! *)
+		    Crash.crash "Infix.parse: empty expression"
+
+
+	    and inftail(a, p, x1, xs as INFIX((a',p'), vid)::x::xs') =
+		if p' <> p then
+		    (x1, xs)
+		else if a <> a' then
+		    errorVId(vid, "Conflicting infix associativity at infix \
+				  \identifier ")
+		else if a = LEFT then
+		    let
+			val (x2, xs'') = inf(p+1, x::xs')
+		    in
+			inftail(a, p, infapply(x1,vid,x2), xs'')
+		    end
+		else (* a = RIGHT *)
+		    let
+			val (x2, xs'')  = inf(p+1,x::xs')
+			val (x2',xs''') = inftail(a,p,x2,xs'')
+		    in
+		        (infapply(x1,vid,x2), xs''')
+		    end
+
+	      | inftail(a, p, x1, INFIX(_,vid)::[]) =
+		    errorVId(vid, "misplaced infix identifier ")
+
+	      | inftail(a, p, x1, xs) = (x1, xs)
+	in
+	    #1 (inf(0, List.map (categorise J) (flatten x)))
+	end
+
+
+    (* Expressions *)
+
+    val exp = parse(ATEXPExp, APPExp, TUPLEAtExp, LONGVIDAtExp,
+		    info_Exp, info_AtExp, categoriseAtExp, flattenExp)
+
+    (* Patterns *)
+
+    val pat = parse(ATPATPat, APPPat, TUPLEAtPat, LONGVIDAtPat,
+		    info_Pat, info_AtPat, categoriseAtPat, flattenPat)
+
+  end

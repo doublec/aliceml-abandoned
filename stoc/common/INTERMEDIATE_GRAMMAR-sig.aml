@@ -8,7 +8,8 @@ signature INTERMEDIATE =
     (* Literals *)
 
     datatype lit =
-	  WordLit   of word
+	  BoolLit   of bool
+	| WordLit   of word
 	| IntLit    of int
 	| CharLit   of char
 	| StringLit of string
@@ -69,7 +70,7 @@ signature INTERMEDIATE =
 
     and dec =
 	  ValDec    of info * id list * exp
-	| ConDec    of info * id * bool (* has args *)
+	| ConDec    of info * id * int (* arity *)
 
 
     (* Operations *)
