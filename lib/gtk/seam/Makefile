@@ -43,7 +43,7 @@ INSTALLTARGETS = $(CPPSOURCES:%.cc=%.dll) \
 	  $(ALICESOURCES:%.aml=%.alc)
 
 # platform specific settings
-ifdef WINDOWS
+ifeq ($(WINDOWS),1)
 GENERATOR = GtkBinding.x86-win32
 CC_OPTS = -mno-cygwin -mms-bitfields
 SML = cmd /c sml
