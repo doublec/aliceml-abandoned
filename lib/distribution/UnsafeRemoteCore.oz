@@ -14,6 +14,7 @@ functor
 import
 %   Pickle at 'x-oz://boot/Pickle'
    Connection
+   Property
 export
    'UnsafeRemoteCore$' : UnsafeRemoteCore
 define
@@ -48,9 +49,13 @@ define
 	 end
       end
    end
+   fun {TimeFun _}
+      {Property.get 'time'}.all
+   end
 
    %% Create Interface
    UnsafeRemoteCore = 'UnsafeRemoteCore'(take : TakeFun
 					 offer : OfferFun
-					 proxy : ProxyFun)
+					 proxy : ProxyFun
+					 time : TimeFun)
 end

@@ -39,4 +39,6 @@ structure Remote :> REMOTE =
 	val proxy = RemoteCore.proxy
 
 	fun remote host = Unix.streamsOf(Unix.execute("ssh", [host, "alice", "--rtt-level=no"]))
+
+	val time = RemoteCore.time
     end

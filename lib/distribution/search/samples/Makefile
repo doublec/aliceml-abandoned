@@ -23,7 +23,9 @@ STOC = alicec
 STODEP =  sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOCOPTS = --rtt-level=no
 
-SOURCES = Sample.aml
+SOURCES = Sample.aml \
+          FDAlpha.aml \
+          FDQueens.aml
 
 COMPONENTS = $(SOURCES:%.aml=%.ozf)
 

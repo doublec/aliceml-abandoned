@@ -18,4 +18,5 @@ signature REMOTE_CORE =
 	val take : string -> Packer.package
 	val offer : Packer.package -> string
 	val proxy : ('a -> 'b) -> 'a -> 'b
+	val time : unit -> int
     end

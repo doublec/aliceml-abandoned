@@ -25,4 +25,5 @@ signature REMOTE =
 
 	val proxy : ('a -> 'b) -> 'a -> 'b
 	val remote : string -> TextIO.instream * TextIO.outstream
+	val time : unit -> int
     end

@@ -18,5 +18,6 @@ signature UNSAFE_REMOTE_CORE_COMPONENT =
 		val take : 'a
 		val offer : 'a
 		val proxy : 'a
+		val time : 'a
 	    end
     end
