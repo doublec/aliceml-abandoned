@@ -1,6 +1,7 @@
 PREFIX = /services/ps/httpd/html/alice
 
 DIRS = $(PREFIX) \
+	$(PREFIX)/download \
 	$(PREFIX)/papers \
 	$(PREFIX)/manual \
 	$(PREFIX)/manual/examples \
@@ -9,6 +10,8 @@ DIRS = $(PREFIX) \
 INSTALLFILES_0 = \
 	style.css bg.gif alice.gif musicemb.jpg macros.php3 \
 	index.php3 people.php3 papers.php3 download.php3
+INSTALLFILES_DOWNLOAD_0 = \
+	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps opaque.ps
 INSTALLFILES_MANUAL_0 = \
@@ -29,20 +32,24 @@ INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER = \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/manual/examples/interpreter/%)
 INSTALLFILES = \
 	$(INSTALLFILES_0:%=$(PREFIX)/%) \
+	$(INSTALLFILES_DOWNLOAD_0:%=$(PREFIX)/download/%) \
 	$(INSTALLFILES_PAPERS_0:%=$(PREFIX)/papers/%) \
 	$(INSTALLFILES_MANUAL_0:%=$(PREFIX)/manual/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_0:%=$(PREFIX)/manual/examples/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/manual/examples/interpreter/%)
+
+DOWNLOADFILES = $(INSTALLFILES_DOWNLOAD_0:%=$(PREFIX)/download/%)
 
 .PHONY: install
 
 all: install
 
 install: $(DIRS) $(INSTALLFILES)
+download: $(DOWNLOADFILES)
 
 manual/examples/interpreter.tar: \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER)
-	(cd manual/examples && tar cvf interpreter.tar \
+	(cd manual/examples && tar -cvf interpreter.tar \
 	 $(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=interpreter/%))
 
 $(DIRS):
@@ -58,3 +65,9 @@ $(PREFIX)/alice.gif: \
 $(PREFIX)/manual/alice.gif: \
 	../../../misc/logo/alice-strikethrough-shadow-blue-190x60.gif
 	install -c -m 444 $< $@
+
+$(PREFIX)/download/%-devel.tgz:
+	(cd /opt && tar -chzf $@ $*-devel)
+
+$(PREFIX)/download/%-mode.tgz:
+	(cd /usr/share/emacs/site-lisp && tar -chzf $@ sml-*)
