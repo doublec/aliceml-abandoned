@@ -1,13 +1,15 @@
 signature PACKAGE =
 sig
     type p
-    functor Unpack(X : (val x : p type t)) : (val x : X.t)
+    functor Unpack :    fct(X : (val x : p signature S)) -> X.S
+    functor UnpackVal : fct(X : (val x : p type t)) -> (val x : X.t)
 end
 
 structure Package :> PACKAGE =
 struct
     type p
-    __primitive functor Unpack : fct(Y : (val x : p type t)) -> (val x : Y.t) = ""
+    __primitive functor Unpack :    fct(Y : (val x : p signature S)) -> Y.S = ""
+    __primitive functor UnpackVal : fct(Y : (val x : p type t)) -> (val x : Y.t) = ""
 end
 
 signature S =
@@ -18,10 +20,8 @@ sig
 	fct(F : fct(Y : (type t = t type u = X.u type v)) ->
 		   (type t = Y.t type u = Y.u type v = Y.v type w)) ->
 	fct(Z : (signature S)) ->
-(* TODO: this does not work yet...
 	fct(A : Z.S) ->
 	fct(G : fct(B : Z.S) -> fct(C : fct(_ : Z.S) -> any) -> Z.S) ->
-*)
 	(type t = t type u = X.u type v signature S = Z.S signature T)
 end
 
