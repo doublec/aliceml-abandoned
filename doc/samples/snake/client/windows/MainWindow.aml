@@ -21,7 +21,6 @@ import structure Protocol             from "../../common/Protocol"
 import structure ArenaWidget          from "ArenaWidget"
 import structure HighscoreIO          from "../../server/HighscoreIO"
 import structure Highscore            from "../../common/Highscore"
-import signature GUI                  from "../GUI"
 
 import structure ConnectionWindow     from "ConnectionWindow"
 import structure ServerSettingsWindow from "ServerSettingsWindow"

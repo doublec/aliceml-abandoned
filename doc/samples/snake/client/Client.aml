@@ -14,7 +14,6 @@ struct
         let
             val promise     = Promise.promise () : Gui.gui_game Promise.promise
             val guiGame     = Promise.future promise
-            
             fun playersJoined players = #playersJoined gui_join players
             
             fun tournamentStarted () = ()
