@@ -1,0 +1,39 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT()
+
+dnl Checks for programs.
+AC_PROG_LN_S
+AC_CHECK_PROG(HASSML,sml,yes,no,$PATH)
+if test $HASSML = "no";
+  then
+	AC_MSG_ERROR("No sml found.");
+  else
+	sml="sml"
+fi
+AC_CHECK_PROG(HASSML,sml-cm,yes,no,$PATH)
+if test HASSML = "no";
+  then
+	AC_MSG_RESULT("No sml-cm. Cross fingers and hope it works with sml.");
+  else
+	sml="sml-cm"
+fi
+AC_CHECK_PROG(HASJAVA,javac,yes,no,$PATH)
+if test $HASJAVA = "no" ;
+  then
+	AC_MSG_ERROR("No javac found.");
+  else
+	javac="javac"
+fi
+
+dnl Checks for libraries.
+dnl Replace `main' with a function in -link:
+
+dnl Checks for header files.
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+
+dnl Checks for library functions.
+
+AC_SUBST(javac)
+AC_SUBST(sml-cm)
+AC_OUTPUT(Makefile)
