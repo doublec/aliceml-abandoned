@@ -21,8 +21,9 @@ PLATFORM=x86-linux
 rm -f bootstrap/alicec-mozart.$PLATFORM bootstrap/alicedep.$PLATFORM
 (cd bootstrap && make) || exit 1
 (cd vm-mozart && make depend) || exit 1
+(cd vm-mozart && /usr/bin/time -po /tmp/time1.out make build1-install) || exit 1
 (cd vm-mozart && make build2-install) || exit 1
-(cd vm-mozart && /usr/bin/time -po /tmp/time.out make build3-install) || exit 1
+(cd vm-mozart && /usr/bin/time -po /tmp/time3.out make build3-install) || exit 1
 (cd vm-mozart && make PREFIX=$prefix install) || exit 1
 PATH=$prefix/bin:$PATH
 export PATH
@@ -36,5 +37,8 @@ unset STOCKHOME
 #(cd lib/gtk && make depend) || exit 1
 #(cd lib/gtk && make all PREFIX=$prefix install) || exit 1
 
-echo Done. Time for build 3:
-cat /tmp/time.out
+echo Done.
+echo Time for build 1:
+cat /tmp/time1.out
+echo Time for build 3:
+cat /tmp/time3.out
