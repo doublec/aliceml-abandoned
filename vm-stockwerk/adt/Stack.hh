@@ -196,6 +196,7 @@ public:
   }
   static Stack *FromWordDirect(word x) {
     Block *p = Store::DirectWordToBlock(x);
+
     Assert(p->GetLabel() == STACK_LABEL);
     return (Stack *) p;
   }
