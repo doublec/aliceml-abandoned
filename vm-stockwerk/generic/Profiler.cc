@@ -80,20 +80,20 @@ word Profiler::table;
 u_int Profiler::heapUsage;
 
 void Profiler::Init() {
-  table = BlockHashTable::New(256)->ToWord(); // to be done
+  table = Map::New(256)->ToWord(); // to be done
   RootSet::Add(table);
 }
 
 ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
   Worker *worker = frame->GetWorker();
   word key = worker->GetProfileKey(frame);
-  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
+  Map *t = Map::FromWordDirect(table);
   if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->GetItem(key));
+    return ProfileEntry::FromWordDirect(t->Get(key));
   else {
     String *name = worker->GetProfileName(frame);
     ProfileEntry *entry = ProfileEntry::New(name);
-    t->InsertItem(key, entry->ToWord());
+    t->Put(key, entry->ToWord());
     return entry;
   }
 }
@@ -101,22 +101,22 @@ ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
 ProfileEntry *Profiler::GetEntry(ConcreteCode *concreteCode) {
   Worker *worker = concreteCode->GetWorker();
   word key = worker->GetProfileKey(concreteCode);
-  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
+  Map *t = Map::FromWordDirect(table);
   if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->GetItem(key));
+    return ProfileEntry::FromWordDirect(t->Get(key));
   else {
     String *name = worker->GetProfileName(concreteCode);
     ProfileEntry *entry = ProfileEntry::New(name);
-    t->InsertItem(key, entry->ToWord());
+    t->Put(key, entry->ToWord());
     return entry;
   }
 }
 
 ProfileEntry *Profiler::GetEntry(TagVal *template_) {
-  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
-  word key          = template_->ToWord();
+  Map *t = Map::FromWordDirect(table);
+  word key = template_->ToWord();
   if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->GetItem(key));
+    return ProfileEntry::FromWordDirect(t->Get(key));
   else {
     Tuple *coord = Tuple::FromWordDirect(template_->Sel(0));
     String *name = String::FromWordDirect(coord->Sel(0));
@@ -126,7 +126,7 @@ ProfileEntry *Profiler::GetEntry(TagVal *template_) {
 		 Store::DirectWordToInt(coord->Sel(1)),
 		 Store::DirectWordToInt(coord->Sel(2)));
     ProfileEntry *entry = ProfileEntry::New(String::New(buf));
-    t->InsertItem(key, entry->ToWord());
+    t->Put(key, entry->ToWord());
     return entry;
   }
 }
@@ -192,7 +192,7 @@ static void PrintInfo(word /*key*/, word value) {
 }
 
 void Profiler::DumpInfo() {
-  BlockHashTable *t = BlockHashTable::FromWordDirect(table);
+  Map *t = Map::FromWordDirect(table);
   if ((logFile = std::fopen("profile_log.txt", "w")) == NULL)
     Error("Profiler:DumpInfo: unable to open log file");
   t->Apply((item_apply) PrintInfo);
