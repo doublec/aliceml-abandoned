@@ -34,6 +34,7 @@ abstract public class Builtin implements DMLValue {
 	} else {
 	    java.lang.String lib = name.substring(0,name.indexOf('.'));
 	    try {
+		Class.forName("de.uni_sb.ps.dml.runtime.General");
 		Class.forName("de.uni_sb.ps.dml.runtime."+lib);
 	    } catch (ClassNotFoundException c) {
 		System.err.println("Unknown Library: "+lib);
