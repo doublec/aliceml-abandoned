@@ -147,7 +147,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.VecExp(i,es))		= O.VecExp(i, trExps es)
       | trExp(I.FunExp(i,x,e))		= O.FunExp(i, trId x, trExp e)
       | trExp(I.AppExp(i,e1,e2))	= O.AppExp(i, trExp e1, trExp e2)
-      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e2, trExp e2)
+      | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(i, trExp e1, trExp e2)
       | trExp(I.AndExp(i,e1,e2))	= O.AndExp(i, trExp e1, trExp e2)
       | trExp(I.OrExp(i,e1,e2))		= O.OrExp(i, trExp e1, trExp e2)
       | trExp(I.IfExp(i,e1,e2,e3))	= O.IfExp(i, trExp e1, trExp e2, trExp e3)
