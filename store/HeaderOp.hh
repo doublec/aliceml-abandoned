@@ -16,7 +16,7 @@
 #pragma interface "store/HeaderOp.hh"
 #endif
 
-class HeaderOp {
+class DllExport HeaderOp {
 public:
   // Header Creation and Access
   static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen) {
