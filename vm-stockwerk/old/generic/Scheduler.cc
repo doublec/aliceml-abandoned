@@ -19,7 +19,7 @@
 #include "builtins/GlobalPrimitives.hh"
 
 StoreConfig *Scheduler::storeConfig; //--** probably not the correct place
-ThreadPool *Scheduler::threadPool;
+ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
 bool Scheduler::preempt;
 
@@ -28,12 +28,12 @@ void Scheduler::Timer() {
 }
 
 void Scheduler::Init() {
-  threadPool = ThreadPool::New();
+  threadQueue = ThreadQueue::New();
 }
 
 void Scheduler::Run() {
   //--** start timer thread
-  while ((currentThread = threadPool->Dequeue()) != INVALID_POINTER) {
+  while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
     Assert(currentThread->GetState() == Thread::RUNNABLE);
     Assert(!currentThread->IsSuspended());
     TaskStack *taskStack = currentThread->GetTaskStack();
@@ -54,7 +54,7 @@ void Scheduler::Run() {
       case Interpreter::Result::PREEMPT:
 	taskStack->PushFrame(1);
 	taskStack->PutInt(0, result.nargs);
-	threadPool->Enqueue(currentThread);
+	threadQueue->Enqueue(currentThread);
 	break;
       case Interpreter::Result::RAISE:
       raise:
@@ -118,10 +118,10 @@ void Scheduler::Run() {
     }
     if (Store::NeedGC()) {
       //--** add threads waiting for I/O as well as properties
-      threadPool->PurgeAll();
-      threadPool =
-	ThreadPool::FromWord(Store::DoGC(threadPool->ToWord(),
-					 storeConfig->max_gen - 1));
+      threadQueue->PurgeAll();
+      threadQueue =
+	ThreadQueue::FromWord(Store::DoGC(threadQueue->ToWord(),
+					  storeConfig->max_gen - 1));
     }
   }
   //--* select(...)

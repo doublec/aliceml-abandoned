@@ -17,7 +17,7 @@
 #pragma interface "scheduler/Scheduler.hh"
 #endif
 
-#include "scheduler/ThreadPool.hh"
+#include "scheduler/ThreadQueue.hh"
 #include "scheduler/Thread.hh"
 
 //
@@ -27,7 +27,7 @@
 class Scheduler {
 private:
   static StoreConfig *storeConfig; //--** probably not the correct place
-  static ThreadPool *threadPool;
+  static ThreadQueue *threadQueue;
   static Thread *currentThread;
   static bool preempt;
 
@@ -41,7 +41,7 @@ public:
       // The thread could also be TERMINATED or RUNNABLE because
       // it had been in the wait queues of several transients.
       thread->SetState(Thread::RUNNABLE);
-      threadPool->Enqueue(thread);
+      threadQueue->Enqueue(thread);
     }
   }
   static Thread *GetCurrentThread() {

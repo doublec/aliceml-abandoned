@@ -10,11 +10,11 @@
 //   $Revision$
 //
 
-#ifndef __SCHEDULER__THREADPOOL_HH__
-#define __SCHEDULER__THREADPOOL_HH__
+#ifndef __SCHEDULER__THREADQUEUE_HH__
+#define __SCHEDULER__THREADQUEUE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "scheduler/ThreadPool.hh"
+#pragma interface "scheduler/ThreadQueue.hh"
 #endif
 
 #include "adt/Queue.hh"
@@ -22,17 +22,17 @@
 
 //--** thread priorities ignored for now
 
-class ThreadPool: private Queue {
+class ThreadQueue: private Queue {
 private:
   static const int threshold = 8;
 public:
   using Queue::ToWord;
 
-  static ThreadPool *New() {
-    return static_cast<ThreadPool *>(Queue::New(threshold));
+  static ThreadQueue *New() {
+    return static_cast<ThreadQueue *>(Queue::New(threshold));
   }
-  static ThreadPool *FromWord(word x) {
-    return static_cast<ThreadPool *>(Queue::FromWord(x));
+  static ThreadQueue *FromWord(word x) {
+    return static_cast<ThreadQueue *>(Queue::FromWord(x));
   }
 
   Thread *Dequeue() {
@@ -45,9 +45,9 @@ public:
     Queue::Enqueue(thread->ToWord());
   }
   void PurgeAll() {
-    Blank(threshold);
+    Blank();
     //--** walk through queue and apply Purge to all elements
   }
 };
 
-#endif __SCHEDULER__THREADPOOL_HH__
+#endif __SCHEDULER__THREADQUEUE_HH__

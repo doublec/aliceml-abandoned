@@ -31,9 +31,9 @@
 #include "scheduler/Thread.hh"
 
 #if defined(INTERFACE)
-#pragma implementation "scheduler/ThreadPool.hh"
+#pragma implementation "scheduler/ThreadQueue.hh"
 #endif
-#include "scheduler/ThreadPool.hh"
+#include "scheduler/ThreadQueue.hh"
 
 #if defined(INTERFACE)
 #pragma implementation "scheduler/Transients.hh"
