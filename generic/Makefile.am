@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir) -I$(top_builddir) $(LTDLINCL)
 
-genericincludedir = '${pkgincludedir}/generic'
+genericincludedir = ${pkgincludedir}/generic
 
 noinst_LTLIBRARIES = \
 	libgeneric.la

@@ -1,6 +1,6 @@
 INCLUDES = -I$(top_srcdir) -I$(top_builddir)
 
-adtincludedir = '${pkgincludedir}/adt'
+adtincludedir = ${pkgincludedir}/adt
 
 noinst_LTLIBRARIES = \
 	libadt.la
