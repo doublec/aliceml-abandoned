@@ -18,7 +18,7 @@
 
 class Set : private Block {
 private:
-  static const u_int TOP_POS = 0;
+  enum { TOP_POS };
 
   Set *Enlarge(u_int oldsize, u_int newsize) {
     Block *p = Store::AllocBlock(GENSET_LABEL, newsize);

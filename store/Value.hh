@@ -62,7 +62,7 @@ public:
 
 class DllExport Transient : private Block {
 protected:
-  static const u_int REF_POS = 0;
+  enum { REF_POS };
 public:
   using Block::GetLabel;
 
@@ -104,7 +104,7 @@ public:
 
 class DllExport Chunk : private Block {
 private:
-  static const u_int BYTESIZE_POS = 0;
+  enum { BYTESIZE_POS };
 public:
   using Block::GetLabel;
   using Block::ToWord;
