@@ -1,0 +1,41 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Remote  from "x-alice:/lib/distribution/Remote"
+import signature PROCESS from "PROCESS-sig"
+
+structure Process :> PROCESS =
+    struct
+	fun send((_, os), s) =
+	    (print ("sending:'" ^ s ^ ";'\n"); TextIO.output(os, s); TextIO.output(os, ";\n"))
+	
+	fun initSite site =
+	    let
+		val root         = "/home/bruni/devel/stockhausen/lib/distribution/search/"
+		val remoteImport = ["import structure Remote from ",
+				    "\"x-alice:/lib/distribution/Remote.ozf\""]
+		val scriptImport = ["import structure RemoteWorker from ",
+				    "\"/", root, "RemoteWorker\""]
+	    in
+		(send(site, String.concat remoteImport);
+		 send(site, String.concat scriptImport))
+	    end
+
+	fun workerSite (host, parcel) =
+	    let
+		val site = Remote.remote host
+	    in
+		(initSite site;
+		 send(site, ("RemoteWorker.worker(\"" ^ parcel ^ "\")\n")))
+	    end
+    end
