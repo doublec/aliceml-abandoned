@@ -29,6 +29,10 @@ import
 from "x-alice:/infrastructure/SIGNATURE.ozf"
 
 import
+    structure MakeTracingPhase
+from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+
+import
     signature TARGET
 from "x-alice:/infrastructure/TARGET.ozf"
 
@@ -59,12 +63,15 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 
 functor MakeBackendMozart(structure Switches: SWITCHES
 			  structure MozartTarget: TARGET
-			  where type t = CodeGenPhase.t): PHASE =
-    struct
-	structure C = EmptyContext
-	structure I = FlatGrammar
-	structure O = MozartTarget
+			      where type t = CodeGenPhase.t): PHASE =
+    MakeTracingPhase(structure Phase =
+			 struct
+			     structure C = EmptyContext
+			     structure I = FlatGrammar
+			     structure O = MozartTarget
 
-	fun translate () (desc, component) =
-	    CodeGenPhase.translate (desc, component)
-    end
+			     fun translate () (desc, component) =
+				 CodeGenPhase.translate (desc, component)
+			 end
+		     structure Switches = Switches
+		     val name = "Assembling")
