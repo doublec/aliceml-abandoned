@@ -3,10 +3,9 @@
 .il.exe:
 	ilasm $<
 
-all: StockWerk.exe
-
-verify: StockWerk.exe
-	peverify StockWerk.exe
+all: Alice.dll
+	coolc /dll Alice.cs
 
 clean:
-	@-del StockWerk.exe
+	@-del Alice.dll
+
