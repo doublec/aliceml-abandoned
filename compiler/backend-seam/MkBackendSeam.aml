@@ -67,12 +67,16 @@ functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 					end) exportDesc
 				val str =
 				    ComponentManager.eval (url, component)
+				    handle exn =>
+					(Vector.app
+					 (fn (p, _) => Promise.fail (p, exn))
+					 exports;
+					 raise exn)
 			    in
 				Vector.app
 				    (fn (p, label) =>
-					Promise.fulfill (p,
-							 UnsafeValue.projPoly
-							     (str, label)))
+					 Promise.fulfill
+					 (p, UnsafeValue.projPoly (str, label)))
 				    exports;
 				str
 			    end
