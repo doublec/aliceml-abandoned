@@ -400,6 +400,32 @@ define
 	       @sDim  = {VirtualString.length String}
 	    end
 	 end
+	 meth layout
+	    FeaX = (@sDim + 3)
+	    Node = @node
+	 in
+	    case {Node layoutY($)}
+	    of XDim|YDim then
+	       if {{Node getParent($)} getHorzMode($)}
+	       then
+		  xDim     <- (FeaX + XDim)
+		  yDim     <- YDim
+		  lastXDim <- (FeaX + {Node getLastXDim($)}) 
+	       else
+		  RealXDim = {Max (FeaX - 3) XDim}
+	       in
+		  xDim     <- (3 + RealXDim)
+		  yDim     <- (YDim + 1)
+		  lastXDim <- (3 + {Node getLastXDim($)})
+	       end
+	    end
+	 end
+	 meth layoutX($)
+	    FeatureIndNode, layout @xDim
+	 end
+	 meth layoutY($)
+	    FeatureIndNode, layout @xDim|@yDim
+	 end
 	 meth draw(X Y)
 	    Visual = @visual
 	    SDim   = @sDim
