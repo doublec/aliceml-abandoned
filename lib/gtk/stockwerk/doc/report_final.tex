@@ -479,6 +479,15 @@ Mehr ist auch nicht n"otig, denn f"ur Zeiger auf Verbundtypen gibt es
 Zugriffsfunktionen, und Zeiger auf andere Werte werden als Ausgabeparameter
 betrachtet (siehe unten).
 
+Alternativ h"atte f"ur C-Zeiger auch ein abstrakter, polymorpher Datentyp
+``$\alpha$ #pointer#'' deklariert werden k"onnen. Bedingt durch das 
+Pseudo-Klassensystem von GTK muss der Programmierer aber sehr h"aufig
+Typumwandlungen von Zeigern vornehmen, so dass die Schnittstelle unhandlicher
+geworden w"are, die Typsicherheit sich aber nicht verbessert 
+h"atte.\footnote{Die
+GTK-Funktionen pr"ufen ohnehin zur Laufzeit, ob die "ubergebenen
+Zeiger den richtigen Typ haben.}
+
 \item 
 #GList# und #GSList# sind GTK-Datenstrukturen f"ur die Verwaltung von Listen.
 Die spezielle Behandlung ist notwendig, da diese Datenstrukturen in der
@@ -546,8 +555,8 @@ Verbundtyp Feldzugriffsfunktionen generiert.
 Diese werden von
 der Schnittstelle nicht behandelt. Eine Abbildung von Typaliasnamen auf
 type-Deklarationen in Alice w"urde erst richtig Sinn machen, wenn man
-statt des nicht n"aher spezifizierten #object# einen polymorphen
-``$\alpha$ #pointer#'' benutzen w"urde. Ein Zugriff auf externe Variablen
+statt #object# einen polymorphen ``$\alpha$ #pointer#'' benutzen w"urde
+(siehe oben). Ein Zugriff auf externe Variablen
 ist bei der GTK-Programmierung nicht n"otig.
 
 \subsection{Wrapper}
