@@ -57,5 +57,10 @@ define
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
 	      end
-	   'projPoly': Value.'.')
+	   'projPoly':
+	      fun {$ X L}
+		 case L of 'NUM'(I) then X.I
+		 [] 'ALPHA'(S) then X.{VirtualString.toAtom S}
+		 end
+	      end)
 end
