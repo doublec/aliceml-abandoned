@@ -153,6 +153,7 @@ functor MakeAbstractGrammar(type lab_info
 	| AppInf    of inf_info * inf * mod	(* interface application *)
 	| CompInf   of inf_info * inf * inf	(* composition *)
 	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
+	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
 
     (* Declarations *)
@@ -289,6 +290,7 @@ functor MakeAbstractGrammar(type lab_info
       | infoInf(AppInf(i,_,_))		= i
       | infoInf(CompInf(i,_,_))		= i
       | infoInf(ArrInf(i,_,_,_))	= i
+      | infoInf(LetInf(i,_,_))		= i
       | infoInf(SingInf(i,_))		= i
 
     fun infoDec(ValDec(i,_,_))		= i

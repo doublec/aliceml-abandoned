@@ -1341,6 +1341,21 @@ print "\n\
 	    ( j, O.ArrInf(infInfo(i,j), id', inf1', inf2') )
 	end
 
+      | elabInf(E, I.LetInf(i, decs, inf)) =
+	let
+	    val  _       = insertScope E
+	    val  s       = Inf.empty()
+	    val  decs'   = elabDecs(E, s, decs)
+	    val  p       = Path.invent()
+(*DEBUG*)
+val p = Path.fromLab(Label.fromString "?let")
+	    val  _       = Inf.strengthenSig(Path.invent(), s)
+	    val (j,inf') = elabInf(E, inf)
+	    val  _       = deleteScope E
+	in
+	    ( j, O.LetInf(infInfo(i,j), decs', inf') )
+	end
+
       | elabInf(E, I.SingInf(i, mod)) =
 	let
 	    val (j,mod') = elabMod(E, mod)

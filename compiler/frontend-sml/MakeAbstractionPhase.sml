@@ -1827,10 +1827,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (inf',E') = trSigExp E sigexp
 		val  _        = deleteScope E
 	   in
-		(*UNFINISHED*)
-		(* Mmh, is there really no better way than having LetInf? *)
-		raise Crash.Crash "unimplemented: let in signatures \
-				  \(may be induced by functor derived form)"
+		( O.LetInf(i, decs', inf'), E' )
 	   end
 
 	 | PARAtSigExp(i, sigexp) => trSigExp E sigexp

@@ -135,6 +135,7 @@ signature ABSTRACT_GRAMMAR =
 	| AppInf    of inf_info * inf * mod	(* interface application *)
 	| CompInf   of inf_info * inf * inf	(* composition *)
 	| ArrInf    of inf_info * id * inf * inf (* arrow (functor) interface *)
+	| LetInf    of inf_info * dec list * inf (* let *)
 	| SingInf   of inf_info * mod		(* singleton interface *)
 
     (* Declarations *)
