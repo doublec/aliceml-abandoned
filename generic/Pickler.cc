@@ -11,28 +11,25 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Pickler.hh"
+#pragma implementation "generic/Pickler.hh"
 #endif
 
 #include <cstdio>
 #include <cstdlib>
 #include "adt/HashTable.hh"
-#include "emulator/RootSet.hh"
-#include "emulator/Tuple.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Backtrace.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Transients.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Transform.hh"
-#include "emulator/Pickler.hh"
-
-#include "emulator/Debug.hh" //--** remove
-
-//--** this should be factored out:
-#include "emulator/Alice.hh"
+#include "generic/RootSet.hh"
+#include "generic/Tuple.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
+#include "generic/Backtrace.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Transients.hh"
+#include "generic/Interpreter.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Transform.hh"
+#include "generic/Pickler.hh"
+#include "generic/Debug.hh" //--** remove
+#include "alice/Data.hh" //--** avoid Alice dependencies
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>

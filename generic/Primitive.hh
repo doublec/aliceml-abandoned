@@ -12,14 +12,14 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_PRIMITIVE_HH__
-#define __EMULATOR_PRIMITIVE_HH__
+#ifndef __GENERIC__PRIMITIVE_HH__
+#define __GENERIC__PRIMITIVE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Primitive.hh"
+#pragma interface "generic/Primitive.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
 class Primitive {
 private:
