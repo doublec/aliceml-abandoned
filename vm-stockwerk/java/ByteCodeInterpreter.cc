@@ -408,7 +408,7 @@ const char *UnlockWorker::Identify() {
 }
 
 void UnlockWorker::DumpFrame(word) {
-  std::fprintf(stderr, "Unlock");
+  std::fprintf(stderr, "Unlock\n");
 }
 
 //
@@ -1341,8 +1341,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (wObject != null) {
 	  word wFieldRef             = GET_POOL_VALUE(GET_POOL_INDEX());
 	  InstanceFieldRef *fieldRef = InstanceFieldRef::FromWord(wFieldRef);
-	  if (fieldRef == INVALID_POINTER)
+	  if (fieldRef == INVALID_POINTER) {
+	    frame->Push(wObject);
 	    REQUEST(wFieldRef);
+	  }
 	  Object *object = Object::FromWord(wObject);
 	  Assert(object != INVALID_POINTER);
 	  word value = object->GetInstanceField(fieldRef->GetIndex()); 
