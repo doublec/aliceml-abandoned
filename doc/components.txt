@@ -5,11 +5,11 @@ Stockhausen provides separate compilation and dynamic linking via components.
 
 Syntactically, components are provided by introducing a new start symbol:
 
-	comp	::= impdec <`;'> program
+	component  ::=	import <`;'> program
 
-	impdec	::= `import' spec `from' string
-		    (*empty*)
-		    impdec <`;'> impdec
+	import     ::=	`import' spec `from' string
+			(*empty*)
+			import <`;'> import
 
 Each compilation unit exports all items declared in the contained program. A
 compiled component is stored at a URL. It can be imported by other components
