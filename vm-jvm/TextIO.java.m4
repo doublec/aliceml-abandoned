@@ -44,7 +44,7 @@ final public class TextIO {
     _BUILTIN(OpenIn) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"TextIO.openIn");
-	    DMLValue fn  = args[0].request();
+	    _REQUESTDEC(DMLValue fn,args[0]);
 	    if (fn instanceof STRING) {
 		java.lang.String filename = ((STRING) fn).getString();
 		FileInputStream fs = null;
@@ -67,7 +67,7 @@ final public class TextIO {
     _BUILTIN(CloseIn) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"TextIO.closeIn");
-	    DMLValue fn  = args[0].request();
+	    _REQUESTDEC(DMLValue fn,args[0]);
 	    if (fn instanceof IStream) {
 		try {
 		    ((IStream) fn).in.close();
@@ -88,7 +88,7 @@ final public class TextIO {
     _BUILTIN(InputAll) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"TextIO.inputAll");
-	    DMLValue ins = args[0].request();
+	    _REQUESTDEC(DMLValue ins,args[0]);
 	    if (ins instanceof IStream) {
 		try {
 		    InputStream in = ((IStream) ins).in;

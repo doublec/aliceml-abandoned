@@ -64,7 +64,7 @@ final public class Connection {
     _BUILTIN(Take) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Connection.take");
-	    DMLValue t = args[0].request();
+	    _REQUESTDEC(DMLValue t,args[0]);
 	    if (!(t instanceof STRING)) {
 		_error("argument not String",val);
 	    }

@@ -16,10 +16,12 @@ public class LVar extends UnicastRemoteObject
     public LVar() throws java.rmi.RemoteException { }
 
     final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
-	if (ref==null) {
+	if (ref == null) {
 	    return this;
 	} else {
-	    ref=ref.getValue();
+	    if (ref instanceof DMLLVar) {
+		ref = ((DMLLVar) ref).getValue();
+	    }
 	}
 	return ref;
     }
@@ -33,7 +35,9 @@ public class LVar extends UnicastRemoteObject
 		e.printStackTrace();
 	    }
 	}
-	ref=ref.request();
+	if (ref instanceof DMLLVar) {
+	    ref = ((DMLLVar) ref).request();
+	}
 	return ref;
     }
 

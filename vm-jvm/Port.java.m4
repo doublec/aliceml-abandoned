@@ -32,8 +32,9 @@ final public class Port extends UnicastRemoteObject
     final public DMLValue recieve() throws RemoteException {
 	DMLValue ret = null;
 	synchronized (first) {
-	    ret = ((Cons) first.request()).car;
-	    first = ((Cons) first.request()).cdr;
+	    _REQUESTDEC(DMLValue h, first);
+	    ret = ((Cons) h).car;
+	    first = ((Cons) h).cdr;
 	}
 	return ret;
     }
@@ -64,7 +65,7 @@ final public class Port extends UnicastRemoteObject
     _BUILTIN(Send) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Port.send");
-	    DMLValue p = args[0].request();
+	    _REQUESTDEC(DMLValue p,args[0]);
 	    if (!(p instanceof DMLPort))
 		_error("argument 1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;
@@ -82,7 +83,7 @@ final public class Port extends UnicastRemoteObject
     _BUILTIN(Recieve) {
     _APPLY(val) {
 	_fromTuple(args,val,1,"Port.recieve");
-	    DMLValue p = args[0].request();
+	    _REQUESTDEC(DMLValue p,args[0]);
 	    if (!(p instanceof DMLPort))
 		_error("argument 1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;

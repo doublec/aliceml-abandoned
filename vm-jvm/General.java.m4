@@ -35,7 +35,7 @@ final public class General {
     _BUILTIN(Deref) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"deref");
-	    DMLValue arg = args[0].request();
+	    _REQUESTDEC(DMLValue arg,args[0]);
 	    if (arg instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) arg;
 		if (cv.getConstructor()==Constants.reference)
@@ -50,7 +50,7 @@ final public class General {
     _BUILTIN(Assign) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"assign");
-	    DMLValue car=args[0].request();
+	    _REQUESTDEC(DMLValue car,args[0]);
 	    if (car instanceof DMLConVal) {
 		return ((DMLConVal) car).assign(args[1]);
 	    }
@@ -74,8 +74,8 @@ final public class General {
 	}
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"compose");
-	    DMLValue f = args[0].request();
-	    DMLValue g = args[1].request();
+	    _REQUESTDEC(DMLValue f,args[0]);
+	    _REQUESTDEC(DMLValue g,args[1]);
 	    return new CO(f,g);
 	}
     }
@@ -135,8 +135,8 @@ final public class General {
     _BUILTIN(Equals) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"equals");
-	    DMLValue car=args[0].request();
-	    DMLValue cdr=args[1].request();
+	    _REQUESTDEC(DMLValue car,args[0]);
+	    _REQUESTDEC(DMLValue cdr,args[1]);
 	    if (car.equals(cdr))
 		return Constants.dmltrue;
 	    else
@@ -149,7 +149,7 @@ final public class General {
     _BUILTIN(Pickle) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.pickle");
-	    DMLValue fst=args[0].request();
+	    _REQUESTDEC(DMLValue fst,args[0]);
 	    if (!(fst instanceof STRING))
 		_error("argument 1 not STRING ",val);
 	    java.lang.String whereto=((STRING) fst).getString();
@@ -185,7 +185,7 @@ final public class General {
     _BUILTIN(Unpickle) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.unpickle");
-	    DMLValue fst=args[0].request();
+	    _REQUESTDEC(DMLValue fst,args[0]);
 	    if (!(fst instanceof STRING))
 		_error("argument 1 not STRING ",val);
 	    java.lang.String wherefrom=((STRING) fst).getString();
@@ -219,7 +219,7 @@ final public class General {
     _BUILTIN(Uminus) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"General.~");
-	    DMLValue number = args[0].request();
+	    _REQUESTDEC(DMLValue number,args[0]);
 	    if (number instanceof Int) {
 		return new Int(-((Int) number).getInt());
 	    } else if (number instanceof Word) {
@@ -246,7 +246,9 @@ final public class General {
     _BUILTIN(Neq) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.<>");
-	    if (args[0].request().equals(args[1].request())) {
+	    _REQUESTDEC(DMLValue l, args[0]);
+	    _REQUESTDEC(DMLValue r, args[1]);
+	    if (l.equals(r)) {
 		return Constants.dmltrue;
 	    } else {
 		return Constants.dmlfalse;
@@ -267,129 +269,4 @@ final public class General {
     }
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
-
-//  final public class Not extends Builtin {
-
-//      final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-//  	val = val.request();
-//  	if (val == Constants.dmltrue) return Constants.dmlfalse;
-//  	if (val == Constants.dmlfalse) return Constants.dmltrue;
-//  	_RAISE(runtimeError,new STRING ("primitive not operation failed\nBAD ARGUMENT: "+val));
-//      }
-//  }
-
-    //    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-//        // soll das hier synchronized sein auf val?
-//        val = val.request();
-//        synchronized (val) {
-//  	  if (val instanceof DMLTuple) {
-//  	      DMLTuple tuple = (DMLTuple) val;
-//  	      if (tuple.getArity()==2) {
-//  		  DMLValue v = tuple.getByIndex(0).request();
-//  		  if (v instanceof DMLConVal) {
-//  		      DMLConVal ref = (DMLConVal) v;
-//  		      return ref.assign(tuple.getByIndex(1));
-//  		  }
-//  		  else {
-//  		      DMLValue[] err = {
-//  			  new STRING ("bad argument #2 for exchange"),
-//  			  val};
-//  		      _RAISE(runtimeError,new Tuple(err));
-//  		  }
-//  	      }
-//  	      else {
-//  		  DMLValue[] err = {
-//  		      new STRING ("wrong number of arguments for exchange"),
-//  		      val};
-//  		  _RAISE(runtimeError,new Tuple(err));
-//  	      }
-
-//  	  }
-//  	  else {
-//  	      DMLValue[] err = {
-//  		  new STRING ("bad argument for deref"),
-//  		  val};
-//  	      _RAISE(runtimeError,new Tuple(err));
-//  	  }
-//        }
-//    }
-//  }
-//  /*
-//   * $Date$
-//   * $Revision$
-//   * $Author$
-//   */
-
-//  package de.uni_sb.ps.dml.builtin;
-
-//  import de.uni_sb.ps.dml.runtime.*;
-//  /** gibt Future von logischer Variable oder Wert selbst */
-//  final public class GetFuture extends Builtin {
-
-//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-//      if (val instanceof LVar)
-//        return new Future((LVar)val);
-//      else
-//        return val;
-//    }
-//  }
-//  /*
-//   * $Date$
-//   * $Revision$
-//   * $Author$
-//   */
-
-//  package de.uni_sb.ps.dml.builtin;
-
-//  import de.uni_sb.ps.dml.runtime.*;
-
-//  final public class Bind extends Builtin {
-
-//      final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-//  	val = val.request();
-//  	if (val instanceof Record) {
-//  	    Record r=(Record) val;
-//  	    if (r.getArity() == 2) {
-//  		DMLValue car=r.getByIndex(0);
-//  		if (car instanceof LVar) {
-//  		    ((LVar) car).bind(r.getByIndex(1));
-//  		    return Constants.dmlunit;
-//  		}
-//  		else
-//  		    _RAISE(runtimeError,new STRING ("bind tried on non-lval "+r.getByIndex(0)+" with "+r.getByIndex(1)));
-//  	    }
-//  	    else
-//  		_RAISE(runtimeError,new STRING ("invalid record length for bind in "+val));
-//  	}
-//  	_RAISE(runtimeError,new STRING ("bind applied to non-record "+val));
-//      }
-//  }
-/*
- * $Date$
- * $Revision$
- * $Author$
- */
-
-//  package de.uni_sb.ps.dml.builtin;
-
-//  import de.uni_sb.ps.dml.runtime.*;
-
-//  final public class BoolFromString extends Builtin {
-
-//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-//        val = val.request();
-//        if (val instanceof STRING) {
-//  	  java.lang.String s=((STRING) val).getString();
-//  	  if (s.equalsIgnoreCase("TRUE"))
-//  	      return Constants.dmltrue;
-//  	  else if (s.equalsIgnoreCase("FALSE"))
-//  	      return Constants.dmlfalse;
-//  	  else
-//  	      _RAISE(runtimeError,new STRING ("NoBoolException"+val));
-//  	  }
-//        else
-//  	  _RAISE(runtimeError,new STRING ("invalid argument for primitive boolfromstring operation in "+val));
-//    }
-//  }
-
 }

@@ -31,7 +31,7 @@ final public class Char extends SCon {
     _BUILTIN(Ord) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Char.ord");
-	    DMLValue ch = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Char) {
 		return new Int(((Char) ch).ch);
 	    } else {
@@ -45,7 +45,7 @@ final public class Char extends SCon {
     _BUILTIN(Chr) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Char.chr");
-	    DMLValue ch = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Int) {
 		int i = ((Int) ch).getInt(); // better?: ch.value
 		if (i <= Character.MAX_VALUE && i >= Character.MIN_VALUE) {
@@ -80,7 +80,7 @@ final public class Char extends SCon {
     _BUILTIN(IsDigit) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Char.isDigit");
-	    DMLValue ch  = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Char) {
 		return (Character.isDigit(((Char) ch).ch) ?
 		    Constants.dmltrue :
@@ -98,7 +98,7 @@ final public class Char extends SCon {
     _BUILTIN(IsHexDigit) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Char.isHexDigit");
-	    DMLValue ch  = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Char) {
 		char c = ((Char) ch).ch;
 		switch (c) {
@@ -124,7 +124,7 @@ final public class Char extends SCon {
     _BUILTIN(IsSpace) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Char.isSpace");
-	    DMLValue ch  = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Char) {
 		return (Character.isWhitespace(((Char) ch).ch) ?
 		    Constants.dmltrue :

@@ -48,7 +48,7 @@ final public class String extends SCon {
     _BUILTIN(Size) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"String.length");
-            DMLValue v = args[0].request();
+            _REQUESTDEC(DMLValue v,args[0]);
             if (v instanceof STRING) {
 		return new Int(((STRING) v).getString().length());
             } else {
@@ -62,17 +62,17 @@ final public class String extends SCon {
     _BUILTIN(Extract) {
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.extract");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
 	    int from = ((Int) v).getInt();
-	    v= args[2].request();
+	    _REQUEST(v,args[2]);
 	    int to = s.length();
 	    if (v instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) v;
@@ -100,17 +100,17 @@ final public class String extends SCon {
     _BUILTIN(Substring) {
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.substring");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
 	    int from = ((Int) v).getInt();
-	    v= args[2].request();
+	    _REQUEST(v,args[2]);
 	    if (!(v instanceof Int)) {
 		_error("argument 3 not Int",val);
 	    }
@@ -124,7 +124,7 @@ final public class String extends SCon {
     _BUILTIN(Concat) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.concat");
-	    DMLValue list = args[0].request();
+	    _REQUESTDEC(DMLValue list,args[0]);
 	    if (list==List.nil) {
 		return new STRING ("");
 	    } else if (list instanceof Cons) {
@@ -154,11 +154,11 @@ final public class String extends SCon {
     _BUILTIN(Append) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.^");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
@@ -173,12 +173,12 @@ final public class String extends SCon {
     _BUILTIN(IsPrefix) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.isPrefix");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
@@ -196,12 +196,12 @@ final public class String extends SCon {
     _BUILTIN(Compare) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.compare");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
@@ -222,12 +222,12 @@ final public class String extends SCon {
     _BUILTIN(Compare_) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.compare'");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
@@ -253,7 +253,7 @@ final public class String extends SCon {
     _BUILTIN(Str) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"String.str");
-	    DMLValue ch = args[0].request();
+	    _REQUESTDEC(DMLValue ch,args[0]);
 	    if (ch instanceof Char) {
 		return new STRING (java.lang.String.valueOf(((Char) ch).getChar()));
 	    } else {
@@ -267,9 +267,9 @@ final public class String extends SCon {
     _BUILTIN(Sub) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.sub");
-	    DMLValue s = args[0].request();
+	    _REQUESTDEC(DMLValue s,args[0]);
 	    if (s instanceof STRING) {
-		DMLValue idx = args[1].request();
+		_REQUESTDEC(DMLValue idx,args[1]);
 		if (idx instanceof Int) {
 		    return new Char(((STRING) s).getString().charAt(((Int) idx).getInt()));
 		} else {

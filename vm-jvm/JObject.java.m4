@@ -15,7 +15,6 @@ final public class JObject implements DMLValue {
     java.lang.Object javaObject = null;
 
     public JObject(java.lang.Object o) {
-	super();
 	javaObject=o;
     }
 
@@ -31,22 +30,22 @@ final public class JObject implements DMLValue {
     _request_id ;
     _getValue_id ;
     _raise ;
+
     /** Builtin zur Benutzung von java API Objekt/Klassen-Methoden
- *  @author Daniel
- */
-    final protected static class InvokeMethod extends Builtin {
+     *  @author Daniel
+     */
+    _BUILTIN(InvokeMethod) {
 	/** Methode entspricht der Applikation einer Methode
 	 *  invoke: string/JObject * string * arg0 * ... * argN -> JObject
 	 *  @param v v sollte ein Tupel sein mit
-	 *  @param #1 STRING  als Klassenname oder
-	 *  @param #1 JObject mit einem java.lang.Object der Klasse
+	 *  @param 1 STRING  als Klassenname oder
+	 *  @param 1 JObject mit einem java.lang.Object der Klasse
 	 *  @param args Argumente für die Methode, kann leer sein
 	 */
-	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    val = val.request();
+	_APPLY(val) {
 	    if (val instanceof DMLTuple) {
 		DMLTuple v = (DMLTuple) val;
-		DMLValue c = v.getByIndex(0).request(); // erstes Argument ist java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument ist java.lang.Object oder Klasse
 
 		Class cl = null;
 		Object object = null;
@@ -56,61 +55,51 @@ final public class JObject implements DMLValue {
 		    try {
 			cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		    } catch (ClassNotFoundException e) {
-			DMLValue[] err = {
-			    new STRING ("cannot find class "+classname),
-			    val};
-			_RAISE(javaAPIError,new Tuple(err));
+			_RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),val));
 		    }
 		} else if (c instanceof JObject) {
 		    object = ((JObject) c).getObject();
 		    cl = object.getClass();
 		    classname=cl.getName();
 		} else { // Fehler
-		    DMLValue[] err = {
-			new STRING ("illegal argument for classtype"),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for classtype"),val));
 		}
 		// Klasse gefunden, Class steht in cl
 
-		DMLValue mn = v.getByIndex(1).request(); // Methodenname
+		_REQUESTDEC(DMLValue mn,v.getByIndex(1)); // Methodenname
 		java.lang.String methname = null;
 		if (!(mn instanceof STRING)) {
-		    DMLValue[] err = {
-			new STRING ("illegal argument for methodname"),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for methodname"),						   val));
 		}
-		else
+		else {
 		    methname = ((STRING) mn).getString();
+		}
 		// System.out.println("Object: "+classname+" Method: "+methname);
 		int length = v.getArity()-2; // Anzahl der Argumente für Methode
 		Class[] classes = null;
 		Object[] args   = null;
 		java.lang.reflect.Method meth = null;
-		if (length==0 || v.getByIndex(2).request()==Constants.dmlunit) { // nullstellige Methode
+		_REQUESTDEC(DMLValue unit,v.getByIndex(2));
+		if (length==0 || unit==Constants.dmlunit) { // nullstellige Methode
 		    try {
 			meth = cl.getMethod(methname,null);
 		    } catch (NoSuchMethodException e) {
-			DMLValue[] err = {
-			    new STRING ("no nullary method available for "+classname),
-			    val};
-			_RAISE(javaAPIError,new Tuple(err));
+			_RAISE(javaAPIError,new Tuple2(new STRING ("no nullary method available for "+classname),						       val));
 		    }
 		}
 		else { // Methode hat >= 1 Argumente
 		    classes = new Class[length];
 		    args = new java.lang.Object[length];
 		    for(int i=0; i<length; i++) {
-			DMLValue helper = v.getByIndex(i+2).request();
+			_REQUESTDEC(DMLValue helper,v.getByIndex(i+2));
 			if (helper instanceof SCon) { // Argument ist STRING , Int, Real oder Word
 			    if (helper instanceof Int) {
 				classes[i] = java.lang.Integer.TYPE;
 				args[i] = new java.lang.Integer(((Int) helper).getInt());
 			    }
-			    else if (helper instanceof de.uni_sb.ps.dml.runtime.Real) {
+			    else if (helper instanceof Real) {
 				classes[i] = Float.TYPE;
-				args[i] = new Float(((de.uni_sb.ps.dml.runtime.Real) helper).getFloat());
+				args[i] = new Float(((Real) helper).getFloat());
 			    }
 			    else if (helper instanceof STRING) {
 				try{
@@ -123,9 +112,9 @@ final public class JObject implements DMLValue {
 				}
 				args[i] = ((STRING) helper).getString();
 			    }
-			    else if (helper instanceof de.uni_sb.ps.dml.runtime.Word) {
+			    else if (helper instanceof Word) {
 				classes[i] = Long.TYPE;
-				args[i] = new Long(((de.uni_sb.ps.dml.runtime.Word) helper).getLong());
+				args[i] = new Long(((Word) helper).getLong());
 			    }
 			}
 			else if (helper instanceof Name) {
@@ -138,10 +127,7 @@ final public class JObject implements DMLValue {
 				args[i] = new Boolean(false);
 			    }
 			    else {
-				DMLValue[] err = {
-				    new STRING ("illegal Name-argument #"+(i+2)),
-				    val};
-				_RAISE(javaAPIError,new Tuple(err));
+				_RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument "+(i+2)),							       val));
 			    }
 			}
 			else if (helper instanceof JObject) { // Argument ist Instanz einer Java-Klasse
@@ -150,27 +136,21 @@ final public class JObject implements DMLValue {
 			    args[i] = o;
 			}
 			else {
-			    DMLValue[] err = {
-				new STRING ("illegal argument #"+(i+2)),
-				val};
-			    _RAISE(javaAPIError,new Tuple(err));
+			    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument "+(i+2)),							   val));
 			}
 		    } // end of for
 		} // end of else Methode
 		// classes ist jetzt berechnet, methname bekannt
 		// Methode wird laut API-Dokumentation aufgelöst
 		// siehe:
-		// http://oo/javadocs/jdk1.2.1/docs/api/java/lang/Class.html#getMethod(java.lang.String, java.lang.Class[])
+		// http://oo/javadocs/jdk1.2.1/docs/api/java/lang/Class.htmlgetMethod(java.lang.String, java.lang.Class[])
 		try {
 		    meth = cl.getMethod(methname,classes);
 		} catch (NoSuchMethodException e) {
 		    try {
 			meth = findMethod(methname,cl,classes);
 		    } catch (NoSuchMethodException f) {
-			DMLValue[] err = {
-			    new STRING (f.getMessage()),
-			    new JObject(f)};
-			_RAISE(javaAPIError,new Tuple(err));
+			_RAISE(javaAPIError,new Tuple2(new STRING (f.getMessage()),						       new JObject(f)));
 		    }
 		}
 
@@ -178,10 +158,7 @@ final public class JObject implements DMLValue {
 		try {
 		    oo = meth.invoke(object,args);
 		} catch (Exception e) {
-		    DMLValue[] err = {
-			new STRING (e.getMessage()),
-			new JObject(e)};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING (e.getMessage()),						   new JObject(e)));
 		}
 		// ERFOLGREICH !
 		// jetzt zurückmappen von java-Objekten nach DML
@@ -193,22 +170,19 @@ final public class JObject implements DMLValue {
 		else if (oo instanceof java.lang.Integer)
 		    return new Int(((java.lang.Integer) oo).intValue());
 		else if (oo instanceof Long)
-		    return new de.uni_sb.ps.dml.runtime.Word(((Long) oo).longValue());
+		    return new Word(((Long) oo).longValue());
 		else if (oo instanceof Float)
-		    return new de.uni_sb.ps.dml.runtime.Real(((Float) oo).floatValue());
+		    return new Real(((Float) oo).floatValue());
 		else if (oo instanceof java.lang.String)
 		    return new STRING ((java.lang.String) oo);
 		else
 		    return new JObject(oo);
 	    }
 	    else {
-		DMLValue[] err = {
-		    new STRING ("illegal argument for primitve method new_instance"),
-		    val};
-		_RAISE(runtimeError,new Tuple(err));
+		_RAISE(runtimeError,new Tuple2(new STRING ("illegal argument for primitve method new_instance"),
+					       val));
 	    }
 	}
-
 
 	/** Noch ein Fix für Linux; versucht sich an der Solaris-Version
 	 *  zu orientieren.
@@ -331,230 +305,213 @@ final public class JObject implements DMLValue {
 	}
     }
 
-    final public static InvokeMethod invokeMethod = new InvokeMethod();
+    _FIELD(JObject,invokeMethod);
 
-
-/** Builtin zur Erzeugung von java API Objekten.
+    /** Builtin zur Erzeugung von java API Objekten.
  *  @author Daniel
  */
-final protected static class NewInstance extends Builtin {
-    /** Methode entspricht der Konstruktor-Applikation
-     *  new_instance: string * arg0 * ... * argN -> JObject
-     *  @param v v sollte ein Tupel sein mit
-     *  @param #1 STRING  als Klassenname
-     *  @param args Argumente für den Konstruktor, kann leer sein
-     */
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	val = val.request();
-	if (val instanceof DMLTuple) {
-	    DMLTuple v = (DMLTuple) val;
-	    DMLValue c = v.getByIndex(0).request(); // erstes Argument
-	    if (c instanceof STRING) {
-		java.lang.String classname = ((STRING) c).getString();
-		Class cl = null;
-		try {
-		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
-		} catch (ClassNotFoundException e) {
-		    DMLValue[] err = {
-			new STRING ("cannot find class "+classname),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
-		}
-		// Klasse gefunden, Class steht in cl
-		int length = v.getArity()-1; // Anzahl der Argumente für Konstruktor
-		Class[] classes = null;
-		Object[] args   = null;
-		java.lang.reflect.Constructor con = null;
-		if (length==0 || v.getByIndex(1).request()==Constants.dmlunit) { // Nullstelliger Konstruktor
+    _BUILTIN(NewInstance) {
+	/** Methode entspricht der Konstruktor-Applikation
+	 *  new_instance: string * arg0 * ... * argN -> JObject
+	 *  @param v v sollte ein Tupel sein mit
+	 *  @param 1 STRING  als Klassenname
+	 *  @param args Argumente für den Konstruktor, kann leer sein
+	 */
+	_APPLY(val) {
+	    _REQUEST(val,val);
+	    if (val instanceof DMLTuple) {
+		DMLTuple v = (DMLTuple) val;
+		_REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument
+		if (c instanceof STRING) {
+		    java.lang.String classname = ((STRING) c).getString();
+		    Class cl = null;
 		    try {
-			con = cl.getConstructor(null);
-		    } catch (NoSuchMethodException e) {
-			DMLValue[] err = {
-			    new STRING ("no nullary constructor available for "+classname),
-			    val};
-			_RAISE(javaAPIError,new Tuple(err));
+			cl = ClassLoader.getSystemClassLoader().loadClass(classname);
+		    } catch (ClassNotFoundException e) {
+			_RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),
+						       val));
 		    }
-		}
-		else { // Konstruktor hat >= 1 Argumente
-		    classes = new Class[length];
-		    args = new java.lang.Object[length];
-		    for(int i=0; i<length; i++) {
-			DMLValue helper = v.getByIndex(i+1).request();
-			if (helper instanceof SCon) {
-			    // Argument ist STRING , Int, Real oder de.uni_sb.ps.dml.runtime.Word
-			    if (helper instanceof Int) {
-				classes[i] = java.lang.Integer.TYPE;
-				args[i] = new java.lang.Integer(((Int) helper).getInt());
-			    }
-			    else if (helper instanceof de.uni_sb.ps.dml.runtime.Real) {
-				classes[i] = Float.TYPE;
-				args[i] = new Float(((de.uni_sb.ps.dml.runtime.Real) helper).getFloat());
-			    }
-			    else if (helper instanceof STRING) {
-				try{
-				    classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
-				} catch (ClassNotFoundException e) {
-				    // This should NEVER happen
-				    System.err.println("internal runtime error: new_instance");
-				    System.err.println(e.getMessage());
-				    e.printStackTrace();
-				}
-				args[i] = ((STRING) helper).getString();
-			    }
-			    else if (helper instanceof de.uni_sb.ps.dml.runtime.Word) {
-				classes[i] = Long.TYPE;
-				args[i] = new Long(((de.uni_sb.ps.dml.runtime.Word) helper).getLong());
-			    }
+		    // Klasse gefunden, Class steht in cl
+		    int length = v.getArity()-1; // Anzahl der Argumente für Konstruktor
+		    Class[] classes = null;
+		    Object[] args   = null;
+		    java.lang.reflect.Constructor con = null;
+		    _REQUESTDEC(DMLValue unit,v.getByIndex(1));
+		    if (length==0 || unit==Constants.dmlunit) { // Nullstelliger Konstruktor
+			try {
+			    con = cl.getConstructor(null);
+			} catch (NoSuchMethodException e) {
+			    _RAISE(javaAPIError,new Tuple2(new STRING ("no nullary constructor available for "+classname), val));
 			}
-			else if (helper instanceof Name) {
-			    if (helper==Constants.dmltrue) {
-				classes[i] = Boolean.TYPE;
-				args[i] = new Boolean(true);
+		    }
+		    else { // Konstruktor hat >= 1 Argumente
+			classes = new Class[length];
+			args = new java.lang.Object[length];
+			for(int i=0; i<length; i++) {
+			    _REQUESTDEC(DMLValue helper,v.getByIndex(i+1));
+			    if (helper instanceof SCon) {
+				// Argument ist STRING , Int, Real oder de.uni_sb.ps.dml.runtime.Word
+				if (helper instanceof Int) {
+				    classes[i] = java.lang.Integer.TYPE;
+				    args[i] = new java.lang.Integer(((Int) helper).getInt());
+				}
+				else if (helper instanceof Real) {
+				    classes[i] = Float.TYPE;
+				    args[i] = new Float(((Real) helper).getFloat());
+				}
+				else if (helper instanceof STRING) {
+				    try{
+					classes[i] = Class.forName("java.lang.String");  // java.lang.String.TYPE;
+				    } catch (ClassNotFoundException e) {
+					// This should NEVER happen
+					System.err.println("internal runtime error: new_instance");
+					System.err.println(e.getMessage());
+					e.printStackTrace();
+				    }
+				    args[i] = ((STRING) helper).getString();
+				}
+				else if (helper instanceof Word) {
+				    classes[i] = Long.TYPE;
+				    args[i] = new Long(((Word) helper).getLong());
+				}
 			    }
-			    else if (helper==Constants.dmlfalse) {
-				classes[i] = Boolean.TYPE;
-				args[i] = new Boolean(false);
+			    else if (helper instanceof Name) {
+				if (helper==Constants.dmltrue) {
+				    classes[i] = Boolean.TYPE;
+				    args[i] = new Boolean(true);
+				}
+				else if (helper==Constants.dmlfalse) {
+				    classes[i] = Boolean.TYPE;
+				    args[i] = new Boolean(false);
+				}
+				else {
+				    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument "+i),
+								   v));
+				}
+			    }
+			    else if (helper instanceof JObject) {
+				// Argument ist Instanz einer Java-Klasse
+				java.lang.Object o = ((JObject) helper).getObject();
+				classes[i] = o.getClass();
+				args[i] = o;
 			    }
 			    else {
-				DMLValue[] err = {
-				    new STRING ("illegal Name-argument #"+i),
-				    v};
-				_RAISE(javaAPIError,new Tuple(err));
+				_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument "+i),
+							       v));
 			    }
-			}
-			else if (helper instanceof JObject) {
-			    // Argument ist Instanz einer Java-Klasse
-			    java.lang.Object o = ((JObject) helper).getObject();
-			    classes[i] = o.getClass();
-			    args[i] = o;
-			}
-			else {
-			    DMLValue[] err = {
-				new STRING ("illegal argument #"+i),
-				v};
-			    _RAISE(javaAPIError,new Tuple(err));
-			}
 			} // end of for
 		    }
-		try {
-		    con = cl.getConstructor(classes); // wenn genau paßt: Redundanz vermeiden mit findConstructor
-		    // System.out.println(con);
-		} catch (NoSuchMethodException e) {
 		    try {
-			con = findConstructor(cl,classes);
-		    } catch (NoSuchMethodException f) {
-			DMLValue[] err = {
-			    new STRING (f.getMessage()),
-			    new JObject(f)};
-			_RAISE(javaAPIError,new Tuple(err));
+			con = cl.getConstructor(classes); // wenn genau passt: Redundanz vermeiden mit findConstructor
+			// System.out.println(con);
+		    } catch (NoSuchMethodException e) {
+			try {
+			    con = findConstructor(cl,classes);
+			} catch (NoSuchMethodException f) {
+			    _RAISE(javaAPIError,new Tuple2(new STRING (f.getMessage()),
+							   new JObject(f)));
+			}
 		    }
-		}
-		
-		Object oo = null;
-		try {
-		    oo = con.newInstance(args);
-		} catch (Exception e) {
-		    DMLValue[] err = {
-			new STRING (e.getMessage()),
-			new JObject(e)};
-		    _RAISE(javaAPIError,new Tuple(err));
-		}
-		// ERFOLGREICH !
-		// zurückmappen
-		if (oo instanceof Boolean)
-		    if (((Boolean) oo).booleanValue())
-			return Constants.dmltrue;
+
+		    Object oo = null;
+		    try {
+			oo = con.newInstance(args);
+		    } catch (Exception e) {
+			_RAISE(javaAPIError,new Tuple2(new STRING (e.getMessage()),
+						       new JObject(e)));
+		    }
+		    // ERFOLGREICH !
+		    // zurückmappen
+		    if (oo instanceof Boolean)
+			if (((Boolean) oo).booleanValue())
+			    return Constants.dmltrue;
+			else
+			    return Constants.dmlfalse;
+		    else if (oo instanceof Integer)
+			return new Int(((Integer) oo).intValue());
+		    else if (oo instanceof Long)
+			return new Word(((Long) oo).longValue());
+		    else if (oo instanceof Float)
+			return new Real(((Float) oo).floatValue());
+		    else if (oo instanceof java.lang.String)
+			return new STRING ((java.lang.String) oo);
 		    else
-			return Constants.dmlfalse;
-		else if (oo instanceof java.lang.Integer)
-		    return new Int(((java.lang.Integer) oo).intValue());
-		else if (oo instanceof Long)
-		    return new de.uni_sb.ps.dml.runtime.Word(((Long) oo).longValue());
-		else if (oo instanceof Float)
-		    return new de.uni_sb.ps.dml.runtime.Real(((Float) oo).floatValue());
-		else if (oo instanceof java.lang.String)
-		    return new STRING ((java.lang.String) oo);
-		else
-		    return new JObject(oo);
-	    } // end of: if (c instanceof STRING)
-	    else {
-		DMLValue[] err = {
-		    new STRING ("illegal argument for classtype"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
-	    }
-	}
-	else {
-	    DMLValue[] err = {
-		new STRING ("illegal argument for primitve method new_instance"),
-		val};
-	    _RAISE(runtimeError,new Tuple(err));
-	}
-    }
-
-    /** Dynamische Auswahl eines Konstruktors via Reflect.
-     *  Patch für Linux; auf Solaris laufen wir da nie rein ...
-     *  Entspricht hoffentlich der Vorgehensweise wie in  <a href="http://oo.ps.uni-sb.de/javadocs/langspec-1.0/15.doc.html#21693">Java Sprachdefinition</a>
-     */
-    final static private Constructor findConstructor(Class cl, Class[] classes) throws NoSuchMethodException {
-	// System.out.println("Hello find!");
-	Constructor con = null;
-	Constructor[] cons = cl.getConstructors();
-
-	// System.out.println("Arguments are: ");
-	// for(int i=0; i<classes.length; i++) System.out.println("\t"+classes[i]);
-	// System.out.println("Found constructors for "+cl.getName());
-	// for(int i=0; i<cons.length; i++) System.out.println("\t"+cons[i]);
-
-	java.util.Vector confits = new java.util.Vector();
-	int argLength = classes.length;
-	// Die Constructors mit passender Argumentzahl ausssuchen:
-	int length=cons.length;
-	for(int i=0; i<length; i++)
-	    if (cons[i].getParameterTypes().length==argLength)
-		confits.addElement(cons[i]);
-
-	// System.out.println("Length-matching constructors for "+cl.getName());
-	// System.out.println("\t"+confits);
-
-	java.util.Enumeration enum = confits.elements();
-	confits = new java.util.Vector();
-	Constructor c = null;
-	// alle Constructors mit möglicherweise passenden Argumenten
-	while (enum.hasMoreElements()) {
-	    c = (Constructor) enum.nextElement();
-	    // System.out.println("Working on: "+c);
-	    Class[] args = c.getParameterTypes();
-	    // Test auf exakten Match redundant, das passiert beim 1. Versuch
-	    //  	    boolean exact = true; // paßt diese Methode genau?
-	    //  	    for(int i=0; i<argLength; i++)
-	    //  		if (!args[i].equals(classes[i])) {
-	    //  		    System.out.println(args[i]+" doesn't equal "+classes[i]);
-	    //  		    exact = false;
-	    //  		    break;
-	    //  		}
-	    //  	    if (exact) { // wenn's genau paßt, können wir den zurückgeben
-	    //  		System.out.println("Exact match: "+c);
-	    //  		return c;
-	    //  	    }
-	    boolean could = true;
-	    for(int i=0; i<argLength; i++)
-		if (args[i].isAssignableFrom(classes[i])) {
-		    // classes[i] gleiche oder oberklasse von args
-		    // System.out.println(args[i]+" assignable from "+classes[i]);
-		}
+			return new JObject(oo);
+		} // end of: if (c instanceof STRING)
 		else {
-		    // System.out.println(args[i]+" not assignable from "+classes[i]);
-		    could = false;
-		    break;
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for classtype"),
+						   val));
 		}
-	    if (could) {
-		// System.out.println("This one could be used: "+c);
-		confits.addElement(c);
 	    }
-	} // hiernach stehen in confits nur die möglicherweise passenden Constructoren
-	// System.out.println("After filtering: "+confits);
-	int size = confits.size();
+	    else {
+		_RAISE(runtimeError,new Tuple2(new STRING ("illegal argument for primitve method new_instance"),
+					       val));
+	    }
+	}
+
+	/** Dynamische Auswahl eines Konstruktors via Reflect.
+	 *  Patch für Linux; auf Solaris laufen wir da nie rein ...
+	 *  Entspricht hoffentlich der Vorgehensweise wie in  <a href="http://oo.ps.uni-sb.de/javadocs/langspec-1.0/15.doc.html21693">Java Sprachdefinition</a>
+	 */
+	final static private Constructor findConstructor(Class cl, Class[] classes) throws NoSuchMethodException {
+	    // System.out.println("Hello find!");
+	    Constructor con = null;
+	    Constructor[] cons = cl.getConstructors();
+
+	    // System.out.println("Arguments are: ");
+	    // for(int i=0; i<classes.length; i++) System.out.println("\t"+classes[i]);
+	    // System.out.println("Found constructors for "+cl.getName());
+	    // for(int i=0; i<cons.length; i++) System.out.println("\t"+cons[i]);
+
+	    java.util.Vector confits = new java.util.Vector();
+	    int argLength = classes.length;
+	    // Die Constructors mit passender Argumentzahl ausssuchen:
+	    int length=cons.length;
+	    for(int i=0; i<length; i++)
+		if (cons[i].getParameterTypes().length==argLength)
+		    confits.addElement(cons[i]);
+
+	    // System.out.println("Length-matching constructors for "+cl.getName());
+	    // System.out.println("\t"+confits);
+
+	    java.util.Enumeration enum = confits.elements();
+	    confits = new java.util.Vector();
+	    Constructor c = null;
+	    // alle Constructors mit möglicherweise passenden Argumenten
+	    while (enum.hasMoreElements()) {
+		c = (Constructor) enum.nextElement();
+		// System.out.println("Working on: "+c);
+		Class[] args = c.getParameterTypes();
+		// Test auf exakten Match redundant, das passiert beim 1. Versuch
+		//  	    boolean exact = true; // paßt diese Methode genau?
+		//  	    for(int i=0; i<argLength; i++)
+		//  		if (!args[i].equals(classes[i])) {
+		//  		    System.out.println(args[i]+" doesn't equal "+classes[i]);
+		//  		    exact = false;
+		//  		    break;
+		//  		}
+		//  	    if (exact) { // wenn's genau paßt, können wir den zurückgeben
+		//  		System.out.println("Exact match: "+c);
+		//  		return c;
+		//  	    }
+		boolean could = true;
+		for(int i=0; i<argLength; i++)
+		    if (args[i].isAssignableFrom(classes[i])) {
+			// classes[i] gleiche oder oberklasse von args
+			// System.out.println(args[i]+" assignable from "+classes[i]);
+		    }
+		    else {
+			// System.out.println(args[i]+" not assignable from "+classes[i]);
+			could = false;
+			break;
+		    }
+		if (could) {
+		    // System.out.println("This one could be used: "+c);
+		    confits.addElement(c);
+		}
+	    } // hiernach stehen in confits nur die möglicherweise passenden Constructoren
+	    // System.out.println("After filtering: "+confits);
+	    int size = confits.size();
 	if (size==0)
 	    throw new NoSuchMethodException();
 	else if (size==1)
@@ -610,26 +567,24 @@ final protected static class NewInstance extends Builtin {
 	}
     }
 }
-final public static NewInstance newInstance = new NewInstance();
+    _FIELD(JObject,newInstance);
 
 
 /** Builtin zum Setzen von java API Objekt/Klassen-Feldern
  *  @author Daniel
  */
-final protected static class Putfield extends Builtin {
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	val = val.request();
+_BUILTIN(Putfield) {
+    _APPLY(val) {
+	_REQUEST(val,val);
 	if (val instanceof DMLTuple) {
 	    DMLTuple v = (DMLTuple) val;
 	    if (v.getArity()!=3) {
-		DMLValue[] err = {
-		    new STRING ("wrong number of arguments for putfield"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("wrong number of arguments for putfield"),
+					       val));
 	    }
 	    // else:   
-	    DMLValue c = v.getByIndex(0).request(); // java.lang.Object oder Klasse
-	    
+	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // java.lang.Object oder Klasse
+
 	    Class cl = null;
 	    java.lang.Object object = null;
 	    java.lang.String classname = null;
@@ -638,10 +593,8 @@ final protected static class Putfield extends Builtin {
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
-		    DMLValue[] err = {
-			new STRING ("cannot find class "+classname),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),
+						   val));
 		}
 	    } else if (c instanceof JObject) {
 		object = ((JObject) c).getObject();
@@ -649,39 +602,37 @@ final protected static class Putfield extends Builtin {
 		classname=cl.getName();
 	    } else { // Fehler
 		DMLValue[] err = {
-		    new STRING ("illegal argument for classtype"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		    };
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for classtype"),
+					       val));
 	    }
 	    // Klasse gefunden, Class steht in cl
 	    // Objekt steht in object
 
-	    c = v.getByIndex(1).request(); // hier: Feldname
+	    _REQUEST(c,v.getByIndex(1)); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING) 
 		fieldname = ((STRING) c).getString();
 	    else {
-		DMLValue[] err = {
-		    new STRING ("illegal argument for fieldname"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
+					       val));
 	    }
 
-	    c = v.getByIndex(2).request(); // hier: Wert
+	    _REQUEST(c,v.getByIndex(2)); // hier: Wert
 	    java.lang.Object arg = null;
 	    if (c instanceof SCon) {
 		// Argument ist STRING , Int, Real oder de.uni_sb.ps.dml.runtime.Word
 		if (c instanceof Int) {
-		    arg = new java.lang.Integer(((Int) c).getInt());
+		    arg = new Integer(((Int) c).getInt());
 		}
-		else if (c instanceof de.uni_sb.ps.dml.runtime.Real) {
-		    arg = new Float(((de.uni_sb.ps.dml.runtime.Real) c).getFloat());
+		else if (c instanceof Real) {
+		    arg = new Float(((Real) c).getFloat());
 		}
 		else if (c instanceof STRING) {
 		    arg = ((STRING) c).getString();
 		}
-		else if (c instanceof de.uni_sb.ps.dml.runtime.Word) {
-		    arg = new Long(((de.uni_sb.ps.dml.runtime.Word) c).getLong());
+		else if (c instanceof Word) {
+		    arg = new Long(((Word) c).getLong());
 		}
 	    }
 	    else if (c instanceof Name) {
@@ -692,10 +643,8 @@ final protected static class Putfield extends Builtin {
 		    arg = new Boolean(false);
 		}
 		else {
-		    DMLValue[] err = {
-			new STRING ("illegal Name-argument for putfield"),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument for putfield"),
+						   val));
 		}
 	    }
 	    else if (c instanceof JObject) {
@@ -703,10 +652,8 @@ final protected static class Putfield extends Builtin {
 		arg = ((JObject) c).getObject();
 	    }
 	    else {
-		DMLValue[] err = {
-		    new STRING ("illegal argument #3 for putfield"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument 3 for putfield"),
+					       val));
 	    }
 
 	    // jetzt koennen wir
@@ -714,54 +661,47 @@ final protected static class Putfield extends Builtin {
 	    try {
 		field = cl.getField(fieldname);
 	    } catch (NoSuchFieldException e) {
-		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING (e.getMessage()),
+					       new JObject(e)));
 	    }
 
 	    try {
 		field.set(object,arg);
 	    } catch (IllegalAccessException e) {
 		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		_RAISE(javaAPIError,new Tuple(err));
+		    };
+		_RAISE(javaAPIError,new Tuple2(new STRING (e.getMessage()),
+					       new JObject(e)));
 	    } catch (Exception e) {
-		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		_RAISE(javaAPIException,new Tuple(err));
+		_RAISE(javaAPIException,new Tuple2(new STRING (e.getMessage()),
+						   new JObject(e)));
 	    }
 	    return Constants.dmlunit; // wie bei ':='
 	}
 	else {
-	    DMLValue[] err = {
-		new STRING ("illegal argument for fieldname"),
-		val};
-	    _RAISE(javaAPIError,new Tuple(err));
+	    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
+					   val));
 	}
     }
 }
-    final public static Putfield putfield = new Putfield();
+
+ _FIELD(JObject,putfield);
 
 
 /** Builtin zum Setzen von java API Objekt/Klassen-Feldern
  *  @author Daniel
  */
-final protected static class Getfield extends Builtin {
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	val = val.request();
+_BUILTIN(Getfield) {
+    _APPLY(val) {
+	_REQUEST(val,val);
 	if (val instanceof DMLTuple) {
 	    DMLTuple v = (DMLTuple) val;
 	    if (v.getArity()!=2) {
-		DMLValue[] err = {
-		    new STRING ("wrong number of arguments for getfield"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("wrong number of arguments for getfield"),
+					       val));
 	    }
 	    // else:   
-	    DMLValue c = v.getByIndex(0).request(); // java.lang.Object oder Klasse
+	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // java.lang.Object oder Klasse
 
 	    Class cl = null;
 	    java.lang.Object object = null;
@@ -771,10 +711,8 @@ final protected static class Getfield extends Builtin {
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
-		    DMLValue[] err = {
-			new STRING ("cannot find class "+classname),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),
+						   val));
 		}
 	    } else if (c instanceof JObject) {
 		object = ((JObject) c).getObject();
@@ -782,22 +720,20 @@ final protected static class Getfield extends Builtin {
 		classname=cl.getName();
 	    } else { // Fehler
 		DMLValue[] err = {
-		    new STRING ("illegal argument for classtype"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		    };
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for classtype"),
+					       val));
 	    }
 	    // Klasse gefunden, Class steht in cl
 	    // Objekt steht in object (evtl. null)
 
-	    c = v.getByIndex(1).request(); // hier: Feldname
+	    _REQUEST(c,v.getByIndex(1)); // hier: Feldname
 	    java.lang.String fieldname = null;
 	    if (c instanceof STRING)
 		fieldname = ((STRING) c).getString();
 	    else {
-		DMLValue[] err = {
-		    new STRING ("illegal argument for fieldname"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
+					       val));
 	    }
 
 	    // jetzt koennen wir
@@ -805,25 +741,16 @@ final protected static class Getfield extends Builtin {
 	    try {
 		field = cl.getField(fieldname);
 	    } catch (NoSuchFieldException e) {
-		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING (e.getMessage()),
+					       new JObject(e)));
 	    }
 
 	    java.lang.Object oo = null;
 	    try {
 		oo = field.get(object);
-	    } catch (IllegalAccessException e) {
-		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		    _RAISE(javaAPIError,new Tuple(err));
 	    } catch (Exception e) {
-		DMLValue[] err = {
-		    new STRING (e.getMessage()),
-		    new JObject(e)};
-		_RAISE(javaAPIException,new Tuple(err));
+		_RAISE(javaAPIException,new Tuple2(new STRING (e.getMessage()),
+						   new JObject(e)));
 	    }
 	    // Erfolgreich durchgeführt ...
 	    // zurückmappen
@@ -833,49 +760,45 @@ final protected static class Getfield extends Builtin {
 		else
 		    return Constants.dmlfalse;
 	    else if (oo instanceof java.lang.Integer)
-		return new Int(((java.lang.Integer) oo).intValue());
+		return new Int(((Integer) oo).intValue());
 	    else if (oo instanceof Long)
-		return new de.uni_sb.ps.dml.runtime.Word(((Long) oo).longValue());
+		return new Word(((Long) oo).longValue());
 	    else if (oo instanceof Float)
-		return new de.uni_sb.ps.dml.runtime.Real(((Float) oo).floatValue());
+		return new Real(((Float) oo).floatValue());
 	    else if (oo instanceof java.lang.String)
 		return new STRING ((java.lang.String) oo);
 	    else
 		return new JObject(oo);
 	}
 	else {
-	    DMLValue[] err = {
-		new STRING ("illegal argument for fieldname"),
-		val};
-	    _RAISE(javaAPIError,new Tuple(err));
+	    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument for fieldname"),
+					   val));
 	}
     }
 }
-    final public static Getfield getfield = new Getfield();
+ _FIELD(JObject,getfield);
 
 /** Builtin zum instanceof testen
  *  @author Daniel
  */
-final protected static class InstanceOf extends Builtin {
+_BUILTIN(InstanceOf) {
     /** Methode entspricht der Applikation einer Methode
      *  invoke: string/JObject * string * arg0 * ... * argN -> JObject
      *  @param v v sollte ein Tupel sein mit
-     *  @param #1 STRING  als Klassenname oder
-     *  @param #1 JObject mit einem java.lang.Object der Klasse
-     *  @param #2 wie #1
+     *  @param 1 STRING  als Klassenname oder
+     *  @param 1 JObject mit einem java.lang.Object der Klasse
+     *  @param 2 wie 1
      */
-    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	val = val.request();
+    _APPLY(val) {
+	_REQUEST(val,val);
 	if (val instanceof DMLTuple) {
 	    DMLTuple v = (DMLTuple) val;
 	    if (v.getArity()!=2) {
-		DMLValue[] err = {
-		    new STRING ("invalid number of arguments for instanceOf"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("invalid number of arguments for instanceOf"),
+					       val));
 	    }
-	    DMLValue c = v.getByIndex(0).request(); // erstes Argument ist java.lang.Object oder Klasse
-	    
+	    _REQUESTDEC(DMLValue c,v.getByIndex(0)); // erstes Argument ist java.lang.Object oder Klasse
+
 	    // 1. Argument
 	    Class cl = null;
 	    if (c instanceof STRING) {
@@ -883,54 +806,44 @@ final protected static class InstanceOf extends Builtin {
 		try {
 		    cl = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
-		    DMLValue[] err = {
-			new STRING ("cannot find class "+classname),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),
+						   val));
 		}
 	    } else if (c instanceof JObject) {
 		cl = ((JObject) c).getObject().getClass();
 	    } else { // Fehler
-		DMLValue[] err = {
-		    new STRING ("illegal argument #1 for instanceOf"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument 1 for instanceOf"),
+		    val));
 	    }
 
 	    // 2. Argument
-	    c = v.getByIndex(1).request(); // zweites Argument
+	    _REQUEST(c,v.getByIndex(1)); // zweites Argument
 	    Class cl2 = null;
 	    if (c instanceof STRING) {
 		java.lang.String classname = ((STRING) c).getString();
 		try {
 		    cl2 = ClassLoader.getSystemClassLoader().loadClass(classname);
 		} catch (ClassNotFoundException e) {
-		    DMLValue[] err = {
-			new STRING ("cannot find class "+classname),
-			val};
-		    _RAISE(javaAPIError,new Tuple(err));
+		    _RAISE(javaAPIError,new Tuple2(new STRING ("cannot find class "+classname),
+						   val));
 		}
 	    } else if (c instanceof JObject) {
 		cl2 = ((JObject) c).getObject().getClass();
 	    } else { // Fehler
-		DMLValue[] err = {
-		    new STRING ("illegal argument #2 for instanceOf"),
-		    val};
-		_RAISE(javaAPIError,new Tuple(err));
+		_RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument 2 for instanceOf"),
+					       val));
 	    }
-	    
+
 	    if (cl2.isAssignableFrom(cl))
 		return Constants.dmltrue;
 	    else
 		return Constants.dmlfalse;
 	}
 	else {
-	    DMLValue[] err = {
-		new STRING ("illegal argument #2 for instanceOf"),
-		val};
-	    _RAISE(javaAPIError,new Tuple(err));
+	    _RAISE(javaAPIError,new Tuple2(new STRING ("illegal argument 2 for instanceOf"),
+					   val));
 	}
     }
 }
-final public static InstanceOf instanceOf = new InstanceOf();
+ _FIELD(JObject,instanceOf);
 }

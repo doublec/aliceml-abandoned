@@ -38,7 +38,7 @@ dnl
 dnl fromTuple für Builtins
 dnl _fromTuple(DMLArray[] wohin, DMLValue woher, int wieviele, String where)
 define(_fromTuple,`
-	$2=$2.request();
+	_REQUEST($2,$2);
 	DMLValue[] $1 = null;
 	if ($2 instanceof DMLTuple) {
 	  DMLTuple t = (DMLTuple) $2;
@@ -64,23 +64,23 @@ define(_BINOP,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.$2");
-	    DMLValue number1 = args[0].request();
+	    _REQUESTDEC(DMLValue number1,args[0]);
 	    if (number1 instanceof Int) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Int) {
 		    return new Int(((Int) number1).getInt() $2 ((Int) number2).getInt());
 		} else {
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Word) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Word) {
 		    return new Word(((Word) number1).getLong() $2 ((Word) number2).getLong());
 		} else {
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Real) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Real) {
 		    return new Real(((Real) number1).getFloat() $2 ((Real) number2).getFloat());
 		} else {
@@ -97,9 +97,9 @@ define(_COMPARE,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.$2");
-	    DMLValue number1 = args[0].request();
+	    _REQUESTDEC(DMLValue number1,args[0]);
 	    if (number1 instanceof Int) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Int) {
 		    return (((Int) number1).getInt() $2 ((Int) number2).getInt() ?
 			    Constants.dmltrue :
@@ -108,7 +108,7 @@ define(_COMPARE,`
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Word) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Word) {
 		    return (((Word) number1).getLong() $2 ((Word) number2).getLong() ?
 			    Constants.dmltrue :
@@ -117,7 +117,7 @@ define(_COMPARE,`
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof Real) {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof Real) {
 		    return (((Real) number1).getFloat() $2 ((Real) number2).getFloat() ?
 			    Constants.dmltrue :
@@ -126,7 +126,7 @@ define(_COMPARE,`
 		    _error("arguments of different number type",val);
 		}
 	    } else if (number1 instanceof STRING`') {
-		DMLValue number2 = args[1].request();
+		_REQUESTDEC(DMLValue number2,args[1]);
 		if (number2 instanceof STRING) {
 		    return (((STRING) number1).getString().
 			    compareTo(((STRING) number2).getString()) $2 0  ?
@@ -149,11 +149,11 @@ define(_BINOPINT,`
 	_BUILTIN(capitalize($1)) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.$2");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -166,11 +166,11 @@ define(_COMPAREINT,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.$2");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -192,12 +192,12 @@ define(_COMPARESTRING,`
     _BUILTIN(capitalize($1)) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.$2");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }
 	    java.lang.String s = ((STRING) v).getString();
-	    v = args[1].request();
+	    _REQUEST(v,args[1]);
 	    if (!(v instanceof STRING)) {
 		_error("argument 2 not String",val);
 	    }
@@ -226,4 +226,14 @@ define(_FIELD,`final public static DMLValue $2 = new capitalize($2)();
 	static {
 	  Builtin.builtins.put("$1.$2",$2);
 	}')
-define(_REQUEST,`$1 = $2.request()')
+define(_REQUEST,`if ($2 instanceof DMLLVar) {
+		    $1 = ((DMLLVar) $2).request();
+		 } else {
+		    $1 = $2;
+                 }')
+define(_REQUESTDEC,`$1 = null;
+		 if ($2 instanceof DMLLVar) {
+		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = ((DMLLVar) $2).request();
+		 } else {
+		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
+                 }')

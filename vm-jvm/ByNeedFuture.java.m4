@@ -21,8 +21,13 @@ public class ByNeedFuture extends Future {
     }
 
     synchronized public DMLValue request() throws java.rmi.RemoteException {
-	if (closure==null)
-	    return ref.request();
+	if (closure==null) {
+	    if (ref instanceof DMLLVar) {
+		return ((DMLLVar) ref).request();
+	    } else {
+		return ref;
+	    }
+	}
 	else {
 	    DMLValue temp = closure;
 	    closure = null;
@@ -31,7 +36,11 @@ public class ByNeedFuture extends Future {
 	    } catch (Throwable t) {
 		System.err.println(t);
 	    }
-	    return ref.request();
+	    if (ref instanceof DMLLVar) {
+		return ((DMLLVar) ref).request();
+	    } else {
+		return ref;
+	    }
 	}
     }
 

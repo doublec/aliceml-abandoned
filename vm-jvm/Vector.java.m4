@@ -276,7 +276,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(FromList) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.fromList");
-	    DMLValue arg=args[0].request();
+	    _REQUESTDEC(DMLValue arg,args[0]);
 	    return new Vector(arg);
 	}
     }
@@ -287,7 +287,7 @@ final public class Vector implements DMLValue {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Vector.tabulate");
 	    int ar=0;
-	    DMLValue arg=args[0].request();
+	    _REQUESTDEC(DMLValue arg,args[0]);
 	    if (arg instanceof Int)
 		ar = ((Int) arg).getInt();
 	    else
@@ -301,7 +301,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(Length) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.length");
-	    DMLValue arg=args[0].request();
+	    _REQUESTDEC(DMLValue arg,args[0]);
 	    if (arg instanceof Vector)
 		return new Int(((Vector) arg).vec.length);
 	    else
@@ -314,9 +314,9 @@ final public class Vector implements DMLValue {
     _BUILTIN(Sub) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Vector.sub");
-	    DMLValue vector = args[0].request();
+	    _REQUESTDEC(DMLValue vector,args[0]);
 	    if (vector instanceof Vector) {
-		DMLValue idx = args[1].request();
+		_REQUESTDEC(DMLValue idx,args[1]);
 		if (idx instanceof Int)
 		    return ((Vector) vector).sub(((Int) idx).getInt());
 		else
@@ -332,11 +332,11 @@ final public class Vector implements DMLValue {
     _BUILTIN(Extract) {
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"Vector.extract");
-	    DMLValue vector = args[0].request();
+	    _REQUESTDEC(DMLValue vector,args[0]);
 	    if (vector instanceof Vector) {
-		DMLValue fr = args[1].request();
+		_REQUESTDEC(DMLValue fr,args[1]);
 		if (fr instanceof Int) {
-		    DMLValue to = args[2].request();
+		    _REQUESTDEC(DMLValue to,args[2]);
 		    if (to==Option.NONE) {
 			Vector a=(Vector) vector;
 			return a.extract(((Int) fr).getInt(),
@@ -367,7 +367,7 @@ final public class Vector implements DMLValue {
     _BUILTIN(Concat) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.fromList");
-	    DMLValue arg=args[0].request();
+	    _REQUESTDEC(DMLValue arg,args[0]);
 	    return Vector.concat(arg);
 	}
     }
@@ -377,22 +377,23 @@ final public class Vector implements DMLValue {
     _BUILTIN(Mapi) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.mapi");
-	    return new Mapi1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Mapi1(val);
 	}
 	_BUILTIN(Mapi1) {
 	    public DMLValue fun = null;
 	    public Mapi1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,3,"Vector.mapi1");
-		DMLValue vector = args[0].request();
+		_REQUESTDEC(DMLValue vector,args[0]);
 		if (!(vector instanceof Vector)) {
 		    _error("argument 1 not Vector",val);
 		}
-		DMLValue from = args[1].request();
+		_REQUESTDEC(DMLValue from,args[1]);
 		if (!(from instanceof Int)) {
 		    _error("argument 2 not Int",val);
 		}
-		DMLValue to = args[2].request();
+		_REQUESTDEC(DMLValue to,args[2]);
 		int toint = 0;
 		if (to==Option.NONE)
 		    toint = ((Vector) vector).vec.length;
@@ -419,14 +420,15 @@ final public class Vector implements DMLValue {
     _BUILTIN(Map) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.map");
-	    return new Map1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Map1(val);
 	}
 	_BUILTIN(Map1) {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,1,"Vector.map1");
-		DMLValue vector = args[0].request();
+		_REQUESTDEC(DMLValue vector,args[0]);
 		if (!(vector instanceof Vector))
 		    _error("argument not Vector",val);
 		return ((Vector) vector).map(fun);
@@ -439,20 +441,21 @@ final public class Vector implements DMLValue {
     _BUILTIN(Appi) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.appi");
-	    return new Appi1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Appi1(val);
 	}
 	_BUILTIN(Appi1) {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,3,"Vector.appi1");
-		DMLValue vector = args[0].request();
+		_REQUESTDEC(DMLValue vector,args[0]);
 		if (!(vector instanceof Vector))
 		    _error("argument 1 not Vector",val);
-		DMLValue from = args[1].request();
+		_REQUESTDEC(DMLValue from,args[1]);
 		if (!(from instanceof Int))
 		    _error("argument 2 not Int",val);
-		DMLValue to = args[2].request();
+		_REQUESTDEC(DMLValue to,args[2]);
 		int toint = 0;
 		if (to==Option.NONE)
 		    toint = ((Vector) vector).vec.length;
@@ -479,14 +482,15 @@ final public class Vector implements DMLValue {
     _BUILTIN(App) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.app");
-	    return new App1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new App1(val);
 	}
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,1,"Vector.app1");
-		DMLValue vector = args[0].request();
+		_REQUESTDEC(DMLValue vector,args[0]);
 		if (!(vector instanceof Vector))
 		    _error("argument not Vector",val);
 		return ((Vector) vector).app(fun);
@@ -499,28 +503,30 @@ final public class Vector implements DMLValue {
     _BUILTIN(Foldli) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.foldli");
-	    return new Foldli1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Foldli1(val);
 	}
 	_BUILTIN(Foldli1) {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,1,"Vector.foldli1");
-		return new Foldli2(fun, args[0].request());
+		_REQUEST(val,args[0]);
+		return new Foldli2(fun,val);
 	    }
 	    _BUILTIN(Foldli2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldli2(DMLValue f, DMLValue i) { init=i; fun=f;}
 		_APPLY(val) {
 		    _fromTuple(args,val,3,"Vector.foldli2");
-		    DMLValue vector = args[0].request();
+		    _REQUESTDEC(DMLValue vector,args[0]);
 		    if (!(vector instanceof Vector))
 			_error("argument 1 not Vector",val);
-		    DMLValue fr = args[1].request();
+		    _REQUESTDEC(DMLValue fr,args[1]);
 		    if (!(fr instanceof Int))
 			_error("argument 2 not Int",val);
 		    int from = ((Int) fr).getInt();
-		    DMLValue to = args[2].request();
+		    _REQUESTDEC(DMLValue to,args[2]);
 		    int toint = 0;
 		    if (to==Option.NONE)
 			toint = ((Vector) vector).vec.length - from;
@@ -549,28 +555,30 @@ final public class Vector implements DMLValue {
     _BUILTIN(Foldri) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.foldri");
-	    return new Foldri1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Foldri1(val);
 	}
 	_BUILTIN(Foldri1) {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
 	    _APPLY(val) {
 		_fromTuple(args,val,1,"Vector.foldri1");
-		return new Foldri2(fun, args[0].request());
+		_REQUEST(val,args[0]);
+		return new Foldri2(fun,val);
 	    }
 	    _BUILTIN(Foldri2) {
 		DMLValue init = null; DMLValue fun = null;
 		Foldri2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
 		    _fromTuple(args,val,3,"Vector.foldri2");
-		    DMLValue vector = args[0].request();
+		    _REQUESTDEC(DMLValue vector,args[0]);
 		    if (!(vector instanceof Vector))
 			_error("argument 1 not Vector",val);
-		    DMLValue fr = args[1].request();
+		    _REQUESTDEC(DMLValue fr,args[1]);
 		    if (!(fr instanceof Int))
 			_error("argument 2 not Int",val);
 		    int from = ((Int) fr).getInt();
-		    DMLValue to = args[2].request();
+		    _REQUESTDEC(DMLValue to,args[2]);
 		    int toint = 0;
 		    if (to==Option.NONE)
 			toint = ((Vector) vector).vec.length - from;
@@ -599,7 +607,8 @@ final public class Vector implements DMLValue {
     _BUILTIN(Foldl) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.foldl");
-	    return new Foldl1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Foldl1(val);
 	}
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
@@ -613,7 +622,7 @@ final public class Vector implements DMLValue {
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
 		    _fromTuple(args,val,1,"Vector.foldl2");
-		    DMLValue vector = args[0].request();
+		    _REQUESTDEC(DMLValue vector,args[0]);
 		    if (!(vector instanceof Vector))
 			_error("argument not Vector",val);
 		    return ((Vector) vector).foldl(fun,init);
@@ -627,7 +636,8 @@ final public class Vector implements DMLValue {
     _BUILTIN(Foldr) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Vector.foldr");
-	    return new Foldr1(args[0].request());
+	    _REQUEST(val,args[0]);
+	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
@@ -641,7 +651,7 @@ final public class Vector implements DMLValue {
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		_APPLY(val) {
 		    _fromTuple(args,val,1,"Vector.foldr2");
-		    DMLValue vector = args[0].request();
+		    _REQUESTDEC(DMLValue vector,args[0]);
 		    if (!(vector instanceof Vector)) {
 			_error("argument not Vector",val);
 		    } else {

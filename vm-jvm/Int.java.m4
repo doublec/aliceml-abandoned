@@ -51,7 +51,7 @@ final public class Int extends SCon {
     _BUILTIN(Uminus) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.~");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -77,11 +77,11 @@ final public class Int extends SCon {
     _BUILTIN(Compare) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.compare");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -102,11 +102,11 @@ final public class Int extends SCon {
     _BUILTIN(Compare_) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.compare'");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -132,11 +132,11 @@ final public class Int extends SCon {
     _BUILTIN(Min) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.min");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -155,11 +155,11 @@ final public class Int extends SCon {
     _BUILTIN(Max) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.max");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -178,7 +178,7 @@ final public class Int extends SCon {
     _BUILTIN(Abs) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.abs");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -192,7 +192,7 @@ final public class Int extends SCon {
     _BUILTIN(Sign) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.sign");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -212,11 +212,11 @@ final public class Int extends SCon {
     _BUILTIN(SameSign) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.sameSign");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument 1 not Int",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(w instanceof Int)) {
 		_error("argument 2 not Int",val);
 	    }
@@ -237,7 +237,7 @@ final public class Int extends SCon {
     _BUILTIN(ToString) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.toString");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof Int)) {
 		_error("argument not Int",val);
 	    }
@@ -252,7 +252,7 @@ final public class Int extends SCon {
     _BUILTIN(FromString) {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.fromString");
-	    DMLValue r = args[0].request();
+	    _REQUESTDEC(DMLValue r,args[0]);
 	    if (!(r instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }

@@ -54,11 +54,11 @@ final public class Real extends SCon {
     _BUILTIN(Plus) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.+");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 1 not Real",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 2 not Real",val);
 	    }
@@ -73,11 +73,11 @@ final public class Real extends SCon {
     _BUILTIN(Minus) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.-");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 1 not Real",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 2 not Real",val);
 	    }
@@ -93,11 +93,11 @@ final public class Real extends SCon {
     _BUILTIN(Mult) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.*");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 1 not Real",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 2 not Real",val);
 	    }
@@ -112,11 +112,11 @@ final public class Real extends SCon {
     _BUILTIN(Div) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real./");
-	    DMLValue v = args[0].request();
+	    _REQUESTDEC(DMLValue v,args[0]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 1 not Real",val);
 	    }
-	    DMLValue w = args[1].request();
+	    _REQUESTDEC(DMLValue w,args[1]);
 	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Real)) {
 		_error("argument 2 not Real",val);
 	    }
@@ -157,7 +157,7 @@ final public class Real extends SCon {
     _BUILTIN(FromString) {
 	_APPLY(val) { 
 	    _fromTuple(args,val,1,"Real.fromString");
-	    DMLValue r = args[0].request();
+	    _REQUESTDEC(DMLValue r,args[0]);
 	    if (!(r instanceof STRING)) {
 		_error("argument 1 not String",val);
 	    }

@@ -113,11 +113,11 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
     final protected java.lang.Object replaceObject(java.lang.Object obj) {
 	// System.out.println("POS: replaceObject "+obj);
 	try {
-	    if (obj instanceof LVar) {
+	    if (obj instanceof DMLLVar) {
 		if (waitforbind)
-		    obj = ((LVar) obj).request();
+		    obj = ((DMLLVar) obj).request();
 		else
-		    obj = ((LVar) obj).getValue();
+		    obj = ((DMLLVar) obj).getValue();
 		return obj;
 	    } else if (obj instanceof Array) {
 		_RAISE(runtimeError,new STRING ("cannot pickle DMLArray"));
