@@ -93,21 +93,27 @@ struct
                             | Container(r) => #kids(r)
 			    | _ => (Array.array(0,Empty))
 
-    fun checkVertical (a,i) = if i >=  Array.length(a) 
+    fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
-			      else case Array.sub(a,i) of
-				  Concat(r) 
-                                  => if checkVertical (#kids(r),0)
-					 then true
-				     else checkVertical (a,i+1)
-                                | Container(r) 
-				  => if setsVertical (Array.sub(a,i))
-					 then true
-				     else checkVertical (a,i+1)
-                                | _ => checkVertical (a,i+1)   
+			      else (case Array.sub(a,i) of
+				    Concat(r) 
+				    => if checkConcKids (#kids(r),0)
+	                                 then true
+				       else checkContKids (a,i+1)
+				  | _ => checkContKids (a,i+1) )
+
+    and checkConcKids (a,i) = if i >=  Array.length(a) 
+				  then false
+			      else (case Array.sub(a,i) of
+                                    Container(r) => true
+                                  | Concat(r) 
+                                    => if checkConcKids(#kids(r),0)
+					   then true
+				       else checkConcKids (a,i+1)
+                                  | _ => checkConcKids (a,i+1) )
 
    and setsVertical n = case n of
-       Container(r) => checkVertical (#kids(r),0)
+       Container(r) => checkContKids (#kids(r),0)
      | _ => false
 
 end;

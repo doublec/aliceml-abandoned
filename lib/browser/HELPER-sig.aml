@@ -53,7 +53,8 @@ sig
     (* Zugriff auf Node-Felder *)
     val getKids : node -> node Array.array
 
-    val checkVertical : node array * int -> bool
+    val checkContKids : node array * int -> bool
+    val checkConcKids : node array * int -> bool
     val setsVertical : node -> bool
 
 end;
