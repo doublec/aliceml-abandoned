@@ -9,11 +9,16 @@ package de.uni_sb.ps.dml.runtime;
 /** Diese Klasse repräsentiert Int.
  *  @see Real
  *  @see SCon
- *  @see de.uni_sb.ps.dml.runtime.String
+ *  @see STRING 
  *  @see DMLValue
  *  @see Word
  */
 final public class Int extends SCon {
+
+    final public static Int MONE = new Int(-1);
+    final public static Int ZERO = new Int(0);
+    final public static Int ONE  = new Int(1);
+
     /** java-int Wert */
     private int value=0;
 
@@ -47,80 +52,18 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.~");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument not Int",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.Int(-((de.uni_sb.ps.dml.runtime.Int) v).getInt());
+		Int(-((Int) v).getInt());
 	}
     }
     /** <code>val ~ : int -> int </code>*/
     _FIELD(Int,uminus);
-
-    _BUILTIN(Mult) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.*");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Int(((de.uni_sb.ps.dml.runtime.Int) v).getInt() *
-					      ((de.uni_sb.ps.dml.runtime.Int) w).getInt());
-	}
-    }
-    /** <code>val * : (int * int) -> int </code>*/
-    _FIELD(Int,mult);
-
-    _BUILTIN(Div) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.div");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    int scnd = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (scnd==0) {
-		General.Div.raise();
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Int(((de.uni_sb.ps.dml.runtime.Int) v).getInt() /
-					      scnd);
-	}
-    }
-    /** <code>val div : (int * int) -> int </code>*/
-    _FIELD(Int,div);
-
-    _BUILTIN(Mod) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.mod");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    int scnd = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (scnd==0) {
-		General.Div.raise();
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Int(((de.uni_sb.ps.dml.runtime.Int) v).getInt() %
-					      scnd);
-	}
-    }
-    /** <code>val mod : (int * int) -> int </code>*/
-    _FIELD(Int,mod);
+    _BINOPINT(mult,*);
+    _BINOPINT(div,/);
+    _BINOPINT(mod,%);
 
     /** <code>val quot : (int * int) -> int </code>*/
     final public static DMLValue quot = div;
@@ -128,57 +71,22 @@ final public class Int extends SCon {
     /** <code>val rem : (int * int) -> int </code>*/
     final public static DMLValue rem = mod;
 
-    _BUILTIN(Plus) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.+");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Int(((de.uni_sb.ps.dml.runtime.Int) v).getInt() +
-					      ((de.uni_sb.ps.dml.runtime.Int) w).getInt());
-	}
-    }
-    /** <code>val + : (int * int) -> int </code>*/
-    _FIELD(Int,plus);
-
-    _BUILTIN(Minus) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.-");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Real(((de.uni_sb.ps.dml.runtime.Int) v).getInt() -
-					      ((de.uni_sb.ps.dml.runtime.Int) w).getInt());
-	}
-    }
-    /** <code>val - : (int * int) -> int </code>*/
-    _FIELD(Int,minus);
+    _BINOPINT(plus,+);
+    _BINOPINT(minus,-);
 
     _BUILTIN(Compare) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.compare");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(w instanceof Int)) {
 		return _error("argument 2 not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
 	    if (i==j) {
 		return General.EQUAL;
 	    } else if (i<j) {
@@ -191,111 +99,49 @@ final public class Int extends SCon {
     /** <code>val compare : (int * int) -> order </code>*/
     _FIELD(Int,compare);
 
-    _BUILTIN(Greater) {
+    _BUILTIN(Compare_) {
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.>");
+	    _fromTuple(args,val,2,"Int.compare'");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(w instanceof Int)) {
 		return _error("argument 2 not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (i>j) {
-		return Constants.dmltrue;
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
+	    if (i==j) {
+		return ZERO;
+	    } else if (i<j) {
+		return MONE;
 	    } else {
-		return Constants.dmlfalse;
+		return ONE;
 	    }
 	}
     }
-    /** <code>val > : (int * int) -> bool </code>*/
-    _FIELD(Int,greater);
+    /** <code>val compare_ : (int * int) -> int </code>*/
+    _FIELD(Int,compare_);
 
-    _BUILTIN(Geq) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.>=");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (i>=j) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
-	    }
-	}
-    }
-    /** <code>val >= : (int * int) -> bool </code>*/
-    _FIELD(Int,geq);
-
-    _BUILTIN(Less) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.<");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (i<j) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
-	    }
-	}
-    }
-    /** <code>val < : (int * int) -> bool </code>*/
-    _FIELD(Int,less);
-
-    _BUILTIN(Leq) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.<=");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 1 not Int",val);
-	    }
-	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
-		return _error("argument 2 not Int",val);
-	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
-	    if (i<=j) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
-	    }
-	}
-    }
-    /** <code>val <= : (int * int) -> bool </code>*/
-    _FIELD(Int,leq);
+    _COMPAREINT(greater,>);
+    _COMPAREINT(geq,>=);
+    _COMPAREINT(less,<);
+    _COMPAREINT(leq,<=);
 
     _BUILTIN(Min) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.min");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(w instanceof Int)) {
 		return _error("argument 2 not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
 	    if (i<j) {
 		return v;
 	    } else {
@@ -310,15 +156,15 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.max");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(w instanceof Int)) {
 		return _error("argument 2 not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
 	    if (i>j) {
 		return v;
 	    } else {
@@ -333,11 +179,11 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.abs");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument not Int",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.Int(java.lang.Math.abs(((de.uni_sb.ps.dml.runtime.Int) v).getInt()));
+		Int(java.lang.Math.abs(((Int) v).getInt()));
 	}
     }
     /** <code>val abs : int -> int </code>*/
@@ -347,17 +193,17 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.sign");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
+	    int i = ((Int) v).getInt();
 	    if (i<0) {
 		i=-1;
 	    } else if (i>0) {
 		i=1;
 	    } // sonst ist i==0
 	    return new
-		de.uni_sb.ps.dml.runtime.Int(i);
+		Int(i);
 	}
     }
     /** <code>val sign : int -> Int.int </code>*/
@@ -367,15 +213,15 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.sameSign");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument 1 not Int",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(w instanceof Int)) {
 		return _error("argument 2 not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
-	    int j = ((de.uni_sb.ps.dml.runtime.Int) w).getInt();
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
 	    if ((i>0 && j>0) ||
 		(i<0 && j<0) ||
 		(i==j)) {
@@ -392,12 +238,12 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.toString");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.Int)) {
+	    if (!(v instanceof Int)) {
 		return _error("argument not Int",val);
 	    }
-	    int i = ((de.uni_sb.ps.dml.runtime.Int) v).getInt();
+	    int i = ((Int) v).getInt();
 	    return new
-		de.uni_sb.ps.dml.runtime.String(i+"");
+		STRING (java.lang.String.valueOf(i));
 	}
     }
     /** <code>val toString : int -> string </code>*/
@@ -407,13 +253,13 @@ final public class Int extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"Int.fromString");
 	    DMLValue r = args[0].request();
-	    if (!(r instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(r instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
 	    try {
-		java.lang.String sf = ((de.uni_sb.ps.dml.runtime.String) r).getString();
+		java.lang.String sf = ((STRING) r).getString();
 		int f = Integer.parseInt(sf);
-		return Option.SOME.apply(new de.uni_sb.ps.dml.runtime.Int(f));
+		return Option.SOME.apply(new Int(f));
 	    } catch (NumberFormatException n) {
 		return Option.NONE;
 	    }

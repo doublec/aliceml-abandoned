@@ -6,7 +6,7 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-/** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.String.
+/** Diese Klasse repräsentiert STRING .
  *  @see Int
  *  @see Real
  *  @see SCon
@@ -18,8 +18,8 @@ final public class String extends SCon {
     /** java-String Wert */
     private java.lang.String value=null;
 
-    /** Baut einen neuen de.uni_sb.ps.dml.runtime.String mit Inhalt <code>value</code>.
-     *  @param value <code>String</code> Wert, der dem de.uni_sb.ps.dml.runtime.String entspricht.
+    /** Baut einen neuen STRING  mit Inhalt <code>value</code>.
+     *  @param value <code>String</code> Wert, der dem STRING  entspricht.
      */
     public String(java.lang.String value) {
 	this.value=value;
@@ -27,8 +27,8 @@ final public class String extends SCon {
 
     /** Testet Gleichheit der Java-Strings */
     final public boolean equals(java.lang.Object val) {
-	return (val instanceof de.uni_sb.ps.dml.runtime.String) &&
-	    (((de.uni_sb.ps.dml.runtime.String) val).value.equals(this.value));
+	return (val instanceof STRING) &&
+	    (((STRING) val).value.equals(this.value));
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.
@@ -38,8 +38,8 @@ final public class String extends SCon {
 	return "\""+value+"\": string";
     }
 
-    /** Den Java-Wert des de.uni_sb.ps.dml.runtime.String auslesen.
-     *  @return java.lang.String Java-Wert der dem de.uni_sb.ps.dml.runtime.String-Wert entspricht
+    /** Den Java-Wert des STRING  auslesen.
+     *  @return java.lang.String Java-Wert der dem STRING -Wert entspricht
      */
     final public java.lang.String getString() {
 	return value;
@@ -49,8 +49,8 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,1,"String.length");
             DMLValue v = args[0].request();
-            if (v instanceof de.uni_sb.ps.dml.runtime.String) {
-		return new Int(((de.uni_sb.ps.dml.runtime.String) v).getString().length());
+            if (v instanceof STRING) {
+		return new Int(((STRING) v).getString().length());
             } else {
 		return _error("argument not String",val);
             }
@@ -63,10 +63,10 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.extract");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof Int)) {
 		return _error("argument 2 not Int",val);
@@ -80,7 +80,7 @@ final public class String extends SCon {
 		    v = cv.getContent();
 		    if (v instanceof Int) {
 			to = ((Int) v).getInt();
-			return new de.uni_sb.ps.dml.runtime.String(s.substring(from,to));
+			return new STRING (s.substring(from,to));
 		    } else {
 			return _error("argument 3 not Int option",val);
 		    }
@@ -90,7 +90,7 @@ final public class String extends SCon {
 	    } else if (v != Option.NONE) {
 		return _error("argument 3 not Int option",val);
 	    } else {
-		return new de.uni_sb.ps.dml.runtime.String(s.substring(from,to));
+		return new STRING (s.substring(from,to));
 	    }
 	}
     }
@@ -101,10 +101,10 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.substring");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
 	    if (!(v instanceof Int)) {
 		return _error("argument 2 not Int",val);
@@ -115,7 +115,7 @@ final public class String extends SCon {
 		return _error("argument 3 not Int",val);
 	    }
 	    int to = ((Int) v).getInt();
-	    return new de.uni_sb.ps.dml.runtime.String(s.substring(from,to));
+	    return new STRING (s.substring(from,to));
 	}
     }
     /** <code>val substring : (string * int * int) -> string </code>*/
@@ -126,14 +126,14 @@ final public class String extends SCon {
 	    _fromTuple(args,val,2,"String.concat");
 	    DMLValue list = args[0].request();
 	    if (list==List.nil) {
-		return new de.uni_sb.ps.dml.runtime.String("");
+		return new STRING ("");
 	    } else if (list instanceof Cons) {
 		StringBuffer buff = new StringBuffer();
 		do {
 		    if (list instanceof Cons) {
 			Cons co = (Cons) list;
-			if (co.car instanceof de.uni_sb.ps.dml.runtime.String) {
-			    buff.append(((de.uni_sb.ps.dml.runtime.String) co.car).getString());
+			if (co.car instanceof STRING) {
+			    buff.append(((STRING) co.car).getString());
 			} else {
 			    return _error("argument not String list",val);
 			}
@@ -142,7 +142,7 @@ final public class String extends SCon {
 			return _error("argument not String list",val);
 		    }
 		} while (list != List.nil);
-		return new de.uni_sb.ps.dml.runtime.String(buff.toString());
+		return new STRING (buff.toString());
 	    } else {
 		return _error("argument not String list",val);
 	    }
@@ -155,16 +155,16 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.^");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
 	    DMLValue w = args[1].request();
-	    if (!(w instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(w instanceof STRING)) {
 		return _error("argument 2 not String",val);
 	    }
 	    return new
-		de.uni_sb.ps.dml.runtime.String(((de.uni_sb.ps.dml.runtime.String) v).getString() +
-						((de.uni_sb.ps.dml.runtime.String) w).getString());
+		STRING (((STRING) v).getString() +
+						((STRING) w).getString());
 	}
     }
     /** <code>val ^ : (string * string) -> string </code>*/
@@ -174,15 +174,15 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.isPrefix");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String t = ((STRING) v).getString();
 	    if (s.startsWith(t)) {
 		return Constants.dmltrue;
 	    } else {
@@ -197,15 +197,15 @@ final public class String extends SCon {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.compare");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String t = ((STRING) v).getString();
 	    int cmp = s.compareTo(t);
 	    if (cmp < 0) {
 		return General.LESS;
@@ -219,97 +219,69 @@ final public class String extends SCon {
     /** <code>val compare : (string * string) -> order </code>*/
     _FIELD(String,compare);
 
-    _BUILTIN(Less) {
+    _BUILTIN(Compare_) {
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.<");
+	    _fromTuple(args,val,2,"String.compare'");
 	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 1 not String",val);
 	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
+	    java.lang.String s = ((STRING) v).getString();
 	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
+	    if (!(v instanceof STRING)) {
 		return _error("argument 2 not String",val);
 	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    if (s.compareTo(t)<0) {
-		return Constants.dmltrue;
+	    java.lang.String t = ((STRING) v).getString();
+	    int cmp = s.compareTo(t);
+	    if (cmp < 0) {
+		return Int.MONE;
+	    } else if (cmp==0) {
+		return Int.ZERO;
 	    } else {
-		return Constants.dmlfalse;
+		return Int.ONE;
 	    }
 	}
     }
-    /** <code>val < : (string * string) -> bool </code>*/
-    _FIELD(String,less);
+    /** <code>val compare : (string * string) -> order </code>*/
+    _FIELD(String,compare_);
 
-    _BUILTIN(Leq) {
-	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.<=");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 1 not String",val);
-	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 2 not String",val);
-	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    if (s.compareTo(t)<=0) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
-	    }
-	}
-    }
-    /** <code>val <= : (string * string) -> bool </code>*/
-    _FIELD(String,leq);
+    _COMPARESTRING(less,<);
+    _COMPARESTRING(leq,<=);
+    _COMPARESTRING(greater,>);
+    _COMPARESTRING(geq,>=);
 
-    _BUILTIN(Greater) {
+    _BUILTIN(Str) {
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.>");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 1 not String",val);
-	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 2 not String",val);
-	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    if (s.compareTo(t)>0) {
-		return Constants.dmltrue;
+	    _fromTuple(args,val,1,"String.str");
+	    DMLValue ch = args[0].request();
+	    if (ch instanceof Char) {
+		return new STRING (java.lang.String.valueOf(((Char) ch).getChar()));
 	    } else {
-		return Constants.dmlfalse;
+		return _error("argument not char",val);
 	    }
 	}
     }
-    /** <code>val > : (string * string) -> bool </code>*/
-    _FIELD(String,Greater);
+    /** <code>val str : Char.char -> string </code>*/
+    _FIELD(String,str);
 
-    _BUILTIN(Geq) {
+    _BUILTIN(Sub) {
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.>=");
-	    DMLValue v = args[0].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 1 not String",val);
-	    }
-	    java.lang.String s = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    v = args[1].request();
-	    if (!(v instanceof de.uni_sb.ps.dml.runtime.String)) {
-		return _error("argument 2 not String",val);
-	    }
-	    java.lang.String t = ((de.uni_sb.ps.dml.runtime.String) v).getString();
-	    if (s.compareTo(t)>=0) {
-		return Constants.dmltrue;
+	    _fromTuple(args,val,2,"String.sub");
+	    DMLValue s = args[0].request();
+	    if (s instanceof STRING) {
+		DMLValue idx = args[1].request();
+		if (idx instanceof Int) {
+		    return new Char(((STRING) s).getString().charAt(((Int) idx).getInt()));
+		} else {
+		    return _error("argument 2 not int",val);
+		}
 	    } else {
-		return Constants.dmlfalse;
+		return _error("argument 1 not string",val);
 	    }
 	}
     }
-    /** <code>val >= : (string * string) -> bool </code>*/
-    _FIELD(String,geq);
+    /** <code>val sub : (string * int) -> Char.char </code>*/
+    _FIELD(String,sub);
 
     /** <code>structure Char : CHAR </code>*/
     /** <code>val maxSize : int </code>*/
@@ -317,8 +289,6 @@ final public class String extends SCon {
     /** <code>val toString : string -> java.lang.String.string </code>*/
     /** <code>val fromCString : java.lang.String.string -> string option </code>*/
     /** <code>val toCString : string -> java.lang.String.string </code>*/
-    /** <code>val sub : (string * int) -> Char.char </code>*/
-    /** <code>val str : Char.char -> string </code>*/
     /** <code>val implode : Char.char list -> string </code>*/
     /** <code>val explode : string -> Char.char list </code>*/
     /** <code>val map : (Char.char -> Char.char) -> string -> string </code>*/

@@ -1,5 +1,6 @@
 dnl Text-Tools
 define(capitalize,`translit(substr($1,0,1),a-z,A-Z)`'substr($1,1)')
+define(STRING,`de.uni_sb.ps.dml.runtime.String')
 dnl
 dnl Hier machen wir die Macros rein, die quasi überall gebraucht werden
 dnl
@@ -16,7 +17,7 @@ define(_raise,`    final public DMLValue raise() {
     }
 ')
 define(_apply_fails,`    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
+	return Constants.runtimeError.apply(new STRING`'("cannot apply "+this+" to "+val)).raise();
     }
 ')
 dnl
@@ -30,7 +31,6 @@ dnl
 dnl fromTuple für Builtins
 dnl _fromTuple(DMLArray[] wohin, DMLValue woher, int wieviele, String where)
 define(_fromTuple,`
-	// MACRO: FROMTUPLE($1,$2,$3,$4)
 	$2=$2.request();
 	DMLValue[] $1 = null;
 	if ($2 instanceof DMLTuple) {
@@ -42,21 +42,20 @@ define(_fromTuple,`
 	  } else {
 	    return Constants.
 		runtimeError.apply(new Tuple2(
-		new de.uni_sb.ps.dml.runtime.String("wrong number of arguments for" + $4),$2));
+		new STRING`'("wrong number of arguments for" + $4),$2));
 	  }
 	} else {
 	    return Constants.
 		runtimeError.apply(new Tuple2(
-		new de.uni_sb.ps.dml.runtime.String("wrong arguments type for" + $4),$2));
+		new STRING`'("wrong arguments type for" + $4),$2));
 	}
-	// END MACRO: FROMTUPLE($1,$2,$3,$4)
 ')
 dnl
 dnl _error
 dnl
 define(_error,`
 	// MACRO: ERROR($1,$2)
-	Constants.runtimeError.apply(new Tuple2(new de.uni_sb.ps.dml.runtime.String($1),$2)).raise()
+	Constants.runtimeError.apply(new Tuple2(new STRING`'($1),$2)).raise()
 	// END MACRO: ERROR($1,$2)
 ')
 dnl
@@ -93,6 +92,7 @@ define(_BINOP,`
 	    }
 	}
     }
+    /** val $2 : (number * number) -> number */
     _FIELD(General,$1);') 
 define(_COMPARE,`
     _BUILTIN(capitalize($1)) {
@@ -126,11 +126,11 @@ define(_COMPARE,`
 		} else {
 		    return _error("arguments of different number type",val);
 		}
-	    } else if (number1 instanceof de.uni_sb.ps.dml.runtime.String) {
+	    } else if (number1 instanceof STRING`') {
 		DMLValue number2 = args[1].request();
-		if (number2 instanceof de.uni_sb.ps.dml.runtime.String) {
-		    return (((de.uni_sb.ps.dml.runtime.String) number1).getString().
-			    compareTo(((de.uni_sb.ps.dml.runtime.String) number2).getString()) $2 0  ?
+		if (number2 instanceof STRING) {
+		    return (((STRING) number1).getString().
+			    compareTo(((STRING) number2).getString()) $2 0  ?
 			    Constants.dmltrue :
 			    Constants.dmlfalse);
 		} else {
@@ -141,7 +141,77 @@ define(_COMPARE,`
 	    }
 	}
     }
+    /** val $2 : (number|string * number|string) -> bool */
     _FIELD(General,$1);')
+dnl
+dnl Int
+dnl
+define(_BINOPINT,`
+	_BUILTIN(capitalize($1)) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"Int.$2");
+	    DMLValue v = args[0].request();
+	    if (!(v instanceof Int)) {
+		return _error("argument 1 not Int",val);
+	    }
+	    DMLValue w = args[1].request();
+	    if (!(w instanceof Int)) {
+		return _error("argument 2 not Int",val);
+	    }
+	    return new Int(((Int) v).getInt() $2 ((Int) w).getInt());
+	}
+    }
+    /** <code>val $2 : (int * int) -> int </code>*/
+    _FIELD(Int,$1);')
+define(_COMPAREINT,`
+    _BUILTIN(capitalize($1)) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"Int.$2");
+	    DMLValue v = args[0].request();
+	    if (!(v instanceof Int)) {
+		return _error("argument 1 not Int",val);
+	    }
+	    DMLValue w = args[1].request();
+	    if (!(w instanceof Int)) {
+		return _error("argument 2 not Int",val);
+	    }
+	    int i = ((Int) v).getInt();
+	    int j = ((Int) w).getInt();
+	    if (i $2 j) {
+		return Constants.dmltrue;
+	    } else {
+		return Constants.dmlfalse;
+	    }
+	}
+    }
+    /** <code>val $2 : (int * int) -> bool </code>*/
+    _FIELD(Int,$1);')
+dnl
+dnl String
+dnl
+define(_COMPARESTRING,`
+    _BUILTIN(capitalize($1)) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"String.$2");
+	    DMLValue v = args[0].request();
+	    if (!(v instanceof STRING)) {
+		return _error("argument 1 not String",val);
+	    }
+	    java.lang.String s = ((STRING) v).getString();
+	    v = args[1].request();
+	    if (!(v instanceof STRING)) {
+		return _error("argument 2 not String",val);
+	    }
+	    java.lang.String t = ((STRING) v).getString();
+	    if (s.compareTo(t) $2 0) {
+		return Constants.dmltrue;
+	    } else {
+		return Constants.dmlfalse;
+	    }
+	}
+    }
+    /** <code>val $2 : (string * string) -> bool </code>*/
+    _FIELD(String,$1);')
 dnl
 dnl _BUILTIN(name)
 dnl

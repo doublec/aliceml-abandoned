@@ -76,12 +76,67 @@ final public class Char extends SCon {
     /** <code>val isAlphaNum : char -> bool </code>*/
     /** <code>val isAscii : char -> bool </code>*/
     /** <code>val isCntrl : char -> bool </code>*/
+
+    _BUILTIN(IsDigit) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"Char.isDigit");
+	    DMLValue ch  = args[0].request();
+	    if (ch instanceof Char) {
+		return (Character.isDigit(((Char) ch).ch) ?
+		    Constants.dmltrue :
+			Constants.dmlfalse);
+	    } else {
+		return _error("argument not char",val);
+	    }
+	}
+    }
     /** <code>val isDigit : char -> bool </code>*/
+    _FIELD(Char,isDigit);
+
     /** <code>val isGraph : char -> bool </code>*/
+
+    _BUILTIN(IsHexDigit) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"Char.isHexDigit");
+	    DMLValue ch  = args[0].request();
+	    if (ch instanceof Char) {
+		char c = ((Char) ch).ch;
+		switch (c) {
+		case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+		case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+		case '0': case '1': case '2': case '3': case '4': case '5':
+		case '6': case '7': case '8': case '9':
+			return Constants.dmltrue;
+		default:
+		    return Constants.dmlfalse;
+		}
+	    } else {
+		return _error("argument not char",val);
+	    }
+	}
+    }
     /** <code>val isHexDigit : char -> bool </code>*/
+    _FIELD(Char,isHexDigit);
+
     /** <code>val isLower : char -> bool </code>*/
     /** <code>val isPrint : char -> bool </code>*/
+
+    _BUILTIN(IsSpace) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"Char.isSpace");
+	    DMLValue ch  = args[0].request();
+	    if (ch instanceof Char) {
+		return (Character.isSpace(((Char) ch).ch) ?
+		    Constants.dmltrue :
+			Constants.dmlfalse);
+	    } else {
+		return _error("argument not char",val);
+	    }
+	}
+    }
     /** <code>val isSpace : char -> bool </code>*/
+    _FIELD(Char,isSpace);
+
     /** <code>val isPunct : char -> bool </code>*/
     /** <code>val isUpper : char -> bool </code>*/
     /** <code>val fromString : java.lang.String.string -> char option </code>*/
