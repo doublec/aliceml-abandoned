@@ -18,7 +18,7 @@
 #pragma interface "java/Data.hh"
 #endif
 
-#include "store/Store.hh"
+#include "generic/Closure.hh"
 
 typedef unsigned short u_wchar; //--**
 
@@ -40,25 +40,26 @@ static const word null = Store::IntToWord(0);
 
 class Class;
 
-class JavaString: private Chunk {
+class DllExport JavaString: private Chunk {
 public:
   using Chunk::ToWord;
+
+  u_wchar *GetBase() {
+    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
+  }
 
   static JavaString *New(u_int length) {
     return static_cast<JavaString *>
       (Store::AllocChunk(sizeof(u_wchar) * length));
   }
   static JavaString *New(u_wchar *s, u_int length) {
-    JavaString *s = New(length);
-    std::memcpy(s->GetBase(), s, length * sizeof(u_wchar));
-    return s;
-  }
-  u_wchar *GetBase() {
-    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
+    JavaString *string = New(length);
+    std::memcpy(string->GetBase(), s, length * sizeof(u_wchar));
+    return string;
   }
 };
 
-class Array: private Block {
+class DllExport Array: private Block {
 protected:
   enum {
     CLASS_POS, // Class
@@ -87,15 +88,11 @@ public:
   }
 };
 
-class Lock: private Block {
+class DllExport Lock: private Block {
   // to be determined
 };
 
-class Float: public Chunk {
-  // see Alice
-};
-
-class FieldInfo: private Block {
+class DllExport FieldInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC    = 0x0001,
@@ -115,7 +112,7 @@ protected:
   };
 };
 
-class ExceptionTableEntry: private Block {
+class DllExport ExceptionTableEntry: private Block {
 protected:
   enum {
     START_PC_POS, // int
@@ -126,7 +123,7 @@ protected:
   };
 };
 
-class JavaByteCode: private Block {
+class DllExport JavaByteCode: private Block {
 protected:
   enum {
     MAX_STACK_POS, // int
@@ -137,7 +134,7 @@ protected:
   };
 };
 
-class MethodInfo: private Block {
+class DllExport MethodInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC       = 0x0001,
@@ -160,7 +157,7 @@ protected:
   };
 };
 
-class ClassInfo: private Block {
+class DllExport ClassInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC    = 0x0001,
@@ -185,7 +182,7 @@ public:
   Class *Prepare();
 };
 
-class Class: public ClassInfo {
+class DllExport Class: public ClassInfo {
 protected:
   enum {
     VIRTUAL_TABLE_POS, // Block(Closure)
@@ -200,7 +197,7 @@ public:
   Closure *GetStaticMethod(u_int index);
 };
 
-class Object: private Block {
+class DllExport Object: private Block {
 protected:
   enum {
     CLASS_POS, // Class
@@ -216,41 +213,41 @@ public:
 // Constant Pool Entries: (Formerly Symbolic) References
 //
 
-class StaticFieldRef: private Block {
+class DllExport StaticFieldRef: private Block {
 public:
   Class *GetClass();
   u_int GetIndex();
 };
 
-class InstanceFieldRef: private Block {
+class DllExport InstanceFieldRef: private Block {
 public:
   u_int GetIndex();
 };
 
-class StaticMethodRef: private Block {
+class DllExport StaticMethodRef: private Block {
 private:
   enum {
     CLASS_POS, // Class
     INDEX_POS, // int
     SIZE
-  }
+  };
 public:
   Class *GetClass();
   u_int GetIndex();
 };
 
-class VirtualMethodRef: private Block {
+class DllExport VirtualMethodRef: private Block {
 private:
 public:
   u_int GetIndex();
 };
 
-class ConstantPool: private Block {
+class DllExport ConstantPool: private Block {
 private:
   enum { SIZE_POS, BASE_SIZE };
 public:
   static ConstantPool *New(u_int size) {
-    Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + SIZE);
+    Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + size);
     b->InitArg(SIZE_POS, size);
     return static_cast<ConstantPool *>(b);
   }

@@ -20,6 +20,8 @@
 #include <cstdlib>
 #include "java/Data.hh"
 
+class ConstantPoolEntry;
+
 class DllExport ClassFile: private Chunk {
 private:
   struct SupportedVersion {
@@ -50,9 +52,9 @@ private:
   bool ParseMagic(u_int &offset);
   bool ParseVersion(u_int &offset);
   ConstantPool *ParseConstantPool(u_int &offset);
-  word ParseConstantPoolEntry(u_int &offset);
+  ConstantPoolEntry *ParseConstantPoolEntry(u_int &offset);
 public:
-  using Chunk::ToWord();
+  using Chunk::ToWord;
 
   static ClassFile *NewFromFile(char *filename);
 
