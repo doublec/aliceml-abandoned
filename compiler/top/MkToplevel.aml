@@ -54,18 +54,14 @@ struct
 				| ss => SOME(String.concat ss)
 
     and readInput' prompt =
-	let
-	    val _    = TextIO.print prompt
-	    val line = TextIO.inputLine(TextIO.stdIn)
-	    val size = String.size line
-	in
-	    if size = 0 then
-		[]
-	    else if size > 1 andalso String.sub(line, size-2) = #";" then
-		[line]
-	    else
-		line :: readInput' contPrompt
-	end
+	(TextIO.print prompt;
+	 case TextIO.inputLine(TextIO.stdIn)
+	  of NONE      => []
+	   | SOME "\n" => "\n" :: readInput' contPrompt
+	   | SOME line => if String.sub(line, String.size line - 2) = #";"
+			  then [line]
+			  else line :: readInput' contPrompt
+	)
 
     fun baseUrl () =
 	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),

@@ -1030,7 +1030,7 @@ struct
     fun main () =
 	let
 	    val _ = TextIO.print "Input number: "
-	    val n = valOf (Int.fromString (TextIO.inputLine TextIO.stdIn))
+	    val n = valOf (Int.fromString (valOf (TextIO.inputLine TextIO.stdIn)))
 	in
 	    TextIO.print (Int.toString (Fac.fac n) ^ "\n"); 
 	    OS.Process.exit OS.Process.success
@@ -1080,7 +1080,7 @@ alicelink -d Main
    structure TextIO :
       sig
          type instream
-         val inputLine : instream -> string
+         val inputLine : instream -> string option
          val stdIn : instream
 	 val print : string -> unit
       end
