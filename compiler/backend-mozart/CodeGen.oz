@@ -18,7 +18,9 @@ import
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
-   Prebound(builtinTable: BuiltinTable)
+   Prebound(builtinTable: BuiltinTable
+	    raiseAliceException: RaiseAliceException
+	    unwrapAliceException: UnwrapAliceException)
    Assembler(assemble)
 export
    Translate
@@ -72,16 +74,6 @@ define
 				    [constant(noElse) constant(Filename)
 				     constant(I) constant(J)] VInter)
 	 VInter = vCallBuiltin(_ 'Exception.raiseError' [ExnReg] Coord nil)
-      end
-   end
-
-   proc {RaiseAliceException E}
-      {Exception.'raiseError' alice(E)}
-   end
-
-   fun {UnwrapAliceException E}
-      case E of error(alice(InnerE) ...) then InnerE
-      else {Exception.'raise' E} unit
       end
    end
 

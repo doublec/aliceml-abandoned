@@ -18,7 +18,19 @@ import
    BootWord at 'x-oz://boot/Word'
 export
    BuiltinTable
+   RaiseAliceException
+   UnwrapAliceException
 define
+   proc {RaiseAliceException E}
+      {Exception.'raiseError' alice(E)}
+   end
+
+   fun {UnwrapAliceException E}
+      case E of error(alice(InnerE) ...) then InnerE
+      else {Exception.'raise' E} unit
+      end
+   end
+
    fun {NumberCompare I J}
       if I == J then 'EQUAL'
       elseif I < J then 'LESS'
@@ -61,7 +73,7 @@ define
 	 fun {$ N Init}
 	    if 0 =< N andthen N < BuiltinTable.'Array.maxLen' then
 	       {Array.new 0 N - 1 Init}
-	    else {Exception.raiseError BuiltinTable.'General.Size'} unit
+	    else {RaiseAliceException BuiltinTable.'General.Size'} unit
 	    end
 	 end
       'Array.fromList':
@@ -79,7 +91,7 @@ define
 	    try
 	       {Array.get A I}
 	    catch error(kernel(array ...) ...) then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
+	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'Array.update':
@@ -87,7 +99,7 @@ define
 	    try
 	       {Array.put A I X}
 	    catch error(kernel(array ...) ...) then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'}
+	       {RaiseAliceException BuiltinTable.'General.Subscript'}
 	    end
 	    unit
 	 end
@@ -100,7 +112,7 @@ define
       'Char.chr':
 	 fun {$ C}
 	    if {Char.is C} then C
-	    else {Exception.raiseError BuiltinTable.'General.Chr'} unit
+	    else {RaiseAliceException BuiltinTable.'General.Chr'} unit
 	    end
 	 end
       'Char.isAlpha': Char.isAlpha
@@ -184,20 +196,20 @@ define
       'Hole.fail':
 	 fun {$ X E}
 	    try
-	       X = {ByNeedFail error(FutureException(E))}
+	       X = {ByNeedFail error(alice(FutureException(E)))}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'Hole.Hole'} unit
+	       {RaiseAliceException BuiltinTable.'Hole.Hole'} unit
 	    end
 	 end
       'Hole.fill':
 	 fun {$ X Y}
 	    if {IsDet X} then   %--** test and bind must be atomic
-	       {Exception.raiseError BuiltinTable.'Hole.Hole'}
+	       {RaiseAliceException BuiltinTable.'Hole.Hole'}
 	    end
 	    try
 	       X = Y
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'Hole.Hole'} unit
+	       {RaiseAliceException BuiltinTable.'Hole.Hole'} unit
 	    end
 	 end
       'Hole.future':
@@ -237,7 +249,7 @@ define
 		  (X1 - X2 - 1) div X2
 	       end
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Int.maxInt': 'NONE'
@@ -257,7 +269,7 @@ define
 		  end
 	       end
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Int.quot':
@@ -265,7 +277,7 @@ define
 	    try
 	       X1 div X2
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Int.rem':
@@ -273,7 +285,7 @@ define
 	    try
 	       X1 mod X2
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Int.precision': 'NONE'
@@ -359,7 +371,7 @@ define
 	    try
 	       {ByteString.get S I}
 	    catch system(kernel('ByteString.get' ...) ...) then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
+	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'String.substring':
@@ -367,7 +379,7 @@ define
 	    try
 	       {ByteString.slice S I I + J}
 	    catch system(kernel('ByteString.slice' ...) ...) then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
+	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'String.str':
@@ -408,7 +420,7 @@ define
 	    try
 	       V.(I + 1)
 	    catch error(kernel('.' ...) ...) then
-	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
+	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
       'Word.+': BootWord.'+'
@@ -423,7 +435,7 @@ define
 	    try
 	       {BootWord.'div' W1 W2}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Word.fromInt\'': BootWord.make
@@ -432,7 +444,7 @@ define
 	    try
 	       {BootWord.'mod' W1 W2}
 	    catch _ then
-	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	       {RaiseAliceException BuiltinTable.'General.Div'} unit
 	    end
 	 end
       'Word.notb': BootWord.notb

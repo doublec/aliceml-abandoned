@@ -18,6 +18,9 @@ import
 export
    'TextIO$': TextIO
    Print
+require
+   Prebound(raiseAliceException: RaiseAliceException)
+   at '../stoc/backend-mozart/Prebound.ozf'
 define
    IoException = {NewUniqueName 'IO.Io'}
 
@@ -42,7 +45,7 @@ define
 	    try
 	       {New TextFile init(name: S flags: [read])}
 	    catch system(E=os(os ...) ...) then
-	       {Exception.raiseError
+	       {RaiseAliceException
 		IoException(name: S
 			    function: {ByteString.make 'openIn'}
 			    cause: E)}   %--** cause not of type exn
