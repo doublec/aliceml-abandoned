@@ -24,20 +24,17 @@
 #include "alice/LivenessInformation.hh"
 
 class LazyCompileInterpreter : public Interpreter {
+private:
+  LazyCompileInterpreter(): Interpreter() {}
 public:
-  // Exported LazyCompileInterpreter Instance
   static LazyCompileInterpreter *self;
   static word concreteCode;
-  // LazyCompileInterpreter Constructor
-  LazyCompileInterpreter() : Interpreter() {}
-  // LazyCompileInterpreter Static Constructor
+
   static void Init();
-  // Frame Handling
-  //static void PushFrame(TaskStack *taskStack, TagVal *abstractCode);
-  virtual void PushCall(Closure *closure);
-  // Execution
+
   virtual Result Run();
-  // Debugging
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };

@@ -80,6 +80,10 @@ Worker::Result LazyCompileInterpreter::Run() {
   return Worker::CONTINUE;
 }
 
+u_int LazyCompileInterpreter::GetInArity(ConcreteCode *) {
+  return 0;
+}
+
 const char *LazyCompileInterpreter::Identify() {
   return "LazyCompileInterpreter";
 }
