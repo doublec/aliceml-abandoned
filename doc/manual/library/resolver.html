@@ -60,7 +60,7 @@
 	  | STRING of string
 
 	val <A href="#resolver">resolver</A> : {name : string, handlers : <A href="resolver-handler.html#t">Handler.t</A> list, memoize : bool} -> resolver
-	val <A href="#localize">localize</A> : resolver -> string -> result option
+	val <A href="#localize">localize</A> : resolver -> <A href=ürl.html#t">Url.t</A> -> result option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -140,11 +140,11 @@
     </DD>
 
     <DT>
-      <TT><A name="localize">localize</A> <I>resolver</I> <I>name</I></TT>
+      <TT><A name="localize">localize</A> <I>resolver</I> <I>url</I></TT>
     </DT>
     <DD>
       <P>performs a localization act, using <TT><I>resolver</I></TT>,
-	to localize the resource with symbolic name <TT><I>name</I></TT>.
+	to localize the resource with symbolic URL <TT><I>url</I></TT>.
 	Returns <TT>SOME _</TT>, if localization was successful, <TT>NONE</TT>
 	otherwise.  Prints tracing messages for every handler that has been
 	tested for applicability, along with its result, if the variable
