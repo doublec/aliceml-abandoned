@@ -265,8 +265,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 				  f, cont')
 		val tryBody =
 		    translateDec (OneDec (coord', id', exp1),
-				  Goto (O.EndHandleStm (coord, stms)::
-					translateCont cont'))
+				  Goto [O.EndHandleStm (coord, stms)])
 	    in
 		[O.HandleStm (coord, tryBody, id,
 			      translateExp (exp2, f, cont'))]
