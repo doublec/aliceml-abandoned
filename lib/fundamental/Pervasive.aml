@@ -43,15 +43,10 @@
 
  *)
 
-import structure RTT from "RTT"
+(* Step 1: Type lib *)
+import structure __pervasive from "RTT"
 
 local
-    (* Step 1: Type lib *)
-    structure __pervasive =
-    struct
-	open RTT
-    end
-
     (* Step 2: Extend with primitive types encoding datatypes
      *         (accesses type lib). *)
     structure __pervasive =
