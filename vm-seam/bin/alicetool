@@ -39,22 +39,15 @@ if test -z "${ALICE_HOME}"; then
   ALICE_HOME=$(dirname $(dirname $0))
 fi
 
-if test -z "${SEAM_HOME}"; then
-    SEAM_HOME=$(find_in seam.exe "$PROGRAMFILES/Seam/bin")
-    SEAM_HOME=$(dirname "$SEAM_HOME")
-fi
-
 case "$mode" in
     makedepend)
-	exec "$SEAM_HOME/bin/seamtool" $verbose makedepend \
-	    -I"$ALICE_HOME"/include "$@"
+	exec seamtool $verbose makedepend -I"$ALICE_HOME"/include "$@"
 	;;
     c++)
-	exec "$SEAM_HOME/bin/seamtool" $verbose c++ \
-	    -I"$ALICE_HOME"/include "$@"
+	exec seamtool $verbose compile -I"$ALICE_HOME"/include "$@"
 	;;
     ld)
-	exec "$SEAM_HOME/bin/seamtool" $verbose ld "$@" "$ALICE_HOME/alice.dll"
+	exec seamtool $verbose link "$@" "$ALICE_HOME/alice.dll"
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2
