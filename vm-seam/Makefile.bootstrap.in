@@ -94,7 +94,10 @@
 
 SRCTOP = ..
 BOOTSTRAPDIR = $(SRCTOP)/bootstrap
-PREFIX = /opt/stockhausen-devel
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+pkgdatadir = @datadir@/@PACKAGE@
 
 # No configuration needed from here
 
@@ -122,8 +125,6 @@ M4 = m4
 ##
 ## Enumerate All Files Making Up the Source Tree
 ##
-
-SEAMFILES = alice.dll
 
 LIBSYSTEMNATIVES0 = \
 	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \
@@ -353,22 +354,6 @@ SOURCEDIRS = \
 	compiler/backend-dotnet compiler/backend-seam linker depend
 
 ##
-## Include Files for the Foreign Function Interface
-##
-
-TOPINCLUDES0 = \
-	Alice.hh
-ALICEINCLUDES0 = \
-	Base.hh Guid.hh Data.hh Types.hh AbstractCode.hh \
-	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
-	NativeCodeInterpreter.hh NativeConcreteCode.hh \
-	JitterImmediateEnv.hh JitterAliceData.hh NativeCodeJitter.hh \
-	PrimitiveTable.hh AliceLanguageLayer.hh BootLinker.hh Authoring.hh
-INCLUDES = \
-	$(TOPINCLUDES0) \
-	$(ALICEINCLUDES0:%=alice/%)
-
-##
 ## Main Target and Generally Applicable Rules
 ##
 
@@ -402,11 +387,9 @@ BUILD1SOURCES = \
 
 INSTALL1DIRS = build1/install build1/install/bin \
 	build1/install/compiler build1/install/linker
-INSTALL1TOPFILES = $(SEAMFILES)
 INSTALL1BINFILES = alicerun alicec alicelink
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
-	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(LIBNATIVES:%=build1/install/%)
@@ -558,9 +541,6 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-$(SEAMFILES:%=build1/install/%): build1/install/%: %
-	install -c -m 555 $< $@
-
 build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
 	(cd build1/install && tar xvf -)
@@ -644,7 +624,6 @@ INSTALL3DIRS = \
 	build3/install/compiler/top \
 	build3/install/linker \
 	build3/install/depend
-INSTALL3INCLUDEFILES = $(INCLUDES)
 #---**
 INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
@@ -658,9 +637,7 @@ INSTALL3COMPILERTOPFILES = \
 INSTALL3LINKERFILES = Main.stc
 INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
-	$(SEAMFILES:%=build3/install/%) \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
-	$(INSTALL3INCLUDEFILES:%=build3/install/include/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
@@ -756,9 +733,6 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-$(SEAMFILES:%=build3/install/%): build3/install/%: build1/install/%
-	install -c -m 555 $< $@
-
 build3/install/include/%: %
 	install -c -m 444 $< $@
 
@@ -817,67 +791,55 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 ##
 
 INSTALLDIRS = \
-	$(PREFIX) \
-	$(PREFIX)/include \
-	$(PREFIX)/include/store \
-	$(PREFIX)/include/adt \
-	$(PREFIX)/include/generic \
-	$(PREFIX)/include/alice \
-	$(PREFIX)/bin \
-	$(PREFIX)/lib \
-	$(PREFIX)/lib/fundamental \
-	$(PREFIX)/lib/data \
-	$(PREFIX)/lib/system \
-	$(PREFIX)/lib/utility \
-	$(PREFIX)/lib/rtt \
-	$(PREFIX)/lib/ml-yacc \
-	$(PREFIX)/compiler \
-	$(PREFIX)/compiler/top \
-	$(PREFIX)/linker \
-	$(PREFIX)/depend
+	${prefix} \
+	${bindir} \
+	${pkgdatadir}/lib \
+	${pkgdatadir}/lib/fundamental \
+	${pkgdatadir}/lib/data \
+	${pkgdatadir}/lib/system \
+	${pkgdatadir}/lib/utility \
+	${pkgdatadir}/lib/rtt \
+	${pkgdatadir}/lib/ml-yacc \
+	${pkgdatadir}/compiler \
+	${pkgdatadir}/compiler/top \
+	${pkgdatadir}/linker \
+	${pkgdatadir}/depend
 INSTALLFILES = \
-	$(SEAMFILES:%=$(PREFIX)/%) \
-	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
-	$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%) \
-	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
-	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
-	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
-	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%) \
-	$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%) \
-	$(INSTALL3DEPENDFILES:%=$(PREFIX)/depend/%)
+	$(INSTALL3TOPFILES:%=${pkgdatadir}/%) \
+	$(INSTALL3BINFILES:%=${bindir}/%) \
+	$(INSTALL3LIBFILES:%=${pkgdatadir}/lib/%) \
+	$(INSTALL3COMPILERFILES:%=${pkgdatadir}/compiler/%) \
+	$(INSTALL3COMPILERTOPFILES:%=${pkgdatadir}/compiler/top/%) \
+	$(INSTALL3LINKERFILES:%=${pkgdatadir}/linker/%) \
+	$(INSTALL3DEPENDFILES:%=${pkgdatadir}/depend/%)
 
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(SEAMFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
+$(INSTALL3TOPFILES:%=${pkgdatadir}/%): ${pkgdatadir}/%: build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3BINFILES:%=${bindir}/%): ${bindir}/%: build3/install/bin/%
 	install -c -m 555 $< $@
 
-$(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
+$(INSTALL3LIBFILES:%=${pkgdatadir}/lib/%): ${pkgdatadir}/%: build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%): $(PREFIX)/%: build3/install/%
-	install -c -m 444 $< $@
-
-$(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
-	install -c -m 555 $< $@
-
-$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
-	install -c -m 444 $< $@
-
-$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%): $(PREFIX)/%: build3/install/%
-	install -c -m 444 $< $@
-
-$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: \
+$(INSTALL3COMPILERFILES:%=${pkgdatadir}/compiler/%): ${pkgdatadir}/%: \
 	build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%): $(PREFIX)/%: \
+$(INSTALL3COMPILERTOPFILES:%=${pkgdatadir}/compiler/top/%): ${pkgdatadir}/%: \
 	build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3DEPENDFILES:%=$(PREFIX)/depend/%): $(PREFIX)/%: \
+$(INSTALL3LINKERFILES:%=${pkgdatadir}/linker/%): ${pkgdatadir}/%: \
+	build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3DEPENDFILES:%=${pkgdatadir}/depend/%): ${pkgdatadir}/%: \
 	build3/install/%
 	install -c -m 444 $< $@
 
