@@ -38,5 +38,5 @@ signature SPACE_COMPONENT =
 		val eq : 'a space * 'a space -> bool
 	    end
 
-	structure SPACE : SPACE
+	structure Space : SPACE
     end

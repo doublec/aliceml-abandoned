@@ -11,81 +11,84 @@
  *
  *)
 
+import structure Space from "Space.ozf"
+import signature SEARCH from "SEARCH.ozf"
+open Space
+
 structure Search :> SEARCH =
     struct
-	type order = 'a * 'a -> unit
+	type 'a order = 'a * 'a -> unit
 	    
 	local
 	    fun doSearchOne s =
-		(case Space.ask s of
+		(case ask s of
 		     FAILED          => NONE
 		   | SUCCEEDED       => SOME(s)
 		   | ALTERNATIVES(n) =>
 			 let
-			     val c = Space.clone s
+			     val c = clone s
 			 in
-			     (Space.commit(s, SINGLE(1));
+			     (commit(s, SINGLE(1));
 			      (case doSearchOne s of
-				   NONE => (Space.commit(c, RANGE(2, n));
-					    doSearchOne c)
-				 | s    => s)
+				   NONE => (commit(c, RANGE(2, n)); doSearchOne c)
+				 | gs   => gs))
 			 end)
 	in
 	    fun searchOne p =
-		     (case doSearchOne (Space.space p) of
-			  NONE    => NONE
-			| SOME(s) => SOME(Space.merge s))
+		(case doSearchOne (space p) of
+		     NONE    => NONE
+		   | SOME(s) => SOME(merge s))
 	end
-
+    
 	local
 	    fun doSearchAll s =
-		     (case Space.ask s of
-			  FAILED          => nil
-			| SUCCEEDED       => [s]
-			| ALTERNATIVES(n) =>
-			      let
-				  val c = Space.clone s
-			      in
-				  (Space.commit(s, SINGLE(1));
-				   Space.commit(c, RANGE(2, n));
-				   doSearchAll(s) @ doSearchAll(c))
-			      end)
+		(case ask s of
+		     FAILED          => nil
+		   | SUCCEEDED       => [s]
+		   | ALTERNATIVES(n) =>
+			 let
+			     val c = clone s
+			 in
+			     (commit(s, SINGLE(1));
+			      commit(c, RANGE(2, n));
+			      doSearchAll(s) @ doSearchAll(c))
+			 end)
 	in
-	    fun searchAll p = List.map Space.merge (doSearchAll (Space.space p))
+	    fun searchAll p = List.map merge (doSearchAll (space p))
 	end
-		     
-	fun searchBest(p, o) =
-		     let
-			 fun constrain(s, bs) =
+    
+	fun searchBest(p, ofun) =
+	    let
+		fun constrain(s, bs) =
+		    let
+			val or = merge (clone bs)
+		    in
+			inject(s, fn nr => ofun(or, nr))
+		    end
+		fun doSearchBest(s, bs) =
+		    (case ask s of
+			 FAILED          => bs
+		       | SUCCEEDED       => s
+		       | ALTERNATIVES(n) =>
 			     let
-				 val or = Space.merge (Space.clone bs)
+				 val c = clone s
 			     in
-				 Space.inject(s, fn nr => o(or, nr))
-			     end
-			 fun doSearchBest(s, bs) =
-			     (case Space.ask s of
-				  FAILED          => bs
-				| SUCCEEDED       => s
-				| ALTERNATIVES(n) =>
-				      let
-					  val c = Space.clone s
-				      in
-					  (Space.commit(s, SINGLE(1));
-					   Space.commit(c, RANGE(2, n));
-					   let
-					       val nbs = doSearchBest(s, bs)
-					   in
-					       (case Space.eq(bs, nbs) of
-						    false => (constrain(c, nbs);
-							      doSearchBest(c, nbs))
-						  | true  => doSearchBest(c, nbs))
-					   end)
-				      end)
-			 val s  = Space.space p
-			 val bs = doSearchBest(s, s)
-		     in
-			 (case Space.ask bs of
-			      SUCCEEDED => SOME(bs)
-			    | _         => NONE)
-		     end
+				 (commit(s, SINGLE(1));
+				  commit(c, RANGE(2, n));
+				  let
+				      val nbs = doSearchBest(s, bs)
+				  in
+				      (case eq(bs, nbs) of
+					   false => (constrain(c, nbs);
+						     doSearchBest(c, nbs))
+					 | true  => doSearchBest(c, nbs))
+				  end)
+			     end)
+		val s  = space p
+		val bs = doSearchBest(s, s)
+	    in
+		(case ask bs of
+		     SUCCEEDED => SOME(merge bs)
+		   | _         => NONE)
+	    end
     end

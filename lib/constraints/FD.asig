@@ -72,6 +72,15 @@ signature FD_COMPONENT =
 		val greater : fd * fd -> unit (* X >: Y *)
 		val greaterEq : fd * fd -> unit (* X >=: Y *)
 
+		(* Non-Linear Propagators *)
+		val distinct : fd vector -> unit
+		val distinctOffset : fd vector * int vector -> unit
+		val distinct2 : fd vector * int vector * fd vector * int vector -> unit
+		val atMost : fd * fd vector * int -> unit
+		val atLeast : fd * fd vector * int -> unit
+		val exactly : fd * fd vector * int -> unit
+		val element : fd * int vector * fd -> unit
+
 		(* 0/1 Propagators *)
 		val conj : bool * bool * bool -> unit
 		val disj : bool * bool * bool -> unit
@@ -116,7 +125,7 @@ signature FD_COMPONENT =
 		    FIRSTFAIL
 		  | NAIVE
 
-		val distribute : dist_mode * fd -> unit
+		val distribute : dist_mode * fd vector -> unit
 	    end
 
 	structure FD : FD

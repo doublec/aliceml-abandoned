@@ -47,14 +47,6 @@ define
 	    {Record.foldR V Cons nil}
 	 end
       end
-%       fun {ListToVector Ls}
-% 	 V = {MakeTuple '#[]' {Length Ls}}
-%       in
-% 	 {List.forAllInd Ls proc {$ X I}
-% 			       V.I = X
-% 			    end}
-% 	 V
-%       end
       fun {AlicePropToOzProp P}
 	 case P
 	 of 'LESS'      then '<:'
@@ -189,6 +181,36 @@ define
       unit
    end
 
+   %% Non-linear Propagators
+   fun {DistinctFun XV}
+      {FD.distinct {VectorToList XV}}
+      unit
+   end
+   fun {DistinctOffsetFun XV IV}
+      {FD.distinctOffset {VectorToList XV} {VectorToList IV}}
+      unit
+   end
+   fun {Distinct2Fun XV1 IV1 XV2 IV2}
+      {FD.distinct2 {VectorToList XV1} {VectorToList IV1} {VectorToList XV2} {VectorToList IV2}}
+      unit
+   end
+   fun {AtMostFun X XV I}
+      {FD.atMost X {VectorToList XV} I}
+      unit
+   end
+   fun {AtLeastFun X XV I}
+      {FD.atLeast X {VectorToList XV} I}
+      unit
+   end
+   fun {ExactlyFun X XV I}
+      {FD.exactly X {VectorToList XV} I}
+      unit
+   end
+   fun {ElementFun X IV Y}
+      {FD.element X {VectorToList IV} Y}
+      unit
+   end
+
    %% 0/1 Propagators
    fun {ConjFun X Y Z}
      {FD.conj X Y Z}
@@ -304,47 +326,54 @@ define
    end
    
    %% Create FD Interface
-   AliceFD = 'FD'('$fd'         : FDType
-		  '$bool'       : BoolType
-		  '$domain'     : DomainType
-		  '$propagator' : PropagatorType
-		  '$dist_mode'  : DistModeType
-		  'fd'          : FDFun
-		  'fdvector'    : FDVectorFun
-		  'decl'        : DeclFun
-		  'bool'        : BoolFun
-		  'boolvector'  : BoolVectorFun
-		  'toBool'      : ToBoolFun
-		  'fromBool '   : FromBoolFun
-		  'sum'         : SumFun
-		  'sumC'        : SumCFun
-		  'sumAC'       : SumACFun
-		  'sumCN'       : SumCNFun
-		  'sumACN'      : SumACNFun
-		  'sumD'        : SumDFun
-		  'sumCD'       : SumCDFun
-		  'plus'        : PlusFun
-		  'minus'       : MinusFun
-		  'times'       : TimesFun
-		  'power'       : PowerFun
-		  'divI'        : DivIFun
-		  'modI'        : ModIFun
-		  'min'         : MinFun
-		  'max'         : MaxFun
-		  'equal'       : EqualFun
-		  'notequal'    : NotEqualFun
-		  'less'        : LessFun
-		  'lessEq'      : LessEqFun
-		  'greater'     : GreaterFun
-		  'greaterEq'   : GreaterEqFun
-		  'conj'        : ConjFun
-		  'disj'        : DisjFun
-		  'exor'        : ExorFun
-		  'nega'        : NegaFun
-		  'impl'        : ImplFun
-		  'equi'        : EquiFun
-		  'Reified'     : AliceReified
-		  'Reflect'     : AliceReflect
-		  'Watch'       : AliceWatch
-		  'distribute'  : DistFun)
+   AliceFD = 'FD'('$fd'            : FDType
+		  '$bool'          : BoolType
+		  '$domain'        : DomainType
+		  '$propagator'    : PropagatorType
+		  '$dist_mode'     : DistModeType
+		  'fd'             : FDFun
+		  'fdvector'       : FDVectorFun
+		  'decl'           : DeclFun
+		  'bool'           : BoolFun
+		  'boolvector'     : BoolVectorFun
+		  'toBool'         : ToBoolFun
+		  'fromBool '      : FromBoolFun
+		  'sum'            : SumFun
+		  'sumC'           : SumCFun
+		  'sumAC'          : SumACFun
+		  'sumCN'          : SumCNFun
+		  'sumACN'         : SumACNFun
+		  'sumD'           : SumDFun
+		  'sumCD'          : SumCDFun
+		  'plus'           : PlusFun
+		  'minus'          : MinusFun
+		  'times'          : TimesFun
+		  'power'          : PowerFun
+		  'divI'           : DivIFun
+		  'modI'           : ModIFun
+		  'min'            : MinFun
+		  'max'            : MaxFun
+		  'equal'          : EqualFun
+		  'notequal'       : NotEqualFun
+		  'less'           : LessFun
+		  'lessEq'         : LessEqFun
+		  'greater'        : GreaterFun
+		  'greaterEq'      : GreaterEqFun
+		  'distinct'       : DistinctFun
+		  'distinctOffset' : DistinctOffsetFun
+		  'distinct2'      : Distinct2Fun
+		  'atMost'         : AtMostFun
+		  'atLeast'        : AtLeastFun
+		  'exactly'        : ExactlyFun
+		  'element'        : ElementFun
+		  'conj'           : ConjFun
+		  'disj'           : DisjFun
+		  'exor'           : ExorFun
+		  'nega'           : NegaFun
+		  'impl'           : ImplFun
+		  'equi'           : EquiFun
+		  'Reified$'       : AliceReified
+		  'Reflect$'       : AliceReflect
+		  'Watch$'         : AliceWatch
+		  'distribute'     : DistFun)
 end
