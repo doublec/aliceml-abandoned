@@ -103,6 +103,10 @@ DEFINE1(UnsafeDebugger_readEventStream) {
   if(event == INVALID_POINTER) {
     fprintf(stderr, "-->Ivalid pointer\n");
   }
+  // Debugging
+  Debug::maxDepth+=1;
+  Debug::Dump(event->ToWord());
+  // Debugging
   EventAccessor *accessor = event->GetAccessor();
   switch(accessor->GetLabel()) {
   case ALICE_EVENT_LABEL:

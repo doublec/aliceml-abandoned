@@ -20,13 +20,16 @@
 #include "Seam.hh"
 
 class AliceEventAccessor : public EventAccessor {
+private:
+  AliceEventAccessor() {
+    return;
+  }
 public:
-  AliceEventAccessor();
-
   static AliceEventAccessor *self;
   static void Init() {
     self = new AliceEventAccessor();
   }
+
   EventLabel GetLabel() {
     return ALICE_EVENT_LABEL;
   }
