@@ -1,0 +1,78 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature PRIM_IO         from "PRIM_IO-sig"
+import structure Config          from "Config"
+import signature TEXT_TRANSLATOR from "TEXT_TRANSLATOR-sig"
+
+functor MkTextTranslator(structure PrimIO: PRIM_IO
+			     where type elem = Char.char
+			       and type vector = CharVector.vector
+			       and type array = CharArray.array) :>
+    TEXT_TRANSLATOR where type PrimIO.elem = PrimIO.elem
+		      and type PrimIO.vector = PrimIO.vector
+		      and type PrimIO.array = PrimIO.array
+		      and type PrimIO.pos = PrimIO.pos =
+    struct
+	structure PrimIO = PrimIO
+
+	fun translateReader (PrimIO.RD {name, chunkSize, readVec, readArr,
+					readVecNB, readArrNB, block, canInput,
+					avail, getPos, setPos, endPos,
+					verifyPos, close, ioDesc}) =
+	    let
+		(*--** only translate CR NL to NL *)
+		fun trv v =
+		    String.implode (CharVector.foldr (fn (c, rest) =>
+							 if c = #"\r" then rest
+							 else c::rest) nil v)
+		fun tra (buf, i, n) = n - tra' (buf, i, i, i + n)
+		and tra' (buf, rd, wr, max) =
+		    if rd = max then rd - wr
+		    else
+			case CharArray.sub (buf, rd) of
+			    #"\r" => tra' (buf, rd + 1, wr, max)
+			  | c => (CharArray.update (buf, wr, c);
+				  tra' (buf, rd + 1, wr + 1, max))
+		val readVec =
+		    case readVec of
+			SOME f => SOME (fn n => trv (f n))
+		      | NONE => NONE
+		val readArr =
+		    case readArr of
+			SOME f => SOME (fn {buf, i, sz} =>
+					   tra (buf, i, f {buf, i, sz}))
+		      | NONE => NONE
+		val readVecNB =
+		    case readVecNB of
+			SOME f => SOME (fn n =>
+					   case f n of
+					       SOME v => SOME (trv v)
+					     | NONE => NONE)
+		      | NONE => NONE
+		val readArrNB =
+		    case readArrNB of
+			SOME f => SOME (fn {buf, i, sz} =>
+					   case f {buf, i, sz} of
+					       SOME n => SOME (tra (buf, i, n))
+					     | NONE => NONE)
+		      | NONE => NONE
+	    in
+		PrimIO.RD {name, chunkSize, readVec, readArr, readVecNB,
+			   readArrNB, block, canInput, avail, getPos,
+			   setPos, endPos, verifyPos, close, ioDesc}
+	    end
+
+	fun translateWriter writer where (Config.platform = Config.UNIX) =
+	    writer
+	  | translateWriter (writer as PrimIO.WR {...}) = writer (*--** *)
+    end
