@@ -14,7 +14,10 @@
  *)
 
 import structure Type from "x-alice:/lib/rtt/Type"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Path from "x-alice:/lib/rtt/Path"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure Label from "x-alice:/lib/rtt/Label"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Types from "Types"
@@ -67,15 +70,159 @@ struct
          | _ => raise  createGraph_unknownNode) 
 
     (* treatProd *)
-    and treatProd (va,t,p,i,d,row) = Empty
+    and treatProd (va,t,p,i,d,row) = 
+	let
+	      val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
+					     p,i,Array.array(3,Empty)
+					     ,~1,~1,setGroup)
+	      val (lbra,rbra) = if Type.isTupleRow(row) 
+				    then ("(","(")
+				else ("{","}")
+	      val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
+						       0,lbra,COLOR,setGroup),
+					 createSimple (INTERPUNCT,upperConcat,
+						       2,rbra,COLOR,setGroup))
+	      val container = createContfromRow (va,t,upperConcat,1,d,row, 
+						 UnsafeValue.proj) 
+	      val upperKids = getKids(upperConcat)
+	  in
+	      ( Array.update(upperKids,0,lbraNode)
+	       ; Array.update(upperKids,1,container)
+	       ; Array.update(upperKids,2,rbraNode)
+	       ; upperConcat)
+	  end
 	
     (* treatSum *)
-    and treatSum (va,t,p,i,d,row) = Empty
+    and treatSum (va,t,p,i,d,row) = 
+        let
+	    val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
+					   p,i,Array.array(4,Empty),
+			                   ~1,~1,setGroup)
+	    val lt_list   = row2list(row)
+	    val l_vector  = labelvector(lt_list)
+	    val index     = UnsafeValue.tag(va,l_vector)
+	    val label     = Label.toString(Vector.sub(l_vector,index))
+	    val labelnode =  createSimple (INTERPUNCT,upperConcat,
+					   0,label,COLOR,setGroup)
+	    val (lbra,rbra) =  if Type.isTupleRow(row) 
+				   then ("(","(")
+			       else ("{","}")
+	    val (lbraNode,rbraNode) = (createSimple (INTERPUNCT,upperConcat,
+						     1,lbra,COLOR,setGroup),
+				       createSimple (INTERPUNCT,upperConcat,
+						     3,rbra,COLOR,setGroup))
+	    val typ = #2(List.nth(lt_list,index))
+	    val intyp = if Type.isApply(typ) 
+		        andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
+					   PervasiveType.path_strict)
+			    then  #2(Type.asApply(typ))
+			else typ
+	    val container = case Type.inspect(intyp) of 
+		Type.Prod(row') 
+		=> if Type.isEmptyRow(row') 
+		       then Empty
+		   else
+		       createContfromRow (va, t, upperConcat, 2, d, row', 
+					  UnsafeValue.projTagged)
+	      | _ => let
+			 val inva = UnsafeValue.projTaggedTuple(va,1,0)
+			 val node = createGraph (inva,intyp,upperConcat,0,d+1)
+		     in 
+			 node 
+		     end
+	    val upperKids = getKids(upperConcat)
+	in
+	    if container = Empty 
+		then labelnode 
+	    else (Array.update(upperKids,0,labelnode)
+		  ; Array.update(upperKids,1,lbraNode)
+		  ; Array.update(upperKids,2,container)
+		  ; Array.update(upperKids,3,rbraNode)
+		  ; upperConcat) 
+	end
+
+    (* createContfromRow *)
+    and createContfromRow (va, t, p, i, d, row, proj) = 
+	let
+	    val lt_list   = row2list(row)
+	    val l_vector  = labelvector(lt_list)
+	    val wlimit    = List.length(lt_list) > !max_width 
+	    val l         = if wlimit then !max_width
+			    else List.length(lt_list)
+	    val al = if wlimit then !max_width +1 else l
+	    val container = createContainer(createValue(va,t,NO_ACTIONS),
+					    p,i,Array.array(al,Empty)
+					    ,~1,~1,~1,setGroup)
+	    val createProdC = if Type.isTupleRow(row)
+				  then createProdConcatTuple
+			      else createProdConcat
+	    val nodes = 
+		Array.tabulate(al,
+			       (fn i => 
+				if wlimit andalso i = !max_width
+				    then createLimit (INTERPUNCT,
+						      WIDTH_LIMIT,
+						      container,
+						      i,d,setGroup)
+				else 
+				    createProdC (Label.toString
+						 (#1(List.nth(lt_list,i))),
+						 proj(va,l_vector,i),
+						 #2(List.nth(lt_list,i)),
+						 container,i,d,l)))
+	    val _ = copyArray(nodes,getKids(container))
+	in
+	    container
+	end
+
+    (* createProdConcat *)
+    and createProdConcat (label,va,t,p,i,d,l) = 
+	let 
+	    val last = if i = l-1 then true else false
+	    val c_length = if last then 3 else 4
+	    val concat = createConcat (INTERPUNCT,p,i,
+				       Array.array(c_length,Empty),
+				       ~1,~1,setGroup)
+	    val l_node = createSimple (INTERPUNCT,concat,0,label,
+				       COLOR,setGroup)
+	    val eq_node = createSimple (INTERPUNCT,concat,1," = ",
+					COLOR,setGroup)
+	    val sep_node = createSimple (INTERPUNCT,concat,3,", ",
+					 COLOR,setGroup)
+	    val node = createGraph (va,t,concat,2,d+1)
+	    val concat_kids = getKids(concat)
+	in
+	    (Array.update(concat_kids,0,l_node)
+	     ; Array.update(concat_kids,1,eq_node)
+	     ; Array.update(concat_kids,2,node)
+	     ; if last then () else 
+	     Array.update(concat_kids,3,sep_node)
+	     ;concat)
+	end
+    
+    (* createProdConcatTuple *)
+    and createProdConcatTuple (label,va,t,p,i,d,l) = 
+	let 
+	    val last = if i = l-1 then true else false
+	    val c_length = if last then 1 else 2
+	    val concat = createConcat (INTERPUNCT,p,i,
+				       Array.array(c_length,Empty),
+				       ~1,~1,setGroup)
+	    val sep_node = createSimple (INTERPUNCT,concat,1,", ",
+					 COLOR,setGroup)
+	    val node = createGraph (va,t,concat,0,d+1)
+	    val concat_kids = getKids(concat)
+	in
+	    (Array.update(concat_kids,0,node  )
+	     ; if last then () else 
+	     Array.update(concat_kids,1,sep_node)
+	     ;concat)
+	end
 
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE => Empty (* !!! *)
+	   NONE => createSimple(INTERPUNCT,p,i,"_",COLOR,setGroup)
          | SOME create => let val doc = create (!max_width,d,v,t)
                           in docToNode (doc,p,i,d) 
 			  end )
@@ -156,6 +303,13 @@ struct
 						   depth = d,
 						   status = ref DAZZLED,
 						   group = f(p)}
-
+                                                    
+    (* queryDepth *)
+    and queryDepth(va,t,p,i,d,row,f) = 
+	if d > !max_depth 
+	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+			      p,i,d,setGroup)
+	else f (va,t,p,i,d,row)
+	    
 end
 
