@@ -20,7 +20,7 @@ DEFINE1(UnsafeReflect_cast) {
 
 DEFINE1(UnsafeReflect_realToVector) {
   DECLARE_REAL(r, x0);
-  Word8Vector *vector = Vector::New(sizeof(double));
+  Word8Vector *vector = Word8Vector::New(sizeof(double));
   u_char *c = r->GetNetworkRepresentation();
   for (u_int i = sizeof(double); i--; )
     vector->Init(i, Store::IntToWord(c[i]));
