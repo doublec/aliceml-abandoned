@@ -178,6 +178,10 @@
   <P>The export of the generated functor is the record corresponding
     to the component considered as a single structure.</P>
 
+  <H3>Exceptions</H3>
+  <P>Alice exceptions are wrapped into <TT>alice(...)</TT> and raised
+    as Oz error exceptions.</P>
+
 <?php section("ozfromalice", "oz from alice") ?>
   <P>Alice compiled components are annotated with signatures denoting
     the expected types of the component it imports and the actual type
