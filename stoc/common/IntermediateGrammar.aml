@@ -1,3 +1,3 @@
 structure IntermediateGrammar =
-		MakeIntermediateGrammar(type info = Source.region
-					type sign = unit)
+	  MakeIntermediateGrammar(type info = Source.region * Type.t option
+				  type sign = unit)

@@ -16,6 +16,7 @@ signature INF =
     type kind					(* [kappa,k] *)
     type con  = kind * path			(* [chi,c]   *)
     type sign					(* [sigma,s] *)
+    type item
     type inf					(* [jota,j] *)
     type t = inf    
 
@@ -95,6 +96,22 @@ signature INF =
     val extendTyp :	sign * path * tkind * typ_sort * typ  option -> unit
     val extendMod :	sign * path *  inf  * path option -> unit
     val extendInf :	sign * path *  kind * inf  option -> unit
+
+  (* Signature inspection *)
+
+    val items :		sign -> item list
+
+    exception Item
+
+    val isValItem :	item -> bool
+    val isTypItem :	item -> bool
+    val isModItem :	item -> bool
+    val isInfItem :	item -> bool
+
+    val asValItem :	item -> lab * typ * val_sort * path option  (* Item *)
+    val asTypItem :	item -> lab * tkind * typ_sort * typ option (* Item *)
+    val asModItem :	item -> lab * inf * path option		(* Item *)
+    val asInfItem :	item -> lab * kind * inf option		(* Item *)
 
   (* Signature lookup *)
 

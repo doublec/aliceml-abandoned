@@ -146,6 +146,31 @@ structure InfPrivate =
     fun extendInf(s,p,k,d)	= extend(s, INF', p, fn x => INF(x,k,d))
 
 
+  (* Signature inspection *)
+
+    exception Item
+
+    fun items(ref items, _) = List.filter (fn item => itemIndex item = 0) items
+
+    fun isValItem(ref(VAL _))		= true
+      | isValItem _			= false
+    fun isTypItem(ref(TYP _))		= true
+      | isTypItem _			= false
+    fun isModItem(ref(MOD _))		= true
+      | isModItem _			= false
+    fun isInfItem(ref(INF _))		= true
+      | isInfItem _			= false
+
+    fun asValItem(ref(VAL(x,t,s,d)))	= (idLab x, t, s, d)
+      | asValItem _			= raise Item
+    fun asTypItem(ref(TYP(x,k,s,d)))	= (idLab x, k, s, d)
+      | asTypItem _			= raise Item
+    fun asModItem(ref(MOD(x,j,d)))	= (idLab x, j, d)
+      | asModItem _			= raise Item
+    fun asInfItem(ref(INF(x,k,d)))	= (idLab x, k, d)
+      | asInfItem _			= raise Item
+
+
   (* Signature lookup *)
 
     fun selectVal'(VAL(x, t, w, d))	= t

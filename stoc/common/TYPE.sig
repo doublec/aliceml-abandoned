@@ -54,16 +54,16 @@ signature TYPE =
 
     exception Type
 
-    val asArrow :	typ -> typ * typ	(* Type *)
-    val asTuple :	typ -> typ list		(* Type *)
-    val asRow :		typ -> row		(* Type *)
-    val asSum :		typ -> row		(* Type *)
-    val asVar :		typ -> var		(* Type *)
-    val asCon :		typ -> con		(* Type *)
-    val asAll :		typ -> var * typ	(* Type *)
-    val asExist :	typ -> var * typ	(* Type *)
-    val asLambda :	typ -> var * typ	(* Type *)
-    val asApp :		typ -> typ * typ	(* Type *)
+    val asArrow :	typ -> typ * typ		(* Type *)
+    val asTuple :	typ -> typ list			(* Type *)
+    val asRow :		typ -> row			(* Type *)
+    val asSum :		typ -> row			(* Type *)
+    val asVar :		typ -> var			(* Type *)
+    val asCon :		typ -> con			(* Type *)
+    val asAll :		typ -> var * typ		(* Type *)
+    val asExist :	typ -> var * typ		(* Type *)
+    val asLambda :	typ -> var * typ		(* Type *)
+    val asApp :		typ -> typ * typ		(* Type *)
 
   (* Complex extractions *)
 
