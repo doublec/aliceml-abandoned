@@ -77,12 +77,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun funtyp(ids,typ) =
 	List.foldr (fn(id,typ) => O.FunTyp(O.infoTyp typ, id, typ)) typ ids
 
-    fun apptyp(ids,typ) =
-	List.foldr (fn(id,typ) => O.ArrTyp(O.infoTyp typ, id, typ)) typ ids
-
     fun apptyp(typs,typ) =
 	List.foldl (fn(typ1,typ2) =>
-	      O.AppTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
+	      O.AppTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ2, typ1)
 	    ) typ typs
 
     fun arrtyp(typs,typ) =
@@ -2177,7 +2174,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  i          = Source.over(i', infoLong longtycon)
 		val (id',stamp) = trVId_bind E vid
-		val  hasArg     = not(Misc.Option_isNone tyo)
 		val  _          = insertScope E
 		val (ids',typ') = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
 		val  typs'      = trTyo E tyo
