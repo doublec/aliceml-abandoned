@@ -37,10 +37,14 @@ static const char *TransLabel(BlockLabel l) {
     return "CANCELLED";
   case BYNEED_LABEL:
     return "BYNEED";
-  case HASHTABLE_LABEL:
-    return "HASHTABLE";
-  case BLOCKHASHTABLE_LABEL:
-    return "BLOCKHASHTABLE";
+  case INT_MAP_LABEL:
+    return "INTMAP";
+  case CHUNK_MAP_LABEL:
+    return "CHUNKMAP";
+  case MAP_LABEL:
+    return "MAP";
+  case WEAK_MAP_LABEL:
+    return "WEAKMAP";
   case QUEUE_LABEL:
     return "QUEUE";
   case STACK_LABEL:
