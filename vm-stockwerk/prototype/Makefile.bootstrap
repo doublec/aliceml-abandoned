@@ -313,14 +313,19 @@ COMPILERSOURCES = \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
 	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSTOCKWERKSOURCES) \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
-ALLSOURCES = $(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES)
+
+LINKERSOURCES0 = \
+	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml Main.aml
+LINKERSOURCES = $(LINKERSOURCES0:%=linker/%)
+
+ALLSOURCES = $(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-stockwerk
+	compiler/backend-dotnet compiler/backend-stockwerk linker
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -331,7 +336,7 @@ SOURCEDIRS = \
 .PHONY: build2-all build2-install
 .PHONY: build3-all build3-install
 
-all: build3-install
+all: build1-install
 
 # Build anything using the compiler generated in pass 1
 alicec1-%: build1-install
@@ -360,9 +365,10 @@ BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin build1/install/compiler
+INSTALL1DIRS = build1/install build1/install/bin \
+	build1/install/compiler build1/install/linker
 INSTALL1TOPFILES = $(VMSOURCES:%.oz=%.ozf) FloatChunk.so-$(PLATFORM)
-INSTALL1BINFILES = alicerun alicec
+INSTALL1BINFILES = alicerun alicec alicelink
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
@@ -467,6 +473,9 @@ build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
+build1/linker/%.aml: linker/%.aml Rel1.import
+	cat Rel1.import $< > $@
+
 build1/%.oz: %.oz
 	cp $< $@
 
@@ -484,6 +493,14 @@ build1/%.ozf: build1/%.oz
 build1/%.stc: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
 	--retain-full-import --trace-component-access --no-rtt -c $< -o $@
+
+build1/PrimitiveTable.ozf: build1/Helper.ozf
+build1/ByneedInterpreter.ozf: build1/Helper.ozf
+build1/Scheduler.ozf: build1/Helper.ozf
+build1/AbstractCodeInterpreter.ozf: build1/Helper.ozf
+build1/Pickle.ozf: build1/Helper.ozf
+build1/BootLinker.ozf: build1/Helper.ozf
+build1/lib/system/UnsafeComponent.ozf: build1/Helper.ozf
 
 ##
 ## Installing Build 1
