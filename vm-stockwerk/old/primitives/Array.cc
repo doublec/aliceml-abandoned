@@ -43,7 +43,7 @@ DEFINE1(Array_length) {
 DEFINE2(Array_sub) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || index >= array->GetLength())
+  if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
     RAISE(GlobalPrimitives::General_Subscript);
   RETURN(array->Sub(index));
 } END
@@ -51,7 +51,7 @@ DEFINE2(Array_sub) {
 DEFINE3(Array_update) {
   DECLARE_ARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || index >= array->GetLength())
+  if (index < 0 || static_cast<u_int>(index) >= array->GetLength())
     RAISE(GlobalPrimitives::General_Subscript);
   array->Update(index, x2);
   RETURN_UNIT;

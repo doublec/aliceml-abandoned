@@ -33,7 +33,7 @@ DEFINE1(Vector_length) {
 DEFINE2(Vector_sub) {
   DECLARE_VECTOR(vector, x0);
   DECLARE_INT(index, x1);
-  if (index < 0 || index >= vector->GetLength())
+  if (index < 0 || static_cast<u_int>(index) >= vector->GetLength())
     RAISE(GlobalPrimitives::General_Subscript);
   RETURN(vector->Sub(index));
 } END

@@ -30,13 +30,12 @@ public:
   Result Run(TaskStack *taskStack, int nargs);
 };
 
-ConcreteCode *PrimitiveInterpreter::Prepare(word abstractCode) {
+ConcreteCode *PrimitiveInterpreter::Prepare(word /*abstractCode*/) {
   Error("PrimitiveInterpreter::Prepare must never be called");
 }
 
 void PrimitiveInterpreter::PushCall(TaskStack *taskStack, word w) {
-  Closure *closure = Closure::FromWord(w);
-  Assert(closure->GetConcreteCode()->GetInterpreter() == this);
+  Assert(Closure::FromWord(w)->GetConcreteCode()->GetInterpreter() == this);
   taskStack->PushFrame(1);
   taskStack->PutUnmanagedPointer(0, this);
 }

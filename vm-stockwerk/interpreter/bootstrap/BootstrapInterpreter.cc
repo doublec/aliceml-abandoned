@@ -200,6 +200,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	case Pickle::StaticCon:
 	  suspendWord = conBlock->Sel(0);
 	  break;
+	default:
+	  Error("invalid con tag");
+	  break;
 	}
 	Constructor *constructor = Constructor::FromWord(suspendWord);
 	if (constructor == INVALID_POINTER) SUSPEND(suspendWord);
@@ -474,7 +477,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	word suspendWord = localEnv->Lookup(pc->Sel(0));
 	Vector *vector = Vector::FromWord(suspendWord);
 	if (vector == INVALID_POINTER) SUSPEND(suspendWord);
-	int value = vector->GetLength();
+	u_int value = vector->GetLength();
 	Vector *tests = Vector::FromWord(pc->Sel(1));
 	u_int ntests = tests->GetLength();
 	for (u_int i = 0; i < ntests; i++) {
