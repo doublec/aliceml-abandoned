@@ -182,13 +182,13 @@ $(INSTALLDIRS):
 	mkdir -p $@
 
 $(INSTALLFILES0:%=$(PREFIX)/%): $(PREFIX)/%: %
-	scp $< grizzly:$@
+	install -c -m 444 $< $@
 
 Default.import: Base.import Other.import
 	cat Base.import Other.import > $@
 
 $(PREFIX)/bin/%: %
-	scp $< grizzly:$@
+	install -c -m 555 $< $@
 
 $(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
 	$(PREFIX)/bin/stoc --noimplicitimport -c $< -o $@
