@@ -30,11 +30,6 @@ in
 signature CREATE_TREE =
 sig
     
-    val coreSign: Inf.sign
-    val packageSign: Inf.sign
-
-    val lookupPath: Inf.sign * string * string -> Path.path
-
     (* creates a new tree as internal representation for values *)
 
     val createTree : int option * Reflect.value * Type.t  * node * 

@@ -15,12 +15,12 @@
 
 import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
 
-import structure Node from "Node"
+import structure Doc from "Doc"
 import structure GtkSupport from "GtkSupport"
 
 import signature COLOR from "COLOR-sig"
 
-local open Node
+local open Doc
 
 in 
 

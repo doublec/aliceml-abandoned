@@ -15,8 +15,8 @@
 
 import signature MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
 
-import structure Node from "Node"
-import structure GtkSupport from "GtkSupport"
+import structure Doc from "Doc"
+import structure GtkSupport from "GtkSupport" 
 
 signature COLOR = 
 sig 
@@ -29,11 +29,11 @@ sig
 
     (* registration of colors *)
 
-    val registerColor: Node.color_class * GtkSupport.tag -> unit
+    val registerColor: Doc.color_class * GtkSupport.tag -> unit
 	
     (* searching for colors *)
 	
-    val lookupColor: Node.color_class -> GtkSupport.tag
+    val lookupColor: Doc.color_class -> GtkSupport.tag
 
 end
 
