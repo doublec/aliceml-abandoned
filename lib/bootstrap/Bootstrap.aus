@@ -413,33 +413,9 @@ structure StringCvt :> STRING_CVT =
 
 (* Int *)
 
-signature INTEGER =
-    sig
-	type int
+local
 
-	val + : int * int -> int
-	val >= : int * int -> bool
-	val < : int * int -> bool
-
-	val scan:
-	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
-	    (int * 'a) option
-
-	val compare: int * int -> order
-
-	val toString: int -> string
-
-	val fromString: string -> int option
-
-	val min: int * int -> int
-	val max: int * int -> int
-
-	val fromInt: int -> int
-	val fromLarge: int -> int
-	val toLarge: int -> int
-    end
-
-structure Int :> INTEGER where type int = int =
+structure Int =
     struct
 	type int = int
 
@@ -518,12 +494,45 @@ structure Int :> INTEGER where type int = int =
 	fun min (i, j) = if i > j then j else i
 	fun max (i, j) = if i < j then j else i
 
-	fun fromInt i = i
+	fun fromInt i   = i
 	fun fromLarge i = i
-	fun toLarge i = i
+	fun toLarge i   = i
     end
 
-structure LargeInt :> INTEGER = Int
+structure LargeInt = Int
+
+in
+
+signature INTEGER =
+    sig
+	type int
+
+	val + : int * int -> int
+	val >= : int * int -> bool
+	val < : int * int -> bool
+
+	val scan:
+	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
+	    (int * 'a) option
+
+	val compare: int * int -> order
+
+	val toString: int -> string
+
+	val fromString: string -> int option
+
+	val min: int * int -> int
+	val max: int * int -> int
+
+	val fromInt: Int.int -> int
+	val fromLarge: LargeInt.int -> int
+	val toLarge: int -> LargeInt.int
+    end
+
+structure Int :> INTEGER where type int = int = Int
+structure LargeInt :> INTEGER where type int = LargeInt.int = LargeInt
+
+end (* local *)
 
 
 (* Real *)
