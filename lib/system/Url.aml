@@ -401,21 +401,17 @@ structure Url :> URL =
 	val toString = toStringEncode (encode isPathChar)
 	val toStringRaw = toStringEncode General.id
 
-	(*--** toLocalFile should be sited *)
 	fun toLocalFile ({scheme = SOME "x-alice", authority = NONE,
 			  device = NONE, path, ...}: url) =
-	    (case Config.homeDir of
-		 SOME homeDir =>
-		     let
-			 val windows = Config.platform = Config.WIN32
-			 val slash = if windows then "\\" else "/"
-			 val l = List.foldr (fn (s, nil) => [s]
-					      | (s, rest) => s::slash::rest)
-					    nil path
-		     in
-			 String.concat (homeDir::slash::l)
-		     end
-	       | NONE => raise NotLocal)
+	    let
+		val windows = Config.platform = Config.WIN32
+		val slash = if windows then "\\" else "/"
+		val l = List.foldr (fn (s, nil) => [s]
+				     | (s, rest) => s::slash::rest)
+				   nil path
+	    in
+		String.concat (Config.homeDir ()::slash::l)
+	    end
 	  | toLocalFile {scheme = (NONE | SOME "file"), authority,
 			 device, absolute, path, ...} =
 	    let
