@@ -220,13 +220,14 @@ define
       [] ['TestStm'(Region Id 'ConTests'(ConBodyVec) ElseBody)]
       then ElseVInstr in
 	 {Record.foldL ConBodyVec
-	  proc {$ VHd Con#Args#Body ElseVInstr} Reg ThenVInstr in
+	  proc {$ VHd ConId#Args#Body ElseVInstr} Reg ThenVInstr in
 	     Reg = {GetReg Id State}
-	     case Con#Args of 'Con'(Id)#'TupArgs'('#[]') then
-		VHd = {TestBuiltin 'Value.\'==\'' [Reg {GetReg Id State}]
+	     case Args of 'TupArgs'('#[]') then
+		VHd = {TestBuiltin 'Value.\'==\'' [Reg {GetReg ConId State}]
 		       ThenVInstr ElseVInstr State}
-	     [] 'Con'(Id)#_ then ThenVInstr0 Coord in
-		VHd = {TestBuiltin 'Record.testLabel' [Reg {GetReg Id State}]
+	     else ThenVInstr0 Coord in
+		VHd = {TestBuiltin 'Record.testLabel'
+		       [Reg {GetReg ConId State}]
 		       ThenVInstr0 ElseVInstr State}
 		Coord = {TranslateRegion Region State}
 		case Args of 'OneArg'(IdDef) then
@@ -344,7 +345,7 @@ define
 		 fun {$ Label#Id In} Label#value({GetReg Id State})|In end
 		 nil}}
 	 vEquateRecord(_ Label {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] 'ConExp'(Region 'Con'(Id1) 'OneArg'(Id2)) then
+      [] 'ConExp'(Region Id1 'OneArg'(Id2)) then
 	 Coord WidthReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}
@@ -354,9 +355,9 @@ define
 				Coord VInter2)
 	 VInter2 = vInlineDot(_ Reg 1 {GetReg Id2 State} true Coord VTl)
 	 vEquateConstant(_ 1 WidthReg VInter1)
-      [] 'ConExp'(_ 'Con'(Id) 'TupArgs'('#[]')) then
+      [] 'ConExp'(_ Id 'TupArgs'('#[]')) then
 	 vUnify(_ Reg {GetReg Id State} VTl)
-      [] 'ConExp'(Region 'Con'(Id) 'TupArgs'(Ids)) then
+      [] 'ConExp'(Region Id 'TupArgs'(Ids)) then
 	 Coord WidthReg VInter1 VInter2
       in
 	 Coord = {TranslateRegion Region State}
