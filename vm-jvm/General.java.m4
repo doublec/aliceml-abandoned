@@ -454,7 +454,7 @@ final public class General {
     _BUILTIN(Show) {
 	_BUILTTUP;
 	_APPLY(val) {
-	    System.out.println(val.toString(10));
+	    System.out.print(val.toString(10));
 	    return Constants.dmlunit;
 	}
     }
@@ -480,7 +480,7 @@ final public class General {
     _BUILTIN(Print) {
 	_BUILTTUP;
 	_APPLY(val) {
-	    System.out.println(val);
+	    System.out.print(val);
 	    return Constants.dmlunit;
 	}
     }
@@ -509,16 +509,48 @@ final public class General {
     // val exnMessage : exn -> string
 
     _BUILTIN(Terminate) {
-	final public DMLValue apply0() throws java.rmi.RemoteException {
-	    System.exit(0);
-	    return Constants.dmlunit;
-	}
-	_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(_) {
-	    System.exit(0);
+	    _REQUEST(_,_);
+	    try {
+		int i = ((Int) _).value;
+		System.exit(i);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
 	    return Constants.dmlunit;
 	}
     }
-    /** <code>val lvar : _ -> lvar</code>*/
+    /** <code>val terminate : int -> unit</code>*/
     _FIELD(General,terminate);
+
+    _BUILTIN(Read) {
+	final public DMLValue apply0() throws java.rmi.RemoteException {
+	    java.lang.String s="";
+	    char ch;
+	    try {
+		while ("\n".indexOf((ch = (char) System.in.read())) == -1) {
+		    s+=ch;
+		}
+	    } catch (java.io.IOException i) {
+		System.err.println(i);
+	    }
+	    return new STRING (s);
+	}
+	_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(_) {
+	    java.lang.String s="";
+	    char ch;
+	    try {
+		while ("\n".indexOf((ch = (char) System.in.read())) == -1) {
+		    s+=ch;
+		}
+	    } catch (java.io.IOException i) {
+		System.err.println(i);
+	    }
+	    return new STRING (s);
+	}
+    }
+    /** <code>val read : unit -> string</code>*/
+    _FIELD(General,read);
 }
