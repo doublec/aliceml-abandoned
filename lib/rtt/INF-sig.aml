@@ -57,11 +57,18 @@ sig
 
   (* Kinds *)
 
+    datatype kind_desc =
+	  GroundKind
+	| SingKind of inf
+	| DepKind  of path * inf * kind
+
     exception Kind
 
     val groundKind :	unit -> kind
     val singKind :	inf  -> kind
     val depKind :	path * inf * kind -> kind
+
+    val inspectKind :	kind -> kind_desc
 
     val isGroundKind :	kind -> bool			(* modulo subkinding *)
     val isSingKind :	kind -> bool
@@ -91,9 +98,23 @@ sig
     val sing :		mod              -> inf
     val abbrev :	inf * inf        -> inf		(* Mismatch *)
 
-  (* Inquiries *)
+  (* Inspection *)
 
-    val isTop :		inf -> bool	(* modulo abbreviations *)
+    datatype desc =
+	  Top
+	| Con    of path
+	| Sig    of sign
+	| Arrow  of path * inf * inf
+	| Exist  of path * inf * inf
+	| Lambda of path * inf * inf
+	| Apply  of inf * mod
+	| Sing   of mod
+
+    exception Interface
+
+    val inspect :	inf -> desc
+
+    val isTop :		inf -> bool			(* modulo subtyping...*)
     val isCon :		inf -> bool
     val isSig :		inf -> bool
     val isArrow :	inf -> bool
@@ -101,29 +122,17 @@ sig
     val isLambda :	inf -> bool
     val isApply :	inf -> bool
     val isSing :	inf -> bool
-    val isAbbrev :	inf -> bool	(* precise *)
-
-    val isTop' :	inf -> bool	(* modulo abbrev, exists & singletons *)
-    val isCon' :	inf -> bool
-    val isSig' :	inf -> bool
-    val isArrow' :	inf -> bool
-
-  (* Projections *)
-
-    exception Interface
 
     val asCon :		inf -> path			(* Interface *)
     val asSig :		inf -> sign			(* Interface *)
     val asArrow :	inf -> path * inf * inf		(* Interface *)
-    val asLambda :	inf -> path * inf * inf		(* Interface *)
     val asExist :	inf -> path * inf * inf		(* Interface *)
+    val asLambda :	inf -> path * inf * inf		(* Interface *)
     val asApply :	inf -> inf  * mod		(* Interface *)
     val asSing :	inf -> mod			(* Interface *)
-    val asAbbrev :	inf -> inf  * inf		(* Interface *)
 
-    val asCon' :	inf -> path			(* Interface *)
-    val asSig' :	inf -> sign			(* Interface *)
-    val asArrow' :	inf -> path * inf * inf		(* Interface *)
+    val isAbbrev :	inf -> bool
+    val asAbbrev :	inf -> inf  * inf		(* Interface *)
 
   (* Instantiation, realisation, etc. *)
 
@@ -193,9 +202,19 @@ sig
 
     val items :		sign -> item list		(* reversed! *)
 
+    datatype item_desc =
+	  FixItem of lab * fix
+	| ValItem of lab * typ
+	| TypItem of path * tkind
+	| ModItem of path * inf
+	| InfItem of path * kind
+	| HiddenItem of item
+
     exception Item
 
-    val isFixItem :	item -> bool
+    val inspectItem :	item -> item_desc
+
+    val isFixItem :	item -> bool			(* modulo hidden... *)
     val isValItem :	item -> bool
     val isTypItem :	item -> bool
     val isModItem :	item -> bool

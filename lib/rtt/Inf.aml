@@ -429,7 +429,18 @@ struct
 
   (* Kinds *)
 
+    datatype kind_desc =
+	  GroundKind
+	| SingKind of inf
+	| DepKind  of path * inf * kind
+
     exception Kind
+
+    fun inspectKind k =
+	case content k
+	  of GROUND		=> GroundKind
+	   | SING j		=> SingKind j
+	   | DEP pjk		=> DepKind pjk
 
     val kGround			= newKind GROUND
     fun groundKind()		= kGround
@@ -467,11 +478,11 @@ struct
 	case content k
 	 of DEP pjk		=> pjk
 	  | SING j		=> asDepKind(kind j)
-	  | _			=> raise Kind
+	  | GROUND		=> raise Kind
     and asSingKind k =
 	case content k
 	 of SING j		=> j
-	  | _			=> raise Kind
+	  | (GROUND | DEP _)	=> raise Kind
 
     fun isGroundKind k =
     	case content k
@@ -490,52 +501,113 @@ struct
 
 
 
-  (* Projections and extractions *)
+  (* Inspection *)
 
     fun asMod m = m
 
     exception Interface
 
-    fun isAbbrev j	= case content j of ABBREV _ => true | _ => false
-    fun asAbbrev j	= case content j of ABBREV z => z | _ => raise Interface
+    datatype desc =
+	  Top
+	| Con    of path
+	| Sig    of sign
+	| Arrow  of path * inf * inf
+	| Exist  of path * inf * inf
+	| Lambda of path * inf * inf
+	| Apply  of inf * mod
+	| Sing   of mod
 
-    fun asInf j		= case content j
-			   of ABBREV(_,j2) => asInf j2
-			    | j'           => j'
+    fun isAbbrev j = case content j of ABBREV _ => true | _ => false
+    fun asAbbrev j = case content j of ABBREV z => z | _ => raise Interface
 
-    fun isTop j		= case asInf j of TOP      => true | _ => false
-    fun isCon j		= case asInf j of CON _    => true | _ => false
-    fun isSig j		= case asInf j of SIG _    => true | _ => false
-    fun isSing j	= case asInf j of THAT _   => true | _ => false
-    fun isArrow j	= case asInf j of FUN _    => true | _ => false
-    fun isExist j	= case asInf j of EXIST _  => true | _ => false
-    fun isLambda j	= case asInf j of LAMBDA _ => true | _ => false
-    fun isApply j	= case asInf j of APPLY _  => true | _ => false
+    fun inspect j =
+	case content j
+	  of ABBREV(_,j2)	=> inspect j2
+	   | TOP		=> Top
+	   | CON(p,_)		=> Con p
+	   | SIG s		=> Sig s
+	   | THAT m		=> Sing m
+	   | FUN pjj		=> Arrow pjj
+	   | EXIST pjj		=> Exist pjj
+	   | LAMBDA pjj		=> Lambda pjj
+	   | APPLY jm		=> Apply jm
 
-    fun asCon j		= case asInf j of CON(p,_) => p | _ => raise Interface
-    fun asSig j		= case asInf j of SIG s    => s | _ => raise Interface
-    fun asSing j	= case asInf j of THAT m   => m | _ => raise Interface
-    fun asArrow j	= case asInf j of FUN x    => x | _ => raise Interface
-    fun asExist j	= case asInf j of EXIST x  => x | _ => raise Interface
-    fun asLambda j	= case asInf j of LAMBDA x => x | _ => raise Interface
-    fun asApply j	= case asInf j of APPLY x  => x | _ => raise Interface
+    fun isTop j =
+	case content j
+	  of (TOP | SIG _ | FUN _)				=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isTop j2
+	   | (CON _ | LAMBDA _ | APPLY _)			=> false
+    fun isSig j =
+	case content j
+	  of SIG _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isSig j2
+	   | (TOP | FUN _ | CON _ | LAMBDA _ | APPLY _)		=> false
+    fun isArrow j =
+	case content j
+	  of FUN _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isArrow j2
+	   | (TOP | SIG _ | CON _ | LAMBDA _ | APPLY _)		=> false
+    fun isExist j =
+	case content j
+	  of EXIST _						=> true
+	   | (ABBREV(_,j2) | THAT(_,j2))			=> isExist j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> false
+    fun isSing j =
+	case content j
+	  of THAT _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> isSing j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> false
+    fun isCon j =
+	case content j
+	  of CON _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isCon j2
+	   | (TOP | SIG _ | FUN _ | LAMBDA _ | APPLY _)		=> false
+    fun isLambda j =
+	case content j
+	  of LAMBDA _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isLambda j2
+	   | (TOP | SIG _ | FUN _ | CON _ | APPLY _)		=> false
+    fun isApply j =
+	case content j
+	  of APPLY _						=> true
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> isApply j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _)		=> false
 
-    (* modulo singletons and existentials *)
-
-    fun asInf' j	= case content j
-			   of ( ABBREV(_,j2)
-			      | THAT(_,j2)
-			      | EXIST(_,_,j2) )     => asInf' j2
-			    | j'                    => j'
-
-    fun isTop' j	= case asInf' j of TOP      => true | _ => false
-    fun isCon' j	= case asInf' j of CON _    => true | _ => false
-    fun isSig' j	= case asInf' j of SIG _    => true | _ => false
-    fun isArrow' j	= case asInf' j of FUN _    => true | _ => false
-
-    fun asCon' j	= case asInf' j of CON(p,_) => p | _ => raise Interface
-    fun asSig' j	= case asInf' j of SIG s    => s | _ => raise Interface
-    fun asArrow' j	= case asInf' j of FUN x    => x | _ => raise Interface
+    fun asSig j =
+	case content j
+	  of SIG s						=> s
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asSig j2
+	   | (TOP | FUN _ | CON _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asArrow j =
+	case content j
+	  of FUN pjj						=> pjj
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asArrow j2
+	   | (TOP | SIG _ | CON _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asExist j =
+	case content j
+	  of EXIST pjj						=> pjj
+	   | (ABBREV(_,j2) | THAT(_,j2))			=> asExist j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> raise Interface
+    fun asSing j =
+	case content j
+	  of THAT m						=> m
+	   | (ABBREV(_,j2) | EXIST(_,_,j2))			=> asSing j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _ | APPLY _)	=> raise Interface
+    fun asCon j =
+	case content j
+	  of CON(p,_)						=> p
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asCon j2
+	   | (TOP | SIG _ | FUN _ | LAMBDA _ | APPLY _)		=> raise Interface
+    fun asLambda j =
+	case content j
+	  of LAMBDA pjj						=> pjj
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asLambda j2
+	   | (TOP | SIG _ | FUN _ | CON _ | APPLY _)		=> raise Interface
+    fun asApply j =
+	case content j
+	  of APPLY jm						=> jm
+	   | (ABBREV(_,j2) | EXIST(_,_,j2) | THAT(_,j2))	=> asApply j2
+	   | (TOP | SIG _ | FUN _ | CON _ | LAMBDA _)		=> raise Interface
 
 
   (* Creation and injection, reduction *)
@@ -633,10 +705,7 @@ struct
 
     (* kind-safe interface *)
 
-    fun ground j =
-	if isGroundKind(kind j)
-	then j
-	else raise Kind
+    fun ground j	= if isGroundKind(kind j) then j else raise Kind
 
     val top		= top'
     fun con(p,k)	= if isSingKind k then asSingKind k else con'(p,k)
@@ -702,28 +771,53 @@ struct
 
     exception Item
 
+    datatype item_desc =
+	  FixItem of lab * fix
+	| ValItem of lab * typ
+	| TypItem of path * tkind
+	| ModItem of path * inf
+	| InfItem of path * kind
+	| HiddenItem of item
+
+    fun inspectItem(FIX lf)	= FixItem lf
+      | inspectItem(VAL lt)	= ValItem lt
+      | inspectItem(TYP pk)	= TypItem pk
+      | inspectItem(MOD pj)	= ModItem pj
+      | inspectItem(INF pk)	= InfItem pk
+      | inspectItem(HIDDEN i)	= HiddenItem i
+
     fun isFixItem(FIX _)	= true
+      | isFixItem(HIDDEN i)	= isFixItem i
       | isFixItem _		= false
     fun isValItem(VAL _)	= true
+      | isValItem(HIDDEN i)	= isValItem i
       | isValItem _		= false
     fun isTypItem(TYP _)	= true
+      | isTypItem(HIDDEN i)	= isTypItem i
       | isTypItem _		= false
     fun isModItem(MOD _)	= true
+      | isModItem(HIDDEN i)	= isModItem i
       | isModItem _		= false
     fun isInfItem(INF _)	= true
+      | isInfItem(HIDDEN i)	= isInfItem i
       | isInfItem _		= false
     fun isHiddenItem(HIDDEN _)	= true
       | isHiddenItem _		= false
 
     fun asFixItem(FIX lq)	= lq
+      | asFixItem(HIDDEN i)	= asFixItem i
       | asFixItem _		= raise Item
     fun asValItem(VAL lt)	= lt
+      | asValItem(HIDDEN i)	= asValItem i
       | asValItem _		= raise Item
     fun asTypItem(TYP pk)	= pk
+      | asTypItem(HIDDEN i)	= asTypItem i
       | asTypItem _		= raise Item
     fun asModItem(MOD pj)	= pj
+      | asModItem(HIDDEN i)	= asModItem i
       | asModItem _		= raise Item
     fun asInfItem(INF pk)	= pk
+      | asInfItem(HIDDEN i)	= asInfItem i
       | asInfItem _		= raise Item
     fun asHiddenItem(HIDDEN i)	= i
       | asHiddenItem _		= raise Item
@@ -885,9 +979,9 @@ struct
 		raise Kind
 
     and maximiseExist(u,p,j1,j2) =
-	if PathSet.member(u,p) then exist'(p, j1, replaceNarrowed(p,j1,j2))
-	else if isTop j1 then j2
-	else exist'(p,j1,j2)
+	if PathSet.member(u,p) then exist'(p, j1, replaceNarrowed(p,j1,j2)) else
+	case content j1 of TOP => j2
+			 | _   => exist'(p,j1,j2)
 
     and maximiseSig(u,s) =
 	let
@@ -914,9 +1008,9 @@ struct
 	    else let
 		val j' = maximise(u,j)
 	    in
-		if Cell.equal(j,j') then SOME item
-		else if isTop' j' then (change := true; NONE)
-		else (change := true; SOME(MOD(p,j')))
+		if Cell.equal(j,j') then SOME item else
+		case content j' of TOP => (change := true; NONE)
+				 | _   => (change := true; SOME(MOD(p,j')))
 	    end
       | maximiseItem (u,change) (item as INF(p,k)) =
 	    if PathSet.member(u,p)
@@ -1187,12 +1281,18 @@ struct
     and buildOld(c,j)    = (Map.insertDisjoint(#inf c, j,j); j)
     and buildNew(c,j,j') = (Map.insertDisjoint(#inf c, j,j'); j')
 
-    and buildPath({inst = NoInst _, ...},     p) = p
-      | buildPath({inst = InstDot p', ...},   p) = Path.dot(p', Path.toLab p)
-      | buildPath({inst = InstTop, rea, ...}, p) =
-	if Path.isName p then Path.name(Path.asName p)
-	else if Path.isHidden p then Path.hidden(Path.asHidden p)
-	else Path.dot(Path.asDot p)
+    and buildPath({inst = NoInst _, ...},   p) = p
+      | buildPath({inst = InstTop, ...},    p) = Path.instance p
+      | buildPath({inst = InstDot p', ...}, p) = if Path.isHidden p
+						 then Path.instance p
+						 else Path.dot(p', Path.toLab p)
+(*DEBUG
+handle e =>
+(TextIO.print "Inf.buildPath failure: ";
+PrettyPrint.output(TextIO.stdOut, PPPath.ppPath p, 80);
+TextIO.print "\n";
+raise e)
+*)
 
     and buildBind(c, j, toInf, p,j1,j2) =
 	let
