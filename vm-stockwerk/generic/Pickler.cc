@@ -256,10 +256,10 @@ static word AddToSeen(word seen, Block *v, u_int id) {
   return t->ToWord();
 }
 
-static u_int FindRef(word x0, word seen) {
+static u_int FindRef(Block *v, word seen) {
   Tuple *cons = Tuple::FromWord(seen);
   while (cons != INVALID_POINTER) {
-    if (cons->Sel(1) == x0) {
+    if (Store::DirectWordToBlock(cons->Sel(1)) == v) {
       return Store::DirectWordToInt(cons->Sel(0));
     }
     cons = Tuple::FromWord(cons->Sel(2));
@@ -294,14 +294,14 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
     CONTINUE(args);
   }
   // Search for already known value
-  u_int ref = FindRef(x0, seen);
+  Block *v  = Store::WordToBlock(x0);
+  u_int ref = FindRef(v, seen);
   if (ref != static_cast<u_int>(-1)) {
     outputStream->PutByte(Tag::REF);
     outputStream->PutUInt(ref);
     CONTINUE(args);
   }
   // Handle new Block Value (non-abstract use)
-  Block *v     = Store::WordToBlock(x0);
   BlockLabel l = v->GetLabel();
   switch (l) {
   case CHUNK_LABEL:
@@ -316,7 +316,7 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
     break;
   case TUPLE_LABEL:
     {
-      u_int size = v->GetSize(); // to be done 
+      u_int size = v->GetSize();
       outputStream->PutByte(Tag::TUPLE);
       outputStream->PutUInt(size);
       seen = AddToSeen(seen, v, id);
@@ -328,7 +328,7 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
     break;
   case CLOSURE_LABEL:
     {
-      u_int size = v->GetSize(); // to be done
+      u_int size = v->GetSize();
       outputStream->PutByte(Tag::CLOSURE);
       outputStream->PutUInt(size);
       seen = AddToSeen(seen, v, id);
@@ -340,16 +340,15 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
     break;
   case HANDLERBLOCK_LABEL:
     {
-      Transform *transform =
-	reinterpret_cast<Transform *>(v->GetHandler()->
-				      GetAbstractRepresentation(v));
-      if (transform == INVALID_POINTER) {
+      Block *block = v->GetHandler()->GetAbstractRepresentation(v);
+      if (block == INVALID_POINTER) {
 	Scheduler::currentData      = Pickler::Sited;
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Interpreter::RAISE;
-      }
-      else {
-	PicklingInterpreter::PushFrame(taskStack, transform->ToWord());
+      } else {
+	std::fprintf(stderr, "handlerblock: label %d\n", block->GetLabel());
+	Assert(block->GetLabel() == TRANSFORM_LABEL);
+	PicklingInterpreter::PushFrame(taskStack, block->ToWord());
 	CONTINUE(args);
       }
     }
@@ -369,6 +368,7 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
       u_int size = v->GetSize(); // to be done
       outputStream->PutByte(Tag::BLOCK);
       outputStream->PutUInt(l);
+      outputStream->PutUInt(size);
       seen = AddToSeen(seen, v, id);
       for (u_int i = size; i--;) {
 	PicklingInterpreter::PushFrame(taskStack, v->GetArg(i));
