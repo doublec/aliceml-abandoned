@@ -371,7 +371,7 @@ val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val mod = typedLink (validate url, Inf.rea (), SOME Sig.x, NONE)
 	    in
-		Reflect.Reify(val x = mod signature S = S)
+		Reflect.Reify(val x = await mod signature S = S)
 	    end
 
 	functor Enter (val url: Url.t signature S structure X: S) =
