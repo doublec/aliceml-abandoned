@@ -458,7 +458,21 @@ val aboutWindow =  (fn () =>
 		 ("width_pixels", Gdk.INT 1)])  
 		       end
 	       else uglyNULL 
-		
+
+ fun resizeSepLine(line,x) = 
+     let 
+	 val (rx1,ry1,rx2,ry2) = 
+	     GtkCanvas.itemGetBounds(line, 0.0,
+				     0.0,
+				     0.0,
+				     0.0)
+	 val y1 = Real.trunc(Real.+(ry1,1.0))
+     in
+	 (GtkCanvas.itemSet(line,
+			    "points", 
+			    Gdk.POINTS ([0, y1, x, y1])))
+     end
+			 
  fun yPosSepLine (item,group) = 
      let
 	 val (_,ry1,_,_) = 

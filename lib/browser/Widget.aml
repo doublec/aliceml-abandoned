@@ -269,6 +269,18 @@ fun getSelectionNode() = case !selection of
   | SOME(n,_,_) => n  
 
 
+fun resizeSepLine(line,x) = let 
+			      val (rx1,ry1,rx2,ry2) = 
+				  GtkCanvas.itemGetBounds(line, 0.0,
+							  0.0,
+							  0.0,
+							  0.0)
+			      val y1 = Real.trunc(Real.+(ry1,1.0))
+			  in
+			      (GtkCanvas.itemSet(line,
+						 "points", 
+						 Gdk.POINTS ([0, y1, x, y1])))
+			  end
 
 fun  resizeSepLinesIterate(dict,x,i,highest_i) =
      if i > highest_i 
@@ -281,23 +293,8 @@ fun  resizeSepLinesIterate(dict,x,i,highest_i) =
 		  if line = uglyNULL 
 		      then  resizeSepLinesIterate(dict,x,i+1,highest_i)
 		  else
-
-(* this can go to GtkSupport *)
-		      let
-			  val (rx1,ry1,rx2,ry2) = 
-			      GtkCanvas.itemGetBounds(line, 0.0,
-						      0.0,
-						      0.0,
-						      0.0)
-			  val y1 = Real.trunc(Real.+(ry1,1.0))
-		      in
-			  (GtkCanvas.itemSet(line,
-					     "points", 
-					     Gdk.POINTS ([0, y1, x, y1]))
-			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
-		      end
-(* this can go to GtkSupport *)
-)
+		      (resizeSepLine(line,x)
+		       ;resizeSepLinesIterate(dict,x,i+1,highest_i)))
 
 fun resizeSepLines (dict,rx) = 
      let 

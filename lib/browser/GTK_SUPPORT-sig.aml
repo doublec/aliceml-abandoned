@@ -100,6 +100,7 @@ signature GTK_SUPPORT =
 	val getPosition   : tag  -> int * int
 	val itemMoveTo    : tag * real * real -> unit
 	val createSepLine : tag * int * real -> tag
+	val resizeSepLine : tag * int -> unit
 	val yPosSepLine   : tag * tag -> unit 
 	val createArrowRight: tag * tag  -> tag
 	val createArrowDown: tag * tag -> tag
