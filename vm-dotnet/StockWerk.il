@@ -1266,10 +1266,7 @@
         ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
-        ldarg.0
-        call void System.CriticalSection::Exit(class System.Object)
-        ldloc.0
-        ret
+        leave.s return
       raiseFulfill:
         ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
         newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
@@ -1289,6 +1286,11 @@
         newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
         throw
       }
+    return:
+      ldarg.0
+      call void System.CriticalSection::Exit(class System.Object)
+      ldloc.0
+      ret
     raise:
       ldarg.0
       call void System.CriticalSection::Exit(class System.Object)
