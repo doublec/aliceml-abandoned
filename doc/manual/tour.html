@@ -1317,8 +1317,13 @@ pages</A> on components for more details.</P>
 the application using the <A href="linker.html">static linker</A>:</P>
 
 <PRE class=code>
-alicelink --include ./ ./Main -o LinkedMain.acl</PRE>
-<I>TODO: show error here? Main.aml is still not adapted to new signature in Fac</I>
+alicelink --include ./ ./Main -o LinkedMain.acl
+<I>alicelink: signature of component
+./Fac
+does not match import requirement of component
+./Main
+Try recompiling the latter.  </I></PRE>
+<I>TODO: show this error here?</I>
 
 <P>The linker verifies that all import/export signatures are compatible and
 builds a new component that bundles all components that are directly or
