@@ -61,22 +61,22 @@ DEFINE1(UnsafeComponent_unpack_) {
   return Unpickler::Unpack(string, taskStack);
 } END
 
-word UnsafeComponent(void) {
-  Tuple *t = Tuple::New(10);
-  t->Init(0, Unpickler::Corrupt);
-  t->Init(1, Pickler::Sited);
-  t->Init(2, Unpickler::Corrupt);
-  t->Init(3, Pickler::Sited);
-  t->Init(4, String::New("stc")->ToWord());
-  t->Init(5, Primitive::MakeClosure("UnsafeComponent.getInitialTable",
-				    UnsafeComponent_getInitialTable, 0, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeComponent.load",
-				    UnsafeComponent_load, 1, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeComponent.pack_",
-				    UnsafeComponent_pack_, 1, true));
-  t->Init(8, Primitive::MakeClosure("UnsafeComponent.save",
-				    UnsafeComponent_save, 2, true));
-  t->Init(9, Primitive::MakeClosure("UnsafeComponent.unpack_",
-				    UnsafeComponent_unpack_, 1, true));
-  RETURN_STRUCTURE(t);
+word UnsafeComponent() {
+  Record *record = Record::New(10);
+  record->Init("'Corrupt", Unpickler::Corrupt);
+  record->Init("'Sited", Pickler::Sited);
+  record->Init("Corrupt", Unpickler::Corrupt);
+  record->Init("Sited", Pickler::Sited);
+  record->Init("extension", String::New("stc")->ToWord());
+  INIT_STRUCTURE(record, "UnsafeComponent", "getInitialTable",
+		 UnsafeComponent_getInitialTable, 0, true);
+  INIT_STRUCTURE(record, "UnsafeComponent", "save",
+		 UnsafeComponent_save, 2, true);
+  INIT_STRUCTURE(record, "UnsafeComponent", "load",
+		 UnsafeComponent_load, 1, true);
+  INIT_STRUCTURE(record, "UnsafeComponent", "pack_",
+		 UnsafeComponent_pack_, 1, true);
+  INIT_STRUCTURE(record, "UnsafeComponent", "unpack_",
+		 UnsafeComponent_unpack_, 1, true);
+  RETURN_STRUCTURE("UnsafeComponent$", record);
 }
