@@ -11,6 +11,10 @@ import
 from "x-alice:/misc/Misc.ozf"
 
 import
+    structure WideChar
+from "x-alice:/misc/Wide.ozf"
+
+import
     structure Stamp
 from "x-alice:/common/Stamp.ozf"
 
