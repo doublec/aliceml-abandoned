@@ -490,6 +490,11 @@ void GecodeSpace::set_selectInter(int s, const IntArgs& vars, int ss) {
   makefsvarargs(a, vars);
   ::selectInter(fss[s], a, fss[ss]);
 }
+void GecodeSpace::set_selectDisjoint(const IntArgs& vars, int ss) {
+  if (!enter()) return;
+  makefsvarargs(a, vars);
+  ::selectDisjoint(a, fss[ss]);
+}
 void GecodeSpace::set_selectSets(int s, const IntArgs& vars, int d) {
   if (!enter()) return;
   makefsvarargs(a, vars);

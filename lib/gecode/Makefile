@@ -44,8 +44,8 @@ GECODEOBJ = -lgecodeset -lgecodeint -lgecodekernel
 
 CPPFLAGS = -I../../../gecode-install/include/gecode
 LDFLAGS = -L../../../gecode-install/lib/gecode
-MY_CXXFLAGS=-O2 -DNDEBUG -pipe -DHAVE_CONFIG_H
-#MY_CXXFLAGS=-pipe -DHAVE_CONFIG_H
+#MY_CXXFLAGS=-O2 -DNDEBUG -pipe -DHAVE_CONFIG_H
+MY_CXXFLAGS=-pipe -DHAVE_CONFIG_H
 
 .PHONY: all generate clean veryclean distclean depend install
 

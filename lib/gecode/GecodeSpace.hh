@@ -229,6 +229,7 @@ public:
 
   void set_selectUnion(setvar, const setvarargs&, setvar);
   void set_selectInter(setvar, const setvarargs&, setvar);
+  void set_selectDisjoint(const setvarargs&, setvar);
   void set_selectSets(setvar, const setvarargs&, intvar);
 
   void set_branch(const setvarargs&, SetBvarSel, SetBvalSel);

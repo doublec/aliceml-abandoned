@@ -128,6 +128,7 @@ struct
            val setvar = UnsafeGecode.set_selectSets
 	   val union = UnsafeGecode.set_selectUnion
 	   val inter = UnsafeGecode.set_selectInter
+           val disjoint = UnsafeGecode.set_selectDisjoint
        end
 
    structure Reflect =
