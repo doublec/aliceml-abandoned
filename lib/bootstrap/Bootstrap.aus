@@ -22,6 +22,7 @@ type     word   = Prebound.word
 type     real   = Prebound.real
 type     string = Prebound.string
 type     char   = Prebound.char
+type  'a vector = 'a Prebound.vector
 datatype list   = datatype Prebound.list
 datatype ref    = datatype Prebound.ref
 datatype exn    = datatype Prebound.exn
@@ -636,7 +637,7 @@ type array = Array.array
 
 structure Vector =
     struct
-	eqtype 'a vector
+	type 'a vector = 'a vector
 
 	__primitive val fromList : 'a list -> 'a vector = "Vector.fromList"
 	__primitive val sub : 'a vector * int -> 'a = "Vector.sub"
