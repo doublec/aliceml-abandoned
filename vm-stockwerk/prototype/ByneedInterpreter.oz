@@ -14,24 +14,11 @@ functor
 import
    PrimitiveTable(values)
    Scheduler(object)
+require
+   Helper(deref: Deref construct: Construct)
 export
    interpreter: Me
 define
-   fun {Construct Args}
-      case Args of arg(X) then X
-      [] args(...) then {Adjoin Args tuple}
-      end
-   end
-
-   fun {Deref X}
-      case X of transient(TransientState) then
-	 case {Access TransientState} of ref(Y) then {Deref Y}
-	 else X
-	 end
-      else X
-      end
-   end
-
    fun {IsCyclic X TransientState}
       case {Deref X} of transient(TransientState2) then
 	 TransientState2 == TransientState
