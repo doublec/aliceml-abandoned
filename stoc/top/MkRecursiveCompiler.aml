@@ -86,7 +86,7 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
-	     if !Switches.implicitImport then
+	     if !Switches.Bootstrap.implicitImport then
 		 if isBaseSig desc then s
 		 else
 		     String.map (fn #"\n" => #" " | c => c)
