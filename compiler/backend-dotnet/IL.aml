@@ -3,36 +3,19 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
-
-import
-    structure IntMap
-from "../infrastructure/IntMap"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    structure Skeleton
-from "Skeleton"
-
-import
-    signature IL
-from "IL-sig"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure IntMap      from "../infrastructure/IntMap"
+import structure Crash       from "../infrastructure/Crash"
+import structure FlatGrammar from "../backend-common/FlatGrammar"
+import structure Skeleton    from "Skeleton"
+import signature IL          from "IL-sig"
 
 structure IL :> IL =
     struct
@@ -255,9 +238,11 @@ structure IL :> IL =
 			 Int.toString (!size) ^ " <> " ^
 			 Int.toString (!returnSize))
 
-	fun eliminateDeadCode (Label label::rest) =
+	fun eliminateDeadCode ((instr as Label label)::rest) =
 	    (case Map.lookup (map, label) of
-		 SOME n => (size := n; Label label::peephole rest)
+		 SOME n =>
+		     if n = ~2 then instr::eliminateDeadCode rest
+		     else (size := n; instr::peephole rest)
 	       | NONE => (Map.insert (map, label, ~1); eliminateDeadCode rest))
 	  | eliminateDeadCode (_::rest) = eliminateDeadCode rest
 	  | eliminateDeadCode nil = nil
@@ -335,7 +320,7 @@ structure IL :> IL =
 		       if tryEndLabel <> catchLabel then
 			   Map.insertDisjoint (map, tryEndLabel, ~1)
 		       else ();
-		       Map.insertDisjoint (map, catchEndLabel, 0))) @
+		       Map.insertDisjoint (map, catchEndLabel, ~2))) @
 		     instr::peephole rest
 	       | Unbox _ => (pop 1 before push 1) @ instr::peephole rest
 	       | Xor => (pop 2 before push 1) @ instr::peephole rest)
