@@ -11,7 +11,7 @@
 ### 
 
 
-# Makefile for alice xml binding
+# Makefile for alice gecode binding
 
 INSTALLTO=`alice-config --alicelibdir`/gecode
 GECODEDIR="/usr"
