@@ -74,24 +74,35 @@ structure Infix :> INFIX =
 
     (* Resolving infixed expressions and patterns *)
 
+    datatype ('a,'b) x = ATOMIC of 'a | NONATOMIC of 'b
+
     fun parse (ATXx, APPx, PARAtX, TUPLEAtX, LONGVIDAtX,
-	       info, categorise, flatten) IE x =
+	       info_X, info_AtX, categorise, flatten) IE x =
 	let
+	    fun info(ATOMIC x)         = info_AtX x
+	      | info(NONATOMIC x)      = info_X x
+
+	    fun atomic(ATOMIC x)       = x
+	      | atomic(NONATOMIC x)    = PARAtX(info_X x, x)
+
+	    fun nonatomic(ATOMIC x)    = ATXx(info_AtX x, x)
+	      | nonatomic(NONATOMIC x) = x
+
 	    fun pair(x1,x2) =
 		let
-		    val i1 = info x1
-		    val i2 = info x2
+		    val x1' = nonatomic x1
+		    val x2' = nonatomic x2
 		in
-		    TUPLEAtX(Source.over(i1,i2), [ATXx(i1,x1), ATXx(i2,x2)])
+		    TUPLEAtX(Source.over(info x1,info x2), [x1', x2'])
 		end
 
 	    fun apply(x1,x2) =
 		let
-		    val i1 = info x1
-		    val i2 = info x2
-		    val i  = Source.over(i1, i2)
+		    val x1' = nonatomic x1
+		    val x2' = atomic x2
+		    val x'  = APPx(Source.over(info x1, info x2), x1', x2')
 		in
-		    PARAtX(i, APPx(i, ATXx(i1, x1), x2))
+		    NONATOMIC x'
 		end
 
 	    fun infapply(x1,vid,x2) =
@@ -101,8 +112,9 @@ structure Infix :> INFIX =
 		    val longvid	= SHORTLong(i_vid, vid)
 		    val x1'	= LONGVIDAtX(i_vid, WITHOp, longvid)
 		    val x2'	= pair(x1,x2)
+		    val x'      = APPx(i, ATXx(i_vid, x1'), x2')
 		in
-		    PARAtX(i, APPx(i, ATXx(i_vid, x1'), x2'))
+		    NONATOMIC x'
 		end
 
 
@@ -114,7 +126,7 @@ structure Infix :> INFIX =
 
 	      | loop(s, NONFIX(x)::i') =
 		    (* shift *)
-		    loop(NONFIX(x)::s, i')
+		    loop(NONFIX(ATOMIC x)::s, i')
 
 	      | loop(s as NONFIX(x)::[], INFIX(q)::i') =
 		    (* shift *)
@@ -142,31 +154,31 @@ structure Infix :> INFIX =
 		    (* shift *)
 		    loop(INFIX(q2)::s, i')
 
-	      | loop(INFIX(a,p,vid)::s, []) =
+	      | loop(INFIX(a,p,vid)::s', []) =
 		    errorVId("misplaced infix identifier ", vid)
 
-	      | loop(INFIX(x)::s, INFIX(a,p,vid)::i) =
+	      | loop(INFIX(x)::s', INFIX(a,p,vid)::i') =
 		    errorVId("misplaced infix identifier ", vid)
 
-	      | loop([], INFIX(a,p,vid)::i) =
+	      | loop([], INFIX(a,p,vid)::i') =
 		    errorVId("misplaced infix identifier ", vid)
 
 	      | loop _ = Crash.crash "Infix.parse: inconsistency"
 
-	    val x = loop([], List.map (categorise IE) (flatten x))
+	    val x' = loop([], List.map (categorise IE) (flatten x))
 	in
-	    ATXx(info x, x)
+	    nonatomic x'
 	end
 
 
     (* Expressions *)
 
     val exp = parse(ATEXPExp, APPExp, PARAtExp, TUPLEAtExp, LONGVIDAtExp,
-		    info_AtExp, categoriseAtExp, flattenExp)
+		    info_Exp, info_AtExp, categoriseAtExp, flattenExp)
 
     (* Patterns *)
 
     val pat = parse(ATPATPat, APPPat, PARAtPat, TUPLEAtPat, LONGVIDAtPat,
-		    info_AtPat, categoriseAtPat, flattenPat)
+		    info_Pat, info_AtPat, categoriseAtPat, flattenPat)
 
   end
