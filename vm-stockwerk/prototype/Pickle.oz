@@ -1,3 +1,15 @@
+%%%
+%%% Author:
+%%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+%%%
+%%% Copyright:
+%%%   Leif Kornstaedt, 2002
+%%%
+%%% Last change:
+%%%   $Date$ by $Author$
+%%%   $Revision$
+%%%
+
 %%
 %% pickle    ::= int | chunk | block | closure | transform
 %% int       ::= POSINT <uint> | NEGINT <uint>
