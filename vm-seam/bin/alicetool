@@ -53,6 +53,14 @@ case "$mode" in
 	fi
 	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$STOCKHOME/include "$@"
 	;;
+    c++)
+	if [ "$platform" = windows ]; then
+	    cflags=-mno-cygwin
+	else
+	    cflags=-fPIC
+	fi
+	cmd g++ $cflags -DLIGHTNING=$LIGHTNING -I$STOCKHOME/include "$@"
+	;;
     ld)
 	outputfile=""
 	ldflags=""
@@ -83,7 +91,7 @@ case "$mode" in
 	    ldflags="-mno-cygwin $ldflags"
 	    libs="$libs $STOCKHOME/stow.dll"
 	fi
-	cmd gcc -shared $ldflags -o $outputfile $fileargs $libs
+	cmd g++ -shared $ldflags -o $outputfile $fileargs $libs
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2
