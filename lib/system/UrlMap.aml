@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,7 +25,14 @@ structure UrlMap :> URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	fun new () = (Lock.lock (), UrlMap.new ())
+	fun new initial =
+	    let
+		val map = UrlMap.new ()
+	    in
+		Vector.app (fn (url, x) => UrlMap.insert (map, url, x))
+			   initial;
+		(Lock.lock (), map)
+	    end
 
 	fun lookup ((lock, map), url) = Lock.sync lock UrlMap.lookup (map, url)
 
