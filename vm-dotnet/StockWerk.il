@@ -36,8 +36,6 @@
 //    In C, these would be allocated as part of the tuple object.
 //
 
-//--** use brinst and brnull instead of brtrue and brfalse
-
 .namespace StockWerk {
   .class sealed public Prebound extends System.Object {
     // Names, Constructors, and Exceptions
@@ -997,13 +995,12 @@
       ldc.i4.s 46   // '.'
       callvirt instance int32 System.String::IndexOf(wchar)
       ldc.i4.M1
-      beq.s appendFrac
+      bne.un.s return
       dup
       ldc.i4.s 101   // 'e'
       callvirt instance int32 System.String::IndexOf(wchar)
       ldc.i4.M1
       bne.un.s return
-    appendFrac:
       newobj instance void System.StringBuilder::.ctor(class System.String)
       ldstr ".0"
       call instance class System.StringBuilder System.StringBuilder::Append(class System.String)
@@ -1090,7 +1087,7 @@
     }
     .method virtual public class System.String ToString() {
       ldarg.0
-      ldfld class System.String StockWerk.NamedName::Name
+      ldfld class System.String StockWerk.NamedConstructor::Name
       ret
     }
   }
