@@ -117,7 +117,7 @@ sig
     val max : space * intvar vector * intvar -> unit
     val abs : space * intvar * intvar * conlevel -> unit
     val mult: space * intvar * intvar * intvar -> unit
-    val power: space * intvar * intvar * intvar -> unit
+(*    val power: space * intvar * intvar * intvar -> unit*)
 
     structure Reified :
 	sig
@@ -140,14 +140,17 @@ sig
 	sig
 	    val min : space * intvar -> int
 	    val max : space * intvar -> int
+            val med : space * intvar -> int
 	    val value : space * intvar -> int (* NotAssigned *)
 	    val boolVal : space * boolvar -> bool (* NotAssigned *)
 	    val boolvar2intvar : boolvar -> intvar
 (*	    val mid : space * intvar -> int *)
 (*	    val nextLarger : space * fd * int -> int *)
 (*	    val nextSmaller : space * fd * int -> int *)
-(*	    val size : space * intvar -> int *)
+	    val size : space * intvar -> int
 	    val dom : space * intvar -> domain
+            val assigned : space * intvar -> bool
+            val range : space * intvar -> bool
 (*	    val domList : fd -> int list *)
 (*	    val nbSusps : fd -> int *)
 (*	    val eq : fd * fd -> bool (* token eq *) *)

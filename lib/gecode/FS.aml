@@ -98,7 +98,7 @@ struct
 	  fun empty space = bounds(space,#[],#[])
 	  fun single(space,i) = make(space,#[(i,i)])
 (*	  val universal = UnsafeGecodeFS.universal*)
-	  val is = UnsafeGecode.set_getAssigned
+	  val is = UnsafeGecode.set_isAssigned
        end
 
    structure Int =
@@ -117,7 +117,7 @@ struct
           val isIn = UnsafeGecode.set_includeRI
 	  val incl = UnsafeGecode.set_includeR
 	  fun areIn(space,v,set) = Vector.app
-				       (fn (b,i) => (isIn(space,i,set,b)))
+				       (fn (b,i) => (isIn(space,set,i,b)))
 				       v
           val equal = UnsafeGecode.set_equalR
           val subset = UnsafeGecode.set_subsetR
@@ -140,7 +140,7 @@ struct
 	   val unknown = UnsafeGecode.set_getUnknown
 	   val cardOfLowerBound = UnsafeGecode.set_getLowerBoundSize
 	   val cardOfUpperBound = UnsafeGecode.set_getUpperBoundSize
-(*	   val cardOfUnknown = UnsafeGecode.getCardOfUnknown*)
-           val print = UnsafeGecode.set_print
+	   val cardOfUnknown = UnsafeGecode.set_getUnknownSize
+           val assigned = UnsafeGecode.set_isAssigned
        end
 end

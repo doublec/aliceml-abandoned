@@ -86,15 +86,43 @@
 
 #define CHECK_SPACE(s) if (!s) RAISE(UnsafeGecode::InvalidSpaceConstructor);
 
-#define DECLARE_VAR(v, stamp, pstamp, x)                \
- u_int v;                                               \
- {                                                      \
-   DECLARE_TUPLE(varIntern, x);                         \
-   s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1)); \
-   if (myStamp != stamp && myStamp != pstamp)           \
-     RAISE(UnsafeGecode::InvalidVarConstructor);                      \
-   v = Store::DirectWordToInt(varIntern->Sel(0));             \
- } \
+#define DECLARE_INTVAR(v, s, stamp, pstamp, x)                  \
+ IntVar v;                                                      \
+ {                                                              \
+   u_int varIdx;                                                \
+   DECLARE_TUPLE(varIntern, x);                                 \
+   s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1));   \
+   if (myStamp != stamp && myStamp != pstamp)                   \
+     RAISE(UnsafeGecode::InvalidVarConstructor);                \
+   varIdx = Store::DirectWordToInt(varIntern->Sel(0));          \
+   v = s->is[varIdx];                                           \
+ }                                                              \
+ DBGMSG("DECLARE_VAR done.");
+
+#define DECLARE_BOOLVAR(v, s, stamp, pstamp, x)                 \
+ BoolVar v;                                                     \
+ {                                                              \
+   u_int varIdx;                                                \
+   DECLARE_TUPLE(varIntern, x);                                 \
+   s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1));   \
+   if (myStamp != stamp && myStamp != pstamp)                   \
+     RAISE(UnsafeGecode::InvalidVarConstructor);                \
+   varIdx = Store::DirectWordToInt(varIntern->Sel(0));          \
+   v = intvar2boolvar(s->is[varIdx]);                           \
+ }                                                              \
+ DBGMSG("DECLARE_VAR done.");
+
+#define DECLARE_SETVAR(v, s, stamp, pstamp, x)                  \
+ SetVar v;                                                      \
+ {                                                              \
+   u_int varIdx;                                                \
+   DECLARE_TUPLE(varIntern, x);                                 \
+   s_int myStamp = Store::DirectWordToInt(varIntern->Sel(1));   \
+   if (myStamp != stamp && myStamp != pstamp)                   \
+     RAISE(UnsafeGecode::InvalidVarConstructor);                \
+   varIdx = Store::DirectWordToInt(varIntern->Sel(0));          \
+   v = s->fss[varIdx];                                          \
+ }                                                              \
  DBGMSG("DECLARE_VAR done.");
 
 #define DECLARE_DESCRIPTION(desc, x) \
@@ -112,30 +140,6 @@ namespace UnsafeGecode {
   static word InvalidDomainConstructor;
   static word DescriptionConstructor;
   static s_int SpaceStamp = 0;
-  
-  class VectorRangeIterator {
-  private:
-    Vector *v;
-    u_int pos;
-    u_int size;
-  public:
-    VectorRangeIterator(Vector *vv) : v(vv), pos(0), size(v->GetLength()) {}
-
-    void operator++(void) { pos++; }
-    bool operator()(void) const { return pos < size; }
-    int min(void) const {
-      Tuple *t = Tuple::FromWord(v->Sub(pos));
-      return Store::WordToInt(t->Sel(0));
-    }
-    int max(void) const {
-      Tuple *t = Tuple::FromWord(v->Sub(pos));
-      return Store::WordToInt(t->Sel(1));
-    }
-    unsigned int width(void) const {
-      Tuple *t = Tuple::FromWord(v->Sub(pos));
-      return Store::WordToInt(t->Sel(1))-Store::WordToInt(t->Sel(0));
-    }
-  };
 
 const BvarSel int2bvarsel[] =
   {

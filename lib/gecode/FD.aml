@@ -128,7 +128,7 @@ struct
    val max = UnsafeGecode.int_max
    val abs = UnsafeGecode.int_abs
    val mult = UnsafeGecode.int_mult
-   val power = UnsafeGecode.int_power
+(*   val power = UnsafeGecode.int_power*)
 
    val branch = UnsafeGecode.int_branch
 
@@ -159,7 +159,11 @@ struct
        struct
            val min = UnsafeGecode.int_getMin
 	   val max = UnsafeGecode.int_getMax
+           val med = UnsafeGecode.int_getMed
            val dom = UnsafeGecode.int_getRanges
+           val size = UnsafeGecode.int_getDomainSize
+           val assigned = UnsafeGecode.int_isAssigned
+           val range = UnsafeGecode.int_isRange
 	   fun value (s,v) =
 	       let
 		   val min = min(s,v)

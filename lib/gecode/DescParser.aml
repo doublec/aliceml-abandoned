@@ -1,5 +1,9 @@
+import structure Print from "x-alice:/lib/system/Print"
+
 structure DescParser =
 struct
+  exception ParseError of string
+
   datatype var_types = IntVar | BoolVar | SetVar | List of var_types
   datatype args =
            Var of var_types | DomSpec | Rel | ConLevel |
@@ -7,7 +11,9 @@ struct
            AvalSel | BvarSel | BvalSel | SetBvarSel | SetBvalSel | 
            Space | Status | Description | Other of string
            
-  type desc = string * (args list * args)
+  type decl = string * (args list * args) * string
+  datatype desc = CLASS of string * decl list
+                | DECL of decl
 
   fun stripWhitespace (s where
                          (Char.isSpace(String.sub(s, String.size s - 1)))) =
@@ -20,16 +26,16 @@ struct
       String.substring(s, 0, String.size s -2)
     | removeTrailingN s = s
 
-  fun parseArg "intvar" = Var IntVar
-    | parseArg "boolvar" = Var BoolVar
-    | parseArg "setvar" = Var SetVar
+  fun parseArg "IntVar" = Var IntVar
+    | parseArg "BoolVar" = Var BoolVar
+    | parseArg "SetVar" = Var SetVar
     | parseArg "DomSpec&" = DomSpec
     | parseArg "reltype" = Rel
-    | parseArg "const intvarargs&" = Var (List IntVar)
+    | parseArg "const IntVarArgs&" = Var (List IntVar)
     | parseArg "const IntArgs&" = IntArgs
     | parseArg "conlevel" = ConLevel
-    | parseArg "const boolvarargs&" = Var (List BoolVar)
-    | parseArg "const setvarargs&" = Var (List SetVar)
+    | parseArg "const BoolVarArgs&" = Var (List BoolVar)
+    | parseArg "const SetVarArgs&" = Var (List SetVar)
     | parseArg "BranchDesc*" = Description
     | parseArg "int" = Int
     | parseArg "unsigned int" = UInt
@@ -43,21 +49,15 @@ struct
     | parseArg (s as ("VarRanges<IntVar>" |
                          "UBIter<SetVar>" |
                          "LBIter<SetVar>" |
-                         "Diff<UBIter<SetVar>, LBIter<SetVar> >" |
+                         "UnknownIter<SetVar>" |
                          "I&"
                          )) = Iterator s
     | parseArg s = Other s
 
   fun parseInArgs s =
       case String.tokens (fn #"," => true | _ => false) s of
-          nil => raise Empty
+          nil => raise ParseError "no arguments"
         | args => List.map (parseArg o stripWhitespace) args
-
-  fun parseDecl def =
-      case String.tokens (fn #"-" => true | _ => false) def of
-          [inargs, outarg] => (parseInArgs inargs,
-                               parseArg (stripWhitespace outarg))
-        | _ => raise Empty
 
   fun parseName s =
       let
@@ -68,30 +68,50 @@ struct
       in
           case n of
               [name] => (name, ret)
-            | _ => raise Overflow
+            | _ => raise ParseError "more than one name!?!"
       end
 
   fun parseLine "" = NONE
     | parseLine "\n" = NONE
     | parseLine (s where (String.isPrefix "//" s)) = NONE
     | parseLine s  =
-      case String.tokens (fn #"(" => true | #")"=> true | _ => false)
-                         (removeTrailingN s) of
-          [nameAndRet, argTypes] =>
-          let
-              val (name, retType) = parseName nameAndRet
-          in
-              SOME (stripWhitespace name,
-                    (parseInArgs argTypes,
-                     parseArg retType))
-          end
-        | s => raise Overflow
+      case String.tokens (fn #";" => true | _ => false) (removeTrailingN s) of
+          [decl, aliceName] =>
+      (case String.tokens (fn #"(" => true | #")"=> true | _ => false)
+                          decl of
+           [nameAndRet, argTypes] =>
+           let
+               val (name, retType) = parseName nameAndRet
+           in
+               SOME (stripWhitespace name,
+                     (parseInArgs argTypes,
+                      parseArg retType),
+                     stripWhitespace aliceName)
+           end
+         | s => raise ParseError "not of structure name(args)")
+        | _ => raise ParseError "semicolon expected"
+
+  fun parseClass' f =
+      case TextIO.inputLine f of
+          NONE => raise ParseError "unexpected EOF"
+        | SOME s where (String.isPrefix "};" s) => nil
+        | SOME s => case parseLine s of NONE => parseClass' f
+                                      | SOME d => (
+             d::parseClass' f)
+
+  fun parseClass s f =
+      case String.tokens (fn #" " => true | _ => false) s of
+          "class"::name::_ =>
+          CLASS (name, parseClass' f)
+        | r => raise ParseError "not of structure class <name> {"
 
   fun parseFile' f =
       case TextIO.inputLine f
        of NONE   => nil
+        | SOME s where (String.isPrefix "class " s) =>
+          (parseClass s f)::parseFile' f
 	| SOME s => case parseLine s of NONE => parseFile' f
-                                      | SOME s => s::parseFile' f
+                                      | SOME s => (DECL s)::parseFile' f
 
   fun parseFile filename =
       let
@@ -101,4 +121,4 @@ struct
 	  before TextIO.closeIn f
       end
 
-end 
+end

@@ -66,11 +66,11 @@ sig
 
     structure Int :
         sig
-            val incl : space * intvar * setvar -> unit
-            val excl : space * intvar * setvar -> unit
-            val the : space * intvar * setvar -> unit
-	    val min : space * intvar * setvar -> unit
-	    val max : space * intvar * setvar -> unit
+            val incl : space * setvar * intvar -> unit
+            val excl : space * setvar * intvar -> unit
+            val the : space * setvar * intvar -> unit
+	    val min : space * setvar * intvar -> unit
+	    val max : space * setvar * intvar -> unit
             val card : space *  setvar * intvar -> unit
 	    val match : space * setvar * intvar vector -> unit
 (*	    val minN : setvar * intvar vector -> unit *)
@@ -78,7 +78,7 @@ sig
 	end
 
     structure Reified : sig
-	val isIn : space * int * setvar * boolvar -> unit
+	val isIn : space * setvar * int * boolvar -> unit
 	val areIn : space * (boolvar * int) vector * setvar -> unit
 	val incl : space * intvar * setvar * boolvar -> unit
 	val equal : space * setvar * setvar * boolvar -> unit
@@ -100,8 +100,8 @@ sig
 	val unknown : space * setvar -> domain
 	val cardOfLowerBound : space * setvar -> int
 	val cardOfUpperBound : space * setvar -> int
-(*	val cardOfUnknown : space * setvar -> int*)
-        val print : space * setvar -> unit (* DEBUGGING ONLY! *)
+	val cardOfUnknown : space * setvar -> int
+        val assigned : space * setvar -> bool
     end
 
     (* Branching strategies *)
