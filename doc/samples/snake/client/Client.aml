@@ -11,12 +11,16 @@ struct
     (* [startClient (gui, server)] starts the core client given a server,
        which can be a future
      *)
-    fun startClient (gui_join : Gui.gui_join, 
+    fun startClient (gui : Gui.gui, gui_join : Gui.gui_join, 
 		     server : Protocol.server_interface) : 
             Protocol.client_interface * Gui.model_join =
         let
+            
             val promise     = Promise.promise () : Gui.gui_game Promise.promise
             val guiGame     = Promise.future promise
+            
+                
+            
             fun playersJoined players = #playersJoined gui_join players
             
             fun tournamentStarted () = #gameStarted gui_join ()
@@ -52,26 +56,29 @@ struct
             (* ------------ gui callbacks --------- *)
             (* user turns snake, gives up...        *)
             
+            fun invoke msg arg =
+                (msg server arg)
+
             fun turn d =
-                #turn server d
+                invoke #turn d
 
             fun changeView h =
-                #changeView server h
+                invoke #changeView h
 
             fun giveUp () =
-                #giveUp server ()
+                invoke #giveUp ()
                 
             fun play (name, color) = 
-                if #play server (name, color) then
+                if invoke #play (name, color) then
                     FST ({ turn, changeView, giveUp }, promise)
                 else
                     SND "no more players are allowed"
                 
             fun watch () =
-                (#watch server ();
+                (invoke #watch ();
                  FST ({ turn, changeView, giveUp }, promise))
 
-            fun disconnect () = #disconnect server ()
+            fun disconnect () = invoke #disconnect ()
             
             val lock = Lock.lock ()
 

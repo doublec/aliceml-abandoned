@@ -31,16 +31,16 @@ fun main () =
         (* gui callbacks *)
         val gui_promise = Promise.promise () : Gui.gui Promise.promise
         val gui         = Promise.future gui_promise
-        val gui_join_p  = Promise.promise () : Gui.gui_join Promise.promise
-        val gui_join    = Promise.future gui_join_p
- 
+
         (* called when user wants to quit *)
         fun quit () = OS.Process.exit OS.Process.success
 
         (* called when user wants to connect to some existing server *) 
         fun connect ticket : (Gui.model_join * Gui.gui_join Promise.promise, string) alt = 
             let
-                (* make physical connection --> take the ticket *)
+                val gui_join_p  = Promise.promise () : Gui.gui_join Promise.promise
+                val gui_join    = Promise.future gui_join_p
+                 (* make physical connection --> take the ticket *)
                 val package     = Remote.take ticket
                 (* unpack it.  Dynamic type check!
                    may fail with Package.Mismatch exception
@@ -52,7 +52,7 @@ fun main () =
                 (* start the actual client logic. returns
                    more or less immediatly *) 
                 val (client, 
-                    model_join) = Client.startClient (gui_join, 
+                    model_join) = Client.startClient (gui, gui_join, 
                                             Promise.future serverP) 
                 (* register ourselves at the server *)
                 val (config, 
@@ -78,14 +78,16 @@ fun main () =
         (* called when user wants to create own server *)
         fun startServer (player, config : Config.config) = 
             let
-                (* both creation of client and creation of server
+                val gui_join_p  = Promise.promise () : Gui.gui_join Promise.promise
+                val gui_join    = Promise.future gui_join_p
+              (* both creation of client and creation of server
                    depends on each other, but Client.startClient
                    is required to not use server before it has
                    returned, i.e only in threads it spawns or closures
                    it returns, likewise with gui_join
                  *)
                 val server                  = Promise.promise () 
-                val (client, model_join)    = Client.startClient (gui_join, 
+                val (client, model_join)    = Client.startClient (gui, gui_join, 
                                                 Promise.future server)
                 fun disconnect () =
                     (* TODO: implement *)
