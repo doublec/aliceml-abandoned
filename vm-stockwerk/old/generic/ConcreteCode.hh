@@ -35,7 +35,7 @@ public:
 			   u_int size) {
     Block *b = Store::AllocBlock(ConcreteCodeLabel, SIZE + size);
     b->InitArg(ABSTRACT_CODE_POS, abstractCode);
-    b->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(reinterpret_cast<void *>(interpreter)));
+    b->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
     return static_cast<ConcreteCode *>(b);
   }
   static ConcreteCode *FromWord(word x) {
@@ -48,7 +48,7 @@ public:
     return GetArg(ABSTRACT_CODE_POS);
   }
   Interpreter *GetInterpreter() {
-    return reinterpret_cast<Interpreter *>(Store::WordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
+    return static_cast<Interpreter *>(Store::WordToUnmanagedPointer(GetArg(INTERPRETER_POS)));
   }
   void Init(u_int index, word value) {
     InitArg(SIZE + index + 1, value);
