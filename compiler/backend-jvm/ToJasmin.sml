@@ -21,6 +21,7 @@ structure ToJasmin =
 	val actclass = ref ""
 	val actmeth = ref ""
 	val lastLabel = ref ~1
+	val finish = ref ""
 
 	fun makeArityString (0,x) = x
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
@@ -184,6 +185,8 @@ structure ToJasmin =
 			ref r
 		    end
 
+		val maxReg = ref 0;
+
 		(* maps JVM registers to their last read access position *)
 		val jvmto: int IntHash.t ref = ref (IntHash.new ())
 
@@ -205,7 +208,8 @@ structure ToJasmin =
 		     jvmto := IntHash.new();
 		     labHash := IntHash.new();
 		     fusedwith := StampHash.new();
-		     defines := StampHash.new())
+		     defines := StampHash.new();
+		     maxReg:=regs)
 
 		(* returns the stamp associated with the one in question *)
 		fun getOrigin register =
@@ -230,6 +234,7 @@ structure ToJasmin =
 			    NONE => Stamp.hash reg
 			  | SOME v => v
 		    in
+			if !maxReg < r then maxReg := r else ();
 			if !VERBOSE >=3 then
 			    print ("Accessing stamp "^Stamp.toString reg^" in "^
 				   "JVM register "^Int.toString r^"\n")
@@ -352,19 +357,6 @@ structure ToJasmin =
 		    in
 			if isSome t then StampHash.appi checkReg (!to) else ()
 		    end
-
-		(* returns the maximum JVM register we use *)
-		fun max parms =
-		    if !OPTIMIZE =0 then
-			StampHash.fold
-			(fn (stamp', y) => Int.max (Stamp.hash stamp', y))
-			parms
-			(!to)
-		    else
-			IntHash.fold
-			Int.max
-			parms
-			(!jvmto)
 
 		(* fuses two stamps. Called on aload/astore pairs *)
 		fun fuse (x,u) =
@@ -1032,9 +1024,9 @@ structure ToJasmin =
 			     recurse (is, nextSize, (Int.max (nextSize,max)))
 			end
 		      | recurse (nil,need,max) =
-			 if enterstack then
-			     TextIO.output
-			     (ziel, ".limit stack "^Int.toString max^"\n")
+			if enterstack then
+			    TextIO.output
+			    (ziel, !finish^".limit stack "^Int.toString max^"\n")
 			 else ()
 		in
 		    recurse (insts, 0, 0)
@@ -1050,7 +1042,7 @@ structure ToJasmin =
 				  ^" "^fieldname^" "^(desclist2string arg)^"\n")
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,
-					   methodsig as (parms,_), instructions)) =
+					   methodsig as (parms,retval), instructions)) =
 		    let
 			val staticapply =
 			    List.exists
@@ -1062,21 +1054,27 @@ structure ToJasmin =
 			     nil => ()
 			   | _ =>
 				 (LabelMerge.new();
-				  JVMreg.new ();
+				  JVMreg.new (siglength parms);
 				  TextIO.output(io,".method "^
 						(mAccessToString access)^
 						methodname^
 						(descriptor2string methodsig)^"\n");
 				  actmeth := methodname;
+				  (* Hack to satisfy Byte Code Verifier. *)
+				  if !OPTIMIZE >= 2
+				      then
+					  finish := ""
+				  else
+				      (case retval of
+					   [Voidsig] => finish := "return\n"
+					 | _ => finish := "areturn\n");
 				  instructionsToJasmin
 				  (optimize instructions,
 				   true,
 				   staticapply,
 				   io);
 				  TextIO.output(io,".limit locals "^
-						Int.toString(JVMreg.max
-							     (siglength parms)
-							     +1)
+						Int.toString(!JVMreg.maxReg + 1)
 						^"\n");
 				  TextIO.output(io,".end method\n\n")))
 		    end
