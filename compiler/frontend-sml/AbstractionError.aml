@@ -18,7 +18,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     type TyCon	= TyCon.t
     type StrId	= StrId.t
     type SigId	= SigId.t
-    type FunId	= FunId.t
     type id	= AbstractGrammar.id
 
     datatype error =
@@ -28,7 +27,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarUnbound		of TyVar
 	| StrIdUnbound		of StrId
 	| SigIdUnbound		of SigId
-	| FunIdUnbound		of FunId
 	| PreboundFirstClass
 	(* Expressions *)
 	| ExpRowLabDuplicate	of Lab
@@ -44,13 +42,13 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarSeqDuplicate	of TyVar
 	| ValTyVarSeqDuplicate	of TyVar
 	(* Declarations and bindings *)
-	| FnBindDuplicate	of VId
-	| FnBindArityInconsistent
-	| FnBindArityZero
-	| FnBindNameInconsistent of VId
-	| FnBindNameMissing
-	| FnBindNameCon		of VId
-	| FnBindPatInvalid
+	| FvalBindDuplicate	of VId
+	| FvalBindArityInconsistent
+	| FvalBindArityZero
+	| FvalBindNameInconsistent of VId
+	| FvalBindNameMissing
+	| FvalBindNameCon	of VId
+	| FvalBindPatInvalid
 	| TypBindDuplicate	of TyCon
 	| DatBindDuplicate	of TyCon
 	| DatBindConDuplicate	of VId
@@ -59,14 +57,12 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| DconBindNonCon
 	| StrBindDuplicate	of StrId
 	| SigBindDuplicate	of SigId
-	| FunBindDuplicate	of FunId
 	(* Specifications and descriptions *)
 	| SpecFixDuplicate	of VId
 	| SpecVIdDuplicate	of VId
 	| SpecTyConDuplicate	of TyCon
 	| SpecStrIdDuplicate	of StrId
 	| SpecSigIdDuplicate	of SigId
-	| SpecFunIdDuplicate	of FunId
 	| ConDescDuplicate	of VId
 	| DconDescNonCon
 	(* Sharing translation *)
@@ -81,7 +77,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| TyVarShadowed		of TyVar
 	| StrIdShadowed		of StrId
 	| SigIdShadowed		of SigId
-	| FunIdShadowed		of FunId
 
 
   (* Pretty printing *)
@@ -94,7 +89,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     fun ppTyVar tyvar	= ppQuoted(TyVar.toString tyvar)
     fun ppStrId strid	= ppQuoted(StrId.toString strid)
     fun ppSigId sigid	= ppQuoted(SigId.toString sigid)
-    fun ppFunId funid	= ppQuoted(FunId.toString funid)
 
     fun ppLab'(AbstractGrammar.Lab(_,l)) = l
 
@@ -110,9 +104,8 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     val classVId	= (ppVId,   ["value","or","constructor"])
     val classTyCon	= (ppTyCon, ["type"])
     val classTyVar	= (ppTyVar, ["type","variable"])
-    val classStrId	= (ppStrId, ["structure"])
+    val classStrId	= (ppStrId, ["structure","or","functor"])
     val classSigId	= (ppSigId, ["signature"])
-    val classFunId	= (ppFunId, ["functor"])
 
     fun ppUnbound((ppId,class), id) =
 	  par(["unknown"] @ class @ [ppId id])
@@ -127,8 +120,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppUnbound(classStrId, strid)
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
-      | ppError(FunIdUnbound funid) =
-	  ppUnbound(classFunId, funid)
       | ppError(PreboundFirstClass) =
 	  par["invalid","use","of","pseudo","structure"]
       (* Expressions *)
@@ -157,20 +148,20 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(ValTyVarSeqDuplicate tyvar) =
 	  par(["duplicate","or","shadowing"] @ #2 classTyVar @ [ppTyVar tyvar])
       (* Declarations and bindings *)
-      | ppError(FnBindDuplicate vid) =
+      | ppError(FvalBindDuplicate vid) =
 	  par["duplicate","function",ppVId vid,"in","binding","group"]
-      | ppError(FnBindArityInconsistent) =
+      | ppError(FvalBindArityInconsistent) =
 	  par["inconistent","function","arity","in","function","clause"]
-      | ppError(FnBindArityZero) =
+      | ppError(FvalBindArityZero) =
 	  par["no","arguments","in","function","clause"]
-      | ppError(FnBindNameInconsistent vid) =
+      | ppError(FvalBindNameInconsistent vid) =
 	  par["inconistent","function","name",ppVId vid,
 	      "in","function","clause"]
-      | ppError(FnBindNameMissing) =
+      | ppError(FvalBindNameMissing) =
 	  par["no","function","name","in","function","clause"]
-      | ppError(FnBindNameCon vid) =
+      | ppError(FvalBindNameCon vid) =
 	  par["redefining","constructor",ppVId vid,"as","value"]
-      | ppError(FnBindPatInvalid) =
+      | ppError(FvalBindPatInvalid) =
 	  par["invalid","function","clause"]
       | ppError(TypBindDuplicate tycon) =
 	  par(["duplicate"] @ #2 classTyCon @
@@ -193,9 +184,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigBindDuplicate sigid) =
 	  par(["duplicate"] @ #2 classSigId @
 	      [ppSigId sigid,"in","binding","group"])
-      | ppError(FunBindDuplicate funid) =
-	  par(["duplicate"] @ #2 classFunId @
-	      [ppFunId funid,"in","binding","group"])
       (* Specifications and descriptions *)
       | ppError(SpecFixDuplicate vid) =
 	  par(["duplicate","fixity","specification","for"] @ #2 classVId @
@@ -208,8 +196,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","signature"])
       | ppError(SpecSigIdDuplicate sigid) =
 	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","signature"])
-      | ppError(SpecFunIdDuplicate funid) =
-	  par(["duplicate"] @ #2 classFunId @ [ppFunId funid,"in","signature"])
       | ppError(ConDescDuplicate vid) =
 	  par["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconDescNonCon) =
@@ -237,8 +223,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppShadowed(classStrId, strid)
       | ppWarning(SigIdShadowed sigid) =
 	  ppShadowed(classSigId, sigid)
-      | ppWarning(FunIdShadowed funid) =
-	  ppShadowed(classFunId, funid)
 
 
   (* Export *)

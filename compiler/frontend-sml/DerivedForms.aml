@@ -77,12 +77,10 @@ structure DerivedForms :> DERIVED_FORMS =
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
     type StrId     = Grammar.StrId
-    type FunId     = Grammar.FunId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
     type LongStrId = Grammar.LongStrId
     type LongSigId = Grammar.LongSigId
-    type LongFunId = Grammar.LongFunId
 
     type Op        = Grammar.Op
     type AtExp     = Grammar.AtExp
@@ -106,17 +104,20 @@ structure DerivedForms :> DERIVED_FORMS =
     type Pat       = Grammar.Pat
     type Ty        = Grammar.Ty
     type TyVarSeq  = Grammar.TyVarSeq
+    type AtStrExp  = Grammar.AtStrExp
+    type AppStrExp = Grammar.StrExp
     type StrExp    = Grammar.StrExp
+    type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
-    type FunBind   = Grammar.FunBind
+    type FunBind   = Grammar.StrBind
+    type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
-    type TyReaDesc = (Info * TyVarSeq * LongTyCon * Ty) list
     type Spec      = Grammar.Spec
     type ValDesc   = Grammar.ValDesc
     type TypDesc   = Grammar.TypDesc
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
-    type FunDesc   = Grammar.FunDesc
+    type FunDesc   = Grammar.StrDesc
     type Program   = Grammar.Program
 
 
@@ -203,6 +204,9 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.ARROWTy(I, replaceTy tyvarseq_tyseq ty1,
 			 replaceTy tyvarseq_tyseq ty2)
 
+      | replaceTy tyvarseq_tyseq (ty as G.PACKTy _) =
+	    ty
+
       | replaceTy tyvarseq_tyseq (G.PARTy(I, ty)) =
 	    G.PARTy(I, replaceTy tyvarseq_tyseq ty)
 
@@ -240,6 +244,9 @@ structure DerivedForms :> DERIVED_FORMS =
 
       | rewriteTy typbind (G.ARROWTy(I, ty1, ty2)) =
 	    G.ARROWTy(I, rewriteTy typbind ty1, rewriteTy typbind ty2)
+
+      | rewriteTy typbind (ty as G.PACKTy _) =
+	    ty
 
       | rewriteTy typbind (G.PARTy(I, ty)) =
 	    G.PARTy(I, rewriteTy typbind ty)
@@ -404,6 +411,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     val FUNDec       = G.FUNDec
     val EXCEPTIONDec = G.CONSTRUCTORDec
+    val FUNCTORDec   = G.STRUCTUREDec
     val FvalBind     = G.FvalBind
     val EQUALExBind  = G.EQUALDconBind
     val Fmatch       = G.Match
@@ -462,25 +470,10 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.SEQDec(I, G.NONFIXDec(I,longvid), NONFIXMULTIDec(I,longvids))
 
 
-    fun PRIMITIVEEXCEPTIONDec(I, op_opt, vid, ty_opt, s) =
-	    G.PRIMITIVECONSTRUCTORDec(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-					 longtycon_EXN(I), s)
-
-    fun PRIMITIVEFUNCTORSPECDec(I, funid, spec, sigexp, s) =
-	let
-	    val I'      = G.infoSigExp sigexp
-	    val strid   = G.StrId(I', StrId.invent())
-	    val sigexp1 = G.SIGSigExp(G.infoSpec spec, spec)
-	in
-	    (* UNFINISHED: to translate, I either need LETSigExp,
-	       or LOCALSpec+OPENSpec. *)
-	    G.PRIMITIVEFUNCTORDec(I, funid, strid, sigexp1, sigexp, s)
-	end
-
-
     fun NEWExBind(I, op_opt, vid, ty_opt, dconbind_opt) =
 	    G.NEWDconBind(I, op_opt, vid, ty_opt,
 			     G.Seq(I,[]), longtycon_EXN(I), dconbind_opt)
+ 
 
     (* Structure bindings *)
 
@@ -493,56 +486,67 @@ structure DerivedForms :> DERIVED_FORMS =
     fun OPAQStrBind(I, strid, sigexp, strexp, strbind_opt) =
 	    G.StrBind(I, strid, G.OPAQStrExp(I, strexp, sigexp), strbind_opt)
 
+    fun WILDCARDStrBind(I, sigexp_opt, strexp, strbind_opt) =
+	    TRANSStrBind(I, G.StrId(I, StrId.invent()),
+			 sigexp_opt, strexp, strbind_opt)
+
 
     (* Structure expressions *)
 
-    fun PARStrExp(I, strexp) = strexp
+    val DECAtStrExp = G.STRUCTAtStrExp
+    val STRIDStrPat = G.StrPat
 
-    fun APPDECStrExp(I, longfunid, dec) =
-	    G.APPStrExp(I, longfunid, G.STRUCTStrExp(G.infoDec dec, dec))
+    fun FCTStrExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp),
+		     strexp) =
+	if StrId.toString strid' <> "" then
+	    G.FCTStrExp(I, strpat, strexp)
+	else
+	let
+	    val I3     = G.infoStrExp strexp
+	    val strid  = G.StrId(I2, StrId.invent())
+
+	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
+	    val letexp = G.ATSTREXPStrExp(I3, G.LETAtStrExp(I3, dec, strexp))
+	in
+	    G.FCTStrExp(I, strpat, letexp)
+	end
+
+    fun WILDCARDStrPat(I, sigexp) =
+	    G.StrPat(I, G.StrId(I, StrId.invent()), sigexp)
+
+    fun SPECStrPat(I, spec) =
+	let
+	    val I' = G.infoSpec spec
+	in
+	    G.StrPat(I, G.StrId(I, StrId.fromString ""),
+		     G.ATSIGEXPSigExp(I', G.SIGAtSigExp(I', spec)))
+	end
 
 
     (* Functor bindings *)
 
-    fun TRANSFunBind(I, funid, strid, sigexp, NONE, strexp, funbind_opt) =
-	    G.FunBind(I, funid, strid, sigexp, strexp, funbind_opt)
-
-      | TRANSFunBind(I, funid, strid,sigexp, SOME sigexp', strexp, funbind_opt)=
-	    G.FunBind(I, funid, strid, sigexp, G.TRANSStrExp(I, strexp,sigexp'),
-			 funbind_opt)
-
-    fun OPAQFunBind(I, funid, strid, sigexp, sigexp', strexp, funbind_opt) =
-	    G.FunBind(I, funid, strid, sigexp, G.OPAQStrExp(I, strexp, sigexp'),
-			 funbind_opt)
-
-
-    fun TRANSSPECFunBind(I, funid, spec, sigexp_opt, strexp, funbind_opt) =
+    fun FunBind(I, strid, strpats, strexp, funbind_opt) =
 	let
-	    val I'     = G.infoStrExp strexp
-	    val strid  = G.StrId(I', StrId.invent())
-	    val sigexp = G.SIGSigExp(G.infoSpec spec, spec)
+	    val I' = G.infoStrExp strexp
 
-	    val dec    = G.OPENDec(I',G.SHORTLong(I',strid))
-	    val strexp'= case sigexp_opt
-			   of NONE         => strexp
-			    | SOME sigexp' => G.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = G.LETStrExp(I', dec, strexp')
+	    fun buildStrExp       []         = strexp
+	      | buildStrExp(strpat::strpats) =
+		    FCTStrExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildStrExp strpats)
 	in
-	    G.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
+	    G.StrBind(I, strid, buildStrExp strpats, funbind_opt)
 	end
 
-    fun OPAQSPECFunBind(I, funid, spec, sigexp', strexp, funbind_opt) =
-	let
-	    val I'     = G.infoStrExp strexp
-	    val strid  = G.StrId(I', StrId.invent())
-	    val sigexp = G.SIGSigExp(G.infoSpec spec, spec)
+    fun TRANSFunBind(I, strid, strpats, NONE, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, strexp, funbind_opt)
 
-	    val dec    = G.OPENDec(I',G.SHORTLong(I',strid))
-	    val strexp'= G.TRANSStrExp(I', strexp, sigexp')
-	    val letexp = G.LETStrExp(I', dec, strexp')
-	in
-	    G.FunBind(I, funid, strid, sigexp, letexp, funbind_opt)
-	end
+      | TRANSFunBind(I, strid, strpats, SOME sigexp, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, G.TRANSStrExp(I, strexp, sigexp),
+		       funbind_opt)
+
+    fun OPAQFunBind(I, strid, strpats, sigexp, strexp, funbind_opt) =
+	    FunBind(I, strid, strpats, G.OPAQStrExp(I, strexp, sigexp),
+		       funbind_opt)
 
 
     (* Specifications *)
@@ -550,6 +554,7 @@ structure DerivedForms :> DERIVED_FORMS =
     val FUNSpec       = G.VALSpec
     val SHARINGSpec   = G.SHARINGSpec
     val EXCEPTIONSpec = G.CONSTRUCTORSpec
+    val FUNCTORSpec   = G.STRUCTURESpec
     val EQUALExDesc   = G.EQUALDconDesc
 
     fun DATATYPESpec(I, datdesc, NONE)         = G.DATATYPESpec(I, datdesc)
@@ -564,7 +569,8 @@ structure DerivedForms :> DERIVED_FORMS =
     fun INCLUDEMULTISpec(I, [])             = G.EMPTYSpec(I)
       | INCLUDEMULTISpec(I, longsigid::longsigids') =
 	let
-	    val spec1 = G.INCLUDESpec(I, G.LONGSIGIDSigExp(I, longsigid))
+	    val sigexp = G.ATSIGEXPSigExp(I, G.LONGSIGIDAtSigExp(I, longsigid))
+	    val spec1  = G.INCLUDESpec(I, sigexp)
 	in
 	    G.SEQSpec(I, spec1, INCLUDEMULTISpec(I, longsigids'))
 	end
@@ -590,68 +596,118 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
 			  longtycon_EXN(I), dcondesc_opt)
 
-    fun SPECFunDesc(I, funid, spec, sigexp, fundesc_opt) =
+    fun FunDesc(I, strid, strpats, sigexp, fundesc_opt) =
 	let
-	    val I'      = G.infoSigExp sigexp
-	    val strid   = G.StrId(I', StrId.invent())
-	    val sigexp1 = G.SIGSigExp(G.infoSpec spec, spec)
+	    val I' = G.infoSigExp sigexp
+
+	    fun buildSigExp       []         = sigexp
+	      | buildSigExp(strpat::strpats) =
+		    FCTSigExp(Source.over(G.infoStrPat strpat, I'),
+			      strpat, buildSigExp strpats)
 	in
-	    (* UNFINISHED: to translate, I either need LETSigExp,
-	       or LOCALSpec+OPENSpec. *)
-	    G.FunDesc(I, funid, strid, sigexp1, sigexp, fundesc_opt)
+	    G.NEWStrDesc(I, strid, buildSigExp strpats, fundesc_opt)
 	end
 
 
     (* Signature expressions *)
 
-    fun PARSigExp(I, sigexp) = sigexp
-
-    fun WHERESTRUCTURESigExp(I, sigexp, longstrid1, longstrid2) =
+    and FCTSigExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp1),
+		     sigexp) =
+	if StrId.toString strid' <> "" then
+	    G.FCTSigExp(I, strpat, sigexp)
+	else
 	let
-	    val  I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
-	    val (strids',strid') = G.explodeLong longstrid1
+	    val I3     = G.infoSigExp sigexp
+	    val strid  = G.StrId(I2, StrId.invent())
 
-	    fun buildStrDesc [] =
-		    G.EQUALStrDesc(I', strid', NONE, longstrid2, NONE)
-	      | buildStrDesc(strid::strids) =
-		    G.NEWStrDesc(I', strid, buildSigExp strids, NONE)
+	    val dec    = G.OPENDec(I3, G.SHORTLong(I3, strid))
+	    val letexp = G.ATSIGEXPSigExp(I3, G.LETAtSigExp(I3, dec, sigexp))
+	in
+	    G.FCTSigExp(I, strpat, letexp)
+	end
+
+
+    datatype Rea =
+	  VALRea         of Info * Op * LongVId * Op * LongVId * Rea option
+	| CONSTRUCTORRea of Info * Op * LongVId * Op * LongVId * Rea option
+	| TYPERea        of Info * TyVarSeq * LongTyCon * Ty * Rea option
+	| STRUCTURERea   of Info * LongStrId * SigExp option * LongStrId
+							     * Rea option
+	| SIGNATURERea   of Info * LongSigId * StrPat list * AppSigExp
+							   * Rea option
+
+    val FUNRea       = VALRea
+    val EXCEPTIONRea = CONSTRUCTORRea
+    val FUNCTORRea   = STRUCTURERea
+
+
+    fun buildValSpec (op_opt1, op_opt2, longvid) (I, vid) =
+	    G.VALSpec(I, G.EQUALValDesc(I, op_opt1, vid,
+					   op_opt2, longvid, NONE))
+    fun buildDconSpec (op_opt1, op_opt2, longvid) (I, vid) =
+	    G.CONSTRUCTORSpec(I, G.EQUALDconDesc(I, op_opt1, vid,
+						    op_opt2, longvid, NONE))
+    fun buildTypSpec (tyvarseq, ty) (I, tycon) =
+	    G.TYPESpec(I, G.EQUALTypDesc(I, tyvarseq, tycon, ty, NONE))
+    fun buildStrSpec (sigexp_opt, longstrid) (I, strid) =
+	    G.STRUCTURESpec(I, G.EQUALStrDesc(I, strid, sigexp_opt,
+						 longstrid, NONE))
+    fun buildSigSpec (strpats, sigexp) (I, sigid) =
+	    G.SIGNATURESpec(I, G.EQUALSigDesc(I, sigid, strpats, sigexp, NONE))
+
+
+    fun buildSigExp(buildInnerSpec, I, longid, rea_opt) =
+	let
+	    val (strids,id) = G.explodeLong longid
+
+	    fun buildSpec      []        = buildInnerSpec(I, id)
+	      | buildSpec(strid::strids) =
+		  G.STRUCTURESpec(I,
+			G.NEWStrDesc(I, strid, buildSigExp strids, NONE))
 
 	    and buildSigExp strids =
-		    G.SIGSigExp(I', G.STRUCTURESpec(I', buildStrDesc strids))
+		  G.ATSIGEXPSigExp(I,
+			G.SIGAtSigExp(I, buildSpec strids))
 	in
-	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	    ( buildSigExp strids, rea_opt )
 	end
 
-    fun WHERETYPESigExp'(I, sigexp, tyvarseq, longtycon, ty) =
+
+    fun Rea(VALRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
+	    buildSigExp(buildValSpec(op_opt1, op_opt2, longvid2),
+			I, longvid1, rea_opt)
+      | Rea(CONSTRUCTORRea(I, op_opt1, longvid1, op_opt2, longvid2, rea_opt)) =
+	    buildSigExp(buildDconSpec(op_opt1, op_opt2, longvid2),
+			I, longvid1, rea_opt)
+      | Rea(TYPERea(I, tyvarseq, longtycon, ty, rea_opt)) =
+	    buildSigExp(buildTypSpec(tyvarseq, ty), I, longtycon, rea_opt)
+      | Rea(STRUCTURERea(I, longstrid1, sigexp_opt, longstrid2, rea_opt)) =
+	    buildSigExp(buildStrSpec(sigexp_opt, longstrid2),
+			I, longstrid1, rea_opt)
+      | Rea(SIGNATURERea(I, longsigid, strpats, sigexp, rea_opt)) =
+	    buildSigExp(buildSigSpec(strpats, sigexp), I, longsigid, rea_opt)
+
+    fun WHEREREASigExp'(I, sigexp, NONE)     = sigexp
+      | WHEREREASigExp'(I, sigexp, SOME rea) =
 	let
-	    val  I'             = Source.over(G.infoSeq tyvarseq, G.infoTy ty)
-	    val (strids',tycon) = G.explodeLong longtycon
-
-	    fun buildSpec [] =
-		  G.TYPESpec(I', G.EQUALTypDesc(I', tyvarseq, tycon, ty, NONE) )
-	      | buildSpec(strid::strids) =
-		  G.STRUCTURESpec(I',
-			G.NEWStrDesc(I', strid, buildSigExp strids, NONE) )
-
-	    and buildSigExp strids = G.SIGSigExp(I', buildSpec strids)
+	    val (sigexp2,rea_opt) = Rea rea
+	    val  I'               = Source.over(I, G.infoSigExp sigexp2)
+	    val  sigexp'          = G.WHERESigExp(I', sigexp, sigexp2)
 	in
-	    G.WHERESigExp(I, sigexp, buildSigExp strids')
+	    WHEREREASigExp'(I, sigexp', rea_opt)
 	end
 
-    fun WHERETYPESigExp(I, sigexp, [])                                = sigexp
-      | WHERETYPESigExp(I, sigexp, (I',tyvarseq,longtycon,ty)::reas') =
+    fun WHEREREASigExp(I, sigexp, rea) = WHEREREASigExp'(I, sigexp, SOME rea)
+
+
+    fun WHERELONGSTRIDSigExp(I, sigexp, longstrid1, longstrid2) =
 	let
-	    val sigexp' = WHERETYPESigExp'(I', sigexp, tyvarseq, longtycon, ty)
+	    val I' = Source.over(G.infoLong longstrid1, G.infoLong longstrid2)
 	in
-	    WHERETYPESigExp(I, sigexp', reas')
+	    WHEREREASigExp(I, sigexp,
+			   STRUCTURERea(I', longstrid1, NONE, longstrid2, NONE))
 	end
 
-
-    fun TyReaDesc(I, tyvarseq, longtycon, ty, NONE) =
-	    (I, tyvarseq, longtycon, ty)::[]
-
-      | TyReaDesc(I, tyvarseq, longtycon, ty, SOME tyreadesc) =
-	    (I, tyvarseq, longtycon, ty)::tyreadesc
 
 
     (* Programs *)

@@ -64,6 +64,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
 	    ) typ typs
 
+    fun funinf(idinfs,inf) =
+	List.foldr (fn((id,inf1),inf2) =>
+	      O.FunInf(Source.over(O.infoId id, O.infoInf inf2), id, inf1, inf2)
+	    ) inf idinfs
+
     fun vardec(ids,dec) =
 	List.foldr (fn(id,dec) => O.VarDec(O.infoId id, id, dec)) dec ids
 
@@ -79,9 +84,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
   (* Constants and identifiers *)
-
-    fun toFunName s   = "$" ^ s
-    fun fromFunName s = String.extract(s,1,NONE)
 
     fun trSCon E =
 	fn SCon(i, SCon.INT n)		=> O.IntLit n
@@ -120,8 +122,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			StrId.toString, E.StrIdUnbound)
     val trSigId = trId(lookupSig, infoSigId, idSigId,
 			SigId.toString, E.SigIdUnbound)
-    val trFunId = trId(lookupFun, infoFunId, idFunId,
-			toFunName o FunId.toString, E.FunIdUnbound)
 
 
     fun trId_bind (lookup,infoId,idId,toString,Shadowed) E id =
@@ -147,8 +147,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 E.StrIdShadowed)
     val trSigId_bind = trId_bind(lookupSig, infoSigId, idSigId, SigId.toString,
 				 E.SigIdShadowed)
-    val trFunId_bind = trId_bind(lookupFun, infoFunId, idFunId,
-				toFunName o FunId.toString, E.FunIdShadowed)
 
 
     (* With polymorphic recursion we could avoid the following code
@@ -203,7 +201,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trLongTyCon = trLongId trTyCon
     val trLongStrId = trLongId trStrId
     val trLongSigId = trLongId trSigId
-    val trLongFunId = trLongId trFunId
 
 
 
@@ -261,6 +258,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsExp E (FNExp(_, match)) =
 	    unguardedTyVarsMatch E match
 
+      | unguardedTyVarsExp E (PACKExp(_, longstrid)) =
+	    []
+
     and unguardedTyVarsMatch E (Match(_, mrule, match_opt)) =
 	    unguardedTyVarsMrule E mrule @ ?unguardedTyVarsMatch E match_opt
 
@@ -272,9 +272,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
       | unguardedTyVarsDec E (STRUCTUREDec(_, strbind)) =
 	    unguardedTyVarsStrBind E strbind
-
-      | unguardedTyVarsDec E (FUNCTORDec(_, funbind)) =
-	    unguardedTyVarsFunBind E funbind
 
       | unguardedTyVarsDec E ( LOCALDec(_, dec1, dec2)
 			     | SEQDec(_, dec1, dec2) ) =
@@ -314,11 +311,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and unguardedTyVarsStrBind E (StrBind(_, strid, strexp, strbind_opt)) =
 	    unguardedTyVarsStrExp E strexp @
 	    ?unguardedTyVarsStrBind E strbind_opt
-
-    and unguardedTyVarsFunBind E (FunBind(_, funid, strid, sigexp, strexp,
-								funbind_opt)) =
-	    unguardedTyVarsStrExp E strexp @
-	    ?unguardedTyVarsFunBind E funbind_opt
 
     and unguardedTyVarsAtPat E (RECORDAtPat(_, patrow_opt)) =
 	    ?unguardedTyVarsPatRow E patrow_opt
@@ -385,6 +377,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | unguardedTyVarsTy E (ARROWTy(_, ty, ty')) =
 	    unguardedTyVarsTy E ty @ unguardedTyVarsTy E ty'
 
+      | unguardedTyVarsTy E (PACKTy(_, longsigid)) =
+	    []
+
       | unguardedTyVarsTy E (PARTy(_, ty)) =
 	    unguardedTyVarsTy E ty
 
@@ -394,21 +389,33 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and unguardedTyVarsTyseq E (Seq(_, tys)) =
 	    List.concat(List.map (unguardedTyVarsTy E) tys)
 
-    and unguardedTyVarsStrExp E (STRUCTStrExp(_, dec)) =
+    and unguardedTyVarsAtStrExp E (STRUCTAtStrExp(_, dec)) =
 	    unguardedTyVarsDec E dec
 
-      | unguardedTyVarsStrExp E (LONGSTRIDStrExp(_, longstrid)) =
+      | unguardedTyVarsAtStrExp E (LONGSTRIDAtStrExp(_, longstrid)) =
 	    []
 
-      | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, sigexp)
-				| OPAQStrExp(_, strexp, sigexp) ) =
-	    unguardedTyVarsStrExp E strexp
-
-      | unguardedTyVarsStrExp E (APPStrExp(_, longfunid, strexp)) =
-	    unguardedTyVarsStrExp E strexp
-
-      | unguardedTyVarsStrExp E (LETStrExp(_, dec, strexp)) =
+      | unguardedTyVarsAtStrExp E (LETAtStrExp(_, dec, strexp)) =
 	    unguardedTyVarsDec E dec @ unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsAtStrExp E (PARAtStrExp(_, strexp)) =
+	    unguardedTyVarsStrExp E strexp
+
+    and unguardedTyVarsStrExp E (ATSTREXPStrExp(_, atstrexp)) =
+	    unguardedTyVarsAtStrExp E atstrexp
+
+      | unguardedTyVarsStrExp E (APPStrExp(_, strexp, atstrexp)) =
+	    unguardedTyVarsStrExp E strexp @ unguardedTyVarsAtStrExp E atstrexp
+
+      | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, _)
+				| OPAQStrExp(_, strexp, _)
+				| FCTStrExp(_, _, strexp) ) =
+	    unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsStrExp E (UNPACKStrExp(_, exp, sigexp)) =
+	    unguardedTyVarsExp E exp
+
+      (*UNFINISHED: if we have LETSigExp then we must check sigexps as well*)
 
 
 
@@ -512,6 +519,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   in
 		O.FunExp(i, id', exp')
 	   end
+
+	| PACKExp(i, longstrid) =>
+	  let
+		val (longid',E') = trLongStrId E longstrid
+		val  mod'        = longidToMod longid'
+	  in
+		O.PackExp(i, mod')
+	  end
+
 
     and trAppExp E =
 	fn APPExp(i, exp, atexp) => O.AppExp(i, trAppExp E exp, trAtExp E atexp)
@@ -755,7 +771,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | ARROWTy(i, ty1, ty2) => O.ArrTyp(i, trTy E ty1, trTy E ty2)
-	 | PARTy(i, ty)         => trTy E ty
+
+	 | PACKTy(i, longsigid) =>
+	   let
+		val (longid',E') = trLongSigId E longsigid
+		val  inf'        = O.ConInf(infoLong longsigid, longid')
+	   in
+		O.PackTyp(i, inf')
+	   end
+
+	 | PARTy(i, ty) => trTy E ty
 
     and trTys E = List.map (trTy E)
 
@@ -826,6 +851,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | RECORDTy(i, tyrowo)   => trAllTyRowo E tyrowo
 	 | TUPLETy(i, tys)       => List.concat(List.map (trAllTy E) tys)
 	 | ARROWTy(i, ty1, ty2)  => trAllTy E ty1 @ trAllTy E ty2
+	 | PACKTy(i, longsigid)  => []
 	 | PARTy(i, ty)          => trAllTy E ty
 
     and trAllTyRowo E =
@@ -959,15 +985,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		decs'
 	   end
 
-	 | FUNCTORDec(i, funbind) =>
-	   let
-		val E'    = Env.new()
-		val decs' = trFunBindo' (E,E',acc) (SOME funbind)
-		val _     = union(E,E')
-	   in
-		decs'
-	   end
-
 	 | LOCALDec(i, dec1, dec2) =>
 	   let
 		val  _     = insertScope E
@@ -986,11 +1003,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
 	   in
-		(foldiVals (trOpenDecVal(E,i,SOME longid')) 
+		(foldiVals (trOpenDecVal(E,i,SOME longid'))
 		(foldiTys  (trOpenDecTy (E,i,longid'))
 		(foldiStrs (trOpenDecStr(E,i,longid'))
-		(foldiFuns (trOpenDecFun(E,i,longid'))
-		(foldiSigs (trOpenDecSig(E,i,longid')) acc E') E') E') E') E')
+		(foldiSigs (trOpenDecSig(E,i,longid')) acc E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -1052,24 +1068,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  mod'       = O.PrimMod(i, s, inf')
 		val  dec'       = O.ModDec(i, id', mod')
 		val  _          = insertStr(E, strid', (i, stamp, E'))
-	   in
-		dec' :: acc
-	   end
-
-	 | PRIMITIVEFUNCTORDec(i, funid as FunId(i1,funid'),
-			strid as StrId(i2,strid'), sigexp1, sigexp2, s) =>
-	   let
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf1',E1)    = trSigExp E sigexp1
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E1))
-		val (inf2',E2)    = trSigExp E sigexp2
-		val  _            = deleteScope E
-		val  inf'         = O.ArrInf(i, id2', inf1', inf2')
-		val  mod'         = O.PrimMod(i, s, inf')
-		val  dec'         = O.ModDec(i, id1', mod')
-		val  _            = insertFun(E, funid', (i1, stamp1, E2))
 	   in
 		dec' :: acc
 	   end
@@ -1154,19 +1152,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertStr(E, strid', (i,stamp2,E'))
-	in
-	    O.ModDec(i, id', mod') :: acc
-	end
-
-    and trOpenDecFun (E,i,longid) (funid', (_,stamp1,E'), acc) =
-	let
-	    val name    = FunId.toString funid'
-	    val stamp2  = Stamp.new()
-	    val id'     = O.Id(i, stamp2, O.ExId(fromFunName name))
-	    val lab'    = O.Lab(i, name)
-	    val longid' = O.LongId(i, longid, lab')
-	    val mod'    = longidToMod longid'
-	    val _       = insertFun(E, funid', (i,stamp2,E'))
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
@@ -1270,7 +1255,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _ = trFmatcho_lhs (E,vid) fmatcho
 		val _ = insertDisjointVal(E', vid', (i',stamp,V))
 			handle CollisionVal _ =>
-			       error(i', E.FnBindDuplicate vid')
+			       error(i', E.FvalBindDuplicate vid')
 	   in
 		id'
 	   end
@@ -1284,7 +1269,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		if idVId vid1 = idVId vid2 then
 		    trFmatcho_lhs (E,vid1) fmatcho
 		else
-		    error(i', E.FnBindNameInconsistent vid2')
+		    error(i', E.FvalBindNameInconsistent vid2')
 	   end
 
     and trFmrule_lhs E (Mrule(i, fpat, exp)) =
@@ -1298,7 +1283,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | ( NONPat(i,_)
 	   | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_)
-	   | WITHFUNPat(i,_,_) )	=> error(i, E.FnBindPatInvalid)
+	   | WITHFUNPat(i,_,_) )	=> error(i, E.FvalBindPatInvalid)
 
     and trFappPat_lhs E =
 	fn APPPat(i, fpat, atpat)	=> trFappPat_lhs E fpat
@@ -1309,7 +1294,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(i', vid'))) =>
 	   (case lookupIdStatus(E, vid')
 	      of  V        => vid
-	       | (R | C _) => error(i', E.FnBindNameCon vid')
+	       | (R | C _) => error(i', E.FvalBindNameCon vid')
 	   )
 
 	 | ALTAtPat(i, fpats) =>
@@ -1320,14 +1305,14 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		case List.find (fn(VId(_,vid'')) => vid'<>vid'') (List.tl vids)
 		  of NONE                => vid
 		   | SOME(VId(i',vid2')) =>
-			error(i', E.FnBindNameInconsistent vid2')
+			error(i', E.FvalBindNameInconsistent vid2')
 	   end
 
 	 | PARAtPat(i, fpat) =>
 		trFpat_lhs E fpat
 
 	 | atpat =>
-		error(infoAtPat atpat, E.FnBindNameMissing)
+		error(infoAtPat atpat, E.FvalBindNameMissing)
 
     and trFpats_lhs E = List.map(trFpat_lhs E)
 
@@ -1376,7 +1361,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (match',arity') = trFmrule_rhs E fmrule
 	   in
 		if arity <> arity' then
-		    error(infoMrule fmrule, E.FnBindArityInconsistent)
+		    error(infoMrule fmrule, E.FvalBindArityInconsistent)
 		else
 		    trFmatcho_rhs' (E, arity, match'::acc) fmatcho
 	   end
@@ -1419,7 +1404,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | ( NONPat(i,_) | ASPat(i,_,_)
 	   | WITHVALPat(i,_,_) | WITHFUNPat(i,_,_) ) =>
-		error(i, E.FnBindPatInvalid)
+		error(i, E.FvalBindPatInvalid)
 
     and trFappPat_rhs (E,E') =
 	fn fpat as APPPat _ =>
@@ -1448,12 +1433,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		case List.find (fn(_,arity',_) => arity<>arity') pat'aritytyps's
 		  of NONE => ( O.AltPat(i, pat'::pats'), arity, typs' @ typs'' )
 		   | SOME(pat',_,_) =>
-			error(O.infoPat pat', E.FnBindArityInconsistent)
+			error(O.infoPat pat', E.FvalBindArityInconsistent)
 	   end
 
 	 | PARAtPat(i, fpat)	=> trFpat_rhs (E,E') fpat
-	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FnBindArityZero)
-	 | fatpat		=> error(infoAtPat fatpat, E.FnBindPatInvalid)
+	 | LONGVIDAtPat(i,_,_)	=> error(i, E.FvalBindArityZero)
+	 | fatpat		=> error(infoAtPat fatpat, E.FvalBindPatInvalid)
 
     and trAltFpats_rhs (E,E') = List.map(trAltFpat_rhs (E,E'))
 
@@ -1477,18 +1462,18 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAppliedFpat_rhs (E,E') =
 	fn fpat as (ATPATPat _ | APPPat _) =>
 		trAppliedFappPat_rhs (E,E') (Infix.pat (infEnv E) fpat)
-	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
+	 | fpat => error(infoPat fpat, E.FvalBindPatInvalid)
 
     and trAppliedFappPat_rhs (E,E') =
 	fn ATPATPat(i, fatpat)	  => trAppliedFatPat_rhs (E,E') fatpat
 	 | APPPat(i, fpat, atpat) => trAppliedFappPat_rhs (E,E') fpat
 				     @ [trAtPat (E,E') atpat]
-	 | fpat => error(infoPat fpat, E.FnBindPatInvalid)
+	 | fpat => error(infoPat fpat, E.FvalBindPatInvalid)
 
     and trAppliedFatPat_rhs (E,E') =
 	fn LONGVIDAtPat _	=> []
 	 | PARAtPat(i, fpat)	=> trAppliedFpat_rhs (E,E') fpat
-	 | fatpat => error(infoAtPat fatpat, E.FnBindPatInvalid)
+	 | fatpat => error(infoAtPat fatpat, E.FvalBindPatInvalid)
 
 
 
@@ -1662,7 +1647,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-  (* Structure, signature, and functor bindings *)
+  (* Structure and signature bindings *)
 
     and trStrBindo' (E,E',acc) =
 	fn NONE => acc
@@ -1684,12 +1669,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trSigBindo' (E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(SigBind(_, sigid as SigId(i',sigid'), sigexp, sigbindo)) =>
+	 | SOME(SigBind(_, sigid as SigId(i',sigid'), strpats, sigexp,
+								sigbindo)) =>
 	   let
-		val i           = Source.over(i', infoSigExp sigexp)
+		val  i          = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trSigId_bind E sigid
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
 		val (inf',E'')  = trSigExp E sigexp
-		val  dec'       = O.InfDec(i, id', inf')
+		val  _          = deleteScope E
+		val  dec'       = O.InfDec(i, id', funinf(idinfs',inf'))
 		val  _          = insertDisjointSig(E', sigid', (i',stamp,E''))
 				  handle CollisionSig _ =>
 				      error(i', E.SigBindDuplicate sigid')
@@ -1698,35 +1687,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    and trFunBindo' (E,E',acc) =
-	fn NONE => acc
-
-	 | SOME(FunBind(_, funid as FunId(i1,funid'), strid as StrId(i2,strid'),
-			   sigexp, strexp, funbindo)) =>
-	   let
-		val  i            = Source.over(i1, infoStrExp strexp)
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf',E2)     = trSigExp E sigexp
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E2))
-		val (mod',E1)     = trStrExp E strexp
-		val  _            = deleteScope E
-		val  funmod'      = O.FunMod(i, id2', inf', mod')
-		val  dec'         = O.ModDec(i, id1', funmod')
-		val  _            = insertDisjointFun(E',funid', (i1,stamp1,E1))
-				    handle CollisionFun _ =>
-				        error(i1, E.FnBindDuplicate funid')
-	   in
-		trFunBindo' (E,E', dec'::acc) funbindo
-	   end
-
-
-
   (* Structure expressions *)
 
-    and trStrExp E =
-	fn STRUCTStrExp(i, dec) =>
+    and trAtStrExp E =
+	fn STRUCTAtStrExp(i, dec) =>
 	   let
 		val _     = insertScope E
 		val decs' = trDec E dec
@@ -1735,11 +1699,34 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.StrMod(i, decs'), E' )
 	   end
 
-	 | LONGSTRIDStrExp(i, longstrid) =>
+	 | LONGSTRIDAtStrExp(i, longstrid) =>
 	   let
 		val (longid',E') = trLongStrId E longstrid
 	   in
 		( longidToMod longid', E' )
+	   end
+
+	 | LETAtStrExp(i, dec, strexp) =>
+	   let
+		val  _        = insertScope E
+		val  decs'    = trDec E dec
+		val (mod',E') = trStrExp E strexp
+		val  _        = deleteScope E
+	   in
+		( O.LetMod(i, decs', mod'), E' )
+	   end
+
+	 | PARAtStrExp(i, strexp) => trStrExp E strexp
+
+    and trStrExp E =
+	fn ATSTREXPStrExp(i, atstrexp) => trAtStrExp E atstrexp
+
+	 | APPStrExp(i, strexp, atstrexp) =>
+	   let
+		val (mod1',E1') = trStrExp E strexp
+		val (mod2',E2') = trAtStrExp E atstrexp
+	   in
+		( O.AppMod(i, mod1', mod2'), E2' )
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
@@ -1758,38 +1745,49 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.UpMod(i, mod', inf'), E'' )
 	   end
 
-	 | APPStrExp(i, longfunid, strexp) =>
+	 | FCTStrExp(i, strpat, strexp) =>
 	   let
-		val  i'          = infoLong longfunid
-		val (longid',E') = trLongFunId E longfunid
-		val  mod1'       = longidToMod longid'
-		val (mod2',_)    = trStrExp E strexp
+		val  _         = insertScope E
+		val (id',inf') = trStrPat E strpat
+		val (mod',E')  = trStrExp E strexp
+		val  _         = deleteScope E
 	   in
-		( O.AppMod(i, mod1', mod2'), E' )
+		( O.FunMod(i, id', inf', mod'), E' )
 	   end
 
-	 | LETStrExp(i, dec, strexp) =>
+	 | UNPACKStrExp(i, exp, sigexp) =>
 	   let
-		val  _        = insertScope E
-		val  decs'    = trDec E dec
-		val (mod',E') = trStrExp E strexp
-		val  _        = deleteScope E
+		val  exp'     = trExp E exp
+		val (inf',E') = trSigExp E sigexp
 	   in
-		( O.LetMod(i, decs', mod'), E' )
+		( O.UnpackMod(i, exp', inf'), E' )
 	   end
+
+
+    and trStrPat E (StrPat(i, strid as StrId(i', strid'), sigexp)) =
+	let
+	    val (id',stamp) = trStrId_bind E strid
+	    val (inf',E')   = trSigExp E sigexp
+	    val  _          = insertStr(E, strid', (i', stamp, E'))
+	in
+	    (id', inf')
+	end
+
+    and trStrPats E = List.map (trStrPat E)
+
 
 
   (* Signatures and specifications *)
 
-    and trSigExp E =
-	fn ANYSigExp(i) =>
+    and trAtSigExp E =
+	fn ANYAtSigExp(i) =>
 	   let
 		val E' = Env.new()
 	   in
 		( O.TopInf(i), E' )
 	   end
 
-	 | SIGSigExp(i, spec) =>
+	 | SIGAtSigExp(i, spec) =>
 	   let
 		val _      = insertScope E
 		val specs' = trSpec E spec
@@ -1798,11 +1796,47 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		( O.SigInf(i, specs'), E' )
 	   end
 
-	 | LONGSIGIDSigExp(i, sigid) =>
+	 | LONGSIGIDAtSigExp(i, sigid) =>
 	   let
 		val (longid',E') = trLongSigId E sigid
 	   in
 		( O.ConInf(i, longid'), E' )
+	   end
+
+	 | LETAtSigExp(i, dec, sigexp) =>
+	   let
+		val  _        = insertScope E
+		val  decs'    = trDec E dec
+		val (inf',E') = trSigExp E sigexp
+		val  _        = deleteScope E
+	   in
+		(*UNFINISHED*)
+		(* Mmh, is there really no better way than having LetInf? *)
+		(inf',E')
+	   end
+
+	 | PARAtSigExp(i, sigexp) => trSigExp E sigexp
+
+
+    and trSigExp E =
+	fn ATSIGEXPSigExp(i, atsigexp) => trAtSigExp E atsigexp
+
+	 | APPSigExp(i, sigexp, atstrexp) =>
+	   let
+		val (inf',E') = trSigExp E sigexp
+		val (mod',_)  = trAtStrExp E atstrexp
+	   in
+		( O.AppInf(i, inf', mod'), E' )
+	   end
+
+	 | FCTSigExp(i, strpat, sigexp) =>
+	   let
+		val  _          = insertScope E
+		val (id',inf1') = trStrPat E strpat
+		val (inf2',E')  = trSigExp E sigexp
+		val  _          = deleteScope E
+	   in
+		( O.ArrInf(i, id', inf1', inf2'), E' )
 	   end
 
 	 | WHERESigExp(i, sigexp1, sigexp2) =>
@@ -1864,9 +1898,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SIGNATURESpec(i, sigdesc) =>
 		trSigDesco' (E,acc) (SOME sigdesc)
 
-	 | FUNCTORSpec(i, fundesc) =>
-		trFunDesco' (E,acc) (SOME fundesc)
-
 	 | INCLUDESpec(i, sigexp) =>
 	   let
 		val (inf',E') = trSigExp E sigexp
@@ -1877,7 +1908,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			 | CollisionTy  x => error(i, E.SpecTyConDuplicate x)
 			 | CollisionStr x => error(i, E.SpecStrIdDuplicate x)
 			 | CollisionSig x => error(i, E.SpecSigIdDuplicate x)
-			 | CollisionFun x => error(i, E.SpecFunIdDuplicate x)
 	   in
 		O.ExtSpec(i, inf') :: acc
 	   end
@@ -1983,7 +2013,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trValDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(ValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
+	 | SOME(NEWValDesc(_, _, vid as VId(i',vid'), ty, valdesco)) =>
 	   let
 		val  i          = Source.over(i', infoTy ty)
 		val (id',stamp) = trVId_bind E vid
@@ -1994,6 +2024,19 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  spec'      = O.ValSpec(i, id', typ')
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
+				      error(i', E.SpecVIdDuplicate vid')
+	   in
+		trValDesco' (E, spec'::acc) valdesco
+	   end
+
+	 | SOME(EQUALValDesc(i, _, vid as VId(i',vid'), _, longvid, valdesco))=>
+	   let
+		val (id',stamp)  = trVId_bind E vid
+		val (longid',is) = trLongVId E longvid
+		val  typ'        = O.SingTyp(O.infoLongid longid', longid')
+		val  spec'       = O.ValSpec(i, id', typ')
+		val  _           = insertDisjointVal(E, vid', (i', stamp, V))
+				   handle CollisionVal vid' =>
 				      error(i', E.SpecVIdDuplicate vid')
 	   in
 		trValDesco' (E, spec'::acc) valdesco
@@ -2201,10 +2244,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trSigDesco' (E,acc) =
 	fn NONE => acc
 
-	 | SOME(NEWSigDesc(_, sigid as SigId(i',sigid'), sigdesco)) =>
+	 | SOME(NEWSigDesc(_, sigid as SigId(i',sigid'), strpats, sigdesco)) =>
 	   let
 		val (id',stamp) = trSigId_bind E sigid
-		val  inf'       = O.AbsInf(i')
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
+		val  inf'       = funinf(idinfs', O.AbsInf(i'))
+		val  _          = deleteScope E
 		val  spec'      = O.InfSpec(i', id', inf')
 		val  _          = insertDisjointSig(E, sigid',
 						    (i', stamp, Env.new()))
@@ -2214,42 +2260,22 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trSigDesco' (E, spec'::acc) sigdesco
 	   end
 
-	 | SOME(EQUALSigDesc(_, sigid as SigId(i',sigid'), sigexp, sigdesco)) =>
+	 | SOME(EQUALSigDesc(_, sigid as SigId(i',sigid'), strpats, sigexp,
+								sigdesco)) =>
 	   let
 		val  i          = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trSigId_bind E sigid
+		val  _          = insertScope E
+		val  idinfs'    = trStrPats E strpats
 		val (inf',E')   = trSigExp E sigexp
-		val  spec'      = O.InfSpec(i', id', inf')
+		val  inf''      = funinf(idinfs', inf')
+		val  _          = deleteScope E
+		val  spec'      = O.InfSpec(i', id', inf'')
 		val  _          = insertDisjointSig(E, sigid', (i', stamp, E'))
 				  handle CollisionSig _ =>
 				      error(i', E.SpecSigIdDuplicate sigid')
 	   in
 		trSigDesco' (E, spec'::acc) sigdesco
-	   end
-
-
-
-    and trFunDesco' (E,acc) =
-	fn NONE => acc
-
-	 | SOME(FunDesc(_, funid as FunId(i1,funid'), strid as StrId(i2,strid'),
-			   sigexp1, sigexp2, fundesco)) =>
-	   let
-		val  i            = Source.over(i1, infoSigExp sigexp2)
-		val (id1',stamp1) = trFunId_bind E funid
-		val (id2',stamp2) = trStrId_bind E strid
-		val (inf1',E1)    = trSigExp E sigexp1
-		val  _            = insertScope E
-		val  _            = insertStr(E, strid', (i2, stamp2, E1))
-		val (inf2',E2)    = trSigExp E sigexp2
-		val  _            = deleteScope E
-		val  inf'         = O.ArrInf(i, id1', inf1', inf2')
-		val  spec'        = O.ModSpec(i, id1', inf')
-		val  _            = insertDisjointFun(E, funid', (i1,stamp1,E2))
-				    handle CollisionFun _ =>
-					error(i1, E.SpecFunIdDuplicate funid')
-	   in
-		trFunDesco' (E, spec'::acc) fundesco
 	   end
 
 

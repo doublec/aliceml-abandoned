@@ -64,12 +64,10 @@ signature DERIVED_FORMS =
     type Lab       = Grammar.Lab
     type VId       = Grammar.VId
     type StrId     = Grammar.StrId
-    type FunId     = Grammar.FunId
     type LongVId   = Grammar.LongVId
     type LongTyCon = Grammar.LongTyCon
     type LongStrId = Grammar.LongStrId
     type LongSigId = Grammar.LongSigId
-    type LongFunId = Grammar.LongFunId
 
     type Op        = Grammar.Op
     type AtExp     = Grammar.AtExp
@@ -93,19 +91,22 @@ signature DERIVED_FORMS =
     type Pat       = Grammar.Pat
     type Ty        = Grammar.Ty
     type TyVarSeq  = Grammar.TyVarSeq
+    type AtStrExp  = Grammar.AtStrExp
+    type AppStrExp = Grammar.StrExp
     type StrExp    = Grammar.StrExp
+    type StrPat    = Grammar.StrPat
     type StrBind   = Grammar.StrBind
-    type FunBind   = Grammar.FunBind
+    type AppSigExp = Grammar.SigExp
     type SigExp    = Grammar.SigExp
-    type TyReaDesc = (Info * TyVarSeq * LongTyCon * Ty) list
     type Spec      = Grammar.Spec
     type ValDesc   = Grammar.ValDesc
     type TypDesc   = Grammar.TypDesc
     type DatDesc   = Grammar.DatDesc
     type ExDesc    = Grammar.DconDesc
-    type FunDesc   = Grammar.FunDesc
+    type FunBind
+    type FunDesc
+    type Rea
     type Program   = Grammar.Program
-
 
     (* Expressions *)
 
@@ -150,13 +151,11 @@ signature DERIVED_FORMS =
     val DATATYPEDec:	Info * DatBind * TypBind option		-> Dec
     val ABSTYPEDec:	Info * DatBind * TypBind option * Dec	-> Dec
     val EXCEPTIONDec:	Info * ExBind				-> Dec
+    val FUNCTORDec:     Info * FunBind                          -> Dec
     val OPENMULTIDec:	Info * LongStrId list			-> Dec
     val INFIXMULTIDec:	Info * int option * VId list		-> Dec
     val INFIXRMULTIDec:	Info * int option * VId list		-> Dec
     val NONFIXMULTIDec:	Info * VId list				-> Dec
-
-    val PRIMITIVEEXCEPTIONDec:   Info * Op * VId * Ty option * string  -> Dec
-    val PRIMITIVEFUNCTORSPECDec: Info * FunId * Spec * SigExp * string -> Dec
 
     val NEWExBind:    Info * Op * VId * Ty option * ExBind option    -> ExBind
     val EQUALExBind:  Info * Op * VId * Op * LongVId * ExBind option -> ExBind
@@ -167,50 +166,62 @@ signature DERIVED_FORMS =
 			       * StrBind option                    -> StrBind
     val OPAQStrBind:      Info * StrId * SigExp * StrExp
 			       * StrBind option                    -> StrBind
+    val WILDCARDStrBind:  Info * SigExp option * StrExp
+			       * StrBind option                    -> StrBind
 
     (* Structure expressions *)
 
-    val PARStrExp:        Info * StrExp                            -> StrExp
-    val APPDECStrExp:     Info * LongFunId * Dec                   -> StrExp
+    val DECAtStrExp:      Info * Dec -> AtStrExp
+    val FCTStrExp:        Info * StrPat * StrExp -> StrExp
+
+    val STRIDStrPat:      Info * StrId * SigExp -> StrPat
+    val WILDCARDStrPat:   Info * SigExp         -> StrPat
+    val SPECStrPat:       Info * Spec           -> StrPat
 
     (* Functor bindings *)
 
-    val TRANSFunBind:     Info * FunId * StrId * SigExp * SigExp option
+    val TRANSFunBind:     Info * StrId * StrPat list * SigExp option
 			       * StrExp * FunBind option           -> FunBind
-    val OPAQFunBind:      Info * FunId * StrId * SigExp * SigExp
+    val OPAQFunBind:      Info * StrId * StrPat list * SigExp
 			       * StrExp * FunBind option           -> FunBind
-    val TRANSSPECFunBind: Info * FunId * Spec * SigExp option
-			       * StrExp * FunBind option           -> FunBind
-    val OPAQSPECFunBind:  Info * FunId * Spec * SigExp
-                               * StrExp * FunBind option           -> FunBind
 
     (* Specifications *)
 
     val FUNSpec:          Info * ValDesc                           -> Spec
     val DATATYPESpec:     Info * DatDesc * TypDesc option          -> Spec
     val EXCEPTIONSpec:    Info * ExDesc                            -> Spec
-    val INCLUDEMULTISpec: Info * LongSigId list                    -> Spec
+    val FUNCTORSpec:      Info * FunDesc                           -> Spec
     val SHARINGSpec:      Info * Spec * LongStrId list             -> Spec
+    val INCLUDEMULTISpec: Info * LongSigId list                    -> Spec
     val INFIXMULTISpec:   Info * int option * VId list             -> Spec
     val INFIXRMULTISpec:  Info * int option * VId list             -> Spec
     val NONFIXMULTISpec:  Info * VId list                          -> Spec
 
     val NEWExDesc:        Info * Op * VId * Ty option * ExDesc option -> ExDesc
-    val EQUALExDesc:      Info * Op * VId * Op * LongVId * ExDesc option
-								   -> ExDesc
+    val EQUALExDesc:      Info * Op * VId * Op * LongVId
+						      * ExDesc option -> ExDesc
 
-    val SPECFunDesc:      Info * FunId * Spec * SigExp * FunDesc option
+    val FunDesc:          Info * StrId * StrPat list * SigExp * FunDesc option
 								   -> FunDesc
 
     (* Signature expressions *)
 
-    val PARSigExp:        Info * SigExp                            -> SigExp
-    val WHERETYPESigExp:  Info * SigExp * TyReaDesc                -> SigExp
-    val WHERESTRUCTURESigExp:
+    val WHEREREASigExp:   Info * SigExp * Rea                      -> SigExp
+    val WHERELONGSTRIDSigExp:
 			  Info * SigExp * LongStrId * LongStrId    -> SigExp
 
-    val TyReaDesc:        Info * TyVarSeq * LongTyCon * Ty
-			       * TyReaDesc option                  -> TyReaDesc
+    val VALRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val FUNRea:           Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val CONSTRUCTORRea:   Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val EXCEPTIONRea:     Info * Op * LongVId * Op * LongVId * Rea option -> Rea
+    val TYPERea:          Info * TyVarSeq * LongTyCon * Ty * Rea option   -> Rea
+    val STRUCTURERea:     Info * LongStrId * SigExp option * LongStrId
+							   * Rea option   -> Rea
+    val FUNCTORRea:       Info * LongStrId * SigExp option * LongStrId
+							   * Rea option   -> Rea
+    val SIGNATURERea:     Info * LongSigId * StrPat list * AppSigExp
+							 * Rea option     -> Rea
+
     (* Programs *)
 
     val DECProgram:       Info * Dec * Program option -> Program

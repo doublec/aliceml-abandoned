@@ -11,24 +11,33 @@
  *   - negated patterns
  *   - withval patterns
  *   - abstract type declarations
- *   - open datatypes and free construct declarations via con
- *   - removed exception declarations (made into a derived form with con)
+ *   - open datatypes and free construct declarations
+ *   - package types and expressions
+ *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
- *   - simplified open and fixity declarations to singe id (multi ids made DF)
+ *   - simplified open and fixity declarations to single id (multi ids made DF)
  *   - some hacks to build libraries: primitive value declarations,
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
  *   - unified strdec and topdec
- *   - open datatypes and free constructor specifications via con
- *   - constructor synonym specifications
- *   - signature synonym specifications
+ *   - unified strid and funid
+ *   - functor expressions
+ *   - removed functor declarations (made into a derived form)
+ *   - package elimination
+ *   - parameterized signatures
+ *   - open datatypes and free constructor specifications
  *   - straightified type specifications (synonyms are kept)
- *   - where for structures
+ *   - signature specifications
+ *   - definitional value, constructor, and structure specifications
+ *   - functor signatures
  *   - top signature
- *   - sharing and where for signatures
- *   - definitional structure specifications
+ *   - generalized where
+ *   - sharing for signatures
+ *   - let for signature expressions
+ *   - functor parameters as a separate syntactic class StrPat
+ *   - parenthesized structure and signature expressions
  *   - fixity directives in signatures
  *   - op keyword in signatures
  *
@@ -65,7 +74,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     datatype TyVar = TyVar of Info * TyVar.t
     datatype StrId = StrId of Info * StrId.t
     datatype SigId = SigId of Info * SigId.t
-    datatype FunId = FunId of Info * FunId.t
 
     datatype 'a Long =
 	  SHORTLong of Info * 'a
@@ -75,7 +83,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and      LongTyCon = TyCon Long
     and      LongStrId = StrId Long
     and      LongSigId = SigId Long
-    and      LongFunId = FunId Long
 
 
     (* Optional keyword `op' *)
@@ -112,6 +119,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
+	| PACKExp        of Info * LongStrId
 
     (* Matches *)      
 
@@ -134,7 +142,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| CONSTRUCTORDec  of Info * DconBind
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
-	| FUNCTORDec      of Info * FunBind
 	| LOCALDec        of Info * Dec * Dec
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
@@ -144,8 +151,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
-	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
-								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -182,11 +187,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
           StrBind        of Info * StrId * StrExp * StrBind option
 
     and SigBind =
-          SigBind        of Info * SigId * SigExp * SigBind option
+          SigBind        of Info * SigId * StrPat list * SigExp * SigBind option
 
-    and FunBind =
-          FunBind        of Info * FunId * StrId * SigExp * StrExp
-                                 * FunBind option
     (* Patterns *)
 
     and AtPat =
@@ -221,6 +223,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
+	| PACKTy         of Info * LongSigId
 	| PARTy          of Info * Ty
 
     and TyRow =
@@ -228,21 +231,37 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     (* Structures *)
 
+    and AtStrExp =
+	  STRUCTAtStrExp    of Info * Dec
+	| LONGSTRIDAtStrExp of Info * LongStrId
+	| LETAtStrExp       of Info * Dec * StrExp
+	| PARAtStrExp       of Info * StrExp
+
     and StrExp =
-	  STRUCTStrExp    of Info * Dec
-	| LONGSTRIDStrExp of Info * LongStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * LongFunId * StrExp
-	| LETStrExp       of Info * Dec * StrExp
+	  ATSTREXPStrExp    of Info * AtStrExp
+	| APPStrExp         of Info * StrExp * AtStrExp
+	| TRANSStrExp       of Info * StrExp * SigExp
+	| OPAQStrExp        of Info * StrExp * SigExp
+	| FCTStrExp         of Info * StrPat * StrExp
+	| UNPACKStrExp      of Info * Exp * SigExp
+
+    and StrPat =
+	  StrPat            of Info * StrId * SigExp
 
     (* Signatures *)
 
+    and AtSigExp =
+	  ANYAtSigExp       of Info
+	| SIGAtSigExp       of Info * Spec
+	| LONGSIGIDAtSigExp of Info * LongSigId
+	| LETAtSigExp       of Info * Dec * SigExp
+	| PARAtSigExp       of Info * SigExp
+
     and SigExp =
-	  ANYSigExp       of Info
-	| SIGSigExp       of Info * Spec
-	| LONGSIGIDSigExp of Info * LongSigId
-	| WHERESigExp     of Info * SigExp * SigExp
+	  ATSIGEXPSigExp    of Info * AtSigExp
+	| APPSigExp         of Info * SigExp * AtStrExp
+	| FCTSigExp         of Info * StrPat * SigExp
+	| WHERESigExp       of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -256,7 +275,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| CONSTRUCTORSpec  of Info * DconDesc
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
-	| FUNCTORSpec      of Info * FunDesc
 	| INCLUDESpec      of Info * SigExp
 	| EMPTYSpec        of Info
 	| SEQSpec          of Info * Spec * Spec
@@ -272,7 +290,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| NONFIXSpec       of Info * VId
 
     and ValDesc =
-	  ValDesc         of Info * Op * VId * Ty * ValDesc option
+	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
+	| EQUALValDesc    of Info * Op * VId * Op * LongVId * ValDesc option
 
     and TypDesc =
 	  NEWTypDesc      of Info * TyVarSeq * TyCon * TypDesc option
@@ -295,12 +314,9 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| EQUALStrDesc    of Info * StrId * SigExp option * LongStrId
 							    * StrDesc option
     and SigDesc =
-          NEWSigDesc      of Info * SigId * SigDesc option
-	| EQUALSigDesc    of Info * SigId * SigExp * SigDesc option
-
-    and FunDesc =
-          FunDesc         of Info * FunId * StrId * SigExp * SigExp
-                                  * FunDesc option
+          NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
+	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
+							* SigDesc option
     (* Programs *)
 
     and Program = Program of Info * Dec * Program option
@@ -331,7 +347,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoTyVar(TyVar(I,_))				= I
     fun infoStrId(StrId(I,_))				= I
     fun infoSigId(SigId(I,_))				= I
-    fun infoFunId(FunId(I,_))				= I
 
     fun infoLong(SHORTLong(I,_))			= I
       | infoLong(DOTLong(I,_,_))			= I
@@ -360,6 +375,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoExp(WHILEExp(I,_,_))			= I
       | infoExp(CASEExp(I,_,_))				= I
       | infoExp(FNExp(I,_))				= I
+      | infoExp(PACKExp(I,_))				= I
 
     fun infoMatch(Match(I,_,_))				= I
 
@@ -375,7 +391,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(CONSTRUCTORDec(I,_))			= I
       | infoDec(STRUCTUREDec(I,_))			= I
       | infoDec(SIGNATUREDec(I,_))			= I
-      | infoDec(FUNCTORDec(I,_))			= I
       | infoDec(LOCALDec(I,_,_))			= I
       | infoDec(OPENDec(I,_))				= I
       | infoDec(EMPTYDec(I))				= I
@@ -384,7 +399,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
       | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
-      | infoDec(PRIMITIVEFUNCTORDec(I,_,_,_,_,_))	= I
       | infoDec(OVERLOADDec(I,_,_,_,_))			= I
       | infoDec(INSTANCEDec(I,_,_,_,_))			= I
       | infoDec(INSTANCESCONDec(I,_,_))			= I
@@ -410,9 +424,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoStrBind(StrBind(I,_,_,_))			= I
 
-    fun infoSigBind(SigBind(I,_,_,_))			= I
-
-    fun infoFunBind(FunBind(I,_,_,_,_,_))		= I
+    fun infoSigBind(SigBind(I,_,_,_,_))			= I
 
     fun infoAtPat(WILDCARDAtPat(I))			= I
       | infoAtPat(SCONAtPat(I,_))			= I
@@ -440,20 +452,34 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoTy(TUPLETy(I,_))				= I
       | infoTy(TYCONTy(I,_,_))				= I
       | infoTy(ARROWTy(I,_,_))				= I
+      | infoTy(PACKTy(I,_))				= I
       | infoTy(PARTy(I,_))				= I
 
     fun infoTyRow(ROWTyRow(I,_,_,_))			= I
 
-    fun infoStrExp(STRUCTStrExp(I,_))			= I
-      | infoStrExp(LONGSTRIDStrExp(I,_))		= I
+    fun infoAtStrExp(STRUCTAtStrExp(I,_))		= I
+      | infoAtStrExp(LONGSTRIDAtStrExp(I,_))		= I
+      | infoAtStrExp(LETAtStrExp(I,_,_))		= I
+      | infoAtStrExp(PARAtStrExp(I,_))			= I
+
+    fun infoStrExp(ATSTREXPStrExp(I,_))			= I
+      | infoStrExp(APPStrExp(I,_,_))			= I
       | infoStrExp(TRANSStrExp(I,_,_))			= I
       | infoStrExp(OPAQStrExp(I,_,_))			= I
-      | infoStrExp(APPStrExp(I,_,_))			= I
-      | infoStrExp(LETStrExp(I,_,_))			= I
+      | infoStrExp(FCTStrExp(I,_,_))			= I
+      | infoStrExp(UNPACKStrExp(I,_,_))			= I
 
-    fun infoSigExp(ANYSigExp(I))			= I
-      | infoSigExp(SIGSigExp(I,_))			= I
-      | infoSigExp(LONGSIGIDSigExp(I,_))		= I
+    fun infoStrPat(StrPat(I,_,_))			= I
+
+    fun infoAtSigExp(ANYAtSigExp(I))			= I
+      | infoAtSigExp(SIGAtSigExp(I,_))			= I
+      | infoAtSigExp(LONGSIGIDAtSigExp(I,_))		= I
+      | infoAtSigExp(LETAtSigExp(I,_,_))		= I
+      | infoAtSigExp(PARAtSigExp(I,_))			= I
+
+    fun infoSigExp(ATSIGEXPSigExp(I,_))			= I
+      | infoSigExp(APPSigExp(I,_,_))			= I
+      | infoSigExp(FCTSigExp(I,_,_))			= I
       | infoSigExp(WHERESigExp(I,_,_))			= I
 
     fun infoSpec(VALSpec(I,_))				= I
@@ -465,7 +491,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(CONSTRUCTORSpec(I,_))			= I
       | infoSpec(STRUCTURESpec(I,_))			= I
       | infoSpec(SIGNATURESpec(I,_))			= I
-      | infoSpec(FUNCTORSpec(I,_))			= I
       | infoSpec(INCLUDESpec(I,_))			= I
       | infoSpec(EMPTYSpec(I))				= I
       | infoSpec(SEQSpec(I,_,_))			= I
@@ -480,7 +505,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(INFIXRSpec(I,_,_))			= I
       | infoSpec(NONFIXSpec(I,_))			= I
 
-    fun infoValDesc(ValDesc(I,_,_,_,_))			= I
+    fun infoValDesc(NEWValDesc(I,_,_,_,_))		= I
+      | infoValDesc(EQUALValDesc(I,_,_,_,_,_))		= I
 
     fun infoTypDesc(NEWTypDesc(I,_,_,_))		= I
       | infoTypDesc(EQUALTypDesc(I,_,_,_,_))		= I
@@ -496,10 +522,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoStrDesc(NEWStrDesc(I,_,_,_))		= I
       | infoStrDesc(EQUALStrDesc(I,_,_,_,_))		= I
 
-    fun infoSigDesc(NEWSigDesc(I,_,_))			= I
-      | infoSigDesc(EQUALSigDesc(I,_,_,_))		= I
-
-    fun infoFunDesc(FunDesc(I,_,_,_,_,_))		= I
+    fun infoSigDesc(NEWSigDesc(I,_,_,_))		= I
+      | infoSigDesc(EQUALSigDesc(I,_,_,_,_))		= I
 
     fun infoProgram(Program(I,_,_))			= I
 
@@ -518,7 +542,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun idTyVar(TyVar(_,id))				= id
     fun idStrId(StrId(_,id))				= id
     fun idSigId(SigId(_,id))				= id
-    fun idFunId(FunId(_,id))				= id
 
 
     fun explodeLong(SHORTLong(_,id))		= ([], id)

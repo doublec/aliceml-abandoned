@@ -7,7 +7,6 @@ signature BIND_ENV =
     type TyCon = TyCon.t
     type StrId = StrId.t
     type SigId = SigId.t
-    type FunId = FunId.t
 
     type Info  = Source.region
     type stamp = AbstractGrammar.stamp
@@ -24,7 +23,6 @@ signature BIND_ENV =
     type Ty  = Info * stamp * Env
     type Str = Info * stamp * Env
     type Sig = Info * stamp * Env
-    type Fun = Info * stamp * Env
 
 
     exception CollisionInf of VId
@@ -34,7 +32,6 @@ signature BIND_ENV =
     exception CollisionVar of TyVar
     exception CollisionStr of StrId
     exception CollisionSig of SigId
-    exception CollisionFun of FunId
 
 
     val new :			unit -> Env
@@ -64,7 +61,6 @@ signature BIND_ENV =
     val insertVar :		Env * TyVar * Var -> unit
     val insertStr :		Env * StrId * Str -> unit
     val insertSig :		Env * SigId * Sig -> unit
-    val insertFun :		Env * FunId * Fun -> unit
     val insertDisjointInf :	Env *  VId  * Inf -> unit   (* CollisionInf *)
     val insertDisjointFld :	Env *  Lab  * Fld -> unit   (* CollisionFld *)
     val insertDisjointVal :	Env *  VId  * Val -> unit   (* CollisionVal *)
@@ -72,7 +68,6 @@ signature BIND_ENV =
     val insertDisjointVar :	Env * TyVar * Var -> unit   (* CollisionVar *)
     val insertDisjointStr :	Env * StrId * Str -> unit   (* CollisionStr *)
     val insertDisjointSig :	Env * SigId * Sig -> unit   (* CollisionSig *)
-    val insertDisjointFun :	Env * FunId * Fun -> unit   (* CollisionFun *)
 
     val lookupInf :		Env *  VId  -> Inf option
     val lookupFld :		Env *  Lab  -> Fld option
@@ -81,7 +76,6 @@ signature BIND_ENV =
     val lookupTy :		Env * TyCon -> Ty  option
     val lookupStr :		Env * StrId -> Str option
     val lookupSig :		Env * SigId -> Sig option
-    val lookupFun :		Env * FunId -> Fun option
     val lookupScopeInf :	Env *  VId  -> Inf option
     val lookupScopeFld :	Env *  Lab  -> Fld option
     val lookupScopeVar :	Env * TyVar -> Var option
@@ -89,7 +83,6 @@ signature BIND_ENV =
     val lookupScopeTy :		Env * TyCon -> Ty  option
     val lookupScopeStr :	Env * StrId -> Str option
     val lookupScopeSig :	Env * SigId -> Sig option
-    val lookupScopeFun :	Env * FunId -> Fun option
 
     val appiInfs :		( VId  * Inf -> unit) -> Env -> unit
     val appiFlds :		( Lab  * Fld -> unit) -> Env -> unit
@@ -98,7 +91,6 @@ signature BIND_ENV =
     val appiTys :		(TyCon * Ty  -> unit) -> Env -> unit
     val appiStrs :		(StrId * Str -> unit) -> Env -> unit
     val appiSigs :		(SigId * Sig -> unit) -> Env -> unit
-    val appiFuns :		(FunId * Fun -> unit) -> Env -> unit
     val appiScopeVals :		( VId  * Val -> unit) -> Env -> unit
 
     val foldiInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
@@ -108,7 +100,6 @@ signature BIND_ENV =
     val foldiTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
     val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldiFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a
 
     val infEnv :		Env -> VId -> InfStatus
 

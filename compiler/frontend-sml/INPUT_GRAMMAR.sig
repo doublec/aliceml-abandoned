@@ -11,24 +11,33 @@
  *   - negated patterns
  *   - withval patterns
  *   - abstract type declarations
- *   - open datatypes and free construct declarations via con
- *   - removed exception declarations (made into a derived form with con)
+ *   - open datatypes and free construct declarations
+ *   - package types and expressions
+ *   - removed exception declarations (made into a derived form)
  *   - removed abstype (made into a derived form with local)
- *   - simplified open and fixity declarations to singe id (multi ids made DF)
+ *   - simplified open and fixity declarations to single id (multi ids made DF)
  *   - some hacks to build libraries: primitive value declarations,
  *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
  *   - unified strdec and topdec
- *   - open datatypes and free constructor specifications via con
- *   - constructor synonym specifications
- *   - signature synonym specifications
+ *   - unified strid and funid
+ *   - functor expressions
+ *   - removed functor declarations (made into a derived form)
+ *   - package elimination
+ *   - parameterized signatures
+ *   - open datatypes and free constructor specifications
  *   - straightified type specifications (synonyms are kept)
- *   - where for structures
+ *   - signature specifications
+ *   - definitional value, constructor, and structure specifications
+ *   - functor signatures
  *   - top signature
- *   - sharing and where for signatures
- *   - definitional structure specifications
+ *   - generalized where
+ *   - sharing for signatures
+ *   - let for signature expressions
+ *   - functor parameters as a separate syntactic class StrPat
+ *   - parenthesized structure and signature expressions
  *   - fixity directives in signatures
  *   - op keyword in signatures
  *
@@ -65,7 +74,6 @@ signature INPUT_GRAMMAR =
     datatype TyVar = TyVar of Info * TyVar.t
     datatype StrId = StrId of Info * StrId.t
     datatype SigId = SigId of Info * SigId.t
-    datatype FunId = FunId of Info * FunId.t
 
     datatype 'a Long =
 	  SHORTLong of Info * 'a
@@ -75,7 +83,6 @@ signature INPUT_GRAMMAR =
     and      LongTyCon = TyCon Long
     and      LongStrId = StrId Long
     and      LongSigId = SigId Long
-    and      LongFunId = FunId Long
 
 
     (* Optional keyword `op' *)
@@ -112,6 +119,7 @@ signature INPUT_GRAMMAR =
 	| WHILEExp       of Info * Exp * Exp
 	| CASEExp        of Info * Exp * Match
 	| FNExp          of Info * Match
+	| PACKExp        of Info * LongStrId
 
     (* Matches *)      
 
@@ -134,7 +142,6 @@ signature INPUT_GRAMMAR =
 	| CONSTRUCTORDec  of Info * DconBind
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
-	| FUNCTORDec      of Info * FunBind
 	| LOCALDec        of Info * Dec * Dec
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
@@ -144,8 +151,6 @@ signature INPUT_GRAMMAR =
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
-	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
-								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -182,11 +187,8 @@ signature INPUT_GRAMMAR =
           StrBind        of Info * StrId * StrExp * StrBind option
 
     and SigBind =
-          SigBind        of Info * SigId * SigExp * SigBind option
+          SigBind        of Info * SigId * StrPat list * SigExp * SigBind option
 
-    and FunBind =
-          FunBind        of Info * FunId * StrId * SigExp * StrExp
-                                 * FunBind option
     (* Patterns *)
 
     and AtPat =
@@ -221,6 +223,7 @@ signature INPUT_GRAMMAR =
 	| TUPLETy        of Info * Ty list
 	| TYCONTy        of Info * TySeq * LongTyCon
 	| ARROWTy        of Info * Ty * Ty
+	| PACKTy         of Info * LongSigId
 	| PARTy          of Info * Ty
 
     and TyRow =
@@ -228,21 +231,37 @@ signature INPUT_GRAMMAR =
 
     (* Structures *)
 
+    and AtStrExp =
+	  STRUCTAtStrExp    of Info * Dec
+	| LONGSTRIDAtStrExp of Info * LongStrId
+	| LETAtStrExp       of Info * Dec * StrExp
+	| PARAtStrExp       of Info * StrExp
+
     and StrExp =
-	  STRUCTStrExp    of Info * Dec
-	| LONGSTRIDStrExp of Info * LongStrId
-	| TRANSStrExp     of Info * StrExp * SigExp
-	| OPAQStrExp      of Info * StrExp * SigExp
-	| APPStrExp       of Info * LongFunId * StrExp
-	| LETStrExp       of Info * Dec * StrExp
+	  ATSTREXPStrExp    of Info * AtStrExp
+	| APPStrExp         of Info * StrExp * AtStrExp
+	| TRANSStrExp       of Info * StrExp * SigExp
+	| OPAQStrExp        of Info * StrExp * SigExp
+	| FCTStrExp         of Info * StrPat * StrExp
+	| UNPACKStrExp      of Info * Exp * SigExp
+
+    and StrPat =
+	  StrPat            of Info * StrId * SigExp
 
     (* Signatures *)
 
+    and AtSigExp =
+	  ANYAtSigExp       of Info
+	| SIGAtSigExp       of Info * Spec
+	| LONGSIGIDAtSigExp of Info * LongSigId
+	| LETAtSigExp       of Info * Dec * SigExp
+	| PARAtSigExp       of Info * SigExp
+
     and SigExp =
-	  ANYSigExp       of Info
-	| SIGSigExp       of Info * Spec
-	| LONGSIGIDSigExp of Info * LongSigId
-	| WHERESigExp     of Info * SigExp * SigExp
+	  ATSIGEXPSigExp    of Info * AtSigExp
+	| APPSigExp         of Info * SigExp * AtStrExp
+	| FCTSigExp         of Info * StrPat * SigExp
+	| WHERESigExp       of Info * SigExp * SigExp
 
     (* Specifications *)
 
@@ -256,7 +275,6 @@ signature INPUT_GRAMMAR =
 	| CONSTRUCTORSpec  of Info * DconDesc
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
-	| FUNCTORSpec      of Info * FunDesc
 	| INCLUDESpec      of Info * SigExp
 	| EMPTYSpec        of Info
 	| SEQSpec          of Info * Spec * Spec
@@ -272,7 +290,8 @@ signature INPUT_GRAMMAR =
 	| NONFIXSpec       of Info * VId
 
     and ValDesc =
-	  ValDesc         of Info * Op * VId * Ty * ValDesc option
+	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
+	| EQUALValDesc    of Info * Op * VId * Op * LongVId * ValDesc option
 
     and TypDesc =
 	  NEWTypDesc      of Info * TyVarSeq * TyCon * TypDesc option
@@ -295,12 +314,9 @@ signature INPUT_GRAMMAR =
 	| EQUALStrDesc    of Info * StrId * SigExp option * LongStrId
 							    * StrDesc option
     and SigDesc =
-          NEWSigDesc      of Info * SigId * SigDesc option
-	| EQUALSigDesc    of Info * SigId * SigExp * SigDesc option
-
-    and FunDesc =
-          FunDesc         of Info * FunId * StrId * SigExp * SigExp
-                                  * FunDesc option
+          NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
+	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
+							* SigDesc option
     (* Programs *)
 
     and Program = Program of Info * Dec * Program option
@@ -331,7 +347,6 @@ signature INPUT_GRAMMAR =
     val infoTyVar :	TyVar		-> Info
     val infoStrId :	StrId		-> Info
     val infoSigId :	SigId		-> Info
-    val infoFunId :	FunId		-> Info
     val infoLong :	'a Long		-> Info
     val infoAtExp :	AtExp		-> Info
     val infoExpRow :	ExpRow		-> Info
@@ -347,13 +362,15 @@ signature INPUT_GRAMMAR =
     val infoDconBind :	DconBind	-> Info
     val infoStrBind :	StrBind		-> Info
     val infoSigBind :	SigBind		-> Info
-    val infoFunBind :	FunBind		-> Info
     val infoAtPat :	AtPat		-> Info
     val infoPatRow :	PatRow		-> Info
     val infoPat :	Pat		-> Info
     val infoTy :	Ty		-> Info
     val infoTyRow :	TyRow		-> Info
+    val infoAtStrExp :	AtStrExp	-> Info
     val infoStrExp :	StrExp		-> Info
+    val infoStrPat :	StrPat		-> Info
+    val infoAtSigExp :	AtSigExp	-> Info
     val infoSigExp :	SigExp		-> Info
     val infoSpec :	Spec		-> Info
     val infoValDesc :	ValDesc		-> Info
@@ -363,7 +380,6 @@ signature INPUT_GRAMMAR =
     val infoDconDesc :	DconDesc	-> Info
     val infoStrDesc :	StrDesc		-> Info
     val infoSigDesc :	SigDesc		-> Info
-    val infoFunDesc :	FunDesc		-> Info
     val infoProgram :	Program		-> Info
     val infoComponent :	Component	-> Info
     val infoImport :	Import		-> Info
@@ -375,7 +391,6 @@ signature INPUT_GRAMMAR =
     val idTyVar :	TyVar		-> TyVar.t
     val idStrId :	StrId		-> StrId.t
     val idSigId :	SigId		-> SigId.t
-    val idFunId :	FunId		-> FunId.t
 
     val explodeLong :	'a Long		-> StrId list * 'a
 

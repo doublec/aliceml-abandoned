@@ -13,7 +13,6 @@ structure BindEnv :> BIND_ENV =
     type TyCon = TyCon.t
     type StrId = StrId.t
     type SigId = SigId.t
-    type FunId = FunId.t
 
     datatype Dom = INFIX of VId
 		 | LAB   of Lab
@@ -22,7 +21,6 @@ structure BindEnv :> BIND_ENV =
 		 | TYCON of TyCon
 		 | STRID of StrId
 		 | SIGID of SigId
-		 | FUNID of FunId
 
     fun hashDom(INFIX id) = StringHashKey.hash(  VId.toString id)
       | hashDom(LAB   id) = StringHashKey.hash(  Lab.toString id)
@@ -31,7 +29,6 @@ structure BindEnv :> BIND_ENV =
       | hashDom(TYCON id) = StringHashKey.hash(TyCon.toString id)
       | hashDom(STRID id) = StringHashKey.hash(StrId.toString id)
       | hashDom(SIGID id) = StringHashKey.hash(SigId.toString id)
-      | hashDom(FUNID id) = StringHashKey.hash(FunId.toString id)
 
 
     (* The map implementing the environment *)
@@ -53,7 +50,6 @@ structure BindEnv :> BIND_ENV =
 		 | TY  of Ty
 		 | STR of Str
 		 | SIG of Sig
-		 | FUN of Fun
 
     withtype Inf = Info * InfStatus
     and      Fld = Info
@@ -62,7 +58,6 @@ structure BindEnv :> BIND_ENV =
     and      Ty  = Info * stamp * Env
     and      Str = Info * stamp * Env
     and      Sig = Info * stamp * Env
-    and      Fun = Info * stamp * Env
 
     fun asInfo(SOME(INF x)) = SOME x | asInfo _ = NONE
     fun asFldo(SOME(FLD x)) = SOME x | asFldo _ = NONE
@@ -71,7 +66,6 @@ structure BindEnv :> BIND_ENV =
     fun asTyo (SOME(TY  x)) = SOME x | asTyo  _ = NONE
     fun asStro(SOME(STR x)) = SOME x | asStro _ = NONE
     fun asSigo(SOME(SIG x)) = SOME x | asSigo _ = NONE
-    fun asFuno(SOME(FUN x)) = SOME x | asFuno _ = NONE
 
     fun appInf f (INFIX id, INF x) = f(id,x) | appInf f _ = ()
     fun appFld f (LAB   id, FLD x) = f(id,x) | appFld f _ = ()
@@ -80,7 +74,6 @@ structure BindEnv :> BIND_ENV =
     fun appTy  f (TYCON id, TY  x) = f(id,x) | appTy  f _ = ()
     fun appStr f (STRID id, STR x) = f(id,x) | appStr f _ = ()
     fun appSig f (SIGID id, SIG x) = f(id,x) | appSig f _ = ()
-    fun appFun f (FUNID id, FUN x) = f(id,x) | appFun f _ = ()
 
     fun foldInf f (INFIX id, INF x, a) = f(id,x,a) | foldInf f (_,_,a) = a
     fun foldFld f (LAB   id, FLD x, a) = f(id,x,a) | foldFld f (_,_,a) = a
@@ -89,7 +82,6 @@ structure BindEnv :> BIND_ENV =
     fun foldTy  f (TYCON id, TY  x, a) = f(id,x,a) | foldTy  f (_,_,a) = a
     fun foldStr f (STRID id, STR x, a) = f(id,x,a) | foldStr f (_,_,a) = a
     fun foldSig f (SIGID id, SIG x, a) = f(id,x,a) | foldSig f (_,_,a) = a
-    fun foldFun f (FUNID id, FUN x, a) = f(id,x,a) | foldFun f (_,_,a) = a
 
 
     (* Collision exceptions *)
@@ -101,7 +93,6 @@ structure BindEnv :> BIND_ENV =
     exception CollisionVar of TyVar
     exception CollisionStr of StrId
     exception CollisionSig of SigId
-    exception CollisionFun of FunId
 
     fun transformCollision(INFIX id)	= raise CollisionInf id
       | transformCollision(LAB   id)	= raise CollisionFld id
@@ -110,7 +101,6 @@ structure BindEnv :> BIND_ENV =
       | transformCollision(TYCON id)	= raise CollisionTy  id
       | transformCollision(STRID id)	= raise CollisionStr id
       | transformCollision(SIGID id)	= raise CollisionSig id
-      | transformCollision(FUNID id)	= raise CollisionFun id
 
 
     (* Actual operations *)
@@ -143,7 +133,6 @@ structure BindEnv :> BIND_ENV =
     fun insertTy (ENV E, id, x)		= Map.insert(E, TYCON id, TY  x)
     fun insertStr(ENV E, id, x)		= Map.insert(E, STRID id, STR x)
     fun insertSig(ENV E, id, x)		= Map.insert(E, SIGID id, SIG x)
-    fun insertFun(ENV E, id, x)		= Map.insert(E, FUNID id, FUN x)
 
     fun insertDisjointInf(ENV E, id, x)	= Map.insertDisjoint(E, INFIX id, INF x)
 					  handle Map.Collision(INFIX id) =>
@@ -166,9 +155,6 @@ structure BindEnv :> BIND_ENV =
     fun insertDisjointSig(ENV E, id, x)	= Map.insertDisjoint(E, SIGID id, SIG x)
 					  handle Map.Collision(SIGID id) =>
 						 raise CollisionSig id
-    fun insertDisjointFun(ENV E, id, x)	= Map.insertDisjoint(E, FUNID id, FUN x)
-					  handle Map.Collision(FUNID id) =>
-						 raise CollisionFun id
 
     fun lookupInf(ENV E, id)		= asInfo(Map.lookup(E, INFIX id))
     fun lookupFld(ENV E, id)		= asFldo(Map.lookup(E, LAB   id))
@@ -177,7 +163,6 @@ structure BindEnv :> BIND_ENV =
     fun lookupTy (ENV E, id)		= asTyo (Map.lookup(E, TYCON id))
     fun lookupStr(ENV E, id)		= asStro(Map.lookup(E, STRID id))
     fun lookupSig(ENV E, id)		= asSigo(Map.lookup(E, SIGID id))
-    fun lookupFun(ENV E, id)		= asFuno(Map.lookup(E, FUNID id))
 
     fun lookupScopeInf(ENV E, id)	= asInfo(Map.lookupScope(E, INFIX id))
     fun lookupScopeFld(ENV E, id)	= asFldo(Map.lookupScope(E, LAB   id))
@@ -186,7 +171,6 @@ structure BindEnv :> BIND_ENV =
     fun lookupScopeTy (ENV E, id)	= asTyo (Map.lookupScope(E, TYCON id))
     fun lookupScopeStr(ENV E, id)	= asStro(Map.lookupScope(E, STRID id))
     fun lookupScopeSig(ENV E, id)	= asSigo(Map.lookupScope(E, SIGID id))
-    fun lookupScopeFun(ENV E, id)	= asFuno(Map.lookupScope(E, FUNID id))
 
     fun appiInfs f (ENV E)		= Map.appi (appInf f) E
     fun appiFlds f (ENV E)		= Map.appi (appFld f) E
@@ -195,7 +179,6 @@ structure BindEnv :> BIND_ENV =
     fun appiTys  f (ENV E)		= Map.appi (appTy  f) E
     fun appiStrs f (ENV E)		= Map.appi (appStr f) E
     fun appiSigs f (ENV E)		= Map.appi (appSig f) E
-    fun appiFuns f (ENV E)		= Map.appi (appFun f) E
     fun appiScopeVals f (ENV E)		= Map.appiScope (appVal f) E
 
     fun foldiInfs f a (ENV E)		= Map.foldi (foldInf f) a E
@@ -205,7 +188,6 @@ structure BindEnv :> BIND_ENV =
     fun foldiTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
     fun foldiStrs f a (ENV E)		= Map.foldi (foldStr f) a E
     fun foldiSigs f a (ENV E)		= Map.foldi (foldSig f) a E
-    fun foldiFuns f a (ENV E)		= Map.foldi (foldFun f) a E
 
 
     fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
@@ -224,8 +206,6 @@ structure BindEnv :> BIND_ENV =
 						  ; STR(I1,z1,E1) )
       | compose(SIG(I1,z1,E1),  SIG(I2,z2,E2))	= ( unionCompose(E1,E2)
 						  ; SIG(I1,z1,E1) )
-      | compose(FUN(I1,z1,E1),  FUN(I2,z2,E2))	= ( unionCompose(E1,E2)
-						  ; FUN(I1,z1,E1) )
       | compose _				= raise Crash.Crash
 							"BindEnv.compose"
     and composeIdStatus(V, is)			= is

@@ -10,7 +10,6 @@ Group
     structure TyCon
     structure StrId
     structure SigId
-    structure FunId
     signature BIND_ENV
     structure BindEnv
     signature BIND_ENV0

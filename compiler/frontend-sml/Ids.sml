@@ -17,5 +17,4 @@ structure TyCon	= MakeId(Stamp)
 structure TyVar	= MakeId(Stamp)
 structure StrId	= MakeId(Stamp)
 structure SigId = MakeId(Stamp)
-structure FunId = MakeId(Stamp)
 end
