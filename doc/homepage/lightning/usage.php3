@@ -48,7 +48,7 @@
   </DL>
 
   <P>To terminate an application, the <TT>OS.Process.terminate</TT>
-    function must be invoked.</P>
+    function can be invoked.</P>
 
 
 <?php section("foreign", "foreign components") ?>

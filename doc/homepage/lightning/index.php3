@@ -33,7 +33,7 @@
   </UL>
 
   <P>
-    This prototype was developed within
+    This prototype has been developed within
     <A href="https://www.research.microsoft.com/Project7/project7.htm">Project
     7</A>, funded by
     <A href="http://www.research.microsoft.com/">Microsoft Research</A>.
