@@ -1,0 +1,7 @@
+import structure Name  from "x-alice:/common/Name.ozf"
+import structure Label from "x-alice:/common/Label.ozf"
+
+import structure PervasiveType from "x-alice:/common/PervasiveType.ozf"
+
+import signature PERVASIVE_TYPE_REFLECTION
+from "x-alice:/common/PERVASIVE_TYPE_REFLECTION.ozf"
