@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,21 +16,10 @@
  * returns a topological ordering of all strongly connected components.
  *)
 
-import
-    structure Assert
-from "Assert"
-
-import
-    signature HASH_KEY
-from "HASH_KEY-sig"
-
-import
-    signature IMP_MAP
-from "IMP_MAP-sig"
-
-import
-    signature DEPTH_FIRST_SEARCH
-from "DEPTH_FIRST_SEARCH-sig"
+import structure Assert             from "Assert"
+import signature HASH_KEY           from "HASH_KEY-sig"
+import signature IMP_MAP            from "IMP_MAP-sig"
+import signature DEPTH_FIRST_SEARCH from "DEPTH_FIRST_SEARCH-sig"
 
 functor MkDepthFirstSearch
     (structure Key: HASH_KEY
@@ -42,20 +31,23 @@ functor MkDepthFirstSearch
 	     {currentId: int ref,
 	      stack: Key.t list ref,
 	      done: int Map.t,
-	      sorted: Key.t list list ref}
+	      sorted: Key.t list list ref,
+	      maxId: int}
 
-	fun newState (): state =
+	fun newState maxId: state =
 	    {currentId = ref 0,
 	     stack = ref nil,
 	     done = Map.new (),
-	     sorted = ref nil}
+	     sorted = ref nil,
+	     maxId = maxId}
 
 	fun getCycle (key::keyr, key', state: state) =
-	    if Key.equal (key, key') then (#stack state := keyr; [key])
-	    else key::getCycle (keyr, key', state)
+	    (Map.insert (#done state, key, #maxId state);
+	     if Key.equal (key, key') then (#stack state := keyr; [key])
+	     else key::getCycle (keyr, key', state))
 	  | getCycle (nil, _, _) = raise Assert.failure
 
-	fun visit (map, key, state as {currentId, stack, done, sorted}) =
+	fun visit (map, key, state as {currentId, stack, done, sorted, ...}) =
 	    let
 		val id = !currentId
 		val _ = Map.insertDisjoint (done, key, id)
@@ -78,7 +70,7 @@ functor MkDepthFirstSearch
 
 	fun search map =
 	    let
-		val state as {done, sorted, ...} = newState ()
+		val state as {done, sorted, ...} = newState (Map.size map)
 	    in
 		Map.appi (fn (key, _) =>
 			  if Map.member (done, key) then ()
