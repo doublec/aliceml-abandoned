@@ -70,13 +70,16 @@ public:
   void Add(Entry *entry) {
     Enqueue(entry->ToWord());
   }
-  u_int EnterIntoFDSet(fd_set *fdSet) {
-    u_int count = GetNumberOfElements();
+  int EnterIntoFDSet(fd_set *fdSet) {
+    int max = -1;
     FD_ZERO(fdSet);
-    for (u_int i = count; i--; ) {
-      FD_SET(Entry::FromWordDirect(GetNthElement(i))->GetFD(), fdSet);
+    for (u_int i = GetNumberOfElements(); i--; ) {
+      int fd = Entry::FromWordDirect(GetNthElement(i))->GetFD();
+      if (fd > max)
+	max = fd;
+      FD_SET(fd, fdSet);
     }
-    return count;
+    return max;
   }
   void Schedule(fd_set *fdSet) {
     u_int n = GetNumberOfElements();
@@ -107,14 +110,14 @@ void IOHandler::Poll() {
   Set *ReadableSet = Set::FromWordDirect(Readable);
   Set *WritableSet = Set::FromWordDirect(Writable);
   static fd_set readFDs, writeFDs;
-  u_int nRead = ReadableSet->EnterIntoFDSet(&readFDs);
-  u_int nWrite = WritableSet->EnterIntoFDSet(&writeFDs);
-  if (nRead + nWrite > 0) {
+  int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
+  int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
+  int max = maxRead > maxWrite? maxRead: maxWrite;
+  if (max > 0) {
     struct timeval timeout;
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
-    int ret = select((nRead > nWrite? nRead: nWrite) + 1,
-		     &readFDs, &writeFDs, NULL, &timeout);
+    int ret = select(max + 1, &readFDs, &writeFDs, NULL, &timeout);
     if (ret < 0) {
       Error("IOHandler::Poll");
     } else if (ret > 0) {
@@ -128,16 +131,13 @@ void IOHandler::Block() {
   Set *ReadableSet = Set::FromWordDirect(Readable);
   Set *WritableSet = Set::FromWordDirect(Writable);
   static fd_set readFDs, writeFDs;
-  u_int nRead = ReadableSet->EnterIntoFDSet(&readFDs);
-  u_int nWrite = WritableSet->EnterIntoFDSet(&writeFDs);
-  if (nRead + nWrite > 0) {
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-    int ret = select((nRead > nWrite? nRead: nWrite) + 1,
-		     &readFDs, &writeFDs, NULL, &timeout);
+  int maxRead = ReadableSet->EnterIntoFDSet(&readFDs);
+  int maxWrite = WritableSet->EnterIntoFDSet(&writeFDs);
+  int max = maxRead > maxWrite? maxRead: maxWrite;
+  if (max > 0) {
+    int ret = select(max + 1, &readFDs, &writeFDs, NULL, NULL);
     if (ret < 0) {
-      Error("IOHandler::Poll");
+      Error("IOHandler::Block");
     }
     Assert(ret > 0);
     ReadableSet->Schedule(&readFDs);
@@ -145,7 +145,7 @@ void IOHandler::Block() {
   }
 }
 
-Future *IOHandler::SignalReadable(int fd) {
+Future *IOHandler::CheckReadable(int fd) {
   fd_set readFDs;
   FD_ZERO(&readFDs);
   FD_SET(fd, &readFDs);
@@ -156,7 +156,7 @@ Future *IOHandler::SignalReadable(int fd) {
 
   int ret = select(fd + 1, &readFDs, NULL, NULL, &timeout);
   if (ret < 0) {
-    Error("IOHandler::SignalReadable");
+    Error("IOHandler::CheckReadable");
   } else if (ret == 0) {
     Future *future = Future::New();
     Entry *entry = Entry::New(fd, future);
@@ -167,7 +167,7 @@ Future *IOHandler::SignalReadable(int fd) {
   }
 }
 
-Future *IOHandler::SignalWritable(int fd) {
+Future *IOHandler::CheckWritable(int fd) {
   fd_set writeFDs;
   FD_ZERO(&writeFDs);
   FD_SET(fd, &writeFDs);
@@ -178,7 +178,7 @@ Future *IOHandler::SignalWritable(int fd) {
 
   int ret = select(fd + 1, NULL, &writeFDs, NULL, &timeout);
   if (ret < 1) {
-    Error("IOHandler::SignalWritable");
+    Error("IOHandler::CheckWritable");
   } else if (ret == 0) {
     Future *future = Future::New();
     Entry *entry = Entry::New(fd, future);

@@ -10,6 +10,7 @@
 //   $Revision$
 //
 
+#include <cstdio>
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -17,6 +18,7 @@
 #include <winsock.h>
 typedef int socklen_t;
 #else
+#include <errno.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -24,6 +26,12 @@ typedef int socklen_t;
 #endif
 
 #include "emulator/Authoring.hh"
+#include "emulator/IOHandler.hh"
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define EWOULDBLOCK WSAEWOULDBLOCK
+#define EINPROGRESS WSAEINPROGRESS
+#endif
 
 static char *ExportCString(String *s) {
   u_int sLen = s->GetSize();
@@ -40,6 +48,14 @@ static int SetNonBlocking(int sock, bool flag) {
   return ioctlsocket(sock, FIONBIO, &arg);
 #else
   return ioctl(sock, FIONBIO, &arg);
+#endif
+}
+
+static int GetLastError() {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return WSAGetLastError();
+#else
+  return errno;
 #endif
 }
 
@@ -81,29 +97,37 @@ DEFINE1(UnsafeSocket_server) {
   static const u_int backLog = 5;
   int ret = listen(sock, backLog);
   Assert(ret == 0); ret = ret;
+  SetNonBlocking(sock, true);
 
   if (getsockname(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen) < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
-  Tuple *tuple = Tuple::New(3);
+  Tuple *tuple = Tuple::New(2);
   tuple->Init(0, Store::IntToWord(sock));
-  //--** nonsense: the local address is only known when accept has been called:
-  tuple->Init(1, String::New(GetHostName(&addr))->ToWord());
-  tuple->Init(2, Store::IntToWord(ntohs(addr.sin_port)));
+  tuple->Init(1, Store::IntToWord(ntohs(addr.sin_port)));
   RETURN(tuple->ToWord());
 } END
 
 DEFINE1(UnsafeSocket_accept) {
   DECLARE_INT(sock, x0);
 
-  //--** non-blocking accept: sock is marked as readable when accept
-  // can complete without blocking
   sockaddr_in addr;
   socklen_t addrLen = sizeof(addr);
+ retry:
   int client = accept(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen);
   if (client < 0) {
-    RAISE(Store::IntToWord(0)); //--** IO.Io
+    if (GetLastError() == EWOULDBLOCK) {
+      Future *future = IOHandler::CheckReadable(sock);
+      if (future != INVALID_POINTER) {
+	REQUEST(future->ToWord());
+      } else {
+	goto retry;
+      }
+    } else {
+      RAISE(Store::IntToWord(0)); //--** IO.Io
+    }
   }
+  SetNonBlocking(client, true);
 
   Tuple *tuple = Tuple::New(3);
   tuple->Init(0, Store::IntToWord(client));
@@ -131,8 +155,20 @@ DEFINE2(UnsafeSocket_client) {
   std::memcpy(&addr.sin_addr, entry->h_addr_list[0], sizeof(addr.sin_addr));
   addr.sin_port = htons(port);
 
-  if (connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
-    RAISE(Store::IntToWord(0)); //--** IO.Io
+  int ret = connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof(addr));
+  if (ret < 0) {
+    int error = GetLastError();
+    if (error == EWOULDBLOCK || error == EINPROGRESS) {
+      Future *future = IOHandler::CheckWritable(sock);
+      if (future != INVALID_POINTER) {
+	Scheduler::currentData = future->ToWord();
+	Scheduler::nArgs = Scheduler::ONE_ARG;
+	Scheduler::currentArgs[0] = Store::IntToWord(sock);
+	return Interpreter::REQUEST;
+      }
+    } else {
+      RAISE(Store::IntToWord(0)); //--** IO.Io
+    }
   }
   RETURN_INT(sock);
 } END
@@ -141,9 +177,19 @@ DEFINE1(UnsafeSocket_input1) {
   DECLARE_INT(sock, x0);
 
   u_char c;
+ retry:
   int n = recv(sock, reinterpret_cast<char *>(&c), 1, 0);
   if (n < 0) {
-    RAISE(Store::IntToWord(0)); //--** IO.Io
+    if (GetLastError() == EWOULDBLOCK) {
+      Future *future = IOHandler::CheckReadable(sock);
+      if (future != INVALID_POINTER) {
+	REQUEST(future->ToWord());
+      } else {
+	goto retry;
+      }
+    } else {
+      RAISE(Store::IntToWord(0)); //--** IO.Io
+    }
   } else if (n == 0) { // EOF
     RETURN_INT(0); // NONE
   } else {
@@ -162,47 +208,75 @@ DEFINE2(UnsafeSocket_inputN) {
     RAISE(PrimitiveTable::General_Size);
   }
   String *buffer = String::New(count);
-  int nread = 0;
-  while (nread < count) {
-    int n = recv(sock, reinterpret_cast<char *>(buffer->GetValue() + nread),
-		 count - nread, 0);
-    if (n < 0) {
+ retry:
+  int n = recv(sock, reinterpret_cast<char *>(buffer->GetValue()), count, 0);
+  if (n < 0) {
+    if (GetLastError() == EWOULDBLOCK) {
+      Future *future = IOHandler::CheckReadable(sock);
+      if (future != INVALID_POINTER) {
+	REQUEST(future->ToWord());
+      } else {
+	goto retry;
+      }
+    } else {
       RAISE(Store::IntToWord(0)); //--** IO.Io
-    } else if (n == 0) {
-      String *string = String::New(nread);
-      std::memcpy(string->GetValue(), buffer->GetValue(), nread);
-      RETURN(string->ToWord());
     }
-    nread += n;
+  } else if (n == 0) {
+    RETURN(String::New(static_cast<u_int>(0))->ToWord());
+  } else if (n == count) {
+    RETURN(buffer->ToWord());
+  } else {
+    String *string = String::New(n);
+    std::memcpy(string->GetValue(), buffer->GetValue(), n);
+    RETURN(string->ToWord());
   }
-  RETURN(buffer->ToWord());
 } END
 
 DEFINE2(UnsafeSocket_output1) {
   DECLARE_INT(sock, x0);
   DECLARE_INT(i, x1);
   u_char c = i;
+ retry:
   if (send(sock, reinterpret_cast<char *>(&c), 1, 0) < 0) {
-    RAISE(Store::IntToWord(0)); //--** IO.Io
+    if (GetLastError() == EWOULDBLOCK) {
+      Future *future = IOHandler::CheckWritable(sock);
+      if (future != INVALID_POINTER) {
+	REQUEST(future->ToWord());
+      } else {
+	goto retry;
+      }
+    } else {
+      RAISE(Store::IntToWord(0)); //--** IO.Io
+    }
   }
   RETURN_UNIT;
 } END
 
-DEFINE2(UnsafeSocket_output) {
+DEFINE3(UnsafeSocket_output) {
   DECLARE_INT(sock, x0);
   DECLARE_STRING(string, x1);
+  DECLARE_INT(offset, x2);
 
-  u_char *buffer = string->GetValue();
-  u_int count = string->GetSize();
-  while (count > 0) {
-    int n = send(sock, reinterpret_cast<char *>(buffer), string->GetSize(), 0);
-    if (n < 0) {
+  std::fprintf(stderr, "output: %d of %d\n", offset, string->GetSize());
+  Assert(offset >= 0 && static_cast<u_int>(offset) < string->GetSize());
+  u_char *buffer = string->GetValue() + offset;
+  u_int count = string->GetSize() - offset;
+ retry:
+  int n = send(sock, reinterpret_cast<char *>(buffer), count, 0);
+  if (n < 0) {
+    if (GetLastError() == EWOULDBLOCK) {
+      Future *future = IOHandler::CheckWritable(sock);
+      if (future != INVALID_POINTER) {
+	REQUEST(future->ToWord());
+      } else {
+	goto retry;
+      }
+    } else {
       RAISE(Store::IntToWord(0)); //--** IO.Io
     }
-    count -= n;
-    buffer += n;
+  } else {
+    RETURN_INT(n);
   }
-  RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeSocket_close) {
@@ -218,6 +292,14 @@ DEFINE1(UnsafeSocket_close) {
 } END
 
 word UnsafeSocket() {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  WSADATA wsa_data;
+  WORD req_version = MAKEWORD(1, 1);
+  if (WSAStartup(req_version, &wsa_data) != 0) {
+    Error("No usable WinSock DLL found");
+  }
+#endif
+
   Tuple *t = Tuple::New(8);
   t->Init(0, Primitive::MakeClosure("UnsafeSocket_accept",
 				    UnsafeSocket_accept, 1, true));
@@ -230,7 +312,7 @@ word UnsafeSocket() {
   t->Init(4, Primitive::MakeClosure("UnsafeSocket_inputN",
 				    UnsafeSocket_inputN, 2, true));
   t->Init(5, Primitive::MakeClosure("UnsafeSocket_output",
-				    UnsafeSocket_output, 2, true));
+				    UnsafeSocket_output, 3, true));
   t->Init(6, Primitive::MakeClosure("UnsafeSocket_output1",
 				    UnsafeSocket_output1, 2, true));
   t->Init(7, Primitive::MakeClosure("UnsafeSocket_server",

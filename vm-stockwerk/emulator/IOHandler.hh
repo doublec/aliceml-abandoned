@@ -26,8 +26,8 @@ public:
   static void Block();
 
   // These return INVALID_POINTER if the fd is already readable/writable:
-  static Future *SignalReadable(int fd);
-  static Future *SignalWritable(int fd);
+  static Future *CheckReadable(int fd);
+  static Future *CheckWritable(int fd);
 };
 
 #endif
