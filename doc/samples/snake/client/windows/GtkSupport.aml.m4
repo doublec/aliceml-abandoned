@@ -177,6 +177,8 @@ struct
 	   (width, height)
 	end
 
+    fun entrySetWidthChars _ = ()
+
 end
 
 structure Gdk =

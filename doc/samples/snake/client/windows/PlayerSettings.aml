@@ -104,7 +104,7 @@ struct
 		    val text = name ^ " has connected!\n"
 		    val color = colorToGdkColor color
 		in
-		    Gtk.textWidgetInsert (playerText, name, color)
+		    Gtk.textWidgetInsert (playerText, text, color)
 		end
 
 

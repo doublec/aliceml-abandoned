@@ -128,7 +128,7 @@ struct
 
     fun initialize () = 
         let
-	    val canvas = Canvas.new 0
+	    val canvas = Canvas.newAa 0
 
         in
 	    {

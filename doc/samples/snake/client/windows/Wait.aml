@@ -123,6 +123,7 @@ struct
 			       fn _ => mainQuit ());
 	    
 	    (* set some default configurations *)
+	    Gtk.entrySetFieldTextSize (serverUrl, String.size serverUrlStr);
 	    Gtk.entrySetText (serverUrl, serverUrlStr);
 	    Gtk.containerSetBorderWidth (waiting, 10);
 	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
@@ -138,7 +139,7 @@ struct
 			      true, true, 5);
 	    
 	    Gtk.boxPackStart (urlHBox, urlLabel, false, false, 5);
-	    Gtk.boxPackStart (urlHBox, serverUrl, true, true, 5);
+	    Gtk.boxPackStart (urlHBox, serverUrl, false, false, 5);
 	    
 	    Gtk.containerAdd (playerWindow, playerText);
 	    

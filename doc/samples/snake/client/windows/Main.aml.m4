@@ -17,7 +17,6 @@ import structure Canvas         from "GtkSupport"
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
 
 import structure Color          from "../../common/Color"
-import structure Config         from "../../server/Config"
 import structure Protocol       from "../../common/Protocol"
 import structure Highscore      from "../../common/Highscore"
 
@@ -126,8 +125,8 @@ struct
 	    val timeLabel = Gtk.labelNew ""
 		
 	    (* the box where time and points are in *)
-	    val labelVBox      = Gtk.vboxNew (false, 10)
-	    val rightHBox      = Gtk.hboxNew (false, 10)
+	    val labelVBox      = Gtk.vboxNew (false, 2)
+	    val rightHBox      = Gtk.hboxNew (false, 2)
 
 	    (* one of the main procedures. resets the window
 	       in START mode and also the sensitivity of the menubar *)
@@ -260,8 +259,8 @@ struct
 			end)
 		     
 			
-	    val dialogVBox     = Gtk.vboxNew (false, 10)
-	    val dialogHBox     = Gtk.hboxNew (false, 10)
+	    val dialogVBox     = Gtk.vboxNew (false, 5)
+	    val dialogHBox     = Gtk.hboxNew (false, 5)
 	    val menuBar        = Gtk.menuBarNew ()
 	    val menuMenu       = Gtk.menuNew ()
 	    val menuHighscore  = Gtk.menuNew ()
@@ -357,11 +356,11 @@ struct
 	    Gtk.signalConnect (menuGiveUpItem, "activate",
 			       fn _ => (!giveUp') ());
 	    
-	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 5);
-	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 5);
+	    Gtk.boxPackStart (labelVBox, timeLabel, false, false, 0);
+	    Gtk.boxPackStart (labelVBox, pointsLabel, false, false, 0);
 	    
-	    Gtk.boxPackStart (rightHBox, separator1, true, true, 5);
-	    Gtk.boxPackStart (rightHBox, labelVBox, false, false, 5);
+	    Gtk.boxPackStart (rightHBox, separator1, true, true, 0);
+	    Gtk.boxPackStart (rightHBox, labelVBox, false, false, 0);
 
 	    Gtk.boxPackStart (dialogHBox, canvas, true, true, 0);
 	    Gtk.boxPackStart (dialogHBox, rightHBox, false, false, 0);
