@@ -2421,7 +2421,7 @@ void NativeCodeJitter::Init(u_int bufferSize) {
 // Function of coord * value option vector * string vector *
 //             idDef args * instr * liveness
 NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
-#if 1
+#if 0
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
