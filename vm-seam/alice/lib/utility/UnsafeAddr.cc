@@ -26,5 +26,5 @@ word UnsafeAddr() {
   Record *record = Record::New(1);
   INIT_STRUCTURE(record, "UnsafeAddr", "addr",
 		 UnsafeAddr_addr, 1, true);
-  RETURN_STRUCTURE("UnsafeAddr$", record);
+  return record->ToWord();
 }
