@@ -1789,7 +1789,7 @@ namespace Alice {
 		else {
 		    TagVal head = ListOp.Cons((System.Char) s[len - 1], (Int32) 1);
 		    for (int i = (len - 2); i >= 0; i--) {
-			head = ListOp.Cons((System.Char) s[len], head);
+			head = ListOp.Cons((System.Char) s[i], head);
 		    }
 		    return head;
 		}
