@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -130,7 +130,7 @@ struct
 
     fun envFromTyp(I,E,s,t,tycon) =
 	if Type.equal(t, PervasiveType.typ_ref) then
-	    let val E' = new() in
+	    let val E' = env() in
 		let
 		   (* Constructor needs to have the same name as the tycon,
 		    * because we have no way of knowing its real name. *)
@@ -142,7 +142,7 @@ struct
 		in
 		    if Type.isUnknown t1 andalso Type.equal(t3,t)
 					 andalso Type.equal(t4,t1)
-		    then insertVal(E', VId.fromString name, (I, Stamp.new(), R))
+		    then insertVal(E', VId.fromString name, (I,Stamp.stamp(),R))
 		    else ()
 		end handle (Inf.Lookup _ | Type.Type) => ();
 	        E'
@@ -155,11 +155,11 @@ struct
 	 of Type.Sum r		=> envFromRow(I, E,s, r,t0, tycon, k)
 	  | Type.Lambda(_,t')	=> envFromTyp'(I, E,s, t',t0, tycon, k+1)
 	  | Type.Mu t'		=> envFromTyp'(I, E,s, t',t0, tycon, k)
-	  | _			=> new()
+	  | _			=> env()
 
     and envFromRow(I,E,s,r,t0,tycon,k) =
 	let
-	    val E' = new()
+	    val E' = env()
 
 	    fun loop r =
 		case Type.inspectRow r
@@ -205,7 +205,7 @@ struct
 	selectSig(#3(valOf(lookupStr(E, stridFromLabel l))), ls)
       | selectSig _               = raise Crash.Crash "BindEnvFromSig.selectSig"
 
-    fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.new(), j)
+    fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.map(), j)
     and envfnFromInf'(I,pm,j) =
 	case Inf.inspect j
 	 of Inf.Top =>
@@ -216,15 +216,15 @@ struct
 	      | SOME(p',strids,sigid) =>
 	    let
 		val z = case PathMap.lookup(pm,p') of SOME z => z
-						    | NONE   => Stamp.new()
+						    | NONE   => Stamp.stamp()
 	    in
 		ABSTR(z,strids,sigid,[])
 	    end)
 	  | Inf.Sig s =>
-		PLAIN(envFromSig'(I, pm, Stamp.new(), s))
+		PLAIN(envFromSig'(I, pm, Stamp.stamp(), s))
 	  | Inf.Arrow(p,j1,j2) =>
 	    let
-		val z  = Stamp.new()
+		val z  = Stamp.stamp()
 		val zo = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
@@ -234,7 +234,7 @@ struct
 	    end
 	  | Inf.Lambda(p,j1,j2) =>
 	    let
-		val z  = Stamp.new()
+		val z  = Stamp.stamp()
 		val zo = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
@@ -254,7 +254,7 @@ struct
 		envfnFromInf'(I,pm, #2(Inf.asMod m))
 	  | Inf.Exist(p,j1,j2) =>
 	    let
-		val z  = Stamp.new()
+		val z  = Stamp.stamp()
 		val zo = PathMap.lookup(pm,p)
 	    in
 		PathMap.insert(pm,p,z);
@@ -263,11 +263,11 @@ struct
 		(case zo of NONE => () | SOME z' => PathMap.insert(pm,p,z'))
 	    end
 
-    and envFromSig (I,s)       = envFromSig'(I, PathMap.new(), Stamp.new(), s)
+    and envFromSig (I,s)       = envFromSig'(I, PathMap.map(), Stamp.stamp(), s)
     and envFromSig'(I,pm,z,s)  = Future.byneed(fn() => envFromSig''(I,pm,z,s))
     and envFromSig''(I,pm,z,s) =
 	let
-	    val E     = new()
+	    val E     = env()
 	    val items = Inf.items s
 	in
 	    insertSelf E;
@@ -284,7 +284,7 @@ struct
 	    let
 		val name = Label.toString l
 		val vid  = vidFromLabel l
-		val z    = Stamp.new()
+		val z    = Stamp.stamp()
 		val is   = if String.sub(name,0) = #"'" then V else
 			    let
 				val l'        = Label.fromString("'" ^ name)
@@ -320,12 +320,12 @@ struct
 	  | Inf.TypItem(p,k) =>
 	    let
 		val l  = Path.toLab p
-		val x  = Stamp.new()
+		val x  = Stamp.stamp()
 		val E' = case Type.inspectKind k
 			  of Type.SingKind t =>
 				envFromTyp(I, E,s, t,
 					   TyCon.fromString(Label.toString l))
-			   | _ => new()
+			   | _ => env()
 	    in
 		insertDisjointTy(E, tyconFromLabel l, (I,x,E'));
 		appiVals (fn(vid,x) => insertVal(E, vid, x)) E'
@@ -335,7 +335,7 @@ struct
 		val l = Path.toLab p
 		val F = envfnFromInf'(I,pm,j)
 		val x = case F of PLAIN E' => Option.valOf(lookupSelf E')
-				| _        => Stamp.new()
+				| _        => Stamp.stamp()
 	    in
 		insertDisjointStr(E, stridFromLabel l, (I,x,F))
 	    end
@@ -343,7 +343,7 @@ struct
 	    let
 		val l = Path.toLab p
 		val F = envfnFromInf'(I, pm, Inf.lookupInf'(s,l))
-		val x = Stamp.new()
+		val x = Stamp.stamp()
 	    in
 		PathMap.insert(pm,p,z);
 		insertDisjointSig(E, sigidFromLabel l, (I,x,F))

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -90,8 +90,8 @@ sig
 
     exception Strengthen
 
-
     val new :			unit -> Env
+    val env :			unit -> Env
     val instance :		EnvFn -> EnvFn
     val strengthen :		stamp * EnvFn -> EnvFn
     val apply :			EnvFn * EnvFn -> EnvFn

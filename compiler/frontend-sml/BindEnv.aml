@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -146,7 +146,8 @@ struct
 
     (* Actual operations *)
 
-    fun new()				= ENV(Map.new())
+    fun env()				= ENV(Map.map())
+    val new				= env
     fun clone(ENV E)			= ENV(Map.clone E)
     fun cloneScope(ENV E)		= ENV(Map.cloneScope E)
     fun splitScope(ENV E)		= ENV(Map.splitScope E)
@@ -168,7 +169,8 @@ struct
     fun size(ENV E)			= Map.size E
     fun sizeScope(ENV E)		= Map.sizeScope E
 
-    fun insertSelf(ENV E)		= Map.insert(E, SELF,STAMP(Stamp.new()))
+    fun insertSelf(ENV E)		= Map.insert(E, SELF,
+							STAMP(Stamp.stamp()))
     fun insertInf(ENV E, id, x)		= Map.insert(E, INFIX id, INF x)
     fun insertFld(ENV E, id, x)		= Map.insert(E, LAB   id, FLD x)
     fun insertVar(ENV E, id, x)		= Map.insert(E, TYVAR id, VAR x)
@@ -282,14 +284,14 @@ struct
 
     exception Instance
 
-    fun instance F = instance' (StampMap.new()) F
+    fun instance F = instance' (StampMap.map()) F
 
     and instance' Z (EMPTY) = EMPTY
 
       | instance' Z (PLAIN(ENV E)) =
 	let
-	    val E' = Map.new()
-	    val z' = Stamp.new()
+	    val E' = Map.map()
+	    val z' = Stamp.stamp()
 	    val z  = Option.valOf(lookupSelf(ENV E))
 		     handle Option.Option => raise Instance
 	in
@@ -300,7 +302,7 @@ struct
 
       | instance' Z (PARAM(z,F)) =
 	let
-	    val z' = Stamp.new()
+	    val z' = Stamp.stamp()
 	in
 	    StampMap.insert(Z,z,z');
 	    PARAM(z', instance' Z F)
@@ -325,7 +327,7 @@ struct
 
     (* Application *)
 
-    fun apply(PARAM(z,F1), F2)			= let val Z   = StampMap.new()
+    fun apply(PARAM(z,F1), F2)			= let val Z   = StampMap.map()
 						      val F1' = instance F1
 						  in  StampMap.insert(Z,z,F2);
 						      subst Z F1'
@@ -412,7 +414,7 @@ struct
 
     fun strengthen(z,F) =
 	let
-	    val Z = StampMap.new()
+	    val Z = StampMap.map()
 
 	    fun calcSubst(strids, PLAIN E) =
 		(
