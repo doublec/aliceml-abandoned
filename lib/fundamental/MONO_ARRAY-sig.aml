@@ -21,20 +21,19 @@ import signature MONO_VECTOR                   from "MONO_VECTOR-sig"
 
 signature MONO_ARRAY =
 sig
-    structure Vector: MONO_VECTOR
-
+    type elem
+    type vector
     eqtype array
     type t = array							(**)
-    type elem = Vector.elem
 
     val maxLen: int
 
     val array: int * elem -> array
-    val new: int * elem -> array					(**)
+    val vector: array -> vector
     val toList:	array -> elem list					(**)
     val fromList: elem list -> array
-    val toVector: array -> Vector.vector				(**)
-    val fromVector: Vector.vector -> array				(**)
+    val toVector: array -> vector					(**)
+    val fromVector: vector -> array					(**)
     val tabulate: int * (int -> elem) -> array
 
     val length: array -> int
@@ -42,29 +41,32 @@ sig
     val update: array * int * elem -> unit
     val swap: array * int * int -> unit					(**)
     val rev: array -> unit						(**)
-    val extract: array * int * int option -> Vector.vector
-    val copy:
-	{src: array, si: int, len: int option, dst: array, di: int} -> unit
-    val copyVec:
-	{src: Vector.t, si: int, len: int option, dst: array, di: int} -> unit
+    val copy: {src: array, dst: array, di: int} -> unit
+    val copyVec: {src: vector, dst: array, di: int} -> unit
 
     val app: (elem -> unit) -> array -> unit
     val appr: (elem -> unit) -> array -> unit				(**)
     val modify: (elem -> elem) -> array -> unit
     val foldl: (elem * 'b -> 'b) -> 'b -> array -> 'b
     val foldr: (elem * 'b -> 'b) -> 'b -> array -> 'b
-    val appi: (int * elem -> unit) -> array * int * int option -> unit
-    val appri: (int * elem -> unit) -> array * int * int option -> unit	(**)
-    val modifyi: (int * elem -> elem) -> array * int * int option -> unit
-    val foldli: (int * elem * 'b -> 'b) -> 'b -> array * int * int option -> 'b
-    val foldri: (int * elem * 'b -> 'b) -> 'b -> array * int * int option -> 'b
+    val all: (elem -> bool) -> array -> bool
+    val exists:	(elem -> bool) -> array -> bool
+    val find: (elem -> bool) -> array -> elem option
 
-    val all: (elem -> bool) -> array -> bool				(**)
-    val exists:	(elem -> bool) -> array -> bool				(**)
-    val find: (elem -> bool) -> array -> elem option			(**)
+    val appi: (int * elem -> unit) -> array -> unit
+    val appri: (int * elem -> unit) -> array -> unit			(**)
+    val modifyi: (int * elem -> elem) -> array -> unit
+    val foldli: (int * elem * 'b -> 'b) -> 'b -> array -> 'b
+    val foldri: (int * elem * 'b -> 'b) -> 'b -> array -> 'b
+    val alli: (int * elem -> bool) -> array -> bool			(**)
+    val existsi: (int * elem -> bool) -> array -> bool			(**)
+    val findi: (int * elem -> bool) -> array -> (int * elem) option
+
+    val contains: (elem * elem -> bool) -> array -> elem -> bool	(**)
+    val notContains: (elem * elem -> bool) -> array -> elem -> bool	(**)
 
     val equal: (elem * elem -> bool) -> array * array -> bool		(**)
-    val compare: (elem * elem -> order) -> array * array -> order	(**)
+    val collate: (elem * elem -> order) -> array * array -> order
 
     val isSorted: (elem * elem -> order) -> array -> bool		(**)
     val sort: (elem * elem -> order) -> array -> unit			(**)
