@@ -1,72 +1,93 @@
 (*
  * Authors:
- *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
  *
  * Copyright:
- *   Benedikt Grundmann, 2003
+ *   Sebastian Germesin, 2004
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
-import signature TEST from "TEST-sig"
-import structure MkSeparate from "MkSeparate"
+
+import signature TEST        from "TEST-sig"
+import structure MkSeparate  from "x-alice:/lib/test/MkSeparate"
+
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure PPValue     from "x-alice:/lib/system/PPValue"
 
 structure Test :> TEST =
 struct
-    type test_case = unit -> unit
 
-    type test_suite = string * test_case list
+    exception Error of (exn * string)
+
+    type test_case   = string * (unit -> unit)
+
+    type test_suite  = string * test_case list
     
     datatype failure = 
-        FAIL_EXN of exn 		(* Exception raised *)
-    |	FAIL_ASSERT of string * int * int				 
+        FAIL_EXN of exn		(* Exception raised *)
+    |	FAIL_ASSERT of string * int
     |	FAIL_TIMEOUT 
 
     type result = {
 	    name: string,
 	    passed: int,
 	    failed: int,
-	    failures: (test_case * failure) list
+	    failures: (test_case * failure * string) list
     }
 
     type config = {
 	    timeout: Time.time,
-	    separate: bool
+	    separate: bool,
+	    showMissing: bool
     }
     
     val defaultConfig = {
-	    timeout = Time.fromSeconds (Int.toLarge 60),
-	    separate = false
+	    timeout = Time.fromSeconds (Int.toLarge 10),
+	    separate = false,
+	    showMissing = true
     }
 
-    exception Assert of string * int * int
+    fun executeTC (cfg:config) (_, f) = 
+      (case Future.awaitEither (spawn (f ();()), 
+				Future.alarm (#timeout cfg)) of
+		FST ex => (Future.await ex; NONE)
+	    |	SND _  => SOME (FAIL_TIMEOUT, "")) 
+		handle Error x => 
+		          (case x of 
+			     (Assert t, str) => SOME (FAIL_ASSERT t,str)
+		           | (e,        str) => SOME (FAIL_EXN e, str))
+		     |    e    => SOME (FAIL_EXN e,"")
 
-    fun executeTC (cfg:config) f = 
-	    (case Future.awaitEither (f (), Future.alarm (#timeout cfg)) of
-		FST () => NONE
-	    |	SND () => SOME (FAIL_TIMEOUT)
-	    ) handle Assert t	=> SOME (FAIL_ASSERT t)
-		    |	e	=> SOME (FAIL_EXN e)
-
+(*
     fun executeSepTC (cfg:config) tc = 
 	let
 	    structure Sep = MkSeparate (val host = "localhost" 
 					type arg = test_case
-					type res = failure option
+					type res = (failure * string) option
 					val f 	 = executeTC cfg)
 	in
 	    Sep.execute tc
 	end
-		    
-    fun combine (executeTC: test_case -> failure option) (tc, res:result) =
+implemented at a later time
+*)	    
+
+    fun combine (executeTC: test_case -> (failure * string) option) 
+		(tc, res:result) =
         case executeTC tc of
-            NONE	=>  { res where passed = #passed res + 1 } 
-        |   SOME f	=>  { res where failed = #failed res + 1, failures=  (tc, f) :: #failures res }
+            NONE	 =>  { res where passed = #passed res + 1 } 
+        |   SOME (f, s) =>  { res where failed = #failed res + 1, 
+                              failures =  (tc, f, s) :: #failures res }
     
     fun run cfg (name, testcases) = 
-        let val res = List.foldl (combine (if #separate cfg then executeSepTC cfg else executeTC cfg))
-					    { name = name, passed = 0, failed = 0, failures = [] } testcases
+        let 
+	    val res = List.foldl (combine (if #separate cfg 
+					   then executeTC(*exetuteSepTC*) cfg 
+					   else executeTC cfg))
+					    { name = name, passed = 0, 
+                                              failed = 0, failures = [] } 
+								     testcases
 	in
 	    { res where failures = List.rev (#failures res) }
 	end
