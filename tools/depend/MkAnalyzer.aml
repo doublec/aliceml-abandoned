@@ -69,6 +69,18 @@ functor MkAnalyzer(structure Parser: PARSER
 		else filename
 	    end
 
+	fun existsFile filename =
+	    (TextIO.closeIn (TextIO.openIn filename); true)
+	    handle IO.Io _ => false
+
+	fun nameOfImportedFile s =
+	    let
+		val asigName = s ^ ".asig"
+	    in
+		if existsFile asigName then asigName
+		else s ^ "." ^ extension
+	    end
+
 	fun analyzeImport (desc, url) =
 	    let
 		val url =
@@ -78,7 +90,7 @@ functor MkAnalyzer(structure Parser: PARSER
 	    in
 		case parseUrl url of
 		    SOME targetFilename =>
-			SOME (pathFloor targetFilename ^ "." ^ extension)
+			SOME (nameOfImportedFile (pathFloor targetFilename))
 		  | NONE => NONE
 	    end
 
