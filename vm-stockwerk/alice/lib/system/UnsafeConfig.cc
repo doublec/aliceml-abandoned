@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 static inline int GetPlatform() {
 #if defined(__CYGWIN32__) || defined(__MINGW32__) || defined(_MSC_VER)
