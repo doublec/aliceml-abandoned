@@ -1,0 +1,456 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure OS      from "OS"
+import structure IO      from "IO"
+import signature PRIM_IO from "PRIM_IO-sig"
+
+functor PrimIO(structure V: MONO_VECTOR
+	       structure A: MONO_ARRAY
+		   where type Vector.vector = V.vector and type elem = V.elem
+	       val someElem: A.elem
+	       type pos
+	       val compare: pos * pos -> order) :>
+    PRIM_IO
+	where type elem = A.elem
+	  and type vector = A.Vector.vector
+	  and type array = A.array =
+    struct
+	type elem = A.elem
+	type vector = A.Vector.vector
+	type array = A.array
+
+	type pos = pos
+	val compare = compare
+
+	datatype reader = RD of
+	    {name: string,
+	     chunkSize: int,
+	     readVec: (int -> vector) option,
+	     readArr: ({buf: array, i: int, sz: int option} -> int) option,
+	     readVecNB: (int -> vector option) option,
+	     readArrNB:
+		 ({buf: array, i: int, sz: int option} -> int option) option,
+	     block: (unit -> unit) option,
+	     canInput: (unit -> bool) option,
+	     avail: unit -> int option,
+	     getPos: (unit -> pos) option,
+	     setPos: (pos -> unit) option,
+	     endPos: (unit -> pos) option,
+	     verifyPos: (unit -> pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	datatype writer = WR of
+	    {name: string,
+	     chunkSize: int,
+	     writeVec: ({buf: vector, i: int, sz: int option} -> int) option,
+	     writeArr: ({buf: array, i: int, sz: int option} -> int) option,
+	     writeVecNB:
+		 ({buf: vector, i: int, sz: int option} -> int option) option,
+	     writeArrNB:
+		 ({buf: array, i: int, sz: int option} -> int option) option,
+	     block: (unit -> unit) option,
+	     canOutput: (unit -> bool) option,
+	     getPos: (unit -> pos) option,
+	     setPos: (pos -> unit) option,
+	     endPos: (unit -> pos) option,
+	     verifyPos: (unit -> pos) option,
+	     close: unit -> unit,
+	     ioDesc: OS.IO.iodesc option}
+
+	fun openVector v =
+	    let
+		val read = ref 0
+		val closed = ref false
+		fun check f =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (f () before Promise.fulfill (p, false))
+		    end
+	    in
+		RD {name = "vector",
+		    chunkSize = V.length v,
+		    readVec = SOME (fn sz => check (fn () =>
+			let
+			    val r = !read
+			    val n = Int.min (V.length v - r, sz)
+			in
+			    if n < 0 then raise General.Subscript else ();
+			    if n = 0 then raise General.Domain else ();
+			    read := r + n;
+			    V.extract (v, r, SOME n)
+			end)),
+		    readArr = SOME (fn {buf, i, sz} => check (fn () =>
+			let
+			    val r = !read
+			    val sz = case sz of
+					 SOME sz => sz
+				       | NONE => A.length buf - i
+			    val n = Int.min (V.length v - r, sz)
+			in
+			    if n < 0 then raise General.Subscript else ();
+			    if n = 0 then raise General.Domain else ();
+			    read := r + n;
+			    V.appi (fn (j, x) => A.update (buf, i + j, x))
+				   (v, 0, NONE); n
+			end)),
+		    readVecNB = NONE,
+		    readArrNB = NONE,
+		    block = SOME (fn () => check (fn () => ())),
+		    canInput = NONE,
+		    avail = fn () => check (fn () =>
+			SOME (V.length v - !read)),
+		    getPos = NONE (*SOME (fn () => check (fn () => !read))*),
+		    setPos = NONE (*SOME (fn i => check (fn () =>
+			if i < 0 orelse i > V.length v then raise Subscript
+			else read := i))*),
+		    endPos = NONE (*SOME (fn () => check (fn () =>
+			V.length v))*),
+		    verifyPos = NONE (*SOME (fn () => check (fn () =>
+			!read))*),
+		    close = fn () => closed := true,
+		    ioDesc = NONE}
+	    end
+
+	fun len (len, i, sz) =
+	    (if i < 0 orelse i > len then raise General.Subscript else ();
+	     case sz of
+		 SOME sz =>
+		     if sz > len - i then raise General.Subscript else sz
+	       | NONE => len - i)
+
+	fun nullRd (): reader =
+	    let
+		val closed = ref false
+		fun check x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (Promise.fulfill (p, false); x)
+		    end
+	    in
+		RD {name = "null",
+		    chunkSize = 2,
+		    readVec = SOME (fn _ => check (V.fromList nil)),
+		    readArr = SOME (fn _ => check 0),
+		    readVecNB = SOME (fn _ => check (SOME (V.fromList nil))),
+		    readArrNB = SOME (fn _ => check (SOME 0)),
+		    block = SOME (fn () => check ()),
+		    canInput = SOME (fn () => check true),
+		    avail = fn () => check (SOME 0),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
+		    close = fn () => closed := true,
+		    ioDesc = NONE}
+	    end
+
+	fun nullWr (): writer =
+	    let
+		val closed = ref false
+		fun check x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (Promise.fulfill (p, false); x)
+		    end
+	    in
+		WR {name = "null",
+		    chunkSize = 2,
+		    writeVec = SOME (fn {buf, i, sz} =>
+					check (len (V.length buf, i, sz))),
+		    writeArr = SOME (fn {buf, i, sz} =>
+					check (len (A.length buf, i, sz))),
+		    writeVecNB =
+			SOME (fn {buf, i, sz} =>
+				 check (SOME (len (V.length buf, i, sz)))),
+		    writeArrNB =
+			SOME (fn {buf, i, sz} =>
+				 check (SOME (len (A.length buf, i, sz)))),
+		    block = SOME (fn () => check ()),
+		    canOutput = SOME (fn () => check true),
+		    getPos = NONE,
+		    setPos = NONE,
+		    endPos = NONE,
+		    verifyPos = NONE,
+		    close = fn () => closed := true,
+		    ioDesc = NONE}
+	    end
+
+	fun augmentReader (RD {name, chunkSize, readVec, readArr, readVecNB,
+			       readArrNB, block, canInput, avail, getPos,
+			       setPos, endPos, verifyPos, close, ioDesc}) =
+	    let
+		val readVec' =
+		    if isSome readVec then readVec
+		    else if isSome readArr then
+			SOME (fn sz =>
+			      let
+				  val buf = A.array (sz, someElem)
+				  val i = valOf readArr {buf, i = 0, sz = NONE}
+			      in
+				  A.extract (buf, 0, SOME i)
+			      end)
+		    else if isSome block then (*--** first read, then block *)
+			if isSome readVecNB then
+			    SOME (fn sz => (valOf block ();
+					    valOf (valOf readVecNB sz)))
+			else if isSome readArrNB then
+			    SOME (fn sz =>
+				  let
+				      val _ = valOf block ()
+				      val buf = A.array (sz, someElem)
+				      val i = valOf (valOf readArrNB
+						  {buf, i = 0, sz = NONE})
+				  in
+				      A.extract (buf, 0, SOME i)
+				  end)
+			else NONE
+		    else NONE
+		val readArr' =
+		    if isSome readArr then readArr
+		    else if isSome readVec then
+			SOME (fn {buf, i, sz} =>
+			      let
+				  val k = case sz of
+					     SOME k => k
+					   | NONE => A.length buf - i
+				  val v = valOf readVec k
+				  val k' = V.length v
+			      in
+				  A.copyVec {src = v, si = 0, len = SOME k',
+					     dst = buf, di = i};
+				  k'
+			      end)
+		    else if isSome block then (*--** first read, then block *)
+			if isSome readArrNB then
+			    SOME (fn {buf, i, sz} =>
+				  (valOf block ();
+				   valOf (valOf readArrNB {buf, i, sz})))
+			else if isSome readVecNB then
+			    SOME (fn {buf, i, sz} =>
+				  let
+				      val _ = valOf block ()
+				      val k = case sz of
+						  SOME k => k
+						| NONE => A.length buf - i
+				      val v = valOf (valOf readVecNB k)
+				      val k' = V.length v
+				  in
+				      A.copyVec {src=v, si=0, len=SOME k',
+						 dst=buf, di=i};
+				      k'
+				  end)
+			else NONE
+		    else NONE
+		val readVecNB' =
+		    if isSome readVecNB then readVecNB
+		    else if isSome readArrNB then
+			SOME (fn sz =>
+			      let
+				  val buf = A.array (sz, someElem)
+			      in
+				  case valOf readArrNB {buf,i=0,sz=NONE} of
+				      SOME i =>
+					  SOME (A.extract (buf, 0, SOME i))
+				    | NONE => NONE
+			      end)
+		    else if Option.isSome canInput then
+			if Option.isSome readVec then
+			    SOME (fn sz =>
+				  if valOf canInput () then
+				      SOME (valOf readVec sz)
+				  else NONE)
+			else if Option.isSome readArr then
+			    SOME (fn sz =>
+				  if valOf canInput () then
+				      let
+					  val buf = A.array (sz, someElem)
+					  val i =
+					      valOf readArr {buf, i=0, sz=NONE}
+				      in
+					  SOME (A.extract (buf, 0, SOME i))
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+		val readArrNB' =
+		    if Option.isSome readArrNB then readArrNB
+		    else if Option.isSome readVecNB then
+			SOME (fn {buf, i, sz} =>
+			      if valOf canInput () then
+				  let
+				      val k = case sz of
+						  SOME k => k
+						| NONE => A.length buf - i
+				      val v = valOf readVec k
+				      val k' = V.length v
+				  in
+				      A.copyVec {src=v, si=0, len=SOME k',
+						 dst=buf, di=i};
+				      SOME k'
+				  end
+			      else NONE)
+		    else if Option.isSome canInput then
+			if Option.isSome readArr then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canInput () then
+				      SOME (valOf readArr {buf, i, sz})
+				  else NONE)
+			else if Option.isSome readVec then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canInput () then
+				      let
+					  val k = case sz of
+						      SOME k => k
+						    | NONE => A.length buf - i
+					  val v = valOf readVec k
+					  val k' = V.length v
+				      in
+					  A.copyVec {src=v, si=0, len=SOME k',
+						     dst=buf, di=i};
+					  SOME k'
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+	    in
+		RD {name, chunkSize, readVec = readVec', readArr = readArr',
+		    readVecNB = readVecNB', readArrNB = readArrNB', block,
+		    canInput, avail, getPos, setPos, endPos, verifyPos,
+		    close, ioDesc}
+	    end
+
+	fun augmentWriter (WR {name, chunkSize, writeVec, writeArr, writeVecNB,
+			       writeArrNB, block, canOutput, getPos, setPos,
+			       endPos, verifyPos, close, ioDesc}) =
+	    let
+		val writeVec' =
+		    if isSome writeVec then writeVec
+		    else if isSome writeArr then
+			SOME (fn {buf, i, sz} =>
+			      let
+				  val n = len (V.length buf, i, sz)
+				  val a = A.array (n, someElem)
+			      in
+				  A.copyVec {src = buf, si = 0, len = SOME n,
+					     dst = a, di = 0};
+				  valOf writeArr {buf = a, i, sz}
+			      end)
+		    else if isSome block then (*--** first write, then block *)
+			if isSome writeVecNB then
+			    SOME (fn {buf, i, sz} =>
+				  (valOf block ();
+				   valOf (valOf writeVecNB {buf, i, sz})))
+			else if isSome writeArrNB then
+			    SOME (fn {buf, i, sz} =>
+				  let
+				      val _ = valOf block ()
+				      val n = len (V.length buf, i, sz)
+				      val a = A.array (n, someElem)
+				  in
+				      A.copyVec {src=buf, si=0, len=SOME n,
+						 dst = a, di = 0};
+				      valOf (valOf writeArrNB {buf = a, i, sz})
+				  end)
+			else NONE
+		    else NONE
+		val writeArr' =
+		    if isSome writeArr then writeArr
+		    else if isSome writeVec then
+			SOME (fn {buf, i, sz} =>
+			      valOf writeVec
+				  {buf = A.extract (buf, i, sz), i, sz})
+		    else if isSome block then (*--** first write, then block *)
+			if isSome writeArrNB then
+			    SOME (fn {buf, i, sz} =>
+				  (valOf block ();
+				   valOf (valOf writeArrNB {buf, i, sz})))
+			else if isSome writeVecNB then
+			    SOME (fn {buf, i, sz} =>
+				  (valOf block ();
+				   valOf (valOf writeVecNB
+				       {buf = A.extract (buf, i, sz), i, sz})))
+			else NONE
+		    else NONE
+		val writeVecNB' =
+		    if isSome writeVecNB then writeVecNB
+		    else if isSome writeArrNB then
+			SOME (fn {buf, i, sz} =>
+			      let
+				  val n = len (V.length buf, i, sz)
+				  val a = A.array (n, someElem)
+			      in
+				  A.copyVec {src = buf, si = 0, len = SOME n,
+					     dst = a, di = 0};
+				  valOf writeArrNB {buf = a, i, sz}
+			      end)
+		    else if isSome canOutput then
+			if isSome writeVec then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canOutput () then
+				      SOME (valOf writeVec {buf, i, sz})
+				  else NONE)
+			else if isSome writeArr then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canOutput () then
+				      let
+					  val n = len (V.length buf, i, sz)
+					  val a = A.array (n, someElem)
+				      in
+					  A.copyVec {src=buf, si=0, len=SOME n,
+						     dst=a, di=0};
+					  SOME (valOf writeArr {buf=a, i, sz})
+				      end
+				  else NONE)
+			else NONE
+		    else NONE
+		val writeArrNB' =
+		    if isSome writeArrNB then writeArrNB
+		    else if isSome writeVecNB then
+			SOME (fn {buf, i, sz} =>
+			      valOf writeVecNB
+				  {buf = A.extract (buf, i, sz), i, sz})
+		    else if isSome canOutput then
+			if isSome writeArr then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canOutput () then
+				      SOME (valOf writeArr {buf, i, sz})
+				  else NONE)
+			else if isSome writeVec then
+			    SOME (fn {buf, i, sz} =>
+				  if valOf canOutput () then
+				      SOME (valOf (valOf writeVecNB
+					  {buf=A.extract (buf, i, sz), i, sz}))
+				  else NONE)
+			else NONE
+		    else NONE
+	    in
+		WR {name, chunkSize, writeVec = writeVec',
+		    writeArr = writeArr', writeVecNB = writeVecNB',
+		    writeArrNB = writeArrNB', block, canOutput, getPos,
+		    setPos, endPos, verifyPos, close, ioDesc}
+	    end
+
+    end

@@ -1,0 +1,429 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure IO        from "IO"
+import signature PRIM_IO   from "PRIM_IO-sig"
+import signature STREAM_IO from "STREAM_IO-sig"
+
+functor StreamIO(structure PrimIO: PRIM_IO
+		 structure Vector: MONO_VECTOR
+				       where type elem = PrimIO.elem
+					 and type vector = PrimIO.vector
+		 structure Array: MONO_ARRAY
+				      where type elem = PrimIO.elem
+					and type array = PrimIO.array
+					and type Vector.vector = PrimIO.vector
+		 val someElem: PrimIO.elem) :>
+	STREAM_IO
+	    where type elem = PrimIO.elem
+	      and type vector = PrimIO.vector
+	      and type reader = PrimIO.reader
+	      and type writer = PrimIO.writer =
+    struct
+	type elem = PrimIO.elem
+	type vector = PrimIO.vector
+	type reader = PrimIO.reader
+	type writer = PrimIO.writer
+	type pos = PrimIO.pos
+	type out_pos = PrimIO.pos
+
+	datatype instream' =
+	    READER of reader
+	  | INPUT of vector * int * instream
+	  | INPUT1 of elem * instream
+	  | EOS of instream
+	  | CLOSEDIN of string
+	withtype instream = instream' ref
+
+	datatype outstream' =
+	    WRITER of writer * PrimIO.array * int ref
+	  | CLOSEDOUT of string
+	withtype outstream = outstream' ref
+
+	fun input f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, chunkSize,
+						 readVec, ...}) =>
+			(let
+			     val v = valOf readVec chunkSize
+			     val f' = ref state
+			 in
+			     Promise.fulfill
+				 (p, if Vector.length v = 0 then EOS f'
+				     else INPUT (v, 0, f'));
+			     (v, f')
+			 end handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function = "input", cause}))
+		  | INPUT (v, i, f') =>
+			(Promise.fulfill (p, state);
+			 (Vector.extract (v, i, NONE), f'))
+		  | INPUT1 (x, f') =>
+			(Promise.fulfill (p, state);
+			 (Vector.fromList [x], f'))
+		  | EOS f' =>
+			(Promise.fulfill (p, state);
+			 (Vector.fromList nil, f'))
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "input",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun input1 f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, chunkSize,
+						 readVec, ...}) =>
+			(let
+			     val v = valOf readVec chunkSize
+			     val k = Vector.length v
+			 in
+			     if k = 0 then
+				 (Promise.fulfill (p, EOS (ref state)); NONE)
+			     else
+				 let
+				     val x = Vector.sub (v, 0)
+				     val f' =
+					 ref (if k = 1 then state
+					      else INPUT (v, 1, ref state))
+				 in
+				     Promise.fulfill (p, INPUT1 (x, f'));
+				     SOME (x, f')
+				 end
+			    end handle cause =>
+				(Promise.fulfill (p, state);
+				 raise IO.Io {name, function="input1", cause}))
+		  | INPUT (v, i, f') =>
+			let
+			    val x = Vector.sub (v, i)
+			    val f'' = if i = Vector.length v then f'
+				      else ref (INPUT (v, i + 1, f'))
+			in
+			    Promise.fulfill (p, state);
+			    SOME (x, ref (INPUT1 (x, f'')))
+			end
+		  | INPUT1 (x, f') =>
+			(Promise.fulfill (p, state); SOME (x, f'))
+		  | EOS _ =>
+			(Promise.fulfill (p, state); NONE)
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "input1",
+				     cause = IO.ClosedStream})
+	    end
+
+	fun inputN (f, n) where (n < 0 orelse n > Vector.maxLen) =
+	    raise General.Size
+	  | inputN (f, n) =
+	    let
+		val (vs, f') = inputN' (f, n)
+	    in
+		(Vector.concat vs, f')
+	    end
+	and inputN' (f, n) =
+	    let
+		val (v, f') = input f
+		val k = Vector.length v
+	    in
+		if k = n orelse k = 0 then ([v], f')
+		else if k > n then
+		    ([Vector.extract (v, 0, SOME n)], ref (INPUT (v, n, f')))
+		else
+		    let
+			val (vs, f'') = inputN' (f, n - k)
+		    in
+			(v::vs, f'')
+		    end
+	    end
+
+	fun inputAll f = (*--** use avail to guess size *)
+	    let
+		val (vs, f') = inputAll' f
+	    in
+		(Vector.concat vs, f')
+	    end
+	and inputAll' f =
+	    let
+		val (v, f') = input f
+	    in
+		if Vector.length v = 0 then ([v], f')
+		else
+		    let
+			val (vs, f'') = inputAll' f
+		    in
+			(v::vs, f'')
+		    end
+	    end
+
+	fun canInput (f, n) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+		fun return k = SOME (Int.min (n, k))
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, readVecNB, ...}) =>
+			((case valOf readVecNB n of
+			      SOME v =>
+				  let
+				      val k = Vector.length v
+				  in
+				      Promise.fulfill
+					  (p, if k = 0 then EOS (ref state)
+					      else INPUT (v, 0, ref state));
+				      return k
+				  end
+			    | NONE => (Promise.fulfill (p, state); NONE))
+			 handle cause =>
+			     raise IO.Io {name, function = "canInput", cause})
+		  | INPUT (v, i, f') =>
+			(Promise.fulfill (p, state);
+			 return (Vector.length v - i))
+		  | INPUT1 (x, f') =>
+			(Promise.fulfill (p, state); return 1)
+		  | EOS f' =>
+			(Promise.fulfill (p, state); return 0)
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "canInput",
+				     cause = IO.ClosedStream})
+	    end
+
+	fun closeIn f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, close, ...}) =>
+			(Promise.fulfill (p, CLOSEDIN name);
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function = "closeIn", cause})
+		  | (INPUT (_, _, f') | INPUT1 (_, f') | EOS f') =>
+			(Promise.fulfill (p, state); closeIn f')
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "canInput",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun endOfStream f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, chunkSize,
+						 readVec, ...}) =>
+			(let
+			     val v = valOf readVec chunkSize
+			     val f' = ref state
+			 in
+			     if Vector.length v = 0 then
+				 (Promise.fulfill (p, EOS f'); true)
+			     else
+				 (Promise.fulfill (p, INPUT (v, 0, f')); false)
+			 end handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function = "endOfStream",
+					   cause}))
+		  | (INPUT (_, _, _) | INPUT1 (_, _)) =>
+			(Promise.fulfill (p, state); false)
+		  | EOS _ =>
+			(Promise.fulfill (p, state); true)
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "endOfStream",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun writeBuffer (buf, i, len, writeArr) =
+	    let
+		val k = writeArr {buf, i, sz = SOME len}
+	    in
+		if k = len then ()
+		else writeBuffer (buf, i + k, len - k, writeArr)
+	    end
+
+	fun output (r, v) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (r, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, ...}, buf, stillFree) =>
+			((output' (writer, buf, Array.length buf, stillFree,
+				   v, Vector.length v, 0);
+			  Promise.fulfill (p, state))
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function = "output", cause}))
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output",
+				      cause = IO.ClosedStream})
+	    end
+	and output' (writer as PrimIO.WR {writeArr, ...}, buf, bufLen,
+		     stillFree, v, vLen, written) =
+	    let
+		val free = !stillFree
+		val k = Int.min (vLen - written, free)
+		val free' = free - k
+		val written' = written + k
+	    in
+		Array.copyVec {src = v, si = written, len = SOME k,
+			       dst = buf, di = bufLen - free};
+		stillFree := free';
+		if free' = 0 then
+		    (writeBuffer (buf, 0, bufLen, valOf writeArr);
+		     if written' = vLen then ()
+		     else output' (writer, buf, bufLen, stillFree,
+				   v, vLen, written'))
+		else ()
+	    end
+
+	fun output1 (r, x) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (r, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree) =>
+			let
+			    val free = !stillFree
+			    val bufLen = Array.length buf
+			    val free' = free - 1
+			in
+			    stillFree := (if free' = 0 then bufLen else free');
+			    Array.update (buf, bufLen - free, x);
+			    if free' = 0 then
+				writeBuffer (buf, 0, bufLen, valOf writeArr)
+				handle cause =>
+				    (Promise.fulfill (p, state);
+				     raise IO.Io {name, function = "output1",
+						  cause})
+			    else ();
+			    Promise.fulfill (p, state)
+			end
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output1",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun flushOut r =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (r, Promise.future p)
+	    in
+		case state of
+		    WRITER (PrimIO.WR {name, writeArr, ...}, buf, stillFree) =>
+			let
+			    val free = !stillFree
+			    val bufLen = Array.length buf
+			in
+			    stillFree := bufLen;
+			    if free < bufLen then
+				writeBuffer (buf, 0, bufLen - free,
+					     valOf writeArr)
+				handle cause =>
+				    (Promise.fulfill (p, state);
+				     raise IO.Io {name, function = "flushOut",
+						  cause})
+			    else ();
+			    Promise.fulfill (p, state)
+			end
+		  | CLOSEDOUT _ => Promise.fulfill (p, state)
+	    end
+
+	fun closeOut r =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (r, Promise.future p)
+	    in
+		case state of
+		    WRITER (PrimIO.WR {name, writeArr, close, ...},
+			    buf, stillFree) =>
+			let
+			    val free = !stillFree
+			    val bufLen = Array.length buf
+			in
+			    Promise.fulfill (p, CLOSEDOUT name);
+			    if free < bufLen then
+				writeBuffer (buf, 0, bufLen - free,
+					     valOf writeArr)
+				handle cause =>
+				    (close ()
+				     handle cause =>
+					 raise IO.Io
+					     {name, function = "closeOut",
+					      cause};
+				     raise IO.Io {name, function = "closeOut",
+						  cause})
+			    else ();
+			    close ()
+			    handle cause =>
+				raise IO.Io {name, function = "closeOut",
+					     cause}
+			end
+		  | CLOSEDOUT _ => Promise.fulfill (p, state)
+	    end
+
+	fun mkInstream (reader, v) =
+	    ref (INPUT (v, 0, ref (READER (PrimIO.augmentReader reader))))
+
+	fun getReader f =
+	    let
+		val (reader, vs) = getReader' f
+	    in
+		(reader, Vector.concat vs)
+	    end
+	and getReader' f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    READER (reader as PrimIO.RD {name, ...}) =>
+			(Promise.fulfill (p, CLOSEDIN name); (reader, nil))
+		  | INPUT (v, i, f') =>
+			let
+			    val _ = Promise.fulfill (p, state)
+			    val (reader, vs) = getReader' f'
+			in
+			    (reader, Vector.extract (v, i, NONE)::vs)
+			end
+		  | INPUT1 (x, f') =>
+			let
+			    val _ = Promise.fulfill (p, state)
+			    val (reader, vs) = getReader' f'
+			in
+			    (reader, Vector.fromList [x]::vs)
+			end
+		  | EOS f' =>
+			(Promise.fulfill (p, state); getReader' f')
+		  | CLOSEDIN name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getReader",
+				      cause = IO.ClosedStream})
+	    end
+    end
