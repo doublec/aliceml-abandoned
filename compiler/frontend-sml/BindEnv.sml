@@ -117,6 +117,7 @@ structure BindEnv :> BIND_ENV =
     fun insertScope(ENV E)		= Map.insertScope E
     fun inheritScope(ENV E1, ENV E2)	= Map.inheritScope(E1,E2)
     fun deleteScope(ENV E)		= Map.deleteScope E
+    fun deleteAll(ENV E)		= Map.deleteAll E
     fun mergeScope(ENV E)		= Map.mergeScope E
     fun mergeDisjointScope(ENV E)	= Map.mergeDisjointScope E
 					  handle Map.Collision coll =>
