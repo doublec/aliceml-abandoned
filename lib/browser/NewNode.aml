@@ -79,13 +79,11 @@ struct
     and createGraph (va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
 	;if !relmode (* Konstruktion im Relationsmodus *)
 	 andalso not(isAtomType(t))
-	     then let val _ = TextIO.print("NEW_NODE: kein atomarer Typ\n")
-		      val ind = if p = Empty then i else getAncIndex p 
+	     then let val ind = if p = Empty then i else getAncIndex p 
 		     (* 'oberster' Index: Urindex *)
                      val relman = case RelMan.lookup(reldict,ind)
 			 of SOME x => x (* es existiert bereits ein Relationsmanager *)
 		          | NONE => []
-		     val _ = TextIO.print("relman hat Laenge"^Int.toString(List.length(relman))^"\n")
 		     val desc = createValue(va,t) 
                      val str = "Ref"^Int.toString(!relnumber)
                      val f = fn t: value * int ref * int
@@ -114,16 +112,23 @@ struct
 			    ; node )
 			 end     
 		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
-		      => let val _ = TextIO.print("was gefunden :)\n")
-			     val str = "Ref "^Int.toString(number)	
+		      => let val str = "Ref "^Int.toString(number)	
 			     val node = if !count > 0 
 					    then createRelRefNode (desc,p,i,d,str,root)
-					else createRelNode (desc,Empty,p,i,d,
-							    count,"Ref0 as",
-							    relman,root)
+					else  createRelNode (desc,Empty,p,i,d,
+							     count,"Ref0 as",
+							     relman,root)
 			 in ( count := !count + 1
-			    ; TextIO.print("SOME:relman hat NEUE Laenge"^Int.toString(List.length(relman))^"\n") 
-			    ; node)
+			    ; if !count > 0 
+				  then let val c = createUsualGraph (va,t,node,0,d,root)
+					   val actrelman = valOf(RelMan.lookup(reldict,ind))
+					       handle Option => []
+					   val new_relman = (V va,count,!relnumber-1)::actrelman
+				       in ( setContent (node,c)   
+					   ; RelMan.update(reldict,(ind,new_relman)) )
+				       end 
+			      else ()    
+			     ; node)
 			 end)
 		 end
 	else (* kein Relationsmodus *) 
@@ -597,6 +602,15 @@ struct
 		      => let val str = "Ref "^Int.toString(number)	
 			     val node = createRelRefNode (desc,p,i,d,str,root)
 			 in ( count := !count + 1
+			     ; if !count > 0 
+				   then let val c = createUsualGraphInf (va,t,node,0,d,root)
+					    val actrelman = valOf(RelMan.lookup(reldict,ind))
+						handle Option => []
+					    val new_relman = (M va,count,!relnumber-1)::actrelman
+					in ( setContent (node,c)   
+					    ; RelMan.update(reldict,(ind,new_relman)) )
+					end 
+			       else ()    
 			    ; node)
 			 end)
 		 end
