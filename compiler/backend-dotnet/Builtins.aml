@@ -24,7 +24,7 @@ structure Builtins :> BUILTINS =
 
 	val builtinTable =
 	    let
-		val map = Map.new ()
+		val map = Map.map ()
 	    in
 		Map.insert (map, "=", "op_Equality");
 		Map.insert (map, "<>", "op_Inequality");
