@@ -29,8 +29,8 @@ from "top/SMLToDotNetBatchCompiler"
 val _ =
     case CommandLine.arguments () of
 	"--dotnet"::args =>
-	    OS.Process.exit (SMLToDotNetBatchCompiler.compile args)
+	    OS.Process.exit (SMLToDotNetBatchCompiler.main args)
       | "--mozart"::args =>
-	    OS.Process.exit (SMLToMozartBatchCompiler.compile args)
+	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
       | args =>
-	    OS.Process.exit (SMLToMozartBatchCompiler.compile args)
+	    OS.Process.exit (SMLToMozartBatchCompiler.main args)
