@@ -29,8 +29,6 @@ private:
 public:
   using Block::ToWord;
 
-  static void Init();
-
   static AliceConcreteCode *New(TagVal *abstractCode);
   TagVal *GetAbstractCode() {
     return TagVal::FromWordDirect(Get(ABSTRACT_CODE_POS));
