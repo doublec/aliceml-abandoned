@@ -1,0 +1,16 @@
+#!/bin/sh
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+export STOCKHOME
+export STOC = $STOCKHOME/stoc-mozart.exe
+export STOC_MOZART= $STOC
+export OZHOME = /opt/mozart-1.1.1
+
+exec sml @SMLload=../../stoc/stoc-mozart "$@"
