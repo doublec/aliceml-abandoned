@@ -30,7 +30,7 @@ DOUBLE_TO_DOUBLE_OP(log, std::log)
 DOUBLE_TO_DOUBLE_OP(sqrt, std::sqrt)
 DOUBLE_TO_DOUBLE_OP(ceil, std::ceil)
 DOUBLE_TO_DOUBLE_OP(floor, std::floor)
-DOUBLE_TO_DOUBLE_OP(rint, std::rint)
+DOUBLE_TO_DOUBLE_OP(rint, rint) //--** std::
 
 void NativeMethodTable::java_lang_StrictMath(JavaString *className) {
   Register(className, "sin", "(D)D", sin, 2, false);
