@@ -77,7 +77,7 @@ structure OutputWriters =
 
       (* History *)
 
-      val history = ref {prev = [], current = "", next = []}
+      val history = ref (Config.loadHistory())
 
       fun extendHistory s =
 	  let

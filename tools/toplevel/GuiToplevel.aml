@@ -16,6 +16,7 @@ import structure GuiMain from "GuiMain"
 import structure Evaluator from "Evaluator"
 import functor GuiSignals from "GuiSignals"
 import structure EventHandler from "EventHandler"
+import structure Config from "Config"
 
 structure GuiToplevel =
   struct
@@ -23,6 +24,7 @@ structure GuiToplevel =
 	let
 	    structure EH = GuiSignals (structure S = EventHandler)
 	in
+	    Config.init ();
 	    GuiMain.init EH.notebook1_on_notebook1_switch_page;
 	    List.app GuiMain.openGivenFile files;
 	    Evaluator.init ();

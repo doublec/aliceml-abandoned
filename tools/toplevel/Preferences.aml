@@ -1,0 +1,104 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2005
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gui from "Gui"
+import structure Config from "Config"
+import structure OutputWriters from "OutputWriters"
+import structure Buffer from "Buffer"
+
+structure Preferences =
+    struct
+
+	fun fillDialog () =
+	    (Gtk.buttonSetLabel(Gui.font_button, !Config.stdFontName);
+	     Gtk.entrySetText(Gui.history_size_entry,
+			      Int.toString (!Config.historySize)))
+
+	fun applyConfig () =
+	    let
+		val fontName = Gtk.buttonGetLabel Gui.font_button
+		val historySize = Gtk.entryGetText Gui.history_size_entry
+		val historySize =
+		    Option.getOpt(Int.fromString historySize, 100)
+	    in
+		Config.historySize := historySize;
+		Config.stdFontName := fontName;
+		Config.stdFont :=
+		Gtk.pangoFontDescriptionFromString fontName;
+		Buffer.changeFonts();
+		Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
+		Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont)
+	    end
+
+	fun fontCallback _ =
+	    let
+                val dia = Gtk.fontSelectionDialogNew "Select font"
+		val _ =Gtk.windowSetPosition (dia, Gtk.WIN_POS_MOUSE)
+		val fontName = Gtk.buttonGetLabel Gui.font_button
+                val _ = Gtk.fontSelectionDialogSetFontName(dia,
+                                                           !Config.stdFontName)
+                val response = Gtk.dialogRun dia
+            in
+                case Gtk.IntToGtkResponseType response of
+                    Gtk.RESPONSE_OK =>
+                    let
+                        val newFont = Gtk.fontSelectionDialogGetFontName dia
+                    in
+			Gtk.buttonSetLabel(Gui.font_button, newFont)
+                    end
+                  | _ => ();
+                Gtk.widgetDestroy dia                
+            end
+
+        val _ = Gtk.signalConnect(Gui.font_button, "clicked",
+				  fontCallback)
+
+        val _ = Gtk.signalConnect(Gui.clear_history_button, "clicked",
+				  fn _ =>
+				  OutputWriters.history :=
+				  {prev=[], current="",next=[]})
+
+        fun closeCallback _ = (Gtk.windowSetModal(Gui.preferences, false);
+			       Gtk.widgetUnmap Gui.preferences)
+        val _ = Gtk.signalConnect(Gui.preferences, "delete-event",
+				  closeCallback)
+        val _ = Gtk.signalConnect(Gui.pref_cancel_button, "clicked",
+				  closeCallback)
+
+	fun revertCallback _ = (Config.init();
+				fillDialog())
+	fun okCallback _ = (applyConfig();
+			    closeCallback())
+	fun saveCallback _ = (applyConfig();
+			      Config.save();
+			      closeCallback())
+
+        val _ = Gtk.signalConnect(Gui.pref_ok_button, "clicked",
+				  okCallback)
+        val _ = Gtk.signalConnect(Gui.pref_save_button, "clicked",
+				  saveCallback)
+        val _ = Gtk.signalConnect(Gui.pref_revert_button, "clicked",
+				  revertCallback)
+
+	fun showDialog() =
+	    let
+		val _ = ()
+	    in
+		fillDialog();
+		Gtk.windowSetPosition (Gui.preferences, Gtk.WIN_POS_MOUSE);
+		Gtk.windowSetModal(Gui.preferences, true);
+		Gtk.widgetShowAll Gui.preferences;
+		Gtk.widgetMap Gui.preferences
+	    end
+    end

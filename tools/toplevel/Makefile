@@ -20,7 +20,8 @@ SOURCES = \
 	SearchDialog.aml \
 	Config.aml \
 	BufferHighlight.aml \
-	AboutDialog.aml
+	AboutDialog.aml \
+	Preferences.aml
 
 all:	Main.alc \
 	LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc

@@ -23,6 +23,7 @@ import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure BufferHighlight from "BufferHighlight"
+import structure Preferences from "Preferences"
 
 structure GuiMain =
     struct
@@ -679,29 +680,6 @@ structure GuiMain =
 		Gtk.widgetGrabFocus Gui.progout
 	  | switchTo _ = ()
 
-	fun selectFont _ =
-            let
-                val dia = Gtk.fontSelectionDialogNew "Select font"
-                val _ = Gtk.fontSelectionDialogSetFontName(dia,
-                                                           !Config.stdFontName)
-                val response = Gtk.dialogRun dia
-            in
-                case Gtk.IntToGtkResponseType response of
-                    Gtk.RESPONSE_OK =>
-                    let
-                        val newFont = Gtk.fontSelectionDialogGetFontName dia
-                    in
-                        Config.stdFontName := newFont;
-                        Config.stdFont :=
-                          Gtk.pangoFontDescriptionFromString newFont;
-                        Buffer.changeFonts();
-                        Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
-                        Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont)
-                    end
-                  | _ => ();
-                Gtk.widgetDestroy dia                
-            end
-
 	fun activateSyntax () =
 	    case getCurrentPage() of
 		NONE => ()
@@ -727,10 +705,15 @@ structure GuiMain =
 	fun initDone () =
 	    Gtk.textViewSetEditable(Gui.compilerout, true)
 
+	fun preferences () = 
+	    Preferences.showDialog()
+
+	fun doQuit () = (Config.saveHistory (!OutputWriters.history);
+			 OS.Process.exit OS.Process.success)
         fun quit () = if List.all Buffer.close (!pages) then
-                          OS.Process.exit OS.Process.success
+			 doQuit ()
                       else FileDialog.modifiedWarning
 			  ("There are modified files.",
 			   "Discard changes and quit anyway or cancel?",
-			   OS.Process.exit, OS.Process.success)
+			   doQuit, () )
     end
