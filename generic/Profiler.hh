@@ -45,6 +45,7 @@ public:
   static void IncCalls(StackFrame *frame); // Scheduler::PushCall
   static void IncClosures(word cCode);  // Interpreter::Close
   static void IncInstances(TagVal *template_); // Interpreter::Specialize
+  static void IncInstrs(word cCode); // NativeCodeJitter
   static void DumpInfo();
 };
 
