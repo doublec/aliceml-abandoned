@@ -14,16 +14,14 @@
  *)
 
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Types from "Types"import structure Helper from "Helper"
+import structure Types from "Types"
+import structure Helper from "Helper"
 import structure RelManDictionary from "RelManDictionary"
 import structure MainDictionary from "MainDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import signature LAYOUT from "LAYOUT-sig"
-
-import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 open Types Helper
 
@@ -65,8 +63,8 @@ struct
                                | _ => raise LayoutError
 
     (* layout *)
-    and layout n = (TextIO.print("LAYOUT: gestartet!\n")
-	; case n of
+    and layout n = 
+        case n of
 	Concat(r) 
 	=>  if !(#status(r)) = DAZZLED
 		then let val li = Array.toList(#kids(r))
@@ -90,10 +88,8 @@ struct
 			     end
 			 val ydim = max (li,g)
 		     in (#width(r) := xdim  
-                         ; TextIO.print("LAYOUT: Concat untersucht\n")
 			 ; #height(r) := ydim
 			 ; #status(r) := DIRTY
-			 ; TextIO.print("LAYOUT: mit Concat fertig!\n")
                          ; (xdim,ydim,0) )
 		     end
 	   else (get_xdim(n),get_ydim(n),0)   
@@ -115,14 +111,12 @@ struct
 			; #height(r) := ydim
 			; #l_width(r) := l_xdim
 			; #status(r) := DIRTY
-			; TextIO.print("LAYOUT: mit Container fertig!\n")
 			; (xdim,ydim,l_xdim) )   
 		    end
 	   else (get_xdim(n),get_ydim(n),get_l_xdim(n)) 
       | Simple(r) => (if !(#status(r)) = DAZZLED
 			  then #status(r) := DIRTY
 		      else ()
-		     ; TextIO.print("LAYOUT: mit Simple fertig!\n")
 		     ; (get_xdim(n),get_ydim(n),0) )
       | Limit(r) => (if !(#status(r)) = DAZZLED
 			 then #status(r) := DIRTY
@@ -147,7 +141,7 @@ struct
 		     end   
 	    else ()
           ; (get_xdim(n),get_ydim(n),0) )
-      | Empty => (0,0,0) )
+      | Empty => (0,0,0) 
    
    (* calcMaxXDim *) 
    fun calcMaxXDim (dict,i)  = 

@@ -13,10 +13,11 @@
  *
  *)
 
+import structure Inf      from "x-alice:/lib/rtt/Inf"
 import structure Type     from "x-alice:/lib/rtt/Type"
 import structure Reflect  from "x-alice:/lib/system/Reflect" 
 import structure Gtk      from "x-alice:/lib/gtk/Gtk"
-import structure Label from "x-alice:/lib/rtt/Label"
+import structure Label    from "x-alice:/lib/rtt/Label"
 import structure Types    from "Types"
 
 open Types
@@ -27,8 +28,7 @@ sig
     exception copyArray_error
 
     val createValue  :  Reflect.value * Type.t * actions -> desc
-
-   
+    val createIValue :  Reflect.value * Inf.t * actions -> desc
 
     (* Hilfsfunktionen zur Typbestimmung *)
     val isApply: Type.desc -> bool	
