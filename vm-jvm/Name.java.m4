@@ -27,10 +27,6 @@ public class Name implements DMLValue {
 	return name+" : name";
     }
 
-    final public boolean equals(java.lang.Object o) {
-	return (this == o);
-    }
-
     /** Falls der Name noch keinen GName hat, wird jetzt ein
      *  neuer GName erzeugt und der Name wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.
