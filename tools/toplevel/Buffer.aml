@@ -27,6 +27,8 @@ structure Buffer =
                     | DELETE of (int * string)
                     | WAIT_INSERT of (int * int)
                     | WAIT_DELETE of (int * string)
+	            | BEGIN_ACTION
+	            | END_ACTION
 
       type buffer = {id: int,
                      file: string option ref,
@@ -126,6 +128,14 @@ structure Buffer =
           end
         | insertText _ _ = print "Gtk is crazy: insert"
 
+      fun userAction (id,begin) _ =
+          let
+              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+	      val action = if begin then BEGIN_ACTION else END_ACTION
+          in
+	      undo := action::(!undo)
+	  end
+
       fun getSelection id =
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -192,21 +202,22 @@ structure Buffer =
               val enditer = Gtk.textIterNew()
 	      val _ = Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
 	  in
+	      Gtk.textBufferBeginUserAction buf;
 	      doIndent(buf,
 		       Gtk.textIterGetLine startiter,
 		       Gtk.textIterGetLine enditer,
 		       indent);
-	      selectWholeLines buf
+	      selectWholeLines buf;
+	      Gtk.textBufferEndUserAction buf
 	  end
 
-      fun undo id =
+      fun undo' (undoBuf, buf, rollBack) =
           let
-              val {undo,buf,...} = BufferMap.lookupExistent(bufferMap, id)
               fun checkUnmodified nil =
                   Gtk.textBufferSetModified(buf, false)
                 | checkUnmodified ur = ()
           in
-              case (!undo) of nil => ()
+              case (!undoBuf) of nil => ()
                             | (DELETE(off,txt)::ur) =>
                               let
                                   val iter = Gtk.textIterNew()
@@ -214,10 +225,12 @@ structure Buffer =
                                   Gtk.textBufferGetIterAtOffset(buf,
                                                                 iter,
                                                                 off);
-                                  undo := WAIT_DELETE(off,txt) :: ur;
                                   Gtk.textBufferInsert(buf, iter, txt,
                                                        String.size txt);
-                                  checkUnmodified ur
+                                  checkUnmodified ur;
+				  undoBuf := ur;
+				  if rollBack then undo'(undoBuf, buf, true) else ();
+                                  undoBuf := WAIT_DELETE(off,txt) :: (!undoBuf)
                               end
                             | (INSERT(off1,off2)::ur) =>
                               let
@@ -230,13 +243,31 @@ structure Buffer =
                                   Gtk.textBufferGetIterAtOffset(buf,
                                                                 enditer,
                                                                 off2);
-                                  undo := WAIT_INSERT(off1,off2) :: ur;
                                   Gtk.textBufferDelete(buf, startiter,
                                                        enditer);
-                                  checkUnmodified ur
+                                  checkUnmodified ur;
+				  undoBuf := ur;
+				  if rollBack then undo'(undoBuf, buf, true) else ();
+                                  undoBuf := WAIT_INSERT(off1,off2) :: (!undoBuf)
                               end
-                            | _ => ()
+		            | (END_ACTION::usr) =>
+			      (undoBuf := usr;
+			       undo' (undoBuf, buf, true))
+		            | (BEGIN_ACTION::usr) =>
+			      (checkUnmodified usr;
+			       undoBuf := usr)
+                            | _ =>
+			      if rollBack then undo'(undoBuf, buf, true) else ()
+
           end
+
+      fun undo id =
+	  let
+              val {undo=undoBuf,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+	  in
+	      Lock.sync Core.lock
+	      undo' (undoBuf, buf, false)
+	  end
 
       fun getFileName id =
           !(#file (BufferMap.lookupExistent(bufferMap, id)))
@@ -309,6 +340,8 @@ structure Buffer =
               Gtk.textBufferConnectSpecialSignals buf;
               Gtk.signalConnect(buf, "delete-text", deleteText id);
               Gtk.signalConnect(buf, "insert-text", insertText id);
+              Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
+              Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
               BufferMap.insertDisjoint(bufferMap, id, ret);
               ret
           end
@@ -423,8 +456,10 @@ structure Buffer =
               val enditer = Gtk.textIterNew()
           in
               Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+	      Gtk.textBufferBeginUserAction buf;
 	      Gtk.textBufferDelete(buf, startiter, enditer);
-	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1)
+	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1);
+	      Gtk.textBufferEndUserAction buf
           end
 
    end

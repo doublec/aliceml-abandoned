@@ -284,7 +284,7 @@
 		      <property name="label" translatable="yes">Go to line</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_go_to_line_activate" last_modification_time="Tue, 15 Mar 2005 15:02:19 GMT"/>
-		      <accelerator key="G" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+		      <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
 		    </widget>
 		  </child>
 
@@ -328,12 +328,6 @@
 			  <property name="ypad">0</property>
 			</widget>
 		      </child>
-		    </widget>
-		  </child>
-
-		  <child>
-		    <widget class="GtkMenuItem" id="separator8">
-		      <property name="visible">True</property>
 		    </widget>
 		  </child>
 		</widget>
