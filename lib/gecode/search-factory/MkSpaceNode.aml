@@ -84,7 +84,7 @@ struct
       dbPrint(dbRecomp, "Recomputing node at PATH " ^(pathToString node)^ "\n");
       case status mom of
         Space.BRANCH descr =>
-          (Space.commitDescription (space, #altNum node, descr) ;
+          (Space.commit (space, #altNum node, descr) ;
            
            (* Branch and Bound. *)
            if bab then
@@ -142,7 +142,7 @@ struct
           val status =
             case status node (* cached *) of
               Space.BRANCH descr =>
-                (Space.commitDescription (space, i, descr) ;
+                (Space.commit (space, i, descr) ;
                  Space.status space)
             | _ => raise Child
         in
@@ -172,7 +172,7 @@ struct
           val status =
             case status node (* cached *) of
               Space.BRANCH descr =>
-                (Space.commitDescription (space, i, descr) ;
+                (Space.commit (space, i, descr) ;
 
                  (* Is there a best solution to apply? *)
                  let
