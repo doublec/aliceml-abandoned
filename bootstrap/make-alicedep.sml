@@ -23,7 +23,7 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (stodep (getArgs ()))
+    fun main _ = OS.Process.exit (SMLToMozartMakeDepend.stodep (getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("stodep", main)
 end;

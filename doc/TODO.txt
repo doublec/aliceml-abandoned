@@ -10,11 +10,11 @@ Dependency graph for the steps outlined below - for Operette 2:
                  |
                  7
                  |
-                 8--
-                 |  \
-                 10  9
+                 8--------
+                 |  \  \  \
+                 9  10 11 12
 
-Steps to be performed after Operette 2: 11 and higher
+Steps to be performed after Operette 2: 13 and higher
 
 Individual steps, each probably resulting in a checkin
 (note - the system is inconsistent only once, namely in-between
@@ -239,41 +239,40 @@ steps 3 and 4):
 
    Rename RTTDummy to DummyRTT to be consistent with other dummies.
 
+10. Use the new stodep instead of the current tool. (LK)
+
+   Remove stoc/top/MakeDepend.aml and stoc/top/make-depend.cm.
+
 ======
  TODO
 ======
 
-10. Test runtime types. (AR)
+11. Test runtime types. (AR)
 
-   Urgh.
+   Also provide functors for type-safe pickling and unpickling.
+
+12. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
 ==================
  AFTER OPERETTE 2
 ==================
 
-11. Enrich native components with runtime types. (LK/AR)
+13. Enrich native components with runtime types. (LK/AR)
 
    Natively implemented components that export types, such
    as TextIO.outstream, are assigned runtime types by wrapping
    them in an Alice component.
 
-12. Provide fundamental library as building-blocks. (AR/LK)
+14. Provide fundamental library as building-blocks. (AR/LK)
 
    Every runtime instantiates `holes' in the library, such
    as by specifying that Int = IntInf or LargeInt = Int31.
    Includes solving the cycle problem regarding Pervasive.
 
-13. Generate dependencies automatically. (AR)
-
-   A basic stodep tool exists, but the parser has to be
-   replaced by a correct one.
-
-14. Let stoc lose its special status. (AR)
+15. Let stoc lose its special status. (AR)
 
    Move the Makefile one level up.  The files are then
    generated within the toplevel directory.
-
-15. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
 16. Factorize vm-mozart/bootstrap/Makefile into vm-specific and generic stuff.
 
