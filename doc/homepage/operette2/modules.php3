@@ -13,6 +13,7 @@
   <UL>
     <LI> <A href="#local">local modules</A> </LI>
     <LI> <A href="#higher">higher-order functors</A> </LI>
+    <LI> <A href="laziness.php3#modules">lazy evaluation</A> </LI>
     <LI> <A href="#top">top signature</A> </LI>
     <LI> <A href="#sigmembers">signature members</A> (*) </LI>
     <LI> <A href="#paramsig">parameterized signatures</A> (*) </LI>
@@ -68,10 +69,10 @@
   </P>
 
   <PRE>
-	functor F(X:S1) =
-	    struct
-	        functor G(Y:S2) = struct (* ... *) end
-	    end
+	functor F(X : S1) =
+	struct
+	    functor G(Y : S2) = struct (* ... *) end
+	end
 
 	structure M = let structure Z = F(X) in G(Y) end
   </PRE>
@@ -83,9 +84,17 @@
   </P>
 
   <PRE>
-	functor F(X:S1)(Y:S2) = struct (* ... *) end
+	functor F(X : S1)(Y : S2) = struct (* ... *) end
 
 	structure M = F(X)(Y)
+  </PRE>
+
+  <P>
+    Actually, Alice even allows omitting the parentheses:
+  </P>
+
+  <PRE>
+	structure M = F X Y
   </PRE>
 
   <P>
@@ -96,7 +105,7 @@
   </P>
 
   <PRE>
-	structure F = fct(X:S1) => fct(Y:S2) => struct (* ... *) end
+	structure F = fct(X : S1) => fct(Y : S2) => struct (* ... *) end
   </PRE>
 
   <P>
@@ -120,7 +129,7 @@
   </P>
 
   <PRE>
-	structure F : fct(X:S1) -> fct(Y:S2) -> sig (* ... *) end
+	structure F : fct(X : S1) -> fct(Y : S2) -> sig (* ... *) end
   </PRE>
 
   <P>
@@ -129,7 +138,7 @@
   </P>
 
   <PRE>
-	functor F(X:S1)(Y:S2) : sig (* ... *) end
+	functor F(X : S1)(Y : S2) : sig (* ... *) end
   </PRE>
 
   <P><A name=top>
@@ -138,7 +147,7 @@
   </A></P>
 
   <PRE>
-	functor Id(X: any) = X
+	functor Id(X : any) = X
   </PRE>
   
 
@@ -153,14 +162,14 @@
 
   <PRE>
 	signature S =
-	    sig
-	        signature T = sig (* ... *) end
-	    end
+	sig
+	    signature T = sig (* ... *) end
+	end
 
 	structure X :> S =
-	    struct
-	        signature T = sig (* ... *) end
-	    end
+	struct
+	    signature T = sig (* ... *) end
+	end
   </PRE>
 
   <P>
@@ -171,10 +180,10 @@
 
   <PRE>
 	signature S =
-	    sig
-	        signature T
-	        structure X : T
-	    end
+	sig
+	    signature T
+	    structure X : T
+	end
   </PRE>
 
   <DIV class=note>
@@ -187,19 +196,19 @@
 
   <PRE>
 	signature I =
-	    sig
-	        signature A
-	        functor F(X : sig
-	                          signature A = A
-	                          functor F(X : A) : sig end
-	                      end) : sig end
-	    end
+	sig
+	    signature A
+	    functor F(X : sig
+	                      signature A = A
+	                      functor F(X : A) : sig end
+	                  end) : sig end
+	end
 
 	signature J =
-	    sig
-	        signature A = I
-	        functor F(X : I) : sig end
-	    end
+	sig
+	    signature A = I
+	    functor F(X : I) : sig end
+	end
 
 	(* Try to check J &lt;= I *)
 
@@ -226,16 +235,16 @@
 
   <PRE>
 	signature SET(Elem : sig type t end) =
-	    sig
-	        type elem = Elem.t
-		type t
-		(* ... *)
-	    end
+	sig
+	    type elem = Elem.t
+	    type t
+	    (* ... *)
+	end
 
 	functor MakeSet(Elem : sig type t end) :> SET(Elem) =
-	    struct
-		(* ... *)
-	    end
+	struct
+	    (* ... *)
+	end
   </PRE>
 
   <P>
@@ -245,16 +254,16 @@
 
   <PRE>
 	signature SET(type t) =
-	    sig
-	        type elem = t
-		type t
-		(* ... *)
-	    end
+	sig
+	    type elem = t
+	    type t
+	    (* ... *)
+	end
 
 	functor MakeSet(type t) :> SET(type t = t) =
-	    struct
-		(* ... *)
-	    end
+	struct
+	    (* ... *)
+	end
   </PRE>
 
   <P class=note>
@@ -578,6 +587,13 @@
            <TT>=</TT> <I>strexp</I>
            &lt;<TT>and</TT> <I>fstrbind</I>&gt; </TD>
       <TD> (n>=1) </TD>
+    </TR>
+    <TR></TR>
+    <TR>
+      <TD> <I>atsigexp</I> </TD>
+      <TD align="center">::=</TD>
+      <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+      <TD> </TD>
     </TR>
     <TR></TR>
     <TR>
