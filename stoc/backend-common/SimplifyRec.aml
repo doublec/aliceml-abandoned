@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -183,7 +183,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		      in
 			  (cs @ cr, idsExps @ idsExpr)
 		      end) (nil, nil) (pats, expFields')
-	       | (_, FieldSort.Row) =>
+	       | (_, FieldSort.Prod) =>
 		     raise Crash.Crash
 			 "SimplifyRec.derec' 1 type inconsistency")
 	  | derec' (ProdPat (_, _), TupExp (_, _)) =
@@ -395,7 +395,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    case arity of
 			FieldSort.Tup i =>
 			    TupPat (info, List.map getField patFields''')
-		      | FieldSort.Row =>
+		      | FieldSort.Prod =>
 			    ProdPat (info, patFields''')
 	    in
 		(constraints, pat')

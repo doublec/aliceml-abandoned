@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,8 +20,8 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 		      fun compare (x1, x2) = Label.compare (get x1, get x2))
 
 	datatype arity =
-	    Row
-	  | Tup of int
+	    Tup of int
+	  | Prod
 
 	fun isTuple (x::xr, i) =
 	    if get x = Label.fromInt i then isTuple (xr, i + 1)
@@ -34,6 +34,6 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 	    in
 		case isTuple (xs', 1) of
 		    SOME i => (xs', Tup i)
-		  | NONE => (xs', Row)
+		  | NONE => (xs', Prod)
 	    end
     end

@@ -82,23 +82,67 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
+	fun isId (IdDef _) = true
+	  | isId (Wildcard) = false
+
+	fun idOf (IdDef id) = id
+	  | idOf (Wildcard) = raise Crash.Crash "ValuePropagationPhase.idOf"
+
 	structure IdMap =
 	    MakeHashScopedImpMap(type t = id
 				 val equals = idEq
 				 fun hash (Id (_, stamp, _)) =
 				     Stamp.hash stamp)
 
-	datatype test' =
-	    RefAppTest of id
-	  | TupTest of id list
-	  | RowTest of (label * id) list
-
 	datatype value =
-	    EXP of exp * stamp
-	  | TEST of test * stamp
-	  | TEST' of test' * stamp
-	  | HANDLE
-	  | UNKNOWN
+	    LitVal of lit
+	  | PrimVal of string
+	  | VarVal of id
+	  | TagVal of label * int * conArity
+	  | ConVal of con * conArity
+	  | RefVal
+	  | TupVal of idDef list
+	  | ProdVal of (label * idDef) list
+	  | SelVal of label * int
+	  | VecVal of idDef list
+	  | FunVal of stamp * funFlag list
+	  | TagAppVal of label * int * idDef args
+	  | ConAppVal of con * idDef args
+	  | RefAppVal of idDef
+	  | CaughtExnVal
+	  | UnknownVal
+
+	fun mapArgs f (OneArg x) = OneArg (f x)
+	  | mapArgs f (TupArgs xs) = TupArgs (List.map f xs)
+	  | mapArgs f (ProdArgs labelXList) =
+	    ProdArgs (List.map (fn (label, x) => (label, f x)) labelXList)
+
+	fun expToValue (LitExp (_, lit)) = LitVal lit
+	  | expToValue (PrimExp (_, name)) = PrimVal name
+	  | expToValue (NewExp (_, conArity)) = UnknownVal   (*--** ConVal? *)
+	  | expToValue (VarExp (_, id)) = VarVal id
+	  | expToValue (TagExp (_, label, n, conArity)) =
+	    TagVal (label, n, conArity)
+	  | expToValue (ConExp (_, con, conArity)) = ConVal (con, conArity)
+	  | expToValue (RefExp _) = RefVal
+	  | expToValue (TupExp (_, ids)) = TupVal (List.map IdDef ids)
+	  | expToValue (ProdExp (_, labelIdList)) =
+	    ProdVal (List.map (fn (label, id) =>
+			       (label, IdDef id)) labelIdList)
+	  | expToValue (SelExp (_, label, n)) = SelVal (label, n)
+	  | expToValue (VecExp (_, ids)) = VecVal (List.map IdDef ids)
+	  | expToValue (FunExp (_, stamp, funFlags, _, _)) =
+	    FunVal (stamp, funFlags)
+	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
+	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
+	  | expToValue (TagAppExp (_, label, n, args)) =
+	    TagAppVal (label, n, mapArgs IdDef args)
+	  | expToValue (ConAppExp (_, con, args)) =
+	    ConAppVal (con, mapArgs IdDef args)
+	  | expToValue (RefAppExp (_, id)) = RefAppVal (IdDef id)
+	  | expToValue (SelAppExp (_, _, _, _)) = UnknownVal
+	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
+
 	type isToplevel = bool
 	type env = (value * isToplevel) IdMap.t
 
@@ -122,8 +166,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | sortStm (RecDec (_, _), _, _, _, _) = ()
 	      | sortStm (RefAppDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (TupDec (_, _, _), _, _, _, _) = ()
-	      | sortStm (RowDec (_, _, _), _, _, _, _) = ()
-	      | sortStm (EvalStm (_, _), _, _, _, _) = ()
+	      | sortStm (ProdDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (RaiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (ReraiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (HandleStm (_, body1, _, body2, body3, stamp),
@@ -134,11 +177,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		 sortBody (body3, stamp, edgeMap, shared, path))
 	      | sortStm (EndHandleStm (_, stamp), pred, edgeMap, _, _) =
 		edge (edgeMap, pred, stamp)
-	      | sortStm (TestStm (_, _, testBodyList, body),
+	      | sortStm (TestStm (_, _, tests, body),
 			 pred, edgeMap, shared, path) =
-		(List.app (fn (_, body) =>
-			   sortBody (body, pred, edgeMap, shared, path))
-		 testBodyList;
+		(sortTests (tests, pred, edgeMap, shared, path);
 		 sortBody (body, pred, edgeMap, shared, path))
 	      | sortStm (SharedStm (_, body, stamp),
 			 pred, edgeMap, shared, path) =
@@ -154,6 +195,22 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			 pred, edgeMap, shared, path) =
 		sortBody (valOf bodyOpt, pred, edgeMap, shared, path)
 	      | sortStm (ExportStm (_, _), _, _, _, _) = ()
+	    and sortTests (LitTests litBodyList, pred, edgeMap, shared, path) =
+		List.app (fn (_, body) =>
+			  sortBody (body, pred, edgeMap, shared, path))
+		litBodyList
+	      | sortTests (TagTests tagBodyList, pred, edgeMap, shared, path) =
+		List.app (fn (_, _, _, body) =>
+			  sortBody (body, pred, edgeMap, shared, path))
+		tagBodyList
+	      | sortTests (ConTests conBodyList, pred, edgeMap, shared, path) =
+		List.app (fn (_, _, body) =>
+			  sortBody (body, pred, edgeMap, shared, path))
+		conBodyList
+	      | sortTests (VecTests vecBodyList, pred, edgeMap, shared, path) =
+		List.app (fn (_, body) =>
+			  sortBody (body, pred, edgeMap, shared, path))
+		vecBodyList
 	    and sortBody (stm::stms, pred, edgeMap, shared, path) =
 		(sortStm (stm, pred, edgeMap, shared, path);
 		 sortBody (stms, pred, edgeMap, shared, path))
@@ -181,11 +238,69 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		end
 	end
 
-	fun valueMin (value as EXP (_, stamp), EXP (_, stamp')) =
-	    if stamp = stamp' then value else UNKNOWN
-	  | valueMin (value as TEST (_, stamp), TEST (_, stamp')) =
-	    if stamp = stamp' then value else UNKNOWN
-	  | valueMin (_, _) = UNKNOWN
+	fun idDefEq (IdDef (Id (_, stamp, _)), IdDef (Id (_, stamp', _))) =
+	    stamp = stamp'
+	  | idDefEq (Wildcard, Wildcard) = true
+	  | idDefEq (_, _) = false
+
+	fun conEq (Con (Id (_, stamp, _)), Con (Id (_, stamp', _))) =
+	    stamp = stamp'
+	  | conEq (StaticCon stamp, StaticCon stamp') = stamp = stamp'
+	  | conEq (_, _) = false
+
+	fun argsMin (args as OneArg idDef, OneArg idDef') =
+	    if idDefEq (idDef, idDef') then args else OneArg Wildcard
+	  | argsMin (TupArgs idDefs, TupArgs idDefs') =
+	    TupArgs (ListPair.map (fn (idDef, idDef') =>
+				   if idDefEq (idDef, idDef') then idDef
+				   else Wildcard) (idDefs, idDefs'))
+	  | argsMin (ProdArgs labelIdDefList, ProdArgs labelIdDefList') =
+	    ProdArgs (ListPair.map (fn ((label, idDef), (_, idDef')) =>
+				    (label,
+				     if idDefEq (idDef, idDef') then idDef
+				     else Wildcard))
+		      (labelIdDefList, labelIdDefList'))
+	  | argsMin (_, _) = raise Crash.Crash "ValuePropagationPhase.argsMin"
+
+	fun valueMin (value as LitVal lit, LitVal lit') =
+	    if lit = lit' then value else UnknownVal
+	  | valueMin (value as PrimVal name, PrimVal name') =
+	    if name = name' then value else UnknownVal
+	  | valueMin (value as VarVal (Id (_, stamp, _)),
+		      VarVal (Id (_, stamp', _))) =
+	    if stamp = stamp' then value else UnknownVal
+	  | valueMin (value as TagVal (label, _, _), TagVal (label', _, _)) =
+	    if label = label' then value else UnknownVal
+	  | valueMin (value as ConVal (con, _), ConVal (con', _)) =
+	    if conEq (con, con') then value else UnknownVal
+	  | valueMin (RefVal, RefVal) = RefVal
+	  | valueMin (TupVal idDefs, TupVal idDefs') =
+	    TupVal (ListPair.map (fn (idDef, idDef') =>
+				  if idDefEq (idDef, idDef') then idDef
+				  else Wildcard) (idDefs, idDefs'))
+	  | valueMin (ProdVal labelIdDefList, ProdVal labelIdDefList') =
+	    ProdVal (ListPair.map (fn ((label, idDef), (_, idDef')) =>
+				   (label, if idDefEq (idDef, idDef')
+					   then idDef else Wildcard))
+		     (labelIdDefList, labelIdDefList'))
+	  | valueMin (value as SelVal (label, _), SelVal (label', _)) =
+	    if label = label' then value else UnknownVal
+	  | valueMin (VecVal idDefs, VecVal idDefs') =
+	    if List.length idDefs = List.length idDefs' then
+		VecVal (ListPair.map (fn (idDef, idDef') =>
+				      if idDefEq (idDef, idDef') then idDef
+				      else Wildcard) (idDefs, idDefs'))
+	    else UnknownVal
+	  | valueMin (value as FunVal (stamp, _), FunVal (stamp', _)) =
+	    if stamp = stamp' then value else UnknownVal
+	  | valueMin (TagAppVal (label, n, args),
+		      TagAppVal (label', _, args')) =
+	    if label = label' then TagAppVal (label, n, argsMin (args, args'))
+	    else UnknownVal
+	  | valueMin (value as RefAppVal idDef, RefAppVal idDef') =
+	    if idDefEq (idDef, idDef') then value else UnknownVal
+	  | valueMin (CaughtExnVal, CaughtExnVal) = CaughtExnVal
+	  | valueMin (_, _) = UnknownVal
 
 	fun unionEnv (env', env) =
 	    IdMap.appiScope
@@ -202,49 +317,42 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun getTerm (info, id, env) =
 	    case IdMap.lookupExistent (env, id) of
-		(EXP (exp as LitExp (_, _), _), _) => exp
-	      | (EXP (exp as VarExp (info', id'), _), _) =>
-		    getTerm (info', id', env)
-	      | (EXP (exp as TagExp (_, _, _, _), _), _) => exp
-	      | (EXP (exp as ConExp (_, _, _), _), _) => exp
-	      | (EXP (exp as StaticConExp (_, _, _), _), _) => exp
-	      | (EXP (exp as RefExp _, _), _) => exp
+		(LitVal lit, _) => LitExp (info, lit)
+	      | (PrimVal name, _) => PrimExp (info, name)
+	      | (VarVal id', _) => getTerm (info, id', env)
+	      | (TagVal (label, n, conArity), _) =>
+		    TagExp (info, label, n, conArity)
+	      | (ConVal (con, conArity), _) => ConExp (info, con, conArity)
+	      | (RefVal, _) => RefExp info
 	      | (_, _) => VarExp (info, id)
 
 	fun deref (id, env) =
 	    case IdMap.lookupExistent (env, id) of
-		(EXP (VarExp (_, id'), _), _) => id'
+		(VarVal id', _) => id'
 	      | (_, _) => id
 
 	fun derefArgs (OneArg id, env) = OneArg (deref (id, env))
 	  | derefArgs (TupArgs ids, env) =
 	    TupArgs (List.map (fn id => deref (id, env)) ids)
-	  | derefArgs (RowArgs labelIdList, env) =
-	    RowArgs (List.map (fn (label, id) => (label, deref (id, env)))
-		     labelIdList)
-
-	fun doSelTup (info, ids, n) = VarExp (info, List.nth (ids, n))
-
-	fun doSelRow (info, labelIdList, n) =
-	    let
-		val (_, id) = List.nth (labelIdList, n)
-	    in
-		VarExp (info, id)
-	    end
+	  | derefArgs (ProdArgs labelIdList, env) =
+	    ProdArgs (List.map (fn (label, id) => (label, deref (id, env)))
+		      labelIdList)
 
 	fun doSel (info, label, n, id, env) =
 	    case IdMap.lookupExistent (env, id) of
-		((EXP (TupExp (_, ids), _) |
-		  TEST' (TupTest ids, _)), _) =>
-		    doSelTup (info, ids, n)
-	      | ((EXP (RowExp (_, labelIdList), _) |
-		  TEST' (RowTest labelIdList, _)), _) =>
-		    doSelRow (info, labelIdList, n)
+		(TupVal idDefs, _) =>
+		    (case List.nth (idDefs, n) of
+			 IdDef id => VarExp (info, id)
+		       | Wildcard => SelAppExp (info, label, n, id))
+	      | (ProdVal labelIdDefList, _) =>
+		    (case List.nth (labelIdDefList, n) of
+			 (_, IdDef id) => VarExp (info, id)
+		       | (_, Wildcard) => SelAppExp (info, label, n, id))
 	      | (_, _) => SelAppExp (info, label, n, id)
 
 	fun arityMatches (OneArg _, SOME Unary) = true
 	  | arityMatches (TupArgs _, SOME (TupArity _)) = true
-	  | arityMatches (RowArgs _, SOME (RowArity _)) = true
+	  | arityMatches (ProdArgs _, SOME (ProdArity _)) = true
 	  | arityMatches (_, _) = false
 
 	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
@@ -254,243 +362,168 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    vpPrimApp (info, name, [id])
 	  | primAppExp (info, id, name, TupArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
-		 ((EXP (TupExp (_, ids), _) |
-		   TEST' (TupTest ids, _)), _) =>
-		     vpPrimApp (info, name, ids)
+		 (TupVal idDefs, _) =>
+		     if List.all isId idDefs then
+			 vpPrimApp (info, name, List.map idOf idDefs)
+		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
-	  | primAppExp (info, id, name, RowArity _, args as OneArg id', env) =
+	  | primAppExp (info, id, name, ProdArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
-		 ((EXP (RowExp (_, labelIdList), _) |
-		   TEST' (RowTest labelIdList, _)), _) =>
-		     vpPrimApp (info, name, List.map #2 labelIdList)
+		 (ProdVal labelIdDefList, _) =>
+		     if List.all (fn (_, idDef) => isId idDef) labelIdDefList
+		     then
+			 vpPrimApp (info, name,
+				    List.map (fn (_, idDef) => idOf idDef)
+				    labelIdDefList)
+		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
 	  | primAppExp (info, id, name, TupArity _, TupArgs ids, _) =
 	    vpPrimApp (info, name, ids)
-	  | primAppExp (info, id, name, RowArity _, RowArgs labelIdList, _) =
+	  | primAppExp (info, id, name, ProdArity _, ProdArgs labelIdList, _) =
 	    vpPrimApp (info, name, List.map #2 labelIdList)
 	  | primAppExp (info, id, _, _, args, _) =
 	    VarAppExp (info, id, args)   (*--** *)
 
-	fun alias (id, id' as Id (info', _, _), env, isToplevel) =
-	    IdMap.insert
-	    (env, id, (EXP (VarExp (info', id'), Stamp.new ()), isToplevel))
+	fun alias (IdDef id, IdDef id', env, isToplevel) =
+	    IdMap.insert (env, id, (VarVal id', isToplevel))
+	  | alias (_, _, _, _) = ()
 
-	fun aliasArgs (OneArg id, OneArg id', env, isToplevel) =
-	    alias (id, id', env, isToplevel)
-	  | aliasArgs (TupArgs ids, TupArgs ids', env, isToplevel) =
-	    ListPair.app (fn (id, id') => alias (id, id', env, isToplevel))
-	    (ids, ids')
-	  | aliasArgs (RowArgs labelIdList, RowArgs labelIdList',
+	fun aliasArgs (OneArg idDef, OneArg idDef', env, isToplevel) =
+	    alias (idDef, idDef', env, isToplevel)
+	  | aliasArgs (TupArgs idDefs, TupArgs idDefs', env, isToplevel) =
+	    ListPair.app (fn (idDef, idDef') =>
+			  alias (idDef, idDef', env, isToplevel))
+	    (idDefs, idDefs')
+	  | aliasArgs (ProdArgs labelIdDefList, ProdArgs labelIdDefList',
 		       env, isToplevel) =
-	    ListPair.app (fn ((_, id), (_, id')) =>
-			  alias (id, id', env, isToplevel))
-	    (labelIdList, labelIdList')
+	    ListPair.app (fn ((_, idDef), (_, idDef')) =>
+			  alias (idDef, idDef', env, isToplevel))
+	    (labelIdDefList, labelIdDefList')
 	  | aliasArgs (_, _, _, _) =
 	    raise Crash.Crash "ValuePropagationPhase.aliasArgs"
 
-	datatype testRes =
-	    ALWAYS_TRUE
-	  | ALWAYS_FALSE
-	  | DYNAMIC_TEST of test
+	fun declare (env, IdDef id, entry) =
+	    IdMap.insertDisjoint (env, id, entry)
+	  | declare (_, Wildcard, _) = ()
 
-	fun declareId (id, env, isToplevel) =
-	    IdMap.insertDisjoint (env, id, (UNKNOWN, isToplevel))
+	fun replace (env, IdDef id, entry) =
+	    IdMap.insert (env, id, entry)
+	  | replace (_, Wildcard, _) = ()
 
-	fun declareArgs (OneArg id, env, isToplevel) =
-	    declareId (id, env, isToplevel)
-	  | declareArgs (TupArgs ids, env, isToplevel) =
-	    List.app (fn id => declareId (id, env, isToplevel)) ids
-	  | declareArgs (RowArgs labelIdList, env, isToplevel) =
-	    List.app (fn (_, id) => declareId (id, env, isToplevel))
-	    labelIdList
+	fun declareUnknown (env, idDef, isToplevel) =
+	    declare (env, idDef, (UnknownVal, isToplevel))
 
-	fun declareTest' (LitTest _, _, _) = ()
-	  | declareTest' (TagTest (_, _), _, _) = ()
-	  | declareTest' (TagAppTest (_, _, args), env, isToplevel) =
-	    declareArgs (args, env, isToplevel)
-	  | declareTest' (ConTest _, _, _) = ()
-	  | declareTest' (ConAppTest (_, args), env, isToplevel) =
-	    declareArgs (args, env, isToplevel)
-	  | declareTest' (StaticConTest _, _, _) = ()
-	  | declareTest' (StaticConAppTest (_, args), env, isToplevel) =
-	    declareArgs (args, env, isToplevel)
-	  | declareTest' (VecTest ids, env, isToplevel) =
-	    declareArgs (TupArgs ids, env, isToplevel)
+	fun declareArgs (env, OneArg idDef, isToplevel) =
+	    declareUnknown (env, idDef, isToplevel)
+	  | declareArgs (env, TupArgs idDefs, isToplevel) =
+	    List.app (fn idDef => declareUnknown (env, idDef, isToplevel))
+	    idDefs
+	  | declareArgs (env, ProdArgs labelIdDefList, isToplevel) =
+	    List.app (fn (_, idDef) => declareUnknown (env, idDef, isToplevel))
+	    labelIdDefList
 
-	fun declareTest (id, DYNAMIC_TEST test, env, isToplevel) =
-	    (IdMap.insert (env, id, (TEST (test, Stamp.new ()), isToplevel));
-	     declareTest' (test, env, isToplevel))
-	  | declareTest (_, _, _, _) = ()
+	fun declareConArgs (_, NONE, _) = ()
+	  | declareConArgs (env, SOME args, isToplevel) =
+	    declareArgs (env, args, isToplevel)
 
-	fun dynamicTest (ConTest id, env) =
-	    (case IdMap.lookupExistent (env, id) of
-		 (EXP (StaticConExp (_, stamp, _), _), _) =>
-		     DYNAMIC_TEST (StaticConTest stamp)
-	       | (_, _) => DYNAMIC_TEST (ConTest (deref (id, env))))
-	  | dynamicTest (ConAppTest (id, args), env) =
-	    (case IdMap.lookupExistent (env, id) of
-		 (EXP (StaticConExp (_, stamp, _), _), _) =>
-		     DYNAMIC_TEST (StaticConAppTest (stamp, args))
-	       | (_, _) => DYNAMIC_TEST (ConAppTest (deref (id, env), args)))
-	  | dynamicTest (test, _) = DYNAMIC_TEST test
+	fun testsAppend (NONE, testsOpt) = testsOpt
+	  | testsAppend (testsOpt, NONE) = testsOpt
+	  | testsAppend (SOME (LitTests xs), SOME (LitTests ys)) =
+	    SOME (LitTests (xs @ ys))
+	  | testsAppend (SOME (TagTests xs), SOME (TagTests ys)) =
+	    SOME (TagTests (xs @ ys))
+	  | testsAppend (SOME (ConTests xs), SOME (ConTests ys)) =
+	    SOME (ConTests (xs @ ys))
+	  | testsAppend (SOME (VecTests xs), SOME (VecTests ys)) =
+	    SOME (VecTests (xs @ ys))
+	  | testsAppend (SOME _, SOME _) =
+	    raise Crash.Crash "ValuePropagationPhase.testsAppend"
 
-	fun vpTest' (test, UNKNOWN, env, _) = dynamicTest (test, env)
-	  | vpTest' (LitTest lit,
-		     (EXP (LitExp (_, lit'), _) |
-		      TEST (LitTest lit', _)), _, _) =
-	    if lit = lit' then ALWAYS_TRUE else ALWAYS_FALSE
-	  | vpTest' (TagTest (_, n),
-		     (EXP (TagExp (_, _, n', _), _) |
-		      TEST (TagTest (_, n'), _)), _, _) =
-	    if n = n' then ALWAYS_TRUE else ALWAYS_FALSE
-	  | vpTest' (TagAppTest (_, n, args),
-		     (EXP (TagAppExp (_, _, n', args'), _) |
-		      TEST (TagAppTest (_, n', args'), _)), env, isToplevel) =
-	    if n = n' then
-		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
-	    else ALWAYS_FALSE
-	  | vpTest' (test as ConTest id,
-		     (EXP (ConExp (_, id', _), _) |
-		      TEST (ConTest id', _)), env, _) =
-	    if idEq (id, id') then ALWAYS_TRUE else dynamicTest (test, env)
-	  | vpTest' (test as ConAppTest (id, args),
-		     (EXP (ConAppExp (_, id', args'), _) |
-		      TEST (ConAppTest (id', args'), _)), env, isToplevel) =
-	    if idEq (id, id') then
-		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
-	    else dynamicTest (test, env)
-	  | vpTest' (test as StaticConTest stamp,
-		     (EXP (StaticConExp (_, stamp', _), _) |
-		      TEST (StaticConTest stamp', _)), env, _) =
-	    if stamp = stamp' then ALWAYS_TRUE else dynamicTest (test, env)
-	  | vpTest' (test as StaticConAppTest (stamp, args),
-		     (EXP (StaticConAppExp (_, stamp', args'), _) |
-		      TEST (StaticConAppTest (stamp', args'), _)),
-		     env, isToplevel) =
-	    if stamp = stamp' then
-		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
-	    else dynamicTest (test, env)
-	  | vpTest' (VecTest ids,
-		     (EXP (VecExp (_, ids'), _) |
-		      TEST (VecTest ids', _)), env, isToplevel) =
-	    if List.length ids = List.length ids' then
-		(ListPair.app (fn (id, id') =>
-			       alias (id, id', env, isToplevel))
-		 (ids, ids'); ALWAYS_TRUE)
-	    else ALWAYS_FALSE
-	  | vpTest' (_, _, _, _) = ALWAYS_FALSE
-
-	fun vpTest (test, id, env, isToplevel) =
-	    let
-		val value =
-		    case IdMap.lookupExistent (env, id) of
-			(value as EXP (LitExp (_, _), _), _) => value
-		      | (value as EXP (NewExp (_, _), _), _) => value
-		      | (value as EXP (TagExp (_, _, _, _), _), _) => value
-		      | (value as EXP (ConExp (_, _, _), _), _) => value
-		      | (value as EXP (StaticConExp (_, _, _), _), _) => value
-		      | (value as EXP (TupExp (_, _), _), _) => value
-		      | (value as EXP (RowExp (_, _), _), _) => value
-		      | (value as EXP (VecExp (_, _), _), _) => value
-		      | (value as TEST (_, _), _) => value
-		      | (_, _) => UNKNOWN
-	    in
-		vpTest' (test, value, env, isToplevel)
-	    end
+	fun testsNull (SOME (LitTests xs)) = List.null xs
+	  | testsNull (SOME (TagTests xs)) = List.null xs
+	  | testsNull (SOME (ConTests xs)) = List.null xs
+	  | testsNull (SOME (VecTests xs)) = List.null xs
+	  | testsNull NONE = true
 
 	fun indirect (_, [stm]) = stm
 	  | indirect (info, body) = IndirectStm (info, ref (SOME body))
 
-	fun vpStm (ValDec (info, id, exp), env, isToplevel, shared) =
+	fun vpStm (ValDec (info, idDef, exp), env, isToplevel, shared) =
 	    let
 		val exp = vpExp (exp, env, isToplevel, shared)
-		val entry = (EXP (exp, Stamp.new ()), isToplevel)
 	    in
-		IdMap.insertDisjoint (env, id, entry);
-		ValDec (info, id, exp)
+		declare (env, idDef, (expToValue exp, isToplevel));
+		ValDec (info, idDef, exp)
 	    end
-	  | vpStm (RecDec (info, idExpList), env, isToplevel, shared) =
+	  | vpStm (RecDec (info, idDefExpList), env, isToplevel, shared) =
 	    let
-		val idExpStampList =
-		    List.map
-		    (fn (id, exp) =>
-		     let
-			 val stamp = Stamp.new ()
-			 val entry = (EXP (exp, stamp), isToplevel)
-		     in
-			 IdMap.insertDisjoint (env, id, entry);
-			 (id, exp, Stamp.new ())
-		     end) idExpList
-		val idExpList =
-		    List.map (fn (id, exp, stamp) =>
+		val _ =
+		    List.app (fn (idDef, exp) =>
+			      declare (env, idDef, (expToValue exp,
+						    isToplevel))) idDefExpList
+		val idDefExpList =
+		    List.map (fn (idDef, exp) =>
 			      let
 				  val exp =
 				      vpExp (exp, env, isToplevel, shared)
-				  val entry = (EXP (exp, stamp), isToplevel)
 			      in
-				  IdMap.insert (env, id, entry); (id, exp)
-			      end) idExpStampList
+				  replace (env, idDef, (expToValue exp,
+							isToplevel));
+				  (idDef, exp)
+			      end) idDefExpList
 	    in
-		RecDec (info, idExpList)
+		RecDec (info, idDefExpList)
 	    end
-	  | vpStm (RefAppDec (info, id, id'), env, isToplevel, _) =
-	    let
-		val id' = deref (id', env)
-		val entry' = (TEST' (RefAppTest id, Stamp.new ()), isToplevel)
-	    in
-		IdMap.insertDisjoint (env, id, (UNKNOWN, isToplevel));
-		IdMap.insert (env, id', entry');
-		RefAppDec (info, id, id')
-	    end
-	  | vpStm (TupDec (info, ids, id), env, isToplevel, _) =
+	  | vpStm (RefAppDec (info, idDef, id), env, isToplevel, _) =
 	    let
 		val id = deref (id, env)
-		val entry = (TEST' (TupTest ids, Stamp.new ()), isToplevel)
 	    in
-		List.app (fn id =>
-			  IdMap.insertDisjoint (env, id,
-						(UNKNOWN, isToplevel))) ids;
-		IdMap.insert (env, id, entry);
-		TupDec (info, ids, id)
+		IdMap.insert (env, id, (RefAppVal idDef, isToplevel));
+		declareUnknown (env, idDef, isToplevel);
+		RefAppDec (info, idDef, id)
 	    end
-	  | vpStm (RowDec (info, labelIdList, id), env, isToplevel, _) =
+	  | vpStm (TupDec (info, idDefs, id), env, isToplevel, _) =
 	    let
 		val id = deref (id, env)
-		val entry =
-		    (TEST' (RowTest labelIdList, Stamp.new ()), isToplevel)
 	    in
-		List.app (fn (_, id) =>
-			  IdMap.insertDisjoint (env, id,
-						(UNKNOWN, isToplevel)))
-		labelIdList;
-		IdMap.insert (env, id, entry);
-		RowDec (info, labelIdList, id)
+		List.app (fn idDef =>
+			  declareUnknown (env, idDef, isToplevel)) idDefs;
+		IdMap.insert (env, id, (TupVal idDefs, isToplevel));
+		TupDec (info, idDefs, id)
 	    end
-	  | vpStm (EvalStm (info, exp), env, isToplevel, shared) =
-	    EvalStm (info, vpExp (exp, env, isToplevel, shared))
+	  | vpStm (ProdDec (info, labelIdDefList, id), env, isToplevel, _) =
+	    let
+		val id = deref (id, env)
+	    in
+		List.app (fn (_, idDef) =>
+			  declareUnknown (env, idDef, isToplevel))
+		labelIdDefList;
+		IdMap.insert (env, id, (ProdVal labelIdDefList, isToplevel));
+		ProdDec (info, labelIdDefList, id)
+	    end
 	  | vpStm (stm as RaiseStm (info, id), env, _, _) =
 	    let
 		val id = deref (id, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		   (HANDLE, _) => ReraiseStm (info, id)
+		   (CaughtExnVal, _) => ReraiseStm (info, id)
 		 | _ => RaiseStm (info, id)
 	    end
 	  | vpStm (stm as ReraiseStm (info, id), env, _, _) =
 	    ReraiseStm (info, deref (id, env))
-	  | vpStm (HandleStm (info, body1, id, body2, body3, stamp),
+	  | vpStm (HandleStm (info, body1, idDef, body2, body3, stamp),
 		   env, isToplevel, shared) =
 	    let
 		val bodyOptRef = ref (SOME body3)
 		val entry = SHARED_ANN (bodyOptRef, IdMap.cloneTop env)
 		val _ = StampMap.insertDisjoint (shared, stamp, entry)
 		val body1 = vpBodyScope (body1, env, isToplevel, shared)
-		val _ = IdMap.insertDisjoint (env, id, (HANDLE, isToplevel))
+		val _ = declare (env, idDef, (CaughtExnVal, isToplevel))
 		val body2 = vpBody (body2, env, isToplevel, shared)
 		val info' = {region = #region info, liveness = ref Unknown}
 		val body3 = [IndirectStm (info', bodyOptRef)]
 	    in
-		HandleStm (info, body1, id, body2, body3, stamp)
+		HandleStm (info, body1, idDef, body2, body3, stamp)
 	    end
 	  | vpStm (stm as EndHandleStm (_, stamp), env, _, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
@@ -499,11 +532,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpStm (stm as TestStm (info, id, _, _), env, isToplevel, shared) =
 	    let
 		val id = deref (id, env)
-		val (testBodyList, elseBody) =
+		val (testsOpt, elseBody) =
 		    vpTestStm ([stm], id, env, isToplevel, shared)
 	    in
-		if List.null testBodyList then indirect (info, elseBody)
-		else TestStm (info, id, testBodyList, elseBody)
+		if testsNull testsOpt then indirect (info, elseBody)
+		else TestStm (info, id, valOf testsOpt, elseBody)
 	    end
 	  | vpStm (SharedStm (info, body, stamp), env, isToplevel, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
@@ -536,39 +569,172 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    indirect (info, vpBody (valOf bodyOpt, env, isToplevel, shared))
 	  | vpStm (ExportStm (info, exp), env, isToplevel, shared) =
 	    ExportStm (info, vpExp (exp, env, isToplevel, shared))
-	and vpTestStm (topBody as [TestStm (_, id, [(test, body)], elseBody)],
+	and vpTestStm (topBody as [TestStm (_, id, tests, elseBody)],
 		       id', env, isToplevel, shared) =
 	    let
 		val id = deref (id, env)
 	    in
 		if idEq (id, id') then
 		    let
-			val (testBodyList, elseBody) =
+			val (testsOpt, elseBody) =
 			    vpTestStm (elseBody, id', env, isToplevel, shared)
-			val env = IdMap.cloneTop env
-			val testRes = vpTest (test, id, env, isToplevel)
-			val _ = declareTest (id, testRes, env, isToplevel)
-			val body = vpBody (body, env, isToplevel, shared)
+			val (testsOpt', elseBody) =
+			    vpTests (id, tests, elseBody,
+				     env, isToplevel, shared)
 		    in
-			case testRes of
-			    ALWAYS_FALSE =>   (*--** warn? *)
-				(testBodyList, elseBody)
-			  | ALWAYS_TRUE => (nil, body)
-			  | DYNAMIC_TEST test =>
-				((test, body)::testBodyList, elseBody)
+			(testsAppend (testsOpt', testsOpt), elseBody)
 		    end
-		else (nil, vpBodyScope (topBody, env, isToplevel, shared))
+		else (NONE, vpBodyScope (topBody, env, isToplevel, shared))
 	    end
 	  | vpTestStm (body as [SharedStm (_, body', stamp)],
 		       id, env, isToplevel, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
 		 UNIQUE => vpTestStm (body', id, env, isToplevel, shared)
-	       | _ => (nil, vpBodyScope (body, env, isToplevel, shared)))
+	       | _ => (NONE, vpBodyScope (body, env, isToplevel, shared)))
 	  | vpTestStm ([IndirectStm (_, ref bodyOpt)],
 		       id, env, isToplevel, shared) =
 	    vpTestStm (valOf bodyOpt, id, env, isToplevel, shared)
 	  | vpTestStm (body, _, env, isToplevel, shared) =
-	    (nil, vpBodyScope (body, env, isToplevel, shared))
+	    (NONE, vpBodyScope (body, env, isToplevel, shared))
+	and vpTests (id, LitTests litBodyList,
+		     elseBody, env, isToplevel, shared) =
+	    let
+		val (litBodyList, elseBody) =
+		    List.foldr
+		    (fn ((lit, body), (litBodyList, elseBody)) =>
+		     let
+			 val env = IdMap.cloneTop env
+			 val entry = IdMap.lookupExistent (env, id)
+			 val entry' = (LitVal lit, isToplevel)
+			 val _ = IdMap.insert (env, id, entry')
+			 val body = vpBody (body, env, isToplevel, shared)
+		     in
+			 case entry of
+			     (LitVal lit', _) =>
+				 if lit = lit' then (nil, body)
+				 else (nil, elseBody)
+			   | _ => ((lit, body)::litBodyList, elseBody)
+		     end) (nil, elseBody) litBodyList
+	    in
+		(case litBodyList of
+		     nil => NONE
+		   | _::_ => SOME (LitTests litBodyList), elseBody)
+	    end
+	  | vpTests (id, TagTests tagBodyList,
+		     elseBody, env, isToplevel, shared) =
+	    let
+		val (tagBodyList, elseBody) =
+		    List.foldr
+		    (fn ((label, n, conArgs, body), (tagBodyList, elseBody)) =>
+		     let
+			 val env = IdMap.cloneTop env
+			 val entry = IdMap.lookupExistent (env, id)
+			 val entry' =
+			     (case conArgs of
+				  NONE => TagVal (label, n, NONE)
+				| SOME args => TagAppVal (label, n, args),
+			      isToplevel)
+			 val _ = IdMap.insert (env, id, entry')
+			 val _ = declareConArgs (env, conArgs, isToplevel)
+		     in
+			 case (conArgs, entry) of
+			     (NONE, (TagVal (_, n', _), _)) =>
+				 if n = n' then
+				     (nil, vpBody (body, env,
+						   isToplevel, shared))
+				 else (nil, elseBody)
+			   | (SOME args, (TagAppVal (_, n', args'), _)) =>
+				 if n = n' then
+				     (aliasArgs (args, args', env, isToplevel);
+				      (nil, vpBody (body, env,
+						    isToplevel, shared)))
+				 else (nil, elseBody)
+			   | (_, _) =>
+				 ((label, n, conArgs,
+				   vpBody (body, env, isToplevel, shared))::
+				  tagBodyList, elseBody)
+		     end) (nil, elseBody) tagBodyList
+	    in
+		(case tagBodyList of
+		     nil => NONE
+		   | _::_ => SOME (TagTests tagBodyList), elseBody)
+	    end
+	  | vpTests (id, ConTests conBodyList,
+		     elseBody, env, isToplevel, shared) =
+	    let
+		val (conBodyList, elseBody) =
+		    List.foldr
+		    (fn ((con, conArgs, body), (conBodyList, elseBody)) =>
+		     let
+			 val con =
+			     case con of
+				 Con id =>
+				     (case IdMap.lookupExistent (env, id) of
+					  (ConVal (con as StaticCon _,
+						   _), _) => con
+					| (_, _) => Con (deref (id, env)))
+			       | StaticCon _ => con
+			 val env = IdMap.cloneTop env
+			 val entry = IdMap.lookupExistent (env, id)
+			 val entry' =
+			     (case conArgs of
+				  NONE => ConVal (con, NONE)
+				| SOME args => ConAppVal (con, args),
+			      isToplevel)
+			 val _ = IdMap.insert (env, id, entry')
+			 val _ = declareConArgs (env, conArgs, isToplevel)
+		     in
+			 case (conArgs, entry) of
+			     (NONE, (ConVal (con', _), _)) =>
+				 if conEq (con, con') then
+				     (nil, vpBody (body, env,
+						   isToplevel, shared))
+				 else (nil, elseBody)
+			   | (SOME args, (ConAppVal (con', args'), _)) =>
+				 if conEq (con, con') then
+				     (aliasArgs (args, args', env, isToplevel);
+				      (nil, vpBody (body, env,
+						    isToplevel, shared)))
+				 else (nil, elseBody)
+			   | (_, _) =>
+				 ((con, conArgs,
+				   vpBody (body, env, isToplevel, shared))::
+				  conBodyList, elseBody)
+		     end) (nil, elseBody) conBodyList
+	    in
+		(case conBodyList of
+		     nil => NONE
+		   | _::_ => SOME (ConTests conBodyList), elseBody)
+	    end
+	  | vpTests (id, VecTests vecBodyList,
+		     elseBody, env, isToplevel, shared) =
+	    let
+		val (vecBodyList, elseBody) =
+		    List.foldr
+		    (fn ((idDefs, body), (vecBodyList, elseBody)) =>
+		     let
+			 val env = IdMap.cloneTop env
+			 val entry = IdMap.lookupExistent (env, id)
+			 val entry' = (VecVal idDefs, isToplevel)
+			 val _ = IdMap.insert (env, id, entry')
+			 val _ = declareArgs (env, TupArgs idDefs, isToplevel)
+		     in
+			 case entry of
+			     (VecVal idDefs', _) =>
+				 if List.length idDefs = List.length idDefs'
+				 then (nil, vpBody (body, env,
+						    isToplevel, shared))
+				 else (nil, elseBody)
+			   | (_, _) =>
+				 ((idDefs,
+				   vpBody (body, env, isToplevel, shared))::
+				  vecBodyList, elseBody)
+		     end) (nil, elseBody) vecBodyList
+	    in
+		(case vecBodyList of
+		     nil => NONE
+		   | _::_ => SOME (VecTests vecBodyList), elseBody)
+	    end
 	and vpExp (exp as LitExp (_, _), _, _, _) = exp
 	  | vpExp (exp as PrimExp (info, name), _, _, _) =
 	    (PrimOps.getArity name
@@ -578,28 +744,29 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 (*--** disabled for now (not all backends support this)
 	  | vpExp (exp as NewExp (_, _), _, false, _) = exp
 	  | vpExp (NewExp (info, conArity), _, true, _) =
-	    StaticConExp (info, Stamp.new (), conArity)
+	    ConExp (info, StaticCon (Stamp.new ()), conArity)
 *)
 	  | vpExp (exp as NewExp (_, _), _, _, _) = exp
 	  | vpExp (VarExp (info, id), env, _, _) = getTerm (info, id, env)
 	  | vpExp (exp as TagExp (_, _, _, _), _, _, _) = exp
-	  | vpExp (ConExp (info, id, conArity), env, _, _) =
+	  | vpExp (ConExp (info, con as Con id, conArity), env, _, _) =
 	    let
 		val id = deref (id, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (EXP (exp as StaticConExp (_, _, _), _), _) => exp
-		  | (_, _) => ConExp (info, id, conArity)
+		    (ConVal (con as StaticCon _, _), _) =>
+			ConExp (info, con, conArity)
+		  | (_, _) => ConExp (info, Con id, conArity)
 	    end
-	  | vpExp (exp as StaticConExp (_, _, _), _, _, _) = exp
+	  | vpExp (exp as ConExp (_, StaticCon _, _), _, _, _) = exp
 	  | vpExp (exp as RefExp _, _, _, _) = exp
 	  | vpExp (TupExp (info, ids), env, _, _) =
 	    (*--** if TupExp took terms instead of ids -> getTerm *)
 	    TupExp (info, List.map (fn id => deref (id, env)) ids)
-	  | vpExp (RowExp (info, labelIdList), env, _, _) =
-	    (*--** if RowExp took terms instead of ids -> getTerm *)
-	    RowExp (info, List.map (fn (label, id) => (label, deref (id, env)))
-		    labelIdList)
+	  | vpExp (ProdExp (info, labelIdList), env, _, _) =
+	    (*--** if ProdExp took terms instead of ids -> getTerm *)
+	    ProdExp (info, List.map (fn (label, id) =>
+				     (label, deref (id, env))) labelIdList)
 	  | vpExp (exp as SelExp (_, _, _), _, _, _) = exp
 	  | vpExp (VecExp (info, ids), env, _, _) =
 	    (*--** if VecExp took terms instead of ids -> getTerm *)
@@ -607,7 +774,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpExp (FunExp (info, stamp, flags, args, body), env, _, _) =
 	    let
 		val _ = IdMap.insertScope env
-		val _ = declareArgs (args, env, false)
+		val _ = declareArgs (env, args, false)
 		val body = vpBodyShared (body, stamp, env, false)
 		val _ = IdMap.deleteScope env
 	    in
@@ -621,51 +788,48 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val args = derefArgs (args, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (EXP (PrimExp (_, name), _), _) =>
+		    (PrimVal name, _) =>
 			primAppExp (info, deref (id, env), name,
 				    valOf (PrimOps.getArity name), args, env)
-		  | (EXP (TagExp (_, label, n, conArity), _), _) =>
+		  | (TagVal (label, n, conArity), _) =>
 			if arityMatches (args, conArity) then
 			    TagAppExp (info, label, n, args)
 			else VarAppExp (info, id, args)
-		  | (EXP (ConExp (_, id, conArity), _), _) =>
+		  | (ConVal (con, conArity), _) =>
 			if arityMatches (args, conArity) then
-			    ConAppExp (info, id, args)
+			    ConAppExp (info, con, args)
 			else VarAppExp (info, id, args)
-		  | (EXP (StaticConExp (_, stamp, conArity), _), _) =>
-			if arityMatches (args, conArity) then
-			    StaticConAppExp (info, stamp, args)
-			else VarAppExp (info, id, args)
-		  | (EXP (RefExp _, _), _) =>
+		  | (RefVal, _) =>
 			(case args of
 			     OneArg id => RefAppExp (info, id)
 			   | _ => VarAppExp (info, id, args))   (*--** *)
-		  | (EXP (SelExp (_, label, n), _), _) =>
+		  | (SelVal (label, n), _) =>
 			(case derefArgs (args, env) of
 			     OneArg id =>
 				 doSel (info, label, n, id, env)
 			   | TupArgs ids =>
-				 doSelTup (info, ids, n)
-			   | RowArgs labelIdList =>
-				 doSelRow (info, labelIdList, n))
-		  | (EXP (FunExp (_, stamp, _, _, _), _), true) =>
+				 VarExp (info, List.nth (ids, n))
+			   | ProdArgs labelIdList =>
+				 VarExp (info, #2 (List.nth (labelIdList, n))))
+		  | (FunVal (stamp, _), true) =>
 			(*--** optimize args conversion *)
 			FunAppExp (info, id, stamp, args)
 		  | (_, _) => VarAppExp (info, id, args)
 	    end
 	  | vpExp (TagAppExp (info, label, n, args), env, _, _) =
 	    TagAppExp (info, label, n, derefArgs (args, env))
-	  | vpExp (ConAppExp (info, id, args), env, _, _) =
+	  | vpExp (ConAppExp (info, Con id, args), env, _, _) =
 	    let
 		val id = deref (id, env)
+		val args = derefArgs (args, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (EXP (StaticConExp (_, stamp, _), _), _) =>
-			StaticConAppExp (info, stamp, derefArgs (args, env))
-		  | (_, _) => ConAppExp (info, id, derefArgs (args, env))
+		    (ConVal (con as StaticCon _, _), _) =>
+			ConAppExp (info, con, args)
+		  | (_, _) => ConAppExp (info, Con id, args)
 	    end
-	  | vpExp (StaticConAppExp (info, stamp, args), env, _, _) =
-	    StaticConAppExp (info, stamp, derefArgs (args, env))
+	  | vpExp (ConAppExp (info, StaticCon stamp, args), env, _, _) =
+	    ConAppExp (info, StaticCon stamp, derefArgs (args, env))
 	  | vpExp (RefAppExp (info, id), env, _, _) =
 	    RefAppExp (info, deref (id, env))
 	  | vpExp (SelAppExp (info, label, n, id), env, _, _) =
@@ -702,7 +866,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				       SOME (vpBody (body, env, isToplevel,
 						     shared))
 				   end;
-			    StampMap.deleteExistent (shared, stamp)
+			   StampMap.deleteExistent (shared, stamp)
 		       end) sorted)
 	       | (_, _) =>
 		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
@@ -720,8 +884,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val env = IdMap.new ()
 		val _ =
-		    List.app (fn (id, _, _) =>
-			      declareId (id, env, true)) imports
+		    List.app (fn (idDef, _, _) =>
+			      declareUnknown (env, idDef, true)) imports
 		val topStamp = Stamp.new ()
 		val body' = vpBodyShared (body, topStamp, env, true)
 		val component' = (imports, (body', sign))

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,7 +30,7 @@ signature SIMPLIFY_MATCH =
 	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
-	  | RowTest of (Label.t * typ) list
+	  | ProdTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of Label.t * int * typ
 	  | VecTest of typ list
@@ -50,16 +50,11 @@ signature SIMPLIFY_MATCH =
 	  | Cooked of (pos * test) list * (pos * test) list
 	  | Translated of O.body
 
-	val posToString: pos -> string
-	val testToString: test -> string
-	val graphToString: testGraph * int -> string
-	val mappingToString: mapping -> string
-
 	type consequent = Source.region * O.body option ref
 
 	val buildGraph: (Source.region * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
 	val buildFunArgs: (Source.region * I.pat * O.body) list * O.body ->
-	    O.id O.args * testGraph * mapping * consequent list
+	    O.idDef O.args * testGraph * mapping * consequent list
     end

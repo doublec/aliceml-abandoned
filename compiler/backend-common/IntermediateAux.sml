@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -364,7 +364,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	fun rowToArity row =
 	    case LabelSort.sort (getLabels row) of
 		(_, LabelSort.Tup n) => TupArity n
-	      | (labels, LabelSort.Row) => RowArity labels
+	      | (labels, LabelSort.Prod) => ProdArity labels
 
 	fun typToArity typ =
 	    if Type.isAll typ then
@@ -406,7 +406,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 if i <= n then SOME (i - 1) else NONE
 		     end
 	       | NONE => NONE)
-	  | findLabel (RowArity labels, label) = find (labels, label, 0)
+	  | findLabel (ProdArity labels, label) = find (labels, label, 0)
 
 	fun selIndex (typ, label) =
 	    valOf (findLabel (typToArity typ, label))

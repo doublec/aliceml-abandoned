@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999
+ *   Leif Kornstaedt, 1999-2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -24,6 +24,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | EX
 	  | NL
 	  | ID of id
+	  | IDDEF of idDef
 	  | CO of string
 	  | NULL
 	  | SEP of format * format list
@@ -50,6 +51,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		    "$" ^ Stamp.toString stamp
 		  | format' (ID (Id (_, stamp, Name.ExId s))) =
 		    s ^ "$" ^ Stamp.toString stamp
+		  | format' (IDDEF (IdDef id)) = format' (ID id)
+		  | format' (IDDEF Wildcard) = "_"
 		  | format' (CO s) = "   (* " ^ s ^ " *)"
 		  | format' NULL = ""
 		  | format' (SEP (f, f1::fr)) =
@@ -95,71 +98,53 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputTag NONE = S "tag0"
 	  | outputTag (SOME Unary) = S "tag1"
-	  | outputTag (SOME (TupArity _) | SOME (RowArity _)) = S "tag+"
+	  | outputTag (SOME (TupArity _) | SOME (ProdArity _)) = S "tag+"
 
 	fun outputCon NONE = S "con0"
 	  | outputCon (SOME Unary) = S "con1"
-	  | outputCon (SOME (TupArity _) | SOME (RowArity _)) = S "con+"
+	  | outputCon (SOME (TupArity _) | SOME (ProdArity _)) = S "con+"
 
-	fun outputArgs (OneArg id) = ID id
-	  | outputArgs (TupArgs ids) =
-	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputArgs (RowArgs labelIdList) =
+	fun outputArgs outputX (OneArg x) = outputX x
+	  | outputArgs outputX (TupArgs xs) =
+	    SEQ [S "(", SEP (S ", ", List.map outputX xs), S ")"]
+	  | outputArgs outputX (ProdArgs labelXList) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (label, id) =>
+			     List.map (fn (label, x) =>
 				       SEQ [S (Label.toString label), S "=",
-					    ID id]) labelIdList),
+					    outputX x]) labelXList),
 		 S "}"]
 
-	fun outputTest (LitTest lit) = outputLit lit
-	  | outputTest (TagTest (label, n)) =
-	    SEQ [S "tag ", S (Label.toString label), S "/", I n]
-	  | outputTest (TagAppTest (label, n, args)) =
-	    SEQ [S "(tag ", S (Label.toString label), S "/", I n, S ") ",
-		 outputArgs args]
-	  | outputTest (ConTest id) =
-	    SEQ [S "con ", ID id]
-	  | outputTest (ConAppTest (id, args)) =
-	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
-	  | outputTest (StaticConTest stamp) =
-	    SEQ [S "con ", S (Stamp.toString stamp)]
-	  | outputTest (StaticConAppTest (stamp, args)) =
-	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
-	  | outputTest (VecTest ids) =
-	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
-
-	fun outputStm (ValDec (_, id, exp), _) =
-	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX]
-	  | outputStm (RecDec (_, idExpList), _) =
+	fun outputStm (ValDec (_, idDef, exp), _) =
+	    SEQ [S "val ", IDDEF idDef, S " = ", IN, outputExp exp, EX]
+	  | outputStm (RecDec (_, idDefExpList), _) =
 	    SEQ [S "rec", IN,
-		 SEQ (List.map (fn (id, exp) =>
-				SEQ [NL, S "val ", ID id, S " = ",
-				     IN, outputExp exp, EX]) idExpList), EX]
-	  | outputStm (RefAppDec (_, id, id'), _) =
-	    SEQ [S "val ref ", ID id, S " = ", ID id']
-	  | outputStm (TupDec (_, ids, id), _) =
-	    SEQ [S "val (", SEP (S ", ", List.map ID ids), S ") = ", ID id]
-	  | outputStm (RowDec (_, labelIdList, id), _) =
+		 SEQ (List.map (fn (idDef, exp) =>
+				SEQ [NL, S "val ", IDDEF idDef, S " = ",
+				     IN, outputExp exp, EX]) idDefExpList), EX]
+	  | outputStm (RefAppDec (_, idDef, id'), _) =
+	    SEQ [S "val ref ", IDDEF idDef, S " = ", ID id']
+	  | outputStm (TupDec (_, idDefs, id), _) =
+	    SEQ [S "val (", SEP (S ", ", List.map IDDEF idDefs),
+		 S ") = ", ID id]
+	  | outputStm (ProdDec (_, labelIdDefList, id), _) =
 	    SEQ [S "val {",
-		 SEP (S ", ", List.map (fn (label, id) =>
-					SEQ [S (Label.toString label), S "=",
-					     ID id]) labelIdList),
+		 SEP (S ", ",
+		      List.map (fn (label, idDef) =>
+				SEQ [S (Label.toString label), S "=",
+				     IDDEF idDef]) labelIdDefList),
 		 S "} = ", ID id]
-	  | outputStm (EvalStm (_, exp), _) =
-	    SEQ [S "eval ", IN, outputExp exp, EX]
-	  | outputStm (HandleStm (_, body1, id, body2, body3, stamp), shared) =
+	  | outputStm (HandleStm (_, body1, idDef, body2, body3, stamp),
+		       shared) =
 	    SEQ [S "try ", S (Stamp.toString stamp), IN, NL,
 		 outputBody (body1, shared), EX, NL,
-		 S "catch ", ID id, IN, NL, outputBody (body2, shared), EX, NL,
+		 S "catch ", IDDEF idDef, IN, NL,
+		 outputBody (body2, shared), EX, NL,
 		 S "cont", IN, NL, outputBody (body3, shared), EX]
 	  | outputStm (EndHandleStm (_, stamp), _) =
 	    SEQ [S "leave ", S (Stamp.toString stamp)]
-	  | outputStm (TestStm (_, id, testBodyList, body), shared) =
+	  | outputStm (TestStm (_, id, tests, body), shared) =
 	    SEQ [S "case ", ID id, S " of", IN, NL,
-		 SEQ (List.map (fn (test, body) =>
-				SEQ [outputTest test, S " =>", IN, NL,
-				     outputBody (body, shared), EX, NL])
-		      testBodyList),
+		 outputTests (tests, shared),
 		 S "else", IN, NL, outputBody (body, shared), EX, EX]
 	  | outputStm (RaiseStm (_, id), _) = SEQ [S "raise ", ID id]
 	  | outputStm (ReraiseStm (_, id), _) = SEQ [S "reraise ", ID id]
@@ -175,6 +160,50 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt, shared)]
 	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
+	and outputTests (LitTests litBodyList, shared) =
+	    SEQ (List.map (fn (lit, body) =>
+			   SEQ [outputLit lit, S " =>", IN, NL,
+				outputBody (body, shared), EX, NL])
+		 litBodyList)
+	  | outputTests (TagTests tagBodyList, shared) =
+	    SEQ (List.map (fn (label, n, conArgs, body) =>
+			   SEQ [case conArgs of
+				    NONE =>
+					SEQ [S "tag ",
+					     S (Label.toString label),
+					     S "/", I n]
+				  | SOME args =>
+					SEQ [S "(tag ",
+					     S (Label.toString label),
+					     S "/", I n, S ") ",
+					     outputArgs IDDEF args],
+				S " =>", IN, NL,
+				outputBody (body, shared), EX, NL])
+		 tagBodyList)
+	  | outputTests (ConTests conBodyList, shared) =
+	    SEQ (List.map (fn (con, conArgs, body) =>
+			   SEQ [case (con, conArgs) of
+				    (Con id, NONE) =>
+					SEQ [S "con ", ID id]
+				  | (Con id, SOME args) =>
+					SEQ [S "(con ", ID id, S ") ",
+					     outputArgs IDDEF args]
+				  | (StaticCon stamp, NONE) =>
+					SEQ [S "con ",
+					     S (Stamp.toString stamp)]
+				  | (StaticCon stamp, SOME args) =>
+					SEQ [S "(con ",
+					     S (Stamp.toString stamp), S ") ",
+					     outputArgs IDDEF args],
+				S " =>", IN, NL,
+				outputBody (body, shared), EX, NL])
+		 conBodyList)
+	  | outputTests (VecTests idDefsBodyList, shared) =
+	    SEQ (List.map (fn (idDefs, body) =>
+			   SEQ [S "#[", SEP (S ", ", List.map IDDEF idDefs),
+				S "]", S " =>", IN, NL,
+				outputBody (body, shared), EX, NL])
+		 idDefsBodyList)
 	and outputExp (LitExp (_, lit)) = outputLit lit
 	  | outputExp (PrimExp (_, name)) = SEQ [S "prim \"", S name, S "\""]
 	  | outputExp (NewExp (_, conArity)) = outputCon conArity
@@ -182,14 +211,15 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (TagExp (_, label, n, conArity)) =
 	    SEQ [outputTag conArity, S " ", S (Label.toString label),
 		 S "/", I n]
-	  | outputExp (ConExp (_, id, conArity)) =
-	    SEQ [outputCon conArity, S " ", ID id]
-	  | outputExp (StaticConExp (_, stamp, conArity)) =
-	    SEQ [outputCon conArity, S " ", S (Stamp.toString stamp)]
+	  | outputExp (ConExp (_, con, conArity)) =
+	    SEQ [outputCon conArity, S " ",
+		 case con of
+		     Con id => ID id
+		   | StaticCon stamp => S (Stamp.toString stamp)]
 	  | outputExp (RefExp _) = SEQ [S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputExp (RowExp (_, labelIdList)) =
+	  | outputExp (ProdExp (_, labelIdList)) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
 				       SEQ [S (Label.toString label), S "=",
@@ -200,25 +230,27 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, _, args, body)) =
-	    SEQ [NL, S "fn ", outputArgs args, S " =>",
+	    SEQ [NL, S "fn ", outputArgs IDDEF args, S " =>",
 		 IN, NL, outputBody (body, StampSet.new ()), EX]
 	  | outputExp (PrimAppExp (_, name, ids)) =
 	    SEQ [S "prim \"", S name, S "\" ", SEP (S ", ", List.map ID ids)]
 	  | outputExp (VarAppExp (_, id, args)) =
-	    SEQ [ID id, S " ", outputArgs args]
+	    SEQ [ID id, S " ", outputArgs ID args]
 	  | outputExp (TagAppExp (_, label, n, args)) =
 	    SEQ [S "(tag ", S (Label.toString label), S "/", I n, S ") ",
-		 outputArgs args]
-	  | outputExp (ConAppExp (_, id, args)) =
-	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
-	  | outputExp (StaticConAppExp (_, stamp, args)) =
-	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
+		 outputArgs ID args]
+	  | outputExp (ConAppExp (_, con, args)) =
+	    SEQ [S "(con ",
+		 case con of
+		     Con id => ID id
+		   | StaticCon stamp => S (Stamp.toString stamp), S ") ",
+		 outputArgs ID args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
 	  | outputExp (SelAppExp (_, label, n, id)) =
 	    SEQ [S "#", S (Label.toString label), S "/", I n, S " ", ID id]
 	  | outputExp (FunAppExp (_, id, _, args)) =
-	    SEQ [ID id, S " ", outputArgs args]
+	    SEQ [ID id, S " ", outputArgs ID args]
 	and outputBody (stms, shared) =
 	    SEP (NL, List.map (fn stm =>
 			       SEQ [outputInfo (infoStm stm),
@@ -226,8 +258,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputComponent (importList, (body, _)) =
 	    format (SEQ [SEQ (List.map
-			      (fn (id, _, url) =>
-			       SEQ [S "import ", ID id,
+			      (fn (idDef, _, url) =>
+			       SEQ [S "import ", IDDEF idDef,
 				    S " from ", S (Url.toString url), S "\n"])
 			      importList), outputBody (body, StampSet.new ()),
 			 NL])
