@@ -18,7 +18,7 @@ import signature SWITCHES        from "../infrastructure/SWITCHES-sig"
 import signature INPUT_GRAMMAR   from "INPUT_GRAMMAR-sig"
 import structure InputGrammar    from "InputGrammar"
 
-import functor   MkLexer         from "Lexer.lex"
+import functor   MkLexer         from "Lexer"
 import functor   MkCountPosLexer from "MkCountPosLexer"
 import structure LrParser        from "../../lib/ml-yacc/parser2"
 import functor   Join            from "../../lib/ml-yacc/join"
