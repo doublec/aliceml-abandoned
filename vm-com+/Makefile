@@ -7,20 +7,24 @@ IOBJS  = Win32.dll
 ILOBJS = Alice.il stow.il
 
 all: stow.cs $(OBJS)
-	coolc -nologo -import:Alice.dll -assembly+ stow.cs
+	cl -nologo -LD io.c -link -export:readline
+	csc -nologo -r:Alice.dll -t:exe stow.cs
 	ildasm -text -tok -byt -out=stow.il stow.exe
 
 %.dll : %.cs
-	coolc -nologo -dll -assembly+ -out:$@ $<
+	csc -nologo -t:library -out:$@ $<
 
 %.dll : %.il
 	ilasm -nologo -quit -dll -out=$@ $<
 
-inspector: Canvas.cs $(IOBJS)
-	coolc -nologo -dll -assembly+ -import:Win32.dll -import:Alice.dll Canvas.cs
+inspector: Canvas.cs Dialog.cs Helper.cs $(IOBJS)
+	csc -nologo -t:library -r:Win32.dll -r:Alice.dll Canvas.cs
+	csc -nologo -t:library -r;Win32.dll -r:Alice.dll Dialog.cs
+	csc -nologo -t:library -r:Alice.dll Helper.cs
 
 clean:
 	rm -rf $(OBJS) $(ILOBJS) stow.exe
 
 distclean: clean
 	rm -rf Win32.dll Canvas.dll *~ *.pdb
+
