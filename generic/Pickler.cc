@@ -67,17 +67,18 @@ private:
   static const u_int SIZE          = 2;
 public:
   // FileOutputStream Accessors
-  FILE *GetFile() {
-    return (FILE *) Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS));
-  }
-  void PutFile(FILE *file) {
+  void InitFile(FILE *file) {
     InitArg(FILE_POS, Store::UnmanagedPointerToWord(file));
+  }
+  void InitException(u_int exception) {
+    InitArg(EXCEPTION_POS, exception);
+  }
+  FILE *GetFile() {
+    return static_cast<FILE *>
+      (Store::DirectWordToUnmanagedPointer(GetArg(FILE_POS)));
   }
   u_int GetException() {
     return Store::DirectWordToInt(GetArg(EXCEPTION_POS));
-  }
-  void PutException(u_int exception) {
-    InitArg(EXCEPTION_POS, exception);
   }
   // FileOutputStream Methods
   void PutByte(u_char byte);
@@ -128,18 +129,18 @@ public:
 void OutputStream::PutByte(u_char byte) {
   switch ((OUT_STREAM_TYPE) this->GetLabel()) {
   case FILE_OUTPUT_STREAM:
-    ((FileOutputStream *) this)->PutByte(byte); break;
+    static_cast<FileOutputStream *>(this)->PutByte(byte); break;
   case STRING_OUTPUT_STREAM:
-    ((StringOutputStream *) this)->PutByte(byte); break;
+    static_cast<StringOutputStream *>(this)->PutByte(byte); break;
   }
 }
 
 void OutputStream::PutBytes(Chunk *c) {
   switch ((OUT_STREAM_TYPE) this->GetLabel()) {
   case FILE_OUTPUT_STREAM:
-    ((FileOutputStream *) this)->PutBytes(c); break;
+    static_cast<FileOutputStream *>(this)->PutBytes(c); break;
   case STRING_OUTPUT_STREAM:
-    ((StringOutputStream *) this)->PutBytes(c); break;
+    static_cast<StringOutputStream *>(this)->PutBytes(c); break;
   }
 }
 
@@ -153,12 +154,12 @@ void OutputStream::PutUInt(u_int i) {
 
 // FileOutputStream Methods
 FileOutputStream *FileOutputStream::New(char *filename) {
-  FileOutputStream *stream =
-    (FileOutputStream *) OutputStream::New(FILE_OUTPUT_STREAM, SIZE);
+  FileOutputStream *stream = static_cast<FileOutputStream *>
+    (OutputStream::New(FILE_OUTPUT_STREAM, SIZE));
   FILE *f         = std::fopen(filename, "wb");
   u_int exception = (f == NULL);
-  stream->PutFile(f);
-  stream->PutException(exception);
+  stream->InitFile(f);
+  stream->InitException(exception);
   return stream;
 }
 
@@ -213,8 +214,8 @@ word StringOutputStream::Close() {
 }
 
 StringOutputStream *StringOutputStream::New() {
-  StringOutputStream *stream =
-    (StringOutputStream *) OutputStream::New(STRING_OUTPUT_STREAM, SIZE);
+  StringOutputStream *stream = static_cast<StringOutputStream *>
+    (OutputStream::New(STRING_OUTPUT_STREAM, SIZE));
   stream->SetPos(0);
   stream->SetSize(INITIAL_SIZE);
   stream->SetString(String::New(INITIAL_SIZE));
@@ -454,8 +455,7 @@ const char *PicklingInterpreter::Identify() {
   return "PicklingInterpreter";
 }
 
-void PicklingInterpreter::DumpFrame(word frameWord) {
-  PicklingFrame *frame = PicklingFrame::FromWordDirect(frameWord);
+void PicklingInterpreter::DumpFrame(word) {
   std::fprintf(stderr, "Pickling Task\n");
 }
 
