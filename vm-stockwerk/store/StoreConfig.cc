@@ -12,9 +12,13 @@
 #include <iostream.h>
 #include <cstdio>
 #include <cstdlib>
+
+typedef unsigned int u_int;
+
 //
 // Helper Functions
 //
+
 static unsigned int ComputeMask(int max, int pos, int width) {
   unsigned int mask = 0;
 
@@ -74,7 +78,7 @@ static void CreateLabel(FILE *f, int size) {
   u_int STACK     = (size - 6);
   u_int MAX_LSIZE = (size - 6);
   u_int CHUNK     = (size - 5);
-  u_int PROMISE   = (size - 4);
+  u_int HOLE      = (size - 4);
   u_int FUTURE    = (size - 3);
   u_int REF       = (size- 2);
   u_int CANCELLED = (size - 1);
@@ -86,11 +90,13 @@ static void CreateLabel(FILE *f, int size) {
   fprintf(f, "  STACK     = 0x%x,\n", STACK);
   fprintf(f, "  MAX_LSIZE = 0x%x,\n", MAX_LSIZE);
   fprintf(f, "  CHUNK     = 0x%x,\n", CHUNK);
-  fprintf(f, "  PROMISE   = 0x%x,\n", PROMISE);
+  fprintf(f, "  MIN_TRANSIENT = 0x%x,\n", HOLE);
+  fprintf(f, "  HOLE      = 0x%x,\n", HOLE);
   fprintf(f, "  FUTURE    = 0x%x,\n", FUTURE);
   fprintf(f, "  REF       = 0x%x,\n", REF);
   fprintf(f, "  CANCELLED = 0x%x,\n", CANCELLED);
-  fprintf(f, "  BYNEED    = 0x%x\n", BYNEED);
+  fprintf(f, "  BYNEED    = 0x%x,\n", BYNEED);
+  fprintf(f, "  MAX_TRANSIENT = 0x%x\n", BYNEED);
 
   fprintf(f, "} BlockLabel;\n\n");
 }
