@@ -1,0 +1,141 @@
+import structure Protocol       from "../common/Protocol"
+import structure Stream         from "x-alice:/lib/data/Stream"
+import structure MkRedBlackMap  from "x-alice:/lib/data/MkRedBlackMap"
+import structure Remote         from "x-alice:/lib/distribution/Remote"
+import structure OS             from "x-alice:/lib/system/OS"
+
+
+structure Server = 
+struct
+    structure P = Protocol
+
+    datatype request =
+        CONNECT             of P.client_interface
+    |   SEND                of P.nick * P.message
+    |   DISCONNECT          of P.nick
+    |   INFO_CONNECTED      of P.nick
+    |   INFO_DISCONNECTED   of P.nick
+
+
+    val (requests_stream, requests) =   Stream.stream ()  
+
+    fun request r =
+        Stream.send (requests_stream, r)
+
+    fun connect interface =
+        request (CONNECT interface)
+
+    structure Map =   MkRedBlackMap (String)
+
+    fun doConnect (clients, interface:P.client_interface) =
+        let
+            fun send msg            = request (SEND (#nick interface, msg))
+            fun disconnect ()       = request (DISCONNECT (#nick interface))
+            val server_interface    = {
+                send        = Remote.proxy send,
+                disconnect  = Remote.proxy disconnect
+            }
+            val nick        = #nick interface 
+        in
+            if Map.member (clients, nick) then (
+                #error interface ("There is already client with nick " ^ nick);
+                clients
+            ) else 
+                let 
+                    val clients = Map.insertDisjoint (clients, nick, interface)
+                in
+                    #accepted interface server_interface;
+                    Map.app (fn c => request (INFO_CONNECTED (#nick c))) clients;
+                    clients
+                end
+        end
+
+    fun doSend (clients, nick, msg) =
+        let 
+            fun send (client:P.client_interface) = #receive client msg
+                handle e =>
+                    request (DISCONNECT (#nick client))
+        in
+            Map.app (fn c =>
+                if #nick c = nick then ()
+                else send c)    clients;
+            clients
+        end
+    
+
+    fun doDisconnect (clients, nick) = 
+        let
+            val clients = Map.remove (clients, nick)
+        in
+            request (INFO_DISCONNECTED nick);
+            clients
+        end
+
+    fun doInfoConnected (clients, nick) = 
+        let
+            fun send (client:P.client_interface) = 
+                if #nick client <> nick then
+                        #connected client nick
+                    handle e =>
+                        request (DISCONNECT (#nick client))
+                else ()
+        in
+            Map.app send clients;
+            clients
+        end
+
+    
+    fun doInfoDisConnected (clients, nick) = 
+        let
+            fun send (client:P.client_interface) = 
+                if #nick client <> nick then
+                        #disconnected client nick
+                    handle e => 
+                        request (DISCONNECT (#nick client))
+                else ()
+        in
+            Map.app send clients;
+            clients
+        end
+
+    
+    fun mainloop (clients, requests) =
+        case requests of
+            []      =>  ()
+        |   r::rs   =>
+            case r of
+                CONNECT cl  => 
+                    mainloop (doConnect (clients, cl), rs)
+            |   DISCONNECT nick =>
+                    mainloop (doDisconnect (clients, nick), rs)
+            |   SEND (nick, msg) =>
+                    mainloop (doSend (clients, nick, msg), rs)
+            |   INFO_CONNECTED nick =>
+                    mainloop (doInfoConnected (clients, nick), rs)
+            |   INFO_DISCONNECTED nick =>
+                    mainloop (doInfoDisConnected (clients, nick), rs)
+
+
+    fun run () = spawn (mainloop (Map.empty, requests))
+end
+
+
+
+fun main () =
+    let
+        structure S = (val connect = Remote.proxy Server.connect) 
+        
+        val p       = pack S :> Protocol.SERVER_CONNECTOR
+        val ticket  = Remote.offer p
+        
+        val file    = TextIO.openOut "ticket.txt"
+    in
+        TextIO.output (file, ticket ^  "\n");
+        TextIO.closeOut file;
+        print "server up.\n";
+        () = Server.run ();
+        OS.Process.exit OS.Process.success
+    end
+
+
+val _ = main ()
