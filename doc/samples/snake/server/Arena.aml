@@ -278,7 +278,7 @@ struct
 
 	    fun killSnake s = 
 		let
-		    val hb = (Snake.head s) :: (Snake.body s)
+		    val hb = Snake.body s
 		in
 		    died := s :: (!died);
 		    List.app 
