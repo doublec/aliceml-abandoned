@@ -1,6 +1,7 @@
 Group is
 
 	ExtendedBasis.sml
+	DummyFuture.sml
 	DummyLock.sml
 	Config.sml
 	Reflect.sml
