@@ -59,7 +59,7 @@ struct
 	 | (SND y1, SND y2)	=> equalY(y1,y2)
 	 | _			=> false
 
-    fun compare (compareX,compareY) =
+    fun collate (compareX,compareY) =
 	fn (FST x1, FST x2)	=> compareX(x1,x2)
 	 | (SND y1, SND y2)	=> compareY(y1,y2)
 	 | (FST _,  SND _ )	=> LESS
