@@ -22,3 +22,4 @@ Group is
 	TranslationPhase.sml
 
 	MakeFrontendCommon.sml
+	FrontendCommonInitialContext.sml

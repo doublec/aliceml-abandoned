@@ -4,4 +4,5 @@ Group is
 	switches.cm
 	phase.cm
 	target.cm
+	initial-context.cm
 	composer.cm

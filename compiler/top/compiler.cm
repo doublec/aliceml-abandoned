@@ -2,7 +2,7 @@ Group is
 
 	../infrastructure/phase.cm
 	../infrastructure/target.cm
+	../infrastructure/initial-context.cm
 
-	INITIAL_CONTEXT.sig
 	COMPILER.sig
 	MakeCompiler.sml

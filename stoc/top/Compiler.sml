@@ -18,16 +18,11 @@ structure Compiler =
 		 structure FrontendCommon   = MakeFrontendCommon(Composer)
 		 structure BackendCommon    = BackendCommon
 		 structure BackendSpecific  = MozartGenerationPhase
+
 		 structure FrontendSpecificInitialContext =
-		     struct
-			 type t = BindEnv.t
-			 fun initial () = BindEnv.clone BindEnv0.E0
-		     end
+			   FrontendSMLInitialContext
 		 structure FrontendCommonInitialContext =
-		     struct
-			 type t = Env.t
-			 fun initial () = Env.clone Env0.E0
-		     end
+			   FrontendCommonInitialContext
 		 structure BackendCommonInitialContext =
 		     struct
 			 type t = unit
