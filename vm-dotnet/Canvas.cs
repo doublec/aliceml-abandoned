@@ -241,7 +241,8 @@ class Canvas {
 	Msg msg             = new Msg();
 
 	Win32.WinCB wcb = new Win32.WinCB(this.CallBack);
-	int root        = System.Runtime.InteropServices.Root.Alloc(wcb);
+	System.Runtime.InteropServices.GCHandle root =
+	    System.Runtime.InteropServices.GCHandle.Alloc(wcb);
 
 	wndclass.cbSize        = System.Runtime.InteropServices.Marshal.SizeOf(wndclass);
 	wndclass.style         = ClassStyle.HRedraw | ClassStyle.VRedraw;
@@ -1173,7 +1174,8 @@ class Inspector {
 	String clName       = "Alice Inspecor";
 
 	Win32.WinCB wcb = new Win32.WinCB(this.CallBack);
-	int root        = System.Runtime.InteropServices.Root.Alloc(wcb);
+	System.Runtime.InteropServices.GCHandle root =
+	    System.Runtime.InteropServices.GCHandle.Alloc(wcb);
 
 	wndclass.cbSize        = System.Runtime.InteropServices.Marshal.SizeOf(wndclass);
 	wndclass.style         = ClassStyle.HRedraw | ClassStyle.VRedraw;
@@ -1209,7 +1211,7 @@ class Inspector {
 	    User.DispatchMessage(msg);
 	}
 	
-	System.Runtime.InteropServices.Root.Free(root);
+	root.Free();
     }
     public static int GetWidth() {
 	return maxWidth;

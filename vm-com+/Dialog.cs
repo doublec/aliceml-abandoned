@@ -8,7 +8,7 @@ using Win32.API;
 class Dialog {
     int wnd;
     int instance;
-    int root;
+    System.Runtime.InteropServices.GCHandle root;
     int xDim;
     int yDim;
     StringBuilder b;
@@ -26,7 +26,7 @@ class Dialog {
 	String clName       = "Entry Area";
 	
 	Win32.WinCB wcb = new Win32.WinCB(this.CallBack);
-        root            = System.Runtime.InteropServices.Root.Alloc(wcb);
+        root            = System.Runtime.InteropServices.GCHandle.Alloc(wcb);
 
 	wndclass.cbSize        = System.Runtime.InteropServices.Marshal.SizeOf(wndclass);
 	wndclass.style         = ClassStyle.HRedraw | ClassStyle.VRedraw;
@@ -62,7 +62,7 @@ class Dialog {
 	    User.DispatchMessage(msg);
 	}
 
-	System.Runtime.InteropServices.Root.Free(root);
+	root.Free();
     }
     public virtual int CallBack(int wnd, int msg, int w, int l) {
 	Rect rect      = new Rect();
