@@ -43,8 +43,8 @@ final public class Connection {
 	Object o = prop.get("java.security.policy");
 	if (o == null) {
 	    java.lang.String name = (java.lang.String) prop.get("user.name");
-	    prop.put("java.security.policy",
-		     "http://"+thisHost.getHostName()+"/~"+name+"/codebase/policy");
+//  	    prop.put("java.security.policy",
+//  		     "http://"+thisHost.getHostName()+"/~"+name+"/codebase/policy");
 	}
 	if (System.getSecurityManager() == null) {
 	    // System.out.println("starte security manager");
