@@ -21,11 +21,11 @@
 #include "store/HeaderOp.hh"
 #include "store/Handler.hh"
 #include "store/PointerOp.hh"
-
 #include "store/Memory.hh"
 
 class Set;
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+
+#if defined(STORE_PROFILE)
 struct timeval;
 #endif
 
@@ -47,7 +47,7 @@ private:
   static Set *wkDictSet;
   static u_int needGC;
   static Finalization *handler;
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#if defined(STORE_PROFILE)
   static struct timeval *sum_t;
 #endif
 #if defined(STORE_GC_DEBUG)
@@ -200,19 +200,20 @@ public:
   static u_int SizeToBlockSize(u_int size) {
     return HeaderOp::TranslateSize(size);
   }
-  // Calculate Block Byte Size according to given byte size (used only for assertions)
+  // Calculate Block Byte Size
+  // according to given byte size (used only for assertions)
   static u_int SizeToChunkSize(u_int size) {
     u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
     return (HeaderOp::TranslateSize(ws) * sizeof(u_int));
   }
-#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-  static void MemStat();
-  static void ResetTime();
-  static struct timeval *ReadTime();
-#endif
 #if defined(STORE_DEBUG)
+  static void MemStat();
   static void Verify(word x);
   static void ForceGC(word &root, const u_int gen);
+#endif
+#if defined(STORE_PROFILE)
+  static void ResetTime();
+  static struct timeval *ReadTime();
 #endif
 };
 
