@@ -104,7 +104,7 @@ structure Main :> MAIN =
 	  | main nil =
 	    (case (!root, !outputFile) of
 		 (SOME root, SOME outputFile) => start (root, outputFile)
-	       | (NONE, _) => usage "missing root functor"
+	       | (NONE, _) => usage "missing root component"
 	       | (_, NONE) => usage "no output file name given")
     end
 
