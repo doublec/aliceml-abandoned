@@ -423,10 +423,10 @@ final public class General {
 		_REQUEST(val,val);
 		if (val instanceof DMLTuple) {
 		    switch (i) {
-		    case 1: return ((DMLTuple) val).get0();
-		    case 2: return ((DMLTuple) val).get1();
-		    case 3: return ((DMLTuple) val).get2();
-		    case 4: return ((DMLTuple) val).get3();
+		    case 0: return ((DMLTuple) val).get0();
+		    case 1: return ((DMLTuple) val).get1();
+		    case 2: return ((DMLTuple) val).get2();
+		    case 3: return ((DMLTuple) val).get3();
 		    default: return ((DMLTuple) val).get(i);
 		    }
 		} else {

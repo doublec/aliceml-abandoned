@@ -548,7 +548,7 @@ final public class List {
 		while (val instanceof Cons) {
 		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(lc.car);
-		    if (res==Constants.dmltrue) {
+		    if (res == Constants.dmltrue) {
 			return Option.SOME.apply(lc.car);
 		    }
 		    _REQUEST(val,lc.cdr);
