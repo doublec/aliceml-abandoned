@@ -69,10 +69,8 @@ fun steiner n =
                            end) root;
 
             (* distribution *)
-            (*
             FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
-            *)
-            FS.randomBranch(space,Vector.fromList root,1);
+            (*FS.randomBranch(space,Vector.fromList root,1);*)
             (Vector.fromList root,space)
         end
 

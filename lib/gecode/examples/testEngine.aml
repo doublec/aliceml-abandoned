@@ -31,8 +31,8 @@ import structure Explorer     from "x-alice:/tools/Explorer"
 		    let
 			val c = Space.clone s
 		    in
-			Space.commit(s, 1);
-			Space.commit(c, 2);
+			Space.commit(s, 0);
+			Space.commit(c, 1);
 			(dfe (s,d+1));
 			(dfe (c,d+1))
 		    end

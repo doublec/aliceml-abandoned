@@ -22,8 +22,8 @@ struct
   (* Given a space node, creates a new tree node. *)
   fun fromSpaceNode spaceNode = 
     Node {spacenode = spaceNode ,
-          left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) ,
-          right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 2)) }
+          left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 0)) ,
+          right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) }
 
   val root = fromSpaceNode SpaceNode.root
 

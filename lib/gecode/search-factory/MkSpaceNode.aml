@@ -17,7 +17,7 @@ struct
   datatype space_node = Node of node_rep
   withtype node_rep =
     {mom    : space_node ,  (* Ancestor *)
-     altNum : int ,         (* Which alternative, 0 means root node *)
+     altNum : int ,         (* Which alternative, ~1 means root node *)
      space  : Space.space option ref , (* Working space *)
      copy   : Space.space option ref ,
      status : Space.status ,
@@ -46,7 +46,7 @@ struct
       val copyref = ref (SOME Policy.root)
     in
     Node {mom    = undefined ,
-          altNum = 0 ,
+          altNum = ~1 ,
           space  = spaceref ,
           copy   = copyref ,
           status = status ,
@@ -105,7 +105,7 @@ struct
                       NONE   => (altNum, NONE) :: tail
                     | SOME b => (altNum, SOME b) :: tail
     in
-      if altNum = 0 then tail
+      if altNum = ~1 then tail
       else getTailPath (#mom node, newtail)
     end
 
@@ -125,7 +125,7 @@ struct
               "Recomputing node at PATH " ^ 
               (Path.toString (getPath (Node node))) ^ "\n");
       case status mom of
-        Space.BRANCH descr =>
+        Space.BRANCH (_,descr) =>
           (Space.commit (space, #altNum node, descr) ;
            
            (* Branch and Bound. *)
@@ -197,7 +197,7 @@ struct
     let
       val spaceRef = ref NONE        
       val descr = case status node of
-                    Space.BRANCH descr => descr
+                    Space.BRANCH (_,descr) => descr
                   | _ => raise Child
 
       val (newBestId, newBestSol) = if bab then getIdSol node else (0, NONE)
@@ -248,7 +248,7 @@ struct
   fun applyPath space ((n, b), (parent, best)) =
     let 
       val _ = case Space.status space of
-                Space.BRANCH descr => Space.commit (space, n, descr)
+                Space.BRANCH (_, descr) => Space.commit (space, n, descr)
               | _ => raise Child
 
       val newBest = case b of

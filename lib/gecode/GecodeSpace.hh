@@ -58,6 +58,7 @@ public:
   using Space::clone;
   using Space::status;
   using Space::description;
+  using Space::alternatives;
   using Space::operator new;
   using Space::operator delete;
 

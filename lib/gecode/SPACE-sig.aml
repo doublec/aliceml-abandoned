@@ -25,7 +25,7 @@ sig
 
     exception Description
 
-    datatype status = BRANCH of description | FAILED | SOLVED
+    datatype status = BRANCH of int * description | FAILED | SOLVED
     val new         : unit -> space
     val status      : space -> status
     

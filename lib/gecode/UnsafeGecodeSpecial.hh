@@ -285,8 +285,9 @@ DEFINE1(status) {
         ConcreteRepresentation::New(UnsafeGecode::gecodeHandler,1);
       cr->Init(0, Store::UnmanagedPointerToWord(s->description()));
       UnsafeGecode::gecodeBranchdescFinalizationSet->Register(cr->ToWord());
-      TagVal *t = TagVal::New(0, 1);
-      t->Init(0, cr->ToWord());
+      TagVal *t = TagVal::New(0, 2);
+      t->Init(0, Store::IntToWord(s->alternatives()));
+      t->Init(1, cr->ToWord());
       RETURN(t->ToWord());
     }
     break;
