@@ -32,7 +32,7 @@ public:
   using Block::ToWord;
 
   u_int GetSize() {
-    return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 1);
+    return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 2);
   }
   void MakeEmpty() {
     ((Block *) this)->InitArg(TOP_POS, Store::IntToWord(2));
