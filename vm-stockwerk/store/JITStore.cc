@@ -157,7 +157,9 @@ void JITStore::LogSetArg(u_int pos, u_int Value) {
   JIT_BEG_COND();
   static char buffer[256];
   JITStore::SaveAllRegs();
+  jit_pushr_ui(Value);
   CompileMessage("---\n");
+  jit_popr_ui(Value);
   CompileRegister(Value);
   sprintf(buffer, "Scheduler::currentArgs[%d] = %s\n",
 	  pos, RegToString(Value));
