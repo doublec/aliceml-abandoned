@@ -107,7 +107,7 @@ DEFINE2(Thread_raiseIn) {
       thread->SetArgs(Interpreter::EmptyArg());
       if (state == Thread::BLOCKED) {
 	Future *future = static_cast<Future *>
-	  (Store::WordToTransient(thread->GetTransient()));
+	  (Store::WordToTransient(thread->GetFuture()));
 	Assert(future != INVALID_POINTER);
 	future->RemoveFromWaitQueue(thread);
 	Scheduler::WakeupThread(thread);

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -51,47 +51,12 @@ private:
   }
 public:
   using Block::ToWord;
-  // Thread Accessors
-  word GetArgs() {
-    return GetArg(ARGS_POS);
-  }
-  TaskStack *GetTaskStack() { //--** should be private
-    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
-  }
-  priority GetPriority() {
-    return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
-  }
-  state GetState() {
-    return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
-  }
-  word GetTransient() {
-    return GetArg(FUTURE_POS);
-  }
-  bool IsSuspended() {
-    return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
-  }
-  void Purge() {
-    GetTaskStack()->Purge();
-  }
-  void SetArgs(word args) {
-    ReplaceArg(ARGS_POS, args);
-  }
-  void SetTerminated() {
-    SetState(TERMINATED);
-  }
-  void BlockOn(word future) {
-    SetState(BLOCKED);
-    ReplaceArg(FUTURE_POS, future);
-  }
-  void Wakeup() {
-    ReplaceArg(FUTURE_POS, 0);
-    SetState(RUNNABLE);
-  }
+
   // Thread Constructor
-  static Thread *New(word args, TaskStack *taskstack) {
+  static Thread *New(word args, TaskStack *taskStack) {
     Block *b = Store::AllocBlock(THREAD_LABEL, SIZE);
     b->InitArg(PRIORITY_POS, NORMAL);
-    b->InitArg(TASK_STACK_POS, taskstack->ToWord());
+    b->InitArg(TASK_STACK_POS, taskStack->ToWord());
     b->InitArg(STATE_POS, RUNNABLE);
     b->InitArg(IS_SUSPENDED_POS, false);
     b->InitArg(ARGS_POS, args);
@@ -108,6 +73,44 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == THREAD_LABEL);
     return static_cast<Thread *>(b);
+  }
+
+  // Thread Accessors
+  TaskStack *GetTaskStack() { //--** should be private
+    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
+  }
+  void SetArgs(word args) {
+    ReplaceArg(ARGS_POS, args);
+  }
+  word GetArgs() {
+    return GetArg(ARGS_POS);
+  }
+  priority GetPriority() {
+    return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
+  }
+  bool IsSuspended() {
+    return Store::DirectWordToInt(GetArg(IS_SUSPENDED_POS));
+  }
+  state GetState() {
+    return static_cast<state>(Store::DirectWordToInt(GetArg(STATE_POS)));
+  }
+  void SetTerminated() {
+    SetState(TERMINATED);
+  }
+  void BlockOn(word future) {
+    // Store the future we're blocking on, for unregistering:
+    SetState(BLOCKED);
+    ReplaceArg(FUTURE_POS, future);
+  }
+  word GetFuture() {
+    return GetArg(FUTURE_POS);
+  }
+  void Wakeup() {
+    ReplaceArg(FUTURE_POS, 0);
+    SetState(RUNNABLE);
+  }
+  void Purge() {
+    GetTaskStack()->Purge();
   }
 };
 

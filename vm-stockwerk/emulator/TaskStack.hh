@@ -20,7 +20,6 @@
 #endif
 
 #include "adt/Stack.hh"
-#include "emulator/Closure.hh"
 #include "emulator/Interpreter.hh"
 #include "emulator/StackFrame.hh"
 
@@ -30,32 +29,12 @@ private:
 public:
   using Stack::ToWord;
   using Stack::IsEmpty;
-  // TaskStack Functions
-  void Dump();
-  void PushFrame(word frame) {
-    Stack::SlowPush(frame);
-  }
-  void PopFrame() {
-    Stack::Pop();
-  }
-  word GetFrame() {
-    return Stack::Top();
-  }
-  Interpreter *GetInterpreter() {
-    return StackFrame::FromWordDirect(GetFrame())->GetInterpreter();
-  }
-  Interpreter::Result PushCall(word closure);
-  void Clear() {
-    ClearFrame(GetStackSize());
-    Blank(0);
-  }
-  void Purge() {
-    return; // to be done
-  }
+
   // TaskStack public static data
   static word emptyTask;
   // TaskStack Static Constructor
   static void Init();
+
   // TaskStack Constructor
   static TaskStack *New() {
     TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(INITIAL_SIZE));
@@ -69,6 +48,23 @@ public:
   static TaskStack *FromWordDirect(word x) {
     return static_cast<TaskStack *>(Stack::FromWordDirect(x));
   }
+
+  // TaskStack Functions
+  void PushFrame(word frame) {
+    Stack::SlowPush(frame);
+  }
+  void PopFrame() {
+    Stack::Pop();
+  }
+  word GetFrame() {
+    return Stack::Top();
+  }
+  Interpreter *GetInterpreter() {
+    return StackFrame::FromWordDirect(GetFrame())->GetInterpreter();
+  }
+  Interpreter::Result PushCall(word closure);
+  void Purge();
+  void Dump();
 };
 
 #endif

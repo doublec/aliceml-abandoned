@@ -40,13 +40,13 @@ word Interpreter::Construct(word args) {
       return tuple->ToWord();
     }
   default:
-    Assert(0);
-    return Store::IntToWord(0);
+    Error("Interpreter::Construct: non-argument block");
   }
 }
 
 word Interpreter::Deconstruct(word args) {
   Block *p = Store::WordToBlock(args);
+  Assert(p != INVALID_POINTER);
   switch (p->GetLabel()) {
   case EMPTYARG_LABEL:
     return args;
@@ -74,33 +74,32 @@ word Interpreter::Deconstruct(word args) {
   case TUPARGS_LABEL:
     return args;
   default:
-    Assert(0);
-    return Store::IntToWord(0);
+    Error("Interpreter::Deconstruct: non-argument block");
   }
 }
 
 //
-// Interpreter Functions
+// Interpreter virtual functions: default implementations
 //
 void Interpreter::PrepareForGC(Block *) {
-  return;
+  return; // default: nothing to do
 }
 
 Block *Interpreter::GetAbstractRepresentation(Block *) {
-  return INVALID_POINTER;
+  return INVALID_POINTER; // default: may not be pickled
 }
 
 void Interpreter::PushCall(TaskStack *, Closure *) {
   Error("Interpreter::PushCall must never be called");
 }
 
-void Interpreter::PurgeFrame(TaskStack *) {
-  return;
+void Interpreter::PurgeFrame(word) {
+  return; // default: nothing to do
 }
 
-Interpreter::Result Interpreter::Handle(word exn, Backtrace *trace,
-					TaskStack *taskStack) {
-  // Default Handler: Clear Frame until Handler is found
+Interpreter::Result
+Interpreter::Handle(word exn, Backtrace *trace, TaskStack *taskStack) {
+  // default: pass the exception up the stack
   trace->Enqueue(taskStack->GetFrame());
   taskStack->PopFrame();
   Scheduler::currentBacktrace = trace;

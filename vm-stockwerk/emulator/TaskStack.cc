@@ -24,18 +24,9 @@
 #include "emulator/Scheduler.hh"
 #include "emulator/Backtrace.hh"
 #include "emulator/ConcreteCode.hh"
+#include "emulator/Closure.hh"
 #include "emulator/Properties.hh"
 #include "emulator/Debug.hh"
-
-void TaskStack::Dump() {
-  u_int size = GetStackSize();
-  for (u_int i = size; i--;) {
-    word frame = GetAbsoluteArg(i);
-    Interpreter *interpreter =
-      StackFrame::FromWordDirect(frame)->GetInterpreter();
-    interpreter->DumpFrame(frame);
-  }
-}
 
 // Empty Interpreter
 class EmptyTaskInterpreter : public Interpreter {
@@ -50,6 +41,10 @@ public:
   virtual void DumpFrame(word frame);
 };
 
+Interpreter::Result EmptyTaskInterpreter::Run(word, TaskStack *) {
+  return Interpreter::TERMINATE;
+}
+
 Interpreter::Result EmptyTaskInterpreter::Handle(word exn, Backtrace *trace,
 						 TaskStack *taskStack) {
   if (Properties::atExn == Store::IntToWord(0)) {
@@ -63,18 +58,15 @@ Interpreter::Result EmptyTaskInterpreter::Handle(word exn, Backtrace *trace,
   }
 }
 
-Interpreter::Result EmptyTaskInterpreter::Run(word, TaskStack *) {
-  return Interpreter::TERMINATE;
-}
-
 const char *EmptyTaskInterpreter::Identify() {
   return "EmptyTaskInterpreter";
 }
 
 void EmptyTaskInterpreter::DumpFrame(word) {
-  // do nothing
+  return; // do nothing
 }
 
+// TaskStack Implementation
 word TaskStack::emptyTask;
 
 void TaskStack::Init() {
@@ -84,35 +76,47 @@ void TaskStack::Init() {
   RootSet::Add(emptyTask);
 }
 
-// Core PushCall Function
-Interpreter::Result TaskStack::PushCall(word closure) {
-  Assert(Store::WordToInt(closure) == INVALID_INT);
-  Transient *transient = Store::WordToTransient(closure);
-  // Found Closure
-  if (transient == INVALID_POINTER) {
-    Closure *cl = Closure::FromWord(closure);
-    Assert(cl != INVALID_POINTER);
-    word code = cl->GetConcreteCode();
-    transient = Store::WordToTransient(code);
-    // Found Code Block
-    if (transient == INVALID_POINTER) {
-      ConcreteCode *cc = ConcreteCode::FromWord(code);
-      cc->GetInterpreter()->PushCall(this, cl);
+Interpreter::Result TaskStack::PushCall(word closureWord) {
+  Assert(Store::WordToInt(closureWord) == INVALID_INT);
+  Transient *transient = Store::WordToTransient(closureWord);
+  if (transient == INVALID_POINTER) { // Closure is determined
+    Closure *closure = Closure::FromWord(closureWord);
+    Assert(closure != INVALID_POINTER);
+    word concreteCodeWord = closure->GetConcreteCode();
+    transient = Store::WordToTransient(concreteCodeWord);
+    if (transient == INVALID_POINTER) { // ConcreteCode is determined
+      ConcreteCode *concreteCode = ConcreteCode::FromWord(concreteCodeWord);
+      Assert(concreteCode != INVALID_POINTER);
+      concreteCode->GetInterpreter()->PushCall(this, closure);
       return Interpreter::CONTINUE;
-    }
-    // Code not yet available
-    else {
-      // Create CallFrame on top
-      PushCallInterpreter::PushFrame(this, closure);
+    } else { // Request ConcreteCode
+      PushCallInterpreter::PushFrame(this, closureWord);
       Scheduler::currentData = transient->ToWord();
       return Interpreter::REQUEST;
     }
-  }
-  // Need to wait for closure
-  else {
+  } else { // Request Closure
+    PushCallInterpreter::PushFrame(this, closureWord);
     Scheduler::currentData = transient->ToWord();
-    // Create CallFrame on top
-    PushCallInterpreter::PushFrame(this, Scheduler::currentData);
     return Interpreter::REQUEST;
+  }
+}
+
+void TaskStack::Purge() {
+  u_int size = GetStackSize();
+  for (u_int i = size; i--; ) {
+    word frame = GetAbsoluteArg(i);
+    Interpreter *interpreter =
+      StackFrame::FromWordDirect(frame)->GetInterpreter();
+    interpreter->PurgeFrame(frame);
+  }
+}
+
+void TaskStack::Dump() {
+  u_int size = GetStackSize();
+  for (u_int i = size; i--; ) {
+    word frame = GetAbsoluteArg(i);
+    Interpreter *interpreter =
+      StackFrame::FromWordDirect(frame)->GetInterpreter();
+    interpreter->DumpFrame(frame);
   }
 }
