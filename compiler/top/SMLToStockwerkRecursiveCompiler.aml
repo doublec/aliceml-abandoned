@@ -50,7 +50,8 @@ structure SMLToStockwerkRecursiveCompiler =
 			    structure Switches = Switches)
 
 	structure BackendStockwerk =
-	    MkBackendStockwerk(structure Switches = Switches)
+	    MkBackendStockwerk(structure ComponentManager = ComponentManager
+			       structure Switches = Switches)
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
 		       structure FrontendSpecific = FrontendSML
