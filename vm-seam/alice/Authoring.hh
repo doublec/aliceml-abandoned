@@ -54,6 +54,7 @@
 
 #define RETURN_UNIT RETURN0
 #define RETURN_BOOL(b) RETURN_INT(!!(b));
+#define RETURN_REAL(r) RETURN(Real::New(r)->ToWord());
 
 #define INIT_STRUCTURE(r, s1, s2, f, i, b)			\
   r->Init(s2, Primitive::MakeClosure(s1 "." s2, f, i, b));
