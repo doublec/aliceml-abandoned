@@ -31,7 +31,8 @@ SOURCES = \
 	$(LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
 	$(LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
 	$(LIB_DISTRIBUTION_MODULES:%=lib/distribution/Unsafe%.cc) \
-	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc
+	LazySelInterpreter.cc AbstractCodeInterpreter.cc AliceConcreteCode.cc \
+	AliceLanguageLayer.cc
 
 OBJS = $(SOURCES:%.cc=%.o)
 
