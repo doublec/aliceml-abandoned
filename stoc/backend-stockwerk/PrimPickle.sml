@@ -28,19 +28,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	fun insertString ((_, _, stringMap), s, id) =
 	    StringMap.insertDisjoint (stringMap, s, id)
 
-	datatype label =
-	    TAG of int
-	  | CLOSURE
-	  | ARRAY
-	  | ARRAY_ZERO
-	  | CELL
-	  | CONSTRUCTOR
-	  | CON_VAL
-	  | GLOBAL_STAMP
-	  | TUPLE
-	  | VECTOR
-	  | VECTOR_ZERO
-
+	type label = int
 	type size = Int.int
 
 	val tPOSINT    = 0w0: Word8.word
@@ -60,30 +48,6 @@ structure PrimPickle :> PRIM_PICKLE =
 	    else if i >= 0 then outputByte (q, Word8.fromLargeInt i)
 	    else raise Crash.Crash "PrimPickle.outputUInt"
 
-	val lArray       = 0: int
-	val lArrayZero   = 1: int
-	val lCell        = 2: int
-	val lConstructor = 3: int
-	val lConVal      = 4: int
-	val lGlobalStamp = 5: int
-	val lTuple       = 6: int
-	val lVector      = 7: int
-	val lVectorZero  = 8: int
-	val lTagMin      = 9: int
-
-	fun outputLabel (q, TAG i) = outputUInt (q, lTagMin + i)
-	  | outputLabel (_, CLOSURE) =
-	    raise Crash.Crash "PrimPickle::outputLabel"
-	  | outputLabel (q, ARRAY) = outputUInt (q, lArray)
-	  | outputLabel (q, ARRAY_ZERO) = outputUInt (q, lArrayZero)
-	  | outputLabel (q, CELL) = outputUInt (q, lCell)
-	  | outputLabel (q, CONSTRUCTOR) = outputUInt (q, lConstructor)
-	  | outputLabel (q, CON_VAL) = outputUInt (q, lConVal)
-	  | outputLabel (q, GLOBAL_STAMP) = outputUInt (q, lGlobalStamp)
-	  | outputLabel (q, TUPLE) = outputUInt (q, lTuple)
-	  | outputLabel (q, VECTOR) = outputUInt (q, lVector)
-	  | outputLabel (q, VECTOR_ZERO) = outputUInt (q, lVectorZero)
-
 	fun openOut name: outstream =
 	    (BinIO.openOut name, ref 0, StringMap.new ())
 
@@ -96,11 +60,12 @@ structure PrimPickle :> PRIM_PICKLE =
 	     outputUInt (q, fromInt (Vector.length bytes));
 	     Vector.app (fn b => outputByte (q, b)) bytes; inc q)
 
-	fun outputBlock (q, CLOSURE, size) =
-	    (outputByte (q, tCLOSURE); outputUInt (q, fromInt size); inc q)
-	  | outputBlock (q, label, size) =
-	    (outputByte (q, tBLOCK); outputLabel (q, label);
+	fun outputBlock (q, label, size) =
+	    (outputByte (q, tBLOCK); outputUInt (q, label);
 	     outputUInt (q, fromInt size); inc q)
+
+	fun outputClosure (q, size) =
+	    (outputByte (q, tCLOSURE); outputUInt (q, fromInt size); inc q)
 
 	fun outputReference (q, id) =
 	    (outputByte (q, tREF); outputUInt (q, id))
