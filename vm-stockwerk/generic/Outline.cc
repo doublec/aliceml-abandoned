@@ -22,7 +22,6 @@
 #pragma implementation "generic/Tuple.hh"
 #pragma implementation "generic/String.hh"
 #pragma implementation "generic/StackFrame.hh"
-#pragma implementation "generic/Transform.hh"
 #pragma implementation "generic/Pickle.hh"
 #endif
 
@@ -37,5 +36,4 @@
 #include "generic/Tuple.hh"
 #include "generic/String.hh"
 #include "generic/StackFrame.hh"
-#include "generic/Transform.hh"
 #include "generic/Pickle.hh"
