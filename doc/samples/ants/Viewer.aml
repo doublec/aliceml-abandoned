@@ -147,7 +147,7 @@ struct
             val gc      = Gdk.gcNew w 
 
            (* every second row is indented *) 
-            val x       = xc * tileSize + (if yc mod 2 <> 0 then tileSize else 0)         
+            val x       = xc * tileSize + (if yc mod 2 <> 0 then tileSize div 2 else 0)         
             val y       = yc * tileSize
 
             fun drawRect c = 
@@ -158,6 +158,29 @@ struct
                 (Gdk.gcSetForeground (gc, c);
                  Gdk.drawRectangle (pixmap, gc, true, x + 1, y+1, tileSize-2, tileSize-2))
 
+            fun drawBoring c =
+                (* draw a cross *)
+                (Gdk.gcSetForeground (gc, c);
+                 Gdk.drawLine (pixmap, gc, x+1, y+1, x+tileSize-3, y+tileSize-3);
+                 Gdk.drawLine (pixmap, gc, x+tileSize-3, y+1, x+1, y+tileSize-3))
+            
+            fun drawFood c =
+                (Gdk.gcSetForeground (gc, c);
+                Gdk.drawRectangle (pixmap, gc, false, x+1, y+1, tileSize-3, tileSize-3))
+
+            fun drawTrail c =
+                (Gdk.gcSetForeground (gc, c);
+                 Gdk.drawLine (pixmap, gc, x+tileSize div 2, y+1, x+tileSize div 2, y+tileSize-3))
+
+
+            fun drawMarkers (m, c) =
+                (if Array.sub (m, 3) (* food marker *) then
+                    drawFood c
+                else if Array.sub (m, 4) (* boring marker *) then
+                    drawBoring c
+                else if Array.sub (m, 1) orelse Array.sub (m, 2) then
+                    drawTrail c 
+                else ())
         in
             if #rocky cell then
                 drawRect rockC
@@ -168,13 +191,18 @@ struct
                  if !(#food cell) > 0 then 
                     drawRect (Vector.sub (foodCs, !(#food cell) - 1))
                  else ();
-                 case ! (#ant cell) of
+                 (case ! (#ant cell) of
                     NONE    => ()
                  |  SOME a  => 
+                    (if !(#hasFood a) then
+                        drawRect (Vector.sub (foodCs, 0))
+                     else ();
                     if #color a = Ant.Red then
                         drawIRect redAntC
                     else 
-                        drawIRect blackAntC );
+                        drawIRect blackAntC));
+                 drawMarkers (#redMarkers cell, redAntC);
+                 drawMarkers (#blackMarkers cell, blackAntC));
                    
             Gdk.drawRectangle (pixmap, gc, true, x, y, tileSize, tileSize);
             Gtk.widgetQueueDrawArea (area,x, y, tileSize, tileSize)
