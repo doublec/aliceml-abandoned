@@ -159,6 +159,14 @@ namespace Alice {
 		return (Int32) 0;
 	    }
 	}
+	public static bool ItB(Object v) {
+	    if ((Int32) v == (Int32) 1) {
+		return true;
+	    }
+	    else {
+		return false;
+	    }
+	}
     }
     class TagVal {
 	int Tag;
@@ -186,10 +194,10 @@ namespace Alice {
 	Object Id;
 	public Object Value;
 	public ConVal(Object id) {
-	    Id = id;
+	    Id = CommonOp.Sync(id);
 	}
 	public ConVal(Object id, Object v) {
-	    Id    = id;
+	    Id    = CommonOp.Sync(id);
 	    Value = v;
 	}
 	public Object GetId() {
@@ -237,6 +245,84 @@ namespace Alice {
 		n++;
 	    }
 	    return n;
+	}
+    }
+    public class opeq : Procedure2 {
+	public static bool BothAliceArray(Object a, Object b) {
+	    return ((a is Alice.Array) && (b is Alice.Array));
+	}
+	public static bool BothCell(Object a, Object b) {
+	    return ((a is Alice.Cell) && (b is Alice.Cell));
+	}
+	public static bool BothConVal(Object a, Object b) {
+	    return ((a is Alice.ConVal) && (b is Alice.ConVal));
+	}
+	public static bool BothTagVal(Object a, Object b) {
+	    return ((a is Alice.TagVal) && (b is Alice.TagVal));
+	}
+	public static bool BothArray(Object a, Object b) {
+	    return ((a is System.Array) && (b is System.Array));
+	}
+	public static Object StaticApply(Object a, Object b) {
+	    a = CommonOp.Sync(a);
+	    b = CommonOp.Sync(b);
+
+	    if (BothAliceArray(a, b)) {
+		return CommonOp.BtI(a == b);
+	    }
+	    else if (BothCell(a, b)) {
+		return CommonOp.BtI(a == b);
+	    }
+	    else if (BothConVal(a, b)) {
+		ConVal at = (ConVal) a;
+		ConVal bt = (ConVal) b;
+		return CommonOp.BtI(at.GetId().Equals(bt.GetId()) &&
+				    CommonOp.ItB(StaticApply(at.Value, bt.Value)));
+	    }
+	    else if (BothTagVal(a, b)) {
+		TagVal at = (TagVal) a;
+		TagVal bt = (TagVal) b;
+		
+		return CommonOp.BtI((at.GetTag() == bt.GetTag()) &&
+				    CommonOp.ItB(StaticApply(at.GetValue(), bt.GetValue())));
+	    }
+	    else if (BothArray(a, b)) {
+		Object[] ar = (Object[]) a;
+		Object[] br = (Object[]) b;
+		int al      = ar.Length;
+		int bl      = br.Length;
+
+		if (al == bl) {
+		    for (int i = 0; i < al; i++) {
+			if (!CommonOp.ItB(StaticApply(ar[i], br[i]))) {
+			    return (Int32) 0;
+			}
+		    }
+		    return (Int32) 1;
+		}
+		else {
+		    return (Int32) 0;
+		}
+	    }
+	    else {
+		return CommonOp.BtI(a == b);
+	    }
+	}
+	public override Object Apply(Object a, Object b) {
+	    return StaticApply(a, b);
+	}
+    }
+    public class opnoteq : Procedure2 {
+	public static Object StaticApply(Object a, Object b) {
+	    if ((Int32) opeq.StaticApply(a, b) == (Int32) 0) {
+		return (Int32) 1;
+	    }
+	    else {
+		return (Int32) 0;
+	    }
+	}
+	public override Object Apply(Object a, Object b) {
+	    return StaticApply(a, b);
 	}
     }
     class Exception : SystemException {
@@ -359,23 +445,34 @@ namespace Alice {
 	    return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
 	}
     }
+    public class TagConstructor : Procedure {
+	int Tag;
+	public TagConstructor(int i) {
+	    Tag = i;
+	}
+	public override Object Apply(Object x) {
+	    return new TagVal(Tag, x);
+	}
+    }
+    public class ConConstructor : Procedure {
+	Object Id;
+	public ConConstructor(Object id) {
+	    Id = id;
+	}
+	public override Object Apply(Object x) {
+	    return new ConVal(Id, x);
+	}
+    }
+    public class Selector : Procedure {
+	int Index;
+	public Selector(int i) {
+	    Index = i;
+	}
+	public override Object Apply(Object x) {
+	    return ((Object[]) CommonOp.Sync(x))[Index];
+	}
+    }
     public class Array {
-	public class opeq : Procedure2 {
-	    public static Object StaticApply(Object a, Object b) {
-		return ((AliceArray) CommonOp.Sync(a) == (AliceArray) CommonOp.Sync(b));
-	    }
-	    public override Object Apply(Object a, Object b) {
-		return StaticApply(a, b);
-	    }
-	}
-	public class opnoteq : Procedure2 {
-	    public static Object StaticApply(Object a, Object b) {
-		return a;
-	    }
-	    public override Object Apply(Object a, Object b) {
-		return StaticApply(a, b);
-	    }
-	}
 	public class array : Procedure2 {
 	    public static Object StaticApply(Object n, Object x) {
 		int elems  = (Int32) CommonOp.Sync(n);
@@ -638,7 +735,7 @@ namespace Alice {
 	}
     }
     public class GlobalStamp {
-	public class New : Procedure0 {
+	public class @new : Procedure0 {
 	    public static Object StaticApply() {
 		return new Guid();
 	    }
@@ -905,15 +1002,30 @@ namespace Alice {
 	public class mod : Procedure2 {
 	    public static Object StaticApply(Object a, Object b) {
 		try {
-		    Int32 ai = (Int32) CommonOp.Sync(a);
-		    Int32 bi = (Int32) CommonOp.Sync(b);
-		    Int32 c  = (Int32) (ai % bi);
+		    int ai = (Int32) CommonOp.Sync(a);
+		    int bi = (Int32) CommonOp.Sync(b);
+		    int c = (ai % bi);
 
-		    if (c < (Int32) 0) {
-			return (c + bi);
+		    if (c == 0) {
+			return c;
 		    }
 		    else {
-			return c;
+			if (c < 0) {
+			    if (bi <= 0) {
+				return c;
+			    }
+			    else {
+				return (c + bi);
+			    }
+			}
+			else {
+			    if (bi < 0) {
+				return (c + bi);
+			    }
+			    else {
+				return c;
+			    }
+			}
 		    }
 		}
 		catch (System.Exception) {
@@ -943,7 +1055,7 @@ namespace Alice {
 		    Int32 ai = (Int32) CommonOp.Sync(a);
 		    Int32 bi = (Int32) CommonOp.Sync(b);
 		    
-		    return (Int32) (ai - (((Int32) (ai / bi)) * bi));
+		    return (Int32) (ai % bi);
 		}
 		catch (System.Exception) {
 		    throw new Exception(Prebound.General.Div);
