@@ -151,10 +151,17 @@ structure Renderer :> RENDERER =
 		    in
 			mulMatVec (o2w, (v1, ~1.0, v3))
 		    end
+		val bound =
+		    Transform (mulMat (translationMat (0.0, 0.5, 0.0),
+				       uscaleMat 1.5),
+			       mulMat (uscaleMat (2.0 / 3.0),
+				       translationMat (0.0, ~0.5, 0.0)),
+			       Sphere (fn _ => surface ConeSide))
 	    in
-		Intersect' (Spheroid' (w2o, ~1.0, 0.0,
-				       (newId (), surface ConeSide, w2o,
-					normal)),
+		Intersect' (Intersect' (preprocess (bound, o2w, w2o),
+					Spheroid' (w2o, ~1.0, 0.0,
+						   (newId (), surface ConeSide, w2o,
+						    normal))),
 			    Intersect' (top, bottom))
 	    end
 	  | preprocess (Union (o1, o2), o2w, w2o) =
