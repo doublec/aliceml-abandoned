@@ -13,7 +13,7 @@
 //
 
 #include <cmath>
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 #define REAL_TO_REAL(name, op)					\
   DEFINE1(name) {						\

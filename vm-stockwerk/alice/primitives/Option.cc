@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 void PrimitiveTable::RegisterOption() {
   RegisterUniqueConstructor("Option.Option");
