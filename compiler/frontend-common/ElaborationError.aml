@@ -54,7 +54,9 @@ struct
 
     datatype error =
 	(* Expressions *)
-	  VecExpUnify		of unify_error
+	  NewExpTyp		of typ
+	| NewExpResTyp		of typ
+	| VecExpUnify		of unify_error
 	| TagExpLab		of lab
 	| TagExpArgUnify	of unify_error
 	| TagExpRowUnify	of unify_error
@@ -71,8 +73,8 @@ struct
 	| RaiseExpUnify		of unify_error
 	| HandleExpUnify	of unify_error
 	| AnnExpUnify		of unify_error
-	| MatchPatUnify		of unify_error
-	| MatchExpUnify		of unify_error
+	| MatPatUnify		of unify_error
+	| MatExpUnify		of unify_error
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgUnify	of unify_error
@@ -98,31 +100,22 @@ struct
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
 	(* Modules *)
-	| StrModUnclosed	of lab * int * typ
+	| StrModUnclosed	of lab * typ
 	| SelModInf		of inf
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
-	| CompInfMismatch	of inf_mismatch
+	| AppInfFunMismatch	of inf
+	| AppInfArgMismatch	of inf_mismatch
+	| InterInfMismatch	of inf_mismatch
 	| SingInfPath
 	| PervasiveInfUnknown	of string
 	(* Imports *)
-	| ValImpUnbound		of lab
-	| ConImpUnbound		of lab
-	| TypImpUnbound		of lab
-	| ModImpUnbound		of lab
-	| InfImpUnbound		of lab
-	| FixImpUnbound		of lab
-	| ValImpMismatch	of lab * typ * typ
-	| ConImpMismatch	of lab * typ * typ
-	| TypImpMismatch	of lab * kind * kind
-	| ModImpMismatch	of lab * inf_mismatch
-	| InfImpMismatch	of lab * inf_mismatch
-	| FixImpMismatch	of lab * fix * fix
+	| ImpMismatch		of inf_mismatch
 	(* Components *)
-	| CompUnclosed		of lab * int * typ
+	| CompUnclosed		of lab * typ
 
     datatype warning =
 	(* Imports *)
@@ -138,20 +131,29 @@ struct
 
     fun ppQuoted s	= "`" ^ s ^ "'"
 
-    fun ppLab'(AbstractGrammar.Lab(_,a)) = Label.toString a
+    fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
 
     fun ppId'(AbstractGrammar.Id(_,_,n)) = Name.toString n
     fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
-      | ppLongid'(AbstractGrammar.LongId(_,y,a)) = ppLongid' y ^ "." ^ ppLab' a
+      | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
     fun ppLongid y = ppQuoted(ppLongid' y)
 
-    fun ppLab a = Label.toString a
+    fun ppLab l = Label.toString l
 
     val ppPath = PPPath.ppPath
     val ppTyp  = PPType.ppTyp
     val ppInf  = PPInf.ppInf
+
+    open Fixity
+
+    fun ppFix NONFIX		= text "nonfix"
+      | ppFix(PREFIX n)		= text "prefix" ^/^ text(Int.toString n)
+      | ppFix(POSTFIX n)	= text "postfix"^/^ text(Int.toString n)
+      | ppFix(INFIX(n,LEFT))	= text "infix"  ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,RIGHT))	= text "infixr" ^/^ text(Int.toString n)
+      | ppFix(INFIX(n,NEITHER))	= text "infixn" ^/^ text(Int.toString n)
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
@@ -187,96 +189,85 @@ struct
 	    ppMismatch' im
 	)
 
-    and ppMismatch'(Inf.MissingFix  a) =
-	    textpar["fixity","of",ppQuoted(ppLab a),"is","unspecified"]
-      | ppMismatch'(Inf.MissingVal a) =
-	    indent(textpar["val",ppLab a]) ^^
+    and ppMismatch'(Inf.MissingFix l) =
+	    break ^^
+	    textpar["fixity","of",ppQuoted(ppLab l),"is","unspecified"]
+      | ppMismatch'(Inf.MissingVal l) =
+	    indent(textpar["val",ppLab l]) ^^
 	    textpar["is","missing"]
-      | ppMismatch'(Inf.MissingTyp  a) =
-	    indent(textpar["type",ppLab a]) ^^
+      | ppMismatch'(Inf.MissingTyp l) =
+	    indent(textpar["type",ppLab l]) ^^
 	    textpar["is","missing"]
-      | ppMismatch'(Inf.MissingMod  a) =
-	    indent(textpar["structure",ppLab a]) ^^
+      | ppMismatch'(Inf.MissingMod l) =
+	    indent(textpar["structure",ppLab l]) ^^
 	    textpar["is","missing"]
-      | ppMismatch'(Inf.MissingInf  a) =
-	    indent(textpar["signature",ppLab a]) ^^
+      | ppMismatch'(Inf.MissingInf l) =
+	    indent(textpar["signature",ppLab l]) ^^
 	    textpar["is","missing"]
-      | ppMismatch'(Inf.ManifestTyp(a,to,t)) =
-	    indent(
-		case to of NONE => textpar["type",ppLab a]
-		| SOME t' => par[text"type",text(ppLab a),text"=",ppTyp t']) ^^
-	    textpar["does","not","match","manifest","specification"] ^^
-	    indent(par[text"type",text(ppLab a),text"=",ppTyp t])
-      | ppMismatch'(Inf.ManifestMod(a,po,p)) =
-	    indent(par([text"structure",text(ppLab a)] @
-		(case po of NONE => [] | SOME p' => [text"=",ppPath p']))) ^^
-	    textpar["does","not","match","manifest","specification"] ^^
-	    indent(par[text"structure",text(ppLab a),text"=",ppPath p])
-      | ppMismatch'(Inf.ManifestInf(a,NONE)) =
-	    indent(textpar["signature",ppLab a]) ^^
-	    textpar["does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestInf(a,SOME im)) =
-	    indent(textpar["signature",ppLab a]) ^^
-	    textpar["does","not","match","manifest","specification,",
-		"because"] ^^
-	    ppMismatch' im
-      | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
-	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
-      | ppMismatch'(Inf.MismatchVal(a,t1,t2)) =
-	    indent(par([text"val",text(ppLab a),text":",ppTyp t1])) ^^
+      | ppMismatch'(Inf.MismatchFix(l,q1,q2)) =
+	    indent(par[ppFix q1,text(ppLab l)]) ^^
 	    textpar["does","not","match"] ^^
-	    indent(par([text"val",text(ppLab a),text":",ppTyp t2]))
-      | ppMismatch'(Inf.MismatchTyp(a,k1,k2)) =
-	    indent(textpar["type",ppLab a]) ^^
+	    indent(par[ppFix q2,text(ppLab l)])
+      | ppMismatch'(Inf.MismatchVal(l,t1,t2)) =
+	    indent(par[text"val",text(ppLab l),text":",ppTyp t1]) ^^
+	    textpar["does","not","match"] ^^
+	    indent(par[text"val",text(ppLab l),text":",ppTyp t2])
+      | ppMismatch'(Inf.MismatchTyp(l,k1,k2)) =
+	if not(Type.isSingKind k2) then
+	    indent(textpar["type",ppLab l]) ^^
 	    textpar["has","incompatible","arity"]
-      | ppMismatch'(Inf.MismatchMod(a, Inf.Incompatible(j1,j2))) =
-	    indent(par([text"structure",text(ppLab a),text":",ppInf j1])) ^^
-	    textpar["does","not","match"] ^^
-	    indent(par([text"structure",text(ppLab a),text":",ppInf j2]))
-      | ppMismatch'(Inf.MismatchMod(a, im as Inf.IncompatibleArg(p1,p2))) =
-	    indent(textpar["structure",ppLab a]) ^^
-	    textpar["has","incompatible","signature,",
-		"because","signature","argument"] ^^
-	    indent(ppPath p1) ^^
-	    textpar["does","not","equal"] ^^
-	    indent(ppPath p2)
-      | ppMismatch'(Inf.MismatchMod(a,im)) =
-	    indent(textpar["structure",ppLab a]) ^^
-	    textpar["has","incompatible","signature,","because"] ^^
+	else
+	    indent(if Type.isSingKind k1
+		   then par[text"type",text(ppLab l),text"=",
+			    ppTyp(Type.asSingKind k1)]
+		   else textpar["type",ppLab l]) ^^
+	    textpar["does","not","match","specification"] ^^
+	    indent(par[text"type",text(ppLab l),text"=",
+		       ppTyp(Type.asSingKind k2)])
+      | ppMismatch'(Inf.MismatchMod(l,im)) =
+	    indent(textpar["structure",ppLab l]) ^^
+	    textpar["does","not","match,","because"] ^^
 	    ppMismatch' im
-      | ppMismatch'(Inf.MismatchInf(a,im)) =
-	    indent(textpar["signature",ppLab a]) ^^
-	    textpar["is","incompatible"]
+      | ppMismatch'(Inf.MismatchInf(l,im)) =
+	    indent(textpar["signature",ppLab l]) ^^
+	    textpar["does","not","match,","because"] ^^
+	    ppMismatch' im
       | ppMismatch'(Inf.MismatchDom im) =
 	    break ^^
-	    textpar["functor","argument","signature","is","too","restrictive,",
+	    textpar["argument","signature","is","too","restrictive,",
 		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
 	    break ^^
-	    textpar["functor","result","signature","is","too","permissive,",
-		"because"] ^^
+	    textpar["result","signature","is","too","permissive,","because"] ^^
+	    ppMismatch' im
+      | ppMismatch'(Inf.MismatchArg im) =
+	    break ^^
+	    textpar["signature","argument","does","not","match,","because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
 	    break ^^
 	    textpar["signature"] ^^
 	    indent(ppInf j1) ^^
-	    textpar["is","not","compatible","to"] ^^
+	    textpar["is","incompatible","to"] ^^
 	    indent(ppInf j2)
-      | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
-	    textpar["applied","signature","argument"] ^^
-	    textpar["signature"] ^^
+      | ppMismatch'(Inf.IncompatibleMod(p1,p2)) =
+	    break ^^
+	    textpar["module"] ^^
 	    indent(ppPath p1) ^^
-	    textpar["does","not","equal"] ^^
+	    textpar["is","not","equal","to"] ^^
 	    indent(ppPath p2)
+      | ppMismatch'(Inf.IncompatibleKind(k1,k2)) =
+	    break ^^
+	    textpar["arity","is","incompatible"]
 
 
-    fun ppUnclosed(d, (a,n,t)) =
+    fun ppUnclosed(d, (l,t)) =
 	vbox(
 	    d ^^
 	    indent(
 		fbox(nest(
-		    text(Label.toString a) ^/^
+		    text(Label.toString l) ^/^
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))
@@ -286,12 +277,22 @@ struct
 	)
 
 
-    fun ppError(VecExpUnify ue) =
+    fun ppError(NewExpTyp t) =
+	vbox(
+	    textpar["new","constructor","is","not","of","function","type:"] ^^
+	    indent(PPType.ppTyp t)
+	)
+      | ppError(NewExpResTyp t) =
+	vbox(
+	    textpar["type","is","not","extensible:"] ^^
+	    indent(PPType.ppTyp t)
+	)
+      | ppError(VecExpUnify ue) =
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","expression:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
-      | ppError(TagExpLab a) =
-	  textpar["label",ppLab a,"is","not","contained","in","type"]
+      | ppError(TagExpLab l) =
+	  textpar["label",ppLab l,"is","not","contained","in","type"]
       | ppError(TagExpRowUnify ue) =
 	ppUnify4(
 	  textpar["constructor","type","and","tag","inconsistent:"],
@@ -348,11 +349,11 @@ struct
 	ppUnify4(
 	  textpar["expression","does","not","match","annotation:"],
 	  textpar["does","not","match","type"], ue)
-      | ppError(MatchPatUnify ue) =
+      | ppError(MatPatUnify ue) =
 	ppUnify4(
 	  textpar["inconsistent","types","in","`case'","patterns:"],
 	  textpar["does","not","agree","with","previous","type"], ue)
-      | ppError(MatchExpUnify ue) =
+      | ppError(MatExpUnify ue) =
 	ppUnify4(
 	  textpar["inconsistent","types","in","branches","of","`case':"],
 	  textpar["does","not","agree","with","previous","type"], ue)
@@ -361,8 +362,8 @@ struct
 	ppUnify4(
 	  textpar["constructor","type","and","tag","inconsistent:"],
 	  textpar["does","not","match","argument","type"], ue)
-      | ppError(TagPatLab a) =
-	  textpar["label",ppLab a,"is","not","contained","in","type"]
+      | ppError(TagPatLab l) =
+	  textpar["label",ppLab l,"is","not","contained","in","type"]
       | ppError(TagPatArgUnify ue | ConPatArgUnify ue) =
 	ppUnify4(
 	  textpar["ill-typed","constructor","argument:"],
@@ -406,27 +407,30 @@ struct
       | ppError(RefTypKind k) =
 	  textpar["missing","arguments","in","type","expression"]
       | ppError(PervasiveTypUnknown s) =
-	  textpar["unknown","pervasive","type","name","\""^s^"\""]
+	  textpar["unknown","pervasive","type","\""^s^"\""]
       (* Declarations *)
       | ppError(ValDecUnify ue) =
 	ppUnify4(
 	  textpar["expression","does","not","match","pattern","type:"],
 	  textpar["does","not","match","type"], ue)
-      | ppError(ValDecLift(x,a)) =
+      | ppError(ValDecLift(x,l)) =
 	  textpar["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
       (* Modules *)
       | ppError(ModlongidInf(y,j)) =
-	  textpar["module",ppLongid y,"is","not","a","structure"]
-      | ppError(StrModUnclosed lnt) =
+	vbox(
+	    textpar["module",ppLongid y,"is","not","a","structure,",
+		    "it","has","signature"] ^^
+	    indent(PPInf.ppInf j)
+	)
+      | ppError(StrModUnclosed lt) =
 	ppUnclosed(
-	  textpar["structure","is","not","closed:"], lnt)
+	  textpar["structure","is","not","closed:"], lt)
       | ppError(SelModInf j) =
 	  textpar["module","expression","is","not","a","structure"]
       | ppError(AppModFunMismatch j) =
 	  textpar["applied","module","is","not","a","functor"]
-	  (* UNFINISHED: print actual signature j *)
       | ppError(AppModArgMismatch im) =
 	ppMismatch(
 	  textpar["module","expression","does","not","match",
@@ -437,69 +441,36 @@ struct
       (* Interfaces *)
       | ppError(GroundInfKind k) =
 	  textpar["missing","arguments","in","signature","expression"]
-      | ppError(CompInfMismatch im) =
+      | ppError(AppInfFunMismatch j) =
+	  textpar["applied","signature","is","not","parameterised"]
+      | ppError(AppInfArgMismatch im) =
+	ppMismatch(
+	  textpar["module","expression","does","not","match",
+		  "signature","parameter:"], im)
+      | ppError(InterInfMismatch im) =
 	ppMismatch(
 	  textpar["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
 	  textpar["module","expression","is","not","a","path"]
       | ppError(PervasiveInfUnknown s) =
-	  textpar["unknown","pervasive","signature","name","\""^s^"\""]
+	  textpar["unknown","pervasive","signature","\""^s^"\""]
       (* Imports *)
-      | ppError(ValImpUnbound a) =
-	  textpar["value",ppLab a,"is","not","exported","by","component"]
-      | ppError(ConImpUnbound a) =
-	  textpar["constructor",ppLab a,"is","not","exported","by","component"]
-      | ppError(TypImpUnbound a) =
-	  textpar["type",ppLab a,"is","not","exported","by","component"]
-      | ppError(ModImpUnbound a) =
-	  textpar["structure","or","functor",ppLab a,"is","not","exported",
-		  "by","component"]
-      | ppError(InfImpUnbound a) =
-	  textpar["signature",ppLab a,"is","not","exported","by","component"]
-      | ppError(FixImpUnbound a) =
-	  textpar["fixity","status","for",ppLab a,"is","not","exported",
-		  "by","component"]
-      | ppError(ValImpMismatch(a,t1,t2)) =
-	vbox(
-	    textpar["type","annotation","of","value",ppLab a] ^^
-	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    textpar["does","not","match","component","export","type"] ^^
-	    nest(break ^^ below(PPType.ppTyp t2))
-	)
-      | ppError(ConImpMismatch(a,t1,t2)) =
-	vbox(
-	    textpar["type","of","constructor",ppLab a] ^^
-	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    textpar["does","not","match","component","export","type"] ^^
-	    nest(break ^^ below(PPType.ppTyp t2))
-	)
-      | ppError(TypImpMismatch(a,k1,k2)) =
-	  textpar["type",ppLab a,"exported","by","component",
-		  "has","incompatible","arity"]
-      | ppError(ModImpMismatch(a,im)) =
+      | ppError(ImpMismatch im) =
 	ppMismatch(
-	  textpar["module",ppLab a,"exported","by","component","does","not",
-		  "match","signature,","because"], im)
-      | ppError(InfImpMismatch(a,im)) =
-	ppMismatch(
-	  textpar["signature",ppLab a,"exported","by","component","is",
-		  "incompatible,","because"], im)
-      | ppError(FixImpMismatch(a,f1,f2)) =
-	  textpar["fixity","status","for",ppLab a,"does","not","match",
-		  "export"]
+	  textpar["component","does","not","match","import,","because"], im)
       (* Components *)
-      | ppError(CompUnclosed ant) =
+      | ppError(CompUnclosed lt) =
 	ppUnclosed(
-	  textpar["component","is","not","closed:"], ant)
+	  textpar["component","is","not","closed:"], lt)
 
-    fun ppWarning(ValImpUnused a) =
-	  textpar["imported","value",ppLab a,"is","not","used"]
-      | ppWarning(TypImpUnused a) =
-	  textpar["imported","type",ppLab a,"is","not","used"]
-      | ppWarning(ModImpUnused a) =
-	  textpar["imported","structure",ppLab a,"is","not","used"]
-      | ppWarning(InfImpUnused a) =
-	  textpar["imported","signature",ppLab a,"is","not","used"]
+    fun ppWarning(ValImpUnused l) =
+	  textpar["imported","value",ppLab l,"is","not","used"]
+      | ppWarning(TypImpUnused l) =
+	  textpar["imported","type",ppLab l,"is","not","used"]
+      | ppWarning(ModImpUnused l) =
+	  textpar["imported","structure",ppLab l,"is","not","used"]
+      | ppWarning(InfImpUnused l) =
+	  textpar["imported","signature",ppLab l,"is","not","used"]
       | ppWarning(NotGeneralized(x,t)) =
 	vbox(
 	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",

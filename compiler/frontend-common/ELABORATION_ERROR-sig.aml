@@ -36,7 +36,9 @@ sig
 
     datatype error =
 	(* Expressions *)
-	  VecExpUnify		of unify_error
+	  NewExpTyp		of typ
+	| NewExpResTyp		of typ
+	| VecExpUnify		of unify_error
 	| TagExpLab		of lab
 	| TagExpArgUnify	of unify_error
 	| TagExpRowUnify	of unify_error
@@ -53,8 +55,8 @@ sig
 	| RaiseExpUnify		of unify_error
 	| HandleExpUnify	of unify_error
 	| AnnExpUnify		of unify_error
-	| MatchPatUnify		of unify_error
-	| MatchExpUnify		of unify_error
+	| MatPatUnify		of unify_error
+	| MatExpUnify		of unify_error
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgUnify	of unify_error
@@ -80,31 +82,22 @@ sig
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
 	(* Modules *)
-	| StrModUnclosed	of lab * int * typ
+	| StrModUnclosed	of lab * typ
 	| SelModInf		of inf
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
 	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
-	| CompInfMismatch	of inf_mismatch
+	| AppInfFunMismatch	of inf
+	| AppInfArgMismatch	of inf_mismatch
+	| InterInfMismatch	of inf_mismatch
 	| SingInfPath
 	| PervasiveInfUnknown	of string
 	(* Imports *)
-	| ValImpUnbound		of lab
-	| ConImpUnbound		of lab
-	| TypImpUnbound		of lab
-	| ModImpUnbound		of lab
-	| InfImpUnbound		of lab
-	| FixImpUnbound		of lab
-	| ValImpMismatch	of lab * typ * typ
-	| ConImpMismatch	of lab * typ * typ
-	| TypImpMismatch	of lab * kind * kind
-	| ModImpMismatch	of lab * inf_mismatch
-	| InfImpMismatch	of lab * inf_mismatch
-	| FixImpMismatch	of lab * fix * fix
+	| ImpMismatch		of inf_mismatch
 	(* Components *)
-	| CompUnclosed		of lab * int * typ
+	| CompUnclosed		of lab * typ
 
     datatype warning =
 	(* Imports *)
