@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,14 +30,12 @@ sig
     type ('a,'b) reader = 'b -> ('a * 'b) option
     type cs
 
-(*TODO
     val padLeft :	char -> int -> string -> string
     val padRight :	char -> int -> string -> string
     val splitl :	(char -> bool) -> (char,'a) reader ->'a -> (string * 'a)
     val takel :		(char -> bool) -> (char,'a) reader -> 'a -> string
-*)
     val dropl :		(char -> bool) -> (char,'a) reader -> 'a -> 'a
     val skipWS :	(char,'a) reader -> 'a -> 'a
-    val scanString:	((char,cs) reader -> ('a,cs) reader) -> string
+    val scanString :	((char,cs) reader -> ('a,cs) reader) -> string
 							     -> 'a option
 end
