@@ -24,8 +24,6 @@
 #define WORDS_NEEDED(n, t) \
   ((sizeof(t) * n + sizeof(word) - 1) / sizeof(word))
 
-typedef unsigned short w_char;
-
 class Alice {
 public:
   enum label {
@@ -452,11 +450,11 @@ public:
 
   using Block::ToWord;
 
-  static WideString *New(w_char *str, u_int len) {
-    Block *b = Store::AllocChunk(WORDS_NEEDED(len, w_char) + 1);
+  static WideString *New(wchar_t *str, u_int len) {
+    Block *b = Store::AllocChunk(WORDS_NEEDED(len, wchar_t) + 1);
     b->InitArg(LEN_POS, len);
     memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str,
-	   len * sizeof(w_char));
+	   len * sizeof(wchar_t));
     return static_cast<WideString *>(b);
   }
   static WideString *FromWord(word x) {
@@ -470,8 +468,8 @@ public:
     return static_cast<WideString *>(b);
   }
 
-  w_char *GetValue() {
-    return reinterpret_cast<w_char *>(GetBase() + 1);
+  wchar_t *GetValue() {
+    return reinterpret_cast<wchar_t *>(GetBase() + 1);
   }
 };
 
