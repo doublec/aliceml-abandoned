@@ -43,9 +43,9 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 
 	fun sign (_, (_, (_, exportSign))) = exportSign
 
-	fun save engine filename component = (*
+	fun save engine filename component =
 	    MozartEngine.saveValue engine filename
-	    (MozartEngine.buildFunctor engine component) *) ()
+	    (MozartEngine.buildFunctor engine component)
     end
 
 functor MakeBackendMozart(structure Switches: SWITCHES
