@@ -247,8 +247,15 @@ define
 	      'Char.toLower': Char.toLower#r_v
 	      'Char.toUpper': Char.toUpper#r_v
 	      'Future.Future': {NewUniqueName 'Future.Future'}
-	      'Future.alarm\'': missing('Future.alarm\'')   %--**
-%		 fun {$ X} !!{Alarm (X + 500) div 1000} end
+	      'Future.alarm\'':
+		 fun {$ X} Id Transient in
+		    {Scheduler.object registerSignalSource(?Id ?Transient)}
+		    thread
+		       {Delay {Alarm (X + 500) div 1000}}
+		       {Scheduler.object emitSignal(Id)}
+		    end
+		    Transient
+		 end#r_v
 	      'Future.await': fun {$ X} X end#r_v
 	      'Future.byneed':
 		 fun {$ Closure} transient({NewCell byneed(Closure)}) end#r_v
@@ -959,7 +966,6 @@ define
 			   transform(AlicePrimitiveFunction
 				     tag(0 {ByteString.make F}))))
       [] value(Y) then Y   %--** cannot be abstracted again
-      [] missing(_) then 0 % {Value.byNeedFail X}   %--**
       else {ImportOzModule X}
       end
    end
