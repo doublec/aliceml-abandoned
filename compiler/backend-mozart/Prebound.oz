@@ -397,7 +397,7 @@ prepare
 	 fun {$ X}
 	    if {IsFuture X} then
 	       skip   %--** wait until it is bound to a hole
-	    elseif {IsFree X} then
+	    elseif {Not {IsFree X}} then
 	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    !!X
