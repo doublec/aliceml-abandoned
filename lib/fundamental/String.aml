@@ -15,24 +15,23 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                       from "Pervasive"
+import structure __pervasive                         from "Pervasive"
 import type char and string and int
-       datatype bool and order and option and list from "ToplevelTypes"
-import infix 4 = <> infixr 5 :: infix 6 + - ^
-       val op = and op <> and op + and op -        from "ToplevelValues"
-import structure Char                              from "Char"
-import structure Bool                              from "Bool"
-import structure List                              from "List"
-import structure StringCvt                         from "StringCvt"
-import structure CharVector                        from "CharVector"
-import signature STRING                            from "STRING-sig"
+       datatype bool and order and option and list   from "ToplevelTypes"
+import infix 4 = <> < infixr 5 :: infix 6 + - ^
+       val op = and op <> and op < and op + and op - from "ToplevelValues"
+import structure Char                                from "Char"
+import structure Bool                                from "Bool"
+import structure List                                from "List"
+import structure StringCvt                           from "StringCvt"
+import structure CharVector                          from "CharVector"
+import signature STRING                              from "STRING-sig"
 
 structure String : STRING =
 struct
+    type char   = char
     type string	= string
     type t	= string						(**)
-
-    structure Char = Char
 
     val maxSize		= CharVector.maxLen
     val size		= CharVector.length
@@ -56,15 +55,6 @@ struct
 
     fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
 
-    __primitive val op < :	string * string -> bool  = "String.<"
-    __primitive val op > :	string * string -> bool  = "String.>"
-    __primitive val op <= :	string * string -> bool  = "String.<="
-    __primitive val op >= :	string * string -> bool  = "String.>="
-    __primitive val compare :	string * string -> order = "String.compare"
-    __primitive val hash :	string -> int            = "String.hash"
-
-    val equal			= op =
-
     fun collate  cmp (s1,s2)	= collate'(cmp,s1,s2,0)
     and collate'(cmp,s1,s2,i)	= case (i = size s1, i = size s2)
 				    of (true,  true)  => EQUAL
@@ -82,10 +72,27 @@ struct
 				  andalso isPrefix'(s1,s2,i+1)
 
     fun isSuffix s1 s2		= isSuffix'(s1,s2,size s1-1,size s2-1)
-    and isSuffix'(s1,s2,i1,i2)	= i1 = ~1 orelse		(**)
+    and isSuffix'(s1,s2,i1,i2)	= i1 = ~1 orelse
 				  i2 <> ~1 andalso
 				  sub'(s1,i1) = sub'(s2,i1)
 				  andalso isSuffix'(s1,s2,i1-1,i2-1)
+
+    fun isSubstring s1 s2	= isSubstring'(s1,s2,0)
+    and isSubstring'(s1,s2,i)	= i + size s1 < size s2
+				  andalso isSubstring''(s1, s2, i, 0)
+				  orelse isSubstring'(s1, s2, i+1)
+    and isSubstring''(s1,s2,i,j)= j = size s1 orelse
+				  sub'(s1, i) = sub'(s2, i+j) andalso
+				  isSubstring''(s1, s2, i, j+1)
+
+    __primitive val op < :	string * string -> bool  = "String.<"
+    __primitive val op > :	string * string -> bool  = "String.>"
+    __primitive val op <= :	string * string -> bool  = "String.<="
+    __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val compare :	string * string -> order = "String.compare"
+    __primitive val hash :	string -> int            = "String.hash"
+
+    val equal			= op =
 
     fun fields  f  s		= fields'(f, explode s, nil)
     and fields'(f, nil, ss)	= List.rev ss

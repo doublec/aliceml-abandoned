@@ -23,30 +23,29 @@ import structure StringCvt                  from "StringCvt"
 
 signature STRING =
 sig
-    type string
+    eqtype char
+    eqtype string
     type t = string							(**)
-
-    structure Char :	CHAR
 
     val maxSize :	int
 
     val size :		string -> int
-    val str :		Char.char -> string
-    val sub :		string * int -> Char.char
+    val str :		char -> string
+    val sub :		string * int -> char
     val substring :	string * int * int -> string
     val extract :	string * int * int option -> string
 
     val op ^ :		string * string -> string
     val concat :	string list -> string
     val concatWith :	string -> string list -> string			(**)
-    val implode :	Char.char list -> string
-    val explode :	string -> Char.char list
-    val tabulate :	int * (int -> Char.char) -> string		(**)
+    val implode :	char list -> string
+    val explode :	string -> char list
+    val tabulate :	int * (int -> char) -> string			(**)
 
-    val map :		(Char.char -> Char.char) -> string -> string
-    val translate :	(Char.char -> string) -> string -> string
-    val fields :	(Char.char -> bool) -> string -> string list
-    val tokens :	(Char.char -> bool) -> string -> string list
+    val map :		(char -> char) -> string -> string
+    val translate :	(char -> string) -> string -> string
+    val fields :	(char -> bool) -> string -> string list
+    val tokens :	(char -> bool) -> string -> string list
 
     val op < :		string * string -> bool
     val op > :		string * string -> bool
@@ -54,10 +53,10 @@ sig
     val op >= :		string * string -> bool
     val equal :		string * string -> bool				(**)
     val compare :	string * string -> order
-    val collate :	(Char.char * Char.char -> order) -> string * string
-							 -> order
+    val collate :	(char * char -> order) -> string * string -> order
     val isPrefix :	string -> string -> bool
-    val isSuffix :	string -> string -> bool			(**)
+    val isSuffix :	string -> string -> bool
+    val isSubstring :	string -> string -> bool
     val hash :		string -> int					(**)
 
     val toWide :	string -> WideString.string			(**)
