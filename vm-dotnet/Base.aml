@@ -34,8 +34,14 @@ infix  0  before
 
 (* Pervasives *)
 
-(* CAREFUL! Each pervasive type may only be mentioned in one primitive
-   declaration/specification, otherwise the compiler will crash! *)
+(*
+ * CAREFUL! Each pervasive type may only be mentioned in one primitive
+ * declaration/specification, otherwise the compiler will crash!
+ *
+ * Also note that __reftype should not declare a constructor named different
+ * from the type constructor, otherwise it will not be suitably exported
+ * into other components.
+ *)
 
 local
 
