@@ -1,0 +1,95 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Space       from "x-alice:/lib/constraints/Space"
+import signature TYPES_CONV  from "TYPES_CONV-sig"
+import signature TRACE_SPACE from "TRACE_SPACE-sig"
+import structure Trace       from "Trace"
+
+functor MkTraceSpace(structure T : TYPES_CONV) : TRACE_SPACE =
+    struct
+	type sol = T.sol
+	type internal_sol = T.internal_sol
+
+	open Trace
+
+	type trace = sol Trace.trace
+
+	type tracespace =
+	    internal_sol Space.space * (internal_sol * internal_sol -> unit) option *
+	    trace list ref * trace list ref
+	    
+	local
+	    fun doUpdate(s, order, fs, hs) =
+		(case fs of
+		     nil   => hs
+		   | f::fr =>
+			 let
+			     val nhs = f::doUpdate(s, order, fr, hs)
+			 in
+			     (case f of
+				  Commit(f)    => (Space.commit(s, f); nhs)
+				| Constrain(l) =>
+				      let
+					  val il = T.internalize l
+					  val _  = Space.ask s
+				      in
+					  (case order of
+					       NONE       => raise Subscript
+					     | SOME order =>
+						   (Space.inject(s, (fn nr => order(il, nr)));
+						    nhs))
+				      end)
+			 end)
+	in
+	    fun update (s, order, histref, futref) =
+		let
+		    val history = doUpdate(s, order, !futref, !histref)
+		in
+		    (histref := history;
+		     futref  := nil)
+		end
+	end
+    
+	fun tracespace(script, order) = (Space.space script, order, ref nil, ref nil)
+	    
+	fun ask (ts as (s, _, _, _)) = (update ts; Space.ask s)
+
+	fun constrain((_, NONE, _, _), _)        = ()
+	  | constrain((_, SOME _, _, futref), a) = futref := (Constrain(a)::(!futref))
+	    
+	local
+	    fun doClone (s, order, ref hs, ref fs) = (Space.clone s, order, ref hs, ref fs)
+	in
+	    fun clone ts = (update ts; doClone ts)
+	end
+    
+	fun merge (ts as (s, _, _, _)) = (update ts; T.externalize (Space.merge s))
+	    
+	fun commit(ts, c) =
+	    let
+		val (s, _, _, futref) = ts
+		val fs                = !futref
+		val f                 = (case c of
+					     Space.RANGE(a, b) =>
+						 if a = b then Space.SINGLE(a) else c
+					   | _                 => c)
+	    in
+		futref := Commit(f)::fs
+	    end
+	
+	fun externalize (_, _, ref hs, ref fs) = fs @ hs
+	    
+	fun internalize (ts as (_, _, histref, futref), hs) =
+	    (histref := nil; futref := hs; update ts)
+    end
