@@ -56,16 +56,16 @@ void Constructor::Init() {
   RootSet::Add(constructorTable);
 }
 
-static Transform *MakeConstructorTransform(word name, word key) {
+static Transform *MakeConstructorTransform(String *name, word key) {
   Tuple *tuple = Tuple::New(2);
-  tuple->Init(0, name);
+  tuple->Init(0, name->ToWord());
   tuple->Init(1, key);
   Chunk *transformName = static_cast<Chunk *>
     (String::FromWordDirect(AliceLanguageLayer::TransformNames::constructor));
   return Transform::New(transformName, tuple->ToWord());
 }
 
-Constructor *Constructor::New(word name, Block *guid) {
+Constructor *Constructor::New(String *name, Block *guid) {
   Assert(guid != INVALID_POINTER);
   HashTable *hashTable = HashTable::FromWordDirect(constructorTable);
   word key = guid->ToWord();
@@ -73,7 +73,7 @@ Constructor *Constructor::New(word name, Block *guid) {
     return Constructor::FromWordDirect(hashTable->GetItem(key));
   } else {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
-    b->Init(NAME_POS, name);
+    b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, MakeConstructorTransform(name, key)->ToWord());
     hashTable->InsertItem(key, b->ToWord());
     return static_cast<Constructor *>(b);
@@ -84,7 +84,7 @@ Transform *Constructor::GetTransform() {
   word transformWord = Get(TRANSFORM_POS);
   if (transformWord == Store::IntToWord(0)) {
     Transform *transform =
-      MakeConstructorTransform(Get(NAME_POS), Guid::New()->ToWord());
+      MakeConstructorTransform(GetName(), Guid::New()->ToWord());
     Replace(TRANSFORM_POS, transform->ToWord());
     return transform;
   } else {
