@@ -101,7 +101,9 @@ structure SMLToComPlusRecursiveCompiler =
 	    MkBackendCommon(val loadSign = loadSign
 			    structure Switches = Switches)
 
-	structure BackendComPlus = MkBackendComPlus(ComPlusTarget)
+	structure BackendComPlus =
+	    MkBackendComPlus(structure Switches = Switches
+			     structure ComPlusTarget = ComPlusTarget)
 
 	structure Compiler =
 	    MkCompiler(structure Switches         = Switches
