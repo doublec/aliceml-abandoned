@@ -18,8 +18,7 @@
     <TT>BLOCKED</TT> until the future is bound, whereafter it becomes
     <TT>RUNNABLE</TT> again.  When the computation has been fully
     performed (or an exception is raised for which there is no handler),
-    the thread becomes <TT>TERMINATED</TT>; we say that the thread has
-    <EM>died</EM>.
+    the thread becomes <TT>TERMINATED</TT>.
   </P>
 
   <P>
@@ -97,7 +96,7 @@
     </DT>
     <DD>
       <P>indicates that a thread control operation was applied to
-	a dead thread.  Should only be caught to perform cleanup
+	a terminated thread.  Should only be caught to perform cleanup
 	actions, and should always be re-raised.</P>
     </DD>
 
@@ -115,7 +114,8 @@
     <DD>
       <P>spawns a new thread <I>thr</I> which computes <I>f</I>&nbsp;().
 	Returns a pair of <I>thr</I> and the result of applying&nbsp;<I>f</I
-	>, which is a future bound when <I>f</I> returns.</P>
+	>, which is a future which will be bound to the result of
+	<I>f</I>&nbsp;().</P>
     </DD>
 
     <DT>
