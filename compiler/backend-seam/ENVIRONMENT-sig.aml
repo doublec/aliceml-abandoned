@@ -16,7 +16,7 @@ signature ENVIRONMENT =
 
 	val new: unit -> t
 	val startFn: t -> unit
-	val endFn: t -> FlatGrammar.id vector
+	val endFn: t -> FlatGrammar.id vector * int
 	val declare: t * FlatGrammar.id -> Pickle.id
 	val fresh: t -> Pickle.id
 	val lookup: t * FlatGrammar.id -> Pickle.idRef

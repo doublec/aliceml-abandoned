@@ -75,7 +75,7 @@ signature PICKLE =
 			     * (con * idDef vector * instr) vector * instr
 	  | VecTest of idRef * (idDef vector * instr) vector * instr
 	  | Return of idRef args
-	and function = Function of int * idDef args * instr
+	and function = Function of int * int * idDef args * instr
 
 	type t = value
     end

@@ -36,7 +36,7 @@ structure Environment :> ENVIRONMENT =
 	fun endFn {stack, scope, localIndex, globalIndex, globals} =
 	    case !stack of
 		(scope', localIndex', globalIndex', globals')::rest =>
-		    Vector.fromList (List.rev (!globals))
+		    (Vector.fromList (List.rev (!globals)), !localIndex)
 		    before (scope := scope';
 			    localIndex := localIndex';
 			    globalIndex := globalIndex';

@@ -181,7 +181,7 @@ structure BackendStockwerk: PHASE =
 	    O.Raise (lookup (env, id))
 	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
 	    O.Raise (lookup (env, id))
-	  | translateStm (HandleStm (_, tryBody, idDef, handleBody), env) =
+	  | translateStm (TryStm (_, tryBody, idDef, handleBody), env) =
 	    O.Try (translateBody (tryBody, env),
 		   translateIdDef (idDef, env),
 		   translateBody (handleBody, env))
@@ -293,9 +293,10 @@ structure BackendStockwerk: PHASE =
 		val _ = startFn env
 		val args' = translateArgs translateIdDef (args, env)
 		val bodyInstr = translateBody (body, env)
-		val globals = endFn env
+		val (globals, nlocals) = endFn env
 		val function =
-		    O.Function (Vector.length globals, args', bodyInstr)
+		    O.Function (Vector.length globals, nlocals,
+				args', bodyInstr)
 	    in
 		O.PutFun (id, translateIds (globals, env), function, instr)
 	    end
