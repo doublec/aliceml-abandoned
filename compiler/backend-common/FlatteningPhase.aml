@@ -62,9 +62,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	(* Matching conArity up with args *)
 
-	fun testArity (args as O.OneArg _, O.Unary, app, body) =
+	fun testArity (args as O.OneArg _, Arity.Unary, app, body) =
 	    app (args, body)
-	  | testArity (O.OneArg idDef, O.TupArity n, app, body) =
+	  | testArity (O.OneArg idDef, Arity.Tuple n, app, body) =
 	    let
 		val ids =
 		    Vector.tabulate
@@ -75,7 +75,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		app (O.TupArgs (Vector.map O.IdDef ids), stm::body)
 	    end
-	  | testArity (O.OneArg idDef, O.ProdArity labels, app, body) =
+	  | testArity (O.OneArg idDef, Arity.Product labels, app, body) =
 	    let
 		val labelIdVec =
 		    Vector.map (fn label =>
@@ -91,9 +91,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		app (O.ProdArgs labelIdDefVec, stm::body)
 	    end
-	  | testArity (args as O.TupArgs _, O.TupArity _, app, body) =
+	  | testArity (args as O.TupArgs _, Arity.Tuple _, app, body) =
 	    app (args, body)
-	  | testArity (args as O.ProdArgs _, O.ProdArity _, app, body) =
+	  | testArity (args as O.ProdArgs _, Arity.Product _, app, body) =
 	    app (args, body)
 	  | testArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.testArity"
@@ -112,8 +112,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | conAppTest (_, _, NONE, _) =
 	    raise Crash.Crash "FlatteningPhase.conAppTest"
 
-	fun expArity (args as O.OneArg _, O.Unary, info, app) = (nil, app args)
-	  | expArity (O.OneArg id, O.TupArity n, info: id_info, app) =
+	fun expArity (args as O.OneArg _, Arity.Unary, info, app) =
+	    (nil, app args)
+	  | expArity (O.OneArg id, Arity.Tuple n, info: id_info, app) =
 	    let
 		val ids =
 		    Vector.tabulate
@@ -123,7 +124,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		([O.TupDec (stm_info (#region info), idDefs, id)],
 		 app (O.TupArgs ids))
 	    end
-	  | expArity (O.OneArg id, O.ProdArity labels, info, app) =
+	  | expArity (O.OneArg id, Arity.Product labels, info, app) =
 	    let
 		val labelIdVec =
 		    Vector.map (fn label =>
@@ -136,9 +137,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		([O.ProdDec (stm_info (#region info), labelIdDefVec, id)],
 		 app (O.ProdArgs labelIdVec))
 	    end
-	  | expArity (args as O.TupArgs _, O.TupArity _, _, app) =
+	  | expArity (args as O.TupArgs _, Arity.Tuple _, _, app) =
 	    (nil, app args)
-	  | expArity (args as O.ProdArgs _, O.ProdArity _, _, app) =
+	  | expArity (args as O.ProdArgs _, Arity.Product _, _, app) =
 	    (nil, app args)
 	  | expArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.expArity"
@@ -352,7 +353,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    end
 		else
 		    f (O.TagExp (id_info info, label,
-				 labelToIndex (#typ info, label), conArity))::
+				 labelToIndex (#typ info, label)))::
 		    translateCont cont
 	    end
 	  | translateExp (ConExp (info, longid, exp, isNAry), f, cont) =
@@ -375,7 +376,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    let
 			val (stms, id, _) = translateLongid longid
 		    in
-			stms @ f (O.ConExp (id_info info, O.Con id, NONE))::
+			stms @ f (O.ConExp (id_info info, O.Con id))::
 			translateCont cont
 		    end
 	    end

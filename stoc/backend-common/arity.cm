@@ -1,0 +1,10 @@
+Group
+
+    structure Arity
+
+is
+
+    ../common/name.cm
+
+    ARITY.sig
+    Arity.sml

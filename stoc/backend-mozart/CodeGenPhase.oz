@@ -91,10 +91,6 @@ define
       end
    end
 
-   fun {TrConArity ConArity}
-      {TrOption ConArity TrArity}
-   end
-
    fun {TrArgs Args TrX}
       case Args of 'OneArg'(X) then oneArg({TrX X})
       [] 'TupArgs'(Xs) then tupArgs({Map Xs TrX})
@@ -189,10 +185,8 @@ define
 	 primExp({TrInfo Info} {StringToAtom String})
       [] 'NewExp'(Info) then newExp({TrInfo Info})
       [] 'VarExp'(Info Id) then varExp({TrInfo Info} {TrId Id})
-      [] 'TagExp'(Info Label N ConArity) then
-	 tagExp({TrInfo Info} {TrLabel Label} N {TrConArity ConArity})
-      [] 'ConExp'(Info Con ConArity) then
-	 conExp({TrInfo Info} {TrCon Con} {TrConArity ConArity})
+      [] 'TagExp'(Info Label N) then tagExp({TrInfo Info} {TrLabel Label} N)
+      [] 'ConExp'(Info Con) then conExp({TrInfo Info} {TrCon Con})
       [] 'RefExp'(Info) then refExp({TrInfo Info})
       [] 'TupExp'(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
       [] 'ProdExp'(Info LabelIdList) then

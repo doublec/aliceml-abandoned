@@ -147,14 +147,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputCon (q, StaticCon stamp) =
 	    (f (q, "staticCon"); outputStamp (q, stamp); r q)
 
-	fun outputArity (q, Unary) = output (q, "unary")
-	  | outputArity (q, TupArity i) =
-	    (f (q, "tupArity"); output (q, Int.toString i); r q)
-	  | outputArity (q, ProdArity labels) =
-	    (f (q, "prodArity"); outputVector outputLabel (q, labels); r q)
-
-	val outputConArity = outputOption outputArity
-
 	fun outputArgs outputX (q, OneArg id) =
 	    (f (q, "oneArg"); outputX (q, id); r q)
 	  | outputArgs outputX (q, TupArgs ids) =
@@ -247,13 +239,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, VarExp (info, id)) =
 	    (f (q, "varExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, TagExp (info, label, n, conArity)) =
+	  | outputExp (q, TagExp (info, label, n)) =
 	    (f (q, "tagExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputInt (q, n); m q;
-	     outputConArity (q, conArity); r q)
-	  | outputExp (q, ConExp (info, con, conArity)) =
+	     outputLabel (q, label); m q; outputInt (q, n); r q)
+	  | outputExp (q, ConExp (info, con)) =
 	    (f (q, "conExp"); outputExpInfo (q, info); m q;
-	     outputCon (q, con); m q; outputConArity (q, conArity); r q)
+	     outputCon (q, con); r q)
 	  | outputExp (q, RefExp info) =
 	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =

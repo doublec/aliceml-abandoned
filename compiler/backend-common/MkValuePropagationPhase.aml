@@ -93,8 +93,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    LitVal of lit
 	  | PrimVal of string
 	  | VarVal of id
-	  | TagVal of label * int * conArity
-	  | ConVal of con * conArity
+	  | TagVal of label * int * Arity.t option
+	  | ConVal of con * Arity.t option
 	  | RefVal
 	  | TupVal of idDef vector
 	  | ProdVal of (label * idDef) vector
@@ -116,9 +116,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (PrimExp (_, name)) = PrimVal name
 	  | expToValue (NewExp _) = UnknownVal   (*--** ConVal? *)
 	  | expToValue (VarExp (_, id)) = VarVal id
-	  | expToValue (TagExp (_, label, n, conArity)) =
-	    TagVal (label, n, conArity)
-	  | expToValue (ConExp (_, con, conArity)) = ConVal (con, conArity)
+	  | expToValue (TagExp (_, label, n)) = TagVal (label, n, NONE)
+	  | expToValue (ConExp (_, con)) = ConVal (con, NONE)
 	  | expToValue (RefExp _) = RefVal
 	  | expToValue (TupExp (_, ids)) = TupVal (Vector.map IdDef ids)
 	  | expToValue (ProdExp (_, labelIdVec)) =
@@ -315,9 +314,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		(LitVal lit, _) => LitExp (info, lit)
 	      | (PrimVal name, _) => PrimExp (info, name)
 	      | (VarVal id', _) => getTerm (info, id', env)
-	      | (TagVal (label, n, conArity), _) =>
-		    TagExp (info, label, n, conArity)
-	      | (ConVal (con, conArity), _) => ConExp (info, con, conArity)
+	      | (TagVal (label, n, NONE), _) => TagExp (info, label, n)
+	      | (ConVal (con, NONE), _) => ConExp (info, con)
 	      | (RefVal, _) => RefExp info
 	      | (_, _) => VarExp (info, id)
 
@@ -345,25 +343,27 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		       | (_, Wildcard) => SelAppExp (info, label, n, id))
 	      | (_, _) => SelAppExp (info, label, n, id)
 
-	fun arityMatches (OneArg _, SOME Unary) = true
-	  | arityMatches (TupArgs _, SOME (TupArity _)) = true
-	  | arityMatches (ProdArgs _, SOME (ProdArity _)) = true
+	fun arityMatches (OneArg _, SOME Arity.Unary) = true
+	  | arityMatches (TupArgs _, SOME (Arity.Tuple _)) = true
+	  | arityMatches (ProdArgs _, SOME (Arity.Product _)) = true
 	  | arityMatches (_, _) = false
 
 	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
 	    (*--** assertion about arity *)
 	    PrimAppExp (info, name, ids)
 
-	fun primAppExp (info, _, name, Unary, args as OneArg id, _) =
+	fun primAppExp (info, _, name, Arity.Unary, args as OneArg id, _) =
 	    vpPrimApp (info, name, #[id])
-	  | primAppExp (info, id, name, TupArity _, args as OneArg id', env) =
+	  | primAppExp (info, id, name,
+			Arity.Tuple _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
 		 (TupVal idDefs, _) =>
 		     if Vector.all isId idDefs then
 			 vpPrimApp (info, name, Vector.map idOf idDefs)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
-	  | primAppExp (info, id, name, ProdArity _, args as OneArg id', env) =
+	  | primAppExp (info, id, name,
+			Arity.Product _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
 		 (ProdVal labelIdDefVec, _) =>
 		     if Vector.all (fn (_, idDef) => isId idDef) labelIdDefVec
@@ -373,12 +373,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				    labelIdDefVec)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
-	  | primAppExp (info, id, name, TupArity _, TupArgs ids, _) =
+	  | primAppExp (info, id, name, Arity.Tuple _, TupArgs ids, _) =
 	    vpPrimApp (info, name, ids)
-	  | primAppExp (info, id, name, ProdArity _, ProdArgs labelIdVec, _) =
+	  | primAppExp (info, id, name,
+			Arity.Product _, ProdArgs labelIdVec, _) =
 	    vpPrimApp (info, name, Vector.map #2 labelIdVec)
 	  | primAppExp (info, id, _, _, args, _) =
-	    VarAppExp (info, id, args)   (*--** *)
+	    VarAppExp (info, id, args)   (*--** crash? *)
 
 	fun alias (IdDef id, IdDef id', env, isToplevel) =
 	    IdMap.insert (env, id, (VarVal id', isToplevel))
@@ -765,17 +766,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpExp (exp as NewExp _, _, _, _) = exp
 	    (*--** generate StaticCon if on toplevel *)
 	  | vpExp (VarExp (info, id), env, _, _) = getTerm (info, id, env)
-	  | vpExp (exp as TagExp (_, _, _, _), _, _, _) = exp
-	  | vpExp (ConExp (info, con as Con id, conArity), env, _, _) =
+	  | vpExp (exp as TagExp (_, _, _), _, _, _) = exp
+	  | vpExp (ConExp (info, con as Con id), env, _, _) =
 	    let
 		val id = deref (id, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		    (ConVal (con as StaticCon _, _), _) =>
-			ConExp (info, con, conArity)
-		  | (_, _) => ConExp (info, Con id, conArity)
+		    (ConVal (con as StaticCon _, NONE), _) =>
+			ConExp (info, con)
+		  | (_, _) => ConExp (info, Con id)
 	    end
-	  | vpExp (exp as ConExp (_, StaticCon _, _), _, _, _) = exp
+	  | vpExp (exp as ConExp (_, StaticCon _), _, _, _) = exp
 	  | vpExp (exp as RefExp _, _, _, _) = exp
 	  | vpExp (TupExp (info, ids), env, _, _) =
 	    (*--** if TupExp took terms instead of ids -> getTerm *)

@@ -48,14 +48,6 @@ signature FLAT_GRAMMAR =
 	    Con of id
 	  | StaticCon of stamp
 
-	datatype arity =
-	    Unary
-	  | TupArity of int
-	  | ProdArity of label vector
-	    (* sorted, all labels distinct, no tuple *)
-
-	type conArity = arity option
-
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
@@ -92,8 +84,8 @@ signature FLAT_GRAMMAR =
 	  | PrimExp of exp_info * string
 	  | NewExp of exp_info
 	  | VarExp of exp_info * id
-	  | TagExp of exp_info * label * int * conArity
-	  | ConExp of exp_info * con * conArity
+	  | TagExp of exp_info * label * int
+	  | ConExp of exp_info * con
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id vector
 	  | ProdExp of exp_info * (label * id) vector

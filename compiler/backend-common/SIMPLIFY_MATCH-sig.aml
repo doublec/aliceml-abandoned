@@ -22,8 +22,8 @@ signature SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * int * unit O.conArgs * O.conArity
-	  | ConTest of I.longid * unit O.conArgs * O.conArity
+	  | TagTest of Label.t * int * unit O.conArgs * Arity.t option
+	  | ConTest of I.longid * unit O.conArgs * Arity.t option
 	  | RefTest
 	  | TupTest of int
 	  | ProdTest of Label.t vector

@@ -332,52 +332,13 @@ define
 			    {TranslateRegion Region State} VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] tagExp(_ Label _ none) then
+      [] tagExp(_ Label _) then
 	 VHd = vEquateConstant(_ Label Reg VTl)
-      [] tagExp(Region Label _ some(unary)) then
-	 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
-      in
-	 PredId = pid(if {IsAtom Label} then Label else '' end
-		      2 {TranslateRegion Region State} nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?ResReg)}
-	 VInstr = vEquateRecord(_ Label 1 ResReg [value(ArgReg)] nil)
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] tagExp(_ Label _ some(_)) then
-	 VHd = vEquateConstant(_ fun {$ X} {Adjoin X Label} end Reg VTl)
-      [] conExp(_ con(Id) none) then
+      [] conExp(_ con(Id)) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(Region con(Id) some(Arity)) then
-	 Coord PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
-      in
-	 Coord = {TranslateRegion Region State}
-	 PredId = pid({GetPrintName Id State} 2 Coord nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?ResReg)}
-	 case Arity of unary then WidthReg VInter1 VInter2 in
-	    {State.cs newReg(?WidthReg)}
-	    VInstr = vEquateConstant(_ 1 WidthReg VInter1)
-	    VInter1 = vCallBuiltin(_ 'Tuple.make'
-				   [{GetReg Id State} WidthReg ResReg]
-				   Coord VInter2)
-	    VInter2 = vInlineDot(_ ResReg 1 ArgReg true Coord nil)
-	 [] tupArity(0) then VInter in
-	    VInstr = vCallBuiltin(_ 'Value.wait' [ArgReg] Coord VInter)
-	    VInter = vUnify(_ ResReg {GetReg Id State} nil)
-	 else
-	    VInstr = vCallBuiltin(_ 'Record.adjoin'
-				  [ArgReg {GetReg Id State} ResReg] Coord nil)
-	 end
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] conExp(Region staticCon(Stamp) ConArity) then
+      [] conExp(Region staticCon(Stamp)) then
 	 {TranslateExp
-	  tagExp(Region {GetStaticCon Stamp State} unit ConArity)
+	  tagExp(Region {GetStaticCon Stamp State} unit)
 	  Reg VHd VTl State}
       [] refExp(Region) then
 	 Coord PredId NLiveRegs ArgReg ResReg VInstr GRegs Code

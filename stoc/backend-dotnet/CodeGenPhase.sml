@@ -461,16 +461,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Box System.Guid)
 	    end
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
-	  | genExp (TagExp (_, _, n, NONE), PREPARE) =
+	  | genExp (TagExp (_, _, n), PREPARE) =
 	    (emit (LdcI4 n); emitBox (Int32Ty, System.Int32))
-	  | genExp (TagExp (_, _, n, SOME _), PREPARE) =
-	    (emit (LdcI4 n);
-	     emit (Newobj (Alice.TagConstructor, [Int32Ty])))
-	  | genExp (ConExp (_, Con id, NONE), PREPARE) = emitId id
-	  | genExp (ConExp (_, Con id, SOME _), PREPARE) =
-	    (emitId id;
-	     emit (Newobj (Alice.ConConstructor, [System.ObjectTy])))
-	  | genExp (ConExp (_, StaticCon _, _), _) =   (*--** implement *)
+	  | genExp (ConExp (_, Con id), PREPARE) = emitId id
+	  | genExp (ConExp (_, StaticCon _), _) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genExp: ConExp/StaticCon"
 	  | genExp (RefExp info, PREPARE) =
 	    genExp (PrimExp (info, "General.ref"), PREPARE)

@@ -9,7 +9,9 @@ is
     ../misc/sources.cm
     ../common/name.cm
     ../common/id-stamp.cm
+
     flat-grammar.cm
+    arity.cm
     output-flat-grammar.cm
 
     PRIM_OPS.sig

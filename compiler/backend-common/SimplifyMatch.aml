@@ -27,8 +27,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * int * unit O.conArgs * O.conArity
-	  | ConTest of I.longid * unit O.conArgs * O.conArity
+	  | TagTest of Label.t * int * unit O.conArgs * Arity.t option
+	  | ConTest of I.longid * unit O.conArgs * Arity.t option
 	  | RefTest
 	  | TupTest of int
 	  | ProdTest of Label.t vector
@@ -559,13 +559,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			       deconstructs pat orelse b) false matches)
 		handle (BindsAll | SideEffect | NotNAry) => false
 
-	    fun process (O.Unary, graph, consequents, info) =
+	    fun process (Arity.Unary, graph, consequents, info) =
 		let
 		    val id = O.freshId (id_info info)
 		in
 		    (O.OneArg (O.IdDef id), graph, [(nil, id)], consequents)
 		end
-	      | process (O.TupArity n, Node (nil, TupTest _, ref graph, _, _),
+	      | process (Arity.Tuple n, Node (nil, TupTest _, ref graph, _, _),
 			 consequents, _) =
 		let
 		    val ids =
@@ -579,7 +579,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		in
 		    (O.TupArgs idDefs, graph, mapping, consequents)
 		end
-	      | process (O.ProdArity labels,
+	      | process (Arity.Product labels,
 			 Node (nil, ProdTest _, ref graph, _, _),
 			 consequents, _) =
 		let
@@ -606,7 +606,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val info = infoPat (#2 (Vector.sub (matches, 0)))
 		    val arity =
 			if checkMatches matches then typToArity (#typ info)
-			else O.Unary
+			else Arity.Unary
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		in
 		    process (arity, graph, consequents, info)

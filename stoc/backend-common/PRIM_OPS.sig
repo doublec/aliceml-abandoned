@@ -14,5 +14,5 @@ signature PRIM_OPS =
     sig
 	exception UnknownPrim
 
-	val getArity: string -> FlatGrammar.arity option   (* UnknownPrim *)
+	val getArity: string -> Arity.t option   (* UnknownPrim *)
     end

@@ -13,7 +13,6 @@
 signature INTERMEDIATE_AUX =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
-	structure O: FLAT_GRAMMAR = FlatGrammar
 
 	val id_info: I.exp_info -> I.dec_info
 
@@ -27,7 +26,7 @@ signature INTERMEDIATE_AUX =
 	val separateAlt: I.pat -> I.pat
 
 	val rowLabels: Type.row -> Label.t list
-	val typToArity: Type.t -> O.arity
-	val makeConArity: Type.t * bool -> O.conArity
+	val typToArity: Type.t -> Arity.t
+	val makeConArity: Type.t * bool -> Arity.t option
 	val labelToIndex: Type.t * Label.t -> int
     end

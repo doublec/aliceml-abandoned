@@ -11,6 +11,7 @@ is
     ../common/intermediate-grammar.cm
 
     flat-grammar.cm
+    arity.cm
 
     LABEL_SORT.sig
     MakeLabelSort.sml

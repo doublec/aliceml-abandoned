@@ -98,14 +98,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "\"", S (String.toString s), S "\""]
 	  | outputLit (RealLit r) = S r
 
-	fun outputTag NONE = S "tag0"
-	  | outputTag (SOME Unary) = S "tag1"
-	  | outputTag (SOME (TupArity _) | SOME (ProdArity _)) = S "tag+"
-
-	fun outputCon NONE = S "con0"
-	  | outputCon (SOME Unary) = S "con1"
-	  | outputCon (SOME (TupArity _) | SOME (ProdArity _)) = S "con+"
-
 	fun outputArgs outputX (OneArg x) = outputX x
 	  | outputArgs outputX (TupArgs xs) =
 	    SEQ #[S "(", SEP (S ", ", Vector.map outputX xs), S ")"]
@@ -212,11 +204,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (PrimExp (_, name)) = SEQ #[S "prim \"", S name, S "\""]
 	  | outputExp (NewExp _) = S "new"
 	  | outputExp (VarExp (_, id)) = ID id
-	  | outputExp (TagExp (_, label, n, conArity)) =
-	    SEQ #[outputTag conArity, S " ", S (Label.toString label),
-		  S "/", I n]
-	  | outputExp (ConExp (_, con, conArity)) =
-	    SEQ #[outputCon conArity, S " ",
+	  | outputExp (TagExp (_, label, n)) =
+	    SEQ #[S "tag ", S (Label.toString label), S "/", I n]
+	  | outputExp (ConExp (_, con)) =
+	    SEQ #[S "con ",
 		  case con of
 		      Con id => ID id
 		    | StaticCon stamp => S (Stamp.toString stamp)]

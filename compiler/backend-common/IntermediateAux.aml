@@ -252,9 +252,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		(WithPat (info, pat', substDecs (decs, subst'')), subst')
 	    end
 
-	structure O = FlatGrammar
-	open O
-
 	fun rowLabels row =
 	    if Type.isEmptyRow row then
 		if Type.isUnknownRow row then
@@ -272,8 +269,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		val labels = rowLabels row
 	    in
 		case isTuple (labels, 1) of
-		    SOME n => TupArity n
-		  | NONE => ProdArity (Vector.fromList labels)
+		    SOME n => Arity.Tuple n
+		  | NONE => Arity.Product (Vector.fromList labels)
 	    end
 
 	fun typToArity typ =
@@ -288,12 +285,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else if Type.isMu typ then
 		typToArity (Type.asMu typ)
 	    else if Type.isTuple typ then
-		TupArity (Vector.length (Type.asTuple typ))
+		Arity.Tuple (Vector.length (Type.asTuple typ))
 	    else if Type.isProd typ then
 		rowToArity (Type.asProd typ)
 	    else if Type.isSum typ then
 		rowToArity (Type.asSum typ)
-	    else Unary
+	    else Arity.Unary
 
 	fun isZeroTyp typ =
 	    Type.isCon typ andalso
@@ -301,16 +298,16 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun makeConArity (typ, isNAry) =
 	    if isZeroTyp typ then NONE
-	    else SOME (if isNAry then typToArity typ else Unary)
+	    else SOME (if isNAry then typToArity typ else Arity.Unary)
 
 	fun find (labels, label', i, n) =
 	    if i = n then NONE
 	    else if Vector.sub (labels, i) = label' then SOME i
 	    else find (labels, label', i + 1, n)
 
-	fun findLabel (Unary, label) =
+	fun findLabel (Arity.Unary, label) =
 	    raise Crash.Crash "IntermediateAux.findLabel"
-	  | findLabel (TupArity n, label) =
+	  | findLabel (Arity.Tuple n, label) =
 	    (case Label.toLargeInt label of
 		 SOME li =>
 		     let
@@ -319,7 +316,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 if i <= n then SOME (i - 1) else NONE
 		     end
 	       | NONE => NONE)
-	  | findLabel (ProdArity labels, label) =
+	  | findLabel (Arity.Product labels, label) =
 	    find (labels, label, 0, Vector.length labels)
 
 	fun labelToIndex (typ, label) =
