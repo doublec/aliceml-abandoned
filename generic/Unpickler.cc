@@ -570,7 +570,7 @@ Worker::Result PickleUnpackWorker::Run(StackFrame *sFrame) {
   Scheduler::PopFrame(frame->GetSize());
   word result = UnpickleArgs::GetResult();
 
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = result;
   return Worker::CONTINUE;
 }
@@ -644,7 +644,7 @@ Worker::Result PickleLoadWorker::Run(StackFrame *sFrame) {
   
   word result = UnpickleArgs::GetResult();
 
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = result;
   return Worker::CONTINUE;
 }

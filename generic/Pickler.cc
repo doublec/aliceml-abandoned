@@ -1223,7 +1223,7 @@ Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
   StringOutputStream *outputStream =
     STATIC_CAST(StringOutputStream *, os);
   
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = outputStream->Close();
 
   return Worker::CONTINUE;

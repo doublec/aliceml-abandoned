@@ -36,7 +36,7 @@
     POP_PRIM_SELF();
 #define DEFINE1(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);	\
+    Assert(Scheduler::nArgs == 1);	                \
     POP_PRIM_SELF(); \
     word x0 = Scheduler::currentArgs[0];
 #define DEFINE2(name)					\
@@ -76,7 +76,7 @@
   return Worker::CONTINUE;			\
 }
 #define RETURN1(w) {				\
-  Scheduler::nArgs = Scheduler::ONE_ARG;	\
+  Scheduler::nArgs = 1;	                        \
   Scheduler::currentArgs[0] = w;		\
   return Worker::CONTINUE;			\
 }

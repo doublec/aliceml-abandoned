@@ -76,7 +76,7 @@ inline Worker::Result
 PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
   switch (interpreter->arity) {
   case 0:
-    if (Scheduler::nArgs == Scheduler::ONE_ARG) {
+    if (Scheduler::nArgs == 1) {
       Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
       if (t == INVALID_POINTER) { // is determined
 	Scheduler::nArgs = 0;
@@ -138,7 +138,7 @@ void PrimitiveInterpreter::DumpFrame(StackFrame *) {
 }
 
 u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {
-  return arity == 1? Scheduler::ONE_ARG: arity;
+  return arity;
 }
 
 Interpreter::function PrimitiveInterpreter::GetCFunction() {

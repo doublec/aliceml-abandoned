@@ -65,11 +65,11 @@ inline void Scheduler::SwitchToThread() {
   stackTop = base + currentTaskStack->GetTop();
   stackMax = base + currentTaskStack->GetSize();
   word args = currentThread->GetArgs(nArgs);
-  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
+  Assert(nArgs == 1 || nArgs < maxArgs);
   switch (nArgs) {
   case 0:
     break;
-  case Scheduler::ONE_ARG:
+  case 1:
     currentArgs[0] = args;
     break;
   default:
@@ -85,13 +85,13 @@ inline void Scheduler::FlushThread() {
   u_int top = GetCurrentStackTop();
   currentTaskStack->SetTop(top);
   currentThread->SetTaskStack(currentTaskStack);
-  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
+  Assert(nArgs == 1 || nArgs < maxArgs);
   switch (nArgs) {
   case 0:
     currentThread->SetArgs(0, Store::IntToWord(0));
     break;
-  case Scheduler::ONE_ARG:
-    currentThread->SetArgs(ONE_ARG, currentArgs[0]);
+  case 1:
+    currentThread->SetArgs(1, currentArgs[0]);
     break;
   default:
     Block *b = Store::AllocBlock(ARGS_LABEL, nArgs);
@@ -119,7 +119,7 @@ int Scheduler::Run() {
       interpretResult:
 	switch (result) {
 	case Worker::CONTINUE:
-	  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
+	  Assert(nArgs == 1 || nArgs < maxArgs);
 	  break;
 	case Worker::PREEMPT:
 	  FlushThread();

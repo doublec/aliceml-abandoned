@@ -92,12 +92,12 @@ Worker::Result BindFutureWorker::Run(StackFrame *sFrame) {
   word arg = Scheduler::currentArgs[0];
   if (IsCyclic(arg, future)) { // cancel future with Cyclic exception
     future->Become(CANCELLED_LABEL, Hole::cyclicExn);
-    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+    Assert(Scheduler::nArgs == 1);
     Scheduler::currentArgs[0] = future->ToWord();
     return Worker::CONTINUE;
   } else { // actually bind the future
     future->Become(REF_LABEL, arg);
-    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+    Assert(Scheduler::nArgs == 1);
     // Scheduler::currentArgs[0] is already set to `arg'
     return Worker::CONTINUE;
   }
@@ -118,7 +118,7 @@ Worker::Result BindFutureWorker::Handle(word) {
   Scheduler::PopFrame(frame->GetSize());
   future->ScheduleWaitingThreads();
   future->Become(CANCELLED_LABEL, Scheduler::currentData);
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
   Scheduler::currentArgs[0] = future->ToWord();
   return Worker::CONTINUE;
 }

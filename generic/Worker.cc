@@ -36,7 +36,7 @@ void Worker::Construct() {
   case 0:
     Scheduler::currentArgs[0] = Store::IntToWord(0);
     break;
-  case Scheduler::ONE_ARG:
+  case 1:
     return;
   default:
     {
@@ -47,14 +47,14 @@ void Worker::Construct() {
     }
     break;
   }
-  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::nArgs = 1;
 }
 
 u_int Worker::Deconstruct() {
   switch (Scheduler::nArgs) {
   case 0:
     return 0;
-  case Scheduler::ONE_ARG:
+  case 1:
     {
       word arg = Scheduler::currentArgs[0];
       Transient *t = Store::WordToTransient(arg);

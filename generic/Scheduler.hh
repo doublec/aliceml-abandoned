@@ -38,7 +38,6 @@ private:
   static void FlushThread();
 public:
   static const u_int maxArgs = 16;
-  static const u_int ONE_ARG = maxArgs + 1;
 
   // Scheduler public data
   static TaskStack *currentTaskStack; // Task stack

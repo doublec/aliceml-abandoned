@@ -290,7 +290,7 @@ public:
   // Side-Effect: Scratches JIT_R0
   void Primitive_Return1(u_int Value) {
     Scheduler_PutZeroArg(Value);
-    jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
+    jit_movi_ui(JIT_R0, 1);
     Scheduler_PutNArgs(JIT_R0);
   }
 };

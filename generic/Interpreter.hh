@@ -40,7 +40,7 @@ public:
   // Frame Handling
   virtual void PushCall(Closure *closure) = 0;
   // Runtime compilation
-  //   returns INVALID_INT if unknown; Scheduler::ONE_ARG for single argument
+  //   returns INVALID_INT if unknown
   virtual u_int GetInArity(ConcreteCode *concreteCode) = 0;
   //   returns NULL if none
   virtual function GetCFunction();
