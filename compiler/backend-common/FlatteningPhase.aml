@@ -12,7 +12,23 @@
 
 import
     structure Assert
-from "../misc/Assert"
+from "../../lib/utility/Assert"
+
+import
+    structure Name
+from "../../lib/rtt/Name"
+
+import
+    structure Label
+from "../../lib/rtt/Label"
+
+import
+    structure Type
+from "../../lib/rtt/Type"
+
+import
+    structure PervasiveType
+from "../../lib/rtt/PervasiveType"
 
 import
     structure Crash
@@ -37,22 +53,6 @@ from "../infrastructure/EmptyContext"
 import
     structure Stamp
 from "../common/Stamp"
-
-import
-    structure Name
-from "../common/Name"
-
-import
-    structure Label
-from "../common/Label"
-
-import
-    structure Type
-from "../common/Type"
-
-import
-    structure PervasiveType
-from "../common/PervasiveType"
 
 import
     signature INTERMEDIATE_GRAMMAR
