@@ -207,8 +207,7 @@ structure Linear :> LINEAR =
 	    end
 	  | getTermsCN(SUMCN, Op(PLUS, ts)) =
 	    (map (fn x => createSumCNEntry x) ts)
-	  | getTermsCN(SUMCN, t) = [createSumCNEntry t]
-	  | getTermsCN _ = raise (Transform "getTermsCN")
+	  | getTermsCN(_, t) = [createSumCNEntry t]
 	    	
 	local
 	    fun convertElem (op`` i)     = FD.SINGLE(i)
