@@ -14,8 +14,6 @@
 //
 
 #include <cstdio>
-#include "store/Map.hh"
-#include "generic/Tuple.hh"
 #include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
@@ -671,7 +669,7 @@ DEFINE2(UnsafeImpMap_findi) {
   }
 } END
 
-word UnsafeImpMap() {
+AliceDll word UnsafeImpMap() {
   ImpMapInsertWorker::Init();
   ImpMapIteratorWorker::Init();
   ImpMapFindWorker::Init();
