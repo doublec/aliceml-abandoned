@@ -29,14 +29,14 @@ public:
 
   // PushCallFrame Constructor
   static PushCallFrame *New(Interpreter *interpreter, word closure) {
-    StackFrame *frame = StackFrame::New(CALL_FRAME, interpreter, SIZE);
+    StackFrame *frame = StackFrame::New(PUSHCALL_FRAME, interpreter, SIZE);
     frame->InitArg(CLOSURE_POS, closure);
     return static_cast<PushCallFrame *>(frame);
   }
   // PushCallFrame Untagging
   static PushCallFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CALL_FRAME);
+    Assert(p->GetLabel() == PUSHCALL_FRAME);
     return static_cast<PushCallFrame *>(p);
   }
 
