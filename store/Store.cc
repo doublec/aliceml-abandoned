@@ -2,51 +2,72 @@
 #include <stdlib.h>
 #include <string.h>
 #include "store.hh"
-#include "tuple.hh"
-//
-// Field Definitions
-//
-DynamicTuple *Store::intgen_set;
+#include "gchelper.hh"
 //
 // Helper Class Implementation
 //
 const unsigned int HeaderDef::GEN_LIMIT[] = { 0x0FFFFFFF, 0x4FFFFFFF, 0x8FFFFFFF };
+DynamicTuple *Tuple::intgen_set;
 //
 // Method Implementations
 //
+Tuple *Store::CopyBlockToDst(Tuple *p, MemChain *dst) {
+  t_size s = HeaderOp::BlankDecodeSize(p);
+  
+  if (s == HeaderDef::MAX_HBSIZE) {
+    Tuple *newp, *realnp;
+    
+    p      = (Tuple *) ((char *) p - 4);
+    s      = *((t_size *) p);
+    newp   = MemManager::Alloc(dst, (s + 2));
+    realnp = (Tuple *) ((char *) newp + 4);
+    
+    memcpy(newp, p, (s + 2) << 2);
+    GCHelper::EncodeGen(realnp, dst->gen);
+    return realnp;
+  }
+  else {
+    Tuple *newp = MemManager::Alloc(dst, (s + 1));
+    
+    memcpy(newp, p, (s + 1) << 2);
+    GCHelper::EncodeGen(newp, dst->gen);
+    return newp;
+  }
+}
+
 void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *scan) {
   while (anchor != NULL) {
     // Scan current chunk
     while (scan < anchor->GetTop()) {
-      b_pointer curp = (b_pointer) scan;
+      Tuple *curp    = (Tuple *) scan;
       word assumed_s = *((word *) curp);
       t_size cursize;
       
       // Find next header
-      if (Helper::IsInt(assumed_s)) {
-	cursize = (t_size) Helper::DecodeInt(assumed_s);
-	curp    = (b_pointer) ((char *) scan + 4);
+      if (PointerOp::IsInt(assumed_s)) {
+	cursize = (t_size) PointerOp::DecodeInt(assumed_s);
+	curp    = (Tuple *) ((char *) scan + 4);
       }
       else {
-	cursize = Helper::BlankDecodeSize(curp);
+	cursize = HeaderOp::BlankDecodeSize(curp);
       }
       
       // Scan current tuple
       for (u_int i = 1; i <= cursize; i++) {
-	t_field tf   = Store::GenTField(i);
-	word p       = Helper::Deref(Store::GetArg(curp, tf));
-	b_pointer sp = Helper::RemoveTag(p);
+	t_field tf = Store::GenTField(i);
+	word p     = PointerOp::Deref(curp->GetArg(tf));
+	Tuple *sp  = PointerOp::RemoveTag(p);
 	
-	if (!Helper::IsInt(p) && (Helper::GetHeader(sp) <= match_gen)) {
-	  if (Helper::AlreadyMoved(sp)) {
-	    Store::SetArg(curp, tf, Helper::GetForwardPtr(sp));
+	if (!PointerOp::IsInt(p) && (HeaderOp::GetHeader(sp) <= match_gen)) {
+	  if (GCHelper::AlreadyMoved(sp)) {
+	    curp->InitArg(tf, GCHelper::GetForwardPtr(sp));
 	  }
 	  else {
-	    b_pointer newsp = Helper::CopyBlockToDst(sp, dst);
-	    word newp       = Helper::EncodeTag(newsp, Helper::DecodeTag(p));
+	    Tuple *newsp = CopyBlockToDst(sp, dst);
+	    word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
 	    
-	    Helper::MarkMoved(sp, newp);
-	    Store::SetArg(curp, tf, newp);
+	    GCHelper::MarkMoved(sp, newp);
+	    curp->InitArg(tf, newp);
 	  }
 	}
       }
@@ -59,6 +80,11 @@ void Store::ScanChunks(MemChain *dst, u_int match_gen, MemChunk *anchor, char *s
   }
 }
 
+void Store::InitStore() {
+  MemManager::InitMemManager();
+  Tuple::intgen_set = new DynamicTuple(64);
+}
+
 void Store::DoGC(DynamicTuple *root_set, u_int gen) {
   u_int match_gen  = HeaderDef::GEN_LIMIT[gen];
   u_int dst_gen    = (gen + 1);
@@ -69,13 +95,13 @@ void Store::DoGC(DynamicTuple *root_set, u_int gen) {
 
   // Copy matching root_set entries
   for (u_int i = 0; i < rs_size; i++) {
-    word p       = Helper::Deref(root_set->GetArg(i));
-    b_pointer sp = Helper::RemoveTag(p); 
+    word p    = PointerOp::Deref(root_set->GetArg(i));
+    Tuple *sp = PointerOp::RemoveTag(p); 
 
-    if (Helper::GetHeader(sp) <= match_gen) {
-      b_pointer newsp = Helper::CopyBlockToDst(sp, dst);
-      word newp       = Helper::EncodeTag(newsp, Helper::DecodeTag(p));
-      Helper::MarkMoved(sp, newp);
+    if (HeaderOp::GetHeader(sp) <= match_gen) {
+      Tuple *newsp = CopyBlockToDst(sp, dst);
+      word newp    = PointerOp::EncodeTag(newsp, PointerOp::DecodeTag(p));
+      GCHelper::MarkMoved(sp, newp);
       root_set->SetArg(i, newp);
     }
   }
@@ -88,32 +114,32 @@ void Store::DoGC(DynamicTuple *root_set, u_int gen) {
   scan   = anchor->GetTop();
 
   // Handle InterGenerational Pointers
-  rs_size = intgen_set->GetSize();
+  rs_size = Tuple::intgen_set->GetSize();
   for (u_int i = 0; i < rs_size; i++) {
-    b_pointer curp = Helper::RemoveTag(Helper::Deref(intgen_set->GetArg(i)));
-    u_int cursize  = Store::GetSize(curp);
+    Tuple *curp   = PointerOp::RemoveTag(PointerOp::Deref(Tuple::intgen_set->GetArg(i)));
+    u_int cursize = curp->GetSize();
     
     for (u_int k = 1; k <= cursize; k++) {
-      t_field tf    = Store::GenTField(k);
-      word fp       = Helper::Deref(Store::GetArg(curp, tf));
-      b_pointer fsp = Helper::RemoveTag(fp);
+      t_field tf = Store::GenTField(k);
+      word fp    = PointerOp::Deref(curp->GetArg(tf));
+      Tuple *fsp = PointerOp::RemoveTag(fp);
       
-      if (!Helper::IsInt(fp) && (Helper::GetHeader(fsp) <= match_gen)) {
-	if (Helper::AlreadyMoved(fsp)) {
-	  Store::SetArg(curp, tf, Helper::GetForwardPtr(fsp));
+      if (!PointerOp::IsInt(fp) && (HeaderOp::GetHeader(fsp) <= match_gen)) {
+	if (GCHelper::AlreadyMoved(fsp)) {
+	  curp->InitArg(tf, GCHelper::GetForwardPtr(fsp));
 	}
 	else {
-	  b_pointer newfsp = Helper::CopyBlockToDst(fsp, dst);
-	  word newfp       = Helper::EncodeTag(newfsp, Helper::DecodeTag(fp));
+	  Tuple *newfsp = CopyBlockToDst(fsp, dst);
+	  word newfp    = PointerOp::EncodeTag(newfsp, PointerOp::DecodeTag(fp));
 
-	  Helper::MarkMoved(fsp, newfp);
-	  Store::SetArg(curp, tf, newfp);
+	  GCHelper::MarkMoved(fsp, newfp);
+	  curp->InitArg(tf, newfp);
 	}
       }
     }
   }
-  intgen_set->Clear();
-  // Scan chunks (intgen_set amount)
+  Tuple::intgen_set->Clear();
+  // Scan chunks (Tuple::intgen_set amount)
   Store::ScanChunks(dst, match_gen, anchor, scan);
 
   // Clean up collected regions

@@ -3,8 +3,7 @@
 
 #include "headerdef.hh"
 
-#define INVALID_BPOINTER NULL
-#define INVALID_TPOINTER NULL
+#define INVALID_POINTER NULL
 
 typedef unsigned int u_int;
 
@@ -13,18 +12,6 @@ typedef struct {
   unsigned int *dummy_entry;
 } word_s;
 typedef word_s * word;
-
-// Block Pointer Datatype
-typedef struct {
-  unsigned int *dummy_entry;
-} b_pointer_s;
-typedef b_pointer_s * b_pointer;
-
-// Transient Pointer Datatype
-typedef struct {
-  unsigned int *dummy_entry;
-} t_pointer_s;
-typedef t_pointer_s * t_pointer;
 
 // Tuple Labels (Block Tags)
 typedef enum {
@@ -65,5 +52,8 @@ typedef enum {
   INTMASK = 1,
   TAGMASK = 3
 } mask;
+
+class Tuple;
+class Transient;
 
 #endif

@@ -21,7 +21,7 @@ protected:
 public:
   static void InitMemManager();
   static void CloseMemManager();
-  static b_pointer Alloc(MemChain *chain, u_int size);
+  static Tuple *Alloc(MemChain *chain, u_int size);
 };
 
 #endif

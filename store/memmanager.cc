@@ -9,7 +9,7 @@ u_int MemManager::needGC;
 //
 // Helper Functions
 //
-static inline MemChunk *MakeList(u_int l) {
+static MemChunk *MakeList(u_int l) {
   MemChunk *list = NULL;
 
   while (l-- > 0) {
@@ -23,7 +23,7 @@ static inline MemChunk *MakeList(u_int l) {
   return list;
 }
 
-static inline void ClearList(MemChunk *list) {
+static void ClearList(MemChunk *list) {
   while (list != NULL) {
     MemChunk *tmp = list->GetNext();
 
@@ -57,7 +57,7 @@ void MemManager::CloseMemManager() {
   }
 }
 
-b_pointer MemManager::Alloc(MemChain *chain, u_int size) {
+Tuple *MemManager::Alloc(MemChain *chain, u_int size) {
   MemChunk *list;
 
   Assert(size > 0);
@@ -80,7 +80,15 @@ b_pointer MemManager::Alloc(MemChain *chain, u_int size) {
   }
   chain->used += size;
 
-  return (b_pointer) list->AllocChunkItem(size);
+#ifdef DEBUG_CHECK
+  {
+    char *tmp = list->AllocChunkItem(size);
+    memset(tmp, 0, size);
+    return (Tuple *) tmp;
+  }
+#else
+  return (Tuple *) list->AllocChunkItem(size);
+#endif
 }
 
 u_int MemManager::NeedGC() {

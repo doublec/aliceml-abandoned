@@ -14,7 +14,7 @@ all: test.cc $(OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 memmanager.cc: memmanager.hh memchunk.hh
-store.cc: store.hh helper.hh tuple.hh
+store.cc: store.hh headerop.hh pointerop.hh tuple.hh gchelper.hh
 
 clean:
 	rm -rf test $(OBJS)
