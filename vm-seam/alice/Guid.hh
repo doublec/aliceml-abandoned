@@ -10,14 +10,14 @@
 //   $Revision$
 //
 
-#ifndef __GENERIC_GUID__
-#define __GENERIC_GUID__
+#ifndef __ALICE__GUID__
+#define __ALICE__GUID__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Guid.hh"
+#pragma interface "alice/Guid.hh"
 #endif
 
-#include "Tuple.hh"
+#include "generic/Tuple.hh"
 
 class Guid: private Tuple {
 private:
