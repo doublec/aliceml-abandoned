@@ -33,6 +33,7 @@ public:
     return cell->ToWord();
   }
   static int Length(word a) {
+    //--** does not work with transients!
     int n = 0;
     
     while (true) {
