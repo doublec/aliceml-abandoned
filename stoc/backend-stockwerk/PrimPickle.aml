@@ -43,13 +43,13 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	type size = Int.int
 
-	val tPOSINT  = 0w0: Word8.word
-	val tNEGINT  = 0w1: Word8.word
-	val tCHUNK   = 0w2: Word8.word
-	val tBLOCK   = 0w3: Word8.word
-	val tCLOSURE = 0w4: Word8.word
-	val tREF     = 0w5: Word8.word
-	val tHANDLER = 0w6: Word8.word
+	val tPOSINT    = 0w0: Word8.word
+	val tNEGINT    = 0w1: Word8.word
+	val tCHUNK     = 0w2: Word8.word
+	val tBLOCK     = 0w3: Word8.word
+	val tCLOSURE   = 0w4: Word8.word
+	val tREF       = 0w5: Word8.word
+	val tTRANSFORM = 0w6: Word8.word
 
 	fun outputByte ((outstream, _, _), w) = BinIO.output1 (outstream, w)
 
@@ -121,12 +121,11 @@ structure PrimPickle :> PRIM_PICKLE =
 			id
 		    end
 
-	fun outputHandler (q, name, label, size) =
+	fun outputTransform (q, name) =
 	    let
 		val id = inc q
 	    in
-		outputByte (q, tHANDLER); outputString (q, name);
-		outputBlock (q, label, size); id
+		outputByte (q, tTRANSFORM); outputString (q, name); id
 	    end
 
 	fun closeOut (outstream, _, _) = BinIO.closeOut outstream

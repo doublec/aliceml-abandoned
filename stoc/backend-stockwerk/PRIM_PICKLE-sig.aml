@@ -11,7 +11,7 @@
  *)
 
 (*
- * pickle    ::= int | chunk | block | handler
+ * pickle    ::= int | chunk | block | transform
  * int       ::= POSINT <uint> | NEGINT <uint>
  * chunk     ::= CHUNK size <byte>*size
  * size      ::= <uint>
@@ -21,7 +21,7 @@
  * field     ::= pickle | reference
  * reference ::= REF id
  * id        ::= <uint>
- * handler   ::= HANDLER (chunk|reference) field
+ * transform ::= TRANSFORM (chunk|reference) field
  *)
 
 signature PRIM_PICKLE =
@@ -50,6 +50,6 @@ signature PRIM_PICKLE =
 	val outputBlock: outstream * label * size -> id
 	val outputReference: outstream * id -> unit
 	val outputString: outstream * string -> id
-	val outputHandler: outstream * string * label * size -> id
+	val outputTransform: outstream * string -> id
 	val closeOut: outstream -> unit
     end

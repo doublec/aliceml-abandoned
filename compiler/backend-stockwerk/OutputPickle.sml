@@ -77,8 +77,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    PrimPickle.outputReference (outstream, id)
 	fun outputString ({outstream, ...}: context, s) =
 	    PrimPickle.outputString (outstream, s)
-	fun outputHandler ({outstream, ...}: context, name, label, size) =
-	    PrimPickle.outputHandler (outstream, name, label, size)
+	fun outputTransform ({outstream, ...}: context, name) =
+	    PrimPickle.outputTransform (outstream, name)
 
 	fun outputOption _ (context, NONE) =
 	    outputInt (context, Label.none)
@@ -143,8 +143,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    end
 
 	fun outputValue (context, Prim name) =
-	    (outputHandler (context, "Alice.primitive", Label.TAG 0, 1);
-	     ignore (outputString (context, name)))
+	    (outputTransform (context, "Alice.primitive");
+	     outputBlock (context, Label.TAG 0, 1);
+	     outputString (context, name); ())
 	  | outputValue (context, Int i) = outputInt (context, i)
 	  | outputValue (context, String s) =
 	    ignore (outputString (context, s))
@@ -177,7 +178,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputValue (context, Sign sign) = outputInt (context, 0) (*--** *)
 	and outputFunction (context,
 			    Function (nglobals, nlocals, args, body)) =
-	    (outputHandler (context, "Alice.function", Label.function, 4);
+	    (outputTransform (context, "Alice.function");
+	     outputBlock (context, Label.function, 4);
 	     outputInt (context, LargeInt.fromInt nglobals);
 	     outputInt (context, LargeInt.fromInt nlocals);
 	     outputArgs outputIdDef (context, args);
