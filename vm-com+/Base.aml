@@ -47,6 +47,10 @@ infix  0  before
 
 structure __pervasive =
   struct
+    __primitive type zero		= "zero"
+    __primitive type 'a succ		= "succ"
+    __primitive type ('a,'b) conarrow	= "conarrow"
+
     structure Label =
     struct
 	fun fromString x = fromString x
