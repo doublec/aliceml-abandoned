@@ -20,7 +20,7 @@
 #include "generic/Debug.hh"
 #include "alice/AbstractCode.hh"
 
-static const char *opcodes[AbstractCode::nInstrs] = {
+static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
   "DirectAppVar", "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
   "LazyPolySel", "PutCon", "PutNew", "PutRef", "PutTag", "PutTup",
@@ -28,6 +28,14 @@ static const char *opcodes[AbstractCode::nInstrs] = {
   "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
   "Try", "VecTest"
 };
+
+const char *AbstractCode::GetOpcodeName(instr opcode) {
+  return opcodeNames[opcode];
+}
+
+const char *AbstractCode::GetOpcodeName(TagVal *pc) {
+  return GetOpcodeName(AbstractCode::GetInstr(pc));
+}
 
 #define OPT(w, X) {				\
   TagVal *opt = TagVal::FromWord(w);		\
@@ -240,7 +248,7 @@ void Disassembler::Start() {
       continue;
     done->InsertItem(pc->ToWord(), Store::IntToWord(0));
     operand = 0;
-    fprintf(file, "%p %s", pc, opcodes[AbstractCode::GetInstr(pc)]);
+    fprintf(file, "%p %s", pc, AbstractCode::GetOpcodeName(pc));
     switch (AbstractCode::GetInstr(pc)) {
     case AbstractCode::Kill:
       IDS LASTINSTR break;

@@ -50,6 +50,9 @@ public:
   };
   static const u_int nInstrs = VecTest + 1;
 
+  static const char *GetOpcodeName(instr opcode);
+  static const char *GetOpcodeName(TagVal *pc);
+
   enum idRef {
     Global, Immediate, LastUseLocal, Local, Toplevel
   };
