@@ -29,6 +29,10 @@ public:
 			   u_int arity, bool sited = false);
   static word MakeClosure(const char *name, function function,
 			  u_int arity, bool sited = false);
+
+  // Push a new primitive frame and call primitive directly
+  static Interpreter::Result Execute(Interpreter *interpreter,
+				     TaskStack *taskStack);
 };
 
 #endif

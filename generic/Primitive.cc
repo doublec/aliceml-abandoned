@@ -59,6 +59,8 @@ public:
   PrimitiveInterpreter(const char *_name, Primitive::function _function,
 		       u_int _arity, bool _sited):
     name(_name), function(_function), arity(_arity), sited(_sited) {}
+  static Interpreter::Result Run(PrimitiveInterpreter *interpreter,
+				 TaskStack *taskStack);
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
@@ -73,6 +75,34 @@ public:
 //
 // PrimitiveInterpreter Functions
 //
+inline Interpreter::Result
+PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter,
+			  TaskStack *taskStack) {
+  switch (interpreter->arity) {
+  case 0:
+    if (Scheduler::nArgs == Scheduler::ONE_ARG) {
+      Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
+      if (t == INVALID_POINTER) { // is determined
+	return interpreter->function(taskStack);
+      } else { // need to request
+	Scheduler::currentData = Scheduler::currentArgs[0];
+	return Interpreter::REQUEST;
+      }
+    }
+  case 1:
+    interpreter->Construct();
+    return interpreter->function(taskStack);
+  default:
+    if (interpreter->Deconstruct()) {
+      // Deconstruct has set Scheduler::currentData as a side-effect
+      return Interpreter::REQUEST;
+    } else {
+      Assert(Scheduler::nArgs == arity);
+      return interpreter->function(taskStack);
+    }
+  }
+}
+
 Block *
 PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
   if (sited) {
@@ -90,29 +120,7 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
 }
 
 Interpreter::Result PrimitiveInterpreter::Run(TaskStack *taskStack) {
-  switch (arity) {
-  case 0:
-    if (Scheduler::nArgs == Scheduler::ONE_ARG) {
-      Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
-      if (t == INVALID_POINTER) { // is determined
-	return function(taskStack);
-      } else { // need to request
-	Scheduler::currentData = Scheduler::currentArgs[0];
-	return Interpreter::REQUEST;
-      }
-    }
-  case 1:
-    Construct();
-    return function(taskStack);
-  default:
-    if (Deconstruct()) {
-      // Deconstruct has set Scheduler::currentData as a side-effect
-      return Interpreter::REQUEST;
-    } else {
-      Assert(Scheduler::nArgs == arity);
-      return function(taskStack);
-    }
-  }
+  return Run(this, taskStack);
 }
 
 const char *PrimitiveInterpreter::Identify() {
@@ -149,4 +157,12 @@ word Primitive::MakeClosure(const char *name, Primitive::function function,
 			    u_int arity, bool sited) {
   word concreteCode = MakeFunction(name, function, arity, sited);
   return Closure::New(concreteCode, 0)->ToWord();
+}
+
+Interpreter::Result
+Primitive::Execute(Interpreter *interpreter, TaskStack *taskStack) {
+  PrimitiveInterpreter *primitive =
+    static_cast<PrimitiveInterpreter *>(interpreter);
+  taskStack->PushFrame(PrimitiveFrame::New(primitive)->ToWord());
+  return PrimitiveInterpreter::Run(primitive, taskStack);
 }
