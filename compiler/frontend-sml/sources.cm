@@ -24,6 +24,7 @@ is
     ml-yacc-lib.cm
     ../misc/sources.cm
     ../error/sources.cm
+    ../top/phase.cm
 
     (* SML syntax *)
 

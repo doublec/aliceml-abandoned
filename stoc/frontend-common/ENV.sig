@@ -21,8 +21,8 @@ signature ENV =
     exception Lookup    of stamp
 
     val new :		unit -> env
-    val copy :		env -> env
-    val copyScope :	env -> env
+    val clone :		env -> env
+    val cloneScope :	env -> env
     val splitScope :	env -> env
     val insertScope :	env -> unit
     val deleteScope :	env -> unit

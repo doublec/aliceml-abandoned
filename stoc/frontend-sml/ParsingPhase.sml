@@ -3,8 +3,10 @@ structure ParsingPhase :> PARSING_PHASE =
 
     (* Import *)
 
-    structure Grammar = InputGrammar
-    structure E       = ParsingError
+    structure C = EmptyContext
+    structure I = Source
+    structure O = InputGrammar
+    structure E = ParsingError
 
 
     (* Build Yacc parser *)
@@ -44,5 +46,7 @@ structure ParsingPhase :> PARSING_PHASE =
 	in
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end
+
+    fun translate() = parse
 
   end

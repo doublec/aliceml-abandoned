@@ -13,6 +13,7 @@
 structure ElaborationPhase :> ELABORATION_PHASE =
   struct
 
+    structure C = Env
     structure I = AbstractGrammar
     structure O = TypedGrammar
     structure E = ElaborationError
@@ -1892,7 +1893,7 @@ val _ = print "\n"
 
 
 
-    fun elab E component =
+    fun translate E component =
 	let
 	    val _         = insertScope E
 	    val impsdecs' = elabComp(E, component)

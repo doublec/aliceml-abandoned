@@ -59,6 +59,8 @@ structure BindEnv :> BIND_ENV =
     and      Str = Info * stamp * Env
     and      Sig = Info * stamp * Env
 
+    type t = Env
+
     fun asInfo(SOME(INF x)) = SOME x | asInfo _ = NONE
     fun asFldo(SOME(FLD x)) = SOME x | asFldo _ = NONE
     fun asVaro(SOME(VAR x)) = SOME x | asVaro _ = NONE
@@ -106,8 +108,8 @@ structure BindEnv :> BIND_ENV =
     (* Actual operations *)
 
     fun new()				= ENV(Map.new())
-    fun copy(ENV E)			= ENV(Map.copy E)
-    fun copyScope(ENV E)		= ENV(Map.copyScope E)
+    fun clone(ENV E)			= ENV(Map.clone E)
+    fun cloneScope(ENV E)		= ENV(Map.cloneScope E)
     fun splitScope(ENV E)		= ENV(Map.splitScope E)
 
     fun insertScope(ENV E)		= Map.insertScope E

@@ -1,13 +1,13 @@
 structure AbstractionPhase :> ABSTRACTION_PHASE =
   struct
 
+    structure C   = BindEnv
     structure I   = InputGrammar
     structure O   = AbstractGrammar
     structure E   = AbstractionError
-    structure Env = BindEnv
 
     open I
-    open Env
+    open BindEnv
 
 
   (* Error handling *)
@@ -545,7 +545,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trMrule E (Mrule(i, pat, exp)) =
 	let
-		val E'   = Env.new()
+		val E'   = BindEnv.new()
 		val pat' = trPat (E,E') pat
 		val  _   = inheritScope(E,E')
 		val exp' = trExp E exp
@@ -635,13 +635,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		trAppPat (E,E') (Infix.pat (infEnv E) pat)
 
 	 | TYPEDPat(i, pat, ty)	=> O.AnnPat(i, trPat (E,E') pat, trTy E ty)
-	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,Env.new()) pat)
+	 | NONPat(i, pat)	=> O.NegPat(i, trPat (E,BindEnv.new()) pat)
 	 | ASPat(i, pat1, pat2) => O.AsPat(i,trPat (E,E') pat1,trPat(E,E') pat2)
 	 | WHENPat(i, pat, atexp) =>
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
-		val  _   = inheritScope(E, copyScope E')
+		val  _   = inheritScope(E, cloneScope E')
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -654,7 +654,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
-		val  _   = inheritScope(E, copyScope E')
+		val  _   = inheritScope(E, cloneScope E')
 		val  _   = insertScope E'
 		val decs'= trValBindo (E,E') (SOME valbind)
 		val  _   = deleteScope E
@@ -670,10 +670,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  _   = insertScope E'
 		val pat' = trPat (E,E') pat
-		val  _   = inheritScope(E, copyScope E')
+		val  _   = inheritScope(E, cloneScope E')
 		val  _   = insertScope E'
 		val ids' = trFvalBindo_lhs (E,E') (SOME fvalbind)
-		val  _   = inheritScope(E, copyScope E')
+		val  _   = inheritScope(E, cloneScope E')
 		val exps'= trFvalBindo_rhs E (SOME fvalbind)
 		val decs'= ListPair.map
 				(fn(id',exp') =>
@@ -717,9 +717,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val _    = insertScope E'
 	    val pat' = trPat (E,E') pat
 	    val E''  = splitScope E'
-	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
-			  error(infoPat pat, E.AltPatInconsistent)
-	    val _    = Env.appiScopeVals
+	    val _    = if BindEnv.sizeScope E' = BindEnv.sizeScope E'' then ()
+		       else error(infoPat pat, E.AltPatInconsistent)
+	    val _    = BindEnv.appiScopeVals
 			    (fn(vid,_) =>
 				if Option.isSome(lookupVal(E'',vid)) then ()
 				else error(infoPat pat, E.AltPatInconsistent)
@@ -859,7 +859,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trDec'(E,acc) =
 	fn VALDec(i, tyvarseq, valbind) =>
 	   let
-		val  E'   = Env.new()
+		val  E'   = BindEnv.new()
 		val  _    = insertScope E
 		val ids'  = trValTyVarSeq E tyvarseq @
 			    unguardedTyVarsValBind E valbind
@@ -877,7 +877,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | FUNDec(i, tyvarseq, fvalbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val ids'  = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _    = union(E,E')
 		val  _    = insertScope E
@@ -896,7 +896,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | TYPEDec(i, typbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
 		val  _    = union(E,E')
 	   in
@@ -906,7 +906,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | EQTYPEDec(i, typbind) =>
 	   (* UNFINISHED *)
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
 		val  _    = union(E,E')
 	   in
@@ -916,7 +916,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | EQEQTYPEDec(i, typbind) =>
 	   (* UNFINISHED *)
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
 		val  _    = union(E,E')
 	   in
@@ -925,7 +925,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | DATATYPEDec(i, datbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val  _    = trDatBindo_lhs (E,E') (SOME datbind)
 		val  _    = union(E,E')
 		val decs' = trDatBindo_rhs (E,E') (SOME datbind)
@@ -950,7 +950,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | CONSTRUCTORDec(i, dconbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trDconBindo' (E,E',acc) (SOME dconbind)
 		val  _    = union(E,E')
 	   in
@@ -959,7 +959,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | STRUCTUREDec(i, strbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trStrBindo' (E,E',acc) (SOME strbind)
 		val  _    = union(E,E')
 	   in
@@ -968,7 +968,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | SIGNATUREDec(i, sigbind) =>
 	   let
-		val E'    = Env.new()
+		val E'    = BindEnv.new()
 		val decs' = trSigBindo' (E,E',acc) (SOME sigbind)
 		val _     = union(E,E')
 	   in
@@ -1385,7 +1385,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trFmrule_rhs E (Mrule(i, fpat, exp)) =
 	   let
-		val  E'                = Env.new()
+		val  E'                = BindEnv.new()
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
 		val  _                 = inheritScope(E,E')
 		val  exp'              = trExp E exp
@@ -1410,7 +1410,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  _   = insertScope E'
 		val (pat',arity,typs') = trFpat_rhs (E,E') fpat
-		val  _   = inheritScope(E, copyScope E')
+		val  _   = inheritScope(E, cloneScope E')
 		val exp' = trAtExp E atexp
 		val  _   = deleteScope E
 		val  _   = mergeDisjointScope E' handle CollisionVal vid' =>
@@ -1464,9 +1464,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val _    = insertScope E'
 	    val pat'aritytyps' = trFpat_rhs (E,E') fpat
 	    val E''  = splitScope E'
-	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
-			  error(infoPat fpat, E.AltPatInconsistent)
-	    val _    = Env.appiVals
+	    val _    = if BindEnv.sizeScope E' = BindEnv.sizeScope E'' then ()
+		       else error(infoPat fpat, E.AltPatInconsistent)
+	    val _    = BindEnv.appiVals
 			    (fn(vid,_) =>
 				if Option.isSome(lookupVal(E'',vid)) then ()
 				else error(infoPat fpat, E.AltPatInconsistent)
@@ -1509,7 +1509,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
 		val dec'        = O.DatDec(i, id', funtyp')
 		val _           = insertDisjointTy(E', tycon',
-						  (i', stamp, Env.new()))
+						  (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
 				      error(i', E.TypBindDuplicate tycon')
 	   in
@@ -1528,7 +1528,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val funtyp'     = funtyp(ids', typ')
 		val dec'        = O.TypDec(i', id', funtyp')
 		val _           = insertDisjointTy(E', tycon',
-						   (i', stamp, Env.new()))
+						   (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
 				      error(i', E.TypBindDuplicate tycon')
 	   in
@@ -1545,7 +1545,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val TyCon(i',tycon') = tycon
 		val (id',stamp)      = trTyCon_bind E tycon
 		val  _               = insertDisjointTy(E', tycon',
-							(i', stamp, Env.new()))
+						(i', stamp, BindEnv.new()))
 				       handle CollisionTy _ =>
 					   error(i', E.DatBindDuplicate tycon')
 	   in
@@ -1799,7 +1799,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trAtSigExp E =
 	fn ANYAtSigExp(i) =>
 	   let
-		val E' = Env.new()
+		val E' = BindEnv.new()
 	   in
 		( O.TopInf(i), E' )
 	   end
@@ -2093,7 +2093,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
 		val spec'       = O.DatSpec(i, id', funtyp')
 		val _           = insertDisjointTy(E, tycon',
-						   (i', stamp, Env.new()))
+						   (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
 				      error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -2112,7 +2112,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val funtyp'     = funtyp(ids', typ')
 		val spec'       = O.TypSpec(i, id', funtyp')
 		val _           = insertDisjointTy(E, tycon',
-						   (i', stamp, Env.new()))
+						   (i', stamp, BindEnv.new()))
 				  handle CollisionTy _ =>
 				      error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -2129,7 +2129,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val TyCon(i',tycon') = tycon
 		val (id',stamp)      = trTyCon_bind E tycon
 		val _                = insertDisjointTy(E, tycon',
-						        (i', stamp, Env.new()))
+						   (i', stamp, BindEnv.new()))
 				       handle CollisionTy _ =>
 					 error(i', E.SpecTyConDuplicate tycon')
 	   in
@@ -2290,7 +2290,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _          = deleteScope E
 		val  spec'      = O.InfSpec(i', id', inf')
 		val  _          = insertDisjointSig(E, sigid',
-						    (i', stamp, Env.new()))
+						    (i', stamp, BindEnv.new()))
 				  handle CollisionSig _ =>
 				      error(i', E.SpecSigIdDuplicate sigid')
 	   in

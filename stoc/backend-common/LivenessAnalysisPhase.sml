@@ -45,7 +45,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun del (lset as (Orig set), Id (_, stamp, _)) =
 	    if StampSet.member (set, stamp) then
 		let
-		    val set' = StampSet.copy set
+		    val set' = StampSet.clone set
 		in
 		    StampSet.delete (set', stamp);
 		    Copy set'
@@ -61,7 +61,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    if StampSet.member (set, stamp) then lset
 	    else
 		let
-		    val set' = StampSet.copy set
+		    val set' = StampSet.clone set
 		in
 		    StampSet.insert (set', stamp);
 		    Copy set'
@@ -74,7 +74,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	fun union (Orig set, set') =
 	    let
-		val set'' = StampSet.copy set
+		val set'' = StampSet.clone set
 	    in
 		StampSet.union (set'', set');
 		Copy set''
@@ -118,7 +118,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		    lset idExpList
 		val set = lazyValOf lset'
 		val _ = setInfo (i, set)
-		val set' = StampSet.copy set
+		val set' = StampSet.clone set
 	    in
 		List.app (fn (Id (_, stamp, _), _) =>
 			  StampSet.delete (set', stamp)) idExpList;
@@ -277,17 +277,17 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initStm (ReraiseStm (_, _), _) = ()
 	  | initStm (HandleStm (_, body1, id, body2, body3, _), set) =
 	    let
-		val set' = StampSet.copy set
+		val set' = StampSet.clone set
 	    in
 		ins (set', id);
-		initBody (body1, StampSet.copy set);
+		initBody (body1, StampSet.clone set);
 		initBody (body2, set');
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
 	  | initStm (TestStm (_, _, test, body1, body2), set) =
 	    let
-		val set' = StampSet.copy set
+		val set' = StampSet.clone set
 	    in
 		initTest (test, set'); initBody (body1, set');
 		initBody (body2, set)

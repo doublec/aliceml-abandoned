@@ -25,19 +25,23 @@ structure Main :> MAIN =
 	    TextIO.closeOut file
 	end
 
-    fun abstract' x = AbstractionPhase.translate (BindEnv.copy BindEnv0.E0) x
-    fun elab' x     = ElaborationPhase.elab (Env.copy Env0.E0) x
+    fun parse' x     = ParsingPhase.translate () x
+    fun abstract' x  = AbstractionPhase.translate (BindEnv.clone BindEnv0.E0) x
+    fun elab' x      = ElaborationPhase.translate (Env.clone Env0.E0) x
+    fun translate' x = TranslationPhase.translate () x
+    fun flatten' x   = MatchCompilationPhase.translate x
+    fun illify' x    = CodeGenPhase.genComponent x
 
-    val parse      = ParsingPhase.parse o Source.fromString
-    val abstract   = abstract' o parse
-    val elab       = elab' o abstract
-    val translate  = TranslationPhase.translate o elab
-    val imperatify = MatchCompilationPhase.translate o translate
-    val illify     = CodeGenPhase.genComponent o imperatify
+    val parse        = parse' o Source.fromString
+    val abstract     = abstract' o parse
+    val elab         = elab' o abstract
+    val translate    = translate' o elab
+    val flatten      = flatten' o translate
+    val illify       = illify' o flatten
 
     fun ozify outstream s =
 	let
-	    val component = imperatify s
+	    val component = flatten s
 	in
 	    OzifyImperativeGrammar.outputComponent (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
@@ -45,7 +49,7 @@ structure Main :> MAIN =
 
     fun debug outstream s =
 	let
-	    val x = imperatify s
+	    val x = flatten s
 	    val _ = LivenessAnalysisPhase.annotate x
 	    val s' = OutputImperativeGrammar.outputComponent x
 	in
@@ -72,8 +76,8 @@ structure Main :> MAIN =
     val translateString		= processString translate
     val translateFile		= processFile translate
 
-    val imperatifyString	= processString imperatify
-    val imperatifyFile		= processFile imperatify
+    val imperatifyString	= processString flatten
+    val imperatifyFile		= processFile flatten
 
     val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
     val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)

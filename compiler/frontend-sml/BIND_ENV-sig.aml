@@ -24,6 +24,8 @@ signature BIND_ENV =
     type Str = Info * stamp * Env
     type Sig = Info * stamp * Env
 
+    type t = Env
+
 
     exception CollisionInf of VId
     exception CollisionFld of Lab
@@ -39,8 +41,8 @@ signature BIND_ENV =
     val size :			Env -> int
     val sizeScope :		Env -> int
 
-    val copy :			Env -> Env
-    val copyScope :		Env -> Env
+    val clone :			Env -> Env
+    val cloneScope :		Env -> Env
 
     val insertScope :		Env -> unit
     val deleteScope :		Env -> unit

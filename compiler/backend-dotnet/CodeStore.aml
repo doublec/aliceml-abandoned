@@ -69,7 +69,7 @@ structure CodeStore :> CODE_STORE =
 	    (namespace := dottedname;
 	     classes := Map.new ();
 	     env := [(global, "main", 0,
-		      (ScopedMap.copy preboundScope, ref 0, ref 0, ref nil),
+		      (ScopedMap.clone preboundScope, ref 0, ref 0, ref nil),
 		      ref nil)])
 
 	fun defineClass (stamp, extends, implements) =
@@ -92,7 +92,7 @@ structure CodeStore :> CODE_STORE =
 		  | NONE =>
 			Map.insertDisjoint (!classes, stamp,
 					    (ref classAttr,
-					     ScopedMap.copy preboundScope,
+					     ScopedMap.clone preboundScope,
 					     ref [ctor]))
 	    end
 
@@ -104,7 +104,7 @@ structure CodeStore :> CODE_STORE =
 			    (scope, classDeclsRef)
 		      | NONE =>
 			    let
-				val scope = ScopedMap.copy preboundScope
+				val scope = ScopedMap.clone preboundScope
 				val classDeclsRef = ref nil
 			    in
 				Map.insertDisjoint

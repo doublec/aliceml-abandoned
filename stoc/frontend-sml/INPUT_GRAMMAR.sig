@@ -337,6 +337,10 @@ signature INPUT_GRAMMAR =
     withtype TySeq    = Ty Seq
     and      TyVarSeq = TyVar Seq
 
+    (* The Type(tm) *)
+
+    type t = Component
+
 
     (* Operations *)
 

@@ -116,6 +116,7 @@ UNFINISHED: obsolete after bootstrapping:
     (* Components *)
 
     type component = (id * sign * Url.t) list * (exp * sign)
+    type t = component
 
 
     (* Projections *)

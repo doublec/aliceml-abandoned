@@ -23,12 +23,14 @@ functor MakeCompiler(
 	, beSpec: BackendSpecific.C.t
 	}
 
+(*UNFINISHED: Do we need this here? Somehow compromises our modularization.
     val initial =
 	{ feSpec = FrontendSpecific.C.initial()
 	, feComm = FrontendCommon.C.initial()
 	, beComm = BackendCommon.C.initial()
 	, beSpec = BackendSpecific.C.initial()
 	}
+*)
 
     fun clone {feSpec,feComm,beComm,beSpec} =
 	{ feSpec = FrontendSpecific.C.clone feSpec

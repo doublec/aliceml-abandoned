@@ -1,4 +1,8 @@
 signature PARSING_PHASE =
   sig
-    val parse: Source.t -> InputGrammar.Component
+    structure C : CONTEXT       = EmptyContext
+    structure I : SOURCE        = Source
+    structure O : INPUT_GRAMMAR = InputGrammar
+
+    val translate : C.t -> I.source -> InputGrammar.Component
   end

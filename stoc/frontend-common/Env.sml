@@ -56,8 +56,8 @@ structure Env :> ENV =
     exception Lookup    = Map.Lookup
 
     fun new()				= ENV(Map.new())
-    fun copy(ENV E)			= ENV(Map.copy E)
-    fun copyScope(ENV E)		= ENV(Map.copyScope E)
+    fun clone(ENV E)			= ENV(Map.clone E)
+    fun cloneScope(ENV E)		= ENV(Map.cloneScope E)
     fun splitScope(ENV E)		= ENV(Map.splitScope E)
     fun insertScope(ENV E)		= Map.insertScope E
     fun deleteScope(ENV E)		= Map.deleteScope E

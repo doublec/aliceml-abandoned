@@ -337,6 +337,10 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     withtype TySeq    = Ty Seq
     and      TyVarSeq = TyVar Seq
 
+    (* The Type(tm) *)
+
+    type t = Component
+
 
     (* Extracting info fields *)
 

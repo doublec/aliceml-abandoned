@@ -1,7 +1,7 @@
 signature CONTEXT =
   sig
     type t
-    val initial: unit -> t
+    (* val initial: unit -> t *)
     val clone:   t    -> t
   end
 

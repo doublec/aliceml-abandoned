@@ -1,6 +1,7 @@
 structure TranslationPhase :> TRANSLATION_PHASE =
   struct
 
+    structure C = EmptyContext
     structure I = TypedGrammar
     structure O = IntermediateGrammar
 
@@ -448,6 +449,6 @@ UNFINISHED: obsolete after bootstrapping:
     and trRepFields(fs, y, ds')		= List.foldr (trRepField y) ds' fs
 
 
-    val translate = trComp
+    fun translate() = trComp
 
   end
