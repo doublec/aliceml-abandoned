@@ -14,6 +14,7 @@
 
 #include <cstdio>
 #include "generic/RootSet.hh"
+#include "generic/UniqueString.hh"
 #include "generic/Transients.hh"
 #include "generic/TaskStack.hh"
 #include "generic/IOHandler.hh"
@@ -73,6 +74,7 @@ int main(int argc, char *argv[]) {
   Store::InitStore(memLimits, 75, 20);
   // Setup Datastructures
   RootSet::Init();
+  UniqueString::Init();
   Properties::Init();
   TaskStack::Init();
   IOHandler::Init();
