@@ -19,7 +19,7 @@ INSTALLFILES_MANUAL_0 = \
 	bg.gif alice.gif style.css \
 	index.php3 macros.php3 menu.php3 laziness.php3 \
 	futures.php3 threads.php3 components.php3 modules.php3 \
-	packages.php3 pickling.php3 constraints.php3 inspector.php3 gtk.php3 \
+	packages.php3 pickling.php3 constraints.php3 gtk.php3 \
 	extensions.php3 incompatibilities.php3 usage.php3 libraries.php3 \
 	explorer.php3 interop.php3 examples.php3 \
 	mozart_cartoon.jpg
@@ -36,7 +36,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	http-client.php3 http-server.php3 resolver-handler.php3 \
 	resolver.php3 component.php3 component-manager.php3 remote.php3 \
 	HttpClientExample.aml HttpServerExample.aml \
-        fd.php3 fs.php3 space.php3 search.php3 linear.php3
+        fd.php3 fs.php3 space.php3 search.php3 linear.php3 inspector.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
