@@ -1,4 +1,8 @@
 import
+    structure PrettyPrint
+from "../misc/PrettyPrint"
+
+import
     structure Source
 from "../infrastructure/Source"
 

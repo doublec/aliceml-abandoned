@@ -1,4 +1,8 @@
 import
+    structure PrettyPrint
+from "../misc/PrettyPrint"
+
+import
     structure Assert
 from "../misc/Assert"
 

@@ -44,6 +44,7 @@ signature SCOPED_IMP_MAP =
 	val lookup: 'a map * key -> 'a option
 	val lookupExistent: 'a map * key -> 'a   (* Lookup *)
 	val appiScope: (key * 'a -> unit) -> 'a map -> unit
+	val foldi: (key * 'a * 'b -> 'b) -> 'b -> 'a map -> 'b
     end
 
 functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
@@ -83,10 +84,15 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
 	      | NONE => raise Lookup key
 
 	fun appiScope f (ref maps) = ImpMap.appi f (List.hd maps)
+
+	fun foldi f z (ref maps) = foldi' (maps, f, z)
+	and foldi' (map::maps, f, z) =
+	    foldi' (maps, f, ImpMap.foldi f z map)
+	  | foldi' (nil, _, z) = z
     end
 
 functor MakeHashScopedImpMap(Key: HASH_KEY) =
-	MakeScopedImpMap(MakeHashImpMap(Key))
+    MakeScopedImpMap(MakeHashImpMap(Key))
 
 structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
     struct
@@ -1004,7 +1010,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun idToString (Id (_, stamp, Name.InId)) =
 	    "$" ^ Stamp.toString stamp
 	  | idToString (Id (_, stamp, Name.ExId s)) =
-	    s ^ "$" ^ Stamp.toString stamp
+	    "$" ^ Stamp.toString stamp ^ "[" ^ s ^ "]"
 
 	fun translate env (_, component as (imports, body, exportDesc, sign)) =
 	    let
@@ -1032,4 +1038,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				TextIO.print ("Lookup " ^ idToString id ^ "\n")
 			  | _ => ();
 			raise exn)
+
+	open PrettyPrint
+	infix ^/^
+
+	fun dumpContext env =
+	    hbox (text "{" ^/^
+		  fbox (below (IdMap.foldi
+			       (fn (id, _, rest) =>
+				text (idToString id) ^/^ rest)
+			       (text "}") env)))
     end

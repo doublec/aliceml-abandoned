@@ -26,15 +26,13 @@ struct
 	val dumpIntermediate			= ref false
 	val checkIntermediate			= ref false
 	val dumpFlatteningResult		= ref false
+	val dumpValuePropagationContext		= ref false
 	val dumpValuePropagationResult		= ref false
 	val dumpLivenessAnalysisIntermediate	= ref false
+	val dumpLivenessAnalysisContext		= ref false
 	val dumpLivenessAnalysisResult		= ref false
 	val dumpDeadCodeEliminationResult	= ref false
 	val dumpTarget				= ref false
     end
 
-    (* Backward compatibility... *)
-
-    val implicitImport		= Bootstrap.implicitImport
-    val outputAssembly		= Debug.dumpTarget
 end

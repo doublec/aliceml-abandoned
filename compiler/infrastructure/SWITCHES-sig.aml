@@ -1,7 +1,5 @@
 signature SWITCHES =
   sig
-    val implicitImport :			bool ref
-    val outputAssembly :			bool ref
 
     structure Warn :
     sig
@@ -28,10 +26,13 @@ signature SWITCHES =
 	val dumpIntermediate :			bool ref
 	val checkIntermediate :			bool ref
 	val dumpFlatteningResult :		bool ref
+	val dumpValuePropagationContext :	bool ref
 	val dumpValuePropagationResult :	bool ref
 	val dumpLivenessAnalysisIntermediate :	bool ref
+	val dumpLivenessAnalysisContext :	bool ref
 	val dumpLivenessAnalysisResult :	bool ref
 	val dumpDeadCodeEliminationResult :	bool ref
 	val dumpTarget :			bool ref
     end
+
   end

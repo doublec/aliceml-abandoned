@@ -236,7 +236,8 @@ structure LivenessAnalysisPhase1 :>
 	    (scanBody body; component)
     end
 
-structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
+structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE
+    where type C.t = StampSet.t =
     struct
 	structure C: CONTEXT = StampSet
 	structure I = FlatGrammar
@@ -359,7 +360,7 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase1
 			     structure Switches = Switches
 			     val name = "Liveness Analysis - Pass 1")
-	structure Phase1' =
+	structure Phase1 =
 	    MakeResultDumpingPhase(
 		structure Phase = Phase1
 		structure Switches = Switches
@@ -371,7 +372,24 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase2
 			     structure Switches = Switches
 			     val name = "Liveness Analysis - Pass 2")
-	structure Phase2' =
+	structure Phase2 =
+	    MakeContextDumpingPhase(
+		structure Phase = Phase2
+		structure Switches = Switches
+		val header = "Set of defined stamps after liveness analysis"
+		fun pp set =
+		    let
+			open PrettyPrint
+			infix ^/^
+		    in
+			hbox (text "{" ^/^
+			      fbox (below (StampSet.fold
+					   (fn (stamp, rest) =>
+					    text (Stamp.toString stamp) ^/^
+					    rest) (text "}") set)))
+		    end
+		val switch = Switches.Debug.dumpLivenessAnalysisContext)
+	structure Phase2 =
 	    MakeResultDumpingPhase(
 		structure Phase = Phase2
 		structure Switches = Switches
@@ -379,6 +397,6 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
 		val switch = Switches.Debug.dumpLivenessAnalysisResult)
     in
-	ComposePhases'(structure Phase1 = Phase1'
-		       structure Phase2 = Phase2')
+	ComposePhases'(structure Phase1 = Phase1
+		       structure Phase2 = Phase2)
     end

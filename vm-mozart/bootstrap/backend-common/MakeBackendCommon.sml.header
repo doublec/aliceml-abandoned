@@ -19,6 +19,10 @@ import
 from "../infrastructure/MakeResultDumpingPhase"
 
 import
+    structure MakeContextDumpingPhase
+from "../infrastructure/MakeContextDumpingPhase"
+
+import
     structure OutputFlatGrammar
 from "OutputFlatGrammar"
 

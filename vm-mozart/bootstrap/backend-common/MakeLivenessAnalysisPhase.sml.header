@@ -27,8 +27,16 @@ import
 from "../infrastructure/MakeResultDumpingPhase"
 
 import
+    structure MakeContextDumpingPhase
+from "../infrastructure/MakeContextDumpingPhase"
+
+import
     structure EmptyContext
 from "../infrastructure/EmptyContext"
+
+import
+    structure Stamp
+from "../common/Stamp"
 
 import
     structure StampSet

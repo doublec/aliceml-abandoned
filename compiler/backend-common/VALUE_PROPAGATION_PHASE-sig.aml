@@ -17,4 +17,5 @@ signature VALUE_PROPAGATION_PHASE =
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
 	val translate: C.t -> Source.desc * I.t -> O.t
+	val dumpContext: C.t -> PrettyPrint.doc
     end

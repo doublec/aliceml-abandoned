@@ -84,10 +84,14 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\t\tType-check intermediate representation.\n\
 	      \\t--(no-)dump-flattening-result\n\
 	      \\t\tDump flat representation after flattening.\n\
+	      \\t--(no-)dump-value-propagation-context\n\
+	      \\t\tDump environment after value propagation.\n\
 	      \\t--(no-)dump-value-propagation-result\n\
 	      \\t\tDump flat representation after value propagation.\n\
 	      \\t--(no-)dump-liveness-analysis-intermediate\n\
 	      \\t\tDump flat representation with liveness annotations.\n\
+	      \\t--(no-)dump-liveness-analysis-context\n\
+	      \\t\t.Dump set of defined stamps after liveness analysis.\n\
 	      \\t--(no-)dump-liveness-analysis-result\n\
 	      \\t\tDump flat representation after liveness analysis.\n\
 	      \\t--(no-)dump-dead-code-elimination-result\n\
@@ -129,10 +133,14 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	     ("dump-intermediate", Debug.dumpIntermediate),
 	     ("check-intermediate", Debug.checkIntermediate),
 	     ("dump-flattening-result", Debug.dumpFlatteningResult),
+	     ("dump-value-propagation-context",
+	      Debug.dumpValuePropagationContext),
 	     ("dump-value-propagation-result",
 	      Debug.dumpValuePropagationResult),
 	     ("dump-liveness-analysis-intermediate",
 	      Debug.dumpLivenessAnalysisIntermediate),
+	     ("dump-liveness-analysis-context",
+	      Debug.dumpLivenessAnalysisContext),
 	     ("dump-liveness-analysis-result",
 	      Debug.dumpLivenessAnalysisResult),
 	     ("dump-dead-code-elimination-result",
