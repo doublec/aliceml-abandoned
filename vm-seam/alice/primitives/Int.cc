@@ -114,14 +114,6 @@ DEFINE2(Int_mod) {
 INT_INT_TO_INT_OP_DIV(Int_quot, /)
 INT_INT_TO_INT_OP_DIV(Int_rem, %)
 
-DEFINE1(Int_toString) {
-  //--** not elegant: string is traversed twice
-  static char buf[20];
-  DECLARE_INT(i, x0);
-  std::sprintf(buf, "%d", i);
-  RETURN(String::New(buf)->ToWord());
-} END
-
 void PrimitiveTable::RegisterInt() {
   Register("Int.~", Int_opnegate, 1);
   Register("Int.+", Int_opadd, 2);
@@ -140,5 +132,4 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.precision", Store::IntToWord(31));
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
-  Register("Int.toString", Int_toString, 1);
 }
