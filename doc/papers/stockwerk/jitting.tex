@@ -125,6 +125,28 @@ profit from newly achieved information might be.
 
 Besides optimality, the compiler has to make sure that recompilation
 does not corrupt existing computation. That is, the reference to the
-``old'' code must not be lost until it is no longer referred to.
+``old'' code must not get lost until it is no longer referred to.
 This is the case for self and native call optimization, which
 must cache old code and immediate environment values.
+\subsubsection{Questions}
+Important questions are
+\begin{itemize}
+\item How to recompile?
+\item When to perform the recompilation?
+\item Which profits can be obtained from recompilation?
+\end{itemize}
+Further, it is interesting to see how recompilation fits into the architecture.
+
+Specialisation usually takes place when either transients are bound or
+a module is imported.
+
+The ``When'' question can be partially answered by having an oracle
+which is consulted in case a transient is bound.
+The orcacle can be supported by having runtime profiling information
+available. 
+
+Another question is whether to specialize the abstract code or the concrete
+code. Currently the concrete code is specialized using environment information.
+
+The scope of specialisation is also important: Focus on closure level or
+have many closures in one module specialized together.
