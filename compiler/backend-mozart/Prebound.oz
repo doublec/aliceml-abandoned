@@ -15,6 +15,7 @@ require
    BootName(newUnique: NewUniqueName '<' hash toString) at 'x-oz://boot/Name'
    BootFloat(fPow) at 'x-oz://boot/Float'
    BootWord at 'x-oz://boot/Word'
+   BootAlice(rpc) at 'x-oz://boot/Alice'
 export
    BuiltinTable
    RaiseAliceException
@@ -34,7 +35,7 @@ prepare
    fun {DropDotReverse Cs Cs2}
       case Cs
       of nil then Cs2
-      [] &.|Rest then Cs2
+      [] &.|_ then Cs2
       [] C|Rest then {DropDotReverse Rest C|Cs2}
       end
    end
@@ -543,6 +544,13 @@ prepare
 	 fun {$ R X} {Assign R X} unit end
       'Ref.exchange':
 	 fun {$ R X} {Exchange R $ X} end
+      'Remote.dynamicCall':
+	 fun {$ A B}
+	    try {BootAlice.rpc A B}
+	    catch alice(undefinedProperty) then %--** needs to be preregistered
+	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')} unit
+	    end
+	 end
       'String.^':
 	 fun {$ S1 S2} {ByteString.append S1 S2} end
       'String.<':
@@ -714,7 +722,7 @@ prepare
 	 fun {$ A I N}
 	    if 0 =< I andthen 0 =< N andthen I + N =< {Array.high A} + 1 then
 	       {ByteString.make {ForThread I + N - 1 I ~1
-	        		 fun {$ Xs I} {BootWord.toInt A.I}|Xs end nil}}
+				 fun {$ Xs I} {BootWord.toInt A.I}|Xs end nil}}
 	    else
 	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
 	       unit
