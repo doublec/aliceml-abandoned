@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -20,6 +20,7 @@
 #include "store/Store.hh"
 #include "adt/Queue.hh"
 #include "emulator/Scheduler.hh"
+#include "emulator/Closure.hh"
 
 //
 // Transient Representation:
@@ -33,12 +34,17 @@
 //    REF_LABEL         value
 //
 
-class Future : public Transient {
+class Future: public Transient {
 private:
   static const u_int initialWaitQueueSize = 2;
 public:
-  // Future Static Data
-  static word cyclicExn;
+  // Future Constructor
+  static Future *New() {
+    Transient *transient = Store::AllocTransient(FUTURE_LABEL);
+    transient->InitArg(0); // empty wait queue
+    return static_cast<Future *>(transient);
+  }
+
   // Future Functions
   void AddToWaitQueue(Thread *thread) {
     Queue *waitQueue = Queue::FromWord(GetArg());
@@ -48,10 +54,9 @@ public:
     }
     waitQueue->Enqueue(thread->ToWord());
   }
-  void RemoveFromWaitQueue(Thread *thread) {
-    Queue *waitQueue = Queue::FromWord(GetArg());
-    if (waitQueue != INVALID_POINTER)
-      waitQueue->Remove(thread->ToWord());
+  void RemoveFromWaitQueue(Thread *thread) { // precondition: is member
+    Queue *waitQueue = Queue::FromWordDirect(GetArg());
+    waitQueue->Remove(thread->ToWord());
   }
   void ScheduleWaitingThreads() {
     Queue *waitQueue = Queue::FromWord(GetArg());
@@ -59,19 +64,23 @@ public:
       while (!waitQueue->IsEmpty())
 	Scheduler::WakeupThread(Thread::FromWordDirect(waitQueue->Dequeue()));
   }
-  // Future Constructor
-  static Future *New() {
-    Transient *transient = Store::AllocTransient(FUTURE_LABEL);
-    return static_cast<Future *>(transient);
-  }
-  // Future Static Constructor
-  static void Init();
 };
 
-class Hole : public Transient {
+class Hole: public Transient {
 public:
-  // Hole Static Data
+  // Future Static Data
+  static word cyclicExn;
   static word holeExn;
+  // Future Static Constructor
+  static void Init();
+
+  // Hole Constructor
+  static Hole *New() {
+    Transient *transient = Store::AllocTransient(HOLE_LABEL);
+    transient->InitArg(0); // no associated future
+    return static_cast<Hole *>(transient);
+  }
+
   // Hole Functions
   Future *GetFuture() {
     Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
@@ -84,43 +93,36 @@ public:
   bool Fill(word w) {
     if (Store::WordToTransient(w) == this) // cyclic bind
       return false;
-    Transient *future = Store::WordToTransient(GetArg());
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
-      static_cast<Future *>(future)->ScheduleWaitingThreads();
+      future->ScheduleWaitingThreads();
       future->Become(REF_LABEL, w);
     }
     Become(REF_LABEL, w);
     return true;
   }
   void Fail(word exn) {
-    Transient *future = Store::WordToTransient(GetArg());
+    Future *future = static_cast<Future *>(Store::WordToTransient(GetArg()));
     if (future != INVALID_POINTER) { // eliminate associated future
-      static_cast<Future *>(future)->ScheduleWaitingThreads();
+      future->ScheduleWaitingThreads();
       future->Become(CANCELLED_LABEL, exn);
     }
     Become(CANCELLED_LABEL, exn);
   }
-  // Hole Constructor
-  static Hole *New() {
-    Transient *transient = Store::AllocTransient(HOLE_LABEL);
-    transient->InitArg(0);
-    return static_cast<Hole *>(transient);
-  }
-  // Hole Static Constructor
-  static void Init();
 };
 
-class Byneed : public Transient {
+class Byneed: public Transient {
 public:
-  // Byneed Accessors
-  Closure *GetClosure() {
-    return Closure::FromWordDirect(GetArg());
-  }
   // Byneed Constructor
   static Byneed *New(word closure) {
     Transient *transient = Store::AllocTransient(BYNEED_LABEL);
     transient->InitArg(closure);
     return static_cast<Byneed *>(transient);
+  }
+
+  // Byneed Accessors
+  Closure *GetClosure() {
+    return Closure::FromWordDirect(GetArg());
   }
 };
 

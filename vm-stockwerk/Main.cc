@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
   RootSet::Init();
   Properties::Init();
   Hole::Init();
-  Future::Init();
   TaskStack::Init();
   Scheduler::Init();
   Primitive::Init();

@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -18,23 +18,20 @@
 #include "emulator/RootSet.hh"
 #include "emulator/Transients.hh"
 
-static const char *holeExnContents = "Hole.Hole";
+word Hole::cyclicExn;
 word Hole::holeExn;
 
 void Hole::Init() {
-  Chunk *chunk = Store::AllocChunk(std::strlen(holeExnContents));
-  std::memcpy(chunk->GetBase(), holeExnContents, strlen(holeExnContents));
-  holeExn = chunk->ToWord();
+  //--** this hard codes constructor representation
+  static const char cyclicExnName[] = "Hole.Cyclic";
+  Chunk *chunk1 = Store::AllocChunk(sizeof(cyclicExnName) - 1);
+  std::memcpy(chunk1->GetBase(), cyclicExnName, sizeof(cyclicExnName) - 1);
+  cyclicExn = chunk1->ToWord();
+  RootSet::Add(cyclicExn);
+
+  static const char holeExnName[] = "Hole.Hole";
+  Chunk *chunk2 = Store::AllocChunk(sizeof(holeExnName) - 1);
+  std::memcpy(chunk2->GetBase(), holeExnName, sizeof(holeExnName) - 1);
+  holeExn = chunk2->ToWord();
   RootSet::Add(holeExn);
 }
-
-static const char *cyclicExnContents = "Future.cyclic";
-word Future::cyclicExn;
-
-void Future::Init() {
-  Chunk *chunk = Store::AllocChunk(std::strlen(cyclicExnContents));
-  std::memcpy(chunk->GetBase(), holeExnContents, strlen(cyclicExnContents));
-  cyclicExn = chunk->ToWord();
-  RootSet::Add(cyclicExn);
-}
-
