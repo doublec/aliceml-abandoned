@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,7 +33,8 @@ struct
     fun ppPath' ps p =
 	if List.exists (fn p' => Path.equal(p,p')) ps then empty else
 	case inspect p
-	 of Name n    => text(Name.toString n)
+	 of Name n    => if n = Name.ExId "__pervasive" then empty else
+			 text(Name.toString n)		(* Ugly hack! *)
 	  | Hidden n  => text "_" ^^ text "." ^^ text(Name.toString n)
 	  | Dot(p',l) =>
 	    let
