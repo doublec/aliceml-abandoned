@@ -11,7 +11,7 @@ INSTALL_LIB_TO= `alice-config --alicelibdir`/yacc
 INSTALL_BIN_TO= `alice-config --alicebindir`
 INSTALL_TOOL_TO=`alice-config --alicetoolsdir`
 
-.PHONY: $(LINKED_YACC) all clean distclean aliceyacclib
+.PHONY: install all clean distclean aliceyacclib
 
 all:	$(LINKED_YACC) aliceyacclib
 
