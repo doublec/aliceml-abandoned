@@ -1137,7 +1137,7 @@
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Tuple::Values
+      stfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
