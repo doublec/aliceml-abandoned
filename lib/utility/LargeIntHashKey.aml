@@ -21,7 +21,7 @@ struct
 
     fun hash n =
 	let
-	    val n'  = abs n handle Overflow => 0
+	    val n' = abs n handle Overflow => 0
 	in
 	    LargeInt.toInt n' handle Overflow =>
 		LargeInt.toInt(n' mod LargeInt.fromInt(valOf(Int.maxInt)))
