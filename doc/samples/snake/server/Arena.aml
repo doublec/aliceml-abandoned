@@ -270,9 +270,10 @@ struct
         
     fun placeSnakes (a,snakes) =
 	let
-	    val died = ref nil
+	    val died    = ref nil
 	    val halffin = ref nil
-	    val fin = ref nil
+	    val fin     = ref nil
+            val eaters  = ref nil
 
 	    fun killSnake s = 
 		let
@@ -310,9 +311,11 @@ struct
 		    else 
 			case collObject of
 			 P.EMPTY    => ()
-		       | P.GOODY n  => Snake.eat (snake,n)
+		       | P.GOODY n  => (Snake.eat (snake,n); 
+                                        eaters := snake :: !eaters)
 		       | P.WALL     => killSnake snake
-		       | P.GATE col => 
+                       | P.GATE (_, P.CLOSED) => killSnake snake
+		       | P.GATE (col, P.OPEN) => 
 			     if col = color andalso Snake.length snake = 1
 				 then (fin := snake::(!fin);
 				       Array2.update(a,r,c,collObject))
@@ -349,7 +352,7 @@ struct
 	in
 	    List.app placeHead snakes;
 	    List.app placeBody snakes;
-	    (!died,!halffin,!fin)
+	    (!died, !eaters, !halffin, !fin)
 	end
     
     fun emptyCopy a =

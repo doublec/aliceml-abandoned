@@ -14,8 +14,8 @@ struct
 	       name       : string,
 	       color      : Color.color,
 	       nextDir    : Protocol.direction ref,
-	       deathCount : int ref 
-			(* number of times this snake has died already *)
+               gatePos    : (int * int) ref,
+	       deathCount : int ref
 		       }
 
     datatype state =

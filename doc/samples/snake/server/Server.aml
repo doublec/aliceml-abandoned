@@ -235,6 +235,7 @@ struct
                                         name        = name,
                                         color       = color,
                                         deathCount  = ref 0,
+                                        gatePos     = ref pos,
                                         nextDir     = ref dir
                                     }
                                 val snake   = Snake.snake (id, color, pos, dir)
@@ -334,12 +335,15 @@ struct
                                                     (id, color, pos, dir)
                             in
                                 (#nextDir info) := dir;
+                                (#gatePos info) := pos;
                                 state := Part.PLAYING (info, snake)
                             end
                         ) (p, startPos);
+
 		    log ("Server", "sending levelStarted");
                     invokeSeveral (_file_, _line_) 
                         (allConnected (), #levelStarted,{ dimensions = dims });
+
 		    log ("Server", (">>>>sending initial Difflist<<<<<<", diffs));
                     invokeSeveral (_file_, _line_) (allConnected (), #update, diffs);
                     (levels, oldArena, arena)
@@ -381,7 +385,10 @@ struct
                 Option.app 
                     (fn (r, c) => Array2.update (arena, r, c, P.GOODY 5)) g
                 
-                            
+                    
+            fun mayAppList f [] = ()
+              | mayAppList f l  = f l
+
             val tick    = Lock.sync lock (fn (levels, oldArena, newArena) =>
                 let
                     val _       = log ("Server", "tick")
@@ -400,10 +407,33 @@ struct
                     val newHeadPos = List.foldl movePlayer [] players 
                     
                     (* place them on the newArena *)
-                    val (deadSnakes, halfFinishedSnakes, finishedSnakes) =
+                    val (deadSnakes, grownSnakes, halfFinishedSnakes, 
+                            finishedSnakes) =
                         Arena.placeSnakes (newArena, 
                             List.map Part.snake players) 
-                   
+
+                    (* open gates if necessary *)
+                    val gates   =   List.foldl (fn (sn, res) =>
+                        let val part    = PMap.lookupExistent 
+                                                (participants, Snake.id sn)
+                            val info    = Part.playerInfo part
+                            val pos     = !(#gatePos info)
+                            val color   = #color info
+                        in
+                            if Snake.belly sn >= #gateTreshold config then
+                                (* Note: gate might already be open, but we
+                                   do not bother to keep track and update 
+                                   anyway.
+                                 *)
+                                let val gate    = P.GATE (color, P.OPEN)
+                                    val (r, c)  = pos 
+                                in
+                                    Array2.update (newArena, r, c, gate);
+                                    (pos, gate) :: res
+                                end
+                            else res
+                        end) [] grownSnakes;
+                    
                     (* shall we place another goody? *)
                     val goodiePos   =   if Random.real 1.0 <= #goodieProb config 
                                             then findEmptySpot (newArena, 3)
@@ -415,12 +445,15 @@ struct
                     val changes = Arena.diff (oldArena, newArena)
                     val _   = log ("Server", ("differences", changes))
                     val _   = mayPlaceGoody (oldArena, goodiePos)
+
+                    val _   = List.app (fn ((r,c), g) => 
+                                Array2.update (oldArena, r, c, g)) gates
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
                     invokeSeveral (_file_, _line_) 
                         (allConnected (), #update, changes);
-                
+                    
                     (* change state of participants whose snake died to DEAD. *)
                     log ("Server", "check for dead snakes");
                     
@@ -434,10 +467,9 @@ struct
                             Part.nameNColor part :: l
                         end) [] deadSnakes ++
                             
-                    (* inform the snakes *)
-                    (fn deads => invokeSeveral (_file_, _line_)
-                        (allConnected (), #playersDied, deads));
-                    (* TODO *)
+                    (* inform the snakes, if any corpses are around *)
+                    mayAppList (fn deads => invokeSeveral (_file_, _line_)
+                                 (allConnected (), #playersDied, deads));
                 
 		    (* inform snake about their new head positions *)
 		    (* FIXME: do not send headPos to dead snakes *)

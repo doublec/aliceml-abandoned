@@ -27,7 +27,8 @@ struct
 	 lives          = NONE,
 	 maxPlayers     = 1,
 	 goodieProb     = 0.2,   
-	 levels         = NONE
+	 levels         = NONE,
+         gateTreshold   = 20 
 	 }
 
     val defaultMulti = 
@@ -39,7 +40,8 @@ struct
 	 lives          = SOME 5,
 	 maxPlayers     = 16,
 	 goodieProb     = 0.3,
-	 levels         = SOME 6
+	 levels         = SOME 6,
+         gateTreshold   = 15
 	 }
 
     val path = OS.Path.currentArc^"/config/config.cs"
