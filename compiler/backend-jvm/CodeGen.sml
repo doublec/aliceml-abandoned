@@ -39,6 +39,7 @@ structure CodeGen =
 	  | Okay
 	  | Dec of stm
 	  | Test of test
+	  | Exp of exp
 	exception Debug of deb
 
 	(* Hashtabelle fuer Stamps. *)
@@ -315,21 +316,16 @@ structure CodeGen =
 		    val free:ScopedStampSet.t= ScopedStampSet.new ()
 
 		    fun insert (Id (_,stamp',_)) =
-			if LambdaIds.isSelfCall stamp'
-			    then ()
-			else
-			    (ScopedStampSet.insert (free, stamp');
-			     print ("inserted "^Int.toString stamp'^"\n"))
+			 if LambdaIds.isSelfCall stamp'
+			     then ()
+			 else
+			     (print ("eintrage stamp "^(Int.toString stamp')^"... ");
+			      ScopedStampSet.insert (free, stamp');
+			      print ("okay.\n"));
 		    fun delete (Id (_,stamp',_)) =
-			(ScopedStampSet.deleteExistent(free, stamp')
-			 handle ScopedStampSet.Delete _ => print "nicht geloescht:\n";
-			 print ("deleted "^Int.toString stamp'^"\n");
-			 if ScopedStampSet.member(free, stamp')
-			     then print "isdrin\n"
-			 else ();
-			     ScopedStampSet.foldScope (fn (x,_) => if x=stamp' then
-						       print "isdochdrin" else ()) () free
-				 )
+			(print ("loesche stamp "^(Int.toString stamp')^"... ");
+			 ScopedStampSet.delete(free, stamp');
+			 print ("okay.\n"))
 
 		    fun get () = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
 
@@ -347,7 +343,8 @@ structure CodeGen =
 	    fun freeVarsExp (LitExp _) = ()
 	      | freeVarsExp (VarExp (_, id')) = fV.insert id'
 	      | freeVarsExp (ConAppExp (_, id', id'')) = (fV.insert id'; fV.insert id'')
-	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Int.toString i));app fV.insert ids)
+	      | freeVarsExp (TupExp ((i,_),ids)) = (print ("TupExp "^(Int.toString i));app fV.insert ids;
+						    print ("/TupExp "^(Int.toString i)^"\n"))
 	      | freeVarsExp (RecExp (_,labids)) = app (fn (lab, id') => fV.insert id') labids
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
@@ -380,6 +377,8 @@ structure CodeGen =
 			 (fn (_,id') => fV.insert id') stringids
 			 )
 	      | freeVarsExp (ConExp(_, id', _)) = fV.insert id'
+	      | freeVarsExp (SelAppExp(_,lab',id')) = fV.insert id'
+	      | freeVarsExp e = raise Debug (Exp e)
 
 	    and freeVarsDec (RaiseStm(_,id')) = fV.insert id'
 	      | freeVarsDec (HandleStm(_,body',id',body'')) = (print "HandleExp";
@@ -468,6 +467,7 @@ structure CodeGen =
 	     let
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
+		 val _ = print "freie Variablen berechnet.\n"
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
 		 val insts = decListCode program
