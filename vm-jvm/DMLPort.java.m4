@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class DMLPort extends UnicastRemoteObject
-    implements DMLValue, RemotePort {
+    implements DMLRemoteValue, RemotePort {
 
     DMLValue first = null;
     DMLLVar last = null;

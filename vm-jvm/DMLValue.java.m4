@@ -18,11 +18,6 @@ public interface DMLValue extends java.io.Serializable {
      */
     public DMLValue apply(DMLValue val) throws java.rmi.RemoteException;
 
-    /** Stringdarstellungen sollen von jedem Wert implementiert werden.
-     *  @return String Darstellung des DMLValue
-     */
-    public String toString();
-
     /** In DML kann jeder Wert als Exception geworfen werden.
      */
     public DMLValue raise() throws java.rmi.RemoteException;

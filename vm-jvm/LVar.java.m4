@@ -1,6 +1,6 @@
 package de.uni_sb.ps.dml.runtime;
 
-public class DMLLVar implements DMLValue, DMLRemoteValue {
+public class DMLLVar implements DMLRemoteValue {
 
     protected DMLValue ref=null;
 

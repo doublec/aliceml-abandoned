@@ -79,4 +79,8 @@ final public class Reference implements DMLConVal, DMLReference {
     final public DMLConstructor getConstructor() {
 	return DMLConstants.reference;
     }
+
+    final public synchronized DMLValue exchange(DMLValue val) {
+	return null;
+    }
 }
