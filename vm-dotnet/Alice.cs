@@ -430,7 +430,7 @@ namespace Alice {
 	public static bool ItB(object o) {
 	    return (Int32) o == 1;
 	}
-	public static bool Equals(object a, object b) {
+	public new static bool Equals(object a, object b) {
 	    a = CommonOp.Sync(a);
 	    b = CommonOp.Sync(b);
 	    if (a is System.Array) {
