@@ -52,6 +52,7 @@
 
 #define RETURN_VOID RETURN0
 #define RETURN_JINT(i) RETURN(JavaInt::ToWord(i))
+#define RETURN_BOOL(b) RETURN(BOOL_TO_WORD(b))
 #define DRETURN(x) RETURN2(x, null)
 
 #define THROW(Class, message) {						\
