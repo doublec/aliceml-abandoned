@@ -28,7 +28,7 @@ sig
     type t = substring							(**)
 
     val equal :		substring * substring -> bool			(**)
-    val hash :		substring -> bool				(**)
+    val hash :		substring -> int				(**)
 
     val base :		substring -> String.string * int * int
     val string :	substring -> String.string
