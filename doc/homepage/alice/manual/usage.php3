@@ -198,10 +198,10 @@
     <DD><P>Dump import/export signatures of resulting component, or
       of root component if no ouput file has been specified.</P></DD>
     <DT><TT>--include</TT> &lt;<I>url</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
-      >url</I>&gt; (default: none, see <TT>--relative</TT>)</DT>
+      >url</I>&gt;</DT>
     <DD><P>Include components with these URL prefixes.</P></DD>
     <DT><TT>--exclude</TT> &lt;<I>url</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
-      >url</I>&gt; (default: <TT>x-oz://</TT>)</DT>
+      >url</I>&gt;</DT>
     <DD><P>Exclude components with these URL prefixes.</P></DD>
     <DT><TT>--rewrite</TT> &lt;<I>rule</I>&gt;<TT>,</TT>...<TT>,</TT>&lt;<I
       >rule</I>&gt;</DT>
@@ -209,5 +209,14 @@
       where a RULE is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
       >to</I>&gt;.</P></DD>
   </DL>
+
+  <P>
+    When the URL of a component is tested for inclusion, it is tested
+    in order against the given <TT>--include</TT> and <TT>--exclude</TT>
+    prefixes.  The first match decides.  If no <TT>--include</TT> or
+    <TT>--exclude</TT> is given, no component will be included at all.
+    In particular, one has to make sure that the root component is
+    included.
+  </P>
 
 <?php footing() ?>
