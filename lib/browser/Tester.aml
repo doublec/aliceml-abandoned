@@ -1,6 +1,17 @@
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
 
+datatype foo = A 
+             | B of foo
+             | C of foo * foo
+
+structure DataType = Reflect.ReflectType (type t = foo);
+val data_type = DataType.x;
+
+UnsafeInspector.inspect(C(C(A,A),B(A)),data_type);
+
+UnsafeInspector.inspect(C(B A,A),data_type);
+
 (* ganz einfache Liste *)
 
 structure SList = Reflect.ReflectType (type t = int (* list list *) list);

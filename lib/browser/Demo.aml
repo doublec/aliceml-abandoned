@@ -51,6 +51,33 @@ UnsafeInspector.inspect(my_matrix,matrix);
 
 (****************************************************)
 
+(* Package *)
+
+signature TEST =
+sig
+    type t
+    val test: string
+    val foo: string -> string
+    signature S
+end;
+
+structure Test = 
+struct
+    type t = string
+    val test = "hi"
+    fun foo str = str^"@"
+    signature S = sig
+		      val x : string
+		  end
+end;
+
+structure P = Package.Pack (signature S = TEST structure X = Test);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+UnsafeInspector.inspect(P.package,Pack.x);
+      
+(****************************************************)
+
 (*** datatype ***)
 
 datatype foo = A 
@@ -114,33 +141,6 @@ UnsafeInspector.inspect({gulp = (a,a,[1,2,3]),
 
 (****************************************************)
 
-(* Package *)
-
-signature TEST =
-sig
-    type t
-    val test: string
-    val foo: string -> string
-    signature S
-end;
-
-structure Test = 
-struct
-    type t = string
-    val test = "hi"
-    fun foo str = str^"@"
-    signature S = sig
-		      val x : string
-		  end
-end;
-
-structure P = Package.Pack (signature S = TEST structure X = Test);
-structure Pack = Reflect.ReflectType (type t = Package.package);
-
-UnsafeInspector.inspect(P.package,Pack.x);
-
-(****************************************************)
-      
 (*** structure Gtk ***)
 
 structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);

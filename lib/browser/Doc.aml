@@ -330,6 +330,7 @@ struct
 
 
     (* auxiliary function to create a doc tree representing a package *)
+
     fun handlePackages (d,va,t,inner_doc) = 
 	let 
 	    val descr = createValue(va,t)
