@@ -13,43 +13,41 @@
  *
  *)
 
-import structure TextIO from "x-alice:/lib/system/TextIO"
-
 import structure Fixity from "x-alice:/lib/rtt/Fixity"
-import structure Type from "x-alice:/lib/rtt/Type"
 import structure Inf from "x-alice:/lib/rtt/Inf"
-import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
-import structure Path from "x-alice:/lib/rtt/Path"
-import structure Name from "x-alice:/lib/rtt/Name"
-import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure Label from "x-alice:/lib/rtt/Label"
-import structure Reflect from "x-alice:/lib/system/Reflect"
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Name from "x-alice:/lib/rtt/Name"
+import structure Path from "x-alice:/lib/rtt/Path"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure Type from "x-alice:/lib/rtt/Type"
 import structure Component from "x-alice:/lib/system/Component"
 import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Url from "x-alice:/lib/system/Url" 
 
-import structure Dictionaries from "Dictionaries"
-import structure Node from "Node"
 import structure Doc from "Doc"
-import structure Settings from "Settings"
-import structure CreateTreeHelper from "CreateTreeHelper"
-import structure Update from "Update"
+import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+import structure Settings from "Settings"
+import structure Dictionaries from "Dictionaries"
+import structure Update from "Update"
+import structure CreateTreeHelper from "CreateTreeHelper"
 
 import signature CREATE_TREE from "CREATE_TREE-sig"
 
 local
-    open Node Doc Settings Dictionaries CreateTreeHelper
+    open Doc Node Settings Dictionaries CreateTreeHelper
 	
 in	
     
 structure CreateTree :> CREATE_TREE =
 struct
     
-    exception createGraph_unknownNode   
+    exception createTree_unknownNode   
 
-    (* Bestimmung des Pfades bei Packages und Promises *)
+    (* identification of the path of promises and packages *)
 
     val coreSign = Inf.asSig(Option.valOf 
 		(Component.inf(ComponentManager.link 
@@ -59,10 +57,11 @@ struct
 		  (Url.fromString "x-alice:/lib/fundamental/Package")))) 
 
 
-    (* adopted from stockhausen/lib/system/PPValue.aml *)
+    (* returns the path (used for promises and packages) *)
 
      fun lookupPath(sign, modLab, typLab) =
-	 let val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	 let val sign' = Inf.asSig(Inf.lookupMod(sign, 
+						 Label.fromString modLab))
 	     val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
 	     val typ'  = if Type.isApply typ 
 			     then #1(Type.asApply typ) 
@@ -70,127 +69,138 @@ struct
 	 in Type.asCon typ'
 	 end
 
-    (* newTree *)
-     fun newTree (va,t,i,root) = createGraph (NONE,va,t,Empty,i,0,root)
+     (***************************************)
 
+     (*** creates a new tree ***)
 
-    (* createGraph *)
-     and createGraph (opt,va,t,p,i,d,root) =
-	 if !relmode (* Konstruktion im Relationsmodus *)
+     fun newTree (va,t,i,root) = createTree (NONE,va,t,Empty,i,0,root)
+
+     (* checking mode / construction in RELATION MODE *)
+
+     and createTree (opt,va,t,p,i,d,root) =
+	 if !relmode (* RELATION MODE *)
 	     andalso not(isAtomType(t)) 
-	     andalso ( not(isListType t andalso null(castList(va))) )
-	     then let val ind = if p = Empty then i else getAncIndex p 
-		      val desc = createValue(va,t) 
-		      val relman = 
-			    case RelMan.lookup(reldict,ind)
-			      of SOME x => x (* Relationsmanager existiert bereits *)
-		               | NONE => []
-		      val f = fn t: value * int ref * int
-			      => isValue (#1(t)) 
-			         andalso if !tokenmode (* token equality *)
-					     then UnsafeValue.same(asValue(#1(t)),va)   
-					 else (* structural equality *)
-					     asValue(#1(t)) = va  
-		      val new_relman = 
-			  ( case List.find f relman of
-				NONE (* Einfuegen des neuen Wertes *)
-				=> RelMan.update(reldict,
-						 (ind,(V va,ref 1,!relnumber)::relman))
-			      | SOME (rv,co,nu) (* Wert schon vorhanden - Zaehler wird erhoeht *)
-				=> co := !co + 1
-			   ; valOf(RelMan.lookup(reldict,ind)) )
-		      val (rva,count,number) = valOf(List.find f new_relman)
-		      val str = "Ref"^Int.toString(number)
-		      val node = if !count = 1 
-				     then createRelNode (desc,Empty,p,i,d,count,
-							 str^" as ",relman,root)
-				 else createRelRefNode(desc,p,i,d,str,root) 
-		  in ( if !count = 1 
-			   then let val c = createUsualGraph (opt,va,t,node,0,d,root)
-				in setContent (node,c)  
-				end 
-		       else ()
-                     ; node )
-		  end 
-	 else createUsualGraph (opt,va,t,p,i,d,root) 
+	     (* atomar values are always represented as in tree mode *)
+             andalso ( not(isListType t andalso null(castList(va))) )
+             (* empty list mustn't be inserted in relation manager *)
+	     then 
+	     let val ind = if p = Empty then i else getAncIndex p 
+		 val desc = createValue(va,t) 
+		 val relman = 
+		       case RelMan.lookup(reldict,ind) of 
+		       SOME x => x (* relation manager exists already *)
+		       | NONE => [] 
+		 val f = fn t: value * int ref * int
+		         => isValue (#1(t)) andalso 
+		            if !tokenmode (* token equality *)
+				then UnsafeValue.same(asValue(#1(t)),va)   
+			    else (* structural equality *)
+				asValue(#1(t)) = va  
+		 val new_relman = 
+		     ( case List.find f relman of
+			   NONE (* new value is beeing inserted *)
+			   => RelMan.update(reldict,
+					    (ind,(V va,
+						  ref 1,
+						  !relnumber)::relman))
+			 | SOME (rv,co,nu) (* counter is beeing 
+					      incremented *)
+			   => co := !co + 1
+		       ; valOf(RelMan.lookup(reldict,ind)) )
+		 val (rva,count,number) = valOf(List.find f new_relman)
+		 val str = "Ref"^Int.toString(number)
+		 val node = if !count = 1 
+				then createRelNode (desc,Empty,p,i,d,count,
+						    str^" as ",relman,root)
+			    else createRelRefNode(desc,p,i,d,str,root) 
+	     in ( if !count = 1 
+		      then let val c = createUsualTree (opt,va,t,
+							node,0,d,root)
+			   in setContent (node,c)  
+			   end 
+		  else ()
+                 ; node )
+	     end 
+	 else (* construction in tree mode *)
+	     createUsualTree (opt,va,t,p,i,d,root) 
 		     	    
-    (* createUsualGraph *)
-    and createUsualGraph (opt,va,t,p,i,d,root) = 
-	if d > !max_depth (* TIEFENFILTER *)
+     (* usual construction in TREE MODE *)
+
+    and createUsualTree (opt,va,t,p,i,d,root) = 
+	if d > !max_depth (** depth filter **)
 	    then createLimit(createValue(va,t),DEPTH_LIMIT,p,i,d,root)
 	else if (isSome(opt) andalso valOf(opt) > !max_width) 
                  orelse (isListType t andalso !max_width = 0)
-	       (* BREITENFILTER (fuer Listen bei geschachtelter Darstellung) *)
-		 then  let val desc = if isListType t then createValue(va,t)
-				      else INTERPUNCT
-		       in 
-			   createLimit(desc,WIDTH_LIMIT,p,i,d,root)
-		       end
-	     else (* maximale Tiefe _nicht_ ueberschritten *)
+	       (** width filter (used for cascaded representation of lists) **)
+		 then let val desc = if isListType t 
+					 then createValue(va,t)
+				     else INTERPUNCT
+		      in createLimit(desc,WIDTH_LIMIT,p,i,d,root)
+		      end
+	     else 
 	     let 
 		 val fut = UnsafeValue.cast va
-	     in if not(Future.isDetermined(fut))
+	     in if not(Future.isDetermined(fut)) (* future *)
 		    then createFutureNode (va,t,p,i,d,root)
 		else
-		    (case Type.inspect t of
-			 Type.Con path  (* Pfadtyp *)
-			 => let val p_path = 
-			 if String.equal(Label.toString(Path.toLab(path)),
-					 "package")
-			     then lookupPath(packageSign,"Package","package")
-			 else if String.equal(Label.toString(Path.toLab(path)),
-					      "val_package")
-				  then lookupPath(packageSign,
-						  "Package","val_package")
-			      else path 
-			    in newPath (va,t,p,i,d,p_path,root)
-			    end
-		      | Type.Arrow _  (* Funktion *)
-			    => createSimple (createValue(va,t),p,i,d,"fn",
-					     DEFAULT,root)
-		      | Type.All(var,typ) (* Allquantor *)
-			    => createUsualGraph (NONE,va,typ,p,i,d,root)
-		      | Type.Exist(var,typ)  (* Existenzquantor *)
-				=> createUsualGraph (NONE,va,typ,p,i,d,root)
-		      | Type.Lambda(var,typ) (* Abstraktion *)
-				=> raise  createGraph_unknownNode 
-		      | Type.Apply(t1,t2) 
-			    =>  if isListType t (* Liste *)
-				    then let val new_opt = if isNone opt 
-							       then SOME 2
-							   else SOME (valOf(opt)+1)
-					     val vv = castList va
-					     val listdesc = 
-						 inspectList(!max_width,vv)
-					 in listdescToNode(new_opt,va,t,p,i,d,
-							   listdesc,root)
-					 end
-				else ( case unApply (Type.inspect(t)) of 
-				       (Type.Con path, ts) (* zusammengesetzter Pfadtyp *) 
-				       => let val p_path = 
-				                  if String.equal(Label.toString(Path.toLab(path)),
-								  "promise") (* Promise *)
-						      then lookupPath(coreSign,"Promise","promise") 
-						  else path 
-					  in 
-					      newPath (va,t,p,i,d,p_path,root)
-					  end 
-				     | _ => raise createGraph_unknownNode ) (* unbekannt *)
-		      | Type.Prod(row) => treatProd(va,t,p,i,d,row,root) 
-		      (* Record *)
-		      | Type.Mu(sum) => createUsualGraph (NONE,va,sum,p,i,d,root) (* Rekursion *)
-		      | Type.Sum(row) => treatSum(va,t,p,i,d,row,root) 
-		      (* Datentyp *) 
-		      | _ => raise  createGraph_unknownNode  (* unbekannt *) )
+		  (case Type.inspect t of
+		   Type.Con path (* path type *)
+		   => let val p_path = 
+		       if String.equal(Label.toString(Path.toLab(path)),
+				       "package")
+			   then lookupPath(packageSign,"Package","package")
+		       else if String.equal(Label.toString(Path.toLab(path)),
+					    "val_package")
+				then lookupPath(packageSign,
+						"Package","val_package")
+			    else path 
+		      in newPath (va,t,p,i,d,p_path,root)
+		      end
+		| Type.Arrow _  (* function *)
+		   => createSimple (createValue(va,t),p,i,d,"fn",
+				    DEFAULT,root)
+		| Type.All(var,typ) (* all quantifier *)
+		  => createUsualTree (NONE,va,typ,p,i,d,root)
+		| Type.Exist(var,typ)  (* existencial quantifier *)
+		  => createUsualTree (NONE,va,typ,p,i,d,root)
+		| Type.Lambda(var,typ) (* abstraction *)
+		  => raise  createTree_unknownNode 
+		| Type.Apply(t1,t2) 
+		  =>  if isListType t (* list *)
+			  then let val new_opt = if isNone opt 
+						     then SOME 2
+						 else SOME (valOf(opt)+1)
+				   val vv = castList va
+				   val listdesc = inspectList(!max_width,vv)
+			       in listdescToNode(new_opt,va,t,p,i,d,
+						 listdesc,root)
+			       end
+		      else 
+			(case unApply (Type.inspect(t)) of 
+			 (Type.Con path, ts) (* cascaded path type  *) 
+			  => let val p_path = 
+			     if String.equal(Label.toString(Path.toLab(path)),
+					     "promise") (* promise *)
+				 then lookupPath(coreSign,"Promise","promise") 
+			     else path 
+			     in newPath (va,t,p,i,d,p_path,root)
+			     end 
+			| _ => raise createTree_unknownNode ) (* unknown *)
+		| Type.Prod(row) (* record *)
+		  => treatProd(va,t,p,i,d,row,root) 
+		| Type.Mu(sum) (* rekursion *)
+		  => createUsualTree (NONE,va,sum,p,i,d,root) (* Rekursion *)
+		| Type.Sum(row) (* datatype *)
+		  => treatSum(va,t,p,i,d,row,root) 
+		| _ => raise  createTree_unknownNode (* unknown *) )
 	     end 
 			 
-(* spezielle Behandlung von Listen *)
+     (******* special handling of LISTS *******)
 
-   (* listdescToNode *)
     and listdescToNode (opt,va,t,p,i,d,ld,root) = 
        case ld of 
 	Indet(l,f) 
-	=> if !relmode (* Darstelung im Relationsmodus *)
+	=> if !relmode (* representation in relation mode *)
 	       then createConsList(opt,va,t,l@f,p,i,d,root)
 	   else let val desc = createValue(va,t)
 		    val length = List.length l
@@ -206,123 +216,126 @@ struct
 		    ; cont )
 		end
       | Det(l,b) 
-        => if !relmode (* Darstellung im Relationsmodus *)
+        => if !relmode (* representation in relation mode *)
 		then createConsList(opt,va,t,castList va,p,i,d,root)
-           else
-	   let val desc = createValue(va,t)
-	       val length = List.length l
-               val na = if b orelse !relmode 
-			    then Array.array(length + 1,Empty)
-			else Array.array(length,Empty)
-	       val inty = #2(Type.asApply(t))   
-	   in if b (* Breitenlimit ueberschritten *)
-		  then let val cont = createContainer (desc,p,i,d,na,root)
-			   val nodearray = listElemArray(l,length,inty,cont,
-							 d,b,root)
-			   val last = createLimit (INTERPUNCT,WIDTH_LIMIT,
-						   cont,length,d+1,root)
-		       in ( Array.update(na,length,last)
-			  ; copyArray(nodearray,na)
-			  ; cont )
-		       end
-	      else let val concat = createConcat(desc,p,i,d,
+           else 
+	     let val desc = createValue(va,t)
+		 val length = List.length l
+		 val na = if b orelse !relmode 
+			      then Array.array(length + 1,Empty)
+			  else Array.array(length,Empty)
+		 val inty = #2(Type.asApply(t))   
+	     in if b (* width limit exceeded *)
+		    then let val cont = createContainer (desc,p,i,d,na,root)
+			     val nodearray = listElemArray(l,length,inty,
+							   cont,d,b,root)
+			     val last = createLimit (INTERPUNCT,WIDTH_LIMIT,
+						     cont,length,d+1,root)
+			 in ( Array.update(na,length,last)
+			     ; copyArray(nodearray,na)
+			     ; cont )
+			 end
+		else 
+		   let val concat = createConcat(desc,p,i,d,
 						 Array.array(3,Empty),root)
- 		       val lbra = createSimple (INTERPUNCT,concat,0,d,
+		       val lbra = createSimple (INTERPUNCT,concat,0,d,
 						"[",BRACK_COLOR,root)
 		       val rbra = createSimple (INTERPUNCT,concat,2,d,
 						"]",BRACK_COLOR,root)
 		       val cont = createContainer (INTERPUNCT,concat,1,d,
 						   na,root)
 		       val nodearray = listElemArray(List.take(l,length-1),
-						     length-1,inty,cont,d,b,root)
+						     length-1,inty,cont,d,b,
+						     root)
 		       val last = let val inva = UnsafeValue.cast(List.last(l))
 			                         : Reflect.value
-				  in createGraph(NONE,inva,inty,cont,length-1,d+1,root)
+				  in createTree(NONE,inva,inty,
+						cont,length-1,d+1,root)
 				  end      	
 		   in ( Array.update(na,length-1,last)
-                      ; copyArray(nodearray,na)
-		      ; Array.update(getKids(concat),0,lbra)
-		      ; Array.update(getKids(concat),1,cont)
-		      ; Array.update(getKids(concat),2,rbra)
-		      ; concat )
+		       ; copyArray(nodearray,na)
+		       ; Array.update(getKids(concat),0,lbra)
+		       ; Array.update(getKids(concat),1,cont)
+		       ; Array.update(getKids(concat),2,rbra)
+		       ; concat )
 		   end
-	   end
-
-(* lineare Darstellung im "tree mode" *)
+	     end
+	    
+     (* linear representation in tree mode *)
  
      and listElemArray(list,length,listtyp,p,d,b,root) = 
-	 let 
-	     val na = Array.array(length,Empty)
-	 in
-	     (List.appi (fn (i,item) => 
+	 let val na = Array.array(length,Empty)
+	 in ( List.appi (fn (i,item) => 
 			 let  val concat = createConcat(INTERPUNCT,p,i,d,
-							Array.array(2,Empty),root)
+							Array.array(2,Empty),
+							root)
 			     val inva = UnsafeValue.cast(item)
-				 : Reflect.value
-			     val elem = createGraph(NONE,inva,listtyp,
-						    concat,0,d+1,root)
+				        : Reflect.value
+			     val elem = createTree(NONE,inva,listtyp,
+						   concat,0,d+1,root)
 			     val repr = if b then "::" else ", "
-			     val sep = createSimple(INTERPUNCT,
-						    concat,1,d,
-						    repr,SEP_COLOR,
-						    root)
-			 in
-			     ( Array.update(getKids(concat),0,elem)
-			      ; Array.update(getKids(concat),1,sep)
-			      ; Array.update(na,i,concat))
-			 end) list;na)
+			     val sep = createSimple(INTERPUNCT,concat,1,d,
+						    repr,SEP_COLOR,root)
+			 in ( Array.update(getKids(concat),0,elem)
+			     ; Array.update(getKids(concat),1,sep)
+			     ; Array.update(na,i,concat))
+			 end) list
+	     ; na)
 	 end
-
-(* geschachtelte Darstellung im Relationsmodus *)
+     
+     (* cascaded representation in relation mode *)
 
      and createConsList (opt,va,t,list,p,i,d,root) = 
 	 if null(list)
-	     then createSimple(INTERPUNCT,p,i,d,
-			       "nil",DEFAULT,root)
+	     then createSimple(INTERPUNCT,p,i,d,"nil",DEFAULT,root)
 	 else 
-	 let val br = valOf(opt) handle Option => ~1
-	     val desc = createValue(va,t)
-	     val inty = #2(Type.asApply(t))
-	     val head = UnsafeValue.cast(hd(list)) : Reflect.value 
-	     val tail = UnsafeValue.cast(tl(list)) : Reflect.value
-
-	     val na = Array.array(2,Empty)
-	     val contnode = createContainer(desc,p,i,d ,na,root)
-	     val concnode = createConcat(INTERPUNCT,contnode,0,d,
-					 Array.array(2,Empty),root)
-	     val headnode = if  not(isListType(inty))
-				then createGraph(NONE,head,inty,concnode,0,d,root)
-			    else let val conc = createConcat(INTERPUNCT,concnode,0,d,
-							     Array.array(3,Empty),root)
-				     val lpar = createSimple(INTERPUNCT,conc,0,d,
-							     "(",BRACK_COLOR,root)
-				     val rpar = createSimple(INTERPUNCT,conc,2,d,
-							     ")",BRACK_COLOR,root)
-				     val hnode = createGraph(NONE,head,inty,conc,1,d,root)
-				 in ( Array.update(getKids(conc),0,lpar)
-				     ; Array.update(getKids(conc),1,hnode)
-				     ; Array.update(getKids(conc),2,rpar)
-				     ; Array.update(getKids(concnode),0,conc)
-				     ; conc )
-				 end       
-	     val sepnode = createSimple(INTERPUNCT,concnode,1,d,
-					"::",SEP_COLOR,root)
-	     val tailnode = createGraph(opt,tail,t,contnode,1,d,root)
-	 in ( Array.update(getKids(concnode),0,headnode)
-            ; Array.update(getKids(concnode),1,sepnode)
-            ; Array.update(getKids(contnode),0,concnode)
-	    ; Array.update(getKids(contnode),1,tailnode)
-	    ; contnode )
-	 end 
+	  let val desc = createValue(va,t)
+	      val inty = #2(Type.asApply(t))
+	      val head = UnsafeValue.cast(hd(list)) : Reflect.value 
+	      val tail = UnsafeValue.cast(tl(list)) : Reflect.value
+	      val na = Array.array(2,Empty)
+	      val contnode = createContainer(desc,p,i,d ,na,root)
+	      val concnode = createConcat(INTERPUNCT,contnode,0,d,
+					  Array.array(2,Empty),root)
+	      val headnode = 
+		  if  not(isListType(inty))
+		      then createTree(NONE,head,inty,
+				      concnode,0,d,root)
+		  else 
+		      let val conc = createConcat(INTERPUNCT,
+						  concnode,0,d,
+						  Array.array(3,Empty),
+						  root)
+			  val lpar = createSimple(INTERPUNCT,conc,0,d,
+						  "(",BRACK_COLOR,root)
+			  val rpar = createSimple(INTERPUNCT,conc,2,d,
+						  ")",BRACK_COLOR,root)
+			  val hnode = createTree(NONE,head,inty,
+						 conc,1,d,root)
+		      in ( Array.update(getKids(conc),0,lpar)
+			  ; Array.update(getKids(conc),1,hnode)
+			  ; Array.update(getKids(conc),2,rpar)
+			  ; Array.update(getKids(concnode),0,conc)
+			  ; conc )
+		      end       
+	      val sepnode = createSimple(INTERPUNCT,concnode,1,d,
+					 "::",SEP_COLOR,root)
+	      val tailnode = createTree(opt,tail,t,contnode,1,d,root)
+	  in ( Array.update(getKids(concnode),0,headnode)
+	      ; Array.update(getKids(concnode),1,sepnode)
+	      ; Array.update(getKids(contnode),0,concnode)
+	      ; Array.update(getKids(contnode),1,tailnode)
+	      ; contnode )
+	  end 
 
                  
-(* spezielle Behandlung von Records,Tupeln und Datentypen *)
-                         
-    (* treatProd *)
-    and treatProd (va,t,p,i,d,row,root) = 
-	let val upperConcat = createConcat(createValue(va,t),
-					   p,i,d,Array.array(3,Empty),
-					   root)
+     (***** special handling of RECORDS, TUPLES and DATATYPES *****)
+
+    (* handling of RECORDS *)
+
+    and treatProd (va,t,p,i,d,row,root) =  
+	let val upperConcat = createConcat(createValue(va,t),p,i,d,
+					   Array.array(3,Empty),root)
 	    val (lbra,rbra) = if Type.isTupleRow(row) 
 				  then ("(",")")
 			      else ("{","}")
@@ -335,86 +348,89 @@ struct
 	    val container = createContfromRow (va,t,upperConcat,1,d,row, 
 					       UnsafeValue.proj,root) 
 	    val upperKids = getKids(upperConcat)
-	in
-	    ( Array.update(upperKids,0,lbraNode)
-	     ; Array.update(upperKids,1,container)
-	     ; Array.update(upperKids,2,rbraNode)
-	     ; upperConcat)
+	in ( Array.update(upperKids,0,lbraNode)
+	    ; Array.update(upperKids,1,container)
+	    ; Array.update(upperKids,2,rbraNode)
+	    ; upperConcat)
 	end
 	
-    (* treatSum *)
-    and treatSum (va,t,p,i,d,row,root) = 
-        let
-	    val lt_list   = row2list(row)
-	    val l_vector  = labelvector(lt_list)
-	    val index     = UnsafeValue.tag(va,l_vector)
-	    val label     = Label.toString(Vector.sub(l_vector,index))
-	                    ^" "
-	    val typ = #2(List.nth(lt_list,index))
-	    val intyp = if Type.isApply(typ) 
-                        andalso Type.isCon(#1(Type.asApply(typ))) 
-		        andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
-					   PervasiveType.path_strict)
-			    then  #2(Type.asApply(typ))
-			else typ
-	    val emptyrow = case Type.inspect(intyp) of 
-		Type.Prod(row') 
-		=> Type.isEmptyRow(row') 
-	      | _ => false
-	    val upperConcat = if emptyrow 
-				  then Empty 
-		    else createConcat(createValue(va,t),
-				      p,i,d,Array.array(4,Empty),root)
-	    val (lbra,rbra) =  let val row' = Type.asProd(intyp)
-			       in if Type.isTupleRow(row')
-				      then ("(",")")
+     (* handling of DATATYPES *)
+
+     and treatSum (va,t,p,i,d,row,root) = 
+	 let val lt_list   = row2list(row)
+	     val l_vector  = labelvector(lt_list)
+	     val index     = UnsafeValue.tag(va,l_vector)
+	     val label     = Label.toString(Vector.sub(l_vector,index))^" "
+	     val typ = #2(List.nth(lt_list,index))
+	     val intyp = if Type.isApply(typ) 
+		         andalso Type.isCon(#1(Type.asApply(typ))) 
+		         andalso Path.equal(Type.asCon(#1(Type.asApply(typ))),
+					    PervasiveType.path_strict)
+			     then  #2(Type.asApply(typ))
+			 else typ
+	     val emptyrow = case Type.inspect(intyp) of 
+		            Type.Prod(row') 
+			    => Type.isEmptyRow(row') 
+			  | _ => false
+	     val upperConcat = if emptyrow 
+				   then Empty 
+			       else createConcat(createValue(va,t),p,i,d,
+						 Array.array(4,Empty),root)
+	     val (lbra,rbra) =  let val row' = Type.asProd(intyp)
+				in if Type.isTupleRow(row')
+				       then ("(",")")
 				   else ("{","}")
-			       end
-			       handle Type.Type => ("_","_")
-	    val (lbraNode,rbraNode) = 
-		if lbra = "_" orelse emptyrow
-		    then (Empty,Empty) 
-		else (createSimple(INTERPUNCT,upperConcat,1,d,lbra,BRACK_COLOR,
-				   root),
-		      createSimple (INTERPUNCT,upperConcat,3,d,rbra,
-				    BRACK_COLOR,root))
-	    val container = case Type.inspect(intyp) of 
-		Type.Prod(row') 
-		=> if Type.isEmptyRow(row') 
-		       then Empty
-		   else
-		       createContfromRow (va, t, upperConcat, 2, d, row', 
-					  UnsafeValue.projTagged,root)
-	      | _ => let
-			 val inva = UnsafeValue.projTaggedTuple(va,1,0)
-			 val node = createGraph (NONE,inva,intyp,upperConcat,2,d+1,root) 
-		     in 
-			 node 
-		     end
-	    val labelnode =  createSimple (INTERPUNCT,
-					   if container = Empty
-					       then p else upperConcat,
-					   if container = Empty
-					       then i else 0,d,label,
-					   LABEL_COLOR,root) 
-	    val upperKids = getKids(upperConcat)
-	in
-	    if container = Empty 
+				end
+			        handle Type.Type => ("_","_")
+	     val (lbraNode,rbraNode) = if lbra = "_" orelse emptyrow
+					   then (Empty,Empty) 
+				       else (createSimple(INTERPUNCT,
+							  upperConcat,1,d,
+							  lbra,BRACK_COLOR,
+							  root),
+					     createSimple (INTERPUNCT,
+							   upperConcat,3,d,
+							   rbra,BRACK_COLOR,
+							   root))
+	     val container = case Type.inspect(intyp) of 
+		             Type.Prod(row') 
+			     => if Type.isEmptyRow(row') 
+				    then Empty
+				else createContfromRow(va,t,upperConcat,2,d,
+						       row', 
+						       UnsafeValue.projTagged,
+						       root)
+			   | _ => let val inva = UnsafeValue.projTaggedTuple
+				                             (va,1,0)
+				      val node = createTree (NONE,inva,intyp,
+							     upperConcat,2,d+1,
+							     root) 
+				  in node 
+				  end
+	     val labelnode =  createSimple (INTERPUNCT,
+					    if container = Empty then p 
+					    else upperConcat,
+					    if container = Empty then i 
+					    else 0,d,label,
+					    LABEL_COLOR,root) 
+	     val upperKids = getKids(upperConcat)
+	 in if container = Empty 
 		then labelnode 
 	    else (Array.update(upperKids,0,labelnode)
 		  ; Array.update(upperKids,1,lbraNode)
 		  ; Array.update(upperKids,2,container)
 		  ; Array.update(upperKids,3,rbraNode)
 		  ; upperConcat) 
-	end
+	 end
 
-    (* createContfromRow *)
+     (* creates a Container from a row *)
+
     and createContfromRow (va, t, p, i, d, row, proj,root) = 
-	let
-	    val lt_list   = row2list(row)
+	let val lt_list   = row2list(row)
 	    val l_vector  = labelvector(lt_list)
 	    val wlimit    = List.length(lt_list) > !max_width 
-	    val l         = if wlimit then !max_width
+	    val l         = if wlimit 
+				then !max_width
 			    else List.length(lt_list)
 	    val al = if wlimit then !max_width +1 else l
 	    val container = createContainer(INTERPUNCT,p,i,d,
@@ -435,89 +451,85 @@ struct
 						  proj(va,l_vector,i),
 						  #2(List.nth(lt_list,i)),
 						  container,i,d,al,root)) )
-	    val _ = copyArray(nodes,getKids(container))
-	in
-	    container
+	in ( copyArray(nodes,getKids(container))
+	    ; container )
 	end
 
-    (* createProdConcat *)
-    and createProdConcat (label,va,t,p,i,d,l,root) = 
-	let 
-	    val last = (i = l-1) 
-	    val c_length = if last then 3 else 4
-	    val concat = createConcat (INTERPUNCT,p,i,d,
-				       Array.array(c_length,Empty),root)
-	    val l_node = createSimple (INTERPUNCT,concat,0,d,label,
-				       LABEL_COLOR,root)
-	    val eq_node = createSimple (INTERPUNCT,concat,1,d," = ",
-					EQU_COLOR,root)
-	    val sep_node = if last 
-			       then Empty
-			   else createSimple (INTERPUNCT,
-					      concat,3,d,", ",
-					      SEP_COLOR,root)
-	    val node = createGraph (NONE,va,t,concat,2,d+1,root)
-	    val concat_kids = getKids(concat)
-	in
-	    (Array.update(concat_kids,0,l_node)
+     and createProdConcat (label,va,t,p,i,d,l,root) = 
+	 let val last = (i = l-1) 
+	     val c_length = if last then 3 else 4
+	     val concat = createConcat (INTERPUNCT,p,i,d,
+					Array.array(c_length,Empty),root)
+	     val l_node = createSimple (INTERPUNCT,concat,0,d,label,
+					LABEL_COLOR,root)
+	     val eq_node = createSimple (INTERPUNCT,concat,1,d," = ",
+					 EQU_COLOR,root)
+	     val sep_node = if last 
+				then Empty
+			    else createSimple (INTERPUNCT,concat,3,d,", ",
+					       SEP_COLOR,root)
+	     val node = createTree (NONE,va,t,concat,2,d+1,root)
+	     val concat_kids = getKids(concat)
+	 in ( Array.update(concat_kids,0,l_node)
 	     ; Array.update(concat_kids,1,eq_node)
 	     ; Array.update(concat_kids,2,node)
-	     ; if last then () 
+	     ; if last 
+		   then () 
 	       else Array.update(concat_kids,3,sep_node)
-	     ;concat)
-	end
-    
-    (* createProdConcatTuple *)
-    and createProdConcatTuple (label,va,t,p,i,d,l,root) = 
-	let 
-	    val last = (i = l-1)
-	    val c_length = if last then 1 else 2
-	    val concat = if last then Empty
-			 else createConcat (INTERPUNCT,p,i,d,
-					    Array.array(c_length,Empty),
-					    root)
+	     ; concat)
+	 end
+     
+     (* vary special case of tuple *)
+
+     and createProdConcatTuple (label,va,t,p,i,d,l,root) = 
+	 let val last = (i = l-1)
+	     val c_length = if last then 1 else 2
+	     val concat = if last then Empty
+			  else createConcat (INTERPUNCT,p,i,d,
+					     Array.array(c_length,Empty),
+					     root)
 	    val sep_node = if last 
 			       then Empty 
 			   else createSimple (INTERPUNCT,concat,1,d,", ",
 					      SEP_COLOR,root)
-	    val node = createGraph (NONE,va,t,if last then p else concat,
-				    if last then i else 0,d+1,root)
+	    val node = createTree (NONE,va,t,
+				   if last then p else concat,
+				   if last then i else 0,
+				   d+1,root)
 	    val concat_kids = getKids(concat)
-	in
-	    if last 
+	 in if last 
 		then node 
-	    else 
-		(Array.update(concat_kids,0,node)
-		 ; Array.update(concat_kids,1,sep_node)
-		 ;concat)                                       
-	end
+	    else ( Array.update(concat_kids,0,node)
+		  ; Array.update(concat_kids,1,sep_node)
+		  ;concat)                                       
+	 end
 
-(* spezielle Behandlung von Werten, deren Typ ein sog. Pfadtyp ist *) 
+     (******* special handling of values whose type is a PATH TYPE *******) 
 
-    (* newPath *)
     and newPath (v,t,p,i,d,path,root) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE 
+	   NONE (* nothing knwon about this type - not registrated *)
 	   => createSimple(INTERPUNCT,p,i,d,"_",DEFAULT,root)
 	 | SOME create 
 	   => let val doc = create (!max_width,d,v,t)
 	      in  docToNode (doc,p,i,d,root) 
 	      end )
 
-    (* docToNode *) (* changed on 5.March *)
-    and docToNode (doc,p,i,d,root) =
+    (* converts docs to nodes *)
+
+    and docToNode (doc,p,i,d,root) = 
         (case doc of
          SIMPLE(r) 
-	   => let val color = 
-	             (case #desc(r) of 
-		      INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
-		                                   | " = " => EQU_COLOR
-						   | ("{" | "}" | "(" | ")"
-                                                          | "#[" | "]" )  
-						     => BRACK_COLOR
-						   | _ => LABEL_COLOR)
-		    | VALUE(rr) 
-		      => (case Type.inspect(#typ(rr)) of
+	 => let val color = 
+	            (case #desc(r) of 
+		     INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
+		                                  | " = " => EQU_COLOR
+		                                  | ("{" | "}" | "(" | ")"
+		                                         | "#[" | "]" )  
+					             => BRACK_COLOR
+						  | _ => LABEL_COLOR)
+		   | VALUE(rr) 
+		     => (case Type.inspect(#typ(rr)) of
 			  Type.Con path
 			  => (if Path.equal(path,PervasiveType.path_int)
 				  then INT_COLOR
@@ -541,127 +553,139 @@ struct
 					then REF_COLOR
 				    else DEFAULT)
 			| _ => DEFAULT) ) 
-	      in createSimple (#desc(r),p,i,d,#rep(r),color,root) 
-	      end  
-        | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
-						 Empty)
-			   val concat = createConcat(#desc(r),p,i,d,na,
-						     root)
-		       in
-			   (Vector.appi (fn (i,a) => 
-				       Array.update(na,i,
-				       docToNode(a,concat,i,d,root))) (#kids(r))
-			    ; concat)
-		       end
-    	| CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
-						   Empty)
-			      val container = createContainer(#desc(r),p,i,d,
-							      na,root)
-			  in
-			      (Vector.appi(fn (i,a) => 
-				      Array.update(na,i,
-				 docToNode(a,container,i,d,root))) (#kids(r))
-			       ;container)
-			  end
-	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,root) 
-	| EMBEDDED(v,t) => createGraph (NONE,v,t,p,i,d+1,root)
-	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d+1,root) ) 
+	    in createSimple (#desc(r),p,i,d,#rep(r),color,root) 
+	    end  
+       | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),Empty)
+			  val concat = createConcat(#desc(r),p,i,d,na,root)
+		      in (Vector.appi 
+			  (fn (i,a) 
+			   => Array.update(na,i,
+					   docToNode(a,concat,i,d,root))) 
+			  (#kids(r))
+			  ; concat)
+		      end
+       | CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
+						  Empty)
+			     val container = createContainer(#desc(r),p,i,d,
+							     na,root)
+			 in (Vector.appi
+			     (fn (i,a) 
+			      => Array.update(na,i,
+					      docToNode(a,container,i,d,root)))
+			     (#kids(r))
+			     ; container)
+			 end
+       | LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,root) 
+       | EMBEDDED(v,t) => createTree (NONE,v,t,p,i,d+1,root)
+       | EMBEDDED_INF(v,t) => createTreeInf (v,t,p,i,d+1,root) ) 
   	     
-(* spezielle Behandlung von Futures *)
- 
-    (* createFutureNode *)
-    and createFutureNode (va,t,p,i,d,root) = 
-	let val desc = createValue(va,t)
-            val fut = UnsafeValue.cast va
-	    val str = if Future.isLazy fut then "byneed" else "future"
-	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,root)
-	in ( case Transient.iterLookup  
-	                   (transdict, 
-			    fn (vv,_,li) 
-			    => List.exists(fn n  
-					   => UnsafeValue.same  
-					   (getValue(getDesc(n)),va))  
-			    li 
-			    handle General.Match => false) of 
+     (******* special handling of FUTURES *******)
+	     
+     and createFutureNode (va,t,p,i,d,root) = 
+	 let val desc = createValue(va,t)
+	     val fut = UnsafeValue.cast va
+	     val str = if Future.isLazy fut then "byneed" else "future"
+	     val simple =  createSimple (desc,p,i,d,str,DEFAULT,root)
+	 in ( case Transient.iterLookup
+	                     (transdict,fn (vv,_,li) 
+			                => List.exists(fn n  
+						       => UnsafeValue.same  
+						         (getValue(getDesc(n)),
+							  va))  li 
+			      handle General.Match => false) of 
 	      SOME ((vv,thr,li),i)   
-	      => Transient.update(transdict,  
-					    (i,(vv,thr,li@[simple]))) 
+	      => Transient.update(transdict,(i,(vv,thr,li@[simple]))) 
             | NONE  
-	      => (let 
-		      val id = 
-			  Dictionaries.Transient.getHighestIndexAssigned(Dictionaries.transdict) +1
-		      val watcher = Update.watcher(fut,va,id,createGraph,createGraphInf,root)
-		  in
-			(  Transient.insertI(transdict,(va,watcher,[simple])) ; ())
+	      => (let val id = Dictionaries.Transient.getHighestIndexAssigned
+		                             (Dictionaries.transdict) +1
+		      val watcher = Update.watcher(fut,va,id,
+						   createTree,createTreeInf,
+						   root)
+		  in ( Transient.insertI(transdict,(va,watcher,[simple])) ; ())
 		  end)
-          ; simple )
-	end 	
+	     ; simple )
+	 end 	
   
-(********* entsprechende Funktionen zur internen Darstellung von MODULEN *********)
-(*********   Code analog zu newTree, createGraph und createUsualGraph    *********)
+     (***************************************)
 
-    (* newTreeInf *)
-    and newTreeInf (va,t,i,root) = createGraphInf (va,t,Empty,i,0,root)
+     (*** analogous tree creation for modules ***)
+ 
+     (*** creates a new tree ***)
 
-     and createGraphInf (va,t,p,i,d,root) =
-	 if !relmode (* Konstruktion im Relationsmodus *)
+     and newTreeInf (va,t,i,root) = createTreeInf (va,t,Empty,i,0,root)
+
+     (* checking mode / construction in RELATION MODE *)
+
+     and createTreeInf (va,t,p,i,d,root) =
+	 if !relmode (* RELATION MODE *)
 	     then let val ind = if p = Empty then i else getAncIndex p 
 		      val desc = createIValue(va,t) 
 		      val relman = 
-			    case RelMan.lookup(reldict,ind)
-			      of SOME x => x (* Relationsmanager existiert bereits *)
-		               | NONE => []
+			    case RelMan.lookup(reldict,ind) of 
+			    SOME x => x (* relation manager exists already *)
+			  | NONE => []
 		      val f = fn t: value * int ref * int
-			      => isModule (#1(t)) 
-			         andalso if !tokenmode (* token equality *)
-					     then UnsafeValue.same(asModule(#1(t)),va)   
-					 else (* structural equality *)
-					     asModule(#1(t)) = va  
+			      => isModule (#1(t)) andalso 
+			         if !tokenmode (* token equality *)
+				     then UnsafeValue.same(asModule(#1(t)),va)
+				 else (* structural equality *)
+				     asModule(#1(t)) = va  
 		      val new_relman = 
 			  ( case List.find f relman of
-				NONE (* Einfuegen des neuen Wertes *)
+				NONE (* new value is beeing inserted *)
 				=> RelMan.update(reldict,
-						 (ind,(M va,ref 1,!relnumber)::relman))
-			      | SOME (rv,co,nu) 
-				=> co := !co + 1 (* Wert schon vorhanden - Zaehler wird erhoeht *)
-			   ; valOf(RelMan.lookup(reldict,ind)) )
+						 (ind,(M va,
+						       ref 1,
+						       !relnumber)::relman))
+			      | SOME (rv,co,nu) (* counter is beeing 
+						   incremented *)
+				=> co := !co + 1 
+			    ; valOf(RelMan.lookup(reldict,ind)) )
 		      val (rva,count,number) = valOf(List.find f new_relman)
 		      val str = "Ref"^Int.toString(number)
 		      val node = if !count = 1 
-				     then createRelNode (desc,Empty,p,i,d,count,
-							 str^" as ",relman,root)
+				     then createRelNode (desc,Empty,p,i,d,
+							 count,str^" as ",
+							 relman,root)
 				 else createRelRefNode(desc,p,i,d,str,root) 
 		  in ( if !count = 1 
-			   then let val c = createUsualGraphInf (va,t,node,0,d,root)
+			   then let val c = createUsualTreeInf (va,t,node,0,d,
+								root)
 				in setContent (node,c)  
 				end 
 		       else ()
-                     ; node )
+		      ; node )
 		  end 
-	 else createUsualGraphInf (va,t,p,i,d,root) 
+	 else (* construction in tree mode *) 
+	     createUsualTreeInf (va,t,p,i,d,root) 
  			         
-    (* createUsualGraphInf *) 
-    and createUsualGraphInf (va,t,p,i,d,root) = 
-	if d > !max_depth (* TIEFENFILTER *)	  
-	    then let val desc = createIValue(va,t)  
-		 in createLimit(desc,DEPTH_LIMIT,p,i,d,root) 
-		 end 
-	else (* maximale Tiefe nicht ueberschritten *)  
+     (* usual construction in TREE MODE *)
+
+     and createUsualTreeInf (va,t,p,i,d,root) = 
+	 if d > !max_depth (** depth filter **)	  
+	     then let val desc = createIValue(va,t)  
+		  in createLimit(desc,DEPTH_LIMIT,p,i,d,root) 
+		  end 
+	else 
 	(case Inf.inspect t of  
-	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s)) 
-		       in treatSig (va,t,p,i,d,ilist,root) 
-		       end  
-       | Inf.Arrow(path,i1,i2) 
+	 Inf.Sig(s) (* signature / structure *) 
+	 => let val ilist = List.rev(Inf.items(s)) 
+	    in treatSig (va,t,p,i,d,ilist,root) 
+	    end  
+       | Inf.Arrow(path,i1,i2) (* functor *)
 	 => createSimple (createIValue(va,t),p,i,d,"functor", 
 			       DEFAULT,root) 
-       | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d,root) 
-       | Inf.Sing(m) => let val ti = #2(Inf.asMod(m)) 
-			in createUsualGraphInf (va,ti,p,i,d,root)
-			end 
-       | _ => createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) ) 
+       | Inf.Exist(path,i1,i2) (* existencial quantification *) 
+	 => createUsualTreeInf (va,i2,p,i,d,root) 
+       | Inf.Sing(m) (* singleton *) 
+	 => let val ti = #2(Inf.asMod(m)) 
+	    in createUsualTreeInf (va,ti,p,i,d,root)
+	    end 
+       | _ => createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) (* unknown *) ) 
+	     
+    (* handling of SIGNATURES / STRUCTURES  -
+       construction of the frame *)
 
-
-    (* treatSig *)
     and treatSig (va,t,p,i,d,ilist,root) = 
 	let val ilength = List.length(ilist)
 	    val limited = ilength > !max_width
@@ -679,7 +703,6 @@ struct
 	    ; Array.update(getKids(container),a_length-1,s_end) 
 	    ; if not(limited)
 		  then setItems (va,ilist,container,d,ilength,root)
-	      (* Erzeugung der Kindkonten *) 
 	      else let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
 					       container,a_length-2,d,
 					       root)
@@ -687,26 +710,22 @@ struct
 		       ; setItems (va,List.take(ilist,!max_width),
 				   container,d,!max_width,root) )
 		   end 
-	       ; container ) 
+	    ; container ) 
 	end   
 
-    (* setItems *)
-			
+     and setItems (va,ilist,p,d,length,root) = 
+	 appi_break ((fn (i,item) 
+		      => let val vv = UnsafeValue.cast va
+			     val label = itemToLabel(item) 
+			     val in_vv = UnsafeValue.projPoly(vv,label)
+			     val node = createItemNode(in_vv,item,p,i+1,d,root)
+			 in Array.update(getKids(p),i+1,node)
+			 end),
+		     length-1,
+		     ilist) 
+	 
+    (* construction of different items *)
 
-(* changed on 5. March *)
- and setItems (va,ilist,p,d,length,root) = 
-     appi_break ((fn (i,item) => let
-		                  val vv = UnsafeValue.cast va
-				  val label = itemToLabel(item) 
-				  val in_vv = UnsafeValue.projPoly(vv,label)
-				  val node = createItemNode(in_vv,item,p,i+1,d,root)
-			       in
-				  Array.update(getKids(p),i+1,node)
-			       end),
-				  length-1,
-				  ilist) 
-
-    (* createItemNode *)
     and createItemNode (vv,item,p,i,d,root) = 
 	case Inf.inspectItem item of
 	Inf.FixItem(_,_) 
@@ -733,7 +752,7 @@ struct
 				       root)
 	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
 				       root)
-	       val value =  createGraph (NONE,vv,t,conc,3,d+1,root)  
+	       val value =  createTree (NONE,vv,t,conc,3,d+1,root)  
 	   in ( Array.update(getKids(conc),0,s_val)
 	       ; Array.update(getKids(conc),1,lab)
 	       ; Array.update(getKids(conc),2,equ)
@@ -745,19 +764,19 @@ struct
 	=> let val label = Path.toLab(path)
 	       val str = "  type "^Label.toString(label)
 	   in createSimple (INTERPUNCT,p,i,d,str,DEFAULT,root)
-	   end  (* Tiefe! *)
+	   end 
       | Inf.ModItem(path,inf)
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,
 					Array.array(4,Empty),root)
-	       val s_struct = createSimple (INTERPUNCT,conc,1,d,"  structure ",
-					    DEFAULT,root)
+	       val s_struct = createSimple (INTERPUNCT,conc,1,d,
+					    "  structure ",DEFAULT,root)
 	       val name = createSimple (INTERPUNCT,conc,1,d,
 					Label.toString(Path.toLab(path)),
 					LABEL_COLOR,root)
 	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
 				       root)
 	       val vv_inf = UnsafeValue.cast vv : Reflect.module
-	       val value =  createGraphInf (vv_inf,inf,conc,3,d+1,root) 
+	       val value =  createTreeInf (vv_inf,inf,conc,3,d+1,root) 
 	   in ( Array.update(getKids(conc),0,s_struct)
 	       ; Array.update(getKids(conc),1,name)
 	       ; Array.update(getKids(conc),2,equ)
@@ -768,12 +787,11 @@ struct
       | Inf.InfItem(path,_)
 	=> let val conc = createConcat (INTERPUNCT,p,i,d,
 					Array.array(2,Empty),root)
-	       val s_sig = createSimple (INTERPUNCT,conc,0,d,"  signature ",
-					 DEFAULT,root)
+	       val s_sig = createSimple (INTERPUNCT,conc,0,d,
+					 "  signature ",DEFAULT,root)
 	       val name = createSimple (INTERPUNCT,conc,1,d,
 					Label.toString(Path.toLab(path)),
 					LABEL_COLOR,root)
-               (* Name der Signatur *)
 	   in ( Array.update(getKids(conc),0,s_sig)
 	       ; Array.update(getKids(conc),1,name)
 	       ; Array.update(getKids(p),i,conc)
@@ -790,8 +808,8 @@ struct
 	       ; Array.update(getKids(p),i,conc)
 	       ; conc)
 	   end
-
-end (* struct end *)
+       
+end 
  
-end (* local end *)
+end 
  

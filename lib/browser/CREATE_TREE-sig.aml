@@ -35,19 +35,21 @@ sig
 
     val lookupPath: Inf.sign * string * string -> Path.path
 
-    (* interne Repraesentation von Werten (ausser Strukturen) *)
+    (* creates a new tree as internal representation for values *)
 
     val newTree: Reflect.value * Type.t * int * GtkSupport.tag -> node
 
-    val createGraph: int option * Reflect.value * Type.t  * node * int * int * 
-	GtkSupport.tag -> node 
+    val createTree : int option * Reflect.value * Type.t  * node * 
+	             int * int * GtkSupport.tag 
+		     -> node 
 
-    (* interne Repraesentation von Strukturen *)
+    (* creates a new tree as internal representation for values *)
 
     val newTreeInf: Reflect.module * Inf.t * int * GtkSupport.tag -> node
 
-    val createGraphInf: Reflect.module * Inf.t  * node * int * int * GtkSupport.tag 
-	-> node
+    val createTreeInf: Reflect.module * Inf.t  * node * 
+	               int * int * GtkSupport.tag 
+		       -> node
 
 end
 
