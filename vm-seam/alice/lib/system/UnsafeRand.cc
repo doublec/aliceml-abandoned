@@ -23,10 +23,17 @@ DEFINE1(UnsafeRand_srand) {
   RETURN_UNIT;
 } END
 
+static inline s_int min (s_int a, s_int b) {
+  if (a <= b) 
+    return a;
+  else
+    return b;
+}
+
 DEFINE0(UnsafeRand_randLimits) {
   Tuple *limits = Tuple::New(2);
   limits->Init(0, Store::IntToWord(0));
-  limits->Init(1, Store::IntToWord(RAND_MAX));
+  limits->Init(1, Store::IntToWord(min (RAND_MAX, MAX_VALID_INT) ));
   RETURN(limits->ToWord());
 } END
 
