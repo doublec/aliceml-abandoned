@@ -16,7 +16,9 @@ structure SMLToComPlusCompiler =
 
 	structure ComPlusTarget = MakeComPlusTarget(Signature)
 
-	structure FrontendSML = MakeFrontendSML(Composer)
+	structure FrontendSML =
+	    MakeFrontendSML(structure Composer = Composer
+			    structure Switches = Switches)
 
 	structure FrontendCommon =
 	    MakeFrontendCommon(structure Composer = Composer

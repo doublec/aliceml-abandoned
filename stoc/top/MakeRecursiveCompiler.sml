@@ -241,19 +241,37 @@ functor MakeMain(structure Composer: COMPOSER'
 	      \[-o <output file>]\n\
 	      \\tstoc --replacesign <input url> <signature file> \
 	      \<output file>\n\
-	      \Options:\n\
-	      \\t--noimplicitimport\n\
-	      \\t\tDo not make the SML Standard Basis available.\n\
-	      \\t--nortt\n\
+	      \Bootstrap options:\n\
+	      \\t--(no-)implicit-import\n\
+	      \\t\tWhether the SML Standard Basis is made available.\n\
+	      \\t--rtt-level=no\n\
 	      \\t\tDo not generate code for runtime types.\n\
-	      \\t--corertt\n\
+	      \\t--rtt-level=core\n\
 	      \\t\tDo only generate code for core runtime types.\n\
-	      \\t--outputassembly\n\
-	      \\t\tWrite an .ozm file with the assembly code.\n\
-	      \\t--noprintcomponentsig\n\
-	      \\t\tOmit output of component signatures.\n\
-	      \\t--dryrun\n\
-	      \\t\tCompile standard input, not writing any output.\n")
+	      \Debug options:\n\
+	      \\t--(no-)dryrun\n\
+	      \\t\tCompile standard input, not writing any output.\n\
+	      \\t--(no-)dump-phase\n\
+	      \\t\tTrace the currently running phase.\n\
+	      \\t--(no-)dump-abstraction-result\n\
+	      \\t\tDump abstract representation.\n\
+	      \\t--(no-)dump-elaboration-result\n\
+	      \\t\tDump abstract representation after elaboration.\n\
+	      \\t--(no-)dump-elaboration-sig\n\
+	      \\t\tDump component signatures after elaboration.\n\
+	      \\t--(no-)dump-intermediate\n\
+	      \\t\tDump intermediate representation.\n\
+	      \\t--(no-)check-intermediate\n\
+	      \\t\tType-check intermediate representation.\n\
+	      \\t--(no-)dump-flattening-result\n\
+	      \\t\tDump flat representation after flattening.\n\
+	      \\t--(no-)dump-value-propagation-result\n\
+	      \\t\tDump flat representation after value propagation.\n\
+	      \\t--(no-)dump-liveness-analysis-intermediate\n\
+	      \\t\tDump flat representation with liveness annotations.\n\
+	      \\t--(no-)dump-liveness-analysis-result\n\
+	      \\t\tDump flat representation after liveness analysis.\n\
+	      \\t--(no-)dump-target\n")
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
 	    (Pickle.replaceSign (Url.fromString infile,
@@ -277,23 +295,42 @@ functor MakeMain(structure Composer: COMPOSER'
 	    stoc_x (infile, outfile)
 	  | stoc' _ = (usage (); OS.Process.failure)
 
-	fun options ("--noimplicitimport"::rest) =
-	    (Switches.implicitImport := false; options rest)
-	  | options ("--nortt"::rest) =
-	    (Switches.rttLevel := Switches.NO_RTT; options rest)
-	  | options ("--corertt"::rest) =
-	    (Switches.rttLevel := Switches.CORE_RTT; options rest)
-	  | options ("--outputassembly"::rest) =
-	    (Switches.outputAssembly := true; options rest)
-	  | options ("--noprintcomponentsig"::rest) =
-	    (Switches.printComponentSig := false; options rest)
-	  | options rest = rest
+	val booleanSwitches =
+	    [("implicit-import", Switches.Bootstrap.implicitImport),
+	     ("dump-phase", Switches.Debug.dumpPhase),
+	     ("dump-abstraction-result", Switches.Debug.dumpAbstractionResult),
+	     ("dump-elaboration-result", Switches.Debug.dumpElaborationResult),
+	     ("dump-elaboration-sig", Switches.Debug.dumpElaborationSig),
+	     ("dump-intermediate", Switches.Debug.dumpIntermediate),
+	     ("check-intermediate", Switches.Debug.checkIntermediate),
+	     ("dump-flattening-result", Switches.Debug.dumpFlatteningResult),
+	     ("dump-value-propagation-result",
+	      Switches.Debug.dumpValuePropagationResult),
+	     ("dump-liveness-analysis-intermediate",
+	      Switches.Debug.dumpLivenessAnalysisIntermediate),
+	     ("dump-liveness-analysis-result",
+	      Switches.Debug.dumpLivenessAnalysisResult),
+	     ("dump-target",
+	      Switches.Debug.dumpTarget)]
 
-	fun defaults () =
-	    (Switches.implicitImport := true;
-	     Switches.outputAssembly := false;
-	     Switches.printComponentSig := true;
-	     Switches.rttLevel := Switches.NO_RTT)
+	fun checkBooleanSwitches (s, (name, switch)::rest) =
+	    if name = "--" ^ s then (switch := true; true)
+	    else if name = "--no-" ^ s then (switch := false; true)
+	    else checkBooleanSwitches (s, rest)
+	  | checkBooleanSwitches (_, nil) = false
+
+	fun options ("--rtt-level=no"::rest) =
+	    (Switches.Bootstrap.rttLevel := Switches.Bootstrap.NO_RTT;
+	     options rest)
+	  | options ("--rtt-level=core"::rest) =
+	    (Switches.Bootstrap.rttLevel := Switches.Bootstrap.CORE_RTT;
+	     options rest)
+	  | options (s::rest) =
+	    if checkBooleanSwitches (s, booleanSwitches) then options rest
+	    else s::rest
+	  | options nil = nil
+
+	fun defaults () = () (* override defaults from MakeSwitches here *)
 
 	fun stoc arguments =
 	    (defaults (); stoc' (options arguments))
