@@ -52,4 +52,11 @@ final public class DMLConVal implements DMLValue {
     final public DMLValue raise() {
 	throw new DMLExceptionWrapper(this);
     }
+
+    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+	if (this.constructor == DMLConstants.reference)
+	    DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+	else
+	    out.defaultWriteObject();
+    }
 }

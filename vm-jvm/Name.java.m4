@@ -4,14 +4,24 @@ final public class DMLName implements DMLValue {
 
     String name = null;
 
+    GName gName = null;
+
     public DMLName(String name) {
 	super();
 	this.name=name;
+	this.gName=null;
     }
 
     public DMLName() {
 	super();
 	this.name = "unnamed";
+	this.gName=null;
+    }
+
+    public DMLName(GName g) {
+	super();
+	this.name = "unnamed";
+	this.gName= g;
     }
 
     final public String toString() {
@@ -36,5 +46,14 @@ final public class DMLName implements DMLValue {
 
     final public DMLValue raise() {
 	throw new DMLExceptionWrapper(this);
+    }
+    final public GName globalize() {
+	if (gName==null) {
+	    gName = new GName(0);
+	    gNames.put(gName,c);
+	    return gName;
+	}
+	else
+	    return gName;
     }
 }

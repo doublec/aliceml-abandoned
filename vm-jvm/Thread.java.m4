@@ -41,4 +41,8 @@ final public class DMLThread extends Thread implements DMLValue {
     final public DMLValue raise() {
 	throw new DMLExceptionWrapper(this);
     }
+
+    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+    }
 }

@@ -4,6 +4,8 @@ final public class DMLRecord implements DMLValue {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
+    DMLRecordArity arity=null;
+
     public DMLRecord (DMLLabel[] ls, DMLValue[] vals) {
 	Object ar=null;
 	this.vals=vals;
@@ -30,8 +32,6 @@ final public class DMLRecord implements DMLValue {
 	    return true;
 	}
     }
-
-    DMLValue vals[]=null;
 
     final public String toString() {
 	String s="{";
@@ -67,17 +67,6 @@ final public class DMLRecord implements DMLValue {
 	    return null;
     }
 
-    DMLRecordArity arity=null;
-
-    /** gibt den i-ten Eintrag des Records */
-    final public DMLValue getByIndex(int i){
-	return vals[i];
-    }
-
-    /** gibt die Stelligkeit des Records an */
-    final public int getArity() {
-	return vals.length;
-    }
 
     /** @parameter: arity,
 	@returns: null, falls es diese Arity noch nicht gab,
@@ -88,21 +77,5 @@ final public class DMLRecord implements DMLValue {
 
     final public DMLRecordArity getRecordArity() {
 	return arity;
-    }
-
-    final public DMLValue getValue() {
-	return this;
-    }
-
-    final public DMLValue request() {
-	return this;
-    }
-
-    final public DMLValue apply(DMLValue v) {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
-    }
-
-    final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
     }
 }

@@ -54,4 +54,11 @@ public class DMLLVar implements DMLValue {
     final public DMLValue raise() {
 	throw new DMLExceptionWrapper(this);
     }
+
+    /** DMLLVar und DMLFuture werden beim pickeln ersetzt, falls sie gebunden sind.
+	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
+    
+    final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+    }
 }

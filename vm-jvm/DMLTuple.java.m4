@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLTuple implements DMLValue {
+public class DMLTuple implements DMLValue {
 
     DMLValue vals[]=null;
 
@@ -9,10 +9,11 @@ final public class DMLTuple implements DMLValue {
 	this.vals=vals;
     }
 
-    final public boolean equals(Object val) {
+    public boolean equals(Object val) {
 	DMLTuple r=null;
 	int i=0;
-	if (!(val instanceof DMLTuple))
+	if (!(val instanceof DMLTuple) ||
+	     (val instanceof DMLRecord))
 	    return false;
 	else {
 	    r = (DMLTuple) val;
@@ -24,7 +25,7 @@ final public class DMLTuple implements DMLValue {
 	}
     }
 
-    final public String toString() {
+    public String toString() {
 	String s="(";
 	int i;
 	for (i=0; i<vals.length;i++) {
@@ -34,12 +35,12 @@ final public class DMLTuple implements DMLValue {
 	return s+")";
     }
 
-    /** gibt den i-ten Eintrag des Tuples */
+    /** gibt den i-ten Eintrag des Tuples oder Records*/
     final public DMLValue getByIndex(int i){
 	return vals[i];
     }
 
-    /** gibt die Stelligkeit des Tuples an */
+    /** gibt die Stelligkeit des Tuples oder Records an */
     final public int getArity() {
 	return vals.length;
     }

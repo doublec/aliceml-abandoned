@@ -2,16 +2,28 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLConstructor implements DMLValue {
 
+    static java.util.Hashtable gNames = new java.util.Hashtable();
+
     String name = null;
+
+    String gName = null;
 
     public DMLConstructor() {
 	super();
 	this.name="unnamed";
+	this.gName = null;
+    }
+
+    public DMLConstructor(GName g) {
+	super();
+	this.name="unnamed";
+	this.gName=g;
     }
 
     public DMLConstructor(String name) {
 	super();
 	this.name=name;
+	this.gName = null;
     }
 
     /** Pointergleichheit */
@@ -37,5 +49,15 @@ final public class DMLConstructor implements DMLValue {
 
     final public DMLValue raise() {
 	throw new DMLExceptionWrapper(this);
+    }
+
+    final public GName globalize() {
+	if (gName==null) {
+	    gName = new GName(1);
+	    gNames.put(gName,c);
+	    return gName;
+	}
+	else
+	    return gName;
     }
 }
