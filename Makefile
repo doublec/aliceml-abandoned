@@ -108,9 +108,7 @@ veryclean: clean-mozart clean-seam
 
 distclean: veryclean
 	rm -rf */NJ */*/NJ */*/*/NJ
-
-distclean: veryclean
-	rm -rf */NJ */*/NJ */*/*/NJ
+	rm -rf install
 
 
 ################################################################################
