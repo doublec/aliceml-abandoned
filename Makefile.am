@@ -140,7 +140,6 @@ libseam_la_SOURCES = \
 	generic/Broker.cc \
 	generic/DebugWorker.cc \
 	generic/Debugger.cc \
-	generic/DebuggerEvent.cc \
 	generic/GenericDebuggerEvent.cc \
 	generic/Stream.cc
 nodist_libseam_la_SOURCES = \
