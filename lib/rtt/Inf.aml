@@ -894,13 +894,16 @@ structure InfPrivate =
 
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
-      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	( realise(rea, j21)
-	; match'(rea, j21, j11) handle Mismatch mismatch =>
-		raise Mismatch(MismatchDom mismatch)
-	; realise(rea, j12)
-	; match'(rea, j12, j22) handle Mismatch mismatch =>
-		raise Mismatch(MismatchRan mismatch)
+      | match'(rea, j1 as ref(FUN _), j2 as ref(FUN _)) =
+	( realise(rea, j2)
+	; case (instance j1, instance j2)
+	   of (ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =>
+	      ( match'(rea, j21, j11) handle Mismatch mismatch =>
+		    raise Mismatch(MismatchDom mismatch)
+	      ; match'(rea, j12, j22) handle Mismatch mismatch =>
+		    raise Mismatch(MismatchRan mismatch)
+	      )
+	    | _ => raise Crash.Crash "Inf.match: funny instantiation"
 	)
 
       | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
