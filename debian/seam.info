@@ -7,8 +7,12 @@ HomePage: http://www.ps.uni-sb.de/alice
 License: BSD
 Description: The Simple Extensible Abstract Machine
 Source-MD5: INSERTMD5HERE
-UpdateLibtool: True
 ConfigureParams: --disable-lightning
+CompileScript: <<
+make -f Makefile.cvs autotools LIBTOOLIZE=glibtoolize
+./configure %c
+make
+<<
 Depends: seam-shlibs (= %v-%r)
 BuildDependsOnly: True
 SplitOff: <<
