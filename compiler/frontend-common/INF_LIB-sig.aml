@@ -54,9 +54,6 @@ sig
     val lab_asSing :		Label.t
     val lab_asLambda :		Label.t
     val lab_asApply :		Label.t
-    val lab_asCon' :		Label.t
-    val lab_asSig' :		Label.t
-    val lab_asArrow' :		Label.t
 
     val lab_groundKind :	Label.t
     val lab_depKind :		Label.t
