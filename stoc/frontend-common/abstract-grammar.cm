@@ -1,0 +1,17 @@
+Group
+
+	signature STAMP
+	structure Stamp
+	signature ABSTRACT_GRAMMAR
+	functor MakeAbstractGrammar
+	structure AbstractGrammar
+
+is
+
+	../error/sources.cm
+	../common/id-stamp.cm
+
+	ABSTRACT_GRAMMAR.sig
+	MakeAbstractGrammar.sml
+
+	AbstractGrammar.sml

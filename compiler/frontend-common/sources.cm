@@ -1,0 +1,11 @@
+Group
+
+
+is
+
+	../error/sources.cm
+	../common/sources.cm
+	abstract-grammar.cm
+
+	TRANSLATION_PHASE.sig
+	TranslationPhase.sml
