@@ -16,6 +16,14 @@
 	()
 	(cons (f (car xs)) (map f (cdr xs))))))
 
+(define imap
+  (lambda (f xs)
+    (if (eq? xs ())
+	()
+	(begin
+	  (set_car! xs (f (car xs)))
+	  (tail imap f (cdr xs))))))
+
 (define foldl
   (lambda (f b xs)
     (if (eq? xs ())
