@@ -1,0 +1,3 @@
+import
+    structure Source
+from "error/Source.ozf"
