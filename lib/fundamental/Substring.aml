@@ -15,10 +15,10 @@
  *)
 
 import structure __pervasive                       from "Pervasive"
-import type int and string
+import type int and char and string
        datatype bool and order and option and list from "ToplevelTypes"
-import infix 6 + - infix 4 = < >
-       val op = and op < and op >
+import infix 6 + - infix 4 = <> < >
+       val op = and op <> and op < and op >
        val op + and op -                           from "ToplevelValues"
 import structure General                           from "General"
 import structure Option                            from "Option"
@@ -26,11 +26,11 @@ import structure List                              from "List"
 import structure String                            from "String"
 import signature SUBSTRING                         from "SUBSTRING-sig"
 
-structure Substring :> SUBSTRING (*where String = String*)
-		       where type String.string    = String.string
-		       where type String.Char.char = String.Char.char =
+structure Substring :> SUBSTRING where type string = string
+				 where type char   = char =
 struct
-    structure String		= String
+    type char			= char
+    type string			= string
     type substring		= string * int * int
     type t			= substring
 
@@ -47,7 +47,8 @@ struct
 					   raise General.Subscript
     fun extract(s, i, NONE)	= substring(s, i, String.size s - i)
       | extract(s, i, SOME j)	= substring(s, i, j)
-    fun all s			= substring(s, 0, String.size s)
+    fun full s			= substring(s, 0, String.size s)
+    val all			= full
 
     fun isEmpty (s,i,n)		= n = 0
 
@@ -66,10 +67,14 @@ struct
     and slice'((s,i,n), j, m)	= if j + m > n then raise General.Subscript else
 				  substring(s, i+j, m)
 
+    (*INEFFICIENT*)
     fun concat sss		= String.concat(List.map string sss)
+    fun concatWith s sss	= String.concatWith s (List.map string sss)
     fun explode	ss		= String.explode(string ss)
     fun translate f ss		= String.concat(List.map f (explode ss))
     fun isPrefix s ss		= String.isPrefix s (string ss)
+    fun isSuffix s ss		= String.isSuffix s (string ss)
+    fun isSubstring s ss	= String.isSubstring s (string ss)
     fun hash ss			= String.hash(string ss)
     fun equal(ss, st)		= string ss = string st
     fun compare(ss, st)		= String.compare(string ss, string st)
@@ -101,8 +106,12 @@ struct
     fun dropr p ss		= #1(splitr p ss)
 (*
     fun position 
-    fun span
-
+*)
+    fun span((s,i,n), (s',i',n'))
+				= if s <> s' orelse i'+n' < i
+				  then raise General.Span
+				  else (s, i, (i'+n')-i)
+(*
     fun tokens
     fun fields
 *)
