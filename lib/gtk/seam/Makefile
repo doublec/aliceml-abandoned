@@ -111,7 +111,7 @@ $(INPUTFILE):
 compile: $(OBJECTS)
 
 %.dll: %.o
-	$(ALICETOOL) -v link -Wl,-S $< -o $@ \
+	$(ALICETOOL) -v link $< -o $@ \
 	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
 
 %.o: %.cc
