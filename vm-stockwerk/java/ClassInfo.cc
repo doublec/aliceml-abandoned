@@ -24,9 +24,13 @@ u_int MethodInfo::GetNumberOfArguments() {
   while (descriptor->CharAt(index) != ')') {
     while (descriptor->CharAt(index) == '[') index++;
     switch (descriptor->CharAt(index)) {
-    case 'B': case 'C': case 'D': case 'F':
-    case 'I': case 'J': case 'S': case 'Z':
+    case 'B': case 'C': case 'F':
+    case 'I': case 'S': case 'Z':
       index++;
+      break;
+    case 'J': case 'D':
+      index++;
+      nArgs++;
       break;
     case 'L':
       while (descriptor->CharAt(index++) != ';');

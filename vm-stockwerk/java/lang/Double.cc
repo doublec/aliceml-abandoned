@@ -13,19 +13,20 @@
 #include "generic/Debug.hh"
 #include "java/Authoring.hh"
 
-DEFINE1(toLongBits) {
-  DECLARE_DOUBLE(theDouble, x0);
-  RETURN(JavaLong::New(theDouble->GetNetworkRepresentation())->ToWord());
+DEFINE2(toLongBits) {
+  DECLARE_DOUBLE(theDouble, x0); x1 = x1;
+  RETURN2(JavaLong::New(theDouble->GetNetworkRepresentation())->ToWord(),
+	  null);
 } END
 
-DEFINE1(longBitsToDouble) {
-  DECLARE_LONG(theLong, x0);
+DEFINE2(longBitsToDouble) {
+  DECLARE_LONG(theLong, x0); x1 = x1;
   Double *theDouble =
     Double::NewFromNetworkRepresentation(theLong->GetNetworkRepresentation());
-  RETURN(theDouble->ToWord());
+  RETURN2(theDouble->ToWord(), null);
 } END
 
 void NativeMethodTable::java_lang_Double(JavaString *className) {
-  Register(className, "toLongBits", "(D)J", toLongBits, 1, false);
-  Register(className, "longBitsToDouble", "(J)D", longBitsToDouble, 1, false);
+  Register(className, "toLongBits", "(D)J", toLongBits, 2, false);
+  Register(className, "longBitsToDouble", "(J)D", longBitsToDouble, 2, false);
 }
