@@ -17,7 +17,6 @@ import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
 
 (*--** implement persistent connections
  * configurability:
- * - max number of simultaneous connections to a single site: int option
  * - idle time to close a connection: Time.t option
  *)
 
@@ -42,7 +41,6 @@ structure HttpClient :> HTTP_CLIENT =
 			val host = String.substring (authority, 0, i)
 			val port = String.extract (authority, i + 1, NONE)
 		    in
-(*--** are symbolic service names allowed as port numbers? *)
 			(host,
 			 case Int.fromString port of
 			     SOME port => port
