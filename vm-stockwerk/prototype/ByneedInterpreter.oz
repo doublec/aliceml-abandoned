@@ -12,7 +12,7 @@
 
 functor
 import
-   PrimitiveTable(table)
+   PrimitiveTable(values)
    Scheduler(object)
 export
    interpreter: Me
@@ -46,8 +46,8 @@ define
 	    X = {Construct Args}
 	    if {IsCyclic X TransientState} then
 	       {Assign TransientState
-		cancelled(PrimitiveTable.table.'Hole.Cyclic')}
-	       exception(nil PrimitiveTable.table.'Hole.Cyclic' Rest)
+		cancelled(PrimitiveTable.values.'Hole.Cyclic')}
+	       exception(nil PrimitiveTable.values.'Hole.Cyclic' Rest)
 	    else
 	       for T in Ts do {Scheduler.object wakeup(T)} end
 	       {Assign TransientState ref(X)}
