@@ -30,26 +30,26 @@ public:
   using DynamicBlock::ToWord;
 
   u_int GetSize() {
-    return GetScanSize();
+    return GetActiveSize();
   }
   void Clear() {
-    SetScanSize(0);
+    SetActiveSize(0);
   }
   Set *Add(word v, u_int gen = STORE_GEN_OLDEST) {
-    u_int top = GetScanSize();
+    u_int top = GetActiveSize();
     u_int max = DynamicBlock::GetSize();
-    Set *p    = ((top < max) ? this : Enlarge(max, (max * 3) >> 1, gen));
-    p->SetScanSize(top + 1);
+    Set *p    = (((top + 1) < max) ? this : Enlarge(max, (max * 3) >> 1, gen));
+    p->SetActiveSize(top + 1);
     p->InitArg(top, v);
     return p;
   }
   void AddUnchecked(word v) {
-    u_int top = GetScanSize();
-    SetScanSize(top + 1);
+    u_int top = GetActiveSize();
+    SetActiveSize(top + 1);
     InitArg(top, v);
   }
   Set *Export(u_int gen) {
-    u_int size = GetScanSize();
+    u_int size = GetActiveSize();
     return Enlarge(size, size, gen);
   }
 
