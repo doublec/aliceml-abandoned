@@ -58,7 +58,8 @@
     "ROOTSETELEMENT", \
     "THREAD", \
     "CLOSURE", \
-    "TUPLE" \
+    "TUPLE", \
+    "EMPTYARG", "ONEARG", "TUPARGS" \
   }
 
 #endif __STORE__PARAMETER_HH__
