@@ -63,6 +63,16 @@ structure Buffer =
               String.extract(s,1 + lastSlash ~1 0, NONE)
           end
 
+      (* Cursor *)
+      fun getCursorIter buf =
+          let
+              val cursor = Gtk.textBufferGetInsert buf
+              val iter = Gtk.textIterNew()
+          in
+              Gtk.textBufferGetIterAtMark(buf, iter, cursor);
+              iter
+          end
+
       fun modifiedChanged id _ =
           let
               val {fileLabel,file,buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -178,4 +188,38 @@ structure Buffer =
               save id;
               ()
           end
+
+      fun match iter back txt i caseSensitive =
+          if (if caseSensitive then
+                  Gtk.textIterGetChar iter = ord (String.sub(txt,i))
+              else
+                  let
+                      val c = Gtk.textIterGetChar iter
+                      val c = if c<=Char.maxOrd then
+                                  ord (Char.toLower (chr c))
+                              else c
+                  in
+                      c = ord (Char.toLower (String.sub(txt,i)))
+                  end)
+          then if i=String.size txt - 1 then 
+                   (Gtk.textIterSetOffset(iter,back);
+                    true)
+               else if Gtk.textIterForwardChar iter 
+               then match iter back txt (i+1) caseSensitive
+               else (Gtk.textIterSetOffset(iter,back);
+                     false)
+          else (Gtk.textIterSetOffset(iter,back);
+                false)
+
+      fun find buf iter off txt caseSensitive =
+          if match iter off txt 0 caseSensitive then
+              let
+                  val iter' = Gtk.textIterCopy iter
+              in
+                  Gtk.textIterForwardChars(iter',size txt);
+                  Gtk.textBufferSelectRange(buf,iter,iter')
+              end
+          else if Gtk.textIterForwardChar iter then
+              find buf iter (off+1) txt caseSensitive
+          else print "not found\n"
    end

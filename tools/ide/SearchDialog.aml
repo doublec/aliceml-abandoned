@@ -1,0 +1,89 @@
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure AliceIdeGUI from "AliceIdeGUI"
+import structure Buffer from "Buffer"
+
+structure SearchDialog =
+    struct
+
+        val searchDialog = Gtk.dialogNew()
+        val _ = Gtk.windowSetTitle(searchDialog,"Search")
+        val _ = Gtk.dialogSetHasSeparator(searchDialog,true)
+        val dialog_vbox1 = Gtk.vboxNew(false,0)
+        val _ = Gtk.widgetShow dialog_vbox1
+        val dialog_action_area1 = Gtk.hbuttonBoxNew()
+        val _ = Gtk.widgetShow dialog_action_area1
+        val _ = Gtk.buttonBoxSetLayout(dialog_action_area1,Gtk.BUTTONBOX_END)
+        val cancelbutton1 = Gtk.buttonNewFromStock("gtk-cancel")
+        val _ = Gtk.widgetShow cancelbutton1
+        val okbutton1 = Gtk.buttonNewFromStock("gtk-ok")
+        val _ = Gtk.widgetShow okbutton1
+        val _ = AliceIdeGUI.Helpers.containerAddList(dialog_action_area1,[cancelbutton1,okbutton1])
+        val vbox4 = Gtk.vboxNew(false,0)
+        val _ = Gtk.widgetShow vbox4
+        val hbox1 = Gtk.hboxNew(false,0)
+        val _ = Gtk.widgetShow hbox1
+        val label2 = Gtk.labelNew("Search for:")
+        val _ = Gtk.widgetShow label2
+        val searchString = Gtk.entryNew()
+        val _ = Gtk.widgetShow searchString
+        val _ = Gtk.entrySetActivatesDefault(searchString,true)
+        val _ = Gtk.boxPackStart(hbox1,label2,false,false,0)
+        val _ = Gtk.boxPackStart(hbox1,searchString,true,true,5)
+        val table1 = Gtk.tableNew(2,2,false)
+        val _ = Gtk.widgetShow table1
+        val _ = Gtk.tableSetRowSpacings(table1,0)
+        val _ = Gtk.tableSetColSpacings(table1,20)
+        val checkbutton1 = Gtk.checkButtonNewWithMnemonic("case sensitive")
+        val _ = Gtk.toggleButtonSetActive(checkbutton1,true)
+        val _ = Gtk.widgetShow checkbutton1
+        val checkbutton2 = Gtk.checkButtonNewWithMnemonic("backwards")
+        val _ = Gtk.widgetShow checkbutton2
+        val checkbutton3 = Gtk.checkButtonNewWithMnemonic("from cursor position")
+        val _ = Gtk.toggleButtonSetActive(checkbutton3,true)
+        val _ = Gtk.widgetShow checkbutton3
+        val checkbutton4 = Gtk.checkButtonNewWithMnemonic("whole words")
+        val _ = Gtk.widgetSetSensitive(checkbutton4,false)
+        val _ = Gtk.widgetSetSensitive(checkbutton3,false)
+        val _ = Gtk.widgetSetSensitive(checkbutton2,false)
+        val _ = Gtk.widgetShow checkbutton4
+        val _ = Gtk.tableAttach(table1,checkbutton1,0,1,0,1,Gtk.FILL,Gtk.FILL,0,0)
+        val _ = Gtk.tableAttach(table1,checkbutton2,1,2,0,1,Gtk.FILL,Gtk.FILL,0,0)
+        val _ = Gtk.tableAttach(table1,checkbutton3,0,1,1,2,Gtk.FILL,Gtk.FILL,0,0)
+        val _ = Gtk.tableAttach(table1,checkbutton4,1,2,1,2,Gtk.FILL,Gtk.FILL,0,0)
+        val _ = Gtk.boxPackStart(vbox4,hbox1,true,true,0)
+        val _ = Gtk.boxPackStart(vbox4,table1,true,true,0)
+(*        val _ = Gtk.boxPackEnd(dialog_vbox1,dialog_action_area1,false,true,0)*)
+        val _ = Gtk.boxPackStart(dialog_vbox1,vbox4,true,true,0)
+        val vbox = Gtk.dialogGetFieldVbox searchDialog
+        val _ = Gtk.containerAdd(vbox,dialog_vbox1)
+        val actionArea = Gtk.dialogGetFieldActionArea searchDialog
+        val _ = Gtk.containerAdd(actionArea,dialog_action_area1)
+
+        fun closeCallback _ = Gtk.widgetUnmap searchDialog
+        val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
+        val _ = Gtk.signalConnect(cancelbutton1, "clicked", closeCallback)
+
+        fun doSearch buf _ =
+            let
+                val iter = Buffer.getCursorIter buf
+                val off = Gtk.textIterGetOffset iter
+                val txt = Gtk.entryGetText searchString
+                val caseSensitive = Gtk.toggleButtonGetActive checkbutton1
+            in
+                print ("find "^txt^" "^
+                       (if caseSensitive then "c" else "")^"\n");
+                Buffer.find buf iter off txt caseSensitive
+            end
+                
+        val searchSignal = ref NONE
+        fun reconnect buf =
+            case !searchSignal of
+                NONE => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch buf)))
+              | SOME s => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch buf));
+                           Gtk.signalDisconnect(okbutton1, s))
+
+        fun search buf =
+            (reconnect buf;
+             Gtk.widgetShowAll searchDialog;
+             Gtk.widgetMap searchDialog)
+    end

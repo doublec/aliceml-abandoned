@@ -7,6 +7,7 @@ import structure OutputWriters from "OutputWriters"
 import structure Evaluator from "Evaluator"
 import structure Buffer from "Buffer"
 import structure FileDialog from "FileDialog"
+import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
 (*import structure Inspector from "x-alice:/lib/tools/Inspector"*)
 import structure Highlight from "Highlight"
@@ -65,16 +66,6 @@ structure AliceIde =
         fun addPage p = pages := (!pages)@[p]
         fun getPage i = List.nth (!pages, i-1)
         fun getCurrentPage () = getPage (!currentPage)
-
-        (* Cursor *)
-        fun getCursorIter buf =
-            let
-                val cursor = Gtk.textBufferGetInsert buf
-                val iter = Gtk.textIterNew()
-            in
-                Gtk.textBufferGetIterAtMark(buf, iter, cursor);
-                iter
-            end
 
         (* Evaluation *)
 
@@ -137,7 +128,7 @@ structure AliceIde =
         fun feedLine() =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
-                val startiter = getCursorIter buf
+                val startiter = Buffer.getCursorIter buf
                 val startline = 1 + Gtk.textIterGetLine startiter
                 val enditer = Gtk.textIterCopy(startiter)
                 val _ = Gtk.textIterSetLineOffset(startiter, 0)
@@ -196,7 +187,7 @@ structure AliceIde =
 
         fun paragraphIters(buf) =
             let
-                val startiter = getCursorIter buf
+                val startiter = Buffer.getCursorIter buf
                 val c = Gtk.textIterGetChar startiter
                 val _ = if c = ord #"\n" orelse c=0 then
                             Gtk.textIterBackwardChar startiter else false
@@ -310,6 +301,10 @@ structure AliceIde =
                 Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
                 app (colorRegion buf) regions
             end
+
+        fun search() = SearchDialog.search (Gtk.textViewGetBuffer (!curtextview))
+                       (* TODO: reconnect on page switch *)
+
 
         fun markSet (buf,_) =
             let

@@ -169,6 +169,15 @@
 		      <signal name="activate" handler="on_syntax_colouring_activate" last_modification_time="Fri, 04 Mar 2005 15:28:33 GMT"/>
 		    </widget>
 		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="search">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Search</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_search_activate" last_modification_time="Fri, 04 Mar 2005 17:40:29 GMT"/>
+		    </widget>
+		  </child>
 		</widget>
 	      </child>
 	    </widget>
