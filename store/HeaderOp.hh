@@ -23,7 +23,7 @@ public:
     if (s > MAX_BLOCKSIZE) {
       return (((gen + 1) << GEN_GC_SHIFT) |
 	      (1 << SIZESHIFT_SHIFT) |
-	      (((s + BIGSIZE_MIN) >> SIZESHIFT_MASK) << SIZE_SHIFT) |
+	      ((s >> SIZESHIFT_MASK) << SIZE_SHIFT) |
 	      (((u_int) l) << TAG_SHIFT));
     }
     else {
