@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -672,33 +672,33 @@ DEFINE2(UnsafeCell_Map_findi) {
 static word UnsafeCell_Map() {
   Record *record = Record::New(14);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "new",
-		 UnsafeCell_Map_new, 0, true);
+		 UnsafeCell_Map_new, 0);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "clone",
-		 UnsafeCell_Map_clone, 1, true);
+		 UnsafeCell_Map_clone, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "insertWithi",
-		 UnsafeCell_Map_insertWithi, 4, true);
+		 UnsafeCell_Map_insertWithi, 4);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "deleteWith",
-		 UnsafeCell_Map_deleteWith, 3, true);
+		 UnsafeCell_Map_deleteWith, 3);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "deleteAll",
-		 UnsafeCell_Map_deleteAll, 1, true);
+		 UnsafeCell_Map_deleteAll, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "lookup",
-		 UnsafeCell_Map_lookup, 2, true);
+		 UnsafeCell_Map_lookup, 2);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "isEmpty",
-		 UnsafeCell_Map_isEmpty, 1, true);
+		 UnsafeCell_Map_isEmpty, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "size",
-		 UnsafeCell_Map_size, 1, true);
+		 UnsafeCell_Map_size, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "app",
-		 UnsafeCell_Map_app, 2, true);
+		 UnsafeCell_Map_app, 2);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "appi",
-		 UnsafeCell_Map_appi, 2, true);
+		 UnsafeCell_Map_appi, 2);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "fold",
-		 UnsafeCell_Map_fold, 3, true);
+		 UnsafeCell_Map_fold, 3);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "foldi",
-		 UnsafeCell_Map_foldi, 3, true);
+		 UnsafeCell_Map_foldi, 3);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "find",
-		 UnsafeCell_Map_find, 2, true);
+		 UnsafeCell_Map_find, 2);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "findi",
-		 UnsafeCell_Map_findi, 2, true);
+		 UnsafeCell_Map_findi, 2);
   return record->ToWord();
 }
 
@@ -709,11 +709,11 @@ word UnsafeCell() {
 
   Record *record = Record::New(4);
   INIT_STRUCTURE(record, "UnsafeCell", "new",
-		 UnsafeCell_new, 1, true);
+		 UnsafeCell_new, 1);
   INIT_STRUCTURE(record, "UnsafeCell", "content",
-		 UnsafeCell_content, 1, true);
+		 UnsafeCell_content, 1);
   INIT_STRUCTURE(record, "UnsafeCell", "replace",
-		 UnsafeCell_replace, 2, true);
+		 UnsafeCell_replace, 2);
   record->Init("Map$", UnsafeCell_Map());
   RETURN_STRUCTURE("UnsafeCell$", record);
 }

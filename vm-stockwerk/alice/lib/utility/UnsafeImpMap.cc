@@ -6,7 +6,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt and Thorsten Brunklaus, 2002
+//   Leif Kornstaedt and Thorsten Brunklaus, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -671,33 +671,33 @@ word UnsafeImpMap() {
 
   Record *record = Record::New(14);
   INIT_STRUCTURE(record, "UnsafeImpMap", "new",
-		 UnsafeImpMap_new, 0, true);
+		 UnsafeImpMap_new, 0);
   INIT_STRUCTURE(record, "UnsafeImpMap", "clone",
-		 UnsafeImpMap_clone, 1, true);
+		 UnsafeImpMap_clone, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "insertWithi",
-		 UnsafeImpMap_insertWithi, 4, true);
+		 UnsafeImpMap_insertWithi, 4);
   INIT_STRUCTURE(record, "UnsafeImpMap", "deleteWith",
-		 UnsafeImpMap_deleteWith, 3, true);
+		 UnsafeImpMap_deleteWith, 3);
   INIT_STRUCTURE(record, "UnsafeImpMap", "deleteAll",
-		 UnsafeImpMap_deleteAll, 1, true);
+		 UnsafeImpMap_deleteAll, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "lookup",
-		 UnsafeImpMap_lookup, 2, true);
+		 UnsafeImpMap_lookup, 2);
   INIT_STRUCTURE(record, "UnsafeImpMap", "isEmpty",
-		 UnsafeImpMap_isEmpty, 1, true);
+		 UnsafeImpMap_isEmpty, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "size",
-		 UnsafeImpMap_size, 1, true);
+		 UnsafeImpMap_size, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "app",
-		 UnsafeImpMap_app, 2, true);
+		 UnsafeImpMap_app, 2);
   INIT_STRUCTURE(record, "UnsafeImpMap", "appi",
-		 UnsafeImpMap_appi, 2, true);
+		 UnsafeImpMap_appi, 2);
   INIT_STRUCTURE(record, "UnsafeImpMap", "fold",
-		 UnsafeImpMap_fold, 3, true);
+		 UnsafeImpMap_fold, 3);
   INIT_STRUCTURE(record, "UnsafeImpMap", "foldi",
-		 UnsafeImpMap_foldi, 3, true);
+		 UnsafeImpMap_foldi, 3);
   INIT_STRUCTURE(record, "UnsafeImpMap", "find",
-		 UnsafeImpMap_find, 2, true);
+		 UnsafeImpMap_find, 2);
   INIT_STRUCTURE(record, "UnsafeImpMap", "findi",
-		 UnsafeImpMap_findi, 2, true);
+		 UnsafeImpMap_findi, 2);
 
   RETURN_STRUCTURE("UnsafeImpMap$", record);
 }

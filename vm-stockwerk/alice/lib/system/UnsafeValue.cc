@@ -4,7 +4,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt and Thorsten Brunklaus, 2002
+//   Leif Kornstaedt and Thorsten Brunklaus, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -303,46 +303,46 @@ DEFINE1(UnsafeValue_outArity) {
 word UnsafeValue() {
   Record *record = Record::New(21);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
-		 UnsafeValue_cast, 1, true);
+		 UnsafeValue_cast, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
-		 UnsafeValue_same, 2, true);
+		 UnsafeValue_same, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "awaitRequest",
-		 UnsafeValue_awaitRequest, 1, true);
+		 UnsafeValue_awaitRequest, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "proj",
-		 UnsafeValue_proj, 3, true);
+		 UnsafeValue_proj, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projTuple",
-		 UnsafeValue_proj, 3, true);
+		 UnsafeValue_proj, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "tag",
-		 UnsafeValue_tag, 2, true);
+		 UnsafeValue_tag, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "projTagged",
-		 UnsafeValue_projTagged, 3, true);
+		 UnsafeValue_projTagged, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projTaggedTuple",
-		 UnsafeValue_projTagged, 3, true);
+		 UnsafeValue_projTagged, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "con",
-		 UnsafeValue_con, 1, true);
+		 UnsafeValue_con, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "projConstructed",
-		 UnsafeValue_projConstructed, 3, true);
+		 UnsafeValue_projConstructed, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projConstructedTuple",
-		 UnsafeValue_projConstructed, 3, true);
+		 UnsafeValue_projConstructed, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "projPoly",
-		 UnsafeValue_projPoly, 2, true);
+		 UnsafeValue_projPoly, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "prod",
-		 UnsafeValue_prod, 1, true);
+		 UnsafeValue_prod, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "tuple",
-		 UnsafeValue_tuple, 1, true);
+		 UnsafeValue_tuple, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "tagged",
-		 UnsafeValue_tagged, 3, true);
+		 UnsafeValue_tagged, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "taggedTuple",
-		 UnsafeValue_taggedTuple, 3, true);
+		 UnsafeValue_taggedTuple, 3);
   INIT_STRUCTURE(record, "UnsafeValue", "closure",
-		 UnsafeValue_closure, 2, true);
+		 UnsafeValue_closure, 2);
   INIT_STRUCTURE(record, "UnsafeValue", "prim",
-		 UnsafeValue_prim, 1, true);
+		 UnsafeValue_prim, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
-		 UnsafeValue_conName, 1, true);
+		 UnsafeValue_conName, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "inArity",
-		 UnsafeValue_inArity, 1, true);
+		 UnsafeValue_inArity, 1);
   INIT_STRUCTURE(record, "UnsafeValue", "outArity",
-		 UnsafeValue_outArity, 1, true);
+		 UnsafeValue_outArity, 1);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
