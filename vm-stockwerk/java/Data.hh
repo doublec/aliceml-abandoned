@@ -22,6 +22,7 @@
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 #include "generic/Worker.hh"
+#include "generic/Float.hh"
 #include "generic/Double.hh"
 
 typedef u_char u_int8;
