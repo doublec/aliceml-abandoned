@@ -552,7 +552,7 @@ define
 		  'Alice function '#F#', line '#L#', column '#C
 	       end
 	    [] handler(_ _ _ _ closure(Function ...) _) then
-	       case Function of function(_ F#L#C _ _ _ _ _) then
+	       case {Deref Function} of function(_ F#L#C _ _ _ _ _) then
 		  'Alice handler '#F#', line '#L#', column '#C
 	       end
 	    end
