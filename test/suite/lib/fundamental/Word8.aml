@@ -72,11 +72,35 @@ struct
 	    Gen.try 1000 Gen.word8 (Test.test t)
 	end
 
-    fun testAndB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+     fun testAndB () = 
+	let
+	    fun t' (a, b) = IntInf.andb (a, b)
+			    
+	    fun t (w, x) = Word8.toLargeInt (Word8.andb (w, x)) =
+			   t' (Word8.toLargeInt w, Word8.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8, Gen.word8)) (Test.test t)
+	end
 
-    fun testOrB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testOrB () =
+	let
+	    fun t' (a, b) = IntInf.orb (a, b)
+			    
+	    fun t (w, x) = Word8.toLargeInt (Word8.orb (w, x)) =
+			   t' (Word8.toLargeInt w, Word8.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8, Gen.word8)) (Test.test t)
+	end
 
-    fun testXorB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testXorB () =
+	let
+	    fun t' (a, b) = IntInf.xorb (a, b)
+			    
+	    fun t (w, x) = Word8.toLargeInt (Word8.xorb (w, x)) =
+			   t' (Word8.toLargeInt w, Word8.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word8, Gen.word8)) (Test.test t)
+	end
 
     fun testNotB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 

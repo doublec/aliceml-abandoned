@@ -53,7 +53,7 @@ struct
 		      x >= IntInf.fromInt 0
 	in
 	    Gen.try 1000 Gen.word
-		    (Test.test (fn w => t (wordToIntInf w)))
+		    (Test.test (fn w => t (Word.toLargeInt w)))
 	end
 
     fun testToIntX () = 
@@ -62,7 +62,7 @@ struct
 		      x >=  p''
 	in
 	    Gen.try 1000 Gen.word
-		    (Test.test (fn w => t (wordToIntInf w)))
+		    (Test.test (fn w => t (Word.toLargeInt w)))
 	end
 
     fun testFromInt () =
@@ -72,11 +72,35 @@ struct
 	    Gen.try 1000 Gen.word (Test.test t)
 	end
 
-    fun testAndB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testAndB () = 
+	let
+	    fun t' (a, b) = IntInf.andb (a, b)
+			    
+	    fun t (w, x) = Word.toLargeInt (Word.andb (w, x)) =
+			   t' (Word.toLargeInt w, Word.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) (Test.test t)
+	end
 
-    fun testOrB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testOrB () =
+	let
+	    fun t' (a, b) = IntInf.orb (a, b)
+			    
+	    fun t (w, x) = Word.toLargeInt (Word.orb (w, x)) =
+			   t' (Word.toLargeInt w, Word.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) (Test.test t)
+	end
 
-    fun testXorB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testXorB () =
+	let
+	    fun t' (a, b) = IntInf.xorb (a, b)
+			    
+	    fun t (w, x) = Word.toLargeInt (Word.xorb (w, x)) =
+			   t' (Word.toLargeInt w, Word.toLargeInt x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) (Test.test t)
+	end
 
     fun testNotB () = Test.test (fn _ => raise Test.NotYetImplemented) ()
 
@@ -87,7 +111,7 @@ struct
 			    IntInf.pow (IntInf.fromInt 2, n)) mod p
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) 
-		    (Test.test (fn (i, n) => wordToIntInf (Word.<< (i, n)) = 
+		   (Test.test (fn (i, n) => Word.toLargeInt (Word.<< (i, n)) = 
 					     t (Word.toInt i, 
 						Word.toInt n)))
 	end
@@ -100,7 +124,7 @@ struct
 						    n))
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word)) 
-		    (Test.test (fn (i, n) => wordToIntInf (Word.>> (i, n)) = 
+		   (Test.test (fn (i, n) => Word.toLargeInt (Word.>> (i, n)) = 
 					     t (Word.toInt i, 
 						Word.toInt n)))
 	end
@@ -118,13 +142,13 @@ struct
 
 	    fun t (i, j) =
 		let 
-		    val (a, b) = (wordToIntInf i, wordToIntInf j)
+		    val (a, b) = (Word.toLargeInt i, Word.toLargeInt j)
 		in
-		    (wordToIntInf (i + j)   = tPlus  (a, b) andalso
-		     wordToIntInf (i - j)   = tMinus (a, b) andalso
-		     wordToIntInf (i * j)   = tTimes (a, b) andalso
-		     wordToIntInf (i div j) = tDiv   (a, b) andalso
-		     wordToIntInf (i mod j) = tMod   (a, b)) 
+		    (Word.toLargeInt (i + j)   = tPlus  (a, b) andalso
+		     Word.toLargeInt (i - j)   = tMinus (a, b) andalso
+		     Word.toLargeInt (i * j)   = tTimes (a, b) andalso
+		     Word.toLargeInt (i div j) = tDiv   (a, b) andalso
+		     Word.toLargeInt (i mod j) = tMod   (a, b)) 
 		               handle Div => b = (IntInf.fromInt 0)
 		end
 	in
@@ -133,8 +157,8 @@ struct
 
     fun testCompare () = 
 	let
-	    fun t (i, j) = IntInf.compare (wordToIntInf i,
-					   wordToIntInf j)
+	    fun t (i, j) = IntInf.compare (Word.toLargeInt i,
+					   Word.toLargeInt j)
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word))
 	      (Test.test (fn (i, j) => Word.compare (i, j) = t (i, j)))
@@ -142,13 +166,13 @@ struct
 
     fun testCompare' () = 
 	let
-	    fun t' (i, j) = IntInf.< (wordToIntInf i,
-				      wordToIntInf j)
+	    fun t' (i, j) = IntInf.< (Word.toLargeInt i,
+				      Word.toLargeInt j)
 
-	    fun t'' (i, j) = IntInf.> (wordToIntInf i,
-				       wordToIntInf j)
+	    fun t'' (i, j) = IntInf.> (Word.toLargeInt i,
+				       Word.toLargeInt j)
 
-	    fun t''' (i, j) = (wordToIntInf i = wordToIntInf j)
+	    fun t''' (i, j) = (Word.toLargeInt i = Word.toLargeInt j)
 
 	    fun t (i, j) = i < j = t'   (i, j) andalso
 			   i > j = t''  (i, j) andalso
@@ -160,8 +184,8 @@ struct
 
     fun testEqual () = 
 	let
-	    fun t (i, j) = IntInf.equal (wordToIntInf i,
-					 wordToIntInf j)
+	    fun t (i, j) = IntInf.equal (Word.toLargeInt i,
+					 Word.toLargeInt j)
 	in
 	    Gen.try 1000 (Gen.pair (Gen.word, Gen.word))
 	      (Test.test (fn (i, j) => Word.equal (i, j) = t (i, j)))

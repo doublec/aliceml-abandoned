@@ -36,6 +36,7 @@ import structure TestArray       from "lib/fundamental/Array"
 import structure TestArraySlice  from "lib/fundamental/ArraySlice"
 import structure TestArray2      from "lib/fundamental/Array2"
 import structure TestVector      from "lib/fundamental/Vector"
+import structure TestVectorSlice from "lib/fundamental/VectorSlice"
 import structure TestVectorPair  from "lib/fundamental/VectorPair"
 import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
@@ -61,6 +62,7 @@ fun randomizeTests () =
 			TestOption.randomize, 
 			TestString.randomize,
 			TestIEEEReal.randomize,
+			TestVectorSlice.randomize,
 			TestInteger.randomize,
 			TestIntInf.randomize,
 			TestByte.randomize,
@@ -99,6 +101,7 @@ val allTests = [TestRegressions.suite,
 		TestArraySlice.suite,
 		TestArray2.suite,
 		TestVector.suite,
+		TestVectorSlice.suite,
 		TestVectorPair.suite,
 		TestChar.suite,
 		TestString.suite,

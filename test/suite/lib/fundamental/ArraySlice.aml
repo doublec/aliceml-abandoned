@@ -235,7 +235,7 @@ struct
 	end
 
     fun testAppr () =
-		      let
+	let
 	    val xs = ref nil
 	    val ys = ref nil
 
@@ -268,17 +268,121 @@ struct
 	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
 	end
 
-    fun testModify () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testModify () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
 
-    fun testModifyi () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun f x a = (x := a :: !x; a + 1)
 
-    fun testFoldl () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t (sl, csl) = 
+		(xs := nil;
+		 ys := nil;
+		 (ArraySlice.modify (f xs) sl; ArraySlice.toList sl) =
+		 List.map (f ys) (ArraySlice.toList csl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) 
+	    (Test.test (fn sl => 
+			   let
+			       val (a, x, y) = ArraySlice.base sl
+			       val b = Array.fromList (Array.toList a)
+			   in
+			       t (sl, ArraySlice.slice (b, x, SOME y))
+			   end))
+	end
 
-    fun testFoldli () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testModifyi () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
 
-    fun testFoldr () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun f x (i, a) = (x := a :: !x; a + i)
 
-    fun testFoldri () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    fun t (sl, csl) = 
+		(xs := nil;
+		 ys := nil;
+		 (ArraySlice.modifyi (f xs) sl; ArraySlice.toList sl) = 
+		 List.mapi (f ys) (ArraySlice.toList csl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int)
+	    (Test.test (fn sl => 
+			   let
+			       val (a, x, y) = ArraySlice.base sl
+			       val b = Array.fromList (Array.toList a)
+			   in
+			       t (sl, ArraySlice.slice (b, x, SOME y))
+			   end))
+	end
+
+    fun testFoldl () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := a :: !x; a + b)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 ArraySlice.foldl (f xs) 0 sl;
+		 List.foldl (f ys) 0 (ArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldli () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; a + b + i)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 ArraySlice.foldli (f xs) 0 sl;
+		 List.foldli (f ys) 0 (ArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldr () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (a, b) = (x := a :: !x; a + b)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 ArraySlice.foldr (f xs) 0 sl;
+		 List.foldr (f ys) 0 (ArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testFoldri () = 
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f x (i, a, b) = (x := a :: !x; a + b + i)
+
+	    fun t sl = 
+		(xs := nil;
+		 ys := nil;
+		 ArraySlice.foldri (f xs) 0 sl;
+		 List.foldri (f ys) 0 (ArraySlice.toList sl);
+		 !xs = !ys)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
 
     fun testFind () =
 	let
@@ -533,7 +637,7 @@ struct
 	    fun t' (sl, f, i) = if i < 0
 				then 0
 				else if Bool.not (f (ArraySlice.sub (sl, i)))
-				     then i
+				     then i + 1
 				     else t' (sl, f, i - 1)
 
 	    fun f y x = (y := x :: !y; x >= 42)
@@ -678,6 +782,12 @@ struct
 				("appi", testAppi),
 				("appr", testAppr),
 				("appri", testAppri),
+				("modify", testModify),
+				("modifyi", testModifyi),
+				("foldl", testFoldl),
+				("foldr", testFoldr),
+				("foldli", testFoldli),
+				("foldri", testFoldri),
 				("find", testFind),
 				("findi", testFindi),
 				("all", testAll),
