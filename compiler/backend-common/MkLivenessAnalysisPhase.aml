@@ -157,9 +157,11 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 				 labelIdDefVec)
 
 	fun laId (id, use, dontKill) =
-	    if IdSet.member (dontKill, id) orelse IdSet.member (use, id)
-	    then false
-	    else (IdSet.insert (use, id); true)
+	    if IdSet.member (use, id) then false
+	    else
+		(IdSet.insert (use, id);
+		 if IdSet.member (dontKill, id) then false
+		 else true)
 
 	fun laIdRef ((IdRef id | LastIdRef id), use, dontKill) =
 	    if laId (id, use, dontKill) then LastIdRef id else IdRef id
