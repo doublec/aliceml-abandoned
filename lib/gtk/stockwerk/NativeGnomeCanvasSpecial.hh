@@ -1,3 +1,15 @@
+//
+// Author:
+//   Robert Grabowski <grabow@ps.uni-sb.de>
+//
+// Copyright:
+//   Robert Grabowski, 2003
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
 #ifndef _NATIVE_GNOME_CANVAS_SPECIAL_HH_
 #define _NATIVE_GNOME_CANVAS_SPECIAL_HH_
 
@@ -20,7 +32,7 @@ DEFINE2(NativeGnomeCanvas_itemNew) {
   GnomeCanvasItem *ret = gnome_canvas_item_new(
 		           static_cast<GnomeCanvasGroup*>(parent), 
 			   static_cast<GtkType>(type), NULL);
-  RETURN(PointerToObject(ret,TYPE_GTK_OBJECT));
+  RETURN(OBJECT_TO_WORD(ret,TYPE_GTK_OBJECT));
 } END
 
 #endif

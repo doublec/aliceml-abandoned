@@ -1,3 +1,15 @@
+//
+// Author:
+//   Robert Grabowski <grabow@ps.uni-sb.de>
+//
+// Copyright:
+//   Robert Grabowski, 2003
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
 #ifndef _NATIVE_GTK_SPECIAL_HH_
 #define _NATIVE_GTK_SPECIAL_HH_
 
@@ -7,17 +19,17 @@
 
 DEFINE0(NativeGtk_textIterNew) {
   GtkTextIter *iter = new GtkTextIter;
-  RETURN(PointerToObject(iter,TYPE_OWN));
+  RETURN(OBJECT_TO_WORD(iter,TYPE_OWN));
 } END
 
 DEFINE0(NativeGtk_treeIterNew) {
   GtkTreeIter *iter = new GtkTreeIter;
-  RETURN(PointerToObject(iter,TYPE_OWN));
+  RETURN(OBJECT_TO_WORD(iter,TYPE_OWN));
 } END
 
 DEFINE0(NativeGtk_treeStoreNew) {
   GtkTreeStore *store = gtk_tree_store_new(1, G_TYPE_STRING);
-  RETURN(PointerToObject(store,TYPE_G_OBJECT));
+  RETURN(OBJECT_TO_WORD(store,TYPE_G_OBJECT));
 } END
 
 DEFINE3(NativeGtk_treeModelGetStringAt) {
