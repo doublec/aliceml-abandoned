@@ -2,3 +2,5 @@
 *.exe *.EXE
 *.il
 *.pdb
+Base.aml
+*.dll.sig

@@ -1,9 +1,0 @@
-signature IO =
-    sig
-        exception Io of {name: string, function: string, cause: exn}
-    end
-
-structure IO : IO =
-    struct
-        exception Io of {name: string, function: string, cause: exn}
-    end
