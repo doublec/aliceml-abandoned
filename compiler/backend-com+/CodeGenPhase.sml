@@ -546,8 +546,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 
-	fun genComponent (component as (nil, _, body)) =
+	fun genComponent (component as (import, _, body)) =
 	    (LivenessAnalysisPhase.annotate component;
-	     init ["Test"]; genBody body; close())
-	  | genComponent (_::_, _, _) = Crash.crash "CodeGenPhase.genComponent"
+	     init ["Test"];
+	     List.app (fn (id, string) =>
+		       (emit (Ldarg 0);
+			emit (Ldstr string);
+			emit (Call (true, StockWerk.Komponist, "Import",
+				    [System.StringTy], StockWerk.StockWertTy));
+			declareLocal id)) import;
+	     genBody body; close())
     end
