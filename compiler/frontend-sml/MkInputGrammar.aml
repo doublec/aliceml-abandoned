@@ -110,9 +110,10 @@ struct
     and      LongSigId = SigId Long
 
 
-    (* Optional keyword `op' *)
+    (* Optional keywords `op' and `lazy' *)
 
-    datatype Op = SANSOp | WITHOp
+    datatype Op   = SANSOp | WITHOp
+    datatype Lazy = SANSLazy | WITHLazy | WITHSpawn
 
 
     (* Expressions *)
@@ -189,7 +190,7 @@ struct
 	| RECValBind     of Info * ValBind
 
     and FvalBind =
-	  FvalBind       of Info * Match * FvalBind option
+	  FvalBind       of Info * Lazy * Match * FvalBind option
 
     and TypBind =
 	  NEWTypBind     of Info * TyVarSeq * TyCon * TypBind option
@@ -476,7 +477,7 @@ struct
     fun infoValBind(PLAINValBind(I,_,_,_))		= I
       | infoValBind(RECValBind(I,_))			= I
 
-    fun infoFvalBind(FvalBind(I,_,_))			= I
+    fun infoFvalBind(FvalBind(I,_,_,_))			= I
 
     fun infoTypBind(NEWTypBind(I,_,_,_))		= I
       | infoTypBind(EQUALTypBind(I,_,_,_,_))		= I

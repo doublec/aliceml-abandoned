@@ -28,6 +28,10 @@
 (*	  exp ::= lazy exp							*)
 (*   - spawn expressions:							*)
 (*	  exp ::= spawn exp							*)
+(*   - lazy function declarations:						*)
+(*        fvalbind ::= lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...	*)
+(*   - concurrent function declarations:					*)
+(*        fvalbind ::= spawn <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...	*)
 (*   - more relaxed constructor pattern syntax:					*)
 (*	  pat ::= pat atpat			(R)				*)
 (*   - generalized layered patterns:						*)
@@ -886,7 +890,13 @@
   fvalbind:
 	  fmatch AND_fvalbind_opt
 			( FvalBind(I(fmatchleft,AND_fvalbind_optright),
-				     fmatch, AND_fvalbind_opt) )
+				     SANSLazy, fmatch, AND_fvalbind_opt) )
+	| LAZY fmatch AND_fvalbind_opt
+			( FvalBind(I(LAZYleft,AND_fvalbind_optright),
+				     WITHLazy, fmatch, AND_fvalbind_opt) )
+	| SPAWN fmatch AND_fvalbind_opt
+			( FvalBind(I(SPAWNleft,AND_fvalbind_optright),
+				     WITHSpawn, fmatch, AND_fvalbind_opt) )
      AND_fvalbind_opt:
 	  AND fvalbind	( SOME fvalbind )
 	| (*empty*)	( NONE )
