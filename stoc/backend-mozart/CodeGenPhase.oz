@@ -17,7 +17,7 @@ import
    Pickle(saveWithCells)
    Open(file)
    CodeGen(translate) at 'CodeGen.ozf'
-   UrlComponent('Url$': Url) at '../misc/Url.ozf'
+   UrlComponent('Url$': Url) at '../../lib/utility/Url.ozf'
 export
    'CodeGenPhase$': CodeGenPhase
 define

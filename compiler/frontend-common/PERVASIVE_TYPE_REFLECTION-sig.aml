@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Name  from "Name"
-import structure Label from "Label"
+import structure Name  from "../../lib/rtt/Name"
+import structure Label from "../../lib/rtt/Label"
 
 signature PERVASIVE_TYPE_REFLECTION =
 sig

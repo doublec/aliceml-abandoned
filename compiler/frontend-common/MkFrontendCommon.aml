@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Url                   from "../misc/Url"
+import structure Url                   from "../../lib/utility/Url"
 import structure Source                from "../infrastructure/Source"
 
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
@@ -22,8 +22,8 @@ import functor   MkResultDumpingPhase  from
 
 import structure Env                   from "Env"
 import structure TypedGrammar          from "TypedGrammar"
-import structure Inf                   from "../common/Inf"
-import structure PPInf                 from "../common/PPInf"
+import structure Inf                   from "../../lib/rtt/Inf"
+import structure PPInf                 from "../../lib/rtt/PPInf"
 import structure PPIntermediateGrammar from "../common/IntermediateGrammar"
 
 import functor   MkElaborationPhase    from "MkElaborationPhase"

@@ -22,26 +22,27 @@
  * table.
  *)
 
-import structure Url               from "../misc/Url"
+import structure Url               from "../../lib/utility/Url"
 import structure Source            from "../infrastructure/Source"
 
-import structure Name              from "../common/Name"
-import structure Label             from "../common/Label"
+import structure Name              from "../../lib/rtt/Name"
+import structure Label             from "../../lib/rtt/Label"
 import structure Stamp             from "../common/Stamp"
-import structure Path              from "../common/Path"
-import structure PathMap           from "../common/PathMap"
-import structure Type              from "../common/Type"
-import structure Inf               from "../common/Inf"
-import structure PervasiveType     from "../common/PervasiveType"
+import structure Path              from "../../lib/rtt/Path"
+import structure PathMap           from "../../lib/rtt/PathMap"
+import structure Type              from "../../lib/rtt/Type"
+import structure Inf               from "../../lib/rtt/Inf"
+import structure PervasiveType     from "../../lib/rtt/PervasiveType"
 import structure Env               from "Env"
 import structure AbstractGrammar   from "AbstractGrammar"
 import structure TypedInfo
        structure TypedGrammar      from "TypedGrammar"
 
-import structure PrettyPrint       from "../misc/PrettyPrint"	(*DEBUG*)
-import structure PPPath            from "../common/PPPath"	(*DEBUG*)
-import structure PPType            from "../common/PPType"	(*DEBUG*)
-import structure PPInf             from "../common/PPInf"	(*DEBUG*)
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
+								(*DEBUG*)
+import structure PPPath            from "../../lib/rtt/PPPath"	(*DEBUG*)
+import structure PPType            from "../../lib/rtt/PPType"	(*DEBUG*)
+import structure PPInf             from "../../lib/rtt/PPInf"	(*DEBUG*)
 
 import structure Crash             from "../infrastructure/Crash"
 import structure Error             from "../infrastructure/Error"

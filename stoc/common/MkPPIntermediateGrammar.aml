@@ -11,9 +11,9 @@
  *)
 
 import structure Stamp       from "Stamp"
-import structure Name        from "Name"
-import structure Label       from "Label"
-import structure PrettyPrint from "../misc/PrettyPrint"
+import structure Name        from "../../lib/rtt/Name"
+import structure Label       from "../../lib/rtt/Label"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 import structure PPMisc      from "../infrastructure/PPMisc"
 
 import signature INTERMEDIATE_GRAMMAR    from "INTERMEDIATE_GRAMMAR-sig"

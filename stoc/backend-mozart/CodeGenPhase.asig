@@ -11,16 +11,16 @@
  *)
 
 import
+    structure Inf
+from "../../lib/rtt/Inf"
+
+import
     structure Source
 from "../infrastructure/Source"
 
 import
     signature CONTEXT
 from "../infrastructure/CONTEXT-sig"
-
-import
-    structure Inf
-from "../common/Inf"
 
 import
     structure FlatGrammar

@@ -12,14 +12,14 @@
 
 import structure Source              from "../infrastructure/Source"
 import structure IntermediateGrammar from "IntermediateGrammar"
-import structure Type                from "Type"
-import structure PervasiveType       from "PervasiveType"
+import structure Type                from "../../lib/rtt/Type"
+import structure PervasiveType       from "../../lib/rtt/PervasiveType"
 import structure Stamp               from "Stamp"
 
-import structure Crash               from "../infrastructure/Crash"
-import functor MkHashScopedImpMap    from "../misc/MkHashScopedImpMap"
-import functor FromEqHashKey         from "../misc/HASH_KEY-sig"
-import signature CHECK_INTERMEDIATE  from "CHECK_INTERMEDIATE-sig"
+import structure Crash              from "../infrastructure/Crash"
+import functor MkHashScopedImpMap   from "../infrastructure/MkHashScopedImpMap"
+import functor FromEqHashKey        from "../../lib/utility/HASH_KEY-sig"
+import signature CHECK_INTERMEDIATE from "CHECK_INTERMEDIATE-sig"
 
 
 structure CheckIntermediate :> CHECK_INTERMEDIATE =

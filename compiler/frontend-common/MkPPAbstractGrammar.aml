@@ -14,13 +14,13 @@ import signature ABSTRACT_GRAMMAR    from "ABSTRACT_GRAMMAR-sig"
 import signature PP_ABSTRACT_GRAMMAR from "PP_ABSTRACT_GRAMMAR-sig"
 
 import structure Stamp               from "../common/Stamp"
-import structure Name                from "../common/Name"
-import structure Label               from "../common/Label"
-import structure Fixity              from "../common/Fixity"
+import structure Name                from "../../lib/rtt/Name"
+import structure Label               from "../../lib/rtt/Label"
+import structure Fixity              from "../../lib/rtt/Fixity"
 
-import structure PrettyPrint         from "../misc/PrettyPrint"
+import structure PrettyPrint         from "../../lib/utility/PrettyPrint"
 import structure PPMisc              from "../infrastructure/PPMisc"
-import structure Url                 from "../misc/Url"
+import structure Url                 from "../../lib/utility/Url"
 
 
 functor MkPPAbstractGrammar(
