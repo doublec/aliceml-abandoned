@@ -1891,6 +1891,20 @@ namespace Alice {
 		return StaticApply(a, b);
 	    }
 	}
+	public class Vector_tabulate: Procedure2 {
+	    public static object StaticApply(object a, object b) {
+		int length = (Int32) CommonOp.Sync(a);
+		Procedure f = (Procedure) CommonOp.Sync(b);
+		object[] vector = new object[length];
+		for (int i = 0; i < length; i++) {
+		    vector[i] = f.Apply(i);
+		}
+		return vector;
+	    }
+	    public override object Apply(object a, object b) {
+		return StaticApply(a, b);
+	    }
+	}
 	public class Word_op_Addition: Procedure2 {
 	    public static object StaticApply(object a, object b) {
 		return (Int32) CommonOp.Sync(a) + (Int32) CommonOp.Sync(b);
@@ -2219,6 +2233,7 @@ namespace Alice {
 	public static object Vector_maxLen   = Int32.MaxValue;
 	public static object Vector_length   = new Vector_length();
 	public static object Vector_sub      = new Vector_sub();
+	public static object Vector_tabulate = new Vector_tabulate();
 
 	public static object Word_op_Addition           = new Word_op_Addition();
 	public static object Word_op_Subtraction        = new Word_op_Subtraction();

@@ -423,6 +423,12 @@ define
 	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
+      'Vector.tabulate':
+	 fun {$ N F} V in
+	    V = {Tuple.make '#[]' N}
+	    {For 1 N 1 proc {$ I} V.I = {F I} end}
+	    V
+	 end
       'Word.+': BootWord.'+'
       'Word.-': BootWord.'-'
       'Word.*': BootWord.'*'

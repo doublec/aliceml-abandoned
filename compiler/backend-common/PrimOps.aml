@@ -178,6 +178,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Vector.maxLen", NONE);
 		ins ("Vector.length", SOME Unary);
 		ins ("Vector.sub", SOME (TupArity 2));
+		ins ("Vector.tabulate", SOME (TupArity 2));
 		ins ("Word.fromInt'", SOME Unary);
 		ins ("Word.toInt", SOME Unary);
 		ins ("Word.toIntX", SOME Unary);

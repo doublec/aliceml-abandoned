@@ -2015,6 +2015,9 @@ structure Vector : VECTOR =
 				= raise General.Subscript
       | sliceLength(v,i,SOME n)	= n
 
+    __primitive val tabulate :	int * (int -> 'a) -> 'a vector
+							= "Vector.tabulate"
+
     fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
     fun extract(v,i,no)		= tabulate(sliceLength(v,i,no),
 					   fn k => sub'(v,i+k))
