@@ -30,7 +30,7 @@ structure PreboundType :> PREBOUND_TYPE =
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
     val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
 
-    val typ_unit	= Type.inRow(Type.emptyRow())
+    val typ_unit	= Type.inProd(Type.emptyRow())
     val typ_int		= Type.inCon con_int
     val typ_word	= Type.inCon con_word
     val typ_char	= Type.inCon con_char

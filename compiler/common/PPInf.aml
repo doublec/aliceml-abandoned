@@ -12,8 +12,9 @@ structure PPInf :> PP_INF =
 
     (* Helpers *)
 
-    fun uncurry(ref(APP(j1,p,_)))= let val (j,ps) = uncurry j1 in (j,ps@[p]) end
-      | uncurry j		 = (j,[])
+    fun uncurry(ref(APPLY(j1,p,_))) = let val (j,ps) = uncurry j1
+				      in (j,ps@[p]) end
+      | uncurry j		    = (j,[])
 
 
     (* Simple objects *)
@@ -25,7 +26,7 @@ structure PPInf :> PP_INF =
     (* Interfaces *)
 
     (* Precedence:
-     *	0 : binders (LAM(id : inf1) . inf2)
+     *	0 : binders (LAMBDA(id : inf1) . inf2)
      *	1 : constructed type (inf(path))
      *)
 
@@ -40,21 +41,21 @@ structure PPInf :> PP_INF =
       | ppInf'(SIG s) =
 	    ppSig' s
 
-      | ppInf'(ARR(p,j1,j2)) =
+      | ppInf'(FUN(p,j1,j2)) =
 	let
 	    val doc = ppBinder("FCT",p,j1,j2)
 	in
 	    fbox(below doc)
 	end
 
-      | ppInf'(LAM(p,j1,j2)) =
+      | ppInf'(LAMBDA(p,j1,j2)) =
 	let
-	    val doc = ppBinder("LAM",p,j1,j2)
+	    val doc = ppBinder("LAMBDA",p,j1,j2)
 	in
 	    fbox(below doc)
 	end
 
-      | ppInf'(j' as APP _) =
+      | ppInf'(j' as APPLY _) =
 	let
 	    val (j,ps) = uncurry(ref j')
 	in

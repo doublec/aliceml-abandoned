@@ -46,9 +46,9 @@ structure ElaborationPhase :> ELABORATION_PHASE =
     fun stringTyp E	= PreboundType.typ_string
     fun realTyp E	= PreboundType.typ_real
 
-    fun refTyp(E,t)	= Type.inApp(PreboundType.typ_ref, t)
-    fun vecTyp(E,t)	= Type.inApp(PreboundType.typ_vec, t)
-    fun listTyp(E,t)	= Type.inApp(PreboundType.typ_list, t)
+    fun refTyp(E,t)	= Type.inApply(PreboundType.typ_ref, t)
+    fun vecTyp(E,t)	= Type.inApply(PreboundType.typ_vec, t)
+    fun listTyp(E,t)	= Type.inApply(PreboundType.typ_list, t)
 
 
   (* Check value restriction *)
@@ -96,7 +96,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
 	let
 	    val  r0         = (if b then Type.unknownRow else Type.emptyRow)()
 	    val (r,fields') = elabFields(elabX, E, r0, fields)
-	    val  t          = Type.inRow r
+	    val  t          = Type.inProd r
 	in
 	    ( t, O.Row(nonInfo(i), fields', b) )
 	end
@@ -249,7 +249,7 @@ val _=print "\n"
 	    val (l,lab') = elabLab(E, lab)
 	    val  t1      = Type.unknown Type.STAR
 	    val  r       = Type.extendRow(l, [t1], Type.unknownRow())
-	    val  t       = Type.inArrow(Type.inRow r, t1)
+	    val  t       = Type.inArrow(Type.inProd r, t1)
 	in
 	    ( t, O.SelExp(typInfo(i,t), lab') )
 	end
@@ -770,7 +770,7 @@ val _=print "\n"
 				| Type.ARROW(k11,k12) =>
 				    if k11 = k2 then () else
 					error(i, E.AppTypArgKind(k11, k2))
-	    val  t         = Type.inApp(t1,t2)
+	    val  t         = Type.inApply(t1,t2)
 	in
 	    ( t, O.AppTyp(typInfo(i,t), typ1', typ2') )
 	end
@@ -910,7 +910,7 @@ val _=print "\n"
 	    val  k             = Type.STAR
 	    val (a,id')        = elabVarId_bind(E, k, id)
 	    val (t,gen,w,typ') = elabTypRep(E, s, p,
-				      Type.inApp(t0, Type.inVar a),
+				      Type.inApply(t0, Type.inVar a),
 				      fn t' => Type.inLambda(a,t'),
 				      fn k' => Type.ARROW(k, buildKind k'), typ)
 	in
@@ -1609,7 +1609,7 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	let
 	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
-	    val t = Type.inRec(Type.unknown k)
+	    val t = Type.inMu(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)
 	    val _ = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	in
@@ -1841,7 +1841,7 @@ val p = Path.fromLab(Label.fromString "?localSpec")
 	let
 	    val p = Inf.newTyp(s, Label.fromName(I.name id))
 	    val k = elabTypKind(E, typ)
-	    val t = Type.inRec(Type.unknown k)
+	    val t = Type.inMu(Type.unknown k)
 	    (* ASSUME that typ does not contain ExtTyp *)
 	    val _ = elabTypId_bind(E, p, t, Type.CLOSED, id)
 	in

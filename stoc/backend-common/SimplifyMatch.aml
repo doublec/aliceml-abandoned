@@ -64,7 +64,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun getRow typ =
 		let
 		    val (labelTypList, hasDots) =
-			if Type.isRow typ then parseRow (Type.asRow typ)
+			if Type.isProd typ then parseRow (Type.asProd typ)
 			else
 			    (Misc.List_mapi (fn (i, typ) =>
 					     (Label.fromInt (i + 1), typ))
@@ -397,7 +397,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	    fun typToArity typ =
 		if Type.isTuple typ then TUP (Type.asTuple typ)
-		else if Type.isRow typ then
+		else if Type.isProd typ then
 		    let
 			fun convert row =
 			    if Type.isEmptyRow row then
@@ -409,7 +409,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				   | (_, _) => raise MustBeUnary)::
 				convert (Type.tailRow row)
 		    in
-			case LabelSort.sort (convert (Type.asRow typ)) of
+			case LabelSort.sort (convert (Type.asProd typ)) of
 			    (labelTypList, LabelSort.Tup _) =>
 				TUP (List.map #2 labelTypList)
 			  | (labelTypList, LabelSort.Rec) => REC labelTypList

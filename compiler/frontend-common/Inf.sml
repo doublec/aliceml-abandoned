@@ -31,12 +31,12 @@ structure InfPrivate =
 
     datatype inf' =
 	  TOP					(* top *)
-	| CON of con				(* interface constructor *)
-	| SIG of sign				(* signature *)
-	| ARR of path * inf * inf		(* arrow (functor) *)
-	| LAM of path * inf * inf		(* abstraction (dep. function)*)
-	| APP of inf * path * inf		(* application *)
-	| LINK of inf
+	| CON    of con				(* interface constructor *)
+	| SIG    of sign			(* signature *)
+	| FUN    of path * inf * inf		(* arrow (functor) *)
+	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
+	| APPLY  of inf * path * inf		(* application *)
+	| LINK   of inf
 
     and item' =
 	  VAL of id *  typ  * val_sort * path def	(* value *)
@@ -249,21 +249,21 @@ structure InfPrivate =
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(j as ref(APP(j1,p,j2)))	= reduceApp(j, j1, p, j2)
-      | reduce(ref(LINK j))		= reduce j
-      | reduce _			= ()
+    fun reduce(j as ref(APPLY(j1,p,j2)))	= reduceApply(j, j1, p, j2)
+      | reduce(ref(LINK j))			= reduce j
+      | reduce _				= ()
 
-    and reduceApp(j, j1 as ref(LAM _), p, j2) =
+    and reduceApply(j, j1 as ref(LAMBDA _), p, j2) =
 	( case !(instance j1)
-	    of LAM(p1, j11, j12) =>
+	    of LAMBDA(p1, j11, j12) =>
 		(*UNFINISHED: do realisation *)
 		(*Path.replace(p1, p)*)
 		( j := LINK j12
 		; reduce j
 		)
-	    | _ => raise Crash.Crash "Type.reduceApp"
+	    | _ => raise Crash.Crash "Inf.reduceApply"
 	)
-      | reduceApp(j, j1, p, j2) = ()
+      | reduceApply(j, j1, p, j2) = ()
 
 
   (* Realisation *)
@@ -291,15 +291,16 @@ structure InfPrivate =
       | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s)
 					  ; j'
 					  )
-      | realise'(rea, j' as ( ARR(_,j1,j2) | LAM(_,j1,j2) )) =
+      | realise'(rea, j' as ( FUN(_,j1,j2) | LAMBDA(_,j1,j2) )) =
 					  ( realise(rea, j1)
 					  ; realise(rea, j2)
 					  ; j'
 					  )
-      | realise'(rea, APP(j1,p,j2))	= ( realise(rea, j1)
+      | realise'(rea, APPLY(j1,p,j2))	= ( realise(rea, j1)
 					  ; realise(rea, j2)
 					  (* UNFINISHED: do reduction *)
-					  ; APP(j1, realisePath(#mod_rea rea, p), j2)
+					  ; APPLY(j1, realisePath(#mod_rea rea,
+								  p), j2)
 					  )
 
     and realiseKind (rea, ref k')	= realiseKind'(rea, k')
@@ -349,31 +350,31 @@ structure InfPrivate =
 
   (* Instantiation *)
 
-    and instance j			= instanceInf(PathMap.new(), j)
+    and instance j				= instanceInf(PathMap.new(), j)
 
-    and instanceInf (rea, ref j')	= ref(instanceInf'(rea, j'))
-    and instanceInf'(rea, LINK j)	= instanceInf'(rea, !j)
-      | instanceInf'(rea, TOP)		= TOP
-      | instanceInf'(rea, CON c)	= CON(instanceCon(rea, c))
-      | instanceInf'(rea, SIG s)	= SIG(instanceSig(rea, s))
-      | instanceInf'(rea, ARR(p,j1,j2))	= ARR(instancePath(rea, p),
-					      instanceInf(rea, j1),
-					      instanceInf(rea, j2))
-      | instanceInf'(rea, LAM(p,j1,j2))	= LAM(instancePath(rea, p),
-					      instanceInf(rea, j1),
-					      instanceInf(rea, j2))
-      | instanceInf'(rea, APP(j1,p,j2))	= APP(instanceInf(rea, j1),
-					      realisePath(rea, p),
-					      instanceInf(rea, j2))
+    and instanceInf (rea, ref j')		= ref(instanceInf'(rea, j'))
+    and instanceInf'(rea, LINK j)		= instanceInf'(rea, !j)
+      | instanceInf'(rea, TOP)			= TOP
+      | instanceInf'(rea, CON c)		= CON(instanceCon(rea, c))
+      | instanceInf'(rea, SIG s)		= SIG(instanceSig(rea, s))
+      | instanceInf'(rea, FUN(p,j1,j2))		= FUN(instancePath(rea, p),
+						      instanceInf(rea, j1),
+						      instanceInf(rea, j2))
+      | instanceInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(instancePath(rea, p),
+							 instanceInf(rea, j1),
+							 instanceInf(rea, j2))
+      | instanceInf'(rea, APPLY(j1,p,j2))	= APPLY(instanceInf(rea, j1),
+							realisePath(rea, p),
+							instanceInf(rea, j2))
 
-    and instanceCon(rea, (k,p))		= ( instanceKind(rea, k),
-					    realisePath(rea, p) )
+    and instanceCon(rea, (k,p))			= ( instanceKind(rea, k),
+						    realisePath(rea, p) )
 
-    and instanceKind (rea, ref k')	= ref(instanceKind'(rea, k'))
-    and instanceKind'(rea, GROUND)	= GROUND
-      | instanceKind'(rea, DEP(p,j,k))	= DEP(instancePath(rea, p),
-					      instanceInf(rea, j),
-					      instanceKind(rea, k))
+    and instanceKind (rea, ref k')		= ref(instanceKind'(rea, k'))
+    and instanceKind'(rea, GROUND)		= GROUND
+      | instanceKind'(rea, DEP(p,j,k))		= DEP(instancePath(rea, p),
+						      instanceInf(rea, j),
+						      instanceKind(rea, k))
     and instancePath(rea, p) =
 	let
 	    val p' = Path.instance PathMap.lookup (rea, p)
@@ -461,31 +462,31 @@ structure InfPrivate =
 
   (* Creation of singleton (shallow instantiation) *)
 
-    and singleton j			= singletonInf(PathMap.new(), j)
+    and singleton j				= singletonInf(PathMap.new(), j)
 
-    and singletonInf (rea, ref j')	= ref(singletonInf'(rea, j'))
-    and singletonInf'(rea, LINK j)	= singletonInf'(rea, !j)
-      | singletonInf'(rea, TOP)		= TOP
-      | singletonInf'(rea, CON c)	= CON(singletonCon(rea, c))
-      | singletonInf'(rea, SIG s)	= SIG(singletonSig(rea, s))
-      | singletonInf'(rea,ARR(p,j1,j2))	= ARR(singletonPath(rea, p),
-					      singletonInf(rea, j1),
-					      singletonInf(rea, j2))
-      | singletonInf'(rea,LAM(p,j1,j2))	= LAM(singletonPath(rea, p),
-					      singletonInf(rea, j1),
-					      singletonInf(rea, j2))
-      | singletonInf'(rea,APP(j1,p,j2))	= APP(singletonInf(rea, j1),
-					      realisePath(rea, p),
-					      singletonInf(rea, j2))
+    and singletonInf (rea, ref j')		= ref(singletonInf'(rea, j'))
+    and singletonInf'(rea, LINK j)		= singletonInf'(rea, !j)
+      | singletonInf'(rea, TOP)			= TOP
+      | singletonInf'(rea, CON c)		= CON(singletonCon(rea, c))
+      | singletonInf'(rea, SIG s)		= SIG(singletonSig(rea, s))
+      | singletonInf'(rea, FUN(p,j1,j2))	= FUN(singletonPath(rea, p),
+						      singletonInf(rea, j1),
+						      singletonInf(rea, j2))
+      | singletonInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(singletonPath(rea, p),
+							 singletonInf(rea, j1),
+							 singletonInf(rea, j2))
+      | singletonInf'(rea, APPLY(j1,p,j2))	= APPLY(singletonInf(rea, j1),
+							realisePath(rea, p),
+							singletonInf(rea, j2))
 
-    and singletonCon(rea, (k,p))	= ( singletonKind(rea, k),
-					    realisePath(rea, p) )
+    and singletonCon(rea, (k,p))		= ( singletonKind(rea, k),
+						    realisePath(rea, p) )
 
-    and singletonKind (rea, ref k')	= ref(singletonKind'(rea, k'))
-    and singletonKind'(rea, GROUND)	= GROUND
-      | singletonKind'(rea, DEP(p,j,k))	= DEP(singletonPath(rea, p),
-					      singletonInf(rea, j),
-					      singletonKind(rea, k))
+    and singletonKind (rea, ref k')		= ref(singletonKind'(rea, k'))
+    and singletonKind'(rea, GROUND)		= GROUND
+      | singletonKind'(rea, DEP(p,j,k))		= DEP(singletonPath(rea, p),
+						      singletonInf(rea, j),
+						      singletonKind(rea, k))
 
     and singletonPath(rea, p) = Path.instance PathMap.lookup (rea, p)
 
@@ -572,9 +573,9 @@ structure InfPrivate =
       | clone'(TOP)		= TOP
       | clone'(CON c)		= CON(cloneCon c)
       | clone'(SIG s)		= SIG(cloneSig s)
-      | clone'(ARR(p,j1,j2))	= ARR(p, clone j1, clone j2)
-      | clone'(LAM(p,j1,j2))	= LAM(p, clone j1, clone j2)
-      | clone'(APP(j1,p,j2))	= APP(clone j1, p, clone j2)
+      | clone'(FUN(p,j1,j2))	= FUN(p, clone j1, clone j2)
+      | clone'(LAMBDA(p,j1,j2))	= LAMBDA(p, clone j1, clone j2)
+      | clone'(APPLY(j1,p,j2))	= APPLY(clone j1, p, clone j2)
 
     and cloneCon (k,p)		= (cloneKind k, p)
 
@@ -617,9 +618,9 @@ structure InfPrivate =
     fun inTop()		= ref TOP
     fun inCon c		= ref(CON c)
     fun inSig s		= ref(SIG s)
-    fun inArrow pjj	= ref(ARR pjj)
-    fun inLambda pjj	= ref(LAM pjj)
-    fun inApp jpj	= let val j = ref(APP jpj) in reduce j ; j end
+    fun inArrow pjj	= ref(FUN pjj)
+    fun inLambda pjj	= ref(LAMBDA pjj)
+    fun inApply jpj	= let val j = ref(APPLY jpj) in reduce j ; j end
 
     fun pathToPath  p	= p
     fun pathToTyp k p	= Type.inCon(k, Type.CLOSED, p)
@@ -632,18 +633,18 @@ structure InfPrivate =
 
     fun asInf j		= !(follow j)
 
-    fun isTop j		= case asInf j of TOP   => true | _ => false
-    fun isCon j		= case asInf j of CON _ => true | _ => false
-    fun isSig j		= case asInf j of SIG _ => true | _ => false
-    fun isArrow j	= case asInf j of ARR _ => true | _ => false
-    fun isLambda j	= case asInf j of LAM _ => true | _ => false
-    fun isApp j		= case asInf j of APP _ => true | _ => false
+    fun isTop j		= case asInf j of TOP      => true | _ => false
+    fun isCon j		= case asInf j of CON _    => true | _ => false
+    fun isSig j		= case asInf j of SIG _    => true | _ => false
+    fun isArrow j	= case asInf j of FUN _    => true | _ => false
+    fun isLambda j	= case asInf j of LAMBDA _ => true | _ => false
+    fun isApply j	= case asInf j of APPLY _  => true | _ => false
 
-    fun asCon j		= case asInf j of CON c   => c   | _ => raise Interface
-    fun asSig j		= case asInf j of SIG s   => s   | _ => raise Interface
-    fun asArrow j	= case asInf j of ARR xjj => xjj | _ => raise Interface
-    fun asLambda j	= case asInf j of LAM xjj => xjj | _ => raise Interface
-    fun asApp j		= case asInf j of APP jpj => jpj | _ => raise Interface
+    fun asCon j		= case asInf j of CON z    => z | _ => raise Interface
+    fun asSig j		= case asInf j of SIG z    => z | _ => raise Interface
+    fun asArrow j	= case asInf j of FUN z    => z | _ => raise Interface
+    fun asLambda j	= case asInf j of LAMBDA z => z | _ => raise Interface
+    fun asApply j	= case asInf j of APPLY z  => z | _ => raise Interface
 
     fun pathCon(_,p)	= p
     fun path j		= pathCon(asCon j)
@@ -730,10 +731,10 @@ structure InfPrivate =
     fun kind(ref j')		= kind' j'
     and kind'( TOP
 	     | SIG _
-	     | ARR _ )		= inGround()
+	     | FUN _ )		= inGround()
       | kind'(CON(k,p))		= k
-      | kind'(LAM(p,j1,j2))	= inDependent(p, j1, kind j2)
-      | kind'(APP(j1,p,j2))	= (*UNFINISHED*) inGround()
+      | kind'(LAMBDA(p,j1,j2))	= inDependent(p, j1, kind j2)
+      | kind'(APPLY(j1,p,j2))	= (*UNFINISHED*) inGround()
       | kind'(LINK j)		= kind j
 
 
@@ -811,7 +812,7 @@ structure InfPrivate =
 	    (* Necessary to create complete realisation. *)
 	    and matchNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
 		    ignore(pair(m1, items2, []))
-	      | matchNested(ref(ARR _), ref(ARR _)) =
+	      | matchNested(ref(FUN _), ref(FUN _)) =
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | matchNested(ref(LINK j1), j2) = matchNested(j1, j2)
 	      | matchNested(j1, ref(LINK j2)) = matchNested(j1, j2)
@@ -895,7 +896,7 @@ structure InfPrivate =
 
       | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
-      | match'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
+      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
 	( realise(rea, j21)
 	; match'(rea, j21, j11) handle Mismatch mismatch =>
 		raise Mismatch(MismatchDom mismatch)
@@ -904,11 +905,11 @@ structure InfPrivate =
 		raise Mismatch(MismatchRan mismatch)
 	)
 
-      | match'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
+      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
 	(*UNFINISHED*)
 	    ()
 
-      | match'(rea, ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
+      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	( match'(rea, j11, j21)
 	; if p1 = p2 then () else
 	      raise Mismatch(IncompatibleArg(p1,p2))
@@ -998,7 +999,7 @@ structure InfPrivate =
 	    (* Necessary to create complete realisation. *)
 	    and pairNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
 		    ignore(pair(m1, items2, [], []))
-	      | pairNested(ref(ARR _), ref(ARR _)) =
+	      | pairNested(ref(FUN _), ref(FUN _)) =
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | pairNested(ref(LINK j1), j2) = pairNested(j1, j2)
 	      | pairNested(j1, ref(LINK j2)) = pairNested(j1, j2)
@@ -1105,17 +1106,17 @@ structure InfPrivate =
       | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
 	    ( intersectSig(rea, s1, s2) ; j1 )
 
-      | intersect'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
+      | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: ARR"
+	    raise Crash.Crash "Inf.intersect: FUN"
 
-      | intersect'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
+      | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: LAM"
+	    raise Crash.Crash "Inf.intersect: LAMBDA"
 
-      | intersect'(rea, j1 as ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
+      | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
 	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: APP"
+	    raise Crash.Crash "Inf.intersect: APPLY"
 
       | intersect'(rea, ref(LINK j1), j2) = intersect'(rea, j1, j2)
       | intersect'(rea, j1, ref(LINK j2)) = intersect'(rea, j1, j2)

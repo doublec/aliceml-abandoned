@@ -369,9 +369,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			    in
 				if Type.isTuple argTyp then
 				    Tuple (List.length (Type.asTuple argTyp))
-				else if Type.isRow argTyp then
+				else if Type.isProd argTyp then
 				    case LabelSort.sort
-					(parseRow (Type.asRow typ)) of
+					(parseRow (Type.asProd typ)) of
 					(_, LabelSort.Tup i) => Tuple i
 				      | (labelTypList, LabelSort.Rec) =>
 					    Record (List.map #1 labelTypList)

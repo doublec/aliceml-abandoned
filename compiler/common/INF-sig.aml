@@ -41,7 +41,7 @@ signature INF =
     val inSig :		sign		 -> inf
     val inArrow :	path * inf * inf -> inf
     val inLambda :	path * inf * inf -> inf
-    val inApp :		inf * path * inf -> inf
+    val inApply :	inf * path * inf -> inf
 
   (* Inquiries *)
 
@@ -50,7 +50,7 @@ signature INF =
     val isSig :		inf -> bool
     val isArrow :	inf -> bool
     val isLambda :	inf -> bool
-    val isApp :		inf -> bool
+    val isApply :	inf -> bool
 
   (* Projections *)
 
@@ -60,7 +60,7 @@ signature INF =
     val asSig :		inf -> sign			(* Interface *)
     val asArrow :	inf -> path * inf * inf		(* Interface *)
     val asLambda :	inf -> path * inf * inf		(* Interface *)
-    val asApp :		inf -> inf * path * inf		(* Interface *)
+    val asApply :	inf -> inf * path * inf		(* Interface *)
 
   (* Cloning etc. *)
 

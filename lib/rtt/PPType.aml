@@ -12,8 +12,9 @@ structure PPType :> PP_TYPE =
 
     (* Helpers *)
 
-    fun uncurry(ref(APP(t1,t2)))= let val (t,ts) = uncurry t1 in (t,ts@[t2]) end
-      | uncurry t		= (t,[])
+    fun uncurry(ref(APPLY(t1,t2))) = let val (t,ts) = uncurry t1
+				     in (t,ts@[t2]) end
+      | uncurry t		   = (t,[])
 
     fun parenPrec p (p',doc) =
 	if p > p' then
@@ -60,7 +61,7 @@ structure PPType :> PP_TYPE =
 
     (* Precedence:
      *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
-     *	1 : binders (LAM ty1 . ty2)
+     *	1 : binders (LAMBDA ty1 . ty2)
      *	2 : function arrow (ty1 -> ty2)
      *	3 : tuple (ty1 * ... * tyn)
      *	4 : constructed type (tyseq tycon)
@@ -98,7 +99,7 @@ structure PPType :> PP_TYPE =
 
 		end
 
-	      | ppTypPrec p (t as ref(REC t1 | MARK(REC t1))) =
+	      | ppTypPrec p (t as ref(MU t1 | MARK(MU t1))) =
 (*DEBUG*)
 ((*print("[pp " ^ pr(!t) ^ "]");*)
 		if occurs(t,t1) then
@@ -125,11 +126,11 @@ structure PPType :> PP_TYPE =
 		    ppTypPrec p t1
 )
 
-	      | ppTypPrec p (t as ref(APP _)) =
+	      | ppTypPrec p (t as ref(APPLY _)) =
 	        ( reduce t ;
-(*print("[pp APP]");*)
-		  if isApp t then ppTypPrec' p (!t)
-			     else ppTypPrec p t
+(*print("[pp APPLY]");*)
+		  if isApply t then ppTypPrec' p (!t)
+			       else ppTypPrec p t
 		)
 
 	      | ppTypPrec p (ref t') = ppTypPrec' p t'
@@ -171,25 +172,25 @@ text "@" ^^*)
 	      | ppTypPrec' p (MARK t') =
 		    text "!" ^^ ppTypPrec' p t'
 
-	      | ppTypPrec' p (ARR(t1,t2)) =
+	      | ppTypPrec' p (FUN(t1,t2)) =
 		let
 		    val doc = ppTypPrec 3 t1 ^/^ text "->" ^/^ ppTypPrec 2 t2
 		in
 		    parenPrec p (2, doc)
 		end
 
-	      | ppTypPrec' p (TUP [] | ROW NIL) =
+	      | ppTypPrec' p (TUPLE [] | PROD NIL) =
 		    text "unit"
 
-	      | ppTypPrec' p (TUP ts) =
+	      | ppTypPrec' p (TUPLE ts) =
 		let
 		    val doc = ppStarList (ppTypPrec 4) ts
 		in
 		    parenPrec p (3, fbox(below(nest doc)))
 		end
 
-	      | ppTypPrec' p (ROW r) =
-		    brace(fbox(below(ppRow r)))
+	      | ppTypPrec' p (PROD r) =
+		    brace(fbox(below(ppProd r)))
 
 	      | ppTypPrec' p (SUM r) =
 		    paren(fbox(below(ppSum r)))
@@ -212,21 +213,21 @@ text "@" ^^*)
 		    parenPrec p (1, fbox(below doc))
 		end
 
-	      | ppTypPrec' p (EX(a,t)) =
+	      | ppTypPrec' p (EXIST(a,t)) =
 		let
 		    val doc = ppBinder("EX",a,t)
 		in
 		    parenPrec p (1, fbox(below doc))
 		end
 
-	      | ppTypPrec' p (LAM(a,t)) =
+	      | ppTypPrec' p (LAMBDA(a,t)) =
 		let
 		    val doc = ppBinder("FN",a,t)
 		in
 		    parenPrec p (1, fbox(below doc))
 		end
 
-	      | ppTypPrec' p (t' as APP _) =
+	      | ppTypPrec' p (t' as APPLY _) =
 		let
 		    val (t,ts) = uncurry(ref t')
 		in
@@ -236,19 +237,19 @@ text "@" ^^*)
 	      | ppTypPrec' p (HOLE _) =
 		    raise Crash.Crash "PPType.ppTyp: bypassed HOLE"
 
-	      | ppTypPrec' p (REC _) =
-		    raise Crash.Crash "PPType.ppTyp: bypassed REC"
+	      | ppTypPrec' p (MU _) =
+		    raise Crash.Crash "PPType.ppTyp: bypassed MU"
 
 
-	    and ppRow NIL		= empty
-	      | ppRow(RHO _)		= text "..."
-	      | ppRow(FLD(l,ts,NIL))	= ppField(l,ts)
-	      | ppRow(FLD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppRow r
+	    and ppProd NIL		= empty
+	      | ppProd(RHO _)		= text "..."
+	      | ppProd(FIELD(l,ts,NIL))	= ppField(l,ts)
+	      | ppProd(FIELD(l,ts,r))	= ppField(l,ts) ^^ text "," ^/^ ppProd r
 
 	    and ppSum NIL		= empty
 	      | ppSum(RHO _)		= text "..."
-	      | ppSum(FLD(l,ts,NIL))	= ppField(l,ts)
-	      | ppSum(FLD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
+	      | ppSum(FIELD(l,ts,NIL))	= ppField(l,ts)
+	      | ppSum(FIELD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
 
 	    and ppField(l,[]) = ppLab l
 	      | ppField(l,ts) =

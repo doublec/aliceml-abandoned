@@ -60,11 +60,11 @@ structure Env0 :> ENV0 =
 
     val typ_false = typ_bool
     val typ_true  = typ_bool
-    val typ_nil   = poly (fn a => Type.inApp(typ_list, a))
-    val typ_cons  = poly (fn a => let val listA = Type.inApp(typ_list, a) in
+    val typ_nil   = poly (fn a => Type.inApply(typ_list, a))
+    val typ_cons  = poly (fn a => let val listA = Type.inApply(typ_list, a) in
 				      Type.inArrow(Type.inTuple[a,listA], listA)
 				  end)
-    val typ_ref   = poly (fn a => Type.inArrow(a, Type.inApp(typ_ref, a)))
+    val typ_ref   = poly (fn a => Type.inArrow(a, Type.inApply(typ_ref, a)))
     val typ_match = typ_exn
     val typ_bind  = typ_exn
 

@@ -62,8 +62,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun mkRefTyp typ =
 	    Type.inArrow (typ,
-			  Type.inApp (Type.inCon (Type.STAR, Type.CLOSED,
-						  Prebound.typpath_ref), typ))
+			  Type.inApply (Type.inCon (Type.STAR, Type.CLOSED,
+						    Prebound.typpath_ref), typ))
 
 	fun patToExp (WildPat info) =
 	    let
@@ -322,7 +322,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			Misc.List_mapi (fn (i, typ) =>
 					(Label.fromInt (i + 1), typ))
 			(Type.asTuple typ)
-		    else parseRow (Type.asRow typ)
+		    else parseRow (Type.asProd typ)
 		fun adjoin (labelTyp as (label, _), patFields as
 			    (Field (_, Lab (_, label'), _)::rest)) =
 		    if label = label' then patFields

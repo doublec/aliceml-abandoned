@@ -24,15 +24,15 @@ signature TYPE =
     val unknown :	kind      -> typ
     val inArrow :	typ * typ -> typ
     val inTuple :	typ list  -> typ
-    val inRow :		row       -> typ
+    val inProd :	row       -> typ
     val inSum :		row       -> typ
     val inVar :		var       -> typ
     val inCon :		con       -> typ
     val inAll :		var * typ -> typ
     val inExist :	var * typ -> typ
     val inLambda :	var * typ -> typ
-    val inApp :		typ * typ -> typ
-    val inRec :		typ       -> typ
+    val inApply :	typ * typ -> typ
+    val inMu :		typ       -> typ
 
     val var :		kind -> var
 
@@ -41,14 +41,14 @@ signature TYPE =
     val isUnknown :	typ -> bool
     val isArrow :	typ -> bool
     val isTuple :	typ -> bool
-    val isRow :		typ -> bool
+    val isProd :	typ -> bool
     val isSum :		typ -> bool
     val isVar :		typ -> bool
     val isCon :		typ -> bool
     val isAll :		typ -> bool
     val isExist :	typ -> bool
     val isLambda :	typ -> bool
-    val isApp :		typ -> bool
+    val isApply :	typ -> bool
 
   (* Projections *)
 
@@ -56,14 +56,14 @@ signature TYPE =
 
     val asArrow :	typ -> typ * typ		(* Type *)
     val asTuple :	typ -> typ list			(* Type *)
-    val asRow :		typ -> row			(* Type *)
+    val asProd :	typ -> row			(* Type *)
     val asSum :		typ -> row			(* Type *)
     val asVar :		typ -> var			(* Type *)
     val asCon :		typ -> con			(* Type *)
     val asAll :		typ -> var * typ		(* Type *)
     val asExist :	typ -> var * typ		(* Type *)
     val asLambda :	typ -> var * typ		(* Type *)
-    val asApp :		typ -> typ * typ		(* Type *)
+    val asApply :	typ -> typ * typ		(* Type *)
 
   (* Complex extractions *)
 

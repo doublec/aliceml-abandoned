@@ -35,7 +35,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun infToTyp j =
 	if Inf.isTop j then
 	    (*UNFINISHED: is this right? *)
-	    Type.inRow(Type.emptyRow())
+	    PreboundType.typ_unit
 	else if Inf.isCon j then
 	    let
 		val (k,p) = Inf.asCon j
@@ -46,7 +46,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 	    let
 		val s = Inf.asSig j
 	    in
-		Type.inRow(sigToRow s)
+		Type.inProd(sigToRow s)
 	    end
 	else if Inf.isArrow j then
 	    let
@@ -60,11 +60,11 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 	    in
 		Type.inLambda(Type.var(Type.STAR), infToTyp j2)
 	    end
-	else if Inf.isApp j then
+	else if Inf.isApply j then
 	    let
-		val (j1,p,j2) = Inf.asApp j
+		val (j1,p,j2) = Inf.asApply j
 	    in
-		Type.inApp(infToTyp j1, infToTyp j2)
+		Type.inApply(infToTyp j1, infToTyp j2)
 	    end
 	else
 	    raise Crash.Crash "TranslationPhase.infToTyp: unknown inf"
@@ -105,7 +105,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
     fun idToDec(O.Id(i as {region=r,...}, z, n), y, t) =
 	let
 	    val l    = Label.fromName n
-	    val tMod = Type.inRow(Type.extendRow(l, [t], Type.unknownRow()))
+	    val tMod = Type.inProd(Type.extendRow(l, [t], Type.unknownRow()))
 	    val tSel = Type.inArrow(tMod, t)
 	in
 	    O.ValDec(i, O.VarPat(typInfo(r,t), O.Id(i,z,n)),
@@ -383,7 +383,7 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  ids'       = ids ds
 	    val (xsus',ds') = trImps'(is, trDecs ds)
 	    val  fs'        = List.map idToField ids'
-	    val  t          = Type.inRow(idsToRow ids')
+	    val  t          = Type.inProd(idsToRow ids')
 	    val  i'         = typInfo(#region i,t)
 	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
 	in

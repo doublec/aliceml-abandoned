@@ -16,25 +16,25 @@ structure TypePrivate =
     type con  = kind * sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
-	  HOLE of kind * int	(* variable for inference *)
-	| LINK of typ		(* forward (needed for unification) *)
-	| MARK of typ'		(* for traversal *)
-	| ARR  of typ * typ	(* arrow type *)
-	| TUP  of typ list	(* tuple *)
-	| ROW  of row		(* record *)
-	| SUM  of row		(* sum type (datatype) *)
-	| VAR  of kind * int	(* bound variable or skolem types *)
-	| CON  of con		(* constructor (of arbitrary kind) *)
-	| ALL  of var * typ	(* universal quantification *)
-	| EX   of var * typ	(* existential quantification *)
-	| LAM  of var * typ	(* abstraction (type function) *)
-	| APP  of typ * typ	(* application *)
-	| REC  of typ		(* recursive type barrier *)
+	  HOLE  of kind * int	(* variable for inference *)
+	| LINK  of typ		(* forward (needed for unification) *)
+	| MARK  of typ'		(* for traversal *)
+	| FUN   of typ * typ	(* arrow type *)
+	| TUPLE of typ list	(* tuple *)
+	| PROD  of row		(* record *)
+	| SUM   of row		(* sum type (datatype) *)
+	| VAR   of kind * int	(* bound variable or skolem types *)
+	| CON   of con		(* constructor (of arbitrary kind) *)
+	| ALL   of var * typ	(* universal quantification *)
+	| EXIST of var * typ	(* existential quantification *)
+	| LAMBDA of var * typ	(* abstraction (type function) *)
+	| APPLY of typ * typ	(* application *)
+	| MU    of typ		(* recursive type barrier *)
 
     and row =						(* [rho,r] *)
 	  NIL
 	| RHO of int ref
-	| FLD of lab * typ list * row
+	| FIELD of lab * typ list * row
 	(* NOTE: representation of rows is suboptimal - change it some day *)
 
     withtype typ = typ' ref				(* [tau,t] *)
@@ -55,17 +55,17 @@ structure TypePrivate =
 
 
 (*DEBUG*)
-    fun pr(ARR _)	= "ARR"
-      | pr(TUP _)	= "TUP"
-      | pr(ROW _)	= "ROW"
+    fun pr(FUN _)	= "ARROW"
+      | pr(TUPLE _)	= "TUPLE"
+      | pr(PROD _)	= "PROD"
       | pr(SUM _)	= "SUM"
       | pr(CON _)	= "CON"
       | pr(VAR _)	= "VAR"
       | pr(ALL _)	= "ALL"
-      | pr(EX  _)	= "EX"
-      | pr(LAM _)	= "LAM"
-      | pr(APP _)	= "APP"
-      | pr(REC _)	= "REC"
+      | pr(EXIST _)	= "EXIST"
+      | pr(LAMBDA _)	= "LAMBDA"
+      | pr(APPLY _)	= "APPLY"
+      | pr(MU _)	= "MU"
       | pr(LINK _)	= "LINK"
       | pr(MARK _)	= "MARK"
       | pr(HOLE _)	= "HOLE"
@@ -102,12 +102,12 @@ structure TypePrivate =
 
     fun kind(ref t')		= kind' t'
 
-    and kind'(LINK t | REC t)	= kind t
+    and kind'(LINK t | MU t)	= kind t
       | kind'(HOLE(k,_))	= k
       | kind'(VAR(k,_))		= k
       | kind'(CON(k,_,_))	= k
-      | kind'(LAM(a,t))		= ARROW(kind a, kind t)
-      | kind'(APP(t1,t2))	= rangeKind(kind t1)
+      | kind'(LAMBDA(a,t))	= ARROW(kind a, kind t)
+      | kind'(APPLY(t1,t2))	= rangeKind(kind t1)
       | kind'(MARK t')		= kind' t'
       | kind' _			= STAR
 
@@ -120,18 +120,18 @@ structure TypePrivate =
 	      | VAR _
 	      | CON _ ), f)		= ()
       | app1'(( LINK t
-	      | REC t
+	      | MU t
 	      | ALL(_,t)
-	      | EX (_,t)
-	      | LAM(_,t)), f)		= f t
-      | app1'(( ARR(t1,t2)
-	      | APP(t1,t2)), f)		= ( f t1 ; f t2 )
-      | app1'(( TUP ts ), f)		= List.app f ts
-      | app1'(( ROW r
+	      | EXIST(_,t)
+	      | LAMBDA(_,t)), f)	= f t
+      | app1'(( FUN(t1,t2)
+	      | APPLY(t1,t2)), f)	= ( f t1 ; f t2 )
+      | app1'(( TUPLE ts ), f)		= List.app f ts
+      | app1'(( PROD r
 	      | SUM r ), f)		= appRow(r,f)
       | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
-    and appRow(FLD(_,ts,r), f)		= ( List.app f ts ; appRow(r,f) )
+    and appRow(FIELD(_,ts,r), f)	= ( List.app f ts ; appRow(r,f) )
       | appRow(_, f)			= ()
 
 
@@ -139,18 +139,18 @@ structure TypePrivate =
 		| VAR _
 		| CON _ ), f, a)	= a
       | foldl1'(( LINK t
-		| REC t
+		| MU t
 		| ALL(_,t)
-		| EX (_,t)
-		| LAM(_,t)), f, a)	= f(t,a)
-      | foldl1'(( ARR(t1,t2)
-		| APP(t1,t2)), f, a)	= f(t2, f(t1,a))
-      | foldl1'(( TUP ts ), f, a)	= List.foldl f a ts
-      | foldl1'(( ROW r
+		| EXIST(_,t)
+		| LAMBDA(_,t)), f, a)	= f(t,a)
+      | foldl1'(( FUN(t1,t2)
+		| APPLY(t1,t2)), f, a)	= f(t2, f(t1,a))
+      | foldl1'(( TUPLE ts ), f, a)	= List.foldl f a ts
+      | foldl1'(( PROD r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
       | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
 
-    and foldlRow(FLD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
+    and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
       | foldlRow(_, f, a)		= a
 
 
@@ -229,16 +229,16 @@ structure TypePrivate =
 			       | t11'                      => dup t11
 		end
 
-	    and clone'(ARR(t1,t2))	= ARR(clone t1, clone t2)
-	      | clone'(TUP ts)		= TUP(List.map clone ts)
-	      | clone'(ROW r)		= ROW(cloneRow r)
+	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
+	      | clone'(TUPLE ts)	= TUPLE(List.map clone ts)
+	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(CON c)		= CON c
 	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
-	      | clone'(EX(a,t))		= EX(dup' a, clone t)
-	      | clone'(LAM(a,t))	= LAM(dup' a, clone t)
-	      | clone'(APP(t1,t2))	= APP(clone t1, clone t2)
-	      | clone'(REC t)		= REC(clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dup' a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
+	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
+	      | clone'(MU t)		= MU(clone t)
 (*DEBUG*)
 | clone'(LINK _) = raise Crash.Crash "Type.clone: LINK"
 | clone'(MARK _) = raise Crash.Crash "Type.clone: MARK"
@@ -247,7 +247,7 @@ structure TypePrivate =
 (*
 	      | clone' _		= raise Crash.Crash "Type.clone"
 *)
-	    and cloneRow(FLD(l,ts,r))	= FLD(l, List.map clone ts, cloneRow r)
+	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
 	      | cloneRow r		= r
 
 	    val t2 = clone t
@@ -274,27 +274,27 @@ structure TypePrivate =
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(t as ref(APP(t1,t2))) =
+    fun reduce(t as ref(APPLY(t1,t2))) =
 	let
-	    fun reduceApp(t1 as ref(LAM(a,_)), r) =
+	    fun reduceApply(t1 as ref(LAMBDA(a,_)), r) =
 		( t := HOLE(kind a, !level)
 		; case !(clone t1)
-		    of LAM(a,t11) =>
+		    of LAMBDA(a,t11) =>
 			( a := LINK t2
-			; t := (if r then REC else LINK) t11
+			; t := (if r then MU else LINK) t11
 			; reduce t
 			)
-		    | _ => raise Crash.Crash "Type.reduceApp"
+		    | _ => raise Crash.Crash "Type.reduceApply"
 		)
-	      | reduceApp(ref(LINK t11), r) =
-		    reduceApp(follow t11, r)
+	      | reduceApply(ref(LINK t11), r) =
+		    reduceApply(follow t11, r)
 
-	      | reduceApp(ref(REC t11), r) =
-		    reduceApp(follow t11, true)
+	      | reduceApply(ref(MU t11), r) =
+		    reduceApply(follow t11, true)
 
-	      | reduceApp _ = ()
+	      | reduceApply _ = ()
 	in
-	    reduceApp(t1, false)
+	    reduceApply(t1, false)
 	end
 
       | reduce _ = ()
@@ -307,12 +307,12 @@ structure TypePrivate =
      * eta-convertible type functions. It's done on demand.
      *)
  
-    fun reduceEta(t as ref(LAM _)) =
+    fun reduceEta(t as ref(LAMBDA _)) =
 	let
-	    fun reduceLam(ref(LAM(a,t1)), vs) =
+	    fun reduceLam(ref(LAMBDA(a,t1)), vs) =
 		reduceLam(t1, a::vs)
 
-	      | reduceLam(ref(APP(t1,t2)), a::vs) =
+	      | reduceLam(ref(APPLY(t1,t2)), a::vs) =
 		let
 		    val t2' = follow t2
 		    val a'  = follow a
@@ -344,17 +344,17 @@ structure TypePrivate =
     fun unknown' k	= HOLE(k, !level)
     fun unknown k	= ref(unknown' k)
 
-    fun inArrow tt	= ref(ARR tt)
-    fun inTuple ts	= ref(TUP ts)
-    fun inRow r		= ref(ROW r)
+    fun inArrow tt	= ref(FUN tt)
+    fun inTuple ts	= ref(TUPLE ts)
+    fun inProd r	= ref(PROD r)
     fun inSum r		= ref(SUM r)
     fun inVar a		= a
     fun inCon c		= ref(CON c)
     fun inAll at	= ref(ALL at)
-    fun inExist at	= ref(EX at)
-    fun inLambda at	= ref(LAM at)
-    fun inApp(t1,t2)	= let val t = ref(APP(t1,t2)) in reduce t ; t end
-    fun inRec t		= ref(REC t)
+    fun inExist at	= ref(EXIST at)
+    fun inLambda at	= ref(LAMBDA at)
+    fun inApply(t1,t2)	= let val t = ref(APPLY(t1,t2)) in reduce t ; t end
+    fun inMu t		= ref(MU t)
 
     fun var k		= ref(VAR(k, !level))
 
@@ -363,31 +363,31 @@ structure TypePrivate =
 
     exception Type
 
-    fun asType(ref(LINK t | REC t))	= asType t
+    fun asType(ref(LINK t | MU t))	= asType t
       | asType(ref t')			= t'
 
-    fun isUnknown t	= case asType t of HOLE _ => true | _ => false
-    fun isArrow t	= case asType t of ARR _ => true | _ => false
-    fun isTuple t	= case asType t of TUP _ => true | _ => false
-    fun isRow t		= case asType t of ROW _ => true | _ => false
-    fun isSum t		= case asType t of SUM _ => true | _ => false
-    fun isVar t		= case asType t of VAR _ => true | _ => false
-    fun isCon t		= case asType t of CON _ => true | _ => false
-    fun isAll t		= case asType t of ALL _ => true | _ => false
-    fun isExist t	= case asType t of EX  _ => true | _ => false
-    fun isLambda t	= case asType t of LAM _ => true | _ => false
-    fun isApp t		= case asType t of APP _ => true | _ => false
+    fun isUnknown t	= case asType t of HOLE _   => true | _ => false
+    fun isArrow t	= case asType t of FUN _    => true | _ => false
+    fun isTuple t	= case asType t of TUPLE _  => true | _ => false
+    fun isProd t	= case asType t of PROD _   => true | _ => false
+    fun isSum t		= case asType t of SUM _    => true | _ => false
+    fun isVar t		= case asType t of VAR _    => true | _ => false
+    fun isCon t		= case asType t of CON _    => true | _ => false
+    fun isAll t		= case asType t of ALL _    => true | _ => false
+    fun isExist t	= case asType t of EXIST _  => true | _ => false
+    fun isLambda t	= case asType t of LAMBDA _ => true | _ => false
+    fun isApply t	= case asType t of APPLY _  => true | _ => false
 
-    fun asArrow t	= case asType t of ARR tt => tt | _ => raise Type
-    fun asTuple t	= case asType t of TUP ts => ts | _ => raise Type
-    fun asRow t		= case asType t of ROW r  => r  | _ => raise Type
-    fun asSum t		= case asType t of SUM r  => r  | _ => raise Type
-    fun asVar t		= case asType t of VAR _  => t  | _ => raise Type
-    fun asCon t		= case asType t of CON c  => c  | _ => raise Type
-    fun asAll t		= case asType t of ALL at => at | _ => raise Type
-    fun asExist t	= case asType t of EX  at => at | _ => raise Type
-    fun asLambda t	= case asType t of LAM at => at | _ => raise Type
-    fun asApp t		= case asType t of APP tt => tt | _ => raise Type
+    fun asArrow t	= case asType t of FUN tt    => tt | _ => raise Type
+    fun asTuple t	= case asType t of TUPLE ts  => ts | _ => raise Type
+    fun asProd t	= case asType t of PROD r    => r  | _ => raise Type
+    fun asSum t		= case asType t of SUM r     => r  | _ => raise Type
+    fun asVar t		= case asType t of VAR _     => t  | _ => raise Type
+    fun asCon t		= case asType t of CON c     => c  | _ => raise Type
+    fun asAll t		= case asType t of ALL at    => at | _ => raise Type
+    fun asExist t	= case asType t of EXIST at  => at | _ => raise Type
+    fun asLambda t	= case asType t of LAMBDA at => at | _ => raise Type
+    fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
 
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
@@ -410,10 +410,10 @@ structure TypePrivate =
 
     fun checkClosedRow NIL		= ()
       | checkClosedRow(RHO _)		= raise Unclosed
-      | checkClosedRow(FLD(l,t,r))	= checkClosedRow r
+      | checkClosedRow(FIELD(l,t,r))	= checkClosedRow r
 
     fun checkClosed'(HOLE _)		= raise Unclosed
-      | checkClosed'(ROW r | SUM r)	= checkClosedRow r
+      | checkClosed'(PROD r | SUM r)	= checkClosedRow r
       | checkClosed' _			= ()
 
     fun isClosed t =
@@ -431,20 +431,20 @@ structure TypePrivate =
      *)
 
     fun instance'(ref(ALL(a,t)))	= ( a := unknown'(kind a); instance' t )
-      | instance'(ref(EX(a,t)))		= instance' t
+      | instance'(ref(EXIST(a,t)))	= instance' t
       | instance' t			= t
 
-    fun instance(t as ref(ALL _| EX _))	= instance'(clone t)
-      | instance(ref(LINK t))		= instance t
-      | instance t			= t
+    fun instance(t as ref(ALL _| EXIST _))	= instance'(clone t)
+      | instance(ref(LINK t))			= instance t
+      | instance t				= t
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
-      | skolem'(ref(EX(a,t)))		= ( a := unknown' STAR ; skolem' t )
+      | skolem'(ref(EXIST(a,t)))	= ( a := unknown' STAR ; skolem' t )
       | skolem' t			= t
 
-    fun skolem(t as ref(ALL _| EX _))	= skolem'(clone t)
-      | skolem(ref(LINK t))		= skolem t
-      | skolem t			= t
+    fun skolem(t as ref(ALL _| EXIST _))	= skolem'(clone t)
+      | skolem(ref(LINK t))			= skolem t
+      | skolem t				= t
 
 
 
@@ -455,27 +455,27 @@ structure TypePrivate =
     fun unknownRow()	= RHO(ref(!level))
     fun emptyRow()	= NIL
 
-    fun extendRow(l,ts, r as (RHO _ | NIL))	= FLD(l,ts,r)
-      | extendRow(l1,ts1, r1 as FLD(l2,ts2,r2)) =
+    fun extendRow(l,ts, r as (RHO _ | NIL))	= FIELD(l,ts,r)
+      | extendRow(l1,ts1, r1 as FIELD(l2,ts2,r2)) =
 	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
-	   | LESS    => FLD(l1, ts1, r1)
-	   | GREATER => FLD(l2, ts2, extendRow(l1,ts1,r2))
+	   | LESS    => FIELD(l1, ts1, r1)
+	   | GREATER => FIELD(l2, ts2, extendRow(l1,ts1,r2))
 
     fun tupToRow ts =
 	let
 	    fun loop(n,  []  ) = NIL
-	      | loop(n, t::ts) = FLD(Label.fromInt n, [t], loop(n+1,ts))
+	      | loop(n, t::ts) = FIELD(Label.fromInt n, [t], loop(n+1,ts))
 	in
 	    loop(1,ts)
 	end
 
     fun openRow NIL			= RHO(ref(!level))
       | openRow(r as RHO _)		= r
-      | openRow(FLD(l,ts,r))		= FLD(l, ts, openRow r)
+      | openRow(FIELD(l,ts,r))		= FIELD(l, ts, openRow r)
 
     fun openRowType(ref(LINK t))	= openRowType t
-      | openRowType(t as ref(ROW r))	= t := ROW(openRow r)
+      | openRowType(t as ref(PROD r))	= t := PROD(openRow r)
       | openRowType(t as ref(SUM r))	= t := SUM(openRow r)
       | openRowType _			= raise Row
 
@@ -485,12 +485,12 @@ structure TypePrivate =
 
     fun isUnknownRow NIL		= false
       | isUnknownRow(RHO _)		= true
-      | isUnknownRow(FLD(l,ts,r))	= isUnknownRow r
+      | isUnknownRow(FIELD(l,ts,r))	= isUnknownRow r
 
-    fun headRow(FLD(l,ts,r))		= (l,ts)
+    fun headRow(FIELD(l,ts,r))		= (l,ts)
       | headRow _			= raise Row
 
-    fun tailRow(FLD(l,ts,r))		= r
+    fun tailRow(FIELD(l,ts,r))		= r
       | tailRow _			= raise Row
 
 
@@ -514,17 +514,17 @@ structure TypePrivate =
 		    fn t => f(inAll(a,t))
 		else f
 
-	      | close(ref(ALL(a,t) | EX(a,t)), f) =
+	      | close(ref(ALL(a,t) | EXIST(a,t)), f) =
 		( a := MARK(!a) ; f )	(* bit of a hack... *)
 
-	      | close(t as ref(ROW r), f) = ( t := ROW(closeRow r) ; f )
-	      | close(t as ref(SUM r), f) = ( t := SUM(closeRow r) ; f )
+	      | close(t as ref(PROD r), f) = ( t := PROD(closeRow r) ; f )
+	      | close(t as ref(SUM r), f)  = ( t := SUM(closeRow r) ; f )
 
 	      | close(_, f) = f
 
 	    and closeRow NIL              = NIL
 	      | closeRow(r as RHO(ref n)) = if n > !level then NIL else r
-	      | closeRow(FLD(l,t,r))      = FLD(l, t, closeRow r)
+	      | closeRow(FIELD(l,t,r))    = FIELD(l, t, closeRow r)
 	in
 	    foldl close (fn t => t) t t
 	end
@@ -540,15 +540,15 @@ structure TypePrivate =
 		    if n > !level then t := HOLE(k,!level) else ()
 	      | lift(t as ref(VAR(k,n))) =
 		    if n > !level then raise Lift t else ()
-	      | lift(ref(ROW r | SUM r)) = liftRow r
+	      | lift(ref(PROD r | SUM r)) = liftRow r
 	      | lift t = ()
 	in
 	    app lift t
 	end
 
-    and liftRow(NIL)        = ()
-      | liftRow(RHO n)      = if !n > !level then n := !level else ()
-      | liftRow(FLD(l,t,r)) = liftRow r
+    and liftRow(NIL)          = ()
+      | liftRow(RHO n)        = if !n > !level then n := !level else ()
+      | liftRow(FIELD(l,t,r)) = liftRow r
 
 
   (* Unification *)
@@ -561,13 +561,13 @@ structure TypePrivate =
 	    fun lift(t as ref(t' as HOLE(k,n'))) =
 		    t := MARK(if n' <= n then t' else HOLE(k,n))
 	      | lift(ref(MARK _)) = ()
-	      | lift(t as ref(t' as (ROW r | SUM r))) =
+	      | lift(t as ref(t' as (PROD r | SUM r))) =
 		    ( liftRow r ; t := MARK t' ; app1'(t', lift) )
 	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
 
-	    and liftRow(NIL)        = ()
-	      | liftRow(RHO n')     = if !n' > n then n' := n else ()
-	      | liftRow(FLD(l,t,r)) = liftRow r
+	    and liftRow(NIL)          = ()
+	      | liftRow(RHO n')       = if !n' > n then n' := n else ()
+	      | liftRow(FIELD(l,t,r)) = liftRow r
 
 	    fun check(t as ref t') =
 		if t1 = t then
@@ -575,7 +575,7 @@ structure TypePrivate =
 		else case t'
 		  of HOLE(k,n') => t := MARK(if n' <= n then t' else HOLE(k,n))
 		   | MARK _     => ()
-		   | REC _      => ( t := MARK t' ; app1'(t', lift) )
+		   | MU _       => ( t := MARK t' ; app1'(t', lift) )
 		   | _          => ( t := MARK t' ; app1'(t', check) )
 	in
 	    check t2 ; unmark t2
@@ -615,29 +615,29 @@ if k1 <> kind' t2' then raise Assert.failure else
 if kind' t1' <> k2 then raise Assert.failure else
 			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
 
-		       | (REC(t11), REC(t21)) =>
+		       | (MU(t11), MU(t21)) =>
 			 recur unify (t11,t21)
 
-		       | (REC(t11), _) =>
-			 ( t2 := REC(ref t2') ; unify(t1,t2) )
+		       | (MU(t11), _) =>
+			 ( t2 := MU(ref t2') ; unify(t1,t2) )
 
-		       | (_, REC(t21)) =>
-			 ( t1 := REC(ref t1') ; unify(t1,t2) )
+		       | (_, MU(t21)) =>
+			 ( t1 := MU(ref t1') ; unify(t1,t2) )
 
-		       | (ARR(tt1), ARR(tt2)) =>
+		       | (FUN(tt1), FUN(tt2)) =>
 			 recur unifyPair (tt1,tt2)
 
-		       | (TUP(ts1), TUP(ts2)) =>
+		       | (TUPLE(ts1), TUPLE(ts2)) =>
 			 recur (ListPair.app unify) (ts1,ts2)
 
-		       | (TUP(ts), ROW(r)) =>
-			 recur unifyRow (t1, t2, tupToRow ts, r, ROW)
+		       | (TUPLE(ts), PROD(r)) =>
+			 recur unifyRow (t1, t2, tupToRow ts, r, PROD)
 
-		       | (ROW(r), TUP(ts)) =>
-			 recur unifyRow (t1, t2, r, tupToRow ts, ROW)
+		       | (PROD(r), TUPLE(ts)) =>
+			 recur unifyRow (t1, t2, r, tupToRow ts, PROD)
 
-		       | (ROW(r1), ROW(r2)) =>
-			 recur unifyRow (t1, t2, r1, r2, ROW)
+		       | (PROD(r1), PROD(r2)) =>
+			 recur unifyRow (t1, t2, r1, r2, PROD)
 
 		       | (SUM(r1), SUM(r2)) =>
 			 recur unifyRow (t1, t2, r1, r2, SUM)
@@ -646,7 +646,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 if p1 = p2 then t1 := LINK t2
 				    else raise Unify(t1,t2)
 
-		       | (APP(tt1), APP(tt2)) =>
+		       | (APPLY(tt1), APPLY(tt2)) =>
 			 (* Note that we do not allow general lambdas during
 			  * unification, so application is considered to be
 			  * in normal form *)
@@ -655,10 +655,10 @@ if kind' t1' <> k2 then raise Assert.failure else
 		       | (ALL(a1,t11), ALL(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: universal quantifier"
 
-		       | (EX(a1,t11), EX(a2,t21)) =>
+		       | (EXIST(a1,t11), EXIST(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: existential quantifier"
 
-		       | (LAM(a1,t11), LAM(a2,t21)) =>
+		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: abstraction"
 
 		       | _ => raise Unify(t1,t2)
@@ -667,28 +667,28 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
-	    and unifyRow(t1, t2, r1, r2, ROWorSUM) =
+	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
 		    fun loop(NIL, false, NIL, false) = NIL
 		      | loop(NIL, false, RHO _, _  ) = NIL
 		      | loop(RHO _, _,   NIL, false) = NIL
 		      | loop(RHO n1, _,  RHO n2, _ ) =
 			    RHO(ref(Int.min(!n1, !n2)))
-		      | loop(rho as RHO _, _, FLD(l,ts,r), b2) =
-			    FLD(l,ts, loop(rho, true, r, b2))
-		      | loop(FLD(l,ts,r), b1, rho as RHO _, _) =
-			    FLD(l,ts, loop(r, b1, rho, true))
-		      | loop(r1 as FLD(l1,ts1,r1'), b1,
-			     r2 as FLD(l2,ts2,r2'), b2) =
+		      | loop(rho as RHO _, _, FIELD(l,ts,r), b2) =
+			    FIELD(l,ts, loop(rho, true, r, b2))
+		      | loop(FIELD(l,ts,r), b1, rho as RHO _, _) =
+			    FIELD(l,ts, loop(r, b1, rho, true))
+		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
+			     r2 as FIELD(l2,ts2,r2'), b2) =
 			(case Label.compare(l1,l2)
 			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
-					 ; FLD(l1,ts1, loop(r1',b1, r2',b2)) )
-			    | LESS    => FLD(l1,ts1, loop(r1',b1, r2,true))
-			    | GREATER => FLD(l2,ts2, loop(r1,true, r2',b2))
+					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
+			    | LESS    => FIELD(l1,ts1, loop(r1',b1, r2,true))
+			    | GREATER => FIELD(l2,ts2, loop(r1,true, r2',b2))
 			)
 		      | loop _ = raise Unify(t1,t2)
 		in
-		    t2 := ROWorSUM(loop(r1,false, r2,false))
+		    t2 := PRODorSUM(loop(r1,false, r2,false))
 		end
 	in
 	    unify(t1,t2)
@@ -750,46 +750,46 @@ if kind' t1' <> k2 then raise Assert.failure else
 		in
 		    t1 = t2 orelse
 		    case (t1',t2')
-		      of (REC(t11), REC(t21)) =>
+		      of (MU(t11), MU(t21)) =>
 			 recur equals (t11,t21)
 
-		       | (REC(t11), _) =>
+		       | (MU(t11), _) =>
 			 recur equals (t11,t2)
 
-		       | (_, REC(t21)) =>
+		       | (_, MU(t21)) =>
 			 recur equals (t1,t21)
 
-		       | (ARR(tt1), ARR(tt2)) =>
+		       | (FUN(tt1), FUN(tt2)) =>
 			 recur equalsPair (tt1,tt2)
 
-		       | (TUP(ts1), TUP(ts2)) =>
+		       | (TUPLE(ts1), TUPLE(ts2)) =>
 			 recur (ListPair.all equals) (ts1,ts2)
 
-		       | ( (TUP(ts), ROW(r))
-			 | (ROW(r), TUP(ts)) ) =>
+		       | ( (TUPLE(ts), PROD(r))
+			 | (PROD(r),   TUPLE(ts)) ) =>
 			 recur equalsRow (r, tupToRow ts)
 
-		       | ( (ROW(r1), ROW(r2))
-			 | (SUM(r1), SUM(r2)) ) =>
+		       | ( (PROD(r1), PROD(r2))
+			 | (SUM(r1),  SUM(r2)) ) =>
 			 recur equalsRow (r1,r2)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
 			 p1 = p2
 
-		       | (APP(tt1), APP(tt2)) =>
+		       | (APPLY(tt1), APPLY(tt2)) =>
 			 recur equalsPair (tt1,tt2)
 
-		       | ( (LAM _, _) | (_, LAM _) ) =>
+		       | ( (LAMBDA _, _) | (_, LAMBDA _) ) =>
 			 ( reduceEta t1
 			 ; reduceEta t2
 			 ; case (!t1,!t2)
-			     of (LAM(a1,t11), LAM(a2,t21)) =>
+			     of (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
 				recurBinder(a1, a2, t11, t21)
-			      | ( (LAM _, _) | (_, LAM _) ) => false
+			      | ( (LAMBDA _, _) | (_, LAMBDA _) ) => false
 			      | _ => equals(t1,t2)
 			 )
-		       | ( (ALL(a1,t11), ALL(a2,t21))
-			 | (EX(a1,t11), EX(a2,t21)) ) =>
+		       | ( (ALL(a1,t11),   ALL(a2,t21))
+			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
 
 		       | _ => false
@@ -800,7 +800,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    and equalsRow(NIL,   NIL)   = true
 	      | equalsRow(RHO _, RHO _) = true
-	      | equalsRow(FLD(l1,ts1,r1), FLD(l2,ts2,r2)) =
+	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
 		l1 = l2 andalso ListPair.all equals (ts1,ts2)
 			andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
@@ -838,7 +838,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 		   of SOME t2 => t1 := LINK(clone t2)	(* expand *)
 		    | NONE    => ()
 		)
-	      | subst(t1 as ref(APP _)) = apps := t1::(!apps)
+	      | subst(t1 as ref(APPLY _)) = apps := t1::(!apps)
 	      | subst t1 = ()
 	in
 	    app subst t ; List.app reduce (!apps)

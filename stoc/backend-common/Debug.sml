@@ -58,7 +58,7 @@ structure Debug :> DEBUG =
 	    "(" ^ listToString patToString pats ^ ")"
 	  | patToString (RowPat (info, patFields)) =
 	    let
-		val row = Type.asRow (#typ info)
+		val row = Type.asProd (#typ info)
 		val n =
 		    let
 			fun length row =
