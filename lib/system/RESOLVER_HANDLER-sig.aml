@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -28,5 +28,7 @@ signature RESOLVER_HANDLER =
 
 	val parse: string -> handler list          (* Syntax *)
 
-	val apply: handler list -> Url.t -> (Url.t * handler list) option
+	val apply: Url.t -> handler list -> (Url.t * handler list) option
+	val tracingApply: (string -> unit) -> Url.t -> handler list ->
+			  (Url.t * handler list) option
     end
