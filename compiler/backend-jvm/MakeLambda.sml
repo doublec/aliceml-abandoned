@@ -23,12 +23,12 @@ functor MakeLambda(structure StampSet:IMP_SET
     struct
 	open ImperativeGrammar
 	open Common
+	open Abbrev
 
 	type stamp=IntermediateGrammar.stamp
 
 	(* non top-level functions must be pickled explicitly *)
-	(* xxx store in corresponding classes *)
-	val pickleFn=StampSet.new()
+	val pickleFn: StampSet.set StampHash.t = StampHash.new()
 
 	(* map function arguments to ids *)
 	val lambdas:id StampHash.t=StampHash.new ()
@@ -52,7 +52,20 @@ functor MakeLambda(structure StampSet:IMP_SET
 	    if upperFun = toplevel
 		then ()
 	    else
-		StampSet.insert (pickleFn, stamp')
+		let
+		    val p=
+			case StampHash.lookup (pickleFn, upperFun) of
+			    NONE =>
+				let
+				    val p' = StampSet.new ()
+				in
+				    StampHash.insert (pickleFn, upperFun, p');
+				    p'
+				end
+			  | SOME p' => p'
+		in
+		    StampSet.insert (p, stamp')
+		end
 
 	(* name a function. *)
 	fun setId (lambda, name as Id (_, namestamp, _)) =
@@ -76,33 +89,37 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun fname stamp' = "f"^(Stamp.toString stamp')
 
 	(* create a full qualified name for a stamp. *)
-	fun fieldname stamp'=Class.getLiteralName()^"/"^(fname stamp')
+	fun fieldname (curCls, stamp') = classNameFromStamp curCls^"/"^(fname stamp')
 
 	(* We need instances of classes to ensure that the class information
 	 is stored in the pickle. Instances of inner functions are created at
 	 runtime, so we have to build dummy instances of inner functions. *)
-	fun generatePickleFn startwert =
+	fun generatePickleFn (stamp', init) =
 	    let
-		fun codePickle (stamp',acc) =
+		fun codePickle (stamp'',acc) =
 		    Aload thisStamp::
-		    Ldc (JVMString (classNameFromStamp stamp'))::
+		    Ldc (JVMString (classNameFromStamp stamp''))::
 		    Invokestatic MForName::
-		    Putfield (fieldname stamp',
+		    Putfield (fieldname (stamp',stamp''),
 			      [Classsig CClass])::
 		    acc
 	    in
-		StampSet.fold codePickle startwert pickleFn
+		case StampHash.lookup (pickleFn, stamp') of
+		    NONE => init
+		  | SOME p => StampSet.fold codePickle init p
 	    end
 
 	(* These are the dummy fields for generatePickleFn *)
-	fun makePickleFields startwert =
+	fun makePickleFields (stamp', init) =
 	    let
-		fun pickleFields (stamp', acc) =
+		fun pickleFields (stamp'', acc) =
 		    Field ([FPublic, FFinal],
-			   fname stamp',
+			   fname stamp'',
 			   [Classsig CClass])::acc
 	    in
-		StampSet.fold pickleFields startwert pickleFn
+		case StampHash.lookup (pickleFn, stamp') of
+		    NONE => init
+		  | SOME p => StampSet.fold pickleFields init p
 	    end
 
 	(* Return the number of Value parameters (1-4) of an recapply of a function
@@ -115,8 +132,10 @@ functor MakeLambda(structure StampSet:IMP_SET
 	 recursive functions are merged in one single apply *)
 	fun getClassStamp (stamp', params) =
 	    case StampIntHash.lookup (recApplies, (stamp', methParms params)) of
-		SOME (stamp'', _, _) => stamp''
-	      | NONE => stamp'
+		SOME (stamp'', _, _) => (if !VERBOSE>=3 then print ("getClassStamp "^Stamp.toString stamp'^" = "^Stamp.toString stamp'') else ();
+					     stamp'')
+	      | NONE => (if !VERBOSE>=3 then print ("getClassStamp "^Stamp.toString stamp'^" fails.") else ();
+			     stamp')
 
 	fun isInRecApply (stamp', params) =
 	    isSome (StampIntHash.lookup (recApplies, (stamp', methParms params)))
@@ -188,10 +207,10 @@ functor MakeLambda(structure StampSet:IMP_SET
 					 recApplies,
 					 errorlabel),
 			   Label errorlabel,
-			   New ECompiler,
+			   New CCompilerException,
 			   Dup,
 			   Ldc (JVMString "unbekannte Funktion."),
-			   Invokespecial (ECompiler, "<init>", ([Classsig CString], [Voidsig])),
+			   Invokespecial (CCompilerException, "<init>", ([Classsig CString], [Voidsig])),
 			   Athrow]))
 		    else ()
 	    end
@@ -230,14 +249,14 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun buildRecApply lambda =
 	    Method ([MPublic],
 		    "recApply",
-		    ([Classsig CVal, Classsig CVal,
-		      Classsig CVal, Classsig CVal, Intsig],
-		     [Classsig CVal]),
+		    ([Classsig IVal, Classsig IVal,
+		      Classsig IVal, Classsig IVal, Intsig],
+		     [Classsig IVal]),
 		    (case StampHash.lookup (recApply, lambda) of
-			 NONE => [Getstatic COut,
+			 NONE => [Getstatic FOut,
 				  Ldc (JVMString "bogus method"),
 				  Invokevirtual (CPrintStream, "print",
-						 ([Classsig CObj], [Voidsig])),
+						 ([Classsig CObject], [Voidsig])),
 				  Aload thisStamp,
 				  Areturn]
 		       | SOME v => v))

@@ -13,6 +13,7 @@
 structure Backend=
     struct
 	open Common
+	 Abbrev
 
 	type stamp=IntermediateGrammar.stamp
 	type label = JVMInst.label
@@ -191,30 +192,51 @@ structure Backend=
 	    struct
 		(* Record arities are stored in a hashtable to avoid
 		 multiple generations. *)
-		val arity: int StringListHash.t = StringListHash.new ()
+		val arity: (int StringListHash.t) StampHash.t = StampHash.new ()
 
 		(* Number of the actual record arity *)
-		val number = ref 0
+		val number: int StampHash.t = StampHash.new ()
 
 		(* create the fieldname of an arity out of its number *)
 		fun fieldname number = "arity"^Int.toString number
 
 		(* get the name of the static JVM field of an arity *)
-		fun staticfield number =
-		    (Class.getLiteralName()^"/"^(fieldname number),
+		fun staticfield (curCls, number) =
+		    (classNameFromStamp curCls^"/"^(fieldname number),
 		     [Arraysig, Classsig CString])
 
 		(* create a new record arity and return its JVM field *)
-		fun insert (strings as (s::_)) =
-		     (case StringListHash.lookup (arity, strings) of
-			 NONE => (number := ((!number)+1);
-				  StringListHash.insert (arity, strings, !number);
-				  staticfield (!number))
-		       | SOME number' => staticfield number')
-		  | insert _ = raise Mitch
+		fun insert (stamp', strings as (s::_)) =
+		    let
+			val l =
+			    case StampHash.lookup (arity, stamp') of
+				NONE =>
+				    let
+					val l' = StringListHash.new ()
+				    in
+					StampHash.insert (arity, stamp', l');
+					l'
+				    end
+			      | SOME l' => l'
+		    in
+			case StringListHash.lookup (l, strings) of
+			    NONE =>
+				let
+				    val nr =
+					case StampHash.lookup(number, stamp') of
+					    NONE => 0
+					  | SOME n =>n+1
+				in
+				    StringListHash.insert (l, strings, nr);
+				    StampHash.insert (number, stamp', nr);
+				    staticfield (stamp', nr)
+				end
+			  | SOME number' => staticfield (stamp', number')
+		    end
+		  | insert _ = Crash.crash "RecordLabel.insert: empty Stringlist"
 
-		(* Generate the record arities at compilitaion time. *)
-		fun generate () =
+		(* Generate the record arities of a certain class at compilitaion time. *)
+		fun generate stamp' =
 		    let
 			fun codeall (strs, aritynumber, acc) =
 			    let
@@ -239,7 +261,7 @@ structure Backend=
 
 				val (r,_) = List.foldr
 				    codeone
-				    (Putstatic (staticfield aritynumber)::
+				    (Putstatic (staticfield (stamp', aritynumber))::
 				     acc,
 				     0)
 				    strs
@@ -247,21 +269,27 @@ structure Backend=
 				r
 			    end
 		    in
-			StringListHash.foldi
-			codeall
-			[Return]
-			arity
+			(case StampHash.lookup (arity, stamp') of
+			     NONE => [Return]
+			   | SOME a =>
+				 (StringListHash.foldi
+				  codeall
+				  [Return]
+				  a))
 		    end
 
-		(* Generate field entries for the record arities. *)
-		fun makefields () =
-		    StringListHash.fold
-		    (fn (number, fields) =>
-		     Field ([FPublic, FStatic],
-			    fieldname number,
-			    [Arraysig, Classsig CString])::fields)
-		    nil
-		    arity
+		(* Generate field entries for the record arities of a certain class. *)
+		fun makefields (stamp', init) =
+		    case StampHash.lookup (arity, stamp') of
+			NONE => init
+		      | SOME a =>
+			    StringListHash.fold
+			    (fn (number, fields) =>
+			     Field ([FPublic, FStatic],
+				    fieldname number,
+				    [Arraysig, Classsig CString])::fields)
+			    init
+			    a
 	    end
 
 	(* JVM is statically typed, DML dynamically. Therefore, we have
@@ -272,25 +300,45 @@ structure Backend=
 	    struct
 		(* All literals are stored in a Hashtable to avoid
 		 redundancy. *)
-		val lithash: int LitHash.t = LitHash.new ()
+		val lithash: int LitHash.map StampHash.t = StampHash.new ()
 
-		(* The number of the actual literal *)
-		val number = ref 0
+		(* The number of the next literal of a certain class *)
+		val number: int StampHash.t = StampHash.new ()
 
 		(* compute a literal's fieldname of its number *)
 		fun fieldname number = "lit"^Int.toString number
 
 		(* compute the whole static JVM field of a literal *)
-		fun staticfield number =
-		    Class.getLiteralName()^"/"^(fieldname number)
+		fun staticfield (stamp', number) =
+		    classNameFromStamp stamp'^"/"^(fieldname number)
 
 		(* add a literal (if necessary) and return its JVM field *)
-		fun insert lit' =
-		    case LitHash.lookup (lithash, lit') of
-			NONE => (number := ((!number)+1);
-				 LitHash.insert (lithash, lit', !number);
-				 staticfield (!number))
-		      | SOME number' => staticfield number'
+		fun insert (stamp',lit') =
+		    let
+			val lit =
+			    case StampHash.lookup(lithash, stamp') of
+				NONE => let
+					    val l = LitHash.new ()
+					in
+					    StampHash.insert (lithash, stamp', l);
+					    l
+					end
+			      | SOME l => l
+		    in
+			case LitHash.lookup (lit, lit') of
+			    NONE =>
+				let
+				    val nr =
+					case StampHash.lookup(number, stamp') of
+					    NONE => 0
+					  | SOME n => n+1
+				in
+				    LitHash.insert (lit, lit', nr);
+				    StampHash.insert (number, stamp', nr);
+				    staticfield (stamp', nr)
+				end
+			  | SOME number' => staticfield (stamp', number')
+		    end
 
 		fun litClass (CharLit _) = CChar
 		  | litClass (IntLit _)    = CInt
@@ -298,40 +346,45 @@ structure Backend=
 		  | litClass (StringLit _) = CStr
 		  | litClass (WordLit _)   = CWord
 
-		(* Generate all literals at compilation time. *)
-		fun generate startwert =
+		(* Generate all literals of a certain class at compilation time. *)
+		fun generate (stamp', init) =
 		     let
 			 fun codelits (lit', constnumber, acc) =
 			     let
 				 val jType = case lit' of
-				     CharLit _   => ([Charsig],[Voidsig])
-				   | IntLit _    => ([Intsig],[Voidsig])
-				   | RealLit _   => ([Floatsig],[Voidsig])
-				   | StringLit _ => ([Classsig CString], [Voidsig])
-				   | WordLit _   => ([Intsig],[Voidsig])
+				     CharLit _   => [Charsig]
+				   | IntLit _    => [Intsig]
+				   | RealLit _   => [Floatsig]
+				   | StringLit _ => [Classsig CString]
+				   | WordLit _   => [Intsig]
 				 and scon = litClass lit'
 			     in
 				 (New scon ::
 				  Dup ::
 				  atCode lit' ::
-				  (Invokespecial (scon,"<init>",jType)) ::
-				  (Putstatic ((staticfield constnumber),[Classsig scon])) ::
+				  (Invokespecial (scon,"<init>",(jType, [Voidsig]))) ::
+				  (Putstatic ((staticfield (stamp', constnumber)),
+					      [Classsig scon])) ::
 				  acc)
 
 			     end
 		     in
-			 LitHash.foldi codelits startwert lithash
+				  case StampHash.lookup (lithash, stamp') of
+				      NONE => init
+				    | SOME l => LitHash.foldi codelits init l
 		     end
 
 		(* Generate JVM field entries for all literals *)
-		fun makefields startwert =
-		    LitHash.foldi
-		    (fn (lit', number, fields) =>
-		     Field ([FPublic, FStatic],
-			    fieldname number,
-			    [Classsig (litClass lit')])::fields)
-		    startwert
-		    lithash
+		fun makefields (stamp',init) =
+				  (case StampHash.lookup (lithash, stamp') of
+				       NONE => init
+				     | SOME l => LitHash.foldi
+					   (fn (lit', number, fields) =>
+					    Field ([FPublic, FStatic],
+						   fieldname number,
+						   [Classsig (litClass lit')])::fields)
+					   init
+					   l)
 	    end
 
 	(* print a list of stamps. Used in verbose mode for debugging. *)

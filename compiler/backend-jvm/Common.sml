@@ -19,49 +19,47 @@ structure Common=
 	open Main
 
 	open JVMInst
-	open Abbrev
 
 	exception Mitch
 
-	(* Name of the initial class *) (* xxx remove literal *)
+	(* Name of the initial class *)
 	structure Class =
 	    struct
 		val initial = ref ""
 
 		fun setInitial name = initial := name
 		fun getInitial () = !initial
-		fun getLiteralName() = getInitial()^"classLiberal"
 	    end
 
-	(* Den Feldnamen zu einer Id bestimmen. Die Id kann eine beliebige Variable sein. *)
+	(* return the fieldname of an Id. Id may be any variable. *)
 	fun fieldNameFromStamp stamp' = "field"^(Stamp.toString stamp')
 	fun fieldNameFromId (Id(_,stamp',_)) = fieldNameFromStamp stamp'
 
 	fun nameFromId (Id (_,stamp',InId)) = "unnamed"^(Stamp.toString stamp')
 	  | nameFromId (Id (_,stamp',ExId name')) = name'^(Stamp.toString stamp')
 
-	(* Den Stamp aus einer Id extrahieren. *)
+	(* extract the stamp from an Id *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
 
-	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
+	(* JVM-Register where compilation result is stored to *)
 	val mainpickle = ref (Stamp.new ()) (* stamp for main structure *)
 
 	val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
 	val _ = SMLofNJ.Internals.GC.messages false
 
-	(* Den Klassennamen einer Id bestimmen, die üblicherweise die Id eines formalen
-	 Funktionsparameters ist. *)
-	fun classNameFromStamp stamp' = Class.getInitial()^"class"^(Stamp.toString stamp')
+	(* Functionclosures are represented by Stamps.
+	 This is the toplevel environment: *)
+	val toplevel = Stamp.new()
+
+	(* return the class name of an Id. *)
+	fun classNameFromStamp stamp' = Class.getInitial()^
+	    (if stamp'=toplevel then "" else "class"^(Stamp.toString stamp'))
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
 	val dummyCoord:ImperativeGrammar.coord = Source.nowhere
 	val dummyPos:Source.position = Source.nowhere
 	val dummyInfo:ImperativeGrammar.info = (dummyPos, ref Unknown)
-
-	(* Functionclosures are represented by Stamps.
-	  This is the toplevel environment: *)
-	 val toplevel = Stamp.new()
 
 	 (* A dummy stamp/id we sometimes write but should never read *)
 	 val illegalStamp = Stamp.new()
@@ -95,17 +93,10 @@ structure Common=
 	 val thisId = Id (dummyPos, thisStamp, InId)
 
 	 datatype APPLY =
-	     (* Goto (# of params, label) *)
-	     GotoLabel of int * label
 	  (* Invokevirtual recapply (# of params, code class, code position, code label)*)
-	  | InvokeRecApply of int * stamp * int * label
+	     InvokeRecApply of int * stamp * int * label
 	  (* Invokeinterface apply or apply0/2/3/4. (# of params) *)
 	  | NormalApply of int
-
-	 (* generate names for apply methods. *)
-	fun applyName 1 = "apply"
-	  | applyName parms =
-	    "apply"^Int.toString (if parms <=4 then parms else 1)
 
 	(* Structure for managing labels in JVM-methods *)
 	structure Label =
