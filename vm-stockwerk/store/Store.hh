@@ -34,18 +34,18 @@ private:
   static MemChunk *roots[STORE_GENERATION_NUM];
   static u_int memUsage[STORE_GENERATION_NUM];
   static u_int memLimits[STORE_GENERATION_NUM];
-  static word intgenSet;
-  static word wkDictSet;
+  static Set *intgenSet;
+  static Set *wkDictSet;
   static u_int needGC;
   static u_int maxGcGen;
 
   static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
   static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen);
+  static Block *ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen);
   static void ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *scan);
-  static void HandleInterGenerationalPointers(Set *intgen_set,
-					      u_int gcGen, u_int dst_gen, u_int cpy_gen);
-  static Block *HandleWeakDictionaries(Set *wkdict_set, u_int dst_gen, u_int cpy_gen);
+  static void HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u_int cpy_gen);
+  static Block *HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen);
   static void SetInitMark(u_int size);
   static char *GCAlloc(u_int s, u_int header, u_int gen);
   static Block *AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen);
@@ -73,7 +73,6 @@ private:
     AssertStore(s <= MAX_BLOCKSIZE);
     return (Block *) Store::FastAlloc(((s + 1) * sizeof(u_int)), HeaderOp::EncodeHeader(l, s, 0));
   }
-  static Block *ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen);
   static void DoGC(word &root, const u_int gcGen);
 public:
   // Init Functions
