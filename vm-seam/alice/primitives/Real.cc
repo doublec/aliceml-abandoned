@@ -114,6 +114,7 @@ DEFINE1(Real_toString) {
   //--** inf, ~inf, nan not formatted correctly
   static char buf[50];
   DECLARE_REAL(real, x0);
+  // TODO: This sometimes inserts ',' instead of '.' as decimalpoint
   std::sprintf(buf, "%.12G", real->GetValue());
   bool hasDecimalPoint = false, done = false;
   u_int i = 0;
@@ -124,6 +125,10 @@ DEFINE1(Real_toString) {
       break;
     case '-':
       buf[i - 1] = '~';
+      break;
+    case ',':
+      buf[i - 1] = '.';
+      hasDecimalPoint = true;
       break;
     case '.':
       hasDecimalPoint = true;
