@@ -33,15 +33,15 @@ struct
 
     fun layout (Concat(r) as n) = 
 	(let 
-	    val no_kids = Array.length(#kids(r))
+	    val no_kids = Array.length(getKids(n))
 	    val li = List.tabulate(no_kids, 
-				   (fn i => layout(Array.sub(#kids(r),i))))
+				   (fn i => layout(Array.sub(getKids(n),i))))
 	    val (xdim,l_xdim) = case no_kids of
 		0 => (0,0)
 	      | 1 => (#1(hd(li)),#3(hd(li)))
 	      | _ => 
 		    let 
-			val seclast = Array.sub(#kids(r),
+			val seclast = Array.sub(getKids(n),
 						no_kids -2)
 			val li' = List.take(li,
 					    List.length(li)-1)
@@ -73,9 +73,9 @@ struct
 	;if !(#status(r)) = DAZZLED
 	    then
 		let 
-		    val no_kids = Array.length(#kids(r))
+		    val no_kids = Array.length(getKids(n))
 		    val li = List.tabulate(no_kids, 
-			      	   (fn i => layout(Array.sub(#kids(r),i))))
+			      	   (fn i => layout(Array.sub(getKids(n),i))))
 		    val xdim = if (setsVertical n)
 				   then List.foldl (maxi(st)) 0 li
 			       else List.foldl (sum(st)) 0 li
