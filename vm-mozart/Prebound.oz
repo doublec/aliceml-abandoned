@@ -184,7 +184,7 @@ define
    Env = env('false': false
 	     'true': true
 	     'nil': nil
-	     'cons': '|'
+	     'cons': '::'
 	     'Match': Match
 	     'Bind': Bind
 	     'eq': fun {$ X#Y} X == Y end
