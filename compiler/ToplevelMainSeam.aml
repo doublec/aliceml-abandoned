@@ -17,4 +17,5 @@ import structure CommandLine       from "../lib/system/CommandLine"
 import structure SMLToSeamToplevel from "top/SMLToSeamToplevel"
 
 val use = SMLToSeamToplevel.use
+val quit = fn () => OS.Process.exit OS.Process.success;
 val _ = spawn OS.Process.exit(SMLToSeamToplevel.main(CommandLine.arguments()))
