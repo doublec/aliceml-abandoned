@@ -284,7 +284,7 @@
       ldarg.0
       ldfld class System.Collections.Hashtable StockWerk.Komponist::Table
       ldarg.1
-      call class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      call class System.Object System.Collections.Hashtable::GetItem(class System.Object)
       dup
       brfalse.s load
       castclass StockWerk.StockWert
@@ -403,10 +403,10 @@
       ldc.i4.1
       ret
     }
-    .method virtual public class System.Object GetRealObject() {
+    .method instance class System.Object GetRealObject() {
       ldsfld class System.Collections.Hashtable StockWerk.RecordArity::ArityTable
       ldarg.0
-      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      call instance class System.Object System.Collections.Hashtable::GetItem(class System.Object)
       dup
       brfalse.s enter
       ret
@@ -417,6 +417,11 @@
       ldarg.0
       call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
       ldarg.0
+      ret
+    }
+    .method virtual public class System.Object GetRealObject(value class System.Serialization.StreamingContext) {
+      ldarg.0
+      tail. call instance class System.Object StockWerk.RecordArity::GetRealObject()
       ret
     }
     .method public int32 Select(class System.String) {
@@ -527,32 +532,28 @@
     }
     .method virtual public class System.Reflection.MemberInfo[] GetMembers(value class System.Serialization.StreamingContext) {
       ldarg.0
-      callvirt instance class System.Type System.Object::GetType()
+      call instance class System.Type System.Object::GetType()
       ldc.i4.1   // also return private members //--** get from arg.1
       tail. callvirt instance class System.Reflection.MemberInfo[] System.Type::GetMembers(bool)
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
-      .locals(class System.Serialization.SerializationTypeData, value class System.Serialization.SerializationInfo)
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
+      .locals(value class System.Serialization.SerializationInfo)
       ldloca.s 0
       initobj System.Serialization.SerializationInfo
       ldloca.s 0
       ldarg.0
-      callvirt instance class System.Type System.Object::GetType()
+      call instance class System.Type System.Object::GetType()
+      dup
       ldarg.1
-      call class System.Serialization.SerializationTypeData System.Serialization.SerializationInfoGenerator::GetSerializationTypeData(class System.Type, int32)
-      stloc.0
-      ldloca.s 1
-      initobj System.Serialization.SerializationInfo
-      ldloca.s 1
-      ldloc.0
+      call class System.Reflection.MemberInfo[] System.Serialization.SerializationInfoGenerator::GetSerializableMembers(class System.Type, value class System.Serialization.StreamingContext)
       ldarg.0
-      call instance void System.Serialization.SerializationInfo::.ctor(class System.Serialization.SerializationTypeData, class System.Object)
+      call instance void System.Serialization.SerializationInfo::.ctor(class System.Type, class System.Reflection.MemberInfo[], class System.Object)
       ldarg.0
-      ldloca.s 1
+      ldloca.s 0
       ldobj System.Serialization.SerializationInfo
       call void System.Serialization.SerializationInfoGenerator::PopulateSerializationInfo(class System.Object, value class System.Serialization.SerializationInfo)
-      ldloc.1
+      ldloc.0
       ret
     }
     .method virtual public void PopulateData(class System.Reflection.MemberInfo[], value class System.Variant[]) {
@@ -573,7 +574,7 @@
       ldloc.0
       ldelema System.Variant
       ldobj System.Variant
-      callvirt instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
+      call instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
       ldloc.0
       ldc.i4.1
       add
@@ -594,7 +595,7 @@
       call instance void System.Variant::.ctor(class System.Object)
       ldloca.s 0
       ldobj System.Variant
-      tail. callvirt instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
+      tail. call instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
       ret
     }
   }
@@ -610,9 +611,12 @@
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
+//--** this is very strange indeed:
+ldstr "" call void System.Console::Write(class System.String)
       ldarg.0
       ldnull
       stfld class System.Object StockWerk.Global::Guid
+ldstr "" call void System.Console::Write(class System.String)
       ret
     }
     .method public static void Enter(class System.Object, class StockWerk.StockWert) {
@@ -639,11 +643,11 @@
     .method public static class StockWerk.StockWert Localize(class System.Object, class StockWerk.StockWert) {
       ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
       ldarg.0
-      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      call instance class System.Object System.Collections.Hashtable::GetItem(class System.Object)
       dup
       brfalse.s enter
       castclass System.WeakReference
-      call instance class System.Object System.WeakReference::get$Target()
+      call instance class System.Object System.WeakReference::GetTarget()
       dup
       brfalse.s enter
       castclass StockWerk.StockWert
@@ -656,7 +660,7 @@
       ldarg.1
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       brtrue.s serialize
@@ -666,14 +670,13 @@
       stfld class System.Object StockWerk.Global::Guid
     serialize:
       ldarg.0
-      ldarg.1
-      ldarga.s 2
+      ldarga.s 1
       ldobj System.Serialization.StreamingContext
       //--** putting a tail. instruction here breaks things (NullReferenceException in super)
-      call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamingContext)
+      call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(value class System.Serialization.StreamingContext)
       ret
     }
-    .method virtual public class System.Object GetRealObject() {
+    .method virtual public class System.Object GetRealObject(value class System.Serialization.StreamingContext) {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       ldarg.0
@@ -1114,7 +1117,7 @@
       stfld class StockWerk.StockWert StockWerk.Ref::Value
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
@@ -1576,17 +1579,14 @@
       tail. callvirt instance bool StockWerk.StockWert::Select(class System.String)
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
       ldarg.0
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
-      pop
-      ldarg.0
       ldarg.1
-      ldarg.2
-      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamingContext)
+      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(value class System.Serialization.StreamingContext)
       ret
     }
-    .method virtual public class System.Object GetRealObject() {
+    .method virtual public class System.Object GetRealObject(value class System.Serialization.StreamingContext) {
       ldarg.0
       tail. callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       ret
@@ -2169,7 +2169,7 @@
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
-      call class System.Thread System.Thread::get$CurrentThread()
+      call class System.Thread System.Thread::GetCurrentThread()
       stfld class System.Thread StockWerk.Thread::Thr
       ret
     }
@@ -2197,7 +2197,7 @@
       ldc.i4.0
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
@@ -2233,7 +2233,7 @@
       stfld class StockWerk.StockWert[] StockWerk.Array::Values
       ret
     }
-    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(value class System.Serialization.StreamingContext) {
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
@@ -2806,11 +2806,12 @@
       ldfld class System.String StockWerk.String::Value
       ldc.i4.3   // System.IO.FileMode::Open
       ldc.i4.1   // System.IO.FileAccess::Read
-      newobj instance void System.IO.FileStream::.ctor(class System.String, int32, int32)
+      newobj instance void System.IO.FileStream::.ctor(class System.String, value class System.IO.FileMode, value class System.IO.FileAccess)
       dup
       stloc.0
       newobj instance void System.Serialization.PseudoMLFormatter::.ctor(class System.IO.Stream)
-      callvirt instance class System.Object System.Serialization.Formatter::Deserialize()
+      ldnull
+      callvirt instance class System.Object System.Serialization.Formatter::Deserialize(class System.Serialization.HeaderHandler)
       ldloc.0
       callvirt instance void System.IO.Stream::Close()
       castclass StockWerk.StockWert
@@ -2846,13 +2847,13 @@
       ldfld class System.String StockWerk.String::Value
       ldc.i4.2   // System.IO.FileMode::Create
       ldc.i4.2   // System.IO.FileAccess::Write
-      newobj instance void System.IO.FileStream::.ctor(class System.String, int32, int32)
+      newobj instance void System.IO.FileStream::.ctor(class System.String, value class System.IO.FileMode, value class System.IO.FileAccess)
       dup
       stloc.0
       newobj instance void System.Serialization.PseudoMLFormatter::.ctor(class System.IO.Stream)
       ldarg.1
-      ldc.i4.5   // System.Serialization.FormatterEnum::PrivateFields + PublicFields
-      callvirt instance void System.Serialization.Formatter::Serialize(class System.Object, int32)
+      ldnull
+      callvirt instance void System.Serialization.Formatter::Serialize(class System.Object, value class System.Serialization.Header[])
       ldloc.0
       callvirt instance void System.IO.Stream::Close()
       ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
@@ -3158,6 +3159,8 @@
       stloc.0
       ldarga.s 0
       call instance class System.Object System.Variant::ToObject()
+//--** castclass StockWerk.StockWert //--** does not work
+pop ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
       ret
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Component
