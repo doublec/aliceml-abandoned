@@ -16,7 +16,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include "adt/HashTable.hh"
 #include "generic/RootSet.hh"
 #include "generic/Tuple.hh"
 #include "generic/ConcreteCode.hh"
@@ -235,30 +234,40 @@ StringOutputStream *StringOutputStream::New() {
   return stream;
 }
 
-// to be done
-class Seen: private Queue {
+class Seen : private Block {
 private:
-  static const u_int initialQueueSize = 8; //--** to be checked
+  static const u_int COUNTER_POS = 0;
+  static const u_int TABLE_POS   = 1;
+  static const u_int SIZE        = 2;
+  static const u_int initialSize = 8; //--** to be checked
 public:
   static const u_int NOT_FOUND = static_cast<u_int>(-1);
 
-  using Queue::ToWord;
+  using Block::ToWord;
 
   static Seen *New() {
-    return static_cast<Seen *>(Queue::New(initialQueueSize));
+    Block *p = Store::AllocBlock(MIN_DATA_LABEL, SIZE);
+    p->InitArg(COUNTER_POS, 0);
+    p->InitArg(TABLE_POS, BlockHashTable::New(initialSize)->ToWord());
+    return static_cast<Seen *>(p);
   }
   static Seen *FromWordDirect(word w) {
-    return static_cast<Seen *>(Queue::FromWordDirect(w));
+    return static_cast<Seen *>(Store::DirectWordToBlock(w));
   }
 
   void Add(Block *v) {
-    Enqueue(v->ToWord());
+    word counter          = GetArg(COUNTER_POS);
+    BlockHashTable *table = BlockHashTable::FromWordDirect(GetArg(TABLE_POS));
+    table->InsertItem(v->ToWord(), counter);
+    InitArg(COUNTER_POS, Store::DirectWordToInt(counter) + 1);
   }
   u_int Find(Block *v) {
-    for (u_int i = GetNumberOfElements(); i--; )
-      if (Store::DirectWordToBlock(GetNthElement(i)) == v)
-	return i;
-    return NOT_FOUND;
+    word vw               = v->ToWord();
+    BlockHashTable *table = BlockHashTable::FromWordDirect(GetArg(TABLE_POS));
+    if (table->IsMember(vw))
+      return Store::DirectWordToInt(table->GetItem(vw));
+    else
+      return NOT_FOUND;
   }
 };
 
