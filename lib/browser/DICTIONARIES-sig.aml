@@ -21,18 +21,15 @@ import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
 signature DICTIONARIES = 
 sig
     structure Main: MK_DICTIONARY
-    structure RelMan: MK_DICTIONARY
-    structure ReinspectedRel: MK_DICTIONARY  	
+    structure RelMan: MK_DICTIONARY 	
     structure Transient: MK_DICTIONARY 
 
     type main = Main.dictionary
     type relman = RelMan.dictionary
-    type reinspected = ReinspectedRel.dictionary
     type transient = Transient.dictionary
 
     val maindict: main  
     val reldict: relman
-    val ri_reldict: reinspected
     val transdict: transient
 
 end

@@ -1097,7 +1097,7 @@ fun setVisible (x,y) = let
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
 	    val root = (new();stopButtonSetActive(true)
 			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(V va,ref 0,0)]))
-			; relnumber := 1
+			; relnumber := 0
 			;!canvasroot)
 	    val n = NewNode.newNode(va,t,i,root)	
             val line = (Layout.layout(n)
@@ -1122,7 +1122,7 @@ fun setVisible (x,y) = let
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
 	    val root = (new();stopButtonSetActive(true)
 			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,[(M va,ref 0,0)]))
-			; relnumber := 1
+			; relnumber := 0
 			;!canvasroot)
 	    val n = NewNode.newNodeInf(va,t,i,root)	
             val line =( Layout.layout(n)

@@ -26,20 +26,16 @@ struct
 
     structure Main = MkDictionary(type t =  Node.node * GtkSupport.tag)
 
-    structure RelMan = MkDictionary(type t = Node.node list)
-
-    structure ReinspectedRel = MkDictionary(type t = Node.node list)
+    structure RelMan = MkDictionary(type t = (Node.value * int ref * int) list)
 
     structure Transient = MkDictionary(type t = Reflect.value * Node.node list)
 
     type main = Main.dictionary
     type relman = RelMan.dictionary
-    type reinspected = ReinspectedRel.dictionary
     type transient = Transient.dictionary
 	
     val maindict = Main.empty
     val reldict = RelMan.empty
-    val ri_reldict = ReinspectedRel.empty
     val transdict = Transient.empty
 
 end
