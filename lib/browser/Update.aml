@@ -44,9 +44,6 @@ struct
     
     exception UpdateError
      
-    val minCounter = ref (MainDictionary.getHighestIndexAssigned
-			  (Dictionaries.dict))
-	
     (* updateChild *)
     fun updateChild (p,i,n) = case p of
 	Concat(r) => (Array.update(#kids(r),i,n)
