@@ -72,7 +72,7 @@ word TaskStack::emptyTask;
 
 void TaskStack::Init() {
   Interpreter *interpreter = new EmptyTaskInterpreter();
-  StackFrame *frame = StackFrame::New(PRIMITIVE_FRAME, interpreter);
+  StackFrame *frame = StackFrame::New(BOTTOM_FRAME, interpreter);
   emptyTask = frame->ToWord();
   RootSet::Add(emptyTask);
 }
