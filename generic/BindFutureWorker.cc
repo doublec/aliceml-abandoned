@@ -68,8 +68,8 @@ Interpreter::Result ByneedInterpreter::Run(word args, TaskStack *taskStack) {
   args = Interpreter::Construct(args); // Argument Conversion
   // Prevent self binding
   if (IsCyclic(args, future)) {
-    future->Become(CANCELLED_LABEL, Future::cyclicExn);
-    Scheduler::currentData = Future::cyclicExn;
+    future->Become(CANCELLED_LABEL, Hole::cyclicExn);
+    Scheduler::currentData = Hole::cyclicExn;
     Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
     return Interpreter::RAISE;
   }
