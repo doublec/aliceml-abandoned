@@ -1,10 +1,15 @@
 (* print after preprocessing: ML code + embedded tokens + parsers *)
+
+
+(* replaced 'lexer' with 'lexxer' because of problems with hose *)
+
+
 structure Output =
 struct
     (* evaluate only after parse? *)
     val closure = false
     (* print error structure at the beginning ? *)
-    val printErrorStruct = false
+    val printErrorStruct = true
     (* print description file *)
     val description = true
 
@@ -133,10 +138,10 @@ struct
 		^" (fn () => ()), p1, p2))\n" 
 	      | cases (t::ts) = (constrCase t)^"\n    | "^(cases ts)
 	in
-	    "\n(* lexer -> (unit -> (SValue.svalue, pos) Token.token),\n "
-	    ^"      where type lexer = unit -> (token * pos * pos) *)"
-	    ^"\nfun toInternalToken lexer =\n"
-	    ^"    fn () =>\n    case lexer() of\n"
+	    "\n(* lexxer -> (unit -> (SValue.svalue, pos) Token.token),\n "
+	    ^"      where type lexxer = unit -> (token * pos * pos) *)"
+	    ^"\nfun toInternalToken lexxer =\n"
+	    ^"    fn () =>\n    case lexxer() of\n"
 	    ^"      "^(cases terms)
 	end
 
@@ -242,22 +247,22 @@ struct
 	    val _ = issueWarnings errs
 	    val structureName = structureName ()
 	    val structureName2 = "rmConstrStatus"^(timeStamp())
-	    val structureName3 = "ErrorStuct"^(timeStamp())
+	    val structureName3 = "ErrorStruct"^(timeStamp())
 
 	    fun parserDecToString  [] = ""
 	      | parserDecToString  ((name,ty,sr)::ds) =
 		let val prefix = case ty of
 		    NONE => "val "^name^" "
-		  | SOME ty => "val "^name^" : lexer -> "^ty^" "
+		  | SOME ty => "val "^name^" : lexxer -> "^ty^" "
 		    val decString = "\nlocal structure J = "^structureName^"\nin\n"
 		    val n = !currParser
-		    val s = decString^prefix^" = fn lexer =>\n"
-			^"let val (a as (_,p1,p2)) = lexer()\n"
+		    val s = decString^prefix^" = fn lexxer =>\n"
+			^"let val (a as (_,p1,p2)) = lexxer()\n"
 			^"    val f = fn _ => J.Token.TOKEN(J.LrTable.T "
 			^(Int.toString n)^", (J.SValue."
 			^((fn (a,_) => a)(List.nth (termlist,n)))^" (fn _ => ()),p1,p2))\n"
-			^"    val lexer1 = J.Misc.mkGet (fn _ => a) lexer\n"
-			^"    val lexer2 = J.Misc.mkGet f (J.toInternalToken lexer1)\n"
+			^"    val lexxer1 = J.Misc.mkGet (fn _ => a) lexxer\n"
+			^"    val lexxer2 = J.Misc.mkGet f (J.toInternalToken lexxer1)\n"
 			^"    val arg = ()\n"
 			^"    val table = J.generatedLrTable\n"
 			^"    val saction = J.SAction.actions\n"
@@ -267,7 +272,7 @@ struct
 			^"    fun extract (J.SValue."^(Translate.start)^" a) =\n"
 			^"        case a () of (J.SValue.S"^(Int.toString n)^" b) => b\n"
 			^"in\n    extract (J.LrParser.parse {arg=arg,\n" 
-			^"                            lexer=lexer2,\n"
+			^"                            lexxer=lexxer2,\n"
 			^"                            saction=saction,\n"
 			^"                            table=table,\n"
 			^"                            void=void,\n"

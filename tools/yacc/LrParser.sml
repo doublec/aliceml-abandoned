@@ -1,6 +1,10 @@
 (* adapted from ML-Yacc Parser Generator 
    (c) 1989 Andrew W. Appel, David R. Tarditi 
 *)
+
+(* replaced 'lexer' with 'lexxer' because of problems with hose *)
+
+
 signature TOKEN =
     sig
 	structure LrTable : LR_TABLE
@@ -19,7 +23,7 @@ signature LR_PARSER_ENG =
 	(* exception ParseError *)
 
 	val parse : {table : LrTable.table,
-		     lexer : unit -> ('_b,'_c) Token.token,
+		     lexxer : unit -> ('_b,'_c) Token.token,
 		     arg: 'arg,
 		     saction : int * '_c *
 		               (LrTable.state * ('_b * '_c * '_c)) list * 
@@ -69,7 +73,7 @@ structure LrParserEng : LR_PARSER_ENG =
 
       val parse = fn {arg : 'a,
 		      table : LrTable.table,
-		      lexer : unit -> ('_b,'_c) token,
+		      lexxer : unit -> ('_b,'_c) token,
 		      saction : int * '_c * ('_b,'_c) stack * 'a ->
 				nonterm * ('_b * '_c * '_c) * ('_b,'_c) stack,
 		      void : '_b,
@@ -101,7 +105,7 @@ structure LrParserEng : LR_PARSER_ENG =
 		    stack as (state,_) :: _ : ('_b ,'_c) stack) =
          case (if DEBUG then prAction(stack, next,action(state, terminal))
                else action(state, terminal))
-              of SHIFT s => parseStep(get lexer, (s,value) :: stack)
+              of SHIFT s => parseStep(get lexxer, (s,value) :: stack)
                | REDUCE i =>
 		    let val (nonterm,value,stack as (state,_) :: _ ) =
 					 saction(i,leftPos,stack,arg)
@@ -113,7 +117,7 @@ structure LrParserEng : LR_PARSER_ENG =
   	       | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
 			   in topvalue
 			   end
-      val next as (TOKEN (terminal,(_,leftPos,_))) = get lexer
+      val next as (TOKEN (terminal,(_,leftPos,_))) = get lexxer
    in parseStep(next,[(initialState table,(void,leftPos,leftPos))])
    end
 end;

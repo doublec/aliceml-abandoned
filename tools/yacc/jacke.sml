@@ -4,6 +4,8 @@
    - performing semantic analysis
 *)
 
+(* replaced 'lexer' with 'lexxer' because of problems with hose *)
+
 
 structure Parse =
 struct 
@@ -24,8 +26,8 @@ struct
           val file = TextIO.openIn filename
           fun get _ = TextIO.input file
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
-          val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
-          val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
+          val lexxer = LrParser.Stream.streamify (Lex.makeLexer get)
+          val (absyn, _) = jackeP.parse(30,lexxer,parseerror,())
 	  val _ = AbsSyn.semanticalAnalysis absyn
 	  val absyn = AbsSyn.removePos absyn
        in TextIO.closeIn file;	   
@@ -38,8 +40,8 @@ struct
           val file = TextIO.openIn filename
           fun get _ = TextIO.input file
           fun parseerror(s,p1,p2) = ErrorMsg.error p1 s
-          val lexer = LrParser.Stream.streamify (Lex.makeLexer get)
-          val (absyn, _) = jackeP.parse(30,lexer,parseerror,())
+          val lexxer = LrParser.Stream.streamify (Lex.makeLexer get)
+          val (absyn, _) = jackeP.parse(30,lexxer,parseerror,())
        in TextIO.closeIn file;	   
            absyn
       end handle LrParser.ParseError => raise ErrorMsg.Error

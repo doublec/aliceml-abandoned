@@ -28,3 +28,5 @@ mkprstruct.sml
 verbose.sml
 output.sml
 
+Main.sml
+MAIN-sig.sml
