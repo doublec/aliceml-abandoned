@@ -18,6 +18,7 @@
  * Extensions and modifications:
  *   - more liberal constant prefixes (allow 0xw)
  *   - binary int and word constants (0b010, 0wb010)
+ *   - allow underscores in numbers
  *   - longids have been moved to the context-free grammar,
  *     so the LONGID token is substituted by a DOT token
  *   - #[ keyword for vector expressions
@@ -226,24 +227,30 @@
   digit      = [0-9];
   bindigit   = [0-1];
   hexdigit   = [0-9a-fA-F];
+  xdigit     = {digit} | "_";
+  xbindigit  = {bindigit} | "_";
+  xhexdigit  = {hexdigit} | "_";
+  digits     = {xdigit}*{digit}{xdigit}*;
+  bindigits  = {xbindigit}*{bindigit}{xbindigit}*;
+  hexdigits  = {xhexdigit}*{hexdigit}{xhexdigit}*;
 
-  posdecint  = {digit}+;
-  posbinint  = "0b"{bindigit}+;
-  poshexint  = "0x"{hexdigit}+;
+  posdecint  = {digit}{xdigit}*;
+  posbinint  = "0b"{bindigits};
+  poshexint  = "0x"{hexdigits};
   negdecint  = "~"{posdecint};
   negbinint  = "~"{posbinint};
   neghexint  = "~"{poshexint};
   decint     = {posdecint} | {negdecint};
   binint     = {posbinint} | {negbinint};
   hexint     = {poshexint} | {neghexint};
-  decword    = "0w"{digit}+;
-  binword    = "0"("wb"|"bw"){bindigit}+;
-  hexword    = "0"("wx"|"xw"){hexdigit}+;
+  decword    = "0w"{digits};
+  binword    = "0"("wb"|"bw"){bindigits};
+  hexword    = "0"("wx"|"xw"){hexdigits};
 
   int        = {decint} | {binint} | {hexint};
   word       = {decword} | {binword} | {hexword};
   exp        = "e" | "E";
-  real       = ({decint}"."{digit}+ ({exp}{decint})?) | ({decint}{exp}{decint});
+  real       = ({decint}"."{digits} ({exp}{decint})?) | ({decint}{exp}{decint});
 
   numericlab = [1-9]{digit}*;
   alphanumid = {letter}({letter} | {digit} | [_'])*;
