@@ -14,36 +14,31 @@
 #define __GENERIC__NATIVE_AUTHORING_HH__
 
 #include "adt/HashTable.hh"
-#include "generic/TaskStack.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
-#define DEFINE0(name)						\
-  static Interpreter::Result name(TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();			\
-    prim_self = prim_self;					\
-    taskStack->PopFrame();
-#define DEFINE1(name)						\
-  static Interpreter::Result name(TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();			\
-    prim_self = prim_self;					\
-    taskStack->PopFrame();					\
+#define DEFINE0(name)					\
+  static Interpreter::Result name() {			\
+    word prim_self = Scheduler::GetAndPopFrame();	\
+    prim_self = prim_self;
+#define DEFINE1(name)					\
+  static Interpreter::Result name() {			\
+    word prim_self = Scheduler::GetAndPopFrame();	\
+    prim_self = prim_self;				\
     word x0 = Scheduler::currentArgs[0];
-#define DEFINE2(name)						\
-  static Interpreter::Result name(TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();			\
-    prim_self = prim_self;					\
-    taskStack->PopFrame();					\
-    word x0 = Scheduler::currentArgs[0];			\
+#define DEFINE2(name)					\
+  static Interpreter::Result name() {			\
+    word prim_self = Scheduler::GetAndPopFrame();	\
+    prim_self = prim_self;				\
+    word x0 = Scheduler::currentArgs[0];		\
     word x1 = Scheduler::currentArgs[1];
-#define DEFINE3(name)						\
-  static Interpreter::Result name(TaskStack *taskStack) {	\
-    word prim_self = taskStack->GetFrame();			\
-    prim_self = prim_self;					\
-    taskStack->PopFrame();					\
-    word x0 = Scheduler::currentArgs[0];			\
-    word x1 = Scheduler::currentArgs[1];			\
+#define DEFINE3(name)					\
+  static Interpreter::Result name() {			\
+    word prim_self = Scheduler::GetAndPopFrame();	\
+    prim_self = prim_self;				\
+    word x0 = Scheduler::currentArgs[0];		\
+    word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];
 #define END }
 
@@ -75,24 +70,22 @@
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(!!(b));
 
-#define PREEMPT {							\
-  return Interpreter::PREEMPT;		                                \
+#define PREEMPT return Interpreter::PREEMPT;
+#define SUSPEND return Interpreter::SUSPEND;
+
+#define RAISE(w) {						\
+  Scheduler::currentData = w;					\
+  Scheduler::currentBacktrace = Backtrace::New(prim_self);	\
+  return Interpreter::RAISE;					\
 }
 
-#define RAISE(w) {							\
-  Scheduler::currentData = w;                                           \
-  Scheduler::currentBacktrace = Backtrace::New(prim_self);              \
-  return Interpreter::RAISE;		                                \
+#define REQUEST(w) {				\
+  Scheduler::currentData = w;			\
+  Scheduler::PushFrameNoCheck(prim_self);	\
+  return Interpreter::REQUEST;			\
 }
 
-#define REQUEST(w) {							\
-  Scheduler::currentData = w;                                           \
-  taskStack->PushFrame(prim_self);                                      \
-  return Interpreter::REQUEST;		                                \
-}
-
-#define TERMINATE							\
-  return Interpreter::TERMINATE;
+#define TERMINATE return Interpreter::TERMINATE;
 
 #define DECLARE_INT(i, x)						\
   int i = Store::WordToInt(x);						\
