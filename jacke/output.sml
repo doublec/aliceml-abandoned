@@ -281,8 +281,9 @@ struct
 	    val errorDef =
 		"(* ---error function for syntax errors: adapt to needs *)\n"
 		^"structure "^structureName3^" = \nstruct\n"
-		^"  (* val error : position-type -> string -> unit *)\n" 
-		^"  val error = fn pos => fn (errormsg :string) => ()\n"
+		^"  exception ParseError\n\n"
+		^"  (* val error : position type -> parse result type *)\n" 
+		^"  val error = fn pos => raise ParseError\n"
 		^"end\n(* --- *)\n\n"
 
 	    val p = (A.MLCode [errorDef, hack]) ::p
