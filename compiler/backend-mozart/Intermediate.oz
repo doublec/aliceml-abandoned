@@ -57,15 +57,15 @@
 %%        |  intLit(<int>)
 %%        |  charLit(<char>)
 %%        |  stringLit(<string>)
-%%        |  realLit(<string>)
+%%        |  realLit(<float>)
 %%
 %% <long id> ::= shortId(<info> <id>)
 %%            |  longId(<info> <long id> <id>)
 %% <id> ::= id(<info> <stamp> <print name>)
 %% <stamp> ::= <int>
-%% <print name> ::= exId(<string>) | inId
+%% <print name> ::= exId(<atom>) | inId
 %%
-%% <lab> ::= lab(<info> <string>)
+%% <lab> ::= lab(<info> <feature>)
 %%
 %% <info> ::= ...
 %%
@@ -74,10 +74,10 @@ functor
 export
    GetPrintName
    InfoOf
-   LabToFeature
+   LitToValue
 define
    fun {GetPrintName Id}
-      case Id of id(_ _ exId(S)) then {String.toAtom S}
+      case Id of id(_ _ exId(A)) then A
       [] id(_ _ inId) then unit
       end
    end
@@ -121,9 +121,12 @@ define
       end
    end
 
-   fun {LabToFeature S}
-      if {String.isInt S} then {String.toInt S}
-      else {String.toAtom S}
+   fun {LitToValue Lit}
+      case Lit of wordLit(W) then word(W)   %--** word({Word.make 32 W})
+      [] intLit(I) then int(I)
+      [] charLit(C) then char(C)
+      [] stringLit(S) then string({ByteString.make S})
+      [] realLit(F) then real(F)
       end
    end
 end

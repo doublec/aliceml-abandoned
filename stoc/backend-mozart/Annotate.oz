@@ -40,8 +40,10 @@ import
    CompilerSupport(newNamedName newPredicateRef)
    at 'x-oz://boot/CompilerSupport'
    Info(setValRep: SetValRep)
-   Intermediate(getPrintName infoOf labToFeature)
+   Intermediate(getPrintName infoOf litToValue)
 export
+   ValRepToValue
+   LongIdValRep
    Annotate
 define
    %%
@@ -138,15 +140,6 @@ define
    fun {ValRepToValue ValRep}
       case ValRep of _#V andthen {IsDet V} then V
       [] _#_ then top
-      end
-   end
-
-   fun {LitToValue Lit}
-      case Lit of wordLit(W) then word(W)
-      [] intLit(I) then int(I)
-      [] charLit(C) then char(C)
-      [] stringLit(S) then string({ByteString.make S})
-      [] realLit(S) then real({String.toFloat S})
       end
    end
 
@@ -257,7 +250,7 @@ define
    proc {AnnotateExp Exp State ?ValRep}
       {SetValRep {Intermediate.infoOf Exp} ValRep}
       case Exp of litExp(_ Lit) then
-	 ValRep = unit#{LitToValue Lit}
+	 ValRep = unit#{Intermediate.litToValue Lit}
       [] varExp(_ LongId) then
 	 ValRep = {LongIdValRep LongId State}
       [] conExp(_ LongId OptExp) then
@@ -277,13 +270,12 @@ define
 	 ValRep = unit#{List.toTuple record VRs}
       [] recExp(_ FieldExps) then VRPairs in
 	 VRPairs = {Map FieldExps
-		    fun {$ field(_ lab(_ S) Exp)}
-		       {Intermediate.labToFeature S}#
-		       {AddReg {AnnotateExp Exp State} State}
+		    fun {$ field(_ lab(_ Feature) Exp)}
+		       Feature#{AddReg {AnnotateExp Exp State} State}
 		    end}
 	 ValRep = unit#{List.toRecord record VRPairs}
-      [] selExp(_ lab(_ S)) then
-	 ValRep = unit#selector({Intermediate.labToFeature S})
+      [] selExp(_ lab(_ Feature)) then
+	 ValRep = unit#selector(Feature)
       [] funExp(_ id(Info Stamp _) Exp) then OldIsToplevel Reg ValRep1 in
 	 %--** generate `fast' function
 	 {Save State}
@@ -399,7 +391,7 @@ define
       case Pat of wildPat(_) then
 	 top
       [] litPat(_ Lit) then
-	 {LitToValue Lit}
+	 {Intermediate.litToValue Lit}
       [] varPat(_ id(_ Stamp _)) then
 	 {EnterValRep State Stamp {AddReg ValRep State}}
 	 {EnterRegStamp State {ValRepToReg ValRep} Stamp}
@@ -438,8 +430,8 @@ define
       [] recPat(_ FieldPats HasDots) then PatArity V in
 	 PatArity = {Arity {List.toRecord x
 			    {Map FieldPats
-			     fun {$ field(_ lab(_ S) _)}
-				{Intermediate.labToFeature S}#unit
+			     fun {$ field(_ lab(_ Feature) _)}
+				Feature#unit
 			     end}}}
 	 V = {ValRepToValue ValRep}
 	 if HasDots then
@@ -447,8 +439,8 @@ define
 	    %--** partially known record values
 	    if {Label V} == record andthen {List.sub PatArity {Arity V}} then
 	       {ForAll FieldPats
-		proc {$ field(_ lab(_ S) Pat)}
-		   _ = {AnnotatePat Pat State V.{Intermediate.labToFeature S}}
+		proc {$ field(_ lab(_ Feature) Pat)}
+		   _ = {AnnotatePat Pat State V.Feature}
 		end}
 	    else
 	       {ForAll FieldPats
@@ -460,15 +452,14 @@ define
 	 elseif {Label V} == record andthen {Arity V} == PatArity then
 	    {List.toRecord record
 	     {Map FieldPats
-	      fun {$ field(_ lab(_ S) Pat)}
-		 {Intermediate.labToFeature S}#
-		 {AnnotatePat Pat State V.{Intermediate.labToFeature S}}
+	      fun {$ field(_ lab(_ Feature) Pat)}
+		 Feature#{AnnotatePat Pat State V.Feature}
 	      end}}
 	 else
 	    {List.toRecord record
 	     {Map FieldPats
-	      fun {$ field(_ lab(_ S) Pat)}
-		 {Intermediate.labToFeature S}#{AnnotatePat Pat State unit#top}
+	      fun {$ field(_ lab(_ Feature) Pat)}
+		 Feature#{AnnotatePat Pat State unit#top}
 	      end}}
 	 end
       [] asPat(_ id(_ Stamp _) Pat) then ValRep1 ValRep2 in
