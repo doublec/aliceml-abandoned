@@ -11,6 +11,7 @@ struct
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
 	val implicitImport			= ref true
+	val implicitImportFile			= ref(NONE : string option)
 	val rttLevel				= ref NO_RTT
     end
 

@@ -86,12 +86,17 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 	fun processBasic process (desc, s) =
 	    process
 	    (desc,
-	     if !Switches.Bootstrap.implicitImport then
-		 if isBaseSig desc then s
-		 else
-		     String.map (fn #"\n" => #" " | c => c)
-		     (readFile (stockhome () ^ "Default.import")) ^ "\n" ^ s
-	     else s)
+	     if not(!Switches.Bootstrap.implicitImport)
+	     orelse isBaseSig desc then s
+	     else
+		 let
+		     val name = Option.getOpt
+				(!Switches.Bootstrap.implicitImportFile,
+				 stockhome () ^ "Default.import")
+		 in
+		     String.map (fn #"\n" => #" " | c => c) (readFile name)
+		     ^ "\n" ^ s
+		 end)
 
 	fun processString process source =
 	    processBasic process (Source.stringDesc, source)

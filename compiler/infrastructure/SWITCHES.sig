@@ -11,6 +11,7 @@ signature SWITCHES =
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
 	val implicitImport :			bool ref
+	val implicitImportFile :		string option ref
 	val rttLevel :				rtt_level ref
     end
 

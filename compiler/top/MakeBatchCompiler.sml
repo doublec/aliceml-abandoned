@@ -63,6 +63,8 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \Bootstrap options:\n\
 	      \\t--(no-)implicit-import\n\
 	      \\t\tWhether the SML Standard Basis is made available.\n\
+	      \\t--implicit-import-file <import file>\n\
+	      \\t\tSpecify file containing implicit import annotations.\n\
 	      \\t--rtt-level=no\n\
 	      \\t\tDo not generate code for runtime types.\n\
 	      \\t--rtt-level=core\n\
@@ -159,6 +161,9 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	     options rest)
 	  | options ("--rtt-level=core"::rest) =
 	    (Bootstrap.rttLevel := Bootstrap.CORE_RTT;
+	     options rest)
+	  | options ("--implicit-import-file"::file::rest) =
+	    (Bootstrap.implicitImportFile := SOME file;
 	     options rest)
 	  | options (s::rest) =
 	    if checkBooleanSwitches (s, booleanSwitches) then options rest
