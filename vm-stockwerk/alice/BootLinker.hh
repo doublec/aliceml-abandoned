@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -23,60 +25,60 @@ class String;
 
 typedef struct {
   const char *name;
-  word (*module)(void);
+  word (*init)(void);
 } prim_table;
 
-// ModuleEntry
-class ModuleEntry : private Block {
+// Component
+class Component : private Block {
 private:
   static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
   static const u_int SIGN_POS    = 0;
-  static const u_int MODULE_POS  = 1;
+  static const u_int STR_POS     = 1;
   static const u_int SIZE        = 2;
 public:
   using Block::ToWord;
-  // ModuleEntry Accessors
+  // Component Accessors
   word GetSign() {
     return GetArg(SIGN_POS);
   }
-  word GetModule() {
-    return GetArg(MODULE_POS);
+  word GetStr() {
+    return GetArg(STR_POS);
   }
-  // ModuleEntry Constructor
-  static ModuleEntry *New(word sign, word module) {
+  // Component Constructor
+  static Component *New(word sign, word str) {
     Block *p = Store::AllocBlock((BlockLabel) ENTRY_LABEL, SIZE);
     p->InitArg(SIGN_POS, sign);
-    p->InitArg(MODULE_POS, module);
-    return (ModuleEntry *) p;
+    p->InitArg(STR_POS, str);
+    return (Component *) p;
   }
-  // ModuleEntry Untagging
-  static ModuleEntry *FromWord(word entry) {
+  // Component Untagging
+  static Component *FromWord(word entry) {
     Block *p = Store::DirectWordToBlock(entry);
     Assert(p != INVALID_POINTER && p->GetLabel() == (BlockLabel) ENTRY_LABEL);
-    return (ModuleEntry *) p;
+    return (Component *) p;
   }
 };
 
 class BootLinker {
 private:
-  static word moduleTable;
+  static word componentTable;
   static u_int traceFlag;
   static char *aliceHome;
-  static HashTable *GetModuleTable() {
-    return HashTable::FromWordDirect(moduleTable);
+  static HashTable *GetComponentTable() {
+    return HashTable::FromWordDirect(componentTable);
   }
 public:
   // BootLinker Functions
   static void Trace(const char *prefix, Chunk *key);
   static void EnterComponent(Chunk *key, word sign, word str) {
-    GetModuleTable()->InsertItem(key->ToWord(),
-				 ModuleEntry::New(sign, str)->ToWord());
+    GetComponentTable()->InsertItem(key->ToWord(),
+				    Component::New(sign, str)->ToWord());
   }
-  static ModuleEntry *LookupComponent(Chunk *key) {
-    HashTable *moduleTable = GetModuleTable();
+  static Component *LookupComponent(Chunk *key) {
+    HashTable *componentTable = GetComponentTable();
     word keyWord = key->ToWord();
-    if (moduleTable->IsMember(keyWord)) {
-      return ModuleEntry::FromWord(moduleTable->GetItem(keyWord));
+    if (componentTable->IsMember(keyWord)) {
+      return Component::FromWord(componentTable->GetItem(keyWord));
     } else {
       return INVALID_POINTER;
     }
