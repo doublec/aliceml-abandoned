@@ -28,20 +28,6 @@
 #include "alice/AliceDebuggerEvent.hh"
 #include "alice/DebugEnvironment.hh"
 
-#ifdef DEBUG_CHECK
-static word dead;
-#endif
-
-#ifdef LIVENESS_DEBUG
-static const BlockLabel DEAD_LABEL = HASHNODE_LABEL;
-
-static void DisassembleAlice(Closure *closure) {
-  AliceConcreteCode *concreteCode =
-    AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  concreteCode->Disassemble(stderr);
-}
-#endif
-
 inline word GetIdRef(word idRef, Closure *globalEnv, 
 		     AbstractCodeFrame::Environment *localEnv) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
@@ -287,10 +273,6 @@ AbstractCodeInterpreter *AbstractCodeInterpreter::self;
 
 void AbstractCodeInterpreter::Init() {
   self = new AbstractCodeInterpreter();
-#ifdef DEBUG_CHECK
-  dead = String::New("UNINITIALIZED OR DEAD")->ToWord();
-  RootSet::Add(dead);
-#endif
 }
 
 Transform *

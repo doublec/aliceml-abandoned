@@ -27,6 +27,9 @@
 #if DEBUGGER
 #include "alice/DebugEnvironment.hh"
 #endif
+#if DEBUG_CHECK
+#include "alice/AbstractCodeFrame.hh"
+#endif
 
 word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
@@ -144,7 +147,9 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 #else
   concreteCodeConstructor = AliceConcreteCode::New;
 #endif
-
+#if DEBUG_CHECK
+  AbstractCodeFrame::Init();
+#endif
 #if DEBUGGER
   // Initialize Debugger Components
   DebugEnvironment::Init();

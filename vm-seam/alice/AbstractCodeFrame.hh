@@ -23,6 +23,20 @@
 #include "alice/AbstractCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 
+#ifdef DEBUG_CHECK
+static word dead;
+#endif
+
+#ifdef LIVENESS_DEBUG
+static const BlockLabel DEAD_LABEL = HASHNODE_LABEL;
+
+static void DisassembleAlice(Closure *closure) {
+  AliceConcreteCode *concreteCode =
+    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+  concreteCode->Disassemble(stderr);
+}
+#endif
+
 // AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame: public StackFrame {
 protected:
@@ -54,7 +68,7 @@ public:
 	}
       }
 #else
-      Assert(value != AliceLanguageLayer::undefinedValue);
+      Assert(value != dead);
 #endif
       return value;
     }
@@ -70,7 +84,7 @@ public:
 #else
     void Kill(word id, TagVal *, Closure *) {
 #ifdef DEBUG_CHECK
-      Update(Store::WordToInt(id), AliceLanguageLayer::undefinedValue);
+      Update(Store::WordToInt(id), dead);
 #else
       Update(Store::WordToInt(id), Store::IntToWord(0));
 #endif
@@ -128,5 +142,12 @@ public:
     frame->InitArg(FORMAL_ARGS_POS, formalArgs);
     return STATIC_CAST(AbstractCodeFrame *, frame);
   }
+#ifdef DEBUG_CHECK
+  static void Init() {
+    dead = String::New("UNINITIALIZED OR DEAD")->ToWord();
+    RootSet::Add(dead);
+  }
+#endif
+
 };
 #endif
