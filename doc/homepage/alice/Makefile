@@ -28,8 +28,8 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	array.php3 alt.php3 bool.php3 byneed.php3 char.php3 \
 	general.php3 ieee-real.php3 mono-array.php3 mono-vector.php3 \
 	option.php3 pair.php3 ref.php3 vector.php3 \
-	thread.php3 resolver-handler.php3 resolver.php3 component.php3 \
-	component-manager.php3
+	thread.php3 url.php3 resolver-handler.php3 resolver.php3 \
+	component.php3 component-manager.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
