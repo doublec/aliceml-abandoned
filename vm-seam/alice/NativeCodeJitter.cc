@@ -690,7 +690,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame_PutCode(JIT_V2, JIT_R0);
       (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
       for (u_int i = info->nLocals; i--;)
-  	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
+	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
       CheckPreempt(info->pc);
       NativeCodeFrame_GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
@@ -711,7 +711,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame_PutCode(JIT_V1, JIT_R0);
       (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
       for (u_int i = info->nLocals; i--;)
-  	NativeCodeFrame_PutEnv(JIT_V1, i, JIT_R0);
+	NativeCodeFrame_PutEnv(JIT_V1, i, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
       // Intra chunk jumps remain immediate
       CheckPreemptImmediate(info->pc);
@@ -2064,7 +2064,6 @@ TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   CompileBranch(TagVal::FromWordDirect(pc->Sel(0)));
   ImmediateEnv::Replace(handlerPC, Store::IntToWord(GetRelativePC()));
   JIT_LOG_MESG("executing exception handler\n");
-  RestoreRegister();
   TagVal *idDef1 = TagVal::FromWord(pc->Sel(1));
   if (idDef1 != INVALID_POINTER)
     MoveMemValToLocalEnv(idDef1->Sel(0), Scheduler_GetZeroArg());
@@ -2820,7 +2819,9 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
   char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
-  if ((!strcmp(filename, "file:d:/cygwin/home/bruni/bug.aml")) && ((Store::DirectWordToInt(coord1->Sel(1)) == 11) || (Store::DirectWordToInt(coord1->Sel(1)) == 21))) {
+  if ((!strcmp(filename, "file:/local/rossberg/alice3/bug.aml")) && 
+1){
+//((Store::DirectWordToInt(coord1->Sel(1)) == 11) || //(Store::DirectWordToInt(coord1->Sel(1)) == 21))) {
     fprintf(stderr, "Disassembling function at %s:%d.%d\n\n",
   	    String::FromWordDirect(coord1->Sel(0))->ExportC(),
   	    Store::DirectWordToInt(coord1->Sel(1)),
@@ -2894,6 +2895,17 @@ NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
   if (setjmp(jumpEnv)==0) {
     CompileInstr(TagVal::FromWordDirect(abstractCode->Sel(5)));
     Chunk *code = CopyCode(codeStart);
+#if 0
+  // Halt
+  Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
+  char *filename = String::FromWordDirect(coord1->Sel(0))->ExportC();
+  if ((!strcmp(filename, "file:/local/rossberg/alice3/bug.aml")) && 
+1){
+//((Store::DirectWordToInt(coord1->Sel(1)) == 11) || //(Store::DirectWordToInt(coord1->Sel(1)) == 21))) {
+    fprintf(stderr, "Halt after jitting code at address %p\n", codeStart);
+    *(int *)0 = 42;
+  }
+#endif
     // Export ConcreteCode
     return NativeConcreteCode::NewInternal(abstractCode, code,
                                            ImmediateEnv::ExportEnv(),
