@@ -74,27 +74,25 @@ struct
 	end
 
     fun load' resolver url =
-	let
-	    val name = Url.toStringRaw url   (*--** use getLocalPath instead *)
-	in
-	    case Resolver.localize resolver name of
-		SOME (Resolver.FILE name') =>
-		    (UnsafeComponent.load name'
-		     handle Corrupt =>
-			 UnsafeComponent.linkNative name'
-			 handle cause as UnsafeComponent.Native msg =>
-				(trace ("linkNative: " ^ msg);
-				 raise IO.Io {name, function = "load", cause})
-			      | cause as Corrupt =>
-				(trace ("linkNative: \
-					\could not resolve symbol");
-				 raise IO.Io {name, function = "load", cause}))
-	      | SOME (Resolver.STRING string) =>
-		    (UnsafeComponent.unpack_ string
-		     handle cause =>
-			 raise IO.Io {name, function = "load", cause})
-	      | NONE => raise IO.Io {name, function = "load", cause = NotFound}
-	end
+	case Resolver.localize resolver url of
+	    SOME (Resolver.FILE name) =>
+		(UnsafeComponent.load name
+		 handle Corrupt =>
+		     UnsafeComponent.linkNative name
+		     handle cause as UnsafeComponent.Native msg =>
+			    (trace ("linkNative: " ^ msg);
+			     raise IO.Io {name, function = "load", cause})
+			  | cause as Corrupt =>
+			    (trace ("linkNative: \
+				    \could not resolve symbol");
+			     raise IO.Io {name, function = "load", cause}))
+	  | SOME (Resolver.STRING string) =>
+		(UnsafeComponent.unpack_ string
+		 handle cause =>
+		     raise IO.Io {name = Url.toStringRaw url,
+				  function = "load", cause})
+	  | NONE => raise IO.Io {name = Url.toStringRaw url,
+				 function = "load", cause = NotFound}
 
     val load = load' defaultResolver
 

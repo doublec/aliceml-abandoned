@@ -20,11 +20,11 @@ signature RESOLVER_HANDLER =
 	exception Syntax
 
 	val default: handler
-	val root: string -> handler
-	val cache: string -> handler
+	val root: Url.t -> handler
+	val cache: Url.t -> handler
 	val prefix: string * string -> handler
 	val pattern: string * string -> handler    (* Syntax *)
-	val custom: string * (string -> Url.t option) -> handler
+	val custom: string * (Url.t -> Url.t option) -> handler
 
 	val parse: string -> handler list          (* Syntax *)
     end

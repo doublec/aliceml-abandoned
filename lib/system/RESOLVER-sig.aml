@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Url              from "Url"
 import signature RESOLVER_HANDLER from "RESOLVER_HANDLER-sig"
 
 signature RESOLVER =
@@ -25,5 +26,5 @@ signature RESOLVER =
 
 	val new: {name: string, handlers: Handler.t list,
 		  memoize: bool} -> resolver
-	val localize: resolver -> string -> result option
+	val localize: resolver -> Url.t -> result option
     end

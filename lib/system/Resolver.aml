@@ -24,7 +24,7 @@ structure Resolver: RESOLVER =
     struct
 	structure Handler =
 	    struct
-		type handler = string * (string -> Url.t option)
+		type handler = string * (Url.t -> Url.t option)
 		type t = handler
 
 		exception Syntax
@@ -42,24 +42,16 @@ structure Resolver: RESOLVER =
 			  | _ => Url.setPath (url, path @ [""])
 		    end
 
-		val default =
-		    ("default",
-		     fn s =>
-			SOME (expandUrl (Url.fromString s))
-			handle Url.Malformed => NONE)
+		val default = ("default", fn url => SOME (expandUrl url))
 
-		fun root s =
+		fun root base =
 		    let
-			val base = baseUrl (Url.fromString s)
-			fun f s =
-			    let
-				val rel = Url.fromString s
-			    in
-				if Url.isAbsolutePath rel then NONE
-				else SOME (expandUrl (Url.resolve base rel))
-			    end handle Url.Malformed => NONE
+			val base = baseUrl base
+			fun f rel =
+			    if Url.isAbsolutePath rel then NONE
+			    else SOME (expandUrl (Url.resolve base rel))
 		    in
-			("root " ^ s, f)
+			("root " ^ Url.toStringRaw base, f)
 		    end
 
 		fun cacheUrl url =
@@ -81,20 +73,16 @@ structure Resolver: RESOLVER =
 			Url.setPath (Url.empty, path)
 		    end
 
-		fun cache s =
+		fun cache base =
 		    let
-			val base = baseUrl (Url.fromString s)
-			fun f s =
-			    let
-				val url = Url.fromString s
-			    in
-				if isSome (Url.getScheme url) then
-				    SOME (expandUrl (Url.resolve
-							 base (cacheUrl url)))
-				else NONE
-			    end handle Url.Malformed => NONE
+			val base = baseUrl base
+			fun f url =
+			    if isSome (Url.getScheme url) then
+				SOME (expandUrl (Url.resolve base
+							     (cacheUrl url)))
+			    else NONE
 		    in
-			("cache " ^ s, f)
+			("cache " ^ Url.toStringRaw base, f)
 		    end
 
 		fun dropPrefix (x::xr, y::yr) =
@@ -156,11 +144,11 @@ structure Resolver: RESOLVER =
 		    StringMap.lookupExistent (env, x)::instantiate' (rest, env)
 		  | instantiate' (nil, _) = nil
 
-		fun pattern' (p1, p2) s =
+		fun pattern' (p1, p2) url =
 		    let
 			val env = StringMap.new ()
 		    in
-			(match (p1, String.explode s, env);
+			(match (p1, String.explode (Url.toStringRaw url), env);
 			 SOME (Url.fromString (instantiate (p2, env))))
 			handle (Failure | Url.Malformed) => NONE
 		    end
@@ -181,7 +169,8 @@ structure Resolver: RESOLVER =
 			("pattern " ^ s1 ^ " -> " ^ s2, pattern' (p1, p2))
 		    end
 
-		fun custom (name, f) = ("custom", fn s => f s handle _ => NONE)
+		fun custom (name, f) =
+		    ("custom " ^ name, fn url => f url handle _ => NONE)
 
 		val sep = Config.pathSeparator
 
@@ -209,14 +198,18 @@ structure Resolver: RESOLVER =
 		  | parse' (#"r":: #"o":: #"o":: #"t":: #"="::cs) =
 		    let
 			val (arg, rest, _) = token (cs, sep, nil)
+			val argUrl = Url.fromString arg
+				     handle Url.Malformed => raise Syntax
 		    in
-			root arg::parse' rest
+			root argUrl::parse' rest
 		    end
 		  | parse' (#"c":: #"a":: #"c":: #"h":: #"e":: #"="::cs) =
 		    let
 			val (arg, rest, _) = token (cs, sep, nil)
+			val argUrl = Url.fromString arg
+				     handle Url.Malformed => raise Syntax
 		    in
-			cache arg::parse' rest
+			cache argUrl::parse' rest
 		    end
 		  | parse' (#"p":: #"r":: #"e":: #"f":: #"i":: #"x"::
 			    #"="::cs) =
@@ -241,8 +234,10 @@ structure Resolver: RESOLVER =
 		  | parse' cs =
 		    let
 			val (arg, rest, _) = token (cs, sep, nil)
+			val argUrl = Url.fromString arg
+				     handle Url.Malformed => raise Syntax
 		    in
-			root arg::parse' rest
+			root argUrl::parse' rest
 		    end
 	    end
 
@@ -293,7 +288,9 @@ structure Resolver: RESOLVER =
 			 else NONE
 		     end handle _ => NONE)
 	      | (SOME "file" | NONE) =>
-		    (*--** check that authority is empty *)
+		    (*--** check that authority is empty (Unix) *)
+		    (*--** translate authority to UNC path (Windows) *)
+		    (*--** use getLocalPath *)
 		    (let
 			 val s = Url.toStringRaw (Url.setScheme (url, NONE))
 		     in
@@ -305,21 +302,22 @@ structure Resolver: RESOLVER =
 		     end handle OS.SysErr _ => NONE)
 	      | _ => NONE
 
-	fun localize (resolver as {name, handlers, ...}) s =
-	    (trace ("[" ^ name ^ "] localize request: " ^ s ^ "\n");
-	     localize' (resolver, handlers, s))
-	and localize' (resolver as {name, ...}, (name', f)::handlers, s) =
-	    (case f s of
-		 SOME url =>
-		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url ^
+	fun localize (resolver as {name, handlers, ...}) url =
+	    (trace ("[" ^ name ^ "] localize request: " ^
+		    Url.toStringRaw url ^ "\n");
+	     localize' (resolver, handlers, url))
+	and localize' (resolver as {name, ...}, (name', f)::handlers, url) =
+	    (case f url of
+		 SOME url' =>
+		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url' ^
 			     "] (" ^ name' ^ ")\n");
-		      case exists (resolver, url) of
+		      case exists (resolver, url') of
 			  result as SOME _ => result
-			| NONE => localize' (resolver, handlers, s))
+			| NONE => localize' (resolver, handlers, url))
 	       | NONE =>
 		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
 			     name' ^ ")\n");
-		      localize' (resolver, handlers, s)))
+		      localize' (resolver, handlers, url)))
 	  | localize' ({name, ...}, nil, _) =
 	    (trace ("[" ^ name ^ "] ...all handlers failed\n"); NONE)
     end
