@@ -149,7 +149,7 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 %.ozf: %.sig
 	$(STOC_MOZART) $< $@
 
-install: $(INSTALLDIRS) $(INSTALLFILES)
+install: all $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
 	mkdir -p $@
