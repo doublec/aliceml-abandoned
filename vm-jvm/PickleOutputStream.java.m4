@@ -5,7 +5,12 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     public DMLObjectOutputStream() throws java.io.IOException {
 	super();
 	if (fcn==null)
-	    fcn=this.getClass().getClassLoader().loadClass("DMLFcnClosure");
+	    try{
+		fcn=this.getClass().getClassLoader().loadClass("DMLFcnClosure");
+	    } catch (ClassNotFoundException e) {
+		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as DMLObjectOutputStream.");
+		e.printStackTrace();
+	    }
     }
 
     public DMLObjectOutputStream(java.io.OutputStream out) throws java.io.IOException {
@@ -15,7 +20,6 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     static Class fcn = null;
 
     protected void annotateClass(Class cls) throws java.io.IOException {
-	java.io.InputStream in=null;
 	if (fcn.isAssignableFrom(cls.getSuperclass())) {
 	    byte[] bytes = null;
 	    String name = cls.getName();
@@ -23,9 +27,11 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 	    if (cl==DMLLoader.loader)
 		bytes = ((DMLLoader) cl).getBytes(name);
 	    else {
+		java.io.InputStream in = null;
+		java.io.DataInputStream din = null;
 		try {
-		    java.io.InputStream in = cl.getResourceAsStream(name+".class");
-		    java.io.DataInputStream din = new java.io.DataInputStream(in);
+		    in = cl.getResourceAsStream(name+".class");
+		    din = new java.io.DataInputStream(in);
 		    bytes = new byte[din.available()];
 		    din.readFully(bytes);
 		}
@@ -40,7 +46,7 @@ final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 			if (din!=null)
 			    din.close();
 		    } catch (java.io.IOException e) {
-			e.printStacktrace();
+			e.printStackTrace();
 		    }
 		}
 	    }
