@@ -97,8 +97,7 @@ functor MkEnums(structure TypeManager : TYPE_MANAGER
 	let
 	    val _ = print (Util.separator("Generating "^safeName))
 	    val myItems = Util.filters [Util.funNot Special.isIgnored, 
-					isItemOfSpace space, checkItem,
-					Util.funNot Special.isIgnoredSafe] tree
+					isItemOfSpace space, checkItem] tree
 
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
