@@ -1,6 +1,9 @@
 
 *** Allgemein/Ideen ***
 
+- aktuelles Problem: Finalisierung an falscher Stelle und nur bei GdkPixbuf?
+- Transient from finalStream funktioniert nicht
+
 - install -C ?
 - Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
 - Kernroutinen aus NativeGtkSpecial in eigene DLL tun

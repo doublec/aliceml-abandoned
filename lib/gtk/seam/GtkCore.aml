@@ -20,6 +20,7 @@ struct
     val NoRef = (fn p => p, fn _ => ())
 
     (* weak map *)
+(*
     local
 	val weakMap = 
 	    ref nil : ( object * (object->unit) * int list ref ) list ref
@@ -35,7 +36,7 @@ struct
 	  | finalizer ((obj as (p,unref,_))::xs) = 
 	        (weakMapRemove p ; unref p ; finalizer xs)
     end
-    
+  *)  
     (* signal table *)
     local
 	val sigTable = ref nil : (int * callBackFunction) list ref
@@ -57,7 +58,7 @@ struct
 	let
 	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
 	    val _      = addToSignalTable(connid,callback)
-	    val (_,_,ids) = weakMapGet obj (NULL,fn _ => (), ref nil)
+	    val (_,_,ids) = NativeGtkCore.weakMapCondGet(obj, (NULL,fn _ => (), ref nil))
 	    val _ = (ids := (connid::(!ids)))
 	in
 	    connid
@@ -100,17 +101,18 @@ struct
 
 	fun newObject (p,refInfo,hasSignals) =
 	    let
-		val obj     = (#1(refInfo) p, #2(refInfo), ref nil)
+		val p'  = #1(refInfo) p
+		val obj = (p', #2(refInfo), ref nil)
 	    in
 		( if hasSignals then addDestroyEvent (obj) else () ;
-  	          weakMapAdd (p,obj) )
+  	          NativeGtkCore.weakMapAdd (p',obj) ;
+		  p )
 	    end 
     in
 	fun addObject (p,refInfo,hasSignals) =
-	    (if p = NULL orelse weakMapContains p 
-		 then () 
-	         else newObject (p,refInfo,hasSignals) ; 
-             p)
+	    if p = NULL orelse NativeGtkCore.weakMapIsMember p 
+		 then p
+	         else newObject (p,refInfo,hasSignals)
     end
 
 
@@ -118,6 +120,8 @@ struct
       | listener ((connid,obj,args)::stream) =
 	( runCallback (connid, obj, args) ; listener stream )
 
+    fun finalizer nil                        = ()
+      | finalizer ((obj as (p,unref,_))::xs) = ( unref p ; finalizer xs )
 
     fun sleep ms = Future.await (Future.alarm (Time.fromMilliseconds ms))
 
@@ -143,9 +147,12 @@ struct
 	let
 	    val eventStream : (int * object * arg list) list = 
 	                                     NativeGtkCore.getEventStream()
+	    val finalStream : (object * (object->unit) * int list ref) list =
+		                             NativeGtkCore.getFinalStream()
 	in
 	    NativeGtkCore.init ();
 	    spawn (listener eventStream);
+	    spawn (finalizer finalStream);
 	    spawn (mainLoop initPoll)
 	end
 end

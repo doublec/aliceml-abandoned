@@ -1,6 +1,25 @@
 #include "NativeUtils.hh"
 
 static word eventStream = 0;
+static word finalStream = 0;
+static word finalStreamRef = 0;
+static word weakDict = 0;
+
+word push_front(word list, word value) {
+  TagVal *cons = TagVal::New(0,2);
+  cons->Init(0,value);
+  cons->Init(1,list);
+  return cons->ToWord();
+}
+
+void put_on_stream(word *stream, word value) {
+  Future *f = static_cast<Future*>(Store::WordToTransient(*stream));
+  *stream = (Future::New())->ToWord();  
+  f->ScheduleWaitingThreads();
+  f->Become(REF_LABEL, push_front(*stream, value));
+}
+
+///////////////////////////////////////////////////////////////////////
 
 DEFINE0(NativeGtkCore_isLoaded) {
   RETURN(BOOL_TO_WORD(eventStream != 0));
@@ -32,59 +51,60 @@ DEFINE0(NativeGtkCore_gtkFalse) {
   RETURN(Store::IntToWord(FALSE));
 } END
 
+inline void print_type(char *s, void *obj) {
+  GObject *p = reinterpret_cast<GObject*>(obj);
+  GTypeQuery q;
+  memset(&q, 0, sizeof(q));
+  g_type_query(G_OBJECT_TYPE(p), &q);
+  g_message("%s: %p (type %s)", s, p, q.type_name);
+}
+
 DEFINE1(NativeGtkCore_widgetRef) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  print_type("widget-reffed", obj);
   RETURN(Store::UnmanagedPointerToWord(
 		gtk_widget_ref(reinterpret_cast<GtkWidget*>(obj))));
 } END
 
 DEFINE1(NativeGtkCore_widgetUnref) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  print_type("widget-unreffed", obj);
   gtk_widget_unref(reinterpret_cast<GtkWidget*>(obj));
   RETURN_UNIT;
 } END
 
 DEFINE1(NativeGtkCore_objectRef) {
-  DECLARE_UNMANAGED_POINTER(obj,x0);
+  DECLARE_UNMANAGED_POINTER(obj,x0);  
+  print_type("object-reffed", obj);
   RETURN(Store::UnmanagedPointerToWord(
          gtk_object_ref(reinterpret_cast<GtkObject*>(obj))));
 } END
 
 DEFINE1(NativeGtkCore_objectUnref) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  print_type("object-unreffed", obj);
   gtk_object_unref(reinterpret_cast<GtkObject*>(obj));
   RETURN_UNIT;
 } END
 
 DEFINE1(NativeGtkCore_gObjectRef) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  print_type("gobject-reffed", obj);
   RETURN(Store::UnmanagedPointerToWord(g_object_ref(obj)));
 } END
 
 DEFINE1(NativeGtkCore_gObjectUnref) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  print_type("gobject-unreffed", obj);
   g_object_unref(obj);
   RETURN_UNIT;
 } END
 
 DEFINE1(NativeGtkCore_deleteUnref) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
+  g_message("delete-unreffed: %p", obj);
   delete (int*)obj;
   RETURN_UNIT; 
-} END
-
-DEFINE0(NativeGtkCore_getEventStream) {
-  /*
-  if (eventStream) {
-    ConVal *conVal =
-      ConVal::New(Constructor::FromWordDirect(TypeMismatchConstructor), 1);
-    conVal->Init(0, String::New("stream exists")->ToWord());     
-    RAISE(conVal->ToWord());
-  }
-  */
-  eventStream = (Future::New())->ToWord();
-  RootSet::Add(eventStream);
-  RETURN(eventStream);
 } END
 
 ////////////////////////////////////////////////////////////////////////
@@ -170,6 +190,7 @@ static inline word ButtonEvent(GdkEvent* event, int label) {
   t->Init(1, Store::UnmanagedPointerToWord(ev->device));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, Store::IntToWord(ev->state));
+  //  g_message("%d", ev->time);
   t->Init(4, Store::IntToWord(ev->time));
   t->Init(5, Store::UnmanagedPointerToWord(ev->window));
   t->Init(6, Real::New(ev->x)->ToWord());
@@ -341,13 +362,6 @@ word GdkEventToDatatype(GdkEvent *event) {
   }
 }
 
-void push_front(word *list, word value) {
-  TagVal *cons = TagVal::New(0,2);
-  cons->Init(0,value);
-  cons->Init(1,*list);
-  *list = cons->ToWord();
-}
-
 word create_param(int tag, word value) {
   TagVal *param = TagVal::New(tag,1);
   param->Init(0, value);
@@ -376,15 +390,13 @@ word create_object(GType t, gpointer p) {
 	value = GdkEventToDatatype(gdk_event_copy(static_cast<GdkEvent*>(p)));
       }
       else
-	value = Store::UnmanagedPointerToWord(p);
+	value = Store::UnmanagedPointerToWord(p);      
   return create_param(tag, value);
 }
 
 void sendArgsToStream(gint connid, guint n_param_values, 
 		      const GValue *param_values) {
-  Future *oldfuture =static_cast<Future*>(Store::WordToTransient(eventStream));
-  eventStream = (Future::New())->ToWord();
-  word stream = eventStream;
+
   word paramlist = Store::IntToWord(Types::nil);
   gpointer widget = NULL;
 
@@ -454,7 +466,7 @@ void sendArgsToStream(gint connid, guint n_param_values,
 	value = create_object(G_VALUE_TYPE(val), g_value_peek_pointer(val));
       }
     }
-    if (!widget) push_front(&paramlist,value);
+    if (!widget) paramlist = push_front(paramlist,value);
   }
   
   Tuple *tup = Tuple::New(3);
@@ -462,10 +474,7 @@ void sendArgsToStream(gint connid, guint n_param_values,
   tup->Init(1,Store::UnmanagedPointerToWord(widget));
   tup->Init(2,paramlist);
   
-  push_front(&stream,tup->ToWord());
-
-  oldfuture->ScheduleWaitingThreads();
-  oldfuture->Become(REF_LABEL, stream);
+  put_on_stream(&eventStream, tup->ToWord());
 }
 
 void generic_marshaller(GClosure *closure, GValue *return_value, 
@@ -508,10 +517,96 @@ DEFINE2(NativeGtkCore_signalDisconnect) {
   RETURN_UNIT;
 } END
 
+DEFINE0(NativeGtkCore_getEventStream) {
+  if (!eventStream) {
+    eventStream = (Future::New())->ToWord();
+    RootSet::Add(eventStream);
+  }
+  RETURN(eventStream);
+} END
+
+//////////////////////////////////////////////////////////////////////
+
+class MyFinalization: public Finalization {
+public:
+  /*
+  // Hack alert
+  u_int AlreadyMoved(Block *p) {
+    return (!((((u_int *) p)[0] & GEN_GC_MASK) >> GEN_GC_SHIFT));
+  }
+  Block *GetForwardPtr(Block *p) {
+    return ((Block **) p)[0];
+  }
+
+  inline word ForwardWord(word p) {
+    Block *sp = PointerOp::RemoveTag(p);
+    // order is important because moving ptr overwrites gen assignment
+    if (AlreadyMoved(sp)) {
+      sp = GetForwardPtr(sp);
+      p  = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(p));
+    }
+    return p;
+  }
+  */
+
+  void Finalize(word value) {
+    void *p = Store::WordToUnmanagedPointer((Tuple::FromWord(value))->Sel(0));
+
+    // g_message("finalizing %p", p);
+
+    finalStreamRef = Tuple::FromWord(value)->Sel(2);
+    Cell *c = Cell::FromWord(finalStreamRef);
+    finalStream = c->Access();
+    //finalStream = ForwardWord(finalStream);
+    put_on_stream(&finalStream, value);
+    c->Assign(finalStream);
+
+    //    g_message("stream: %d, ref: %d", finalStream, finalStreamRef);
+
+    g_message("finalized %p", p);
+  }
+};
+
+DEFINE2(NativeGtkCore_weakMapAdd) {
+  // x0 = pointer/key, x1 = (pointer, unref-fun, ids ref)
+
+  // g_message("adding %p", Store::WordToUnmanagedPointer(x0));
+  Tuple* t = Tuple::FromWord(x1);
+  t->Init(2, finalStreamRef);
+
+  WeakMap::FromWord(weakDict)->Put(x0, t->ToWord());
+  
+  g_message("added %p", Store::WordToUnmanagedPointer(x0));
+  RETURN_UNIT;
+} END
+
+DEFINE1(NativeGtkCore_weakMapIsMember) {
+  // x0 = pointer/key
+  RETURN(BOOL_TO_WORD(WeakMap::FromWord(weakDict)->IsMember(x0)));
+} END
+
+DEFINE2(NativeGtkCore_weakMapCondGet) {
+  // x0 = pointer/key, x1 = alternative
+  RETURN(WeakMap::FromWord(weakDict)->CondGet(x0,x1));
+} END
+
+DEFINE0(NativeGtkCore_getFinalStream) {
+  if (!finalStream) {
+    finalStream = (Future::New())->ToWord();
+    RootSet::Add(finalStream);
+    finalStreamRef = (Cell::New(finalStream))->ToWord();
+    RootSet::Add(finalStreamRef);
+    weakDict = WeakMap::New(256, new MyFinalization())->ToWord();
+    RootSet::Add(weakDict);
+  }
+  RETURN(finalStream);
+} END
+
+
 //////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(17);
+  Record *record = CreateRecord(21);
   INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
 		 NativeGtkCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
@@ -526,6 +621,7 @@ word InitComponent() {
 		 NativeGtkCore_gtkTrue, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "gtkFalse", 
 		 NativeGtkCore_gtkFalse, 0);
+
   INIT_STRUCTURE(record, "NativeGtkCore", "objectRef", 
 		 NativeGtkCore_objectRef, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "objectUnref", 
@@ -540,12 +636,22 @@ word InitComponent() {
 		 NativeGtkCore_gObjectUnref, 1);
   INIT_STRUCTURE(record, "NativeGtkCore", "deleteUnref", 
 		 NativeGtkCore_deleteUnref, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "getEventStream", 
-		 NativeGtkCore_getEventStream, 0);
+
   INIT_STRUCTURE(record, "NativeGtkCore", "signalConnect", 
 		 NativeGtkCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeGtkCore", "signalDisconnect", 
 		 NativeGtkCore_signalDisconnect, 3);
+  INIT_STRUCTURE(record, "NativeGtkCore", "getEventStream", 
+		 NativeGtkCore_getEventStream, 0);
+
+  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapAdd", 
+		 NativeGtkCore_weakMapAdd, 2);
+  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapIsMember", 
+		 NativeGtkCore_weakMapIsMember, 1);
+  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapCondGet", 
+		 NativeGtkCore_weakMapCondGet, 2);
+  INIT_STRUCTURE(record, "NativeGtkCore", "getFinalStream", 
+		 NativeGtkCore_getFinalStream, 0);
 
   RETURN_STRUCTURE("NativeGtkCore$", record);
 }
