@@ -138,10 +138,16 @@ structure TextIO :> TEXT_IO =
 
 	fun outputSubstr (f, s) = output (f, Substring.string s)
 
-	val stdIn =
-	    TextImperativeIO.mkInstream
-		(TextStreamIO.mkInstream (textReader IODesc.stdIn,
-					  CharVector.fromList nil))
+	fun syncReader (os, TextPrimIO.RD ops) =
+	    let
+		fun sync f = fn x => (flushOut os; f x)
+	    in
+		TextPrimIO.RD {ops where
+			       readVec = Option.map sync (#readVec ops),
+			       readArr = Option.map sync (#readArr ops),
+			       readVecNB = Option.map sync (#readVecNB ops),
+			       readArrNB = Option.map sync (#readArrNB ops)}
+	    end
 
 	val stdOut =
 	    TextImperativeIO.mkOutstream
@@ -152,6 +158,12 @@ structure TextIO :> TEXT_IO =
 	    TextImperativeIO.mkOutstream
 		(TextStreamIO.mkOutstream (textWriter IODesc.stdErr,
 					   IO.NO_BUF))
+
+	val stdIn =
+	    TextImperativeIO.mkInstream
+		(TextStreamIO.mkInstream (syncReader (stdOut,
+						      textReader IODesc.stdIn),
+					  CharVector.fromList nil))
 
 	fun print s = (output (stdOut, s); flushOut stdOut)
 
