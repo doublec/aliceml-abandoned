@@ -53,6 +53,16 @@
     word x1 = Scheduler::currentArgs[1];		\
     word x2 = Scheduler::currentArgs[2];		\
     word x3 = Scheduler::currentArgs[3];
+#define DEFINE5(name)					\
+  static Worker::Result name() {			\
+    Assert(Scheduler::nArgs == 5);			\
+    word prim_self = Scheduler::GetAndPopFrame();	\
+    prim_self = prim_self;				\
+    word x0 = Scheduler::currentArgs[0];		\
+    word x1 = Scheduler::currentArgs[1];		\
+    word x2 = Scheduler::currentArgs[2];		\
+    word x3 = Scheduler::currentArgs[3];		\
+    word x4 = Scheduler::currentArgs[4];
 #define END }
 
 #define RETURN0 {				\
