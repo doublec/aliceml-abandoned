@@ -142,6 +142,7 @@ struct
 			Gtk.toggleButtonSetActive(treemode_button,1)
 	    (* Buttonbox *)
 
+	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val bbox = createButtonBox{buttons = [BObj("ok",[Handler("clicked",
 		    (fn _ => let
 			val _ =Settings.max_width := 
@@ -166,43 +167,12 @@ struct
 				     BObj("apply",[]),
 				     BObj("cancel",
 					  [Handler("clicked",fn _ => 
-						   Gtk.widgetDestroy(w))])]}
+						   Gtk.widgetDestroy(w))])],
+				       borderwidth = 20}
   
-(* 	    val bbox = Gtk.hbuttonBoxNew()
-	    val _ = Gtk.containerSetBorderWidth(bbox,10)
-	    val _ = Gtk.buttonBoxSetLayout(bbox,Gtk.BUTTONBOX_END)
-	    val ok_button = Gtk.buttonNewWithLabel("ok")
-	    val apply_button = Gtk.buttonNewWithLabel("apply")
-	    val cancel_button = Gtk.buttonNewWithLabel("cancel")
-	    val _ = Gtk.containerAdd(bbox,ok_button)
-	    val _ = Gtk.containerAdd(bbox,apply_button)
-	    val _ = Gtk.containerAdd(bbox,cancel_button)
+
 	    val n = createNotebook[("Width & Depth Limit Settings",inner_vbox),
 				   ("Mode Settings",radiobox)] 
-	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val _  = Gtk.signalConnect (cancel_button, "clicked", 
-					fn _ => Gtk.widgetDestroy(w) )
-	    val _  = Gtk.signalConnect (ok_button, "clicked", 
-		fn _ => let
-			val _ =Settings.max_width := 
-			       Gtk.spinButtonGetValueAsInt(width_s) 
-		        val _ =Settings.max_depth := 
-			       Gtk.spinButtonGetValueAsInt(depth_s)
-		        val _ = Settings.relmode := (if 
-			       Gtk.toggleButtonGetActive(relmode_button) = 1
-							 orelse 
-			       Gtk.toggleButtonGetActive(tokenmode_button) = 1
-							 then true 
-						     else false)
-			val _ = Settings.tokenmode := (if 
-		               Gtk.toggleButtonGetActive(tokenmode_button) = 1
-							   then 
-							       true 
-						       else false)
-			val _ =   Gtk.widgetDestroy(w)
-			in
-					()
-			end)
 	    val _ = Gtk.windowSetTitle (w, "Preferences")
 	    val _ = Gtk.boxPackStart(vbox,n,0,0,0)
 	    val _ = Gtk.boxPackEnd(vbox,bbox,0,0,0)
@@ -308,8 +278,8 @@ struct
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
 	in
 	case n of
-	RelNode _ => ()
-      | RelRefNode _ => ()
+	Types.RelNode _ => ()
+      | Types.RelRefNode _ => ()
       | _ =>
 	serve (fn () => 
 	       (createMenu
