@@ -15,6 +15,9 @@
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 import structure Types from "Types"
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure PPType from "x-alice:/lib/rtt/PPType"
+import structure PPInf from "x-alice:/lib/rtt/PPInf"
 import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
@@ -337,10 +340,9 @@ struct
 	in
 	    Array.update(handlers,i,handler)
 	end
-          
-     val status = Gtk.statusbarNew()
-     val st_context = Gtk.statusbarGetContextId(status,"st")
-     val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
+        
+
+    val (status,postType,postMode) = createStatusbar() 
 	 
      structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
 				    val ysize = !Settings.max_y) 	
@@ -408,6 +410,22 @@ struct
 					     Preferences)],true)],
 		  sensitive = true}])  
 	 
+     fun postT n = 
+	 let  
+	     val desc = Helper.getDesc(n)
+	 in
+	     (case desc of
+		 Types.INTERPUNCT => 0
+	       |  Types.VALUE(r) => 
+		     postType("  " 
+			      ^ PrettyPrint.toString(PPType.ppTyp(#typ(r)),
+						     1000))
+	       | Types.I_VALUE(r) =>
+		     postType("  " 
+			      ^ PrettyPrint.toString(PPInf.ppInf(#typ(r)),
+						     1000))
+		     ;())
+	 end
 	    
      fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
@@ -426,7 +444,7 @@ struct
 		    in 
 		       (case node of 
 			    SOME(n) => 
-				let
+				let 
 				    val group = Helper.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
 					    	* Layout.get_xdim(n))
@@ -438,7 +456,8 @@ struct
 							    x2,
 							    y2)
 				in
-				    (GtkCanvas.itemLowerToBottom(re)
+				    (postT n
+				    ;GtkCanvas.itemLowerToBottom(re)
 				    ;destroySelectionMarkings()
 				    ;selection := SOME (n,re)
 				    ;setSelectionMenuSensitive(bar,true)
