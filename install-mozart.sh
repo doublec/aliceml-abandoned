@@ -3,13 +3,13 @@
 # Bootstrap the Alice-to-Mozart compiler.
 
 # To install globally:
-#   prefix=/opt/stockhausen-devel
+#   prefix=/opt/stockhausen-release
 # To install locally:
 #   prefix=`pwd`/install
 
 if [ "$1" = "-global" ]
 then
-   prefix=/opt/stockhausen-devel
+   prefix=/opt/stockhausen-operette3
 else
    prefix=`pwd`/install
 fi
