@@ -64,9 +64,9 @@ struct
            => (case unApply (Type.inspect(t)) of 
                (Type.Con path, ts) => newPath (va,t,p,i,d,path)
              | _ => raise createGraph_unknownNode)   
-         | Type.Prod(row) => treatProd (va,t,p,i,d,row)
+         | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd)
 	 | Type.Mu(sum) => createGraph (va,sum,p,i,d)
-         | Type.Sum(row) => treatSum (va,t,p,i,d,row)   
+         | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum) 
          | _ => raise  createGraph_unknownNode) 
 
     (* treatProd *)
@@ -104,6 +104,7 @@ struct
 	    val l_vector  = labelvector(lt_list)
 	    val index     = UnsafeValue.tag(va,l_vector)
 	    val label     = Label.toString(Vector.sub(l_vector,index))
+	                    ^" "
 	    val labelnode =  createSimple (INTERPUNCT,upperConcat,
 					   0,label,LABEL_COLOR,setGroup)
 	    val typ = #2(List.nth(lt_list,index))
@@ -284,7 +285,7 @@ struct
 			    (Array.update(na,
 					  !rl,
 					  docToNode(Vector.sub(#kids(r),!rl),
-						    concat,!rl,d+1))
+						    concat,!rl,d))
 			     ; rl := !rl - 1)
 			    ; concat)
 			end

@@ -126,17 +126,9 @@ struct
                     val ref_value = UnsafeValue.cast deref : Reflect.value
                     val ref_typ = #2(Type.asApply t)
                     val conc1 = SIMPLE{desc = INTERPUNCT,
-				       rep = "ref",
+				       rep = "ref ",
                                        color = REF_COLOR}
-                    val conc2 = 
-			CONTAINER{desc = INTERPUNCT,
-				  kids = #[SIMPLE{desc = INTERPUNCT,
-						       rep = "(",
-						       color = BRACK_COLOR},
-					   EMBEDDED(ref_value,ref_typ),
-					   SIMPLE{desc = INTERPUNCT,
-						  rep = ")",
-						  color = BRACK_COLOR}]} 
+                    val conc2 = EMBEDDED(ref_value,ref_typ) 
                 in CONCAT{desc = descr,
                           kids = #[conc1,conc2]}
 		end 
@@ -166,9 +158,9 @@ struct
 					  kids = 
 					  #[EMBEDDED
 					    (Vector.sub(vec,i),vec_typ),
-						    SIMPLE{desc = INTERPUNCT,
-							   rep = ", ",
-							   color = SEP_COLOR}]} )
+					    SIMPLE{desc = INTERPUNCT,
+						   rep = ", ",
+						   color = SEP_COLOR}]} )
                     val cont = CONTAINER{desc = INTERPUNCT,
 					 kids = cont_kids}
 		in CONCAT{desc = descr,

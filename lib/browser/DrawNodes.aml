@@ -91,14 +91,24 @@ struct
 			val i = ref 0
 		    in ( while !i <= l do
                         (let val li = List.take(kids_list,!i)
-                             val sum_xdim = sum_up(li,get_xdim)
-                             val sum_ydim = sum_up(li,get_ydim)
+                             val sum_xdim = 
+				 if !i = l 
+				     andalso !i > 0
+				     andalso setsVertical (List.nth(kids_list,
+								    !i-1))
+				     then 
+				     let val li' = List.take(kids_list,!i-1)
+				     in sum_up(li',get_xdim) +
+				        get_l_xdim(List.nth(kids_list,!i-1))
+				     end 
+				 else sum_up(li,get_xdim)
+                             val max_ydim =  max(li,get_ydim)
                          in draw (List.nth(kids_list,!i),
-				   x+sum_xdim,
-				   y+sum_ydim)			     
+				  x + sum_xdim,
+				  if !i = 0 then y else y + max_ydim - 1)
 			 end ; i := !i + 1)
-                       ; #status(r) := CLEAN
-		       ; (x+get_xdim(n),y+get_ydim(n)) )
+		       ; #status(r) := CLEAN
+		       ; (x+get_xdim(n),y+get_ydim(n) - 1) )
 		    end
 						
 	   else (x+get_xdim(n),y+get_ydim(n))
