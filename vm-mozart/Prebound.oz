@@ -206,7 +206,7 @@ prepare
 	 fun {$ A I N}
 	    if 0 =< I andthen 0 =< N andthen I + N =< {Array.high A} + 1 then
 	       {ByteString.make {ForThread I + N - 1 I ~1
-	        		 fun {$ Xs I} {BootWord.toInt A.I}|Xs end nil}}
+	        		 fun {$ Xs I} A.I|Xs end nil}}
 	    else
 	       {Exception.raiseError alice(BuiltinTable.'General.Subscript')}
 	       unit
