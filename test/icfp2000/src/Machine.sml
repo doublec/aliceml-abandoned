@@ -220,13 +220,13 @@ struct
 		      [Binder _, Binder _, Binder _,
 		       Real r, Real g, Real b, Operator Point,
 		       Real kd, Real ks, Real n] =>
-			  (fn _ => fn _ =>
+			  let val result =
 				{ color    = Color.color(r,g,b)
 				, diffuse  = kd
 				, specular = ks
 				, phong    = n
 				}
-			  )
+			  in fn _ => fn _ => result end
 		    | _ => fn x => surface o face x
 	in
 	    ObjectV(RenderObj f) :: stack
