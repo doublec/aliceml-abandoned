@@ -35,7 +35,10 @@ struct
 	    separate: bool
     }
     
-    val defaultConfig = { timeout = Time.fromSeconds 60, separate = false }
+    val defaultConfig = {
+	    timeout = Time.fromSeconds (Int.toLarge 60),
+	    separate = false
+    }
 
     exception Assert of string * int * int
 

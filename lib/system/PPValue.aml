@@ -490,7 +490,8 @@ struct
 	end
 
     fun ppTime t fm x =
-	SOME(ppCustom fm (text "time", [text(Int.toString x ^ "us")]))
+	SOME(ppCustom fm (text "time",
+		[text(LargeInt.toString(Time.toMicroseconds x) ^ "us")]))
 
     fun ppThread t fm x =
 	let
