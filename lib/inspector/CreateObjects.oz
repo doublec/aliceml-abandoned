@@ -12,6 +12,7 @@
 
 functor $
 import
+   FD
    System(eq)
    Inspector('nodes' : TreeNodes)
    HelperComponent('nodes' : Helper) at 'Helper'
@@ -25,6 +26,7 @@ export
    cellCreateObject        : CellCreateObject
    cellGrCreateObject      : CellGrCreateObject
    tupleCreateObject       : TupleCreateObject
+   fdIntCreateObject       : FDIntCreateObject
    tupleGrCreateObject     : TupleGrCreateObject
    vectorCreateObject      : VectorCreateObject
    vectorGrCreateObject    : VectorGrCreateObject
@@ -52,6 +54,7 @@ define
       LabelTupleGrCreateObject = CreateObjects.labelTupleGrCreateObject
       OzRecordGrCreateObject   = CreateObjects.recordGrCreateObject
       PipeTupleGrCreateObject  = CreateObjects.pipeTupleGrCreateObject
+      OzFDIntCreateObject      = CreateObjects.fdIntCreateObject
       OzFreeGrCreateObject     = CreateObjects.freeGrCreateObject
       OzFutureGrCreateObject   = CreateObjects.futureGrCreateObject
       OzFDIntGrCreateObject    = CreateObjects.fdIntGrCreateObject
@@ -116,7 +119,6 @@ define
    %%
    %% Container Objects
    %%
-
 
    class CellCreateObject from LabelTupleCreateObject
       attr
@@ -413,6 +415,23 @@ define
    %% Logic-, Future- and Constraint-Variants
    %%
 
+   class FDIntCreateObject from OzFDIntCreateObject
+      meth createContainer
+	 Arity  = @arity
+	 Visual = @visual
+	 Value  = @value
+      in
+	 depth <- (@depth - 1)
+	 Arity     = {FD.reflect.dom Value}
+	 @type     = fdint
+	 @maxWidth = {Length Arity}
+	 @label    = {New Helper.ozAtom create('{' self 0 Visual internal)}
+	 @brace    = {New Helper.ozAtom create('}' self 0 Visual internal)}
+	 {Visual logVar(self Value false)}
+	 OzRecordCreateObject, adjustWidth({Visual getWidth($)} 1)
+      end
+   end
+
    class FreeGrCreateObject from OzFreeGrCreateObject
       meth handleMode(RefStr Visual)
 	 @mode = {New Helper.marker create('R'#RefStr ' as ' self Visual)}
@@ -426,6 +445,20 @@ define
    end
 
    class FDIntGrCreateObject from OzFDIntGrCreateObject
+      meth createContainer
+	 Arity  = @arity
+	 Visual = @visual
+	 Value  = @value
+      in
+	 depth <- (@depth - 1)
+	 Arity     = {FD.reflect.dom Value}
+	 @type     = fdint
+	 @maxWidth = {Length Arity}
+	 @label    = {New Helper.labelType create(fd '{' self Visual)}
+	 @brace    = {New Helper.ozAtom create('}' self 0 Visual internal)}
+	 {Visual logVar(self Value false)}
+	 OzRecordCreateObject, adjustWidth({Visual getWidth($)} 1)
+      end
       meth handleMode(RefStr Visual)
 	 @mode = {New Helper.marker create('R'#RefStr ' as ' self Visual)}
       end
