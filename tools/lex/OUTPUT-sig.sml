@@ -3,6 +3,7 @@ signature OUTPUT =
 
 	(* printLexList : prints the outputfile
 	 *)
-	val printLexList : TextIO.outstream * AbsSyn.lex list * Table.auto_map -> unit
+	val printLexList : TextIO.outstream * AbsSyn.lex list * Table.auto_map
+	                   -> unit
 
     end
