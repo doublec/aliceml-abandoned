@@ -25,13 +25,23 @@ INSTALLFILES_MANUAL_0 = \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	style.css macros.php3 menu.php3 index.php3 \
-	alt.php3 array.php3 bool.php3 byneed.php3 char.php3 future.php3 \
-	general.php3 hole.php3 ieee-real.php3 integer.php3 \
+	alt.php3 array.php3 \
+	bin-io.php3 bool.php3 byneed.php3 \
+	char.php3 command-line.php3 \
+	future.php3 \
+	general.php3 \
+	hole.php3 \
+	ieee-real.php3 imperative-io.php3 integer.php3 io.php3 \
 	list.php3 list-pair.php3 lock.php3 \
 	math.php3 mono-array.php3 mono-vector.php3 \
-	option.php3 package.php3 pair.php3 promise.php3 real.php3 ref.php3 \
-	string.php3 string-cvt.php3 substring.php3 time.php3 toplevel.php3 \
-	unique-string.php3 vector.php3 vector-pair.php3 word.php3 \
+	option.php3 os.php3 os-file-sys.php3 os-io.php3 os-process.php3 \
+	package.php3 pair.php3 pickle.php3 prim-io.php3 promise.php3 \
+	real.php3 ref.php3 \
+	stream-io.php3 string.php3 string-cvt.php3 substring.php3 \
+	text-io.php3 text-stream-io.php3 time.php3 toplevel.php3 \
+	unique-string.php3 unix.php3 \
+	vector.php3 vector-pair.php3 \
+	word.php3 \
 	thread.php3 url.php3 config.php3 socket.php3 http.php3 \
 	http-client.php3 http-server.php3 resolver-handler.php3 \
 	resolver.php3 component.php3 component-manager.php3 remote.php3 \
