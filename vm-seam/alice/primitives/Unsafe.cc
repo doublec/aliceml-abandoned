@@ -5,20 +5,20 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
-#include "emulator/Tuple.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Transform.hh"
-#include "emulator/Unpickler.hh"
-#include "emulator/AbstractCodeInterpreter.hh"
+#include "generic/Tuple.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
+#include "generic/Transform.hh"
+#include "generic/Unpickler.hh"
+#include "alice/AbstractCodeInterpreter.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(Unsafe_Array_sub) {
   DECLARE_ARRAY(array, x0);
