@@ -39,6 +39,7 @@ signature LINK =
 	val rewrite: (string * string) vector -> string -> string
 
 	val link: {root: Url.t,
+		   verbose: bool,
 		   boundary: boundary vector,
 		   rewrite: (string * string) vector} -> MyComponent.t
 		     (* Empty, Mismatch, Conflict, Cyclic *)
