@@ -13,6 +13,7 @@
 functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
+   Word(make toInt) at 'x-oz://boot/Word'
    Open(file text)
    System(printInfo)
 export
@@ -20,14 +21,45 @@ export
 define
    Io = {NewUniqueName 'IO.Io'}
 
-   class TextFile from Open.file Open.text
-      attr Name
-      meth init(name: S flags: F)
-	 Open.file, init(name: S flags: F)
-	 Name <- {ByteString.make S}
-      end
+   class BaseFile from Open.file Open.text
+      attr name
       meth getName($)
-	 @Name
+	 @name
+      end
+   end
+
+   class TextFile from BaseFile
+      meth init(name: S flags: F)
+	 Open.file, init(name: S flags: text|F)
+	 name <- {ByteString.make S}
+      end
+      meth inputAll($)
+	 {ByteString.make Open.file, read(list: $ size: all)}
+      end
+      meth output(S)
+	 Open.file, write(vs: S)
+      end
+      meth output1(C)
+	 Open.file, write(vs: [C])
+      end
+   end
+
+   class BinFile from BaseFile
+      meth init(name: S flags: F)
+	 Open.file, init(name: S flags: binary|F)
+	 name <- {ByteString.make S}
+      end
+      meth inputAll($)
+	 {List.toTuple '#[]'
+	  {Map Open.file, read(list: $ size: all)
+	   fun {$ C} {Word.make 8 C} end}}
+      end
+      meth output(S)
+	 Open.file, write(vs: {Map {Record.toList S}
+			       fun {$ C} {Word.toInt C} end})
+      end
+      meth output1(C)
+	 Open.file, write(vs: [{Word.toInt C}])
       end
    end
 
@@ -36,13 +68,12 @@ define
       '\'Io': Io
       'Io': fun {$ X} Io(X) end
       'stdIn':
-	 {New TextFile init(name: stdin flags: [read text])}
+	 {New TextFile init(name: stdin flags: [read])}
       'openIn':
 	 fun {$ B S}
 	    try
-	       {New TextFile init(name: S
-				  flags: [read
-					  if B then text else binary end])}
+	       {New if B then TextFile else BinFile end
+		init(name: S flags: [read])}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: S
@@ -53,7 +84,7 @@ define
 	 end
       'inputAll':
 	 fun {$ F}
-	    try {ByteString.make {F read(list: $ size: all)}}
+	    try {F inputAll($)}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: {F getName($)}
@@ -79,15 +110,14 @@ define
       'closeIn':
 	 fun {$ F} {F close()} unit end
       'stdOut':
-	 {New TextFile init(name: stdout flags: [write text])}
+	 {New TextFile init(name: stdout flags: [write])}
       'stdErr':
-	 {New TextFile init(name: stderr flags: [write text])}
+	 {New TextFile init(name: stderr flags: [write])}
       'openOut':
 	 fun {$ B S}
 	    try
-	       {New TextFile init(name: S
-				  flags: [write create truncate
-					  if B then text else binary end])}
+	       {New if B then TextFile else BinFile end
+		init(name: S flags: [write create truncate])}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: S
@@ -99,9 +129,8 @@ define
       'openAppend':
 	 fun {$ B S}
 	    try
-	       {New TextFile init(name: S
-				  flags: [write create append
-					  if B then text else binary end])}
+	       {New if B then TextFile else BinFile end
+		init(name: S flags: [write create append])}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: S
@@ -113,7 +142,7 @@ define
       'output':
 	 fun {$ F S}
 	    try
-	       {F write(vs: S)}
+	       {F output(S)}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: {F getName($)}
@@ -125,7 +154,7 @@ define
       'output1':
 	 fun {$ F C}
 	    try
-	       {F write(vs: [C])}
+	       {F output1(C)}
 	    catch system(E=os(os ...) ...) then
 	       {Exception.raiseError
 		alice(Io(name: {F getName($)}
