@@ -1,3 +1,7 @@
 Group is
 
-	SIGNATURE-sig.aml
+    ../utility/sources.cm
+    ../rtt/interface.cm
+
+    SIGNATURE-sig.aml
+    Signature.aml
