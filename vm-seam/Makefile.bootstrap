@@ -360,7 +360,7 @@ TOPINCLUDES0 = \
 ALICEINCLUDES0 = \
 	Base.hh Guid.hh Data.hh Types.hh AbstractCode.hh \
 	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
-	NativeCodeInterpreter.hh NativeConcreteCode.hh \
+	NativeCodeInterpreter.hh NativeConcreteCode.hh NativeCodeJitter.hh \
 	PrimitiveTable.hh AliceLanguageLayer.hh BootLinker.hh Authoring.hh
 INCLUDES = \
 	$(TOPINCLUDES0) \
