@@ -186,7 +186,7 @@
   </P>
 
   <PRE>
-	val promise: unit -> 'a 
+	val promise: unit -> 'a promise
   </PRE>
 
   <P>

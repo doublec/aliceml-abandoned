@@ -124,9 +124,13 @@
   </PRE>
 
   <P>
-    This is legal in SML'97 (though it was not in SML'90 and SML/NJ for example
-    does not allow it either). In Alice it produces a type clash
-    (due to the extended <TT>val</TT> <TT>rec</TT>).
+    This is legal in SML'97 due to some artefact of the formal language
+    specification and would introduce a function named
+    <TT>NONE</TT>, hiding the constructor status of <TT>NONE</TT>. In Alice it
+    produces a type clash because it is interpreted as trying to match
+    <TT>NONE</TT> with a lambda expression. This is consistent with SML'90 and
+    other SML implementations like SML/NJ, however, and probably what the user
+    would expect.
   </P>
 
   <P>
