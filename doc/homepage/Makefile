@@ -26,7 +26,7 @@ all: install
 install: $(DIRS) $(INSTALLFILES)
 	(cd ../manual && make PREFIX=$(PREFIX)/manual-devel)
 
-release: install
+release: install download
 	(cd ../manual && make PREFIX=$(PREFIX)/manual)
 
 download: $(DOWNLOADFILES)
@@ -53,7 +53,7 @@ $(PREFIX)/bg.gif: ../manual/bg.gif
 $(PREFIX)/download/COPYING: ../../COPYING
 	install -c -m 444 $< $@
 
-$(PREFIX)/download/CHANGES: ../versions/changes.txt
+$(PREFIX)/download/CHANGES: ../versions/changes-devel-mozart.txt
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/%-devel.tgz:
