@@ -121,7 +121,10 @@ private:
   }
   void LastInstr(word w) {
     TagVal *instr = TagVal::FromWordDirect(w);
-    todo->SlowPush(instr->ToWord());
+    if (done->IsMember(w))
+      fprintf(file, " %p", instr);
+    else
+      todo->SlowPush(instr->ToWord());
   }
   void Int(word w) {
     fprintf(file, " %d", Store::DirectWordToInt(w));
