@@ -34,7 +34,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	thread.php3 url.php3 config.php3 socket.php3 http.php3 \
 	http-client.php3 http-server.php3 resolver-handler.php3 \
 	resolver.php3 component.php3 component-manager.php3 \
-	HttpClientExample.php3 HttpServerExample.php3
+	HttpClientExample.aml HttpServerExample.aml
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
