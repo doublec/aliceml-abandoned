@@ -1185,7 +1185,7 @@ structure CodeGen =
 						       raise Debug (Ias FreeVars.array)
 					     else *)
 						      [Dup,
-						       Comment ("Hi3: id="^Stamp.toString (Local.get stamp'')),
+						       Comment ("Hi3: id="^Int.toString (Local.get stamp'')),
 						       Aload (Local.get stamp''),
 						       Putfield(className^"/"^(Local.fieldNameFromStamp stamp''),CVal, 0),
 						       Comment ("load local variable")])
