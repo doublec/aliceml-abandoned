@@ -1,0 +1,121 @@
+<?php include("macros.php3"); ?>
+<?php heading("The PROBLEM signature (search factory)", "The <TT>PROBLEM</TT> signature (search-factory)"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature PROBLEM</PRE>
+   <P>A <TT>PROBLEM</TT> is a specification of a constraint problem, including recomputation policy,
+   debug level, and branch and bound optimization. A structure with this signature can be passed as an argument
+   to the <a href="sf-search.html"<TT>MkSearch</TT></A> functor.</P>
+
+  <P>
+    See also:
+    <A href="sf-debug.html"><TT>DEBUG</TT></A>,
+    <A href="sf-search.html"><TT>SEARCH</TT></A>,
+    <A href="sf-distributed.html"><TT>MkEngine</TT></A> (Distributed Search).
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature PROBLEM from "x-alice:/lib/gecode/search-factory/PROBLEM-sig"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature PROBLEM =
+sig
+  type <A href="#solution">solution</A>
+  type <A href="#space">space</A>
+
+  val <A href="#root">root</A>         : space
+  val <A href="#readSolution">readSolution</A> : space -> solution
+  val <A href="#copyq">copyq</A>        : int -> bool
+  val <A href="#mask">mask</A>         : Debug.db_mask
+
+  val <A href="#bab">bab</A>          : bool
+  val <A href="#bound">bound</A>        : space * solution -> unit
+  val <A href="#compare">compare</A>      : solution * solution -> bool
+       
+end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="solution">solution</A></TT>
+    </DT>
+    <DD>
+      <P>The type of concrete solutions. Usually a tuple or a vector of integers.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>type <A name="space">space</A></TT>
+    </DT>
+    <DD>
+      <P>The type of constraint spaces. Always <A href="space.html"><TT>Space.space</TT></A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="root">root</A></TT>
+    </DT>
+    <DD><P>The root space, that is, a fresh constraint space where constraints have been posted.
+           The search algorithm (see <A href="sf-search.html">SEARCH</A>) will use this space as a starting point.
+        </P>
+    </DD>
+
+    <DT>
+      <TT><A name="readSolution">readSolution</A> <I>space</I></TT>
+    </DT>
+    <DD><P>This function should extract a solution from a solved space (<TT>space</TT>).</P>
+    </DD>
+
+    <DT>
+      <TT><A name="copyq">copyq</A> <I>depth</I></TT>
+    </DT>
+    <DD><P><I>Recomputation policy</I>: all the nodes of the search tree whose depth satisfies
+        the predicate <TT>copyq depth = true</TT> will be copied and used for recomputation.
+        As an example, a fixed distance recomputation policy can be defined using
+        <TT>fun copyq d = d mod fixedDistance = 0</TT>, where <TT>fixedDistance</TT> is a given integer.
+        Note that although this scheme is quite flexible, it is not possible to define real <I>adaptative</I>
+        policies that way.
+        </P>
+    </DD>
+
+    <DT>
+      <TT><A name="mask">mask</A></TT>
+    </DT>
+    <DD><P>A debug mask that selects which debug messages are to be printed. See <A href="sf-debug.html">Debug</A>.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="bab">bab</A></TT>
+    </DT>
+    <DD><P>Should be set to true for Branch & Bound search. Otherwise (simple search), should be false.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="bound">bound</A> <I>(space, solution)</I></TT>
+    </DT>
+    <DD><P>Should bound the given space with the given solution.</P>
+        <P><B>Required</B>: This function is called only if Branch & Bound is active (that is, <TT>bab = true</TT>).
+           Otherwise, you may define it as <TT>fun bound _ = assert false</TT>.
+       </P>
+    </DD>
+
+    <DT>
+      <TT><A name="compare">compare</A> <I>(solution1, solution2)</I></TT>
+    </DT>
+    <DD><P>Should return true if and only if <TT><I>solution2</I></TT> is better than <TT><I></I>solution1</TT>.</P>
+        <P><B>Required</B>: This function is called only if
+           <A href="sf-search.html#init">Search.init</A> or <A href="sf-search.html#betterThan">Search.betterThan</A>
+           are to be called. It is also used by distributed search with Branch & Bound active.
+           In all other cases, including local search, and local Branch & Bound search, this function is <B>not</B>
+           required and can be defined as <TT>fun compare _ = assert false</TT>.
+        </P>
+    </DD>
+  </DL>
+  
+<?php footing(); ?>

@@ -1,0 +1,77 @@
+<?php include("macros.php3"); ?>
+<?php heading("The MkEngine functor (distributed search)", "The <TT>MkEngine</TT> functor (distributed search)"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature ENGINE
+    functor MkEngine (type solution val toString : solution -> string)
+		     (MkProblem : fct (Constraints:CONSTRAINTS)
+			          -> PROBLEM
+				     where type space = Constraints.Space.space
+				     where type solution = solution)
+         :> ENGINE where type solution = solution
+</PRE>
+   <P>The <TT>MkEngine</TT> functor expects two arguments.
+      The first one is a structure that provides the type of solutions of the distributed problem
+      and a function <TT>toString</TT> to print them.
+      The second one is a functor that creates a <A href="sf-problem.html"><TT>PROBLEM</TT></A>, given
+      a local constraint library.</P>
+
+  <P>
+    See also:
+    <A href="sf-problem.html"><TT>PROBLEM</TT></A>,
+    <A href="sf-search.html"><TT>SEARCH</TT></A>,
+    <A href="channel.html"><TT>CHANNEL</TT></A>.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature ENGINE   from "x-alice:/lib/gecode/distributed-search/ENGINE-sig"
+    import structure MkEngine from "x-alice:/lib/gecode/distributed-search/MkEngine"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature ENGINE =
+sig
+    type <A href="#solution">solution</A>
+
+    val <A href="#start">start</A> : (string * string) list ->
+		(unit -> unit) * (solution Channel.channel)
+end
+
+</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="solution">solution</A></TT>
+    </DT>
+    <DD>
+      <P>The type of solutions, equal to the type <TT>solution</TT> passed as an argument to the functor
+         <TT>MkEngine</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="start">start</A> <I>hostList</I></TT>
+    </DT>
+    <DD>
+      <P>Start the search on the given hosts.
+         <TT><I>hostList</I></TT> is a list of pairs <I>(host, nickname)</I>,
+         where <I>host</I> is the network name of the remote machine (where alice should be installed,
+         see <A href="remote.html">Remote</A>),
+         and <I>nickname</I> is a display name for that machine (for debug messages).
+      </P>
+      <P><TT>start hostList</TT> returns a pair <I>(shutdown, solutions)</I> as soon as all remote workers
+         have been contacted.
+         <I>shutdown</I> is a function that can be used to concurrently stop the search and stop remote workers.
+         <I>solutions</I> is a channel, initially empty, that is filled with solutions as soon as they are discovered.
+      </P>
+    </DD>
+
+  </DL>
+  
+<?php footing(); ?>

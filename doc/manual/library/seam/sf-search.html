@@ -1,0 +1,163 @@
+<?php include("macros.php3"); ?>
+<?php heading("The MkSearch functor (search factory)", "The <TT>MkSearch</TT> functor (search-factory)"); ?>
+
+<P></P>
+<?php section("synopsis", "synopsis"); ?>
+  <PRE>
+    signature SEARCH
+    functor MkSearch (<A href="sf-problem.html">Problem : PROBLEM</A> where type space = <a href="space.html">Space.space</A>) 
+                  :> SEARCH where type solution = <A href="sf-problem.html#solution">Problem.solution</A>
+		            where type space    = <A href="space.html">Space.space</A></PRE>
+
+
+   <P>
+     The <TT>MkSearch</TT> functor expects a description of the constraint problem to solve,
+     given as a structure <A href="sf-problem.html"><TT>PROBLEM</TT></A>.
+     It returns a structure that can be used for searching one or many solutions.
+   </P>
+
+  <P>
+    See also:
+    <A href="sf-problem.html"><TT>PROBLEM</TT></A>,
+    <A href="sf-path.html"><TT>PATH</TT></A>,
+    <A href="space.html"><TT>Space</TT></A>.
+  </P>
+
+<?php section("import", "import"); ?>
+
+  <PRE>
+    import signature SEARCH   from "x-alice:/lib/gecode/search-factory/SEARCH-sig"
+    import structure MkSearch from "x-alice:/lib/gecode/search-factory/MkSearch"</PRE>
+
+<?php section("interface", "interface"); ?>
+  <PRE>
+signature SEARCH =
+sig
+
+  type <A href="#solution">solution</A>
+  type <A href="#space">space</A>
+
+  exception <A href="#NotAssigned">NotAssigned</A>
+    
+  val <A href="#init">init</A>              : solution <A href="sf-path.html">Path.t</A> -> unit
+  val <A href="#nextSolved">nextSolved</A>        : unit -> (space * solution <A href="sf-path.html">Path.t</A>) option
+  val <A href="#isFinished">isFinished</A>        : unit -> bool
+  val <A href="#getOneSolution">getOneSolution</A>    : unit -> (solution * solution <A href="sf-path.html">Path.t</A>) option
+  val <A href="#getAllSolutions">getAllSolutions</A>   : unit -> solution list
+  val <A href="#getUnexploredPath">getUnexploredPath</A> : unit -> solution <A href="sf-path.html">Path.t</A> option
+  val <A href="#stopSearch">stopSearch</A>        : unit -> unit
+  val <A href="#betterThan">betterThan</A>        : solution -> unit
+
+end</PRE>
+
+<?php section("description", "description"); ?>
+
+  <DL>
+    <DT>
+      <TT>type <A name="solution">solution</A></TT>
+    </DT>
+    <DD>
+      <P>The type of solutions. The <TT>MkSearch</TT> functor returns a type <TT>solution</TT>
+         equal to <TT>Problem.solution</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>type <A name="space">space</A></TT>
+    </DT>
+    <DD>
+      <P>The type of constraint spaces. The <TT>MkSearch</TT> functor returns a type <TT>space</TT>
+         equal to <TT>Space.space</TT>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT>exception <A name="NotAssigned">NotAssigned</A></TT>
+    </DT>
+    <DD>
+      <P>Raised when the constraint problem to solve is under-specified, that is, 
+         a space is solved, but the variables necessary to read the solutions are not
+         all determined. See the same exception in <A href="fd.html">FD</A>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="init">init</A> <I>path</I></TT>
+    </DT>
+    <DD>
+      <P><B>Optional</B>. Sets the top node of the search (by default it is the root node of the search tree).
+         Raise <TT>Fail</TT> if the search has already begun and is not finished yet.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="nextSolved">nextSolved</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>NONE</TT> if no more solution can be found.
+         Otherwise, returns a pair <TT>(space, path)</TT> of the solved space and the path of this solution
+         in the search tree.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="isFinished">isFinished</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Indicates if the search is finished.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="getOneSolution">getOneSolution</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>NONE</TT> if no more solution can be found.
+         Otherwise, returns a pair <TT>(sol, path)</TT> of one new solution and the path of this solution
+         in the search tree.
+	 Raises <A href="#NotAssigned"><TT>NotAssigned</TT></A> if the variables are not assigned in the solved space.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="getAllSolutions">getAllSolutions</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Returns a list of all the (remaining) solutions.
+         In the case of Branch & Bound, the first solution of the list (head of the list) is the best solution.
+	 Raises <A href="#NotAssigned"><TT>NotAssigned</TT></A> if the variables are not assigned in the solved space.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="getUnexploredPath">getUnexploredPath</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Returns the path corresponding to some unexplored node,
+         usually the highest available in the tree. Returns <TT>NONE</TT> if one or less such nodes
+         are available. Returns <TT>SOME path</TT> otherwise. The returned path is removed from
+         the list of unexplored nodes so that it will not be explored in the future.
+      <B>Thread-safe</B>. </P>
+    </DD>
+
+    <DT>
+      <TT><A name="stopSearch">stopSearch</A> <I>()</I></TT>
+    </DT>
+    <DD>
+      <P>Stops the search. <B>Thread-safe</B>.
+      </P>
+    </DD>
+
+    <DT>
+      <TT><A name="betterThan">betterThan</A> <I>solution</I></TT>
+    </DT>
+    <DD>
+      <P><B>Optional</B>. In case of Branch & Bound search, constrain the search tree by inserting a new solution
+         found in another place (like in distributed search). In general, you need <B>not</B> call this function
+         when doing Branch & Bound search.
+         <B>Thread-safe</B>.
+      </P>
+    </DD>
+  </DL>
+  
+<?php footing(); ?>
