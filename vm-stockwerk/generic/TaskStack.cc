@@ -19,7 +19,7 @@
 #include <cstdio>
 #include "generic/RootSet.hh"
 #include "generic/TaskStack.hh"
-#include "generic/Interpreter.hh"
+#include "generic/Worker.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Properties.hh"
@@ -29,11 +29,11 @@
 #include "generic/Profiler.hh"
 #endif
 
-// Empty Interpreter
-class EmptyTaskInterpreter: public Interpreter {
+// Empty Task Worker
+class EmptyTaskWorker: public Worker {
 public:
-  // EmptyTaskInterpreter Constructor
-  EmptyTaskInterpreter(): Interpreter() {}
+  // EmptyTaskWorker Constructor
+  EmptyTaskWorker(): Worker() {}
   // Execution
   virtual Result Run();
   virtual Result Handle();
@@ -42,12 +42,12 @@ public:
   virtual void DumpFrame(word frame);
 };
 
-Interpreter::Result EmptyTaskInterpreter::Run() {
+Worker::Result EmptyTaskWorker::Run() {
   Scheduler::nArgs = 0;
-  return Interpreter::TERMINATE;
+  return Worker::TERMINATE;
 }
 
-Interpreter::Result EmptyTaskInterpreter::Handle() {
+Worker::Result EmptyTaskWorker::Handle() {
   if (Properties::atExn == Store::IntToWord(0)) {
     fprintf(stderr, "uncaught exception:\n");
     Debug::Dump(Scheduler::currentData);
@@ -59,11 +59,11 @@ Interpreter::Result EmptyTaskInterpreter::Handle() {
   }
 }
 
-const char *EmptyTaskInterpreter::Identify() {
-  return "EmptyTaskInterpreter";
+const char *EmptyTaskWorker::Identify() {
+  return "EmptyTaskWorker";
 }
 
-void EmptyTaskInterpreter::DumpFrame(word) {
+void EmptyTaskWorker::DumpFrame(word) {
   return; // do nothing
 }
 
@@ -71,7 +71,7 @@ void EmptyTaskInterpreter::DumpFrame(word) {
 word TaskStack::emptyTask;
 
 void TaskStack::Init() {
-  Interpreter *interpreter = new EmptyTaskInterpreter();
+  Worker *interpreter = new EmptyTaskWorker();
   StackFrame *frame = StackFrame::New(BOTTOM_FRAME, interpreter);
   emptyTask = frame->ToWord();
   RootSet::Add(emptyTask);
@@ -99,13 +99,13 @@ void TaskStack::Purge(u_int nFrames) {
   // Purge all frames:
   for (u_int i = nFrames; i--; ) {
     StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
-    frame->GetInterpreter()->PurgeFrame(frame->ToWord());
+    frame->GetWorker()->PurgeFrame(frame->ToWord());
   }
 }
 
 void TaskStack::Dump(u_int nFrames) {
   for (u_int i = nFrames; i--; ) {
     StackFrame *frame = StackFrame::FromWordDirect(GetArg(i));
-    frame->GetInterpreter()->DumpFrame(frame->ToWord());
+    frame->GetWorker()->DumpFrame(frame->ToWord());
   }
 }

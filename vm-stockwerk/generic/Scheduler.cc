@@ -22,8 +22,8 @@
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
 #include "generic/StackFrame.hh"
-#include "generic/ByneedInterpreter.hh"
-#include "generic/PushCallInterpreter.hh"
+#include "generic/BindFutureWorker.hh"
+#include "generic/PushCallWorker.hh"
 #include "generic/IOHandler.hh"
 #include "generic/SignalHandler.hh"
 
@@ -102,42 +102,42 @@ void Scheduler::Run() {
 	Profiler::SampleHeap();
 #endif
 	StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
-	Interpreter *interpreter = frame->GetInterpreter();
-	Interpreter::Result result = interpreter->Run();
+	Worker *worker = frame->GetWorker();
+	Worker::Result result = worker->Run();
 #if PROFILE
 	Profiler::AddHeap(frame);
 #endif
       interpretResult:
 	switch (result) {
-	case Interpreter::CONTINUE:
+	case Worker::CONTINUE:
 	  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
 	  break;
-	case Interpreter::PREEMPT:
+	case Worker::PREEMPT:
 	  FlushThread();
 	  threadQueue->Enqueue(currentThread);
 	  nextThread = true;
 	  break;
-	case Interpreter::SUSPEND:
+	case Worker::SUSPEND:
 	  FlushThread();
 	  currentThread->Purge();
 	  currentThread->Suspend();
 	  nextThread = true;
 	  break;
-	case Interpreter::RAISE:
+	case Worker::RAISE:
 	  {
 	  raise:
 #if PROFILE
 	    Profiler::SampleHeap();
 #endif
 	    frame = StackFrame::FromWordDirect(GetFrame());
-	    interpreter = frame->GetInterpreter();
-	    result = interpreter->Handle();
+	    worker = frame->GetWorker();
+	    result = worker->Handle();
 #if PROFILE
 	    Profiler::AddHeap(frame);
 #endif
 	    goto interpretResult;
 	  }
-	case Interpreter::REQUEST:
+	case Worker::REQUEST:
 	  {
 	    Transient *transient = Store::WordToTransient(currentData);
 	    Assert(transient != INVALID_POINTER);
@@ -161,8 +161,8 @@ void Scheduler::Run() {
 	    case BYNEED_LABEL:
 	      {
 		Thread *newThread = NewThread(0, Store::IntToWord(0));
-		ByneedInterpreter::PushFrame(newThread, transient);
-		PushCallInterpreter::PushFrame(newThread, transient->GetArg());
+		BindFutureWorker::PushFrame(newThread, transient);
+		PushCallWorker::PushFrame(newThread, transient->GetArg());
 		// The future's argument is an empty wait queue:
 		transient->Become(FUTURE_LABEL, Store::IntToWord(0));
 		FlushThread();
@@ -179,7 +179,7 @@ void Scheduler::Run() {
 	    }
 	  }
 	  break;
-	case Interpreter::TERMINATE:
+	case Worker::TERMINATE:
 	  FlushThread();
 	  currentThread->SetTerminated();
 	  nextThread = true;
@@ -204,7 +204,7 @@ void Scheduler::Run() {
   }
 }
 
-Interpreter::Result Scheduler::PushCall(word wClosure) {
+Worker::Result Scheduler::PushCall(word wClosure) {
   Assert(Store::WordToInt(wClosure) == INVALID_INT);
   Transient *transient = Store::WordToTransient(wClosure);
   if (transient == INVALID_POINTER) { // Closure is determined
@@ -221,17 +221,17 @@ Interpreter::Result Scheduler::PushCall(word wClosure) {
       Profiler::IncCalls(frame);
 #endif
       if (StatusWord::GetStatus() != 0)
-	return Interpreter::PREEMPT;
+	return Worker::PREEMPT;
       else
-	return Interpreter::CONTINUE;
+	return Worker::CONTINUE;
     } else { // Request ConcreteCode
-      PushCallInterpreter::PushFrame(wClosure);
+      PushCallWorker::PushFrame(wClosure);
       currentData = transient->ToWord();
-      return Interpreter::REQUEST;
+      return Worker::REQUEST;
     }
   } else { // Request Closure
-    PushCallInterpreter::PushFrame(wClosure);
+    PushCallWorker::PushFrame(wClosure);
     currentData = transient->ToWord();
-    return Interpreter::REQUEST;
+    return Worker::REQUEST;
   }
 }
