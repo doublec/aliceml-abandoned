@@ -23,7 +23,7 @@ define
        'Command line option error: '#M#'\n'#
        'Usage: '#{Property.get 'application.url'}#' [options]\n'#
        '--in=<File>         File containing component to translate.\n'#
-       '--out=<File>        Name of pickle to write.'}
+       '--out=<File>        Name of pickle to write.\n'}
       {Application.exit 2}
    end
 
