@@ -28,21 +28,22 @@ structure WindowManager :> WINDOW_MANAGER =
 	val window     = ref W.window
 	val show       = ref W.show
 
+	val act_line = ref 0
+
+	fun incr_act_line dy = act_line := !act_line + dy
+	    
 	fun new () = let
 			 val a =  !(!alive)
 		     in
-			 if  a then () else let
-					        structure W =  MkWindow() :MK_WINDOW
-					       	val _    = alive:= W.alive 
-						val _ = canvasroot := W.canvasroot
-						val _ = window := W.window
-						val _ = show:=  W.show
-					    in
-						()
-					    end
+			 if  a then () 
+			 else let
+				  structure W =  MkWindow() :MK_WINDOW
+				  val _    = alive:= W.alive 
+				  val _ = canvasroot := W.canvasroot
+				  val _ = window := W.window
+				  val _ = show:=  W.show
+			      in
+				  (incr_act_line (~(!act_line)) )
+			      end
 		     end
-	
-	
-      
-
 end

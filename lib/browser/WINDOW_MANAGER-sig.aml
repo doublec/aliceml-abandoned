@@ -18,6 +18,11 @@ import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 signature WINDOW_MANAGER =
 sig
     val alive: bool ref ref
+
+    val act_line : int ref
+
+    val incr_act_line : int -> unit 
+
     val new : unit -> unit
     val canvasroot: Gtk.object ref
     val window: Gtk.object ref
