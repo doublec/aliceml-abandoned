@@ -464,6 +464,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		FunExp (info, stamp, flags, args, body')
 	    end
 	  | vpExp (PrimAppExp (info, string, ids), env, _, _) =
+	    (*--** make sure it's applied with the correct arity *)
 	    (*--** partially evaluate this application *)
 	    PrimAppExp (info, string, List.map (fn id => deref (id, env)) ids)
 	  | vpExp (VarAppExp (info, id, args), env, _, _) =
