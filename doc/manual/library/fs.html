@@ -15,6 +15,11 @@
     Finite set variables are variables whose values are sets of
     non-negative integers.
   </P>
+  <P>
+    Note that every propagator creation
+    can raise a <TT>Tell</TT> exception if it is performed on toplevel and
+    the constraint is inconsistent with other constraints.
+  </P>
 
   <P>See also:
     <A href="fd.html"><TT>FD</TT></A>
@@ -32,6 +37,8 @@
     signature FS =
     sig
 	type fs
+
+	exception Tell = FD.Tell
 
 	(* Implementation dependent fs limits *)
 	val inf : int
@@ -114,6 +121,14 @@
     </DT>
     <DD>
       <P>The type of finite set variables.
+    </P></DD>
+
+    <DT>
+      <TT>exception Tell</TT>
+    </DT>
+    <DD>
+      <P>is raised when a propagator is created on toplevel and is inconsistent
+         with other constraints.
     </P></DD>
 
     <DT>
