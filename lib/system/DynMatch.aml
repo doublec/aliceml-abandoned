@@ -38,6 +38,7 @@ struct
     fun trModLab lab		= Label.fromName(trModName(Label.toName lab))
     fun trInfLab lab		= Label.fromName(trInfName(Label.toName lab))
 
+
     fun match(m, j) =
 	let
 	    val rea = Inf.rea()
@@ -58,7 +59,7 @@ struct
 	 of (Inf.FixItem _ | Inf.ValItem _) =>
 	        matchSig(rea, m, items)
 	  | Inf.TypItem(p,k) =>
-	    if Type.isSingKind k then () else
+	    if Type.isSingKind k then matchSig(rea, m, items) else
 	    let
 		val l = trTypLab(Path.toLab p)
 		val t = lazy UnsafeValue.projPoly(m,l)
@@ -67,7 +68,7 @@ struct
 		matchSig(rea, m, items)
 	    end
 	  | Inf.ModItem(p,j) =>
-	    if Inf.isSing j then () else
+	    if Inf.isSing j then matchSig(rea, m, items) else
 	    let
 		val l  = trModLab(Path.toLab p)
 		val m' = lazy UnsafeValue.projPoly(m,l)
@@ -76,7 +77,7 @@ struct
 		matchSig(rea, m, items)
 	    end
 	  | Inf.InfItem(p,k) =>
-	    if Inf.isSingKind k then () else
+	    if Inf.isSingKind k then matchSig(rea, m, items) else
 	    let
 		val l = trInfLab(Path.toLab p)
 		val j = lazy UnsafeValue.projPoly(m,l)

@@ -12,8 +12,11 @@
  *)
 
 import structure Inf               from "../rtt/Inf"
+import structure PathMap           from "../rtt/PathMap"
 import structure TextIO            from "TextIO"
 import structure PrettyPrint       from "../utility/PrettyPrint"
+import structure PPPath            from "../rtt/PPPath"
+import structure PPType            from "../rtt/PPType"
 import structure PPInf             from "../rtt/PPInf"
 import structure IO                from "IO"
 import structure OS                from "OS"
@@ -176,6 +179,8 @@ struct
 	    trace (!logStream,
 		   "warning: no import/export signatures, accepted unchecked")
 
+	fun pathToString path = PrettyPrint.toString (PPPath.ppPath path, 10000)
+	fun typToString typ = PrettyPrint.toString (PPType.ppTyp typ, 10000)
 	fun infToString NONE = "(none)"
 	  | infToString (SOME inf) = PrettyPrint.toString (PPInf.ppInf inf, 80)
 
@@ -198,6 +203,14 @@ struct
 			    		 ":\n" ^ infToString importInf);
 		      trace (!logStream, "signature found in " ^ url' ^
 					 ":\n" ^ infToString inf);
+		      trace (!logStream, "under realisation\n" ^
+					 PathMap.foldi (fn (path, typ, s) =>
+					     pathToString path ^ " -> " ^
+					     typToString typ ^ "\n" ^ s)
+					 (PathMap.foldi (fn (path, inf, s) =>
+					     pathToString path ^ " ->\n" ^
+					     infToString (SOME inf)^ "\n" ^ s)
+					  "" (#inf_rea rea)) (#typ_rea rea));
 		      raise Failure (url,
 				     Mismatch {component = url,
 					       request = baseUrlOpt,
@@ -240,6 +253,13 @@ struct
 		case importInf of
 		    NONE => ()
 		  | SOME inf' => DynMatch.matchWith (rea, mod', inf');
+(*DEBUG
+trace (!logStream, "considering import " ^ Url.toString url ^ ":\n" ^ infToString importInf);
+trace (!logStream, "extended realisation after considering import " ^ Url.toString url ^ ":" ^
+	 PathMap.foldi (fn (path, typ, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
+	 (PathMap.foldi (fn (path, inf, s) => "\n" ^ pathToString path ^ " -> _" ^ s)
+	  "" (#inf_rea rea)) (#typ_rea rea));
+*)
 		mod'
 	    end
 	and eval' (baseUrl, component) = eval'' (baseUrl, cast component)
@@ -255,6 +275,9 @@ struct
 			Url.resolve baseUrl url
 		    end
 		val rea = Inf.rea ()
+(*DEBUG
+val _ = trace (!logStream, "linking " ^ Url.toString baseUrl ^ "...")
+*)
 		val imports' =
 		    Vector.map (fn (importUrlS, importInf) =>
 				   typedLink (resolve importUrlS, rea,
