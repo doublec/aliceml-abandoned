@@ -28,7 +28,7 @@
     then every localization act will output trace messages about what
     handlers were called on what resource and with what result.
     These messages are printed to the standard error output stream
-    <TT>TextIO.stdErr</TT>.
+    <TT><A href="text-io.php3">TextIO.stdErr</A></TT>.
   </P>
 
   <P>
@@ -58,8 +58,8 @@
 	    FILE of string
 	  | STRING of string
 
-	val <A href="#new">new</A>: string * Handler.handler list -> resolver
-	val <A href="#localize">localize</A>: resolver -> string -> result option
+	val <A href="#new">new</A> : {name : string, handlers : <A href="resolver-handler.php3#t">Handler.t</A> list, memoize : bool} -> resolver
+	val <A href="#localize">localize</A> : resolver -> string -> result option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -125,12 +125,13 @@
     </DD>
 
     <DT>
-      <TT><A name="new">new</A> (<I>name</I>, <I>handlers</I>)</TT>
+      <TT><A name="new">new</A> {name = <I>s</I>, handlers = <I>handlers</I>, memoize = <I>b</I>}</TT>
     </DT>
     <DD>
-      <P>returns a new resolver with name <TT><I>name</I></TT> and trying the
-	given <TT><I>handlers</I></TT> in order.  The name is used to print
-	tracing messages.</P>
+      <P>returns a new resolver with name <TT><I>s</I></TT> and trying the
+	given <TT><I>handlers</I></TT> in order.  If <TT><I>b</I></TT> is
+	<TT>true</TT>, then the results of localization acts are memoized.
+	The name is used only to print tracing messages.</P>
     </DD>
 
     <DT>

@@ -37,14 +37,14 @@
 
 	exception <A href="#Syntax">Syntax</A>
 
-	val <A href="#default">default</A>: handler
-	val <A href="#root">root</A>: string -> handler
-	val <A href="#cache">cache</A>: string -> handler
-	val <A href="#prefix">prefix</A>: string * string -> handler
-	val <A href="#pattern">pattern</A>: string * string -> handler
-	val <A href="#custom">custom</A>: string * (string -> <A href="url.php3#t">Url.t</A> option) -> handler
+	val <A href="#default">default</A> : handler
+	val <A href="#root">root</A> : string -> handler
+	val <A href="#cache">cache</A> : string -> handler
+	val <A href="#prefix">prefix</A> : string * string -> handler
+	val <A href="#pattern">pattern</A> : string * string -> handler
+	val <A href="#custom">custom</A> : string * (string -> <A href="url.php3#t">Url.t</A> option) -> handler
 
-	val <A href="#parse">parse</A>: string -> handler list
+	val <A href="#parse">parse</A> : string -> handler list
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -62,8 +62,8 @@
       <TT>exception <A name="Syntax">Syntax</A></TT>
     </DT>
     <DD>
-      <P>used by <A href="#parse">parse</A> to indicate that a string was
-	not a well-formed representation of a list of handlers.</P>
+      <P>used by <TT><A href="#parse">parse</A></TT> to indicate that a string
+	was not a well-formed representation of a list of handlers.</P>
     </DD>
 
     <DT>
