@@ -27,6 +27,8 @@
 #include "emulator/Transients.hh"
 #include "emulator/PrimitiveTable.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
+#include "emulator/Alice.hh"
+#include "emulator/RootSet.hh"
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
@@ -168,10 +170,16 @@ public:
     free(rdBuf);
   }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
-    // This is blocking
-    AppendToBuffer(rdBuf, (u_int) fread(rdBuf, sizeof(u_char), rdSize, file));
-    taskStack->PopFrame();
-    CONTINUE(args);
+    // This is blocking: to be done
+    u_int nread = (u_int) fread(rdBuf, sizeof(u_char), rdSize, file);
+    if (nread == 0) {
+      Scheduler::currentData = Unpickler::Corrupt;
+      return Interpreter::RAISE;
+    } else {
+      AppendToBuffer(rdBuf, nread);
+      taskStack->PopFrame();
+      CONTINUE(args);
+    }
   }
 };
 
@@ -191,7 +199,7 @@ public:
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
     taskStack->PopFrame();
     if (string == INVALID_POINTER) {
-      Scheduler::currentData = Store::IntToWord(0); // to be done
+      Scheduler::currentData = Unpickler::Corrupt;
       return Interpreter::RAISE;
     }
     else {
@@ -472,7 +480,6 @@ public:
   static void PushFrame(TaskStack *taskStack, word block, int i, int n);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
-  // Handle to be done
   // Debugging
   virtual const char *Identify();
   virtual const char *ToString(word args, TaskStack *taskStack);
@@ -691,7 +698,6 @@ public:
   static void PushFrame(TaskStack *taskStack, Tuple *x);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
-  // Handle to be done
   // Debugging
   virtual const char *Identify();
   virtual const char *ToString(word args, TaskStack *taskStack);
@@ -827,6 +833,8 @@ Interpreter::Result Unpickler::Load(char *filename, TaskStack *taskStack) {
   CONTINUE(PickleArgs::New((InputStreamBase *) is, env->ToWord(), 0)->ToWord());
 }
 
+word Unpickler::Corrupt;
+
 void Unpickler::Init() {
   // Setup internal Interpreters
   InputInterpreter::Init();
@@ -834,4 +842,7 @@ void Unpickler::Init() {
   UnpickleInterpreter::Init();
   PickleUnpackInterpeter::Init();
   PickleLoadInterpreter::Init();
+  Corrupt =
+    UniqueConstructor::New(String::New("UnsafeComponent.Corrupt"))->ToWord();
+  RootSet::Add(Corrupt);
 }

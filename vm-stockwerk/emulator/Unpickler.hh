@@ -23,6 +23,8 @@ typedef unsigned char u_char;
 
 class Unpickler {
 public:
+  // Exceptions
+  static word Corrupt;
   // Unpickler Functions
   static Interpreter::Result Unpack(Chunk *s, TaskStack *taskStack);
   // Excpect c filename style
