@@ -45,7 +45,6 @@ signature IMPERATIVE_GRAMMAR =
 	    ValDec of coord * id * exp * isToplevel
 	  | RecDec of coord * (id * exp) list * isToplevel
 	    (* all ids distinct *)
-	    (*--** replace id list above by id *)
 	  | ConDec of coord * id * hasArgs * isToplevel
 	  | EvalStm of coord * exp
 	  (* the following must always be last *)
