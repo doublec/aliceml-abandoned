@@ -425,7 +425,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
     //    g_value_set_boolean(return_value, 
     //          (GPOINTER_TO_INT(closure->data) != 0) ? TRUE : FALSE);
-    g_value_set_boolean(return_value, TRUE);
+    g_value_set_boolean(return_value, FALSE);
 }
 
 DEFINE3(NativeCore_signalConnect) {
@@ -441,7 +441,7 @@ DEFINE3(NativeCore_signalConnect) {
 					closure, after ? TRUE : FALSE); 
   g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
 			     generic_marshaller);
-  
+
   RETURN(INT_TO_WORD(static_cast<int>(connid)));
 } END
 
