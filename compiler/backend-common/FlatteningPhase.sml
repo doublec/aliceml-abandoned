@@ -46,8 +46,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
-	  | share stms =   (*--** provide better coordinates *)
-	    [O.SharedStm (Source.nowhere, stms, ref 0)]
+	  | share stms = [O.SharedStm (Source.nowhere, stms, ref 0)]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -115,15 +114,36 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      case dec of
 				  O.ValDec (_, id, exp', _) => (id, exp')
 				| _ =>
-				      Error.error (Source.nowhere,   (*--** *)
-						   "not admissible"))
+				      Error.error (coord, "not admissible"))
 		    decs'
 		val rest =
 		    O.RecDec (coord, idExpList', false)::aliasDecs @
 		    translateCont cont
+		val rest' = translateCont (Decs (conDecs, Goto rest))
+		val errStms = share [O.RaiseStm (coord, id_Bind)]
 	    in
-		(*--** generate constraints *)
-		translateCont (Decs (conDecs, Goto rest))
+		List.foldr
+		(fn ((longid1, longid2, hasArgs), rest) =>
+		 let
+		     val (stms1, id1) = translateLongid longid1
+		     val (stms2, id2) = translateLongid longid2
+		 in
+		     stms1 @ stms2 @
+		     (if hasArgs then
+			  let
+			      val id1' = freshId coord
+			      val id2' = freshId coord
+			  in
+			      [O.ValDec (coord, id1',
+					 O.ConAppExp (coord, id1, id1), false),
+			       O.TestStm (coord, id1,
+					  O.ConTest (id2, SOME id2'),
+					  rest, errStms)]
+			  end
+		      else
+			  [O.TestStm (coord, id1, O.ConTest (id2, NONE),
+				      rest, errStms)])
+		 end) rest' constraints
 	    end
 	  | translateDec (ConDec (coord, id, hasArgs), cont) =
 	    O.ConDec (coord, id, hasArgs, false)::translateCont cont

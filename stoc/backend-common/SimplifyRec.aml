@@ -16,7 +16,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	open I
 
-	type constraint = longid * longid
+	type constraint = longid * longid * bool   (* has args *)
 	type binding = id * exp
 	type alias = id * id
 
@@ -115,13 +115,13 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
 	  | derec' (ConPat (coord, longid1, NONE),
 		    ConExp (_, longid2, false)) =
-	    ([(longid1, longid2)], nil)
+	    ([(longid1, longid2, false)], nil)
 	  | derec' (ConPat (coord, longid1, SOME pat),
 		   AppExp (_, ConExp (_, longid2, true), exp)) =
 	    let
 		val (constraints, idsExpList) = derec' (pat, exp)
 	    in
-		((longid1, longid2)::constraints, idsExpList)
+		((longid1, longid2, true)::constraints, idsExpList)
 	    end
 	  | derec' (RefPat (_, pat), AppExp (_, RefExp _, exp)) =
 	    derec' (pat, exp)
@@ -226,13 +226,13 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | unify (pat1, VarPat (coord, id)) = (nil, AsPat (coord, id, pat1))
 	  | unify (pat1 as ConPat (coord, longid, NONE),
 		   ConPat (_, longid', NONE)) =
-	    ([(longid, longid')], pat1)
+	    ([(longid, longid', false)], pat1)
 	  | unify (ConPat (coord, longid, SOME pat1),
 		   ConPat (_, longid', SOME pat2)) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
 	    in
-		((longid, longid')::constraints,
+		((longid, longid', true)::constraints,
 		 ConPat (coord, longid, SOME pat))
 	    end
 	  | unify (RefPat (coord, pat1), RefPat (_, pat2)) =

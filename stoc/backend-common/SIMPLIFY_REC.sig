@@ -14,7 +14,7 @@ signature SIMPLIFY_REC =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-	type constraint = I.longid * I.longid
+	type constraint = I.longid * I.longid * bool   (* has args *)
 	type binding = I.id * I.exp
 	type alias = I.id * I.id
 
