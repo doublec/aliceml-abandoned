@@ -23,5 +23,8 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
 		val load: string -> 'component          (* IO.Io, Corrupt *)
+
+		val pack_: 'component -> string         (* Sited *)
+		val unpack_: string -> 'component       (* Corrupt *)
 	    end
     end
