@@ -1,4 +1,4 @@
 @echo off
 
-echo sml @SMLload=D:\stockhausen\stoc\top\stoc-com+ %1 %2
-sml @SMLload=D:\stockhausen\stoc\top\stoc-com+ %1 %2
+echo sml-cm @SMLload=Y:\stockhausen\stoc\top\stoc-com+ %1 %2
+sml-cm @SMLload=Y:\stockhausen\stoc\top\stoc-com+ %1 %2
