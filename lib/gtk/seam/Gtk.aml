@@ -9,7 +9,7 @@ structure Gtk :> GTK =
 struct
     open GtkTypes
     open GtkCore
-    val _ = GtkCore.init()
+    val _ = init()
     open GtkEnums 
     open GtkUnsafe
 end

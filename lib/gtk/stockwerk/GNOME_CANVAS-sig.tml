@@ -1,5 +1,4 @@
 import structure GtkTypes from "GtkTypes"
-import structure GtkEnums from "GtkEnums"
 import structure GdkEnums from "GdkEnums"
 import structure PangoEnums from "PangoEnums"
 
@@ -8,8 +7,9 @@ sig
 
     type object = GtkTypes.object
     exception TypeMismatch of string
-    type arg = GtkTypes.arg
 
+<<< "GTK_TYPES-sig.aml" >>>
+<<< "GTK_CORE-sig.aml" >>>
 <<< "GNOME_CANVAS_ENUMS-sig.aml" >>>
 <<< "GNOME_CANVAS_UNSAFE-sig.aml" >>>
 

@@ -9,6 +9,7 @@ sig
     exception TypeMismatch of string
 
 <<< "GTK_TYPES-sig.aml" >>>
+<<< "GTK_CORE-sig.aml" >>>
 <<< "GDK_ENUMS-sig.aml" >>>
 <<< "GDK_UNSAFE-sig.aml" >>>
 

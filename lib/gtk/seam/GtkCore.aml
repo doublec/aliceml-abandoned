@@ -1,12 +1,12 @@
-import structure NativeGtk from "NativeGtk"
+import structure NativeGtkCore from "NativeGtkCore"
 import structure GtkTypes from "GtkTypes"
 import signature GTK_CORE from "GTK_CORE-sig"
 
 structure GtkCore :> GTK_CORE =
 struct
-    val NULL = NativeGtk.null()
-    val TRUE = NativeGtk.gtkTrue()
-    val FALSE = NativeGtk.gtkFalse()
+    val NULL = NativeGtkCore.null()
+    val TRUE = NativeGtkCore.gtkTrue()
+    val FALSE = NativeGtkCore.gtkFalse()
 
     type object = GtkTypes.object
     exception TypeMismatch = GtkTypes.TypeMismatch
@@ -14,10 +14,10 @@ struct
     type callBackFunction = object * arg list -> unit
 
     type refInfo = (object -> object) * (object -> unit)
-    val GtkWidgetRef = (NativeGtk.widgetRef, NativeGtk.widgetUnref)
-    val GtkObjectRef = (NativeGtk.objectRef, NativeGtk.objectUnref)
-    val GObjectRef = (NativeGtk.gObjectRef, NativeGtk.gObjectUnref)
-    val DeleteRef = (fn p => p, NativeGtk.deleteUnref)
+    val GtkWidgetRef = (NativeGtkCore.widgetRef, NativeGtkCore.widgetUnref)
+    val GtkObjectRef = (NativeGtkCore.objectRef, NativeGtkCore.objectUnref)
+    val GObjectRef = (NativeGtkCore.gObjectRef, NativeGtkCore.gObjectUnref)
+    val DeleteRef = (fn p => p, NativeGtkCore.deleteUnref)
     val NoRef = (fn p => p, fn _ => ())
 
     (* weak map *)
@@ -56,7 +56,7 @@ struct
 
     fun doSignalConnect (obj,signame,callback,after) =
 	let
-	    val connid = NativeGtk.signalConnect (obj,signame,after)
+	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
 	    val _      = addToSignalTable(connid,callback)
 	    val (_,_,ids) = weakMapGet obj (NULL,fn _ => (), ref nil)
 	    val _ = (ids := (connid::(!ids)))
@@ -73,7 +73,7 @@ struct
 	val signalConnectAfter = checkSignalConnect true
 
 	fun signalDisconnect (obj, connid) =
-	    ( NativeGtk.signalDisconnect(obj,connid) ;
+	    ( NativeGtkCore.signalDisconnect(obj,connid) ;
 	      removeFromSignalTable connid )
     end
 
@@ -129,12 +129,12 @@ struct
 
     fun mainLoop sTime =
 	let
-	    val haveEvents = (NativeGtk.eventsPending() = TRUE)
+	    val haveEvents = NativeGtkCore.eventsPending()
 	    val sTimeNew = 
 		if haveEvents then initPoll
 		    else sTime + (if sTime >= maxPoll then 0 else pollStep)
 	in
-	    (if haveEvents then NativeGtk.mainIteration() else false ;
+	    (if haveEvents then NativeGtkCore.mainIteration() else () ;
 		 sleep sTime;  
 		 mainLoop sTimeNew)
 	end
@@ -142,12 +142,13 @@ struct
     fun init () = 
     let
 	val eventStream : (int * object * arg list) list = 
-	                                     NativeGtk.getEventStream()
-	val _ = NativeGtk.init ()
+	                                     NativeGtkCore.getEventStream()
+	val _ = NativeGtkCore.init ()
 	val _ = spawn (listener eventStream)
 	val _ = spawn (mainLoop initPoll)
     in
 	()
     end
       handle _ => ()
+
 end

@@ -8,7 +8,8 @@ import signature GDK from "GDK-sig"
 structure Gdk :> GDK =
 struct
     open GtkTypes
-    val _ = GtkCore.init()
+    open GtkCore
+    val _ = init()
     open GdkEnums 
     open GdkUnsafe
 end

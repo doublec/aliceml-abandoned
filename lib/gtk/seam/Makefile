@@ -9,12 +9,16 @@ COMPSCAP = GDK GTK GNOME_CANVAS
 ENUMCOMPS = Pango
 ENUMCOMPSCAP = PANGO
 
+# The following native components will be compiled
+# (in addition to the generated ones)
+NATIVECOMPS = GtkCore
+
 # names of generated files
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
 	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
-NATIVES = $(COMPS:%=Native%)
-GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
+NATIVES = $(COMPS:%=Native%) $(NATIVECOMPS:%=Native%)
+GENNATIVES = $(COMPS:%=Native%.asig) $(COMPS:%=Native%.cc)
 GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)
 GENSIGS = $(COMPSCAP:%=%-sig.aml) 
 
@@ -31,11 +35,17 @@ CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(COMMON) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)
 
 # executable names
+ifdef WINDOWS
+GENERATOR = GtkBinding.x86-win32
+else
 GENERATOR = GtkBinding.x86-linux
+endif
+
 SML = sml
 ALICEC = alicec --dump-phases
 ALICETOOL = alicetool
-INSTALL = install -C -v -m 666
+#INSTALL = install -C -v -m 666
+INSTALL = install -v -m 644
 CLIBS = gtk+-2.0 libgnomecanvas-2.0
 
 #################################################

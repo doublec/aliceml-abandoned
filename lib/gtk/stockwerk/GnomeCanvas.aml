@@ -8,7 +8,8 @@ import signature GNOME_CANVAS from "GNOME_CANVAS-sig"
 structure GnomeCanvas :> GNOME_CANVAS =
 struct
     open GtkTypes
-    val _ = GtkCore.init()
+    open GtkCore
+    val _ = init()
     open GnomeCanvasEnums 
     open GnomeCanvasUnsafe
 
