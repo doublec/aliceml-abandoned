@@ -26,8 +26,7 @@ struct
     
     val all = [C("brown",0.4,0.4,0.0),
 	       C("blue",0.0,0.0,1.0),
-	       C("yellow",1.0,1.0,0.0),
-	       C()]
+	       C("yellow",1.0,1.0,0.0)]
     (** [all] is a list of all available colors *)
     
     fun toString (C(s,_,_,_)) = s
