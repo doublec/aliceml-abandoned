@@ -58,3 +58,12 @@ Mozart:
    Exception Handler (und zeigt sogar eine Selektion von
    <N:VoidRegister>!).  Beispiel: ozd -E Main.ozf test/General,
    steppen bis {ReadFile ...}, dann 'next'.
+
+Alice-Postings:
+-- [Design] Representation of Alice Components
+-- [Programming Methodology] Functional vs. Imperative Threads
+-- [Design] Alice Component Managers
+-- [Design] The Alice Static Linker
+-- [Announcement] Prototype of the Alice VM (aka The Stockwerk)
+-- [Problem] Run-time Signature Coertion
+-- [Problem] Compatibility of Static vs. Run-time Types
