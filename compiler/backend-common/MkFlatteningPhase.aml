@@ -123,12 +123,13 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun typToOutArity typ =
 	    case Type.inspect typ of
-		(Type.Prod _ | Type.Apply _ | Type.Unknown _) => NONE
+		(Type.Prod _ | Type.Apply _ | Type.Unknown _ | Type.Var _) =>
+		    NONE
 	      | Type.Con path =>
 		    if PathSet.member (nonProdTypesSet, path) then
 			SOME Arity.Unary
 		    else NONE
-	      | (Type.Var _ | Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
+	      | (Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
 	      | Type.Mu typ => typToOutArity typ
 	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
 		    raise Crash.Crash "MkFlatteningPhase.typToOutArity"
