@@ -130,16 +130,13 @@ structure Main :> MAIN =
 			      \   " ^ Url.toString url ^ "\n")
 
 	fun startDumpOnly root =
-	    let
-		val component = MyComponent.load (Url.fromString root)
-	    in
-		printComponentSigs (root, component);
-		OS.Process.success
-	    end
+	    (case MyComponent.load (Url.fromString root) of
+		 SOME component => printComponentSigs (root, component)
+	       | NONE => TextIO.print "[no signature]\n";
+	     OS.Process.success)
 	    handle IO.Io _ =>
 		       error ("could not load component\n\
 			      \   " ^ root ^ "\n")
-
 
 	(* Parse comma-separated lists *)
 	fun csl s = String.tokens (fn c => c = #",") s

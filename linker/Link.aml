@@ -21,157 +21,159 @@ import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
 
 structure Link :> LINK =
-    struct
-	datatype boundary =
-	    INCLUDE of string
-	  | EXCLUDE of string
+struct
+    datatype boundary =
+	INCLUDE of string
+      | EXCLUDE of string
 
-	exception Empty
-	exception Mismatch of Url.t * Url.t
-	exception Conflict of Url.t
-	exception Io of Url.t * exn
+    exception Empty
+    exception Mismatch of Url.t * Url.t
+    exception Conflict of Url.t
+    exception Io of Url.t * exn
 
-	structure UrlHashKey = FromEqHashKey(Url)
-	structure UrlMap = MkHashImpMap(UrlHashKey)
+    structure UrlHashKey = FromEqHashKey(Url)
+    structure UrlMap = MkHashImpMap(UrlHashKey)
 
-	fun infMatches (SOME j1, SOME j2) =
-	    ((Inf.match (j1, j2); true) handle Inf.Mismatch _ => false)
-	  | infMatches (_, _) = true
+    fun infMatches (SOME j1, SOME j2) =
+	((Inf.match (j1, j2); true) handle Inf.Mismatch _ => false)
+      | infMatches (_, _) = true
 
-	fun infIntersect (inf1, inf2) = SOME inf1   (*--** *)
+    fun infIntersect (inf1, inf2) = SOME inf1   (*--** *)
 
-	fun isExcluded (url, boundary) =
-	    isExcluded' (Url.toString url, boundary, 0, Vector.length boundary)
-	and isExcluded' (s, boundary, i, n) =
-	    if i = n then true
-	    else
-		case Vector.sub (boundary, i) of
-		    INCLUDE s' => if String.isPrefix s' s then false
-				  else isExcluded' (s, boundary, i + 1, n)
-		  | EXCLUDE s' => if String.isPrefix s' s then true
-				  else isExcluded' (s, boundary, i + 1, n)
+    fun isExcluded (url, boundary) =
+	isExcluded' (Url.toString url, boundary, 0, Vector.length boundary)
+    and isExcluded' (s, boundary, i, n) =
+	if i = n then true
+	else
+	    case Vector.sub (boundary, i) of
+		INCLUDE s' => if String.isPrefix s' s then false
+			      else isExcluded' (s, boundary, i + 1, n)
+	      | EXCLUDE s' => if String.isPrefix s' s then true
+			      else isExcluded' (s, boundary, i + 1, n)
 
-	fun collect (boundary, typeCheck) root =
-	    let
-		val componentMap = UrlMap.new ()
-		val includeMap = UrlMap.new ()
-		val excludeMap = UrlMap.new ()
+    fun collect (boundary, typeCheck) root =
+	let
+	    val componentMap = UrlMap.new ()
+	    val includeMap = UrlMap.new ()
+	    val excludeMap = UrlMap.new ()
 
-		fun collect' (url, parent, expectedInf) =
-		    if UrlMap.member (componentMap, url) then
-			let
-			    val component =
-				UrlMap.lookupExistent (componentMap, url)
-			    val actualInf = MyComponent.inf component
-			in
-			    if typeCheck then
+	    fun collect' (url, parent, expectedInf) =
+		if UrlMap.member (componentMap, url) then
+		    let
+			val component =
+			    UrlMap.lookupExistent (componentMap, url)
+			val actualInf = MyComponent.inf component
+		    in
+			if typeCheck then
+			    if infMatches (actualInf, expectedInf) then ()
+			    else raise Mismatch (url, parent)
+			else ()
+		    end
+		else if UrlMap.member (excludeMap, url) then
+		    let
+			val inf' = UrlMap.lookupExistent (excludeMap, url)
+		    in
+			case infIntersect (expectedInf, inf') of
+			    SOME inf'' =>
+				UrlMap.insert (excludeMap, url, inf'')
+			  | NONE => raise Conflict url
+		    end
+		else if isExcluded (url, boundary) then
+		    UrlMap.insert (excludeMap, url, expectedInf)
+		else
+		    (case MyComponent.load url of
+			 NONE => (* native; exclude *)
+			     UrlMap.insert (excludeMap, url, expectedInf)
+		       | SOME component =>
+			     include' (component, url, parent, expectedInf))
+		    handle exn as IO.Io _ => raise Io (url, exn)
+	    and include' (component, url, parent, expectedInf) =
+		let
+		    val actualInf = MyComponent.inf component
+		    val _ = if typeCheck then
 				if infMatches (actualInf, expectedInf) then ()
 				else raise Mismatch (url, parent)
 			    else ()
-			end
-		    else if UrlMap.member (excludeMap, url) then
-			let
-			    val inf' = UrlMap.lookupExistent (excludeMap, url)
-			in
-			    case infIntersect (expectedInf, inf') of
-				SOME inf'' =>
-				    UrlMap.insert (excludeMap, url, inf'')
-			      | NONE => raise Conflict url
-			end
-		    else if isExcluded (url, boundary) then
-			UrlMap.insert (excludeMap, url, expectedInf)
-		    else
-			let
-			    val component = MyComponent.load url
-					    handle exn as IO.Io _ =>
-						raise Io (url, exn)
-			    val actualInf = MyComponent.inf component
-			    val _ = if typeCheck then
-					if infMatches (actualInf, expectedInf)
-					then ()
-					else raise Mismatch (url, parent)
-				    else ()
-			    val component' =
-				if url = root then component
-				else MyComponent.stripImportInfs component
-			    val _ =
-				UrlMap.insert (componentMap, url, component')
-			    val resolve = Url.resolve url
-			    val importUrls =
-				Vector.map
-				(fn (s, inf) =>
-				    let
-					val url' = resolve (Url.fromString s)
-				    in
-					collect' (url', url, inf); url'
-				    end) (MyComponent.imports component)
-			in
-			    UrlMap.insert (includeMap, url, importUrls)
-			end
-	    in
-		collect' (root, Url.empty, NONE);
-		if UrlMap.isEmpty componentMap then raise Empty else ();
-		{componentMap, includeMap, excludeMap}
-	    end
-
-	structure DepthFirstSearch =
-	    MkDepthFirstSearch(structure Key = UrlHashKey
-			       structure Map = UrlMap)
-
-	fun sort (includeMap, excludeMap) =
-	    let
-		val graph = UrlMap.new ()
-		val cyclic = ref false
-	    in
-		UrlMap.appi (fn (url, urls) =>
-				UrlMap.insert (graph, url, Vector.toList urls))
-			    includeMap;
-		UrlMap.appi (fn (url, _) => UrlMap.insert (graph, url, nil))
-			    excludeMap;
-		DepthFirstSearch.search graph
-	    end
-
-	fun rewrite rewrites s =
-	    rewrite' (s, rewrites, 0, Vector.length rewrites)
-	and rewrite' (s, rewrites, i, n) =
-	    if i = n then s
-	    else
-		let
-		    val (fro, to) = Vector.sub (rewrites, i)
+		    val component' =
+			if url = root then component
+			else MyComponent.stripImportInfs component
+		    val _ = UrlMap.insert (componentMap, url, component')
+		    val resolve = Url.resolve url
+		    val importUrls =
+			Vector.map
+			    (fn (s, inf) =>
+				let
+				    val url' = resolve (Url.fromString s)
+				in
+				    collect' (url', url, inf); url'
+				end) (MyComponent.imports component)
 		in
-		    if String.isPrefix fro s then
-			to ^ String.extract (s, String.size fro, NONE)
-		    else rewrite' (s, rewrites, i + 1, n)
+		    UrlMap.insert (includeMap, url, importUrls)
 		end
+	in
+	    collect' (root, Url.empty, NONE);
+	    if UrlMap.isEmpty componentMap then raise Empty else ();
+	    {componentMap, includeMap, excludeMap}
+	end
 
-	fun build (root, componentMap, includeMap, excludeMap, rewrite) =
+    structure DepthFirstSearch =
+	MkDepthFirstSearch(structure Key = UrlHashKey
+			   structure Map = UrlMap)
+
+    fun sort (includeMap, excludeMap) =
+	let
+	    val graph = UrlMap.new ()
+	    val cyclic = ref false
+	in
+	    UrlMap.appi (fn (url, urls) =>
+			    UrlMap.insert (graph, url, Vector.toList urls))
+			includeMap;
+	    UrlMap.appi (fn (url, _) => UrlMap.insert (graph, url, nil))
+			excludeMap;
+	    DepthFirstSearch.search graph
+	end
+
+    fun rewrite rewrites s =
+	rewrite' (s, rewrites, 0, Vector.length rewrites)
+    and rewrite' (s, rewrites, i, n) =
+	if i = n then s
+	else
 	    let
-		fun getComponent url =
-		    UrlMap.lookupExistent (componentMap, url)
-		val includes =
-		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
-						      url::rest)
-						  nil includeMap)
-		val excludes =
-		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
-						      url::rest)
-						  nil excludeMap)
-		val urlToIndexMap = UrlMap.new ()
-		val _ =
-		    Vector.appi (fn (i, url) =>
-				    UrlMap.insert (urlToIndexMap, url,
-						   (true, i))) includes
-		val _ =
-		    Vector.appi (fn (i, url) =>
-				    UrlMap.insert (urlToIndexMap, url,
-						   (false, i))) excludes
-		val imports =
-		    Vector.map (fn url =>
-				   (rewrite (Url.toString url),
-				    UrlMap.lookupExistent (excludeMap, url)))
-			       excludes
-		val includeTable =
-		    Vector.map
+		val (fro, to) = Vector.sub (rewrites, i)
+	    in
+		if String.isPrefix fro s then
+		    to ^ String.extract (s, String.size fro, NONE)
+		else rewrite' (s, rewrites, i + 1, n)
+	    end
+
+    fun build (root, componentMap, includeMap, excludeMap, rewrite) =
+	let
+	    fun getComponent url =
+		UrlMap.lookupExistent (componentMap, url)
+	    val includes =
+		Vector.fromList
+		    (UrlMap.foldi (fn (url, _, rest) => url::rest)
+				  nil includeMap)
+	    val excludes =
+		Vector.fromList
+		    (UrlMap.foldi (fn (url, _, rest) => url::rest)
+				  nil excludeMap)
+	    val urlToIndexMap = UrlMap.new ()
+	    val _ =
+		Vector.appi (fn (i, url) =>
+				UrlMap.insert (urlToIndexMap, url, (true, i)))
+			    includes
+	    val _ =
+		Vector.appi (fn (i, url) =>
+				UrlMap.insert (urlToIndexMap, url, (false, i)))
+			    excludes
+	    val imports =
+		Vector.map (fn url =>
+			       (rewrite (Url.toString url),
+				UrlMap.lookupExistent (excludeMap, url)))
+			   excludes
+	    val includeTable =
+		Vector.map
 		    (fn url =>
 			let
 			    val component = getComponent url
@@ -190,14 +192,13 @@ structure Link :> LINK =
 			in
 			    (importSpec, MyComponent.body (getComponent url))
 			end) includes
-		val (_, rootIndex) =
-		    UrlMap.lookupExistent (urlToIndexMap, root)
-		fun body imports =
-		    let
-			val strs = Vector.tabulate (Vector.length includeTable,
-						    fn _ => Hole.hole ())
-		    in
-			Vector.appi
+	    val (_, rootIndex) = UrlMap.lookupExistent (urlToIndexMap, root)
+	    fun body imports =
+		let
+		    val strs = Vector.tabulate (Vector.length includeTable,
+						fn _ => Hole.hole ())
+		in
+		    Vector.appi
 			(fn (i, (importSpec, body)) =>
 			    let
 				val actuals =
@@ -211,59 +212,56 @@ structure Link :> LINK =
 				Hole.fill (Vector.sub (strs, i), str)
 			    end) includeTable;
 			Vector.sub (strs, rootIndex)
-		    end
-		val inf = MyComponent.inf (getComponent root)
-	    in
-		MyComponent.new {imports, body, inf}
-	    end
+		end
+	    val inf = MyComponent.inf (getComponent root)
+	in
+	    MyComponent.new {imports, body, inf}
+	end
 
-	fun warnCycle urls =
-	    let
-		val ss =
-		    List.map (fn url => "   " ^ Url.toString url ^ "\n") urls
-	    in
-		TextIO.print ("WARNING: linked components \
-			      \have cyclic inter-dependencies:\n" ^
-			      String.concat ss)
-	    end
+    fun warnCycle urls =
+	let
+	    val ss = List.map (fn url => "   " ^ Url.toString url ^ "\n") urls
+	in
+	    TextIO.print ("WARNING: linked components have cyclic \
+			  \inter-dependencies:\n" ^ String.concat ss)
+	end
 
-	fun link {root, verbose, typeCheck, boundary, rewrite = rewrites} =
-	    let
-		val {componentMap, includeMap, excludeMap} =
-		    collect (boundary, typeCheck) root
-		val rewrite = rewrite rewrites
-		val order = sort (includeMap, excludeMap)
-	    in
-		if verbose then
-		    let
-			val includes =
-			    root::
-			    List.filter (fn url =>
-					    url <> root andalso
-					    UrlMap.member (includeMap, url))
-					(List.concat order)
-			val imports =
-			    List.sort String.compare
-				      (UrlMap.foldi
-					   (fn (url, _, rest) =>
-					       rewrite (Url.toString url)::
-					       rest) nil excludeMap)
-		    in
-			TextIO.print ("Included components:\n");
-			List.appr (fn url =>
-				      TextIO.print ("   " ^ Url.toString url ^
-						    "\n")) includes;
-			if List.null imports then
-			    TextIO.print "No imports\n"
-			else
-			    (TextIO.print ("Imports (after rewrite):\n");
-			     List.app (fn s => TextIO.print ("   " ^ s ^ "\n"))
-				      imports)
-		    end
-		else ();
-		List.app (fn urls =>
-			     if List.null (List.tl urls) then ()
-			     else warnCycle urls) order;
-		build (root, componentMap, includeMap, excludeMap, rewrite)
-	    end
-    end
+    fun link {root, verbose, typeCheck, boundary, rewrite = rewrites} =
+	let
+	    val {componentMap, includeMap, excludeMap} =
+		collect (boundary, typeCheck) root
+	    val rewrite = rewrite rewrites
+	    val order = sort (includeMap, excludeMap)
+	in
+	    if verbose then
+		let
+		    val includes =
+			root::
+			List.filter (fn url =>
+					url <> root andalso
+					UrlMap.member (includeMap, url))
+				    (List.concat order)
+		    val imports =
+			List.sort String.compare
+				  (UrlMap.foldi
+				       (fn (url, _, rest) =>
+					   rewrite (Url.toString url)::rest)
+				       nil excludeMap)
+		in
+		    TextIO.print ("Included components:\n");
+		    List.appr (fn url =>
+				  TextIO.print ("   " ^ Url.toString url ^
+						"\n")) includes;
+		    if List.null imports then TextIO.print "No imports\n"
+		    else
+			(TextIO.print ("Imports (after rewrite):\n");
+			 List.app (fn s => TextIO.print ("   " ^ s ^ "\n"))
+				  imports)
+		end
+	    else ();
+	    List.app (fn urls =>
+			 if List.null (List.tl urls) then ()
+			 else warnCycle urls) order;
+	    build (root, componentMap, includeMap, excludeMap, rewrite)
+	end
+end
