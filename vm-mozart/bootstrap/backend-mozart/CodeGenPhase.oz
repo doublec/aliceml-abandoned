@@ -70,12 +70,21 @@ define
       end
    end
 
-   fun {TrConArity ConArity}
-      case ConArity of 'Nullary' then nullary
-      [] 'Unary' then unary
+   fun {TrOption Option Tr}
+      case Option of 'NONE' then non
+      [] 'SOME'(X) then some({Tr X})
+      end
+   end
+
+   fun {TrArity Arity}
+      case Arity of 'Unary' then unary
       [] 'Tuple'(I) then tuple(I)
       [] 'Record'(Labs) then record({Map Labs TrLab})
       end
+   end
+
+   fun {TrConArity ConArity}
+      {TrOption ConArity TrArity}
    end
 
    fun {TrFunFlag FunFlag}
@@ -190,8 +199,6 @@ define
 	 selAppExp({TrInfo Info} {TrLab Lab} N {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
 	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args})
-      [] 'AdjExp'(Info Id1 Id2) then
-	 adjExp({TrInfo Info} {TrId Id1} {TrId Id2})
       end
    end
 
