@@ -18,11 +18,11 @@ structure Search =
 struct
     open TreeNode
 
-    fun explore (node, callBack) =
+    fun explore (node, state, callBack) =
         let
             fun dfe node =
-                case ExplorerNode.noOfChildren node of
-                    0 => (case ExplorerNode.nodeStatus node of
+                case ExplorerNode.noOfChildren (state, node) of
+                    0 => (case ExplorerNode.nodeStatus (state, node) of
                               Types.SOLVED => callBack()
                             | _ => ())
                   | 2 =>

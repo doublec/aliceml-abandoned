@@ -49,6 +49,11 @@ structure Types =
                          debug : bool ref,
 			 window : Core.object,
 			 menu : {inspectionActions : Core.object ref},
+                         status : {choice : int ref,
+                                   failed : int ref,
+                                   solved : int ref,
+                                   contextId : int ref},
+                         cancelSearch : bool ref,
 			 scale : real ref}
 
   fun setTree (ref (SOME ({tree=tree,...}: explorer_state))) newTree =
@@ -61,5 +66,39 @@ structure Types =
   fun setDebug (ref (SOME ({debug=debug,...}: explorer_state))) flag =
       debug:=flag
     | setDebug _ _ = ()
+
+  (* Status accessors *)
+  fun getSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
+                                 explorer_state))) =
+      (!choice,!failed,!solved)
+  fun resetSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
+                                   explorer_state))) =
+      (choice := 0; failed := 0; solved := 0)
+
+  fun addChoice (ref (SOME ({status={choice,...},...}:
+                            explorer_state))) =
+      (choice := (!choice) + 1)
+
+  fun addFailed (ref (SOME ({status={failed,...},...}:
+                            explorer_state))) =
+      (failed := (!failed) + 1)
+
+  fun addSolved (ref (SOME ({status={solved,...},...}:
+                            explorer_state))) =
+      (solved := (!solved) + 1)
+
+  fun cancelSearch (ref (SOME ({cancelSearch=cs,...}:
+                               explorer_state))) =
+      if !cs then (cs := false; true) else false
+
+  fun setCancelSearch (ref (SOME ({cancelSearch=cs,...}:
+                               explorer_state))) =
+      cs := true
+    | setCancelSearch _ = ()
+
+  fun resetCancelSearch (ref (SOME ({cancelSearch=cs,...}:
+                               explorer_state))) =
+      cs := false
+    | resetCancelSearch _ = ()
 
   end

@@ -19,8 +19,6 @@ import structure Types        from "Types"
 structure ExplorerSearch =
   struct
 
-  exception SearchDone
-
   fun initSearch (serve, state : Types.explorer_state option ref,
                   refresh,resetCanvas, s) =
       let
@@ -40,11 +38,12 @@ structure ExplorerSearch =
 
   fun searchFrom (serve, state : Types.explorer_state option ref,
                   callBack, refresh, node) =
-      (Search.explore (node, callBack) handle SearchDone => ();
+      (Search.explore (node, state, callBack)
+       handle ExplorerNode.SearchDone => ();
        refresh (serve, state))
 
   fun search (serve, state : Types.explorer_state option ref,
-              refresh, breakAfter, root) =
+              refresh, setStatusMsg, breakAfter, root) =
       case !state of
           SOME {refreshAfter=ref refreshAfter,tree=ref tree,...} =>
           let
@@ -60,12 +59,16 @@ structure ExplorerSearch =
                                 if breakAfter > 0 then
                                     (found := (!found) + 1;
                                      if (!found) >= breakAfter then
-                                         raise SearchDone
+                                         raise ExplorerNode.SearchDone
                                      else ())
                                 else ())
               val fromNode = Option.getOpt(root, tree)
-          in 
-              searchFrom (serve, state, callBack, refresh, fromNode)
+              
+          in
+              setStatusMsg(state, "Searching...", true);
+              searchFrom (serve, state, callBack, refresh, fromNode);
+              setStatusMsg(state, "", false);
+              ()
           end
         | _ => ()
 

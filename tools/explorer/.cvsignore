@@ -1,2 +1,4 @@
 *.stc
 Makefile.depend
+ExplorerGUI.aml
+ExplorerGUISignals.aml

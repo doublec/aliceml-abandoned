@@ -25,7 +25,7 @@ fun queens n cl space =
 	distinctOffset(space, v2, cl);
 	distinct(space, v, cl);
 	branch(space, v, B_SIZE_MIN, B_MIN);
-	(v, space)
+	v
     end
 
 fun money cl space = 
@@ -60,4 +60,4 @@ fun money cl space =
         root
     end
 
-val _ = Explorer.initScript (queens 8 FD.BND)
+val _ = Explorer.initScript (queens 10 FD.BND)

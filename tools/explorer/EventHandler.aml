@@ -83,6 +83,18 @@ structure EventHandler =
 
   val itr = Real.fromInt
 
+  fun refreshStatusbar state =
+      let
+          val (choices, failed, solved) = Types.getSearchState state
+      in
+          Gtk.labelSetText(ExplorerGUI.noOfChoices,
+                           Int.toString choices);
+          Gtk.labelSetText(ExplorerGUI.noOfFailed,
+                           Int.toString failed);
+          Gtk.labelSetText(ExplorerGUI.noOfSolved,
+                           Int.toString solved)
+      end
+
   fun destroyMainWindow (resetCanvas,
                          serve,
                          state as ref (SOME {window=window,rootSpace=rootSpace,
@@ -91,6 +103,9 @@ structure EventHandler =
       (Gtk.widgetHide window;
        rootSpace := NONE;
        resetCanvas serve state;
+       Types.resetSearchState state;
+       Types.resetCancelSearch state;
+       refreshStatusbar state;
        ExplorerNode.discardTree (!tree) )
     | destroyMainWindow _ = ()
 
@@ -108,6 +123,8 @@ structure EventHandler =
       end
     | setBBox _ = ()
 
+
+
   fun refresh (cmw, serve, state) =
       case !state of
           (SOME (rstate as {canvas={canvas=canvas,...},
@@ -122,6 +139,7 @@ structure EventHandler =
 	      val (minx, maxx, depth) = TreeNode.getBBox shape
           in
               Gtk.widgetShowAll window;
+              refreshStatusbar state;
               setBBox (state, (minx, maxx, depth));
               Gtk.layoutFreeze canvas;
 	      VisualNode.adjust (rstate, tree, 0, 0, TreeNode.verSpaceI, 0);
@@ -163,41 +181,44 @@ structure EventHandler =
 		     refresh (cmw, serve, state))
                   | _ => ())
 
-  fun exploreOneHandler (cmw, serve, state) _ =
+  fun exploreOneHandler (cmw, setStatusMsg, serve, state) _ =
       serve (fn () =>
                 case !state of
                     SOME {currentNode=ref (SOME cn),...} =>
                     ExplorerSearch.search
                         (serve, state, refreshAfterSearch (cn, cmw),
-                         1, SOME cn)
+                         setStatusMsg, 1, SOME cn)
                   | _ => ())
 
-  fun exploreAllHandler (cmw, serve, state) _ =
+  fun exploreAllHandler (cmw, setStatusMsg, serve, state) _ =
       serve (fn () =>
                 case !state of
                     SOME {currentNode=ref (SOME cn),...} =>
                     ExplorerSearch.search
                         (serve, state, refreshAfterSearch (cn, cmw),
-                         0, SOME cn)
+                         setStatusMsg, 0, SOME cn)
                   | _ => ())
 
-  fun exploreNHandler (cmw, serve, state) _ =
+  fun exploreNHandler (cmw, setStatusMsg, serve, state) _ =
       serve (fn () =>
                 case !state of
                     SOME {currentNode=ref (SOME cn),breakAfter=ref breakAfter,
                           ...} =>
                     ExplorerSearch.search
                         (serve, state, refreshAfterSearch (cn, cmw),
-                         breakAfter, SOME cn)
+                         setStatusMsg, breakAfter, SOME cn)
                   | _ => ())
                                                 
   fun resetHandler (cmw, resetCanvas, serve, state) _ =
       serve (fn () =>
                 case !state of
                     SOME {rootSpace=ref (SOME rs),...} =>
-                    ExplorerSearch.initSearch (serve, state,
-                                               fn (x,y) => refresh (cmw,x,y),
-                                               resetCanvas, rs)
+                    (Types.resetSearchState state;
+                     Types.resetCancelSearch state;
+                     refreshStatusbar state;
+                     ExplorerSearch.initSearch (serve, state,
+                                                fn (x,y) => refresh (cmw,x,y),
+                                                resetCanvas, rs))
                   | _ => ())
 
   fun selectInspectionAction (serve,

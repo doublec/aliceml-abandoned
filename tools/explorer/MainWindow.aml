@@ -33,6 +33,8 @@ signature MAINWINDOW =
                              Types.explorer_state option ref
       val refresh : ((unit -> unit) -> unit) *
                     Types.explorer_state option ref -> unit
+      val setStatusMsg : Types.explorer_state option ref *
+                         string * bool -> unit
   end
 
 structure MainWindow :> MAINWINDOW =
@@ -92,6 +94,9 @@ structure MainWindow :> MAINWINDOW =
           val w = ExplorerGUI.aliceexplorer
           val _ = Gtk.containerAdd(ExplorerGUI.scrolledwindow, #canvas canvas)
 
+          val cid = Gtk.statusbarGetContextId(ExplorerGUI.statusbar,
+                                              "Alice explorer")
+
           structure Signals : EXPLORERGUISIGNALS_SIG =
             struct
               fun on_save_activate _ = ()
@@ -113,12 +118,13 @@ structure MainWindow :> MAINWINDOW =
                       (createMainWindow, serve, state)
               val on_next_solution_activate =
                   EventHandler.exploreOneHandler
-                      (createMainWindow, serve, state)
+                      (createMainWindow, setStatusMsg, serve, state)
               val on_next_n_solutions_activate =
-                  EventHandler.exploreNHandler (createMainWindow, serve, state)
+                  EventHandler.exploreNHandler
+                      (createMainWindow, setStatusMsg, serve, state)
               val on_all_solutions_activate =
                   EventHandler.exploreAllHandler
-                      (createMainWindow, serve, state)
+                      (createMainWindow, setStatusMsg, serve, state)
               val on_view_activate =
                   EventHandler.viewOptionsHandler (w, serve, state)
               val on_debug_activate = EventHandler.debugHandler (serve, state)
@@ -128,12 +134,16 @@ structure MainWindow :> MAINWINDOW =
               val on_scale_value_changed =
                   CanvasHelper.scaleCanvasHandler
                       (serve, state, ExplorerGUI.scale)
+              fun on_cancel_search_activate _ =
+                  Types.setCancelSearch state
             end
           
           structure S = ExplorerGUISignals(structure S = Signals)
 
       in
 	  Gtk.widgetShowAll w;
+          Gtk.statusbarPush(ExplorerGUI.statusbar,cid,
+                            "Ready.");
 	  state := SOME {canvas=canvas, window=w,
 			 menu={inspectionActions=ref ExplorerGUI.inspection1},
 			 scale=ref Defaults.defScale,
@@ -145,7 +155,12 @@ structure MainWindow :> MAINWINDOW =
                          refreshAfter=ref 1,
                          breakAfter=ref 0,
                          hideFailed=ref true,
-                         debug=ref false
+                         debug=ref false,
+                         status={choice=ref 0,
+                                 solved=ref 0,
+                                 failed=ref 0,
+                                 contextId=ref cid},
+                         cancelSearch=ref false
 			 };
 	  state
       end
@@ -153,5 +168,13 @@ structure MainWindow :> MAINWINDOW =
   and refresh (serve, state as ref (SOME {tree=ref tree,...})) =
       EventHandler.refreshAfterSearch (tree, createMainWindow) (serve, state)
     | refresh _ = ()
-
+  and setStatusMsg (state as
+                          ref (SOME {status={contextId=contextId,...},...}) :
+                    Types.explorer_state option ref,
+                    msg, push) =
+      if push then
+          (Gtk.statusbarPush(ExplorerGUI.statusbar, !contextId, msg); ())
+      else
+          Gtk.statusbarPop(ExplorerGUI.statusbar, !contextId)
+    | setStatusMsg _ = ()
   end

@@ -78,7 +78,9 @@ structure Explorer =
                               (serve, state, MainWindow.refresh,
                                CanvasHelper.resetCanvas, s));
 	  serve (fn () => ExplorerSearch.search
-                              (serve, state, MainWindow.refresh, 0, NONE));
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               0, NONE));
 	  state
       end
 
@@ -90,7 +92,9 @@ structure Explorer =
                               (serve, state, MainWindow.refresh,
                                CanvasHelper.resetCanvas, s));
 	  serve (fn () => ExplorerSearch.search
-                              (serve, state, MainWindow.refresh, 1, NONE));
+                              (serve, state,
+                               MainWindow.refresh, MainWindow.setStatusMsg,
+                               1, NONE));
 	  state
       end
 

@@ -20,6 +20,8 @@ structure ExplorerNode =
 struct
     open TreeNode
 
+    exception SearchDone
+
     fun createNode mom alternative =
         N({offset=ref 0,
 	   oldOffset=ref NONE,
@@ -74,18 +76,21 @@ struct
     fun getSpace (N({space=ref (SOME s),...},_,_)) = s
       | getSpace n = recomputeSpace n
 
-    fun nodeStatus (node as N({status=status,...},_,_)) =
+    fun nodeStatus (state, node as N({status=status,...},_,_)) =
         case !status of Types.UNKNOWN =>
                         let
                             val s = getSpace node
                         in
                             case Space.status s of
                                 Space.FAILED => (setStatus node Types.FAILED;
+                                                 Types.addFailed state;
                                                  Types.FAILED)
                               | Space.SOLVED => (setStatus node Types.SOLVED;
                                                  TreeNode.setHasSolBelow node;
+                                                 Types.addSolved state;
                                                  Types.SOLVED)
                               | Space.BRANCH => (setStatus node Types.CHOICE;
+                                                 Types.addChoice state;
                                                  Types.CHOICE)
                         end
                       | s => s
@@ -95,10 +100,13 @@ struct
     fun isHidden (node as N({hidden=hidden,...},_,_)) = !hidden
     fun curNodeStatus (N({status=ref status,...},_,_)) = status
 
-    fun noOfChildren (node as N({status=status,...},_,ch)) =
+    fun noOfChildren (state, node as N({status=status,...},_,ch)) =
+        if (Types.cancelSearch state) then
+           raise SearchDone
+        else
         case !status of Types.UNKNOWN =>
                         (VisualNode.undrawAndDirtyUp node;
-                         case nodeStatus node of
+                         case nodeStatus (state, node) of
                              Types.FAILED => 0
                            | Types.SOLVED => 0
                            | Types.CHOICE =>
