@@ -1,7 +1,7 @@
 OZC = ozc
 STOC = ../../stoc/backend-mozart/stoc-mozart --image=../../stoc/top/stoc-mozart
 MERGE = ./merge.sh
-OZHOME = /usr/local/oz
+OZHOME = /opt/mozart-1.1.0
 OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
 LIB_DIR = ../../lib/bootstrap
