@@ -104,7 +104,7 @@ STOC0 = $(BOOTSTRAPDIR)/stoc
 STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
 STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
 
-STOC_OPTS = $(STOC_EXTRA_OPTS) --no-dump-elaboration-sig --no-implicit-import
+STOC_OPTS = --no-dump-elaboration-sig --no-implicit-import $(STOC_EXTRA_OPTS)
 STOC_EXTRA_OPTS = --dump-target
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
