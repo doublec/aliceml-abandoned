@@ -8,25 +8,64 @@
 
   <P>
     Although ML is a strict language, Alice provides full support for
-    lazy evaluation. A lazy computation is created through the predefined
-    procedure
+    lazy evaluation. A lazy computation is created using the keyword
+    <TT>lazy</TT>:
   </P>
 
-  <PRE>
-	val byneed : (unit -> 'a) -> 'a 
-  </PRE>
+  <TABLE>
+    <TR>
+      <TD> <I>exp</I> </TD>
+      <TD align="center">::=</TD>
+      <TD> ... </TD>
+      <TD> </TD>
+    </TR>
+    <TR>
+      <TD></TD> <TD></TD>
+      <TD> <TT>lazy</TT> <I>exp</I> </TD>
+      <TD> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lazy expression </TD>
+    </TR>
+  </TABLE>
 
   <P>
-    It takes a procedure and returns a handle for its result (a so-called
-    future). The procedure will be evaluated when some operation first tries
-    to access this result.
+    This expression form evaluates to a place-holder for the value of
+    <I>exp</I> (a so-called future). The expression will not be evaluated
+    before some operation first tries to access this value, however.
   </P>
 
   <P>
-    If the procedure passed to <TT>byneed</TT> terminates with an exception
+    If evaluation of the expression terminates with an exception
     <I>e</I>, any attempt to access the result value will cause an exception
     <TT>Future(</TT><I>e</I><TT>)</TT> to be raised.
   </P>
+
+  <P>
+    There also is syntactic sugar for declaring lazy functions using the 
+    <TT>fun</TT> syntax:
+  </P>
+
+  <TABLE>
+    <TR>
+      <TD> <I>fvalbind</I> </TD>
+      <TD align="center">::=</TD>
+      <TD align="right"> &lt;<TT>lazy</TT>&gt; </TD>
+      <TD> &lt;<TT>op</TT>&gt; <I>vid atpat ... atpat</I> &lt;<TT>:</TT> ty&gt;
+	   <TT>=</TT> <I>exp</I> </TD>
+    </TR><TR>
+      <TD></TD><TD></TD>
+      <TD align="right"> <TT>|</TT> </TD>
+      <TD> &lt;<TT>op</TT>&gt; <I>vid atpat ... atpat</I> &lt;<TT>:</TT> ty&gt;
+	   <TT>=</TT> <I>exp</I> </TD>
+    </TR><TR>
+      <TD></TD><TD></TD>
+      <TD align="right"> <TT>|</TT> </TD>
+      <TD> ... </TD>
+    </TR><TR>
+      <TD></TD><TD></TD>
+      <TD align="right"> <TT>|</TT> </TD>
+      <TD> &lt;<TT>op</TT>&gt; <I>vid atpat ... atpat</I> &lt;<TT>:</TT> ty&gt;
+	   <TT>=</TT> <I>exp</I> </TD>
+    </TR>
+  </TABLE>
 
   <P>
     Note that by-need evaluation is just one aspect of Alice's
@@ -42,7 +81,7 @@
   </P>
 
   <PRE>
-	fun enumFrom n = byneed(fn() => n :: enumFrom(n+1))
+	fun enumFrom n = lazy n :: enumFrom(n+1)
 
 	val ns = enumFrom 0
   </PRE>
@@ -61,7 +100,27 @@
 
   <PRE>
 	fun mapl f   []    = nil
-	  | mapl f (x::xs) = byneed(fn() => f x :: mapl f xs)
+	  | mapl f (x::xs) = lazy f x :: mapl f xs
+  </PRE>
+
+  <P>
+    However, this version is still strict in the head of the list. A fully
+    lazy version is:
+  </P>
+
+  <PRE>
+	fun mapl' f xs = lazy (case xs of
+	                             []   => nil
+	                          | x::xs => f x :: mapl' f xs)
+  </PRE>
+
+  <P>
+    which is equivalent to the more readable formulation
+  </P>
+
+  <PRE>
+	fun lazy mapl f   []    = nil
+	       | mapl f (x::xs) = f x :: mapl f xs
   </PRE>
 
 
