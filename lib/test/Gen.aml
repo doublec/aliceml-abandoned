@@ -36,7 +36,7 @@ struct
     
     fun const v (i:int)	    = v
 
-    fun oneOf vals	    = List.nth (vals, Random.int (length vals - 1))
+    fun oneOf vals	    = List.nth (vals, Random.int (length vals))
 
     fun oneOfFreq vals	    = 
 	    select (Random.int (List.foldl 
