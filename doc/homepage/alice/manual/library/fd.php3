@@ -253,7 +253,6 @@
     <DT>
       <P>This datatype is used to denote the distribution stragety which is
          given to the <TT>FD.distribute</TT> function.
-         See <A HREF=""></A> for details.
     </DT>
 
     <DT>
