@@ -25,11 +25,14 @@ public:
   // Exceptions
   static word Corrupt;
 
+  // Unpickler Static Constructor
   static void Init();
+  static void InitExceptions();
 
   typedef word (*handler)(word);
   static void RegisterHandler(String *name, handler handler);
 
+  // Unpickler Functions
   static Worker::Result Unpack(String *string);
   static Worker::Result Load(String *filename);
 };

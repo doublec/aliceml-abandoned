@@ -1,11 +1,15 @@
 //
-// Authors:
+// Author:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Contributor:
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+//   Guido Tack <tack@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
 //   Leif Kornstaedt, 2002
+//   Guido Tack, 2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -19,33 +23,53 @@
 #pragma interface "generic/Pickle.hh"
 #endif
 
-// pickle    ::= int | chunk | unique | block | tuple | closure | transform
-// int       ::= POSINT <uint> | NEGINT <uint>
-// chunk     ::= CHUNK size <byte>*size
-// unique    ::= UNIQUE (chunk|reference)
-// size      ::= <uint>
-// block     ::= BLOCK label size field*size
-// tuple     ::= TUPLE size field*size
-// closure   ::= CLOSURE size field*size
-// label     ::= <uint>
-// field     ::= pickle | reference
-// reference ::= REF id
-// id        ::= <uint>
-// transform ::= TRANSFORM (chunk|reference) field
+//   pickle        ::=  init instrs ENDOFSTREAM
+//   init	   ::=  INIT stackSize noOfLocals
+//   stackSize     ::= <uint>
+//   noOfLocals    ::= <uint>
+//   instrs        ::=  instr instrs
+// 	             |  (* empty *)
+//   instr	   ::=  simpleInstr
+//                   |  complexInstr
+//   simpleInstr   ::=  STORE address
+// 	             |  LOAD address
+//                   |  POSINT <uint>
+//                   |  NEGINT <uint>
+//                   |  CHUNK size <byte>*size
+//                   |  UNIQUE
+//   complexInstr  ::=  ANNOUNCE complexInstr' address
+// 	             |  FULFILL address
+//                   |  complexInstr'
+//   complexInstr' ::=  BLOCK label size
+//                   |  TUPLE size
+//                   |  CLOSURE size
+//                   |  TRANSFORM
+//   address       ::=  <uint>
+//   size          ::=  <uint>
+//   label         ::=  <uint>
 
 class Pickle {
 public:
   enum Tag {
-    POSINT,
-    NEGINT,
-    CHUNK,
-    UNIQUE,
-    BLOCK,
-    TUPLE,
-    CLOSURE,
-    REF,
-    TRANSFORM
+    INIT,         // 0
+    STORE,        // 1
+    LOAD,         // 2
+    POSINT,       // 3
+    NEGINT,       // 4
+    CHUNK,        // 5
+    UNIQUE,       // 6
+    BLOCK,        // 7
+    TUPLE,        // 8
+    CLOSURE,      // 9
+    TRANSFORM,    // 10
+    aBLOCK,       // 11
+    aTUPLE,       // 12
+    aCLOSURE,     // 13
+    aTRANSFORM,   // 14
+    FULFILL,      // 15
+    ENDOFSTREAM   // 16
   };
+
 };
 
 #endif
