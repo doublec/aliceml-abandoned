@@ -29,6 +29,12 @@ open UnsafeInspector Promise;
 
 (******************************** DEMO 1 *************************************)
 
+(*** convenient value inspection ***)
+
+fun inspect' t x = UnsafeInspector.inspect(x, t)
+
+__overload 'a inspect :  'a -> unit = inspect'
+
 (***** TUPLE *****)
 
 (* Array *)

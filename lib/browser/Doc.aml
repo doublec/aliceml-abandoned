@@ -91,7 +91,7 @@ struct
 		
     (* map storing doc creator functions *)
 	
-    val pathTable = PathMap.new() 
+    val pathTable = PathMap.map() 
 
     (* identification of the path of promises and packages *)
 

@@ -282,8 +282,6 @@ struct
       | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | Empty        =>  GtkSupport.newTag(GtkSupport.canvasRoot(canvas),
 					   0.0,0.0)
-      | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
-      | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
 
 
     fun setDazzled n = case n of

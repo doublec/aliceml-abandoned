@@ -13,7 +13,7 @@
  *
  *)
 
-import signature MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+import signature MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 
 import structure Doc from "Doc"
 import structure GtkSupport from "GtkSupport" 

@@ -13,7 +13,7 @@
  *
  *)
 
-import structure MkHashImpMap from "x-alice:/lib/utility/MkHashImpMap"
+import structure MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
 
 import structure Doc from "Doc"
 import structure GtkSupport from "GtkSupport"
@@ -56,7 +56,7 @@ struct
 
     (* map storing different colors *)
 	
-    val colorTable = ColorMap.new()
+    val colorTable = ColorMap.map()
        
     (* registration of colors *)
 

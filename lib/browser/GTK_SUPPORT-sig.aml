@@ -34,7 +34,7 @@ signature GTK_SUPPORT =
 	val widgetHideAll:           tag -> unit
 	val containerAdd:            tag * tag -> unit
 	val signalConnect:           tag * string * (Gtk.arg list -> unit) 
-	                             -> int 
+	                             -> Gtk.sigid 
 	val labelNew:                string -> tag
 	val radioButtonNewWithLabel: tag * string -> tag
 	val radioButtonGroup:        tag -> tag
