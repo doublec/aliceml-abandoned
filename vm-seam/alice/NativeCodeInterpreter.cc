@@ -29,8 +29,7 @@
 class NativeCodeFrame : public StackFrame {
 protected:
   enum {
-    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS,
-    CONTINUATION_POS, BASE_SIZE
+    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS, BASE_SIZE
   };
 public:
   // NativeCodeFrame Accessors
@@ -61,7 +60,6 @@ public:
 			      Chunk *code,
 			      Closure *closure,
 			      Tuple *immediateArgs,
-			      word continuation,
 			      u_int nbLocals) {
     u_int frSize = BASE_SIZE + nbLocals;
     NEW_STACK_FRAME(frame, interpreter, frSize);
@@ -69,7 +67,6 @@ public:
     frame->InitArg(CODE_POS, code->ToWord());
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(IMMEDIATE_ARGS_POS, immediateArgs->ToWord());
-    frame->InitArg(CONTINUATION_POS, continuation);
     return static_cast<NativeCodeFrame *>(frame);
   }
 };
@@ -80,7 +77,7 @@ public:
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
 static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,
-					  word continuation, Closure *closure) {
+					  Closure *closure) {
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
   u_int nLocals        = concreteCode->GetNLocals();
   Chunk *code          = concreteCode->GetNativeCode();
@@ -89,17 +86,16 @@ static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,
     NativeCodeFrame::New(NativeCodeInterpreter::self,
 			 concreteCode->GetCCCPC(),
 			 code, closure, immediateArgs,
-			 continuation, nLocals);
+			 nLocals);
   for (u_int i = nLocals; i--;)
     frame->InitLocalEnv(i, Store::IntToWord(0));
   return static_cast<StackFrame *>(frame);
 }
 
-StackFrame *NativeCodeInterpreter::FastPushCall(word continuation,
-						Closure *closure) {
+StackFrame *NativeCodeInterpreter::FastPushCall(Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWordDirect(closure->GetConcreteCode());
-  return MakeNativeFrame(concreteCode, continuation, closure);
+  return MakeNativeFrame(concreteCode, closure);
 }
 
 Transform *
@@ -116,7 +112,7 @@ u_int NativeCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
 void NativeCodeInterpreter::PushCall(Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
-  MakeNativeFrame(concreteCode, Store::IntToWord(0), closure);
+  MakeNativeFrame(concreteCode, closure);
 }
 
 Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {

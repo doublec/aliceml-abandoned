@@ -33,7 +33,7 @@ public:
   static void Init() {
     self = new NativeCodeInterpreter();
   }
-  static StackFrame *FastPushCall(word continuation, Closure *closure);
+  static StackFrame *FastPushCall(Closure *closure);
   // Handler Methods
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
