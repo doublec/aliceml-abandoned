@@ -94,10 +94,10 @@ public:
   void SetEOB(u_int eob) {
     Block::InitArg(EOB_POS, eob);
   }
-  Chunk *GetBuffer() {
-    return Store::DirectWordToChunk(Block::GetArg(BUFFER_POS));
+  String *GetBuffer() {
+    return String::FromWordDirect(Block::GetArg(BUFFER_POS));
   }
-  void SetBuffer(Chunk *buffer) {
+  void SetBuffer(String *buffer) {
     Block::ReplaceArg(BUFFER_POS, buffer->ToWord());
   }
   word GetArg(u_int index) {
@@ -128,13 +128,13 @@ public:
     }
     else {
       SetRd(rd + 1);
-      u_char *buffer = (u_char*) GetBuffer()->GetBase();
+      u_char *buffer = GetBuffer()->GetValue();
       return buffer[rd];
     }
   }
   u_char *GetBytes(u_int n) {
     u_int rd      = GetRd();
-    u_char *bytes = (u_char *) GetBuffer()->GetBase() + rd;
+    u_char *bytes = GetBuffer()->GetValue() + rd;
     // Seek bytes to make sure they are available
     if (rd + n >= GetTl()) {
       SetEOB(1);
@@ -167,25 +167,19 @@ public:
     // This has to be revisited: TOO NAIVE
     // Fresh Buffer
     if (GetTl() == 0) {
-      Chunk *c       = Store::AllocChunk(size);
-      u_char *buffer = (u_char *) c->GetBase();
-      Assert(buffer != INVALID_POINTER);
-      std::memcpy(buffer, src, size);
       SetTl(size);
-      SetBuffer(c);
+      SetBuffer(String::New(reinterpret_cast<char *>(src), size));
     }
     // Enlarge Buffer
     else {
       u_int tl       = GetTl();
       int newTl      = size + tl;
-      u_char *old    = (u_char *) GetBuffer()->GetBase();
-      Chunk *c       = Store::AllocChunk(newTl);
-      u_char *buffer = (u_char *) c->GetBase();
-      Assert(buffer != INVALID_POINTER);
-      std::memcpy(buffer, old, tl);
-      std::memcpy(buffer + tl, src, size);
+      String *buffer = String::New(newTl);
+      u_char *p      = buffer->GetValue();
+      std::memcpy(p, GetBuffer()->GetValue(), tl);
+      std::memcpy(p + tl, src, size);
       SetTl(newTl);
-      SetBuffer(c);
+      SetBuffer(buffer);
     }
   }
   // Former virtual methods; need manual dispatch
@@ -292,10 +286,10 @@ public:
     ReplaceArg(STRING_POS, string);
   }
   // StringInputStream Constructor
-  static StringInputStream *New(Chunk *chunk) {
+  static StringInputStream *New(String *string) {
     StringInputStream *is =
       (StringInputStream *) InputStream::New(STRING_INPUT_STREAM, SIZE);
-    is->SetString(chunk->ToWord());
+    is->SetString(string->ToWord());
     return is;
   }
   // StringInputStream Functions
@@ -470,13 +464,13 @@ public:
 
 // ApplyTransform Function
 static inline
-word ApplyTransform(Chunk *f, word x) {
-  Assert(f != INVALID_POINTER);
+word ApplyTransform(String *name, word argument) {
+  Assert(name != INVALID_POINTER);
   HashTable *table = HashTable::FromWordDirect(handlerTable);
-  if (table->IsMember(f->ToWord())) {
+  if (table->IsMember(name->ToWord())) {
     Unpickler::handler handler = (Unpickler::handler)
-      Store::DirectWordToUnmanagedPointer(table->GetItem(f->ToWord()));
-    return handler(x);
+      Store::DirectWordToUnmanagedPointer(table->GetItem(name->ToWord()));
+    return handler(argument);
   } else {
     Error("ApplyTransform: unknown transform");
   }
@@ -498,10 +492,10 @@ Interpreter::Result TransformInterpreter::Run(TaskStack *taskStack) {
     TransformFrame::FromWordDirect(taskStack->GetFrame());
   Future *future = frame->GetFuture();
   Tuple *tuple   = frame->GetTuple();
-  Chunk *f       = Chunk::FromWord(tuple->Sel(0));
-  word x         = tuple->Sel(1);
-  future->Become(REF_LABEL, ApplyTransform(f, x));
-  taskStack->PopFrame(); // Discard Frame
+  String *name   = String::FromWordDirect(tuple->Sel(0));
+  word argument  = tuple->Sel(1);
+  future->Become(REF_LABEL, ApplyTransform(name, argument));
+  taskStack->PopFrame();
   return Interpreter::CONTINUE;
 }
 
@@ -927,17 +921,7 @@ void PickleLoadInterpreter::DumpFrame(word) {
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
-// String Handling: to be done
-static char *ExportCString(Chunk *s) {
-  u_int sLen = s->GetSize();
-  Chunk *e   = Store::AllocChunk(sLen + 1);
-  char *eb   = e->GetBase();
-  std::memcpy(eb, s->GetBase(), sLen);
-  eb[sLen] = '\0';
-  return eb;
-}
-
-Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
+Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
   Tuple *x = Tuple::New(1);
   InputStream *is = (InputStream *) StringInputStream::New(s);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
@@ -948,8 +932,8 @@ Interpreter::Result Unpickler::Unpack(Chunk *s, TaskStack *taskStack) {
   return Interpreter::CONTINUE;
 }
 
-Interpreter::Result Unpickler::Load(Chunk *filename, TaskStack *taskStack) {
-  char *szFileName    = ExportCString(filename);
+Interpreter::Result Unpickler::Load(String *filename, TaskStack *taskStack) {
+  char *szFileName    = filename->ExportC();
   FileInputStream *is = FileInputStream::New(szFileName);
   if (is->GotException()) {
     delete is;
@@ -987,7 +971,7 @@ void Unpickler::InitExceptions() {
   RootSet::Add(Corrupt);
 }
 
-void Unpickler::RegisterHandler(Chunk *name, handler handler) {
+void Unpickler::RegisterHandler(String *name, handler handler) {
   word x = Store::UnmanagedPointerToWord((void *) handler);
   HashTable::FromWordDirect(handlerTable)->InsertItem(name->ToWord(), x);
 }
