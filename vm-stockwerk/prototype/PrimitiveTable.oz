@@ -191,7 +191,7 @@ define
 		 fun {$ N X TaskStack}
 		    if 0 =< N andthen N < Values.'Array.maxLen' then
 		       continue(arg({Array.new 0 N - 1 X}) TaskStack.2)
-		    else exception(nil Values.'General.Size' TaskStack.2)
+		    else exception(nil Values.'General.Size' TaskStack)
 		    end
 		 end#rr_t
 	      'Array.fromList':
@@ -210,7 +210,7 @@ define
 		 fun {$ A I TaskStack}
 		    try continue(arg({Array.get A I}) TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(nil Values.'General.Subscript' TaskStack.2)
+		       exception(nil Values.'General.Subscript' TaskStack)
 		    end
 		 end#rr_t
 	      'Array.update':
@@ -219,7 +219,7 @@ define
 		       {Array.put A I X}
 		       continue(args() TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(nil Values.'General.Subscript' TaskStack.2)
+		       exception(nil Values.'General.Subscript' TaskStack)
 		    end
 		 end#rri_t
 	      'Char.<': Value.'<'#rr_b
@@ -230,7 +230,7 @@ define
 	      'Char.chr':
 		 fun {$ C TaskStack}
 		    if {Char.is C} then continue(arg(C) TaskStack.2)
-		    else exception(nil Values.'General.Chr' TaskStack.2)
+		    else exception(nil Values.'General.Chr' TaskStack)
 		    end
 		 end#r_t
 	      'Char.isAlpha': Char.isAlpha#r_b
@@ -336,7 +336,7 @@ define
 			  continue(args() TaskStack.2)
 		       else request(Transient args(Transient Exn) TaskStack)
 		       end
-		    else exception(nil Values.'Hole.Hole' TaskStack.2)
+		    else exception(nil Values.'Hole.Hole' TaskStack)
 		    end
 		 end#ii_t
 	      'Hole.fill':
@@ -344,7 +344,7 @@ define
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
 			  if {IsCyclic Y TransientState} then
-			     exception(nil Values.'Hole.Cyclic' TaskStack.2)
+			     exception(nil Values.'Hole.Cyclic' TaskStack)
 			  else
 			     NewTransientState = ref(Y)
 			  in
@@ -363,7 +363,7 @@ define
 			  end
 		       else request(Transient args(Transient Y) TaskStack)
 		       end
-		    else exception(nil Values.'Hole.Hole' TaskStack.2)
+		    else exception(nil Values.'Hole.Hole' TaskStack)
 		    end
 		 end#ii_t
 	      'Hole.future':
@@ -380,7 +380,7 @@ define
 			  continue(arg(Res) TaskStack.2)
 		       else request(Transient arg(Transient) TaskStack)
 		       end
-		    else exception(nil Values.'Hole.Hole' TaskStack.2)
+		    else exception(nil Values.'Hole.Hole' TaskStack)
 		    end
 		 end#i_t
 	      'Hole.hole': fun {$} transient({NewCell hole(noFuture)}) end#n_v
@@ -417,7 +417,7 @@ define
 				       (X1 - X2 - 1) div X2
 				    end) TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'Int.maxInt': value(NONE)
@@ -437,7 +437,7 @@ define
 				       end
 				    end) TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'Int.precision': value(NONE)
@@ -445,14 +445,14 @@ define
 		 fun {$ I J TaskStack}
 		    try continue(arg(I div J) TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'Int.rem':
 		 fun {$ I J TaskStack}
 		    try continue(arg(I mod J) TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'LargeWord.wordSize': value(32)
@@ -552,7 +552,7 @@ define
 		    try
 		       continue(arg({ByteString.get S I}) TaskStack.2)
 		    catch system(kernel('ByteString.get' ...) ...) then
-		       exception(nil Values.'General.Subscript' TaskStack.2)
+		       exception(nil Values.'General.Subscript' TaskStack)
 		    end
 		 end#rr_t
 	      'String.substring':
@@ -560,7 +560,7 @@ define
 		    try
 		       continue(arg({ByteString.slice S I I + J}) TaskStack.2)
 		    catch system(kernel('ByteString.slice' ...) ...) then
-		       exception(nil Values.'General.Subscript' TaskStack.2)
+		       exception(nil Values.'General.Subscript' TaskStack)
 		    end
 		 end#rrr_t
 	      'String.str': fun {$ C} {ByteString.make [C]} end#r_v
@@ -572,9 +572,9 @@ define
 	      'Thread.raiseIn':
 		 fun {$ T Exn TaskStack}
 		    if T == {Scheduler.object getCurrentThread($)} then
-		       exception(nil Exn TaskStack.2)
+		       exception(nil Exn TaskStack)
 		    elsecase {T getState($)} of terminated then
-		       exception(nil Values.'Thread.Terminated' TaskStack.2)
+		       exception(nil Values.'Thread.Terminated' TaskStack)
 		    elseof State then OtherTaskStack NewFrame in
 		       {T getTaskStack(?OtherTaskStack)}
 		       NewFrame = raiseIn(ThreadRaiseInInterpreter Exn)
@@ -637,7 +637,7 @@ define
 		 fun {$ V I TaskStack}
 		    try continue(arg(V.(I + 1)) TaskStack.2)
 		    catch error(kernel('.' ...) ...) then
-		       exception(nil Values.'General.Subscript' TaskStack.2)
+		       exception(nil Values.'General.Subscript' TaskStack)
 		    end
 		 end#rr_t
 	      'Vector.tabulate':
@@ -687,7 +687,7 @@ define
 		       continue(arg({W2I {BootWord.'div' {I2W W1} {I2W W2}}})
 				TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'Word.fromInt\'': fun {$ _ X} X end#rr_v   %--** size
@@ -701,7 +701,7 @@ define
 		       continue(arg({W2I {BootWord.'mod' {I2W W1} {I2W W2}}})
 				TaskStack.2)
 		    catch _ then
-		       exception(nil Values.'General.Div' TaskStack.2)
+		       exception(nil Values.'General.Div' TaskStack)
 		    end
 		 end#rr_t
 	      'Word.notb': fun {$ X} {W2I {BootWord.notb {I2W X}}} end#r_v
@@ -754,8 +754,8 @@ define
    threadRaiseInInterpreter(
       run:
 	 fun {$ _ TaskStack}
-	    case TaskStack of raiseIn(_ Exn)|Rest then
-	       exception(nil Exn Rest)
+	    case TaskStack of (Frame=raiseIn(_ Exn))|Rest then
+	       exception([Frame] Exn Rest)
 	    end
 	 end
       handle:
