@@ -64,7 +64,8 @@
     "ROOTSETELEMENT", \
     "THREAD", \
     "CONCRETECODE", \
-    "CLOSURE" \
+    "CLOSURE", \
+    "TUPLE" \
   }
 
 #endif __STORE__PARAMETER_HH__
