@@ -99,9 +99,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
-	fun emitCoord (l, r) =   (*--** for debugging *)
-	    emit (Comment (Int.toString l ^ "-" ^ Int.toString r))
-
 	fun emitRecordArity labs =
 	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
 	     appi (fn (i, lab) =>
@@ -304,7 +301,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		genTestStm (id, testBodyFunList, elseBody)
 	    end
-	  | genStm (RaiseStm ((i, _), id)) =
+	  | genStm (RaiseStm (((i, _), _), id)) =
 	    (emitId id; emit (LdcI4 i);
 	     emit (Newobj (StockWerk.ExceptionWrapper,
 			   [StockWerk.StockWertTy, Int32Ty])); emit Throw)
@@ -461,16 +458,16 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, TupArgs nil), BOTH) =
+	  | genExp (AppExp (_, id, TupArgs nil), BOTH) =
 	    (emitId id;
 	     emit (Callvirt (StockWerk.StockWert, "Apply0",
 			     nil, StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, TupArgs [id1, id2]), BOTH) =
+	  | genExp (AppExp (_, id, TupArgs [id1, id2]), BOTH) =
 	    (emitId id; emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply2",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, TupArgs [id1, id2, id3]), BOTH) =
+	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3]), BOTH) =
 	    (emitId id; emitId id1; emitId id2; emitId id3;
 	     emit (Callvirt (StockWerk.StockWert, "Apply3",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
@@ -518,22 +515,22 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		     case args of
 			 OneArg _ => Crash.crash "CodeGen.genFunBody"
 		       | TupArgs (ids as (nil | [_, _] | [_, _, _])) =>
-			 let
-			     val name =
-				 "Apply" ^ Int.toString (List.length ids)
-			 in
-			     defineMethod (stamp, name, ids);
-			     genBody body; closeMethod ();
-			     (TupTest ids,
-			      fn () =>
-			      (emit (Ldarg 0); List.map emitId ids;
-			       emit Tail;
-			       emit (Call (true, className stamp, name,
-					   List.map (fn _ =>
-						     StockWerk.StockWertTy)
-					   ids, StockWerk.StockWertTy));
-			      emit Ret))
-			 end
+			     let
+				 val name =
+				     "Apply" ^ Int.toString (List.length ids)
+			     in
+				 defineMethod (stamp, name, ids);
+				 genBody body; closeMethod ();
+				 (TupTest ids,
+				  fn () =>
+				  (emit (Ldarg 0); List.map emitId ids;
+				   emit Tail;
+				   emit (Call (true, className stamp, name,
+					       List.map
+					       (fn _ => StockWerk.StockWertTy)
+					       ids, StockWerk.StockWertTy));
+				   emit Ret))
+			     end
 		       | TupArgs ids =>
 			     (TupTest ids, fn () => genBody body)
 		       | RecArgs labIdList =>
