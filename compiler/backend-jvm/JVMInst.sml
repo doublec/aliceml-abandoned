@@ -1,4 +1,4 @@
-structure JVMInst : JVMInst =
+structure JVMInst =
     struct
 	type label = string
 	and classname = string
@@ -11,7 +11,6 @@ structure JVMInst : JVMInst =
 	  | Floatsig
 	  | Intsig
 	  | Voidsig
-
 
 	datatype LABEL =
 	    StringLabel of string
@@ -91,5 +90,5 @@ structure JVMInst : JVMInst =
 	    MPublic | MPrivate | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
 	and
 	    LIMITS =
-	    Limits of int * int * int
+	    Limits of int * int (* locals, stack *)
     end

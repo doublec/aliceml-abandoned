@@ -1,4 +1,4 @@
-structure ToJasmin : ToJasmin =
+structure ToJasmin =
     struct
 
 	open JVMInst
@@ -156,13 +156,13 @@ structure ToJasmin : ToJasmin =
 	end
 
 	val methodToJasmin =
-	    fn Method(access,methodname,methodsig,Limits (perslocs, reuselocals,stack), instructions) =>
+	    fn Method(access,methodname,methodsig,Limits (perslocs,stack), instructions) =>
 	    let
 		val mcc = mAccessToString access
 	    in
 		perslocals := perslocs;
 		".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
-		".limit locals "^Int.toString(perslocs+reuselocals+1)^"\n"^
+		".limit locals "^Int.toString(perslocs+1)^"\n"^
 		".limit stack "^Int.toString(stack)^"\n"^
 		instructionsToJasmin(instructions)^"\n"^
 		".end method\n"
