@@ -584,17 +584,30 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
-    case AbstractCode::LazyPolySel: // of id * idRef * label * instr
+    case AbstractCode::LazyPolySel:
+      // of id vector * idRef * label vector * instr
       {
 	word wRecord = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
-	UniqueString *label = UniqueString::FromWordDirect(pc->Sel(2));
 	Record *record = Record::FromWord(wRecord);
+	Vector *ids = Vector::FromWordDirect(pc->Sel(0));
+	Vector *labels = Vector::FromWordDirect(pc->Sel(2));
+	Assert(ids->GetLength() == labels->GetLength());
 	if (record == INVALID_POINTER) {
-	  Closure *closure = LazySelClosure::New(wRecord, label);
-	  localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
-	} else {
-	  localEnv->Add(pc->Sel(0), record->PolySel(label));
-	}
+	  u_int n = ids->GetLength();
+	  LazySelClosure *closure = LazySelClosure::New(wRecord, labels);
+	  word wClosure = closure->ToWord();
+	  Vector *byneeds = Vector::New(n);
+	  for (u_int i = n; i--; ) {
+	    word wByneed = Byneed::New(wClosure)->ToWord();
+	    localEnv->Add(ids->Sub(i), wByneed);
+	    byneeds->Init(i, wByneed);
+	  }
+	  closure->InitByneeds(byneeds);
+	} else
+	  for (u_int i = ids->GetLength(); i--; ) {
+	    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+	    localEnv->Add(ids->Sub(i), record->PolySel(label));
+	  }
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
