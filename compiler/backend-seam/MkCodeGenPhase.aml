@@ -13,6 +13,7 @@
 import structure Atom                  from "../../lib/data/Atom"
 import structure MkHashImpSet          from "../../lib/data/MkHashImpSet"
 import structure Url                   from "../../lib/system/Url"
+import structure OS                    from "../../lib/system/OS"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
 import structure Type                  from "../../lib/rtt/Type"
@@ -840,12 +841,19 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 				elseInstr)
 	    end
 
+	fun urlToString url =
+	    case (Url.getScheme url, Url.getAuthority url) of
+		((NONE | SOME "file"), NONE) =>
+		OS.Path.mkRelative{path = Url.toString(Url.setScheme(url, NONE)),
+				   relativeTo = OS.FileSys.getDir()}
+	      | _ => Url.toString url
+
 	fun translate (desc, context, {imports, body, exports, sign}) =
 	    let
 		val context' = StampMap.clone context
 		val filename =
 		    case Source.sourceUrl desc of
-			SOME url => Url.toString url
+			SOME url => urlToString url
 		      | NONE => ""
 		val imports' =
 		    Vector.map (fn (_, sign, url, _) =>
