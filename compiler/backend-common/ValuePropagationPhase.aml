@@ -167,31 +167,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	fun derefArgs (args, env) = mapArgs (fn id => deref (id, env)) args
 
-	fun gatherTests ([TestStm (_, id, testBodyList, elseBody)],
-			 id', env, shared) =
-	    let
-		val id = deref (id, env)
-	    in
-		if idEq (id, id') then
-		    let
-			val (testBodyList', elseBody') =
-			    gatherTests (elseBody, id', env, shared)
-		    in
-			(testBodyList @ testBodyList', elseBody')
-		    end
-		else (nil, elseBody)
-	    end
-(*--** still buggy
-	  | gatherTests (body as [SharedStm (_, body', stamp)],
-			 id, env, shared) =
-	    (case StampMap.lookupExistent (shared, stamp) of
-		 UNIQUE => gatherTests (body', id, env, shared)
-	       | _ => (nil, body))
-*)
-	  | gatherTests ([IndirectStm (_, ref bodyOpt)], id, env, shared) =
-	    gatherTests (valOf bodyOpt, id, env, shared)
-	  | gatherTests (body, _, _, _) = (nil, body)
-
 	fun doSelTup (info, ids, n) = VarExp (info, List.nth (ids, n))
 
 	fun doSelRec (info, labelIdList, n) =
@@ -366,6 +341,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    else ALWAYS_FALSE
 	  | vpTest (_, _, _, _) = ALWAYS_FALSE
 
+	fun indirect (_, [stm]) = stm
+	  | indirect (info, body) = IndirectStm (info, ref (SOME body))
+
 	fun vpStm (ValDec (info, id, exp), env, isToplevel, shared) =
 	    let
 		val exp = vpExp (exp, env, isToplevel, shared)
@@ -435,31 +413,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    let
 		val id = deref (id, env)
 		val (testBodyList, elseBody) =
-		    gatherTests ([stm], id, env, shared)
-		val _ = IdMap.insertScope env
-		val elseBody = vpBody (elseBody, env, isToplevel, shared)
-		val _ = IdMap.deleteScope env
-		val (testBodyList, elseBody) =
-		    List.foldr
-		    (fn ((test, body), (rest, elseBody)) =>
-		     let
-			 val _ = IdMap.insertScope env
-			 val value = getConstruction (id, env)
-			 val testRes = vpTest (test, value, env, isToplevel)
-			 val _ = declareTest (id, testRes, env, isToplevel)
-			 val body = vpBody (body, env, isToplevel, shared)
-			 val _ = IdMap.deleteScope env
-		     in
-			 case testRes of
-			     ALWAYS_FALSE => (rest, elseBody)   (*--** warn? *)
-			   | ALWAYS_TRUE => (nil, body)
-			   | DYNAMIC_TEST test =>
-				 ((test, body)::rest, elseBody)
-		     end) (nil, elseBody) testBodyList
+		    vpTestStm ([stm], id, env, isToplevel, shared)
 	    in
 		case testBodyList of
 		    _::_ => TestStm (info, id, testBodyList, elseBody)
-		  | nil => IndirectStm (info, ref (SOME elseBody))
+		  | nil => indirect (info, elseBody)
 	    end
 	  | vpStm (SharedStm (info, body, stamp), env, isToplevel, shared) =
 	    (case StampMap.lookupExistent (shared, stamp) of
@@ -467,7 +425,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     let
 			 val body' = vpBody (body, env, isToplevel, shared)
 		     in
-			 IndirectStm (info, ref (SOME body'))
+			 indirect (info, body')
 		     end
 	       | SHARED =>
 		     let
@@ -491,6 +449,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     end)
 	  | vpStm (ReturnStm (info, exp), env, isToplevel, shared) =
 	    ReturnStm (info, vpExp (exp, env, isToplevel, shared))
+	  | vpStm (IndirectStm (_, ref (SOME [stm])),
+		   env, isToplevel, shared) =
+	    vpStm (stm, env, isToplevel, shared)
 	  | vpStm (stm as IndirectStm (info, bodyOptRef as ref bodyOpt),
 		   env, isToplevel, shared) =
 	    let
@@ -500,6 +461,41 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    end
 	  | vpStm (ExportStm (info, exp), env, isToplevel, shared) =
 	    ExportStm (info, vpExp (exp, env, isToplevel, shared))
+	and vpTestStm (topBody as [TestStm (_, id, [(test, body)], elseBody)],
+		       id', env, isToplevel, shared) =
+	    let
+		val id = deref (id, env)
+	    in
+		if idEq (id, id') then
+		    let
+			val (testBodyList, elseBody) =
+			    vpTestStm (elseBody, id', env, isToplevel, shared)
+			val _ = IdMap.insertScope env
+			val value = getConstruction (id, env)
+			val testRes = vpTest (test, value, env, isToplevel)
+			val _ = declareTest (id, testRes, env, isToplevel)
+			val body = vpBody (body, env, isToplevel, shared)
+			val _ = IdMap.deleteScope env
+		    in
+			case testRes of
+			    ALWAYS_FALSE =>   (*--** warn? *)
+				(testBodyList, elseBody)
+			  | ALWAYS_TRUE => (nil, body)
+			  | DYNAMIC_TEST test =>
+				((test, body)::testBodyList, elseBody)
+		    end
+		else (nil, vpBodyScope (topBody, env, isToplevel, shared))
+	    end
+	  | vpTestStm (body as [SharedStm (_, body', stamp)],
+		       id, env, isToplevel, shared) =
+	    (case StampMap.lookupExistent (shared, stamp) of
+		 UNIQUE => vpTestStm (body', id, env, isToplevel, shared)
+	       | _ => (nil, vpBodyScope (body, env, isToplevel, shared)))
+	  | vpTestStm ([IndirectStm (_, ref bodyOpt)],
+		       id, env, isToplevel, shared) =
+	    vpTestStm (valOf bodyOpt, id, env, isToplevel, shared)
+	  | vpTestStm (body, _, env, isToplevel, shared) =
+	    (nil, vpBodyScope (body, env, isToplevel, shared))
 	and vpExp (exp as LitExp (_, _), _, _, _) = exp
 	  | vpExp (exp as PrimExp (_, _), _, _, _) = exp
 	  | vpExp (exp as NewExp (_, _), _, false, _) = exp
@@ -600,6 +596,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    vpStm (stm, env, isToplevel, shared)::
 	    vpBody (stms, env, isToplevel, shared)
 	  | vpBody (nil, _, _, _) = nil
+	and vpBodyScope (body, env, isToplevel, shared) =
+	    (IdMap.insertScope env;
+	     vpBody (body, env, isToplevel, shared) before
+	     IdMap.deleteScope env)
 	and vpBodyShared (body, stamp, env, isToplevel) =
 	    (case sortShared (body, stamp) of
 		 ([stamp']::sorted, shared) =>
@@ -667,6 +667,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val topStamp = Stamp.new ()
 		val body' = vpBodyShared (body, topStamp, env, true)
 		val component' = (imports, (body', sign))
+val _ = debug component'
 	    in
 		component'
 	    end
