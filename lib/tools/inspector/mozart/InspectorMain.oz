@@ -123,6 +123,7 @@ define
 	 of det(tuple)  then false
 	 [] det(record) then false
 	 [] det(cell)   then false
+	 [] det(name)   then false
 	 [] det(_)      then true
 	 else false
 	 end
