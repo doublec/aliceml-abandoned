@@ -106,10 +106,16 @@ STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
 
 STOC_OPTS = --no-dump-elaboration-sig --no-implicit-import $(STOC_EXTRA_OPTS)
 STOC_EXTRA_OPTS = --dump-target
+
+STOL0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
+STOL1 = STOCKHOME=build1/install build1/install/bin/stol
+STOL2 = STOCKHOME=build2/install build2/install/bin/stol
+
+STOL_OPTS = -z9
+
 STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
 
 OZC = ozc
-OZL = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl -z9
 MLLEX = ml-lex
 MLYACC = ml-yacc
 
@@ -284,7 +290,7 @@ BUILD1SOURCES = build1/lib/fundamental/RTT.aml $(ALLSOURCES:%=build1/%)
 
 INSTALL1DIRS = build1/install build1/install/bin build1/install/stoc
 INSTALL1TOPFILES = StowMain.ozf
-INSTALL1BINFILES = stow stoc
+INSTALL1BINFILES = stow stoc stol
 INSTALL1STOCFILES = StocMain.ozf
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
@@ -391,10 +397,10 @@ BUILD1OZLINPUTS = \
 	build1/stoc/StocMain.ozf
 
 build1/LinkedStowMain.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
-	$(OZL) --include=.. $< -o $@
+	$(STOL0) $(STOL_OPTS) --include=.. $< -o $@
 
 build1/stoc/LinkedStocMain.ozf: $(BUILD1OZLINPUTS)
-	$(OZL) --include=.. build1/stoc/StocMain.ozf -o $@
+	$(STOL0) $(STOL_OPTS) --include=.. build1/stoc/StocMain.ozf -o $@
 
 ##
 ## Installing Build 1
@@ -428,7 +434,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/system build2/install/lib/utility \
 	build2/install/lib/rtt build2/install/lib/ml-yacc build2/install/stoc
 INSTALL2TOPFILES = StowMain.ozf Default.import
-INSTALL2BINFILES = stow stoc
+INSTALL2BINFILES = stow stoc stol
 INSTALL2LIBFILES = rtt/RTT.ozf
 INSTALL2STOCFILES = StocMain.ozf
 INSTALL2FILES = \
@@ -476,7 +482,7 @@ $(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
-	$(OZL) --include=.. $< -o $@
+	$(STOL1) $(STOL_OPTS) --include=.. $< -o $@
 
 ##
 ## Installing Build 2
@@ -493,10 +499,7 @@ build2/install/StowMain.ozf: build1/install/StowMain.ozf
 build2/install/Default.import: build2/Default.import
 	install -c -m 444 $< $@
 
-build2/install/bin/stoc: build1/install/bin/stoc
-	install -c -m 555 $< $@
-
-build2/install/bin/stow: build1/install/bin/stow
+$(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
 	install -c -m 555 $< $@
 
 $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
@@ -518,7 +521,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/stoc build3/install/stoc/top
 INSTALL3TOPFILES = $(INSTALL2TOPFILES)
-INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot stot-emacs
+INSTALL3BINFILES = $(INSTALL2BINFILES) stot stot-emacs
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
@@ -561,7 +564,7 @@ build3/%.ozf: build3/%.oz
 
 build3/LinkedStowMain.ozf: build3/StowMain.ozf \
 	build3/lib/utility/Url.ozf build3/stoc/top/Composer.ozf
-	$(OZL) --include=.. $< -o $@
+	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
 
 build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
@@ -581,18 +584,18 @@ build3/%.ozf: build3/%.aml
 
 build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(OZL) --include=.. $< -o $@
+	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
 
 build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(OZL) --include=.. $< -o $@
+	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
 
 build3/stoc/LinkedStotEmacsMain.ozf: build3/stoc/StotEmacsMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(OZL) --include=.. $< -o $@
+	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
 
 build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
-	$(OZL) --include=.. $< -o $@
+	$(STOL2) $(STOL_OPTS) --include=.. $< -o $@
 
 ##
 ## Installing Build 3
