@@ -49,11 +49,13 @@ signature UPDATE =
 	    node * (Reflect.value * Type.t * node * int * int -> node) * 
 	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
-	val foldDepth: node * int -> unit
+	val foldDepth: 
+	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
+	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
-	val foldWidth: node * int -> unit
-
-	val shrink: node -> unit
+	val foldWidth: 
+	    node * int * (Reflect.value * Type.t * node * int * int -> node) *
+	    (Reflect.value * Inf.t * node * int * int -> node) -> unit
 
 end
 

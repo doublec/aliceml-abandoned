@@ -18,14 +18,26 @@ import signature SETTINGS from "SETTINGS-sig"
 
 structure Settings :> SETTINGS = 
 struct 
+
     val max_width = ref 10
     val max_depth = ref 5
+
     val max_x = ref 0.0
     val max_y = ref 0.0 
+
     val relmode = ref false
     val relnumber = ref 0
     val tokenmode = ref false
+
     val fontname = ref "8x13"
     val font = ref (Gdk.fontLoad(!fontname))
+
+    fun set_width w = max_width := w
+
+    fun set_depth d = max_depth := d
+	
+    fun set_relmode b = relmode := b
+
+    fun set_tokenmode b = tokenmode := b
 
 end

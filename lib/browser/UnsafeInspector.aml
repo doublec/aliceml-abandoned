@@ -55,14 +55,6 @@ struct
 	     ; (!WindowManager.show) () )
 	end 
 
-    and set_width w = Settings.max_width := w
-
-    and set_depth d = Settings.max_depth := d
-	
-    and set_relmode b = Settings.relmode := b
-
-    and set_tokenmode b = Settings.tokenmode := b
-
     val _  = Init.init ()
 
 end

@@ -23,9 +23,4 @@ sig
 
     val inspectInf: 'a * Inf.t -> unit
 	
-    val set_width: int -> unit
-    val set_depth: int -> unit
-    val set_relmode: bool -> unit
-    val set_tokenmode: bool -> unit
-	
 end;

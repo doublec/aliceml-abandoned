@@ -215,35 +215,36 @@ struct
       ; () )
 
     (* foldDepth *)
-    and foldDepth (n,i) = TextIO.print("Changing depth by " 
-					     ^ Int.toString(i)
-					     ^ "\n") (* !!!! *)
-
-    (* foldWith *)
-    and foldWidth (n,i) = TextIO.print("Changing width by " 
-				       ^ Int.toString(i)
-				       ^ "\n") (* !!!! *)
-
-    (* shrink *)
-    and shrink n = 
+    and foldDepth (n,i,f,g) = 
 	Server.serve
-	(fn () =>
+	(fn () => 
 	(setDazzled n
+	; Settings.set_depth(!Settings.max_depth + i)
 	; let val ind = getAncIndex n 
 	      val anc = valOf(MainDictionary.lookup 
 			      (Dictionaries.dict,ind)) 
 	      val old_ydim = Layout.get_ydim(anc) 
-	      val limit = NewNodeHelper.createLimit (getDesc(n),DEPTH_LIMIT,
-						     getParent(n),getIndex(n),
-						     getDepth(n),
-						     NewNodeHelper.setGroup)
-	      val _ = updateChild(getParent(n),getIndex(n),limit)
-	      val node = if getParent(limit) = Empty then limit else anc
+	      val va = getValue(getDesc(n))
+	      val new = 
+		  case getDesc n of 
+		  INTERPUNCT => raise Match
+		| VALUE(r) => f (va,#typ(r),getParent(n),getIndex(n),
+				 getDepth(n))
+		| I_VALUE(r) => g (va,#typ(r),getParent(n),getIndex(n),
+				   getDepth(n))
+	      val _ = updateChild(getParent(n),getIndex(n),new)  
+	      val node = if getParent(new) = Empty then new else anc
 	      val (_,y_pos) = Services.getPosition(getGroup(anc))
 	  in ( Gtk.objectDestroy(getGroup(n))
-             ;  showChanges (anc,node,old_ydim,ind,y_pos) )
-	end))
-		
+	      ;  showChanges (anc,node,old_ydim,ind,y_pos) 
+	      ; Settings.set_depth(!Settings.max_depth - i) )
+	  end))
+
+    (* foldWith *)
+    and foldWidth (n,i,f,g) = TextIO.print("Changing width by " 
+					   ^ Int.toString(i)
+					   ^ "\n") (* !!!! *)
+	
 end (* struct *)
 
 end

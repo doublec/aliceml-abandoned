@@ -23,12 +23,17 @@ import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 *)
 import structure Url from "x-alice:/lib/utility/Url" 
 import structure Types from "Types"
+import structure Helper from "Helper"
+import structure Settings from "Settings"
 import structure CreateDoc from "CreateDoc"
+import structure NewNode from "NewNode"
 import structure MkColorTable from "MkColorTable"
+import structure WindowManager from "WindowManager"
+import structure Update from "Update"
 import signature INIT from "INIT-sig"
 
 local 
-    open Types CreateDoc MkColorTable
+    open Types CreateDoc MkColorTable NewNode
 in
    
 structure Init :> INIT = 
@@ -80,8 +85,36 @@ struct
 	           ; registerColor(LIMIT_COLOR, allocColor (65535,10000,0))
 	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
 	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
-	           ; registerColor(DEFAULT, allocColor(0,0,0)) )
+	           ; registerColor(DEFAULT, allocColor(0,0,0)) 
+	           ; !WindowManager.register
+	                    ("reinspect",fn (n,_) 
+			                 => Update.reinspect(n,createGraph,
+							     createGraphInf))
+		   ; !WindowManager.register
+			    ("width",
+			     fn (n,i) => Update.foldWidth(n,i,createGraph,
+							  createGraphInf))
+                   ; !WindowManager.register
+			    ("depth",
+			     fn (n,i) => Update.foldDepth(n,i,createGraph,
+							  createGraphInf))
 
+                   ; !WindowManager.register
+			    ("shrink",
+			     fn (n,_) 
+			     => let val diff = Helper.getDepth(n) - 
+			                       !(Settings.max_depth)
+				in if diff >= 0 
+				       then ()
+				   else Update.foldDepth(n,diff-1,createGraph,
+							 createGraphInf)
+				end)
+		   ; !WindowManager.register
+			    ("expand",
+			     fn (n,_) 
+			     => Update.foldDepth(n,1,createGraph,
+						 createGraphInf)) )
+		      
 end
 
 end

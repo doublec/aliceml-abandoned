@@ -36,7 +36,6 @@ import structure Update from "Update"
 import structure MkPathTable from "MkPathTable"
 import structure Services from "Services"
 import structure Settings from "Settings"
-import structure WindowManager from "WindowManager"
 import structure NewNodeHelper from "NewNodeHelper"
 import signature NEW_NODE from "NEW_NODE-sig"
 
@@ -808,25 +807,6 @@ struct
 	       ; Array.update(getKids(p),i,conc)
 	       ; conc)
 	   end
-
-(* Registrierung der update-Funktionen von Werten beim WindowManager *)
-   
-    val _ = !WindowManager.register("reinspect",
-				    fn (n,_) 
-				    => Update.reinspect(n,
-							createGraph,
-							createGraphInf))
-
-    val _ = !WindowManager.register("width",
-				    fn (n,i) => Update.foldWidth(n,i))
-    val _ = !WindowManager.register("depth",
-				    fn (n,i) => Update.foldDepth(n,i))
-
-    val _ = !WindowManager.register("shrink",fn (n,_) => Update.shrink n)
-
-    val _ = !WindowManager.register("expand",
-				    fn (n,_) => Update.foldDepth(n,1))
-
 
 end (* struct end *)
  
