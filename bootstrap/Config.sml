@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2003
  *   Andreas Rossberg, 2001
  *
  * Last change:
@@ -20,6 +20,9 @@ sig
     val vm : string
 
     val homeDir : string option
+
+    val pathEscape : char option
+    val pathSeparator : char
 end
 
 structure Config : CONFIG =
@@ -34,4 +37,14 @@ struct
     val vm = "smlnj"
 
     val homeDir = OS.Process.getEnv "STOCKHOME"
+
+    val pathEscape =
+	case platform of
+	    WIN32 => NONE
+	  | UNIX => SOME #"\\"
+
+    val pathSeparator =
+	case platform of
+	    WIN32 => #";"
+	  | UNIX => #":"
 end
