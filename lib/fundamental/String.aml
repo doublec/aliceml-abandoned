@@ -37,6 +37,7 @@ struct
     val size		= CharVector.length
     val sub		= CharVector.sub
     val implode		= CharVector.fromList
+    val explode		= CharVector.toList
     val tabulate	= CharVector.tabulate
     val concat		= CharVector.concat
     val map		= CharVector.map
@@ -45,25 +46,13 @@ struct
 
     __primitive val sub' : string * int -> char = "Unsafe.String.sub"
     __primitive val substring : string * int * int -> string
-						= "String.substring"
+						= "CharVector.extract"
     fun extract(s, i, NONE)   = substring(s, i, size s - i)
       | extract(s, i, SOME j) = substring(s, i, j)
 
     __primitive val op ^ :    string * string -> string = "String.^"
 
-    __primitive val explode : string -> char list       = "String.explode"
-
     fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
-
-    fun collate  cmp (s1,s2)	= collate'(cmp,s1,s2,0)
-    and collate'(cmp,s1,s2,i)	= case (i = size s1, i = size s2)
-				    of (true,  true)  => EQUAL
-				     | (true,  false) => LESS
-				     | (false, true)  => GREATER
-				     | (false, false) =>
-				  case cmp(sub'(s1,i), sub'(s2,i))
-				    of EQUAL => collate'(cmp,s1,s2,i+1)
-				     | other => other
 
     fun isPrefix s1 s2		= isPrefix'(s1,s2,0)
     and isPrefix'(s1,s2,i)	= i = size s1 orelse
@@ -79,11 +68,11 @@ struct
 
     fun isSubstring s1 s2	= isSubstring'(s1,s2,0)
     and isSubstring'(s1,s2,i)	= i + size s1 < size s2
-				  andalso isSubstring''(s1, s2, i, 0)
-				  orelse isSubstring'(s1, s2, i+1)
+				  andalso isSubstring''(s1,s2,i,0)
+				  orelse isSubstring'(s1,s2,i+1)
     and isSubstring''(s1,s2,i,j)= j = size s1 orelse
-				  sub'(s1, i) = sub'(s2, i+j) andalso
-				  isSubstring''(s1, s2, i, j+1)
+				  sub'(s1,i) = sub'(s2,i+j) andalso
+				  isSubstring''(s1,s2,i,j+1)
 
     __primitive val op < :	string * string -> bool  = "String.<"
     __primitive val op > :	string * string -> bool  = "String.>"
@@ -93,6 +82,7 @@ struct
     __primitive val hash :	string -> int            = "String.hash"
 
     val equal			= op =
+    val collate			= CharVector.collate
 
     fun fields  f  s		= fields'(f, explode s, nil)
     and fields'(f, nil, ss)	= List.rev ss
