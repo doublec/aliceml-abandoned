@@ -4,6 +4,7 @@ import
    System(printError show)
    Property(get)
    Pickle(save)
+   NativeWord(toInt) at '../Word.so{native}'
    Base('$Option') at 'Base.ozf'
    BackendCommon('$ImperativeGrammar') at 'BackendCommon.ozf'
    Common('$Prebound': Prebound) at 'Common.ozf'
@@ -107,7 +108,7 @@ define
    end
 
    fun {TrLit Lit}
-      case Lit of WordLit(W) then wordLit(W)
+      case Lit of WordLit(W) then wordLit({NativeWord.toInt W})
       [] IntLit(I) then intLit(I)
       [] CharLit(C) then charLit(C)
       [] StringLit(S) then stringLit({ByteString.toString S})
