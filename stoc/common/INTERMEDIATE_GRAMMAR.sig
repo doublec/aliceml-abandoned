@@ -32,7 +32,7 @@ signature INTERMEDIATE =
 	| VarExp    of info * longid
 	| ConExp    of info * longid * exp option
 	| TupExp    of info * exp list
-	| RecExp    of info * exp field list
+	| RecExp    of info * exp field list		(* distinct labels *)
 	| SelExp    of info * lab
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
@@ -51,14 +51,14 @@ signature INTERMEDIATE =
 
     and match    = Match of info * pat * exp
 
-    (* Patterns *)
+    (* Patterns (always linear) *)
 
     and pat =
 	  LitPat    of info * lit
 	| VarPat    of info * id
 	| ConPat    of info * longid * pat option
 	| TupPat    of info * pat list
-	| RecPat    of info * pat field list * bool (* dots *)
+	| RecPat    of info * pat field list * bool (* dots *)	(* distinct *)
 	| AsPat     of info * id * pat
 	| AltPat    of info * pat list
 	| NegPat    of info * pat
@@ -68,7 +68,7 @@ signature INTERMEDIATE =
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * id list * exp
+	  ValDec    of info * id list * exp		(* distinct ids *)
 	| ConDec    of info * id * bool (* has args *)
 
 
