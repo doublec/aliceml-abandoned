@@ -7,10 +7,6 @@ structure StampMap: IMP_MAP
 ###frontend-common/NAME.sig
 structure Name: NAME
 
-###frontend-common/ABSTRACT_GRAMMAR.sig
-structure AbstractGrammar: ABSTRACT_GRAMMAR
-structure TypedGrammar: ABSTRACT_GRAMMAR
-
 ###frontend-common/LAB.sig
 structure Lab: LAB
 
@@ -21,6 +17,16 @@ structure PathMap: IMP_MAP
 
 ###frontend-common/TYPE.sig
 structure Type: TYPE
+
+###frontend-common/SIGN.sig
+structure Sign: SIGN
+
+###frontend-common/INF.sig
+structure Inf: INF
+
+###frontend-common/ABSTRACT_GRAMMAR.sig
+structure AbstractGrammar: ABSTRACT_GRAMMAR
+structure TypedGrammar: ABSTRACT_GRAMMAR
 
 ###frontend-common/ENV.sig
 structure Env: ENV

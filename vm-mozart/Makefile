@@ -84,9 +84,6 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/StampMap.sml \
 	$(STOC_DIR)/frontend-common/NAME.sig \
 	$(STOC_DIR)/frontend-common/Name.sml \
-	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \
-	$(STOC_DIR)/frontend-common/MakeAbstractGrammar.sml \
-	$(STOC_DIR)/frontend-common/AbstractGrammar.sml \
 	$(STOC_DIR)/frontend-common/LAB.sig \
 	$(STOC_DIR)/frontend-common/Lab.sml \
 	$(STOC_DIR)/frontend-common/PATH.sig \
@@ -94,6 +91,13 @@ FRONTEND_COMMON_FILES = \
 	$(STOC_DIR)/frontend-common/PathSet.sml \
 	$(STOC_DIR)/frontend-common/TYPE.sig \
 	$(STOC_DIR)/frontend-common/Type.sml \
+	$(STOC_DIR)/frontend-common/SIGN.sig \
+	$(STOC_DIR)/frontend-common/Sign.sml \
+	$(STOC_DIR)/frontend-common/INF.sig \
+	$(STOC_DIR)/frontend-common/Inf.sml \
+	$(STOC_DIR)/frontend-common/ABSTRACT_GRAMMAR.sig \
+	$(STOC_DIR)/frontend-common/MakeAbstractGrammar.sml \
+	$(STOC_DIR)/frontend-common/AbstractGrammar.sml \
 	$(STOC_DIR)/frontend-common/TypedGrammar.sml \
 	$(STOC_DIR)/frontend-common/ENV.sig \
 	$(STOC_DIR)/frontend-common/Env.sml \
