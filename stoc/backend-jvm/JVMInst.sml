@@ -32,7 +32,7 @@ datatype
   | Ifeq  of label
   | Ifneq of label
   | Ifnull of label
-  | Ireturn of int
+  | Ireturn
   | Instanceof of classname
   | Invokespecial of classname * methodname * methodsig
   | Invokevirtual of classname * methodname * methodsig
