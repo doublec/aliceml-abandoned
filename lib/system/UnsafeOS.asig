@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -21,13 +21,16 @@ signature UNSAFE_OS_COMPONENT =
 		structure FileSys:
 		    sig
 			val chDir: string -> unit		(* OS.SysErr *)
-			val getDir: unit -> string
+			val getDir: unit -> string		(* OS.SysErr *)
 			val mkDir: string -> unit		(* OS.SysErr *)
+			val rmDir: string -> unit		(* OS.SysErr *)
 			val isDir: string -> bool		(* OS.SysErr *)
+			val isLink: string -> bool		(* OS.SysErr *)
+			val readLink: string -> string		(* OS.SysErr *)
 			val fileSize: string -> Position.int	(* OS.SysErr *)
 			val modTime: string -> Time.time	(* OS.SysErr *)
 			val remove: string -> unit		(* OS.SysErr *)
-			val tmpName: unit -> string
+			val tmpName: unit -> string		(* OS.SysErr *)
 		    end
 
 		structure Process:
