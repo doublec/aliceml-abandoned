@@ -18,5 +18,5 @@ import structure SMLToMozartToplevel from "top/SMLToMozartToplevel"
 val use = SMLToMozartToplevel.use
 val _ =
     Future.concur(fn _ =>
-		     OS.Process.exit(SMLToMozartToplevel.stot
+		     OS.Process.exit(SMLToMozartToplevel.main
 					 (CommandLine.arguments())))
