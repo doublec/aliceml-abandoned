@@ -40,16 +40,32 @@ struct
 
   (* Recognize sum type constructors (tags) *)
 
-    fun isTagType t =
-	Type.isArrow' t andalso isTagType(#2(Type.asArrow' t)) orelse
-	Type.isAll' t   andalso isTagType(#2(Type.asAll' t))   orelse
-	Type.isExist' t andalso isTagType(#2(Type.asExist' t)) orelse
+    fun decomposeConarrow t =
+	if Type.isAll t then decomposeConarrow(#2(Type.asAll t)) else
+	let
+	    val (t',tArity)  = Type.asApply t
+	    val (t'',tArrow) = Type.asApply t'
+	in
+(*ASSERT    assert Type.isCon t''
+	    andalso Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow)
+	    => *)
+	    if Type.isCon t''
+	    andalso Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow)
+	    then () else raise Assert.failure;
+	    (tArrow, tArity)
+	end
+
+    fun isTagType t  = isTagType'(#1(decomposeConarrow t))
+    and isTagType' t =
+	Type.isArrow' t andalso isTagType'(#2(Type.asArrow' t)) orelse
+	Type.isAll' t   andalso isTagType'(#2(Type.asAll' t))   orelse
+	Type.isExist' t andalso isTagType'(#2(Type.asExist' t)) orelse
 	Type.isSum' t
 
-    fun decodeArity t =
-	if Type.isApply t then
-	    1 + decodeArity(#1(Type.asApply t))
-	else 0
+    fun decodeArity t  = decodeArity'(#2(decomposeConarrow t))
+    and decodeArity' t = if Type.isApply t
+			 then 1 + decodeArity'(#1(Type.asApply t))
+			 else 0
 
 
   (* Names and labels *)
