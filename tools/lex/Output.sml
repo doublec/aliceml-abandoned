@@ -83,8 +83,8 @@ structure Output :> OUTPUT =
 	fun printResultsLb say pIdList idList =
 	    let
 		fun printOne id =
-		    (say ("\tval " ^ id ^ " = " ^ id
-			  ^ "(string, lexPos, lineNum, (");
+		    (say ("  val " ^ id ^ " = " ^ id
+			  ^ "(getChar, strBuf, eof, lexPos, lineNum, (");
 		     pIdList "dummy_" idList;
 		     say "))\n")
 	    in
@@ -99,7 +99,8 @@ structure Output :> OUTPUT =
 	    let
 		val n = ref (num - 1)
 		fun printOne i =
-		    say ("fn string => #" ^ Int.toString i ^ " (build string)")
+		    say ("fn getChar => #" ^ Int.toString i
+			 ^ " (build getChar)")
 	    in
 		while !n > 0 do
 		    (printOne (num - !n);
@@ -158,7 +159,7 @@ structure Output :> OUTPUT =
 		(say (escape x);
 		 ++chars;
 		 if !chars mod modulo = 0
-		     then say ("\\\n\t" ^ space ^ "\\")
+		     then say ("\\\n  " ^ space ^ "\\")
 		 else ())
 	    end
 		
@@ -191,14 +192,14 @@ structure Output :> OUTPUT =
 		maxState := state;
 		case stopt of
 		    NONE =>
-			(say ",\n\t";
+			(say ",\n  ";
 			 pOneTr (state, vec);
 			 pointList := (++ actPoint) :: (!pointList);
 			 printListTr say pOneTr maxState pointList actPoint
 		                     (xs,(!actPoint, state, vec)::ts)
 			 )
 		  | SOME (point, state', _ ) =>
-			(say ("\n\t(*" ^ Int.toString state ^ " -> ");
+			(say ("\n  (*" ^ Int.toString state ^ " -> ");
 			      say (Int.toString state' ^ "*)");
 			      pointList := point :: (!pointList);
 			      printListTr say pOneTr maxState pointList actPoint
@@ -225,7 +226,7 @@ structure Output :> OUTPUT =
 		
 	    in
 		(say (",");
-		 if !printedStates mod 16 = 0 then say "\n\t" else ();
+		 if !printedStates mod 10 = 0 then say "\n  " else ();
 		     say ( pretty p);
 		     ++ printedStates;
 		     printPointerTr say printedStates ps)
@@ -259,19 +260,19 @@ structure Output :> OUTPUT =
 
 		val pPointTr = printPointerTr say printedStates
 	    in
-		say ("val table_" ^ lexid ^ " = \n\tlet\n");
+		say ("val table_" ^ lexid ^ " = \n  let\n");
 		
-		say ("\tval dtran = [ \"\" (* unused state 0 *)");
+		say ("  val dtran = [ \"\" (* unused state 0 *)");
 		pListTr (tranList, nil);
 		say ("]\n\n");
 		
-		say ("\tval pointer = [ 0 (* unused state 0 *)");
+		say ("  val pointer = [ 0 (* unused state 0 *)");
 		pPointTr (rev( !pointList ) );
 		say ("]\n\n");
 		
-		say ("\tin\n\t(Vector.fromList pointer, \
+		say ("  in\n  (Vector.fromList pointer, \
 		 \Vector.fromList dtran, ");
-		say ( Bool.toString bigTable ^ ")\n\tend\n\n")
+		say ( Bool.toString bigTable ^ ")\n  end\n\n")
 	    end
 		
 		
@@ -300,16 +301,16 @@ structure Output :> OUTPUT =
 				     say "0 (* unused state 0 *)" )
 			    
 	    in
-		say ("val final_" ^ lexid ^ " =\n\tlet\n");
+		say ("val final_" ^ lexid ^ " =\n  let\n");
 		
-		say "\tval finlist = [";
+		say "  val finlist = [";
 		while ++maxState < numStates + !printedStates - 1 do
 		    (printOne (!maxState);
 		     say ",";
-		     if !maxState mod 16 = 0 then say "\n\t  " else () );
+		     if !maxState mod 10 = 0 then say "\n    " else () );
 		printOne (!maxState);
 		say "]\n";
-		say "\tin\n\tVector.fromList finlist\n\tend\n\n"
+		say "  in\n  Vector.fromList finlist\n  end\n\n"
 	    end
 			
 
@@ -328,16 +329,16 @@ structure Output :> OUTPUT =
 			    !s
 		    end
 		fun oneAction (n, atexp) =
-		    (if !first then (first:=false; say "\t  ") else say "\t| ";
+		    (if !first then (first:=false; say "    ") else say "  | ";
 			 say (pretty n);
 			 say " => ";
 			     printAtexp atexp)
 	    in
 		say ("fun action_" ^ lexid ^ " ((");
 		pIdList "" idList;
-		say ("), pos, yytext, yyline, yycol) =\n\tcase pos of\n");
+		say ("), pos, yytext, yyline, yycol) =\n  case pos of\n");
 		IntMap.appi oneAction atMap;
-		say "\t|    _ => raise Domain\n"
+		say "  |    _ => raise Domain\n"
 	    end
 		
 	
@@ -388,34 +389,36 @@ structure Output :> OUTPUT =
 
 			printLexbindList (lbl, idList);
 
-			say "\n\n(**** some hack to fix type annotation \
-			 \problems (thanks to Andreas Rossberg) ****)\n\n";
-			say "val annot_ref = ref 0\n\n";
+			say "\n\n(*** some hack to fix type annotation \
+			 \problems (thanks to Andreas Rossberg) ***)\n\n";
 			pAnLb idList;
-			say "\nfun annot f = (fn () => f (\"\", annot_ref, \
-			 \annot_ref, (";
+			say "\nfun annot f = (fn () => f (\
+			 \fn () => SOME #\" \", ref \"\", ref true, ref 0, \
+			 \ref 0, (";
 			pIdList "annot_" idList;
 			say ")); f)\n\n";
 
 			pMainLb idList ["val ", " = annot (Lexer.lexer \
 			 \(table_", ", action_", ", final_", "))\n"];
 
-			say "fun build string =\n\tlet\n";
-			say "\tval lexPos = ref 0\n";
-			say "\tval lineNum = ref 1\n\n";
+			say "fun build getChar =\n  let\n";
+			say "  val strBuf = ref \"\"\n";
+			say "  val eof = ref false\n";
+			say "  val lexPos = ref 0\n";
+			say "  val lineNum = ref 1\n\n";
 
-			pMainLb idList ["\tval ref_", " = ref NONE\n"];
+			pMainLb idList ["  val ref_", " = ref NONE\n"];
 
-			pMainLb idList ["\tfun dummy_", " () = \
+			pMainLb idList ["  fun dummy_", " () = \
 			 \valOf (!ref_", ") ()\n"];
 
 			pResLb idList;
 
-			say "\n\tin\n";
-			pMainLb idList ["\tref_", " := SOME ", ";\n"];
-			say "\t(";
+			say "\n  in\n";
+			pMainLb idList ["  ref_", " := SOME ", ";\n"];
+			say "  (";
 			pIdList "" idList;
-			say ")\n\tend\n";
+			say ")\n  end\n";
 
 			say "in\n(";
 			pFunLb (length idList);

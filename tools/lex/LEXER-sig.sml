@@ -7,7 +7,14 @@ signature LEXER =
 	    (int vector * string vector * bool)
 	    * ('a * int * string * int * int -> 'b)
 	    * int vector 
-	    -> string * int ref * int ref * 'a
-	    -> (unit -> 'b)
+	    ->
+	    (unit -> char option) * string ref
+	    * bool ref * int ref * int ref * 'a
+	    ->
+	    (unit -> 'b)
+
+	val fromString : string -> (unit -> char option)
+
+	val fromStream : TextIO.instream -> (unit -> char option)
 
     end

@@ -12,20 +12,18 @@ structure Lexer :> LEXER =
 	 * x is a tuple of the lexids in the same lexbind list
 	 *)
 	fun lexer ((pointer, dtran, bigTable), action, finstates)
-	          (string, lexPos, lineNum, x)  =
+	          (getChar, strBuf, eof, lexPos, lineNum, x)  =
 	    let
 
 		val stateStack = ref [1]
 		val newLines = ref [~1]
 		val firstPos = ref 0
 		val numBack = ref 0
-		val inputSize = size string
-
 
 		(* actChar : unit -> int
 		 * returns the ord of the actual character
 		 *)
-		fun actChar () = (ord (String.sub (string, !lexPos) ) )
+		fun actChar () = (ord (String.sub (!strBuf, !lexPos) ) )
 		    handle Subscript => 256
 
 
@@ -64,11 +62,10 @@ structure Lexer :> LEXER =
 				    
 
 		fun errorInfo () = 
-		    if !lexPos < inputSize
-			then (substring(string, !lexPos + 1, !numBack ))
-		    else "EOF"
+		    if !eof then "EOF"
+		    else(substring(!strBuf, !lexPos + 1, !numBack ))
 			handle Subscript =>
-			    substring(string, !lexPos + 1,!numBack - 1 ) ^ "EOF"
+			    substring(!strBuf, !lexPos + 1,!numBack - 1) ^ "EOF"
 
 
 		(* getAction : unit -> 'a
@@ -94,7 +91,7 @@ structure Lexer :> LEXER =
 			       | p => let
 					  val len = length (!stateStack) - 1
 					  val yytext =
-					      substring (string, !lexPos - len,
+					      substring (!strBuf, !lexPos - len,
 							 len)
 					      handle Subscript => ""
 					  val newLines = ref (!newLines)
@@ -142,6 +139,10 @@ structure Lexer :> LEXER =
 
 		and lex () =
 		    let
+			val _ = case getChar() of
+			    NONE   => eof := true
+(* sehr ineffizient!!! *)  | SOME c => strBuf := !strBuf ^ str c
+
 			val chr = actChar ()
 		    in
 			case trans chr of
@@ -159,5 +160,17 @@ structure Lexer :> LEXER =
 	    end
 
 
+	fun fromString s =
+	    let
+		val count = ref ~1
+	    in
+		fn () => ((count := ! count + 1 ;
+			   SOME (String.sub ( s , ! count )))
+			  handle Subscript => NONE )
+	    end 
+
+
+	fun fromStream instream =
+	    fn () => TextIO.input1 instream
 
     end
