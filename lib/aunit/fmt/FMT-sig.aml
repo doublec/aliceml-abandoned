@@ -1,0 +1,30 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2003
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature FMT =
+sig
+	datatype format =
+		S of string
+	|	I of int
+	|	R of real
+	|	B of bool
+	|	HEX of int
+	|	OCT of int
+	|	BIN of int
+	|	SPC
+	|	NL 						(* newline *)
+	|	TAB						(* tabulator *)
+
+	val fmt: TextIO.outstream -> format list -> unit
+end
+
+
