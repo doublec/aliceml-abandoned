@@ -69,7 +69,11 @@ struct
 				  end
 
     fun lookup((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
-				    Option.map #2 (List.find (isEntryFor k) kas)
+				    case List.find (isEntryFor k) kas
+				      of NONE      => NONE
+				       | SOME(k,a) => SOME a
+				  (*Option.map #2 (List.find (isEntryFor k) kas)
+				   *)
 				  end
 
     fun lookupExistent((ref t,_), k)
