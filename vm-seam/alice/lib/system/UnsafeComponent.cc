@@ -24,8 +24,15 @@
 #include "generic/Pickler.hh"
 #include "alice/Authoring.hh"
 
+static word NotFoundConstructor;
+static word MismatchConstructor;
+static word EvalConstructor;
+static word FailureConstructor;
 static word NativeConstructor;
 
+//
+// Error Handling
+//
 static word MakeNativeError() {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   DWORD errorCode = GetLastError();
@@ -53,6 +60,33 @@ static word MakeNativeError() {
   conVal->Init(0, s->ToWord());
   return conVal->ToWord();
 }
+
+//
+// Primitives
+//
+DEFINE3(UnsafeComponent_Mismatch) {
+  ConVal *conVal =
+    ConVal::New(Constructor::FromWordDirect(MismatchConstructor), 3);
+  conVal->Init(0, x0);
+  conVal->Init(1, x1);
+  conVal->Init(2, x2);
+  RETURN(conVal->ToWord());
+} END
+
+DEFINE1(UnsafeComponent_Eval) {
+  ConVal *conVal =
+    ConVal::New(Constructor::FromWordDirect(EvalConstructor), 1);
+  conVal->Init(0, x0);
+  RETURN(conVal->ToWord());
+} END
+
+DEFINE2(UnsafeComponent_Failure) {
+  ConVal *conVal =
+    ConVal::New(Constructor::FromWordDirect(FailureConstructor), 2);
+  conVal->Init(0, x0);
+  conVal->Init(1, x1);
+  RETURN(conVal->ToWord());
+} END
 
 DEFINE1(UnsafeComponent_Native) {
   ConVal *conVal =
@@ -133,15 +167,38 @@ DEFINE1(UnsafeComponent_unpack_) {
 } END
 
 word UnsafeComponent() {
+  NotFoundConstructor =
+    UniqueConstructor::New(String::New("UnsafeComponent.NotFound"))->ToWord();
+  RootSet::Add(NotFoundConstructor);
+  MismatchConstructor =
+    UniqueConstructor::New(String::New("UnsafeComponent.Mismatch"))->ToWord();
+  RootSet::Add(MismatchConstructor);
+  EvalConstructor =
+    UniqueConstructor::New(String::New("UnsafeComponent.Eval"))->ToWord();
+  RootSet::Add(EvalConstructor);
+  FailureConstructor =
+    UniqueConstructor::New(String::New("UnsafeComponent.Failure"))->ToWord();
+  RootSet::Add(FailureConstructor);
   NativeConstructor =
     UniqueConstructor::New(String::New("UnsafeComponent.Native"))->ToWord();
   RootSet::Add(NativeConstructor);
 
-  Record *record = Record::New(13);
+  Record *record = Record::New(21);
   record->Init("'Sited", Pickler::Sited);
   record->Init("Sited", Pickler::Sited);
   record->Init("'Corrupt", Unpickler::Corrupt);
   record->Init("Corrupt", Unpickler::Corrupt);
+  record->Init("'NotFound", NotFoundConstructor);
+  record->Init("NotFound", NotFoundConstructor);
+  record->Init("'Mismatch", MismatchConstructor);
+  INIT_STRUCTURE(record, "UnsafeComponent", "Mismatch",
+		 UnsafeComponent_Mismatch, 3, true);
+  record->Init("'Eval", EvalConstructor);
+  INIT_STRUCTURE(record, "UnsafeComponent", "Eval",
+		 UnsafeComponent_Eval, 1, true);
+  record->Init("'Failure", FailureConstructor);
+  INIT_STRUCTURE(record, "UnsafeComponent", "Failure",
+		 UnsafeComponent_Failure, 2, true);
   record->Init("'Native", NativeConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Native",
 		 UnsafeComponent_Native, 1, true);
