@@ -216,6 +216,7 @@ void TaskStack::Init() {
   emptyStack = Store::AllocBlock(MIN_DATA_LABEL, 1)->ToWord();
   RootSet::Add(emptyStack);
 
+  UncaughtExceptionWorker::Init();
   uncaughtExceptionClosures = Store::IntToWord(0);
   RootSet::Add(uncaughtExceptionClosures);
 }
