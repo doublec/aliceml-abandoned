@@ -16,7 +16,7 @@ Library:
 Inspector:
 
 * Display values more consistently with interactive toplevel.
-
+* References are now updated correctly.
 
 Runtime system:
 
