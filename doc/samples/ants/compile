@@ -9,7 +9,7 @@ AMLFILE=$BASEFILE.aml
 
 echo >$AMLFILE
 echo >>$AMLFILE 'import "Ante" import "Instructions" open Ante'
-cat >>$AMLFILE lib.ante
+#cat >>$AMLFILE lib.ante
 cat >>$AMLFILE $INFILE
 echo >>$AMLFILE ';Instructions.output ignore (TextIO.stdOut, compile ant);'
 echo >>$AMLFILE 'OS.Process.exit OS.Process.success : unit;'

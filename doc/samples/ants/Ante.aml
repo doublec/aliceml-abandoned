@@ -37,7 +37,7 @@ struct
     val labcount = ref 0
 
     fun newlabel s =
-	"$" ^ s ^ Int.toString (!labcount) before (labcount := !labcount+1)
+	s ^ "$" ^ Int.toString (!labcount) before (labcount := !labcount+1)
 
   (* Primitives *)
 
@@ -68,20 +68,40 @@ struct
 		let
 		    val z' = (z + (case s of left => 5 | right => 1)) mod 6
 		in
-		    Turn(s, Concat(Goto (expandlabel z' l),
-				   Label (expandlabel z l, k z)))
+		    Turn(s, Concat(Goto(expandlabel z' l),
+				   Label(expandlabel z l, k z)))
 		end
 	    end)
 
     infixr ++
-    fun (0,f1) ++ (n2,f2) = (n2, fn k => fn z => Concat(f1 k z, f2 k z))
-      | (1,f1) ++ (n2,f2) = (n2, fn k => fn z => f1 (f2 k) z)
+    fun (0,f1) ++ (n2,f2) =
+	(n2, fn k =>
+	     let
+		 val k1 = f1 k
+		 val k2 = f2 k
+	     in
+		 fn z => Concat(k1 z, k2 z)
+	     end)
+      | (1,f1) ++ (n2,f2) =
+	(n2, fn k => f1 (f2 k))
       | (_,f1) ++ (n2,f2) =
-	(n2, fn k => let val l = newlabel "++"
-		     in fn z => Concat(f1 (fn z => Goto l) z, Label(l, f2 k z))
-		     end)
+	(n2, fn k =>
+	     let
+		 val l = newlabel "++"
+		 val k1 = f1 (fn z => Goto (expandlabel z l))
+		 val k2 = f2 k
+	     in
+		 fn z => Concat(k1 z, Label(expandlabel z l, k2 z))
+	     end)
 
-    fun join g (n1,f1) (n2,f2) = (n1+n2, fn k => fn z => g (f1 k z, f2 k z))
+    fun join g (n1,f1) (n2,f2) =
+	(n1+n2, fn k =>
+		let
+		    val k1 = f1 k
+		    val k2 = f2 k
+		in
+		    fn z => g (k1 z, k2 z)
+		end)
 
     fun move2 ifyes b1 ifnot b2		= join Move b1 b2
       | move2 ifnot b1 ifyes b2		= join Move b2 b1
@@ -108,24 +128,20 @@ struct
     fun flip i yesno b			= flip2 i yesno b (negate yesno) nop
 
     fun switch (bs : stmt list) =
-	(1, fn k => 
+	(1, fn k =>
 	    let
 		val l1 = newlabel "switch"
 		val l2 = newlabel "switchout"
-		val (_,fs) = ListPair.unzip bs
 	    in
-		fn z =>
-		let
-		in
-		    Concat(Goto(expandlabel z l1), switch' l1 l2 z 0 fs k)
-		end
+		List.foldri (fn (i,(_,f),k) =>
+		    let
+			val l = expandlabel i l1
+			val k' = f (fn z => Goto(expandlabel z l2))
+		    in
+			fn z => Concat(Label(expandlabel z l, k' z), k z)
+		    end
+		) (fn z => Label(expandlabel z l2, k z)) bs
 	    end)
-    and switch' l1 l2 z i   []    k = Label(expandlabel z l2, k)
-      | switch' l1 l2 z i (f::fs) k = 
-        if i = z
-        then Concat(Label(expandlabel z l1, f (Goto(expandlabel z l2))),
-		    switch' l1 l2 z (i+1) fs k)
-        else Concat(f (Goto(expandlabel z l2)), switch' l1 l2 z (i+1) fs k)
 
 
   (* Combinators *)
