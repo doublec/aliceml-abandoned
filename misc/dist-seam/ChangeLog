@@ -1,0 +1,4 @@
+2002-10-13  Marco Kuhlmann  <kuhlmann@ps.uni-sb.de>
+
+	added a basic autoconf/automake infrastructure to the project tree
+	to ease building *.deb and *.rpm packages
