@@ -1,0 +1,97 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Types from "Types"
+import structure Helper from "Helper"
+import signature LAYOUT from "LAYOUT-sig"
+
+open Types Helper
+
+structure Layout :> LAYOUT = 
+struct
+
+    exception LayoutError
+
+    fun sum_up (li,f) = if List.length(li) = 0
+			    then 0
+			else f(hd(li)) + sum_up(tl(li),f) 
+
+    and max (li,f) = case List.length(li) of
+	             0 => 0
+		   | 1 => f(hd(li))     
+		   | _ => let val m = Int.max(f(hd(li)),
+					      f(hd(tl(li))) )
+			  in Int.max(m, max(tl(tl(li)),f) )
+			  end
+
+    and get_xdim n = case n of Simple(r) => !(#width(r))
+                             | Concat(r) => !(#width(r))
+                             | Container(r) => !(#width(r))
+                             | Limit(_) => 1
+                             | Empty => 0
+
+    and get_ydim n = case n of Concat(r) => !(#height(r))
+                             | Container(r) => !(#height(r))
+                             | Empty => 0
+                             | _ => 1
+
+    and get_l_xdim n = case n of Container(r) => !(#l_width(r))
+                               | _ => raise LayoutError
+
+    and set_xdim n = case n of 
+        Concat(r) => (#width(r) := calc_xdim n ; array_map(set_xdim,#kids(r)) )
+      | Container(r) 
+	=> (#width(r) := calc_xdim n ; array_map(set_xdim,#kids(r)) )
+      | _ => ()
+	    
+    and set_ydim n = case n of 
+	Concat(r) 
+	=> (#height(r) := calc_ydim n ; array_map(set_ydim,#kids(r)) )
+      | Container(r) 
+	=> (#height(r) := calc_ydim n ; array_map(set_ydim,#kids(r)) )
+      | _ => ()	  
+
+    and set_l_xdim n = case n of
+	Concat(r) => array_map(set_l_xdim,#kids(r))
+      | Container(r) => ( #l_width(r) := calc_l_xdim n 
+                        ; array_map(set_l_xdim,#kids(r)) )
+      | _ => ()
+
+    and calc_xdim n = case n of
+	Simple(r) => !(#width(r))
+      | Concat(r) => sum_up (Array.toList(#kids(r)),calc_xdim)
+      | Container(r) => let val li = Array.toList(#kids(r))
+			in if setsVertical n 
+			       then max (li,calc_xdim) 
+			   else sum_up (li,calc_xdim) 
+			end
+      | Limit(r) => 1
+      | Empty => 0
+
+    and calc_ydim n = case n of
+	Concat(r) => max (Array.toList(#kids(r)),calc_ydim)
+      | Container(r) => if setsVertical n 
+			    then sum_up (Array.toList(#kids(r)),calc_ydim)
+			else max (Array.toList(#kids(r)),calc_ydim)
+      | Empty => 0
+      | _ => 1
+ 
+    and calc_l_xdim n = case n of 
+        Container(r) => calc_xdim (List.last(Array.toList(#kids(r))) )
+      | _ => raise LayoutError
+
+    fun layout n = (set_xdim n; set_ydim n; set_l_xdim n)
+
+end
