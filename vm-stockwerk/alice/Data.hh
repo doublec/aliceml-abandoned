@@ -402,4 +402,4 @@ public:
   }
 };
 
-#endif __ALICE__DATA_HH__
+#endif

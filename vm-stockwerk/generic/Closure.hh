@@ -58,4 +58,4 @@ public:
   }
 };
 
-#endif __GENERIC__CLOSURE_HH__
+#endif
