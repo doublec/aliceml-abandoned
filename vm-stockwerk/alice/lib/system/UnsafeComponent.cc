@@ -47,7 +47,7 @@ DEFINE1(UnsafeComponent_load) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(s, x0);
-  Error("UnsafeComponent.load not implemented"); //--** to be done
+  Error("UnsafeComponent.save not implemented"); //--** to be done
 } END
 
 word UnsafeComponent(void) {
