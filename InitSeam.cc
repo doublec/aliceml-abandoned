@@ -25,6 +25,7 @@
 #include "generic/Pickler.hh"
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
+#include "generic/Time.hh"
 #if PROFILE
 #include "generic/Profiler.hh"
 #endif
@@ -53,6 +54,7 @@ extern "C" SeamDll void InitSeam() {
   IODesc::Init();
   SignalHandler::Init();
   Scheduler::Init();
+  Time::Init();
 #if PROFILE
   Profiler::Init();
 #endif
