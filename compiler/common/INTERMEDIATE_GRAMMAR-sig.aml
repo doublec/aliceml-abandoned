@@ -63,7 +63,7 @@ signature INTERMEDIATE =
 	| TupPat    of info * pat list
 	| RecPat    of info * pat field list * bool (* dots *)
 			(* all labels distinct *)
-	| AsPat     of info * id * pat
+	| AsPat     of info * pat * pat
 	| AltPat    of info * pat list
 			(* all paterns bind same ids *)
 	| NegPat    of info * pat
