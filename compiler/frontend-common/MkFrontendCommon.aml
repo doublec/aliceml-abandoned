@@ -34,14 +34,14 @@ import structure CheckIntermediate     from "../common/CheckIntermediate"
 
 
 functor MkFrontendCommon(
-		val loadSign: Source.desc * Url.t -> Inf.sign
+		val loadSig: Source.desc * Url.t -> Inf.sign
 		structure Switches: SWITCHES
 	) : PHASE =
     let
 	structure Phase1 =
 		  MkTracingPhase(
 			structure Phase =
-			    MkElaborationPhase(val       loadSig  = loadSign
+			    MkElaborationPhase(val       loadSig  = loadSig
 					       structure Switches = Switches)
 			structure Switches = Switches
 			val name = "Elaboration"

@@ -27,7 +27,7 @@ import structure MkAbstractionPhase
 
 
 functor MkFrontendSML(
-		val loadSign :       sig_loader
+		val loadSig :        sig_loader
 		structure Switches : SWITCHES
 	) : PHASE =
     let
@@ -40,7 +40,7 @@ functor MkFrontendSML(
 	structure Phase2 =
 		  MkTracingPhase(
 			structure Phase    =
-			    MkAbstractionPhase(val loadSign = loadSign
+			    MkAbstractionPhase(val loadSig = loadSig
 					       structure Switches = Switches)
 			structure Switches = Switches
 			val name = "Abstraction"
