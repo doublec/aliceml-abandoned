@@ -83,9 +83,9 @@ functor MakeEngine(val cmd: string
 		    [("Result", s)] => valOf (Int.fromString s)
 		  | _ => raise Format "buildFunctor: result expected")
 
-	fun saveFunctor proc filename value =
-	    (sendCommand (proc, "saveFunctor", [STRING filename, VALUE value]);
+	fun saveValue proc filename value =
+	    (sendCommand (proc, "saveValue", [STRING filename, VALUE value]);
 	     case parseResult proc of
 		 [("Result", _)] => ()
-	       | _ => raise Format "saveFunctor: result expected")
+	       | _ => raise Format "saveValue: result expected")
     end

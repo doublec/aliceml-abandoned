@@ -4,6 +4,6 @@ signature TARGET =
 
     type t
 
-    val eval: C.t -> t -> C.t
-    val save: string -> t -> unit
+    val apply: C.t -> t -> unit
+    val save: C.t -> string -> t -> unit
   end

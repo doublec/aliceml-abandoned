@@ -1,14 +1,18 @@
 Group
 
     structure OzifyFlatGrammar
+    structure MozartGenerationPhase
 
 is
 
+    ../error/sources.cm
     ../misc/sources.cm
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
+    ../top/phase.cm
     ../top/engine.cm
 
     (* Externalisation (into Oz syntax) *)
 
     OzifyFlatGrammar.sml
+    MozartGenerationPhase.sml

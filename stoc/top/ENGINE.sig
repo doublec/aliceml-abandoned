@@ -29,7 +29,7 @@ signature ENGINE =
 	val stop: t -> unit
 
 	val buildFunctor: t -> code -> value   (* Format *)
-	val saveFunctor: t -> string -> value -> unit   (* Format *)
+	val saveValue: t -> string -> value -> unit   (* Format *)
 
 	val valueToString: value -> string
     end
