@@ -15,32 +15,11 @@
 DEFINES = @DEFS@
 INCLUDES = -I$(SRCTOP) -I$(BUILDTOP) @INCLUDES@ @CPPFLAGS@
 
-CXX_WARNING_FLAGS = \
-	-Wall -W -Wundef -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wconversion -Wredundant-decls \
-	-Winline -Woverloaded-virtual -Wsign-promo
-
-CXX_DEBUG_FLAGS = \
-	-DINTERFACE -DDEBUG_CHECK -DSTORE_DEBUG -DJAVA_INTERPRETER_DEBUG \
-	-fno-inline-functions -fimplement-inlines -ggdb
-
-CXX_OPTIMIZE_FLAGS = \
-	-pipe -mcpu=pentium -march=pentium3 -O3 -fomit-frame-pointer \
-	-fforce-mem -fforce-addr -finline-limit=2500 \
-	-fno-implement-inlines -fno-keep-static-consts \
-	-fno-implicit-templates -fno-implicit-inline-templates
-
 CXX = @CXX@
-
-#CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
-CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
+CXXFLAGS = @CXXFLAGS@
 
 LD = @CXX@
-LD_DEBUG_FLAGS = 
-LD_OPTIMIZE_FLAGS = -Wl,-S
-
-#LDFLAGS = $(MACHINE_FLAGS) $(LD_DEBUG_FLAGS) @LDFLAGS@
-LDFLAGS = $(LD_OPTIMIZE_FLAGS) @LDFLAGS@
+LDFLAGS = @LDFLAGS@
 
 LIBS = @LIBS@
 
