@@ -71,7 +71,7 @@ LinkedInspector.ozf: Inspector.ozf $(ALICELINK_INPUTS)
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(PREFIX)/lib/tools/%.ozf: Linked%.ozf
 	install -c -m 444 $< $@

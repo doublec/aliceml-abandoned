@@ -40,7 +40,7 @@ $(COMPONENTS): %.stc: %.aml
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(PREFIX)/lib/distribution/search/%: %
 	install -c -m 444 $< $@

@@ -66,10 +66,10 @@ install: $(INSTALLDIRS) $(INSTALLFILES)
 build3-install: $(INSTALL3DIRS) $(INSTALL3FILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(INSTALL3DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(INSTALLDIRS)/%.stc: %.stc
 	install -c -m 444 $< $@

@@ -89,7 +89,7 @@ Linked%.ozf: %.ozf $(OZSOURCES:%.oz=%.ozf)
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(NATIVES:%=$(PREFIX)/lib/constraints/%.ozf): \
 	$(PREFIX)/lib/constraints/%.ozf: Linked%.ozf

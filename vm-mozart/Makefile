@@ -556,7 +556,7 @@ build1/LinkedVMMain.ozf: $(VMSOURCES:%.oz=build1/%.ozf)
 build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 
 $(INSTALL1DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 build1/install/compiler/CompilerMain.ozf:
 	(cd build1 && tar cf - `find . -name '*.ozf'`) | \
@@ -763,7 +763,7 @@ build3/tools/depend/LinkedMain.ozf: $(TOOLSDEPENDSOURCES:%.aml=build3/%.ozf)
 build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 
 $(INSTALL3DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 build3/install/VMMain.ozf: build3/LinkedVMMain.ozf
 	install -c -m 444 $< $@
@@ -846,7 +846,7 @@ INSTALLFILES = \
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@

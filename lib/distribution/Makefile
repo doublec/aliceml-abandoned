@@ -98,7 +98,7 @@ Linked%Remote.ozf: %Remote.$(STC) $(OZSOURCES:%.oz=%.$(STC)) MkRemote.$(STC)
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 #$(NATIVES:%=$(PREFIX)/lib/distribution/%.$(STC)): \
 #	$(PREFIX)/lib/distribution/%.$(STC): Linked%.$(STC)

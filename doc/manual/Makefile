@@ -89,7 +89,7 @@ examples/interpreter.tar: \
 	 $(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=interpreter/%))
 
 $(DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(PREFIX)/%.html: %.html macros.php3 menu.html
 	(echo '<?php $$platform = "$(PLATFORM)"; ?>'; cat $<) > $<.static.in

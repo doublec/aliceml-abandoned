@@ -19,7 +19,7 @@ alicerun.1: alicerun
 	help2man -I see_also -N $< -o $@
 
 $(PREFIX)/man:
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(PREFIX)/man/%.1: %.1
 	install -c -m 444 $< $@

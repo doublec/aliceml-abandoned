@@ -557,7 +557,7 @@ build1/%.stc: build1/%.aml
 build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 
 $(INSTALL1DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
@@ -747,7 +747,7 @@ build3/tools/depend/LinkedMain.stc: $(TOOLSDEPENDSOURCES:%.aml=build3/%.stc)
 build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 
 $(INSTALL3DIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 build3/install/include/%: %
 	install -c -m 444 $< $@
@@ -826,7 +826,7 @@ INSTALLFILES = \
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
-	mkdir -p $@
+	mkdir -p -m 775 $@
 
 $(INSTALL3TOPFILES:%=${pkgdatadir}/%): ${pkgdatadir}/%: build3/install/%
 	install -c -m 444 $< $@
