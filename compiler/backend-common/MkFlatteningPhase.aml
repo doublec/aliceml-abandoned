@@ -127,19 +127,19 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	(* Translation *)
 
-	fun translateLongid (ShortId (info, id)) = (nil, id, valOf (#typ info))
+	fun translateLongid (ShortId (info, id)) = (nil, id, #typ info)
 	  | translateLongid (LongId ({region, typ = typOpt}, longid,
 				     Lab (_, label))) =
 	    let
-		val (stms, id, typ) = translateLongid longid
+		val (stms, id, typOpt') = translateLongid longid
 		val info = {region = region}
 		val id' = Id (info, Stamp.new (), Name.InId)
-		val n = labelToIndex (typ, label)
+		val n = selIndex (valOf typOpt', label)
 		val stm =
 		    O.ValDec (stm_info region, id',
 			      O.SelAppExp (info, label, n, id))
 	    in
-		(stms @ [stm], id', valOf typOpt)
+		(stms @ [stm], id', typOpt)
 	    end
 
 	fun decsToIdExpList (O.ValDec (_, id, exp')::rest, region) =
@@ -287,7 +287,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		stms @ f (O.VarExp (id_info info, id))::translateCont cont
 	    end
 	  | translateExp (TagExp (info, Lab (_, label), isNAry), f, cont) =
-	    f (O.TagExp (id_info info, label, labelToIndex (#typ info, label),
+	    f (O.TagExp (id_info info, label, tagIndex (#typ info, label),
 			 makeConArity (#typ info, isNAry)))::
 	    translateCont cont
 	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
@@ -342,7 +342,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
 	    let
-		val n = labelToIndex (#1 (Type.asArrow (#typ info)), label)
+		val n = selIndex (#1 (Type.asArrow (#typ info)), label)
 	    in
 		f (O.SelExp (id_info info, label, n))::translateCont cont
 	    end
@@ -416,7 +416,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, args) = unfoldArgs (exp2, rest, isNAry)
-		val n = labelToIndex (#typ info', label)
+		val n = tagIndex (#typ info', label)
 		val conArity = makeConArity (#typ info', isNAry)
 		val (idTestOpt, exp') =
 		    tagAppExp (id_info info, label, n, args, conArity)
@@ -468,7 +468,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
-		val n = labelToIndex (#1 (Type.asArrow (#typ info')), label)
+		val n = selIndex (#1 (Type.asArrow (#typ info')), label)
 	    in
 		(r := SOME (f (O.SelAppExp (id_info info, label, n, id2))::
 			    translateCont cont);
@@ -499,12 +499,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    let
 			val id = freshId info'
 			val exp =
-			    case labelToIndexOpt (arity2, label) of
+			    case findLabel (arity2, label) of
 				SOME i =>
 				    O.SelAppExp (info', label, i, id2)
 			      | NONE =>
 				    O.SelAppExp (info', label,
-						 valOf (labelToIndexOpt
+						 valOf (findLabel
 							(arity1, label)), id1)
 		    in
 			(O.ValDec (stm_info region, id, exp), id)

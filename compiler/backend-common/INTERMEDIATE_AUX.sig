@@ -36,6 +36,7 @@ signature INTERMEDIATE_AUX =
 
 	val typToArity: Type.t -> O.arity
 	val makeConArity: Type.t * bool -> O.conArity
-	val labelToIndexOpt: O.arity * Label.t -> int option
-	val labelToIndex: Type.t * Label.t -> int
+	val findLabel: O.arity * Label.t -> int option
+	val selIndex: Type.t * Label.t -> int
+	val tagIndex: Type.t * Label.t -> int
     end

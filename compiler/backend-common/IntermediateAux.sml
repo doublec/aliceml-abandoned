@@ -367,9 +367,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	      | (labels, LabelSort.Rec) => RecArity labels
 
 	fun typToArity typ =
-	    if Type.isArrow typ then
-		typToArity (#2 (Type.asArrow typ))
-	    else if Type.isAll typ then
+	    if Type.isAll typ then
 		typToArity (#2 (Type.asAll typ))
 	    else if Type.isExist typ then
 		typToArity (#2 (Type.asExist typ))
@@ -397,9 +395,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    if label = label' then SOME i else find (rest, label', i + 1)
 	  | find (nil, _, _) = NONE
 
-	fun labelToIndexOpt (Unary, label) =
-	    raise Crash.Crash "IntermediateAux.labelToIndexOpt"
-	  | labelToIndexOpt (TupArity n, label) =
+	fun findLabel (Unary, label) =
+	    raise Crash.Crash "IntermediateAux.findLabel"
+	  | findLabel (TupArity n, label) =
 	    (case Label.toLargeInt label of
 		 SOME li =>
 		     let
@@ -408,8 +406,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 if i <= n then SOME (i - 1) else NONE
 		     end
 	       | NONE => NONE)
-	  | labelToIndexOpt (RecArity labels, label) = find (labels, label, 0)
+	  | findLabel (RecArity labels, label) = find (labels, label, 0)
 
-	fun labelToIndex (typ, label) =
-	    valOf (labelToIndexOpt (typToArity typ, label))
+	fun selIndex (typ, label) =
+	    valOf (findLabel (typToArity typ, label))
+
+	fun tagIndex (typ, label) =
+	    selIndex (if Type.isArrow typ then #2 (Type.asArrow typ) else typ,
+		      label)
     end

@@ -60,6 +60,8 @@ signature FLAT_GRAMMAR =
 	  | TagAppTest of label * int * id args
 	  | ConTest of id
 	  | ConAppTest of id * id args
+	  | StaticConTest of stamp
+	  | StaticConAppTest of stamp * id args
 	  | RefAppTest of id
 	  | TupTest of id list
 	  | RecTest of (label * id) list
