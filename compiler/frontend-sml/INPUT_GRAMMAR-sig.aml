@@ -312,8 +312,6 @@ sig
 	| INFIXSpec         of Info * int * VId
 	| INFIXRSpec        of Info * int * VId
 	| NONFIXSpec        of Info * VId
-	| PRIMITIVETYPESpec of Info * TyVarSeq * TyCon * string
-	| PRIMITIVESIGNATURESpec of Info * SigId * StrPat list * string
 
     and ValDesc =
 	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option

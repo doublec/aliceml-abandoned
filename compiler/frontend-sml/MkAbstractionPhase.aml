@@ -2706,31 +2706,6 @@ struct
 		spec' :: acc
 	   end
 
-	 | PRIMITIVETYPESpec(i, tyvarseq, tycon as TyCon(i',tycon'), s) =>
-	   let
-		val (typid',stamp) = trTyCon_bind E tycon
-		val  _             = insertScope E
-		val  varids'       = trTyVarSeq E tyvarseq	(* ignore *)
-		val  _             = removeScope E
-		val  spec'         = O.TypSpec(i, typid', O.PrimTyp(i,s))
-		val  _             = insertTy(E, tycon', (i, stamp, env()))
-	   in
-		spec' :: acc
-	   end
-
-	 | PRIMITIVESIGNATURESpec(i, sigid as SigId(i',sigid'), strpats, s) =>
-	   let
-		val (infid',stamp) = trSigId_bind E sigid
-		val  _             = insertScope E
-		val  modid_infs'   = trStrPats E strpats	(* ignore *)
-		val  _             = removeScope E
-		val  spec'         = O.InfSpec(i', infid', O.PrimInf(i,s))
-		val  F             = ABSTR(self E, [], sigid', [])
-		val  _             = insertSig(E, sigid', (i',stamp,F))
-	   in
-		spec' :: acc
-	   end
-
 
     and trOpenSpecVal (E,i,modlongido',tycon) (vid', (_,stamp1,is), acc) =
 	let

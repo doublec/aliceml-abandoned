@@ -313,8 +313,6 @@ struct
 	| INFIXSpec         of Info * int * VId
 	| INFIXRSpec        of Info * int * VId
 	| NONFIXSpec        of Info * VId
-	| PRIMITIVETYPESpec of Info * TyVarSeq * TyCon * string
-	| PRIMITIVESIGNATURESpec of Info * SigId * StrPat list * string
 
     and ValDesc =
 	  NEWValDesc      of Info * Op * VId * Ty * ValDesc option
@@ -586,8 +584,6 @@ struct
       | infoSpec(INFIXSpec(I,_,_))			= I
       | infoSpec(INFIXRSpec(I,_,_))			= I
       | infoSpec(NONFIXSpec(I,_))			= I
-      | infoSpec(PRIMITIVETYPESpec(I,_,_,_))		= I
-      | infoSpec(PRIMITIVESIGNATURESpec(I,_,_,_))	= I
 
     fun infoValDesc(NEWValDesc(I,_,_,_,_))		= I
       | infoValDesc(EQUALValDesc(I,_,_,_,_,_))		= I
