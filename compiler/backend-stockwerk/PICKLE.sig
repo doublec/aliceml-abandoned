@@ -21,7 +21,7 @@ signature PICKLE =
 	  | Char of WideChar.char
 	  | String of WideString.string
 	  | Real of string
-	  | Constructor of stamp
+	  | Constructor of Stamp.t
 
 	type id = int
 
@@ -29,43 +29,51 @@ signature PICKLE =
 	    IdDef of id
 	  | Wildcard
 
+	datatype idRef =
+	    Local of id
+	  | Global of int
+	(*--** | Constant of value *)
+
 	datatype con =
-	    Con of id
+	    Con of idRef	
 	  | StaticCon of value
 
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
 
+	(*--** direct call *)
+
 	datatype instr =
 	    PutConst of id * value * instr
-	  | PutVar of id * id * instr
+	  | PutVar of id * idRef * instr
 	  | PutNew of id * instr (*--** not really needed (builtin) *)
-	  | PutGlobal of id * int * instr
-	  | PutTag of id * int * id vector * instr
-	  | PutCon of id * con * id vector * instr
-	  | PutRef of id * id * instr
-	  | PutTup of id * id vector * instr
-	  | PutSel of id * int * id * instr
-	  | PutVec of id * id vector * instr
-	  | PutFun of id * id vector * function * instr
+	  | PutTag of id * int * idRef vector * instr
+	  | PutCon of id * con * idRef vector * instr
+	  | PutRef of id * idRef * instr
+	  | PutTup of id * idRef vector * instr
+	  | PutSel of id * int * idRef * instr
+	  | PutVec of id * idRef vector * instr
+	  | PutFun of id * idRef vector * function * instr
 	  | Kill of id vector * instr
-	  | AppPrim of id * string * id vector * instr
-	  | AppVar of id args * id * id args * instr
-	  | GetTup of idDef vector * id * instr
-	  | Try of instr * id * instr
+	  | AppPrim of idDef * string * idRef vector * instr option
+	  | AppVar of idDef args * idRef * idRef args * instr option
+	  | GetRef of id * idRef * instr
+	  | GetTup of idDef vector * idRef * instr
+	  | Raise of idRef
+	  | Try of instr * idDef * instr
 	  | EndTry of instr
 	  | EndHandle of instr
-	  | IntTest of id * (int * instr) vector * instr
-	  | RealTest of id * (real * instr) vector * instr
-	  | StringTest of id * (string * instr) vector * instr
-	  | TagTest of id * (int * instr) vector
-			  * (int * idDef vector * instr) vector * instr
-	  | ConTest of id * (con * instr) vector
-			  * (con * idDef vector * instr) vector * instr
-	  | VecTest of id * (idDef vector * instr) vector * instr
-	  | Return of id args
+	  | IntTest of idRef * (int * instr) vector * instr
+	  | RealTest of idRef * (real * instr) vector * instr
+	  | StringTest of idRef * (string * instr) vector * instr
+	  | TagTest of idRef * (int * instr) vector
+			     * (int * idDef vector * instr) vector * instr
+	  | ConTest of idRef * (con * instr) vector
+			     * (con * idDef vector * instr) vector * instr
+	  | VecTest of idRef * (idDef vector * instr) vector * instr
+	  | Return of idRef args
 	and function = Function of int * idDef args * instr
 
-	type t = unit   (*--** this can't be serious *)
+	type t = value
     end

@@ -1,9 +1,13 @@
 Group is
 
+    ../infrastructure/crash.cm
     ../infrastructure/phase.cm
     ../infrastructure/target.cm
+    ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
 
     PICKLE.sig
     Pickle.sml
+    ENVIRONMENT.sig
+    Environment.sml
     BackendStockwerk.sml
