@@ -9,50 +9,50 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/manual/examples/interpreter
 
 INSTALLFILES_0 = \
-	style.css bg.gif alice.gif musicemb.jpg macros.php3 project.php3 \
-	index.php3 people.php3 papers.php3 download.php3 download-old.php3
+	style.css bg.gif alice.gif musicemb.jpg macros.php3 project.html \
+	index.html people.html papers.html download.html download-old.html
 INSTALLFILES_DOWNLOAD_0 = \
 	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps opaque.ps
 INSTALLFILES_MANUAL_0 = \
-	style.css macros.php3 menu.php3 bg.gif logo-small.gif logo-large.gif \
-	index.php3 features.php3 \
-	language.php3 futures.php3 types.php3 modules.php3 sugar.php3 \
-	threads.php3 components.php3 distribution.php3 \
-	packages.php3 pickling.php3 constraints.php3 gtk.php3 \
-	incompatibilities.php3 limitations.php3 \
-	tools.php3 interactive.php3 compiler.php3 machine.php3 \
-	linker.php3 depend.php3 \
-	explorer.php3 interop.php3 examples.php3 tour.php3 \
+	style.css macros.php3 menu.html bg.gif logo-small.gif logo-large.gif \
+	index.html features.html \
+	language.html futures.html types.html modules.html sugar.html \
+	threads.html components.html distribution.html \
+	packages.html pickling.html constraints.html gtk.html \
+	incompatibilities.html limitations.html \
+	tools.html interactive.html compiler.html machine.html \
+	linker.html depend.html \
+	explorer.html interop.html examples.html tour.html \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
-	macros.php3 menu.php3 bg.gif \
-	index.php3 \
-	alt.php3 array.php3 array-slice.php3 \
-	bin-io.php3 bool.php3 byneed.php3 byte.php3 \
-	char.php3 command-line.php3 \
-	future.php3 \
-	general.php3 \
-	hole.php3 \
-	ieee-real.php3 imperative-io.php3 integer.php3 io.php3 \
-	list.php3 list-pair.php3 lock.php3 \
-	math.php3 mono-array.php3 mono-array-slice.php3 mono-vector.php3 \
-	mono-vector-slice.php3 \
-	option.php3 os.php3 os-file-sys.php3 os-io.php3 os-process.php3 \
-	package.php3 pair.php3 pickle.php3 prim-io.php3 promise.php3 \
-	real.php3 ref.php3 \
-	stream-io.php3 string.php3 string-cvt.php3 substring.php3 \
-	text.php3 text-io.php3 text-stream-io.php3 time.php3 toplevel.php3 \
-	unique-string.php3 unix.php3 \
-	vector.php3 vector-pair.php3 vector-slice.php3 \
-	word.php3 \
-	thread.php3 url.php3 config.php3 socket.php3 http.php3 \
-	http-client.php3 http-server.php3 resolver-handler.php3 \
-	resolver.php3 component.php3 component-manager.php3 remote.php3 \
+	macros.php3 menu.html bg.gif \
+	index.html \
+	alt.html array.html array-slice.html \
+	bin-io.html bool.html byneed.html byte.html \
+	char.html command-line.html \
+	future.html \
+	general.html \
+	hole.html \
+	ieee-real.html imperative-io.html integer.html io.html \
+	list.html list-pair.html lock.html \
+	math.html mono-array.html mono-array-slice.html mono-vector.html \
+	mono-vector-slice.html \
+	option.html os.html os-file-sys.html os-io.html os-process.html \
+	package.html pair.html pickle.html prim-io.html promise.html \
+	real.html ref.html \
+	stream-io.html string.html string-cvt.html substring.html \
+	text.html text-io.html text-stream-io.html time.html toplevel.html \
+	unique-string.html unix.html \
+	vector.html vector-pair.html vector-slice.html \
+	word.html \
+	thread.html url.html config.html socket.html http.html \
+	http-client.html http-server.html resolver-handler.html \
+	resolver.html component.html component-manager.html remote.html \
 	HttpClientExample.aml HttpServerExample.aml \
-        fd.php3 fs.php3 space.php3 search.php3 linear.php3 \
-        inspector.php3 explorer.php3
+        fd.html fs.html space.html search.html linear.html \
+        inspector.html explorer.html
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
