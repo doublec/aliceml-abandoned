@@ -231,11 +231,11 @@ STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
-	INTERACTIVE_TOPLEVEL-sig.aml MkEmacsToplevel.aml \
-	SMLToMozartEmacsToplevel.aml
+	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml MkEmacsToplevel.aml \
+	SMLToMozartToplevel.aml SMLToMozartEmacsToplevel.aml
 STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
 
-STOCSOURCES0 = StocMain.aml StotMain.aml
+STOCSOURCES0 = StocMain.aml StotMain.aml StotEmacsMain.aml
 STOCSOURCES = \
 	$(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
 	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
@@ -514,12 +514,12 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build/install/stoc build3/install/stoc/top
 INSTALL3TOPFILES = $(INSTALL2TOPFILES)
-INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
+INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot stot-emacs
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/RTT.ozf
-INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf
+INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf StotEmacsMain.ozf
 INSTALL3STOCTOPFILES = Composer.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
@@ -544,7 +544,9 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/LinkedStowMain.ozf \
-	build3/stoc/LinkedStocMain.ozf build3/stoc/LinkedStotMain.ozf \
+	build3/stoc/LinkedStocMain.ozf \
+	build3/stoc/LinkedStotMain.ozf \
+	build3/stoc/LinkedStotEmacsMain.ozf \
 	build3/stoc/top/LinkedComposer.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
@@ -578,6 +580,10 @@ build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf \
 	$(OZL) --include=.. $< -o $@
 
 build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf \
+	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+	$(OZL) --include=.. $< -o $@
+
+build3/stoc/LinkedStotEmacsMain.ozf: build3/stoc/StotEmacsMain.ozf \
 	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(OZL) --include=.. $< -o $@
 

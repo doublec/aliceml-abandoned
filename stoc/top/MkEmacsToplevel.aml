@@ -37,7 +37,11 @@ from "INTERACTIVE_TOPLEVEL-sig"
 functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
     INTERACTIVE_TOPLEVEL =
     struct
-	fun usage () = TextIO.output (TextIO.stdErr, "Usage: stot\n")
+	structure OptionParser = MkOptionParser (RecursiveCompiler.Switches)
+
+	fun usage() = TextIO.output (TextIO.stdErr,
+				     "Usage: stot-emacs [options]\n" ^
+				     OptionParser.helpText)
 
 	fun readUntilEOF q =
 	    case TextIO.inputLine q of
@@ -68,22 +72,27 @@ functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 	    loop (eval (readSource TextIO.stdIn,
 			compilerContext, targetContext))
 
-	fun stot' nil =
+	fun stot' (_::_) = (usage(); OS.Process.failure)
+	  | stot' nil =
 	    let
 		open RecursiveCompiler.Switches
+		val dumpSig = !Debug.dumpElaborationSig
 		val _ = Debug.dumpElaborationSig := false
-		val _ = Language.reexportImport := true
 		val (compilerContext, targetContext) =
-		    eval ("", RecursiveCompiler.empty,
-			  RecursiveCompiler.Target.C.new ())
+		    eval("", RecursiveCompiler.empty,
+			     RecursiveCompiler.Target.C.new())
 	    in
-		Debug.dumpElaborationSig := true;
-		Language.implicitImport := false;
-		loop (compilerContext, targetContext)
+		Debug.dumpElaborationSig := dumpSig;
+		Language.implicitImport  := false;
+		loop(compilerContext, targetContext)
 	    end
-	  | stot' (_::_) = (usage (); OS.Process.failure)
 
-	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
-
-	fun stot arguments = stot' (OptionParser.parse arguments)
+	fun stot arguments =
+	    let
+		open RecursiveCompiler.Switches
+	    in
+		Debug.dumpPhases := true;
+		Language.reexportImport := true;
+		stot'(OptionParser.parse arguments)
+	    end
     end
