@@ -91,7 +91,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				    val (bindings', exp') =
 					unfoldExp (substExp (exp, subst))
 				in
-				    (id, exp')::bindings'
+				    (id, exp')::(bindings' @ bindings)
 				end) nil idExpList
 	    in
 		simplifyDecs conDecs @
