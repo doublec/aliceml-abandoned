@@ -111,7 +111,7 @@ define
 	 {State.cs newReg(?ExnReg)}
 	 VInter = vCallBuiltin(_ 'Exception.raiseError' [ExnReg] Coord nil)
 	 vEquateRecord(_ kernel 4 ExnReg [constant(noElse) constant(Filename)
-		       constant(I) constant(J)] VInter)
+					  constant(I) constant(J)] VInter)
       end
    end
 
@@ -481,15 +481,13 @@ define
 	 [] 'TupArgs'('#[]') then
 	    {State.cs newReg(?ArgReg)}
 	    vEquateConstant(_ unit ArgReg VInter)
-	 [] 'ProdArgs'(LabelIdVec) then
+	 [] 'ProdArgs'(LabelIdVec) then Rec in
 	    {State.cs newReg(?ArgReg)}
-	    vEquateRecord(_ '#'
-			  {Record.foldR LabelIdVec
-			   fun {$ Label#_ In} Label|In end nil}
-			  ArgReg
-			  {Record.foldR LabelIdVec
-			   fun {$ _#Id In} value({GetReg Id State})|In end nil}
-			  VInter)
+	    Rec = {List.toRecord '#'
+		   {Record.foldR LabelIdVec
+		    fun {$ Label#Id In} Label#value({GetReg Id State})|In end
+		    nil}}
+	    vEquateRecord(_ '#' {Arity Rec} ArgReg {Record.toList Rec} VInter)
 	 end
       [] 'TagAppExp'(_ Label _ 'OneArg'(Id)) then
 	 vEquateRecord(_ Label 1 Reg [value({GetReg Id State})] VTl)
@@ -499,13 +497,12 @@ define
 	 vEquateRecord(_ Label {Width Ids} Reg
 		       {Record.foldR Ids
 			fun {$ Id In} value({GetReg Id State})|In end nil} VTl)
-      [] 'TagAppExp'(_ Label _ 'ProdArgs'(LabelIdVec)) then
-	 vEquateRecord(_ Label
-		       {Record.foldR LabelIdVec
-			fun {$ Label#_ In} Label|In end nil} Reg
-		       {Record.foldR LabelIdVec
-			fun {$ _#Id In} value({GetReg Id State})|In end nil}
-		       VTl)
+      [] 'TagAppExp'(_ Label _ 'ProdArgs'(LabelIdVec)) then Rec in
+	 Rec = {List.toRecord '#'
+		{Record.foldR LabelIdVec
+		 fun {$ Label#Id In} Label#value({GetReg Id State})|In end
+		 nil}}
+	 vEquateRecord(_ Label {Arity Rec} Reg {Record.toList Rec} VTl)
       [] 'ConAppExp'(Region 'Con'(Id1) 'OneArg'(Id2)) then
 	 Coord WidthReg VInter1 VInter2
       in
