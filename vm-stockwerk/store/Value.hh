@@ -17,8 +17,6 @@
 #endif
 
 class DllExport Block {
-private:
-  static const u_int HANDLER_POS = 0;
 public:
   word *GetBase() {
     return (word *) this + 1;
