@@ -361,6 +361,10 @@
 			<param name="Local" value="library/space.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="SQLite">
+			<param name="Local" value="library/sqlite.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Store">
 			<param name="Local" value="library/store.html">
 			</OBJECT>

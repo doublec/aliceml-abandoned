@@ -70,8 +70,8 @@ INSTALLFILES_LIBRARY_0 = \
 	package.html pair.html pickle.html prim-io.html print.html \
 	promise.html \
 	real.html ref.html ref-map.html \
-	set.html stack.html stamp.html store.html stream-io.html string.html \
-	string-cvt.html substring.html \
+	set.html sqlite.html stack.html stamp.html store.html stream-io.html \
+	string.html string-cvt.html substring.html \
 	text.html text-io.html text-stream-io.html time.html timer.html \
 	toplevel.html \
 	unix.html \
