@@ -10,7 +10,8 @@
  *   $Revision$
  *)
 
-import signature PACKAGE from "PACKAGE-sig"
+import structure __pervasive from "Pervasive"
+import signature PACKAGE     from "PACKAGE-sig"
 
 structure Package :> PACKAGE =
 struct
@@ -23,15 +24,15 @@ struct
     exception MismatchVal
 
     __primitive functor Pack :      fct(signature S structure X : S) ->
-				    (val x : package) = "Pack"
-    __primitive functor Unpack :    fct(val x : package signature S) ->
+				    (val package : package) = "Pack"
+    __primitive functor Unpack :    fct(val package : package signature S) ->
 				    S = "Unpack"
     __primitive functor PackVal :   fct(type t val x : t) ->
-				    (val x : val_package) = "PackVal"
-    __primitive functor UnpackVal': fct(val x : val_package type t) ->
+				    (val package : val_package) = "PackVal"
+    __primitive functor UnpackVal': fct(val package : val_package type t) ->
 				    (val x : t) = "UnpackVal"
 
-    functor UnpackVal(Arg : sig val x : val_package type t end) =
+    functor UnpackVal(Arg : sig val package : val_package type t end) =
 	struct
 	    val x = let structure X = UnpackVal'(Arg) in X.x end
 		    handle Bind => raise MismatchVal

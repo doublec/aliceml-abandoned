@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Package      from "Package"
 import structure UnsafePickle from "UnsafePickle"
 import signature PICKLE       from "PICKLE-sig"
 

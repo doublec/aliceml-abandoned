@@ -140,11 +140,12 @@ LIBFUNDAMENTALSOURCES0 = \
 	LargeWord.aml List.aml ListPair.aml Math.aml Option.aml Pair.aml \
 	Position.aml Promise.aml Real.aml Ref.aml String.aml StringCvt.aml \
 	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
-	VectorPair.aml WideChar.aml WideString.aml Word.aml
+	VectorPair.aml WideChar.aml WideString.aml Word.aml \
+	PACKAGE-sig.aml Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
 	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
-	OS.aml PACKAGE-sig.aml Package.aml PICKLE-sig.aml Pickle.aml
+	OS.aml PICKLE-sig.aml Pickle.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
@@ -577,6 +578,9 @@ build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 #--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
 build3/lib/fundamental/%.ozf: build3/lib/fundamental/%.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+
+build3/lib/system/%.ozf: build3/lib/system/%.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/%.ozf: build3/%.aml
