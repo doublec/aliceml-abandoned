@@ -275,8 +275,8 @@ struct
 
   (* Very basic helpers *)
 
-    val same		= Cell.equals
-    val sameKind	= Cell.equals
+    val same		= Cell.equal
+    val sameKind	= Cell.equal
 
     fun fromCanonical t	= t
     fun canonical t	= case content t of LINK t' => canonical t' | _ => t
@@ -290,11 +290,11 @@ struct
 
     fun dummy _		= raise Assert.failure
     val appFwd 		= ref dummy : ((typ -> unit) -> typ -> unit) ref
-    val equalsFwd 	= ref dummy : (typ * typ -> bool) ref
+    val equalFwd 	= ref dummy : (typ * typ -> bool) ref
     val substFwd	= ref dummy : (subst * typ -> typ) ref
 
     fun app f		= !appFwd f
-    fun equals(t1,t2)	= !equalsFwd(t1,t2)
+    fun equal(t1,t2)	= !equalFwd(t1,t2)
     fun subst(m,t)	= !substFwd(m,t)
 
 
@@ -454,19 +454,19 @@ struct
 	  of SING _		=> true
 	   | _			=> false
 
-    fun equalsKind(k1,k2) =
-	Cell.equals(k1,k2) orelse
+    fun equalKind(k1,k2) =
+	Cell.equal(k1,k2) orelse
 	case (content k1, content k2)
 	  of (STAR, STAR)	=> true
 	   | (EXT,  EXT)	=> true
 	   | (ARROW(k11,k12),
-	      ARROW(k21,k22))	=> equalsKind(k21,k11) andalso
-				   equalsKind(k12,k22)
-	   | (SING t1, SING t2)	=> equals(t1,t2)
+	      ARROW(k21,k22))	=> equalKind(k21,k11) andalso
+				   equalKind(k12,k22)
+	   | (SING t1, SING t2)	=> equal(t1,t2)
 	   | _			=> false
 
     fun matchesKind(k1,k2) =
-	Cell.equals(k1,k2) orelse
+	Cell.equal(k1,k2) orelse
 	case (content k1, content k2)
 	  of (STAR, STAR)	=> true
 	   | (EXT,  STAR)	=> true
@@ -474,7 +474,7 @@ struct
 	   | (ARROW(k11,k12),
 	      ARROW(k21,k22))	=> matchesKind(k21,k11) andalso
 				   matchesKind(k12,k22)
-	   | (SING t1, SING t2)	=> equals(t1,t2)
+	   | (SING t1, SING t2)	=> equal(t1,t2)
 	   | (SING t1, _)	=> matchesKind(kind t1, k2)
 	   | _			=> false
 
@@ -525,7 +525,7 @@ struct
     and reduceEta(a,t) =
 	case content t
 	  of APPLY(t1,t2) =>
-		if Cell.equals(a, asType t2) andalso not(occurs(a,t1))
+		if Cell.equal(a, asType t2) andalso not(occurs(a,t1))
 		then t1
 		else new(LAMBDA(a,t))
 	   | (LINK t1 | ABBREV(_,t1)) =>
@@ -541,7 +541,7 @@ struct
     and occurs(t1,t2) =
 	let
 	    exception Occurs
-	    fun occurs1 t = if Cell.equals(t1,t) then raise Occurs else ()
+	    fun occurs1 t = if Cell.equal(t1,t) then raise Occurs else ()
 	in
 	    ( app occurs1 t2 ; false ) handle Occurs => true
 	end
@@ -971,7 +971,7 @@ struct
 					     else raise Kind
 				       | NONE =>
 					 let val k' = buildKind(mt,mk,rea,k) in
-					     if Cell.equals(k,k')
+					     if Cell.equal(k,k')
 					     then buildOld(mt,t)
 					     else buildNew(mt,t,abs'(k',p))
 					 end
@@ -1001,7 +1001,7 @@ struct
 	    val t1  = canonical t1
 	    val t1' = buildBind'(mt,mk,rea,a,t1)
 	in
-	    if Cell.equals(t1,t1')
+	    if Cell.equal(t1,t1')
 	    then buildOld(mt, t)
 	    else buildNew(mt, t, toTyp(a,t1'))
 	end
@@ -1031,7 +1031,7 @@ struct
 	    val t1' = build(mt,mk,rea,t1)
 	    val t2' = build(mt,mk,rea,t2)
 	in
-	    if Cell.equals(t1,t1') andalso Cell.equals(t2,t2')
+	    if Cell.equal(t1,t1') andalso Cell.equal(t2,t2')
 	    then buildOld(mt, t)
 	    else buildNew(mt, t, toTyp(t1',t2'))
 	end
@@ -1040,7 +1040,7 @@ struct
 	let
 	    val ts' = Vector.map (fn ti => build(mt,mk,rea,ti)) ts
 	in
-	    if VectorPair.all (fn(t,t') => Cell.equals(canonical t,t')) (ts,ts')
+	    if VectorPair.all (fn(t,t') => Cell.equal(canonical t,t')) (ts,ts')
 	    then buildOld(mt, t)
 	    else buildNew(mt, t, toTyp(INDEXED ts'))
 	end
@@ -1050,7 +1050,7 @@ struct
 	in
 (*ASSERT    assert isNone d => *)
 	    if isSome d then raise Assert.failure else
-	    if ListPair.all (fn((_,t),(_,t')) => Cell.equals(canonical t,t'))
+	    if ListPair.all (fn((_,t),(_,t')) => Cell.equal(canonical t,t'))
 			    (lts,lts')
 	    then buildOld(mt, t)
 	    else buildNew(mt, t, toTyp(NAMED(lts',d)))
@@ -1067,7 +1067,7 @@ struct
 		    val k1' = buildKind(mt,mk,rea,k1)
 		    val k2' = buildKind(mt,mk,rea,k2)
 		in
-		    if Cell.equals(k1,k1') andalso Cell.equals(k2,k2')
+		    if Cell.equal(k1,k1') andalso Cell.equal(k2,k2')
 		    then buildOldKind(mk, k)
 		    else buildNewKind(mk, k, arrowKind(k1',k2'))
 		end
@@ -1075,7 +1075,7 @@ struct
 		let
 		    val t' = build(mt,mk,rea,t)
 		in
-		    if Cell.equals(t,t')
+		    if Cell.equal(t,t')
 		    then buildOldKind(mk, k)
 		    else buildNewKind(mk, k, singKind t')
 		end
@@ -1086,9 +1086,9 @@ struct
     and hasFree(mus, mt,mk, rea, t) =
 	(*ASSUME that if rea is empty we are only substituting vars! *)
 	not(PathMap.isEmpty rea) andalso
-	not(List.exists (fn t' => Cell.equals(t',t)) (!mus)) andalso
+	not(List.exists (fn t' => Cell.equal(t',t)) (!mus)) andalso
 	case Map.lookup(mt,t)
-	  of SOME t'		=> not(Cell.equals(t,t'))
+	  of SOME t'		=> not(Cell.equal(t,t'))
 	   | NONE		=>
 	case content t
 	  of LINK t1		=> hasFree(mus, mt,mk, rea, t1)
@@ -1112,7 +1112,7 @@ struct
 
     and kindHasFree(mus, mt,mk, rea, k) =
 	case KindMap.lookup(mk,k)
-	  of SOME k'		=> not(Cell.equals(k,k'))
+	  of SOME k'		=> not(Cell.equal(k,k'))
 	   | NONE		=>
 	case content k
 	  of (STAR | EXT)	=> false
@@ -1254,7 +1254,7 @@ struct
 	    val m = Map.new()
 
 	    fun lift t =
-		if Cell.equals(t1,t) then raise Unify(t1,t2) else
+		if Cell.equal(t1,t) then raise Unify(t1,t2) else
 		if Map.member(m,t) then () else
 		Map.insert(m,t,()) before
 		(case content t
@@ -1338,7 +1338,7 @@ struct
 				     | SOME t => SOME(t,i)
     fun insert(1, m::ms, t1,t2)	= (case Map.lookup(m,t1)
 				    of NONE   => Map.insert(m, t1,t2)
-				     | SOME t => if Cell.equals(t,t2) then ()
+				     | SOME t => if Cell.equal(t,t2) then ()
 						 else insert(1, m::ms, t,t2)
 				  )
       | insert(i, m::ms, t1,t2)	= insert(i-1, ms, t1, t2)
@@ -1352,7 +1352,7 @@ struct
 	    val t1 = canonical t1
 	    val t2 = canonical t2
 	in
-	    if Cell.equals(t1,t2) then () else replace(t1,LINK t2)
+	    if Cell.equal(t1,t2) then () else replace(t1,LINK t2)
 	end
 
     val merge' = Lock.sync lock merge'
@@ -1367,7 +1367,7 @@ struct
 	    val t1 = canonical t1
 	    val t2 = canonical t2
 	in
-	    if Cell.equals(t1,t2) then ps else (t1,t2)::ps
+	    if Cell.equal(t1,t2) then ps else (t1,t2)::ps
 	end
 
     fun mergeBind2'(t1,t2) =
@@ -1416,7 +1416,7 @@ struct
 	(*TODO: can we safely return 0 or do we have to max the level?*)
 
     fun unify'(mayBind,ms,t1,t2) =
-	if Cell.equals(t1,t2) then 0 else
+	if Cell.equal(t1,t2) then 0 else
 	case lookup(1,ms,t1)
 	  of SOME(t3,i) => Int.max(i, unify'(mayBind,ms,t3,t2))
 	   | NONE =>
@@ -1438,7 +1438,7 @@ struct
 	   | (_, ABBREV(t21,t22)) => unify'(mayBind,ms,t1,t22)
 
 	   | (ABS(k1,p1), ABS(k2,p2)) =>
-		if Path.equals(p1,p2) andalso equalsKind(k1,k2)
+		if Path.equal(p1,p2) andalso equalKind(k1,k2)
 		then merge(ms,t1,t2,0)
 		else raise Unify(t1,t2)
 	   | ( (FUN(t11,t12), FUN(t21,t22))
@@ -1504,7 +1504,7 @@ struct
 	   | _ => raise Unify(t1,t2)
 
     and unifyBoundVar(m,ms, a1,a2) =
-	if Cell.equals(a1,a2) then 0 else
+	if Cell.equal(a1,a2) then 0 else
 	case lookup(1,ms,a1)
 	  of SOME(a3,i) => Int.max(i+1, unifyBoundVar(m,ms, canonical a3, a2))
 	   | NONE       => (Map.insert(m,a1,a2) ; 1)
@@ -1584,7 +1584,7 @@ struct
 
     fun unify(t1,t2) = unify'(true, [], t1, t2)
 
-    fun equals(t1,t2) =
+    fun equal(t1,t2) =
 	(unify'(false, [], t1, t2) ; true) handle Unify _ => false
 
     fun matches(t1,t2) =
@@ -1597,7 +1597,7 @@ struct
 
     (*DEBUG*)
     val unify   = trace unify "unify"
-    val equals  = trace equals "equals"
+    val equal   = trace equal "equal"
     val matches = trace matches "matches"
 
 
@@ -1630,7 +1630,7 @@ struct
 
   (* Tie forwarding knots *)
 
-    val _ = appFwd    := app
-    val _ = equalsFwd := equals
-    val _ = substFwd  := subst
+    val _ = appFwd   := app
+    val _ = equalFwd := equal
+    val _ = substFwd := subst
 end
