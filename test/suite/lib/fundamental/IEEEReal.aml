@@ -1,0 +1,36 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../test/TESTSUITE-sig"
+
+import structure Test      from "../test/Test"
+
+structure TestIEEEReal :> TESTSUITE = (* the IEEEReal test suite *)
+struct
+
+    fun testGetRoundingMode () = 
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testSetRoundingMode () =
+        Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testToString () =
+        Test.test (fn _ => raise Test.MissingFunction) ()
+
+    fun testFromString () = 
+	Test.test (fn _ => raise Test.MissingFunction) ()
+
+    val suite = ("IEEEReal", [("testGetRoundingMode", testGetRoundingMode), 
+                          ("testSetRoundingMode", testSetRoundingMode),
+                          ("testToString", testToString),
+ 			  ("testFromString", testFromString)])
+end

@@ -1,0 +1,111 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../test/TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../test/Test"
+
+structure TestAlt :> TESTSUITE = (* the alt test suite *)
+struct
+
+    fun testIsFst () = 
+	(Test.test (fn x => Alt.isFst x =  true) (FST 0);
+	 Test.test (fn x => Alt.isFst x = false) (SND 0))
+
+    fun testIsSnd () = 
+	(Test.test (fn x => Alt.isSnd x =  true) (SND 0);
+	 Test.test (fn x => Alt.isSnd x = false) (FST 0))
+
+    fun testFst () =
+        (Test.test (fn x => Alt.fst x = 0) (FST 0);
+	 Test.test (fn x => (Alt.fst x handle Alt.Alt => 0) = 0) (SND 0))
+
+    fun testSnd () =
+        (Test.test (fn x => Alt.snd x = 0) (SND 0);
+	 Test.test (fn x => (Alt.snd x handle Alt.Alt => 0) = 0) (FST 0))
+
+    fun testGetFst () =
+        (Test.test (fn x => Alt.getFst x = 0) (FST 0, 1);
+	 Test.test (fn x => Alt.getFst x = 1) (SND 0, 1))
+
+    fun testGetSnd () =
+        (Test.test (fn x => Alt.getSnd x = 1) (FST 0, 1);
+	 Test.test (fn x => Alt.getSnd x = 0) (SND 0, 1))
+
+    fun testApp () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAppFst () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAppSnd () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMap () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+		
+    fun testMapFst () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+		    
+    fun testMapSnd () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+			
+    fun testEqual () =
+	let
+	    val equal1 = (Int.equal, Bool.equal)
+	    val equal2 = (Int.equal, Int.equal)
+	in 
+	  (Test.test (fn x => Alt.equal equal1 x = true)  (FST 1, FST 1);
+	   Test.test (fn x => Alt.equal equal1 x = true)  (SND true, SND true);
+	   Test.test (fn x => Alt.equal equal1 x = false) (FST 0, SND true);
+	   Test.test (fn x => Alt.equal equal1 x = false) (SND true, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = true)  (FST 0, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, FST 0);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 1, SND 0);
+	   Test.test (fn x => Alt.equal equal2 x = true)  (SND 1, SND 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, SND 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 1, FST 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (SND 0, FST 1);
+	   Test.test (fn x => Alt.equal equal2 x = false) (FST 1, SND 1))
+	end
+
+    fun testCollate () =
+	let
+	    val coll1 = (Int.compare, Bool.compare)
+	in 
+      (Test.test (fn x => Alt.collate coll1 x = EQUAL)   (FST 1, FST 1);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (FST 0, FST 1);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (FST 1, FST 0);
+       Test.test (fn x => Alt.collate coll1 x = EQUAL)   (SND true, SND true);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (SND false, SND true);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (SND true, SND false);
+       Test.test (fn x => Alt.collate coll1 x = GREATER) (SND true, FST 0);
+       Test.test (fn x => Alt.collate coll1 x = LESS)    (FST 0, SND true))
+	end
+
+
+    val suite = ("Alt", [("testIsFst", testIsFst), 
+                          ("testIsSnd", testIsSnd),
+                          ("testFst", testFst),
+                          ("testSnd", testSnd),
+ 			  ("testGetFst", testGetFst), 
+	                  ("testGetSnd", testSnd),
+			  ("testApp", testApp),
+			  ("testAppFst", testAppFst),
+			  ("testAppSnd", testAppSnd),
+			  ("testMap", testMap),
+			  ("testMapFst", testMapFst),
+			  ("testMapSnd", testMapSnd),
+			  ("testEqual", testEqual),
+			  ("testCollate", testCollate)])
+end

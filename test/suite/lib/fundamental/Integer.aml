@@ -1,0 +1,49 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../test/TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../test/Test"
+
+
+structure TestInteger :> TESTSUITE = (* the integer test suite *)
+struct
+
+    fun testMinInt () = 
+	Test.test (fn _ => valOf Int.minInt = ~1073741824) ()
+
+    fun testMaxInt () = 
+	Test.test (fn _ => valOf Int.maxInt = 1073741823) ()
+
+    fun testPrecision () = 
+	Test.test (fn _ => valOf Int.precision = 31) ()
+
+    fun testFromLarge () =
+	let
+	    val test1  = (Int.toLarge (valOf Int.maxInt)) + Int.toLarge 1000000
+	    val test2  = Int.toLarge 1000000
+	in
+	 (Test.test 
+	      (fn x => (Int.fromLarge x; true) handle Overflow => false) test1;
+	     Test.test (fn x => (Int.fromLarge x; true)                ) test2)
+	end
+
+    fun testHash () = 
+       (Test.test (fn x => Int.hash x = (valOf Int.maxInt)) (valOf Int.maxInt);
+	Test.test (fn x => Int.hash x = 0)                  (valOf Int.minInt))
+ 
+    val suite = ("Integer", [("testHash", testHash),
+			     ("testMinInt", testMinInt),
+			     ("testMaxInt", testMaxInt),
+			     ("testPrecision", testPrecision)])
+end
