@@ -675,7 +675,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
       NativeCodeFrame_PutImmediateArgs(JIT_V2, JIT_R0);
       NativeConcreteCode_GetNativeCode(JIT_R0, JIT_V1);
       NativeCodeFrame_PutCode(JIT_V2, JIT_R0);
-      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
       for (u_int i = info->nLocals; i--;)
   	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
       CheckPreempt(info->pc);
@@ -717,7 +717,7 @@ void NativeCodeJitter::PushCall(CallInfo *info) {
 void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
   JIT_LOG_MESG("DirectCall\n");
   JIT_LOG_MESG(interpreter->Identify());
-  jit_movi_p(JIT_R0, interpreter);
+  (void) jit_movi_p(JIT_R0, interpreter);
   // "Leaf" position
   JITStore::Prepare(1, false);
   jit_pusharg_ui(JIT_R0);
@@ -759,7 +759,7 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
 	Scheduler_PopFrame(size);
 	NativeCodeFrame_New(JIT_V2, info->nLocals);
       }
-      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
       for (u_int i = info->nLocals; i--;)
   	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
     no_init:
@@ -825,7 +825,7 @@ u_int NativeCodeJitter::GetRelativePC() {
 }
 
 void NativeCodeJitter::SetRelativePC(word pc) {
-  jit_movi_p(JIT_R0, pc);
+  (void) jit_movi_p(JIT_R0, pc);
   NativeCodeFrame_PutPC(JIT_V2, JIT_R0);
 }
 
@@ -916,7 +916,7 @@ u_int NativeCodeJitter::LoadIdRefKill(u_int Dest, word idRef) {
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
-	jit_movi_p(Dest, val);
+	(void) jit_movi_p(Dest, val);
       }
       else
 	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
@@ -950,7 +950,7 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
-	jit_movi_p(Dest, val);
+	(void) jit_movi_p(Dest, val);
 	return Dest;
       }
       else
@@ -979,7 +979,7 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
     {
       word val = tagVal->Sel(0);
       if (PointerOp::IsInt(val)) {
-	jit_movi_p(Dest, val);
+	(void) jit_movi_p(Dest, val);
 	return Dest;
       }
       else
@@ -994,7 +994,7 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
 }
 
 void NativeCodeJitter::KillVariables() {
-  jit_movi_p(JIT_R0, Store::IntToWord(4711));
+  (void) jit_movi_p(JIT_R0, Store::IntToWord(4711));
   for (u_int i = livenessTable->GetSize(); i--;) {
     if (livenessTable->NeedsKill(i)) {
       livenessTable->SetDead(i);
@@ -1028,7 +1028,7 @@ void NativeCodeJitter::CheckPreemptImmediate(u_int pc) {
   jit_insn *immediate =
     (jit_insn *) ((char *) codeBuffer + pc  - 2 * sizeof(word));
   JITStore::LoadStatus(JIT_R0);
-  drop_jit_beqi_ui(immediate, JIT_R0, 0);
+  (void) jit_beqi_ui(immediate, JIT_R0, 0);
   SetRelativePC(Store::IntToWord(pc));
   jit_movi_ui(JIT_R0, Worker::PREEMPT);
   RETURN();
@@ -1117,9 +1117,9 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       }
       JITStore::DirectWordToInt(JIT_FP, JIT_FP);
       JITStore::DirectWordToInt(JIT_V1, JIT_V1);
-      jit_movi_p(JIT_R0, Store::IntToWord(1));
+      (void) jit_movi_p(JIT_R0, Store::IntToWord(1));
       jit_insn *smaller = jit_bltr_i(jit_forward(), JIT_FP, JIT_V1);
-      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
       jit_patch(smaller);
       Result = JIT_R0;
       boolTest = 1;
@@ -1428,7 +1428,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 #endif
  check_request:
   TagVal *idDefsInstrOpt = TagVal::FromWord(pc->Sel(3));
-  word contPC;
+  word contPC = 0;
   if (idDefsInstrOpt != INVALID_POINTER)
     contPC = CompileContinuation(idDefsInstrOpt, info.outArity, info.nLocals);
   if (request) {
@@ -1597,7 +1597,7 @@ TagVal *NativeCodeJitter::InstrPutTup(TagVal *pc) {
   Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
   u_int nArgs    = idRefs->GetLength();
   if (nArgs == 0) {
-    jit_movi_p(JIT_V1, Store::IntToWord(0)); // unit
+    (void) jit_movi_p(JIT_V1, Store::IntToWord(0)); // unit
   }
   else {
     Tuple_New(JIT_V1, nArgs);
@@ -2461,7 +2461,7 @@ TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
   word stamp = pc->Sel(0);
   if (sharedTable->IsMember(stamp)) {
     u_int offset = Store::DirectWordToInt(sharedTable->Get(stamp));
-    drop_jit_jmpi(codeBuffer + offset);
+    (void) jit_jmpi(codeBuffer + offset);
     return INVALID_POINTER;
   }
   else {

@@ -77,7 +77,7 @@ public:
 
   void BigTagVal_New(u_int This, u_int tag, u_int size) {
     JITStore::AllocBlock(This, Alice::BIG_TAG, size + BIGTAGVAL_BASE_SIZE);
-    jit_movi_p(JIT_R0, Store::IntToWord(tag));
+    (void) jit_movi_p(JIT_R0, Store::IntToWord(tag));
     JITStore::InitArg(This, BIGTAGVAL_TAG_POS, JIT_R0);
   }
   void BigTagVal_GetTag(u_int Dest, u_int This) {
@@ -100,7 +100,7 @@ public:
 
   void Vector_New(u_int This, u_int size) {
     JITStore::AllocBlock(This, Alice::Vector, VECTOR_BASE_SIZE + size);
-    jit_movi_p(JIT_R0, Store::IntToWord(size));
+    (void) jit_movi_p(JIT_R0, Store::IntToWord(size));
     JITStore::InitArg(This, VECTOR_LENGTH_POS, JIT_R0);
   }
   void Vector_GetLength(u_int Dest, u_int This) {
@@ -118,7 +118,7 @@ public:
 
   void Record_New(u_int This, u_int n) {
     JITStore::AllocBlock(This, Alice::Record, RECORD_BASE_SIZE + n * 2);
-    jit_movi_p(JIT_R0, Store::IntToWord(n));
+    (void) jit_movi_p(JIT_R0, Store::IntToWord(n));
     JITStore::InitArg(This, RECORD_WIDTH_POS, JIT_R0);
   }
   void Record_GetWidth(u_int Dest, u_int This) {
