@@ -21,7 +21,7 @@
 #include "generic/ConcreteRepresentationHandler.hh"
 
 class ConcreteRepresentation: private Block {
-private:
+protected:
   static const u_int HANDLER_POS = 0;
   static const u_int BASE_SIZE   = 1;
 public:
