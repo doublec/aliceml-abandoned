@@ -61,9 +61,9 @@
  * annotiert werden.
  *)
 
-import structure MkHashImpMap   from "../../lib/utility/MkHashImpMap"
 import structure Url            from "../../lib/utility/Url"
 import structure Name           from "../../lib/rtt/Name"
+import structure IntMap         from "../infrastructure/IntMap"
 import structure Crash          from "../infrastructure/Crash"
 import structure Source         from "../infrastructure/Source"
 import structure EmptyContext   from "../infrastructure/EmptyContext"
@@ -111,11 +111,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Callvirt (Alice.Transient, "Await", #[], ObjectTy));
 		emit (Label label)
 	    end
-
-	structure IntMap =
-	     MkHashImpMap(type t = int
-			  val equals = op=
-			  fun hash i = i)
 
 	fun parseTests (_, _, ~1, min, max) = (min, max)
 	  | parseTests (tests, map, i, min, max) =

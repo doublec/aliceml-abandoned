@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure FromEqHashKey      from "../../lib/utility/HASH_KEY-sig"
 import structure Crash              from "../infrastructure/Crash"
 import structure MkHashScopedImpMap from "../infrastructure/MkHashScopedImpMap"
 import structure Stamp              from "../common/Stamp"
@@ -42,7 +41,7 @@ structure CodeStore :> CODE_STORE =
 	type class = stamp
 
 	structure Map = StampMap
-	structure ScopedMap = MkHashScopedImpMap(FromEqHashKey(Stamp))
+	structure ScopedMap = MkHashScopedImpMap(Stamp)
 
 	type classAttrState = (extends * implements) option ref
 	type scope = reg ScopedMap.t
