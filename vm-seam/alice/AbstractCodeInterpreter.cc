@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include "generic/RootSet.hh"
 #include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
@@ -27,6 +28,14 @@
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
 
+static word dead;
+
+void Disassemble(Closure *closure) {
+  AliceConcreteCode *concreteCode =
+    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+  concreteCode->Disassemble(stdout);
+}
+
 // Local Environment
 class Environment : private Array {
 public:
@@ -36,10 +45,16 @@ public:
     Update(Store::WordToInt(id), value);
   }
   word Lookup(word id) {
-    return Sub(Store::WordToInt(id));
+    word value = Sub(Store::WordToInt(id));
+    Assert(value != dead);
+    return value;
   }
   void Kill(word id) {
+#ifdef DEBUG_CHECK
+    Update(Store::WordToInt(id), dead);
+#else
     Update(Store::WordToInt(id), Store::IntToWord(0));
+#endif
   }
   // Environment Constructor
   static Environment *New(u_int size) {
@@ -146,12 +161,36 @@ inline void PushState(TaskStack *taskStack,
   taskStack->PushFrame(frame->ToWord());
 }
 
+inline word
+GetIdRefKill(word idRef, Closure *globalEnv, Environment *localEnv) {
+  TagVal *tagVal = TagVal::FromWordDirect(idRef);
+  switch (AbstractCode::GetIdRef(tagVal)) {
+  case AbstractCode::Immediate:
+    return tagVal->Sel(0);
+  case AbstractCode::Local:
+    return localEnv->Lookup(tagVal->Sel(0));
+  case AbstractCode::LastUseLocal:
+    {
+      word id = tagVal->Sel(0);
+      word value = localEnv->Lookup(id);
+      localEnv->Kill(id);
+      return value;
+    }
+  case AbstractCode::Global:
+  case AbstractCode::Toplevel:
+    return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
+  default:
+    Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
+  }
+}
+
 inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   switch (AbstractCode::GetIdRef(tagVal)) {
   case AbstractCode::Immediate:
     return tagVal->Sel(0);
   case AbstractCode::Local:
+  case AbstractCode::LastUseLocal:
     return localEnv->Lookup(tagVal->Sel(0));
   case AbstractCode::Global:
   case AbstractCode::Toplevel:
@@ -161,10 +200,24 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
   }
 }
 
+inline void KillIdRef(word idRef, Environment *localEnv) {
+  TagVal *tagVal = TagVal::FromWordDirect(idRef);
+  if (AbstractCode::GetIdRef(tagVal) == AbstractCode::LastUseLocal)
+    localEnv->Kill(tagVal->Sel(0));
+}
+
 //
 // Interpreter Functions
 //
 AbstractCodeInterpreter *AbstractCodeInterpreter::self;
+
+void AbstractCodeInterpreter::Init() {
+  self = new AbstractCodeInterpreter();
+#ifdef DEBUG_CHECK
+  dead = String::New("DEAD VALUE")->ToWord();
+  RootSet::Add(dead);
+#endif
+}
 
 Block *
 AbstractCodeInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
@@ -276,7 +329,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case AbstractCode::PutVar: // of id * idRef  * instr
       {
-	localEnv->Add(pc->Sel(0), GetIdRef(pc->Sel(1), globalEnv, localEnv));
+	localEnv->Add(pc->Sel(0),
+		      GetIdRefKill(pc->Sel(1), globalEnv, localEnv));
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
       break;
@@ -294,7 +348,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	TagVal *tagVal =
 	  TagVal::New(Store::DirectWordToInt(pc->Sel(1)), nargs);
 	for (u_int i = nargs; i--; )
-	  tagVal->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	  tagVal->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), tagVal->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
@@ -306,16 +360,17 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Constructor *constructor = Constructor::FromWord(requestWord);
 	if (constructor == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(1), localEnv);
 	ConVal *conVal = ConVal::New(constructor, nargs);
 	for (u_int i = nargs; i--; )
-	  conVal->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	  conVal->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), conVal->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
       break;
     case AbstractCode::PutRef: // of id * idRef * instr
       {
-	word contents = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	word contents = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
 	localEnv->Add(pc->Sel(0), Cell::New(contents)->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
@@ -329,7 +384,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	} else {
 	  Tuple *tuple = Tuple::New(nargs);
 	  for (u_int i = nargs; i--; )
-	    tuple->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	    tuple->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	  localEnv->Add(pc->Sel(0), tuple->ToWord());
 	}
 	pc = TagVal::FromWordDirect(pc->Sel(2));
@@ -341,7 +396,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	u_int nargs = idRefs->GetLength();
 	Vector *vector = Vector::New(nargs);
 	for (u_int i = nargs; i--; )
-	  vector->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	  vector->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), vector->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
@@ -352,7 +407,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	u_int nGlobals = idRefs->GetLength();
 	Closure *closure = Closure::New(pc->Sel(2), nGlobals);
 	for (u_int i = nGlobals; i--; )
-	  closure->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
+	  closure->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
@@ -377,7 +432,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	// Construct closure from concrete code:
 	Closure *closure = Closure::New(concreteCode->ToWord(), nToplevels);
 	for (u_int i = nToplevels; i--; ) {
-	  word value = GetIdRef(idRefs->Sub(i), globalEnv, localEnv);
+	  word value = GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv);
 	  closure->Init(i, value);
 	  toplevels->Init(i, value);
 	}
@@ -403,7 +458,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	Scheduler::nArgs = nArgs == 1? Scheduler::ONE_ARG: nArgs;
 	for (u_int i = nArgs; i--; )
 	  Scheduler::currentArgs[i] =
-	    GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
+	    GetIdRefKill(actualIdRefs->Sub(i), globalEnv, localEnv);
 	return taskStack->PushCall(pc->Sel(0));
       }
       break;
@@ -425,7 +480,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	case AbstractCode::OneArg:
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] =
-	    GetIdRef(actualArgs->Sel(0), globalEnv, localEnv);
+	    GetIdRefKill(actualArgs->Sel(0), globalEnv, localEnv);
 	  break;
 	case AbstractCode::TupArgs:
 	  {
@@ -434,16 +489,16 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	    Scheduler::nArgs = nArgs;
 	    for (u_int i = nArgs; i--; )
 	      Scheduler::currentArgs[i] =
-		GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
+		GetIdRefKill(actualIdRefs->Sub(i), globalEnv, localEnv);
 	  }
 	  break;
 	}
 	if (Scheduler::TestPreempt() || Store::NeedGC()) {
 	  Interpreter::Result res =
-	    taskStack->PushCall(GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	    taskStack->PushCall(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
 	  return res == Interpreter::CONTINUE? Interpreter::PREEMPT: res;
 	} else {
-	  word closure = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	  word closure = GetIdRefKill(pc->Sel(0), globalEnv, localEnv);
 	  return taskStack->PushCall(closure);
 	}
       }
@@ -453,6 +508,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Cell *cell = Cell::FromWord(requestWord);
 	if (cell == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(1), localEnv);
 	localEnv->Add(pc->Sel(0), cell->Access());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
@@ -465,9 +521,11 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	if (nargs == 0) {
 	  if (Store::WordToInt(requestWord) == INVALID_INT)
 	    REQUEST(requestWord);
+	  KillIdRef(pc->Sel(1), localEnv);
 	} else {
 	  Tuple *tuple = Tuple::FromWord(requestWord);
 	  if (tuple == INVALID_POINTER) REQUEST(requestWord);
+	  KillIdRef(pc->Sel(1), localEnv);
 	  tuple->AssertWidth(idDefs->GetLength());
 	  for (u_int i = nargs; i--; ) {
 	    TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
@@ -483,6 +541,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Tuple *tuple = Tuple::FromWord(requestWord);
 	if (tuple == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(1), localEnv);
 	localEnv->Add(pc->Sel(0),
 		      tuple->Sel(Store::DirectWordToInt(pc->Sel(2))));
 	pc = TagVal::FromWordDirect(pc->Sel(3));
@@ -490,7 +549,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case AbstractCode::LazySel: // of id * idRef * int * instr
       {
-	word tuple = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	word tuple = GetIdRefKill(pc->Sel(1), globalEnv, localEnv);
 	int index = Store::DirectWordToInt(pc->Sel(2));
 	Closure *closure = LazySelClosure::New(tuple, index);
 	localEnv->Add(pc->Sel(0), Byneed::New(closure->ToWord())->ToWord());
@@ -499,7 +558,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case AbstractCode::Raise: // of idRef
       {
-	Scheduler::currentData = GetIdRef(pc->Sel(0), globalEnv, localEnv);
+	Scheduler::currentData = GetIdRefKill(pc->Sel(0), globalEnv, localEnv);
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
 	return Interpreter::RAISE;
       }
@@ -507,7 +566,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
     case AbstractCode::Reraise: // of idRef
       {
 	Tuple *package =
-	  Tuple::FromWordDirect(GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	  Tuple::FromWordDirect(GetIdRefKill(pc->Sel(0), globalEnv, localEnv));
 	package->AssertWidth(2);
 	Scheduler::currentData = package->Sel(0);
 	Scheduler::currentBacktrace =
@@ -550,6 +609,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	int value = Store::WordToInt(requestWord);
 	if (value == INVALID_INT) REQUEST(requestWord);
+	KillIdRef(pc->Sel(0), localEnv);
 	Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	u_int ntests = tests->GetLength();
 	for (u_int i = 0; i < ntests; i++) {
@@ -567,6 +627,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	int value = Store::WordToInt(requestWord);
 	if (value == INVALID_INT) REQUEST(requestWord);
+	KillIdRef(pc->Sel(0), localEnv);
 	int offset = Store::DirectWordToInt(pc->Sel(1));
 	u_int index = static_cast<u_int>(value - offset);
 	Vector *tests = Vector::FromWordDirect(pc->Sel(2));
@@ -581,6 +642,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Real *real = Real::FromWord(requestWord);
 	if (real == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(0), localEnv);
 	double value = real->GetValue();
 	Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	u_int ntests = tests->GetLength();
@@ -600,6 +662,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	String *string = String::FromWord(requestWord);
 	if (string == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(0), localEnv);
 	const u_char *value = string->GetValue();
 	u_int length = string->GetSize();
 	Vector *tests = Vector::FromWordDirect(pc->Sel(1));
@@ -625,6 +688,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
 	  int tag = Store::WordToInt(requestWord);
 	  if (tag == INVALID_INT) REQUEST(requestWord);
+	  KillIdRef(pc->Sel(0), localEnv);
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
@@ -635,6 +699,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	    }
 	  }
 	} else { // non-nullary constructor
+	  KillIdRef(pc->Sel(0), localEnv);
 	  int tag = tagVal->GetTag();
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  u_int ntests = tests->GetLength();
@@ -663,6 +728,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
 	  int tag = Store::WordToInt(requestWord);
 	  if (tag == INVALID_INT) REQUEST(requestWord);
+	  KillIdRef(pc->Sel(0), localEnv);
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	  if (static_cast<u_int>(tag) < tests->GetLength()) {
 	    Tuple *tuple = Tuple::FromWordDirect(tests->Sub(tag));
@@ -671,6 +737,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	    goto loop;
 	  }
 	} else { // non-nullary constructor
+	  KillIdRef(pc->Sel(0), localEnv);
 	  int tag = tagVal->GetTag();
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	  if (static_cast<u_int>(tag) < tests->GetLength()) {
@@ -714,6 +781,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 		if (idDef != INVALID_POINTER) // IdDef id
 		  localEnv->Add(idDef->Sel(0), conVal->Sel(i));
 	      }
+	      KillIdRef(pc->Sel(0), localEnv); //--** some kills missing
 	      pc = TagVal::FromWordDirect(triple->Sel(2));
 	      goto loop;
 	    }
@@ -729,6 +797,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	    Constructor *testConstructor = Constructor::FromWord(requestWord);
 	    if (testConstructor == INVALID_POINTER) REQUEST(requestWord);
 	    if (testConstructor == constructor) {
+	      KillIdRef(pc->Sel(0), localEnv); //--** some kills missing
 	      pc = TagVal::FromWordDirect(pair->Sel(1));
 	      goto loop;
 	    }
@@ -743,6 +812,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Vector *vector = Vector::FromWord(requestWord);
 	if (vector == INVALID_POINTER) REQUEST(requestWord);
+	KillIdRef(pc->Sel(0), localEnv);
 	u_int value = vector->GetLength();
 	Vector *tests = Vector::FromWordDirect(pc->Sel(1));
 	u_int ntests = tests->GetLength();
@@ -774,7 +844,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	case AbstractCode::OneArg:
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] =
-	    GetIdRef(returnArgs->Sel(0), globalEnv, localEnv);
+	    GetIdRefKill(returnArgs->Sel(0), globalEnv, localEnv);
 	  break;
 	case AbstractCode::TupArgs:
 	  {
@@ -784,12 +854,12 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	      Scheduler::nArgs = nArgs;
 	      for (u_int i = nArgs; i--; )
 		Scheduler::currentArgs[i] =
-		  GetIdRef(returnIdRefs->Sub(i), globalEnv, localEnv);
+		  GetIdRefKill(returnIdRefs->Sub(i), globalEnv, localEnv);
 	    } else {
 	      Tuple *tuple = Tuple::New(nArgs);
 	      for (u_int i = nArgs; i--; )
-		tuple->Init(i, GetIdRef(returnIdRefs->Sub(i),
-					globalEnv, localEnv));
+		tuple->Init(i, GetIdRefKill(returnIdRefs->Sub(i),
+					    globalEnv, localEnv));
 	      Scheduler::nArgs = Scheduler::ONE_ARG;
 	      Scheduler::currentArgs[0] = tuple->ToWord();
 	    }
