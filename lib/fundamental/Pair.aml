@@ -40,6 +40,6 @@ struct
 
     fun collate (compareX,compareY) ((x1,y1), (x2,y2)) =
 	case compareX(x1,x2)
-	 of EQUAL => collateY(y1,y2)
+	 of EQUAL => compareY(y1,y2)
 	  | other => other
 end

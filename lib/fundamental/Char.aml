@@ -183,7 +183,7 @@ struct
 	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
 	   | NONE                                => NONE
 
-    fun scan getc src =
+    and scan getc src =
 	case getc src
 	  of SOME(#"\\", src')                   => scanEscape getc src'
 	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
