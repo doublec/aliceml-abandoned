@@ -19,7 +19,7 @@ evaluates it.</P>
 
 <?php section("description", "description") ?>
 
-<P>Executes the application given by <I>&lt; url&gt;</I>, denoting a compiled
+<P>Executes the application given by <I>&lt;url&gt;</I>, denoting a compiled
 component. The component is located, loaded and evaluated using the root <A
 href="library/component-manager.php3">component manager</A>. The component may
 be a Mozart component (<A
