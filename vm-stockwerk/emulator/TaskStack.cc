@@ -103,6 +103,7 @@ Interpreter::Result TaskStack::PushCall(word closureWord) {
 }
 
 void TaskStack::Purge() {
+  Blank(INITIAL_SIZE);
   u_int size = GetStackSize();
   for (u_int i = size; i--; ) {
     word frame = GetAbsoluteArg(i);
