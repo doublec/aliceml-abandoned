@@ -45,6 +45,6 @@ DEFINE0(UnsafeTime_now) {
 
 AliceDll word UnsafeTime() {
   Record *record = Record::New(1);
-  INIT_STRUCTURE(record, "UnsafeTime", "now", UnsafeTime_now, 1);
+  INIT_STRUCTURE(record, "UnsafeTime", "now", UnsafeTime_now, 0);
   RETURN_STRUCTURE("UnsafeTime$", record);
 }
