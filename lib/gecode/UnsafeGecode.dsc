@@ -89,9 +89,6 @@ void assign(const IntVarArgs&, AvalSel); int_assign;
 // Branching
 void branch(const IntVarArgs&, BvarSel, BvalSel); int_branch;
 
-// Faling
-void fail(void); fail;
-
 // Finite Set Variables / Constraints
 
 //UBIter<SetVar> getUpperBound(setvar); set_getUpperBound;
@@ -149,4 +146,4 @@ void selectDisjoint(const SetVarArgs&, SetVar); set_selectDisjoint;
 void selectSets(SetVar, const SetVarArgs&, IntVar); set_selectSets;
 
 void branch(const SetVarArgs&, SetBvarSel, SetBvalSel); set_branch;
-void randomBranch(const SetVarArgs&, int); set_randomBranch;
+//void randomBranch(const SetVarArgs&, int); set_randomBranch;

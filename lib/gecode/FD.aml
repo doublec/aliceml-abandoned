@@ -32,15 +32,15 @@ struct
     datatype avalsel = AVAL_MIN | AVAL_MED | AVAL_MAX
 
     datatype b_var_sel =
-	     B_MAX_MAX
+	     B_DEGREE_MAX
+	   | B_DEGREE_MIN
+	   | B_MAX_MAX
 	   | B_MAX_MIN
 	   | B_MIN_MAX
 	   | B_MIN_MIN
 	   | B_NONE
 	   | B_SIZE_MAX
 	   | B_SIZE_MIN
-	   | B_WIDTH_MAX
-	   | B_WIDTH_MIN
 	     
     datatype b_val_sel =
 	     B_MAX

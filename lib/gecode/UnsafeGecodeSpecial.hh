@@ -143,6 +143,7 @@ namespace UnsafeGecode {
 
 const BvarSel int2bvarsel[] =
   {
+    BVAR_DEGREE_MAX, BVAR_DEGREE_MIN,
     BVAR_MAX_MAX, BVAR_MAX_MIN,
     BVAR_MIN_MAX, BVAR_MIN_MIN,
     BVAR_NONE, BVAR_SIZE_MAX,
@@ -177,13 +178,15 @@ const SetBvarSel int2fsbvarsel[] =
     SETBVAR_MAX_CARD,
     SETBVAR_MIN_CARD,
     SETBVAR_MIN_UNKNOWN_ELEM,
-    SETBVAR_NONE
+    SETBVAR_NONE,
+    SETBVAR_RANDOM
   };
 
 const SetBvalSel int2fsbvalsel[] =
   {
     SETBVAL_MAX,
-    SETBVAL_MIN
+    SETBVAL_MIN,
+    SETBVAL_RANDOM
   };
 
 class GecodeHandler : public ConcreteRepresentationHandler {
@@ -373,6 +376,17 @@ DEFINE1(alive) {
   
   DBGMSG("done");
   RETURN_BOOL(Store::WordToInt(cr->Get(0))!=0);
+} END
+
+DEFINE1(fail) {
+  DBGMSG("fail");
+  DECLARE_SPACE(s, stamp, pstamp, x0);
+  CHECK_SPACE(s);
+  if (!s->enter()) {
+    RAISE(UnsafeGecode::InvalidSpaceConstructor);
+  }
+  fail();
+  RETURN_UNIT;
 } END
 
 using namespace Iter::Ranges;

@@ -1,4 +1,4 @@
-import structure Print from "x-alice:/lib/system/Print"
+(*import structure Print from "x-alice:/lib/system/Print"*)
 import structure DescParser from "DescParser"
 
 structure Generator =
@@ -26,10 +26,14 @@ structure Generator =
             "  DECLARE_VECTOR(v"^n^", x"^n^");\n" ^
             "  int noOfPairs"^n^" = v"^n^"->GetLength();\n" ^
             "  int pairs"^n^"[noOfPairs"^n^"][2];\n\n" ^
+            "  int lastMax = IntegerSet::SMALLEST_ELEMENT-1;\n" ^
             "  for (int j=noOfPairs"^n^"; j--;) {\n" ^
             "    DECLARE_TUPLE(tmp, v"^n^"->Sub(j));\n" ^
             "    DECLARE_INT(tmp0, tmp->Sel(0));\n" ^
             "    DECLARE_INT(tmp1, tmp->Sel(1));\n" ^
+            "    if (tmp0>tmp1 || tmp0<=lastMax)\n" ^
+            "      RAISE(UnsafeGecode::InvalidDomainConstructor);\n" ^
+            "    lastMax = tmp1;\n" ^
             "    pairs"^n^"[j][0] = tmp0;\n" ^
             "    pairs"^n^"[j][1] = tmp1;\n" ^
             "  }\n" ^
@@ -193,8 +197,7 @@ structure Generator =
            case (class,outarg) of
              (NONE, Void) =>
              TextIO.output(f, 
-             				(*Hack for fail() here*)
-                           "  "^fname^"("^(if args="" then "" else "s, ")^args^");\n"^
+                           "  "^fname^"(s,"^args^");\n"^
                            "  RETURN_UNIT;\n")
            | (NONE, (Int|UInt)) =>
              TextIO.output(f, "  RETURN_INT("^fname^"(s,"^args^"));\n")
@@ -335,7 +338,7 @@ structure Generator =
     | argToType add Space = (addMark add)^"space"
     | argToType add Status = (addMark add)^"status"
     | argToType add Description = (addMark add)^"description"
-    | argToType add (Other _) = raise GeneratorError "argToType failed"
+    | argToType add (Other s) = (raise GeneratorError "argToType failed")
 
   fun putStars [a] = a
     | putStars nil = ""
@@ -367,7 +370,8 @@ structure Generator =
                Fun ("description", 1, [Space], Description, "description"),
                Fun ("clone", 1, [Space], Space, "clone"),
                Fun ("discard", 1, [Space], Void, "discard"),
-               Fun ("alive", 1, [Space], Bool, "alive")
+               Fun ("alive", 1, [Space], Bool, "alive"),
+               Fun ("fail", 1, [Space], Void, "fail")
                ]
           val f = TextIO.openOut ("UnsafeGecode.cc")
           val asig = TextIO.openOut ("UnsafeGecode.asig")

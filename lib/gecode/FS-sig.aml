@@ -113,13 +113,15 @@ sig
 	   | FSB_MIN_CARD
            | FSB_MIN_UNKNOWN_ELEM
 	   | FSB_NONE
+           | FSB_RANDOM_VAR
 	     
     datatype fsb_val_sel =
 	     FSB_MAX
 	   | FSB_MIN
+           | FSB_RANDOM_VAL
 
     val setvarbranch :  space *  setvar vector * fsb_var_sel *
 			fsb_val_sel -> unit
 
-    val randomBranch : space * setvar vector * int -> unit
+(*    val randomBranch : space * setvar vector * int -> unit*)
 end
