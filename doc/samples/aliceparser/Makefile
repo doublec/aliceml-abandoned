@@ -8,7 +8,7 @@ AliceParser.aml:	AliceParser.y
 	aliceyacc $< -o $@
 
 %.alc:	%.aml
-	alicec --no-warn-conventions $< -o $@
+	alicec --no-warn-conventions --dump-phase-timings $< -o $@
 
 Main.alc:	AliceParser.alc AliceLexer.alc AliceLexer-MLLex.alc
 
