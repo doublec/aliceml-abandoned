@@ -138,6 +138,17 @@ structure AliceIde =
                 else ()
             end
 
+        fun EOLsBeforeNonWS acc iter next =
+            let
+                val c = Gtk.textIterGetChar iter
+            in
+                if c=0 then acc
+                else if Char.isSpace (chr c) then
+                    (next iter;
+                     EOLsBeforeNonWS (acc + (if c = ord #"\n" then 1 else 0)) iter next)
+                else acc
+            end
+
         fun paragraphIters(buf) =
             let
                 val cursor = Gtk.textBufferGetInsert(buf)
@@ -151,6 +162,7 @@ structure AliceIde =
                 val _ = findEOP enditer Gtk.textIterForwardChar
                 val _ = findNonWS startiter Gtk.textIterForwardChar
                 val _ = findNonWS enditer Gtk.textIterBackwardChar
+                val _ = Gtk.textIterForwardChar enditer (* end is exclusive! *)
             in
                 (startiter, enditer)
             end
@@ -172,8 +184,11 @@ structure AliceIde =
                 val (startiter, enditer) = paragraphIters(buf)
                 val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
                 val _ = Gtk.textBufferPlaceCursor(buf, enditer)
-                val _ = Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
             in
+                case EOLsBeforeNonWS 0 enditer Gtk.textIterForwardChar of
+                    0 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
+                  | 2 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
+                  | _ => Gtk.textBufferPlaceCursor(buf, enditer);
                 Gtk.textIterFree startiter;
                 Gtk.textIterFree enditer;
                 eval (str^"\n")
