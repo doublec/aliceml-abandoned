@@ -40,16 +40,24 @@ define
       {Scheduler.object run()}
    end
 
-   proc {Link Url ?Module}
-      {System.showError 'unpickling '#Url}
-      try
-	 Functor = {OzPickle.load Url}
-	 case {Module.link [Functor]} of [OzModule] then
-	    Module = {PrimitiveTable.importOzModule OzModule}
+   proc {Link Url ?Module} Key in
+      Key = {URL.toAtom Url}
+      case {Dictionary.condGet ModuleTable Key unit} of unit then
+	 case {Dictionary.condGet ModuleTable {URL.toAtom Url#'.stc'} unit}
+	 of unit then
+	    {System.showError 'unpickling '#Url}
+	    try
+	       Functor = {OzPickle.load Url}
+	       case {Module.link [Functor]} of [OzModule] then
+		  Module = {PrimitiveTable.importOzModule OzModule}
+	       end
+	    catch error(url(load ...) ...) then {DoLink Url Module}
+	    [] error(dp(generic ...) ...) then {DoLink Url Module}
+	    end
+	    ModuleTable.Key := Module
+	 elseof M then Module = M
 	 end
-      catch error(url(load ...) ...) then {DoLink Url Module}
-      [] error(dp(generic ...) ...) then {DoLink Url Module}
+      elseof M then Module = M
       end
-      ModuleTable.{URL.toAtom Url} := Module
    end
 end
