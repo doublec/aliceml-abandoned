@@ -18,7 +18,7 @@
 
 #include "store/Store.hh"
 
-class HashTable : public BlockHashTable {
+class DllExport HashTable : public BlockHashTable {
 public:
   enum hashkeytype {
     INT_KEY,
