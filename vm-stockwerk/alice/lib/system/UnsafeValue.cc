@@ -72,8 +72,25 @@ DEFINE1(UnsafeValue_conName) {
   RETURN(exId->ToWord());
 } END
 
+DEFINE2(UnsafeValue_projPoly) {
+  DECLARE_RECORD(record, x0);
+  DECLARE_TAGVAL(tagVal, x1);
+  switch (tagVal->GetTag()) {
+  case 0: // ALPHA
+    {
+      word wLabel = tagVal->Sel(0);
+      DECLARE_STRING(label, wLabel);
+      RETURN(record->PolySel(UniqueString::New(label)));
+    }
+  case 1: // NUM
+    Error("UnsafeValue.projPoly: numeric labels not supported");
+  default:
+    Error("UnsafeValue.projPoly: unknown tag");
+  }
+} END
+
 word UnsafeValue() {
-  Record *record = Record::New(11);
+  Record *record = Record::New(12);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1, true);
   INIT_STRUCTURE(record, "UnsafeValue", "same",
@@ -96,5 +113,7 @@ word UnsafeValue() {
 		 UnsafeValue_projConstructed, 3, true);
   INIT_STRUCTURE(record, "UnsafeValue", "conName",
 		 UnsafeValue_conName, 1, true);
+  INIT_STRUCTURE(record, "UnsafeValue", "projPoly",
+		 UnsafeValue_projPoly, 2, true);
   RETURN_STRUCTURE("UnsafeValue$", record);
 }
