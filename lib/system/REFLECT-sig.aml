@@ -1,7 +1,7 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
  *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
@@ -15,17 +15,19 @@ import structure Type from "../rtt/Type"
 import structure Inf  from "../rtt/Inf"
 
 signature REFLECT =
-    sig
-	type value
+sig
+    type value
+    type module
 
-	val realToVector: real -> Word8.word vector
+    val realToVector: real -> Word8.word vector
 
-	val reflectPackage : Package.package -> value * Inf.t
+    val reflectPackage :    Package.package -> module * Inf.t
+    val reflectValPackage : Package.val_package -> value * Type.t
 
-	functor Reflect(signature S structure X : S) : (val x : value)
-	functor Unreflect(val x : value signature S) : S
-	functor ReflectSig(signature S) : (val x : Inf.t)
-	functor UnreflectSig(val x : Inf.t) : (signature S)
-	functor ReflectType(type t) : (val x : Type.t)
-	(*functor UnreflectType(val x : Type.t) : (type t)*)
-    end
+    functor Reflect(signature S structure X : S) : (val x : module)
+    functor Unreflect(val x : module signature S) : S	(* Unsafe! *)
+    functor ReflectSig(signature S) : (val x : Inf.t)
+    functor UnreflectSig(val x : Inf.t) : (signature S)
+    functor ReflectType(type t) : (val x : Type.t)
+    (*functor UnreflectType(val x : Type.t) : (type t)*)
+end

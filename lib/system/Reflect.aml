@@ -1,7 +1,7 @@
 (*
  * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
  *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
@@ -15,22 +15,39 @@ import structure Label         from "../rtt/Label"
 import structure Type          from "../rtt/Type"
 import structure Inf           from "../rtt/Inf"
 import structure UnsafeReflect from "UnsafeReflect"
+import structure UnsafeValue   from "UnsafeValue"
 import signature REFLECT       from "REFLECT-sig"
 
 structure Reflect :> REFLECT =
     struct
 	type value
+	type module
 
-	val cast = UnsafeReflect.cast
+	val cast = UnsafeValue.cast
 
 	fun realToVector r =
 	    Vector.map Word8.fromInt (UnsafeReflect.realToVector r)
 
-	(* Q&D, has to correspond to translation and Package module *)
+	(* TODO: Q&D, has to correspond to translation and Package module *)
 	type package'
-	datatype package = Package__ of package'
+	datatype package     = Package__ of package'
+	datatype val_package = ValPackage__ of package'
+
+	val lab_x = Label.fromString "x"
+	val lab_t = Label.fromString "$t"
+
 	fun reflectPackage p =
-	    case cast p : package of Package__ p' => cast p' : value * Inf.t
+	    case cast p : package of Package__ p' => cast p' : module * Inf.t
+
+	fun reflectValPackage p =
+	    case cast p : val_package of ValPackage__ p' =>
+	    let
+		val (m,j) = cast p' : module * Inf.t
+	    in
+		(UnsafeValue.projPoly(m,lab_x) : value,
+		 UnsafeValue.projPoly(m,lab_t) : Type.t)
+	    end
+
 
 	functor Reflect(signature S structure X: S) =
 	    let
@@ -40,7 +57,7 @@ structure Reflect :> REFLECT =
 		(val x = cast Str.x)
 	    end
 
-	functor Unreflect(val x: value signature S) =
+	functor Unreflect(val x: module signature S) =
 	    UnsafeReflect.Unreflect(val x = cast x signature S = S)
 
 	structure ReflectSig = UnsafeReflect.ReflectSig
