@@ -40,6 +40,8 @@ case $host_os in
        ;;
 esac
 
+AC_CHECK_SIZEOF(long)
+
 # checks for structures
 
 # checks for compiler characteristics
