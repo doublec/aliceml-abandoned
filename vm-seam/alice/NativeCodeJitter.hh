@@ -20,7 +20,7 @@
 #include "store/JITStore.hh"
 #include "alice/NativeConcreteCode.hh"
 
-class HashTable;
+class IntMap;
 class TagVal;
 class Vector;
 class LivenessTable;
@@ -57,7 +57,7 @@ protected:
   static word instructionStartPC;
 
   static const u_int SHARED_TABLE_SIZE = 512;
-  static HashTable *sharedTable;
+  static IntMap *sharedTable;
   
   static LivenessTable *livenessTable;
   static LivenessTable *livenessFreeList;
@@ -99,7 +99,7 @@ protected:
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LoadStatus(u_int Dest);
   static void CheckPreempt(u_int pc);
-  static void LookupTestTable(u_int Key, u_int table);
+  static void LookupTestTable(u_int Key, u_int table, bool isInt = true);
   static u_int CompilePrimitive(INLINED_PRIMITIVE primitive,
 				Vector *actualIdRefs);
   static void NormalAppPrim(Closure *closure, TagVal *pc);

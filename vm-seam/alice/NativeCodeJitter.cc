@@ -20,7 +20,9 @@
 #endif
 
 #include <cstdio>
-#include "adt/HashTable.hh"
+#include "store/Map.hh"
+#include "adt/IntMap.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Closure.hh"
@@ -527,7 +529,7 @@ u_int NativeCodeJitter::codeBufferSize;
 word NativeCodeJitter::initialPC;
 word NativeCodeJitter::initialNoCCCPC;
 word NativeCodeJitter::instructionStartPC;
-HashTable *NativeCodeJitter::sharedTable;
+IntMap *NativeCodeJitter::sharedTable;
 
 LivenessTable *NativeCodeJitter::livenessTable;
 LivenessTable *NativeCodeJitter::livenessFreeList;
@@ -1553,10 +1555,10 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
 #if defined(JIT_STORE_DEBUG)
   JITStore::LogMesg(GetPrimitveName(pc->Sel(0)));
 #endif
-  Closure *closure      = Closure::FromWord(pc->Sel(0));
-  BlockHashTable *table = BlockHashTable::FromWordDirect(inlineTable);
-  if (table->IsMember(closure->ToWord())) {
-    word tag = table->GetItem(closure->ToWord());
+  Closure *closure = Closure::FromWord(pc->Sel(0));
+  Map *inlineMap   = Map::FromWordDirect(inlineTable);
+  if (inlineMap->IsMember(closure->ToWord())) {
+    word tag = inlineMap->Get(closure->ToWord());
     INLINED_PRIMITIVE primitive =
       static_cast<INLINED_PRIMITIVE>(Store::DirectWordToInt(tag));
     // Inline primitive
@@ -1773,19 +1775,30 @@ TagVal *NativeCodeJitter::InstrEndHandle(TagVal *pc) {
 }
 
 // Test Helpers
-static void *LookupTable(HashTable *table, word key) {
-  if (table->IsMember(key))
-    return table->GetItem(key);
+static void *LookupIntTable(IntMap *map, word key) {
+  if (map->IsMember(key))
+    return map->Get(key);
   else
     return 0;
 }
 
-void NativeCodeJitter::LookupTestTable(u_int Key, u_int table) {
+static void *LookupChunkTable(ChunkMap *map, word key) {
+  if (map->IsMember(key))
+    return map->Get(key);
+  else
+    return 0;
+}
+
+void NativeCodeJitter::LookupTestTable(u_int Key, u_int table,
+				       bool isInt = true) {
   Prepare();
   jit_pushr_ui(Key); // Key Argument
   ImmediateSel(JIT_R0, JIT_V2, table);
   jit_pushr_ui(JIT_R0); // Table Argument
-  JITStore::Call(2, (void *) LookupTable);
+  if (isInt)
+    JITStore::Call(2, (void *) LookupIntTable);
+  else
+    JITStore::Call(2, (void *) LookupChunkTable);
   Finish();
 }
 
@@ -1795,10 +1808,10 @@ TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int IntVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
-  Vector *tests    = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests     = tests->GetLength();
-  HashTable *table = HashTable::New(HashTable::INT_KEY, nTests * 2);
-  u_int i1         = ImmediateEnv::Register(table->ToWord());
+  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+  u_int nTests  = tests->GetLength();
+  IntMap *map   = IntMap::New(nTests * 2);
+  u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(IntVal, i1);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
@@ -1807,7 +1820,7 @@ TagVal *NativeCodeJitter::InstrIntTest(TagVal *pc) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
-    table->InsertItem(key, Store::IntToWord(offset));
+    map->Put(key, Store::IntToWord(offset));
     CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
   }
   jit_patch(else_ref);
@@ -1848,11 +1861,11 @@ TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
   word instrPC  = Store::IntToWord(GetRelativePC());
   u_int RealVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
-  Vector *tests    = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests     = tests->GetLength();
-  HashTable *table = HashTable::New(HashTable::BLOCK_KEY, nTests * 2);
-  u_int i1         = ImmediateEnv::Register(table->ToWord());
-  LookupTestTable(RealVal, i1);
+  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+  u_int nTests  = tests->GetLength();
+  ChunkMap *map = ChunkMap::New(nTests * 2);
+  u_int i1      = ImmediateEnv::Register(map->ToWord());
+  LookupTestTable(RealVal, i1, false);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
   // Create Branches (order is significant)
@@ -1860,7 +1873,7 @@ TagVal *NativeCodeJitter::InstrRealTest(TagVal *pc) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
-    table->InsertItem(key, Store::IntToWord(offset));
+    map->Put(key, Store::IntToWord(offset));
     CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
   }
   jit_patch(else_ref);
@@ -1873,11 +1886,11 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
   word instrPC    = Store::IntToWord(GetRelativePC());
   u_int StringVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
-  Vector *tests    = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests     = tests->GetLength();
-  HashTable *table = HashTable::New(HashTable::BLOCK_KEY, nTests * 2);
-  u_int i1         = ImmediateEnv::Register(table->ToWord());
-  LookupTestTable(StringVal, i1);
+  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+  u_int nTests  = tests->GetLength();
+  ChunkMap *map = ChunkMap::New(nTests * 2);
+  u_int i1      = ImmediateEnv::Register(map->ToWord());
+  LookupTestTable(StringVal, i1, false);
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
   BranchToOffset(JIT_RET);
   // Create Branches (order is significant)
@@ -1885,7 +1898,7 @@ TagVal *NativeCodeJitter::InstrStringTest(TagVal *pc) {
     Tuple *pair  = Tuple::FromWordDirect(tests->Sub(i));
     word key     = pair->Sel(0);
     u_int offset = GetRelativePC();
-    table->InsertItem(key, Store::IntToWord(offset));
+    map->Put(key, Store::IntToWord(offset));
     CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
   }
   jit_patch(else_ref);
@@ -1909,8 +1922,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     else_ref1 = jit_jmpi(jit_forward());
   }
   else {
-    HashTable *table1 = HashTable::New(HashTable::INT_KEY, nTests1 * 2);
-    u_int i1          = ImmediateEnv::Register(table1->ToWord());
+    IntMap *map1 = IntMap::New(nTests1 * 2);
+    u_int i1     = ImmediateEnv::Register(map1->ToWord());
     LookupTestTable(tagVal, i1);
     else_ref1 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
     BranchToOffset(JIT_RET);
@@ -1919,7 +1932,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
       Tuple *pair  = Tuple::FromWordDirect(tests1->Sub(i));
       word key     = pair->Sel(0);
       u_int offset = GetRelativePC();
-      table1->InsertItem(key, Store::IntToWord(offset));
+      map1->Put(key, Store::IntToWord(offset));
       CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
     }
   }
@@ -1934,8 +1947,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
     JITAlice::TagVal::GetTag(tagVal);
     IntToWord(JIT_R0, JIT_R0);
     jit_pushr_ui(tagVal); // Save TagVal Ptr
-    HashTable *table2 = HashTable::New(HashTable::INT_KEY, nTests2 * 2);
-    u_int i2          = ImmediateEnv::Register(table2->ToWord());
+    IntMap *map2 = IntMap::New(nTests2 * 2);
+    u_int i2     = ImmediateEnv::Register(map2->ToWord());
     LookupTestTable(JIT_R0, i2);
     jit_insn *else_ref2 = jit_beqi_ui(jit_forward(), JIT_RET, 0);
     BranchToOffset(JIT_RET);
@@ -1944,7 +1957,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
       Tuple *triple  = Tuple::FromWordDirect(tests2->Sub(i));
       word key       = triple->Sel(0);
       u_int offset   = GetRelativePC();
-      table2->InsertItem(key, Store::IntToWord(offset));
+      map2->Put(key, Store::IntToWord(offset));
       Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       jit_popr_ui(JIT_V1); // Restore TagVal Ptr
       for (u_int i = idDefs->GetLength(); i--;) {
@@ -2067,10 +2080,10 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
   KillIdRef(pc->Sel(0));
   jit_pushr_ui(VecVal); // Save vector ptr
   JITAlice::Vector::GetLength(JIT_R0, VecVal);
-  Vector *tests    = Vector::FromWordDirect(pc->Sel(1));
-  u_int nTests     = tests->GetLength();
-  HashTable *table = HashTable::New(HashTable::INT_KEY, nTests * 2);
-  u_int i1         = ImmediateEnv::Register(table->ToWord());
+  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
+  u_int nTests  = tests->GetLength();
+  IntMap *map   = IntMap::New(nTests * 2);
+  u_int i1      = ImmediateEnv::Register(map->ToWord());
   LookupTestTable(JIT_R0, i1);
   jit_popr_ui(JIT_V1); // Restore vector ptr
   jit_insn *else_ref = jit_beqi_ui(jit_forward(), JIT_RET, 0);
@@ -2081,7 +2094,7 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
     Vector *idDefs = Vector::FromWordDirect(pair->Sel(0));
     word key       = Store::IntToWord(idDefs->GetLength());
     u_int offset   = GetRelativePC();
-    table->InsertItem(key, Store::IntToWord(offset));
+    map->Put(key, Store::IntToWord(offset));
     for (u_int i = idDefs->GetLength(); i--;) {
       TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
       if (idDef != INVALID_POINTER) {
@@ -2100,13 +2113,13 @@ TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
   PrintPC("InstrShared\n");
   word stamp = pc->Sel(0);
   if (sharedTable->IsMember(stamp)) {
-    u_int offset = Store::DirectWordToInt(sharedTable->GetItem(stamp));
+    u_int offset = Store::DirectWordToInt(sharedTable->Get(stamp));
     drop_jit_jmpi(codeBuffer + offset);
     return INVALID_POINTER;
   }
   else {
     u_int offset = jit_get_ip().ptr - (char *) codeBuffer;
-    sharedTable->InsertItem(stamp, Store::IntToWord(offset));
+    sharedTable->Put(stamp, Store::IntToWord(offset));
     return TagVal::FromWordDirect(pc->Sel(1));
   }
 }
@@ -2311,14 +2324,14 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   ImmediateEnv::Init();
   ActiveSet::Init();
   // InitInlines
-  BlockHashTable *table = BlockHashTable::New(10);
+  Map *inlineMap = Map::New(10);
   u_int i = 0;
   do {
     ::Chunk *name = (::Chunk *) (String::New(inlines[i].name));
     word value    = PrimitiveTable::LookupValue(name);
-    table->InsertItem(value, Store::IntToWord(inlines[i].tag));
+    inlineMap->Put(value, Store::IntToWord(inlines[i].tag));
   } while (inlines[++i].name != NULL);
-  inlineTable = table->ToWord();
+  inlineTable = inlineMap->ToWord();
   RootSet::Add(inlineTable);
   // Compute Initial PC
   CompileProlog("Dummy Information");
@@ -2365,7 +2378,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
 #endif
   // Setup nodes/immediate value tables
   ImmediateEnv::Init();
-  sharedTable  = HashTable::New(HashTable::INT_KEY, SHARED_TABLE_SIZE);
+  sharedTable = IntMap::New(SHARED_TABLE_SIZE);
   // Start function compilation with prolog
 #if defined(JIT_STORE_DEBUG)
   Tuple *coord2 = Tuple::FromWord(abstractCode->Sel(0));
