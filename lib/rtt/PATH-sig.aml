@@ -1,18 +1,33 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (* Since SML allows multiple definitions of the same id in a structure,
    labels are not enough for paths. So we added an index. *)
 
+import structure Name  from "Name"
+import structure Label from "Label"
+
+
 signature PATH =
-  sig
+sig
+    (* Types *)
 
-  (* Types *)
-
-    type lab   = Label.t
-    type name  = Name.t
+    type name	= Name.t
+    type lab	= Label.t
 
     type path
-    type t = path
+    type t	= path
 
-  (* Operations *)
+    (* Operations *)
 
     val invent :	unit -> path
     val pervasive :	string -> path
@@ -23,12 +38,12 @@ signature PATH =
     val equals :	path * path -> bool
     val hash :		path -> int
 
+    exception Path
     val isDot :		path -> bool
-    val asDot :		path -> path * lab * int
+    val asDot :		path -> path * lab * int	(* [Path] *)
 
     val strengthen :	path * lab * int * path -> unit
 
     val clone :		path -> path
     val instance :	('rea * path -> path option) -> 'rea * path -> path
-
-  end
+end

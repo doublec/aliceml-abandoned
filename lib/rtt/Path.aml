@@ -1,16 +1,34 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 (* Notes:
  * - Paths are shared, i.e. each path has to be unique.
  * - Since SML allows multiple definitions of the same id in a structure,
  *   labels are not enough for paths. So we added an index.
  *)
 
+import structure GlobalStamp from "../utility/GlobalStamp"
+import structure Name        from "Name"
+import structure Label       from "Label"
+import signature PATH        from "PATH-sig"
+
+
 structure PathPrivate =
-  struct
+struct
 
   (* Types *)
 
-    type lab	= Label.t
     type name	= Name.t
+    type lab	= Label.t
     type stamp	= GlobalStamp.t
 
     datatype path' =
@@ -29,6 +47,8 @@ structure PathPrivate =
     fun pervasive s		= (GlobalStamp.fromString s,
 				   ref(PLAIN(Name.ExId s)))
 
+    exception Path
+
     fun toLab (_, ref(PLAIN n))	= Label.fromName n
       | toLab (_, ref(DOT pln))	= #2 pln
 
@@ -36,7 +56,7 @@ structure PathPrivate =
       | isDot   _		= false
 
     fun asDot (_, ref(DOT pln))	= pln
-      | asDot   _		= raise Crash.Crash "Path.asDot"
+      | asDot   _		= raise Path
 
 
   (* Comparison and hashing *)
@@ -68,7 +88,7 @@ structure PathPrivate =
 
     fun clone p = instance (fn _ => NONE) ((), p)
 
-  end
+end
 
 
 structure Path : PATH = PathPrivate
