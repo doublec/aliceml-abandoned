@@ -18,7 +18,6 @@
 
 #include "generic/String.hh"
 #include "generic/Worker.hh"
-#include "generic/Properties.hh"
 #include "generic/Scheduler.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
@@ -104,14 +103,13 @@ void RunMainWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Run `void main(String[] args)'\n");
 }
 
-void Startup() {
+void Startup(int argc, char *argv[]) {
   RunMainWorker::Init();
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
   {
     char buf[512];
-    std::sprintf(buf, "%s",
-		 String::FromWordDirect(Properties::rootUrl)->ExportC());
+    std::sprintf(buf, "%s", argv[1]);
     for (u_int i = std::strlen(buf); i--; )
       if (buf[i] == '.') buf[i] = '/';
     word theClass = classLoader->ResolveClass(JavaString::New(buf));

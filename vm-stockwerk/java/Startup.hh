@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -17,6 +17,6 @@
 #pragma interface "java/Startup.hh"
 #endif
 
-DllExport void Startup();
+DllExport void Startup(int argc, char *argv[]);
 
 #endif
