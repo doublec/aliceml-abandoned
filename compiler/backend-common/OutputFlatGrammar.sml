@@ -147,8 +147,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		SEQ #[S "goto ", S (Stamp.toString stamp)]
 	  | outputStm (ReturnStm (_, exp), _) =
 	    SEQ #[S "return ", IN, outputExp exp, EX]
-	  | outputStm (IndirectStm (_, ref bodyOpt), shared) =
-	    SEQ #[S "indirect", NL, outputBody (valOf bodyOpt, shared)]
+	  | outputStm (IndirectStm (_, ref NONE), _) =
+	    S "indirect (* uninitialized *)"
+	  | outputStm (IndirectStm (_, ref (SOME body)), shared) =
+	    SEQ #[S "indirect", NL, outputBody (body, shared)]
 	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ #[S "export ", IN, outputExp exp, EX]
 	and outputTests (LitTests litBodyVector, shared) =
