@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ $Author$
@@ -17,27 +17,24 @@ import structure Reflect   from "Reflect"
 signature COMPONENT_MANAGER =
     sig
 	exception Conflict
-	exception Mismatch of {component : Url.t,
-			       request : Url.t option,
-			       cause : Inf.mismatch}
 
 	type component
 
 	functor Eval(val component: component
 		     val url: Url.t
-		     signature S): S                (* Mismatch *)
+		     signature S): S                (* Component.Mismatch *)
 
 	functor Link(val url: Url.t
-		     signature S): S                (* Io, Corrupt, Mismatch *)
+		     signature S): S                (* [Component.Failure] *)
 
 	functor Enter(val url: Url.t
 		      signature S
 		      structure X: S): any          (* Conflict *)
 
-	val eval: Url.t * component -> Reflect.value
-	val link: Url.t -> component                (* Io, Corrupt, Mismatch *)
+	val eval: Url.t * component -> Reflect.value(* Component.Failure *)
+	val link: Url.t -> component                (* [Component.Failure] *)
 	val enter: Url.t * component -> unit        (* Conflict *)
 	val lookup: Url.t -> component option
 
-	val start: Url.t -> unit                    (* Io, Corrupt, Mismatch *)
+	val start: Url.t -> unit                    (* Component.Failure *)
     end

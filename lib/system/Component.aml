@@ -35,8 +35,14 @@ struct
       | EVALUATED of { inf: inf, mod: mod }
     type t = component
 
-    exception Sited    = UnsafeComponent.Sited
-    exception Corrupt  = UnsafeComponent.Corrupt
+    exception Sited   = UnsafeComponent.Sited
+    exception Corrupt = UnsafeComponent.Corrupt
+
+    exception Mismatch of {component : Url.t,
+			   request : Url.t option,
+			   cause : Inf.mismatch}
+    exception Eval of exn
+    exception Failure of Url.t * exn
 
     val extension = UnsafeComponent.extension
 
@@ -100,9 +106,6 @@ struct
 	(*--** urls are required to be absolute, but this is not checked *)
 
 	exception Conflict
-	exception Mismatch of {component : Url.t,
-			       request : Url.t option,
-			       cause : Inf.mismatch}
 
 	datatype component = datatype component
 
@@ -134,10 +137,11 @@ struct
 		lazy (trace ("type-checking " ^ message);
 		      (strictTypeCheck (inf, importInf, mod)
 		       handle Inf.Mismatch m =>
-			   raise Mismatch {component = url,
-					   request = baseUrlOpt,
-					   cause = m}) before
-		      trace ("type-checked  " ^ message))
+			   raise Failure (url,
+					  Mismatch {component = url,
+						    request = baseUrlOpt,
+						    cause = m}))
+		      before trace ("type-checked  " ^ message))
 	    end
 
 	fun link' url =
@@ -145,7 +149,8 @@ struct
 		UrlMap.EXISTING entry => entry
 	      | UrlMap.NEW p =>
 		    let
-			val component = lazy load url
+			val component =
+			    lazy (load url handle e => raise Failure (url, e))
 			val inf = lazy inf component
 			val mod = lazy eval (url, component)
 			val entry = (inf, mod)
@@ -169,7 +174,10 @@ struct
 			       imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
-		body imports' before
+		body imports'
+		handle e as (non (Failure (_, _))) =>
+		    raise Failure (baseUrl, Eval e)
+		before
 		trace ("evaluated  " ^ Url.toString baseUrl)
 	    end
 	  | eval (_, EVALUATED {mod, ...}) = Future.await mod
