@@ -179,11 +179,13 @@ libs-mozart:
 ## Install Alice on Seam
 ##
 install-seam:
-	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) install-seam-rec
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) GECODEDIR=$(GECODEDIR) \
+		install-seam-rec
 install-seam-rec: install-common build-seam bootstrap-seam libs-seam
 
 reinstall-seam:
-	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) reinstall-seam-rec
+	make PREFIX=$(PREFIX) TARGET=seam DEBUG=$(DEBUG) GECODEDIR=$(GECODEDIR) \
+		reinstall-seam-rec
 reinstall-seam-rec: bootstrap-seam libs-seam
 
 bootstrap-seam:
