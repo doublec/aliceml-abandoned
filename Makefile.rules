@@ -4,7 +4,7 @@
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ## 
 ## Copyright:
-##   Leif Kornstaedt, 2000
+##   Leif Kornstaedt, 2000-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -16,5 +16,5 @@
 %.$(OBJEXT): %.cc
 	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
 
-%.$(OBJEXT): %.cc
+%.s: %.cc
 	$(CXX) $(DEFINES) $(INCLUDES) $(CXXFLAGS) -S $< -o $@
