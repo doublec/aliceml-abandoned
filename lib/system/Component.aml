@@ -11,7 +11,6 @@
  *)
 
 import structure Url               from "../utility/Url"
-import structure Label             from "../rtt/Label"
 import structure Inf               from "../rtt/Inf"
 import structure TextIO            from "TextIO"
 import structure IO                from "IO"
@@ -30,8 +29,8 @@ struct
     type str = Reflect.value
 
     datatype component =
-	UNEVALUATED of { imports: (Label.t * string * sign) vector,
-			 body:    Reflect.value,
+	UNEVALUATED of { imports: (string * sign) vector,
+			 body:    str vector -> str,
 			 sign:    sign }
       | EVALUATED of sign * str
     type t = component
@@ -144,15 +143,15 @@ struct
 	    end
 	and eval (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
+		fun resolve s = Url.resolve baseUrl (Url.fromString s)
 		val imports' =
-		    Vector.map (fn (label, importUrlS, importSign) =>
-				(label,
-				 typedLink (Url.resolve baseUrl
-						(Url.fromString importUrlS),
-					    importSign, SOME baseUrl))) imports
+		    Vector.map (fn (importUrlS, importSign) =>
+				   typedLink (resolve importUrlS,
+					      importSign, SOME baseUrl))
+			       imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
-		UnsafeComponent.apply (body, imports')
+		body imports'
 	    end
 	  | eval (_, EVALUATED (_, str)) = Future.await str
 

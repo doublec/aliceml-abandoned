@@ -10,8 +10,6 @@
  *   $Revision$
  *)
 
-import structure Label from "../rtt/Label"
-
 signature UNSAFE_COMPONENT_COMPONENT =
     sig
 	structure UnsafeComponent:
@@ -25,6 +23,5 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
 		val load: string -> 'component          (* IO.Io, Corrupt *)
-		val apply: 'body * (Label.t * 'str) vector -> 'str
 	    end
     end

@@ -49,18 +49,6 @@ define
 		[] S then S
 		end}
 
-   fun {LabelToOz Label}
-      case Label of 'NUM'(I) then I
-      [] 'ALPHA'(S) then {VirtualString.toAtom S}
-      end
-   end
-
-   fun {OzToLabel F}
-      if {IsInt F} then 'NUM'(F)
-      else 'ALPHA'({ByteString.make F})
-      end
-   end
-
    fun {SigToOz SigOpt}
       case SigOpt of 'NONE' then nil
       [] 'SOME'(Sig) then sig(Sig)
@@ -78,10 +66,9 @@ define
       case Component
       of 'UNEVALUATED'(imports: Imports body: Body sign: Sig) then
 	 {Functor.new
-	  {List.toRecord 'import'
+	  {List.toTuple 'import'
 	   {Record.foldR Imports
-	    fun {$ Label#URL#Sig In}
-	       {LabelToOz Label}#
+	    fun {$ URL#Sig In}
 	       info('from': {VirtualString.toAtom URL}
 		    'type': {SigToOz Sig})|In
 	    end nil}}
@@ -91,15 +78,29 @@ define
       end
    end
 
-   fun {FunctorToComponent F}
+   local
+      proc {ForAll2 Xs Ys P}
+	 case Xs#Ys of nil#nil then skip
+	 [] (X|Xr)#(Y|Yr) then {P X Y} {ForAll2 Xr Yr P}
+	 end
+      end
+   in
+      proc {ReplaceArity R Ari ?NewR}
+	 NewR = {Record.make {Label R} Ari}
+	 {ForAll2 {Arity R} Ari proc {$ Old New} NewR.New = R.Old end}
+      end
+   end
+
+   fun {FunctorToComponent F} Ari in
       if {Not {Functor.is F}} then
 	 {Exception.raiseError alice(CorruptException)}
       end
+      Ari = {Arity {Record.make '#' {Record.foldRInd F.'import'
+				     fun {$ Fea _ Rest} Fea|Rest end nil}}}
       'UNEVALUATED'(imports:
 		       {List.toTuple '#[]'
 			{Record.foldRInd F.'import'
 			 fun {$ ModName Desc Rest}
-			    {OzToLabel ModName}#
 			    {ByteString.make
 			     case {CondSelect Desc 'from' unit}
 			     of unit then
@@ -109,7 +110,8 @@ define
 			     end}#
 			    {OzToSig {CondSelect Desc 'type' nil}}|Rest
 			 end nil}}
-		    body: F.apply
+		    body:
+		       fun {$ IMPORT} {F.apply {ReplaceArity IMPORT Ari}} end
 		    sign: {OzToSig F.'export'})
    end
 
@@ -174,13 +176,5 @@ define
 		  fun {$ U}
 		     {Trace 'component' 'load '#U}
 		     {Load U}
-		  end
-	       'apply':
-		  fun {$ Body Imports}
-		     {Body {List.toRecord 'IMPORT'
-			    {Record.foldR Imports
-			     fun {$ Label#Str Rest}
-				{LabelToOz Label}#Str|Rest
-			     end nil}}}
 		  end)
 end
