@@ -22,7 +22,7 @@ final public class Connection {
     static Exporter exp = null;
     static java.util.Random rand = null;
 
-    final static java.net.InetAddress thisHost;
+    static java.net.InetAddress thisHost;
     static {
 	java.net.InetAddress i=null;
 	try {

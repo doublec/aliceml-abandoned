@@ -27,7 +27,7 @@ package de.uni_sb.ps.dml.runtime;
  *  Must not: (0, 2);
  *  To avoid the second case, access methods have to be synchronized.
  */
-final public class Reference implements DMLConVal, DMLReference {
+final public class Reference implements DMLConVal {
 
     private SManager mgr = null;      // Homesite-Manager
     public DMLValue content = null;
