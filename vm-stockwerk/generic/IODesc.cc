@@ -49,9 +49,9 @@ class IOForwarder {
 private:
   class InOut {
   public:
-    SOCKET fd1;
-    HANDLE fd2;
-    InOut(SOCKET f1, HANDLE f2): fd1(f1), fd2(f2) {}
+    SOCKET socket;
+    HANDLE handle;
+    InOut(SOCKET s, HANDLE h): socket(s), handle(h) {}
   };
 
   static const u_int BUFFER_SIZE = 1024;
@@ -113,9 +113,9 @@ public:
 };
 
 DWORD __stdcall IOForwarder::ReaderThread(void *p) {
-  InOut *io = (InOut*) p;
-  SOCKET out = io->fd1;
-  HANDLE in = io->fd2;
+  InOut *io = static_cast<InOut *>(p);
+  SOCKET out = io->socket;
+  HANDLE in = io->handle;
   delete io;
 
   // This one solves a problem with W2K SP2.
@@ -153,9 +153,9 @@ DWORD __stdcall IOForwarder::ReaderThread(void *p) {
 }
 
 DWORD __stdcall IOForwarder::WriterThread(void *p) {
-  InOut *io = (InOut*) p;
-  SOCKET in = io->fd1;
-  HANDLE out = io->fd2;
+  InOut *io = static_cast<InOut *>(p);
+  SOCKET in = io->socket;
+  HANDLE out = io->handle;
   delete io;
 
   char buf[BUFFER_SIZE];
@@ -222,7 +222,9 @@ IODesc *IODesc::NewFromHandle(u_int dir, String *name, HANDLE handle) {
   Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_HANDLE|dir);
   p->InitArg(NAME_POS, name->ToWord());
-  p->InitArg(HANDLE_POS, Store::UnmanagedPointerToWord(handle));
+  Chunk *c = Store::AllocChunk(sizeof(HANDLE));
+  ((HANDLE *) c->GetBase())[0] = handle;
+  p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
   return static_cast<IODesc *>(p);
 }
@@ -251,7 +253,9 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
   p->InitArg(FLAGS_POS, TYPE_FORWARDED | dir);
   p->InitArg(NAME_POS, name->ToWord());
   p->InitArg(FD_POS, fd);
-  p->InitArg(HANDLE_POS, Store::UnmanagedPointerToWord(handle));
+  Chunk *c = Store::AllocChunk(sizeof(HANDLE));
+  ((HANDLE *) c->GetBase())[0] = handle;
+  p->InitArg(HANDLE_POS, c->ToWord());
   p->InitArg(FINALIZATION_KEY_POS, finalizationSet->Register(p->ToWord()));
   return static_cast<IODesc *>(p);
 }
