@@ -481,7 +481,7 @@ void ResolveInterpreter::DumpFrame(word wFrame) {
 }
 
 //
-// ClassLoader Method Implementations
+// ClassLoader Implementation
 //
 word ClassLoader::wBootstrapClassLoader;
 

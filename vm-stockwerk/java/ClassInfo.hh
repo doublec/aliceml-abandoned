@@ -19,7 +19,6 @@
 #endif
 
 #include "java/Data.hh"
-#include "java/Table.hh"
 #include "java/JavaByteCode.hh"
 #include "java/ClassLoader.hh"
 

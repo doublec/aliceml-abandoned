@@ -39,7 +39,6 @@ enum CONSTANT_tag {
 //
 // Symbolic Constant Pool Entries
 //
-
 class ConstantPoolEntry: private Block {
 public:
   using Block::ToWord;
@@ -171,9 +170,8 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
 }
 
 //
-// ClassFile Method Implementations
+// ClassFile Implementation
 //
-
 bool ClassFile::ParseMagic(u_int &offset) {
   return GetU4(offset) == MAGIC;
 }
@@ -554,6 +552,7 @@ ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   u_int superIndex = GetU2(offset);
   word super = superIndex?
     runtimeConstantPool->Get(superIndex): Store::IntToWord(0);
+  //--** For an interface, super must always be the class java/lang/Object
   Table *interfaces = ParseInterfaces(offset, runtimeConstantPool);
   Table *fields = ParseFields(offset, constantPool, runtimeConstantPool);
   if (fields == INVALID_POINTER) return INVALID_POINTER;

@@ -218,7 +218,6 @@ Class *Class::New(ClassInfo *classInfo) {
   // Initialize class:
   b->InitArg(CLASS_INFO_POS, classInfo->ToWord());
   b->InitArg(METHOD_HASH_TABLE_POS, methodHashTable->ToWord());
-  b->InitArg(NUMBER_OF_VIRTUAL_METHODS_POS, nVirtualMethods);
   b->InitArg(NUMBER_OF_INSTANCE_FIELDS_POS, nInstanceFields);
   b->InitArg(LOCK_POS, Lock::New()->ToWord());
   // Initialize static fields:
@@ -257,13 +256,12 @@ Class *Class::New(ClassInfo *classInfo) {
     i++;
   }
   // Initialize static methods and construct virtual table:
-  Block *virtualTable =
-    Store::AllocBlock(JavaLabel::VirtualTable, nVirtualMethods);
+  Table *virtualTable = Table::New(nVirtualMethods);
   b->InitArg(VIRTUAL_TABLE_POS, virtualTable->ToWord());
-  Block *superVirtualTable = super == INVALID_POINTER? INVALID_POINTER:
-    super->GetVirtualTable();
+  Table *superVirtualTable = super == INVALID_POINTER?
+    INVALID_POINTER: super->GetVirtualTable();
   for (i = nSuperVirtualMethods; i--; )
-    virtualTable->InitArg(i, superVirtualTable->GetArg(i));
+    virtualTable->Init(i, superVirtualTable->Get(i));
   RuntimeConstantPool *runtimeConstantPool =
     classInfo->GetRuntimeConstantPool();
   word classInitializer = null;
@@ -312,7 +310,7 @@ Class *Class::New(ClassInfo *classInfo) {
       VirtualMethodRef *methodRef =
 	VirtualMethodRef::FromWordDirect(wMethodRef);
       Assert(methodRef->GetClass() == theClass);
-      virtualTable->InitArg(methodRef->GetIndex(), wClosure);
+      virtualTable->Init(methodRef->GetIndex(), wClosure);
     }
   }
   b->InitArg(CLASS_INITIALIZER_POS, classInitializer);

@@ -50,25 +50,63 @@ public:
   static const BlockLabel ClassInfo           = (BlockLabel) (base + 5);
   // Runtime class representation
   static const BlockLabel RuntimeConstantPool = (BlockLabel) (base + 6);
-  static const BlockLabel VirtualTable        = (BlockLabel) (base + 7);
-  static const BlockLabel StaticFieldRef      = (BlockLabel) (base + 8);
-  static const BlockLabel InstanceFieldRef    = (BlockLabel) (base + 9);
-  static const BlockLabel StaticMethodRef     = (BlockLabel) (base + 10);
-  static const BlockLabel VirtualMethodRef    = (BlockLabel) (base + 11);
+  static const BlockLabel StaticFieldRef      = (BlockLabel) (base + 7);
+  static const BlockLabel InstanceFieldRef    = (BlockLabel) (base + 8);
+  static const BlockLabel StaticMethodRef     = (BlockLabel) (base + 9);
+  static const BlockLabel VirtualMethodRef    = (BlockLabel) (base + 10);
   // Code
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 12);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (base + 11);
   // Types
-  static const BlockLabel Class               = (BlockLabel) (base + 13);
-  static const BlockLabel ArrayType           = (BlockLabel) (base + 15);
-  static const BlockLabel PrimitiveType       = (BlockLabel) (base + 14);
+  static const BlockLabel Class               = (BlockLabel) (base + 12);
+  static const BlockLabel PrimitiveType       = (BlockLabel) (base + 13);
+  static const BlockLabel ArrayType           = (BlockLabel) (base + 14);
   // Data layer
-  static const BlockLabel Lock                = (BlockLabel) (base + 16);
-  static const BlockLabel Object              = (BlockLabel) (base + 17);
-  static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
+  static const BlockLabel Lock                = (BlockLabel) (base + 15);
+  static const BlockLabel Object              = (BlockLabel) (base + 16);
+  static const BlockLabel ObjectArray         = (BlockLabel) (base + 17);
   static const BlockLabel BaseArray           = CHUNK_LABEL;
 };
 
 static const word null = Store::IntToWord(0);
+
+class DllExport Table: private Block {
+protected:
+  enum {
+    COUNT_POS, // int
+    BASE_SIZE
+    // ... elements
+  };
+public:
+  using Block::ToWord;
+
+  static Table *New(u_int count) {
+    Block *b = Store::AllocBlock(JavaLabel::Table, BASE_SIZE + count);
+    b->InitArg(COUNT_POS, Store::IntToWord(count));
+    return static_cast<Table *>(b);
+  }
+  static Table *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Table);
+    return static_cast<Table *>(b);
+  }
+  static Table *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Table);
+    return static_cast<Table *>(b);
+  }
+
+  u_int GetCount() {
+    return Store::DirectWordToInt(GetArg(COUNT_POS));
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetCount());
+    InitArg(BASE_SIZE + index, value);
+  }
+  word Get(u_int index) {
+    Assert(index < GetCount());
+    return GetArg(BASE_SIZE + index);
+  }
+};
 
 //
 // Types
@@ -97,11 +135,10 @@ protected:
   enum {
     CLASS_INFO_POS, // ClassInfo
     METHOD_HASH_TABLE_POS, // HashTable(name x descriptor -> MethodRef)
-    NUMBER_OF_VIRTUAL_METHODS_POS, // int
-    NUMBER_OF_INSTANCE_FIELDS_POS, // int
-    VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
+    VIRTUAL_TABLE_POS, // Table(Closure)
     LOCK_POS, // Lock
     CLASS_INITIALIZER_POS, // Closure | int(0)
+    NUMBER_OF_INSTANCE_FIELDS_POS, // int
     BASE_SIZE
     // ... static fields
     // ... static methods
@@ -137,14 +174,11 @@ public:
   u_int GetNumberOfInstanceFields() {
     return Store::DirectWordToInt(GetArg(NUMBER_OF_INSTANCE_FIELDS_POS));
   }
-  u_int GetNumberOfVirtualMethods() {
-    return Store::DirectWordToInt(GetArg(NUMBER_OF_VIRTUAL_METHODS_POS));
-  }
-  Block *GetVirtualTable() {
-    return Store::DirectWordToBlock(GetArg(VIRTUAL_TABLE_POS));
+  Table *GetVirtualTable() {
+    return Table::FromWordDirect(GetArg(VIRTUAL_TABLE_POS));
   }
   Closure *GetVirtualMethod(u_int index) {
-    return Closure::FromWordDirect(GetVirtualTable()->GetArg(index));
+    return Closure::FromWordDirect(GetVirtualTable()->Get(index));
   }
   class Lock *GetLock();
   Closure *GetClassInitializer() {
