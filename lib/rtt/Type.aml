@@ -444,6 +444,8 @@ end)
 
     fun close t =
     	let
+	    val trail = ref []
+
 	    fun close(a as ref(HOLE(k,n)), f) =
 		if n > !level then
 		    ( update(a, VAR(k,n)) ; fn t => f(inAll(a,t)) )
@@ -459,6 +461,9 @@ end)
 		if n > !level then
 		    fn t => f(inAll(a,t))
 		else f
+
+	      | close(ref(ALL(a,t) | EX(a,t)), f) =
+		( a := MARK(!a) ; f )	(* Hack! *)
 
 	      | close(_, f) = f
 	in
