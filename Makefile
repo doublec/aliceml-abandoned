@@ -28,7 +28,7 @@ endif
 ##
 ## Do it!
 ##
-install: install-mozart
+install: install-mozart man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
 	@echo Time for build 1:
@@ -36,7 +36,7 @@ install: install-mozart
 	@echo Time for build 3:
 	@cat $(TIMEDIR)3
 	
-install-common: install-prelude bootstrap-smlnj doc man
+install-common: install-prelude bootstrap-smlnj doc
 
 install-prelude:
 	@echo Installing Alice to $(PREFIX) for $(PLATFORM)...
