@@ -6,7 +6,7 @@ PLATFORM = x86-linux
 all: stoc-frontend.$(PLATFORM)
 
 stoc-frontend.$(PLATFORM):
-	$(SML) < Executable.sml
+	echo 'use "Executable.sml";' | $(SML)
 
 clean:
 	-rm -rf CM
