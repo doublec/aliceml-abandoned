@@ -60,4 +60,8 @@ final public class DMLConVal implements DMLValue {
 	else
 	    out.defaultWriteObject();
     }
+
+    final public DMLConstructor getConstructor() {
+	return constructor;
+    }
 }
