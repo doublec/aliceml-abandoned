@@ -283,14 +283,14 @@ guard expression occurs whenever the pattern is tried to be matched.</P>
 cyclic lists:</P>
 
 <PRE class=code>
-val xs = 1::2::xs</PRE>
+val rec xs = 1::2::xs</PRE>
 
 <P>Or regular trees:</P>
 
 <PRE class=code>
 datatype tree = LEAF | BRANCH of tree * tree
 
-val tree = BRANCH(BRANCH(tree,LEAF), tree)</PRE>
+val rec tree = BRANCH(BRANCH(tree,LEAF), tree)</PRE>
 
 <P>The right-hand sides of recursive bindings may be any expressions that are
 <EM>non-expansive</EM> (i.e. syntactic values) and match the corresponding
@@ -298,7 +298,7 @@ left-hand side patterns (statically). Unfounded recursion is legal, but
 evaluates to <A href="futures.html">futures</A> that cannot be eliminated:</P>
 
 <PRE class=code>
-val (x,y) = (y,x)</PRE>
+val rec (x,y) = (y,x)</PRE>
 
 <P>Note that the same data structures are constructable by explicit use of <A
 href="futures.html#promises">promises</A>.</P>
