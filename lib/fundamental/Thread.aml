@@ -30,6 +30,7 @@ struct
     datatype state = RUNNABLE | BLOCKED | TERMINATED
 
     __primitive exception Terminate			= "Thread.Terminate"
+    __primitive exception Terminated			= "Thread.Terminated"
 
     __primitive val current :	unit -> thread		= "Thread.current"
     __primitive val state :	thread -> state		= "Thread.state"
