@@ -23,7 +23,7 @@ structure World =
   type world = int * cell array
 
   (* Managing the world *)
-  fun newWorld(x_size, y_size) = Array.array(x_size*y_size,emptyCell)
+  fun newWorld(x_size, y_size) = (x_size, Array.array(x_size*y_size,emptyCell))
                                              
   fun getCellAt((xs, cells):world, (x,y)) =
       Array.sub(cells, xs*x+y)
