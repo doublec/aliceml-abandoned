@@ -1,9 +1,9 @@
 structure Abbrev  =
     struct
-	val CBind          = ("de/uni_sb/ps/dml/runtime/DMLConstants/dmlbind","de/uni_sb/ps/dml/runtime/DMLExName")
+	val CBind          = ("de/uni_sb/ps/dml/runtime/DMLConstants/dmlbind","de/uni_sb/ps/dml/runtime/DMLName")
 	val CCons          = ("de/uni_sb/ps/dml/builtin/DMLConstants/cons","de/uni-sb/ps/dml/runtime/DMLConstructor")
 	val CFalse         = ("de/uni_sb/ps/dml/builtin/DMLConstants/dmlfalse","de/uni_sb/ps/dml/runtime/DMLName")
-	val CMatch         = ("de/uni_sb/ps/dml/runtime/DMLConstants/dmlmatch","de/uni_sb/ps/dml/runtime/DMLExName")
+	val CMatch         = ("de/uni_sb/ps/dml/runtime/DMLConstants/dmlmatch","de/uni_sb/ps/dml/runtime/DMLName")
 	val CNil          = ("de/uni_sb/ps/dml/builtin/DMLConstants/dmlnil","de/uni_sb/ps/dml/runtime/DMLName")
 	val CTrue          = ("de/uni_sb/ps/dml/builtin/DMLConstants/dmltrue","de/uni_sb/ps/dml/runtime/DMLName")
 	val CUnit          = ("de/uni_sb/ps/dml/runtime/DMLConstants/dmlunit","de/uni_sb/ps/dml/runtime/DMLName")
@@ -12,7 +12,7 @@ structure Abbrev  =
 	val CConstructor   = "de/uni_sb/ps/dml/runtime/DMLConstructor"
 	val CConVal        = "de/uni_sb/ps/dml/runtime/DMLConVal"
 	val CExWrap        = "de/uni_sb/ps/dml/runtime/DMLExceptionWrapper"
-	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/DMLFcnClosure"
+	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/DMLFunction"
 	val CFuture        = "de/uni_sb/ps/dml/runtime/DMLFuture"
 	val CInt           = "de/uni_sb/ps/dml/runtime/DMLInt"
 	val CInternalError = "de/uni_sb/ps/dml/runtime/DMLInternalError"
