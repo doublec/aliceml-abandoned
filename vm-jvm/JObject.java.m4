@@ -28,4 +28,8 @@ final public class DMLObject implements DMLValue {
     final public Object getObject() {
 	return javaObject;
     }
+
+    final public String toString() {
+	return javaObject.getClass().getName()+": "+javaObject+" : APIObject";
+    }
 }

@@ -11,7 +11,7 @@ abstract public class DMLBuiltin implements DMLValue {
     }
 
     final public String toString() {
-	return "compiled function: "+this.getClass();
+	return "builtin function: "+this.getClass();
     }
 
     final public DMLValue getValue() {

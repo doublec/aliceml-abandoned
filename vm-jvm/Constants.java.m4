@@ -14,4 +14,13 @@ final public class DMLConstants {
     public static final DMLConstructor reference    = new DMLConstructor("reference");
     public static final DMLConstructor cons         = new DMLConstructor("list");
 
+    /** Diese Exception gibt's, um java-Exceptions zu verpacken */
+    public static final DMLConstructor javaAPIException = new DMLConstructor("javaAPIException");
+
+    /** Diese Exception zeigt wirkliche FEHLER des Benutzers an:
+     *  - nicht-existierende Methoden/Konstructoren
+     *  - Sicherheitsfehler
+     */
+    public static final DMLConstructor javaAPIError = new DMLConstructor("javaAPIError");
+
 }

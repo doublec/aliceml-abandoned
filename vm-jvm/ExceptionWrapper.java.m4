@@ -11,4 +11,8 @@ final public class DMLExceptionWrapper extends RuntimeException {
     public DMLValue getValue() {
 	return value;
     }
+
+    public String toString() {
+	return "\n\t"+value;
+    }
 }
