@@ -480,6 +480,9 @@ build1/compiler/backend-stockwerk/%.aml: compiler/backend-stockwerk/%.aml \
 build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
+build1/compiler/ToplevelMain.aml: compiler/ToplevelMainStockwerk.aml
+	cat Rel1.import $< > $@
+
 build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
