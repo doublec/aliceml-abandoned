@@ -1799,7 +1799,7 @@ TagVal *NativeCodeJitter::InstrCompactIntTest(TagVal *pc) {
   u_int IntVal = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
   KillIdRef(pc->Sel(0));
   JITStore::DirectWordToInt(JIT_R0, IntVal);
-  int indexOffset = Store::DirectWordToInt(pc->Sel(1));
+  s_int indexOffset = Store::DirectWordToInt(pc->Sel(1));
   if (indexOffset != 0)
     jit_subi_i(JIT_R0, JIT_R0, indexOffset);
   Vector *tests      = Vector::FromWordDirect(pc->Sel(2));
