@@ -4,24 +4,21 @@
 ## copy this file into a directory with all the tar.gz source packages.
 ## Then run make to generate the Debian packages.
 
-SEAMVERSION = 1.0.0
-ALICEVERSION = 1.0.1
-GECODEVERSION = 0.9
+URL = http://www.ps.uni-sb.de/alice/download
+
+REVISION = 1
+PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
+	alice-gecode-1.0.1 alice-gtk-1.0.1 \
+	alice-runtime-1.0.1
+
+all: $(PACKAGES:%=%.tar.gz)
 
 DPKGOPTIONS =
 
-TARGETS = seam-$(SEAMVERSION) \
-	alice-$(SEAMVERSION) \
-	alice-runtime-$(ALICEVERSION) \
-	gecode-$(GECODEVERSION) \
-	alice-gecode-$(ALICEVERSION) \
-	alice-gtk-$(ALICEVERSION)
-
-all: $(TARGETS)
-
-$(TARGETS): % : %.tar.gz
-	tar xzf $< && \
-	cd $@ && \
+$(PACKAGES:%=%.tar.gz): %:
+	curl $(URL)/$@ -o $@
+	tar xzf $@ && \
+	cd $(@:%.tar.gz=%) && \
 	dpkg-buildpackage -rfakeroot $(DPKGOPTIONS)
 
 clean:
