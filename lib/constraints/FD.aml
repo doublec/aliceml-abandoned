@@ -37,7 +37,8 @@ structure FD :> FD =
 	datatype dist_mode =
 	    NAIVE
 	  | FIRSTFAIL
-	  | SPLIT
+	  | SPLIT_MIN
+	  | SPLIT_MAX
 	  | NBSUSPS
 
 	datatype assign =
