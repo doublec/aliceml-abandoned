@@ -144,6 +144,7 @@ struct
 	    Debug.dumpPhases := false;
 	    Language.allowUnclosedComponents := true;
 	    Language.reexportImport := true;
+	    Language.retainFullImport := true;
 	    Global.traceComponentAccess := true;
 	    main'(OptionParser.parse arguments)
 	end
