@@ -188,12 +188,15 @@ LIBRTTSOURCES0 = \
 	PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml \
 	PPInf.aml RTT.aml
 LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
+LIBDISTRIBUTIONSOURCES0 = \
+	UnsafeRemote.asig HTTP_SERVER-sig.aml HttpServer.aml HttpServerMain.aml
 
 LIBSOURCES0 = \
 	$(LIBSYSTEMSOURCES0:%=system/%) \
 	$(LIBUTILITYSOURCES0:%=utility/%) \
 	$(LIBRTTSOURCES0:%=rtt/%) \
-	$(LIBMLYACCSOURCES0:%=ml-yacc/%)
+	$(LIBMLYACCSOURCES0:%=ml-yacc/%) \
+	$(LIBDISTRIBUTIONSOURCES0:%=distribution/%)
 LIBSOURCES = \
 	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
 	$(LIBSOURCES0:%=lib/%)
@@ -316,8 +319,8 @@ ALLSOURCES = $(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
-	compiler compiler/infrastructure compiler/common compiler/top \
-	compiler/frontend-common compiler/frontend-sml \
+	lib/distribution compiler compiler/infrastructure compiler/common \
+	compiler/top compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
 	compiler/backend-dotnet compiler/backend-stockwerk linker
 
@@ -400,10 +403,7 @@ build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 build1/lib/fundamental/%.aml: lib/fundamental/%.aml
 	cp $< $@
 
-build1/lib/system/%.asig: lib/system/%.asig Rel2.import
-	cat Rel2.import $< > $@
-
-build1/lib/utility/%.asig: lib/utility/%.asig Rel2.import
+build1/lib/%.asig: lib/%.asig Rel2.import
 	cat Rel2.import $< > $@
 
 build1/lib/%.aml: lib/%.aml Rel2.import
