@@ -57,4 +57,7 @@ and fib' n =
 	future res
     end
 
-val _ = show (fib 15)
+fun loop 0 = ()
+  | loop n = (fib 12; loop (n - 1))
+
+val _ = loop 50
