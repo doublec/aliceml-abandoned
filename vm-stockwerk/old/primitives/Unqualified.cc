@@ -55,7 +55,15 @@ static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
     }
     RETURN_BOOL(true);
   case CHUNK_LABEL:
-    RETURN_BOOL(false); //--** implement
+    {
+      u_int size = a->GetSize();
+      if (b->GetSize() != size)
+	RETURN_BOOL(false);
+      for (u_int i = 1; i <= size; i++)
+	if (a->GetArg(i) != b->GetArg(i))
+	  RETURN_BOOL(false);
+      RETURN_BOOL(true);
+    }
   default:
     if (label == b->GetLabel()) {
       RETURN_BOOL(a == b);
