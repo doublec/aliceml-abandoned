@@ -42,8 +42,6 @@ u_int Store::memMax[STORE_GENERATION_NUM];
 u_int Store::memFree;
 u_int Store::memTolerance;
 
-char *Store::curChunkMax;
-s_int Store::curChunkTop;
 MemChunk *Store::curChunk;
 u_int Store::hdrGen;
 u_int Store::dstGen;
@@ -54,9 +52,8 @@ u_int Store::needGC          = 0;
 Finalization *Store::handler = INVALID_POINTER;
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-u_int Store::totalMem = 0;
+u_int Store::totalMem  = 0;
 u_int Store::gcLiveMem = 0;
-u_int MemChunk::counter =  0;
 struct timeval *Store::sum_t;
 #endif
 
@@ -64,28 +61,13 @@ struct timeval *Store::sum_t;
 // Method Implementations
 //
 
-static inline u_int GetMagicHeader() {
-  return HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-}
-
 inline u_int Store::GetMemUsage(MemChunk *chunk) {
   u_int size = 0;
-  
-  chunk = chunk->GetNext();
-  while (!chunk->IsAnchor()) {
-    s_int top = (s_int) ((chunk == curChunk) ? curChunkTop : chunk->GetTop());
-    
-    size += (chunk->GetSize() + top);
+  while (chunk != NULL) {
+    size += (u_int) (chunk->GetTop() - chunk->GetBase());
     chunk = chunk->GetNext();
   }
   return size;
-}
-
-inline void Store::SwitchToChunk(MemChunk *chunk) {
-  curChunk->SetTop(curChunkTop);
-  curChunkTop = chunk->GetTop();
-  curChunkMax = chunk->GetMax();
-  curChunk    = chunk;
 }
 
 inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
@@ -96,36 +78,30 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
     div_t d    = std::div(size, STORE_MEMCHUNK_SIZE);
     alloc_size = ((d.quot + (d.rem ? 1 : 0)) * STORE_MEMCHUNK_SIZE);
   }
-
-  // Allocate a Chunk
-  MemChunk *root  = roots[gen];
-  MemChunk *chunk = new MemChunk(root, curChunk, alloc_size);
-  // Store chunk into Chain and prepare for next (Fast|GC)Alloc
-  root->SetNext(chunk);
-  curChunk->SetPrev(chunk);
-  SwitchToChunk(chunk);
-
+  // Allocate a new Chunk
+  MemChunk *chunk = new MemChunk(roots[gen], alloc_size);
+  roots[gen] = chunk;
+  curChunk   = chunk;
   needGC = (GetMemUsage(roots[gen]) > memMax[gen]);
 }
 
 inline char *Store::GCAlloc(u_int size, u_int header) {
   for (;;) {
-    char *p      = (curChunkMax + curChunkTop);
-    s_int newtop = (curChunkTop + size);
-
-    ((u_int *) p)[-1] = header;
-    if (newtop >= 0) {
-      ((u_int *) p)[-1] = GetMagicHeader();  // Restore old end mark
+    char *p      = curChunk->GetTop();
+    char *newtop = p + size; 
+    if (newtop >= curChunk->GetMax()) {
       AllocNewMemChunk(size, Store::dstGen);
       continue;
     }
-    curChunkTop = newtop;
+    curChunk->SetTop(newtop);
+    ((u_int *) p)[0] = header;
     return p;
   }
 }
 
 inline char *Store::GCAlloc(u_int size) {
-  return Store::GCAlloc(BlockMemSize(size), HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen));
+  return Store::GCAlloc(BlockMemSize(size),
+			HeaderOp::EncodeHeader(MIN_DATA_LABEL, size, hdrGen));
 }
 
 inline Block *Store::AddToFinSet(Block *p, word value) {
@@ -156,30 +132,19 @@ inline Block *Store::AddToFinSet(Block *p, word value) {
   return np;
 }
 
-void Store::AllocNewMemChunk() {
-  Block *p = (Block *) (curChunkMax + curChunkTop);
-  AllocNewMemChunk((1 + HeaderOp::DecodeSize(p)) * sizeof(u_int), HeaderOp::DecodeGeneration(p));
+void Store::AllocNewMemChunk(u_int size) {
+  AllocNewMemChunk(size, 0);
 }
 
 inline void Store::FreeMemChunks(MemChunk *chunk, const u_int threshold) {
-  chunk = chunk->GetNext();
-
   u_int used = 0;
-  while (!chunk->IsAnchor()) {
+  while (chunk != NULL) {
     MemChunk *next = chunk->GetNext();
-    
-    if (used < threshold) {
-      used += chunk->GetSize();
-#if defined(STORE_DEBUG)
-      std::printf("clearing... %d\n", chunk->id);
-#endif
+    if (used <= threshold) {
       chunk->Clear();
+      used += (u_int) (chunk->GetMax() - chunk->GetBase());
     }
     else {
-      MemChunk *prev = chunk->GetPrev();
-
-      prev->SetNext(next);
-      next->SetPrev(prev);
       delete chunk;
     }
     chunk = next;
@@ -190,8 +155,23 @@ inline Block *Store::CloneBlock(Block *p) {
   u_int size   = HeaderOp::DecodeSize(p);
   u_int header = HeaderOp::EncodeHeader(HeaderOp::DecodeLabel(p), size, hdrGen);
   Block *newp  = (Block *) Store::GCAlloc(BlockMemSize(size), header);
-
-  std::memcpy(newp, p, (size * sizeof(u_int)));
+  std::memcpy(newp->GetBase(), p->GetBase(), (size * sizeof(u_int)));
+#if defined(STORE_GC_DEBUG)
+  if (p->GetSize() != newp->GetSize()) {
+    std::fprintf(stderr, "size mismatch in copyied block: %u != %u\n",
+		 p->GetSize(), newp->GetSize());
+    ((char *) NULL)[0] = '\0';
+  }
+  for (u_int i = size; i--;) {
+    AssertStore(p->GetArg(i) != (word) 0);
+    AssertStore(newp->GetArg(i) != (word) 0);
+    if (p->GetArg(i) != newp->GetArg(i)) {
+      std::fprintf(stderr, "Block mismatch at %d: %u != %u\n", i,
+		   p->GetArg(i), newp->GetArg(i));
+      ((char *) NULL)[0] = '\0';
+    }
+  }
+#endif
   GCHelper::MarkMoved(p, newp);
   return newp;
 }
@@ -200,14 +180,17 @@ inline word Store::ForwardWord(word p) {
   if (PointerOp::IsInt(p)) {
     return p;
   }
-
   Block *sp = PointerOp::RemoveTag(p);
   // order is important because moving ptr overwrites gen assignment
   if (GCHelper::AlreadyMoved(sp)) {
-    return PointerOp::EncodeTag(GCHelper::GetForwardPtr(sp), PointerOp::DecodeTag(p));
+    sp = GCHelper::GetForwardPtr(sp);
+    p = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(p));
+    return p;
   }
   else if (HeaderOp::DecodeGeneration(sp) < dstGen) {
-    return PointerOp::EncodeTag(CloneBlock(sp), PointerOp::DecodeTag(p));
+    sp = CloneBlock(sp);
+    p = PointerOp::EncodeTag(sp, PointerOp::DecodeTag(p));
+    return p;
   }
   else {
     return p;
@@ -215,7 +198,12 @@ inline word Store::ForwardWord(word p) {
 }
 
 inline Block *Store::ForwardSet(Block *p) {
-  return ((HeaderOp::DecodeGeneration(p) < dstGen) ? CloneBlock(p) : p);
+  if (HeaderOp::DecodeGeneration(p) < dstGen) {
+    return CloneBlock(p);
+  }
+  else {
+    return p;
+  };
 }
 
 inline s_int Store::CanFinalize(Block *p) {
@@ -225,49 +213,51 @@ inline s_int Store::CanFinalize(Block *p) {
 	  ((l == WEAK_DICT_LABEL) && ((WeakDictionary *) p)->GetCounter() == 0));
 }
 
-inline void Store::CheneyScan(MemChunk *chunk, Block *scan) {
-  while (!chunk->IsAnchor()) {
+inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
+  // std::fprintf(stderr, "Store::CheneyScan: enter\n");
+  while (chunk != NULL) {
     // Scan current MemChunk
-    while (HeaderOp::GetHeader(scan) != GetMagicHeader()) {
+    while (scan < chunk->GetTop()) {
       // Test for HandlerBlock must be done only once
-      BlockLabel l = scan->GetLabel();
+      Block *p     = (Block *) scan;
+      BlockLabel l = p->GetLabel();
+      //u_int index = GetTableIndex(scan);
+      //      std::fprintf(stderr, "scanning block %d (%d)[%d] at %p\n",
+      //		   counter++, l, index, scan);
       if (l == HANDLERBLOCK_LABEL) {
-	PointerOp::DecodeHandler(scan)->PrepareForGC(scan);
+	PointerOp::DecodeHandler(p)->PrepareForGC(p);
       }
     
       // Scan current tuple (if not CHUNK or WEAK_DICT_LABEL)
-      u_int cursize = HeaderOp::DecodeSize(scan);
+      u_int cursize = HeaderOp::DecodeSize(p);
       if ((l != CHUNK_LABEL) && (l != WEAK_DICT_LABEL)) {
 	for (u_int i = cursize; i--;) {
-	  scan->InitArg(i, Store::ForwardWord(PointerOp::Deref(scan->GetArg(i))));
+	  //	  std::fprintf(stderr, "scanning index %d/%d\n", i, cursize);
+	  word item = p->GetArg(i);
+	  item = PointerOp::Deref(item);
+	  item = Store::ForwardWord(item);
+	  p->InitArg(i, item);
 	}
       }
-      scan = (Block *) ((char *) scan + BlockMemSize(cursize));
+      scan += BlockMemSize(cursize);
     }
-
     chunk = chunk->GetPrev();
-    scan  = (Block *) (chunk->GetBottom() + sizeof(u_int));
+    if (chunk != NULL) {
+      scan = chunk->GetBase();
+    }
   }
 }
 
-void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int mem_tolerance) {
+void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
+  u_int mem_free, u_int mem_tolerance) {
   for (u_int i = STORE_GENERATION_NUM; i--;) {
-    MemChunk *lanchor  = new MemChunk();
-    MemChunk *ranchor  = new MemChunk();
-    MemChunk *memChunk = new MemChunk(lanchor, ranchor, STORE_MEMCHUNK_SIZE);
-
-    lanchor->SetNext(memChunk);
-    ranchor->SetPrev(memChunk);
-    Store::roots[i]  = lanchor;
+    Store::roots[i]  = new MemChunk(NULL, STORE_MEMCHUNK_SIZE);
     Store::memMax[i] = mem_max[i];
   }
   Store::memFree      = mem_free;
   Store::memTolerance = mem_tolerance;
   // Prepare Memory Allocation
-  MemChunk *anchor = roots[0]->GetNext();
-  curChunkTop = anchor->GetTop();
-  curChunkMax = anchor->GetMax();
-  curChunk    = anchor;
+  curChunk = roots[0];
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
@@ -281,8 +271,7 @@ void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free, u_int
 void Store::CloseStore() {
   for (int i = (STORE_GENERATION_NUM - 1); i--;) {
     MemChunk *chain = roots[i];
-
-    while (chain != INVALID_POINTER) {
+    while (chain != NULL) {
       MemChunk *tmp = chain->GetNext();
       delete chain;
       chain = tmp;
@@ -300,16 +289,15 @@ void Store::RegisterWeakDict(WeakDictionary *v) {
 }
 
 word Store::ResolveForwardPtr(word v) {
-  word dv = PointerOp::Deref(v);
-
-  if (!PointerOp::IsInt(dv)) {
-    Block *p = PointerOp::RemoveTag(dv);
-
+  v = PointerOp::Deref(v);
+  if (!PointerOp::IsInt(v)) {
+    Block *p = PointerOp::RemoveTag(v);
     if (HeaderOp::DecodeGeneration(p) == 0) {
-      return PointerOp::EncodeTag(GCHelper::GetForwardPtr(p), PointerOp::DecodeTag(dv));
+      return PointerOp::EncodeTag(GCHelper::GetForwardPtr(p),
+				  PointerOp::DecodeTag(v));
     }
   }
-  return dv;
+  return v;
 }
 
 inline void Store::HandleInterGenerationalPointers(u_int gen) {
@@ -473,7 +461,7 @@ inline Block *Store::HandleWeakDictionaries() {
   }
   // Phase Three: Forward Dictionary Contents and record Finalize Candiates
   MemChunk *chunk = curChunk;
-  char *scan      = (curChunkMax + curChunkTop);
+  char *scan      = curChunk->GetTop();
   for (u_int i = rs_size; i >= 1; i--) {
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Block *table         = dict->GetTable();
@@ -521,7 +509,7 @@ inline Block *Store::HandleWeakDictionaries() {
     }
   }
   // Now successivly forward the finalized tree
-  Store::CheneyScan(chunk, (Block *) scan);
+  Store::CheneyScan(chunk, scan);
 #if defined(STORE_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
@@ -535,72 +523,61 @@ static inline u_int min(u_int a, u_int b) {
 inline void Store::DoGC(word &root, const u_int gen) {
   dstGen = (gen + 1);
   hdrGen = ((dstGen == (STORE_GENERATION_NUM - 1)) ? gen : dstGen);
-
   // Switch to the new Generation
-  SwitchToChunk(roots[dstGen]->GetNext());
-
+  curChunk = roots[dstGen];
   // Copy Root-, Intgen- and WeakDict-Set to New Memory (if appropriate)
   Block *root_set = ForwardSet(Store::WordToBlock(root));
   intgenSet       = (Set *) ForwardSet((Block *) intgenSet);
   wkDictSet       = (Set *) ForwardSet((Block *) wkDictSet);
-
   // Obtain scan start
   MemChunk *chunk = curChunk;
-  char *scan      = (curChunkMax + curChunkTop);
-
+  char *scan      = curChunk->GetTop();
   // Copy matching rootset entries
   for (u_int i = root_set->GetSize(); i--;) {
-    root_set->InitArg(i, Store::ForwardWord(PointerOp::Deref(root_set->GetArg(i))));
+    word item = root_set->GetArg(i);
+    item = PointerOp::Deref(item);
+    item = Store::ForwardWord(item);
+    root_set->InitArg(i, item);
   }
   // Scanning chunks (root_set amount)
-  Store::CheneyScan(chunk, (Block *) scan);
-
+  Store::CheneyScan(chunk, scan);
   // Obtain new scan start (to scan intgen set stuff)
   chunk = curChunk;
-  scan  = (curChunkMax + curChunkTop);
+  scan  = curChunk->GetTop();
   // Handle InterGenerational Pointers
   Store::HandleInterGenerationalPointers(gen);
   // Scan chunks (intgen_set amount)
-  Store::CheneyScan(chunk, (Block *) scan);
-
+  Store::CheneyScan(chunk, scan);
   // Handle Weak Dictionaries, if any (performs scanning itself)
   Block *arr = INVALID_POINTER;
   if (wkDictSet->GetSize() != 0) {
     arr = Store::HandleWeakDictionaries();
   }
-  
   // Clean up Collected regions
   for (u_int i = dstGen; i--;) {
     Store::FreeMemChunks(roots[i], memMax[i]);
   }
-
   // Switch Semispaces
   if (dstGen == (STORE_GENERATION_NUM - 1)) {
     MemChunk *tmp = roots[STORE_GENERATION_NUM - 2];
     roots[STORE_GENERATION_NUM - 2] = roots[STORE_GENERATION_NUM - 1];
     roots[STORE_GENERATION_NUM - 1] = tmp;
   }
-
   // Clear GC Flag and Calc Limits for next gen GC
   needGC = 0;
   // Calc Limits for next GC
   u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
-
   // Try to align them to block size
   s_int block_size = STORE_MEMCHUNK_SIZE;
   s_int block_dist = wanted % block_size;
-
   if (block_dist > 0) {
     block_dist = block_size - block_dist;
   }
-
   wanted += min(block_dist, ((wanted * memTolerance) / 100));
   memMax[hdrGen] = wanted;
-
   // Switch back to Generation Zero and Adjust Root Set
-  SwitchToChunk(roots[0]->GetNext());
+  curChunk = roots[0];
   root = root_set->ToWord();
-
   // Call Finalization Handler
   if ((arr != INVALID_POINTER) && (handler != INVALID_POINTER)) {
     u_int size = (Store::WordToInt(arr->GetArg(0)) - 1);
@@ -617,9 +594,10 @@ void Store::DoGC(word &root) {
 #endif
   // Determine GC Range
   u_int gen = (STORE_GENERATION_NUM - 2);
-  while ((gen > 0) && (GetMemUsage(roots[gen]) <= memMax[gen])) {
-    gen--;
-  }
+  // to be done
+  //while ((gen > 0) && (GetMemUsage(roots[gen]) <= memMax[gen])) {
+  //  gen--;
+  // }
 
 #if defined(STORE_DEBUG)
   std::printf("GCing all gens <= %d.\n", gen);
@@ -664,11 +642,61 @@ void Store::SetGCParams(u_int mem_free, u_int mem_tolerance) {
 }
 
 #if defined(STORE_DEBUG)
+u_int path[100000];
+Block *cycles[100000];
+u_int depth = 0;
+
+void Store::Verify(word x) {
+  AssertStore(depth < 100000);
+  if (PointerOp::IsInt(x)) {
+    AssertStore(PointerOp::DecodeInt(x) != INVALID_INT);
+  }
+  else {
+    Block *p = PointerOp::RemoveTag(x);
+    if (GCHelper::AlreadyMoved(p)) {
+      p = GCHelper::GetForwardPtr(p);
+    }
+    std::fprintf(stderr, ".");
+    for (u_int i = depth; i--;) {
+      if (cycles[i] == p)
+  	return;
+    }
+    std::fprintf(stderr, ".");
+    cycles[depth] = p;
+    BlockLabel l = p->GetLabel();
+    if (l != CHUNK_LABEL) {
+      u_int size = p->GetSize();
+      for (u_int i = size; i--;) {
+  	word item = p->GetArg(i);
+  	path[depth++] = i;
+	std::fprintf(stderr, ".");
+  	Verify(item);
+  	depth--;
+      }
+    }
+  }
+}
+
 void Store::ForceGC(word &root, const u_int gen) {
   Store::DoGC(root, gen);
 }
+
 #endif
 
+#if defined(STORE_GC_DEBUG)
+void Store::CheckAlive(char *p) {
+  MemChunk *chunk = roots[0];
+  if (p != NULL) {
+    while (chunk != NULL) {
+      if (p >= chunk->GetBase() && (p < chunk->GetTop()))
+	return;
+      chunk = chunk->GetNext();
+    }
+    std::fprintf(stderr, "Illegal blcok ptr to non-alive struct\n");
+    ((char *) NULL)[0] = 0x00;
+  }
+}
+#endif
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
@@ -676,19 +704,18 @@ void Store::MemStat() {
   std::printf("ingen_set size: %u\n", intgenSet->GetSize());
   std::printf("---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    MemChunk *chunk = roots[i]->GetNext();
+    MemChunk *chunk = roots[i];
     u_int used      = 0;
     u_int total     = 0;
-
-    while (!chunk->IsAnchor()) {
-      u_int size = chunk->GetSize();
-      s_int top  = (s_int) ((chunk == curChunk) ? curChunkTop : chunk->GetTop());
-      
-      used += (size + top);
-      total += size;
+    while (chunk != NULL) {
+      char *base = chunk->GetBase();
+      char *top  = chunk->GetTop();
+      used  += (u_int) (top - base);
+      total += (u_int) (chunk->GetMax() - base);
       chunk = chunk->GetNext();
     }
-    std::printf("G%d --> Used: %8u; Total: %8u; GC-Limit: %8u.\n", i, used, total, memMax[i]);
+    std::printf("G%d --> Used: %8u; Total: %8u; GC-Limit: %8u.\n",
+		i, used, total, memMax[i]);
   }
   std::printf("---\n");
   std::fflush(stdout);
@@ -696,7 +723,6 @@ void Store::MemStat() {
 
 void Store::ResetTime() {
   sum_t->tv_sec = sum_t->tv_usec = 0;
-
   totalMem = 0;
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     totalMem += Store::GetMemUsage(roots[i]);
