@@ -4,7 +4,7 @@
  *   does not support it.
  *)
 
-signature INTERMEDIATE =
+signature INTERMEDIATE_GRAMMAR =
   sig
 
     (* Generic *)

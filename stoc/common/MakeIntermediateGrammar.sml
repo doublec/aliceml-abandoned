@@ -4,8 +4,8 @@
  *   does not support it.
  *)
 
-functor Intermediate(type info
-		     val dummy: info) :> INTERMEDIATE where type info = info =
+functor MakeIntermediateGrammar(type info val dummy: info) :>
+  INTERMEDIATE_GRAMMAR where type info = info =
   struct
 
     (* Generic *)

@@ -1,3 +1,3 @@
-structure PostTranslationIntermediate =
-		Intermediate(type info = Source.position
-			     val dummy = Source.nowhere)
+structure IntermediateGrammar =
+		MakeIntermediateGrammar(type info = Source.position
+					val dummy = Source.nowhere)
