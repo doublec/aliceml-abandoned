@@ -64,7 +64,7 @@ local
 	  | EVENT_BUTTON_RELEASE of { button:int, x:real, y:real }
 	  | EVENT_MOTION_NOTIFY of {x:real, y:real}
 	  | EVENT_UNKNOWN
-
+(****)
 	fun getEvent ev =
 	    (case Gdk.eventAnyGetFieldType ev of
 		Gdk.BUTTON_PRESS => 
@@ -82,7 +82,7 @@ local
 		    { x=(Gdk.eventMotionGetFieldX ev),
 		      y=(Gdk.eventMotionGetFieldY ev) }
 	      | _ => EVENT_UNKNOWN )
-
+(****)
     in
 	fun rectangleHandler(item, event) =
 	    (case getEvent event of

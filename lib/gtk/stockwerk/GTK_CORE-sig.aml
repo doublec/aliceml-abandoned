@@ -17,6 +17,6 @@ sig
     val signalDisconnect       : object * int -> unit
     val signalDisconnectByFunc : object * callBackFunction -> unit
 
-(**)val addObject : object * int -> object
+(**)val addObject : object * (object -> unit) * bool -> object
 (**)val init : unit -> unit
 end

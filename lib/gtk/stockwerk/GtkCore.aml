@@ -16,6 +16,11 @@ struct
     local
 	val weakMap = 
 	    ref nil : ( object * (object->unit) * int list ref ) list ref
+
+        fun weakMapRemove p = List.filter (fn (p',_,_) => p<>p') (!weakMap)
+	fun finalizer nil                        = ()
+	  | finalizer ((obj as (p,unref,_))::xs) = 
+	        (weakMapRemove p ; unref p ; finalizer xs)
     in
 	fun weakMapAdd (_,obj) = ( weakMap := (obj::(!weakMap)) )
 	fun weakMapContains p = List.exists (fn (p',_,_) => p=p') (!weakMap)
@@ -67,13 +72,24 @@ struct
     local
 	fun addDestroyEvent (obj as (p,_,_)) =
 	    let
+                (* - Gtk ruft "destroy", damit Anwendung alle (Gtk-)Referenzen
+		     auf Objekt loswird
+                   - durch die Konstruktion der event-Funktion besteht bis
+		     zum "destroy" eine (Alice-)Referenz auf das Objekt
+		   - die event-Funktion entfernt alle Alice-Referenzen, die
+                     sie kennt
+		   - sind alle Alice-Referenzen weg, entfernt der finalizer
+		     auch die Gtk-Referenz
+		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
+		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
+		val sigid = Promise.promise()
 		fun event _ =
 		    case obj of (p, _, ref ids) =>
 			( List.app removeFromSignalTable ids ;
-			  signalDisconnectByFunc(p,event) )
-		val sigid = doSignalConnect(p,"destroy",event,false) 
+			  signalDisconnect(p, Promise.future sigid) )
 	    in
-		()
+		Promise.fulfill(sigid, 
+				doSignalConnect(p,"destroy",event,false))
 	    end
 
 	(* TO-DO: ref() *)
@@ -85,10 +101,10 @@ struct
   	          weakMapAdd (p,obj) )
 	    end 
     in
-	fun addObject (p,tinfo) = (*(p,unref,hasSignals) =*)
+	fun addObject (p,unref,hasSignals) =
 	    (if p = NULL orelse weakMapContains p 
 		 then () 
-	         else newObject (p,fn _=>(), false) ; 
+	         else newObject (p,unref,hasSignals) ; 
              p)
     end
 
