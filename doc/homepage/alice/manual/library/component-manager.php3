@@ -30,26 +30,26 @@
   <PRE>
     signature COMPONENT_MANAGER =
     sig
-	exception Conflict
+	exception <A href="#Conflict">Conflict</A>
 
-	type component
+	type <A href="#component">component</A>
 
-	functor Eval(val component : component
+	functor <A href="#Eval-fn">Eval</A>(val component : component
 		     val url : Url.t
 		     signature S) : S
 
-	functor Link(val url : Url.t
+	functor <A href="#Link-fn">Link</A>(val url : Url.t
 		     signature S) : S
 
-	functor Enter(val url: Url.t
+	functor <A href="#Enter-fn">Enter</A>(val url: Url.t
 		      signature S
 		      structure X : S) : any
 
-	val link : Url.t -> component
-	val enter : Url.t * component -> unit
-	val lookup : Url.t -> component option
+	val <A href="#link">link</A> : Url.t -> component
+	val <A href="#enter">enter</A> : Url.t * component -> unit
+	val <A href="#lookup">lookup</A> : Url.t -> component option
 
-	val start : Url.t -> unit
+	val <A href="#start">start</A> : Url.t -> unit
     end
   </PRE>
 
@@ -57,7 +57,7 @@
 
   <DL>
     <DT>
-      <TT>exception Conflict</TT>
+      <TT>exception <A name="Conflict">Conflict</A></TT>
     </DT>
     <DD>
       <P>indicates an attempt to enter a component in the component table
@@ -65,7 +65,7 @@
     </DD>
 
     <DT>
-      <TT>type component</TT>
+      <TT>type <A name="component">component</A></TT>
     </DT>
     <DD>
       <P>The type of components this component manager operates on.
@@ -73,7 +73,7 @@
     </DD>
 
     <DT>
-      <TT>Eval(val component = <I>comp</I> val url = <I>url</I> signature S = <I>S</I>)</TT>
+      <TT><A name="Eval-fn">Eval</A>(val component = <I>comp</I> val url = <I>url</I> signature S = <I>S</I>)</TT>
     </DT>
     <DD>
       <P>evaluates <I>comp</I>, rooted at <I>url</I>, in the context of
@@ -88,7 +88,7 @@
     </DD>
 
     <DT>
-      <TT>Link(val url = <I>url</I> signature S = <I>S</I>)</TT>
+      <TT><A name="Link-fn">Link</A>(val url = <I>url</I> signature S = <I>S</I>)</TT>
     </DT>
     <DD>
       <P>returns a new by-need future that, when triggered, causes the
@@ -99,7 +99,7 @@
     </DD>
 
     <DT>
-      <PRE>Enter(val url = <I>url</I>
+      <PRE><A name="Enter-fn">Enter</A>(val url = <I>url</I>
       signature S = <I>S</I>
       structure X = <I>X</I>)</PRE>
     </DT>
@@ -111,7 +111,7 @@
     </DD>
 
     <DT>
-      <TT>link <I>url</I></TT>
+      <TT><A name="link">link</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>returns a new by-need future that, when triggered, causes the
@@ -121,7 +121,7 @@
     </DD>
 
     <DT>
-      <TT>enter (<I>url</I>, <I>comp</I>)</TT>
+      <TT><A name="enter">enter</A> (<I>url</I>, <I>comp</I>)</TT>
     </DT>
     <DD>
       <P>enters <I>comp</I> into the component table, under name <I>url</I>.
@@ -130,7 +130,7 @@
     </DD>
 
     <DT>
-      <TT>lookup <I>url</I></TT>
+      <TT><A name="lookup">lookup</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>returns <TT>SOME <I>comp</I></TT>, if the component table has
@@ -139,7 +139,7 @@
     </DD>
 
     <DT>
-      <TT>start <I>url</I></TT>
+      <TT><A name="start">start</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>links and evaluates the component at <I>url</I> eagerly.

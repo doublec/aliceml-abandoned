@@ -39,28 +39,28 @@
   <PRE>
     signature THREAD =
     sig
-	type thread
-	type t = thread
-	datatype state = RUNNABLE | BLOCKED | TERMINATED
+	type <A href="#thread">thread</A>
+	type <A href="#t">t</A> = thread
+	datatype <A href="#state">state</A> = RUNNABLE | BLOCKED | TERMINATED
 
-	exception Terminate
-	exception Terminated
+	exception <A href="#Terminate">Terminate</A>
+	exception <A href="#Terminated">Terminated</A>
 
-	val thread :		(unit -> unit) -> thread
-	val spawnThread :	(unit -> 'a) -> thread * 'a
+	val <A href="#thread">thread</A> :		(unit -> unit) -> thread
+	val <A href="#spawnThread">spawnThread</A> :	(unit -> 'a) -> thread * 'a
 
-	val current :		unit -> thread
-	val state :		thread -> state
+	val <A href="#current">current</A> :		unit -> thread
+	val <A href="#state">state</A> :		thread -> state
 
-	val yield :		thread -> unit
-	val sleep :		Time.time -> unit
+	val <A href="#yield">yield</A> :		thread -> unit
+	val <A href="#sleep">sleep</A> :		Time.time -> unit
 
-	val raiseIn :		thread * exn -> unit
-	val terminate :		thread -> unit
+	val <A href="#raiseIn">raiseIn</A> :		thread * exn -> unit
+	val <A href="#terminate">terminate</A> :		thread -> unit
 
-	val suspend :		thread -> unit
-	val resume :		thread -> unit
-	val isSuspended :	thread -> bool
+	val <A href="#suspend">suspend</A> :		thread -> unit
+	val <A href="#resume">resume</A> :		thread -> unit
+	val <A href="#isSuspended">isSuspended</A> :	thread -> bool
     end
   </PRE>
 
@@ -68,8 +68,8 @@
 
   <DL>
     <DT>
-      <TT>type thread</TT><BR>
-      <TT>type t = thread</TT>
+      <TT>type <A name="thread">thread</A></TT><BR>
+      <TT>type <A name="t">t</A> = thread</TT>
     </DT>
     <DD>
       <P>The type of first-class threads.  A reference to a first-class
@@ -78,14 +78,14 @@
     </DD>
 
     <DT>
-      <TT>datatype state = RUNNABLE | BLOCKED | TERMINATED</TT>
+      <TT>datatype <A name="state">state</A> = RUNNABLE | BLOCKED | TERMINATED</TT>
     </DT>
     <DD>
       <P>The type of thread states.</P>
     </DD>
 
     <DT>
-      <TT>exception Terminate</TT>
+      <TT>exception <A name="Terminate">Terminate</A></TT>
     </DT>
     <DD>
       <P>This exception is raised by the <TT>terminate</TT> function
@@ -93,7 +93,7 @@
     </DD>
 
     <DT>
-      <TT>exception Terminated</TT>
+      <TT>exception <A name="Terminated">Terminated</A></TT>
     </DT>
     <DD>
       <P>indicates that a thread control operation was applied to
@@ -102,7 +102,7 @@
     </DD>
 
     <DT>
-      <TT>thread <I>f</I></TT>
+      <TT><A name="thread">thread</A> <I>f</I></TT>
     </DT>
     <DD>
       <P>spawns a new thread <I>thr</I> which computes <I>f</I>&nbsp;().
@@ -110,7 +110,7 @@
     </DD>
 
     <DT>
-      <TT>spawnThread <I>f</I></TT>
+      <TT><A name="spawnThread">spawnThread</A> <I>f</I></TT>
     </DT>
     <DD>
       <P>spawns a new thread <I>thr</I> which computes <I>f</I>&nbsp;().
@@ -119,7 +119,7 @@
     </DD>
 
     <DT>
-      <TT>current ()</TT>
+      <TT><A name="current">current</A> ()</TT>
     </DT>
     <DD>
       <P>returns the calling thread, that is, the thread
@@ -127,14 +127,14 @@
     </DD>
 
     <DT>
-      <TT>state <I>thr</I></TT>
+      <TT><A name="state">state</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>returns the current state of&nbsp;<I>thr</I>.</P>
     </DD>
 
     <DT>
-      <TT>yield <I>thr</I></TT>
+      <TT><A name="yield">yield</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>causes the scheduler to stop executing thread&nbsp;<I>thr</I>,
@@ -144,7 +144,7 @@
     </DD>
 
     <DT>
-      <TT>sleep <I>t</I></TT>
+      <TT><A name="sleep">sleep</A> <I>t</I></TT>
     </DT>
     <DD>
       <P>causes the calling thread to stop executing and not be rescheduled
@@ -154,7 +154,7 @@
     </DD>
 
     <DT>
-      <TT>raiseIn (<I>thr</I>, <I>ex</I>)</TT>
+      <TT><A name="raiseIn">raiseIn</A> (<I>thr</I>, <I>ex</I>)</TT>
     </DT>
     <DD>
       <P>raises the exception <I>ex</I> in thread <I>thr</I>.
@@ -164,7 +164,7 @@
     </DD>
 
     <DT>
-      <TT>terminate <I>thr</I></TT>
+      <TT><A name="terminate">terminate</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>attempts to terminate <I>thr</I> by raising exception
@@ -173,7 +173,7 @@
     </DD>
 
     <DT>
-      <TT>suspend <I>thr</I></TT>
+      <TT><A name="suspend">suspend</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>suspends <I>thr</I>.  If <I>thr</I> is being executed, then
@@ -184,7 +184,7 @@
     </DD>
 
     <DT>
-      <TT>resume <I>thr</I></TT>
+      <TT><A name="resume">resume</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>resumes <I>thr</I>.  If <I>thr</I> is runnable, makes <I>thr</I>
@@ -193,7 +193,7 @@
     </DD>
 
     <DT>
-      <TT>isSuspended <I>thr</I></TT>
+      <TT><A name="isSuspended">isSuspended</A> <I>thr</I></TT>
     </DT>
     <DD>
       <P>returns <TT>true</TT> if <I>thr</I> is suspended, <TT>false</TT>

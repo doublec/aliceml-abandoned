@@ -36,28 +36,28 @@
   <PRE>
     signature COMPONENT =
     sig
-	type component
-	type t = component
+	type <A href="#component">component</A>
+	type <A href="#t">t</A> = component
 
-	exception Sited
-	exception Corrupt
+	exception <A href="#Sited">Sited</A>
+	exception <A href="#Corrupt">Corrupt</A>
 
-	exception Mismatch of {component : Url.t,
+	exception <A href="#Mismatch">Mismatch</A> of {component : Url.t,
 			       request : Url.t option,
 			       cause : Inf.mismatch}
-	exception Eval of exn
-	exception Failure of Url.t * exn
+	exception <A href="#Eval">Eval</A> of exn
+	exception <A href="#Failure">Failure</A> of Url.t * exn
 
-	val extension: string
+	val <A href="#extension">extension</A>: string
 
-	functor Create(signature S  structure X : S) :
+	functor <A href="#Create">Create</A>(signature S  structure X : S) :
 	    sig  val component : component  end
 
-	val load: Url.t -> component
-	val save: string * component -> unit
-	val inf: component -> Inf.t option
+	val <A href="#load">load</A>: Url.t -> component
+	val <A href="#save">save</A>: string * component -> unit
+	val <A href="#inf">inf</A>: component -> Inf.t option
 
-	functor MkManager() : COMPONENT_MANAGER where type component = component
+	functor <A href="#MkManager">MkManager</A>() : COMPONENT_MANAGER where type component = component
     end
   </PRE>
 
@@ -65,15 +65,15 @@
 
   <DL>
     <DT>
-      <TT>type component</TT><BR>
-      <TT>type t = component</TT>
+      <TT>type <A name="component">component</A></TT><BR>
+      <TT>type <A name="t">t</A> = component</TT>
     </DT>
     <DD>
       <P>The type of first-class components.</P>
     </DD>
 
     <DT>
-      <TT>exception Sited</TT>
+      <TT>exception <A name="Sited">Sited</A></TT>
     </DT>
     <DD>
       <P>used by the <TT>save</TT> operation to indicate that a first-class
@@ -83,7 +83,7 @@
     </DD>
 
     <DT>
-      <TT>exception Corrupt</TT>
+      <TT>exception <A name="Corrupt">Corrupt</A></TT>
     </DT>
     <DD>
       <P>used by the <TT>load</TT> operation to indicate that the contents
@@ -93,7 +93,7 @@
     </DD>
 
     <DT>
-      <PRE>exception Mismatch of {component : Url.t,
+      <PRE>exception <A name="Mismatch">Mismatch</A> of {component : Url.t,
 		       request : Url.t option,
 		       cause : Inf.mismatch}</PRE>
     </DT>
@@ -107,7 +107,7 @@
     </DD>
 
     <DT>
-      <TT>exception Eval of exn</TT>
+      <TT>exception <A name="Eval">Eval</A> of exn</TT>
     </DT>
     <DD>
       <P>indicates that a component raised an exception during
@@ -117,7 +117,7 @@
     </DD>
 
     <DT>
-      <TT>exception Failure of Url.t * exn</TT>
+      <TT>exception <A name="Failure">Failure</A> of Url.t * exn</TT>
     </DT>
     <DD>
       <P>indicates that the loading, evaluating or signature matching
@@ -129,7 +129,7 @@
     </DD>
 
     <DT>
-      <TT>extension</TT>
+      <TT><A name="extension">extension</A></TT>
     </DT>
     <DD>
       <P>is the string used on the current platform as extension part to
@@ -139,7 +139,7 @@
     </DD>
 
     <DT>
-      <TT>Create(signature S = <I>S</I>  structure X = <I>X</I>)</TT>
+      <TT><A name="Create">Create</A>(signature S = <I>S</I>  structure X = <I>X</I>)</TT>
     </DT>
     <DD>
       <P>returns an evaluated component (as <TT>val component</TT> of the
@@ -148,7 +148,7 @@
     </DD>
 
     <DT>
-      <TT>load <I>url</I></TT>
+      <TT><A name="load">load</A> <I>url</I></TT>
     </DT>
     <DD>
       <P>localizes <I>url</I> using the <A href="resolver.php3">resolver</A>
@@ -160,7 +160,7 @@
     </DD>
 
     <DT>
-      <TT>save (<I>s</I>, <I>comp</I>)</TT>
+      <TT><A name="save">save</A> (<I>s</I>, <I>comp</I>)</TT>
     </DT>
     <DD>
       <P>pickles <I>comp</I> and saves it to a new file with
@@ -169,7 +169,7 @@
     </DD>
 
     <DT>
-      <TT>inf <I>comp</I></TT>
+      <TT><A name="inf">inf</A> <I>comp</I></TT>
     </DT>
     <DD>
       <P>retrieves the export signature from <I>comp</I>.  May return
@@ -180,7 +180,7 @@
     </DD>
 
     <DT>
-      <TT>MkManager()</TT>
+      <TT><A name="MkManager">MkManager</A>()</TT>
     </DT>
     <DD>
       <P>returns a new component manager with a component table empty but
