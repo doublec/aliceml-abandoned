@@ -230,7 +230,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 emit (Label label); genBody body
 		     end
 	       | SOME label => emit (Br label))
-	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
+	  | genStm (ReturnStm (_, exp)) = (*--** tail calls *)
+	    (genExp (exp, BOTH); emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
 	  | genStm (ExportStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
 	and genTests (LitTests #[], elseBody) = genBody elseBody
