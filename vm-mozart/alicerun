@@ -17,4 +17,4 @@ OZ_LOAD=pattern='?{x}'='?{x}.ozf':pattern=x-alice\\:/'?{x}'=$STOCKHOME/'?{x}'.oz
 
 export STOCKHOME PATH OZ_LOAD
 
-exec ozengine x-alice:/StowMain "$@"
+exec ozengine x-alice:/VMMain "$@"

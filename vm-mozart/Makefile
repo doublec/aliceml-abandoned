@@ -29,13 +29,13 @@
 ## Pass 1
 ## ------
 ##
-## The goal is to build a stoc using the hybrid SML/NJ+Mozart compiler.
+## The goal is to build a compiler using the hybrid SML/NJ+Mozart compiler.
 ## This is performed via the following targets.
 ##
 ## build1-all:
 ##    A complete source tree is created in subdirectory build1.
 ##    The native components are created using ozc.  The component
-##    stoc/StocMain.ozf (and all its imports, transitively)
+##    compiler/CompilerMain.ozf (and all its imports, transitively)
 ##    are built using the hybrid compiler via recursive invocation.
 ## build1-install:
 ##    A minimal but working system (only consisting of a compiler,
@@ -61,7 +61,7 @@
 ## ------
 ##
 ## This pass finally builds bootstrapped versions of /everything/
-## (including stot), with runtime type information and a first-class
+## (including toplevel), with runtime type information and a first-class
 ## compiler.
 ##
 ## build3-all:
@@ -100,20 +100,20 @@ PREFIX = /opt/stockhausen-devel
 
 VPATH = $(SRCTOP)
 
-STOC0 = $(BOOTSTRAPDIR)/stoc
-STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
-STOC2 = STOCKHOME=build2/install build2/install/bin/stoc
+ALICEC0 = $(BOOTSTRAPDIR)/alicec
+ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
+ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
-STOC_OPTS = --no-dump-elaboration-sig --no-implicit-import $(STOC_EXTRA_OPTS)
-STOC_EXTRA_OPTS = --dump-target
+ALICEC_OPTS = --no-dump-elaboration-sig --no-implicit-import $(ALICEC_EXTRA_OPTS)
+ALICEC_EXTRA_OPTS = --dump-target
 
-STOL0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
-STOL1 = STOCKHOME=build1/install build1/install/bin/stol
-STOL2 = STOCKHOME=build2/install build2/install/bin/stol
+ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
+ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
+ALICELINK2 = STOCKHOME=build2/install build2/install/bin/alicelink
 
-STOL_OPTS = -z9
+ALICELINK_OPTS = -z9
 
-STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
+ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
 OZC = ozc
 MLLEX = ml-lex
@@ -145,7 +145,7 @@ LIBFUNDAMENTALSOURCES0 = \
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
 	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
-	OS.aml PICKLE-sig.aml Pickle.aml
+	OS.aml PICKLE-sig.aml Pickle.aml HOME-sig.aml Home.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
@@ -173,7 +173,7 @@ LIBSOURCES = \
 	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
 	$(LIBSOURCES0:%=lib/%)
 
-STOCINFRASTRUCTURESOURCES0 = \
+COMPILERINFRASTRUCTURESOURCES0 = \
 	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
 	Error.aml SWITCHES-sig.aml MkSwitches.aml CONTEXT-sig.aml \
 	REPRESENTATION-sig.aml PHASE-sig.aml PHASE_ERROR-sig.aml \
@@ -181,17 +181,17 @@ STOCINFRASTRUCTURESOURCES0 = \
 	MkContextDumpingPhase.aml EmptyContext.aml SIGNATURE-sig.aml \
 	COMPOSER-sig.aml TARGET-sig.aml MkHashScopedImpSet.aml \
 	MkHashScopedImpMap.aml StringMap.aml PP_MISC-sig.aml PPMisc.aml
-STOCINFRASTRUCTURESOURCES = \
-	$(STOCINFRASTRUCTURESOURCES0:%=stoc/infrastructure/%)
+COMPILERINFRASTRUCTURESOURCES = \
+	$(COMPILERINFRASTRUCTURESOURCES0:%=compiler/infrastructure/%)
 
-STOCCOMMONSOURCES0 = \
+COMPILERCOMMONSOURCES0 = \
 	Stamp.aml StampSet.aml StampMap.aml INTERMEDIATE_GRAMMAR-sig.aml \
 	MkIntermediateGrammar.aml PP_INTERMEDIATE_GRAMMAR-sig.aml \
 	MkPPIntermediateGrammar.aml IntermediateGrammar.aml \
 	CHECK_INTERMEDIATE-sig.aml CheckIntermediate.aml
-STOCCOMMONSOURCES = $(STOCCOMMONSOURCES0:%=stoc/common/%)
+COMPILERCOMMONSOURCES = $(COMPILERCOMMONSOURCES0:%=compiler/common/%)
 
-STOCFRONTENDCOMMONSOURCES0 = \
+COMPILERFRONTENDCOMMONSOURCES0 = \
 	LABEL_REFLECTION-sig.aml LabelReflection.aml \
 	PATH_REFLECTION-sig.aml PathReflection.aml \
 	TYPE_REFLECTION-sig.aml TypeReflection.aml \
@@ -204,10 +204,10 @@ STOCFRONTENDCOMMONSOURCES0 = \
 	ELABORATION_ERROR-sig.aml ElaborationError.aml \
 	ELABORATION_PHASE-sig.aml MkElaborationPhase.aml \
 	TRANSLATION_PHASE-sig.aml MkTranslationPhase.aml MkFrontendCommon.aml
-STOCFRONTENDCOMMONSOURCES = \
-	$(STOCFRONTENDCOMMONSOURCES0:%=stoc/frontend-common/%)
+COMPILERFRONTENDCOMMONSOURCES = \
+	$(COMPILERFRONTENDCOMMONSOURCES0:%=compiler/frontend-common/%)
 
-STOCFRONTENDSMLSOURCES0 = \
+COMPILERFRONTENDSMLSOURCES0 = \
 	LAB-sig.aml Lab.aml ID-sig.aml MkId.aml Ids.aml SCON-sig.aml SCon.aml \
 	INPUT_GRAMMAR-sig.aml MkInputGrammar.aml InputGrammar.aml \
 	PARSING_ERROR-sig.aml ParsingError.aml ABSTRACTION_ERROR-sig.aml \
@@ -218,9 +218,9 @@ STOCFRONTENDSMLSOURCES0 = \
 	Parser.aml DerivedForms.aml LEXER_ERROR-sig.aml MkLexerError.aml \
 	Lexer.aml MkCountPosLexer.aml PARSING_PHASE-sig.aml \
 	MkParsingPhase.aml MkFrontendSML.aml
-STOCFRONTENDSMLSOURCES = $(STOCFRONTENDSMLSOURCES0:%=stoc/frontend-sml/%)
+COMPILERFRONTENDSMLSOURCES = $(COMPILERFRONTENDSMLSOURCES0:%=compiler/frontend-sml/%)
 
-STOCBACKENDCOMMONSOURCES0 = \
+COMPILERBACKENDCOMMONSOURCES0 = \
 	LABEL_SORT-sig.aml MkLabelSort.aml LabelSort.aml FLAT_GRAMMAR-sig.aml \
 	FlatGrammar.aml OUTPUT_FLAT_GRAMMAR-sig.aml OutputFlatGrammar.aml \
 	ARITY-sig.aml Arity.aml INTERMEDIATE_AUX-sig.aml IntermediateAux.aml \
@@ -230,22 +230,22 @@ STOCBACKENDCOMMONSOURCES0 = \
 	ValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
 	MkLivenessAnalysisPhase.aml DEAD_CODE_ELIMINATION_PHASE-sig.aml \
 	DeadCodeEliminationPhase.aml MkBackendCommon.aml
-STOCBACKENDCOMMONSOURCES = $(STOCBACKENDCOMMONSOURCES0:%=stoc/backend-common/%)
+COMPILERBACKENDCOMMONSOURCES = $(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
-STOCBACKENDMOZARTSOURCES0 = \
+COMPILERBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
 	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
 #--** CodeGenPhase.ozf should be built via replacesign
-STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
+COMPILERBACKENDMOZARTSOURCES = $(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
 
-STOCBACKENDDOTNETSOURCES0 = \
+COMPILERBACKENDDOTNETSOURCES0 = \
 	SKELETON-sig.aml Skeleton.aml IL-sig.aml IL.aml System.aml \
 	Alice.aml BUILTINS-sig.aml Builtins.aml CODE_STORE-sig.aml \
 	CodeStore.aml CODE_GEN_PHASE-sig.aml CodeGenPhase.aml \
 	MkBackendDotNet.aml
-STOCBACKENDDOTNETSOURCES = $(STOCBACKENDDOTNETSOURCES0:%=stoc/backend-dotnet/%)
+COMPILERBACKENDDOTNETSOURCES = $(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
-STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
+COMPILERTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
@@ -255,22 +255,23 @@ STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	SMLToDotNetBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml
-STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
+COMPILERTOPSOURCES = $(COMPILERTOPSOURCES0:%=compiler/top/%)
 
-STOCSOURCES0 = StocMain.aml StotMain.aml
-STOCSOURCES = \
-	$(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
-	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
-	$(STOCBACKENDCOMMONSOURCES) $(STOCBACKENDMOZARTSOURCES) \
-	$(STOCBACKENDDOTNETSOURCES) $(STOCTOPSOURCES) \
-	$(STOCSOURCES0:%=stoc/%)
-ALLSOURCES = StowMain.oz $(LIBSOURCES) $(STOCSOURCES)
+COMPILERSOURCES0 = CompilerMain.aml ToplevelMain.aml
+COMPILERSOURCES = \
+	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
+	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
+	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
+	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERTOPSOURCES) \
+	$(COMPILERSOURCES0:%=compiler/%)
+ALLSOURCES = VMMain.oz $(LIBSOURCES) $(COMPILERSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
-	stoc stoc/infrastructure stoc/common stoc/frontend-common \
-	stoc/frontend-sml stoc/backend-common stoc/backend-mozart \
-	stoc/backend-dotnet stoc/top
+	compiler compiler/infrastructure compiler/common compiler/top \
+	compiler/frontend-common compiler/frontend-sml \
+	compiler/backend-common compiler/backend-mozart \
+	compiler/backend-dotnet
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -284,8 +285,8 @@ SOURCEDIRS = \
 all: build3-install
 
 # Build anything using the compiler generated in pass 1
-stoc1-%: build1-install
-	$(MAKE) STOC0=$(STOC1) $*
+alicec1-%: build1-install
+	$(MAKE) ALICEC0=$(ALICEC1) $*
 
 %.lex.sml: %.lex
 	$(MLLEX) $<
@@ -302,14 +303,14 @@ stoc1-%: build1-install
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = build1/lib/fundamental/RTT.aml $(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin build1/install/stoc
-INSTALL1TOPFILES = StowMain.ozf
-INSTALL1BINFILES = stow stoc stol
-INSTALL1STOCFILES = StocMain.ozf
+INSTALL1DIRS = build1/install build1/install/bin build1/install/compiler
+INSTALL1TOPFILES = VMMain.ozf
+INSTALL1BINFILES = alicerun alicec alicelink
+INSTALL1COMPILERFILES = CompilerMain.ozf
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
-	$(INSTALL1STOCFILES:%=build1/install/stoc/%)
+	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%)
 
 ##
 ## Creating the Source Tree for Build 1
@@ -339,55 +340,57 @@ build1/lib/system/%.asig: lib/system/%.asig Rel2.import
 build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/infrastructure/%.aml: stoc/infrastructure/%.aml Rel2.import
+build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/common/%.aml: stoc/common/%.aml Rel2.import
+build1/compiler/common/%.aml: compiler/common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-common/%.aml: stoc/frontend-common/%.aml Rel2.import
+build1/compiler/frontend-common/%.aml: compiler/frontend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-sml/%.aml: stoc/frontend-sml/%.aml Rel2.import
+build1/compiler/frontend-sml/%.aml: compiler/frontend-sml/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/frontend-sml/Lexer.lex: stoc/frontend-sml/Lexer.lex
+build1/compiler/frontend-sml/Lexer.lex: compiler/frontend-sml/Lexer.lex
 	cp $< $@
 
-build1/stoc/frontend-sml/Lexer.aml: build1/stoc/frontend-sml/Lexer.lex.sml \
-	stoc/frontend-sml/Lexer.aml.header Rel2.import
-	cat Rel2.import $(SRCTOP)/stoc/frontend-sml/Lexer.aml.header $< > $@
+build1/compiler/frontend-sml/Lexer.aml: \
+	build1/compiler/frontend-sml/Lexer.lex.sml \
+	compiler/frontend-sml/Lexer.aml.header Rel2.import
+	cat Rel2.import $(SRCTOP)/compiler/frontend-sml/Lexer.aml.header $< > $@
 
-build1/stoc/frontend-sml/Parser.grm: stoc/frontend-sml/Parser.grm
+build1/compiler/frontend-sml/Parser.grm: compiler/frontend-sml/Parser.grm
 	cp $< $@
 
-build1/stoc/frontend-sml/PARSER-sig.aml: \
-	build1/stoc/frontend-sml/Parser.grm.sig \
-	Rel2.import stoc/frontend-sml/PARSER-sig.aml.header fixparser.awk
-	(cat Rel2.import $(SRCTOP)/stoc/frontend-sml/PARSER-sig.aml.header && \
+build1/compiler/frontend-sml/PARSER-sig.aml: \
+	build1/compiler/frontend-sml/Parser.grm.sig \
+	Rel2.import compiler/frontend-sml/PARSER-sig.aml.header fixparser.awk
+	(cat Rel2.import $(SRCTOP)/compiler/frontend-sml/PARSER-sig.aml.header && \
 	 awk -f fixparser.awk < $<) > $@ || rm $@
 
-build1/stoc/frontend-sml/Parser.aml: build1/stoc/frontend-sml/Parser.grm.sml \
-	Rel2.import stoc/frontend-sml/Parser.aml.header
-	cat Rel2.import $(SRCTOP)/stoc/frontend-sml/Parser.aml.header $< > $@
+build1/compiler/frontend-sml/Parser.aml: \
+	build1/compiler/frontend-sml/Parser.grm.sml \
+	Rel2.import compiler/frontend-sml/Parser.aml.header
+	cat Rel2.import $(SRCTOP)/compiler/frontend-sml/Parser.aml.header $< > $@
 
-build1/stoc/backend-common/%.aml: stoc/backend-common/%.aml Rel2.import
+build1/compiler/backend-common/%.aml: compiler/backend-common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-mozart/%.aml: stoc/backend-mozart/%.aml Rel2.import
+build1/compiler/backend-mozart/%.aml: compiler/backend-mozart/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-mozart/%.asig: stoc/backend-mozart/%.asig \
+build1/compiler/backend-mozart/%.asig: compiler/backend-mozart/%.asig \
 	Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/backend-dotnet/%.aml: stoc/backend-dotnet/%.aml Rel2.import
+build1/compiler/backend-dotnet/%.aml: compiler/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/top/%.aml: stoc/top/%.aml Rel2.import
+build1/compiler/top/%.aml: compiler/top/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/stoc/%.aml: stoc/%.aml Rel1.import
+build1/compiler/%.aml: compiler/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
 build1/%.oz: %.oz
@@ -398,26 +401,26 @@ build1/%.oz: %.oz
 ##
 
 build1-all: $(BUILD1DIRS) $(BUILD1SOURCES) \
-	build1/LinkedStowMain.ozf build1/stoc/LinkedStocMain.ozf
+	build1/LinkedVMMain.ozf build1/compiler/LinkedCompilerMain.ozf
 
 build1/%.ozf: build1/%.oz
 	$(OZC) -c $< -o $@
 
 build1/%.ozf: build1/%.aml
-	$(STOC0) $(STOC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC0) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
 	$(BUILD1SOURCES) \
 	$(NATIVECOMPONENTS:%=build1/lib/system/%.ozf) \
 	$(BUILD1OZSOURCES:%.oz=%.ozf) \
-	build1/stoc/StocMain.ozf
+	build1/compiler/CompilerMain.ozf
 
-build1/LinkedStowMain.ozf: build1/StowMain.ozf $(BUILD1OZLINPUTS)
-	$(STOL0) $(STOL_OPTS) --include=.. $< -o $@
+build1/LinkedVMMain.ozf: build1/VMMain.ozf $(BUILD1OZLINPUTS)
+	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
 
-build1/stoc/LinkedStocMain.ozf: $(BUILD1OZLINPUTS)
-	$(STOL0) $(STOL_OPTS) --include=.. build1/stoc/StocMain.ozf -o $@
+build1/compiler/LinkedCompilerMain.ozf: $(BUILD1OZLINPUTS)
+	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. build1/compiler/CompilerMain.ozf -o $@
 
 ##
 ## Installing Build 1
@@ -428,10 +431,10 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-build1/install/StowMain.ozf: build1/LinkedStowMain.ozf
+build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
 	install -c -m 444 $< $@
 
-build1/install/stoc/StocMain.ozf: build1/stoc/LinkedStocMain.ozf
+build1/install/compiler/CompilerMain.ozf: build1/compiler/LinkedCompilerMain.ozf
 	install -c -m 444 $< $@
 
 build1/install/bin/%: %
@@ -449,16 +452,17 @@ BUILD2SOURCES = build2/lib/fundamental/RTT.aml $(LIBSOURCES:%=build2/%)
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
 	build2/install/lib/system build2/install/lib/utility \
-	build2/install/lib/rtt build2/install/lib/ml-yacc build2/install/stoc
-INSTALL2TOPFILES = StowMain.ozf Default.import
-INSTALL2BINFILES = stow stoc stol
+	build2/install/lib/rtt build2/install/lib/ml-yacc \
+	build2/install/compiler
+INSTALL2TOPFILES = VMMain.ozf Default.import
+INSTALL2BINFILES = alicerun alicec alicelink
 INSTALL2LIBFILES = rtt/RTT.ozf
-INSTALL2STOCFILES = StocMain.ozf
+INSTALL2COMPILERFILES = CompilerMain.ozf
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
 	$(INSTALL2LIBFILES:%=build2/install/lib/%) \
-	$(INSTALL2STOCFILES:%=build2/install/stoc/%)
+	$(INSTALL2COMPILERFILES:%=build2/install/compiler/%)
 
 ##
 ## Creating the Source Tree for Build 2
@@ -473,7 +477,7 @@ build2/lib/fundamental/RTT.aml: build1/lib/fundamental/RTT.aml
 build2/%.aml: build1/%.aml
 	cp $< $@
 
-build2/LinkedStowMain.ozf build2/stoc/LinkedStocMain.ozf: build2/%: build1/%
+build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: build1/%
 	cp $< $@
 
 build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
@@ -490,16 +494,16 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 	build2/lib/rtt/LinkedRTT.ozf
 
 build2/%.ozf: build2/%.aml
-	$(STOC1) $(STOC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
 
 $(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
 	build1/%.ozf build2/%.asig
-	$(STOC1) $(STOC_OPTS) --rtt-level=no --replacesign $< build2/$*.asig $@
+	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no --replacesign $< build2/$*.asig $@
 
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
 build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
-	$(STOL1) $(STOL_OPTS) --include=.. $< -o $@
+	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
 
 ##
 ## Installing Build 2
@@ -510,7 +514,7 @@ build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
 $(INSTALL2DIRS):
 	mkdir -p $@
 
-build2/install/StowMain.ozf: build1/install/StowMain.ozf
+build2/install/VMMain.ozf: build1/install/VMMain.ozf
 	install -c -m 444 $< $@
 
 build2/install/Default.import: build2/Default.import
@@ -522,7 +526,7 @@ $(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
 $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 	install -c -m 444 $< $@
 
-build2/install/stoc/StocMain.ozf: build1/install/stoc/StocMain.ozf
+build2/install/compiler/CompilerMain.ozf: build1/install/compiler/CompilerMain.ozf
 	install -c -m 444 $< $@
 
 ########################################################################
@@ -536,23 +540,23 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
-	build3/install/stoc build3/install/stoc/top
+	build3/install/compiler build3/install/compiler/top
 INSTALL3TOPFILES = $(INSTALL2TOPFILES)
-INSTALL3BINFILES = $(INSTALL2BINFILES) stot
+INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/Fundamental.ozf
-INSTALL3STOCFILES = $(INSTALL2STOCFILES) StotMain.ozf
-INSTALL3STOCTOPFILES = Composer.ozf \
+INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
+INSTALL3COMPILERTOPFILES = Composer.ozf \
 	SMLToMozartRecursiveCompiler.ozf SMLToDotNetRecursiveCompiler.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%.bat) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
-	$(INSTALL3STOCFILES:%=build3/install/stoc/%) \
-	$(INSTALL3STOCTOPFILES:%=build3/install/stoc/top/%)
+	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
+	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%)
 
 ##
 ## Creating the Source Tree for Build 3
@@ -570,11 +574,11 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
-	build3/stoc/LinkedStocMain.ozf \
-	build3/stoc/LinkedStotMain.ozf \
-	build3/stoc/top/LinkedComposer.ozf \
-	build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf \
-	build3/stoc/top/LinkedSMLToDotNetRecursiveCompiler.ozf
+	build3/compiler/LinkedCompilerMain.ozf \
+	build3/compiler/LinkedToplevelMain.ozf \
+	build3/compiler/top/LinkedComposer.ozf \
+	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
+	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -587,56 +591,56 @@ build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 
 $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
-	$(STOC2) $(STOC_OPTS) --rtt-level=no --replacesign $< build3/$*.asig $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=no --replacesign $< build3/$*.asig $@
 
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
-#--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
+#--** --rtt-level=core is a problem for compiler/frontend-sml/MkParsingPhase.aml
 build3/lib/fundamental/%.ozf: build3/lib/fundamental/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/lib/system/%.ozf: build3/lib/system/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/lib/utility/URL-sig.ozf: build3/lib/utility/URL-sig.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/lib/utility/Url.ozf: build3/lib/utility/Url.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/%.ozf: build3/%.aml
-	$(STOC2) $(STOC_OPTS) --rtt-level=no -c $< -o $@
+	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
 
 BUILD3 := $(shell pwd)/build3
-TOP3 = $(BUILD3)/stoc/top
+TOP3 = $(BUILD3)/compiler/top
 
 build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
-	$(STOL2) $(STOL_OPTS) $< -o $@
+	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
 
-build3/stoc/LinkedStocMain.ozf: build3/stoc/StocMain.ozf
-	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
+build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
 	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
 
-build3/stoc/LinkedStotMain.ozf: build3/stoc/StotMain.ozf
-	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../ \
+build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
 	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
 
-build3/stoc/top/LinkedComposer.ozf: build3/stoc/top/Composer.ozf
-	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ $< -o $@
+build3/compiler/top/LinkedComposer.ozf: build3/compiler/top/Composer.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ $< -o $@
 
-build3/stoc/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
-	build3/stoc/top/SMLToMozartRecursiveCompiler.ozf \
-	$(STOCBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
-	--exclude=$(BUILD3)/lib,$(BUILD3)/stoc/top/Composer $< -o $@
+build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
+	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
+	$(COMPILERBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
+	--exclude=$(BUILD3)/lib,$(BUILD3)/compiler/top/Composer $< -o $@
 
-build3/stoc/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
-	build3/stoc/top/SMLToDotNetRecursiveCompiler.ozf
-	$(STOL2) $(STOL_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
-	--exclude=$(BUILD3)/lib,$(BUILD3)/stoc/top/Composer $< -o $@
+build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
+	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
+	--exclude=$(BUILD3)/lib,$(BUILD3)/compiler/top/Composer $< -o $@
 
 ##
 ## Installing Build 3
@@ -663,10 +667,10 @@ build3/install/lib/fundamental/Fundamental.ozf: \
 build3/install/lib/%: build3/lib/%
 	install -c -m 444 $< $@
 
-build3/install/stoc/%: build3/stoc/Linked%
+build3/install/compiler/%: build3/compiler/Linked%
 	install -c -m 444 $< $@
 
-build3/install/stoc/top/%: build3/stoc/top/Linked%
+build3/install/compiler/top/%: build3/compiler/top/Linked%
 	install -c -m 444 $< $@
 
 ########################################################################
@@ -682,7 +686,7 @@ BUILD3ALICESOURCES = $(filter %.aml %.asig, $(BUILD3SOURCES))
 
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
-	$(STODEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) > Makefile.depend
+	$(ALICEDEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) > Makefile.depend
 
 -include Makefile.depend
 
@@ -692,13 +696,13 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
-	$(PREFIX)/lib/ml-yacc $(PREFIX)/stoc $(PREFIX)/stoc/top
+	$(PREFIX)/lib/ml-yacc $(PREFIX)/compiler $(PREFIX)/compiler/top
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
-	$(INSTALL3STOCFILES:%=$(PREFIX)/stoc/%) \
-	$(INSTALL3STOCTOPFILES:%=$(PREFIX)/stoc/top/%)
+	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
+	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%)
 
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
@@ -714,10 +718,10 @@ $(INSTALL3BINFILES:%=$(PREFIX)/bin/%): $(PREFIX)/%: build3/install/%
 $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3STOCFILES:%=$(PREFIX)/stoc/%): $(PREFIX)/%: build3/install/%
+$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3STOCTOPFILES:%=$(PREFIX)/stoc/top/%): $(PREFIX)/%: build3/install/%
+$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
 ##

@@ -18,7 +18,7 @@ import
    System(printError)
    Resolve(trace)
    Error(registerFormatter)
-   ComposerComponent('Composer$': Composer) at 'stoc/top/Composer'
+   ComposerComponent('Composer$': Composer) at 'compiler/top/Composer'
 define
    Spec = record(mode: start
 		 typecheck(rightmost type: bool default: true))
