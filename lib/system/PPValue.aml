@@ -48,7 +48,7 @@ struct
   (* Type registration *)
 
     val registry =
-	PathMap.new() : (typ -> format -> value -> doc option) list PathMap.t
+	PathMap.map() : (typ -> format -> value -> doc option) list PathMap.t
 
     fun registerTyp(p,f) =
 	PathMap.insertWith op@ (registry, p, [UnsafeValue.cast f])
@@ -515,9 +515,6 @@ struct
 	    SOME(ppCustom fm (text "package", [text "..."]))
 	end
 
-    fun ppStream t fm x =
-	SOME(ppCustom fm (text "stream", []))
-
   (* Register *)
 
     val coreSig = Inf.asSig(Option.valOf
@@ -544,7 +541,6 @@ struct
     val path_time	   = lookupPath(coreSig,"Time","time")
     val path_thread	   = lookupPath(coreSig,"Thread","thread")
     val path_lock	   = lookupPath(coreSig,"Lock","lock")
-    val path_stream	   = lookupPath(coreSig,"Stream","stream")
     val path_package	   = lookupPath(packageSig,"Package","package")
     val path_val_package   = lookupPath(packageSig,"Package","val_package")
     val path_word8_vector  = lookupPath(coreSig,"Word8Vector","vector")
@@ -579,7 +575,6 @@ struct
     val _ = registerTyp(path_time,          ppTime)
     val _ = registerTyp(path_thread,        ppThread)
     val _ = registerTyp(path_lock,          ppLock)
-    val _ = registerTyp(path_stream,        ppStream)
     val _ = registerTyp(path_package,       ppPackage)
     val _ = registerTyp(path_val_package,   ppValPackage)
     val _ = registerTyp(path_word8_vector,  ppWord8Vector' typ_word8)

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -147,7 +147,7 @@ struct
 
     fun ppVars vs =
 	let
-	    val m     = Type.Map.new()
+	    val m     = Type.Map.map()
 	    val prec  = case vs of ([] | [_]) => 1 | _ => 0
 	    val ddocs = List.mapi (ppVar prec) vs
 	    val doc   = ppCommaList #2 ddocs
@@ -222,7 +222,7 @@ struct
 			text "val " ^^
 			ppLab l ^/^
 			text ":" ^/^
-			PPType.ppTyp' ([],0,Type.Map.new()) t ^/^
+			PPType.ppTyp' ([],0,Type.Map.map()) t ^/^
 			text "=" ^/^
 			PPValue.ppVal t (UnsafeValue.projPoly(str,l))
 		    )))
@@ -371,7 +371,7 @@ struct
 	    val items = Inf.items(Inf.asSig j)
 	in
 	    vbox(below(
-		List.foldr (ppItem(LabelSet.new(),m)) empty items
+		List.foldr (ppItem(LabelSet.set(),m)) empty items
 	    ))
 	end
 	handle Inf.Interface => PPInf.ppInf j

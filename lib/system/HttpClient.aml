@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure IO           from "IO"
 import structure Socket       from "Socket"
 import structure Url          from "Url"
@@ -47,7 +47,7 @@ structure HttpClient :> HTTP_CLIENT =
 				 fun hash (host, port) =
 				     String.hash host + port)
 
-		val map: Socket.t list Map.t = Map.new ()
+		val map: Socket.t list Map.t = Map.map ()
 		val lock = Lock.lock ()
 
 		fun new' (host, port) =
@@ -101,7 +101,7 @@ structure HttpClient :> HTTP_CLIENT =
 
 	fun get url =
 	    let
-		val headers = Http.StringMap.new ()
+		val headers = Http.StringMap.map ()
 	    in
 		Http.StringMap.insert (headers, "Host",
 				       Option.valOf (Url.getAuthority url));
@@ -115,7 +115,7 @@ structure HttpClient :> HTTP_CLIENT =
 
 	fun post (url, {contentType, body}) =
 	    let
-		val headers = Http.StringMap.new ()
+		val headers = Http.StringMap.map ()
 	    in
 		Http.StringMap.insert (headers, "Host",
 				       Option.valOf (Url.getAuthority url));

@@ -10,7 +10,8 @@
  *   $Revision$
  *)
 
-import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure Stream        from "../data/Stream"
+import structure MkHashImpMap  from "../data/MkHashImpMap"
 import structure TextIO        from "TextIO"
 import structure Url           from "Url"
 import structure Socket        from "Socket"
@@ -53,7 +54,7 @@ structure HttpServer :> HTTP_SERVER =
 
 	structure UrlMap = MkHashImpMap(Url)
 
-	val handlerMap: handler UrlMap.t = UrlMap.new ()
+	val handlerMap: handler UrlMap.t = UrlMap.map ()
 
 	fun findHandler uri = findHandler' (List.rev (Url.getPath uri))
 	and findHandler' ss =
