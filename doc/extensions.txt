@@ -2,10 +2,10 @@ Core language:
 
 + binary literals
 + longids as context-free syntax
+- allow with type instead of withtype?
 
 - var annotations in types?
 - curried fn? (grammar overhead)
-- allow with type instead of withtype?
 + more liberal syntax in fun
 + more liberal datatype declaration syntax
 + punning in record expressions
@@ -43,6 +43,7 @@ Module language:
 + where for structures
 + structure synonyms
 * singleton signatures / open in signatures (DF)
+* hiding
 * signature composition
 * signature subtraction
 * parameterized signatures

@@ -12,7 +12,7 @@
 
 signature INTERMEDIATEAUX =
     sig
-	structure Intermediate: INTERMEDIATE
+	structure Intermediate: INTERMEDIATE = PostTranslationIntermediate
 
 	val freshId: Intermediate.info -> Intermediate.id
 
@@ -26,4 +26,3 @@ signature INTERMEDIATEAUX =
 
 	val separateAlt: Intermediate.pat -> Intermediate.pat
     end
-where Intermediate = PostTranslationIntermediate
