@@ -271,13 +271,15 @@ structure ToJasmin =
 		    let
 			fun assign (stamp',_) =
 			    let
-				val notfused = not (isSome (StampHash.lookup (!fusedwith, stamp')))
 				val genuineReg = getOrigin stamp'
+				val notmapped = not (isSome (StampHash.lookup
+							     (!fusedwith, stamp')))
+				    andalso
+				    (not (isSome (StampHash.lookup (!regmap, genuineReg))))
 				val f' = lookup (!from, genuineReg)
 				val t' = lookup (!to, genuineReg)
 				fun assignNextFree act =
-				    if f' > lookupInt (!jvmto, act) andalso
-					not (isSome (StampHash.lookup (!regmap, genuineReg)))
+				    if f' >= lookupInt (!jvmto, act)
 					then (if !VERBOSE >=2 then
 						  print ("map "^Stamp.toString genuineReg^" to "^
 							 Int.toString act^"\n") else ();
@@ -287,7 +289,8 @@ structure ToJasmin =
 							   IntHash.insert (!jvmto, act, t'))
 						    | SOME v => print ("ERROR: trying to overwrite old value"^
 								       Int.toString v^"\n"))
-				    else assignNextFree (act+1)
+				    else
+					assignNextFree (act+1)
 			    in
 				if !VERBOSE >= 2 then
 				    print ("trying to assign "^Stamp.toString genuineReg^" from "^
@@ -297,10 +300,13 @@ structure ToJasmin =
 				    t' <> ~1 andalso
 				    (* If a register is never read,
 				     we don't have to store it *)
-				    notfused then
+				    notmapped then
+				    (* don't map a Stamp twice *)
 				    assignNextFree 1
 				else
-					()
+				    ();
+				    if !VERBOSE >= 2 then
+					print ("assign ok.\n") else ()
 			    end
 		    in
 			StampHash.appi assign (!to)
