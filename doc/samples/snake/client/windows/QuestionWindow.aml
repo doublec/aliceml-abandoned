@@ -33,7 +33,7 @@ struct
 	in
 
 	    question quest;
-	    Gtk.windowSetModal ((Gtk.dialogGetFieldWindow sure_window), true);
+	    Gtk.windowSetModal (Gtk.dialogGetFieldWindow sure_window, true);
 	    Gtk.containerSetBorderWidth (Gtk.dialogGetFieldWindow sure_window,
 					 10);
 	    Gtk.windowSetTitle (Gtk.dialogGetFieldWindow sure_window, title);

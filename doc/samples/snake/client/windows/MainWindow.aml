@@ -3,10 +3,12 @@ import structure Gdk                  from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas            from "x-alice:/lib/gtk/GtkCanvas"
 import structure Inspector            from "x-alice:/lib/tools/Inspector"
 import structure Ctrl                 from "x-alice:/lib/utility/Ctrl"
+
 import structure Color                from "../../common/Color"
 import structure Config               from "../../server/Config"
 import structure Protocol             from "../../common/Protocol"
 import structure ArenaWidget          from "ArenaWidget"
+import structure HighscoreIO          from "../../server/HighscoreIO"
 
 import structure ConnectionWindow     from "ConnectionWindow"
 import structure ServerSettingsWindow from "ServerSettingsWindow"
@@ -14,24 +16,24 @@ import structure TextWindow           from "TextWindow"
 import structure QuestionWindow       from "QuestionWindow"
 
 
+open Ctrl
+
 structure MainWindow =
 struct
-
-    open Ctrl
 
     datatype mode = START | GAME
 
     val mode = ref START
 
     val arena = ArenaWidget.initialize ()
-
     val canvas = ArenaWidget.toObject arena
+
 
     val menu_hi_item = Gtk.menuItemNewWithLabel "Highscore"
     val menu_m_item  = Gtk.menuItemNewWithLabel "Menu"
     val menu_gu_item = Gtk.menuItemNewWithLabel "Give Up"
 
-    fun reset' () = 
+    fun reset' () =
 	(Gtk.widgetSetSensitive (menu_gu_item, false);
 	 Gtk.widgetSetSensitive (menu_m_item, true);
 	 Gtk.widgetSetSensitive (menu_hi_item, true);
@@ -43,18 +45,19 @@ struct
 	(TextWindow.mkTextWindow (title, msg); reset' ())
 
 
-    fun gameMode ({turn,
-		   changeView,
-		   giveUp},
+    val turn' = ref (fn d => ())
+    val changeView' = ref (fn h => ())
+    val giveUp' = ref (fn () => ())
+
+    fun gameMode ({turn, changeView, giveUp},
 		   guiGame) =
 	let
-	    
 	    fun gameFinished h = 
-		reset (SOME ("Highscore", "highscore"))
+		reset (SOME ("Highscore", "highscore..."))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
-	    fun updatePoints p = ()
+	    fun updatePoints p = () (* TODO: implementation *)
 
 	in
 	    Gtk.widgetSetSensitive (menu_gu_item, true);
@@ -62,7 +65,11 @@ struct
 	    Gtk.widgetSetSensitive (menu_hi_item, false);
 	    Gtk.widgetShow canvas;
 	    mode := GAME;
-	    Promise.fulfill (guiGame, {update, updatePoints, gameFinished})
+	    assert (Future.isFuture $ Promise.future guiGame) 
+	    do Promise.fulfill (guiGame, {update, updatePoints, gameFinished});
+	    turn' := turn;
+	    changeView' := changeView;
+	    giveUp' := giveUp
 	end
 	 
 
@@ -85,50 +92,11 @@ struct
 			   | QuestionWindow.NO     => ()
 			   | QuestionWindow.CANCEL => ()
 			end
-
-	    fun startClient () = 
-		ConnectionWindow.mkConnectToServer ({connect},
-						    {reset, gameMode})
-
-	    fun startMultiPlayer () = 
-		ServerSettingsWindow.mkServerSettings ({startServer},
-						       {reset, gameMode})
-
-	    fun openHighscore () = () (* TODO: implementation *)
-
-	    fun startSinglePlayer () = 
-		case startServer (SOME ("Player", Color.fromString "brown"), 
-				  Config.defaultSingle) of
-		    FST ({start}, _) => 
-			(case start () of
-			     FST (mGame, guiGame) => gameMode (mGame, guiGame)
-			   | SND   errorMsg       => 
-				 reset (SOME ("ERROR!!", errorMsg)))
-		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
-		    
-	    fun turn x = Inspector.inspect x
-
-	    fun key keyval = (* abfage ob spectator oder net *)
-		if !mode = GAME
-		    then
-			case Gdk.keyvalName keyval of
-			    "Up"      => turn Protocol.UP
-			  | "Down"    => turn Protocol.DOWN
-			  | "Right"   => turn Protocol.RIGHT
-			  | "Left"    => turn Protocol.LEFT
-			  |    _      => ()
-		else ()
-
-
-	    fun canvasEvent [Gtk.EVENT (event)] = 
-		(case event of
-		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
-		   |            _                  	=> ())
-	      |  canvasEvent       _            = ()
 		     
 			
 	    val main_window     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 	    val dialog_vbox1 	= Gtk.vboxNew (false, 10)
+	    val canvas_vbox2    = Gtk.vboxNew (false, 10)
 	    val menu_m_single	= Gtk.menuItemNewWithLabel "Single-Player"
 	    val menu_m_client	= Gtk.menuItemNewWithLabel "Multi-Player Client"
 	    val menu_m_server	= Gtk.menuItemNewWithLabel "Multi-Player Server"
@@ -139,8 +107,54 @@ struct
 	    val menu_q_item	= Gtk.menuItemNewWithLabel "Quit"
 	    val menu_qu_item    = Gtk.menuItemNewWithLabel "Quit"
 
+	    fun startClient () = 
+		ConnectionWindow.mkConnectToServer ({connect},
+						    {reset, gameMode})
+
+	    fun startMultiPlayer () = 
+		ServerSettingsWindow.mkServerSettings ({startServer},
+						       {reset, gameMode})
+
+	    fun openHighscore () = 
+		let
+		    val score = HighscoreIO.load ()
+		in
+		    TextWindow.mkTextWindow ("Highscore", "highscore...")
+		end
+
+	    fun startSinglePlayer () = 
+		case startServer (SOME ("Player", Color.fromString "blue"), 
+				  Config.defaultSingle) of
+		    FST ({start}, _) => 
+			(case start () of
+			     FST (mGame, guiGame) => gameMode (mGame, guiGame)
+			   | SND   errorMsg       => 
+				 reset (SOME ("ERROR!!", errorMsg)))
+		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
+
+	    fun key keyval =
+		  if !mode = GAME
+		      then
+			  case Gdk.keyvalName keyval of
+			      "Up"      => (!turn') Protocol.UP
+			    | "Down"    => (!turn') Protocol.DOWN
+			    | "Right"   => (!turn') Protocol.RIGHT
+			    | "Left"    => (!turn') Protocol.LEFT
+			    |  "q"      => (!changeView') Protocol.PREV
+			    |  "w"      => (!changeView') Protocol.NEXT
+			    |   _       => ()
+		  else ()
+
+
+	    fun canvasEvent [Gtk.EVENT event] = 
+		(case event of
+		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
+		   |            _                  	=> ())
+	      |  canvasEvent       _            = ()
+
 	in
 
+	    mode := START;
 	    Gtk.windowSetTitle (main_window, "Alice Snake");
 	    Gtk.windowSetDefaultSize (main_window, 800, 500);
 	    Gtk.windowSetPosition (main_window, Gtk.WIN_POS_CENTER);
@@ -165,7 +179,9 @@ struct
 	    Gtk.signalConnect (menu_m_server, "activate", 
 			       fn _ => startMultiPlayer ());
 	    Gtk.signalConnect (menu_qu_item, "activate", 
-			       fn _ => mainQuit ()); 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (menu_gu_item, "activate",
+			       fn _ => (!giveUp') ());
 
 	    Gtk.menuItemSetSubmenu (menu_m_item, menu_menu);
 	    Gtk.menuItemSetSubmenu (menu_q_item, menu_quit);
@@ -177,8 +193,10 @@ struct
 	    Gtk.menuBarAppend (menu_bar, menu_q_item);
 	    
 	    Gtk.boxPackStart (dialog_vbox1, menu_bar, false, false, 0);
+	    Gtk.boxPackStart (canvas_vbox2, canvas, false, false, 0);
 	    
 	    Gtk.containerAdd (main_window, dialog_vbox1);
+	    Gtk.containerAdd (main_window, canvas_vbox2);
 	    Gtk.widgetShowAll main_window
 		
 	end
