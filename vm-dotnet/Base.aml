@@ -335,9 +335,8 @@ structure Char =
 	__primitive isDigit :    char -> bool = "Char.isDigit"
 	__primitive isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive isSpace :    char -> bool = "Char.isSpace"
-	__primitive isCString :  char -> bool = "Char.isCString"
 
-	val toCString = 0   (*--** *)
+	__primitive toCString :  char -> bool = "Char.toCString"
     end
 
 type char = Char.char
@@ -517,8 +516,8 @@ structure Int =
 
 	__primitive toString : int -> string = "Int.toString"
 
-	__primitive >= : int * int -> bool = "Int.>="
-	__primitive < : int * int  -> bool = "Int.<"
+	val op>= = op>=
+	val op< = op<
 
 	val fromString = scanString (scan DEC)   (*--** crashes *)
 
@@ -578,7 +577,6 @@ structure Word =
 
 	__primitive toInt : word -> int = "Word.toInt"
 	__primitive toLargeInt : word -> LargeInt.int = "Word.toInt"
-	__primitive fromLargeInt : LargeInt.int -> word = "Word.fromInt"
 	__primitive toIntX : word -> int = "Word.toIntX"
 	__primitive orb : word * word -> word = "Word.orb"
 	__primitive xorb : word * word -> word = "Word.xorb"
@@ -588,7 +586,8 @@ structure Word =
 	__primitive op>> : word * word -> word = "Word.>>"
 	__primitive op~>> : word * word -> word = "Word.~>>"
 	__primitive toString : word -> string = "Word.toString"
-	__primitive >=   : word * word -> bool = "Word.>="
+
+	val op>= = op>=
 
 	fun fromLargeWord w = w
 	fun toLargeWord w = w
@@ -740,27 +739,3 @@ structure Vector =
     end
 
 val vector = Vector.fromList
-
-(* TextIO *)
-
-structure TextIO =
-    struct
-	type instream
-	type outstream
-
-	__primitive stdIn : instream = "TextIO.stdIn"
-	__primitive openIn : string -> instream = "TextIO.openIn"
-	__primitive inputAll : instream -> string = "TextIO.inputAll"
-	__primitive closeIn : instream -> unit = "TextIO.closeIn"
-
-	__primitive stdOut : outstream = "TextIO.stdOut"
-	__primitive stdErr : outstream = "TextIO.stdErr"
-	__primitive openOut : string -> outstream = "TextIO.openOut"
-	__primitive output : outstream * string -> unit = "TextIO.output"
-	__primitive output1 : outstream * char -> unit = "TextIO.output1"
-	__primitive closeOut : outstream -> unit = "TextIO.closeOut"
-
-	__primitive print : string -> unit = "TextIO.print"
-    end
-
-val print = TextIO.print
