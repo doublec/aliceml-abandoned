@@ -1,7 +1,7 @@
-- move PP stuff from lib/rtt to compiler/frontend-common
-- don't use instance structures for runtime interfaces
+- make fixpoints explicit
+- reconsider open types: probably as a special builtin type 'a <ext>;
+  change syntax to exttype
 - compress: integrate rehash-consing; use compress_state
-- complete verifier for intermediate language
 - remove indexed labels from signatures by converting hiding to local
 - remove definitionals from signatures by adding singletons
 - remove signature intersection
@@ -14,3 +14,4 @@
 - get rid of 'con somehow
 - make quantifications in interfaces explicit
 - clean up VarDec stuff in elaborator
+- move PP stuff from lib/rtt to compiler/frontend-common
