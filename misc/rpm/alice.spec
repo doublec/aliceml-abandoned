@@ -51,11 +51,11 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}
 
 %changelog
+* Wed Apr 14 2004 Guido Tack <tack@ps.uni-sb.de>
+- new upstream version
+
 * Tue Oct 15 2002 Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 - initial RPM release
 
 * Thu Feb 13 2002 Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
-- new upstream version
-
-* Wed Apr 14 2004 Guido Tack <tack@ps.uni-sb.de>
 - new upstream version
