@@ -69,14 +69,14 @@ struct
 
       | ppInf'(FUN(p,j1,j2)) =
 	let
-	    val doc = ppBinder("FCT",p,j1,j2)
+	    val doc = ppBinder("fct",p,j1,j2)
 	in
 	    fbox(below doc)
 	end
 
       | ppInf'(LAMBDA(p,j1,j2)) =
 	let
-	    val doc = ppBinder("LAMBDA",p,j1,j2)
+	    val doc = ppBinder("fn",p,j1,j2)
 	in
 	    fbox(below doc)
 	end
@@ -101,16 +101,16 @@ text "@" ^^*)
 	    abox(
 		fbox(
 		    text s ^^
-		    text "(" ^/^
-		    below(break ^^
+		    text "(" ^^
+		    below(
 			PPPath.ppPath p ^/^
 			text ":" ^^
 			nest(break ^^
 			    ppInf j1
 			)
-		    ) ^/^
+		    ) ^^
 		    text ")" ^/^
-		    text "."
+		    text "->"
 		) ^^
 		nest(break ^^
 		    ppInf j2
