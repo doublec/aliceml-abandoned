@@ -31,7 +31,7 @@ for i in \
     CommandLine.dll.sig Default.import Dialog.cs Dialog.dll Dialog.dll.sig \
     IO.cs IO.dll IO.dll.sig OS.cs OS.dll OS.dll.sig Skeleton.il \
     TextIO.cs TextIO.dll TextIO.dll.sig Tools.aml Tools.dll Win32.cs \
-    Win32.dll stoc-com+.x86-win32 stoc.bat stow.cs stow.exe streams.dll \
+    Win32.dll stoc-dotnet.x86-win32 stoc.bat stow.cs stow.exe streams.dll \
     vars.bat
 do
     cp $i $dist
