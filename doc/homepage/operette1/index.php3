@@ -45,6 +45,22 @@
 
 
 
+<?php section("people", "people") ?>
+
+  <P>
+    The following people are currently involved in the Alice/Stockhausen
+    project:
+  </P>
+
+  <UL>
+    <LI> <A href="/~bruni/">Thorsten Brunklaus</A> </LI>
+    <LI> <A href="/~kornstae/">Leif Kornstaedt</A> </LI>
+    <LI> <A href="/~rossberg/">Andreas Rossberg</A> </LI>
+    <LI> <A href="/~smolka/">Gert Smolka</A> </LI>
+  </UL>
+
+
+
 <?php section("contact", "contact") ?>
 
   <P>
