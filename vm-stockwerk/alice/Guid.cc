@@ -66,8 +66,8 @@ static int GetTimeStamp() {
 #endif
 
 static inline word intToWord(int i) {
-  //--** wild hack!
-  return Store::IntToWord(((i & (1 << 30)) << 1) | (i & 0x7FFFFFFF));
+  //--** wild hack: make signed (n-1)-bit integer
+  return Store::IntToWord((i + i) / 2);
 }
 
 Guid *Guid::New() {
