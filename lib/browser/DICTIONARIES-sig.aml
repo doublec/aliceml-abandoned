@@ -16,13 +16,13 @@
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
 
-import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
+import signature DICTIONARY from "DICTIONARY-sig"
 
 signature DICTIONARIES = 
 sig
-    structure Main: MK_DICTIONARY
-    structure RelMan: MK_DICTIONARY 	
-    structure Transient: MK_DICTIONARY 
+    structure Main: DICTIONARY
+    structure RelMan: DICTIONARY 	
+    structure Transient: DICTIONARY 
 
     type main = Main.dictionary
     type relman = RelMan.dictionary

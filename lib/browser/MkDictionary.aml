@@ -13,10 +13,10 @@
  *
  *)
 
-import signature MK_DICTIONARY from "MK_DICTIONARY-sig"
+import signature DICTIONARY from "DICTIONARY-sig"
 
 (* functor MkDictionary *)
-functor MkDictionary (type t) :> MK_DICTIONARY where type elemtype = t =
+functor MkDictionary (type t) :> DICTIONARY where type elemtype = t =
 struct
     type elemtype = t
 	

@@ -13,7 +13,7 @@
  *
  *)
 
-signature MK_DICTIONARY  = 
+signature DICTIONARY  = 
 sig
     type elemtype
     type dictionary
