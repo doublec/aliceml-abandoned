@@ -128,18 +128,18 @@ structure HttpServer :> HTTP_SERVER =
 	fun start portOpt =
 	    let
 		val p = Promise.promise ()
+
+		fun start' portOpt =
+		    let 
+			val (_, serverPort) =
+			    Socket.server (portOpt, handleConnection)
+		    in
+			Promise.fulfill (p, SOME serverPort);
+			serverPort
+		    end
 	    in
-		case Ref.exchange (myPort, Promise.future p) of
-		    portOpt as SOME port =>
-			(Promise.fulfill (p, portOpt); port)
-		  | NONE =>
-			let
-			    val (_, serverPort) =
-				Socket.server (portOpt, handleConnection)
-			in
-			    Promise.fulfill (p, SOME serverPort);
-			    serverPort
-			end
+		Ref.exchange (myPort, Promise.future p);
+		start' portOpt
 	    end
 
 	fun register (uri, handler) =
