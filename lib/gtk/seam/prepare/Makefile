@@ -15,14 +15,14 @@ ifeq ("$(PLATFORM)", "")
   $(error Unknown platform)
 endif
 ifeq ("$(PLATFORM)", "x86-win32")
-CC_OPTS = -mno-cygwin -mms-bitfields
+EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H -D__IEEE_LITTLE_ENDIAN
 SML = cmd /c sml
 else
 ifeq ("$(PLATFORM)", "ppc-darwin")
-CC_OPTS = -D__ppc__
+EXTRA_CC_OPTS = -D__ppc__
 SML = sml
 else
-CC_OPTS =
+EXTRA_CC_OPTS =
 SML = sml
 endif
 endif
