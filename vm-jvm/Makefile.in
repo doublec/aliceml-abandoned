@@ -93,7 +93,7 @@ link:
 	$(M4) $(M4INCL) $$a > `basename $$a .m4` ; done)
 	test -d $(CLASSROOT)$(RUNTIME) || (\
 	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) *java && \
-	$(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)LVar $(rt)Future $(rt)ServerManager $(rt)ClientManager $(rt)Exporter $(rt)Port)
+	$(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)LVar $(rt)Future $(rt)ServerManager $(rt)ClientManager $(rt)Exporter $(rt)Port $(rt)ByNeedFuture)
 
 rmi:	$(rmifil)
 
