@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -21,15 +21,14 @@ import signature PP_PATH     from "PP_PATH-sig"
 
 structure PPPath :> PP_PATH =
 struct
-    (* Import *)
-
     open Path
     open PrettyPrint
     open PPMisc
-
     infixr ^^
 
-    fun ppPath' ps p =
+    val debug = false
+
+    fun ppPath''(ps,p) =
 	if List.exists (fn p' => Path.equal(p,p')) ps then empty else
 	case inspect p
 	 of Name n    => if n = Name.ExId "__pervasive" then empty else
@@ -37,13 +36,19 @@ struct
 	  | Hidden n  => text "_" ^^ text "." ^^ text(Name.toString n)
 	  | Dot(p',l) =>
 	    let
-		val doc1 = ppPath' ps p'
+		val doc1 = ppPath''(ps,p')
 		val doc2 = text(Label.toString l)
 	    in
 		if isEmpty doc1
 		then doc2
 		else doc1 ^^ text "." ^^ doc2
 	    end
+
+    fun ppPath' ps p =
+	ppPath''(ps,p) ^^
+	(if debug
+	 then text("#" ^ Int.toString(Path.hash p))
+	 else empty)
 
     fun ppPath p =
 	let
@@ -53,9 +58,4 @@ struct
 	    then text "_"
 	    else doc
 	end
-
-(*DEBUG
-    val ppPath  = fn p => ppPath  p ^^ text("$"^ Int.toString(Path.hash p))
-    val ppPath' = fn ps => fn p => ppPath' ps p ^^ text("$"^ Int.toString(Path.hash p))
-*)
 end

@@ -23,15 +23,12 @@ import signature PP_TYPE       from "PP_TYPE-sig"
 
 structure PPType :> PP_TYPE =
 struct
-
-    (* Import *)
-
     open Type
     open PrettyPrint
     open PPMisc
-
     infixr ^^ ^/^
 
+    val debug = false
 
     (* Helpers *)
 
@@ -153,7 +150,7 @@ struct
 	    let
 		val (t1,t2) = asAbbrev t
 	    in
-		ppTyp'(ps,i,j,m,prec,t1)
+		ppTyp'(ps,i,j,m, prec, if debug then t2 else t1)
 (*DEBUG
 		parenPrec prec (asPrec,
 		    fbox(
@@ -220,17 +217,16 @@ struct
 		    ))
 		)
 	  | Sum r =>
+		if debug then text "..." else
 		parenPrec prec (ofPrec,
 		    fbox(below(
 			ppRow(" |", " of", ps, i, j, m, ofPrec+1, r)
 		    ))
 		)
 	  | All(a,t') =>
+		if debug then ppBind("forall",ps,i,j,m,prec,a,t') else
 		(Map.insert(m, canonical(var a), ppVar'(true,i,a));
 		 ppTyp'(ps,i+1,j,m,prec,t'))
-(*DEBUG
-		ppBind("forall",ps,i,j,m,prec,a,t')
-*)
 	  | Exist(a,t') =>
 		ppBind("exist",ps,i,j,m,prec,a,t')
 	  | Lambda(a,t') =>
@@ -248,6 +244,7 @@ struct
 		)
 	    end
 	  | Mu t' =>
+	    if debug then text "datatype" else
 	    let
 		val k   = kind t'
 		val doc = ppVar'(true, i, newVar(k, Unconstrained))

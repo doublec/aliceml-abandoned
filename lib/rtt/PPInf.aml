@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,6 +33,7 @@ struct
     open PPMisc
     infixr ^^ ^/^
 
+    val debug = false
 
   (* Deconstruction helpers *)
 
@@ -52,10 +53,9 @@ struct
     and unbind'(j,binds) =
 	case inspect j
 	 of Arrow(p,j1,j2)	=> unbind'(j2, ("fct"," ->",p,j1)::binds)
-	  | Exist(p,j1,j2)	=> unbind'(j2, binds)
-(*DEBUG
-				   unbind'(j2, ("exist"," =>",p,j1)::binds)
-*)
+	  | Exist(p,j1,j2)	=> if not debug
+				   then unbind'(j2, binds)
+				   else unbind'(j2, ("exist"," =>",p,j1)::binds)
 	  | Lambda(p,j1,j2)	=> unbind'(j2, ("fn"," =>",p,j1)::binds)
 	  | _			=> (List.rev binds, j)
 
@@ -191,8 +191,9 @@ struct
 	    let
 		val (j1,j2) = asAbbrev j
 	    in
-		ppInf'(ps,prec,j1)
-(*DEBUG
+		if not debug
+		then ppInf'(ps,prec,j1)
+		else
 		parenPrec prec (asPrec,
 		    fbox(
 			ppInf'(ps, asPrec+1, j1) ^^
@@ -200,7 +201,6 @@ struct
 			ppInf'(ps, asPrec+1, j2)
 		    )
 		)
-*)
 	    end
 	else case inspect j
 	 of Top   => text "any"
@@ -370,10 +370,9 @@ struct
 			  | Type.ArrowKind _ => assert false
 		    ) ^^
 		    hbox(doc1 ^/^ text "") ^^
-		    ppLab(Path.toLab p) ^/^
-(*DEBUG
-		    PPPath.ppPath' ps p ^/^
-*)
+		    (if not debug
+		     then ppLab(Path.toLab p)
+		     else PPPath.ppPath' ps p) ^/^
 		    (case to
 		     of NONE   => empty
 		      | SOME t =>
@@ -395,10 +394,9 @@ struct
 		doc ^/^
 		fbox(nest(
 		    text(if isArrow j' then "functor " else "structure ") ^^
-		    ppLab(Path.toLab p) ^/^
-(*DEBUG
-		    PPPath.ppPath' ps p ^/^
-*)
+		    (if not debug
+		     then ppLab(Path.toLab p)
+		     else PPPath.ppPath' ps p) ^/^
 		    text ":" ^/^
 		    ppInf'(p::ps, rootPrec, j') ^/^
 		    (case po
@@ -435,10 +433,9 @@ struct
 		doc ^/^
 		fbox(nest(
 		    text "signature " ^^
-		    ppLab(Path.toLab p) ^/^
-(*DEBUG
-		    PPPath.ppPath' ps p ^/^
-*)
+		    (if not debug
+		     then ppLab(Path.toLab p)
+		     else PPPath.ppPath' ps p) ^/^
 		    abox(
 			List.foldr (ppBind ps) empty bds'
 		    ) ^/^
@@ -451,10 +448,9 @@ struct
 		))
 	    end
 	  | HiddenItem item' =>
-		doc
-(*DEBUG
-		text "? " ^^ ppItem (ps,ls) (item', doc)
-*)
+		if not debug
+		then doc
+		else text "? " ^^ ppItem (ps,ls) (item', doc)
 
 
   (* Kinds *)
