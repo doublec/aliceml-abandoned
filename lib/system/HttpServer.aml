@@ -11,7 +11,7 @@
  *)
 
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure TextIO        from "TextIO"
+(*import structure TextIO      from "TextIO"*)
 import structure Url           from "Url"
 import structure Socket        from "Socket"
 import structure Http          from "Http"
@@ -61,9 +61,10 @@ structure HttpServer :> HTTP_SERVER =
 
 	fun handleConnection (socket, host, port) =
 	    let
-		(*--** more sophisticated logging *)
+(*--** replace by some logging facility
 		val _ = TextIO.print ("connection from " ^ host ^ ":" ^
 				      Int.toString port ^ "\n")
+*)
 		val request = Http.readRequest socket
 		val handler = findHandler (#uri request)
 		val response = handler request
@@ -76,8 +77,10 @@ structure HttpServer :> HTTP_SERVER =
 		Socket.close socket
 	    end
 	    handle Http.Format =>
-		       (TextIO.print "protocol error\n";
-			Socket.close socket)
+		       Socket.close socket
+(*--** replace by some logging facility
+		       before TextIO.print "protocol error\n"
+*)
 		 | Http.Closed => ()
 
 	fun start portOpt =
