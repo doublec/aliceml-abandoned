@@ -89,6 +89,7 @@ in
   fun delete_event _ = (print "window closed\n" ;
 			OS.Process.exit OS.Process.success )
 
+
   val sig1 = signalConnectAfter(button,"clicked",callback)
   val sig2 = signalConnect(textbuf,"insert_text",callback)
   val sig3 = signalConnect(ibox,"button_press_event",callback)
