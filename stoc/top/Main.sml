@@ -25,12 +25,12 @@ structure Main :> MAIN =
 	    TextIO.closeOut file
 	end
 
-    val parse      = ParsingPhase.parse
-    fun abstract x = (AbstractionPhase.translate (BindEnv.copy BindEnv0.E0) o parse) x
-    fun elab x     = (ElaborationPhase.elab (Env.copy Env0.E0) o abstract) x
+    val parse      = ParsingPhase.parse o Source.fromString
+    val abstract   = AbstractionPhase.translate(BindEnv.copy BindEnv0.E0) o parse
+    val elab       = ElaborationPhase.elab(Env.copy Env0.E0) o abstract
     val translate  = TranslationPhase.translate o elab
     val imperatify = MatchCompilationPhase.translate o translate
-    val ilify      = CodeGenPhase.genComponent o imperatify
+    val illify     = CodeGenPhase.genComponent o imperatify
 
     fun ozify outstream s =
 	let
@@ -51,7 +51,7 @@ structure Main :> MAIN =
 
     fun comify outstream s =
 	let
-	    val component = ilify s
+	    val component = illify s
 	in
 	    IL.outputProgram (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
