@@ -65,7 +65,7 @@ struct
 		parse'(ts, true, context, stack,
 		       text(x, contextUntouched, context, doc), cost)
 	   | Lex.SPACE x =>
-		parse'(ts, true, context, stack,
+		parse'(ts, contextUntouched, context, stack,
 		       space(if #tt context then x else " ", contextUntouched,
 			     spacify context, doc), cost)
 	   | Lex.OPEN t =>
