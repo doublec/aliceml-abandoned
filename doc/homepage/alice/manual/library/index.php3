@@ -86,6 +86,7 @@
   <P><TT>lib/tools</TT>:</P>
 
   <TABLE>
+    <TR> <TD><A href="explorer.php3"><TT>EXPLORER</TT></A></TD> </TR>
     <TR> <TD><A href="inspector.php3"><TT>INSPECTOR</TT></A></TD> </TR>
   </TABLE>
 
@@ -171,6 +172,7 @@
   <P><TT>lib/tools</TT>:</P>
 
   <TABLE>
+    <TR> <TD><A href="explorer.php3"><TT>Explorer</TT></A></TD> </TR>
     <TR> <TD><A href="inspector.php3"><TT>Inspector</TT></A></TD> </TR>
   </TABLE>
 
