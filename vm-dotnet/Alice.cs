@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Reflection;
-using System.IO;
 
 using Alice;
 using Alice.Values;
@@ -118,14 +117,6 @@ namespace Alice {
 	    public override Object Apply(Object obj) {
 		Object[] a = (Object[]) CommonOp.Sync(obj);
 		return Apply(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8]);
-	    }
-	}
-	class StreamWrapper {
-	    public System.String name;
-	    public Object stream;
-	    public StreamWrapper(System.String name, Object stream) {
-		this.name   = name;
-		this.stream = stream;
 	    }
 	}
 	public class Cell {
@@ -454,7 +445,7 @@ namespace Alice {
 	    }
 	}
     }
-    class CommonOp {
+    public class CommonOp {
 	public static Object Sync(Object obj) {
 	    if (obj is Transient) {
 		return ((Transient) obj).Await();
@@ -480,7 +471,7 @@ namespace Alice {
 	    }
 	}
     }
-    class ListOp {
+    public class ListOp {
 	public static bool IsNil(Object obj) {
 	    return (obj is Int32);
 	}
@@ -2212,245 +2203,6 @@ namespace Alice {
 		return StaticApply(a);
 	    }
 	}
-	public class OS_Process_system : Procedure {
-	    public static Object StaticApply(Object a) {
-		// to be determined
-		return a;
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class OS_Process_exit : Procedure {
-	    public static Object StaticApply(Object obj) {
-		Environment.Exit((Int32) CommonOp.Sync(obj));
-		return Prebound.unit;
-	    }
-	    public override Object Apply(Object obj) {
-		return StaticApply(obj);
-	    }
-	}
-	public class OS_Process_getEnv : Procedure {
-	    public static Object StaticApply(Object a) {
-		try {
-		    return new TagVal(1,
-				      (System.String)
-				      Environment.GetEnvironmentVariable((System.String)
-									 CommonOp.Sync(a)));
-		}
-		catch (System.Exception) {
-		    return Prebound.Option_NONE;
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_openIn : Procedure {
-	    public static Object StaticApply(Object a) {
-		System.String name = "";
-		try {
-		    name = (System.String) CommonOp.Sync(a);
-		    return new StreamWrapper(name,
-					     new StreamReader(new FileStream(name,
-									     FileMode.Open,
-									     FileAccess.Read)));
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0]       = e; // to be determined
-		    ar[1]       = "openIn";
-		    ar[2]       = name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_inputAll : Procedure {
-	    public static Object StaticApply(Object a) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamReader r        = (StreamReader) wrapper.stream;
-		try {
-		    return r.ReadToEnd();
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0] = e; // to be determined
-		    ar[1] = "inputAll";
-		    ar[2] = wrapper.name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_inputLine : Procedure {
-	    static Char[] buf = new Char[4097];
-	    public static Object StaticApply(Object a) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamReader r        = (StreamReader) wrapper.stream;
-		try {
-		    System.String line = r.ReadLine();
-
-		    if (line == "") {
-			return line;
-		    }
-		    else {
-			// SML Base Library helper text
-			// if the file ends without newline, stick it on anyway
-			return System.String.Concat(line, "\n");
-		    }
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0]       = e; // to be determined
-		    ar[1]       = "inputLine";
-		    ar[2]       = wrapper.name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_closeIn : Procedure {
-	    public static Object StaticApply(Object a) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamReader r        = (StreamReader) wrapper.stream;
-
-		r.Close();
-		return Prebound.unit;
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_openOut : Procedure {
-	    public static Object StaticApply(Object a) {
-		System.String name = "";
-		try {
-		    name = (System.String) CommonOp.Sync(a);
-		    return new StreamWrapper(name,
-					     new StreamWriter(new FileStream(name,
-									     FileMode.CreateNew,
-									     FileAccess.Write)));
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0]       = e; // to be determined
-		    ar[1]       = "openOut";
-		    ar[2]       = name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_output : Procedure2 {
-	    public static Object StaticApply(Object a, Object b) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamWriter  w       = (StreamWriter) wrapper.stream;
-		try {
-		    w.Write((System.String) CommonOp.Sync(b));
-		    return Prebound.unit;
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0] = e; // to be determined
-		    ar[1] = "output";
-		    ar[2] = wrapper.name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a, Object b) {
-		return StaticApply(a, b);
-	    }
-	}
-	public class TextIO_output1 : Procedure2 {
-	    public static Object StaticApply(Object a, Object b) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamWriter  w       = (StreamWriter) wrapper.stream;
-		try {
-		    w.Write((System.Char) CommonOp.Sync(b));
-		    return Prebound.unit;
-		}
-		catch (System.Exception e) {
-		    Object[] ar = new Object[3];
-		    ar[0] = e; // to be determined
-		    ar[1] = "output1";
-		    ar[2] = wrapper.name;
-		    throw new Values.Exception(new ConVal(Prebound.IO_Io, ar));
-		}
-	    }
-	    public override Object Apply(Object a, Object b) {
-		return StaticApply(a, b);
-	    }
-	}
-	public class TextIO_flushOut : Procedure {
-	    public static Object StaticApply(Object a) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamWriter w        = (StreamWriter) wrapper.stream;
-
-		w.Flush();
-		return Prebound.unit;
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_closeOut : Procedure {
-	    public static Object StaticApply(Object a) {
-		StreamWrapper wrapper = (StreamWrapper) CommonOp.Sync(a);
-		StreamWriter w        = (StreamWriter) wrapper.stream;
-
-		w.Close();
-		return Prebound.unit;
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class TextIO_print : Procedure {
-	    public static Object StaticApply(Object a) {
-		Console.Write((System.String) CommonOp.Sync(a));
-		return Prebound.unit;
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class CommandLine_name : Procedure {
-	    public static Object StaticApply(Object a) {
-		return Environment.GetCommandLineArgs()[1];
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
-	public class CommandLine_arguments : Procedure {
-	    public static Object StaticApply(Object a) {
-		System.String[] args = Environment.GetCommandLineArgs();
-		int len              = args.Length;
-
-		if (len == 2) {
-		    return (Int32) 1;
-		}
-		else {
-		    TagVal head = ListOp.Cons(args[len - 1], (Int32) 1);
-		    for (int i = (len - 2); i >= 2; i--) {
-			head = (TagVal) ListOp.Cons(args[i], head);
-		    }
-		    return head;
-		}
-	    }
-	    public override Object Apply(Object a) {
-		return StaticApply(a);
-	    }
-	}
     }
     public class Prebound {
 	public static Object opeq    = new Builtins.opeq();
@@ -2657,35 +2409,6 @@ namespace Alice {
 	public static Object Word_arithshr     = new Word_arithshr();
 	public static Object Word_toString     = new Word_toString();
 	public static Object Word_wordSize     = (Int32) 32;
-
-	public static Object IO_Io = "IO.Io";
-
-	public static Object OS_Process_success = (Int32) 0;
-	public static Object OS_Process_failure = (Int32) 1;
-	public static Object OS_Process_system  = new OS_Process_system();
-	public static Object OS_Process_exit    = new OS_Process_exit();
-	public static Object OS_Process_getEnv  = new OS_Process_getEnv();
-
-	public static Object TextIO_stdIn =
-	    new StreamWrapper("stdin", System.Console.In);
-	public static Object TextIO_stdOut =
-	    new StreamWrapper("stdout", System.Console.Out);
-	public static Object TextIO_stdErr =
-	    new StreamWrapper("stderr", System.Console.Error);
-	public static Object TextIO_openIn    = new TextIO_openIn();
-	public static Object TextIO_inputAll  = new TextIO_inputAll();
-	public static Object TextIO_inputLine = new TextIO_inputLine();
-	public static Object TextIO_closeIn   = new TextIO_closeIn();
-	public static Object TextIO_openOut   = new TextIO_openOut();
-	public static Object TextIO_output    = new TextIO_output();
-	public static Object TextIO_output1   = new TextIO_output1();
-	public static Object TextIO_flushOut  = new TextIO_flushOut();
-	public static Object TextIO_closeOut  = new TextIO_closeOut();
-	public static Object TextIO_print     = new TextIO_print();
-
-	public static Object CommandLine_name      = new CommandLine_name();
-	public static Object CommandLine_arguments = new CommandLine_arguments();
-	
     }
     public class Komponist {
 	static public Komponist global_k          = null;
