@@ -937,9 +937,8 @@ u_int NativeCodeJitter::LoadIdRef(u_int Dest, word idRef, word pc) {
 	jit_movi_p(Dest, val);
 	return Dest;
       }
-      ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
-      if (PointerOp::IsTransient(val) == false)
-	return Dest;
+      else
+	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
     }
     break;
   default:
@@ -967,9 +966,8 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
 	jit_movi_p(Dest, val);
 	return Dest;
       }
-      ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
-      if (PointerOp::IsTransient(val) == false)
-	return Dest;
+      else
+	ImmediateSel(Dest, JIT_V2, ImmediateEnv::Register(val));
     }
     break;
   default:
@@ -1985,7 +1983,7 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
   Vector *tests2 = Vector::FromWordDirect(pc->Sel(2));
   u_int nTests2  = tests2->GetLength();
   if (nTests2 != 0) {
-    JITAlice::TagVal::GetTag(tagVal);
+    JITAlice::TagVal::GetTag(JIT_R0, tagVal);
     IntToWord(JIT_R0, JIT_R0);
     jit_pushr_ui(tagVal); // Save TagVal Ptr
     IntMap *map2 = IntMap::New(nTests2 * 2);
@@ -2057,7 +2055,7 @@ TagVal *NativeCodeJitter::InstrCompactTagTest(TagVal *pc) {
   jit_insn *skip_tagload = jit_jmpi(jit_forward());
   // Block branch (v1 is non-nullary constructor)
   jit_patch(have_constructor);
-  JITAlice::TagVal::GetTag(tagVal);
+  JITAlice::TagVal::GetTag(JIT_R0, tagVal);
   jit_patch(skip_tagload);
   Vector *tests         = Vector::FromWordDirect(pc->Sel(1));
   u_int nTests          = tests->GetLength();

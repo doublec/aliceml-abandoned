@@ -60,9 +60,9 @@ namespace JITAlice {
     static void Put(u_int This, u_int pos, u_int Value) {
       JITStore::InitArg(This, pos, Value);
     }
-    static void GetTag(u_int This) {
-      JITStore::Block::GetLabel(JIT_R0, This);
-      jit_subi_ui(JIT_R0, JIT_R0, Alice::MIN_TAG);
+    static void GetTag(u_int Dest, u_int This) {
+      JITStore::Block::GetLabel(Dest, This);
+      jit_subi_ui(Dest, Dest, Alice::MIN_TAG);
     }
   };
 
