@@ -21,22 +21,26 @@ structure ToJasmin =
 
 	val labelMerge: string StringHash.t ref = ref (StringHash.new())
 
-	fun mergeLabels insts =
-	    let
-		fun merge (Label lab'::Goto lab''::rest) =
-		    (StringHash.insert (!labelMerge, lab', lab'');
-		     merge rest)
-		  | merge (_::rest) = merge rest
-		  | merge nil = ()
-	    in
-	    labelMerge := StringHash.new();
-	    merge insts
-	    end
-
 	fun directJump lab' =
 	    case StringHash.lookup (!labelMerge, lab') of
 		NONE => lab'
 	      | SOME lab'' => directJump lab''
+
+	fun mergeLabels insts =
+	    let
+		fun enter (Label lab'::Goto lab''::rest) =
+		    (StringHash.insert (!labelMerge, lab', lab'');
+		     enter rest)
+		  | enter (_::rest) = enter rest
+		  | enter nil = ()
+		fun merge (Label lab'::Goto lab''::rest) =
+		    Goto (directJump lab'')::merge rest
+		  | merge x = x
+	    in
+	    labelMerge := StringHash.new();
+	    enter insts;
+	    merge insts
+	    end
 
 	local
 	    val linecount = ref 0
@@ -313,14 +317,10 @@ structure ToJasmin =
 				      else else',
 					  need, max);
 					  recurse (is, !stackneed,!stackmax))
-			      | Label l' =>
+			      | Goto l' =>
 				    (case is of
 					Goto l''::rest =>
-					    (if !DEBUG >= 2
-						 then TextIO.output
-						     (ziel, "\t; "^l'^": Goto "^l'')
-					     else ();
-						 recurse (is, need, max))
+					    recurse (i::Comment ("Goto "^l'')::rest, need, max)
 				      | _ => (TextIO.output (ziel, instructionToJasmin (i,staticapply)^"\n");
 					      recurse (is, need, max)))
 			      | _ =>
@@ -361,14 +361,18 @@ structure ToJasmin =
 					   instructions, catches, staticapply)) =
 		    (* apply hat derzeit oft ein doppeltes Areturn am Ende.
 		     Wird spaeter wegoptimiert. *)
-		    (mergeLabels(instructions);
-		     TextIO.output(io,".method "^
+		    (TextIO.output(io,".method "^
 				   (mAccessToString access)^
 				   methodname^
 				   (descriptor2string methodsig)^"\n");
 		     instructionsToJasmin(catches,0,0, staticapply, io);
 		     (* Seiteneffekt: stackneed und stackmax werden gesetzt *)
-		     instructionsToJasmin(instructions,0,0, staticapply, io);
+		     instructionsToJasmin
+		     (mergeLabels instructions,
+		      0,
+		      0,
+		      staticapply,
+		      io);
 		     (if !stackneed = 0
 			  orelse
 			  !stackneed = ~1
