@@ -14,7 +14,7 @@ functor
 export
    interpreter: Me
 require
-   Helper(deref: Deref)
+   Helper(deref: Deref pushCall: PushCall)
 define
    NONE = 0
    SOME = 1
@@ -83,7 +83,7 @@ define
 	    end
 	 end
       pushCall:
-	 fun {$ Closure TaskStack}
+	 fun {$ Closure _ TaskStack}
 	    case Closure of closure(_ X I) then
 	       lazySelFrame(LazySelInterpreter X I)|TaskStack
 	    end
@@ -246,10 +246,10 @@ define
 	    end
 	 end
 	 case IdDefInstrOpt of !NONE then   % tail call
-	    continue(Args {Op.1.1.pushCall Op TaskStack})
+	    {PushCall Args Op TaskStack}
 	 [] tag(!SOME tuple(IdDef NextInstr)) then NewFrame in
 	    NewFrame = frame(Me tag(!OneArg IdDef) NextInstr Closure L)
-	    continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
+	    {PushCall Args Op NewFrame|TaskStack}
 	 end
       [] tag(!AppVar IdRef IdRefArgs IdDefArgsInstrOpt) then Op in
 	 Op = case IdRef of tag(!Local Id) then L.Id
@@ -277,10 +277,10 @@ define
 	       end
 	    end
 	    case IdDefArgsInstrOpt of !NONE then   % tail call
-	       continue(Args {Op.1.1.pushCall Op TaskStack})
+	       {PushCall Args Op TaskStack}
 	    [] tag(!SOME tuple(IdDefArgs NextInstr)) then NewFrame in
 	       NewFrame = frame(Me IdDefArgs NextInstr Closure L)
-	       continue(Args {Op.1.1.pushCall Op NewFrame|TaskStack})
+	       {PushCall Args Op NewFrame|TaskStack}
 	    end
 	 end
       [] tag(!GetRef Id IdRef NextInstr) then R0 in
@@ -547,7 +547,7 @@ define
       run: Run
       handle: Handle
       pushCall:
-	 fun {$ Closure=closure(Function ...) TaskStack}
+	 fun {$ Closure Function TaskStack}
 	    case Function of function(_ _ _ NL IdDefArgs BodyInstr) then L in
 	       L = {NewArray 0 NL - 1 uninitialized}
 	       frame(Me IdDefArgs BodyInstr Closure L)|TaskStack
