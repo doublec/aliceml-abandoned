@@ -4,7 +4,8 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000
+ *   Leif Kornstaedt, 2000-2001
+ *   Andreas Rossberg, 2000
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,12 +21,11 @@
 
 import structure Source   from "../infrastructure/Source"
 import signature SWITCHES from "../infrastructure/SWITCHES-sig"
-import signature TARGET   from "../infrastructure/TARGET-sig"
+import structure Target   from "../infrastructure/Target"
 
 signature COMPILER =
 sig
     structure Switches: SWITCHES
-    structure Target:   TARGET
 
     exception Error
 
