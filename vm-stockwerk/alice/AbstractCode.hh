@@ -54,11 +54,11 @@ public:
   static const char *GetOpcodeName(TagVal *pc);
 
   enum idRef {
-    Global, Immediate, LastUseLocal, Local, Toplevel
+    Global, Immediate, LastUseLocal, Local
   };
 
   enum abstractCode {
-    Function, Specialized
+    Function
   };
 
   static con GetCon(TagVal *tagVal) {

@@ -178,9 +178,6 @@ private:
     case AbstractCode::Global:
       fprintf(file, " Global(%d)", Store::DirectWordToInt(idRef->Sel(0)));
       break;
-    case AbstractCode::Toplevel:
-      fprintf(file, " Toplevel(%d)", Store::DirectWordToInt(idRef->Sel(0)));
-      break;
     }
   }
   void IdDefInstr(word w) {
