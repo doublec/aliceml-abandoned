@@ -41,7 +41,9 @@ $(LASTGENERATE) generate: gtkclean.c $(GENERATOR)
 	touch $(LASTGENERATE)
 
 $(GENERATOR):
+	rm -f $(GENERATOR)
 	echo 'CM.make(); compile();' | $(SML)
+	test ! -e $(GENERATOR) || exit 1
 
 gtkclean.c:
 	(cd prepare ; $(MAKE) )

@@ -1,5 +1,6 @@
-import structure Gtk from "../Gtk"
 import structure Gdk from "../Gdk"
+import structure Gtk from "../Gtk"
+import structure GnomeCanvas from "../GnomeCanvas"
 import structure Image from "Image"
 
 local
@@ -7,37 +8,69 @@ local
 in
   (*val _ = widgetShow (colorSelectionDialogNew "Farbe auswaehlen...")*)
 
-  val w = windowNew WINDOW_TOPLEVEL
-  val _ = windowSetTitle(w, "Hallo Welt!")
-  val _ = containerSetBorderWidth(w,10)
+  val window = windowNew WINDOW_TOPLEVEL
+  val _ = windowSetTitle(window, "Hallo Welt!")
+  val _ = containerSetBorderWidth(window,10)
 
   val gdkpic = Gdk.pixbufNewFromXpmData Image.pixmap
-  val i = imageNewFromPixbuf(gdkpic)
+  val image = imageNewFromPixbuf gdkpic
   val ibox = eventBoxNew()
-  val _ = containerAdd(ibox, i)
+  val _ = containerAdd(ibox, image)
 
-  val b = buttonNewWithLabel "Test"
+  val button = buttonNewWithLabel "Test"
 
-  val tb = textBufferNew NULL
-  val tv = textViewNewWithBuffer tb
+  val textbuf = textBufferNew NULL
+  val textview = textViewNewWithBuffer textbuf
 
-  val c = comboNew()
-  val _ = comboSetPopdownStrings(c, ["Auswahl 1", "Auswahl 2"])
+  val combo = comboNew()
+  val _ = comboSetPopdownStrings(combo, ["Auswahl 1", "Auswahl 2"])
+  val canvas = GnomeCanvas.new()
+  val _ = widgetSetSizeRequest(canvas, 100, 100)
+  val root = GnomeCanvas.root canvas
+  val rect = GnomeCanvas.itemNew(root, GnomeCanvas.rectGetType(),
+		  	         "fill_color", [STRING "white", OBJECT NULL])
+  val _ = GnomeCanvas.itemSetValist(rect, 
+				    "x1", [REAL 5.0,
+				    STRING "y1", REAL 5.0,
+				    STRING "x2", REAL 95.0,
+				    STRING "y2", REAL 95.0,
+				    STRING "outline_color", STRING "black",
+				    OBJECT NULL])
 
+  val circle = GnomeCanvas.itemNew(root, GnomeCanvas.ellipseGetType(),
+		  	         "fill_color", [STRING "blue", OBJECT NULL])
+  val _ = GnomeCanvas.itemSetValist(circle, 
+				    "x1", [REAL 10.0,
+				    STRING "y1", REAL 10.0,
+				    STRING "x2", REAL 90.0,
+				    STRING "y2", REAL 90.0,
+				    STRING "outline_color", STRING "black",
+				    OBJECT NULL])
+
+  val text = GnomeCanvas.itemNew(root, GnomeCanvas.textGetType(),
+		  	         "fill_color", [STRING "white", OBJECT NULL])
+  val _ = GnomeCanvas.itemSetValist(text, 
+				    "text", [STRING "Canvas",
+                                    STRING "x", REAL 50.0,
+				    STRING "y", REAL 50.0,
+				    OBJECT NULL])
+   
 
   val box = vboxNew(false,0)
 
-  val _ = ( boxPackStart(box,b,   false,false,0) ;
-	    boxPackStart(box,tv,  false,false,0) ;
-	    boxPackStart(box,c,   false,false,0) ;
-	    boxPackStart(box,ibox,false,false,0) ;
-	    containerAdd (w,box) ;
- 	    widgetShowAll w )
+  val _ = ( boxPackStart(box,button,   false,false,0) ;
+	    boxPackStart(box,textview, false,false,0) ;
+	    boxPackStart(box,combo,    false,false,0) ;
+	    boxPackStart(box,ibox,     false,false,0) ;
+	    boxPackStart(box,canvas,   false,false,0) ;
+	    containerAdd (window,box) ;
+ 	    widgetShowAll window )
       
-  fun cb (widget, arglist) = 
+  fun callback (widget, arglist) = 
   let
-      val table = [(w,"Window"),(i,"Image"),(ibox,"ImageBox"),(b,"Button"),
-		   (tb,"TextBuffer"),(tv,"TextView"),(c,"Combo")]
+      val table = [(window,"Window"),(image,"Image"),(ibox,"ImageBox"),
+		   (button,"Button"),(textbuf,"TextBuffer"),
+		   (textview,"TextView"),(combo,"Combo")]
       fun getobj ob = foldl (fn ((x,n),e) => if x=ob then n else e) "???" table
       fun show (BOOL b)    = "BOOL: "^(Bool.toString b)
 	| show (INT i)     = "INT: "^(Int.toString i)
@@ -53,10 +86,11 @@ in
       )
   end
 
-  fun delete_event _ = OS.Process.exit OS.Process.success
+  fun delete_event _ = (print "window closed\n" ;
+			OS.Process.exit OS.Process.success )
 
-  val s1 = signalConnectAfter(b,"clicked",cb)
-  val s2 = signalConnect(tb,"insert_text",cb)
-  val s3 = signalConnect(ibox,"button_press_event",cb)
-  val s4 = signalConnect(w,"delete_event",delete_event)
+  val sig1 = signalConnectAfter(button,"clicked",callback)
+  val sig2 = signalConnect(textbuf,"insert_text",callback)
+  val sig3 = signalConnect(ibox,"button_press_event",callback)
+  val sig4 = signalConnect(window,"delete_event",delete_event)
 end
