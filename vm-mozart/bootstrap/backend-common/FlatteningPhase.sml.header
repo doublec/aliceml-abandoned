@@ -35,12 +35,8 @@ import
 from "x-alice:/common/Type.ozf"
 
 import
-    structure Prebound
-from "x-alice:/common/Prebound.ozf"
-
-import
-    structure PreboundType
-from "x-alice:/common/PreboundType.ozf"
+    structure PervasiveType
+from "x-alice:/common/PervasiveType.ozf"
 
 import
     signature INTERMEDIATE_GRAMMAR

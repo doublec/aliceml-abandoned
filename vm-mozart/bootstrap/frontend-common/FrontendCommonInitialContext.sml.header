@@ -5,7 +5,3 @@ from "x-alice:/infrastructure/INITIAL_CONTEXT.ozf"
 import
     structure Env
 from "x-alice:/frontend-common/Env.ozf"
-
-import
-    structure Env0
-from "x-alice:/frontend-common/Env0.ozf"

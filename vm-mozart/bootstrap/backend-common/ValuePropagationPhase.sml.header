@@ -56,10 +56,6 @@ import
 from "x-alice:/common/Label.ozf"
 
 import
-    structure Prebound
-from "x-alice:/common/Prebound.ozf"
-
-import
     structure FlatGrammar
 from "x-alice:/backend-common/FlatGrammar.ozf"
 

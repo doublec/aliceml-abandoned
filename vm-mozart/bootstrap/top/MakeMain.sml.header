@@ -55,20 +55,12 @@ import   (*DEBUG*)
 from "x-alice:/frontend-sml/BindEnv.ozf"
 
 import   (*DEBUG*)
-    structure BindEnv0
-from "x-alice:/frontend-sml/BindEnv0.ozf"
-
-import   (*DEBUG*)
     structure MakeAbstractionPhase
 from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
 
 import   (*DEBUG*)
     structure Env
 from "x-alice:/frontend-common/Env.ozf"
-
-import   (*DEBUG*)
-    structure Env0
-from "x-alice:/frontend-common/Env0.ozf"
 
 import   (*DEBUG*)
     structure MakeElaborationPhase
