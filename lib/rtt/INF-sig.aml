@@ -106,7 +106,7 @@ signature INF =
     val lookupMod' :	sign * lab * int -> inf
     val lookupInf' :	sign * lab * int -> inf
 
-  (* Matching *)
+  (* Matching and intersection *)
 
     datatype mismatch =
 	  MissingVal  of lab
@@ -126,7 +126,7 @@ signature INF =
 
     exception Mismatch of mismatch
 
-    val match :		inf  *  inf -> rea		(* Mismatch *)
-    val matchSig :	sign * sign -> rea		(* Mismatch *)
+    val match :		inf * inf -> rea		(* Mismatch *)
+    val intersect :	inf * inf -> inf		(* Mismatch *)
 
   end

@@ -84,6 +84,16 @@ val 2 = 3:int
 
 ;
 
+__primitive val Thread_spawn: (unit -> unit) -> unit = "Thread.spawn"
+
+fun g{} = {}
+
+val _ = Thread_spawn
+val _ = Thread_spawn g
+val _ = Thread_spawn: (unit -> unit) -> unit
+
+;
+
 datatype blub = Blub
 (*val rec rec f = fn() => ()
 val rec f = fn() => () and rec g = fn() => ()

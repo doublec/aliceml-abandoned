@@ -151,11 +151,6 @@ val x=case Name.toString(I.name id) of "?" => "?" | x => x
 val _=print("-- lookup val " ^ x ^ "(" ^ Stamp.toString stamp ^ ") : ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupVal(E, stamp))), 600)
 val _=print "\n"
-(*
-val _=print("-- instantiated " ^ x ^ "(" ^ Stamp.toString stamp ^ ") : ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
-val _=print(" (* current level = " ^ Int.toString(!TypePrivate.level) ^ " *)\n")
-"*)
 	    val t  = #2(lookupVal(E, stamp))
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )

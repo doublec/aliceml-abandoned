@@ -164,6 +164,8 @@ end
 *)
 
 	    and ppTypePrec' p (LINK t) =
+(*DEBUG
+text "@" ^^*)
 		    ppTypePrec p t
 
 	      | ppTypePrec' p (MARK t') =
@@ -176,7 +178,7 @@ end
 		    parenPrec p (2, doc)
 		end
 
-	      | ppTypePrec' p (TUP []) =
+	      | ppTypePrec' p (TUP [] | ROW NIL) =
 		    text "unit"
 
 	      | ppTypePrec' p (TUP ts) =

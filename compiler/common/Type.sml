@@ -516,16 +516,16 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recurse (ListPair.app unify) (ts1,ts2)
 
 		       | (TUP(ts), ROW(r)) =>
-			 recurse unifyRow (tupToRow ts, r, ROW)
+			 recurse unifyRow (t1, t2, tupToRow ts, r, ROW)
 
 		       | (ROW(r), TUP(ts)) =>
-			 recurse unifyRow (r, tupToRow ts, ROW)
+			 recurse unifyRow (t1, t2, r, tupToRow ts, ROW)
 
 		       | (ROW(r1), ROW(r2)) =>
-			 recurse unifyRow (r1,r2,ROW)
+			 recurse unifyRow (t1, t2, r1, r2, ROW)
 
 		       | (SUM(r1), SUM(r2)) =>
-			 recurse unifyRow (r1,r2,SUM)
+			 recurse unifyRow (t1, t2, r1, r2, SUM)
 
 		       | (CON(_,_,p1), CON(_,_,p2)) =>
 			 if p1 = p2 then t1 := LINK t2
@@ -552,7 +552,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
-	    and unifyRow(r1, r2, ROWorSUM) =
+	    and unifyRow(t1, t2, r1, r2, ROWorSUM) =
 		let
 		    fun loop(NIL, false, NIL, false) = NIL
 		      | loop(NIL, false, RHO, _    ) = NIL

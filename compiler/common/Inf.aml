@@ -514,6 +514,7 @@ structure InfPrivate =
 
     exception Mismatch of mismatch
 
+
     fun matchDef (equals, err) (l ,_,       NONE   ) = ()
       | matchDef (equals, err) (l, NONE,    SOME _ ) = raise Mismatch(err l)
       | matchDef (equals, err) (l, SOME x1, SOME x2) =
@@ -524,7 +525,7 @@ structure InfPrivate =
     fun matchModDef x = matchDef(op=, ManifestMod) x
     fun matchInfDef x = matchDef(equals, ManifestInf) x
 
-    and matchSig'(rea, (ref items1, m1), s2 as (ref items2, m2)) =
+    and matchSig(rea, (ref items1, m1), s2 as (ref items2, m2)) =
 	let
 	    val {val_rea, typ_rea, mod_rea, inf_rea} = rea
 
@@ -621,13 +622,14 @@ structure InfPrivate =
 	else
 	    raise Mismatch(Incompatible(j1,j2))
 
-      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig'(rea, s1, s2)
+      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
 
       | match'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
 	(*UNFINISHED*)
 	    ()
 
       | match'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
+	(*UNFINISHED*)
 	    ()
 
       | match'(rea, ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
@@ -656,12 +658,145 @@ structure InfPrivate =
 	    rea
 	end
 
-    fun matchSig(j1,j2) =
+
+  (* Intersection *)
+
+(*(**)
+    fun intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, NONE)   = ()
+      | intersectDef (sel, equals, err) (rea, l, p1, NONE, p2, SOME z) =
+	    PathMap.insert(sel rea, p1, z)
+      | intersectDef (sel, equals, err) (rea, l, p1, SOME z, p2, NONE) =
+	    PathMap.insert(sel rea, p2, z)
+      | intersectDef (sel, equals, err) (rea, l, p1, SOME z1, p2, SOME z2) =
+	    if equals(x1,x2) then () else raise Mismatch(err l)
+
+    fun intersectValDef x = intersectDef(#val_rea, op=, ManifestVal) x
+    fun intersectTypDef x = intersectDef(#typ_rea, Type.equals, ManifestTyp) x
+    fun intersectModDef x = intersectDef(#mod_rea, op=, ManifestMod) x
+    fun intersectInfDef x = intersectDef(#inf_rea, equals, ManifestInf) x
+
+    fun intersectSig(rea, s1 as (ref items1, m1), s2 as (ref items2, m2)) =
 	let
+	    fun pair(m1,      [],      pairs) = List.rev pairs
+	      | pair(m1, item2::items, pairs) =
+		case Map.lookup(m1, (itemDom item2, itemLab item2))
+		  of NONE => ()
+		   | SOME [] => raise Crash.crash "Inf.intersectSig"
+		   | SOME(item1::_) =>
+		     ( pair1(!item1, !item2)
+		     ; pair(m1, items, (item1,item2)::pairs)
+		     )
+
+	    and pair1(VAL(x1,t1,w1,d1), VAL(x2,t2,w2,d2)) =
+		intersectValDef(rea, idPath x1, d1, idPath x2, d2)
+	      | pair1(TYP(x1,k1,w1,d1), TYP(x2,k2,w2,d2)) =
+		intersectTypDef(rea, idPath x1, d1, idPath x2, d2)
+	      | pair1(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+		( intersectModDef(rea, idPath x1, d1, idPath x2, d2)
+		; intersectNested(j1,j2) )
+	      | pair1(INF(x1,k1,d1), TYP(x2,k2,d2)) =
+		intersectInfDef(rea, idPath x1, d1, idPath x2, d2)
+
+	    (* Necessary to create fully expanded realisation. *)
+	    and intersectNested(ref(SIG(_,m1)), ref(SIG(ref items2,_))) =
+		    ignore(pair(m1, items2, []))
+	      | intersectNested(ref(ARR _), ref(ARR _)) =
+		(*UNFINISHED: when introducing functor paths*) ()
+	      | intersectNested(ref(LINK j1), j2) = intersectNested(j1, j2)
+	      | intersectNested(j1, ref(LINK j2)) = intersectNested(j1, j2)
+	      | intersectNested _ = ()
+
+	    val pairs = pair(m1, items2, [])
+	in
+	    realiseSig(rea, s1) ;
+	    realiseSig(rea, s2) ;
+	    List.app intersectItem pairs
+	end
+
+    and intersectItem(ref item1', item2 as ref item2') =
+	( intersectItem'(item1', item2') ; item2 := item1' )
+
+    and intersectItem'(VAL(x1,t1,s1,d1), VAL(x2,t2,s2,d2)) =
+	let val l = idLab x2 in
+	    intersectTyp(l, t1, t2) ;
+	    intersectValDef(l, d1, d2)
+	end
+      | intersectItem'(TYP(x1,k1,s1,d1), TYP(x2,k2,s2,d2)) =
+	let val l = idLab x2 in
+	    intersectTKind(l, k1, k2) ;
+	    intersectTypDef(l, d1, d2)
+	end
+      | intersectItem'(MOD(x1,j1,d1), MOD(x2,j2,d2)) =
+	let val l = idLab x2 in
+	    intersectInf(l, j1, j2) ;
+	    intersectModDef(l, d1, d2)
+	end
+      | intersectItem'(INF(x1,k1,d1), INF(x2,k2,d2)) =
+	let val l = idLab x2 in
+	    intersectKind(l, k1, k2) ;
+	    intersectInfDef(l, d1, d2)
+	end
+      | intersectItem' _ = raise Crash.crash "Inf.intersectItem"
+
+    and intersectTyp(l,t1,t2) =
+	if Type.intersectes(t1,t2) then () else
+	    raise Mismatch(MismatchVal(l,t1,t2))
+
+    and intersectTKind(l,k1,k2) =
+	if k1 = k2 then () else
+	    raise Mismatch(MismatchTyp(l,k1,k2))
+
+    and intersectInf(l,j1,j2) =
+	intersect'(emptyRea(), j1, j2)
+	handle Mismatch Mismatch =>
+	    raise Mismatch(MismatchMod(l, Mismatch))
+
+    and intersectKind(l,k1,k2) =
+	equaliseKind(k1,k2)
+	handle Mismatch Mismatch =>
+	    raise Mismatch(MismatchInf(l, Mismatch))
+
+
+    and intersect'(rea, j1, ref ANY) = j1
+      | intersect'(rea, ref ANY, j2) = j2
+      | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+	if p1 = p2 then
+	    j1
+	else
+	    raise Mismatch(Incompatible(j1,j2))
+
+      | intersect'(rea, ref(SIG s1), ref(SIG s2)) = intersectSig(rea, s1, s2)
+
+      | intersect'(rea, ref(ARR(p1,j11,j12)), ref(ARR(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.crash "Inf.intersect: ARR"
+
+      | intersect'(rea, ref(LAM(p1,j11,j12)), ref(LAM(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.crash "Inf.intersect: LAM"
+
+      | intersect'(rea, j1 as ref(APP(j11,p1,j12)), ref(APP(j21,p2,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.crash "Inf.intersect: APP"
+
+      | intersect'(rea, ref(LINK j1), j2) = intersect'(rea, j1, j2)
+      | intersect'(rea, j1, ref(LINK j2)) = intersect'(rea, j1, j2)
+      | intersect'(rea, j1,j2)            = raise Mismatch(Incompatible(j1,j2))
+
+
+    and equals(j1,j2) = (*UNFINISHED*) true
+
+    and equaliseKind(k1,k2) = (*UNFINISHED*) ()
+*)
+
+    fun intersect(j1,j2) =
+	let
+	    val j1' = clone j1
+	    val j2' = clone j2
 	    val rea = emptyRea()
 	in
-	    matchSig'(rea, j1, j2) ;
-	    rea
+(*	    intersect'(rea, j1', j2')
+*)j1'
 	end
 
   end
