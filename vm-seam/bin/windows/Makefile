@@ -7,7 +7,10 @@ CXXFLAGS = -O2 -march=pentium3 -mcpu=pentium3
 LD = g++ -mno-cygwin
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
-EXES = alicerun.exe alice.exe alicec.exe aliceserv.exe alicelink.exe alicedep.exe
+EXES = \
+	alicerun.exe alice.exe alicec.exe \
+	aliceserv.exe alicelink.exe alicedep.exe \
+	aide.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
@@ -35,6 +38,10 @@ alicelink.o: alicex.cc
 alicedep.o: alicex.cc
 	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Depend"' \
         -c alicex.cc -o alicedep.o
+
+aide.o: alicex.cc
+	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/AIDE"' \
+        -c alicex.cc -o aide.o
 
 %.exe: %.o
 	$(LD) $< -o $@ $(LDFLAGS)
