@@ -55,6 +55,7 @@
     .field static public initonly class StockWerk.StockWert fulfill
     .field static public initonly class StockWerk.StockWert await
     .field static public initonly class StockWerk.StockWert thread
+    .field static public initonly class StockWerk.StockWert currentThread
     .method public static void .cctor() {
       // Names and Exceptions
       ldstr "()"
@@ -92,6 +93,8 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::await
       newobj instance void StockWerk.Builtins.BIThread::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::thread
+      newobj instance void StockWerk.Builtins.BICurrentThread::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::currentThread
       ret
     }
   }
@@ -1471,31 +1474,63 @@
   // Thread
   //
 
-  .class public sealed Thread extends StockWerk.StockWert {
+  .class public sealed ThreadStart extends System.Object {
     .field private class StockWerk.StockWert Proc
     .method public void .ctor(class StockWerk.StockWert) {
       ldarg.0
-      call instance void StockWerk.StockWert::.ctor()
+      call instance void System.Object::.ctor()
       ldarg.0
       ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Thread::Proc
-      ldarg.0
-      ldftn instance void StockWerk.Thread::Body()
-      newobj instance void System.ThreadStart::.ctor(class System.Object, int32)
-      newobj instance void System.Thread::.ctor(class System.ThreadStart)
-      tail. call instance void System.Thread::Start()
+      stfld class StockWerk.StockWert StockWerk.ThreadStart::Proc
       ret
     }
     .method private void Body() {
       //--** catch and print exceptions?
       ldarg.0
-      ldfld class StockWerk.StockWert StockWerk.Thread::Proc
+      ldfld class StockWerk.StockWert StockWerk.ThreadStart::Proc
       ldarg.0
       ldnull
-      stfld class StockWerk.StockWert StockWerk.Thread::Proc
+      stfld class StockWerk.StockWert StockWerk.ThreadStart::Proc
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       pop
+      ret
+    }
+  }
+
+  .class public sealed Thread extends StockWerk.StockWert {
+    .field private class System.Thread Thr
+    .method public void .ctor() {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      call class System.Thread System.Thread::get$CurrentThread()
+      stfld class System.Thread StockWerk.Thread::Thr
+      ret
+    }
+    .method public bool Equals(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Thread
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Thread
+      ldfld class System.Thread StockWerk.Thread::Thr
+      ldarg.0
+      ldfld class System.Thread StockWerk.Thread::Thr
+      ceq
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
       ret
     }
     .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
@@ -1572,7 +1607,24 @@
     }
     .method public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
       ldarg.1
-      newobj instance void StockWerk.Thread::.ctor(class StockWerk.StockWert)
+      newobj instance void StockWerk.ThreadStart::.ctor(class StockWerk.StockWert)
+      ldftn instance void StockWerk.ThreadStart::Body()
+      newobj instance void System.ThreadStart::.ctor(class System.Object, int32)
+      newobj instance void System.Thread::.ctor(class System.ThreadStart)
+      call instance void System.Thread::Start()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
+      ret
+    }
+  }
+
+  .class sealed BICurrentThread extends StockWerk.Procedure0 {
+    .method public void .ctor() {
+      ldarg.0
+      tail. call instance void StockWerk.Procedure0::.ctor()
+      ret
+    }
+    .method public class StockWerk.StockWert Apply0() {
+      newobj instance void StockWerk.Thread::.ctor()
       ret
     }
   }
