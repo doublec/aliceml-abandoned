@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) {
   IOHandler::Init();
   Scheduler::Init();
   // Setup Interpreters and Services
-  Primitive::Init();
   PushCallInterpreter::Init();
   ByneedInterpreter::Init();
   Unpickler::Init();

@@ -33,10 +33,7 @@
 #include "generic/Transform.hh"
 #include "generic/Unpickler.hh"
 
-//--** these should be factored out:
-#include "alice/Data.hh"
-#include "alice/PrimitiveTable.hh"
-#include "alice/AliceConcreteCode.hh"
+#include "alice/Data.hh" //--** should not be here
 
 // pickle    ::= int | chunk | block | tuple | closure | transform
 // int       ::= POSINT <uint> | NEGINT <uint>
@@ -475,27 +472,13 @@ public:
 static inline
 word ApplyTransform(Chunk *f, word x) {
   Assert(f != INVALID_POINTER);
-  char *fs = f->GetBase();
-  u_int len = f->GetSize();
-  if ((len == sizeof("Alice.primitive.value") - 1) &&
-      !std::memcmp(fs, "Alice.primitive.value", len)) {
-    Block *xp = Store::WordToBlock(x);
-    //--** xp->AssertWidth(1);
-    return PrimitiveTable::LookupValue(Chunk::FromWord(xp->GetArg(0)));
-  } else if ((len == sizeof("Alice.primitive.function") - 1) &&
-	     !std::memcmp(fs, "Alice.primitive.function", len)) {
-    Block *xp = Store::WordToBlock(x);
-    //--** xp->AssertWidth(1);
-    return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
+  HashTable *table = HashTable::FromWordDirect(handlerTable);
+  if (table->IsMember(f->ToWord())) {
+    Unpickler::handler handler = (Unpickler::handler)
+      Store::DirectWordToUnmanagedPointer(table->GetItem(f->ToWord()));
+    return handler(x);
   } else {
-    HashTable *table = HashTable::FromWordDirect(handlerTable);
-    if (table->IsMember(f->ToWord())) {
-      Unpickler::handler handler = (Unpickler::handler)
-	Store::DirectWordToUnmanagedPointer(table->GetItem(f->ToWord()));
-      return handler(x);
-    } else {
-      Error("ApplyTransform: unknown transform");
-    }
+    Error("ApplyTransform: unknown transform");
   }
 }
 
