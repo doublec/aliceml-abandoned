@@ -81,8 +81,6 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_OPTIMIZED],
                              -fno-keep-static-consts \
                              -fno-implicit-templates \
                              -fno-implicit-inline-templates)
-      AC_SEAM_CHECK_LDFLAG([[-Wl,-S]])
-      AC_SEAM_CHECK_LDFLAG([[-Wl,--stack=0x1000000]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,-S]])
       AC_SEAM_CHECK_LDFLAG_SEAMTOOL([[-Wl,--stack=0x1000000]])
    else
