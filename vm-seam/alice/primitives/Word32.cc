@@ -111,7 +111,13 @@ DEFINE1(Word32_fromLargeWord) {
   RETURN(x0);
 } END
 
-WORD32_WORD_TO_WORD_OP(Word32_mod, %)
+DEFINE2(Word32_mod) {
+  DECLARE_WORD32(i, x0);
+  DECLARE_WORD32(j, x1);
+  if (j == 0)
+    RAISE(PrimitiveTable::General_Div);
+  RETURN_WORD32(i % j);
+} END
 
 DEFINE1(Word32_notb) {
   DECLARE_WORD32(i, x0);

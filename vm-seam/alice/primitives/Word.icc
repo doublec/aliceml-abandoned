@@ -149,7 +149,13 @@ DEFINE1(Word_fromLarge) {
   RETURN_WORD(w);
 } END
 
-WORD_WORD_TO_WORD_OP(Word_mod, %)
+DEFINE2(Word_mod) {
+  DECLARE_WORD(i, x0);
+  DECLARE_WORD(j, x1);
+  if (j == 0)
+    RAISE(PrimitiveTable::General_Div);
+  RETURN_WORD(i % j);
+} END
 
 DEFINE1(Word_notb) {
   DECLARE_WORD(i, x0);
