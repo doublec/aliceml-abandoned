@@ -17,7 +17,7 @@ signature HIGHLIGHT =
 sig
     datatype style = PLAIN | RESERVED | STRING | COMMENT | ERRONEOUS
 
-    val scan : string list -> (style * int * int * int * int) list
+    val scan : substring list -> (style * int * int * int * int) list
 end
 
 structure Highlight : HIGHLIGHT =
@@ -56,7 +56,7 @@ struct
     fun isIdChar c = Char.isAlphaNum c orelse c = #"_"
 
     fun checkReserved (s, y, x1, x2, rs) =
-	if isReserved (Substring.substring (s, x1, x2-x1))
+	if isReserved (Substring.slice (s, x1, SOME (x2-x1)))
 	then (RESERVED, y,x1, y,x2)::rs
 	else rs
 
@@ -71,42 +71,42 @@ struct
       | scanNL (s::ss, y, rs) = scanPlain (ss, s, y+1, 0, rs)
 
     and scanPlain (ss, s, y, x, rs) =
-	if x = String.size s then
+	if x = Substring.size s then
 	    scanNL (ss, y, rs)
 	else let
-	    val c = String.sub (s, x)
+	    val c = Substring.sub (s, x)
 	in
 	    if isIdChar c then
 		scanId (ss, s, y, x, x+1, rs)
 	    else if c = #"\"" then
 		scanString (ss, s, y, x, y, x+1, rs)
-	    else if c = #"(" andalso x < String.size s
-		 andalso String.sub (s, x+1) = #"*" then
+	    else if c = #"(" andalso x < Substring.size s
+		 andalso Substring.sub (s, x+1) = #"*" then
 		scanComment 1 (ss, s, y, x, y, x+2, rs)
 	    else
 		scanPlain (ss, s, y, x+1, rs)
 	end
     and scanString (ss, s, y', x', y, x, rs) =
-	if x = String.size s then
+	if x = Substring.size s then
 	    scanNL (ss, y, (ERRONEOUS, y',x', y,x)::rs)
 	else let
-	    val c = String.sub (s, x)
+	    val c = Substring.sub (s, x)
 	in
 	    if c = #"\"" then
 		scanPlain (ss, s, y, x+1, (STRING, y',x', y,x+1)::rs)
 	    else if c = #"\\" then
-		if x = String.size s - 1
-		orelse Char.isSpace (String.sub (s, x+1))
+		if x = Substring.size s - 1
+		orelse Char.isSpace (Substring.sub (s, x+1))
 		then scanStringGap (ss, s, y', x', y, x+1, rs)
 		else scanString (ss, s, y', x', y, x+2, rs)
 	    else
 		scanString (ss, s, y', x', y, x+1, rs)
 	end
     and scanStringGap (ss, s, y', x', y, x, rs) =
-	if x = String.size s then
+	if x = Substring.size s then
 	    scanNLInner (scanStringGap, ss, y', x', y, x, rs)
 	else let
-	    val c = String.sub (s, x)
+	    val c = Substring.sub (s, x)
 	in
 	    if c = #"\\" then
 		scanString (ss, s, y', x', y, x+1, rs)
@@ -116,9 +116,9 @@ struct
 		scanPlain (ss, s, y, x+1, (ERRONEOUS, y',x', y,x+1)::rs)
 	end
     and scanId (ss, s, y, x', x, rs) =
-	if x = String.size s then
+	if x = Substring.size s then
 	    scanNL (ss, y, checkReserved (s, y, x', x, rs))
-	else if isIdChar (String.sub (s, x)) then
+	else if isIdChar (Substring.sub (s, x)) then
 	    scanId (ss, s, y, x', x+1, rs)
 	else
 	    scanPlain (ss, s, y, x, checkReserved (s, y, x', x, rs))
@@ -126,14 +126,14 @@ struct
 	if nesting = 0 then
 	    scanPlain (ss, s, y, x, (COMMENT, y',x', y,x)::rs)
 	(* last character cannot end or start a comment *)
-	else if x >= String.size s - 1 then
+	else if x >= Substring.size s - 1 then
 	    scanNLInner (scanComment nesting, ss, y', x', y, x, rs)
 	else let
-	    val c = String.sub (s, x)
+	    val c = Substring.sub (s, x)
 	in
-	    if c = #"*" andalso String.sub (s, x+1) = #")" then
+	    if c = #"*" andalso Substring.sub (s, x+1) = #")" then
 		scanComment (nesting-1) (ss, s, y', x', y, x+2, rs)
-	    else if c = #"(" andalso String.sub (s, x+1) = #"*" then
+	    else if c = #"(" andalso Substring.sub (s, x+1) = #"*" then
 		scanComment (nesting+1) (ss, s, y', x', y, x+2, rs)
 	    else
 		scanComment nesting (ss, s, y', x', y, x+1, rs)

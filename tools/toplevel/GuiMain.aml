@@ -266,7 +266,9 @@ structure AliceIde =
                                              startiter, enditer)
             end
 
-        fun breakLines str = String.fields (fn #"\n" => true | _ => false) str
+        fun breakLines str =
+            Substring.fields (fn #"\n" => true | _ => false)
+                             (Substring.full str)
 
         fun syntax() =
             let
