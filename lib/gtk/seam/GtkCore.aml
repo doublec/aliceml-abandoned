@@ -19,46 +19,15 @@ struct
     val DeleteRef = (fn p => p, NativeGtkCore.deleteUnref)
     val NoRef = (fn p => p, fn _ => ())
 
-    (* weak map *)
-(*
-    local
-	val weakMap = 
-	    ref nil : ( object * (object->unit) * int list ref ) list ref
+    val printObject = NativeGtkCore.printObject
 
-        fun weakMapRemove p = List.filter (fn (p',_,_) => p<>p') (!weakMap)
-    in
-	fun weakMapAdd (_,obj) = ( weakMap := (obj::(!weakMap)) )
-	fun weakMapContains p = List.exists (fn (p',_,_) => p=p') (!weakMap)
-	fun weakMapGet p def = 
-	    foldl (fn (obj,e)=>if p = (#1obj) then obj else e) def (!weakMap)
-
-	fun finalizer nil                        = ()
-	  | finalizer ((obj as (p,unref,_))::xs) = 
-	        (weakMapRemove p ; unref p ; finalizer xs)
-    end
-  *)  
-    (* signal table *)
-    local
-	val sigTable = ref nil : (int * callBackFunction) list ref
-    in
-	fun addToSignalTable (connid,callback) =
-	    (sigTable := ((connid,callback)::(!sigTable)))
-
-	fun removeFromSignalTable connid =
-	    sigTable := List.filter (fn (cid,_) => connid<>cid) (!sigTable)
-
-	fun runCallback (connid, obj, args) =
-	    List.app 
-	      (fn (cid,f)=>if connid=cid then f(obj,args) else ())
-	      (!sigTable)
-
-    end
-
+    (* signal table functions *)
     fun doSignalConnect (obj,signame,callback,after) =
 	let
 	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
-	    val _      = addToSignalTable(connid,callback)
-	    val (_,_,ids) = NativeGtkCore.weakMapCondGet(obj, (NULL,fn _ => (), ref nil))
+	    val _      = NativeGtkCore.signalMapAdd(connid,callback)
+	    val (_,_,ids) = NativeGtkCore.weakMapCondGet
+		                (obj, (NULL,fn _ => (), ref nil))
 	    val _ = (ids := (connid::(!ids)))
 	in
 	    connid
@@ -74,9 +43,20 @@ struct
 
 	fun signalDisconnect (obj, connid) =
 	    ( NativeGtkCore.signalDisconnect(obj,connid) ;
-	      removeFromSignalTable connid )
+	      NativeGtkCore.signalMapRemove connid )
     end
 
+    (* event stream listener *)
+    local
+	fun runCallback(connid, obj, args) =
+	    NativeGtkCore.signalMapCondGet(connid, fn _ => ()) (obj,args)
+    in
+	fun listener nil                         = ()
+	  | listener ((connid,obj,args)::stream) =
+	    ( runCallback (connid, obj, args) ; listener stream )
+    end
+
+    (* finalization handling *)
     local
 	fun addDestroyEvent (obj as (p,_,_)) =
 	    let
@@ -93,7 +73,9 @@ struct
 		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
 		fun event _ =
-			List.app removeFromSignalTable (!(#3obj))
+		    let val x = ref obj
+		    in	List.app NativeGtkCore.signalMapRemove (!(#3(!x)))
+		    end
 	    in
 		( doSignalConnect(p,"destroy",event,true) ; () )
 	    end
@@ -112,25 +94,19 @@ struct
 	    if p = NULL orelse NativeGtkCore.weakMapIsMember p 
 		 then p
 	         else newObject (p,refInfo,hasSignals)
+	fun finalizer nil                        = ()
+	  | finalizer ((obj as (p,unref,_))::xs) = ( unref p ; finalizer xs )
     end
 
-    fun printObject p = NativeGtkCore.printObject p
+    (* main loop *)
+    local
+	fun sleep ms = Future.await(Future.alarm(Time.fromMilliseconds ms))
+    in
+	val initPoll = 10
+	val maxPoll = 50
+	val pollStep = 5
 
-
-    fun listener nil                        = ()
-      | listener ((connid,obj,args)::stream) =
-	( runCallback (connid, obj, args) ; listener stream )
-
-    fun finalizer nil                        = ()
-      | finalizer ((obj as (p,unref,_))::xs) = ( unref p ; finalizer xs )
-
-    fun sleep ms = Future.await (Future.alarm (Time.fromMilliseconds ms))
-
-    val initPoll = 10
-    val maxPoll = 50
-    val pollStep = 5
-
-    fun mainLoop sTime =
+	fun mainLoop sTime =
 	let
 	    val haveEvents = NativeGtkCore.eventsPending()
 	    val sTimeNew = 
@@ -141,9 +117,9 @@ struct
 		 sleep sTime;  
 		 mainLoop sTimeNew)
 	end
+    end
 
     (* Init Core Module *)
- 
     fun init () = if NativeGtkCore.isLoaded() then () else
 	let
 	    val eventStream : (int * object * arg list) list = 

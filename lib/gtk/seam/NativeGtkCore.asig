@@ -31,5 +31,9 @@ sig
         val weakMapIsMember : 'object -> bool
         val weakMapCondGet : 'object * 'info -> 'info
  	val getFinalStream : unit -> 'stream
+
+	val signalMapAdd : 'connid * 'callback -> unit
+	val signalMapRemove : 'connid -> unit
+	val signalMapCondGet : 'connid * 'callback -> 'callback
     end
 end

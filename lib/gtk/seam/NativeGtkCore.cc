@@ -4,6 +4,7 @@ static word eventStream = 0;
 static word finalStream = 0;
 static word finalStreamRef = 0;
 static word weakDict = 0;
+static word signalMap = 0;
 
 word push_front(word list, word value) {
   TagVal *cons = TagVal::New(0,2);
@@ -22,10 +23,14 @@ void put_on_stream(word *stream, word value) {
 ///////////////////////////////////////////////////////////////////////
 
 DEFINE0(NativeGtkCore_isLoaded) {
-  RETURN(BOOL_TO_WORD(eventStream != 0));
+  RETURN(BOOL_TO_WORD(signalMap != 0));
 } END
 
 DEFINE0(NativeGtkCore_init) {
+  if (!signalMap) {
+    signalMap = Map::New(256)->ToWord();
+    RootSet::Add(signalMap);
+  }
   gtk_init(NULL,NULL);
   RETURN_UNIT;
 } END
@@ -616,10 +621,26 @@ DEFINE0(NativeGtkCore_getFinalStream) {
 } END
 
 
+////////////////////////////////////////////////////////////////////////
+
+DEFINE2(NativeGtkCore_signalMapAdd) {
+  Map::FromWord(signalMap)->Put(x0,x1);
+  RETURN_UNIT;
+} END
+
+DEFINE1(NativeGtkCore_signalMapRemove) {
+  Map::FromWord(signalMap)->Remove(x0);
+  RETURN_UNIT;
+} END
+
+DEFINE2(NativeGtkCore_signalMapCondGet) {
+  RETURN(Map::FromWord(signalMap)->CondGet(x0,x1));
+} END
+
 //////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(22);
+  Record *record = CreateRecord(25);
   INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
 		 NativeGtkCore_isLoaded, 0);
   INIT_STRUCTURE(record, "NativeGtkCore", "init", 
@@ -668,6 +689,13 @@ word InitComponent() {
 		 NativeGtkCore_weakMapCondGet, 2);
   INIT_STRUCTURE(record, "NativeGtkCore", "getFinalStream", 
 		 NativeGtkCore_getFinalStream, 0);
+
+  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapAdd",
+		 NativeGtkCore_signalMapAdd, 2);
+  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapRemove",
+		 NativeGtkCore_signalMapRemove, 1);
+  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapCondGet",
+		 NativeGtkCore_signalMapCondGet, 2);
 
   RETURN_STRUCTURE("NativeGtkCore$", record);
 }
