@@ -1,4 +1,5 @@
 ../../lib/bootstrap/Bootstrap.aus
+../../lib/bootstrap/Word.aus
 ../../lib/bootstrap/TextIO.aus
 /opt/smlnj/src/ml-yacc/lib/base.sig
 /opt/smlnj/src/ml-yacc/lib/join.sml
