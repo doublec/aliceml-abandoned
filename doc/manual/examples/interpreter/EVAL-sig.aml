@@ -5,9 +5,9 @@
  *)
 
 
-import structure Syntax from "Syntax.ozf"
-import structure Value  from "Value.ozf"
-import structure Env    from "Env.ozf"
+import structure Syntax from "Syntax"
+import structure Value  from "Value"
+import structure Env    from "Env"
 
 
 signature EVAL =
