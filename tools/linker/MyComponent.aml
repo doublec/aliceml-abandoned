@@ -62,7 +62,7 @@ struct
     fun inf (UNEVALUATED {inf, ...}) = inf
       | inf (EVALUATED {inf, ...}) = inf
 
-    fun new {imports, body, inf} = UNEVALUATED {imports, body, inf}
+    fun component {imports, body, inf} = UNEVALUATED {imports, body, inf}
 
     fun stripImportInfs (UNEVALUATED {imports, body, inf}) =
 	let

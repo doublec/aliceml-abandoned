@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import signature IMP_MAP     from "../lib/utility/IMP_MAP-sig"
+import signature IMP_MAP     from "../lib/data/IMP_MAP-sig"
 import structure Url         from "../lib/system/Url"
 import structure Resolver    from "../lib/system/Resolver"
 import structure MyComponent from "MyComponent"

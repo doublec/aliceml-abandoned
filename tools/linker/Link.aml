@@ -16,8 +16,8 @@ import structure OS                 from "../lib/system/OS"
 import structure IO                 from "../lib/system/IO"
 import structure Url                from "../lib/system/Url"
 import structure Resolver           from "../lib/system/Resolver"
-import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
-import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
+import structure FromEqHashable     from "../lib/data/HASHABLE-sig"
+import structure MkHashImpMap       from "../lib/data/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
@@ -34,7 +34,7 @@ struct
     exception Rewrite of Url.t * Url.t * Url.t
     exception Io of Url.t * exn
 
-    structure UrlHashKey = FromEqHashKey(Url)
+    structure UrlHashKey = FromEqHashable(Url)
     structure UrlMap = MkHashImpMap(UrlHashKey)
 
     fun infMatches (SOME j1, SOME j2) =
@@ -56,9 +56,9 @@ struct
 
     fun collect (boundary, typeCheck) root =
 	let
-	    val componentMap = UrlMap.new ()
-	    val includeMap = UrlMap.new ()
-	    val excludeMap = UrlMap.new ()
+	    val componentMap = UrlMap.map ()
+	    val includeMap = UrlMap.map ()
+	    val excludeMap = UrlMap.map ()
 
 	    fun collect' (url, parent, expectedInf) =
 		if UrlMap.member (componentMap, url) then
@@ -125,7 +125,7 @@ struct
 
     fun sort (includeMap, excludeMap) =
 	let
-	    val graph = UrlMap.new ()
+	    val graph = UrlMap.map ()
 	    val cyclic = ref false
 	in
 	    UrlMap.appi (fn (url, urls) =>
@@ -157,7 +157,7 @@ struct
 		Vector.fromList
 		    (UrlMap.foldi (fn (url, _, rest) => url::rest)
 				  nil excludeMap)
-	    val urlToIndexMap = UrlMap.new ()
+	    val urlToIndexMap = UrlMap.map ()
 	    val _ =
 		Vector.appi (fn (i, url) =>
 				UrlMap.insert (urlToIndexMap, url, (true, i)))
@@ -215,7 +215,7 @@ struct
 		end
 	    val inf = MyComponent.inf (getComponent root)
 	in
-	    MyComponent.new {imports, body, inf}
+	    MyComponent.component {imports, body, inf}
 	end
 
     fun warnCycle urls =
@@ -232,8 +232,8 @@ struct
 		collect (boundary, typeCheck) root
 	    val rewrite = rewrite handlers
 	    val order = sort (includeMap, excludeMap)
-	    val rewritesMap = UrlMap.new ()
-	    val invRewritesMap = UrlMap.new ()
+	    val rewritesMap = UrlMap.map ()
+	    val invRewritesMap = UrlMap.map ()
 	in
 	    UrlMap.appi (fn (url, _) =>
 			    let

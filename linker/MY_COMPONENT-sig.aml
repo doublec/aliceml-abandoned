@@ -28,9 +28,9 @@ signature MY_COMPONENT =
 	val body: t -> (mod vector -> mod)
 	val inf: t -> inf
 
-	val new: {imports: (string * inf) vector,
-		  body: mod vector -> mod,
-		  inf: inf} -> t
+	val component: {imports: (string * inf) vector,
+			body: mod vector -> mod,
+			inf: inf} -> t
 
 	val stripImportInfs: t -> t
     end
