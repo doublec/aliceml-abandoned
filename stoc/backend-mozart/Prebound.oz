@@ -14,7 +14,7 @@ functor
 import
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootWord at 'x-oz://boot/Word'
-   System(show printInfo)
+   System(show printInfo printName)
    Browser(browse)
    Application(exit)
 export
@@ -115,13 +115,17 @@ define
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
-      'General.exchange':
-	 fun {$ C New} {Exchange C $ New} end
       'General.Fail': {NewUniqueName 'General.Fail'}
       'General.Overflow': {NewUniqueName 'General.Overflow'}
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
+      'General.exchange':
+	 fun {$ C New} {Exchange C $ New} end
+      'General.exnName':
+	 fun {$ E} {ByteString.make {System.printName E}} end
+      'General.exnMessage':
+	 fun {$ E} {ByteString.make {System.printName E}} end
       'GlobalStamp.new':
 	 fun {$ unit} {NewName} end
       'GlobalStamp.fromString':
