@@ -322,8 +322,8 @@ ALLSOURCES = \
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
-	lib/distribution compiler compiler/infrastructure compiler/common \
-	compiler/top compiler/frontend-common compiler/frontend-sml \
+	compiler compiler/infrastructure compiler/common compiler/top \
+	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
 	compiler/backend-dotnet compiler/backend-stockwerk linker depend
 
