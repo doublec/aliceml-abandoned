@@ -15,6 +15,7 @@
   <UL>
     <LI> <A href="#data">structural datatypes</A> </LI>
     <LI> <A href="#exttype">extensible datatypes</A> </LI>
+    <LI> <A href="#literals">extended syntax for numeric literals</A> </LI>
     <LI> <A href="#patterns">extended pattern language</A> </LI>
     <LI> <A href="#valrec">generalized <TT>val</TT> <TT>rec</TT></A> </LI>
     <LI> <A href="#vectors">vector expressions and patterns</A> </LI>
@@ -26,7 +27,7 @@
     <A href="laziness.php3">lazy evaluation</A>,
     <A href="futures.php3">futures</A>, and 
     <A href="packages.php3">packages</A>,
-    <A href="threads.php3">threads</A>, show up as
+    <A href="threads.php3">threads</A>, are discussed elsewhere or show up as
     <A href="library.php3">library</A> primitives only.
   </P>
 
@@ -195,6 +196,28 @@
     </TR>
   </TABLE>
 
+
+
+<?php section("literals", "literals") ?>
+
+  <P>
+    Numeric literals may contain underscores to group digits:
+  </P>
+
+  <PRE>
+	val pi = 3.141_592_653_596
+	val billion = 1_000_000_000
+	val nibbles = 0wx_f300_4588
+  </PRE>
+
+  <P>
+    Moreover, Alice supports binary integer and word literals:
+  </P>
+
+  <PRE>
+	val ten  = 0b1010
+	val bits = 0wb1101_0010_1111_0010
+  </PRE>
 
 
 <?php section("patterns", "patterns") ?>
