@@ -24,7 +24,7 @@ structure Linear :> LINEAR =
 	infix  4  `= `<> `> `>= `< `<=
 	infix  3  `<->
 
-	datatype fdop = PLUS | MINUS | MUL
+	datatype fdop = PLUS | MUL
 
 	datatype domain_element =
 	    `` of int
@@ -56,16 +56,53 @@ structure Linear :> LINEAR =
 	datatype status =
 	    ATOMIC of FD.fd
 	  | SUM | SUMC | SUMCN
-	  | NEGSUM of status * (term' list)
-	  | MALFORMED
 
-	fun transform (op`+(a, b)) = BinOp(PLUS, transform a, transform b)
-	  | transform (op`-(a, b)) = BinOp(MINUS, transform a, transform b)
-	  | transform (op`*(a, b)) = BinOp(MUL, transform a, transform b)
-	  | transform t            = Id t
+	fun simplify(op`*(op`+(a, b), c)) =
+	    let
+	      val c' = simplify c
+	    in
+	      simplify (op`+(op`*(simplify a, c'), op`*(simplify b, c')))
+	    end
+	  | simplify(op`*(a, op`+(b, c))) =
+	    let
+	      val a' = simplify a
+	    in
+	      simplify (op`+(op`*(a', simplify b), op`*(a', simplify c)))
+	    end
+	  | simplify (op`+(op`(i), op`+(op`(j), a))) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(op`+(op`(i), a), op`(j))) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(op`+(op`(i), op`(j)), a)) =
+	    simplify (op`+(op`(i + j), simplify a))
+	  | simplify (op`+(a, b)) = op`+(simplify a, simplify b)
+	  | simplify (op`*(op`(i), op`*(op`(j), a))) =
+	    simplify (op`*(op`(i * j), simplify a))
+	  | simplify (op`*(op`*(op`(i), a), op`(j))) =
+	    simplify (op`*(op`(i * j), simplify a))
+	  | simplify (op`*(op`*(op`(i), op`(j)), a)) =
+	    simplify (op`*(op`(i * j), a))
+	  | simplify (op`+(op`(i), op`(j))) = op`(i + j)
+	  | simplify (op`*(op`(i), op`(j))) = op`(i * j)
+	  | simplify (op`*(a, b)) = op`*(simplify a, simplify b)
+	  | simplify (op`-(a, b)) =
+	    simplify (op`+(simplify a, op`*(`(~1), simplify b)))
+	  | simplify t            = t
 
+	fun transform a             = transform' (simplify a)
+	and transform' (op`+(a, b)) = BinOp(PLUS, transform' a, transform' b)
+	  | transform' (op`*(a, b)) = BinOp(MUL, transform' a, transform' b)
+	  | transform' t            = Id t
+			
 	fun flatten (x as (Id _)) = x
-	  | flatten (BinOp(label, a, b)) = Op(label, flatten'(label, a, [b]))
+	  | flatten (BinOp(label, a, b)) =
+	    let
+	      val ts  = flatten'(label, a, [b])
+	      fun flatten''(Op(l, ls), e) where (l = label) = e @ ls
+		| flatten'' (t, e)                          = e @ [t]
+	    in
+	      Op(label, foldl flatten'' nil ts)
+	    end
 	and flatten'(l, t as BinOp(opl, a, b), ts) where (l = opl) =
 	    flatten'(l, a, b::ts)
 	  | flatten'(label, t, ts) = map flatten (t::ts)
@@ -77,66 +114,68 @@ structure Linear :> LINEAR =
 	fun getInt (Id(op` i)) = i
 	  | getInt _           = raise Subscript
 
-	local
-	    fun idTest (Id (op` i)) = true
-	      | idTest (Id (fd v))  = true
-	      | idTest _            = false
-	in
-	    fun isPlainSum ts = List.all idTest ts
-	end
-
-	fun checkConst (Op(MUL, [Id(op`(_)), Id(fd _)])) = false
-	  | checkConst (Id _)                            = false
-	  | checkConst _                                 = true
-
-	fun isConstSum ts = not (List.exists checkConst ts)
-
-	(* Reverse Logic (needed for List.exists) *)
-	fun allAtomic nil           = false
+	fun isSum ts            = List.all checkS ts
+	and checkS (Id (op` i)) = i >= 0
+	  | checkS (Id (fd v))  = true
+	  | checkS _            = false
+				  
+	fun isSumC ts                                 = List.all checkSC ts
+	and checkSC (Op(MUL, [Id(op` _), Id(fd _)]))  = true
+	  | checkSC (Op(MUL, [Id(fd _), Id(op` _)]))  = true
+	  | checkSC (Op(MUL, [Id(op` _), Id(op` _)])) = true
+	  | checkSC (Id _)                            = true
+	  | checkSC _                                 = false
+							 
+	fun allAtomic nil           = true
 	  | allAtomic ((Id  _)::tr) = allAtomic tr
-	  | allAtomic _             = true
+	  | allAtomic _             = false
+				   
+	fun isSumCN ts             = List.all checkSCN ts
+	and checkSCN (Op(MUL, ts)) = allAtomic ts
+	  | checkSCN (Id _)        = true
+	  | checkSCN _             = false
 
-	fun isNSum ts =
-	    not (List.exists
-		 (fn (Op(MUL, (Id(op` _))::tr)) => allAtomic tr | _ => true) ts)
-
-	fun analyzeSum ts = if isPlainSum ts then SUM
-			    else if isConstSum ts then SUMC
-				 else if isNSum ts then SUMCN
-				      else MALFORMED
+	fun analyzeSum ts = if isSum ts then SUM
+			    else if isSumC ts then SUMC
+			    else if isSumCN ts then SUMCN
+			    else raise Subscript
 					  
-	fun analyzeCN ts = if not(allAtomic ts) then SUMCN else MALFORMED
+	fun analyzeCN ts = if allAtomic ts then SUMCN else raise Subscript
 
-	fun analyze (Id (fd v))                      = ATOMIC v
-	  | analyze (Id (op` i))                     = ATOMIC (FD.fromInt i)
-	  | analyze (Op(MUL, [Id(op` _), Id(fd _)])) = SUMC
-	  | analyze (Op(MUL, (Id(op` _))::ts))       = analyzeCN ts
-	  | analyze (Op(MUL, ts))                    = analyzeCN ts
-	  | analyze (Op(MINUS, ts))                  = NEGSUM(analyzeSum ts, ts)
-	  | analyze (Op(PLUS, ts))                   = analyzeSum ts
+	fun analyze (Id (fd v))                  = ATOMIC v
+	  | analyze (Id (op` i))                 = ATOMIC (FD.fromInt i)
+	  | analyze (Op(MUL, [Id(op` _), Id _])) = SUMC
+	  | analyze (Op(MUL, ts))                = analyzeCN ts
+	  | analyze (Op(PLUS, ts))               = analyzeSum ts
 
 	fun createSumVector (Op(PLUS, ts)) = Vector.fromList (map getFD ts)
 	  | createSumVector _              = raise Subscript
 
-	fun makeConst (Op(MUL, [c, v])) = (getInt c, getFD v)
-	  | makeConst t                 = (1, getFD t)
-
+	fun makeConst (Op(MUL, [Id (op` i), Id (op` j)])) = (i*j, FD.fromInt 1)
+	  | makeConst (Op(MUL, [Id (op` i), v]))          = (i, getFD v)
+	  | makeConst (Op(MUL, [v, Id (op` i)]))          = (i, getFD v)
+	  | makeConst (Id (op` i))                        = (i, FD.fromInt 1)
+	  | makeConst t                                   = (1, getFD t)
+					  
 	fun createSumCVector (Op(PLUS, ts)) = Vector.fromList (map makeConst ts)
-	  | createSumCVector (Op(Mul, [Id (op` i), t as (Id _)])) =
-	    #[(i, getFD t)]
-	  | createSumCVector _  = raise Subscript
+	  | createSumCVector (t as Op(MUL, ts)) = #[makeConst t]
+	  | createSumCVector _                  = raise Subscript
 
-	fun splitInt (ts as ((Id (fd _))::_)) = (1, ts)
-	  | splitInt ((Id (op` i))::ts)        = (i, ts)
+	fun computeInt(nil, k, nil)             = (k, [FD.fromInt 1])
+	  | computeInt(nil, k, vs)              = (k, vs)
+	  | computeInt((Id (fd v))::tr, k, vs)  = computeInt (tr, k, v::vs) 
+	  | computeInt((Id (op` i))::tr, k, vs) = computeInt(tr, k * i, vs)
+	  | computeInt _                        = raise Subscript
 
 	fun createSumCNEntry (Op(MUL, ts)) =
 	    let
-		val (i, ts) = splitInt ts
+	      val (i, ts) = computeInt(ts, 1, nil)
 	    in
-		(i, Vector.fromList (map getFD ts))
+	      (i, Vector.fromList ts)
 	    end
-	  | createSumCNEntry (t as (Id _)) = (1, Vector.fromList([getFD t]))
-	  | createSumCNEntry  _            = raise Subscript
+	  | createSumCNEntry (Id (op` i)) = (i, #[FD.fromInt 1])
+	  | createSumCNEntry (Id (fd v))  = (1, Vector.fromList([v]))
+	  | createSumCNEntry  _           = raise Subscript
 
 	fun createSumCNVector (Op(PLUS, ts)) =
 	    Vector.fromList (map createSumCNEntry ts)
@@ -144,100 +183,29 @@ structure Linear :> LINEAR =
 
 	fun negateSum (i, v) = (~i, v)
 
-	fun negateAtomic (Id (fd v))  = (~1, v)
-	  | negateAtomic (Id (op` i)) = (~1, FD.fromInt i)
-
-	fun makeNegSum (t::tr) =
-	    let
-		val tv  = getFD t
-		val trs = map negateAtomic tr
-	    in
-		Vector.fromList ([(1, tv)] @ trs)
-	    end
-	  | makeNegSum _ = raise Subscript
-
-	fun negSumCFirst (Op(MUL, [Id (op` i), Id (fd v)])) = (i, v)
-	  | negSumCFirst (Id (op` i))                       = (1, FD.fromInt i)
-	  | negSumCFirst (Id (fd v))                        = (1, v)
-	  | negSumCFirst _                                  = raise Subscript
-
-	fun negSumCEntry e = negateSum (negSumCFirst e)
-	  
-	fun makeNegSumC (t::tr) =
-	    let
-		val trs = map negSumCEntry tr
-	    in
-		Vector.fromList ([(negSumCFirst t)] @ trs)
-	    end
-	  | makeNegSumC _ = raise Subscript
-
-	fun negSumCNFirst (Op(MUL, (Id (op` i))::tr)) =
-	    (i, Vector.fromList (map getFD tr))
-	  | negSumCNFirst (Id (op` i)) = (1, #[FD.fromInt i])
-	  | negSumCNFirst (Id (fd v)) = (1, #[v])
-	  | negSumCNFirst _ = raise Subscript
-
-	fun negSumCNEntry e = negateSum (negSumCNFirst e)
-
-	fun makeNegSumCN (t::tr) =
-	    let
-		val trs = map negSumCNEntry tr
-	    in
-		Vector.fromList ([(negSumCNFirst t)] @ trs)
-	    end
-	  | makeNegSumCN _ = raise Subscript
-
-	(* Handle Variable Aliasing *)
-	local
-	    fun member(v, vs) =
-		List.exists (fn (_, x) => FD.Reflect.eq(x, v)) vs
-
-	    fun simplify'(v, vs, newvec) =
-		let
-		    val vvs = List.filter (fn (_, x) => FD.Reflect.eq(x, v)) vs
-		    val cs  = foldl (fn ((i, _), e) => e + i) 0 vvs 
-		in
-		    if cs = 0 then newvec else (cs, v)::newvec
-		end
-
-	    fun simplify(nil, vs, (visited, newvec))             = newvec
-	      | simplify((i, v)::vr, vs, t as (visited, newvec)) =
-		if member(v, newvec) then simplify(vr, vs, t) else
-		    let
-			val visited = v::visited
-			val newvec  = simplify'(v, vs, newvec)
-		    in
-			simplify(vr, vs, (visited, newvec))
-		    end
-
-	    fun checkReturn nil = raise Subscript (* Stupid constraint *)
-	      | checkReturn vs  = Vector.fromList vs
-	in
-	    fun simplifySumCVector v =
-		let
-		    val vs = Vector.toList v
-		in
-		    (case vs of
-			 [_]   => v
-		       | e::er => checkReturn (simplify(vs, vs, (nil, nil))))
-		end
-	    
-	    fun simplifySumVector v =
-		simplifySumCVector (Vector.map (fn x => (1, x)) v)
-	end
-
 	fun needType(SUM, t)  = if t <> SUMCN then SUMC else SUMCN
 	  | needType(SUMC, t) = if t <> SUMCN then SUMC else SUMCN
 	  | needType _        = SUMCN
 
-	fun getConstTerm (Op(MUL, [Id (op` i), Id (fd v)])) = (i, v)
-	  | getConstTerm (t as (Id _))                      = (1, getFD t)
-	  | getConstTerm _                                  = raise Subscript
+	fun getTermsC(SUM, (Op(PLUS, ts)))     = (map (fn x => (1, getFD x)) ts)
+	  | getTermsC(SUMC,(Op(PLUS, ts)))      = map makeConst ts
+	  | getTermsC(SUMC,(t as (Op(MUL, _)))) = [makeConst t]
+	  | getTermsC _                         = raise Subscript
 
-	fun getTerms(SUM, (Op(PLUS, ts))) = (map (fn x => (1, getFD x)) ts)
-	  | getTerms(SUMC,(Op(PLUS, ts))) = map getConstTerm ts
-	  | getTerms(SUMC,(t as (Op(MUL, _)))) = [getConstTerm t] 
-	  | getTerms _                         = raise Subscript
+	fun getTermsCN(SUM, (Op(PLUS, ts))) =
+	    (map (fn x => (1, #[getFD x])) ts)
+	  | getTermsCN(SUMC,(Op(PLUS, ts))) =
+	    (map (fn x => let val (i, v) = makeConst x in (i, #[v]) end) ts)
+	  | getTermsCN(SUMC,(t as (Op(MUL, _)))) =
+	    let
+	      val (i, v) = makeConst t
+	    in
+	      [(i, #[v])]
+	    end
+	  | getTermsCN(SUMCN, Op(PLUS, ts)) =
+	    (map (fn x => createSumCNEntry x) ts)
+	  | getTermsCN(SUMCN, t) = [createSumCNEntry t]
+	  | getTermsCN _ = raise Subscript
 	    	
 	local
 	    fun convertElem (op`` i)     = FD.SINGLE(i)
@@ -292,24 +260,26 @@ structure Linear :> LINEAR =
 			 FD.sumC(createSumCVector a', rel, bv)
 		   | (SUMCN, ATOMIC bv) =>
 			 FD.sumCN(createSumCNVector a', rel, bv)
-		   | (NEGSUM (SUM, ts), ATOMIC bv) =>
-			 FD.sumC(makeNegSum ts, rel, bv)
-		   | (NEGSUM(SUMC, ts), ATOMIC bv) =>
-			 FD.sumC(makeNegSumC ts, rel, bv)
-		   | (NEGSUM(SUMCN, ts), ATOMIC bv) =>
-			 FD.sumCN(makeNegSumCN ts, rel, bv)
 		   | (at, bt) =>
-			 (case needType(at, bt) of
-			      SUMC =>
-				  let
-				      val ats  = getTerms(at, a')
-				      val bts  = getTerms(bt, b')
-				      val sums = (ats @ (map negateSum bts))
-				  in
-				      FD.sumC(Vector.fromList sums,
-					      rel, FD.fromInt 0)
-				  end
-			    | SUMCN => () (* to be done *) ))
+		     (case needType(at, bt) of
+			SUMC =>
+			let
+			  val ats  = getTermsC(at, a')
+			  val bts  = getTermsC(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.sumC(Vector.fromList sums,
+				  rel, FD.fromInt 0)
+			end
+		      | SUMCN =>
+			let
+			  val ats  = getTermsCN(at, a')
+			  val bts  = getTermsCN(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.sumCN(Vector.fromList sums,
+				   rel, FD.fromInt 0)
+			end))
 	    end
 	and postReified(op`<(a, b), c)  = postReified'(a, b, c, FD.LESS)
 	  | postReified(op`<=(a, b), c) = postReified'(a, b, c, FD.LESSEQ)
@@ -331,24 +301,25 @@ structure Linear :> LINEAR =
 			 FD.Reified.sumC(createSumCVector a', rel, bv, cv)
 		   | (SUMCN, ATOMIC bv) =>
 			 FD.Reified.sumCN(createSumCNVector a', rel, bv, cv)
-		   | (NEGSUM(SUM, ts), ATOMIC bv) =>
-			 FD.Reified.sumC(makeNegSum ts, rel, bv, cv)
-		   | (NEGSUM(SUMC, ts), ATOMIC bv) =>
-			 FD.Reified.sumC(makeNegSumC ts, rel, bv, cv)
-		   | (NEGSUM(SUMCN, ts), ATOMIC bv) =>
-			 FD.Reified.sumCN(makeNegSumCN ts, rel, bv, cv)
 		   | (at, bt) =>
-			 (case needType(at, bt) of
-			      SUMC =>
-				  let
-				      val ats  = getTerms(at, a')
-				      val bts  = getTerms(bt, b')
-				      val sums = (ats @ (map negateSum bts))
-				  in
-				      FD.Reified.sumC(Vector.fromList sums,
-						      rel, FD.fromInt 0, cv)
-				  end
-			    | SUMCN =>
-				  () (* to be done *)))
+		     (case needType(at, bt) of
+			SUMC =>
+			let
+			  val ats  = getTermsC(at, a')
+			  val bts  = getTermsC(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.Reified.sumC(Vector.fromList sums,
+					  rel, FD.fromInt 0, cv)
+			end
+		      | SUMCN =>
+			let
+			  val ats  = getTermsCN(at, a')
+			  val bts  = getTermsCN(bt, b')
+			  val sums = (ats @ (map negateSum bts))
+			in
+			  FD.Reified.sumCN(Vector.fromList sums,
+					   rel, FD.fromInt 0, cv)
+			end))
 	    end
     end
