@@ -68,7 +68,7 @@
  *		     end
  *
  * We did NOT introduce a sharing signature ... and signature ... derived form
- * similar to types, because we consider that one completely broken.
+ * similar to types, because we consider that completely broken anyway.
  *
  * Notes:
  * - Two phrases named Fmatch and Fmrule have been added to factorize FvalBind.
@@ -202,8 +202,6 @@ sig
     val INFIXMULTISpec:   Info * int option * VId list             -> Spec
     val INFIXRMULTISpec:  Info * int option * VId list             -> Spec
     val NONFIXMULTISpec:  Info * VId list                          -> Spec
-    val PRIMITIVEEQTYPESpec:   Info * TyVarSeq * TyCon * string    -> Spec
-    val PRIMITIVEEQEQTYPESpec: Info * TyVarSeq * TyCon * string    -> Spec
 
     val NEWExDesc:        Info * Op * VId * Ty option * ExDesc option -> ExDesc
     val EQUALExDesc:      Info * Op * VId * Op * LongVId
@@ -231,8 +229,6 @@ sig
 							   * Rea option   -> Rea
     val SIGNATURERea:     Info * LongSigId * StrPat list * AppSigExp
 							 * Rea option     -> Rea
-    val PRIMITIVETYPERea: Info * TyVarSeq * LongTyCon * string            -> Rea
-    val PRIMITIVESIGNATURERea: Info * LongSigId * StrPat list * string    -> Rea
 
 
     (* Imports *)
