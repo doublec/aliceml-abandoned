@@ -13,8 +13,8 @@
 
 #include "GecodeSpace.hh"
 
-void GecodeSpace::commitDescription(int alt, BranchDesc *desc) {
-  commit(alt, desc);
+void GecodeSpace::commit(int alt, BranchDesc *desc) {
+  Space::commit(alt, desc);
 }
 
 int GecodeSpace::new_intvar(DomSpec& ds) {
@@ -488,7 +488,7 @@ void GecodeSpace::set_selectUnion(int s, const IntArgs& vars, int ss) {
 void GecodeSpace::set_selectInter(int s, const IntArgs& vars, int ss) {
   if (!enter()) return;
   makefsvarargs(a, vars);
-  ::selectUnion(fss[s], a, fss[ss]);
+  ::selectInter(fss[s], a, fss[ss]);
 }
 void GecodeSpace::set_selectSets(int s, const IntArgs& vars, int d) {
   if (!enter()) return;

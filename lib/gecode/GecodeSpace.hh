@@ -57,7 +57,6 @@ protected:
 public:
   using Space::clone;
   using Space::status;
-  using Space::commit;
   using Space::description;
   using Space::operator new;
   using Space::operator delete;
@@ -84,8 +83,7 @@ public:
   intvar new_intvar(DomSpec&);
   boolvar new_boolvar(void);
 
-  // commit with description (for batch recomputation)
-  void commitDescription(int alt, BranchDesc*);
+  void commit(int alt, BranchDesc*);
 
   // Inspect variable information
   int int_getMin(intvar);

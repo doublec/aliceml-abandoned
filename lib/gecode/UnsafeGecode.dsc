@@ -1,10 +1,8 @@
 // Spaces
-commit : int - void
-
 new_intvar : DomSpec& - intvar
 new_boolvar : void - boolvar
 new_setvar : void - setvar
-commitDescription : int, BranchDesc* - void
+commit : int, BranchDesc* - void
 
 // Inspect variable information
 
