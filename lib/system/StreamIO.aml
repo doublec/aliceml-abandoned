@@ -72,21 +72,17 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				case bufOpt of
 				    SOME (v, i) => (v, i)
 				  | NONE =>
-				    let
-					val chunkSize =
-					    if chunkSize > 1 then chunkSize
-					    else
-						case avail () of
-						    (SOME 0 | NONE) => 1
-						  | SOME i => i
-				    in
-					(blocking readVec chunkSize
+					(blocking readVec
+					     (if chunkSize > 1 then chunkSize
+					      else
+						  case avail () of
+						      (SOME 0 | NONE) => 1
+						    | SOME i => i)
 					 handle cause =>
 					     (Promise.fulfill (p, state);
 					      raise IO.Io
 						  {name, function, cause}),
 					 0)
-				    end
 			    val k = Vector.length v
 			in
 			    if k <= offset + nMarkRead then
@@ -293,7 +289,8 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		val i' = i - 1
 	    in
 		if Vector.sub (buf, i') = someElem then SOME i
-		else if i' = 0 then NONE else lineEnd (buf, i')
+		else if i' = 0 then NONE
+		else lineEnd (buf, i')
 	    end
 
 	fun output (f, v) =
@@ -366,18 +363,21 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			    val bufLen = Array.length buf
 			    val free' = free - 1
 			in
-			    stillFree := (if free' = 0 then bufLen else free');
 			    Array.update (buf, bufLen - free, x);
 			    if free' = 0 orelse bufferMode = IO.NO_BUF
 				orelse (bufferMode = IO.LINE_BUF
 					andalso x = someElem)
 			    then
-				writeBuffer (buf, 0, bufLen, blocking writeArr)
-				handle cause =>
-				    (Promise.fulfill (p, state);
-				     raise IO.Io {name, function = "output1",
-						  cause})
-			    else ();
+				(stillFree := bufLen;
+				 writeBuffer (buf, 0, bufLen - free',
+					      blocking writeArr)
+				 handle cause =>
+				     (Promise.fulfill (p, state);
+				      raise IO.Io {name, function = "output1",
+						   cause}))
+			    else
+				stillFree := (if free' = 0 then bufLen
+					      else free');
 			    Promise.fulfill (p, state)
 			end
 		  | TERMINATED name =>
@@ -458,6 +458,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				      cause = IO.ClosedStream})
 	    end
 
+(*--** if chunkSize = 1, do not allocate a buffer at all (always unbuffered) *)
 	fun mkOutstream (writer as PrimIO.WR {chunkSize, ...}, bufferMode) =
 	    ref (WRITER (PrimIO.augmentWriter writer,
 			 Array.array (chunkSize, someElem),
