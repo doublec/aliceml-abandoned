@@ -90,5 +90,10 @@ Promise.fulfill(prom1,#[1,2]);
 
 Promise.fulfill(prom2,#[2,3,4,5,6]);
 
+(***)
 
+val x = lazy 4711;
 
+structure Int = Reflect.ReflectType (type t = int);
+
+UnsafeInspector.inspect(x,Int.x);

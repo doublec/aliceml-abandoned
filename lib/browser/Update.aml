@@ -206,22 +206,28 @@ struct
         (let val va = getValue(getDesc(n))
 	 in  Server.serve(fn () => update(n,va,f,g))
 	 end
-	; TextIO.print ("REINSPECT: angeklickter Knoten hat Tiefe "
-			^Int.toString(getDepth(n))
-			^" und Tiefenlimit ist "
-			^Int.toString(!(Settings.max_depth))
-			^" !!!\n") )
+	 ; TextIO.print ("REINSPECT: angeklickter Knoten hat Tiefe "
+			 ^Int.toString(getDepth(n))
+			 ^" und Tiefenlimit ist "
+			 ^Int.toString(!(Settings.max_depth))
+			 ^" !!!\n") )
 	     handle General.Match => raise UpdateError )
       ; () )
 
     (* foldDepth *)
-    and foldDepth (n,d) = () (* !!!! *)
+    and foldDepth (n,i) = TextIO.print("Changing depth by " 
+					     ^ Int.toString(i)
+					     ^ "\n") (* !!!! *)
 
     (* foldWith *)
-    and foldWidth (n,d) = () (* !!!! *)
+    and foldWidth (n,i) = TextIO.print("Changing width by " 
+				       ^ Int.toString(i)
+				       ^ "\n") (* !!!! *)
 
     (* shrink *)
     and shrink n = 
+	Server.serve
+	(fn () =>
 	(setDazzled n
 	; let val ind = getAncIndex n 
 	      val anc = valOf(MainDictionary.lookup 
@@ -236,7 +242,7 @@ struct
 	      val (_,y_pos) = Services.getPosition(getGroup(anc))
 	  in ( Gtk.objectDestroy(getGroup(n))
              ;  showChanges (anc,node,old_ydim,ind,y_pos) )
-	end) 
+	end))
 		
 end (* struct *)
 

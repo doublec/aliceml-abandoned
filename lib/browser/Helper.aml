@@ -122,6 +122,10 @@ struct
     fun getTyp desc = case desc of VALUE(r) => #typ(r)
                                  | _ => raise Match
 
+    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
+                                 | _ => raise Match
+	                         
+
     fun getDepth n = case n of Limit(r) => #depth(r)
                              | Concat(r) => #depth(r)
                              | Container(r) => #depth(r)

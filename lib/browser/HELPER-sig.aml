@@ -14,6 +14,7 @@
  *)
 
 import structure Type     from "x-alice:/lib/rtt/Type"
+import structure Inf     from "x-alice:/lib/rtt/Inf"
 import structure Reflect  from "x-alice:/lib/system/Reflect" 
 import structure Gtk      from "x-alice:/lib/gtk/Gtk"
 import structure Label    from "x-alice:/lib/rtt/Label"
@@ -48,6 +49,7 @@ sig
     val getDesc : node -> desc
     val getValue : desc -> Reflect.value
     val getTyp : desc -> Type.typ
+    val getInf : desc -> Inf.t
     val getDepth : node -> int
     val getGroup : node -> Gtk.object
     val getRep : node -> string

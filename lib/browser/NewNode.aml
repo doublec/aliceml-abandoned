@@ -818,18 +818,14 @@ struct
 							createGraphInf))
 
     val _ = !WindowManager.register("width",
-			 fn (n,i) => TextIO.print("Changing width by " 
-						  ^ Int.toString(i)
-						  ^ "\n"))
+				    fn (n,i) => Update.foldWidth(n,i))
     val _ = !WindowManager.register("depth",
-		    fn (n,i) => TextIO.print("Changing depth by " 
-					     ^ Int.toString(i)
-					     ^ "\n"))
+				    fn (n,i) => Update.foldDepth(n,i))
 
     val _ = !WindowManager.register("shrink",fn (n,_) => Update.shrink n)
 
     val _ = !WindowManager.register("expand",
-				    fn (n,_) => TextIO.print("Expanding!\n"))
+				    fn (n,_) => Update.foldDepth(n,1))
 
 
 end (* struct end *)
