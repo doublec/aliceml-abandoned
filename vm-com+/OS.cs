@@ -43,10 +43,7 @@ class OS_Process_getEnv: Procedure {
 
 public class Execute {
     public static object Main(object obj) {
-	return new object[4] {
-	    null,                              //--** $OS$
-	    null,                              //--** $OS_FILE_SYS$
-	    null,                              //--** $OS_PROCESS$
+	return new object[1] {
 	    new object[2] {                    // OS$
 		null,                          //--** OS$.FileSys$
 		new object[6] {                // OS$.Process$

@@ -40,8 +40,7 @@ class CommandLine_arguments: Procedure {
 
 public class Execute {
     public static object Main(object obj) {
-	return new object[2] {
-	    null,                             //--** $COMMAND_LINE$
+	return new object[1] {
 	    new object[2] {                   // CommandLine$
 		new CommandLine_arguments(),  // CommandLine$.arguments
 		new CommandLine_name()        // CommandLine$.name

@@ -15,15 +15,8 @@ import
    OS(system getEnv getCWD)
    Application(exit)
 export
-   '$OS$': OS_Signature
-   '$OS_FILE_SYS$': OS_FILE_SYS_Signature
-   '$OS_PROCESS$': OS_PROCESS_Signature
    'OS$': OS_Module
 define
-   OS_Signature = {Value.byNeedFail rttNotImplemented}
-   OS_FILE_SYS_Signature = {Value.byNeedFail rttNotImplemented}
-   OS_PROCESS_Signature = {Value.byNeedFail rttNotImplemented}
-
    OS_Module =
    'OS'('FileSys$':
 	   'FileSys'('getDir':

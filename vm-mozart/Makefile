@@ -134,7 +134,9 @@ LIBFUNDAMENTALSOURCES0 = \
 	Position.aml Promise.aml Real.aml Ref.aml String.aml StringCvt.aml \
 	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
 	VectorPair.aml WideChar.aml WideString.aml Word.aml
-LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig)
+LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
+	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
+	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
@@ -568,10 +570,9 @@ $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 #--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
-build3/stoc/%.ozf: build3/stoc/%.aml
-	$(STOC2) $(STOC_OPTS) -c $< -o $@
+build3/lib/fundamental/%.ozf: build3/lib/%.aml
+	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
 
-#--** --rtt-level=full crashes - failed assertion in line 889 of Type.aml
 build3/%.ozf: build3/%.aml
 	$(STOC2) $(STOC_OPTS) -c $< -o $@
 
