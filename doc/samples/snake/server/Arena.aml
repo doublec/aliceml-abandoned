@@ -149,19 +149,23 @@ struct
 	    (arena,startpointlist)
 	end
 
-    fun placeSnakes (a,snakes,directions) =
+
+
+
+    fun placeSnakes (a,snakes) =
 	let
 	    val died = ref nil
 	    val halffin = ref nil
 	    val fin = ref nil
 
-	    fun merge nil nil xs = xs
-	      | merge (s::slist) (d::dlist) xs = 
-		                merge slist dlist ((s,d)::xs)
-
-	    val movedsnakes = List.map 
-		                (fn x => Snake.move x (* snakes net mutable machen *)) 
-				      (merge snakes directions nil)
+	    fun killSnake s = 
+		let
+		    val hb = (Snake.head s)::(Snake.body s)
+		in
+		    died := s::(!died);
+		    List.app 
+		        (fn (r,c) => Array2.update(a,r,c,P.EMPTY)) hb
+		end
 
 	    fun placeHead snake =
 		let
@@ -172,43 +176,64 @@ struct
 		    fun hitSnake s     nil     = false
 		      | hitSnake s (sn::slist) = 
 			let
-			    val bodyhead = (Snake.head sn)::(Snake.body sn)
+			    val hb = (Snake.head sn)::(Snake.body sn)
 			in
-			    if List.exists (fn x => Snake.head s = x) bodyhead
+			    if List.exists (fn x => Snake.head s = x) hb
 				then true
 			    else hitSnake s slist
 			end
 			
 		    val othersnakes = 
-			    List.filter (fn x => not (snake = x)) movedsnakes
+			    List.filter (fn x => not (snake = x)) snakes
 		    val hit = hitSnake snake othersnakes
 		in
+		    Array2.update(a,r,c,P.SNAKE_HEAD(dir,color));
 		    if hit
-			then died := snake::(!died)
-		    else case collObject of
-			P.EMPTY    => ()
-		      | P.GOODIE n => Snake.eat snake
-		      | P.WALL     => died := snake::(!died)
-		      | P.GATE c   => if c = color
-					  then halffin := snake::(!halffin)
-				      else died := snake::(!died)
-		      |    _       => died := snake::(!died);
-		      Array2.update(a,r,c,P.SNAKE_HEAD(dir,color))
+			then killSnake snake
+		    else 
+			case collObject of
+			 P.EMPTY    => ()
+		       | P.GOODIE n => Snake.eat (snake,n)
+		       | P.WALL     => killSnake snake
+		       | P.GATE col => 
+			     if col = color andalso Snake.length snake = 1
+				 then (fin := snake::(!fin);
+				       Array2.update(a,r,c,collObject))
+			     else
+				 if col = color
+				     then (halffin := snake::(!halffin);
+					   Array2.update(a,r,c,collObject))
+				 else killSnake snake
+		       | P.SNAKE_HEAD(_,col) => 
+				 if col <> color 
+				     then killSnake snake
+				 else ()
+		       |     _      => (assert false;
+					killSnake snake)
 		end
 
-	    fun placeBody snake = 
+	    fun placeBody snake =
 		let
 		    val color = Snake.color snake
 		    val body =  Snake.body snake
+		    fun stillDied s = color = Snake.color s
+		    val stilldied = List.exists stillDied (!died)
 		in
-		    List.app (fn(r,c) => 
-			      Array2.update(a,r,c,P.SNAKE_BODY(color))) body
+		    if stilldied
+			then ()
+		    else 
+			List.app 
+			    (fn(r,c) => Array2.update(a,
+						      r,
+						      c,
+						      P.SNAKE_BODY(color)))
+			         body
 		end
 		
 	in
-	    List.app placeHead movedsnakes;
-	    List.app placeBody movedsnakes;
-	    (died,halffin,fin)
+	    List.app placeHead snakes;
+	    List.app placeBody snakes;
+	    (!died,!halffin,!fin)
 	end
     
     fun emptyCopy a =
