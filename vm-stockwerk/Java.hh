@@ -16,6 +16,8 @@
 #include "Stockwerk.hh"
 #include "java/Data.hh"
 #include "java/StackFrame.hh"
+#include "java/Table.hh"
+#include "java/JavaByteCode.hh"
 #include "java/ClassInfo.hh"
 #include "java/ClassFile.hh"
 #include "java/ClassLoader.hh"
