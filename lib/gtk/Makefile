@@ -1,189 +1,149 @@
-###
-### Authors:
-###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
-### 
-### Copyright:
-###   Thorsten Brunklaus, 2000
-###   Leif Kornstaedt, 2001
-### 
-### Last change:
-###   $Date$ by $Author$
-###   $Revision$
-### 
+# Generated automatically from Makefile.in by configure.
+PREFIX	    = //c/Programs/alice
+SRCDIR      = .
 
-# Configuration Section
+OZC         = ozc
+OZL         = ozl
+COMPILE     = $(OZC) -c
+LINK        = $(OZL)
 
-SRCTOP = ../..
-SRCDIR = $(SRCTOP)/lib/gtk
-BUILDDIR := $(shell pwd)
-BUILDTOP = $(BUILDDIR)/../..
+CPP         = /usr/bin/cpp
+CPPFLAGS    = -undef -D__GNUC__ -std=c99
+GTKCONFIG   = /home/bruni/.wrapper/gtk-config
+HAVE_CANVAS = yes
+CANVASDIR   = /home/bruni/devel/wingtk/build
 
-PREFIX=/opt/stockhausen-devel
+ALICEC      = alicec
+ALICECOPTS  = --trace-component-access --dump-phases
+ALICEL      = alicelink
+ALICELOPTS  =
 
-SMLPLATFORM = x86-linux
+#---------------------------------------------------------------------
+# Extra Variables
+#---------------------------------------------------------------------
 
-# End of Configuration Section
+BUILDDIR        = $(SRCDIR)
+GTKFLAGS        = $(shell $(GTKCONFIG) --cflags)
+GTKLIBS         = $(shell $(GTKCONFIG) --libs)
 
-OZPLATFORM := $(shell oztool platform)
-VPATH = $(SRCDIR)
+ifeq ($(HAVE_CANVAS), yes)
+GTKCANVASFLAGS = -I$(CANVASDIR)/include
+GTKCANVASLIBS  = -L$(CANVASDIR)/lib -lgtk-canvas -lart_lgpl -lgdk_imlib
+else
+GTKCANVASFLAGS =
+GTKCANVASLIBS  =
+endif
 
-SML = sml
-CPP = cpp -undef -D__GNUC__
-CPPFLAGS := $(shell gtk-config --cflags gtk) -I$(SRCDIR)/gtk-canvas
+CPPEXTRAFLAGS = $(shell $(GTKCONFIG) --cflags gtk) $(GTKCANVASFLAGS)
 
-OZC = ozc
-OZCOPTS = -z9
-OZTOOL = oztool
-OZTOOLOPTS =
+#---------------------------------------------------------------------
+# Alice Binding
+#---------------------------------------------------------------------
 
-STOC = alicec
-STOCOPTS = #--no-dump-phases
+OZSOURCES = AliceWrapper.oz
+OZOBJS    = $(OZSOURCES:%.oz=%.ozf)
 
-OZSOURCES = GtkCoreOz.oz Gtk.oz Gdk.oz Canvas.oz
-COMPONENTS = $(OZSOURCES:%.oz=%.ozf)
-UNTYPEDCOMPONENTS = $(OZSOURCES:%.oz=Untyped%.ozf)
+ALICESOURCES = GtkTreeTypes.aml \
+               UTIL-sig.aml \
+               Util.aml \
+               TYPE_MANAGER-sig.aml \
+               MkTypeManager.aml \
+               WRAPPER-sig.aml \
+               MkWrapper.aml \
+               SIGNATURE-sig.aml \
+               MkSignature.aml \
+               GTK_BINDING-sig.aml \
+               GtkBinding.aml \
+               GtkTypes.aml
+ALICEOBJS    = $(ALICESOURCES:%.aml=%.ozf)
 
-ALICETYPESOURCES = GtkCoreTypes.aml
-ALICETYPECOMPONENTS = $(ALICETYPESOURCES:%.aml=%.ozf)
+#---------------------------------------------------------------------
+# Alice Wrapper Files
+#---------------------------------------------------------------------
 
-ALICESOURCES = GtkCore.aml
-ALICECOMPONENTS = $(ALICESOURCES:%.aml=%.ozf)
+OZWRPSRCS = UnsafeGDK.oz \
+            UnsafeGTK.oz \
+            UnsafeGTKCANVAS.oz
+OZWRPOBJS = $(OZWRPSRCS:%.oz=%.ozf)
+OZWRPSIGS = $(OZWRPSRCS:%.oz=%.asig)
 
-INSTALLDIRS = $(PREFIX)/lib/gtk
-INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/gtk/%) \
-               $(ALICETYPECOMPONENTS:%=$(PREFIX)/lib/gtk/%) \
-               $(ALICECOMPONENTS:%=$(PREFIX)/lib/gtk/%) \
-               $(NATIVECOMPONENTS:%=$(PREFIX)/lib/gtk/%)
+WRPSRCS    = GDK.aml \
+             GTK.aml \
+             GTKCANVAS.aml
+WRPOBJS    = $(WRPSRCS:%.aml=%.ozf)
+COMPONENTS = $(WRPOBJS:%.ozf=Linked%.ozf)
 
-CXXFLAGS = $(CPPFLAGS) \
-           -I/home/thor/devel/mozart/platform/emulator \
-           -I/home/thor/devel/build/platform/emulator
+#---------------------------------------------------------------------
+# Target Variables
+#---------------------------------------------------------------------
 
-NATIVESOURCES = GtkSignal.c GtkCanvas.c
-NATIVEOBJS = $(NATIVESOURCES:%.c=%.o)
-NATIVECOMPONENTS = $(NATIVESOURCES:%.c=%.so-$(OZPLATFORM))
+TARGETS         = gtkraw.c $(ALICEOBJS) $(OZOBJS)
+WRAPPER_TARGETS = $(OZWRPOBJS)
 
-NATIVEIMLIB = $(SRCDIR)/build/lib/libgdk_imlib.a
-NATIVECANVAS = $(SRCDIR)/build/lib/libgtk-canvas.a
+INSTALLDIRS  = $(PREFIX)/lib/gtk
+INSTALLFILES = $(COMPONENTS:Linked%=$(PREFIX)/lib/gtk/%)
 
-NATIVEFLAGS = $(SRCDIR)/build/lib/libgtk-canvas.a \
-              $(SRCDIR)/build/lib/libgdk_imlib.a \
-              $(SRCDIR)/build/lib/libart_lgpl.a \
-              -lg -lgdk -lgtk
+#---------------------------------------------------------------------
+# Rules
+#---------------------------------------------------------------------
 
-.PHONY: all depend install clean veryclean distclean
+%.ozf: %.oz
+	$(COMPILE) $< -o $@
 
-##
-## Building
-##
+%.ozf: %.aml
+	$(ALICEC) $(ALICECOPTS) -c $(BUILDDIR)/$< -o $(BUILDDIR)/$@
 
-all: $(ALICETYPECOMPONENTS) $(COMPONENTS) $(ALICECOMPONENTS) \
-     $(NATIVEIMLIB) $(NATIVECANVAS) $(NATIVECOMPONENTS) 
+Linked%.ozf: %.ozf
+	$(ALICEL) $(ALICELOPTS) $< -o $@
 
-depend:
-	touch Makefile.depend
+#---------------------------------------------------------------------
+# Building
+#---------------------------------------------------------------------
 
-header/gtkraw.c: header/gtk.c
-	$(CPP) $(CPPFLAGS) $< $@
+.PHONY: all clean veryclean distclean binding
 
-header/gtkheader.c: header/gtkraw.c header/filter.$(SMLPLATFORM)
-	sml @SMLload=header/filter $< $@
+all: $(TARGETS) binding
 
-header/filter.$(SMLPLATFORM): header/filter.sml header/make-filter.sml
-	-rm -f $@
-	(cd header && echo 'use "make-filter.sml";' | $(SML))
-	if [ ! -f $@ ]; then exit 1; fi
+#---------------------------------------------------------------------
+# Read GTK C Sources
+#---------------------------------------------------------------------
 
-collect.$(SMLPLATFORM): collect.sml make-collect.sml
-	-rm -f $@
-	echo 'use "make-collect.sml";' | $(SML)
-	if [ ! -f $@ ]; then exit 1; fi
+gtkraw.c: gtkdefs.c
+	$(CPP) $(CPPFLAGS) $(CPPEXTRAFLAGS) $< $@
 
-GtkWrapper.oz: collect.$(SMLPLATFORM) header/gtkheader.c
-	sml @SMLload=collect header/gtkheader.c
+#---------------------------------------------------------------------
+# Create Binding Files
+#---------------------------------------------------------------------
 
-GtkExport.oz: GtkWrapper.oz ;
-Gtk.asig: GtkExport.oz ;
-GdkWrapper.oz: Gtk.asig ;
-GdkExport.oz: GdkWrapper.oz ;
-Gdk.asig: GdkExport.oz ;
-CanvasWrapper.oz: Gdk.asig ;
-CanvasExport.oz: CanvasWrapper.oz ;
-Canvas.asig: CanvasExport.oz ;
+binding:
+	alicerun "x-oz://system/gtk/Generator.ozf" \
+          --no-native AliceWrapper.ozf
+	@$(MAKE) wrapper_files
 
-Untyped%.ozf: %.oz
-	$(OZC) $(OZCOPTS) -c $< -o $@
+wrapper_files: $(WRAPPER_TARGETS)
+wrapper: $(WRPOBJS) $(COMPONENTS)
 
-%.ozf: Untyped%.ozf %.asig
-	$(STOC) $(STOCOPTS) --replacesign $< $*.asig $@
-
-$(ALICETYPECOMPONENTS): %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
-
-$(ALICECOMPONENTS): %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
-
-$(NATIVEOBJS):%.o: %.c
-	$(OZTOOL) c++ $(CXXFLAGS) -c $< -o $@
-
-%.so-$(OZPLATFORM): %.o
-	oztool ld -o $@ $< $(NATIVEFLAGS)
-
-GtkCoreOz.ozf: GtkCoreTypes.ozf
-UntypedGtk.ozf: GtkWrapper.oz GtkExport.oz
-Gtk.ozf: GtkCore.ozf
-UntypedGdk.ozf: GdkWrapper.oz GdkExport.oz
-Gdk.ozf: GtkCore.ozf
-UntypedCanvas.ozf: CanvasWrapper.oz CanvasExport.oz
-Canvas.ozf: GtkCore.ozf
-
-$(NATIVEIMLIB): gtk-canvas/imlib/config.log
-	(cd gtk-canvas/imlib && $(MAKE) all install) || exit 1
-
-$(NATIVECANVAS): gtk-canvas/config.log
-	(cd gtk-canvas && $(MAKE) all install) || exit 1
-
-gtk-canvas/imlib/config.log:
-	(cd gtk-canvas/imlib && ./configure --prefix=$(BUILDDIR)/build) || exit 1
-
-gtk-canvas/config.log:
-	(cd gtk-canvas && ./configure --prefix=$(BUILDDIR)/build) || exit 1
-
--include Makefile.depend
-
-##
-## Installing
-##
+#---------------------------------------------------------------------
+# Installing
+#---------------------------------------------------------------------
 
 install: $(INSTALLDIRS) $(INSTALLFILES)
 
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(PREFIX)/lib/gtk/%.so-$(OZPLATFORM): %.so-$(OZPLATFORM)
-	install -c -m 555 $< $@
-
-$(PREFIX)/lib/gtk/%: %
+$(PREFIX)/lib/gtk/%: Linked%
 	install -c -m 444 $< $@
 
+#---------------------------------------------------------------------
+# Cleaning up
+#---------------------------------------------------------------------
 
-##
-## Cleaning Up
-##
+clean veryclean:
+	-$(RM) $(ALICEOBJS) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
 
-clean:
-	-rm -f header/gtkraw.c header/gtkheader.c
-	-rm -f GtkWrapper.oz GtkExport.oz Gtk.asig
-	-rm -f GdkWrapper.oz GdkExport.oz Gdk.asig
-	-rm -f CanvasWrapper.oz CanvasExport.oz Canvas.asig
-	-rm -f $(UNTYPEDCOMPONENTS) $(ALICETYPECOMPONENTS) $(ALICECOMPONENTS) $(COMPONENTS)
-	-rm -f GtkCanvas.c $(NATIVEOBJS) $(NATIVECOMPONENTS)
-	-rm -rf build
+wrapper_clean:
+	-$(RM) $(WRPOBJS)
 
-veryclean: clean
-	-rm -f header/filter.$(SMLPLATFORM) collect.$(SMLPLATFORM)
-
-distclean: veryclean
-	(cd gtk-canvas && $(MAKE) distclean) || exit 1
-	-rm -f Makefile.depend
+distclean: clean
+	-$(RM) gtkraw.c config.* Makefile
