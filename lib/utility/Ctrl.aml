@@ -30,12 +30,13 @@ struct
 
     fun repeat (n, f) = for (0, n - 1, f)
 
-    fun ispawn f a = 
+    fun ispawn (file, line) f a = 
         let
             (* print error message and terminate process *)
             fun crashWith exn =
                 (TextIO.output (TextIO.stdErr,
-                    "ispawn failed with exception " ^ exnName exn ^ "\n");
+                    "ispawn failed with exception " ^ exnName exn ^ " at "
+                        ^ file ^ ":" ^ Int.toString line ^ "\n");
                  OS.Process.exit OS.Process.failure)
         in
             (* spawn process.  returned unit is a future, discard it *)

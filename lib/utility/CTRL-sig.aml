@@ -27,8 +27,8 @@ sig
     val repeat : int * (int -> unit) -> unit
     (** [repeat (n, f)] is semantically equivalent to [for (0, n - 1, f)] *)
 
-    val ispawn : ('a -> unit) -> 'a -> unit
-    (** [ispawn f a] spawns f a directly returning unit.
+    val ispawn : string * int -> ('a -> unit) -> 'a -> unit
+    (** [ispawn (_file_, _line_) f a] spawns f a directly returning unit.
         [not (Future.isFuture (ispawn f a))] always holds.
         If [f] raises any exception the process is terminated
         with [OS.Process.exit OS.Process.failure] and a error
