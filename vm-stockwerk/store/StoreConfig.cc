@@ -12,13 +12,6 @@
 #include <iostream.h>
 #include <cstdio>
 #include <cstdlib>
-
-#if defined(INTERFACE)
-#pragma implementation "headerdef.hh"
-#endif
-#include "headerdef.hh"
-
-#include "store.hh"
 //
 // Helper Functions
 //
@@ -32,83 +25,134 @@ static unsigned int ComputeMask(int max, int pos, int width) {
   return mask;
 }
 
-static unsigned int *CreateGenerationLimits(int pos, int generations) {
-  unsigned int *ar = (unsigned int *) std::malloc(sizeof(unsigned int) * generations);
+static int StringToInt(char *v) {
+  int i;
+
+  sscanf(v, "%u", &i);
+  return i;
+}
+
+static void CreateHeader(FILE *f, int width, int tag, int size, int generations,
+			 u_int *MAX_TAGSIZE_PTR, u_int *GEN_SHIFT_PTR) {
+  u_int GC_SHIFT     = 0;
+  u_int TAG_SHIFT    = 1;
+  u_int SIZE_SHIFT   = (TAG_SHIFT + tag);
+  u_int MAXOLD_SHIFT = (SIZE_SHIFT + size);
+  u_int GEN_SHIFT    = (MAXOLD_SHIFT + generations);
+  u_int MAX_TAGSIZE  = ((1 << tag) - 1);
+  u_int MAX_HBSIZE   = ((1 << size) - 1);
+  u_int GC_MASK      = ComputeMask(width, 0, 1);
+  u_int TAG_MASK     = ComputeMask(width, TAG_SHIFT, tag);
+  u_int SIZE_MASK    = ComputeMask(width, SIZE_SHIFT, size);
+  u_int MAXOLD_MASK  = ComputeMask(width, MAXOLD_SHIFT, generations);
+  u_int GEN_MASK     = ComputeMask(width, GEN_SHIFT, generations);
+
+  *MAX_TAGSIZE_PTR = MAX_TAGSIZE;
+  *GEN_SHIFT_PTR   = GEN_SHIFT;
+
+  fprintf(f, "typedef enum {\n");
+
+  fprintf(f, "  GC_SHIFT     = 0x%x,\n", GC_SHIFT);
+  fprintf(f, "  TAG_SHIFT    = 0x%x,\n", TAG_SHIFT);
+  fprintf(f, "  SIZE_SHIFT   = 0x%x,\n", SIZE_SHIFT);
+  fprintf(f, "  MAXOLD_SHIFT = 0x%x,\n", MAXOLD_SHIFT);
+  fprintf(f, "  GEN_SHIFT    = 0x%x,\n", GEN_SHIFT);
+  fprintf(f, "  MAX_TAGSIZE  = 0x%x,\n", MAX_TAGSIZE);
+  fprintf(f, "  MAX_HBSIZE   = 0x%x,\n", MAX_HBSIZE);
+
+  fprintf(f, "  GC_MASK      = 0x%x,\n", GC_MASK);
+  fprintf(f, "  TAG_MASK     = 0x%x,\n", TAG_MASK);
+  fprintf(f, "  SIZE_MASK    = 0x%x,\n", SIZE_MASK);
+  fprintf(f, "  MAXOLD_MASK  = 0x%x,\n", MAXOLD_MASK);
+  fprintf(f, "  GEN_MASK     = 0x%x\n", GEN_MASK);
+
+  fprintf(f, "} HeaderHef;\n\n");
+}
+
+static void CreateLabel(FILE *f, int size) {
+  u_int MIN_LSIZE = 0;
+  u_int STACK     = (size - 6);
+  u_int MAX_LSIZE = (size - 6);
+  u_int CHUNK     = (size - 5);
+  u_int PROMISE   = (size - 4);
+  u_int FUTURE    = (size - 3);
+  u_int REF       = (size- 2);
+  u_int CANCELLED = (size - 1);
+  u_int BYNEED    = size;
+
+  fprintf(f, "typedef enum {\n");
+
+  fprintf(f, "  MIN_LSIZE = 0x%x,\n", MIN_LSIZE);
+  fprintf(f, "  STACK     = 0x%x,\n", STACK);
+  fprintf(f, "  MAX_LSIZE = 0x%x,\n", MAX_LSIZE);
+  fprintf(f, "  CHUNK     = 0x%x,\n", CHUNK);
+  fprintf(f, "  PROMISE   = 0x%x,\n", PROMISE);
+  fprintf(f, "  FUTURE    = 0x%x,\n", FUTURE);
+  fprintf(f, "  REF       = 0x%x,\n", REF);
+  fprintf(f, "  CANCELLED = 0x%x,\n", CANCELLED);
+  fprintf(f, "  BYNEED    = 0x%x\n", BYNEED);
+
+  fprintf(f, "} BlockLabel;\n\n");
+}
+
+static void CreateGenerationLimits(FILE *f, int pos, int generations) {
+  fprintf(f, "#define PLACEGENERATIONLIMIT static u_int gen_limits[] = {");
 
   for (int i = 0; i < generations; i++) {
     unsigned int mask = (i << pos);
-
+    
     for (int k = 0; k < (pos - 2); k++) {
       mask += (1 << k);
     }
-
-    ar[i] = mask;
+    
+    fprintf(f, " 0x%x", mask);
+    if ((i + 1) < generations) {
+      fprintf(f, ",");
+    }
   }
 
-  return ar;
-}
-//
-// Class Fields
-//
-t_label BlockLabel::MIN_LSIZE = 0;
-t_label BlockLabel::STACK     = 0;
-t_label BlockLabel::MAX_LSIZE = 0;
-t_label BlockLabel::CHUNK     = 0;
-t_label BlockLabel::PROMISE   = 0;
-t_label BlockLabel::FUTURE    = 0;
-t_label BlockLabel::REF       = 0;
-t_label BlockLabel::CANCELLED = 0;
-t_label BlockLabel::BYNEED    = 0;
-
-unsigned int HeaderDef::GC_SHIFT     = 0;
-unsigned int HeaderDef::TAG_SHIFT    = 0;
-unsigned int HeaderDef::SIZE_SHIFT   = 0;
-unsigned int HeaderDef::MAXOLD_SHIFT = 0;
-unsigned int HeaderDef::GEN_SHIFT    = 0;
-
-unsigned int HeaderDef::MAX_TAGSIZE = 0;
-unsigned int HeaderDef::MAX_HBSIZE  = 0;
-
-unsigned int *HeaderDef::GEN_LIMIT  = NULL;
-
-unsigned int HeaderDef::GC_MASK     = 0;
-unsigned int HeaderDef::TAG_MASK    = 0;
-unsigned int HeaderDef::SIZE_MASK   = 0;
-unsigned int HeaderDef::MAXOLD_MASK = 0;
-unsigned int HeaderDef::GEN_MASK    = 0;
-//
-// Method Implementations
-//
-void BlockLabel::CreateLabel(unsigned int size) {
-  MIN_LSIZE = 0;
-  STACK     = (size - 6);
-  MAX_LSIZE = (size - 6);
-  CHUNK     = (size - 5);
-  PROMISE   = (size - 4);
-  FUTURE    = (size - 3);
-  REF       = (size - 2);
-  CANCELLED = (size - 1);
-  BYNEED    = size;
+  fprintf(f, " }\n\n");
 }
 
-void HeaderDef::CreateHeader(int width, int tag, int size, int generations) {
-  Assert((tag + size + generations * 2) <= width);
+int main(int argc, char **argv) {
+  int checksum = 0;
+  int val[4]; // width, tag, size, generations
+  u_int MAX_TAGSIZE, GEN_SHIFT;
+  FILE *f;
 
-  GC_SHIFT     = 0;
-  TAG_SHIFT    = 1;
-  SIZE_SHIFT   = (TAG_SHIFT + tag);
-  MAXOLD_SHIFT = (SIZE_SHIFT + size);
-  GEN_SHIFT    = (MAXOLD_SHIFT + generations);
-  MAX_TAGSIZE  = ((1 << tag) - 1);
-  MAX_HBSIZE   = ((1 << size) - 1);
+  if (argc < 5) {
+    fprintf(stderr, "usage: %s width tag size generations\n", argv[0]);
+    exit(0);
+  }
 
-  GEN_LIMIT    = CreateGenerationLimits(GEN_SHIFT, ((1 << generations) - 1));
+  for (int i = 0; i < 4; i++) {
+    val[i] = StringToInt(argv[i + 1]);
+  }
+
+  for (int i = 1; i < 4; i++) {
+    checksum += ((i == 3) ? 2 : 1) * val[i];
+  }
+
+  if (checksum != val[0]) {
+    fprintf(stderr, "%s: error: illegal width checksum. Aborting generation.\n", argv[0]);
+    exit(0);
+  }
+
+  if ((f = fopen("headerdef.hh", "w")) == NULL) {
+    fprintf(stderr, "%s: unable to open file headerdef.hh\n", argv[0]);
+    exit(1);
+  }
   
-  GC_MASK     = ComputeMask(width, 0, 1);
-  TAG_MASK    = ComputeMask(width, TAG_SHIFT, tag);
-  SIZE_MASK   = ComputeMask(width, SIZE_SHIFT, size);
-  MAXOLD_MASK = ComputeMask(width, MAXOLD_SHIFT, generations);
-  GEN_MASK    = ComputeMask(width, GEN_SHIFT, generations);
+  fprintf(f, "//\n// This File is generated. Please do not edit.\n//\n");
+  fprintf(f, "#ifndef __HEADERDEF_HH__\n");
+  fprintf(f, "#define __HEADERDEF_HH__\n\n");
 
-  BlockLabel::CreateLabel(MAX_TAGSIZE);
+  CreateHeader(f, val[0], val[1], val[2], val[3], &MAX_TAGSIZE, &GEN_SHIFT);
+  CreateLabel(f, MAX_TAGSIZE);
+  CreateGenerationLimits(f, GEN_SHIFT, ((1 << val[3]) - 1));
+
+  fprintf(f, "#endif\n");
+  fclose(f);
+
+  return 0;
 }

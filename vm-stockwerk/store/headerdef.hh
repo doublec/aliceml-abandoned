@@ -1,58 +1,36 @@
 //
-// Author:
-//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-//
-// Copyright:
-//   Thorsten Brunklaus, 2000
-//
-// Last Change:
-//   $Date$ by $Author$
-//   $Revision$
+// This File is generated. Please do not edit.
 //
 #ifndef __HEADERDEF_HH__
 #define __HEADERDEF_HH__
 
-#if defined(INTERFACE)
-#pragma interface
-#endif
+typedef enum {
+  GC_SHIFT     = 0x0,
+  TAG_SHIFT    = 0x1,
+  SIZE_SHIFT   = 0x11,
+  MAXOLD_SHIFT = 0x1c,
+  GEN_SHIFT    = 0x1e,
+  MAX_TAGSIZE  = 0xffff,
+  MAX_HBSIZE   = 0x7ff,
+  GC_MASK      = 0x1,
+  TAG_MASK     = 0x1fffe,
+  SIZE_MASK    = 0xffe0000,
+  MAXOLD_MASK  = 0x30000000,
+  GEN_MASK     = 0xc0000000
+} HeaderHef;
 
-typedef unsigned int t_label;
+typedef enum {
+  MIN_LSIZE = 0x0,
+  STACK     = 0xfff9,
+  MAX_LSIZE = 0xfff9,
+  CHUNK     = 0xfffa,
+  PROMISE   = 0xfffb,
+  FUTURE    = 0xfffc,
+  REF       = 0xfffd,
+  CANCELLED = 0xfffe,
+  BYNEED    = 0xffff
+} BlockLabel;
 
-// KNOWN Block Labels
-class BlockLabel {
-public:
-  static t_label MIN_LSIZE;
-  static t_label STACK;
-  static t_label MAX_LSIZE;
-  static t_label CHUNK;
-  static t_label PROMISE;
-  static t_label FUTURE;
-  static t_label REF;
-  static t_label CANCELLED;
-  static t_label BYNEED;
-
-  static void CreateLabel(unsigned int size);
-};
-
-class HeaderDef {
-public:
-  // Header Representation
-  static unsigned int GC_SHIFT;
-  static unsigned int TAG_SHIFT;
-  static unsigned int SIZE_SHIFT;
-  static unsigned int MAXOLD_SHIFT;
-  static unsigned int GEN_SHIFT;
-  static unsigned int MAX_TAGSIZE;
-  static unsigned int MAX_HBSIZE;
-  static unsigned int *GEN_LIMIT;
-  // Header Decode Masks
-  static unsigned int GC_MASK;
-  static unsigned int TAG_MASK;
-  static unsigned int SIZE_MASK;
-  static unsigned int MAXOLD_MASK;
-  static unsigned int GEN_MASK;
-
-  static void CreateHeader(int width, int tag, int size, int generations);
-};
+#define PLACEGENERATIONLIMIT static u_int gen_limits[] = { 0xfffffff, 0x4fffffff, 0x8fffffff }
 
 #endif
