@@ -1,3 +1,3 @@
 #!/bin/sh
-
-exec $(dirname $0)/alicerun x-alice:/compiler/CompileServerMain "$@"
+dir=$(dirname "$0")
+exec "$dir"/alicerun x-alice:/compiler/CompileServerMain "$@"
