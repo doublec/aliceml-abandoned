@@ -1302,12 +1302,7 @@ val _ = checkMuFwd := checkMu
 	Path.equal(p1,p2) andalso ListPair.allEq Path.equal (ps1,ps2)
       | equalConstraint _ = false
 
-    fun meetsConstraint'(t, Unconstrained)    = true
-      | meetsConstraint'(t, c as Intensional) =
-	(case asType' t
-	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
-	  |  _                             => false
-	)
+    fun meetsConstraint'(t, (Unconstrained | Intensional)) = true
       | meetsConstraint'(t, c as Extensional(p,ps)) =
 	(case asType' t
 	 of (HOLE(_,_,c',_) | VAR(_,_,c')) => subsumesConstraint(c',c)
