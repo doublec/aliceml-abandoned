@@ -74,10 +74,12 @@ struct
                 invoke #giveUp ()
                 
             fun play (name, color) = 
-                if invoke #play (name, color) then
+                (if invoke #play (name, color) then
                     FST ({ turn, changeView, giveUp }, promise)
-                else
-                    SND "no more players are allowed"
+                 else
+                    SND "no more players are allowed")
+                handle e =>
+                    Gui.serverError e
                 
             fun watch () =
                 (invoke #watch ();
@@ -100,7 +102,7 @@ struct
                             raise e
                         ))
             
- (*           fun locked name f = Lock.sync lock f *)
+            fun locked name f = Lock.sync lock f 
         in
             (* return locked but not yet proxied client interface! *)
             ({

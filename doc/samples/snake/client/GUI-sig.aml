@@ -90,7 +90,8 @@ sig
 	 
 	 }
 	
-	
+    val serverError : exn -> 'a
+
     val execute: model_initial * gui Promise.promise -> unit
 	
 end

@@ -16,6 +16,7 @@ import structure Color      from "../common/Color"
 import structure Protocol   from "../common/Protocol"
 import structure Config     from "../server/Config"
 import structure Main       from "windows/Main"
+import structure Error      from "windows/Error"
 
 
 structure Gui :> GUI =
@@ -97,6 +98,8 @@ struct
 
     val execute = Main.mkMainWindow
 
+    fun serverError exn =
+        raise Error.Error "lost connection to server"
 
 end
 
