@@ -563,7 +563,7 @@ Component *BootLinker::LookupComponent(String *key) {
 }
 
 void BootLinker::Link(String *url) {
-  traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
+  traceFlag = std::getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
   BootWorker::PushFrame(thread, url);
   LoadWorker::PushFrame(thread, url);
