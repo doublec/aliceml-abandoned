@@ -54,6 +54,7 @@ final public class Int implements DMLValue {
     _apply_fails;
 
     _BUILTIN(Uminus) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Int.~");
 	    if (!(val instanceof Int)) {
@@ -79,24 +80,25 @@ final public class Int implements DMLValue {
     _BINOPINT(minus,-);
 
     _BUILTIN(Compare) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.compare");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
-	    int i = ((Int) v).value;
-	    int j = ((Int) w).value;
-	    if (i==j) {
-		return General.EQUAL;
-	    } else if (i<j) {
-		return General.LESS;
-	    } else {
-		return General.GREATER;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		int i = ((Int) v).value;
+		int j = ((Int) w).value;
+		if (i==j) {
+		    return General.EQUAL;
+		} else if (i<j) {
+		    return General.LESS;
+		} else {
+		    return General.GREATER;
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument for assign",new Tuple2(v1,v2));
 	    }
 	}
     }
@@ -104,24 +106,25 @@ final public class Int implements DMLValue {
     _FIELD(Int,compare);
 
     _BUILTIN(Compare_) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.compare'");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
-	    int i = ((Int) v).value;
-	    int j = ((Int) w).value;
-	    if (i==j) {
-		return ZERO;
-	    } else if (i<j) {
-		return MONE;
-	    } else {
-		return ONE;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		int i = ((Int) v).value;
+		int j = ((Int) w).value;
+		if (i==j) {
+		    return ZERO;
+		} else if (i<j) {
+		    return MONE;
+		} else {
+		    return ONE;
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument for assign",new Tuple2(v1,v2));
 	    }
 	}
     }
@@ -134,22 +137,23 @@ final public class Int implements DMLValue {
     _COMPAREINT(leq,<=);
 
     _BUILTIN(Min) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.min");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
-	    int i = ((Int) v).value;
-	    int j = ((Int) w).value;
-	    if (i<j) {
-		return v;
-	    } else {
-		return w;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		int i = ((Int) v).value;
+		int j = ((Int) w).value;
+		if (i<j) {
+		    return v;
+		} else {
+		    return w;
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument for assign",new Tuple2(v1,v2));
 	    }
 	}
     }
@@ -157,22 +161,23 @@ final public class Int implements DMLValue {
     _FIELD(Int,min);
 
     _BUILTIN(Max) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.max");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
-	    int i = ((Int) v).value;
-	    int j = ((Int) w).value;
-	    if (i>j) {
-		return v;
-	    } else {
-		return w;
+	}
+	_SAPPLY2(v) {
+	    try{
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		int i = ((Int) v).value;
+		int j = ((Int) w).value;
+		if (i>j) {
+		    return v;
+		} else {
+		    return w;
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument for assign",new Tuple2(v1,v2));
 	    }
 	}
     }
@@ -180,6 +185,7 @@ final public class Int implements DMLValue {
     _FIELD(Int,max);
 
     _BUILTIN(Abs) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Int.abs");
 	    if (!(val instanceof Int)) {
@@ -193,6 +199,7 @@ final public class Int implements DMLValue {
     _FIELD(Int,abs);
 
     _BUILTIN(Sign) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Int.sign");
 	    if (!(val instanceof Int)) {
@@ -212,24 +219,25 @@ final public class Int implements DMLValue {
     _FIELD(Int,sign);
 
     _BUILTIN(SameSign) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.sameSign");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Int)) {
-		_error("argument 1 not Int",val);
-	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
-	    int i = ((Int) v).value;
-	    int j = ((Int) w).value;
-	    if ((i>0 && j>0) ||
-		(i<0 && j<0) ||
-		(i==j)) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		int i = ((Int) v).value;
+		int j = ((Int) w).value;
+		if ((i>0 && j>0) ||
+		    (i<0 && j<0) ||
+		    (i==j)) {
+		    return Constants.dmltrue;
+		} else {
+		    return Constants.dmlfalse;
+		}
+	    } catch (ClassCastException c) {
+		_error("wrong argument for assign",new Tuple2(v1,v2));
 	    }
 	}
     }
@@ -237,6 +245,7 @@ final public class Int implements DMLValue {
     _FIELD(Int,sameSign);
 
     _BUILTIN(ToString) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Int.toString");
 	    if (!(val instanceof Int)) {
@@ -251,6 +260,7 @@ final public class Int implements DMLValue {
     _FIELD(Int,toString);
 
     _BUILTIN(FromString) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Int.fromString");
 	    if (!(val instanceof STRING)) {

@@ -39,6 +39,7 @@ final public class Char implements DMLValue {
     /** <code>val maxChar : char </code>*/
     /** <code>val maxOrd : int </code>*/
     _BUILTIN(Ord) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Char.ord");
 	    if (val instanceof Char) {
@@ -52,6 +53,7 @@ final public class Char implements DMLValue {
     _FIELD(Char,ord);
 
     _BUILTIN(Chr) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Char.chr");
 	    if (val instanceof Int) {
@@ -86,6 +88,7 @@ final public class Char implements DMLValue {
     /** <code>val isCntrl : char -> bool </code>*/
 
     _BUILTIN(IsDigit) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Char.isDigit");
 	    if (val instanceof Char) {
@@ -103,6 +106,7 @@ final public class Char implements DMLValue {
     /** <code>val isGraph : char -> bool </code>*/
 
     _BUILTIN(IsHexDigit) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Char.isHexDigit");
 	    if (val instanceof Char) {
@@ -128,6 +132,7 @@ final public class Char implements DMLValue {
     /** <code>val isPrint : char -> bool </code>*/
 
     _BUILTIN(IsSpace) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Char.isSpace");
 	    if (val instanceof Char) {
@@ -149,6 +154,7 @@ final public class Char implements DMLValue {
     /** <code>val toString : char -> java.lang.String.string </code>*/
     /** <code>val fromCString : java.lang.String.string -> char option </code>*/
     _BUILTIN(ToCString) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    return new STRING (java.lang.String.valueOf(((Char) val).value));
 	}

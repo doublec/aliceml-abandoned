@@ -12,7 +12,7 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-final public class ConValTuple4 implements DMLConVal {
+final public class ConVal4 implements DMLConVal {
 
     private DMLValue fst = null;
     private DMLValue snd = null;
@@ -21,11 +21,11 @@ final public class ConValTuple4 implements DMLConVal {
 
     final public Constructor constructor;
 
-    public ConValTuple4(Constructor con) {
+    public ConVal4(Constructor con) {
 	constructor = con;
     }
 
-    public ConValTuple4(Constructor con,
+    public ConVal4(Constructor con,
 			DMLValue eins,
 			DMLValue zwei,
 			DMLValue drei,
@@ -69,8 +69,8 @@ final public class ConValTuple4 implements DMLConVal {
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
 	try {
-	    if (val instanceof ConValTuple4) {
-	    ConValTuple4 v = (ConValTuple4) val;
+	    if (val instanceof ConVal4) {
+	    ConVal4 v = (ConVal4) val;
 	    return
 		fst.equals(v.fst) &&
 		snd.equals(v.snd) &&

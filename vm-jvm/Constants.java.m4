@@ -34,6 +34,23 @@ final public class Constants {
 	    throws java.rmi.RemoteException {
 	    return new Reference(val);
 	}
+
+	final public DMLValue apply0()
+	    throws java.rmi.RemoteException {
+	    _RAISENAME(General.Match);
+	}
+	final public DMLValue apply2(DMLValue v1, DMLValue v2)
+	    throws java.rmi.RemoteException {
+	    return new Reference(new Tuple2(v1,v2));
+	}
+	final public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+	    throws java.rmi.RemoteException {
+	    return new Reference(new Tuple3(v1,v2,v3));
+	}
+	final public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+	    throws java.rmi.RemoteException {
+	    return new Reference(new Tuple4(v1,v2,v3,v4));
+	}
     }
 
     public static final Constructor reference    = new Ref("reference");

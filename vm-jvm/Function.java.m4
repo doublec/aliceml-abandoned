@@ -17,6 +17,7 @@ abstract public class Function implements DMLValue {
     static public boolean DEBUG = false;
 
     _BUILTIN(Debug) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    DEBUG=true;
 	    return null;

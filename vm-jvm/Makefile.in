@@ -24,11 +24,9 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Char.class \
 	$(CLASSROOT)$(RUNTIME)ClientManager.class \
 	$(CLASSROOT)$(RUNTIME)ConVal.class \
-	$(CLASSROOT)$(RUNTIME)ConValTuple1.class \
 	$(CLASSROOT)$(RUNTIME)ConValTuple2.class \
 	$(CLASSROOT)$(RUNTIME)ConValTuple3.class \
 	$(CLASSROOT)$(RUNTIME)ConValTuple4.class \
-	$(CLASSROOT)$(RUNTIME)ConValTuple5.class \
 	$(CLASSROOT)$(RUNTIME)Connection.class \
 	$(CLASSROOT)$(RUNTIME)Cons.class \
 	$(CLASSROOT)$(RUNTIME)Constants.class \
@@ -70,11 +68,9 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)TextIO.class \
 	$(CLASSROOT)$(RUNTIME)Thread.class \
 	$(CLASSROOT)$(RUNTIME)Tuple.class \
-	$(CLASSROOT)$(RUNTIME)Tuple1.class \
 	$(CLASSROOT)$(RUNTIME)Tuple2.class \
 	$(CLASSROOT)$(RUNTIME)Tuple3.class \
 	$(CLASSROOT)$(RUNTIME)Tuple4.class \
-	$(CLASSROOT)$(RUNTIME)Tuple5.class \
 	$(CLASSROOT)$(RUNTIME)UniqueConstructor.class \
 	$(CLASSROOT)$(RUNTIME)UniqueName.class \
 	$(CLASSROOT)$(RUNTIME)Vector.class \

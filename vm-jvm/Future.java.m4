@@ -49,4 +49,19 @@ public class Future extends LVar {
     public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
 	return ref.apply(val); // ref ist LVar !
     }
+    public DMLValue apply0() throws java.rmi.RemoteException {
+	return ref.apply0();
+    }
+    public DMLValue apply2(DMLValue v1, DMLValue v2)
+	throws java.rmi.RemoteException {
+	return ref.apply2(v1,v2);
+    }
+    public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+	throws java.rmi.RemoteException {
+	return ref.apply3(v1,v2,v3);
+    }
+    public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+	throws java.rmi.RemoteException {
+	return ref.apply4(v1,v2,v3,v4);
+    }
 }

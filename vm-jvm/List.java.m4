@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -21,10 +21,13 @@ final public class List {
 	    super(n);
 	}
 
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	final public DMLValue apply(DMLValue val)
 	    throws java.rmi.RemoteException {
 	    _fromTuple(args,val,2,"List.cons");
-	    return new Cons(args[0],args[1]);
+	}
+	_SAPPLY2(v) {
+	    return new Cons(v1,v2);
 	}
     }
     final public static Constructor cons = new ConsConstructor("List.cons");
@@ -33,14 +36,16 @@ final public class List {
     final public static Name Empty = new UniqueName("List.Empty");
 
     _BUILTIN(IsNull) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.null");
+	    _REQUEST(val,val);
 	    if (val instanceof Cons) {
 		return Constants.dmlfalse;
 	    } else if (val==nil) {
 		return Constants.dmltrue;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -48,8 +53,10 @@ final public class List {
     _FIELD(List,isNull);
 
     _BUILTIN(Length) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.length");
+	    _REQUEST(val,val);
 	    int length = 0;
 	    while (val instanceof Cons) {
 		length++;
@@ -59,7 +66,7 @@ final public class List {
 	    if (val==nil) {
 		return new Int(length);
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -67,11 +74,14 @@ final public class List {
     _FIELD(List,length);
 
     _BUILTIN(Append) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.append");
-	    _REQUESTDEC(DMLValue first,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue first,v1);
 	    if (first==nil)
-		return args[1];
+		return v2;
 	    else if (first instanceof Cons) {
 		Cons newList = new Cons(null,null);
 		Cons cons = newList;
@@ -82,13 +92,13 @@ final public class List {
 			cons=(Cons) cons.cdr;
 			_REQUEST(first,fc.cdr);
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
-		cons.cdr = args[1];
+		cons.cdr = v2;
 		return newList.cdr;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -96,14 +106,16 @@ final public class List {
     _FIELD(List,append);
 
     _BUILTIN(Hd) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.hd");
+	    _REQUEST(val,val);
 	    if (val instanceof Cons) {
 		return ((Cons) val).car;
 	    } else if (val==nil) {
-		_RAISENAME(Empty);
+		_RAISENAME(List.Empty);
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -111,14 +123,16 @@ final public class List {
     _FIELD(List,hd);
 
     _BUILTIN(Tl) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.tl");
+	    _REQUEST(val,val);
 	    if (val instanceof Cons) {
 		return ((Cons) val).cdr;
 	    } else if (val==nil) {
-		_RAISENAME(Empty);
+		_RAISENAME(List.Empty);
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -126,8 +140,10 @@ final public class List {
     _FIELD(List,tl);
 
     _BUILTIN(Last) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.last");
+	    _REQUEST(val,val);
 	    if (val==nil) {
 		_RAISENAME(Empty);
 	    } else if (val instanceof Cons) {
@@ -138,12 +154,12 @@ final public class List {
 			DMLValue co = ((Cons) next).cdr;
 			_REQUEST(next,co);
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		return ((Cons) val).car;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -151,16 +167,18 @@ final public class List {
     _FIELD(List,last);
 
     _BUILTIN(GetItem) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.getItem");
+	    _REQUEST(val,val);
 	    if (val==nil)
 		return Option.NONE;
 	    else if (val instanceof Cons) {
 		DMLValue car = ((Cons) val).car;
 		DMLValue cdr = ((Cons) val).cdr;
-		return Option.SOME.apply(new Tuple2(car,cdr));
+		return Option.SOME.apply2(car,cdr);
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -168,17 +186,20 @@ final public class List {
     _FIELD(List,getItem);
 
     _BUILTIN(Nth) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.nth");
-	    _REQUESTDEC(DMLValue n,args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue n,v2);
 	    if (!(n instanceof Int)) {
-		_error("argument 2 not Int",val);
+		_RAISENAME(General.Match);
 	    }
 	    int le = ((Int) n).value;
 	    if (le<0) {
 		_RAISENAME(General.Subscript);
 	    }
-	    _REQUESTDEC(DMLValue first,args[0]);
+	    _REQUESTDEC(DMLValue first,v1);
 	    if (first==nil) {
 		_RAISENAME(Empty);
 	    } else if (first instanceof Cons) {
@@ -190,7 +211,7 @@ final public class List {
 			first = next;
 			_REQUEST(next,((Cons) next).cdr);
 		    } else {
-			_error("argument 1 not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		if (i<le) {
@@ -199,7 +220,7 @@ final public class List {
 		    return ((Cons) first).car;
 		}
 	    } else {
-		_error("argument 1 not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -207,17 +228,20 @@ final public class List {
     _FIELD(List,nth);
 
     _BUILTIN(Take) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.take");
-	    _REQUESTDEC(DMLValue n,args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue n,v2);
 	    if (!(n instanceof Int)) {
-		_error("argument 2 not Int",val);
+		_RAISENAME(General.Match);
 	    }
 	    int le = ((Int) n).value;
 	    if (le<0) {
 		_RAISENAME(General.Subscript);
 	    }
-	    _REQUESTDEC(DMLValue first,args[0]);
+	    _REQUESTDEC(DMLValue first,v2);
 	    if (first==nil) {
 		_RAISENAME(Empty);
 	    } else if (first instanceof Cons) {
@@ -232,7 +256,7 @@ final public class List {
 			cons=(Cons)cons.cdr;
 			_REQUEST(first,fc.cdr);
 		    } else {
-			_error("argument 1 not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		if (i>le) {
@@ -242,7 +266,7 @@ final public class List {
 		    return newList.cdr;
 		}
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -250,17 +274,20 @@ final public class List {
     _FIELD(List,take);
 
     _BUILTIN(Drop) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.drop");
-	    _REQUESTDEC(DMLValue n,args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue n,v2);
 	    if (!(n instanceof Int)) {
-		_error("argument 2 not Int",val);
+		_RAISENAME(General.Match);
 	    }
 	    int le = ((Int) n).value;
 	    if (le<0) {
 		_RAISENAME(General.Subscript);
 	    }
-	    _REQUESTDEC(DMLValue first,args[0]);
+	    _REQUESTDEC(DMLValue first,v1);
 	    if (first==nil) {
 		_RAISENAME(Empty);
 	    } else if (first instanceof Cons) {
@@ -273,7 +300,7 @@ final public class List {
 			DMLValue co = ((Cons) next).cdr;
 			_REQUEST(next,co);
 		    } else {
-			_error("argument 1 not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		if (i<le) {
@@ -282,7 +309,7 @@ final public class List {
 		    return ((Cons) first).cdr;
 		}
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -290,8 +317,10 @@ final public class List {
     _FIELD(List,drop);
 
     _BUILTIN(Rev) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.rev");
+	    _REQUEST(val,val);
 	    if (val==nil) {
 		_RAISENAME(Empty);
 	    }
@@ -304,12 +333,12 @@ final public class List {
 			cons = new Cons(fc.car,cons);
 			_REQUEST(val,fc.cdr);
 		    } else {
-			_error("argument 1 not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		return cons;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -317,8 +346,10 @@ final public class List {
     _FIELD(List,rev);
 
     _BUILTIN(Concat) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"List.concat");
+	    _REQUEST(val,val);
 	    if (val==nil)
 		return nil;
 	    else if (val instanceof Cons) {
@@ -338,18 +369,18 @@ final public class List {
 				cons=(Cons) cons.cdr;
 				_REQUEST(li,l.cdr);
 			    } else {
-				_error("argument not List list",val);
+				_RAISENAME(General.Match);
 			    }
 			}
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		    _REQUEST(val,((Cons) val).cdr);
 		}
 		cons.cdr=nil;
 		return result.cdr;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -357,13 +388,16 @@ final public class List {
     _FIELD(List,concat);
 
     _BUILTIN(RevAppend) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.revAppend");
-	    _REQUESTDEC(DMLValue first,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue first,v1);
 	    if (first==nil)
-		return args[1];
+		return v2;
 	    else if (first instanceof Cons) {
-		Cons cons = new Cons(((Cons) first).car,args[1]);
+		Cons cons = new Cons(((Cons) first).car,v2);
 		_REQUEST(first,((Cons) first).cdr);
 		while (first!=nil) {
 		    if (first instanceof Cons) {
@@ -371,12 +405,12 @@ final public class List {
 			cons = new Cons(fc.car,cons);
 			_REQUEST(first,fc.cdr);
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 		return cons;
 	    } else {
-		_error("argument not List",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -384,6 +418,7 @@ final public class List {
     _FIELD(List,revAppend);
 
     _BUILTIN(App) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMTUPLE(args,val,1,"List.app");
 	    return new App1(val);
@@ -391,6 +426,7 @@ final public class List {
 	_BUILTIN(App1) {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.app1");
 		while (val instanceof Cons) {
@@ -401,7 +437,7 @@ final public class List {
 		if (val==nil) {
 		    return Constants.dmlunit;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -410,13 +446,15 @@ final public class List {
     _FIELD(List,app);
 
     _BUILTIN(Map) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    //	    _FROMTUPLE(args,val,1,"List.map");
+	    //      _FROMTUPLE(args,val,1,"List.map");
 	    return new Map1(val);
 	}
 	_BUILTIN(Map1) {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.map1");
 		if (val==nil)
@@ -434,7 +472,7 @@ final public class List {
 		    list.cdr=nil;
 		    return first.cdr;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -443,6 +481,7 @@ final public class List {
     _FIELD(List,map);
 
     _BUILTIN(MapPartial) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMTUPLE(args,val,1,"List.mapPartial");
 	    return new MapPartial1(val);
@@ -450,6 +489,7 @@ final public class List {
 	_BUILTIN(MapPartial1) {
 	    DMLValue fun = null;
 	    MapPartial1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.mapPartial1");
 		if (val==nil)
@@ -469,7 +509,7 @@ final public class List {
 		    list.cdr=nil;
 		    return first.cdr;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -478,13 +518,15 @@ final public class List {
     _FIELD(List,mapPartial);
 
     _BUILTIN(Find) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    //	    _FROMTUPLE(args,val,1,"List.find");
+	    //      _FROMTUPLE(args,val,1,"List.find");
 	    return new Find1(val);
 	}
 	_BUILTIN(Find1) {
 	    DMLValue fun = null;
 	    Find1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.find1");
 		if (val==nil)
@@ -499,7 +541,7 @@ final public class List {
 		if (val==nil) {
 		    return Option.NONE;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -508,6 +550,7 @@ final public class List {
     _FIELD(List,find);
 
     _BUILTIN(Filter) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    //_FROMTUPLE(args,val,1,"List.filter");
 	    return new Filter1(val);
@@ -515,6 +558,7 @@ final public class List {
 	_BUILTIN(Filter1) {
 	    DMLValue fun = null;
 	    Filter1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.filter1");
 		if (val==nil)
@@ -534,7 +578,7 @@ final public class List {
 		    list.cdr=nil;
 		    return first.cdr;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -543,6 +587,7 @@ final public class List {
     _FIELD(List,filter);
 
     _BUILTIN(Partition) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    //_FROMTUPLE(args,val,1,"List.partition");
 	    return new Partition1(val);
@@ -550,6 +595,7 @@ final public class List {
 	_BUILTIN(Partition1) {
 	    DMLValue fun = null;
 	    Partition1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.partition1");
 		if (val==nil)
@@ -577,7 +623,7 @@ final public class List {
 		    return new Tuple2(pos.cdr,neg.cdr);
 		}
 		else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -586,6 +632,7 @@ final public class List {
     _FIELD(List,partition);
 
     _BUILTIN(Foldl) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    //_FROMTUPLE(args,val,1,"List.foldl");
 	    return new Foldl1(val);
@@ -593,8 +640,9 @@ final public class List {
 	_BUILTIN(Foldl1) {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
-		//		_FROMTUPLE(args,val,1,"List.foldl1");
+		//              _FROMTUPLE(args,val,1,"List.foldl1");
 		return new Foldl2(fun,val);
 	    }
 	    _BUILTIN(Foldl2) {
@@ -603,6 +651,7 @@ final public class List {
 		    fun=f;
 		    init = i;
 		}
+		_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 		_APPLY(val) {
 		    // _FROMSINGLE(val,"List.foldl2");
 		    if (val==nil)
@@ -611,16 +660,16 @@ final public class List {
 			DMLValue result=init;
 			while (val instanceof Cons) {
 			    Cons lc = (Cons) val;
-			    result=fun.apply(new Tuple2(lc.car,result));
+			    result=fun.apply2(lc.car,result);
 			    val = lc.cdr;
 			}
 			if (val==nil) {
 			    return result;
 			} else {
-			    _error("argument not List",val);
+			    _RAISENAME(General.Match);
 			}
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 	    }
@@ -630,13 +679,15 @@ final public class List {
     _FIELD(List,foldl);
 
     _BUILTIN(Foldr) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    //	    _FROMTUPLE(args,val,1,"List.foldr");
+	    //      _FROMTUPLE(args,val,1,"List.foldr");
 	    return new Foldr1(val);
 	}
 	_BUILTIN(Foldr1) {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		//_FROMTUPLE(args,val,1,"List.foldr1");
 		return new Foldr2(fun,val);
@@ -647,6 +698,7 @@ final public class List {
 		    fun=f;
 		    init = i;
 		}
+		_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 		_APPLY(val) {
 		    // _FROMSINGLE(val,"List.foldr2");
 		    if (val==nil)
@@ -660,14 +712,14 @@ final public class List {
 				cons = new Cons(lc.car,cons);
 				_REQUEST(val,lc.cdr);
 			    } else {
-				_error("argument 1 not List",val);
+				_RAISENAME(General.Match);
 			    }
 			}
 			// in cons ist jetzt die umgedrehte Liste
 			DMLValue result=init;
 			while (cons instanceof Cons) {
 			    Cons cc = (Cons) cons;
-			    result=fun.apply(new Tuple2(cc.car,result));
+			    result=fun.apply2(cc.car,result);
 			    if (cc.cdr instanceof Cons)
 				cons = (Cons) cc.cdr;
 			    else
@@ -675,7 +727,7 @@ final public class List {
 			}
 			return result;
 		    } else {
-			_error("argument not List",val);
+			_RAISENAME(General.Match);
 		    }
 		}
 	    }
@@ -685,6 +737,7 @@ final public class List {
     _FIELD(List,foldr);
 
     _BUILTIN(Exists) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    //FROMTUPLE(args,val,1,"List.exists");
 	    return new Exists1(val);
@@ -692,6 +745,7 @@ final public class List {
 	_BUILTIN(Exists1) {
 	    DMLValue fun = null;
 	    Exists1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.exists1");
 		if (val==nil)
@@ -706,7 +760,7 @@ final public class List {
 		if (val==nil) {
 		    return Constants.dmlfalse;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -715,6 +769,7 @@ final public class List {
     _FIELD(List,exists);
 
     _BUILTIN(All) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _fromTuple(args,val,1,"List.all");
 	    return new All1(val);
@@ -722,6 +777,7 @@ final public class List {
 	_BUILTIN(All1) {
 	    DMLValue fun = null;
 	    All1(DMLValue f) { fun=f; }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.all1");
 		if (val==nil)
@@ -736,7 +792,7 @@ final public class List {
 		if (val==nil) {
 		    return Constants.dmltrue;
 		} else {
-		    _error("argument not List",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -745,17 +801,20 @@ final public class List {
     _FIELD(List,all);
 
     _BUILTIN(Tabulate) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"List.tabulate");
-	    _REQUESTDEC(DMLValue n,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue n,v1);
 	    if (!(n instanceof Int)) {
-		_error("argument 1 not Int",val);
+		_RAISENAME(General.Match);
 	    }
 	    int k = ((Int) n).value;
 	    if (k<0) {
 		_RAISENAME(General.Size);
 	    }
-	    DMLValue fun = args[1];
+	    DMLValue fun = v2;
 	    Cons first = new Cons(null,null);
 	    Cons cons = first;
 	    for(int i=0; i<k; i++) {

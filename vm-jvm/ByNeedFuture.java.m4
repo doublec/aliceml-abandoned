@@ -19,7 +19,7 @@ public class ByNeedFuture extends Future {
 
     private DMLValue closure = null;
     private LVar ref = null;
-
+    private int state = 0; // 0 - unbound, 1 ByNeed error, 2 = bound
     public ByNeedFuture(DMLValue v) throws java.rmi.RemoteException {
 	super();
 	closure=v;
@@ -27,16 +27,16 @@ public class ByNeedFuture extends Future {
     }
 
     synchronized public DMLValue request() throws java.rmi.RemoteException {
-	if (closure == null) {
+	if (state == 2) {
 	    return ref.request();
 	}
-	else {
+	else if (state == 0) {
 	    DMLValue temp = closure;
 	    DMLValue v = null;
 	    closure = null;
 	    boolean hasSelfRef = false;
 	    try {
-		v = temp.apply(Constants.dmlunit);
+		v = temp.apply0();
 
 		while (v instanceof DMLLVar) {
 		    if (v == this) { // we detect a self-cycle
@@ -51,21 +51,26 @@ public class ByNeedFuture extends Future {
 			v = vv;
 		    }
 		}
-		if (hasSelfRef) {
-		    _RAISENAME(LVar.Fulfill);
-		} else {
+		if (!hasSelfRef) {
 		    ref.bind(v);
 		}
-	    } catch (Throwable t) {
-		System.err.println(t);
+	    } catch (ExceptionWrapper t) {
+		if (t.value == LVar.Fulfill ||
+		    hasSelfRef) {
+		    throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
+		} else {
+		    throw t;
+		}
 	    }
 
 	    if (hasSelfRef) {
-		closure = temp;
-		return this;
+		state = 1; // error
+		throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
 	    } else {
 		return ref.request();
 	    }
+	} else { // state == 1
+		    throw new ExceptionWrapper(ByNeedFuture.ByNeed.apply(LVar.Fulfill));
 	}
     }
 
@@ -82,4 +87,6 @@ public class ByNeedFuture extends Future {
 	    return val.toString();
 	}
     }
+
+    final public static Constructor ByNeed = new UniqueConstructor("ByNeed");
 }

@@ -22,4 +22,11 @@ public interface DMLValue extends java.io.Serializable {
      *  @return DMLValue das Ergebnis der Applikation
      */
     public DMLValue apply(DMLValue val) throws java.rmi.RemoteException;
+    public DMLValue apply0() throws java.rmi.RemoteException;
+    public DMLValue apply2(DMLValue v1, DMLValue v2)
+	throws java.rmi.RemoteException;
+    public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+	throws java.rmi.RemoteException;
+    public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+	throws java.rmi.RemoteException;
 }

@@ -23,6 +23,7 @@ final public class Connection {
     static java.util.Random rand = null;
 
     _BUILTIN(Offer) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // FROMSINGLE(args,val,1,"Connection.offer");
 	    java.net.InetAddress i=null;
@@ -79,6 +80,7 @@ final public class Connection {
     _FIELD(Connection,offer);
 
     _BUILTIN(Take) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Connection.take");
 	    if (!(val instanceof STRING)) {

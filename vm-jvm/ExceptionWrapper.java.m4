@@ -16,7 +16,7 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class ExceptionWrapper extends RuntimeException {
 
-    final protected DMLValue value;
+    final public DMLValue value;
 
     /** Baut einen neuen ExceptionWrapper.
      *  @param val der Wert der als Exception geworfen werden soll

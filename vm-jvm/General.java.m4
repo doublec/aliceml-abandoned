@@ -39,6 +39,7 @@ final public class General {
     final public static Name Subscript = new UniqueName("General.Subscript");
 
     _BUILTIN(Deref) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"deref");
 	    if (val instanceof DMLConVal) {
@@ -46,20 +47,23 @@ final public class General {
 		if (cv.getConstructor()==Constants.reference)
 		    return cv.getContent();
 	    }
-	    _error("wrong argument 1 for deref",val);
+	    _RAISENAME(General.Match);
 	}
     }
     /** <code>val ! : 'a ref -> 'a</code>*/
     _FIELD(General,deref);
 
     _BUILTIN(Assign) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"assign");
-	    _REQUESTDEC(DMLValue car,args[0]);
-	    if (car instanceof Reference) {
-		return ((Reference) car).assign(args[1]);
-	    } else {
-		_error("wrong argument 1 for assign",val);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue car,v1);
+	    try {
+		return ((Reference) car).assign(v2);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -70,12 +74,15 @@ final public class General {
     }
 
     _BUILTIN(Bind) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.bind");
-	    if (args[0] instanceof DMLLVar) {
-		return ((DMLLVar) args[0]).bind(args[1]);
+	}
+	_SAPPLY2(v) {
+	    if (v1 instanceof DMLLVar) {
+		return ((DMLLVar) v2).bind(v2);
 	    } else {
-		_error("wrong argument 1 for bind",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -83,7 +90,8 @@ final public class General {
     _FIELD(General,bind);
 
     _BUILTIN(O) {
-	final public class CO extends Builtin {
+	final public static class CO extends Builtin {
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    public DMLValue f,g;
 	    public CO(DMLValue f, DMLValue g) {
 		this.f=f;
@@ -93,10 +101,13 @@ final public class General {
 		return f.apply(g.apply(v));
 	    }
 	}
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"compose");
-	    _REQUESTDEC(DMLValue f,args[0]);
-	    _REQUESTDEC(DMLValue g,args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue f,v1);
+	    _REQUESTDEC(DMLValue g,v2);
 	    return new CO(f,g);
 	}
     }
@@ -104,9 +115,12 @@ final public class General {
     _FIELD(General,o);
 
     _BUILTIN(Before) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"before");
-	    return args[0];
+	}
+	_SAPPLY2(v) {
+	    return v1;
 	}
     }
     /** <code>val before : ('a * unit) -> 'a</code>*/
@@ -114,6 +128,7 @@ final public class General {
     _FIELD(General,before);
 
     _BUILTIN(Ignore) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(_) {
 	    return Constants.dmlunit;
 	}
@@ -122,6 +137,7 @@ final public class General {
     _FIELD(General,ignore);
 
     _BUILTIN(ByNeed) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(fun) {
 	    return new ByNeedFuture(fun);
 	}
@@ -130,6 +146,7 @@ final public class General {
     _FIELD(General,byNeed);
 
     _BUILTIN(Wait) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    if (val instanceof DMLLVar) {
 		return ((DMLLVar) val).request();
@@ -142,6 +159,7 @@ final public class General {
     _FIELD(General,wait);
 
     _BUILTIN(Lvar) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(_) {
 	    return new LVar();
 	}
@@ -151,6 +169,7 @@ final public class General {
 
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     _BUILTIN(Ref) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // FROMTUPLE(args,val,1,"General.ref");
 	    return new Reference(val);
@@ -163,6 +182,7 @@ final public class General {
     }
 
     _BUILTIN(Spawn) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // FROMTUPLE(args,val,1,"spawn");
 	    de.uni_sb.ps.dml.runtime.Thread t=new de.uni_sb.ps.dml.runtime.Thread(val);
@@ -177,10 +197,13 @@ final public class General {
     _FIELD(General,spawn);
 
     _BUILTIN(Equals) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"equals");
-	    _REQUESTDEC(DMLValue car,args[0]);
-	    _REQUESTDEC(DMLValue cdr,args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue car,v1);
+	    _REQUESTDEC(DMLValue cdr,v2);
 	    if (car.equals(cdr))
 		return Constants.dmltrue;
 	    else
@@ -191,14 +214,17 @@ final public class General {
     _FIELD(General,equals);
 
     _BUILTIN(Pickle) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.pickle");
-	    _REQUESTDEC(DMLValue fst,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue fst,v1);
 	    if (!(fst instanceof STRING)) {
-		_error("argument 1 not STRING ",val);
+		_RAISENAME(General.Match);
 	    }
 	    java.lang.String whereto=((STRING) fst).value;
-	    return apply(whereto,null,args[1]);
+	    return apply(whereto,null,v2);
 	}
 
 	final public static DMLValue apply(java.lang.String name,
@@ -236,11 +262,14 @@ final public class General {
     _FIELD(General,pickle);
 
     _BUILTIN(Unpickle) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.unpickle");
-	    _REQUESTDEC(DMLValue fst,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue fst,v1);
 	    if (!(fst instanceof STRING)) {
-		_error("argument 1 not STRING ",val);
+		_RAISENAME(General.Match);
 	    }
 	    java.lang.String wherefrom=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
@@ -272,6 +301,7 @@ final public class General {
 
 
     _BUILTIN(Uminus) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"General.~");
 	    if (val instanceof Int) {
@@ -281,7 +311,7 @@ final public class General {
 	    } else if (val instanceof Real) {
 		return new Real(-((Real) val).value);
 	    } else {
-		_error("argument not Number",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -317,10 +347,13 @@ final public class General {
     _COMPARE(leq,<=);
 
     _BUILTIN(Neq) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"General.<>");
-	    _REQUESTDEC(DMLValue l, args[0]);
-	    _REQUESTDEC(DMLValue r, args[1]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue l, v1);
+	    _REQUESTDEC(DMLValue r, v2);
 	    if (l.equals(r)) {
 		return Constants.dmlfalse;
 	    } else {
@@ -333,6 +366,7 @@ final public class General {
 	Builtin.builtins.put("<>",neq);
     }
     _BUILTIN(Sel) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"General.sel");
 	    if (val instanceof Int) {
@@ -340,7 +374,7 @@ final public class General {
 	    } else if (val instanceof STRING) {
 		return new SelFunString(((STRING) val).value);
 	    } else {
-		_error("argument not string or int",val);
+		_RAISENAME(General.Match);
 	    }
 	}
 	_BUILTIN(SelFunInt) {
@@ -348,6 +382,7 @@ final public class General {
 	    public SelFunInt(int idx) {
 		i = idx;
 	    }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"General.sel "+i);
 		if (val instanceof DMLTuple) {
@@ -360,7 +395,7 @@ final public class General {
 		    default: return ((DMLTuple) val).get(i);
 		    }
 		} else {
-		    _error("argument not tuple",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
@@ -369,18 +404,20 @@ final public class General {
 	    public SelFunString(java.lang.String str) {
 		lab = str;
 	    }
+	    _NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"General.sel "+lab);
 		if (val instanceof Record) {
 		    return ((Record) val).get(lab);
 		} else {
-		    _error("argument not record",val);
+		    _RAISENAME(General.Match);
 		}
 	    }
 	}
     }
 
     _BUILTIN(Print) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    System.out.println(val);
 	    return Constants.dmlunit;
@@ -393,11 +430,12 @@ final public class General {
     }
 
     _BUILTIN(Bi) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    if (val instanceof STRING) {
 		return Builtin.getBuiltin((STRING) val);
 	    } else {
-		_error("argument not string",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }

@@ -45,54 +45,7 @@ public class Tuple implements DMLTuple {
 		}
 		return true;
 	    } else { // kann nur noch Tuple<i> sein
-		switch (vals.length) {
-		case 1:
-		    if (val instanceof Tuple1) {
-			return vals[0].equals(((Tuple1) val).fst);
-		    } else {
-			return false;
-		    }
-		case 2:
-		    if (val instanceof Tuple2) {
-			return
-			    vals[0].equals(((Tuple2) val).fst) &&
-			    vals[1].equals(((Tuple2) val).snd);
-		    } else {
-			return false;
-		    }
-		case 3:
-		    if (val instanceof Tuple3) {
-			return
-			    vals[0].equals(((Tuple3) val).fst) &&
-			    vals[1].equals(((Tuple3) val).snd) &&
-			    vals[2].equals(((Tuple3) val).thr);
-		    } else {
-			return false;
-		    }
-		case 4:
-		    if (val instanceof Tuple4) {
-			return
-			    vals[0].equals(((Tuple4) val).fst) &&
-			    vals[1].equals(((Tuple4) val).snd) &&
-			    vals[2].equals(((Tuple4) val).thr) &&
-			    vals[3].equals(((Tuple4) val).fur);
-		    } else {
-			return false;
-		    }
-		case 5:
-		    if (val instanceof Tuple5) {
-			return
-			    vals[0].equals(((Tuple5) val).fst) &&
-			    vals[1].equals(((Tuple5) val).snd) &&
-			    vals[2].equals(((Tuple5) val).thr) &&
-			    vals[3].equals(((Tuple5) val).fur) &&
-			    vals[4].equals(((Tuple5) val).fiv);
-		    } else {
-			return false;
-		    }
-		default:
-		    return false;
-		}
+		return false;
 	    }
 	} else {
 	    return false;

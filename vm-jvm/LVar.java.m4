@@ -106,6 +106,21 @@ public class LVar extends UnicastRemoteObject
     public DMLValue apply(DMLValue v)  throws java.rmi.RemoteException {
 	return this.request().apply(v);
     }
+    public DMLValue apply0() throws java.rmi.RemoteException {
+	return this.request().apply0();
+    }
+    public DMLValue apply2(DMLValue v1, DMLValue v2)
+	throws java.rmi.RemoteException {
+	return this.request().apply2(v1,v2);
+    }
+    public DMLValue apply3(DMLValue v1, DMLValue v2, DMLValue v3)
+	throws java.rmi.RemoteException {
+	return this.request().apply3(v1,v2,v3);
+    }
+    public DMLValue apply4(DMLValue v1, DMLValue v2, DMLValue v3, DMLValue v4)
+	throws java.rmi.RemoteException {
+	return this.request().apply4(v1,v2,v3,v4);
+    }
 
     /** LVar und Future werden beim pickeln ersetzt, falls sie gebunden sind.
 	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */

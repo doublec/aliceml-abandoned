@@ -55,7 +55,7 @@ public class Thread extends java.lang.Thread implements DMLValue {
 	DMLValue v = null;
 	DMLValue t = null;
 	try {
-	    v = fcn.apply(Constants.dmlunit);
+	    v = fcn.apply0();
 	    while(tail!=null) {
 		t=tail;
 		tail=null;

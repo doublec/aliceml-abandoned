@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -45,34 +45,33 @@ final public class String implements DMLValue {
     }
 
     _apply_fails;
-    
+
     _BUILTIN(Size) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"String.length");
-            if (val instanceof STRING) {
+	    if (val instanceof STRING) {
 		return new Int(((STRING) val).value.length());
-            } else {
-		_error("argument not String",val);
-            }
-        }
+	    } else {
+		_RAISENAME(General.Match);
+	    }
+	}
     }
     /** <code>val size : string -> int </code>*/
     _FIELD(String,size);
 
     _BUILTIN(Extract) {
+	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.extract");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
-	    }
+	}
+	_SAPPLY3(v) {
+	    try {
+	    _REQUESTDEC(DMLValue v,v1);
 	    java.lang.String s = ((STRING) v).value;
-	    _REQUEST(v,args[1]);
-	    if (!(v instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
+	    _REQUEST(v,v2);
 	    int from = ((Int) v).value;
-	    _REQUEST(v,args[2]);
+	    _REQUEST(v,v3);
 	    int to = s.length();
 	    if (v instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) v;
@@ -82,15 +81,18 @@ final public class String implements DMLValue {
 			to = ((Int) v).value;
 			return new STRING (s.substring(from,to));
 		    } else {
-			_error("argument 3 not Int option",val);
+			_RAISENAME(General.Match);
 		    }
 		} else {
-		    _error("argument 3 not Int option",val);
+		    _RAISENAME(General.Match);
 		}
 	    } else if (v != Option.NONE) {
-		_error("argument 3 not Int option",val);
+		_RAISENAME(General.Match);
 	    } else {
 		return new STRING (s.substring(from,to));
+	    }
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -98,53 +100,56 @@ final public class String implements DMLValue {
     _FIELD(String,extract);
 
     _BUILTIN(Substring) {
+	_NOAPPLY0;_NOAPPLY2;_APPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,3,"String.substring");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
-	    }
+	}
+	_SAPPLY3(v) {
+	    try {
+	    _REQUESTDEC(DMLValue v,v1);
 	    java.lang.String s = ((STRING) v).value;
-	    _REQUEST(v,args[1]);
-	    if (!(v instanceof Int)) {
-		_error("argument 2 not Int",val);
-	    }
+	    _REQUEST(v,v2);
 	    int from = ((Int) v).value;
-	    _REQUEST(v,args[2]);
-	    if (!(v instanceof Int)) {
-		_error("argument 3 not Int",val);
-	    }
+	    _REQUEST(v,v3);
 	    int to = ((Int) v).value;
 	    return new STRING (s.substring(from,to));
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
 	}
     }
     /** <code>val substring : (string * int * int) -> string </code>*/
     _FIELD(String,substring);
 
     _BUILTIN(Concat) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.concat");
-	    _REQUESTDEC(DMLValue list,args[0]);
-	    if (list==List.nil) {
-		return new STRING ("");
-	    } else if (list instanceof Cons) {
-		StringBuffer buff = new StringBuffer();
-		do {
-		    if (list instanceof Cons) {
-			Cons co = (Cons) list;
-			if (co.car instanceof STRING) {
-			    buff.append(((STRING) co.car).value);
+	    //	    _FROMTUPLE(args,val,2,"String.concat");
+	    try {
+		_REQUESTDEC(DMLValue list,val);
+		if (list==List.nil) {
+		    return new STRING ("");
+		} else if (list instanceof Cons) {
+		    StringBuffer buff = new StringBuffer();
+		    do {
+			if (list instanceof Cons) {
+			    Cons co = (Cons) list;
+			    if (co.car instanceof STRING) {
+				buff.append(((STRING) co.car).value);
+			    } else {
+				_RAISENAME(General.Match);
+			    }
+			    list = co.cdr;
 			} else {
-			    _error("argument not String list",val);
+			    _RAISENAME(General.Match);
 			}
-			list = co.cdr;
-		    } else {
-			_error("argument not String list",val);
-		    }
-		} while (list != List.nil);
-		return new STRING (buff.toString());
-	    } else {
-		_error("argument not String list",val);
+		    } while (list != List.nil);
+		    return new STRING (buff.toString());
+		} else {
+		    _RAISENAME(General.Match);
+		}
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -152,19 +157,18 @@ final public class String implements DMLValue {
     _FIELD(String,concat);
 
     _BUILTIN(Append) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.^");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		return new STRING (((STRING) v).value + ((STRING) w).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(w instanceof STRING)) {
-		_error("argument 2 not String",val);
-	    }
-	    return new
-		STRING (((STRING) v).value +
-						((STRING) w).value);
 	}
     }
     /** <code>val ^ : (string * string) -> string </code>*/
@@ -174,22 +178,23 @@ final public class String implements DMLValue {
     }
 
     _BUILTIN(IsPrefix) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.isPrefix");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
-	    }
-	    java.lang.String s = ((STRING) v).value;
-	    _REQUEST(v,args[1]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 2 not String",val);
-	    }
-	    java.lang.String t = ((STRING) v).value;
-	    if (s.startsWith(t)) {
-		return Constants.dmltrue;
-	    } else {
-		return Constants.dmlfalse;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		java.lang.String s = ((STRING) v).value;
+		_REQUEST(v,v2);
+		java.lang.String t = ((STRING) v).value;
+		if (s.startsWith(t)) {
+		    return Constants.dmltrue;
+		} else {
+		    return Constants.dmlfalse;
+		}
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -197,25 +202,26 @@ final public class String implements DMLValue {
     _FIELD(String,isPrefix);
 
     _BUILTIN(Compare) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.compare");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
-	    }
-	    java.lang.String s = ((STRING) v).value;
-	    _REQUEST(v,args[1]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 2 not String",val);
-	    }
-	    java.lang.String t = ((STRING) v).value;
-	    int cmp = s.compareTo(t);
-	    if (cmp < 0) {
-		return General.LESS;
-	    } else if (cmp==0) {
-		return General.EQUAL;
-	    } else {
-		return General.GREATER;
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		java.lang.String s = ((STRING) v).value;
+		_REQUEST(v,v2);
+		java.lang.String t = ((STRING) v).value;
+		int cmp = s.compareTo(t);
+		if (cmp < 0) {
+		    return General.LESS;
+		} else if (cmp==0) {
+		    return General.EQUAL;
+		} else {
+		    return General.GREATER;
+		}
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -223,17 +229,15 @@ final public class String implements DMLValue {
     _FIELD(String,compare);
 
     _BUILTIN(Compare_) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.compare'");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 1 not String",val);
-	    }
+	}
+	_SAPPLY2(v) {
+	    try {
+	    _REQUESTDEC(DMLValue v,v1);
 	    java.lang.String s = ((STRING) v).value;
-	    _REQUEST(v,args[1]);
-	    if (!(v instanceof STRING)) {
-		_error("argument 2 not String",val);
-	    }
+	    _REQUEST(v,v2);
 	    java.lang.String t = ((STRING) v).value;
 	    int cmp = s.compareTo(t);
 	    if (cmp < 0) {
@@ -242,6 +246,9 @@ final public class String implements DMLValue {
 		return Int.ZERO;
 	    } else {
 		return Int.ONE;
+	    }
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -254,12 +261,13 @@ final public class String implements DMLValue {
     _COMPARESTRING(geq,>=);
 
     _BUILTIN(Str) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"String.str");
 	    if (val instanceof Char) {
 		return new STRING (java.lang.String.valueOf(((Char) val).value));
 	    } else {
-		_error("argument not char",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -267,18 +275,17 @@ final public class String implements DMLValue {
     _FIELD(String,str);
 
     _BUILTIN(Sub) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"String.sub");
-	    _REQUESTDEC(DMLValue s,args[0]);
-	    if (s instanceof STRING) {
-		_REQUESTDEC(DMLValue idx,args[1]);
-		if (idx instanceof Int) {
-		    return new Char(((STRING) s).value.charAt(((Int) idx).value));
-		} else {
-		    _error("argument 2 not int",val);
-		}
-	    } else {
-		_error("argument 1 not string",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+	    _REQUESTDEC(DMLValue s,v1);
+	    _REQUESTDEC(DMLValue idx,v2);
+	    return new Char(((STRING) s).value.charAt(((Int) idx).value));
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -292,6 +299,7 @@ final public class String implements DMLValue {
     /** <code>val fromCString : java.lang.String.string -> string option </code>*/
 
     _BUILTIN(ToCString) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    java.lang.String result = null;
 	    try {
@@ -357,7 +365,7 @@ final public class String implements DMLValue {
 			result.substring(idx+1);
 		}
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	    return new STRING (result);
 	}
@@ -367,6 +375,7 @@ final public class String implements DMLValue {
 
     /** <code>val implode : Char.char list -> string </code>*/
     _BUILTIN(Explode) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    if (val instanceof STRING) {
 		char cl[] = ((STRING) val).value.toCharArray();
@@ -379,7 +388,7 @@ final public class String implements DMLValue {
 		next.cdr = List.nil;
 		return first;
 	    } else {
-		_error("argument not string",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }

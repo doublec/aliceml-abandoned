@@ -1,21 +1,21 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert Real.
  *  @see Int
  *  @see SCon
- *  @see STRING 
+ *  @see STRING
  *  @see DMLValue
  *  @see Word
  */
@@ -60,37 +60,38 @@ final public class Real implements DMLValue {
     /** <code>val negInf : real </code>*/
 
     _BUILTIN(Plus) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.+");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Real)) {
-		_error("argument 1 not Real",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		return new Real(((Real) v).value +
+				((Real) v).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(v instanceof Real)) {
-		_error("argument 2 not Real",val);
-	    }
-	    return new Real(((Real) v).value +
-			    ((Real) v).value);
 	}
     }
     /** <code>val + : (real * real) -> real </code>*/
     _FIELD(Real,plus);
 
     _BUILTIN(Minus) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.-");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Real)) {
-		_error("argument 1 not Real",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		return new Real(((Real) v).value -
+				((Real) v).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(v instanceof Real)) {
-		_error("argument 2 not Real",val);
-	    }
-	    return new
-		de.uni_sb.ps.dml.runtime.Real(((Real) v).value -
-					      ((Real) v).value);
 	}
     }
     /** <code>val - : (real * real) -> real </code>*/
@@ -98,40 +99,43 @@ final public class Real implements DMLValue {
 
 
     _BUILTIN(Mult) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real.*");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Real)) {
-		_error("argument 1 not Real",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		return new Real(((Real) v).value *
+				((Real) v).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(v instanceof Real)) {
-		_error("argument 2 not Real",val);
-	    }
-	    return new Real(((Real) v).value *
-			    ((Real) v).value);
 	}
     }
     /** <code>val * : (real * real) -> real </code>*/
     _FIELD(Real,mult);
 
     _BUILTIN(Div) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Real./");
-	    _REQUESTDEC(DMLValue v,args[0]);
-	    if (!(v instanceof Real)) {
-		_error("argument 1 not Real",val);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue v,v1);
+		_REQUESTDEC(DMLValue w,v2);
+		return new Real(((Real) v).value /
+				((Real) v).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
-	    _REQUESTDEC(DMLValue w,args[1]);
-	    if (!(v instanceof Real)) {
-		_error("argument 2 not Real",val);
-	    }
-	    return new Real(((Real) v).value /
-			    ((Real) v).value);
 	}
     }
     /** <code>val / : (real * real) -> real </code>*/
     _FIELD(Real,div);
+
 
     /** <code>val *+ : real * real * real -> real </code>*/
     /** <code>val *- : real * real * real -> real </code>*/
@@ -160,7 +164,8 @@ final public class Real implements DMLValue {
     /** <code>val fmt : java.lang.StringCvt.realfmt -> real -> string </code>*/
     /** <code>val toString : real -> string </code>*/
     _BUILTIN(FromString) {
-	_APPLY(val) { 
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(val) {
 	    // _FROMSINGLE(val,"Real.fromString");
 	    if (!(val instanceof STRING)) {
 		_error("argument 1 not String",val);
@@ -195,6 +200,7 @@ final public class Real implements DMLValue {
     /** <code>val toInt : IEEEReal.rounding_mode -> real -> int </code>*/
     /** <code>val toLargeInt : IEEEReal.rounding_mode -> real -> LargeInt.int </code>*/
     _BUILTIN(FromInt) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    if (val instanceof Int) {
 		return new Real(((Int) val).value);

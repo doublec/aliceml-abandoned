@@ -23,7 +23,9 @@ final public class Option {
     // val getOpt : ('a option * 'a) -> 'a 
     // val isSome : 'a option -> bool 
     _BUILTIN(ValOf) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
+	    _REQUEST(val,val);
 	    if (val instanceof DMLConVal) {
 		DMLConVal cv = (DMLConVal) val;
 		if (cv.getConstructor() == SOME) {

@@ -52,8 +52,11 @@ final public class Port extends UnicastRemoteObject
     }
 
     _BUILTIN(NewPort) {
+	_APPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    // _FROMSINGLE(val,"Port.newPort");
+	    return sapply0();
+	}
+	_SAPPLY0 {
 	    try {
 		return new Port();
 	    } catch (RemoteException r) {
@@ -66,15 +69,18 @@ final public class Port extends UnicastRemoteObject
     _FIELD(Port,newPort);
 
     _BUILTIN(Send) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Port.send");
-	    _REQUESTDEC(DMLValue p,args[0]);
+	}
+	_SAPPLY2(v) {
+	    _REQUESTDEC(DMLValue p,v1);
 	    if (!(p instanceof DMLPort)) {
-		_error("argument 1 not DMLPort",val);
+		_RAISENAME(General.Match);
 	    }
 	    DMLPort port = (DMLPort) p;
 	    try {
-		return port.send(args[1]);
+		return port.send(v2);
 	    } catch (RemoteException r) {
 		System.err.println(r);
 		return null;
@@ -85,10 +91,11 @@ final public class Port extends UnicastRemoteObject
     _FIELD(Port,send);
 
     _BUILTIN(Recieve) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"Port.recieve");
 	    if (!(val instanceof DMLPort)) {
-		_error("argument 1 not DMLPort",val);
+		_RAISENAME(General.Match);
 	    }
 	    DMLPort port = (DMLPort) val;
 	    try {

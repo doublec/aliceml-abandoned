@@ -16,10 +16,12 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple4 implements DMLTuple {
 
-    final public DMLValue fst;
-    final public DMLValue snd;
-    final public DMLValue thr;
-    final public DMLValue fur;
+    protected DMLValue fst;
+    protected DMLValue snd;
+    protected DMLValue thr;
+    protected DMLValue fur;
+
+    public Tuple4() {}
 
     public Tuple4(DMLValue eins,
 		  DMLValue zwei,
@@ -36,6 +38,25 @@ final public class Tuple4 implements DMLTuple {
     public DMLValue get2() { return thr; }
     public DMLValue get3() { return fur; }
     public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
+
+    final public void setContent(DMLValue eins,
+			DMLValue zwei,
+			DMLValue drei,
+			DMLValue vier) {
+	if (fst == null) {
+	    fst=eins;
+	    snd=zwei;
+	    thr=drei;
+	    fur=vier;
+	} else {
+	    try {
+		_RAISE(runtimeError, new STRING ("cannot set content twice"));
+	    } catch (java.rmi.RemoteException r) {
+		System.err.println(r);
+		r.printStackTrace();
+	    }
+	}
+    }
 
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {

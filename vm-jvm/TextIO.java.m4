@@ -54,6 +54,7 @@ final public class TextIO {
     }
 
     _BUILTIN(OpenIn) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"TextIO.openIn");
 	    if (val instanceof STRING) {
@@ -68,7 +69,7 @@ final public class TextIO {
 		    _RAISENAME(IO);
 		}
 	    } else {
-		_error("argument not string",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -76,6 +77,7 @@ final public class TextIO {
     _FIELD(TextIO,openIn);
 
     _BUILTIN(CloseIn) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"TextIO.closeIn");
 	    if (val instanceof IStream) {
@@ -88,7 +90,7 @@ final public class TextIO {
 		    _RAISENAME(IO);
 		}
 	    } else {
-		_error("argument not string",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -96,6 +98,7 @@ final public class TextIO {
     _FIELD(TextIO,closeIn);
 
     _BUILTIN(InputAll) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // _FROMSINGLE(val,"TextIO.inputAll");
 	    if (val instanceof IStream) {
@@ -111,7 +114,7 @@ final public class TextIO {
 		    _RAISENAME(IO);
 		}
 	    } else {
-		_error("argument not instream",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }

@@ -61,34 +61,51 @@ final public class Word implements DMLValue {
     /** <code>val fromLargeInt : LargeInt.int -> word </code>*/
 
     _BUILTIN(ToInt) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _REQUEST(val,val);
-	    return new Int(((Word) val).value);
-	}
+	    try {
+		_REQUEST(val,val);
+		return new Int(((Word) val).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
+ 	}
     }
     /** <code>val toInt : word -> Int.int </code>*/
     _FIELD(Word,toInt);
 
     _BUILTIN(ToIntX) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _REQUEST(val,val);
-	    return new Int(((Word) val).value);
+	    try{
+		_REQUEST(val,val);
+		return new Int(((Word) val).value);
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
 	}
     }
     /** <code>val toIntX : word -> Int.int </code>*/
     _FIELD(Word,toIntX);
 
     _BUILTIN(FromIntStrich) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    // möglicherweise nicht so ganz richtig
 	    _fromTuple(args,val,2,"Word.fromInt'");
-	    _REQUEST(args[0],args[0]);
-	    int bits = ((Int) args[0]).value;
-	    if (bits > 32) {
-		_error("argument 1 to large",val);
-	    } else {
-		_REQUEST(args[1],args[1]);
-		return new Word(((Int) args[1]).value);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUEST(v1,v1);
+		int bits = ((Int) v1).value;
+		if (bits > 32) {
+		    _error("argument to large",v1);
+		} else {
+		    _REQUEST(v2,v2);
+		    return new Word(((Int) v2).value);
+		}
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -101,14 +118,17 @@ final public class Word implements DMLValue {
     /** <code>val fromInt : Int.int -> word </code>*/
 
     _BUILTIN(Orb) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.orb");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value | ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -116,14 +136,17 @@ final public class Word implements DMLValue {
     _FIELD(Word,orb);
 
     _BUILTIN(Xorb) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.xorb");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value ^ ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -131,14 +154,17 @@ final public class Word implements DMLValue {
     _FIELD(Word,xorb);
 
     _BUILTIN(Andb) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.andb");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value & ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -146,12 +172,13 @@ final public class Word implements DMLValue {
     _FIELD(Word,andb);
 
     _BUILTIN(Notb) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    try {
 		_REQUESTDEC(DMLValue y,val);
 		return new Word(((Word) y).value ^ 0x7fffffff);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -159,14 +186,17 @@ final public class Word implements DMLValue {
     _FIELD(Word,notb);
 
     _BUILTIN(Left) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.<<");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value << ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -177,14 +207,17 @@ final public class Word implements DMLValue {
     }
 
     _BUILTIN(Right) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.>>");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value >> ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -195,14 +228,17 @@ final public class Word implements DMLValue {
     }
 
     _BUILTIN(NRight) {
+	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    try {
 		_fromTuple(args,val,2,"Word.>>");
-		_REQUESTDEC(DMLValue x,args[0]);
-		_REQUESTDEC(DMLValue y,args[1]);
+	}
+	_SAPPLY2(v) {
+	    try {
+		_REQUESTDEC(DMLValue x,v1);
+		_REQUESTDEC(DMLValue y,v2);
 		return new Word(((Word) x).value >>> ((Word) y).value);
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
@@ -226,12 +262,13 @@ final public class Word implements DMLValue {
     /** <code>val fmt : java.lang.StringCvt.radix -> word -> string </code>*/
 
     _BUILTIN(ToString) {
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    try {
 		_REQUESTDEC(DMLValue y,val);
 		return new STRING (java.lang.String.valueOf(((Word) y).value));
 	    } catch (ClassCastException c) {
-		_error("wrong argument",val);
+		_RAISENAME(General.Match);
 	    }
 	}
     }
