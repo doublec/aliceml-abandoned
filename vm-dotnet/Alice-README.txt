@@ -1,4 +1,4 @@
-This file describes how to install and run Alice for NGWS.
+This file describes how to install and run Alice for .NET.
 
 1. Unpack Alice.zip to a directory of your choice.
    Documentation is available as:
@@ -10,16 +10,16 @@ This file describes how to install and run Alice for NGWS.
 
 3. To run the precompiled demo do:
 
-      stow streams.dll
+      alicerun streams.dll
 
    This demo is described in doc\examples.html.
 
 4. You can invoke the compiler on the samples as follows:
 
-      stoc examples\streams.aml streams.dll
+      alicec examples\streams.aml streams.dll
 
    produces a streams.dll file in the current directory.
 
 5. Invoke the application:
 
-      stow streams.dll
+      alicerun streams.dll
