@@ -69,7 +69,8 @@
     </DT>
     <DD>
       <P>The type of components this component manager operates on.
-	Usually equivalent to <TT>Component.component</TT>.</P>
+	Usually equivalent to <TT><A href="component.php3#component"
+	>Component.component</A></TT>.</P>
     </DD>
 
     <DT>
@@ -78,13 +79,14 @@
     <DD>
       <P>evaluates <I>comp</I>, rooted at <I>url</I>, in the context of
 	the component table managed by this component manager, and returns
-	the computed structure.  Raises <TT>Component.Mismatch</TT> if the
-	computed structure does not match&nbsp;<I>S</I>, <EM>after</EM>
-	evaluating the declarations contained in <I>comp</I>.  Note that no
-	entry for <I>url</I> is created in the component table, but entries
-	may be created for components imported (directly or indirectly)
-	by <I>comp</I>.  Relative import URLs in <I>comp</I> are resolved
-	using <I>url</I> as a base url, which should be absolute.</P>
+	the computed structure.  Raises <TT><A href="component.php3#Mismatch"
+	>Component.Mismatch</A></TT> if the computed structure does not
+	match&nbsp;<I>S</I>, <EM>after</EM> evaluating the declarations
+	contained in <I>comp</I>.  Note that no entry for <I>url</I> is
+	created in the component table, but entries may be created for
+	components imported (directly or indirectly) by <I>comp</I>.
+	Relative import URLs in <I>comp</I> are resolved using <I>url</I>
+	as a base url, which should be absolute.</P>
     </DD>
 
     <DT>
@@ -106,8 +108,8 @@
     <DD>
       <P>enters an evaluated component with export structure&nbsp;<I>X</I>
 	of signature&nbsp;<I>S</I> into the component table, under name
-	<I>url</I>.  Raises <TT>Conflict</TT> if the component table
-	already had an entry for <I>url</I>.</P>
+	<I>url</I>.  Raises <TT><A href="#Conflict">Conflict</A></TT> if
+	the component table already had an entry for <I>url</I>.</P>
     </DD>
 
     <DT>
@@ -125,8 +127,8 @@
     </DT>
     <DD>
       <P>enters <I>comp</I> into the component table, under name <I>url</I>.
-	Raises <TT>Conflict</TT> if the component table already had an entry
-	for <I>url</I>.</P>
+	Raises <TT><A href="#Conflict">Conflict</A></TT> if the component
+	table already had an entry for <I>url</I>.</P>
     </DD>
 
     <DT>
@@ -143,7 +145,8 @@
     </DT>
     <DD>
       <P>links and evaluates the component at <I>url</I> eagerly.
-	Raises <TT>Component.Failure</TT> if this fails.</P>
+	Raises <TT><A href="component.php3#Failure">Component.Failure</A></TT>
+	if this fails.</P>
     </DD>
   </DL>
 

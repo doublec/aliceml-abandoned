@@ -43,7 +43,7 @@
 	type <A href="#t">t</A> = thread
 	datatype <A href="#state">state</A> = RUNNABLE | BLOCKED | TERMINATED
 
-	exception <A href="#Terminate">Terminate</A>
+	exception <A href="#Terminate-exn">Terminate</A>
 	exception <A href="#Terminated">Terminated</A>
 
 	val <A href="#thread">thread</A> :		(unit -> unit) -> thread
@@ -85,11 +85,11 @@
     </DD>
 
     <DT>
-      <TT>exception <A name="Terminate">Terminate</A></TT>
+      <TT>exception <A name="Terminate-exn">Terminate</A></TT>
     </DT>
     <DD>
-      <P>This exception is raised by the <TT>terminate</TT> function
-	to terminate a thread.  Should never be raised explicitly.</P>
+      <P>This exception is raised by <TT><A href="#terminate">terminate</A
+	></TT> to terminate a thread.  Should never be raised explicitly.</P>
     </DD>
 
     <DT>
@@ -150,7 +150,8 @@
       <P>causes the calling thread to stop executing and not be rescheduled
 	for the time specified by&nbsp;<I>t</I>.  If <I>t</I> is zero or
 	negative, immediately returns.  This is equivalent to</P>
-      <PRE>Future.await (Future.alarm t)</PRE>
+      <PRE><A href="future.php3#await">Future.await</A
+	> (<A href="future.php3#alarm">Future.alarm</A> t)</PRE>
     </DD>
 
     <DT>
@@ -158,9 +159,9 @@
     </DT>
     <DD>
       <P>raises the exception <I>ex</I> in thread <I>thr</I>.
-	If <I>thr</I> is terminated, instead raises <TT>Terminated</TT>
-	in the calling thread.  If <I>thr</I> is blocked, makes <I>thr</I>
-	runnable again.</P>
+	If <I>thr</I> is terminated, instead raises <TT><A href="#Terminated"
+	>Terminated</A></TT> in the calling thread.  If <I>thr</I> is blocked,
+	makes <I>thr</I> runnable again.</P>
     </DD>
 
     <DT>
@@ -168,8 +169,10 @@
     </DT>
     <DD>
       <P>attempts to terminate <I>thr</I> by raising exception
-	<TT>Terminated</TT> in it.  Can be implemented as</P>
-      <PRE>raiseIn (<I>thr</I>, Terminated)</PRE>
+	<TT><A href="#Terminated">Terminated</A></TT> in it.  Can be
+	implemented as</P>
+      <PRE><A href="#raiseIn">raiseIn</A> (<I>thr</I>, <A href="#Terminated"
+	>Terminated</A>)</PRE>
     </DD>
 
     <DT>

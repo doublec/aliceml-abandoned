@@ -113,7 +113,7 @@
       <P>indicates that a component raised an exception during
 	initialization, that is, while its declarations were being
 	evaluated.  This is never raised directly, but packaged in
-	a <TT>Failure</TT> exception instead.</P>
+	a <TT><A href="#Failure">Failure</A></TT> exception instead.</P>
     </DD>
 
     <DT>
@@ -123,9 +123,9 @@
       <P>indicates that the loading, evaluating or signature matching
 	of a component failed.  The URL is that of the component.  If
 	loading failed, the exception is an <TT>IO.Io</TT> exception.
-	If evaluating failed, the exception is an <TT>Eval</TT> exception.
-	If signature matching failed, the exception is a <TT>Mismatch</TT>
-	exception.</P>
+	If evaluating failed, the exception is an <TT><A href="#Eval">Eval</A
+	></TT> exception.  If signature matching failed, the exception is a
+	<TT><A href="#Mismatch">Mismatch</A></TT> exception.</P>
     </DD>
 
     <DT>
@@ -186,8 +186,9 @@
       <P>returns a new component manager with a component table empty but
 	for the virtual machine's built-in components and those components
 	that had to be loaded to initialize the system's boot component
-	manager.  The returned component manager uses <TT>load</TT> to
-	load its components, and as such the corresponding resolver.</P>
+	manager.  The returned component manager uses <TT><A href="#load"
+	>load</A></TT> to load its components, and as such the corresponding
+	resolver.</P>
     </DD>
   </DL>
 
