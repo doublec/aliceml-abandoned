@@ -14,7 +14,7 @@ stow.exe: stow.cs Alice.dll
 	csc -nologo -t:exe -r:Alice.dll stow.cs
 
 stow.il: stow.exe
-	ildasm /text /out=stow.il stow.exe
+	ildasm /nobar /text /out=stow.il stow.exe
 
 HashCode.exe: HashCode.cs
 	csc -nologo -t:exe HashCode.cs
