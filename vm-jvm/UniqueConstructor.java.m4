@@ -23,11 +23,6 @@ public class UniqueConstructor extends Constructor {
 	this.name = name;
 	GName.gNames.put(name,this);
     }
-    /** @see UniqueName */
-    final protected void writeObject(java.io.ObjectOutputStream out)
-	throws java.io.IOException {
-	out.defaultWriteObject();
-    }
 
     /** Such an object always exists on the machine.
      *  Still there could be no entry in the hashtable if the

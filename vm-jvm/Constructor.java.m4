@@ -52,10 +52,11 @@ public class Constructor implements DMLValue {
      *  neuer GName erzeugt und der Constructor wird unter dem GName in
      *  der globalen Hashtabelle eingetragen.
      */
-    protected void writeObject(java.io.ObjectOutputStream out)
+    final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
-	if (gName==null) {
-	    gName=new GName();
+	if (gName == null) {
+	    gName = new GName();
+	    //  System.out.println("C: new "+gName);
 	    GName.gNames.put(gName,this);
 	}
 	out.defaultWriteObject();
@@ -69,6 +70,7 @@ public class Constructor implements DMLValue {
      */
     protected Object readResolve()
 	throws java.io.ObjectStreamException {
+	System.out.println(gName);
 	Object o = GName.gNames.get(gName);
 	if (o == null) {
 	    GName.gNames.put(gName,this);

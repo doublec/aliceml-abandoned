@@ -139,7 +139,7 @@ final public class Reference implements DMLConVal {
 	return ret;
     }
 
-    final protected void writeObject(java.io.ObjectOutputStream out)
+    final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	try {
 	    // the client manager is not written to the stream

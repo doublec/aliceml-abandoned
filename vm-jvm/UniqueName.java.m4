@@ -32,7 +32,7 @@ public class UniqueName extends Name {
     /** Here we use the default mechanism to store the name, since the
      *  UniqueNames are put into the GName table by their constructor.
      */
-    protected void writeObject(java.io.ObjectOutputStream out)
+    final private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
 	out.defaultWriteObject();
     }
