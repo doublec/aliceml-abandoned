@@ -24,7 +24,6 @@ import structure UseEnv            from "UseEnv"
 import structure TypedInfo
        structure TypedGrammar      from "TypedGrammar"
 
-import structure IO                from "../../lib/system/IO"
 import structure Reflect           from "../../lib/system/Reflect"
 import structure DynMatch          from "../../lib/system/DynMatch"
 
