@@ -3214,8 +3214,13 @@ functor MakeAbstractionPhase(
 
     fun trComponent (E,desc) (Component(i, ann, programo)) =
 	let
+	    val  _    = insertScope E
 	    val anns' = trAnn (E,desc) ann
+	    val  _    = insertScope E
 	    val decs' = trProgramo E programo
+	    val  E'   = splitScope E
+	    val  _    = deleteScope E
+	    val  _    = union(E,E')
 	in
 	    O.Comp(i, anns', decs')
 	end
