@@ -263,7 +263,9 @@ functor MakeElaborationPhase(
       | elabExp(E, I.VecExp(i, exps)) =
 	let
 	    val (ts,exps') = elabExps(E, exps)
-	    val  t         = vecTyp(E, List.hd ts)
+	    val  t0        = case ts of t::_ => t
+				      |  []  => Type.unknown(Type.STAR)
+	    val  t         = vecTyp(E, t0)
 	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoExp(List.nth(exps,n)),
 				      E.VecExpUnify(t, List.nth(ts,n), t1, t2))
@@ -511,7 +513,9 @@ functor MakeElaborationPhase(
       | elabPat(E, s, I.VecPat(i, pats)) =
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
-	    val  t         = vecTyp(E, List.hd ts)
+	    val  t0        = case ts of t::_ => t
+				      |  []  => Type.unknown(Type.STAR)
+	    val  t         = vecTyp(E, t0)
 	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.VecPatUnify(t, List.nth(ts,n), t1, t2))
@@ -532,7 +536,8 @@ functor MakeElaborationPhase(
       | elabPat(E, s, I.AltPat(i, pats)) =
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
-	    val  t         = List.hd ts
+	    val  t         = case ts of t::_ => t
+				      |  []  => Type.unknown(Type.STAR)
 	    val  _         = Type.unifyList ts handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
 				      E.AltPatUnify(t, List.nth(ts,n), t1, t2))
