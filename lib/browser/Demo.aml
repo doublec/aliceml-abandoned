@@ -145,7 +145,7 @@ UnsafeInspector.inspect({gulp = (a,a,[1,2,3]),
 structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
 structure T = Reflect.ReflectSig(signature S = GTK);
 
-UnsafeInspector.inspectInf (V.x,T.x);
+UnsafeInspector.inspectMod (V.x,T.x);
 
 
 (****************************************************)
