@@ -1,10 +1,25 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure NativeCore from "NativeCore"
 import signature CORE from "CORE-sig"
 
 structure Core :> CORE =
 struct
+    (* object is an abstract type for pointers to Gtk structures *)
     type object
 
+    (* event represents a GdkEvent *)
     datatype event =
 	EVENT_NOTHING
       | EVENT_DELETE
@@ -80,6 +95,11 @@ struct
       | EVENT_SETTING
       | EVENT_UNSUPPORTED of object
 
+    (* arg is used for: 
+        - arguments coming from the event stream and passed to 
+          an alice event callback function
+        - arguments passed to a Gtk function that takes a variable number of
+	  arguments *)
     datatype arg = 
 	BOOL of bool
       | INT of int
@@ -89,16 +109,13 @@ struct
       | LIST of object list
       | EVENT of event
 
-    val NULL = NativeCore.null()
-    val TRUE = NativeCore.gtkTrue()
-    val FALSE = NativeCore.gtkFalse()
+    val NULL = NativeCore.null()      (* represents the C NULL pointer *)
+    val TRUE = NativeCore.gtkTrue()   (* the Gtk TRUE value as int *)
+    val FALSE = NativeCore.gtkFalse() (* the Gtk FALSE value as int *)
 
     type callBackFunction = object * arg list -> unit
 
-    val printObject = NativeCore.printObject
-    val forceGC = NativeCore.forceGC
-
-    (* signal table functions *)
+    (* signal connecting and signal table functions *)
     fun doSignalConnect (obj,signame,callback,after) =
 	let
 	    val connid = NativeCore.signalConnect (obj,signame,after)
@@ -132,22 +149,21 @@ struct
 
     (* finalization handling *)
     local
-
+        (* - all objects are (Gtk-)referenced automatically upon creation and
+	     added to the weak map (if there are not already there)
+	   - Gtk calls "destroy" so that all owners of a reference
+	     to the object can release it
+	   - by the following "addDestroyEvent" and "event" functions
+             an alice reference is kept alive unless "destroy" is called,
+	     in which case "event" removes all callback functions 
+	     (including itself) from the signal table and with it all
+	     alice references it is aware of
+	     (disconnecting is done automatically by Gtk)
+	   - when all alice references are lost, the finalizer (Gtk-)unrefs
+	     the object, telling Gtk that it may destroy the object completely
+        *)
 	fun addDestroyEvent obj =
 	    let
-                (* - Gtk ruft "destroy", damit Anwendung alle (Gtk-)Referenzen
-		     auf Objekt loswird
-                   - durch die Konstruktion der event-Funktion besteht bis
-		     zum "destroy" eine (Alice-)Referenz auf das Objekt
-		   - die event-Funktion entfernt alle bisher registrierten
-		     Signale des Objekts aus der Tabelle und damit alle
-		     Alice-Referenzen, die sie kennt 
-		     (disconnecten macht Gtk selbst)
-		   - sind alle Alice-Referenzen weg, entfernt der finalizer
-		     auch die Gtk-Referenz
-		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
-		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
-
 		fun event _ = List.app NativeCore.signalMapRemove
 		                       (NativeCore.signalMapGetConnIds obj)
 	    in
@@ -174,6 +190,10 @@ struct
 	    end 
     end
 
+    (* debug functions *)
+    val printObject = NativeCore.printObject
+    val forceGC = NativeCore.forceGC
+
     (* main loop *)
     local
 	fun sleep ms = Future.await(Future.alarm(Time.fromMilliseconds ms))
@@ -195,7 +215,7 @@ struct
 	end
     end
 
-    (* Init Core Module *)
+    (* init core module *)
     fun init () = if NativeCore.isLoaded() then () else
 	let
 	    val eventStream : (int * object * arg list) list = 

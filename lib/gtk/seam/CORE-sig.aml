@@ -1,3 +1,15 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
 
 signature CORE =
 sig
@@ -94,8 +106,7 @@ sig
     type callBackFunction = object * arg list -> unit
     val signalConnect      : object * string * callBackFunction -> int
     val signalConnectAfter : object * string * callBackFunction -> int
-
-    val signalDisconnect       : object * int -> unit
+    val signalDisconnect   : object * int -> unit
 
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
