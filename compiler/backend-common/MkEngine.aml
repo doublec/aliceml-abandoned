@@ -50,8 +50,8 @@ import signature CONTEXT      from "../infrastructure/CONTEXT-sig"
 
 structure IdMap =
     MkHashImpMap(type t = FlatGrammar.id
-		 fun equals (FlatGrammar.Id (_, stamp1, _),
-			     FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
+		 fun equal (FlatGrammar.Id (_, stamp1, _),
+			    FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
 		 fun hash (FlatGrammar.Id (_, stamp, _)) = Stamp.hash stamp)
 
 functor MkEngine(val cmd: unit -> string * string list
