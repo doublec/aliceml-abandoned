@@ -127,14 +127,20 @@ void GMPFinalizationSet::Finalize(word value) {
     b = BigInt::FromWordDirect(cr->Get(0));                           \
   }
 
-#define DECLARE_INTINF_PROMOTE(b, x)                                    \
+#define DECLARE_INTINF_PROMOTE(b, flag, x)                              \
+  bool flag;                                                            \
   BigInt *b;                                                            \
   {                                                                     \
     TEST_INTINF(b ## i, x);                                             \
-    if (b ## i!=INVALID_INT) { b = BigInt::New(b ## i); } else          \
+    if (b ## i!=INVALID_INT) { b = BigInt::New(b ## i); flag=true; }    \
+    else                                                                \
     { ConcreteRepresentation *cr = ConcreteRepresentation::FromWord(x); \
       b = BigInt::FromWordDirect(cr->Get(0));                           \
+      flag = false;                                                     \
   } }
+
+#define DISCARD_PROMOTED(b, flag)               \
+  if (flag) b->destroy();
 
 #define MK_INTINF(w, i)                                          \
   word w;                                                        \
@@ -146,38 +152,42 @@ void GMPFinalizationSet::Finalize(word value) {
     PrimitiveTable::gmpFinalizationSet->Register(w);             \
   }
 
-#define RETURN_INTINF(i)                                         \
-{                                                                \
-  int j = i->toInt();                                            \
-  if (j != INVALID_INT) { RETURN_INT(j); }                       \
-  MK_INTINF(w, i);                                               \
-  RETURN(w);                                                     \
+#define RETURN_INTINF(i)                        \
+{                                               \
+  int j = i->toInt();                           \
+  if (j != INVALID_INT) {                       \
+    i->destroy(); RETURN_INT(j);                \
+  }                                             \
+  MK_INTINF(w, i);                              \
+  RETURN(w);                                    \
 }
 
-#define RETURN_INTINF2(i, j)                                   \
-{                                                              \
-  word res1, res2;                                             \
-  int ii = i->toInt();                                         \
-  if (ii != INVALID_INT) {                                     \
-    res1 = Store::IntToWord(ii);                               \
-  } else {                                                     \
-    ConcreteRepresentation *cr =                               \
-    ConcreteRepresentation::New(PrimitiveTable::gmpHandler,1); \
-    cr->Init(0, i->ToWord());                                  \
-    res1 = cr->ToWord();                                       \
-    PrimitiveTable::gmpFinalizationSet->Register(res1);        \
-  }                                                            \
-  int jj = j->toInt();                                         \
-  if (jj != INVALID_INT) {                                     \
-    res2 = Store::IntToWord(jj);                               \
-  } else {                                                     \
-    ConcreteRepresentation *cr =                               \
-    ConcreteRepresentation::New(PrimitiveTable::gmpHandler,1); \
-    cr->Init(0, j->ToWord());                                  \
-    res2 = cr->ToWord();                                       \
-    PrimitiveTable::gmpFinalizationSet->Register(res2);        \
-  }                                                            \
-  RETURN2(res1, res2);                                         \
+#define RETURN_INTINF2(i, j)                                    \
+{                                                               \
+  word res1, res2;                                              \
+  int ii = i->toInt();                                          \
+  if (ii != INVALID_INT) {                                      \
+    res1 = Store::IntToWord(ii);                                \
+    i->destroy();                                               \
+  } else {                                                      \
+    ConcreteRepresentation *cr =                                \
+    ConcreteRepresentation::New(PrimitiveTable::gmpHandler,1);  \
+    cr->Init(0, i->ToWord());                                   \
+    res1 = cr->ToWord();                                        \
+    PrimitiveTable::gmpFinalizationSet->Register(res1);         \
+  }                                                             \
+  int jj = j->toInt();                                          \
+  if (jj != INVALID_INT) {                                      \
+    res2 = Store::IntToWord(jj);                                \
+    j->destroy();                                               \
+  } else {                                                      \
+    ConcreteRepresentation *cr =                                \
+    ConcreteRepresentation::New(PrimitiveTable::gmpHandler,1);  \
+    cr->Init(0, j->ToWord());                                   \
+    res2 = cr->ToWord();                                        \
+    PrimitiveTable::gmpFinalizationSet->Register(res2);         \
+  }                                                             \
+  RETURN2(res1, res2);                                          \
 }
 
 DEFINE1(IntInf_fromInt) {
@@ -343,19 +353,27 @@ DEFINE2(IntInf_pow) {
     }
     RETURN_INT(0);
   }
-  DECLARE_INTINF_PROMOTE(a, x0);
-  RETURN_INTINF(a->pow(exp));
+  DECLARE_INTINF_PROMOTE(a, flag, x0);
+  BigInt *res = a->pow(exp);
+  DISCARD_PROMOTED(a, flag);
+  RETURN_INTINF(res);
 } END
 
 // division operators
 /*--* should be able to use operations on small ints */
-#define MKOPDIV(op, bigop) \
-DEFINE2(IntInf_ ## op) { \
-  DECLARE_INTINF_PROMOTE(a, x0); \
-  DECLARE_INTINF_PROMOTE(b, x1); \
-  if (b == 0) \
-    RAISE(PrimitiveTable::General_Div); \
-  RETURN_INTINF(a->bigop(b)); \
+#define MKOPDIV(op, bigop)                      \
+DEFINE2(IntInf_ ## op) {                        \
+  DECLARE_INTINF_PROMOTE(a, flagA, x0);         \
+  DECLARE_INTINF_PROMOTE(b, flagB, x1);         \
+  if (b == 0) {                                 \
+    DISCARD_PROMOTED(a, flagA);                 \
+    DISCARD_PROMOTED(b, flagB);                 \
+    RAISE(PrimitiveTable::General_Div);         \
+  }                                             \
+  BigInt *res = a->bigop(b);                    \
+  DISCARD_PROMOTED(a, flagA);                   \
+  DISCARD_PROMOTED(b, flagB);                   \
+  RETURN_INTINF(res);                           \
 } END
 MKOPDIV(div, div);
 MKOPDIV(mod, mod);
@@ -421,40 +439,52 @@ DEFINE2(IntInf_compare) {
 } END
 
 DEFINE2(IntInf_divMod) {
-  DECLARE_INTINF_PROMOTE(a, x0);
-  DECLARE_INTINF_PROMOTE(b, x1);
+  DECLARE_INTINF_PROMOTE(a, flagA, x0);
+  DECLARE_INTINF_PROMOTE(b, flagB, x1);
 
-  if (b==0)
+  if (b==0) {
+    DISCARD_PROMOTED(a, flagA);
+    DISCARD_PROMOTED(b, flagB);
     RAISE(PrimitiveTable::General_Div);
+  }
 
   BigInt *d = BigInt::New();
   BigInt *m = BigInt::New();
 
   a->divMod(b, d, m);
+  DISCARD_PROMOTED(a, flagA);
+  DISCARD_PROMOTED(b, flagB);
   RETURN_INTINF2(d,m);
 } END
 
 DEFINE2(IntInf_quotRem) {
-  DECLARE_INTINF_PROMOTE(a, x0);
-  DECLARE_INTINF_PROMOTE(b, x1);
+  DECLARE_INTINF_PROMOTE(a, flagA, x0);
+  DECLARE_INTINF_PROMOTE(b, flagB, x1);
 
-  if (b==0)
+  if (b==0) {
+    DISCARD_PROMOTED(a, flagA);
+    DISCARD_PROMOTED(b, flagB);
     RAISE(PrimitiveTable::General_Div);
+  }
 
   BigInt *q = BigInt::New();
   BigInt *r = BigInt::New();
 
   a->quotRem(b, q, r);
+  DISCARD_PROMOTED(a, flagA);
+  DISCARD_PROMOTED(b, flagB);
   RETURN_INTINF2(q,r);
 } END
 
 DEFINE1(IntInf_log2) {
-  DECLARE_INTINF_PROMOTE(i, x0);
+  DECLARE_INTINF_PROMOTE(i, flag, x0);
   if (i->compare(0)<=0) {
+    DISCARD_PROMOTED(i, flag);
     RAISE(PrimitiveTable::General_Domain);
   }
   
   unsigned long int l = i->log2();
+  DISCARD_PROMOTED(i, flag);
 
   if (l>MAX_VALID_INT)
     { RAISE(PrimitiveTable::General_Overflow); }
@@ -463,15 +493,19 @@ DEFINE1(IntInf_log2) {
 } END
 
 DEFINE2(IntInf_shiftl) {
-  DECLARE_INTINF_PROMOTE(a, x0);
+  DECLARE_INTINF_PROMOTE(a, flagA, x0);
   DECLARE_INT(b, x1);
-  RETURN_INTINF(a->shiftl(b));
+  BigInt *res = a->shiftl(b);
+  DISCARD_PROMOTED(a, flagA);
+  RETURN_INTINF(res);
 } END
 
 DEFINE2(IntInf_shiftr) {
-  DECLARE_INTINF_PROMOTE(a, x0);
+  DECLARE_INTINF_PROMOTE(a, flagA, x0);
   DECLARE_INT(b, x1);
-  RETURN_INTINF(a->shiftr(b));
+  BigInt *res = a->shiftr(b);
+  DISCARD_PROMOTED(a, flagA);
+  RETURN_INTINF(res);
 } END
 
 static word BigIntegerHandler(word x) {
@@ -497,7 +531,9 @@ static word BigIntegerHandler(word x) {
       mpz_neg(b->big(), b->big());
     }
 
-    if (int ii=b->toInt() != INVALID_INT) {
+    int ii=b->toInt();
+    if (ii != INVALID_INT) {
+      b->destroy();
       return Store::IntToWord(ii);
     }
 
