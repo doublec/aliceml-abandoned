@@ -64,8 +64,11 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    not (StampSet.member (shared, stamp)) before
 	    StampSet.insert (shared, stamp)
 
-	fun insert (x, ys as (y::yr)): int list =
-	    if x < y then x::ys else y::insert (x, yr)
+	fun insert (x, ys as (y::yr)) =
+	    (case Stamp.compare (x, y) of
+		 LESS => x::ys
+	       | EQUAL => ys
+	       | GREATER => y::insert (x, yr))
 	  | insert (x, nil) = [x]
 
 	val sort = StampSet.fold insert nil
@@ -86,11 +89,13 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputInfo ({liveness, ...}: stm_info) = outputLiveness liveness
 
-	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
-	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i
-	  | outputLit (CharLit c) = "char " ^ WideChar.toCString c
-	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
-	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
+	fun outputLit (WordLit w) = SEQ [S "0w", S (LargeWord.toString w)]
+	  | outputLit (IntLit i) = S (LargeInt.toString i)
+	  | outputLit (CharLit c) =
+	    SEQ [S "#\"", S (WideChar.toString c), S "\""]
+	  | outputLit (StringLit s) =
+	    SEQ [S "\"", S (String.toString s), S "\""]
+	  | outputLit (RealLit r) = S r
 
 	fun outputTag NONE = S "tag0"
 	  | outputTag (SOME Unary) = S "tag1"
@@ -110,7 +115,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					    ID id]) labelIdList),
 		 S "}"]
 
-	fun outputTest (LitTest lit) = S (outputLit lit)
+	fun outputTest (LitTest lit) = outputLit lit
 	  | outputTest (TagTest (label, n)) =
 	    SEQ [S "tag ", S (Label.toString label), S "/", I n]
 	  | outputTest (TagAppTest (label, n, args)) =
@@ -149,12 +154,12 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputStm (EvalStm (_, exp), _) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
 	  | outputStm (HandleStm (_, body1, id, body2, body3, stamp), shared) =
-	    SEQ [S "try", CO (Stamp.toString stamp), IN, NL,
+	    SEQ [S "try ", S (Stamp.toString stamp), IN, NL,
 		 outputBody (body1, shared), EX, NL,
 		 S "catch ", ID id, IN, NL, outputBody (body2, shared), EX, NL,
 		 S "cont", IN, NL, outputBody (body3, shared), EX]
 	  | outputStm (EndHandleStm (_, stamp), _) =
-	    S ("(* leave " ^ Stamp.toString stamp ^ " *)")
+	    SEQ [S "leave ", S (Stamp.toString stamp)]
 	  | outputStm (TestStm (_, id, testBodyList, body), shared) =
 	    SEQ [S "case ", ID id, S " of", IN, NL,
 		 SEQ (List.map (fn (test, body) =>
@@ -176,7 +181,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt, shared)]
 	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
-	and outputExp (LitExp (_, lit)) = S (outputLit lit)
+	and outputExp (LitExp (_, lit)) = outputLit lit
 	  | outputExp (PrimExp (_, name)) = SEQ [S "prim \"", S name, S "\""]
 	  | outputExp (NewExp (_, conArity)) = outputCon conArity
 	  | outputExp (VarExp (_, id)) = ID id
