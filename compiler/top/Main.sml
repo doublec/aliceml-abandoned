@@ -47,7 +47,6 @@ structure Main :> MAIN =
 	fun elab' x      = ElaborationPhase.translate (Env.clone Env0.E0) x
 	fun translate' x = TranslationPhase.translate () x
 	fun flatten' x   = BackendCommon.translate () x
-	fun mozartify' x = MozartGenerationPhase.translate () x
 
 	fun (f o g) (desc, x) = f (desc, g (desc, x))
 
@@ -57,7 +56,6 @@ structure Main :> MAIN =
 	val elab          = elab' o abstract
 	val translate     = translate' o elab
 	val flatten       = flatten' o translate
-	val mozartify     = mozartify' o flatten
     in
 	val parseString		= processString parse
 	val parseFile		= processFile parse
