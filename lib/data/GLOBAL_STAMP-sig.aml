@@ -1,10 +1,20 @@
 (*
- * Global stamp generator.
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
  *)
+
+import signature STAMP from "STAMP-sig"
 
 
 signature GLOBAL_STAMP =
-  sig
+sig
     (*include STAMP*)
 
     eqtype stamp
@@ -15,4 +25,4 @@ signature GLOBAL_STAMP =
     val toString :	stamp  -> string
 
     val hash :		stamp -> int
-  end
+end
