@@ -16,19 +16,23 @@ The binding environment just contains the information necessary to do
 binding analysis for identifiers:
 
 	Env	= InfEnv U FldEnv U VarEnv U ValEnv U TyEnv U StrEnv U SigEnv
+	EnvFn	= Env U (StrId^n * SigId) U (StrId * EnvFn)
 	InfEnv	= VId   -> InfStatus		(infix env)
 	FldEnv	= Lab   -> 0			(field env)
 	VarEnv	= TyVar -> Stamp		(type variable env)
 	ValEnv	= VId   -> Stamp * IdStatus	(value env)
 	TyEnv	= TyCon -> Stamp * Env		(type env)
-	StrEnv	= StrId -> Stamp * Env		(module env)
-	SigEnv	= SigId -> Stamp * Env		(signature env)
+	StrEnv	= StrId -> Stamp * EnvFn	(module env)
+	SigEnv	= SigId -> Stamp * EnvFn	(signature env)
 
 Field envs are just used to detect duplicate labels. Type envs map to
 constructor environments. Module envs map to environments representing the
-module's signature (th result signature for functors, as we never need to look
-at the argument signature). Similarly, signature envs map to the result
-environment (ignoring signature parameters).
+module's signature. Similarly, signature envs map to the result
+environment. We cannot ignore functor or signature parameters because we
+have first class signatures.
+
+UNFINISHED: avoid higher-order implementation of EnvFn, because it is
+expensive - we recalculate everything on every application.
 
 *******************************************************************************)
 
@@ -60,13 +64,17 @@ sig
     datatype IdStatus  = V | T of int | C of int | R
 
     type Env
+    datatype EnvFn = EMPTY
+		   | PLAIN of Env
+		   | PARAM of stamp * EnvFn
+		   | ABSTR of stamp * StrId list * SigId * EnvFn list
     type Inf = Info * InfStatus
     type Fld = Info
     type Var = Info * stamp
     type Val = Info * stamp * IdStatus
     type Ty  = Info * stamp * Env
-    type Str = Info * stamp * Env
-    type Sig = Info * stamp * Env
+    type Str = Info * stamp * EnvFn
+    type Sig = Info * stamp * EnvFn
 
     type t = Env
 
@@ -79,8 +87,14 @@ sig
     exception CollisionStr of StrId
     exception CollisionSig of SigId
 
+    exception Strengthen
+
 
     val new :			unit -> Env
+    val instance :		EnvFn -> EnvFn
+    val strengthen :		stamp * EnvFn -> EnvFn
+    val apply :			EnvFn * EnvFn -> EnvFn
+    val match :			EnvFn * EnvFn -> EnvFn
 
     val size :			Env -> int
     val sizeScope :		Env -> int
@@ -100,7 +114,9 @@ sig
     val unionDisjoint :		Env * Env -> unit	(* Collision* *)
     val unionCompose :		Env * Env -> unit
     val unionInf :		Env * Env -> unit
+    val composeEnvFn :		EnvFn * EnvFn -> unit
 
+    val insertSelf :		Env -> unit
     val insertInf :		Env *  VId  * Inf -> unit
     val insertFld :		Env *  Lab  * Fld -> unit
     val insertVal :		Env *  VId  * Val -> unit
@@ -116,6 +132,7 @@ sig
     val insertDisjointStr :	Env * StrId * Str -> unit   (* CollisionStr *)
     val insertDisjointSig :	Env * SigId * Sig -> unit   (* CollisionSig *)
 
+    val lookupSelf :		Env -> stamp option
     val lookupInf :		Env *  VId  -> Inf option
     val lookupFld :		Env *  Lab  -> Fld option
     val lookupVar :		Env * TyVar -> Var option

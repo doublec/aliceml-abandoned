@@ -33,6 +33,7 @@ sig
 	| TyVarUnbound		of TyVar.t
 	| StrIdUnbound		of StrId.t
 	| SigIdUnbound		of SigId.t
+	| LongStrIdNonStruct
 	(* Expressions *)
 	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab.t
@@ -50,6 +51,7 @@ sig
 	| TyVarSeqDuplicate	of TyVar.t
 	| ValTyVarSeqDuplicate	of TyVar.t
 	(* Declarations and bindings *)
+	| OpenDecNonStruct
 	| FvalBindDuplicate	of VId.t
 	| FvalBindArityInconsistent
 	| FvalBindArityZero
@@ -65,7 +67,10 @@ sig
 	| DconBindNonCon
 	| StrBindDuplicate	of StrId.t
 	| SigBindDuplicate	of SigId.t
+	(* Structure expressions *)
+	| AppStrExpNonFun
 	(* Specifications and descriptions *)
+	| IncludeSpecNonStruct
 	| SpecFixDuplicate	of VId.t
 	| SpecVIdDuplicate	of VId.t
 	| SpecTyConDuplicate	of TyCon.t

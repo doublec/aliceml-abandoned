@@ -48,6 +48,7 @@ struct
 	| TyVarUnbound		of TyVar.t
 	| StrIdUnbound		of StrId.t
 	| SigIdUnbound		of SigId.t
+	| LongStrIdNonStruct
 	(* Expressions *)
 	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab.t
@@ -65,6 +66,7 @@ struct
 	| TyVarSeqDuplicate	of TyVar.t
 	| ValTyVarSeqDuplicate	of TyVar.t
 	(* Declarations and bindings *)
+	| OpenDecNonStruct
 	| FvalBindDuplicate	of VId.t
 	| FvalBindArityInconsistent
 	| FvalBindArityZero
@@ -80,7 +82,10 @@ struct
 	| DconBindNonCon
 	| StrBindDuplicate	of StrId.t
 	| SigBindDuplicate	of SigId.t
+	(* Structure expressions *)
+	| AppStrExpNonFun
 	(* Specifications and descriptions *)
+	| IncludeSpecNonStruct
 	| SpecFixDuplicate	of VId.t
 	| SpecVIdDuplicate	of VId.t
 	| SpecTyConDuplicate	of TyCon.t
@@ -167,6 +172,8 @@ struct
 	  ppUnbound(classStrId, strid)
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
+      | ppError(LongStrIdNonStruct) =
+	  textpar["module","in","long","identifier","is","not","a","structure"]
       (* Expressions *)
       | ppError(ExpConArgSuperfluous) =
 	  textpar["superfluous","constructor","argument"]
@@ -200,6 +207,8 @@ struct
 	  textpar(["duplicate","or","shadowing"] @ #2 classTyVar @
 		  [ppTyVar tyvar])
       (* Declarations and bindings *)
+      | ppError(OpenDecNonStruct) =
+	  textpar["module","in","open","declaration","is","not","a","structure"]
       | ppError(FvalBindDuplicate vid) =
 	  textpar["duplicate","function",ppVId vid,"in","binding","group"]
       | ppError(FvalBindArityInconsistent) =
@@ -236,7 +245,13 @@ struct
       | ppError(SigBindDuplicate sigid) =
 	  textpar(["duplicate"] @ #2 classSigId @
 		  [ppSigId sigid,"in","binding","group"])
+      (* Structure expressions *)
+      | ppError(AppStrExpNonFun) =
+	  textpar["application","of","non-functor"]
       (* Specifications and descriptions *)
+      | ppError(IncludeSpecNonStruct) =
+	  textpar["signature","in","include","specification","is","not",
+		  "a","structure"]
       | ppError(SpecFixDuplicate vid) =
 	  textpar(["duplicate","fixity","specification","for"] @ #2 classVId @
 		  [ppVId vid,"in","signature"])

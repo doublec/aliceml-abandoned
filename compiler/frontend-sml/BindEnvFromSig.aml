@@ -18,6 +18,7 @@ import structure Name          from "../../lib/rtt/Name"
 import structure Label         from "../../lib/rtt/Label"
 import structure Fixity        from "../../lib/rtt/Fixity"
 import structure Path          from "../../lib/rtt/Path"
+import structure PathMap       from "../../lib/rtt/PathMap"
 import structure Type          from "../../lib/rtt/Type"
 import structure Inf           from "../../lib/rtt/Inf"
 import structure PervasiveType from "../../lib/rtt/PervasiveType"
@@ -54,6 +55,10 @@ struct
       | infFromFix(Fixity.POSTFIX n)	= NONE
       | infFromFix(Fixity.INFIX(n,a))	= SOME(assocFromAssoc a, n)
 
+    fun vidFromLabel a   = VId.fromString(Label.toString a)
+    fun tyconFromLabel a = TyCon.fromString(Label.toString a)
+    fun stridFromLabel a = StrId.fromString(Label.toString a)
+    fun sigidFromLabel a = SigId.fromString(Label.toString a)
 
     fun idStatusFromTyp t =
 	if Type.isAll t then idStatusFromTyp(#2(Type.asAll t)) else
@@ -146,42 +151,90 @@ struct
 	end
 
 
-    fun envFromInf(I,j) =
-	if Inf.isTop j orelse Inf.isCon j then
-	    new()
+    fun explodePath p =
+	if Path.isDot p then
+	    let val (p',l,n) = Path.asDot p
+	    in explodePath'(p', [], sigidFromLabel l) end
+	else
+	    raise Crash.Crash "BindEnvFromSig.explodePath"
+    and explodePath'(p, strids, sigid) =
+	if Path.isDot p then
+	    let val (p',l,n) = Path.asDot p
+	    in explodePath'(p', stridFromLabel l :: strids, sigid) end
+	else
+	    (p, strids, sigid)
+
+    fun selectSig(PLAIN E, [l])   = #3(valOf(lookupSig(E, sigidFromLabel l)))
+      | selectSig(PLAIN E, l::ls) =
+	selectSig(#3(valOf(lookupStr(E, stridFromLabel l))), ls)
+      | selectSig _               = raise Crash.Crash "BindEnvFromSig.selectSig"
+
+    fun envfnFromInf(I,j) = envfnFromInf'(I, PathMap.new(), j)
+    and envfnFromInf'(I,pm,j) =
+	if Inf.isTop j then
+	    EMPTY
+	else if Inf.isCon j then
+	    let
+		val (k,p)             = Inf.asCon j
+		val (p',strids,sigid) = explodePath p
+		val  z                = case PathMap.lookup(pm,p')
+					  of SOME z => z
+					   | NONE   => Stamp.new()
+	    in
+		ABSTR(z,strids,sigid,[])
+	    end
 	else if Inf.isSig j then
-	    envFromSig(I, Inf.asSig j)
+	    PLAIN(envFromSig'(I, pm, Inf.asSig j))
 	else if Inf.isArrow j then
-	    envFromInf(I, #3(Inf.asArrow j))
+	    let
+		val (p,j1,j2) = Inf.asArrow j
+		val  z        = Stamp.new()
+	    in
+		PathMap.insert(pm,p,z);
+		PARAM(z, envfnFromInf'(I,pm,j2))
+	    end
 	else if Inf.isLambda j then
-	    envFromInf(I, #3(Inf.asLambda j))
+	    let
+		val (p,j1,j2) = Inf.asLambda j
+		val  z        = Stamp.new()
+	    in
+		PathMap.insert(pm,p,z);
+		PARAM(z, envfnFromInf'(I,pm,j2))
+	    end
 	else if Inf.isApply j then
-	    envFromInf(I, #1(Inf.asApply j))
+	    let
+		val (j1,_,j2) = Inf.asApply j
+		val  F1       = envfnFromInf'(I,pm,j1)
+		val  F2       = envfnFromInf'(I,pm,j2)
+	    in
+		apply(F1,F2)
+	    end
 	else
 	    raise Crash.Crash "BindEnvFromSig.envFromInf: unknown interface"
 
-    and envFromSig(I,s) =
+    and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), s)
+    and envFromSig'(I,pm,s) =
 	let
 	    val E = new()
 	in
-	    List.app (insertItem(E,I,s)) (Inf.items s);
+	    insertSelf E;
+	    List.app (insertItem(E,I,pm,s)) (Inf.items s);
 	    E
 	end
 
-    and insertItem (E,I,s) item =
+    and insertItem (E,I,pm,s) item =
 	if Inf.isFixItem item then
 	    let
 		val (l,f) = Inf.asFixItem item
-		val  vid  = VId.fromString(Label.toString l)
 		val  is   = infFromFix f
 	    in
-		insertInf(E, vid, (I,is))
+		insertInf(E, vidFromLabel l, (I,is))
 	    end
 	else if Inf.isValItem item then
 	    let
 		val (l,t,d) = Inf.asValItem item
 		val  name   = Label.toString l
-		val  vid    = VId.fromString name
+		val  vid    = vidFromLabel l
 		val  x      = Stamp.new()
 	    in
 		if String.sub(name,0) = #"'" then
@@ -202,31 +255,29 @@ struct
 	else if Inf.isTypItem item then
 	    let
 		val (l,k,d) = Inf.asTypItem item
-		val  tycon  = TyCon.fromString(Label.toString l)
 		val  x      = Stamp.new()
 		val  E'     = case d
 				of NONE   => new()
-				 | SOME t => envFromTyp(I, s, t)
+				 | SOME t => envFromTyp(I,s,t)
 	    in
-		insertTy(E, tycon, (I,x,E'))
+		insertTy(E, tyconFromLabel l, (I,x,E'))
 	    end
 	else if Inf.isModItem item then
 	    let
 		val (l,j,_) = Inf.asModItem item
-		val  strid  = StrId.fromString(Label.toString l)
-		val  x      = Stamp.new()
-		val  E'     = envFromInf(I, j)
+		val  F      = envfnFromInf'(I,pm,j)
+		val  x      = case F of PLAIN E' => Option.valOf(lookupSelf E')
+				      | _        => Stamp.new()
 	    in
-		insertStr(E, strid, (I,x,E'))
+		insertStr(E, stridFromLabel l, (I,x,F))
 	    end
 	else if Inf.isInfItem item then
 	    let
 		val (l,k,jo) = Inf.asInfItem item
-		val  sigid   = SigId.fromString(Label.toString l)
+		val  F       = envfnFromInf'(I, pm, Inf.lookupInf(s,l))
 		val  x       = Stamp.new()
-		val  E'      = envFromInf(I, Option.getOpt(jo, Inf.inTop()))
 	    in
-		insertSig(E, sigid, (I,x,E'))
+		insertSig(E, sigidFromLabel l, (I,x,F))
 	    end
 	else
 	     raise Crash.Crash "BindEnvFromSig.insertItem: unknown item"
