@@ -10,7 +10,10 @@
  *   $Revision$
  *)
 
-signature NATIVE_CONFIG_COMPONENT =
-sig
-    structure NativeConfig : sig val platform: 'a end
+signature UNSAFE_CONFIG_COMPONENT =
+    sig
+	structure UnsafeConfig:
+	    sig
+		val platform: 'platform
+	    end
 end
