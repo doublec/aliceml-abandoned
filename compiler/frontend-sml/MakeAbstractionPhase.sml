@@ -2327,7 +2327,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGTYPESpec(i, spec, longtycons) =>
 	   let
-		val specs'      = trSpec' (E,[]) spec
+		val specs'      = List.rev(trSpec' (E,[]) spec)
 		val typlongids' = List.map (#1 o trLongTyCon E) longtycons
 		val rspecs'     = List.rev(Sharing.shareTyp(specs',typlongids'))
 	   in
@@ -2336,7 +2336,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGSIGNATURESpec(i, spec, longsigids) =>
 	   let
-		val specs'      = trSpec' (E,[]) spec
+		val specs'      = List.rev(trSpec' (E,[]) spec)
 		val inflongids' = List.map (#1 o trLongSigId E) longsigids
 		val rspecs'     = List.rev(Sharing.shareSig(specs',inflongids'))
 	   in
@@ -2345,7 +2345,7 @@ functor MakeAbstractionPhase(
 
 	 | SHARINGSpec(i, spec, longstrids) =>
 	   let
-		val specs'      = trSpec' (E,[]) spec
+		val specs'      = List.rev(trSpec' (E,[]) spec)
 		val modlongids' = List.map (#1 o trLongStrId E) longstrids
 		val rspecs'     = List.rev(Sharing.shareStr(specs',modlongids'))
 	   in
