@@ -1,6 +1,6 @@
 PHP = php
 
-ifeq ($(SEAM), 1)
+ifeq ($(TARGET), seam)
 INTEROP =
 CONSTRAINTS = constraints_gecode.html
 PLATFORM_LIB = \

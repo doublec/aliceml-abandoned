@@ -90,7 +90,7 @@ bootstrap-smlnj:
 ## Documentation
 ##
 doc:
-	(cd doc/manual && make PREFIX=$(PREFIX)/share/alice/doc) || exit 1
+	(cd doc/manual && make PREFIX=$(PREFIX)/share/alice/doc TARGET=$(TARGET)) || exit 1
 
 # this requires help2man, see http://www.gnu.org/software/help2man/
 man:
