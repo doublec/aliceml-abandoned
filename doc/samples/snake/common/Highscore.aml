@@ -53,9 +53,32 @@ struct
 
     fun save hs = Pickle.save (path,pack (val h = hs) :> (val h : highscore))
 
-    fun merge (h,p,player,level) = h (* TODO: implementation *)
+    fun merge (high,p : points list,player,lvl) = 
+	let
+	    val convert = 
+		List.foldl (fn(point,xs) => {name = #name point,
+					     color = #color point,
+					     points = #points point,
+					     player = player,
+					     level = lvl}::xs) nil
 
-    fun foldl f init h = init (* TODO: implementation *)
+	    fun order (e1 : entry,e2 : entry) = 
+		if #points e1 < #points e2 
+		    then LESS
+		else
+		    if #points e1 > #points e2
+			then GREATER
+		    else EQUAL
+	(* if highscore should be sorted another way,
+	   only change this procedure *)
+
+	    val sorted = List.sort order ((convert p)@high)
+
+	in
+	    List.take(sorted,10)
+	end
+
+    val foldl = List.foldl (* TODO: implementation *)
 
 end
 
