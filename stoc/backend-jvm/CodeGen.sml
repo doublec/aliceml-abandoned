@@ -42,10 +42,20 @@ structure CodeGen =
 	  | Exp of exp
 	exception Debug of deb
 
-	(* Hashtabelle fuer Stamps. *)
-	structure StampHash=MakeHashImpMap(type t=stamp val hash=Stamp.hash)
-	structure ScopedStampSet=MakeHashScopedImpSet(type t=stamp val hash=Stamp.hash)
-	structure StringListHash=MakeHashImpMap(StringListHashKey)
+	(* Hashtabelle für Stamps. *)
+	structure StampHash = MakeHashImpMap(type t=stamp val hash=Stamp.hash)
+
+	(* Scoped Sets für Stamps. Wird zur Berechnung der freien
+	 Variablen benutzt. *)
+	structure ScopedStampSet = MakeHashScopedImpSet(type t=stamp val hash=Stamp.hash)
+
+	(* Hashtabelle für Listen von Strings. Wird benötigt bei der
+	 statischen Berechnung der Recordaritäten. *)
+	structure StringListHash = MakeHashImpMap(StringListHashKey)
+
+	(* Hashtabelle für Integers. Wird benötigt zum statischen
+	 Generieren von Integerkonstanten. *)
+	structure IntHash = MakeHashImpMap (type t=int fun hash n=n)
 
 	(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl.
 	 Den ersten Stack brauchen wir, damit für jede Klasse wieder bei label1
@@ -239,8 +249,13 @@ structure CodeGen =
 		    if i >= ~32768 andalso i <= 32767 then Sipush i
 		    else Ldc (JVMInt i)
 
+	(* Die Aritäten von Records koennen statisch gebaut werden. Zur
+	 Laufzeit genügt es, ein (statisches) Feld der Hauptklasse
+	 auszulesen. *)
 	structure RecordLabel =
 	    struct
+		(* Die Aritäten werden in einer Hashtabelle verwaltet,
+		 um doppeltes Generieren zu vermeiden. *)
 		val arity: int StringListHash.t = StringListHash.new ()
 		val number = ref 0
 
@@ -249,14 +264,15 @@ structure CodeGen =
 		fun staticfield number =
 		    (Class.getInitial ()^"/"^(fieldname number), CLabel, 1)
 
+		(* Hinzufügen einer Recordarity *)
 		fun insert strings =
-		    (print "insert Recordlabel\n";
-		     case StringListHash.lookup (arity, strings) of
-			 NONE => (number := ((!number)+1);
-				  StringListHash.insert (arity, strings, !number);
-				  staticfield (!number))
-		       | SOME number' => staticfield number')
+		    case StringListHash.lookup (arity, strings) of
+			NONE => (number := ((!number)+1);
+				 StringListHash.insert (arity, strings, !number);
+				 staticfield (!number))
+		      | SOME number' => staticfield number'
 
+		(* Generieren aller Recordarities zur Übersetzungszeit *)
 		fun generate () =
 		    let
 			fun codeall (strs, aritynumber, acc) =
@@ -299,6 +315,8 @@ structure CodeGen =
 			[Return]
 			arity
 		    end
+
+		(* Erzeugen der .field Einträge *)
 		fun makefields () =
 		    StringListHash.fold
 		    (fn (number, fields) =>
@@ -307,6 +325,56 @@ structure CodeGen =
 			    Classtype (CLabel, 1))::fields)
 		    nil
 		    arity
+	    end
+
+	(* Literale zu Konstruieren ist aufgrund unserer
+	 Wrapper-Klassen recht teuer. Wir bauen sie daher zur
+	 Compilezeit und schreiben sie in statische Felder. *)
+	structure Integers =
+	    struct
+		(* Die Konstanten werden in einer Hashtabelle
+		 verwaltet, um doppeltes Generieren zu vermeiden. *)
+		val inthash: int IntHash.t = IntHash.new ()
+		val number = ref 0
+
+		fun fieldname number = "int"^Int.toString number
+
+		fun staticfield number =
+		    (Class.getInitial ()^"/"^(fieldname number), CLabel, 1)
+
+		(* Hinzufügen einer Konstanten *)
+		fun insert int' =
+		    case IntHash.lookup (inthash, int') of
+			NONE => (number := ((!number)+1);
+				 IntHash.insert (inthash, int', !number);
+				 staticfield (!number))
+		      | SOME number' => staticfield number'
+
+		(* Erzeugen aller Integerkonstanten zur
+		 Übersetzungszeit *)
+		fun generate startwert =
+		    let
+			fun codeints (int', constnumber, acc) =
+			    (New CInt ::
+			     Dup ::
+			     (atCodeInt int') ::
+			     (Invokespecial (CInt, "<init>",
+					     ([Intsig], [Voidsig])))::
+			     (Putstatic (staticfield constnumber)) ::
+			     acc)
+		    in
+			IntHash.foldi codeints startwert inthash
+		    end
+
+		(* Erzeugen der .field Einträge *)
+		fun makefields startwert =
+		    IntHash.fold
+		    (fn (number, fields) =>
+		     Field ([FPublic, FStatic],
+			    fieldname number,
+			    Classtype (CInt, 0))::fields)
+		    startwert
+		    inthash
 	    end
 
 	(* Berechnung der freien Variablen *)
@@ -1324,8 +1392,15 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		     (idCode id'') @
 		     [Invokeinterface (CVal, "apply",
 				       ([Classsig CVal], [Classsig CVal]))]
+	  | expCode (SelAppExp (_, lab', id')) =
+		     idCode id' @
+		     [Checkcast CDMLTuple,
+		      Iconst 1, (* xxx Den wirklichen Label kenne ich erst, wenn ich
+				 Konstanten propagiert habe *)
+		      Invokeinterface (CDMLTuple, "getByLabel",
+				       ([Intsig], [Classsig CVal]))]
 
-	  | expCode _ = raise Error "boom"
+	  | expCode e = raise Debug (Exp e)
 	and
 	    expCodeClass (OneArg id',body') =
 	    let
