@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   int brokerArgc = argc + 1;
   char *brokerArgv[brokerArgc];
   brokerArgv[0] = "alice";
-  brokerArgv[1] = "x-alice:/compiler/ToplevelMain";
+  brokerArgv[1] = ROOT;
   for (int i = 1; i < argc; i++)
     brokerArgv[i + 1] = argv[i];
   String *languageId = String::New(brokerArgv[0]);
