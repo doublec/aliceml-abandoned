@@ -19,7 +19,7 @@ local
 	    (CodeGen.genProgramCode ("Emil", Main.imperatifyString prog); 0)
     val rec dc = fn
 	(fi::rest) =>
-	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".rec")
+	    (CodeGen.genProgramCode (if (extract(fi, size fi-4, NONE)=".dml")
 					 then substring(fi, 0, size fi-4)
 				     else fi,
 					 Main.imperatifyFile fi); dc (rest))

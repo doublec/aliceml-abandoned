@@ -91,6 +91,8 @@ structure ToJasmin =
 	  | stackNeedInstruction (Invokespecial (_,_,(arglist,_)))          = ~1-(siglength arglist)
 	  | stackNeedInstruction (Invokestatic  (_,_,(arglist,Voidsig)))    = ~(siglength arglist)
 	  | stackNeedInstruction (Invokestatic  (_,_,(arglist,_)))          = 1-(siglength arglist)
+	    (* Sonderfall fuer Exceptionhandling *)
+	  | stackNeedInstruction (Invokevirtual (CExWrap,"getValue",([],Classsig CVal))) = 1
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,Voidsig)))    = ~1-(siglength arglist)
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,_)))          = ~(siglength arglist)
 	  | stackNeedInstruction Ireturn = ~1
@@ -221,7 +223,7 @@ structure ToJasmin =
 		      | noStack _ = false
 		in
 		    (if noStack i then "" else
-			 ("\t\t.line "^line()^
+			 ((*"\t\t.line "^line()^*)
 			  "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n")^
 		    (instructionToJasmin i)^"\n"^
 		    (if nd<0 then
