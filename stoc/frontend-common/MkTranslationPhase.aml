@@ -1040,9 +1040,15 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 		SOME(trUnit r)
 	else if Inf.isCon j2 andalso Inf.isCon j1 then
 	    if not isOpaque then
-(*ASSERT	assert Path.equals(#2(Inf.asCon j1), #2(Inf.asCon)) => *)
-		if not (Path.equals(#2(Inf.asCon j1), #2(Inf.asCon j2)))
-		then raise Assert.failure else
+		(* Note: If we match transparently and have to constructors
+		 * then they are necessarily the same at runtime.
+		 * However, it is not necessarily the case during translation
+		 * because we do transparent ups for functor sig arguments
+		 * even in the opaque, so that no proper substitution has been
+		 * performed to equalize them. Example:
+		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
+		 * So we cannot put in an assertion here!
+		 *)
 		NONE
 	    else
 		(*UNFINISHED: do runtime abstraction (__perv.Coerce.Opaque?) *)
