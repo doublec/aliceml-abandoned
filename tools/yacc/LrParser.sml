@@ -6,7 +6,8 @@ signature LR_PARSER_ENG =
 	structure LrTable : LR_TABLE
 	structure Token : TOKEN
 
-	sharing LrTable = Token.LrTable
+(*	sharing LrTable = Token.LrTable *)
+	sharing type LrTable.table = Token.LrTable.table
 
 	exception ParseError
 
@@ -24,7 +25,7 @@ signature LR_PARSER_ENG =
     end
 
 
-structure LrParserEng :> LR_PARSER_ENG =
+structure LrParserEng : LR_PARSER_ENG =
  struct
      val print = fn s => TextIO.print s
      val println = fn s => (print s; print "\n")
