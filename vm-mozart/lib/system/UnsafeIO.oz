@@ -22,11 +22,19 @@ export
    StdText
 define
    Io = {NewUniqueName 'IO.Io'}
+   ClosedStream = {NewUniqueName 'IO.ClosedStream'}
 
    class BaseFile from Open.file Open.text
-      attr name
+      attr name closed: false
       meth getName($)
 	 @name
+      end
+      meth close()
+	 Open.file, close()
+	 closed <- true
+      end
+      meth isClosed($)
+	 @closed
       end
    end
 
@@ -133,6 +141,8 @@ define
    'IO'(
       '\'Io': Io
       'Io': fun {$ X} Io(X) end
+      '\'ClosedStream': ClosedStream
+      'ClosedStream': ClosedStream
       'stdIn':
 	 {New StdTextFile init(name: stdin flags: [read])}
       'openIn':
@@ -150,24 +160,30 @@ define
 	 end
       'inputAll':
 	 fun {$ F}
-	    try {F inputAll($)}
-	    catch system(E=os(os ...) ...) then
-	       {Exception.raiseError
-		alice(Io(name: {F getName($)}
-			 function: {ByteString.make 'inputAll'}
-			 cause: E))}   %--** cause not of type exn
-	       unit
+	    if {F isClosed($)} then {ByteString.make ""}
+	    else
+	       try {F inputAll($)}
+	       catch system(E=os(os ...) ...) then
+		  {Exception.raiseError
+		   alice(Io(name: {F getName($)}
+			    function: {ByteString.make 'inputAll'}
+			    cause: E))}   %--** cause not of type exn
+		  unit
+	       end
 	    end
 	 end
       'inputLine':
 	 fun {$ F}
-	    try {F inputLine($)}
-	    catch system(E=os(os ...) ...) then
-	       {Exception.raiseError
-		alice(Io(name: {F getName($)}
-			 function: {ByteString.make 'inputLine'}
-			 cause: E))}   %--** cause not of type exn
-	       unit
+	    if {F isClosed($)} then {ByteString.make ""}
+	    else
+	       try {F inputLine($)}
+	       catch system(E=os(os ...) ...) then
+		  {Exception.raiseError
+		   alice(Io(name: {F getName($)}
+			    function: {ByteString.make 'inputLine'}
+			    cause: E))}   %--** cause not of type exn
+		  unit
+	       end
 	    end
 	 end
       'closeIn':
@@ -204,27 +220,41 @@ define
 	 end
       'output':
 	 fun {$ F S}
-	    try
-	       {F output(S)}
-	    catch system(E=os(os ...) ...) then
+	    if {F isClosed($)} then
 	       {Exception.raiseError
 		alice(Io(name: {F getName($)}
 			 function: {ByteString.make 'output'}
-			 cause: E))}   %--** cause not of type exn
+			 cause: ClosedStream))} unit
+	    else
+	       try
+		  {F output(S)}
+	       catch system(E=os(os ...) ...) then
+		  {Exception.raiseError
+		   alice(Io(name: {F getName($)}
+			    function: {ByteString.make 'output'}
+			    cause: E))}   %--** cause not of type exn
+	       end
+	       unit
 	    end
-	    unit
 	 end
       'output1':
 	 fun {$ F C}
-	    try
-	       {F output1(C)}
-	    catch system(E=os(os ...) ...) then
+	    if {F isClosed($)} then
 	       {Exception.raiseError
 		alice(Io(name: {F getName($)}
 			 function: {ByteString.make 'output1'}
-			 cause: E))}   %--** cause not of type exn
+			 cause: ClosedStream))} unit
+	    else
+	       try
+		  {F output1(C)}
+	       catch system(E=os(os ...) ...) then
+		  {Exception.raiseError
+		   alice(Io(name: {F getName($)}
+			    function: {ByteString.make 'output1'}
+			    cause: E))}   %--** cause not of type exn
+	       end
+	       unit
 	    end
-	    unit
 	 end
       'flushOut':
 	 fun {$ F} /*{F flush()}*/ unit end   %--** not supported for files?
