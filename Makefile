@@ -93,6 +93,9 @@ veryclean: clean
 	(cd bootstrap && make veryclean) || exit 1
 	rm -rf */CM */*/CM */*/*/CM
 
+distclean: veryclean
+	rm -rf */NJ */*/NJ */*/*/NJ
+
 
 ################################################################################
 ## Mozart-specific stuff
