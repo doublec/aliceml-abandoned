@@ -69,6 +69,8 @@ signature ABSTRACTION_ERROR =
 	| SigItemUnbound	of SigId
 	| ConItemNonCon		of VId
 	| DconItemNonCon	of VId
+	(* Components *)
+	| CompCorrupt		of Url.t
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id

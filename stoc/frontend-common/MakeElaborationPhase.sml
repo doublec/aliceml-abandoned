@@ -10,9 +10,9 @@
  * table.
  *)
 
-(*UNFINISHED*)
-signature COMPOSER' = sig val sign: Url.t -> Inf.sign end
-functor MakeElaborationPhase(Composer: COMPOSER') :> ELABORATION_PHASE =
+functor MakeElaborationPhase(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) :> ELABORATION_PHASE =
   struct
 
     structure C = Env
@@ -2153,7 +2153,7 @@ else
 ; print "\n"
 )
 	in
-	    O.Comp(nonInfo(i), anns', decs')
+	    O.Comp(sigInfo(i,s), anns', decs')
 	end
 
 
@@ -2172,5 +2172,3 @@ else
 	    )
 
   end
-
-structure ElaborationPhase = MakeElaborationPhase(fun sign _ = Inf.empty())

@@ -1,3 +1,25 @@
+structure Composer =	(* dummy *)
+  struct
+    structure Sig =
+      struct
+        type t = Inf.sign
+	fun matches(j1,j2) = false
+      end
+
+    exception Corrupt
+
+    fun sign url = Inf.empty()
+    fun start url = ()
+  end
+
+structure AbstractionPhase = MakeAbstractionPhase(Composer)
+structure ElaborationPhase = MakeElaborationPhase(Composer)
+
+(* Test *)
+structure FrontendSML    = MakeFrontendSML(Composer)
+structure FrontendCommon = MakeFrontendCommon(Composer)
+
+
 structure Main :> MAIN =
   struct
 

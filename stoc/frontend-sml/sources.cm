@@ -1,84 +1,71 @@
-Group
+Group is
 
-    signature PARSING_PHASE
-    signature ABSTRACTION_PHASE
-    structure ParsingPhase
-    structure AbstractionPhase
-    signature ID
-    structure VId
-    structure TyVar
-    structure TyCon
-    structure StrId
-    structure SigId
-    signature BIND_ENV
-    structure BindEnv
-    signature BIND_ENV0
-    structure BindEnv0
-    signature INPUT_GRAMMAR
-    structure InputGrammar
+	(* Utilities *)
 
-is
+	ml-yacc-lib.cm
+	../misc/sources.cm
+	../error/sources.cm
 
-    (* Utilities *)
+	(* SML syntax *)
 
-    ml-yacc-lib.cm
-    ../misc/sources.cm
-    ../error/sources.cm
-    ../top/phase.cm
+	SCON.sig
+	SCon.sml
+	LAB.sig
+	Lab.sml
+	ID.sig
+	MakeId.sml
 
-    (* SML syntax *)
+	Ids.sml
 
-    SCON.sig
-    SCon.sml
-    LAB.sig
-    Lab.sml
-    ID.sig
-    MakeId.sml
+	INPUT_GRAMMAR.sig
+	MakeInputGrammar.sml
+	InputGrammar.sml
 
-    Ids.sml
+	(* Parsing *)
 
-    INPUT_GRAMMAR.sig
-    MakeInputGrammar.sml
-    InputGrammar.sml
+	LEXER_ERROR.sig
+	LexerError.sml
+	PARSING_ERROR.sig
+	ParsingError.sml
 
-    (* Parsing *)
+	Lexer.lex
+	CountPosLexer.sml
+	Parser.grm
 
-    LEXER_ERROR.sig
-    LexerError.sml
-    PARSING_ERROR.sig
-    ParsingError.sml
+	DERIVED_FORMS.sig
+	DerivedForms.sml
 
-    Lexer.lex
-    CountPosLexer.sml
-    Parser.grm
-
-    DERIVED_FORMS.sig
-    DerivedForms.sml
-
-    PARSING_PHASE.sig
-    ParsingPhase.sml
+	PARSING_PHASE.sig
+	ParsingPhase.sml
 
 
-    (* Abstract syntax *)
+	(* Abstract syntax *)
 
-    ../frontend-common/abstract-grammar.cm
-    ../common/name.cm
-    ../common/prebound.cm
+	(*../frontend-common/abstract-grammar.cm*)
+	../frontend-common/sources.cm
+	../common/name.cm
+	../common/prebound.cm
+	../top/phase.cm
+	../top/composer.cm
 
-    (* Translation into abstract syntax (binding analysis) *)
+	(* Translation into abstract syntax (binding analysis) *)
 
-    BIND_ENV.sig
-    BindEnv.sml
-    BIND_ENV0.sig
-    BindEnv0.sml
+	BIND_ENV.sig
+	BindEnv.sml
+	BIND_ENV0.sig
+	BindEnv0.sml
+	BIND_ENV_FROM_SIG.sig
+	BindEnvFromSig.sml
 
-    ABSTRACTION_ERROR.sig
-    AbstractionError.sml
+	ABSTRACTION_ERROR.sig
+	AbstractionError.sml
 
-    INFIX.sig
-    Infix.sml
-    SHARING.sig
-    Sharing.sml
+	INFIX.sig
+	Infix.sml
+	SHARING.sig
+	Sharing.sml
 
-    ABSTRACTION_PHASE.sig
-    AbstractionPhase.sml
+	ABSTRACTION_PHASE.sig
+	MakeAbstractionPhase.sml
+
+	MakeFrontendSML.sml

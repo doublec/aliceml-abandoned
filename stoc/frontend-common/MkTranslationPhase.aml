@@ -384,7 +384,8 @@ UNFINISHED: obsolete after bootstrapping:
 	    val  i'         = typInfo(#region i,t)
 	    val  exp'       = O.LetExp(i', ds', O.RowExp(i', fs'))
 	in
-	    ( xsus', (exp',()) )
+	    (*UNFINISHED*)
+	    ( xsus', (exp', () (*#sign i*)) )
 	end
 
     fun translate() = trComp

@@ -17,7 +17,7 @@ structure TypedInfo =
     type spec_info	= { region: Source.region }
     type imp_info	= { region: Source.region }
     type ann_info	= { region: Source.region }
-    type comp_info	= { region: Source.region }
+    type comp_info	= { region: Source.region, sign: Inf.sign }
 
     fun labToIdInfo i	= i
     fun idToLabInfo i	= i
@@ -26,6 +26,7 @@ structure TypedInfo =
     fun fixInfo(r,f)	= { region = r, fix = f }
     fun typInfo(r,t)	= { region = r, typ = t }
     fun infInfo(r,j)	= { region = r, inf = j }
+    fun sigInfo(r,s)	= { region = r, sign = s }
   end
 
 structure TypedGrammar = MakeAbstractGrammar(TypedInfo)

@@ -3,7 +3,6 @@
 Current:
 
 - Look into type annotations
-- Structural datatypes
 - Syntactic constructor arity?
 
 General:
@@ -30,15 +29,11 @@ Missing from Standard Core Language:
 
 Missing from Standard Module Language:
 
-- Matching of datatype constructors does not check equality of constructor sets
-  [deferred until decision on structural datatypes is made]
 - Include (no work-around)
   [might be translated into where expressions]
 
 Missing from Extended Core Language:
 
-- Structural datatypes
-  [seems to require a form of higher-order unification]
 - Specifications as declarations
   [how model them in elaboration rules?]
 - Explicit quantification syntax
@@ -46,7 +41,7 @@ Missing from Extended Core Language:
 - Higher-kind type expressions and declarations, kind annotations
   [need to finalize design first]
 - Existential constructors
-  [not to useful without type classes]
+  [not too useful without type classes]
 - Universal constructors
   [deferred to be designed together with existential constructors]
 - Type classes
@@ -56,12 +51,6 @@ Missing from Extended Core Language:
 
 Missing from Extended Module Language:
 
-- Treating fixity directives during signature matching
-  [would carry frontend stuff into the backend - is this semantics necessary?]
-- Syntax for functor expressions and signatures (use functor
-  declarations and specifications for now)
-  [easy, provided we give up separation of StrId and FunId as well as
-   where type .. and type derived form]
 - Open in signatures
   [not difficult, but do we want it? (required for some derived forms);
    probably local specifications should contain declarations]

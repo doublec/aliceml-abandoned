@@ -1,4 +1,6 @@
-structure AbstractionPhase :> ABSTRACTION_PHASE =
+functor MakeAbstractionPhase(
+		Composer: COMPOSER where type Sig.t = Inf.sign
+	) :> ABSTRACTION_PHASE =
   struct
 
     structure C   = BindEnv
@@ -2705,8 +2707,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		(*UNFINISHED: extract bind env from component*)
-		val E'    = BindEnv.new()
+		val s     = Composer.sign url
+			    handle Composer.Corrupt =>
+				error(i, E.CompCorrupt url)
+				(*UNFINISHED: handle IO errors *)
+		val E'    = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
 		val imps' = trImp (E,E') imp
 		val _     = mergeScope E

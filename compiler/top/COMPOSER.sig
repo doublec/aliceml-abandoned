@@ -12,6 +12,8 @@ signature COMPOSER =
   sig
     structure Sig: SIGNATURE
 
-    val sign:	Url.t -> Sig.t
-    val start:	Url.t -> unit
+    exception Corrupt
+
+    val sign:	Url.t -> Sig.t		(* [Corrupt, IO.Io] *)
+    val start:	Url.t -> unit		(* [Corrupt, IO.Io] *)
   end

@@ -5,3 +5,5 @@ Group is
 	PHASE.sig
 	TARGET.sig
 	EmptyContext.sml
+
+	ComposePhases.sml

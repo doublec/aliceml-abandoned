@@ -78,6 +78,8 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	| SigItemUnbound	of SigId
 	| ConItemNonCon		of VId
 	| DconItemNonCon	of VId
+	(* Components *)
+	| CompCorrupt		of Url.t
 	(* Sharing translation *)
 	| SharingExternalTy	of id
 	| SharingExternalSig	of id
@@ -251,6 +253,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(DconItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
 		  "not","a","constructor"]
+      (* Components *)
+      | ppError(CompCorrupt u) =
+	  textpar["corrupt","component","at","URL","\""^Url.toString u^"\""]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
 	  textpar(#2 classTyCon @ [ppId x,"is","external","to","signature"])
