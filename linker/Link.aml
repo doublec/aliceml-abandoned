@@ -10,12 +10,12 @@
  *   $Revision$
  *)
 
-import structure Signature          from "x-alice:/lib/system/Signature"
-import structure FromEqHashKey      from "x-alice:/lib/utility/HASH_KEY-sig"
-import structure MkHashImpMap       from "x-alice:/lib/utility/MkHashImpMap"
-import structure MkDepthFirstSearch from "x-alice:/lib/utility/MkDepthFirstSearch"
-import structure Url                from "x-alice:/lib/utility/Url"
-import structure Label              from "x-alice:/lib/rtt/Label"
+import structure Signature          from "../lib/system/Signature"
+import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
+import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
+import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
+import structure Url                from "../lib/utility/Url"
+import structure Label              from "../lib/rtt/Label"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
 
@@ -28,7 +28,7 @@ structure Link :> LINK =
 	exception Empty
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
-	exception Cyclic
+	exception Cyclic of Url.t list
 
 	structure UrlHashKey = FromEqHashKey(Url)
 	structure UrlMap = MkHashImpMap(UrlHashKey)
@@ -121,7 +121,7 @@ structure Link :> LINK =
 		List.map (fn urls =>
 			     case urls of
 				 [url] => url
-			       | _ => raise Cyclic)
+			       | urls => raise Cyclic urls)
 			 (DepthFirstSearch.search graph)
 	    end
 
@@ -168,10 +168,57 @@ structure Link :> LINK =
 				     rewrite (Url.toString url),
 				     UrlMap.lookupExistent (excludeMap, url)))
 				(excludes, 0, NONE)
-		val bodies =
-		    Vector.map (fn url => MyComponent.body (getComponent url))
-			       includes
-		fun body #[(_, str)] = str   (*--** UNFINISHED *)
+		val includeTable =
+		    Vector.map
+		    (fn url =>
+			let
+			    val component = getComponent url
+			    val importUrls =
+				UrlMap.lookupExistent (includeMap, url)
+			    val imports = MyComponent.imports component
+			    val importSpec =
+				Vector.mapi
+				(fn (i, (label, _, _)) =>
+				    let
+					val url = Vector.sub (importUrls, i)
+					val (included, index) =
+					    UrlMap.lookupExistent
+						(urlToIndexMap, url)
+				    in
+					(label, included, index)
+				    end) (imports, 0, NONE)
+			in
+			    (importSpec, MyComponent.body (getComponent url))
+			end) includes
+		val (_, rootIndex) =
+		    UrlMap.lookupExistent (urlToIndexMap, root)
+		fun body imports =
+		    let
+			val strs = Vector.tabulate (Vector.length includeTable,
+						    fn _ => Hole.hole ())
+		    in
+			Vector.appi
+			(fn (i, (importSpec, body)) =>
+			    let
+				val actuals =
+				    Vector.map
+				    (fn (label, included, index) =>
+					(label,
+					 if included then
+					     Vector.sub (strs, index)
+					 else
+(*--** this gives a type error:		     #2 (Vector.sub (imports, index))*)
+(*--** as does this:			     case Vector.sub (imports, index)
+					       of {2 = str, ...} => str *)
+					     case Vector.sub (imports, index)
+					       of (_, str) => str
+				    )) importSpec
+				val str = lazy body actuals
+			    in
+				Hole.fill (Vector.sub (strs, i), str)
+			    end) (includeTable, 0, NONE);
+			Vector.sub (strs, rootIndex)
+		    end
 		val sign = MyComponent.sign (getComponent root)
 	    in
 		MyComponent.new {imports, body, sign}

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import signature IMP_MAP     from "x-alice:/lib/utility/IMP_MAP-sig"
-import structure Url         from "x-alice:/lib/utility/Url"
+import signature IMP_MAP     from "../lib/utility/IMP_MAP-sig"
+import structure Url         from "../lib/utility/Url"
 import structure MyComponent from "MyComponent"
 
 signature LINK =
@@ -25,7 +25,7 @@ signature LINK =
 	exception Empty
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
-	exception Cyclic
+	exception Cyclic of Url.t list
 
 	val collect: boundary vector -> Url.t ->
 		     {componentMap: MyComponent.t UrlMap.t,
