@@ -53,7 +53,7 @@ structure Common=
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
 	val dummyCoord:ImperativeGrammar.coord = Source.nowhere
-	val dummyPos:Source.position = Source.nowhere
+	val dummyPos:Source.region = Source.nowhere
 	val dummyInfo:ImperativeGrammar.info = (dummyPos, ref Unknown)
 
 	 (* A dummy stamp/id we sometimes write but should never read *)
@@ -114,7 +114,7 @@ structure Common=
 		    let
 			val ret = case !retryStack of
 			    (l,_)::_ => l
-			  | nil => Crash.crash "Label.popRetry"
+			  | nil => raise (Crash.Crash "Label.popRetry")
 		    in
 			retryStack := tl (!retryStack);
 			ret
@@ -124,7 +124,7 @@ structure Common=
 		    case !retryStack of
 			(_,stamp'')::_ => if stamp' = stamp'' then ()
 				       else retryStack := ls :: (!retryStack)
-		      | nil => Crash.crash "Label.newRetry"
+		      | nil => raise (Crash.Crash "Label.newRetry")
 
 		fun printStackTrace () =
 		    let

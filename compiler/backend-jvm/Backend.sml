@@ -195,7 +195,7 @@ structure Backend=
 				end
 			  | SOME number' => staticfield (stamp', number')
 		    end
-		  | insert _ = Crash.crash "RecordLabel.insert: empty Stringlist"
+		  | insert _ = raise (Crash.Crash "RecordLabel.insert: empty Stringlist")
 
 		(* Generate the record arities of a certain class at compilation time. *)
 		fun generate () =

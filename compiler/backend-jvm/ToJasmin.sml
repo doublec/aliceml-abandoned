@@ -75,7 +75,7 @@ structure ToJasmin =
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
 		  | SOME (Jump IRet) => "ireturn"
-		  | SOME _ => Crash.crash "ToJasmin: directJump"
+		  | SOME _ => raise (Crash.Crash "ToJasmin: directJump")
 
 	    (* return the real label for this jump *)
 	    fun condJump lab' =
@@ -349,7 +349,7 @@ structure ToJasmin =
 				val regfrom = lookup (!fromPos, genuineReg)
 				val regto = lookup (!toPos, genuineReg)
 				val t' = case t of
-				    NONE => Crash.crash "ToJasmin: addJump"
+				    NONE => raise (Crash.Crash "ToJasmin: addJump")
 				  | SOME v => v
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto
@@ -875,7 +875,7 @@ structure ToJasmin =
 		" to "^LabelMerge.labName to^" using "^
 		LabelMerge.labName use
 	      | instructionToJasmin (Call _,_) =
-					 Crash.crash "IntructionToJasmin: unresolved Ifstatic"
+					 raise (Crash.Crash "IntructionToJasmin: unresolved Ifstatic")
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -891,7 +891,7 @@ structure ToJasmin =
 			else if i=1 then
 			    "fconst_1"
 			     else "fconst_2"
-	      | instructionToJasmin (Get _, _) = Crash.crash "instructionToJasmin: Unresolved Get"
+	      | instructionToJasmin (Get _, _) = raise (Crash.Crash "instructionToJasmin: Unresolved Get")
 	      | instructionToJasmin (Getfield(fieldn, arg),_) = "getfield "^fieldn^" "^
 				 (desclist2string arg)
 	      | instructionToJasmin (Getstatic(fieldn, arg),_) = "getstatic "^fieldn^" "^
@@ -954,7 +954,7 @@ structure ToJasmin =
 				 flatten (switchlist, labellist)^
 				 "default: "^LabelMerge.labName default
 			     end
-	      | instructionToJasmin (Multi _,_) = Crash.crash "instructionToJasmin: unresolved Multi"
+	      | instructionToJasmin (Multi _,_) = raise (Crash.Crash "instructionToJasmin: unresolved Multi")
 	      | instructionToJasmin (New cn,_) = "new "^cn
 	      | instructionToJasmin (Nop, _) = "nop"
 	      | instructionToJasmin (Pop,_) = "pop"

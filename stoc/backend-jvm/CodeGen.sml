@@ -544,7 +544,7 @@ structure CodeGen =
 					     number::switchlist,
 					     lab :: labelList,
 					     b', t'', b'')
-					  | _ => Crash.crash "CodeGen: generateBody"
+					  | _ => raise (Crash.Crash "CodeGen: generateBody")
 				else
 				    (Label lab ::
 				     Multi (decListCode (body', curFun, curCls)) ::
@@ -603,7 +603,7 @@ structure CodeGen =
 				 litTest (CInt, [Intsig])
 			   | LitTest (CharLit startwert) =>
 				 litTest (CChar, [Charsig])
-			   | _ => Crash.crash "CodeGen: GenerateSwitch")
+			   | _ => raise (Crash.Crash "CodeGen: GenerateSwitch"))
 		    end
 
 		fun tcode (cls, ret, cmpcode) =
@@ -1357,7 +1357,7 @@ structure CodeGen =
 		     createFun(thisFun, lambda, upperFun, upperCls, true)
 
 	  | expCode (RecExp(_, nil),_,_) =
-		     Crash.crash "CodeGen.expCode: empty RecExp"
+		     raise (Crash.Crash "CodeGen.expCode: empty RecExp")
 
 	  | expCode (RecExp(((line,_),_),labid),curFun,curCls) =
 		     Line line ::
@@ -1513,7 +1513,7 @@ structure CodeGen =
 		  | createApplies (nil, a0, a2, a3, a4, ra) =
 		     (print ("Lambda "^Stamp.toString curFun^" in "^Stamp.toString curCls);
 		      (a0, a2, a3, a4, decListCode (ra, curFun, curCls)))
-		  | createApplies (_, _, _, _, _, _) = Crash.crash "CodeGen: createApplies"
+		  | createApplies (_, _, _, _, _, _) = raise (Crash.Crash "CodeGen: createApplies")
 
 		val (ap0, ap2, ap3, ap4, ad) =
 		    createApplies (List.rev specialApplies,
@@ -1637,7 +1637,7 @@ structure CodeGen =
 	    in
 		classToJasmin (class)
 	    end
-	  | expCodeClass _ = Crash.crash "CodeGen.expCodeClass"
+	  | expCodeClass _ = raise (Crash.Crash "CodeGen.expCodeClass")
 	and
 	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", imperatifyString' prog)
 	and
