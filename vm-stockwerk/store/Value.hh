@@ -55,10 +55,6 @@ public:
   void ReplaceArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
   }
-  Handler *GetHandler() {
-    return ((GetLabel() == HANDLERBLOCK_LABEL) ?
-	    PointerOp::DecodeHandler(this) : (Handler *) INVALID_POINTER);
-  }
   word ToWord() {
     return PointerOp::EncodeBlock(this);
   }
