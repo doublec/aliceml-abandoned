@@ -57,7 +57,7 @@ depend:
 Inspector.ozf: UnsafeInspector.asig Inspector.aml
 
 LinkedInspector.ozf: Inspector.ozf $(OZLINPUTS)
-	$(STOL) $(OZLOPTS) $< -o $@
+	$(STOL) -v $(OZLOPTS) $< -o $@
 
 %.ozf: %.oz
 	$(OZC) $(OZCOPTS) -c $< -o $@
