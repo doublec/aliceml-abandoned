@@ -71,7 +71,7 @@ define
    end
 
    fun {TranslateLab lab(_ S)}
-      {String.toAtom S}
+      S
    end
 
    fun {TranslateLit Lit}
