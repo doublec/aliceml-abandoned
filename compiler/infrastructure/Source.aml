@@ -12,7 +12,7 @@
 
 (* A source file *)
 
-import structure Url    from "../../lib/utility/Url"
+import structure Url    from "../../lib/system/Url"
 import signature SOURCE from "SOURCE-sig"
 
 
