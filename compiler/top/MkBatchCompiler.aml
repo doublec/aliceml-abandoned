@@ -27,16 +27,8 @@ import
 from "../../lib/utility/Url"
 
 import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
     structure Error
 from "../infrastructure/Error"
-
-import
-    structure Signature
-from "Signature"
 
 import
     structure MkOptionParser
@@ -51,7 +43,6 @@ import
 from "RECURSIVE_COMPILER-sig"
 
 functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
-			    where type Composer.Sig.t = Signature.t
 			val executableHeader: string): BATCH_COMPILER =
     struct
 	fun basename filename =
