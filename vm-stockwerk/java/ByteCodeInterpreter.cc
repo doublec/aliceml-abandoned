@@ -1817,7 +1817,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LDC2_W:
       {
-	Error("not implemented");
+	word value = GET_POOL_VALUE((unsigned short) GET_POOL_INDEX()); 
+	frame->Push(value);
+	FILL_SLOT();
+	pc += 3;
       }
       break;
     case Instr::LDIV:
