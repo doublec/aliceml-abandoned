@@ -20,15 +20,6 @@
 
 DebuggerEvent *DebuggerEvent::FromWord(word x) {
   Block *b = Store::WordToBlock(x);
-  if (b->GetLabel() == 7) {
-    Debug::maxDepth = 3;
-    FILE *file = fopen("/home/jens/uni/fopra/readEvent.txt", "w+");
-    if (file == NULL) {
-      fprintf(stderr, "Unable to open file\n");
-      exit(0);
-    }
-    Debug::DumpTo(file, x);
-  }
   Assert(b == INVALID_POINTER || (b->GetLabel() > (BlockLabel) MIN_EVENT_LABEL 
 				  && b->GetLabel() < (BlockLabel) MAX_EVENT_LABEL));
   return static_cast<DebuggerEvent *>(b);

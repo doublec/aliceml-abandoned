@@ -57,14 +57,14 @@ static bool Exists(word wThread, word list) {
 }
 
 #define SetBreakpoint(thread) {                         \
-  if (Exists(thread->ToWord(), breakPoint)) {           \
+  if (Exists(thread->ToWord(), breakPointList)) {           \
     return;                                             \
   }                                                     \
   Block *b = Store::AllocBlock((BlockLabel) 1, SIZE);   \
   b->InitArg(HD_POS, thread->ToWord());                 \
-  b->InitArg(TL_POS, breakPoint);                       \
+  b->InitArg(TL_POS, breakPointList);                       \
                                                         \
-  breakPoint = b->ToWord();                             \
+  breakPointList = b->ToWord();                             \
 }
 
 //
@@ -72,25 +72,25 @@ static bool Exists(word wThread, word list) {
 //
 
 word Debugger::eventStream;
-word Debugger::breakPoint;
+word Debugger::breakPointList;
 
 void Debugger::Init() {
   eventStream = Stream::New()->ToWord();
-  breakPoint = Store::IntToWord(0);
+  breakPointList = Store::IntToWord(0);
   RootSet::Add(eventStream);
-  RootSet::Add(breakPoint);
+  RootSet::Add(breakPointList);
 }
 
 bool Debugger::IsBreakpoint(Thread *thread) {
   bool bp = false;
 
-  if (breakPoint == Store::IntToWord(0)) {
+  if (breakPointList == Store::IntToWord(0)) {
     return false;
   }
 
   word acc = Store::IntToWord(0);
-  while(breakPoint != Store::IntToWord(0)) {
-    Block *b = Store::WordToBlock(breakPoint);
+  while(breakPointList != Store::IntToWord(0)) {
+    Block *b = Store::WordToBlock(breakPointList);
     if (b == INVALID_POINTER) {
       Error("Invalid Thread List");
     }
@@ -107,9 +107,9 @@ bool Debugger::IsBreakpoint(Thread *thread) {
       curr->InitArg(TL_POS, acc);
       acc = curr->ToWord();
     }
-    breakPoint = b->GetArg(TL_POS);
+    breakPointList = b->GetArg(TL_POS);
   }
-  breakPoint = acc;
+  breakPointList = acc;
   return bp;
 }
 

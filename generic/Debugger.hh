@@ -23,7 +23,7 @@ class Thread;
 class SeamDll Debugger {
 private:
   static word eventStream;
-  static word breakPoint;
+  static word breakPointList;
 
   static void GenerateMissingEvents();
 public:
