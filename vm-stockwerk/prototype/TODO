@@ -1,6 +1,5 @@
 Stockwerk:
 -- Rename Pickle.oz to PrimPickle.oz
--- Rename Linker.oz to BootLinker.oz
 -- proxies
 -- non-blocking I/O (UnsafeIO.oz, UnsafeSocket.oz)
 -- Component manager and spaces in path names => %20

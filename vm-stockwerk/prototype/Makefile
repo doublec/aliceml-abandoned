@@ -20,7 +20,7 @@ SRCS = \
 	Scheduler.oz \
 	AbstractCodeInterpreter.oz \
 	Pickle.oz \
-	Linker.oz \
+	BootLinker.oz \
 	Main.oz
 
 LIB_SYSTEM_SRCS0 = \
@@ -59,5 +59,5 @@ ByneedInterpreter.ozf: Helper.ozf
 Scheduler.ozf: Helper.ozf
 AbstractCodeInterpreter.ozf: Helper.ozf
 Pickle.ozf: Helper.ozf
-Linker.ozf: Helper.ozf
+BootLinker.ozf: Helper.ozf
 lib/system/UnsafeComponent.ozf: Helper.ozf

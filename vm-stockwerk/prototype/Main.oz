@@ -17,7 +17,7 @@ import
    OS(getEnv)
    Property(get put)
    URL(make resolve toString)
-   Linker(link)
+   BootLinker(link)
    PrimitiveTable(values)
    Scheduler(object)
 define
@@ -33,7 +33,7 @@ define
 
    case Args.1 of RootUrl|Rest then
       {Property.put 'stockwerk.args' Rest}
-      case {Linker.link Args.booturl} of tuple(Closure) then
+      case {BootLinker.link Args.booturl} of tuple(Closure) then
 	 {Scheduler.object newThread(closure: Closure
 				     args: arg({ByteString.make RootUrl}))}
 	 {Scheduler.object run()}
