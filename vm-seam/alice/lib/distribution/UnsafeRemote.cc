@@ -18,6 +18,7 @@
 #include <netdb.h>
 #include <sys/utsname.h>
 #include <sys/types.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <cstring>
 #include <cstdlib>
