@@ -41,8 +41,9 @@ environment variables:</P>
 <DL>
   <DT><P><TT>STOCKHOME</TT></P>
   <DD><P>specifies the directory where Alice is installed.  If not set,
-    <TT>alicerun</TT> guesses its name by looking in the following
-    directories, in that order:</P>
+    under Unix or started from a Windows Cygwin shell, <TT>alicerun</TT>
+    guesses its name by looking in the following directories, in that
+    order:</P>
     <OL>
       <LI><TT>/usr/share/alice</TT>, which is the default installation
 	path on some Unix variants
@@ -51,7 +52,9 @@ environment variables:</P>
       <LI>The parent directory of the directory in which <TT>alicerun</TT>
 	resides.
     </OL>
-    <P></P>
+    <P>If not set, under Windows started from a <TT>CMD</TT> console,
+    <TT>alicerun</TT> guesses the installation directory to be
+    <TT>%PROGRAMFILES%\Alice</TT>.</P>
   <DT><TT>ALICE_LOAD_PREFIX</TT>
   <DT><TT>ALICE_LOAD_SUFFIX</TT>
   <DD><P>specify resolving methods to use when trying to access components.
