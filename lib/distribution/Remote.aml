@@ -14,9 +14,9 @@ import signature COMPONENT_MANAGER
     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 import structure Unix              from "x-alice:/lib/system/Unix"
 import structure Url               from "x-alice:/lib/utility/Url"
-import structure Http              from "Http"
-import structure HttpServer        from "HttpServer"
-import structure HttpClient        from "HttpClient"
+import structure Http              from "x-alice:/lib/system/Http"
+import structure HttpServer        from "x-alice:/lib/system/HttpServer"
+import structure HttpClient        from "x-alice:/lib/system/HttpClient"
 import signature REMOTE            from "REMOTE-sig"
 import structure UnsafeRemote      from "UnsafeRemote"
 
@@ -50,8 +50,18 @@ structure HttpRemotePort :> REMOTE_PORT =
 		      ("http://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^
 		       Int.toString (HttpServer.start NONE) ^ "/"))
 
+	val counter = ref 0
+
 	fun register handler =
-	    Url.resolve rootUrl (HttpServer.register handler)
+	    let
+		val p = Promise.promise ()
+		val n = Ref.exchange (counter, Promise.future p)
+		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
+	    in
+		Promise.fulfill (p, n + 1);
+		HttpServer.register (uri, handler);
+		Url.resolve rootUrl uri
+	    end
 
 	(* Error Handling *)
 
