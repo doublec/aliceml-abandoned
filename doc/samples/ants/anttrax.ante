@@ -104,18 +104,27 @@ fun domove otherwise evadeaction =
     ))
 
 
-
-fun gohome trailaction homeaction =
-    let
-        val d = direct ()
-    in
-    letlabel (fn exit =>
-	d ++
-	domove otherwise (
-	    todo
-	)
+fun gohome goaction homeaction =
+let
+    val direct = direct()
+    val turn_left = turn left
+in
+    loopx (fn break =>
+	sense here home ifyes (
+	    homeaction ++
+	    break
+	) ++
+	direct ++
+	letlabel (fn tryagain =>
+	    label tryagain ++
+	    domove otherwise (
+		turn_left ++
+		goto tryagain
+	    )
+	) ++
+	goaction
     )
-    end
+end
 
 (* val fetch_food = *)
 (*     loop ( *)
