@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure Url          from "Url"
 import structure Socket       from "Socket"
 import signature HTTP         from "HTTP-sig"
@@ -68,7 +68,7 @@ structure Http :> HTTP =
 
 	fun readHeaders socket =
 	    let
-		val headers = StringMap.new ()
+		val headers = StringMap.map ()
 	    in
 		readHeaders' (readLine socket, socket, headers);
 		headers
@@ -218,7 +218,7 @@ structure Http :> HTTP =
 
 	fun makeResponse {statusCode, contentType, body} =
 	    let
-		val headers = StringMap.new ()
+		val headers = StringMap.map ()
 	    in
 		StringMap.insert (headers, "Content-Type", contentType);
 		StringMap.insert (headers, "Content-Length",
