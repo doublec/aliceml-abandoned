@@ -27,10 +27,12 @@ LIGHTNING_SOURCES =
 endif
 
 PRIMITIVE_MODULES = \
-	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
-	List Math Option Real Ref String Thread UniqueString Unsafe Vector Word
+	Unqualified Array Char Future General GlobalStamp Hole Int \
+	List Math Option Real Ref String Thread UniqueString Unsafe \
+	Vector Word8 Word8Vector Word31
 LIB_SYSTEM_MODULES = \
-	Config IO OS CommandLine Component Debug Socket Rand Value Reflect
+	Config IODesc IO OS CommandLine Component Debug Socket Rand Value \
+	Reflect
 LIB_UTILITY_MODULES = Cell Addr
 LIB_DISTRIBUTION_MODULES = Remote
 
