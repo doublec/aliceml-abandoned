@@ -12,18 +12,19 @@
  *)
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
-import structure GtkCore   from "x-alice:/lib/gtk/GtkCore"
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
-import structure Canvas    from "x-alice:/lib/gtk/Canvas"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Random    from "x-alice:/lib/utility/Random"
 
 local
-    open GtkCore
+    datatype event = datatype Gtk.event
+    datatype arg   = datatype Gtk.arg
 
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
-	    val stream = Cell.cell tail
+	    val stream = Ref.ref tail
 
 	    fun process s = (case s of
 				 nil   => ()
@@ -31,12 +32,12 @@ local
 	    fun send p =
 		let
 		    val newtail = Promise.promise ()
-		    val tail    = Cell.exchange(stream, newtail)
+		    val tail    = Ref.exchange(stream, newtail)
 		in
 		    Promise.fulfill(tail, p::(Promise.future newtail))
 		end
 	in
-	    (Thread.spawn (fn () => process(Promise.future tail));
+	    (spawn (process(Promise.future tail));
 	     send)
 	end
 
@@ -47,10 +48,10 @@ local
     val font = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso8859-1"
 
     val map   = Gdk.colormapGetSystem ()
-    val black = Gdk.allocateGdkColor(0,0,0)
-    val white = Gdk.allocateGdkColor(65535, 65535, 65535)
-    val _     = Gdk.colormapAllocColor(map, black, false, true)
-    val _     = Gdk.colormapAllocColor(map, white, false, true)
+    val black = Gdk.allocColor(0,0,0)
+    val white = Gdk.allocColor(65535, 65535, 65535)
+    val _     = Gdk.colormapAllocColor(map, black, 0, 1)
+    val _     = Gdk.colormapAllocColor(map, white, 0, 1)
 
     exception Error
     
@@ -72,7 +73,8 @@ local
       | numToHex 15 = #"F"
       | numToHex _  = raise Error
 
-    fun makeHeX col = String.implode [numToHex(col div 16), numToHex(col mod 16)]
+    fun makeHeX col =
+	String.implode [numToHex(col div 16), numToHex(col mod 16)]
 
     fun getPieceColor piece =
 	let
@@ -81,23 +83,23 @@ local
 	    val r      = ((4 - x) * 255) div 4
 	    val g      = ((4 - y) * 255) div 4
 	    val b      = 128
-(*	    val color  = Gdk.allocateGdkColor((r * 256 + r), (g * 256 + r), (b * 256 + b)) *)
-	    val color  = Gdk.allocateGdkColor(0, 0, 0)
-	    val colStr = "RGB:" ^ (makeHeX r) ^ "/" ^ (makeHeX g) ^ "/" ^ (makeHeX b)
+	    val color  = Gdk.allocColor(0, 0, 0)
+	    val colStr = "#" ^(makeHeX r) ^ (makeHeX g) ^ (makeHeX b)
 	    val _      = Gdk.colorParse(colStr, color) 
-	    val _      = Gdk.colormapAllocColor(map, color, false, true) 
+	    val _      = Gdk.colormapAllocColor(map, color, 0, 1)
 	in
 	    color
 	end
 
     fun createCanvas () =
 	let
-	    val canvas = Canvas.new ()
+	    val canvas = GtkCanvas.new ()
 	    val xDim   = (pieceSize * 4 + 1)
 	    val yDim   = (pieceSize * 4 + 1)
 	in
 	    (Gtk.widgetSetUsize(canvas, xDim, yDim);
-	     Canvas.setScrollRegion(canvas, 0.0, 0.0, Real.fromInt xDim, Real.fromInt yDim);
+	     GtkCanvas.setScrollRegion(canvas, 0.0, 0.0,
+				       Real.fromInt xDim, Real.fromInt yDim);
 	     canvas)
 	end
 
@@ -113,21 +115,27 @@ local
 	    val pos3 = (y * 4 + x - 1)
 	    val pos4 = (y * 4 + x + 1)
 	in
-	    if      ((y > 0) andalso isEmpty(itemArr, pos1)) then (0.0, ~1.0, x, y - 1, true)
-	    else if ((y < 3) andalso isEmpty(itemArr, pos2)) then (0.0, 1.0, x, y + 1, true)
-	    else if ((x > 0) andalso isEmpty(itemArr, pos3)) then (~1.0, 0.0, x - 1, y, true)
-	    else if ((x < 3) andalso isEmpty(itemArr, pos4)) then (1.0, 0.0, x + 1, y, true)
+	    if      ((y > 0) andalso isEmpty(itemArr, pos1))
+		then (0.0, ~1.0, x, y - 1, true)
+	    else if ((y < 3) andalso isEmpty(itemArr, pos2))
+                then (0.0, 1.0, x, y + 1, true)
+	    else if ((x > 0) andalso isEmpty(itemArr, pos3))
+                then (~1.0, 0.0, x - 1, y, true)
+	    else if ((x < 3) andalso isEmpty(itemArr, pos4))
+                then (1.0, 0.0, x + 1, y, true)
 	    else (0.0, 0.0, x, y, false)
 	end
 
     fun checkVictory(posArr, i) =
 	(case i < 15 of
 	     false => (print "You win!"; true)
-	   | true  => (Array.sub(posArr, i) = i) andalso checkVictory(posArr, (i + 1)))
+	   | true  => (Array.sub(posArr, i) = i)
+		 andalso checkVictory(posArr, (i + 1)))
 
     fun fillBoard(board as (itemArr, posArr), i, parent) =
 	(case i < 15 of
-	     false => (Array.update(itemArr, 15, NONE); Array.update(posArr, i, 15))
+	     false => (Array.update(itemArr, 15, NONE);
+		       Array.update(posArr, i, 15))
 	   | true  =>
 		 let
 		     val x   = i mod 4
@@ -141,40 +149,52 @@ local
 		     val tX = Real.+(X1, 25.0)
 		     val tY = Real.+(Y1, 25.0)
 
-		     val group = Canvas.itemNew(parent, Canvas.groupGetType (),
-						[va_string "x", va_float X1,
-						 va_string "y", va_float Y1])
-
-		     val box = Canvas.itemNew(group, Canvas.rectGetType (),
-					      [va_string "x1", va_float 0.0,
-					       va_string "y1", va_float 0.0,
-					       va_string "x2", va_float (ItR pieceSize),
-					       va_string "y2", va_float (ItR pieceSize),
-					       va_string "fill_color_gdk",
-					       va_object (getPieceColor i),
-					       va_string "outline_color_gdk", va_object black,
-					       va_string "width_pixels", va_int 0])
-
-		     val text = Canvas.itemNew(group, Canvas.textGetType (),
-					       [va_string "text",
-						va_string (Int.toString (i + 1)),
-						va_string "x", va_float 25.0,
-						va_string "y", va_float 25.0,
-						va_string "font", va_string font,
-						va_string "anchor", va_int Gtk.ANCHOR_CENTER,
-						va_string "fill_color_gdk", va_object black])
+		     val group =
+			 GtkCanvas.itemNew(parent,
+					   GtkCanvas.groupGetType (),
+					   [("x", DOUBLE X1),
+					    ("y", DOUBLE Y1)])
 			 
-		     fun pieceEvent event = serve
+		     val box =
+			 GtkCanvas.itemNew(group, GtkCanvas.rectGetType (),
+					   [("x1", DOUBLE 0.0),
+					    ("y1", DOUBLE 0.0),
+					    ("x2", DOUBLE (ItR pieceSize)),
+					    ("y2", DOUBLE (ItR pieceSize)),
+					    ("fill_color_gdk",
+					     OBJECT (getPieceColor i)),
+					     ("outline_color_gdk",
+					      OBJECT black),
+					     ("width_pixels", INT 0)])
+
+		     val text =
+			 GtkCanvas.itemNew(group, GtkCanvas.textGetType (),
+					   [("text",
+					     STRING (Int.toString (i + 1))),
+					    ("x", DOUBLE 25.0),
+					    ("y", DOUBLE 25.0),
+					    ("font", STRING font),
+					    ("anchor", INT Gtk.ANCHOR_CENTER),
+					    ("fill_color_gdk", OBJECT black)])
+			 
+		     fun pieceEvent [EVENT(event)] = serve
 			 (fn () =>
-			  (case Gdk.getGdkEvent event of
-			       GDK_ENTER_NOTIFY _ => Canvas.itemSet(text, "fill_color_gdk", white)
-			     | GDK_LEAVE_NOTIFY _ => Canvas.itemSet(text, "fill_color_gdk", black)
+			  (case event of
+			       GDK_ENTER_NOTIFY _ =>
+				   GtkCanvas.itemSet(text,
+						     "fill_color_gdk",
+						     OBJECT white)
+			     | GDK_LEAVE_NOTIFY _ =>
+				   GtkCanvas.itemSet(text,
+						     "fill_color_gdk",
+						     OBJECT black)
 			     | GDK_BUTTON_PRESS _ =>
 				   let
-				       val pos                    = Array.sub(posArr, i)
-				       val y                      = pos div 4
-				       val x                      = pos mod 4
-				       val (dx, dy, nx, ny, move) = checkMove(itemArr, x, y)
+				       val pos = Array.sub(posArr, i)
+				       val y   = pos div 4
+				       val x   = pos mod 4
+				       val (dx, dy, nx, ny, move) =
+					   checkMove(itemArr, x, y)
 				   in
 				       (case move of
 					    false => ()
@@ -188,7 +208,7 @@ local
 						    (Array.update(posArr, i, newpos);
 						     Array.update(itemArr, pos, NONE);
 						     Array.update(itemArr, newpos, SOME group);
-						     Canvas.itemMove(group, mx, my);
+						     GtkCanvas.itemMove(group, mx, my);
 						     checkVictory(posArr, 0); ())
 						end)
 				   end
@@ -203,10 +223,10 @@ local
     fun createBoard canvas =
 	let
 	    val posArr  = Array.array(16, 0)
-	    val itemArr = Array.array(16, NONE : object option)
+	    val itemArr = Array.array(16, NONE)
 	    val board   = (itemArr, posArr)
 	in
-	    (fillBoard(board, 0, Canvas.root canvas); board)
+	    (fillBoard(board, 0, GtkCanvas.root canvas); board)
 	end
     
     val board = Hole.hole ()
@@ -218,7 +238,7 @@ local
 
     fun makeMove pos =
 	let
-	    val dir = rand () mod 4
+	    val dir = Random.int 4
 	in
 	    if      ((dir = 0) andalso (pos > 3))          then (0, ~1)
 	    else if ((dir = 1) andalso (pos < 12))         then (0, 1)
@@ -252,17 +272,17 @@ local
 		      Array.update(itemArr, oldpos, NONE);
 		      Array.update(posArr, posIndex, oldpos);
 		      Array.update(posArr, oldposIndex, pos);
-		      Canvas.itemMove(valOf item, dx, dy);
-		      Canvas.updateNow canvas;
+		      GtkCanvas.itemMove(valOf item, dx, dy);
+		      GtkCanvas.updateNow canvas;
 		      moveSpot (canvas, board, (i + 1), oldpos))
 		 end)
 
     fun scrambleEvent canvas (board as (itemArr, posArr)) _ = serve
-	(fn () => (srand 0; moveSpot(canvas, board, 0, findSpot(itemArr, 0))))
+	(fn () => moveSpot(canvas, board, 0, findSpot(itemArr, 0)))
 
     fun fifteen () =
 	let
-	    val vbox      = Gtk.vboxNew(false, 4)
+	    val vbox      = Gtk.vboxNew(0, 4)
  	    val alignment = Gtk.alignmentNew(0.5, 0.5, 0.0, 0.0)
 	    val frame     = Gtk.frameNew "" 
 	    val canvas    = createCanvas ()
@@ -270,7 +290,7 @@ local
 	in
 	    (Gtk.containerSetBorderWidth(vbox, 4);
 	     Gtk.widgetShow vbox;
-	     Gtk.boxPackStart(vbox, alignment, true, true, 0);
+	     Gtk.boxPackStart(vbox, alignment, 1, 1, 0);
 	     Gtk.widgetShow alignment;
 	     Gtk.frameSetShadowType(frame, Gtk.SHADOW_IN);
 	     Gtk.containerAdd(alignment, frame);
@@ -278,7 +298,7 @@ local
 	     Gtk.containerAdd(frame, canvas);
 	     Gtk.widgetShow canvas;
 	     Hole.fill(board, createBoard canvas);
-	     Gtk.boxPackStart(vbox, button, false, false, 0);
+	     Gtk.boxPackStart(vbox, button, 0, 0, 0);
 	     Gtk.signalConnect(button, "clicked", scrambleEvent canvas board);
 	     Gtk.widgetShow button;
 	     vbox)
@@ -286,18 +306,21 @@ local
 
     fun main () =
 	let
-	    val window   = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val notebook = Gtk.notebookNew ()
-	    val f_page   = fifteen ()
-	    val f_label  = Gtk.labelNew "Fifteen"
+	    val window      = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val deleteEvent = fn _ => OS.Process.exit OS.Process.success
+	    val notebook    = Gtk.notebookNew ()
+	    val f_page      = fifteen ()
+	    val f_label     = Gtk.labelNew "Fifteen"
 	in
-	    (Gtk.containerSetBorderWidth(window, 4);
+	    (Gtk.signalConnect(window, "delete-event", deleteEvent);
+	     Gtk.containerSetBorderWidth(window, 4);
              Gtk.windowSetTitle(window, "Canvas Demo");
 	     Gtk.containerAdd(window, notebook);
-	     Gtk.notebookSetShowTabs(notebook, true);
+	     Gtk.notebookSetShowTabs(notebook, 1);
 	     Gtk.notebookAppendPage(notebook, f_page, f_label);
 	     Gtk.widgetShowAll window)
 	end
 in
-    val _ = main () handle ex => Inspector.inspect ("Got unexpected exception", ex)
+    val _ = main ()
+	handle ex => Inspector.inspect ("Got unexpected exception", ex)
 end
