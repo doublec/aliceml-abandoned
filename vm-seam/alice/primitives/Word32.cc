@@ -69,12 +69,14 @@ WORD32_WORD_TO_BOOL_OP(Word32_opgreaterEq, >=)
 DEFINE2(Word32_opshl) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
+  if (j > WORD_PRECISION) j = WORD_PRECISION; // see comment in Word.icc
   RETURN_WORD32(i << j);
 } END
 
 DEFINE2(Word32_opshr) {
   DECLARE_WORD32(i, x0);
   DECLARE_STANDARD_WORD(j, x1);
+  if (j > WORD_PRECISION) j = WORD_PRECISION; // see comment in Word.icc
   RETURN_WORD32(i >> j);
 } END
 
