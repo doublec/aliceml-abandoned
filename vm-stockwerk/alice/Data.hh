@@ -20,10 +20,7 @@
 #endif
 
 #include <cstring>
-#include "store/Store.hh"
-
-#define MAX_SIZE(t) \
-  (MAX_BIGBLOCKSIZE * sizeof(u_int) / sizeof(t))
+#include "generic/String.hh"
 
 class Transform;
 
@@ -235,40 +232,6 @@ public:
   }
 };
 
-class String: private Chunk {
-public:
-  static const u_int maxSize = MAX_SIZE(char);
-
-  using Chunk::ToWord;
-
-  static String *New(u_int len) {
-    return static_cast<String *>(Store::AllocChunk(len));
-  }
-  static String *New(const char *str, u_int len) {
-    Chunk *chunk = Store::AllocChunk(len);
-    std::memcpy(chunk->GetBase(), str, len);
-    return static_cast<String *>(chunk);
-  }
-  static String *New(const char *str) {
-    return New(str, strlen(str));
-  }
-  static String *FromWord(word x) {
-    Chunk *chunk = Store::WordToChunk(x);
-    return static_cast<String *>(chunk);
-  }
-  static String *FromWordDirect(word x) {
-    Chunk *chunk = Store::DirectWordToChunk(x);
-    return static_cast<String *>(chunk);
-  }
-
-  u_int GetSize() {
-    return Chunk::GetSize();
-  }
-  u_char *GetValue() {
-    return reinterpret_cast<u_char *>(GetBase());
-  }
-};
-
 class TagVal: private Block {
 public:
   using Block::ToWord;
@@ -353,35 +316,6 @@ public:
   }
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
-  }
-};
-
-class WideString: private Chunk {
-public:
-  static const u_int maxSize = MAX_SIZE(wchar_t);
-
-  using Chunk::ToWord;
-
-  static WideString *New(wchar_t *str, u_int len) {
-    u_int nchars = len * sizeof(wchar_t);
-    Chunk *chunk = Store::AllocChunk(nchars);
-    std::memcpy(chunk->GetBase(), str, nchars);
-    return static_cast<WideString *>(chunk);
-  }
-  static WideString *FromWord(word x) {
-    Chunk *chunk = Store::WordToChunk(x);
-    return static_cast<WideString *>(chunk);
-  }
-  static WideString *FromWordDirect(word x) {
-    Chunk *chunk = Store::DirectWordToChunk(x);
-    return static_cast<WideString *>(chunk);
-  }
-
-  u_int GetSize() {
-    return Chunk::GetSize() / sizeof(wchar_t);
-  }
-  wchar_t *GetValue() {
-    return reinterpret_cast<wchar_t *>(GetBase());
   }
 };
 
