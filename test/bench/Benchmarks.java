@@ -607,7 +607,7 @@ final class FibThread extends Thread {
     public static void runbench(int n) {
 	FibThread aux = new FibThread(n);
 	int res = aux.fibthread(n);
-	System.out.print("fibthread(" + n + ") = " + res + "\n");
+	//System.out.print("fibthread(" + n + ") = " + res + "\n");
     }
 }
 

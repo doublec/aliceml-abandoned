@@ -1,14 +1,14 @@
 public class BenchmarksST {
   public static void main(String[] args) 
   {
-      int times = 5;
+      int times = 8;
       runtimes("fib", times, 31);
       runtimes("tak", times, 8);
       runtimes("nrev", times, 3000);
-      runtimes("quick", times, 30);
-      runtimes("quickho", times, 30);
-      runtimes("quickarray", times, 30);
-      runtimes("queens", times, 10);
+//        runtimes("quick", times, 30);
+//        runtimes("quickho", times, 30);
+//        runtimes("quickarray", times, 30);
+//        runtimes("queens", times, 10);
       runtimes("derivvirt", times, 30);
       System.exit(0);
   }
