@@ -414,6 +414,9 @@ Interpreter::Result LoadInterpreter::Run(word, TaskStack *taskStack) {
   LoadFrame *frame = LoadFrame::FromWord(taskStack->GetFrame());
   Chunk *key      = frame->GetString();
   taskStack->PopFrame();
+  if (BootLinker::LookupComponent(key) != INVALID_POINTER) {
+    CONTINUE(Interpreter::EmptyArg());
+  }
   BootLinker::Trace("[boot-linker] loading", key);
   LinkInterpreter::PushFrame(taskStack, key);
   taskStack->PushFrame(frame->ToWord());
@@ -434,6 +437,8 @@ const char *LoadInterpreter::ToString(word args, TaskStack *taskStack) {
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
 word BootLinker::componentTable;
+word BootLinker::keyQueue;
+u_int BootLinker::numberOfEntries;
 u_int BootLinker::traceFlag;
 char *BootLinker::aliceHome;
 
@@ -441,6 +446,9 @@ void BootLinker::Init(char *home, prim_table *builtins) {
   componentTable = HashTable::New(HashTable::BLOCK_KEY,
 				  INITIAL_TABLE_SIZE)->ToWord();
   RootSet::Add(componentTable);
+  keyQueue = Queue::New(19)->ToWord();
+  RootSet::Add(keyQueue);
+  numberOfEntries = 0;
   aliceHome = home;
   // Initialize Interpreters
   ApplyInterpreter::Init();
@@ -458,12 +466,30 @@ void BootLinker::Init(char *home, prim_table *builtins) {
 }
 
 void BootLinker::Print(Chunk *c) {
-  fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
+  fprintf(stderr, "%.*s\n", (int) c->GetSize(), c->GetBase());
 }
 
 void BootLinker::Trace(const char *prefix, Chunk *key) {
   if (traceFlag) {
     fprintf(stderr, "%s '%.*s'\n", prefix, (int) key->GetSize(), key->GetBase());
+  }
+}
+
+void BootLinker::EnterComponent(Chunk *key, word sign, word str) {
+  Assert(!GetComponentTable()->IsMember(key->ToWord()));
+  GetComponentTable()->InsertItem(key->ToWord(),
+				  Component::New(sign, str)->ToWord());
+  GetKeyQueue()->Enqueue(key->ToWord());
+  numberOfEntries++;
+}
+
+Component *BootLinker::LookupComponent(Chunk *key) {
+  HashTable *componentTable = GetComponentTable();
+  word keyWord = key->ToWord();
+  if (componentTable->IsMember(keyWord)) {
+    return Component::FromWord(componentTable->GetItem(keyWord));
+  } else {
+    return INVALID_POINTER;
   }
 }
 
