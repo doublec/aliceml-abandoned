@@ -59,26 +59,23 @@ void AliceLanguageLayer::Init() {
   String *alicePrimitiveValue = String::New("Alice.primitive.value");
   TransformNames::primitiveValue = alicePrimitiveValue->ToWord();
   RootSet::Add(TransformNames::primitiveValue);
-  Unpickler::RegisterHandler(static_cast<Chunk *>(alicePrimitiveValue),
-			     AlicePrimitiveValueHandler);
+  Unpickler::RegisterHandler(alicePrimitiveValue, AlicePrimitiveValueHandler);
 
   String *alicePrimitiveFunction = String::New("Alice.primitive.function");
   TransformNames::primitiveFunction = alicePrimitiveFunction->ToWord();
   RootSet::Add(TransformNames::primitiveFunction);
-  Unpickler::RegisterHandler(static_cast<Chunk *>(alicePrimitiveFunction),
+  Unpickler::RegisterHandler(alicePrimitiveFunction,
 			     AlicePrimitiveFunctionHandler);
 
   String *aliceFunction = String::New("Alice.function");
   TransformNames::function = aliceFunction->ToWord();
   RootSet::Add(TransformNames::function);
-  Unpickler::RegisterHandler(static_cast<Chunk *>(aliceFunction),
-			     AliceFunctionHandler);
+  Unpickler::RegisterHandler(aliceFunction, AliceFunctionHandler);
 
   String *aliceConstructor = String::New("Alice.constructor");
   TransformNames::constructor = aliceConstructor->ToWord();
   RootSet::Add(TransformNames::constructor);
-  Unpickler::RegisterHandler(static_cast<Chunk *>(aliceConstructor),
-			     AliceConstructorHandler);
+  Unpickler::RegisterHandler(aliceConstructor, AliceConstructorHandler);
 
   Constructor::Init();
   Guid::Init();
