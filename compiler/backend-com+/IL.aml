@@ -235,7 +235,7 @@ structure IL :> IL =
 	fun eliminateDeadCode (Label label::rest) =
 	    (case Map.lookup (map, label) of
 		 SOME n => (size := n; Label label::peephole rest)
-	       | NONE => eliminateDeadCode rest)
+	       | NONE => (Map.insert (map, label, ~1); eliminateDeadCode rest))
 	  | eliminateDeadCode (_::rest) = eliminateDeadCode rest
 	  | eliminateDeadCode nil = nil
 	and peephole (Dup::Pop::rest) = (push 1; pop 1; peephole rest)
@@ -311,7 +311,7 @@ structure IL :> IL =
 		       if tryEndLabel <> catchLabel then
 			   Map.insertDisjoint (map, tryEndLabel, ~1)
 		       else ();
-		       Map.insertDisjoint (map, catchEndLabel, ~1))) @
+		       Map.insertDisjoint (map, catchEndLabel, 0))) @
 		     instr::peephole rest
 	       | Unbox _ => (pop 1 before push 1) @ instr::peephole rest
 	       | Xor => (pop 2 before push 1) @ instr::peephole rest)
