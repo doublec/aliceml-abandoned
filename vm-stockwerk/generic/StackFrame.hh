@@ -43,6 +43,7 @@ typedef enum {
   ENTER_FRAME,
   LINK_FRAME,
   LOAD_FRAME,
+  BOOT_FRAME,
   // Alice Frames //--** should be in the Alice Language Layer
   ABSTRACT_CODE_FRAME,
   ABSTRACT_CODE_HANDLER_FRAME,
