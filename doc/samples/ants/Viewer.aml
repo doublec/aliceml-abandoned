@@ -178,6 +178,8 @@ struct
             val mcos = ~cos
             val msin = ~sin
 
+            val gray = allocColor' (0.80, 0.80, 0.80)
+
             fun drawTrail direction (gc, pixmap, x, y, c) =
                 let 
                     val (dx, dy) =
@@ -193,10 +195,10 @@ struct
                     val ddx = round (dx * realTileSize * 0.75 )
                     val ddy = round (dy * realTileSize * 0.75 )
                  in
+                     Gdk.gcSetForeground (gc, gray);
+                     Gdk.drawLine (pixmap, gc, x0, y0, x0+ddx, y0+ddy) ;
                      Gdk.gcSetForeground (gc, c);
-                      Gdk.drawRectangle (pixmap, gc, false, x0-1, y0-1, 2, 2) ;
-                      Gdk.drawLine (pixmap, gc, x0, y0, x0+ddx, y0+ddy)
-                     
+                     Gdk.drawPoint (pixmap, gc, x0, y0)                     
                  end
 
             fun getDirection m =
