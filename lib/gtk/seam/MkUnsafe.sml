@@ -80,6 +80,41 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		List.concat (map addEnum (ret::(map getType arglist)))
 	end
 
+        local
+	    val classes = ref nil
+	    exception NoUnref
+	    val deleteObjects = ["GtkTextIter", "GtkTreeIter",
+				 "GdkColor", "GdkPoint", "GdkRectangle"]
+
+	    fun buildClassList' (STRUCT (name,(_,t)::_)) =
+		(case removeTypeRefs t of
+		     STRUCTREF sup => ( classes := ((sup,name)::(!classes)) )
+		   | _             => () 
+		)
+	      | buildClassList' _ = ()
+
+	    fun getParentClass name nil = raise NoUnref
+	      | getParentClass name ((sup, n)::cs) = 
+		if n=name then sup else getParentClass name cs
+
+	    fun getUnrefFun' "GObject"   = ("GtkCore.GObjectUnref", true)
+	      | getUnrefFun' "GtkObject" = ("GtkCore.GtkObjectUnref", true)
+	      | getUnrefFun' "GtkWidget" = ("GtkCore.GtkWidgetUnref", true)
+	      | getUnrefFun' name        = 
+		  if List.exists (fn n=>n=name) deleteObjects
+		      then ("GtkCore.DeleteUnref", false)
+		      else getUnrefFun' 
+ 			   (Util.cutPrefix("_",getParentClass name (!classes)))
+	in
+	    fun buildClassList tree = List.app buildClassList' tree
+	    fun getUnrefFun t = 
+		(case removeTypeRefs t of 
+		     STRUCTREF name => getUnrefFun' (Util.cutPrefix("_",name))
+		   | _              => raise NoUnref)
+		     handle _ => ("GtkCore.NoUnref", false)
+	end
+	    
+
 	(* SIGNATURE CODE GENERATION *)
 	fun sigEntry(funName, ret, arglist, doinout) =
         let
@@ -110,9 +145,14 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		    ENUMREF ename =>
 			(if toNative then ename^"ToReal" else "RealTo"^ename)
 			^" "^vname
-		  | POINTER _     =>
+		  | POINTER t'    =>
 			if toNative then vname else 
-			    ("GtkCore.addObject("^vname^",fn _ => (),false)")
+			let
+			    val (unref, hasSignals) = getUnrefFun t'
+			in
+			    "GtkCore.addObject("^vname^","^unref^","^
+			    (if hasSignals then "true" else "false")^")"
+			end
 	         | _ => vname)
 	in
 	    if generateSimple
@@ -158,7 +198,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		        (map prepare (List.filter checkStructMember members))
 		end
 	    in
-	        ( List.concat (map (call sigEntry) [true,false]),
+		( List.concat (map (call sigEntry) [true,false]),
 		  List.concat (map (call wrapperEntry) [true,false]) )
 	    end
 	  | processItem (UNION (unionName, members)) =
@@ -169,6 +209,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
         fun create tree =
 	let
 	    val _ = print (Util.separator("Generating "^unsafeName))
+	    val _ = buildClassList tree
 	    val myItems' = List.filter (Util.funNot Special.isIgnored) tree
 	    val myItems = Util.filters [isItemOfSpace space, checkItem,
 				        Util.funNot Special.isIgnoredSafe] 

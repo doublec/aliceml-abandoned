@@ -13,6 +13,12 @@ struct
     type arg = GtkTypes.arg
     type callBackFunction = object * arg list -> unit
 
+    val GtkWidgetUnref = NativeGtk.widgetUnref
+    val GtkObjectUnref = NativeGtk.objectUnref
+    val GObjectUnref = NativeGtk.gObjectUnref
+    val DeleteUnref = NativeGtk.deleteUnref
+    val NoUnref = fn _ => ()
+
     local
 	val weakMap = 
 	    ref nil : ( object * (object->unit) * int list ref ) list ref
@@ -65,8 +71,6 @@ struct
 	fun signalDisconnect (obj, connid) =
 	    ( NativeGtk.signalDisconnect(obj,connid) ;
 	      removeFromSignalTable connid )
-	fun signalDisconnectByFunc (obj, callback) = ()
-             (*signalDisconnect(obj,findConnID(obj,callback))*) 
     end
 
     local
