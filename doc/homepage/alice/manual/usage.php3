@@ -84,7 +84,7 @@
     point to the installation directory of the mozart system and alice system, respectively.</P>
 
   <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.3.
-    Both of them have their advantages and disatvantages.
+    Both of them have their advantages and disadvantages.
     (Note: Within PSL the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
 
   <P>To use ml mode version 3.3, install this
