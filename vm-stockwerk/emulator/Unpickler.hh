@@ -23,12 +23,14 @@ class Unpickler {
 public:
   // Exceptions
   static word Corrupt;
-  // Unpickler Functions
-  static Interpreter::Result Unpack(Chunk *s, TaskStack *taskStack);
-  // Excpect c filename style
-  static Interpreter::Result Load(Chunk *filename, TaskStack *taskStack);
+  static word aliceFunctionTransformName;
+
   // Unpickler Static Constructor
   static void Init();
+
+  // Unpickler Functions
+  static Interpreter::Result Unpack(Chunk *string, TaskStack *taskStack);
+  static Interpreter::Result Load(Chunk *filename, TaskStack *taskStack);
 };
 
 #endif

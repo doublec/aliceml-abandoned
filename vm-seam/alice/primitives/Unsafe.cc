@@ -13,10 +13,11 @@
 //
 
 #include "emulator/Authoring.hh"
-#include "emulator/Transform.hh"
+#include "emulator/Tuple.hh"
 #include "emulator/ConcreteCode.hh"
 #include "emulator/Closure.hh"
-#include "emulator/Tuple.hh"
+#include "emulator/Transform.hh"
+#include "emulator/Unpickler.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
 
 DEFINE2(Unsafe_Array_sub) {
@@ -56,8 +57,8 @@ DEFINE1(Unsafe_getPrimitiveByName) {
 DEFINE2(Unsafe_makeClosure) {
   word function = x0;
   DECLARE_VECTOR(vector, x1);
-  //--** sharing of names
-  Chunk *name = static_cast<Chunk *>(String::New("Alice.function"));
+  Chunk *name =
+    Store::DirectWordToChunk(Unpickler::aliceFunctionTransformName);
   Transform *transform = Transform::New(name, function);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, 2);
