@@ -17,7 +17,6 @@ import structure Color      from "../../common/Color"
 import structure Config     from "../../server/Config"
 
 import structure Wait       from "Wait"
-import structure TextWindow from "TextWindow"
 
 
 import val log              from "../../common/Log"

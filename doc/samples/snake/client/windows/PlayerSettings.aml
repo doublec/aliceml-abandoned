@@ -17,7 +17,7 @@ import structure Inspector  from "x-alice:/lib/tools/Inspector"
 import structure Color      from "../../common/Color"
 
 import structure Wait       from "Wait"
-import structure TextWindow from "TextWindow"
+import structure Text       from "Text"
 
 
 fun colorToGdkColor c =
@@ -195,7 +195,7 @@ struct
 
 		in
 		    if Gtk.entryGetText nameText = ""
-			then TextWindow.mkTextWindow 
+			then Text.mkTextWindow 
 			    ("ERROR!!", "Please enter a name!")
 		    else
 			(Gtk.widgetDestroy playerSettings;

@@ -107,10 +107,15 @@ struct
     val windowWidth2  = windowWidth  div 2
 	
     fun initialize () = 
-	{
-	 canvas = GtkCanvas.new 0,
-	 state  = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY)))
-	 }
+        let
+            val canvas  = GtkCanvas.new 0
+        in
+            Gtk.layoutFreeze canvas;
+	    {
+	        canvas,
+	        state  = ref (Array2.array(0, 0, (Gtk.null (), P.EMPTY)))
+	    }
+        end
 	
     fun toObject ({canvas, ... } : arena_widget) : Gtk.object  = canvas
 	
@@ -432,7 +437,9 @@ struct
 				        Real.round y1, 
 				        Real.round x2, 
 				        Real.round y2)
-            else ()
+            else ();
+            Gtk.layoutThaw obj;
+            Gtk.layoutFreeze obj
 	end
 
 end

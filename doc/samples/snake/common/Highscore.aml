@@ -74,8 +74,3 @@ struct
 
 end
 
-val _ = Pickle.save ("Highscore.ozf", pack (structure Highscore = Highscore) 
-		                        :> (structure Highscore : HIGHSCORE))
-    
-
-val _ = OS.Process.exit OS.Process.success

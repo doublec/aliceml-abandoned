@@ -14,8 +14,6 @@ import structure Color   from "Color"
 
 signature HIGHSCORE =
 sig
-    type highscore
-    type t = highscore
 
     type entry = 
 	{
@@ -25,6 +23,9 @@ sig
 	 player:     int,
 	 level:      int
 	 }
+
+    type highscore = entry list
+    type t = highscore
 
 
     type points = 
