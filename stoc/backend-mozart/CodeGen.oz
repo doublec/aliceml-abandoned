@@ -272,15 +272,15 @@ define
 	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
 			    {TranslateRegion Region State} VTl)
       [] sharedStm(_ Body Stamp) then
-	 case {Dictionary.condGet State.shareDict Stamp unit} of unit then
+	 if {Dictionary.member State.shareDict Stamp} then
+	    VHd = {Dictionary.get State.shareDict Stamp}
+	 else
 	    {Dictionary.put State.shareDict Stamp VHd}
 	    case {TranslateBody Body $ nil State ReturnReg} of nil then
 	       VHd = nil
 	    elseof VBody then
 	       VHd = vShared(_ _ {State.cs newLabel($)} VBody)
 	    end
-	 elseof VInstr then
-	    VHd = VInstr
 	 end
 	 VTl = nil
       [] returnStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl State}
