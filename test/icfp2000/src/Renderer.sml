@@ -1,43 +1,68 @@
-signature VECT =
+signature VECTOR =
     sig
-	type t = real * real * real
+	type vector = real * real * real
+	type row = real * real * real * real
+	type matrix = row * row * row
 
-	val add: t * t -> t
-	val sub: t * t -> t
-	val scale: real * t -> t
-	val dotProd: t * t -> real
-	val vecProd: t * t -> t
-	val det: t * t * t -> real
+	val add: vector * vector -> vector
+	val sub: vector * vector -> vector
+	val scale: real * vector -> vector
+	val dotProd: vector * vector -> real
+	val transformPoint: matrix * vector -> vector
+	val transformVector: matrix * vector -> vector
+	val length: vector -> real
+	val toUnit: vector -> vector
     end
 
-structure Vect :> VECT =
+structure Vector :> VECTOR =
     struct
-	type t = real * real * real
+	type vector = real * real * real
+	type row = real * real * real * real
+	type matrix = row * row * row
 
-	fun add ((ax, ay, az), (bx, by, bz)): t = (ax + bx, ay + by, az + bz)
+	fun add ((ax, ay, az), (bx, by, bz)): vector =
+	    (ax + bx, ay + by, az + bz)
 
-	fun sub ((ax, ay, az), (bx, by, bz)): t = (ax - bx, ay - by, az - bz)
+	fun sub ((ax, ay, az), (bx, by, bz)): vector =
+	    (ax - bx, ay - by, az - bz)
 
-	fun scale (k, (x, y, z)): t = (k * x, k * y, k * z)
+	fun scale (k, (x, y, z)): vector = (k * x, k * y, k * z)
 
 	fun dotProd ((ax, ay, az), (bx, by, bz)): real =
 	    ax * bx + ay * by + az * bz
 
-	fun vecProd ((ax, ay, az), (bx, by, bz)): t =
-	    (ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx)
+	fun transformPoint (((a11, a12, a13, a14),
+			     (a21, a22, a23, a24),
+			     (a31, a32, a33, a34)), (b1, b2, b3)): vector =
+	    (a11 * b1 + a12 * b2 + a13 * b3 + a14,
+	     a21 * b1 + a22 * b2 + a23 * b3 + a24,
+	     a31 * b1 + a32 * b2 + a33 * b3 + a34)
 
-	fun det ((ax, ay, az), (bx, by, bz), (cx, cy, cz)): real =
-	    az * by * cz + bx * cy * az + cx * ay * bz -
-	    ax * cy * bz - cx * by * az - bx * ay * cz
+	fun transformVector (((a11, a12, a13, _),
+			      (a21, a22, a23, _),
+			      (a31, a32, a33, _)), (b1, b2, b3)): vector =
+	    (a11 * b1 + a12 * b2 + a13 * b3,
+	     a21 * b1 + a22 * b2 + a23 * b3,
+	     a31 * b1 + a32 * b2 + a33 * b3)
+
+	fun length (x, y, z): real = Math.sqrt (x * x + y * y + z * z)
+
+	fun toUnit (x, y, z) =
+	    let
+		val k = Math.sqrt (x * x + y * y + z * z)
+	    in
+		(k * x, k * y, k * z)
+	    end
     end
 
 structure Renderer (*:> RENDERER*) =
     struct
-    type angle   = real
-    type point   = real * real * real
-    type vector  = real * real * real
-    type stretch = vector * vector * vector
-    type color   = {red : real, green : real, blue : real}
+    type angle  = real
+    type point  = real * real * real
+    type vector = real * real * real
+    type row    = real * real * real * real
+    type matrix = row * row * row
+    type color  = {red : real, green : real, blue : real}
 
     datatype plane_face    = PlaneSurface
     datatype sphere_face   = SphereSurface
@@ -54,12 +79,11 @@ structure Renderer (*:> RENDERER*) =
 	    , phong :    real }
 
     datatype object =
-	      Plane      of plane_face surface * vector * real
-	    | Sphere     of sphere_face surface * point * real
-	    | Ellipsoid  of sphere_face surface * point * stretch
-	    | Cube       of cube_face surface * point * stretch     (* Tier 2 *)
-	    | Cylinder   of cylinder_face surface * point * stretch (* Tier 2 *)
-	    | Cone       of cone_face surface * point * stretch     (* Tier 2 *)
+	      Plane      of matrix * matrix * plane_face surface
+	    | Sphere     of matrix * matrix * sphere_face surface
+	    | Cube       of matrix * matrix * cube_face surface     (* Tier 2 *)
+	    | Cylinder   of matrix * matrix * cylinder_face surface (* Tier 2 *)
+	    | Cone       of matrix * matrix * cone_face surface     (* Tier 2 *)
 	    | Union      of object * object
 	    | Intersect  of object * object                         (* Tier 3 *)
 	    | Difference of object * object                         (* Tier 3 *)
@@ -116,57 +140,152 @@ structure Renderer (*:> RENDERER*) =
 	  | diff (nil, _) = nil
 	  | diff (_, _) = raise Crash
 
-	fun intersect (Plane (surface, normal, dist), base', dir') =
+	fun intersect (Plane (o2w, w2o, surface), base, dir) =
 	    let
-		val d = Vect.dotProd (normal, dir')
+		val (_, dy, _) = Vector.transformVector (w2o, dir)
 	    in
-		if d >= 0.0 then nil
+		if dy >= 0.0 then nil
 		else
-		    [(~(Vect.dotProd (normal, base') + dist) / d,
-		      (surface PlaneSurface, fn _ => normal), Entry)]
-	    end
-	  | intersect (Sphere (surface, base, r), base', dir') =
-	    let
-		val u = Vect.sub (base, base')
-		val lambda = Vect.dotProd (dir', u)
-		val e = Vect.dotProd (dir', dir')
-		val d = lambda * lambda - e * (Vect.dotProd (u, u) - r * r)
-	    in
-		if d >= 0.0 then
 		    let
-			val lambda0 = lambda / e
-			val x = (surface SphereSurface,
-				 fn v => Vect.sub (v, base))
+			val (_, y, _) = Vector.transformPoint (w2o, base)
 		    in
-			if lambda0 - d >= 0.0 then
-			    [(lambda0 - d, x, Entry), (lambda0 + d, x, Exit)]
-			else if lambda0 + d >= 0.0 then
-			    [(lambda0 + d, x, Entry), (lambda0 - d, x, Exit)]
-			else nil
+			[(y / ~dy,
+			  (surface PlaneSurface,
+			   fn _ =>
+			   Vector.transformVector (o2w, (0.0, 1.0, 0.0))),
+			  Entry)]
 		    end
-		else nil
 	    end
-	  | intersect (Union (obj1, obj2), base', dir') =
-	    union (merge (intersect (obj1, base', dir'),
-			  intersect (obj2, base', dir')), Outside)
-	  | intersect (Intersect (obj1, obj2), base', dir') =
-	    inter (merge (intersect (obj1, base', dir'),
-			  intersect (obj2, base', dir')), Outside)
-	  | intersect (Difference (obj1, obj2), base', dir') =
-	    diff (merge (intersect (obj1, base', dir'),
-			 intersect (obj2, base', dir')), Outside)
+	  | intersect (Sphere (o2w, w2o, surface), base, dir) =
+	    let
+		val base' = Vector.transformPoint (w2o, base)
+		val dir' = Vector.transformVector (w2o, dir)
+		val mtca = Vector.dotProd (dir', base')
+	    in
+		if mtca > 0.0 then nil
+		else
+		    let
+			val d2 = Vector.dotProd (base', base') - mtca * mtca
+		    in
+			if d2 > 1.0 then nil
+			else
+			    let
+				val tca = ~mtca
+				val thc = Math.sqrt (1.0 - d2)
+				val x = (surface SphereSurface,
+					 fn v =>
+					 Vector.transformVector
+					 (o2w, Vector.sub (v, base')))
+				val k = Vector.length dir'
+			    in
+				[((tca - thc) / k, x, Entry),
+				 ((tca + thc) / k, x, Exit)]
+			    end
+		    end
+	    end
+	  | intersect (Cube (o2w, w2o, surface), base, dir) =
+	    raise Crash   (*UNFINISHED*)
+	  | intersect (Cylinder (o2w, w2o, surface), base, dir) =
+	    raise Crash   (*UNFINISHED*)
+	    (* Possibilities:
+	     *    2 intersections with bottom (dy = 0)
+	     *    1 intersection with bottom
+	     *         1 intersection with top - order!
+	     *         1 intersection with side - order!
+	     *         0 intersections with top/side (tangential)
+	     *    0 intersections with bottom
+	     *         2 intersections with top (dy = 0)
+	     *         1 intersection with top
+             *              1 intersection with side - order!
+	     *              0 intersections with top/side
+	     *         0 intersection with top
+	     *              (runs along side: cannot happen)
+	     *              2 intersections with side
+	     *              1 intersections with side (tangential)
+	     *              0 intersections with side
+	     *)
+(*
+	    let
+		val base' as (x, y, z) = Vector.transformPoint (w2o, base)
+		val dir' as (dx, dy, dz) = Vector.transformVector (w2o, dir)
+	    in
+		if Real.= (dy, 0.0) then
+		    if y > 0.0 andalso y < 1.0 then
+		    else if Real.= (y, 0.0) then
+		    else if Real.= (y, 1.0) then
+		    else nil
+		else
+		    let   (* test intersection with bottom *)
+			val k = y / dy
+			val bot_x = x + k * dx
+			val bot_z = z + k * dz
+		    in
+			if bot_x * bot_x + bot_z * bot_z <= 1.0 then
+			    k is intersection; test with top/side
+			else   (* test intersection with top *)
+			    let
+				val k = (1.0 - y) / dy
+				val top_x = x + k * dx
+				val top_z = z + k * dz
+			    in
+				if top_x * top_x + top_z * top_z <= 1.0 then
+				    k is intersection; test with side
+				else   (* test intersection with top *)
+			    end
+		    end
+	    end
+*)
+	  | intersect (Cone (o2w, w2o, surface), base, dir) =
+	    raise Crash   (*UNFINISHED*)
+	  | intersect (Union (obj1, obj2), base, dir) =
+	    union (merge (intersect (obj1, base, dir),
+			  intersect (obj2, base, dir)), Outside)
+	  | intersect (Intersect (obj1, obj2), base, dir) =
+	    inter (merge (intersect (obj1, base, dir),
+			  intersect (obj2, base, dir)), Outside)
+	  | intersect (Difference (obj1, obj2), base, dir) =
+	    diff (merge (intersect (obj1, base, dir),
+			 intersect (obj2, base, dir)), Outside)
+
+	fun isShadowed ((k', _, Entry)::_, k: real) = k < k'
+	  | isShadowed ((_, _, Exit)::_, _) = raise Crash
+	  | isShadowed (nil, _) = true
+
+	fun intensity (Directional (color, dir), scene, point) =
+	    if List.null (intersect (scene, point, dir)) then SOME color
+	    else NONE
+	  | intensity (Point (color, pos), scene, point) =
+	    let
+		val dir = Vector.sub (pos, point)
+	    in
+		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
+		else SOME color   (*--** attenuation *)
+	    end
+	  | intensity (Spot (color, pos, at, cutoff, exp), scene, point) =
+	    let
+		val dir = Vector.sub (pos, point)
+	    in
+		(*--** at, cutoff, exp *)
+		if isShadowed (intersect (scene, point, dir), 1.0) then NONE
+		else SOME color   (*--** attenuation *)
+	    end
 
 	fun render {ambient, lights, scene, vision, width, height, depth} =
 	    let
 		fun trace (base, dir) =
 		    case intersect (scene, base, dir) of
-			(lambda, (surface, f), Entry)::_ =>
+			(k, (surface, f), Entry)::_ =>
 			    let
 				val p =   (* intersection point *)
-				    Vect.add (base, Vect.scale (lambda, dir))
-				val n = f p   (* normal vector on surface *)
+				    Vector.add (base, Vector.scale (k, dir))
+				val n =   (* unit normal vector on surface *)
+				    Vector.toUnit (f p)
 				val {color = c, diffuse = kd,
-				     specular = ks, phong = n} = surface p
+				     specular = ks, phong = exp} = surface p
+				val intensities =
+				    List.mapPartial
+				    (fn light => intensity (light, scene, p))
+				    lights
 			    in
 				ambient (*UNF*)
 			    end
