@@ -3,8 +3,8 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* Indent-selection inserts whitespace at beginning of line, not before first
-  character
+* File not saved message appears twice
+* Not all dialogue buttons have icons
 * Reconsider implicit imports
 * Proper save changes treatment at quit?
 * Cut&Paste with other apps doesn't work properly although it should :-(

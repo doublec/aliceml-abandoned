@@ -104,33 +104,6 @@ structure GuiMain =
             String.tabulate(line-1, fn _ => #"\n") ^
 	    String.tabulate(col, fn _ => #" ") ^ str
 
-	fun getColFromOffset(iter, 0, col) = col
-	  | getColFromOffset(iter, offset, col) =
-	    let
-		val c = Gtk.textIterGetChar iter
-	    in
-		if c = Char.ord #"\t" then
-		    let
-			val tabjump = 8 - col mod 8
-		    in
-			Gtk.textIterForwardChar iter;
-			getColFromOffset(iter, offset-1, col+tabjump)
-		    end
-		else
-		    (Gtk.textIterForwardChar iter;
-		     getColFromOffset(iter, offset-1, col+1))
-	    end
-	fun getColumn iter =
-	    let
-		val line = Gtk.textIterGetLine iter
-		val offset = Gtk.textIterGetLineOffset iter
-		val iter' = Gtk.textIterCopy iter
-	    in
-		Gtk.textIterSetLineOffset(iter', 0);
-		getColFromOffset(iter', offset, 0)
-	    end
-	fun getLine iter = Gtk.textIterGetLine iter + 1
-
         fun feedSelection() =
             case (!curtextview) of BUFFER view =>
             let
@@ -146,8 +119,8 @@ structure GuiMain =
 			 (Gtk.textBufferGetSelectionBounds(buf,
                                                            startiter,enditer),
 			  Gtk.textBufferGetText(buf, startiter, enditer, false),
-			  getLine startiter,
-			  getColumn startiter)
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
 		     end) ()
             in
                 if sel
@@ -170,7 +143,7 @@ structure GuiMain =
 		     in
 			 Gtk.textIterSetLineOffset(startiter, 0);
 			 Gtk.textIterForwardToLineEnd(enditer);
-			 (getLine startiter,
+			 (Buffer.getLine startiter,
 			  Gtk.textBufferGetText(buf,
 						startiter, enditer, false))
 		     end) ()
@@ -261,8 +234,8 @@ structure GuiMain =
 			      end
 		     in
 			 (Gtk.textBufferGetText(buf, startiter, enditer, false),
-			  getLine startiter,
-			  getColumn startiter)
+			  Buffer.getLine startiter,
+			  Buffer.getColumn startiter)
 		     end) ()
 
                 val str = addSpace(line, col, Gtk.utf8ToLatin1 str)
@@ -359,7 +332,7 @@ structure GuiMain =
 			 val iter = Gtk.textIterNew()
 			 val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
 		     in
-			 (getLine iter, getColumn iter)
+			 (Buffer.getLine iter, Buffer.getColumn iter)
 		     end) ()
             in
                 Stream.send(OutputWriters.rowCol, (line, col))

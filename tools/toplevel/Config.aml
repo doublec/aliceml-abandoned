@@ -58,6 +58,7 @@ structure Config =
       val sizeY = 800
 
       val historySize = ref 100
+      val useTabs = ref true
 
       val cmap   = Gdk.colormapGetSystem ()
       val ugly = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
