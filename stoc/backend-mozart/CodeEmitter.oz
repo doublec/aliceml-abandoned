@@ -85,6 +85,13 @@ local
 	 end
       end
 
+      fun {Subset Xs Ys}
+	 case Xs#Ys of (I|Xr)#(I|Yr) then {Subset Xr Yr}
+	 [] nil#_ then true
+	 else false
+	 end
+      end
+
 \ifdef DEBUG_OPTIMIZER
       proc {Send P M}
 	 {System.show M}
@@ -94,7 +101,7 @@ local
    in
       class RegisterOptimizer
 	 feat P S D
-	 attr N: unit
+	 attr N: unit LastYs: nil
 	 meth init(NumberReserved) Ms in
 	    self.P = {Port.new Ms}
 	    self.S = {Space.new
@@ -126,21 +133,26 @@ local
 	 meth isEmpty($)
 	    {Dictionary.isEmpty self.D}
 	 end
-	 meth decl(Is ?Y ?I)=M J in
+	 meth decl(Is ?Y ?I)=M J NewYs in
 	    I = @N
 	    N <- I + 1
 	    Y = y(J)
 	    {Dictionary.put self.D I J}
 	    {Send self.P decl(I)}
-	    {Send self.P distinct(I|Is)}
+	    NewYs = {Sort I|Is Value.'<'}
+	    if {Not {Subset @LastYs NewYs}} then
+	       {Send self.P distinct(@LastYs)}
+	    end
+	    LastYs <- NewYs
 	 end
 	 meth eq(_ _)=M
 	    {Send self.P M}
 	 end
-	 meth set(_ _)=M
-	    {Send self.P M}
-	 end
 	 meth optimize(?NumberOfYs) T RaiseOnBlock in
+	    case @LastYs of nil then skip
+	    elseof Ys then
+	       {Send self.P distinct(Ys)}
+	    end
 	    {Send self.P optimize()}
 	    T = {Thread.this}
 	    RaiseOnBlock = {Debug.getRaiseOnBlock T}
