@@ -11,6 +11,7 @@
  *   $Revision$
  *)
 
+import structure Foreign              from "../../lib/system/Foreign"
 import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
 import structure Url                  from "../../lib/system/Url"
@@ -25,8 +26,6 @@ import structure Target               from "../infrastructure/Target"
 import structure MkOptionParser       from "MkOptionParser"
 import signature RECURSIVE_COMPILER   from "RECURSIVE_COMPILER-sig"
 import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
-
-import structure Foreign from "../../lib/system/Foreign"
 
 functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER) :
     INTERACTIVE_TOPLEVEL =
@@ -73,10 +72,10 @@ struct
 		       SOME "file")
 
     fun eval compile (printSig, source, context) =
-	Foreign.catch(fn _ => eval' compile (printSig, source, context),
-		      fn e =>
-			 (TextIO.output(TextIO.stdErr, Foreign.exnMessage e);
-			  context))
+	Foreign.catch (fn _ => eval' compile (printSig, source, context),
+		       fn e =>
+			  (TextIO.output (TextIO.stdErr, Foreign.exnMessage e);
+			   context))
     and eval' compile (printSig, source, context) =
 	(case compile context source of
 	     (context, Target.COMPONENT {eval, component, ...}) =>
