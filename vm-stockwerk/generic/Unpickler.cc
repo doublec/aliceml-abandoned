@@ -349,9 +349,10 @@ private:
   static const u_int STREAM_POS = 0;
   static const u_int ENV_POS    = 1;
   static const u_int COUNT_POS  = 2;
+  static const u_int SIZE       = 3;
 public:
   static void New(InputStream *is, word env, int count) {
-    Scheduler::nArgs = 3;
+    Scheduler::nArgs = SIZE;
     Scheduler::currentArgs[STREAM_POS] = is->ToWord();
     Scheduler::currentArgs[ENV_POS] = env;
     Scheduler::currentArgs[COUNT_POS] = Store::IntToWord(count);

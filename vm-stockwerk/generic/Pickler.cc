@@ -236,6 +236,7 @@ StringOutputStream *StringOutputStream::New() {
 
 class Seen : private Block {
 private:
+  static const BlockLabel SEEN_LABEL = MIN_DATA_LABEL;
   static const u_int COUNTER_POS = 0;
   static const u_int TABLE_POS   = 1;
   static const u_int SIZE        = 2;
@@ -246,20 +247,22 @@ public:
   using Block::ToWord;
 
   static Seen *New() {
-    Block *p = Store::AllocBlock(MIN_DATA_LABEL, SIZE);
+    Block *p = Store::AllocBlock(SEEN_LABEL, SIZE);
     p->InitArg(COUNTER_POS, 0);
     p->InitArg(TABLE_POS, BlockHashTable::New(initialSize)->ToWord());
     return static_cast<Seen *>(p);
   }
   static Seen *FromWordDirect(word w) {
-    return static_cast<Seen *>(Store::DirectWordToBlock(w));
+    Block *b = Store::DirectWordToBlock(w);
+    Assert(b->GetLabel() == SEEN_LABEL);
+    return static_cast<Seen *>(b);
   }
 
   void Add(Block *v) {
     word counter          = GetArg(COUNTER_POS);
     BlockHashTable *table = BlockHashTable::FromWordDirect(GetArg(TABLE_POS));
     table->InsertItem(v->ToWord(), counter);
-    InitArg(COUNTER_POS, Store::DirectWordToInt(counter) + 1);
+    ReplaceArg(COUNTER_POS, Store::DirectWordToInt(counter) + 1);
   }
   u_int Find(Block *v) {
     word vw               = v->ToWord();
@@ -276,9 +279,10 @@ class PickleArgs {
 private:
   static const u_int STREAM_POS = 0;
   static const u_int SEEN_POS   = 1;
+  static const u_int SIZE       = 2;
 public:
   static void New(OutputStream *stream, Seen *seen) {
-    Scheduler::nArgs = 2;
+    Scheduler::nArgs = SIZE;
     Scheduler::currentArgs[STREAM_POS] = stream->ToWord();
     Scheduler::currentArgs[SEEN_POS] = seen->ToWord();
   }
