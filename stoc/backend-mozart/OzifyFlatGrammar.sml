@@ -12,10 +12,9 @@
  *   $Revision$
  *)
 
-structure OzifyFlatGrammar :> OZIFY_FLAT_GRAMMAR =
+structure OzifyFlatGrammar :> CODE where type t = FlatGrammar.t =
     struct
-	structure I = FlatGrammar
-	open I
+	open FlatGrammar
 
 	local
 	    val count = ref 0
@@ -261,7 +260,7 @@ structure OzifyFlatGrammar :> OZIFY_FLAT_GRAMMAR =
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun outputComponent (q, (importList, (stms, _))) =
+	fun externalize (q, (importList, (stms, _))) =
 	    (output1 (q, #"(");
 	     outputList (fn (q, (id, _, url)) =>
 			 outputPair (outputId, outputString)

@@ -43,7 +43,7 @@ structure Main :> MAIN =
 	let
 	    val component = flatten s
 	in
-	    OzifyFlatGrammar.outputComponent (outstream, component);
+	    OzifyFlatGrammar.externalize (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
 	end
 
