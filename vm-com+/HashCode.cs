@@ -12,6 +12,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 
 public class HashCode {
     public static void Main(string[] args) {
@@ -24,7 +25,8 @@ public class HashCode {
 					    FileAccess.Read));
 	StreamWriter outFile =
 	    new StreamWriter(new FileStream(args[1], FileMode.Create,
-					    FileAccess.Write));
+					    FileAccess.Write),
+			     new ASCIIEncoding());
 	while (true) {
 	    string s = inFile.ReadLine();
 	    if (s == null)

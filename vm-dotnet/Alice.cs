@@ -365,6 +365,10 @@ namespace Alice {
 		    return false;
 		}
 	    }
+	    public override int GetHashCode() {
+		//--** improve; attention: may be cyclic
+		return Tag;
+	    }
 	}
 	public class ConVal {
 	    object Id;
@@ -384,6 +388,10 @@ namespace Alice {
 		    return false;
 		}
 	    }
+	    public override int GetHashCode() {
+		//--** improve; attention: may be cyclic
+		return Id.GetHashCode();
+	    }
 	}
 	public class Exception: SystemException {
 	    public object Value;
@@ -391,7 +399,7 @@ namespace Alice {
 		Value = exn;
 	    }
 	    public Exception(object exn, int line):
-		base(exn.ToString() + " at line " + Int32.ToString(line)) {
+		base(exn.ToString() + " at line " + line.ToString()) {
 		Value = exn;
 	    }
 	}
@@ -623,7 +631,7 @@ namespace Alice {
 	}
 	public class Char_isCntrl: Procedure {
 	    public static object StaticApply(object a) {
-		return CommonOp.BtI(!Char.IsPrintable((Char) CommonOp.Sync(a)));
+		return CommonOp.BtI(Char.IsControl((Char) CommonOp.Sync(a)));
 	    }
 	    public override object Apply(object a) {
 		return StaticApply(a);
@@ -640,7 +648,7 @@ namespace Alice {
 	public class Char_isGraph: Procedure {
 	    public static object StaticApply(object a) {
 		char c = (Char) CommonOp.Sync(a);
-		return CommonOp.BtI(Char.IsPrintable(c) &&
+		return CommonOp.BtI(!Char.IsControl(c) &&
 				    !Char.IsWhiteSpace(c));
 	    }
 	    public override object Apply(object a) {
@@ -667,7 +675,7 @@ namespace Alice {
 	}
 	public class Char_isPrint: Procedure {
 	    public static object StaticApply(object a) {
-		return CommonOp.BtI(Char.IsPrintable((Char) CommonOp.Sync(a)));
+		return CommonOp.BtI(!Char.IsControl((Char) CommonOp.Sync(a)));
 	    }
 	    public override object Apply(object a) {
 		return StaticApply(a);
@@ -1423,7 +1431,7 @@ namespace Alice {
 	}
 	public class Real_ceil: Procedure {
 	    public static object StaticApply(object a) {
-		return (int) Math.Ceil((Double) CommonOp.Sync(a));
+		return (int) Math.Ceiling((Double) CommonOp.Sync(a));
 	    }
 	    public override object Apply(object a) {
 		return StaticApply(a);
@@ -1463,7 +1471,7 @@ namespace Alice {
 	}
 	public class Real_realCeil: Procedure {
 	    public static object StaticApply(object a) {
-		return Math.Ceil((Double) CommonOp.Sync(a));
+		return Math.Ceiling((Double) CommonOp.Sync(a));
 	    }
 	    public override object Apply(object a) {
 		return StaticApply(a);
@@ -1491,7 +1499,7 @@ namespace Alice {
 		if (x >= 0.0) {
 		    return Math.Floor(x);
 		} else {
-		    return Math.Ceil(x);
+		    return Math.Ceiling(x);
 		}
 	    }
 	    public override object Apply(object a) {
