@@ -88,7 +88,7 @@ public:
 
 class Cell: private Block {
 protected:
-  enum { VAL_POS, SIZE };
+  enum { VALUE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -96,9 +96,9 @@ public:
     return static_cast<Cell *>(Store::AllocBlock(Alice::Cell, SIZE));
   }
   static Cell *New(word value) {
-    Cell *c = static_cast<Cell *>(Store::AllocBlock(Alice::Cell, SIZE));
-    c->InitArg(VAL_POS, value);
-    return c;
+    Block *b = Store::AllocBlock(Alice::Cell, SIZE);
+    b->InitArg(VALUE_POS, value);
+    return static_cast<Cell *>(b);
   }
   static Cell *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -112,17 +112,17 @@ public:
   }
 
   void Init(word value) {
-    InitArg(VAL_POS, value);
+    InitArg(VALUE_POS, value);
   }
   void Assign(word value) {
-    ReplaceArg(VAL_POS, value);
+    ReplaceArg(VALUE_POS, value);
   }
   word Access() {
-    return GetArg(VAL_POS);
+    return GetArg(VALUE_POS);
   }
   word Exchange(word value) {
-    word val = GetArg(VAL_POS);
-    ReplaceArg(VAL_POS, value);
+    word val = GetArg(VALUE_POS);
+    ReplaceArg(VALUE_POS, value);
     return val;
   }
 };
