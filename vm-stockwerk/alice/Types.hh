@@ -31,7 +31,8 @@ public:
   enum { DETERMINED, FAILED, FUTURE };
   // Component.component
   enum { EVALUATED, UNEVALUATED };
-  enum { inf, mod };
+  enum { inf1, mod };                   // EVALUATED labels
+  enum { body, imports, inf2 };         // UNEVALUATED labels
   // Config.platform
   enum { UNIX, WIN32 };
   // Label.lab
