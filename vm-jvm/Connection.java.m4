@@ -21,7 +21,7 @@ final public class Connection {
     static Hashtable export = null;
     static Exporter exp = null;
     static Random rand = null;
-
+    static int exporterNumber = 0;
     static InetAddress thisHost;
     static {
 	InetAddress i=null;
@@ -58,12 +58,19 @@ final public class Connection {
 	export = new Hashtable();
 	exp = new Exporter(export);
 	rand = new Random(42);
+	// rand = new Random((new Date()).getTime());
 
 	// System.out.println("starte registry");
-	java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
+	try {
+	    java.rmi.registry.Registry r = java.rmi.registry.LocateRegistry.getRegistry(1099);
+	    exporterNumber = r.list().length;
+	} catch (RemoteException _) {
+	    java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
+	    // exporterNumber = 0;
+	}
 	try {
 	    // System.out.println("binde exporter in registry");
-	    Naming.rebind("//localhost/exporter",exp);
+	    Naming.rebind("//localhost/exporter"+exporterNumber,exp);
 	} catch (MalformedURLException m) {
 	    System.err.println(m);
 	    m.printStackTrace();
@@ -84,7 +91,8 @@ final public class Connection {
 	    }
 	    java.lang.String ticket = Long.toString(rand.nextLong());
 	    export.put(ticket,val);
-	    return new STRING (thisHost.getHostAddress()+"\\"+ticket);
+	    return new STRING (exporterNumber+"#"+
+			       thisHost.getHostAddress()+":"+ticket);
 	}
     }
     /** val offer : value -> ticket */
@@ -104,18 +112,24 @@ final public class Connection {
 	    try {
 	    java.lang.String ti = ((STRING) val).value;
 	    // System.out.println("ti = "+ti);
-	    int indexofbackslash = ti.indexOf('\\');
-	    if (indexofbackslash < 0) {
+	    int indexofnumber = ti.indexOf('#');
+	    if (indexofnumber < 0) {
 		_error("ticket invalid",val);
 	    }
-	    java.lang.String ip = ti.substring(0,indexofbackslash);
+	    java.lang.String number = ti.substring(0,indexofnumber);
+	    ti = ti.substring(indexofnumber+1);
+	    int indexofcolon = ti.indexOf(':');
+	    if (indexofcolon < 0) {
+		_error("ticket invalid",val);
+	    }
+	    java.lang.String ip = ti.substring(0,indexofcolon);
 	    // System.out.println("ip = "+ip);
-	    java.lang.String ticket = ti.substring(indexofbackslash+1);
+	    java.lang.String ticket = ti.substring(indexofcolon+1);
 	    // System.out.println("ticket = "+ticket);
 	    Export exp = null;
 	    try {
 		// System.out.println("looking for "+ticket+" on "+ip);
-		exp = (Export) Naming.lookup("//"+ip+"/exporter");
+		exp = (Export) Naming.lookup("//"+ip+"/exporter"+number);
 	    } catch (NotBoundException n) {
 		_error("ticket not bound",val);
 	    } catch (MalformedURLException m) {
