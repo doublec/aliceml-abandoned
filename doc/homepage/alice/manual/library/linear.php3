@@ -97,6 +97,7 @@
         <LI><TT>`*(<I>x</I>,<I>y</I>)</TT> denotes the
             product of <I>x</I> and <I>y</I>.
       </UL>
+      <P></P>
     </DD>
 
     <DT>
@@ -128,6 +129,7 @@
         <LI><TT>`<->(<I>e</I>,<I>c</I>)</TT> reifies
             the equation <I>e</I> into <I>c</I>.
       </UL>
+      <P></P>
     </DD>
 
     <DT>
