@@ -24,7 +24,14 @@
 
 class MsgBuffer;
 void marshalNumber(unsigned int i, MsgBuffer *bs);
-unsigned int unmarshalNumber(MsgBuffer *bs);
+
+#define ROBUST
+
+#ifdef ROBUST
+unsigned int unmarshalNumberRobust(MsgBuffer *, int *);
+#else
+unsigned int unmarshalNumber(MsgBuffer *);
+#endif
 
 class Word: public OZ_Extension {
 public:
@@ -116,8 +123,14 @@ inline static Word *OZ_WordToC(OZ_Term t) {
 
 OZ_Term unmarshalWord(void *p) {
   MsgBuffer *bs = (MsgBuffer *) p;
+#ifdef ROBUST
+  int e;
+  int size = unmarshalNumberRobust(bs, &e);
+  int value = unmarshalNumberRobust(bs, &e);
+#else
   int size = unmarshalNumber(bs);
   int value = unmarshalNumber(bs);
+#endif
   return OZ_word(size, value);
 }
 
@@ -227,6 +240,8 @@ OZ_BI_define(Word_asr, 2, 1) {
 //
 // Interface
 //
+
+char oz_module_name[] = "Word";
 
 OZ_C_proc_interface *oz_init_module(void) {
   static OZ_C_proc_interface interface[] = {
