@@ -11,8 +11,9 @@
  *   $Revision$
  *)
 
-import structure TextIO             from "../../lib/system/TextIO"
 import structure IO                 from "../../lib/system/IO"
+import structure BinIO              from "../../lib/system/BinIO"
+import structure TextIO             from "../../lib/system/TextIO"
 import structure OS                 from "../../lib/system/OS"
 import structure Config             from "../../lib/system/Config"
 import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
@@ -98,9 +99,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	fun readFile filename =
 	    let
-		val file   = TextIO.openIn filename handle IO.Io _ =>
+		val file   = TextIO.openIn filename handle IO.Io {...} =>
 				error("could not open " ^ filename)
-		val source = TextIO.inputAll file handle IO.Io _ =>
+		val source = TextIO.inputAll file handle IO.Io {...} =>
 				error("error reading " ^ filename)
 		val _      = TextIO.closeIn file
 	    in
@@ -217,9 +218,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	(* Define signature acquisition via recursive compiler invocation *)
 
-	fun existsFile filename =
-	    (TextIO.closeIn (TextIO.openIn filename); true)
-	    handle IO.Io _ => false
+	fun existsFile filename = (*--** use OS.FileSys.access *)
+	    (BinIO.closeIn (BinIO.openIn filename); true)
+	    handle IO.Io {...} => false
 
 	fun pathCeil filename =
 	    let
@@ -269,10 +270,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 
 	val sigTable: Inf.sign UrlMap.t = UrlMap.new ()
 
-	fun loadSig url =
-	    case Component.inf (ComponentManager.link url) of
-		SOME inf => inf
-	      | NONE => raise Component.Corrupt
+	fun loadSig url = Component.inf (ComponentManager.link url)
 
 	fun acquireSig (desc, url) =
 	    let
@@ -285,15 +283,15 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    SOME sign => sign
 		  | NONE =>
 		    let
-			val inf =
-			    (loadSig url'
-			     before trace ("loaded signature from " ^
-					   Url.toString url'))
-			    handle exn as (IO.Io _ | Component.Corrupt) =>
-				   acquireFromSigFile (url', exn)
-			val sign = Inf.asSig inf handle Inf.Interface =>
-					error("higher-order content found in " ^
-					      Url.toString url)
+			val inf = valOf (loadSig url')
+			    handle exn as (IO.Io {...} | Option.Option) =>
+				acquireFromSigFile (url', exn)
+			val _ = trace ("loaded signature from " ^
+				       Url.toString url')
+			val sign = Inf.asSig inf
+			    handle Inf.Interface =>
+				error ("higher-order content found in " ^
+				       Url.toString url)
 		    in
 			UrlMap.insert (sigTable, urlCeil url', sign);
 			sign
@@ -310,8 +308,9 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 		    acquireFromSource targetFilename
 		else
 		    error ((case exn of
-			      IO.Io _ => "could not locate component "
-			    | Component.Corrupt => "no signature found in "
+(*--** NotFound *)
+			      IO.Io {...} => "could not locate component "
+			    | Option.Option => "no signature found in "
 			    | _ => "unknown error while accessing ") ^
 			   parseUrl url)
 	    end
