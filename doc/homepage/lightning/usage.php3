@@ -17,9 +17,8 @@
   <DL>
     <DT><TT>stoc</TT> [<TT>-c</TT>]
       <I>&lt;input file&gt;</I> [<TT>-o</TT>] <I>&lt;output file&gt;</I></DT>
-    <DD><P>Compile <I>&lt;input file&gt;</I> as an Alice source and write an
-      IL file to <I>&lt;output file&gt;</I>.  This then has to be assembled
-      by issuing <TT>ilasm /dll </TT><I>&lt;output file&gt;</I>.</P></DD>
+    <DD><P>Compile <I>&lt;input file&gt;</I> as an Alice source and write a
+      DLL to <I>&lt;output file&gt;</I>.</P></DD>
   </DL>
 
   <P>Any imported component <TT>file.dll</TT> must either exist in source
@@ -33,13 +32,6 @@
   <P><A href="libraries.php3#toplevel">Parts of the SML Standard
     Basis top-level environment</A> are automatically available for
     compiling source files.</P>
-
-  <P><B>Important notice:</B>  Due to a bug in the system, it is
-    necessary to reassemble some support files each time you invoked
-    <TT>stoc</TT>.  To do this, issue the following commands:</P>
-  <PRE>
-	ilasm /dll TextIO.il
-	ilasm /dll Tools.il</PRE>
 
 
 <?php section("vm", "vm") ?>
