@@ -379,18 +379,13 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTests (ConTests conBodyVec, elseBody) =
 	    let
 		val max = Vector.length conBodyVec - 1
-		fun gen (i, (con, args, body)) =
+		fun gen (i, (id, args, body)) =
 		    let
 			val elseLabel = newLabel ()
 			val regState = saveRegState ()
 		    in
 			if i < max then emit Dup else ();
-			case con of
-			    Con id => (emitId id; emitAwait ())
-			  | StaticCon _ =>
-				raise Crash.Crash
-				    ("CodeGenPhase.genTests: " ^
-				     "StaticCon not implemented");   (*--** *)
+			emitId id; emitAwait ();
 			emit (B (NE_UN, elseLabel));
 			if i < max then emit Pop else ();
 			case args of
@@ -510,12 +505,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (TagExp (_, _, n, args)) =
 	    (emit (LdcI4 n); genArgs args;
 	     emit (Newobj (Alice.TagVal, #[Int32Ty, ObjectTy])))
-	  | genExp (ConExp (_, Con id, TupArgs #[])) = emitId id
-	  | genExp (ConExp (_, Con id, args)) =
+	  | genExp (ConExp (_, id, TupArgs #[])) = emitId id
+	  | genExp (ConExp (_, id, args)) =
 	    (emitId id; genArgs args;
 	     emit (Newobj (Alice.ConVal, #[ObjectTy, ObjectTy])))
-	  | genExp (ConExp (_, StaticCon _, _)) =   (*--** implement *)
-	    raise Crash.Crash "CodeGenPhase.genExp: ConExp/StaticCon"
 	  | genExp (RefExp (_, id)) =
 	    (emitId id; emit (Newobj (Alice.Cell, #[ObjectTy])))
 	  | genExp (TupExp (info, #[])) = genExp (PrimExp (info, "unit"))
