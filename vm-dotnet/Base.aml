@@ -582,9 +582,10 @@ structure Word =
 	__primitive op>> : word * word -> word = "Word.>>"
 	__primitive op~>> : word * word -> word = "Word.~>>"
 	__primitive toString : word -> string = "Word.toString"
+	__primitive >=   : word * word -> bool = "Word.>="
 
-	fun fromLarge w = w
-	fun toLarge w = w
+	fun fromLargeWord w = w
+	fun toLargeWord w = w
 
 	local
 	    open StringCvt
