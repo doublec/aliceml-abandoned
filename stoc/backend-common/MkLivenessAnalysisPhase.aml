@@ -174,13 +174,13 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    Vector.foldl (fn ((_, _, conArgs, body), lset) =>
 			  let
 			      val lset' = scanBody body
-			      val lset'' =
+			      val lset' =
 				  case conArgs of
 				      SOME args =>
 					  processArgs (args, lset', delDef)
 				    | NONE => lset'
 			  in
-			      union (lset, lset'')
+			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) tagBodyVec
 	  | scanTests (ConTests conBodyVec) =
 	    Vector.foldl (fn ((con, conArgs, body), lset) =>
@@ -202,9 +202,9 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    Vector.foldl (fn ((idDefs, body), lset) =>
 			  let
 			      val lset' = scanBody body
-			      val lset'' = delDefVec (lset, idDefs)
+			      val lset' = delDefVec (lset', idDefs)
 			  in
-			      union (lset, lset'')
+			      union (lset, lset')
 			  end) (Copy (StampSet.new ())) vecBodyVec
 	and scanExp (LitExp (_, _), lset) = lset
 	  | scanExp (PrimExp (_, _), lset) = lset
