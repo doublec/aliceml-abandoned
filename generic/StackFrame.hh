@@ -51,7 +51,7 @@ typedef enum {
   RAISE_FRAME,
   REFMAP_ITERATOR_FRAME,
   // End of Frames
-  MAX_STACK_FRAME = REFMAP_APP_FRAME
+  MAX_STACK_FRAME = REFMAP_ITERATOR_FRAME
 } FrameLabel;
 
 class StackFrame : private Block {
