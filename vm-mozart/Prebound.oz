@@ -409,6 +409,7 @@ prepare
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
       'Thread.Terminate': kernel(terminate)
+      'Thread.Terminated': {NewUniqueName 'Thread.Terminated'}
       'Thread.current':
 	 fun {$ unit} {Thread.this} end
       'Thread.isSuspended': Thread.isSuspended
