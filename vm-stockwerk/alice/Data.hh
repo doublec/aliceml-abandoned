@@ -280,8 +280,9 @@ public:
 class UniqueString: private ConcreteRepresentation {
 private:
   static const u_int STRING_POS = 0;
-  static const u_int TRANSFORM_POS = 1;
-  static const u_int SIZE = 2;
+  static const u_int HASH_VALUE_POS = 1;
+  static const u_int TRANSFORM_POS = 2;
+  static const u_int SIZE = 3;
   static ConcreteRepresentationHandler *handler;
 public:
   using Block::ToWord;
@@ -292,6 +293,9 @@ public:
 
   String *ToString() {
     return String::FromWordDirect(Get(STRING_POS));
+  }
+  u_int Hash() {
+    return Store::DirectWordToInt(Get(HASH_VALUE_POS));
   }
 
   static UniqueString *FromWord(word x) {
