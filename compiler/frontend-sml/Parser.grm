@@ -410,7 +410,7 @@
 	| program			of Program
 	|    program_opt		of Program option
 	| component			of Component
-	| import			of Import
+	| import0			of Import
 	|    import1			of Import
 
 
@@ -1573,10 +1573,10 @@
   (* Components *)
 
   component:
-	  import program_opt	( Component(I(importleft,program_optright),
-					    import, program_opt) )
+	  import0 program_opt	( Component(I(import0left,program_optright),
+					    import0, program_opt) )
 
-  import:
+  import0:
 	  import1		( import1 )
 	| (*empty*)		( EMPTYImport(I(defaultPos,defaultPos)) )
 

@@ -2241,16 +2241,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     (* Components *)
 
-    fun trComponent E (Component(i, import, programo)) =
+    fun trComponent E (Component(i, imp, programo)) =
 	let
-	    val imps' = trImport E import
+	    val imps' = trImport E imp
 	    val decs' = trProgramo E programo
 	in
 	    O.Comp(i, imps', decs')
 	end
 
 
-    and trImport  E import = List.rev(trImport' (E,[]) import)
+    and trImport  E imp  = List.rev(trImport' (E,[]) imp)
     and trImport'(E,acc) =
 	fn IMPORTImport(i, spec, scon) =>
 	   let
@@ -2266,8 +2266,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | EMPTYImport(i) =>
 		acc
 
-	 | SEQImport(i, import1, import2) =>
-		trImport' (E, trImport' (E,acc) import1) import2
+	 | SEQImport(i, imp1, imp2) =>
+		trImport' (E, trImport' (E,acc) imp1) imp2
 
 
     val translate = trComponent

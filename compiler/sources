@@ -62,7 +62,10 @@
 ../frontend-sml/Parser.grm.sig
 ../frontend-sml/Parser.grm.sml
 ../frontend-sml/DerivedForms.sml
+../frontend-sml/LEXER_ERROR.sig
+../frontend-sml/LexerError.sml
 ../frontend-sml/Lexer.lex.sml
+../frontend-sml/CountPosLexer.sml
 ../frontend-sml/PARSING_PHASE.sig
 ../frontend-sml/ParsingPhase.sml
 ../frontend-sml/BIND_ENV0.sig
