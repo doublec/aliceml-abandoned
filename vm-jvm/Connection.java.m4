@@ -57,8 +57,8 @@ final public class Connection {
 	}
 	export = new Hashtable();
 	exp = new Exporter(export);
-	rand = new Random(42);
-	// rand = new Random((new Date()).getTime());
+	//	rand = new Random(42);
+	rand = new Random((new Date()).getTime());
 
 	// System.out.println("starte registry");
 	try {
