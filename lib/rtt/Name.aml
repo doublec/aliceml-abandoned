@@ -10,9 +10,7 @@
  *   $Revision$
  *)
 
-import structure StringHashKey from "../utility/StringHashKey"
-import signature NAME          from "NAME-sig"
-
+import signature NAME from "NAME-sig"
 
 structure Name :> NAME =
 struct
@@ -24,7 +22,7 @@ struct
       | compare(InId,    ExId _)	= LESS
       | compare(InId,    InId)		= EQUAL
 
-    fun hash(ExId s)			= StringHashKey.hash s
+    fun hash(ExId s)			= String.hash s
       | hash InId			= 0
 
     fun toString(ExId s)		= s

@@ -218,7 +218,7 @@ struct
 				val t' = if not(Type.isAbbrev t) then t else
 					 let val (t1,t2) = Type.asAbbrev t in
 					     if Type.isAbs t1 andalso
-					        Path.equals(Type.asAbs t1, p)
+					        Path.equal(Type.asAbs t1, p)
 					     then t2
 					     else t
 					 end
@@ -293,7 +293,7 @@ struct
 				val j' = if not(isAbbrev j) then j else
 					 let val (j1,j2) = asAbbrev j in
 					     if isAbs j1 andalso
-					        Path.equals(asAbs j1, p)
+					        Path.equal(asAbs j1, p)
 					     then j2
 					     else j
 					 end

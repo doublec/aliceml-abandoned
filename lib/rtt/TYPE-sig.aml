@@ -60,7 +60,7 @@ sig
     val asArrowKind :	kind -> kind * kind		(* Kind *)
     val asSingKind :	kind -> typ			(* Kind *)
 
-    val equalsKind :	kind * kind -> bool
+    val equalKind :	kind * kind -> bool
     val matchesKind :	kind * kind -> bool
 
     val kind :		typ -> kind
@@ -170,7 +170,7 @@ sig
 
   (* Comparison *)
 
-    val equals :	typ * typ -> bool
+    val equal :		typ * typ -> bool
     val matches :	typ * typ -> bool
 
   (* Hashing *)

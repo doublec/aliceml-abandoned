@@ -39,7 +39,7 @@ struct
 	end
 
     fun ppPath' ps p =
-	if List.exists (fn p' => Path.equals(p,p')) ps then
+	if List.exists (fn p' => Path.equal(p,p')) ps then
 	    empty
 	else if isDot p then
 	    let

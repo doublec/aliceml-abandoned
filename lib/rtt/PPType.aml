@@ -42,7 +42,7 @@ struct
 	let
 	    val (t1,t2) = Type.asApply t
 	in
-	    if not(Type.equals(t1, PervasiveType.typ_strict)) then
+	    if not(Type.equal(t1, PervasiveType.typ_strict)) then
 		SOME t
 	    else if Type.isTuple t2
 	    andalso Vector.length(Type.asTuple t2) = 0 then

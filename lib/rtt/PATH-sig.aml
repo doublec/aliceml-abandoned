@@ -44,7 +44,7 @@ sig
 
   (* Comparison and hashing *)
 
-    val equals :	path * path -> bool
+    val equal :		path * path -> bool
     val hash :		path -> int
 
   (* Transformation *)
