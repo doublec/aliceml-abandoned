@@ -55,7 +55,8 @@ DEFINE1(Unsafe_getPrimitiveByName) {
 } END
 
 DEFINE1(Unsafe_makeFunction) {
-  DECLARE_TAGVAL(function, x0);
+  DECLARE_TUPLE(function, x0);
+  function->AssertWidth(5);
   ConcreteCode *concreteCode =
     ConcreteCode::New(AbstractCodeInterpreter::self, 2);
   Chunk *name =
