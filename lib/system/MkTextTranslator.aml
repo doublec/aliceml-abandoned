@@ -94,6 +94,9 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 			   setPos, endPos, verifyPos, close, ioDesc}
 	    end
 
+	val crnlVec = "\r\n"
+	val crnlArr = CharArray.fromVector crnlVec
+
 	fun translateWriter writer where (Config.platform <> Config.WIN32) =
 	    writer
 	  | translateWriter (PrimIO.WR {name, chunkSize, writeVec, writeArr,
@@ -101,50 +104,112 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 					canOutput, getPos, setPos, endPos,
 					verifyPos, close, ioDesc}) =
 	    let
-		fun tr (raw, sub, i, n) =
+		fun findNL (buf, sub, i, max) =
+		    if i = max then NONE else
+		    case sub (buf, i) of
+			#"\n" => SOME i
+		      | c => findNL (buf, sub, i + 1, max)
+
+		fun tr (write, sub, crnl, buf, i, sz) =
 		    let
-			val buf = CharArray.array (2 * n, #"\000")
-			val n' = tr' (raw, sub, buf, i, 0, i + n)
+			val i' = tr' (write, sub, crnl, buf, i, i + sz)
 		    in
-			CharArraySlice.slice (buf, 0, SOME n')
+			if i' = i then NONE else SOME (i' - i)
 		    end
-		and tr' (raw, sub, buf, rd, wr, max) =
+		and tr' (write, sub, crnl, buf, i, max) =
+		    if i = max then i else
+		    case findNL (buf, sub, i, max) of
+			NONE => (case write (buf, i, SOME (max - i)) of
+				     NONE => i
+				   | SOME n => i + n)
+		      | SOME j => case write (buf, i, SOME (j - i)) of
+				      NONE => i
+				    | SOME n where (n < j - i) => i + n
+				    | SOME n =>
+				  case write (crnl, 0, SOME 2) of
+				      NONE => i + n
+				    | SOME 1 =>
+				      (* Ouch, we have written a partial NL,
+				       * what now? If we are in NB mode, we
+				       * return -- this will potentially
+				       * duplicate the \r in the output, but
+				       * there seems to be no way around it.
+				       * In blocking mode we *have* to retry,
+				       * otherwise we might have to deliver 0
+				       * written elements, which is illegal.
+				       * Note that write will return NONE in NB
+				       * mode and block otherwise.
+				       *)
+				      (case write (crnl, 1, SOME 1) of
+					   NONE => i + n
+					 | SOME _ =>
+					   tr' (write, sub, crnl, buf, i + n+1,
+						max))
+				    | SOME _ =>
+				      tr' (write, sub, crnl, buf, i + n+1, max)
+
+		fun writeSlice (slice, write) sl = write (slice sl)
+
+		fun trv writeVec sl =
+		    let
+			val (buf, i, sz) = CharVectorSlice.base sl
+		    in
+			tr (writeSlice (CharVectorSlice.slice, writeVec),
+			    CharVector.sub, crnlVec, buf, i, sz)
+		    end
+		fun tra writeArr sl =
+		    let
+			val (buf, i, sz) = CharArraySlice.base sl
+		    in
+			tr (writeSlice (CharArraySlice.slice, writeArr),
+			    CharArray.sub, crnlArr, buf, i, sz)
+		    end
+(*
+		fun tr (rdbuf, sub, i, n) =
+		    let
+			val wrbuf = CharArray.array (2 * n, #"\000")
+			val n' = tr' (rdbuf, sub, i, wrbuf, 0, i + n)
+		    in
+			CharArraySlice.slice (wrbuf, 0, SOME n')
+		    end
+		and tr' (rdbuf, sub, rd, wrbuf, wr, max) =
 		    if rd = max then wr else
-		    case sub (raw, rd) of
-			#"\n" => (CharArray.update (buf, wr, #"\r");
-				  CharArray.update (buf, wr + 1, #"\n");
-				  tr' (raw, sub, buf, rd + 1, wr + 2, max))
-		      | c => (CharArray.update (buf, wr, c);
-			      tr' (raw, sub, buf, rd + 1, wr + 1, max))
-		fun tra sl =
+		    case sub (rdbuf, rd) of
+			#"\n" => (CharArray.update (wrbuf, wr, #"\r");
+				  CharArray.update (wrbuf, wr + 1, #"\n");
+				  tr' (rdbuf, sub, rd + 1, wrbuf, wr + 2, max))
+		      | c => (CharArray.update (wrbuf, wr, c);
+			      tr' (rdbuf, sub, rd + 1, wrbuf, wr + 1, max))
+		fun tra writeArr sl =
 		    let
 			val (buf, i, sz) = CharArraySlice.base sl
 		    in
 			tr (buf, CharArray.sub, i, sz)
 		    end
-		fun trv sl =
+		fun trv writeVec sl =
 		    let
 			val (buf, i, sz) = CharVectorSlice.base sl
 			val sl' = tr (buf, CharVector.sub, i, sz)
 		    in
 			CharVectorSlice.full (CharArraySlice.vector sl')
 		    end
+*)
 
 		val writeVec =
 		    case writeVec of
-			SOME f => SOME (fn sl => f (trv sl))
+			SOME f => SOME (valOf o trv (fn sl => SOME (f sl)))
 		      | NONE => NONE
 		val writeArr =
 		    case writeArr of
-			SOME f => SOME (fn sl => f (tra sl))
+			SOME f => SOME (valOf o tra (fn sl => SOME (f sl)))
 		      | NONE => NONE
 		val writeVecNB =
 		    case writeVecNB of
-			SOME f => SOME (fn sl => f (trv sl))
+			SOME f => SOME (trv f)
 		      | NONE => NONE
 		val writeArrNB =
 		    case writeArrNB of
-			SOME f => SOME (fn sl => f (tra sl))
+			SOME f => SOME (tra f)
 		      | NONE => NONE
 	    in
 		PrimIO.WR {name, chunkSize, writeVec, writeArr, writeVecNB,
