@@ -198,7 +198,8 @@ public:
 class DllExport JavaInt {
 public:
   static word ToWord(s_int value) {
-    return Store::IntToWord(value);
+    s_int x = value * 2;
+    return Store::IntToWord(x / 2); //--** hack: sign-extend 31-bit -> 32-bit
   }
   static s_int FromWord(word value) {
     return Store::DirectWordToInt(value);
@@ -219,8 +220,15 @@ public:
     std::memcpy(chunk->GetBase(), p, 8);
     return static_cast<JavaLong *>(chunk);
   }
+  static JavaLong *FromWord(word x) {
+    return static_cast<JavaLong *>(Store::WordToChunk(x));
+  }
   static JavaLong *FromWordDirect(word x) {
     return static_cast<JavaLong *>(Store::DirectWordToChunk(x));
+  }
+
+  u_char *GetNetworkRepresentation() {
+    return reinterpret_cast<u_char *>(GetBase());
   }
 };
 
