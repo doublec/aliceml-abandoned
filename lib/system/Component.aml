@@ -124,7 +124,7 @@ struct
 		lazy (trace ("type-checking " ^ message);
 		      (strictTypeCheck (inf, importInf, mod)
 		       handle Inf.Mismatch m =>
-		           raise Mismatch (url, baseUrlOpt, m)) before
+			   raise Mismatch (url, baseUrlOpt, m)) before
 		      trace ("type-checked  " ^ message))
 	    end
 
