@@ -14,11 +14,11 @@ functor
 import
    Property(get)
 export
-   'NativeConfig$': NativeConfig
+   'UnsafeConfig$': Config
 define
-   NativeConfig =
-   'NativeConfig'('platform':
-		     case {Property.get 'platform.os'} of win32 then 'WIN32'
-		     else 'UNIX'
-		     end)
+   Config =
+   'Config'('platform':
+	       case {Property.get 'platform.os'} of win32 then 'WIN32'
+	       else 'UNIX'
+	       end)
 end
