@@ -11,14 +11,13 @@
  *)
 
 import structure Socket        from "Socket"
-import structure StringHashKey from "../utility/StringHashKey"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
 import signature HTTP          from "HTTP-sig"
 
 structure Http :> HTTP =
     struct
-	structure StringMap = MkHashImpMap(StringHashKey)
+	structure StringMap = MkHashImpMap(String)
 
 	type document = {contentType: string, body: string}
 	type request =

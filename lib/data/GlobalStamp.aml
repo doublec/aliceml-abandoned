@@ -27,4 +27,6 @@ struct
 
     __primitive val compare :	stamp * stamp -> order	= "GlobalStamp.compare"
     __primitive val hash :	stamp -> int		= "GlobalStamp.hash"
+
+    val equal = op =
 end

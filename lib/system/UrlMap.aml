@@ -11,13 +11,12 @@
  *)
 
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-import structure FromEqHashKey from "../utility/HASH_KEY-sig"
 import structure Url           from "../utility/Url"
 import signature URL_MAP       from "URL_MAP-sig"
 
 structure UrlMap :> URL_MAP =
     struct
-	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+	structure UrlMap = MkHashImpMap(Url)
 
 	type 'a t = Lock.lock * 'a UrlMap.t
 

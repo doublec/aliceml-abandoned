@@ -12,7 +12,6 @@
 
 import structure TextIO        from "TextIO"
 import structure Socket        from "Socket"
-import structure FromEqHashKey from "../utility/HASH_KEY-sig"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
 import structure Http          from "Http"
@@ -43,7 +42,7 @@ structure HttpServer :> HTTP_SERVER =
 		    | NONE => "") ^ "</ADDRESS>\n\
 		 \</BODY></HTML>\n"}
 
-	structure UrlMap = MkHashImpMap(FromEqHashKey(Url))
+	structure UrlMap = MkHashImpMap(Url)
 
 	val handlerMap: handler UrlMap.t = UrlMap.new ()
 

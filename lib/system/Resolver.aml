@@ -11,7 +11,6 @@
  *)
 
 import structure Assert        from "../utility/Assert"
-import structure StringHashKey from "../utility/StringHashKey"
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
 import structure Url           from "../utility/Url"
 import structure Config        from "Config"
@@ -134,7 +133,7 @@ structure Resolver: RESOLVER =
 
 		exception Failure
 
-		structure StringMap = MkHashImpMap(StringHashKey)
+		structure StringMap = MkHashImpMap(String)
 
 		fun match (TEXT cs'::rest, cs, env) =
 		    (case dropPrefix (cs', cs) of
