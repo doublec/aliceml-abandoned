@@ -55,13 +55,6 @@ struct
 	    (tArrow, tArity)
 	end
 
-    fun isTagType t  = isTagType'(#1(decomposeConarrow t))
-    and isTagType' t =
-	Type.isArrow' t andalso isTagType'(#2(Type.asArrow' t)) orelse
-	Type.isAll' t   andalso isTagType'(#2(Type.asAll' t))   orelse
-	Type.isExist' t andalso isTagType'(#2(Type.asExist' t)) orelse
-	Type.isSum' t
-
     fun decodeArity t  = decodeArity'(#2(decomposeConarrow t))
     and decodeArity' t = if Type.isApply t
 			 then 1 + decodeArity'(#1(Type.asApply t))
@@ -530,11 +523,6 @@ UNFINISHED: obsolete after bootstrapping:
       | trInflongid(I.LongId(i,y,l))	= O.LongId(trInfInfo i,
 						   trModlongid y, trInflab l)
 
-    fun trLabLongid(I.ShortId(i,x))	= O.Lab(
-					    nonInfo(#region(i : I.valid_info)),
-					    Label.fromName(trValName(I.name x)))
-      | trLabLongid(I.LongId(i,y,l))	= trVallab l
-
 
   (* Extract bound ids from declarations. *)
 
@@ -579,16 +567,11 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.LabExp(i,l,t))		= O.FailExp(i)
       | trExp(I.NewExp(i,t))		= O.NewExp(i, decodeArity(#typ i) > 1)
-      | trExp(I.TagExp(i,l,e))		= O.TagExp(i, trVallab l, trExp e,false)
-      | trExp(I.ConExp(i,y,e))		= let val t = #typ(I.infoLongid y)
-					  in if isTagType t
-					     then O.TagExp(i, trLabLongid y,
-							      trExp e,
-							      decodeArity t > 1)
-					     else O.ConExp(i, trVallongid y,
-							      trExp e,
-							      decodeArity t > 1)
-					  end
+      | trExp(I.TagExp(i,l,NONE,e))	= O.TagExp(i, trVallab l, trExp e,false)
+      | trExp(I.TagExp(i,l,SOME y,e))	= O.TagExp(i, trVallab l, trExp e,
+					  decodeArity(#typ(I.infoLongid y)) > 1)
+      | trExp(I.ConExp(i,y,e))		= O.ConExp(i, trVallongid y, trExp e,
+					  decodeArity(#typ(I.infoLongid y)) > 1)
       | trExp(I.RefExp(i,e))		= O.RefExp(i, trExp e)
       | trExp(I.TupExp(i,es))		= O.TupExp(i, trExps es)
       | trExp(I.ProdExp(i,r))		= O.ProdExp(i, trExpRow r)
@@ -653,16 +636,11 @@ UNFINISHED: obsolete after bootstrapping:
     and trPat(I.JokPat(i))		= O.JokPat(i)
       | trPat(I.LitPat(i,l))		= O.LitPat(i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(i, trValid x)
-      | trPat(I.TagPat(i,l,p))		= O.TagPat(i, trVallab l, trPat p,false)
-      | trPat(I.ConPat(i,y,p))		= let val t = #typ(I.infoLongid y)
-					  in if isTagType t
-					     then O.TagPat(i, trLabLongid y,
-							      trPat p,
-							      decodeArity t > 1)
-					     else O.ConPat(i, trVallongid y,
-							      trPat p,
-							      decodeArity t > 1)
-					  end
+      | trPat(I.TagPat(i,l,NONE,p))	= O.TagPat(i, trVallab l, trPat p,false)
+      | trPat(I.TagPat(i,l,SOME y,p))	= O.TagPat(i, trVallab l, trPat p,
+					  decodeArity(#typ(I.infoLongid y)) > 1)
+      | trPat(I.ConPat(i,y,p))		= O.ConPat(i, trVallongid y, trPat p,
+					  decodeArity(#typ(I.infoLongid y)) > 1)
       | trPat(I.RefPat(i,p))		= O.RefPat(i, trPat p)
       | trPat(I.TupPat(i,ps))		= O.TupPat(i, trPats ps)
       | trPat(I.ProdPat(i,r))		= O.ProdPat(i, trPatRow r)

@@ -270,10 +270,10 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	  ppUnboundImport(classSigId, sigid)
       | ppError(ConItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
-		  "not","a","constructor"]
+		  "not","a","proper","constructor"]
       | ppError(DconItemNonCon vid) =
 	  textpar["value",ppVId vid,"exported","by","component","is",
-		  "not","a","constructor"]
+		  "not","a","proper","constructor"]
       (* Components *)
       | ppError(CompCorrupt u) =
 	  textpar["corrupt","component","at","URL","\""^Url.toString u^"\""]

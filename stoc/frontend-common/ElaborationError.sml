@@ -25,6 +25,9 @@ structure ElaborationError :> ELABORATION_ERROR =
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
+	| TagExpConUnify	of unify_error
+	| TagExpArgUnify	of unify_error
+	| TagExpRowUnify	of unify_error
 	| ConExpConUnify	of unify_error
 	| ConExpArgUnify	of unify_error
 	| UpdExpUnify		of unify_error
@@ -42,6 +45,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
+	| TagPatConUnify	of unify_error
+	| TagPatArgUnify	of unify_error
+	| TagPatRowUnify	of unify_error
 	| ConPatConUnify	of unify_error
 	| ConPatArgUnify	of unify_error
 	| VecPatUnify		of unify_error
@@ -251,11 +257,15 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify2(
 	  textpar["inconsistent","types","in","vector","expression:"],
 	  textpar["does","not","agree","with","previous","element","type"], ue)
-      | ppError(ConExpConUnify ue) =
+      | ppError(TagExpRowUnify ue) =
+	ppUnify4(
+	  textpar["constructor","type","and","tag","inconsistent:"],
+	  textpar["does","not","match","argument","type"], ue)
+      | ppError(TagExpConUnify ue | ConExpConUnify ue) =
 	ppUnify2(
 	  textpar["applied","value","is","not","a","constructor","function:"],
 	  textpar["does","not","match","function","type"], ue)
-      | ppError(ConExpArgUnify ue) =
+      | ppError(TagExpArgUnify ue | ConExpArgUnify ue) =
 	ppUnify4(
 	  textpar["constructor","argument","type","mismatch:"],
 	  textpar["does","not","match","argument","type"], ue)
@@ -316,12 +326,16 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  textpar["inconsistent","types","in","branches","of","`case':"],
 	  textpar["does","not","agree","with","previous","type"], ue)
       (* Patterns *)
-      | ppError(ConPatConUnify ue) =
+      | ppError(TagPatRowUnify ue) =
+	ppUnify4(
+	  textpar["constructor","type","and","tag","inconsistent:"],
+	  textpar["does","not","match","argument","type"], ue)
+      | ppError(TagPatConUnify ue | ConPatConUnify ue) =
 	ppUnify2(
 	  textpar["applied","identifier","is","not","a","constructor",
 		  "function:"],
 	  textpar["does","not","match","function","type"], ue)
-      | ppError(ConPatArgUnify ue) =
+      | ppError(TagPatArgUnify ue | ConPatArgUnify ue) =
 	ppUnify4(
 	  textpar["ill-typed","constructor","argument:"],
 	  textpar["does","not","match","argument","type"], ue)

@@ -56,7 +56,7 @@ ref 0				'Ref(0)
 
 Treatment of datatypes is still unsatisfactory for 3 reasons:
 
-- ConExp's are hijacked to represent certain cases of tagged exps as well
+- TagExp's need to carry an optional longid
   (where an implicit type annotation is required).
 - We had to introduce LabExp's
   (just to provide these implicit annotations in a very indirect way).
@@ -101,6 +101,10 @@ functor MakeAbstractionPhase(
     fun conVId vid = VId.fromString(conName(VId.toString vid))
 
     fun inventId i = O.Id(i, Stamp.new(), Name.InId)
+
+    fun idToLab(O.Id(i, _, name))        = O.Lab(i, Label.fromName name)
+    fun longidToLab(O.ShortId(_, id))    = idToLab id
+      | longidToLab(O.LongId(_, _, lab)) = lab
 
     fun modlongidToMod(O.ShortId(i, modid))            = O.VarMod(i, modid)
       | modlongidToMod(O.LongId(i, modlongid, modlab)) =
@@ -301,12 +305,8 @@ functor MakeAbstractionPhase(
 		val  modlongid'      =
 		     case modlongido'
 		       of NONE            => O.ShortId(i, modid')
-			| SOME modlongid' =>
-			  let val O.Id(i',_,name) = modid' in
-			      O.LongId(i, modlongid',
-					  O.Lab(i', Label.fromName name))
-			  end
-
+			| SOME modlongid' => O.LongId(i, modlongid',
+							 idToLab modid')
 	   in
 		( SOME modlongid', x )
 	   end
@@ -326,11 +326,7 @@ functor MakeAbstractionPhase(
 		val  longid'         =
 		     case modlongido'
 		       of NONE            => O.ShortId(i, id')
-			| SOME modlongid' =>
-			  let val O.Id(i',_,name) = id' in
-			      O.LongId(i, modlongid',
-					  O.Lab(i', Label.fromName name))
-			  end
+			| SOME modlongid' => O.LongId(i, modlongid',idToLab id')
 	   in
 		( longid', x )
 	   end
@@ -704,8 +700,12 @@ functor MakeAbstractionPhase(
 	      of (vallongid', V) =>
 		 ( fn(i',exp') => O.AppExp(i', O.VarExp(i, vallongid'), exp') )
 
-	       | (vallongid', C 0) =>
+	       | (vallongid', (T 0 | C 0)) =>
 		 ( fn(i',exp') => error(i', E.ExpConArgSuperfluous) )
+
+	       | (vallongid', T k) =>
+		 ( fn(i',exp') => O.TagExp(i', longidToLab vallongid',
+					   SOME(trConLongVId E longvid), exp') )
 
 	       | (vallongid', C k) =>
 		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid, exp') )
@@ -758,9 +758,10 @@ functor MakeAbstractionPhase(
 	 | SCONAtPat(i, scon)	=> O.LitPat(i, trSCon E scon)
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
 	   (case lookupIdStatus(E, vid')
-	      of  C 0      => O.ConPat(i, trConLongVId E longvid, O.JokPat(i))
-	       | (C _ | R) => error(i, E.PatConArgMissing)
-	       |  V        =>
+	      of  T 0 => O.TagPat(i, idToLab(#1(trVId E vid)),
+				     SOME(trConLongVId E longvid), O.JokPat(i))
+	       |  C 0 => O.ConPat(i, trConLongVId E longvid, O.JokPat(i))
+	       |  V   =>
 		 let
 		    (* If inside an alternative pattern then E' contains
 		     * an upper scope where the variable is already bound.
@@ -779,10 +780,14 @@ functor MakeAbstractionPhase(
 		 in
 		    O.VarPat(i, valid')
 		 end
+	       | (T _ | C _ | R) => error(i, E.PatConArgMissing)
 	   )
 	 | LONGVIDAtPat(i, _, longvid) =>
 	   (case trLongVId E longvid
-	      of (vallongid', C 0) => O.ConPat(i, trConLongVId E longvid,
+	      of (vallongid', T 0) => O.TagPat(i, longidToLab vallongid',
+						  SOME(trConLongVId E longvid),
+						  O.JokPat(i))
+	       | (vallongid', C 0) => O.ConPat(i, trConLongVId E longvid,
 						  O.JokPat(i))
 	       | (vallongid', V)   => error(i, E.PatLongVIdVar)
 	       | (vallongid', _)   => error(i, E.PatConArgMissing)
@@ -911,8 +916,12 @@ functor MakeAbstractionPhase(
 	   (case trLongVId E longvid
 	      of (vallongid', V) => error(i, E.AppPatNonCon)
 
-	       | (vallongid', C 0) =>
+	       | (vallongid', (T 0 | C 0)) =>
 		 ( fn(i',pat') => error(i', E.PatConArgSuperfluous) )
+
+	       | (vallongid', T k) =>
+		 ( fn(i',pat') => O.TagPat(i', longidToLab vallongid',
+					   SOME(trConLongVId E longvid), pat') )
 
 	       | (vallongid', C k) =>
 		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid, pat') )
@@ -1558,8 +1567,8 @@ functor MakeAbstractionPhase(
     and trFatPat_lhs E =
 	fn LONGVIDAtPat(i, _, SHORTLong(_, vid as VId(i', vid'))) =>
 	   (case lookupIdStatus(E, vid')
-	      of  V        => vid
-	       | (R | C _) => error(i', E.FvalBindNameCon vid')
+	      of  V              => vid
+	       | (R | C _ | T _) => error(i', E.FvalBindNameCon vid')
 	   )
 
 	 | ALTAtPat(i, fpats) =>
@@ -1909,7 +1918,7 @@ functor MakeAbstractionPhase(
 		val (valid2',stamp2) = trVId_bind E vid
 		val  vallongid1'     = O.ShortId(i, valid1')
 		val (typ11',k)       = trTyo E tyo
-		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  vallab'         = idToLab valid2'
 		val  field'          = O.Field(i, vallab', typ11')
 		val  typ1'           = conarrowtyp E (O.infoTyp typ',
 						      typ11', typ', k)
@@ -1917,13 +1926,13 @@ functor MakeAbstractionPhase(
 		val  dec1'           = O.ValDec(i, O.VarPat(i', valid1'), exp1')
 		val  exp2'           =
 		     if k = 0 then
-			O.ConExp(i, vallongid1', O.FailExp(i))
+			O.TagExp(i, vallab', SOME vallongid1', O.FailExp(i))
 		     else
 		     let
 			val  validM'     = O.Id(i, Stamp.new(), Name.InId)
 			val  vallongidM' = O.ShortId(i, validM')
 			val  patM'       = O.VarPat(i, validM')
-			val  expM'       = O.ConExp(i, vallongid1',
+			val  expM'       = O.TagExp(i, vallab',SOME vallongid1',
 						    O.VarExp(i, vallongidM'))
 		     in
 			O.FunExp(i, #[O.Match(i, patM', expM')])
@@ -2007,7 +2016,7 @@ functor MakeAbstractionPhase(
 				error(i', E.DconBindDuplicate vid')
 		      ; trDconBindo' (E,E', dec2'::acc) dconbindo
 		      )
-		   | V => error(i, E.DconBindNonCon)
+		   | (T _ | V) => error(i, E.DconBindNonCon)
 	   end
 
 
@@ -2570,7 +2579,7 @@ functor MakeAbstractionPhase(
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val (typ11',k)       = trTyo E tyo
-		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  vallab'         = idToLab valid2'
 		val  field'          = O.Field(i, vallab', typ11')
 		val  typ1'           = alltyp(typids',
 					      conarrowtyp E
@@ -2637,8 +2646,8 @@ functor MakeAbstractionPhase(
 						vallongid2')
 		val  spec2'          = O.ValSpec(i, valid2', typ2')
 		val  k               = case is
-					 of C k   => k
-					  | (V|R) => error(i, E.DconDescNonCon)
+					 of C k => k
+					  | _   => error(i, E.DconDescNonCon)
 	   in
 		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E, vid',  (i', stamp2, C k))
@@ -2979,7 +2988,7 @@ functor MakeAbstractionPhase(
 		val (valid1',stamp1) = trConVId_bind' E vid
 		val (valid2',stamp2) = trVId_bind E vid
 		val (typ11',k)       = trTyo E tyo
-		val  vallab'         = O.Lab(i', Label.fromName(O.name valid2'))
+		val  vallab'         = idToLab valid2'
 		val  field'          = O.Field(i, vallab', typ11')
 		val  typ1'           = alltyp(typids',
 					      conarrowtyp E
@@ -2992,9 +3001,9 @@ functor MakeAbstractionPhase(
 		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
 	   in
 		case lookupVal(E', vid')
-		  of SOME(_,_, C _)  => ()
-		   | SOME(_,_,(V|R)) => error(i', E.ConItemNonCon vid')
-		   | NONE            => error(i', E.ConItemUnbound vid');
+		  of SOME(_,_,T _) => ()
+		   | SOME(_,_,_)   => error(i', E.ConItemNonCon vid')
+		   | NONE          => error(i', E.ConItemUnbound vid');
 		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
 		; insertDisjointVal(E', vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
@@ -3014,8 +3023,8 @@ functor MakeAbstractionPhase(
 		val  imp1'           = O.ValImp(i', valid1', O.NoDesc(i'))
 		val  imp2'           = O.ValImp(i', valid2', O.NoDesc(i'))
 		val  k               = case lookupVal(E', vid')
-				       of SOME(_,_,C k)   => k
-					| SOME(_,_,(V|R)) =>
+				       of SOME(_,_,C k) => k
+					| SOME(_,_,_)   =>
 					  error(i', E.DconItemNonCon vid')
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')
@@ -3047,8 +3056,8 @@ functor MakeAbstractionPhase(
 						       typ11', typ12'))
 		val  imp2'           = O.ValImp(i, valid2', O.SomeDesc(i,typ2'))
 		val  k               = case lookupVal(E', vid')
-				       of SOME(_,_,C k)   => k
-					| SOME(_,_,(V|R)) =>
+				       of SOME(_,_,C k) => k
+					| SOME(_,_,_)   =>
 					  error(i', E.DconItemNonCon vid')
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')

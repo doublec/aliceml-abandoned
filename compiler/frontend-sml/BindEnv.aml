@@ -42,7 +42,7 @@ structure BindEnv :> BIND_ENV =
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
-    datatype IdStatus  = V | C of int | R
+    datatype IdStatus  = V | T of int | C of int | R
 
     datatype Env = ENV of Ran Map.t
     and      Ran = INF of Inf

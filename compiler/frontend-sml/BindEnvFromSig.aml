@@ -40,11 +40,15 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 
     and idStatusFromTyp'(t1,t2) =
 	if      Type.isApply' t1 then idStatusFromTyp'(#1(Type.asApply' t1), t2)
+	else if Type.isSum' t1 then
+	    T(arityFromNatTyp t2)
 	else if Type.isCon' t1
 	andalso Path.equals(#3(Type.asCon' t1), PervasiveType.path_ref) then
 	    R
-	else
+	else if Type.isCon' t1 andalso #2(Type.asCon' t1) = Type.OPEN then
 	    C(arityFromNatTyp t2)
+	else
+	    raise Type.Type
 
     and arityFromNatTyp t =
 	if Type.isApply t then

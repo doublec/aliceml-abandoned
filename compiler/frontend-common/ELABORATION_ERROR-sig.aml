@@ -16,6 +16,9 @@ signature ELABORATION_ERROR =
     datatype error =
 	(* Expressions *)
 	  VecExpUnify		of unify_error
+	| TagExpConUnify	of unify_error
+	| TagExpArgUnify	of unify_error
+	| TagExpRowUnify	of unify_error
 	| ConExpConUnify	of unify_error
 	| ConExpArgUnify	of unify_error
 	| UpdExpUnify		of unify_error
@@ -33,6 +36,9 @@ signature ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
+	| TagPatConUnify	of unify_error
+	| TagPatArgUnify	of unify_error
+	| TagPatRowUnify	of unify_error
 	| ConPatConUnify	of unify_error
 	| ConPatArgUnify	of unify_error
 	| VecPatUnify		of unify_error

@@ -96,7 +96,7 @@ functor MakeAbstractGrammar(type fix_info
 	| PrimExp   of exp_info * string * typ	(* builtin values *)
 	| LabExp    of exp_info * vallab * typ	(* first-class label *)
 	| NewExp    of exp_info * typ		(* first-class constructor *)
-	| TagExp    of exp_info * vallab * exp	(* tagged value *)
+	| TagExp    of exp_info * vallab * vallongid option * exp (* tagged *)
 	| ConExp    of exp_info * vallongid * exp (* constructed value *)
 	| RefExp    of exp_info * exp		(* reference *)
 	| TupExp    of exp_info * exp vector	(* tuple *)
@@ -130,7 +130,7 @@ functor MakeAbstractGrammar(type fix_info
 	  JokPat    of pat_info			(* joker (wildcard) *)
 	| LitPat    of pat_info * lit		(* literal *)
 	| VarPat    of pat_info * valid		(* variable *)
-	| TagPat    of pat_info * vallab * pat	(* tagged value *)
+	| TagPat    of pat_info * vallab * vallongid option * pat (* tagged *)
 	| ConPat    of pat_info * vallongid * pat (* constructed value *)
 	| RefPat    of pat_info * pat		(* reference *)
 	| TupPat    of pat_info * pat vector	(* tuple *)
@@ -252,7 +252,7 @@ functor MakeAbstractGrammar(type fix_info
       | infoExp(PrimExp(i,_,_))		= i
       | infoExp(LabExp(i,_,_))		= i
       | infoExp(NewExp(i,_))		= i
-      | infoExp(TagExp(i,_,_))		= i
+      | infoExp(TagExp(i,_,_,_))	= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i,_))		= i
       | infoExp(TupExp(i,_))		= i
@@ -282,7 +282,7 @@ functor MakeAbstractGrammar(type fix_info
     fun infoPat(JokPat(i))		= i
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
-      | infoPat(TagPat(i,_,_))		= i
+      | infoPat(TagPat(i,_,_,_))	= i
       | infoPat(ConPat(i,_,_))		= i
       | infoPat(RefPat(i,_))		= i
       | infoPat(TupPat(i,_))		= i

@@ -80,7 +80,7 @@ struct
 	       | I.NewExp _
 	       | I.FunExp _
 	       | I.FailExp _ )			= true
-      | isValue( I.TagExp(_, _, exp)
+      | isValue( I.TagExp(_, _, _, exp)
 	       | I.ConExp(_, _, exp)
 	       | I.RefExp(_, exp)
 	       | I.SelExp(_, _, exp)
@@ -245,14 +245,33 @@ struct
 	    ( t, O.NewExp(typInfo(i,t), typ') )
 	end
 
-      | elabExp(E, I.TagExp(i, vallab, exp)) =
+      | elabExp(E, I.TagExp(i, vallab, NONE, exp)) =
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val (t1,exp')   = elabExp(E, exp)
 	    val  r          = Type.extendRow(a, t1, Type.unknownRow())
 	    val  t          = Type.inSum r
 	in
-	    ( t, O.TagExp(typInfo(i,t), vallab', exp') )
+	    ( t, O.TagExp(typInfo(i,t), vallab', NONE, exp') )
+	end
+
+      | elabExp(E, I.TagExp(i, vallab, SOME vallongid, exp)) =
+	let
+	    (*UNFINISHED: check consistency of label*)
+	    val (a,vallab')     = elabLab(E, vallab)
+	    val (t1,vallongid') = elabVallongid(E, vallongid)
+	    val  t1'            = Type.instance t1
+	    val (t2,exp')       = elabExp(E, exp)
+	    val  t11            = Type.unknown(Type.STAR)
+	    val  t12            = Type.unknown(Type.STAR)
+	    val  t3             = conarrowTyp(E, t11, t12)
+	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
+				    error(I.infoLongid vallongid,
+					  E.TagExpConUnify(t3, t1', t4, t5))
+	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
+				    error(i, E.TagExpArgUnify(t11, t2, t4, t5))
+	in
+	    ( t12, O.TagExp(typInfo(i,t12), vallab', SOME vallongid', exp') )
 	end
 
       | elabExp(E, I.ConExp(i, vallongid, exp)) =
@@ -548,14 +567,33 @@ struct
 	    ( t, O.VarPat(typInfo(i,t), valid') )
 	end
 
-      | elabPat(E, s, I.TagPat(i, vallab, pat)) =
+      | elabPat(E, s, I.TagPat(i, vallab, NONE, pat)) =
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val (t1,pat')   = elabPat(E, s, pat)
 	    val  r          = Type.extendRow(a, t1, Type.unknownRow())
 	    val  t          = Type.inSum r
 	in
-	    ( t, O.TagPat(typInfo(i,t), vallab', pat') )
+	    ( t, O.TagPat(typInfo(i,t), vallab', NONE, pat') )
+	end
+
+      | elabPat(E, s, I.TagPat(i, vallab, SOME vallongid, pat)) =
+	let
+	    (*UNFINISHED: check consistency of label*)
+	    val (a,vallab')     = elabLab(E, vallab)
+	    val (t1,vallongid') = elabVallongid(E, vallongid)
+	    val  t1'            = Type.instance t1
+	    val (t2,pat')       = elabPat(E, s, pat)
+	    val  t11            = Type.unknown(Type.STAR)
+	    val  t12            = Type.unknown(Type.STAR)
+	    val  t3             = conarrowTyp(E, t11, t12)
+	    val  _              = Type.unify(t3,t1') handle Type.Unify(t4,t5) =>
+				    error(I.infoLongid vallongid,
+					  E.TagPatConUnify(t3, t1', t4, t5))
+	    val  _              = Type.unify(t11,t2) handle Type.Unify(t4,t5) =>
+				    error(i, E.TagPatArgUnify(t11, t2, t4, t5))
+	in
+	    ( t12, O.TagPat(typInfo(i,t12), vallab', SOME vallongid', pat') )
 	end
 
       | elabPat(E, s, I.ConPat(i, vallongid, pat)) =

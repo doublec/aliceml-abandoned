@@ -50,8 +50,8 @@ struct
     fun ppString s		= text("\"" ^ s ^ "\"")
     fun ppUrl u			= text("\"" ^ Url.toString u ^ "\"")
 
-    fun ppStringOption(NONE)	= empty
-      | ppStringOption(SOME s)	= ppString s
+    fun ppOption ppX (NONE)	= text "[]"
+      | ppOption ppX (SOME x)	= ppX x
 
     fun ppFix(Fixity.NONFIX)	= text "NonFix"
       | ppFix(Fixity.PREFIX n)	= text("PreFix(" ^ Int.toString n ^ ")")
@@ -197,8 +197,10 @@ struct
       | ppExp(NewExp(i, typ))		= exptree "New" i (
 					    ppTyp typ
 					  )
-      | ppExp(TagExp(i, vallab, exp))	= exptree "Tag" i (
+      | ppExp(TagExp(i, vallab, vallongido, exp))
+					= exptree "Tag" i (
 					    ppVallab vallab ^/^
+					    ppOption ppVallongid vallongido ^/^
 					    ppExp exp
 					  )
       | ppExp(ConExp(i, vallongid,exp))	= exptree "Con" i (
@@ -294,8 +296,10 @@ struct
       | ppPat(VarPat(i, valid))		= pattree "Var" i (
 					    ppValid valid
 					  )
-      | ppPat(TagPat(i, vallab, pat))	= pattree "Tag" i (
+      | ppPat(TagPat(i, vallab, vallongido, pat))
+					= pattree "Tag" i (
 					    ppVallab vallab ^/^
+					    ppOption ppVallongid vallongido ^/^
 					    ppPat pat
 					  )
       | ppPat(ConPat(i, vallongid,pat))	= pattree "Con" i (
@@ -387,10 +391,10 @@ struct
 					    ppVallongid vallongid
 					  )
       | ppTyp(AbsTyp(i, so))		= typtree "Abs" i (
-					    ppStringOption so
+					    ppOption ppString so
 					  )
       | ppTyp(ExtTyp(i, so))		= typtree "Ext" i (
-					    ppStringOption so
+					    ppOption ppString so
 					  )
 
   (* Modules *)
@@ -478,7 +482,7 @@ struct
 					    ppMod mod
 					  )
       | ppInf(AbsInf(i, so))		= inftree "Abs" i (
-					    ppStringOption so
+					    ppOption ppString so
 					  )
 
   (* Declarations *)

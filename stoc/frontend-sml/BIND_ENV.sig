@@ -35,7 +35,7 @@ signature BIND_ENV =
 
     datatype InfAssoc  = datatype Infix.Assoc
     type     InfStatus = Infix.InfStatus
-    datatype IdStatus  = V | C of int | R
+    datatype IdStatus  = V | T of int | C of int | R
 
     type Env
     type Inf = Info * InfStatus
