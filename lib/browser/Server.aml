@@ -17,6 +17,9 @@ import signature SERVER from "SERVER-sig"
 
 structure Server :> SERVER =
 struct
+
+    fun error e = print ("Server: got exception " ^ (General.exnName e) ^ "\n")
+
     fun newServer () =
 	let
 	    val tail   = Promise.promise ()
@@ -24,7 +27,7 @@ struct
 		
 	    fun process s = (case s of
 				 nil   => ()
-			       | p::pr => (p ();
+			       | p::pr => ((p () handle e => error e);
 					   process pr))
 	    fun send p =
 		let
