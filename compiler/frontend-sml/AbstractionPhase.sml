@@ -1,3 +1,11 @@
+(*
+ * To do:
+ * - proper treatment of hiding in single scope
+ * - where
+ * - sharing
+ * - transparent signature constraints
+ *)
+
 structure AbstractionPhase :> ABSTRACTION_PHASE =
   struct
 
@@ -813,7 +821,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			     else trValBindo (E,E') ) (SOME valbind)
 		val  _    = deleteScope E
 		val  _    = union(E,E')
-		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		if List.null ids' then decs'
 				  else typvardecs(ids', decs') @ acc
@@ -835,7 +842,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
-		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
 	   end
@@ -845,7 +851,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val E'    = Env.new()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
 		val  _    = union(E,E')
-		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		decs'
 	   end
@@ -855,10 +860,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val E'    = Env.new()
 		val  _    = trDatBindo_lhs (E,E') (SOME datbind)
 		val  _    = union(E,E')
-		(* BUG: detect hiding and make correspondings decs local *)
 		val decs' = trDatBindo_rhs (E,E') (SOME datbind)
 		val  _    = union(E,E')
-		(* BUG: detect hiding and make correspondings decs local *)
 	   in
 		O.RecDec(i, decs') :: acc
 	   end
@@ -969,7 +972,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val pat'    = O.VarPat(i, id')
 	    val exp'    = O.VarExp(i, longid')
 	    val _       = insertVal(E, vid', (i,stamp,is))
-	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    (case is
 	       of V => O.ValDec(i, O.VarPat(i, id'), O.VarExp(i, longid'))
@@ -985,7 +987,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val typ'    = O.ConTyp(i, longid')
 	    val _       = insertTy(E, tycon', (i,stamp,E'))
-	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.TypDec(i, id', typ') :: acc
 	end
@@ -998,7 +999,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertStr(E, strid', (i,stamp,E'))
-	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
@@ -1011,7 +1011,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val mod'    = longidToMod longid'
 	    val _       = insertFun(E, funid', (i,stamp,E'))
-	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.ModDec(i, id', mod') :: acc
 	end
@@ -1024,7 +1023,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val longid' = O.LongId(i, longid, lab')
 	    val inf'    = O.ConInf(i, longid')
 	    val _       = insertSig(E, sigid', (i,stamp,E'))
-	    (* BUG: detect hiding and make correspondings decs local *)
 	in
 	    O.InfDec(i, id', inf') :: acc
 	end
