@@ -1,0 +1,5 @@
+source /local/botlan/alice/lib/constraints/distribution/AlicePath
+export ALICERUN=/opt/alice-devel/bin/alicerun
+export WORKERURI="x-alice:/lib/constraints/distribution/RemoteWorker"
+export DISPLAY=":0.0"
+

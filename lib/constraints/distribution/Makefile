@@ -3,8 +3,7 @@ ALICEC = alicec
 ALICEDEP = alicedep
 ALICEC_OPTS =
 
-SOURCES = CHANNEL-sig.aml Channel.aml \
-	  Debug.aml Utils.aml \
+SOURCES = Debug.aml Utils.aml \
           Common.aml \
           Path.aml Interface.aml \
           PARCEL-sig.aml \
@@ -20,20 +19,13 @@ COMPONENTS = $(SOURCES:%.aml=%.stc)
 #INSTALLDIRS = $(PREFIX)/lib/distribution/search
 #INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/search/%)
 
-.PHONY: all depend clean veryclean distclean message
+.PHONY: all msg depend clean veryclean distclean message
 
 all: msg $(COMPONENTS)
 
 msg:
-	@echo "**************************************"
-	@echo "- Reimplement MkRSpace.aml"
-	@echo "- Remember, you have sleepms in MkWorker"
-	@echo "- When generative types are back, look for ??? in MkEngine."
-	@echo "- HANDLE exceptions in THREADS. See MkWorker for inspiration."
-	@echo "  Also find WHO should fail : the manager, the worker, both ???"
-	@echo "  In particular when a call to 'share' raises an exception."
-	@echo "- Write (all?) the interfaces"
-	@echo "**************************************"
+	@echo "*** Beware: each workers sleeps 950ms at each node."
+	@echo "*** This is why the search is so slow."
 	@echo
 
 depend:

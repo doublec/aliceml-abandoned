@@ -2,45 +2,59 @@ import signature FD    from "x-alice:/lib/gecode/FD-sig"
 import signature FS    from "x-alice:/lib/gecode/FS-sig"
 import signature SPACE from "x-alice:/lib/gecode/SPACE-sig"
 
-
 structure Common =
 struct
-    datatype search_mode = ONE | ALL | BEST
 
-    signature SCRIPT_GEN =
+  (* In 'BEST' search mode, found solutions are used to restrict the search tree
+   * internal_order (space, sol, vars)
+   *   posts constraints in the given space such that
+   *   sol < vars   i.e. vars are strictly better than sol
+   *  'space stands for Space.space *)
+  type ('a, 'b, 'space) internal_order = 'space * 'a * 'b -> unit
+
+  (* In 'BEST' search mode, two choices :
+   *   - Build automatically an order on solutions using a conversion function
+   *   - Provide a comparison for solutions, compatible with the internal order,
+   *     that is, externalOrder (x, y) iff y is strictly better than x
+   *)
+  datatype ('a,'b,'space) compare_mode =
+    Internalize of 'a * 'space -> 'b (* Conversion function *)
+  | ExternalOrder of 'a * 'a -> bool (* Comparison of solutions. *)
+
+  datatype ('a,'b,'space) search_mode =
+    ONE
+  | ALL
+  | BEST of ('a,'b,'space) internal_order * ('a,'b,'space) compare_mode
+    
+  signature SCRIPT_GEN =
     sig
-(*	type sol = int vector *)
-	functor MkScript (Space : SPACE) 
-	                 (FD : FD where type space = Space.space)
-			 (FS : FS where type space = Space.space
-			          where type intvar = FD.intvar
-				  where type boolvar = FD.boolvar)  :
-	    sig
-(*		type variables = FD.intvar vector *)
-		    
-		val script      : unit -> (FD.intvar vector) * Space.space
-		val internalize : (int vector) * Space.space -> (FD.intvar vector)
-		val getSolution : (FD.intvar vector) * Space.space -> (int vector)
-		    
-		(* order (space, sol, vars)
-		 *   posts constraints in the given space which mean
-		 *   sol < vars   vars are strictly better than sol
-		 *)
-		val order : Space.space * (int vector) * (FD.intvar vector) -> unit
-	    end
-	
-	val print  : (int vector) -> string
+      (* type sol = int vector *)
+      functor MkScript (Space : SPACE) 
+        (FD : FD where type space = Space.space)
+        (FS : FS where type space = Space.space
+         where type intvar = FD.intvar
+         where type boolvar = FD.boolvar)  :
+        sig
+          (* type variables = FD.intvar vector *)
+          
+          val script      : unit -> (FD.intvar vector) * Space.space
+          val getSolution : (FD.intvar vector) * Space.space -> (int vector)
+          val searchMode  : (int vector, FD.intvar vector, Space.space) search_mode
+        end
 
-	(*
-	 * rdist   is the recomputation distance:
-	 *     0 always performs recomputation (equivalent to infinite rdist)
-	 *     1 for no recomputation (that is, always clone the spaces)
-	 *     n for recomputation every n steps
-	 *)
-	val rdist : int
-
+      (* print solutions. Used for debug. *)      
+      val print  : (int vector) -> string
+        
+      (*
+       * rdist   is the recomputation distance:
+       *     0 always performs recomputation (equivalent to infinite rdist)
+       *     1 for no recomputation (that is, always clone the spaces)
+       *     n for recomputation every n steps
+       *)
+      val rdist : int
+        
     end
-
+  
 end
 
 

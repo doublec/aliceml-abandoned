@@ -1,11 +1,12 @@
-import "Channel"
-import "Common"
-import "Interface"
-import structure Debug from "Debug"
+import structure Channel from "x-alice:/lib/data/Channel"
+
+import structure Common    from "Common"
+import structure Interface from "Interface"
+import structure Debug     from "Debug"
 
 signature MANAGER =
 sig
-    val new : Debug.db_mask * int * Common.search_mode * ('a * 'a -> bool) option * ('a -> string)
-	      -> 'a Interface.manager_intf * 'a Channel.t
+  val new : Debug.db_mask * int * ('a,'b,'c) Common.search_mode * ('a -> string)
+            -> 'a Interface.manager_intf * 'a Channel.t
 end
 

@@ -10,23 +10,20 @@
 structure Path =
 struct
     datatype 'a item =
-	Commit    of int
-      | Constrain of 'a
+	Commit of int
+      | Better of 'a
 
     (* A path in the search tree. *)
-    (* externalized paths are in the correct order (1st operation 1st) *)
-    (* internalized paths are in reverse order (1st operation last) *)
     type 'a path = ('a item) list
     type t = path
 	
     val root = []
 
-    val itos = Int.toString
     fun print [] = "[]"
       | print ((Commit n) :: xs) =
-	       (itos n ^ "-" ^ print xs)
-      | print ((Constrain _) :: xs) =
-	       ("BEST(" ^ print xs ^ ")")
+	       (Int.toString n ^ "-" ^ print xs)
+      | print ((Better _) :: xs) =
+	       ("Better(x)-" ^ print xs)
 
 end
 

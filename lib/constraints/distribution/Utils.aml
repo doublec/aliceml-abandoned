@@ -1,106 +1,109 @@
-import "Channel"
+import structure Channel from "x-alice:/lib/data/Channel"
 
 structure Utils =
 struct
 
-(* If (f a) = NONE for all elements of the list, return NONE
- * Otherwise, returns SOME b such that (f a) = SOME b
- * and a is the first element of the list returning SOME *)
-fun findSome f nil   = NONE
-  | findSome f (x::xs) =
-    case f x of 
-	NONE => findSome f xs
-      | (SOME b) as r => r
+  (* If (f a) = NONE for all elements of the list, return NONE
+   * Otherwise, returns SOME b such that (f a) = SOME b
+   * and a is the first element of the list returning SOME *)
+  fun findSome f nil     = NONE
+    | findSome f (x::xs) =
+        case f x of 
+          NONE => findSome f xs
+        | (SOME b) as r => r
 
-(* We could use fold, but it is nice that way.*)
-fun revmap' (f, acc, nil) = acc
-  | revmap' (f, acc, x::xs) = revmap'(f, f x::acc, xs)
-fun revmap f l = revmap' (f, [], l)
+  (* Sleep for t milliseconds *)        
+  fun sleepms t = Thread.sleep (Time.fromMilliseconds t)
 
-fun sleepms t = Thread.sleep (Time.fromMilliseconds t)
-
-functor NewSequence () =
+  (* Creates a new 'server' which evaluates tasks sequentially. *)
+  functor NewSequence () =
     struct
-	(* A new channel for jobs that must be run sequentially. *)
-	val jobs      = Channel.new ()
-	    
-	(* f () will be evaluated sequentially *)
-	fun add f = Channel.put (jobs, f)
-	fun app f arg = add (fn () => f arg)
-
-	(* Run jobs. *)
-	val _ = spawn (Channel.app (fn job => job()) jobs)
-	    
-	(* Nicely stop all jobs. *)
-	fun stop () =
-	    (Channel.close jobs ;
-	     Channel.purge jobs)
-	    
+      (* A new channel for jobs that must be run sequentially. *)
+      val jobs      = Channel.new ()
+        
+      (* f () will be evaluated sequentially *)
+      fun add f = Channel.put (jobs, f)
+      fun app f arg = add (fn () => f arg)
+        
+      (* Run jobs. *)
+      val _ = spawn (Channel.app (fn job => job()) jobs)
+        
+      (* Nicely stop all jobs. *)
+      fun stop () =
+        (Channel.close jobs ;
+         Channel.purge jobs)
+        
     end
-
+  
 end
 
-signature MYSTACK =
-    sig
-	type 'a stack
-	type t = stack
 
-	val new : unit -> 'a t
-	val push : 'a t * 'a -> unit
-	val pop  : 'a t -> 'a option
-	val takeLast : 'a t -> 'a option
-	val isEmpty : 'a t -> bool
-    end
+(* A special Stack where the last element can be concurrently taken. *)
+(* This stack requires a single regular consumer (using pop). *)
+signature MYSTACK =
+  sig
+    type 'a stack
+    type t = stack
+      
+    val new : unit -> 'a t
+    val push : 'a t * 'a -> unit
+    val pop  : 'a t -> 'a option
+    val takeLast : 'a t -> 'a option
+    val isEmpty : 'a t -> bool
+  end
 
 structure MyStack :> MYSTACK =
-    struct
-	
-	type 'a stack = ('a option Promise.t option ref) * 'a list ref
-	type t = stack
+  struct
 
-	fun new () = (ref NONE, ref [])
-	
-	fun push ((_,stackL), e) = stackL := e :: (!stackL)
-	    
-	(* Remove the last element of the list, use it to fulfill promise p. *)
-	fun listLast (p, []) = assert false
-	  | listLast (p, [x]) = (Promise.fulfill (p, SOME x) ; [])
-	  | listLast (p, x :: xs) = x :: listLast (p, xs)
-
-	fun isEmpty (_, stackL) = List.null (!stackL)
-
-	fun pop (stackP, stackL) = 
-	    case !stackP of
-		NONE   => (case !stackL of
-			       []      => NONE
-			     | x :: xs => (stackL := xs ; SOME x))
-		    
-	      (* A promise is waiting to be fulfilled. *)
-	      | SOME p => (case !stackL of
-			       []  => (Promise.fulfill (p,NONE) ;
-				       stackP := NONE ;
-				       NONE)
-
-			     | [x] => (Promise.fulfill (p, NONE) ;
-				       stackP := NONE ;
-				       stackL := [] ;
-				       SOME x)
-
-			     | x :: xs => (stackL := listLast (p, xs) ;
-					   stackP := NONE ;
-					   SOME x))
-
-	fun takeLast (stackP, stackL) =
-	    (* This matching is only an optimization. *)
-	    case !stackL of
-		[]  => NONE
-	      | [x] => NONE
-	      | x :: xs =>
-		    let val p = Promise.promise ()
-		    in
-			assert !stackP = NONE ;
-			stackP := SOME p ;
-			Future.await (Promise.future p)
-		    end
-    end
+    (* Implementation: *)
+    (*    a reference indicating if the last element is requested *)
+    (*   and the stack itself is a list ref. *)
+    type 'a stack = ('a option Promise.t option ref) * 'a list ref
+    type t = stack
+      
+    fun new () = (ref NONE, ref [])
+      
+    fun push ((_,stackL), e) = stackL := e :: (!stackL)
+      
+    (* Remove the last element of the list, use it to fulfill promise p. *)
+    fun listLast (p, []) = assert false
+      | listLast (p, [x]) = (Promise.fulfill (p, SOME x) ; [])
+      | listLast (p, x :: xs) = x :: listLast (p, xs)
+      
+    fun isEmpty (_, stackL) = List.null (!stackL)
+      
+    fun pop (stackP, stackL) = 
+      case !stackP of
+        NONE   => (case !stackL of
+                     []      => NONE
+                   | x :: xs => (stackL := xs ; SOME x))
+          
+      (* A promise is waiting to be fulfilled. *)
+      | SOME p => (case !stackL of
+                     []  => (Promise.fulfill (p,NONE) ;
+                             stackP := NONE ;
+                             NONE)
+                       
+                   | [x] => (Promise.fulfill (p, NONE) ;
+                             stackP := NONE ;
+                             stackL := [] ;
+                             SOME x)
+                       
+                   | x :: xs => (stackL := listLast (p, xs) ;
+                                 stackP := NONE ;
+                                 SOME x))
+          
+    fun takeLast (stackP, stackL) =
+      (* This matching is only an optimization. *)
+      case !stackL of
+        []  => NONE
+      | [x] => NONE
+      | x :: xs =>
+          let val p = Promise.promise ()
+          in
+            assert !stackP = NONE ;
+            stackP := SOME p ;
+            Future.await (Promise.future p)
+          end
+  end
 

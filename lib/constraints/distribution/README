@@ -1,0 +1,119 @@
+*** Plan ********************
+
+1 - Short Description
+2 - Copyright
+3 - Contact
+4 - Usage
+5 - Quick start
+
+*****************************
+
+
+
+--- 1 - Short Description ---
+-----------------------------
+
+This is the implementation of a distributed search algorithm,
+meant for constraint problems (it should be easily adapted to other
+frameworks, though).
+
+A constraint-based problem and a list of hosts is passed to a manager.
+The manager connects to each host and runs a program which is called a worker.
+Each worker searches part of the initial problem and sends its result(s)
+to the manager.
+The manager collects results and dispatches the problem between
+workers dynamically.
+
+
+
+--- 2 - Copyright ---
+---------------------
+
+The algorithm itself was designed by Christian Schulte, implemented by him
+in Mozart, and reimplemented by Thorsten Brunklaus in Alice.
+This new implementation, by Didier Le Botlan, is supposedly written
+in a more ML fashion.
+
+
+--- 3 - Contact ---
+-------------------
+
+Please substitute $ by @
+  botlan$ps.uni-sb.de
+
+
+
+--- 4 - Usage ---
+-----------------
+
+The problem takes the form of a structure which must
+match signature Common.SCRIPT_GEN (found in Common.aml).
+
+It contains an abstract type 'sol' which is the type of solutions.
+Typically, it will be a tuple of integers, or an array of integers.
+It can be any picklable structure.
+Indeed, solutions will be send over the network to propagate
+solutions from the workers to the manager.
+
+A function 'print' is used for debug only, it converts solutions to strings.
+A recomputation distance is also given (see RSPACE-sig.aml).
+
+The functor MkScript takes the constraint modules Space, FD and FS and
+returns a description of the problem. This consists of
+- a script creating a new space and some variables, and posting some constraints
+  over these variables.
+- a function read a solution from variables.
+- the search mode, which can be
+   ONE : search for one solution
+   ALL : search for all solution
+   BEST (order, cmode) : search for the best solution,
+     according to the given order. See Common.aml for more details.
+
+
+To start the search,
+	(- We build the search engine. -)
+	structure Engine = MkEngine Manager ScriptGen
+	    
+	(- As soon as the engine starts, it returns a channel of solutions. -)
+	val sols = Engine.start(dbAll, hosts)
+
+The arguments to 'start' are a debug level and a list of hosts.
+
+
+See Test.aml to get a full example.
+
+
+
+--- 5 - Quick Start ---
+-----------------------
+
+COMPILE:
+  make clean
+  make depend
+  make
+
+If compilation fails because some component cannot be found,
+edit "AlicePath" to match your own settings,
+then do "source AlicePath" and make again.
+
+RUN:
+  Near the end of Test.aml, the value 'hosts' gives the names (or IPs)
+  of the workers.
+
+  The variable initScript defines the location of some script that must
+  be found on every worker. This script must define ALICERUN and WORKERURI.
+  Define also DISPLAY if the workers are graphical.
+  See the file initScript for an example.
+
+  If you use the graphical workers, each worker must allow X windows to open.
+  (an unsafe way to do so is 'xhost +' on each worker).
+
+When this is set up, launch the demo:
+
+  alicerun Test
+
+
+
+
+
+

@@ -1,33 +1,21 @@
-source /home/bruni/.zshrc
-
-export PATH=/c/Programme/SEAM/bin:$PATH
-
 echo -n "Setting ALICE_LOAD..."
 
 ALICE_LOAD=""
 
-# Gecode
-#ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.dll;$ALICE_LOAD"
-#ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.stc;$ALICE_LOAD"
+# Channel (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/data/Channel=/local/botlan/alice/lib/data/Channel.stc:$ALICE_LOAD"
 
-# AliceXML
-#ALICE_LOAD="pattern=x-alice:/lib/xml/?{x}=c:/Programme/SEAM/share/alice/lib/xml/?{x}.dll;$ALICE_LOAD"
-#ALICE_LOAD="pattern=x-alice:/lib/xml/?{x}=c:/Programme/SEAM/share/alice/lib/xml/?{x}.stc;$ALICE_LOAD"
+# Gecode (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.dll:$ALICE_LOAD"
+ALICE_LOAD="pattern=x-alice:/lib/gecode/?{x}=/local/botlan/gecode/interfaces/alice/?{x}.stc:$ALICE_LOAD"
 
-# Gtk
-#ALICE_LOAD="pattern=x-alice:/lib/gtk/?{x}=c:/Programme/SEAM/share/alice/lib/gtk/?{x}.stc;$ALICE_LOAD"
-#ALICE_LOAD="pattern=x-alice:/lib/gtk/?{x}=c:/Programme/SEAM/share/alice/lib/gtk/?{x}.dll;$ALICE_LOAD"
+# Explorer (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/tools/Explorer=/local/botlan/alice/tools/explorer/LinkedExplorer.stc:$ALICE_LOAD"
+ALICE_LOAD="pattern=x-alice:/tools/explorer/?{x}=/local/botlan/alice/tools/explorer/?{x}.stc:$ALICE_LOAD"
 
-# Explorer
-ALICE_LOAD="pattern=x-alice:/tools/Explorer=c:/Programme/SEAM/share/alice/tools/explorer/LinkedExplorer.stc;$ALICE_LOAD"
-ALICE_LOAD="pattern=x-alice:/tools/explorer/?{x}=c:/Programme/SEAM/share/alice/tools/?{x}.stc;$ALICE_LOAD"
-
-
-# Distributed Engine : RemoteWorker
-ALICE_LOAD="pattern=x-alice:?{x}=d:/cygwin/home/bruni/Projects/DistributedEngine/Sources/?{x}.stc;$ALICE_LOAD"
+# Distributed search engine (needed until it is install in the standard library)
+ALICE_LOAD="pattern=x-alice:/lib/constraints/distribution/?{x}=/local/botlan/alice/lib/constraints/distribution/?{x}.stc:$ALICE_LOAD"
 
 echo "Done."
 export ALICE_LOAD
-#export ALICE_TRACE_COMPONENT=1
-#export ALICE_TRACE_RESOLVER="o"
 

@@ -1,12 +1,7 @@
-import structure Remote from "x-alice:/lib/distribution/Remote"
-import signature MANAGER from "MANAGER-sig"
-import structure Manager from "Manager"
-import "Common"
-import "Path"
-
+import structure Remote  from "x-alice:/lib/distribution/Remote"
 import structure Space from "x-alice:/lib/gecode/Space"
-import structure FD from "x-alice:/lib/gecode/FD"
-import structure FS from "x-alice:/lib/gecode/FS"
+import structure FD    from "x-alice:/lib/gecode/FD"
+import structure FS    from "x-alice:/lib/gecode/FS"
 
 (* Related to the Explorer. *)
 import structure ExplorerNode from "x-alice:/tools/explorer/ExplorerNode"
@@ -14,46 +9,58 @@ import structure ExplorerMain from "x-alice:/tools/explorer/ExplorerMain"
 import structure MainWindow   from "x-alice:/tools/explorer/MainWindow"
 import structure Types        from "x-alice:/tools/explorer/Types"
 
+import signature MANAGER from "MANAGER-sig"
+import structure Manager from "Manager"
+import structure Common  from "Common"
+import structure Path    from "Path"
+
+(* A graphical manager draws the solutions. *)
+
 functor GManager (ScriptGen : Common.SCRIPT_GEN) :> MANAGER =
 struct
 
-    structure Script = ScriptGen.MkScript Space FD FS
-    val (variables, rootSpace) = Script.script ()
-
-    val expl = ExplorerMain.initWithSpace rootSpace
-    val state = valOf (!expl)
-	
-    val _ = Types.setHideFailed expl false
-    val _ = Types.setZoomFollows expl true
-
-    fun getQLeft  tree = ExplorerNode.getLeftChild tree
-    fun getQRight tree = ExplorerNode.getRightChild tree
-
-    fun qStatus tree = 
-	(ExplorerNode.noOfChildren (expl, tree) ;
-	 ExplorerNode.nodeStatus (expl, tree) ;
-	 MainWindow.refresh (ExplorerMain.serve, expl))
-
-    fun applyPath (tree, []) = tree
-      | applyPath (tree, Path.Constrain _ :: l) = assert false
-      | applyPath (tree, Path.Commit 1 :: l) = (qStatus tree ; applyPath (getQLeft tree, l))
-      | applyPath (tree, Path.Commit 2 :: l) = (qStatus tree ; applyPath (getQRight tree, l))
-      | applyPath (tree, _) = assert false
-
-    fun draw path = ExplorerMain.serve (fn () => qStatus(applyPath (Types.getTree expl, path)))
-
-    fun new (verbosity, n, searchMode, oorder, printSol) =
-	let
-	    val (managerIntf, solutions) = Manager.new (verbosity, n, searchMode, oorder, printSol)
-
-	    fun collect (sol, id, path) = (draw path ; #collect managerIntf (sol, id, path))
-
-	    val newInterface = {register = #register managerIntf,
-				find     = #find managerIntf,
-				collect  = Remote.proxy collect,
-				log      = #log managerIntf}
-	in
-	    (newInterface, solutions)
-	end
-
+  structure Script = ScriptGen.MkScript Space FD FS
+  val (variables, rootSpace) = Script.script ()
+    
+  val expl = ExplorerMain.initWithSpace rootSpace
+  val state = valOf (!expl)
+    
+  val _ = Types.setHideFailed expl false
+  val _ = Types.setZoomFollows expl true
+    
+  fun getQLeft  tree = ExplorerNode.getLeftChild tree
+  fun getQRight tree = ExplorerNode.getRightChild tree
+    
+  fun qStatus tree = 
+    (ExplorerNode.noOfChildren (expl, tree) ;
+     ExplorerNode.nodeStatus (expl, tree) ;
+     MainWindow.refresh (ExplorerMain.serve, expl))
+    
+  fun applyPath (tree, []) = tree
+    | applyPath (tree, Path.Better _ :: l) = tree
+    | applyPath (tree, Path.Commit 1 :: l) = (qStatus tree ;
+                                              applyPath (getQLeft tree, l))
+    | applyPath (tree, Path.Commit 2 :: l) = (qStatus tree ;
+                                              applyPath (getQRight tree, l))
+    | applyPath (tree, _) = assert false
+    
+  fun draw path = ExplorerMain.serve
+    (fn () => qStatus(applyPath (Types.getTree expl, path)))
+    
+  fun new (verbosity, n, searchMode, printSol) =
+    let
+      val (managerIntf, solutions) =
+        Manager.new (verbosity, n, searchMode, printSol)
+        
+      fun collect (sol, id, path) = (draw path ;
+                                     #collect managerIntf (sol, id, path))
+        
+      val newInterface = {register = #register managerIntf,
+                          find     = #find managerIntf,
+                          collect  = Remote.proxy collect,
+                          log      = #log managerIntf}
+    in
+      (newInterface, solutions)
+    end
+  
 end

@@ -1,5 +1,5 @@
 import structure Space from "x-alice:/lib/gecode/Space"
-import "Path"
+import structure Path  from "Path"
 
 signature RSPACE =
 
@@ -16,15 +16,15 @@ fct (type a
      val root   : Space.space
      val order  : Space.space * a -> unit
      val rdist  : int ) ->
-    sig
-	type rspace
-	val space    : a Path.t -> rspace  (* Fail *)
-	val path     : rspace -> a Path.t  (* Reversed *)
-	val status   : rspace -> Space.status  (* Implicit cloning may happen *)
-	val getLeft  : rspace -> rspace  (* NotBranching *)
-	val getRight : rspace -> rspace  (* NotBranching *)
-	val getSpace : rspace -> Space.space
-    end
+sig
+  type rspace
+  val space    : a Path.t -> rspace  (* Fail *)
+  val path     : rspace -> a Path.t  (* This path is in reverse order. *)
+  val status   : rspace -> Space.status  (* Implicit cloning may happen *)
+  val getLeft  : rspace -> rspace  (* NotBranching *)
+  val getRight : rspace -> rspace  (* NotBranching *)
+  val getSpace : rspace -> Space.space
+end
 
 exception NotBranching
 (* The exception NotBranching is raised when getLeft or getRight is called
