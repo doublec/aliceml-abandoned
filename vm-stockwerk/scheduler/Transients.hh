@@ -50,6 +50,11 @@ public:
     }
     waitQueue->Enqueue(thread->ToWord());
   }
+  void RemoveFromWaitQueue(Thread *thread) {
+    Queue *waitQueue = Queue::FromWord(GetArg());
+    if (waitQueue != INVALID_POINTER)
+      waitQueue->Remove(thread->ToWord());
+  }
   void ScheduleWaitingThreads() {
     Queue *waitQueue = Queue::FromWord(GetArg());
     if (waitQueue != INVALID_POINTER)
