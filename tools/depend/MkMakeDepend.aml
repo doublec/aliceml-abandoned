@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,6 +12,7 @@
  *)
 
 import structure OS          from "../../lib/system/OS"
+import structure IO          from "../../lib/system/IO"
 import structure TextIO      from "../../lib/system/TextIO"
 import structure Parser      from "SMLParser"
 import structure Error       from "SMLError"
@@ -63,7 +64,17 @@ struct
 					  "while processing " ^ filename ^
 					  ": assertion failure\n");
 			   raise FAIL)
-			| Error.Error _ => raise FAIL
+			| Error.Error _ =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": internal failure\n");
+			   raise FAIL)
+			| IO.Io {cause, ...} =>
+			  (TextIO.output (TextIO.stdErr,
+					  "while processing " ^ filename ^
+					  ": I/O exception " ^ exnName cause ^
+					  "\n");
+			   raise FAIL)
 			| e =>
 			  (TextIO.output (TextIO.stdErr,
 					  "while processing " ^ filename ^
