@@ -67,9 +67,11 @@ fi
 ##
 if [ ! -f "$SUPPORTDIR/install/$SUPPORTPLATFORM/include/zlib.h" ]
 then
-    cd "$SUPPORTDIR/zlib" &&
-    CC=$CC ./configure --prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
-    make all install distclean || exit 1
+    (
+	cd "$SUPPORTDIR/zlib" &&
+	CC=$CC ./configure --prefix="$SUPPORTDIR/install/$SUPPORTPLATFORM" &&
+	make all install distclean
+    ) || exit 1
 fi
 
 ##
