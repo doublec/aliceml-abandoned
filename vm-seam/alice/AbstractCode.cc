@@ -277,7 +277,7 @@ void Disassembler::Start() {
     case AbstractCode::Sel:
       ID IDREF INT LASTINSTR break;
     case AbstractCode::LazyPolySel:
-      ID IDREF LABEL LASTINSTR break;
+      IDS IDREF LABELS LASTINSTR break;
     case AbstractCode::Raise:
       IDREF break;
     case AbstractCode::Reraise:
