@@ -1,12 +1,12 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final class DMLOut extends java.io.ObjectOutputStream {
+final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 
-    public DMLOut() throws java.io.IOException {
+    public DMLObjectOutputStream() throws java.io.IOException {
 	super();
     }
 
-    public DMLOut(java.io.OutputStream out) throws java.io.IOException {
+    public DMLObjectOutputStream(java.io.OutputStream out) throws java.io.IOException {
 	super(out);
     }
 
