@@ -35,14 +35,11 @@ public:
   static const BlockLabel ClassInfo           = (BlockLabel) (Array + 7);
   static const BlockLabel Class               = (BlockLabel) (Array + 8);
   static const BlockLabel Object              = (BlockLabel) (Array + 9);
-  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 10);
+  static const BlockLabel ClassLoader         = (BlockLabel) (Array + 10);
+  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 11);
 };
 
 static const word null = Store::IntToWord(0);
-
-class ClassInfo;
-class Class;
-class ConstantPool;
 
 class DllExport JavaString: private Chunk {
 public:
@@ -84,7 +81,7 @@ public:
   bool Equals(JavaString *string) {
     u_int length = GetLength();
     if (string->GetLength() != length) return false;
-    return !std::memcmp(GetBase(), string->GetBase(), 
+    return !std::memcmp(GetBase(), string->GetBase(),
 			length * sizeof(u_wchar));
   }
 };
@@ -235,7 +232,7 @@ protected:
     START_PC_POS, // int
     END_PC_POS, // int
     HANDLER_PC_POS, // int
-    CATCH_TYPE_POS, // Class | int(0)
+    CATCH_TYPE_POS, // Future(Class) | int(0)
     SIZE
   };
 private:
@@ -257,7 +254,11 @@ public:
     return entry;
   }
   static ExceptionTableEntry *New(u_int startPC, u_int endPC,
-				  u_int handlerPC, ClassInfo *catchType);
+				  u_int handlerPC, word catchType) {
+    ExceptionTableEntry *entry = NewInternal(startPC, endPC, handlerPC);
+    entry->InitArg(CATCH_TYPE_POS, catchType);
+    return entry;
+  }
 };
 
 class DllExport JavaByteCode: private Block {
@@ -353,23 +354,35 @@ protected:
     INTERFACES_POS, // Array(Class)
     FIELDS_POS, // Array(FieldInfo)
     METHODS_POS, // Array(MethodInfo)
-    CONSTANT_POOL_POS, // ConstantPool
+    CONSTANT_POOL_POS, // Array(word)
     SIZE
   };
 public:
   using Block::ToWord;
 
   static ClassInfo *New(u_int accessFlags, JavaString *name,
-			ClassInfo *super, Array *interfaces, Array *fields,
-			Array *methods, ConstantPool *constantPool);
+			word super, Array *interfaces, Array *fields,
+			Array *methods, Array *constantPool) {
+    Assert(((accessFlags & ACC_INTERFACE) == 0 &&
+	    ((accessFlags & ACC_FINAL) != 0) +
+	    ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
+	   (accessFlags & ACC_ABSTRACT) != 0);
+    Assert(accessFlags & ACC_SUPER); // not supported by this implementation
+    Block *b = Store::AllocBlock(JavaLabel::ClassInfo, SIZE);
+    b->InitArg(ACCESS_FLAGS_POS, accessFlags);
+    b->InitArg(NAME_POS, name->ToWord());
+    b->InitArg(SUPER_POS, super);
+    b->InitArg(INTERFACES_POS, interfaces->ToWord());
+    b->InitArg(FIELDS_POS, fields->ToWord());
+    b->InitArg(METHODS_POS, methods->ToWord());
+    b->InitArg(CONSTANT_POOL_POS, constantPool->ToWord());
+    return static_cast<ClassInfo *>(b);
+  }
   static ClassInfo *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::ClassInfo);
     return static_cast<ClassInfo *>(b);
   }
-
-  bool Verify();
-  Class *Prepare();
 };
 
 class DllExport Class: private Block {
@@ -404,70 +417,30 @@ public:
 // Constant Pool Entries: (Formerly Symbolic) References
 //
 
-class DllExport StaticFieldRef: private Block {
+class DllExport FieldRef: private Block {
+public:
+  u_int GetIndex();
+};
+
+class DllExport StaticFieldRef: public FieldRef {
 public:
   Class *GetClass();
-  u_int GetIndex();
 };
 
-class DllExport InstanceFieldRef: private Block {
+class DllExport InstanceFieldRef: public FieldRef {
+};
+
+class DllExport MethodRef: private Block {
 public:
   u_int GetIndex();
 };
 
-class DllExport StaticMethodRef: private Block {
-private:
-  enum {
-    CLASS_POS, // Class
-    INDEX_POS, // int
-    SIZE
-  };
+class DllExport StaticMethodRef: public MethodRef {
 public:
   Class *GetClass();
-  u_int GetIndex();
 };
 
-class DllExport VirtualMethodRef: private Block {
-private:
-public:
-  u_int GetIndex();
-};
-
-class DllExport ConstantPool: private Block {
-private:
-  enum { SIZE_POS, BASE_SIZE };
-public:
-  using Block::ToWord;
-
-  static ConstantPool *New(u_int size) {
-    Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + size);
-    b->InitArg(SIZE_POS, size);
-    return static_cast<ConstantPool *>(b);
-  }
-  static ConstantPool *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == JavaLabel::ConstantPool);
-    return static_cast<ConstantPool *>(b);
-  }
-
-  u_int GetCount() {
-    return Store::DirectWordToInt(GetArg(SIZE_POS));
-  }
-  void Init(u_int offset, word constant) {
-    Assert(offset >= 1 && offset <= GetCount());
-    InitArg(offset - 1 + BASE_SIZE, constant);
-  }
-  word Get(u_int offset) {
-    Assert(offset >= 1 && offset <= GetCount());
-    return GetArg(offset - 1 + BASE_SIZE);
-  }
-
-  JavaString *GetString(u_int offset) {
-    return JavaString::FromWordDirect(Get(offset));
-  }
-  ClassInfo *GetClassInfo(u_int offset) {
-    return ClassInfo::FromWordDirect(Get(offset));
-  }
+class DllExport VirtualMethodRef: public MethodRef {
 };
 
 #endif

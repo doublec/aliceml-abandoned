@@ -20,7 +20,9 @@
 #include <cstdlib>
 #include "java/Data.hh"
 
+class ConstantPool;
 class ConstantPoolEntry;
+class ClassLoader;
 
 class DllExport ClassFile: private Chunk {
 private:
@@ -53,23 +55,28 @@ private:
   bool ParseVersion(u_int &offset);
   ConstantPool *ParseConstantPool(u_int &offset);
   ConstantPoolEntry *ParseConstantPoolEntry(u_int &offset);
-  void FixupConstantPool(ConstantPool *constantPool);
-  Array *ParseInterfaces(u_int &offset, ConstantPool *constantPool);
-  Array *ParseFields(u_int &offset, ConstantPool *constantPool);
-  FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool);
-  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPool,
-			    word &constantValue);
-  Array *ParseMethods(u_int &offset, ConstantPool *constantPool);
-  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool);
-  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPool,
-			     JavaByteCode *&byteCode);
+  Array *ResolveConstantPool(ConstantPool *constantPoolS,
+			     ClassLoader *classLoader);
+  Array *ParseInterfaces(u_int &offset, Array *constantPoolR);
+  Array *ParseFields(u_int &offset, ConstantPool *constantPoolS,
+		     Array *constantPoolR);
+  FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPoolS,
+			    Array *constantPoolR);
+  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPoolS,
+			    Array *constantPoolR, word &constantValue);
+  Array *ParseMethods(u_int &offset, ConstantPool *constantPoolS,
+		      Array *constantPoolR);
+  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPoolS,
+			      Array *constantPoolR);
+  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPoolS,
+			     Array *constantPoolR, JavaByteCode *&byteCode);
   void SkipAttributes(u_int &offset);
 public:
   using Chunk::ToWord;
 
   static ClassFile *NewFromFile(char *filename);
 
-  ClassInfo *Parse();
+  ClassInfo *Parse(ClassLoader *classLoader);
 };
 
 #endif

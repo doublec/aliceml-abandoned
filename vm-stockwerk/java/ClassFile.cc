@@ -15,6 +15,7 @@
 #endif
 
 #include "java/ClassFile.hh"
+#include "java/ClassLoader.hh"
 
 enum CONSTANT_tag {
   CONSTANT_Class              = 7,
@@ -53,48 +54,94 @@ public:
   CONSTANT_tag GetTag() {
     return static_cast<CONSTANT_tag>(static_cast<int>(GetLabel()));
   }
-  word Fixup(ConstantPool *);
+  word Resolve(ConstantPool *constantPoolS, ClassLoader *classLoader);
 };
 
-word ConstantPoolEntry::Fixup(ConstantPool *constantPool) {
+class ConstantPool: private Block {
+private:
+  enum { SIZE_POS, BASE_SIZE };
+public:
+  using Block::ToWord;
+
+  static ConstantPool *New(u_int size) {
+    Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + size);
+    b->InitArg(SIZE_POS, size);
+    return static_cast<ConstantPool *>(b);
+  }
+  static ConstantPool *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::ConstantPool);
+    return static_cast<ConstantPool *>(b);
+  }
+
+  u_int GetSize() {
+    return Store::DirectWordToInt(GetArg(SIZE_POS));
+  }
+  void Init(u_int index, ConstantPoolEntry *entry) {
+    Assert(index >= 1 && index <= GetSize());
+    InitArg(index - 1 + BASE_SIZE, entry->ToWord());
+  }
+  ConstantPoolEntry *Get(u_int index) {
+    Assert(index >= 1 && index <= GetSize());
+    return ConstantPoolEntry::FromWordDirect(GetArg(index - 1 + BASE_SIZE));
+  }
+  JavaString *GetUtf8(u_int index) {
+    ConstantPoolEntry *entry = Get(index);
+    Assert(entry->GetTag() == CONSTANT_Utf8);
+    return JavaString::FromWordDirect(entry->GetArg(0));
+  }
+  JavaString *GetNameAndType(u_int index, JavaString *&descriptor) {
+    ConstantPoolEntry *entry = Get(index);
+    Assert(entry->GetTag() == CONSTANT_NameAndType);
+    descriptor = JavaString::FromWordDirect(entry->GetArg(1));
+    return JavaString::FromWordDirect(entry->GetArg(0));
+  }
+};
+
+word ConstantPoolEntry::Resolve(ConstantPool *constantPoolS,
+				ClassLoader *classLoader) {
   switch (GetTag()) {
   case CONSTANT_Class:
     {
-      JavaString *name =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
-      //--** return a Class
-      Error("Fixup CONSTANT_Class not implemented");
+      u_int nameIndex = Store::DirectWordToInt(GetArg(0));
+      return classLoader->ResolveClass(constantPoolS->GetUtf8(nameIndex));
     }
   case CONSTANT_Fieldref:
     {
       //--** All fields of interfaces must have their ACC_PUBLIC, ACC_STATIC,
       //--** and ACC_FINAL flags set and may not have any of the other flags
       //--** in Table 4.4 set
-      JavaString *className =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
-      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
-      //--** return a StaticFieldRef/InstanceFieldRef
-      Error("Fixup CONSTANT_Fieldref not implemented");
+      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
+      JavaString *className = constantPoolS->GetUtf8(classNameIndex);
+      JavaString *descriptor;
+      JavaString *name =
+	constantPoolS->GetNameAndType(nameAndTypeIndex, descriptor);
+      return classLoader->ResolveFieldRef(className, name, descriptor);
     }
   case CONSTANT_Methodref:
     {
-      JavaString *className =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
-      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
-      //--** return a StaticMethodRef/VirtualMethodRef
-      Error("Fixup CONSTANT_Methodref not implemented");
+      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
+      JavaString *className = constantPoolS->GetUtf8(classNameIndex);
+      JavaString *descriptor;
+      JavaString *name =
+	constantPoolS->GetNameAndType(nameAndTypeIndex, descriptor);
+      return classLoader->ResolveMethodRef(className, name, descriptor);
     }
   case CONSTANT_InterfaceMethodref:
     {
-      JavaString *className =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
-      word nameAndType = constantPool->Get(Store::DirectWordToInt(GetArg(1)));
-      //--** return an InterfaceMethodRef
-      Error("Fixup CONSTANT_InterfaceMethodref not implemented");
+      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
+      JavaString *className = constantPoolS->GetUtf8(classNameIndex);
+      JavaString *descriptor;
+      JavaString *name =
+	constantPoolS->GetNameAndType(nameAndTypeIndex, descriptor);
+      return classLoader->ResolveInterfaceMethodRef(className, name,
+						    descriptor);
     }
   case CONSTANT_String:
-    return
-      constantPool->GetString(Store::DirectWordToInt(GetArg(0)))->ToWord();
+    return constantPoolS->GetUtf8(Store::DirectWordToInt(GetArg(0)))->ToWord();
   case CONSTANT_Integer:
     return GetArg(0);
   case CONSTANT_Float:
@@ -102,19 +149,10 @@ word ConstantPoolEntry::Fixup(ConstantPool *constantPool) {
   case CONSTANT_Double:
     Error("unimplemented CONSTANT_tag"); //--**
   case CONSTANT_NameAndType:
-    {
-      JavaString *name =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(0)));
-      JavaString *descriptor =
-	constantPool->GetString(Store::DirectWordToInt(GetArg(1)));
-      //--** return a NameAndType
-      Error("Fixup CONSTANT_InterfaceMethodref not implemented");
-    }
   case CONSTANT_Utf8:
-    return
-      constantPool->GetString(Store::DirectWordToInt(GetArg(0)))->ToWord();
+    return Store::IntToWord(0); // may only be referenced from constant pool
   default:
-    Error("unknown constant pool tag"); //--** raise exception
+    Error("invalid constant pool tag");
   }
 }
 
@@ -140,16 +178,16 @@ bool ClassFile::ParseVersion(u_int &offset) {
 
 ConstantPool *ClassFile::ParseConstantPool(u_int &offset) {
   u_int constantPoolCount = GetU2(offset);
-  ConstantPool *constantPool = ConstantPool::New(constantPoolCount - 1);
+  ConstantPool *constantPoolS = ConstantPool::New(constantPoolCount - 1);
   for (u_int i = 1; i < constantPoolCount; i++) {
     ConstantPoolEntry *entry = ParseConstantPoolEntry(offset);
     if (entry == INVALID_POINTER) return INVALID_POINTER;
-    constantPool->Init(i, entry->ToWord());
+    constantPoolS->Init(i, entry);
     CONSTANT_tag tag = entry->GetTag();
     if (tag == CONSTANT_Long || tag == CONSTANT_Double)
       i++; // these take up two entries in the constant pool table
   }
-  return constantPool;
+  return constantPoolS;
 }
 
 ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
@@ -234,23 +272,26 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   }
 }
 
-void ClassFile::FixupConstantPool(ConstantPool *constantPool) {
-  for (u_int j = 1; j < constantPool->GetCount(); j++) {
-    ConstantPoolEntry *entry =
-      ConstantPoolEntry::FromWordDirect(constantPool->Get(j));
-    constantPool->Init(j, entry->Fixup(constantPool));
-  }
+Array *ClassFile::ResolveConstantPool(ConstantPool *constantPoolS,
+				      ClassLoader *classLoader) {
+  u_int constantPoolCount = constantPoolS->GetSize();
+  Array *constantPoolR = Array::New(constantPoolCount);
+  for (u_int j = 1; j < constantPoolCount; j++)
+    constantPoolR->Init(j - 1, constantPoolS->Get(j)->Resolve(constantPoolS,
+							      classLoader));
+  return constantPoolR;
 }
 
-Array *ClassFile::ParseInterfaces(u_int &offset, ConstantPool *constantPool) {
+Array *ClassFile::ParseInterfaces(u_int &offset, Array *constantPoolR) {
   u_int interfacesCount = GetU2(offset);
   Array *interfaces = Array::New(interfacesCount);
   for (u_int i = 0; i < interfacesCount; i++)
-    interfaces->Assign(i, constantPool->Get(GetU2(offset)));
+    interfaces->Assign(i, constantPoolR->Get(GetU2(offset)));
   return interfaces;
 }
 
-Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool) {
+Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPoolS,
+			      Array *constantPoolR) {
   //--** No two fields in one class file may have the same name and descriptor
   //--** All fields of interfaces must have their ACC_PUBLIC, ACC_STATIC, and
   //--** ACC_FINAL flags set and may not have any of the other flags in
@@ -258,7 +299,8 @@ Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool) {
   u_int fieldsCount = GetU2(offset);
   Array *fields = Array::New(fieldsCount);
   for (u_int i = 0; i < fieldsCount; i++) {
-    FieldInfo *fieldInfo = ParseFieldInfo(offset, constantPool);
+    FieldInfo *fieldInfo =
+      ParseFieldInfo(offset, constantPoolS, constantPoolR);
     if (fieldInfo == INVALID_POINTER) return INVALID_POINTER;
     fields->Assign(i, fieldInfo->ToWord());
   }
@@ -266,19 +308,21 @@ Array *ClassFile::ParseFields(u_int &offset, ConstantPool *constantPool) {
 }
 
 FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
-				     ConstantPool *constantPool) {
+				     ConstantPool *constantPoolS,
+				     Array *constantPoolR) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & FieldInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & FieldInfo::ACC_PRIVATE) != 0) +
-      ((accessFlags & FieldInfo::ACC_PROTECTED) != 0) > 1) 
+      ((accessFlags & FieldInfo::ACC_PROTECTED) != 0) > 1)
     return INVALID_POINTER;
   if (((accessFlags & FieldInfo::ACC_FINAL) != 0) +
       ((accessFlags & FieldInfo::ACC_VOLATILE) != 0) > 1)
     return INVALID_POINTER;
-  JavaString *name = constantPool->GetString(GetU2(offset));
-  JavaString *descriptor = constantPool->GetString(GetU2(offset));
+  JavaString *name = constantPoolS->GetUtf8(GetU2(offset));
+  JavaString *descriptor = constantPoolS->GetUtf8(GetU2(offset));
   word constantValue;
-  if (!ParseFieldAttributes(offset, constantPool, constantValue))
+  if (!ParseFieldAttributes(offset, constantPoolS, constantPoolR,
+			    constantValue))
     return INVALID_POINTER;
   else if (constantValue != (word) 0 && (accessFlags & FieldInfo::ACC_STATIC))
     return FieldInfo::New(accessFlags, name, descriptor, constantValue);
@@ -287,32 +331,36 @@ FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
 }
 
 bool ClassFile::ParseFieldAttributes(u_int &offset,
-				     ConstantPool *constantPool,
+				     ConstantPool *constantPoolS,
+				     Array *constantPoolR,
 				     word &constantValue) {
   u_int attributesCount = GetU2(offset);
   JavaString *constantValueAttributeName = JavaString::New("ConstantValue");
   constantValue = (word) 0;
   for (u_int i = attributesCount; i--; ) {
-    JavaString *attributeName = constantPool->GetString(GetU2(offset));
+    JavaString *attributeName = constantPoolS->GetUtf8(GetU2(offset));
     u_int attributeLength = GetU4(offset);
     if (attributeName->Equals(constantValueAttributeName)) {
+      //--** is attributeLength != 2 an error or an unknown attribute?
       Assert(attributeLength == 2);
       if (constantValue != (word) 0) return false;
-      constantValue = constantPool->Get(GetU2(offset));
+      constantValue = constantPoolR->Get(GetU2(offset));
     } else
       offset += attributeLength; // skip info
   }
   return true;
 }
 
-Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool) {
+Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPoolS,
+			       Array *constantPoolR) {
   //--** No two methods in one class file may have the same name and descriptor
   //--** All interface methods must have their ACC_ABSTRACT and ACC_PUBLIC
   //--** flags set and may not have any of the other flags in Table 4.5 set 
   u_int methodsCount = GetU2(offset);
   Array *methods = Array::New(methodsCount);
   for (u_int i = 0; i < methodsCount; i++) {
-    MethodInfo *methodInfo = ParseMethodInfo(offset, constantPool);
+    MethodInfo *methodInfo =
+      ParseMethodInfo(offset, constantPoolS, constantPoolR);
     if (methodInfo == INVALID_POINTER) return INVALID_POINTER;
     methods->Assign(i, methodInfo->ToWord());
   }
@@ -320,7 +368,8 @@ Array *ClassFile::ParseMethods(u_int &offset, ConstantPool *constantPool) {
 }
 
 MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
-				       ConstantPool *constantPool) {
+				       ConstantPool *constantPoolS,
+				       Array *constantPoolR) {
   u_int accessFlags = GetU2(offset);
   if (((accessFlags & MethodInfo::ACC_PUBLIC) != 0) +
       ((accessFlags & MethodInfo::ACC_PRIVATE) != 0) +
@@ -332,10 +381,10 @@ MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
 		      MethodInfo::ACC_STRICT |
 		      MethodInfo::ACC_SYNCHRONIZED)) != 0)
     return INVALID_POINTER;
-  JavaString *name = constantPool->GetString(GetU2(offset));
-  JavaString *descriptor = constantPool->GetString(GetU2(offset));
+  JavaString *name = constantPoolS->GetUtf8(GetU2(offset));
+  JavaString *descriptor = constantPoolS->GetUtf8(GetU2(offset));
   JavaByteCode *byteCode;
-  if (!ParseMethodAttributes(offset, constantPool, byteCode))
+  if (!ParseMethodAttributes(offset, constantPoolS, constantPoolR, byteCode))
     return INVALID_POINTER;
   else if (byteCode == INVALID_POINTER) {
     if (accessFlags & (MethodInfo::ACC_NATIVE | MethodInfo::ACC_ABSTRACT))
@@ -351,15 +400,18 @@ MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
 }
 
 bool ClassFile::ParseMethodAttributes(u_int &offset,
-				      ConstantPool *constantPool,
+				      ConstantPool *constantPoolS,
+				      Array *constantPoolR,
 				      JavaByteCode *&byteCode) {
+  //--** implementations must recognize the Exceptions attribute
   u_int attributesCount = GetU2(offset);
   JavaString *codeAttributeName = JavaString::New("Code");
   byteCode = INVALID_POINTER;
   for (u_int i = attributesCount; i--; ) {
-    JavaString *attributeName = constantPool->GetString(GetU2(offset));
+    JavaString *attributeName = constantPoolS->GetUtf8(GetU2(offset));
     u_int attributeLength = GetU4(offset);
     if (attributeName->Equals(codeAttributeName)) {
+      // Parse Code attribute:
       if (byteCode != INVALID_POINTER) return INVALID_POINTER;
       u_int startOffset = offset;
       u_int maxStack = GetU2(offset);
@@ -377,7 +429,7 @@ bool ClassFile::ParseMethodAttributes(u_int &offset,
 	u_int catchType = GetU2(offset);
 	ExceptionTableEntry *entry = catchType?
 	  ExceptionTableEntry::New(startPC, endPC, handlerPC,
-				   constantPool->GetClassInfo(catchType)):
+				   constantPoolR->Get(catchType)):
 	  ExceptionTableEntry::New(startPC, endPC, handlerPC);
 	exceptionTable->Init(k, entry->ToWord());
       }
@@ -403,32 +455,32 @@ ClassFile *ClassFile::NewFromFile(char *filename) {
   //--**
 }
 
-ClassInfo *ClassFile::Parse() {
+ClassInfo *ClassFile::Parse(ClassLoader *classLoader) {
   u_int offset = 0;
   if (!ParseMagic(offset)) return INVALID_POINTER;
   if (!ParseVersion(offset)) return INVALID_POINTER;
-  ConstantPool *constantPool = ParseConstantPool(offset);
-  if (constantPool == INVALID_POINTER) return INVALID_POINTER;
+  ConstantPool *constantPoolS = ParseConstantPool(offset);
+  if (constantPoolS == INVALID_POINTER) return INVALID_POINTER;
+  Array *constantPoolR = ResolveConstantPool(constantPoolS, classLoader);
   u_int accessFlags = GetU2(offset);
   //--** check accessFlags validity
   JavaString *name;
   {
-    ConstantPoolEntry *thisClassEntry =
-      ConstantPoolEntry::FromWordDirect(constantPool->Get(GetU2(offset)));
+    // Retrieve the name of the current class without resolving it:
+    ConstantPoolEntry *thisClassEntry = constantPoolS->Get(GetU2(offset));
     Assert(thisClassEntry->GetTag() == CONSTANT_Class);
     u_int nameIndex = Store::DirectWordToInt(thisClassEntry->GetArg(0));
-    ConstantPoolEntry *nameEntry =
-      ConstantPoolEntry::FromWordDirect(constantPool->Get(nameIndex));
+    ConstantPoolEntry *nameEntry = constantPoolS->Get(nameIndex);
     Assert(nameEntry->GetTag() == CONSTANT_Utf8);
     name = JavaString::FromWordDirect(nameEntry->GetArg(0));
   }
-  ClassInfo *super = constantPool->GetClassInfo(GetU2(offset));
-  Array *interfaces = ParseInterfaces(offset, constantPool);
-  Array *fields = ParseFields(offset, constantPool);
+  word super = constantPoolR->Get(GetU2(offset));
+  Array *interfaces = ParseInterfaces(offset, constantPoolR);
+  Array *fields = ParseFields(offset, constantPoolS, constantPoolR);
   if (fields == INVALID_POINTER) return INVALID_POINTER;
-  Array *methods = ParseMethods(offset, constantPool);
+  Array *methods = ParseMethods(offset, constantPoolS, constantPoolR);
   if (methods == INVALID_POINTER) return INVALID_POINTER;
   SkipAttributes(offset);
   return ClassInfo::New(accessFlags, name,
-			super, interfaces, fields, methods, constantPool);
+			super, interfaces, fields, methods, constantPoolR);
 }
