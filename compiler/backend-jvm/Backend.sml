@@ -37,16 +37,23 @@ structure Backend=
 	(* Sets of Stamps. Used for computation of free variables *)
 	structure StampSet = MakeHashImpSet(type t=stamp val hash=Stamp.hash)
 
-	structure Lambda = MakeLambda(structure StampSet=StampSet
-				      structure StampHash=StampHash
-				      val toplevel=toplevel)
-
 	(* Hashtable of (stamp*int) pairs. Used for the optimization of
 	 merging several SML functions in one apply when defined as
 	 fun ... and *)
-	structure StampIntHash = MakeHashImpMap(type t=stamp*int
+	structure StampIntHash = MakeHashImpMap(type t=(stamp*int)
 						fun hash (stamp', int') =
 						    Stamp.hash stamp' + int')
+
+	(* Set of (stamp*int) pairs. *)
+	structure StampIntSet = MakeHashImpSet(type t=(stamp*int)
+						fun hash (stamp', int') =
+						    Stamp.hash stamp' + int')
+
+	structure Lambda = MakeLambda(structure StampSet=StampSet
+				      structure StampHash=StampHash
+				      structure StampIntSet=StampIntSet
+				      structure StampIntHash=StampIntHash
+				      val toplevel=toplevel)
 
 	(* Structure for managing labels in JVM-methods *)
 	structure Label =
@@ -56,13 +63,6 @@ structure Backend=
 
 		(* Labels are stacked, so each function starts counting at 1. *)
 		val stack : (int list) ref= ref nil
-
-		(* In JVM, handles are stored in an exception table as triples of
-		 program positions (beginTry, endTry, handleRoutine).
-		 During code generation, we know the labels for beginTry and
-		 handleRoutine, but we don't yet know about endTry.
-		 Furthermore, handles may be nested, so we use a stack. *)
-		val handleStack = ref [(~1, ~1)]
 
 		fun new () =
 		    (labelcount := !labelcount + 1;
@@ -78,23 +78,6 @@ structure Backend=
 
 		fun pop () = (labelcount:=hd(!stack);
 				    stack:=tl(!stack))
-
-		(* Create a new label and push it on the handleStack *)
-		fun pushANewHandle originLabel =
-		    let
-			val label'=new()
-		    in
-			handleStack := (originLabel,label')::(!handleStack);
-			label'
-		    end
-
-		(* Pop a handle label and return it *)
-		fun popHandle () =
-		    #2 (hd (!handleStack)) before handleStack := tl (!handleStack)
-
-		(* verify whether label at top of stack was pushed for label' *)
-		fun topHandleDefinedAt label' =
-		    #1 (hd (!handleStack)) = label'
 	    end
 
 	(* Administration of JVM registers *)
@@ -229,31 +212,6 @@ structure Backend=
 				    print ("("^Stamp.toString stamp'^","^
 					   Stamp.toString stamp''^")"))
 		    defFun
-	    end
-
-
-	(* Store for the exception table entries. Nested exception handles
-	 are stored in the wrong order (innerst first), so we have to
-	 reverse the list when creating the exception table. *)
-	structure Catch =
-	    struct
-		val stack=ref (nil:CATCH list list)
-		val liste=ref (nil:CATCH list)
-
-		fun add x = liste := x::(!liste)
-
-		fun push () = (stack := (!liste)::(!stack);
-			       liste:=nil)
-
-		fun top () = List.rev (!liste)
-
-		fun pop () = let
-				 val t = top ()
-			     in
-				 liste:=hd(!stack);
-				 stack:=(tl (!stack));
-				 t
-			     end
 	    end
 
 	(* load an integer as JVM integer constant. *)
@@ -436,20 +394,9 @@ structure Backend=
 		    lithash
 	    end
 
-	datatype APPLY =
-	    (* methodname, # of params, isstatic *)
-	    Apply of string * int * bool
-	  (* # of params, isstatic, code class, code position.
-	   No methodname, because it is always "recapply". *)
-	  | RecApply of int * bool * stamp * int
-
-	structure Function =
-	    struct
-	    end
-
-(* print a list of stamps. Used in verbose mode for debugging. *)
-fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
-and psl (x::nil) = Stamp.toString x
-  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
-  | psl nil = ""
+	(* print a list of stamps. Used in verbose mode for debugging. *)
+	fun printStampList xs = print ("Free: ("^(psl xs)^")\n")
+	and psl (x::nil) = Stamp.toString x
+	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
+	  | psl nil = ""
     end

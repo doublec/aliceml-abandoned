@@ -354,6 +354,16 @@ structure ToJasmin =
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
 
+		  | deadCode (last, (c as Catch (ex, from, to, using))::rest) =
+		    (* note that to is not necessarily reachable.
+		     Anyhow, we have to generate the label for it. *)
+		    (LabelMerge.setReachable from;
+		     LabelMerge.setReachable using;
+		     LabelMerge.setUsed from;
+		     LabelMerge.setUsed to;
+		     LabelMerge.setUsed using;
+		     c :: deadCode (last, rest))
+
 		  | deadCode (Lab (lab', dropMode),Label lab''::rest) =
 		    let
 			val l'' = Lab (lab'', dropMode)
@@ -581,11 +591,11 @@ structure ToJasmin =
 		fun flatten (inst, akku) =
 		    (case inst of
 			 Nop => akku
-		       | Ifstatic (stamp', then', else') =>
+		       | Ifstatic (meth, then', else') =>
 			     List.foldr
 			     flatten
 			     akku
-			     (if Lambda.isStatic stamp'
+			     (if Lambda.isStatic meth
 				  then then'
 			      else else')
 		       | Multi insts =>
@@ -692,6 +702,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Arraylength = 0
 	  | stackNeedInstruction Athrow = ~1
 	  | stackNeedInstruction (Bipush _) = 1
+	  | stackNeedInstruction (Catch _) = 0
 	  | stackNeedInstruction (Checkcast _) = 0
 	  | stackNeedInstruction (Comment _) = 0
 	  | stackNeedInstruction Dup = 1
@@ -738,24 +749,6 @@ structure ToJasmin =
 	  | stackNeedInstruction (Lookupswitch _) = ~1
 	  | stackNeedInstruction (Var _) = 0
 
-	(* generate Jasmin code for Catches *)
-	fun catchesToJasmin (catches, out) =
-	    let
-		fun catchToJasmin (Catch(cn,from,to,use)) =
-		    (LabelMerge.checkSizeAt (use, 1);
-		     (* note that to is not necessarily reachable.
-		      Anyhow, we have to generate the label for it. *)
-		     LabelMerge.setReachable from;
-		     LabelMerge.setReachable use;
-		     LabelMerge.setUsed from;
-		     LabelMerge.setUsed to;
-		     LabelMerge.setUsed use;
-		     TextIO.output(out,".catch "^cn^" from "^Label.toString from^
-				   " to "^Label.toString to^" using "^Label.toString use^"\n"))
-	    in
-		app catchToJasmin catches
-	    end
-
 	local
 	    (* generate Jasmin code for an instruction *)
 	    fun instructionToJasmin (Astore j, s) =
@@ -784,6 +777,10 @@ structure ToJasmin =
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
+	      | instructionToJasmin (Catch(cn,from,to,use), _) =
+		".catch "^cn^" from "^LabelMerge.condJump from^
+		" to "^LabelMerge.condJump to^" using "^
+		LabelMerge.condJump use^"\n"
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -917,6 +914,8 @@ structure ToJasmin =
 			       are handled, so we have to ensure an empty stack
 			       when throwing exceptions. *)
 			      | Athrow => LabelMerge.leaveMethod (sizeAfter, is)
+			      | Catch (_, try, to, catch) =>
+				    LabelMerge.checkSizeAt (catch, 1)
 			      | Goto label =>
 				    (LabelMerge.checkSizeAt (label, sizeAfter);
 				     LabelMerge.leave (is, sizeAfter))
@@ -976,33 +975,34 @@ structure ToJasmin =
 		fun interfaceToJasmin (i,akku) = akku^".implements "^i^"\n"
 		fun methodToJasmin (Method(access,methodname,
 					   methodsig as (parms,_),Locals perslocs,
-					   instructions, catches)) =
+					   instructions)) =
 		    let
 			val staticapply =
 			    List.exists
-			    (fn MStatic => true
-			  | _ => false)
+			    (fn MStatic => true | _ => false)
 			    access
 
 			val parmscount = siglength parms
 		    in
-			LabelMerge.new();
-			JVMreg.new perslocs;
-			TextIO.output(io,".method "^
-				      (mAccessToString access)^
-				      methodname^
-				      (descriptor2string methodsig)^"\n");
-			actmeth := methodname;
-			catchesToJasmin (catches, io);
-			instructionsToJasmin
-			(optimize (instructions, perslocs, parmscount),
-			 true,
-			 staticapply,
-			 io);
-			TextIO.output(io,".limit locals "^
-				      Int.toString(JVMreg.max perslocs+1+parmscount)
-				      ^"\n");
-			TextIO.output(io,".end method\n\n")
+			(case instructions of
+			     nil => ()
+			   | _ =>
+				 LabelMerge.new();
+				 JVMreg.new perslocs;
+				 TextIO.output(io,".method "^
+					       (mAccessToString access)^
+					       methodname^
+					       (descriptor2string methodsig)^"\n");
+				 actmeth := methodname;
+				 instructionsToJasmin
+				 (optimize (instructions, perslocs, parmscount),
+				  true,
+				  staticapply,
+				  io);
+				 TextIO.output(io,".limit locals "^
+					       Int.toString(JVMreg.max perslocs+1+parmscount)
+					       ^"\n");
+				 TextIO.output(io,".end method\n\n"))
 		    end
 	    in
 		actclass:= name;

@@ -45,6 +45,7 @@ structure JVMInst =
 	  | Arraylength
 	  | Athrow
 	  | Bipush of int
+	  | Catch of classname * label * label * label
 	  | Checkcast of classname
 	  | Comment of string
 	  | Dup
@@ -63,7 +64,7 @@ structure JVMInst =
 	  | Ificmpne of label
 	  | Ifne of label
 	  | Ifnull of label
-	  | Ifstatic of (stamp * INSTRUCTION list * INSTRUCTION list)
+	  | Ifstatic of ((stamp *int) * INSTRUCTION list * INSTRUCTION list)
 	  | Iload of int
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
@@ -97,7 +98,7 @@ structure JVMInst =
 	and
 	    METHOD =
 	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * LIMITS *
-	    INSTRUCTION list * CATCH list
+	    INSTRUCTION list
 	and
 	    CLASSACCESS =
 	    CPublic | CFinal | CSuper | CAbstract | CInterface
@@ -110,7 +111,4 @@ structure JVMInst =
 	and
 	    LIMITS =
 	    Locals of int (* locals, stack *)
-	and
-	    CATCH =
-	    Catch of classname * label * label * label
     end

@@ -110,4 +110,22 @@ structure Common=
 	 (* Stamp and Id for 'this'-Pointer *)
 	 val thisStamp = Stamp.new ()
 	 val thisId = Id (dummyPos, thisStamp, InId)
+
+	 datatype APPLY =
+	    (* methodname, # of params *)
+	    Apply of string * int
+	  (* # of params, code class, code position.
+	   No methodname, because it is always "recapply". *)
+	  | RecApply of int * stamp * int
+
+	 (* generate names for apply methods. *)
+	fun applyName (isstatic, 1) =
+	    if isstatic then "sapply" else "apply"
+	  | applyName (isstatic, parms) =
+		let
+		    val p = if parms <=4 then parms else 1
+		in
+		    if isstatic then "sapply"^Int.toString p
+		    else "apply"^Int.toString p
+		end
     end
