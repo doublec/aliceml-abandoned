@@ -1,7 +1,7 @@
-PREFIX=/home/pslab/Projects/Alice-Distribution
+PREFIX=/home/pslab/Projects/distro
 BINDIR=$(PREFIX)/bin
 
-CXX = seamtool compile
+CXX = seamtool -v compile
 CXXFLAGS = -O2 -march=pentium3 -mcpu=pentium3
 
 LD = g++ -mno-cygwin
@@ -9,7 +9,7 @@ LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
 	alicerun.exe alicerunwin.exe alice.exe alicec.exe \
-	alicelink.exe alicedep.exe
+	alicelink.exe alicedep.exe aliceglade.exe aliceremote.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
@@ -23,6 +23,9 @@ alicerun.o: alicex.cc Makefile
 alicerunwin.exe: alicerun.exe
 	cp $< $@
 	editbin /subsystem:windows $@
+
+aliceremote.exe: alicerun.exe
+	cp $< $@
 
 alice.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
@@ -45,6 +48,12 @@ alicelink.o: alicex.cc Makefile
 alicedep.o: alicex.cc Makefile
 	$(CXX) $(CXXFLAGS) \
 		-DROOT='"x-alice:/tools/Depend"' \
+		-DPRELOAD_GTK=0 \
+		-c $< -o $@
+
+aliceglade.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='"x-alice:/tools/Glade"' \
 		-DPRELOAD_GTK=0 \
 		-c $< -o $@
 
