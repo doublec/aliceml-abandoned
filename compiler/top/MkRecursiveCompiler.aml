@@ -124,9 +124,11 @@ functor MakeMain(structure Composer: COMPOSER'
 	      | (SOME "file", NONE) =>
 		    Url.toString (Url.setScheme (url, NONE))
 	      | (SOME "x-alice", NONE) =>
+(*--**UNFINISHED: This line is necessary for the COM+ backend
 		    (case OS.Process.getEnv "STOCKHOME" of
 			 SOME s => s ^ "/"
 		       | NONE => "") ^
+*)
 		    Url.toString (Url.setScheme (Url.makeRelativePath url,
 						 NONE))
 	      | _ => raise Crash.Crash "MakeMain.parseUrl"
