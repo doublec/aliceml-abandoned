@@ -23,6 +23,10 @@ import
 from "../infrastructure/Error"
 
 import
+    structure MkOptionParser
+from "MkOptionParser"
+
+import
     signature RECURSIVE_COMPILER
 from "RECURSIVE_COMPILER-sig"
 
@@ -64,7 +68,7 @@ functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 	    loop (eval (readSource TextIO.stdIn,
 			compilerContext, targetContext))
 
-	fun stot nil =
+	fun stot' nil =
 	    let
 		open RecursiveCompiler.Switches
 		val _ = Debug.dumpElaborationSig := false
@@ -77,5 +81,9 @@ functor MkEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 		Language.implicitImport := false;
 		loop (compilerContext, targetContext)
 	    end
-	  | stot (_::_) = (usage (); OS.Process.failure)
+	  | stot' (_::_) = (usage (); OS.Process.failure)
+
+	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
+
+	fun stot arguments = stot' (OptionParser.parse arguments)
     end

@@ -228,6 +228,7 @@ STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
 STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
+	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml StocMain.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkEmacsToplevel.aml \
@@ -430,9 +431,6 @@ INSTALL2FILES = \
 
 $(BUILD2DIRS):
 	mkdir -p $@
-
-build2/lib/fundamental/RTT.aml: build1/lib/fundamental/RTT.aml
-	cp $< $@
 
 build2/%.aml: build1/%.aml
 	cp $< $@

@@ -39,6 +39,10 @@ import
 from "Signature"
 
 import
+    structure MkOptionParser
+from "MkOptionParser"
+
+import
     signature BATCH_COMPILER
 from "BATCH_COMPILER-sig"
 
@@ -50,10 +54,6 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 			    where type Composer.Sig.t = Signature.t
 			val executableHeader: string): BATCH_COMPILER =
     struct
-	val version = "Build " ^
-			(*TODO Date.toString(Date.fromTimeLocal(Time.now()))*)
-			"2001/??/??"
-
 	fun basename filename =
 	    let
 		fun cutPath ((#"/" | #"\\")::rest) = nil
@@ -89,6 +89,8 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 *)
 )
 
+	structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
+
 	fun usage () =
 	    TextIO.output
 	    (TextIO.stdErr,
@@ -96,56 +98,7 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\tstoc [<option> ...] [-c|-x] <input file> \
 	      \[-o <output file>]\n\
 	      \\tstoc --replacesign <input url> <signature file> \
-	      \<output file>\n\
-	      \Warning options:\n\
-	      \\t--(no-)warn-shadowing\n\
-	      \\t\tWhether to warn about shadowing of identifiers.\n\
-	      \Language options:\n\
-	      \\t--(no-)reexport-import\n\
-	      \\t\tMake imported entities part of the component.\n\
-	      \\t--(no-)implicit-import\n\
-	      \\t\tWhether the SML Standard Basis is made available.\n\
-	      \\t--implicit-import-file <import file>\n\
-	      \\t\tSpecify file containing implicit import annotations.\n\
-	      \\t--rtt-level=no\n\
-	      \\t\tDo not generate code for runtime types.\n\
-	      \\t--rtt-level=core\n\
-	      \\t\tDo only generate code for core runtime types.\n\
-	      \\t--rtt-level=full\n\
-	      \\t\tFull support for runtime types.\n\
-	      \Debug options:\n\
-	      \\t--version\n\
-	      \\t\tPrint compiler version.\n\
-	      \\t--(no-)dryrun\n\
-	      \\t\tCompile standard input, not writing any output.\n\
-	      \\t--(no-)dump-phases\n\
-	      \\t\tTrace the running phases.\n\
-	      \\t--(no-)dump-abstraction-result\n\
-	      \\t\tDump abstract representation.\n\
-	      \\t--(no-)dump-elaboration-result\n\
-	      \\t\tDump abstract representation after elaboration.\n\
-	      \\t--(no-)dump-elaboration-sig\n\
-	      \\t\tDump component signatures after elaboration.\n\
-	      \\t--(no-)dump-intermediate\n\
-	      \\t\tDump intermediate representation.\n\
-	      \\t--(no-)check-intermediate\n\
-	      \\t\tType-check intermediate representation.\n\
-	      \\t--(no-)dump-flattening-result\n\
-	      \\t\tDump flat representation after flattening.\n\
-	      \\t--(no-)dump-value-propagation-context\n\
-	      \\t\tDump environment after value propagation.\n\
-	      \\t--(no-)dump-value-propagation-result\n\
-	      \\t\tDump flat representation after value propagation.\n\
-	      \\t--(no-)dump-liveness-analysis-intermediate\n\
-	      \\t\tDump flat representation with liveness annotations.\n\
-	      \\t--(no-)dump-liveness-analysis-context\n\
-	      \\t\t.Dump set of defined stamps after liveness analysis.\n\
-	      \\t--(no-)dump-liveness-analysis-result\n\
-	      \\t\tDump flat representation after liveness analysis.\n\
-	      \\t--(no-)dump-dead-code-elimination-result\n\
-	      \\t\tDump flat representation after dead code elimination.\n\
-	      \\t--(no-)dump-target\n\
-	      \\t\tDump target code representation.\n")
+	      \<output file>\n" ^ OptionParser.helpText)
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
 	    (UnsafePickle.replaceSign (infile,
@@ -169,64 +122,10 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    stoc_x (infile, outfile)
 	  | stoc' _ = (usage (); OS.Process.failure)
 
-	open RecursiveCompiler.Switches
-
-	val booleanSwitches =
-	    [("warn-shadowing", Warn.shadowing),
-	     ("reexport-import", Language.reexportImport),
-	     ("implicit-import", Language.implicitImport),
-	     ("dump-phases", Debug.dumpPhases),
-	     ("dump-abstraction-result", Debug.dumpAbstractionResult),
-	     ("dump-elaboration-result", Debug.dumpElaborationResult),
-	     ("dump-elaboration-sig", Debug.dumpElaborationSig),
-	     ("dump-intermediate", Debug.dumpIntermediate),
-	     ("check-intermediate", Debug.checkIntermediate),
-	     ("dump-flattening-result", Debug.dumpFlatteningResult),
-	     ("dump-value-propagation-context",
-	      Debug.dumpValuePropagationContext),
-	     ("dump-value-propagation-result",
-	      Debug.dumpValuePropagationResult),
-	     ("dump-liveness-analysis-intermediate",
-	      Debug.dumpLivenessAnalysisIntermediate),
-	     ("dump-liveness-analysis-context",
-	      Debug.dumpLivenessAnalysisContext),
-	     ("dump-liveness-analysis-result",
-	      Debug.dumpLivenessAnalysisResult),
-	     ("dump-dead-code-elimination-result",
-	      Debug.dumpDeadCodeEliminationResult),
-	     ("dump-target",
-	      Debug.dumpTarget)]
-
-	fun checkBooleanSwitches (s, (name, switch)::rest) =
-	    if "--" ^ name = s then (switch := true; true)
-	    else if "--no-" ^ name = s then (switch := false; true)
-	    else checkBooleanSwitches (s, rest)
-	  | checkBooleanSwitches (_, nil) = false
-
-	fun options ("--version"::rest) =
-	    (TextIO.output (TextIO.stdOut, version ^ "\n");
-	     options rest)
-	  | options ("--rtt-level=no"::rest) =
-	    (Language.rttLevel := Language.NO_RTT;
-	     options rest)
-	  | options ("--rtt-level=core"::rest) =
-	    (Language.rttLevel := Language.CORE_RTT;
-	     options rest)
-	  | options ("--rtt-level=full"::rest) =
-	    (Language.rttLevel := Language.FULL_RTT;
-	     options rest)
-	  | options ("--implicit-import-file"::file::rest) =
-	    (Language.implicitImportFile := SOME file;
-	     options rest)
-	  | options (s::rest) =
-	    if checkBooleanSwitches (s, booleanSwitches) then options rest
-	    else s::rest
-	  | options nil = nil
-
 	fun defaults () = () (* override defaults from MkSwitches here *)
 
 	fun stoc arguments =
-	    (defaults (); stoc' (options arguments))
+	    (defaults (); stoc' (OptionParser.parse arguments))
 	    handle Error.Error (_, _) => OS.Process.failure
 		 | Crash.Crash message =>
 		       (TextIO.output (TextIO.stdErr,
