@@ -25,8 +25,8 @@ sig
     type longid_info
     type exp_info
     type pat_info
-    type 'a field_info
-    type match_info
+    type 'a fld_info
+    type mat_info
     type dec_info
 
     type sign
@@ -58,20 +58,20 @@ sig
 	| ConExp    of exp_info * longid * exp		(* constructed value *)
 	| RefExp    of exp_info	* exp			(* reference *)
 	| TupExp    of exp_info * exp vector		(* tuple *)
-	| ProdExp   of exp_info * exp field vector	(* record / module *)
+	| ProdExp   of exp_info * exp fld vector	(* record / module *)
 				(* all labels distinct *)
 	| SelExp    of exp_info * lab * exp		(* field selection *)
 	| VecExp    of exp_info * exp vector		(* vector *)
 	| StrictExp of exp_info * exp			(* strict evaluation *)
-	| FunExp    of exp_info * match vector		(* function / functor *)
+	| FunExp    of exp_info * mat vector		(* function / functor *)
 	| AppExp    of exp_info * exp * exp		(* application *)
 	| AndExp    of exp_info * exp * exp		(* conjunction *)
 	| OrExp     of exp_info * exp * exp		(* disjunction *)
 	| IfExp     of exp_info * exp * exp * exp	(* conditional *)
 	| SeqExp    of exp_info * exp * exp		(* sequential *)
-	| CaseExp   of exp_info * exp * match vector	(* case switch *)
+	| CaseExp   of exp_info * exp * mat vector	(* case switch *)
 	| RaiseExp  of exp_info * exp			(* exception raise *)
-	| HandleExp of exp_info * exp * match vector	(* exception handler *)
+	| HandleExp of exp_info * exp * mat vector	(* exception handler *)
 	| FailExp   of exp_info				(* lazy failure *)
 	| LazyExp   of exp_info * exp			(* by-need suspension *)
 	| SpawnExp  of exp_info * exp			(* concurrent thread *)
@@ -79,11 +79,11 @@ sig
 	| AbsExp    of exp_info * exp			(* type abstraction *)
 	| UnabsExp  of exp_info * exp			(* type realization *)
 
-    and 'a field = Field of 'a field_info * lab * 'a
-
-    and match    = Match of match_info * pat * exp
+    and 'a fld = Fld of 'a fld_info * lab * 'a
 
     (* Patterns (always linear) *)
+
+    and mat = Mat of mat_info * pat * exp
 
     and pat =
 	  JokPat    of pat_info				(* joker (wildcard) *)
@@ -93,7 +93,7 @@ sig
 	| ConPat    of pat_info * longid * pat		(* constructed *)
 	| RefPat    of pat_info * pat			(* reference *)
 	| TupPat    of pat_info * pat vector		(* tuple *)
-	| ProdPat   of pat_info * pat field vector	(* record *)
+	| ProdPat   of pat_info * pat fld vector	(* record *)
 				(* all labels distinct *)
 	| VecPat    of pat_info * pat vector		(* vector *)
 	| StrictPat of pat_info * pat			(* non-future *)
@@ -122,7 +122,7 @@ sig
 
     (* Components *)
 
-    type comp = (id * sign * Url.t) vector * dec vector * id field vector * sign
+    type comp = (id * sign * Url.t) vector * dec vector * id fld vector * sign
     type t = comp
 
 
@@ -136,8 +136,8 @@ sig
     val infoId :	id	-> id_info
     val infoLongid :	longid	-> longid_info
     val infoExp :	exp	-> exp_info
-    val infoField :	'a field -> 'a field_info
-    val infoMatch :	match	-> match_info
+    val infoFld :	'a fld	-> 'a fld_info
+    val infoMat :	mat	-> mat_info
     val infoPat :	pat	-> pat_info
     val infoDec :	dec	-> dec_info
 end
