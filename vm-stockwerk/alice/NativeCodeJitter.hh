@@ -89,7 +89,8 @@ protected:
   static u_int GetRelativePC();
   static void SetRelativePC(word pc);
   // Calling Convention Conversion
-  static void CompileCCC(TagVal *idDefArgs, bool update = false);
+  static void CompileCCC(u_int calleeArity, bool update = false);
+  static void LoadFormalArguments(u_int calleeArity, TagVal *idDefArgs);
   // NativeCodeJitter Instruction Helpers
   static u_int LoadIdRefKill(u_int Dest, word idRef);
   static void Await(u_int Ptr, word pc);
@@ -107,6 +108,7 @@ protected:
   static void LoadArguments(TagVal *actualArgs);
   static void AppVarPrim(TagVal *pc, Interpreter *interpreter);
   static void AppVar(TagVal *pc, word wClosure);
+  static void DirectAppVar(TagVal *pc, word wClosure);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);
@@ -121,6 +123,7 @@ protected:
   static TagVal *InstrSpecialize(TagVal *pc);
   static TagVal *InstrAppPrim(TagVal *pc);
   static TagVal *InstrAppVar(TagVal *pc);
+  static TagVal *InstrDirectAppVar(TagVal *pc);
   static TagVal *InstrGetRef(TagVal *pc);
   static TagVal *InstrGetTup(TagVal *pc);
   static TagVal *InstrSel(TagVal *pc);
