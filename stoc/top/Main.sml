@@ -26,13 +26,24 @@ structure Main :> MAIN =
     fun elab' x    = let val y = abstract x in
 			ElaborationPhase.elab (Env.copy Env0.E0) y ; y
 		     end
-    val translate  = TranslationPhase.translate o elab'
-    val imperatify = MatchCompilationPhase.translate o translate
-    val ilify      = CodeGenPhase.genComponent o imperatify
+    val translate   = TranslationPhase.translate o elab'
+    val translate'  = TranslationPhase.translate o abstract
+    val imperatify  = MatchCompilationPhase.translate o translate
+    val imperatify' = MatchCompilationPhase.translate o translate'
+    val ilify       = CodeGenPhase.genComponent o imperatify
+    val ilify'      = CodeGenPhase.genComponent o imperatify'
 
     fun ozify outstream s =
 	let
 	    val component = imperatify s
+	in
+	    OzifyImperativeGrammar.outputComponent (outstream, component);
+	    TextIO.output1 (outstream, #"\n")
+	end
+
+    fun ozify' outstream s =
+	let
+	    val component = imperatify' s
 	in
 	    OzifyImperativeGrammar.outputComponent (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
@@ -45,9 +56,24 @@ structure Main :> MAIN =
 	    TextIO.output (outstream, s')
 	end
 
+    fun debug' outstream s =
+	let
+	    val s' = OutputImperativeGrammar.outputComponent (imperatify' s)
+	in
+	    TextIO.output (outstream, s')
+	end
+
     fun comify outstream s =
 	let
 	    val component = ilify s
+	in
+	    IL.outputProgram (outstream, component);
+	    TextIO.output1 (outstream, #"\n")
+	end
+
+    fun comify' outstream s =
+	let
+	    val component = ilify' s
 	in
 	    IL.outputProgram (outstream, component);
 	    TextIO.output1 (outstream, #"\n")
@@ -59,31 +85,47 @@ structure Main :> MAIN =
     val abstractString		= processString abstract
     val abstractFile		= processFile abstract
 
-    val translateString		= processString translate
-    val translateFile		= processFile translate
-
     val elabString		= processString elab
     val elabFile		= processFile elab
 
+    val translateString		= processString translate
+    val translateFile		= processFile translate
+    val translateString'	= processString translate'
+    val translateFile'		= processFile translate'
+
     val imperatifyString	= processString imperatify
     val imperatifyFile		= processFile imperatify
+    val imperatifyString'	= processString imperatify'
+    val imperatifyFile'		= processFile imperatify'
 
     val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
     val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)
+    val ozifyStringToStdOut'	= processString (ozify' TextIO.stdOut)
+    val ozifyFileToStdOut'	= processFile (ozify' TextIO.stdOut)
 
     fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
-    fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
+    fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify' n2) n1
+    fun ozifyStringToFile'(s,n)	= processString (toFile ozify n) s
+    fun ozifyFileToFile'(n1,n2)	= processFile (toFile ozify' n2) n1
 
     val debugStringToStdOut	= processString (debug TextIO.stdOut)
     val debugFileToStdOut	= processFile (debug TextIO.stdOut)
+    val debugStringToStdOut'	= processString (debug' TextIO.stdOut)
+    val debugFileToStdOut'	= processFile (debug' TextIO.stdOut)
 
     fun debugStringToFile(s,n)	= processString (toFile debug n) s
     fun debugFileToFile(n1,n2)	= processFile (toFile debug n2) n1
+    fun debugStringToFile'(s,n)	= processString (toFile debug' n) s
+    fun debugFileToFile'(n1,n2)	= processFile (toFile debug' n2) n1
 
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)
+    val comifyStringToStdOut'	= processString (comify' TextIO.stdOut)
+    val comifyFileToStdOut'	= processFile (comify' TextIO.stdOut)
 
     fun comifyStringToFile(s,n)	= processString (toFile comify n) s
     fun comifyFileToFile(n1,n2)	= processFile (toFile comify n2) n1
+    fun comifyStringToFile'(s,n) = processString (toFile comify' n) s
+    fun comifyFileToFile'(n1,n2) = processFile (toFile comify' n2) n1
 
   end
