@@ -44,5 +44,5 @@ signature CODE_GEN_PHASE =
 	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: IL = IL
 
-	val translate: C.t -> Source.desc * I.component -> O.t
+	val translate: Source.desc * C.t * I.component -> C.t * O.t
     end
