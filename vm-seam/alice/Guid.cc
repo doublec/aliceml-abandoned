@@ -11,7 +11,7 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Guid.hh"
+#pragma implementation "alice/Guid.hh"
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -25,8 +25,8 @@
 #include <cstdlib>
 #include <time.h>
 
-#include "emulator/Guid.hh"
-#include "emulator/RootSet.hh"
+#include "generic/RootSet.hh"
+#include "alice/Guid.hh"
 
 word Guid::vmGuid;
 

@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000-2001
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -16,7 +16,7 @@
 #define __ALICE__DATA_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Alice.hh"
+#pragma interface "alice/Data.hh"
 #endif
 
 #include <cstring>
