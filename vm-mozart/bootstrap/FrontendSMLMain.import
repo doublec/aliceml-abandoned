@@ -1,0 +1,7 @@
+(* -*- sml -*- *)
+
+import
+
+val abstract: Source.source -> AbstractGrammar.component
+
+from "FrontendSMLMain.ozf"

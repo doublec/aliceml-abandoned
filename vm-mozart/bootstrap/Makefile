@@ -153,6 +153,10 @@ FRONTEND_SML_PARSER_FILES = \
 	$(STOC_DIR)/frontend-sml/PARSING_PHASE.sig \
 	$(STOC_DIR)/frontend-sml/ParsingPhase.sml
 
+FRONTEND_SML_MAIN_FILES = \
+	Base.import \
+	FrontendSMLMain.sml
+
 BACKEND_COMMON_FILES = \
 	Base.import \
 	Word.import \
@@ -190,17 +194,35 @@ BACKEND_MOZART_FILES = \
 	$(STOC_DIR)/backend-mozart/OZIFY_IMPERATIVE_GRAMMAR.sig \
 	$(STOC_DIR)/backend-mozart/OzifyImperativeGrammar.sml
 
+MAIN_FILES = \
+	Base.import \
+	Word.import \
+	TextIO.import \
+	Misc.import \
+	Error.import \
+	Common.import \
+	FrontendCommon.import \
+	FrontendSMLMain.import \
+	BackendCommon.import \
+	BackendMozart.import \
+	Main.sml
+
 COMPONENTS = \
 	Base \
 	MLYacc \
 	Misc Error Common \
-	FrontendCommon FrontendSMLLexer FrontendSML FrontendSMLParser \
-	BackendCommon BackendMozart
+	FrontendCommon \
+	FrontendSMLLexer FrontendSML FrontendSMLParser FrontendSMLMain \
+	BackendCommon BackendMozart \
+	Main
 
 %.ozf: %.aus
 	$(STOC) --in=$< --out=$@
 
-all: $(COMPONENTS:%=%.ozf)
+all: stoc-mozart
+
+stoc-mozart: $(COMPONENTS:%=%.ozf)
+	ozl $(OZLFLAGS) -x Main.ozf -o $@
 
 Base.aus: $(BASE_FILES)
 	$(MERGE) $(BASE_FILES) > $@
@@ -220,10 +242,14 @@ FrontendSML.aus: $(FRONTEND_SML_FILES)
 	$(MERGE) $(FRONTEND_SML_FILES) > $@
 FrontendSMLParser.aus: $(FRONTEND_SML_PARSER_FILES)
 	$(MERGE) $(FRONTEND_SML_PARSER_FILES) > $@
+FrontendSMLMain.aus: $(FRONTEND_SML_MAIN_FILES)
+	$(MERGE) $(FRONTEND_SML_MAIN_FILES) > $@
 BackendCommon.aus: $(BACKEND_COMMON_FILES)
 	$(MERGE) $(BACKEND_COMMON_FILES) > $@
 BackendMozart.aus: $(BACKEND_MOZART_FILES)
 	$(MERGE) $(BACKEND_MOZART_FILES) > $@
+Main.aus: $(MAIN_FILES)
+	$(MERGE) $(MAIN_FILES) > $@
 
 clean:
 	-rm -rf $(COMPONENTS:%=%.aus)

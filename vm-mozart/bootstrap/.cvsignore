@@ -1,4 +1,5 @@
 Base.aus MLYacc.aus Misc.aus Error.aus Common.aus
-FrontendCommon.aus FrontendSMLLexer.aus FrontendSML.aus FrontendSMLParser.aus
-BackendCommon.aus BackendMozart.aus
+FrontendCommon.aus
+FrontendSMLLexer.aus FrontendSML.aus FrontendSMLParser.aus FrontendSMLMain.aus
+BackendCommon.aus BackendMozart.aus Main.aus
 *.ozf
