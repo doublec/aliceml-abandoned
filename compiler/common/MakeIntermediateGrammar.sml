@@ -23,7 +23,7 @@ functor MakeIntermediateGrammar(type info) :>
 
     (* Identifiers *)
 
-    type stamp      = int
+    type stamp      = Stamp.t
 
     datatype name   = ExId of string | InId
 
