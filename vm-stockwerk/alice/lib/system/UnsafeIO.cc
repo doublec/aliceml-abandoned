@@ -34,6 +34,7 @@
 #endif
 
 #include "store/Store.hh"
+#include "store/WeakDictionary.hh"
 #include "generic/RootSet.hh"
 #include "generic/StackFrame.hh"
 #include "generic/Interpreter.hh"
@@ -56,16 +57,46 @@ static word ClosedStreamConstructor;
     RAISE(conVal->ToWord());						\
   }
 
-// Builtin IOStream Classes
-//--** to be done: finalization
+// Finalization of IOStreams
+class IOStreamFinalization: public Finalization {
+private:
+  static const u_int initialSize = 4; //--** to be determined
+
+  u_int keyCounter;
+  word wWeakDictionary;
+public:
+  IOStreamFinalization() {
+    keyCounter = 0;
+    wWeakDictionary = WeakDictionary::New(initialSize, this)->ToWord();
+    RootSet::Add(wWeakDictionary);
+  }
+
+  u_int Register(word value) {
+    WeakDictionary *weakDictionary =
+      WeakDictionary::FromWordDirect(wWeakDictionary);
+    u_int key = keyCounter++;
+    weakDictionary->InsertItem(key, value);
+    return key;
+  }
+  void Unregister(u_int key) {
+    WeakDictionary *weakDictionary =
+      WeakDictionary::FromWordDirect(wWeakDictionary);
+    weakDictionary->DeleteItem(key);
+  }
+  virtual void Finalize(word value);
+};
+
+// IOStream Classes
 enum IOStreamType {
   IO_IN  = MIN_DATA_LABEL,
-  IO_OUT = (IO_IN + 1)
+  IO_OUT = IO_IN + 1
 };
 
 class IOStream: private Block {
 private:
-  enum { STREAM_POS, NAME_POS, SIZE };
+  enum { STREAM_POS, NAME_POS, FINALIZATION_KEY_POS, SIZE };
+
+  static IOStreamFinalization *handler;
 protected:
   static BlockLabel IOStreamTypeToBlockLabel(IOStreamType type) {
     return static_cast<BlockLabel>(static_cast<int>(type));
@@ -75,10 +106,21 @@ protected:
     Block *p = Store::AllocBlock(IOStreamTypeToBlockLabel(type), SIZE);
     p->InitArg(STREAM_POS, Store::UnmanagedPointerToWord(file));
     p->InitArg(NAME_POS, name->ToWord());
+    p->InitArg(FINALIZATION_KEY_POS, handler->Register(p->ToWord()));
     return static_cast<IOStream *>(p);
   }
 public:
   using Block::ToWord;
+
+  static void Init() {
+    handler = new IOStreamFinalization();
+  }
+
+  static IOStream *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == IOStreamTypeToBlockLabel(IO_IN));
+    return static_cast<IOStream *>(p);
+  }
 
   std::FILE *GetFile() {
     return static_cast<std::FILE *>
@@ -91,42 +133,48 @@ public:
   void Close() {
     FILE *file = GetFile();
     if (file != NULL) {
+      u_int key = Store::DirectWordToInt(GetArg(FINALIZATION_KEY_POS));
+      handler->Unregister(key);
       std::fclose(file);
       ReplaceArg(STREAM_POS, Store::UnmanagedPointerToWord(NULL));
     }
   }
 };
 
-class InStream: public IOStream {
-public:
-  static InStream *New(std::FILE *file, String *name) {
-    return static_cast<InStream *>(IOStream::New(IO_IN, file, name));
-  }
+void IOStreamFinalization::Finalize(word value) {
+  IOStream::FromWordDirect(value)->Close();
+}
 
-  static InStream *FromWord(word x) {
+IOStreamFinalization *IOStream::handler;
+
+class Instream: public IOStream {
+public:
+  static Instream *New(std::FILE *file, String *name) {
+    return static_cast<Instream *>(IOStream::New(IO_IN, file, name));
+  }
+  static Instream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER ||
 	   p->GetLabel() == IOStreamTypeToBlockLabel(IO_IN));
-    return static_cast<InStream *>(p);
+    return static_cast<Instream *>(p);
   }
 };
 
-class OutStream: public IOStream {
+class Outstream: public IOStream {
 public:
-  static OutStream *New(std::FILE *file, String *name) {
-    return static_cast<OutStream *>(IOStream::New(IO_OUT, file, name));
+  static Outstream *New(std::FILE *file, String *name) {
+    return static_cast<Outstream *>(IOStream::New(IO_OUT, file, name));
   }
-
-  static OutStream *FromWord(word x) {
+  static Outstream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER ||
 	   p->GetLabel() == IOStreamTypeToBlockLabel(IO_OUT));
-    return static_cast<OutStream *>(p);
+    return static_cast<Outstream *>(p);
   }
 };
 
-#define DECLARE_INSTREAM(file, x)  DECLARE_BLOCKTYPE(InStream, file, x);
-#define DECLARE_OUTSTREAM(file, x) DECLARE_BLOCKTYPE(OutStream, file, x);
+#define DECLARE_INSTREAM(file, x)  DECLARE_BLOCKTYPE(Instream, file, x);
+#define DECLARE_OUTSTREAM(file, x) DECLARE_BLOCKTYPE(Outstream, file, x);
 
 static String *Concat(String *a, const char *b, u_int bLen) {
   u_int aLen = a->GetSize();
@@ -492,7 +540,7 @@ DEFINE2(UnsafeIO_openIn) {
   const char *flags = (isText? "r": "rb");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
-    RETURN(InStream::New(file, name)->ToWord());
+    RETURN(Instream::New(file, name)->ToWord());
   } else {
     RAISE_IO(Store::IntToWord(0), "openIn", name);
   }
@@ -572,7 +620,7 @@ DEFINE2(UnsafeIO_openOut) {
   const char *flags = (isText? "w": "wb");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
-    RETURN(OutStream::New(file, name)->ToWord());
+    RETURN(Outstream::New(file, name)->ToWord());
   } else {
     RAISE_IO(Store::IntToWord(0), "openOut", name);
   }
@@ -584,7 +632,7 @@ DEFINE2(UnsafeIO_openAppend) {
   const char *flags = (isText? "wa": "wab");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
-    RETURN(OutStream::New(file, name)->ToWord());
+    RETURN(Outstream::New(file, name)->ToWord());
   } else {
     RAISE_IO(Store::IntToWord(0), "openAppend", name);
   }
@@ -649,6 +697,7 @@ word UnsafeIO() {
     UniqueConstructor::New(String::New("IO.ClosedStream"))->ToWord();
   RootSet::Add(ClosedStreamConstructor);
 
+  IOStream::Init();
   IOInterpreter::Init();
   int handle;
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -688,11 +737,11 @@ word UnsafeIO() {
   record->Init("'ClosedStream", ClosedStreamConstructor);
   record->Init("ClosedStream", ClosedStreamConstructor);
   record->Init("stdIn",
-	       InStream::New(stdin, String::New("stdin"))->ToWord());
+	       Instream::New(stdin, String::New("stdin"))->ToWord());
   record->Init("stdOut",
-	       OutStream::New(stdout, String::New("stdout"))->ToWord());
+	       Outstream::New(stdout, String::New("stdout"))->ToWord());
   record->Init("stdErr",
-	       OutStream::New(stderr, String::New("stderr"))->ToWord());
+	       Outstream::New(stderr, String::New("stderr"))->ToWord());
   INIT_STRUCTURE(record, "UnsafeIO", "openIn",
 		 UnsafeIO_openIn, 2, true);
   INIT_STRUCTURE(record, "UnsafeIO", "closeIn",
