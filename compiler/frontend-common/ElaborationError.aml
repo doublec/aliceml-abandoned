@@ -206,6 +206,10 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    textpar["is","incompatible"]
       | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
 	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
+      | ppMismatch'(Inf.MismatchValSort(a,Inf.CONSTRUCTOR _,
+					  Inf.CONSTRUCTOR _)) =
+	    indent(textpar["constructor",ppLab a]) ^^
+	    textpar["has","incompatible","syntactic","arity"]
       | ppMismatch'(Inf.MismatchValSort(a,w1,w2)) =
 	    indent(textpar["val",ppLab a]) ^^
 	    textpar["is","not","a","constructor"]
