@@ -22,22 +22,34 @@ SOURCES = \
 	Config.aml \
 	BufferHighlight.aml
 
-all: Main.alc
-#LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc
-AIDE.alc: $(SOURCES:%.aml=%.alc)
-	alicelink -z --include ./ ./AliceIdeMain -o $@
+all:	Main.alc \
+	LinkedTextToplevel.alc LinkedGuiToplevel.alc LinkedCoreToplevel.alc
+
+LinkedCoreToplevel.alc: CoreToplevel.alc
+	alicelink -z --include ./ ./$< -o $@
+
+LinkedTextToplevel.alc: TextToplevel.alc
+	alicelink -z --exclude ./CoreToplevel --include ./ ./$< -o $@
+
+LinkedGuiToplevel.alc: GuiToplevel.alc
+	alicelink -z --exclude ./CoreToplevel --include ./ ./$< -o $@
 
 %.alc: %.aml
 	alicec $< -o $@
 
 install: all
 	install -d $(INSTALLTO)
-	install AIDE.alc $(INSTALLTO)/AIDE.alc
-	install aide $(INSTALLBINTO)/aide
+	install Main.alc $(INSTALLTO)/Toplevel.alc
+	install LinkedTextToplevel.alc $(INSTALLTO)/TextToplevel.alc
+	install LinkedGuiToplevel.alc $(INSTALLTO)/GuiToplevel.alc
+	install LinkedCoreToplevel.alc $(INSTALLTO)/CoreToplevel.alc
+	install alice $(INSTALLBINTO)/alice
 
 clean:
-	rm -f $(SOURCES:%.aml=%.alc)
-	rm -f AIDE.alc
+	rm -f *.alc
+
+distclean: clean
+	rm -f Makefile.depend
 
 depend:
 	alicedep $(SOURCES) > Makefile.depend
