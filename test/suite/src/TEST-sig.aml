@@ -1,0 +1,11 @@
+
+signature TEST =
+sig
+
+   exception NotYetImplemented
+	  
+   exception MissingFunction
+
+   val test : ('a -> bool) -> 'a -> unit
+
+end

@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../test/TESTSUITE-sig"
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
 
 import structure Gen       from "x-alice:/lib/test/Gen"
-import structure Test      from "../test/Test"
+import structure Test      from "../../src/Test"
 
 import structure Time      from "x-alice:/lib/system/Time"
 

@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../test/TESTSUITE-sig"
+import signature TESTSUITE from "../../src//TESTSUITE-sig"
 
-import structure Test      from "../test/Test"
+import structure Test      from "../../src/Test"
 
 structure TestIEEEReal :> TESTSUITE = (* the IEEEReal test suite *)
 struct

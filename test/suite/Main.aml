@@ -11,7 +11,7 @@
  *)
 
 import structure Report       from "x-alice:/lib/test/Report"
-import structure Test         from "src/Test"
+import structure Test         from "x-alice:/lib/test/Test"
 
 import structure Time         from "x-alice:/lib/system/Time"
 

@@ -10,11 +10,11 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE         from "../test/TESTSUITE-sig"
+import signature TESTSUITE         from "../../src/TESTSUITE-sig"
+
+import structure Test              from "../../src/Test"
 
 import signature GEN               from "x-alice:/lib/test/GEN-sig"
-import structure Test              from "../test/Test"
-
 import structure Url               from "x-alice:/lib/system/Url"
 import structure Component         from "x-alice:/lib/system/Component"
 import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
