@@ -17,7 +17,7 @@ include $(TOPDIR)/Makefile.rules
 
 SUBDIRS = java alice generic adt store
 
-SOURCES = Base.cc InitSeam.cc AliceMain.cc JavaMain.cc
+SOURCES = Base.cc InitSeam.cc SeamMain.cc AliceMain.cc JavaMain.cc
 OBJS = $(SOURCES:%.cc=%.o)
 
 ##
@@ -101,13 +101,16 @@ LIBS = -L$(SUPPORTDIR)/lib $(EXTRA_LIBS) -lz
 
 .PHONY: clean-local veryclean-local distclean-local $(SUBDIRS)
 
-all: alice.exe java.exe
+all: seam.exe alice.exe java.exe
 
 $(SUBDIRS): %:
 	(cd $@ && $(MAKE) all)
 
 seam.dll: Base.o InitSeam.o store adt generic
 	$(LD) $(LDFLAGS) -shared -o $@ Base.o InitSeam.o $(SEAM_OBJS) $(LIBS)
+
+seam.exe: SeamMain.o seam.dll
+	$(LD) $(LDFLAGS) -o $@ $< seam.dll
 
 alice.dll: seam.dll alice
 	$(LD) $(LDFLAGS) $(ALICE_DLL_EXTRA_LDFLAGS) \
