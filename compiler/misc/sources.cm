@@ -20,3 +20,6 @@ Group is
     MakeHashScopedImpSet.sml
     MakeHashScopedImpMap.sml
     StringHashKey.sml
+
+    PRETTY_PRINT.sig
+    PrettyPrint.sml
