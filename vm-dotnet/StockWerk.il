@@ -11,19 +11,22 @@
 //
 
 //
-// Serialization:
-// -- replicable data structures use default serialization mechanism
-// -- the abstract superclass Global represents entities that have a global
-//    identity.  Global implements IObjectReference, replacing itself by a
-//    unique instance of the entity if it was already present in the system
-// -- names and constructors extend Global
-// -- Promise and Thread implement ISerializable to throw an exception
-// -- Future and ByNeed implement ISerializable to block until bound
-//    and then serialize a Ref object
-// -- Ref implements IObjectReference in order to remove the
-//    indirection upon deserialization
-//
-//--** TODO: add implementations for ISerializable
+// Design of Serialization:
+// -- StockWert implements ISerializable with the default serialization
+//    behaviour
+// -- replicable data structures (literals, tuples, records, names,
+//    constructors, and constructed values except references) inherit the
+//    default serialization mechanism
+// -- the abstract class Global represents entities that have a Guid.
+//    Global overrides GetObjectData to generate a Guid upon serialization,
+//    then fall back to StockWert::GetObjectData.  Global implements
+//    IObjectReference, replacing itself upon deserialization by the unique
+//    representation of the entity if it was already present in the system
+// -- Name and Constructor extend Global
+// -- Transient overrides GetObjectData to request itself, then to fall back
+//    to StockWert::GetObjectData.  Transient implements IObjectReference to
+//    remove the indirection upon deserialization
+// -- Thread implements ISerializable::GetObjectData to throw an exception
 //
 
 //--** use brinst and brnull instead of brtrue and brfalse
@@ -36,7 +39,8 @@
     .field static public initonly class StockWerk.StockWert Future
     .field static public initonly class StockWerk.StockWert Fulfill
     .field static public initonly class StockWerk.StockWert ByNeed
-    .method public static void Initialize() {
+    .field static public initonly class StockWerk.StockWert Pickle
+    .method public static void .cctor() {
       ldstr "()"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Unit
@@ -55,14 +59,17 @@
       ldstr "ByNeed"
       newobj instance void StockWerk.NamedConstructor::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::ByNeed
+      ldstr "Pickle"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
       ret
     }
   }
 
   .class sealed public State extends System.Object {
-    //--** use WeakReference
+    //--** use WeakReference?
     .field static private initonly class System.Collections.Hashtable GuidTable
-    .method public static void Initialize() {
+    .method public static void .cctor() {
       newobj instance void System.Collections.Hashtable::.ctor()
       stsfld class System.Collections.Hashtable StockWerk.State::GuidTable
       ret
@@ -116,7 +123,7 @@
   // Value Representation
   //
 
-  .class abstract public StockWert extends System.Object {
+  .class abstract public StockWert extends System.Object implements System.Serialization.ISerializable {
     .method public void .ctor() {
       ldarg.0
       tail. call instance void System.Object::.ctor()
@@ -151,11 +158,67 @@
       ldc.i4 0
       ret
     }
+    .method virtual public class System.Reflection.MemberInfo[0 ...] GetMembers(value class System.Serialization.StreamingContext) {
+      ldarg.0
+      callvirt instance class System.Type System.Object::GetType()
+      ldc.i4 1
+      tail. callvirt instance class System.Reflection.MemberInfo[0 ...] System.Type::GetMembers(bool)
+      ret
+    }
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+      .locals(value class System.Serialization.SerializationInfo)
+      ldloca.s 0
+      ldarg.0
+      callvirt instance class System.Type System.Object::GetType()
+      ldarg.1
+      call class System.Serialization.SerializationTypeData System.Serialization.SerializationInfoGenerator::GetSerializationTypeData(class System.Type, int32)
+      ldarg.0
+      call instance void System.Serialization.SerializationInfo::.ctor(class System.Serialization.SerializationTypeData, class System.Object)
+      ldarg.0
+      ldloc.0
+      call void System.Serialization.SerializationInfoGenerator::PopulateSerializationInfo(class System.Object, value class System.Serialization.SerializationInfo)
+      ldloc.0
+      ret
+    }
+    .method virtual public void PopulateData(class System.Reflection.MemberInfo[0 ...], value class System.Variant[0 ...]) {
+      ldc.i4 0
+      stloc.0
+    loop:
+      ldloc.0
+      ldarg.1
+      ldlen
+      bge.s return
+      ldarg.1
+      ldloc.0
+      ldelem.ref
+      castclass System.Reflection.FieldInfo
+      ldarg.0
+      ldarg.2
+      ldloc.0
+      ldelema System.Variant
+      ldobj System.Variant
+      callvirt instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
+      ldloc.0
+      ldc.i4 1
+      add
+      stloc.0
+      br.s loop
+    return:
+      ret
+    }
+    .method virtual public void FixupMember(class System.Reflection.MemberInfo, class System.Object) {
+      ldarg.1
+      castclass System.Reflection.FieldInfo
+      ldarg.0
+      ldarg.2
+      call value class System.Variant System.Variant::$widen(class System.Object)
+      tail. callvirt instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
+      ret
+    }
   }
 
-  .class abstract public Global extends StockWerk.StockWert
-  implements System.Serialization.IObjectReference /*, System.Serialization.ISerializable */ {
-    .field private class System.Object Guid
+  .class abstract public Global extends StockWerk.StockWert implements System.Serialization.IObjectReference {
+    .field public class System.Object Guid   //--** use private instead of public
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -164,41 +227,28 @@
       stfld class System.Object StockWerk.Global::Guid
       ret
     }
-    .method public void MakeGuid() {
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
-      brtrue.s return
+      brtrue.s serialize
       ldarg.0
       dup
       call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
       stfld class System.Object StockWerk.Global::Guid
-    return:
+    serialize:
+      ldarg.0
+      ldarg.1
+      ldarg.2
+      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamContext)
       ret
     }
-    .method public class System.Object GetRealObject() {
-      .locals(class StockWerk.StockWert)
+    .method virtual public class System.Object GetRealObject() {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       ldarg.0
-      call class StockWerk.StockWert StockWerk.State::Localize(class System.Object, class StockWerk.StockWert)
+      tail. call class StockWerk.StockWert StockWerk.State::Localize(class System.Object, class StockWerk.StockWert)
       ret
     }
-    /*
-    .method public virtual class System.Reflection.MemberInfo[] GetMembers(value class System.Serialization.StreamingContext) {
-      ldnull
-      ret
-    }
-    .method public virtual value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
-      ldnull
-      ret
-    }
-    .method public virtual void PopulateData(class System.Reflection.MemberInfo[], value class System.Variant[]) {
-      ret
-    }
-    .method public virtual void FixupMember(class System.Reflection.MemberInfo, class System.Object) {
-      ret
-    }
-    */
   }
 
   //
@@ -350,13 +400,28 @@
   // Transients
   //
 
-  .class public abstract Transient extends StockWerk.StockWert {
+  .class public abstract Transient extends StockWerk.StockWert implements System.Serialization.IObjectReference {
     .method public void .ctor() {
       ldarg.0
       tail. call instance void StockWerk.StockWert::.ctor()
       ret
     }
     .method abstract virtual public class StockWerk.StockWert Request() {}
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+      ldarg.0
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      pop
+      ldarg.0
+      ldarg.1
+      ldarg.2
+      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamContext)
+      ret
+    }
+    .method virtual public class System.Object GetRealObject() {
+      ldarg.0
+      tail. callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      ret
+    }
   }
 
   .class sealed public Promise extends StockWerk.Transient {
@@ -508,8 +573,7 @@
     }
   }
 
-  .class sealed public Ref extends StockWerk.StockWert
-  implements System.Serialization.IObjectReference {
+  .class sealed public Ref extends StockWerk.StockWert implements System.Serialization.IObjectReference {
     // this class is only instantiated during serialization
     .field private class StockWerk.StockWert Ref
     .method public void .ctor(class StockWerk.StockWert) {
@@ -657,7 +721,7 @@
       ldftn instance void StockWerk.Thread::Body()
       newobj instance void System.ThreadStart::.ctor(class System.Object, int32)
       newobj instance void System.Thread::.ctor(class System.ThreadStart)
-      tail. callvirt instance void System.Thread::Start()
+      tail. call instance void System.Thread::Start()
       ret
     }
     .method private void Body() {
@@ -671,6 +735,11 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
       pop
       ret
+    }
+    .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::Pickle
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
     }
   }
 }
@@ -788,8 +857,6 @@
 
 .method public static void DllMain() {
   .entrypoint
-  call void StockWerk.State::Initialize()
-  call void StockWerk.Prebound::Initialize()
   //--** the following instructions just make the DLL verifiable:
   newobj instance void StockWerk.Builtins.BIAwait::.ctor()
   pop
