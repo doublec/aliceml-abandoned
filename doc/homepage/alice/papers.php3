@@ -26,6 +26,9 @@
     <LI> Gerhard Schneider:
 	 <A href="/Papers/abstracts/Schneider2000.html">ML mit Typklassen</A>,
 	 Diplomarbeit (in German), 2000
+    <LI> Andreas Rossberg:
+	 <A href="papers/intermediate.ps">The Stockhausen Intermediate
+	 Language</A>, Tech Report, 2001
   </UL>
 
   <P>

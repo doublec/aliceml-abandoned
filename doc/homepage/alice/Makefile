@@ -1,6 +1,7 @@
 PREFIX = /services/ps/httpd/html/alice
 
 DIRS = $(PREFIX) \
+	$(PREFIX)/papers \
 	$(PREFIX)/manual \
 	$(PREFIX)/manual/examples \
 	$(PREFIX)/manual/examples/interpreter
@@ -8,6 +9,8 @@ DIRS = $(PREFIX) \
 INSTALLFILES_0 = \
 	style.css bg.gif alice.gif musicemb.jpg macros.php3 \
 	index.php3 people.php3 papers.php3 download.php3
+INSTALLFILES_PAPERS_0 = \
+	intermediate.ps
 INSTALLFILES_MANUAL_0 = \
 	bg.gif alice.gif style.css \
 	index.php3 macros.php3 menu.php3 laziness.php3 \
@@ -26,6 +29,7 @@ INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER = \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/manual/examples/interpreter/%)
 INSTALLFILES = \
 	$(INSTALLFILES_0:%=$(PREFIX)/%) \
+	$(INSTALLFILES_PAPERS_0:%=$(PREFIX)/papers/%) \
 	$(INSTALLFILES_MANUAL_0:%=$(PREFIX)/manual/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_0:%=$(PREFIX)/manual/examples/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/manual/examples/interpreter/%)
