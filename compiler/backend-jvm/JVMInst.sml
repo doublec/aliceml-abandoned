@@ -36,8 +36,8 @@ structure JVMInst =
 	  | Comment of string
 	  | Dup
 	  | Fconst of int
-	  | Getfield of fieldname * classname
-	  | Getstatic of fieldname * classname
+	  | Getfield of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Getstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
 	  | Goto of label
 	  | Iadd
 	  | Iconst of int
@@ -59,8 +59,8 @@ structure JVMInst =
 	  | Ldc of JVMBASETYPE
 	  | New of classname
 	  | Pop
-	  | Putfield of classname * fieldname
-	  | Putstatic of classname * fieldname
+	  | Putfield of fieldname * classname * int (* int is dimension. 0 if no array *)
+	  | Putstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
 	  | Return
 	  | Sipush of int
 	  | Swap
@@ -77,7 +77,7 @@ structure JVMInst =
 	    INSTRUCTION list * INSTRUCTION list
 	and
 	    FIELDTYPE =
-	    Classtype of classname
+	    Classtype of classname * int (* int is dimension. 0, if no array *)
 	  | Sonstwas of int
 	and
 	    CLASSACCESS =

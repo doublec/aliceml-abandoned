@@ -8,6 +8,9 @@ structure ToJasmin =
 	val actclass= ref ""
 	val actmeth = ref ""
 
+	fun makeArityString (0,x) = x
+	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
+
 	fun intToString i = if i<0 then "-"^Int.toString(~i) else Int.toString i
 
 	local
@@ -156,8 +159,10 @@ structure ToJasmin =
 		else if i=1 then
 		    "fconst_1"
 		     else "fconst_2"
-	      | instructionToJasmin (Getfield(fieldn, ty)) = "getfield "^fieldn^" L"^ty^";"
-	      | instructionToJasmin (Getstatic(fieldn, ty)) = "getstatic "^fieldn^" L"^ty^";"
+	      | instructionToJasmin (Getfield(fieldn, ty,arity)) = "getfield "^fieldn^" "^
+			 (makeArityString (arity, ""))^"L"^ty^";"
+	      | instructionToJasmin (Getstatic(fieldn, ty,arity)) = "getstatic "^fieldn^" "^
+			 (makeArityString (arity, ""))^"L"^ty^";"
 	      | instructionToJasmin (Goto l) = "goto "^l
 	      | instructionToJasmin (Iconst i) =
 			 if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
@@ -193,8 +198,10 @@ structure ToJasmin =
 	      | instructionToJasmin (Ldc(JVMInt i)) = "ldc "^intToString i
 	      | instructionToJasmin (New cn) = "new "^cn
 	      | instructionToJasmin Pop = "pop"
-	      | instructionToJasmin (Putfield(cn,f)) = "putfield "^cn^" L"^f^";"
-	      | instructionToJasmin (Putstatic(cn,f)) = "putstatic "^cn^" L"^f^";"
+	      | instructionToJasmin (Putfield(cn,f,arity)) = "putfield "^cn^" "^
+			     (makeArityString (arity, ""))^"L"^f^";"
+	      | instructionToJasmin (Putstatic(cn,f,arity)) = "putstatic "^cn^" "^
+			     (makeArityString (arity, ""))^"L"^f^";"
 	      | instructionToJasmin Return = "return"
 	      | instructionToJasmin (Sipush i) = "sipush "^intToString i
 	      | instructionToJasmin Swap = "swap"
@@ -226,11 +233,11 @@ structure ToJasmin =
 	end
 
 	local
-	    fun fieldToJasmin (Field(access,fieldname, Classtype classtype)) =
+	    fun fieldToJasmin (Field(access,fieldname, Classtype (classtype, arity))) =
 		let
 		    val fcc = fAccessToString access
 		in
-		    ".field "^fcc^" "^fieldname^" L"^classtype^";\n"
+		    ".field "^fcc^" "^fieldname^" "^(makeArityString (arity, ""))^"L"^classtype^";\n"
 		end
 	      | fieldToJasmin (Field(access,fieldname, Sonstwas i)) =
 		let
