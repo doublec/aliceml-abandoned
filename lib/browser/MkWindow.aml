@@ -27,6 +27,7 @@ import structure NodeSearch from "NodeSearch"
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
+import structure Helper from "Helper" (* to be verified *)
 (* import structure Update from "Update" (* to be verified *)
 import structure NewNode from "NewNode" (* to be verified *) *)
 import signature MK_WINDOW from "MK_WINDOW-sig"
@@ -276,10 +277,7 @@ struct
 
     fun makePopup {node = n, widthhandler = w, depthhandler = d, reinspecthandler = r} = 
 	let 
-	    val reinspect_active = 
-		                 (case n of 
-				      Types.Limit(re) => #sort(re) = Types.DEPTH_LIMIT 
-				    | _ => true)
+	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
 	in
 	serve (fn () => 
 	       (createMenu
@@ -300,7 +298,8 @@ struct
 			  items = [],
 			  sensitive = true},
 		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),r,reinspect_active)],
+			  items = [EntryObj(LABEL("reinspect"),r,
+					    reinspect_active)],
 			  sensitive = true}])
 		;()))
 	end
@@ -382,82 +381,6 @@ struct
         | _ => ()
      end)
     
-     
-
-
-
-
-(*
-
-    fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
-	let
-	    val valueh = Gtk.adjustmentGetFieldValue(hadj)
-	    val valuev = Gtk.adjustmentGetFieldValue(vadj)   
-	in
-	    case event of
-		Gdk.GDK_BUTTON_PRESS(r) => 
-		    let 
-			val x = Real.+ (#x(r),valueh)
-			val y = Real.+ (#y(r),valuev)
-			val (node_x,node_y,node) = 
-			    NodeSearch.search(Dictionaries.dict,x,y)
-			    val font_width = fontWidth(!Settings.font)
-			    val font_height = fontHeight(!Settings.font)
-		    in
-			case #button(r) of
-			    1 =>
-				let
-				    val (node_x_real,node_y_real) = 
-					(Real.fromInt(font_width* node_x),
-					 Real.fromInt(font_height *node_y)) 
-				in
-				    (case node of 
-					 SOME(n) => 
-					     let
-						 val x2 = Real.+(node_x_real,
-								 Real.fromInt(font_width 
-								 * Layout.get_xdim(n)))
-						 val y2 = Real.+ (node_y_real,
-								  Real.fromInt(font_height 
-						        	      *Layout.get_ydim(n)))
-						 val re =createRectangle(lowest_layer,
-									 node_x_real,
-									 node_y_real,
-									 x2,
-									 y2)
-						 val _ = GtkCanvas.itemLowerToBottom(re)
-						 val _ = case !selection of 
-						     NONE => ()
-						   | SOME(_,rect) => Gtk.objectDestroy(rect)
-						 val _ = selection := SOME (n,re)
-					     in
-						 setSelectionMenuSensitive(bar,true)
-					     end
-				       | NONE => ( setSelectionMenuSensitive(bar,false)
-						  ; case !selection of 
-						     NONE => ()
-						   | SOME(_,rect) => Gtk.objectDestroy(rect)
-						  ; selection := NONE))
-				end
-			  | 3 => let
-				     val x = Real.+ (#x(r),valueh)
-				     val y = Real.+ (#y(r),valuev)
-				     val (node_x,node_y,node) = 
-					 NodeSearch.search(Dictionaries.dict,x,y)
-				 in
-				     (case node of 
-					  SOME(n) =>( makePopup({widthhandler = [], 
-							   depthhandler = [], 
-							   reinspecthandler = []})
-						     ; ())
-					| NONE => ()   )  
-				 end
-			  | _ => ()
-		    end
-	      | _ => ()
-	end)
-	
-*)
 			     
     val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
 	
