@@ -10,9 +10,10 @@
  *   $Revision$
  *)
 
-import signature COMPONENT_MANAGER from "../system/COMPONENT_MANAGER-sig"
-import structure Unix              from "../system/Unix"
-import structure Url               from "../utility/Url"
+import signature COMPONENT_MANAGER
+    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import structure Unix              from "x-alice:/lib/system/Unix"
+import structure Url               from "x-alice:/lib/utility/Url"
 import structure Http              from "Http"
 import structure HttpServer        from "HttpServer"
 import structure HttpClient        from "HttpClient"

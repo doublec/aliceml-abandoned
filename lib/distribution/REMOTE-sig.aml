@@ -11,7 +11,8 @@
  *   $Revision$
  *)
 
-import signature COMPONENT_MANAGER from "../system/COMPONENT_MANAGER-sig"
+import signature COMPONENT_MANAGER
+    from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 
 signature REMOTE =
     sig

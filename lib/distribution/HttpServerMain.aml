@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import structure OS          from "../system/OS"
-import structure TextIO      from "../system/TextIO"
-import structure CommandLine from "../system/CommandLine"
-import structure Url         from "../utility/Url"
+import structure OS          from "x-alice:/lib/system/OS"
+import structure TextIO      from "x-alice:/lib/system/TextIO"
+import structure CommandLine from "x-alice:/lib/system/CommandLine"
+import structure Url         from "x-alice:/lib/utility/Url"
 import structure Http        from "Http"
 import structure HttpServer  from "HttpServer"
 

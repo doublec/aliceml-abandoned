@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import signature IMP_MAP from "../utility/IMP_MAP-sig"
-import structure Url     from "../utility/Url"
-import structure Socket  from "../system/Socket"
+import signature IMP_MAP from "x-alice:/lib/utility/IMP_MAP-sig"
+import structure Url     from "x-alice:/lib/utility/Url"
+import structure Socket  from "x-alice:/lib/system/Socket"
 
 signature HTTP =
     sig
