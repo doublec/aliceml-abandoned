@@ -114,7 +114,7 @@ local
     val curtext   = ref NONE : Gtk.object option ref
     val curfile   = ref ""
 
-    val font = Gdk.fontLoad "-adobe-helvetica-medium-r-*--12-*"
+    val font = Gdk.fontLoad "8x13"
 
     fun fileToWindow file =
 	let
@@ -136,7 +136,7 @@ local
 	    val kcol  = !textcolor
 	in
 	    (Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
-	     Gtk.textSetEditable(text, true);
+	     Gtk.textSetEditable(text, 1);
 	     curtext := SOME text;
 	     Gtk.textSetAdjustments(text, xa, ya);
 	     Gdk.colormapAllocColor(map, black, 0, 1);
@@ -179,7 +179,7 @@ local
 			       TableSimple {x=1, y=0, item=Window vs}]
 	    in
 		(Gtk.widgetSetUsize(text, Real.round xdim, Real.round ydim);
-		 Gtk.textSetEditable(text, false);
+		 Gtk.textSetEditable(text, 0);
 		 Gtk.textSetAdjustments(text, xa, ya);
 		 Gdk.colormapAllocColor(map, black, 0, 1);
 		 Gdk.colormapAllocColor(map, white, 0, 1);
@@ -210,14 +210,15 @@ local
     end
 
     local
-	val shell = GtkCore.openShell("alice", "")
+	val proc                  = Unix.execute ("alice", nil)
+	val (instream, outstream) = Unix.streamsOf proc
 
-	fun printResult shell =
-	    (case GtkCore.getShell shell of
-		 NONE    => showResult "interpreter terminated."
-	       | SOME s  => (showResult s; printResult shell))
+	fun printResult () =
+	    (case TextIO.inputLine instream of
+		 "" => showResult "interpreter terminated."
+	       | s  => (showResult s; printResult ()))
     in
-	fun listenToShell () = Thread.spawn (fn () => printResult shell)
+	fun listenToShell () = spawn (printResult ())
 
 	fun textToShell () =
 	    let
@@ -225,8 +226,8 @@ local
 		val lines    = Gtk.editableGetChars(text, 0, Gtk.textGetLength text);
 		val newlines = String.translate (fn #"\n" => " \n" | c => str c) lines
 	    in
-		(GtkCore.putShell(shell, newlines);
-		 GtkCore.putShell(shell, ";\n"))
+		(TextIO.output(outstream, newlines);
+		 TextIO.output(outstream, ";\n"))
 	    end
     end
 
@@ -261,7 +262,7 @@ local
 	fun fromReal r =
 	    let
 		val rn = Real.*(r, 255.0)
-		val ri = valOf(Int.fromString(GtkCore.realToString rn))
+		val ri = Real.floor rn
 	    in
 		String.implode [numToHex(ri div 16), numToHex(ri mod 16)]
 	    end
@@ -269,9 +270,9 @@ local
 	fun okHandler _ = serve
 	    (fn () =>
 	     let
-		 val (r, g, b, _) = Gtk.colorSelectionGetColor colorSel
+		 val [r, g, b, _] = Gtk.colorSelectionGetColor colorSel
 		 val (ri, gi, bi) = (fromReal r, fromReal g, fromReal b)
-		 val color        = Gdk.allocateGdkColor(0, 0, 0)
+		 val color        = Gdk.allocColor(0, 0, 0)
 		 val colorString  = "RGB:" ^ ri ^ "/" ^ gi ^ "/" ^ bi
 	     in
 		 (textcolor := color;
@@ -308,11 +309,13 @@ local
 
     fun tourAliceHandler _ = ()
     fun tourColorHandler _ = getKeywordColor ()
-    fun tourExitHandler _  = Gtk.signalEmit(tour, "destroy")
+    fun tourExitHandler _  = () (* Gtk.signalEmit("destroy", tour) *)
 
-    val tourMenu  = [MenuItem("About Alice...", [MenuHandler tourAliceHandler]),
-		     MenuItem("Keyword color...", [MenuHandler tourColorHandler]),
-		     MenuItem("Exit", [MenuHandler tourExitHandler])]
+    val tourMenu  = [MenuItem("About Alice...",
+			      [Handler ("select", tourAliceHandler)]),
+		     MenuItem("Keyword color...",
+			      [Handler ("select", tourColorHandler)]),
+		     MenuItem("Exit", [Handler("select", tourExitHandler)])]
     val menuBar   = MenuBar([{label="Tour", submenu=tourMenu}])
     val menuAlign = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0, inner=menuBar}
 
