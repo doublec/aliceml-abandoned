@@ -1,7 +1,7 @@
 PHP = php
 
 ifeq ($(TARGET), mozart)
-INTEROP = interop.html
+INTEROP = interop.html migration.html
 CONSTRAINTS = constraints_mozart.html
 PLATFORM_LIB = fd.html fs.html space.html search.html \
 	linear.html explorer.html \
@@ -34,7 +34,7 @@ INSTALLFILES_0 = \
 	incompatibilities.html limitations.html \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
-	$(INTEROP) migration.html tour.html sitemap.html \
+	$(INTEROP) tour.html sitemap.html \
 	mozart_cartoon.jpg \
 	inspector-intro-1.png inspector-intro-2.png inspector-intro-3.png \
 	inspector-intro-4.png \
