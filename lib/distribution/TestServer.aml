@@ -24,7 +24,7 @@ signature TEST_SERVER =
 
 structure TestServer :> TEST_SERVER =
     struct
-	fun usage s =
+	fun usage () =
 	    (TextIO.output
 	     (TextIO.stdErr,
 	      "Usage: " ^ CommandLine.name () ^ "\n");

@@ -23,7 +23,7 @@ signature TEST_CLIENT =
 
 structure TestClient :> TEST_CLIENT =
     struct
-	fun usage s =
+	fun usage () =
 	    (TextIO.output
 	     (TextIO.stdErr,
 	      "Usage: " ^ CommandLine.name () ^ " <str-url> <proxy-url>\n");
