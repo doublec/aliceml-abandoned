@@ -8,10 +8,14 @@
     >Mozart</A> and supports interoperability between Oz and Alice.</P>
   <P>The Stockhausen compiler translates components into pickled Oz functors.
     It is possible to mix Oz and Alice code on a per-component basis.
-    This document explains how to:</P>
+    This document explains:</P>
   <UL>
-    <LI><A href="#ozfromalice">import Oz functors into Alice components</A>
-    <LI><A href="#alicefromoz">import Alice functors into Oz components</A>
+    <LI>how <A href="#datatrepresentation">Alice data structures are mapped
+      to Oz data structures</A>
+    <LI>how to <A href="#ozfromalice">import Oz functors into Alice
+      components</A>
+    <LI>how to <A href="#alicefromoz">import Alice functors into Oz
+      components</A>
   </UL>
 
 <?php section("datarepresentation", "data representation") ?>
@@ -114,7 +118,10 @@
       <TR><TH>Alice Future<TH>Oz Representation
       <TR><TD>Future<TD>Future
       <TR><TD>By-need future<TD>By-need future
-      <TR><TD>Promise<TD>Logic variable
+      <TR>
+	<TD>Promise
+	<TD>Pair of boolean cell and logic variable;<BR>the cell is
+	  <TT>true</TT> if the promise is either fulfilled or failed
     </TABLE>
   </CENTER>
 
@@ -125,6 +132,7 @@
       <TR><TH>Alice Library Type<TH>Oz Representation
       <TR><TD><TT>array</TT><TD>Array
       <TR><TD><TT>vector</TT><TD>Tuple with label <TT>'#'</TT>
+      <TR><TD><TT>Cell.cell</TT><TD>Cell
       <TR><TD><TT>Thread.thread</TT><TD>Thread
       <TR>
 	<TD><TT>TextIO.instream</TT>, <TT>TextIO.outstream</TT>
