@@ -648,9 +648,9 @@
 				 Seq(I(defaultPos,defaultPos), []), fvalbind) )
 	| FUN tyvarseq1 fvalbind
 			( FUNDec(I(FUNleft,fvalbindright), tyvarseq1, fvalbind))
-	| PRIMITIVE OP_opt vid COLON ty EQUALS scon
-			( PRIMITIVEDec(I(PRIMITIVEleft,sconright),
-				       OP_opt, vid, ty, scon) )
+	| PRIMITIVE OP_opt vid COLON ty EQUALS STRING
+			( PRIMITIVEDec(I(PRIMITIVEleft,STRINGright),
+				       OP_opt, vid, ty, STRING) )
 	| TYPE typbind	( TYPEDec(I(TYPEleft,typbindright), typbind) )
 	| EQTYPE typbind
 			( EQTYPEDec(I(EQTYPEleft,typbindright), typbind) )
@@ -1586,8 +1586,9 @@
 	| (*empty*)		( EMPTYImport(I(defaultPos,defaultPos)) )
 
      import1:
-	  IMPORT spec FROM scon	( IMPORTImport(I(IMPORTleft,sconright),
-					       spec, scon) )
+	  IMPORT spec FROM STRING
+	  			( IMPORTImport(I(IMPORTleft,STRINGright),
+					       spec, STRING) )
 	| import1 import1 %prec SEMICOLON
 				( SEQImport(I(import11left,import12right),
 					    import11, import12) )

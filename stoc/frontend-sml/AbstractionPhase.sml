@@ -893,22 +893,20 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
 	   end
 
-	 | PRIMITIVEDec(i, _, vid as VId(_,vid'), ty, scon) =>
+	 | PRIMITIVEDec(i, _, vid as VId(_,vid'), ty, s) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  _          = insertScope E
 		val  ids'       = trAllTy E ty
-		val  typ'       = alltyp(ids', trTy E ty)
+		val  typ'       = trTy E ty
 		val  _          = deleteScope E
-		val  lit'       = trSCon E scon
-		val  s          = case lit'
-				    of O.StringLit s => s
-				     | _ => error(i, "string required")
 		val  pat'       = O.VarPat(O.infoId id', id')
 		val  exp'       = O.PrimExp(i, s, typ')
+		val  dec'       = O.ValDec(i, pat', exp')
 		val  _          = insertVal(E, vid', (i, stamp, V))
 	   in
-		O.ValDec(i, pat', exp') :: acc
+		if List.null ids' then dec' :: acc
+				  else typvardecs(ids', [dec']) @ acc
 	   end
 
 	 | TYPEDec(i, typbind) =>
@@ -989,7 +987,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (_,stamp,E') = prebound E
 		val  _           = insertStr(E, strid', (i',stamp,E'))
 	   in
-		[]
+		acc
 	   end
 
 	 | SIGNATUREDec(i, sigbind) =>
@@ -1484,7 +1482,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'        = trTyVarSeq E tyvarseq
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
-		val dec'        = O.TypDec(i, id', funtyp')
+		val dec'        = O.DatDec(i, id', funtyp')
 		val _ = insertDisjointTy(E', tycon', (i', stamp, Env.new()))
 			handle CollisionTy _ =>
 			       errorTyCon("duplicate type construtor ", tycon,
@@ -1979,7 +1977,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val ids'        = trTyVarSeq E tyvarseq
 		val _           = deleteScope E
 		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
-		val spec'       = O.TypSpec(i, id', funtyp')
+		val spec'       = O.DatSpec(i, id', funtyp')
 		val _ = insertDisjointTy(E, tycon', (i', stamp, Env.new()))
 			handle CollisionTy _ =>
 			       errorTyCon("duplicate type construtor ", tycon,
@@ -2260,13 +2258,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trImport  E imp  = List.rev(trImport' (E,[]) imp)
     and trImport'(E,acc) =
-	fn IMPORTImport(i, spec, scon) =>
+	fn IMPORTImport(i, spec, s) =>
 	   let
 		val specs' = trSpec E spec
-		val lit'   = trSCon E scon
-		val s      = case lit'
-			       of O.StringLit s => s
-			        | _             => error(i, "string required")
 	   in
 		O.Imp(i, specs', s) :: acc
 	   end

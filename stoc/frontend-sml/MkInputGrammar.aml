@@ -123,7 +123,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and Dec =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
-	| PRIMITIVEDec    of Info * Op * VId * Ty * SCon
+	| PRIMITIVEDec    of Info * Op * VId * Ty * string
 	| TYPEDec         of Info * TypBind
 	| EQTYPEDec       of Info * TypBind
 	| EQEQTYPEDec     of Info * TypBind
@@ -302,7 +302,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and Component = Component of Info * Import * Program option
 
     and Import =
-	  IMPORTImport of Info * Spec * SCon
+	  IMPORTImport of Info * Spec * string
 	| EMPTYImport  of Info
 	| SEQImport    of Info * Import * Import
 
