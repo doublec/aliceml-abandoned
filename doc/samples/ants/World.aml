@@ -353,4 +353,12 @@ structure World =
                 print ("Black score: \t"^Int.toString blackScore^"\n")
             end
 
+
+	fun appWorld(w as (xs,cells,_):world, f) =
+            Array.appi (fn (i,c) =>
+                            let val (x,y) = indexToCoords(xs,i) 
+                            in
+                                f (w, x, y)
+                            end) cells
+
   end

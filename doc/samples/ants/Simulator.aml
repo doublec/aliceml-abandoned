@@ -11,7 +11,7 @@ structure Simulator :
                       'a Instructions.ant * 
                       'a Instructions.ant *
                       Ant.id -> unit
-           fun simulate : bool * bool * bool * bool * bool * int * int *
+           fun simulate : bool * bool * bool * bool * bool * bool * int * int *
                           string * string * string -> unit
                                                       ) =
   struct
@@ -98,7 +98,7 @@ structure Simulator :
       else ()
 
   fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
-               visualize,
+               visualize, visualizeEnd,
                delay, rounds,
                redAnt, blackAnt, world) =
       let
@@ -149,7 +149,12 @@ structure Simulator :
               (printOnlyAnts world;
                printStats world)
           else ();
-          ()
+          if visualizeEnd then
+            let val viewer = Viewer.viewer (redAnt, blackAnt)
+            in
+                World.appWorld (world, Viewer.updateCell viewer) 
+            end
+          else ()
       end
 
   end
