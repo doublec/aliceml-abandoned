@@ -201,10 +201,24 @@ define
 		'::'('#'(C Cr))
 	     end nil}
 	 end
-      'Thread.spawn':
-	 fun {$ P} thread {P '#' _} end '#' end
+      'Thread.getCurrent':
+	 fun {$ '#'} {Thread.this} end
+      'Thread.getState\'':
+	 fun {$ T} {ByteString.make {Thread.state T}} end
+      'Thread.injectException':
+	 fun {$ T#E} {Thread.injectException T E} '#' end
+      'Thread.isSuspended':
+	 fun {$ T} {Thread.isSuspended T} end
+      'Thread.preempt':
+	 fun {$ T} {Thread.preempt T} '#' end
+      'Thread.resume':
+	 fun {$ T} {Thread.resume T} '#' end
       'Thread.sleep':
 	 fun {$ N} {Delay N} '#' end
+      'Thread.spawn':
+	 fun {$ P} thread {P '#' _} end '#' end
+      'Thread.suspend':
+	 fun {$ T} {Thread.suspend T} '#' end
       'Transient.await':
 	 fun {$ X} {Wait X} X end
       'Transient.byNeed':
