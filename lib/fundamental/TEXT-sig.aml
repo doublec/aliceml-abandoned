@@ -1,0 +1,39 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import signature CHAR        from "CHAR-sig"
+import signature STRING      from "STRING-sig"
+import signature SUBSTRING   from "SUBSTRING-sig"
+import signature MONO_VECTOR from "MONO_VECTOR-sig"
+import signature MONO_ARRAY  from "MONO_ARRAY-sig"
+
+signature TEXT =
+sig
+    structure Char :       CHAR
+    structure String :     STRING
+			   where type char   = Char.t
+			     and type string = Char.string
+    structure Substring :  SUBSTRING
+			   where type char   = Char.t
+			     and type string = String.t
+    structure CharVector : MONO_VECTOR
+			   where type elem   = Char.t
+			     and type vector = String.t
+    structure CharArray :  MONO_ARRAY
+			   where type elem   = Char.t
+			     and type vector = String.t
+end
