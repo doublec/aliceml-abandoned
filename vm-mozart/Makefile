@@ -49,7 +49,6 @@
 ##
 ## build2-all:
 ##    A source tree for the libraries is created in subdirectory build2.
-##    The native components are assigned signatures via --replacesign.
 ##    Libraries implemented in Alice are compiled using the system
 ##    installed in Pass 1.
 ## build2-install:
@@ -125,8 +124,7 @@ MLYACC = ml-yacc
 ##
 
 NATIVECOMPONENTS = \
-	NativeConfig IO TextIO OS_Process OS_FileSys Unix CommandLine \
-	Tools UnsafePickle Debug Socket
+	Config IO TextIO OS Unix CommandLine Pickle Debug Socket
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
@@ -143,10 +141,12 @@ LIBFUNDAMENTALSOURCES0 = \
 	Real.aml Ref.aml String.aml StringCvt.aml Substring.aml Thread.aml \
 	Time.aml Toplevel.aml Vector.aml VectorPair.aml WideChar.aml \
 	WideString.aml Word.aml PACKAGE-sig.aml Package.aml ByNeed.aml
-LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig) \
-	COMMAND_LINE-sig.aml IO-sig.aml OS-sig.aml OS_FILE_SYS-sig.aml \
-	OS_PROCESS-sig.aml SOCKET-sig.aml TEXT_IO-sig.aml UNIX-sig.aml \
-	OS.aml PICKLE-sig.aml Pickle.aml CONFIG-sig.aml Config.aml
+LIBSYSTEMSOURCES0 = \
+	$(NATIVECOMPONENTS:%=Unsafe%.asig) \
+	CONFIG-sig.aml IO-sig.aml TEXT_IO-sig.aml OS_FILE_SYS-sig.aml \
+	OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
+	PICKLE-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
+	$(NATIVECOMPONENTS:%=%.aml)
 LIBUTILITYSOURCES0 = \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
@@ -220,7 +220,8 @@ COMPILERFRONTENDSMLSOURCES0 = \
 	Parser.aml DerivedForms.aml LEXER_ERROR-sig.aml MkLexerError.aml \
 	Lexer.aml MkCountPosLexer.aml PARSING_PHASE-sig.aml \
 	MkParsingPhase.aml MkFrontendSML.aml
-COMPILERFRONTENDSMLSOURCES = $(COMPILERFRONTENDSMLSOURCES0:%=compiler/frontend-sml/%)
+COMPILERFRONTENDSMLSOURCES = \
+	$(COMPILERFRONTENDSMLSOURCES0:%=compiler/frontend-sml/%)
 
 COMPILERBACKENDCOMMONSOURCES0 = \
 	LABEL_SORT-sig.aml MkLabelSort.aml LabelSort.aml FLAT_GRAMMAR-sig.aml \
@@ -232,21 +233,25 @@ COMPILERBACKENDCOMMONSOURCES0 = \
 	ValuePropagationPhase.aml LIVENESS_ANALYSIS_PHASE-sig.aml \
 	MkLivenessAnalysisPhase.aml DEAD_CODE_ELIMINATION_PHASE-sig.aml \
 	DeadCodeEliminationPhase.aml MkBackendCommon.aml
-COMPILERBACKENDCOMMONSOURCES = $(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
+COMPILERBACKENDCOMMONSOURCES = \
+	$(COMPILERBACKENDCOMMONSOURCES0:%=compiler/backend-common/%)
 
 COMPILERBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
 	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
-COMPILERBACKENDMOZARTSOURCES = $(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
+COMPILERBACKENDMOZARTSOURCES = \
+	$(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
 
 COMPILERBACKENDDOTNETSOURCES0 = \
 	SKELETON-sig.aml Skeleton.aml IL-sig.aml IL.aml System.aml \
 	Alice.aml BUILTINS-sig.aml Builtins.aml CODE_STORE-sig.aml \
 	CodeStore.aml CODE_GEN_PHASE-sig.aml CodeGenPhase.aml \
 	MkBackendDotNet.aml
-COMPILERBACKENDDOTNETSOURCES = $(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
+COMPILERBACKENDDOTNETSOURCES = \
+	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
-COMPILERTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
+COMPILERTOPSOURCES0 = \
+	Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
@@ -347,7 +352,8 @@ build1/compiler/infrastructure/%.aml: compiler/infrastructure/%.aml Rel2.import
 build1/compiler/common/%.aml: compiler/common/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
-build1/compiler/frontend-common/%.aml: compiler/frontend-common/%.aml Rel2.import
+build1/compiler/frontend-common/%.aml: compiler/frontend-common/%.aml \
+	Rel2.import
 	cat Rel2.import $< > $@
 
 build1/compiler/frontend-sml/%.aml: compiler/frontend-sml/%.aml Rel2.import
@@ -414,7 +420,7 @@ build1/%.ozf: build1/%.aml
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
 	$(BUILD1SOURCES) \
-	$(NATIVECOMPONENTS:%=build1/lib/system/%.ozf) \
+	$(NATIVECOMPONENTS:%=build1/lib/system/Unsafe%.ozf) \
 	$(BUILD1OZSOURCES:%.oz=%.ozf) \
 	build1/compiler/CompilerMain.ozf
 
@@ -422,7 +428,8 @@ build1/LinkedVMMain.ozf: build1/VMMain.ozf $(BUILD1OZLINPUTS)
 	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
 
 build1/compiler/LinkedCompilerMain.ozf: $(BUILD1OZLINPUTS)
-	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. build1/compiler/CompilerMain.ozf -o $@
+	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. \
+	build1/compiler/CompilerMain.ozf -o $@
 
 ##
 ## Installing Build 1
@@ -436,7 +443,8 @@ $(INSTALL1DIRS):
 build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
 	install -c -m 444 $< $@
 
-build1/install/compiler/CompilerMain.ozf: build1/compiler/LinkedCompilerMain.ozf
+build1/install/compiler/CompilerMain.ozf: \
+	build1/compiler/LinkedCompilerMain.ozf
 	install -c -m 444 $< $@
 
 build1/install/bin/%: %
@@ -479,13 +487,17 @@ build2/lib/fundamental/RTT.aml: build1/lib/fundamental/RTT.aml
 build2/%.aml: build1/%.aml
 	cp $< $@
 
-build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: build1/%
+build2/%.asig: build1/%.asig
+	cp $< $@
+
+build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: \
+	build1/%
 	cp $< $@
 
 build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
-$(NATIVECOMPONENTS:%=build2/lib/system/%.asig): build2/%: build1/%
+$(NATIVECOMPONENTS:%=build2/lib/system/Unsafe%.asig): build2/%: build1/%
 	cp $< $@
 
 ##
@@ -497,10 +509,6 @@ build2-all: build1-install $(BUILD2DIRS) $(BUILD2SOURCES) \
 
 build2/%.ozf: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no -c $< -o $@
-
-$(NATIVECOMPONENTS:%=build2/lib/system/%.ozf): build2/%.ozf: \
-	build1/%.ozf build2/%.asig
-	$(ALICEC1) $(ALICEC_OPTS) --rtt-level=no --replacesign $< build2/$*.asig $@
 
 build2/lib/system/Unix.ozf: build2/lib/system/TextIO.ozf
 
@@ -528,7 +536,8 @@ $(INSTALL2BINFILES:%=build2/install/bin/%): build2/%: build1/%
 $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 	install -c -m 444 $< $@
 
-build2/install/compiler/CompilerMain.ozf: build1/install/compiler/CompilerMain.ozf
+build2/install/compiler/CompilerMain.ozf: \
+	build1/install/compiler/CompilerMain.ozf
 	install -c -m 444 $< $@
 
 ########################################################################
@@ -575,6 +584,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 ##
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
+	$(NATIVECOMPONENTS:%=build3/lib/system/Unsafe%.ozf) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
@@ -588,12 +598,12 @@ build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
+$(NATIVECOMPONENTS:%=build3/lib/system/Unsafe%.ozf): \
+	build3/lib/system/%.ozf: lib/system/%.oz
+	$(OZC) -c $< -o $@
+
 build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
-
-$(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
-	build1/%.ozf build3/%.asig build3/lib/fundamental/Fundamental.ozf
-	$(ALICEC2) $(ALICEC_OPTS) --rtt-level=no --replacesign $< build3/$*.asig $@
 
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
@@ -642,13 +652,15 @@ build3/compiler/top/LinkedComposer.ozf: build3/compiler/top/Composer.ozf
 build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
 	$(COMPILERBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
-	--exclude=$(BUILD3)/lib,$(BUILD3)/compiler/top/Composer $< -o $@
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
+	--include=$(BUILD3)/compiler \
+	--exclude=$(BUILD3)/compiler/top/Composer $< -o $@
 
 build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ --include=.. \
-	--exclude=$(BUILD3)/lib,$(BUILD3)/compiler/top/Composer $< -o $@
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
+	--include=$(BUILD3)/compiler \
+	--exclude=$(BUILD3)/compiler/top/Composer $< -o $@
 
 ##
 ## Installing Build 3
@@ -729,7 +741,8 @@ $(INSTALL3LIBFILES:%=$(PREFIX)/lib/%): $(PREFIX)/%: build3/install/%
 $(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%): $(PREFIX)/%: build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: build3/install/%
+$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: \
+	build3/install/%
 	install -c -m 444 $< $@
 
 ##

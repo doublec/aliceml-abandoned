@@ -17,8 +17,7 @@ import
    Property(get)
    System(printInfo)
 export
-   'TextIO$': TextIO
-   Print
+   'UnsafeTextIO$': TextIO
 define
    IoException = {NewUniqueName 'IO.Io'}
 
@@ -36,22 +35,14 @@ define
 		 else fun {$ S} S end
 		 end
 
-   fun {TextIOInputAll F}
+   fun {InputAll F}
       case {F getS($)} of false then ""
-      [] S then {ConvertLine S}#'\n'#{TextIOInputAll F}
+      [] S then {ConvertLine S}#'\n'#{InputAll F}
       end
-   end
-
-   fun {Print X}
-      {System.printInfo X} unit
    end
 
    TextIO =
    'TextIO'(
-      '$instream': {Value.byNeedFail rttNotImplemented}
-      '$oustream': {Value.byNeedFail rttNotImplemented}
-      '$vector': {Value.byNeedFail rttNotImplemented}
-      '$elem': {Value.byNeedFail rttNotImplemented}
       'stdIn':
 	 {New TextFile init(name: stdin flags: [read])}
       'openIn':
@@ -67,7 +58,7 @@ define
 	    end
 	 end
       'inputAll':
-	 fun {$ F} {ByteString.make {TextIOInputAll F}} end
+	 fun {$ F} {ByteString.make {InputAll F}} end
       'inputLine':
 	 fun {$ F}
 	    case {F getS($)} of false then {ByteString.make ""}
@@ -92,5 +83,8 @@ define
 	 fun {$ F} /*{F flush()}*/ unit end   %--** not supported for files?
       'closeOut':
 	 fun {$ F} {F close()} unit end
-      'print': Print)
+      'print':
+	 fun {$ X}
+	    {System.printInfo X} unit
+	 end)
 end
