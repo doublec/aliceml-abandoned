@@ -1,6 +1,4 @@
 (* very simple (toplevel) grammar definition *)
-type bla = int
-
 token PLUS | MINUS | TIMES | NUM of int
 
 assocl TIMES

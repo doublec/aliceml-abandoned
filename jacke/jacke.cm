@@ -6,5 +6,6 @@ smlnj-lib.cm
 jacke.lex	
 jacke.grm
 ErrorMsg.sml
+AbsSyn.sml
 jacke.sml
 
