@@ -13,9 +13,9 @@
 functor $
 import
    System(printName)
-   Word(toInt) at 'x-oz://boot/Word.ozf'
+   Word(toInt) at 'x-oz://boot/Word'
    Inspector('nodes' : TreeNodes)
-   HelperComponent('nodes' : Helper) at 'Helper.ozf'
+   HelperComponent('nodes' : Helper) at 'Helper'
 export
    atomLayoutObject       : AtomLayoutObject
    nameLayoutObject       : NameLayoutObject

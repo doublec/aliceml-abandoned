@@ -13,7 +13,7 @@
 functor
 import
    Inspector(inspect inspectN configure)
-   TreeNodesComponent('nodes' : TreeNodes) at 'TreeNodes.ozf'
+   TreeNodesComponent('nodes' : TreeNodes) at 'TreeNodes'
 export
    'Inspector$' : AliceInspector
 define

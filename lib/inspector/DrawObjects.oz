@@ -13,7 +13,7 @@
 functor $
 import
    Inspector('nodes' : TreeNodes)
-   HelperComponent('nodes' : Helper) at 'Helper.ozf'
+   HelperComponent('nodes' : Helper) at 'Helper'
 export
    listGrMDrawObject : ListGrMDrawObject
    listGrSDrawObject : ListGrSDrawObject
