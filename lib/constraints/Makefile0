@@ -43,7 +43,7 @@ all: $(OZOBJS) $(SMLOBJS)
 clean:
 	rm -f $(OZOBJS) $(SMLOBJS) *.ozm *.ozp
 
-install:
+install: all
 	(cd $(PREFIX)/lib && rm -rf constraints) || exit 1
 	mkdir $(PREFIX)/lib/constraints
 	cp $(OZOBJS) $(PREFIX)/lib/constraints

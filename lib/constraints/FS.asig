@@ -1,6 +1,7 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
  *   Thorsten Brunklaus, 2000
@@ -23,9 +24,8 @@ in
 		    type fs
 
 		    (* Allocation Function *)
-		    val fs : domain * domain -> fs
-		    val fsvector : domain * domain * int -> fs vector
-		    val decl : unit -> fs
+		    val fs : (domain * domain) option -> fs
+		    val fsVec : int * domain * domain -> fs vector
 
 		    (* Integer FS *)
 		    structure Int :
@@ -41,14 +41,14 @@ in
 		    (* Standard Propagators *)
 		    val compl : fs * fs -> unit
 		    val complIn : fs * fs * fs -> unit
-		    val include' : fd * fs -> unit
-		    val exclude : fd * fs -> unit
+		    val incl : fd * fs -> unit
+		    val excl : fd * fs -> unit
 		    val card : fs * fd -> unit
 		    val cardRange : int * int * fs -> unit
 		    val isIn : int * fs -> bool
-		    val empty : fs -> bool
+		    val isEmpty : fs -> bool
 
-		    val diff : fs * fs * fs -> unit
+		    val difference : fs * fs * fs -> unit
 		    val intersect : fs * fs * fs -> unit
 		    val intersectN : fs vector * fs -> unit
 		    val union : fs * fs * fs -> unit
@@ -57,25 +57,22 @@ in
 		    val disjoint : fs * fs -> unit
 		    val disjointN : fs vector -> unit
 		    val distinct : fs * fs -> unit
-		    val distictN : fs vector -> unit
+		    val distinctN : fs vector -> unit
 		    val partition : fs vector * fs -> unit
 
-		    (* FS Values *)
-		    structure Value :
-			sig
-			    val empty : unit -> fs
-			    val universal : unit -> fs
-			    val singl : int -> fs
-			    val make : domain -> fs
-			    val is : fs -> bool
-			end
+		    (* Values *)
+		    val value : domain -> fs
+		    val emptyValue : unit -> fs
+		    val singletonValue : int -> fs
+		    val universalValue : unit -> fs
+		    val isValue : fs -> bool
 		    
 		    (* Reified Propagators *)
 		    structure Reified :
 			sig
 			    val isIn : int * fs * bin -> unit
 			    val areIn : int list * fs * bin list -> unit
-			    val include' : fd * fs * bin -> unit
+			    val incl : fd * fs * bin -> unit
 			    val equal : fs * fs * bin -> unit
 			    val partition : fs list * int list * fs * bin list -> unit
 			end
@@ -88,12 +85,9 @@ in
 			    val unknown : fs -> domain
 			    val upperBound : fs -> domain
 
-			    structure CardOf :
-				sig
-				    val lowerBound : fs -> int
-				    val unknown : fs -> int
-				    val upperBound : fs -> int
-				end
+			    val cardOfLowerBound : fs -> int
+			    val cardOfUnknown : fs -> int
+			    val cardOfUpperBound : fs -> int
 			end
 		end
 

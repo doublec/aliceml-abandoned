@@ -13,13 +13,9 @@
 
 signature SEARCH =
     sig
-	type 'a order = 'a * 'a -> unit
+	type 'a pruner = 'a * 'a -> unit
 
 	val searchOne : (unit -> 'a) -> 'a option
 	val searchAll : (unit -> 'a) -> 'a list
-	val searchBest : (unit -> 'a) * 'a order -> 'a option
-	    
-(*	val exploreOne : (unit -> 'a) -> unit
-	val exploreAll : (unit -> 'a) -> unit
-	val exploreBest : (unit -> 'a) -> unit *)
+	val searchBest : (unit -> 'a) * 'a pruner -> 'a option
     end

@@ -1,6 +1,7 @@
 (*
  * Authors:
  *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
  *   Thorsten Brunklaus, 2000
@@ -16,7 +17,7 @@ signature FD_COMPONENT =
 	signature FD =
 	    sig
 		type fd
-		type bin
+		type bin = fd
 
 		datatype domain_element =
 		    SINGLE of int
@@ -24,7 +25,7 @@ signature FD_COMPONENT =
 
 		type domain = domain_element vector
 
-		datatype propagator =
+		datatype relation =
 		    LESS
 		  | LESSEQ
 		  | EQUAL
@@ -33,26 +34,26 @@ signature FD_COMPONENT =
 		  | GREATEREQ
 
 		(* Allocation Functions *)
-		val fd : domain -> fd
-		val fdvector : domain * int -> fd vector
-		val decl : unit -> fd
+		val fd : domain option -> fd
+		val fdVec : int * domain -> fd vector
+		val range : int * int -> fd
+		val rangeVec : int * (int * int) -> fd vector
 		val bin : unit -> bin
-		val binvector : int -> bin
+		val binVec : int -> bin
 
 		(* Conversion *)
-		val toBin : fd -> bin option
-		val fromBin : bin -> fd
-		val toInt : fd -> int option
+		val toInt : fd -> int
 		val fromInt : int -> fd
+		val isBin : fd -> bool
 
 		(* Standards Sums *)
-		val sum : fd vector * propagator * fd -> unit
-		val sumC : int vector * fd vector * propagator * fd -> unit
-		val sumAC : int vector * fd vector * propagator * fd -> unit
-		val sumCN : int vector * fd vector vector * propagator * fd -> unit
-		val sumACN : int vector * fd vector vector * propagator * fd -> unit
-		val sumD : fd vector * propagator * fd -> unit
-		val sumCD : int vector * fd vector * propagator * fd -> unit
+		val sum : fd vector * relation * fd -> unit
+		val sumC : (int * fd) vector * relation * fd -> unit
+		val sumAC : (int * fd) vector * relation * fd -> unit
+		val sumCN : (int * fd vector) vector * relation * fd -> unit
+		val sumACN : (int * fd vector) vector * relation * fd -> unit
+		val sumD : fd vector * relation * fd -> unit
+		val sumCD : (int * fd) vector * relation * fd -> unit
 
 		(* Standard Propagators; Interval propagation *)
 		val plus : fd * fd * fd -> unit (* X + Y =: Z *)
@@ -74,7 +75,7 @@ signature FD_COMPONENT =
 		    
 		val equal : fd * fd -> unit (* X =: Y *)
 		val notequal : fd * fd -> unit (* X \=: Y *)
-		val distance : fd * fd * propagator * fd -> unit
+		val distance : fd * fd * relation * fd -> unit
 		val less : fd * fd -> unit (* X <: Y *)
 		val lessEq : fd * fd -> unit (* X <=: Y *)
 		val greater : fd * fd -> unit (* X >: Y *)
@@ -85,8 +86,8 @@ signature FD_COMPONENT =
 
 		(* Non-Linear Propagators *)
 		val distinct : fd vector -> unit
-		val distinctOffset : fd vector * int vector -> unit
-		val distinct2 : fd vector * int vector * fd vector * int vector -> unit
+		val distinctOffset : (fd * int) vector -> unit
+		val distinct2 : ((fd * int) * (fd * int)) vector -> unit
 		val atMost : fd * fd vector * int -> unit
 		val atLeast : fd * fd vector * int -> unit
 		val exactly : fd * fd vector * int -> unit
@@ -104,17 +105,17 @@ signature FD_COMPONENT =
 		structure Reified :
 		    sig
 			(* Reified Variable is returned *)
-			val int : domain * bin -> fd
+			val fd : domain * bin -> fd
 			(* Reified Vector of Variables is returned *)
-			val dom : domain * int * bin -> fd vector
+			val fdVec : int * domain * bin -> fd vector
 			(* Same as in Oz *)
 			val card : int * bin vector * int * bin -> unit
-			val distance : fd * fd * propagator * fd * bin -> unit
-			val sum : fd vector * propagator * fd * bin -> unit
-			val sumC : int vector * fd vector * propagator * fd * bin -> unit
-			val sumAC : int vector * fd vector * propagator * fd * bin -> unit
-			val sumCN : int vector * fd vector vector * propagator * fd * bin -> unit
-			val sumACN : int vector * fd vector vector * propagator * fd * bin -> unit
+			val distance : fd * fd * relation * fd * bin -> unit
+			val sum : fd vector * relation * fd * bin -> unit
+			val sumC : (int * fd) vector * relation * fd * bin -> unit
+			val sumAC : (int * fd) vector * relation * fd * bin -> unit
+			val sumCN : (int * fd vector) vector * relation * fd * bin -> unit
+			val sumACN : (int * fd vector) vector * relation * fd * bin -> unit
 		    end
 
 		(* Reflection *)
@@ -131,12 +132,12 @@ signature FD_COMPONENT =
 			val nbSusps : fd -> int
 		    end
 
-		(* Watching *)
+		(* Watching (obsolete?) *)
 		structure Watch :
 		    sig
-			val min : fd * int -> bin
-			val max : fd * int -> bin
-			val size : fd * int -> bin
+			val min : fd * int -> bool
+			val max : fd * int -> bool
+			val size : fd * int -> bool
 		    end
 
 		(* Distribution *)

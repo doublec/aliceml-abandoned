@@ -1,6 +1,7 @@
 %%%
 %%% Authors:
 %%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
 %%%   Thorsten Brunklaus, 2000
@@ -48,14 +49,14 @@ define
    end
    
    %% Interface Functions
-   fun {FsFun D1 D2}
-      {FS.var.bounds {AliceDomainToOzDomain D1} {AliceDomainToOzDomain D2}}
+   fun {FsFun DsO}
+      case DsO
+      of 'NONE'        then {FS.var.decl}
+      [] 'SOME'(D1#D2) then {FS.var.bounds {AliceDomainToOzDomain D1} {AliceDomainToOzDomain D2}}
+      end
    end
-   fun {FsVectorFun D1 D2 I}
+   fun {FsVecFun I D1 D2}
       {FS.var.tuple.bounds '#[]' I {AliceDomainToOzDomain D1} {AliceDomainToOzDomain D2}}
-   end
-   fun {DeclFun _}
-      {FS.var.decl}
    end
 
    %% Create AliceInt Interface
@@ -101,11 +102,11 @@ define
       {FS.complIn M1 M2 M3}
       unit
    end
-   fun {IncludeFun D M}
+   fun {InclFun D M}
       {FS.include D M}
       unit
    end
-   fun {ExcludeFun D M}
+   fun {ExclFun D M}
       {FS.exclude D M}
       unit
    end
@@ -117,14 +118,8 @@ define
       {FS.cardRange I1 I2 M}
       unit
    end
-   fun {IsInFun I M}
-      {FS.isIn I M}
-   end
-   fun {EmptyFun M}
-      {FS.empty M}
-   end
    
-   fun {DiffFun M1 M2 M3}
+   fun {DifferenceFun M1 M2 M3}
       {FS.diff M1 M2 M3}
       unit
    end
@@ -168,30 +163,14 @@ define
       {FS.partition MV M}
       unit
    end
-
-   %% Create Value Interface
-   local
-      fun {EmptyFun _}
-	 {FS.value.empty}
-      end
-      fun {UniversalFun _}
-	 {FS.value.universal}
-      end
-      fun {SinglFun I}
-	 {FS.value.singl I}
-      end
-      fun {MakeFun S}
-	 {FS.value.make {AliceDomainToOzDomain S}}
-      end
-      fun {IsFun V}
-	 {FS.value.is V}
-      end
-   in
-      AliceValue = 'Value'('empty'     : EmptyFun
-			   'universal' : UniversalFun
-			   'singl'     : SinglFun
-			   'make'      : MakeFun
-			   'is'        : IsFun)
+   fun {ValueFun S}
+      {FS.value.make {AliceDomainToOzDomain S}}
+   end
+   fun {EmptyValueFun _}
+      {FS.value.empty}
+   end
+   fun {UniversalValueFun _}
+      {FS.value.universal}
    end
 
    %% Create Reified Interface
@@ -204,7 +183,7 @@ define
 	 {FS.reified.areIn Is M Ds}
 	 unit
       end
-      fun {IncludeFun D M B}
+      fun {InclFun D M B}
 	 {FS.reified.include D M B}
 	 unit
       end
@@ -219,7 +198,7 @@ define
    in
       AliceReified = 'Reified'('isIn'      : IsInFun
 			       'areIn'     : AreInFun
-			       'include\'' : IncludeFun
+			       'incl'      : InclFun
 			       'equalFun'  : EqualFun
 			       'partition' : PartitionFun)
    end
@@ -242,43 +221,45 @@ define
 	 {OzDomainToAliceDomain {FS.reflect.upperBound X}}
       end
 
-      AliceCardOf = 'CardOf'('lowerBound' : FS.reflect.cardOf.lowerBound
-			     'unknown'    : FS.reflect.cardOf.unknown
-			     'upperBound' : FS.reflect.cardOf.upperBound)
    in
-      AliceReflect = 'Reflect'('card'       : CardFun
-			       'lowerBound' : LowerBoundFun
-			       'unknown'    : UnknownFun
-			       'upperBound' : UpperBoundFun
-			       'CardOf$'    : AliceCardOf)
+      AliceReflect = 'Reflect'('card'             : CardFun
+			       'lowerBound'       : LowerBoundFun
+			       'unknown'          : UnknownFun
+			       'upperBound'       : UpperBoundFun
+			       'cardOfLowerBound' : FS.reflect.cardOf.lowerBound
+			       'cardOfUnknown'    : FS.reflect.cardOf.unknown
+			       'cardOfUpperBound' : FS.reflect.cardOf.upperBound)
    end
    
    %% Create FS Interface
-   AliceFS = 'FS'('$fs'        : _
-		  'fs'         : FsFun
-		  'fsvector'   : FsVectorFun
-		  'decl'       : DeclFun
-		  'Int$'       : AliceInt
-		  'compl'      : ComplFun
-		  'complIn'    : ComplInFun
-		  'include\''  : IncludeFun
-		  'exclude'    : ExcludeFun
-		  'card'       : CardFun
-		  'cardRange'  : CardRangeFun
-		  'isIn'       : IsInFun
-		  'empty'      : EmptyFun
-		  'diff'       : DiffFun
-		  'intersect'  : IntersectFun
-		  'intersectN' : IntersectNFun
-		  'union'      : UnionFun
-		  'unionN'     : UnionNFun
-		  'subset'     : SubsetFun
-		  'disjoint'   : DisjointFun
-		  'disjointN'  : DisjointNFun
-		  'distinct'   : DistinctFun
-		  'distinctN'  : DistinctNFun
-		  'partition'  : PartitionFun
-		  'Value$'     : AliceValue
-		  'Reified$'   : AliceReified
-		  'Reflect$'   : AliceReflect)
+   AliceFS = 'FS'('$fs'            : _
+		  'fs'             : FsFun
+		  'fsVec'          : FsVecFun
+		  'Int$'           : AliceInt
+		  'compl'          : ComplFun
+		  'complIn'        : ComplInFun
+		  'incl'           : InclFun
+		  'excl'           : ExclFun
+		  'card'           : CardFun
+		  'cardRange'      : CardRangeFun
+		  'isIn'           : FS.isIn
+		  'isEmpty'        : FS.empty
+		  'difference'     : DifferenceFun
+		  'intersect'      : IntersectFun
+		  'intersectN'     : IntersectNFun
+		  'union'          : UnionFun
+		  'unionN'         : UnionNFun
+		  'subset'         : SubsetFun
+		  'disjoint'       : DisjointFun
+		  'disjointN'      : DisjointNFun
+		  'distinct'       : DistinctFun
+		  'distinctN'      : DistinctNFun
+		  'partition'      : PartitionFun
+		  'value'          : ValueFun
+		  'emptyValue'     : EmptyValueFun
+		  'singletonValue' : FS.value.singl
+		  'universalValue' : UniversalValueFun
+		  'isValue'        : FS.value.is
+		  'Reified$'       : AliceReified
+		  'Reflect$'       : AliceReflect)
 end

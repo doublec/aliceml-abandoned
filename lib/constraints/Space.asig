@@ -33,7 +33,7 @@ signature SPACE_COMPONENT =
 		val commit : 'a space * choice -> unit
 		val inject : 'a space * ('a -> unit) -> unit
 		val merge : 'a space -> 'a
-		val eq : 'a space * 'a space -> bool
+		val eq : 'a space * 'a space -> bool (* deprecated! *)
 	    end
 
 	structure Space : SPACE

@@ -1,6 +1,7 @@
 %%%
 %%% Authors:
 %%%   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+%%%   Andreas Rossberg <rossberg@ps.uni-sb.de>
 %%%
 %%% Copyright:
 %%%   Thorsten Brunklaus, 2000
@@ -20,6 +21,17 @@ define
    %% To come soon
 
    %% Global Helper Functions
+   proc {UnzipVec V V1 V2}
+      I = {Width V}
+   in
+      V1 = {MakeTuple '#[]' I}
+      V2 = {MakeTuple '#[]' I}
+      {Record.forAllInd V proc {$ I X#Y}
+      			     V1.I = X
+			     V2.I = Y
+			  end}
+   end
+
    local
       fun {MakeOzValue V}
 	 case V
@@ -34,63 +46,61 @@ define
       fun {AliceDomainToOzDomain D}
 	 {Record.foldR D Cons nil}
       end
-      local
-	 fun {Cons X Y}
-	    X|Y
-	 end
-      in
-	 fun {VectorToList V}
-	    {Record.foldR V Cons nil}
-	 end
-      end
-      fun {AlicePropToOzProp P}
-	 case P
-	 of 'LESS'      then '<:'
-	 [] 'LESSEQ'    then '=<:'
-	 [] 'EQUAL'     then '=:'
-	 [] 'NOTEQUAL'  then '\\=:'
-	 [] 'GREATER'   then '>:'
-	 [] 'GREATEREQ' then '>=:'
-	 end
+   end
+
+   fun {AlicePropToOzProp P}
+      case P
+      of 'LESS'      then '<:'
+      [] 'LESSEQ'    then '=<:'
+      [] 'EQUAL'     then '=:'
+      [] 'NOTEQUAL'  then '\\=:'
+      [] 'GREATER'   then '>:'
+      [] 'GREATEREQ' then '>=:'
       end
    end
    
    %% Interface Functions
-   fun {FDFun D}
-      {FD.int {AliceDomainToOzDomain D}}
+   fun {FDFun DO}
+      case DO
+      of 'NONE'    then {FD.decl}
+      [] 'SOME'(D) then {FD.int {AliceDomainToOzDomain D}}
+      end
    end
-   fun {FDVectorFun D I}
+   fun {FDVecFun I D}
       V = {MakeTuple '#[]' I}
    in
-      {FD.dom {AliceDomainToOzDomain D} V} V
-    end
-   fun {DeclFun}
-      {FD.decl}
+      {FD.dom {AliceDomainToOzDomain D} V}
+      V
    end
-   fun {BoolFun}
+   fun {RangeFun L H}
+      {FD.int L#H}
+   end
+   fun {RangeVecFun I D}
+      V = {MakeTuple '#[]' I}
+   in
+      {FD.dom D V}
+      V
+   end
+   fun {BinFun _}
       {FD.int 0#1} 
    end
-   fun {BoolVectorFun I}
+   fun {BinVecFun I}
       V = {MakeTuple '#[]' I}
    in
-      {FD.dom 0#1 V} V
+      {FD.dom 0#1 V}
+      V
    end
 
    %% Conversion Functions
-   fun {ToBoolFun X}
-      case {FD.reflect.dom X}
-      of [0#1] then 'SOME'(X)
-      [] _     then 'NONE'
-      end
-   end
-   fun {FromBoolFun X}
-      X
-   end
    fun {ToIntFun X}
-      if {IsInt X} then 'SOME'(X) else 'NONE' end
+      {Wait X}
+      X
    end
    fun {FromIntFun X}
       X
+   end
+   fun {IsBinFun X}
+      {FD.reflect.max X} =< 1
    end
    
    %% Standard Sums
@@ -98,19 +108,31 @@ define
       {FD.sum XV {AlicePropToOzProp P} Y}
       unit
    end
-   fun {SumCFun IV XV P Y}
+   fun {SumCFun IXV P Y}
+      IV XV
+   in
+      {UnzipVec IXV IV XV}
       {FD.sumC IV XV {AlicePropToOzProp P} Y}
       unit
    end
-   fun {SumACFun IV XV P Y}
+   fun {SumACFun IXV P Y}
+      IV XV
+   in
+      {UnzipVec IXV IV XV}
       {FD.sumAC IV XV {AlicePropToOzProp P} Y}
       unit
    end
-   fun {SumCNFun IV XVV P Y}
+   fun {SumCNFun IXVV P Y}
+      IV XVV
+   in
+      {UnzipVec IXVV IV XVV}
       {FD.sumCN IV XVV {AlicePropToOzProp P} Y}
       unit
    end
-   fun {SumACNFun IV XVV P Y}
+   fun {SumACNFun IXVV P Y}
+      IV XVV
+   in
+      {UnzipVec IXVV IV XVV}
       {FD.sumACN IV XVV {AlicePropToOzProp P} Y}
       unit
    end
@@ -118,7 +140,10 @@ define
       {FD.sumD XV {AlicePropToOzProp P} Y}
       unit
    end
-   fun {SumCDFun IV XV P Y}
+   fun {SumCDFun IXV P Y}
+      IV XV
+   in
+      {UnzipVec IXV IV XV}
       {FD.sumCD IV XV {AlicePropToOzProp P} Y}
       unit
    end
@@ -223,31 +248,40 @@ define
 
    %% Non-linear Propagators
    fun {DistinctFun XV}
-      {FD.distinct {VectorToList XV}}
+      {FD.distinct XV}
       unit
    end
-   fun {DistinctOffsetFun XV IV}
-      {FD.distinctOffset {VectorToList XV} {VectorToList IV}}
+   fun {DistinctOffsetFun XIV}
+      XV IV
+   in
+      {UnzipVec XIV XV IV}
+      {FD.distinctOffset XV IV}
       unit
    end
-   fun {Distinct2Fun XV1 IV1 XV2 IV2}
-      {FD.distinct2 {VectorToList XV1} {VectorToList IV1} {VectorToList XV2} {VectorToList IV2}}
+   fun {Distinct2Fun XIXIV}
+      XIV1 XIV2
+      XV1 IV1 XV2 IV2
+   in
+      {UnzipVec XIXIV XIV1 XIV2}
+      {UnzipVec XIV1 XV1 IV1}
+      {UnzipVec XIV2 XV2 IV2}
+      {FD.distinct2 XV1 IV1 XV2 IV2}
       unit
    end
    fun {AtMostFun X XV I}
-      {FD.atMost X {VectorToList XV} I}
+      {FD.atMost X XV I}
       unit
    end
    fun {AtLeastFun X XV I}
-      {FD.atLeast X {VectorToList XV} I}
+      {FD.atLeast X XV I}
       unit
    end
    fun {ExactlyFun X XV I}
-      {FD.exactly X {VectorToList XV} I}
+      {FD.exactly X XV I}
       unit
    end
    fun {ElementFun X IV Y}
-      {FD.element X {VectorToList IV} Y}
+      {FD.element X IV Y}
       unit
    end
 
@@ -278,10 +312,10 @@ define
    end
 
    local
-      fun {IntFun D B}
+      fun {FdFun D B}
 	 {FD.reified.int {AliceDomainToOzDomain D} $ B}
       end
-      fun {DomFun D I B}
+      fun {FdVecFun I D B}
 	 V = {MakeTuple '#[]' I}
       in
 	 {FD.reified.dom {AliceDomainToOzDomain D} V B}
@@ -299,26 +333,38 @@ define
 	 {FD.reified.sum XV {AlicePropToOzProp P} Y B}
 	 unit
       end
-      fun {SumCFun IV XV P Y B}
+      fun {SumCFun IXV P Y B}
+	 IV XV
+      in
+	 {UnzipVec IXV IV XV}
 	 {FD.reified.sumC IV XV {AlicePropToOzProp P} Y B}
 	 unit
       end
-      fun {SumACFun IV XV P Y B}
+      fun {SumACFun IXV P Y B}
+	 IV XV
+      in
+	 {UnzipVec IXV IV XV}
 	 {FD.reified.sumAC IV XV {AlicePropToOzProp P} Y B}
 	 unit
       end
-      fun {SumCNFun IV XVV P Y B}
+      fun {SumCNFun IXVV P Y B}
+	 IV XVV
+      in
+	 {UnzipVec IXVV IV XVV}
 	 {FD.reified.sumCN IV XVV {AlicePropToOzProp P} Y B}
 	 unit
       end
-      fun {SumACNFun IV XVV P Y B}
+      fun {SumACNFun IXVV P Y B}
+	 IV XVV
+      in
+	 {UnzipVec IXVV IV XVV}
 	 {FD.reified.sumCN IV XVV {AlicePropToOzProp P} Y B}
 	 unit
       end
    in
       %% Create Reified Interface
-      AliceReified = 'Reified'('int'      : IntFun
-			       'dom'      : DomFun
+      AliceReified = 'Reified'('fd'       : FdFun
+			       'fdVec'    : FdVecFun
 			       'card'     : CardFun
 			       'distance' : DistanceFun
 			       'sum'      : SumFun
@@ -383,7 +429,7 @@ define
    AliceFD = 'FD'('$fd'            : _
 		  '$bin'           : _
 		  '$domain'        : _
-		  '$propagator'    : _
+		  '$relation'      : _
 		  '$dist_mode'     : _
 		  'SINGLE'         : fun {$ N} 'SINGLE'(N) end
 		  'RANGE'          : fun {$ L U} 'RANGE'(L U) end
@@ -402,14 +448,14 @@ define
 		  '\'GREATER'      : _
 		  '\'GREATEREQ'    : _
 		  'fd'             : FDFun
-		  'fdvector'       : FDVectorFun
-		  'decl'           : DeclFun
-		  'bool'           : BoolFun
-		  'boolvector'     : BoolVectorFun
-		  'toBin'          : ToBoolFun
-		  'fromBin'        : FromBoolFun
+		  'fdVec'          : FDVecFun
+		  'range'          : RangeFun
+		  'rangeVec'       : RangeVecFun
+		  'bin'            : BinFun
+		  'binVec'         : BinVecFun
 		  'toInt'          : ToIntFun
 		  'fromInt'        : FromIntFun
+		  'isBin'          : IsBinFun
 		  'sum'            : SumFun
 		  'sumC'           : SumCFun
 		  'sumAC'          : SumACFun
