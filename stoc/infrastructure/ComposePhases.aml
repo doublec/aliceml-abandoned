@@ -10,6 +10,7 @@ functor ComposePhases(
     structure O = Phase2.O
     structure C = Context
 
-    fun translate context = Phase2.translate(context2 context)
-			  o Phase1.translate(context1 context)
+    fun translate context (desc, rep) =
+	Phase2.translate(context2 context)
+	(desc, Phase1.translate(context1 context) (desc, rep))
   end

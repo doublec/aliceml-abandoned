@@ -745,7 +745,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _)), _, _) =
 	    raise Crash.Crash "FlatteningPhase.translateTest"
 
-	fun translate () (imports, (exportExp, sign)) =
+	fun translate () (desc, (imports, (exportExp, sign))) =
 	    let
 		fun export exp =
 		    O.ExportStm (stmInfo (#region (infoExp exportExp)), exp)

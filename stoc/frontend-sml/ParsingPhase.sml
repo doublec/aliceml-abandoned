@@ -47,6 +47,6 @@ structure ParsingPhase :> PARSING_PHASE =
 	    #1 (Parser.parse(0, lexer, onError, ()))
 	end
 
-    fun translate() = parse
+    fun translate() (desc, source) = parse source
 
   end

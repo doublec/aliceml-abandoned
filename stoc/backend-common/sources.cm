@@ -1,8 +1,16 @@
-Group is
+Group
 
+    structure FlatGrammar
+    structure BackendCommon
+
+is
+
+    ../infrastructure/phase.cm
     flat-grammar.cm
     flattening-phase.cm
     value-propagation-phase.cm
     liveness-analysis-phase.cm
     output-flat-grammar.cm
     engine.cm
+
+    BackendCommon.sml

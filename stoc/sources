@@ -176,5 +176,6 @@ top/Composer.sml
 top/INITIAL_CONTEXT.sig
 top/COMPILER.sig
 top/MakeCompiler.sml
+top/Compiler.sml
 top/MAIN.sig
 top/Main.sml

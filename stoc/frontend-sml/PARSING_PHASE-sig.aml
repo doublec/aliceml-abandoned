@@ -4,5 +4,5 @@ signature PARSING_PHASE =
     structure I : SOURCE        = Source
     structure O : INPUT_GRAMMAR = InputGrammar
 
-    val translate : C.t -> I.source -> InputGrammar.Component
+    val translate : C.t -> Source.desc * I.source -> InputGrammar.Component
   end

@@ -415,6 +415,6 @@ UNFINISHED: obsolete after bootstrapping:
 	    ( xsus', (exp', #sign i) )
 	end
 
-    fun translate() = trComp
+    fun translate() (desc, component) = trComp component
 
   end

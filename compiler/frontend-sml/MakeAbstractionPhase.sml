@@ -2837,6 +2837,6 @@ functor MakeAbstractionPhase(
 	end
 
 
-    val translate = trComponent
+    fun translate E (desc, component) = trComponent E component
 
   end

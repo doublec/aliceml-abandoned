@@ -30,12 +30,17 @@ local
 			    "uncaught exception " ^ exnName e ^ "\n");
 	     OS.Process.failure)
 
+    fun defaults () = Main.Switches.printComponentSig := false
+
     fun stoc nil =   (* for testing bootstrapping *)
-	hdl Main.ozifyStringToStdOut (TextIO.inputAll TextIO.stdIn)
+	(defaults ();
+	 hdl Main.flattenString (TextIO.inputAll TextIO.stdIn))
       | stoc ([infile, "-o", outfile] | ["-c", infile, "-o", outfile]) =
-	hdl Main.compileForMozart (infile, outfile)
+	(defaults ();
+	 hdl Main.compileForMozart (infile, outfile))
       | stoc [infile, outfile] =
-	hdl Main.compileForMozart (infile, outfile)
+	(defaults ();
+	 hdl Main.compileForMozart (infile, outfile))
       | stoc _ = OS.Process.failure
 in
     val _ = SMLofNJ.exportFn ("stoc-mozart", fn _ => stoc (getArgs ()))

@@ -2174,7 +2174,7 @@ else
 	end
 
 
-    fun translate E component =
+    fun translate E (desc, component) =
 	let
 	    val _         = insertScope E
 	    val impsdecs' = elabComp(E, component)

@@ -16,5 +16,5 @@ signature FLATTENING_PHASE =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val translate: C.t -> I.t -> O.t
+	val translate: C.t -> Source.desc * I.t -> O.t
     end

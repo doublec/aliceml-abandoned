@@ -7,11 +7,11 @@
 
 signature COMPILER =
   sig
-    structure Source: SOURCE
     structure Target: TARGET
 
     type context
 
     val initial: context
-    val compile: context * Source.t -> context * Target.t  (* [Error.Error] *)
+    val compile: context * Source.desc * Source.t ->
+		 context * Target.t  (* [Error.Error] *)
   end

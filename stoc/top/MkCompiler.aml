@@ -5,7 +5,6 @@
  *)
 
 functor MakeCompiler(
-	structure Source:   SOURCE
 	structure Target:   TARGET
 	structure FrontendSpecific: PHASE where I = Source
 	structure FrontendCommon:   PHASE where I = FrontendSpecific.O
@@ -20,11 +19,9 @@ functor MakeCompiler(
 					  where type t = BackendCommon.C.t
 	structure BackendSpecificInitialContext:  INITIAL_CONTEXT
 					  where type t = BackendSpecific.C.t
-       ) :> COMPILER where Source = Source
-		     where Target = Target
+       ) :> COMPILER where Target = Target
   =
   struct
-    structure Source = Source
     structure Target = Target
 
     type context =
@@ -48,14 +45,14 @@ functor MakeCompiler(
 	, beSpec = BackendSpecific.C.clone beSpec
 	}
 
-    fun compile(C, source) =
+    fun compile(C, desc, source) =
 	let
 	    val C' = clone C
-	    val f  = BackendSpecific.translate(#beSpec C')
-		   o BackendCommon.translate(#beComm C')
-		   o FrontendCommon.translate(#feComm C')
-		   o FrontendSpecific.translate(#feSpec C')
+	    val rep = FrontendSpecific.translate (#feSpec C') (desc, source)
+	    val rep = FrontendCommon.translate (#feComm C') (desc, rep)
+	    val rep = BackendCommon.translate (#beComm C') (desc, rep)
+	    val target = BackendSpecific.translate (#beSpec C') (desc, rep)
 	in
-	    (C', f source)
+	    (C', target)
 	end
   end

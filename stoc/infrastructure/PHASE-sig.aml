@@ -4,5 +4,5 @@ signature PHASE =
     structure I: REPRESENTATION
     structure O: REPRESENTATION
 
-    val translate: C.t -> I.t -> O.t   (* [Error.Error] *)
+    val translate: C.t -> Source.desc * I.t -> O.t   (* [Error.Error] *)
   end

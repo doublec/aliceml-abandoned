@@ -1,6 +1,8 @@
 signature MAIN =
   sig
 
+    structure Switches: SWITCHES
+
     val parseString :		string -> InputGrammar.t
     val parseFile :		string -> InputGrammar.t
 
@@ -16,24 +18,6 @@ signature MAIN =
     val flattenString :		string -> FlatGrammar.component
     val flattenFile :		string -> FlatGrammar.component
 
-    val debugStringToStdOut :	string -> unit
-    val debugFileToStdOut :	string -> unit
-
-    val debugStringToFile :	string * string -> unit
-    val debugFileToFile :	string * string -> unit
-
-    val ozifyStringToStdOut :	string -> unit
-    val ozifyFileToStdOut :	string -> unit
-
-    val ozifyStringToFile :	string * string -> unit
-    val ozifyFileToFile :	string * string -> unit
-
     val compileForMozart :	string * string -> IntermediateGrammar.sign
-
-    val comifyStringToStdOut :	string -> unit
-    val comifyFileToStdOut :	string -> unit
-
-    val comifyStringToFile :	string * string -> unit
-    val comifyFileToFile :	string * string -> unit
 
   end
