@@ -45,7 +45,7 @@
   <P>which, given the name of an Alice source file, will process this
   file as if it had been fed as direct input.</P>
 
-  <P>What you type in in the interactive toplevel actually is a
+  <P>Each input in the interactive toplevel actually is a
   <A href="components.php3">component</A>. This implies that you
   can use import announcements to link in separately compiled
   components from arbitrary URIs:</P>
