@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import signature HASH_KEY             from "../../lib/utility/HASH_KEY-sig"
-import signature IMP_SET              from "../../lib/utility/IMP_SET-sig"
+import signature HASHABLE             from "../../lib/data/HASHABLE-sig"
+import signature IMP_SET              from "../../lib/data/IMP_SET-sig"
 import structure Label                from "../../lib/rtt/Label"
 import structure Type                 from "../../lib/rtt/Type"
 import structure Stamp                from "../common/Stamp"
@@ -39,7 +39,7 @@ signature INTERMEDIATE_AUX =
 
 	val idEq: O.id * O.id -> bool
 
-	structure IdKey: HASH_KEY where type t = O.id
+	structure IdKey: HASHABLE where type t = O.id
 	structure IdSet: IMP_SET where type item = O.id
 
 	val getUsedVars: O.exp * IdSet.t -> IdSet.t
