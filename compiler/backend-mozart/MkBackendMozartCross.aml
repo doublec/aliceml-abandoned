@@ -50,15 +50,16 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 				   structure I = FlatGrammar
 				   structure O = Target
 
-				   fun translate context (desc, component) =
+				   fun translate (desc, context, component) =
 				       let
 					   val program =
 					       (desc, ref NONE, component)
 				       in
-					   Target.FOREIGN
-					       {save = save (context, program,
-							     dumpTarget),
-						inf = #sign component}
+					   (context,
+					    Target.FOREIGN
+						{save = save (context, program,
+							      dumpTarget),
+						 inf = #sign component})
 				       end
 			       end
 			   structure Switches = Switches
