@@ -1,8 +1,8 @@
 BOOTSTRAPDIR= ../../../bootstrap
 
-STOC     = alicec
-STOCOPTS = --dump-phases
-STODEP   = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
+ALICEC      = alicec
+ALICEC_OPTS = --dump-phases
+ALICEDEP    = alicedep
 
 SRCS = hello.aml          \
        packbox.aml        \
@@ -17,12 +17,12 @@ SRCS = hello.aml          \
 OBJS = $(SRCS:%.aml=%.ozf)
 
 %.ozf: %.aml
-	$(STOC) $(STOCOPTS) -c $< -o $@
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 all: $(OBJS)
 
 depend:
-	$(STODEP) $(SRCS) > Makefile.depend
+	$(ALICEDEP) $(SRCS) > Makefile.depend
 
 clean:
 	rm -f *.oz*
