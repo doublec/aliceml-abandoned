@@ -22,7 +22,8 @@ structure CodeGen =
 	local
 	    structure fV =
 		struct
-		    val free:ScopedStampSet.t= ScopedStampSet.new ()
+		    val free:StampSet.t ref = ref (StampSet.new ())
+		    val freeStack:StampSet.t list ref = ref nil
 
 		    fun insert (Id (_,stamp',_)) =
 			(if !ECHO>=2 then
@@ -34,17 +35,17 @@ structure CodeGen =
 			     Lambda.isSelfCall stamp'
 			     then ()
 			 else
-			     ScopedStampSet.insert (free, stamp'))
+			     StampSet.insert (!free, stamp'))
 		    fun delete (Id (_,stamp',_)) =
 			(if !ECHO>=2 then
 			     print ("Top "^(Stamp.toString (Lambda.top()))^
 				    " delete free: "^(Stamp.toString stamp')^"\n")
 			 else ();
-			 ScopedStampSet.delete(free, stamp'))
+			 StampSet.delete(!free, stamp'))
 
 		    fun get () =
 			let
-			    val x = ScopedStampSet.foldScope (fn (x,xs) => x::xs) nil free
+			    val x = StampSet.fold (fn (x,xs) => x::xs) nil (!free)
 			in
 			    if !ECHO>=2 then
 				(print ("Top "^(Stamp.toString (Lambda.top())));
@@ -54,15 +55,19 @@ structure CodeGen =
 			end
 
 		    fun isFree stamp' =
-			ScopedStampSet.member (free, stamp')
+			StampSet.member (!free, stamp')
 
 		    (* Betreten einer neuen Subfunktion. *)
 		    fun enter () =
-			 ScopedStampSet.insertScope free
+			(freeStack := !free::(!freeStack);
+			 free := StampSet.new())
 
 		    (* Verlassen der Subfunktion. *)
 		    fun exit () =
-			 ScopedStampSet.mergeScope free
+			(StampSet.app
+			 (fn x => StampSet.insert (!free,x))
+			 (hd (!freeStack));
+			 freeStack := tl (!freeStack))
 		end
 	in
 	    fun freeVarsExp (LitExp _) = ()
@@ -179,7 +184,7 @@ structure CodeGen =
 		 (* JVM-Register initialisieren. *)
 		 fun initializeLocals 0 = [Label afterInit]
 		   | initializeLocals x = [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
-		 val iL = initializeLocals (Register.max())
+		 (*val iL = initializeLocals (Register.max())*)
 
 		 val _ = if (!mainpickle= ~1) then
 		     raise Error "Derzeit sind nur Strukturen übersetzbar." else ()
@@ -211,7 +216,7 @@ structure CodeGen =
 		 val literalName = Class.getLiteralName()
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
 				  Locals (Register.max()+1),
-				   iL @
+				   (*iL @*)
 				   insts @
 				   (if !ECHO >= 1 then
 					[Getstatic ("java/lang/System/out",[Classsig "java/io/PrintStream"]),
@@ -660,7 +665,7 @@ structure CodeGen =
 		if Lambda.isSelfCall stamp' then
 		    idArgCode arg' @
 		    [Astore 1,
-		     Goto afterInit]
+		     Goto (*afterInit*) alpha]
 		else
 		    (expCode ap) @
 		    [Areturn]
@@ -1091,16 +1096,16 @@ structure CodeGen =
 		    val fieldscode = fields freeVarList
 		    val bd = vars (Register.max(),e)
 		end
-		local (* Register in apply initialisieren *)
+		(*local (* Register in apply initialisieren *)
 		    fun initializeLocals 0 = [Label afterInit]
 		      | initializeLocals x = [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 		in
 		    val initRegister = initializeLocals (Register.max ())
-		end
+		end*)
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
 		val ap =
 		    (Label alpha::
-		     initRegister @
+		     (*initRegister @*)
 		     bd @
 		     [Label omega,
 		      Areturn])
