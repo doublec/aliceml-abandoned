@@ -237,6 +237,7 @@ Worker::Result ResolveInterpreter::Run() {
   case RESOLVE_CLASS:
     {
       JavaString *name = frame->GetName();
+      std::fprintf(stderr, "resolving class %s\n", name->ExportC());
       JavaString *filename = name->Concat(JavaString::New(".class"));
       ClassFile *classFile = ClassFile::NewFromFile(filename);
       if (classFile == INVALID_POINTER)
@@ -296,6 +297,9 @@ Worker::Result ResolveInterpreter::Run() {
       }
       JavaString *name = frame->GetName();
       JavaString *descriptor = frame->GetDescriptor();
+      std::fprintf(stderr, "resolving method %s#%s%s\n",
+		   theClass->GetClassInfo()->GetName()->ExportC(),
+		   name->ExportC(), descriptor->ExportC());
       //--** if the method is defined in one of the superinterfaces,
       //--** raise IncompatibleClassChangeError
       ClassInfo *classInfo = theClass->GetClassInfo();
@@ -307,9 +311,21 @@ Worker::Result ResolveInterpreter::Run() {
 	  u_int nArgs = methodInfo->GetNumberOfArguments();
 	  Scheduler::PopFrame();
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
-	  Scheduler::currentArgs[0] = methodInfo->IsStatic()?
-	    StaticMethodRef::New(theClass, sIndex, nArgs)->ToWord():
-	    VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
+	  if (methodInfo->IsStatic()) {
+	    // Indices of static methods start after static fields:
+	    Table *fields = classInfo->GetFields();
+	    u_int nStaticFields = 0, nFields = fields->GetCount();
+	    for (u_int i = 0; i < nFields; i++) {
+	      FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
+	      if (fieldInfo->IsStatic()) nStaticFields++;
+	    }
+	    Scheduler::currentArgs[0] =
+	      StaticMethodRef::New(theClass, nStaticFields + sIndex, nArgs)->
+	      ToWord();
+	  } else {
+	    Scheduler::currentArgs[0] =
+	      VirtualMethodRef::New(theClass, vIndex, nArgs)->ToWord();
+	  }
 	  return Worker::CONTINUE;
 	} else {
 	  if (methodInfo->IsStatic())
