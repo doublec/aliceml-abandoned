@@ -482,7 +482,7 @@ build1/%.ozf: build1/%.oz
 
 build1/%.stc: build1/%.aml
 	$(ALICEC0) $(ALICEC_OPTS) --recursive-compilation \
-	--trace-component-access --no-rtt -c $< -o $@
+	--retain-full-import --trace-component-access --no-rtt -c $< -o $@
 
 ##
 ## Installing Build 1
