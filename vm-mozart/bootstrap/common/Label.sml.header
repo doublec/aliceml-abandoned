@@ -7,5 +7,9 @@ import
 from "x-alice:/misc/StringHashKey.ozf"
 
 import
+    structure LargeIntHashKey
+from "x-alice:/misc/LargeIntHashKey.ozf"
+
+import
     signature LABEL
 from "x-alice:/common/LABEL.ozf"
