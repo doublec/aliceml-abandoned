@@ -88,6 +88,8 @@ struct
    val equals = UnsafeGecode.set_equals
    val convex = UnsafeGecode.set_convex
    val convexHull = UnsafeGecode.set_convexHull
+   val seq = UnsafeGecode.set_seq
+   val seqU = UnsafeGecode.set_seqU
 
    val setvarbranch = UnsafeGecode.set_branch
    val randomBranch = UnsafeGecode.set_randomBranch

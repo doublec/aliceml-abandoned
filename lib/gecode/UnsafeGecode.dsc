@@ -135,6 +135,8 @@ void partition(SetVar, SetVar, SetVar); set_partition;
 void fsunion(const SetVarArgs&, SetVar); set_unionn;
 void intersection(const SetVarArgs&, SetVar); set_intersectionn;
 void partition(const SetVarArgs&, SetVar); set_partitionn;
+void seq(const SetVarArgs&); set_seq;
+void seqU(const SetVarArgs&, SetVar); set_seqU;
 
 void include(SetVar, IntVar, BoolVar); set_includeR;
 void include(SetVar, int, BoolVar); set_includeRI;
