@@ -330,7 +330,7 @@ void PicklingInterpreter::PushFrame(word data) {
 }
 
 #define CONTINUE()					\
-  if (StatusWord::GetStatus(Store::GCStatus() | Scheduler::PreemptStatus())) \
+  if (StatusWord::GetStatus() != 0)                     \
     return Interpreter::PREEMPT;			\
   else							\
     return Interpreter::CONTINUE;

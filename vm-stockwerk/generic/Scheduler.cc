@@ -98,7 +98,6 @@ void Scheduler::Run(bool waitForever = false) {
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
     SwitchToThread();
     for (bool nextThread = false; !nextThread; ) {
-      StatusWord::ClearStatus(PreemptStatus());
 #if PROFILE
       Profiler::SampleHeap();
 #endif
@@ -194,9 +193,10 @@ void Scheduler::Run(bool waitForever = false) {
       RootSet::DoGarbageCollection();
       threadQueue = ThreadQueue::FromWordDirect(root);
     }
-    if (StatusWord::GetStatus(SignalHandler::SignalStatus()))
+    if (SignalHandler::GetSignalStatus())
       SignalHandler::HandlePendingSignals();
     IOHandler::Poll();
+    StatusWord::ClearStatus();
   }
   // Check for both incoming signals and io
   if (waitForever) {
@@ -222,7 +222,10 @@ Interpreter::Result Scheduler::PushCall(word wClosure) {
       StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
       Profiler::IncCalls(frame);
 #endif
-      return Interpreter::CONTINUE;
+      if (StatusWord::GetStatus() != 0)
+	return Interpreter::PREEMPT;
+      else
+	return Interpreter::CONTINUE;
     } else { // Request ConcreteCode
       PushCallInterpreter::PushFrame(wClosure);
       currentData = transient->ToWord();
