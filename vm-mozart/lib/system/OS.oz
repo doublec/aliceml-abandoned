@@ -14,7 +14,7 @@ functor
 import
    OS(getEnv)
 export
-   'OS': OS_Module
+   '$OS': OS_Module
 define
    OS_Module =
    'OS'('Process':
