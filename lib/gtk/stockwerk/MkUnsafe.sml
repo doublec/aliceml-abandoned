@@ -97,12 +97,12 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	      | getParentClass name ((sup, n)::cs) = 
 		if n=name then sup else getParentClass name cs
 
-	    fun getUnrefFun' "_GObject"   = ("GtkCore.GObjectUnref", true)
-	      | getUnrefFun' "_GtkObject" = ("GtkCore.GtkObjectUnref", true)
-	      | getUnrefFun' "_GtkWidget" = ("GtkCore.GtkWidgetUnref", true)
+	    fun getUnrefFun' "_GObject"   = ("GtkCore.GObjectRef", false)
+	      | getUnrefFun' "_GtkObject" = ("GtkCore.GtkObjectRef", true)
+	      | getUnrefFun' "_GtkWidget" = ("GtkCore.GtkWidgetRef", true)
 	      | getUnrefFun' name        = 
 		  if List.exists (fn n=>n=name) deleteObjects
-		      then ("GtkCore.DeleteUnref", false)
+		      then ("GtkCore.DeleteRef", false)
 		      else getUnrefFun' (getParentClass name (!classes))
 	in
 	    fun buildClassList tree = List.app buildClassList' tree
@@ -110,7 +110,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		(case removeTypeRefs t of 
 		     STRUCTREF name => getUnrefFun' name
 		   | _              => raise NoUnref)
-		     handle _ => ("GtkCore.NoUnref", false)
+		     handle _ => ("GtkCore.NoRef", false)
 	end
 	    
 

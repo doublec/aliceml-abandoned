@@ -47,6 +47,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		 FUNC("gtk_tree_store_new", POINTER VOID, nil),
 		 FUNC("gtk_tree_view_get_selected_string", 
 		      STRING true, [POINTER VOID]),
+		 FUNC("gtk_g_object_ref", POINTER VOID, [POINTER VOID]),
 		 FUNC("gtk_g_object_unref", VOID, [POINTER VOID]),
 		 FUNC("gtk_delete_unref", VOID, [POINTER VOID])]
 
