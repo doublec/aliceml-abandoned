@@ -37,26 +37,22 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
 				      Array.update(s, n, is')
 				  end
 
-    fun insert(s,i)		= let val n   = hash(s,i)
+    fun insertWith f (s,i)	= let val n   = hash(s,i)
 				      val is  = Array.sub(s,n)
 				  in
 				      if List.exists (fn i' => i = i') is
-				      then ()
+				      then f i
 				      else Array.update(s, n, i::is)
 				  end
 
-    fun insertDisjoint(s,i)	= let val n  = hash(s,i)
-				      val is = Array.sub(s,n)
-				  in
-				      if List.exists (fn i' => i = i') is
-				      then raise Collision i
-				      else Array.update(s, n, i::is)
-				  end
+    val insert			= insertWith(fn i => ())
+    val insertDisjoint		= insertWith(fn i => raise Collision i)
 
     fun app f			= Array.app(List.app f)
     fun fold f			= Array.foldl(fn(is,a) => List.foldl f a is)
 
     fun union(s1,s2)		= app (fn i => insert(s1,i)) s2
     fun unionDisjoint(s1,s2)	= app (fn i => insertDisjoint(s1,i)) s2
+    fun unionWith f (s1,s2)	= app (fn i => insertWith f (s1,i)) s2
 
   end

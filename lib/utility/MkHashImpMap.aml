@@ -39,26 +39,30 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
 				      Array.update(t, i, kas')
 				  end
 
-    fun insert(t,k,a)		= let val i    = hash(t,k)
+    fun insertWithi f (t,k,a)	= let val i    = hash(t,k)
 				      val kas  = Array.sub(t,i)
-				      val kas' = delete'(kas,k)
-						 handle Delete => kas
+				      val kas' =
+					case List.find (isEntryFor k) kas
+					  of NONE       => (k,a)::kas
+					   | SOME(k,a') =>
+						(k, f(k,a',a))::delete'(kas,k)
 				  in
-				      Array.update(t, i, (k,a)::kas')
+				      Array.update(t, i, kas')
 				  end
 
-    fun insertDisjoint(t,k,a)	= let val i    = hash(t,k)
-				      val kas  = Array.sub(t,i)
-				  in
-				      if List.exists (isEntryFor k) kas
-				      then raise Collision k
-				      else Array.update(t, i, (k,a)::kas)
-				  end
+    fun insertWith f		= insertWithi(fn(k,a1,a2) => f(a1,a2))
+    fun insert x		= insertWithi #3 x
+    fun insertDisjoint x	= insertWithi(fn(k,_,_) => raise Collision k) x
 
-    fun app f			= Array.app(List.app f)
-    fun fold f			= Array.foldl(fn(kas,b) => List.foldl f b kas)
+    fun appi f			= Array.app(List.app f)
+    fun foldi f			= Array.foldl(fn(kas,b) => List.foldl f b kas)
+    fun app f			= appi(fn(k,a) => f a)
+    fun fold f			= foldi(fn((k,a),b) => f(a,b))
 
-    fun plus(m1,m2)		= app (fn(k,a) => insert(m1,k,a)) m2
-    fun plusDisjoint(m1,m2)	= app (fn(k,a) => insertDisjoint(m1,k,a)) m2
+    fun union' insert (m1,m2)	= appi (fn(k,a) => insert(m1,k,a)) m2
+    fun union x			= union' insert x
+    fun unionDisjoint x		= union' insertDisjoint x
+    fun unionWith f		= union'(insertWith f)
+    fun unionWithi f		= union'(insertWithi f)
 
   end

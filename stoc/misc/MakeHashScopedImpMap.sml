@@ -23,7 +23,7 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     fun delete2ndScope r	= r := List.hd(!r)::List.tl(List.tl(!r))
 
     fun mergeScope(r as ref ms)	= let val ms' = List.tl ms in
-				      ImpMap.plus(List.hd ms', List.hd ms) ;
+				      ImpMap.union(List.hd ms', List.hd ms) ;
 				      r := ms'
 				  end
 
@@ -46,20 +46,27 @@ functor MakeHashScopedImpMap(Key: HASH_KEY) :>
     fun foldScope f b (ref ms)	= ImpMap.fold f b (List.hd ms)
     fun fold f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.fold f b' m)
 					     b ms
+    fun appiScope f (ref ms)	= ImpMap.appi f (List.hd ms)
+    fun appi f (ref ms)		= List.app (ImpMap.appi f) (List.rev ms)
+    fun foldiScope f b (ref ms)	= ImpMap.foldi f b (List.hd ms)
+    fun foldi f b (ref ms)	= List.foldr (fn(m,b') => ImpMap.foldi f b' m)
+					     b ms
 
     fun delete(ref ms, k)	= ImpMap.delete(List.hd ms, k)
-    fun insert(ref ms, k, a)	= ImpMap.insert(List.hd ms, k, a)
-    fun insertDisjoint(ref ms, k, a)
-				= ImpMap.insertDisjoint(List.hd ms, k, a)
 
-    fun plus(ref ms1, ref ms2)	= let val m = List.hd ms1 in
-				    List.app (fn m' => ImpMap.plus(m,m')) ms2
-				  end
+    fun insert(ref ms, k, a)		= ImpMap.insert(List.hd ms, k, a)
+    fun insertDisjoint(ref ms, k, a)	= ImpMap.insertDisjoint(List.hd ms, k,a)
+    fun insertWith f (ref ms, k, a)	= ImpMap.insertWith f (List.hd ms, k, a)
+    fun insertWithi f (ref ms, k, a)	= ImpMap.insertWithi f (List.hd ms, k,a)
 
-    fun plusDisjoint(ref ms1, ref ms2)
+    fun union' mapUnion (ref ms1, ref ms2)
 				= let val m = List.hd ms1 in
-				      List.app (fn m' =>
-					     ImpMap.plusDisjoint(m,m')) ms2
+				      List.app (fn m' => mapUnion(m,m')) ms2
 				  end
+
+    fun union x			= union' ImpMap.union x
+    fun unionDisjoint x		= union' ImpMap.unionDisjoint x
+    fun unionWith f		= union'(ImpMap.unionWith f)
+    fun unionWithi f		= union'(ImpMap.unionWithi f)
 
   end

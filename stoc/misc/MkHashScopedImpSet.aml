@@ -46,18 +46,18 @@ functor MakeHashScopedImpSet(Item: HASH_KEY) :>
 					     a ss
 
     fun delete(ref ss, i)	= ImpSet.delete(List.hd ss, i)
+
     fun insert(ref ss, i)	= ImpSet.insert(List.hd ss, i)
-    fun insertDisjoint(ref ss, i)
-				= ImpSet.insertDisjoint(List.hd ss, i)
+    fun insertDisjoint(ref ss, i) = ImpSet.insertDisjoint(List.hd ss, i)
+    fun insertWith f (ref ss, i)  = ImpSet.insertWith f (List.hd ss, i)
 
-    fun union(ref ss1, ref ss2)	= let val s = List.hd ss1 in
-				    List.app (fn s' => ImpSet.union(s,s')) ss2
+    fun union' setUnion (ref ss1, ref ss2)
+				= let val s1 = List.hd ss1 in
+				      List.app (fn s2 => setUnion(s1,s2)) ss2
 				  end
 
-    fun unionDisjoint(ref ss1, ref ss2)
-				= let val s = List.hd ss1 in
-				      List.app (fn s' =>
-					     ImpSet.unionDisjoint(s,s')) ss2
-				  end
+    fun union x			= union' ImpSet.union x
+    fun unionDisjoint x		= union' ImpSet.unionDisjoint x
+    fun unionWith f		= union'(ImpSet.unionWith f)
 
   end

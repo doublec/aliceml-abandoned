@@ -26,6 +26,8 @@ signature SCOPED_IMP_SET =
     val insertDisjoint:	set * item -> unit		(* Collision *)
     val union :		set * set  -> unit
     val unionDisjoint :	set * set  -> unit		(* Collision *)
+    val insertWith :	(item -> unit) -> set * item -> unit
+    val unionWith :	(item -> unit) -> set * set -> unit
 
     val member :	set * item -> bool
     val memberScope :	set * item -> bool

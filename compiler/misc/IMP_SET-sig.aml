@@ -1,7 +1,7 @@
 signature IMP_SET =
   sig
 
-    type item
+    eqtype item
     type set
     type t = set
 
@@ -16,6 +16,8 @@ signature IMP_SET =
     val insertDisjoint:	set * item -> unit		(* Collision *)
     val union :		set * set  -> unit
     val unionDisjoint :	set * set  -> unit		(* Collision *)
+    val insertWith :	(item -> unit) -> set * item -> unit
+    val unionWith :	(item -> unit) -> set * set -> unit
 
     val member :	set * item -> bool
     val isEmpty :	set -> bool

@@ -24,17 +24,25 @@ signature SCOPED_IMP_MAP =
     val delete :	'a map * key -> unit		(* Delete *)
     val insert :	'a map * key * 'a -> unit
     val insertDisjoint:	'a map * key * 'a -> unit	(* Collision *)
-    val plus :		'a map * 'a map -> unit
-    val plusDisjoint :	'a map * 'a map -> unit		(* Collision *)
+    val union :		'a map * 'a map -> unit
+    val unionDisjoint :	'a map * 'a map -> unit		(* Collision *)
+    val insertWith :	('a * 'a -> 'a) -> 'a map * key * 'a -> unit
+    val unionWith :	('a * 'a -> 'a) -> 'a map * 'a map -> unit
+    val insertWithi :	(key * 'a * 'a -> 'a) -> 'a map * key * 'a -> unit
+    val unionWithi :	(key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
     val lookup :	'a map * key -> 'a option
     val lookupScope :	'a map * key -> 'a option
     val isEmpty :	'a map -> bool
     val isEmptyScope :	'a map -> bool
 
-    val app :		(key * 'a -> unit) -> 'a map -> unit
-    val appScope :	(key * 'a -> unit) -> 'a map -> unit
-    val fold :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
-    val foldScope :	((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val app :		('a -> unit) -> 'a map -> unit
+    val appScope :	('a -> unit) -> 'a map -> unit
+    val fold :		('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldScope :	('a * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val appi :		(key * 'a -> unit) -> 'a map -> unit
+    val appiScope :	(key * 'a -> unit) -> 'a map -> unit
+    val foldi :		((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
+    val foldiScope :	((key * 'a) * 'b -> 'b) -> 'b -> 'a map -> 'b
 
   end
