@@ -18,7 +18,9 @@ include $(TOPDIR)/Makefile.rules
 JAVA_LANG_SOURCES = \
 	Class.cc Object.cc Throwable.cc System.cc ClassLoader.cc \
 	Float.cc Double.cc StrictMath.cc
-JAVA_IO_SOURCES = FileDescriptor.cc FileOutputStream.cc ObjectStreamClass.cc
+JAVA_IO_SOURCES = \
+	FileDescriptor.cc FileInputStream.cc FileOutputStream.cc \
+	ObjectStreamClass.cc
 JAVA_SECURITY_SOURCES = AccessController.cc
 SUN_REFLECT_SOURCES = Reflection.cc
 SOURCES = \
