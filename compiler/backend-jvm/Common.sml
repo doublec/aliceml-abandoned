@@ -125,5 +125,15 @@ structure Common=
 			(_,stamp'')::_ => if stamp' = stamp'' then ()
 				       else retryStack := ls :: (!retryStack)
 		      | nil => Crash.crash "Label.newRetry"
+
+		fun printStackTrace () =
+		    let
+			fun prstack ((l,s)::xs) = (print (toString l^":"^Stamp.toString s^"\n");
+						   prstack xs)
+			  | prstack nil = ()
+		    in
+			print "LabelStack:\n";
+			prstack (!retryStack)
+		    end
 	    end
     end

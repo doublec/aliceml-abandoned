@@ -322,7 +322,8 @@ structure CodeGen =
 			    if !VERBOSE >=2 then print "Okay.\n" else ()
 		    end;
 		    if (!VERBOSE >= 1) then Lambda.showRecApplies ()
-		    else ()
+		    else ();
+		    Label.printStackTrace ()
 	    end
 
 	and decListCode (dec::rest, curFun, curCls) =
@@ -431,13 +432,18 @@ structure CodeGen =
 		val stampcode' = idCode (id', curFun, curCls)
 
 		(* only test for transients after the last pattern failed. *)
-		fun nf (SharedStm (_,s,_)::_) = nf s
-		  | nf (TestStm (_, Id (_,nextStamp,_),_,_,_)::_) = nextStamp = stamp'
-		  | nf (IndirectStm (_, ref NONE)::rest) = nf rest
-		  | nf (IndirectStm (_, ref (SOME i))::_) = nf i
-		  | nf _ = false
-
-		val notfinished = nf body''
+		fun notfinished (SharedStm (_,s,_)::_) = notfinished s
+		  | notfinished (TestStm (_, Id (_,nextStamp,_),_,_,_)::_) =
+		    let
+			val x = nextStamp = stamp'
+		    in
+			if x then print ("NOT finished at "^Stamp.toString nextStamp) else
+			    print ("finished at "^Stamp.toString stamp'^"/"^Stamp.toString nextStamp);
+			x
+		    end
+		  | notfinished (IndirectStm (_, ref NONE)::rest) = notfinished rest
+		  | notfinished (IndirectStm (_, ref (SOME i))::_) = notfinished i
+		  | notfinished _ = false
 
 		val _ = Label.newRetry (retry, stamp')
 
@@ -505,7 +511,7 @@ structure CodeGen =
 				     Multi (decListCode (body', curFun, curCls)) ::
 				     Multi akku ::
 				     Label wrongclasslabel ::
-				     (if notfinished then
+				     (if notfinished body'' then
 					  Nop
 				      else
 					  Multi
@@ -540,15 +546,13 @@ structure CodeGen =
 
 			val gb as (_, _, _) = generateBody (nil, nil, nil, body', test', body'')
 
-			val sw = makeSwitch gb
-
 			fun litTest (cls, ret) =
 			    Dup ::
 			    Instanceof cls ::
 			    Ifeq wrongclasslabel ::
 			    Checkcast cls ::
 			    Getfield (cls^"/value", ret) ::
-			    sw
+			    makeSwitch gb
 		    in
 			Label begin ::
 			stampcode' ::
@@ -754,7 +758,7 @@ structure CodeGen =
 		    Comment "Test: Goto danach" ::
 		    Goto danach ::
 		    Label wrongclasslabel ::
-		    (if notfinished then Nop
+		    (if notfinished body'' then Nop
 		     else
 			 Multi
 			 [Instanceof ITransient,
