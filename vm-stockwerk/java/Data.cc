@@ -332,9 +332,7 @@ static word wInternTable;
 static const u_int initialInternTableSize = 19; //--** to be determined
 
 void JavaString::Init() {
-  //--** not nice: this creates a JavaString before wClass is initialized
-  ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
-  wClass = classLoader->ResolveClass(JavaString::New("java/lang/String"));
+  wClass = ClassLoader::PreloadClass("java/lang/String");
   RootSet::Add(wClass);
   wInternTable =
     HashTable::New(HashTable::BLOCK_KEY, initialInternTableSize)->ToWord();
