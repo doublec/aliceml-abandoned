@@ -25,7 +25,6 @@ sig
 *)  type ref = ref val ref : 'a -> 'a ref
     type  'a t   = 'a ref
 
-    val new :		'a -> 'a ref
     val ! :		'a ref -> 'a
     val := :		'a ref * 'a -> unit
     val :=: :		'a ref * 'a ref -> unit

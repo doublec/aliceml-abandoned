@@ -25,7 +25,6 @@ structure Ref :> REF =							(**)
     datatype ref			= datatype ref
     type  'a t				= 'a ref
 
-    val new				= ref
     val !				= !
     val op :=				= op :=
     val op :=:				= op :=:
