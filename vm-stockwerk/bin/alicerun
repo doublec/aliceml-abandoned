@@ -22,7 +22,7 @@ find_in () {
 if test -z "${ALICE_HOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    ALICE_HOME=$(find_in stow.exe /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
+    ALICE_HOME=$(find_in alice.exe /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
 fi
 
 case $(uname) in
@@ -57,10 +57,10 @@ export ALICE_HOME ALICE_LOAD
 
 ## To use the GUI debugger on Windows/Cygwin:
 #echo run "$@"
-#exec insight "$ALICE_HOME"/stow.exe
+#exec insight "$ALICE_HOME"/alice.exe
 
 ## To use the debugger on Unix:
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "$@"; cat) |
-#exec gdb "$ALICE_HOME"/stow.exe
+#exec gdb "$ALICE_HOME"/alice.exe
 
-exec "$ALICE_HOME"/stow.exe "$@"
+exec "$ALICE_HOME"/alice.exe "$@"
