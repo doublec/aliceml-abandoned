@@ -156,6 +156,11 @@ functor MakeMain(structure Composer: COMPOSER'
 		 if existsFile sigFilename then
 		     raise RETURN (compileSign sigFilename)
 		 else ();
+		 case changeExtension (targetFilename, ".dll", ".aml") of
+		     SOME sourceFilename =>
+			 raise RETURN (compile
+				       (sourceFilename, targetFilename, ""))
+		   | NONE => ();
 		 case changeExtension (targetFilename, ".ozf", ".aml") of
 		     SOME sourceFilename =>
 			 raise RETURN (compile
