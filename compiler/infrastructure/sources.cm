@@ -8,4 +8,5 @@ Group is
 
 	MkHashScopedImpSet.aml
 	MkHashScopedImpMap.aml
+	IntMap.aml
 	StringMap.aml
