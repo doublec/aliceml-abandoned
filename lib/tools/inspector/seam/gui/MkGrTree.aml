@@ -47,13 +47,13 @@ fun fromTexts (group, xpos, height, textList, accu) =
      end
 	
 (* Special handling of references, because of the subscript. *)      
-fun refPrefix (group, xpos, [(lbl, style) as rep], id) =
+fun refPrefix (group, xpos, ((lbl, style) as rep)::rest, id) =
      let
        val _ = assert lbl = Prefs.refL
        val (item, width, height) =
-         Driver.newTextItemId (("ref", style), group, xpos, id)
+         Driver.newTextItemId ((Prefs.refIdL, style), group, xpos, id)
      in
-       ([(item, rep)], xpos + width, height)
+       fromTexts (group, xpos + width, height, rest, [(item, rep)])
      end
   | refPrefix _ = assert false
 

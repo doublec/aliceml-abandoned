@@ -1,5 +1,4 @@
 import structure Type          from "x-alice:/lib/rtt/Type"
-import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
 import structure Atom          from "x-alice:/lib/data/Atom"
 import structure Reflect       from "x-alice:/lib/system/Reflect"
 import structure Common        from "Common"
@@ -56,7 +55,8 @@ struct
     end
 
   (*** REFERENCES ***)
-  val refPrefix = [(Prefs.refL, Prefs.refStyle)]
+  val refPrefix = (Prefs.refL, Prefs.refStyle) :: AbsTree.openParenthesisL
+  val refSuffix = AbsTree.closeParenthesisL
 
   fun reference (depth, item, path, targs, value) =
     let
@@ -67,7 +67,7 @@ struct
       val item  = case item of AbsTree.Value (t,v,_) => Value (t,v, Reference)
                              | _ => assert false
     in
-      AbsTree.makeBox {prefix = refPrefix, tree, suffix = [], item}
+      AbsTree.makeBox {prefix = refPrefix, tree, suffix = refSuffix, item}
     end
 
   (*** PROMISE ***)
