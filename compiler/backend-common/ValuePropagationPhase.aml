@@ -755,8 +755,17 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			(ProdVal idOpts', isToplevel') =>
 			    (VectorPair.map
 				 (fn (IdDef id, SOME id') =>
-				     (IdMap.insert (env, id, (VarVal id',
-							      isToplevel'));
+		(* id and id' can be equal due to pattern matching compilation,
+		 * for example in:
+		 *    datatype t = A | B | C
+		 *    fun f (a,b) (A, x) = x
+		 *      | f (a,b) (B, x) = x
+		 *      | f a_b (_, x) = x          <- here
+		 *)
+				     (if idEq (id, id') then ()
+				      else IdMap.insert (env, id,
+							 (VarVal id',
+							  isToplevel'));
 				      Wildcard)
 				   | (idDef, _) => idDef)
 				 (idDefs, idOpts'), true)
@@ -784,8 +793,10 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			(ProdVal idOpts, isToplevel') =>
 			    (VectorPair.map
 				 (fn ((label, IdDef id), SOME id') =>
-				     (IdMap.insert (env, id, (VarVal id',
-							      isToplevel'));
+				     (if idEq (id, id') then ()
+				      else IdMap.insert (env, id,
+							 (VarVal id',
+							  isToplevel'));
 				      (label, Wildcard))
 				   | (labelIdDef, _) => labelIdDef)
 				 (labelIdDefVec, idOpts), true)
@@ -857,12 +868,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     stamp)]
 		     end
 	       | VISITED (bodyOptRef, env') =>
-		     let
-			 val _ = unionEnv (env', env)
-		     in
-			 [SharedStm (info, [IndirectStm (info, bodyOptRef)],
-				     stamp)]
-		     end)
+		     (unionEnv (env', env);
+		      [SharedStm (info, [IndirectStm (info, bodyOptRef)],
+				  stamp)]))
 	  | vpBody ([ReturnStm (info, exp)],
 		    {env, isToplevel, lazySels, ...}) =
 	    let
@@ -1082,9 +1090,11 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				  {env = env, isToplevel = false,
 				   export = NONE, lazySels = lazySels})
 		val flags =
-		    if List.exists (fn IsToplevel => true | _ => false) flags
-		    then flags
-		    else IsToplevel::flags
+		    if isToplevel then
+			if List.exists (fn IsToplevel => true | _ => false)
+				       flags then flags
+			else IsToplevel::flags
+		    else List.filter (fn IsToplevel => false | _ => true) flags
 	    in
 		IdMap.deleteScope env;
 		(nil, FunExp (info, stamp, flags, args,
