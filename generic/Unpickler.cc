@@ -310,34 +310,6 @@ void InputStreamFinalizationSet::Finalize(word value) {
   gzclose(InputStream::FromWordDirect(value)->GetFile());
 }
 
-// ApplyTransform Function
-static inline
-word ApplyTransform(String *name, word argument) {
-  Assert(name != INVALID_POINTER);
-  ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
-  if (map->IsMember(name->ToWord())) {
-    Unpickler::handler handler = (Unpickler::handler)
-      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
-    return handler(argument);
-  } else {
-    u_char *p = name->GetValue();
-    u_int i = 0;
-    while (p[i] != '.') {
-      Assert(i < name->GetSize());
-      i++;
-    }
-    String *languageId = String::New(reinterpret_cast<char *>(p), i);
-    Broker::Load(languageId);
-    if (map->IsMember(name->ToWord())) {
-      Unpickler::handler handler = (Unpickler::handler)
-	Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
-      return handler(argument);
-    } else {
-      Error("ApplyTransform: unknown transform");
-    }
-  }
-}
-
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
 // Pickle Arguments
@@ -411,6 +383,135 @@ void InputWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Fill Unpickling Buffer\n");
 }
 
+// TransformWorker
+class TransformFrame : private StackFrame {
+private:
+  enum { FUTURE_POS, NAME_POS, ARG_POS, SIZE };
+public:
+  static TransformFrame *New(Worker *worker,
+			     Future *future,
+			     String *name,
+			     word arg) {
+    NEW_STACK_FRAME(frame, worker, SIZE);
+    frame->InitArg(FUTURE_POS, future->ToWord());
+    frame->InitArg(NAME_POS, name->ToWord());
+    frame->InitArg(ARG_POS, arg);
+    return static_cast<TransformFrame *>(frame);
+  }
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
+  Future *GetFuture() {
+    return
+      static_cast<Future *>(Store::DirectWordToTransient(GetArg(FUTURE_POS)));
+  }
+  String *GetName() {
+    return String::FromWordDirect(GetArg(NAME_POS));
+  }
+  word GetArgument() {
+    return GetArg(ARG_POS);
+  }
+};
+
+class TransformWorker : public Worker {
+private:
+  static TransformWorker *self;
+  TransformWorker(): Worker() {}
+public:
+  static void Init() {
+    self = new TransformWorker();
+  }
+
+  static void PushFrame(Future *future, String *name, word arg);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(StackFrame *sFrame);
+};
+
+TransformWorker *TransformWorker::self;
+
+void TransformWorker::PushFrame(Future *future,
+				String *name,
+				word arg) {
+  TransformFrame::New(self, future, name, arg);
+}
+
+u_int TransformWorker::GetFrameSize(StackFrame *sFrame) {
+  TransformFrame *frame = static_cast<TransformFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+const char *TransformWorker::Identify() {
+  return "TransformWorker";
+}
+
+void TransformWorker::DumpFrame(StackFrame *) {
+  std::fprintf(stderr, "TransformWorker Frame\n");
+}
+
+Worker::Result TransformWorker::Run(StackFrame *sFrame) {
+
+  fprintf(stderr, "running transformworker\n");
+  TransformFrame *frame = static_cast<TransformFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+
+  Future *f = frame->GetFuture();
+  String *name = frame->GetName();
+  word argument = frame->GetArgument();
+
+
+
+  ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
+  
+  if (map->IsMember(name->ToWord())) {
+    Unpickler::handler handler = (Unpickler::handler)
+      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
+    f->Become(REF_LABEL, handler(argument));
+  } else {
+    Error("TransformWorker: unknown transform");
+//     Scheduler::currentData = Unpickler::Corrupt;
+//     Scheduler::currentBacktrace =
+//       Backtrace::New(static_cast<StackFrame *>(frame)->Clone());
+//     Scheduler::PopFrame();
+//     return Worker::RAISE;
+  }
+
+  Scheduler::PopFrame(frame->GetSize());
+  if (StatusWord::GetStatus() != 0)
+    return Worker::PREEMPT;
+  else
+    return Worker::CONTINUE;  
+}
+
+// ApplyTransform Function
+static inline
+bool ApplyTransform(String *name, word argument, word *newBlock,
+		    Future *f) {
+  Assert(name != INVALID_POINTER);
+  ChunkMap *map = ChunkMap::FromWordDirect(handlerTable);
+
+  if (map->IsMember(name->ToWord())) {
+    Unpickler::handler handler = (Unpickler::handler)
+      Store::DirectWordToUnmanagedPointer(map->Get(name->ToWord()));
+    *newBlock = handler(argument);
+    return false;
+  } else {
+    u_char *p = name->GetValue();
+    u_int i = 0;
+    while (p[i] != '.') {
+      Assert(i < name->GetSize());
+      i++;
+    }
+    String *languageId = String::New(reinterpret_cast<char *>(p), i);
+    TransformWorker::PushFrame(f, name, argument);
+    Broker::Load(languageId);	  
+    *newBlock = f->ToWord();
+    return true;
+  }
+}
 
 // PickleUnpackWorker Frame
 class PickleUnpackFrame: private StackFrame {
@@ -677,9 +778,10 @@ public:
 
 class StoreAbstraction {
 public:
-  static word AllocBlock(BlockLabel label,
+  static bool AllocBlock(BlockLabel label,
 			 u_int size,
-			 UnpickleFrame *frame) {
+			 UnpickleFrame *frame,
+			 word *newBlock) {
     switch(label) {
     case TRANSFORM_LABEL:
       {
@@ -687,20 +789,18 @@ public:
 
 	String *name   = String::FromWordDirect(frame->Pop());
 	word argument  = frame->Pop();
-	
-	word result = ApplyTransform(name, argument);
-	return result;
+	return ApplyTransform(name, argument, newBlock, Future::New());
       }
       break;
     case CLOSURE_LABEL:
       {
 	word cc    = Store::IntToWord(0); // will be replaced by concrete code
-	word y     = Closure::New(cc, size - 1)->ToWord();
-	Block *b = Store::DirectWordToBlock(y);
+	*newBlock   = Closure::New(cc, size - 1)->ToWord();
+	Block *b = Store::DirectWordToBlock(*newBlock);
 	for (u_int i=0; i<size; i++) {
 	  b->InitArg(i, frame->Pop());
 	}
-	return y;
+	return false;
       }
       break;
     default:
@@ -709,7 +809,8 @@ public:
 	for (u_int i=0; i<size; i++) {
 	  b->InitArg(i, frame->Pop());
 	}
-	return b->ToWord();
+	*newBlock = b->ToWord();
+	return false;
       }      
       break;
     }
@@ -740,15 +841,17 @@ public:
   }
 
   
-  static Block *MakeFulfilledBlock(word future,
-				   UnpickleFrame *frame) {
+  static bool MakeFulfilledBlock(word future,
+				 UnpickleFrame *frame,
+				 word *newBlock) {
     if (Store::WordToTransient(future) == INVALID_POINTER) {
       Block *b = Store::DirectWordToBlock(future);
       u_int size = b->GetSize();
       for (u_int i=0; i<size; i++) {
 	b->ReplaceArg(i, frame->Pop());
       }
-      return b;
+      *newBlock = b->ToWord();
+      return false;
     } else {
       Future *f = static_cast<Future *>
 	(Store::DirectWordToTransient(future));
@@ -756,8 +859,7 @@ public:
       word argument  = frame->Pop();
       String *name   = String::FromWordDirect(frame->Pop());
 	
-      f->Become(REF_LABEL, ApplyTransform(name, argument));
-      return Store::DirectWordToBlock(f->ToWord());
+      return ApplyTransform(name, argument, newBlock, f);
     }
   }  
 
@@ -818,6 +920,8 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
   //  NUStack *st = UnpickleArgs::GetStack();
 
   for(;;) {
+    word newBlock;
+    bool mustContinue = false;
     u_char tag = is->GetByte(); NCHECK_EOB();
     switch (static_cast<Pickle::Tag>(tag)) {
     case Pickle::INIT:
@@ -892,10 +996,10 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	u_int size   = is->GetUInt(); NCHECK_EOB();
 	is->Commit();
 
-	word block =
+	mustContinue =
 	  StoreAbstraction::AllocBlock(static_cast<BlockLabel>(label),
-				       size, frame);
-	frame->Push(block);
+				       size, frame, &newBlock);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::TUPLE:
@@ -903,10 +1007,10 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	u_int size = is->GetUInt(); NCHECK_EOB();
 	is->Commit();
 
-	word block = 
+	mustContinue = 
 	  StoreAbstraction::AllocBlock(TUPLE_LABEL,
-				       size, frame);
-	frame->Push(block);
+				       size, frame, &newBlock);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::CLOSURE:
@@ -914,19 +1018,19 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	u_int size = is->GetUInt(); NCHECK_EOB();
 	is->Commit();
 
-	word block = 
+	mustContinue = 
 	  StoreAbstraction::AllocBlock(CLOSURE_LABEL,
-				       size, frame);
-	frame->Push(block);
+				       size, frame, &newBlock);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::TRANSFORM:
       {
 	is->Commit();
-	word block =
+	mustContinue =
 	  StoreAbstraction::AllocBlock(TRANSFORM_LABEL,
-				       2, frame);
-	frame->Push(block);
+				       2, frame, &newBlock);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::aBLOCK:
@@ -984,8 +1088,10 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
 	if (addr > MAX_VALID_INT) NCORRUPT();
 
 	word future = frame->Load(addr);
-	Block *block = StoreAbstraction::MakeFulfilledBlock(future, frame);
-	frame->Push(block->ToWord());
+	mustContinue = StoreAbstraction::MakeFulfilledBlock(future,
+							    frame,
+							    &newBlock);
+	frame->Push(newBlock);
       }
       break;
     case Pickle::ENDOFSTREAM:
@@ -1003,6 +1109,8 @@ Worker::Result UnpickleWorker::Run(StackFrame *sFrame) {
     }
     if (StatusWord::GetStatus() != 0) {
       return Worker::PREEMPT;
+    } else if (mustContinue) {
+      return Worker::CONTINUE;
     }
   }
 
@@ -1144,6 +1252,7 @@ void Unpickler::Init() {
   UnpickleWorker::Init();
   PickleUnpackWorker::Init();
   PickleLoadWorker::Init();
+  TransformWorker::Init();
   InputStream::Init();
   handlerTable = ChunkMap::New(initialHandlerTableSize)->ToWord();
   RootSet::Add(handlerTable);
