@@ -813,8 +813,8 @@ namespace Alice {
 		at.Start();
 		bt.Start();
 		Monitor.Wait(n);
-		at.Stop();
-		bt.Stop();
+		at.Abort();
+		bt.Abort();
 		return a;
 	    }
 	    public override object Apply(object a, object b) {
