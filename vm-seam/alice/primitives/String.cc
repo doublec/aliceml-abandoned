@@ -81,6 +81,11 @@ DEFINE1(String_explode) {
   RETURN(list);
 } END
 
+DEFINE1(String_hash) {
+  DECLARE_STRING(string, x0);
+  RETURN_INT(string->Hash());
+} END
+
 DEFINE1(String_implode) {
   DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
   if (length > String::maxSize)
@@ -138,6 +143,7 @@ void PrimitiveTable::RegisterString() {
   Register("String.>=", String_opgreaterEq, 2);
   Register("String.compare", String_compare, 2);
   Register("String.explode", String_explode, 1);
+  Register("String.hash", String_hash, 1);
   Register("String.implode", String_implode, 1);
   Register("String.maxSize", Store::IntToWord(String::maxSize));
   Register("String.size", String_size, 1);
