@@ -18,9 +18,12 @@ int main(int argc, char *argv[])
   gtk_init(&argc, &argv);
   GtkWidget *app = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-  g_signal_connect (app, "delete_event",
+  gulong connid1 = g_signal_connect (app, "delete_event",
 		    G_CALLBACK (quit_cb), NULL);
 
+  gulong connid2 = g_signal_connect (app, "delete_event",
+		    G_CALLBACK (quit_cb), NULL);
+  g_message("%d, %d", connid1, connid2);
   
   GdkColormap* map = gdk_colormap_get_system();
   GdkColor* black = new GdkColor;
