@@ -13,6 +13,8 @@
 functor
 export
    interpreter: Me
+require
+   Helper(deref: Deref)
 define
    NONE = 0
    SOME = 1
@@ -61,15 +63,6 @@ define
 
    Con       = 0
    StaticCon = 1
-
-   fun {Deref X}
-      case X of transient(TransientState) then
-	 case {Access TransientState} of ref(Y) then {Deref Y}
-	 else X
-	 end
-      else X
-      end
-   end
 
    LazySelInterpreter =
    lazySelInterpreter(
