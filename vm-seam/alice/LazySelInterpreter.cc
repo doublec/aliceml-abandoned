@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -15,34 +17,36 @@
 #endif
 
 #include <cstdio>
-#include "generic/ConcreteCode.hh"
 #include "generic/StackFrame.hh"
+#include "generic/Transients.hh"
 #include "generic/Scheduler.hh"
 #include "alice/LazySelInterpreter.hh"
 
 // LazySel Frame
-class LazySelFrame : private StackFrame {
+class LazySelFrame: private StackFrame {
 private:
-  static const u_int RECORD_POS = 0;
-  static const u_int LABEL_POS  = 1;
-  static const u_int SIZE       = 2;
+  enum { RECORD_POS, LABELS_POS, BYNEEDS_POS, SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
   // LazySelFrame Accessors
   word GetRecord() {
-    return StackFrame::GetArg(RECORD_POS);
+    return GetArg(RECORD_POS);
   }
-  UniqueString *GetLabel() {
-    return UniqueString::FromWordDirect(StackFrame::GetArg(LABEL_POS));
+  Vector *GetLabels() {
+    return Vector::FromWordDirect(GetArg(LABELS_POS));
+  }
+  Vector *GetByneeds() {
+    return Vector::FromWordDirect(GetArg(BYNEEDS_POS));
   }
   // LazySelFrame Constructor
-  static LazySelFrame *New(Interpreter *interpreter,
-			   word record, UniqueString *label) {
+  static LazySelFrame *New(Interpreter *interpreter, word record,
+			   Vector *labels, Vector *byneeds) {
     StackFrame *frame =
-      StackFrame::New(LAZY_SELECTION_FRAME,interpreter, SIZE);
+      StackFrame::New(LAZY_SELECTION_FRAME, interpreter, SIZE);
     frame->InitArg(RECORD_POS, record);
-    frame->InitArg(LABEL_POS, label->ToWord());
+    frame->InitArg(LABELS_POS, labels->ToWord());
+    frame->InitArg(BYNEEDS_POS, byneeds->ToWord());
     return static_cast<LazySelFrame *>(frame);
   }
   // LazySelFrame Untagging
@@ -58,27 +62,43 @@ public:
 //
 LazySelInterpreter *LazySelInterpreter::self;
 
-void
-LazySelInterpreter::PushFrame(word record, UniqueString *label) {
-  Scheduler::PushFrame(LazySelFrame::New(self, record, label)->ToWord());
-}
-
-void LazySelInterpreter::PushCall(Closure *closure) {
-  PushFrame(closure->Sub(0), UniqueString::FromWordDirect(closure->Sub(1)));
+void LazySelInterpreter::PushCall(Closure *closure0) {
+  LazySelClosure *closure = static_cast<LazySelClosure *>(closure0);
+  LazySelFrame *frame =
+    LazySelFrame::New(self, closure->GetRecord(),
+		      closure->GetLabels(), closure->GetByneeds());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
 Interpreter::Result LazySelInterpreter::Run() {
   LazySelFrame *frame = LazySelFrame::FromWordDirect(Scheduler::GetFrame());
-  word record = frame->GetRecord();
-  Transient *transient = Store::WordToTransient(record);
+  word wRecord = frame->GetRecord();
+  Transient *transient = Store::WordToTransient(wRecord);
   if (transient == INVALID_POINTER) { // is determined
+    Record *record = Record::FromWord(wRecord);
+    Vector *labels = frame->GetLabels();
+    Vector *byneeds = frame->GetByneeds();
+    Assert(labels->GetLength() == byneeds->GetLength());
+    word result = 0;
+    for (u_int i = labels->GetLength(); i--; ) {
+      Transient *transient = Store::DirectWordToTransient(byneeds->Sub(i));
+      UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+      word value = record->PolySel(label);
+      if (transient->GetLabel() == FUTURE_LABEL) {
+	Assert(result == 0);
+	result = value;
+      } else {
+	Assert(transient->GetLabel() == BYNEED_LABEL);
+	transient->Become(REF_LABEL, value);
+      }
+    }
+    Assert(result != 0);
     Scheduler::PopFrame();
     Scheduler::nArgs = Scheduler::ONE_ARG;
-    Scheduler::currentArgs[0] =
-      Record::FromWord(record)->PolySel(frame->GetLabel());
+    Scheduler::currentArgs[0] = result;
     return Interpreter::CONTINUE;
   } else { // need to request
-    Scheduler::currentData = record;
+    Scheduler::currentData = wRecord;
     return Interpreter::REQUEST;
   }
 }
@@ -89,16 +109,11 @@ const char *LazySelInterpreter::Identify() {
 
 void LazySelInterpreter::DumpFrame(word frameWord) {
   LazySelFrame *frame = LazySelFrame::FromWordDirect(frameWord);
-  fprintf(stderr, "Select %s\n", frame->GetLabel()->ToString()->ExportC());
-}
-
-//
-// LazySelClosure
-//
-LazySelClosure *LazySelClosure::New(word record, UniqueString *label) {
-  ConcreteCode *concreteCode = ConcreteCode::New(LazySelInterpreter::self, 0);
-  Closure *closure = Closure::New(concreteCode->ToWord(), 2);
-  closure->Init(0, record);
-  closure->Init(1, label->ToWord());
-  return static_cast<LazySelClosure *>(closure);
+  std::fprintf(stderr, "Select");
+  Vector *labels = frame->GetLabels();
+  for (u_int i = labels->GetLength(); i--; ) {
+    UniqueString *label = UniqueString::FromWordDirect(labels->Sub(i));
+    std::fprintf(stderr, " %s", label->ToString()->ExportC());
+  }
+  std::fprintf(stderr, "\n");
 }

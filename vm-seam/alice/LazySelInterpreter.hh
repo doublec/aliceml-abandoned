@@ -18,6 +18,7 @@
 #endif
 
 #include "generic/Interpreter.hh"
+#include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
 
@@ -32,7 +33,6 @@ public:
     self = new LazySelInterpreter();
   }
   // Frame Handling
-  static void PushFrame(word record, UniqueString *label);
   virtual void PushCall(Closure *closure);
   // Execution
   virtual Result Run();
@@ -43,7 +43,29 @@ public:
 
 class LazySelClosure: public Closure {
 public:
-  static LazySelClosure *New(word tuple, UniqueString *label);
+  enum { RECORD_POS, LABELS_POS, BYNEEDS_POS, SIZE };
+
+  static LazySelClosure *New(word record, Vector *labels) {
+    ConcreteCode *concreteCode =
+      ConcreteCode::New(LazySelInterpreter::self, 0);
+    Closure *closure = Closure::New(concreteCode->ToWord(), SIZE);
+    closure->Init(RECORD_POS, record);
+    closure->Init(LABELS_POS, labels->ToWord());
+    return static_cast<LazySelClosure *>(closure);
+  }
+  void InitByneeds(Vector *byneeds) {
+    Init(BYNEEDS_POS, byneeds->ToWord());
+  }
+
+  word GetRecord() {
+    return Sub(RECORD_POS);
+  }
+  Vector *GetLabels() {
+    return Vector::FromWordDirect(Sub(LABELS_POS));
+  }
+  Vector *GetByneeds() {
+    return Vector::FromWordDirect(Sub(BYNEEDS_POS));
+  }
 };
 
 #endif
