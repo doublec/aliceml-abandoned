@@ -46,7 +46,7 @@ UNFINISHED: obsolete after bootstrapping:
 				(* bool : is n-ary *)
 	| RefExp    of exp_info				(* reference *)
 	| TupExp    of exp_info * exp list		(* tuple *)
-	| RowExp    of exp_info * exp field list	(* record / module *)
+	| ProdExp   of exp_info * exp field list	(* record / module *)
 			(* all labels distinct *)
 	| SelExp    of exp_info * lab			(* field selector *)
 	| VecExp    of exp_info * exp list		(* vector *)
@@ -71,7 +71,7 @@ UNFINISHED: obsolete after bootstrapping:
     (* Patterns (always linear) *)
 
     and pat =
-	  WildPat   of pat_info				(* wildcard *)
+	  JokPat    of pat_info				(* joker (wildcard) *)
 	| LitPat    of pat_info * lit			(* literal *)
 	| VarPat    of pat_info * id			(* variable *)
 	| TagPat    of pat_info * lab * bool		(* sum injector *)
@@ -80,7 +80,7 @@ UNFINISHED: obsolete after bootstrapping:
 			(* bool : is n-ary, appears only fully applied *)
 	| RefPat    of pat_info				(* reference *)
 	| TupPat    of pat_info * pat list		(* tuple *)
-	| RowPat    of pat_info * pat field list	(* record *)
+	| ProdPat   of pat_info * pat field list	(* record *)
 			(* all labels distinct *)
 	| VecPat    of pat_info * pat list		(* vector *)
 	| AppPat    of pat_info * pat * pat		(* construction *)
