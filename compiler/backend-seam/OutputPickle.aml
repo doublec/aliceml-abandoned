@@ -75,10 +75,11 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val try            = TAG 30
 		val vecTest        = TAG 31
 
-		val global    = TAG 0
-		val immediate = TAG 1
-		val local_    = TAG 2
-		val toplevel  = TAG 3
+		val global       = TAG 0
+		val immediate    = TAG 1
+		val lastUseLocal = TAG 2
+		val local_       = TAG 3
+		val toplevel     = TAG 4
 
 		val template = TAG 0
 
@@ -391,6 +392,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	     outputValue (context, value))
 	  | outputIdRef (context, Local id) =
 	    (outputBlock (context, Label.local_, 1); outputId (context, id))
+	  | outputIdRef (context, LastUseLocal id) =
+	    (outputBlock (context, Label.lastUseLocal, 1);
+	     outputId (context, id))
 	  | outputIdRef (context, Global i) =
 	    (outputBlock (context, Label.global, 1); outputId (context, i))
 	  | outputIdRef (context, Toplevel i) =
