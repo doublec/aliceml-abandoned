@@ -27,16 +27,21 @@ AbstractGrammar
  | ElaborationPhase:
  |	- Admissibility checking
  |	- Type inference
- |	- Overloading resolution
+ |	- Overloading resolution (TBD)
  |	- Interface checking
  V
 TypedGrammar (= AbstractGrammar')
  |
  | TranslationPhase:
- |	- Overloading translation
+ |	- Overloading translation (TBD)
  |	- Module translation
+ |	- Run-time type translation
  |
  | -------------------------------------
+ V
+IntermediateGrammar
+ |
+ | CheckIntermediate
  V
 IntermediateGrammar
  |
@@ -56,32 +61,26 @@ FlatGrammar
  |	- Selection evaluation
  |	- Selection lifting
  |	- Constant folding (TBD)
- |	- Constant hoisting (TBD)
+ |	- Constant hoisting
  |	- Inlining (TBD)
  |	- Specialization (TBD)
- |	- Function and constructor print name computation (TBD)
+ |	- Function (TBD) and constructor print name computation
  V
 FlatGrammar'
  |
  | LivenessAnalysisPhase:
  |	- Liveness analysis
+ |	- Dead code elimination:
+ |	  - Removal of unreferenced side-effect-free expressions
+ |	  - Removal of bogus shared statements
+ |	  - Removal of unused imports
+ |	  - Initialization reordering
  V
 FlatGrammar''
  |
- | DeadCodeEliminationPhase:
- |	- Removal of unreferenced side-effect-free expressions
- |	- Removal of bogus shared statements
- |	- Removal of unused imports
- |	- Initialization reordering
- |
- | -------------------------------------
- V
-FlatGrammar'''
- |
  | -------- backend-stockwerk ----------
  |
- | GenerationPhase:
- |	- Register allocation
+ | CodeGenPhase:
  |	- Code generation
  |
  | -------------------------------------
