@@ -243,12 +243,24 @@ functor MakeMain(structure Composer: COMPOSER'
 	      \\t--noimplicitimport\n\
 	      \\t\tDo not make the SML Standard Basis available.\n\
 	      \\t--outputassembly\n\
-	      \\t\tWrite an .ozm file with the assembly code.\n")
+	      \\t\tWrite an .ozm file with the assembly code.\n\
+	      \\t--noprintcomponentsig\n\
+	      \\t\tOmit output of component signatures.\n\
+	      \\t--dryrun\n\
+	      \\t\tCompile standard input, not writing any output.\n")
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
 	    (Pickle.replaceSign (Url.fromString infile,
 				 compileSign signfile, outfile);
 	     OS.Process.success)
+	  | stoc' ["--dryrun"] =
+	    let
+		val s = TextIO.inputAll TextIO.stdIn
+	    in
+		Compiler.compile (Compiler.empty, Source.stringDesc,
+				  Source.fromString s);
+		OS.Process.success
+	    end
 	  | stoc' ([infile] | ["-c", infile]) =
 	    stoc_c (infile, basename infile ^ ".ozf")
 	  | stoc' ["-x", infile] =
