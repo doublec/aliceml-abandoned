@@ -17,8 +17,8 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SRCS = \
-	RootSet.cc TaskStack.cc NativeTaskManager.cc InternalTasks.cc \
-	Scheduler.cc Transients.cc Outline.cc
+	RootSet.cc Finalization.cc TaskStack.cc NativeTaskManager.cc \
+	InternalTasks.cc Scheduler.cc Transients.cc Outline.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all header clean distclean
