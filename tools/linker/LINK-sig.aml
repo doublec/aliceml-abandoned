@@ -33,8 +33,10 @@ signature LINK =
 		      excludeMap: MyComponent.sign UrlMap.t}
 		     (* Empty, Mismatch, Conflict *)
 
-	val sort: Url.t vector UrlMap.t -> Url.t list
+	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list
 		     (* Cyclic *)
+
+	val rewrite: (string * string) vector -> string -> string
 
 	val link: {root: Url.t,
 		   boundary: boundary vector,

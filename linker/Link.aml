@@ -15,6 +15,7 @@ import structure FromEqHashKey      from "x-alice:/lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "x-alice:/lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "x-alice:/lib/utility/MkDepthFirstSearch"
 import structure Url                from "x-alice:/lib/utility/Url"
+import structure Label              from "x-alice:/lib/rtt/Label"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
 
@@ -108,14 +109,15 @@ structure Link :> LINK =
 	    MkDepthFirstSearch(structure Key = UrlHashKey
 			       structure Map = UrlMap)
 
-	fun sort includeMap =
+	fun sort (includeMap, excludeMap) =
 	    let
 		val graph = UrlMap.new ()
 	    in
-		UrlMap.appi
-		    (fn (url, urls) =>
-			UrlMap.insert (graph, url, Vector.toList urls))
-		    includeMap;
+		UrlMap.appi (fn (url, urls) =>
+				UrlMap.insert (graph, url, Vector.toList urls))
+			    includeMap;
+		UrlMap.appi (fn (url, _) => UrlMap.insert (graph, url, nil))
+			    excludeMap;
 		List.map (fn urls =>
 			     case urls of
 				 [url] => url
@@ -123,10 +125,65 @@ structure Link :> LINK =
 			 (DepthFirstSearch.search graph)
 	    end
 
-	fun link {root, boundary, rewrite} =
+	fun rewrite rewrites s =
+	    rewrite' (s, rewrites, 0, Vector.length rewrites)
+	and rewrite' (s, rewrites, i, n) =
+	    if i = n then s
+	    else
+		let
+		    val (fro, to) = Vector.sub (rewrites, i)
+		in
+		    if String.isPrefix fro s then
+			to ^ String.extract (s, String.size fro, NONE)
+		    else rewrite' (s, rewrites, i + 1, n)
+		end
+
+	fun build (root, order, componentMap, includeMap, excludeMap,
+		   rewrite) =
 	    let
-		val res = collect boundary root
+		fun getComponent url =
+		    UrlMap.lookupExistent (componentMap, url)
+		val excludes =
+		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
+						      url::rest)
+						  nil excludeMap)
+		val includes =
+		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
+						      url::rest)
+						  nil excludeMap)
+		val urlToIndexMap = UrlMap.new ()
+		val _ =
+		    Vector.appi (fn (i, url) =>
+				    UrlMap.insert (urlToIndexMap, url,
+						   (true, i)))
+				(includes, 0, NONE)
+		val _ =
+		    Vector.appi (fn (i, url) =>
+				    UrlMap.insert (urlToIndexMap, url,
+						   (false, i)))
+				(excludes, 0, NONE)
+		val imports =
+		    Vector.mapi (fn (i, url) =>
+				    (Label.fromInt i,
+				     rewrite (Url.toString url),
+				     UrlMap.lookupExistent (excludeMap, url)))
+				(excludes, 0, NONE)
+		val bodies =
+		    Vector.map (fn url => MyComponent.body (getComponent url))
+			       includes
+		fun body #[(_, str)] = str   (*--** UNFINISHED *)
+		val sign = MyComponent.sign (getComponent root)
 	    in
-		UrlMap.lookupExistent (#componentMap res, root) (*--** UNFINISHED *)
+		MyComponent.new {imports, body, sign}
+	    end
+
+	fun link {root, boundary, rewrite = rewrites} =
+	    let
+		val {componentMap, includeMap, excludeMap} =
+		    collect boundary root
+		val order = sort (includeMap, excludeMap)
+	    in
+		build (root, order, componentMap, includeMap, excludeMap,
+		       rewrite rewrites)
 	    end
     end
