@@ -30,8 +30,6 @@ in
 
 signature NEW_NODE =
 sig
-
-    val relmode: bool ref
 	
     val dict: MainDictionary.dictionary
 
@@ -85,6 +83,13 @@ sig
     
     val createLimit: desc * limit * node * int * int * (node -> Gtk.object) 
 	-> node
+
+    val createRelNode : 
+	desc * node * node * int * string * node list * (node -> Gtk.object) 
+	-> node
+   
+    val createRelRefNode : 
+	desc * node * int * string * node * (node -> Gtk.object) -> node
 
     val queryDepth :  
 	Reflect.value * Type.t  * node * int * int * Type.row * 
