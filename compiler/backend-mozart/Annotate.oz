@@ -125,13 +125,19 @@ define
    %% Auxiliary Functions on Value Representations
    %%
 
+   fun {AddReg ValRep=Reg#V State}
+      case Reg of unit then {NewReg State}#V
+      else ValRep
+      end
+   end
+
    fun {ValRepToReg Reg#_}
       Reg
    end
 
    fun {ValRepToValue ValRep}
       case ValRep of _#V andthen {IsDet V} then V
-      [] _#_ then unit
+      [] _#_ then top
       end
    end
 
@@ -148,48 +154,38 @@ define
       case LongId of shortId(Info id(_ Stamp _)) then
 	 ValRep = {LookupValRep State Stamp}
 	 {SetValRep Info ValRep}
-      [] longId(Info LongId id(_ _ inId(PrintName))) then V in
+      [] longId(Info LongId id(_ _ exId(PrintName))) then V in
 	 V = {ValRepToValue {LongIdValRep LongId State}}
 	 ValRep = if {Label V} == record andthen {HasFeature V PrintName} then
 		     V.PrintName
-		  else {NewReg State}#top
+		  else unit#top
 		  end
 	 {SetValRep Info ValRep}
-      [] longId(_ _ id(_ _ exId)) then
+      [] longId(_ _ id(_ _ inId)) then
 	 raise notImplemented(longIdValRep LongId) end   %--**
       end
    end
 
-   fun {CombineValReps Reg#V1 _#V2}
-      Reg#case V1 of top then V2
-	  elsecase V1 of conval(N ValRep1) then
-	     case V2 of conval(!N ValRep2) then
-		conval(N {CombineValReps ValRep1 ValRep2})
-	     else V1
-	     end
-	  elseif {Label V1} == record andthen {Label V2} == record
-	     andthen {Arity V1} == {Arity V2}
-	  then
-	     {Record.zip V1 V2 CombineValReps}
-	  else V1
-	  end
+   fun {CombineValReps Reg1#V1 _#V2}
+      Reg1#case V1#V2 of top#_ then V2
+	   [] conval(N ValRep1)#conval(N ValRep2) then
+	      conval(N {CombineValReps ValRep1 ValRep2})
+	   [] record(...)#record(...) andthen {Arity V1} == {Arity V2} then
+	      {Record.zip V1 V2 CombineValReps}
+	   else V1
+	   end
    end
 
-   proc {Bind Reg#V1 ValRep2=_#V2 State}
+   proc {Bind Reg1#V1 ValRep2=_#V2 State}
       %% arguments: ValRep of arbiter, ValRep of pattern
-      {ForAll {GetRegStamps State Reg}
+      {ForAll {GetRegStamps State Reg1}
        proc {$ Stamp}
 	  {EnterValRep State Stamp
 	   {CombineValReps {LookupValRep State Stamp} ValRep2}}
        end}
-      case V1 of conval(N ValRep1) then
-	 case V2 of conval(!N ValRep2) then
-	    {Bind ValRep1 ValRep2 State}
-	 else skip
-	 end
-      elseif {Label V1} == record andthen {Label V2} == record
-	 andthen {Arity V1} == {Arity V2}
-      then
+      case V1#V2 of conval(N ValRep1)#conval(N ValRep2) then
+	 {Bind ValRep1 ValRep2 State}
+      [] record(...)#record(...) andthen {Arity V1} == {Arity V2} then
 	 {Record.forAllInd V1
 	  proc {$ Feature ValRep1}
 	     {Bind ValRep1 V2.Feature State}
@@ -232,7 +228,7 @@ define
 	  end}
 	 ValRep = {AnnotateExp Exp State}
 	 case Ids of [id(Info Stamp _)] then
-	    {SetValRep Info ValRep}
+	    {SetValRep Info {AddReg ValRep State}}
 	    {EnterRegStamp State {ValRepToReg ValRep} Stamp}
 	 else V in
 	    V = {ValRepToValue ValRep}
@@ -259,32 +255,35 @@ define
    end
 
    proc {AnnotateExp Exp State ?ValRep}
+      {SetValRep {Intermediate.infoOf Exp} ValRep}
       case Exp of litExp(_ Lit) then
-	 ValRep = {NewReg State}#{LitToValue Lit}
+	 ValRep = unit#{LitToValue Lit}
       [] varExp(_ LongId) then
 	 ValRep = {LongIdValRep LongId State}
       [] conExp(_ LongId OptExp) then
 	 case OptExp of none then
 	    ValRep = {LongIdValRep LongId State}
 	 [] some(Exp) then ExpValRep V in
-	    ExpValRep = {AnnotateExp Exp State}
+	    ExpValRep = {AddReg {AnnotateExp Exp State} State}
 	    V = case {ValRepToValue {LongIdValRep LongId State}} of con(N) then
 		   conval(N ExpValRep)
 		else top
 		end
-	    ValRep = {NewReg State}#V
+	    ValRep = unit#V
 	 end
       [] tupExp(_ Exps) then VRs in
-	 VRs = {Map Exps fun {$ Exp} {AnnotateExp Exp State} end}
-	 ValRep = {NewReg State}#{List.toTuple record VRs}
+	 VRs = {Map Exps
+		fun {$ Exp} {AddReg {AnnotateExp Exp State} State} end}
+	 ValRep = unit#{List.toTuple record VRs}
       [] recExp(_ FieldExps) then VRPairs in
 	 VRPairs = {Map FieldExps
 		    fun {$ field(_ lab(_ S) Exp)}
-		       {Intermediate.labToFeature S}#{AnnotateExp Exp State}
+		       {Intermediate.labToFeature S}#
+		       {AddReg {AnnotateExp Exp State} State}
 		    end}
-	 ValRep = {NewReg State}#{List.toRecord record VRPairs}
+	 ValRep = unit#{List.toRecord record VRPairs}
       [] selExp(_ lab(_ S)) then
-	 ValRep = {NewReg State}#selector({Intermediate.labToFeature S})
+	 ValRep = unit#selector({Intermediate.labToFeature S})
       [] funExp(_ id(Info Stamp _) Exp) then OldIsToplevel Reg ValRep1 in
 	 %--** generate `fast' function
 	 {Save State}
@@ -298,21 +297,21 @@ define
 	 _ = {AnnotateExp Exp State}
 	 {SetToplevel State OldIsToplevel}
 	 {Restore State}
-	 ValRep = {NewReg State}#fn({CompilerSupport.newPredicateRef} unit)
+	 ValRep = unit#fn({CompilerSupport.newPredicateRef} unit)
       [] appExp(_ Exp1 Exp2) then ValRep1 ValRep2 in
 	 ValRep1 = {AnnotateExp Exp1 State}
 	 ValRep2 = {AnnotateExp Exp2 State}
 	 ValRep = case {ValRepToValue ValRep1} of con(N) then
-		     {NewReg State}#conval(N ValRep2)
+		     unit#conval(N {AddReg ValRep2 State})
 		  [] selector(Feature) then V2 in
 		     V2 = {ValRepToValue ValRep2}
 		     if {Label V2} == record andthen {HasFeature V2 Feature}
 		     then V2.Feature
-		     else {NewReg State}#top
+		     else unit#top
 		     end
 		  [] builtin(_) then
-		     {NewReg State}#top   %--** partially evaluate application
-		  else {NewReg State}#top
+		     unit#top   %--** partially evaluate application
+		  else unit#top
 		  end
       [] adjExp(_ Exp1 Exp2) then ValRep1 ValRep2 V1 V2 V in
 	 ValRep1 = {AnnotateExp Exp1 State}
@@ -323,19 +322,19 @@ define
 		{Adjoin V1 V2}
 	     else top
 	     end
-	 ValRep = {NewReg State}#V
+	 ValRep = unit#V
       [] andExp(_ Exp1 Exp2) then
 	 _ = {AnnotateExp Exp1 State}
 	 {Save State}
 	 _ = {AnnotateExp Exp2 State}
 	 {Restore State}
-	 ValRep = {NewReg State}#top
+	 ValRep = unit#top
       [] orExp(_ Exp1 Exp2) then
 	 _ = {AnnotateExp Exp1 State}
 	 {Save State}
 	 _ = {AnnotateExp Exp2 State}
 	 {Restore State}
-	 ValRep = {NewReg State}#top
+	 ValRep = unit#top
       [] ifExp(_ Exp1 Exp2 Exp3) then
 	 _ = {AnnotateExp Exp1 State}
 	 {Save State}
@@ -344,15 +343,16 @@ define
 	 {Save State}
 	 _ = {AnnotateExp Exp3 State}
 	 {Restore State}
-	 ValRep = {NewReg State}#top
+	 ValRep = unit#top
       [] whileExp(_ Exp1 Exp2) then
 	 _ = {AnnotateExp Exp1 State}
 	 {Save State}
 	 _ = {AnnotateExp Exp2 State}
 	 {Restore State}
-	 ValRep = {NewReg State}#record()
+	 ValRep = unit#record()
       [] seqExp(_ Exps) then
-	 ValRep = {FoldL Exps fun {$ _ Exp} {AnnotateExp Exp State} end unit}
+	 ValRep = {FoldL Exps
+		   fun {$ _ Exp} {AnnotateExp Exp State} end unit#top}
       [] caseExp(_ Exp Matches LongId) then ValRep1 in
 	 ValRep1 = {AnnotateExp Exp State}
 	 case Matches of [match(_ Pat Exp)] then ValRep2 in
@@ -368,52 +368,53 @@ define
 		_ = {AnnotateExp Exp State}
 		{Restore State}
 	     end}
-	    ValRep = {NewReg State}#top
+	    ValRep = unit#top
 	 end
 	 _ = {LongIdValRep LongId State}
       [] raiseExp(_ Exp) then
 	 _ = {AnnotateExp Exp State}
-	 ValRep = {NewReg State}#top
-      [] handleExp(_ Exp1 id(_ Stamp _) Exp2) then Reg in
+	 ValRep = unit#top
+      [] handleExp(_ Exp1 id(Info Stamp _) Exp2) then Reg ValRep1 in
 	 {Save State}
 	 _ = {AnnotateExp Exp1 State}
 	 {Restore State}
 	 {Save State}
 	 Reg = {NewReg State}
-	 {EnterValRep State Stamp Reg#top}
+	 ValRep1 = Reg#top
+	 {EnterValRep State Stamp ValRep1}
 	 {EnterRegStamp State Reg Stamp}
+	 {SetValRep Info ValRep1}
 	 _ = {AnnotateExp Exp2 State}
 	 {Restore State}
-	 ValRep = {NewReg State}#top
+	 ValRep = unit#top
       [] letExp(_ Decs Exp) then
 	 {ForAll Decs proc {$ Dec} {AnnotateDec Dec State} end}
 	 ValRep = {AnnotateExp Exp State}
       end
-      {SetValRep {Intermediate.infoOf Exp} ValRep}
    end
 
    fun {AnnotatePat Pat State ValRep}
       {SetValRep {Intermediate.infoOf Pat} ValRep}
       {ValRepToReg ValRep}#
-      case Pat of litPat(_ Lit) then
+      case Pat of wildPat(_) then
+	 top
+      [] litPat(_ Lit) then
 	 {LitToValue Lit}
       [] varPat(_ id(_ Stamp _)) then
-	 {EnterValRep State Stamp ValRep}
+	 {EnterValRep State Stamp {AddReg ValRep State}}
 	 {EnterRegStamp State {ValRepToReg ValRep} Stamp}
 	 top
       [] conPat(_ LongId OptPat) then ValRep1 in
 	 ValRep1 = {LongIdValRep LongId State}
 	 case OptPat of some(Pat) then V in
-	    V = case {ValRepToValue ValRep1} of con(N) then
-		   case {ValRepToValue ValRep} of conval(!N SubValRep) then
-		      {AnnotatePat Pat State SubValRep}
-		   else
-		      {AnnotatePat Pat State {NewReg State}#top}
-		   end
+	    V = case {ValRepToValue ValRep1}#{ValRepToValue ValRep}
+		of con(N)#conval(!N SubValRep) then
+		   {AnnotatePat Pat State SubValRep}
 		else
-		   {AnnotatePat Pat State {NewReg State}#top}
+		   {AnnotatePat Pat State unit#top}
 		end
-	    case {ValRepToValue ValRep1} of con(N) then conval(N V)
+	    case {ValRepToValue ValRep1} of con(N) then
+	       conval(N {AddReg V State})
 	    else top
 	    end
 	 [] none then
@@ -428,11 +429,11 @@ define
 	 then
 	    {List.toTuple record
 	     {List.mapInd Pats
-	      fun {$ I Pat} {AnnotatePat Pat State V.I} end}}
+	      fun {$ I Pat} {AddReg {AnnotatePat Pat State V.I} State} end}}
 	 else
 	    {List.toTuple record
 	     {Map Pats
-	      fun {$ Pat} {AnnotatePat Pat State {NewReg State}#top} end}}
+	      fun {$ Pat} {AddReg {AnnotatePat Pat State unit#top} State} end}}
 	 end
       [] recPat(_ FieldPats HasDots) then PatArity V in
 	 PatArity = {Arity {List.toRecord x
@@ -452,7 +453,7 @@ define
 	    else
 	       {ForAll FieldPats
 		proc {$ field(_ _ Pat)}
-		   _ = {AnnotatePat Pat State {NewReg State}#top}
+		   _ = {AnnotatePat Pat State unit#top}
 		end}
 	    end
 	    top
@@ -467,15 +468,14 @@ define
 	    {List.toRecord record
 	     {Map FieldPats
 	      fun {$ field(_ lab(_ S) Pat)}
-		 {Intermediate.labToFeature S}#
-		 {AnnotatePat Pat State {NewReg State}#top}
+		 {Intermediate.labToFeature S}#{AnnotatePat Pat State unit#top}
 	      end}}
 	 end
       [] asPat(_ id(_ Stamp _) Pat) then ValRep1 ValRep2 in
 	 ValRep1 = _#_
 	 {EnterValRep State Stamp ValRep1}
 	 ValRep2 = {AnnotatePat Pat State ValRep}
-	 ValRep1 = {CombineValReps ValRep ValRep2}
+	 ValRep1 = {AddReg {CombineValReps ValRep ValRep2} State}
 	 {ValRepToValue ValRep2}
       [] altPat(_ Pats) then
 	 case Pats of [Pat] then {AnnotatePat Pat State ValRep}
