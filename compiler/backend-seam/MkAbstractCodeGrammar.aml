@@ -72,6 +72,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	and idRef =
 	    Immediate of value
 	  | Local of id
+	  | LastUseLocal of id
 	  | Global of int
 	  | Toplevel of int
 	and template =
