@@ -34,13 +34,28 @@ static char *ExportCString(String *s) {
   return reinterpret_cast<char *>(eb);
 }
 
-static int setNonBlocking(int sock, bool flag) {
+static int SetNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   return ioctlsocket(sock, FIONBIO, &arg);
 #else
   return ioctl(sock, FIONBIO, &arg);
 #endif
+}
+
+static const char *GetHostName(sockaddr_in *addr) {
+  const char *host = inet_ntoa(addr->sin_addr);
+  if (!std::strcmp(host, "127.0.0.1")) {
+    // workaround for misconfigured offline hosts:
+    host = "localhost";
+  } else {
+    hostent *entry =
+      gethostbyaddr(reinterpret_cast<char *>(&addr->sin_addr),
+		    sizeof(addr), AF_INET);
+    if (entry)
+      host = entry->h_name;
+  }
+  return host;
 }
 
 DEFINE1(UnsafeSocket_server) {
@@ -70,9 +85,10 @@ DEFINE1(UnsafeSocket_server) {
   if (getsockname(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen) < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
-  Tuple *tuple = Tuple::New(2);
+  Tuple *tuple = Tuple::New(3);
   tuple->Init(0, Store::IntToWord(sock));
-  tuple->Init(1, Store::IntToWord(ntohs(addr.sin_port)));
+  tuple->Init(1, String::New(GetHostName(&addr))->ToWord());
+  tuple->Init(2, Store::IntToWord(ntohs(addr.sin_port)));
   RETURN(tuple->ToWord());
 } END
 
@@ -86,21 +102,9 @@ DEFINE1(UnsafeSocket_accept) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
 
-  const char *host = inet_ntoa(addr.sin_addr);
-  if (!strcmp(host, "127.0.0.1")) {
-    // workaround for misconfigured offline hosts:
-    host = "localhost";
-  } else {
-    hostent *entry =
-      gethostbyaddr(reinterpret_cast<char *>(&addr.sin_addr),
-		    addrLen, AF_INET);
-    if (entry)
-      host = entry->h_name;
-  }
-
   Tuple *tuple = Tuple::New(3);
   tuple->Init(0, Store::IntToWord(client));
-  tuple->Init(1, String::New(host)->ToWord());
+  tuple->Init(1, String::New(GetHostName(&addr))->ToWord());
   tuple->Init(2, Store::IntToWord(ntohs(addr.sin_port)));
   RETURN(tuple->ToWord());
 } END
@@ -134,7 +138,7 @@ DEFINE1(UnsafeSocket_input1) {
   DECLARE_INT(sock, x0);
 
   u_char c;
-  int n = recv(sock, reinterpret_cast<char *>(&c), 1, MSG_PEEK);
+  int n = recv(sock, reinterpret_cast<char *>(&c), 1, 0);
   if (n < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   } else if (n == 0) { // EOF
