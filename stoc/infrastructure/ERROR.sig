@@ -15,6 +15,7 @@ signature ERROR =
 
     exception Error of position * string
 
-    val error: position * string -> 'a
+    val error :	position * string -> 'a
+    val warn :	position * string -> unit
 
   end

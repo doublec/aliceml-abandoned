@@ -15,6 +15,11 @@ structure Error :> ERROR =
 
     exception Error of position * string
 
-    fun error(pos, message) = raise Error(pos, message)
+    fun print((l,r), s) =
+        TextIO.output(TextIO.stdErr,
+		      Int.toString l ^ "-" ^ Int.toString r ^ ": " ^ s ^ "\n")
+
+    fun error(pos, message) = ( print(pos,message) ; raise Error(pos, message) )
+    fun warn (pos, message) =   print(pos, message)
 
   end
