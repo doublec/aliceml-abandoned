@@ -25,16 +25,6 @@
 #include "generic/Properties.hh"
 #include "alice/primitives/Authoring.hh"
 
-// String Handling
-static char *ExportCString(String *s) {
-  u_int sLen = s->GetSize();
-  String *e  = String::New(sLen + 1);
-  u_char *eb = e->GetValue();
-  std::memcpy(eb, s->GetValue(), sLen);
-  eb[sLen] = '\0';
-  return reinterpret_cast<char *>(eb);
-}
-
 // Global OS.sysErr Exception
 static word SysErrConstructor;
 
@@ -53,7 +43,7 @@ static word SysErrConstructor;
 
 DEFINE1(FileSys_chDir) {
   DECLARE_STRING(name, x0);
-  int res = chdir(ExportCString(name));
+  int res = chdir(name->ExportC());
   if (res) {
     const char *err = "chDir: cannot change directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
@@ -66,7 +56,7 @@ DEFINE1(FileSys_chDir) {
 DEFINE1(FileSys_fileSize) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  int res = stat(ExportCString(name), &info);
+  int res = stat(name->ExportC(), &info);
   if (res) {
     RETURN_INT(info.st_size);
   }
@@ -90,9 +80,9 @@ DEFINE0(FileSys_getDir) {
 DEFINE1(FileSys_mkDir) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  int res = mkdir(ExportCString(name));
+  int res = mkdir(name->ExportC());
 #else
-  int res = mkdir(ExportCString(name),
+  int res = mkdir(name->ExportC(),
 		  S_IRUSR | S_IWUSR | S_IXUSR |
 		  S_IRGRP | S_IWGRP | S_IXGRP |
 		  S_IROTH | S_IWOTH | S_IXOTH);
@@ -108,7 +98,7 @@ DEFINE1(FileSys_mkDir) {
 DEFINE1(FileSys_modTime) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  int res = stat(ExportCString(name), &info);
+  int res = stat(name->ExportC(), &info);
   if (!res) {
     RETURN_INT(info.st_mtime * 100000000);
   }
@@ -120,7 +110,7 @@ DEFINE1(FileSys_modTime) {
 
 DEFINE1(FileSys_remove) {
   DECLARE_STRING(name, x0);
-  int res = unlink(ExportCString(name));
+  int res = unlink(name->ExportC());
   if (!res) {
     RETURN_UNIT;
   }
@@ -177,8 +167,8 @@ static word FileSys(void) {
 //
 
 DEFINE1(Process_system) {
-  DECLARE_STRING(s, x0);
-  RETURN_INT(system(ExportCString(s)));
+  DECLARE_STRING(command, x0);
+  RETURN_INT(system(command->ExportC()));
 } END
 
 DEFINE1(Process_atExn) {
@@ -195,7 +185,7 @@ DEFINE1(Process_exit) {
 
 DEFINE1(Process_getEnv) {
   DECLARE_STRING(envVar, x0);
-  char *envVal = getenv(ExportCString(envVar));
+  char *envVal = getenv(envVar->ExportC());
   if (envVal != NULL) {
     TagVal *val = TagVal::New(1, 1); // SOME
     val->Init(0, String::New(envVal)->ToWord());

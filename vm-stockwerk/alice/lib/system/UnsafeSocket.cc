@@ -38,15 +38,6 @@ typedef int socklen_t;
 #define GetLastError() errno
 #endif
 
-static char *ExportCString(String *s) {
-  u_int sLen = s->GetSize();
-  String *e  = String::New(sLen + 1);
-  u_char *eb = e->GetValue();
-  std::memcpy(eb, s->GetValue(), sLen);
-  eb[sLen] = '\0';
-  return reinterpret_cast<char *>(eb);
-}
-
 static int SetNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
   return ioctlsocket(sock, FIONBIO, &arg);
@@ -133,7 +124,7 @@ DEFINE2(UnsafeSocket_client) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
 
-  hostent *entry = gethostbyname(ExportCString(host));
+  hostent *entry = gethostbyname(host->ExportC());
   if (!entry) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
