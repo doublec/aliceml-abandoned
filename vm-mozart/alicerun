@@ -19,10 +19,10 @@ find_in () {
     echo "${found_in}"
 }
 
-if test -z "${STOCKHOME}"; then
+if test -z "${ALICE_HOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    STOCKHOME=$(find_in VMMain.ozf /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
+    ALICE_HOME=$(find_in VMMain.ozf /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
 fi
 
 if test -z "${OZHOME}"; then
@@ -31,7 +31,7 @@ fi
 
 case $(uname) in
     CYGWIN*)
-	STOCKHOME=`cygpath -m "$STOCKHOME"`
+	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
 	sep=\;
 	esc=
 	;;
@@ -54,8 +54,8 @@ fi
 
 : ${OZ_LOAD:=cache=~/.oz/cache${sep}cache=$OZHOME/cache}
 
-OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${sep}$OZ_LOAD
+OZ_LOAD=$ALICE_LOAD${sep}pattern=x-alice:/'?{x}'=$ALICE_HOME/'?{x}'.ozf${sep}$OZ_LOAD
 
-export STOCKHOME OZ_LOAD ALICE_LOAD
+export ALICE_HOME ALICE_LOAD OZ_LOAD
 
 exec ozengine x-alice:/VMMain "$@"
