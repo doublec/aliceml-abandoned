@@ -84,16 +84,26 @@ struct
 
   (* Surface wrappers *)
 
-    fun p1half x = (x + 1.0)/2.0
+    open Math
+
+    val doublepi    = 2.0*pi
+    val rezdoublepi = 1.0/doublepi
+    fun p1half x    = (x + 1.0)/2.0
     fun clamped surface (i,u,v) = surface(i, clamp u, clamp v)
+
+    fun uFrom(a (* = sin(2*pi*u) *), b (* = cos(2*pi*u) *)) =
+	(if a >= 0.0 then acos b else doublepi - acos b) * rezdoublepi
 
     fun mkPlane surface =
 	Renderer.Plane
 	    (fn Renderer.PlaneSurface => fn(u,_,v) => surface(0,u,v))
 
-    fun mkSphere surface =	(*UNFINISHED*)
+    fun mkSphere surface =
 	Renderer.Sphere
-	    (fn Renderer.SphereSurface => fn(x,y,z) => clamped surface (0,x,x))
+	    (fn Renderer.SphereSurface => fn(x,y,z) =>
+		let val c = 1.0 / sqrt(1.0 - y*y)
+		in clamped surface (0, uFrom(c*x, c*z), 0.5*(y+1.0)) end
+	    )
 
     fun mkCube surface =
 	Renderer.Cube
@@ -108,7 +118,7 @@ struct
     fun mkCylinder surface =
 	Renderer.Cylinder
 	    (fn Renderer.CylinderSide =>
-		    (fn(x,y,z) => clamped surface (0,x,x)) (*UNFINISHED*)
+		    (fn(x,y,z) => clamped surface (0, uFrom(x,z), y))
 	      | Renderer.CylinderTop =>
 		    (fn(x,_,z) => clamped surface (1, p1half x, p1half z))
 	      | Renderer.CylinderBottom =>
@@ -118,7 +128,7 @@ struct
     fun mkCone surface =
 	Renderer.Cone
 	    (fn Renderer.ConeSide =>
-		    (fn(x,y,z) => clamped surface (0,x,x)) (*UNFINISHED*)
+		    (fn(x,y,z) => clamped surface (0, uFrom(x/y, z/y), y))
 	      | Renderer.ConeBase =>
 		    (fn(x,_,z) => clamped surface (1, p1half x, p1half z))
 	    )
