@@ -1,3 +1,9 @@
-use (List.hd (CommandLine.arguments ()));
-Instructions.output ignore (TextIO.stdOut, compile ant);
+import "Ante"
+import "Instructions"
+open Ante;
+
+use (valOf (OS.Process.getEnv "ANTINFILE"));
+
+Instructions.output ignore (TextIO.openOut (valOf (OS.Process.getEnv "ANTOUTFILE")), compile ant);
+
 OS.Process.exit OS.Process.success;

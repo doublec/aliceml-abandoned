@@ -1,7 +1,3 @@
-import "Ante"
-import "Instructions"
-open Ante
-
 fun seek_food deliver_food =
     loop (
 	sense here home ifnot (
@@ -33,6 +29,3 @@ val ant =
     proc "deliver" (
 	deliver_food (goto "seek")
     )
-
-val _ = Instructions.output ignore (TextIO.stdOut, compile ant)
-val _ = OS.Process.exit OS.Process.success
