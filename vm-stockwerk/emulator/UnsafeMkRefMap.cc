@@ -70,21 +70,21 @@ DEFINE1(UnsafeMkRefMap_isEmpty) {
 
 word UnsafeMkRefMap(void) {
   Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeClosure("UnsafeMkRefMap_clone",
+  t->Init(0, Primitive::MakeClosure("UnsafeMkRefMap.clone",
 				    UnsafeMkRefMap_clone, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeMkRefMap_delete",
+  t->Init(1, Primitive::MakeClosure("UnsafeMkRefMap.delete",
 				    UnsafeMkRefMap_delete, 2, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeMkRefMap_deleteAll",
+  t->Init(2, Primitive::MakeClosure("UnsafeMkRefMap.deleteAll",
 				    UnsafeMkRefMap_deleteAll, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeMkRefMap_insert",
+  t->Init(3, Primitive::MakeClosure("UnsafeMkRefMap.insert",
 				    UnsafeMkRefMap_insert, 3, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeMkRefMap_isEmpty",
+  t->Init(4, Primitive::MakeClosure("UnsafeMkRefMap.isEmpty",
 				    UnsafeMkRefMap_isEmpty, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeMkRefMap_lookup",
+  t->Init(5, Primitive::MakeClosure("UnsafeMkRefMap.lookup",
 				    UnsafeMkRefMap_lookup, 2, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeMkRefMap_member",
+  t->Init(6, Primitive::MakeClosure("UnsafeMkRefMap.member",
 				    UnsafeMkRefMap_member, 2, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeMkRefMap_new",
+  t->Init(7, Primitive::MakeClosure("UnsafeMkRefMap.new",
 				    UnsafeMkRefMap_new, 0, true));
   RETURN_STRUCTURE(t);
 }

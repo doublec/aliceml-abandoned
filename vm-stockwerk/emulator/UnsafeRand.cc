@@ -32,11 +32,11 @@ DEFINE0(UnsafeRand_randLimits) {
 
 word UnsafeRand(void) {
   Tuple *t = Tuple::New(3);
-  t->Init(0, Primitive::MakeClosure("UnsafeRand_rand",
+  t->Init(0, Primitive::MakeClosure("UnsafeRand.rand",
 				    UnsafeRand_rand, 0, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeRand_randLimits",
+  t->Init(1, Primitive::MakeClosure("UnsafeRand.randLimits",
 				    UnsafeRand_randLimits, 0, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeRand_srand",
+  t->Init(2, Primitive::MakeClosure("UnsafeRand.srand",
 				    UnsafeRand_srand, 1, true));
   RETURN_STRUCTURE(t);
 }

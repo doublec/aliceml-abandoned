@@ -84,15 +84,16 @@ word UnsafeRemote(void) {
   callback = Store::IntToWord(0);
 
   Tuple *t = Tuple::New(5);
-  t->Init(0, Primitive::MakeClosure("UnsafeRemote_dynamicCall",
+  //--** enter UnsafeRemote_dynamicCall into the PrimitiveTable
+  t->Init(0, Primitive::MakeClosure("UnsafeRemote.dynamicCall",
 				    UnsafeRemote_dynamicCall, 2, false));
-  t->Init(1, Primitive::MakeClosure("UnsafeRemote_getLocalIP",
+  t->Init(1, Primitive::MakeClosure("UnsafeRemote.getLocalIP",
 				    UnsafeRemote_getLocalIP, 0, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeRemote_packValue",
+  t->Init(2, Primitive::MakeClosure("UnsafeRemote.packValue",
 				    UnsafeRemote_packValue, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeRemote_setCallback",
+  t->Init(3, Primitive::MakeClosure("UnsafeRemote.setCallback",
 				    UnsafeRemote_setCallback, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeRemote_unpackValue",
+  t->Init(4, Primitive::MakeClosure("UnsafeRemote.unpackValue",
 				    UnsafeRemote_unpackValue, 1, true));
   RETURN_STRUCTURE(t);
 }

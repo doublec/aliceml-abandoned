@@ -270,29 +270,29 @@ word UnsafeIO(void) {
 
   Tuple *t = Tuple::New(16);
   t->Init(0, IoConstructor);
-  t->Init(1, Primitive::MakeClosure("UnsafeIO_Io",
+  t->Init(1, Primitive::MakeClosure("UnsafeIO.Io",
 				    UnsafeIO_Io, 3, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeIO_closeIn",
+  t->Init(2, Primitive::MakeClosure("UnsafeIO.closeIn",
 				    UnsafeIO_closeIn, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeIO_closeOut",
+  t->Init(3, Primitive::MakeClosure("UnsafeIO.closeOut",
 				    UnsafeIO_closeOut, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeIO_flushOut",
+  t->Init(4, Primitive::MakeClosure("UnsafeIO.flushOut",
 				    UnsafeIO_flushOut, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeIO_inputAll",
+  t->Init(5, Primitive::MakeClosure("UnsafeIO.inputAll",
 				    UnsafeIO_inputAll, 1, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeIO_inputLine",
+  t->Init(6, Primitive::MakeClosure("UnsafeIO.inputLine",
 				    UnsafeIO_inputLine, 1, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeIO_openAppend",
+  t->Init(7, Primitive::MakeClosure("UnsafeIO.openAppend",
 				    UnsafeIO_openAppend, 2, true));
-  t->Init(8, Primitive::MakeClosure("UnsafeIO_openIn",
+  t->Init(8, Primitive::MakeClosure("UnsafeIO.openIn",
 				    UnsafeIO_openIn, 2, true));
-  t->Init(9, Primitive::MakeClosure("UnsafeIO_openOut",
+  t->Init(9, Primitive::MakeClosure("UnsafeIO.openOut",
 				    UnsafeIO_openOut, 2, true));
-  t->Init(10, Primitive::MakeClosure("UnsafeIO_output",
+  t->Init(10, Primitive::MakeClosure("UnsafeIO.output",
 				     UnsafeIO_output, 2, true));
-  t->Init(11, Primitive::MakeClosure("UnsafeIO_output1",
+  t->Init(11, Primitive::MakeClosure("UnsafeIO.output1",
 				     UnsafeIO_output1, 2, true));
-  t->Init(12, Primitive::MakeClosure("UnsafeIO_print",
+  t->Init(12, Primitive::MakeClosure("UnsafeIO.print",
 				     UnsafeIO_print, 1, true));
   t->Init(13, OutStream::New(stderr, String::New("stderr"))->ToWord());
   t->Init(14, InStream::New(stdin, String::New("stdin"))->ToWord());

@@ -78,17 +78,17 @@ word UnsafeReflect(void) {
     littleEndian = false;
 
   Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure("UnsafeReflect_Reflect",
+  t->Init(0, Primitive::MakeClosure("UnsafeReflect.Reflect",
 				    UnsafeReflect_Reflect, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeReflect_ReflectSig",
+  t->Init(1, Primitive::MakeClosure("UnsafeReflect.ReflectSig",
 				    UnsafeReflect_ReflectSig, 1, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeReflect_Unreflect",
+  t->Init(2, Primitive::MakeClosure("UnsafeReflect.Unreflect",
 				    UnsafeReflect_Unreflect, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeReflect_UnreflectSig",
+  t->Init(3, Primitive::MakeClosure("UnsafeReflect.UnreflectSig",
 				    UnsafeReflect_UnreflectSig, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeReflect_cast",
+  t->Init(4, Primitive::MakeClosure("UnsafeReflect.cast",
 				    UnsafeReflect_cast, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeReflect_realToVector",
+  t->Init(5, Primitive::MakeClosure("UnsafeReflect.realToVector",
 				    UnsafeReflect_realToVector, 1, true));
   RETURN_STRUCTURE(t);
 }
