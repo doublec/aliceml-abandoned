@@ -31,7 +31,6 @@ AC_SEAM_CHECK_SOCKET_FLAVOR
 # checks for header files
 
 AC_PATH_SEAM
-AC_SEAM_WITH_LIGHTNING
 
 # checks for types
 
