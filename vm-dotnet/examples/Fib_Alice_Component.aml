@@ -1,0 +1,9 @@
+val lang = "Alice"
+
+fun nextTerms (count, term0, term1) =
+    let
+	fun gen (a, b) = byneed (fn () => a::gen (b, a + b))
+	val fibs = gen (term0, term1)
+    in
+	Vector.fromList (List.take (List.drop (fibs, 2), count))
+    end

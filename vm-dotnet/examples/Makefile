@@ -1,6 +1,17 @@
-OBJS = concfib.dll hamming.dll hello.dll infer.dll inflist.dll streams.dll
+OBJS = \
+	concfib.dll hamming.dll hello.dll infer.dll inflist.dll streams.dll \
+	Fib_Alice_Component.dll Fib_Alice.dll Test.exe
 
 all: $(OBJS)
+
+Fib_Alice_Component.dll: Fib_Alice_Component.aml
+	..\stoc --no-dump-elaboration-sig -c Fib_Alice_Component.aml -o $@
+
+Fib_Alice.dll: Fib_Alice.cs
+	csc -nologo -t:library -r:../Alice.dll -r:System.dll Fib_Alice.cs
+
+Test.exe: Test.cs
+	csc -nologo -t:exe -r:Fib_Alice.dll Test.cs
 
 concfib.dll: concfib.aml
 	..\stoc --no-dump-elaboration-sig -c concfib.aml -o $@
