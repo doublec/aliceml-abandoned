@@ -203,10 +203,19 @@ structure Main :> MAIN =
 	      | _ => raise Crash.Crash "Composer.compileSign"
 	end
 
+    val fileStack: string list ref = ref nil
+
     fun compileForMozart (sourceFilename, targetFilename) =
 	(TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
+	 fileStack := sourceFilename::(!fileStack);
 	 processFile (mozartify sourceFilename targetFilename) sourceFilename
-	 before TextIO.print ("### wrote file " ^ targetFilename ^ "\n"))
+	 before (TextIO.print ("### wrote file " ^ targetFilename ^ "\n");
+		 case !fileStack of
+		     _::(rest as resumeFilename::_) =>
+			 (fileStack := rest;
+			  TextIO.print ("### resuming compilation of " ^
+					resumeFilename ^ "\n"))
+		   | _ => ()))
 
     fun acquireSign url =
 	let
