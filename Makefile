@@ -23,9 +23,12 @@ all-subdirs:
 
 clean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
+	rm -f $(OBJS)
 
 veryclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
+	rm -f $(OBJS) stow
 
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
+	rm -f $(OBJS) stow
