@@ -50,7 +50,7 @@ protected:
 public:
   using Block::ToWord;
   // IOStream Accessors
-  FILE *GetStream() {
+  std::FILE *GetStream() {
     return static_cast<std::FILE *>
       (Store::DirectWordToUnmanagedPointer(GetArg(STREAM_POS)));
   }
