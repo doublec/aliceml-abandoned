@@ -224,7 +224,7 @@
     <DD>
       <P>The type of finite domain variables. The type <TT>bin</TT> is used
          to indicate boolean 0/1 variables.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>datatype domain_element = SINGLE of int | RANGE of int * int</TT><BR>
@@ -237,7 +237,7 @@
          <TT>ih</TT> is greater than or equal to <TT>il</TT>.
       <P>For example, the value <TT>#[SINGLE(5), RANGE(7, 10)]</TT>
          specifies the domain <TT>[5,7,8,9,10]</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>datatype relation = LESS | LESSEQ | EQUAL | NOTEQUAL | GREATER | GREATEREQ</TT>
@@ -245,7 +245,7 @@
     <DD>
       <P>This is the datatype to denote a arithmetic relation which is
          given to generic propagators as an argument.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>datatype dist_mode = NAIVE | FIRSTFAIL | SPLIT | NBSUSPS</TT>
@@ -263,7 +263,7 @@
          finite domain variables. <TT>MIN</TT> denotes the minimal integer
          value, <TT>MAX</TT> denotes the maximal integer value and <TT>MID</TT>
          the value <TT>MAX / 2</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>fd <I>dom</I></TT>
@@ -273,7 +273,7 @@
          the given domain <I>dom</I>. In case <I>dom</I> equals to
          <TT>NONE</TT>, the maximal domain <TT>[MIN, MIN + 1, ..., MAX]</TT>
          is used.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>fdVec (<I>n</I>, <I>dom</I>)</TT>
@@ -282,14 +282,14 @@
       <P>returns a vector of freshly created finite domain variables.
          The vector has size <I>n</I> and all variables are initialized
          with the domain denoted by <I>dom</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>range (<I>il</I>, <I>ih</I>)</TT>
     </DT>
     <DD>
       <P>convienience abbreviation for <TT>fd (SOME (#[RANGE(il, ih)])</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>rangeVec (<I>n</I>, <I>il</I>, <I>ih</I>)</TT>
@@ -297,21 +297,21 @@
     <DD>
       <P>convienience abbreviation for
          <TT>fdVec (n,SOME (#[RANGE(il, ih)])</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>bin ()</TT>
     </DT>
     <DD>
       <P>convienience abbreviation for <TT>fd (SOME (#[RANGE(0, 1)])</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>binVec <I>n</I></TT>
     </DT>
     <DD>
       <P>convienience abbreviation for <TT>fdVec (n,SOME (#[RANGE(0, 1)])</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>assign (<I>as</I>, <I>v</I>)</TT>
@@ -320,7 +320,7 @@
       <P>Every finite domain variable contained in vector <I>v</I> is assigned
          the value denoted by <I>as</I>, that is, either the minimal, medium or
          maximal value possible.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>toInt <I>f</I></TT>
@@ -329,7 +329,7 @@
       <P>returns the integer value i denoted
          by the finite domain variable is returned, presuming
          that <I>f</I> has a singleton domain.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>future <I>f</I></TT>
@@ -338,7 +338,7 @@
       <P>returns the integer value i denoted
          by the finite domain variable is returned, presuming
          that <I>f</I> has a singleton domain.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>fromInt <I>i</I></TT>
@@ -346,7 +346,7 @@
     <DD>
       <P>returns a freshly created finite domain variable
          initialized with the singleton domain <TT>#[SINGLE i]</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>isBin <I>f</I></TT>
@@ -354,7 +354,7 @@
     <DD>
       <P>returns <TT>true</TT> iff <I>f</I> is 0/1 variable,
          <TT>false</TT> otherwise.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sum (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -370,7 +370,7 @@
          variable is left. Then the appropriate value is discarded
          from the variable's domain.
          For the other relations, the propagator does interval propagation. 
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -381,7 +381,7 @@
         i1 * v1 + ... + in * vn - r <I>rel</I> 0</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumAC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -392,7 +392,7 @@
         |iv * v| = |i1 * v1 + ... + in * vn| <I>rel</I> r</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumCN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -403,7 +403,7 @@
         i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn - r <I>rel</I> 0</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumACN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -414,7 +414,7 @@
         |i1 * v1 * ... * v1m1 + ... + in * vn1 * ... *vnmn| <I>rel</I> r</PRE>
       <P>For the precise operational semantics, see
          <A href="http://www.mozart-oz.org/documentation/system/node21.html#section.fd.arithmetic">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -424,7 +424,7 @@
          domain propagation. Not that only equality (<TT>EQUAL</TT>) and
          non-equality are supported (<TT>NOTEQUAL</TT>),
          as for inequalities domain and bounds propagation are equivalent
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>sumCD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
@@ -434,7 +434,7 @@
          domain propagation. Not that only equality (<TT>EQUAL</TT>) and
          non-equality are supported (<TT>NOTEQUAL</TT>),
          as for inequalities domain and bounds propagation are equivalent
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>plus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -442,7 +442,7 @@
     <DD>
       <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
          constraints its arguments as <TT>X + Y = Z</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>minus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -450,7 +450,7 @@
     <DD>
       <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
          constraints its arguments as <TT>X - Y = Z</TT>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>times (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -465,7 +465,7 @@
          the propagator ceases to exist and a propagator is imposed instead,
          which constrains the variables <TT>X</TT> and <TT>Y</TT> as
          described <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>power (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
@@ -474,7 +474,7 @@
       <P><I>z</I> is the result of <I>x</I> raised to the power of <I>i</I>.
          The propagator constrains the variables <I>X</I> and <I>Y</I> as
          described <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>divI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
@@ -486,7 +486,7 @@
          the domain of the other variable, such that the constraint holds.
          Additionally, if <TT>x = z</TT>, the propagator is replaced by
          <TT>I = 1</TT>. 
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>modI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
@@ -499,7 +499,7 @@
          Additionally, if <TT>x = z</TT>, the propagator is replaced by
          <TT>x < i</TT>.  If the current upper bound of <I>x</I>
          is less than <I>i</I>, the propagator is replaced by <TT>x=z</TT>. 
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>plusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -508,7 +508,7 @@
       <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
          constraints its arguments as <TT>X + Y = Z</TT>.
       <P>Does domain propagation, which can be very expensive.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>minusD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -517,7 +517,7 @@
       <P><I>z</I> is the difference of <I>x</I> and <I>y</I>. The propagator
          constraints its arguments as <TT>X - Y = Z</TT>.
       <P>Does domain propagation, which can be very expensive.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>timesD (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -525,7 +525,7 @@
     <DD>
       <P><I>z</I> is the product of <I>x</I> and <I>y</I>.
       <P>Does domain propagation, which can be very expensive.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>divD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
@@ -533,7 +533,7 @@
     <DD>
       <P><I>z</I> is the result of the integer division of <I>x</I> by <I>i</I>.
       <P>Does domain propagation, which can be very expensive.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>modD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
@@ -541,7 +541,7 @@
     <DD>
       <P><I>z</I> is the result of <I>x</I> modulus <I>i</I>.
       <P>Does domain propagation, which can be very expensive.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>min (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -550,7 +550,7 @@
       <P><I>z</I> is the minimum of <I>x</I> modulus <I>y</I>.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>max (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -559,21 +559,21 @@
       <P><I>z</I> is the maximum of <I>x</I> and <I>y</I>.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>equal (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> equals <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>notequal (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> does not equal <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>distance (<I>x</I>, <I>y</I>, <I>rel</I>, <I>z</I>)</TT>
@@ -585,35 +585,35 @@
      <P>May cut holes into domains.
      <P>This propagator is equivalent to
         <TT>sumAC(#[(1, x), (~1, y)], rel, z)</TT> but is more efficient.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>less (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is less than <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>lessEq (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is less than or equal to <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>greater (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is greater than <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>greaterEq (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that <I>x</I> is greater than or equal to <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>disjoint (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>)</TT>
@@ -625,7 +625,7 @@
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>disjointC (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
@@ -637,7 +637,7 @@
       <P>May cut holes into the domains.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>tasksOverlap (<I>x</I>, <I>i1</I>, <I>y</I>, <I>i2</I>, <I>c</I>)</TT>
@@ -645,7 +645,7 @@
     <DD>
       <P>For operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node25.html#section.fd.misc">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>distinct <I>v</I></TT>
@@ -657,7 +657,7 @@
          If two variables become equal, the propagator fails, e. g.
          <TT>FD.distinct #[a,a, b]</TT> will fail even if <I>a</I> 
          is not determined. 
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>distinctOffset <I>v</I></TT>
@@ -666,7 +666,7 @@
       <P>All sums <TT>di + ii</TT> are pairwise distinct.
         If one becomes determined, the remaining elements <TT>dj</TT>
         are constrained to be different from <TT>di + ii - ij</TT>. 
-    </DD>
+    </P></DD>
 
     <DT>
       <tt>distinct2 <I>v</I></TT>
@@ -674,7 +674,7 @@
     <DD>
       <P>For operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>atMost (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
@@ -684,7 +684,7 @@
          are equal to <I>i</I>.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>atLeast (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
@@ -694,7 +694,7 @@
          are equal to <I>i</I>.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>exactly (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
@@ -704,7 +704,7 @@
          are equal to <I>i</I>.
       <P>For precise operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node22.html#label182">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>element (<I>x</I>, <I>v</I>, <I>z</I>)</TT>
@@ -719,7 +719,7 @@
          For each value j in the domain of <I>z</I>,
          all positions where j occurs in <I>v</I>
          are in the domain of <I>x</I>; and no other values.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>conj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
@@ -729,42 +729,42 @@
 
       <P>For operational semantics, see
          <A HREF="http://www.mozart-oz.org/documentation/system/node23.html#label202">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>disj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the disjunction of <I>x</I> and <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>exor (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the exclusive disjunction of <I>x</I> and <I>y</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>nega (<I>x</I>, <I>y</I>)</TT>
     </DT>
     <DD>
       <P><I>y</I> is the negation of <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>impl (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the implication of <I>x</I> by <I>y</I> (x -> y).
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>equi (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the equivalence of <I>x</I> by <I>y</I> (x <-> y).
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.fd (<I>dom</I>, <I>c</I>)</TT>
@@ -772,7 +772,7 @@
     <DD>
       <P>returns a freshly created finite domain variable
          which is initialized with <I>dom</I> and reified into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.fdVec (<I>n</I>, <I>dom</I>, <I>c</I>)</TT>
@@ -780,7 +780,7 @@
     <DD>
       <P>returns a vector of size <I>n</I> of finite domain variables.
          Each variable is initialized with <I>dom</I> and reified into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.card (<I>i1</I>, <I>v</I>, <I>i2</I>, <I>c</I>)</TT>
@@ -788,49 +788,49 @@
     <DD>
       <P>For detailed documentation, click
          <A HREF="http://www.mozart-oz.org/documentation/system/node24.html#label216">here</A>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.sum (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sum(v, rel, r)</TT> into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.sumC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumC(v, rel, r)</TT> into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.sumAC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumAC(v, rel, r)</TT> into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reified.sumCN (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumCN(v, rel, r)</TT> into <I>c</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.min <I>x</I></TT>
     </DT>
     <DD>
       <P>returns the current lower bound of <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.max <I>x</I></TT>
     </DT>
     <DD>
       <P>returns the current upper bound of <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.mid <I>x</I></TT>
@@ -840,7 +840,7 @@
          of the current domain (the arithmetical means of the lower
          and upper bound of <I>x</I>).
          In case of ties, the smaller element is selected. 
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.nextLarger (<I>x</I>, <I>i</I>)</TT>
@@ -848,7 +848,7 @@
     <DD>
       <P>returns the smallest integer in the domain of <I>x</I>
          which is larger than <I>i</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.nextSmaller (<I>x</I>, <I>i</I>)</TT>
@@ -856,21 +856,21 @@
     <DD>
       <P>returns the largest integer in the domain of <I>x</I>
          which is smaller than <I>i</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.size <I>x</I></TT>
     </DT>
     <DD>
       <P>returns the size of the current domain of <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.dom <I>x</I></TT>
     </DT>
     <DD>
       <P>returns the the current domain of <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.domList <I>x</I></TT>
@@ -878,14 +878,14 @@
     <DD>
       <P>returns the the current domain of <I>x</I> as an ordered list of
          integers.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.nbSusps <I>x</I></TT>
     </DT>
     <DD>
       <P>returns the the current number of suspensions on <I>x</I>.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>Reflect.eq (<I>x</I>, <I>y</I>)</TT>
@@ -893,13 +893,14 @@
     <DD>
       <P>returns <TT>true</TT> iff <I>x</I> and <I>y</I>
          denote the same variable, <TT>false</TT> otherwise.
-    </DD>
+    </P></DD>
 
     <DT>
       <TT>distribute (<I>spec</I>, <I>v</I>)</TT>
     </DT>
     <DD>
       <P><I>v</I> is distributed according to the distribution spec <I>spec</I>:
+      </P>
       <UL>
         <LI><TT>NAIVE</TT> considers only non-determined elements of <I>v</I>.
             Chooses the leftmost variable <I>x</I> in <I>v</I> and creates
@@ -922,3 +923,11 @@
       </UL>
     </DD>
   </DL>
+
+<?php section("also", "see also") ?>
+
+  <DL><DD>
+    <A href="fs.php3"><TT>FS</TT></A>
+  </DD></DL>
+
+<?php footing() ?>
