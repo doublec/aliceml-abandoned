@@ -13,6 +13,7 @@
 
 import structure UnsafeFD from "UnsafeFD"
 import signature FD       from "FD-sig"
+import structure Foreign  from "x-alice:/lib/system/Foreign"
 
 structure FD :> FD =
     struct
@@ -24,7 +25,7 @@ structure FD :> FD =
 	  | RANGE  of int * int
 	    
 	type domain = domain_element vector
-	    
+
 	datatype relation =
 	    LESS
 	  | LESSEQ
@@ -47,12 +48,35 @@ structure FD :> FD =
 	(* Introduce flat bindings *)
 	open UnsafeFD
 
+	(* Wrap constructors *)
+	fun checkBounds i = if i >= inf
+			    then if i <= sup then ()
+				 else raise Overflow
+			    else raise Domain
+
+	fun checkDomainElement (SINGLE i)    = checkBounds i
+	  | checkDomainElement (RANGE(l, h)) = (checkBounds l; checkBounds h)
+	fun checkDomain d = Vector.app checkDomainElement d
+
+	fun fd NONE            = unsafeFD NONE
+	  | fd (r as (SOME d)) = (checkDomain d; unsafeFD r)
+
+	fun fdVec (i, d) = (checkDomain d; unsafeFDVec(i, d))
+
+	fun range(l, h) =
+	    (checkBounds l; checkBounds h; unsafeRange(l, h))
+
+	fun rangeVec(v, r as (l, h)) =
+	    (checkBounds l; checkBounds h; unsafeRangeVec(v, r))
+
+	fun fromInt i = (checkBounds i; unsafeFromInt i)
+
 	(* Reified Constraints *)
 	structure Reified =
 	    struct
-		val fd = reified_fd
-		val fdVec = reified_fdVec
-
+	        fun fd (d, b)     = (checkDomain d; unsafeReified_fd(d, b))
+		fun fdVec(i,d, b) =
+		    (checkDomain d; unsafeReified_fdVec(i, d, b))
 		val card  = reified_card
 		val distance = reified_distance
 		val sum = reified_sum

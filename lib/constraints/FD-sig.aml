@@ -22,7 +22,7 @@ signature FD =
 	  | RANGE  of int * int
 	    
 	type domain = domain_element vector
-	    
+
 	datatype relation =
 	    LESS
 	  | LESSEQ
@@ -42,6 +42,11 @@ signature FD =
 	  | MID
 	  | MAX
 	    
+
+	(* Implementation dependent fd limits *)
+	val inf : int
+	val sup : int
+
 	(* Allocation Functions *)
 	val fd : domain option -> fd
 	val fdVec : int * domain -> fd vector

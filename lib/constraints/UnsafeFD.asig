@@ -16,11 +16,15 @@ signature UNSAFE_FD_COMPONENT =
     sig
 	structure UnsafeFD :
 	    sig
+	        (* FD Limits *)
+                val inf : int
+		val sup : int
+
 		(* Allocation Functions *)
-		val fd : 'a
-		val fdVec : 'a
-		val range : 'a
-		val rangeVec : 'a
+		val unsafeFD : 'a
+		val unsafeFDVec : 'a
+		val unsafeRange : 'a
+		val unsafeRangeVec : 'a
 		val bin : 'a
 		val binVec : 'a
 
@@ -30,7 +34,7 @@ signature UNSAFE_FD_COMPONENT =
 		(* Conversion *)
 		val toInt : 'a
 		val future : 'a
-		val fromInt : 'a
+		val unsafeFromInt : 'a
 		val isBin : 'a
 
 		(* Standards Sums *)
@@ -89,8 +93,8 @@ signature UNSAFE_FD_COMPONENT =
 		val equi : 'a
 
 		(* Reified Constraints *)
-		val reified_fd : 'a
-		val reified_fdVec : 'a
+		val unsafeReified_fd : 'a
+		val unsafeReified_fdVec : 'a
 
 		val reified_card : 'a
 		val reified_distance : 'a

@@ -499,18 +499,20 @@ define
       {Schedule.taskIntervals {ConvertT TasksR} {ConvertS startR StartR} {ConvertS durR DurR}}
       unit
    end
-   
+
    %% Create Interface
-   UnsafeFD = 'UnsafeFD'('fd'                  : FDFun
-			 'fdVec'               : FDVecFun
-			 'range'               : RangeFun
-			 'rangeVec'            : RangeVecFun
+   UnsafeFD = 'UnsafeFD'('inf'                 : FD.inf
+			 'sup'                 : FD.sup
+			 'unsafeFD'            : FDFun
+			 'unsafeFDVec'         : FDVecFun
+			 'unsafeRange'         : RangeFun
+			 'unsafeRangeVec'      : RangeVecFun
 			 'bin'                 : BinFun
 			 'binVec'              : BinVecFun
 			 'assign'              : AssignFun
 			 'toInt'               : ToIntFun
 			 'future'              : ToFutureFun
-			 'fromInt'             : FromIntFun
+			 'unsafeFromInt'       : FromIntFun
 			 'isBin'               : IsBinFun
 			 'sum'                 : SumFun
 			 'sumC'                : SumCFun
@@ -555,8 +557,8 @@ define
 			 'nega'                : NegaFun
 			 'impl'                : ImplFun
 			 'equi'                : EquiFun
-			 'reified_fd'          : ReifiedFdFun
-			 'reified_fdVec'       : ReifiedFdVecFun
+			 'unsafeReified_fd'    : ReifiedFdFun
+			 'unsafeReified_fdVec' : ReifiedFdVecFun
 			 'reified_card'        : ReifiedCardFun
 			 'reified_distance'    : ReifiedDistanceFun
 			 'reified_sum'         : ReifiedSumFun
