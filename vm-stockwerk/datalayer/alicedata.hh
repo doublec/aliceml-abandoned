@@ -384,6 +384,8 @@ class WideString: private Block {
 private:
   static const u_int LEN_POS = 1;
 public:
+  static const u_int maxSize = 0x1FFFFFFF; //--** is this correct?
+
   using Block::ToWord;
 
   static WideString *New(w_char *str, u_int len) {
