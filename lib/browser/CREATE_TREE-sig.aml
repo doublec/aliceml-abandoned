@@ -37,14 +37,14 @@ sig
 
     (* interne Repraesentation von Werten (ausser Strukturen) *)
 
-    val newNode: Reflect.value * Type.t * int * GtkSupport.tag -> node
+    val newTree: Reflect.value * Type.t * int * GtkSupport.tag -> node
 
     val createGraph: int option * Reflect.value * Type.t  * node * int * int * 
 	GtkSupport.tag -> node 
 
     (* interne Repraesentation von Strukturen *)
 
-    val newNodeInf: Reflect.module * Inf.t * int * GtkSupport.tag -> node
+    val newTreeInf: Reflect.module * Inf.t * int * GtkSupport.tag -> node
 
     val createGraphInf: Reflect.module * Inf.t  * node * int * int * GtkSupport.tag 
 	-> node

@@ -47,7 +47,7 @@ in
 structure CreateTree :> CREATE_TREE =
 struct
     
-    exception createGraph_unknownNode
+    exception createGraph_unknownNode   
 
     (* Bestimmung des Pfades bei Packages und Promises *)
 
@@ -72,8 +72,8 @@ struct
 	     Type.asCon typ'
 	 end
 
-    (* newNode *)
-     fun newNode (va,t,i,root) = createGraph (NONE,va,t,Empty,i,0,root)
+    (* newTree *)
+     fun newTree (va,t,i,root) = createGraph (NONE,va,t,Empty,i,0,root)
 			     
     (* createGraph *)
     and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
@@ -81,54 +81,61 @@ struct
 	 andalso not(isAtomType(t)) andalso ( not(isListType t andalso 
 						  null(castList(va))) )
 	     then let val ind = if p = Empty then i else getAncIndex p 
-		     (* 'oberster' Index: Urindex *)
-                     val relman = case RelMan.lookup(reldict,ind)
-			 of SOME x => x (* es existiert bereits ein Relationsmanager *)
-		          | NONE => []
-		     val desc = createValue(va,t) 
-                     val str = "Ref"^Int.toString(!relnumber)
-                     val f = fn t: value * int ref * int
-			     => isValue (#1(t)) andalso
-				if !tokenmode (* token equality *)
-				    then UnsafeValue.same(asValue(#1(t)),va)   
-				else (* structural equality *)
-					asValue(#1(t)) = va 
-		 (* Suche, ob der Wert bereits dargestellt worden ist *) 
-		 in 
+		      (* 'oberster' Index: Urindex *)
+		      val relman = 
+			    case RelMan.lookup(reldict,ind)
+			      of SOME x => x (* es existiert bereits ein Relationsmanager *)
+		               | NONE => ( if isListType t
+					       then ( Dictionaries.RelMan.update(Dictionaries.reldict,
+										 (ind,
+										  [(V va,ref 0,!relnumber)]))
+                                                    ; valOf(RelMan.lookup(reldict,ind)) )
+					   else [] )
+			val desc = createValue(va,t) 
+			val str = "Ref"^Int.toString(!relnumber)
+			val f = fn t: value * int ref * int
+			    => isValue (#1(t)) andalso
+			    if !tokenmode (* token equality *)
+				then UnsafeValue.same(asValue(#1(t)),va)   
+			    else (* structural equality *)
+				asValue(#1(t)) = va 
+		    (* Suche, ob der Wert bereits dargestellt worden ist *) 
+		    in 
 		     (case List.find f relman of   
-		      NONE (* erstmalige Darstellung des Wertes, da er noch nicht 
-                              dargestellt worden ist *) 
-		      => let val _ = TextIO.print("Nichts gefunden :(\n")
-			     val count = ref 1
-			     val number = !relnumber
-			     val node = createRelNode (desc,Empty,p,i,d,
-						       count,str^" as ",
-						       relman,root)
-			     val c = createUsualGraph (opt,va,t,node,0,d,root)
+			  NONE (* erstmalige Darstellung des Wertes, da er noch nicht 
+				dargestellt worden ist *) 
+			  => let val count = ref 1
+				 val number = !relnumber
+				 val node = createRelNode (desc,Empty,p,i,d,
+							   count,str^" as ",
+							   relman,root)
+				 val c = createUsualGraph (opt,va,t,node,0,d,root)
 			     val actrelman = valOf(RelMan.lookup(reldict,ind))
 			         handle Option => []
 			     val new_relman = (V va,count,number)::actrelman
-			 in ( setContent (node,c)   
-			    ; RelMan.update(reldict,(ind,new_relman)) 
-                            ; TextIO.print("CREATE_GRAPH: Eintrag in RelDict!\n")
-			    (* Anhaengen der neuen RelNode an den Relationsmanager *)
-			    ; node )
+			     in ( setContent (node,c)   
+				 ; RelMan.update(reldict,(ind,new_relman)) 
+				 ; TextIO.print("CREATE_GRAPH: Eintrag in RelDict!\n")
+				 (* Anhaengen der neuen RelNode an den Relationsmanager *)
+				 ; node )
 			 end     
-		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
-		      => (  count := !count + 1
-			 ;  let val str = "Ref "^Int.toString(number)
-				val node = if !count = 1 
-					       then createRelNode (desc,Empty,p,i,d,count,
-								   "Ref0 as ",relman,root)
-					   else createRelRefNode(desc,p,i,d,str,root) 
-			    in ( if !count = 1 
-				     then let val c = createUsualGraph (opt,va,t,node,0,d,root)
-					  in setContent (node,c)  
-					  end 
-				 else ()
-			       ; node)
-			 end ) )
-		 end
+		   | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
+			  => (  count := !count + 1
+			      ;  let val _ = if !count  = 1 then TextIO.print("SOME: counter war 0\n")
+					     else ()
+				     val str = "Ref "^Int.toString(number)
+				     val node = if !count = 1 
+						    then createRelNode (desc,Empty,p,i,d,count,
+									str^" as ",relman,root)
+						else createRelRefNode(desc,p,i,d,str,root) 
+				 in ( if !count = 1 
+					  then let val c = createUsualGraph (opt,va,t,node,0,d,root)
+					       in setContent (node,c)  
+					       end 
+				      else ()
+				    ; node)
+				 end ) ) 
+		 end 
 	else (* kein Relationsmodus *) 
 	    createUsualGraph (NONE,va,t,p,i,d,root))
 	    
@@ -136,8 +143,14 @@ struct
     and createUsualGraph (opt,va,t,p,i,d,root) = 
 	if d > !max_depth (* TIEFENFILTER *)
 	    then createLimit(createValue(va,t),DEPTH_LIMIT,p,i,d,root)
-	else if isSome(opt) andalso valOf(opt) > !max_width
-		 then  createLimit(INTERPUNCT,WIDTH_LIMIT,p,i,d,root)
+	else if (isSome(opt) andalso valOf(opt) > !max_width) 
+                 orelse (isListType t andalso !max_width = 0)
+		 (* BREITENFILTER (fuer Listen) *)
+		 then  let val desc = if isListType t then createValue(va,t)
+				      else INTERPUNCT
+		       in 
+			   createLimit(desc,WIDTH_LIMIT,p,i,d,root)
+		       end
 	     else (* maximale Tiefe _nicht_ ueberschritten *)
 	     let 
 		 val fut = UnsafeValue.cast va
@@ -167,7 +180,7 @@ struct
 		      | Type.Lambda(var,typ) (* Abstraktion *)
 				=> raise  createGraph_unknownNode 
 		      | Type.Apply(t1,t2) 
-			    =>  if isListType t 
+			    =>  if isListType t (* Liste *)
 				    then let val new_opt = if isNone opt 
 							       then SOME 2
 							   else SOME (valOf(opt)+1)
@@ -612,8 +625,8 @@ struct
 (* entsprechende Funktionen zur internen Darstellung von Strukturen und
    Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)
 
-    (* newNodeInf *)
-    and newNodeInf (va,t,i,root) = createGraphInf (va,t,Empty,i,0,root)
+    (* newTreeInf *)
+    and newTreeInf (va,t,i,root) = createGraphInf (va,t,Empty,i,0,root)
 			         
  
     (* createGraphInf *)

@@ -196,6 +196,10 @@ struct
 	Limit _ => true
       | _ => false
 
+    fun isContainer n = case n of 
+	Container _ => true
+      | _ => false
+
     (* Test, ob Container vertikal anordnet *)
 
     fun setsVertical  n = 
@@ -222,9 +226,9 @@ struct
 			Concat(rr)  
 			=> checkConcKids (#kids(rr),0) 
 			   orelse checkContKids (a,i+1) 
-		      | Container(rr) => not(isListType(getTyp(#desc(rr))))
+		      | Container(rr) => not(isListType(getTyp(#desc(rr)))
+					     handle _ => false)
 					 orelse checkContKids(#kids(rr),0)
-					 handle Match => true 
 		      | _ => checkContKids (a,i+1) ) 
 		| _ => checkContKids (a,i+1) ) 
 	    
@@ -232,7 +236,7 @@ struct
 	if i >=  Array.length(a) 
 	    then false 
 	else (case Array.sub(a,i) of
-		  Container(r) => true
+		      Container(r) => true
 		    | Concat(r) 
 		      => checkConcKids(#kids(r),0)
 		      orelse checkConcKids (a,i+1)
@@ -241,9 +245,9 @@ struct
 			  Concat(rr)  
 			  => checkConcKids (#kids(rr),0)  
 			  orelse checkConcKids (a,i+1) 
-			| Container(rr) => not(isListType(getTyp(#desc(rr))))
+			| Container(rr) => not(isListType(getTyp(#desc(rr)))
+					       handle _ => false)
 					   orelse checkContKids(#kids(rr),0)
-					   handle Match => true
 			| _ => checkConcKids (a,i+1) )
 		    | _ => checkConcKids (a,i+1) )
 	      
@@ -367,6 +371,23 @@ struct
 			else if getParent n = Empty  
 				 then getIndex n
 			     else getAncIndex (getParent(n)) 
+
+    (* updateChild *)
+    fun updateChild (p,i,n) = case p of
+	Concat(r) => (Array.update(#kids(r),i,n)
+		      ; if not(getParent(n) = Empty)
+			    then updateChild(#parent(r),getIndex(p),p)
+			else () )
+      | Container(r) => (Array.update(#kids(r),i,n)
+			 ; if not(getParent(n) = Empty)
+			       then updateChild(#parent(r),getIndex(p),p)
+			   else () )
+      | RelNode(r) => (#content(r) := n
+		       ; if not(getParent(n) = Empty)
+			     then updateChild(#parent(r),getIndex(p),p) 
+			 else () )
+      | Empty => () 
+      | _ => raise Match
 
     (* Operationen auf RelNodes *)
 

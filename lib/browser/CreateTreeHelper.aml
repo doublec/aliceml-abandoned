@@ -113,21 +113,6 @@ struct
 			      then raise Match 
 				  else copyArray'(a,b,0)
 
-    (* Operationen auf Strings *)
-(*	
-    fun iterTake' (str,i,a) = 
-	if i >= (String.size(str)) 
-	    then a
-	else
-	    let val test = String.sub(str,i) 
-	    in if Char.equal(#" ",test)
-		   then a
-	       else iterTake' (str,i+1, a ^ Char.toString(test))
-	    end  
-
-    fun iterTake str = iterTake'(str,0,"")
-*)
-
     (* berechnet f(0,x_{0}), f(1,x_{1}), ......, f(br,x_{br}) *)
     (* wird benutzt von setItems *)
 

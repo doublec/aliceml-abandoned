@@ -7,10 +7,14 @@ structure SList = Reflect.ReflectType (type t = int list);
 
 (* UnsafeInspector.inspect ([[1,2],[1,2]],SList.x) *)
 
-UnsafeInspector.inspect ([1,2],SList.x);
+UnsafeInspector.inspect ([1,2,3,4,5,6],SList.x);
 
 val rec x = 1::x;
+val y = 3::4::x;
+
 UnsafeInspector.inspect(x,SList.x);
+
+UnsafeInspector.inspect(y,SList.x);
 
 (* Tupel mir verschiedenen "einfachen" Werten - zum Testen des Breitenfilters
    geeignet *)

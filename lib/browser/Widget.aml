@@ -1015,7 +1015,7 @@ fun setVisible (x,y) = let
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;CreateTree.newNode(va,t,i,root))		
+		     ;CreateTree.newTree(va,t,i,root))		
             val line = (stopButtonSetActive(false)
 			; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
@@ -1042,14 +1042,13 @@ fun setVisible (x,y) = let
 	    val va = UnsafeValue.cast v: Reflect.module
 	    val i = Dictionaries.Main.
 		        getHighestIndexAssigned(Dictionaries.maindict) +1
-	    val root = (new();stopButtonSetActive(true)
-			; Dictionaries.RelMan.update(Dictionaries.reldict,(i,
-							 [(M va,ref 0,0)]))
+	    val root = (new()
+			;stopButtonSetActive(true)
 			; relnumber := 0
 			;!canvasroot)
 	    val save_settings = (!Settings.max_width,!Settings.max_depth)
 	    val n = (stopButtonSetActive(true)
-		     ;CreateTree.newNodeInf(va,t,i,root))
+		     ;CreateTree.newTreeInf(va,t,i,root))
             val line =(stopButtonSetActive(false) 
 		       ; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))

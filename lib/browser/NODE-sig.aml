@@ -148,6 +148,7 @@ sig
     val isRelNode : node -> bool
     val isRelRefNode : node -> bool
     val isLimit : node -> bool
+    val isContainer: node -> bool
 
     val setsVertical : node -> bool (* nur bei Container moeglich! *)  
 
@@ -178,7 +179,9 @@ sig
 
     val getValueAnc : node -> node
     val getNoRelAnc : node -> node * int
-    val getAncIndex : node -> int    
+    val getAncIndex : node -> int 
+
+    val updateChild : node * int * node -> unit   
 
     (* Operationen auf RelNodes *)
 

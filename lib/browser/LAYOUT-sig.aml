@@ -13,7 +13,6 @@
  *
  *)
 
-import structure Dictionaries from "Dictionaries"
 import structure Node from "Node"
 
 signature LAYOUT =
