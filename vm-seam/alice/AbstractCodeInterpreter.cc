@@ -30,13 +30,13 @@ static word dead;
 
 #ifdef LIVENESS_DEBUG
 static const BlockLabel DEAD_LABEL = HASHNODE_LABEL;
-#endif
 
 static void DisassembleAlice(Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
   concreteCode->Disassemble(stderr);
 }
+#endif
 
 // Local Environment
 class Environment: private Array {
@@ -457,9 +457,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	  TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
 	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
 	template_->AssertWidth(AbstractCode::functionWidth);
-#if PROFILE
-	Profiler::IncInstances(template_);
-#endif
+	// PROFILE: IncInstances here
 	abstractCode->Init(0, template_->Sel(0));
 	abstractCode->Init(2, template_->Sel(2));
 	abstractCode->Init(3, template_->Sel(3));
@@ -988,10 +986,11 @@ void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
 }
 
 #if PROFILE
-word AbstractCodeInterpreter::GetProfileKey(StackFrame *frame) {
-  AbstractCodeFrame *f = AbstractCodeFrame::FromWordDirect(frame->ToWord());
+word AbstractCodeInterpreter::GetProfileKey(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ConcreteCode *concreteCode =
-    ConcreteCode::FromWord(f->GetClosure()->GetConcreteCode());
+    ConcreteCode::FromWord(frame->GetClosure()->GetConcreteCode());
   return concreteCode->ToWord();
 }
 
@@ -1013,13 +1012,14 @@ MakeProfileName(AliceConcreteCode *concreteCode, const char *type) {
   return String::New(buf);
 }
 
-String *AbstractCodeInterpreter::GetProfileName(StackFrame *frame) {
-  AbstractCodeFrame *f = AbstractCodeFrame::FromWordDirect(frame->ToWord());
-  Closure *closure = f->GetClosure();
+String *AbstractCodeInterpreter::GetProfileName(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  Closure *closure = frame->GetClosure();
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
   return MakeProfileName(concreteCode,
-			 f->IsHandlerFrame()? "handler": "function");
+			 frame->IsHandlerFrame()? "handler" : "function");
 }
 
 String *AbstractCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
