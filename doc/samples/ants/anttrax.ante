@@ -1,12 +1,90 @@
+val validmarker = 0
+val trailmarker1 = 1
+val trailmarker2 = 2
+val trailmarker3 = 3
 
+val markE  = (nil, [trailmarker1, trailmarker2, trailmarker3])
+val markSE = ([trailmarker1], [trailmarker2, trailmarker3])
+val markSW = ([trailmarker2], [trailmarker1, trailmarker3])
+val markW  = ([trailmarker1,trailmarker2], [trailmarker3])
+val markNW = ([trailmarker3], [trailmarker1, trailmarker2])
+val markNE = ([trailmarker3,trailmarker1], [trailmarker2])
+
+val foodmarker = 4
+
+val todo = loop (flip 123 ifyes nop)
+val lost = loop (flip 124 ifyes nop)
+
+local
+(* set the vector in the current field *)
+(* last operation is setting the valid marker *)
+fun doMark (pos, neg) =
+    (List.foldl (fn (m, r) => mark m ++ r) nop pos) ++
+    (List.foldl (fn (m, r) => unmark m ++ r) nop neg) ++
+    mark validmarker
+    
+(* generate a mark for the _opposite_ direction *)
+fun markWithState 0 = doMark markW
+  | markWithState 1 = doMark markNW
+  | markWithState 2 = doMark markNE
+  | markWithState 3 = doMark markE
+  | markWithState 4 = doMark markSE
+  | markWithState 5 = doMark markSW
+  | markWithState _ = raise Match
+
+fun turnHome'(e,se,sw,w,nw,ne) =
+    sense2 here (marker trailmarker1) ifyes (
+      sense2 here (marker trailmarker2) ifyes (
+        w ()
+      ) ifnot (
+        sense2 here (marker trailmarker3) ifyes (
+          ne ()
+        ) ifnot (
+          se ()
+        )
+      )
+    ) ifnot (
+      sense2 here (marker trailmarker2) ifyes (
+        sw ()
+      ) ifnot (
+        sense2 here (marker trailmarker3) ifyes (
+          nw ()
+        ) ifnot (
+          e ()
+        )
+      )
+    )
+
+val turns = (fn _ => nop, fn _ => turn right,
+             fn _ => turn right ++ turn right,
+             fn _ => turn right ++ turn right ++ turn right,
+             fn _ => turn left ++ turn left,
+             fn _ => turn left)
+
+fun cycleTurns 0 t = t
+  | cycleTurns n (a,b,c,d,e,f) = cycleTurns (n-1) (f,a,b,c,d,e)
+
+fun turnHome n = turnHome' (cycleTurns n turns)
+
+(* if we are on a vector, turn to the indicated direction *)
+(* if we are not, set a mark looking opposite to our direction *)
+
+in
+fun direct() =
+    sense2 here (marker validmarker) ifyes (
+      switch (List.tabulate(6,turnHome))
+    ) ifnot (
+      switch (List.tabulate(6,markWithState))
+    )
+end
 
 fun domove otherwise evadeaction =
     letlabel (fn exit =>
     letlabel (fn evade =>
 	sense ahead foehome ifyes (goto evade) ++
 	(* avoid trap *)
-	sense aheadleft foe ifyes (
-	    sense aheadright foe ifyes (goto evade)
+	sense leftahead foe ifyes (
+	    sense rightahead foe ifyes (goto evade)
 	) ++
 	move ifyes (goto exit) ++
 	label evade ++
@@ -18,7 +96,7 @@ fun domove otherwise evadeaction =
 
 fun gohome trailaction homeaction =
     letlabel (fn exit =>
-	direct ++
+	direct() ++
 	domove otherwise (
 	    todo
 	)
@@ -28,10 +106,31 @@ fun gohome trailaction homeaction =
 val fetch_food =
     loop (
 	turnto (marker foodmarker) ifnot (
-	    turnto food
+	    turnto food ifnot nop
 	) ++
 	domove otherwise nop
     )
 
+(*
 val deliver_food =
-    gohome (mark food) (drop ++ times 3 (turn left) ++ fetch_food)
+    gohome (mark (marker foodmarker))
+           (drop ++ times 3 (turn left) ++ fetch_food)
+*)
+
+val d1 = direct()
+val d2 = direct()
+val d3 = direct()
+val t1 = turn left
+val t2 = turn left
+val ant =  loopx (fn break =>
+             d1 ++
+             flip 6 ifyes t1 ++             
+             domove otherwise t2 ++
+             flip 40 ifyes (d2 ++ break)
+           ) ++
+           loopx (fn break =>
+             sense here home ifyes break ++
+             d3 ++
+             mark foodmarker ++
+             move ifnot nop
+           )
