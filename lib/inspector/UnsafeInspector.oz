@@ -141,27 +141,28 @@ define
 
    %% GUI Specific (Type->Name) Conversion Table
    local
-      ConversionTable = [ number       # 'Int, Real and Word'
-			  function     # 'Function'
-			  text         # 'String'
-			  cell         # 'Reference'
-			  constructor  # 'Constructor'
-			  tuple        # 'Tuple'
-			  vector       # 'Vector'
-			  conval       # 'Constructed Value'
-			  record       # 'Record'
-			  reclabel     # 'Record Label'
-			  list         # 'List'
-			  future       # 'Future'
-			  fdint        # 'Finite-Domain-Variable'
-			  fset         # 'Finite-Set-Variable'
-			  variable     # 'Relation Variable'
-			  variableref  # 'Rel-Var Reference'
-			  misc         # 'Miscellany'
-			  round        # 'Round Brackets'
-			  widthbitmap  # 'Width-Limit-Indicator'
-			  depthbitmap  # 'Depth-Limit-Indicator'
-			  free         # 'Hole'
+      ConversionTable = [ number        # 'Int, Real and Word'
+			  function      # 'Function'
+			  text          # 'String'
+			  cell          # 'Reference'
+			  constructor   # 'Constructor'
+			  typeindicator # 'Type Indicator'
+			  tuple         # 'Tuple'
+			  vector        # 'Vector'
+			  conval        # 'Constructed Value'
+			  record        # 'Record'
+			  reclabel      # 'Record Label'
+			  list          # 'List'
+			  future        # 'Future'
+			  fdint         # 'Finite-Domain-Variable'
+			  fset          # 'Finite-Set-Variable'
+			  variable      # 'Relation Variable'
+			  variableref   # 'Rel-Var Reference'
+			  misc          # 'Miscellany'
+			  round         # 'Round Brackets'
+			  widthbitmap   # 'Width-Limit-Indicator'
+			  depthbitmap   # 'Depth-Limit-Indicator'
+			  free          # 'Hole'
 			]
    in
       {Inspector.configure typeConversion ConversionTable}
@@ -202,6 +203,7 @@ define
 		      'HOLE':             {NewCell Brown}
 		      'FUTURE':           {NewCell Brown}
 		      'CONSTRUCTOR':      {NewCell Blue}
+		      'TYPEINDICATOR':    {NewCell Red}
 		      'TUPLE':            {NewCell Black}
 		      'RECORD':           {NewCell Black}
 		      'LIST':             {NewCell Black}
@@ -247,6 +249,7 @@ define
 			      'FUNCTION':         functionColor
 			      'STRING':           textColor
 			      'CONSTRUCTOR':      constructorColor
+			      'TYPEINDICATOR':    typeindicatorColor
 			      'HOLE':             freeColor
 			      'FUTURE':           futureColor
 			      'TUPLE':            tupleColor
@@ -402,7 +405,7 @@ define
       {ForAll ['NUMBER' 'FUNCTION' 'STRING' 'HOLE' 'FUTURE' 'CONSTRUCTOR'
 	       'TUPLE' 'RECORD' 'LIST' 'VECTOR' 'RECORD_LABEL'
 	       'ALIAS_DEFINITION' 'ALIAS_REFERENCE' 'WIDTH_ARROW'
-	       'DEPTH_ARROW' 'PARENTHESES' 'MISC']
+	       'DEPTH_ARROW' 'PARENTHESES' 'MISC' 'TYPEINDICATOR']
        ConfigureColor}
       {ForAll ['NUMBER' 'FUNCTION' 'STRING' 'HOLE' 'FUTURE' 'CONSTRUCTOR'
 	       'REFERENCE' 'FD' 'FSET' 'TUPLE' 'RECORD' 'LIST'
