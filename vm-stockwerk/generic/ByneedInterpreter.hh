@@ -22,11 +22,12 @@
 class Transient;
 
 class ByneedInterpreter : public Interpreter {
+private:
+  // ByneedInterpreter Constructor
+  ByneedInterpreter() : Interpreter() {}
 public:
   // Exported ByneedInterpreter Instance
   static ByneedInterpreter *self;
-  // ByneedInterpreter Constructor
-  ByneedInterpreter() : Interpreter() {}
   // ByneedInterpreter Static Constructor
   static void Init() {
     self = new ByneedInterpreter();
