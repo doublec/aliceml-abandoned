@@ -63,6 +63,7 @@ public:
   static const BlockLabel Lock                = (BlockLabel) (base + 16);
   static const BlockLabel Object              = (BlockLabel) (base + 17);
   static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
+  static const BlockLabel BaseArray           = CHUNK_LABEL;
 };
 
 static const word null = Store::IntToWord(0);
@@ -171,6 +172,25 @@ public:
     Block *b = Store::AllocBlock(JavaLabel::BaseType, SIZE);
     b->InitArg(BASE_TYPE_POS, baseType);
     return static_cast<BaseType *>(b);
+  }
+
+  static u_int GetElementSize(type baseType) {
+    switch (baseType) {
+    case BaseType::Boolean:
+    case BaseType::Byte:
+      return 1;
+    case BaseType::Char:
+    case BaseType::Short:
+      return 2;
+    case BaseType::Int:
+    case BaseType::Float:
+      return 4;
+    case BaseType::Long:
+    case BaseType::Double:
+      return 8;
+    default:
+      Error("invalid base type");
+    }
   }
 
   type GetBaseType() {
@@ -322,13 +342,15 @@ class DllExport Object: private Block {
 protected:
   enum {
     CLASS_POS, // Class
+    LOCK_POS, // Lock | int(0)
     BASE_SIZE
     // ... instance fields
   };
 
   static Object *New(word wClass, u_int size) {
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
-    b->InitArg(0, wClass);
+    b->InitArg(CLASS_POS, wClass);
+    b->InitArg(LOCK_POS, null);
     //--** initialization incorrect for long/float/double
     for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<Object *>(b);
@@ -363,6 +385,15 @@ public:
     theClass = theClass->GetSuperClass();
     if (theClass == INVALID_POINTER) return false;
     goto loop;
+  }
+  Lock *GetLock() {
+    word wLock = GetArg(LOCK_POS);
+    if (wLock == null) {
+      Lock *lock = Lock::New();
+      ReplaceArg(LOCK_POS, lock->ToWord());
+      return lock;
+    }
+    return Lock::FromWordDirect(wLock);
   }
   void InitInstanceField(u_int index, word value) {
     ReplaceArg(BASE_SIZE + index, value);
@@ -422,6 +453,7 @@ public:
     return GetArg(BASE_SIZE + index);
   }
   void Store(u_int index, word value) {
+    //--** assert assignment compatibility
     Assert(index < GetLength());
     ReplaceArg(BASE_SIZE + index, value);
   }
@@ -444,27 +476,7 @@ public:
   using Block::ToWord;
 
   static BaseArray *New(BaseType::type baseType, u_int length) {
-    u_int elemSize;
-    switch (baseType) {
-    case BaseType::Boolean:
-    case BaseType::Byte:
-      elemSize = 1;
-      break;
-    case BaseType::Char:
-    case BaseType::Short:
-      elemSize = 2;
-      break;
-    case BaseType::Int:
-    case BaseType::Float:
-      elemSize = 4;
-      break;
-    case BaseType::Long:
-    case BaseType::Double:
-      elemSize = 8;
-      break;
-    default:
-      Error("invalid base type");
-    }
+    u_int elemSize = BaseType::GetElementSize(baseType);
     Chunk *chunk = Store::AllocChunk(BASE_SIZE + length * elemSize);
     char *p = chunk->GetBase();
     for (u_int i = length * elemSize; i--; ) p[BASE_SIZE + i] = 0;
@@ -578,6 +590,22 @@ public:
     Assert(GetBaseType() == BaseType::Double);
     std::memcpy(GetElementPointer(index, 8),
 		value->GetNetworkRepresentation(), 8);
+  }
+
+  void Copy(u_int destPos, BaseArray *srcArray, u_int srcPos, u_int n) {
+    Assert(GetBaseType() == srcArray->GetBaseType());
+    Assert(destPos + n <= GetLength());
+    Assert(srcPos + n <= srcArray->GetLength());
+    u_int elemSize = BaseType::GetElementSize(GetBaseType());
+    if (srcArray == this) {
+      std::memmove(GetElementPointer(destPos, elemSize),
+		   srcArray->GetElementPointer(srcPos, elemSize),
+		   n * elemSize);
+    } else {
+      std::memcpy(GetElementPointer(destPos, elemSize),
+		  srcArray->GetElementPointer(srcPos, elemSize),
+		  n * elemSize);
+    }
   }
 };
 
