@@ -10,13 +10,9 @@
  *   $Revision$
  *)
 
+import signature COMMAND_LINE from "COMMAND_LINE-sig"
+
 signature COMMAND_LINE_COMPONENT =
     sig
-	signature COMMAND_LINE =
-	    sig
-		val name: unit -> string
-		val arguments: unit -> string list
-	    end
-
 	structure CommandLine: COMMAND_LINE
     end

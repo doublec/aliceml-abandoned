@@ -1,38 +1,20 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import signature OS from "OS-sig"
+
 signature OS_COMPONENT =
     sig
-	signature OS_FILE_SYS =
-	    sig
-		val getDir: unit -> string
-	    end
-
-	signature OS_PROCESS =
-	    sig
-		eqtype status
-
-		val success: status
-		val failure: status
-		val system: string -> status
-		val exit: status -> 'a
-		val getEnv: string -> string option
-	    end
-
-	signature OS =
-	    sig
-		structure FileSys: OS_FILE_SYS
-		structure Process: OS_PROCESS
-	    end
 
 	structure OS: OS
     end

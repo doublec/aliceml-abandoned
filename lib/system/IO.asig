@@ -1,21 +1,19 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import signature IO from "IO-sig"
+
 signature IO_COMPONENT =
     sig
-	signature IO =
-	    sig
-		exception Io of {name: string, function: string, cause: exn}
-	    end
-
-	structure IO: IO
+	structure IO : IO
     end
