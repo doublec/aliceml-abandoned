@@ -10,8 +10,8 @@
 //   $Revision$
 //
 
-#ifndef __ALICE_STACK_FRAME_HH__
-#define __ALICE_STACK_FRAME_HH__
+#ifndef __ALICE__STACK_FRAME_HH__
+#define __ALICE__STACK_FRAME_HH__
 
 #if defined(INTERFACE)
 #pragma interface "alice/StackFrame.hh"
