@@ -171,6 +171,11 @@ steps 3 and 4):
       SORT -> LIST_SORT
       Sort -> ListSort
 
+   Some cleanup in the stoc and stoc/error directories.
+   
+   The JVM backend has been removed because it was totally out of sync
+   anyway.
+
 4. Get vm-mozart-bootstrap to work again. (LK)
 
    For most files, a simple copy suffices instead of concatenating
