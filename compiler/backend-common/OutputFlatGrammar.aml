@@ -102,10 +102,6 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		 SEQ (List.map (fn (id, exp) =>
 				SEQ [NL, S "val ", ID id, S " = ",
 				     IN, outputExp exp, EX]) idExpList), EX]
-	  | outputStm (ConDec (_, id, false, isToplevel)) =
-	    SEQ [S "con ", ID id, if isToplevel then CO "toplevel" else NULL]
-	  | outputStm (ConDec (_, id, true, isToplevel)) =
-	    SEQ [S "nam ", ID id, if isToplevel then CO "toplevel" else NULL]
 	  | outputStm (EvalStm (_, exp)) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
 	  | outputStm (HandleStm (_, body1, id, body2, body3, shared)) =
@@ -136,6 +132,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "export ", IN, SEP (S ", ", List.map ID ids)]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
+	  | outputExp (NewExp (_, false)) = SEQ [S "con"]
+	  | outputExp (NewExp (_, true)) = SEQ [S "nam"]
 	  | outputExp (VarExp (_, id)) = ID id
 	  | outputExp (ConExp (_, id, false)) = SEQ [S "nam ", ID id]
 	  | outputExp (ConExp (_, id, true)) = SEQ [S "con ", ID id]

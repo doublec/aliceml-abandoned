@@ -382,24 +382,18 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				      (fromId, toId)::subst)
 				     subst (List.tl ids))
 				end) (nil, nil) idsExpList
-		val (preDecs, constraints'', idExpList', aliases') = derec decr
+		val (constraints'', idExpList', aliases') = derec decr
 	    in
-		(preDecs, constraints @ constraints' @ constraints'',
+		(constraints @ constraints' @ constraints'',
 		 idExpList @ idExpList', aliases @ aliases')
-	    end
-	  | derec ((dec as ConDec (_, _, _))::decr) =
-	    let
-		val (preDecs, constraints, idExpList, aliases) = derec decr
-	    in
-		(dec::preDecs, constraints, idExpList, aliases)
 	    end
 	  | derec (RecDec (_, decs)::decr) =
 	    let
-		val (preDecs, constraints, idExpList, aliases) = derec decs
-		val (preDecs', constraints', idExpList', aliases') = derec decr
+		val (constraints, idExpList, aliases) = derec decs
+		val (constraints', idExpList', aliases') = derec decr
 	    in
-		(preDecs @ preDecs', constraints @ constraints',
+		(constraints @ constraints',
 		 idExpList @ idExpList', aliases @ aliases')
 	    end
-	  | derec nil = (nil, nil, nil, nil)
+	  | derec nil = (nil, nil, nil)
     end

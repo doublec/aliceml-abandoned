@@ -65,7 +65,6 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	    ValDec of info * id * exp * isToplevel
 	  | RecDec of info * (id * exp) list * isToplevel
 	    (* all ids distinct *)
-	  | ConDec of info * id * hasArgs * isToplevel
 	  | EvalStm of info * exp
 	  | RaiseStm of info * id
 	  (* the following must always be last *)
@@ -79,6 +78,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	and exp =
 	    LitExp of coord * lit
 	  | PrimExp of coord * string
+	  | NewExp of coord * hasArgs
 	  | VarExp of coord * id
 	  | ConExp of coord * id * hasArgs
 	  | RefExp of coord
@@ -101,7 +101,6 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	fun infoStm (ValDec (info, _, _, _)) = info
 	  | infoStm (RecDec (info, _, _)) = info
-	  | infoStm (ConDec (info, _, _, _)) = info
 	  | infoStm (EvalStm (info, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
 	  | infoStm (HandleStm (info, _, _, _, _, _)) = info

@@ -100,12 +100,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		simplifyCase (coord, exp, matches, id_Bind)
 	    end
-	  | translateDec (ConDec (coord, id, hasArgs), cont) =
-	    O.ConDec (info coord, id, hasArgs, false)::translateCont cont
 	  | translateDec (RecDec (coord, decs), cont) =
 	    let
-		val (preDecs, constraints, idExpList, subst) =
-		    SimplifyRec.derec decs
+		val (constraints, idExpList, subst) = SimplifyRec.derec decs
 		val aliasDecs =
 		    List.map (fn (fromId, toId) =>
 			      let
@@ -126,7 +123,6 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val rest =
 		    O.RecDec (info coord, idExpList', false)::aliasDecs @
 		    translateCont cont
-		val rest' = translateCont (Decs (preDecs, Goto rest))
 		val errStms = share [O.RaiseStm (info coord, id_Bind)]
 	    in
 		List.foldr
@@ -151,7 +147,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		      else
 			  [O.TestStm (info coord, id1, O.ConTest (id2, NONE),
 				      rest, errStms)])
-		 end) rest' constraints
+		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
 	    let
@@ -192,6 +188,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    f (O.LitExp (coord, lit))::translateCont cont
 	  | translateExp (PrimExp (coord, s), f, cont) =
 	    f (O.PrimExp (coord, s))::translateCont cont
+	  | translateExp (NewExp (coord, hasArgs), f, cont) =
+	    f (O.NewExp (coord, hasArgs))::translateCont cont
 	  | translateExp (VarExp (coord, longid), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
@@ -624,5 +622,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.translateTest"
 
-	fun translate (decs, ids) = translateCont (Decs (decs, Export ids))
+	fun translate (nil, ids, decs) =
+	    translateCont (Decs (decs, Export ids))
+	  | translate (_, _, _) = Crash.crash "MatchCompilationPhase.translate"
     end

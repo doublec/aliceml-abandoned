@@ -265,18 +265,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		       (genExp (exp, PREPARE); declareLocal id)) idExpList;
 	     List.app (fn (id, exp) =>
 		       (emitId id; genExp (exp, FILL))) idExpList)
-	  | genStm (ConDec (_, id as Id (_, _, ExId s), false, _)) =
-	    (emit (Ldstr s);   (*--** only on toplevel *)
-	     emit (Newobj (StockWerk.NamedName, [System.StringTy]));
-	     declareLocal id)
-	  | genStm (ConDec (_, id as Id (_, _, ExId s), true, _)) =
-	    (emit (Ldstr s);   (*--** only on toplevel *)
-	     emit (Newobj (StockWerk.NamedConstructor, [System.StringTy]));
-	     declareLocal id)
-	  | genStm (ConDec (_, id, false, _)) =
-	    (emit (Newobj (StockWerk.Name, nil)); declareLocal id)
-	  | genStm (ConDec (_, id, true, _)) =
-	    (emit (Newobj (StockWerk.Constructor, nil)); declareLocal id)
 	  | genStm (EvalStm (_, exp)) = (genExp (exp, BOTH); emit Pop)
 	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, shared)) =
 	    let
@@ -301,7 +289,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		genTestStm (id, testBodyFunList, elseBody)
 	    end
-	  | genStm (RaiseStm (((i, _), _), id)) =
+	  | genStm (RaiseStm ((((i, _), (_, _)), _), id)) =
 	    (emitId id; emit (LdcI4 i);
 	     emit (Newobj (StockWerk.ExceptionWrapper,
 			   [StockWerk.StockWertTy, Int32Ty])); emit Throw)
@@ -353,6 +341,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (PrimExp (_, name), PREPARE) =
 	    emit (Ldsfld (StockWerk.Prebound, Builtins.lookup name,
 			  StockWerk.StockWertTy))
+	  | genExp (NewExp (_, false), PREPARE) =
+	    emit (Newobj (StockWerk.Name, nil))
+	  | genExp (NewExp (_, true), PREPARE) =
+	    emit (Newobj (StockWerk.Constructor, nil))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
 	  | genExp (RefExp _, PREPARE) =

@@ -69,10 +69,14 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (output1 (q, #"("); outputA (q, a);
 	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
 
-	fun outputCoord (q, (l, r)) =
-	    (output (q, Int.toString l);
+	fun outputCoord (q, ((ll, lc), (rl, rc))) =
+	    (output (q, Int.toString ll);
 	     output1 (q, #"#");
-	     output (q, Int.toString r))
+	     output (q, Int.toString lc);
+	     output1 (q, #"#");
+	     output (q, Int.toString rl);
+	     output1 (q, #"#");
+	     output (q, Int.toString rc))
 
 	fun outputInfo (q, (coord, _)) = outputCoord (q, coord)   (*--** *)
 
@@ -146,10 +150,6 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "recDec"); outputInfo (q, info); m q;
 	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, ConDec (info, id, hasArgs, isToplevel)) =
-	    (f (q, "conDec"); outputInfo (q, info); m q;
-	     outputId (q, id); m q; outputBool (q, hasArgs); m q;
-	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, EvalStm (info, exp)) =
 	    (f (q, "evalStm"); outputInfo (q, info); m q;
 	     outputExp (q, exp); r q)
@@ -192,6 +192,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, PrimExp (coord, string)) =
 	    (f (q, "primExp"); outputCoord (q, coord); m q;
 	     outputAtom (q, string); r q)
+	  | outputExp (q, NewExp (coord, hasArgs)) =
+	    (f (q, "newExp"); outputCoord (q, coord); m q;
+	     outputBool (q, hasArgs); r q)
 	  | outputExp (q, VarExp (coord, id)) =
 	    (f (q, "varExp"); outputCoord (q, coord); m q;
 	     outputId (q, id); r q)

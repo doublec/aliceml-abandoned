@@ -29,11 +29,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun occursInDec (ValDec (_, pat, exp), id) =
 	    occursInPat (pat, id) orelse occursInExp (exp, id)
-	  | occursInDec (ConDec (_, _, _), _) = false
 	  | occursInDec (RecDec (_, decs), id) =
 	    List.exists (fn dec => occursInDec (dec, id)) decs
 	and occursInExp (LitExp (_, _), _) = false
 	  | occursInExp (PrimExp (_, _), _) = false
+	  | occursInExp (NewExp (_, _), _) = false
 	  | occursInExp (VarExp (_, ShortId (_, id)), id') = idEq (id, id')
 	  | occursInExp (VarExp (_, LongId (_, _, _)), _) = false
 	  | occursInExp (ConExp (_, _, _), _) = false
@@ -126,7 +126,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		patternVariablesOf' (pat, foldr declaredVariables ids decs)
 	    and declaredVariables (ValDec (_, pat, _), ids) =
 		patternVariablesOf' (pat, ids)
-	      | declaredVariables (ConDec (_, id, _), ids) = id::ids
 	      | declaredVariables (RecDec (_, decs), ids) =
 		foldr declaredVariables ids decs
 	in
@@ -149,11 +148,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substDecs (nil, _) = nil
 	and substDec (ValDec (coord, pat, exp), subst) =
 	    ValDec (coord, substPat (pat, subst), substExp (exp, subst))
-	  | substDec (dec as ConDec (_, _, _), _) = dec
 	  | substDec (RecDec (coord, decs), subst) =
 	    RecDec (coord, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (exp as PrimExp (_, _), _) = exp
+	  | substExp (exp as NewExp (_, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
 	  | substExp (exp as ConExp (_, _, _), _) = exp

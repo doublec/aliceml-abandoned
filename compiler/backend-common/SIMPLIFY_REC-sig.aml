@@ -18,6 +18,5 @@ signature SIMPLIFY_REC =
 	type binding = I.id * I.exp
 	type alias = I.id * I.id
 
-	val derec: I.dec list ->
-	    I.dec list * constraint list * binding list * alias list
+	val derec: I.dec list -> constraint list * binding list * alias list
     end
