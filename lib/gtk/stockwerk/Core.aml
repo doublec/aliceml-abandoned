@@ -113,7 +113,7 @@ struct
     val TRUE = NativeCore.gtkTrue()   (* the Gtk TRUE value as int *)
     val FALSE = NativeCore.gtkFalse() (* the Gtk FALSE value as int *)
 
-    type callBackFunction = object * arg list -> unit
+    type callback_function = object * arg list -> unit
 
     (* signal connecting and signal table functions *)
     fun doSignalConnect (obj,signame,callback,after) =
@@ -151,30 +151,25 @@ struct
     local
         (* - all objects are (Gtk-)referenced automatically upon creation and
 	     added to the weak map (if there are not already there)
+           - the following "destroyEvent" function is registered automatically
+	     when a new object "enters" alice
 	   - Gtk calls "destroy" so that all owners of a reference
 	     to the object can release it
-	   - by the following "addDestroyEvent" and "event" functions
-             an alice reference is kept alive unless "destroy" is called,
-	     in which case "event" removes all callback functions 
+	   - "destroyEvent" then removes all callback functions 
 	     (including itself) from the signal table and with it all
 	     alice references it is aware of
 	     (disconnecting is done automatically by Gtk)
 	   - when all alice references are lost, the finalizer (Gtk-)unrefs
 	     the object, telling Gtk that it may destroy the object completely
         *)
-	fun addDestroyEvent obj =
-	    let
-		fun event _ = 
-		    List.app NativeCore.signalMapRemove
-		                       (NativeCore.signalMapGetConnIds obj)
-	    in
-		( doSignalConnect(obj,"destroy",event,true) ; () )
-	    end
+	fun destroyEvent obj = 
+                List.app NativeCore.signalMapRemove  
+		         (NativeCore.signalMapGetConnIds obj)
 
 	fun newObject obj =
 	    ( if NativeCore.hasSignals obj
-		  then addDestroyEvent obj
-	          else () ;
+		  then doSignalConnect(obj,"destroy",destroyEvent,true)
+	          else 0 ;
 	      NativeCore.weakMapAdd obj ;
 	      obj )
     in
