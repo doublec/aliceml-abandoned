@@ -170,6 +170,9 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Thread.state", SOME Unary);
 		ins ("Thread.suspend", SOME Unary);
 		ins ("Thread.yield", SOME Unary);
+		ins ("UniqueString.unique", SOME Unary);
+		ins ("UniqueString.string", SOME Unary);
+		ins ("UniqueString.hash", SOME Unary);
 		ins ("Unsafe.Array.sub", SOME (Tuple 2));
 		ins ("Unsafe.Array.update", SOME (Tuple 3));
 		ins ("Unsafe.String.sub", SOME (Tuple 2));
