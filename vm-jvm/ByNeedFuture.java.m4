@@ -16,6 +16,7 @@ public class DMLByNeedFuture extends DMLFuture {
 	    return ref;
 	else {
 	    ref=ref.apply(DMLConstants.dmlunit);
+	    applied=true;
 	    return ref;
 	}
     }
