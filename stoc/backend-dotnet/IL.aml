@@ -1,0 +1,475 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure IL :> IL =
+    struct
+	type id = string
+
+	type dottedname = id list
+
+	(* Class Attributes *)
+
+	type isPublic = bool
+
+	type classVisibility = isPublic
+
+	datatype classInheritance =
+	    AbstractClass
+	  | InterfaceClass
+	  | SealedClass
+	  | ValueClass
+	  | RegularClass
+
+	type classAttr = classVisibility * classInheritance
+
+	(* Method Attributes *)
+
+	datatype memberVisibility =
+	    Private
+	  | Assembly
+	  | Public
+	  | FamilyAndAssembly
+	  | Family
+	  | FamilyOrAssembly
+	datatype methOverriding =
+	    Abstract
+	  | Final
+	  | Normal
+	datatype methCallConv =
+	    Static
+	  | Instance
+	  | Virtual
+
+	type methAttr = memberVisibility * methOverriding * methCallConv
+
+	(* Field Attributes *)
+
+	type static = bool
+	type initonly = bool
+
+	type fieldAttr = memberVisibility * static * initonly
+
+	(* Types *)
+
+	datatype ty =
+	    ClassTy of dottedname
+	  | ValueClassTy of dottedname
+	  | ArrayTy of ty
+	  | CharTy
+	  | VoidTy
+	  | BoolTy
+	  | Int32Ty
+	  | Float32Ty
+	  | UnsignedInt32Ty
+
+	(* Instructions *)
+
+	type label = int
+
+	type isInstance = bool
+
+	datatype cond =
+	    EQ
+	  | GE
+	  | GE_UN
+	  | GT
+	  | GT_UN
+	  | LE
+	  | LE_UN
+	  | LT
+	  | LT_UN
+	  | NE_UN
+	  | TRUE
+	  | FALSE
+
+	datatype instr =
+	    Add
+	  | AddOvf
+	  | And
+	  | B of cond * label
+	  | Br of label
+	  | Call of isInstance * dottedname * id * ty list * ty
+	  | Callvirt of dottedname * id * ty list * ty
+	  | Castclass of dottedname
+	  | Ceq
+	  | Cgt
+	  | CgtUn
+	  | Clt
+	  | CltUn
+	  | Div
+	  | DivUn
+	  | Dup
+	  | IsInst of dottedname
+	  | Label of label
+	  | Ldarg of int
+	  | LdcI4 of int
+	  | LdcR4 of string
+	  | LdelemRef
+	  | Ldfld of dottedname * id * ty
+	  | Ldlen
+	  | Ldloc of int
+	  | Ldnull
+	  | Ldsfld of dottedname * id * ty
+	  | Ldstr of string
+	  | Newarr of ty
+	  | Newobj of dottedname * ty list
+	  | Mul
+	  | Neg
+	  | Not
+	  | Or
+	  | Pop
+	  | Rem
+	  | RemUn
+	  | Rethrow
+	  | Shl
+	  | Shr
+	  | ShrUn
+	  | Starg of int
+	  | StelemRef
+	  | Stfld of dottedname * id * ty
+	  | Stloc of int
+	  | Stsfld of dottedname * id * ty
+	  | Sub
+	  | SubOvf
+	  | Switch of label list
+	  | Tail
+	  | Throw
+	  | Try of label * label * dottedname * label * label
+	  | Xor
+
+	(* Top-Level Declarations *)
+
+	type extends = dottedname
+	type implements = dottedname list
+
+	type locals = ty list * bool   (* initialize *)
+
+	datatype classDecl =
+	    Field of id * fieldAttr * ty
+	  | Method of id * methAttr * ty list * ty * locals * instr list
+
+	datatype decl =
+	    Class of
+	    dottedname * classAttr * extends * implements * classDecl list
+	  | GlobalMethod of
+	    id * methAttr * ty list * ty * locals * instr list *
+	    bool   (* is entry point *)
+
+	type program = decl list
+
+	(* Output to File *)
+
+	val output = TextIO.output
+	val output1 = TextIO.output1
+
+	val outputId = output
+
+	fun outputDottedname (q, [id]) = outputId (q, id)
+	  | outputDottedname (q, id::idr) =
+	    (outputId (q, id); output1 (q, #"."); outputDottedname (q, idr))
+	  | outputDottedname (_, nil) = Crash.crash "IL.outputDottedname"
+
+	fun outputClassAttr (q, (isPublic, inheritance)) =
+	    (if isPublic then output (q, "public ")
+	     else output (q, "private ");
+	     case inheritance of
+		 AbstractClass => output (q, "abstract ")
+	       | InterfaceClass => output (q, "interface ")
+	       | SealedClass => output (q, "sealed ")
+	       | ValueClass => output (q, "value ")
+	       | RegularClass => ())
+
+	fun outputMemberVisibility (q, Private) = output (q, "private ")
+	  | outputMemberVisibility (q, Assembly) = output (q, "assembly ")
+	  | outputMemberVisibility (q, Public) = output (q, "public ")
+	  | outputMemberVisibility (q, FamilyAndAssembly) =
+	    output (q, "famandassem ")
+	  | outputMemberVisibility (q, Family) = output (q, "family ")
+	  | outputMemberVisibility (q, FamilyOrAssembly) =
+	    output (q, "famorassem ")
+
+	fun outputMethOverriding (q, Abstract) = output (q, "abstract ")
+	  | outputMethOverriding (q, Final) = output (q, "final ")
+	  | outputMethOverriding (q, Normal) = ()
+
+	fun outputMethCallConv (q, Static) = output (q, "static ")
+	  | outputMethCallConv (q, Instance) = output (q, "instance ")
+	  | outputMethCallConv (q, Virtual) = output (q, "virtual ")
+
+	fun outputMethAttr (q, (vis, over, conv)) =
+	    (outputMemberVisibility (q, vis);
+	     outputMethOverriding (q, over);
+	     outputMethCallConv (q, conv))
+
+	fun outputFieldAttr (q, (vis, static, initonly)) =
+	    (outputMemberVisibility (q, vis);
+	     if static then output (q, "static ") else ();
+	     if initonly then output (q, "initonly ") else ())
+
+	fun outputTy (q, ClassTy dottedname) =
+	    (output (q, "class "); outputDottedname (q, dottedname))
+	  | outputTy (q, ValueClassTy dottedname) =
+	    (output (q, "value class "); outputDottedname (q, dottedname))
+	  | outputTy (q, ArrayTy ty) = (outputTy (q, ty); output (q, "[]"))
+	  | outputTy (q, CharTy) = output (q, "char")
+	  | outputTy (q, VoidTy) = output (q, "void")
+	  | outputTy (q, BoolTy) = output (q, "bool")
+	  | outputTy (q, Int32Ty) = output (q, "int32")
+	  | outputTy (q, Float32Ty) = output (q, "float32")
+	  | outputTy (q, UnsignedInt32Ty) = output (q, "unsigned int32")
+
+	fun outputTys (q, [ty]) = outputTy (q, ty)
+	  | outputTys (q, ty::tyr) =
+	    (outputTy (q, ty); output (q, ", "); outputTys (q, tyr))
+	  | outputTys (q, nil) = ()
+
+	fun outputLabel (q, i) = output (q, "L" ^ Int.toString i)
+
+	fun outputLabels (q, [label]) = outputLabel (q, label)
+	  | outputLabels (q, label::labelr) =
+	    (outputLabel (q, label); output (q, ", ");
+	     outputLabels (q, labelr))
+	  | outputLabels (q, nil) = ()
+
+	fun outputInstr (q, Add) = output (q, "add")
+	  | outputInstr (q, AddOvf) = output (q, "add.ovf")
+	  | outputInstr (q, And) = output (q, "and")
+	  | outputInstr (q, B (EQ, label)) =   (*--** short form? *)
+	    (output (q, "beq "); outputLabel (q, label))
+	  | outputInstr (q, B (GE, label)) =   (*--** short form? *)
+	    (output (q, "bge "); outputLabel (q, label))
+	  | outputInstr (q, B (GE_UN, label)) =   (*--** short form? *)
+	    (output (q, "bge.un "); outputLabel (q, label))
+	  | outputInstr (q, B (GT, label)) =   (*--** short form? *)
+	    (output (q, "bgt "); outputLabel (q, label))
+	  | outputInstr (q, B (GT_UN, label)) =   (*--** short form? *)
+	    (output (q, "bgt.un "); outputLabel (q, label))
+	  | outputInstr (q, B (LE, label)) =   (*--** short form? *)
+	    (output (q, "ble "); outputLabel (q, label))
+	  | outputInstr (q, B (LE_UN, label)) =   (*--** short form? *)
+	    (output (q, "ble.un "); outputLabel (q, label))
+	  | outputInstr (q, B (LT, label)) =   (*--** short form? *)
+	    (output (q, "blt "); outputLabel (q, label))
+	  | outputInstr (q, B (LT_UN, label)) =   (*--** short form? *)
+	    (output (q, "blt.un "); outputLabel (q, label))
+	  | outputInstr (q, B (NE_UN, label)) =   (*--** short form? *)
+	    (output (q, "bne.un "); outputLabel (q, label))
+	  | outputInstr (q, B (TRUE, label)) =   (*--** short form? *)
+	    (output (q, "btrue "); outputLabel (q, label))
+	  | outputInstr (q, B (FALSE, label)) =   (*--** short form? *)
+	    (output (q, "bfalse "); outputLabel (q, label))
+	  | outputInstr (q, Br label) =   (*--** short form? *)
+	    (output (q, "br "); outputLabel (q, label))
+	  | outputInstr (q, Call (isInstance, dottedname, id, tys, ty)) =
+	    (output (q, "call ");
+	     if isInstance then output (q, "instance ") else ();
+	     outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id); output1 (q, #"(");
+	     outputTys (q, tys); output1 (q, #")"))
+	  | outputInstr (q, Callvirt (dottedname, id, tys, ty)) =
+	    (output (q, "callvirt instance ");
+	     outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id); output1 (q, #"(");
+	     outputTys (q, tys); output1 (q, #")"))
+	  | outputInstr (q, Castclass dottedname) =
+	    (output (q, "castclass "); outputDottedname (q, dottedname))
+	  | outputInstr (q, Ceq) = output (q, "ceq")
+	  | outputInstr (q, Cgt) = output (q, "cgt")
+	  | outputInstr (q, CgtUn) = output (q, "cgt.un")
+	  | outputInstr (q, Clt) = output (q, "clt")
+	  | outputInstr (q, CltUn) = output (q, "clt.un")
+	  | outputInstr (q, Div) = output (q, "div")
+	  | outputInstr (q, DivUn) = output (q, "div.un")
+	  | outputInstr (q, Dup) = output (q, "dup")
+	  | outputInstr (q, IsInst dottedname) =
+	    (output (q, "isinst "); outputDottedname (q, dottedname))
+	  | outputInstr (q, Label label) =
+	    (outputLabel (q, label); output1 (q, #":"))
+	  | outputInstr (q, Ldarg i) =
+	    (output (q, "ldarg");
+	     if i < 4 then (output1 (q, #"."); output (q, Int.toString i))
+	     else if i < 256 then
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, LdcI4 i) =
+	    (output (q, "ldc.i4");
+	     if i >= 0 andalso i <= 8 then
+		 (output1 (q, #"."); output (q, Int.toString i))
+	     else if i = ~1 then output (q, ".M1")
+	     else if i >= ~128 andalso i <= 127 then
+		 (*--** how are negative numbers represented here and below? *)
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, LdcR4 r) =
+	    (output (q, "ldc.r4 "); output (q, r))
+	  | outputInstr (q, LdelemRef) = output (q, "ldelem.ref")
+	  | outputInstr (q, Ldfld (dottedname, id, ty)) =
+	    (output (q, "ldfld "); outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id))
+	  | outputInstr (q, Ldlen) = output (q, "ldlen")
+	  | outputInstr (q, Ldloc i) =
+	    (output (q, "ldloc");
+	     if i < 4 then (output1 (q, #"."); output (q, Int.toString i))
+	     else if i < 256 then
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, Ldnull) = output (q, "ldnull")
+	  | outputInstr (q, Ldsfld (dottedname, id, ty)) =
+	    (output (q, "ldsfld "); outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id))
+	  | outputInstr (q, Ldstr s) =
+	    (output (q, "ldstr \""); output (q, String.toCString s);
+	     output1 (q, #"\""))
+	  | outputInstr (q, Newarr ty) =
+	    (output (q, "newarr "); outputTy (q, ty))
+	  | outputInstr (q, Newobj (dottedname, tys)) =
+	    (output (q, "newobj instance void ");
+	     output1 (q, #" "); outputDottedname (q, dottedname);
+	     output (q, "::.ctor("); outputTys (q, tys); output1 (q, #")"))
+	  | outputInstr (q, Mul) = output (q, "mul")
+	  | outputInstr (q, Neg) = output (q, "neg")
+	  | outputInstr (q, Not) = output (q, "not")
+	  | outputInstr (q, Or) = output (q, "or")
+	  | outputInstr (q, Pop) = output (q, "pop")
+	  | outputInstr (q, Rem) = output (q, "rem")
+	  | outputInstr (q, RemUn) = output (q, "rem.un")
+	  | outputInstr (q, Rethrow) = output (q, "rethrow")
+	  | outputInstr (q, Shl) = output (q, "shl")
+	  | outputInstr (q, Shr) = output (q, "shr")
+	  | outputInstr (q, ShrUn) = output (q, "shr.un")
+	  | outputInstr (q, Starg i) =
+	    (output (q, "starg");
+	     if i < 4 then (output1 (q, #"."); output (q, Int.toString i))
+	     else if i < 256 then
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, StelemRef) = output (q, "stelem.ref")
+	  | outputInstr (q, Stfld (dottedname, id, ty)) =
+	    (output (q, "stfld "); outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id))
+	  | outputInstr (q, Stloc i) =
+	    (output (q, "stloc");
+	     if i < 4 then (output1 (q, #"."); output (q, Int.toString i))
+	     else if i < 256 then
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, Stsfld (dottedname, id, ty)) =
+	    (output (q, "stsfld "); outputTy (q, ty); output1 (q, #" ");
+	     outputDottedname (q, dottedname); output (q, "::");
+	     outputId (q, id))
+	  | outputInstr (q, Sub) = output (q, "sub")
+	  | outputInstr (q, SubOvf) = output (q, "sub.ovf")
+	  | outputInstr (q, Switch labels) =
+	    (output (q, "switch("); outputLabels (q, labels);
+	     output1 (q, #")"))
+	  | outputInstr (q, Tail) = output (q, "tail")
+	  | outputInstr (q, Throw) = output (q, "throw")
+	  | outputInstr (q, Try (label1, label2, dottedname, label3, label4)) =
+	    (output (q, ".try "); outputLabel (q, label1);
+	     output (q, " to "); outputLabel (q, label2);
+	     output (q, " catch "); outputDottedname (q, dottedname);
+	     output (q, " handler "); outputLabel (q, label3);
+	     output (q, " to "); outputLabel (q, label4))
+	  | outputInstr (q, Xor) = output (q, "xor")
+
+	fun outputInstrs (q, instr::instrr) =
+	    (outputInstr (q, instr); output1 (q, #"\n"); outputInstrs (q, instrr))
+	  | outputInstrs (_, nil) = ()
+
+	local
+	    fun outputLocals' (q, ty::tyr) =
+		(output (q, ", "); outputTy (q, ty);
+		 outputLocals' (q, tyr))
+	      | outputLocals' (q, nil) = ()
+	in
+	    fun outputLocals (q, (ty1::tyr, zeroinit)) =
+		(output (q, ".locals("); outputTy (q, ty1);
+		 outputLocals' (q, tyr); output (q, ")\n");
+		 if zeroinit then output (q, ".zeroinit\n") else ())
+	      | outputLocals (_, (nil, _)) = ()
+	end
+
+	fun outputClassDecl (q, Field (id, attr, ty)) =
+	    (output (q, ".field "); outputFieldAttr (q, attr);
+	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
+	     output1 (q, #"\n"))
+	  | outputClassDecl (q, Method (id, attr, tys, ty, locals, instrs)) =
+	    (output (q, ".method "); outputMethAttr (q, attr);
+	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
+	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
+	     outputLocals (q, locals); outputInstrs (q, instrs);
+	     output (q, "}\n"))
+
+	fun outputClassDecls (q, decl::declr) =
+	    (outputClassDecl (q, decl); outputClassDecls (q, declr))
+	  | outputClassDecls (_, nil) = ()
+
+	fun splitNamespace [id] = (nil, id)
+	  | splitNamespace (id::idr) =
+	    let
+		val (namespace, id') = splitNamespace idr
+	    in
+		(id::namespace, id')
+	    end
+	  | splitNamespace nil = Crash.crash "IL.splitNamespace"
+
+	local
+	    fun outputDottednames (q, dottedname::dottednames) =
+		(output (q, ", "); outputDottedname (q, dottedname);
+		 outputDottednames (q, dottednames))
+	      | outputDottednames (_, nil) = ()
+	in
+	    fun outputImplements (q, dottedname::dottednames) =
+		(output (q, "implements "); outputDottedname (q, dottedname);
+		 outputDottednames (q, dottednames))
+	      | outputImplements (_, nil) = ()
+	end
+
+	fun outputDecl (q, Class (name, attr, super, interfaces, members)) =
+	    let
+		val (namespace, id) = splitNamespace name
+	    in
+		case namespace of
+		    nil => ()
+		  | _::_ =>
+			(output (q, ".namespace ");
+			 outputDottedname (q, namespace);
+			 output (q, " {\n"));
+		output (q, ".class "); outputClassAttr (q, attr);
+		outputId (q, id); output (q, " extends ");
+		outputDottedname (q, super);
+		outputImplements (q, interfaces);
+		output (q, " {\n"); outputClassDecls (q, members);
+		output (q, "}\n");
+		case namespace of
+		    nil => ()
+		  | _::_ => output (q, "}\n")
+	    end
+	  | outputDecl (q, GlobalMethod (id, attr, tys, ty, locals, instrs,
+					 entrypoint)) =
+	    (output (q, ".method "); outputMethAttr (q, attr);
+	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
+	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
+	     if entrypoint then output (q, ".entrypoint\n") else ();
+	     outputLocals (q, locals); outputInstrs (q, instrs);
+	     output (q, "}\n"))
+
+	fun outputProgram (q, decl::declr) =
+	    (outputDecl (q, decl); output1 (q, #"\n");
+	     outputProgram (q, declr))
+	  | outputProgram (_, nil) = ()
+    end
