@@ -14,6 +14,11 @@ structure OS =
     struct
 	structure Process =
 	    struct
+		type status = int
+
+		val success: status = 0
+		val failure: status = 1
+
 		__primitive val getEnv: string -> string option =
 		    "OS.Process.getEnv"
 	    end
