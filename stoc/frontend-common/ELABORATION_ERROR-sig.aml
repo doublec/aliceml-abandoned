@@ -1,6 +1,7 @@
 signature ELABORATION_ERROR =
   sig
 
+    type lab    = Lab.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind
@@ -46,6 +47,7 @@ signature ELABORATION_ERROR =
 	(* Long ids *)
 	| ModLongidInf		of longid * inf
 	(* Modules *)
+	| StrModUnclosed	of lab * int * typ
 	| SelModInf		of inf
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
@@ -53,6 +55,9 @@ signature ELABORATION_ERROR =
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
+	| SingInfPath
+	(* Components *)
+	| CompUnclosed		of lab * int * typ
 
     datatype warning =
 	  NotGeneralized	of id * typ

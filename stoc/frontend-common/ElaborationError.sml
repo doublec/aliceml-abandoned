@@ -9,6 +9,7 @@ structure ElaborationError :> ELABORATION_ERROR =
     val par = paragraph
 
 
+    type lab    = Lab.t
     type typ    = Type.t
     type var    = Type.var
     type kind   = Type.kind
@@ -54,6 +55,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	(* Long ids *)
 	| ModLongidInf		of longid * inf
 	(* Modules *)
+	| StrModUnclosed	of lab * int * typ
 	| SelModInf		of inf
 	| AppModFunMismatch	of inf
 	| AppModArgMismatch	of inf_mismatch
@@ -61,6 +63,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 	| CompInfMismatch	of inf_mismatch
+	| SingInfPath
+	(* Components *)
+	| CompUnclosed		of lab * int * typ
 
     datatype warning =
 	  NotGeneralized	of id * typ
@@ -168,6 +173,21 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
 	    ["applied","signature","arguments","are","incompatible"]
 
+
+    fun ppUnclosed(d, (l,n,t)) =
+	vbox(
+	    d ^^
+	    nest(break ^^
+		fbox(nest(
+		    text(Lab.toString l) ^/^
+		    text ":" ^/^
+		    below(PPType.ppTyp t)
+		))
+	    ) ^/^
+	    par["contains","free","type","variable"]
+	)
+
+
     fun ppError(VecExpUnify ue) =
 	ppUnify2(
 	  par["inconsistent","types","in","vector","expression:"],
@@ -266,6 +286,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	      "although","it","contains","explicit","type","variables"]
       | ppError(ModLongidInf(y,j)) =
 	  par["module",ppLongid y,"is","not","a","structure"]
+      | ppError(StrModUnclosed lnt) =
+	ppUnclosed(
+	  par["structure","is","not","closed:"], lnt)
       | ppError(SelModInf j) =
 	  par["module","expression","is","not","a","structure"]
       | ppError(AppModFunMismatch j) =
@@ -283,6 +306,11 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppError(CompInfMismatch im) =
 	ppMismatch(
 	  par["inconsistency","at","signature","specialization:"], im)
+      | ppError(SingInfPath) =
+	  par["module","expression","is","not","a","path"]
+      | ppError(CompUnclosed lnt) =
+	ppUnclosed(
+	  par["component","is","not","closed:"], lnt)
 
     fun ppWarning(NotGeneralized(x,t)) =
 	vbox(

@@ -38,7 +38,7 @@ structure PPInf :> PP_INF =
 	    ppCon c
 
       | ppInf'(SIG s) =
-	    ppSig s
+	    ppSig' s
 
       | ppInf'(ARR(p,j1,j2)) =
 	let
@@ -90,9 +90,9 @@ text "@" ^^*)
 
     (* Signatures *)
 
-    and ppSig(ref items, _) =
+    and ppSig' s =
 	let
-	    val doc = List.foldl ppItem empty items
+	    val doc = ppSig s
 	in
 	    abox(below(
 		text "sig" ^^
@@ -104,6 +104,8 @@ text "@" ^^*)
 		text "end"
 	    ))
 	end
+
+    and ppSig(ref items, _) = vbox(List.foldl ppItem empty items)
 
     and ppItem(ref item', doc) = ppItem'(item', doc)
 

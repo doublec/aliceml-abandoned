@@ -192,6 +192,22 @@ structure InfPrivate =
     fun lookupMod' args	= (selectMod' o lookup' MOD') args
     fun lookupInf' args	= (selectInf  o lookup' INF') args
 
+    fun lookupValPath args = (selectVal o lookup VAL') args
+    fun lookupModPath args = (selectMod o lookup MOD') args
+
+
+  (* Closure check *)
+
+    exception Unclosed of lab * int * typ
+
+    fun close (ref items,_) = List.app closeItem items
+
+    and closeItem(ref(VAL((p,l,n), t, w, d))) =
+	if Type.isClosed t then () else
+	    raise Unclosed(l,n,t)
+      | closeItem _ = ()
+	(* ASSUME that nested structures are always closed *)
+
 
   (* Reduction to head normal form *)
 
@@ -339,7 +355,9 @@ structure InfPrivate =
 		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
 		)
 
-	    fun instanceItem(ref(VAL((p,l,n), t, w, d))) =
+	    fun instanceItem(ref item') = instanceItem' item'
+
+	    and instanceItem'(VAL((p,l,n), t, w, d)) =
 		let
 		    val p'   = instancePath(rea, p)
 		    val t'   = instanceTyp(rea, t)
@@ -349,7 +367,7 @@ structure InfPrivate =
 		    extendSig((VAL',l), item)
 		end
 
-	      | instanceItem(ref(TYP((p,l,n), k, w, d))) =
+	      | instanceItem'(TYP((p,l,n), k, w, d)) =
 		let
 		    val p'   = instancePath(rea, p)
 		    val d'   = instanceTypDef(rea, d)
@@ -358,7 +376,7 @@ structure InfPrivate =
 		    extendSig((TYP',l), item)
 		end
 
-	      | instanceItem(ref(MOD((p,l,n), j, d))) =
+	      | instanceItem'(MOD((p,l,n), j, d)) =
 		let
 		    val p'   = instancePath(rea, p)
 		    val j'   = instanceInf(rea, j)
@@ -368,7 +386,7 @@ structure InfPrivate =
 		    extendSig((MOD',l), item)
 		end
 
-	      | instanceItem(ref(INF((p,l,n), k, d))) =
+	      | instanceItem'(INF((p,l,n), k, d)) =
 		let
 		    val p'   = instancePath(rea, p)
 		    val k'   = instanceKind(rea, k)
@@ -435,7 +453,9 @@ structure InfPrivate =
 		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
 		)
 
-	    fun singletonItem(ref(VAL((p,l,n), t, w, d))) =
+	    fun singletonItem(ref item') = singletonItem' item'
+
+	    and singletonItem'(VAL((p,l,n), t, w, d)) =
 		let
 		    val p'   = singletonPath(rea, p)
 		    val t'   = singletonTyp(rea, t)
@@ -445,7 +465,7 @@ structure InfPrivate =
 		    extendSig((VAL',l), item)
 		end
 
-	      | singletonItem(ref(TYP((p,l,n), k, w, d))) =
+	      | singletonItem'(TYP((p,l,n), k, w, d)) =
 		let
 		    val p'   = singletonPath(rea, p)
 		    val d'   = singletonTypDef(rea, d)
@@ -454,7 +474,7 @@ structure InfPrivate =
 		    extendSig((TYP',l), item)
 		end
 
-	      | singletonItem(ref(MOD((p,l,n), j, d))) =
+	      | singletonItem'(MOD((p,l,n), j, d)) =
 		let
 		    val p'   = singletonPath(rea, p)
 		    val j'   = singletonInf(rea, j)
@@ -464,7 +484,7 @@ structure InfPrivate =
 		    extendSig((MOD',l), item)
 		end
 
-	      | singletonItem(ref(INF((p,l,n), k, d))) =
+	      | singletonItem'(INF((p,l,n), k, d)) =
 		let
 		    val p'   = singletonPath(rea, p)
 		    val k'   = singletonKind(rea, k)
@@ -518,15 +538,16 @@ structure InfPrivate =
 		; Map.insertWith (fn(l1,l2) => l2 @ l1) (map, space_l, [item])
 		)
 
-	    fun cloneItem(ref(item' as VAL(x,t,w,d))) =
+	    fun cloneItem(ref item') = cloneItem' item'
+	    and cloneItem'(item' as VAL(x,t,w,d)) =
 		    extendSig((VAL', idLab x), ref item')
-	      | cloneItem(ref(item' as TYP(x,k,w,d))) =
+	      | cloneItem'(item' as TYP(x,k,w,d)) =
 		    extendSig((TYP', idLab x), ref item')
-	      | cloneItem(ref(MOD(x,j,d))) =
+	      | cloneItem'(MOD(x,j,d)) =
 		let val item' = MOD(x, clone j, d) in
 		    extendSig((MOD', idLab x), ref item')
 		end
-	      | cloneItem(ref(INF(x,k,d))) =
+	      | cloneItem'(INF(x,k,d)) =
 		let val item' = INF(x, cloneKind k, Option.map clone d) in
 		    extendSig((INF', idLab x), ref item')
 		end
@@ -582,37 +603,40 @@ structure InfPrivate =
     and strengthenSig(p, (ref items, _)) =
 	    List.app (fn item => strengthenItem(p, item)) items
 
-    and strengthenItem(p, item as ref(VAL(x, t, w, d))) =
+    and strengthenItem(p, item as ref item') =
+	    item := strengthenItem'(p, item')
+
+    and strengthenItem'(p, VAL(x, t, w, d)) =
 	let
 	    val _  = strengthenId(p, x)
 	    val d' = strengthenPathDef(idPath x, d)
 	in
-	    item := VAL(x, t, w, d')
+	    VAL(x, t, w, d')
 	end
 
-      | strengthenItem(p, item as ref(TYP(x, k, w, d))) =
+      | strengthenItem'(p, TYP(x, k, w, d)) =
 	let
 	    val _  = strengthenId(p, x)
 	    val d' = strengthenTypDef(idPath x, k, d)
 	in
-	    item := TYP(x, k, w, d')
+	    TYP(x, k, w, d')
 	end
 
-      | strengthenItem(p, item as ref(MOD(x, j, d))) =
+      | strengthenItem'(p, MOD(x, j, d)) =
 	let
 	    val _  = strengthenId(p, x)
 	    val _  = strengthen(idPath x, j)
 	    val d' = strengthenPathDef(idPath x, d)
 	in
-	    item := MOD(x, j, d')
+	    MOD(x, j, d')
 	end
 
-      | strengthenItem(p, item as ref(INF(x, k, d))) =
+      | strengthenItem'(p, INF(x, k, d)) =
 	let
 	    val _  = strengthenId(p, x)
 	    val d' = strengthenInfDef(idPath x, k, d)
 	in
-	    item := INF(x, k, d')
+	    INF(x, k, d')
 	end
 
     and strengthenId(p, pln)		= Path.strengthen(p, pln)
