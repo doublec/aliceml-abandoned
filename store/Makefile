@@ -31,9 +31,10 @@ headerdef: headerdef.o
 $(OBJS): headerdef.hh
 
 clean:
+	rm -f headerdef.o headerdef headerdef.exe
 	rm -f $(OBJS)
 
-veryclean:
+veryclean: clean
 	rm -f test headerdef.hh libstore.a
 
 distclean: veryclean
