@@ -45,4 +45,7 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_indent_region_activate _ = GuiMain.indentSelection true
 	fun on_outdent_region_activate _ = GuiMain.indentSelection false
 	fun on_reset_activate _ = GuiMain.reset()
+	fun on_switch_to_editor_activate _ = GuiMain.switchTo 0
+	fun on_switch_to_compiler_activate _ = GuiMain.switchTo 1
+	fun on_switch_to_io_activate _ = GuiMain.switchTo 2
     end

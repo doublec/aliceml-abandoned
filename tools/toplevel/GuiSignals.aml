@@ -31,9 +31,11 @@ signature GUISIGNALS_SIG =
     val on_find_and_replace_activate : Gtk.callback_function
     val on_go_to_line_activate : Gtk.callback_function
     val on_jump_to_last_error_activate : Gtk.callback_function
-    val on_syntax_colouring_activate : Gtk.callback_function
     val on_feedregion_activate : Gtk.callback_function
     val on_feedfile_activate : Gtk.callback_function
+    val on_switch_to_editor_activate : Gtk.callback_function
+    val on_switch_to_compiler_activate : Gtk.callback_function
+    val on_switch_to_io_activate : Gtk.callback_function
     val on_interrupt_activate : Gtk.callback_function
     val on_background_activate : Gtk.callback_function
     val on_reset_activate : Gtk.callback_function
@@ -63,9 +65,11 @@ functor GuiSignals(structure S : GUISIGNALS_SIG) =
     val find_and_replace_on_find_and_replace_activate = Gtk.signalConnect(Gui.find_and_replace, "activate",S.on_find_and_replace_activate)
     val go_to_line_on_go_to_line_activate = Gtk.signalConnect(Gui.go_to_line, "activate",S.on_go_to_line_activate)
     val jump_to_last_error_on_jump_to_last_error_activate = Gtk.signalConnect(Gui.jump_to_last_error, "activate",S.on_jump_to_last_error_activate)
-    val syntax_colouring_on_syntax_colouring_activate = Gtk.signalConnect(Gui.syntax_colouring, "activate",S.on_syntax_colouring_activate)
     val feedregion_on_feedregion_activate = Gtk.signalConnect(Gui.feedregion, "activate",S.on_feedregion_activate)
     val feedfile_on_feedfile_activate = Gtk.signalConnect(Gui.feedfile, "activate",S.on_feedfile_activate)
+    val switch_to_editor_on_switch_to_editor_activate = Gtk.signalConnect(Gui.switch_to_editor, "activate",S.on_switch_to_editor_activate)
+    val switch_to_compiler_on_switch_to_compiler_activate = Gtk.signalConnect(Gui.switch_to_compiler, "activate",S.on_switch_to_compiler_activate)
+    val switch_to_io_on_switch_to_io_activate = Gtk.signalConnect(Gui.switch_to_io, "activate",S.on_switch_to_io_activate)
     val interrupt_on_interrupt_activate = Gtk.signalConnect(Gui.interrupt, "activate",S.on_interrupt_activate)
     val background_on_background_activate = Gtk.signalConnect(Gui.background, "activate",S.on_background_activate)
     val reset_on_reset_activate = Gtk.signalConnect(Gui.reset, "activate",S.on_reset_activate)

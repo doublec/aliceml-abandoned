@@ -14,7 +14,6 @@ Bugs:
 
 Missing Features:
 
-* shortcuts for switching between editor, compiler, io (Ctrl+1,2,3)
 * comment/uncomment region?
 * cumulative undo?
 * redo?

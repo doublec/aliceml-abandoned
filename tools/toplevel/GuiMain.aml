@@ -269,7 +269,7 @@ structure GuiMain =
 	    (app (fn w => Gtk.widgetSetSensitive(w,activate))
 	     [Gui.save1,Gui.save_as1,Gui.go_to_line,
 	      Gui.undo,Gui.find,Gui.find_and_replace,
-	      Gui.syntax_colouring,Gui.feedregion,Gui.feedfile,
+	      Gui.feedregion,Gui.feedfile,
 	      Gui.indent_region, Gui.outdent_region];
 	     app (fn w => Gtk.widgetSetSensitive(w,not activate))
 	     [Gui.back_in_history,Gui.forward_in_history])
@@ -331,14 +331,15 @@ structure GuiMain =
 		 val ratio = Real.fromInt h1 / Real.fromInt (h1+h2)
 	     in
 		 if Gtk.notebookGetNPages Gui.notebook1 > 0
-		     then if Gtk.panedGetPosition Gui.vpaned1 = 1 then
-			 let
-			     val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
-			 in
-			     Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
-			     Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
-			 end
-			  else ()
+		     then (if Gtk.panedGetPosition Gui.vpaned1 = 1 then
+			   let
+			       val newPos = Real.fromInt (h1+h2-Config.editorHeight) * ratio
+			   in
+			       Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
+			       Gtk.panedSetPosition(Gui.vpaned1,Config.editorHeight)
+			   end
+			   else ();
+			   Gtk.widgetSetSensitive(Gui.switch_to_editor, true))
 		 else
 		     let
 			 val editorHeight = Gtk.panedGetPosition Gui.vpaned1
@@ -347,7 +348,8 @@ structure GuiMain =
 		     in
 			 Gtk.panedSetPosition(Gui.vpaned1,1);
 			 Gtk.panedSetPosition(Gui.vpaned2,Real.round newPos);
-			 Gtk.widgetGrabFocus Gui.compilerout
+			 Gtk.widgetGrabFocus Gui.compilerout;
+			 Gtk.widgetSetSensitive(Gui.switch_to_editor, false)
 		     end
 	     end
 
@@ -520,6 +522,7 @@ structure GuiMain =
                     case String.tokens (fn #":" => true | _ => false) s of
                         [s1,s2] => (NONE, s1)
                       | (s1::s2::s3::_) => (SOME s1, s2)
+		      | _ => raise Match (* make compiler happy *)
                 val (s11,s12,s21,s22) =
                     case
                     String.tokens (fn #"-" => true
@@ -604,6 +607,16 @@ structure GuiMain =
 	    
 	val forwardHistory = OutputWriters.historyNext
 	val backwardHistory = OutputWriters.historyPrev
+
+	fun switchTo 0 =
+	    (case getCurrentPage() of
+		 NONE => ()
+	       | SOME id => Gtk.widgetGrabFocus (Buffer.getView id))
+	  | switchTo 1 =
+		Gtk.widgetGrabFocus Gui.compilerout
+	  | switchTo 2 =
+		Gtk.widgetGrabFocus Gui.progout
+	  | switchTo _ = ()
 
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
