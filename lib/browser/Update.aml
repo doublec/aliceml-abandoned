@@ -89,6 +89,8 @@ structure Update :> UPDATE =
 		       ; let val ind = getAncIndex n 
                              val anc = valOf(MainDictionary.lookup 
 					         (Dictionaries.dict,ind)) 
+			     val (x,y) = Services.getPosition
+				 (getGroup(anc),!(Settings.font)) 
                              val t = ( case getDesc(n) of  
 				       VALUE(rr) => #typ(rr) 
 				     | _ => raise UpdateError)  
@@ -101,12 +103,9 @@ structure Update :> UPDATE =
 			    ; MainDictionary.update(Dictionaries.dict, 
 			         		     (ind,anc)) 
 			    ; Layout.layout(anc) 
-                            ; let val (x,y) = Services.getPosition
-			                       (getGroup(anc),!(Settings.font))
-			      in (TextIO.print ("("^Int.toString(x)^" / "
+			    ;(TextIO.print ("("^Int.toString(x)^" / "
 						^Int.toString(y)^")\n")
-				  ; DrawNodes.draw(anc,0,0,DrawNodes.DRAW)) 
-			      end ) 
+			    ; DrawNodes.draw(anc,x,y,DrawNodes.DRAW))  ) 
 			 end )
 		val _ = TextIO.print "...update-Funktion computed \n\n" 
 		val mapped_li = List.map update new_li 
