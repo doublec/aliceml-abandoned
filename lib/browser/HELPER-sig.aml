@@ -50,6 +50,10 @@ sig
     val getTyp : desc -> Type.typ
     val getDepth : node -> int
     val getGroup : node -> Gtk.object
+    val getRep : node -> string
+    val getStatus : node -> status ref
+    val getColor : node -> color_class
+    val getSort : node -> limit
     val getValueAnc : node -> node
 
     val setsVertical : node -> bool

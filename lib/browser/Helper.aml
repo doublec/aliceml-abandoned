@@ -137,6 +137,27 @@ struct
                               | RelRefNode(r) => #group(r)
                               | _ => raise Match
 
+    fun getRep (Simple(r))     = #rep(r)
+      | getRep (RelNode(r))    = #rep(r)
+      | getRep (RelRefNode(r)) =  #rep(r)
+      | getRep _               = ""
+                             
+    fun getStatus (Concat(r))     = #status(r)
+      | getStatus (Container(r))  = #status(r)
+      | getStatus (Simple(r))     = #status(r) 
+      | getStatus (Limit(r))      = #status(r)
+      | getStatus (RelNode(r))    = #status(r)
+      | getStatus (RelRefNode(r)) = #status(r)
+      | getStatus  _ = raise Match
+
+    fun getColor (Simple(r))     = #color(r) 
+      | getColor (RelNode(r))    = #color(r)
+      | getColor (RelRefNode(r)) = #color(r)
+      | getColor  _ = raise Match
+
+    fun getSort (Limit(r)) = #sort(r)
+      | getSort _  = raise Match
+
     fun getValueAnc n = let val p = getParent(n) 
 			in if p = Empty 
 			       then n 

@@ -35,155 +35,98 @@ struct
     exception MissingColor
     exception DrawError
     exception NodeFound of int * int * node
-
-    datatype intention = DRAW | SEARCH of int * int
     	   
-    fun groupToPosition (node,x,y) = 
-	    let
-		val group = getGroup(node) 
-		val w = Services.fontWidth()
-		val h = Services.fontHeight()
-		val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h))
-	    in
-		GtkCanvas.itemMove(group,rx,ry)
-	    end
+    fun groupToPosition (node,x,y) = Services.moveGroup(getGroup(node),x,y)
 
     (* atomDraw *)
-    fun atomDraw (node,x,y,f)  = case node of
-	Simple(r) 
-	=> (let 
-		val color = case ColorMap.lookup(MkColorTable.colorTable,
-						 #color(r)) of 
+    fun atomDraw (node,x,y,f) = 
+	let 
+	    val color = case ColorMap.lookup(MkColorTable.colorTable,
+						 getColor(node)) of 
 		            SOME x => x
 			  | NONE   => raise MissingColor
 	    in
-		(f(node,x,y)
-		 ;Services.printXY (#rep(r),
-				    #group(r),
+		(Services.printXY (getRep(node),
+				    getGroup(node),
 				    0.0,
 				    0.0,
 				    color,
 				    !Settings.fontname)
-		 ;#status(r) := Types.CLEAN
-		 ;(x+String.length(#rep(r)),y))
-	    end )
-      | Limit(r) 
-	=> (let 
-		val color = case ColorMap.lookup(MkColorTable.colorTable,
-						 LIMIT_COLOR) of 
-		            SOME x => x
-			  | NONE   => raise MissingColor
-		val limitsig = if #sort(r) = Types.DEPTH_LIMIT
-				   then "*" 
-			       else "@"
-	    in
-		(f(node,x,y)
-		 ;Services.printXY (limitsig,
-				    #group(r),
-				    0.0,
-				    0.0,
-				    color,
-				    !Settings.fontname)
-		 ;#status(r) := Types.CLEAN     
-	         ;(x+1,y))
-	    end )
-      | RelRefNode(r)
-        =>  ( let 	
-		  val color = case ColorMap.lookup(MkColorTable.colorTable,
-						   #color(r)) of 
-		              SOME x => x
-			    | NONE   => raise MissingColor
-	      in
-		  (f(node,x,y)
-		   ;Services.printXY (#rep(r),
-				      #group(r),
-				      0.0,
-				      0.0,
-				      color,
-				      !Settings.fontname)
-		   ;#status(r) := Types.CLEAN
-	           ;(x+String.length(#rep(r)),y))
-	      end )
-      | RelNode(r)
-	=> ( let 
-		
-		 val color = case ColorMap.lookup(MkColorTable.colorTable,
-						  #color(r)) of 
-		             SOME x => x
-			   | NONE   => raise MissingColor
-		 in
-		     (f(node,x,y)
-		      ;Services.printXY (#rep(r),
-					 #group(r),
-					 0.0,
-					 0.0,
-					 color,
-					 !Settings.fontname)
-		      ;#status(r) := Types.CLEAN
-	              ; (x+String.length(#rep(r)),y))
-	     end )
-      | _ => raise DrawError
-	    
+		 ;getStatus(node) := Types.CLEAN
+		 ;f(node,x,y)
+		 ;(x+String.length(getRep(node)),y))
+	    end
+
+    (* drawLimit *)
+    fun drawLimit (node,x,y,f) = 
+	let 
+	    val color = case ColorMap.lookup(MkColorTable.colorTable,
+					     LIMIT_COLOR) of 
+		SOME x => x
+	      | NONE   => raise MissingColor
+	    val limitsig = if getSort(node) = Types.DEPTH_LIMIT
+			       then "*" 
+			   else "@"
+	in
+	    (Services.printXY (limitsig,
+			       getGroup(node),
+			       0.0,
+			       0.0,
+			       color,
+			       !Settings.fontname)
+	     ;getStatus(node) := Types.CLEAN 
+	     ;f(node,x,y)
+	     ;(x+1,y))
+	end
+    
+    and concatHorFunct f  =  (fn (a,(x,y))  => draw(a,x,y,f)) 
+
     (* drawConcat *) 
-    and drawConcat (n,x,y,f) = case n of
-	Concat(r)
-	=> (let
-		val hor_funct = 
-		    (fn (a,(x,y)) 
-		     => draw(a,x,y,f))
-	    in
-		let 
-		    val (new_x,new_y) = 
-			(Array.foldl hor_funct (0,0) 
-			 (#kids(r))) 
-		in 
-		    (f(n,x,y)
-		     ; #status(r) := Types.CLEAN
-		     ;(new_x+x,new_y+y))
-		end
-	    end)
-      | _ => raise DrawError
-	   
-    (* drawContainer *)
-    and drawContainer(n,x,y,f) =  case n of
-	Container(r) 
-	=> 	(let val _ = #status(r) := Types.CLEAN
-			     val hor_funct = 
-				 (fn (a,(x,y,_)) 
-				  => let
-					 val (new_x,new_y) 
-					     = draw(a,x,y,f)
-				     in (new_x,new_y,0)
-				     end)
-                             val ver_funct = 
-				 (fn (a,(x,y,_)) 
+    and drawConcat (n,x,y,f) = 
+	let 
+	       val (new_x,new_y) = 
+		   (Array.foldl (concatHorFunct f) (0,0) 
+		    (getKids(n))) 
+	   in 
+	       (f(n,x,y)
+		; getStatus(n) := Types.CLEAN
+		;(new_x+x,new_y+y))
+	   end
+
+    and containerHorFunct f =  (fn (a,(x,y,_))  => let
+						       val (new_x,new_y) 
+							   = draw(a,x,y,f)
+						   in (new_x,new_y,0)
+						   end)
+	
+    and containerVerFunct f = (fn (a,(x,y,_)) 
 				  => let
 					 val (x1,y1) = 
 					     draw(a,x,y,f)
 				     in
 				       (x,y1+1,x1)
 				     end)
-			     val vertical = setsVertical(n)
-			     val funct = if vertical 
-					     then ver_funct
-					 else hor_funct
-			 in
-				 let val (new_x',new_y',new_x2) = 
-				     (Array.foldl funct (0,0,0) 
-				      (#kids(r))) 
-				      val new_x = if vertical 
-						      then new_x2
-							  else new_x'
-				      val new_y = if vertical 
-						      then new_y' -1
-						  else new_y'
-				 in
-					  (f(n,x,y)
-					   ;(new_x+x,new_y+y))
-				 end
-			 end) 
-      | _ => raise DrawError
 	   
+    (* drawContainer *)
+    and drawContainer(n,x,y,f) =  
+	let 
+	    val vertical = setsVertical(n)
+	    val funct = if vertical 
+			    then (containerVerFunct f)
+			else (containerHorFunct f)
+	    val (new_x',new_y',new_x2) = 
+		(Array.foldl funct (0,0,0) 
+		 (getKids(n))) 
+	    val (new_x,new_y) = if vertical 
+				    then (new_x2,new_y' -1)
+				else  (new_x',new_y') 
+	in
+	    (getStatus(n) := Types.CLEAN
+	     ;f(n,x,y)
+	     ;(new_x+x,new_y+y))
+	end 
+    
+    
     (* drawRelNode *)
     and drawRelNode (n,x,y,f) = case n of
 	RelNode(r) 
@@ -238,36 +181,28 @@ struct
 
   
     (* draw *)
-    and draw (n,x,y,f) = 
-      ( TextIO.print ("DRAW: drawing with x = "
-		      ^Int.toString(x)^" and y = "
-		      ^Int.toString(y)^"\n")
-        ;
-	case n of
-	Simple(r) => if !(#status(r)) = DIRTY  
-				  then atomDraw (n,x,y,f)
-				 else move(n,x,y)  	
-      | Concat(r) => if !(#status(r)) = DIRTY  
+    and draw (((Simple _ as n ) 
+	     | (RelRefNode _ as n)) ,x,y,f) = if !(getStatus(n)) = DIRTY  
+						  then atomDraw (n,x,y,f)
+					      else move(n,x,y)  	
+      | draw (Concat(_) as n,x,y,f) = if (!(getStatus(n))) = DIRTY  
 			 then drawConcat (n,x,y,f)
 			  else move(n,x,y)  
-      | Container(r) => if !(#status(r)) = DIRTY  
+      | draw (Container(_) as n,x,y,f) = if (!(getStatus(n))) = DIRTY  
 			    then drawContainer (n,x,y,f)
 				else move(n,x,y) 	     
-      | Limit(r) => if  !(#status(r)) = DIRTY  
-			then atomDraw (n,x,y,f)
+      | draw (Limit(_) as n,x,y,f) = if  (!(getStatus(n))) = DIRTY  
+			then drawLimit (n,x,y,f)
 			 else move(n,x,y) 
-      | RelNode(r) => if  !(#status(r)) = DIRTY 
+      | draw (RelNode(r) as n,x,y,f) = if  !(#status(r)) = DIRTY 
 				 then drawRelNode (n,x,y,f)
 		      else ( move(n,x,y) 
 				   ;( case !(#counter(r)) of
 				   1 => (x+get_xdim(!(#content(r))),
 					 y+get_ydim(!(#content(r))))
-				 | _ => (x+get_xdim(n),y+get_ydim(n)) ))
-	  | RelRefNode(r) => if  !(#status(r)) = DIRTY  
-					  then atomDraw (n,x,y,f)
-					  else  move(n,x,y) 
-	  | Empty => (x,y)
-      )
+				 | _ => (x+get_xdim(n),y+get_ydim(n)) )) 
+       | draw  (Empty,x,y,f) =  (x,y)
+     
 
 end
        

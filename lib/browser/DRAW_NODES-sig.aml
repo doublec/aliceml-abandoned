@@ -22,11 +22,12 @@ signature DRAW_NODES =
         exception  MissingColor
 	exception DrawError
 
-	datatype intention = DRAW | SEARCH of int * int
-
 	val groupToPosition:  node * int * int -> unit
 	
 	val atomDraw   :   node * int * int *  (node * int * int -> unit) 
+	    -> int * int 
+
+	val drawLimit   :   node * int * int *  (node * int * int -> unit) 
 	    -> int * int 
 
 	val drawConcat :   
