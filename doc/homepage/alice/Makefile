@@ -26,8 +26,8 @@ INSTALLFILES_MANUAL_0 = \
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	style.css macros.php3 menu.php3 index.php3 \
 	alt.php3 array.php3 bool.php3 byneed.php3 char.php3 future.php3 \
-	general.php3 ieee-real.php3 integer.php3 list.php3 list-pair.php3 \
-	lock.php3 \
+	general.php3 hole.php3 ieee-real.php3 integer.php3 \
+	list.php3 list-pair.php3 lock.php3 \
 	math.php3 mono-array.php3 mono-vector.php3 \
 	option.php3 pair.php3 promise.php3 real.php3 ref.php3 \
 	string.php3 string-cvt.php3 substring.php3 time.php3 toplevel.php3 \
