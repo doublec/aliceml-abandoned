@@ -165,7 +165,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 
 	fun laIdRef ((IdRef id | LastIdRef id), use, dontKill) =
 	    if laId (id, use, dontKill) then LastIdRef id else IdRef id
-	  | laIdRef (idRef as (Lit _ | Prim _), _, _) = idRef
+	  | laIdRef (idRef as (Lit _ | Prim _ | Value _), _, _) = idRef
 
 	fun laIdRefs (idRefs, use, dontKill) =
 	    let
@@ -176,7 +176,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 			       if IdSet.member (ids, id) then
 				   IdSet.insert (nonlinear, id)
 			       else IdSet.insert (ids, id)
-			     | (Lit _ | Prim _) => ()) idRefs;
+			     | (Lit _ | Prim _ | Value _) => ()) idRefs;
 		(Vector.fromList (IdSet.fold (fn (id, rest) =>
 						 if laId (id, use, dontKill)
 						 then id::rest else rest)
@@ -184,7 +184,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		 Vector.map (fn idRef as (IdRef id | LastIdRef id) =>
 				if IdSet.member (nonlinear, id) then IdRef id
 				else laIdRef (idRef, use, dontKill)
-			      | idRef as (Lit _ | Prim _) => idRef) idRefs)
+			      | idRef as (Lit _ | Prim _ | Value _) => idRef)
+			    idRefs)
 	    end
 
 	fun laLabelIdRefVec (labelIdRefVec, use, dontKill) =
@@ -394,18 +395,18 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    let
 		val testUseVec =
 		    Vector.map
-			(fn (label, i, idDefArgs, body) =>
+			(fn (labels, n, idDefArgs, body) =>
 			    let
 				val (body, use') =
 				    laBody (body, shared, dontKill)
 				val idDefArgs = laIdDefArgs (idDefArgs, use')
 			    in
 				IdSet.union (use, use');
-				(label, i, idDefArgs, body, use')
+				(labels, n, idDefArgs, body, use')
 			    end) tests
 		val tests =
-		    Vector.map (fn (label, i, idDefArgs, body, use') =>
-				   (label, i, idDefArgs,
+		    Vector.map (fn (labels, n, idDefArgs, body, use') =>
+				   (labels, n, idDefArgs,
 				    lastUse (difference (use, use'), body)))
 			       testUseVec
 	    in
@@ -456,12 +457,12 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	and laExp (exp as NewExp (_, _), _, _) = (#[], exp)
 	  | laExp (VarExp (info, idRef), use, dontKill) =
 	    (#[], VarExp (info, laIdRef (idRef, use, dontKill)))
-	  | laExp (TagExp (info, label, i, idRefArgs), use, dontKill) =
+	  | laExp (TagExp (info, labels, n, idRefArgs), use, dontKill) =
 	    let
 		val (lastUses, idRefArgs) =
 		    laIdRefArgs (idRefArgs, use, dontKill)
 	    in
-		(lastUses, TagExp (info, label, i, idRefArgs))
+		(lastUses, TagExp (info, labels, n, idRefArgs))
 	    end
 	  | laExp (ConExp (info, idRef, idRefArgs), use, dontKill) =
 	    (*--** nonlinearities between constructor and arguments *)
@@ -523,6 +524,14 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    in
 		(lastUses, VarAppExp (info, laIdRef (idRef, use, dontKill),
 				      idRefArgs))
+	    end
+	  | laExp (DirectAppExp (info, idRef, idRefArgs), use, dontKill) =
+	    let
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, DirectAppExp (info, laIdRef (idRef, use, dontKill),
+					 idRefArgs))
 	    end
 	  | laExp (SelExp (info, prod, label, i, idRef), use, dontKill) =
 	    (#[], SelExp (info, prod, label, i,

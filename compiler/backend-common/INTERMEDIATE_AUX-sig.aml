@@ -42,6 +42,7 @@ signature INTERMEDIATE_AUX =
 
 	val typToArity: Type.t -> Arity.t
 	val labelToIndex: Type.t * Label.t -> O.prod * int
+	val prodToLabels: O.prod -> Label.t vector
 
 	val reset: unit -> unit
     end

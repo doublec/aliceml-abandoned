@@ -60,7 +60,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    fun adjoin (pos, mapping) =
 		case lookup' (pos, mapping) of
 		    SOME (O.IdRef id | O.LastIdRef id) => (O.IdDef id, mapping)
-		  | SOME (O.Lit _ | O.Prim _) =>
+		  | SOME (O.Lit _ | O.Prim _ | O.Value _) =>
 			raise Crash.Crash "MkFlatteningPhase.adjoin"
 		  | NONE =>
 			let
@@ -72,7 +72,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun idRefStamp (O.IdRef (O.Id (_, stamp, _))) = stamp
 	  | idRefStamp (O.LastIdRef (O.Id (_, stamp, _))) = stamp
-	  | idRefStamp (O.Lit _ | O.Prim _) =
+	  | idRefStamp (O.Lit _ | O.Prim _ | O.Value _) =
 	    raise Crash.Crash "MkFlatteningPhase.idRefStamp"
 
 	fun mappingsToSubst (mapping0, mapping) =
@@ -129,10 +129,10 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | testArity (_, _, _, _) =
 	    raise Crash.Crash "MkFlatteningPhase.testArity"
 
-	fun tagTest (label, n, args, arity, body) =
+	fun tagTest (labels, n, args, arity, body) =
 	    testArity (args, arity,
-		       fn (args, body) => O.TagTests #[(label, n, args, body)],
-		       body)
+		       fn (args, body) =>
+			  O.TagTests #[(labels, n, args, body)], body)
 
 	fun conTest (idRef, args, arity, body) =
 	    testArity (args, arity,
@@ -170,9 +170,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | expArity (_, _, _, _) =
 	    raise Crash.Crash "MkFlatteningPhase.expArity"
 
-	fun tagExp (info, label, n, args, arity) =
+	fun tagExp (info, labels, n, args, arity) =
 	    expArity (args, arity, info,
-		      fn args => O.TagExp (#region info, label, n, args))
+		      fn args => O.TagExp (#region info, labels, n, args))
 
 	fun conExp (info, id, args, arity) =
 	    expArity (args, arity, info,
@@ -240,12 +240,13 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | recToHoles (nil, _, unallocated) =
 	    (Assert.assert (IdSet.isEmpty unallocated); nil)
 
+	val boolLabels = #[PervasiveType.lab_false, PervasiveType.lab_true]
+
 	fun translateIf (info: exp_info, idRef, thenStms, elseStms, errStms) =
 	    [O.TestStm (#region info, idRef,
-			O.TagTests #[(PervasiveType.lab_true, 1,
-				      O.TupArgs #[], thenStms),
-				     (PervasiveType.lab_false, 0,
-				      O.TupArgs #[], elseStms)], errStms)]
+			O.TagTests #[(boolLabels, 1, O.TupArgs #[], thenStms),
+				     (boolLabels, 0, O.TupArgs #[], elseStms)],
+			errStms)]
 
 	fun raisePrim (region, name) =
 	    [O.RaiseStm (region, O.Prim name)]
@@ -433,9 +434,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			     unfoldStrict (info', exp, Goto rest)
 			 val id = O.freshId (#region info)
 			 val stm = O.ValDec (#region info, O.IdDef id, exp')
-			 val (_, n) = labelToIndex (#typ info, label)
+			 val (prod, n) = labelToIndex (#typ info, label)
 			 val exp'' =
-			     O.TagExp (#region info, label, n,
+			     O.TagExp (#region info, prodToLabels prod, n,
 				       O.OneArg (O.IdRef id))
 		     in
 			 r := SOME (stm::f exp''::translateCont cont);
@@ -446,9 +447,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			 val r = ref NONE
 			 val rest = [O.IndirectStm (#region info, r)]
 			 val (stms, args) = unfoldArgs (exp, rest)
-			 val (_, n) = labelToIndex (#typ info, label)
+			 val (prod, n) = labelToIndex (#typ info, label)
 			 val (stms', exp') =
-			     tagExp (info, label, n, args, arity)
+			     tagExp (info, prodToLabels prod, n, args, arity)
 		     in
 			 r := SOME (stms' @ f exp'::translateCont cont);
 			 stms
@@ -458,8 +459,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
-		val (_, n) = labelToIndex (#typ info, label)
-		val exp' = O.TagExp (#region info, label, n, O.OneArg idRef)
+		val (prod, n) = labelToIndex (#typ info, label)
+		val exp' = O.TagExp (#region info, prodToLabels prod, n,
+				     O.OneArg idRef)
 	    in
 		r := SOME (f exp'::translateCont cont);
 		stms
@@ -925,15 +927,16 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		([O.TestStm (region, idRef, tests, elseBody)], mapping'')
 	    end
-	  | translateNode (pos, TagTest (label, n, args, arity),
+	  | translateNode (pos, TagTest (labels, n, args, arity),
 			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val idRef = lookup (pos, mapping)
+		val label = Vector.sub (labels, n)
 		val (idDefArgs, mapping') =
 		    translateArgs (args, LABEL label::pos, mapping)
 		val (thenBody, mapping'') =
 		    translateGraph (thenGraph, mapping', region)
-		val tests = tagTest (label, n, idDefArgs, arity, thenBody)
+		val tests = tagTest (labels, n, idDefArgs, arity, thenBody)
 		val (elseBody, mapping''') =
 		    translateGraph (elseGraph, mapping'', region)
 	    in

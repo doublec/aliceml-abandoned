@@ -299,7 +299,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun usedVarsIdRef ((O.IdRef id | O.LastIdRef id), set, used) =
 	    usedVarsId (id, set, used)
-	  | usedVarsIdRef ((O.Lit _ | O.Prim _), _, _) = ()
+	  | usedVarsIdRef ((O.Lit _ | O.Prim _ | O.Value _), _, _) = ()
 
 	fun usedVarsArgs (O.OneArg idRef, set, used) =
 	    usedVarsIdRef (idRef, set, used)
@@ -383,6 +383,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | usedVarsExp (O.PrimAppExp (_, _, idRefs), set, used, _) =
 	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
 	  | usedVarsExp (O.VarAppExp (_, idRef, args), set, used, _) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.DirectAppExp (_, idRef, args), set, used, _) =
 	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
 	  | usedVarsExp (O.SelExp (_, _, _, _, idRef), set, used, _) =
 	    usedVarsIdRef (idRef, set, used)
@@ -503,6 +505,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	      | (Arity.Unary, _) =>
 		    raise Crash.Crash ("IntermediateAux.labelToIndex")
 	      | (arity, NONE) => findLabel (arity, label)
+
+	fun prodToLabels (O.Tuple n) =
+	    Vector.tabulate (n, fn i => Label.fromInt (i + 1))
+	  | prodToLabels (O.Product labels) = labels
 
 	fun reset () = Type.Map.deleteAll typToArityMap
     end

@@ -78,6 +78,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  | format' (IDREF (Lit lit)) = format' (LIT lit)
 		  | format' (IDREF (Prim name)) =
 		    (append "prim \""; append name; append "\"")
+		  | format' (IDREF (Value value)) = append "<val>"
 		  | format' (IDDEF (IdDef id)) = append (idToString id)
 		  | format' (IDDEF Wildcard) = append "_"
 		  | format' (CO s) = (append "   (* "; append s; append " *)")
@@ -171,9 +172,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				   formatBody (body, shared), EX, NL])
 		 litBodyVector)
 	  | formatTests (TagTests tagBodyVector, shared) =
-	    SEQ (Vector.map (fn (label, n, args, body) =>
+	    SEQ (Vector.map (fn (labels, n, args, body) =>
 			     SEQ #[S "(tag ",
-				   S (Label.toString label),
+				   S (Label.toString (Vector.sub (labels, n))),
 				   S "/", I n, S ") ",
 				   formatArgs IDDEF args,
 				   S " =>", IN, NL,
@@ -194,9 +195,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 idDefsBodyVector)
 	and formatExp (NewExp (_, _)) = S "new"
 	  | formatExp (VarExp (_, idRef)) = IDREF idRef
-	  | formatExp (TagExp (_, label, n, args)) =
-	    SEQ #[S "(tag ", S (Label.toString label), S "/", I n, S ") ",
-		  formatArgs IDREF args]
+	  | formatExp (TagExp (_, labels, n, args)) =
+	    SEQ #[S "(tag ", S (Label.toString (Vector.sub (labels, n))),
+		  S "/", I n, S ") ", formatArgs IDREF args]
 	  | formatExp (ConExp (_, idRef, args)) =
 	    SEQ #[S "(con ", IDREF idRef, S ") ", formatArgs IDREF args]
 	  | formatExp (RefExp (_, idRef)) = SEQ #[S "ref ", IDREF idRef]
@@ -226,6 +227,8 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  SEP (S ", ", Vector.map IDREF idRefs), S ")"]
 	  | formatExp (VarAppExp (_, idRef, args)) =
 	    SEQ #[IDREF idRef, S " ", formatArgs IDREF args]
+	  | formatExp (DirectAppExp (_, idRef, args)) =
+	    SEQ #[IDREF idRef, S " ", formatArgs IDREF args, S " (* direct *)"]
 	  | formatExp (SelExp (_, _, label, n, idRef)) =
 	    SEQ #[S "#", S (Label.toString label),
 		  S "/", I n, S " ", IDREF idRef]

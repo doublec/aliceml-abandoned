@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Reflect             from "../../lib/system/Reflect"
 import structure Url                 from "../../lib/system/Url"
 import structure Name                from "../../lib/rtt/Name"
 import structure Label               from "../../lib/rtt/Label"
@@ -51,6 +52,7 @@ signature FLAT_GRAMMAR =
 	  | LastIdRef of id
 	  | Lit of lit
 	  | Prim of string
+	  | Value of Reflect.value * bool
 
 	datatype funFlag =
 	    PrintName of string
@@ -91,13 +93,13 @@ signature FLAT_GRAMMAR =
 	  | ExportStm of stm_info * exp
 	and tests =
 	    LitTests of (lit * body) vector
-	  | TagTests of (label * int * idDef args * body) vector
+	  | TagTests of (label vector * int * idDef args * body) vector
 	  | ConTests of (idRef * idDef args * body) vector
 	  | VecTests of (idDef vector * body) vector
 	and exp =
 	    NewExp of exp_info * Name.t
 	  | VarExp of exp_info * idRef
-	  | TagExp of exp_info * label * int * idRef args
+	  | TagExp of exp_info * label vector * int * idRef args
 	  | ConExp of exp_info * idRef * idRef args
 	  | RefExp of exp_info * idRef
 	  | TupExp of exp_info * idRef vector
@@ -109,6 +111,7 @@ signature FLAT_GRAMMAR =
 	  | FunExp of exp_info * stamp * funFlag list * idDef args * body
 	  | PrimAppExp of exp_info * string * idRef vector       (* exact *)
 	  | VarAppExp of exp_info * idRef * idRef args
+	  | DirectAppExp of exp_info * idRef * idRef args
 	  | SelExp of exp_info * prod * label * int * idRef
 	  | LazyPolySelExp of exp_info * label * idRef
 	  | FunAppExp of exp_info * idRef * stamp * idRef args   (* exact *)

@@ -22,6 +22,7 @@
 
 import structure TextIO (*--**DEBUG*)    from "../../lib/system/TextIO"
 import structure Url                     from "../../lib/system/Url"
+import structure UnsafeValue             from "../../lib/system/UnsafeValue"
 import structure Reflect                 from "../../lib/system/Reflect"
 import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import structure Assert                  from "../../lib/utility/Assert"
@@ -42,6 +43,30 @@ import structure FlatGrammar             from "FlatGrammar"
 import structure OutputFlatGrammar       from "OutputFlatGrammar"
 import structure PrimOps                 from "PrimOps"
 import signature VALUE_PROPAGATION_PHASE from "VALUE_PROPAGATION_PHASE-sig"
+
+structure UnsafeValue :
+    sig
+	val cast: 'a -> 'b
+	val same: 'a * 'b -> bool
+	val prim: string -> Reflect.value
+	val proj: Reflect.value * Label.t vector * int -> Reflect.value
+	val projTuple: Reflect.value * int * int -> Reflect.value
+	val tag: Reflect.value * Label.t vector -> int
+	val projTagged: Reflect.value * Label.t vector * int -> Reflect.value
+	val projTaggedTuple: Reflect.value * int * int -> Reflect.value
+	val con: Reflect.value -> Reflect.value
+	val projConstructed: Reflect.value *
+			     Label.t vector * int -> Reflect.value
+	val projConstructedTuple: Reflect.value * int * int -> Reflect.value
+	val projPoly: Reflect.value * Label.t -> Reflect.value
+	val prod: (Label.t * Reflect.value) vector -> Reflect.value
+	val tuple: Reflect.value vector -> Reflect.value
+	val tagged: Label.t vector * int *
+		    (Label.t * Reflect.value) vector -> Reflect.value
+	val taggedTuple: Label.t vector * int *
+			 Reflect.value vector -> Reflect.value
+	val inArity: Reflect.value -> int
+    end = UnsafeValue
 
 (*
  * We need to implement our own maps because the ones provided by
@@ -124,7 +149,8 @@ functor MkScopedImpMap(ImpMap: IMP_MAP) :>
 functor MkHashScopedImpMap(Key: HASH_KEY) =
     MkScopedImpMap(MkHashImpMap(Key))
 
-functor MkValuePropagationPhase(val loadMod:
+functor MkValuePropagationPhase(val isCross: bool
+				val loadMod:
 				    Source.desc * Url.t -> Reflect.module) :>
     VALUE_PROPAGATION_PHASE =
     struct
@@ -153,13 +179,14 @@ functor MkValuePropagationPhase(val loadMod:
 	    LitVal of lit
 	  | PrimVal of string
 	  | VarVal of id
-	  | TagVal of label * int * id option args
-	  | ConVal of id * id option args
-	  | ProdVal of id option vector
-	  | PolyProdVal of id option LabelMap.t
-	  | VecVal of id option vector
+	  | TagVal of label vector * int * value args
+	  | ConVal of id * value args
+	  | ProdVal of value vector
+	  | PolyProdVal of value LabelMap.t * Stamp.t
+	  | VecVal of value vector
 	  | FunVal of stamp * idDef args * body
 	  | CaughtExnVal of id
+	  | ReflectVal of Reflect.value * bool
 	  | UnknownVal
 	  | FailedVal
 
@@ -173,31 +200,41 @@ functor MkValuePropagationPhase(val loadMod:
 	  | allArgs f (ProdArgs labelXVec) =
 	    Vector.all (fn (_, x) => f x) labelXVec
 
-	fun idRefId (IdRef id) = id
-	  | idRefId (LastIdRef id) = id
-	  | idRefId (Lit _ | Prim _) =
-	    raise Crash.Crash "ValuePropagationPhase.idRefId"
+	fun idRefIdOpt (IdRef id) = SOME id
+	  | idRefIdOpt (LastIdRef id) = SOME id
+	  | idRefIdOpt (Lit _ | Prim _ | Value (_, _)) = NONE
 
-	fun idRefIdOpt (IdRef id | LastIdRef id) = SOME id
-	  | idRefIdOpt (Lit _ | Prim _) = NONE
+	fun valueToIdRefOpt (LitVal lit) = SOME (Lit lit)
+	  | valueToIdRefOpt (PrimVal name) = SOME (Prim name)
+	  | valueToIdRefOpt (VarVal id) = SOME (IdRef id)
+	  | valueToIdRefOpt (ReflectVal (rvalue, eager)) =
+	    SOME (Value (rvalue, eager))
+	  | valueToIdRefOpt _ = NONE
 
-	fun idDefIdOpt (IdDef id) = SOME id
-	  | idDefIdOpt Wildcard = NONE
+	fun idRefToValue (IdRef id | LastIdRef id) = VarVal id
+	  | idRefToValue (Lit lit) = LitVal lit
+	  | idRefToValue (Prim name) = PrimVal name
+	  | idRefToValue (Value (rvalue, eager)) = ReflectVal (rvalue, eager)
 
 	fun expToValue (NewExp (_, _)) = UnknownVal   (*--** ConVal? *)
 	  | expToValue (VarExp (_, Lit lit)) = LitVal lit
 	  | expToValue (VarExp (_, Prim name)) = PrimVal name
+	  | expToValue (VarExp (_, Value (rvalue, eager))) =
+	    ReflectVal (rvalue, eager)
 	  | expToValue (VarExp (_, (IdRef id | LastIdRef id))) = VarVal id
-	  | expToValue (TagExp (_, label, n, args)) =
-	    TagVal (label, n, mapArgs idRefIdOpt args)
+	  | expToValue (TagExp (_, labels, n, args)) =
+	    TagVal (labels, n, mapArgs idRefToValue args)
 	  | expToValue (ConExp (_, (IdRef id | LastIdRef id), args)) =
-	    ConVal (id, mapArgs idRefIdOpt args)
-	  | expToValue (ConExp (_, (Lit _ | Prim _), _)) = UnknownVal
+	    ConVal (id, mapArgs idRefToValue args)
+	  | expToValue (ConExp (_, Lit _, _)) =
+	    raise Crash.Crash "MkValuePropagationPhase.expToValue: ConExp Lit"
+	  | expToValue (ConExp (_, (Prim _ | Value (_, _)), _)) =
+	    UnknownVal   (*--** represent constructed value *)
 	  | expToValue (RefExp (_, _)) = UnknownVal
 	  | expToValue (TupExp (_, idRefs)) =
-	    ProdVal (Vector.map idRefIdOpt idRefs)
+	    ProdVal (Vector.map idRefToValue idRefs)
 	  | expToValue (ProdExp (_, labelIdRefVec)) =
-	    ProdVal (Vector.map (fn (_, idRef) => idRefIdOpt idRef)
+	    ProdVal (Vector.map (fn (_, idRef) => idRefToValue idRef)
 				labelIdRefVec)
 	  | expToValue (PolyProdExp (_, labelIdRefVec)) =
 	    let
@@ -205,20 +242,24 @@ functor MkValuePropagationPhase(val loadMod:
 	    in
 		Vector.app (fn (label, idRef) =>
 			       LabelMap.insertDisjoint
-				   (map, label, idRefIdOpt idRef))
+				   (map, label, idRefToValue idRef))
 			   labelIdRefVec;
-		PolyProdVal map
+		PolyProdVal (map, Stamp.new ())
 	    end
 	  | expToValue (VecExp (_, idRefs)) =
-	    VecVal (Vector.map idRefIdOpt idRefs)
+	    VecVal (Vector.map idRefToValue idRefs)
 	  | expToValue (FunExp (_, stamp, _, args, body)) =
 	    FunVal (stamp, args, body)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
 	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
+	  | expToValue (DirectAppExp (_, _, _)) = UnknownVal
 	  | expToValue (SelExp (_, _, _, _, _)) = UnknownVal
 	  | expToValue (LazyPolySelExp (_, _, _)) = UnknownVal
 	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
 	  | expToValue (FailExp _) = FailedVal
+
+	fun idDefToValue (IdDef id) = VarVal id
+	  | idDefToValue Wildcard = UnknownVal
 
 	(*
 	 * For each identifier, we store in the environment whether it is
@@ -425,14 +466,14 @@ functor MkValuePropagationPhase(val loadMod:
 				 ReturnStm (_, _) | ExportStm (_, _))], _, _) =
 	    body
 	  | patchBody (_, _, _) =
-	    raise Crash.Crash "ValuePropagationPhase.patchBody"
+	    raise Crash.Crash "MkValuePropagationPhase.patchBody"
 	and patchTests (LitTests tests, lazySels, shared) =
 	    LitTests (Vector.map (fn (lit, body) =>
 				  (lit, patchBody (body, lazySels, shared)))
 		      tests)
 	  | patchTests (TagTests tests, lazySels, shared) =
-	    TagTests (Vector.map (fn (label, n, args, body) =>
-				  (label, n, args,
+	    TagTests (Vector.map (fn (labels, n, args, body) =>
+				  (labels, n, args,
 				   patchArgs (args, lazySels) @
 				   patchBody (body, lazySels, shared))) tests)
 	  | patchTests (ConTests tests, lazySels, shared) =
@@ -452,29 +493,10 @@ functor MkValuePropagationPhase(val loadMod:
 	 * control-flow junctions, this means that we have to combine the
 	 * environments from all branches.
 	 *
-	 * `unionEnv' takes two environments and returns the combined minimal
+	 * `intersectEnv' takes two environments and returns the combined
 	 * environment.  It is reflexive and associative, so an arbitrary
-	 * number of environments can be combined using `unionEnv.'
+	 * number of environments can be combined using `intersectEnv.'
 	 *)
-
-	fun idOptEq (SOME (Id (_, stamp, _)), SOME (Id (_, stamp', _))) =
-	    stamp = stamp'
-	  | idOptEq (NONE, NONE) = true
-	  | idOptEq (_, _) = false
-
-	fun argsMin (args as OneArg idOpt, OneArg idOpt') =
-	    if idOptEq (idOpt, idOpt') then args else OneArg NONE
-	  | argsMin (TupArgs idOpts, TupArgs idOpts') =
-	    TupArgs (VectorPair.map (fn (idOpt, idOpt') =>
-				     if idOptEq (idOpt, idOpt') then idOpt
-				     else NONE) (idOpts, idOpts'))
-	  | argsMin (ProdArgs labelIdOptVec, ProdArgs labelIdOptVec') =
-	    ProdArgs (VectorPair.map (fn ((label, idOpt), (_, idOpt')) =>
-				      (label,
-				       if idOptEq (idOpt, idOpt') then idOpt
-				       else NONE))
-		      (labelIdOptVec, labelIdOptVec'))
-	  | argsMin (_, _) = raise Crash.Crash "ValuePropagationPhase.argsMin"
 
 	fun valueMin (value as LitVal lit, LitVal lit') =
 	    if litEq (lit, lit') then value else UnknownVal
@@ -483,24 +505,24 @@ functor MkValuePropagationPhase(val loadMod:
 	  | valueMin (value as VarVal (Id (_, stamp, _)),
 		      VarVal (Id (_, stamp', _))) =
 	    if stamp = stamp' then value else UnknownVal
-	  | valueMin (TagVal (label, n, args), TagVal (_, n', args')) =
-	    if n = n' then TagVal (label, n, argsMin (args, args'))
+	  | valueMin (TagVal (labels, n, args), TagVal (_, n', args')) =
+	    if n = n' then TagVal (labels, n, argsMin (args, args'))
 	    else UnknownVal
 	  | valueMin (ConVal (id, args), ConVal (id', args')) =
 	    if idEq (id, id') then ConVal (id, argsMin (args, args'))
 	    else UnknownVal
-	  | valueMin (ProdVal idOpts, ProdVal idOpts') =
-	    ProdVal (VectorPair.map (fn (idOpt, idOpt') =>
-				     if idOptEq (idOpt, idOpt')
-				     then idOpt else NONE)
-		     (idOpts, idOpts'))
-	  | valueMin (value as PolyProdVal map, PolyProdVal map') =
-	    if map = map' then value else UnknownVal
-	  | valueMin (VecVal idOpts, VecVal idOpts') =
-	    if Vector.length idOpts = Vector.length idOpts' then
-		VecVal (VectorPair.map (fn (idOpt, idOpt') =>
-					if idOptEq (idOpt, idOpt') then idOpt
-					else NONE) (idOpts, idOpts'))
+	  | valueMin (ProdVal values, ProdVal values') =
+	    ProdVal (VectorPair.map (fn (value, value') =>
+					valueMin (value, value'))
+				    (values, values'))
+	  | valueMin (value as PolyProdVal (_, stamp),
+		      PolyProdVal (_, stamp')) =
+	    if stamp = stamp' then value else UnknownVal
+	  | valueMin (VecVal values, VecVal values') =
+	    if Vector.length values = Vector.length values' then
+		VecVal (VectorPair.map (fn (values, values') =>
+					   valueMin (values, values'))
+				       (values, values'))
 	    else UnknownVal
 	  | valueMin (value as FunVal (stamp, _, _), FunVal (stamp', _, _)) =
 	    if stamp = stamp' then value else UnknownVal
@@ -508,8 +530,18 @@ functor MkValuePropagationPhase(val loadMod:
 	    if idEq (id, id') then value else UnknownVal
 	  | valueMin (FailedVal, FailedVal) = FailedVal
 	  | valueMin (_, _) = UnknownVal
+	and argsMin (args as OneArg value, OneArg value') =
+	    OneArg (valueMin (value, value'))
+	  | argsMin (TupArgs values, TupArgs values') =
+	    TupArgs (VectorPair.map valueMin (values, values'))
+	  | argsMin (ProdArgs labelValueVec, ProdArgs labelValueVec') =
+	    ProdArgs (VectorPair.map (fn ((label, value), (_, value')) =>
+					 (label, valueMin (value, value')))
+				     (labelValueVec, labelValueVec'))
+	  | argsMin (_, _) =
+	    raise Crash.Crash "MkValuePropagationPhase.argsMin"
 
-	fun unionEnv (env', env) =
+	fun intersectEnv (env', env) =
 	    IdMap.appiScope
 	    (fn (id, entry as (value, isToplevel)) =>
 	     case IdMap.lookup (env', id) of
@@ -524,23 +556,142 @@ functor MkValuePropagationPhase(val loadMod:
 
 	(* Various Helper Functions *)
 
-	fun idRefEq ((IdRef id1 | LastIdRef id1),
-		     (IdRef id2 | LastIdRef id2)) = idEq (id1, id2)
-	  | idRefEq ((Lit _ | Prim _), _) = false
-	  | idRefEq (_, (Lit _ | Prim _)) = false
+	fun acquirePrim name =
+	    if isCross then PrimVal name
+	    else ReflectVal (UnsafeValue.prim name, true)
+
+	fun idRefEq ((IdRef id | LastIdRef id),
+		     (IdRef id' | LastIdRef id')) = idEq (id, id')
+	  | idRefEq (Lit lit, Lit lit') = litEq (lit, lit')
+	  | idRefEq (Prim name, Prim name') = name = name'
+	  | idRefEq (Value (rvalue, _), Value (rvalue', _)) =
+	    UnsafeValue.same (rvalue, rvalue')
+	  | idRefEq (_, _) = false
+
+	fun isDetermined (rvalue, eager) =
+	    if eager then
+		(Future.await rvalue; true)
+		handle _ =>
+		    (TextIO.output (TextIO.stdErr,
+				    "warning: found failed future\n");
+		     false)
+	    else Future.isDetermined rvalue
+
+	fun litRValueEq (lit, rvalue, eager) =
+	    (isDetermined (rvalue, eager);
+	     case lit of
+		 IntLit i => UnsafeValue.same (i, rvalue)
+	       | WordLit w => UnsafeValue.same (w, rvalue)
+	       | CharLit c => UnsafeValue.same (c, rvalue)
+	       | StringLit s => UnsafeValue.same (s, rvalue)
+	       | RealLit r => UnsafeValue.same (r, rvalue))
 
 	fun lookupEnv (env, (IdRef id | LastIdRef id)) =
 	    IdMap.lookupExistent (env, id)
 	  | lookupEnv (_, Lit lit) = (LitVal lit, true)
 	  | lookupEnv (_, Prim name) = (PrimVal name, true)
+	  | lookupEnv (_, Value (rvalue, eager)) =
+	    (ReflectVal (rvalue, eager), true)
+
+	fun valueToRValue value =
+	    if isCross then NONE
+	    else
+		case value of
+		    LitVal (IntLit i) => SOME (UnsafeValue.cast i, true)
+		  | LitVal (WordLit w) => SOME (UnsafeValue.cast w, true)
+		  | LitVal (CharLit c) => SOME (UnsafeValue.cast c, true)
+		  | LitVal (StringLit s) => SOME (UnsafeValue.cast s, true)
+		  | LitVal (RealLit r) => SOME (UnsafeValue.cast r, true)
+		  | PrimVal name => SOME (UnsafeValue.prim name, true)
+		  | ReflectVal (rvalue, eager) => SOME (rvalue, eager)
+		  | _ => NONE
+
+	fun idRefsToRValues (idRefs, env) =
+	    case Vector.foldr
+		     (fn (_, NONE) => NONE
+		       | (idRef, SOME (rvalues, eager)) =>
+			 case valueToRValue (#1 (lookupEnv (env, idRef))) of
+			     SOME (rvalue, eager') =>
+				 SOME (rvalue::rvalues, eager andalso eager')
+			   | NONE => NONE) (SOME ([], true)) idRefs of
+		SOME (rvalues, eager) => SOME (Vector.fromList rvalues, eager)
+	      | NONE => NONE
+
+	fun labelIdRefVecToRValues (labelIdRefVec, env) =
+	    case Vector.foldr
+		     (fn (_, NONE) => NONE
+		       | ((label, idRef), SOME (labelRValueList, eager)) =>
+			 case valueToRValue (#1 (lookupEnv (env, idRef))) of
+			     SOME (rvalue, eager') =>
+				 SOME ((label, rvalue)::labelRValueList,
+				       eager andalso eager')
+			   | NONE => NONE) (SOME ([], true)) labelIdRefVec of
+		SOME (labelRValueList, eager) =>
+		    SOME (Vector.fromList labelRValueList, eager)
+	      | NONE => NONE
+
+	fun argsToRValue (OneArg idRef, env) =
+	    (case valueToRValue (#1 (lookupEnv (env, idRef))) of
+		 SOME (rvalue, eager) => SOME (OneArg rvalue, eager)
+	       | NONE => NONE)
+	  | argsToRValue (TupArgs idRefs, env) =
+	    (case idRefsToRValues (idRefs, env) of
+		 SOME (rvalues, eager) => SOME (TupArgs rvalues, eager)
+	       | NONE => NONE)
+	  | argsToRValue (ProdArgs labelIdRefVec, env) =
+	    (case labelIdRefVecToRValues (labelIdRefVec, env) of
+		 SOME (labelRValueVec, eager) =>
+		     SOME (ProdArgs labelRValueVec, eager)
+	       | NONE => NONE)
+
+	fun taggedToRValue (labels, n, args, env) =
+	    if isCross then NONE
+	    else
+		case argsToRValue (args, env) of
+		    SOME (OneArg rvalue, eager) =>
+			SOME (UnsafeValue.taggedTuple (labels, n, #[rvalue]),
+			      eager)
+		  | SOME (TupArgs rvalues, eager) =>
+			SOME (UnsafeValue.taggedTuple (labels, n, rvalues),
+			      eager)
+		  | SOME (ProdArgs labelRValueVec, eager) =>
+			SOME (UnsafeValue.tagged (labels, n, labelRValueVec),
+			      eager)
+		  | NONE => NONE
+
+	fun tupleToRValue (idRefs, env) =
+	    if isCross then NONE
+	    else
+		case idRefsToRValues (idRefs, env) of
+		    SOME (rvalues, eager) =>
+			SOME (UnsafeValue.tuple rvalues, eager)
+		  | NONE => NONE
+
+	fun prodToRValue (labelIdRefVec, env) =
+	    if isCross then NONE
+	    else
+		case labelIdRefVecToRValues (labelIdRefVec, env) of
+		    SOME (labelRValueVec, eager) =>
+			SOME (UnsafeValue.prod labelRValueVec, eager)
+		  | NONE => NONE
+
+	fun vectorToRValue (idRefs, env) =
+	    if isCross then NONE
+	    else
+		case idRefsToRValues (idRefs, env) of
+		    SOME (rvalues, eager) =>
+			SOME (UnsafeValue.cast rvalues, eager)
+		  | NONE => NONE
 
 	fun varExp (info, idRef, env) =
 	    case lookupEnv (env, idRef) of
 		(LitVal lit, _) => VarExp (info, Lit lit)
 	      | (PrimVal name, _) => VarExp (info, Prim name)
+	      | (ReflectVal (rvalue, eager), _) =>
+		    VarExp (info, Value (rvalue, eager))
 	      | (VarVal id', _) => varExp (info, IdRef id', env)
-	      | (TagVal (label, n, TupArgs #[]), _) =>
-		    TagExp (info, label, n, TupArgs #[])
+	      | (TagVal (labels, n, TupArgs #[]), _) =>
+		    TagExp (info, labels, n, TupArgs #[])
 	      | (ConVal (id', TupArgs #[]), _) =>
 		    ConExp (info, IdRef id', TupArgs #[])
 	      | (_, _) => VarExp (info, idRef)
@@ -550,6 +701,7 @@ functor MkValuePropagationPhase(val loadMod:
 		(LitVal lit, _) => Lit lit
 	      | (PrimVal name, _) => Prim name
 	      | (VarVal id', _) => IdRef id'
+	      | (ReflectVal (rvalue, eager), _) => Value (rvalue, eager)
 	      | (_, _) => idRef
 
 	fun derefArgs (OneArg idRef, env) = OneArg (deref (idRef, env))
@@ -564,10 +716,19 @@ functor MkValuePropagationPhase(val loadMod:
 	  | argsToIdRefs (TupArgs idRefs) = idRefs
 	  | argsToIdRefs (ProdArgs labelIdRefVec) = Vector.map #2 labelIdRefVec
 
-	fun doSel (n, idRef, env) =
+	fun doSel (prod, i, idRef, env) =
 	    case lookupEnv (env, idRef) of
-		(ProdVal idOpts, _) =>
-		    Option.map IdRef (Vector.sub (idOpts, n))
+		(ProdVal values, _) => valueToIdRefOpt (Vector.sub (values, i))
+	      | (ReflectVal (rvalue, eager), _) =>
+		    if isDetermined (rvalue, eager) then
+			case prod of
+			    Tuple n =>
+				SOME (Value (UnsafeValue.projTuple
+						 (rvalue, n, i), eager))
+			  | Product labels =>
+				SOME (Value (UnsafeValue.proj
+						 (rvalue, labels, i), eager))
+		    else NONE
 	      | (_, _) => NONE
 
 	fun doLazySel (id, label, map, env, isToplevel) =
@@ -585,11 +746,37 @@ functor MkValuePropagationPhase(val loadMod:
 
 	(* Calling Convention Conversion *)
 
-	fun getIdRefs (idRef, env) =
+	fun getInArity (rvalue, eager) =
+	    if isDetermined (rvalue, eager) then
+		case UnsafeValue.inArity rvalue of
+		    ~2 => NONE
+		  | ~1 => SOME Arity.Unary
+		  | n => SOME (Arity.Tuple n)
+	    else NONE
+
+	fun getIdRefs (idRef, prod, env) =
 	    case lookupEnv (env, idRef) of
-		(ProdVal idOpts, _) =>
-		    if Vector.all isSome idOpts then
-			SOME (Vector.map valOf idOpts)
+		(ProdVal values, _) =>
+		    (SOME (Vector.map (fn value =>
+					  Option.valOf (valueToIdRefOpt value))
+				      values)
+		     handle Option.Option => NONE)
+	      | (ReflectVal (rvalue, eager), _) =>
+		    if isDetermined (rvalue, eager) then
+			let
+			    val (n, f) =
+				case prod of
+				    Tuple n =>
+					(n, fn i => UnsafeValue.projTuple
+							(rvalue, n, i))
+				  | Product labels => 
+					(Vector.length labels,
+					 fn i => UnsafeValue.proj
+						     (rvalue, labels, i))
+			in
+			    SOME (Vector.tabulate
+				      (n, fn i => Value (f i, eager)))
+			end
 		    else NONE
 	      | (_, _) => NONE
 
@@ -618,8 +805,8 @@ functor MkValuePropagationPhase(val loadMod:
 	    end
 	  | adaptArity (info, Arity.Tuple n, OneArg idRef, env, f) =
 	    (* deconstruct tuple (try statically) *)
-	    (case getIdRefs (idRef, env) of
-		 SOME ids => (nil, f (TupArgs (Vector.map IdRef ids)))
+	    (case getIdRefs (idRef, Tuple n, env) of
+		 SOME idRefs => (nil, f (TupArgs idRefs))
 	       | NONE =>
 		     let
 			 val ids = Vector.tabulate (n, fn _ => freshId info)
@@ -631,10 +818,9 @@ functor MkValuePropagationPhase(val loadMod:
 	    (nil, f args)
 	  | adaptArity (info, Arity.Product labels, OneArg idRef, env, f) =
 	    (* deconstruct product (try statically) *)
-	    (case getIdRefs (idRef, env) of
-		 SOME ids =>
-		     (nil, f (ProdArgs (VectorPair.zip
-					    (labels, Vector.map IdRef ids))))
+	    (case getIdRefs (idRef, Product labels, env) of
+		 SOME idRefs =>
+		     (nil, f (ProdArgs (VectorPair.zip (labels, idRefs))))
 	       | NONE =>
 		     let
 			 val labelIdVec =
@@ -653,13 +839,20 @@ functor MkValuePropagationPhase(val loadMod:
 	  | adaptArity (_, Arity.Product _, args as ProdArgs _, _, f) =
 	    (nil, f args)
 	  | adaptArity (_, _, _, _, _) =
-	    raise Crash.Crash "ValuePropagationPhase.adaptArity"
+	    raise Crash.Crash "MkValuePropagationPhase.adaptArity"
+
+	(* Relaxed version - allows product arguments to tupled functions *)
+	fun adaptArity' (info, Arity.Tuple n, ProdArgs labelIdRefVec, env, f) =
+	    adaptArity (info, Arity.Tuple n,
+			TupArgs (Vector.map #2 labelIdRefVec), env, f)
+	  | adaptArity' (info, arity, args, env, f) =
+	    adaptArity (info, arity, args, env, f)
 
 	(* Applications of Primitives *)
 
 	fun isNonlocal ((IdRef id | LastIdRef id), env) =
 	    isSome (IdMap.lookup (env, id))
-	  | isNonlocal ((Lit _ | Prim _), _) = true
+	  | isNonlocal ((Lit _ | Prim _ | Value (_, _)), _) = true
 
 	fun isSimple (NewExp (_, _), _) = true
 	  | isSimple (VarExp (_, idRef), env) = isNonlocal (idRef, env)
@@ -679,7 +872,8 @@ functor MkValuePropagationPhase(val loadMod:
 
 	fun vpPrimApp (info, "Future.concur", idRefs as #[idRef], env) =
 	    (case lookupEnv (env, idRef) of
-		 (FunVal (_, _, [ReturnStm (_, exp)]), _) =>
+		 (FunVal (_, (OneArg Wildcard | TupArgs #[]),
+			  [ReturnStm (_, exp)]), _) =>
 		     if isSimple (exp, env) then exp
 		     else PrimAppExp (info, "Future.concur", idRefs)
 	       | (_, _) => PrimAppExp (info, "Future.concur", idRefs))
@@ -689,23 +883,126 @@ functor MkValuePropagationPhase(val loadMod:
 
 	(* Environment Handling *)
 
-	fun alias (IdDef id, SOME id', env, isToplevel) =
-	    IdMap.insert (env, id, (VarVal id', isToplevel))
-	  | alias (_, _, _, _) = ()
+	fun aliasRValueRowT proj (idDefs, rvalue, env, isToplevel, eager) =
+	    let
+		val n = Vector.length idDefs
+	    in
+		Vector.mapi
+		    (fn (i, IdDef id) =>
+			let
+			    val rvalue = proj (rvalue, n, i)
+			    val value = ReflectVal (rvalue, eager)
+			in
+			    IdMap.insert (env, id, (value, isToplevel));
+			    Wildcard
+			end
+		      | (_, Wildcard) => Wildcard) idDefs
+	    end
 
-	fun aliasArgs (OneArg idDef, OneArg idOpt', env, isToplevel) =
-	    alias (idDef, idOpt', env, isToplevel)
-	  | aliasArgs (TupArgs idDefs, TupArgs idOpts', env, isToplevel) =
-	    VectorPair.app (fn (idDef, idOpt') =>
-			       alias (idDef, idOpt', env, isToplevel))
-			   (idDefs, idOpts')
-	  | aliasArgs (ProdArgs labelIdDefVec, ProdArgs labelIdOptVec',
+	fun aliasRValueTuple (idDefs, rvalue, env, isToplevel, eager) =
+	    aliasRValueRowT UnsafeValue.projTuple
+			    (idDefs, rvalue, env, isToplevel, eager)
+
+	fun aliasRValueRowP proj (labelIdDefVec, rvalue,
+				  env, isToplevel, eager) =
+	    let
+		val labels = Vector.map #1 labelIdDefVec
+	    in
+		Vector.mapi
+		    (fn (i, (label, IdDef id)) =>
+			let
+			    val rvalue = proj (rvalue, labels, i)
+			    val value = ReflectVal (rvalue, eager)
+			in
+			    IdMap.insert (env, id, (value, isToplevel));
+			    (label, Wildcard)
+			end
+		      | (_, (label, Wildcard)) =>
+			(label, Wildcard)) labelIdDefVec
+	    end
+
+	fun aliasRValueProd (labelIdDefVec, rvalue, env, isToplevel, eager) =
+	    aliasRValueRowP UnsafeValue.proj
+			    (labelIdDefVec, rvalue, env, isToplevel, eager)
+
+	fun aliasRValueTagged (OneArg (IdDef id), rvalue,
+			       env, isToplevel, eager) =
+	    let
+		val rvalue = UnsafeValue.projTaggedTuple (rvalue, 1, 0)
+		val value = ReflectVal (rvalue, eager)
+	    in
+		IdMap.insert (env, id, (value, isToplevel))
+	    end
+	  | aliasRValueTagged (OneArg Wildcard, _, _, _, _) = ()
+	  | aliasRValueTagged (TupArgs idDefs, rvalue,
+			       env, isToplevel, eager) = 
+	    ignore (aliasRValueRowT UnsafeValue.projTaggedTuple
+				    (idDefs, rvalue, env, isToplevel, eager))
+	  | aliasRValueTagged (ProdArgs labelIdDefVec, rvalue,
+			       env, isToplevel, eager) =
+	    ignore (aliasRValueRowP UnsafeValue.projTagged
+				    (labelIdDefVec, rvalue,
+				     env, isToplevel, eager))
+
+	fun aliasRValueConstructed (OneArg (IdDef id), rvalue,
+				    env, isToplevel, eager) =
+	    let
+		val rvalue = UnsafeValue.projConstructedTuple (rvalue, 1, 0)
+		val value = ReflectVal (rvalue, eager)
+	    in
+		IdMap.insert (env, id, (value, isToplevel))
+	    end
+	  | aliasRValueConstructed (OneArg Wildcard, _, _, _, _) = ()
+	  | aliasRValueConstructed (TupArgs idDefs, rvalue,
+				    env, isToplevel, eager) = 
+	    ignore (aliasRValueRowT UnsafeValue.projConstructedTuple
+				    (idDefs, rvalue, env, isToplevel, eager))
+	  | aliasRValueConstructed (ProdArgs labelIdDefVec, rvalue,
+				    env, isToplevel, eager) =
+	    ignore (aliasRValueRowP UnsafeValue.projConstructed
+				    (labelIdDefVec, rvalue,
+				     env, isToplevel, eager))
+
+	fun aliasRValueVec (idDefs, rvalues, env, isToplevel, eager) =
+	    VectorPair.app
+		(fn (IdDef id, rvalue) =>
+		    IdMap.insert (env, id,
+				  (ReflectVal (rvalue, eager), isToplevel))
+		  | (Wildcard, _) => ()) (idDefs, rvalues)
+
+	fun alias (IdDef id, value as VarVal id', env, isToplevel) =
+	    (* id and id' can be equal due to pattern matching compilation,
+	     * for example in:
+	     *    datatype t = A | B | C
+	     *    fun f (a,b) (A, x) = x
+	     *      | f (a,b) (B, x) = x
+	     *      | f a_b (_, x) = x          <- here
+	     *)
+	    if idEq (id, id') then Wildcard
+	    else (IdMap.insert (env, id, (value, isToplevel)); Wildcard)
+	  | alias (IdDef id,
+		   value as (LitVal _ | PrimVal _ | ReflectVal (_, _)),
+		   env, isToplevel) =
+	    (IdMap.insert (env, id, (value, isToplevel)); Wildcard)
+	  | alias (idDef, _, _, _) = idDef
+
+	fun aliasVec (idDefs, values, env, isToplevel) =
+	    VectorPair.map (fn (idDef, value) =>
+			       alias (idDef, value, env, isToplevel))
+			   (idDefs, values)
+
+	fun aliasArgs (OneArg idDef, OneArg value, env, isToplevel) =
+	    OneArg (alias (idDef, value, env, isToplevel))
+	  | aliasArgs (TupArgs idDefs, TupArgs values, env, isToplevel) =
+	    TupArgs (aliasVec (idDefs, values, env, isToplevel))
+	  | aliasArgs (ProdArgs labelIdDefVec, ProdArgs labelValueVec,
 		       env, isToplevel) =
-	    VectorPair.app (fn ((_, idDef), (_, idOpt')) =>
-			       alias (idDef, idOpt', env, isToplevel))
-			   (labelIdDefVec, labelIdOptVec')
+	    ProdArgs (VectorPair.map (fn ((label, idDef), (_, value)) =>
+					 (label, alias (idDef, value,
+							env, isToplevel)))
+				     (labelIdDefVec, labelValueVec))
 	  | aliasArgs (_, _, _, _) =
-	    raise Crash.Crash "ValuePropagationPhase.aliasArgs"
+	    raise Crash.Crash "MkValuePropagationPhase.aliasArgs"
 
 	fun declare (env, IdDef id, entry) = IdMap.insert (env, id, entry)
 	  | declare (_, Wildcard, _) = ()
@@ -735,7 +1032,7 @@ functor MkValuePropagationPhase(val loadMod:
 	  | testsAppend (SOME (VecTests xs), SOME (VecTests ys)) =
 	    SOME (VecTests (Vector.concat [xs, ys]))
 	  | testsAppend (SOME _, SOME _) =
-	    raise Crash.Crash "ValuePropagationPhase.testsAppend"
+	    raise Crash.Crash "MkValuePropagationPhase.testsAppend"
 
 	fun testsNull (SOME (LitTests xs)) = Vector.length xs = 0
 	  | testsNull (SOME (TagTests xs)) = Vector.length xs = 0
@@ -759,36 +1056,29 @@ functor MkValuePropagationPhase(val loadMod:
 		    state as {env, isToplevel, ...}) =
 	    let
 		val idRef = deref (idRef, env)
-		val id = idRefId idRef
 		val (idDefs, isDet) =
-		    case IdMap.lookupExistent (env, id) of
-			(ProdVal idOpts', isToplevel') =>
-			    (VectorPair.map
-				 (fn (IdDef id, SOME id') =>
-		(* id and id' can be equal due to pattern matching compilation,
-		 * for example in:
-		 *    datatype t = A | B | C
-		 *    fun f (a,b) (A, x) = x
-		 *      | f (a,b) (B, x) = x
-		 *      | f a_b (_, x) = x          <- here
-		 *)
-				     (if idEq (id, id') then ()
-				      else IdMap.insert (env, id,
-							 (VarVal id',
-							  isToplevel'));
-				      Wildcard)
-				   | (idDef, _) => idDef)
-				 (idDefs, idOpts'), true)
+		    case lookupEnv (env, idRef) of
+			(ProdVal values, isToplevel') =>
+			    (aliasVec (idDefs, values, env, isToplevel'), true)
+		      | (ReflectVal (rvalue, eager), isToplevel') =>
+			    if isDetermined (rvalue, eager) then
+				(aliasRValueTuple
+				     (idDefs, rvalue, env, isToplevel', eager),
+				 true)
+			    else (idDefs, false)
 		      | (_, _) => (idDefs, false)
 		val isSome = ref false
-		val idOpts =
+		val values =
 		    Vector.map (fn idDef =>
 				   (declareUnknown (env, idDef, isToplevel);
 				    case idDef of
-					IdDef id => (isSome := true; SOME id)
-				      | Wildcard => NONE)) idDefs
+					IdDef id => (isSome := true; VarVal id)
+				      | Wildcard => UnknownVal)) idDefs
 	    in
-		IdMap.insert (env, id, (ProdVal idOpts, isToplevel));
+		case idRefIdOpt idRef of
+		    SOME id =>
+			IdMap.insert (env, id, (ProdVal values, isToplevel))
+		  | NONE => ();
 		if !isSome orelse not isDet then
 		    TupDec (info, idDefs, idRef)::vpBody (stms, state)
 		else vpBody (stms, state)
@@ -797,29 +1087,33 @@ functor MkValuePropagationPhase(val loadMod:
 		    state as {env, isToplevel, ...}) =
 	    let
 		val idRef = deref (idRef, env)
-		val id = idRefId idRef
 		val (labelIdDefVec, isDet) =
-		    case IdMap.lookupExistent (env, id) of
-			(ProdVal idOpts, isToplevel') =>
+		    case lookupEnv (env, idRef) of
+			(ProdVal values, isToplevel') =>
 			    (VectorPair.map
-				 (fn ((label, IdDef id), SOME id') =>
-				     (if idEq (id, id') then ()
-				      else IdMap.insert (env, id,
-							 (VarVal id',
-							  isToplevel'));
-				      (label, Wildcard))
-				   | (labelIdDef, _) => labelIdDef)
-				 (labelIdDefVec, idOpts), true)
+				 (fn ((label, idDef), value) =>
+				     (label, alias (idDef, value,
+						    env, isToplevel)))
+				 (labelIdDefVec, values), true)
+		      | (ReflectVal (rvalue, eager), isToplevel') =>
+			    if isDetermined (rvalue, eager) then
+				(aliasRValueProd
+				     (labelIdDefVec, rvalue,
+				      env, isToplevel', eager), true)
+			    else (labelIdDefVec, false)
 		      | (_, _) => (labelIdDefVec, false)
 		val isSome = ref false
-		val idOpts =
+		val values =
 		    Vector.map (fn (_, idDef) =>
 				   (declareUnknown (env, idDef, isToplevel);
 				    case idDef of
-					IdDef id => (isSome := true; SOME id)
-				      | Wildcard => NONE)) labelIdDefVec
+					IdDef id => (isSome := true; VarVal id)
+				      | Wildcard => UnknownVal)) labelIdDefVec
 	    in
-		IdMap.insert (env, id, (ProdVal idOpts, isToplevel));
+		case idRefIdOpt idRef of
+		    SOME id =>
+			IdMap.insert (env, id, (ProdVal values, isToplevel))
+		  | NONE => ();
 		if !isSome orelse not isDet then
 		    ProdDec (info, labelIdDefVec, idRef)::vpBody (stms, state)
 		else vpBody (stms, state)
@@ -851,11 +1145,11 @@ functor MkValuePropagationPhase(val loadMod:
 	    [EndTryStm (info, vpBodyScope (body, state))]
 	  | vpBody ([EndHandleStm (info, body)], state) =
 	    [EndHandleStm (info, vpBodyScope (body, state))]
-	  | vpBody ([stm as TestStm (info, idRef, _, _)],
+	  | vpBody (stms as [TestStm (info, idRef, _, _)],
 		    state as {env, ...}) =
 	    let
 		val idRef = deref (idRef, env)
-		val (testsOpt, elseBody) = vpTestStm ([stm], idRef, state)
+		val (testsOpt, elseBody) = vpTestStm (stms, idRef, state)
 	    in
 		if testsNull testsOpt then elseBody
 		else [TestStm (info, idRef, valOf testsOpt, elseBody)]
@@ -864,7 +1158,7 @@ functor MkValuePropagationPhase(val loadMod:
 		    state as {env, shared, ...}) =
 	    (* We need to return a SharedStm with an IndirectStm in it;
 	     * the IndirectStm's reference will be updated destructively
-	     * later when analyses proceeds (topological ordering). *)
+	     * later when analysis proceeds (topological ordering). *)
 	    (case StampMap.lookupExistent (shared, stamp) of
 		 UNIQUE => vpBody (body, state)
 	       | SHARED =>
@@ -878,7 +1172,7 @@ functor MkValuePropagationPhase(val loadMod:
 				     stamp)]
 		     end
 	       | VISITED (bodyOptRef, env') =>
-		     (unionEnv (env', env);
+		     (intersectEnv (env', env);
 		      [SharedStm (info, [IndirectStm (info, bodyOptRef)],
 				  stamp)]))
 	  | vpBody ([ReturnStm (info, exp)],
@@ -904,7 +1198,7 @@ functor MkValuePropagationPhase(val loadMod:
 		stms @ [ExportStm (info, exp)]
 	    end
 	  | vpBody (_, _) =
-	    raise Crash.Crash "ValuePropagationPhase.vpBody"
+	    raise Crash.Crash "MkValuePropagationPhase.vpBody"
 	and vpTestStm (topBody as [TestStm (_, idRef, tests, elseBody)],
 		       idRef', state as {env, ...}) =
 	    let
@@ -935,9 +1229,11 @@ functor MkValuePropagationPhase(val loadMod:
 		fun insertId (env, value) =
 		    case idRef of
 			(IdRef id | LastIdRef id) =>
-			    IdMap.lookupExistent (env, id)
+			    #1 (IdMap.lookupExistent (env, id))
 			    before IdMap.insert (env, id, (value, isToplevel))
-		      | (Lit _ | Prim _) => (UnknownVal, false)
+		      | Lit lit => LitVal lit
+		      | Prim name => acquirePrim name
+		      | Value (rvalue, eager) => ReflectVal (rvalue, eager)
 		val (litBodyList, elseBody) =
 		    Vector.foldr
 		    (fn ((lit, body), (litBodyList, elseBody)) =>
@@ -946,13 +1242,17 @@ functor MkValuePropagationPhase(val loadMod:
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
 				      lazySels = lazySels}
-			 val entry = insertId (env, LitVal lit)
+			 val knownVal = insertId (env, LitVal lit)
 			 val body = vpBody (body, state)
 		     in
-			 case entry of
-			     (LitVal lit', _) =>
+			 case knownVal of
+			     LitVal lit' =>
 				 if litEq (lit, lit') then (nil, body)
 				 else (nil, elseBody)
+			   | ReflectVal (rvalue, eager) => 
+				 if litRValueEq (lit, rvalue, eager) then
+				     (nil, body)
+				 else ((lit, body)::litBodyList, elseBody)
 			   | _ => ((lit, body)::litBodyList, elseBody)
 		     end) (nil, elseBody) litBodyVec
 	    in
@@ -967,31 +1267,55 @@ functor MkValuePropagationPhase(val loadMod:
 		fun insertId (env, value) =
 		    case idRef of
 			(IdRef id | LastIdRef id) =>
-			    IdMap.lookupExistent (env, id)
+			    #1 (IdMap.lookupExistent (env, id))
 			    before IdMap.insert (env, id, (value, isToplevel))
-		      | (Lit _ | Prim _) => (UnknownVal, false)
+		      | Lit _ =>
+			    raise Crash.Crash
+				"MkValuePropagationPhase.vpTests TagTests Lit"
+		      | Prim name => acquirePrim name
+		      | Value (rvalue, eager) => ReflectVal (rvalue, eager)
 		val (tagBodyList, elseBody) =
 		    Vector.foldr
-		    (fn ((label, n, args, body), (tagBodyList, elseBody)) =>
+		    (fn ((labels, n, args, body), (tagBodyList, elseBody')) =>
 		     let
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
 				      lazySels = lazySels}
 			 val value =
-			     TagVal (label, n, mapArgs idDefIdOpt args)
-			 val entry = insertId (env, value)
+			     TagVal (labels, n, mapArgs idDefToValue args)
+			 val knownVal = insertId (env, value)
 			 val _ = declareArgs (env, args, isToplevel)
 		     in
-			 case entry of
-			     (TagVal (_, n', args'), _) =>
+			 case knownVal of
+			     TagVal (_, n', args') =>
 				 if n = n' then
-				     (aliasArgs (args, args', env, isToplevel);
-				      (nil, vpBody (body, state)))
-				 else (nil, elseBody)
-			   | (_, _) =>
-				 ((label, n, args, vpBody (body, state))::
-				  tagBodyList, elseBody)
+				     let
+					 val args = aliasArgs (args, args',
+							       env, isToplevel)
+				     in
+					 if allArgs (fn IdDef _ => false
+						      | Wildcard => true) args
+					 then (nil, vpBody (body, state))
+					 else ((labels, n, args,
+						vpBody (body, state))::
+					       tagBodyList, elseBody)
+				     end
+				 else (nil, elseBody')
+			   | ReflectVal (rvalue, eager) =>
+				 if isDetermined (rvalue, eager) then
+				     if UnsafeValue.tag (rvalue, labels) = n
+				     then (aliasRValueTagged
+					       (args, rvalue,
+						env, isToplevel, eager);
+					   (nil, vpBody (body, state)))
+				     else (nil, elseBody')
+				 else
+				     ((labels, n, args, vpBody (body, state))::
+				      tagBodyList, elseBody')
+			   | _ =>
+				 ((labels, n, args, vpBody (body, state))::
+				  tagBodyList, elseBody')
 		     end) (nil, elseBody) tagBodyVec
 	    in
 		(case tagBodyList of
@@ -1005,12 +1329,16 @@ functor MkValuePropagationPhase(val loadMod:
 		fun insertId (env, value) =
 		    case idRef of
 			(IdRef id | LastIdRef id) =>
-			    IdMap.lookupExistent (env, id)
+			    #1 (IdMap.lookupExistent (env, id))
 			    before IdMap.insert (env, id, (value, isToplevel))
-		      | (Lit _ | Prim _) => (UnknownVal, false)
+		      | Lit _ =>
+			    raise Crash.Crash
+				"MkValuePropagationPhase.vpTests ConTests Lit"
+		      | Prim name => acquirePrim name
+		      | Value (rvalue, eager) => ReflectVal (rvalue, eager)
 		val (conBodyList, elseBody) =
 		    Vector.foldr
-		    (fn ((con, args, body), (conBodyList, elseBody)) =>
+		    (fn ((con, args, body), (conBodyList, elseBody')) =>
 		     let
 			 val con = deref (con, env)
 			 val env = IdMap.cloneTop env
@@ -1020,22 +1348,46 @@ functor MkValuePropagationPhase(val loadMod:
 			 val value =
 			     case con of
 				 (IdRef id | LastIdRef id) =>
-				     ConVal (id, mapArgs idDefIdOpt args)
-			       | (Lit _ | Prim _) => UnknownVal
-			 val entry = insertId (env, value)
+				     ConVal (id, mapArgs idDefToValue args)
+			       | Lit _ =>
+				     raise Crash.Crash
+					 "MkValuePropagationPhase.vpTests"
+			       | Prim name => PrimVal name
+			       | Value (rvalue, eager) =>
+				     ReflectVal (rvalue, eager)
+			 val knownVal = insertId (env, value)
 			 val _ = declareArgs (env, args, isToplevel)
 		     in
-			 case entry of
-			     (ConVal (con', args'), _) =>
+			 case knownVal of
+			     ConVal (con', args') =>
 				 if idRefEq (con, IdRef con') then
-				     (aliasArgs (args, args', env, isToplevel);
-				      (nil, vpBody (body, state)))
-				 else
-				     ((con, args, vpBody (body, state))::
-				      conBodyList, elseBody)
-			   | (_, _) =>
+				     let
+					 val args = aliasArgs (args, args',
+							       env, isToplevel)
+				     in
+					 if allArgs (fn IdDef _ => false
+						      | Wildcard => true) args
+					 then (nil, vpBody (body, state))
+					 else ((con, args,
+						vpBody (body, state))::
+					       conBodyList, elseBody)
+				     end
+				 else ((con, args, vpBody (body, state))::
+				       conBodyList, elseBody')
+			   | ReflectVal (rvalue, eager) =>
+				 if isDetermined (rvalue, eager) andalso
+				    idRefEq (con,
+					     Value (UnsafeValue.con rvalue,
+						    eager))
+				 then (aliasRValueConstructed
+					   (args, rvalue,
+					    env, isToplevel, eager);
+				       (nil, vpBody (body, state)))
+				 else ((con, args, vpBody (body, state))::
+				       conBodyList, elseBody')
+			   | _ =>
 				 ((con, args, vpBody (body, state))::
-				  conBodyList, elseBody)
+				  conBodyList, elseBody')
 		     end) (nil, elseBody) conBodyVec
 	    in
 		(case conBodyList of
@@ -1049,30 +1401,58 @@ functor MkValuePropagationPhase(val loadMod:
 		fun insertId (env, value) =
 		    case idRef of
 			(IdRef id | LastIdRef id) =>
-			    IdMap.lookupExistent (env, id)
+			    #1 (IdMap.lookupExistent (env, id))
 			    before IdMap.insert (env, id, (value, isToplevel))
-		      | (Lit _ | Prim _) => (UnknownVal, false)
+		      | Lit _ =>
+			    raise Crash.Crash
+				"MkValuePropagationPhase.vpTests VecTests Lit"
+		      | Prim name => acquirePrim name
+		      | Value (rvalue, eager) => ReflectVal (rvalue, eager)
 		val (vecBodyList, elseBody) =
 		    Vector.foldr
-		    (fn ((idDefs, body), (vecBodyList, elseBody)) =>
+		    (fn ((idDefs, body), (vecBodyList, elseBody')) =>
 		     let
 			 val env = IdMap.cloneTop env
 			 val state = {env = env, isToplevel = isToplevel,
 				      shared = shared, export = export,
 				      lazySels = lazySels}
-			 val value = VecVal (Vector.map idDefIdOpt idDefs)
-			 val entry = insertId (env, value)
+			 val value = VecVal (Vector.map idDefToValue idDefs)
+			 val knownValue = insertId (env, value)
 			 val _ = declareArgs (env, TupArgs idDefs, isToplevel)
 		     in
-			 case entry of
-			     (VecVal idDefs', _) =>
+			 case knownValue of
+			     VecVal values =>
 				 if Vector.length idDefs =
-				    Vector.length idDefs'
-				 then (nil, vpBody (body, state))
-				 else (nil, elseBody)
-			   | (_, _) =>
+				    Vector.length values
+				 then
+				     let
+					 val idDefs = aliasVec (idDefs, values,
+							      env, isToplevel)
+				     in
+					 if Vector.all (fn IdDef _ => false
+							 | Wildcard => true)
+						       idDefs
+					 then (nil, vpBody (body, state))
+					 else ((idDefs, vpBody (body, state))::
+					       vecBodyList, elseBody)
+				     end
+				 else (nil, elseBody')
+			   | ReflectVal (rvalue, eager) =>
+				 let
+				     val rvalues = UnsafeValue.cast rvalue:
+						   Reflect.value vector
+				 in
+				     if Vector.length idDefs =
+					Vector.length rvalues
+				     then (aliasRValueVec (idDefs, rvalues,
+							   env, isToplevel,
+							   eager);
+					   (nil, vpBody (body, state)))
+				     else (nil, elseBody')
+				 end
+			   | _ =>
 				 ((idDefs, vpBody (body, state))::vecBodyList,
-				  elseBody)
+				  elseBody')
 		     end) (nil, elseBody) vecBodyVec
 	    in
 		(case vecBodyList of
@@ -1088,27 +1468,56 @@ functor MkValuePropagationPhase(val loadMod:
 	     (nil, exp))
 	  | vpExp (VarExp (info, idRef), env, _, _) =
 	    (nil, varExp (info, idRef, env))
-	  | vpExp (TagExp (info, label, n, args), env, _, _) =
-	    (nil, TagExp (info, label, n, derefArgs (args, env)))
+	  | vpExp (TagExp (info, labels, n, args), env, _, _) =
+	    let
+		val args = derefArgs (args, env)
+	    in
+		case taggedToRValue (labels, n, args, env) of
+		    SOME (rvalue, eager) =>
+			(nil, VarExp (info, Value (rvalue, eager)))
+		  | NONE =>
+			(nil, TagExp (info, labels, n, args))
+	    end
 	  | vpExp (ConExp (info, idRef, args), env, _, _) =
+(*--** construct statically if possible *)
 	    (nil, ConExp (info, deref (idRef, env), derefArgs (args, env)))
 	  | vpExp (RefExp (info, idRef), env, _, _) =
 	    (nil, RefExp (info, deref (idRef, env)))
 	  | vpExp (TupExp (info, idRefs), env, _, _) =
-	    (nil, TupExp (info, Vector.map (fn idRef => deref (idRef, env))
-					   idRefs))
+	    let
+		val idRefs = Vector.map (fn idRef => deref (idRef, env)) idRefs
+	    in
+		case tupleToRValue (idRefs, env) of
+		    SOME (rvalue, eager) =>
+			(nil, VarExp (info, Value (rvalue, eager)))
+		  | NONE => (nil, TupExp (info, idRefs))
+	    end
 	  | vpExp (ProdExp (info, labelIdRefVec), env, _, _) =
-	    (nil, ProdExp (info, Vector.map (fn (label, idRef) =>
-						(label, deref (idRef, env)))
-					    labelIdRefVec))
+	    let
+		val labelIdRefVec =
+		    Vector.map (fn (label, idRef) =>
+				   (label, deref (idRef, env))) labelIdRefVec
+	    in
+		case prodToRValue (labelIdRefVec, env) of
+		    SOME (rvalue, eager) =>
+			(nil, VarExp (info, Value (rvalue, eager)))
+		  | NONE => (nil, ProdExp (info, labelIdRefVec))
+	    end
 	  | vpExp (PolyProdExp (info, labelIdRefVec), env, _, _) =
+(*--** construct statically if possible *)
 	    (nil, PolyProdExp (info,
 			       Vector.map (fn (label, idRef) =>
 					      (label, deref (idRef, env)))
 					  labelIdRefVec))
 	  | vpExp (VecExp (info, idRefs), env, _, _) =
-	    (nil, VecExp (info, Vector.map (fn idRef => deref (idRef, env))
-					   idRefs))
+	    let
+		val idRefs = Vector.map (fn idRef => deref (idRef, env)) idRefs
+	    in
+		case vectorToRValue (idRefs, env) of
+		    SOME (rvalue, eager) =>
+			(nil, VarExp (info, Value (rvalue, eager)))
+		  | NONE => (nil, VecExp (info, idRefs))
+	    end
 	  | vpExp (FunExp (info, stamp, flags, args, body),
 		   env, isToplevel, lazySels) =
 	    let
@@ -1151,13 +1560,28 @@ functor MkValuePropagationPhase(val loadMod:
 			adaptArity (info, argsToArity args', args, env,
 				    fn args => FunAppExp (info, idRef,
 							  stamp, args))
+		  | (ReflectVal (rvalue, eager), _) =>
+			(case getInArity (rvalue, eager) of
+			     SOME arity =>
+				 adaptArity' (info, arity, args, env,
+					      fn args =>
+						 DirectAppExp
+						     (info, idRef, args))
+			   | NONE => (nil, VarAppExp (info, idRef, args)))
 		  | (_, _) => (nil, VarAppExp (info, idRef, args))
+	    end
+	  | vpExp (DirectAppExp (info, idRef, args), env, _, _) =
+	    let
+		val idRef = deref (idRef, env)
+		val args = derefArgs (args, env)
+	    in
+		(nil, DirectAppExp (info, idRef, args))
 	    end
 	  | vpExp (SelExp (info, prod, label, n, idRef), env, _, _) =
 	    let
 		val idRef = deref (idRef, env)
 	    in
-		case doSel (n, idRef, env) of
+		case doSel (prod, n, idRef, env) of
 		    SOME idRef => (nil, VarExp (info, idRef))
 		  | NONE => (nil, SelExp (info, prod, label, n, idRef))
 	    end
@@ -1165,30 +1589,42 @@ functor MkValuePropagationPhase(val loadMod:
 		   env, isToplevel, lazySels) =
 	    let
 		val idRef = deref (idRef, env)
-		val id = idRefId idRef
+		val idRefOpt =
+		    case lookupEnv (env, idRef) of
+			(PolyProdVal (map, _), _) =>
+			    (case LabelMap.lookup (map, label) of
+				 SOME value => valueToIdRefOpt value
+			       | NONE => NONE)
+		      | (ReflectVal (rvalue, eager), _) =>
+			    if isDetermined (rvalue, eager) then
+				let
+				    val rvalue' =
+					UnsafeValue.projPoly (rvalue, label)
+				in
+				    SOME (Value (rvalue', eager))
+				end
+			    else NONE
+		      | (_, _) => NONE
 	    in
-		case IdMap.lookupExistent (env, id) of
-		    (PolyProdVal map, _) =>
-			(case LabelMap.lookup (map, label) of
-			     SOME (SOME id) => (nil, VarExp (info, IdRef id))
-			   | (SOME NONE | NONE) =>
-				 (nil, LazyPolySelExp (info, label, idRef)))
-		  | (_, _) =>
-			(case IdMap.lookup (lazySels, id) of
-			     SOME map =>
-				 (nil, VarExp (info,
-					       doLazySel (idRef, label, map,
-							  env, isToplevel)))
-			   | NONE =>
-				 let
-				     val map = LabelMap.new ()
-				 in
-				     IdMap.insert (lazySels, id, map);
-				     (nil,
-				      VarExp (info,
-					      doLazySel (idRef, label, map,
-							 env, isToplevel)))
-				 end)
+		case idRefOpt of
+		    SOME idRef => (nil, VarExp (info, idRef))
+		  | NONE =>
+		    let
+			val id = Option.valOf (idRefIdOpt idRef)
+			val map =
+			    case IdMap.lookup (lazySels, id) of
+				SOME map => map
+			      | NONE => 
+				    let
+					val map = LabelMap.new ()
+				    in
+					IdMap.insert (lazySels, id, map);
+					map
+				    end
+		    in
+			(nil, VarExp (info, doLazySel (idRef, label, map,
+						       env, isToplevel)))
+		    end
 	    end
 	  | vpExp (FunAppExp (info, idRef, stamp, args), env, _, _) =
 	    (nil, FunAppExp (info, idRef, stamp, derefArgs (args, env)))
@@ -1198,39 +1634,37 @@ functor MkValuePropagationPhase(val loadMod:
 			   shared = shared, export = export,
 			   lazySels = lazySels})
 	and vpBodyShared (body, stamp, {env, isToplevel, export, lazySels}) =
-	    (case sortShared (body, stamp) of
-		 ([stamp']::sorted, shared) =>
-		     (Assert.assert (stamp = stamp');
-		      vpBody (body, {env = env, isToplevel = isToplevel,
-				     shared = shared, export = export,
-				     lazySels = lazySels}) before
-		      List.app
-		      (fn stamps =>
-		       let
-			   val _ = Assert.assert (List.null (List.tl stamps))
-			   val stamp = List.hd stamps
-		       in
-			   case StampMap.lookupExistent (shared, stamp) of
-			       UNIQUE => ()
-			     | SHARED =>
-				   raise Crash.Crash
-				       "ValuePropagationPhase.vpBodyShared 1"
-			     | VISITED (bodyOptRef, env) =>
-				   let
-				       val body = valOf (!bodyOptRef)
-				   in
-				       bodyOptRef :=
-				       SOME (vpBody (body,
-						     {env = env,
-						      isToplevel = isToplevel,
-						      shared = shared,
-						      export = export,
-						      lazySels = lazySels}))
-				   end;
-			   StampMap.deleteExistent (shared, stamp)
-		       end) sorted)
-	       | (_, _) =>
-		     raise Crash.Crash "ValuePropagationPhase.vpBodyShared 2")
+	    case sortShared (body, stamp) of
+		([stamp']::sorted, shared) =>
+		    (Assert.assert (stamp = stamp');
+		     vpBody (body, {env = env, isToplevel = isToplevel,
+				    shared = shared, export = export,
+				    lazySels = lazySels}) before
+		     List.app
+		     (fn stamps =>
+		      let
+			  val _ = Assert.assert (List.null (List.tl stamps))
+			  val stamp = List.hd stamps
+		      in
+			  case StampMap.lookupExistent (shared, stamp) of
+			      UNIQUE => ()
+			    | SHARED => ()   (* dead code *)
+			    | VISITED (bodyOptRef, env) =>
+			          let
+				      val body = valOf (!bodyOptRef)
+				  in
+				      bodyOptRef :=
+				      SOME (vpBody (body,
+						    {env = env,
+						     isToplevel = isToplevel,
+						     shared = shared,
+						     export = export,
+						     lazySels = lazySels}))
+				  end;
+			  StampMap.deleteExistent (shared, stamp)
+		      end) sorted)
+	      | (_, _) =>
+		    raise Crash.Crash "MkValuePropagationPhase.vpBodyShared"
 
 	fun debug component =
 	    let
@@ -1243,13 +1677,30 @@ functor MkValuePropagationPhase(val loadMod:
 		TextIO.closeOut q
 	    end
 
-	fun translate env (_, component as {imports, body, exports, sign}) =
+	fun declareImport (desc, env) (id, _, url, true) =
+	    let
+		val value =
+		    if isCross then UnknownVal
+		    else
+			ReflectVal (UnsafeValue.cast (loadMod (desc, url)),
+				    true)
+			handle _ =>
+			    (TextIO.output (TextIO.stdErr,
+					    "warning: could not load \
+					    \compile-time import " ^
+					    Url.toString url ^ "\n");
+			     UnknownVal)
+	    in
+		declare (env, IdDef id, (value, true))
+	    end
+	  | declareImport (_, env) (id, _, _, false) = 
+	    declareUnknown (env, IdDef id, true)
+
+	fun translate env (desc, component as {imports, body, exports, sign}) =
 	    let
 		val env' = IdMap.clone env
-		val _ =
-		    (*--** handle compile-time imports *)
-		    Vector.app (fn (id, _, _, _) =>
-				declareUnknown (env', IdDef id, true)) imports
+(*--** enter values from context into env' *)
+		val _ = Vector.app (declareImport (desc, env')) imports
 		val _ = IdMap.insertScope env'
 		val lazySels = IdMap.new ()
 		val body =
@@ -1274,14 +1725,15 @@ functor MkValuePropagationPhase(val loadMod:
 		 | exn =>
 		       (TextIO.print
 			"\nValuePropagationPhase crashed: \
-			 \dumping debug information to vpdebug.txt\n";
+			\dumping debug information to vpdebug.txt\n";
 			debug component;
 			case exn of
 			    IdMap.Lookup id =>
 				TextIO.print ("Lookup " ^
 					      OutputFlatGrammar.idToString id ^
 					      "\n")
-			  | _ => ();
+			  | Crash.Crash s => TextIO.print ("Crash " ^ s ^ "\n")
+			  | _ => TextIO.print (General.exnName exn ^ "\n");
 			raise exn)
 
 	open PrettyPrint
