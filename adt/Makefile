@@ -31,9 +31,9 @@ veryclean: clean
 	rm -f libadt.a
 
 distclean: veryclean
-	rm -f Makefile.deps
+	rm -f Makefile.depend
 
-Makefile.deps: Makefile $(SRCS)
-	$(MAKEDEPEND) $(SRCS) > Makefile.deps
+Makefile.depend: Makefile $(SRCS)
+	$(MAKEDEPEND) $(SRCS) > $@
 
-include Makefile.deps
+include Makefile.depend
