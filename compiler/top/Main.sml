@@ -34,6 +34,13 @@ structure Main :> MAIN =
 	    TextIO.closeOut file
 	end
 
+    fun debug s =
+	let
+	    val s' = OutputImperativeGrammar.outputProgram (imperatify s)
+	in
+	    TextIO.output (TextIO.stdOut, s')
+	end
+
     val parseString		= processString parse
     val parseFile		= processFile parse
 
@@ -57,5 +64,8 @@ structure Main :> MAIN =
 
     fun ozifyStringToFile(s,n)	= processString (ozifyToFile n) s
     fun ozifyFileToFile(n1,n2)	= processFile (ozifyToFile n2) n1
+
+    val debugString		= processString debug
+    val debugFile		= processFile debug
 
   end
