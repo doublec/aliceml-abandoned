@@ -268,7 +268,7 @@ struct
 		val {isAbs, vol, arcs} = fromString s
 		val arcs' = mkCanonicalArcs(isAbs, arcs, nil)
 	    in
-		toString{isAbs, vol, arcs=arcs'}
+		toString{isAbs, vol=String.map Char.toLower vol, arcs=arcs'}
 	    end
 
 	fun isCanonical s = s = mkCanonical s
