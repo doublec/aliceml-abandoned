@@ -81,12 +81,14 @@ signature INTERMEDIATE_GRAMMAR =
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * pat * exp * bool (* recursive *)
-	  		(* if dec is recursive, then
+	  ValDec    of info * pat * exp
+	  		(* if inside RecDec, then
 			 * (1) pat may not contain WithPat
 			 * (2) exp may only contain LitExp, VarExp, ConExp,
 			 *     RefExp, TupExp, RowExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
+	| RecDec    of info * dec list
+			(* may only contain ValDec *)
 
     (* Programs *)
 

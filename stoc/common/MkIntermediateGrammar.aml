@@ -82,12 +82,14 @@ functor MakeIntermediateGrammar(type info) :>
     (* Declarations *)
 
     and dec =
-	  ValDec    of info * pat * exp * bool (* recursive *)
-	  		(* if dec is recursive, then
+	  ValDec    of info * pat * exp
+	  		(* if inside RecDec, then
 			 * (1) pat may not contain WithPat
 			 * (2) exp may only contain LitExp, VarExp, ConExp,
 			 *     RefExp, TupExp, RowExp, FunExp *)
 	| ConDec    of info * id * bool (* has args *)
+	| RecDec    of info * dec list
+			(* may only contain ValDec *)
 
     (* Programs *)
 
@@ -137,7 +139,8 @@ functor MakeIntermediateGrammar(type info) :>
       | infoPat(GuardPat(i,_,_))	= i
       | infoPat(WithPat(i,_,_))		= i
 
-    fun infoDec(ValDec(i,_,_,_))	= i
+    fun infoDec(ValDec(i,_,_))		= i
       | infoDec(ConDec(i,_,_))		= i
+      | infoDec(RecDec(i,_))		= i
 
   end
