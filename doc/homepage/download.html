@@ -97,7 +97,8 @@ and libgmp.</P>
 
 <P>
 Please add <TT>deb http://www.ps.uni-sb.de/alice/download/fink ./</TT>
-to your <TT>/sw/etc/apt/sources.list</TT>.
+to your <TT>/sw/etc/apt/sources.list</TT>. You need to install the
+  package <TT>alice-runtime</TT>, e.g. using the Fink Commander.</LI>
 </P>
 
 <?php subsection("license", "License") ?>
@@ -105,6 +106,11 @@ to your <TT>/sw/etc/apt/sources.list</TT>.
 <P>The Alice system is free software. See the <A
 href="download/COPYING">license</A> for details.</P>
 
+<P>
+Some binary packages (especially the Windows builds) contain versions
+of the Gtk, Sqlite3, and libxml2 libraries. Please see the
+corresponding web sites for license information.
+</P>
 
 <?php section("mozart-packages", "Previous version") ?>
 
