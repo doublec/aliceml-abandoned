@@ -12,8 +12,8 @@
 
 #if defined(INTERFACE)
 #pragma implementation "generic/FinalizationSet.hh"
-#pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Transform.hh"
+#pragma implementation "generic/ConcreteRepresentationHandler.hh"
 #pragma implementation "generic/ConcreteRepresentation.hh"
 #pragma implementation "generic/ConcreteCode.hh"
 #pragma implementation "generic/Closure.hh"
@@ -22,12 +22,13 @@
 #pragma implementation "generic/Tuple.hh"
 #pragma implementation "generic/String.hh"
 #pragma implementation "generic/StackFrame.hh"
+#pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Pickle.hh"
 #endif
 
 #include "generic/FinalizationSet.hh"
-#include "generic/Backtrace.hh"
 #include "generic/Transform.hh"
+#include "generic/ConcreteRepresentationHandler.hh"
 #include "generic/ConcreteRepresentation.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
@@ -36,4 +37,5 @@
 #include "generic/Tuple.hh"
 #include "generic/String.hh"
 #include "generic/StackFrame.hh"
+#include "generic/Backtrace.hh"
 #include "generic/Pickle.hh"
