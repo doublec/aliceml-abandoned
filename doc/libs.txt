@@ -6,6 +6,12 @@ Option.app: ('a -> unit) -> 'a option -> unit
 
 OptionPair
 
+structure Ref:
+sig
+  type 'a ref = 'a ref
+  val map: ('a -> 'a) -> 'a ref -> 'a ref
+end
+
 ListPair.find: ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option 
 
 Array.all: ('a -> bool) -> 'a array -> bool
