@@ -1,0 +1,255 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestArray :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun testMaxLen () =
+	Test.test (fn x => 
+		   IntInf.toInt (IntInf.- (IntInf.pow (IntInf.fromInt 2, 24), 
+					   IntInf.fromInt 18)) = x) 
+	                                                    Array.maxLen
+
+    fun testSub () =
+	let
+	    fun t (a, i) = if i < 0 orelse Array.length a <= i 
+			       then NONE 
+			   else SOME (List.nth (Array.toList a, i))
+			       
+	    fun t' x = let
+			   val r = t x
+		       in
+			   Array.sub x = valOf r
+			    handle Subscript => Option.isNone r
+		       end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int))
+	      (Test.test t')
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (a, i, x) = if i < 0 orelse Array.length a <= i
+				  then NONE 
+			      else SOME (Array.sub (a, i) before 
+					 Array.update (a, i, x))
+	    fun t' (a, i, x) = let
+				   val r = t (a, i, x)
+			       in
+				   Array.sub (a, i) = x
+				    handle Subscript => Option.isNone r
+			       end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
+	       (Test.test t')
+	end
+
+    fun testLength () =
+	let
+	    fun t (a, i) = (Array.sub (a, i); 
+			    t (a, i + 1)) handle Subscript => i
+	in
+	    Gen.try 1000 (Gen.array Gen.int)
+	      (Test.test (fn a => t (a, 0) = Array.length a))
+	end
+				
+
+    fun testToList () =
+	let
+	    fun t' (a, i, xs) = if i >= Array.length a 
+				  then List.rev xs
+			      else t' (a, i + 1, (Array.sub (a, i))::xs)
+
+	    fun t a = t' (a, 0, []) = Array.toList a
+	in
+	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	end
+
+    fun testArray () = 
+	let
+	    fun t' (0, x) xs = List.rev xs
+	      | t' (i, x) xs = t' (i - 1, x) (x::xs)
+
+	    fun t (i, x) = t' (i, x) [] = Array.toList (Array.array (i, x))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.int, Gen.int))
+	       (Test.test  t)
+	end
+
+    fun testVector () =
+	let
+	    fun t a = (Vector.fromList (Array.toList a) = 
+		       Array.vector a)
+		          handle Size => Array.length a > Vector.maxLen 
+	in 
+	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	end
+
+    fun testToVector () =
+	let
+	    fun t a = (Vector.fromList (Array.toList a) = 
+		       Array.vector a)
+		          handle Size => Array.length a > Vector.maxLen 
+	in 
+	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t'' ([]   , a, i) = a
+	      | t'' (x::xs, a, i) = (Array.update (a, i, x); 
+				     t'' (xs, a, i - 1))
+
+	    fun t' xs = let
+			    val size = List.length xs
+			in 
+			    if size > Array.maxLen 
+				then NONE
+			    else SOME (t'' (List.rev xs, 
+					    Array.array (size, 0), 
+					    size - 1))
+			end
+			    
+	    fun t xs = let
+			   val r = t' xs
+		       in
+			   Array.equal Int.equal (Array.fromList xs, 
+						  valOf (t' xs))
+			     handle Size => Option.isNone r
+		       end
+
+	    fun h xs = (Array.fromList xs; true)
+		         handle Size => List.length xs > Array.maxLen
+	in
+	    Gen.try 1000 (Gen.list Gen.int) (Test.test t)(*;
+		  TODO: more higher timeout
+	    Test.test h (0 :: (Array.toList (Array.array (Array.maxLen, 0))))*)
+	end
+	    
+    fun testTabulate () =
+	let
+	    fun t (n, f) = Array.toList (Array.tabulate (n, f)) =
+		           List.tabulate (n, f)
+			    handle Size => n < 0 orelse Array.maxLen < n
+
+	    fun t' x = x + 1
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn x => t (x, t')))
+	end
+
+    fun testContains () =
+	let
+	    fun t (a, x) = Array.contains a x =
+		           List.contains (Array.toList a) x
+	in
+	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testNotContains () =
+	let
+	    fun t (a, x) = Array.notContains a x = 
+		           Bool.not (Array.contains a x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.int)) (Test.test t)
+	end
+
+    fun testSort () =
+	let
+	    fun t f a = List.sort f (Array.toList a) =
+		        Array.toList (Array.sort f a; a)
+	in
+	    Gen.try 1000 (Gen.array Gen.int) 
+	       (Test.test (fn a => t Int.compare a))
+	end
+
+    fun testIsSorted () =
+	let
+	    fun t f a = Array.isSorted f a =
+		        List.isSorted f (Array.toList a)
+	in
+	    Gen.try 1000 (Gen.array Gen.int) 
+	       (Test.test (fn a => t Int.compare a))
+	end
+
+    fun testCollate () =
+	let
+	    fun t f (a1, a2) = 
+		List.collate f (Array.toList a1, 
+				Array.toList a2) =
+		Array.collate f (a1, a2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
+	       (Test.test (fn x => t Int.compare x))
+	end
+
+    fun testEqual () =
+	let
+	    fun t f (a1, a2) = Array.equal f (a1, a2) =
+		               List.equal f (Array.toList a1, Array.toList a2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.array Gen.int, Gen.array Gen.int))
+	        (Test.test (fn x => t Int.equal x))
+	end
+
+    fun testSwap () =
+	let
+	    fun t (ar, a, b) = let
+				   val abef = Array.sub (ar, a)
+				   val bbef = Array.sub (ar, b)
+			       in
+				   Array.swap (ar, a, b);
+				   abef = Array.sub (ar, b) andalso
+				   bbef = Array.sub (ar, a)
+			       end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, Gen.int, Gen.int))
+	       (Test.test (fn (arr, a, b) => if a < Array.length arr andalso
+			                        b < Array.length arr
+						 then t (arr, a, b)
+					     else true))
+	end
+
+    fun testRev () =
+	let
+	    fun t a = List.rev (Array.toList a) =
+		      Array.toList (Array.rev a; a)
+	in
+	    Gen.try 1000 (Gen.array Gen.int) (Test.test t)
+	end
+
+    val suite = ("Array", [("maxLen", testMaxLen),
+			   ("sub", testSub),
+			   ("update", testUpdate),
+			   ("length", testLength),
+			   ("toList", testToList),
+			   ("array", testArray),
+			   ("vector", testVector),
+			   ("toVector", testToVector),
+			   ("fromList", testFromList),
+			   ("tabulate", testTabulate),
+			   ("contains", testContains),
+			   ("notContains", testNotContains),
+			   ("sort", testSort),
+			   ("isSorted", testIsSorted),
+			   ("equal", testEqual),
+			   ("collate", testCollate),
+			   ("swap", testSwap),
+			   ("rev", testRev)])
+end

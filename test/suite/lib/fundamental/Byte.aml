@@ -36,14 +36,17 @@ struct
 	end
 
     fun testBytesToString () =
-	(* TODO: implement Gen.word8Vector
 	 let
 	    fun t bv = CharVector.tabulate(Word8Vector.length bv,
 			       fn i => Byte.byteToChar(Word8Vector.sub(bv, i)))
 	in
-	    Gen.try 10000 Gen.word8Vector 
-	          (Test.test (fn bv = t bv = Byte.bytesToString bv))
-	end*)Test.test (fn _ => raise Test.NotYetImplemented) ()
+	    Gen.try 1000 (Gen.list Gen.word8)
+	          (Test.test (fn l => let
+					  val bv = Word8Vector.fromList l
+				      in 
+					  t bv = Byte.bytesToString bv
+				      end))
+	end
 
 
     fun testStringToBytes () = 
@@ -51,7 +54,7 @@ struct
 	    fun t s = Word8Vector.tabulate(String.size s,
 				     fn i => Byte.charToByte(String.sub(s, i)))
 	in
-	    Gen.try 10000 Gen.string 
+	    Gen.try 1000 Gen.string 
 	        (Test.test (fn s => t s = Byte.stringToBytes s))
 	end
 
