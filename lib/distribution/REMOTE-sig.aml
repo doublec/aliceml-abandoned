@@ -19,7 +19,7 @@ signature REMOTE =
 
 	type ticket = string
 
-	(*val proxy: ('a -> 'b) -> 'a -> 'b*)
+	val proxy: ('a -> 'b) -> 'a -> 'b
 	val offer: Package.package -> string              (* Pickle.Sited *)
 	val take: string -> Package.package               (* Ticket *)
 

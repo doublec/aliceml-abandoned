@@ -21,13 +21,52 @@ import structure UnsafeRemote      from "UnsafeRemote"
 
 structure Remote :> REMOTE =
     struct
+	val pickleContentType = "application/x-alice-pickle"
+
+	(*--------------------------------------------------------------
+	 * Proxies and RPC
+	 *)
+
+	datatype 'a result = RETURN of 'a | RAISE of exn
+
+	fun makeRpcHandler f (request: Http.request) =
+	    let
+		val x = UnsafeRemote.unpackValue (#body request)
+		val result = RETURN (f x) handle e => RAISE e
+	    in
+		Http.makeResponse
+		    {statusCode = 200,
+		     contentType = pickleContentType,
+		     body = UnsafeRemote.packValue result}
+	    end
+
+	fun proxyCallback (url, x) =
+	    let
+		val response =
+		    HttpClient.post (url, {contentType = pickleContentType,
+					   body = UnsafeRemote.packValue x})
+	    in
+		case UnsafeRemote.unpackValue (#body response) of
+		    RETURN y => y
+		  | RAISE e => raise e
+	    end
+
+	val _ = UnsafeRemote.setCallback proxyCallback
+
+	fun proxy f =
+	    let
+		val url = HttpServer.register (makeRpcHandler f)
+	    in
+		fn x => UnsafeRemote.dynamicCall (url, x)
+	    end
+
+	(*--------------------------------------------------------------
+	 * Take and Offer
+	 *)
+
 	exception Ticket
 
 	type ticket = string
-
-	(*fun proxy f = UnsafeRemote.proxy (fn x => f x)*)
-
-	val pickleContentType = "application/x-alice-pickle"
 
 	fun makeTakeHandler value =
 	    let
@@ -65,6 +104,11 @@ structure Remote :> REMOTE =
 	functor Take(val ticket: string signature S) =
 	    Package.Unpack(val package = take ticket
 			   signature S = S)
+
+
+	(*--------------------------------------------------------------
+	 * Remote Execution
+	 *)
 
 (*
 	functor Execute(val host: string
