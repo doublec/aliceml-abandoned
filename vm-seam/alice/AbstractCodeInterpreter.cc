@@ -195,17 +195,19 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
 //
 AbstractCodeInterpreter *AbstractCodeInterpreter::self;
 
-void AbstractCodeInterpreter::PushCall(TaskStack *taskStack, word closure) {
-  Closure *cl = Closure::FromWord(closure);
-  ConcreteCode *concreteCode = ConcreteCode::FromWord(cl->GetConcreteCode());
+void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
+				       Closure *closure) {
+  ConcreteCode *concreteCode =
+    ConcreteCode::FromWord(closure->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == this);
   // datatype function = Function of coord * int * int * idDef args * instr
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
+  int nlocals = Store::WordToInt(function->Sel(2));
   AbstractCodeFrame *frame =
     AbstractCodeFrame::New(this,
 			   function->Sel(4),
-			   cl,
-			   Environment::New(Store::WordToInt(function->Sel(2))),
+			   closure,
+			   Environment::New(nlocals),
 			   function->Sel(3));
   taskStack->PushFrame(frame->ToWord());
 }

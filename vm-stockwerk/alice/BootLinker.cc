@@ -312,7 +312,7 @@ Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
 			    GetItem(key2->ToWord()));
     modules->Init(i, entry->GetModule());
   }
-  //  taskStack->PushCall(bodyclosure);
+  //--** taskStack->PushCall(bodyclosure);
   CONTINUE(Interpreter::OneArg(modules->ToWord()));
 }
 

@@ -69,9 +69,9 @@ void LazySelectionInterpreter::PushFrame(TaskStack *taskStack,
   taskStack->PushFrame(LazySelectionFrame::New(self, tuple, index)->ToWord());
 }
 
-void LazySelectionInterpreter::PushCall(TaskStack *taskStack, word closure) {
-  Closure *cl = Closure::FromWord(closure);
-  PushFrame(taskStack, cl->Sub(0), Store::WordToInt(cl->Sub(1)));
+void LazySelectionInterpreter::PushCall(TaskStack *taskStack,
+					Closure *closure) {
+  PushFrame(taskStack, closure->Sub(0), Store::WordToInt(closure->Sub(1)));
 }
 
 Interpreter::Result

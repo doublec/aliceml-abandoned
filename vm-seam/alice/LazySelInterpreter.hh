@@ -32,7 +32,7 @@ public:
   }
   // Frame Handling
   static void PushFrame(TaskStack *taskStack, word tuple, int index);
-  virtual void PushCall(TaskStack *taskStack, word closure);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging

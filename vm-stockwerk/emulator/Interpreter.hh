@@ -52,14 +52,14 @@ public:
   // Presets Scheduler::currentData
   static word Deconstruct(word args);
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, word closure);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PurgeFrame(TaskStack *taskStack);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack) = 0;
   virtual Result Handle(word exn, word debug, TaskStack *taskStack);
   // Debugging
-  virtual const char *Identify();
-  virtual const char *ToString(word args, TaskStack *taskStack);
+  virtual const char *Identify() = 0;
+  virtual const char *ToString(word args, TaskStack *taskStack) = 0;
 };
 
 #endif

@@ -32,7 +32,7 @@ public:
     self = new AbstractCodeInterpreter();
   }
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, word closure);
+  virtual void PushCall(TaskStack *taskStack, Closure *closure);
   virtual void PurgeFrame(TaskStack *taskStack);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);

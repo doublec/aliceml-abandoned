@@ -78,8 +78,8 @@ word Interpreter::Deconstruct(word args) {
 //
 // Interpreter Functions
 //
-void Interpreter::PushCall(TaskStack *taskStack, word closure) {
-  taskStack->PushCall(closure);
+void Interpreter::PushCall(TaskStack *, Closure *) {
+  Error("Interpreter::PushCall must never be called\n");
 }
 
 void Interpreter::PurgeFrame(TaskStack *taskStack) {
@@ -93,12 +93,4 @@ Interpreter::Result Interpreter::Handle(word exn, word /*debug*/,
   taskStack->PopFrame();
   Scheduler::currentData = exn;
   return Interpreter::RAISE;
-}
-
-const char *Interpreter::Identify() {
-  return "Interpreter";
-}
-
-const char *Interpreter::ToString(word args, TaskStack *taskStack) {
-  return "Interpreter::ToString";
 }
