@@ -14,7 +14,7 @@ import structure Gtk          from "x-alice:/lib/gtk/Gtk"
 import structure Gdk          from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas    from "x-alice:/lib/gtk/GtkCanvas"
 import functor MkRedBlackMap  from "x-alice:/lib/data/MkRedBlackMap"
-import structure CanvasTool   from "CanvasTool"
+import structure GtkBuilder   from "GtkBuilder"
 import structure Protocol     from "../common/Protocol"
 import structure Color        from "../common/Color"
 import structure Pos          from "../common/Pos"
@@ -42,7 +42,7 @@ import structure Arena        from "../server/Arena"
 
 structure P = Protocol
 
-open CanvasTool
+open GtkBuilder
 
 datatype event = datatype Gtk.event
 datatype arg   = datatype Gtk.arg
