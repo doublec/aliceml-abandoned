@@ -10,75 +10,31 @@
  *   $Revision$
  *)
 
-import
-    structure TextIO
-from "../../lib/system/TextIO"
+import structure TextIO             from "../../lib/system/TextIO"
+import structure IO                 from "../../lib/system/IO"
+import structure OS                 from "../../lib/system/OS"
+import structure Config             from "../../lib/system/Config"
+import structure Signature          from "../../lib/system/Signature"
+import signature COMPONENT_MANAGER  from "../../lib/system/COMPONENT_MANAGER-sig"
+import structure Component          from "../../lib/system/Component"
+import structure Url                from "../../lib/utility/Url"
+import structure Path               from "../../lib/rtt/Path"
+import structure Inf                from "../../lib/rtt/Inf"
 
-import
-    structure IO
-from "../../lib/system/IO"
+import structure Crash              from "../infrastructure/Crash"
+import structure Source             from "../infrastructure/Source"
+import structure Error              from "../infrastructure/Error"
+import structure Target             from "../infrastructure/Target"
+import signature COMPILER           from "COMPILER-sig"
+import structure SignTable          from "SignTable"
+import signature RECURSIVE_COMPILER from "RECURSIVE_COMPILER-sig"
 
-import
-    structure OS
-from "../../lib/system/OS"
-
-import
-    structure Config
-from "../../lib/system/Config"
-
-import
-    structure UnsafePickle
-from "../../lib/system/UnsafePickle"
-
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure Path
-from "../../lib/rtt/Path"
-
-import
-    structure Inf
-from "../../lib/rtt/Inf"
-
-import
-    structure Crash
-from "../infrastructure/Crash"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure Error
-from "../infrastructure/Error"
-
-import
-    signature COMPOSER
-from "../infrastructure/COMPOSER-sig"
-
-import
-    structure Signature
-from "Signature"
-
-import
-    signature COMPILER
-from "COMPILER-sig"
-
-import
-    signature RECURSIVE_COMPILER
-from "RECURSIVE_COMPILER-sig"
-
-functor MkRecursiveCompiler(structure Composer: COMPOSER
-				where type Sig.t = Signature.t
+functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
+				where type component = Component.t
 			    structure Compiler: COMPILER
-				where type Target.Sig.t = Signature.t
 			    val extension: string): RECURSIVE_COMPILER =
     struct
-	structure Composer = Composer
 	structure Switches = Compiler.Switches
-	structure Target = Compiler.Target
 
 	exception Error = Compiler.Error
 
@@ -195,21 +151,21 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 			Compiler.compile (Compiler.empty, desc,
 					  Source.fromString s)
 		    val _ = trace "done"
-		    val (stamp, inf) = Target.sign target
+		    val sign =
+			case target of
+			    Target.COMPONENT {component, ...} =>
+				valOf (Component.sign (component ()))
+			  | Target.FOREIGN {sign, ...} => sign
 		in
-		    if Inf.isSig inf then
-			case Inf.items(Inf.asSig inf) of
-			    [item] =>
-				let
-				    val inf = valOf (#3 (Inf.asInfItem item))
-				in
-				    Inf.strengthen (Path.invent(), inf);
-				    (stamp, inf)
-				end
-			  | _ => raise Crash.Crash
-				       "MkBatchCompiler.compileSign 1"
-		    else
-			raise Crash.Crash "MkBatchCompiler.compileSign 2"
+		    case Inf.items (Signature.toSig sign) of
+			[item] =>
+			    let
+				val inf = valOf (#3 (Inf.asInfItem item))
+			    in
+				Inf.strengthen (Path.invent(), inf);
+				Signature.fromSig (Inf.asSig inf)
+			    end
+		      | _ => raise Crash.Crash "MkBatchCompiler.compileSign"
 		end
 	in
 	    fun compileSign filename = processFile compileSign' filename
@@ -217,13 +173,17 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 
 	local
 	    fun compile' outFilename (desc, s) =
-		let
-		    val (_, target) =
-			Compiler.compile (empty, desc, Source.fromString s)
-		in
-		    Target.save (Target.C.new ()) outFilename target;
-		    Target.sign target
-		end
+		case Compiler.compile (empty, desc, Source.fromString s) of
+		    (_, Target.COMPONENT {component, ...}) =>
+			let
+			    val component = component ()
+			in
+			    Component.save (outFilename, component);
+			    valOf (Component.sign component)
+			end
+		  | (_, Target.FOREIGN {save, sign}) =>
+			(save outFilename;
+			 sign)
 
 	    val fileStack: string list ref = ref nil
 	in
@@ -291,6 +251,11 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	 *                  else A without the component extension
 	 *)
 
+	fun loadSign url =
+	    case Component.sign (ComponentManager.link url) of
+		SOME sign => sign
+	      | NONE => raise Component.Corrupt
+
 	fun acquireSign (desc, url) =
 	    let
 		val url' =
@@ -298,23 +263,19 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 			SOME base => Url.resolve base url
 		      | NONE => resolveWrtCwd url
 	    in
-		case Composer.sign url' of
+		case SignTable.lookup (urlCeil url') of
 		    SOME sign => sign
 		  | NONE =>
-		case Composer.sign (urlCeil url') of
-		    SOME sign => sign
-		  | NONE =>
-		let
-		    val sign =
-			(valOf (UnsafePickle.loadSign (Url.toString url'))
-			 (* this also looks for url ^ ext *)
-			 before trace ("loaded signature from " ^
-				       Url.toString url'))
-			handle exn as (IO.Io _ | Option.Option) =>
-			       acquireFromSig (url', exn)
-		in
-		    Composer.enterSign (urlCeil url', sign); sign
-		end
+		    let
+			val sign =
+			    (loadSign url'
+			     before trace ("loaded signature from " ^
+					   Url.toString url'))
+			    handle exn as (IO.Io _ | Component.Corrupt) =>
+				   acquireFromSig (url', exn)
+		    in
+			SignTable.insert (urlCeil url', sign); sign
+		    end
 	    end
 	and acquireFromSig (url, exn) =
 	    let
@@ -329,7 +290,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 			(Source.nowhere,
 			 (case exn of
 			      IO.Io _ => "could not locate component "
-			    | Option.Option => "no signature found in "
+			    | Component.Corrupt => "no signature found in "
 			    | _ => "") ^ Url.toString url)
 	    end
 	and acquireFromSource (url, targetFilename) =

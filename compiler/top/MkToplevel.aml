@@ -13,8 +13,11 @@
 
 import structure TextIO               from "../../lib/system/TextIO"
 import structure OS                   from "../../lib/system/OS"
+import structure Url                  from "../../lib/utility/Url"
 
+import structure Crash                from "../infrastructure/Crash"
 import structure Error                from "../infrastructure/Error"
+import structure Target               from "../infrastructure/Target"
 import structure MkOptionParser       from "MkOptionParser"
 import signature RECURSIVE_COMPILER   from "RECURSIVE_COMPILER-sig"
 import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
@@ -60,29 +63,32 @@ struct
 		line :: readInput' contPrompt
 	end
 
-    fun eval compile (source, compilerContext, targetContext) =
-	let
-	    val (compilerContext, target) = compile compilerContext source
-	in
-	    RecursiveCompiler.Target.apply targetContext target;
-	    (compilerContext, targetContext)
-	end
-	handle RecursiveCompiler.Error => (compilerContext, targetContext)
+    fun baseUrl () =
+	Url.setScheme (Url.fromString (OS.FileSys.getDir () ^ "/"),
+		       SOME "file")
+
+    fun eval compile (source, context) =
+	(case compile context source of
+	     (context, Target.COMPONENT {eval, ...}) =>
+		 (eval (baseUrl ()); context)
+	   | (_, Target.FOREIGN _) =>
+		 raise Crash.Crash
+		     "MkToplevel.eval: cross-compilation not supported")
+	handle RecursiveCompiler.Error => context
 	     | exn =>
 		   (TextIO.output (TextIO.stdErr,
 				   "uncaught exception " ^
 				   General.exnName exn ^ "\n");
-		    (compilerContext, targetContext))   (*--** is this cool or what? *)
+		    context)   (*--** is this cool or what? *)
 
     val evalString = eval RecursiveCompiler.compileString
     val evalFile   = eval RecursiveCompiler.compileFile
 
-    fun loop(compilerContext, targetContext) =
+    fun loop context =
 	case readInput() of
-	    SOME source =>
-		loopUses(evalString(source, compilerContext, targetContext))
+	    SOME source => loopUses(evalString(source, context))
 	  | NONE => TextIO.print "\n"
-    and loopUses (compilerContext, targetContext) =
+    and loopUses context =
 	let
 	    val new = Hole.hole ()
 	    val old = Ref.exchange (useFiles, new)
@@ -90,11 +96,10 @@ struct
 	    case old of
 		filename::rest =>
 		    (Hole.fill (new, rest);
-		     loopUses (evalFile (filename,
-					 compilerContext, targetContext)))
+		     loopUses (evalFile (filename, context)))
 	      | nil =>
 		    (Hole.fill (new, nil);
-		     loop (compilerContext, targetContext))
+		     loop context)
 	end
 
     fun main'(_::_) = (usage(); OS.Process.failure)
@@ -103,13 +108,11 @@ struct
 	    open RecursiveCompiler.Switches
 	    val dumpSig = !Debug.dumpElaborationSig
 	    val _ = Debug.dumpElaborationSig := false
-	    val (compilerContext, targetContext) =
-		evalString("", RecursiveCompiler.empty,
-			       RecursiveCompiler.Target.C.new())
+	    val context = evalString("", RecursiveCompiler.empty)
 	in
 	    Debug.dumpElaborationSig := dumpSig;
 	    Language.implicitImport  := false;
-	    loop(compilerContext, targetContext);
+	    loop context;
 	    OS.Process.success
 	end
 
