@@ -15,6 +15,13 @@
 #include "builtins/GlobalPrimitives.hh"
 
 int main(int argc, char *argv[]) {
+  u_int memLimits[STORE_GENERATION_NUM];
+
+  for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
+    memLimits[i] = (i + 1);
+  }
+  Store::InitStore(memLimits);
+
   Primitive::Init();
   GlobalPrimitives::Init();
   Scheduler::Init();
