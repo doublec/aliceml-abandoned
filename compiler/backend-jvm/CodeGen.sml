@@ -626,7 +626,7 @@ structure CodeGen =
 			stampcode' @
 			[Checkcast CDMLTuple,
 			 Ldc (JVMString s'),
-			 Invokeinterface (CDMLTuple,"get",([],[Classsig CVal])),
+			 Invokeinterface (CDMLTuple,"get",([Classsig CString],[Classsig CVal])),
 			 Astore n]
 		    end
 		      | testCode test' = raise Debug (Test test')
@@ -1077,7 +1077,7 @@ structure CodeGen =
 		      | fields nil = nil
 		    fun vars (0, akku) = akku
 		      | vars (n, akku) =
-			vars (n-1,Var (n, "woasweisi"^(Int.toString n),
+			vars (n-1,Var (n, "woaswoisi"^(Int.toString n),
 			      [Classsig CVal], alpha, omega)::akku)
 		in
 		    val fieldscode = fields freeVarList
