@@ -463,6 +463,20 @@ final public class General {
 	Builtin.builtins.put("show",show);
     }
 
+    _BUILTIN(StringHash) {
+	_BUILTTUP;
+	_APPLY(val) {
+	    try {
+		return new Int(java.lang.Math.
+			       abs(((STRING) val).value.hashCode()));
+	    } catch (ClassCastException c) {
+		return new Int(java.lang.Math.
+			       abs(val.hashCode()));
+	    }
+	}
+    }
+    _FIELD(General,stringHash);
+
     _BUILTIN(Print) {
 	_BUILTTUP;
 	_APPLY(val) {

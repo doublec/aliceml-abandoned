@@ -47,7 +47,7 @@ final public class Connection {
 		     "http://"+thisHost.getHostName()+"/~"+name+"/codebase/policy");
 	}
 	if (System.getSecurityManager() == null) {
-	    System.out.println("starte security manager");
+	    // System.out.println("starte security manager");
 	    try {
 		System.setSecurityManager(new RMISecurityManager());
 	    } catch (Exception e) {

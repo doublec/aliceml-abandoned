@@ -35,6 +35,8 @@ final public class Reference implements DMLConVal {
     public DMLValue content = null;
     private CManager cmgr = null;     // Clientsite-Manager
 
+    public Reference() {}
+
     public Reference(DMLValue ct) throws RemoteException {
 	content = ct;
     }

@@ -85,6 +85,7 @@ final public class Array implements DMLValue {
 
     final public DMLValue sub(int index) {
 	if (index<0 || arr.length<=index) {
+	    System.err.println("index: "+index+" length: "+arr.length);
 	    _RAISENAME(General.Subscript);
 	} else {
 	    return arr[index];

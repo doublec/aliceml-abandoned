@@ -352,6 +352,7 @@ define(UNAME,`    final public static Name $1;
 	} else {
 	    $1 = (Name) o;
 	}
+	Builtin.builtins.put("$2",$1);
     }
 ')
 define(UCONS,`    final public static Constructor $1;
@@ -362,5 +363,6 @@ define(UCONS,`    final public static Constructor $1;
 	} else {
 	    $1 = (Constructor) o;
 	}
+	Builtin.builtins.put("$2",$1);
     }
 ')

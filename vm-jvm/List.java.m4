@@ -544,12 +544,13 @@ final public class List {
 	    _APPLY(val) {
 		// _FROMSINGLE(val,"List.find1");
 		if (val==nil)
-		    return Constants.dmlfalse;
+		    return Option.NONE;
 		while (val instanceof Cons) {
 		    Cons lc = (Cons) val;
 		    DMLValue res=fun.apply(lc.car);
-		    if (res==Constants.dmltrue)
+		    if (res==Constants.dmltrue) {
 			return Option.SOME.apply(lc.car);
+		    }
 		    _REQUEST(val,lc.cdr);
 		}
 		if (val==nil) {
