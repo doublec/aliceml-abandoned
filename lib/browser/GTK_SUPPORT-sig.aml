@@ -41,6 +41,8 @@ signature GTK_SUPPORT =
 	    val spinButtonGetValueAsInt: tag -> int 
 	    val widgetDestroy: tag -> unit
 	    val objectDestroy: tag -> unit
+	    val adjustmentNew: real * real * real * real * real * real -> tag 
+	    val widgetSetScrollAdjustments: tag * tag * tag -> bool
 	    val adjustmentGetFieldPageSize: tag -> real
 	    val adjustmentGetFieldUpper: tag -> real
 	    val adjustmentGetFieldValue: tag -> real	
@@ -50,7 +52,13 @@ signature GTK_SUPPORT =
 	    val menuItemNewWithLabel: string -> tag
 	    val menuItemRightJustify: tag -> unit
 
-	    val itemLowerToBottom: tag -> unit
+(* GtkCanvas Primitives *)
+
+	    val canvasNew: unit -> tag
+	    val canvasRoot: tag -> tag
+	    val canvasItemSet: tag * string * Gtk.arg -> unit
+	    val canvasItemLowerToBottom: tag -> unit
+	    val canvasSetScrollRegion: tag * real * real * real * real -> unit
 
 (* Gdk Primitves *)
 
@@ -130,8 +138,8 @@ signature GTK_SUPPORT =
 (* Canvas Items & Handling *)
 
 	val allocColor : int * int * int -> tag
-(*	val fontWidth     : unit -> int
-        val fontHeight    : unit -> int *)
+	val createCanvasBackground: tag * real * real -> tag
+	val resizeCanvas: real * real * tag * tag * tag * real * real * real * real -> unit
 	val newTag        : tag * real * real -> tag
 	val move          : tag * real * real -> unit   
 	val print00       : string * tag * tag * string -> tag

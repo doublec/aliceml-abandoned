@@ -76,7 +76,7 @@ struct
      fun newNode (va,t,i,root) = createGraph (NONE,va,t,Empty,i,0,root)
 			     
     (* createGraph *)
-    and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *)(* Thread.sleep(Time.fromSeconds(1)) *)()
+    and createGraph (opt,va,t,p,i,d,root) = ( (*Window.testIfStop() *) ()
 	;if !relmode (* Konstruktion im Relationsmodus *)
 	 andalso not(isAtomType(t))
 	     then let val ind = if p = Empty then i else getAncIndex p 

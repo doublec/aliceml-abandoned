@@ -30,32 +30,13 @@ struct
     val _ =  (Gtk.widgetSetUsize(canvas, Real.trunc xsize, Real.trunc ysize ) 
 	      ;GtkCanvas.setScrollRegion (canvas,0.0,0.0,xsize,ysize))
 
-    val background =  GtkCanvas.itemNew 
-		      ( GtkCanvas.root(canvas), 
-		       GtkCanvas.RECTANGLE,
-		       [("x1", Gtk.DOUBLE 0.0),
-			("y1", Gtk.DOUBLE 0.0),
-			("x2", Gtk.DOUBLE xsize),
-			("y2", Gtk.DOUBLE ysize),
-			("fill_color_gdk", 
-		       Gtk.OBJECT(GtkSupport.allocColor(65535,65535,65535))),
-			("outline_color_gdk", 
-			 Gtk.OBJECT (GtkSupport.allocColor(0,0,0)))]) 
+    val background =  GtkSupport.createCanvasBackground(canvas,xsize,ysize)
 
     val root = GtkCanvas.root(canvas)
+
+    fun resize (h,v,scrolled,valueh,valuev,max_x,max_y)  = 
+	GtkSupport.resizeCanvas(h,v,scrolled,canvas,background,valueh,valuev, max_x, max_y)
   
-    fun resize (x,y,scrolled,valueh,valuev  ) =  
-	let 
-	   val adj1 = Gtk.adjustmentNew(valueh,0.0,!Settings.max_x ,
-					 20.0,50.0,!Settings.max_x )
-	    val adj2 = Gtk.adjustmentNew(valuev,0.0,!Settings.max_y ,
-					 20.0,50.0,!Settings.max_y )
-	in
-	( Gtk.widgetSetScrollAdjustments(scrolled,adj1,adj2) 
-	     ;GtkCanvas.setScrollRegion(canvas,0.0,0.0,x,y)
-	     ;GtkCanvas.itemSet(background,"x2", Gtk.DOUBLE x)
-	     ;GtkCanvas.itemSet(background,"y2", Gtk.DOUBLE y))
-	end
 end
 
 

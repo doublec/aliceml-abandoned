@@ -52,7 +52,7 @@ struct
 							    Settings.getFontHeight(),
 							    Settings.getFontWidth()) 
 
-    fun createArrowRight (group,color) =  GtkSupport.createArrowDown(group,color,
+    fun createArrowRight (group,color) =  GtkSupport.createArrowRight(group,color,
 							    Settings.getFontHeight(),
 							    Settings.getFontWidth()) 
 							    

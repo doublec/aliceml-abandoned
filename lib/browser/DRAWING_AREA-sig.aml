@@ -19,5 +19,5 @@ sig
     type tag = Gtk.object
     val canvas: tag
     val root: tag
-    val resize: real * real * Gtk.object * real * real -> unit
+    val resize: real * real * Gtk.object * real * real * real * real -> unit
 end

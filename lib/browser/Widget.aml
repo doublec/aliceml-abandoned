@@ -316,7 +316,9 @@ struct
 			    val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
 					then !(Settings.max_y) else page_sv
 			in
-			    (resize(h,v,scrolled,valueh,valuev  )
+			    (resize(h,v,scrolled,valueh,valuev,
+						     !Settings.max_x,
+						     !Settings.max_y)
 			     ; resizeSepLines(Dictionaries.maindict,
 					      h)
 			     ; ())
@@ -906,8 +908,8 @@ fun makePopup n =
 							    y2')
 				in                                             
 				    (  postT n   
-				    ; itemLowerToBottom(re) 
-				    ; itemLowerToBottom(re') 
+				    ; canvasItemLowerToBottom(re) 
+				    ; canvasItemLowerToBottom(re') 
 				    ; destroySelectionMarkings()
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)

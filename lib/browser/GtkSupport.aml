@@ -48,6 +48,8 @@ val radioButtonGroup = Gtk.radioButtonGroup
 val toggleButtonSetActive = Gtk.toggleButtonSetActive
 val toggleButtonGetActive = Gtk.toggleButtonGetActive
 val spinButtonGetValueAsInt = Gtk.spinButtonGetValueAsInt
+val adjustmentNew = Gtk.adjustmentNew
+val widgetSetScrollAdjustments = Gtk.widgetSetScrollAdjustments
 val adjustmentGetFieldPageSize = Gtk.adjustmentGetFieldPageSize
 val adjustmentGetFieldUpper = Gtk.adjustmentGetFieldUpper
 val adjustmentGetFieldValue = Gtk.adjustmentGetFieldValue
@@ -57,7 +59,15 @@ val menuBarAppend = Gtk.menuBarAppend
 val menuItemNewWithLabel = Gtk.menuItemNewWithLabel
 val menuItemRightJustify = Gtk.menuItemRightJustify
 
-val itemLowerToBottom = GtkCanvas.itemLowerToBottom
+(************ GtkCanvas Primitives ********************)
+
+fun canvasNew() = GtkCanvas.new 0
+val canvasRoot = GtkCanvas.root 
+val canvasItemNew = GtkCanvas.itemNew
+val canvasItemSet = GtkCanvas.itemSet
+val canvasItemLowerToBottom = GtkCanvas.itemLowerToBottom
+val canvasSetScrollRegion = GtkCanvas.setScrollRegion
+val canvasRECTANGLE = GtkCanvas.RECTANGLE
 
 (************ Gdk Primitives **************************)
 
@@ -435,19 +445,40 @@ fun setExpandSensitive (bar,sensitive)=
 	    c
 	end
     
-(* 		  
- fun fontHeight() = !Settings.fontHeight 
-     
- fun fontWidth() = !Settings.fontWidth *)
+ fun createCanvasBackground(canvas,xsize,ysize) = 
+     canvasItemNew 
+     ( canvasRoot(canvas), 
+      GtkCanvas.RECTANGLE,
+      [("x1", Gtk.DOUBLE 0.0),
+       ("y1", Gtk.DOUBLE 0.0),
+       ("x2", Gtk.DOUBLE xsize),
+       ("y2", Gtk.DOUBLE ysize),
+       ("fill_color_gdk", 
+	Gtk.OBJECT(allocColor(65535,65535,65535))),
+       ("outline_color_gdk", 
+	Gtk.OBJECT (allocColor(0,0,0)))]) 
+
+  fun resizeCanvas (x,y,scrolled,canvas,background,valueh,valuev, max_x, max_y) =  
+	let 
+	   val adj1 = Gtk.adjustmentNew(valueh,0.0,max_x ,
+					 20.0,50.0,max_x )
+	    val adj2 = Gtk.adjustmentNew(valuev,0.0,max_y ,
+					 20.0,50.0,max_y )
+	in
+	( widgetSetScrollAdjustments(scrolled,adj1,adj2) 
+	     ;canvasSetScrollRegion(canvas,0.0,0.0,x,y)
+	     ;canvasItemSet(background,"x2", Gtk.DOUBLE x)
+	     ;canvasItemSet(background,"y2", Gtk.DOUBLE y))
+	end
 
  fun newTag(parent,x,y) = 
-     GtkCanvas.itemNew(parent, 
+     canvasItemNew(parent, 
 		       GtkCanvas.GROUP,
 		       [("x", Gtk.DOUBLE y), 
 			("y", Gtk.DOUBLE y)])		   
 		
  fun print00 (str,group,color,fontname) = 
-     GtkCanvas.itemNew(group, 
+     canvasItemNew(group, 
 		       GtkCanvas.TEXT, 
 		      [("text", Gtk.STRING str),
 		       ("font", Gtk.STRING fontname),
