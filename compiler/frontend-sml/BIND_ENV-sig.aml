@@ -104,8 +104,8 @@ sig
     val cloneScope :		Env -> Env
 
     val insertScope :		Env -> unit
-    val deleteScope :		Env -> unit
-    val deleteAll :		Env -> unit
+    val removeScope :		Env -> unit
+    val removeAll :		Env -> unit
     val mergeScope :		Env -> unit
     val mergeDisjointScope :	Env -> unit		(* Collision* *)
     val inheritScope :		Env * Env -> unit

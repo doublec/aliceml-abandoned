@@ -185,7 +185,7 @@ struct
 	in
 	    loop r
 	    handle (Option.Option|Inf.Lookup _|Type.Type|Type.Mismatch _) =>
-		deleteAll E';
+		removeAll E';
 	    E'
 	end
 
