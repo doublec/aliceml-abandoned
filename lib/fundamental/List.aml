@@ -66,8 +66,6 @@ struct
     fun   nil   @ ys		= ys
       | (x::xs) @ ys		= x :: xs @ ys
 
-    val append			= op @					(**)
-
     fun revAppend( nil,  ys)	= ys
       | revAppend(x::xs, ys)	= revAppend(xs, x::ys)
 
@@ -106,10 +104,6 @@ struct
     fun map  f   xs		= map'(f,xs)
     and map'(f,  nil )		= nil
       | map'(f, x::xs)		= f x :: map'(f,xs)
-
-    fun mapr  f   xs		= mapr'(f,xs)				(**)
-    and mapr'(f,  nil )		= nil
-      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
 
     fun mapi  f xs		= mapi'(f,0,xs)				(**)
     and mapi'(f, i,  nil )	= nil

@@ -39,7 +39,6 @@ sig
 
     val rev :		'a list -> 'a list
     val op @ :		'a list * 'a list -> 'a list
-    val append :	'a list * 'a list -> 'a list			(**)
     val revAppend :	'a list * 'a list -> 'a list
     val concat :	'a list list -> 'a list
 
@@ -48,7 +47,6 @@ sig
     val appi :		(int * 'a -> unit) -> 'a list -> unit		(**)
     val appri :		(int * 'a -> unit) -> 'a list -> unit		(**)
     val map :		('a -> 'b) -> 'a list -> 'b list
-    val mapr :		('a -> 'b) -> 'a list -> 'b list		(**)
     val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list		(**)
     val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
     val find :		('a -> bool) -> 'a list -> 'a option
