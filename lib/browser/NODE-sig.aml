@@ -21,16 +21,13 @@ import structure GtkSupport from "GtkSupport"
 
 signature NODE = 
 sig
-    datatype actions = NO_ACTIONS (* herausnehmen!!! *)
-	
+       
     datatype desc = 
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
-		  typ : Type.typ,
-		  actions : actions}
+		  typ : Type.typ}
       | I_VALUE of {value : Reflect.module,
-		    typ : Inf.t,
-		    actions : actions} 
+		    typ : Inf.t} 
 
     datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 	
@@ -123,8 +120,8 @@ sig
 
     (* Operationen auf desc *)
 
-    val createValue  :  Reflect.value * Type.t * actions -> desc
-    val createIValue :  Reflect.module * Inf.t * actions -> desc
+    val createValue  :  Reflect.value * Type.t -> desc
+    val createIValue :  Reflect.module * Inf.t -> desc
 	
     val getValue : desc -> Reflect.value
     val getInfValue : desc -> Reflect.module

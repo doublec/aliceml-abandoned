@@ -24,17 +24,13 @@ import signature NODE from "NODE-sig"
 
 structure Node :> NODE = 
 struct
-    
-    datatype actions = NO_ACTIONS (* herausnehmen!!! *)
-	
+ 
     datatype desc =
 	INTERPUNCT
       | VALUE of {value : Reflect.value,
-		  typ : Type.t,
-		  actions : actions}
+		  typ : Type.t}
       | I_VALUE of {value : Reflect.module,
-		    typ : Inf.t,
-		    actions : actions} 
+		    typ : Inf.t} 
 
     datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 	
@@ -129,13 +125,11 @@ struct
 
     (* Erzeugung *)
 	
-    fun createValue(va,t,act) = VALUE{value = va,
-				      typ = t,
-				      actions = act}
+    fun createValue(va,t) = VALUE{value = va,
+				  typ = t}
 	
-    fun createIValue(va,t,act) = I_VALUE{value = va,
-					 typ = t,
-					 actions = act}
+    fun createIValue(va,t) = I_VALUE{value = va,
+				     typ = t}
 
     (* Wert *) 
 	

@@ -30,7 +30,6 @@ import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
 import structure Url from "x-alice:/lib/system/Url" 
 
 import structure Dictionaries from "Dictionaries"
-
 import structure Node from "Node"
 import structure Doc from "Doc"
 import structure Settings from "Settings"
@@ -87,20 +86,16 @@ struct
 		     RelMan.lookup(reldict,ind)
 			 of SOME x => x (* es existiert bereits ein Relationsmanager *)
 		       | NONE => []
-		     val desc = createValue(va,t,NO_ACTIONS) 
+		     val desc = createValue(va,t) 
                      val str = "Ref"^Int.toString(!relnumber)
-                     val f = if !tokenmode (* token equality *)
-				 then fn x   
-				      => if getDesc(x) = INTERPUNCT  
-					     then false  
-					 else UnsafeValue.same
-					     (getValue(getDesc(x)),va)   
-			     else (* structural equality *)
-				  fn x   
-				  => if getDesc(x) = INTERPUNCT  
-					 then false  
-				     else getValue(getDesc(x)) = va
-                    (* Suche, ob der Wert bereits dargestellt worden ist *) 
+                     val f = fn x  
+			     => getDesc(x) <> INTERPUNCT  
+				andalso (if !tokenmode (* token equality *)
+					     then UnsafeValue.same
+						 (getValue(getDesc(x)),va)   
+					 else (* structural equality *)
+					     getValue(getDesc(x)) = va )
+		 (* Suche, ob der Wert bereits dargestellt worden ist *) 
 		 in 
 		     (case List.find f relman of   
 		      NONE (* erstmalige Darstellung des Wertes, da er noch nicht 
@@ -172,6 +167,11 @@ struct
 	    
     (* createUsualGraph *)
     and createUsualGraph (va,t,p,i,d,root) = 
+	if d > !max_depth (* TIEFENFILTER *)
+	    then let val desc = createValue(va,t) 
+		 in createLimit(desc,DEPTH_LIMIT,p,i,d,root)
+		 end 
+	else (* maximale Tiefe _nicht_ ueberschritten *)
 	let val fut = UnsafeValue.cast va
 	in if not(Future.isDetermined(fut))
 	       then createFutureNode (va,t,p,i,d,root)
@@ -190,11 +190,8 @@ struct
 	       in newPath (va,t,p,i,d,p_path,root)
 	       end
 	   | Type.Arrow _  (* Funktion *)
-	     => if d > !max_depth
-		    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-				      p,i,d,root)
-		else createSimple (createValue(va,t,NO_ACTIONS),p,i,d,"fn",
-				   DEFAULT,root)
+	     => createSimple (createValue(va,t),p,i,d,"fn",
+			      DEFAULT,root)
 	   | Type.All(var,typ) (* Allquantor *)
 	     => createGraph (va,typ,p,i,d,root)
 	   | Type.Exist(var,typ)  (* Existenzquantor *)
@@ -217,15 +214,14 @@ struct
 			      then let val vv = castList va
 				       val listdesc = inspectList(!max_width,
 								  vv)
-				   in queryDepthL (va,t,p,i,d,listdesc,
-						   listdescToNode,root)
+				   in listdescToNode(va,t,p,i,d,listdesc,root)
 				   end
 			  else raise createGraph_unknownNode (* unbekannt *)
 		       end)  
-	   | Type.Prod(row) => queryDepth(va,t,p,i,d,row,treatProd,root) 
+	   | Type.Prod(row) => treatProd(va,t,p,i,d,row,root) 
 	     (* Record *)
 	   | Type.Mu(sum) => createGraph (va,sum,p,i,d,root) (* Rekursion *)
-	   | Type.Sum(row) => queryDepth(va,t,p,i,d,row,treatSum,root) 
+	   | Type.Sum(row) => treatSum(va,t,p,i,d,row,root) 
 	     (* Datentyp *) 
 	   | _ => raise  createGraph_unknownNode  (* unbekannt *) )
 	end
@@ -236,7 +232,7 @@ struct
     and listdescToNode (va,t,p,i,d,ld,root) = 
        case ld of 
 	Indet(l,f) 
-	=> let val desc = createValue(va,t,NO_ACTIONS)
+	=> let val desc = createValue(va,t)
                val length = List.length l
 	       val na = Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
@@ -249,7 +245,7 @@ struct
 	      ; cont )
 	   end
       | Det(l,b) 
-        => let val desc = createValue(va,t,NO_ACTIONS)
+        => let val desc = createValue(va,t)
 	       val length = List.length l
                val na = if b orelse !relmode 
 			    then Array.array(length + 1,Empty)
@@ -314,37 +310,13 @@ struct
 			 ; Array.update(na,i,concat))
 		    end) list;na)
 	 end
-
-
-   
-(*** alte iterative Version:
-    and listElemArray(list,length,listtyp,p,d,b) = 
-	let val rl = ref 0
-	    val na = Array.array(length,Empty)
-	in ( while !rl < length do
-            (let val concat = createConcat(INTERPUNCT,p,!rl,d,
-					   Array.array(2,Empty),root) 
-                 val inva = UnsafeValue.cast(List.nth(list,!rl))
-                            : Reflect.value
-                 val elem = createGraph(inva,listtyp,concat,0,d+1)
-                 val repr = if b orelse !relmode then "::" else ", "
-                 val sep = createSimple(INTERPUNCT,concat,1,d,repr,SEP_COLOR,
-					root)
-	     in ( Array.update(getKids(concat),0,elem)
-                ; Array.update(getKids(concat),1,sep)
-                ; Array.update(na,!rl,concat))
-	     end ; rl := !rl + 1)
-	   ; na )
-	end
-  
-*)
                  
 (* spezielle Behandlung von Records,Tupeln und Datentypen *)
                          
     (* treatProd *)
     and treatProd (va,t,p,i,d,row,root) = 
 	let
-	      val upperConcat = createConcat(createValue(va,t,NO_ACTIONS),
+	      val upperConcat = createConcat(createValue(va,t),
 					     p,i,d,Array.array(3,Empty),
 					     root)
 	      val (lbra,rbra) = if Type.isTupleRow(row) 
@@ -387,7 +359,7 @@ struct
 	      | _ => false
 	    val upperConcat = if emptyrow 
 				  then Empty 
-		    else createConcat(createValue(va,t,NO_ACTIONS),
+		    else createConcat(createValue(va,t),
 				      p,i,d,Array.array(4,Empty),root)
 	    val (lbra,rbra) =  let val row' = Type.asProd(intyp)
 			       in if Type.isTupleRow(row')
@@ -522,9 +494,7 @@ struct
     and newPath (v,t,p,i,d,path,root) =
         (case PathMap.lookup(pathTable, path) of
 	   NONE 
-	   => if d > !max_depth
-		  then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,root)
-	      else createSimple(INTERPUNCT,p,i,d,"_",DEFAULT,root)
+	   => createSimple(INTERPUNCT,p,i,d,"_",DEFAULT,root)
 	 | SOME create 
 	   => let val doc = create (!max_width,d,v,t)
 	      in  docToNode (doc,p,i,d,root) 
@@ -592,49 +562,12 @@ and docToNode (doc,p,i,d,root) =
 	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,root) 
 	| EMBEDDED(v,t) => createGraph (v,t,p,i,d,root)
 	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d,root) ) 
-
-
-    (* docToNode *)
-  (* old docToNode
-     ... 
-        | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
-						 Empty)
-                            val concat = createConcat(#desc(r),p,i,d,na,
-						      root)
-                            val rl = ref 0
-			in (while !rl <= (Vector.length(#kids(r)) - 1) do
-			    (Array.update(na,
-					  !rl,
-					  docToNode(Vector.sub(#kids(r),
-								   !rl),
-							concat,!rl,d))
-			     ; rl := !rl + 1)
-			    ; concat)
-			end
-	| CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
-						   Empty)
-			      val container = createContainer(#desc(r),p,i,d,
-							      na,root)
-			      val rl = ref 0
-			  in (while !rl <= (Vector.length(#kids(r)) - 1) do
-				  (Array.update(na,
-						!rl,
-						docToNode(Vector.sub(#kids(r),
-								     !rl),
-							  container,!rl,d+1))
-				   ; rl := !rl + 1)
-				  ; container)
-			  end
-	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,root) 
-	| EMBEDDED(v,t) => createGraph (v,t,p,i,d)
-	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d) ) 
-*)
-	     
+  	     
 (* spezielle Behandlung von Futures *)
    
     (* createFutureNode *)
     and createFutureNode (va,t,p,i,d,root) = 
-	let val desc = createValue(va,t,NO_ACTIONS)
+	let val desc = createValue(va,t)
             val fut = UnsafeValue.cast va
 	    val str = if Future.isLazy fut then "byneed" else "future"
 	    val simple =  createSimple (desc,p,i,d,str,DEFAULT,root)
@@ -686,7 +619,7 @@ and docToNode (doc,p,i,d,root) =
 		 in 
 		     (case List.find f relman of   
 			  NONE 
-			  => let val desc = createIValue(va,t,NO_ACTIONS)   
+			  => let val desc = createIValue(va,t)   
 				 val node = createRelNode (desc,Empty,p,i,d,
 							   str^" as ",
 							   relman,root)
@@ -732,57 +665,53 @@ and docToNode (doc,p,i,d,root) =
 	    
     (* createUsualGraphInf *)
     and createUsualGraphInf (va,t,p,i,d,root) = 
+	if d > !max_depth (* TIEFENFILTER *)	
+	    then let val desc = createIValue(va,t) 
+		 in createLimit(desc,DEPTH_LIMIT,p,i,d,root)
+		 end 
+	else (* maximale Tiefe nicht ueberschritten *)
 	(case Inf.inspect t of 
 	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s))
 		       in treatSig (va,t,p,i,d,ilist,root)
 		       end 
        | Inf.Arrow(path,i1,i2) 
-	 => if d > !max_depth
-		then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-				  p,i,d,root)
-	    else createSimple (createIValue(va,t,NO_ACTIONS),p,i,d,"functor",
+	 => createSimple (createIValue(va,t),p,i,d,"functor",
 			       DEFAULT,root)
        | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d,root)
        | Inf.Sing(m) => let val ti = #2(Inf.asMod(m))
 			  in createUsualGraphInf (va,ti,p,i,d,root)
 			  end
-       | _ => if d > !max_depth
-		  then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
-				    p,i,d,root)  
-	      else createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) )
+       | _ => createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) )
 
 
     (* treatSig *)
     and treatSig (va,t,p,i,d,ilist,root) = 
-	if d > !max_depth
-	    then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,p,i,d,
-			      root)
-	else let val ilength = List.length(ilist)
-		 val limited = ilength > !max_width
-		 val a_length = if limited 
-				    then 3 + !max_width
-				else 2 + List.length(ilist)
-		 val container = 
-	             createContainer(createIValue(va,t,NO_ACTIONS),p,i,d,
-				     Array.array(a_length,Empty),root)
-		 val s_begin = createSimple(INTERPUNCT,container,0,d,"struct",
-					    DEFAULT,root)
-		 val s_end = createSimple(INTERPUNCT,container,a_length-1,d,
-					  "end",DEFAULT,root)
-	     in ( Array.update(getKids(container),0,s_begin) 
-		 ; Array.update(getKids(container),a_length-1,s_end) 
-                 ; if not(limited)
-		       then setItems (va,ilist,container,d,ilength,root)
-                   (* Erzeugung der Kindkonten *) 
-		   else let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
-						    container,a_length-2,d,
-						    root)
-			in ( Array.update(getKids(container),a_length-2,limit)
-                            ; setItems (va,List.take(ilist,!max_width),
-					container,d,!max_width,root) )
-			end 
-		 ; container ) 
-	     end   
+	let val ilength = List.length(ilist)
+	    val limited = ilength > !max_width
+	    val a_length = if limited 
+			       then 3 + !max_width
+			   else 2 + List.length(ilist)
+	    val container = 
+		createContainer(createIValue(va,t),p,i,d,
+				Array.array(a_length,Empty),root)
+	    val s_begin = createSimple(INTERPUNCT,container,0,d,"struct",
+				       DEFAULT,root)
+	    val s_end = createSimple(INTERPUNCT,container,a_length-1,d,
+				     "end",DEFAULT,root)
+	in ( Array.update(getKids(container),0,s_begin) 
+	    ; Array.update(getKids(container),a_length-1,s_end) 
+	    ; if not(limited)
+		  then setItems (va,ilist,container,d,ilength,root)
+	      (* Erzeugung der Kindkonten *) 
+	      else let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
+					       container,a_length-2,d,
+					       root)
+		   in ( Array.update(getKids(container),a_length-2,limit)
+		       ; setItems (va,List.take(ilist,!max_width),
+				   container,d,!max_width,root) )
+		   end 
+	       ; container ) 
+	end   
 
     (* setItems *)
 			
@@ -799,22 +728,6 @@ and docToNode (doc,p,i,d,root) =
 			       end),
 				  length-1,
 				  ilist) 
-
- (* old setItems *)
- (*
-    and setItems (va,ilist,p,d,length) = 
-	let val l = ref 1
-	in while !l <= length do
-	    (let val node = let val vv = UnsafeValue.cast va
-				val item = (List.nth(ilist,!l-1))
-				val label = itemToLabel(item)
-				val in_vv = UnsafeValue.projPoly(vv,label)
-			    in createItemNode(in_vv,item,p,!l,d) 
-			    end 
-	     in Array.update(getKids(p),!l,node)
-	     end
-           ; l := !l + 1)
-	end  *)
 
     (* createItemNode *)
     and createItemNode (vv,item,p,i,d,root) = 

@@ -62,12 +62,12 @@ struct
       | Inf.HiddenItem(i) => itemToLabel i
 
     (* Tiefenfilter *)
-
+(*
     (* queryDepth *)
 
     fun queryDepth (va,t,p,i,d,row,f,root) = 
 	if d > !max_depth 
-	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+	    then createLimit (createValue(va,t),DEPTH_LIMIT,
 			      p,i,d,root)
 	else f (va,t,p,i,d,row,root)
 
@@ -75,10 +75,10 @@ struct
 
     fun queryDepthL (va,t,p,i,d,ld,f,root) = 
 	if d > !max_depth 
-	    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
+	    then createLimit (createValue(va,t),DEPTH_LIMIT,
 			      p,i,d,root)
 	else f (va,t,p,i,d,ld,root)
-
+*)
     (* zur Behandlung von Listen *)
 	
      val compList = 

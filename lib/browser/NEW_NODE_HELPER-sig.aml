@@ -39,7 +39,7 @@ sig
     val unApply: Type.desc -> Type.desc * Type.t list 
 
     val itemToLabel: Inf.item -> Label.lab
-
+(*
     val queryDepth: 
 	Reflect.value * Type.t * node * int * int * Type.row * 
         (Reflect.value * Type.t * node * int * int * Type.row * GtkSupport.tag 
@@ -49,6 +49,7 @@ sig
 	Reflect.value * Type.t * node * int * int * 'a list_desc * 
 	(Reflect.value * Type.t * node * int * int * 'a list_desc * GtkSupport.tag 
 	 -> node) * GtkSupport.tag -> node
+*)
 
   (* Behandlung von Listen *)
 	

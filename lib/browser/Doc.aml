@@ -62,7 +62,7 @@ struct
     fun castArray value  = UnsafeValue.cast value : 'a array 
 
     fun handlePackages (d,va,t,inner_doc) = 
-	let val descr = createValue(va,t,NO_ACTIONS)
+	let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr,
 			  sort = DEPTH_LIMIT}
@@ -84,7 +84,7 @@ struct
     (* createInt *)
 
     fun createInt (m_width,d,va,t) = 
-	let val descr = createValue(va,t,NO_ACTIONS)
+	let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
@@ -96,7 +96,7 @@ struct
     (* createString *)
 
     fun createString (m_width,d,va,t) = 
-    let val descr = createValue(va,t,NO_ACTIONS)
+    let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	   then LIMIT{desc = descr, 
 		      sort = DEPTH_LIMIT}
@@ -110,7 +110,7 @@ struct
     (* createChar *)
 
     fun createChar (m_width,d,va,t) = 
-	 let val descr = createValue(va,t,NO_ACTIONS)
+	 let val descr = createValue(va,t)
 	 in if d > !(Settings.max_depth)	
 		then LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
@@ -125,7 +125,7 @@ struct
     (* createWord *)
 
     fun createWord (m_width,d,va,t) = 
-        let val descr = createValue(va,t,NO_ACTIONS)
+        let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)     
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
@@ -140,7 +140,7 @@ struct
     (* createReal *)
 
     fun createReal (m_width,d,va,t) = 
-        let val descr = createValue(va,t,NO_ACTIONS)
+        let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
@@ -152,7 +152,7 @@ struct
     (* createExn *)
 
     fun createExn (m_width,d,va,t) =
-        let val descr = createValue(va,t,NO_ACTIONS)
+        let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then  LIMIT{desc = descr, 
 			   sort = DEPTH_LIMIT}
@@ -169,7 +169,7 @@ struct
     (* createRef *)
 
     fun createRef (m_width,d,va,t) =
-        let val descr = createValue(va,t,NO_ACTIONS)
+        let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
@@ -188,7 +188,7 @@ struct
     (* createVector *)
 
     fun createVector (m_width,d,va,t) = 
-	let val descr = createValue(va,t,NO_ACTIONS)
+	let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
@@ -229,7 +229,7 @@ struct
     (* createArray *)
 
     fun createArray (m_width,d,va,t) = 
-        let val descr = createValue(va,t,NO_ACTIONS)
+        let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
@@ -283,7 +283,7 @@ struct
     (* createPromise *)
 
     and createPromise (m_width,d,va,t) = 
-	let val descr = createValue(va,t,NO_ACTIONS)
+	let val descr = createValue(va,t)
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
