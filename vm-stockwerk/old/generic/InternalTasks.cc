@@ -46,7 +46,7 @@ DEFINE1(Internal_raise) {
 
 void Primitive::RegisterInternal() {
   Register("Internal.applyUnit", Internal_applyUnit, 1);
-  Register("Internal.bind", Internal_bind, 1);
+  Register("Internal.bind", Internal_bind, 1, 1);
   Register("Internal.byneedHandler", Internal_byneedHandler, 1);
   Register("Internal.popHandler", Internal_popHandler, 1);
   Register("Internal.raise", Internal_raise, 1);

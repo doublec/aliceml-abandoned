@@ -27,9 +27,10 @@ class PrimitiveInterpreter: public Interpreter {
 private:
   Primitive::function function;
   int arity;
+  u_int frameSize;
 public:
-  PrimitiveInterpreter(Primitive::function f, int n):
-    function(f), arity(n == 1? -1: n) {}
+  PrimitiveInterpreter(Primitive::function f, int n, u_int m):
+    function(f), arity(n == 1? -1: n), frameSize(m + 1) {}
 
   virtual ConcreteCode *Prepare(word abstractCode);
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
@@ -48,8 +49,7 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
 }
 
 void PrimitiveInterpreter::PopFrame(TaskStack *taskStack) {
-  //--** this is not correct for Vector_tabulate_cont and Internal_bind!
-  taskStack->PopFrame(1);
+  taskStack->PopFrame(frameSize);
 }
 
 Interpreter::Result
@@ -128,12 +128,18 @@ void Primitive::Register(const char *name, word value) {
   table->InsertItem(String::New(name)->ToWord(), value);
 }
 
-void Primitive::Register(const char *name, function value, u_int arity) {
+void Primitive::Register(const char *name, function value, u_int arity,
+			 u_int frameSize) {
   word abstractCode = Store::IntToWord(0); //--** this has to be revisited
   ConcreteCode *concreteCode =
-    ConcreteCode::New(abstractCode, new PrimitiveInterpreter(value, arity), 0);
+    ConcreteCode::New(abstractCode,
+		      new PrimitiveInterpreter(value, arity, frameSize), 0);
   Closure *closure = Closure::New(concreteCode, 0);
   Register(name, closure->ToWord());
+}
+
+void Primitive::Register(const char *name, function value, u_int arity) {
+  Register(name, value, arity, 0);
 }
 
 void Primitive::RegisterUniqueConstructor(const char *name) {

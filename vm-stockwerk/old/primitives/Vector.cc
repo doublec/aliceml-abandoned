@@ -80,5 +80,5 @@ void Primitive::RegisterVector() {
   Register("Vector.length", Vector_length, 1);
   Register("Vector.sub", Vector_sub, 2);
   Register("Vector.tabulate", Vector_tabulate, 2);
-  Register("Vector.tabulate/cont", Vector_tabulate_cont, 1);
+  Register("Vector.tabulate/cont", Vector_tabulate_cont, 1, 3);
 }

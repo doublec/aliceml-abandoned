@@ -31,6 +31,8 @@ private:
 
   static void Register(const char *name, word value);
   static void Register(const char *name, function value, u_int arity);
+  static void Register(const char *name, function value, u_int arity,
+		       u_int frameSize);
   static void RegisterUniqueConstructor(const char *name);
 
   static void RegisterInternal();
