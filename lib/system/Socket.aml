@@ -26,7 +26,8 @@ structure Socket :> SOCKET =
 	fun server (portOpt, acceptFun) =
 	    let
 		val serverPort = Option.getOpt (portOpt, 0)
-		val (serverSocket, serverPort) = UnsafeSocket.server serverPort
+		val (serverSocket, serverHost, serverPort) =
+		    UnsafeSocket.server serverPort
 		fun acceptLoop () =
 		    let
 			val (clientSocket, clientHost, clientPort) =
@@ -37,7 +38,7 @@ structure Socket :> SOCKET =
 		    end
 	    in
 		spawn acceptLoop ();
-		(serverSocket, serverPort)
+		(serverSocket, serverHost, serverPort)
 	    end
 
 	val client = UnsafeSocket.client

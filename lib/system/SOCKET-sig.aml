@@ -21,7 +21,8 @@ signature SOCKET =
 	type host = string
 	type port = int
 
-	val server: port option * (socket * host * port -> unit) -> socket * port
+	val server: port option * (socket * host * port -> unit) ->
+	    socket * host * port
 	val client: host * port -> socket
 
 	val input1: socket -> char option
