@@ -77,7 +77,12 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    if (showtime) {
 		time = System.currentTimeMillis();
 	    }
-	    fcn = ((Record) r).get("main");
+	    if (fcn instanceof Record) {
+		fcn = ((Record) r).get("main");
+	    } else {
+		System.err.println("No main function defined.");
+		System.exit(1);
+	    }
 	    if (fcn == null) {
 		System.err.println("No main function defined.");
 		System.exit(1);
