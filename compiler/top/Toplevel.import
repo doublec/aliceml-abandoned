@@ -14,6 +14,27 @@
 
 (* This file is executed on startup of interactive toplevel. *)
 
+import signature ORDERED from "x-alice:/lib/data/ORDERED-sig"
+import signature HASHABLE from "x-alice:/lib/data/HASHABLE-sig"
+import signature STAMP from "x-alice:/lib/data/STAMP-sig"
+import functor MkStamp from "x-alice:/lib/data/MkStamp"
+import signature GLOBAL_STAMP from "x-alice:/lib/data/GLOBAL_STAMP-sig"
+import structure GlobalStamp from "x-alice:/lib/data/GlobalStamp"
+import signature STACK from "x-alice:/lib/data/STACK-sig"
+import structure Stack from "x-alice:/lib/data/Stack"
+import signature STREAM from "x-alice:/lib/data/STREAM-sig"
+import structure Stream from "x-alice:/lib/data/Stream"
+import signature SET from "x-alice:/lib/data/SET-sig"
+import signature MAP from "x-alice:/lib/data/MAP-sig"
+import functor MkRedBlackSet from "x-alice:/lib/data/MkRedBlackSet"
+import functor MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import signature IMP_SET from "x-alice:/lib/data/IMP_SET-sig"
+import signature IMP_MAP from "x-alice:/lib/data/IMP_MAP-sig"
+import functor MkRedBlackImpSet from "x-alice:/lib/data/MkRedBlackImpSet"
+import functor MkRedBlackImpMap from "x-alice:/lib/data/MkRedBlackImpMap"
+import functor MkHashImpSet from "x-alice:/lib/data/MkHashImpSet"
+import functor MkHashImpMap from "x-alice:/lib/data/MkHashImpMap"
+
 import signature COMPONENT from "x-alice:/lib/system/COMPONENT-sig"
 import signature COMPONENT_MANAGER from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
 import signature CONFIG from "x-alice:/lib/system/CONFIG-sig"
