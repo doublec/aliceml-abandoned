@@ -36,7 +36,7 @@ struct
 
 
     (* builds the player settings window *)
-    fun mkEnterName {startServer, reset, gameMode} =
+    fun mkEnterName {startServer, gameMode} =
 	let
 
 	    val enterName     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -88,7 +88,7 @@ struct
 	    (* the mainQuit procedure. returns to the main window *)
 	    fun mainQuit () = 
 		(Gtk.widgetDestroy enterName;
-		 reset NONE)
+		 raise Error.Error "")
 
 
 	    (* called, if the client has changed the nameText widget.
@@ -122,9 +122,9 @@ struct
 					 gameMode ({disconnect}, mGame, 
 						   guiGame)
 				   | SND   errorMsg       => 
-					 reset (SOME ("ERROR!!", errorMsg)))
+					 raise Error.Error errorMsg)
 			    end
-		      | SND errorMsg   => reset (SOME ("ERROR!!", errorMsg))
+		      | SND errorMsg   => raise Error.Error errorMsg
 		end
 
 	in

@@ -283,17 +283,22 @@ struct
 			
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
-                  Connection.mkConnectToServer ({connect}, {reset, gameMode})
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+                  Connection.mkConnectToServer ({connect}, gameMode)
+ 	               handle Error.Error msg => 
+                                        if msg = "" then reset NONE 
+                                        else reset (SOME ("Error!", msg))
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
-		  ServerSettings.mkServerSettings ({startServer}, 
-                                                             {reset, gameMode})
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+		  ServerSettings.mkServerSettings ({startServer}, gameMode)
+ 	               handle Error.Error msg => 
+                                        if msg = "" then reset NONE 
+                                        else reset (SOME ("Error!", msg))
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
-		  EnterName.mkEnterName {startServer, reset, gameMode}
- 	               handle Error.Error msg => reset (SOME ("Error!", msg))
+		  EnterName.mkEnterName {startServer, gameMode}
+ 	               handle Error.Error msg => 
+                                        if msg = "" then reset NONE 
+                                        else reset (SOME ("Error!", msg))
 
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 

@@ -20,7 +20,7 @@ structure Connection =
 struct
 
 
-    fun mkConnectToServer ({connect}, {reset, gameMode}) =
+    fun mkConnectToServer ({connect}, gameMode) =
 	let
 
 	    val connectToServer = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -34,7 +34,7 @@ struct
 	    val clientUrl       = Gtk.entryNew ()
 
 	    fun mainQuit () = (Gtk.widgetDestroy connectToServer;
-			       reset NONE)
+                               raise Error.Error "")
 		
 	    fun readUrl ()  = Gtk.entryGetText clientUrl
 
@@ -47,8 +47,8 @@ struct
 		     case return () of
 			 FST (mJoin, guiJoin) => 
 			     (PlayerSettings.mkPlayerSettings 
-			       (mJoin, guiJoin, {reset, gameMode}))
-		       | SND    errorMsg => reset (SOME ("ERROR!!", errorMsg))
+			       (mJoin, guiJoin, gameMode))
+		       | SND    errorMsg => raise Error.Error errorMsg
 		 end)
 	
 	in

@@ -35,8 +35,7 @@ struct
 
 
     (* builds the player settings window *)
-    fun mkPlayerSettings ({watch, play, disconnect}, guiJoin, 
-			  {reset, gameMode}) =
+    fun mkPlayerSettings ({watch, play, disconnect}, guiJoin, gameMode) =
 	let
 
 	    val playerSettings  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -63,7 +62,7 @@ struct
 	    val buttonHBox	= Gtk.hboxNew (true, 10)
 
 	    (* contains a fututre unless the 'ready' button has been pushed.
-	       after that it is fulfilled with (Gui.game_model, Gui.game_gui *)
+	       after that it is fulfilled with(Gui.game_model, Gui.game_gui )*)
 	    val state = Promise.promise ()
 
 	    (* an alterable list which contains all colors that are
@@ -124,8 +123,7 @@ struct
 	    fun gameStarted () = 
 		if Future.isFuture (Promise.future state)
 		    then (Gtk.widgetDestroy playerSettings;
-			  reset (SOME ("ERROR", 
-				       "Sorry, game already started")))
+			  raise Error.Error "Sorry, game already started")
 		else let
 			 val (mGame, guiGame) = Promise.future state
 		     in
@@ -152,7 +150,8 @@ struct
 	    (* the mainQuit procedure. disconnects the client from the game
 	       and returns to the main window *)
 	    fun mainQuit () = 
-		(disconnect (); Gtk.widgetDestroy playerSettings; reset NONE)
+                  (disconnect (); Gtk.widgetDestroy playerSettings; 
+		   raise Error.Error "")
 
 	    (* called, if the client has changed the nameText widget.
 	       if nameText = "" -> you can't press the ready-button,
@@ -208,8 +207,9 @@ struct
 			     playersJoined [(name, color)];
 			     Promise.fulfill (state, game))
 		      | SND errorMsg => 
-			    (reset (SOME ("ERROR!!", errorMsg));
-			     Gtk.widgetDestroy playerSettings)
+			    (Gtk.widgetDestroy playerSettings;
+			     raise Error.Error errorMsg)
+			     
 		end
 
 	in
