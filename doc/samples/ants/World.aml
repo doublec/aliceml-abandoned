@@ -195,4 +195,53 @@ structure World =
        app (fn d => checkForSurroundedAntAt(world, adjacentCell(pos, d)))
        Ant.directions)
 
+
+	
+	fun dirToString Ant.E = "0"
+	| dirToString Ant.SE = "1"
+	| dirToString Ant.SW = "2"
+	| dirToString Ant.W = "3"
+	| dirToString Ant.NW = "4"
+	| dirToString Ant.NE = "5"
+	
+		
+	fun antToString (a:Ant.ant) = 
+		
+		(case #color(a) of Ant.Red => "red ant of id "
+		 | Ant.Black => "black ant of id "
+		) ^ 
+		Int.toString (#id a) ^
+		", dir " ^ dirToString (#direction a) ^
+		", food " ^ (if (#hasFood a) then "1" else "0") ^
+		", state " ^ Int.toString (#state a) ^
+		", resting " ^ Int.toString (#resting a)
+
+	
+	
+	val marksToString :(bool vector -> string ) = Vector.foldli ( fn (i,b,s) => if b then s^(Int.toString i) else s  ) ""
+	val orMarks = Vector.foldl (fn (b,r) => if b then true else r ) false
+	
+	fun cellToString (c:cell) =
+	if #rocky(c) then "rock"
+	else 
+		(if (#food c) >0 then (Int.toString (#food c) )^ " food; "
+		else ""
+		)^
+		(if (#redHill c) then "red hill; "
+		else if (#blackHill c) then "black hill; "
+		else ""
+		)^
+		(if orMarks (#redMarkers c) then "red marks: " ^ (marksToString (#redMarkers c)) ^ "; "
+		else ""
+		)^
+		(if orMarks (#blackMarkers c) then "black marks: " ^ (marksToString (#blackMarkers c)) ^ "; "
+		else ""
+		)^
+		(case (#ant c) of NONE => ""
+		| SOME(a) => antToString a
+		)
+		
+	
+
+
   end
