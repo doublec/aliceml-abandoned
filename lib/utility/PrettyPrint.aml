@@ -162,19 +162,7 @@ struct
     fun loop 0 f = ()
       | loop n f = ( f() ; loop (n-1) f )
 
-    fun outputPrim os (PTEXT s) =
-	(*--** ugly workaround for SML/NJ under Windows:
-	 * if the argument string to TextIO.output is too long,
-	 * we get an operating system error exception.
-	 *)
-	let
-	    val r = ref s
-	in
-	    while String.length (!r) > 256 do
-		(TextIO.output (os, String.substring (!r, 0, 256));
-		 r := String.extract (!r, 256, NONE));
-	    TextIO.output(os, !r)
-	end
+    fun outputPrim os (PTEXT s) = TextIO.output(os, s)
       | outputPrim os (PLINE i) =
 	    ( TextIO.output1(os, #"\n")
 	    ; loop i (fn() => TextIO.output1(os, #" "))
