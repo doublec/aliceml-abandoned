@@ -26,7 +26,7 @@ import signature SERVER         from "SERVER-sig"
 import structure MkHeap         from "../common/MkHeap"
 import structure Inspector      from "x-alice:/lib/tools/Inspector"
 import structure Stream         from "x-alice:/lib/data/Stream"
-
+import structure Channel        from "Channel"
 (*
 import val dummyClient          from "DummyClient"
 *)
@@ -176,24 +176,25 @@ struct
             
             type rpc    = unit -> unit
 
-            fun actualInvoke (p, [])       = ()
-              | actualInvoke (p, r::rpcs)   =
-                if Part.isConnected p then 
-                    (r () handle e => Part.disconnect p;
-                     actualInvoke (p, rpcs))
-                else
-                    (* participant is not connected --> do not process
-                      rpcs to this client any more *)
-                    ()
+            fun actualInvoke (p, chan)  = 
+                if Channel.isClosed chan then ()
+                else 
+                    let
+                        val r = Channel.receive chan
+                    in
+                        r () handle e => 
+                            (Part.disconnect p; Channel.destroy chan);
+                        actualInvoke (p, chan)
+                    end
 
-            val rpcs    = ref PMap.empty : rpc Stream.stream PMap.map ref
+            val rpcs    = ref PMap.empty : (rpc Channel.channel) PMap.map ref
            
             fun startRPCHandler p =
                 let
-                    val (stream, l) = Stream.stream ()
+                    val chan    = Channel.channel ()
                 in                
-                    ispawn (_file_, _line_) actualInvoke (p, l);
-                    rpcs := PMap.insertDisjoint (!rpcs, Part.id p, stream)
+                    ispawn (_file_, _line_) actualInvoke (p, chan);
+                    rpcs := PMap.insertDisjoint (!rpcs, Part.id p, chan)
                 end 
                  
 	    (* schedule an RPC call.  
@@ -203,12 +204,12 @@ struct
                     (* we use this promise as a lock *)
                     val id          = Part.id part
                     val client      = Part.client_interface part
-                    val rpcStream   = PMap.lookupExistent (!rpcs, id)
+                    val chan        = PMap.lookupExistent (!rpcs, id)
                 in
                     if Part.isConnected part then
-                        Stream.send (rpcStream, (fn () => f client a))
+                        Channel.send (chan, (fn () => f client a))
                     else
-                        Stream.close rpcStream        
+                        Channel.close chan
                 end 
                 
             (* Invoke f a on several clients simultaneously.
@@ -218,6 +219,37 @@ struct
             fun invokeSeveral (clients, f, a) = 
                 List.app (fn c => invoke (c, f, a)) clients 
                
+            
+            fun synchronize () =
+                let
+                    val syncStepTime    = 10
+
+                    fun isSynced () =
+                        PMap.all (fn chan => Channel.length chan = 0) (!rpcs)
+
+                    fun killSlowClients () =
+                        PMap.appi (fn (id, chan) =>
+                            if Channel.length chan > 0 then
+                                (Part.disconnect (PMap.lookupExistent 
+                                    (!participants, id));
+                                 Channel.destroy chan)
+                            else ()) (!rpcs)
+
+                    fun loop (b, syncs) =
+                        if b then syncs
+                        else if syncs * syncStepTime > Time.toMilliseconds 
+                                (#tick config) * 4 then  
+                            syncs before killSlowClients ()
+                        else (Thread.sleep $ Time.fromMilliseconds 10;
+                              loop (isSynced (), syncs + 1))
+                
+                    val steps   = loop (isSynced (), 0)
+                in
+                    if steps > 0 then
+                        TextIO.output (TextIO.stdErr, 
+                            Int.toString (syncStepTime * steps) ^ "\n")
+                    else ()
+                end
 
             (* [withParticipant def (procName, id, f) returns a function which 
                when invoked applies the participant with id [id]
@@ -791,6 +823,7 @@ struct
 
                     fun loop state =
                         let 
+                            val _     = synchronize ()
                             val state = tick $ Future.await state
                         in
                             Thread.sleep (#tick config);
