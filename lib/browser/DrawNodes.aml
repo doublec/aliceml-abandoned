@@ -118,26 +118,28 @@ struct
     and drawContainer(n,x,y) =  case n of
        Container(r) 
        => if !(#status(r)) = DIRTY
-	      then (let             
-			val _ = #status(r) := Types.CLEAN
-			val hor_funct = (fn (a,(x,y)) 
-					 => draw(a,x,y))
-			val ver_funct = (fn (a,(x,y)) 
-					 => let
-						val (x1,y1) = 
-						    draw(a,x,y)
-					    in
-						(x,y1+1)
+	      then if Array.length(#kids(r)) = 0
+		       then (x,y)
+		   else (let             
+			     val _ = #status(r) := Types.CLEAN
+			     val hor_funct = (fn (a,(x,y)) 
+					      => draw(a,x,y))
+			     val ver_funct = (fn (a,(x,y)) 
+					      => let
+						     val (x1,y1) = 
+							 draw(a,x,y)
+						 in
+						     (x,y1+1)
 					    end)
-			val funct = if setsVertical(n) 
-					then ver_funct
-				    else hor_funct
-		    in
-			Array.foldl funct (x,y) (#kids(r))
-		    end)
+			     val funct = if setsVertical(n) 
+					     then ver_funct
+					 else hor_funct
+			 in
+			     Array.foldl funct (x,y) (#kids(r))
+			 end)
 	  else 
 	      (x + get_xdim(n), y + get_ydim(n)) 
-    | _ => raise DrawError
+     | _ => raise DrawError
        
     (* draw *)
     and draw (n,x,y) = case n of

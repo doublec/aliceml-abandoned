@@ -109,7 +109,9 @@ struct
       | _ => 1
  
     and calc_l_xdim n = case n of 
-        Container(r) => calc_xdim (List.last(Array.toList(#kids(r))) )
+        Container(r) => if List.null(Array.toList(#kids(r)))
+			    then 0
+			else calc_xdim (List.last(Array.toList(#kids(r))) )
       | _ => raise LayoutError
 
     and set_dirty n = case n of 
