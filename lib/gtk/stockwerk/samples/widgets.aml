@@ -16,7 +16,7 @@
    one could replace all "print" function calls by "Inspector.inspect". *)
 
 import structure Gtk        from "../Gtk"
-import structure GtkBuilder from "GtkBuilder"
+import structure GtkBuilder from "../GtkBuilder"
 
 local
     open GtkBuilder

@@ -14,7 +14,7 @@
 import structure Gdk        from "../Gdk"
 import structure Gtk        from "../Gtk"
 import structure GnomeCanvas  from "../GnomeCanvas"
-import structure GtkBuilder from "GtkBuilder"
+import structure GtkBuilder from "../GtkBuilder"
 
 local
     open GtkBuilder

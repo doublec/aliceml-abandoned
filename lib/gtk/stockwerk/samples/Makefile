@@ -8,8 +8,6 @@ SRCS = hello.aml          \
        packbox.aml        \
        canvas.aml         \
        scramble.aml       \
-       GtkBuilder-sig.aml \
-       GtkBuilder.aml     \
        widgets.aml        \
        move.aml           \
        TextViewer.aml     \

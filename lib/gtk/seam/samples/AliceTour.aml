@@ -13,7 +13,7 @@
 
 import structure Gtk        from "../Gtk"
 import structure Gdk        from "../Gdk"
-import structure GtkBuilder from "GtkBuilder"
+import structure GtkBuilder from "../GtkBuilder"
 import structure Config     from "x-alice:/lib/system/Config"
 
 local
