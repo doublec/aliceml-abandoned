@@ -25,6 +25,7 @@ import structure Dictionaries from "Dictionaries"
 import structure NodeSearch from "NodeSearch" 
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
+import structure Server from "Server"
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
@@ -38,7 +39,9 @@ struct
     type tag = Gtk.object
 
     val uglyNULL = UnsafeValue.cast () : Gtk.object
-	
+
+    val serve = Server.newServer ()
+
     val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 
     val _  = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
@@ -56,7 +59,7 @@ struct
 
 
     (* "About..."-WindowHandler *)
-    fun about _ = 
+    fun about _ = serve (fn () =>  
 	let
 	    val dialog = Gtk.dialogNew()
 	    val _ = Gtk.windowSetTitle(dialog,"information")
@@ -71,10 +74,10 @@ struct
 	    val _ = Gtk.widgetShowAll(dialog)
 	in
 	    ()
-	end
+	end)
 			   
     (* Preferences Window Handler *)
-    fun Preferences _ = 
+    fun Preferences _ = serve (fn () =>
 	let	
 	    val vbox = Gtk.vboxNew(0,4)
 	    (* Width & Depth Settings *)
@@ -158,48 +161,55 @@ struct
 					fn _ => Gtk.widgetDestroy(w) )
 	in
 	    Gtk.widgetShowAll(w)
-	end
+	end)
 	
     (* Menu-Bar *)
-     val bar = WindowHelper.createMenu
-	 [ WindowHelper.MenuObj{title = "Inspector",
-				items = [(LABEL "About...",
-					  [WindowHelper.Handler("activate",
-								about)]),
-					 (SEP,[]),
-					 (LABEL "Close",
-					  [WindowHelper.Handler("activate",
-								Delete)])]},
-	  WindowHelper.MenuObj{title = "Selection",
-			       items = [(LABEL "Expand",
-					 []),
-					(LABEL "Shrink",
-					 []),
-					(SEP, []),
-					(LABEL "Reinspect",
-					 [])] }   ,
-	  WindowHelper.MenuObj{title = "Options",
-			       items = [(LABEL "Preferences...",
-					 [WindowHelper.Handler("activate",
-							       Preferences)])] }]  
-			
-     val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
-     val status = Gtk.statusbarNew()
+    val bar = WindowHelper.createMenu
+	(BarObj[MenuObj
+		{title = "Inspector",
+		 items = [EntryObj
+			  (LABEL "About...",
+			   [Handler("activate",
+				    about)]),
+			  EntryObj(SEP,[]),
+			  EntryObj(LABEL "Close",
+				   [Handler("activate",
+					    Delete)])]},
+		MenuObj
+		{title = "Selection",
+		 items = [EntryObj(LABEL "Expand",
+				   []),
+			  EntryObj(LABEL "Shrink",
+				   []),
+			  EntryObj(SEP, []),
+			  EntryObj(LABEL "Reinspect",
+				   [])] }   ,
+		MenuObj
+		{title = "Options",
+		 items = [EntryObj(LABEL "Preferences...",
+				   [Handler("activate",
+					    Preferences)])] }])  
+	
+    val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
+    val status = Gtk.statusbarNew()
      val st_context = Gtk.statusbarGetContextId(status,"st")
      val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
      val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
     
-    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x val ysize = !Settings.max_y) 	
+    structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
+				   val ysize = !Settings.max_y) 	
 
     val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
 
-    val _ = Gtk.scrolledWindowSetPolicy(scrolled,Gtk.POLICY_ALWAYS,Gtk.POLICY_ALWAYS)
+    val _ = Gtk.scrolledWindowSetPolicy(scrolled,
+					Gtk.POLICY_ALWAYS,
+					Gtk.POLICY_ALWAYS)
 	
 
     val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
     val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
 
-    fun handleResize _ = let
+    fun handleResize _ = serve (fn () => let
 	                     val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
 			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
 			     val upperv = Gtk.adjustmentGetFieldUpper(vadj)
@@ -210,7 +220,7 @@ struct
 					 then !(Settings.max_y) else page_sv
 			   in
 			    DA.resize(h,v)  
-			 end
+			 end)
 
     val _ = Gtk.signalConnect(scrolled,"size_allocate",handleResize)
     val _ = Gtk.boxPackStart(vbox,scrolled,Gtk.EXPAND,Gtk.FILL,0) 
@@ -224,17 +234,27 @@ struct
 
 
     fun makePopup {widthhandler = w, depthhandler = d, reinspecthandler = r} = 
-	createPopupMenu([MenuObj{title = "Explore Tree",
-				items = [(LABEL("width"),[]),
-					 (LABEL("depth"),[])]},
-			MenuObj{title = "Filter",
-				items = []},
-			MenuObj{title = "Actions",
-				items = [(LABEL("reinspect"),[])]}])
+	serve (fn () => 
+	       (createMenu
+		(PopupObj
+		 [MenuObj{title = "Explore Tree",
+			  items = [MenuObj
+				   {title = "width",
+				    items = 
+				    [EntryObj(LABEL("+1"),[])]},
+				   MenuObj
+				   {title = "depth",
+				    items = 
+				    [EntryObj(LABEL("-2"),[])]}]},
+		  MenuObj{title = "Filter",
+			  items = []},
+		  MenuObj{title = "Actions",
+			  items = [EntryObj(LABEL("reinspect"),[])]}])
+		;()))
 
 
 
-    fun handleEvent [Gdk.EVENT(event)] = 
+    fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
 	let
 	    val valueh = Gtk.adjustmentGetFieldValue(hadj)
 	    val valuev = Gtk.adjustmentGetFieldValue(vadj)   
@@ -296,7 +316,7 @@ struct
 			  | _ => ()
 		    end
 	      | _ => ()
-					 end
+	end)
 				     
     val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
 	

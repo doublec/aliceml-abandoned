@@ -14,7 +14,7 @@
  *)
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-signature MK_DRAWING_AREA =
+signature DRAWING_AREA =
 sig
     type tag = Gtk.object
     val canvas: tag

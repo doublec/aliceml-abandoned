@@ -87,6 +87,15 @@ struct
                               | RelRefNode(r) => #parent(r)
                               | _ => raise Match
 
+    fun getGroup n = case n of Concat(r) => #group(r)
+                              | Container(r) => #group(r)
+                              | Simple(r) => #group(r) 
+                              | Limit(r) => #group(r)
+                              | RelNode(r) => #group(r)
+                              | RelRefNode(r) => #group(r)
+                              | _ => raise Match
+
+
     fun getIndex n = case n of Concat(r) => #index(r)
                              | Container(r) => #index(r)
                              | Simple(r) => #index(r)

@@ -18,6 +18,7 @@ signature MK_WINDOW =
 sig
     type tag = Gtk.object
     val window: tag
+    val serve: (unit -> unit) -> unit
     val canvas: tag
     val canvasroot: tag
     val resize: unit -> unit
