@@ -274,7 +274,6 @@ Interpreter::Result PicklingInterpreter::Run(word args, TaskStack *taskStack) {
     Scheduler::currentData = x0;
     return Interpreter::REQUEST;
   }
-  //--** x0 = Deref(x0), to be done
   taskStack->PopFrame();
   PicklingArgs *pargs        = PicklingArgs::FromWordDirect(args);
   int id                     = pargs->GetId();
