@@ -7,4 +7,4 @@ set OZ_LOAD=pattern=?{x}=?{x}.ozf;pattern=x-alice:/?{x}=%STOCKHOME%/?{x}.ozf;pat
 
 set PATH=%OZHOME%\bin;%PATH%
 
-ozengine x-alice:/StowMain %1 %2 %3 %4 %5 %6 %7 %8 %9
+ozengine x-alice:/VMMain %1 %2 %3 %4 %5 %6 %7 %8 %9
