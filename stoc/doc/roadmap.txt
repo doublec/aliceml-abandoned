@@ -33,7 +33,6 @@ AbstractGrammar
 TypedGrammar (= AbstractGrammar')
  |
  | TranslationPhase:
- |	- Type erasure
  |	- Overloading translation
  |	- Module translation
  |
