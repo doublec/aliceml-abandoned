@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -140,6 +140,8 @@ struct
 	| AnnExp    of exp_info * exp * typ	(* type annotation *)
 	| LetExp    of exp_info * dec vector * exp (* let *)
 	| PackExp   of exp_info * mod * inf	(* package introduction *)
+	| OverExp   of exp_info * exp vector
+				* varid * typlongid vector * typ (* overload *)
 
     and 'a row = Row of 'a row_info * 'a fld vector * bool
     and 'a fld = Fld of 'a fld_info * vallab * 'a
@@ -298,6 +300,7 @@ struct
       | infoExp(AnnExp(i,_,_))		= i
       | infoExp(LetExp(i,_,_))		= i
       | infoExp(PackExp(i,_,_))		= i
+      | infoExp(OverExp(i,_,_,_,_))	= i
 
     fun infoRow(Row(i,_,_))		= i
     fun infoFld(Fld(i,_,_))		= i
@@ -411,7 +414,8 @@ struct
 	       | SpawnExp(_, exp)
 	       | AnnExp(_, exp, _) )		= isValue exp
       | isValue( TupExp(_, exps)
-	       | VecExp(_, exps) )		= Vector.all isValue exps
+	       | VecExp(_, exps)
+	       | OverExp(_, exps, _, _, _) )	= Vector.all isValue exps
       | isValue( ProdExp(_, exprow) )		= isValueRow isValue exprow
       | isValue( UpdExp(_, exp, exprow) )	= isValue exp andalso
 						  isValueRow isValue exprow

@@ -57,6 +57,12 @@ sig
 	| AnnExpMismatch	of typ_mismatch
 	| MatPatMismatch	of typ_mismatch
 	| MatExpMismatch	of typ_mismatch
+	| OverExpEmpty
+	| OverExpArity
+	| OverExpNonPrimTyp	of typ
+	| OverExpOverlap	of typ * typ
+	| OverExpKind		of typ
+	| OverExpMismatch	of typ_mismatch
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch
@@ -78,6 +84,7 @@ sig
 	| PervasiveTypUnknown	of string
 	(* Declarations *)
 	| ValDecMismatch	of typ_mismatch
+	| ValDecUnclosed	of typ
 	| ValDecLift		of valid * var
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf

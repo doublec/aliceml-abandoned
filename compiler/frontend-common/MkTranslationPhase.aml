@@ -124,7 +124,7 @@ struct
     open FixityTranslation
 
     val typ_unit	= Type.tuple #[]
-    val var_poly	= Type.newVar(Type.starKind())
+    val var_poly	= Type.newVar(Type.starKind(), Type.Unconstrained)
     val typ_poly	= Type.all(var_poly, Type.var var_poly)
 
     fun typ(E, modlab, lab) =
@@ -162,8 +162,35 @@ struct
 
     fun compareField((l1,_), (l2,_)) = Label.compare(l1,l2)
 
-    val infHash  = Inf.Map.map() : Type.t Inf.Map.t
-		(*UNFINISHED: remove this global variable! *)
+    val typHash = Type.Map.map() : Type.t Type.Map.t
+    val infHash = Inf.Map.map() : Type.t Inf.Map.t
+		(*UNFINISHED: remove this global variables! *)
+
+    fun typToTyp(E,t) =
+	let
+	    val tcan = Type.canonical t
+	in
+	    case Type.Map.lookup(typHash, tcan)
+	     of SOME t' => t'
+	      | NONE =>
+	    case Type.inspect t
+	     of Type.All(a,_) =>
+		(case Type.constraintVar a
+		 of Type.Unconstrained     => t
+		  | Type.Intensional       => t (*TODO*)
+		  | Type.Extensional(p,ps) =>
+		    let
+			val k  = Type.kindVar a
+			val t' = Type.tuple(Vector.map
+				 (fn p => Type.instanceWith(t, Type.con(p,k)))
+				 (Vector.fromList(p::ps)))
+		    in
+			Type.Map.insert(typHash, tcan, t');
+			t'
+		    end
+		)
+	      | _ => t
+	end
 
     (* A proper translation of interface kinds would require
      * polymorphic kinds and record kinds, because we have first
@@ -233,7 +260,7 @@ struct
 	 of (Inf.FixItem _ | Inf.HiddenItem _) =>
 		NONE
 	  | Inf.ValItem(l,t) =>
-		SOME(trValLabel l, t)
+		SOME(trValLabel l, typToTyp(E,t))
 	  | Inf.TypItem(p,k) =>
 	    let
 		val t = typ_typ E handle TranslationEnv.Pervasive =>
@@ -317,6 +344,7 @@ struct
     val callLab			= call modlab_label
     val callPath		= call modlab_path
     val callTyp			= call modlab_type
+    val accessTyp		= access modlab_type
     val callPervType		= call modlab_pervasiveType
     val accessPervType		= access modlab_pervasiveType
     val callInf			= call modlab_inf
@@ -382,6 +410,8 @@ struct
     fun trPath'(E, r) =
 	callPath(E, lab_invent, trUnit r)
 
+    fun trUnconstrained(E, r) = accessTyp(E, lab_unconstrained)
+
     fun trKind(E, r, k) =
 	case Type.inspectKind k
 	 of Type.StarKind => callTyp(E, lab_starKind, trUnit r)
@@ -407,7 +437,7 @@ struct
 
   (* Identifiers *)
 
-    fun trValInfo(E,i)			= i
+    fun trValInfo(E, {region,typ})	= {region=region, typ=typToTyp(E,typ)}
     fun trTypInfo(E, {region,typ})	= {region=region, typ=typ_typ E}
     fun trVarInfo(E, {region,var})	= {region=region, typ=typ_var E}
     fun trModInfo(E, {region,inf})	= {region=region, typ=infToTyp(E,inf)}
@@ -544,9 +574,38 @@ struct
 
   (* Expressions *)
 
+    fun trVarExp(E, i, y) =
+	let
+	    val t1 = #typ i
+	    val t2 = #typ(I.infoLongid y)
+	    val y' = trVallongid(E, y)
+	    val e' = O.VarExp(i, y')
+	in
+	    case Type.inspect t2
+	     of Type.All(a,t) =>
+		(case Type.constraintVar a
+		 of Type.Unconstrained => e'
+		  | Type.Intensional   => e' (*TODO*)
+		  | Type.Extensional(p,ps) =>
+		    let
+			val  k    = Type.kindVar a
+			val (n,_) = Option.valOf(List.findi
+					(fn(_,p) => 
+					 Type.equal(t1, Type.instanceWith
+							    (t2, Type.con(p,k)))
+					) (p::ps))
+		    in
+			O.SelExp(i, O.Lab(nonInfo(#region i),
+					  Label.fromInt(n+1)),
+				    O.VarExp(O.infoLongid y', y'))
+		    end
+		)
+	      | _ => e'
+	end
+
     fun trExps(E, es)			= Vector.map (fn e => trExp(E,e)) es
     and trExp(E, I.LitExp(i,l))		= O.LitExp(i, trLit l)
-      | trExp(E, I.VarExp(i,y))		= (O.VarExp(i, trVallongid(E, y))
+      | trExp(E, I.VarExp(i,y))		= (trVarExp(E,i,y)
 (* may happen with functor derived form...
 (*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "15\n"); raise VirtualModule))
 *))
@@ -579,6 +638,7 @@ struct
       | trExp(E, I.AnnExp(i,e,t))	= trExp(E,e)
       | trExp(E, I.LetExp(i,ds,e))	= O.LetExp(i, trDecs(E,ds), trExp(E,e))
       | trExp(E, I.PackExp(i,m,j))	= trPackExp(E,i,m,j)
+      | trExp(E, I.OverExp(i,es,x,ys,t))= trTuple(#region i, trExps(E,es))
 
     and trExpRow(E, I.Row(i,fs,_))	= trExpFlds(E,fs)
     and trExpFlds(E, fs)		= Vector.map (trExpFld E) fs
@@ -650,7 +710,7 @@ struct
     and trPats(E, ps)			= Vector.map (fn p => trPat(E,p)) ps
     and trPat(E, I.JokPat(i))		= O.JokPat(i)
       | trPat(E, I.LitPat(i,l))		= O.LitPat(i, trLit l)
-      | trPat(E, I.VarPat(i,x))		= O.VarPat(i, trValid(E,x))
+      | trPat(E, I.VarPat(i,x))		= O.VarPat(trValInfo(E,i), trValid(E,x))
       | trPat(E, I.TagPat(i,l,_,p))	= O.TagPat(i, trVallab l, trPat(E,p))
       | trPat(E, I.ConPat(i,y,p))	= (O.ConPat(i, trVallongid(E,y),
 						      trPat(E,p))
@@ -1356,7 +1416,7 @@ struct
 	handle VirtualModule => trVirtTyplongid(E,y))
 
       | trTyp'(E, I.FunTyp(i,x,t)) =
-	(* [fn x => t] = let val $x = Type.newVar <<kind x>>
+	(* [fn x => t] = let val $x = Type.newVar(<<kind x>>, Unconstrained)
 	 *               in Type.lambda($x,[t]) end
 	 *)
 	let
@@ -1400,7 +1460,7 @@ struct
 	end
 
       | trTyp'(E, I.AllTyp(i,x,t)) =
-	(* [forall x => t] = let val $x = Type.newVar <<kind x>>
+	(* [forall x => t] = let val $x = Type.newVar(<<kind x>>, Unconstrained)
 	 *                   in Type.all($x,[t]) end
 	 *)
 	let
@@ -1410,7 +1470,7 @@ struct
 	end
 
       | trTyp'(E, I.ExTyp(i,x,t)) =
-	(* [exists x => t] = let val $x = Type.newVar <<kind x>>
+	(* [exists x => t] = let val $x = Type.newVar(<<kind x>>, Unconstrained)
 	 *                   in Type.exists($x,[t]) end
 	 *)
 	let
@@ -1478,7 +1538,9 @@ struct
 	    val r  = #region i
 	    val x' = trVarid(E,x)
 	    val d' = O.ValDec(origInfo(r,Aux), idToPat x',
-			      callTyp(E, lab_newVar, trKind(E,r,k)))
+			      callTyp(E, lab_newVar,
+				      trTuple(r, #[trKind(E,r,k),
+						   trUnconstrained(E,r)])))
 	    val e' = callTyp(E, a, trTuple(r, #[idToExp x', trTyp'(E,t)]))
 	in
 	    O.LetExp(O.infoExp e', #[d'], e')

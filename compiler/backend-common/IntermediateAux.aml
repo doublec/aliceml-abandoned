@@ -475,7 +475,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			rowToArity (row, typ, makeMap)
 	      | Type.Sum row =>
 		    rowToArity (row, typ, makeMap)
-	      | Type.Unknown =>
+	      | Type.Unknown _ =>
 		    raise Crash.Crash "IntermediateAux.typToArity"
 
 	fun typToArity typ = #1 (typToArity' (typ, false))

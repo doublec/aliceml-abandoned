@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -178,6 +178,8 @@ struct
     val ppModlongid	= ppLongid(ppModlongidInfo, ppModidInfo, ppModlabInfo)
     val ppInflongid	= ppLongid(ppInflongidInfo, ppInfidInfo, ppInflabInfo)
 
+    fun ppTyplongids xs	= vec(Vector.map ppTyplongid xs)
+
 
   (* Rows and Fields *)
 
@@ -305,6 +307,13 @@ struct
       | ppExp(PackExp(i, mod, inf))	= exptree "Pack" i (
 					    ppMod mod ^/^
 					    ppInf inf
+					  )
+      | ppExp(OverExp(i, exps, varid, typlongids, typ))
+ 					= exptree "Over" i (
+					    ppExps exps ^/^
+					    ppVarid varid ^/^
+					    ppTyplongids typlongids ^/^
+					    ppTyp typ
 					  )
 
     and ppMats mats			= vec(Vector.map ppMat mats)

@@ -570,6 +570,53 @@ struct
 	    ( t, O.PackExp(typInfo(i,t), mod', inf') )
 	end
 
+      | elabExp(E, I.OverExp(i, exps, varid, typlongids, typ)) =
+	let
+	    val  _ = if Vector.length exps = Vector.length typlongids then ()
+		     else error(i, E.OverExpArity)
+	    val (ts1,exps') =
+		VectorPair.unzip(Vector.map (fn x => elabExp(E,x)) exps)
+	    val (ts2,typlongids') =
+		VectorPair.unzip(Vector.map (fn x => elabTyplongid(E,x))
+					    typlongids)
+	    val _  = Env.insertScope E
+	    val ks = Vector.map Type.kind ts2
+	    val ps = Vector.map (fn t => Type.asCon t handle Type.Type =>
+				    error(i, E.OverExpNonPrimTyp t)) ts2
+	    val c  = case Vector.toList ps
+		     of nil   => error(i, E.OverExpEmpty)
+		      | p::ps => Type.Extensional(p,ps)
+	    val k  = Vector.sub(ks, 0)
+	    val m  = PathMap.map()
+	    val _  = Vector.appi
+		     (fn(j,k') =>
+		      let
+			  val i' = I.infoLongid(Vector.sub(typlongids,j))
+		      in
+			  if not(Type.equalKind(k,k')) then
+			      error(i', E.OverExpKind(Vector.sub(ts2,j)))
+			  else
+			      PathMap.insertDisjoint(m, Vector.sub(ps,j), j)
+			      handle PathMap.Collision p =>
+				 error(i', E.OverExpOverlap(Vector.sub(ts2,j),
+				   Vector.sub(ts2,PathMap.lookupExistent(m,p))))
+		      end) ks
+	    val (a,varid') = elabVarid_bind(E, k, c, varid)
+	    val (t1,typ')  = elabTyp(E, typ)
+	    val  _         = Env.removeScope E
+	    val  t         = Type.all(a,t1)
+	in
+	    Vector.appi (fn(j,t1) =>
+			 let
+			     val t2 = Type.instanceWith(t, Vector.sub(ts2,j))
+			 in
+			     Type.unify(t1, t2) handle Type.Mismatch(t3,t4) =>
+			         error(I.infoExp(Vector.sub(exps,j)),
+				       E.OverExpMismatch(t1,t2,t3,t4))
+			 end) ts1;
+	    ( t, O.OverExp(typInfo(i,t), exps', varid', typlongids', typ') )
+	end
+
     and elabExps(E, exps) =
 	VectorPair.unzip(Vector.map (fn exp => elabExp(E,exp)) exps)
 
@@ -776,16 +823,16 @@ struct
 
   (* Type identifiers *)
 
-    and elabVarid_bind'(E, k, I.Id(i, stamp, name)) =
+    and elabVarid_bind'(E, k, c, I.Id(i, stamp, name)) =
 	let
-	    val a = Type.newVar k
+	    val a = Type.newVar(k,c)
 	in
 	    O.Id(varInfo(i,a), stamp, name)
 	end
 
-    and elabVarid_bind(E, k, varid as I.Id(i, stamp, name)) =
+    and elabVarid_bind(E, k, c, varid as I.Id(i, stamp, name)) =
 	let
-	    val a = Type.newVar k
+	    val a = Type.newVar(k,c)
 	    val u = ref false
 	    val _ = Env.insertVar(E, stamp, {id=varid, var=a, use=u})
 	in
@@ -930,7 +977,8 @@ struct
 
       | elabTyp'(E, allowJok, I.FunTyp(i, varid, typ)) =
 	let
-	    val (a,varid') = elabVarid_bind(E, Type.starKind(), varid)
+	    val (a,varid') = elabVarid_bind(E, Type.starKind(),
+					       Type.Unconstrained, varid)
 	    val (t1,typ')  = elabTyp'(E, allowJok, typ)
 	    val  t         = Type.lambda(a,t1)
 	in
@@ -985,7 +1033,8 @@ struct
 
       | elabTyp'(E, allowJok, I.AllTyp(i, varid, typ)) =
 	let
-	    val (a,varid') = elabVarid_bind(E, Type.starKind(), varid)
+	    val (a,varid') = elabVarid_bind(E, Type.starKind(),
+					       Type.Unconstrained, varid)
 	    val (t1,typ')  = elabStarTyp(E, allowJok, typ)
 	    val  t         = Type.all(a,t1)
 	in
@@ -994,7 +1043,8 @@ struct
 
       | elabTyp'(E, allowJok, I.ExTyp(i, varid, typ)) =
 	let
-	    val (a,varid') = elabVarid_bind(E, Type.starKind(), varid)
+	    val (a,varid') = elabVarid_bind(E, Type.starKind(),
+					       Type.Unconstrained, varid)
 	    val (t1,typ')  = elabStarTyp(E, allowJok, typ)
 	    val  t         = Type.exist(a,t1)
 	in
@@ -1044,7 +1094,7 @@ struct
     and elabTypRep(E, p, mkKind, I.FunTyp(i, varid, typ)) =
 	let
 	    val  k            = Type.starKind()
-	    val (a,varid')    = elabVarid_bind(E, k, varid)
+	    val (a,varid')    = elabVarid_bind(E, k, Type.Unconstrained, varid)
 	    val (t1,gen,typ') = elabTypRep(E, p,
 				     fn k' => mkKind(Type.arrowKind(k,k')), typ)
             val  t            = if gen then t1 else Type.lambda(a,t1)
@@ -1615,7 +1665,7 @@ TextIO.print "\n";
 	    val  E'       = Env.splitScope E
 	    val  _        = Type.unify(t1,t2) handle Type.Mismatch(t3,t4) =>
 				error(i, E.ValDecMismatch(t1, t2, t3, t4))
-	    val  _        = if I.isValue exp then generaliseVals(E, s, az, E')
+	    val  _        = if I.isValue exp then generaliseVals(i,E, s, az, E')
 					     else liftVals(E, s, az, E')
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
@@ -1670,7 +1720,8 @@ TextIO.print "\n";
 
       | elabDec(E, s,po,varids, I.VarDec(i, varid, dec)) =
 	let
-	    val varid'  = elabVarid_bind'(E, Type.starKind(), varid)
+	    val varid'  = elabVarid_bind'(E, Type.starKind(),
+					     Type.Unconstrained, varid)
 	    val dec'    = elabDec(E, s,po,varid::varids, dec)
 	in
 	    O.VarDec(nonInfo(i), varid', dec')
@@ -1689,7 +1740,7 @@ TextIO.print "\n";
 	    (* ASSUME that only ValDec or TypDec are under RecDec *)
 	    (* ASSUME that recursive ValDecs are never expansive *)
 	    val _      = Env.appTyps (fn(x,entry)=> Env.insertTyp(E,x,entry)) E'
-	    val _      = generaliseVals(E, s, az, E')
+	    val _      = generaliseVals(i, E, s, az, E')
 	in
 	    O.RecDec(nonInfo(i), decs')
 	end
@@ -1721,7 +1772,7 @@ TextIO.print "\n";
     and enterVarids(E, varids) =
 	List.map (fn varid as I.Id(_, stamp, name) =>
 		  let
-		      val a = Type.newVar(Type.starKind())
+		      val a = Type.newVar(Type.starKind(), Type.Unconstrained)
 		  in
 		      Env.insertVar(E,stamp, {id=varid, var=a, use=ref false});
 		      a
@@ -1747,11 +1798,12 @@ TextIO.print "\n";
 		     end
 		    ) E'
 
-    and generaliseVals(E, s, az, E') =
+    and generaliseVals(i, E, s, az, E') =
 	let
 	    val xes = Env.foldVals (fn(x,e,xes) => (x,e)::xes) [] E'
 	    val ts  = List.map (#typ o #2) xes
-	    val ts' = Type.close ts
+	    val ts' = Type.close ts handle Type.Close t =>
+			error(i, E.ValDecUnclosed t)
 	in
 	    ListPair.app (fn((x, {id=id, use=u, qtyp=qt, ...}), t) =>
 			  let

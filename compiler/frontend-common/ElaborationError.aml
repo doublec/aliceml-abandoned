@@ -75,6 +75,12 @@ struct
 	| AnnExpMismatch	of typ_mismatch
 	| MatPatMismatch	of typ_mismatch
 	| MatExpMismatch	of typ_mismatch
+	| OverExpEmpty
+	| OverExpArity
+	| OverExpNonPrimTyp	of typ
+	| OverExpOverlap	of typ * typ
+	| OverExpKind		of typ
+	| OverExpMismatch	of typ_mismatch
 	(* Patterns *)
 	| TagPatLab		of lab
 	| TagPatArgMismatch	of typ_mismatch
@@ -96,6 +102,7 @@ struct
 	| PervasiveTypUnknown	of string
 	(* Declarations *)
 	| ValDecMismatch	of typ_mismatch
+	| ValDecUnclosed	of typ
 	| ValDecLift		of valid * var
 	(* Long ids *)
 	| ModlongidInf		of modlongid * inf
@@ -389,6 +396,33 @@ struct
 	ppTypMismatch4(
 	  textpar["inconsistent","types","in","branches","of","`case':"],
 	  textpar["does","not","agree","with","previous","type"], ue)
+      | ppError(OverExpEmpty) =
+	  textpar["empty","overloading"]
+      | ppError(OverExpArity) =
+	  textpar["number","of","overloaded","types","does","not",
+		  "match","number","of","cases"]
+      | ppError(OverExpNonPrimTyp t) =
+	vbox(
+	    textpar["non-abstract","overloaded","type:"] ^^
+	    indent(PPType.ppTyp t)
+	)
+      | ppError(OverExpOverlap(t1,t2)) =
+	vbox(
+	    textpar["overlapping","overload,","because", "type"] ^^
+	    indent(PPType.ppTyp t1) ^^
+	    textpar["is","the","same","as","type"] ^^
+	    indent(PPType.ppTyp t2)
+	)
+      | ppError(OverExpKind t) =
+	vbox(
+	    textpar["inconsistent","kinds","in","overloading:"] ^^
+	    indent(PPType.ppTyp t) ^^
+	    textpar["does","not","agree","with","previous","type"]
+	)
+      | ppError(OverExpMismatch ue) =
+	ppTypMismatch4(
+	  textpar["type","mismatch","in","overloading:"],
+	  textpar["does","not","match","instance","type"], ue)
       (* Patterns *)
       | ppError(TagPatRowMismatch ue) =
 	ppTypMismatch4(
@@ -445,6 +479,11 @@ struct
 	ppTypMismatch4(
 	  textpar["expression","does","not","match","pattern","type:"],
 	  textpar["does","not","match","type"], ue)
+      | ppError(ValDecUnclosed t) =
+	vbox(
+	    textpar["unresolved","type","in","declaration:"] ^^
+	    indent(PPType.ppTyp t)
+	)
       | ppError(ValDecLift(x,l)) =
 	  textpar["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
