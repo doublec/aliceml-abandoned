@@ -418,14 +418,12 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
   gint connid = GPOINTER_TO_INT(marshal_data);
 
   //  g_print("event occured: %d\n", connid);
-  //  g_print("delete?: %d\n", isDelete);
 
   sendArgsToStream(connid,n_param_values,param_values);
 
   if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
-    //    g_value_set_boolean(return_value, 
-    //          (GPOINTER_TO_INT(closure->data) != 0) ? TRUE : FALSE);
-    g_value_set_boolean(return_value, FALSE);
+    g_value_set_boolean(return_value,
+			(GPOINTER_TO_INT(closure->data) == 2) ? TRUE : FALSE);
 }
 
 DEFINE3(NativeCore_signalConnect) {
@@ -433,10 +431,10 @@ DEFINE3(NativeCore_signalConnect) {
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
 
-  //gint isDelete = !strcmp(signalname, "delete_event");
+  gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
 
   GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-  				     /*GINT_TO_POINTER(isDelete)*/NULL, NULL);
+  				     GINT_TO_POINTER(userData), NULL);
   gulong connid = g_signal_connect_closure(G_OBJECT(obj), signalname, 
 					closure, after ? TRUE : FALSE); 
   g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
