@@ -811,10 +811,57 @@ structure CodeGen : CODEGEN =
 		    0 => nil
 		  | x => [Aconst_null, Astore (x+1)]@(initializeLocals (x-1))
 		val iL = initializeLocals (Persistent.maxLocals())
-		val stack = stackneed match
-		val applY = Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
-				    Limits (Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
-				    (Aload 1) :: iL @ mcm @ [Areturn])
+		val stack = if name="main" then Int.max(stackneed match + 1,6) else stackneed match + 1
+		val applY = if name="main"
+				then
+				    let
+					val eins = Reuse.aNewLabel()
+					val zwei = Reuse.aNewLabel()
+					val drei = Reuse.aNewLabel()
+				    in
+					Method ([MPublic, MStatic],"main",([Arraysig,Classsig CString], Voidsig),
+						Limits (Persistent.maxLocals(),Reuse.maxLocals(),stack),
+						[Iconst 0,
+						 Istore eins,
+						 Aload 0,
+						 Arraylength,
+						 Anewarray CLabel,
+						 Astore zwei,
+						 Aload 0,
+						 Arraylength,
+						 Anewarray CVal,
+						 Astore drei,
+						 Iconst 0,
+						 Istore eins,
+						 Goto zweiE,
+						 Label dreizehn,
+						 Aload zwei,
+						 Iload eins,
+						 New CLabel,
+						 Dup,
+						 Iload eins,
+						 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
+						 Aastore,
+						 Aload drei,
+						 Iload eins,
+						 New CStr,
+						 Dup,
+						 Aload 0,
+						 Iload eins,
+						 Aaload,
+						 Invokespecial (CStr,"<init>",([Classsig CString], Voidsig)),
+						 Aastore,
+						 Iinc (eins,1),
+						 Iload eins,
+						 Aload 0,
+						 Arraylength,
+						 If_icmplt dreizehn]@
+						iL @ mcm @ [Return])
+				    end
+			    else
+				Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),
+					Limits (Persistent.maxLocals()+1,Reuse.maxLocals(),stack),
+					(Aload 1) :: iL @ mcm @ [Areturn])
 	    in
 		pushLabel();
 		Reuse.pushLocals();
