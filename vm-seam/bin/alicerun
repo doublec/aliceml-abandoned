@@ -47,6 +47,7 @@ SEAM_HOME=$(abs_path "$SEAM_HOME")
 
 case $(uname) in
     CYGWIN*)
+	PATH="$ALICE_HOME:$PATH"
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
 	sep=\;
 	;;
