@@ -10,10 +10,11 @@
  *   $Revision$
  *)
 
-import structure Inf               from "../rtt/Inf"
-import structure Reflect           from "Reflect"
-import structure Url               from "Url"
-import structure Resolver          from "Resolver"
+import structure TextIO    from "TextIO"
+import structure Inf       from "../rtt/Inf"
+import structure Reflect   from "Reflect"
+import structure Url       from "Url"
+import structure Resolver  from "Resolver"
 
 signature COMPONENT =
     sig
@@ -42,11 +43,14 @@ signature COMPONENT =
 	val load: Url.t -> component                      (* IO.Io *)
 	val save: string * component -> unit              (* IO.Io *)
 	val inf: component -> Inf.t option
+	val imports: component -> (Url.t * Inf.t option) vector
 
 	functor MkManager(val resolver: Resolver.t):
 	    (* COMPONENT_MANAGER *)
 	    sig
 		exception Conflict
+
+		val logStream: TextIO.outstream option ref
 
 		functor Eval(val component: component
 			     val url: Url.t
@@ -60,6 +64,7 @@ signature COMPONENT =
 			      structure X: S): any
 
 		val eval: Url.t * component -> Reflect.module
+		val load: Url.t -> component
 		val link: Url.t -> component
 		val enter: Url.t * component -> unit
 		val lookup: Url.t -> component option

@@ -12,6 +12,8 @@
 
 import structure Inf               from "../rtt/Inf"
 import structure TextIO            from "TextIO"
+import structure PrettyPrint       from "../utility/PrettyPrint"
+import structure PPInf             from "../rtt/PPInf"
 import structure IO                from "IO"
 import structure OS                from "OS"
 import structure Reflect           from "Reflect"
@@ -43,13 +45,17 @@ struct
 
     val extension = UnsafeComponent.extension
 
-    local
-	val b = Option.isSome (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
-    in
-	fun trace s where b =
-	    TextIO.output (TextIO.stdErr, "[component manager] " ^ s ^ "\n")
-	  | trace _ = ()
-    end
+    fun trace (NONE, s)   = ()
+      | trace (SOME f, s) = TextIO.output (f, "[component manager] " ^ s ^ "\n")
+
+    val defaultLogStream = 
+	Option.map (fn "" => TextIO.stdErr
+		     | s  => TextIO.openOut s handle IO.Io _ =>
+			     (trace (SOME TextIO.stdErr,
+				     "warning: could not open log file " ^ s ^
+				     ", falling back to stderr");
+			      TextIO.stdErr))
+		   (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
 
     fun create (inf, mod) = EVALUATED {inf, mod}
 
@@ -72,18 +78,18 @@ struct
 	    Resolver.resolver {name = "load", handlers, memoize = true}
 	end
 
-    fun load' resolver url =
+    fun load' (logStream, resolver) url =
 	case Resolver.localize resolver url of
 	    SOME (Resolver.FILE name) =>
 		(UnsafeComponent.load name
 		 handle Corrupt =>
 		     UnsafeComponent.linkNative name
 		     handle cause as UnsafeComponent.Native msg =>
-			    (trace ("linkNative: " ^ msg);
+			    (trace (logStream, "linkNative: " ^ msg);
 			     raise IO.Io {name, function = "load", cause})
 			  | cause as Corrupt =>
-			    (trace ("linkNative: \
-				    \could not resolve symbol");
+			    (trace (logStream,
+				    "linkNative: could not resolve symbol");
 			     raise IO.Io {name, function = "load", cause}))
 	  | SOME (Resolver.STRING string) =>
 		(UnsafeComponent.unpack_ string
@@ -93,7 +99,7 @@ struct
 	  | NONE => raise IO.Io {name = Url.toStringRaw url,
 				 function = "load", cause = NotFound}
 
-    val load = load' defaultResolver
+    val load = load' (defaultLogStream, defaultResolver)
 
     fun save (name, component) =
 	UnsafeComponent.save (name, component)
@@ -102,11 +108,17 @@ struct
     fun inf (UNEVALUATED {inf, ...}) = inf
       | inf (EVALUATED {inf, ...}) = inf
 
+    fun imports (UNEVALUATED {imports, ...}) =
+	Vector.map (Pair.mapFst Url.fromString) imports
+      | imports (EVALUATED _) = #[]
+
     val initialTable = lazy UnsafeComponent.getInitialTable ()
 
     signature COMPONENT_MANAGER =
     sig
 	exception Conflict
+
+	val logStream: TextIO.outstream option ref
 
 	functor Eval(val component: component
 		     val url: Url.t
@@ -120,6 +132,7 @@ struct
 		      structure X: S): any
 
 	val eval: Url.t * component -> Reflect.module
+	val load: Url.t -> component
 	val link: Url.t -> component
 	val enter: Url.t * component -> unit
 	val lookup: Url.t -> component option
@@ -133,6 +146,8 @@ struct
 
 	exception Conflict
 
+	val logStream = ref defaultLogStream
+
 	val map: (inf * mod) UrlMap.t =
 	    lazy UrlMap.map (Vector.map (fn (s, inf, mod) =>
 					 (Url.fromString ("x-alice:/" ^ s),
@@ -142,31 +157,46 @@ struct
 	fun strictTypeCheck (SOME inf, SOME importInf, mod) =
 	    (Inf.match (inf, importInf); mod) (*--** coercion *)
 	  | strictTypeCheck (NONE, SOME _, mod) =
-	    (trace ("warning: no export signature, accepted unchecked"); mod)
+	    (trace (!logStream,
+		    "warning: no export signature, accepted unchecked"); mod)
 	  | strictTypeCheck (SOME _, NONE, mod) =
-	    (trace ("warning: no import signature, accepted unchecked"); mod)
+	    (trace (!logStream,
+		    "warning: no import signature, accepted unchecked"); mod)
 	  | strictTypeCheck (NONE, NONE, mod) =
-	    (trace ("warning: no import/export signatures, accepted unchecked");
+	    (trace (!logStream,
+		    "warning: no import/export signatures, accepted unchecked");
 	     mod)
+
+	fun infToString NONE = "(none)"
+	  | infToString (SOME inf) = PrettyPrint.toString (PPInf.ppInf inf, 80)
 
 	fun lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt) =
 	    let
-		val message =
-		    Url.toString url ^
-		    (case baseUrlOpt of
-			 SOME baseUrl =>
-			 " imported by " ^ Url.toString baseUrl
-		       | NONE => "")
+		val url' = Url.toString url
+		val baseUrlOpt' = Option.map Url.toString baseUrlOpt
+		val message = url' ^ (case baseUrlOpt' of
+					  SOME s => " imported by " ^ s
+					| NONE => " linked explicitly")
 	    in
-		lazy (trace ("type-checking " ^ message);
+		lazy (trace (!logStream, "type-checking " ^ message);
 		      (strictTypeCheck (inf, importInf, mod)
 		       handle Inf.Mismatch m =>
-			   raise Failure (url,
-					  Mismatch {component = url,
-						    request = baseUrlOpt,
-						    cause = m}))
-		      before trace ("type-checked  " ^ message))
+			   (trace (!logStream, "type-checking failed");
+			    trace (!logStream, "signature expected" ^
+					       (case baseUrlOpt' of
+						    NONE => ""
+						  | SOME s => " by " ^ s) ^
+			    		       ":\n" ^ infToString importInf);
+			    trace (!logStream, "signature found in " ^ url' ^
+					       ":\n" ^ infToString inf);
+			    raise Failure (url,
+					   Mismatch {component = url,
+						     request = baseUrlOpt,
+						     cause = m})))
+		      before trace (!logStream, "type-checked  " ^ message))
 	    end
+
+	val load = load' (!logStream, resolver)
 
 	fun link' url =
 	    case UrlMap.lookupNew (map, url) of
@@ -174,8 +204,7 @@ struct
 	      | UrlMap.NEW p =>
 		    let
 			val component =
-			    lazy (load' resolver url
-				  handle e => raise Failure (url, e))
+			    lazy (load url handle e => raise Failure (url, e))
 			val inf = lazy inf component
 			val mod = lazy eval' (url, component)
 			val entry = (inf, mod)
@@ -204,13 +233,15 @@ struct
 					      importInf, SOME baseUrl))
 			       imports
 	    in
-		trace ("evaluating " ^ Url.toString baseUrl);
+		trace (!logStream, "evaluating " ^ Url.toString baseUrl);
 		(body imports'
+(*DEBUG
 		 handle e as (non (Failure (_, _))) =>
-		     (trace ("evaluation failed in " ^ Url.toString baseUrl);
-		      raise Failure (baseUrl, Eval e)))
+		     (trace (!logStream,
+			     "evaluation failed in " ^ Url.toString baseUrl);
+		      raise Failure (baseUrl, Eval e))*))
 		before
-		trace ("evaluated  " ^ Url.toString baseUrl)
+		trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
 	    end
 	  | eval' (_, EVALUATED {mod, ...}) = Future.await mod
 
