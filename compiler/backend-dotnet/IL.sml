@@ -106,7 +106,7 @@ structure IL :> IL =
 	  | Div
 	  | DivUn
 	  | Dup
-	  | IsInst of dottedname
+	  | Isinst of dottedname
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
@@ -261,9 +261,9 @@ structure IL :> IL =
 	  | outputInstr (q, B (NE_UN, label)) =   (*--** short form? *)
 	    (output (q, "bne.un "); outputLabel (q, label))
 	  | outputInstr (q, B (TRUE, label)) =   (*--** short form? *)
-	    (output (q, "btrue "); outputLabel (q, label))
+	    (output (q, "brtrue "); outputLabel (q, label))
 	  | outputInstr (q, B (FALSE, label)) =   (*--** short form? *)
-	    (output (q, "bfalse "); outputLabel (q, label))
+	    (output (q, "brfalse "); outputLabel (q, label))
 	  | outputInstr (q, Br label) =   (*--** short form? *)
 	    (output (q, "br "); outputLabel (q, label))
 	  | outputInstr (q, Call (isInstance, dottedname, id, tys, ty)) =
@@ -289,7 +289,7 @@ structure IL :> IL =
 	  | outputInstr (q, Div) = output (q, "div")
 	  | outputInstr (q, DivUn) = output (q, "div.un")
 	  | outputInstr (q, Dup) = output (q, "dup")
-	  | outputInstr (q, IsInst dottedname) =
+	  | outputInstr (q, Isinst dottedname) =
 	    (output (q, "isinst "); outputDottedname (q, dottedname))
 	  | outputInstr (q, Label label) =
 	    (outputLabel (q, label); output1 (q, #":"))

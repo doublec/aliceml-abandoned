@@ -106,7 +106,7 @@ signature IL =
 	  | Div
 	  | DivUn
 	  | Dup
-	  | IsInst of dottedname
+	  | Isinst of dottedname
 	  | Label of label
 	  | Ldarg of int
 	  | LdcI4 of int
