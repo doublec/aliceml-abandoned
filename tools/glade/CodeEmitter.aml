@@ -212,6 +212,18 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    (realString i, psr)
 	end
+    fun getAdjProp(ps, p) =
+        let
+            val (a, psr) = getProp(ps, p)
+            fun sep #" " = true | sep _ = false
+        in
+            case a of NONE => ("0.0","0.0","0.0","0.0","0.0","0.0",psr)
+                    | SOME a' =>
+                      (case map (realString o SOME) (String.tokens sep a') of
+                           [a1,a2,a3,a4,a5,a6] =>
+                           (a1,a2,a3,a4,a5,a6,psr)
+                         | _ => ("0.0","0.0","0.0","0.0","0.0","0.0",psr))
+        end
 	    
     (* translate Gtk name to Alice name*)
     fun translateName str =
@@ -245,6 +257,10 @@ structure CodeEmitter :> CODE_EMITTER =
 				"hbutton"^String.extract(s,10,NONE)
 			    else if String.isPrefix "GtkVButton" s then
 				"vbutton"^String.extract(s,10,NONE)
+			    else if String.isPrefix "GtkHScale" s then
+				"hscale"^String.extract(s,9,NONE)
+			    else if String.isPrefix "GtkVScale" s then
+				"vscale"^String.extract(s,9,NONE)
 			    else
 				(Char.toString(Char.toLower(String.sub(s,3)))^
 				 String.extract(s,4,NONE))
@@ -530,6 +546,33 @@ structure CodeEmitter :> CODE_EMITTER =
 	      | NONE => ()
 	end
       | newObject'(doc, "GtkList", id, prop, access, sign, accel) = ()
+      | newObject'(doc, "Custom", id, prop, access, sign, accel) = ()
+      | newObject'(doc, "GtkScrolledWindow", id, prop, access, sign, accel) =
+        let
+            val (width, psr)  = getIntProp(prop, "width_request")
+            val (height, psr) = getIntProp(psr, "height_request")
+        in
+            output(doc, "val "^id^"_xa = Gtk.adjustmentNew(0.0,0.0,"^
+                        width^".0"^",1.0,"^width^".0,"^width^".0)\n");
+            output(doc, "val "^id^"_ya = Gtk.adjustmentNew(0.0,0.0,"^
+                        height^".0"^",1.0,"^height^".0,"^height^".0)\n");
+            output(doc, "val "^id^" = "^"Gtk.scrolledWindowNew("^
+                        id^"_xa,"^id^"_ya)\n");
+
+            (* process full properties, we just abused width&height! *)
+            processProperties(doc, "GtkScrolledWindow", id, prop)
+        end
+      | newObject'(doc, class as ("GtkVScale" | "GtkHScale"), id,
+                   prop, access, sign, accel) =
+        let
+            val (a1,a2,a3,a4,a5,a6,psr) = getAdjProp(prop, "adjustment")
+        in
+            output(doc, "val "^id^"_adj = Gtk.adjustmentNew("^
+                        a1^","^a2^","^a3^","^a4^","^a5^","^a6^")\n");
+            output(doc, "val "^id^" = Gtk."^cvtGtkName class^"New("^
+                        id^"_adj)\n");
+            processProperties(doc, class, id, psr)
+        end
       | newObject'(doc, class, id, prop, access, sign, accel) =
 	let
 	    val (constr, label, psr) = getConstructor(class, prop)
@@ -540,7 +583,7 @@ structure CodeEmitter :> CODE_EMITTER =
 	end
 	
     fun newObject(doc, class, id, prop, access, sign, accel) =
-	newObject'(doc, class, cvtId(id), prop, access, sign, accel)
+         newObject'(doc, class, cvtId(id), prop, access, sign, accel)
 
     fun makeChildrenList children =
 	"["^(insertStr "," (List.map (fn (c,_) => c) children))^"]"
