@@ -95,7 +95,7 @@ int my_regexec (regex_t* compiled,
   nmatch = (size_t) 0;
   matchptr = (regmatch_t*) NULL;
 
-  while ((nmatch == 0) || (nmatch >= (max_nmatch - 1))) {
+  while (needsupdate) {
     max_nmatch = max_nmatch * 3/2;
     matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * max_nmatch);
 
