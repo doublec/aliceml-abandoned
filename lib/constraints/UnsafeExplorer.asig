@@ -11,7 +11,7 @@
  *
  *)
 
-signature UNSAFE_EXPLORER_OZ_COMPONENT =
+signature UNSAFE_EXPLORER_COMPONENT =
     sig
 	structure UnsafeExplorer :
 	    sig
