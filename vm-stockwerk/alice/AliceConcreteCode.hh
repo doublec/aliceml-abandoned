@@ -17,6 +17,7 @@
 #pragma interface "alice/AliceConcreteCode.hh"
 #endif
 
+#include <cstdio>
 #include "generic/ConcreteCode.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCodeInterpreter.hh"
@@ -36,6 +37,7 @@ public:
   Block *GetAbstractRepresentation() {
     return Store::DirectWordToBlock(Get(TRANSFORM_POS));
   }
+  void Disassemble(std::FILE *file);
 
   static AliceConcreteCode *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
