@@ -41,8 +41,8 @@ ConcreteCode *PrimitiveInterpreter::Prepare(word /*abstractCode*/) {
   Error("PrimitiveInterpreter::Prepare: must never be called");
 }
 
-void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *w) {
-  Assert(Closure::FromWord(w)->GetConcreteCode()->GetInterpreter() == this);
+void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
+  Assert(closure->GetConcreteCode()->GetInterpreter() == this);
   taskStack->PushFrame(1);
   taskStack->PutUnmanagedPointer(0, this);
 }
@@ -77,7 +77,7 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  return Result(Result::CONTINUE, 1);
 	}
 	taskStack->PushFrame(arity - 1);
-	Assert(tuple->GetWidth() == arity);
+	Assert(static_cast<int>(tuple->GetWidth()) == arity); //--**
 	for (u_int i = arity; i--; )
 	  taskStack->PutWord(i, tuple->Sel(i));
       }
