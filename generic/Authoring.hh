@@ -128,6 +128,11 @@
 #define DECLARE_INT(i, x)			\
   s_int i = Store::WordToInt(x);		\
   if (i == INVALID_INT) { REQUEST(x); } else {}
+#define DECLARE_UNMANAGED_POINTER(pointer, x)				\
+  void *pointer = NULL;							\
+  if (Store::WordToTransient(x) != INVALID_POINTER) { REQUEST(x); }	\
+  else { pointer = Store::WordToUnmanagedPointer(x); }     
+
 #define DECLARE_BLOCKTYPE(t, a, x)			\
   t *a = t::FromWord(x);				\
   if (a == INVALID_POINTER) { REQUEST(x); } else {}
