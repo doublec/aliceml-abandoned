@@ -18,7 +18,7 @@ signature IL =
     sig
 	type id = string
 
-	type dottedname = id list
+	type dottedname = id vector
 
 	(* Class Attributes *)
 
@@ -71,6 +71,8 @@ signature IL =
 	  | BoolTy
 	  | Int32Ty
 	  | Float64Ty
+	  | ObjectTy
+	  | StringTy
 
 	(* Instructions *)
 
@@ -99,8 +101,8 @@ signature IL =
 	  | B of cond * label
 	  | Box of dottedname
 	  | Br of label
-	  | Call of isInstance * dottedname * id * ty list * ty
-	  | Callvirt of dottedname * id * ty list * ty
+	  | Call of isInstance * dottedname * id * ty vector * ty
+	  | Callvirt of dottedname * id * ty vector * ty
 	  | Castclass of ty
 	  | Ceq
 	  | Cgt
@@ -129,7 +131,7 @@ signature IL =
 	  | Ldstr of string
 	  | Leave of label
 	  | Newarr of ty
-	  | Newobj of dottedname * ty list
+	  | Newobj of dottedname * ty vector
 	  | Mul
 	  | Neg
 	  | Not
@@ -149,7 +151,7 @@ signature IL =
 	  | Stsfld of dottedname * id * ty
 	  | Sub
 	  | SubOvf
-	  | Switch of label list
+	  | Switch of label vector
 	  | Tail
 	  | Throw
 	  | Try of label * label * dottedname * label * label
@@ -159,13 +161,13 @@ signature IL =
 	(* Top-Level Declarations *)
 
 	type extends = dottedname
-	type implements = dottedname list
+	type implements = dottedname vector
 
-	type locals = ty list * bool   (* initialize *)
+	type locals = ty vector * bool   (* initialize *)
 
 	datatype classDecl =
 	    Field of id * fieldAttr * ty
-	  | Method of id * methAttr * ty list * ty * locals * instr list
+	  | Method of id * methAttr * ty vector * ty * locals * instr list
 
 	type isEntrypoint = bool
 
@@ -173,7 +175,7 @@ signature IL =
 	    Class of
 	    dottedname * classAttr * extends * implements * classDecl list
 	  | GlobalMethod of
-	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
+	    id * isPublic * ty vector * ty * isEntrypoint * locals * instr list
 
 	type sign = FlatGrammar.sign
 	type program = decl list * sign

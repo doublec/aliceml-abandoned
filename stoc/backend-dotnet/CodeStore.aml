@@ -81,13 +81,14 @@ structure CodeStore :> CODE_STORE =
 	type instrsState = IL.instr list ref
 
 	(*--** remove global state *)
-	val namespace: dottedname ref = ref nil
+	val namespace: dottedname ref = ref #[]
 	val classes: (classAttrState * scope * classDeclsState) Map.t ref =
 	    ref (Map.new ())
 	val env: (class * IL.id * int * regState * instrsState) list ref =
 	    ref nil
 
-	fun className class = !namespace @ ["P" ^ Stamp.toString class]
+	fun className class =
+	    Vector.append (!namespace, #["P" ^ Stamp.toString class])
 	fun sfldName i = "V" ^ Int.toString i
 	fun fldName i = "G" ^ Int.toString i
 
@@ -103,9 +104,9 @@ structure CodeStore :> CODE_STORE =
 		val classAttr = SOME (extends, implements)
 		val ctor =
 		    Method (".ctor", (Public, Instance),
-			    nil, VoidTy, (nil, false),
+			    #[], VoidTy, (#[], false),
 			    [Ldarg 0,
-			     Tail, Call (true, extends, ".ctor", nil, VoidTy),
+			     Tail, Call (true, extends, ".ctor", #[], VoidTy),
 			     Ret])
 	    in
 		case Map.lookup (!classes, stamp) of
@@ -140,15 +141,15 @@ structure CodeStore :> CODE_STORE =
 			    end
 	    in
 		ScopedMap.insertScope scope;
-		List.foldl (fn (idDef, i) =>
-			    (case idDef of
-				 IdDef (Id (_, stamp, _)) =>
-				     ScopedMap.insertDisjoint (scope, stamp,
-							       Arg i)
-			       | Wildcard => ();
-			     i + 1)) 1 args;
+		Vector.foldl (fn (idDef, i) =>
+			      (case idDef of
+				   IdDef (Id (_, stamp, _)) =>
+				       ScopedMap.insertDisjoint (scope, stamp,
+								 Arg i)
+				 | Wildcard => ();
+			       i + 1)) 1 args;
 		env :=
-		(stamp, id, List.length args,
+		(stamp, id, Vector.length args,
 		 (scope, ref 0, ref 0, ref nil, ref nil), ref nil)::(!env)
 	    end
 
@@ -186,12 +187,10 @@ structure CodeStore :> CODE_STORE =
 	    fun emitStamp stamp =
 		case lookup (!env, stamp) of
 		    SFld i =>
-			emit (Ldsfld (currentClosure (), sfldName i,
-				      System.ObjectTy))
+			emit (Ldsfld (currentClosure (), sfldName i, ObjectTy))
 		  | Fld i =>
 			(emit (Ldarg 0);
-			 emit (Ldfld (currentClosure (), fldName i,
-				      System.ObjectTy)))
+			 emit (Ldfld (currentClosure (), fldName i, ObjectTy)))
 		  | Loc i => emit (Ldloc i)
 		  | Arg i => emit (Ldarg i)
 		  | Killed _ => raise Crash.Crash "CodeStore.emitStamp"
@@ -216,9 +215,12 @@ structure CodeStore :> CODE_STORE =
 	    in
 		emit (Comment ("store " ^ Stamp.toString stamp));
 		case ScopedMap.lookup (scope, stamp) of
-		    SOME (Loc i) => emit (Stloc i)
+		    SOME (Loc i) =>
+			(emit (Stloc i))
 		  | SOME (Killed i) =>
-			(ScopedMap.insert (scope, stamp, Loc i);
+			(indicesRef :=
+			 List.filter (fn j => i <> j) (!indicesRef);
+			 ScopedMap.insert (scope, stamp, Loc i);
 			 emit (Stloc i))
 		  | SOME _ => raise Crash.Crash "CodeStore.declareLocal"
 		  | NONE =>
@@ -228,7 +230,7 @@ structure CodeStore :> CODE_STORE =
 				    ref nil =>
 					!ri before
 					(ri := !ri + 1;
-					 tysRef := System.ObjectTy::(!tysRef))
+					 tysRef := ObjectTy::(!tysRef))
 				  | ref (index::rest) =>
 					index before indicesRef := rest
 			in
@@ -246,7 +248,8 @@ structure CodeStore :> CODE_STORE =
 		(fn stamp =>
 		 case ScopedMap.lookup (scope, stamp) of
 		     SOME (Loc i) =>
-			 (emit (Comment ("kill " ^ Stamp.toString stamp));
+			 (emit (Comment ("kill " ^ Stamp.toString stamp ^
+					 " in loc " ^ Int.toString i));
 			  indicesRef := i::(!indicesRef);
 			  ScopedMap.insert (scope, stamp, Killed i))
 		   | SOME (Arg _) =>
@@ -276,7 +279,7 @@ structure CodeStore :> CODE_STORE =
 		indicesRef := indices'
 	    end
 
-	fun args n = List.tabulate (n, fn _ => System.ObjectTy)
+	fun args n = Vector.tabulate (n, fn _ => ObjectTy)
 
 	fun closeMethod () =
 	    case !env of
@@ -290,8 +293,9 @@ structure CodeStore :> CODE_STORE =
 			val _ = env := envr
 			val method =
 			    Method (id, (Public, Virtual),
-				    args narg, System.ObjectTy,
-				    (List.rev tys, false), List.rev instrs)
+				    args narg, ObjectTy,
+				    (Vector.fromList (List.rev tys), false),
+				    List.rev instrs)
 			val newClassDecls =
 			    ScopedMap.foldi
 			    (fn (stamp, reg, classDecls) =>
@@ -300,20 +304,20 @@ structure CodeStore :> CODE_STORE =
 				     (emit Dup;
 				      emitStamp stamp;
 				      emit (Stsfld (className', sfldName i,
-						    System.ObjectTy));
+						    ObjectTy));
 				      ScopedMap.insertDisjoint (scope, stamp,
 								reg);
 				      Field (sfldName i, (Public, true, false),
-					     System.ObjectTy)::classDecls)
+					     ObjectTy)::classDecls)
 			       | Fld i =>
 				     (emit Dup;
 				      emitStamp stamp;
 				      emit (Stfld (className', fldName i,
-						   System.ObjectTy));
+						   ObjectTy));
 				      ScopedMap.insertDisjoint (scope, stamp,
 								reg);
 				      Field (fldName i, (Public, false, false),
-					     System.ObjectTy)::classDecls)
+					     ObjectTy)::classDecls)
 			   | _ => classDecls) (!classDeclsRef) delta
 		    in
 			classDeclsRef := method::newClassDecls
@@ -325,12 +329,12 @@ structure CodeStore :> CODE_STORE =
 		val mainMethod =
 		    case !env of
 			[(_, id, 0, (_, _, _, ref tys, _), ref instrs)] =>
-			    Class (["Execute"], (true, SealedClass),
-				   System.Object, nil,
+			    Class (#["Execute"], (true, SealedClass),
+				   System.Object, #[],
 				   [Method (id, (Public, Static),
-					    [System.ObjectTy], System.ObjectTy,
-					    (List.rev tys, false),
-					    List.rev instrs)])
+					    #[ObjectTy], ObjectTy,
+					    (Vector.fromList (List.rev tys),
+					     false), List.rev instrs)])
 		      | _ => raise Crash.Crash "CodeStore.close"
 	    in
 		Map.foldi
@@ -339,7 +343,7 @@ structure CodeStore :> CODE_STORE =
 		     val (extends, implements) = Option.valOf classAttr
 		 in
 		     Class (className stamp, (true, SealedClass),
-			    extends, implements, classDecls)::program
+			    extends, implements, List.rev classDecls)::program
 		 end) [mainMethod] (!classes)
 	    end
     end

@@ -80,7 +80,7 @@ structure Builtins :> BUILTINS =
 			Map.insertDisjoint (builtinTable, name, res); res
 		    end
 
-	fun lookupClass name = ["Alice", "Builtins", lookup name]
+	fun lookupClass name = #["Alice", "Builtins", lookup name]
 
-	fun lookupField name = (["Alice", "Prebound"], lookup name)
+	fun lookupField name = (#["Alice", "Prebound"], lookup name)
     end
