@@ -10,8 +10,8 @@
 *)
 
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
-import structure Protocol    from "../common/Protocol"
-import structure Pos         from "../common/Pos"
+import structure Protocol    from "../../common/Protocol"
+import structure Pos         from "../../common/Pos"
 
 signature ARENAWIDGET =
 sig

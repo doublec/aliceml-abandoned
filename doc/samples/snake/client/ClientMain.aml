@@ -83,7 +83,7 @@ fun main () =
                    returned, i.e only in threads it spawns or closures
                    it returns, likewise with gui_join
                  *)
-                val server                  = Promise.promise ()
+                val server                  = Promise.promise () 
                 val (client, model_join)    = Client.startClient (gui_join, 
                                                 Promise.future server)
 
@@ -119,8 +119,9 @@ fun main () =
                         FST ({ start = startGame res}, gui_join_p)
                     end
             end
+        val model_initial   = { connect, startServer } : Gui.model_initial
     in
-        Gui.execute ({ connect, startServer }, gui_promise)
+        Gui.execute (model_initial, gui_promise)
     end
 
 (* start it *)

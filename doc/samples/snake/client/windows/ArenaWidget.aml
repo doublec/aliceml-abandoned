@@ -17,10 +17,10 @@ import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 (*
 import structure GtkBuilder    from "GtkBuilder"
 *)
-import structure Protocol      from "../common/Protocol"
-import structure Color         from "../common/Color"
-import structure Pos           from "../common/Pos"
-import structure Arena         from "../server/Arena"
+import structure Protocol      from "../../common/Protocol"
+import structure Color         from "../../common/Color"
+import structure Pos           from "../../common/Pos"
+import structure Arena         from "../../server/Arena"
 
 (* Overview:
 

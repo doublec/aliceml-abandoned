@@ -6,7 +6,7 @@ import structure Ctrl                 from "x-alice:/lib/utility/Ctrl"
 import structure Color                from "../../common/Color"
 import structure Config               from "../../server/Config"
 import structure Protocol             from "../../common/Protocol"
-import structure ArenaWidget          from "../ArenaWidget"
+import structure ArenaWidget          from "ArenaWidget"
 
 import structure ConnectionWindow     from "ConnectionWindow"
 import structure ServerSettingsWindow from "ServerSettingsWindow"
