@@ -26,16 +26,39 @@ public:
   static const BlockLabel Object              = (BlockLabel) (Array + 8);
 };
 
-class Array: public Block {
+static const word null = Store::IntToWord(0);
+
+class Class;
+
+class Array: private Block {
 protected:
   enum {
+    CLASS_POS, // Class
     SIZE_POS, // int
     BASE_SIZE
   };
 public:
+  static Array *New(word type, u_int length) {
+    //--** represent arrays depending on type
+    Block *b = Store::AllocBlock(JavaLabel::Array, BASE_SIZE + length);
+    b->InitArg(CLASS_POS, type);
+    b->InitArg(SIZE_POS, Store::IntToWord(length));
+    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
+    return static_cast<Array *>(b);
+  }
+  static Array *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::Array);
+    return static_cast<Array *>(b);
+  }
+  static Array *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::Array);
+    return static_cast<Array *>(b);
+  }
 };
 
-class Lock: public Block {
+class Lock: private Block {
   // to be determined
 };
 
@@ -127,11 +150,9 @@ protected:
     METHODS_POS, // Array(MethodInfo)
     BASE_SIZE
   };
-public:
 };
 
 class Class: public ClassInfo {
-public:
 protected:
   enum {
     VIRTUAL_TABLE_POS, // Block(Closure)
@@ -146,5 +167,4 @@ protected:
     CLASS_POS, // Class
     BASE_SIZE
   };
-public:
 };
