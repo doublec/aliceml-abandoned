@@ -33,6 +33,11 @@
     Alice value in the Inspector window.
   </P>
 
+  <P>
+    In the <A href="usage.php3#interactive">interactive toplevel</A> the
+    inspector is readily available without further import announcements.
+  </P>
+
 
 <?php section("configuration", "configuration") ?>
 
