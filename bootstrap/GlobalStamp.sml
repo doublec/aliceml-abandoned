@@ -10,8 +10,7 @@
  *   $Revision$
  *)
 
-import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
-
+(* Dummy replacement for bootstrapping *)
 
 structure GlobalStamp :> GLOBAL_STAMP  =
 struct
