@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Build-Depends: debhelper (>= 4.0.0), zlib1g-dev
 Maintainer: Marco Kuhlmann <mk@debian.org>
-Standards-Version: 3.5.10
+Standards-Version: 3.6.0
 
 Package: seam
 Architecture: any
