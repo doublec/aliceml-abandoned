@@ -9,6 +9,10 @@ STOC_DIR = ../../stoc
 BASE_FILES = \
 	$(LIB_DIR)/Bootstrap.aus
 
+WORD_FILES = \
+	Base.import \
+	Word.sml
+
 MLYACC_FILES = \
 	Base.import \
 	TextIO.import \
@@ -210,7 +214,7 @@ MAIN_FILES = \
 	Main.sml
 
 COMPONENTS = \
-	Base \
+	Base Word \
 	MLYacc \
 	Misc Error Common \
 	FrontendCommon \
@@ -224,10 +228,12 @@ COMPONENTS = \
 all: stoc-mozart
 
 stoc-mozart: $(COMPONENTS:%=%.ozf)
-	$(OZL) $(OZLFLAGS) -x Main.ozf -o $@
+	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=. -x Main.ozf -o $@
 
 Base.aus: $(BASE_FILES)
 	$(MERGE) $(BASE_FILES) > $@
+Word.aus: $(WORD_FILES)
+	$(MERGE) $(WORD_FILES) > $@
 MLYacc.aus: $(MLYACC_FILES)
 	$(MERGE) $(MLYACC_FILES) > $@
 Misc.aus: $(MISC_FILES)
