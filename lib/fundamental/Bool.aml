@@ -1,0 +1,32 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import datatype bool         from "ToplevelTypes"
+import signature BOOL        from "BOOL-sig"
+
+
+structure Bool : BOOL =
+struct
+    datatype bool	= datatype bool
+    type     t		= bool			(**)
+
+    fun not true	= false
+      | not false	= true
+
+    fun toString true	= "true"
+      | toString false	= "false"
+end
