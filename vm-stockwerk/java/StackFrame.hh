@@ -37,5 +37,9 @@ static const FrameLabel PUT_PROPERTIES_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 7);
 static const FrameLabel RUN_MAIN_FRAME =
   (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 8);
+static const FrameLabel REFLECT_CONSTRUCTORS_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 9);
+static const FrameLabel RETURN_INSTANCE_FRAME =
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 9);
 
 #endif
