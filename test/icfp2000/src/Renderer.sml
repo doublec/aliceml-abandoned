@@ -160,8 +160,8 @@ structure Renderer :> RENDERER =
 	    in
 		Intersect' (Intersect' (preprocess (bound, o2w, w2o),
 					Spheroid' (w2o, ~1.0, 0.0,
-						   (newId (), surface ConeSide, w2o,
-						    normal))),
+						   (newId (), surface ConeSide,
+						    w2o, normal))),
 			    Intersect' (top, bottom))
 	    end
 	  | preprocess (Union (o1, o2), o2w, w2o) =
