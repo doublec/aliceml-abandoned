@@ -42,7 +42,7 @@ INSTALLFILES_LIBRARY_0 = \
 	resolver.html component.html component-manager.html remote.html \
 	HttpClientExample.aml HttpServerExample.aml \
         fd.html fs.html space.html search.html linear.html \
-	gtk.html \
+	gdk.html gtk.html gtkcanvas.html \
         inspector.html explorer.html
 INSTALLFILES_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
