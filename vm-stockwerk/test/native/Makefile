@@ -4,7 +4,7 @@ NATIVES = Timer
 	alicetool -v cc -c $< -o $@
 
 %.dll: %.o
-	alicetool -v ld -s $< -o $@
+	alicetool -v ld -Wl,-S $< -o $@
 
 all: $(NATIVES:%=%.dll)
 
