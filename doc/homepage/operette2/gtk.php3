@@ -58,7 +58,8 @@
 
   <P>
     Besides reading the documentation provided by GTK itself, it is recommended to take
-    a look into the samples shipped with Operette 2.
+    a look into the
+    <A HREF="examples.php3#gtk">samples</A>.
   </P>
 
 <?php footing() ?>
