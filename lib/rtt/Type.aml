@@ -379,8 +379,8 @@ struct
 
     type clone_state = { trail: (typ * typ') list ref, typs: typ list ref }
 
-    fun cloneStart() = {trail = ref [], typs = ref []}
-    fun cloneFinish{trail,typs} = 
+    fun cloneStart() = {trail = ref [], typs = ref []} : clone_state
+    fun cloneFinish({trail,typs} : clone_state) = 
 	( List.app op:= (!trail)
 	; List.app unmark (!typs)
 	)
@@ -1251,8 +1251,84 @@ if isLambda t1 then raise Assert.failure else
 
     exception Intersect
 
-    fun intersect(t1,t2) = ()
+    fun intersect(t1:typ, t2:typ) = ()
     (* UNFINISHED *)
+
+
+  (* Synchronisation for thread safety *)
+
+    val lock		= Lock.lock()
+
+    val inApply		= Lock.sync lock inApply
+    val isUnknown	= Lock.sync lock isUnknown
+    val isArrow		= Lock.sync lock isArrow
+    val isTuple		= Lock.sync lock isTuple
+    val isProd		= Lock.sync lock isProd
+    val isSum		= Lock.sync lock isSum
+    val isVar		= Lock.sync lock isVar
+    val isCon		= Lock.sync lock isCon
+    val isAll		= Lock.sync lock isAll
+    val isExist		= Lock.sync lock isExist
+    val isLambda	= Lock.sync lock isLambda
+    val isApply		= Lock.sync lock isApply
+    val isMu		= Lock.sync lock isMu
+    val isAbbrev	= Lock.sync lock isAbbrev
+    val isUnknown'	= Lock.sync lock isUnknown'
+    val isArrow'	= Lock.sync lock isArrow'
+    val isTuple'	= Lock.sync lock isTuple'
+    val isProd'		= Lock.sync lock isProd'
+    val isSum'		= Lock.sync lock isSum'
+    val isVar'		= Lock.sync lock isVar'
+    val isCon'		= Lock.sync lock isCon'
+    val isAll'		= Lock.sync lock isAll'
+    val isExist'	= Lock.sync lock isExist'
+    val isLambda'	= Lock.sync lock isLambda'
+    val isApply'	= Lock.sync lock isApply'
+    val asArrow		= Lock.sync lock asArrow
+    val asTuple		= Lock.sync lock asTuple
+    val asProd		= Lock.sync lock asProd
+    val asSum		= Lock.sync lock asSum
+    val asVar		= Lock.sync lock asVar
+    val asCon		= Lock.sync lock asCon
+    val asAll		= Lock.sync lock asAll
+    val asExist		= Lock.sync lock asExist
+    val asLambda	= Lock.sync lock asLambda
+    val asApply		= Lock.sync lock asApply
+    val asMu		= Lock.sync lock asMu
+    val asAbbrev	= Lock.sync lock asAbbrev
+    val asArrow'	= Lock.sync lock asArrow'
+    val asTuple'	= Lock.sync lock asTuple'
+    val asProd'		= Lock.sync lock asProd'
+    val asSum'		= Lock.sync lock asSum'
+    val asVar'		= Lock.sync lock asVar'
+    val asCon'		= Lock.sync lock asCon'
+    val asAll'		= Lock.sync lock asAll'
+    val asExist'	= Lock.sync lock asExist'
+    val asLambda'	= Lock.sync lock asLambda'
+    val asApply'	= Lock.sync lock asApply'
+
+    val kind		= Lock.sync lock kind
+    val kindVar		= Lock.sync lock kindVar
+    val path		= Lock.sync lock path
+    val paths		= Lock.sync lock paths
+
+    val instance	= Lock.sync lock instance
+    val skolem		= Lock.sync lock skolem
+    val clone		= Lock.sync lock clone
+    val cloneStart	= Lock.sync lock cloneStart
+    val cloneCont	= Lock.sync lock cloneCont
+    val cloneFinish	= Lock.sync lock cloneFinish
+    val realise		= Lock.sync lock realise
+    val realisePath	= Lock.sync lock realisePath
+
+    val fill		= Lock.sync lock fill
+    val unify		= Lock.sync lock unify
+    val intersect	= Lock.sync lock intersect
+    val close		= Lock.sync lock close
+    val isClosed	= Lock.sync lock isClosed
+    val equals		= Lock.sync lock equals
+    val matches		= Lock.sync lock matches
+    val hash		= Lock.sync lock hash
 
 end
 

@@ -331,4 +331,9 @@ text "(" ^^
 	    ppTyp t before List.app op:= (!trail)
 	end
 
+
+  (* Synchronisation for thread safety *)
+
+    val ppTyp = Lock.sync lock ppTyp
+
 end

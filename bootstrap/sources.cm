@@ -1,6 +1,7 @@
 Group is
 
 	ExtendedBasis.sml
+	DummyLock.sml
 	Config.sml
 
 #if (!defined(structure Posix))
