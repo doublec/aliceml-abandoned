@@ -10,10 +10,21 @@
 #OPTS = $(COMPS:%=-D%_DISABLE_DEPRECATED)
 OPTS =
 
-ifdef WINDOWS
-EXTRA_CC_OPTS = -DGLIB_HAVE_ALLOCA_H -D__IEEE_LITTLE_ENDIAN
+PLATFORM := $(shell ./platform.sh smlnj)
+ifeq ("$(PLATFORM)", "")
+  $(error Unknown platform)
+endif
+ifeq ("$(PLATFORM)", "x86-win32")
+CC_OPTS = -mno-cygwin -mms-bitfields
+SML = cmd /c sml
 else
-EXTRA_CC_OPTS =
+ifeq ("$(PLATFORM)", "ppc-darwin")
+CC_OPTS = -D__ppc__
+SML = sml
+else
+CC_OPTS =
+SML = sml
+endif
 endif
 
 ifndef PC_OPTS

@@ -15,7 +15,7 @@ fi;
 # search for the KEYSYM file 
 for opt in `pkg-config --cflags ${PC_OPTS}`; do
   # is opt a -I include option?
-  if [[ "-I" == `echo "$opt" | head -c 2` ]]; then
+  if [[ "-I" == `echo "$opt" | head -n 1 | cut -b -2` ]]; then
      INCDIR=`echo "$opt" | tail -c +3`
      # does the keysym file exists in the subdirectory gdk?
      if [[ -f "${INCDIR}/gdk/${KEYSYM}" ]]; then
