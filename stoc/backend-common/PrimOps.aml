@@ -75,6 +75,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("GlobalStamp.toString", SOME Unary);
 		ins ("GlobalStamp.compare", SOME (TupArity 2));
 		ins ("GlobalStamp.hash", SOME Unary);
+		ins ("Hole.Cyclic", NONE);
 		ins ("Hole.Hole", NONE);
 		ins ("Hole.fail", SOME (TupArity 2));
 		ins ("Hole.fill", SOME (TupArity 2));
@@ -192,9 +193,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word.~>>", SOME (TupArity 2));
 		ins ("Word.toString", SOME Unary);
 		ins ("Word.wordSize", NONE);
-(*--**DEBUG*)
-		ins ("OS.Process.exit", SOME Unary);
-		ins ("TextIO.print", SOME Unary);
 		map
 	    end
 
