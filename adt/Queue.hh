@@ -200,4 +200,4 @@ public:
   }
 };
 
-#endif __ADT__QUEUE_HH__
+#endif

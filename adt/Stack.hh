@@ -225,4 +225,4 @@ public:
   }
 };
 
-#endif __ADT__STACK_HH__
+#endif

@@ -60,4 +60,4 @@ public:
   }
 };
 
-#endif __ADT__HASHTABLE_HH__
+#endif

@@ -134,4 +134,4 @@ public:
   }
 };
 
-#endif __STORE__VALUE_HH__
+#endif
