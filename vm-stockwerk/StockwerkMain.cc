@@ -109,11 +109,3 @@ DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
   Scheduler::Run();
   return 0;
 }
-
-int main(int argc, char *argv[]) {
-  char *home = std::getenv("STOCKHOME");
-  if (home == NULL) {
-    Error("could not determine installation directory");
-  }
-  std::exit(StockwerkMain(home, argc, argv));
-}

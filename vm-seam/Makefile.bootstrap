@@ -128,6 +128,12 @@ MLYACC = ml-yacc
 ## Enumerate All Files Making Up the Source Tree
 ##
 
+ifdef WINDOWS
+STOCKWERKFILES = stow.exe stow.dll
+else
+STOCKWERKFILES = stow.exe
+endif
+
 LIBSYSTEMNATIVES0 = \
 	Config IO OS Unix CommandLine Component Debug Socket Rand Reflect
 LIBUTILITYNATIVES0 = \
@@ -394,7 +400,7 @@ BUILD1SOURCES = \
 
 INSTALL1DIRS = build1/install build1/install/bin \
 	build1/install/compiler build1/install/linker
-INSTALL1TOPFILES = stow.exe
+INSTALL1TOPFILES = $(STOCKWERKFILES)
 INSTALL1BINFILES = alicerun alicec alicelink
 INSTALL1COMPILERFILES = CompilerMain.stc
 INSTALL1FILES = \
@@ -547,7 +553,7 @@ build1-install: build1-all $(INSTALL1DIRS) $(INSTALL1FILES)
 $(INSTALL1DIRS):
 	mkdir -p $@
 
-build1/install/stow.exe: stow.exe
+$(STOCKWERKFILES:%=build1/install/%): build1/install/%: %
 	install -c -m 555 $< $@
 
 .PHONY: build1/install/CompilerMain.stc
@@ -671,7 +677,7 @@ INSTALL3COMPILERTOPFILES = \
 INSTALL3LINKERFILES = Main.stc
 INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
-	build3/install/stow.exe \
+	$(STOCKWERKFILES:%=build3/install/%) \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3INCLUDEFILES:%=build3/install/include/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -765,7 +771,7 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-build3/install/stow.exe: build1/install/stow.exe
+$(STOCKWERKFILES:%=build3/install/%): build3/install/%: build1/install/%
 	install -c -m 555 $< $@
 
 build3/install/include/%: %
@@ -826,7 +832,7 @@ INSTALLDIRS = \
 	$(PREFIX)/lib/rtt $(PREFIX)/lib/ml-yacc $(PREFIX)/compiler \
 	$(PREFIX)/compiler/top $(PREFIX)/linker $(PREFIX)/depend
 INSTALLFILES = \
-	$(PREFIX)/stow.exe \
+	$(STOCKWERKFILES:%=$(PREFIX)/%) \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
 	$(INSTALL3INCLUDEFILES:%=$(PREFIX)/include/%) \
 	$(INSTALL3BINFILES:%=$(PREFIX)/bin/%) \
@@ -841,7 +847,7 @@ install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(PREFIX)/stow.exe: build3/install/stow.exe
+$(STOCKWERKFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%
 	install -c -m 555 $< $@
 
 $(INSTALL3TOPFILES:%=$(PREFIX)/%): $(PREFIX)/%: build3/install/%

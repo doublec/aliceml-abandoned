@@ -18,7 +18,7 @@ include $(TOPDIR)/Makefile.rules
 SUBDIRS = store adt generic alice
 SUBDIRSR = alice generic adt store
 
-SRCS = Base.cc Main.cc
+SRCS = Base.cc StockwerkMain.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 
@@ -28,8 +28,13 @@ LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) $(EXTRA_LIBS)
 
 all: all-subdirs $(TARGETS)
 
-stow.exe: $(OBJS) $(LIBS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+ifdef WINDOWS
+stow.exe: Main.o stow.dll
+	$(LD) $(LDFLAGS) -o $@ Main.o stow.dll
+else
+stow.exe: Main.o $(OBJS) $(LIBS)
+	$(LD) $(LDFLAGS) -o $@ Main.o $(OBJS) $(LDLIBS)
+endif
 
 %.def: $(OBJS) $(LIBS)
 	$(DLLTOOL) --output-def $@ --dllname $*.dll $^
@@ -42,15 +47,15 @@ all-subdirs:
 
 clean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) clean) || exit 1; done
-	rm -f $(OBJS) stow.def
+	rm -f $(OBJS) Main.o stow.def
 
 veryclean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) veryclean) || exit 1; done
-	rm -f $(OBJS) stow stow.exe stow.dll
+	rm -f $(OBJS) Main.o stow.exe stow.dll
 
 distclean:
 	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) stow stow.exe stow.dll Makefile.depend
+	rm -f $(OBJS) Main.o stow.exe stow.dll Makefile.depend
 
 Makefile.depend: Makefile $(SRCS)
 	cd store && $(MAKE) StoreConfig.hh || exit 1
