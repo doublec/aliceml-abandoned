@@ -24,8 +24,8 @@ INSTALLFILES_MANUAL_0 = \
 	explorer.php3 interop.php3 examples.php3 \
 	mozart_cartoon.jpg
 INSTALLFILES_MANUAL_LIBRARY_0 = \
-	style.css macros.php3 menu.php3 \
-	array.php3 alt.php3 bool.php3 byneed.php3 char.php3 \
+	style.css macros.php3 menu.php3 index.php3 \
+	alt.php3 array.php3 bool.php3 byneed.php3 char.php3 \
 	general.php3 ieee-real.php3 integer.php3 list.php3 list-pair.php3 \
 	math.php3 mono-array.php3 mono-vector.php3 \
 	option.php3 pair.php3 real.php3 ref.php3 \
