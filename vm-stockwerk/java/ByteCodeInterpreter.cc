@@ -370,6 +370,58 @@ public:
   }
 };
 
+class Real: private Chunk {
+public:
+  using Chunk::ToWord;
+
+  static Real *New(double value) {
+    Chunk *chunk = Store::AllocChunk(sizeof(double));
+    char *to = chunk->GetBase(), *from = reinterpret_cast<char *>(&value);
+#if DOUBLE_LITTLE_ENDIAN
+    for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#else
+    std::memcpy(to, from, sizeof(double));
+#endif
+    return static_cast<Real *>(chunk);
+  }
+  static Real *FromWord(word x) {
+    Chunk *chunk = Store::WordToChunk(x);
+    Assert(chunk == INVALID_POINTER || chunk->GetSize() == sizeof(double));
+    return static_cast<Real *>(chunk);
+  }
+  static Real *FromWordDirect(word x) {
+    Chunk *chunk = Store::DirectWordToChunk(x);
+    Assert(chunk->GetSize() == sizeof(double));
+    return static_cast<Real *>(chunk);
+  }
+
+  double GetValue() {
+    double result;
+    char *to = reinterpret_cast<char *>(&result), *from = GetBase();
+#if DOUBLE_LITTLE_ENDIAN
+    for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#else
+    std::memcpy(to, from, sizeof(double));
+#endif
+    return result;
+  }
+  u_char *GetBigEndianRepresentation() {
+    return reinterpret_cast<u_char *>(GetBase());
+  }
+};
+
+// to be done: check compliance of java spec with c spec
+class JavaReal {
+public:
+  static word ToWord(double value) {
+    return Real::New(value)->ToWord();
+  }
+  static double FromWord(word value) {
+    return Real::FromWordDirect(value)->GetValue();
+  }
+};
+
+
 //
 // Helper Stuff
 //
@@ -386,6 +438,20 @@ public:
 #define GET_WIDE_INDEX() \
   ((code[pc + 1] << 24) | (code[pc + 2] << 16) \
   | (code[pc + 3] << 8) | code[pc + 4])
+
+#define FILL_SLOT() \
+  frame->Push(Store::IntToWord(0))
+
+#define DROP_SLOT() \
+  frame->Pop();
+
+#define DECLARE_DOUBLE(v) \
+  DROP_SLOT(); \
+  double v = JavaReal::FromWord(frame->Pop())
+
+#define PUSH_DOUBLE(v) \
+  frame->Push(JavaReal::ToWord(v)); \
+  FILL_SLOT()
 
 #define REQUEST(w) {	      \
   frame->SetPC(pc);           \
@@ -862,7 +928,9 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::D2I:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(value);
+	frame->Push(JavaInt::ToWord((int) value));
+	pc += 1;
       }
       break;
     case Instr::D2L:
@@ -872,42 +940,68 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DADD:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	PUSH_DOUBLE(v1 + v2);
+	pc += 1;
       }
       break;
     case Instr::DCMPG:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	int result = (v1 > v2);
+	frame->Push(JavaInt::ToWord(result));
+	pc += 1;
       }
       break;
     case Instr::DCMPL:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	int result = (v1 < v2);
+	frame->Push(JavaInt::ToWord(result));
+	pc += 1;
       }
       break;
     case Instr::DCONST_0:
       {
-	Error("not implemented");
+	PUSH_DOUBLE(0.0);
+	pc += 1;
       }
       break;
     case Instr::DCONST_1:
       {
-	Error("not implemented");
+	PUSH_DOUBLE(1.0);
+	pc += 1;
       }
       break;
     case Instr::DDIV:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	if (v2 == 0.0) {
+	  PUSH_DOUBLE(0.0); // to be done: signed extended zero
+	}
+	else {
+	  PUSH_DOUBLE(v1 / v2);
+	}
+	pc += 1;
       }
       break;
     case Instr::DMUL:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	PUSH_DOUBLE(v1 * v2);
+	pc += 1;
       }
       break;
     case Instr::DNEG:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v1);
+	PUSH_DOUBLE(0.0-v1);
+	pc += 1;
       }
       break;
     case Instr::DREM:
@@ -917,7 +1011,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DSUB:
       {
-	Error("not implemented");
+	DECLARE_DOUBLE(v2);
+	DECLARE_DOUBLE(v1);
+	PUSH_DOUBLE(v1 - v2);
+	pc += 1;
       }
       break;
     case Instr::DUP:
