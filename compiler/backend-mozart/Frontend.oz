@@ -58,10 +58,10 @@ define
       end
    end
 
-   fun {StockhausenToImperative File} Pipe S in
+   fun {StockhausenToImperative File Image} Pipe S in
       Pipe = {New TextPipe
 	      init(cmd: 'sml-cm'
-		   args: ['@SMLload=../top/stoc-mozart' File])}
+		   args: ['@SMLload='#Image File])}
       {Pipe get(?S)}
       {Pipe close()}
       S
@@ -116,11 +116,11 @@ define
       {Map Stms fun {$ Stm} {ShareStm Stm ShareDict} end}
    end
 
-   fun {TranslateFile File} C in
+   fun {TranslateFile File Image} C in
       C = {New Compiler.engine init()}
       _ = {New Compiler.interface init(C auto)}
       {C enqueue(setSwitch(expression true))}
-      case {StockhausenToImperative File} of false then unit
+      case {StockhausenToImperative File Image} of false then unit
       elseof VS then Imports Exports Body in
 	 Imports#Exports#Body = {VirtualStringToValue VS}
 	 Imports#Exports#{ShareBody Body {NewDictionary}}
