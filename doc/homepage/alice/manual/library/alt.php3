@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Alt</TT> structure", "The <TT>Alt</TT> structure") ?>
+<?php heading("The Alt structure", "The <TT>Alt</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -14,8 +14,9 @@
   </P>
 
   <P>
-    The type <TT>alt</TT> and its constructors are available in the
-    <A href="toplevel.php3">top-level environment</A>.
+    The type <TT>alt</TT> and its constructors, as well as the functions
+    <TT>fst</TT>, <TT>snd</TT>, <TT>isFst</TT> and <TT>isSnd</TT> are available
+    in the <A href="toplevel.php3">top-level environment</A>.
   </P>
 
 <?php section("import", "import") ?>

@@ -1,18 +1,18 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Char</TT> structure", "The <TT>Char</TT> structure") ?>
+<?php heading("The CHAR signature", "The <TT>CHAR</TT> signature") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
   <PRE>
     signature CHAR
-    structure Char : CHAR
+    structure Char : CHAR where type char = char and type string = string
     structure WideChar : CHAR
   </PRE>
 
   <P>
     An extended version of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/char.html">Standard ML
-    Basis' <TT>Char</TT> and <TT>WideChar</TT> </A> structures.
+    Basis' <TT>CHAR</TT></A> signature.
   </P>
 
   <P>
@@ -90,7 +90,7 @@
   <P>
     Items not described here are as in the 
     <A href="http://www.dina.kvl.dk/~sestoft/sml/char.html">Standard ML
-    Basis' <TT>Char</TT></A> structure.
+    Basis' <TT>CHAR</TT></A> signature.
   </P>
 
   <DL>
@@ -112,7 +112,7 @@
       <TT>hash <I>c</I></TT>
     </DT>
     <DD>
-      <P>A hashing function for characters. Returns <TT>Int.hash (ord
+      <P>A hash function for characters. Returns <TT>Int.hash (ord
       <I>c</I>)</TT>.</P>
     </DD>
 

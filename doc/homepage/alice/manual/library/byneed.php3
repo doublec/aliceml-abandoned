@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>ByNeed</TT> functor", "The <TT>ByNeed</TT> functor") ?>
+<?php heading("The ByNeed functor", "The <TT>ByNeed</TT> functor") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -46,6 +46,7 @@
     <DD>
       <P>A functorial suspension of the module expression to be evaluated.</P>
     </DD>
+  </DL>
 
 <?php section("also", "see also") ?>
 

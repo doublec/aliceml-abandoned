@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Ref</TT> structure", "The <TT>Ref</TT> structure") ?>
+<?php heading("The Ref structure", "The <TT>Ref</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -62,7 +62,7 @@
     <DD>
       <P>Creates a reference to the value <TT><I>a</I></TT>.
       This function <TT>new</TT> is a synonym for the <TT>ref</TT>
-      constructor.</P>
+      constructor, for consistency with other mutable data structures.</P>
     </DD>
 
     <DT>

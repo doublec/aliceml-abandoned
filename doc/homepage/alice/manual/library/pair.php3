@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Pair</TT> structure", "The <TT>Pair</TT> structure") ?>
+<?php heading("The Pair structure", "The <TT>Pair</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 

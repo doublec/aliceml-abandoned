@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>Vector</TT> structure", "The <TT>Vector</TT> structure") ?>
+<?php heading("The Vector structure", "The <TT>Vector</TT> structure") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -11,7 +11,7 @@
   <P>
     An extended version of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/vector.html">Standard ML
-    Basis' <TT>Vector</TT> </A> structure.
+    Basis' <TT>Vector</TT></A> structure.
   </P>
 
 <?php section("import", "import") ?>
@@ -38,7 +38,6 @@
 	val sub :         'a vector * int -> 'a
 	val replace :     'a vector * int * 'a -> 'a vector
 	val extract :     'a vector * int * int option -> 'a vector
-	val append :      'a vector * 'a vector -> 'a vector
 	val concat :      'a vector list -> 'a vector
 	val rev :         'a vector -> 'a vector
 
@@ -104,19 +103,9 @@
     </DT>
     <DD>
       <P>Returns a new vector, identical to <TT><I>vec</I></TT>, except the
-      <I>i</I>th element is set to <TT><I>x</I></TT>. If <TT><I>i</I></TT> < 0
-      or |<TT><I>vec</I></TT>| <= <TT><I>i</I></TT>, then the Subscript
-       exception is raised.</P>
-    </DD>
-
-    <DT>
-      <TT>append (<I>vec1</I>, <I>vec2</I>)</TT>
-    </DT>
-    <DD>
-      <P>Returns the vector that is the concatenation of <TT><I>vec1</I></TT>
-      and <TT><I>vec2</I></TT>. Raises <TT>Size</TT> if
-      |<TT><I>vec1</I></TT>| + |<TT><I>vec2</I></TT>| > <TT>maxLen</TT>.
-      Equivalent to <TT>concat [<I>vec1</I>, <I>vec2</I>]</TT>.</P>
+      <I>i</I>th element is set to <TT><I>x</I></TT>. If <TT><I>i</I></TT> &lt; 0
+      or |<TT><I>vec</I></TT>| &lt;= <TT><I>i</I></TT>, then the Subscript
+      exception is raised.</P>
     </DD>
 
     <DT>
@@ -126,9 +115,9 @@
     <DD>
       <P>Like <TT>appi</TT> and <TT>app</TT>, but apply <TT><I>f</I></TT> in
       right to left order (i.e., decreasing indices). The expression
-      <TT>app <I>f vec</I></TT> is equivalent to: 
+      <TT>app <I>f vec</I></TT> is equivalent to:</P>
       <PRE>
-        appri (f o #2) (vec, 0, NONE)</PRE>
+        appri (<I>f</I> o #2) (<I>vec</I>, 0, NONE)</PRE>
     </DD>
 
     <DT>
@@ -212,11 +201,13 @@
       <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
       elements.</P>
     </DD>
+  </DL>
 
 <?php section("also", "see also") ?>
 
   <DL><DD>
     <A href="mono-vector.php3"><TT>MONO_VECTOR</TT></A>,
+    <A href="vector-pair.php3"><TT>VectorPair</TT></A>,
     <A href="array.php3"><TT>Array</TT></A>
   </DD></DL>
 

@@ -1,5 +1,5 @@
 <?php include("macros.php3"); ?>
-<?php heading("The <TT>MONO_ARRAY</TT> signature", "The <TT>MONO_ARRAY</TT> signature") ?>
+<?php heading("The MONO_ARRAY signature", "The <TT>MONO_ARRAY</TT> signature") ?>
 
 <?php section("synopsis", "synopsis") ?>
 
@@ -12,7 +12,7 @@
   <P>
     An extended version of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/array.html">Standard ML
-    Basis' <TT>MONO_ARRAY</TT> </A> signature.
+    Basis' <TT>MONO_ARRAY</TT></A> signature.
   </P>
 
 <?php section("import", "import") ?>
@@ -95,7 +95,8 @@
     </DT>
     <DD>
       <P>Creates a new array of size <TT><I>n</I></TT>, initialised with
-      value <TT><I>init</I></TT>. Synonym for funciton <TT>array</TT>.</P>
+      value <TT><I>init</I></TT>. Synonym for funciton <TT>array</TT>, for
+      consistency with other mutable data structures.</P>
     </DD>
 
     <DT>
@@ -137,8 +138,8 @@
     </DT>
     <DD>
       <P>Swaps the <I>i</I>th and <I>j</I>th element of array
-      <TT><I>arr</I></TT>. If <I>i</I> &lt; 0 or |<I>arr</I>| <= <I>i</I>,
-      or <I>j</I> &lt; 0 or |<I>arr</I>| <= <I>j</I>,
+      <TT><I>arr</I></TT>. If <I>i</I> &lt; 0 or |<I>arr</I>| &lt;= <I>i</I>,
+      or <I>j</I> &lt; 0 or |<I>arr</I>| &lt;= <I>j</I>,
       then the <TT>Subscript</TT> exception is raised.</P>
     </DD>
 
@@ -149,9 +150,9 @@
     <DD>
       <P>Like <TT>appi</TT> and <TT>app</TT>, but apply <TT><I>f</I></TT> in
       right to left order (i.e., decreasing indices). The expression
-      <TT>app <I>f arr</I></TT> is equivalent to: 
+      <TT>app <I>f arr</I></TT> is equivalent to:</P>
       <PRE>
-        appri (f o #2) (arr, 0, NONE)</PRE>
+        appri (<I>f</I> o #2) (<I>arr</I>, 0, NONE)</PRE>
     </DD>
 
     <DT>
@@ -217,6 +218,7 @@
       <TT><I>f</I></TT>. Sorting may be unstable with respect to equal
       elements.</P>
     </DD>
+  </DL>
 
 <?php section("also", "see also") ?>
 

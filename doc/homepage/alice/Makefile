@@ -26,8 +26,11 @@ INSTALLFILES_MANUAL_0 = \
 INSTALLFILES_MANUAL_LIBRARY_0 = \
 	style.css macros.php3 menu.php3 \
 	array.php3 alt.php3 bool.php3 byneed.php3 char.php3 \
-	general.php3 ieee-real.php3 mono-array.php3 mono-vector.php3 \
-	option.php3 pair.php3 ref.php3 vector.php3 \
+	general.php3 ieee-real.php3 integer.php3 list.php3 list-pair.php3 \
+	math.php3 mono-array.php3 mono-vector.php3 \
+	option.php3 pair.php3 real.php3 ref.php3 \
+	string.php3 string-cvt.php3 substring.php3 time.php3 toplevel.php3 \
+	unique-string.php3 vector.php3 vector-pair.php3 word.php3 \
 	thread.php3 url.php3 resolver-handler.php3 resolver.php3 \
 	component.php3 component-manager.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
