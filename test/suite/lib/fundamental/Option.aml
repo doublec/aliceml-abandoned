@@ -12,7 +12,7 @@
 
 import signature TESTSUITE from "../test/TESTSUITE-sig"
 
-import structure Gen       from "../../src/Gen"
+import structure Gen       from "x-alice:/lib/test/Gen"
 import structure Test      from "../test/Test"
 
 structure TestOption :> TESTSUITE =

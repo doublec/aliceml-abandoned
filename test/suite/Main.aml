@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure Report       from "src/Report"
+import structure Report       from "x-alice:/lib/test/Report"
 import structure Test         from "src/Test"
 
 import structure Time         from "x-alice:/lib/system/Time"

@@ -12,7 +12,7 @@
 
 import signature TESTSUITE         from "../test/TESTSUITE-sig"
 
-import signature GEN               from "../../src/GEN-sig"
+import signature GEN               from "x-alice:/lib/test/GEN-sig"
 import structure Test              from "../test/Test"
 
 import structure Url               from "x-alice:/lib/system/Url"
@@ -23,7 +23,7 @@ import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
 structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
 struct
 
-    val url = Url.fromString "../../src/Gen"
+    val url = Url.fromString "x-alice:/lib/test/Gen"
 
     val comp = Component.load url
     
