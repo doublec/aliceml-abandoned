@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,6 +12,7 @@
 
 (* Error handling. *)
 
+import structure Url         from "../../lib/system/Url"
 import structure TextIO      from "../../lib/system/TextIO"
 import signature ERROR       from "ERROR-sig"
 import structure Source      from "Source"
@@ -30,9 +31,16 @@ struct
 
     exception Error of region * doc
 
+    val currentUrl : Url.t option ref = ref NONE
+    fun setCurrentUrl uo = currentUrl := uo
+
+    fun urlToString url = Url.toString (Url.setScheme (url, NONE))
+
     fun print(reg, doc) =
-        output(TextIO.stdErr,
-	       text(Source.regionToString reg ^ ": ") ^^ doc ^^ break, 78)
+	output(TextIO.stdErr,
+	       (case !currentUrl of NONE   => empty
+	                          | SOME f => text (urlToString f) ^^ text ":") ^^
+	       text(Source.regionToString reg) ^^ text ": " ^^ doc ^^ break, 78)
 
     fun error(reg, message)   = ( print(reg,message) ; raise Error(reg,message) )
     fun warn(b, reg, message) = if not b then () else

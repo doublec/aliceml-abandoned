@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 2000-2003
+ *   Andreas Rossberg and Leif Kornstaedt, 2000-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -52,6 +52,7 @@ struct
 
     fun compile (desc, {feSpec, feComm, beComm, beSpec}, source) =
 	let
+	    val _ = Error.setCurrentUrl (Source.sourceUrl desc)
 	    val (c1,rep) = FrontendSpecific.translate (desc, feSpec, source)
 	    val (c2,rep) = FrontendCommon.translate (desc, feComm, rep)
 	    val (c3,rep) = BackendCommon.translate (desc, beComm, rep)
