@@ -28,12 +28,6 @@
     RETURN_INT(static_cast<int>(op(real->GetValue())));		\
   } END
 
-#define INT_TO_REAL(name, op)					\
-  DEFINE1(name) {						\
-    DECLARE_INT(i, x0);						\
-    RETURN(Real::New(static_cast<double>(op(i)))->ToWord());	\
-  } END
-
 #define REAL_REAL_TO_REAL_OP(name, op)					 \
   DEFINE2(name) {							 \
     DECLARE_REAL(real1, x0);						 \
@@ -89,10 +83,29 @@ DEFINE2(Real_compare) {
 } END
 
 REAL_TO_INT(Real_floor, std::floor)
-INT_TO_REAL(Real_fromInt, /*identity*/)
+
+DEFINE1(Real_fromInt) {
+  DECLARE_INT(i, x0);
+  RETURN(Real::New(static_cast<double>(i))->ToWord());
+} END
+
 REAL_TO_REAL(Real_realCeil, std::ceil)
 REAL_TO_REAL(Real_realFloor, std::floor)
-REAL_TO_REAL(Real_realRound, std::rint)
+
+double rint(double x) {
+  double fx = floor(x);
+  double diff = x - fx;
+  if (diff > 0.5)
+    fx += 1.0;
+  else if (diff == 0.5) {
+    double f2 = fx / 2.0;
+    if (f2 != floor(f2))
+      fx += 1.0;
+  }
+  return fx;
+}
+
+REAL_TO_REAL(Real_realRound, rint)
 REAL_TO_REAL(Real_realTrunc, Trunc)
 REAL_REAL_TO_INT(Real_rem, std::fmod)
 REAL_TO_INT(Real_round, std::rint)
