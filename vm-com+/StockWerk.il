@@ -56,7 +56,13 @@
     .field static public initonly class StockWerk.StockWert ByNeed
     .field static public initonly class StockWerk.StockWert Pickle
     .field static public initonly class StockWerk.StockWert Component
+    .field static public initonly class StockWerk.StockWert General$Chr
+    .field static public initonly class StockWerk.StockWert General$Div
+    .field static public initonly class StockWerk.StockWert General$Domain
+    .field static public initonly class StockWerk.StockWert General$Fail
+    .field static public initonly class StockWerk.StockWert General$Overflow
     .field static public initonly class StockWerk.StockWert General$Size
+    .field static public initonly class StockWerk.StockWert General$Span
     .field static public initonly class StockWerk.StockWert General$Subscript
     .field static public initonly class StockWerk.StockWert List$Empty
     .field static public initonly class StockWerk.StockWert Option$Option
@@ -66,40 +72,40 @@
     .field static public initonly class StockWerk.StockWert ne
     .field static public initonly class StockWerk.StockWert Application$exit
     .field static public initonly class StockWerk.StockWert Array$array
-    .field static public initonly class StockWerk.StockWert Array$fromList
+    .field static public initonly class StockWerk.StockWert Array$fromList //--**
     .field static public initonly class StockWerk.StockWert Array$length
     .field static public initonly class StockWerk.StockWert Array$sub
     .field static public initonly class StockWerk.StockWert Array$update
     .field static public initonly class StockWerk.StockWert Char$chr
-    .field static public initonly class StockWerk.StockWert Char$isDigit
-    .field static public initonly class StockWerk.StockWert Char$isHexDigit
-    .field static public initonly class StockWerk.StockWert Char$isSpace
+    .field static public initonly class StockWerk.StockWert Char$isDigit //--**
+    .field static public initonly class StockWerk.StockWert Char$isHexDigit //--**
+    .field static public initonly class StockWerk.StockWert Char$isSpace //--**
     .field static public initonly class StockWerk.StockWert Char$ord
-    .field static public initonly class StockWerk.StockWert Char$toCString
+    .field static public initonly class StockWerk.StockWert Char$toCString //--**
     .field static public initonly class StockWerk.StockWert General$assign
     .field static public initonly class StockWerk.StockWert General$exchange
-    .field static public initonly class StockWerk.StockWert Int$compare2
-    .field static public initonly class StockWerk.StockWert Int$div
-    .field static public initonly class StockWerk.StockWert Int$ge
-    .field static public initonly class StockWerk.StockWert Int$gt
-    .field static public initonly class StockWerk.StockWert Int$le
+    .field static public initonly class StockWerk.StockWert Int$compare //--**
+    .field static public initonly class StockWerk.StockWert Int$div //--**
+    .field static public initonly class StockWerk.StockWert Int$ge //--**
+    .field static public initonly class StockWerk.StockWert Int$gt //--**
+    .field static public initonly class StockWerk.StockWert Int$le //--**
     .field static public initonly class StockWerk.StockWert Int$less
     .field static public initonly class StockWerk.StockWert Int$minus
-    .field static public initonly class StockWerk.StockWert Int$mod
+    .field static public initonly class StockWerk.StockWert Int$mod //--**
     .field static public initonly class StockWerk.StockWert Int$plus
     .field static public initonly class StockWerk.StockWert Int$times
     .field static public initonly class StockWerk.StockWert Int$toString
-    .field static public initonly class StockWerk.StockWert Int$uminus
+    .field static public initonly class StockWerk.StockWert Int$uminus //--**
     .field static public initonly class StockWerk.StockWert Pickle$load
     .field static public initonly class StockWerk.StockWert Pickle$save
-    .field static public initonly class StockWerk.StockWert String$compare2
+    .field static public initonly class StockWerk.StockWert String$compare //--**
     .field static public initonly class StockWerk.StockWert String$conc
-    .field static public initonly class StockWerk.StockWert String$explode
-    .field static public initonly class StockWerk.StockWert String$size
+    .field static public initonly class StockWerk.StockWert String$explode //--**
+    .field static public initonly class StockWerk.StockWert String$size //--**
     .field static public initonly class StockWerk.StockWert String$str
-    .field static public initonly class StockWerk.StockWert String$sub
-    .field static public initonly class StockWerk.StockWert String$substring
-    .field static public initonly class StockWerk.StockWert String$toCString
+    .field static public initonly class StockWerk.StockWert String$sub //--**
+    .field static public initonly class StockWerk.StockWert String$substring //--**
+    .field static public initonly class StockWerk.StockWert String$toCString //--**
     //--** these should come from a custom component:
     .field static public initonly class StockWerk.StockWert TextIO$closeIn
     .field static public initonly class StockWerk.StockWert TextIO$closeOut
@@ -122,20 +128,24 @@
     .field static public initonly class StockWerk.StockWert Transient$fulfill
     .field static public initonly class StockWerk.StockWert Transient$future
     .field static public initonly class StockWerk.StockWert Transient$promise
-    .field static public initonly class StockWerk.StockWert Vector$fromList
-    .field static public initonly class StockWerk.StockWert Vector$sub
-    .field static public initonly class StockWerk.StockWert Word$andb
-    .field static public initonly class StockWerk.StockWert Word$asr
-    .field static public initonly class StockWerk.StockWert Word$fromInt2
-    .field static public initonly class StockWerk.StockWert Word$lsr
-    .field static public initonly class StockWerk.StockWert Word$notb
-    .field static public initonly class StockWerk.StockWert Word$orb
-    .field static public initonly class StockWerk.StockWert Word$plus
-    .field static public initonly class StockWerk.StockWert Word$shl
-    .field static public initonly class StockWerk.StockWert Word$toInt
-    .field static public initonly class StockWerk.StockWert Word$toIntX
-    .field static public initonly class StockWerk.StockWert Word$toString
-    .field static public initonly class StockWerk.StockWert Word$xorb
+    .field static public initonly class StockWerk.StockWert Vector$fromList //--**
+    .field static public initonly class StockWerk.StockWert Vector$sub //--**
+    .field static public initonly class StockWerk.StockWert Word$andb //--**
+    .field static public initonly class StockWerk.StockWert Word$asr //--**
+    .field static public initonly class StockWerk.StockWert Word$fromInt2 //--**
+    .field static public initonly class StockWerk.StockWert Word$lsr //--**
+    .field static public initonly class StockWerk.StockWert Word$minus //--**
+    .field static public initonly class StockWerk.StockWert Word$mod //--**
+    .field static public initonly class StockWerk.StockWert Word$notb //--**
+    .field static public initonly class StockWerk.StockWert Word$orb //--**
+    .field static public initonly class StockWerk.StockWert Word$plus //--**
+    .field static public initonly class StockWerk.StockWert Word$shl //--**
+    .field static public initonly class StockWerk.StockWert Word$shr //--**
+    .field static public initonly class StockWerk.StockWert Word$times //--**
+    .field static public initonly class StockWerk.StockWert Word$toInt //--**
+    .field static public initonly class StockWerk.StockWert Word$toIntX //--**
+    .field static public initonly class StockWerk.StockWert Word$toString //--**
+    .field static public initonly class StockWerk.StockWert Word$xorb //--**
     .method public static void .cctor() {
       // Names, Constructors, and Exceptions
       newobj instance void StockWerk.RefConstructor::.ctor()
@@ -182,9 +192,27 @@
       ldstr "Component"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::Component
+      ldstr "General.Char"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Chr
+      ldstr "General.Div"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Div
+      ldstr "General.Domain"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Domain
+      ldstr "General.Fail"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Fail
+      ldstr "General.Overflow"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
       ldstr "General.Size"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Size
+      ldstr "General.Span"
+      newobj instance void StockWerk.NamedName::.ctor(class System.String)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::General$Span
       ldstr "General.Subscript"
       newobj instance void StockWerk.NamedName::.ctor(class System.String)
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$Subscript
@@ -2178,25 +2206,28 @@
   .class public sealed Array extends StockWerk.StockWert {
     .field public class StockWerk.StockWert[] Values
     .method public void .ctor(int32, class StockWerk.StockWert) {
+      .locals(class StockWerk.Stockwert[])
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
-      ldarg.0
       ldarg.1
       newarr class StockWerk.StockWert
+      stloc.0
     loop:
-      ldarg.1
-      ldc.i4.0
-      blt.s return
-      dup
-      ldarg.1
-      ldarg.2
-      stelem.ref
       ldarg.1
       ldc.i4.1
       sub
       starg.s 1
+      ldarg.1
+      ldc.i4.M1
+      ble.s return
+      ldloc.0
+      ldarg.1
+      ldarg.2
+      stelem.ref
       br.s loop
     return:
+      ldarg.0
+      ldloc.0
       stfld class StockWerk.StockWert[] StockWerk.Array::Values
       ret
     }
