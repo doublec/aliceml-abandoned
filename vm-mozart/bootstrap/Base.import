@@ -153,18 +153,14 @@ import
     signature TIME
     structure Time
 
-    signature TRANSIENT
-    structure Transient
-    structure Transient'
-
-    signature FUTURE
-    structure Future
-    signature PROMISE
-    structure Promise
     signature CELL
     structure Cell
     signature HOLE
     structure Hole
+    signature FUTURE
+    structure Future
+    signature PROMISE
+    structure Promise
 
     signature THREAD
     structure Thread
