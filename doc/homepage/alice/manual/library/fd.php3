@@ -250,10 +250,10 @@
     <DT>
       <TT>datatype dist_mode = NAIVE | FIRSTFAIL | SPLIT | NBSUSPS</TT>
     </DT>
-    <DT>
+    <DD>
       <P>This datatype is used to denote the distribution stragety which is
          given to the <TT>FD.distribute</TT> function.
-    </DT>
+    </P></DD>
 
     <DT>
       <TT>datatype assign = MIN | MID | MAX</TT>
