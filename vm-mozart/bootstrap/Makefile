@@ -47,7 +47,9 @@ COMMONSOURCES = \
 	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml \
 	LABEL_REFLECTION.sig LabelReflection.sml \
 	PATH_REFLECTION.sig PathReflection.sml \
-	TYPE_REFLECTION.sig TypeReflection.sml
+	TYPE_REFLECTION.sig TypeReflection.sml \
+	FIXITY_REFLECTION.sig FixityReflection.sml \
+	INF_REFLECTION.sig InfReflection.sml
 COMMONFILES = $(COMMONSOURCES:%=common/%)
 
 FRONTENDCOMMONSOURCES = \
