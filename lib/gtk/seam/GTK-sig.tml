@@ -1,5 +1,6 @@
 import structure GtkTypes from "GtkTypes"
 import structure GdkEnums from "GdkEnums"
+import structure PangoEnums from "PangoEnums"
 
 signature GTK =
 sig

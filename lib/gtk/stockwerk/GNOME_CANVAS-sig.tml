@@ -1,5 +1,7 @@
 import structure GtkTypes from "GtkTypes"
+import structure GtkEnums from "GtkEnums"
 import structure GdkEnums from "GdkEnums"
+import structure PangoEnums from "PangoEnums"
 
 signature GNOME_CANVAS =
 sig

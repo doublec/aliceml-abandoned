@@ -58,6 +58,8 @@ aktuelles Stockhausen vom: 17.10.02 12:00
 setenv ALICE_TRACE_COMPONENT 1
 setenv ALICE_TRACE_RESOLVER 1
 
+unsetenv ALICE_TRACE_COMPONENT
+unsetenv ALICE_TRACE_RESOLVER
 
 
 *** Projekt ***

@@ -20,7 +20,7 @@ signature UTIL =
         val replaceChar : char * string -> string -> string
 
         (* Namespace and prefix stuff *)
-        datatype spaces = GDK | GTK | GNOMECANVAS
+        datatype spaces = GDK | GTK | GNOMECANVAS | PANGO
 	val allSpaces : spaces list
 
 	val spaceName : spaces -> string

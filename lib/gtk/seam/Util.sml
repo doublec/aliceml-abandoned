@@ -30,17 +30,19 @@ structure Util :> UTIL =
 	  | makeTuple sep e [x]     = x
 	  | makeTuple sep e (x::xr) = x ^ sep ^ (makeTuple sep e xr)	
 
-        datatype spaces = GDK | GTK | GNOMECANVAS
+        datatype spaces = GDK | GTK | GNOMECANVAS | PANGO
 
-	val allSpaces = [GDK, GTK, GNOMECANVAS]
+	val allSpaces = [GDK, GTK, GNOMECANVAS, PANGO]
 
 	fun spaceName GDK         = "Gdk"
 	  | spaceName GTK         = "Gtk"
 	  | spaceName GNOMECANVAS = "GnomeCanvas"
+	  | spaceName PANGO       = "Pango"
 
 	fun spaceFuncPrefix GDK       = "gdk_"
 	  | spaceFuncPrefix GTK       = "gtk_"
 	  | spaceFuncPrefix GNOMECANVAS = "gnome_canvas_"
+	  | spaceFuncPrefix PANGO       = "pango_"
 
 	fun spaceEnumPrefix space = spaceName space
 	fun spaceStructPrefix space = "_"^(spaceName space)

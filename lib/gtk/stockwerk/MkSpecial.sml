@@ -7,7 +7,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	    case space of
 		Util.GTK => ["NativeGtkSpecial.hh"]
 	      | Util.GDK => ["NativeGdkSpecial.hh"]
-	      | Util.GNOMECANVAS => nil
+	      | Util.GNOMECANVAS => ["NativeGnomeCanvasSpecial.hh"]
+	      | _ => nil
 
         (* ignoreFuns: do not generate any code for: *)
 	val ignoreFuns = 
@@ -18,10 +19,10 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_false"]
 	      | Util.GDK => ["gdk_init",
 			     "gdk_init_check",
-			     "gdk_pixbuf_new_from_xpm_data",
-			     "gdk_keymap_get_direction" (**)]
+			     "gdk_pixbuf_new_from_xpm_data"]
 	      | Util.GNOMECANVAS => ["gnome_canvas_join_gdk_to_art", (**)
 				     "gnome_canvas_cap_gdk_to_art" (**)]
+	      | _ => nil
 
         (* specialFuns: generate asig, but no code for: *)
 	val specialFuns = case space of
@@ -38,7 +39,18 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	 | Util.GDK =>
 	       [FUNC("gdk_init", VOID, nil),
 	        FUNC("gdk_pixbuf_new_from_xpm_data", POINTER VOID,
-		     [ARRAY (NONE, STRING true)])]
+		     [ARRAY (NONE, STRING true)]),
+		FUNC("gdk_color_new", POINTER VOID, [NUMERIC (false,false,INT),
+		      NUMERIC (false,false,INT), NUMERIC (false,false,INT)]),
+		FUNC("gdk_point_new", POINTER VOID,
+		     [NUMERIC (true,false,INT), NUMERIC (true,false,INT)]),
+		FUNC("gdk_rectangle_new", POINTER VOID,
+		     [NUMERIC (true,false,INT), NUMERIC (true,false,INT),
+		      NUMERIC (true,false,INT), NUMERIC (true,false,INT)])]
+	  | Util.GNOMECANVAS =>
+	       [FUNC("gnome_canvas_points_set_coords", VOID,
+		     [POINTER VOID, NUMERIC (true,false,INT), 
+		      NUMERIC (true,false,INT)])]
 	  | _ => nil
 
        (* changedFuns: generate different asig and code for: *)

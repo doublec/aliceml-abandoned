@@ -12,6 +12,7 @@ signature TYPE_MANAGER =
 
 	val isOutArg :            TypeTree.ty -> bool
 	val splitArgTypes :       TypeTree.ty list -> arginfo list
+	val splitArgTypesNoOuts : TypeTree.ty list -> arginfo list
 	val splitInOuts :         arginfo list * bool -> 
 	                                arginfo list * arginfo list
         val numIns :              arginfo list * bool -> int
@@ -25,7 +26,10 @@ signature TYPE_MANAGER =
 	val isRefOfSpace :        Util.spaces -> TypeTree.ty -> bool
 	val isItemOfSpace :       Util.spaces -> TypeTree.decl -> bool
 	val checkItem :           TypeTree.decl -> bool
-
+	val checkStructMember :   TypeTree.struct_item -> bool
+	val makeFieldFun :        Util.spaces 
+	                            -> string * string * TypeTree.ty * bool
+	                            -> string * TypeTree.ty * TypeTree.ty list
 	val getEnumSpace :        string -> Util.spaces
 	
 	val getClassList :        TypeTree.tree -> TypeTree.tree

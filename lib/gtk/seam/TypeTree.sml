@@ -7,7 +7,7 @@ structure TypeTree =
       exception EArray
       exception EEllipses
 
-      datatype numKind = 
+      datatype num_kind = 
 	 CHAR
        | SHORT
        | INT
@@ -21,7 +21,7 @@ structure TypeTree =
 	 VOID
        | ELLIPSES of bool    (* if true: ..., if false: va_list *)
        | BOOL
-       | NUMERIC of bool * bool * numKind  (* signed? / real? / kind *)
+       | NUMERIC of bool * bool * num_kind  (* signed? / real? / kind *)
        | POINTER of ty
        | STRING of bool    (* pointer to signed char? *)
        | ARRAY of LargeInt.int option * ty (* size / type *)

@@ -12,4 +12,37 @@ DEFINE1(NativeGdk_pixbufNewFromXpmData) {
   RETURN(Store::UnmanagedPointerToWord(ret));
 } END
 
+DEFINE3(NativeGdk_colorNew) {
+  DECLARE_INT(red,x0);
+  DECLARE_INT(green,x1);
+  DECLARE_INT(blue,x2);
+  GdkColor *col = new GdkColor;
+  col->red = static_cast<guint16>(red);
+  col->green = static_cast<guint16>(green);
+  col->blue = static_cast<guint16>(blue);
+  RETURN(Store::UnmanagedPointerToWord(col));
+} END
+
+DEFINE2(NativeGdk_pointNew) {
+  DECLARE_INT(x,x0);
+  DECLARE_INT(y,x1);
+  GdkPoint *p = new GdkPoint;
+  p->x = x;
+  p->y = y;
+  RETURN(Store::UnmanagedPointerToWord(p));
+} END
+
+DEFINE4(NativeGdk_rectangleNew) {
+  DECLARE_INT(x,x0);
+  DECLARE_INT(y,x1);
+  DECLARE_INT(width,x2);
+  DECLARE_INT(height,x3);
+  GdkRectangle *rect = new GdkRectangle;
+  rect->x = x;
+  rect->y = y;
+  rect->width = width;
+  rect->height = height;
+  RETURN(Store::UnmanagedPointerToWord(rect));
+} END
+
 #endif

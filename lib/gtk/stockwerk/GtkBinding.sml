@@ -1,6 +1,5 @@
 local
     structure SGDK = MkSpecial (val space = Util.GDK)
-
     structure UGDK = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGDK
 			      val space = Util.GDK)
@@ -11,8 +10,13 @@ local
 		 	     structure Special = SGDK
 			     val space = Util.GDK)
 
-    structure SGTK = MkSpecial (val space = Util.GTK)
 
+    structure SPAN = MkSpecial (val space = Util.PANGO)
+    structure EPAN = MkEnums(structure TypeManager = TypeManager
+			     structure Special = SPAN
+			     val space = Util.PANGO)
+
+    structure SGTK = MkSpecial (val space = Util.GTK)
     structure UGTK = MkNative(structure TypeManager = TypeManager
                               structure Special = SGTK
 			      val space = Util.GTK)
@@ -24,7 +28,6 @@ local
 			     val space = Util.GTK)
 
     structure SGC  = MkSpecial (val space = Util.GNOMECANVAS)
-
     structure UGC  = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGC
 			      val space = Util.GNOMECANVAS)
@@ -46,6 +49,7 @@ in
 	 UGTK.create tree ;
 	 CGTK.create tree ;
 	 EGTK.create tree ;
+	 EPAN.create tree ;
 	 UGDK.create tree ;
 	 CGDK.create tree ;
 	 EGDK.create tree ;

@@ -98,6 +98,10 @@ struct
 			      List.tabulate(length arglist',Int.toString))
     end
 
+    fun splitArgTypesNoOuts arglist =
+	ListPair.map (fn (num,t) => (IN, "in"^num, t))
+		     (List.tabulate (length arglist,Int.toString), arglist)
+
     fun splitInOuts (l,doinout) =
 	(List.filter (fn (IN,_,_) => true | _ => doinout) l,
 	 List.filter (fn (IN,_,_) => false | _ => true) l)
@@ -168,12 +172,33 @@ struct
 	 | EEllipses => error "ellipses in argument list"
          | EArray    => warning "array in arglist or retval" *)
     end		    
+(***) | checkItem (s as (STRUCT _)) = isItemOfSpace Util.GDK s
       | checkItem _ = true
 
+    fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
+      | checkStructMember (_,t) =
+	(case removeTypeRefs t of
+	     FUNCTION _        => false
+	   | ARRAY _           => false
+	   | POINTER (ARRAY _) => false
+           | t'         => ((getAliceType t' ; true) handle _ => false))
+
+
+    fun makeFieldFun space (sname, mname, mtype, get) =
+    let
+	val sname' = (Util.spaceName space)^
+	              Util.cutPrefix ("_"^(Util.spaceEnumPrefix space), sname)
+	val stype = POINTER (STRUCTREF sname')
+    in
+	if get then
+	    (sname'^"_get_field_"^mname, mtype, [stype])
+	else
+	    (sname'^"_set_field_"^mname, VOID, [stype, mtype])
+    end
 
     fun getEnumSpace name = 
 	foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
-	       Util.GTK  Util.allSpaces
+	       Util.GTK Util.allSpaces
 
 end
 

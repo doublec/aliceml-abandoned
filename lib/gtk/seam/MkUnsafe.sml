@@ -21,6 +21,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		  "import structure GtkTypes from \"GtkTypes\"\n",
 		  "import structure GtkEnums from \"GtkEnums\"\n",
 		  "import structure GdkEnums from \"GdkEnums\"\n",
+		  "import structure PangoEnums from \"PangoEnums\"\n",
 		  "\n",
 		  "signature ", Util.strUpper unsafeName, " =\n",
 		  "sig\n",
@@ -42,6 +43,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 "import structure GtkCore  from \"GtkCore\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
+		 "import structure PangoEnums from \"PangoEnums\"\n",
 		 "import signature ", Util.strUpper(unsafeName), 
 		 " from \"", Util.strUpper(unsafeName), "-sig\"\n\n",
 		 "structure ", unsafeName, " :> ",
@@ -52,6 +54,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		 wrIndent, "type arg = GtkTypes.arg\n\n",
 		 wrIndent, "open GtkEnums\n",
 		 wrIndent, "open GdkEnums\n",
+		 wrIndent, "open PangoEnums\n",
 		 "\n"],
 	     outro = 
 		 [Util.indent 1, "end\n\n"]
@@ -114,8 +117,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	in
 	    if generateSimple
 	    then
-		[wrIndent, "val ", wname, " = ", 
-		 nativeName, ".", wname, "\n"]
+		[wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
 	    else
 		[wrIndent, "fun ", wname, "(", 
 		 Util.makeTuple ", " "" (map (fn info => #2info) ins), 
@@ -131,15 +133,36 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 
 	(* SIGNATURE AND WRAPPER ENTRIES *)
 	fun processItem (FUNC (funName,ret,arglist)) = 
-	let
-	    val al =  splitArgTypes arglist
-	    fun call f = f(funName, ret, al, false) @
-		         (if numOuts (al,false) > 0 
-			      then f(funName,ret,al,true)
-			      else nil)
-	in
-	    ( call sigEntry , call wrapperEntry )
-	end
+	    let
+		val al =  splitArgTypes arglist
+		fun call f = f(funName, ret, al, false) @
+		                 (if numOuts (al,false) > 0 
+				      then f(funName,ret,al,true)
+				      else nil)
+	    in
+		( call sigEntry , call wrapperEntry )
+	    end
+	  | processItem (STRUCT (structName, members)) =
+	    let
+	        fun call f get = 
+		let
+		    fun prepare (mname, mtype) =
+		    let
+			val (funName,ret,arglist) = 
+			    makeFieldFun space (structName,mname,mtype,get)
+		    in
+			f(funName,ret,splitArgTypesNoOuts arglist,false)
+		    end
+		in
+		    List.concat 
+		        (map prepare (List.filter checkStructMember members))
+		end
+	    in
+	        ( List.concat (map (call sigEntry) [true,false]),
+		  List.concat (map (call wrapperEntry) [true,false]) )
+	    end
+	  | processItem (UNION (unionName, members)) =
+	      processItem (STRUCT (unionName, members))
 	  | processItem _ = ( nil , nil )
 
         (* main function for creating unsafe files *)

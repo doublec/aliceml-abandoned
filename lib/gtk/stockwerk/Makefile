@@ -1,11 +1,16 @@
 
 COMPS = Gdk Gtk GnomeCanvas
 COMPSCAP = GDK GTK GNOME_CANVAS
+
+ENUMCOMPS = Pango
+ENUMCOMPSCAP = PANGO
+
 NATIVES = $(COMPS:%=Native%)
 LIBS = gtk+-2.0 libgnomecanvas-2.0
 
 GENERATOR = GtkBinding.x86-linux
-ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml)
+ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
+	$(ENUMCOMPSCAP:%=%_ENUMS-sig.aml) $(ENUMCOMPS:%=%Enums.aml)
 UNSAFE = $(COMPSCAP:%=%_UNSAFE-sig.aml) $(COMPS:%=%Unsafe.aml)
 GENNATIVES = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
 GENFILES = $(GENNATIVES) $(ENUMS) $(UNSAFE)

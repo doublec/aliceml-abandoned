@@ -204,95 +204,110 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    endDecl
 	end	    
 
-        fun makeFieldFun (sname, mname, mtype, get) =
-	let
-	    val sname' = Util.cutPrefix ("_", sname)
-	    val stype = POINTER (TYPEREF (sname', VOID))
-	in
-	    if get then
-		(sname'^"_get_field_"^mname, mtype, [stype])
-	    else
-		(sname'^"_set_field_"^mname, VOID, [stype, mtype])
-	end
-
         (* special preparation for get/set methods *)
         fun fieldSigEntry (sname, mname, mtype, get) =
 	let
-	    val (funName,ret,arglist) = makeFieldFun (sname,mname,mtype,get)
+	    val (funName,ret,arglist) = makeFieldFun space 
+		                          (sname,mname,mtype,get)
 	in
-	    ( getAliceType mtype ;
-	      sigEntry (funName,ret,splitArgTypes arglist,false) )
-	    handle _ => nil
+            sigEntry (funName,ret,splitArgTypesNoOuts arglist,false)
 	end
 
         fun fieldWrapperEntry (sname, mname, mtype, get) = 
         let
-	    val (funName,ret,arglist) = makeFieldFun (sname,mname,mtype,get)
-	    val al = splitArgTypes arglist
+	    val (funName,ret,arglist) = makeFieldFun space 
+		                          (sname,mname,mtype,get)
+	    val al = splitArgTypesNoOuts arglist
 	    val stype = if null al then "" else getCType (#3(hd al))
 	    val svar  = if null al then "" else #2(hd al)
 	    val mvar  = if length al < 2 then "" else #2(hd(tl al))
+	    val isString = case mtype of STRING _ => true | _ => false
 	    val callLine =
 		if get then
-		    [getCType mtype, " ret = (static_cast<",
+		    [if isString then "const " else "",
+		     getCType mtype, " ret = (static_cast<",
 		     stype, ">(", svar,"))->", mname,";\n"]
 		else
 		    ["(static_cast<", stype, ">(", svar,"))->", mname, " = ",
-		     "static_cast<", getCType mtype, ">(", mvar, ");\n"]
+		     if isString then "reinterpret_cast<" else "static_cast<",
+		     getCType mtype, ">(", mvar, ");\n"]
 	in
-	    ( getAliceType mtype ;
-  	      wrapperEntry callLine (funName,ret,al,false) )
-	    handle _ => nil
+	    wrapperEntry callLine (funName,ret,al,false)
 	end
 
         (* SIGNATURE AND WRAPPER ENTRIES *)
-	fun processItem (f as (FUNC (funName,ret,arglist))) =
+	fun processItem (func as FUNC (funName,ret,arglist)) =
 	    let
 		val al = splitArgTypes arglist
 		fun call f = f(funName,ret,al,false) @
 		                 (if numOuts(al,true) > 0
 				      then f(funName,ret,al,true) 
 				      else nil)
-		val spec = (List.exists (fn f' => f=f') Special.specialFuns)
+		val spec = (List.exists (fn f' => func=f') Special.specialFuns)
 	    in
 	       (if spec then sigEntry(funName,ret,al,false) else call sigEntry,
 	        if spec then nil                 else call (wrapperEntry nil) )
 	    end
-	  | processItem (s as (STRUCT (structName, members))) =
+	  | processItem (STRUCT (structName, members)) =
 	    let
 	        fun call f get = 
 		    List.concat 
 		      (map (fn (mname, mtype) => f(structName,mname,mtype,get))
-		           members)
+		           (List.filter checkStructMember members))
 	    in
 	        ( List.concat (map (call fieldSigEntry) [true,false]),
 		  List.concat (map (call fieldWrapperEntry) [true,false]) )
 	    end
+	  | processItem (UNION (unionName, members)) =
+	      processItem (STRUCT (unionName, members))
 	  | processItem _ = ( nil , nil )
 
+
 	(* STRUCTURE ENTRY GENERATION *)
-	fun makeStructureEntry (FUNC(funName,ret,arglist)) =
-	let
-	    val al = splitArgTypes arglist
-	    val wname = Util.computeWrapperName(space,funName)
-	    fun line l io = 
-		[wrIndent, "INIT_STRUCTURE(record, \"",nativeName,
-		 "\", \"", wname, if io then "'" else "", "\", ", 
-		 nativeName, "_", wname, if io then "_" else "", ", ",
-		 Int.toString(numIns(l,io)), ", true);\n"]
+	local
+	    fun line (funName,arglist,io) =
+	    let
+		val wname = Util.computeWrapperName(space,funName)
+	    in
+		String.concat
+		    [wrIndent, "INIT_STRUCTURE(record, \"",nativeName,
+		     "\", \"", wname, if io then "'" else "", "\", ", 
+		     nativeName, "_", wname, if io then "_" else "", ", ",
+		     Int.toString(numIns(arglist,io)), ", true);\n"]
+	    end
 	in
-	    line al false @ (if numOuts(al,false)>0 then line al true else nil)
+	    fun makeStructureEntry (FUNC(funName,ret,arglist)) =
+		let
+		    val al = splitArgTypes arglist
+		in
+		    line(funName,al,false) ::
+		      (if numOuts(al,false)>0 
+			   then [line(funName,al,true)] else nil)
+		end
+	      | makeStructureEntry (STRUCT(structName, members)) =
+		let
+		    fun fieldGetSetInit sname get (mname,mtype) =
+		    let
+			val (funName,ret,arglist) = 
+			    makeFieldFun space (sname,mname,mtype,get)
+		    in
+			line(funName,splitArgTypesNoOuts arglist,false)
+		    end
+		    val members' = List.filter checkStructMember members
+		in
+		    (map (fieldGetSetInit structName true)  members') @
+		    (map (fieldGetSetInit structName false) members')
+		end
+	      | makeStructureEntry (UNION(unionName, members)) =
+		    makeStructureEntry (STRUCT(unionName, members))
+	      | makeStructureEntry _ = nil
 	end
-	  | makeStructureEntry _ = nil
 
         (* STRUCTURE CODE GENERATION *)
         fun makeStructure items = 
 	let
-	    fun count arglist = 
-		if numOuts(splitArgTypes(arglist),false) > 0 then 2 else 1
-	    val numItems = 
-		foldl (fn (FUNC(_,_,arglist),sum) => sum+(count arglist)
-                                        | (_,sum) => sum) 0 items
+	    val initLines = List.concat (map makeStructureEntry items)
+
 	    fun getIncEntry filename =
 	    let	val {base, ext} = OS.Path.splitBaseExt filename
 		val ext' = case ext of SOME s => "_"^s | _ => ""
@@ -306,14 +321,12 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		   (Util.makeTuple ", " "" includeEntries), " };\n",
 		 "  Record *record = CreateRecord(data, ", 
 		   Int.toString (length includeEntries), ", ",
-		   Int.toString (numItems), ");\n\n"
+		   Int.toString (length initLines), ");\n\n"
 		 ]
 	    val footer = ["  RETURN_STRUCTURE(\"", nativeName,
 			  "$\", record);\n}\n"]
 	in
-	    header@
-	    (List.concat (map makeStructureEntry items))@
-	    footer
+	    header @ initLines @ footer
 	end
 
         (* main function for creating native files *)
