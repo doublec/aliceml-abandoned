@@ -2139,10 +2139,12 @@ and elabRHSRecSpec' bla =
 	    val decs' = elabDecs(E, s, decs)
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.CompUnclosed lnt)
-(*DEBUG*)
+(*DEBUG
 val _ = print "Component signature:\n"
 val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
 val _ = print "\n"
+*)
+val _ = print "Output of component signature disabled\n"
 	in
 	    O.Comp(nonInfo(i), anns', decs')
 	end
