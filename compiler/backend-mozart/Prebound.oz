@@ -413,7 +413,7 @@ prepare
       'Thread.isSuspended': Thread.isSuspended
       'Thread.raiseIn':
 	 fun {$ T E}
-	    try {Thread.injectException T E}
+	    try {Thread.injectException T error(alice(E) debug: unit)}
 	    catch kernel(deadThread _) then
 	       {Exception.raiseError alice(BuiltinTable.'Thread.Terminated')}
 	    end
