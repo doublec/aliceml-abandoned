@@ -3,11 +3,11 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* gtk-critical when using history for the first time
-* propagate output width on init and after resize
+* TextIter's are used (1) without freeing them, and (2) without locking (mostly). This can induce all kinds of space leaks and race conditions. Clean this up.
 
 Missing Features:
 
+* propagate output width on init and after resize
 * comment/uncomment region?
 * cumulative undo?
 * redo?

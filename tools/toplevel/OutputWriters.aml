@@ -132,6 +132,8 @@ structure OutputWriters =
                                        0.0,false,0.0,0.0);
               Core.signalHandlerUnblock(buffer, handler)
           end
+
+      val fillBuf = Lock.sync Core.lock fillBuf
               
       val contextId = Gtk.statusbarGetContextId(Gui.statusbar, "Alice")
       val _ = Gtk.statusbarPush(Gui.statusbar,contextId, "Ready.");
@@ -221,7 +223,6 @@ structure OutputWriters =
 		   if lastChar(buf, off+size-1) = SOME (ord #";")
         	    then
                 	let
-                	    val startiter = Gtk.textIterCopy enditer
                 	    val _ = Gtk.textIterBackwardToTagToggle(startiter, noedit)
                 	    val _ = Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
                 	    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
@@ -230,14 +231,12 @@ structure OutputWriters =
                 	    val _ = highlight(buf, str, offset, startiter, enditer)
                 	    val _ = eval str
                 	in
-                	    extendHistory (String.substring (str, 0, String.size str-1));
-			    Gtk.textBufferApplyTag(buf, bold, startiter, enditer)
+                	    extendHistory (String.substring (str, 0, String.size str-1))
                 	end
 		    else
 			Gtk.textBufferInsertAtCursor(buf, "  ", ~1)
         	else
 		    let
-                	val startiter = Gtk.textIterCopy enditer
 		    in
                         Gtk.textBufferGetIterAtOffset(buf, startiter, off);
 			Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
@@ -291,7 +290,8 @@ structure OutputWriters =
 			  if String.sub (text, 0) < #"\010"
 			  then receive (String.extract (text, 1, NONE),
 					Char.ord (String.sub (text, 0)))
-			  else (fillBuf (widget, buf, signal,
+			  else (
+			  fillBuf (widget, buf, signal,
 					 [Vector.sub (styles, mark), noed],
 					 Vector.sub (highlights, mark), text);
 				mark)
