@@ -24,7 +24,7 @@ signature UNSAFE_COMPONENT_COMPONENT =
 		val extension: string
 
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
-		val load: Url.t -> 'component           (* IO.Io, Corrupt *)
+		val load: string -> 'component          (* IO.Io, Corrupt *)
 		val apply: 'body * (Label.t * 'str) vector -> 'str
 	    end
     end

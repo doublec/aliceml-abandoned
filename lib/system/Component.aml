@@ -28,7 +28,7 @@ struct
     type str = Reflect.value
 
     datatype component =
-	UNEVALUATED of { imports: (Label.t * Url.t * sign) vector,
+	UNEVALUATED of { imports: (Label.t * string * sign) vector,
 			 body:    Reflect.value,
 			 sign:    sign }
       | EVALUATED of sign * str
@@ -53,7 +53,8 @@ struct
 
     fun create (sign, str) = EVALUATED (sign, str)
 
-    val load = UnsafeComponent.load
+    fun load url = UnsafeComponent.load (Url.toStringRaw url)
+	(*--** use getLocalPath instead *)
     val save = UnsafeComponent.save
 
     fun sign (UNEVALUATED {sign, ...}) = sign
@@ -117,9 +118,10 @@ struct
 	and eval (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
 		val imports' =
-		    Vector.map (fn (label, importUrl, importSign) =>
+		    Vector.map (fn (label, importUrlS, importSign) =>
 				(label,
-				 typedLink (Url.resolve baseUrl importUrl,
+				 typedLink (Url.resolve baseUrl
+						(Url.fromString importUrlS),
 					    importSign, SOME baseUrl))) imports
 	    in
 		trace ("evaluating " ^ Url.toString baseUrl);
