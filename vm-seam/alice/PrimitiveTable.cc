@@ -69,6 +69,7 @@ void PrimitiveTable::Init() {
   RegisterRef();
   RegisterString();
   RegisterThread();
+  //RegisterTimer(); // Experimental Timer structure
   RegisterUniqueString();
   RegisterUnsafe();
   RegisterVector();
