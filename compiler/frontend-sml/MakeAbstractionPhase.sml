@@ -109,12 +109,20 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    ( O.Id(infoId id, stamp, O.ExId(toString(idId id))), stamp )
 	end
 
-    val trVId_bind   = trId_bind(infoVId,   idVId,   VId.toString)
+
+    val trVId_bind'  = trId_bind(infoVId,   idVId,   VId.toString)
     val trTyCon_bind = trId_bind(infoTyCon, idTyCon, TyCon.toString)
     val trTyVar_bind = trId_bind(infoTyVar, idTyVar, TyVar.toString)
     val trStrId_bind = trId_bind(infoStrId, idStrId, StrId.toString)
     val trSigId_bind = trId_bind(infoSigId, idSigId, SigId.toString)
     val trFunId_bind = trId_bind(infoFunId, idFunId, FunId.toString)
+
+    fun trVId_bind E (vid as VId(i,vid')) =
+	case VId.toString vid'
+	  of ("true" | "false" | "nil" | "::" | "ref") =>
+		errorVId("invalid rebinding of predefined identifier ", vid, "")
+	   | _ =>
+		trVId_bind' E vid
 
 
     (* With polymorphic recursion we could avoid the following code
@@ -162,9 +170,210 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
+    (* Calculate sets of unguarded explicit type variables [Section 4.6] *)
+
+    fun ? tyvarsX E  NONE    = []
+      | ? tyvarsX E (SOME x) = tyvarsX E x
+
+    fun unguardedTyVarsAtExp E (RECORDAtExp(_, exprow_opt)) =
+	    ?unguardedTyVarsExpRow E exprow_opt
+
+      | unguardedTyVarsAtExp E ( TUPLEAtExp(_, exps)
+			       | VECTORAtExp(_, exps)
+			       | SEQAtExp(_, exps) ) =
+	    List.concat(List.map (unguardedTyVarsExp E) exps)
+
+      | unguardedTyVarsAtExp E (LETAtExp(_, dec, exp)) =
+	    unguardedTyVarsDec E dec @ unguardedTyVarsExp E exp
+
+      | unguardedTyVarsAtExp E (PARAtExp(_, exp)) =
+	    unguardedTyVarsExp E exp
+
+      | unguardedTyVarsAtExp E _ = []
+
+    and unguardedTyVarsExpRow E (ROWExpRow(_, lab, exp, exprow_opt)) =
+	    unguardedTyVarsExp E exp @ ?unguardedTyVarsExpRow E exprow_opt
+
+    and unguardedTyVarsExp E (ATEXPExp(_, atexp)) =
+	    unguardedTyVarsAtExp E atexp
+
+      | unguardedTyVarsExp E (APPExp(_, exp, atexp)) =
+	    unguardedTyVarsExp E exp @ unguardedTyVarsAtExp E atexp
+
+      | unguardedTyVarsExp E (TYPEDExp(_, exp, ty)) =
+	    unguardedTyVarsExp E exp @ unguardedTyVarsTy E ty
+
+      | unguardedTyVarsExp E ( ANDALSOExp(_, exp1, exp2)
+			     | ORELSEExp(_, exp1, exp2)
+			     | WHILEExp(_, exp1, exp2) ) =
+	    unguardedTyVarsExp E exp1 @ unguardedTyVarsExp E exp2
+
+      | unguardedTyVarsExp E (HANDLEExp(_, exp, match)) =
+	    unguardedTyVarsExp E exp @ unguardedTyVarsMatch E match
+
+      | unguardedTyVarsExp E (RAISEExp(_, exp)) =
+	    unguardedTyVarsExp E exp
+
+      | unguardedTyVarsExp E (IFExp(_, exp1, exp2, exp3)) =
+	    unguardedTyVarsExp E exp1 @ unguardedTyVarsExp E exp2 @
+	    unguardedTyVarsExp E exp3
+
+      | unguardedTyVarsExp E (CASEExp(_, exp, match)) =
+	    unguardedTyVarsExp E exp @ unguardedTyVarsMatch E match
+
+      | unguardedTyVarsExp E (FNExp(_, match)) =
+	    unguardedTyVarsMatch E match
+
+    and unguardedTyVarsMatch E (Match(_, mrule, match_opt)) =
+	    unguardedTyVarsMrule E mrule @ ?unguardedTyVarsMatch E match_opt
+
+    and unguardedTyVarsMrule E (Mrule(_, pat, exp)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsExp E exp
+
+    and unguardedTyVarsDec E (CONDec(_, dconbind)) =
+	    unguardedTyVarsDconBind E dconbind
+
+      | unguardedTyVarsDec E (STRUCTUREDec(_, strbind)) =
+	    unguardedTyVarsStrBind E strbind
+
+      | unguardedTyVarsDec E (FUNCTORDec(_, funbind)) =
+	    unguardedTyVarsFunBind E funbind
+
+      | unguardedTyVarsDec E ( LOCALDec(_, dec1, dec2)
+			     | SEQDec(_, dec1, dec2) ) =
+	    unguardedTyVarsDec E dec1 @ unguardedTyVarsDec E dec2
+
+      | unguardedTyVarsDec E _ = []
+
+    and unguardedTyVarsValBind E (PLAINValBind(_, pat, exp, valbind_opt)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsExp E exp @
+	    ?unguardedTyVarsValBind E valbind_opt
+
+      | unguardedTyVarsValBind E (RECValBind(_, valbind)) =
+	    unguardedTyVarsValBind E valbind
+
+    and unguardedTyVarsFvalBind E (FvalBind(_, match, fvalbind_opt)) =
+	    unguardedTyVarsMatch E match @
+	    ?unguardedTyVarsFvalBind E fvalbind_opt
+
+    and unguardedTyVarsDconBind E (NEWDconBind(_, _, vid, ty_opt, tyvarseq,
+						     longtycon, dconbind_opt)) =
+	let
+	    val  _   = insertScope E
+	    val  _   = trTyVarSeq E tyvarseq
+	    val  _   = insertScope E
+	    val ids' = ?unguardedTyVarsTy E ty_opt
+	    val  _   = delete2ndScope E
+	    val  _   = mergeScope E
+	in
+	    ids' @ ?unguardedTyVarsDconBind E dconbind_opt
+	end
+
+      | unguardedTyVarsDconBind E (EQUALDconBind(_, _,vid, _,longvid,
+								dconbind_opt)) =
+	    ?unguardedTyVarsDconBind E dconbind_opt
+
+    and unguardedTyVarsStrBind E (StrBind(_, strid, strexp, strbind_opt)) =
+	    unguardedTyVarsStrExp E strexp @
+	    ?unguardedTyVarsStrBind E strbind_opt
+
+    and unguardedTyVarsFunBind E (FunBind(_, funid, strid, sigexp, strexp,
+								funbind_opt)) =
+	    unguardedTyVarsStrExp E strexp @
+	    ?unguardedTyVarsFunBind E funbind_opt
+
+    and unguardedTyVarsAtPat E (RECORDAtPat(_, patrow_opt)) =
+	    ?unguardedTyVarsPatRow E patrow_opt
+
+      | unguardedTyVarsAtPat E ( TUPLEAtPat(_, pats)
+			       | VECTORAtPat(_, pats)
+			       | ALTAtPat(_, pats) ) =
+	    List.concat(List.map (unguardedTyVarsPat E) pats)
+
+      | unguardedTyVarsAtPat E (PARAtPat(_, pat)) =
+	    unguardedTyVarsPat E pat
+
+      | unguardedTyVarsAtPat E _ = []
+
+    and unguardedTyVarsPatRow E (WILDCARDPatRow(_)) = []
+
+      | unguardedTyVarsPatRow E (ROWPatRow(_, lab, pat, patrow_opt)) =
+	    unguardedTyVarsPat E pat @ ?unguardedTyVarsPatRow E patrow_opt
+
+    and unguardedTyVarsPat E (ATPATPat(_, atpat)) =
+	    unguardedTyVarsAtPat E atpat
+
+      | unguardedTyVarsPat E (APPPat(_, pat, atpat)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsAtPat E atpat
+
+      | unguardedTyVarsPat E (TYPEDPat(_, pat, ty)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsTy E ty
+
+      | unguardedTyVarsPat E (NONPat(_, pat)) =
+	    unguardedTyVarsPat E pat
+
+      | unguardedTyVarsPat E (ASPat(_, pat1, pat2)) =
+	    unguardedTyVarsPat E pat1 @ unguardedTyVarsPat E pat2
+
+      | unguardedTyVarsPat E (WHENPat(_, pat, atexp)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsAtExp E atexp
+
+      | unguardedTyVarsPat E (WITHVALPat(_, pat, valbind)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsValBind E valbind
+
+      | unguardedTyVarsPat E (WITHFUNPat(_, pat, fvalbind)) =
+	    unguardedTyVarsPat E pat @ unguardedTyVarsFvalBind E fvalbind
+
+    and unguardedTyVarsTy E (TYVARTy(_, tyvar as TyVar(i,tyvar'))) =
+	if isSome(lookupVar(E, tyvar')) then
+	    []
+	else
+	let
+	    val (id',stamp) = trTyVar_bind E tyvar
+	    val  _          = insertVar(E, tyvar', (i, stamp))
+	in
+	    [id']
+	end
+
+      | unguardedTyVarsTy E (RECORDTy(_, tyrow_opt)) =
+	    ?unguardedTyVarsTyRow E tyrow_opt
+
+      | unguardedTyVarsTy E (TYCONTy(_, tyseq, longtycon)) =
+	    unguardedTyVarsTyseq E tyseq
+
+      | unguardedTyVarsTy E (ARROWTy(_, ty, ty')) =
+	    unguardedTyVarsTy E ty @ unguardedTyVarsTy E ty'
+
+      | unguardedTyVarsTy E (PARTy(_, ty)) =
+	    unguardedTyVarsTy E ty
+
+    and unguardedTyVarsTyRow E (ROWTyRow(_, lab, ty, tyrow_opt)) =
+	    unguardedTyVarsTy E ty @ ?unguardedTyVarsTyRow E tyrow_opt
+
+    and unguardedTyVarsTyseq E (Seq(_, tys)) =
+	    List.concat(List.map (unguardedTyVarsTy E) tys)
+
+    and unguardedTyVarsStrExp E (STRUCTStrExp(_, dec)) =
+	    unguardedTyVarsDec E dec
+
+      | unguardedTyVarsStrExp E (LONGSTRIDStrExp(_, longstrid)) =
+	    []
+
+      | unguardedTyVarsStrExp E ( TRANSStrExp(_, strexp, sigexp)
+				| OPAQStrExp(_, strexp, sigexp) ) =
+	    unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsStrExp E (APPStrExp(_, longfunid, strexp)) =
+	    unguardedTyVarsStrExp E strexp
+
+      | unguardedTyVarsStrExp E (LETStrExp(_, dec, strexp)) =
+	    unguardedTyVarsDec E dec @ unguardedTyVarsStrExp E strexp
+
+
+
     (* Expressions *)
 
-    fun trAtExp E =
+    and trAtExp E =
 	fn SCONAtExp(i, scon)		=> O.LitExp(i, trSCon E scon)
 	 | LONGVIDAtExp(i, _, longvid)	=>
 	   (case trLongVId E longvid
@@ -484,6 +693,23 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
+    (* Tyvarseqs at a val or fun. *)
+
+    and trValTyVarSeq E (Seq(i, tyvars)) = List.map (trValSeqTyVar E) tyvars
+
+    and trValSeqTyVar E (tyvar as TyVar(i, tyvar')) =
+	if isSome(lookupVar(E, tyvar')) then
+	    errorTyVar("duplicate or shadowing type variable ", tyvar, "")
+	else
+	let
+	    val (id',stamp) = trTyVar_bind E tyvar
+	    val  _          = insertVar(E, tyvar', (i, stamp))
+	in
+	    id'
+	end
+
+
+    (* Extract type variables from a type (as implicitly quantified) *)
 
     and trAllTy E =
 	fn TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
@@ -517,7 +743,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn VALDec(i, tyvarseq, valbind) =>
 	   let
 		val  E'   = Env.new()
-		val ids'  = trTyVarSeq E' tyvarseq
+		val ids'  = trValTyVarSeq E' tyvarseq
 		val  _    = insertScope E'
 		val decs' = trValBindo (E,E') (SOME valbind)
 		val  _    = delete2ndScope E'
@@ -532,7 +758,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (ids',fmatches) = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _    = union(E,E')
 		val  _    = insertScope E
-		val ids'' = trTyVarSeq E tyvarseq
+		val ids'' = trValTyVarSeq E tyvarseq
 		val exps' = trFmatches_rhs E fmatches
 		val  _    = delete2ndScope E
 		val decs' = ListPair.map
