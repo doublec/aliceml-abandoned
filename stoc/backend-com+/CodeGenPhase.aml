@@ -54,8 +54,8 @@
  * Applikationen verwendet wird, heisst Hilfsprozedur (Auxiliary).  Berechne
  * den Dominanzgraphen des Aufrufgraphen der Toplevel-Prozeduren.  Jede
  * dominierende nicht-Hilfsprozedur, die ausschliesslich Hilfsprozeduren
- * unter sich hat, kann die Definitionen ihrer Hilfsprozeduren in ihrer
- * eigenen Klasse aufnehmen.
+ * unter sich hat, kann die Definitionen ihrer Hilfsprozeduren in ihre
+ * eigene Klasse mit aufnehmen.
  *
  * Entsprechend dominierte Hilfsprozeduren sollen mit dem Flag AuxiliaryOf
  * annotiert werden.
@@ -114,8 +114,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    PREPARE
 	  | FILL
 	  | BOTH
-
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
 	fun genTestInt (dottedname, ty, i, elseLabel) =
 	    (emit Dup; emit (Isinst dottedname); emit (B (FALSE, elseLabel));
@@ -269,24 +267,27 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcR4 s);
 	     emit (Newobj (StockWerk.Real, [Float32Ty])))
 
+	(*--** remove global state *)
+	val sharedLabels: label StampMap.t = StampMap.new ()
+
 	(*--** in EvalStm and declarations of unused variables,
 	 * remove all of exp but side-effects *)
 
-	fun genStm (ValDec (_, id, exp, _)) =
+	fun genStm (ValDec (_, id, exp)) =
 	    (genExp (exp, BOTH); declareLocal id)
-	  | genStm (RecDec (_, idExpList, _)) =
+	  | genStm (RecDec (_, idExpList)) =
 	    (List.app (fn (id, exp) =>
 		       (genExp (exp, PREPARE); declareLocal id)) idExpList;
 	     List.app (fn (id, exp) =>
 		       (emitId id; genExp (exp, FILL))) idExpList)
 	  | genStm (EvalStm (_, exp)) = (genExp (exp, BOTH); emit Pop)
-	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, shared)) =
+	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, stamp)) =
 	    let
 		val label1 = newLabel ()
 		val label2 = newLabel ()
 		val label3 = newLabel ()
 	    in
-		shared := label3;
+		StampMap.insertDisjoint (sharedLabels, stamp, label3);
 		emit (Try (label1, label2, StockWerk.ExceptionWrapper,
 			   label2, label3));
 		emit (Label label1); genBody tryBody;
@@ -296,13 +297,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		declareLocal id; genBody catchBody;
 		emit (Label label3); genBody contBody
 	    end
-	  | genStm (EndHandleStm (_, shared)) = emit (Leave (!shared))
-	  | genStm (stm as TestStm (_, id, _, _, _)) =
-	    let
-		val (testBodyList, elseBody) = gatherTests ([stm], id)
-	    in
-		genTestStm (id, testBodyList, fn () => genBody elseBody)
-	    end
+	  | genStm (EndHandleStm (_, stamp)) =
+	    emit (Leave (StampMap.lookupExistent (sharedLabels, stamp)))
+	  | genStm (stm as TestStm (_, id, testBodyList, elseBody)) =
+	    genTestStm (id, testBodyList, fn () => genBody elseBody)
 	  | genStm (RaiseStm (info, id)) =
 	    let
 		val ((line, _), (_, _)) = #region info
@@ -313,25 +311,19 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Throw
 	    end
 	  | genStm (ReraiseStm (_, _)) = emit Rethrow
-	  | genStm (SharedStm (_, body, shared as ref 0)) =
-	    let
-		val label = newLabel ()
-	    in
-		emit (Label label); shared := label; genBody body
-	    end
-	  | genStm (SharedStm (_, _, ref i)) = emit (Br i)
+	  | genStm (SharedStm (_, body, stamp)) =
+	    (case StampMap.lookup (sharedLabels, stamp) of
+		 NONE =>
+		     let
+			 val label = newLabel ()
+		     in
+			 StampMap.insertDisjoint (sharedLabels, stamp, label);
+			 emit (Label label); genBody body
+		     end
+	       | SOME label => emit (Br label))
 	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
 	  | genStm (ExportStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
-	and gatherTests ([TestStm (_, id, test, thenBody, elseBody)], id') =
-	    if idEq (id, id') then
-		let
-		    val (testBodyList, elseBody') = gatherTests (elseBody, id')
-		in
-		    ((test, thenBody)::testBodyList, elseBody')
-		end
-	    else (nil, elseBody)
-	  | gatherTests (body, _) = (nil, body)
 	and genTestStm (_, nil, elseBodyFun) = elseBodyFun ()
 	  | genTestStm (id, testBodyList, elseBodyFun) =
 	    let
@@ -540,50 +532,40 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			 closeMethod ()
 		     end;
 	     emit Pop)
-	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
+	  | genExp (PrimAppExp (_, name, ids), BOTH) =   (*--** not impl'd *)
+	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
+	  | genExp (VarAppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs nil), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs nil), BOTH) =
 	    (emitId id;
 	     emit (Callvirt (StockWerk.StockWert, "Apply0",
 			     nil, StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2]), BOTH) =
 	    (emitId id; emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply2",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2, id3]), BOTH) =
 	    (emitId id; emitId id1; emitId id2; emitId id3;
 	     emit (Callvirt (StockWerk.StockWert, "Apply3",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (_, id, TupArgs [id1, id2, id3, id4]), BOTH) =
+	  | genExp (VarAppExp (_, id, TupArgs [id1, id2, id3, id4]), BOTH) =
 	    (emitId id; emitId id1; emitId id2; emitId id3; emitId id4;
 	     emit (Callvirt (StockWerk.StockWert, "Apply4",
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (info, id, TupArgs ids), BOTH) =
+	  | genExp (VarAppExp (info, id, TupArgs ids), BOTH) =
 	    (emitId id; genExp (TupExp (info, ids), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (info, id, RecArgs labelIdList), BOTH) =
+	  | genExp (VarAppExp (info, id, RecArgs labelIdList), BOTH) =
 	    (emitId id; genExp (RecExp (info, labelIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (SelAppExp (_, label, id), BOTH) =
-	    (emitId id;
-	     case Label.toLargeInt label of
-		 SOME i =>
-		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
-		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
-				      StockWerk.StockWertTy)))
-	       | NONE =>
-		     (emit (Ldstr (Label.toString label));
-		      emit (Callvirt (StockWerk.StockWert, "Select",
-				      [System.StringTy],
-				      StockWerk.StockWertTy))))
 	  | genExp (TagAppExp (_, _, _, _), _) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genExp: TagAppExp"
 	  | genExp (ConAppExp (_, id, _, _), PREPARE) =
@@ -598,8 +580,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id;
 	     emit (Call (true, StockWerk.Ref, "Assign",
 			 [StockWerk.StockWertTy], VoidTy)))
-	  | genExp (PrimAppExp (_, name, ids), BOTH) =   (*--** not impl'd *)
-	    raise Crash.Crash "CodeGenPhase.genExp: PrimAppExp"
+	  | genExp (SelAppExp (_, label, id), BOTH) =
+	    (emitId id;
+	     case Label.toLargeInt label of
+		 SOME i =>
+		     (emit (LdcI4 (LargeInt.toInt i));	(*--** *)
+		      emit (Callvirt (StockWerk.StockWert, "Select", [Int32Ty],
+				      StockWerk.StockWertTy)))
+	       | NONE =>
+		     (emit (Ldstr (Label.toString label));
+		      emit (Callvirt (StockWerk.StockWert, "Select",
+				      [System.StringTy],
+				      StockWerk.StockWertTy))))
+	  | genExp (FunAppExp (info, id, _, args), expMode) =
+	    genExp (VarAppExp (info, id, args), expMode)
 	  | genExp (AdjExp (_, id1, id2), BOTH) =   (*--** not implemented *)
 	    raise Crash.Crash "CodeGenPhase.genExp: AdjExp"
 	  | genExp (exp, PREPARE) =
