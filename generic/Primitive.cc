@@ -52,11 +52,10 @@ private:
   Interpreter::function function;
   word frame;
   u_int arity;
-  bool sited;
 public:
   PrimitiveInterpreter(const char *_name, Interpreter::function _function,
-		       u_int _arity, bool _sited):
-    name(_name), function(_function), arity(_arity), sited(_sited) {
+		       u_int _arity):
+    name(_name), function(_function), arity(_arity) {
     frame = PrimitiveFrame::New(this)->ToWord();
     RootSet::Add(frame);
   }
@@ -117,12 +116,12 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
 
 Transform *
 PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  if (sited) {
+  ConcreteCode *concreteCode = static_cast<ConcreteCode *>(b);
+  word wAbstract = concreteCode->Get(0);
+  if (wAbstract == Store::IntToWord(0))
     return INVALID_POINTER;
-  } else {
-    ConcreteCode *concreteCode = static_cast<ConcreteCode *>(b);
-    return Transform::FromWordDirect(concreteCode->Get(0));
-  }
+  else
+    return Transform::FromWordDirect(wAbstract);
 }
 
 void PrimitiveInterpreter::PushCall(Closure *closure) {
@@ -154,13 +153,15 @@ Interpreter::function PrimitiveInterpreter::GetCFunction() {
 //
 // Primitive Functions
 //
-word Primitive::MakeFunction(Transform *abstract, const char *name,
-			     Interpreter::function function,
-			     u_int arity, bool sited) {
+word Primitive::MakeFunction(const char *name, Interpreter::function function,
+			     u_int arity, Transform *abstract) {
   PrimitiveInterpreter *interpreter =
-    new PrimitiveInterpreter(name, function, arity, sited);
+    new PrimitiveInterpreter(name, function, arity);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
-  concreteCode->Init(0, abstract->ToWord());
+  if (abstract == INVALID_POINTER)
+    concreteCode->Init(0, Store::IntToWord(0));
+  else
+    concreteCode->Init(0, abstract->ToWord());
   return concreteCode->ToWord();
 }
 
