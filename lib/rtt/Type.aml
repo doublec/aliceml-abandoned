@@ -135,8 +135,8 @@ We do eager reduction, so all types are always in normal form. We thus define
 a type t to be well-formed (wf) iff is well-kinded, all nested types and rows
 are wf, and
 
-	t = HOLE(k,_)	and k <> SING _
-	t = VAR(k,_)	and k <> SING _
+	t = HOLE(k,_,_)	and k <> SING _
+	t = VAR(k,_,_)	and k <> SING _
 	t = CON(_,k)	and k <> SING _
 	t = LINK t'
 	t = FUN(t1,t2)
@@ -151,7 +151,7 @@ are wf, and
 
 and a is var-wf iff
 
-	t = VAR(k,_)	and k <> SING _
+	t = VAR(k,_,_)	and k <> SING _
 	t = LINK t'	and t' var-wf
 
 and t is mu-wf iff it is wf and
@@ -226,10 +226,15 @@ struct
     type lab  = Label.t					(* [lab,l] *)
     type path = Path.t					(* [pi,p] *)
 
+    datatype constraint =				(* [c] *)
+	  Unconstrained
+	| Intensional
+	| Extensional of path * path list
+
     datatype typ' =					(* [tau',t'] *)
 	  LINK   of typ		(* forward (needed for unification) *)
-	| HOLE   of kind * int	(* variable for inference *)
-	| VAR    of kind * int	(* bound variable or skolem types *)
+	| HOLE   of kind * int * constraint	(* variable for inference *)
+	| VAR    of kind * int * constraint	(* bound var or skolem types *)
 	| CON    of path * kind	(* constructor (of arbitrary kind) *)
 	| FUN    of typ * typ	(* arrow type *)
 	| PROD   of row		(* product (tuple or record) *)
@@ -328,6 +333,11 @@ struct
 
     fun pth p = PrettyPrint.toString(PPPath.ppPath p, 1000000)
 
+    fun cnstr Unconstrained = ""
+      | cnstr Intensional   = "[...]"
+      | cnstr Extensional(p,ps) =
+	"[" ^ List.foldl (fn p => "," ^ pth p) (pth p) ps ^ "]"
+
     fun id t = Int.toString(Addr.addr t) (* only works from build2 on *)
     (*fun id t = Int.toString(Cell.hash t)*)
     		(* For NJ, have to make bootstrap/Cell transparent! *)
@@ -336,8 +346,8 @@ struct
 	fn t =>	if Hole.isHole t then "_" else
 	case t
 	of LINK t	=> "LINK(" ^ typ ads t ^ ")"
-	 | HOLE(_,n)	=> "HOLE_" ^ Int.toString n
-	 | VAR(_,n)	=> "VAR_" ^ Int.toString n
+	 | HOLE(_,n,c)	=> "HOLE_" ^ Int.toString n ^ cnstr c
+	 | VAR(_,n,c)	=> "VAR_" ^ Int.toString n ^ cnstr c
 	 | CON(p,_)	=> "CON(" ^ pth p ^ ")"
 	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 	 | PROD r	=> "PROD(" ^ rowToString ads r ^ ")"
@@ -448,8 +458,8 @@ struct
 	case content t
 	  of ( LINK t | MU t
 	     | ABBREV(_,t) )	=> kind t
-	   | HOLE(k,_)		=> k
-	   | VAR(k,_)		=> k
+	   | HOLE(k,_,_)	=> k
+	   | VAR(k,_,_)		=> k
 	   | CON(_,k)		=> k
 	   | LAMBDA(a,t)	=> arrowKind(kind a, kind t)
 	   | APPLY(t1,t2)	=> #2(asArrowKind(kind t1))
@@ -522,18 +532,18 @@ struct
 	   | _				=> t
     fun asType' t = content(asType t)
 
-    fun canonicalVar t	=
+    fun canonicalVar t =
 	let val t' = canonical t in
 	    case content t'
-	      of VAR(k,n)		=> if n = boundLevel then ()
-					   else replace(t', VAR(k,boundLevel))
-	       | HOLE(k,n)		=> replace(t', VAR(k,boundLevel))
+	      of VAR(k,n,c)		=> if n = boundLevel then ()
+					   else replace(t', VAR(k,boundLevel,c))
+	       | HOLE(k,n,c)		=> replace(t', VAR(k,boundLevel,c))
 	       | _			=> raise Type;
 	    t'
 	end
 
-    fun unknown' k	= new(HOLE(k, !level))
-    fun newVar' k	= new(VAR(k, !level))
+    fun unknown'(k,c)	= new(HOLE(k, !level, c))
+    fun newVar'(k,c)	= new(VAR(k, !level, c))
 
     fun con'(p,k)	= new(CON(p,k))
     fun arrow'(t1,t2)	= new(FUN(t1,t2))
@@ -581,7 +591,7 @@ struct
 	   | (LINK t1 | ABBREV(_,t1)) =>
 		reduceEta(a,t1)
 	   (* Not needed, since k is never singleton
-	   | (HOLE(k,_) | VAR(k,_) | CON(_,k)) =>
+	   | (HOLE(k,_,_) | VAR(k,_,_) | CON(_,k)) =>
 		(case content k
 		 of SING t1 => reduceEta(a,t1)
 		  | _       => new(LAMBDA(a,t))
@@ -614,7 +624,7 @@ struct
 	   | ABBREV(t11,t12) =>
 		reduceBeta(t1, t12, t2, SOME(Option.getOpt(to,t11)))
 	   (* Not needed, since k is never singleton
-	   | (HOLE(k,_) | VAR(k,_) | CON(_,k)) =>
+	   | (HOLE(k,_,_) | VAR(k,_,_) | CON(_,k)) =>
 		(case content k
 		 of SING t3 => reduceBeta(t1,t3,t2,to)
 		  | _       => new(APPLY(t1,t2))
@@ -636,7 +646,8 @@ struct
 			      else raise Kind
 			  end
 
-    fun unknown k	= if isSingKind k then asSingKind k else unknown' k
+    fun unknown k	= if isSingKind k then asSingKind k
+			  else unknown'(k, Unconstrained)
     val newVar		= newVar'
     fun var a		= let val k = kind a in
 			      if isSingKind k then asSingKind k else a
@@ -820,23 +831,28 @@ struct
 
   (* Inspection *)
 
+    fun constraintVar t =
+	case asType' t
+	 of VAR(_,_,c) => c
+	  | _          => raise Type
+
     datatype desc =
-	  Unknown
-	| Var	of var
-	| Con	of path
-	| Arrow	of typ * typ
-	| Prod	of row
-	| Sum	of row
-	| Mu	of typ
-	| All	of var * typ
-	| Exist	of var * typ
-	| Lambda of var * typ
-	| Apply	of typ * typ
+	  Unknown of constraint
+	| Var	  of var
+	| Con	  of path
+	| Arrow	  of typ * typ
+	| Prod	  of row
+	| Sum	  of row
+	| Mu	  of typ
+	| All	  of var * typ
+	| Exist	  of var * typ
+	| Lambda  of var * typ
+	| Apply	  of typ * typ
 
     fun inspect t =
 	case content t
 	  of (LINK t2 | ABBREV(_,t2))	=> inspect t2
-	   | HOLE _			=> Unknown
+	   | HOLE(_,_,c)		=> Unknown c
 	   | VAR _			=> Var t
 	   | CON(p,_)			=> Con p
 	   | FUN tt			=> Arrow tt
@@ -1070,7 +1086,7 @@ val _ = checkMuFwd := checkMu
 	   | MU t1		=> if not(hasFree(ref [t], mt,mk, rea, t1))
 				   then buildOld(mt, t)
 				   else let
-				       val t0' = unknown'(kind t1)
+				       val t0' = unknown'(kind t1,Unconstrained)
 				       val t'  = buildNew(mt, t, mu' t0')
 				       val t1' = build(mt,mk, rea, t1)
 				   in
@@ -1262,9 +1278,11 @@ val _ = checkMuFwd := checkMu
 	case content t
 	  of LINK t	=> instance'(f,m,t,to)
 	   | ABBREV(t1,t2) => instance'(f,m,t2, SOME(Option.getOpt(to,t1)))
-	   | ALL(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
+	   | ALL(a,t)	=> (Map.insert(m, canonical a,
+					  unknown'(kind a, constraintVar a));
 			    instance'(f,m,t,to))
-	   | EXIST(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a,
+					  newVar'(kind a, constraintVar a));
 			    instance'(f,m,t,to))
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
@@ -1274,9 +1292,11 @@ val _ = checkMuFwd := checkMu
 	case content t
 	  of LINK t	=> skolem'(f,m,t,to)
 	   | ABBREV(t1,t2) => skolem'(f,m,t2, SOME(Option.getOpt(to,t1)))
-	   | ALL(a,t)	=> (Map.insert(m, canonical a, newVar'(kind a));
+	   | ALL(a,t)	=> (Map.insert(m, canonical a,
+					  newVar'(kind a, constraintVar a));
 			    skolem'(f,m,t,to))
-	   | EXIST(a,t)	=> (Map.insert(m, canonical a, unknown'(kind a));
+	   | EXIST(a,t)	=> (Map.insert(m, canonical a,
+					  unknown'(kind a, constraintVar a));
 			    skolem'(f,m,t,to))
 	   | _		=> case to of NONE    => f(m,t)
 				    | SOME t1 => f(m,abbrev'(t1,t))
@@ -1285,16 +1305,27 @@ val _ = checkMuFwd := checkMu
     val instance = trace instance "instance"
     val skolem   = trace skolem "skolem"
 
+    fun instanceWith(t1, t2) =
+	let
+	    val (a,t) = asAll t1
+	    val  m    = Map.map()
+	in
+	    matchKind(kind t2, kind a) handle KindMismatch _ => raise Kind;
+	    Map.insert(m, canonical a, t2);
+	    subst(m,t)
+	end
+
 
   (* Check for holes *)
 
     exception Unclosed
 
-    fun checkClosedRow(NAMED(_,SOME _))	= raise Unclosed
-      | checkClosedRow _		= ()
+    fun isClosedRow(NAMED(_,SOME _))	= false
+      | isClosedRow _			= true
 
     fun checkClosed'(HOLE _)		= raise Unclosed
-      | checkClosed'(PROD r | SUM r)	= checkClosedRow r
+      | checkClosed'(PROD r | SUM r)	= if isClosedRow r then () else
+					  raise Unclosed
       | checkClosed' _			= ()
 
     fun isClosed t =
@@ -1303,6 +1334,8 @@ val _ = checkMuFwd := checkMu
 
 
   (* Closure *)
+
+    exception Close of typ
 
     (* Quantifies over all holes with level larger than current
      * and replaces them by variables.
@@ -1320,15 +1353,15 @@ val _ = checkMuFwd := checkMu
 
     and close1(t, f) =
 	case content t
-	  of HOLE(k,n)	=> if n <= !level then f else (fn t2 => f(all'(t,t2)))
-	   | PROD r	=> (replace(t, PROD(closeRow r)) ; f)
-	   | SUM r	=> (replace(t, SUM(closeRow r)) ; f)
-	   | _		=> f
-
-    and closeRow r =
-	case r
-	  of NAMED(r',SOME n)	=> if n <= !level then r else NAMED(r',NONE)
-	   | _			=> r
+	 of HOLE(k,n,c) =>
+	    if n <= !level then f else
+	    (case c
+	     of Unconstrained    => (fn t2 => f(all'(t,t2)))
+	      | Intensional      => raise Close t
+	      | Extensional(p,_) => (replace(t, CON(p,k)); f)
+	    )
+	   | (PROD r | SUM r) => if isClosedRow r then f else raise Close t
+	   | _                => f
 
     (*DEBUG*)
     val close = trace close "close"
@@ -1347,8 +1380,9 @@ val _ = checkMuFwd := checkMu
 		if Map.member(m,t) then () else
 		Map.insert(m,t,()) before
 		(case content t
-		  of HOLE(k,n')	=> if n' <= n then () else replace(t, HOLE(k,n))
-		   | VAR(k,n')	=> if n' <= n then () else raise Lift t
+		  of HOLE(k,n',c) =>
+			if n' <= n then () else replace(t, HOLE(k,n,c))
+		   | VAR(k,n',c) => if n' <= n then () else raise Lift t
 		   | PROD r	=> liftRow(t, PROD, r)
 		   | SUM r	=> liftRow(t, SUM, r)
 		   | MU _	=> ()	(*ASSUME no holes under mu *)
@@ -1367,7 +1401,7 @@ val _ = checkMuFwd := checkMu
 	end
 (*DEBUG*)handle e => raise e
 
-    val dummy      = newVar(starKind())
+    val dummy      = newVar(starKind(), Unconstrained)
     fun lift'(n,t) = liftAndCheck(n, dummy, t)
     fun lift t     = liftAndCheck(!level, dummy, t)
 
@@ -1375,6 +1409,52 @@ val _ = checkMuFwd := checkMu
     val liftAndCheck = trace liftAndCheck "liftAndCheck"
     val lift'        = trace lift' "lift'"
     val lift         = trace lift "lift"
+
+
+  (* Constraints *)
+
+    exception Constraint
+
+    fun equalPath p1 p2      = Path.equal(p1,p2)
+    fun memberPath(p,ps)     = List.exists (equalPath p) ps
+    fun removePath(p,nil)    = nil
+      | removePath(p,p'::ps) = if Path.equal(p,p') then ps
+			       else p'::removePath(p,ps)
+
+    fun conjunctConstraint(Unconstrained, c) = c
+      | conjunctConstraint(c, Unconstrained) = c
+      | conjunctConstraint(Intensional, c)   = c
+      | conjunctConstraint(c, Intensional)   = c
+      | conjunctConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
+	let
+	    val ps = List.filter (fn p1 => memberPath(p1, p2::ps2)) (p1::ps1)
+	in
+	    if Path.equal(p1,p2) then Extensional(p1, removePath(p1,ps)) else
+	    case (memberPath(p1,ps), memberPath(p2,ps))
+	     of (true, false) => Extensional(p1, removePath(p1,ps))
+	      | (false, true) => Extensional(p2, removePath(p2,ps))
+	      | _             => raise Constraint
+	end
+
+    fun subsumesConstraint(_, Unconstrained) = true
+      | subsumesConstraint(Unconstrained, Intensional) = false
+      | subsumesConstraint(_, Intensional) = true
+      | subsumesConstraint((Unconstrained | Intensional), Extensional _) = false
+      | subsumesConstraint(Extensional(p1,ps1), Extensional(p2,ps2)) =
+	Path.equal(p1,p2) andalso List.all (fn p => memberPath(p,ps2)) ps1
+
+    fun meetsConstraint(t, Unconstrained)    = true
+      | meetsConstraint(t, c as Intensional) =
+	(case asType' t
+	 of (HOLE(_,_,c') | VAR(_,_,c')) => subsumesConstraint(c',c)
+	  |  _                           => false
+	)
+      | meetsConstraint(t, c as Extensional(p,ps)) =
+	(case asType' t
+	 of (HOLE(_,_,c') | VAR(_,_,c')) => subsumesConstraint(c',c)
+	  | CON(p',_) => Path.equal(p',p) orelse memberPath(p',ps)
+	  | _ => false
+	)
 
 
   (* Unification/matching algorithm *)
@@ -1498,7 +1578,7 @@ val _ = checkMuFwd := checkMu
 		(mergeBind' m; 0)
 	end
 
-    fun bind(i,ms,rea, n1,t1,t2,k1) =
+    fun bind(i,ms,rea, n1,t1,t2,k1,c) =
 	(* Merge at level i - this is a conservative approximation that
 	 * avoids calculating the level of t2. *)
 	let
@@ -1514,8 +1594,6 @@ val _ = checkMuFwd := checkMu
 			       List.app (fn m => Map.unionDisjoint(mt,m)) ms;
 			       canonical(build(mt,mk,rea',t2))
 			   end
-	    val _   = liftAndCheck(n1,t1,t2')
-		      handle Lift _ => raise Mismatch(t1,t2')
 	in
 (*DEBUG
 TextIO.print("bind "^typToString t1^" "^typToString t2^"\n");
@@ -1524,6 +1602,8 @@ case rea of NONE => TextIO.print("rea = -\n")
 List.appri (fn(i,m) => TextIO.print("m"^Int.toString i^" = {\n" ^ substToString m ^ "}\n")) ms;
 TextIO.print("i = "^Int.toString i^"\n");
 *)
+	    if meetsConstraint(t2',c) then () else raise Mismatch(t1,t2');
+	    liftAndCheck(n1,t1,t2') handle Lift _ => raise Mismatch(t1,t2');
 	    replace(t1, LINK t2');
 	    merge(ms,t1,t2',i)
 	end
@@ -1621,12 +1701,16 @@ handle e =>
 		then merge(ms,t1,t2,0)
 		else raise Mismatch(t1,t2)
 
-	  | (HOLE(k1,n1), HOLE(k2,n2)) =>
-		(bind(i,ms,rea,n1,t1,t2,k1) handle Mismatch _ =>
-		 bind(i,ms,rea,n2,t2,t1,k2)
-		)
-	  | (HOLE(k1,n1), _) => bind(i,ms,rea, n1,t1,t2,k1)
-	  | (_, HOLE(k2,n2)) => bind(i,ms,rea, n2,t2,t1,k2)
+	  | (HOLE(k1,n1,c1), HOLE(k2,n2,c2)) =>
+	    let
+		val c' = conjunctConstraint(c1,c2)
+			 handle Constraint => raise Mismatch(t1,t2)
+	    in
+		bind(i,ms,rea,n1,t1,t2,k1,c') handle Mismatch _ =>
+		bind(i,ms,rea,n2,t2,t1,k2,c')
+	    end
+	  | (HOLE(k1,n1,c1), _) => bind(i,ms,rea, n1,t1,t2,k1,c1)
+	  | (_, HOLE(k2,n2,c2)) => bind(i,ms,rea, n2,t2,t1,k2,c2)
 
 	  | (ABBREV(_,t1'), _) => unify''(i,ms,rea,t1',t2)
 	  | (_, ABBREV(_,t2')) => unify''(i,ms,rea,t1,t2')
