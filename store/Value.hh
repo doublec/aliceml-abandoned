@@ -38,7 +38,7 @@ public:
     AssertStore(v != NULL);
     ((word *) this)[f + 1] = v;
   }
-  void InitArg(u_int f, int v) {
+  void InitArg(u_int f, s_int v) {
     InitArg(f, Store::IntToWord(v));
   }
   void ReplaceArg(u_int f, word v) {
@@ -54,7 +54,7 @@ public:
     }
     ((word *) this)[f + 1] = v;
   }
-  void ReplaceArg(u_int f, int v) {
+  void ReplaceArg(u_int f, s_int v) {
     InitArg(f, Store::IntToWord(v));
   }
   word ToWord() {
@@ -77,13 +77,13 @@ public:
   void InitArg(word w) {
     Block::InitArg(REF_POS, w);
   }
-  void InitArg(int w) {
+  void InitArg(s_int w) {
     Block::InitArg(REF_POS, w);
   }
   void ReplaceArg(word w) {
     Block::ReplaceArg(REF_POS, w);
   }
-  void ReplaceArg(int w) {
+  void ReplaceArg(s_int w) {
     Block::InitArg(REF_POS, w);
   }
   void Become(BlockLabel l, word w) {
@@ -94,7 +94,7 @@ public:
     HeaderOp::EncodeLabel(this, l);
     Block::ReplaceArg(REF_POS, w);
   }
-  void Become(BlockLabel l, int i) {
+  void Become(BlockLabel l, s_int i) {
     AssertStore((GetLabel() >= MIN_TRANSIENT_LABEL) &&
 		(GetLabel() <= MAX_TRANSIENT_LABEL) &&
 		(GetLabel() != REF_LABEL));
