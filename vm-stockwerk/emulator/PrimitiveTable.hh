@@ -41,10 +41,12 @@ private:
   static void RegisterGlobalStamp();
   static void RegisterHole();
   static void RegisterInt();
+  static void RegisterLargeWord();
   static void RegisterList();
   static void RegisterMath();
   static void RegisterOption();
   static void RegisterReal();
+  static void RegisterRef();
   static void RegisterString();
   static void RegisterThread();
   static void RegisterUnsafe();

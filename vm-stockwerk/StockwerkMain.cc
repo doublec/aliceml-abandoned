@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
   BootLinker::Init(
-		   "/home/bruni/devel/stockhausen/vm-stockwerk/emulator/test/install/",
+		   "c:/cygwin/home/bruni/devel/stockhausen/vm-stockwerk/emulator/test/install/",
 		   builtins);
   BootLinker::SetTraceMode(1);
   if (argc < 2) {
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     Chunk *rootUrl  = NewChunk(argv[1]); BootLinker::Print(rootUrl);
     Chunk *bootUrl  = NewChunk("lib/system/Boot"); BootLinker::Print(bootUrl);
     word module     = BootLinker::Link(bootUrl);
+    exit(0);
     Tuple *tuple    = Tuple::FromWord(module);
     tuple->AssertWidth(1);
     Scheduler::NewThread(tuple->Sel(0), // Module Closure

@@ -28,6 +28,7 @@ bool Scheduler::preempt;
 
 word Scheduler::currentArgs;
 word Scheduler::currentData;
+word Scheduler::vmGUID;
 
 void Scheduler::Timer() {
   preempt = true;
@@ -36,6 +37,7 @@ void Scheduler::Timer() {
 void Scheduler::Init() {
   threadQueue = ThreadQueue::New();
   RootSet::Add(root);
+  vmGUID = Tuple::New(4)->ToWord(); // Hack alert: to be done
 }
 
 static const char *ResultToString(Interpreter::Result result) {
@@ -79,46 +81,51 @@ void Scheduler::Run() {
 	threadQueue->Enqueue(currentThread);
 	nextThread = true;
 	break;
-      case Interpreter::RAISE: {
-      raise:
-	currentThread->SetArgs(currentArgs);
-        interpreter = taskStack->GetInterpreter();
-        result      = interpreter->Handle(currentThread->GetArgs(), taskStack);
-        goto interpretResult;
-      }
-      case Interpreter::REQUEST: {
-	Transient *transient = Store::WordToTransient(Scheduler::currentData);
-	switch (transient->GetLabel()) {
-	case HOLE_LABEL:
-	  Scheduler::currentData = Hole::holeExn;
-	  goto raise;
-	case FUTURE_LABEL:
-	  taskStack->Purge();
-	  currentThread->SetArgs(currentArgs);
-	  currentThread->SetState(Thread::BLOCKED);
-	  ((Future *) transient)->AddToWaitQueue(currentThread);
-	  nextThread = true;
-	  break;
-	case CANCELLED_LABEL:
-	  Scheduler::currentData = transient->GetArg();
-	  goto raise;
-	case BYNEED_LABEL: {
-	  TaskStack *newTaskStack = TaskStack::New();
-	  ByneedInterpreter::PushFrame(newTaskStack, transient);
-	  NewThread(transient->GetArg(), Interpreter::EmptyArg(), newTaskStack);
-	  transient->Become(FUTURE_LABEL, Store::IntToWord(0)); // empty queue
-	  currentThread->SetArgs(currentArgs);
-	  currentThread->Block(transient->ToWord());
+      case Interpreter::RAISE:
+	{
+	raise:
+	  currentThread->SetArgs(Interpreter::EmptyArg());
+	  interpreter = taskStack->GetInterpreter();
+	  result      = interpreter->Handle(currentThread->GetArgs(),
+					    taskStack);
+	  goto interpretResult;
 	}
-	  break;
-	default:
-	  Error("Scheduler::Run: invalid transient label");
-	  break;
+      case Interpreter::REQUEST:
+	{
+	  Transient *transient = Store::WordToTransient(Scheduler::currentData);
+	  switch (transient->GetLabel()) {
+	  case HOLE_LABEL:
+	    Scheduler::currentData = Hole::holeExn;
+	    goto raise;
+	  case FUTURE_LABEL:
+	    taskStack->Purge();
+	    currentThread->SetArgs(currentArgs);
+	    currentThread->SetState(Thread::BLOCKED);
+	    ((Future *) transient)->AddToWaitQueue(currentThread);
+	    nextThread = true;
+	    break;
+	  case CANCELLED_LABEL:
+	    Scheduler::currentData = transient->GetArg();
+	    goto raise;
+	  case BYNEED_LABEL:
+	    {
+	      TaskStack *newTaskStack = TaskStack::New();
+	      ByneedInterpreter::PushFrame(newTaskStack, transient);
+	      NewThread(transient->GetArg(),
+			Interpreter::EmptyArg(), newTaskStack);
+	      // empty queue
+	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
+	      currentThread->SetArgs(currentArgs);
+	      currentThread->Block(transient->ToWord());
+	    }
+	    break;
+	  default:
+	    Error("Scheduler::Run: invalid transient label");
+	    break;
+	  }
 	}
-      }
-      break;
+	break;
       case Interpreter::TERMINATE:
-	taskStack->Clear(); // now subject to garbage collection
 	currentThread->SetState(Thread::TERMINATED);
 	nextThread = true;
 	break;

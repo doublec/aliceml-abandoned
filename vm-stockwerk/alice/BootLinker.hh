@@ -40,8 +40,6 @@ public:
   static void SetTraceMode(u_int trace) {
     traceFlag = trace;
   }
-  // This should live somewhere else
-  static word ResolveUrl(Chunk *base, Chunk *rel);
   static Chunk *MakeFileName(Chunk *key);
   static word Link(Chunk *url);
   // BootLinker Static Constructor

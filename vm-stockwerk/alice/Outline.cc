@@ -16,5 +16,3 @@
 #pragma implementation "emulator/Alice.hh"
 #endif
 #include "emulator/Alice.hh"
-
-u_int GlobalStamp::hashCode = 0;

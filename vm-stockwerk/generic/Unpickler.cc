@@ -48,7 +48,7 @@
 // Streaming Classes
 //
 class InputStreamBase {
-protected:
+private:
   int hd, tl, rd, eob;
   u_char *buffer;
 public:
@@ -123,6 +123,7 @@ public:
       memcpy(buffer + tl, src, size);
       tl = newTl;
     }
+    fprintf(stderr, "AppendToBuffer: newTl=%d\n", tl);
   }
   // Buffer Handling
   virtual void Close() = 0;
@@ -141,14 +142,15 @@ public:
 // FileInputStream
 class FileInputStream : public InputStreamBase {
 private:
-  static const u_int BUFFER_SIZE = 8192;
+  static const u_int BUFFER_SIZE = 2 * 1024 * 1024 + 1;
   FILE *file;
   u_int exception;
 public:
   // FileInputStream Constructor
   FileInputStream(char *filename) : InputStreamBase() {
+    exception = 0;
     file = fopen(filename, "r");
-    if (file == INVALID_POINTER) {
+    if (file == NULL) {
       exception = 1;
     }
   }
@@ -160,10 +162,10 @@ public:
     fclose(file);
   }
   virtual Interpreter::Result FillBuffer(word args, TaskStack *taskStack) {
-    buffer = (u_char *) malloc(sizeof(u_char) * BUFFER_SIZE);
+    u_char *locBuffer = (u_char *) malloc(sizeof(u_char) * BUFFER_SIZE);
     // This is blocking
-    AppendToBuffer(buffer,
-		   (u_int) fread(buffer, sizeof(u_char), BUFFER_SIZE, file));
+    AppendToBuffer(locBuffer,
+		   (u_int) fread(locBuffer, sizeof(u_char), BUFFER_SIZE, file));
     taskStack->PopFrame();
     CONTINUE(args);
   }
@@ -229,6 +231,21 @@ public:
   }
 };
 
+// InternalTuple
+class InternalTuple : public Tuple {
+public:
+  // InternalTuple Constructor
+  static InternalTuple *New(u_int n) {
+    return (InternalTuple *) Tuple::New(n);
+  }
+  // InternalTuple Untagging
+  static InternalTuple *FromWord(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p != INVALID_POINTER && (p->GetLabel() == TUPLE_LABEL));
+    return (InternalTuple *) p;
+  }
+};
+
 // InputInterpreter
 class InputInterpreter : public Interpreter {
 private:
@@ -284,12 +301,12 @@ public:
   Transient *GetTransient() {
     return Store::WordToTransient(StackFrame::GetArg(TRANSIENT_POS));
   }
-  Tuple *GetTuple() {
-    return Tuple::FromWord(StackFrame::GetArg(TUPLE_POS));
+  InternalTuple *GetTuple() {
+    return InternalTuple::FromWord(StackFrame::GetArg(TUPLE_POS));
   }
   // TransformFrame Constructor
   static TransformFrame *New(Interpreter *interpreter,
-			     Transient *transient, Tuple *tuple) {
+			     Transient *transient, InternalTuple *tuple) {
     StackFrame *frame = StackFrame::New(TRANSFORM_FRAME, interpreter, SIZE);
     frame->ReplaceArg(TRANSIENT_POS, transient->ToWord());
     frame->ReplaceArg(TUPLE_POS, tuple->ToWord());
@@ -318,7 +335,7 @@ public:
   // Frame Handling
   static void TransformInterpreter::PushFrame(TaskStack *taskStack,
 					      Transient *transient,
-					      Tuple *tuple);
+					      InternalTuple *tuple);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
@@ -329,17 +346,18 @@ public:
 // ApplyTransform Function
 static inline
 word ApplyTransform(Chunk *f, word x) {
+  Assert(f != INVALID_POINTER);
   char *fs = f->GetBase();
   u_int len = f->GetSize();
   if ((len == sizeof("Alice.primitive.value") - 1) &&
       !strncmp(fs, "Alice.primitive.value", len)) {
     Block *xp = Store::WordToBlock(x);
-    return PrimitiveTable::LookupValue(Chunk::FromWord(xp->GetArg(1)));
+    return PrimitiveTable::LookupValue(Chunk::FromWord(xp->GetArg(0)));
   }
   else if ((len == sizeof("Alice.primitive.function") - 1) &&
 	   !strncmp(fs, "Alice.primitive.function", len)) {
     Block *xp = Store::WordToBlock(x);
-    return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(1)));
+    return PrimitiveTable::LookupFunction(Chunk::FromWord(xp->GetArg(0)));
   } else if ((len == sizeof("Alice.function") - 1) && 
 	     !strncmp(fs, "Alice.function", len)) {
     // x->AssertWidth(6);
@@ -357,7 +375,7 @@ TransformInterpreter *TransformInterpreter::self;
 
 void TransformInterpreter::PushFrame(TaskStack *taskStack,
 				     Transient *transient,
-				     Tuple *tuple) {
+				     InternalTuple *tuple) {
   TransformFrame *frame = TransformFrame::New(self, transient, tuple);
   taskStack->PushFrame(frame->ToWord());
 }
@@ -368,10 +386,10 @@ const char *TransformInterpreter::Identify() {
 
 Interpreter::Result TransformInterpreter::Run(word args, TaskStack *taskStack) {
   TransformFrame *frame = TransformFrame::FromWord(taskStack->GetFrame());
-  Transient *transient = frame->GetTransient();
-  Tuple *tuple         = frame->GetTuple();
-  Chunk *f             = Chunk::FromWord(tuple->Sel(0));
-  word x               = tuple->Sel(1);
+  Transient *transient  = frame->GetTransient();
+  InternalTuple *tuple  = frame->GetTuple();
+  Chunk *f              = Chunk::FromWord(tuple->Sel(0));
+  word x                = tuple->Sel(1);
   transient->Become(REF_LABEL, ApplyTransform(f, x));
   taskStack->PopFrame(); // Discard Frame
   CONTINUE(args);
@@ -595,10 +613,10 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
 	Set(x, i, yw);
 	AddToEnv(env, count, yw);
 	is->Commit();
-	Tuple *y2 = Tuple::New(2); // to be checked
+	InternalTuple *y2 = InternalTuple::New(2);
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleInterpreter::PushFrame(taskStack, y2->ToWord(), 0, 2);
 	TransformInterpreter::PushFrame(taskStack, y, y2);
+	UnpickleInterpreter::PushFrame(taskStack, y2->ToWord(), 0, 2);
 	CONTINUE(PickleArgs::New(is, env, count + 1)->ToWord());
       }
       break;
@@ -793,6 +811,7 @@ Interpreter::Result Unpickler::Load(char *filename, TaskStack *taskStack) {
   if (is->GotException()) {
     delete is;
     Scheduler::currentData = Store::IntToWord(0); // to be done
+    fprintf(stderr, "file '%s' not found\n", filename);
     return Interpreter::RAISE;
   }
   HashTable *env = HashTable::New(HashTable::INT_KEY, INITIAL_TABLE_SIZE);

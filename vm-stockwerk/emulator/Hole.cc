@@ -66,5 +66,5 @@ void PrimitiveTable::RegisterHole() {
   Register("Hole.future", Hole_future, -1);
   Register("Hole.hole", Hole_hole, 0);
   Register("Hole.isFailed", Hole_isFailed, -1);
-  Register("Hole.isFailed", Hole_isHole, -1);
+  Register("Hole.isHole", Hole_isHole, -1);
 }

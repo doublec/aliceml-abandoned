@@ -102,7 +102,7 @@ VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
       VectorTabulateFrame::New(this, vector, fun, (i + 1), n);
     taskStack->PushFrame(newFrame->ToWord());
     Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));
-    PushCallInterpreter::PushFrame(taskStack, fun);
+    taskStack->PushCall(fun);
     return Interpreter::CONTINUE;
   }
 }
@@ -155,7 +155,7 @@ DEFINE2(Vector_tabulate) {
     word cl = closure->ToWord();
     Vector *vector = Vector::New(length);
     VectorTabulateInterpreter::PushFrame(taskStack, vector, cl, 1, length);
-    PushCallInterpreter::PushFrame(taskStack, cl);
+    taskStack->PushCall(cl);
     RETURN_INT(0);
   }
 } END

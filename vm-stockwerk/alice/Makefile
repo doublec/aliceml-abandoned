@@ -41,10 +41,12 @@ PRIMITIVESSRCS = Primitive.cc \
                  GlobalStamp.cc \
                  Hole.cc \
                  Int.cc \
+                 LargeWord.cc \
                  List.cc \
                  Math.cc \
                  Option.cc \
                  Real.cc \
+                 Ref.cc \
                  String.cc \
                  Thread.cc \
                  Unqualified.cc \

@@ -19,7 +19,6 @@
 
 #include "emulator/RootSet.hh"
 #include "emulator/Interpreter.hh"
-#include "emulator/PushCallInterpreter.hh"
 #include "emulator/Scheduler.hh"
 #include "emulator/Unpickler.hh"
 #include "emulator/Alice.hh"
@@ -59,6 +58,29 @@ public:
     return (ModuleEntry *) p;
   }
 };
+
+// Internal Resolve
+static Chunk *ResolveUrl(Chunk *base, Chunk *rel) {
+  u_int bSize  = base->GetSize();
+  u_int rSize  = rel->GetSize();
+  char *bptr   = base->GetBase();
+  char *bmax   = strrchr(bptr, '/');
+  if (bmax == NULL) {
+    Chunk *path = Store::AllocChunk(rSize);
+    char *pptr  = path->GetBase();
+    memcpy(pptr, rel->GetBase(), rSize);
+    return path;
+  }
+  else {
+    u_int n     = (bmax - bptr);
+    Chunk *path = Store::AllocChunk(n + 1 + rSize);
+    char *pptr  = path->GetBase();
+    memcpy(pptr, bptr, n);
+    pptr[n] = '/';
+    memcpy(pptr + n + 1, rel->GetBase(), rSize);
+    return path;
+  }
+}
 
 //
 // Interpreter Classes
@@ -285,12 +307,13 @@ Interpreter::Result ApplyInterpreter::Run(word args, TaskStack *taskStack) {
     Tuple *t = Tuple::FromWord(imports->Sub(i));
     Assert(t != INVALID_POINTER);
     t->AssertWidth(2);
-    word key2 = BootLinker::ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
+    Chunk *key2 = ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
     ModuleEntry *entry =
-      ModuleEntry::FromWord(BootLinker::GetModuleTable()->GetItem(key2));
+      ModuleEntry::FromWord(BootLinker::GetModuleTable()->
+			    GetItem(key2->ToWord()));
     modules->Init(i, entry->GetModule());
   }
-  PushCallInterpreter::PushFrame(taskStack, bodyclosure);
+  //  taskStack->PushCall(bodyclosure);
   CONTINUE(Interpreter::OneArg(modules->ToWord()));
 }
 
@@ -349,40 +372,45 @@ Interpreter::Result LinkInterpreter::Run(word args, TaskStack *taskStack) {
   args = Interpreter::Construct(args);
   TagVal *targs = TagVal::FromWord(args);
   Assert(targs != INVALID_POINTER);
-  // Evaluated Component
-  if ((COMPONENT) targs->GetTag() == EVALUATED) {
-    targs->AssertWidth(2);
-    word sign = targs->Sel(0);
-    word x    = targs->Sel(1);
-    EnterInterpreter::PushFrame(taskStack, key, sign);
-    CONTINUE(Interpreter::OneArg(x));
-  }
-  // Unevaluated Component
-  else {
-    targs->AssertWidth(3);
-    word bodyclosure = targs->Sel(0);
-    word imports     = targs->Sel(1);
-    word sign        = targs->Sel(2);
-    Chunk *key      = Store::WordToChunk(targs->Sel(2));
-    // Add EnterFrame
-    EnterInterpreter::PushFrame(taskStack, key, sign);
-    // Add ApplyFrame
-    ApplyInterpreter::PushFrame(taskStack, bodyclosure, imports, key);
-    // Add the Load Frames of Imports: string * sign vector
-    Vector *iv = Vector::FromWord(imports);
-    Assert(iv != INVALID_POINTER);
-    for (u_int i = iv->GetLength(); i--;) {
-      Tuple *t = Tuple::FromWord(iv->Sub(i));
-      Assert(t != INVALID_POINTER);
-      t->AssertWidth(2);
-      Chunk *key2 =
-	Store::WordToChunk(BootLinker::ResolveUrl(key,
-						Store::WordToChunk(t->Sel(0))));
-      if (!BootLinker::GetModuleTable()->IsMember(key2->ToWord())) {
-	LoadInterpreter::PushFrame(taskStack, key2);
-      }
+  switch ((COMPONENT) targs->GetTag()) {
+  case EVALUATED:
+    {
+      targs->AssertWidth(2);
+      word sign = targs->Sel(0);
+      word x    = targs->Sel(1);
+      EnterInterpreter::PushFrame(taskStack, key, sign);
+      CONTINUE(Interpreter::OneArg(x));
     }
-    CONTINUE(Interpreter::EmptyArg());
+    break;
+  case UNEVALUATED:
+    {
+      targs->AssertWidth(3);
+      word bodyclosure = targs->Sel(0);
+      word imports     = targs->Sel(1);
+      word sign        = targs->Sel(2);
+      // Add EnterFrame
+      EnterInterpreter::PushFrame(taskStack, key, sign);
+      // Add ApplyFrame
+      ApplyInterpreter::PushFrame(taskStack, bodyclosure, imports, key);
+      // Add the Load Frames of Imports: string * sign vector
+      Vector *iv = Vector::FromWord(imports);
+      Assert(iv != INVALID_POINTER);
+      for (u_int i = iv->GetLength(); i--;) {
+	Tuple *t = Tuple::FromWord(iv->Sub(i));
+	Assert(t != INVALID_POINTER);
+	t->AssertWidth(2);
+	Chunk *rel  = Store::WordToChunk(t->Sel(0));
+	Chunk *key2 = ResolveUrl(key, rel);
+	if (!BootLinker::GetModuleTable()->IsMember(key2->ToWord())) {
+	  LoadInterpreter::PushFrame(taskStack, key2);
+	}
+      }
+      CONTINUE(Interpreter::EmptyArg());
+    }
+    break;
+  default:
+    Assert(0);
+    CONTINUE(args);
   }
 }
 
@@ -447,35 +475,13 @@ void BootLinker::Init(char *home, prim_table *builtins) {
 }
 
 void BootLinker::Print(Chunk *c) {
-  fprintf(stderr, "'%*s'\n", c->GetSize(), c->GetBase());
+  fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
 }
 
 void BootLinker::Trace(const char *prefix, Chunk *key) {
   if (traceFlag) {
-    fprintf(stderr, "%s '%*s'\n", prefix, key->GetSize(), key->GetBase());
+    fprintf(stderr, "%s '%.*s'\n", prefix, (int) key->GetSize(), key->GetBase());
   }
-}
-
-word BootLinker::ResolveUrl(Chunk *base, Chunk *rel) {
-  // Assumes 0x00 terminated strings
-  u_int bSize  = base->GetSize();
-  u_int rSize  = rel->GetSize();
-  Chunk *path  = Store::AllocChunk(bSize + rSize + 2);
-  char *pptr   = path->GetBase();
-  char *bptr   = base->GetBase();
-  char *bmax   = strchr(bptr, '/');
-  if (bmax == INVALID_POINTER) {
-    strncpy(pptr, bptr, bSize);
-    pptr[bSize] = 0x00;
-  }
-  else {
-    u_int n = (bmax - bptr);
-    strncpy(pptr, bmax, bmax - bptr);
-    pptr[n] = 0x00;
-  }
-  strcat(pptr, "/");
-  strcat(pptr, rel->GetBase());
-  return path->ToWord();
 }
 
 Chunk *BootLinker::MakeFileName(Chunk *key) {
@@ -489,7 +495,6 @@ Chunk *BootLinker::MakeFileName(Chunk *key) {
   base[hSize + kSize] = (char) 0x00;
   strcat(base, ".stc");
   base[hSize + kSize + 4] = (char) 0x00;
-  fprintf(stderr, "MakeFileName: result:");
   Print(path);
   return path;
 }

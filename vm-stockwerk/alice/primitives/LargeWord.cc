@@ -12,7 +12,8 @@
 //   $Revision$
 //
 
-#if defined(INTERFACE)
-#pragma implementation "emulator/Alice.hh"
-#endif
-#include "emulator/Alice.hh"
+#include "emulator/Authoring.hh"
+
+void PrimitiveTable::RegisterLargeWord() {
+  Register("LargeWord.wordSize", Store::IntToWord(31));
+}

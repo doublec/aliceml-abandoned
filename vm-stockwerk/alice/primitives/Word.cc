@@ -22,6 +22,13 @@
     RETURN_INT(i op j);				\
   } END
 
+#define WORD_WORD_TO_BOOL_OP(name, op)		\
+  DEFINE2(name) {				\
+    DECLARE_INT(i, x0);				\
+    DECLARE_INT(j, x1);				\
+    RETURN_BOOL(i op j);			\
+  } END
+
 //--** operations can be implemented more efficiently by not right-shifting!
 //--** else topmost bit has to be truncated (or assertions fail)
 
@@ -29,6 +36,10 @@ WORD_WORD_TO_WORD_OP(Word_opadd, +)
 WORD_WORD_TO_WORD_OP(Word_opsub, -)
 WORD_WORD_TO_WORD_OP(Word_opmul, *)
 WORD_WORD_TO_WORD_OP(Word_opshl, <<)
+WORD_WORD_TO_BOOL_OP(Word_opless, <)
+WORD_WORD_TO_BOOL_OP(Word_opgreater, >)
+WORD_WORD_TO_BOOL_OP(Word_oplessEq, <=)
+WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 
 DEFINE2(Word_opshr) {
   DECLARE_INT(i, x0);
@@ -58,8 +69,18 @@ DEFINE2(Word_div) {
 } END
 
 DEFINE2(Word_fromIntQuote) { //--** should be fromInt (not Quote)
-  DECLARE_INT(i, x0);
-  RETURN(x0);
+  DECLARE_INT(i, x1);
+  RETURN(x1);
+} END
+
+DEFINE2(Word_fromWordQuote) { //--** size?
+  DECLARE_INT(w, x1);
+  RETURN(x1);
+} END
+
+DEFINE2(Word_fromWordXQuote) { //--** size?
+  DECLARE_INT(w, x1);
+  RETURN(x1);
 } END
 
 WORD_WORD_TO_WORD_OP(Word_mod, %)
@@ -97,12 +118,18 @@ void PrimitiveTable::RegisterWord() {
   Register("Word.+", Word_opadd, 2);
   Register("Word.-", Word_opsub, 2);
   Register("Word.*", Word_opmul, 2);
+  Register("Word.<", Word_opless, 2);
+  Register("Word.>", Word_opgreater, 2);
+  Register("Word.<=", Word_oplessEq, 2);
+  Register("Word.>=", Word_opgreaterEq, 2);
   Register("Word.<<", Word_opshl, 2);
   Register("Word.>>", Word_opshr, 2);
   Register("Word.~>>", Word_oparithshr, 2);
   Register("Word.andb", Word_andb, 2);
   Register("Word.div", Word_div, 2);
   Register("Word.fromInt'", Word_fromIntQuote, 2);
+  Register("Word.fromWord'", Word_fromWordQuote, 2);
+  Register("Word.fromWordX'", Word_fromWordXQuote, 2);
   Register("Word.mod", Word_mod, 2);
   Register("Word.notb", Word_notb, -1);
   Register("Word.orb", Word_orb, 2);

@@ -31,8 +31,7 @@ public:
     Cell         = MIN_DATA_LABEL + 1,
     Constructor  = MIN_DATA_LABEL + 2,
     ConVal       = MIN_DATA_LABEL + 3,
-    GlobalStamp  = MIN_DATA_LABEL + 4,
-    Vector       = MIN_DATA_LABEL + 5,
+    Vector       = MIN_DATA_LABEL + 4,
     FIRST_LABEL  = Array,
     LAST_LABEL   = Vector,
 
@@ -46,7 +45,7 @@ public:
   }
   static bool IsTag(BlockLabel l) {
     u_int i = static_cast<u_int>(l);
-    return i >= MAX_TAG && i <= MIN_TAG;
+    return i >= MIN_TAG && i <= MAX_TAG;
   }
   static u_int LabelToTag(BlockLabel l) {
     Assert(IsTag(l));
@@ -327,49 +326,6 @@ public:
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
     return static_cast<UniqueConstructor *>(b);
-  }
-};
-
-class GlobalStamp: private Block {
-private:
-  static const u_int HASH_CODE_POS = 0;
-  static const u_int NAME_POS = 1;
-  static const u_int SIZE = 2;
-
-  static u_int hashCode;
-public:
-  using Block::ToWord;
-
-  static GlobalStamp *New() {
-    Block *b =
-      Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
-    b->InitArg(HASH_CODE_POS, hashCode++);
-    return static_cast<GlobalStamp *>(b);
-  }
-  static GlobalStamp *New(String *name) {
-    Block *b =
-      Store::AllocBlock(Alice::ToBlockLabel(Alice::GlobalStamp), SIZE);
-    b->InitArg(HASH_CODE_POS, hashCode++);
-    b->InitArg(NAME_POS, name->ToWord());
-    return static_cast<GlobalStamp *>(b);
-  }
-  static GlobalStamp *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == Alice::ToBlockLabel(Alice::GlobalStamp));
-    return static_cast<GlobalStamp *>(b);
-  }
-  static GlobalStamp *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == Alice::ToBlockLabel(Alice::GlobalStamp));
-    return static_cast<GlobalStamp *>(b);
-  }
-
-  u_int GetHashCode() {
-    return Store::DirectWordToInt(GetArg(HASH_CODE_POS));
-  }
-  String *GetName() {
-    return String::FromWordDirect(GetArg(NAME_POS));
   }
 };
 

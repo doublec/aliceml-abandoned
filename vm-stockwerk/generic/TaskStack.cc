@@ -16,6 +16,7 @@
 #pragma implementation "emulator/TaskStack.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/RootSet.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Interpreter.hh"
@@ -38,6 +39,7 @@ public:
 
 Interpreter::Result EmptyTaskInterpreter::Handle(word, TaskStack *) {
   //--** output information about the unhandled exception
+  fprintf(stderr, "uncaught exception\n");
   return Interpreter::TERMINATE;
 }
 

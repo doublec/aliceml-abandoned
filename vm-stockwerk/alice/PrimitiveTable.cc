@@ -49,15 +49,17 @@ void PrimitiveTable::Init() {
   RegisterGlobalStamp();
   RegisterHole();
   RegisterInt();
+  RegisterLargeWord();
   RegisterList();
   RegisterMath();
   RegisterOption();
   RegisterReal();
+  RegisterRef();
   RegisterString();
   RegisterThread();
   RegisterUnsafe();
   RegisterVector();
-  RegisterWord();
+  RegisterWord(); 
 }
 
 void PrimitiveTable::Register(const char *name, word value) {
@@ -87,6 +89,7 @@ void PrimitiveTable::RegisterUniqueConstructor(const char *name) {
 
 
 word PrimitiveTable::Lookup(word table, Chunk *name) {
+  Assert(name != INVALID_POINTER);
   word key = name->ToWord();
   HashTable *t = HashTable::FromWordDirect(table);
   if (!t->IsMember(key)) {

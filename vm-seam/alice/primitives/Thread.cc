@@ -69,6 +69,7 @@ DEFINE0(Thread_yield) {
 
 void PrimitiveTable::RegisterThread() {
   RegisterUniqueConstructor("Thread.Terminate");
+  RegisterUniqueConstructor("Thread.Terminated");
   Register("Thread.current", Thread_current, 0);
   Register("Thread.isSuspended", Thread_isSuspended, -1);
   Register("Thread.raiseIn", Thread_raiseIn, 2);
