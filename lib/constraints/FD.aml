@@ -15,7 +15,7 @@ import structure UnsafeFD from "UnsafeFD"
 import signature FD       from "FD-sig"
 import structure Foreign  from "x-alice:/lib/system/Foreign"
 
-structure FD :> FD =
+structure FD : FD =
     struct
 	type fd
 	type bin = fd

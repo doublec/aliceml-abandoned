@@ -5,7 +5,7 @@
 
   <PRE>
     signature FS
-    structure FS : FS</PRE>
+    structure FS : FS where type fd = FD.fd</PRE>
 
   <P>
     The <TT>FS</TT> structure provides access to finite set variables and
@@ -36,6 +36,7 @@
   <PRE>
     signature FS =
     sig
+	type fd
 	type fs
 
 	exception Tell = FD.Tell
@@ -116,6 +117,13 @@
 <?php section("description", "description"); ?>
 
   <DL>
+    <DT>
+      <TT>type fs</TT>
+    </DT>
+    <DD>
+      <P>The type of finite domain variables.
+    </P></DD>
+
     <DT>
       <TT>type fs</TT>
     </DT>

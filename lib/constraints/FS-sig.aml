@@ -18,6 +18,7 @@ local
 in
     signature FS =
 	sig
+	    type fd
 	    type fs
 
 	    exception Tell of {cause : exn} (* = FD.Tell *)

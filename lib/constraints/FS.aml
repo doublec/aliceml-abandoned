@@ -18,8 +18,9 @@ import signature FS       from "FS-sig"
 local
     open FD
 in
-    structure FS :> FS =
+    structure FS : FS =
 	struct
+	    type fd = fd
 	    type fs
 
 	    exception Tell = FD.Tell
