@@ -14,7 +14,7 @@
  *)
 
 import structure TextIO   from "../lib/system/TextIO"
-import structure Home     from "../lib/system/Home"
+import structure Config   from "../lib/system/Config"
 import structure Url      from "../lib/utility/Url"
 import signature ANALYZER from "ANALYZER-sig"
 
@@ -33,10 +33,12 @@ functor MkAnalyzer(structure Parser: PARSER
 		    NONE =>
 			let
 			    val home =
-				case OS.Process.getEnv (Home.homeEnv) of
+				case Config.homeDir of
 				    SOME s => s ^ "/"
-				  | NONE => (warn (Home.homeEnv ^ " not set");
-					     "")
+				  | NONE =>
+					(warn ("could not determine " ^
+					       "installation directory");
+					 "")
 			in
 			    homeref := SOME home; home
 			end

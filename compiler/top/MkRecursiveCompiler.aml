@@ -23,8 +23,8 @@ import
 from "../../lib/system/OS"
 
 import
-    structure Home
-from "../../lib/system/Home"
+    structure Config
+from "../../lib/system/Config"
 
 import
     structure UnsafePickle
@@ -102,10 +102,12 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		    NONE =>
 			let
 			    val home =
-				case OS.Process.getEnv (Home.homeEnv) of
+				case Config.homeDir of
 				    SOME s => s ^ "/"
-				  | NONE => (warn (Home.homeEnv ^ " not set");
-					     "")
+				  | NONE =>
+					(warn ("could not determine " ^
+					       "installation directory");
+					 "")
 			in
 			    homeref := SOME home; home
 			end
