@@ -66,6 +66,12 @@
   </TABLE>
   </TT>
 
+  <P><TT>lib/distribution</TT>:</P>
+
+  <TABLE>
+    <TR> <TD><A href="remote.php3"><TT>REMOTE</TT></A></TD> </TR>
+  </TABLE>
+
 <?php section("structures", "structures") ?>
 
   <P><TT>lib/fundamental</TT>:</P>
@@ -127,6 +133,12 @@
     <TR> <TD><A href="url.php3">Url</A></TD> </TR>
   </TABLE>
   </TT>
+
+  <P><TT>lib/distribution</TT>:</P>
+
+  <TABLE>
+    <TR> <TD><A href="remote.php3"><TT>Remote</TT></A></TD> </TR>
+  </TABLE>
 
 <?php section("functors", "functors") ?>
 
