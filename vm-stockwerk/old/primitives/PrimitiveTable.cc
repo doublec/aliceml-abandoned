@@ -48,6 +48,7 @@ void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
 }
 
 void PrimitiveInterpreter::PopFrame(TaskStack *taskStack) {
+  //--** this is not correct for Vector_tabulate_cont and Internal_bind!
   taskStack->PopFrame(1);
 }
 
