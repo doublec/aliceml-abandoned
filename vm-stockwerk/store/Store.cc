@@ -497,7 +497,7 @@ void Store::HandleBlockHashTables() {
     // Get current Table ptr
     if (GCHelper::AlreadyMoved(p))
       p = GCHelper::GetForwardPtr(p);
-    else if (HeaderOp::DecodeGeneration(p) < hdrGen) // was dstGen; to be done
+    else if (HeaderOp::DecodeGeneration(p) < dstGen)
       p = INVALID_POINTER;
     // Do rehash only if table is alive
     if (p != INVALID_POINTER) {
@@ -561,8 +561,6 @@ inline void Store::DoGC(word &root, const u_int gen) {
     item = Store::ForwardWord(item);
     root_set->InitArg(i, item);
   }
-  // Copy BlockHashTable if appropriate
-  BlockHashTable::tables = ForwardWord(BlockHashTable::tables);
   // Scanning chunks (root_set amount)
   Store::CheneyScan(chunk, scan);
   // Obtain new scan start (to scan intgen set stuff)
