@@ -22,14 +22,14 @@ import java.rmi.RemoteException;
 
 public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
-    public DMLValue tail = null;
+    //    public DMLValue tail = null;
 
     protected NoGood ng = null;
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
      *  die der java.lang.Thread ausführt.
      *  Die Funktion sollte den Typ fcn : unit -> 'a haben.
      */
-    final public DMLValue fcn;
+    public DMLValue fcn;
 
     /** Gesamtzahl de.uni_sb.ps.dml.runtime.Threads */
     public static int totalNumber=0;
@@ -54,15 +54,15 @@ public class Thread extends java.lang.Thread implements DMLValue {
      *  verworfen.
      */
     public void run() {
-	DMLValue v = null;
-	DMLValue t = null;
+	//	DMLValue v = null;
+	//	DMLValue t = null;
 	try {
-	    v = fcn.apply0();
-	    while(tail != null) {
-		t = tail;
-		tail = null;
-		v = t.apply(v);
-	    }
+	    fcn.apply0();
+//  	    while(tail != null) {
+//  		t = tail;
+//  		tail = null;
+//  		v = t.apply(v);
+//  	    }
 	} catch (RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();

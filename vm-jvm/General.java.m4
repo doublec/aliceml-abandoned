@@ -261,7 +261,8 @@ final public class General {
 
 	final public static DMLValue apply(java.lang.String name,
 					   DMLValue val1,
-					   DMLValue val2) throws java.rmi.RemoteException {
+					   DMLValue val2)
+	    throws java.rmi.RemoteException {
 	    java.util.zip.GZIPOutputStream zip = null;
 	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;

@@ -64,8 +64,6 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
     }
 
     public void run() {
-	DMLValue v = null;
-	DMLValue t = null;
 	long time = 0l;
 	try {
 	    FileInputStream fin = new FileInputStream(filename);
@@ -80,23 +78,19 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    if (showtime) {
 		time = System.currentTimeMillis();
 	    }
-	    t = ((Record) r).get("main");
-	    if (t==null) {
+	    fcn = ((Record) r).get("main");
+	    if (fcn == null) {
 		System.err.println("No main function defined.");
 		System.exit(1);
 	    }
-	    v=t.apply(arglist);
-	    while (tail!=null) {
-		t = tail;
-		tail = null;
-		v=t.apply(v);
-	    }
+	    fcn.apply(arglist);
 	}catch (FileNotFoundException f) {
 	    System.err.println("Could not find: " + filename);
 	    System.exit(1);
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
+
 	if (showtime) {
 	    System.out.println("Execution time [ms]: "+ (System.currentTimeMillis() - time));
 	}
@@ -110,6 +104,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    (new Exec(args)).start();
 	}
     }
+
     private static void usage() {
 	System.out.println("Exec usage:\n java Exec [ts] <filename> [runtimeargs]\n\tt : show execution time\n\ts : show content of pickle\n\tfilename : we try filename and filename.pickle");
     }
