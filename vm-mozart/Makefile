@@ -413,7 +413,7 @@ build1/compiler/frontend-sml/PARSER-sig.aml: \
 	build1/compiler/frontend-sml/Parser.grm.sig \
 	Rel2.import compiler/frontend-sml/PARSER-sig.aml.header fixparser.awk
 	(cat Rel2.import $(SRCTOP)/compiler/frontend-sml/PARSER-sig.aml.header && \
-	 awk -f fixparser.awk < $<) > $@ || rm $@
+	 awk -f $(SRCTOP)/fixparser.awk < $<) > $@ || rm $@
 
 build1/compiler/frontend-sml/Parser.aml: \
 	build1/compiler/frontend-sml/Parser.grm.sml \
