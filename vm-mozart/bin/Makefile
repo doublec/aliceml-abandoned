@@ -20,11 +20,11 @@ alicec.exe: $(FILEOBJS)
         alicex.cc $(FILEOBJS) -o alicec.exe
 
 alicelink.exe: $(FILEOBJS)
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/linker/Main"' \
+	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Linker"' \
         alicex.cc $(FILEOBJS) -o alicelink.exe
 
 alicedep.exe: $(FILEOBJS)
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/depend/Main"' \
+	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Depend"' \
         alicex.cc $(FILEOBJS) -o alicedep.exe
 
 %.o: %.cc
