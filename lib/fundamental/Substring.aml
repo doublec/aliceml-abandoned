@@ -56,9 +56,10 @@ struct
       | getc (s,i,n)		= SOME (String.sub(s, i), (s, i+1, n-1))
     fun first ss		= Option.map #1 (getc ss)
 
+    fun Int_min(i, j)		= if i < j then i else j
     fun Int_max(i, j)		= if i > j then i else j
     fun triml k (s,i,n)		= if k < 0 then raise General.Subscript else
-				  (s, i+k, Int_max(n-k, 0))
+				  (s, i + Int_min(k, n), Int_max(n-k, 0))
     fun trimr k (s,i,n)		= if k < 0 then raise General.Subscript else
 				  (s, i, Int_max(n-k, 0))
 
