@@ -140,7 +140,7 @@ structure Buffer =
 	      else ()
 	  end
 
-      fun insertText id (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length]) =
+      fun insertText' (id, (buf,[Gtk.INT off, Gtk.STRING txt, Gtk.INT length])) =
           let
               val {undo,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
           in
@@ -163,7 +163,9 @@ structure Buffer =
 		  Gtk.textBufferInsert(buf, startiter, indent, ~1)
 	      end
           end
-        | insertText _ _ = print "Gtk is crazy: insert"
+        | insertText' _ = print "Gtk is crazy: insert"
+
+      fun insertText id args = Lock.sync Core.lock insertText' (id,args)
 
       fun userAction (id,begin) _ =
           let
@@ -185,6 +187,8 @@ structure Buffer =
                                                startiter,enditer,
                                                false))
           end
+
+      fun getSelection id = Lock.sync Core.lock getSelection id
 
       fun doIndent(buf, line, endline, indent) =
 	  if line > endline then ()
@@ -247,6 +251,8 @@ structure Buffer =
 	      selectWholeLines buf;
 	      Gtk.textBufferEndUserAction buf
 	  end
+
+      fun indentSelection args = Lock.sync Core.lock indentSelection args
 
       fun setUndoSaveMarker undo =
 	  undo := SAVE_MARKER::List.filter (fn x => x<>SAVE_MARKER) (!undo)
@@ -328,7 +334,8 @@ structure Buffer =
 	  in
 	      highlightActive := active;
 	      if active then
-		  Promise.fulfill(!highlight, SOME 0)
+		  (Promise.fulfill (!highlight, SOME 0)
+		   handle Promise.Promise => ())
 	      else
 		  let
 		      val startiter = Gtk.textIterNew()
@@ -341,6 +348,8 @@ structure Buffer =
 		  end
 		  
 	  end
+
+      fun setSyntaxHighlighting arg = Lock.sync Core.lock setSyntaxHighlighting arg
 
       fun getBufferByName f =
 	  case BufferMap.find
@@ -430,6 +439,8 @@ structure Buffer =
               ret
           end
 
+      fun buffer arg = Lock.sync Core.lock buffer arg
+
       fun close id =
           let
               val {file,buf,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -468,6 +479,7 @@ structure Buffer =
                              else ();
                              true)
           end
+      fun save arg = Lock.sync Core.lock save arg
 
       fun saveAs (id, fileName) =
           let
@@ -519,7 +531,7 @@ structure Buffer =
 		(Gtk.textIterSetOffset(iter, 0);
 		 find' (iter, 0, txt, caseSensitive, true)))
 
-      fun find id txt caseSensitive =
+      fun find(id, txt, caseSensitive) =
           let
               val {view,buf,lastSearchPos,...} = BufferMap.lookupExistent(bufferMap, id)
               val iter = getCursorIter buf
@@ -541,6 +553,8 @@ structure Buffer =
               else false
           end
 
+      fun find arg = Lock.sync Core.lock find arg
+
       fun replace(id, replaceString) =
           let
               val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
@@ -553,6 +567,8 @@ structure Buffer =
 	      Gtk.textBufferInsert(buf, startiter, replaceString, ~1);
 	      Gtk.textBufferEndUserAction buf
           end
+
+      fun replace arg = Lock.sync Core.lock replace arg
 
       fun changeFonts() =
           BufferMap.app (fn {view,...} =>

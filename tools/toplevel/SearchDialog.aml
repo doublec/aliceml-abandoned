@@ -107,7 +107,7 @@ structure SearchDialog =
             in
 		if txt = "" then ()
 		else let
-		    val found = Buffer.find id txt caseSensitive
+		    val found = Buffer.find (id, txt, caseSensitive)
 		in
 		    if found andalso !isReplace then
 			(Gtk.windowSetModal(searchDialog, true);

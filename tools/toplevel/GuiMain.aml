@@ -85,11 +85,14 @@ structure GuiMain =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-                val startiter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetStartIter(buf,startiter)
-                val enditer = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetEndIter(buf,enditer)
-                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+		val str = Lock.sync Core.lock
+		    (fn () => let
+		     val startiter = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetStartIter(buf,startiter)
+		     val enditer = Gtk.textIterNew()
+		     val _ = Gtk.textBufferGetEndIter(buf,enditer)
+		     in Gtk.textBufferGetText(buf, startiter, enditer, false)
+		     end) ()
                 val str = Core.utf8ToLatin1 str
             in
                 eval true str
@@ -103,16 +106,24 @@ structure GuiMain =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-                val startiter = Gtk.textIterNew()
-                val enditer = Gtk.textIterNew()
-                val sel = Gtk.textBufferGetSelectionBounds(buf,
-                                                           startiter,enditer)
-                val startline = 1 + Gtk.textIterGetLine startiter
+
+		val (sel, startline, txt) =
+		    Lock.sync Core.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.textIterNew()
+		     val enditer = Gtk.textIterNew()
+		     in
+			 (Gtk.textBufferGetSelectionBounds(buf,
+                                                           startiter,enditer),
+			  1 + Gtk.textIterGetLine startiter,
+			  Gtk.textBufferGetText(buf,
+						startiter, enditer, false))
+		     end) ()
             in
                 if sel
                 then eval true (addNewlines(startline,
-                                       Core.utf8ToLatin1
-                                           (Gtk.textBufferGetText(buf, startiter, enditer, false))))
+					    Core.utf8ToLatin1 txt))
                 else ()
             end
                                  | _ => ()
@@ -121,14 +132,21 @@ structure GuiMain =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-                val startiter = Buffer.getCursorIter buf
-                val startline = 1 + Gtk.textIterGetLine startiter
-                val enditer = Gtk.textIterCopy(startiter)
-                val _ = Gtk.textIterSetLineOffset(startiter, 0)
-                val _ = Gtk.textIterForwardToLineEnd(enditer)
+		    
+		val (startline, str) = Lock.sync Core.lock
+		    (fn () =>
+		     let
+			 val startiter = Buffer.getCursorIter buf
+			 val enditer = Gtk.textIterCopy(startiter)
+		     in
+			 Gtk.textIterSetLineOffset(startiter, 0);
+			 Gtk.textIterForwardToLineEnd(enditer);
+			 (1 + Gtk.textIterGetLine startiter,
+			  Gtk.textBufferGetText(buf,
+						startiter, enditer, false))
+		     end) ()
                 val str = addNewlines(startline,
-                                      Core.utf8ToLatin1
-                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
+                                      Core.utf8ToLatin1 str)
             in
                 eval true str
             end
@@ -198,19 +216,26 @@ structure GuiMain =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-		val startiter = Gtk.textIterNew()
-		val enditer = Gtk.textIterNew()
-                val (startiter, enditer) = 
-		    if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
-		    then (startiter, enditer)
-		    else let val (start,endd) = paragraphIters(buf)
-		         in Buffer.selectRange(buf, start, endd);
-			    (start,endd)
-			 end
-                val startline = Gtk.textIterGetLine startiter
+
+		val (startline, str) = Lock.sync Core.lock
+		    (fn () =>
+		     let
+		     val startiter = Gtk.textIterNew()
+		     val enditer = Gtk.textIterNew()
+		     val (startiter, enditer) = 
+			 if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
+			     then (startiter, enditer)
+			 else let val (start,endd) = paragraphIters(buf)
+			      in Buffer.selectRange(buf, start, endd);
+				  (start,endd)
+			      end
+		     in
+			 (Gtk.textIterGetLine startiter,
+			  Gtk.textBufferGetText(buf, startiter, enditer, false))
+		     end) ()
+
                 val str = addNewlines(startline,
-                                      Core.utf8ToLatin1
-                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
+                                      Core.utf8ToLatin1 str)
             in
                 eval true (str^"\n")
             end
@@ -298,12 +323,18 @@ structure GuiMain =
         fun markSet (buf,_) =
             let
                 val cursor = Gtk.textBufferGetInsert buf
-                val iter = Gtk.textIterNew()
-                val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
+		val (startline, offset) = Lock.sync Core.lock
+		    (fn () =>
+		     let
+			 val iter = Gtk.textIterNew()
+		     in
+			 Gtk.textBufferGetIterAtMark(buf,iter,cursor);
+			 (1 + Gtk.textIterGetLine iter,
+			  Gtk.textIterGetLineOffset iter)
+		     end) ()
             in
                 Stream.send(OutputWriters.rowCol,
-                            (1 + Gtk.textIterGetLine iter,
-                             Gtk.textIterGetLineOffset iter))
+                            (startline, offset))
             end
 
 	val notebookSwitchEventIdP = Promise.promise()
@@ -525,6 +556,8 @@ structure GuiMain =
             end
 	    end
 
+	fun jumpToError x = Lock.sync Core.lock jumpToError x
+
         fun findErrorStart' (iter, tag) =
             if Gtk.textIterHasTag(iter, tag) then
                 (Gtk.textIterBackwardChar iter; findErrorStart' (iter, tag))
@@ -602,6 +635,8 @@ structure GuiMain =
             end
           | populatePopup _ = print "Gtk is crazy\n"
 
+	fun populatePopup x = Lock.sync Core.lock populatePopup x
+
 	fun jumpToLastError () =
 	    let
 		val buf = Gtk.textViewGetBuffer Gui.compilerout
@@ -620,6 +655,8 @@ structure GuiMain =
 		    NONE => ()
 		  | SOME coords => jumpToError coords ()
 	    end
+
+	val jumpToLastError = Lock.sync Core.lock jumpToLastError
 
 	fun indentSelection indent =
 	    case getCurrentPage() of NONE => ()
