@@ -38,7 +38,7 @@ static inline void InitStore() {
 }
 
 // Public Functions
-u_int RegisterAtom(char *s) {
+u_int RegisterAtom(const char *s) {
   return Interpreter::RegisterAtom(s);
 }
 

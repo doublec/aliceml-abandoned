@@ -16,7 +16,7 @@
 #include "adt/Stack.hh"
 
 // External Helper Functions
-extern u_int RegisterAtom(char *s);
+extern u_int RegisterAtom(const char *s);
 extern char *AtomToString(u_int name);
 extern u_int GlobalAlloc(u_int name);
 extern int SearchGlobal(u_int name);
@@ -37,6 +37,7 @@ typedef enum {
   T_LAMBDA,
   T_APPLICATION,
   T_APPLY,
+  T_TAILAPPLY,
   T_LET,
   T_DECLARR,
   T_EXPRARR,
@@ -77,9 +78,11 @@ typedef enum {
   OP_TIME,
   OP_GC,
   OP_GENGC,
+  OP_SETGC,
   OP_SHOWLIST,
   OP_EXIT,
-  OP_MEMSTAT
+  OP_MEMSTAT,
+  OP_SKIP
 } PrimType;
 
 // Global Helper Nodes
@@ -181,7 +184,7 @@ public:
   char *GetString() { return GetBase(); }
   u_int Length()    { return GetSize(); }
 
-  static StringCoreNode *New(char *str) {
+  static StringCoreNode *New(const char *str) {
     int len  = (strlen(str) + 1);
     Chunk *b = Store::AllocChunk(len);
     char *ar = b->GetBase();
@@ -207,7 +210,7 @@ public:
   char *GetString() { return StringCoreNode::FromWord(GetArg(STRING_POS))->GetString(); }
   u_int Length()    { return StringCoreNode::FromWord(GetArg(STRING_POS))->Length(); }
 
-  static StringNode *New(char *str) {
+  static StringNode *New(const char *str) {
     Block *p = Store::AllocBlock((BlockLabel) T_STRING, SIZE);
 
     p->InitArg(STRING_POS, StringCoreNode::New(str)->ToWord());
@@ -262,7 +265,7 @@ public:
     return (IdNode *) p;
   }
 
-  static Block *New(char *s) {
+  static Block *New(const char *s) {
     Block *p = Store::AllocBlock((BlockLabel) T_ID, SIZE);
 
     p->InitArg(NAME_POS, RegisterAtom(s));
@@ -511,6 +514,12 @@ public:
     p->InitArg(EXPRARR_POS, exprarr);
     p->InitArg(TAIL_POS, tail);
     return p;
+  }
+  static Block *FromLambda(word lamba) {
+    Block *arr = Store::AllocBlock((BlockLabel) T_EXPRARR, 1);
+
+    arr->ReplaceArg(0, lamba);
+    return New(arr->ToWord(), 0);
   }
   static ApplicationNode *FromBlock(Block *x) {
     return (ApplicationNode *) x;
@@ -769,7 +778,7 @@ class AtomDictionary : private EnlargableArray {
 public:
   using Block::ToWord;
 
-  u_int FromString(char *s) {
+  u_int FromString(const char *s) {
     Block *arr = GetArray();
 
     for (int i = GetTop(); i--;) {
