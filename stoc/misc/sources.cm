@@ -17,10 +17,3 @@ Group is
     MakeHashScopedImpSet.sml
     MakeHashScopedImpMap.sml
     StringHashKey.sml
-
-    CRASH.sig
-    Crash.sml
-    SOURCE.sig
-    Source.sml
-    ERROR.sig
-    Error.sml

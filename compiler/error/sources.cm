@@ -1,26 +1,10 @@
 Group is
 
-    (* Utilities *)
-
-    MISC.sig
-    Misc.sml
-    STAMP.sig
-    MakeStamp.sml
-
-    HASH_KEY.sig
-    IMP_SET.sig
-    IMP_MAP.sig
-    SCOPED_IMP_SET.sig
-    SCOPED_IMP_MAP.sig
-    MakeHashImpSet.sml
-    MakeHashImpMap.sml
-    MakeHashScopedImpSet.sml
-    MakeHashScopedImpMap.sml
-    StringHashKey.sml
-
     CRASH.sig
     Crash.sml
+
     SOURCE.sig
     Source.sml
+
     ERROR.sig
     Error.sml
