@@ -160,13 +160,20 @@ structure.</P>
 <?php section("request", "requesting a future") ?>
 
 <P>A future is <EM>requested</EM> if it is used as an argument to a
-<EM>strict</EM> operation. Strict operations are:</P>
+<EM>strict</EM> operation. The following operations are strict:</P>
 
 <UL>
-  <LI> Pattern matching </LI>
+  <LI> Pattern matching is strict in the examined value. </LI>
+  <LI> Function (functor) application is strict in the function
+       (functor) value. </LI>
+  <LI> Exception raising is strict in the exception value. </LI>
   <LI> Primitive operations that need to access a value (e.g. <TT>op+</TT>,
-       <TT>op=</TT>, <A href="pickling.html">pickling</A>) </LI>
+       <TT>op=</TT>, <A href="pickling.html">pickling</A>) are strict
+       in their corresponding arguments. </LI>
 </UL>
+
+<P>Note that in particular, selecting items from a structure using
+longids is non-strict.</P>
 
 <P>If a future is requested by a thread, that thread blocks until the future
 has been replaced by a non-future value (or a failed future, see <A
@@ -177,16 +184,17 @@ proceeds.</P>
 computation. The future is replaced by a concurrent future of the computation's
 result. The requesting thread blocks until the result is determined.</P>
 
-<P>Request of a promised future will block at least until a <TT>fulfill</TT>
+<P>Requesting a promised future will block at least until a <TT>fulfill</TT>
 operation has been applied to the corresponding promise. Blocking continues if
 the promise is fulfilled with another future.</P>
 
-<P><EM>Structural</EM> operations that are strict (i.e., <TT>op=</TT> and <A
-href="pickling.html">pickling</A>), traverse all values in a depth-first
-left-to-right order. Futures are requested in that order. If traversal is
-terminated early, the remaining futures are not requested. Early termination
-occurs if a future is failed, two partial values are not equal (<TT>op=</TT>),
-or a part of a value is sited (pickling).</P>
+<P><EM>Structural</EM> operations that are strict (i.e., pattern matching,
+<TT>op=</TT> and <A href="pickling.html">pickling</A>) traverse all values
+in a depth-first left-to-right order. Futures are requested in that order.
+If traversal is terminated early, the remaining futures are not requested.
+Early termination occurs if a future is failed, upon a mismatch (pattern
+matching), if two partial values are not equal (<TT>op=</TT>), or if part
+of a value is sited (pickling).</P>
 
 <P>The implicit data-flow synchronisation implied by the future semantics
 enables concurrent programming on a high level of abstraction.</P>
@@ -198,16 +206,17 @@ enables concurrent programming on a high level of abstraction.</P>
 with an exception, that future cannot be eliminated. Instead, it turns into a
 <EM>failed future</EM>. Promised futures can be failed explicitly by means of
 the <A href="library/promise.html"><TT>Promise.fail</TT></A> function. Any
-attempt to request a failed future will reraise the exception that was the
+attempt to request a failed future will re-raise the exception that was the
 cause of the failure.</P>
 
 <P>A second error condition is the attempt to replace a future with itself. This
 may happen if a recursive <TT>spawn</TT> or <TT>lazy</TT> expression is
-unfounded, or if a promise is fulfilled with its own future. In all cases, the
-future will be failed with the special exception <TT>Future.Cyclic</TT>.</P>
+unfounded, or if a promise is fulfilled with its own future. In all of
+these cases, the future will be failed with the special exception
+<TT>Future.Cyclic</TT>.</P>
 
 
-<?php section("state", "state") ?>
+<?php section("state", "threads and state") ?>
 
 <P>To deal with state in a thread-safe way, the structure <TT>Ref</TT> provides
 an atomic exchange operation for references:</P>
@@ -255,9 +264,8 @@ programming with futures, promises and concurrent threads:</P>
   <LI> <A href="library/ref.html"><TT>Ref</TT></A> </LI>
 </UL>
 
-<P>The latter is a functor that allows creation of lazy futures for modules.</P>
-
-<P>Lazy modules are also at the core of the semantics of <A
+<P><TT>ByNeed</TT> is a functor that allows creation of lazy futures
+for modules. Lazy modules are also at the core of the semantics of <A
 href="components.html">components</A>.</P>
 
 
