@@ -59,7 +59,8 @@ public:
   word GetEvent() {
     return GetAccessor()->GetEvent(Block::GetArg(EVENT_POS));
   }
-  DebuggerEvent *FromWord(word x) {
+
+  static DebuggerEvent *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || 
 	   (b->GetLabel() > (BlockLabel) MIN_EVENT_LABEL 
@@ -67,7 +68,7 @@ public:
   return STATIC_CAST(DebuggerEvent *, b);
   }
 
-  DebuggerEvent *FromWordDirect(word x) {
+  static DebuggerEvent *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() > (BlockLabel) MIN_EVENT_LABEL 
 	   && b->GetLabel() < (BlockLabel)MAX_EVENT_LABEL);
