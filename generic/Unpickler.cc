@@ -250,21 +250,6 @@ public:
   }
 };
 
-// InternalTuple
-class InternalTuple : public Tuple {
-public:
-  // InternalTuple Constructor
-  static InternalTuple *New(u_int n) {
-    return (InternalTuple *) Tuple::New(n);
-  }
-  // InternalTuple Untagging
-  static InternalTuple *FromWord(word x) {
-    Block *p = Store::DirectWordToBlock(x);
-    Assert(p != INVALID_POINTER && (p->GetLabel() == TUPLE_LABEL));
-    return (InternalTuple *) p;
-  }
-};
-
 // InputInterpreter
 class InputInterpreter : public Interpreter {
 private:
@@ -320,12 +305,12 @@ public:
   Transient *GetTransient() {
     return Store::WordToTransient(StackFrame::GetArg(TRANSIENT_POS));
   }
-  InternalTuple *GetTuple() {
-    return InternalTuple::FromWord(StackFrame::GetArg(TUPLE_POS));
+  Tuple *GetTuple() {
+    return Tuple::FromWordDirect(StackFrame::GetArg(TUPLE_POS));
   }
   // TransformFrame Constructor
   static TransformFrame *New(Interpreter *interpreter,
-			     Transient *transient, InternalTuple *tuple) {
+			     Transient *transient, Tuple *tuple) {
     StackFrame *frame = StackFrame::New(TRANSFORM_FRAME, interpreter, SIZE);
     frame->ReplaceArg(TRANSIENT_POS, transient->ToWord());
     frame->ReplaceArg(TUPLE_POS, tuple->ToWord());
@@ -354,7 +339,7 @@ public:
   // Frame Handling
   static void TransformInterpreter::PushFrame(TaskStack *taskStack,
 					      Transient *transient,
-					      InternalTuple *tuple);
+					      Tuple *tuple);
   // Execution
   virtual Result Run(word args, TaskStack *taskStack);
   // Debugging
@@ -395,7 +380,7 @@ TransformInterpreter *TransformInterpreter::self;
 
 void TransformInterpreter::PushFrame(TaskStack *taskStack,
 				     Transient *transient,
-				     InternalTuple *tuple) {
+				     Tuple *tuple) {
   TransformFrame *frame = TransformFrame::New(self, transient, tuple);
   taskStack->PushFrame(frame->ToWord());
 }
@@ -407,7 +392,7 @@ const char *TransformInterpreter::Identify() {
 Interpreter::Result TransformInterpreter::Run(word args, TaskStack *taskStack) {
   TransformFrame *frame = TransformFrame::FromWord(taskStack->GetFrame());
   Transient *transient  = frame->GetTransient();
-  InternalTuple *tuple  = frame->GetTuple();
+  Tuple *tuple          = frame->GetTuple();
   Chunk *f              = Chunk::FromWord(tuple->Sel(0));
   word x                = tuple->Sel(1);
   transient->Become(REF_LABEL, ApplyTransform(f, x));
@@ -559,7 +544,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
     case Tag::POSINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
-	Set(x, i, Store::IntToWord(y)); // to be checked
+	Set(x, i, Store::IntToWord(y));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, (i + 1), n);
 	CONTINUE(args);
@@ -568,7 +553,7 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
     case Tag::NEGINT:
       {
 	u_int y = is->GetUInt(); CHECK_EOB();
-	Set(x, i, Store::IntToWord((0 - (int) y))); // to be checked
+	Set(x, i, Store::IntToWord(-(y + 1)));
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, (i + 1), n);
 	CONTINUE(args);
@@ -632,10 +617,10 @@ Interpreter::Result UnpickleInterpreter::Run(word args, TaskStack *taskStack) {
 	Set(x, i, yw);
 	AddToEnv(env, count, yw);
 	is->Commit();
-	InternalTuple *y2 = InternalTuple::New(2);
+	Tuple *tuple = Tuple::New(2);
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	TransformInterpreter::PushFrame(taskStack, y, y2);
-	UnpickleInterpreter::PushFrame(taskStack, y2->ToWord(), 0, 2);
+	TransformInterpreter::PushFrame(taskStack, y, tuple);
+	UnpickleInterpreter::PushFrame(taskStack, tuple->ToWord(), 0, 2);
 	CONTINUE(PickleArgs::New(is, env, count + 1)->ToWord());
       }
       break;
