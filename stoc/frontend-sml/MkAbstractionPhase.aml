@@ -1,9 +1,9 @@
 (*
  * To do:
- * - proper treatment of hiding in single scope
  * - where
  * - sharing
  * - transparent signature constraints
+ * - represent fixity declarations in abstract grammar for signature matching
  *)
 
 structure AbstractionPhase :> ABSTRACTION_PHASE =
@@ -87,8 +87,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
 	    ) typ typs
 
-    fun typvardecs(ids,decs) =
-	List.foldr (fn(id,decs)=> [O.TypvarDec(O.infoId id, id, decs)]) decs ids
+    fun vardec(ids,dec) =
+	List.foldr (fn(id,dec) => O.VarDec(O.infoId id, id, dec)) dec ids
+
+    fun varspec(ids,spec) =
+	List.foldr (fn(id,spec) => O.VarSpec(O.infoId id, id, spec)) spec ids
 
 (*UNFINISHED: obsolete
     fun alltyp(  [],    typ) = typ
@@ -109,9 +112,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    O.ArrTyp(i, typ2, arrtyp(typs, typ1))
 	end
 
-    fun typvardecs(  [],    decs) = decs
-      | typvardecs(id::ids, decs) = [O.TypvarDec(O.infoId id, id,
-						 typvardecs(ids, decs))]
+    fun vardec(  [],    dec) = dec
+      | vardec(id::ids, dec) = O.VarDec(O.infoId id, id, vardec(ids, dec))
 *)
 
     fun lookupIdStatus(E, vid') =
@@ -845,7 +847,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	end
 
 
-    (* Tyvarseqs at a val or fun. *)
+    (* Tyvarseqs at a val or fun *)
 
     and trValTyVarSeq E (Seq(i, tyvars)) = List.map (trValSeqTyVar E) tyvars
 
@@ -906,8 +908,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  _    = deleteScope E
 		val  _    = union(E,E')
 	   in
-		if List.null ids' then decs'
-				  else typvardecs(ids', decs') @ acc
+		if List.null ids'
+		then decs'
+		else List.map (fn dec' => vardec(ids', dec')) decs' @ acc
+	   (* UNFINISHED: violates uniqueness of stamps in bindings *)
 	   end
 
 	 | FUNDec(i, tyvarseq, fvalbind) =>
@@ -926,7 +930,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
 	   in
-		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
+		vardec(ids'', O.RecDec(i, decs')) :: acc
 	   end
 
 	 | TYPEDec(i, typbind) =>
@@ -1071,8 +1075,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  dec'       = O.ValDec(i, pat', exp')
 		val  _          = insertVal(E, vid', (i, stamp, V))
 	   in
-		if List.null ids' then dec' :: acc
-				  else typvardecs(ids', [dec']) @ acc
+		vardec(ids', dec') :: acc
 	   end
 
 	 | PRIMITIVECONSTRUCTORDec
@@ -1094,8 +1097,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val  k           = List.length typs'
 		val  _           = insertVal(E, vid', (i', stamp, C k))
 	   in
-		dec2':: (if List.null ids' then dec1' :: acc
-					   else typvardecs(ids', [dec1']) @ acc)
+		dec2' :: vardec(ids', dec1') :: acc
 	   end
 
 	 | PRIMITIVESTRUCTUREDec(i, strid as StrId(i',strid'), sigexp, s) =>
@@ -1692,7 +1694,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				   errorVId("duplicate data constructor ", vid,
 					    " in binding group")
 	   in
-		trDconBindo' (E,E', dec'::acc) dconbindo
+		trDconBindo' (E,E', vardec(ids', dec')::acc) dconbindo
 	   end
 
 	 | SOME(EQUALDconBind(_, _, vid as VId(i',vid'), _,
@@ -2195,7 +2197,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				   errorVId("duplicate data constructor ", vid,
 					    " in signature")
 	   in
-		trDconDesco' (E, spec'::acc) dcondesco
+		trDconDesco' (E, varspec(ids', spec')::acc) dcondesco
 	   end
 
 	 | SOME(EQUALDconDesc(_, _, vid as VId(i',vid'), _, longvid,
