@@ -38,7 +38,6 @@
 #include "alice/AliceLanguageLayer.hh"
 
 extern word UnsafeConfig();
-extern word UnsafeIO();
 extern word UnsafeIODesc();
 extern word UnsafeOS();
 //extern word UnsafeUnix(); //--** missing
@@ -55,7 +54,6 @@ extern word UnsafeRemote();
 
 static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeConfig",       UnsafeConfig},
-  {"lib/system/UnsafeIO",           UnsafeIO},
   {"lib/system/UnsafeIODesc",       UnsafeIODesc},
   {"lib/system/UnsafeOS",           UnsafeOS},
 //{"lib/system/UnsafeUnix",         UnsafeUnix}, //--** missing
