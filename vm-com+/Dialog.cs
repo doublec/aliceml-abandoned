@@ -78,7 +78,9 @@ class Dialog {
 	case WinMsg.Char:
 	    switch (w) {
 	    case '\b':
-		b = b.Remove(b.Length - 1, 1);
+		if (b.Length > 0) {
+		    b = b.Remove(b.Length - 1, 1);
+		}
 		break;
 	    case '\r':
 		Notify();
