@@ -1,0 +1,45 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE         from "../test/TESTSUITE-sig"
+
+import signature GEN               from "../../src/GEN-sig"
+import structure Test              from "../test/Test"
+
+import structure Url               from "x-alice:/lib/system/Url"
+import structure Component         from "x-alice:/lib/system/Component"
+import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
+
+
+structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
+struct
+
+    val url = Url.fromString "../../src/Gen"
+
+    val comp = Component.load url
+    
+    fun testEval' () = 
+	let
+	    structure X = ComponentManager.Eval (
+		                       val component = comp 
+				       val url = url
+				       signature S = GEN)
+	in
+	    true
+	end
+	       
+    fun testEval () = 
+	(Test.test (fn _ => (*testEval' ()*) true) ())
+
+
+    val suite = ("Compiler", [("testEval", testEval)])
+end
