@@ -438,7 +438,7 @@ AC_DEFUN([AC_SEAM_ARG_ENABLE_DEBUGGER],
    fi])dnl
 
 dnl Macro:
-dnl   AC_SEAM_ARG_ENABLE_WARNINGS
+dnl   AC_SEAM_ARG_WITH_WARNINGS
 dnl
 dnl Description:
 dnl   Introduce a build option to enable compiler warnings and
@@ -447,14 +447,21 @@ dnl
 dnl Authors:
 dnl   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl   Guido Tack <tack@ps.uni-sb.de>
 dnl
-AC_DEFUN([AC_SEAM_ARG_ENABLE_WARNINGS],
-  [AC_ARG_ENABLE([warnings],
-      AC_HELP_STRING([--enable-warnings],
-        [enable compiler warnings @<:@default=yes@:>@]))
+AC_DEFUN([AC_SEAM_ARG_WITH_WARNINGS],
+  [AC_ARG_WITH([warnings],
+      AC_HELP_STRING([--with-warnings],
+        [enable compiler warnings (no/yes/pedantic) @<:@default=yes@:>@]))
    AC_MSG_CHECKING(whether to enable compiler warnings)
-   if test "${enable_warnings:-yes}" = "yes"; then
+   if test "${with_warnings:-yes}" = "yes"; then
       AC_MSG_RESULT(yes)
+      AC_SEAM_CHECK_CXXFLAGS(-Wundef -Wpointer-arith -Wcast-qual \
+                             -Wcast-align -Wwrite-strings -Wconversion \
+                             -Wredundant-decls -Winline \
+                             -Woverloaded-virtual -Wsign-promo)
+   elif test "${with_warnings:-yes}" = "pedantic"; then
+      AC_MSG_RESULT(pedantic)
       AC_SEAM_CHECK_CXXFLAGS(-Wall -W -Wundef -Wpointer-arith -Wcast-qual \
                              -Wcast-align -Wwrite-strings -Wconversion \
                              -Wredundant-decls -Winline \
@@ -534,7 +541,7 @@ AC_DEFUN([AC_SEAM_CHECK_SOCKET_FLAVOR],
                ])])])])])dnl
 
 dnl Macro:
-dnl   AC_SEAM_WITH_LIGHTNING
+dnl   AC_SEAM_ENABLE_LIGHTNING
 dnl
 dnl Description:
 dnl   Introduce a build option for the use of GNU lightning.
@@ -542,28 +549,48 @@ dnl
 dnl Author:
 dnl   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl   Guido Tack <tack@ps.uni-sb.de>
 dnl
-AC_DEFUN([AC_SEAM_WITH_LIGHTNING],
-  [AC_ARG_WITH(lightning,
-      AC_HELP_STRING([--with-lightning],
+AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
+  [AC_ARG_ENABLE(lightning,
+      AC_HELP_STRING([--enable-lightning],
         [use GNU lightning @<:@default=yes@:>@]))
-   if test "${with_lightning}" = "no"; then
-      AC_DEFINE(HAVE_LIGHTNING, 0)
-   else
-      # TODO: Do a version check on GNU lightning instead of this message
-      AC_MSG_NOTICE([You have chosen to build using GNU lightning.       ])
-      AC_MSG_NOTICE([Please note that this will only work, if your local ])
-      AC_MSG_NOTICE([version of GNU lightning is the same as the one that])
-      AC_MSG_NOTICE([was used when building SEAM.                        ])
-      AC_CHECK_SIZEOF(long)
-      if test "${with_lightning}" != "yes"; then
-         CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I${with_lightning}"
-         CPPFLAGS="${CPPFLAGS} -I${with_lightning}/include"
+   AC_MSG_CHECKING(whether to use GNU lightning)
+   if test "${enable_lightning:-yes}" = "yes"; then
+      AC_REQUIRE([AC_CANONICAL_HOST])dnl
+      if test -d "${srcdir}"/lightning; then
+        have_lightning=yes
+        AC_DEFINE(HAVE_LIGHTNING, 1)
+        AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
+        AC_MSG_RESULT(yes)
+        case "$host_cpu" in
+             i?86)	 cpu_subdir=i386                                ;;
+             sparc*)	 cpu_subdir=sparc				;;
+             powerpc)    cpu_subdir=ppc					;;
+             *)          ;;
+        esac
+        if test -n "$cpu_subdir"; then
+        AC_CONFIG_LINKS(lightning/asm.h:lightning/$cpu_subdir/asm.h
+                        lightning/core.h:lightning/$cpu_subdir/core.h
+                        lightning/fp.h:lightning/$cpu_subdir/fp.h
+                        lightning/funcs.h:lightning/$cpu_subdir/funcs.h, , [
+                        ])
+        AC_SEAM_CHECK_CXXFLAG_SEAMTOOL(-fno-operator-names)
+        else
+          AC_MSG_ERROR(cannot find GNU lightning platform specific headers.)
+        fi
+      else
+        AC_MSG_ERROR(cannot find GNU lightning)
       fi
-      AC_CHECK_HEADER(lightning.h,
-        [AC_DEFINE(HAVE_LIGHTNING, 1)],
-        [AC_MSG_ERROR(cannot find GNU lightning)])
-   fi])dnl
+      AC_CHECK_SIZEOF(long)
+   else
+      have_lightning=no
+      AC_DEFINE(HAVE_LIGHTNING, 0)
+      AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
+      AC_MSG_RESULT(no)
+   fi
+   AM_CONDITIONAL(HAVE_LIGHTNING, test x$have_lightning = xyes)
+   ])dnl
 
 # ---------------------------------------------------------------
 # End of file
