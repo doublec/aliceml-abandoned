@@ -5,7 +5,7 @@ import
     val makeListType
     val makeRecordType
     val makeTupleType
-from "x-alice:Canvas.dll"
+from "x-alice:/Canvas.dll"
 
 signature TOOLS =
     sig
