@@ -4,4 +4,4 @@ Group is
 	elaboration-phase.cm
 	translation-phase.cm
 
-	MakeFrontendCommon.sml
+	MkFrontendCommon.aml
