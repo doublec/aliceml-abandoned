@@ -56,4 +56,9 @@ sig
 	val dumpLivenessAnalysisResult :	bool ref
 	val dumpTarget :			bool ref
     end
+
+    structure CodeGen :
+    sig
+	val debugMode :				bool ref
+    end
 end

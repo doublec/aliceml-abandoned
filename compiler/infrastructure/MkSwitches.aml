@@ -58,4 +58,9 @@ struct
 	val dumpLivenessAnalysisResult		= ref false
 	val dumpTarget				= ref false
     end
+
+    structure CodeGen =
+    struct
+	val debugMode				= ref false
+    end
 end
