@@ -1,11 +1,10 @@
 (*
  * Authors:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,37 +15,55 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive    from "Pervasive"
-import type int datatype option              from "ToplevelTypes"
-import infix 4 = infix 6 + val op = and op + from "ToplevelValues"
-import structure Char                        from "Char"
-import structure String                      from "String"
-import signature STRING_CVT                  from "STRING_CVT-sig"
+import structure __pervasive                from "Pervasive"
+import type int and string and char
+       datatype bool and option and list    from "ToplevelTypes"
+import infix 4 = <= infixr 5 :: infix 6 +
+       val op = and op <= and op +          from "ToplevelValues"
+import structure List                       from "List"
+import signature STRING_CVT                 from "STRING_CVT-sig"
 
 
 structure StringCvt :> STRING_CVT =
 struct
-    datatype radix      = BIN | OCT | DEC | HEX
-    datatype realfmt    = EXACT
-			| SCI of int option
-			| FIX of int option
-			| GEN of int option
+    datatype radix		= BIN | OCT | DEC | HEX
+    datatype realfmt		= EXACT
+				| SCI of int option
+				| FIX of int option
+				| GEN of int option
 
-    type ('a,'b) reader = 'b -> ('a * 'b) option
-    type cs             = int
+    type ('a,'b) reader		= 'b -> ('a * 'b) option
+    type cs			= int
 
-    fun dropl  p f s  = dropl'(p,f,s)
-    and dropl'(p,f,s) =
-	case f s of SOME(c,s') where (p c) => dropl'(p,f,s')
-		  | _                      => s
+    infix 6 ^
+    __primitive val ^ :              string * string -> string = "String.^"
+    __primitive val String_size :    string -> int        = "String.size"
+    __primitive val String_sub :     string * int -> char = "Unsafe.String.sub"
+    __primitive val String_implode : char list -> string  = "String.implode"
+    __primitive val Char_isSpace :   char -> bool         = "Char.isSpace"
 
-    fun skipWS f = dropl Char.isSpace f
+    fun padLeft c i s		= if i <= 0 then s else
+				  String_implode(List.tabulate(i, fn _=> c)) ^ s
+    fun padRight c i s		= if i <= 0 then s else
+				  s ^ String_implode(List.tabulate(i, fn _=> c))
+
+    fun splitl p f src		= splitl'(p, f, src, nil)
+    and splitl'(p, f, src, cs)	= case f src
+ 				    of NONE =>
+				       (String_implode(List.rev cs), src)
+				     | SOME (c, src') =>
+				       if p c
+				       then splitl'(p, f, src', c::cs)
+				       else (String_implode(List.rev cs), src)
+
+    fun takel p f s		= #1(splitl p f s)
+    fun dropl p f s		= #2(splitl p f s)
+    fun skipWS f s		= dropl Char_isSpace f s
 
     fun scanString scan s =
 	let
-	    val n = String.size s
-	    fun get i where (i = n) = NONE
-	      | get i               = SOME(String.sub(s,i), i+1)
+	    fun get i where (i = String_size s) = NONE
+	      | get i                           = SOME(String_sub(s,i), i+1)
 	in
 	    case scan get 0 of NONE      => NONE
 			     | SOME(x,_) => SOME x
