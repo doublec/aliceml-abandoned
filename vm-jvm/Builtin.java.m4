@@ -39,6 +39,9 @@ abstract public class Builtin implements DMLValue {
 	    } catch (ClassNotFoundException c) {
 		System.err.println("Unknown Library: "+lib);
 		c.printStackTrace();
+	    } catch (Exception e) {
+		System.err.println(e);
+		e.printStackTrace();
 	    }
 	    b = (DMLValue) builtins.get(name);
 	    if (b==null) {
