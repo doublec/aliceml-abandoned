@@ -333,7 +333,9 @@ final public class General {
 	}
     }
     _FIELD(General,unpickle);
-
+    static {
+	Builtin.builtins.put("Komponist.import",unpickle);
+    }
 
     _BUILTIN(Uminus) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
