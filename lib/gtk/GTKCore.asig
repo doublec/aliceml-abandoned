@@ -34,6 +34,7 @@ signature GTK_CORE_COMPONENT =
                 val signalEmit : object * string -> unit
 		val allocateGDKColor : int * int * int -> object
 		val freeGDKColor : object -> unit
+		val initCanvas : unit -> unit
 		val exit : unit -> unit
 	    end
 
