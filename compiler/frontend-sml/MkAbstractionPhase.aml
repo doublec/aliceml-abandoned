@@ -1459,8 +1459,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val i           = Source.over(i', infoSigExp sigexp)
 		val (id',stamp) = trSigId_bind E sigid
-		val (inf',E')   = trSigExp E sigexp
-		val  _          = insertDisjointSig(E', sigid', (i',stamp,E'))
+		val (inf',E'')  = trSigExp E sigexp
+		val  _          = insertDisjointSig(E', sigid', (i',stamp,E''))
 				  handle CollisionSig _ =>
 				  errorSigId("duplicate signature name ", sigid,
 					     " in binding group")
