@@ -35,6 +35,7 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="save">
 		      <property name="visible">True</property>
+		      <property name="sensitive">False</property>
 		      <property name="label">gtk-save</property>
 		      <property name="use_stock">True</property>
 		      <signal name="activate" handler="on_save_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
@@ -44,6 +45,7 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="save_as">
 		      <property name="visible">True</property>
+		      <property name="sensitive">False</property>
 		      <property name="label">gtk-save-as</property>
 		      <property name="use_stock">True</property>
 		      <signal name="activate" handler="on_save_as_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
@@ -100,7 +102,7 @@
 		  <child>
 		    <widget class="GtkMenuItem" id="unhide_all">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Unhide all</property>
+		      <property name="label" translatable="yes">Unhide subtree</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_unhide_all_activate" last_modification_time="Tue, 11 May 2004 17:37:19 GMT"/>
 		      <accelerator key="h" modifiers="GDK_SHIFT_MASK" signal="activate"/>
@@ -110,7 +112,7 @@
 		  <child>
 		    <widget class="GtkMenuItem" id="hide_failed">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Hide failed</property>
+		      <property name="label" translatable="yes">Hide failed subtrees</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_hide_failed_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
 		      <accelerator key="f" modifiers="0" signal="activate"/>
@@ -172,15 +174,6 @@
 
 	      <child>
 		<widget class="GtkMenu" id="options1_menu">
-
-		  <child>
-		    <widget class="GtkMenuItem" id="debug">
-		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">debug</property>
-		      <property name="use_underline">True</property>
-		      <signal name="activate" handler="on_debug_activate" last_modification_time="Thu, 13 May 2004 09:08:31 GMT"/>
-		    </widget>
-		  </child>
 
 		  <child>
 		    <widget class="GtkMenuItem" id="inspection1">
@@ -269,16 +262,57 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVScale" id="scale">
+	    <widget class="GtkVBox" id="vbox2">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
-	      <property name="draw_value">False</property>
-	      <property name="value_pos">GTK_POS_TOP</property>
-	      <property name="digits">1</property>
-	      <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
-	      <property name="inverted">False</property>
-	      <property name="adjustment">1 0.1 2 0.1 0 0</property>
-	      <signal name="value_changed" handler="on_scale_value_changed" last_modification_time="Tue, 11 May 2004 17:25:59 GMT"/>
+	      <property name="homogeneous">False</property>
+	      <property name="spacing">0</property>
+
+	      <child>
+		<widget class="GtkButton" id="zoomToFit">
+		  <property name="width_request">24</property>
+		  <property name="height_request">24</property>
+		  <property name="visible">True</property>
+		  <property name="tooltip" translatable="yes">Zoom to fit window</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <signal name="clicked" handler="on_zoom_to_fit_clicked" last_modification_time="Fri, 14 May 2004 11:39:29 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image1">
+		      <property name="visible">True</property>
+		      <property name="stock">gtk-zoom-fit</property>
+		      <property name="icon_size">4</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkVScale" id="scale">
+		  <property name="visible">True</property>
+		  <property name="can_focus">True</property>
+		  <property name="draw_value">False</property>
+		  <property name="value_pos">GTK_POS_TOP</property>
+		  <property name="digits">1</property>
+		  <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
+		  <property name="inverted">False</property>
+		  <property name="adjustment">1 0.1 3 0.1 0 0</property>
+		  <signal name="value_changed" handler="on_scale_value_changed" last_modification_time="Tue, 11 May 2004 17:25:59 GMT"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">True</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>

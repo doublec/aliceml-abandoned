@@ -10,13 +10,11 @@
  *   $Revision$
  *)
 
-import structure Space     from "x-alice:/lib/gecode/Space"
 import structure FD        from "x-alice:/lib/gecode/FD"
 import structure Explorer  from "x-alice:/tools/Explorer"
 
-fun queens n cl =
+fun queens n cl space =
     let
-	val space = Space.new()
 	open FD
 
 	val v = rangeVec(space, n, (0, n-1))
@@ -30,35 +28,36 @@ fun queens n cl =
 	(v, space)
     end
 
-val (v, s) = queens 10 FD.BND
-
-fun test () =
+fun money cl space = 
     let
-        val space = Space.new()
-        val v = FD.range(space,(0,1))
-        val v2 = FD.range(space,(0,1))
-        val v3 = FD.range(space,(0,1))
+	open FD
+
+	val v as #[s,e,n,d,m,o',r,y] = rangeVec(space, 8, (0,9))
+
+        val root = {s=s,e=e,n=n,d=d,m=m,o'=o',r=r,y=y}
+
+	val v1 = #[(1000,   s),
+		   (100,    e),
+		   (10,     n),
+		   (1,      d),
+
+		   (1000,   m),
+		   (100,    o'),
+		   (10,     r),
+		   (1,      e),
+
+		   (~10000, m),
+		   (~1000,  o'),
+		   (~100,   n),
+		   (~10,    e),
+		   (~1,     y)]
     in
-        FD.branch(space,#[v,v2,v3],FD.B_SIZE_MIN, FD.B_MIN);
-        (#[v], space)
+	relI(space, s, NQ, 0);
+	relI(space, m, NQ, 0);
+	linear(space, v1, EQ, 0, cl);
+	distinct(space, v, cl);
+	branch(space, v, B_SIZE_MIN, B_MIN);
+        root
     end
 
-(*val (v, s) = test()*)
-
-fun inspect1 s = (print "inspect1!\n";
-		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
-					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
-		 print "\n")
-fun inspect2 s = (print "inspect2!\n";
-		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
-					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
-		 print "\n")
-fun inspect3 s = (print "inspect3!\n";
-		 Vector.app (fn v => print ("("^Int.toString (FD.Reflect.min(s,v))^"/"^
-					    Int.toString (FD.Reflect.max(s,v))^") ")) v;
-		 print "\n")
-
-val e = Explorer.initWithSpace s
-val _ = Explorer.addInfoAction(e, inspect1, "inspect")
-val _ = Explorer.addInfoAction(e, inspect2, "inspect2")
-val _ = Explorer.addInfoAction(e, inspect3, "inspect3")
+val _ = Explorer.initScript (money FD.BND)

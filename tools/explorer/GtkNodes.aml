@@ -143,24 +143,25 @@ struct
       let
 	  val color = if shadow then shadowColor else lightgray
 	  val outline = if shadow then shadowColor else black
-          val origWidth = 10.0*256.0*scale
-	  val scaledCircleWidth = 10.0*256.0*scale*0.7
-          val diff = origWidth - scaledCircleWidth
-
-	  val x1 = (itr myX) - scaledCircleWidth
-	  val y1 = (itr myY) - scaledCircleWidth - diff
-	  val x2 = (itr myX) + scaledCircleWidth
-	  val y2 = (itr myY) + scaledCircleWidth - diff
+	  val width = Real.round(9.0*256.0*scale)
+	  val sHorSpace = width
+	  val sVerSpace = width
+	  val x0 = myX
+	  val y0 = myY - width - 1
+	  val x1 = myX - sHorSpace
+	  val y1 = myY + sVerSpace
+	  val x2 = myX + sHorSpace
+	  val y2 = myY + sVerSpace
+	  val points = [x0,y0,x1,y1,x2,y2,x0,y0]
       in
-	  GnomeCanvas.itemCreate(group,
-				 GnomeCanvas.ellipseGetType(),
-				 [("x1", Gtk.REAL x1),
-				  ("y1", Gtk.REAL y1),
-				  ("x2", Gtk.REAL x2),
-				  ("y2", Gtk.REAL y2),
-				  ("fill_color_gdk", Gtk.OBJECT color),
-				  ("outline_color_gdk", Gtk.OBJECT outline)
-				  ])
+	  (GnomeCanvas.itemCreate(group,
+				  GnomeCanvas.polygonGetType(),
+				  [("points", Gtk.OBJECT
+						  (GnomeCanvas.makePoints points)),
+				   ("fill_color_gdk", Gtk.OBJECT color),
+				   ("outline_color_gdk", Gtk.OBJECT outline)
+				   ]
+				  ))	  
       end
 
   fun connect

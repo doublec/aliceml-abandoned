@@ -170,6 +170,8 @@ struct
        else
 	   (!shape)
 
+   fun getShape (N ({shape=ref shape,...},_,_)) = shape
+
    fun getBBox shape =
        let
 	   fun doIt nil _ _ curMinLeft curMaxRight curDepth =

@@ -21,15 +21,17 @@ structure ExplorerSearch =
 
   exception SearchDone
 
-  fun initSearch serve (state : Types.explorer_state option ref) refresh s =
+  fun initSearch serve (state : Types.explorer_state option ref) refresh resetCanvas s =
       let
           val s' = Space.clone s
       in
           case !state of
-              SOME {tree=tree,rootSpace,...} =>
+              SOME {tree,rootSpace,currentNode,...} =>
               (ExplorerNode.discardTree (!tree);
+               resetCanvas serve state;
                tree := ExplorerNode.createNode NONE 0;
                rootSpace := SOME s;
+               currentNode := SOME (!tree);
                ExplorerNode.setSpace (!tree) (SOME s');
                refresh serve state)
             | _ => ()

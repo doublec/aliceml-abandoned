@@ -86,6 +86,7 @@ struct
                       | s => s
 
     fun isUnknown (node as N({status=status,...},_,_)) = (!status = Types.UNKNOWN)
+    fun isHidden (node as N({hidden=hidden,...},_,_)) = !hidden
     fun curNodeStatus (N({status=ref status,...},_,_)) = status
 
     fun noOfChildren (node as N({status=status,...},_,ch)) =

@@ -27,27 +27,30 @@ structure CanvasHelper =
 	  val rootGroup = GtkNode.makeGroup (GnomeCanvas.root canvas)
 	  val shadowGroup = GtkNode.makeGroup rootGroup
 	  val actionGroup = GtkNode.makeGroup rootGroup
+          val actionHandler = Gtk.signalConnect(actionGroup, "event",
+			                        EventHandler.nodeEvent state serve);
       in
 	   Gtk.widgetSetSizeRequest(canvas, xDim, yDim);
 	   GnomeCanvas.setScrollRegion(canvas, 0.0, 0.0,
 				       Real.fromInt xDim, Real.fromInt yDim);
 	   GnomeCanvas.setPixelsPerUnit(canvas, 1.0);
 	   GnomeCanvas.setBackgroundColor(canvas, GtkNode.white);
-	   Gtk.signalConnect(actionGroup, "event",
-			     EventHandler.nodeEvent state serve);
 	   {canvas=canvas, rootGroup=ref rootGroup,
-            shadowGroup=ref shadowGroup, actionGroup=ref actionGroup}
+            shadowGroup=ref shadowGroup, actionGroup=ref actionGroup,
+            actionHandler=ref actionHandler}
       end
 
   fun resetCanvas serve (s as
 			   (ref (SOME {canvas={rootGroup=rootGroup,
 				               actionGroup=actionGroup,
+                                               actionHandler=actionHandler,
 				               canvas=canvas,...},...}
 				 : Types.explorer_state option)))=
-      (Gtk.objectDestroy (!rootGroup);
+      (Gtk.signalDisconnect(!actionGroup, !actionHandler);
+       Gtk.objectDestroy (!rootGroup);
        rootGroup := GtkNode.makeGroup (GnomeCanvas.root canvas);
        actionGroup := GtkNode.makeGroup (!rootGroup);
-       Gtk.signalConnect(!actionGroup, "event", EventHandler.nodeEvent s serve);
+       actionHandler := Gtk.signalConnect(!actionGroup, "event", EventHandler.nodeEvent s serve);
        ())
     | resetCanvas _ _ = ()
 

@@ -93,17 +93,18 @@ structure MainWindow :> MAINWINDOW =
             struct
               fun on_save_activate _ = ()
               fun on_save_as_activate _ = ()
-              val on_reset_activate = EventHandler.resetHandler serve refresh state
-              val on_quit_activate = EventHandler.exitHandler serve createMainWindow state
-              val on_unhide_activate = EventHandler.nodeHideHandler serve createMainWindow state
-              val on_unhide_all_activate   = EventHandler.nodeUnhideHandler serve createMainWindow state
-              val on_hide_failed_activate = EventHandler.hideFailedHandler serve createMainWindow state
-              val on_next_solution_activate = EventHandler.exploreOneHandler serve refresh state
-              val on_next_n_solutions_activate = EventHandler.exploreNHandler serve refresh state
-              val on_all_solutions_activate = EventHandler.exploreAllHandler serve refresh state
+              val on_reset_activate = EventHandler.resetHandler createMainWindow CanvasHelper.resetCanvas serve state
+              val on_quit_activate = EventHandler.exitHandler CanvasHelper.resetCanvas serve state
+              val on_unhide_activate = EventHandler.nodeHideHandler createMainWindow serve state
+              val on_unhide_all_activate   = EventHandler.nodeUnhideHandler createMainWindow serve state
+              val on_hide_failed_activate = EventHandler.hideFailedHandler createMainWindow serve state
+              val on_next_solution_activate = EventHandler.exploreOneHandler createMainWindow serve state
+              val on_next_n_solutions_activate = EventHandler.exploreNHandler createMainWindow serve state
+              val on_all_solutions_activate = EventHandler.exploreAllHandler createMainWindow serve state
               val on_view_activate = EventHandler.viewOptionsHandler w serve state
               val on_debug_activate = EventHandler.debugHandler serve state
               fun on_about_activate _ = ()
+              val on_zoom_to_fit_clicked = EventHandler.zoomToFitHandler serve state
               val on_scale_value_changed =
                   CanvasHelper.scaleCanvasHandler serve state ExplorerGUI.scale
             end
@@ -122,11 +123,14 @@ structure MainWindow :> MAINWINDOW =
 			 currentNode=ref NONE,
                          refreshAfter=ref 1,
                          breakAfter=ref 0,
+                         hideFailed=ref true,
                          debug=ref false
 			 };
 	  state
       end
 
-  and refresh serve state = EventHandler.refresh serve createMainWindow state
+  and refresh serve (state as ref (SOME {tree=ref tree,...})) =
+      EventHandler.refreshAfterSearch tree createMainWindow serve state
+    | refresh _ _ = ()
 
   end

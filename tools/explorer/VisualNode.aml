@@ -98,37 +98,26 @@ structure VisualNode =
     | toggleHide _ = ()
 
 
-  fun doUnhideAll (v as Types.N({hidden=hidden,...},_,children)) =
+  fun unhideAll (v as Types.N({hidden=hidden,...},_,children)) =
       if (!hidden) then
 	  (GtkNode.undrawSubtree v;
 	   hidden:=false;
 	   dirtyUp v;
-	   Vector.app doUnhideAll (!children))  
+	   Vector.app unhideAll (!children))  
       else
-	  Vector.app doUnhideAll (!children)
+	  Vector.app unhideAll (!children)
 
-
-  fun unhideAll (state as ref (SOME ({tree=ref v,...}
-				     : Types.explorer_state))) =
-      doUnhideAll v
-    | unhideAll _ = ()
-
-
-  fun doHideFailed (v as Types.N({hidden=hidden,status=status,hasSolBelow=hasSolBelow,...},_,children)) =
+  fun hideFailed (v as Types.N({hidden=hidden,status=status,hasSolBelow=hasSolBelow,...},_,children)) =
       if (!hidden) then ()
       else
 	  case (!status) of
-	      Types.FAILED => ()
-	    | _ => if (!hasSolBelow) then
-		       Vector.app doHideFailed (!children)
-		   else
-		       (GtkNode.undrawSubtree v;
-			hidden:=true;
-			dirtyUp v)
-
-  fun hideFailed (state as ref (SOME ({tree=ref v,...}
-				      : Types.explorer_state))) =
-      doHideFailed v
-    | hideFailed _ = ()
+	      Types.CHOICE =>
+	      if (!hasSolBelow) then
+		  Vector.app hideFailed (!children)
+	      else
+		  (GtkNode.undrawSubtree v;
+		   hidden:=true;
+		   dirtyUp v)
+            | _ => ()
 
   end

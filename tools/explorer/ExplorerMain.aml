@@ -12,7 +12,10 @@
 
 import structure ExplorerSearch from "ExplorerSearch"
 import structure MainWindow     from "MainWindow"
+import structure Space          from "x-alice:/lib/gecode/Space"
+import structure ExplorerInspect from "ExplorerInspect"
 import structure Types          from "Types"
+import structure CanvasHelper from "CanvasHelper"
 
 structure Explorer =
   struct
@@ -61,7 +64,8 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
+                                                    CanvasHelper.resetCanvas s);
 	  state
       end
 
@@ -69,7 +73,8 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
+                                                    CanvasHelper.resetCanvas s);
 	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 0 NONE);
 	  state
       end
@@ -78,7 +83,8 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
+                                                    CanvasHelper.resetCanvas s);
 	  serve (fn () => ExplorerSearch.search serve state MainWindow.refresh 1 NONE);
 	  state
       end
@@ -87,15 +93,19 @@ structure Explorer =
       let
 	  val state = initExplorer()
       in
-          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh s);
+          serve (fn () => ExplorerSearch.initSearch serve state MainWindow.refresh
+                                                    CanvasHelper.resetCanvas s);
 	  serve (fn () => ExplorerSearch.searchBest serve state MainWindow.refresh);
 	  state
       end
 
   fun addInfoAction (e, action, name) =
       case (!e) of
-	  SOME {inspect=inspect,...} =>
-	  (inspect := (action, name)::(!inspect);
+	  SOME {inspect=inspect,
+                curInspAction=curInspAction,...} =>
+	  (inspect := List.filter (fn (_,n) => n<>name) (!inspect);
+           inspect := (action, name)::(!inspect);
+           curInspAction := name;
 	   serve (fn () =>
 		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
 	| _ => ()
@@ -107,5 +117,39 @@ structure Explorer =
 	   serve (fn () =>
 		     MainWindow.updateInspectionActionsMenu (!inspect) serve e))
 	| _ => ()
+
+  fun initScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = initWithSpace space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreAllScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = exploreAll space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  fun exploreOneScript' t script =
+      let
+          val space = Space.new()
+          val root = script space
+          val e = exploreOne space
+      in
+          addInfoAction(e, ExplorerInspect.inspect t root, "default");
+          e
+      end
+
+  __overload 'a initScript : (Space.space -> 'a) -> explorer = initScript'
+  __overload 'a exploreAllScript : (Space.space -> 'a) -> explorer = exploreAllScript'
+  __overload 'a exploreOneScript : (Space.space -> 'a) -> explorer = exploreOneScript'
 
   end
