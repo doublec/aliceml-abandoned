@@ -10,29 +10,32 @@
     Stockhausen is equipped with parts of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">Standard
     ML Basis Library</A>.  Additional modules deal with Alice extensions
-    over Standard ML, namely <A href="futures.php3">futures</A> and
-    <A href="threads.php3">threads</A>.
+    over Standard ML.
   </P>
 
   <P>
-    The library is structured as follows:
+    The overall library is structured as follows:
   </P>
 
   <UL>
-    <LI><A href="#toplevel">the top-level environment</A>
-    <LI><A href="#fundamental">the fundamental library</A>
-    <LI><A href="#system">the system library</A>
+    <LI><A href="#toplevel">top-level environment</A>
+    <LI><A href="#fundamental">fundamental library</A>
+    <LI><A href="#system">system library</A>
     <LI><A href="#utility">utilities library</A>
+        (<TT>"x-alice:/lib/utility/..."</TT>)
+    <LI><A href="gtk.php3">Gtk library</A>
+        (<TT>"x-alice:/lib/gtk/..."</TT>)
+    <LI><A href="constraints.php3">constraint library</A>
+        (<TT>"x-alice:/lib/constraints/..."</TT>)
     <LI><A href="#tools">tools</A>
-    <LI><A href="#gui">graphical user interface library</A>
+        (<TT>"x-alice:/lib/tools/..."</TT>)
   </UL>
 
   <P>
-    The first two are available by default to Alice programs,
+    The first three are available by default to Alice programs,
     while components from the latter need to be imported
-    using URIs using the <TT>x-alice:</TT> scheme.
-
-    For example, program using the <TT>Url</TT> structure has
+    through URIs using the <TT>x-alice:</TT> scheme.
+    For example, a program using the <TT>Url</TT> structure has
     to be prefixed by the following import announcement
     (see <A href="components.php3">components</A>):
   </P>
@@ -47,10 +50,9 @@
   <P>
     The Standard ML
     <A href="http://www.dina.kvl.dk/~sestoft/sml/top-level-chapter.html">
-    top-level environment</A> has been implemented almost completely,
-    except for <TT>print</TT> (you have to import it from <TT>TextIO</TT>,
-    see <A href="#text-io">below</A>) and the special purpose
-    procedure <TT>use</TT>.
+    top-level environment</A> has been implemented completely, with the
+    caveat that the special purpose procedure <TT>use</TT> is only available
+    in the <A href="usage.php3#stot">interactive toplevel</A>.
   </P>
 
   <P>
@@ -76,15 +78,32 @@
   </P>
 
   <UL>
+    <LI> <TT>structure Ref</TT> </LI>
+    <LI> <TT>structure VectorPair</TT> </LI>
+    <LI> <TT>structure Alt</TT> </LI>
     <LI> <TT>structure <A href="futures.php3#future">Future</A></TT> </LI>
     <LI> <TT>structure <A href="futures.php3#promise">Promise</A></TT> </LI>
     <LI> <TT>structure <A href="futures.php3#cell">Cell</A></TT> </LI>
     <LI> <TT>structure <A href="threads.php3#sig">Thread</A></TT>
+    <LI> <TT>structure <A href="packages.php3">Package</A></TT> </LI>
+    <LI> <TT>functor <A href="laziness.php3#modules">ByNeed</A></TT> </LI>
   </UL>
 
   <P>
+    The first three modules extend the SML Basis Library by providing
+    useful functionality on references, on pairs of vectors (similar to
+    the <TT>ListPair</TT> structure) and on the datatype
+  </P>
+
+  <PRE>
+	datatype ('a,'b) alt = FST of 'a | SND of 'b
+  </PRE>
+
+  <P>
     The following fundamental modules correspond to the modules from the
-    SML Basis Library with the same name and are fully implemented:
+    SML Basis Library with the same name and are fully implemented.
+    Some of them - in particular <TT>List</TT>, <TT>Vector</TT> and similar
+    structures - even provide considerably extended functionality.
   </P>
 
   <UL>
@@ -193,11 +212,18 @@
     </LI>
   </UL>
 
+
 <?php section("system", "system") ?>
 
   <P>
     The system namespace contains the resourceful modules from the
-    SML Basis Library.  Only the following modules are available
+    SML Basis Library.
+    The Stockhausen <A href="pickling.php3">pickling library</A> also
+    lives in this namespace.
+  </P>
+    
+  <P>
+    Only the following modules from the the SML Basis Library are available
     for now, in incomplete form:
   </P>
 
@@ -239,6 +265,7 @@
     available in Operette 2.
   </P>
 
+
 <?php section("utility", "utility") ?>
 
   <UL>
@@ -248,136 +275,16 @@
     </LI>
   </UL>
 
+  and others...
+
+
 <?php section("tools", "tools") ?>
 
   <P>
-    The <I>Alice Inspector</I> is a tool that allows to interactively
-    display and inspect Alice data structures.  Access to the Inspector
-    is provided through the following structure:
+    The only component in the tools namespace currently is the
+    <A href="inspector.php3"><I>Alice Inspector</I></A>
+    (aka. <I>Data Hauser</I>).
   </P>
 
-  <UL>
-    <LI>
-      <TT>structure Inspector
-      <BR>from "x-alice:/lib/tools/Inspector"</TT>
-    </LI>
-  </UL>
 
-  <PRE>
-	signature INSPECTOR =
-	    sig
-		type value
-
-		datatype color =
-		    KEEP_COLOR
-		  | SET_COLOR       of {red: int, green: int, blue: int}
-		datatype width =
-		    KEEP_WIDTHS
-		  | REPLACE_WIDTHS  of int vector
-		  | APPEND_WIDTH    of int
-		  | REMOVE_WIDTH    of int
-		datatype depth =
-		    KEEP_DEPTHS
-		  | REPLACE_DEPTHS  of int vector
-		  | APPEND_DEPTH    of int
-		  | REMOVE_DEPTH    of int
-		datatype action =
-		    KEEP_ACTIONS
-		  | REPLACE_ACTIONS of (string * (value -> unit)) vector
-		  | APPEND_ACTION   of string * (value -> unit)
-		  | REMOVE_ACTION   of string
-
-		datatype option =
-		    NUMBER            of color *                 action
-		  | FUNCTION          of color *                 action
-		  | STRING            of color *                 action
-		  | HOLE              of color *                 action
-		  | FUTURE            of color *                 action
-		  | CONSTRUCTOR       of color *                 action
-		  | REFERENCE         of                         action
-		  | FD                of                         action
-		  | FSET              of                         action
-		  | TUPLE             of color * width * depth * action
-		  | RECORD            of color * width * depth * action
-		  | LIST              of color * width * depth * action
-		  | CONSTRUCTED_VALUE of         width * depth * action
-		  | VECTOR            of color * width * depth * action
-		  | RECORD_LABEL      of color
-		  (* relation mode *)
-		  | ALIAS_DEFINITION  of color
-		  | ALIAS_REFERENCE   of color
-		  (* ellipses *)
-		  | WIDTH_ARROW       of color
-		  | DEPTH_ARROW       of color
-		  | PARENTHESES       of color
-		  | MISC              of color
-
-		exception ConfigurationError
-
-		val inspect: 'a -> unit
-		val inspectN: int * 'a -> unit
-		val configure: option vector -> unit   (* ConfigurationError *)
-
-		functor InspectType(type t): any
-		functor InspectSig(signature S): any
-		functor InspectValSig(type t val x: t signature S): any
-		functor Inspect(signature S structure X: S): any
-	    end</PRE>
-
-<?php section("gui", "gui") ?>
-
-  <P>
-    A graphical user interface library, built on the GTK Toolkit, is
-    available via the following components:
-  </P>
-
-  <UL>
-    <LI>
-      <TT><A name="gtkcore">structure</A>
-      <A href="http://developer.gnome.org/doc/API/gtk/index.html">GtkCore</A>
-      <BR>from "x-alice:/lib/gtk/GtkCore"</TT>
-    </LI>
-    <LI>
-      <TT><A name="gtk">structure</A>
-      <A href="http://developer.gnome.org/doc/API/gtk/index.html">Gtk</A>
-      <BR>from "x-alice:/lib/gtk/GTK"</TT>
-    </LI>
-    <LI>
-      <TT><A name="gdk">structure</A>
-      <A href="http://developer.gnome.org/doc/API/gdk/index.html">Gdk</A>
-      <BR>from "x-alice:/lib/gtk/GDK"</TT>
-    </LI>
-  </UL>
-
-  <P>
-    All modules together contain almost the full set of functions originally
-    provided by the toolkit.  The functions are available under names
-    following the so-called "camel casing" scheme, with the library
-    prefix removed, i.e., <TT>gtk_foo_bar</TT> would be available as
-    <TT>Gtk.fooBar</TT> and <TT>gdk_foo_baz</TT> as <TT>Gdk.fooBaz</TT>,
-    respectively.
-  </P>
-
-  <P>
-    Upon this, we provide the GnomeCanvas via the component:
-  </P>
-
-  <UL>
-    <LI>
-      <TT><A name="canvas">structure</A>
-      <A href="http://developer.gnome.org/doc/API/libgnomeui/book1.html">Canvas</A>
-      <BR>from "x-alice:/lib/gtk/Canvas"</TT>
-    </LI>
-  </UL>
-
-  <P>
-    The functions are also available under names following the "camel casing" scheme,
-    with the <TT>gnome_canvas</TT> prefix removed, i. e., <TT>gnome_canvas_new</TT> would be
-    available as <TT>Canvas.new</TT>.
-  </P>
-
-  <P>
-    Besides reading the documentation provided by GTK itself, it is recommended to take
-    a look into the samples shipped with Operette 2.
-  </P>
 <?php footing() ?>
