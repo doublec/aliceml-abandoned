@@ -15,10 +15,10 @@
 # actual files required if SEAM should be built with support for GNU
 # lightning.
 
-all: autotools lightning
+all: lightning autotools
 
 autotools:
-	mkdir lightning
+	if ! test -d lightning; then mkdir lightning; fi
 	cp -p Makefile.lightning.am lightning/Makefile.am
 	libtoolize --copy --force --automake --ltdl
 	aclocal -I .
@@ -29,6 +29,5 @@ autotools:
 lightning:
 	rm -rf lightning
 	lightningize --copy --force --automake
-	cp -p Makefile.lightning.am lightning/Makefile.am
 
 .PHONY: all autotools lightning
