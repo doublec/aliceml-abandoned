@@ -22,7 +22,11 @@ sig
 
     type player_settings_widget
 
-    val mkPlayerSettings : 
+    type cancel_cb = unit -> unit 
+
+    type ready_cb = 
+
+    val mkPlayerSettings : Gtk.object * cancel_cb * ready_cb -> player_settings_widget
 
 end =
 struct

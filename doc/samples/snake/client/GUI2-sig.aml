@@ -3,6 +3,7 @@ import structure Protocol       from "../common/Protocol"
 signature GUI2 =
 sig
     type gui
+
     datatype error = 
         ERROR of string
      |  CONN_ERROR of string
@@ -21,7 +22,10 @@ sig
 
         (* called during the join phase *)
         play :          string * Color.color -> error option,
-        watch :         unit -> error option
+	watch :         unit -> error option,
+        
+	(* called in wait phase of server *)
+	start : unit -> error option
 
         (* called anytime *)
         disconnect :    unit -> unit
@@ -30,12 +34,12 @@ sig
 
     val start : callbacks -> gui
 
-    val playersJoined : (string * Color.color) list -> unit
-    val playersDisconnected : string * Color.color -> unit
-    val gameStarted :   gui -> unit
-    val levelStart :    gui * Protocol.level_info -> unit    
-    val levelTick :     gui * Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit
-    val levelCountdown : gui * int -> unit
-    val gameFinished :  gui * Highscore.highscore -> unit
+    val playersJoined :       gui * (string * Color.color) list -> unit
+    val playersDisconnected : gui * string * Color.color -> unit
+    val gameStarted :         gui -> unit
+    val levelStart :          gui * Protocol.level_info -> unit    
+    val levelTick :           gui * Highscore.points list option * Protocol.diff list * Pos.pos option * Time.time -> unit
+    val levelCountdown :      gui * int -> unit
+    val gameFinished :        gui * Highscore.highscore -> unit
 
 end
