@@ -37,6 +37,20 @@ struct
 
     (* Helpers *)
 
+    fun unarg t =
+	if not(Type.isApply t) then SOME t else
+	let
+	    val (t1,t2) = Type.asApply t
+	in
+	    if not(Type.equals(t1, PervasiveType.typ_strict)) then
+		SOME t
+	    else if Type.isTuple t2
+	    andalso Vector.length(Type.asTuple t2) = 0 then
+		NONE
+	    else
+		SOME t2
+	end
+
     fun uncurry t =
 	if not(isApply t) then (t,[]) else
 	let
@@ -242,18 +256,18 @@ struct
 		    end
 
 	    and ppField(ann,l,t) =
-		if Type.equals(t, PervasiveType.typ_zero) then
-		    ppLab l
-		else
-		    abox(
-			hbox(
-			    ppLab l ^/^
-			    ann
-			) ^^
-			nest(break ^^
-			    ppTyp t
-			)
-		    )
+		case unarg t
+		  of NONE => ppLab l
+		   | SOME t' =>
+		     abox(
+			 hbox(
+			     ppLab l ^/^
+			     ann
+			 ) ^^
+			 nest(break ^^
+			     ppTyp t'
+			 )
+		     )
 
 	    and ppBinder(s,a,t) =
 		let
