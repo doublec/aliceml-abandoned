@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,11 +17,9 @@ import structure OS          from "../../lib/system/OS"
 import structure CommandLine from "../../lib/system/CommandLine"
 import structure Url         from "../../lib/system/Url"
 import structure Resolver    from "../../lib/system/Resolver"
-import structure PrettyPrint from "../../lib/utility/PrettyPrint"
-import structure PPInf       from "../../lib/rtt/PPInf"
-import structure Inf         from "../../lib/rtt/Inf"
 import structure MyComponent from "MyComponent"
 import structure Link        from "Link"
+import structure PrintSig    from "PrintSig"
 
 signature MAIN =
     sig
@@ -76,35 +74,6 @@ structure Main :> MAIN =
 	fun help () = usage (NONE, false)
 	fun usageError s = usage (SOME s, true)
 
-	fun ppInfOpt NONE = PrettyPrint.text "[no signature]"
-	  | ppInfOpt (SOME inf) =
-	    if Inf.isSig inf then
-		PPInf.ppSig (Inf.asSig inf)
-	    else
-		PPInf.ppInf inf
-
-	fun printComponentSigs (url, component) =
-	    let
-		val export = MyComponent.inf component
-		val imports = MyComponent.imports component
-		open PrettyPrint infixr ^^ ^/^
-	    in
-		Vector.app (fn (url, infOpt) =>
-			    let
-				val doc = abox(
-					      nest 3 (
-						  text "import" ^/^
-						  ppInfOpt infOpt
-					      ) ^/^
-					      text ("from \"" ^ url ^ "\"")
-					  ) ^^ break
-			    in
-				PrettyPrint.output (TextIO.stdOut, doc, 80)
-			    end)
-			   imports;
-		PrettyPrint.output (TextIO.stdOut, ppInfOpt export^^break, 80)
-	    end
-
 	fun start (root, outputFile) =
 	    let
 		val component =
@@ -115,7 +84,7 @@ structure Main :> MAIN =
 			       rewrite = !rewrite @ [Resolver.Handler.default]}
 	    in
 		MyComponent.save (outputFile, component);
-		if !dumpsig then printComponentSigs (outputFile, component)
+		if !dumpsig then PrintSig.printSig (outputFile, component)
 		else ();
 		OS.Process.success
 	    end
@@ -144,7 +113,7 @@ structure Main :> MAIN =
 
 	fun startDumpOnly root =
 	    (case MyComponent.load (Url.fromString root) of
-		 SOME component => printComponentSigs (root, component)
+		 SOME component => PrintSig.printSig (root, component)
 	       | NONE => TextIO.print "[no signature]\n";
 	     OS.Process.success)
 	    handle IO.Io _ =>
