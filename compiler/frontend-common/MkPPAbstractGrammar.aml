@@ -460,7 +460,7 @@ struct
 					    ppMod mod ^/^
 					    ppInf inf
 					  )
-      | ppMod(UpMod(i, mod, inf))	= modtree "Up" i (
+      | ppMod(AbsMod(i, mod, inf))	= modtree "Abs" i (
 					    ppMod mod ^/^
 					    ppInf inf
 					  )
