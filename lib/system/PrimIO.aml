@@ -20,7 +20,7 @@ functor PrimIO(structure V: MONO_VECTOR
 		   where type vector = V.vector
 		     and type elem = V.elem
 	       val someElem: A.elem
-	       type pos
+	       eqtype pos
 	       val compare: pos * pos -> order) :>
     PRIM_IO
 	where type elem = A.elem
