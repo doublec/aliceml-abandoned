@@ -13,12 +13,16 @@
 functor
 import
    OS(getEnv)
+   Application(exit)
 export
    '$OS': OS_Module
 define
    OS_Module =
    'OS'('Process':
-	   'Process'('getEnv':
+	   'Process'('success': 0
+		     'failure': 1
+		     'exit': Application.exit
+		     'getEnv':
 			fun {$ S}
 			   case {OS.getEnv S} of false then 'NONE'
 			   elseof S2 then 'SOME'({ByteString.make S2})
