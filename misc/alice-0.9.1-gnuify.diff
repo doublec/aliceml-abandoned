@@ -1,0 +1,3757 @@
+diff -urN alice-0.9.orig/aclocal.m4 alice-0.9/aclocal.m4
+--- alice-0.9.orig/aclocal.m4	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/aclocal.m4	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,134 @@
++dnl aclocal.m4 generated automatically by aclocal 1.4-p6
++
++dnl Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
++dnl This file is free software; the Free Software Foundation
++dnl gives unlimited permission to copy and/or distribute it,
++dnl with or without modifications, as long as this notice is preserved.
++
++dnl This program is distributed in the hope that it will be useful,
++dnl but WITHOUT ANY WARRANTY, to the extent permitted by law; without
++dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
++dnl PARTICULAR PURPOSE.
++
++# Do all the work for Automake.  This macro actually does too much --
++# some checks are only needed if your package does certain things.
++# But this isn't really a big deal.
++
++# serial 1
++
++dnl Usage:
++dnl AM_INIT_AUTOMAKE(package,version, [no-define])
++
++AC_DEFUN([AM_INIT_AUTOMAKE],
++[AC_REQUIRE([AM_SET_CURRENT_AUTOMAKE_VERSION])dnl
++AC_REQUIRE([AC_PROG_INSTALL])
++PACKAGE=[$1]
++AC_SUBST(PACKAGE)
++VERSION=[$2]
++AC_SUBST(VERSION)
++dnl test to see if srcdir already configured
++if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
++  AC_MSG_ERROR([source directory already configured; run "make distclean" there first])
++fi
++ifelse([$3],,
++AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of package])
++AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package]))
++AC_REQUIRE([AM_SANITY_CHECK])
++AC_REQUIRE([AC_ARG_PROGRAM])
++dnl FIXME This is truly gross.
++missing_dir=`cd $ac_aux_dir && pwd`
++AM_MISSING_PROG(ACLOCAL, aclocal-${am__api_version}, $missing_dir)
++AM_MISSING_PROG(AUTOCONF, autoconf, $missing_dir)
++AM_MISSING_PROG(AUTOMAKE, automake-${am__api_version}, $missing_dir)
++AM_MISSING_PROG(AUTOHEADER, autoheader, $missing_dir)
++AM_MISSING_PROG(MAKEINFO, makeinfo, $missing_dir)
++AC_REQUIRE([AC_PROG_MAKE_SET])])
++
++# Copyright 2002  Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++
++# AM_AUTOMAKE_VERSION(VERSION)
++# ----------------------------
++# Automake X.Y traces this macro to ensure aclocal.m4 has been
++# generated from the m4 files accompanying Automake X.Y.
++AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.4"])
++
++# AM_SET_CURRENT_AUTOMAKE_VERSION
++# -------------------------------
++# Call AM_AUTOMAKE_VERSION so it can be traced.
++# This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
++AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
++	 [AM_AUTOMAKE_VERSION([1.4-p6])])
++
++#
++# Check to make sure that the build environment is sane.
++#
++
++AC_DEFUN([AM_SANITY_CHECK],
++[AC_MSG_CHECKING([whether build environment is sane])
++# Just in case
++sleep 1
++echo timestamp > conftestfile
++# Do `set' in a subshell so we don't clobber the current shell's
++# arguments.  Must try -L first in case configure is actually a
++# symlink; some systems play weird games with the mod time of symlinks
++# (eg FreeBSD returns the mod time of the symlink's containing
++# directory).
++if (
++   set X `ls -Lt $srcdir/configure conftestfile 2> /dev/null`
++   if test "[$]*" = "X"; then
++      # -L didn't work.
++      set X `ls -t $srcdir/configure conftestfile`
++   fi
++   if test "[$]*" != "X $srcdir/configure conftestfile" \
++      && test "[$]*" != "X conftestfile $srcdir/configure"; then
++
++      # If neither matched, then we have a broken ls.  This can happen
++      # if, for instance, CONFIG_SHELL is bash and it inherits a
++      # broken ls alias from the environment.  This has actually
++      # happened.  Such a system could not be considered "sane".
++      AC_MSG_ERROR([ls -t appears to fail.  Make sure there is not a broken
++alias in your environment])
++   fi
++
++   test "[$]2" = conftestfile
++   )
++then
++   # Ok.
++   :
++else
++   AC_MSG_ERROR([newly created file is older than distributed files!
++Check your system clock])
++fi
++rm -f conftest*
++AC_MSG_RESULT(yes)])
++
++dnl AM_MISSING_PROG(NAME, PROGRAM, DIRECTORY)
++dnl The program must properly implement --version.
++AC_DEFUN([AM_MISSING_PROG],
++[AC_MSG_CHECKING(for working $2)
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if ($2 --version) < /dev/null > /dev/null 2>&1; then
++   $1=$2
++   AC_MSG_RESULT(found)
++else
++   $1="$3/missing $2"
++   AC_MSG_RESULT(missing)
++fi
++AC_SUBST($1)])
++
+diff -urN alice-0.9.orig/AUTHORS alice-0.9/AUTHORS
+--- alice-0.9.orig/AUTHORS	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/AUTHORS	2002-10-15 17:46:41.000000000 +0200
+@@ -0,0 +1,11 @@
++The principle authors of Alice are:
++
++Thorsten Brunklaus
++Leif Kornstaedt
++Andreas Rossberg
++
++The following people have made essential contributions to the
++design of the language:
++
++Jan Schwinghammer
++Gert Smolka
+diff -urN alice-0.9.orig/bin/Makefile.am alice-0.9/bin/Makefile.am
+--- alice-0.9.orig/bin/Makefile.am	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/bin/Makefile.am	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,5 @@
++## Process this file with automake to produce Makefile.in
++
++bin_SCRIPTS = alice alicec alicedep alicelink alicerun aliceserv
++
++EXTRA_DIST = alice alicec alicedep alicelink alicerun aliceserv
+diff -urN alice-0.9.orig/bin/Makefile.in alice-0.9/bin/Makefile.in
+--- alice-0.9.orig/bin/Makefile.in	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/bin/Makefile.in	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,194 @@
++# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
++
++# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
++# This Makefile.in is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
++# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
++# PARTICULAR PURPOSE.
++
++
++SHELL = @SHELL@
++
++srcdir = @srcdir@
++top_srcdir = @top_srcdir@
++VPATH = @srcdir@
++prefix = @prefix@
++exec_prefix = @exec_prefix@
++
++bindir = @bindir@
++sbindir = @sbindir@
++libexecdir = @libexecdir@
++datadir = @datadir@
++sysconfdir = @sysconfdir@
++sharedstatedir = @sharedstatedir@
++localstatedir = @localstatedir@
++libdir = @libdir@
++infodir = @infodir@
++mandir = @mandir@
++includedir = @includedir@
++oldincludedir = /usr/include
++
++DESTDIR =
++
++pkgdatadir = $(datadir)/@PACKAGE@
++pkglibdir = $(libdir)/@PACKAGE@
++pkgincludedir = $(includedir)/@PACKAGE@
++
++top_builddir = ..
++
++ACLOCAL = @ACLOCAL@
++AUTOCONF = @AUTOCONF@
++AUTOMAKE = @AUTOMAKE@
++AUTOHEADER = @AUTOHEADER@
++
++INSTALL = @INSTALL@
++INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
++INSTALL_DATA = @INSTALL_DATA@
++INSTALL_SCRIPT = @INSTALL_SCRIPT@
++transform = @program_transform_name@
++
++NORMAL_INSTALL = :
++PRE_INSTALL = :
++POST_INSTALL = :
++NORMAL_UNINSTALL = :
++PRE_UNINSTALL = :
++POST_UNINSTALL = :
++MAKEINFO = @MAKEINFO@
++PACKAGE = @PACKAGE@
++VERSION = @VERSION@
++
++bin_SCRIPTS = alice alicec alicedep alicelink alicerun aliceserv
++
++EXTRA_DIST = alice alicec alicedep alicelink alicerun aliceserv
++mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
++CONFIG_CLEAN_FILES = 
++SCRIPTS =  $(bin_SCRIPTS)
++
++DIST_COMMON =  Makefile.am Makefile.in
++
++
++DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
++
++TAR = tar
++GZIP_ENV = --best
++all: all-redirect
++.SUFFIXES:
++$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
++	cd $(top_srcdir) && $(AUTOMAKE) --gnu bin/Makefile
++
++Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
++	cd $(top_builddir) \
++	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
++
++
++install-binSCRIPTS: $(bin_SCRIPTS)
++	@$(NORMAL_INSTALL)
++	$(mkinstalldirs) $(DESTDIR)$(bindir)
++	@list='$(bin_SCRIPTS)'; for p in $$list; do \
++	  if test -f $$p; then \
++	    echo " $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`"; \
++	    $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
++	  else if test -f $(srcdir)/$$p; then \
++	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`"; \
++	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
++	  else :; fi; fi; \
++	done
++
++uninstall-binSCRIPTS:
++	@$(NORMAL_UNINSTALL)
++	list='$(bin_SCRIPTS)'; for p in $$list; do \
++	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
++	done
++tags: TAGS
++TAGS:
++
++
++distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
++
++subdir = bin
++
++distdir: $(DISTFILES)
++	here=`cd $(top_builddir) && pwd`; \
++	top_distdir=`cd $(top_distdir) && pwd`; \
++	distdir=`cd $(distdir) && pwd`; \
++	cd $(top_srcdir) \
++	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu bin/Makefile
++	@for file in $(DISTFILES); do \
++	  d=$(srcdir); \
++	  if test -d $$d/$$file; then \
++	    cp -pr $$d/$$file $(distdir)/$$file; \
++	  else \
++	    test -f $(distdir)/$$file \
++	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
++	    || cp -p $$d/$$file $(distdir)/$$file || :; \
++	  fi; \
++	done
++info-am:
++info: info-am
++dvi-am:
++dvi: dvi-am
++check-am: all-am
++check: check-am
++installcheck-am:
++installcheck: installcheck-am
++install-exec-am: install-binSCRIPTS
++install-exec: install-exec-am
++
++install-data-am:
++install-data: install-data-am
++
++install-am: all-am
++	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
++install: install-am
++uninstall-am: uninstall-binSCRIPTS
++uninstall: uninstall-am
++all-am: Makefile $(SCRIPTS)
++all-redirect: all-am
++install-strip:
++	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
++installdirs:
++	$(mkinstalldirs)  $(DESTDIR)$(bindir)
++
++
++mostlyclean-generic:
++
++clean-generic:
++
++distclean-generic:
++	-rm -f Makefile $(CONFIG_CLEAN_FILES)
++	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
++
++maintainer-clean-generic:
++mostlyclean-am:  mostlyclean-generic
++
++mostlyclean: mostlyclean-am
++
++clean-am:  clean-generic mostlyclean-am
++
++clean: clean-am
++
++distclean-am:  distclean-generic clean-am
++
++distclean: distclean-am
++
++maintainer-clean-am:  maintainer-clean-generic distclean-am
++	@echo "This command is intended for maintainers to use;"
++	@echo "it deletes files that may require special tools to rebuild."
++
++maintainer-clean: maintainer-clean-am
++
++.PHONY: uninstall-binSCRIPTS install-binSCRIPTS tags distdir info-am \
++info dvi-am dvi check check-am installcheck-am installcheck \
++install-exec-am install-exec install-data-am install-data install-am \
++install uninstall-am uninstall all-redirect all-am all installdirs \
++mostlyclean-generic distclean-generic clean-generic \
++maintainer-clean-generic clean mostlyclean distclean maintainer-clean
++
++
++# Tell versions [3.59,3.63) of GNU make to not export all variables.
++# Otherwise a system limit (for SysV at least) may be exceeded.
++.NOEXPORT:
+diff -urN alice-0.9.orig/ChangeLog alice-0.9/ChangeLog
+--- alice-0.9.orig/ChangeLog	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/ChangeLog	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,4 @@
++2002-10-13  Marco Kuhlmann  <kuhlmann@ps.uni-sb.de>
++
++	added a basic autoconf/automake infrastructure to the project tree
++	to ease building *.deb and *.rpm packages
+diff -urN alice-0.9.orig/configure alice-0.9/configure
+--- alice-0.9.orig/configure	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/configure	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,2304 @@
++#! /bin/sh
++# Guess values for system-dependent variables and create Makefiles.
++# Generated by GNU Autoconf 2.54.
++#
++# Copyright 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002
++# Free Software Foundation, Inc.
++# This configure script is free software; the Free Software Foundation
++# gives unlimited permission to copy, distribute and modify it.
++## --------------------- ##
++## M4sh Initialization.  ##
++## --------------------- ##
++
++# Be Bourne compatible
++if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
++  emulate sh
++  NULLCMD=:
++  # Zsh 3.x and 4.x performs word splitting on ${1+"$@"}, which
++  # is contrary to our usage.  Disable this feature.
++  alias -g '${1+"$@"}'='"$@"'
++elif test -n "${BASH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
++  set -o posix
++fi
++
++# Support unset when possible.
++if (FOO=FOO; unset FOO) >/dev/null 2>&1; then
++  as_unset=unset
++else
++  as_unset=false
++fi
++
++
++# Work around bugs in pre-3.0 UWIN ksh.
++$as_unset ENV MAIL MAILPATH
++PS1='$ '
++PS2='> '
++PS4='+ '
++
++# NLS nuisances.
++for as_var in LANG LANGUAGE LC_ALL LC_COLLATE LC_CTYPE LC_NUMERIC LC_MESSAGES LC_TIME
++do
++  if (set +x; test -n "`(eval $as_var=C; export $as_var) 2>&1`"); then
++    eval $as_var=C; export $as_var
++  else
++    $as_unset $as_var
++  fi
++done
++
++# Required to use basename.
++if expr a : '\(a\)' >/dev/null 2>&1; then
++  as_expr=expr
++else
++  as_expr=false
++fi
++
++if (basename /) >/dev/null 2>&1 && test "X`basename / 2>&1`" = "X/"; then
++  as_basename=basename
++else
++  as_basename=false
++fi
++
++
++# Name of the executable.
++as_me=`$as_basename "$0" ||
++$as_expr X/"$0" : '.*/\([^/][^/]*\)/*$' \| \
++	 X"$0" : 'X\(//\)$' \| \
++	 X"$0" : 'X\(/\)$' \| \
++	 .     : '\(.\)' 2>/dev/null ||
++echo X/"$0" |
++    sed '/^.*\/\([^/][^/]*\)\/*$/{ s//\1/; q; }
++  	  /^X\/\(\/\/\)$/{ s//\1/; q; }
++  	  /^X\/\(\/\).*/{ s//\1/; q; }
++  	  s/.*/./; q'`
++
++
++# PATH needs CR, and LINENO needs CR and PATH.
++# Avoid depending upon Character Ranges.
++as_cr_letters='abcdefghijklmnopqrstuvwxyz'
++as_cr_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
++as_cr_Letters=$as_cr_letters$as_cr_LETTERS
++as_cr_digits='0123456789'
++as_cr_alnum=$as_cr_Letters$as_cr_digits
++
++# The user is always right.
++if test "${PATH_SEPARATOR+set}" != set; then
++  echo "#! /bin/sh" >conftest.sh
++  echo  "exit 0"   >>conftest.sh
++  chmod +x conftest.sh
++  if (PATH="/nonexistent;."; conftest.sh) >/dev/null 2>&1; then
++    PATH_SEPARATOR=';'
++  else
++    PATH_SEPARATOR=:
++  fi
++  rm -f conftest.sh
++fi
++
++
++  as_lineno_1=$LINENO
++  as_lineno_2=$LINENO
++  as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
++  test "x$as_lineno_1" != "x$as_lineno_2" &&
++  test "x$as_lineno_3"  = "x$as_lineno_2"  || {
++  # Find who we are.  Look in the path if we contain no path at all
++  # relative or not.
++  case $0 in
++    *[\\/]* ) as_myself=$0 ;;
++    *) as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  test -r "$as_dir/$0" && as_myself=$as_dir/$0 && break
++done
++
++       ;;
++  esac
++  # We did not find ourselves, most probably we were run as `sh COMMAND'
++  # in which case we are not to be found in the path.
++  if test "x$as_myself" = x; then
++    as_myself=$0
++  fi
++  if test ! -f "$as_myself"; then
++    { echo "$as_me: error: cannot find myself; rerun with an absolute path" >&2
++   { (exit 1); exit 1; }; }
++  fi
++  case $CONFIG_SHELL in
++  '')
++    as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  for as_base in sh bash ksh sh5; do
++	 case $as_dir in
++	 /*)
++	   if ("$as_dir/$as_base" -c '
++  as_lineno_1=$LINENO
++  as_lineno_2=$LINENO
++  as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
++  test "x$as_lineno_1" != "x$as_lineno_2" &&
++  test "x$as_lineno_3"  = "x$as_lineno_2" ') 2>/dev/null; then
++	     $as_unset BASH_ENV || test "${BASH_ENV+set}" != set || { BASH_ENV=; export BASH_ENV; }
++	     $as_unset ENV || test "${ENV+set}" != set || { ENV=; export ENV; }
++	     CONFIG_SHELL=$as_dir/$as_base
++	     export CONFIG_SHELL
++	     exec "$CONFIG_SHELL" "$0" ${1+"$@"}
++	   fi;;
++	 esac
++       done
++done
++;;
++  esac
++
++  # Create $as_me.lineno as a copy of $as_myself, but with $LINENO
++  # uniformly replaced by the line number.  The first 'sed' inserts a
++  # line-number line before each line; the second 'sed' does the real
++  # work.  The second script uses 'N' to pair each line-number line
++  # with the numbered line, and appends trailing '-' during
++  # substitution so that $LINENO is not a special case at line end.
++  # (Raja R Harinath suggested sed '=', and Paul Eggert wrote the
++  # second 'sed' script.  Blame Lee E. McMahon for sed's syntax.  :-)
++  sed '=' <$as_myself |
++    sed '
++      N
++      s,$,-,
++      : loop
++      s,^\(['$as_cr_digits']*\)\(.*\)[$]LINENO\([^'$as_cr_alnum'_]\),\1\2\1\3,
++      t loop
++      s,-$,,
++      s,^['$as_cr_digits']*\n,,
++    ' >$as_me.lineno &&
++  chmod +x $as_me.lineno ||
++    { echo "$as_me: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&2
++   { (exit 1); exit 1; }; }
++
++  # Don't try to exec as it changes $[0], causing all sort of problems
++  # (the dirname of $[0] is not the place where we might find the
++  # original and so on.  Autoconf is especially sensible to this).
++  . ./$as_me.lineno
++  # Exit status is that of the last command.
++  exit
++}
++
++
++case `echo "testing\c"; echo 1,2,3`,`echo -n testing; echo 1,2,3` in
++  *c*,-n*) ECHO_N= ECHO_C='
++' ECHO_T='	' ;;
++  *c*,*  ) ECHO_N=-n ECHO_C= ECHO_T= ;;
++  *)       ECHO_N= ECHO_C='\c' ECHO_T= ;;
++esac
++
++if expr a : '\(a\)' >/dev/null 2>&1; then
++  as_expr=expr
++else
++  as_expr=false
++fi
++
++rm -f conf$$ conf$$.exe conf$$.file
++echo >conf$$.file
++if ln -s conf$$.file conf$$ 2>/dev/null; then
++  # We could just check for DJGPP; but this test a) works b) is more generic
++  # and c) will remain valid once DJGPP supports symlinks (DJGPP 2.04).
++  if test -f conf$$.exe; then
++    # Don't use ln at all; we don't have any links
++    as_ln_s='cp -p'
++  else
++    as_ln_s='ln -s'
++  fi
++elif ln conf$$.file conf$$ 2>/dev/null; then
++  as_ln_s=ln
++else
++  as_ln_s='cp -p'
++fi
++rm -f conf$$ conf$$.exe conf$$.file
++
++if mkdir -p . 2>/dev/null; then
++  as_mkdir_p=:
++else
++  as_mkdir_p=false
++fi
++
++as_executable_p="test -f"
++
++# Sed expression to map a string onto a valid CPP name.
++as_tr_cpp="sed y%*$as_cr_letters%P$as_cr_LETTERS%;s%[^_$as_cr_alnum]%_%g"
++
++# Sed expression to map a string onto a valid variable name.
++as_tr_sh="sed y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
++
++
++# IFS
++# We need space, tab and new line, in precisely that order.
++as_nl='
++'
++IFS=" 	$as_nl"
++
++# CDPATH.
++$as_unset CDPATH
++
++
++# Name of the host.
++# hostname on some systems (SVR3.2, Linux) returns a bogus exit status,
++# so uname gets run too.
++ac_hostname=`(hostname || uname -n) 2>/dev/null | sed 1q`
++
++exec 6>&1
++
++#
++# Initializations.
++#
++ac_default_prefix=/usr/local
++ac_config_libobj_dir=.
++cross_compiling=no
++subdirs=
++MFLAGS=
++MAKEFLAGS=
++SHELL=${CONFIG_SHELL-/bin/sh}
++
++# Maximum number of lines to put in a shell here document.
++# This variable seems obsolete.  It should probably be removed, and
++# only ac_max_sed_lines should be used.
++: ${ac_max_here_lines=38}
++
++# Identity of this package.
++PACKAGE_NAME=
++PACKAGE_TARNAME=
++PACKAGE_VERSION=
++PACKAGE_STRING=
++PACKAGE_BUGREPORT=
++
++ac_unique_file="VMMain.ozf"
++ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO SET_MAKE LIBOBJS LTLIBOBJS'
++ac_subst_files=''
++
++# Initialize some variables set by options.
++ac_init_help=
++ac_init_version=false
++# The variables have the same names as the options, with
++# dashes changed to underlines.
++cache_file=/dev/null
++exec_prefix=NONE
++no_create=
++no_recursion=
++prefix=NONE
++program_prefix=NONE
++program_suffix=NONE
++program_transform_name=s,x,x,
++silent=
++site=
++srcdir=
++verbose=
++x_includes=NONE
++x_libraries=NONE
++
++# Installation directory options.
++# These are left unexpanded so users can "make install exec_prefix=/foo"
++# and all the variables that are supposed to be based on exec_prefix
++# by default will actually change.
++# Use braces instead of parens because sh, perl, etc. also accept them.
++bindir='${exec_prefix}/bin'
++sbindir='${exec_prefix}/sbin'
++libexecdir='${exec_prefix}/libexec'
++datadir='${prefix}/share'
++sysconfdir='${prefix}/etc'
++sharedstatedir='${prefix}/com'
++localstatedir='${prefix}/var'
++libdir='${exec_prefix}/lib'
++includedir='${prefix}/include'
++oldincludedir='/usr/include'
++infodir='${prefix}/info'
++mandir='${prefix}/man'
++
++ac_prev=
++for ac_option
++do
++  # If the previous option needs an argument, assign it.
++  if test -n "$ac_prev"; then
++    eval "$ac_prev=\$ac_option"
++    ac_prev=
++    continue
++  fi
++
++  ac_optarg=`expr "x$ac_option" : 'x[^=]*=\(.*\)'`
++
++  # Accept the important Cygnus configure options, so we can diagnose typos.
++
++  case $ac_option in
++
++  -bindir | --bindir | --bindi | --bind | --bin | --bi)
++    ac_prev=bindir ;;
++  -bindir=* | --bindir=* | --bindi=* | --bind=* | --bin=* | --bi=*)
++    bindir=$ac_optarg ;;
++
++  -build | --build | --buil | --bui | --bu)
++    ac_prev=build_alias ;;
++  -build=* | --build=* | --buil=* | --bui=* | --bu=*)
++    build_alias=$ac_optarg ;;
++
++  -cache-file | --cache-file | --cache-fil | --cache-fi \
++  | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
++    ac_prev=cache_file ;;
++  -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
++  | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* | --c=*)
++    cache_file=$ac_optarg ;;
++
++  --config-cache | -C)
++    cache_file=config.cache ;;
++
++  -datadir | --datadir | --datadi | --datad | --data | --dat | --da)
++    ac_prev=datadir ;;
++  -datadir=* | --datadir=* | --datadi=* | --datad=* | --data=* | --dat=* \
++  | --da=*)
++    datadir=$ac_optarg ;;
++
++  -disable-* | --disable-*)
++    ac_feature=`expr "x$ac_option" : 'x-*disable-\(.*\)'`
++    # Reject names that are not valid shell variable names.
++    expr "x$ac_feature" : ".*[^-_$as_cr_alnum]" >/dev/null &&
++      { echo "$as_me: error: invalid feature name: $ac_feature" >&2
++   { (exit 1); exit 1; }; }
++    ac_feature=`echo $ac_feature | sed 's/-/_/g'`
++    eval "enable_$ac_feature=no" ;;
++
++  -enable-* | --enable-*)
++    ac_feature=`expr "x$ac_option" : 'x-*enable-\([^=]*\)'`
++    # Reject names that are not valid shell variable names.
++    expr "x$ac_feature" : ".*[^-_$as_cr_alnum]" >/dev/null &&
++      { echo "$as_me: error: invalid feature name: $ac_feature" >&2
++   { (exit 1); exit 1; }; }
++    ac_feature=`echo $ac_feature | sed 's/-/_/g'`
++    case $ac_option in
++      *=*) ac_optarg=`echo "$ac_optarg" | sed "s/'/'\\\\\\\\''/g"`;;
++      *) ac_optarg=yes ;;
++    esac
++    eval "enable_$ac_feature='$ac_optarg'" ;;
++
++  -exec-prefix | --exec_prefix | --exec-prefix | --exec-prefi \
++  | --exec-pref | --exec-pre | --exec-pr | --exec-p | --exec- \
++  | --exec | --exe | --ex)
++    ac_prev=exec_prefix ;;
++  -exec-prefix=* | --exec_prefix=* | --exec-prefix=* | --exec-prefi=* \
++  | --exec-pref=* | --exec-pre=* | --exec-pr=* | --exec-p=* | --exec-=* \
++  | --exec=* | --exe=* | --ex=*)
++    exec_prefix=$ac_optarg ;;
++
++  -gas | --gas | --ga | --g)
++    # Obsolete; use --with-gas.
++    with_gas=yes ;;
++
++  -help | --help | --hel | --he | -h)
++    ac_init_help=long ;;
++  -help=r* | --help=r* | --hel=r* | --he=r* | -hr*)
++    ac_init_help=recursive ;;
++  -help=s* | --help=s* | --hel=s* | --he=s* | -hs*)
++    ac_init_help=short ;;
++
++  -host | --host | --hos | --ho)
++    ac_prev=host_alias ;;
++  -host=* | --host=* | --hos=* | --ho=*)
++    host_alias=$ac_optarg ;;
++
++  -includedir | --includedir | --includedi | --included | --include \
++  | --includ | --inclu | --incl | --inc)
++    ac_prev=includedir ;;
++  -includedir=* | --includedir=* | --includedi=* | --included=* | --include=* \
++  | --includ=* | --inclu=* | --incl=* | --inc=*)
++    includedir=$ac_optarg ;;
++
++  -infodir | --infodir | --infodi | --infod | --info | --inf)
++    ac_prev=infodir ;;
++  -infodir=* | --infodir=* | --infodi=* | --infod=* | --info=* | --inf=*)
++    infodir=$ac_optarg ;;
++
++  -libdir | --libdir | --libdi | --libd)
++    ac_prev=libdir ;;
++  -libdir=* | --libdir=* | --libdi=* | --libd=*)
++    libdir=$ac_optarg ;;
++
++  -libexecdir | --libexecdir | --libexecdi | --libexecd | --libexec \
++  | --libexe | --libex | --libe)
++    ac_prev=libexecdir ;;
++  -libexecdir=* | --libexecdir=* | --libexecdi=* | --libexecd=* | --libexec=* \
++  | --libexe=* | --libex=* | --libe=*)
++    libexecdir=$ac_optarg ;;
++
++  -localstatedir | --localstatedir | --localstatedi | --localstated \
++  | --localstate | --localstat | --localsta | --localst \
++  | --locals | --local | --loca | --loc | --lo)
++    ac_prev=localstatedir ;;
++  -localstatedir=* | --localstatedir=* | --localstatedi=* | --localstated=* \
++  | --localstate=* | --localstat=* | --localsta=* | --localst=* \
++  | --locals=* | --local=* | --loca=* | --loc=* | --lo=*)
++    localstatedir=$ac_optarg ;;
++
++  -mandir | --mandir | --mandi | --mand | --man | --ma | --m)
++    ac_prev=mandir ;;
++  -mandir=* | --mandir=* | --mandi=* | --mand=* | --man=* | --ma=* | --m=*)
++    mandir=$ac_optarg ;;
++
++  -nfp | --nfp | --nf)
++    # Obsolete; use --without-fp.
++    with_fp=no ;;
++
++  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
++  | --no-cr | --no-c | -n)
++    no_create=yes ;;
++
++  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
++  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r)
++    no_recursion=yes ;;
++
++  -oldincludedir | --oldincludedir | --oldincludedi | --oldincluded \
++  | --oldinclude | --oldinclud | --oldinclu | --oldincl | --oldinc \
++  | --oldin | --oldi | --old | --ol | --o)
++    ac_prev=oldincludedir ;;
++  -oldincludedir=* | --oldincludedir=* | --oldincludedi=* | --oldincluded=* \
++  | --oldinclude=* | --oldinclud=* | --oldinclu=* | --oldincl=* | --oldinc=* \
++  | --oldin=* | --oldi=* | --old=* | --ol=* | --o=*)
++    oldincludedir=$ac_optarg ;;
++
++  -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
++    ac_prev=prefix ;;
++  -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
++    prefix=$ac_optarg ;;
++
++  -program-prefix | --program-prefix | --program-prefi | --program-pref \
++  | --program-pre | --program-pr | --program-p)
++    ac_prev=program_prefix ;;
++  -program-prefix=* | --program-prefix=* | --program-prefi=* \
++  | --program-pref=* | --program-pre=* | --program-pr=* | --program-p=*)
++    program_prefix=$ac_optarg ;;
++
++  -program-suffix | --program-suffix | --program-suffi | --program-suff \
++  | --program-suf | --program-su | --program-s)
++    ac_prev=program_suffix ;;
++  -program-suffix=* | --program-suffix=* | --program-suffi=* \
++  | --program-suff=* | --program-suf=* | --program-su=* | --program-s=*)
++    program_suffix=$ac_optarg ;;
++
++  -program-transform-name | --program-transform-name \
++  | --program-transform-nam | --program-transform-na \
++  | --program-transform-n | --program-transform- \
++  | --program-transform | --program-transfor \
++  | --program-transfo | --program-transf \
++  | --program-trans | --program-tran \
++  | --progr-tra | --program-tr | --program-t)
++    ac_prev=program_transform_name ;;
++  -program-transform-name=* | --program-transform-name=* \
++  | --program-transform-nam=* | --program-transform-na=* \
++  | --program-transform-n=* | --program-transform-=* \
++  | --program-transform=* | --program-transfor=* \
++  | --program-transfo=* | --program-transf=* \
++  | --program-trans=* | --program-tran=* \
++  | --progr-tra=* | --program-tr=* | --program-t=*)
++    program_transform_name=$ac_optarg ;;
++
++  -q | -quiet | --quiet | --quie | --qui | --qu | --q \
++  | -silent | --silent | --silen | --sile | --sil)
++    silent=yes ;;
++
++  -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
++    ac_prev=sbindir ;;
++  -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
++  | --sbi=* | --sb=*)
++    sbindir=$ac_optarg ;;
++
++  -sharedstatedir | --sharedstatedir | --sharedstatedi \
++  | --sharedstated | --sharedstate | --sharedstat | --sharedsta \
++  | --sharedst | --shareds | --shared | --share | --shar \
++  | --sha | --sh)
++    ac_prev=sharedstatedir ;;
++  -sharedstatedir=* | --sharedstatedir=* | --sharedstatedi=* \
++  | --sharedstated=* | --sharedstate=* | --sharedstat=* | --sharedsta=* \
++  | --sharedst=* | --shareds=* | --shared=* | --share=* | --shar=* \
++  | --sha=* | --sh=*)
++    sharedstatedir=$ac_optarg ;;
++
++  -site | --site | --sit)
++    ac_prev=site ;;
++  -site=* | --site=* | --sit=*)
++    site=$ac_optarg ;;
++
++  -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
++    ac_prev=srcdir ;;
++  -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
++    srcdir=$ac_optarg ;;
++
++  -sysconfdir | --sysconfdir | --sysconfdi | --sysconfd | --sysconf \
++  | --syscon | --sysco | --sysc | --sys | --sy)
++    ac_prev=sysconfdir ;;
++  -sysconfdir=* | --sysconfdir=* | --sysconfdi=* | --sysconfd=* | --sysconf=* \
++  | --syscon=* | --sysco=* | --sysc=* | --sys=* | --sy=*)
++    sysconfdir=$ac_optarg ;;
++
++  -target | --target | --targe | --targ | --tar | --ta | --t)
++    ac_prev=target_alias ;;
++  -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
++    target_alias=$ac_optarg ;;
++
++  -v | -verbose | --verbose | --verbos | --verbo | --verb)
++    verbose=yes ;;
++
++  -version | --version | --versio | --versi | --vers | -V)
++    ac_init_version=: ;;
++
++  -with-* | --with-*)
++    ac_package=`expr "x$ac_option" : 'x-*with-\([^=]*\)'`
++    # Reject names that are not valid shell variable names.
++    expr "x$ac_package" : ".*[^-_$as_cr_alnum]" >/dev/null &&
++      { echo "$as_me: error: invalid package name: $ac_package" >&2
++   { (exit 1); exit 1; }; }
++    ac_package=`echo $ac_package| sed 's/-/_/g'`
++    case $ac_option in
++      *=*) ac_optarg=`echo "$ac_optarg" | sed "s/'/'\\\\\\\\''/g"`;;
++      *) ac_optarg=yes ;;
++    esac
++    eval "with_$ac_package='$ac_optarg'" ;;
++
++  -without-* | --without-*)
++    ac_package=`expr "x$ac_option" : 'x-*without-\(.*\)'`
++    # Reject names that are not valid shell variable names.
++    expr "x$ac_package" : ".*[^-_$as_cr_alnum]" >/dev/null &&
++      { echo "$as_me: error: invalid package name: $ac_package" >&2
++   { (exit 1); exit 1; }; }
++    ac_package=`echo $ac_package | sed 's/-/_/g'`
++    eval "with_$ac_package=no" ;;
++
++  --x)
++    # Obsolete; use --with-x.
++    with_x=yes ;;
++
++  -x-includes | --x-includes | --x-include | --x-includ | --x-inclu \
++  | --x-incl | --x-inc | --x-in | --x-i)
++    ac_prev=x_includes ;;
++  -x-includes=* | --x-includes=* | --x-include=* | --x-includ=* | --x-inclu=* \
++  | --x-incl=* | --x-inc=* | --x-in=* | --x-i=*)
++    x_includes=$ac_optarg ;;
++
++  -x-libraries | --x-libraries | --x-librarie | --x-librari \
++  | --x-librar | --x-libra | --x-libr | --x-lib | --x-li | --x-l)
++    ac_prev=x_libraries ;;
++  -x-libraries=* | --x-libraries=* | --x-librarie=* | --x-librari=* \
++  | --x-librar=* | --x-libra=* | --x-libr=* | --x-lib=* | --x-li=* | --x-l=*)
++    x_libraries=$ac_optarg ;;
++
++  -*) { echo "$as_me: error: unrecognized option: $ac_option
++Try \`$0 --help' for more information." >&2
++   { (exit 1); exit 1; }; }
++    ;;
++
++  *=*)
++    ac_envvar=`expr "x$ac_option" : 'x\([^=]*\)='`
++    # Reject names that are not valid shell variable names.
++    expr "x$ac_envvar" : ".*[^_$as_cr_alnum]" >/dev/null &&
++      { echo "$as_me: error: invalid variable name: $ac_envvar" >&2
++   { (exit 1); exit 1; }; }
++    ac_optarg=`echo "$ac_optarg" | sed "s/'/'\\\\\\\\''/g"`
++    eval "$ac_envvar='$ac_optarg'"
++    export $ac_envvar ;;
++
++  *)
++    # FIXME: should be removed in autoconf 3.0.
++    echo "$as_me: WARNING: you should use --build, --host, --target" >&2
++    expr "x$ac_option" : ".*[^-._$as_cr_alnum]" >/dev/null &&
++      echo "$as_me: WARNING: invalid host type: $ac_option" >&2
++    : ${build_alias=$ac_option} ${host_alias=$ac_option} ${target_alias=$ac_option}
++    ;;
++
++  esac
++done
++
++if test -n "$ac_prev"; then
++  ac_option=--`echo $ac_prev | sed 's/_/-/g'`
++  { echo "$as_me: error: missing argument to $ac_option" >&2
++   { (exit 1); exit 1; }; }
++fi
++
++# Be sure to have absolute paths.
++for ac_var in exec_prefix prefix
++do
++  eval ac_val=$`echo $ac_var`
++  case $ac_val in
++    [\\/$]* | ?:[\\/]* | NONE | '' ) ;;
++    *)  { echo "$as_me: error: expected an absolute directory name for --$ac_var: $ac_val" >&2
++   { (exit 1); exit 1; }; };;
++  esac
++done
++
++# Be sure to have absolute paths.
++for ac_var in bindir sbindir libexecdir datadir sysconfdir sharedstatedir \
++              localstatedir libdir includedir oldincludedir infodir mandir
++do
++  eval ac_val=$`echo $ac_var`
++  case $ac_val in
++    [\\/$]* | ?:[\\/]* ) ;;
++    *)  { echo "$as_me: error: expected an absolute directory name for --$ac_var: $ac_val" >&2
++   { (exit 1); exit 1; }; };;
++  esac
++done
++
++# There might be people who depend on the old broken behavior: `$host'
++# used to hold the argument of --host etc.
++# FIXME: To remove some day.
++build=$build_alias
++host=$host_alias
++target=$target_alias
++
++# FIXME: To remove some day.
++if test "x$host_alias" != x; then
++  if test "x$build_alias" = x; then
++    cross_compiling=maybe
++    echo "$as_me: WARNING: If you wanted to set the --build type, don't use --host.
++    If a cross compiler is detected then cross compile mode will be used." >&2
++  elif test "x$build_alias" != "x$host_alias"; then
++    cross_compiling=yes
++  fi
++fi
++
++ac_tool_prefix=
++test -n "$host_alias" && ac_tool_prefix=$host_alias-
++
++test "$silent" = yes && exec 6>/dev/null
++
++
++# Find the source files, if location was not specified.
++if test -z "$srcdir"; then
++  ac_srcdir_defaulted=yes
++  # Try the directory containing this script, then its parent.
++  ac_confdir=`(dirname "$0") 2>/dev/null ||
++$as_expr X"$0" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
++         X"$0" : 'X\(//\)[^/]' \| \
++         X"$0" : 'X\(//\)$' \| \
++         X"$0" : 'X\(/\)' \| \
++         .     : '\(.\)' 2>/dev/null ||
++echo X"$0" |
++    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{ s//\1/; q; }
++  	  /^X\(\/\/\)[^/].*/{ s//\1/; q; }
++  	  /^X\(\/\/\)$/{ s//\1/; q; }
++  	  /^X\(\/\).*/{ s//\1/; q; }
++  	  s/.*/./; q'`
++  srcdir=$ac_confdir
++  if test ! -r $srcdir/$ac_unique_file; then
++    srcdir=..
++  fi
++else
++  ac_srcdir_defaulted=no
++fi
++if test ! -r $srcdir/$ac_unique_file; then
++  if test "$ac_srcdir_defaulted" = yes; then
++    { echo "$as_me: error: cannot find sources ($ac_unique_file) in $ac_confdir or .." >&2
++   { (exit 1); exit 1; }; }
++  else
++    { echo "$as_me: error: cannot find sources ($ac_unique_file) in $srcdir" >&2
++   { (exit 1); exit 1; }; }
++  fi
++fi
++(cd $srcdir && test -r ./$ac_unique_file) 2>/dev/null ||
++  { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
++   { (exit 1); exit 1; }; }
++srcdir=`echo "$srcdir" | sed 's%\([^\\/]\)[\\/]*$%\1%'`
++ac_env_build_alias_set=${build_alias+set}
++ac_env_build_alias_value=$build_alias
++ac_cv_env_build_alias_set=${build_alias+set}
++ac_cv_env_build_alias_value=$build_alias
++ac_env_host_alias_set=${host_alias+set}
++ac_env_host_alias_value=$host_alias
++ac_cv_env_host_alias_set=${host_alias+set}
++ac_cv_env_host_alias_value=$host_alias
++ac_env_target_alias_set=${target_alias+set}
++ac_env_target_alias_value=$target_alias
++ac_cv_env_target_alias_set=${target_alias+set}
++ac_cv_env_target_alias_value=$target_alias
++
++#
++# Report the --help message.
++#
++if test "$ac_init_help" = "long"; then
++  # Omit some internal or obsolete options to make the list less imposing.
++  # This message is too long to be a string in the A/UX 3.1 sh.
++  cat <<_ACEOF
++\`configure' configures this package to adapt to many kinds of systems.
++
++Usage: $0 [OPTION]... [VAR=VALUE]...
++
++To assign environment variables (e.g., CC, CFLAGS...), specify them as
++VAR=VALUE.  See below for descriptions of some of the useful variables.
++
++Defaults for the options are specified in brackets.
++
++Configuration:
++  -h, --help              display this help and exit
++      --help=short        display options specific to this package
++      --help=recursive    display the short help of all the included packages
++  -V, --version           display version information and exit
++  -q, --quiet, --silent   do not print \`checking...' messages
++      --cache-file=FILE   cache test results in FILE [disabled]
++  -C, --config-cache      alias for \`--cache-file=config.cache'
++  -n, --no-create         do not create output files
++      --srcdir=DIR        find the sources in DIR [configure dir or \`..']
++
++_ACEOF
++
++  cat <<_ACEOF
++Installation directories:
++  --prefix=PREFIX         install architecture-independent files in PREFIX
++                          [$ac_default_prefix]
++  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
++                          [PREFIX]
++
++By default, \`make install' will install all the files in
++\`$ac_default_prefix/bin', \`$ac_default_prefix/lib' etc.  You can specify
++an installation prefix other than \`$ac_default_prefix' using \`--prefix',
++for instance \`--prefix=\$HOME'.
++
++For better control, use the options below.
++
++Fine tuning of the installation directories:
++  --bindir=DIR           user executables [EPREFIX/bin]
++  --sbindir=DIR          system admin executables [EPREFIX/sbin]
++  --libexecdir=DIR       program executables [EPREFIX/libexec]
++  --datadir=DIR          read-only architecture-independent data [PREFIX/share]
++  --sysconfdir=DIR       read-only single-machine data [PREFIX/etc]
++  --sharedstatedir=DIR   modifiable architecture-independent data [PREFIX/com]
++  --localstatedir=DIR    modifiable single-machine data [PREFIX/var]
++  --libdir=DIR           object code libraries [EPREFIX/lib]
++  --includedir=DIR       C header files [PREFIX/include]
++  --oldincludedir=DIR    C header files for non-gcc [/usr/include]
++  --infodir=DIR          info documentation [PREFIX/info]
++  --mandir=DIR           man documentation [PREFIX/man]
++_ACEOF
++
++  cat <<\_ACEOF
++
++Program names:
++  --program-prefix=PREFIX            prepend PREFIX to installed program names
++  --program-suffix=SUFFIX            append SUFFIX to installed program names
++  --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
++_ACEOF
++fi
++
++if test -n "$ac_init_help"; then
++
++  cat <<\_ACEOF
++
++_ACEOF
++fi
++
++if test "$ac_init_help" = "recursive"; then
++  # If there are subdirs, report their specific --help.
++  ac_popdir=`pwd`
++  for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
++    test -d $ac_dir || continue
++    ac_builddir=.
++
++if test "$ac_dir" != .; then
++  ac_dir_suffix=/`echo "$ac_dir" | sed 's,^\.[\\/],,'`
++  # A "../" for each directory in $ac_dir_suffix.
++  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
++else
++  ac_dir_suffix= ac_top_builddir=
++fi
++
++case $srcdir in
++  .)  # No --srcdir option.  We are building in place.
++    ac_srcdir=.
++    if test -z "$ac_top_builddir"; then
++       ac_top_srcdir=.
++    else
++       ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
++    fi ;;
++  [\\/]* | ?:[\\/]* )  # Absolute path.
++    ac_srcdir=$srcdir$ac_dir_suffix;
++    ac_top_srcdir=$srcdir ;;
++  *) # Relative path.
++    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
++    ac_top_srcdir=$ac_top_builddir$srcdir ;;
++esac
++# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
++# absolute.
++ac_abs_builddir=`cd "$ac_dir" && cd $ac_builddir && pwd`
++ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && pwd`
++ac_abs_srcdir=`cd "$ac_dir" && cd $ac_srcdir && pwd`
++ac_abs_top_srcdir=`cd "$ac_dir" && cd $ac_top_srcdir && pwd`
++
++    cd $ac_dir
++    # Check for guested configure; otherwise get Cygnus style configure.
++    if test -f $ac_srcdir/configure.gnu; then
++      echo
++      $SHELL $ac_srcdir/configure.gnu  --help=recursive
++    elif test -f $ac_srcdir/configure; then
++      echo
++      $SHELL $ac_srcdir/configure  --help=recursive
++    elif test -f $ac_srcdir/configure.ac ||
++           test -f $ac_srcdir/configure.in; then
++      echo
++      $ac_configure --help
++    else
++      echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
++    fi
++    cd $ac_popdir
++  done
++fi
++
++test -n "$ac_init_help" && exit 0
++if $ac_init_version; then
++  cat <<\_ACEOF
++
++Copyright 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002
++Free Software Foundation, Inc.
++This configure script is free software; the Free Software Foundation
++gives unlimited permission to copy, distribute and modify it.
++_ACEOF
++  exit 0
++fi
++exec 5>config.log
++cat >&5 <<_ACEOF
++This file contains any messages produced by compilers while
++running configure, to aid debugging if configure makes a mistake.
++
++It was created by $as_me, which was
++generated by GNU Autoconf 2.54.  Invocation command line was
++
++  $ $0 $@
++
++_ACEOF
++{
++cat <<_ASUNAME
++## --------- ##
++## Platform. ##
++## --------- ##
++
++hostname = `(hostname || uname -n) 2>/dev/null | sed 1q`
++uname -m = `(uname -m) 2>/dev/null || echo unknown`
++uname -r = `(uname -r) 2>/dev/null || echo unknown`
++uname -s = `(uname -s) 2>/dev/null || echo unknown`
++uname -v = `(uname -v) 2>/dev/null || echo unknown`
++
++/usr/bin/uname -p = `(/usr/bin/uname -p) 2>/dev/null || echo unknown`
++/bin/uname -X     = `(/bin/uname -X) 2>/dev/null     || echo unknown`
++
++/bin/arch              = `(/bin/arch) 2>/dev/null              || echo unknown`
++/usr/bin/arch -k       = `(/usr/bin/arch -k) 2>/dev/null       || echo unknown`
++/usr/convex/getsysinfo = `(/usr/convex/getsysinfo) 2>/dev/null || echo unknown`
++hostinfo               = `(hostinfo) 2>/dev/null               || echo unknown`
++/bin/machine           = `(/bin/machine) 2>/dev/null           || echo unknown`
++/usr/bin/oslevel       = `(/usr/bin/oslevel) 2>/dev/null       || echo unknown`
++/bin/universe          = `(/bin/universe) 2>/dev/null          || echo unknown`
++
++_ASUNAME
++
++as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  echo "PATH: $as_dir"
++done
++
++} >&5
++
++cat >&5 <<_ACEOF
++
++
++## ----------- ##
++## Core tests. ##
++## ----------- ##
++
++_ACEOF
++
++
++# Keep a trace of the command line.
++# Strip out --no-create and --no-recursion so they do not pile up.
++# Also quote any args containing shell meta-characters.
++ac_configure_args=
++ac_sep=
++for ac_arg
++do
++  case $ac_arg in
++  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
++  | --no-cr | --no-c | -n ) continue ;;
++  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
++  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r)
++    continue ;;
++  *" "*|*"	"*|*[\[\]\~\#\$\^\&\*\(\)\{\}\\\|\;\<\>\?\"\']*)
++    ac_arg=`echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
++  esac
++  ac_configure_args="$ac_configure_args$ac_sep'$ac_arg'"
++  # Get rid of the leading space.
++  ac_sep=" "
++done
++
++# When interrupted or exit'd, cleanup temporary files, and complete
++# config.log.  We remove comments because anyway the quotes in there
++# would cause problems or look ugly.
++# WARNING: Be sure not to use single quotes in there, as some shells,
++# such as our DU 5.0 friend, will then `close' the trap.
++trap 'exit_status=$?
++  # Save into config.log some information that might help in debugging.
++  {
++    echo
++
++    cat <<\_ASBOX
++## ---------------- ##
++## Cache variables. ##
++## ---------------- ##
++_ASBOX
++    echo
++    # The following way of writing the cache mishandles newlines in values,
++{
++  (set) 2>&1 |
++    case `(ac_space='"'"' '"'"'; set | grep ac_space) 2>&1` in
++    *ac_space=\ *)
++      sed -n \
++        "s/'"'"'/'"'"'\\\\'"'"''"'"'/g;
++    	  s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1='"'"'\\2'"'"'/p"
++      ;;
++    *)
++      sed -n \
++        "s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1=\\2/p"
++      ;;
++    esac;
++}
++    echo
++
++    cat <<\_ASBOX
++## ----------------- ##
++## Output variables. ##
++## ----------------- ##
++_ASBOX
++    echo
++    for ac_var in $ac_subst_vars
++    do
++      eval ac_val=$`echo $ac_var`
++      echo "$ac_var='"'"'$ac_val'"'"'"
++    done | sort
++    echo
++
++    if test -n "$ac_subst_files"; then
++      cat <<\_ASBOX
++## ------------- ##
++## Output files. ##
++## ------------- ##
++_ASBOX
++      echo
++      for ac_var in $ac_subst_files
++      do
++	eval ac_val=$`echo $ac_var`
++        echo "$ac_var='"'"'$ac_val'"'"'"
++      done | sort
++      echo
++    fi
++
++    if test -s confdefs.h; then
++      cat <<\_ASBOX
++## ----------- ##
++## confdefs.h. ##
++## ----------- ##
++_ASBOX
++      echo
++      sed "/^$/d" confdefs.h | sort
++      echo
++    fi
++    test "$ac_signal" != 0 &&
++      echo "$as_me: caught signal $ac_signal"
++    echo "$as_me: exit $exit_status"
++  } >&5
++  rm -f core core.* *.core &&
++  rm -rf conftest* confdefs* conf$$* $ac_clean_files &&
++    exit $exit_status
++     ' 0
++for ac_signal in 1 2 13 15; do
++  trap 'ac_signal='$ac_signal'; { (exit 1); exit 1; }' $ac_signal
++done
++ac_signal=0
++
++# confdefs.h avoids OS command line length limits that DEFS can exceed.
++rm -rf conftest* confdefs.h
++# AIX cpp loses on an empty file, so make sure it contains at least a newline.
++echo >confdefs.h
++
++# Predefined preprocessor variables.
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE_NAME "$PACKAGE_NAME"
++_ACEOF
++
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE_TARNAME "$PACKAGE_TARNAME"
++_ACEOF
++
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE_VERSION "$PACKAGE_VERSION"
++_ACEOF
++
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE_STRING "$PACKAGE_STRING"
++_ACEOF
++
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
++_ACEOF
++
++
++# Let the site file select an alternate cache file if it wants to.
++# Prefer explicitly selected file to automatically selected ones.
++if test -z "$CONFIG_SITE"; then
++  if test "x$prefix" != xNONE; then
++    CONFIG_SITE="$prefix/share/config.site $prefix/etc/config.site"
++  else
++    CONFIG_SITE="$ac_default_prefix/share/config.site $ac_default_prefix/etc/config.site"
++  fi
++fi
++for ac_site_file in $CONFIG_SITE; do
++  if test -r "$ac_site_file"; then
++    { echo "$as_me:$LINENO: loading site script $ac_site_file" >&5
++echo "$as_me: loading site script $ac_site_file" >&6;}
++    sed 's/^/| /' "$ac_site_file" >&5
++    . "$ac_site_file"
++  fi
++done
++
++if test -r "$cache_file"; then
++  # Some versions of bash will fail to source /dev/null (special
++  # files actually), so we avoid doing that.
++  if test -f "$cache_file"; then
++    { echo "$as_me:$LINENO: loading cache $cache_file" >&5
++echo "$as_me: loading cache $cache_file" >&6;}
++    case $cache_file in
++      [\\/]* | ?:[\\/]* ) . $cache_file;;
++      *)                      . ./$cache_file;;
++    esac
++  fi
++else
++  { echo "$as_me:$LINENO: creating cache $cache_file" >&5
++echo "$as_me: creating cache $cache_file" >&6;}
++  >$cache_file
++fi
++
++# Check that the precious variables saved in the cache have kept the same
++# value.
++ac_cache_corrupted=false
++for ac_var in `(set) 2>&1 |
++               sed -n 's/^ac_env_\([a-zA-Z_0-9]*\)_set=.*/\1/p'`; do
++  eval ac_old_set=\$ac_cv_env_${ac_var}_set
++  eval ac_new_set=\$ac_env_${ac_var}_set
++  eval ac_old_val="\$ac_cv_env_${ac_var}_value"
++  eval ac_new_val="\$ac_env_${ac_var}_value"
++  case $ac_old_set,$ac_new_set in
++    set,)
++      { echo "$as_me:$LINENO: error: \`$ac_var' was set to \`$ac_old_val' in the previous run" >&5
++echo "$as_me: error: \`$ac_var' was set to \`$ac_old_val' in the previous run" >&2;}
++      ac_cache_corrupted=: ;;
++    ,set)
++      { echo "$as_me:$LINENO: error: \`$ac_var' was not set in the previous run" >&5
++echo "$as_me: error: \`$ac_var' was not set in the previous run" >&2;}
++      ac_cache_corrupted=: ;;
++    ,);;
++    *)
++      if test "x$ac_old_val" != "x$ac_new_val"; then
++        { echo "$as_me:$LINENO: error: \`$ac_var' has changed since the previous run:" >&5
++echo "$as_me: error: \`$ac_var' has changed since the previous run:" >&2;}
++        { echo "$as_me:$LINENO:   former value:  $ac_old_val" >&5
++echo "$as_me:   former value:  $ac_old_val" >&2;}
++        { echo "$as_me:$LINENO:   current value: $ac_new_val" >&5
++echo "$as_me:   current value: $ac_new_val" >&2;}
++        ac_cache_corrupted=:
++      fi;;
++  esac
++  # Pass precious variables to config.status.
++  if test "$ac_new_set" = set; then
++    case $ac_new_val in
++    *" "*|*"	"*|*[\[\]\~\#\$\^\&\*\(\)\{\}\\\|\;\<\>\?\"\']*)
++      ac_arg=$ac_var=`echo "$ac_new_val" | sed "s/'/'\\\\\\\\''/g"` ;;
++    *) ac_arg=$ac_var=$ac_new_val ;;
++    esac
++    case " $ac_configure_args " in
++      *" '$ac_arg' "*) ;; # Avoid dups.  Use of quotes ensures accuracy.
++      *) ac_configure_args="$ac_configure_args '$ac_arg'" ;;
++    esac
++  fi
++done
++if $ac_cache_corrupted; then
++  { echo "$as_me:$LINENO: error: changes in the environment can compromise the build" >&5
++echo "$as_me: error: changes in the environment can compromise the build" >&2;}
++  { { echo "$as_me:$LINENO: error: run \`make distclean' and/or \`rm $cache_file' and start over" >&5
++echo "$as_me: error: run \`make distclean' and/or \`rm $cache_file' and start over" >&2;}
++   { (exit 1); exit 1; }; }
++fi
++
++ac_ext=c
++ac_cpp='$CPP $CPPFLAGS'
++ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
++ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
++ac_compiler_gnu=$ac_cv_c_compiler_gnu
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++am__api_version="1.4"
++ac_aux_dir=
++for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
++  if test -f $ac_dir/install-sh; then
++    ac_aux_dir=$ac_dir
++    ac_install_sh="$ac_aux_dir/install-sh -c"
++    break
++  elif test -f $ac_dir/install.sh; then
++    ac_aux_dir=$ac_dir
++    ac_install_sh="$ac_aux_dir/install.sh -c"
++    break
++  elif test -f $ac_dir/shtool; then
++    ac_aux_dir=$ac_dir
++    ac_install_sh="$ac_aux_dir/shtool install -c"
++    break
++  fi
++done
++if test -z "$ac_aux_dir"; then
++  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
++echo "$as_me: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&2;}
++   { (exit 1); exit 1; }; }
++fi
++ac_config_guess="$SHELL $ac_aux_dir/config.guess"
++ac_config_sub="$SHELL $ac_aux_dir/config.sub"
++ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
++
++# Find a good install program.  We prefer a C program (faster),
++# so one script is as good as another.  But avoid the broken or
++# incompatible versions:
++# SysV /etc/install, /usr/sbin/install
++# SunOS /usr/etc/install
++# IRIX /sbin/install
++# AIX /bin/install
++# AmigaOS /C/install, which installs bootblocks on floppy discs
++# AIX 4 /usr/bin/installbsd, which doesn't work without a -g flag
++# AFS /usr/afsws/bin/install, which mishandles nonexistent args
++# SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
++# ./install, which can be erroneously created by make from ./install.sh.
++echo "$as_me:$LINENO: checking for a BSD-compatible install" >&5
++echo $ECHO_N "checking for a BSD-compatible install... $ECHO_C" >&6
++if test -z "$INSTALL"; then
++if test "${ac_cv_path_install+set}" = set; then
++  echo $ECHO_N "(cached) $ECHO_C" >&6
++else
++  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  # Account for people who put trailing slashes in PATH elements.
++case $as_dir/ in
++  ./ | .// | /cC/* | \
++  /etc/* | /usr/sbin/* | /usr/etc/* | /sbin/* | /usr/afsws/bin/* | \
++  /usr/ucb/* ) ;;
++  *)
++    # OSF1 and SCO ODT 3.0 have their own names for install.
++    # Don't use installbsd from OSF since it installs stuff as root
++    # by default.
++    for ac_prog in ginstall scoinst install; do
++      for ac_exec_ext in '' $ac_executable_extensions; do
++        if $as_executable_p "$as_dir/$ac_prog$ac_exec_ext"; then
++          if test $ac_prog = install &&
++            grep dspmsg "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
++            # AIX install.  It has an incompatible calling convention.
++            :
++          elif test $ac_prog = install &&
++            grep pwplus "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
++            # program-specific install script used by HP pwplus--don't use.
++            :
++          else
++            ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
++            break 3
++          fi
++        fi
++      done
++    done
++    ;;
++esac
++done
++
++
++fi
++  if test "${ac_cv_path_install+set}" = set; then
++    INSTALL=$ac_cv_path_install
++  else
++    # As a last resort, use the slow shell script.  We don't cache a
++    # path for INSTALL within a source directory, because that will
++    # break other packages using the cache if that directory is
++    # removed, or if the path is relative.
++    INSTALL=$ac_install_sh
++  fi
++fi
++echo "$as_me:$LINENO: result: $INSTALL" >&5
++echo "${ECHO_T}$INSTALL" >&6
++
++# Use test -z because SunOS4 sh mishandles braces in ${var-val}.
++# It thinks the first close brace ends the variable substitution.
++test -z "$INSTALL_PROGRAM" && INSTALL_PROGRAM='${INSTALL}'
++
++test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
++
++test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
++
++echo "$as_me:$LINENO: checking whether build environment is sane" >&5
++echo $ECHO_N "checking whether build environment is sane... $ECHO_C" >&6
++# Just in case
++sleep 1
++echo timestamp > conftestfile
++# Do `set' in a subshell so we don't clobber the current shell's
++# arguments.  Must try -L first in case configure is actually a
++# symlink; some systems play weird games with the mod time of symlinks
++# (eg FreeBSD returns the mod time of the symlink's containing
++# directory).
++if (
++   set X `ls -Lt $srcdir/configure conftestfile 2> /dev/null`
++   if test "$*" = "X"; then
++      # -L didn't work.
++      set X `ls -t $srcdir/configure conftestfile`
++   fi
++   if test "$*" != "X $srcdir/configure conftestfile" \
++      && test "$*" != "X conftestfile $srcdir/configure"; then
++
++      # If neither matched, then we have a broken ls.  This can happen
++      # if, for instance, CONFIG_SHELL is bash and it inherits a
++      # broken ls alias from the environment.  This has actually
++      # happened.  Such a system could not be considered "sane".
++      { { echo "$as_me:$LINENO: error: ls -t appears to fail.  Make sure there is not a broken
++alias in your environment" >&5
++echo "$as_me: error: ls -t appears to fail.  Make sure there is not a broken
++alias in your environment" >&2;}
++   { (exit 1); exit 1; }; }
++   fi
++
++   test "$2" = conftestfile
++   )
++then
++   # Ok.
++   :
++else
++   { { echo "$as_me:$LINENO: error: newly created file is older than distributed files!
++Check your system clock" >&5
++echo "$as_me: error: newly created file is older than distributed files!
++Check your system clock" >&2;}
++   { (exit 1); exit 1; }; }
++fi
++rm -f conftest*
++echo "$as_me:$LINENO: result: yes" >&5
++echo "${ECHO_T}yes" >&6
++test "$program_prefix" != NONE &&
++  program_transform_name="s,^,$program_prefix,;$program_transform_name"
++# Use a double $ so make ignores it.
++test "$program_suffix" != NONE &&
++  program_transform_name="s,\$,$program_suffix,;$program_transform_name"
++# Double any \ or $.  echo might interpret backslashes.
++# By default was `s,x,x', remove it if useless.
++cat <<\_ACEOF >conftest.sed
++s/[\\$]/&&/g;s/;s,x,x,$//
++_ACEOF
++program_transform_name=`echo $program_transform_name | sed -f conftest.sed`
++rm conftest.sed
++
++echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \${MAKE}" >&5
++echo $ECHO_N "checking whether ${MAKE-make} sets \${MAKE}... $ECHO_C" >&6
++set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y,./+-,__p_,'`
++if eval "test \"\${ac_cv_prog_make_${ac_make}_set+set}\" = set"; then
++  echo $ECHO_N "(cached) $ECHO_C" >&6
++else
++  cat >conftest.make <<\_ACEOF
++all:
++	@echo 'ac_maketemp="${MAKE}"'
++_ACEOF
++# GNU make sometimes prints "make[1]: Entering...", which would confuse us.
++eval `${MAKE-make} -f conftest.make 2>/dev/null | grep temp=`
++if test -n "$ac_maketemp"; then
++  eval ac_cv_prog_make_${ac_make}_set=yes
++else
++  eval ac_cv_prog_make_${ac_make}_set=no
++fi
++rm -f conftest.make
++fi
++if eval "test \"`echo '$ac_cv_prog_make_'${ac_make}_set`\" = yes"; then
++  echo "$as_me:$LINENO: result: yes" >&5
++echo "${ECHO_T}yes" >&6
++  SET_MAKE=
++else
++  echo "$as_me:$LINENO: result: no" >&5
++echo "${ECHO_T}no" >&6
++  SET_MAKE="MAKE=${MAKE-make}"
++fi
++
++
++PACKAGE=alice
++
++VERSION=0.9
++
++if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
++  { { echo "$as_me:$LINENO: error: source directory already configured; run \"make distclean\" there first" >&5
++echo "$as_me: error: source directory already configured; run \"make distclean\" there first" >&2;}
++   { (exit 1); exit 1; }; }
++fi
++
++cat >>confdefs.h <<_ACEOF
++#define PACKAGE "$PACKAGE"
++_ACEOF
++
++
++cat >>confdefs.h <<_ACEOF
++#define VERSION "$VERSION"
++_ACEOF
++
++
++
++missing_dir=`cd $ac_aux_dir && pwd`
++echo "$as_me:$LINENO: checking for working aclocal-${am__api_version}" >&5
++echo $ECHO_N "checking for working aclocal-${am__api_version}... $ECHO_C" >&6
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if (aclocal-${am__api_version} --version) < /dev/null > /dev/null 2>&1; then
++   ACLOCAL=aclocal-${am__api_version}
++   echo "$as_me:$LINENO: result: found" >&5
++echo "${ECHO_T}found" >&6
++else
++   ACLOCAL="$missing_dir/missing aclocal-${am__api_version}"
++   echo "$as_me:$LINENO: result: missing" >&5
++echo "${ECHO_T}missing" >&6
++fi
++
++echo "$as_me:$LINENO: checking for working autoconf" >&5
++echo $ECHO_N "checking for working autoconf... $ECHO_C" >&6
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if (autoconf --version) < /dev/null > /dev/null 2>&1; then
++   AUTOCONF=autoconf
++   echo "$as_me:$LINENO: result: found" >&5
++echo "${ECHO_T}found" >&6
++else
++   AUTOCONF="$missing_dir/missing autoconf"
++   echo "$as_me:$LINENO: result: missing" >&5
++echo "${ECHO_T}missing" >&6
++fi
++
++echo "$as_me:$LINENO: checking for working automake-${am__api_version}" >&5
++echo $ECHO_N "checking for working automake-${am__api_version}... $ECHO_C" >&6
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if (automake-${am__api_version} --version) < /dev/null > /dev/null 2>&1; then
++   AUTOMAKE=automake-${am__api_version}
++   echo "$as_me:$LINENO: result: found" >&5
++echo "${ECHO_T}found" >&6
++else
++   AUTOMAKE="$missing_dir/missing automake-${am__api_version}"
++   echo "$as_me:$LINENO: result: missing" >&5
++echo "${ECHO_T}missing" >&6
++fi
++
++echo "$as_me:$LINENO: checking for working autoheader" >&5
++echo $ECHO_N "checking for working autoheader... $ECHO_C" >&6
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if (autoheader --version) < /dev/null > /dev/null 2>&1; then
++   AUTOHEADER=autoheader
++   echo "$as_me:$LINENO: result: found" >&5
++echo "${ECHO_T}found" >&6
++else
++   AUTOHEADER="$missing_dir/missing autoheader"
++   echo "$as_me:$LINENO: result: missing" >&5
++echo "${ECHO_T}missing" >&6
++fi
++
++echo "$as_me:$LINENO: checking for working makeinfo" >&5
++echo $ECHO_N "checking for working makeinfo... $ECHO_C" >&6
++# Run test in a subshell; some versions of sh will print an error if
++# an executable is not found, even if stderr is redirected.
++# Redirect stdin to placate older versions of autoconf.  Sigh.
++if (makeinfo --version) < /dev/null > /dev/null 2>&1; then
++   MAKEINFO=makeinfo
++   echo "$as_me:$LINENO: result: found" >&5
++echo "${ECHO_T}found" >&6
++else
++   MAKEINFO="$missing_dir/missing makeinfo"
++   echo "$as_me:$LINENO: result: missing" >&5
++echo "${ECHO_T}missing" >&6
++fi
++
++
++
++                    ac_config_files="$ac_config_files Makefile bin/Makefile"
++cat >confcache <<\_ACEOF
++# This file is a shell script that caches the results of configure
++# tests run on this system so they can be shared between configure
++# scripts and configure runs, see configure's option --config-cache.
++# It is not useful on other systems.  If it contains results you don't
++# want to keep, you may remove or edit it.
++#
++# config.status only pays attention to the cache file if you give it
++# the --recheck option to rerun configure.
++#
++# `ac_cv_env_foo' variables (set or unset) will be overridden when
++# loading this file, other *unset* `ac_cv_foo' will be assigned the
++# following values.
++
++_ACEOF
++
++# The following way of writing the cache mishandles newlines in values,
++# but we know of no workaround that is simple, portable, and efficient.
++# So, don't put newlines in cache variables' values.
++# Ultrix sh set writes to stderr and can't be redirected directly,
++# and sets the high bit in the cache file unless we assign to the vars.
++{
++  (set) 2>&1 |
++    case `(ac_space=' '; set | grep ac_space) 2>&1` in
++    *ac_space=\ *)
++      # `set' does not quote correctly, so add quotes (double-quote
++      # substitution turns \\\\ into \\, and sed turns \\ into \).
++      sed -n \
++        "s/'/'\\\\''/g;
++    	  s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1='\\2'/p"
++      ;;
++    *)
++      # `set' quotes correctly as required by POSIX, so do not add quotes.
++      sed -n \
++        "s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1=\\2/p"
++      ;;
++    esac;
++} |
++  sed '
++     t clear
++     : clear
++     s/^\([^=]*\)=\(.*[{}].*\)$/test "${\1+set}" = set || &/
++     t end
++     /^ac_cv_env/!s/^\([^=]*\)=\(.*\)$/\1=${\1=\2}/
++     : end' >>confcache
++if cmp -s $cache_file confcache; then :; else
++  if test -w $cache_file; then
++    test "x$cache_file" != "x/dev/null" && echo "updating cache $cache_file"
++    cat confcache >$cache_file
++  else
++    echo "not updating unwritable cache $cache_file"
++  fi
++fi
++rm -f confcache
++
++test "x$prefix" = xNONE && prefix=$ac_default_prefix
++# Let make expand exec_prefix.
++test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
++
++# VPATH may cause trouble with some makes, so we remove $(srcdir),
++# ${srcdir} and @srcdir@ from VPATH if srcdir is ".", strip leading and
++# trailing colons and then remove the whole line if VPATH becomes empty
++# (actually we leave an empty line to preserve line numbers).
++if test "x$srcdir" = x.; then
++  ac_vpsub='/^[ 	]*VPATH[ 	]*=/{
++s/:*\$(srcdir):*/:/;
++s/:*\${srcdir}:*/:/;
++s/:*@srcdir@:*/:/;
++s/^\([^=]*=[ 	]*\):*/\1/;
++s/:*$//;
++s/^[^=]*=[ 	]*$//;
++}'
++fi
++
++# Transform confdefs.h into DEFS.
++# Protect against shell expansion while executing Makefile rules.
++# Protect against Makefile macro expansion.
++#
++# If the first sed substitution is executed (which looks for macros that
++# take arguments), then we branch to the quote section.  Otherwise,
++# look for a macro that doesn't take arguments.
++cat >confdef2opt.sed <<\_ACEOF
++t clear
++: clear
++s,^[ 	]*#[ 	]*define[ 	][ 	]*\([^ 	(][^ 	(]*([^)]*)\)[ 	]*\(.*\),-D\1=\2,g
++t quote
++s,^[ 	]*#[ 	]*define[ 	][ 	]*\([^ 	][^ 	]*\)[ 	]*\(.*\),-D\1=\2,g
++t quote
++d
++: quote
++s,[ 	`~#$^&*(){}\\|;'"<>?],\\&,g
++s,\[,\\&,g
++s,\],\\&,g
++s,\$,$$,g
++p
++_ACEOF
++# We use echo to avoid assuming a particular line-breaking character.
++# The extra dot is to prevent the shell from consuming trailing
++# line-breaks from the sub-command output.  A line-break within
++# single-quotes doesn't work because, if this script is created in a
++# platform that uses two characters for line-breaks (e.g., DOS), tr
++# would break.
++ac_LF_and_DOT=`echo; echo .`
++DEFS=`sed -n -f confdef2opt.sed confdefs.h | tr "$ac_LF_and_DOT" ' .'`
++rm -f confdef2opt.sed
++
++
++ac_libobjs=
++ac_ltlibobjs=
++for ac_i in : $LIBOBJS; do test "x$ac_i" = x: && continue
++  # 1. Remove the extension, and $U if already installed.
++  ac_i=`echo "$ac_i" |
++         sed 's/\$U\././;s/\.o$//;s/\.obj$//'`
++  # 2. Add them.
++  ac_libobjs="$ac_libobjs $ac_i\$U.$ac_objext"
++  ac_ltlibobjs="$ac_ltlibobjs $ac_i"'$U.lo'
++done
++LIBOBJS=$ac_libobjs
++
++LTLIBOBJS=$ac_ltlibobjs
++
++
++
++: ${CONFIG_STATUS=./config.status}
++ac_clean_files_save=$ac_clean_files
++ac_clean_files="$ac_clean_files $CONFIG_STATUS"
++{ echo "$as_me:$LINENO: creating $CONFIG_STATUS" >&5
++echo "$as_me: creating $CONFIG_STATUS" >&6;}
++cat >$CONFIG_STATUS <<_ACEOF
++#! $SHELL
++# Generated by $as_me.
++# Run this file to recreate the current configuration.
++# Compiler output produced by configure, useful for debugging
++# configure, is in config.log if it exists.
++
++debug=false
++SHELL=\${CONFIG_SHELL-$SHELL}
++_ACEOF
++
++cat >>$CONFIG_STATUS <<\_ACEOF
++## --------------------- ##
++## M4sh Initialization.  ##
++## --------------------- ##
++
++# Be Bourne compatible
++if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
++  emulate sh
++  NULLCMD=:
++  # Zsh 3.x and 4.x performs word splitting on ${1+"$@"}, which
++  # is contrary to our usage.  Disable this feature.
++  alias -g '${1+"$@"}'='"$@"'
++elif test -n "${BASH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
++  set -o posix
++fi
++
++# Support unset when possible.
++if (FOO=FOO; unset FOO) >/dev/null 2>&1; then
++  as_unset=unset
++else
++  as_unset=false
++fi
++
++
++# Work around bugs in pre-3.0 UWIN ksh.
++$as_unset ENV MAIL MAILPATH
++PS1='$ '
++PS2='> '
++PS4='+ '
++
++# NLS nuisances.
++for as_var in LANG LANGUAGE LC_ALL LC_COLLATE LC_CTYPE LC_NUMERIC LC_MESSAGES LC_TIME
++do
++  if (set +x; test -n "`(eval $as_var=C; export $as_var) 2>&1`"); then
++    eval $as_var=C; export $as_var
++  else
++    $as_unset $as_var
++  fi
++done
++
++# Required to use basename.
++if expr a : '\(a\)' >/dev/null 2>&1; then
++  as_expr=expr
++else
++  as_expr=false
++fi
++
++if (basename /) >/dev/null 2>&1 && test "X`basename / 2>&1`" = "X/"; then
++  as_basename=basename
++else
++  as_basename=false
++fi
++
++
++# Name of the executable.
++as_me=`$as_basename "$0" ||
++$as_expr X/"$0" : '.*/\([^/][^/]*\)/*$' \| \
++	 X"$0" : 'X\(//\)$' \| \
++	 X"$0" : 'X\(/\)$' \| \
++	 .     : '\(.\)' 2>/dev/null ||
++echo X/"$0" |
++    sed '/^.*\/\([^/][^/]*\)\/*$/{ s//\1/; q; }
++  	  /^X\/\(\/\/\)$/{ s//\1/; q; }
++  	  /^X\/\(\/\).*/{ s//\1/; q; }
++  	  s/.*/./; q'`
++
++
++# PATH needs CR, and LINENO needs CR and PATH.
++# Avoid depending upon Character Ranges.
++as_cr_letters='abcdefghijklmnopqrstuvwxyz'
++as_cr_LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
++as_cr_Letters=$as_cr_letters$as_cr_LETTERS
++as_cr_digits='0123456789'
++as_cr_alnum=$as_cr_Letters$as_cr_digits
++
++# The user is always right.
++if test "${PATH_SEPARATOR+set}" != set; then
++  echo "#! /bin/sh" >conftest.sh
++  echo  "exit 0"   >>conftest.sh
++  chmod +x conftest.sh
++  if (PATH="/nonexistent;."; conftest.sh) >/dev/null 2>&1; then
++    PATH_SEPARATOR=';'
++  else
++    PATH_SEPARATOR=:
++  fi
++  rm -f conftest.sh
++fi
++
++
++  as_lineno_1=$LINENO
++  as_lineno_2=$LINENO
++  as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
++  test "x$as_lineno_1" != "x$as_lineno_2" &&
++  test "x$as_lineno_3"  = "x$as_lineno_2"  || {
++  # Find who we are.  Look in the path if we contain no path at all
++  # relative or not.
++  case $0 in
++    *[\\/]* ) as_myself=$0 ;;
++    *) as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in $PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  test -r "$as_dir/$0" && as_myself=$as_dir/$0 && break
++done
++
++       ;;
++  esac
++  # We did not find ourselves, most probably we were run as `sh COMMAND'
++  # in which case we are not to be found in the path.
++  if test "x$as_myself" = x; then
++    as_myself=$0
++  fi
++  if test ! -f "$as_myself"; then
++    { { echo "$as_me:$LINENO: error: cannot find myself; rerun with an absolute path" >&5
++echo "$as_me: error: cannot find myself; rerun with an absolute path" >&2;}
++   { (exit 1); exit 1; }; }
++  fi
++  case $CONFIG_SHELL in
++  '')
++    as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
++for as_dir in /bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH
++do
++  IFS=$as_save_IFS
++  test -z "$as_dir" && as_dir=.
++  for as_base in sh bash ksh sh5; do
++	 case $as_dir in
++	 /*)
++	   if ("$as_dir/$as_base" -c '
++  as_lineno_1=$LINENO
++  as_lineno_2=$LINENO
++  as_lineno_3=`(expr $as_lineno_1 + 1) 2>/dev/null`
++  test "x$as_lineno_1" != "x$as_lineno_2" &&
++  test "x$as_lineno_3"  = "x$as_lineno_2" ') 2>/dev/null; then
++	     $as_unset BASH_ENV || test "${BASH_ENV+set}" != set || { BASH_ENV=; export BASH_ENV; }
++	     $as_unset ENV || test "${ENV+set}" != set || { ENV=; export ENV; }
++	     CONFIG_SHELL=$as_dir/$as_base
++	     export CONFIG_SHELL
++	     exec "$CONFIG_SHELL" "$0" ${1+"$@"}
++	   fi;;
++	 esac
++       done
++done
++;;
++  esac
++
++  # Create $as_me.lineno as a copy of $as_myself, but with $LINENO
++  # uniformly replaced by the line number.  The first 'sed' inserts a
++  # line-number line before each line; the second 'sed' does the real
++  # work.  The second script uses 'N' to pair each line-number line
++  # with the numbered line, and appends trailing '-' during
++  # substitution so that $LINENO is not a special case at line end.
++  # (Raja R Harinath suggested sed '=', and Paul Eggert wrote the
++  # second 'sed' script.  Blame Lee E. McMahon for sed's syntax.  :-)
++  sed '=' <$as_myself |
++    sed '
++      N
++      s,$,-,
++      : loop
++      s,^\(['$as_cr_digits']*\)\(.*\)[$]LINENO\([^'$as_cr_alnum'_]\),\1\2\1\3,
++      t loop
++      s,-$,,
++      s,^['$as_cr_digits']*\n,,
++    ' >$as_me.lineno &&
++  chmod +x $as_me.lineno ||
++    { { echo "$as_me:$LINENO: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&5
++echo "$as_me: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&2;}
++   { (exit 1); exit 1; }; }
++
++  # Don't try to exec as it changes $[0], causing all sort of problems
++  # (the dirname of $[0] is not the place where we might find the
++  # original and so on.  Autoconf is especially sensible to this).
++  . ./$as_me.lineno
++  # Exit status is that of the last command.
++  exit
++}
++
++
++case `echo "testing\c"; echo 1,2,3`,`echo -n testing; echo 1,2,3` in
++  *c*,-n*) ECHO_N= ECHO_C='
++' ECHO_T='	' ;;
++  *c*,*  ) ECHO_N=-n ECHO_C= ECHO_T= ;;
++  *)       ECHO_N= ECHO_C='\c' ECHO_T= ;;
++esac
++
++if expr a : '\(a\)' >/dev/null 2>&1; then
++  as_expr=expr
++else
++  as_expr=false
++fi
++
++rm -f conf$$ conf$$.exe conf$$.file
++echo >conf$$.file
++if ln -s conf$$.file conf$$ 2>/dev/null; then
++  # We could just check for DJGPP; but this test a) works b) is more generic
++  # and c) will remain valid once DJGPP supports symlinks (DJGPP 2.04).
++  if test -f conf$$.exe; then
++    # Don't use ln at all; we don't have any links
++    as_ln_s='cp -p'
++  else
++    as_ln_s='ln -s'
++  fi
++elif ln conf$$.file conf$$ 2>/dev/null; then
++  as_ln_s=ln
++else
++  as_ln_s='cp -p'
++fi
++rm -f conf$$ conf$$.exe conf$$.file
++
++if mkdir -p . 2>/dev/null; then
++  as_mkdir_p=:
++else
++  as_mkdir_p=false
++fi
++
++as_executable_p="test -f"
++
++# Sed expression to map a string onto a valid CPP name.
++as_tr_cpp="sed y%*$as_cr_letters%P$as_cr_LETTERS%;s%[^_$as_cr_alnum]%_%g"
++
++# Sed expression to map a string onto a valid variable name.
++as_tr_sh="sed y%*+%pp%;s%[^_$as_cr_alnum]%_%g"
++
++
++# IFS
++# We need space, tab and new line, in precisely that order.
++as_nl='
++'
++IFS=" 	$as_nl"
++
++# CDPATH.
++$as_unset CDPATH
++
++exec 6>&1
++
++# Open the log real soon, to keep \$[0] and so on meaningful, and to
++# report actual input values of CONFIG_FILES etc. instead of their
++# values after options handling.  Logging --version etc. is OK.
++exec 5>>config.log
++{
++  echo
++  sed 'h;s/./-/g;s/^.../## /;s/...$/ ##/;p;x;p;x' <<_ASBOX
++## Running $as_me. ##
++_ASBOX
++} >&5
++cat >&5 <<_CSEOF
++
++This file was extended by $as_me, which was
++generated by GNU Autoconf 2.54.  Invocation command line was
++
++  CONFIG_FILES    = $CONFIG_FILES
++  CONFIG_HEADERS  = $CONFIG_HEADERS
++  CONFIG_LINKS    = $CONFIG_LINKS
++  CONFIG_COMMANDS = $CONFIG_COMMANDS
++  $ $0 $@
++
++_CSEOF
++echo "on `(hostname || uname -n) 2>/dev/null | sed 1q`" >&5
++echo >&5
++_ACEOF
++
++# Files that config.status was made for.
++if test -n "$ac_config_files"; then
++  echo "config_files=\"$ac_config_files\"" >>$CONFIG_STATUS
++fi
++
++if test -n "$ac_config_headers"; then
++  echo "config_headers=\"$ac_config_headers\"" >>$CONFIG_STATUS
++fi
++
++if test -n "$ac_config_links"; then
++  echo "config_links=\"$ac_config_links\"" >>$CONFIG_STATUS
++fi
++
++if test -n "$ac_config_commands"; then
++  echo "config_commands=\"$ac_config_commands\"" >>$CONFIG_STATUS
++fi
++
++cat >>$CONFIG_STATUS <<\_ACEOF
++
++ac_cs_usage="\
++\`$as_me' instantiates files from templates according to the
++current configuration.
++
++Usage: $0 [OPTIONS] [FILE]...
++
++  -h, --help       print this help, then exit
++  -V, --version    print version number, then exit
++  -d, --debug      don't remove temporary files
++      --recheck    update $as_me by reconfiguring in the same conditions
++  --file=FILE[:TEMPLATE]
++                   instantiate the configuration file FILE
++
++Configuration files:
++$config_files
++
++Report bugs to <bug-autoconf@gnu.org>."
++_ACEOF
++
++cat >>$CONFIG_STATUS <<_ACEOF
++ac_cs_version="\\
++config.status
++configured by $0, generated by GNU Autoconf 2.54,
++  with options \\"`echo "$ac_configure_args" | sed 's/[\\""\`\$]/\\\\&/g'`\\"
++
++Copyright 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001
++Free Software Foundation, Inc.
++This config.status script is free software; the Free Software Foundation
++gives unlimited permission to copy, distribute and modify it."
++srcdir=$srcdir
++INSTALL="$INSTALL"
++_ACEOF
++
++cat >>$CONFIG_STATUS <<\_ACEOF
++# If no file are specified by the user, then we need to provide default
++# value.  By we need to know if files were specified by the user.
++ac_need_defaults=:
++while test $# != 0
++do
++  case $1 in
++  --*=*)
++    ac_option=`expr "x$1" : 'x\([^=]*\)='`
++    ac_optarg=`expr "x$1" : 'x[^=]*=\(.*\)'`
++    ac_shift=:
++    ;;
++  -*)
++    ac_option=$1
++    ac_optarg=$2
++    ac_shift=shift
++    ;;
++  *) # This is not an option, so the user has probably given explicit
++     # arguments.
++     ac_option=$1
++     ac_need_defaults=false;;
++  esac
++
++  case $ac_option in
++  # Handling of the options.
++_ACEOF
++cat >>$CONFIG_STATUS <<_ACEOF
++  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
++    echo "running $SHELL $0 " $ac_configure_args " --no-create --no-recursion"
++    exec $SHELL $0 $ac_configure_args --no-create --no-recursion ;;
++_ACEOF
++cat >>$CONFIG_STATUS <<\_ACEOF
++  --version | --vers* | -V )
++    echo "$ac_cs_version"; exit 0 ;;
++  --he | --h)
++    # Conflict between --help and --header
++    { { echo "$as_me:$LINENO: error: ambiguous option: $1
++Try \`$0 --help' for more information." >&5
++echo "$as_me: error: ambiguous option: $1
++Try \`$0 --help' for more information." >&2;}
++   { (exit 1); exit 1; }; };;
++  --help | --hel | -h )
++    echo "$ac_cs_usage"; exit 0 ;;
++  --debug | --d* | -d )
++    debug=: ;;
++  --file | --fil | --fi | --f )
++    $ac_shift
++    CONFIG_FILES="$CONFIG_FILES $ac_optarg"
++    ac_need_defaults=false;;
++  --header | --heade | --head | --hea )
++    $ac_shift
++    CONFIG_HEADERS="$CONFIG_HEADERS $ac_optarg"
++    ac_need_defaults=false;;
++
++  # This is an error.
++  -*) { { echo "$as_me:$LINENO: error: unrecognized option: $1
++Try \`$0 --help' for more information." >&5
++echo "$as_me: error: unrecognized option: $1
++Try \`$0 --help' for more information." >&2;}
++   { (exit 1); exit 1; }; } ;;
++
++  *) ac_config_targets="$ac_config_targets $1" ;;
++
++  esac
++  shift
++done
++
++_ACEOF
++
++
++
++
++
++cat >>$CONFIG_STATUS <<\_ACEOF
++for ac_config_target in $ac_config_targets
++do
++  case "$ac_config_target" in
++  # Handling of arguments.
++  "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
++  "bin/Makefile" ) CONFIG_FILES="$CONFIG_FILES bin/Makefile" ;;
++  *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
++echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
++   { (exit 1); exit 1; }; };;
++  esac
++done
++
++# If the user did not use the arguments to specify the items to instantiate,
++# then the envvar interface is used.  Set only those that are not.
++# We use the long form for the default assignment because of an extremely
++# bizarre bug on SunOS 4.1.3.
++if $ac_need_defaults; then
++  test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
++fi
++
++# Create a temporary directory, and hook for its removal unless debugging.
++$debug ||
++{
++  trap 'exit_status=$?; rm -rf $tmp && exit $exit_status' 0
++  trap '{ (exit 1); exit 1; }' 1 2 13 15
++}
++
++# Create a (secure) tmp directory for tmp files.
++: ${TMPDIR=/tmp}
++{
++  tmp=`(umask 077 && mktemp -d -q "$TMPDIR/csXXXXXX") 2>/dev/null` &&
++  test -n "$tmp" && test -d "$tmp"
++}  ||
++{
++  tmp=$TMPDIR/cs$$-$RANDOM
++  (umask 077 && mkdir $tmp)
++} ||
++{
++   echo "$me: cannot create a temporary directory in $TMPDIR" >&2
++   { (exit 1); exit 1; }
++}
++
++_ACEOF
++
++cat >>$CONFIG_STATUS <<_ACEOF
++
++#
++# CONFIG_FILES section.
++#
++
++# No need to generate the scripts if there are no CONFIG_FILES.
++# This happens for instance when ./config.status config.h
++if test -n "\$CONFIG_FILES"; then
++  # Protect against being on the right side of a sed subst in config.status.
++  sed 's/,@/@@/; s/@,/@@/; s/,;t t\$/@;t t/; /@;t t\$/s/[\\\\&,]/\\\\&/g;
++   s/@@/,@/; s/@@/@,/; s/@;t t\$/,;t t/' >\$tmp/subs.sed <<\\CEOF
++s,@SHELL@,$SHELL,;t t
++s,@PATH_SEPARATOR@,$PATH_SEPARATOR,;t t
++s,@PACKAGE_NAME@,$PACKAGE_NAME,;t t
++s,@PACKAGE_TARNAME@,$PACKAGE_TARNAME,;t t
++s,@PACKAGE_VERSION@,$PACKAGE_VERSION,;t t
++s,@PACKAGE_STRING@,$PACKAGE_STRING,;t t
++s,@PACKAGE_BUGREPORT@,$PACKAGE_BUGREPORT,;t t
++s,@exec_prefix@,$exec_prefix,;t t
++s,@prefix@,$prefix,;t t
++s,@program_transform_name@,$program_transform_name,;t t
++s,@bindir@,$bindir,;t t
++s,@sbindir@,$sbindir,;t t
++s,@libexecdir@,$libexecdir,;t t
++s,@datadir@,$datadir,;t t
++s,@sysconfdir@,$sysconfdir,;t t
++s,@sharedstatedir@,$sharedstatedir,;t t
++s,@localstatedir@,$localstatedir,;t t
++s,@libdir@,$libdir,;t t
++s,@includedir@,$includedir,;t t
++s,@oldincludedir@,$oldincludedir,;t t
++s,@infodir@,$infodir,;t t
++s,@mandir@,$mandir,;t t
++s,@build_alias@,$build_alias,;t t
++s,@host_alias@,$host_alias,;t t
++s,@target_alias@,$target_alias,;t t
++s,@DEFS@,$DEFS,;t t
++s,@ECHO_C@,$ECHO_C,;t t
++s,@ECHO_N@,$ECHO_N,;t t
++s,@ECHO_T@,$ECHO_T,;t t
++s,@LIBS@,$LIBS,;t t
++s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
++s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
++s,@INSTALL_DATA@,$INSTALL_DATA,;t t
++s,@PACKAGE@,$PACKAGE,;t t
++s,@VERSION@,$VERSION,;t t
++s,@ACLOCAL@,$ACLOCAL,;t t
++s,@AUTOCONF@,$AUTOCONF,;t t
++s,@AUTOMAKE@,$AUTOMAKE,;t t
++s,@AUTOHEADER@,$AUTOHEADER,;t t
++s,@MAKEINFO@,$MAKEINFO,;t t
++s,@SET_MAKE@,$SET_MAKE,;t t
++s,@LIBOBJS@,$LIBOBJS,;t t
++s,@LTLIBOBJS@,$LTLIBOBJS,;t t
++CEOF
++
++_ACEOF
++
++  cat >>$CONFIG_STATUS <<\_ACEOF
++  # Split the substitutions into bite-sized pieces for seds with
++  # small command number limits, like on Digital OSF/1 and HP-UX.
++  ac_max_sed_lines=48
++  ac_sed_frag=1 # Number of current file.
++  ac_beg=1 # First line for current file.
++  ac_end=$ac_max_sed_lines # Line after last line for current file.
++  ac_more_lines=:
++  ac_sed_cmds=
++  while $ac_more_lines; do
++    if test $ac_beg -gt 1; then
++      sed "1,${ac_beg}d; ${ac_end}q" $tmp/subs.sed >$tmp/subs.frag
++    else
++      sed "${ac_end}q" $tmp/subs.sed >$tmp/subs.frag
++    fi
++    if test ! -s $tmp/subs.frag; then
++      ac_more_lines=false
++    else
++      # The purpose of the label and of the branching condition is to
++      # speed up the sed processing (if there are no `@' at all, there
++      # is no need to browse any of the substitutions).
++      # These are the two extra sed commands mentioned above.
++      (echo ':t
++  /@[a-zA-Z_][a-zA-Z_0-9]*@/!b' && cat $tmp/subs.frag) >$tmp/subs-$ac_sed_frag.sed
++      if test -z "$ac_sed_cmds"; then
++  	ac_sed_cmds="sed -f $tmp/subs-$ac_sed_frag.sed"
++      else
++  	ac_sed_cmds="$ac_sed_cmds | sed -f $tmp/subs-$ac_sed_frag.sed"
++      fi
++      ac_sed_frag=`expr $ac_sed_frag + 1`
++      ac_beg=$ac_end
++      ac_end=`expr $ac_end + $ac_max_sed_lines`
++    fi
++  done
++  if test -z "$ac_sed_cmds"; then
++    ac_sed_cmds=cat
++  fi
++fi # test -n "$CONFIG_FILES"
++
++_ACEOF
++cat >>$CONFIG_STATUS <<\_ACEOF
++for ac_file in : $CONFIG_FILES; do test "x$ac_file" = x: && continue
++  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
++  case $ac_file in
++  - | *:- | *:-:* ) # input from stdin
++        cat >$tmp/stdin
++        ac_file_in=`echo "$ac_file" | sed 's,[^:]*:,,'`
++        ac_file=`echo "$ac_file" | sed 's,:.*,,'` ;;
++  *:* ) ac_file_in=`echo "$ac_file" | sed 's,[^:]*:,,'`
++        ac_file=`echo "$ac_file" | sed 's,:.*,,'` ;;
++  * )   ac_file_in=$ac_file.in ;;
++  esac
++
++  # Compute @srcdir@, @top_srcdir@, and @INSTALL@ for subdirectories.
++  ac_dir=`(dirname "$ac_file") 2>/dev/null ||
++$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
++         X"$ac_file" : 'X\(//\)[^/]' \| \
++         X"$ac_file" : 'X\(//\)$' \| \
++         X"$ac_file" : 'X\(/\)' \| \
++         .     : '\(.\)' 2>/dev/null ||
++echo X"$ac_file" |
++    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{ s//\1/; q; }
++  	  /^X\(\/\/\)[^/].*/{ s//\1/; q; }
++  	  /^X\(\/\/\)$/{ s//\1/; q; }
++  	  /^X\(\/\).*/{ s//\1/; q; }
++  	  s/.*/./; q'`
++  { if $as_mkdir_p; then
++    mkdir -p "$ac_dir"
++  else
++    as_dir="$ac_dir"
++    as_dirs=
++    while test ! -d "$as_dir"; do
++      as_dirs="$as_dir $as_dirs"
++      as_dir=`(dirname "$as_dir") 2>/dev/null ||
++$as_expr X"$as_dir" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
++         X"$as_dir" : 'X\(//\)[^/]' \| \
++         X"$as_dir" : 'X\(//\)$' \| \
++         X"$as_dir" : 'X\(/\)' \| \
++         .     : '\(.\)' 2>/dev/null ||
++echo X"$as_dir" |
++    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{ s//\1/; q; }
++  	  /^X\(\/\/\)[^/].*/{ s//\1/; q; }
++  	  /^X\(\/\/\)$/{ s//\1/; q; }
++  	  /^X\(\/\).*/{ s//\1/; q; }
++  	  s/.*/./; q'`
++    done
++    test ! -n "$as_dirs" || mkdir $as_dirs
++  fi || { { echo "$as_me:$LINENO: error: cannot create directory \"$ac_dir\"" >&5
++echo "$as_me: error: cannot create directory \"$ac_dir\"" >&2;}
++   { (exit 1); exit 1; }; }; }
++
++  ac_builddir=.
++
++if test "$ac_dir" != .; then
++  ac_dir_suffix=/`echo "$ac_dir" | sed 's,^\.[\\/],,'`
++  # A "../" for each directory in $ac_dir_suffix.
++  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
++else
++  ac_dir_suffix= ac_top_builddir=
++fi
++
++case $srcdir in
++  .)  # No --srcdir option.  We are building in place.
++    ac_srcdir=.
++    if test -z "$ac_top_builddir"; then
++       ac_top_srcdir=.
++    else
++       ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
++    fi ;;
++  [\\/]* | ?:[\\/]* )  # Absolute path.
++    ac_srcdir=$srcdir$ac_dir_suffix;
++    ac_top_srcdir=$srcdir ;;
++  *) # Relative path.
++    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
++    ac_top_srcdir=$ac_top_builddir$srcdir ;;
++esac
++# Don't blindly perform a `cd "$ac_dir"/$ac_foo && pwd` since $ac_foo can be
++# absolute.
++ac_abs_builddir=`cd "$ac_dir" && cd $ac_builddir && pwd`
++ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && pwd`
++ac_abs_srcdir=`cd "$ac_dir" && cd $ac_srcdir && pwd`
++ac_abs_top_srcdir=`cd "$ac_dir" && cd $ac_top_srcdir && pwd`
++
++
++  case $INSTALL in
++  [\\/$]* | ?:[\\/]* ) ac_INSTALL=$INSTALL ;;
++  *) ac_INSTALL=$ac_top_builddir$INSTALL ;;
++  esac
++
++  if test x"$ac_file" != x-; then
++    { echo "$as_me:$LINENO: creating $ac_file" >&5
++echo "$as_me: creating $ac_file" >&6;}
++    rm -f "$ac_file"
++  fi
++  # Let's still pretend it is `configure' which instantiates (i.e., don't
++  # use $as_me), people would be surprised to read:
++  #    /* config.h.  Generated by config.status.  */
++  if test x"$ac_file" = x-; then
++    configure_input=
++  else
++    configure_input="$ac_file.  "
++  fi
++  configure_input=$configure_input"Generated from `echo $ac_file_in |
++                                     sed 's,.*/,,'` by configure."
++
++  # First look for the input files in the build tree, otherwise in the
++  # src tree.
++  ac_file_inputs=`IFS=:
++    for f in $ac_file_in; do
++      case $f in
++      -) echo $tmp/stdin ;;
++      [\\/$]*)
++         # Absolute (can't be DOS-style, as IFS=:)
++         test -f "$f" || { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
++echo "$as_me: error: cannot find input file: $f" >&2;}
++   { (exit 1); exit 1; }; }
++         echo $f;;
++      *) # Relative
++         if test -f "$f"; then
++           # Build tree
++           echo $f
++         elif test -f "$srcdir/$f"; then
++           # Source tree
++           echo $srcdir/$f
++         else
++           # /dev/null tree
++           { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
++echo "$as_me: error: cannot find input file: $f" >&2;}
++   { (exit 1); exit 1; }; }
++         fi;;
++      esac
++    done` || { (exit 1); exit 1; }
++_ACEOF
++cat >>$CONFIG_STATUS <<_ACEOF
++  sed "$ac_vpsub
++$extrasub
++_ACEOF
++cat >>$CONFIG_STATUS <<\_ACEOF
++:t
++/@[a-zA-Z_][a-zA-Z_0-9]*@/!b
++s,@configure_input@,$configure_input,;t t
++s,@srcdir@,$ac_srcdir,;t t
++s,@abs_srcdir@,$ac_abs_srcdir,;t t
++s,@top_srcdir@,$ac_top_srcdir,;t t
++s,@abs_top_srcdir@,$ac_abs_top_srcdir,;t t
++s,@builddir@,$ac_builddir,;t t
++s,@abs_builddir@,$ac_abs_builddir,;t t
++s,@top_builddir@,$ac_top_builddir,;t t
++s,@abs_top_builddir@,$ac_abs_top_builddir,;t t
++s,@INSTALL@,$ac_INSTALL,;t t
++" $ac_file_inputs | (eval "$ac_sed_cmds") >$tmp/out
++  rm -f $tmp/stdin
++  if test x"$ac_file" != x-; then
++    mv $tmp/out $ac_file
++  else
++    cat $tmp/out
++    rm -f $tmp/out
++  fi
++
++done
++_ACEOF
++
++cat >>$CONFIG_STATUS <<\_ACEOF
++
++{ (exit 0); exit 0; }
++_ACEOF
++chmod +x $CONFIG_STATUS
++ac_clean_files=$ac_clean_files_save
++
++
++# configure is writing to config.log, and then calls config.status.
++# config.status does its own redirection, appending to config.log.
++# Unfortunately, on DOS this fails, as config.log is still kept open
++# by configure, so config.status won't be able to write to it; its
++# output is simply discarded.  So we exec the FD to /dev/null,
++# effectively closing config.log, so it can be properly (re)opened and
++# appended to by config.status.  When coming back to configure, we
++# need to make the FD available again.
++if test "$no_create" != yes; then
++  ac_cs_success=:
++  exec 5>/dev/null
++  $SHELL $CONFIG_STATUS || ac_cs_success=false
++  exec 5>>config.log
++  # Use ||, not &&, to avoid exiting from the if with $? = 1, which
++  # would make configure fail if this is the last instruction.
++  $ac_cs_success || { (exit 1); exit 1; }
++fi
++
+diff -urN alice-0.9.orig/configure.ac alice-0.9/configure.ac
+--- alice-0.9.orig/configure.ac	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/configure.ac	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,5 @@
++dnl Process this file with autoconf to produce a configure script.
++AC_INIT(VMMain.ozf)
++AM_INIT_AUTOMAKE(alice, 0.9)
++
++AC_OUTPUT(Makefile bin/Makefile)
+diff -urN alice-0.9.orig/INSTALL alice-0.9/INSTALL
+--- alice-0.9.orig/INSTALL	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/INSTALL	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,182 @@
++Basic Installation
++==================
++
++   These are generic installation instructions.
++
++   The `configure' shell script attempts to guess correct values for
++various system-dependent variables used during compilation.  It uses
++those values to create a `Makefile' in each directory of the package.
++It may also create one or more `.h' files containing system-dependent
++definitions.  Finally, it creates a shell script `config.status' that
++you can run in the future to recreate the current configuration, a file
++`config.cache' that saves the results of its tests to speed up
++reconfiguring, and a file `config.log' containing compiler output
++(useful mainly for debugging `configure').
++
++   If you need to do unusual things to compile the package, please try
++to figure out how `configure' could check whether to do them, and mail
++diffs or instructions to the address given in the `README' so they can
++be considered for the next release.  If at some point `config.cache'
++contains results you don't want to keep, you may remove or edit it.
++
++   The file `configure.in' is used to create `configure' by a program
++called `autoconf'.  You only need `configure.in' if you want to change
++it or regenerate `configure' using a newer version of `autoconf'.
++
++The simplest way to compile this package is:
++
++  1. `cd' to the directory containing the package's source code and type
++     `./configure' to configure the package for your system.  If you're
++     using `csh' on an old version of System V, you might need to type
++     `sh ./configure' instead to prevent `csh' from trying to execute
++     `configure' itself.
++
++     Running `configure' takes awhile.  While running, it prints some
++     messages telling which features it is checking for.
++
++  2. Type `make' to compile the package.
++
++  3. Optionally, type `make check' to run any self-tests that come with
++     the package.
++
++  4. Type `make install' to install the programs and any data files and
++     documentation.
++
++  5. You can remove the program binaries and object files from the
++     source code directory by typing `make clean'.  To also remove the
++     files that `configure' created (so you can compile the package for
++     a different kind of computer), type `make distclean'.  There is
++     also a `make maintainer-clean' target, but that is intended mainly
++     for the package's developers.  If you use it, you may have to get
++     all sorts of other programs in order to regenerate files that came
++     with the distribution.
++
++Compilers and Options
++=====================
++
++   Some systems require unusual options for compilation or linking that
++the `configure' script does not know about.  You can give `configure'
++initial values for variables by setting them in the environment.  Using
++a Bourne-compatible shell, you can do that on the command line like
++this:
++     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
++
++Or on systems that have the `env' program, you can do it like this:
++     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
++
++Compiling For Multiple Architectures
++====================================
++
++   You can compile the package for more than one kind of computer at the
++same time, by placing the object files for each architecture in their
++own directory.  To do this, you must use a version of `make' that
++supports the `VPATH' variable, such as GNU `make'.  `cd' to the
++directory where you want the object files and executables to go and run
++the `configure' script.  `configure' automatically checks for the
++source code in the directory that `configure' is in and in `..'.
++
++   If you have to use a `make' that does not supports the `VPATH'
++variable, you have to compile the package for one architecture at a time
++in the source code directory.  After you have installed the package for
++one architecture, use `make distclean' before reconfiguring for another
++architecture.
++
++Installation Names
++==================
++
++   By default, `make install' will install the package's files in
++`/usr/local/bin', `/usr/local/man', etc.  You can specify an
++installation prefix other than `/usr/local' by giving `configure' the
++option `--prefix=PATH'.
++
++   You can specify separate installation prefixes for
++architecture-specific files and architecture-independent files.  If you
++give `configure' the option `--exec-prefix=PATH', the package will use
++PATH as the prefix for installing programs and libraries.
++Documentation and other data files will still use the regular prefix.
++
++   In addition, if you use an unusual directory layout you can give
++options like `--bindir=PATH' to specify different values for particular
++kinds of files.  Run `configure --help' for a list of the directories
++you can set and what kinds of files go in them.
++
++   If the package supports it, you can cause programs to be installed
++with an extra prefix or suffix on their names by giving `configure' the
++option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
++
++Optional Features
++=================
++
++   Some packages pay attention to `--enable-FEATURE' options to
++`configure', where FEATURE indicates an optional part of the package.
++They may also pay attention to `--with-PACKAGE' options, where PACKAGE
++is something like `gnu-as' or `x' (for the X Window System).  The
++`README' should mention any `--enable-' and `--with-' options that the
++package recognizes.
++
++   For packages that use the X Window System, `configure' can usually
++find the X include and library files automatically, but if it doesn't,
++you can use the `configure' options `--x-includes=DIR' and
++`--x-libraries=DIR' to specify their locations.
++
++Specifying the System Type
++==========================
++
++   There may be some features `configure' can not figure out
++automatically, but needs to determine by the type of host the package
++will run on.  Usually `configure' can figure that out, but if it prints
++a message saying it can not guess the host type, give it the
++`--host=TYPE' option.  TYPE can either be a short name for the system
++type, such as `sun4', or a canonical name with three fields:
++     CPU-COMPANY-SYSTEM
++
++See the file `config.sub' for the possible values of each field.  If
++`config.sub' isn't included in this package, then this package doesn't
++need to know the host type.
++
++   If you are building compiler tools for cross-compiling, you can also
++use the `--target=TYPE' option to select the type of system they will
++produce code for and the `--build=TYPE' option to select the type of
++system on which you are compiling the package.
++
++Sharing Defaults
++================
++
++   If you want to set default values for `configure' scripts to share,
++you can create a site shell script called `config.site' that gives
++default values for variables like `CC', `cache_file', and `prefix'.
++`configure' looks for `PREFIX/share/config.site' if it exists, then
++`PREFIX/etc/config.site' if it exists.  Or, you can set the
++`CONFIG_SITE' environment variable to the location of the site script.
++A warning: not all `configure' scripts look for a site script.
++
++Operation Controls
++==================
++
++   `configure' recognizes the following options to control how it
++operates.
++
++`--cache-file=FILE'
++     Use and save the results of the tests in FILE instead of
++     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
++     debugging `configure'.
++
++`--help'
++     Print a summary of the options to `configure', and exit.
++
++`--quiet'
++`--silent'
++`-q'
++     Do not print messages saying which checks are being made.  To
++     suppress all normal output, redirect it to `/dev/null' (any error
++     messages will still be shown).
++
++`--srcdir=DIR'
++     Look for the package's source code in directory DIR.  Usually
++     `configure' can determine that directory automatically.
++
++`--version'
++     Print the version of Autoconf used to generate the `configure'
++     script, and exit.
++
++`configure' also accepts some other, not widely useful, options.
+diff -urN alice-0.9.orig/install-sh alice-0.9/install-sh
+--- alice-0.9.orig/install-sh	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/install-sh	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,251 @@
++#!/bin/sh
++#
++# install - install a program, script, or datafile
++# This comes from X11R5 (mit/util/scripts/install.sh).
++#
++# Copyright 1991 by the Massachusetts Institute of Technology
++#
++# Permission to use, copy, modify, distribute, and sell this software and its
++# documentation for any purpose is hereby granted without fee, provided that
++# the above copyright notice appear in all copies and that both that
++# copyright notice and this permission notice appear in supporting
++# documentation, and that the name of M.I.T. not be used in advertising or
++# publicity pertaining to distribution of the software without specific,
++# written prior permission.  M.I.T. makes no representations about the
++# suitability of this software for any purpose.  It is provided "as is"
++# without express or implied warranty.
++#
++# Calling this script install-sh is preferred over install.sh, to prevent
++# `make' implicit rules from creating a file called install from it
++# when there is no Makefile.
++#
++# This script is compatible with the BSD install script, but was written
++# from scratch.  It can only install one file at a time, a restriction
++# shared with many OS's install programs.
++
++
++# set DOITPROG to echo to test this script
++
++# Don't use :- since 4.3BSD and earlier shells don't like it.
++doit="${DOITPROG-}"
++
++
++# put in absolute paths if you don't have them in your path; or use env. vars.
++
++mvprog="${MVPROG-mv}"
++cpprog="${CPPROG-cp}"
++chmodprog="${CHMODPROG-chmod}"
++chownprog="${CHOWNPROG-chown}"
++chgrpprog="${CHGRPPROG-chgrp}"
++stripprog="${STRIPPROG-strip}"
++rmprog="${RMPROG-rm}"
++mkdirprog="${MKDIRPROG-mkdir}"
++
++transformbasename=""
++transform_arg=""
++instcmd="$mvprog"
++chmodcmd="$chmodprog 0755"
++chowncmd=""
++chgrpcmd=""
++stripcmd=""
++rmcmd="$rmprog -f"
++mvcmd="$mvprog"
++src=""
++dst=""
++dir_arg=""
++
++while [ x"$1" != x ]; do
++    case $1 in
++	-c) instcmd="$cpprog"
++	    shift
++	    continue;;
++
++	-d) dir_arg=true
++	    shift
++	    continue;;
++
++	-m) chmodcmd="$chmodprog $2"
++	    shift
++	    shift
++	    continue;;
++
++	-o) chowncmd="$chownprog $2"
++	    shift
++	    shift
++	    continue;;
++
++	-g) chgrpcmd="$chgrpprog $2"
++	    shift
++	    shift
++	    continue;;
++
++	-s) stripcmd="$stripprog"
++	    shift
++	    continue;;
++
++	-t=*) transformarg=`echo $1 | sed 's/-t=//'`
++	    shift
++	    continue;;
++
++	-b=*) transformbasename=`echo $1 | sed 's/-b=//'`
++	    shift
++	    continue;;
++
++	*)  if [ x"$src" = x ]
++	    then
++		src=$1
++	    else
++		# this colon is to work around a 386BSD /bin/sh bug
++		:
++		dst=$1
++	    fi
++	    shift
++	    continue;;
++    esac
++done
++
++if [ x"$src" = x ]
++then
++	echo "install:	no input file specified"
++	exit 1
++else
++	true
++fi
++
++if [ x"$dir_arg" != x ]; then
++	dst=$src
++	src=""
++	
++	if [ -d $dst ]; then
++		instcmd=:
++		chmodcmd=""
++	else
++		instcmd=mkdir
++	fi
++else
++
++# Waiting for this to be detected by the "$instcmd $src $dsttmp" command
++# might cause directories to be created, which would be especially bad 
++# if $src (and thus $dsttmp) contains '*'.
++
++	if [ -f $src -o -d $src ]
++	then
++		true
++	else
++		echo "install:  $src does not exist"
++		exit 1
++	fi
++	
++	if [ x"$dst" = x ]
++	then
++		echo "install:	no destination specified"
++		exit 1
++	else
++		true
++	fi
++
++# If destination is a directory, append the input filename; if your system
++# does not like double slashes in filenames, you may need to add some logic
++
++	if [ -d $dst ]
++	then
++		dst="$dst"/`basename $src`
++	else
++		true
++	fi
++fi
++
++## this sed command emulates the dirname command
++dstdir=`echo $dst | sed -e 's,[^/]*$,,;s,/$,,;s,^$,.,'`
++
++# Make sure that the destination directory exists.
++#  this part is taken from Noah Friedman's mkinstalldirs script
++
++# Skip lots of stat calls in the usual case.
++if [ ! -d "$dstdir" ]; then
++defaultIFS=' 	
++'
++IFS="${IFS-${defaultIFS}}"
++
++oIFS="${IFS}"
++# Some sh's can't handle IFS=/ for some reason.
++IFS='%'
++set - `echo ${dstdir} | sed -e 's@/@%@g' -e 's@^%@/@'`
++IFS="${oIFS}"
++
++pathcomp=''
++
++while [ $# -ne 0 ] ; do
++	pathcomp="${pathcomp}${1}"
++	shift
++
++	if [ ! -d "${pathcomp}" ] ;
++        then
++		$mkdirprog "${pathcomp}"
++	else
++		true
++	fi
++
++	pathcomp="${pathcomp}/"
++done
++fi
++
++if [ x"$dir_arg" != x ]
++then
++	$doit $instcmd $dst &&
++
++	if [ x"$chowncmd" != x ]; then $doit $chowncmd $dst; else true ; fi &&
++	if [ x"$chgrpcmd" != x ]; then $doit $chgrpcmd $dst; else true ; fi &&
++	if [ x"$stripcmd" != x ]; then $doit $stripcmd $dst; else true ; fi &&
++	if [ x"$chmodcmd" != x ]; then $doit $chmodcmd $dst; else true ; fi
++else
++
++# If we're going to rename the final executable, determine the name now.
++
++	if [ x"$transformarg" = x ] 
++	then
++		dstfile=`basename $dst`
++	else
++		dstfile=`basename $dst $transformbasename | 
++			sed $transformarg`$transformbasename
++	fi
++
++# don't allow the sed command to completely eliminate the filename
++
++	if [ x"$dstfile" = x ] 
++	then
++		dstfile=`basename $dst`
++	else
++		true
++	fi
++
++# Make a temp file name in the proper directory.
++
++	dsttmp=$dstdir/#inst.$$#
++
++# Move or copy the file name to the temp name
++
++	$doit $instcmd $src $dsttmp &&
++
++	trap "rm -f ${dsttmp}" 0 &&
++
++# and set any options; do chmod last to preserve setuid bits
++
++# If any of these fail, we abort the whole thing.  If we want to
++# ignore errors from any of these, just make sure not to ignore
++# errors from the above "$doit $instcmd $src $dsttmp" command.
++
++	if [ x"$chowncmd" != x ]; then $doit $chowncmd $dsttmp; else true;fi &&
++	if [ x"$chgrpcmd" != x ]; then $doit $chgrpcmd $dsttmp; else true;fi &&
++	if [ x"$stripcmd" != x ]; then $doit $stripcmd $dsttmp; else true;fi &&
++	if [ x"$chmodcmd" != x ]; then $doit $chmodcmd $dsttmp; else true;fi &&
++
++# Now rename the file to the real destination.
++
++	$doit $rmcmd -f $dstdir/$dstfile &&
++	$doit $mvcmd $dsttmp $dstdir/$dstfile 
++
++fi &&
++
++
++exit 0
+diff -urN alice-0.9.orig/Makefile.am alice-0.9/Makefile.am
+--- alice-0.9.orig/Makefile.am	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/Makefile.am	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,14 @@
++## Process this file with automake to produce Makefile.in
++
++SUBDIRS = bin
++EXTRA_SUBDIRS = compiler depend doc lib linker
++
++EXTRA_DIST = VMMain.ozf alice.import alicec.import
++
++dist-hook:
++	cp -p -r $(EXTRA_SUBDIRS) $(distdir)
++
++install-data-hook:
++	$(mkinstalldirs) $(DESTDIR)$(datadir)/alice
++	(cd $(srcdir) && $(TAR) -c $(EXTRA_DIST) $(EXTRA_SUBDIRS)) | \
++	(cd $(DESTDIR)$(datadir)/alice && $(TAR) x)
+diff -urN alice-0.9.orig/Makefile.in alice-0.9/Makefile.in
+--- alice-0.9.orig/Makefile.in	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/Makefile.in	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,333 @@
++# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
++
++# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
++# This Makefile.in is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
++# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
++# PARTICULAR PURPOSE.
++
++
++SHELL = @SHELL@
++
++srcdir = @srcdir@
++top_srcdir = @top_srcdir@
++VPATH = @srcdir@
++prefix = @prefix@
++exec_prefix = @exec_prefix@
++
++bindir = @bindir@
++sbindir = @sbindir@
++libexecdir = @libexecdir@
++datadir = @datadir@
++sysconfdir = @sysconfdir@
++sharedstatedir = @sharedstatedir@
++localstatedir = @localstatedir@
++libdir = @libdir@
++infodir = @infodir@
++mandir = @mandir@
++includedir = @includedir@
++oldincludedir = /usr/include
++
++DESTDIR =
++
++pkgdatadir = $(datadir)/@PACKAGE@
++pkglibdir = $(libdir)/@PACKAGE@
++pkgincludedir = $(includedir)/@PACKAGE@
++
++top_builddir = .
++
++ACLOCAL = @ACLOCAL@
++AUTOCONF = @AUTOCONF@
++AUTOMAKE = @AUTOMAKE@
++AUTOHEADER = @AUTOHEADER@
++
++INSTALL = @INSTALL@
++INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
++INSTALL_DATA = @INSTALL_DATA@
++INSTALL_SCRIPT = @INSTALL_SCRIPT@
++transform = @program_transform_name@
++
++NORMAL_INSTALL = :
++PRE_INSTALL = :
++POST_INSTALL = :
++NORMAL_UNINSTALL = :
++PRE_UNINSTALL = :
++POST_UNINSTALL = :
++MAKEINFO = @MAKEINFO@
++PACKAGE = @PACKAGE@
++VERSION = @VERSION@
++
++SUBDIRS = bin
++EXTRA_SUBDIRS = compiler depend doc lib linker
++
++EXTRA_DIST = VMMain.ozf alice.import alicec.import
++ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
++mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
++CONFIG_CLEAN_FILES = 
++DIST_COMMON =  README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
++Makefile.in NEWS aclocal.m4 configure configure.ac install-sh missing \
++mkinstalldirs
++
++
++DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
++
++TAR = tar
++GZIP_ENV = --best
++all: all-redirect
++.SUFFIXES:
++$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
++	cd $(top_srcdir) && $(AUTOMAKE) --gnu Makefile
++
++Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
++	cd $(top_builddir) \
++	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
++
++$(ACLOCAL_M4):  configure.ac 
++	cd $(srcdir) && $(ACLOCAL)
++
++config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
++	$(SHELL) ./config.status --recheck
++$(srcdir)/configure: $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
++	cd $(srcdir) && $(AUTOCONF)
++
++# This directory's subdirectories are mostly independent; you can cd
++# into them and run `make' without going through this Makefile.
++# To change the values of `make' variables: instead of editing Makefiles,
++# (1) if the variable is set in `config.status', edit `config.status'
++#     (which will cause the Makefiles to be regenerated when you run `make');
++# (2) otherwise, pass the desired values on the `make' command line.
++
++@SET_MAKE@
++
++all-recursive install-data-recursive install-exec-recursive \
++installdirs-recursive install-recursive uninstall-recursive  \
++check-recursive installcheck-recursive info-recursive dvi-recursive:
++	@set fnord $(MAKEFLAGS); amf=$$2; \
++	dot_seen=no; \
++	target=`echo $@ | sed s/-recursive//`; \
++	list='$(SUBDIRS)'; for subdir in $$list; do \
++	  echo "Making $$target in $$subdir"; \
++	  if test "$$subdir" = "."; then \
++	    dot_seen=yes; \
++	    local_target="$$target-am"; \
++	  else \
++	    local_target="$$target"; \
++	  fi; \
++	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
++	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
++	done; \
++	if test "$$dot_seen" = "no"; then \
++	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
++	fi; test -z "$$fail"
++
++mostlyclean-recursive clean-recursive distclean-recursive \
++maintainer-clean-recursive:
++	@set fnord $(MAKEFLAGS); amf=$$2; \
++	dot_seen=no; \
++	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
++	  rev="$$subdir $$rev"; \
++	  test "$$subdir" != "." || dot_seen=yes; \
++	done; \
++	test "$$dot_seen" = "no" && rev=". $$rev"; \
++	target=`echo $@ | sed s/-recursive//`; \
++	for subdir in $$rev; do \
++	  echo "Making $$target in $$subdir"; \
++	  if test "$$subdir" = "."; then \
++	    local_target="$$target-am"; \
++	  else \
++	    local_target="$$target"; \
++	  fi; \
++	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
++	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
++	done && test -z "$$fail"
++tags-recursive:
++	list='$(SUBDIRS)'; for subdir in $$list; do \
++	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
++	done
++
++tags: TAGS
++
++ID: $(HEADERS) $(SOURCES) $(LISP)
++	list='$(SOURCES) $(HEADERS)'; \
++	unique=`for i in $$list; do echo $$i; done | \
++	  awk '    { files[$$0] = 1; } \
++	       END { for (i in files) print i; }'`; \
++	here=`pwd` && cd $(srcdir) \
++	  && mkid -f$$here/ID $$unique $(LISP)
++
++TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
++	tags=; \
++	here=`pwd`; \
++	list='$(SUBDIRS)'; for subdir in $$list; do \
++   if test "$$subdir" = .; then :; else \
++	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
++   fi; \
++	done; \
++	list='$(SOURCES) $(HEADERS)'; \
++	unique=`for i in $$list; do echo $$i; done | \
++	  awk '    { files[$$0] = 1; } \
++	       END { for (i in files) print i; }'`; \
++	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
++	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
++
++mostlyclean-tags:
++
++clean-tags:
++
++distclean-tags:
++	-rm -f TAGS ID
++
++maintainer-clean-tags:
++
++distdir = $(PACKAGE)-$(VERSION)
++top_distdir = $(distdir)
++
++# This target untars the dist file and tries a VPATH configuration.  Then
++# it guarantees that the distribution is self-contained by making another
++# tarfile.
++distcheck: dist
++	-rm -rf $(distdir)
++	GZIP=$(GZIP_ENV) $(TAR) zxf $(distdir).tar.gz
++	mkdir $(distdir)/=build
++	mkdir $(distdir)/=inst
++	dc_install_base=`cd $(distdir)/=inst && pwd`; \
++	cd $(distdir)/=build \
++	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
++	  && $(MAKE) $(AM_MAKEFLAGS) \
++	  && $(MAKE) $(AM_MAKEFLAGS) dvi \
++	  && $(MAKE) $(AM_MAKEFLAGS) check \
++	  && $(MAKE) $(AM_MAKEFLAGS) install \
++	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
++	  && $(MAKE) $(AM_MAKEFLAGS) dist
++	-rm -rf $(distdir)
++	@banner="$(distdir).tar.gz is ready for distribution"; \
++	dashes=`echo "$$banner" | sed s/./=/g`; \
++	echo "$$dashes"; \
++	echo "$$banner"; \
++	echo "$$dashes"
++dist: distdir
++	-chmod -R a+r $(distdir)
++	GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)
++	-rm -rf $(distdir)
++dist-all: distdir
++	-chmod -R a+r $(distdir)
++	GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)
++	-rm -rf $(distdir)
++distdir: $(DISTFILES)
++	-rm -rf $(distdir)
++	mkdir $(distdir)
++	-chmod 777 $(distdir)
++	here=`cd $(top_builddir) && pwd`; \
++	top_distdir=`cd $(distdir) && pwd`; \
++	distdir=`cd $(distdir) && pwd`; \
++	cd $(top_srcdir) \
++	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu Makefile
++	@for file in $(DISTFILES); do \
++	  d=$(srcdir); \
++	  if test -d $$d/$$file; then \
++	    cp -pr $$d/$$file $(distdir)/$$file; \
++	  else \
++	    test -f $(distdir)/$$file \
++	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
++	    || cp -p $$d/$$file $(distdir)/$$file || :; \
++	  fi; \
++	done
++	for subdir in $(SUBDIRS); do \
++	  if test "$$subdir" = .; then :; else \
++	    test -d $(distdir)/$$subdir \
++	    || mkdir $(distdir)/$$subdir \
++	    || exit 1; \
++	    chmod 777 $(distdir)/$$subdir; \
++	    (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
++	      || exit 1; \
++	  fi; \
++	done
++	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-hook
++info-am:
++info: info-recursive
++dvi-am:
++dvi: dvi-recursive
++check-am: all-am
++check: check-recursive
++installcheck-am:
++installcheck: installcheck-recursive
++install-exec-am:
++install-exec: install-exec-recursive
++
++install-data-am:
++	@$(NORMAL_INSTALL)
++	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
++install-data: install-data-recursive
++
++install-am: all-am
++	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
++install: install-recursive
++uninstall-am:
++uninstall: uninstall-recursive
++all-am: Makefile
++all-redirect: all-recursive
++install-strip:
++	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
++installdirs: installdirs-recursive
++installdirs-am:
++
++
++mostlyclean-generic:
++
++clean-generic:
++
++distclean-generic:
++	-rm -f Makefile $(CONFIG_CLEAN_FILES)
++	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
++
++maintainer-clean-generic:
++mostlyclean-am:  mostlyclean-tags mostlyclean-generic
++
++mostlyclean: mostlyclean-recursive
++
++clean-am:  clean-tags clean-generic mostlyclean-am
++
++clean: clean-recursive
++
++distclean-am:  distclean-tags distclean-generic clean-am
++
++distclean: distclean-recursive
++	-rm -f config.status
++
++maintainer-clean-am:  maintainer-clean-tags maintainer-clean-generic \
++		distclean-am
++	@echo "This command is intended for maintainers to use;"
++	@echo "it deletes files that may require special tools to rebuild."
++
++maintainer-clean: maintainer-clean-recursive
++	-rm -f config.status
++
++.PHONY: install-data-recursive uninstall-data-recursive \
++install-exec-recursive uninstall-exec-recursive installdirs-recursive \
++uninstalldirs-recursive all-recursive check-recursive \
++installcheck-recursive info-recursive dvi-recursive \
++mostlyclean-recursive distclean-recursive clean-recursive \
++maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
++distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
++dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
++install-exec install-data-am install-data install-am install \
++uninstall-am uninstall all-redirect all-am all installdirs-am \
++installdirs mostlyclean-generic distclean-generic clean-generic \
++maintainer-clean-generic clean mostlyclean distclean maintainer-clean
++
++
++dist-hook:
++	cp -p -r $(EXTRA_SUBDIRS) $(distdir)
++
++install-data-hook:
++	$(mkinstalldirs) $(DESTDIR)$(datadir)/alice
++	(cd $(srcdir) && $(TAR) -c $(EXTRA_DIST) $(EXTRA_SUBDIRS)) | \
++	(cd $(DESTDIR)$(datadir)/alice && $(TAR) x)
++
++# Tell versions [3.59,3.63) of GNU make to not export all variables.
++# Otherwise a system limit (for SysV at least) may be exceeded.
++.NOEXPORT:
+diff -urN alice-0.9.orig/missing alice-0.9/missing
+--- alice-0.9.orig/missing	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/missing	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,198 @@
++#! /bin/sh
++# Common stub for a few missing GNU programs while installing.
++# Copyright (C) 1996, 1997, 2001, 2002 Free Software Foundation, Inc.
++# Franc,ois Pinard <pinard@iro.umontreal.ca>, 1996.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++# 02111-1307, USA.
++
++if test $# -eq 0; then
++  echo 1>&2 "Try \`$0 --help' for more information"
++  exit 1
++fi
++
++# In the cases where this matters, `missing' is being run in the
++# srcdir already.
++if test -f configure.in; then
++  configure_ac=configure.ac
++else
++  configure_ac=configure.in
++fi
++
++case "$1" in
++
++  -h|--h|--he|--hel|--help)
++    echo "\
++$0 [OPTION]... PROGRAM [ARGUMENT]...
++
++Handle \`PROGRAM [ARGUMENT]...' for when PROGRAM is missing, or return an
++error status if there is no known handling for PROGRAM.
++
++Options:
++  -h, --help      display this help and exit
++  -v, --version   output version information and exit
++
++Supported PROGRAM values:
++  aclocal      touch file \`aclocal.m4'
++  autoconf     touch file \`configure'
++  autoheader   touch file \`config.h.in'
++  automake     touch all \`Makefile.in' files
++  bison        create \`y.tab.[ch]', if possible, from existing .[ch]
++  flex         create \`lex.yy.c', if possible, from existing .c
++  lex          create \`lex.yy.c', if possible, from existing .c
++  makeinfo     touch the output file
++  yacc         create \`y.tab.[ch]', if possible, from existing .[ch]"
++    ;;
++
++  -v|--v|--ve|--ver|--vers|--versi|--versio|--version)
++    echo "missing - GNU libit 0.0"
++    ;;
++
++  -*)
++    echo 1>&2 "$0: Unknown \`$1' option"
++    echo 1>&2 "Try \`$0 --help' for more information"
++    exit 1
++    ;;
++
++  aclocal*)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified \`acinclude.m4' or \`$configure_ac'.  You might want
++         to install the \`Automake' and \`Perl' packages.  Grab them from
++         any GNU archive site."
++    touch aclocal.m4
++    ;;
++
++  autoconf)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified \`$configure_ac'.  You might want to install the
++         \`Autoconf' and \`GNU m4' packages.  Grab them from any GNU
++         archive site."
++    touch configure
++    ;;
++
++  autoheader)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified \`acconfig.h' or \`$configure_ac'.  You might want
++         to install the \`Autoconf' and \`GNU m4' packages.  Grab them
++         from any GNU archive site."
++    files=`sed -n 's/^[ ]*A[CM]_CONFIG_HEADER(\([^)]*\)).*/\1/p' $configure_ac`
++    test -z "$files" && files="config.h"
++    touch_files=
++    for f in $files; do
++      case "$f" in
++      *:*) touch_files="$touch_files "`echo "$f" |
++				       sed -e 's/^[^:]*://' -e 's/:.*//'`;;
++      *) touch_files="$touch_files $f.in";;
++      esac
++    done
++    touch $touch_files
++    ;;
++
++  automake*)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified \`Makefile.am', \`acinclude.m4' or \`$configure_ac'.
++         You might want to install the \`Automake' and \`Perl' packages.
++         Grab them from any GNU archive site."
++    find . -type f -name Makefile.am -print |
++	   sed 's/\.am$/.in/' |
++	   while read f; do touch "$f"; done
++    ;;
++
++  bison|yacc)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified a \`.y' file.  You may need the \`Bison' package
++         in order for those modifications to take effect.  You can get
++         \`Bison' from any GNU archive site."
++    rm -f y.tab.c y.tab.h
++    if [ $# -ne 1 ]; then
++        eval LASTARG="\${$#}"
++	case "$LASTARG" in
++	*.y)
++	    SRCFILE=`echo "$LASTARG" | sed 's/y$/c/'`
++	    if [ -f "$SRCFILE" ]; then
++	         cp "$SRCFILE" y.tab.c
++	    fi
++	    SRCFILE=`echo "$LASTARG" | sed 's/y$/h/'`
++	    if [ -f "$SRCFILE" ]; then
++	         cp "$SRCFILE" y.tab.h
++	    fi
++	  ;;
++	esac
++    fi
++    if [ ! -f y.tab.h ]; then
++	echo >y.tab.h
++    fi
++    if [ ! -f y.tab.c ]; then
++	echo 'main() { return 0; }' >y.tab.c
++    fi
++    ;;
++
++  lex|flex)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified a \`.l' file.  You may need the \`Flex' package
++         in order for those modifications to take effect.  You can get
++         \`Flex' from any GNU archive site."
++    rm -f lex.yy.c
++    if [ $# -ne 1 ]; then
++        eval LASTARG="\${$#}"
++	case "$LASTARG" in
++	*.l)
++	    SRCFILE=`echo "$LASTARG" | sed 's/l$/c/'`
++	    if [ -f "$SRCFILE" ]; then
++	         cp "$SRCFILE" lex.yy.c
++	    fi
++	  ;;
++	esac
++    fi
++    if [ ! -f lex.yy.c ]; then
++	echo 'main() { return 0; }' >lex.yy.c
++    fi
++    ;;
++
++  makeinfo)
++    echo 1>&2 "\
++WARNING: \`$1' is missing on your system.  You should only need it if
++         you modified a \`.texi' or \`.texinfo' file, or any other file
++         indirectly affecting the aspect of the manual.  The spurious
++         call might also be the consequence of using a buggy \`make' (AIX,
++         DU, IRIX).  You might want to install the \`Texinfo' package or
++         the \`GNU make' package.  Grab either from any GNU archive site."
++    file=`echo "$*" | sed -n 's/.*-o \([^ ]*\).*/\1/p'`
++    if test -z "$file"; then
++      file=`echo "$*" | sed 's/.* \([^ ]*\) *$/\1/'`
++      file=`sed -n '/^@setfilename/ { s/.* \([^ ]*\) *$/\1/; p; q; }' $file`
++    fi
++    touch $file
++    ;;
++
++  *)
++    echo 1>&2 "\
++WARNING: \`$1' is needed, and you do not seem to have it handy on your
++         system.  You might have modified some files without having the
++         proper tools for further handling them.  Check the \`README' file,
++         it often tells you about the needed prerequirements for installing
++         this package.  You may also peek at any GNU archive site, in case
++         some other package would contain this missing \`$1' program."
++    exit 1
++    ;;
++esac
++
++exit 0
+diff -urN alice-0.9.orig/mkinstalldirs alice-0.9/mkinstalldirs
+--- alice-0.9.orig/mkinstalldirs	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/mkinstalldirs	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,40 @@
++#! /bin/sh
++# mkinstalldirs --- make directory hierarchy
++# Author: Noah Friedman <friedman@prep.ai.mit.edu>
++# Created: 1993-05-16
++# Public domain
++
++# $Id$
++
++errstatus=0
++
++for file
++do
++   set fnord `echo ":$file" | sed -ne 's/^:\//#/;s/^://;s/\// /g;s/^#/\//;p'`
++   shift
++
++   pathcomp=
++   for d
++   do
++     pathcomp="$pathcomp$d"
++     case "$pathcomp" in
++       -* ) pathcomp=./$pathcomp ;;
++     esac
++
++     if test ! -d "$pathcomp"; then
++        echo "mkdir $pathcomp"
++
++        mkdir "$pathcomp" || lasterr=$?
++
++        if test ! -d "$pathcomp"; then
++  	  errstatus=$lasterr
++        fi
++     fi
++
++     pathcomp="$pathcomp/"
++   done
++done
++
++exit $errstatus
++
++# mkinstalldirs ends here
+diff -urN alice-0.9.orig/NEWS alice-0.9/NEWS
+--- alice-0.9.orig/NEWS	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/NEWS	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1 @@
++This is the first public release of the Alice Programming System.
+diff -urN alice-0.9.orig/README alice-0.9/README
+--- alice-0.9.orig/README	1970-01-01 01:00:00.000000000 +0100
++++ alice-0.9/README	2002-10-15 17:43:49.000000000 +0200
+@@ -0,0 +1,21 @@
++The Alice Programming System
++
++Alice is a functional programming language based on Standard ML,
++extended with support for concurrent, distributed, and constraint
++programming.
++
++The Alice Programming System (APS) includes an interpreter-like
++interactive toplevel, a batch compiler, a static linker, the
++Inspector (a tool for dynamically inspecting Alice data
++structures), the Explorer (a tool for interactively investigating
++search problems), a binding for the Gnome toolkit GUI library,
++and a comprehensive library.  The current release of the APS is
++based on the Mozart virtual machine, which faciliates
++interoperation between Alice and Oz (http://www.mozart-oz.org/).
++
++The Alice Programming System is distributed under the terms and
++conditions of the Alice License, a slight modification of the BSD
++license.  See the file COPYING for details.
++
++For more information on Alice and the Alice Programming System,
++visit the webpage at http://www.ps.uni-sb.de/alice.
