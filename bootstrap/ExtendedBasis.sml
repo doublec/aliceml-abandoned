@@ -411,6 +411,11 @@ structure String =
     val toList		= explode
     val tabulate	= implode o List.tabulate
 
+    fun separate s' ss		= concat(separate'(s', ss))
+    and separate'(s', nil)	= nil
+      | separate'(s', s::nil)	= s::nil
+      | separate'(s', s::ss)	= s::s'::separate'(s', ss)
+
     fun isSuffix s1 s2			= isSuffix'(s1,s2,size s1-1,size s2-1)
     and isSuffix'(s1,s2,i1,i2)		= i1 = ~1 orelse
 					  i2 <> ~1 andalso
@@ -441,6 +446,8 @@ signature STRING =
     val fromList :	Char.char list -> string
     val toList :	string -> Char.char list
     val tabulate :	int * (int -> Char.char) -> string
+
+    val separate :	string -> string list -> string
 
     val isSuffix :	string -> string -> bool
   end
