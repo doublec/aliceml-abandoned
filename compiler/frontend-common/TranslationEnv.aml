@@ -30,8 +30,8 @@ struct
     exception Collision		= StampSet.Collision
     exception Pervasive
 
-    fun env()			= (StampSet.set(), ref NONE, ref NONE)
-    val new			= env
+    fun env()			= (StampSet.set(), ref NONE, ref NONE) : env
+    val empty			= env()
     fun clone(s,xr,yr)		= (StampSet.clone s, ref(!xr), ref(!yr))
 
     fun insertMod((E,_,_), x)	= StampSet.insertDisjoint(E,x)
