@@ -58,7 +58,7 @@ define
    fun {TranslateLit Lit}
       case Lit of wordLit(W) then W   %--** {Word.make ...}
       [] intLit(I) then I
-      [] charLit(C) then C
+      [] charLit([C]) then C
       [] stringLit(S) then {ByteString.make S}
       [] realLit(S) then {String.toFloat S}
       end
