@@ -415,7 +415,7 @@ struct
     and createContfromRow (va, t, p, i, d, row, proj,canvas) = 
 	let val lt_list   = row2list(row)
 	    val l_vector  = labelvector(lt_list)
-	    val wlimit    = List.length(lt_list) > !max_width 
+	    val wlimit    = Vector.length(l_vector) > !max_width 
 	    val l         = if wlimit 
 				then !max_width
 			    else List.length(lt_list)
