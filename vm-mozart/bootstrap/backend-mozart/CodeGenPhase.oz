@@ -19,8 +19,13 @@ import
 export
    Translate
 define
-   NONE = 'NONE'
    SOME = 'SOME'
+   NUM = 'NUM'
+   ALPHA = 'ALPHA'
+   Nullary = 'Nullary'
+   Unary = 'Unary'
+   Tuple = 'Tuple'
+   Record = 'Record'
    WordLit = 'WordLit'
    IntLit = 'IntLit'
    CharLit = 'CharLit'
@@ -30,8 +35,11 @@ define
    InId = 'InId'
    Id = 'Id'
    LitTest = 'LitTest'
+   TagTest = 'TagTest'
+   TagAppTest = 'TagAppTest'
    ConTest = 'ConTest'
-   RefTest = 'RefTest'
+   ConAppTest = 'ConAppTest'
+   RefAppTest = 'RefAppTest'
    TupTest = 'TupTest'
    RecTest = 'RecTest'
    LabTest = 'LabTest'
@@ -56,6 +64,7 @@ define
    PrimExp = 'PrimExp'
    NewExp = 'NewExp'
    VarExp = 'VarExp'
+   TagExp = 'TagExp'
    ConExp = 'ConExp'
    RefExp = 'RefExp'
    TupExp = 'TupExp'
@@ -65,6 +74,7 @@ define
    FunExp = 'FunExp'
    AppExp = 'AppExp'
    SelAppExp = 'SelAppExp'
+   TagAppExp = 'TagAppExp'
    ConAppExp = 'ConAppExp'
    RefAppExp = 'RefAppExp'
    PrimAppExp = 'PrimAppExp'
@@ -79,24 +89,16 @@ define
       end
    end
 
-   fun {TrOption Opt Tr}
-      case Opt of !NONE then none
-      [] SOME(X) then some({Tr X})
-      end
-   end
-
-   fun {TrList Xs Tr}
-      case Xs of '::'(X#Xr) then {Tr X}|{TrList Xr Tr}
-      [] nil then nil
-      end
-   end
-
    fun {TrAtom S}
       {String.toAtom {ByteString.toString S}}
    end
 
    fun {TrCoord (LL#LC)#(RL#RC)}
       LL#LC#RL#RC
+   end
+
+   fun {TrInfo '#'(region: Coord ...)}
+      {TrCoord Coord}
    end
 
    fun {TrLit Lit}
@@ -126,26 +128,21 @@ define
       end
    end
 
-   fun {TrId Id(Coord#Stamp#Name)}
-      id({TrCoord Coord} {TrStamp Stamp} {TrName Name})
+   fun {TrId Id(Info#Stamp#Name)}
+      id({TrInfo Info} {TrStamp Stamp} {TrName Name})
    end
 
-   fun {TrLab S} S2 in
-      S2 = {ByteString.toString S}
-      if {String.isInt S2} then {String.toInt S2}
-      else {String.toAtom S2}
+   fun {TrLab Lab}
+      case Lab of NUM(I) then I
+      [] ALPHA(S) then {String.toAtom S}
       end
    end
 
-   fun {TrTest Test}
-      case Test of LitTest(Lit) then litTest({TrLit Lit})
-      [] ConTest(Id#IdOpt) then conTest({TrId Id} {TrOption IdOpt TrId})
-      [] RefTest(Id) then refTest({TrId Id})
-      [] TupTest(Ids) then tupTest({TrList Ids TrId})
-      [] RecTest(LabIdList) then
-	 recTest({TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
-      [] LabTest(Lab#Id) then labTest({TrLab Lab} {TrId Id})
-      [] VecTest(Ids) then vecTest({TrList Ids TrId})
+   fun {TrConArity ConArity}
+      case ConArity of !Nullary then nullary
+      [] !Unary then unary
+      [] Tuple(I) then tuple(I)
+      [] Record(Labs) then record({Map Labs TrLab})
       end
    end
 
@@ -157,34 +154,47 @@ define
 
    fun {TrArgs Args}
       case Args of OneArg(Id) then oneArg({TrId Id})
-      [] TupArgs(Ids) then tupArgs({TrList Ids TrId})
+      [] TupArgs(Ids) then tupArgs({Map Ids TrId})
       [] RecArgs(LabIdList) then
-	 recArgs({TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+	 recArgs({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
       end
    end
 
-   fun {TrInfo Coord#_}
-      {TrCoord Coord}
+   fun {TrTest Test}
+      case Test of LitTest(Lit) then litTest({TrLit Lit})
+      [] TagTest(Lab) then tagTest({TrLab Lab})
+      [] TagAppTest(Lab Args ConArity) then
+	 tagAppTest({TrLab Lab} {TrArgs Args} {TrConArity ConArity})
+      [] ConTest(Id) then conTest({TrId Id})
+      [] ConAppTest(Id Args ConArity) then
+	 conAppTest({TrId Id} {TrArgs Args} {TrConArity ConArity})
+      [] RefAppTest(Id) then refAppTest({TrId Id})
+      [] TupTest(Ids) then tupTest({Map Ids TrId})
+      [] RecTest(LabIdList) then
+	 recTest({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      [] LabTest(Lab Id) then labTest({TrLab Lab} {TrId Id})
+      [] VecTest(Ids) then vecTest({Map Ids TrId})
+      end
    end
 
    fun {TrStm Stm}
-      case Stm of ValDec(Info#Id#Exp#IsToplevel) then
+      case Stm of ValDec(Info Id Exp IsToplevel) then
 	 valDec({TrInfo Info} {TrId Id} {TrExp Exp} IsToplevel)
-      [] RecDec(Info#IdExpList#IsToplevel) then
+      [] RecDec(Info IdExpList IsToplevel) then
 	 recDec({TrInfo Info}
-		{TrList IdExpList fun {$ Id#Exp} {TrId Id}#{TrExp Exp} end}
+		{Map IdExpList fun {$ Id#Exp} {TrId Id}#{TrExp Exp} end}
 		IsToplevel)
-      [] EvalStm(Info#Exp) then evalStm({TrInfo Info} {TrExp Exp})
-      [] RaiseStm(Info#Id) then raiseStm({TrInfo Info} {TrId Id})
-      [] HandleStm(Info#Body1#Id#Body2#Body3#Shared) then
+      [] EvalStm(Info Exp) then evalStm({TrInfo Info} {TrExp Exp})
+      [] RaiseStm(Info Id) then raiseStm({TrInfo Info} {TrId Id})
+      [] HandleStm(Info Body1 Id Body2 Body3 Shared) then
 	 {Assign Shared true}
 	 handleStm({TrInfo Info} {TrBody Body1} {TrId Id}
 		   {TrBody Body2} {TrBody Body3} Shared)
-      [] EndHandleStm(Info#Shared) then endHandleStm({TrInfo Info} Shared)
-      [] TestStm(Info#Id#Test#Body1#Body2) then
+      [] EndHandleStm(Info Shared) then endHandleStm({TrInfo Info} Shared)
+      [] TestStm(Info Id Test Body1 Body2) then
 	 testStm({TrInfo Info} {TrId Id} {TrTest Test}
 		 {TrBody Body1} {TrBody Body2})
-      [] SharedStm(Info#Body#Shared) then X in
+      [] SharedStm(Info Body Shared) then X in
 	 X = {Access Shared}
 	 if {IsInt X} then NewStm NewBody in
 	    NewStm = sharedStm({TrInfo Info} NewBody {Gen})
@@ -193,53 +203,57 @@ define
 	    NewStm
 	 else X
 	 end
-      [] ReturnStm(Info#Exp) then returnStm({TrInfo Info} {TrExp Exp})
-      [] IndirectStm(_#BodyOptRef) then
+      [] ReturnStm(Info Exp) then returnStm({TrInfo Info} {TrExp Exp})
+      [] IndirectStm(_ BodyOptRef) then
 	 case {Access BodyOptRef} of SOME(Body) then {TrBody Body} end
-      [] ExportStm(Info#Exp) then exportStm({TrInfo Info} {TrExp Exp})
+      [] ExportStm(Info Exp) then exportStm({TrInfo Info} {TrExp Exp})
       end
    end
 
    fun {TrExp Exp}
-      case Exp of LitExp(Coord#Lit) then litExp({TrCoord Coord} {TrLit Lit})
-      [] PrimExp(Coord#String) then primExp({TrCoord Coord} {TrAtom String})
-      [] NewExp(Coord#StringOpt#HasArgs) then
-	 newExp({TrCoord Coord} {TrOption StringOpt TrAtom} HasArgs)
-      [] VarExp(Coord#Id) then varExp({TrCoord Coord} {TrId Id})
-      [] ConExp(Coord#Id#HasArgs) then
-	 conExp({TrCoord Coord} {TrId Id} HasArgs)
-      [] RefExp(Coord) then refExp({TrCoord Coord})
-      [] TupExp(Coord#Ids) then tupExp({TrCoord Coord} {TrList Ids TrId})
-      [] RecExp(Coord#LabIdList) then
-	 recExp({TrCoord Coord}
-		{TrList LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
-      [] SelExp(Coord#Lab) then selExp({TrCoord Coord} {TrLab Lab})
-      [] VecExp(Coord#Ids) then vecExp({TrCoord Coord} {TrList Ids TrId})
-      [] FunExp(Coord#Stamp#Flags#ArgsBodyList) then
-	 funExp({TrCoord Coord} {TrStamp Stamp} {TrList Flags TrFunFlag}
-		{TrList ArgsBodyList
+      case Exp of LitExp(Info Lit) then litExp({TrInfo Info} {TrLit Lit})
+      [] PrimExp(Info String) then primExp({TrInfo Info} {TrAtom String})
+      [] NewExp(Info ConArity) then newExp({TrInfo Info} {TrConArity ConArity})
+      [] VarExp(Info Id) then varExp({TrInfo Info} {TrId Id})
+      [] TagExp(Info Lab ConArity) then
+	 tagExp({TrInfo Info} {TrLab Lab} {TrConArity ConArity})
+      [] ConExp(Info Id ConArity) then
+	 conExp({TrInfo Info} {TrId Id} {TrConArity ConArity})
+      [] RefExp(Info) then refExp({TrInfo Info})
+      [] TupExp(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
+      [] RecExp(Info LabIdList) then
+	 recExp({TrInfo Info}
+		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      [] SelExp(Info Lab) then selExp({TrInfo Info} {TrLab Lab})
+      [] VecExp(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
+      [] FunExp(Info Stamp Flags ArgsBodyList) then
+	 funExp({TrInfo Info} {TrStamp Stamp} {Map Flags TrFunFlag}
+		{Map ArgsBodyList
 		 fun {$ Args#Body} {TrArgs Args}#{TrBody Body} end})
-      [] AppExp(Coord#Id#Args) then
-	 appExp({TrCoord Coord} {TrId Id} {TrArgs Args})
-      [] SelAppExp(Coord#Lab#Id) then
-	 selAppExp({TrCoord Coord} {TrLab Lab} {TrId Id})
-      [] ConAppExp(Coord#Id#Args) then
-	 conAppExp({TrCoord Coord} {TrId Id} {TrArgs Args})
-      [] RefAppExp(Coord#Args) then refAppExp({TrCoord Coord} {TrArgs Args})
-      [] PrimAppExp(Coord#String#Ids) then
-	 primAppExp({TrCoord Coord} {TrAtom String} {TrList Ids TrId})
-      [] AdjExp(Coord#Id1#Id2) then
-	 adjExp({TrCoord Coord} {TrId Id1} {TrId Id2})
+      [] AppExp(Info Id Args) then
+	 appExp({TrInfo Info} {TrId Id} {TrArgs Args})
+      [] SelAppExp(Info Lab Id) then
+	 selAppExp({TrInfo Info} {TrLab Lab} {TrId Id})
+      [] TagAppExp(Info Lab Args ConArity) then
+	 tagAppExp({TrInfo Info} {TrLab Lab} {TrArgs Args}
+		   {TrConArity ConArity})
+      [] ConAppExp(Info Id Args ConArity) then
+	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args} {TrConArity ConArity})
+      [] RefAppExp(Info Id) then refAppExp({TrInfo Info} {TrId Id})
+      [] PrimAppExp(Info String Ids) then
+	 primAppExp({TrInfo Info} {TrAtom String} {Map Ids TrId})
+      [] AdjExp(Info Id1 Id2) then
+	 adjExp({TrInfo Info} {TrId Id1} {TrId Id2})
       end
    end
 
    fun {TrBody Stms}
-      {Flatten {TrList Stms TrStm}}
+      {Flatten {Map Stms TrStm}}
    end
 
    fun {TrComponent IdStringList#Ids#Body}
-      {TrList IdStringList fun {$ Id#String} {TrId Id}#{TrAtom String} end}#
-      {TrList Ids TrId}#{TrBody Body}
+      {Map IdStringList fun {$ Id#String} {TrId Id}#{TrAtom String} end}#
+      {Map Ids TrId}#{TrBody Body}
    end
 
    fun {Translate InFilename Component OutFilename} F in
