@@ -10,18 +10,17 @@
  *   $Revision$
  *)
 
-signature PICKLE =
-    sig
-	structure C: CONTEXT = EmptyContext
+structure Pickle :> PICKLE =
+    struct
+	structure C = EmptyContext
 
 	datatype value =
 	    Prim of string
-	  | Int of LargeInt.int
-	  | Word of LargeWord.word
-	  | Char of WideChar.char
-	  | String of WideString.string
-	  | Real of string
-	  | Constructor of stamp
+	  | IntLit of LargeInt.int
+	  | WordLit of LargeWord.word
+	  | CharLit of WideChar.char
+	  | StringLit of WideString.string
+	  | RealLit of string
 
 	type id = int
 
@@ -40,7 +39,7 @@ signature PICKLE =
 	datatype instr =
 	    PutConst of id * value * instr
 	  | PutVar of id * id * instr
-	  | PutNew of id * instr (*--** not really needed (builtin) *)
+	  | PutNew of id * instr
 	  | PutGlobal of id * int * instr
 	  | PutTag of id * int * id vector * instr
 	  | PutCon of id * con * id vector * instr

@@ -1,0 +1,9 @@
+Group is
+
+    ../infrastructure/phase.cm
+    ../infrastructure/target.cm
+    ../backend-common/flat-grammar.cm
+
+    PICKLE.sig
+    Pickle.sml
+    BackendStockwerk.sml

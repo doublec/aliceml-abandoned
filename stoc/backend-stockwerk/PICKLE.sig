@@ -12,7 +12,22 @@
 
 signature PICKLE =
     sig
-	datatype value = ... (*--** missing *)
+	structure C: CONTEXT = EmptyContext
+
+	datatype value =
+	    Prim of string
+	  | Int of LargeInt.int
+	  | Word of LargeWord.word
+	  | Char of WideChar.char
+	  | String of WideString.string
+	  | Real of string
+	  | Constructor of stamp
+
+	type id = int
+
+	datatype idDef =
+	    IdDef of id
+	  | Wildcard
 
 	datatype con =
 	    Con of id
@@ -22,11 +37,10 @@ signature PICKLE =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
 
-	datatype function = Function of int * idDef args * instr
-
 	datatype instr =
 	    PutConst of id * value * instr
-	  | PutNew of id * instr
+	  | PutVar of id * id * instr
+	  | PutNew of id * instr (*--** not really needed (builtin) *)
 	  | PutGlobal of id * int * instr
 	  | PutTag of id * int * id vector * instr
 	  | PutCon of id * con * id vector * instr
@@ -51,4 +65,7 @@ signature PICKLE =
 			  * (con * idDef vector * instr) vector * instr
 	  | VecTest of id * (idDef vector * instr) vector * instr
 	  | Return of id args
+	and function = Function of int * idDef args * instr
+
+	type t = unit   (*--** this can't be serious *)
     end
