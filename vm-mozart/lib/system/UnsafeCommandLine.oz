@@ -20,7 +20,7 @@ define
    CommandLine =
    'CommandLine'('name':
 		    fun {$ unit}
-		       {ByteString.make {Property.get 'application.url'}}
+		       {ByteString.make {Property.get 'alice.rootUrl'}}
 		    end
 		 'arguments':
 		    fun {$ unit}
