@@ -36,92 +36,54 @@ import signature MK_WINDOW from "MK_WINDOW-sig"
 local 
 open WindowHelper
 
-in
+val serve' = Server.newServer () 
 
+(* "About..."-WindowHandler *)
+fun about _ = serve' (fn () =>  
+		     let
+			 val dialog = Gtk.dialogNew()
+			 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
+			 val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
+			 val l = 
+			     Gtk.labelNew("Alice Browser \n"
+					  ^ "Created by \n"
+					  ^ "Bernadette Blum & Marvin Schiller")
+		     in
+			 ( Gtk.windowSetTitle(dialog,"information")
+			  ; Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),
+					     ok)
+			  ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
+			  ;Gtk.widgetShowAll(dialog))
+		     end)
 
-functor MkWindow () :> MK_WINDOW =
-struct
-
-    type tag = Gtk.object
-
-    val serve = Server.newServer ()
-
-    val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-  
-    val alive = ref true
-
-    val selection = ref NONE
-
-    fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
-
-    val _  = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
-	      ; Gtk.widgetSetUsize (window, 400, 300)      
-	      ;Gtk.signalConnect (window, "delete-event", Delete))
-
-    val handlers = Array.array(5,(fn n=> ()))
-
-    fun selectHandler "reinspect" = Array.sub(handlers,0)
-      | selectHandler "width"     = Array.sub(handlers,1)
-      | selectHandler "depth"     = Array.sub(handlers,2)
-      | selectHandler "shrink"    = Array.sub(handlers,3)
-      | selectHandler "expand"    = Array.sub(handlers,4)
-
-    fun register (str,handler) = 
-	let
-	    val i = case str of "reinspect" => 0
-	  | "width" =>  1 
-	  | "depth" =>  2
-	  | "shrink" => 3
-	  | "expand" => 4
-	in
-	    Array.update(handlers,i,handler)
-	end
-    
-    (* "About..."-WindowHandler *)
-    fun about _ = serve (fn () =>  
-	let
-	    val dialog = Gtk.dialogNew()
-	    val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
-	    val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
-	    val l = 
-		Gtk.labelNew("Alice Browser \n"
-			     ^ "Created by \n"
-			     ^ "Bernadette Blum & Marvin Schiller")
-	in
-	       ( Gtk.windowSetTitle(dialog,"information")
-	   	  ; Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),
-	      			     ok)
-	       	  ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
-	       	  ;Gtk.widgetShowAll(dialog))
-	end)
-			   
-    fun okHandler(w,
-		  width_s,
-		  depth_s,
-		  treemode_button,
-		  relmode_button, 
-		  tokenmode_button) = (fn _ => 
-		   (Settings.max_width := 
-		    Gtk.spinButtonGetValueAsInt(width_s) 
-		    ;Settings.max_depth := 
-		    Gtk.spinButtonGetValueAsInt(depth_s)
-		    ;Settings.relmode := (
-		     Gtk.toggleButtonGetActive(relmode_button) = 1
+(* Handles ok Button in Preferences Window *)
+fun okHandler(w,
+	      width_s,
+	      depth_s,
+	      treemode_button,
+	      relmode_button, 
+	      tokenmode_button) = (fn _ => 
+				   (Settings.max_width := 
+				    Gtk.spinButtonGetValueAsInt(width_s) 
+				    ;Settings.max_depth := 
+				    Gtk.spinButtonGetValueAsInt(depth_s)
+				    ;Settings.relmode := (
+			            Gtk.toggleButtonGetActive(relmode_button) = 1
 					  orelse 
-	            Gtk.toggleButtonGetActive(tokenmode_button) = 1)
-		    ;Settings.tokenmode :=  
-		    Gtk.toggleButtonGetActive(tokenmode_button) = 1
-		    ;Gtk.widgetDestroy(w)
-		    ;if 
-		    Gtk.toggleButtonGetActive(treemode_button) = 1
-			 then (RelManDictionary.dumpAll(Dictionaries.reldict)
-			      ; Settings.relnumber := 0)
-		     else ()))
+       			            Gtk.toggleButtonGetActive(tokenmode_button) = 1)
+				    ;Settings.tokenmode :=  
+				    Gtk.toggleButtonGetActive(tokenmode_button) = 1
+				    ;Gtk.widgetDestroy(w)
+				    ;if 
+				    Gtk.toggleButtonGetActive(treemode_button) = 1
+					 then (RelManDictionary.dumpAll(Dictionaries.reldict)
+					       ; Settings.relnumber := 0)
+				     else ()))
 
-    (* Preferences Window Handler *)
-    fun Preferences _ = serve (fn () =>
-	let	
-	    (* Width & Depth Settings *)
+(* Preferences Window Handler *)
+fun Preferences _ = serve' (fn () =>
+       	   let	
+           (* Width & Depth Settings *)
 	   val width_lab = Gtk.labelNew("Set Width Limit to...")	       
 	   val width_s = createSpinButton{init =(!Settings.max_width) , 
 					   lower = 0, 
@@ -183,43 +145,15 @@ struct
 	    val vbox = createVBoxDefaults[n,bbox]
 		in
 		    (Gtk.windowSetTitle (w, "Preferences")
+		    ;Gtk.windowSetPolicy(w,0,0,1)
 	            ;Gtk.containerAdd(w,vbox)
 	            ;Gtk.signalConnect (w, "delete-event", 
 					fn _ => Gtk.widgetDestroy(w) )
 		     ;Gtk.widgetShowAll(w))
 	end)
-	
-    (* Menu-Bar *)
-    val bar = WindowHelper.createMenu
-	(BarObj[MenuObj
-		{title = "Inspector",
-		 items = [EntryObj
-			  (LABEL "About...",
-			   [Handler("activate",
-				    about)],true),
-			  EntryObj(SEP,[],true),
-			  EntryObj(LABEL "Close",
-				   [Handler("activate",
-					    Delete)],true)],
-		 sensitive = true},
-		MenuObj
-		{title = "Selection",
-		 items = [EntryObj(LABEL "Expand",
-				   [],true),
-			  EntryObj(LABEL "Shrink",
-				   [],true),
-			  EntryObj(SEP, [],true),
-			  EntryObj(LABEL "Reinspect",
-				   [],true)],
-		 sensitive = true}   ,
-		MenuObj
-		{title = "Options",
-		 items = [EntryObj(LABEL "Preferences...",
-				   [Handler("activate",
-					    Preferences)],true)],
-		 sensitive = true}])  
-	
-    fun setSelectionMenuSensitive (bar,sensitive) = 
+
+(* Switches "selection" menu on/off *)
+fun setSelectionMenuSensitive (bar,sensitive) = 
 	let
 	    val menu_heading_items = UnsafeValue.cast 
 		(Gtk.containerChildren(bar)) : Gtk.object list
@@ -234,33 +168,25 @@ struct
 	     ; setSensitive(selection_menu,sensitive))
 	end
 
-     val _ = setSelectionMenuSensitive (bar,false)  
-	 
-       
-     val status = Gtk.statusbarNew()
-     val st_context = Gtk.statusbarGetContextId(status,"st")
-     val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
-	 
-     structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
-				    val ysize = !Settings.max_y) 	
-	 
-   (*   val adj1 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_x ,
-				  20.0,50.0,!Settings.max_x )
-     val adj2 = Gtk.adjustmentNew(0.0,0.0,!Settings.max_y ,
-				  20.0,50.0,!Settings.max_y ) 
+val window' = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 
-     val scrolled = Gtk.scrolledWindowNew(adj1,adj2)
-	 
-     val _ = Gtk.scrolledWindowSetPolicy(scrolled,
-					 Gtk.POLICY_ALWAYS,
-					 Gtk.POLICY_ALWAYS)
-	 
-     val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
-     val vadj = Gtk.scrolledWindowGetVadjustment(scrolled) *)
+val alive' = ref true
 
-     val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
-	 
-     fun handleResize _ = serve (fn () => let
+fun Delete _ = (Gtk.widgetDestroy(window');alive':= false)
+
+val selection = ref NONE
+    
+fun destroySelectionMarkings () = case !selection of 
+    NONE => ()
+  | SOME(_,rect) => Gtk.objectDestroy(rect) 
+
+
+fun getSelectionNode() = case !selection of 
+    NONE => Types.Empty
+  | SOME(n,_) => n  
+
+(* invokes canvas resize *)	
+fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
 	                     val page_sh = Gtk.adjustmentGetFieldPageSize(hadj)
 			     val upperh = Gtk.adjustmentGetFieldUpper(hadj)
 			     val valueh = Gtk.adjustmentGetFieldValue(hadj)
@@ -272,20 +198,21 @@ struct
 			     val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
 					 then !(Settings.max_y) else page_sv
 			   in
-			    DA.resize(h,v,scrolled,valueh,valuev  )  
-			 end)
+			       resize(h,v,scrolled,valueh,valuev  )  
+			 end))
 
-     fun scrollX x = let
-			 val valueh = Gtk.adjustmentGetFieldValue(hadj)
-			 val pages =  Gtk.adjustmentGetFieldPageSize(hadj)
-		     in
-			 ( if Real.> (Real.+(Real.+(valueh,x),pages),!Settings.max_x)
-			       then  Gtk.adjustmentSetValue(hadj,Real.-(!Settings.max_x,pages))
-			   else Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
+(* Scrolling *)
+fun scrollX (x,scrolled,hadj) = let
+				    val valueh = Gtk.adjustmentGetFieldValue(hadj)
+				    val pages =  Gtk.adjustmentGetFieldPageSize(hadj)
+				in
+				    ( if Real.> (Real.+(Real.+(valueh,x),pages),!Settings.max_x)
+			      then  Gtk.adjustmentSetValue(hadj,Real.-(!Settings.max_x,pages))
+				      else Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
 			  ;())
 		     end
 
-     fun scrollY y = let
+fun scrollY (y,scrolled,vadj) = let
 			 val pages =  Gtk.adjustmentGetFieldPageSize(vadj)
 			 val valuev = Gtk.adjustmentGetFieldValue(vadj)
 		     in
@@ -295,20 +222,8 @@ struct
 			  ;())
 		     end 
 
-    val _ = Gtk.signalConnect(scrolled,"size_allocate",handleResize)
-    val vbox = createVBox[(bar,0,0,0),
-			  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
-			  (status,0,0,0)]
-    val _ = Gtk.containerAdd(scrolled,DA.canvas)
-    val _ = Gtk.containerAdd(window,vbox)
-
-    val lowest_layer  = GtkCanvas.itemNew(DA.root, 
-			  GtkCanvas.GROUP,
-			  [("x", Gtk.DOUBLE 0.0), 
-			   ("y", Gtk.DOUBLE 0.0)])
-
-
-    fun makePopup {node = n, widthhandler = w, depthhandler = d, 
+(* Popup window for selection *)
+ fun makePopup {node = n, widthhandler = w, depthhandler = d, 
 		   reinspecthandler = r} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
@@ -317,7 +232,7 @@ struct
 	Types.RelNode _ => ()
       | Types.RelRefNode _ => ()
       | _ =>
-	serve (fn () => 
+	serve' (fn () => 
 	       (createMenu
 		(PopupObj
 		 [MenuObj{title = "Explore Tree",
@@ -341,26 +256,107 @@ struct
 			  sensitive = true}])
 		;()))
 	end
-				      
 
-	fun calcAbsoluteMousePointerPosition(x,y) = 
-	    let
-		val valueh = Gtk.adjustmentGetFieldValue(hadj)
-		val valuev = Gtk.adjustmentGetFieldValue(vadj) 
-		val x = Real.+ (x,valueh)
-		val y = Real.+ (y,valuev)
-	    in
-		(x,y)
-	    end
-	
-	fun destroySelectionMarkings () = case !selection of 
-	    NONE => ()
-	  | SOME(_,rect) => Gtk.objectDestroy(rect)  
-		
-	fun handleReinspect node = 
-	    fn _ => (selectHandler("reinspect")) node
+ fun calcAbsoluteMousePointerPosition(x,y,hadj,vadj) = 
+     let
+	 val valueh = Gtk.adjustmentGetFieldValue(hadj)
+	 val valuev = Gtk.adjustmentGetFieldValue(vadj) 
+	 val x = Real.+ (x,valueh)
+	 val y = Real.+ (y,valuev)
+     in
+	 (x,y)
+     end
 
- fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
+in
+
+
+functor MkWindow () :> MK_WINDOW =
+struct
+
+    val serve =  serve'
+
+    type tag = Gtk.object
+
+    val window = window'
+  
+    val alive = alive'
+
+    val handlers = Array.array(5,(fn n=> ()))
+
+    fun selectHandler "reinspect" = Array.sub(handlers,0)
+      | selectHandler "width"     = Array.sub(handlers,1)
+      | selectHandler "depth"     = Array.sub(handlers,2)
+      | selectHandler "shrink"    = Array.sub(handlers,3)
+      | selectHandler "expand"    = Array.sub(handlers,4)
+
+    fun register (str,handler) = 
+	let
+	    val i = case str of "reinspect" => 0
+	  | "width" =>  1 
+	  | "depth" =>  2
+	  | "shrink" => 3
+	  | "expand" => 4
+	in
+	    Array.update(handlers,i,handler)
+	end
+          
+     val status = Gtk.statusbarNew()
+     val st_context = Gtk.statusbarGetContextId(status,"st")
+     val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
+	 
+     structure DA  =  MkDrawingArea(val xsize = !Settings.max_x 
+				    val ysize = !Settings.max_y) 	
+
+     val (scrolled,hadj,vadj) =  createScrollWindowDefaults(20.0,50.0)
+     val canvas = DA.canvas
+     val lowest_layer  = GtkCanvas.itemNew(DA.root, 
+					   GtkCanvas.GROUP,
+					   [("x", Gtk.DOUBLE 0.0), 
+					    ("y", Gtk.DOUBLE 0.0)])
+     val canvasroot = lowest_layer
+     val resize = handleResize(scrolled,hadj,vadj,DA.resize)
+     fun show() = if !alive then Gtk.widgetShowAll(window) else ()
+    
+     fun handleReinspect node = 
+	 fn _ => (selectHandler("reinspect")) node
+
+     fun handleReinspectSelection _ =
+	 (selectHandler("reinspect")) (getSelectionNode())
+
+	 (* Menu-Bar *)
+     val bar = WindowHelper.createMenu
+	 (BarObj[MenuObj
+		 {title = "Inspector",
+		  items = [EntryObj
+			   (LABEL "About...",
+			    [Handler("activate",
+				    about)],true),
+			   EntryObj(SEP,[],true),
+			   EntryObj(LABEL "Close",
+				    [Handler("activate",
+					     Delete)],true)],
+		  sensitive = true},
+		 MenuObj
+		 {title = "Selection",
+		  items = [EntryObj(LABEL "Expand",
+				    [],true),
+			   EntryObj(LABEL "Shrink",
+				   []
+				    ,true),
+			   EntryObj(SEP, [],true),
+			   EntryObj(LABEL "Reinspect",
+				    [Handler("activate",handleReinspectSelection)]
+				    ,true)],
+		  sensitive = true}   ,
+		 MenuObj
+		 {title = "Options",
+		  items = [EntryObj(LABEL "Preferences...",
+				    [Handler("activate",
+					     Preferences)],true)],
+		  sensitive = true}])  
+	 
+	    
+     fun handleEvent [Gdk.EVENT(event)] = serve (fn () =>
      let
 	 val font_width = Services.fontWidth()
 	 val font_height = Services.fontHeight()  
@@ -368,7 +364,7 @@ struct
 	case event of
 	  Gdk.GDK_BUTTON_PRESS({button = 1, ...} as r) => 
 		    let 
-			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r))
+			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r),hadj,vadj)
 			val node = 
 			    NodeSearch.search(Dictionaries.dict,x,y)      
 		    in 
@@ -397,7 +393,7 @@ struct
 		    end
 	| Gdk.GDK_BUTTON_PRESS({button = 3, ...} as r) =>
 		    let
-			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r))
+			val (x,y) = calcAbsoluteMousePointerPosition(#x(r),#y(r),hadj,vadj)
 			val node = 
 			    NodeSearch.search(Dictionaries.dict,x,y)
 		    in
@@ -411,31 +407,31 @@ struct
 				   ; ())
 		   | NONE => ())
 		    end 
-(*	| Gdk.GDK_KEY_PRESS({keyval = 65361,...}) =>(TextIO.print("moving left\n");  scrollX(~10.0)) 
-	| Gdk.GDK_KEY_PRESS({keyval = 65363,...}) =>( TextIO.print("moving right\n") ; scrollX(10.0) )
-	| Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => scrollY(~10.0)    
-	| Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => scrollY(10.0) *)
         | _ => ()
      end)
 
      fun handleWindowEvent [Gdk.EVENT(event)] = 
 	 serve (fn () => 
 		case event of  
-		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => scrollX(~10.0) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => scrollX(10.0) 
-		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => scrollY(~10.0)    
-		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => scrollY(10.0)
+		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => scrollX(~10.0,scrolled,hadj) 
+		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => scrollX(10.0,scrolled,hadj) 
+		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => scrollY(~10.0,scrolled,vadj)    
+		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => scrollY(10.0,scrolled,vadj)
 		  | _ => () )
 
-    
-			     
-    val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
-    val _ = Gtk.signalConnect(window,"event",handleWindowEvent)
-	
-    val canvas = DA.canvas
-    val canvasroot = lowest_layer
-    val resize = handleResize
-    fun show() = if !alive then Gtk.widgetShowAll(window) else ()
+     val _ = (Gtk.windowSetTitle (window, "Alice Browser V 0.2")
+	      ; Gtk.widgetSetUsize (window, 200, 100) 
+	      ; Gtk.windowSetDefaultSize(window, 500,400)
+	      ;Gtk.signalConnect (window, "delete-event", Delete)
+	      ;setSelectionMenuSensitive (bar,false)  
+	      ;Gtk.signalConnect(scrolled,"size_allocate",
+				 handleResize(scrolled,hadj,vadj,DA.resize))
+	      ;Gtk.containerAdd(scrolled,DA.canvas)
+	      ;Gtk.containerAdd(window,createVBox[(bar,0,0,0),
+						  (scrolled,Gtk.EXPAND,Gtk.FILL,0),
+						  (status,0,0,0)])
+	      ;Gtk.signalConnect(DA.canvas,"event",handleEvent)
+	      ;Gtk.signalConnect(window,"event",handleWindowEvent))
 	
 end
 
