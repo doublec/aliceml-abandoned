@@ -253,8 +253,6 @@ steps 3 and 4):
 
 12. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
-12a. Move .header files to stoc.
-
 ==================
  AFTER OPERETTE 2
 ==================
