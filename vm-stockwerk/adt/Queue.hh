@@ -92,6 +92,11 @@ public:
     Assert(b == INVALID_POINTER || b->GetLabel() == QUEUE_LABEL);
     return static_cast<Queue *>(b);
   }
+  static Queue *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == QUEUE_LABEL);
+    return static_cast<Queue *>(b);
+  }
 
   void Enqueue(word w) {
     Block *array = GetArray();

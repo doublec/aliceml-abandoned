@@ -24,6 +24,10 @@ private:
   static const u_int SIZE    = 2;
   static const u_int TOP_POS = 1;
   static const u_int ARR_POS = 2;
+
+  static Stack *FromBlock(Block *x) {
+    return (Stack *) x;
+  }
 protected:
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = Store::DirectWordToBlock(GetArg(ARR_POS));
@@ -170,9 +174,6 @@ public:
     }
     HeaderOp::EncodeSize(a, newmax);
   }
-  static Stack *FromBlock(Block *x) {
-    return (Stack *) x;
-  }
   static Stack *New(u_int s) {
     Block *p = Store::AllocBlock(STACK_LABEL, SIZE);
     Block *a = Store::AllocBlock(STACKARRAY_LABEL, s);
@@ -186,6 +187,11 @@ public:
     Block *p = Store::WordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == STACK_LABEL));
+    return FromBlock(p);
+  }
+  static Stack *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+    Assert(p->GetLabel() == STACK_LABEL);
     return FromBlock(p);
   }
 };
