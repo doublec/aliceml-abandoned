@@ -48,7 +48,7 @@ structure BufferHighlight =
           let
               val regions = Highlight.scan str
           in
-              List.all (fn(s,x,y) => !kill orelse
+              List.all (fn(s,x,y) => not(!kill) andalso
 			colorRegion (buf, offset, removeTags, s, x, y)) regions;
 	      ()
           end
@@ -70,7 +70,8 @@ structure BufferHighlight =
            if Gtk.textIterGetOffset iter = 0 then ()
 	   else if not(Gtk.textIterHasTag(iter, plaintag)) then
 	       (Gtk.textIterBackwardToTagToggle(iter, plaintag);
-	        findPlainSpace(iter, plaintag))
+	        Gtk.textIterBackwardChar iter;
+		findPlainSpace(iter, plaintag))
 	   else if Char.isSpace(Char.chr(Gtk.textIterGetChar iter))
 		   handle Chr => false then
 		()
