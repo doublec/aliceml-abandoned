@@ -12,8 +12,8 @@ final public class RecordArity implements java.io.Serializable {
     java.util.Hashtable hashtable=null;
 
     public RecordArity(Label[] labels) {
-	hashtable = new java.util.Hashtable(); // size?
 	int l = labels.length;
+	hashtable = new java.util.Hashtable(l); // hashtable with default size l
 	this.labels = labels;
 
 	for(int i=0; i<l; i++) {
