@@ -12,26 +12,33 @@
  *   $Revision$
  *)
 
+
+
+(*****************************************************************************
+ * Top-level, part 1
+ *****************************************************************************)
+
 (* Hardwired *)
 
 __prebound Prebound
 
-datatype bool   = datatype Prebound.bool
-type     int    = Prebound.int
-type     word   = Prebound.word
-type     real   = Prebound.real
-type     string = Prebound.string
-type     char   = Prebound.char
-type  'a vector = 'a Prebound.vector
-datatype list   = datatype Prebound.list
-datatype ref    = datatype Prebound.ref
-datatype exn    = datatype Prebound.exn
+type     unit	= {}
+datatype bool	= datatype Prebound.bool
+type     int	= Prebound.int
+type     word	= Prebound.word
+type     real	= Prebound.real
+type     string	= Prebound.string
+type     char	= Prebound.char
+type  'a vector	= 'a Prebound.vector
+datatype list	= datatype Prebound.list
+datatype ref	= datatype Prebound.ref
+datatype exn	= datatype Prebound.exn
 
-exception Match = Prebound.Match
-exception Bind  = Prebound.Bind
+exception Match	= Prebound.Match
+exception Bind	= Prebound.Bind
 
 
-(* Toplevel *)
+(* Fixity *)
 
 infix  7  * / div mod
 infix  6  + - ^
@@ -40,32 +47,32 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
 
-(*--** __primitive val use : string -> unit = "use" *)
 
-__primitive val op=  : ''a * ''a -> bool = "="
-__primitive val op<> : ''a * ''a -> bool = "<>"
+(* Generic and overloaded Identifiers (but we don't overload them :-P) *)
 
+__primitive val op =  :	''a * ''a -> bool	= "="
+__primitive val op <> :	''a * ''a -> bool	= "<>"
 
-(* Overloaded Identifiers *)
+__primitive val ~ :	int -> int		= "Int.~"
+__primitive val op + :	int * int -> int	= "Int.+"
+__primitive val op - :	int * int -> int	= "Int.-"
+__primitive val op * :	int * int -> int	= "Int.*"
+__primitive val op / :	real * real -> real	= "Real./"
+__primitive val op div:	int * int -> int	= "Int.div"
+__primitive val op mod:	int * int -> int	= "Int.mod"
 
-__primitive val op~ :	int -> int = "Int.~"
+__primitive val abs:	int -> int		= "Int.abs"
 
-__primitive val op+ :	int * int -> int = "Int.+"
-__primitive val op- :	int * int -> int = "Int.-"
-__primitive val op* :	int * int -> int = "Int.*"
-__primitive val op/ : real * real -> real = "Real./"
-
-__primitive val op div:	int * int -> int = "Int.div"
-__primitive val op mod:	int * int -> int = "Int.mod"
-__primitive val abs:	int -> int = "Int.abs"
-
-__primitive val op< :	int * int -> bool = "Int.<"
-__primitive val op> :	int * int -> bool = "Int.>"
-__primitive val op<= :	int * int -> bool = "Int.<="
-__primitive val op>= :	int * int -> bool = "Int.>="
+__primitive val op < :	int * int -> bool	= "Int.<"
+__primitive val op > :	int * int -> bool	= "Int.>"
+__primitive val op <= :	int * int -> bool	= "Int.<="
+__primitive val op >= :	int * int -> bool	= "Int.>="
 
 
-(* General *)
+
+(*****************************************************************************
+ * General
+ *****************************************************************************)
 
 signature GENERAL =
   sig
@@ -83,54 +90,89 @@ signature GENERAL =
     exception Span
     exception Subscript
 
-    val exnName: exn -> string
-    val exnMessage: exn -> string
+    val exnName :	exn -> string
+    val exnMessage :	exn -> string
 
-    datatype order = LESS | EQUAL | GREATER
-    val ! : 'a ref -> 'a
-    val := : 'a ref * 'a -> unit
-    val o: ('b -> 'c) * ('a -> 'b) -> 'a -> 'c
-    val before: 'a * unit -> 'a
-    val ignore: 'a -> unit
+    datatype order =	LESS | EQUAL | GREATER
+
+    val ! :		'a ref -> 'a
+    val := :		'a ref * 'a -> unit
+
+    val op o :		('b -> 'c) * ('a -> 'b) -> 'a -> 'c
+    val before :	'a * unit -> 'a
+    val ignore :	'a -> unit
   end
 
 
-structure General: GENERAL =
+structure General : GENERAL =
   struct
-
     type unit = {}
     type exn  = exn
 
-    exception Bind = Bind
-    __primitive constructor Chr: exn = "General.Chr"
-    __primitive constructor Div: exn = "General.Div"
-    __primitive constructor Domain: exn = "General.Domain"
-    __primitive constructor Fail of string: exn = "General.Fail"
+    exception Bind  = Bind
     exception Match = Match
-    __primitive constructor Overflow: exn = "General.Overflow"
-    __primitive constructor Size: exn = "General.Size"
-    __primitive constructor Span: exn = "General.Span"
-    __primitive constructor Subscript: exn = "General.Subscript"
+    __primitive constructor Chr : exn		= "General.Chr"
+    __primitive constructor Div : exn		= "General.Div"
+    __primitive constructor Domain : exn	= "General.Domain"
+    __primitive constructor Fail of string: exn	= "General.Fail"
+    __primitive constructor Overflow : exn	= "General.Overflow"
+    __primitive constructor Size : exn		= "General.Size"
+    __primitive constructor Span : exn		= "General.Span"
+    __primitive constructor Subscript : exn	= "General.Subscript"
 
-    __primitive val exnName: exn -> string = "General.exnName"
-    __primitive val exnMessage: exn -> string = "General.exnMessage"
+    __primitive val exnName : exn -> string	= "General.exnName"
+    val exnMessage = exnName
 
     datatype order = LESS | EQUAL | GREATER
 
-    fun !(ref v) = v
+    __primitive val op := : 'a ref * 'a -> unit	= "General.:="
 
-    __primitive val op:= : 'a ref * 'a -> unit = "General.:="
+    fun !(ref v)	= v
 
-    fun (f o g) a  = f(g a)
-    fun a before b = a
-    fun ignore a   = ()
-
+    fun (f o g) a	= f(g a)
+    fun a before b	= a
+    fun ignore a	= ()
   end
 
-open General
+
+datatype order = datatype General.order
 
 
-(* Option *)
+
+(*****************************************************************************
+ * Bool
+ *****************************************************************************)
+
+signature BOOL =
+  sig
+    datatype bool = false | true
+
+    val not :		bool -> bool
+
+    val toString :	bool -> string
+(*MISSING
+    val fromString : 	string -> bool option
+    val scan :		(char,'a) StringCvt.reader -> (bool,'a) StringCvt.reader
+*)
+  end
+
+
+structure Bool : BOOL =
+  struct
+    datatype bool	= datatype bool
+
+    fun not true	= false
+      | not false	= true
+
+    fun toString true	= "true"
+      | toString false	= "false"
+  end
+
+
+
+(*****************************************************************************
+ * Option
+ *****************************************************************************)
 
 signature OPTION =
   sig
@@ -138,90 +180,59 @@ signature OPTION =
 
     exception Option
 
-    val getOpt : 'a option * 'a -> 'a
-    val isSome : 'a option -> bool
-    val valOf : 'a option -> 'a
-    val filter : ('a -> bool) -> 'a -> 'a option
-    val join : 'a option option -> 'a option
-    val map : ('a -> 'b) -> 'a option -> 'b option
-    val mapPartial : ('a -> 'b option) -> 'a option -> 'b option
-    val compose : ('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
-    val composePartial : ('a -> 'c option) * ('b -> 'a option)
-                         -> 'b -> 'c option
+    val getOpt :	'a option * 'a -> 'a
+    val isSome :	'a option -> bool
+    val valOf :		'a option -> 'a
+    val filter :	('a -> bool) -> 'a -> 'a option
+    val join :		'a option option -> 'a option
+    val map :		('a -> 'b) -> 'a option -> 'b option
+    val mapPartial :	('a -> 'b option) -> 'a option -> 'b option
+    val compose :	('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
+    val composePartial:	('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
   end
 
-structure Option: OPTION =
-  struct
 
+structure Option : OPTION =
+  struct
     datatype 'a option = NONE | SOME of 'a
 
-    __primitive constructor Option: exn = "Option.Option"
+    __primitive constructor Option : exn = "Option.Option"
 
-    fun getOpt(SOME v, _) = v
-      | getOpt(NONE,   a) = a
+    fun getOpt(SOME x, _)	= x
+      | getOpt(NONE,   x)	= x
 
-    fun isSome(SOME v) = true
-      | isSome NONE    = false
+    fun isSome(SOME x)		= true
+      | isSome NONE		= false
 
-    fun valOf(SOME v) = v
-      | valOf NONE    = raise Option
+    fun valOf(SOME x)		= x
+      | valOf NONE		= raise Option
 
-    fun filter f a = if f a then SOME a else NONE
+    fun filter f x where (f x)	= SOME x
+      | filter f x		= NONE
 
-    fun join NONE    = NONE
-      | join(SOME v) = v
+    fun join NONE		= NONE
+      | join(SOME x)		= x
 
-    fun map f  NONE    = NONE
-      | map f (SOME v) = SOME(f v)
+    fun map f  NONE		= NONE
+      | map f (SOME x)		= SOME(f x)
 
-    fun mapPartial f  NONE    = NONE
-      | mapPartial f (SOME v) = f v
+    fun mapPartial f  NONE	= NONE
+      | mapPartial f (SOME x)	= f x
 
-    fun compose (f,g) a =
-	case g a
-	  of NONE   => NONE
-	   | SOME v => SOME(f v)
+    fun compose (f,g) x		= case g x of NONE   => NONE
+					    | SOME y => SOME(f y)
 
-    fun composePartial (f,g) a =
-	case g a
-	  of NONE   => NONE
-	   | SOME v => f v
-
+    fun composePartial (f,g) x	= case g x of NONE   => NONE
+					    | SOME y => f y
   end
 
 datatype option = datatype Option.option
 
 
-(* Bool *)
 
-signature BOOL =
-  sig
-    datatype bool = false | true
-    val not : bool -> bool
-    val toString : bool -> string
-(*MISSING
-    val fromString : string -> bool option
-    val scan : (char,'a) StringCvt.reader -> (bool,'a) StringCvt.reader
-*)
-  end
-
-structure Bool: BOOL =
-  struct
-
-    datatype bool = datatype bool
-
-    fun not true  = false
-      | not false = true
-
-    fun toString true  = "true"  : string
-      | toString false = "false" : string
-
-  end
-
-val not = Bool.not
-
-
-(* List *)
+(*****************************************************************************
+ * List
+ *****************************************************************************)
 
 signature LIST =
   sig
@@ -229,1229 +240,1804 @@ signature LIST =
 
     exception Empty
 
-    val null : 'a list -> bool
-    val hd : 'a list -> 'a
-    val tl : 'a list -> 'a list
-    val last : 'a list -> 'a
-    val getItem : 'a list -> ('a * 'a list) option
-    val nth : 'a list * int -> 'a
-    val take : 'a list * int -> 'a list
-    val drop : 'a list * int -> 'a list
-    val length : 'a list -> int
-    val rev : 'a list -> 'a list
-    val @ : 'a list * 'a list -> 'a list
-    val concat : 'a list list -> 'a list
-    val revAppend : 'a list * 'a list -> 'a list
-    val app : ('a -> unit) -> 'a list -> unit
-    val map : ('a -> 'b) -> 'a list -> 'b list
-    val mapPartial : ('a -> 'b option) -> 'a list -> 'b list
-    val find : ('a -> bool) -> 'a list -> 'a option
-    val filter : ('a -> bool) -> 'a list -> 'a list
-    val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
-    val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
-    val exists : ('a -> bool) -> 'a list -> bool
-    val all : ('a -> bool) -> 'a list -> bool
-    val tabulate : int * (int -> 'a) -> 'a list
+    val null :		'a list -> bool
+    val length :	'a list -> int
+
+    val hd :		'a list -> 'a
+    val tl :		'a list -> 'a list
+    val last :		'a list -> 'a
+    val getItem :	'a list -> ('a * 'a list) option
+    val nth :		'a list * int -> 'a
+    val take :		'a list * int -> 'a list
+    val drop :		'a list * int -> 'a list
+
+    val rev :		'a list -> 'a list
+    val @ :		'a list * 'a list -> 'a list
+    val revAppend :	'a list * 'a list -> 'a list
+    val concat :	'a list list -> 'a list
+
+    val app :		('a -> unit) -> 'a list -> unit
+    val map :		('a -> 'b) -> 'a list -> 'b list
+    val mapPartial :	('a -> 'b option) -> 'a list -> 'b list
+    val find :		('a -> bool) -> 'a list -> 'a option
+    val filter :	('a -> bool) -> 'a list -> 'a list
+    val partition :	('a -> bool) -> 'a list -> 'a list * 'a list
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+    val exists :	('a -> bool) -> 'a list -> bool
+    val all :		('a -> bool) -> 'a list -> bool
+
+    val tabulate :	int * (int -> 'a) -> 'a list
   end
 
-structure List: LIST =
+
+structure List : LIST =
   struct
+    datatype list		= datatype list
 
-    datatype list = datatype list
+    __primitive constructor Empty : exn = "List.Empty"
 
-    __primitive constructor Empty: exn = "List.Empty"
+    fun null nil		= true
+      | null _			= false
 
-    fun null [] = true
-      | null _  = false
+    fun length   xs		= length'(xs, 0)
+    and length'( nil,  i)	= i
+      | length'(y::ys, i)	= length'(ys, i+1)
 
-    fun length xs =
-	let fun length'(nil,   n) = n
-	      | length'(y::ys, n) = length'(ys,n+1)
-	in length'(xs,0) end
+    fun hd(x::xs)		= x
+      | hd  _			= raise Empty
 
-    fun   nil   @ ys = ys
-      | (x::xs) @ ys = x :: xs @ ys
+    fun tl(x::xs)		= xs
+      | tl  _			= raise Empty
 
-    fun hd(x::xs) = x
-      | hd  _     = raise Empty
+    fun last(x::nil)		= x
+      | last(x::xs)		= last xs
+      | last  nil		= raise Empty
 
-    fun tl(x::xs) = xs
-      | tl  _     = raise Empty
+    fun getItem(x::xs)		= SOME(x,xs)
+      | getItem  nil 		= NONE
 
-    fun last(x::nil) = x
-      | last(x::xs)  = last xs
-      | last  nil    = raise Empty
+    fun nth (xs,i) where (i>=0)	= nth'(xs,i)
+      | nth (xs,i)		= raise General.Subscript
+    and nth'(x::xs, 0)		= x
+      | nth'(x::xs, i)		= nth'(xs, i-1)
+      | nth'(nil,   i)		= raise General.Subscript
 
-    fun getItem(x::xs) = SOME(x,xs)
-      | getItem  nil   = NONE
+    fun rev   xs		= rev'(xs, nil)
+    and rev'( nil,  ys)		= ys
+      | rev'(x::xs, ys)		= rev'(xs, x::ys)
 
-    fun nth(l,i) =
-	let fun nth'(x::xs, 0) = x
-	      | nth'(x::xs, j) = nth'(xs, j-1)
-	      | nth'(nil,   j) = raise Subscript
-	in if i >= 0 then nth'(l,i) else raise Subscript end
+    fun   nil   @ ys		= ys
+      | (x::xs) @ ys		= x :: xs @ ys
 
-    fun rev l =
-	let fun rev'( nil,  ys) = ys
-	      | rev'(x::xs, ys) = rev'(xs, x::ys)
-	in rev'(l,nil) end
+    fun revAppend( nil,  ys)	= ys
+      | revAppend(x::xs, ys)	= revAppend(xs, x::ys)
 
-    fun take(l,i) =
-	let fun take'(x::xs, 0, ys) = rev ys
-	      | take'(x::xs, j, ys) = take'(xs, j-1, x::ys)
-	      | take'(nil,   j, ys) = raise Subscript
-	in if i >= 0 then take'(l,i,nil) else raise Subscript end
+    fun concat   nil		= nil
+      | concat(xs::xss)		= xs @ concat xss
 
-    fun drop(l,i) =
-	let fun drop'(xs,    0) = xs
-	      | drop'(x::xs, j) = drop'(xs, j-1)
-	      | drop'(nil,   j) = raise Subscript
-	in if i >= 0 then drop'(l,i) else raise Subscript end
+    fun take (xs,i) where (i<0)	= raise General.Subscript
+      | take (xs,i)		= take'(xs,i,nil)
+    and take'(x::xs, 0, ys)	= rev ys
+      | take'(x::xs, i, ys)	= take'(xs, i-1, x::ys)
+      | take'( nil,  i, ys)	= raise General.Subscript
 
-    fun concat  nil   = nil
-      | concat(l::ls) = l @ concat ls
+    fun drop (xs,i) where (i<0)	= raise General.Subscript
+      | drop (xs,i)		= drop'(xs,i)
+    and drop'(xs,    0)		= xs
+      | drop'(x::xs, i)		= drop'(xs, i-1)
+      | drop'( nil,  i)		= raise General.Subscript
 
-    fun revAppend( nil,  ys) = ys
-      | revAppend(x::xs, ys) = revAppend(xs, x::ys)
 
-    fun app f   nil   = ()
-      | app f (x::xs) = (f x ; app f xs)
+    fun app  f   xs		= app'(f,xs)
+    and app'(f,  nil )		= ()
+      | app'(f, x::xs)		= (f x ; app'(f,xs))
 
-    fun map f   nil   = nil
-      | map f (x::xs) = f x :: map f xs
+    fun map  f   xs		= map'(f,xs)
+    and map'(f,  nil )		= nil
+      | map'(f, x::xs)		= f x :: map'(f,xs)
 
-    fun mapPartial f   nil   = nil
-      | mapPartial f (x::xs) =
-	let val yo = f x
-	    val ys = mapPartial f xs
-	in case yo of NONE => ys | SOME y => y::ys end
+    fun mapPartial  f   xs	= mapPartial'(f,xs)
+    and mapPartial'(f,  nil )	= nil
+      | mapPartial'(f, x::xs)	= case f x of NONE   => mapPartial'(f,xs)
+					    | SOME y => y :: mapPartial'(f,xs)
 
-    fun find f   nil   = NONE
-      | find f (x::xs) = if f x then SOME x else find f xs
+    fun find  f   xs			= find'(f,xs)
+    and find'(f,  nil )			= NONE
+      | find'(f, x::xs) where (f x)	= SOME x
+      | find'(f, x::xs)			= find'(f,xs)
 
-    fun filter f   nil   = nil
-      | filter f (x::xs) =
-	let val b  = f x
-	    val ys = filter f xs
-	in if b then x::ys else ys end
+    fun filter  f   xs			= filter'(f,xs)
+    and filter'(f,  nil )		= nil
+      | filter'(f, x::xs) where (f x)	= x :: filter'(f,xs)
+      | filter'(f, x::xs)		= filter'(f,xs)
 
-    fun partition f l =
-	let fun partition'( nil,  pos, neg) = (rev pos, rev neg)
-	      | partition'(x::xs, pos, neg) =
-		if f x then partition'(xs, x::pos, neg)
-		       else partition'(xs, pos, x::neg)
-	in partition'(l,nil,nil) end
+    fun partition  f xs			= partition'(f,xs,nil,nil)
+    and partition'(f,  nil,  ys, zs)	= (rev ys, rev zs)
+      | partition'(f, x::xs, ys, zs)	= if f x then partition'(f,xs,x::ys,zs)
+						 else partition'(f,xs,ys,x::zs)
 
-    fun foldl f b   nil   = b
-      | foldl f b (x::xs) = foldl f (f(x,b)) xs
+    fun foldl  f  y   xs		= foldl'(f,y,xs)
+    and foldl'(f, y,  nil )		= y
+      | foldl'(f, y, x::xs)		= foldl'(f, f(x,y), xs)
 
-    fun foldr f b   nil   = b
-      | foldr f b (x::xs) = f(x, foldr f b xs)
+    fun foldr  f  y   xs		= foldr'(f,y,xs)
+    and foldr'(f, y,  nil )		= y
+      | foldr'(f, y, x::xs)		= f(x, foldr'(f,y,xs))
 
-    fun exists f   nil   = false
-      | exists f (x::xs) = f x orelse exists f xs
+    fun exists  f   xs			= exists'(f,xs)
+    and exists'(f,  nil )		= false
+      | exists'(f, x::xs)		= f x orelse exists'(f,xs)
 
-    fun all f   nil   = true
-      | all f (x::xs) = f x andalso all f xs
+    fun all  f   xs			= all'(f,xs)
+    and all'(f,  nil )			= true
+      | all'(f, x::xs)			= f x andalso all'(f,xs)
 
-    fun tabulate(n, f) =
-	let fun tabulate'(i,l) = if i = n then rev l
-					  else tabulate'(i+1, f i :: l)
-	in if n >= 0 then tabulate'(0, nil) else raise Size end
-
+    fun tabulate (n,f)      where (n<0)	= raise General.Size
+      | tabulate (n,f)			= tabulate'(n,f,0,nil)
+    and tabulate'(n,f,i,xs) where (i=n)	= rev xs
+      | tabulate'(n,f,i,xs)		= tabulate'(n, f, i+1, f i :: xs)
   end
 
 
-(* ListPair *)
+
+(*****************************************************************************
+ * ListPair
+ *****************************************************************************)
 
 signature LIST_PAIR =
   sig
-    val zip : 'a list * 'b list -> ('a * 'b) list
-    val unzip : ('a * 'b) list -> 'a list * 'b list
-    val map : ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
-    val app : ('a * 'b -> unit) -> 'a list * 'b list -> unit
-    val foldl : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
-    val foldr : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
-    val all : ('a * 'b -> bool) -> 'a list * 'b list -> bool
-    val exists : ('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val zip :		'a list * 'b list -> ('a * 'b) list
+    val unzip :		('a * 'b) list -> 'a list * 'b list
+    val map :		('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+    val app :		('a * 'b -> unit) -> 'a list * 'b list -> unit
+    val foldl :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val foldr :		('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+    val all :		('a * 'b -> bool) -> 'a list * 'b list -> bool
+    val exists :	('a * 'b -> bool) -> 'a list * 'b list -> bool
   end
 
-structure ListPair: LIST_PAIR =
+
+structure ListPair : LIST_PAIR =
   struct
+    fun zip (xs1,xs2)			= zip'(xs1,xs2,nil)
+    and zip'( nil,    _,   zs)		= List.rev zs
+      | zip'(  _,    nil,  zs)		= List.rev zs
+      | zip'(x::xs, y::ys, zs)		= zip'(xs, ys, (x,y)::zs)
 
-    fun zip(l1, l2) =
-	let fun zip'( nil,    _,   l) = List.rev l
-	      | zip'(  _,    nil,  l) = List.rev l
-	      | zip'(x::xs, y::ys, l) = zip'(xs, ys, (x,y)::l)
-	in zip'(l1, l2, nil) end
+    fun unzip zs			= unzip'(zs,nil,nil)
+    and unzip'(     nil,  xs, ys)	= (List.rev xs, List.rev ys)
+      | unzip'((x,y)::zs, xs, ys)	= unzip'(zs, x::xs, y::ys)
 
-    fun unzip l =
-	let fun unzip'(    nil,   l1, l2) = (List.rev l1, List.rev l2)
-	      | unzip'((x,y)::l', l1, l2) = unzip'(l', x::l1, y::l2)
-	in unzip'(l, nil, nil) end
+    fun map f (xs,ys)			= map'(f,xs,ys)
+    and map'(f,  nil,    _  )		= nil
+      | map'(f,   _,    nil )		= nil
+      | map'(f, x::xs, y::ys)		= f(x,y) :: map'(f,xs,ys)
 
-    fun map f ( nil,    _  ) = nil
-      | map f (  _,    nil ) = nil
-      | map f (x::xs, y::ys) = f(x,y) :: map f (xs,ys)
+    fun app f (xs,ys)			= app'(f,xs,ys)
+    and app'(f,  nil,    _  )		= ()
+      | app'(f,   _,    nil )		= ()
+      | app'(f, x::xs, y::ys)		= (f(x,y) ; app'(f,xs,ys))
 
-    fun app f ( nil,    _  ) = ()
-      | app f (  _,    nil ) = ()
-      | app f (x::xs, y::ys) = (f(x,y) ; app f (xs,ys))
+    fun foldl  f  z (xs,ys)		= foldl'(f,z,xs,ys)
+    and foldl'(f, z,  nil,    _  )	= z
+      | foldl'(f, z,   _,    nil )	= z
+      | foldl'(f, z, x::xs, y::ys)	= f(x, y, foldl'(f,z,xs,ys))
 
-    fun foldl f c ( nil,    _  ) = c
-      | foldl f c (  _,    nil ) = c
-      | foldl f c (x::xs, y::ys) = f(x, y, foldl f c (xs,ys))
+    fun foldr  f  z (xs,ys)      	= foldr'(f,z,xs,ys)
+    and foldr'(f, z,  nil,    _  ) 	= z
+      | foldr'(f, z,   _,    nil ) 	= z
+      | foldr'(f, z, x::xs, y::ys) 	= foldr'(f, f(x,y,z), xs, ys)
 
-    fun foldr f c ( nil,    _  ) = c
-      | foldr f c (  _,    nil ) = c
-      | foldr f c (x::xs, y::ys) = foldr f (f(x,y,c)) (xs,ys)
+    fun exists  f (xs,ys)        	= exists'(f,xs,ys)
+    and exists'(f,  nil,    _  ) 	= false
+      | exists'(f,   _,    nil ) 	= false
+      | exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
 
-    fun exists f ( nil,    _  ) = false
-      | exists f (  _,    nil ) = false
-      | exists f (x::xs, y::ys) = f(x,y) orelse exists f (xs,ys)
-
-    fun all f ( nil,    _  ) = true
-      | all f (  _,    nil ) = true
-      | all f (x::xs, y::ys) = f(x,y) andalso all f (xs,ys)
-
+    fun all  f (xs,ys)			= all'(f,xs,ys)
+    and all'(f,  nil,    _  )		= true
+      | all'(f,   _,    nil )		= true
+      | all'(f, x::xs, y::ys)		= f(x,y) andalso all'(f,xs,ys)
   end
 
 
-(* Char *)
+
+(*****************************************************************************
+ * Char
+ *****************************************************************************)
 
 signature CHAR =
   sig
-    type char
+    eqtype char
+    eqtype string
 
-    val chr : int -> char
-    val ord : char -> int
+    val minChar :	char
+    val maxChar :	char
+    val maxOrd :	int
+
+    val chr :		int -> char
+    val ord :		char -> int
+
+    val pred :		char -> char
+    val succ :		char -> char
+
+    val op < :		char * char -> bool
+    val op <= :		char * char -> bool
+    val op > :		char * char -> bool
+    val op >= :		char * char -> bool
+    val compare :	char * char -> order
+
+    val contains :	string -> char -> bool
+    val notContains :	string -> char -> bool
+
+    val toLower :	char -> char
+    val toUpper :	char -> char
+
+    val isLower :	char -> bool
+    val isUpper :	char -> bool
+    val isAlpha :	char -> bool
+    val isAlphaNum :	char -> bool
+    val isDigit :	char -> bool
+    val isHexDigit :	char -> bool
+    val isPunct :	char -> bool
+    val isPrint :	char -> bool
+    val isGraph :	char -> bool
+    val isSpace :	char -> bool
+    val isCntrl :	char -> bool
+    val isAscii :	char -> bool
 
 (*MISSING
-    val minChar : char
-    val maxChar : char
-    val maxOrd : int
-    val pred : char -> char
-    val succ : char -> char
-    val < : char * char -> bool
+    val toString :	char -> string
 *)
-    val <= : char * char -> bool
+    val toCString :	char -> string
 (*MISSING
-    val > : char * char -> bool
-    val >= : char * char -> bool
-    val compare : char * char -> order
-    val scan : (char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
-    val fromString : string -> char option
-    val toString : char -> string
-    val fromCString : string -> char option
+    val fromString :	string -> char option
+    val fromCString :	string -> char option
+    val scan :		(char,'a) StringCvt.reader -> (char,'a) StringCvt.reader
 *)
-    val toCString : char -> string
-(*MISSING
-    val contains : string -> char -> bool
-    val notContains : string -> char -> bool
-    val isLower : char -> bool
-    val isUpper : char -> bool
-*)
-    val isDigit : char -> bool
-(*MISSING
-    val isAlpha : char -> bool
-*)
-    val isHexDigit : char -> bool
-    val isAlphaNum : char -> bool
-(*MISSING
-    val isPrint : char -> bool
-*)
-    val isSpace : char -> bool
-(*MISSING
-    val isPunct : char -> bool
-    val isGraph : char -> bool
-    val isCntrl : char -> bool
-    val isAscii : char -> bool
-    val toUpper : char -> char
-*)
-    val toLower : char -> char
   end
 
-structure Char: CHAR =
-    struct
-	type char = char
 
-	__primitive val <= : char * char -> bool = "Char.<="
+structure Char : CHAR =
+  struct
+    type char   = char
+    type string = string
 
-	__primitive val ord : char -> int = "Char.ord"
-	__primitive val chr : int -> char = "Char.chr"
+    __primitive val ord : char -> int = "Char.ord"
+    __primitive val chr : int -> char = "Char.chr"
 
-	__primitive val isAlphaNum : char -> bool = "Char.isAlphaNum"
-	__primitive val isDigit :    char -> bool = "Char.isDigit"
-	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
-	__primitive val isSpace :    char -> bool = "Char.isSpace"
-	__primitive val toLower :    char -> char = "Char.toLower"
+    val maxOrd  = 255
+    val minChar = chr 0
+    val maxChar = chr maxOrd
 
-	__primitive val toCString :  char -> string = "Char.toCString"
-    end
+    fun pred c where (c = minChar)	= raise General.Chr
+      | pred c				= chr(ord c - 1)
+    fun succ c where (c = maxChar)	= raise General.Chr
+      | succ c				= chr(ord c + 1)
+
+    __primitive val Int_compare : int * int -> order   = "Int.compare"
+    __primitive val String_size : string -> int        = "String.size"
+    __primitive val String_sub :  string * int -> char = "String.sub"
+
+    fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
+
+    fun contains  s c    = contains'(s, c, String_size s)
+    and contains'(s,c,i) =
+	String_sub(s,i) = c orelse i >= 0 andalso contains'(s, c, i-1)
+
+    fun notContains s c = Bool.not(contains s c)
 
 
-(* String *)
+    __primitive val op < :	char * char -> bool = "Char.<"
+    __primitive val op > :	char * char -> bool = "Char.>"
+    __primitive val op <= :	char * char -> bool = "Char.<="
+    __primitive val op >= :	char * char -> bool = "Char.>="
+
+    __primitive val toLower :	char -> char = "Char.toLower"
+    __primitive val toUpper :	char -> char = "Char.toUpper"
+
+    __primitive val isLower :	char -> bool = "Char.isLower"
+    __primitive val isUpper :	char -> bool = "Char.isUpper"
+    __primitive val isAlpha :	char -> bool = "Char.isAlpha"
+    __primitive val isAlphaNum:	char -> bool = "Char.isAlphaNum"
+    __primitive val isDigit :	char -> bool = "Char.isDigit"
+    __primitive val isHexDigit:	char -> bool = "Char.isHexDigit"
+    __primitive val isPunct :	char -> bool = "Char.isPunct"
+    __primitive val isPrint :	char -> bool = "Char.isPrint"
+    __primitive val isGraph :	char -> bool = "Char.isGraph"
+    __primitive val isSpace :	char -> bool = "Char.isSpace"
+    __primitive val isCntrl :	char -> bool = "Char.isCntrl"
+
+    fun isAscii c = chr 0 <= c andalso c <= chr 127
+
+    __primitive val toCString :  char -> string = "Char.toCString"
+  end
+
+
+
+(*****************************************************************************
+ * String
+ *****************************************************************************)
 
 signature STRING =
   sig
     type string
 
+    structure Char :	CHAR
+
+    val maxSize :	int
+
+    val size :		string -> int
+    val str :		Char.char -> string
+    val sub :		string * int -> Char.char
+    val substring :	string * int * int -> string
+    val extract :	string * int * int option -> string
+
+    val ^ :		string * string -> string
+    val concat :	string list -> string
+    val implode :	Char.char list -> string
+    val explode :	string -> Char.char list
+
+    val map :		(Char.char -> Char.char) -> string -> string
+    val translate :	(Char.char -> string) -> string -> string
+    val tokens :	(Char.char -> bool) -> string -> string list
 (*MISSING
-    val maxSize : int
+    val fields :	(Char.char -> bool) -> string -> string list
 *)
-    val size : string -> int
-    val sub : string * int -> char
-    val substring : string * int * int -> string
-    val extract : string * int * int option -> string
-    val concat : string list -> string
-    val ^ : string * string -> string
-    val str : char -> string
-    val implode : char list -> string
-    val explode : string -> char list
+
+    val op < :		string * string -> bool
+    val op > :		string * string -> bool
+    val op <= :		string * string -> bool
+    val op >= :		string * string -> bool
+    val compare :	string * string -> order
+    val collate :	(Char.char * Char.char -> order) -> string * string
+							 -> order
+    val isPrefix :	string -> string -> bool
+
 (*MISSING
-    val fromString : string -> string option
-    val toString : string -> string
-    val fromCString : string -> string option
+    val toString :	string -> string
 *)
-    val toCString : string -> string
-    val map : (char -> char) -> string -> string
+    val toCString :	string -> string
 (*MISSING
-    val translate : (char -> string) -> string -> string
+    val fromString :	string -> string option
+    val fromCString :	string -> string option
 *)
-    val tokens : (char -> bool) -> string -> string list
-(*MISSING
-    val fields : (char -> bool) -> string -> string list
-    val isPrefix : string -> string -> bool
-*)
-    val compare : string * string -> order
-(*MISSING
-    val collate : (char * char -> order) -> string * string -> order
-*)
-    val <= : string * string -> bool
-    val < : string * string -> bool
-    val >= : string * string -> bool
-    val > : string * string -> bool
   end
 
-structure String: STRING =
-    struct
-	type string = string
 
-	__primitive val op^ : string * string -> string = "String.^"
-	__primitive val str : char -> string = "String.str"
-	__primitive val size : string -> int = "String.size"
-	__primitive val substring : string * int * int -> string =
-							"String.substring"
-	__primitive val sub : string * int -> char = "String.sub"
-	__primitive val explode : string -> char list = "String.explode"
+structure String : STRING =
+  struct
+    type string	= string
 
-	fun extract (s, i, NONE) = substring (s, i, size s - i)
-	  | extract (s, i, SOME j) = substring (s, i, j)
+    structure Char = Char
 
-	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
+    __primitive val maxSize : int = "String.maxSize"
 
-	fun toCString s =
-	    List.foldr (fn (c, rest) => Char.toCString c ^ rest) "" (explode s)
+    __primitive val size : string -> int        = "String.size"
+    __primitive val str :  char -> string       = "String.str"
+    __primitive val sub :  string * int -> char = "String.sub"
+    __primitive val substring : string * int * int -> string
+						= "String.substring"
 
-	fun implode l = concat (List.map str l)
+    fun extract(s, i, NONE)   = substring(s, i, size s - i)
+      | extract(s, i, SOME j) = substring(s, i, j)
 
-	fun map f s = implode (List.map f (explode s))
+    __primitive val op^ :     string * string -> string = "String.^"
+    __primitive val explode : string -> char list       = "String.explode"
 
-	__primitive val compare : string * string -> order = "String.compare"
+    fun concat ss     = List.foldr op^ "" ss		(*INEFFICIENT*)
+    fun implode cs    = concat(List.map str cs)		(*INEFFICIENT*)
 
-	fun s < t = compare (s, t) = LESS
+    fun map f s       = implode(List.map f (explode s))	(*INEFFICIENT*)
+    fun translate f s = concat(List.map f (explode s))	(*INEFFICIENT*)
 
-	local
-	    fun token (c::cr, f) =
-		if f c then
-		    let
-			val (cs, rest) = token (cr, f)
-		    in
-			(c::cs, rest)
-		    end
-		else (nil, cr)
-	      | token (nil, _) = (nil, nil)
+    __primitive val op < :	string * string -> bool  = "String.<"
+    __primitive val op > :	string * string -> bool  = "String.>"
+    __primitive val op <= :	string * string -> bool  = "String.<="
+    __primitive val op >= :	string * string -> bool  = "String.>="
+    __primitive val compare :	string * string -> order = "String.compare"
 
-	    fun tokens' (c::cr, f) =
-		if f c then tokens' (cr, f)
-		else
-		    let
-			val (cs, rest) = token (cr, f)
-		    in
-			implode (c::cs)::tokens' (rest, f)
-		    end
-	      | tokens' (nil, _) = nil
+    fun collate cmp (s1,s2) =
+	let
+	    val n1 = size s1
+	    val n2 = size s2
+
+	    fun collate' i where (i = n1) = if n1 = n2 then EQUAL else LESS
+	      | collate' i where (i = n2) = GREATER
+	      | collate' i                = case cmp(sub(s1,i), sub(s2,i))
+					      of EQUAL => collate'(i+1)
+					       | other => other
 	in
-	    fun tokens f s = tokens' (explode s, f)
+	    collate' 0
 	end
 
-	__primitive val op< :	string * string -> bool = "String.<"
-	__primitive val op> :	string * string -> bool = "String.>"
-	__primitive val op<= :	string * string -> bool = "String.<="
-	__primitive val op>= :	string * string -> bool = "String.>="
+    fun isPrefix s1 s2 =
+	let
+	    val n1 = size s1
+	    val n2 = size s2
 
-    end
+	    fun isPrefix' i =
+		i = n1 orelse
+		i <> n2 andalso sub(s1,i) = sub(s2,i) andalso isPrefix'(i+1)
+	in
+	    isPrefix' 0
+	end
 
 
-(* StringCvt *)
+    fun tokens  f   s                 = tokens'(f, explode s)
+    and tokens'(f,  nil )             = nil
+      | tokens'(f, c::cs) where (f c) = tokens'(f,cs)
+      | tokens'(f, c::cs)             = let val (cs1,cs2) = token'(f,cs) in
+					   implode(c::cs1) :: tokens'(f,cs2)
+					end
+    and token'(f,  nil )              = (nil,nil)
+      | token'(f, c::cs) where (f c)  = let val (cs1,cs2) = token'(f,cs) in
+					   (c::cs1, cs2)
+					end
+      | token'(f, c::cs)              = (nil,cs)
+
+    fun toCString s =
+	List.foldr (fn(c,cs) => Char.toCString c ^ cs) "" (explode s)
+  end
+
+
+
+(*****************************************************************************
+ * Substring
+ *****************************************************************************)
+
+signature SUBSTRING =
+  sig
+    structure String :	STRING
+
+    type substring
+
+    val base :		substring -> String.string * int * int
+    val string :	substring -> String.string
+    val substring :	String.string * int * int -> substring
+    val extract :	String.string * int * int option -> substring
+
+    val isEmpty :	substring -> bool
+    val size :		substring -> int
+
+    val all :		String.string -> substring
+    val getc :		substring -> (String.Char.char * substring) option
+    val first :		substring -> String.Char.char option
+    val triml :		int -> substring -> substring
+    val trimr :		int -> substring -> substring
+    val sub :		substring * int -> char
+    val slice :		substring * int * int option -> substring
+    val concat :	substring list -> String.string
+    val explode :	substring -> String.Char.char list
+
+    val isPrefix :	String.string -> substring -> bool
+    val compare :	substring * substring -> order
+    val collate :	(String.Char.char * String.Char.char -> order) ->
+					substring * substring -> order
+
+    val splitl :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitr :	(String.Char.char -> bool) -> substring
+						   -> substring * substring
+    val splitAt :	substring * int -> substring * substring
+    val dropl :		(String.Char.char -> bool) -> substring -> substring
+    val dropr :		(String.Char.char -> bool) -> substring -> substring
+    val takel :		(String.Char.char -> bool) -> substring -> substring
+    val taker :		(String.Char.char -> bool) -> substring -> substring
+    val position :	String.string -> substring -> substring * substring
+    val span :		substring * substring -> substring
+    val translate :	(String.Char.char -> String.string) -> substring
+							   -> String.string
+    val tokens :	(String.Char.char -> bool) -> substring -> substring list
+    val fields :	(String.Char.char -> bool) -> substring -> substring list
+
+    val app :		(String.Char.char -> unit) -> substring -> unit
+    val foldl :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+    val foldr :		(String.Char.char * 'a -> 'a) -> 'a -> substring -> 'a
+  end
+
+
+(*MISSING
+structure Substring : SUBSTRING =
+  struct
+  end
+*)
+
+
+
+(*****************************************************************************
+ * StringCvt
+ *****************************************************************************)
 
 signature STRING_CVT =
-    sig
-	datatype radix = BIN | OCT | DEC | HEX
+  sig
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
 
-	type ('a, 'b) reader = 'b -> ('a * 'b) option
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs
 
-	type cs
+(*MISSING
+    val padLeft :	char -> int -> string -> string
+    val padRight :	char -> int -> string -> string
+    val splitl :	(char -> bool) -> (char,'a) reader ->'a -> (string * 'a)
+    val takel :		(char -> bool) -> (char,'a) reader -> 'a -> string
+*)
+    val dropl :		(char -> bool) -> (char,'a) reader -> 'a -> 'a
+    val skipWS :	(char,'a) reader -> 'a -> 'a
+    val scanString:	((char,cs) reader -> ('a,cs) reader) -> string
+							     -> 'a option
+  end
 
-	val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a
-
-	val skipWS: (char, 'a) reader -> 'a -> 'a
-
-	val scanString:
-	    ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
-    end
 
 structure StringCvt :> STRING_CVT =
-    struct
-	datatype radix = BIN | OCT | DEC | HEX
+  struct
+    datatype radix      = BIN | OCT | DEC | HEX
+    datatype realfmt    = EXACT
+			| SCI of int option
+			| FIX of int option
+			| GEN of int option
 
-	type ('a, 'b) reader = 'b -> ('a * 'b) option
+    type ('a,'b) reader = 'b -> ('a * 'b) option
+    type cs             = int
 
-	type cs = int
+    fun dropl  p f s  = dropl'(p,f,s)
+    and dropl'(p,f,s) =
+	case f s of SOME(c,s') where (p c) => dropl'(p,f,s')
+		  | _                      => s
 
-	fun dropl p getc =
-	    let
-		fun h src =
-		    case getc src of
-			NONE => src
-		      | SOME (c, rest) => if p c then h rest else src
-	    in
-		h
-	    end
+    fun skipWS f = dropl Char.isSpace f
 
-	fun skipWS getc = dropl Char.isSpace getc
-
-	fun scanString scan s =
-	    let
-		val len = String.size s
-		fun getc i =
-		    if i < len then SOME (String.sub (s, i), i + 1)
-		    else NONE
-	    in
-		case scan getc 0 of
-		    NONE => NONE
-		  | SOME (res, _) => SOME res
-	    end
-    end
+    fun scanString scan s =
+	let
+	    val n = String.size s
+	    fun get i where (i = n) = NONE
+	      | get i               = SOME(String.sub(s,i), i+1)
+	in
+	    case scan get 0 of NONE      => NONE
+			     | SOME(x,_) => SOME x
+	end
+  end
 
 
-(* Int *)
+
+(*****************************************************************************
+ * Int
+ *****************************************************************************)
 
 local
 
 structure Int =
-    struct
-	type int = int
+  struct
+      type int = int
 
-	open StringCvt
+      __primitive val minInt :    int option = "Int.minInt"
+      __primitive val maxInt :    int option = "Int.maxInt"
+      __primitive val precision : int option = "Int.precision"
 
-	val maxInt = NONE
+      fun toInt i	= i
+      fun fromInt i	= i
+      fun toLarge i	= i
+      fun fromLarge i	= i
 
-	val ~ = ~
-	val op+ = op+
-	val op- = op-
-	val op* = op*
+      val ~		= ~
+      val op +		= op +
+      val op -		= op -
+      val op *		= op *
+      val op div	= op div
+      val op mod	= op mod
 
-	val op div = op div
-	val op mod = op mod
-	val abs = abs
+      val op <		= op <
+      val op >		= op >
+      val op <=		= op <=
+      val op >=		= op >=
 
-	val op< = op<
-	val op> = op>
-	val op<= = op<=
-	val op>= = op>=
+      __primitive val compare : int * int -> order = "Int.compare"
 
-	fun decval c = Char.ord c - Char.ord #"0"
-	fun hexval c =
-	    if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
-	    then Char.ord c - Char.ord #"0"
-	    else (Char.ord c - Char.ord #"A" + 10) mod 32
-	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+      val abs			= abs
 
-	fun isBinDigit #"0" = true
-	  | isBinDigit #"1" = true
-	  | isBinDigit _ = false
+      fun min(i,j)		= if i < j then i else j
+      fun max(i,j)		= if i > j then i else j
 
-	fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
-			   Char.ord c <= Char.ord #"7"
+      fun sign i where (i>0)	= 1
+	| sign i where (i<0)	= ~1
+	| sign i		= 0
 
-	fun scan radix getc source =
-	    let
-		val (isDigit, factor) =
-		    case radix of
-			BIN => (isBinDigit,       2)
-		      | OCT => (isOctDigit,       8)
-		      | DEC => (Char.isDigit,    10)
-		      | HEX => (Char.isHexDigit, 16)
-		fun dig1 sgn NONE = NONE
-		  | dig1 sgn (SOME (c, rest)) =
-		    let
-			fun digr res src =
-			    case getc src of
-				NONE => SOME (sgn * res, src)
-			      | SOME (c', rest') =>
-				    if isDigit c' then
-					digr (factor * res + hexval c') rest'
-				    else
-					SOME (sgn * res, src)
-		    in
-			if isDigit c then digr (hexval c) rest else NONE
-		    end
-		fun getdigs sgn after0 inp =
-		    case dig1 sgn inp of
-			NONE => SOME (0, after0)
-		      | res => res
-		fun hexopt sgn NONE = NONE
-		  | hexopt sgn (SOME (#"0", after0)) =
-		    if radix <> HEX then getdigs sgn after0 (getc after0)
-		    else
-			(case getc after0 of
-			     NONE => SOME(0, after0)
-			   | SOME ((#"x" | #"X"), rest) =>
-				 getdigs sgn after0 (getc rest)
-			   | inp => getdigs sgn after0 inp)
-		  | hexopt sgn inp = dig1 sgn inp
-		fun sign NONE = NONE
-		  | sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
-		  | sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
-		  | sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
-		  | sign inp = hexopt  1 inp
-	    in
-		sign (skipWSget getc source)
-	    end
+      fun sameSign(i,j)		= sign i = sign j
 
-	__primitive val compare: int * int -> order = "Int.compare"
 
-	__primitive val toString : int -> string = "Int.toString"
+      open StringCvt
 
-	val fromString = scanString (scan DEC)   (*--** crashes *)
+      fun decval c = Char.ord c - Char.ord #"0"
+      fun hexval c =
+	  if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
+	  then Char.ord c - Char.ord #"0"
+	  else (Char.ord c - Char.ord #"A" + 10) mod 32
 
-	fun min (i, j) = if i > j then j else i
-	fun max (i, j) = if i < j then j else i
+      fun skipWSget getc src = getc (dropl Char.isSpace getc src)
 
-	fun fromInt i   = i
-	fun fromLarge i = i
-	fun toInt i     = i
-	fun toLarge i   = i
-    end
+      fun isBinDigit #"0" = true
+	| isBinDigit #"1" = true
+	| isBinDigit _    = false
+
+      fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
+			 Char.ord c <= Char.ord #"7"
+
+      fun scan radix getc source =
+	  let
+	      val (isDigit, factor) =
+		  case radix of
+		      BIN => (isBinDigit,       2)
+		    | OCT => (isOctDigit,       8)
+		    | DEC => (Char.isDigit,    10)
+		    | HEX => (Char.isHexDigit, 16)
+	      fun dig1 sgn NONE = NONE
+		| dig1 sgn (SOME (c, rest)) =
+		  let
+		      fun digr res src =
+			  case getc src of
+			      NONE => SOME (sgn * res, src)
+			    | SOME (c', rest') =>
+				  if isDigit c' then
+				      digr (factor * res + hexval c') rest'
+				  else
+				      SOME (sgn * res, src)
+		  in
+		      if isDigit c then digr (hexval c) rest else NONE
+		  end
+	      fun getdigs sgn after0 inp =
+		  case dig1 sgn inp of
+		      NONE => SOME (0, after0)
+		    | res => res
+	      fun hexopt sgn NONE = NONE
+		| hexopt sgn (SOME (#"0", after0)) =
+		  if radix <> HEX then getdigs sgn after0 (getc after0)
+		  else
+		      (case getc after0 of
+			   NONE => SOME(0, after0)
+			 | SOME ((#"x" | #"X"), rest) =>
+			       getdigs sgn after0 (getc rest)
+			 | inp => getdigs sgn after0 inp)
+		| hexopt sgn inp = dig1 sgn inp
+	      fun sign NONE = NONE
+		| sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
+		| sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
+		| sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
+		| sign inp = hexopt  1 inp
+	  in
+	      sign (skipWSget getc source)
+	  end
+
+      __primitive val toString : int -> string = "Int.toString"
+
+      val fromString = scanString(scan DEC)   (*--** crashes *)
+  end
+
 
 structure LargeInt = Int
 
-in
+
+in (* local *)
+
 
 signature INTEGER =
-    sig
-	type int
+  sig
+    eqtype int
 
-	val maxInt : int option
+    val minInt :	int option
+    val maxInt :	int option
+    val precision :	Int.int option
 
-	val ~ : int -> int
-	val + : int * int -> int
-	val - : int * int -> int
-	val * : int * int -> int
-	val div : int * int -> int
-	val mod : int * int -> int
-	val abs : int -> int
-	val < : int * int -> bool
-	val > : int * int -> bool
-	val <= : int * int -> bool
-	val >= : int * int -> bool
+    val toInt :		int -> Int.int
+    val fromInt :	Int.int -> int
+    val toLarge :	int -> LargeInt.int
+    val fromLarge :	LargeInt.int -> int
 
-	val scan:
-	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
-	    (int * 'a) option
+    val ~ :		int -> int
+    val op + :		int * int -> int
+    val op - :		int * int -> int
+    val op * :		int * int -> int
+    val op div :	int * int -> int
+    val op mod :	int * int -> int
+(*MISSING
+    val op quot :	int * int -> int
+    val op rem :	int * int -> int
+*)
 
-	val compare: int * int -> order
+    val op < :		int * int -> bool
+    val op > :		int * int -> bool
+    val op <= :		int * int -> bool
+    val op >= :		int * int -> bool
+    val compare :	int * int -> order
 
-	val toString: int -> string
+    val abs :		int -> int
+    val min :		int * int -> int
+    val max :		int * int -> int
+    val sign :		int -> Int.int
+    val sameSign :	int * int -> bool
 
-	val fromString: string -> int option
+    val toString :	int -> string
+    val fromString:	string -> int option
+(*MISSING
+    val fmt :		StringCvt.radix -> int -> string
+*)
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader -> 'a
+					-> (int * 'a) option
+  end
 
-	val min: int * int -> int
-	val max: int * int -> int
 
-	val fromInt: Int.int -> int
-	val fromLarge: LargeInt.int -> int
-	val toInt : int -> Int.int
-	val toLarge: int -> LargeInt.int
-    end
-
-structure Int :> INTEGER where type int = int = Int
-structure LargeInt :> INTEGER where type int = LargeInt.int = LargeInt
+structure Int      :> (INTEGER where type int = int)		= Int
+structure LargeInt :> (INTEGER where type int = LargeInt.int)	= LargeInt
+structure Position :   INTEGER					= Int
 
 end (* local *)
 
 
-(* Word *)
+
+(*****************************************************************************
+ * Word
+ *****************************************************************************)
+
+local
+
+structure Word =
+  struct
+    type word = word
+
+    __primitive val wordSize :		int                  = "Word.wordSize"
+
+    __primitive val toInt :		word -> int          = "Word.toInt"
+    __primitive val toIntX :		word -> int          = "Word.toIntX"
+    __primitive val toLargeInt :	word -> LargeInt.int = "Word.toInt"
+    __primitive val toLargeIntX :	word -> LargeInt.int = "Word.toIntX"
+    __primitive val fromInt' :		int * int -> word    = "Word.fromInt'"
+
+    fun toLargeWord w	= w
+    fun fromLargeWord w	= w
+    fun fromInt x	= fromInt'(wordSize,x)
+    fun fromLargeInt x	= fromInt'(wordSize,x)
+
+
+    __primitive val op + :   word * word -> word = "Word.+"
+    __primitive val op - :   word * word -> word = "Word.-"
+    __primitive val op * :   word * word -> word = "Word.*"
+    __primitive val op div : word * word -> word = "Word.div"
+    __primitive val op mod : word * word -> word = "Word.mod"
+
+    __primitive val notb :   word -> word        = "Word.notb"
+    __primitive val orb :    word * word -> word = "Word.orb"
+    __primitive val xorb :   word * word -> word = "Word.xorb"
+    __primitive val andb :   word * word -> word = "Word.andb"
+    __primitive val op << :  word * word -> word = "Word.<<"
+    __primitive val op >> :  word * word -> word = "Word.>>"
+    __primitive val op ~>> : word * word -> word = "Word.~>>"
+
+    __primitive val toString : word -> string = "Word.toString"
+
+    local
+	open StringCvt
+	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+
+	(* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
+	fun decval c = fromInt (Char.ord c) - fromInt 48;
+	fun hexval c =
+	    if Char.ord #"0" <= Char.ord c
+	    andalso Char.ord c <= Char.ord #"9" then
+		fromInt (Char.ord c) - fromInt 48
+	    else
+		(fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
+    in
+	fun scan radix getc source =
+	    let open StringCvt
+		val source = skipWS getc source
+		val (isDigit, factor) =
+		    case radix of
+			BIN => (fn c => (Char.ord #"0" <= Char.ord c
+				andalso Char.ord c <= Char.ord #"1"),  2)
+		      | OCT => (fn c => (Char.ord #"0" <= Char.ord c
+				andalso Char.ord c <= Char.ord #"7"),  8)
+		      | DEC => (Char.isDigit,                          10)
+		      | HEX => (Char.isHexDigit,                       16)
+		fun dig1 NONE              = NONE
+		  | dig1 (SOME (c1, src1)) =
+		    let fun digr res src =
+			case getc src of
+			    NONE           => SOME (res, src)
+			  | SOME (c, rest) =>
+				if isDigit c then
+				    digr (fromInt factor * res + hexval c)
+				    rest
+				else SOME (res, src)
+		    in
+			if isDigit c1 then digr (hexval c1) src1
+			else NONE
+		    end
+		fun getdigs after0 src =
+		    case dig1 (getc src) of
+			NONE => SOME(fromInt 0, after0)
+		      | res  => res
+		fun hexprefix after0 src =
+		    if radix <> HEX then getdigs after0 src
+		    else
+			case getc src of
+			    SOME(#"x", rest) => getdigs after0 rest
+			  | SOME(#"X", rest) => getdigs after0 rest
+			  | SOME _           => getdigs after0 src
+			  | NONE => SOME(fromInt 0, after0)
+	    in
+		case getc source of
+		    SOME(#"0", after0) =>
+			(case getc after0 of
+			     SOME(#"w", src2) => hexprefix after0 src2
+			   | SOME _           => hexprefix after0 after0
+			   | NONE             => SOME(fromInt 0, after0))
+		  | SOME _ => dig1 (getc source)
+		  | NONE   => NONE
+	    end
+    end
+  end
+
+
+structure LargeWord = Word
+
+
+in (* local *)
+
 
 signature WORD =
   sig
     eqtype word
 
-    val wordSize : int
-    val toLargeWord : word -> word
+    val wordSize :	int
+
+    val toLargeWord :	word -> LargeWord.word
 (*MISSING
-    val toLargeWordX : word -> word
+    val toLargeWordX :	word -> LargeWord.word
 *)
-    val fromLargeWord : word -> word
-    val toLargeInt : word -> int
-    val toLargeIntX : word -> int
-    val fromLargeInt : int -> word
-    val toInt : word -> int
-    val toIntX : word -> int
-    val fromInt : int -> word
-    val orb : word * word -> word
-    val xorb : word * word -> word
-    val andb : word * word -> word
-    val notb : word -> word
-    val << : word * word -> word
-    val >> : word * word -> word
-    val ~>> : word * word -> word
-    val + : word * word -> word
-    val - : word * word -> word
-    val * : word * word -> word
+    val fromLargeWord :	LargeWord.word -> word
+    val toLargeInt :	word -> LargeInt.int
+    val toLargeIntX :	word -> LargeInt.int
+    val fromLargeInt :	LargeInt.int -> word
+    val toInt :		word -> Int.int
+    val toIntX :	word -> Int.int
+    val fromInt :	Int.int -> word
+
+    val notb :		word -> word
+    val orb :		word * word -> word
+    val xorb :		word * word -> word
+    val andb :		word * word -> word
+    val << :		word * word -> word
+    val >> :		word * word -> word
+    val ~>> :		word * word -> word
+
+    val + :		word * word -> word
+    val - :		word * word -> word
+    val * :		word * word -> word
+    val div :		word * word -> word
+    val mod :		word * word -> word
+
 (*MISSING
-    val div : word * word -> word
+    val op > :		word * word -> bool
+    val op < :		word * word -> bool
+    val op >= :		word * word -> bool
+    val op <= :		word * word -> bool
+    val compare :	word * word -> order
+
+    val min :		word * word -> word
+    val max :		word * word -> word
 *)
-    val mod : word * word -> word
+
+    val toString :	word -> string
 (*MISSING
-    val compare : word * word -> order
-    val > : word * word -> bool
-    val >= : word * word -> bool
-    val < : word * word -> bool
-    val <= : word * word -> bool
-    val min : word * word -> word
-    val max : word * word -> word
+    val fromString :	string -> word option
+    val fmt :		StringCvt.radix -> word -> string
 *)
-    val scan : StringCvt.radix
-               -> (char,'a) StringCvt.reader -> (word,'a) StringCvt.reader
-(*MISSING
-    val fromString : string -> word option
-    val fmt : StringCvt.radix -> word -> string
-*)
-    val toString : word -> string
+    val scan :		StringCvt.radix -> (char,'a) StringCvt.reader
+					-> (word,'a) StringCvt.reader
   end
 
-structure Word: WORD =
-    struct
-	type word = word
 
-	val wordSize = 31
+structure Word      :> (WORD where type word = Word.word)	= Word
+structure LargeWord :> (WORD where type word = LargeWord.word)	= LargeWord
 
-	local
-	    __primitive val fromInt' : int * int -> word = "Word.fromInt'"
-	in
-	    fun fromInt x = fromInt' (wordSize, x)
-	    fun fromLargeInt x = fromInt' (wordSize, x)
-	end
-
-	__primitive val toInt : word -> int = "Word.toInt"
-	__primitive val toLargeInt : word -> LargeInt.int = "Word.toInt"
-	__primitive val toIntX : word -> int = "Word.toIntX"
-	__primitive val toLargeIntX : word -> LargeInt.int = "Word.toIntX"
-	__primitive val op+ : word * word -> word = "Word.+"
-	__primitive val op- : word * word -> word = "Word.-"
-	__primitive val op* : word * word -> word = "Word.*"
-	__primitive val op mod : word * word -> word = "Word.mod"
-	__primitive val orb : word * word -> word = "Word.orb"
-	__primitive val xorb : word * word -> word = "Word.xorb"
-	__primitive val andb : word * word -> word = "Word.andb"
-	__primitive val notb : word -> word = "Word.notb"
-	__primitive val op<< : word * word -> word = "Word.<<"
-	__primitive val op>> : word * word -> word = "Word.>>"
-	__primitive val op~>> : word * word -> word = "Word.~>>"
-	__primitive val toString : word -> string = "Word.toString"
-
-	fun fromLargeWord w = w
-	fun toLargeWord w = w
-
-	local
-	    open StringCvt
-	    fun skipWSget getc source = getc (dropl Char.isSpace getc source)
-
-	    (* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
-	    fun decval c = fromInt (Char.ord c) - fromInt 48;
-	    fun hexval c =
-		if Char.ord #"0" <= Char.ord c
-		andalso Char.ord c <= Char.ord #"9" then
-		    fromInt (Char.ord c) - fromInt 48
-		else
-		    (fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
-	in
-	    fun scan radix getc source =
-		let open StringCvt
-		    val source = skipWS getc source
-		    val (isDigit, factor) =
-			case radix of
-			    BIN => (fn c => (Char.ord #"0" <= Char.ord c
-				    andalso Char.ord c <= Char.ord #"1"),  2)
-			  | OCT => (fn c => (Char.ord #"0" <= Char.ord c
-				    andalso Char.ord c <= Char.ord #"7"),  8)
-			  | DEC => (Char.isDigit,                          10)
-			  | HEX => (Char.isHexDigit,                       16)
-		    fun dig1 NONE              = NONE
-		      | dig1 (SOME (c1, src1)) =
-			let fun digr res src =
-			    case getc src of
-				NONE           => SOME (res, src)
-			      | SOME (c, rest) =>
-				    if isDigit c then
-					digr (fromInt factor * res + hexval c)
-					rest
-				    else SOME (res, src)
-			in
-			    if isDigit c1 then digr (hexval c1) src1
-			    else NONE
-			end
-		    fun getdigs after0 src =
-			case dig1 (getc src) of
-			    NONE => SOME(fromInt 0, after0)
-			  | res  => res
-		    fun hexprefix after0 src =
-			if radix <> HEX then getdigs after0 src
-			else
-			    case getc src of
-				SOME(#"x", rest) => getdigs after0 rest
-			      | SOME(#"X", rest) => getdigs after0 rest
-			      | SOME _           => getdigs after0 src
-			      | NONE => SOME(fromInt 0, after0)
-		in
-		    case getc source of
-			SOME(#"0", after0) =>
-			    (case getc after0 of
-				 SOME(#"w", src2) => hexprefix after0 src2
-			       | SOME _           => hexprefix after0 after0
-			       | NONE             => SOME(fromInt 0, after0))
-		      | SOME _ => dig1 (getc source)
-		      | NONE   => NONE
-		end
-	end
-    end
-
-structure LargeWord: WORD = Word
+end (* local *)
 
 
-(* Real *)
 
-signature REAL =
+(*****************************************************************************
+ * IEEEReal
+ *****************************************************************************)
+
+signature IEEE_REAL =
+  sig
+     exception Unordered
+
+     datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
+     datatype nan_mode		= QUIET | SIGNALLING
+     datatype float_class	= NAN of nan_mode
+				| INF
+				| ZERO
+				| NORMAL
+				| SUBNORMAL
+     datatype rounding_mode	= TO_NEAREST
+				| TO_NEGINF
+				| TO_POSINF
+				| TO_ZERO
+
+(*MISSING
+     val setRoundingMode :	rounding_mode -> unit
+     val getRoundingMode :	unit -> rounding_mode
+*)
+
+     type decimal_approx	= { kind : float_class, sign : bool,
+				    digits : int list,  exp : int }
+
+(*MISSING
+     val toString :		decimal_approx -> string
+     val fromString :		string -> decimal_approx option
+*)
+  end
+
+
+structure IEEEReal : IEEE_REAL =
+  struct
+     exception Unordered
+
+     datatype real_order	= LESS | EQUAL | GREATER | UNORDERED
+     datatype nan_mode		= QUIET | SIGNALLING
+     datatype float_class	= NAN of nan_mode
+				| INF
+				| ZERO
+				| NORMAL
+				| SUBNORMAL
+     datatype rounding_mode	= TO_NEAREST
+				| TO_NEGINF
+				| TO_POSINF
+				| TO_ZERO
+
+     type decimal_approx	= { kind : float_class, sign : bool,
+				    digits : int list,  exp : int }
+  end
+
+
+
+(*****************************************************************************
+ * Math
+ *****************************************************************************)
+
+signature MATH =
   sig
     type real
-(*MISSING
-    structure Math :
-      sig
-        type real
-        val pi : real
-        val e : real
-        val sqrt : real -> real
-        val sin : real -> real
-        val cos : real -> real
-        val tan : real -> real
-        val asin : real -> real
-        val acos : real -> real
-        val atan : real -> real
-        val atan2 : real * real -> real
-        val exp : real -> real
-        val pow : real * real -> real
-        val ln : real -> real
-        val log10 : real -> real
-        val sinh : real -> real
-        val cosh : real -> real
-        val tanh : real -> real
-      end
-    val radix : int
-    val precision : int
-    val maxFinite : real
-    val minPos : real
-    val minNormalPos : real
-    val posInf : real
-    val negInf : real
-*)
-    val + : real * real -> real
-    val - : real * real -> real
-    val * : real * real -> real
-(*MISSING
-    val / : real * real -> real
-    val *+ : real * real * real -> real
-    val *- : real * real * real -> real
-*)
-    val ~ : real -> real
-(*MISSING
-    val abs : real -> real
-    val min : real * real -> real
-    val max : real * real -> real
-    val sign : real -> int
-    val signBit : real -> bool
-    val sameSign : real * real -> bool
-    val copySign : real * real -> real
-*)
-    val compare : real * real -> order
-(*MISSING
-    val compareReal : real * real -> IEEEReal.real_order
-*)
-    val < : real * real -> bool
-    val <= : real * real -> bool
-    val > : real * real -> bool
-    val >= : real * real -> bool
-(*MISSING
-    val == : real * real -> bool
-    val != : real * real -> bool
-    val ?= : real * real -> bool
-    val unordered : real * real -> bool
-    val isFinite : real -> bool
-    val isNan : real -> bool
-    val isNormal : real -> bool
-    val class : real -> IEEEReal.float_class
-    val fmt : StringCvt.realfmt -> real -> string
-*)
-    val toString : real -> string
-    val fromString : string -> real option
-    val scan : (char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
-(*MISSING
-    val toManExp : real -> {exp:int, man:real}
-    val fromManExp : {exp:int, man:real} -> real
-    val split : real -> {frac:real, whole:real}
-    val realMod : real -> real
-    val rem : real * real -> real
-    val nextAfter : real * real -> real
-    val checkFloat : real -> real
-    val floor : real -> int
-    val ceil : real -> int
-*)
-    val trunc : real -> int
-(*MISSING
-    val round : real -> int
-    val realFloor : real -> real
-    val realCeil : real -> real
-    val realTrunc : real -> real
-    val toInt : IEEEReal.rounding_mode -> real -> int
-    val toLargeInt : IEEEReal.rounding_mode -> real -> Int32.int
-*)
-    val fromInt : int -> real
-(*MISSING
-    val fromLargeInt : Int32.int -> real
-    val toLarge : real -> Real64.real
-    val fromLarge : IEEEReal.rounding_mode -> Real64.real -> real
-    val toDecimal : real -> IEEEReal.decimal_approx
-    val fromDecimal : IEEEReal.decimal_approx -> real
-    sharing type Math.real = real
-*)
+
+    val e :		real
+    val pi :		real
+
+    val sqrt :		real -> real
+    val exp :		real -> real
+    val pow :		real * real -> real
+    val ln :		real -> real
+    val log10 :		real -> real
+
+    val sin :		real -> real
+    val cos :		real -> real
+    val tan :		real -> real
+    val asin :		real -> real
+    val acos :		real -> real
+    val atan :		real -> real
+    val atan2 :		real * real -> real
+    val sinh :		real -> real
+    val cosh :		real -> real
+    val tanh :		real -> real
   end
 
-structure Real: REAL =
-    struct
-	type real = real
 
-	__primitive val fromInt: int -> real = "Real.fromInt"
+structure Math : MATH =
+  struct
+    type real = real
 
-	__primitive val ~ : real -> real = "Real.~"
-	__primitive val op+ : real * real -> real = "Real.+"
-	__primitive val op- : real * real -> real = "Real.-"
-	__primitive val op* : real * real -> real = "Real.*"
-	val op/ = op/
-	__primitive val op< : real * real -> bool = "Real.<"
-	__primitive val op> : real * real -> bool = "Real.>"
-	__primitive val op<= : real * real -> bool = "Real.<="
-	__primitive val op>= : real * real -> bool = "Real.>="
+    __primitive val e :		real			= "Math.e"
+    __primitive val pi :	real			= "Math.pi"
 
-	__primitive val compare: real * real -> order = "Real.compare"
-	__primitive val trunc: real -> int = "Real.trunc"
+    __primitive val sqrt :	real -> real		= "Math.sqrt"
+    __primitive val exp :	real -> real		= "Math.exp"
+    __primitive val pow :	real * real -> real	= "Math.pow"
+    __primitive val ln :	real -> real		= "Math.ln"
 
-	fun scan(r: (char,'a) StringCvt.reader) = scan r   (*--** *)
+    val ln10	= ln 10.0
+    fun log10 x	= ln x / ln10
 
-	fun scan getc source =
-	    let
-		fun decval c = Int.- (Char.ord c, 48)
-		fun pow10 0 = 1.0
-		  | pow10 n =
-		    if n mod 2 = 0 then
-			let val x = pow10 (n div 2) in x * x end
-		    else 10.0 * pow10 (Int.- (n, 1))
-		fun pointsym src =
+    __primitive val sin :	real -> real		= "Math.sin"
+    __primitive val cos :	real -> real		= "Math.cos"
+    __primitive val tan :	real -> real		= "Math.tan"
+    __primitive val asin :	real -> real		= "Math.asin"
+    __primitive val acos :	real -> real		= "Math.acos"
+    __primitive val atan :	real -> real		= "Math.atan"
+    __primitive val atan2 :	real * real -> real	= "Math.atan2"
+    __primitive val sinh :	real -> real		= "Math.sinh"
+    __primitive val cosh :	real -> real		= "Math.cosh"
+    __primitive val tanh :	real -> real		= "Math.tanh"
+  end
+
+
+
+(*****************************************************************************
+ * Real
+ *****************************************************************************)
+
+local
+
+structure Real =
+  struct
+    type real = real
+
+    structure Math = Math
+
+    infix 4  == != ?=
+
+    __primitive val ~ :		real -> real		= "Real.~"
+    __primitive val op + :	real * real -> real	= "Real.+"
+    __primitive val op - :	real * real -> real	= "Real.-"
+    __primitive val op * :	real * real -> real	= "Real.*"
+    __primitive val op / :	real * real -> real	= "Real./"
+    __primitive val rem :	real * real -> real	= "Real.rem"
+
+    __primitive val op < :	real * real -> bool	= "Real.<"
+    __primitive val op > :	real * real -> bool	= "Real.>"
+    __primitive val op <= :	real * real -> bool	= "Real.<="
+    __primitive val op >= :	real * real -> bool	= "Real.>="
+    __primitive val compare :	real * real -> order	= "Real.compare"
+
+    fun compareReal(x,y) =
+	(case compare(x,y)
+	   of LESS			=> IEEEReal.LESS
+	    | GREATER			=> IEEEReal.GREATER
+	    | EQUAL			=> IEEEReal.EQUAL
+	) handle IEEEReal.Unordered	=> IEEEReal.UNORDERED
+
+    fun *+(x,y,z)			= x*y + z
+    fun *-(x,y,z)			= x*y - z
+
+    fun abs x where (x < 0.0)		= ~x
+      | abs x				= x
+
+    fun min(x,y)			= if x < y then x else y
+    fun max(x,y)			= if x > y then x else y
+
+    fun sign x where (x > 0.0)		= 1
+      | sign x where (x < 0.0)		= ~1
+      | sign x				= 0
+
+    fun signBit x			= Int.<(sign x, 0) orelse x = ~0.0
+    fun sameSign(x,y)			= signBit x = signBit y
+
+    fun copySign(x,y) where (sameSign(x,y))	= x
+      | copySign(x,y)				= ~x
+
+    fun x == y				= x = y orelse
+					  sign x = 0 andalso sign y = 0
+    fun x != y				= Bool.not(x == y)
+    fun x ?= y				= x == y
+
+    __primitive val ceil :	real -> Int.int	= "Real.ceil"
+    __primitive val floor :	real -> Int.int	= "Real.floor"
+    __primitive val trunc :	real -> Int.int	= "Real.trunc"
+    __primitive val round :	real -> Int.int	= "Real.round"
+    __primitive val realCeil :	real -> real	= "Real.realCeil"
+    __primitive val realFloor :	real -> real	= "Real.realFloor"
+    __primitive val realTrunc :	real -> real	= "Real.realTrunc"
+
+    __primitive val fromInt :	int -> real	= "Real.fromInt"
+
+    fun toInt IEEEReal.TO_POSINF		= ceil
+      | toInt IEEEReal.TO_NEGINF		= floor
+      | toInt IEEEReal.TO_ZERO			= trunc
+      | toInt IEEEReal.TO_NEAREST		= round
+
+    val toLargeInt				= toInt
+    val fromLargeInt				= fromInt
+
+    fun toLarge x				= x
+    fun fromLarge mode x			= x
+
+
+    fun scan getc source =
+	let
+	    fun decval c = Int.- (Char.ord c, 48)
+	    fun pow10 0 = 1.0
+	      | pow10 n =
+		if n mod 2 = 0 then
+		    let val x = pow10 (n div 2) in x * x end
+		else 10.0 * pow10 (Int.- (n, 1))
+	    fun pointsym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) => if c = #"." then (true, rest)
+				      else (false, src)
+	    fun esym src =
+		case getc src of
+		    NONE           => (false, src)
+		  | SOME (c, rest) =>
+			if c = #"e" orelse c = #"E"  then
+			    (true, rest)
+			else (false, src)
+	    fun scandigs first next final source =
+		let fun digs state src =
 		    case getc src of
-			NONE           => (false, src)
-		      | SOME (c, rest) => if c = #"." then (true, rest)
-					  else (false, src)
-		fun esym src =
-		    case getc src of
-			NONE           => (false, src)
-		      | SOME (c, rest) =>
-			    if c = #"e" orelse c = #"E"  then
-				(true, rest)
-			    else (false, src)
-		fun scandigs first next final source =
-		    let fun digs state src =
-			case getc src of
-			    NONE          => (SOME (final state), src)
-			  | SOME(c, rest) =>
-				if Char.isDigit c then
-				    digs (next(state, decval c)) rest
-				else
-				    (SOME (final state), src)
-		    in
-			case getc source of
-			    NONE          => (NONE, source)
-			  | SOME(c, rest) =>
-				if Char.isDigit c then
-				    digs (first (decval c)) rest
-				else (NONE, source)
-		    end
+			NONE          => (SOME (final state), src)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (next(state, decval c)) rest
+			    else
+				(SOME (final state), src)
+		in
+		    case getc source of
+			NONE          => (NONE, source)
+		      | SOME(c, rest) =>
+			    if Char.isDigit c then
+				digs (first (decval c)) rest
+			    else (NONE, source)
+		end
 
-		fun ident x = x
-		val getint  =
-		    scandigs fromInt
-		    (fn (res, cval) => 10.0 * res + fromInt cval) ident
-		val getfrac =
-		    scandigs
-		    (fn cval => (1, fromInt cval))
-		    (fn ((decs, frac), cval) =>
-		     (Int.+(decs,1), 10.0*frac+fromInt cval))
-		    (fn (decs, frac) => frac / pow10 decs)
-		val getexp =
-		    scandigs ident (fn (res, cval) =>
-				    Int.+(Int.*(10,res),cval)) ident
+	    fun ident x = x
+	    val getint  =
+		scandigs fromInt
+		(fn (res, cval) => 10.0 * res + fromInt cval) ident
+	    val getfrac =
+		scandigs
+		(fn cval => (1, fromInt cval))
+		(fn ((decs, frac), cval) =>
+		 (Int.+(decs,1), 10.0*frac+fromInt cval))
+		(fn (decs, frac) => frac / pow10 decs)
+	    val getexp =
+		scandigs ident (fn (res, cval) =>
+				Int.+(Int.*(10,res),cval)) ident
 
-		fun sign src =
-		    case getc src of
-			SOME(#"+", rest) => (true,  rest)
-		      | SOME(#"-", rest) => (false, rest)
-		      | SOME(#"~", rest) => (false, rest)
-		      | _                => (true,  src )
+	    fun sign src =
+		case getc src of
+		    SOME(#"+", rest) => (true,  rest)
+		  | SOME(#"-", rest) => (false, rest)
+		  | SOME(#"~", rest) => (false, rest)
+		  | _                => (true,  src )
 
-		val src = StringCvt.dropl Char.isSpace getc source
-		val (manpos, src1) = sign src
-		val (intg,   src2) = getint src1
-		val (decpt,  src3) = pointsym src2
-		val (frac,   src4) = getfrac src3
+	    val src = StringCvt.dropl Char.isSpace getc source
+	    val (manpos, src1) = sign src
+	    val (intg,   src2) = getint src1
+	    val (decpt,  src3) = pointsym src2
+	    val (frac,   src4) = getfrac src3
 
-		fun mkres v rest =
-		    SOME(if manpos then v else ~v, rest)
+	    fun mkres v rest =
+		SOME(if manpos then v else ~v, rest)
 
-		fun expopt manval src =
-		    let val (esym,   src1) = esym src
-			val (exppos, src2) = sign src1
-			val (expv,   rest) = getexp src2
-		    in
-			case (esym, expv) of
-			    (_,     NONE)     => mkres manval src
-			  | (true,  SOME exp) =>
-				if exppos then mkres (manval * pow10 exp) rest
-				else mkres (manval / pow10 exp) rest
-			  | _                 => NONE
-		    end
-	    in
-		case (intg,     decpt, frac) of
-		    (NONE,      true,  SOME fval) => expopt fval src4
-		  | (SOME ival, false, SOME _   ) => NONE
-		  | (SOME ival, true,  NONE     ) => mkres ival src2
-		  | (SOME ival, false, NONE     ) => expopt ival src2
-		  | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
-		  | _                             => NONE
-	    end
+	    fun expopt manval src =
+		let val (esym,   src1) = esym src
+		    val (exppos, src2) = sign src1
+		    val (expv,   rest) = getexp src2
+		in
+		    case (esym, expv) of
+			(_,     NONE)     => mkres manval src
+		      | (true,  SOME exp) =>
+			    if exppos then mkres (manval * pow10 exp) rest
+			    else mkres (manval / pow10 exp) rest
+		      | _                 => NONE
+		end
+	in
+	    case (intg,     decpt, frac) of
+		(NONE,      true,  SOME fval) => expopt fval src4
+	      | (SOME ival, false, SOME _   ) => NONE
+	      | (SOME ival, true,  NONE     ) => mkres ival src2
+	      | (SOME ival, false, NONE     ) => expopt ival src2
+	      | (SOME ival, _    , SOME fval) => expopt (ival+fval) src4
+	      | _                             => NONE
+	end
 
-	val fromString = StringCvt.scanString scan
+    __primitive val toString: real -> string = "Real.toString"
 
-	__primitive val toString: real -> string = "Real.toString"
-    end
+    val fromString = StringCvt.scanString scan
+  end
+
 
 structure LargeReal = Real
 
 
-(* Array *)
+in (* local *)
 
-signature ARRAY =
+
+signature REAL =
   sig
-    type 'a array
+    type real
+
+    structure Math :	MATH where type real = real
+
 (*MISSING
-    type 'a vector
-    val maxLen : int
+    val radix :		int
+    val precision :	int
+    val maxFinite :	real
+    val minPos :	real
+    val minNormalPos :	real
+
+    val posInf :	real
+    val negInf :	real
 *)
-    val array : int * 'a -> 'a array
+
+    val ~ :		real -> real
+    val op + :		real * real -> real
+    val op - :		real * real -> real
+    val op * :		real * real -> real
+    val op / :		real * real -> real
+    val rem :		real * real -> real
+    val *+ :		real * real * real -> real
+    val *- :		real * real * real -> real
+
+    val abs :		real -> real
+    val min :		real * real -> real
+    val max :		real * real -> real
+    val sign :		real -> int
+    val signBit :	real -> bool
+    val sameSign :	real * real -> bool
+    val copySign :	real * real -> real
+
+    val op < :		real * real -> bool
+    val op > :		real * real -> bool
+    val op <= :		real * real -> bool
+    val op >= :		real * real -> bool
+    val compare :	real * real -> order
+    val compareReal :	real * real -> IEEEReal.real_order
+
+    val == :		real * real -> bool
+    val != :		real * real -> bool
+    val ?= :		real * real -> bool
 (*MISSING
-    val tabulate : int * (int -> 'a) -> 'a array
+    val unordered :	real * real -> bool
+
+    val isFinite :	real -> bool
+    val isNan :		real -> bool
+    val isNormal :	real -> bool
+    val class :		real -> IEEEReal.float_class
 *)
-    val fromList : 'a list -> 'a array
+
+    val ceil :		real -> Int.int
+    val floor :		real -> Int.int
+    val trunc :		real -> Int.int
+    val round :		real -> Int.int
+    val realFloor :	real -> real
+    val realCeil :	real -> real
+    val realTrunc :	real -> real
+
 (*MISSING
-    val array0 : 'a array
+    val nextAfter :	real * real -> real
+    val checkFloat :	real -> real
 *)
-    val length : 'a array -> int
-    val sub : 'a array * int -> 'a
-    val update : 'a array * int * 'a -> unit
+
 (*MISSING
-    val extract : 'a array * int * int option -> 'a vector
+    val toManExp :	real -> {exp:int, man:real}
+    val fromManExp :	{exp:int, man:real} -> real
+    val split :		real -> {frac:real, whole:real}
+    val realMod :	real -> real
 *)
-    val copy : {di:int, dst:'a array, len:int option, si:int, src:'a array}
-               -> unit
+
+    val toInt :		IEEEReal.rounding_mode -> real -> int
+    val toLargeInt :	IEEEReal.rounding_mode -> real -> LargeInt.int
+    val fromInt :	int -> real
+    val fromLargeInt :	LargeInt.int -> real
+    val toLarge :	real -> LargeReal.real
+    val fromLarge :	IEEEReal.rounding_mode -> LargeReal.real -> real
 (*MISSING
-    val copyVec : {di:int, dst:'a array, len:int option, si:int, src:'a vector}
-                  -> unit
+    val toDecimal :	real -> IEEEReal.decimal_approx
+    val fromDecimal :	IEEEReal.decimal_approx -> real
 *)
-    val app : ('a -> unit) -> 'a array -> unit
-    val foldl : ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+
+    val toString :	real -> string
+    val fromString :	string -> real option
 (*MISSING
-    val foldr : ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
-    val modify : ('a -> 'a) -> 'a array -> unit
-    val appi : (int * 'a -> unit) -> 'a array * int * int option -> unit
-    val foldli : (int * 'a * 'b -> 'b)
-                 -> 'b -> 'a array * int * int option -> 'b
-    val foldri : (int * 'a * 'b -> 'b)
-                 -> 'b -> 'a array * int * int option -> 'b
-    val modifyi : (int * 'a -> 'a) -> 'a array * int * int option -> unit
+    val fmt :		StringCvt.realfmt -> real -> string
 *)
+    val scan :		(char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
   end
 
-structure Array: ARRAY =
-    struct
-	__eqtype 'a array
 
-	__primitive val array : int * 'a -> 'a array = "Array.array"
-	__primitive val fromList : 'a list -> 'a array = "Array.fromList"
-	__primitive val length : 'a array -> int = "Array.length"
-	__primitive val sub : 'a array * int -> 'a = "Array.sub"
-	__primitive val update : 'a array * int * 'a -> unit = "Array.update"
+structure Real      :> (REAL where type real = Real.real)	= Real
+structure LargeReal :> (REAL where type real = LargeReal.real)	= LargeReal
 
-	fun copy {src, si, len, dst, di} =
-	    let
-		val bound =
-		    case len of
-			NONE => length src
-		      | SOME n => si + n
-		val offset = di - si
-		fun copy' i =
-		    if i < bound then
-			(update (dst, i + offset, sub (src, i));
-			 copy' (i + 1))
-		    else ()
-	    in
-		copy' si
-	    end
-
-	fun foldl f z a =
-	    let
-		val n = length a
-		fun foldl' (i, z') =
-		    if i < n then foldl' (i + 1, f (sub (a, i), z'))
-		    else z'
-	    in
-		foldl' (0, z)
-	    end
-
-	fun app f a =
-	    let
-		val n = length a
-		fun app' i =
-		    if i < n then (f (sub (a, i)); app' (i + 1))
-		    else ()
-	    in
-		app' 0
-	    end
-    end
-
-type array = Array.array
+end (* local *)
 
 
-(* Vector *)
+
+(*****************************************************************************
+ * Vector
+ *****************************************************************************)
 
 signature VECTOR =
   sig
     eqtype 'a vector
 
+    val maxLen :	int
+
+    val fromList :	'a list -> 'a vector
+    val tabulate :	int * (int -> 'a) -> 'a vector
+
+    val length :	'a vector -> int
+    val sub :		'a vector * int -> 'a
 (*MISSING
-    val maxLen : int
+    val extract :	'a vector * int * int option -> 'a vector
+    val concat :	'a vector list -> 'a vector
 *)
-    val fromList : 'a list -> 'a vector
-    val tabulate : int * (int -> 'a) -> 'a vector
+
+    val app :		('a -> unit) -> 'a vector -> unit
 (*MISSING
-    val length : 'a vector -> int
+    val map :		('a -> 'b) -> 'a vector -> 'b vector
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
 *)
-    val sub : 'a vector * int -> 'a
+    val appi :		(int * 'a -> unit) -> 'a vector * int * int option
+					   -> unit
 (*MISSING
-    val extract : 'a vector * int * int option -> 'a vector
-    val concat : 'a vector list -> 'a vector
-    val app : ('a -> unit) -> 'a vector -> unit
-    val map : ('a -> 'b) -> 'a vector -> 'b vector
-    val foldl : ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
-    val foldr : ('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
-    val appi : (int * 'a -> unit) -> 'a vector * int * int option -> unit
-    val mapi : (int * 'a -> 'b) -> 'a vector * int * int option -> 'b vector
-    val foldli : (int * 'a * 'b -> 'b)
-                 -> 'b -> 'a vector * int * int option -> 'b
-    val foldri : (int * 'a * 'b -> 'b)
-                 -> 'b -> 'a vector * int * int option -> 'b
+    val mapi :		(int * 'a -> 'b) -> 'a vector * int * int option
+					 -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+				       -> 'a vector * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) => 'b
+				       -> 'a vector * int * int option -> 'b
 *)
   end
 
-structure Vector: VECTOR =
-    struct
-	type 'a vector = 'a vector
 
-	__primitive val fromList : 'a list -> 'a vector = "Vector.fromList"
-	__primitive val sub : 'a vector * int -> 'a = "Vector.sub"
+structure Vector : VECTOR =
+  struct
+    type 'a vector = 'a vector
 
-	fun tabulate (n, f) = fromList (List.tabulate (n, f))
-    end
+    __primitive val maxLen :	int			= "Vector.maxLen"
 
-val vector = Vector.fromList
+    __primitive val fromList :	'a list -> 'a vector	= "Vector.fromList"
+    __primitive val length :	'a vector -> int	= "Vector.length"
+    __primitive val sub :	'a vector * int -> 'a	= "Vector.sub"
+
+    fun tabulate(n,f)			= fromList(List.tabulate(n,f))
+
+    fun app  f v			= app'(f, v, length v, 0)
+    and app'(f,v,n,i) where (i = n)	= ()
+      | app'(f,v,n,i)			= (f(sub(v,i)) ; app'(f,v,n,i+1))
+
+    fun appi f (v,i,NONE)		= appi'(f, v, length v, i)
+      | appi f (v,i,SOME n)		= appi'(f, v, i+n, i)
+    and appi'(f,v,n,i) where (i = n)	= ()
+      | appi'(f,v,n,i)			= (f(i, sub(v,i)) ; appi'(f,v,n,i+1))
+  end
 
 
-(* Transient *)
+
+(*****************************************************************************
+ * Array
+ *****************************************************************************)
+
+signature ARRAY =
+  sig
+    type 'a array
+    type 'a vector
+
+    val maxLen :	int
+
+    val array :		int * 'a -> 'a array
+    val fromList :	'a list -> 'a array
+    val tabulate :	int * (int -> 'a) -> 'a array
+
+    val length :	'a array -> int
+    val sub :		'a array * int -> 'a
+    val update :	'a array * int * 'a -> unit
+(*MISSING
+    val extract :	'a array * int * int option -> 'a vector
+*)
+    val copy :		{di:int, dst:'a array, len:int option,
+			 si:int, src:'a array} -> unit
+(*MISSING
+    val copyVec :	{di:int, dst:'a array, len:int option,
+			 si:int, src:'a vector} -> unit
+*)
+
+    val app :		('a -> unit) -> 'a array -> unit
+    val foldl :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+(*MISSING
+    val foldr :		('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+    val modify :	('a -> 'a) -> 'a array -> unit
+    val appi :		(int * 'a -> unit)
+					-> 'a array * int * int option -> unit
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b
+					-> 'a array * int * int option -> 'b
+    val modifyi :	(int * 'a -> 'a) -> 'a array * int * int option -> unit
+*)
+  end
+
+
+structure Array : ARRAY =
+  struct
+    __eqtype 'a array
+    type 'a vector = 'a vector
+
+    __primitive val maxLen :	int			= "Array.maxLen"
+
+    __primitive val array :	int * 'a -> 'a array	= "Array.array"
+    __primitive val fromList :	'a list -> 'a array	= "Array.fromList"
+    __primitive val length :	'a array -> int		= "Array.length"
+    __primitive val sub :	'a array * int -> 'a	= "Array.sub"
+    __primitive val update :	'a array * int * 'a -> unit = "Array.update"
+
+    fun tabulate(n,f) = fromList(List.tabulate(n,f))
+
+    fun copy {src,si,len,dst,di} =
+	let
+	    val d = di - si
+	    val n = case len of NONE    => length src
+			      | SOME n' => si+n'
+	    fun copy' i where (i=n)	= ()
+	      | copy' i			= ( update(dst, i+d, sub(src,i))
+					  ; copy'(i+1) )
+	in
+	    copy' si
+	end
+
+    fun app  f a                      = app'(f,a,length a, 0)
+    and app'(f,a,n,i) where (i=n)     = ()
+      | app'(f,a,n,i)                 = (f(sub(a,i)) ; app'(f,a,n,i+1))
+
+    fun foldl  f x a                  = foldl'(f, x, a, length a, 0)
+    and foldl'(f,x,a,n,i) where (i=n) = x
+      | foldl'(f,x,a,n,i)             = foldl'(f, f(sub(a,i), x), a, n, i+1)
+  end
+
+
+
+(*****************************************************************************
+ * Time
+ *****************************************************************************)
+
+signature TIME =
+  sig
+    eqtype time
+
+    exception Time
+
+    val zeroTime :		time
+(*MISSING
+    val now :			unit -> time
+*)
+
+    val fromReal :		LargeReal.real -> time
+    val toReal :		time -> LargeReal.real
+    val toSeconds :		time -> LargeInt.int
+    val toMilliseconds :	time -> LargeInt.int
+    val toMicroseconds :	time -> LargeInt.int
+    val fromSeconds :		LargeInt.int -> time
+    val fromMilliseconds :	LargeInt.int -> time
+    val fromMicroseconds :	LargeInt.int -> time
+
+    val op + :			time * time -> time
+    val op - :			time * time -> time
+
+    val op < :			time * time -> bool
+    val op > :			time * time -> bool
+    val op <= :			time * time -> bool
+    val op >= :			time * time -> bool
+    val compare :		time * time -> order
+
+(*MISSING
+    val toString :	time -> string
+    val fromString :	string -> time option
+    val fmt :		int -> time -> string
+    val scan :		(char,'a) StringCvt.reader -> 'a -> (time * 'a) option
+*)
+  end
+
+
+structure Time :> TIME =
+  struct
+    open LargeInt		(* +, -, <, >, <=, >=, compare *)
+
+    type time			= LargeInt.int	(* microseconds *)
+
+    exception Time
+
+    val zeroTime		= 0
+
+    fun fromReal x		= Real.toLargeInt IEEEReal.TO_NEAREST
+						  (Real.*(x,1000000.0))
+    fun toReal t		= Real.fromLargeInt t / 1000000.0
+
+    fun toSeconds t		= t div 1000000
+    fun toMilliseconds t	= t div 1000
+    fun toMicroseconds t	= t
+    fun fromSeconds n		= n * 1000000
+    fun fromMilliseconds n	= n * 1000
+    fun fromMicroseconds n	= n
+  end
+
+
+
+(*****************************************************************************
+ * Transient
+ *****************************************************************************)
 
 signature TRANSIENT =
-    sig
-	exception Promise
-	exception Future
-	exception Fulfill
-	exception ByNeed of exn
+  sig
+    exception Promise
+    exception Future
+    exception Fulfill
+    exception ByNeed of exn
 
-	val promise: unit -> 'a
-	val fulfill: 'a * 'a -> unit
+    val promise :	unit -> 'a
+    val future :	'a -> 'a
+    val byNeed :	(unit -> 'a) -> 'a
 
-	val future: 'a -> 'a
-	val byNeed: (unit -> 'a) -> 'a
+    val fulfill :	'a * 'a -> unit
+    val fail :		'a * exn -> unit
+    val await :		'a -> 'a
+    val awaitOne :	'a * 'b -> 'a
 
-	val await: 'a -> 'a
+    val isPromise :	'a -> bool
+    val isFuture :	'a -> bool
+  end
 
-	val isPromise: 'a -> bool
-	val isFuture: 'a -> bool
-    end
 
-structure Transient: TRANSIENT =
-    struct
-	__primitive constructor Promise: exn = "Transient.Promise"
-	__primitive constructor Future: exn = "Transient.Future"
-	__primitive constructor Fulfill: exn = "Transient.Fulfill"
-	__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
+structure Transient : TRANSIENT =
+  struct
+    __primitive constructor Promise : exn		= "Transient.Promise"
+    __primitive constructor Future :  exn		= "Transient.Future"
+    __primitive constructor Fulfill : exn		= "Transient.Fulfill"
+    __primitive constructor ByNeed of exn : exn		= "Transient.ByNeed"
 
-	__primitive val promise: unit -> 'a = "Transient.promise"
-	__primitive val fulfill: 'a * 'a -> unit = "Transient.fulfill"
+    __primitive val promise :	unit -> 'a		= "Transient.promise"
+    __primitive val future :	'a -> 'a		= "Transient.future"
+    __primitive val byNeed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
 
-	__primitive val future: 'a -> 'a = "Transient.future"
-	__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+    __primitive val fulfill :	'a * 'a -> unit		= "Transient.fulfill"
+    __primitive val fail :	'a * exn -> unit	= "Transient.fail"
+    __primitive val await :	'a -> 'a		= "Transient.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
 
-	__primitive val await: 'a -> 'a = "Transient.await"
+    __primitive val isPromise :	'a -> bool		= "Transient.isPromise"
+    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
+  end
 
-	__primitive val isPromise: 'a -> bool = "Transient.isPromise"
-	__primitive val isFuture: 'a -> bool = "Transient.isFuture"
-    end
-
-open Transient
 
 structure Transient' =
-    struct
-	type 'a promise
+  struct
+    type 'a promise
 
-	__primitive constructor Promise: exn = "Transient.Promise"
-	__primitive constructor Future: exn = "Transient.Future"
-	__primitive constructor Fulfill: exn = "Transient.Fulfill"
-	__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
+    __primitive constructor Promise : exn		= "Transient.Promise"
+    __primitive constructor Future :  exn		= "Transient.Future"
+    __primitive constructor Fulfill : exn		= "Transient.Fulfill"
+    __primitive constructor ByNeed of exn : exn		= "Transient.ByNeed"
 
-	__primitive val promise: unit -> 'a promise = "Transient.promise"
-	__primitive val fulfill: 'a promise * 'a -> unit = "Transient.fulfill"
+    __primitive val promise :	unit -> 'a promise	= "Transient.promise"
+    __primitive val future :	'a promise -> 'a	= "Transient.future"
+    __primitive val byNeed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
 
-	__primitive val future: 'a promise -> 'a = "Transient.future"
-	__primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
+    __primitive val fulfill :	'a promise * 'a -> unit	= "Transient.fulfill"
+    __primitive val fail :	'a promise * exn-> unit	= "Transient.fail"
+    __primitive val await :	'a -> 'a		= "Transient.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
 
-	__primitive val await: 'a -> 'a = "Transient.await"
-
-	__primitive val isPromise: 'a promise -> bool = "Transient.isPromise"
-	__primitive val isFuture: 'a -> bool = "Transient.isFuture"
-    end
+    __primitive val isPromise :	'a promise -> bool	= "Transient.isPromise"
+    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
+  end
 
 
-(* Thread *)
+
+(*****************************************************************************
+ * Future
+ *****************************************************************************)
+
+signature FUTURE =
+  sig
+    exception Future of exn
+
+    val concur :	(unit -> 'a) -> 'a
+    val byneed :	(unit -> 'a) -> 'a
+    val alarm :		Time.time -> unit
+
+    val await :		'a -> 'a
+    val awaitOne :	'a * 'b -> 'a
+  end
+
+
+structure Future : FUTURE =
+  struct
+    __primitive constructor Future of exn : exn		= "Transient.ByNeed"
+
+    __primitive val concur :	(unit -> 'a) -> 'a	= "Thread.spawn"
+    __primitive val byneed :	(unit -> 'a) -> 'a	= "Transient.byNeed"
+    __primitive val alarm :	Time.time -> unit	= "Transient.alarm'"
+
+    __primitive val await :	'a -> 'a		= "Transient.await"
+    __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
+  end
+
+
+
+(*****************************************************************************
+ * Promise
+ *****************************************************************************)
+
+signature PROMISE =
+  sig
+    type 'a promise
+
+    exception Promise
+
+    val promise :	unit -> 'a promise
+    val future :	'a promise -> 'a
+
+    val fulfill :	'a promise * 'a  -> unit	(* Promise *)
+    val fail :		'a promise * exn -> unit	(* Promise *)
+  end
+
+
+structure Promise : PROMISE =
+  struct
+    type 'a promise
+
+    __primitive constructor Promise : exn		= "Transient.Promise"
+
+    __primitive val promise :	unit -> 'a promise	= "Transient.promise"
+    __primitive val future :	'a promise -> 'a	= "Transient.future"
+
+    __primitive val fulfill :	'a promise * 'a -> unit	= "Transient.fulfill"
+    __primitive val fail :	'a promise * exn-> unit	= "Transient.fail"
+  end
+
+
+
+(*****************************************************************************
+ * Cell
+ *****************************************************************************)
+
+signature CELL =
+  sig
+    __eqtype 'a cell
+
+    val cell :		'a -> 'a cell
+    val exchange :	'a cell * 'a -> 'a
+  end
+
+
+structure Cell :> CELL =
+  struct
+    type 'a cell	= 'a ref
+
+    val cell		= ref
+    __primitive val exchange :	'a cell * 'a -> 'a  = "General.exchange"
+  end
+
+
+
+(*****************************************************************************
+ * Hole
+ *****************************************************************************)
+
+signature HOLE =
+  sig
+    exception Hole
+
+    val hole :		unit -> 'a
+    val future :	'a -> 'a
+
+    val fill :		'a * 'a  -> unit	(* Hole *)
+    val fail :		'a * exn -> unit	(* Hole *)
+  end
+
+
+structure Hole : HOLE =
+  struct
+    __primitive constructor Hole : exn			= "Transient.Promise"
+
+    __primitive val hole :	unit -> 'a		= "Transient.promise"
+    __primitive val future :	'a -> 'a		= "Transient.future"
+
+    __primitive val fill :	'a * 'a  -> unit	= "Transient.fulfill"
+    __primitive val fail :	'a * exn -> unit	= "Transient.fail"
+  end
+
+
+
+(*****************************************************************************
+ * Thread
+ *****************************************************************************)
 
 signature THREAD =
-    sig
-	type thread
+  sig
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
 
-	datatype state =
-	    RUNNABLE
-	  | BLOCKED
-	  | TERMINATED
+    exception Terminate
 
-	exception Terminate
+    val spawn :		(unit -> 'a) -> 'a
+    val current :	unit -> thread
+    val state :		thread -> state
 
-	val spawn: (unit -> 'a) -> 'a
-	val current: unit -> thread
-	val state: thread -> state
+    val yield :		thread -> unit
+    val sleep :		Time.time -> unit
 
-	val yield: thread -> unit
-	val sleep: int -> unit
+    val raiseIn :	thread * exn -> unit
+    val terminate :	thread -> unit
 
-	val raiseIn: thread * exn -> unit
-	val terminate: thread -> unit
-
-	val suspend: thread -> unit
-	val resume: thread -> unit
-	val isSuspended: thread -> bool
-    end
-
-structure Thread: THREAD =
-    struct
-	type thread
-
-	datatype state =
-	    RUNNABLE
-	  | BLOCKED
-	  | TERMINATED
-
-	__primitive constructor Terminate: exn = "Thread.Terminate"
-
-	__primitive val spawn: (unit -> 'a) -> 'a = "Thread.spawn"
-	__primitive val current: unit -> thread = "Thread.current"
-	__primitive val state: thread -> state = "Thread.state"
-
-	__primitive val yield: thread -> unit = "Thread.yield"
-	__primitive val sleep: int -> unit = "Thread.sleep"
-
-	__primitive val raiseIn: thread * exn -> unit = "Thread.raiseIn"
-	fun terminate t = raiseIn (t, Terminate)
-
-	__primitive val suspend: thread -> unit = "Thread.suspend"
-	__primitive val resume: thread -> unit = "Thread.resume"
-	__primitive val isSuspended: thread -> bool = "Thread.isSuspended"
-    end
+    val suspend :	thread -> unit
+    val resume :	thread -> unit
+    val isSuspended :	thread -> bool
+  end
 
 
-(* More members exported to toplevel *)
+structure Thread : THREAD =
+  struct
+    type thread
+    datatype state = RUNNABLE | BLOCKED | TERMINATED
 
-val getOpt = Option.getOpt
-val isSome = Option.isSome
-val valOf = Option.valOf
+    __primitive constructor Terminate : exn		= "Thread.Terminate"
 
-val null = List.null
-val hd = List.hd
-val tl = List.tl
-val length = List.length
-val rev = List.rev
-val op@ = List.@
-val app = List.app
-val map = List.map
-val foldr = List.foldr
-val foldl = List.foldl
+    __primitive val spawn :	(unit -> 'a) -> 'a	= "Thread.spawn"
+    __primitive val current :	unit -> thread		= "Thread.current"
+    __primitive val state :	thread -> state		= "Thread.state"
 
-val ord = Char.ord
-val chr = Char.chr
+    __primitive val yield :	thread -> unit		= "Thread.yield"
+    __primitive val raiseIn :	thread * exn -> unit	= "Thread.raiseIn"
 
-val str = String.str
-val size = String.size
-val concat = String.concat
-val explode = String.explode
-val implode = String.implode
-val substring = String.substring
-val op^ = String.^
+    fun sleep t = Future.await(Future.alarm t)
 
-val real = Real.fromInt
-val trunc = Real.trunc
+    fun terminate t = raiseIn (t, Terminate)
 
-val spawn = Thread.spawn
+    __primitive val suspend :		thread -> unit	= "Thread.suspend"
+    __primitive val resume :		thread -> unit	= "Thread.resume"
+    __primitive val isSuspended :	thread -> bool	= "Thread.isSuspended"
+  end
+
+
+
+(*****************************************************************************
+ * Top-level, part 2
+ *****************************************************************************)
+
+type array	= Array.array
+
+open General
+
+val not		= Bool.not
+
+val getOpt	= Option.getOpt
+val isSome	= Option.isSome
+val valOf	= Option.valOf
+
+val null	= List.null
+val hd		= List.hd
+val tl		= List.tl
+val length	= List.length
+val rev		= List.rev
+val op @	= List.@
+val app		= List.app
+val map		= List.map
+val foldr	= List.foldr
+val foldl	= List.foldl
+
+val ord		= Char.ord
+val chr		= Char.chr
+
+val str		= String.str
+val size	= String.size
+val op ^	= String.^
+val concat	= String.concat
+val explode	= String.explode
+val implode	= String.implode
+val substring	= String.substring
+
+val vector	= Vector.fromList
+
+val real	= Real.fromInt
+val ceil	= Real.ceil
+val floor	= Real.floor
+val trunc	= Real.trunc
+val round	= Real.round
+
+(*MISSING
+__primitive val use : string -> unit = "use"
+*)
