@@ -4,7 +4,7 @@ OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
-NATIVESOURCES = BootWord IO TextIO OS Unix CommandLine
+NATIVESOURCES = BootWord IO TextIO OS Unix CommandLine Debug
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
 LIBSOURCES = Base.sml Word.sml $(NATIVESOURCES:%=%.ozf.sig)
