@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) {
   AbstractCodeInterpreter::Init();
   Unpickler::Init();
   BootLinker::Init(builtins);
-  BootLinker::SetTraceMode(1);
   // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
