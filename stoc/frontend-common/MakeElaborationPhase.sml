@@ -1951,17 +1951,7 @@ struct
 
 
     fun translate E (desc, component) =
-	let
-	    val _         = insertScope E
-	    val impsdecs' = elabComp(E, desc, component)
-	    val _         = mergeScope E
-	in
-	    impsdecs'
-	end
-	handle Error.Error x =>
-	    ( deleteScope E
-	    ; Type.resetLevel()
-	    ; raise Error.Error x
-	    )
+	elabComp(E, desc, component)
+	handle e as Error.Error _ => ( Type.resetLevel() ; raise e )
 
 end
