@@ -993,6 +993,22 @@ Worker::Result AbstractCodeInterpreter::Handle() {
   }
 }
 
+u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
+  Assert(concreteCode->GetInterpreter() == AbstractCodeInterpreter::self);
+  AliceConcreteCode *aliceConcreteCode =
+    static_cast<AliceConcreteCode *>(concreteCode);
+  TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
+  TagVal *args = TagVal::FromWordDirect(abstractCode->Sel(3));
+  switch (AbstractCode::GetArgs(args)) {
+  case AbstractCode::OneArg:
+    return Scheduler::ONE_ARG;
+  case AbstractCode::TupArgs:
+    return Vector::FromWordDirect(args->Sel(0))->GetLength();
+  default:
+    Error("invalid args tag");
+  }
+}
+
 const char *AbstractCodeInterpreter::Identify() {
   return "AbstractCodeInterpreter";
 }
