@@ -176,11 +176,14 @@
 	<LI><P>A protocol failure occurs in the lower communication layers.
 	  In this case, <TT>Proxy(<A 
 	  href="#Protocol-exn">Protocol</A> <I>s</I>)</TT> will be raised,
-	  with <TT><I>s</I></TT> describing the error condition.</P>
+	  with <TT><I>s</I></TT> describing the error condition. One
+	  possible cause is that the remote process terminates before the call
+	  returns (in particular, this can occur when the call itself triggers
+	  termination of the remote process).</P>
 	<LI><P>An I/O problem occurs in the lower communication layers.
 	  In this case, <TT>Proxy(<A 
 	  href="io.html">Io</A> <I>args</I>)</TT> will be raised, with
-	  <TT><I>args</I></TT> carrying further information. Usually this
+	  <TT><I>args</I></TT> carrying further information. Usually, this
 	  means that the process that exported the proxy is no
 	  longer alive.</P>
       </UL>
@@ -289,7 +292,7 @@
     </DD>
 
     <DT>
-      <TT><A name="eval">eval</A> (<I>host</I>, <I>component</I>)</TT>
+      <TT><A name="eval">eval</A> (<I>host</I>, <I>component</I>)</TT><BR>
       <TT><A name="run">run</A> (<I>host</I>, <I>component</I>)</TT>
     </DT>
     <DD>
@@ -302,14 +305,14 @@
 
 	<P>Like proxy calls, remote execution may fail for a number of reasons:</P>
       <UL>
-	<LI><P>The remote process called
-	  <TT><A href="os-process.html">OS.Process.exit</A></TT> before
-	  evaluation of the component was finished. In this case,
-	  <TT><A href="#Exit-exn">Exit</A></TT> is raised.</P>
 	<LI><P>The component contains a sited value. In that
 	  case, <TT><A
 	  href="#SitedArgument-exn">SitedArgument</A></TT> will be
 	  raised.</P>
+	<LI><P>The remote process calls
+	  <TT><A href="os-process.html">OS.Process.exit</A></TT> before
+	  evaluation of the component was finished. In this case,
+	  <TT><A href="#Exit-exn">Exit</A></TT> is raised.</P>
 	<LI><P>The export of the component contains a sited value after
 	  evaluation on the remote site, or it contains a failed future that
 	  carries an exception with a sited value or another failed
@@ -361,7 +364,7 @@
     <DT>
       <TT><A name="Eval">Eval</A> (val host = <I>host</I>
 	signature S = <I>S</I>
-	functor F = <I>F</I>)</TT>
+	functor F = <I>F</I>)</TT><BR>
       <TT><A name="Run">Run</A> (val host = <I>host</I>
 	signature S = <I>S</I>
 	functor F = <I>F</I>)</TT>
