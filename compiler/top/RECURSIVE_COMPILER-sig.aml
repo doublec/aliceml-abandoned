@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Signature from "../../lib/system/Signature"
 import structure Url       from "../../lib/utility/Url"
+import structure Inf       from "../../lib/rtt/Inf"
 import structure Source    from "../infrastructure/Source"
 import signature SWITCHES  from "../infrastructure/SWITCHES-sig"
 import structure Target    from "../infrastructure/Target"
@@ -27,9 +27,8 @@ signature RECURSIVE_COMPILER =
 
 	val extension: string
 
-	val compileSign: string -> Signature.t
-	val compileFileToFile: string * string -> Signature.t
-	val acquireSign: Source.desc * Url.t -> Signature.t
+	val compileFileToFile: string * string -> unit
+	val acquireSig: Source.desc * Url.t -> Inf.sign
 
 	val compileFile: context -> string -> context * Target.t
 	val compileString: context -> string -> context * Target.t

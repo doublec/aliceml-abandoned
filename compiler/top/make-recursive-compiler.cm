@@ -4,6 +4,5 @@ Group is
     ../infrastructure/crash.cm
     compiler.cm
 
-    SignTable.aml
     RECURSIVE_COMPILER-sig.aml
     MkRecursiveCompiler.aml
