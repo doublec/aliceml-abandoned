@@ -29,7 +29,7 @@ import structure String                               from "String"
 import structure StringCvt                            from "StringCvt"
 import signature WORD                                 from "WORD-sig"
 
-functor MkWord(structure BaseWord: sig
+functor MkWord(BaseWord: sig
     type word
 
     val wordSize : int
