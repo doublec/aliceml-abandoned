@@ -45,7 +45,6 @@ void Interpreter::Construct() {
 bool Interpreter::Deconstruct() {
   switch (Scheduler::nArgs) {
   case 0:
-    Scheduler::nArgs = 0;
     return false;
   case Scheduler::ONE_ARG:
     {
