@@ -48,19 +48,17 @@
 	exception <A href="#Ticket-exn">Ticket</A>
 	exception <A href="#Protocol">Protocol</A> of int * string
 
-	val <A href="#proxy">proxy</A> : ('a -> 'b) -> 'a -> 'b
+	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
+
 	val <A href="#offer">offer</A> : <A href="package.php3#package">Package.t</A> -> string
-	val <A href="#take">take</A> : ticket -> <A href="package.php3#package>Package.t</A>
+	val <A href="#take">take</A> : ticket -> <A href="package.php3#package">Package.t</A>
 
-	functor <A href="#Offer-fn">Offer</A>(signature S  structure X : S) :
-	    sig  val ticket : ticket  end
+	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
+	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S
 
-	functor <A href="#Take-fn">Take</A>(val ticket : ticket  signature S) : S
-
-	functor <A href="#Execute">Execute</A>(val host : string
-			signature RESULT
-			functor Start(ComponentManager :
-					  <A href="component-manager.php3">COMPONENT_MANAGER</A>) : RESULT) : RESULT
+	functor <A href="#Execute">Execute</A> (val host : string
+			 signature RESULT
+			 functor Start (ComponentManager : <A href="component-manager.php3">COMPONENT_MANAGER</A>) : RESULT) : RESULT
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -136,7 +134,7 @@
     </DD>
 
     <DT>
-      <TT><A name="Offer-fn">Offer</A>(signature S = <I>S</I>
+      <TT><A name="Offer-fn">Offer</A> (signature S = <I>S</I>
 	structure X = <I>X</I>)</TT>
     </DT>
     <DD>
@@ -145,11 +143,13 @@
 	href="#take">take</A></TT> or <TT><A href="#Take-fn">Take</A></TT>.
 	If the argument is a mutable data structure, then taking returns
 	a clone of how the data structure looked when the offer was
-	initially made.</P>
+	initially made. Equivalent to</P>
+        <PRE>
+	(val ticket = offer (pack <I>X</I> :> <I>S</I>))</PRE>
     </DD>
 
     <DT>
-      <TT><A name="Take-fn">Take</A>(val ticket = <I>ticket</I>
+      <TT><A name="Take-fn">Take</A> (val ticket = <I>ticket</I>
 	signature S = <I>S</I>)</TT>
     </DT>
     <DD>
@@ -160,11 +160,13 @@
 	ticket is invalid or the site on which it was created no longer
 	exists.  Raises <TT><A href="package.php3#Mismatch">Package.Mismatch</A
 	></TT> if the value was not exported with a signature matching&nbsp;<TT
-	><I>S</I></TT>.</P>
+	><I>S</I></TT>. Equivalent to</P>
+        <PRE>
+	unpack (take <I>ticket</I>) : <I>S</I></PRE>
     </DD>
 
     <DT>
-      <TT><A name="Execute">Execute</A>(val host = <I>host</I>
+      <TT><A name="Execute">Execute</A> (val host = <I>host</I>
 	signature RESULT = <I>S</I>
 	functor Start = <I>F</I>)</TT>
     </DT>
