@@ -34,6 +34,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	try {
 	    FileInputStream fin = new FileInputStream(filename);
 	    PickleInputStream in = new PickleInputStream(fin);
+	    in.readObject(); // read the literals class
 	    DMLValue r = (DMLValue) in.readObject();
 	    System.out.println(r);
 	    v=((Record) r).get("main").apply(arglist);

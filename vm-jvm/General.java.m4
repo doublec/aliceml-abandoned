@@ -172,13 +172,20 @@ final public class General {
 		_error("argument 1 not STRING ",val);
 	    }
 	    java.lang.String whereto=((STRING) fst).value;
+	    return apply(whereto,null,args[1]);
+	}
+
+	final public static DMLValue apply(java.lang.String name,
+					   DMLValue val1,
+					   DMLValue val2) throws java.rmi.RemoteException {
 	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;
 	    PickleOutputStream out=null;
 	    try{
-		outf=new java.io.FileOutputStream(whereto);
+		outf=new java.io.FileOutputStream(name);
 		out=new PickleOutputStream(outf);
-		out.writeObject(args[1]);
+		out.writeObject(val1);
+		out.writeObject(val2);
 		outf.flush();
 		out.flush();
 	    } catch (Exception e) {
@@ -217,6 +224,7 @@ final public class General {
 	    try{
 		inf=new java.io.FileInputStream(wherefrom);
 		in=new PickleInputStream(inf);
+		in.readObject();
 		result=(DMLValue) in.readObject();
 	    } catch (Exception e) {
 		System.err.println(e);
