@@ -3,7 +3,6 @@ FILES = AbsSyn.sml \
 	Extract.sml \
 	Hose.sml \
 	Lexer.sml \
-	Main.sml \
 	Output.sml \
 	Parse.sml \
 	Table.sml \
