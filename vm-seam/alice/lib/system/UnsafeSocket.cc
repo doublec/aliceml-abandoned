@@ -26,7 +26,6 @@
 
 #include "Base.hh"
 
-#include <unistd.h>
 #include <sys/types.h>
 
 #include "alice/Authoring.hh"
@@ -37,6 +36,7 @@ typedef int socklen_t;
 #define EINPROGRESS WSAEINPROGRESS
 #define Interruptible(res, call) int res = call; res = res;
 #else
+#include <unistd.h>
 #define ioctlsocket ioctl
 #define closesocket close
 #define WSAGetLastError() errno

@@ -107,10 +107,11 @@ word PrimitiveTable::Lookup(word table, Chunk *name) {
   word key = name->ToWord();
   ChunkMap *t = ChunkMap::FromWordDirect(table);
   if (!t->IsMember(key)) {
-    char message[80 + name->GetSize()];
-    sprintf(message, "PrimitiveTable::Lookup: unknown primitive `%.*s'",
+    String *message = String::New(80 + name->GetSize());
+    sprintf(reinterpret_cast<char *>(message->GetValue()),
+	    "PrimitiveTable::Lookup: unknown primitive `%.*s'",
 	    static_cast<int>(name->GetSize()), name->GetBase());
-    Error(message);
+    Error(message->ExportC());
   }
   return t->Get(key);
 }

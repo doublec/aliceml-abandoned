@@ -271,7 +271,8 @@ DEFINE2(UnsafeValue_closure) {
 
 DEFINE1(UnsafeValue_prim) {
   DECLARE_STRING(name, x0);
-  RETURN(PrimitiveTable::LookupValue(static_cast<Chunk *>(name)));
+  Chunk *nameChunk = Store::DirectWordToChunk(name->ToWord());
+  RETURN(PrimitiveTable::LookupValue(nameChunk));
 } END
 
 DEFINE1(UnsafeValue_conName) {
