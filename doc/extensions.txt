@@ -30,7 +30,8 @@ Core language:
 * make real an eqtype
 * polymorphic records
 + open datatypes, turning exceptions into derived forms
-* existiential types in datatypes
+* existential types in datatypes
+* higher kind type variables (type ('a : _*_ -> _) t = (int,bool) 'a)
 * specs as decs (semantics?)
 
 Module language:
