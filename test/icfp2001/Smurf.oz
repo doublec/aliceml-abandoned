@@ -1,4 +1,4 @@
-%\define DEBUG
+\define DEBUG
 
 functor
 import
@@ -15,6 +15,14 @@ import
 export
    'Smurf$': SmurfModule
 define
+   fun {SeqUnion Ss S}
+      {Select.seqUnion
+       {List.mapInd Ss
+	fun {$ I Si}
+	   {Select.fs [FS.value.empty Si] {FD.plus {FS.reified.isIn I S} 1}}
+	end}}
+   end
+
    AttributeNames = [b ems i tt u size color]
 
    RootAttributes = attributes(b: 1 ems: 1 i: 1 tt: 1 u: 1
@@ -165,6 +173,8 @@ define
 
       FirstNonRootI = FirstElementI
       LastNonRootI = LastDataItemI
+      FirstNonDataItemI = RootI
+      LastNonDataItemI = LastElementI
       FirstVertexI = RootI
       LastVertexI = LastNonRootI
 
@@ -175,7 +185,6 @@ define
 		     down: {FS.value.make FirstNonRootI#LastNonRootI}
 		     eqdown: {FS.value.make FirstVertexI#LastVertexI}
 		     scope: {FS.value.make FirstDataItemI#LastDataItemI}
-		     depth: 0
 		     attributes: RootAttributes)
 
       %% Initialize element vertices
@@ -183,10 +192,14 @@ define
 	 V.I = element(mother: {FD.int [RootI FirstElementI#LastElementI]}
 		       daughters:
 			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       daughtersE:
+			  {FS.var.upperBound FirstElementI#LastElementI}
 		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       downE: {FS.var.upperBound FirstElementI#LastElementI}
 		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       eqdownE: {FS.var.upperBound FirstElementI#LastElementI}
+		       isDownEmpty: {FD.int 0#1}
 		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
-		       depth: {FD.int 1#NumberOfElements}
 		       attributes: {MkElementAttributes}
 		       tag: {FD.int 1#MaxTag})
       end
@@ -200,7 +213,6 @@ define
 			 down: FS.value.empty
 			 eqdown: {FS.value.singl I}
 			 scope: {FS.value.singl I}
-			 depth: {FD.int 1#(NumberOfElements + 1)}
 			 attributes: {MkDataItemAttributes Property IsSpace}
 			 text: Text)
        end}
@@ -220,7 +232,7 @@ define
 	 W.eqdown = {FS.partition [{FS.value.singl I} W.down]}
       end
 
-      for I1 in FirstVertexI..LastVertexI do W1 in   %--** omit data items
+      for I1 in FirstNonDataItemI..LastNonDataItemI do W1 in
 	 W1 = V.I1
 	 for I2 in FirstNonRootI..LastNonRootI do
 	    if I2 \= I1 then W2 in
@@ -271,6 +283,7 @@ define
 	 W = V.I
 	 {FS.int.convex W.scope}
 	 W.scope = {Select.union Scopes W.daughters}
+%--**	 W.scope = {SeqUnion Scopes W.daughters}
       end
 
       %% Unused elements are immediate daughters of the root
@@ -281,20 +294,34 @@ define
 	 IsEpsilon =<: (W.mother =: RootI)
       end
 
-      %% Break symmetries #1: Depth Method
-      Depths = for I in FirstVertexI..LastVertexI collect: Collect do
-		  {Collect V.I.depth}
-	       end
+      %% Break symmetries: Sequenced Union Method
+      for I in FirstNonRootI..LastNonRootI do
+	 V.I.mother <: I
+      end
 
-      for I in FirstElementI..LastElementI do W MotherDepth in
+      E = {FS.value.make FirstElementI#LastElementI}
+      EqdownEs = for I in FirstVertexI..LastVertexI collect: Collect do
+		    {Collect case {CondSelect V.I eqdownE unit} of unit then
+				FS.value.empty
+			     elseof S then S
+			     end}
+		 end
+
+      for I in FirstElementI..LastElementI do W in
 	 W = V.I
-	 MotherDepth = {Select.fd Depths W.mother}
-	 W.depth = {FD.plus MotherDepth 1}
+	 W.daughtersE = {FS.intersect E W.daughters}
+	 W.downE = {FS.intersect E W.down}
+	 W.eqdownE = {FS.intersect E W.eqdown}
+	 W.downE = {SeqUnion EqdownEs W.daughtersE}
+	 {FS.int.convex W.eqdownE}
+	 W.isDownEmpty = {FS.reified.equal W.down FS.value.empty}
+	 W.down = {FS.union W.downE W.scope}
       end
 
-      for I in FirstElementI..LastElementI - 1 do
-	 V.I.depth =<: V.(I + 1).depth
-      end
+%--**
+%      for I in FirstElementI..LastElementI - 1 do
+%	 V.I.isDownEmpty =<: V.(I + 1).isDownEmpty
+%      end
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
