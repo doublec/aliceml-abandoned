@@ -44,7 +44,7 @@ struct
     fun join NONE		= NONE
       | join(SOME x)		= x
 
-    fun app f  NONE		= ()					(**)
+    fun app f  NONE		= ()
       | app f (SOME x)		= f x
 
     fun map f  NONE		= NONE

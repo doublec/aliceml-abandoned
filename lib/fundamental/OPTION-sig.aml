@@ -34,7 +34,7 @@ sig
     val valOf :		'a option -> 'a
     val filter :	('a -> bool) -> 'a -> 'a option
     val join :		'a option option -> 'a option
-    val app :		('a -> unit) -> 'a option -> unit		(**)
+    val app :		('a -> unit) -> 'a option -> unit
     val map :		('a -> 'b) -> 'a option -> 'b option
     val mapPartial :	('a -> 'b option) -> 'a option -> 'b option
     val fold :		('a * 'b -> 'b) -> 'b -> 'a option -> 'b	(**)
