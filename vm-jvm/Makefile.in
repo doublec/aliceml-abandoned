@@ -24,9 +24,9 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)Char.class \
 	$(CLASSROOT)$(RUNTIME)ClientManager.class \
 	$(CLASSROOT)$(RUNTIME)ConVal.class \
-	$(CLASSROOT)$(RUNTIME)ConValTuple2.class \
-	$(CLASSROOT)$(RUNTIME)ConValTuple3.class \
-	$(CLASSROOT)$(RUNTIME)ConValTuple4.class \
+	$(CLASSROOT)$(RUNTIME)ConVal2.class \
+	$(CLASSROOT)$(RUNTIME)ConVal3.class \
+	$(CLASSROOT)$(RUNTIME)ConVal4.class \
 	$(CLASSROOT)$(RUNTIME)Connection.class \
 	$(CLASSROOT)$(RUNTIME)Cons.class \
 	$(CLASSROOT)$(RUNTIME)Constants.class \

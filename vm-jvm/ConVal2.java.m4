@@ -12,18 +12,18 @@
  */
 package de.uni_sb.ps.dml.runtime;
 
-final public class ConValTuple2 implements DMLConVal {
+final public class ConVal2 implements DMLConVal {
 
     private DMLValue fst = null;
     private DMLValue snd = null;
 
     final public Constructor constructor;
 
-    public ConValTuple2(Constructor con) {
+    public ConVal2(Constructor con) {
 	constructor = con;
     }
 
-    public ConValTuple2(Constructor con,
+    public ConVal2(Constructor con,
 			DMLValue eins,
 			DMLValue zwei) {
 	constructor=con;
@@ -59,23 +59,29 @@ final public class ConValTuple2 implements DMLConVal {
     /** Gleichheit der  und Inhalte */
     final public boolean equals(java.lang.Object val) {
 	try {
-	    if (val instanceof ConValTuple2) {
-	    ConValTuple2 v = (ConValTuple2) val;
-	    return
-		fst.equals(v.fst) &&
-		snd.equals(v.snd);
-	} else if (val instanceof DMLConVal) {
-	    DMLTuple t = (DMLTuple) ((DMLConVal) val).getContent();
-	    if (t.getArity()!=2) {
-		return false;
-	    } else {
+	    if (val instanceof ConVal2) {
+		ConVal2 v = (ConVal2) val;
 		return
-		    t.get0().equals(fst) &&
-		    t.get1().equals(snd);
+		    v.constructor == constructor &&
+		    fst.equals(v.fst) &&
+		    snd.equals(v.snd);
+	    } else if (val instanceof DMLConVal) {
+		DMLConVal cv = (DMLConVal) val;
+		if (cv.getConstructor() == constructor) {
+		    DMLTuple t = (DMLTuple) cv.getContent();
+		    if (t.getArity()!=2) {
+			return false;
+		    } else {
+			return
+			    t.get0().equals(fst) &&
+			    t.get1().equals(snd);
+		    }
+		} else {
+		    return false;
+		}
+	    } else {
+		return false;
 	    }
-	} else {
-	    return false;
-	}
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();

@@ -70,26 +70,32 @@ final public class ConVal4 implements DMLConVal {
     final public boolean equals(java.lang.Object val) {
 	try {
 	    if (val instanceof ConVal4) {
-	    ConVal4 v = (ConVal4) val;
-	    return
-		fst.equals(v.fst) &&
-		snd.equals(v.snd) &&
-		thr.equals(v.thr) &&
-		fur.equals(v.fur);
-	} else if (val instanceof DMLConVal) {
-	    DMLTuple t = (DMLTuple) ((DMLConVal) val).getContent();
-	    if (t.getArity()!=4) {
-		return false;
-	    } else {
+		ConVal4 v = (ConVal4) val;
 		return
-		    t.get0().equals(fst) &&
-		    t.get1().equals(snd) &&
-		    t.get2().equals(thr) &&
-		    t.get3().equals(fur);
+		    v.constructor == constructor &&
+		    fst.equals(v.fst) &&
+		    snd.equals(v.snd) &&
+		    thr.equals(v.thr) &&
+		    fur.equals(v.fur);
+	    } else if (val instanceof DMLConVal) {
+		DMLConVal cv = (DMLConVal) val;
+		if (cv.getConstructor() == constructor) {
+		    DMLTuple t = (DMLTuple) cv.getContent();
+		    if (t.getArity()!=4) {
+			return false;
+		    } else {
+			return
+			    t.get0().equals(fst) &&
+			    t.get1().equals(snd) &&
+			    t.get2().equals(thr) &&
+			    t.get3().equals(fur);
+		    }
+		} else {
+		    return false;
+		}
+	    } else {
+		return false;
 	    }
-	} else {
-	    return false;
-	}
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();
