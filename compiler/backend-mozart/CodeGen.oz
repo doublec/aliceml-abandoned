@@ -256,19 +256,24 @@ define
 			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
       [] selExp(_ Lab) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
-      [] funExp(Coord PrintName ArgsBodyList) then
-	 case ArgsBodyList of [oneArg(Id)#Body] then   %--** support others
-	    PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
-	 in
-	    PredId = pid(PrintName 2 {TranslateCoord Coord} nil NLiveRegs)
-	    {State.cs startDefinition()}
-	    {State.cs newReg(?ResReg)}
-	    FormalRegs = [{MakeReg Id State} ResReg]
-	    {TranslateBody Body ?VInstr nil State ResReg}
-	    {State.cs
-	     endDefinition(VInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
-	    VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-	 end
+      [] funExp(Coord PrintName oneArg(Id)#Body|ArgsBodyList) then
+	 Body2 PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
+      in
+	 Body2 = {FoldL ArgsBodyList
+		  fun {$ In Args#Body} Test in
+		     Test = case Args of tupArgs(Ids) then tupTest(Ids)
+			    [] recArgs(LabIdList) then recTest(LabIdList)
+			    end
+		     [testStm(Coord Id Test Body In)]
+		  end Body}
+	 PredId = pid(PrintName 2 {TranslateCoord Coord} nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ResReg)}
+	 FormalRegs = [{MakeReg Id State} ResReg]
+	 {TranslateBody Body2 ?VInstr nil State ResReg}
+	 {State.cs
+	  endDefinition(VInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] appExp(Coord Id Args) then ArgReg VInter in
 	 {State.cs newReg(?ArgReg)}
 	 {TranslateArgs Args ArgReg VHd VInter State}
