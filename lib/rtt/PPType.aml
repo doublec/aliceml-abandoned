@@ -87,7 +87,7 @@ struct
 	    val n = !counter+1
 	in
 	    (* Clean up map *)
-	    List.app (fn t => Map.deleteExistent(holes, t))
+	    List.app (fn t => Map.removeExistent(holes, t))
 		(Map.foldi (fn(t,_,ts) => if isUnknown(fromCanonical t)
 					  then ts else t::ts) [] holes);
 	    Map.insertDisjoint(holes, canonical t, n);
