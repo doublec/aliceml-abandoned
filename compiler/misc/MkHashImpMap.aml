@@ -1,108 +1,96 @@
 functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
   struct
 
-    type key = Key.t
-
-    datatype 'a entry = EMPTY | ENTRY of key * 'a | DELETED
-
-    type 'a map = (int ref * 'a entry array) ref
+    type key    = Key.t
+    type 'a map = (key * 'a) list array ref * int ref
     type 'a t   = 'a map
 
     exception Delete    of key
     exception Collision of key
 
 
-    fun valOfEntry (ENTRY(k,a))		= a
-      | valOfEntry    _			= raise Match
-
-    fun appiEntry f (ENTRY(k,a))	= f(k,a)
-      | appiEntry f    _		= ()
-
-    fun foldiEntry f b (ENTRY(k,a))	= f(k,a,b)
-      | foldiEntry f b    _		= b
-
-
     val initialSize		= 19
 
-    fun new()			= ref(ref 0, Array.array(initialSize,EMPTY))
+    fun new()			= (ref(Array.array(initialSize,[])), ref 0)
 
-    fun size(ref(n,_))		= !n
-    fun isEmpty(ref(n,_))	= !n = 0
+    fun size(_, ref n)		= n
+    fun isEmpty(_, ref n)	= n = 0
 
-    fun copy(ref(n,t)) =
-	let
-	    val t' = Array.array(Array.length t, EMPTY)
-	in
-	    Array.copy{src=t, dst=t', si=0, di=0, len=NONE} ;
-	    ref(ref(!n), t')
-	end
-
-
-    fun find(t,k) =
-	let
-	    val i0 = Key.hash k mod Array.length t
-
-	    fun loop(i,jo) =
-		case Array.sub(t,i)
-		  of EMPTY       => (false, Option.getOpt(jo,i))
-		   | DELETED     => next(i, SOME(Option.getOpt(jo,i)))
-		   | ENTRY(k',_) => if k = k' then (true,i)
-					      else next(i,jo)
-	    and next(i,jo) =
-		let val i' = (i+1) mod Array.length t in
-		    if i' = i0 then (false, Option.valOf jo)
-			       else loop(i',jo)
-		end
-	in
-	    loop(i0,NONE)
-	end
-
-    fun lookup(ref(_,t),k) =
-	case find(t,k)
-	  of (false,_) => NONE
-	   | (true, i) => SOME(valOfEntry(Array.sub(t,i)))
+    fun appi f (ref t, _)	= Array.app (List.app f) t
+    fun foldi f b (ref t, _)	= let fun f'((k,a),b) = f(k,a,b) in
+				      Array.foldl (fn(kas,a) =>
+							List.foldl f' b kas
+						  ) b t
+				  end
+    fun app f			= appi(fn(k,a) => f a)
+    fun fold f			= foldi(fn(k,a,b) => f(a,b))
 
 
-    fun deleteWith f (ref(n,t), k) =
-	case find(t,k)
-	  of (false,_) => f k
-	   | (true, i) => ( Array.update(t,i,DELETED) ; n := !n-1 )
+    fun copy(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
+				  in
+				      Array.copy{src=t, dst=t', si=0, di=0,
+						 len=NONE} ;
+				      (ref t', ref n)
+				  end
+
+
+    fun hash(t,k)		= Key.hash k mod Array.length t
+    fun isEntryFor k (k',_)	= k = k'
+
+    fun lookup((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
+				    Option.map #2 (List.find (isEntryFor k) kas)
+				  end
+
+    exception Delete'
+
+    fun delete'(  [],    k)	= raise Delete'
+      | delete'(ka::kas, k)	= if #1 ka = k then kas : (key * 'a) list
+					       else ka :: delete'(kas,k)
+
+    fun deleteWith f (m,k)	= let val (ref t,n) = m
+				      val i    = hash(t,k)
+				      val kas  = Array.sub(t,i)
+				      val kas' = delete'(kas,k) before n := !n-1
+						 handle Delete' =>
+							(f k ; kas)
+				  in
+				      Array.update(t, i, kas')
+				  end
 
     fun delete x		= deleteWith ignore x
-    fun deleteExistent x	= deleteWith (fn k => raise Delete k) x
+    fun deleteExistent x	= deleteWith(fn k => raise Delete k) x
 
 
-    fun reinsert t (ka as (k,a)) = Array.update(t, #2(find(t,k)), ENTRY ka)
+    fun reinsert t (ka as(k,_))	= let val i = hash(t,k) in
+				      Array.update(t, i, ka::Array.sub(t,i))
+				  end
 
-    fun resize(m as ref(n,t)) =
-	if 3 * !n < 2 * Array.length t then () else
-	let
-	    val t' = Array.array(2*Array.length t-1, EMPTY)
-	in
-	    Array.app (appiEntry(reinsert t')) t ;
-	    m := (n,t')
-	end
+    fun resize(r as ref t,ref n)= if 3 * n < 2 * Array.length t then () else
+				  let
+				      val t'= Array.array(2*Array.length t-1,[])
+				  in
+				      Array.app(List.app (reinsert t')) t ;
+				      r := t'
+				  end
 
-
-    fun insertWithi f (m,k,a) =
-	let
-	    val   _   = resize m
-	    val (n,t) = !m
-	    val (b,i) = find(t,k)
-	    val   a'  = if not b then a
-				 else f(k, valOfEntry(Array.sub(t,i)), a)
-	in
-	    Array.update(t, i, ENTRY(k,a')) ; n := !n+1
-	end
+    fun insertWithi f (m,k,a)	= let val _  = resize m
+				      val (ref t,n) = m
+				      val i    = hash(t,k)
+				      val kas  = Array.sub(t,i)
+				      val kas' =
+					case List.find (isEntryFor k) kas
+					  of NONE =>
+						(k,a)::kas before n := !n+1
+					   | SOME(k,a') =>
+						(k, f(k,a',a))::delete'(kas,k)
+				  in
+				      Array.update(t, i, kas')
+				  end
 
     fun insertWith f		= insertWithi(fn(k,a1,a2) => f(a1,a2))
     fun insert x		= insertWithi #3 x
     fun insertDisjoint x	= insertWithi(fn(k,_,_) => raise Collision k) x
 
-    fun appi f (ref(_,t))	= Array.app (appiEntry f) t
-    fun foldi f b (ref(_,t))	= Array.foldl (fn(e,b) => foldiEntry f b e) b t
-    fun app f			= appi (fn(k,a) => f a)
-    fun fold f			= foldi (fn(k,a,b) => f(a,b))
 
     fun union' insert (m1,m2)	= appi (fn(k,a) => insert(m1,k,a)) m2
     fun union x			= union' insert x

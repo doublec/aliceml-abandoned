@@ -14,6 +14,8 @@ Group is
     SCOPED_IMP_MAP.sig
     MakeHashImpSet.sml
     MakeHashImpMap.sml
+    MakeScopedImpSet.sml
+    MakeScopedImpMap.sml
     MakeHashScopedImpSet.sml
     MakeHashScopedImpMap.sml
     StringHashKey.sml
