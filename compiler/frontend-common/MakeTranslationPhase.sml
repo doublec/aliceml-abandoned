@@ -70,62 +70,65 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Extract bound ids from declarations. *)
 
-    fun idsId(x as I.Id(_,_,I.ExId _), xs)   = (trId x)::xs
-      | idsId(x, xs)			     = xs
+    fun idsId trId xs' x =
+	case trId x
+	  of x' as O.Id(_,_,O.ExId s') => StringMap.insert(xs', s', x')
+	   | _                         => ()
 
-    fun idsId'(x as I.Id(_,_,I.ExId _), xs)  = (trId' x)::xs
-      | idsId'(x, xs)			     = xs
+    fun idsRow    idsZ xs' (I.Row(i,fs,_))   = idsFields idsZ xs' fs
+    and idsField  idsZ xs' (I.Field(i,a,z))  = idsZ xs' z
+    and idsFields idsZ xs' 		     = List.app(idsField idsZ xs')
 
-    fun idsRow    idsZ (I.Row(i,fs,_), xs')  = idsFields idsZ (fs, xs')
-    and idsField  idsZ (I.Field(i,a,z), xs') = idsZ(z, xs')
-    and idsFields idsZ (fs, xs')	     = List.foldr (idsField idsZ) xs' fs
+    fun idsDec xs' (I.ValDec(i,p,e))	= idsPat xs' p
+      | idsDec xs' (I.ConDec(i,c,t))	= idsCon xs' c
+      | idsDec xs' (I.TypDec(i,x,t))	= ()
+      | idsDec xs' (I.DatDec(i,x,t))	= idsTyp xs' t
+      | idsDec xs' (I.ModDec(i,x,m))	= idsId trId' xs' x
+      | idsDec xs' (I.InfDec(i,x,j))	= ()
+      | idsDec xs' (I.RecDec(i,ds))	= idsDecs xs' ds
+      | idsDec xs' (I.TypvarDec(i,x,ds))= idsDecs xs' ds
+      | idsDec xs' (I.LocalDec(i,ds))	= ()
+    and idsDecs xs'			= List.app(idsDec xs')
 
-    fun idsDec(I.ValDec(i,p,e), xs')	= idsPat(p, xs')
-      | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
-      | idsDec(I.TypDec(i,x,t), xs')	= xs'
-      | idsDec(I.DatDec(i,x,t), xs')	= idsTyp(t, xs')
-      | idsDec(I.ModDec(i,x,m), xs')	= idsId'(x, xs')
-      | idsDec(I.InfDec(i,x,j), xs')	= xs'
-      | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
-      | idsDec(I.TypvarDec(i,x,ds),xs')	= idsDecs(ds, xs')
-      | idsDec(I.LocalDec(i,ds), xs')	= xs'
-    and idsDecs(ds, xs')		= List.foldr idsDec xs' ds
+    and idsPat xs' (I.JokPat(i))	= ()
+      | idsPat xs' (I.LitPat(i,l))	= ()
+      | idsPat xs' (I.VarPat(i,x))	= idsId trId xs' x
+      | idsPat xs' (I.ConPat(i,y,ps))	= idsPats xs' ps
+      | idsPat xs' (I.RefPat(i,p))	= idsPat xs' p
+      | idsPat xs' (I.TupPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (I.RowPat(i,r))	= idsRow idsPat xs' r
+      | idsPat xs' (I.VecPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (I.AsPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
+      | idsPat xs' (I.AltPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (I.NegPat(i,p))	= idsPat xs' p
+      | idsPat xs' (I.GuardPat(i,p,e))	= idsPat xs' p
+      | idsPat xs' (I.AnnPat(i,p,t))	= idsPat xs' p
+      | idsPat xs' (I.WithPat(i,p,ds))	= ( idsPat xs' p ; idsDecs xs' ds )
+    and idsPats xs'			= List.app(idsPat xs')
 
-    and idsPat(I.JokPat(i), xs')	= xs'
-      | idsPat(I.LitPat(i,l), xs')	= xs'
-      | idsPat(I.VarPat(i,x), xs')	= idsId(x, xs')
-      | idsPat(I.ConPat(i,y,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.RefPat(i,p), xs')	= idsPat(p, xs')
-      | idsPat(I.TupPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.RowPat(i,r), xs')	= idsRow idsPat (r, xs')
-      | idsPat(I.VecPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.AsPat(i,p1,p2), xs')	= idsPat(p1, idsPat(p2, xs'))
-      | idsPat(I.AltPat(i,ps), xs')	= idsPats(ps, xs')
-      | idsPat(I.NegPat(i,p), xs')	= idsPat(p, xs')
-      | idsPat(I.GuardPat(i,p,e), xs')	= idsPat(p, xs')
-      | idsPat(I.AnnPat(i,p,t), xs')	= idsPat(p, xs')
-      | idsPat(I.WithPat(i,p,ds), xs')	= idsPat(p, idsDecs(ds, xs'))
-    and idsPats(ps, xs')		= List.foldr idsPat xs' ps
+    and idsCon xs' (I.Con(i,x,ts))	= idsId trId xs' x
+    and idsCons xs'			= List.app(idsCon xs')
 
-    and idsCon(I.Con(i,x,ts), xs')	= idsId(x, xs')
-    and idsCons(cs, xs')		= List.foldr idsCon xs' cs
+    and idsTyp xs' (I.AbsTyp(i))	= ()
+      | idsTyp xs' (I.VarTyp(i,x))	= ()
+      | idsTyp xs' (I.ConTyp(i,y))	= ()
+      | idsTyp xs' (I.FunTyp(i,x,t))	= idsTyp xs' t
+      | idsTyp xs' (I.AppTyp(i,t1,t2))	= ( idsTyp xs' t1 ; idsTyp xs' t2 )
+      | idsTyp xs' (I.RefTyp(i,t))	= idsTyp xs' t
+      | idsTyp xs' (I.TupTyp(i,ts))	= idsTyps xs' ts
+      | idsTyp xs' (I.RowTyp(i,r))	= idsRow idsTyp xs' r
+      | idsTyp xs' (I.ArrTyp(i,t1,t2))	= ( idsTyp xs' t1 ; idsTyp xs' t2 )
+      | idsTyp xs' (I.SumTyp(i,cs))	= idsCons xs' cs
+      | idsTyp xs' (I.ExtTyp(i))	= ()
+      | idsTyp xs' (I.AllTyp(i,x,t))	= idsTyp xs' t
+      | idsTyp xs' (I.ExTyp(i,x,t))	= idsTyp xs' t
+      | idsTyp xs' (I.SingTyp(i,y))	= ()
+    and idsTyps xs'			= List.app(idsTyp xs')
 
-    and idsTyp(I.AbsTyp(i), xs')	= xs'
-      | idsTyp(I.VarTyp(i,x), xs')	= xs'
-      | idsTyp(I.ConTyp(i,y), xs')	= xs'
-      | idsTyp(I.FunTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.AppTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
-      | idsTyp(I.RefTyp(i,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.TupTyp(i,ts), xs')	= idsTyps(ts, xs')
-      | idsTyp(I.RowTyp(i,r), xs')	= idsRow idsTyp (r, xs')
-      | idsTyp(I.ArrTyp(i,t1,t2), xs')	= idsTyp(t1, idsTyp(t2, xs'))
-      | idsTyp(I.SumTyp(i,cs), xs')	= idsCons(cs, xs')
-      | idsTyp(I.ExtTyp(i), xs')	= xs'
-      | idsTyp(I.AllTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.ExTyp(i,x,t), xs')	= idsTyp(t, xs')
-      | idsTyp(I.SingTyp(i,y), xs')	= xs'
-    and idsTyps(ts, xs')		= List.foldr idsTyp xs' ts
-
+    fun ids ds				= let val xs' = StringMap.new() in
+					      idsDecs xs' ds ;
+					      StringMap.fold op:: [] xs'
+					  end
 
 
     (* Expressions *)
@@ -202,7 +205,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trMod(I.VarMod(i,x))		= let val x' as O.Id(i',_,_)= trId' x in
 					      O.VarExp(i, O.ShortId(i', x'))
 					  end
-      | trMod(I.StrMod(i,ds))		= let val ids' = idsDecs(ds, [])
+      | trMod(I.StrMod(i,ds))		= let val ids' = ids ds
 					      val fs'  = List.map idToField ids'
 					      val ds'  = trDecs ds in
 					      O.LetExp(i, ds', O.RowExp(i, fs'))
@@ -273,7 +276,7 @@ UNFINISHED: obsolete after bootstrapping:
 	let
 	    val (xus',ds') = trImps'(is, trDecs ds)
 	in
-	    ( xus', idsDecs(ds,[]), ds' )
+	    ( xus', ids ds, ds' )
 	end
 
     and trImps'(is, ds')		= List.foldr trImp ([],ds') is

@@ -14,9 +14,12 @@ is
 	Path.sml
 
 	PathSet.sml
+	StringMap.sml
 	TYPE.sig
 	Type.sml
-	ENV.sig
+(*	INF.sig
+	Inf.sml
+*)	ENV.sig
 	Env.sml
 
 	ENV0.sig
