@@ -647,6 +647,7 @@ build3/lib/fundamental/LinkedFundamental.stc: \
 	build3/lib/fundamental/Fundamental.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
 	--exclude build3/lib/utility/Unsafe \
+	--exclude build3/lib/system/Unsafe \
 	--include build3 \
 	build3/lib/fundamental/Fundamental -o $@
 
