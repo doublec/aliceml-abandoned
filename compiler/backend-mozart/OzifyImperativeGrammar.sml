@@ -38,10 +38,6 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	fun outputInt (q, n) = output (q, Int.toString n)
 	fun outputLargeInt (q, n) = output (q, LargeInt.toString n)
 	fun outputLargeWord (q, w) = outputLargeInt (q, LargeWord.toLargeInt w)
-	fun outputString (q, s) =
-	    (output1 (q, #"\"");
-	     output (q, String.toCString s);
-	     output1 (q, #"\""))
 	fun outputAtom (q, s) =
 	    (output1 (q, #"'");
 	     output (q, String.toCString s);
@@ -63,6 +59,10 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     appTail (fn (x, xr) =>
 		      (outputX (q, x); case xr of nil => () | _ =>  m q)) xs;
 	     output1 (q, #"]"))
+
+	fun outputString (q, s) =
+	    outputList (fn (q, c) => output (q, Int.toString (Char.ord c)))
+	    (q, String.explode s)
 
 	fun outputPair (outputA, outputB) (q, (a, b)) =
 	    (output1 (q, #"("); outputA (q, a);
