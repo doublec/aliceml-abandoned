@@ -319,7 +319,7 @@ DEFINE2(IntInf_pow) {
 DEFINE2(IntInf_ ## op) {                        \
   DECLARE_INTINF_PROMOTE(a, flagA, x0);         \
   DECLARE_INTINF_PROMOTE(b, flagB, x1);         \
-  if (b == 0) {                                 \
+  if (*b == 0) {                                \
     DISCARD_PROMOTED(a, flagA);                 \
     DISCARD_PROMOTED(b, flagB);                 \
     RAISE(PrimitiveTable::General_Div);         \
@@ -396,7 +396,7 @@ DEFINE2(IntInf_divMod) {
   DECLARE_INTINF_PROMOTE(a, flagA, x0);
   DECLARE_INTINF_PROMOTE(b, flagB, x1);
 
-  if (b==0) {
+  if (*b==0) {
     DISCARD_PROMOTED(a, flagA);
     DISCARD_PROMOTED(b, flagB);
     RAISE(PrimitiveTable::General_Div);
@@ -415,7 +415,7 @@ DEFINE2(IntInf_quotRem) {
   DECLARE_INTINF_PROMOTE(a, flagA, x0);
   DECLARE_INTINF_PROMOTE(b, flagB, x1);
 
-  if (b==0) {
+  if (*b==0) {
     DISCARD_PROMOTED(a, flagA);
     DISCARD_PROMOTED(b, flagB);
     RAISE(PrimitiveTable::General_Div);
