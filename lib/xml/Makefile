@@ -52,11 +52,11 @@ all: $(NATIVES:%=%.dll) $(TARGETS)
 AliceXML.dll: $(SOURCES:%.cc=%.o)
 
 %.o: %.cc
-	alicetool -v c++ -DPROFILE=0 $(ALLFLAGS) $(EXTRA_INCLUDES) \
+	alicetool -v compile $(ALLFLAGS) $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
 %.dll: %.o
-	alicetool -v ld $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	alicetool -v link $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.stc: %.aml
 	alicec -c $< -o $@
