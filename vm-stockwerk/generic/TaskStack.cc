@@ -13,20 +13,20 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/TaskStack.hh"
+#pragma implementation "generic/TaskStack.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/RootSet.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Interpreter.hh"
-#include "emulator/PushCallInterpreter.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Backtrace.hh"
-#include "emulator/ConcreteCode.hh"
-#include "emulator/Closure.hh"
-#include "emulator/Properties.hh"
-#include "emulator/Debug.hh"
+#include "generic/RootSet.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Interpreter.hh"
+#include "generic/PushCallInterpreter.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Backtrace.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
+#include "generic/Properties.hh"
+#include "generic/Debug.hh"
 
 // Empty Interpreter
 class EmptyTaskInterpreter : public Interpreter {
