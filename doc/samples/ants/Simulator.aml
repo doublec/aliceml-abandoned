@@ -20,6 +20,7 @@ structure Simulator :
   open Instructions
   open World
 
+  val defSeed =  Word.fromInt 12345
   local
       val rands = ref defSeed
       fun nextRand() = 
