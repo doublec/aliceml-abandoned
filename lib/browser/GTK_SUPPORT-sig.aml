@@ -91,10 +91,7 @@ signature GTK_SUPPORT =
 	val getPosition   : tag  -> int * int
 	val itemMoveTo    : tag * real * real -> unit
 	val createSepLine : tag * int * real -> tag
-(* -> Widget *)
-(*	val resizeSepLines: MainDictionary.dictionary * real -> unit *)
 	val yPosSepLine   : tag * tag -> unit 
-(*	val yPosSepRel    : tag * int -> unit   *)
 	val createArrowRight: tag * tag  -> tag
 	val createArrowDown: tag * tag -> tag
 	val createRectangle: Gtk.object * real * real * real * real 

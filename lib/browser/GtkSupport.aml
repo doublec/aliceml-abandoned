@@ -432,46 +432,6 @@ fun changeFontSize i = let
 		 ("width_pixels", Gdk.INT 1)])  
 		       end
 	       else uglyNULL 
-
-(* DRINGEND ERFORDERLICH! -> Widget *)
- 
- fun  resizeSepLinesIterate(dict,x,i,highest_i) =
-     if i > highest_i 
-	 then ()
-     else ()
-(*
-	 (case MainDictionary.lookup(dict,i) of
-	      NONE =>
-		  resizeSepLinesIterate(dict,x,i+1,highest_i)
-	    | SOME (_,line) => 
-		  if line = uglyNULL 
-		      then  resizeSepLinesIterate(dict,x,i+1,highest_i)
-		  else
-		      let
-			  val (rx1,ry1,rx2,ry2) = 
-			      GtkCanvas.itemGetBounds(line, 0.0,
-						      0.0,
-						      0.0,
-						      0.0)
-			  val y1 = Real.trunc(Real.+(ry1,1.0))
-		      in
-			  (GtkCanvas.itemSet(line,
-					     "points", 
-					     Gdk.POINTS ([0, y1, x, y1]))
-			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
-		      end)
-*)
-fun resizeSepLines (dict,rx) = ()
-
- (*fun resizeSepLines (dict,rx) = 
-     let 
-	 val x = Real.trunc rx
-	 val highest_i = MainDictionary.getHighestIndexAssigned(dict)
-     in
-	 resizeSepLinesIterate(dict,x,0,highest_i)
-     end *)
-
-
 		
  fun yPosSepLine (item,group) = 
      let
@@ -494,24 +454,6 @@ fun resizeSepLines (dict,rx) = ()
 					y]))   
      end 
 	
-(*
- fun yPosSepRel (item,dy) = 
-     let
-	 val (_,_,lx2,_) = 
-	     GtkCanvas.itemGetBounds(item, 0.0,
-				     0.0,
-				     0.0,
-				     0.0)
-	 val y = fontHeight() * dy
-     in
-	 GtkCanvas.itemSet(item,
-			   "points", 
-			   Gdk.POINTS ([0, y, 
-					Real.trunc(lx2), 
-					y]))   
-     end 
-  *) 
-
  fun translate (nil,h,v,h_off,v_off) = nil
    | translate (x1::x2::xr,h,v,h_off,v_off) = 
      ((x1 * h) div 8 + h_off)::
@@ -519,12 +461,6 @@ fun resizeSepLines (dict,rx) = ()
    | translate _ = raise Match
      
  fun createArrow(group,points,color) = 
-  (*   let
-		     val color = case ColorMap.lookup(MkColorTable.colorTable,
-						    Node.LIMIT_COLOR) of 
-		       SOME x => x
-		     | NONE   => raise MissingColor 
-     in *)
 	 GtkCanvas.itemNew(group,
 			   GtkCanvas.POLYGON,
 			   [("points", 
@@ -534,7 +470,6 @@ fun resizeSepLines (dict,rx) = ()
 			    ("outline_color_gdk",
 			     Gdk.OBJECT(allocColor(0,0,0))),
 			    ("width_pixels", Gdk.INT 1)])
-   (*  end *)
 
  	       
  fun createArrowRight(group,color) = 
