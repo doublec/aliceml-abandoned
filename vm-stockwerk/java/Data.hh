@@ -205,6 +205,10 @@ public:
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
   }
 
+  bool IsJavaLangObject() {
+    //--** implement a better test
+    return !IsInterface() && GetSuperClass() == INVALID_POINTER;
+  }
   bool Extends(Class *aClass) {
     Assert(!aClass->IsInterface());
     Class *theClass = this;
@@ -215,6 +219,12 @@ public:
     goto loop;
   }
   bool Implements(Class *aClass);
+  bool IsSubtypeOf(Class *aClass) {
+    if (aClass->IsInterface())
+      return Implements(aClass);
+    else
+      return Extends(aClass);
+  }
 };
 
 class DllExport PrimitiveType: protected Type {
@@ -466,10 +476,7 @@ public:
     return theClass;
   }
   bool IsInstanceOf(Class *aClass) {
-    if (aClass->IsInterface())
-      return GetClass()->Implements(aClass);
-    else
-      return GetClass()->Extends(aClass);
+    return GetClass()->IsSubtypeOf(aClass);
   }
   Lock *GetLock() {
     word wLock = GetArg(LOCK_POS);

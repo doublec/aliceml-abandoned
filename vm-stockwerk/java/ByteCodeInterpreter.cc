@@ -29,6 +29,95 @@
 #include "java/ByteCodeInterpreter.hh"
 #include "java/ClassInfo.hh"
 
+static bool IsSubtypeOf(Type *type1, Type *type2) {
+  switch (type1->GetLabel()) {
+  case JavaLabel::Class:
+    return type2->GetLabel() == JavaLabel::Class &&
+      static_cast<Class *>(type1)->IsSubtypeOf(static_cast<Class *>(type2));
+  case JavaLabel::PrimitiveType:
+    switch (type2->GetLabel()) {
+    case JavaLabel::Class:
+      //--** can be one of the interfaces implemented by arrays (2.15)
+      return static_cast<Class *>(type2)->IsJavaLangObject();
+    case JavaLabel::PrimitiveType:
+      return (static_cast<PrimitiveType *>(type1)->GetType() ==
+	      static_cast<PrimitiveType *>(type2)->GetType());
+    case JavaLabel::ArrayType:
+      return false;
+    default:
+      Error("invalid type");
+    }
+  case JavaLabel::ArrayType:
+    switch (type2->GetLabel()) {
+    case JavaLabel::Class:
+      //--** can be one of the interfaces implemented by arrays (2.15)
+      return static_cast<Class *>(type2)->IsJavaLangObject();
+    case JavaLabel::PrimitiveType:
+      return false;
+    case JavaLabel::ArrayType:
+      {
+	//--** problem: element types can be futures
+	Type *elementType1 = static_cast<ArrayType *>(type1)->GetElementType();
+	Type *elementType2 = static_cast<ArrayType *>(type2)->GetElementType();
+	return IsSubtypeOf(elementType1, elementType2);
+      }
+    default:
+      Error("invalid type");
+    }
+  default:
+    Error("invalid value");
+  }
+}
+
+static bool IsInstanceOf(word value, Type *type) {
+  Block *b = Store::WordToBlock(value);
+  if (b == INVALID_POINTER) {
+    Assert(Store::WordToInt(value) == 0); // null
+    return true;
+  }
+  switch (b->GetLabel()) {
+  case JavaLabel::Object:
+    return type->GetLabel() == JavaLabel::Class &&
+      static_cast<Object *>(b)->IsInstanceOf(static_cast<Class *>(type));
+  case JavaLabel::BaseArray:
+    switch (type->GetLabel()) {
+    case JavaLabel::Class:
+      //--** can be one of the interfaces implemented by arrays (2.15)
+      return static_cast<Class *>(type)->IsJavaLangObject();
+    case JavaLabel::PrimitiveType:
+      return false;
+    case JavaLabel::ArrayType:
+      {
+	Type *elementType = static_cast<ArrayType *>(type)->GetElementType();
+	return elementType->GetLabel() == JavaLabel::PrimitiveType &&
+	  static_cast<PrimitiveType *>(elementType)->GetType() ==
+	  static_cast<BaseArray *>(b)->GetElementType();
+      }
+    default:
+      Error("invalid type");
+    }
+  case JavaLabel::ObjectArray:
+    switch (type->GetLabel()) {
+    case JavaLabel::Class:
+      //--** can be one of the interfaces implemented by arrays (2.15)
+      return static_cast<Class *>(type)->IsJavaLangObject();
+    case JavaLabel::PrimitiveType:
+      return false;
+    case JavaLabel::ArrayType:
+      {
+	//--** problem: element types can be futures
+	Type *elementType1 = static_cast<ObjectArray *>(b)->GetElementType();
+	Type *elementType2 = static_cast<ArrayType *>(type)->GetElementType();
+	return IsSubtypeOf(elementType1, elementType2);
+      }
+    default:
+      Error("invalid type");
+    }
+  default:
+    Error("invalid value");
+  }
+}
+
 //
 // Interpreter StackFrames
 //
@@ -489,26 +578,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
-	    Type *type     = array->GetElementType();
-	    switch (type->GetLabel()) {
-	    case JavaLabel::Class:
-	      {
-		Object *object = Object::FromWord(value);
-		if (object != INVALID_POINTER &&
-		    !object->IsInstanceOf(static_cast<Class *>(type))) {
-		  RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
-		}
-	      }
-	      break;
-	    case JavaLabel::PrimitiveType:
-	      Error("invalid type");
-	    case JavaLabel::ArrayType:
-	      //--** to be done
-	      break;
-	    default:
-	      Error("unknown type");
+	    if (IsInstanceOf(value, array->GetElementType())) {
+	      array->Store(index, value);
 	    }
-	    array->Store(index, value);
+	    else {
+	      RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
+	    }
 	  }
 	  else {
 	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "AASTORE");
@@ -861,32 +936,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (type == INVALID_POINTER)
 	  REQUEST(wType);
 	word wObject = frame->Pop();
-	switch (type->GetLabel()) {
-	case JavaLabel::Class:
-	  {
-	    Class *aClass = static_cast<Class *>(type);
-	    Block *p = Store::WordToBlock(wObject);
-	    if (p != INVALID_POINTER &&
-		(p->GetLabel() != JavaLabel::Object ||
-		 !Object::FromWordDirect(wObject)->IsInstanceOf(aClass))) {
-	      RAISE_VM_EXCEPTION(ClassCastException, "CHECKCAST");
-	    }
-	  }
-	  break;
-	case JavaLabel::PrimitiveType:
-	  {
-	    Error("invalid type");
-	  }
-	  break;
-	case JavaLabel::ArrayType:
-	  {
-	    Error("not implemented");
-	  }
-	  break;
-	default:
-	  Error("unknown type");
+	if (IsInstanceOf(wObject, type)) {
+	  frame->Push(wObject);
 	}
-	frame->Push(wObject);
+	else {
+	  RAISE_VM_EXCEPTION(ClassCastException, "CHECKCAST");
+	}
 	pc += 3;
       }
       break;
@@ -1616,31 +1671,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (type == INVALID_POINTER)
 	  REQUEST(wType);
 	word wObject = frame->Pop();
-	u_int result = 0;
-	switch (type->GetLabel()) {
-	case JavaLabel::Class:
-	  {
-	    Class *aClass = static_cast<Class *>(type);
-	    Block *p = Store::WordToBlock(wObject);
-	    result = (p == INVALID_POINTER ||
-		      p->GetLabel() == JavaLabel::Object &&
-		      Object::FromWordDirect(wObject)->IsInstanceOf(aClass));
-	  }
-	  break;
-	case JavaLabel::PrimitiveType:
-	  {
-	    Error("invalid type");
-	  }
-	  break;
-	case JavaLabel::ArrayType:
-	  {
-	    Error("not implemented"); // to be done
-	  }
-	  break;
-	default:
-	  Error("unknown type");
-	}
-	frame->Push(JavaInt::ToWord(result));
+	frame->Push(JavaInt::ToWord(IsInstanceOf(wObject, type)));
 	pc += 3;
       }
       break;
@@ -2400,9 +2431,9 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
 	frame->SetPC(entry->GetHandlerPC());
 	return Worker::CONTINUE;
       }
-      Class *typeObj = Class::FromWord(entry->GetCatchType());
-      Assert(typeObj != INVALID_POINTER);
-      if (object->IsInstanceOf(typeObj)) {
+      Type *type = Type::FromWord(wType);
+      Assert(type != INVALID_POINTER); //--** to be done: should request
+      if (IsInstanceOf(object->ToWord(), type)) {
 	frame->SetPC(entry->GetHandlerPC());
 	return Worker::CONTINUE;
       }
