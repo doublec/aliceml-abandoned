@@ -178,7 +178,7 @@ define
    MaxTag = {Width Tags} = 26
 
    ILLEGAL_DATA    = {FS.value.singl Epsilon}
-   ILLEGAL_EPSILON = {FS.value.make 1#26}
+   ILLEGAL_EPSILON = FS.value.empty
    ILLEGAL_B       = {FS.value.make 1#2}
    ILLEGAL_I       = {FS.value.make 1#3}
    ILLEGAL_TT      = {FS.value.make 1#4}
@@ -277,6 +277,17 @@ define
 			 text:       Text)
        end}
 
+      V.2.mother = 1
+      V.3.mother = 1
+      V.4.mother = 3
+      V.5.mother = 4
+      V.2.tag = Epsilon
+      V.3.tag = 3
+      V.4.tag = 2
+      V.2.illegalup = ILLEGAL_EPSILON
+      V.4.illegalup = ILLEGAL_B
+      V.3.illegalup = ILLEGAL_I
+
       %% Treeness Constraints
       Eqdowns = for I in FirstVertexI..LastVertexI collect: Collect do
 		   {Collect V.I.eqdown}
@@ -371,7 +382,6 @@ define
       end
 
       %% Propagation of illegal tag sets
-/*
       IllegalUps = for I in FirstVertexI..LastVertexI collect: Collect do
 		      {Collect V.I.illegalup}
 		   end
@@ -379,18 +389,24 @@ define
 		       {Collect Tags.I.illegal}
 		    end
 
-      for I in FirstElementI..LastElementI do W TagIllegal in
+      for I in FirstElementI..LastElementI do W Permitted ExtraTags TagIllegal in
 	 W = V.I
 	 {FS.exclude W.tag W.illegal}
 
-	 W.illegal = {FS.compl {Select.union
-				{Map IllegalUps FS.compl} W.daughters}}
+	 %% one way of saying W.illegal = {Select.inter IllegalUps W.daughters}
 
-%	 W.illegal = {Select.union IllegalUps W.daughters}
+	 Permitted = {Select.union {Map IllegalUps FS.compl} W.daughters}
+
+	 ExtraTags = {FS.var.upperBound [Epsilon]}
+	 {FS.card ExtraTags} =: {FS.reified.equal W.daughters FS.value.empty}
+
+	 W.illegal = {FS.intersect
+		      {FS.compl {FS.union Permitted ExtraTags}}
+		      {FS.value.make 1#MaxTag}}
+
 	 TagIllegal = {Select.fs TagIllegals W.tag}
 	 W.illegalup = {FS.union TagIllegal W.illegal}
       end
-*/
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
@@ -495,7 +511,7 @@ define
 	end}}
 */
 
-      {Distribute}
+%      {Distribute}
    end
 
    fun {Script Meaning SourceCost}
