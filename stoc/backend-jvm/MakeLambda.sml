@@ -97,11 +97,10 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun generatePickleFn (stamp', init) =
 	    let
 		fun codePickle (stamp'',acc) =
-		    Aload thisStamp::
 		    Ldc (JVMString (classNameFromStamp stamp''))::
 		    Invokestatic MForName::
-		    Putfield (fieldname (stamp',stamp''),
-			      [Classsig CClass])::
+		    Putstatic (fieldname (stamp',stamp''),
+			       [Classsig CClass])::
 		    acc
 	    in
 		case StampHash.lookup (pickleFn, stamp') of
@@ -113,7 +112,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun makePickleFields (stamp', init) =
 	    let
 		fun pickleFields (stamp'', acc) =
-		    Field ([FPublic, FFinal],
+		    Field ([FPublic, FStatic],
 			   fname stamp'',
 			   [Classsig CClass])::acc
 	    in

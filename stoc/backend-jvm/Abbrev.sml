@@ -15,17 +15,13 @@ structure Abbrev  =
 	open JVMInst
 
 	(* java classes *)
-	(* val CHashtable     = "java/util/Hashtable"*)
 	val CObject           = "java/lang/Object"
 	val CPrintStream   = "java/io/PrintStream"
 	val CString        = "java/lang/String"
 	val CThread        = "java/lang/Thread"
-        val CVector        = "java/util/Vector"
-        val CClass         = "java/lang/Class"
+	val CVector        = "java/util/Vector"
+	val CClass         = "java/lang/Class"
 	val CCompilerException = "java/lang/RuntimeException"
-
-	(* java interfaces *)
-(*	val ISerializable  = "java/io/Serializable"*)
 
 	(* java methods *)
 	val MForName       = (CClass, "forName", ([Classsig CString], [Classsig CClass]))
@@ -37,25 +33,18 @@ structure Abbrev  =
 	val FOut           = ("java/lang/System/out", [Classsig CPrintStream])
 
 	(* runtime classes *)
-	val CName          = "de/uni_sb/ps/dml/runtime/Name"(*
-	val CConstants     = "de/uni_sb/ps/dml/runtime/Constants"*)
+	val CName          = "de/uni_sb/ps/dml/runtime/Name"
 	val CConstructor   = "de/uni_sb/ps/dml/runtime/Constructor"
 	val CConVal        = "de/uni_sb/ps/dml/runtime/ConVal"
 	fun cConVal n      = CConVal^(if n=1 orelse n>=5 then "" else Int.toString n)
 	val CExWrap        = "de/uni_sb/ps/dml/runtime/ExceptionWrapper"
-	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/Function"(*
-	val CFuture        = "de/uni_sb/ps/dml/runtime/Future"
-	val CByNeedFuture  = "de/uni_sb/ps/dml/runtime/ByNeedFuture"*)
+	val CFcnClosure    = "de/uni_sb/ps/dml/runtime/Function"
 	val CInt           = "de/uni_sb/ps/dml/runtime/Int"
 	val CWord          = "de/uni_sb/ps/dml/runtime/Word"
-	val CChar          = "de/uni_sb/ps/dml/runtime/Char"(*
-	val CLVal          = "de/uni_sb/ps/dml/runtime/LTransient"*)
+	val CChar          = "de/uni_sb/ps/dml/runtime/Char"
 	val CReal          = "de/uni_sb/ps/dml/runtime/Real"
-	val CRecord        = "de/uni_sb/ps/dml/runtime/Record"(*
-	val CRecordArity   = "de/uni_sb/ps/dml/runtime/RecordArity"
-	val CSCon          = "de/uni_sb/ps/dml/runtime/SCon"*)
-	val CStr           = "de/uni_sb/ps/dml/runtime/String"(*
-	val CThread        = "de/uni_sb/ps/dml/runtime/Thread"*)
+	val CRecord        = "de/uni_sb/ps/dml/runtime/Record"
+	val CStr           = "de/uni_sb/ps/dml/runtime/String"
 	val CTuple         = "de/uni_sb/ps/dml/runtime/Tuple"
 	val CBuiltin       = "de/uni_sb/ps/dml/runtime/Builtin"
 	val CSelString     = "de/uni_sb/ps/dml/runtime/General$SelFunString"
@@ -65,9 +54,7 @@ structure Abbrev  =
 
 	(* runtime interfaces *)
 	val IConVal        = "de/uni_sb/ps/dml/runtime/DMLConVal"
-	val ITransient  = "de/uni_sb/ps/dml/runtime/DMLTransient"(*
-	val IInternalError = "de/uni_sb/ps/dml/runtime/DMLInternalError"
-	val IReference     = "de/uni_sb/ps/dml/runtime/DMLReference"*)
+	val ITransient  = "de/uni_sb/ps/dml/runtime/DMLTransient"
 	val IVal           = "de/uni_sb/ps/dml/runtime/DMLValue"
 	val ITuple      = "de/uni_sb/ps/dml/runtime/DMLTuple"
 

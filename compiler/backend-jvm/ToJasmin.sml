@@ -776,6 +776,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Comment _) = 0
 	  | stackNeedInstruction (Line _) = 0
 	  | stackNeedInstruction Dup = 1
+	  | stackNeedInstruction Fcmpl = ~1
 	  | stackNeedInstruction (Fconst _) = 1
 	  | stackNeedInstruction (Get _) = 0
 	  | stackNeedInstruction (Getfield _) = 0
@@ -860,6 +861,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Line l,_) =
 			if !LINES andalso l <> 0 then "\t.line "^Int.toString l else ""
 	      | instructionToJasmin (Dup,_) = "dup"
+	      | instructionToJasmin (Fcmpl,_) = "fcmpl"
 	      | instructionToJasmin (Fconst i,_) =
 			if i=0 then
 			    "fconst_0"

@@ -309,8 +309,15 @@ structure Backend=
 		fun fieldname number = "lit"^Int.toString number
 
 		(* compute the whole static JVM field of a literal *)
-		fun staticfield (stamp', number) =
-		    classNameFromStamp stamp'^"/"^(fieldname number)
+		fun staticfield (stamp', number, cls) =
+		    (classNameFromStamp stamp'^"/"^(fieldname number),
+		     cls)
+
+		fun litClass (CharLit _) = CChar
+		  | litClass (IntLit _)    = CInt
+		  | litClass (RealLit _)   = CReal
+		  | litClass (StringLit _) = CStr
+		  | litClass (WordLit _)   = CWord
 
 		(* add a literal (if necessary) and return its JVM field *)
 		fun insert (stamp',lit') =
@@ -335,16 +342,11 @@ structure Backend=
 				in
 				    LitHash.insert (lit, lit', nr);
 				    StampHash.insert (number, stamp', nr);
-				    staticfield (stamp', nr)
+				    staticfield (stamp', nr, [Classsig (litClass lit')])
 				end
-			  | SOME number' => staticfield (stamp', number')
+			  | SOME number' =>
+				staticfield (stamp', number', [Classsig (litClass lit')])
 		    end
-
-		fun litClass (CharLit _) = CChar
-		  | litClass (IntLit _)    = CInt
-		  | litClass (RealLit _)   = CReal
-		  | litClass (StringLit _) = CStr
-		  | litClass (WordLit _)   = CWord
 
 		(* Generate all literals of a certain class at compilation time. *)
 		fun generate (stamp', init) =
@@ -363,8 +365,8 @@ structure Backend=
 				  Dup ::
 				  atCode lit' ::
 				  (Invokespecial (scon,"<init>",(jType, [Voidsig]))) ::
-				  (Putstatic ((staticfield (stamp', constnumber)),
-					      [Classsig scon])) ::
+				  (Putstatic ((staticfield (stamp', constnumber,
+							    [Classsig scon])))) ::
 				  acc)
 
 			     end

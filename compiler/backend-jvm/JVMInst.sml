@@ -50,6 +50,7 @@ structure JVMInst =
 	  | Checkcast of classname
 	  | Comment of string
 	  | Dup
+	  | Fcmpl
 	  | Fconst of int
 	  | Get of INSTRUCTION list
 	  | Getfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
