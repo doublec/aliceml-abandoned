@@ -25,18 +25,9 @@ __primitive op=  : ''a * ''a -> bool = "="
 __primitive op<> : ''a * ''a -> bool = "<>"
 __primitive op:= : 'a ref * 'a -> unit = ":="
 
-__primitive op~ : int -> int = "~"
-
 __primitive op+ : int * int -> int = "+"
 __primitive op- : int * int -> int = "-"
-__primitive op* : int * int -> int = "*"
-__primitive op div : int * int -> int = "div"
-__primitive op mod : int * int -> int = "mod"
-
 __primitive op< : int * int -> bool = "<"
-__primitive op> : int * int -> bool = ">"
-__primitive op<= : int * int -> bool = "<="
-__primitive op>= : int * int -> bool = ">="
 
 structure General =
     struct
