@@ -1,0 +1,11 @@
+
+import structure Core from "Core"
+import structure gtk from "gtk"
+
+structure Gtk =
+struct
+    open gtk
+    open Core
+   
+    val _ = init()
+end

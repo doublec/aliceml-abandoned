@@ -1,0 +1,35 @@
+signature NATIVE_CORE_COMPONENT =
+sig
+    structure NativeCore :
+    sig
+	val isNull : 'a -> bool
+	val null : unit -> 'object
+	val gtkTrue : unit -> int
+	val gtkFalse : unit -> int
+	
+        val signalConnect : 'object * string * bool -> int
+        val signalDisconnect : 'object * int -> unit
+	val getEventStream : unit -> 'stream
+
+	val signalMapAdd : 'connid * 'callback * 'object -> unit
+	val signalMapRemove : 'connid -> unit
+	val signalMapCondGet : 'connid * 'callback1 -> 'callback2
+	val signalMapGetConnIds : 'object -> 'connid list
+
+	val weakMapAdd : 'object -> unit
+        val weakMapIsMember : 'object -> bool
+        val weakMapCondGet : 'object1 * 'object2 -> 'object3
+
+	val unrefObject : 'object1 -> 'object2
+	val hasSignals : 'object -> bool
+
+	val isLoaded : unit -> bool
+	val init : unit -> unit
+	val eventsPending : unit -> bool
+	val mainIteration : unit -> unit
+
+	val printObject : 'object -> unit
+	val forceGC : unit -> unit
+
+    end
+end
