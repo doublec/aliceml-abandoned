@@ -103,6 +103,10 @@ raising an exception&nbsp;<TT>e</TT>).  <TT>y</TT>&nbsp;(resp.&nbsp;<TT>e</TT>)
 is cloned to yield <TT>y'</TT> (resp.&nbsp;<TT>e'</TT>), which is returned
 (resp. raised) as result of the application <TT>f x</TT>.</P>
 
+<P>Applications of proxies are always concurrent on the server.  Conceptually,
+they can be considered to happen in the same thread as the application of
+the proxy, which may actually happen in a thread on a different site.</P>
+
 <P>A proxy is always picklable, independently of whether the function it
 proxies is picklable or not.  If <TT>f'</TT> is transferred to another
 site&nbsp;B and applied there, instead of the function&nbsp;<TT>f</TT> only
