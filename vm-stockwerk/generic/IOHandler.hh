@@ -20,8 +20,13 @@
 class Future;
 
 class IOHandler {
+protected:
+  static int defaultFD;
 public:
   static void Init();
+  static void SetDefaultBlockFD(int fd) {
+    defaultFD = fd;
+  }
   static void Poll();
   static void Block();
   static void Purge();
