@@ -74,7 +74,8 @@ fun makeSuffix (group, xs, xpos, height) =
 fun setIr (ir, i) = (assert !ir = 0 ; ir := i ; SOME (i - 1))
 
 fun mapDesc (NestedRow t) = NestedRow t
-  | mapDesc Struct = Struct
+  | mapDesc TopLevel = TopLevel
+  | mapDesc Struct   = Struct
   | mapDesc (Decl d) = Decl d
   | mapDesc (Value (t, v, Future ())) = Value (t, v, Future (ref 0))
   | mapDesc (Value (t, v, Noflag)) = Value (t, v, Noflag)
@@ -87,6 +88,7 @@ fun mapDesc (NestedRow t) = NestedRow t
   | mapDesc (ListTail (t, v, Reference)) = assert false
 
 fun unmapDesc (NestedRow t) = NestedRow t
+  | unmapDesc TopLevel = TopLevel
   | unmapDesc Struct    = Struct
   | unmapDesc (Decl d)  = Decl d
   | unmapDesc (Value (t, v, Future _)) = Value (t, v, Future ())
@@ -104,6 +106,7 @@ fun newTree (tree, desc) =
   let val id =
     case desc of
       NestedRow _ => NONE
+    | TopLevel => NONE
     | Struct => NONE
     | Decl _ => NONE
     (* Register a reference, a future. *)

@@ -98,6 +98,11 @@ and tree =
 		       kids      : tree array ref,
 		       mode      : display_mode ref }
 
+datatype elem = Nowhere
+              | InPrefix of tree
+              | InTree   of tree
+              | InSuffix of tree * garment list * orient ref * int
+
 fun suffixIsInObj (sdepth, orient, odepth) =
     if sdepth > odepth then true
     else if sdepth < odepth then false

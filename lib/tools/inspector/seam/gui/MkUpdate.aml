@@ -1,5 +1,4 @@
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
-import structure Inf         from "x-alice:/lib/rtt/Inf"
 import structure Reflect     from "x-alice:/lib/system/Reflect" 
 import signature UPDATE      from "UPDATE-sig"
 import signature GR_TREE     from "GR_TREE-sig"
@@ -125,12 +124,21 @@ fun reinspect tree = reinspect' (tree, !Prefs.depthLimit)
 val undefinedExpand = Common.undefined "MkUpdate.expandWidth-item"
 val undefinedAbsExpand  = Common.undefined "MkUpdate.expandWidth-abstract-item"
 
-(* Expand a declaration in a module. *)
-fun expandDecl (AbsTree.FunItem _, _) = ()
-  | expandDecl (decl, tree) = replaceBy (tree, Basic.fromDecl decl)
+datatype limit_description = datatype AbsTree.limit_description
 
+(* Gets the module from the inner container. *)
+fun getModuleFromStruct tree = case getDesc (#1 (getParent tree)) of
+				 Module (_, m, _) => m | _ => assert false
+
+fun getModuleFromField tree = getModuleFromStruct (#1 (getParent tree))
+
+(* Expand a declaration in a module. *)
+fun expandDecl (decl, tree) =
+    Option.app (fn abstree => updateWith (tree, abstree))
+               (Basic.fromDecl (getModuleFromField tree, decl))
+ 
 (* Expands a record or a tuple. *)
-fun abstreeBuilder (depth, AbsTree.TupRec {row, tagged}, desc, start, _) =
+fun abstreeBuilder (depth, TupRec {row, tagged}, desc, start, _) =
   let val value = AbsTree.getValue desc
   in
     case row of 
@@ -146,21 +154,17 @@ fun abstreeBuilder (depth, AbsTree.TupRec {row, tagged}, desc, start, _) =
   end
 
 (* Expands a module. *)
-  | abstreeBuilder (depth, AbsTree.ModuleLimit length, desc, start, tree) =
+  | abstreeBuilder (depth, ModuleLimit (items, length), desc, start, tree) =
     let
-      val sign = case getDesc (#1 (getParent tree)) of
-		   Module (sign, modl, _) => sign | _ => assert false
-      val sign = case Inf.inspect sign of
-		   Inf.Sig sign => sign | _ => assert false
-      val items = Inf.items sign
-      fun makeAbs (limit, array) = Basic.makeDecl (depth, array, items, length,
-						   start, limit)
+      val module = getModuleFromStruct tree
+      fun makeAbs (limit, array) = Basic.makeDecl (module, depth, array, items,
+						   length, limit)
     in
-      (makeAbs, length)
+      (makeAbs, length + start)
     end
     
 (* Expands an array. *)
-  | abstreeBuilder (depth, AbsTree.Array typ, desc, start, tree) =
+  | abstreeBuilder (depth, Array typ, desc, start, tree) =
     let
       val value = Reflect.reify (AbsTree.getValue desc)
       fun makeAbs (limit, array) = AbsTree.makeArray (depth, limit, array,
@@ -170,7 +174,7 @@ fun abstreeBuilder (depth, AbsTree.TupRec {row, tagged}, desc, start, _) =
     end
 
 (* Expands a vector. *)
-  | abstreeBuilder (depth, AbsTree.Vector typ, desc, start, tree) =
+  | abstreeBuilder (depth, Vector typ, desc, start, tree) =
     let
       val value = Reflect.reify (AbsTree.getValue desc)
       fun makeAbs (limit, array) = AbsTree.makeVector (depth, limit, array,
@@ -180,14 +184,14 @@ fun abstreeBuilder (depth, AbsTree.TupRec {row, tagged}, desc, start, _) =
     end
 
 
-  | abstreeBuilder (_, AbsTree.ListLimit _, _, _, _) = assert false
+  | abstreeBuilder (_, ListLimit _, _, _, _) = assert false
       
 (* Enlarge the given limited container. *)
-fun expandWidth (parent, limitDesc) =
+fun expandWidth (fully, parent, limitDesc) =
     case parent of
       Container {kids, desc, depth, mode, group, delta, ...} =>
       (case limitDesc of
-         AbsTree.ListLimit (typ, l) => (* Special expansion for lists. *)
+         ListLimit (typ, l) => (* Special expansion for lists. *)
 	 let
 	   val index = Array.length (!kids) - 1
 	   val tree = Array.sub (!kids, index)
@@ -196,7 +200,7 @@ fun expandWidth (parent, limitDesc) =
 	   val value = refl l
 	   val item = GrTree.unmapDesc desc
 	   val depth = !Prefs.incrDepth
-	   val width = !Prefs.incrWidth
+	   val width = if fully then !Prefs.incrWidth else !Prefs.bigWidth
 	   val abstree = Builtin.list' (width, depth, item, path, targs, l)
 	 in
 	   replaceListTail (abstree, parent, index, tree)
@@ -208,14 +212,14 @@ fun expandWidth (parent, limitDesc) =
 	   val depth = depth + 1
 	   val lastElement = Array.sub (!kids, size - 1)
 	   val lastSuffixes = getSuffixes (lastElement, depth)
-	   val _ = GrTypes.destroy lastElement
 	   val start = size - 1
 	   val (makeAbs, full) = abstreeBuilder (!Prefs.incrDepth, limitDesc,
                                                  desc, start, parent)
 				 
 	   val newSize = size - 1 + !Prefs.incrWidth
-	   val (newSize, limit) = if newSize >= full then (full, false)
-				  else (newSize + 1, true)
+	   val (newSize, limit) = if fully orelse newSize >= full
+                                    then (full, false)
+				    else (newSize + 1, true)
 				       
            (* Number of abstract trees to create, including the limit. *)
 	   val nAbstrees = 1 + newSize - size
@@ -253,6 +257,8 @@ fun expandWidth (parent, limitDesc) =
 		       dst = newkids, idst = size - 1, 
 		       length = nAbstrees, f = mapAbstree} ;
 
+	   GrTypes.destroy lastElement ;
+
 	   kids := newkids
 	 end)
 
@@ -262,6 +268,7 @@ fun expandWidth (parent, limitDesc) =
 fun forceEval tree =
   let val value = case getDesc tree of
                     NestedRow _        => refl 0
+		  | TopLevel           => assert false
 		  | Struct             => refl 0
 		  | Decl _             => refl 0
                   | ListTail (_, v, _) => refl v
@@ -325,11 +332,17 @@ fun refont tree =
   | Container {kids, status, ...} => Array.app refont (!kids)
 
 (* Expand the given item. *)
-fun expand tree =
+fun expand full tree =
     case tree of
-      Simple {content = Fold NONE, ...} => reinspect' (tree, !Prefs.incrDepth)
+      Simple {content = Fold NONE, ...} => 
+        let val depth = if full then !Prefs.bigDepth else !Prefs.incrDepth
+        in
+          reinspect' (tree, depth)
+        end
+
     | Simple {content = WidthLimit limitDesc, parent, ...} =>
-                                              expandWidth (parent, limitDesc)
+        expandWidth (full, parent, limitDesc)
+
     | Simple {content = Fold (SOME {tree = ftree, group = hgroup, ...}),
 	      parent = parent', index = index', delta = delta', ...} =>
               let
@@ -352,6 +365,8 @@ fun expand tree =
 		refont fftree
               end
 
+    | Simple {desc = AbsTree.Decl decl, ...} => expandDecl (decl, tree)
+
     | Prefix {tree = kid, ...} =>
        (case !kid of
 	  Simple {desc = AbsTree.Decl decl, ...} => expandDecl (decl, tree)
@@ -367,6 +382,7 @@ fun checkNotMonitored' (Simple _) = ()
   | checkNotMonitored' (Container {desc, ...}) =
          case desc of
              NestedRow _ => ()
+	   | TopLevel    => assert false
 	   | Value (_, v, Reference) => assert false
 	   | Value (_, v, Future _) => assert false
 	   | ListTail (_, v, Future _) => assert false
@@ -411,7 +427,7 @@ fun fold tree =
                 val kids = Array.array (1, tree)
                 val fakedParent = Container {group = hiddenGroup,
                                              delta = ref (!delta),
-                                             desc = AbsTree.NestedRow NONE, 
+                                             desc = AbsTree.TopLevel, 
                                              parent = undefinedTopR,
                                              index = ref ~1,
                                              depth,

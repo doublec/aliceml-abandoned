@@ -34,6 +34,7 @@ struct
   val menuItemClose = Gtk.menuItemNewWithLabel "Close"
     
   (* MENU : Selection *)
+  val menuItemExpandF = Gtk.menuItemNewWithLabel "Fully Expand"
   val menuItemExpand = Gtk.menuItemNewWithLabel "Expand"
   val menuItemFold = Gtk.menuItemNewWithLabel "Fold"
   val menuItemSep21  = Gtk.menuItemNew ()
@@ -41,9 +42,12 @@ struct
   val menuItemForceEval = Gtk.menuItemNewWithLabel "Force Evaluation"
   val menuItemSep22  = Gtk.menuItemNew ()
   val menuItemRemovEntry = Gtk.menuItemNewWithLabel "Remove entry"
+  val menuItemSep23  = Gtk.menuItemNew ()
+  val menuItemPPrintT = Gtk.menuItemNewWithLabel "Pretty Print to Terminal"
 
   val _ = Gtk.widgetSetSensitive(menuSelection, false)
   val _ = Gtk.widgetSetSensitive(menuItemExpand, false)
+  val _ = Gtk.widgetSetSensitive(menuItemExpandF, false)
   val _ = Gtk.widgetSetSensitive(menuItemFold, false)
   val _ = Gtk.widgetSetSensitive(menuItemReinspect, false)
   val _ = Gtk.widgetSetSensitive(menuItemRemovEntry, false)
@@ -92,6 +96,7 @@ struct
      Gtk.menuShellAppend (menuInspectorM, menuItemSep11) ;
      Gtk.menuShellAppend (menuInspectorM, menuItemClose) ;
      
+     Gtk.menuShellAppend (menuSelectionM, menuItemExpandF) ;
      Gtk.menuShellAppend (menuSelectionM, menuItemExpand) ;
      Gtk.menuShellAppend (menuSelectionM, menuItemFold) ;
      Gtk.menuShellAppend (menuSelectionM, menuItemSep21) ;
@@ -99,6 +104,8 @@ struct
      Gtk.menuShellAppend (menuSelectionM, menuItemForceEval) ;
      Gtk.menuShellAppend (menuSelectionM, menuItemSep22) ;
      Gtk.menuShellAppend (menuSelectionM, menuItemRemovEntry) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemSep23) ;
+     Gtk.menuShellAppend (menuSelectionM, menuItemPPrintT) ;
      
      Gtk.menuShellAppend (menuOptionsM, menuItemPreferences) ;
      

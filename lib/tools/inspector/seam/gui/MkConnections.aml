@@ -23,10 +23,12 @@ in
      
      connect (MainWin.menuItemClear, "activate", Handlers.clear) ;
      connect (MainWin.menuItemExpand, "activate", Handlers.expand) ;
+     connect (MainWin.menuItemExpandF, "activate", Handlers.expandf) ;
      connect (MainWin.menuItemFold, "activate", Handlers.fold) ;
      connect (MainWin.menuItemReinspect, "activate", Handlers.reinspect) ;
      connect (MainWin.menuItemForceEval, "activate", Handlers.forceEval) ;
      connect (MainWin.menuItemRemovEntry, "activate", Handlers.removeEntry) ;
+     connect (MainWin.menuItemPPrintT, "activate", Handlers.pprintT) ;
      
      connect (MainWin.menuItemAbout, "activate", newAboutWindow) ;
      connect (MainWin.menuItemPreferences, "activate", newPrefsWindow) ;

@@ -51,11 +51,18 @@ struct
 
   functor Inspect (A : (signature S structure X : S)) : any =
     let
+(*      val p       = pack A.X : A.S
+      val (m, s) = Reflect.reflectPackage p
+      val _ = inspectItem (Common.Module (s, m)) *)
+
       structure I = Reflect.ReflectSig A (* Does reflect the signature A.S *)
       structure M = Reflect.Reflect A    (* Does reflect the structure A.X *)
       val _ = inspectItem (Common.Module (I.x, M.x))
     in
       ()
     end
+
+  (* Define your own mappers. *)
+  
 
 end

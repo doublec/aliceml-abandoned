@@ -16,6 +16,7 @@ sig
   val deselect     : unit -> unit
   val reselect     : unit -> unit
   val mapSelection : (GrTypes.tree -> unit) -> unit
+  val getSelection : unit -> GrTypes.tree list (* Must be read-only ! *)
   val doSelect     : int list list -> unit
   val toEntries    : (int -> unit) -> unit
   val isEmpty      : unit -> bool

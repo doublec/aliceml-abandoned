@@ -1,5 +1,6 @@
 import structure Atom      from "x-alice:/lib/data/Atom"
 import structure Inspector from "Inspector"
+import signature GTK       from "x-alice:/lib/gtk/GTK-sig"
 
 val _ = print "One.\n" 
 
@@ -183,25 +184,33 @@ val _ =
   
 structure MyS = struct type t1 = int type t2 = int type t3 = int
 		       datatype t4 = Zero | One of int | Two of int * int
+                       exception Foobar
+                       exception Moo of int * int
                        val x1 = 10 val x2 = 20 val x3 = 30 val x4 = 40 
                        val x5 = 50 val x6 = 60 val x7 = 70 val x8 = Zero
                        val x9 = One 90 val x10 = Two (100, 110)
+                       structure MyInt = Int
+                       signature MY_GTK = GTK
                 end
 
 signature MY_S = sig type t1 = int type t2 = t1 type t3
                      datatype t4 = Zero | One of int | Two of int * int
-                     val x1 : t1 val x2 : t2 val x3 : t3 val x4 : int
+                     val x1 : int val x2 : t2 val x3 : t3 val x4 : int
                      val x5 : t1 val x6 : t2 val x7 : t3 val x8 : t4
                      val x9 : t4 val x10 : t4
+                     structure MyInt : INTEGER
+                     signature MY_GTK
                  end 
 
 signature MY_S2 = sig type t1 = int type t2 = t1 type t3 type t4
+                     exception Foobar exception Moo of int * int
                      val x1 : t1 val x2 : t2 val x3 : t3 val x4 : int
                      val x5 : t1 val x6 : t2 val x7 : t3 val x8 : t4
                      val x9 : t4 val x10 : t4
+                     structure MyInt : INTEGER
+                     signature MY_GTK
                  end 
 
-(*
 structure _ = Inspector.Inspect (signature S = MY_S2
                                  structure X = MyS)
 
@@ -211,11 +220,6 @@ structure _ = Inspector.Inspect (signature S = MY_S
                                  structure X = MyS)
 
 val _ = waitLine ()
-
-structure _ = Inspector.Inspect (signature S = INTEGER
-                                 structure X = Int)
-val _ = waitLine ()
-  *)
 
 val llo = lazy 100
 val ar = Array.array (5, llo)
@@ -384,19 +388,3 @@ val _ =
   OS.Process.exit OS.Process.success ;
   ())
 
-(* Test méchant :
-             étant donné n * p, une matrice avec n lignes, p colonnes,
-         chaque ligne est décalée de 1 par rapport à la ligne précédente.
-      Chaque case contient un futur ou un lazy, un truc comme ça.
-     Afficher la matrice (une entrée), _puis_,
-      chaque ligne (n entrées).
-
- n grand => teste les gros containers, et un grand nombre d'entrées.
- p grand => largeur.
-
-
-Et pour la profondeur  ? *)
-
-
-(* Autre test : essayer avec les structures construites par
-   l'inspecteur lui-même: mettre un Inspector dans MkHandlers.inspectNewItem. *)

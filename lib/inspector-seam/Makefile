@@ -21,18 +21,20 @@ MAIN = QUEUE-sig MkQueue \
        Prefs Common Cache \
        AbsTree BasicTypeMappers BuiltinTypeMappers TypeMappers \
        MONITORS-sig MkMonitors \
+       Print \
        HANDLERS-sig MkHandlers \
        Inspector \
        Test
 
 ROOTCOMPONENT = Inspector
-LINKEDNAME = InspectorL.alc
+LINKEDNAME = LinkedInspector.alc
 
 SOURCES = $(GUI:%=gui/%.aml) $(MAIN:%=%.aml)
 
 COMPONENTS = $(SOURCES:%.aml=%.alc)
 
 LINKCOMPONENTS = $(SOURCES:%.aml=--include %)
+INSTALLTO = `alice-config --alicelibdir`/tools
 
 .PHONY: all depend clean veryclean distclean
 
@@ -46,9 +48,12 @@ depend:
 $(COMPONENTS): %.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
-linked: $(COMPONENTS)
+$(LINKEDNAME): $(COMPONENTS)
 	$(ALICELINK) -v $(LINKCOMPONENTS) $(ROOTCOMPONENT) -o $(LINKEDNAME)
 
+install: $(LINKEDNAME)
+	mkdir -p -m 775 $(INSTALLTO)
+	install -c -m444 $(LINKEDNAME) $(INSTALLTO)/Inspector.alc
 
 ##
 ## Cleaning Up

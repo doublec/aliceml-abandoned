@@ -3,6 +3,7 @@ import structure Reflect      from "x-alice:/lib/system/Reflect"
 import structure Type         from "x-alice:/lib/rtt/Type"
 import structure Inf          from "x-alice:/lib/rtt/Inf"
 import structure Label        from "x-alice:/lib/rtt/Label"
+import structure Fixity       from "x-alice:/lib/rtt/Fixity"
 import structure Prefs        from "Prefs"
 import structure Common       from "Common"
 
@@ -16,11 +17,10 @@ struct
 
   (* Declarations in a module that have their own tree. *)
   datatype declaration =
-	   FixItem
-	 | ValItem of string * Type.typ
-	 | FunItem of Type.typ
+	   FixItem of Label.t * Fixity.t
+	 | ValItem of string * Type.typ * Reflect.value
 	 | TypItem
-	 | ModItem
+	 | ModItem of string * Inf.t * Reflect.module
 	 | SigItem
 
   datatype 'a item = 
@@ -36,6 +36,7 @@ struct
 
   | Struct   (* Keywords around structures and the whole body, also. *)
   | Decl of declaration 
+  | TopLevel (* Top-level container. *)
 
   type absitem = unit item
 
@@ -48,6 +49,7 @@ struct
     | downcastItem Struct             = NONE
     | downcastItem (Decl _)           = NONE
     | downcastItem (ListTail _)       = NONE
+    | downcastItem TopLevel           = assert false
 
   fun getValue (Value (_, v, _)) = v
     | getValue _ = assert false
@@ -62,7 +64,7 @@ struct
 			     | ListLimit of Type.typ * Reflect.value list
                              | Array of Type.typ
                              | Vector of Type.typ
-			     | ModuleLimit of int
+			     | ModuleLimit of declaration list * int
 
   datatype orientation = datatype Prefs.orientation
 

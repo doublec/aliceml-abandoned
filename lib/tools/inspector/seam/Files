@@ -13,6 +13,7 @@ Common.aml		: Instruction of the virtual machine, tool functions
 HANDLERS-sig.aml
 MkHandlers.aml		: Handlers = actions of the graphical interface
 MONITORS-sig.aml
+PrintInfo.aml           : (For debug) Prints information about nodes.
 MkMonitors.aml		: Monitors for futures and references
 Inspector.aml		: Main entry of the Inspector
 Test.aml		: Test the inspector

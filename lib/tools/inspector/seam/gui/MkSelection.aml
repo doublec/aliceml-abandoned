@@ -2,6 +2,7 @@ import signature CANVAS_DRIVER from "CANVAS_DRIVER-sig"
 import signature MAIN_WINDOW   from "MAIN_WINDOW-sig"
 import signature SELECTION     from "SELECTION-sig"
 import structure GrTypes       from "GrTypes"
+import structure Print         from "../Print"
 import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure Gtk           from "x-alice:/lib/gtk/Gtk"
 import structure Common        from "../Common"
@@ -42,30 +43,22 @@ fun initMenu () =
     if !selection = [] then setSens (MainWindow.menuSelection, false)
     else (setSens(MainWindow.menuSelection, true) ;
 	  setSens(MainWindow.menuItemExpand, true) ;
+	  setSens(MainWindow.menuItemExpandF, true) ;
 	  setSens(MainWindow.menuItemFold, true) ;
 	  setSens(MainWindow.menuItemReinspect, true) ;
 	  setSens(MainWindow.menuItemForceEval, true) ;
 	  setSens(MainWindow.menuItemRemovEntry, true))
 
-(* Tells if the given declaration is expandable. *)
-fun expandableDecl decl =
-    case decl of
-      AbsTree.FixItem => false
-    | AbsTree.ValItem _ => true
-    | AbsTree.FunItem _ => true (* Does nothing. *)
-    | AbsTree.TypItem => true
-    | AbsTree.ModItem => true
-    | AbsTree.SigItem => true
-
 (* Tells if the given tree is expandable. *)
 fun expandable (Simple {content = (Fold _ | WidthLimit _), ...}) = true
-  | expandable (Simple {desc = AbsTree.Decl decl, ...}) = expandableDecl decl
+  | expandable (Simple {desc = AbsTree.Decl decl, ...}) = true
   | expandable (Simple _) = false
   | expandable (Prefix {tree, ...}) = expandable (!tree)
   | expandable (Container {kids, ...}) = false
 
 (* Tells if the given content is foldable. *)
 fun foldable' (NestedRow _) = false
+  | foldable' TopLevel      = assert false
   | foldable' Struct        = false
   | foldable' (Decl _)      = false
   | foldable' (Value _)     = true
@@ -79,6 +72,7 @@ fun foldable (Simple {desc, ...}) = foldable' desc
 
 (* Tells if the given content is reinspectable. *)
 fun reinspectable' (NestedRow _) = false
+  | reinspectable' TopLevel      = assert false
   | reinspectable' Struct        = false
   | reinspectable' (Decl _)      = false
   | reinspectable' (Value _)     = true
@@ -93,12 +87,14 @@ fun reinspectable (Simple {desc, ...}) = reinspectable' desc
 (* Tells if the given tree is a lazy. *)
 fun isLazy tree = case getDesc tree of
 		    NestedRow _ => false
-                  | Struct => false
-                  | Decl _ => false
+		  | TopLevel    => assert false
+                  | Struct      => false
+                  | Decl _      => false
 		  | Value (_, v, Future _)  => Future.isLazy v
 		  | Module (_, m, Future _) => Future.isLazy m
-		  | ListTail (_, v, _) => Future.isLazy v
-		  | _ => false
+		  | ListTail (_, v, _)      => Future.isLazy v
+		  | Value _  => false
+		  | Module _ => false
 
 fun isFuture (Simple {desc = NestedRow _, parent, ...}) =
      (case getDesc parent of
@@ -114,7 +110,8 @@ fun isFuture (Simple {desc = NestedRow _, parent, ...}) =
                       
 fun updMenu' (tree, {entry, ...} : selection) =
     (if expandable tree
-     then () else setSens(MainWindow.menuItemExpand, false) ;
+     then () else (setSens(MainWindow.menuItemExpand, false) ;
+                   setSens(MainWindow.menuItemExpandF, false)) ;
      
      if foldable tree
      then () else setSens(MainWindow.menuItemFold, false) ;
@@ -441,11 +438,6 @@ fun selectSuffix (orient, tree, depth) =
     selectOrient (orient, parent, index)
   end
     
-datatype elem = Nowhere
-              | InPrefix of tree
-              | InTree   of tree
-              | InSuffix of tree * garment list * orient ref * int
-
 fun findInSuffix (_, _, []) = Nowhere
   | findInSuffix (simple, x, (gl, orient, depth) :: rest) =
   let
@@ -523,8 +515,8 @@ fun find (atree, x, y) =
 fun getEntireValue (atree, x, y) =
   case find (atree, x, y) of
     Nowhere => NONE
-  | InSuffix (simple, _, orient, depth) => SOME (selectSuffix (orient, simple,
-                                                               depth))
+  | InSuffix (simple, _, orient, depth) =>
+                                    SOME (selectSuffix (orient, simple, depth))
   | InPrefix (Prefix {orient, parent, index, ...}) =>
                                     SOME (selectOrient (orient, parent, index))
   | InPrefix _ => assert false
@@ -539,41 +531,7 @@ fun selectAt (atree, x, y) =
 
 fun selectTree tree = ignore (highlight (select' tree))
 
-fun printInfo elem =
-  case elem of
-    Nowhere => MainWindow.setStatus "There is no element here."
-  | InTree atree =>
-      let
-        val message =
-          case atree of
-            Simple {index, depth, delta, ...} =>
-              "Simple {index = " ^ (Int.toString index) ^
-              ", depth = " ^ (Int.toString depth) ^
-              ", delta = " ^ (Int.toString (!delta)) ^ "}"
-          | Prefix {index, depth, delta, ...} => assert false
-          | Container {index, depth, delta, ...} =>
-              "Container {index = " ^ (Int.toString (!index)) ^
-              ", depth = " ^ (Int.toString depth) ^
-              ", delta = " ^ (Int.toString (!delta)) ^ "}"
-      in
-        MainWindow.setStatus message
-      end
-
-  | InSuffix (_, orient, simple, depth) =>
-      let val message = "Suffix : depth = " ^ (Int.toString depth)
-      in
-        MainWindow.setStatus message
-      end
-
-  | InPrefix (Prefix {index, depth, delta, ...}) =>
-      let val message =
-        "Prefix {index = " ^ (Int.toString index) ^
-        ", depth = " ^ (Int.toString depth) ^
-        ", delta = " ^ (Int.toString (!delta)) ^ "}"
-      in
-        MainWindow.setStatus message
-      end
-  | InPrefix _ => assert false
+fun printInfo x = MainWindow.setStatus (Print.info x)
 
 fun infoAt (atree, x, y, false) = printInfo (find (atree, x, y))
   | infoAt (atree, x, y, true) =
@@ -623,6 +581,22 @@ fun doSelect paths =
       setSelection (sel, trees)
     end
 	
+val cmpLists = List.collate Int.compare
+fun cmpPath ((_, p1 :: path1), (_, p2 :: path2)) = 
+        if p1 < p2 then GREATER (* Yes *)
+	else if p1 > p2 then LESS
+	else cmpLists (path1, path2)
+  | cmpPath _ = assert false
+
+fun getSelection () =
+    let
+      val trees = getTrees ()
+      val trees' = List.map (fn t => (t, getPath (t, []))) trees
+      val sorted = List.sort cmpPath trees'
+    in
+      List.map #1 sorted
+    end
+
 fun mapSelection f = 
    let
      val paths = getPaths ()

@@ -19,15 +19,15 @@ struct
   val refCounter = ref 1
   fun newRef () = (refCounter := !refCounter + 1 ; !refCounter)
 
-
   fun getDesc [] = assert false
     | getDesc (x :: _) =
             case GrTypes.getDesc x of
               AbsTree.NestedRow _ => assert false
-	    | AbsTree.Struct => assert false
-	    | AbsTree.Decl _ => assert false
-            | AbsTree.Value (t, v, _) => Common.Value (t, v)
-            | AbsTree.Module (s, m, _) => Common.Module (s, m)
+            | AbsTree.TopLevel    => assert false
+	    | AbsTree.Struct      => assert false
+	    | AbsTree.Decl _      => assert false
+            | AbsTree.Value (t, v, _)    => Common.Value (t, v)
+            | AbsTree.Module (s, m, _)   => Common.Module (s, m)
             | AbsTree.ListTail (t, v, _) => Common.Value (t, Reflect.reflect v)
 
   fun isContainer (GrTypes.Container _) = true
@@ -153,12 +153,13 @@ struct
         (* Is is a reference or a future ? *)
 	val _ = case desc of
 		  AbsTree.NestedRow _ => ()
-                | AbsTree.Struct => ()
-                | AbsTree.Decl _ => ()
-		| AbsTree.Value (_, _, Reference) => height := ~1
-		| AbsTree.Value (_, _, Future ir) => height := ~(!ir)
+		| AbsTree.TopLevel    => assert false
+                | AbsTree.Struct      => ()
+                | AbsTree.Decl _      => ()
+		| AbsTree.Value (_, _, Reference)    => height := ~1
+		| AbsTree.Value (_, _, Future ir)    => height := ~(!ir)
 		| AbsTree.ListTail (_, _, Future ir) => height := ~(!ir)
-		| AbsTree.Module (_, _, Future ir) => height := ~(!ir)
+		| AbsTree.Module (_, _, Future ir)   => height := ~(!ir)
 		| _ => ()
       in
 	Array.app mark (!kids)

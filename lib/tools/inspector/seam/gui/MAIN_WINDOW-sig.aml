@@ -9,10 +9,12 @@ sig
   val menuItemClear       : Gtk.object
   val menuSelection       : Gtk.object
   val menuItemExpand      : Gtk.object
+  val menuItemExpandF     : Gtk.object
   val menuItemFold        : Gtk.object
   val menuItemReinspect   : Gtk.object
   val menuItemRemovEntry  : Gtk.object
   val menuItemForceEval   : Gtk.object
+  val menuItemPPrintT     : Gtk.object
   val menuItemPreferences : Gtk.object
   val canvas              : Gtk.object
   val setStatus           : string -> unit

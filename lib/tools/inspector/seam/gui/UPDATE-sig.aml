@@ -13,7 +13,7 @@ sig
   val refont    : tree -> unit
   val fold      : tree -> unit
   val reinspect : tree -> unit
-  val expand    : tree -> unit
+  val expand    : bool -> tree -> unit
   val forceEval : tree -> unit
 
 

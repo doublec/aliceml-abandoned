@@ -7,6 +7,7 @@ import structure MkBoard        from "gui/MkBoard"
 import signature HANDLERS       from "HANDLERS-sig"
 import structure TypeMappers    from "TypeMappers"
 import structure AbsTree        from "AbsTree"
+import structure Print          from "Print"
 import structure MkTooltip      from "gui/MkTooltip"
 
 functor MkHandlers
@@ -30,11 +31,13 @@ struct
   datatype instruction = datatype Common.instruction
 
   fun clear _       = queuePut Clear
-  fun expand _      = queuePut Expand
+  fun expand _      = queuePut (Expand false)
+  fun expandf _     = queuePut (Expand true)
   fun fold _        = queuePut FoldTree
   fun reinspect _   = queuePut Reinspect
   fun forceEval _   = queuePut ForceEval
   fun removeEntry _ = queuePut RemoveEntry
+  fun pprintT _     = Print.pprintTrees (Selection.getSelection ())
 
   (* The limits have been changed. *)
   fun newLimits () = ()
@@ -45,10 +48,9 @@ struct
       val (group, id) = Board.newGroup ()
       val _       = MainWindow.setStatus "Creating abstract representation"
       val abstree = TypeMappers.map (!Prefs.depthLimit, item)
-      val item    = AbsTree.castItem item
       (* Top-level values are encapsulated in a container. *)
       val abstree = AbsTree.makeBox {prefix = [], suffix = [], 
-                                     tree = abstree, item}
+                                     tree = abstree, item = AbsTree.TopLevel}
       val _       = MainWindow.setStatus "Creating concrete representation"
       val (tree, height, width) =
 	  GrTree.fromAbsTree {group, abstree,
@@ -74,7 +76,7 @@ struct
      | Inspect item        => displayNewItem item
      | RemoveEntry         => Selection.toEntries Board.remove
      | Clear               => Board.removeAll ()
-     | Expand              => Selection.mapSelection Update.expand
+     | Expand full         => Selection.mapSelection (Update.expand full)
      | FoldTree            => Selection.mapSelection Update.fold
      | Reinspect           => Selection.mapSelection Update.reinspect
      | ForceEval           => Selection.mapSelection Update.forceEval

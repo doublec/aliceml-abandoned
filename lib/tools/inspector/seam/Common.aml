@@ -19,7 +19,7 @@ struct
   | Inspect   of alice_item  (* Inspect some alice value. *)
   | RemoveEntry              (* Remove selected entry. *)
   | Clear                    (* Clear the board. *)
-  | Expand                   (* Expand the selection. *)
+  | Expand of bool           (* Expand the selection, fully or not. *)
   | FoldTree                 (* Fold the selection. *)
   | Reinspect                (* Reinspect the selection. *)
   | ForceEval                (* Force the evaluation of the selected value. *)
@@ -42,7 +42,7 @@ struct
     | Inspect _   => 1
     | RemoveEntry => 1
     | Clear       => 1
-    | Expand      => 1
+    | Expand _    => 1
     | FoldTree    => 1
     | Reinspect   => 1
     | ForceEval   => 1

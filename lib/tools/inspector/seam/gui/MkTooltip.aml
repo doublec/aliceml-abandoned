@@ -89,6 +89,18 @@ struct
   (* Gtk tooltip. *)
   val tooltips = Gtk.tooltipsNew ()
 
+  fun hideTipWindow _ =
+      let
+	val _ = Gtk.tooltipsForceWindow tooltips
+	val tipWindow = Gtk.tooltipsGetFieldTipWindow tooltips
+      in
+	Gtk.widgetHide tipWindow
+      end
+
+  fun addEvent (window, event) =
+    Gtk.widgetAddEvents (window, Gdk.GdkEventMaskToInt event)
+
+
   fun createTooltip (x, y, message) =
     let
       val _ = Gtk.tooltipsForceWindow tooltips
@@ -122,12 +134,15 @@ struct
             then Gtk.windowMove (tipWindow, nx', ny')
           else ()
         end      
-
     in
       Gtk.labelSetLineWrap (tipLabel, false) ;
       Promise.fulfill (signalConnectionP, 
                        Gtk.signalConnect (tipWindow, "map-event", mapped)) ;
+      addEvent (tipWindow, Gdk.BUTTON_PRESS_MASK) ;
+      addEvent (tipWindow, Gdk.POINTER_MOTION_MASK) ;
       Gtk.signalConnect (tipWindow, "leave-notify-event", hideTooltip) ;
+      Gtk.signalConnect (tipWindow, "motion-notify-event", hideTooltip) ;
+      Gtk.signalConnect (tipWindow, "button-press-event", hideTooltip) ;
       Gtk.labelSetText (tipLabel, message) ;
       Gtk.windowSetTransientFor (tipWindow, MainWindow.window) ;
       Gtk.windowMove (tipWindow, nx, ny) ;
@@ -138,18 +153,16 @@ struct
 
   (* Content of the tooltips. *)
 
-  val notAValue = "This item is not a stand-alone value."
   val pps = PrettyPrint.toString
   fun pptype t = pps (PPType.ppTyp t, 80)
   fun ppsig  s = pps (PPInf.ppInf s, 120)
 
   fun tooltipDecl decl =
       case decl of
-	AbsTree.FixItem => "Fixity declaration"
-      | AbsTree.ValItem (_, t) => pptype t
-      | AbsTree.FunItem t => pptype t
+	AbsTree.FixItem _ => "Fixity declaration"
+      | AbsTree.ValItem (_, t, _) => pptype t
       | AbsTree.TypItem => "Type declaration"
-      | AbsTree.ModItem => "Module declaration"
+      | AbsTree.ModItem (_, s, _) => ppsig s
       | AbsTree.SigItem => "Signature declaration"
 
   fun tooltip (x, y) = 
@@ -158,24 +171,16 @@ struct
     | SOME tree =>
         let val message =
           case GrTypes.getDesc tree of
-            AbsTree.NestedRow NONE => notAValue
-          | AbsTree.NestedRow (SOME t) => pptype t
-	  | AbsTree.ListTail (t, _, _) => pptype t
-          | AbsTree.Value (t, _, _) => pptype t
-          | AbsTree.Module (s, _, _) => ppsig s
-	  | AbsTree.Struct => notAValue
-	  | AbsTree.Decl decl => tooltipDecl decl
+            AbsTree.NestedRow NONE     => NONE
+          | AbsTree.NestedRow (SOME t) => SOME (pptype t)
+	  | AbsTree.ListTail (t, _, _) => SOME (pptype t)
+          | AbsTree.Value (t, _, _)    => SOME (pptype t)
+          | AbsTree.Module (s, _, _)   => SOME (ppsig s)
+	  | AbsTree.Struct             => NONE
+	  | AbsTree.Decl decl          => SOME (tooltipDecl decl)
+	  | AbsTree.TopLevel           => assert false
         in
-          createTooltip (x, y, message)
+          Option.app (fn txt => createTooltip (x, y, txt)) message
         end
-
-  fun hideTipWindow () =
-      let
-	val _ = Gtk.tooltipsForceWindow tooltips
-	val tipWindow = Gtk.tooltipsGetFieldTipWindow tooltips
-      in
-	Gtk.widgetHide tipWindow
-      end
-
 
 end

@@ -97,6 +97,7 @@ gui/MkSelection.alc: \
 	gui/MAIN_WINDOW-sig.alc \
 	gui/SELECTION-sig.alc \
 	gui/GrTypes.alc \
+	Print.alc \
 	Common.alc \
 	AbsTree.alc \
 
@@ -174,6 +175,10 @@ MkMonitors.alc: \
 	TypeMappers.alc \
 	AbsTree.alc
 
+Print.alc: \
+	gui/GrTypes.alc \
+	AbsTree.alc \
+
 HANDLERS-sig.alc: \
 	Prefs.alc \
 	Common.alc \
@@ -187,6 +192,7 @@ MkHandlers.alc: \
 	HANDLERS-sig.alc \
 	TypeMappers.alc \
 	AbsTree.alc \
+	Print.alc \
 	gui/MkTooltip.alc
 
 Inspector.alc: \
@@ -197,5 +203,5 @@ Inspector.alc: \
 	Prefs.alc
 
 Test.alc: \
-	Inspector.alc
+	Inspector.alc \
 
