@@ -255,13 +255,13 @@ struct
                   case myStatus of
 		      TreeNode.FAILED => ((itr myX)*scale,(itr (myY-s))*scale)
 		    | TreeNode.SOLVED => ((itr myX)*scale,(itr (myY-t))*scale)
-		    | TreeNode.CHOICE => ((itr myX)*scale,(itr (myY-t))*scale)
+		    | TreeNode.CHOICE _ => ((itr myX)*scale,(itr (myY-t))*scale)
 		    | TreeNode.UNKNOWN => ((itr myX)*scale,(itr (myY-t))*scale)
 	  val (x2, y2) =
               case parentStatus of
 		  TreeNode.FAILED => ((itr momX)*scale,(itr (momY+s))*scale)
 		| TreeNode.SOLVED => ((itr momX)*scale,(itr (momY+t))*scale)
-		| TreeNode.CHOICE => ((itr momX)*scale,(itr (momY+t))*scale)
+		| TreeNode.CHOICE _ => ((itr momX)*scale,(itr (momY+t))*scale)
 		| TreeNode.UNKNOWN => ((itr momX)*scale,(itr (momY+t))*scale)
 
 	  val points = [Real.round x1,Real.round y1,
@@ -290,7 +290,7 @@ struct
 		     else case status of
 			      TreeNode.FAILED => drawFailedNode
 			    | TreeNode.SOLVED => drawSuccNode
-			    | TreeNode.CHOICE => drawChoiceNode
+			    | TreeNode.CHOICE _ => drawChoiceNode
 			    | TreeNode.UNKNOWN => drawUnknownNode
       in
 	  draw (group, shadow, scale, Real.round realX, Real.round realY)

@@ -16,7 +16,7 @@ import structure Space from "x-alice:/lib/gecode/Space"
 structure Types =
   struct
 
-  datatype status = FAILED | SOLVED | CHOICE | UNKNOWN
+  datatype status = FAILED | SOLVED | CHOICE of int | UNKNOWN
   type node_info = {offset : int ref,
 		    oldOffset : int option ref,
 		    groupOffset : int ref,

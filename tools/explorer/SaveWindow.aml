@@ -76,7 +76,7 @@ structure SaveWindow =
                       else case !status of
                           Types.FAILED => psFailed((myX-7,myY-7),(myX+7,myY+7))
                         | Types.SOLVED => psSolved(myX,myY+10)
-                        | Types.CHOICE => psChoice(myX,myY)
+                        | Types.CHOICE _ => psChoice(myX,myY)
                         | Types.UNKNOWN => psUnknown(myX,myY)
           val connection = if depth=0 then NONE
                            else if !hidden then
@@ -84,7 +84,7 @@ structure SaveWindow =
                            else case !status of
                                     Types.FAILED => SOME (psLine((myX,myY-7),(momX,myY-28)))
                                   | Types.SOLVED => SOME (psLine((myX,myY-10),(momX,myY-28)))
-                                  | Types.CHOICE => SOME (psLine((myX,myY-10),(momX,myY-28)))
+                                  | Types.CHOICE _ => SOME (psLine((myX,myY-10),(momX,myY-28)))
                                   | Types.UNKNOWN => SOME (psLine((myX,myY-10),(momX,myY-28)))
           val children = if !hidden then nil else
                          List.concat (List.map (buildPsTree (depth+1) myX) (Vector.toList (!children)))

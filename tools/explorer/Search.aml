@@ -25,18 +25,17 @@ struct
                     0 => (case ExplorerNode.nodeStatus (state, node) of
                               Types.SOLVED => callBack()
                             | _ => ())
-                  | 2 =>
-                    let val left = ExplorerNode.getLeftChild node
-                    in if ExplorerNode.isUnknown left 
-                          orelse ExplorerNode.hasOpenChildren left then
-                           dfe left else ();
-                    let val right = ExplorerNode.getRightChild node
-                    in if ExplorerNode.isUnknown right 
-                          orelse ExplorerNode.hasOpenChildren right then
-                           dfe right else ()
-                    end
-                    end
-                  | _ => raise Empty
+                  | n => doDfe 0 n node
+            and doDfe m n _ where (m=n) = ()
+              | doDfe m n node =
+                let
+                    val child = (ExplorerNode.getChild node m)
+                in
+                    if ExplorerNode.isUnknown child orelse
+                       ExplorerNode.hasOpenChildren child then
+                        (dfe child; doDfe (m+1) n node)
+                    else doDfe (m+1) n node
+                end
         in
             dfe node
         end

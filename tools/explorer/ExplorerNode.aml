@@ -67,7 +67,7 @@ struct
 	    val s = recomputeSpace mom
 	in
           case Space.status s of
-            Space.BRANCH desc =>
+            Space.BRANCH (_,desc) =>
               (Space.commit(s, i, desc);
                Space.status s;
                space := SOME s;
@@ -92,9 +92,10 @@ struct
                                                  TreeNode.setHasSolBelow node;
                                                  Types.addSolved state;
                                                  Types.SOLVED)
-                              | Space.BRANCH _ => (setStatus node Types.CHOICE;
-                                                   Types.addChoice state;
-                                                   Types.CHOICE)
+                              | Space.BRANCH(alt,desc) 
+                                => (setStatus node (Types.CHOICE alt);
+                                    Types.addChoice state;
+                                    Types.CHOICE alt)
                         end
                       | s => s
 
@@ -112,13 +113,16 @@ struct
                          case nodeStatus (state, node) of
                              Types.FAILED => 0
                            | Types.SOLVED => 0
-                           | Types.CHOICE =>
-                             (setChildren node #[createNode (SOME node) 1,
-                                                 createNode (SOME node) 2];
-                                              2)
+                           | Types.CHOICE n =>
+                             (setChildren node 
+                                (Vector.tabulate(n,
+                                   fn i => createNode (SOME node) i));
+                              n)
                            | Types.UNKNOWN => raise Subscript (* can't happen*)
                                                     )
                       | _ => Vector.length (!ch)
+
+    fun getChild (node as N(_,_,ch)) n = Vector.sub(!ch, n)
 
     fun getLeftChild (node as N(_,_,ch)) =
         case !ch of #[c,_] => c

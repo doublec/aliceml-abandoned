@@ -241,7 +241,7 @@ struct
        case (!status) of
 	   FAILED => "failed "^(if (!dirty) then "dirty" else "clean")
 	 | SOLVED => "solved "^(if (!dirty) then "dirty" else "clean")
-	 | CHOICE => "choice "^(if (!dirty) then "dirty" else "clean")
+	 | CHOICE _ => "choice "^(if (!dirty) then "dirty" else "clean")
 	 | UNKNOWN => "unknown "^(if (!dirty) then "dirty" else "clean")
        
 end

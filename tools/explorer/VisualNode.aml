@@ -116,7 +116,7 @@ structure VisualNode =
       if (!hidden) then ()
       else
 	  case (!status) of
-	      Types.CHOICE =>
+	      Types.CHOICE _ =>
 	      if (!hasSolBelow) then
 		  Vector.app hideFailed (!children)
 	      else
