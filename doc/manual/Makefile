@@ -17,6 +17,7 @@ INSTALLFILES_0 = \
 	interop.html examples.html tour.html sitemap.html \
 	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg inspector-3.jpg \
 	inspector-conc-1.jpg inspector-conc-2.jpg inspector-conc-3.jpg \
+	inspector-conc-4.jpg inspector-conc-5.jpg inspector-conc-6.jpg \
 	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
 	inspector-fd-4.jpg inspector-fd-5.jpg
 INSTALLFILES_LIBRARY_0 = \

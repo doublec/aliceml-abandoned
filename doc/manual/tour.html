@@ -633,24 +633,69 @@ end
 </PRE>
 
 <P>The implementation is a variation of a difference list: the first reference
-stores the tail of the queue ("write position"), while the second represents
+stores the tail of the queue ("write position"), while the second points to
 the head ("read position"). Modification of either position is performed by an
 atomic exchange operation on the respective reference. That ensures that all
 operations are properly sequentialized.</P>
 
-<!--TODO-->
-<P>More explanation...</P>
+<P>The tail is represented as a promised future. As in the append example
+from the previous section this allows constructing the message queue
+incrementally in the <TT>put</TT> function.</P>
 
+<P>By using a promised future in the implementation of <TT>get</TT> we can use
+atomic exchange although the new value actually depends on the previous one.
+Any concurrent <TT>get</TT> operation will block automatically (in <TT>tl</TT>)
+until the future is eliminated by fulfilling the promise. Consequently, no
+<TT>get</TT> operation can proceed before the former has determined the new
+queue. That ensures thread-safity.<P>
+
+<P>Likewise, when the queue is empty, <TT>get</TT> encounters a future for
+<TT>xs</TT> and will block. This time, the future is eliminated by the next
+<TT>put</TT> operation.</P>
+
+<P>Let us create a channel and observe its content using the Inspector:</P>
 
 <PRE class=code>
-val (p: int Port.port, xs) = Port.new ()
+val ch : int Chan.chan = Chan.chan ()
+<I>val ch : int Chan.chan = val</I>
+inspect ch
+<I>val it : unit = ()</I></PRE>
 
-Inspector.inspect xs;
+<P class=note><I>Note:</I> The interactive top-level prints the channel value
+as <TT>val</TT>, indicating an abstract type that cannot be shown. The
+Inspector allows looking at values of abstract type, however.</P>
 
-Port.send (p, 17);
+<P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
 
-Port.send (p, 7);
+<PRE class=code>
+Chan.put (ch, 17); Chan.put (ch, 6)
+<I>val it : unit = ()</I></PRE>
 </PRE>
+
+<P align=center><IMG src="inspector-conc-5.jpg" border=0 alt="Alice Inspector"></P>
+
+<PRE class=code>
+(Chan.get ch, Chan.get ch)
+<I>val it : int * int = (17, 6)</I></PRE>
+
+<P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>Tuples are always evaluated from left to right, so we will deterministically
+get the pair <TT>(17,6)</TT>. To witness non-determinism due to concurrency, let
+us set up several clients:</P>
+
+<PRE class=code>
+fun client _ = spawn (fib 20; Chan.get ch)
+<I>val client : 'a -> int = fn</I>
+inspect (List.tabulate (5, client))
+<I>val it : unit = ()</I>
+Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
+<I>val it : unit = ()</I></I></PRE>
+
+<P align=center><IMG src="inspector-conc-6.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>The order in which the treads will read from the channel is
+non-deterministic, but no value will get lost or read twice.</P>
 
 
 <?php section("packages", "packages") ?>
