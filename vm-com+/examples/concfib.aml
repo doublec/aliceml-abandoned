@@ -1,0 +1,30 @@
+__prebound Prebound
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+type     int    = Prebound.int
+type     string = Prebound.string
+type     bool   = Prebound.bool
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+type unit = {}
+
+__primitive val op- : int * int -> int = "Int.-"
+__primitive val op+ : int * int -> int = "Int.+"
+__primitive val concur : (unit -> 'a) -> 'a = "Future.concur"
+__primitive val intToString: int -> string = "Int.toString"
+__primitive val print: string -> unit = "TextIO.print"
+
+fun fib 0 = 1
+  | fib 1 = 1
+  | fib n = fib' (n - 1) + fib' (n - 2)
+and fib' n = concur (fn () => fib n)
+
+val _ = print (intToString (fib 12))

@@ -1,0 +1,60 @@
+__prebound Prebound
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+type     int    = Prebound.int
+type     string = Prebound.string
+type     bool   = Prebound.bool
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+type unit = {}
+
+__primitive val op=  : ''a * ''a -> bool = "="
+
+__primitive val op- : int * int -> int = "Int.-"
+__primitive val op* : int * int -> int = "Int.*"
+__primitive val op< : int * int -> bool = "Int.<"
+
+__primitive val hole: unit -> 'a = "Hole.hole"
+__primitive val future: 'a -> 'a = "Hole.future"
+__primitive val fill: 'a * 'a -> unit = "Hole.fill"
+__primitive val byneed: (unit -> 'a) -> 'a = "Future.byneed"
+
+__primitive val intToString: int -> string = "Int.toString"
+__primitive val print: string -> unit = "TextIO.print"
+
+fun nth (x::_, 0) = x
+  | nth (_::xr, i) = nth (xr, i - 1)
+
+fun map (f, xs) =
+    byneed (fn () =>
+	    case xs of
+		x::xr => f x::map (f, xr))
+
+fun merge (xs, ys) =
+    byneed (fn () =>
+	    case (xs, ys) of
+		(x::xr, y::yr) =>
+		    if x = y then x::merge (xr, yr)
+		    else if x < y then x::merge (xr, ys)
+		    else y::merge (xs, yr))
+
+fun makeStream () =
+    let
+	val rest = hole ()
+	val hamming = 1::rest
+    in
+	fill (rest, merge (map (fn i => 2 * i, hamming),
+			   merge (map (fn i => 3 * i, hamming),
+				  map (fn i => 5 * i, hamming))));
+	hamming
+    end
+
+val _ = print (intToString (nth (makeStream (), 100)))
