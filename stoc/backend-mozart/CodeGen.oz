@@ -116,12 +116,6 @@ define
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(id(Coord ref _) some(Id)) then ThenVInstr0 in
-	    VHd = vTestBuiltin(_ 'Cell.is' [Reg0 {State.cs newReg($)}]
-			       ThenVInstr0 ElseVInstr VTl)
-	    ThenVInstr0 = vCallBuiltin(_ 'Cell.access'
-				       [Reg0 {MakeReg Id State}]
-				       {TranslateCoord Coord} ThenVInstr)
 	 [] conTest(Id1 some(Id2)) then NameReg ThenVInstr0 in
 	    NameReg = {GetReg Id1 State}
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
@@ -129,6 +123,12 @@ define
 			       ThenVInstr0 ElseVInstr VTl)
 	    ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id2 State} false
 				     unit ThenVInstr)
+	 [] refTest(Id) then ThenVInstr0 in
+	    VHd = vTestBuiltin(_ 'Cell.is' [Reg0 {State.cs newReg($)}]
+			       ThenVInstr0 ElseVInstr VTl)
+	    ThenVInstr0 = vCallBuiltin(_ 'Cell.access'
+				       [Reg0 {MakeReg Id State}]
+				       {TranslateCoord Coord} ThenVInstr)
 	 [] tupTest(nil) then
 	    VHd = vTestConstant(_ Reg0 '#'
 				ThenVInstr ElseVInstr {TranslateCoord Coord}
@@ -194,18 +194,6 @@ define
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(Coord Id=id(_ ref _) true) then
-	 Pos PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
-      in
-	 Pos = {TranslateCoord Coord}
-	 PredId = pid({GetPrintName Id} 2 Pos nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?ResReg)}
-	 VInstr = vCallBuiltin(_ 'Cell.new' [ArgReg ResReg] Pos nil)
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] conExp(Coord Id true) then
 	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
 	 VInstr NameReg VInter1 VInter2 GRegs Code
@@ -221,6 +209,18 @@ define
 	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
 				Pos VInter2)
 	 VInter2 = vInlineDot(_ ResReg 1 ArgReg false Pos nil)
+	 {State.cs
+	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] refExp(Coord) then
+	 Pos PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
+      in
+	 Pos = {TranslateCoord Coord}
+	 PredId = pid('ref' 2 Pos nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ArgReg)}
+	 {State.cs newReg(?ResReg)}
+	 VInstr = vCallBuiltin(_ 'Cell.new' [ArgReg ResReg] Pos nil)
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
@@ -258,9 +258,6 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord} VTl)
-      [] conAppExp(Coord id(_ ref _) oneArg(Id)) then
-	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
-			    {TranslateCoord Coord} VTl)
       [] conAppExp(Coord Id1 oneArg(Id2)) then
 	 Pos VInter1 NameReg TmpReg ResReg VInter2 VInter3
       in
@@ -273,6 +270,9 @@ define
 				Pos VInter2)
 	 VInter2 = vInlineDot(_ ResReg 1 {GetReg Id2 State} false Pos VInter3)
 	 VInter3 = vUnify(_ Reg ResReg VTl)
+      [] refAppExp(Coord oneArg(Id)) then
+	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
+			    {TranslateCoord Coord} VTl)
       [] primAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}

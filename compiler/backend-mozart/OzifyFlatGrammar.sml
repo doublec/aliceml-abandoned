@@ -110,6 +110,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputTest (q, ConTest (id, idOpt)) =
 	    (f (q, "conTest"); outputId (q, id); m q;
 	     outputOption outputId (q, idOpt); r q)
+	  | outputTest (q, RefTest id) =
+	    (f (q, "refTest"); outputId (q, id); r q)
 	  | outputTest (q, TupTest ids) =
 	    (f (q, "tupTest"); outputList outputId (q, ids); r q)
 	  | outputTest (q, RecTest labIdList) =
@@ -192,6 +194,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, ConExp (coord, id, hasArgs)) =
 	    (f (q, "conExp"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
+	  | outputExp (q, RefExp coord) =
+	    (f (q, "refExp"); outputCoord (q, coord); r q)
 	  | outputExp (q, TupExp (coord, ids)) =
 	    (f (q, "tupExp"); outputCoord (q, coord); m q;
 	     outputList outputId (q, ids); r q)
@@ -218,6 +222,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, ConAppExp (coord, id, args)) =
 	    (f (q, "conAppExp"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
+	  | outputExp (q, RefAppExp (coord, args)) =
+	    (f (q, "refAppExp"); outputCoord (q, coord); m q;
+	     outputArgs outputId (q, args); r q)
 	  | outputExp (q, PrimAppExp (coord, string, ids)) =
 	    (f (q, "primAppExp"); outputCoord (q, coord); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
