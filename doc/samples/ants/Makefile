@@ -1,28 +1,42 @@
-SIMULATOR_SOURCES = \
-	Ant.aml \
-	Instructions.aml \
-	World.aml \
-	Simulator.aml \
-	InstructionsParser.aml
+PATH := /opt/alice-devel/bin:$(PATH)
+ALICEC = alicec --no-warn-conventions
+ALICEDEP =  alicedep
 
-SIMULATOR_TARGETS = $(SIMULATOR_SOURCES:%.aml=%.stc)
+SIMULATOR_COMPONENTS = \
+	Ant \
+	Instructions \
+	World \
+	Simulator \
+	InstructionsParser
 
-SOURCES = $(SIMULATOR_SOURCES)
-TARGETS = $(SIMULATOR_TARGETS)
+SIMULATOR_SOURCES = $(SIMULATOR_COMPONENTS:%=%.aml)
+SIMULATOR_TARGETS = $(SIMULATOR_COMPONENTS:%=%.stc)
 
-.PHONY: all simulator depend clean
+COMPILER_COMPONENTS = \
+	ANTE-sig Ante EMIT-sig Emit
 
-all: simulator
+COMPILER_SOURCES = $(COMPILER_COMPONENTS:%=%.aml)
+COMPILER_TARGETS = $(COMPILER_COMPONENTS:%=%.stc)
 
-simulator: $(SIMULATOR_TARGETS)
+SOURCES = $(SIMULATOR_SOURCES) $(COMPILER_SOURCES)
+TARGETS = $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
+
+.PHONY: all simulator compiler depend clean distclean
+
+all: simulator compiler
+
+simulator: $(SIMULATOR_TARGETS) $(COMPILER_TARGETS)
 
 %.stc: %.aml
-	alicec -c $< -o $@
+	$(ALICEC) $<
 
 depend:
-	alicedep $(SOURCES) > Makefile.depend
+	$(ALICEDEP) $(SOURCES) > Makefile.depend
 
 -include Makefile.depend
 
 clean:
 	rm -f $(TARGETS)
+
+distclean: clean
+	rm -f Makefile.depend
