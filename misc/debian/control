@@ -1,9 +1,9 @@
 Source: alice
 Section: devel
 Priority: optional
-Build-Depends: debhelper (>= 4.0.0)
+Build-Depends: debhelper (>= 4.1.6)
 Maintainer: Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
-Standards-Version: 3.5.8
+Standards-Version: 3.5.10
 
 Package: alice
 Architecture: all
@@ -11,15 +11,15 @@ Depends: mozart (>= 1.2.5)
 Recommends: mozart-gtk, www-browser
 Suggests: sml-mode
 Description: The Alice Programming System
- Alice is a functional programming language based on Standard ML, extended
- with support for concurrent, distributed, and constraint programming.
+ Alice is a functional programming language based on Standard ML, extended with
+ support for concurrent, distributed, and constraint programming.
  .
- This package provides the Alice Programming System, an implementation of
- Alice based on the Mozart virtual machine.  It includes an
- interpreter-like interactive toplevel, a batch compiler, a static linker,
- the Inspector (a tool for dynamically inspecting Alice data structures),
- the Explorer (a tool for interactively investigating search problems), a
- binding for the Gnome toolkit GUI library, and a comprehensive library.
+ This package provides an implementation of Alice based on the Mozart virtual
+ machine.  It includes an interpreter-like interactive toplevel, a batch
+ compiler, a static linker, the Inspector (a tool for dynamically inspecting
+ Alice data structures), the Explorer (a tool for interactively investigating
+ search problems), a binding for the Gnome toolkit GUI library, and a
+ comprehensive library.
  .
- More information on Alice and the Alice Programming System is available at
- <a href="http://www.ps.uni-sb.de/alice/">http://www.ps.uni-sb.de/alice/</a>.
+ More information on Alice and the Alice Programming System is available at <a
+ href="http://www.ps.uni-sb.de/alice/">http://www.ps.uni-sb.de/alice/</a>.
