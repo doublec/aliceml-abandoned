@@ -15,7 +15,7 @@
     functor PrimIO (structure V :  MONO_VECTOR
                     structure A :  MONO_ARRAY where Vector = V
 		    val someElem : V.elem
-		    type pos
+		    eqtype pos
 		    val compare :  pos * pos -> order) :
 	    PRIM_IO where type elem   = V.elem
 	              and type vector = V.t
