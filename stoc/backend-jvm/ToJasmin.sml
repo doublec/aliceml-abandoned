@@ -186,6 +186,13 @@ structure ToJasmin =
 		fun get reg =
 		    if !OPTIMIZE >= 1 then Array.sub (!regmap, getOrigin reg) else reg
 
+		(* returns Jasmin-code for astore/istore. May be pop for
+		 unread registers *)
+		fun store (reg, job) =
+		    if reg = ~1 then
+			"pop"
+		    else job^Int.toString reg
+
 		(* called when a register is defined. Needed for lifeness analysis *)
 		fun define (register, pos) =
 		    let
@@ -216,20 +223,24 @@ structure ToJasmin =
 				val notfused = (Array.sub (!fusedwith, register) = ~1)
 				val genuineReg = getOrigin register
 				val f' = Array.sub (!from, genuineReg)
+				val t' = Array.sub (!to, genuineReg)
 				fun assignNextFree (act) =
 				    if f' > Array.sub (!jvmto, act)
 					then (Array.update (!regmap, genuineReg, act);
-					      Array.update (!jvmto, act,
-							    Array.sub (!to, genuineReg)))
+					      Array.update (!jvmto, act, t'))
 				    else assignNextFree (act+1)
 			    in
 				if f'= ~1 then
+				    (* Never stored to this register. *)
 				    ()
+				else
+				    if t' <> ~1 andalso
+					(* If a register is never read,
+					 we don't have to store it *)
+					notfused then
+					assignNextFree 1
 				    else
-					if notfused then
-					    assignNextFree 1
-					else
-					    ();
+					();
 				if register+1<Array.length(!to)
 				    then assign (register+1)
 				else ()
@@ -282,7 +293,7 @@ structure ToJasmin =
 			fun findMax r =
 			    if r+1=Array.length (!jvmto) orelse
 				Array.sub (!jvmto, r) = ~1 then
-				r
+				r-1
 			    else findMax (r+1)
 		    in
 			if !OPTIMIZE >= 1 then
@@ -642,8 +653,8 @@ structure ToJasmin =
 		    val i = if s then JVMreg.get j-1 else JVMreg.get j
 		in
 		    if i<4 then
-			"astore_"^Int.toString i
-		    else "astore "^Int.toString i
+			JVMreg.store(i,"astore_")
+		    else JVMreg.store(i,"astore ")
 		end
 	      | instructionToJasmin (Aastore,_)  = "aastore"
 	      | instructionToJasmin (Aaload,_) = "aaload"
@@ -704,12 +715,12 @@ structure ToJasmin =
 					 end
 	      | instructionToJasmin (Istore j,s) =
 					 let
-				     val i = if s then JVMreg.get j-1 else JVMreg.get j
-				 in
-				     if i<4 then
-				     "istore_"^Int.toString i
-				     else "istore "^Int.toString i
-				 end
+					     val i = if s then JVMreg.get j-1 else JVMreg.get j
+					 in
+					     if i<4 then
+						 JVMreg.store(i,"istore_")
+					     else JVMreg.store(i,"istore ")
+					 end
 	      | instructionToJasmin (Ireturn,_) = "ireturn"
 	      | instructionToJasmin (Instanceof cn,_) = "instanceof "^cn
 	      | instructionToJasmin (Invokeinterface(cn,mn,ms as (arg,ret)),_) =
