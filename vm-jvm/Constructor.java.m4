@@ -74,7 +74,7 @@ public class Constructor implements DMLValue {
      */
     protected Object readResolve()
 	throws java.io.ObjectStreamException {
-	System.out.println(gName);
+//  	System.out.println(gName);
 	Object o = GName.gNames.get(gName);
 	if (o == null) {
 	    GName.gNames.put(gName,this);
