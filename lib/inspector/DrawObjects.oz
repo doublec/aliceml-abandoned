@@ -57,13 +57,27 @@ define
    end
 
    class CellUpdate
+      attr
+	 watchThread
       meth watchCell
-	 Cell     = @savedValue
-	 OldValue = {Access Cell}
-	 WidPort  = {@visual getServer($)}
-	 PollMS   = {@visual get(widgetCellPollInterval $)}
+	 Cell        = @savedValue
+	 OldValue    = {Access Cell}
+	 WidPort     = {@visual getServer($)}
+	 PollMS      = {@visual get(widgetCellPollInterval $)}
+	 WatchThread = @watchThread
       in
-	 thread {WatchCell self Cell OldValue WidPort PollMS} end 
+	 thread
+	    WatchThread = {Thread.this}
+	    {WatchCell self Cell OldValue WidPort PollMS}
+	 end
+      end
+      meth terminate
+	 WatchThread = @watchThread
+      in
+	 case {Thread.state WatchThread}
+	 of terminated then skip
+	 else {Thread.terminate WatchThread}
+	 end
       end
       meth tell($)
 	 case @dirty
@@ -83,12 +97,20 @@ define
 	 LabelTupleDrawObject, drawBody(X Y)
 	 CellUpdate, watchCell
       end
+      meth makeDirty
+	 CellUpdate, terminate
+	 LabelTupleDrawObject, makeDirty
+      end
    end
 
    class CellIndDrawObject from LabelTupleIndDrawObject CellUpdate
       meth drawBody(X Y)
 	 LabelTupleIndDrawObject, drawBody(X Y)
 	 CellUpdate, watchCell
+      end
+      meth makeDirty
+	 CellUpdate, terminate
+	 LabelTupleIndDrawObject, makeDirty
       end
    end
 
@@ -97,12 +119,20 @@ define
 	 LabelTupleGrDrawObject, drawBody(X Y)
 	 CellUpdate, watchCell
       end
+      meth makeDirty
+	 CellUpdate, terminate
+	 LabelTupleGrDrawObject, makeDirty
+      end
    end
 
    class CellGrIndDrawObject from LabelTupleGrIndDrawObject CellUpdate
       meth drawBody(X Y)
 	 LabelTupleGrIndDrawObject, drawBody(X Y)
 	 CellUpdate, watchCell
+      end
+      meth makeDirty
+	 CellUpdate, terminate
+	 LabelTupleGrIndDrawObject, makeDirty
       end
    end
    
