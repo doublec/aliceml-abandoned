@@ -12,10 +12,12 @@
 import signature HIGHSCORE_IO from "HIGHSCORE_IO-sig"
 import structure Highscore    from "../common/Highscore"
 
+import structure Inspector    from "x-alice:/lib/tools/Inspector"
+
 structure HighscoreIO :> HIGHSCORE_IO =
 struct
 
-    val path = OS.Path.currentArc ^ "highscore/highscore.hs"
+    val path = OS.Path.currentArc ^ "/highscore/highscore.hs"
 
     fun load () = 
 	let

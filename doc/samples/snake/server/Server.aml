@@ -321,7 +321,6 @@ struct
                             in
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
-                                Inspector.inspect ("Server:playersJoined", players, name, color);
                                 (* inform the other PLAYERs *)
                                 invokeSeveral (_file_, _line_) 
                                     (players, #playersJoined, [(name, color)]);
@@ -383,7 +382,6 @@ struct
                     val highscore   = HighscoreIO.load ()
                     val highscore   = Highscore.merge (highscore, 
                                         computePointsList (), 0) (*FIXME*)
-                    val _           = HighscoreIO.save highscore
                 in
                     invokeSeveral (_file_, _line_)
                         (allConnected (), #tournamentFinished, highscore);
@@ -446,7 +444,7 @@ struct
                     (* send level finished signal *)
                     invokeSeveral (_file_, _line_) 
                         (allConnected (), #levelFinished, ());
-                    
+
                     case levels of
                         []  =>      (* no more levels -- tournament ended *)
                         finishTournament ()

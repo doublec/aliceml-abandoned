@@ -110,8 +110,7 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		(Inspector.inspect "highscore window appears";
-		    reset (SOME ("Highscore", "bla"(*highscoreToString h*))))
+		    reset (SOME ("Highscore", highscoreToString h))
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
 
