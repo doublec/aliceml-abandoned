@@ -1686,6 +1686,7 @@ static void PushHandlerFrame(word codeFrame, word handlerFrame) {
   Scheduler::PushFrame(codeFrame);
 }
 
+// Try of instr * idDef * idDef * instr
 TagVal *NativeCodeJitter::InstrTry(TagVal *pc) {
   PrintPC("Try\n");
   NativeCodeHandlerFrame::New(JIT_V1);
