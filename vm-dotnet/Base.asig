@@ -16,32 +16,38 @@
  *)
 
 
-__prebound Prebound
+local
 
+structure Pervasive =							(**)
+  struct
+    structure Int	= struct __primitive eqtype int		= "int"     end
+    structure LargeInt	= struct               type int		= Int.int   end
+    structure Word	= struct __primitive eqtype word	= "word"    end
+    structure LargeWord	= struct               type word	= Word.word end
+    structure Real	= struct __primitive eqtype real	= "real"    end
+    structure LargeReal	= struct               type real	= Real.real end
+    structure Char	= struct __primitive eqtype char	= "char"    end
+    structure WideChar	= struct               type char	= Char.char end
+    structure String	= struct __primitive eqtype string	= "string"  end
+    structure WideString= struct               type string	= String.string
+									    end
+    structure Vector	= struct __primitive eqtype 'a vector	= "vector"  end
+    structure Array	= struct __primitive __eqeqtype 'a array= "array"   end
+    structure Ref	= struct __primitive __reftype 'a ref	= ref of 'a end
+    structure General	= struct __primitive datatype exn	= "exn"     end
+(*
+    structure Time	= struct __primitive eqtype time	= "time"    end
+    structure Promise	= struct __primitive type 'a promise	= "promise" end
+*)
+  end
+
+in
 
 signature BASIS = sig
 
 (*****************************************************************************
  * Top-level, part 1
  *****************************************************************************)
-
-(* Hardwired *)
-
-type     unit	= {}
-datatype bool	= datatype Prebound.bool
-type     int	= Prebound.int
-type     word	= Prebound.word
-type     real	= Prebound.real
-type     string	= Prebound.string
-type     char	= Prebound.char
-type  'a vector	= 'a Prebound.vector
-datatype list	= datatype Prebound.list
-datatype ref	= datatype Prebound.ref
-datatype exn	= datatype Prebound.exn
-
-exception Match	= Prebound.Match
-exception Bind	= Prebound.Bind
-
 
 (* Fixity *)
 
@@ -52,6 +58,27 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  3  :=:			(**)
 infix  0  before
+
+(* Pervasives *)
+
+type    unit		= {}
+type    int		= Pervasive.Int.int
+type    word		= Pervasive.Word.word
+type    real		= Pervasive.Real.real
+type    char		= Pervasive.Char.char
+type    string		= Pervasive.String.string
+type 'a vector		= 'a Pervasive.Vector.vector
+type 'a array		= 'a Pervasive.Array.array
+
+datatype exn		= datatype Pervasive.General.exn
+datatype ref		= datatype Pervasive.Ref.ref
+
+datatype bool		= false | true
+datatype order		= LESS | EQUAL | GREATER
+datatype ('a,'b) alt	= FST of 'a | SND of 'b				(**)
+datatype 'a option	= NONE | SOME of 'a
+datatype 'a list	= nil | op:: of 'a * 'a list
+
 
 
 (* Generic and overloaded Identifiers (but we don't overload them :-P) *)
@@ -114,7 +141,6 @@ signature GENERAL =
 structure General : GENERAL where type unit = unit
 			    where type exn  = exn
 
-datatype order = datatype General.order
 
 
 (*****************************************************************************
@@ -245,9 +271,6 @@ signature OPTION =
 
 
 structure Option : OPTION
-
-
-datatype option = datatype Option.option
 
 
 
@@ -1020,7 +1043,7 @@ structure Time : TIME
 
 signature CELL =
   sig
-    __eqtype 'a cell
+    __eqeqtype 'a cell
 
     val cell :		'a -> 'a cell
     val exchange :	'a cell * 'a -> 'a
@@ -1137,13 +1160,12 @@ structure Thread : THREAD
  * Top-level, part 2
  *****************************************************************************)
 
-type ('a,'b) alt	= ('a,'b) Alt.alt			(**)
-type 'a array		= 'a Array.array
-
+exception Bind		= General.Bind
 exception Chr		= General.Chr
 exception Div		= General.Div
 exception Domain	= General.Domain
 exception Fail		= General.Fail
+exception Match		= General.Match
 exception Overflow	= General.Overflow
 exception Size		= General.Size
 exception Span		= General.Span
@@ -1215,3 +1237,5 @@ val byneed :		(unit -> 'a) -> 'a			(**)
 
 
 end (* sig *)
+
+end (* local *)
