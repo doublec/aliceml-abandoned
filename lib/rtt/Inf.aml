@@ -1180,13 +1180,14 @@ TextIO.print "\n";
 		then (j2, newRea())
 		else raise Mismatch(Incompatible(j1,j2))
 	   | (SIG s1, SIG s2) =>
-		if isNested then (matchSig(s1,s2,j2), dummyRea) else
 		let
-		    val rea  = matchRea(s1,s2)
-		    val j2'  = realise(rea,j2)
-		    val j2'' = matchSig(s1, asSig j2', j2')
+		    val rea = if isNested then dummyRea else matchRea(s1,s2)
+		    val j2' = if isNested then j2 else realise(rea,j2)
+		    val s2' = matchSig(s1, asSig j2')
 		in
-		    (j2'', rea)
+		    if s2' = s2
+		    then (j2', rea)
+		    else (sign' s2', rea)
 		end
 	   | (FUN(p1,j11,j12), FUN(p2,j21,j22)) =>
 		let
@@ -1240,8 +1241,8 @@ TextIO.print "\n";
 	    ((p2,j2'), rea)
 	end
 
-    and matchSig(s1,s2,j2) =
-	if stamp s1 = stamp s2 then j2 else
+    and matchSig(s1,s2) =
+	if stamp s1 = stamp s2 then s2 else
 	let
 	    val change = ref false
 	    val tab1   = tab s1
@@ -1291,8 +1292,8 @@ TextIO.print "\n";
 	     val items2' = List.mapr matchItem (items s2)
 	in
 	    if !change
-	    then sign'(newSig items2')
-	    else j2
+	    then newSig items2'
+	    else s2
 	end
 
     and matchKind(k1,k2) =
