@@ -85,8 +85,8 @@ struct
 	    if obj = NULL then obj else
 	    let
 		val obj' = NativeGtkCore.weakMapCondGet(obj,NULL)
-		val _ = print "condget done.\n"
-		val _ = TextIO.flushOut TextIO.stdOut
+(*!		val _ = print "condget done.\n"
+		val _ = TextIO.flushOut TextIO.stdOut*)
 	    in
 		if obj' = NULL then newObject obj else obj'
 	    end 

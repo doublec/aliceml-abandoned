@@ -52,8 +52,8 @@ local
     (* Create Rectangle Handler *)
     local
 	fun toggleColor(item, fill, outline) =
-	    (GnomeCanvas.itemSet(item, "fill_color_gdk", [Gtk.OBJECT fill]);
-	     GnomeCanvas.itemSet(item, "outline_color_gdk", [Gtk.OBJECT outline]))
+	    (GnomeCanvas.itemSet(item, "fill_color_gdk", Gtk.OBJECT fill);
+	     GnomeCanvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline))
 
 	val pressed = ref false
 	val buttonx = ref (0.0)

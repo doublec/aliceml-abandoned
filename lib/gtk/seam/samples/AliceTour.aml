@@ -66,14 +66,23 @@ local
 
     fun isToken c = not (isSep c)
 
+    fun myInsertWithTags (buffer, iter, token, taglist) =
+    let
+	val startOffset = Gtk.textIterGetOffset iter
+	val start = Gtk.textIterNew()
+    in
+	Gtk.textBufferInsert (buffer, iter, token, String.size token) ;
+	Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
+        List.app (fn t => Gtk.textBufferApplyTag(buffer,t,start,iter)) taglist
+    end
+
     fun insertTokens(pars as (text, iter, tc, nc, bg, ft), nil)       = ()
       | insertTokens(pars as (text, iter, tc, nc, bg, ft), token::tr) =
 	let
 	    val fg = if isKeyWord token then tc else nc
 	in
 	    (Gtk.textBufferGetEndIter(text, iter);
-	     Gtk.textBufferInsertWithTags(text, iter, token, String.size token,
-					  ft, [Gtk.OBJECT fg, Gtk.OBJECT bg]);
+	     myInsertWithTags(text, iter, token, [ft, fg, bg]);
 	     insertTokens(pars, tr))
 	end
 
@@ -135,7 +144,7 @@ local
 	    val white = Gdk.colorNew(65535, 65535, 65535)
 	    val kcol  = !textcolor
 	    fun createTag(name, prop, value) =
-		Gtk.textBufferCreateTag(text, name, prop, [value])
+		Gtk.textBufferCreateTag(text, name, prop, value)
 	in
 	    (Gtk.widgetSetSizeRequest(textv, Real.round xdim, Real.round ydim);
 	     Gtk.widgetSetScrollAdjustments(textv, xa, ya);

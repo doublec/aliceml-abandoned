@@ -32,7 +32,7 @@ inline void print_type(char *s, void *obj) {
   GTypeQuery q;
   memset(&q, 0, sizeof(q));
   g_type_query(G_OBJECT_TYPE(p), &q);
-  g_message("%s: %p (type %s)", s, p, q.type_name);
+  //!  g_message("%s: %p (type %s)", s, p, q.type_name);
 }
 
 inline void refObject(void *p, int type) {
@@ -51,7 +51,7 @@ inline void refObject(void *p, int type) {
 
 DEFINE1(NativeGtkCore_refObject) {
   DECLARE_UNMANAGED_POINTER_TYPE(p,type,x0);
-  g_message("reffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
+  //!  g_message("reffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
   refObject(p,type);  
   RETURN(x0);
 } END
@@ -83,7 +83,7 @@ DEFINE1(NativeGtkCore_hasSignals) {
 
 DEFINE1(NativeGtkCore_printObject) {
   DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
-  g_message("Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
+  g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
   RETURN_UNIT;
 } END
 
@@ -551,7 +551,7 @@ DEFINE1(NativeGtkCore_weakMapAdd) {
   DECLARE_UNMANAGED_POINTER_TYPE(obj,type,x0);
   //g_message("adding Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   WeakMap::FromWord(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
-  g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
+  //!  g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN_UNIT;
 } END
 
@@ -566,7 +566,7 @@ DEFINE1(NativeGtkCore_weakMapIsMember) {
 DEFINE2(NativeGtkCore_weakMapCondGet) {
   // x0 = (pointer, type), x1 = alternative  
   WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1);
-  g_message("condget");
+  //!  g_message("condget");
   RETURN(WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1));
 } END
 

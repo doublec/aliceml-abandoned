@@ -307,8 +307,6 @@ in
 	      | MakeTextContents (x::xs) = x^"\n"^(MakeTextContents xs)
 	    and MakeTextWidget ({xdim=xdim, ydim=ydim, text=ts}) =
 		let
-(*		    val l = Gtk.labelNew "abc"
-		    val _ = GtkCore.printObject l*)
 		    val buf = Gtk.textBufferNew Gtk.NULL
 		    val s = MakeTextContents ts
 		    val _ = Gtk.textBufferSetText(buf, s, size s)
@@ -348,8 +346,9 @@ in
 				       | SubTree (t,s) => (t, SOME s)
 		in
 		    (Gtk.treeStoreAppend(tree, iter, parent);
-		     Gtk.treeStoreSet(tree, iter, [Gtk.INT 0, Gtk.STRING title,
-						  Gtk.INT ~1]);
+		     Gtk.treeStoreSetValist(tree, iter, 
+					    [Gtk.INT 0, 
+					     Gtk.STRING title, Gtk.INT ~1]);
 		     (if sub=NONE then () else MakeTreeItems(tree, iter, 
 							     valOf sub));
 		     MakeTreeItems(tree, parent, ir))
@@ -359,13 +358,15 @@ in
 		    val tree = Gtk.treeStoreNew ()
 		    val _ = MakeTreeItems(tree, Gtk.NULL, entries)
 		    val treev = Gtk.treeViewNewWithModel tree
+		    val col = Gtk.treeViewColumnNew()
+		    val cell = Gtk.cellRendererTextNew()
 		    fun callback (tv, _) =
 			    handler(Gtk.treeViewGetSelectedString tv, "select")
 		in
 		    (Gtk.treeViewSetHeadersVisible(treev, false);
-		     Gtk.treeViewInsertColumnWithAttributes
-		       (treev, ~1, "", Gtk.cellRendererTextNew(), 
-			[Gtk.STRING "text", Gtk.INT 0]);
+		     Gtk.treeViewColumnPackStart(col, cell, true); 
+		     Gtk.treeViewColumnAddAttribute(col, cell, "text", 0);
+		     Gtk.treeViewInsertColumn(treev, col, ~1);
 		     Gtk.treeViewExpandAll treev;
 		     Gtk.signalConnect(treev, "cursor-changed", callback);
 		     treev)
