@@ -33,8 +33,8 @@ functor MkBackendStockwerk(structure ComponentManager:
 
 	type value = AbstractCodeGrammar.value
 	__primitive val cast: value -> Component.t = "Unsafe.cast"
-	__primitive val selTuple: Reflect.value * int -> value =
-	    "Unsafe.selTuple"
+	__primitive val selRecord: Reflect.value * UniqueString.t -> value =
+	    "Unsafe.selRecord"
 
 	structure ThePhase =
 	    struct
@@ -52,12 +52,12 @@ functor MkBackendStockwerk(structure ComponentManager:
 				val str =
 				    ComponentManager.eval (url, component)
 			    in
-				Vector.appi
-				    (fn (i, stamp) =>
+				Vector.app
+				    (fn (stamp, label) =>
 					StampMap.insert
 					    (context, stamp,
-					     selTuple (str, i)))
-				    (exportDesc, 0, NONE)
+					     selRecord (str, label)))
+				    exportDesc
 			    end
 		    in
 			Target.COMPONENT {component = fn () => component, eval}
