@@ -78,10 +78,10 @@ define
       end
    end
 
-   fun {MyMember Ts T}
+   fun {QueueMember Ts T}
       if {IsFree Ts} then false
       elsecase Ts of !T|_ then true
-      elseof _|Tr then {MyMember Tr T}
+      elseof _|Tr then {QueueMember Tr T}
       end
    end
 
@@ -108,7 +108,8 @@ define
 	 Scheduler, Enqueue(T)
       end
       meth condEnqueue(T)
-	 case {T getState($)} of runnable andthen {Not {MyMember @QueueHd T}}
+	 case {T getState($)} of runnable
+	    andthen {Not {QueueMember @QueueHd T}}
 	 then Scheduler, Enqueue(T)
 	 else skip
 	 end
