@@ -302,9 +302,9 @@ struct
     fun trace f s	= f
     val newKind		= new
 
-    (*DEBUG: The following allows tracing of all type nodes.
+    (*DEBUG: The following allows tracing of all type nodes.*)
 
-    fun id t = Int.toString((*hash DEBUG*) Addr.addr t)
+    fun id t = Int.toString(hash (*DEBUG Addr.addr*) t)
 
     val rec typ'ToString = fn ads =>
 	fn t =>	if Hole.isHole t then "_" else
@@ -312,8 +312,8 @@ struct
 	of LINK t	=> "LINK(" ^ typ ads t ^ ")"
 	 | HOLE _	=> "HOLE"
 	 | VAR _	=> "VAR"
-	 | ABS(_,p)	=> "ABS(" ^ Label.toString(Path.toLab p) ^ "["
-				  ^ Int.toString(Path.hash p) ^ "])"
+	 | ABS(_,p)	=> "ABS(" ^ Label.toString(Path.toLab p) ^ "$"
+				  ^ Int.toString(Path.hash p) ^ ")"
 	 | FUN(t1,t2)	=> "FUN(" ^ typ ads t1 ^ "," ^ typ ads t2 ^ ")"
 	 | PROD r	=> "PROD(" ^ rowToString ads r ^ ")"
 	 | SUM r	=> "SUM(" ^ rowToString ads r ^ ")"
@@ -393,7 +393,7 @@ struct
 	    then ()
 	    else ( TextIO.print "!!!!";TextIO.inputLine TextIO.stdIn; () )
 	end
-    *)
+    (**)
 
 
   (* Kinds *)
@@ -841,39 +841,41 @@ struct
      * - not ignoring abbreviations (eg. realisations, lifting)
      *)
 
-    fun app1(t,f,b)			= app1'(content t, f, b)
-    and app1'(( HOLE _
-	      | VAR _
-	      | ABS _ ), f, b)		= ()
-      | app1'(( LINK t
-	      | MU t ), f, b)		= f t
-      | app1'(( ALL(a,t)
-	      | EXIST(a,t)
-	      | LAMBDA(a,t) ), f, b)	= (f a ; f t)
-      | app1'(( FUN(t1,t2)
-	      | APPLY(t1,t2) ), f, b)	= (f t1 ; f t2)
-      | app1'(( ABBREV(t1,t2) ), f, b)	= if b then (f t1 ; f t2) else f t2
-      | app1'(( PROD r
-	      | SUM r ), f, b)		= appRow1(r,f)
+    fun app1(t,f,b) =
+	case content t
+	  of ( HOLE _
+	     | VAR _
+	     | ABS _ )			=> ()
+	   | ( LINK t
+	     | MU t )			=> f t
+ 	   | ( ALL(a,t)
+	     | EXIST(a,t)
+	     | LAMBDA(a,t) )		=> (f a ; f t)
+	   | ( FUN(t1,t2)
+	     | APPLY(t1,t2) )		=> (f t1 ; f t2)
+	   | ( ABBREV(t1,t2) )		=> if b then (f t1 ; f t2) else f t2
+	   | ( PROD r
+	     | SUM r )			=> appRow1(r,f)
 
     and appRow1(INDEXED ts, f)		= Vector.app f ts
       | appRow1(NAMED(lts,d), f)	= List.app (f o #2) lts
 
 
-    fun foldl1(t,f,c,b)			= foldl1'(content t, f, c, b)
-    and foldl1'(( HOLE _
-		| VAR _
-		| ABS _ ), f,c,b)	= c
-      | foldl1'(( LINK t
-		| MU t ), f,c,b)	= f(t,c)
-      | foldl1'(( ALL(a,t)
-		| EXIST(a,t)
-		| LAMBDA(a,t) ), f,c,b)	= f(t, f(a,c))
-      | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2)), f,c,b)	= f(t2, f(t1,c))
-      | foldl1'(( ABBREV(t1,t2)),f,c,b)	= if b then f(t2, f(t1,c)) else f(t2,c)
-      | foldl1'(( PROD r
-		| SUM r ), f,c,b)	= foldlRow1(r,f,c)
+    fun foldl1(t,f,c,b) =
+	case content t
+	  of ( HOLE _
+	     | VAR _
+	     | ABS _ )			=> c
+	   | ( LINK t
+	     | MU t )			=> f(t,c)
+	   | ( ALL(a,t)
+	     | EXIST(a,t)
+	     | LAMBDA(a,t) )		=> f(t, f(a,c))
+	   | ( FUN(t1,t2)
+	     | APPLY(t1,t2) )		=> f(t2, f(t1,c))
+	   | ( ABBREV(t1,t2) )		=> if b then f(t2, f(t1,c)) else f(t2,c)
+	   | ( PROD r
+	     | SUM r )			=> foldlRow1(r,f,c)
 
     and foldlRow1(INDEXED ts, f,c)	= Vector.foldl f c ts
       | foldlRow1(NAMED(lts,d), f,c)	= List.foldl (fn((l,t),c)=>f(t,c)) c lts
@@ -914,6 +916,25 @@ struct
     fun foldl f c t          = foldl'(true, f, c, t)
     fun foldlNoAbbrevs f c t = foldl'(false, f, c, t)
 
+    fun appKind1(k,f,fTyp) =
+	case content k
+	  of ( STAR | EXT )		=> ()
+	   | ARROW(k1,k2)		=> (f k1; f k2)
+	   | SING t			=> (fTyp t)
+
+    fun appKind (f,fTyp) k =
+	let
+	    val m = KindMap.new()
+
+	    fun app k =
+		if KindMap.member(m,k) then () else
+		( f k;
+		  KindMap.insert(m,k,());
+		  appKind1(k,app,fTyp)
+		)
+	in
+	    app k
+	end
 
   (* Cloning for substitution. *)
 
@@ -1241,7 +1262,7 @@ struct
 		   | PROD r	=> liftRow(t, PROD, r)
 		   | SUM r	=> liftRow(t, SUM, r)
 		   | MU _	=> ()	(*ASSUME no holes under mu *)
-		   | t'		=> app1'(t', lift, true)
+		   | t'		=> app1(t, lift, true)
 		)
 	    and liftRow(t, CONS, r) =
 		(case r
@@ -1419,7 +1440,6 @@ struct
 		if Path.equals(p1,p2) andalso equalsKind(k1,k2)
 		then merge(ms,t1,t2,0)
 		else raise Unify(t1,t2)
-
 	   | ( (FUN(t11,t12), FUN(t21,t22))
 	     | (APPLY(t11,t12), APPLY(t21,t22)) ) =>
 		merge(ms, t1,t2, Int.max(unify'(mayBind,ms,t11,t21),
@@ -1582,14 +1602,27 @@ struct
 
   (* Free paths *)
 
-    fun paths t =
+    fun paths' s t =
     	let
-	    val s = PathMap.new()
-
 	    fun path t = case content t of ABS(k,p) => PathMap.insert(s,p,k)
 					 | _        => ()
 	in
-	    appNoAbbrevs path t;
+	    appNoAbbrevs path t
+	end
+
+    fun paths t =
+    	let
+	    val s = PathMap.new()
+	in
+	    paths' s t;
+	    s
+	end
+
+    fun pathsKind k =
+    	let
+	    val s = PathMap.new()
+	in
+	    appKind (ignore, paths' s) k;
 	    s
 	end
 
