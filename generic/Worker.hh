@@ -40,13 +40,13 @@ public:
   //   returns 0 iff deconstruction was immediately successful
   static u_int Deconstruct();
   // Frame Handling
-  virtual void PurgeFrame(word frame);
+  virtual void PurgeFrame(word wFrame);
   // Execution
   virtual Result Run() = 0;
   virtual Result Handle();
   // Debugging
   virtual const char *Identify() = 0;
-  virtual void DumpFrame(word frame) = 0;
+  virtual void DumpFrame(word wFrame) = 0;
 #if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);
