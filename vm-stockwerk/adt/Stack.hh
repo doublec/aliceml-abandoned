@@ -18,17 +18,17 @@
 
 #include <cstring>
 
-typedef enum {
-  STACK_LABEL      = MIN_HELPER_LABEL,
-  STACKARRAY_LABEL = (MIN_HELPER_LABEL + 1)
-} StackLabel;
-
 class Stack : private Block {
 private:
   static const u_int SIZE    = 2;
   static const u_int TOP_POS = 1;
   static const u_int ARR_POS = 2;
 protected:
+  enum labels {
+    STACK_LABEL      = MIN_HELPER_LABEL,
+    STACKARRAY_LABEL = (MIN_HELPER_LABEL + 1)
+  };
+
   void Enlarge(u_int oldsize, u_int newsize) {
     Block *oa = Store::UnsafeWordToBlock(GetArg(ARR_POS));
     Block *na = Store::AllocBlock((BlockLabel) STACKARRAY, newsize);
@@ -40,10 +40,10 @@ public:
   using Block::ToWord;
 
   u_int GetStackSize() {
-    return (u_int) (Store::UnsafeWordToInt(GetArg(TOP_POS)) - 1);
+    return (Store::UnsafeWordToInt(GetArg(TOP_POS)) - 1);
   }
   void AllocArgFrame(u_int fsize) {
-    u_int top  = (u_int) Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int top  = Store::UnsafeWordToInt(GetArg(TOP_POS));
     u_int max  = Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize();
     u_int size = (top + fsize);
 
@@ -61,7 +61,7 @@ public:
     a->InitArg((newtop - 1), a->GetArg(top - 1));
   }
   void AllocFrame(u_int fsize) {
-    u_int top  = (u_int) Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int top  = Store::UnsafeWordToInt(GetArg(TOP_POS));
     u_int max  = Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize();
     u_int size = (top + fsize);
 
@@ -78,16 +78,16 @@ public:
   void Push(word v) {
     int top = Store::UnsafeWordToInt(GetArg(TOP_POS));
 
-    Assert(top <= (int) Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize());
-    InitArg(TOP_POS, Store::IntToWord(top + 1));
-    Store::UnsafeWordToBlock(GetArg(ARR_POS))->ReplaceArg((u_int) top, v);
+    Assert(top <= Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetSize());
+    InitArg(TOP_POS, Store::IntToWord((top + 1)));
+    Store::UnsafeWordToBlock(GetArg(ARR_POS))->ReplaceArg(top, v);
   }
   void SlowPush(word v) {
-    u_int top = (u_int) Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int top = Store::UnsafeWordToInt(GetArg(TOP_POS));
     Block *a  = Store::UnsafeWordToBlock(GetArg(ARR_POS));
     u_int max = a->GetSize();
 
-    InitArg(TOP_POS, Store::IntToWord((int) (top + 1)));
+    InitArg(TOP_POS, Store::IntToWord((top + 1)));
     if (top <= max) {
       a->ReplaceArg(top, v);
     }
@@ -98,17 +98,17 @@ public:
   }
   word Top() {
     return Store::UnsafeWordToBlock(GetArg(ARR_POS))->
-      GetArg((u_int) Store::WordToInt(GetArg(TOP_POS)) - 1);
+      GetArg(Store::WordToInt(GetArg(TOP_POS)) - 1);
   }
   word GetFrameArg(u_int f) {
-    u_int top = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int top = Store::WordToInt(GetArg(TOP_POS));
     u_int pos = (top - 1 - f);
     
     Assert(pos >= 1);
     return Store::UnsafeWordToBlock(GetArg(ARR_POS))->GetArg(pos);
   }
   void PutFrameArg(u_int f, word v) {
-    u_int top = (u_int) Store::WordToInt(GetArg(TOP_POS));
+    u_int top = Store::WordToInt(GetArg(TOP_POS));
     u_int pos = (top - 1 - f);
     
     Assert(pos >= 1);
@@ -125,12 +125,11 @@ public:
     return (Store::WordToInt(GetArg(TOP_POS)) == 1);
   }
   void Blank(u_int threshold) {
-    u_int top    = (u_int) Store::UnsafeWordToInt(GetArg(TOP_POS));
+    u_int top    = Store::UnsafeWordToInt(GetArg(TOP_POS));
     Block *a     = Store::UnsafeWordToBlock(GetArg(ARR_POS));
     u_int max    = a->GetSize();
     u_int newmax = (top + threshold); 
 
-    // should Blank increase the stack?
     newmax = ((newmax <= max) ? newmax : max);
 
     for (u_int i = top; i <= newmax; i++) {
