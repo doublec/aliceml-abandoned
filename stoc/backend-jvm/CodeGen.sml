@@ -246,13 +246,12 @@ structure CodeGen =
 		 val decs = decListCode (program, toplevel, toplevel)
 
 		 val run = Method([MPublic], "run", ([], [Voidsig]),
-				  (Multi (Lambda.generatePickleFn
-					  (Literals.generate,
-					   toplevel,
-					   RecordLabel.generate toplevel)) ::
-				   Multi decs ::
-				   Return ::
-				   nil))
+				  ([Multi (Lambda.generatePickleFn
+					   (Literals.generate,
+					    toplevel,
+					    RecordLabel.generate toplevel)),
+				    Multi decs,
+				    Return]))
 
 		 val clinit = Method([MPublic],
 				     "<clinit>",
@@ -302,19 +301,17 @@ structure CodeGen =
 	and decCode (ValDec((((line,_),_),_), id',
 			    exp' as FunExp (_, thisFun, _, _),_), curFun, curCls) =
 	    (Lambda.setId (thisFun, id');
-	     Line line ::
-	     Multi (expCode (exp', curFun, curCls)) ::
-	     Astore thisFun ::
-	     nil)
+	     [Line line,
+	      Multi (expCode (exp', curFun, curCls)),
+	      Astore thisFun])
 	  | decCode (ValDec((((line,_),_),_), Id (_,stamp',_),
 			    ConAppExp (_,id'', idargs),_), curFun, curCls) =
 	    Line line ::
 	    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 	  | decCode (ValDec((((line,_),_),_), Id (_,stamp',_), exp',_), curFun, curCls) =
-	    (Line line ::
-	     Multi (expCode (exp', curFun, curCls)) ::
-	     Astore stamp' ::
-	     nil)
+	    [Line line,
+	     Multi (expCode (exp', curFun, curCls)),
+	     Astore stamp']
 
 	  | decCode (RecDec (_, nil, _), _, _) = nil
 	  | decCode (RecDec ((((line,_),_),_),idexps as ((recid,_)::rest),_), curFun, curCls) =
@@ -332,52 +329,43 @@ structure CodeGen =
 				    let
 					val className = classNameFromStamp thisFun
 				    in
-					Line line ::
-					New className ::
-					Dup ::
-					Invokespecial (className, "<init>",
-						       ([],[Voidsig])) ::
-					Astore thisFun ::
-					nil
+					[Line line,
+					 New className,
+					 Dup,
+					 Invokespecial (className, "<init>",
+							([],[Voidsig])),
+					 Astore thisFun]
 				    end
 
+			      (* constructed value *)
 			      | ConAppExp (((line,_),_),id'',idargs) =>
 				    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 
-			      | VarExp (((line,_),_), id'') =>
-				    Line line ::
-				    idCode (id'', curCls) ::
-				    Astore stamp' ::
-				    nil
-
 			      (* record *)
 			      | RecExp (((line,_),_),_) =>
-				    Line line ::
-				    New CRecord ::
-				    Dup ::
-				    Invokespecial (CRecord,"<init>",
-						   ([],[Voidsig])) ::
-				    Astore stamp' ::
-				    nil
+				    [Line line,
+				     New CRecord,
+				     Dup,
+				     Invokespecial (CRecord,"<init>",
+						    ([],[Voidsig])),
+				     Astore stamp']
 
 			      (* tuple *)
 			      | TupExp (((line,_),_), ids) =>
 				    let
 					val thisTup = cTuple (length ids)
 				    in
-					Line line ::
-					New thisTup  ::
-					Dup ::
-					Invokespecial (thisTup,"<init>",
-						       ([],[Voidsig])) ::
-					Astore stamp' ::
-					nil
+					[Line line,
+					 New thisTup,
+					 Dup,
+					 Invokespecial (thisTup,"<init>",
+							([],[Voidsig])),
+					 Astore stamp']
 				    end
 
 			      | exp' =>
-				    Multi (expCode (exp', curFun, curCls)) ::
-				    Astore stamp' ::
-				    nil
+				    [Multi (expCode (exp', curFun, curCls)),
+				     Astore stamp']
 			in
 			    Comment "RecDec:" ::
 			    Multi one ::
@@ -392,6 +380,10 @@ structure CodeGen =
 		    fun evalexp ((id',exp' as FunExp(_,thisFun, _, lambda)), akku) =
 			Multi (createFun (thisFun, lambda, curFun, curCls, false)) ::
 			akku
+		      | evalexp ((id'', RecExp (_, labid)), akku) =
+			createRecord (SOME id'', labid, akku, curCls)
+		      | evalexp ((id'', TupExp (_, ids)), akku) =
+			createTuple (SOME id'', ids, akku, curCls)
 		      | evalexp (_,akku) = akku
 		in
 		    val expcode = List.foldr evalexp nil idexps
@@ -586,41 +578,38 @@ structure CodeGen =
 				     Ifne elselabel]))
 
 		  | testCode (ConTest (id'',NONE)) =
-			 stampcode' ::
-			 Label retry ::
-			 idCode (id'', curCls) ::
-			 Ifacmpne elselabel ::
-			 nil
+			 [stampcode',
+			  Label retry,
+			  idCode (id'', curCls),
+			  Ifacmpne elselabel]
 
 		  | testCode (ConTest (id'',SOME (Id (_,stamp''',_)))) =
-			 stampcode' ::
-			 Label retry ::
-			 Dup ::
-			 Instanceof IConVal ::
-			 Ifeq ilselabel ::
-			 Checkcast IConVal ::
-			 Invokeinterface (IConVal, "getConstructor",
-					  ([], [Classsig CConstructor])) ::
-			 idCode (id'', curCls) ::
-			 Ifacmpne elselabel ::
-			 stampcode' ::
-			 Checkcast IConVal ::
-			 Invokeinterface (IConVal, "getContent",
-					  ([],[Classsig IVal])) ::
-			 Astore stamp''' ::
-			 nil
+			 [stampcode',
+			  Label retry,
+			  Dup,
+			  Instanceof IConVal,
+			  Ifeq ilselabel,
+			  Checkcast IConVal,
+			  Invokeinterface (IConVal, "getConstructor",
+					   ([], [Classsig CConstructor])),
+			  idCode (id'', curCls),
+			  Ifacmpne elselabel,
+			  stampcode',
+			  Checkcast IConVal,
+			  Invokeinterface (IConVal, "getContent",
+					   ([],[Classsig IVal])),
+			  Astore stamp''']
 
 		  | testCode (RefTest (Id (_,stamp''',_))) =
-			 stampcode' ::
-			 Label retry ::
-			 Dup ::
-			 Instanceof CReference ::
-			 Ifeq ilselabel ::
-			 Checkcast CReference ::
-			 Invokevirtual (CReference, "getContent",
-					([],[Classsig IVal])) ::
-			 Astore stamp''' ::
-			 nil
+			 [stampcode',
+			  Label retry,
+			  Dup,
+			  Instanceof CReference,
+			  Ifeq ilselabel,
+			  Checkcast CReference,
+			  Invokevirtual (CReference, "getContent",
+					 ([],[Classsig IVal])),
+			  Astore stamp''']
 
 		  | testCode (RecTest stringid) =
 			 (* Load arity, compare, then bind *)
@@ -630,10 +619,9 @@ structure CodeGen =
 			    stringids2strings (stringids', l::s')
 			  | stringids2strings (nil, s') = s'
 			fun bindit ((_,Id (_,stamp'',_))::nil,i) =
-			    atCodeInt i ::
-			    Aaload ::
-			    Astore stamp'' ::
-			    nil
+			    [atCodeInt i,
+			     Aaload,
+			     Astore stamp'']
 			  | bindit ((_,Id (_,stamp'',_))::rest,i) =
 			    Dup ::
 			    atCodeInt i ::
@@ -665,10 +653,9 @@ structure CodeGen =
 		    in
 			if lgt = 0
 			    then
-				stampcode' ::
-				Getstatic BUnit ::
-				Ifacmpne elselabel ::
-				nil
+				[stampcode',
+				 Getstatic BUnit,
+				 Ifacmpne elselabel]
 			else
 			    stampcode' ::
 			    Label retry ::
@@ -711,16 +698,15 @@ structure CodeGen =
 		    end
 
 		  | testCode (LabTest (s', Id (_,stamp'',_))) =
-		    stampcode' ::
-		    Label retry ::
-		    Dup ::
-		    Instanceof ITuple ::
-		    Ifeq ilselabel ::
-		    Checkcast ITuple ::
-		    Ldc (JVMString s') ::
-		    Invokeinterface (ITuple,"get",([Classsig CString],[Classsig IVal])) ::
-		    Astore stamp'' ::
-		    nil
+		    [stampcode',
+		     Label retry,
+		     Dup,
+		     Instanceof ITuple,
+		     Ifeq ilselabel,
+		     Checkcast ITuple,
+		     Ldc (JVMString s'),
+		     Invokeinterface (ITuple,"get",([Classsig CString],[Classsig IVal])),
+		     Astore stamp'']
 
 		  | testCode (VecTest ids) =
 		    (* compare the length, then bind *)
@@ -817,10 +803,9 @@ structure CodeGen =
 		    end
 
 	  | decCode (EndHandleStm ((((line,_),_),_), ref cont), _, _) =
-		    Comment "EndHandleStm" ::
-		    Line line ::
-		    Goto cont ::
-		    nil
+		    [Comment "EndHandleStm",
+		     Line line,
+		     Goto cont]
 
 	  | decCode (EvalStm ((((line,_),_),_), exp'), curFun, curCls) =
 		    Comment ("EvalStm. curFun = "^Stamp.toString curFun^" curCls = "^Stamp.toString curCls) ::
@@ -922,7 +907,11 @@ structure CodeGen =
 				       (fieldNameFromStamp stamp'),
 				       [Classsig IVal])]
 	and
-	    createTuple (ids:id list, init, curCls) =
+	    createTuple (idop, ids:id list, init, curCls) =
+	    (* idop: load tuple from this id. Create a new one, if idop is NONE *)
+	    (* If idop is NONE, the tuple remains on top of the stack.
+	     if idop is SOME id', the tuple is omitted because createTuple was called
+		 from a RecDec *)
 	    let
 		val arity = length ids
 
@@ -936,42 +925,50 @@ structure CodeGen =
 			 akku)
 		  | f (nil, _, akku) = akku
 
-		fun specTups (id' :: rest) =
-		    idCode (id',curCls) ::
-		    specTups rest
-		  | specTups nil = nil
+		val ctuple = cTuple arity
+
+		fun specTups (id' :: rest', fld::rest'', akku) =
+		    specTups (rest',
+			      rest'',
+			      (if fld = "fst" then Nop else Dup) ::
+			      idCode (id',curCls) ::
+			      Putfield (ctuple^"/"^fld, [Classsig IVal]) ::
+			      akku)
+		  | specTups (_,_,akku) = akku
+
+		val tuple = case idop of
+		    NONE => Multi [New ctuple,
+				   Dup,
+				   Invokespecial (ctuple, "<init>",
+						  ([], [Voidsig])),
+				   Dup]
+		  | SOME (Id (_,stamp'',_)) => Aload stamp''
 	    in
 		Comment "create Tuple:" ::
-		(if arity <= 4 andalso arity >= 2 then
-		     New (cTuple arity) ::
-		     Dup ::
-		     Multi (specTups ids) ::
-		     Invokespecial
-		     (cTuple arity, "<init>",
-		      (valList arity,
-		       [Voidsig])) ::
-		     init
+		(if arity = 0 then
+		     Getstatic BUnit::init
 		 else
-		     if arity = 0 then
-			 Getstatic BUnit::init
-		    else
-			New CTuple ::
-			Dup ::
-			atCodeInt (Int.toLarge arity) ::
-			Anewarray IVal ::
-			f (ids,
-			   0,
-			   Invokespecial (CTuple, "<init>",
-					  ([Arraysig, Classsig IVal],
-					   [Voidsig])) ::
-			   init))
+		     tuple ::
+		     (if arity <= 4 andalso arity >= 2 then
+			  specTups (ids, ["fst", "snd", "thr", "fur"], init)
+		      else
+			 atCodeInt (Int.toLarge arity) ::
+			  Anewarray IVal ::
+			  f (ids,
+			     0,
+			     Putfield (CTuple^"/vals", [Arraysig, Classsig IVal]) ::
+			     init)))
 	    end
 	and
-	    createRecord (labid,init, curCls) =
+	    createRecord (idop, labid,init, curCls) =
+	    (* idop: load record from this id. Create a new one, if idop is NONE *)
+	    (* If idop is NONE, the record remains on top of the stack.
+	     if idop is SOME id', the record is omitted because createRecord was called
+		 from a RecDec *)
 	    (* labids: (lab * id) list *)
 	    (* 1st load Label[] *)
 	    (* 2nd build Value[] *)
-	    (* 3rd create Record *)
+	    (* 3rd create or load Record *)
 	    (* the Label[] is built statically! *)
 	    let
 		val arity = length labid
@@ -989,20 +986,25 @@ structure CodeGen =
 		    Aastore ::
 		    (load (rs,j+1))
 		  | load (nil,_) = nil
+
+		val record = case idop of
+		    NONE => Multi [New CRecord,
+				   Dup,
+				   Getstatic (RecordLabel.insert
+					      (curCls, labids2strings (labid, nil))),
+				   Invokespecial (CRecord,"<init>",
+						  ([Arraysig, Classsig CString], [Voidsig])),
+				   Dup]
+		  | SOME (Id (_,stamp'',_)) => Aload stamp''
+
 	    (* 3. *)
 	    in
 		Comment "[Record " ::
-		New CRecord ::
-		Dup ::
-		Getstatic (RecordLabel.insert
-			   (curCls, labids2strings (labid, nil))) ::
+		record ::
 		atCodeInt (Int.toLarge arity) ::
 		Anewarray IVal ::
 		Multi (load (labid,0)) ::
-		Invokespecial (CRecord,"<init>",
-			       ([Arraysig, Classsig CString,
-				 Arraysig, Classsig IVal],
-				[Voidsig])) ::
+		Putfield (CRecord^"/vals", [Arraysig, Classsig IVal]) ::
 		Comment "Record ]" ::
 		init
 	    end
@@ -1015,11 +1017,11 @@ structure CodeGen =
 
 	  | idArgCode (TupArgs ids, curCls, init) =
 	    Comment "TupArgs" ::
-	    createTuple (ids, init, curCls)
+	    createTuple (NONE, ids, init, curCls)
 
 	  | idArgCode (RecArgs stringids, curCls, init) =
 	    Comment "RecArgs" ::
-	    createRecord (stringids, init, curCls)
+	    createRecord (NONE, stringids, init, curCls)
 	and
 	    invokeRecApply (stamp', args, curFun, tailCallPos, curCls, defaultApply) =
 	    let
@@ -1246,7 +1248,7 @@ structure CodeGen =
 			    (fn (id', akku) => idCode (id', curCls) :: akku)
 			    init
 			    (List.rev ids)
-			     else createTuple (ids, init, curCls)
+			     else createTuple (NONE, ids, init, curCls)
 		in
 		    (case name of
 			 "print" =>
@@ -1279,7 +1281,7 @@ structure CodeGen =
 
 	  | expCode (RecExp(((line,_),_),labid),_,curCls) =
 		     Line line ::
-		     createRecord (labid, nil, curCls)
+		     createRecord (NONE, labid, nil, curCls)
 
 	  | expCode (LitExp(((line,_),_),lit'),_,curCls) =
 		     [Line line,
@@ -1287,7 +1289,7 @@ structure CodeGen =
 
 	  | expCode (TupExp(((line,_),_),longids), _, curCls) =
 		     Line line ::
-		     createTuple (longids, nil, curCls)
+		     createTuple (NONE, longids, nil, curCls)
 
 	  | expCode (VarExp(((line,_),_),id'), _, curCls) =
 		     [Line line,
@@ -1492,25 +1494,24 @@ structure CodeGen =
 			     end
 
 		val defaultApply =
-		    (case ap0 of
-			 nil => Nop
-		       | _ => let
-				  val elselabel=Label.new()
-			      in
-				  Multi [stampCode (parm1Stamp, curCls),
-					 Getstatic BUnit,
-					 Ifacmpne elselabel,
-					 stampCode (curFun, curCls),
-					 Invokeinterface (mApply 0),
-					 Areturn,
-					 Label elselabel]
-			      end) ::
-			 buildSpecialApply(2, ap2) ::
-			 buildSpecialApply(3, ap3) ::
-			 buildSpecialApply(4, ap4) ::
-			 Multi ad ::
-			 Areturn ::
-			 nil
+		    [(case ap0 of
+			  nil => Nop
+			| _ => let
+				   val elselabel=Label.new()
+			       in
+				   Multi [stampCode (parm1Stamp, curCls),
+					  Getstatic BUnit,
+					  Ifacmpne elselabel,
+					  stampCode (curFun, curCls),
+					  Invokeinterface (mApply 0),
+					  Areturn,
+					  Label elselabel]
+			       end),
+		     buildSpecialApply(2, ap2),
+		     buildSpecialApply(3, ap3),
+		     buildSpecialApply(4, ap4),
+		     Multi ad,
+		     Areturn]
 
 		fun parmLoad nil = nil
 		  | parmLoad (Id (_,s',_)::rest) =
