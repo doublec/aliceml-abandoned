@@ -67,7 +67,7 @@ structure Socket :> SOCKET =
 	val output1 = UnsafeSocket.output1
 
 	fun output (socket, s) = output' (socket, s, 0)
-	and output' (socket, s, i, n) =
+	and output' (socket, s, i) =
 	    if i = String.size s then ()
 	    else output' (socket, s, i + UnsafeSocket.output (socket, s, i))
 
