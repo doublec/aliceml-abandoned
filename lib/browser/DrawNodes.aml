@@ -139,10 +139,10 @@ struct
 			      (x+new_x,y+new_y)
 			  end
 		 else let 
-			  val (new_x,new_y) = atomDraw (n,0,0,f)
+			  val (new_x,_) = atomDraw (n,x,y,f)
 			  val content = !(#content(r))
 			  val (x2,y2) = draw (content,
-					      new_x,new_y,f)
+					      new_x,0,f)
 		      in
 			  (x + String.length(#rep(r)) +   
 			   Layout.get_xdim(content),

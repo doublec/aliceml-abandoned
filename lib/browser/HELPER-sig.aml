@@ -55,11 +55,13 @@ sig
     val getColor : node -> color_class
     val getSort : node -> limit
     val getValueAnc : node -> node
+    val getNoRelAnc : node -> node
 
     val setsVertical : node -> bool
 
     val isSimple : node -> bool
     val isRelNode : node -> bool
+    val isRelRefNode : node -> bool
 
     (* Behandlung von Listen *)
     val inspectList : int * 'a list  -> 'a list_desc 

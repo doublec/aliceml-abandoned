@@ -165,6 +165,11 @@ struct
 				    then getValueAnc(p) 
 				else p
 			end
+
+    fun getNoRelAnc n = let val p = getParent(n)
+			in case p of RelNode _ => getNoRelAnc p
+                                   | _ => p 
+			end 
 	                  			 
     fun checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
@@ -212,6 +217,10 @@ struct
 
     and isRelNode n = case n of
 	RelNode _ => true
+      | _ => false
+
+    and isRelRefNode n = case n of
+	RelRefNode _ => true
       | _ => false
 
     fun inspectList(n,x) = inspectList'(n,x,[])

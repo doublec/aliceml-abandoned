@@ -71,7 +71,7 @@ struct
       | Container(r) => ( #status(r) := DAZZLED
 			 ; setDazzled(getParent(n)) )
       | RelNode(r) => ( #status(r) := DAZZLED
-		       ; setDazzled(getParent(n)) )
+ 		       ; setDazzled(getParent(n)) )
       | RelRefNode(r) => ( #status(r) := DAZZLED
 			  ; setDazzled(getParent(n)) )
       | Limit(r) => ( #status(r) := DAZZLED
@@ -112,6 +112,9 @@ struct
 		     | INTERPUNCT => raise UpdateError 
 	       val _ = updateChild(p,getIndex(n),new)
 	       val node = if getParent(new) = Empty then new else anc
+	       val _ = if isRelRefNode new
+			   then findRelNode(node,va)
+		       else ()
 	       val (x_pos,y_pos) = Services.getPosition(getGroup(anc))
 	   in ( Gtk.objectDestroy(getGroup(n))
 	       ; Layout.layout(node)
@@ -129,6 +132,35 @@ struct
 		     ; !WindowManager.resize() )
 		 end)
 	   end )
+
+    (* findRelNode *)
+    and findRelNode(anc,va) = 
+	let val found = ref false
+	    val g = fn n => findRelNode(n,va)
+	    val f = fn n => if isRelNode n andalso va = getValue(getDesc(n))
+				then (TextIO.print("FIND_RELNODE: found :-)\n")
+				     ; found := true
+                                     ; setDazzled n)
+			    else ()
+	in ( case anc of
+	     Concat(r) => ( f anc
+			  ; if !found then ()
+			    else array_map (f,getKids(anc))
+			  ; if !found then ()
+			    else array_map (g,getKids(anc)) )
+	   | Container(r) => ( f anc
+			     ; if !found then () 
+			       else array_map (f,getKids(anc))
+			     ; if !found then ()
+			       else array_map (g,getKids(anc)) )
+	   | RelNode(r) => (f anc
+                           ; if !found then ()
+			     else g (!(#content(r))) )
+	   | _ => () )
+	end
+        
+	
+    
 	
     (* tell *)
     and tell (va,li,f,g) =  
