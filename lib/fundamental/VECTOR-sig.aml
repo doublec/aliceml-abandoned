@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2001
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -33,8 +33,7 @@ sig
 
     val length :	'a vector -> int
     val sub :		'a vector * int -> 'a
-    val update :	'a vector * int * 'a -> 'a vector		(**)
-    val extract :	'a vector * int * int option -> 'a vector
+    val update :	'a vector * int * 'a -> 'a vector
     val concat :	'a vector list -> 'a vector
     val rev :		'a vector -> 'a vector				(**)
 
@@ -43,25 +42,24 @@ sig
     val map :		('a -> 'b) -> 'a vector -> 'b vector
     val foldl :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
     val foldr :		('a * 'b -> 'b) -> 'b -> 'a vector -> 'b
-    val appi :		(int * 'a -> unit) -> 'a vector * int * int option
-					   -> unit
-    val appri :		(int * 'a -> unit) -> 'a vector * int * int option (**)
-					   -> unit
-    val mapi :		(int * 'a -> 'b) -> 'a vector * int * int option
-					 -> 'b vector
-    val foldli :	(int * 'a * 'b -> 'b) -> 'b
-				       -> 'a vector * int * int option -> 'b
-    val foldri :	(int * 'a * 'b -> 'b) -> 'b
-				       -> 'a vector * int * int option -> 'b
+    val all :		('a -> bool) -> 'a vector -> bool
+    val exists :	('a -> bool) -> 'a vector -> bool
+    val find :		('a -> bool) -> 'a vector -> 'a option
 
-    val all :		('a -> bool) -> 'a vector -> bool		(**)
-    val exists :	('a -> bool) -> 'a vector -> bool		(**)
-    val find :		('a -> bool) -> 'a vector -> 'a option		(**)
+    val appi :		(int * 'a -> unit) -> 'a vector -> unit
+    val appri :		(int * 'a -> unit) -> 'a vector -> unit		(**)
+    val mapi :		(int * 'a -> 'b) -> 'a vector -> 'b vector
+    val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a vector -> 'b
+    val alli :		(int * 'a -> bool) -> 'a vector -> bool		(**)
+    val existsi :	(int * 'a -> bool) -> 'a vector -> bool		(**)
+    val findi :		(int * 'a -> bool) -> 'a vector -> (int * 'a) option
+
     val contains :	''a vector -> ''a -> bool			(**)
     val notContains :	''a vector -> ''a -> bool			(**)
 
     val equal :		('a * 'a -> bool) -> 'a vector * 'a vector -> bool (**)
-    val compare :	('a * 'a -> order) -> 'a vector * 'a vector -> order (**)
+    val collate :	('a * 'a -> order) -> 'a vector * 'a vector -> order
 
     val isSorted :	('a * 'a -> order) -> 'a vector -> bool		(**)
     val sort :		('a * 'a -> order) -> 'a vector -> 'a vector	(**)

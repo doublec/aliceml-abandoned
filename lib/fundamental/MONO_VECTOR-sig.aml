@@ -28,8 +28,7 @@ sig
 
     val length: vector -> int
     val sub: vector * int -> elem
-    val update: vector * int * elem -> vector				(**)
-    val extract: vector * int * int option -> vector
+    val update: vector * int * elem -> vector
     val concat: vector list -> vector
     val rev: vector -> vector						(**)
 
@@ -38,20 +37,24 @@ sig
     val map: (elem -> elem) -> vector -> vector
     val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a
     val foldr: (elem * 'a -> 'a) -> 'a -> vector -> 'a
-    val appi: (int * elem -> unit) -> vector * int * int option -> unit
-    val appri: (int * elem -> unit) -> vector * int * int option -> unit (**)
-    val mapi: (int * elem -> elem) -> vector * int * int option -> vector
-    val foldli:
-	(int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a
-    val foldri:
-	(int * elem * 'a -> 'a) -> 'a -> vector * int * int option -> 'a
+    val all: (elem -> bool) -> vector -> bool
+    val exists: (elem -> bool) -> vector -> bool
+    val find: (elem -> bool) -> vector -> elem option
 
-    val all: (elem -> bool) -> vector -> bool				(**)
-    val exists: (elem -> bool) -> vector -> bool			(**)
-    val find: (elem -> bool) -> vector -> elem option			(**)
+    val appi: (int * elem -> unit) -> vector -> unit
+    val appri: (int * elem -> unit) -> vector -> unit			(**)
+    val mapi: (int * elem -> elem) -> vector -> vector
+    val foldli: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
+    val foldri: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a
+    val alli: (int * elem -> bool) -> vector -> bool			(**)
+    val existsi: (int * elem -> bool) -> vector -> bool			(**)
+    val findi: (int * elem -> bool) -> vector -> (int * elem) option
+
+    val contains: (elem * elem -> bool) -> vector -> elem -> bool	(**)
+    val notContains: (elem * elem -> bool) -> vector -> elem -> bool	(**)
 
     val equal: (elem * elem -> bool) -> vector * vector -> bool		(**)
-    val compare: (elem * elem -> order) -> vector * vector -> order	(**)
+    val collate: (elem * elem -> order) -> vector * vector -> order
 
     val isSorted: (elem * elem -> order) -> vector -> bool		(**)
     val sort: (elem * elem -> order) -> vector -> vector		(**)
