@@ -39,9 +39,9 @@ define
    fun {ShareStm Stm ShareDict}
       case Stm of valDec(Coord Id Exp IsToplevel) then
 	 valDec(Coord Id {ShareExp Exp ShareDict} IsToplevel)
-      [] recDec(Coord IdsExpList IsToplevel) then
-	 recDec(Coord {Map IdsExpList
-		       fun {$ Ids#Exp} Ids#{ShareExp Exp ShareDict} end}
+      [] recDec(Coord IdExpList IsToplevel) then
+	 recDec(Coord {Map IdExpList
+		       fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end}
 		IsToplevel)
       [] conDec(_ _ _ _) then Stm
       [] evalStm(Coord Exp) then evalStm(Coord {ShareExp Exp ShareDict})

@@ -43,7 +43,7 @@ signature IMPERATIVE_GRAMMAR =
 
 	datatype stm =
 	    ValDec of coord * id * exp * isToplevel
-	  | RecDec of coord * (id list * exp) list * isToplevel
+	  | RecDec of coord * (id * exp) list * isToplevel
 	    (* all ids distinct *)
 	    (*--** replace id list above by id *)
 	  | ConDec of coord * id * hasArgs * isToplevel

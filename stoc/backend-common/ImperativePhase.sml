@@ -100,17 +100,17 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    translateExp (exp,
 			  fn _ => Crash.crash "ImperativePhase.translateDec 1",
 			  cont)
-	  | translateDec (RecDec (coord, idsExpList), cont) =
+	  | translateDec (RecDec (coord, idExpList), cont) =
 	    let
 		exception Result of O.exp
 		fun result exp' = raise Result exp'
-		val idsExpList' =
-		    List.map (fn (ids, exp) =>
+		val idExpList' =
+		    List.map (fn (id, exp) =>
 			      (translateExp (exp, result, Goto nil);
 			       Crash.crash "ImperativePhase.translateDec 2")
-			      handle Result exp' => (ids, exp')) idsExpList
+			      handle Result exp' => (id, exp')) idExpList
 	    in
-		O.RecDec (coord, idsExpList', false)::translateCont cont
+		O.RecDec (coord, idExpList', false)::translateCont cont
 	    end
 	  | translateDec (ConDec (coord, id, hasArgs), cont) =
 	    O.ConDec (coord, id, hasArgs, false)::translateCont cont

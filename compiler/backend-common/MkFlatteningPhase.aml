@@ -625,12 +625,26 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		  | simplifyRec (RecDec (_, decs), rest) =
 		    List.foldr simplifyRec rest decs
 		  | simplifyRec (ConDec (_, _, _), rest) = rest
-		val idsExpList =
-		    List.map (fn (ids, exp) => (ids, simplifyExp exp))
-		    (List.foldr simplifyRec nil decs)
+		val idsExpList = List.foldr simplifyRec nil decs
+		val (nonRecIdsExpList, recIdsExpList) =
+		    List.partition (fn (ids, _) => List.null ids) idsExpList
+		val subst =
+		    List.foldr (fn ((ids, _), subst) =>
+				let
+				    val toId = List.hd ids
+				in
+				    List.foldr (fn (fromId, subst) =>
+						(fromId, toId)::subst)
+				    subst (List.tl ids)
+				end) nil recIdsExpList
+		val idExpList =
+		    List.map (fn (ids, exp) =>
+			      (List.hd ids,
+			       simplifyExp (substExp (exp, subst))))
+		    recIdsExpList
 	    in
 		simplifyCon decs @
-		O.RecDec (coord, idsExpList)::simplifyDecs decr
+		O.RecDec (coord, idExpList)::simplifyDecs decr
 	    end
 	  | simplifyDecs (ConDec (coord, id, hasArgs)::decr) =
 	    O.ConDec (coord, id, hasArgs)::simplifyDecs decr
@@ -697,6 +711,26 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
 	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
+	  | simplifyExp (AppExp (coord, ConExp (_, longid), exp)) =
+	    let
+		val (decOpt, longid') = simplifyTerm exp
+		val exp' =
+		    O.ConExp (coord, longid, SOME longid')
+	    in
+		case decOpt of
+		    NONE => exp'
+		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+	    end
+	  | simplifyExp (AppExp (coord, RefExp _, exp)) =
+	    let
+		val (decOpt, longid) = simplifyTerm exp
+		val exp' =
+		    O.ConExp (coord, longid_ref, SOME longid)
+	    in
+		case decOpt of
+		    NONE => exp'
+		  | SOME dec' => O.LetExp (coord, [dec'], exp')
+	    end
 	  | simplifyExp (AppExp (coord, exp1, exp2)) =
 	    let
 		val (decOpt, longid) = simplifyTerm exp1
@@ -705,7 +739,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => O.LetExp (infoExp exp1, [dec'], exp')
+		  | SOME dec' => O.LetExp (coord, [dec'], exp')
 	    end
 	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
 	    O.AdjExp (coord, simplifyExp exp1, simplifyExp exp2)
@@ -798,7 +832,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			    | SOME _ => ()) consequents;
 		case decOpt of
 		    NONE => exp'
-		  | SOME dec' => O.LetExp (infoExp exp, [dec'], exp')
+		  | SOME dec' => O.LetExp (coord, [dec'], exp')
 	    end
 	and simplifyGraph (Node (_, _, _, _, _, _, _, ref (SOME exp)), _) = exp
 	  | simplifyGraph (Node (pos, test, ref thenGraph, ref elseGraph, _, _,

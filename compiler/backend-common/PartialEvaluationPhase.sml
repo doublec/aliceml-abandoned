@@ -107,7 +107,7 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 	    in
 		ValDec (coord, ids, exp')
 	    end
-	  | evalDec (dec as RecDec (_, idsExpList), state) =
+	  | evalDec (dec as RecDec (_, idExpList), state) =
 	    dec   (*--** *)
 	  | evalDec (dec as ConDec (_, id, hasArgs), state) =
 	    let

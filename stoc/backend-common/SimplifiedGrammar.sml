@@ -38,7 +38,7 @@ structure SimplifiedGrammar :> SIMPLIFIED_GRAMMAR =
 	datatype dec =
 	    OneDec of coord * id * exp
 	  | ValDec of coord * id list * exp   (* all ids distinct *)
-	  | RecDec of coord * (id list * exp) list   (* all ids distinct *)
+	  | RecDec of coord * (id * exp) list   (* all ids distinct *)
 	  | ConDec of coord * id * bool   (* has args *)
 	and exp =
 	    LitExp of coord * lit

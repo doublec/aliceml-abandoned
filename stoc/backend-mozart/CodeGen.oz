@@ -37,10 +37,6 @@ define
       {Dictionary.put State.regDict Stamp Reg}
    end
 
-   proc {SetReg id(_ Stamp _) State Reg}
-      {Dictionary.put State.regDict Stamp Reg}
-   end
-
    fun {GetReg id(_ Stamp _) State}
       {Dictionary.get State.regDict Stamp}
    end
@@ -71,21 +67,11 @@ define
    proc {TranslateStm Stm VHd VTl State ReturnReg}
       case Stm of valDec(_ Id Exp _) then
 	 {TranslateExp Exp {MakeReg Id State} VHd VTl State}
-      [] recDec(_ IdsExpList _) then
-	 {ForAll IdsExpList
-	  proc {$ Ids#_}
-	     case Ids of Id|Idr then Reg in
-		Reg = {MakeReg Id State}
-		{ForAll Idr proc {$ Id} {SetReg Id State Reg} end}
-	     [] nil then skip
-	     end
-	  end}
-	 {FoldL IdsExpList
-	  proc {$ VHd Ids#Exp VTl} Reg in
-	     Reg = case Ids of Id|_ then {GetReg Id State}
-		   [] nil then {State.cs newReg($)}
-		   end
-	     {TranslateExp Exp Reg VHd VTl State}
+      [] recDec(_ IdExpList _) then
+	 {ForAll IdExpList proc {$ Id#_} {MakeReg Id State _} end}
+	 {FoldL IdExpList
+	  proc {$ VHd Id#Exp VTl}
+	     {TranslateExp Exp {GetReg Id State} VHd VTl State}
 	  end VHd VTl}
       [] conDec(Coord Id false _) then
 	 VHd = vCallBuiltin(_ 'Name.new' [{MakeReg Id State}]
@@ -232,8 +218,9 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLab Lab} Reg false
 			  {TranslateCoord Coord} VTl)
-      [] conAppExp(_ _ _) then
-	 VHd = VTl   %--**
+      [] conAppExp(Coord Id1 Id2) then
+	 VHd = vCall(_ {GetReg Id1 State} [{GetReg Id2 State} Reg]
+		     {TranslateCoord Coord} VTl)
       [] buitinAppExp(Coord Builtinname Ids) then
 	 VHd = vCallBuiltin(_ BuiltinTable.Builtinname
 			    {FoldR Ids

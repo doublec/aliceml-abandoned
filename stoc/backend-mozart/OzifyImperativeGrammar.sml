@@ -142,10 +142,10 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputExp (q, exp); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, RecDec (coord, idsExpList, isToplevel)) =
+	  | outputStm (q, RecDec (coord, idExpList, isToplevel)) =
 	    (f (q, "recDec"); outputCoord (q, coord); m q;
-	     outputList (outputPair (outputList outputId, outputExp))
-	     (q, idsExpList); m q; outputBool (q, isToplevel); r q)
+	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
+	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, ConDec (coord, id, hasArgs, isToplevel)) =
 	    (f (q, "conDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); m q;
