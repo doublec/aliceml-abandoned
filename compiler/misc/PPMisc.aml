@@ -9,7 +9,7 @@ structure PPMisc :> PP_MISC =
 
     open PrettyPrint
 
-    infixr ^^
+    infixr ^^ ^/^
 
 
     (* Some PP combinators *)
@@ -35,5 +35,8 @@ structure PPMisc :> PP_MISC =
       | ppSeqPrec ppXPrec n  xs = paren(ppCommaList (ppXPrec 0) xs)
 
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
+
+
+    val paragraph = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
   end

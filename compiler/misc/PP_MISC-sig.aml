@@ -18,4 +18,6 @@ signature PP_MISC =
     val ppSeq:		('a -> doc) -> 'a list -> doc
     val ppSeqPrec:	(int -> 'a -> doc) -> int -> 'a list -> doc
 
+    val paragraph:	string list -> doc
+
   end
