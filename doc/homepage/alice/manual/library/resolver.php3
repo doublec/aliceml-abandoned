@@ -61,7 +61,8 @@
       <P>defines the handlers used by resolvers.  The
 	<TT><A href="resolver-handler.php3#parse">parse</A></TT>
 	function uses the following syntax:  Handler specifications
-	are separated by colons (<TT>:</TT>).  If last handler
+	are separated by <TT><A href="config.php3#pathSeparator"
+	>Config.pathSeparator</A></TT> characters.  If last handler
 	specification is the equals sign (<TT>=</TT>), then the
 	<TT><A href="resolver-handler.php3#default">default</A></TT>
 	handler is <I>not</I> appended, else it is.  The following
@@ -85,6 +86,9 @@
 	  <TD>The handler <TT><A href="resolver-handler.php3#prefix">pattern</A
 	    > (<I>s1</I>, <I>s2</I>).
       </TABLE>
+      <P>Characters within strings <I>s</I>, <I>s1</I>, <I>s2</I> above
+	can be escaped using the <TT><A href="config.php3#pathEscape"
+	>Config.pathEscape</A></TT> character, if applicable.
     </DD>
 
     <DT>

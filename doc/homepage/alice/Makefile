@@ -31,7 +31,7 @@ INSTALLFILES_MANUAL_LIBRARY_0 = \
 	option.php3 pair.php3 real.php3 ref.php3 \
 	string.php3 string-cvt.php3 substring.php3 time.php3 toplevel.php3 \
 	unique-string.php3 vector.php3 vector-pair.php3 word.php3 \
-	thread.php3 url.php3 resolver-handler.php3 resolver.php3 \
+	thread.php3 url.php3 config.php3 resolver-handler.php3 resolver.php3 \
 	component.php3 component-manager.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
