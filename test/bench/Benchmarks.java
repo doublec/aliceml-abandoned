@@ -1,31 +1,17 @@
 public class Benchmarks {
   public static void main(String[] args) 
   {
-      if (args.length != 3) {
-	  System.out.println("usage: $0 bench iterations size");
-	  System.exit(1);
-      }
-      String name = args[0];
-      int times = new Integer(args[1]).intValue();
-      int n     = new Integer(args[2]).intValue();
-      if (name.compareTo("intarith")==0 ||
-	  name.compareTo("floatarith")==0 ||
-	  name.compareTo("apply1")==0 ||
-	  name.compareTo("apply5")==0 ||
-	  name.compareTo("apply10")==0 ||
-	  name.compareTo("apply1ho")==0 ||
-	  name.compareTo("apply5ho")==0 ||
-	  name.compareTo("apply10ho")==0 ||
-	  name.compareTo("lists")==0
-	  ) {
-	  long few  = runtimes(name+"few",times,n);
-	  long many = runtimes(name+"many",times,n);
-	  System.out.println("Average: "+(many-few));
-      } else {
-	  runtimes(name,times,n);
-      }
+      int times = 10;
+      runtimes("fib", times, 31);
+      runtimes("tak", times, 8);
+      runtimes("nrev", times, 3000);
+      runtimes("quick", times, 30);
+//        runtimes("quickho", times, 30);
+//        runtimes("quickarray", times, 30);
+//        runtimes("queens", times, 10);
+      runtimes("derivvirt", times, 30);
+      System.exit(0);
   }
-
 
   public static long runtimes(String name, int times, int n)
   {
@@ -49,7 +35,13 @@ public class Benchmarks {
 
   public static long runit(String name, int n) 
   {
-      //System.gc();
+      ListClass lRev = null;
+      ListClass lQuick = null;
+      if (name.compareTo("nrev") == 0) {
+	  lRev = ListClass.genlist(n);
+      } else if (name.compareTo("quick") == 0) {
+	  lQuick = ListClass.randlist(5000);
+      }
     long starttime = System.currentTimeMillis();
 
     int i = 0;
@@ -62,11 +54,10 @@ public class Benchmarks {
     } else if (name.compareTo("tak")==0) {
       i=tak(3*n,2*n,n);
     } else if (name.compareTo("nrev")==0) {
-      ListClass l = ListClass.genlist(n);
-      ListClass.nrev(l);//.print();
+      ListClass.nrev(lRev);//.print();
       //System.out.println("");            
     } else if (name.compareTo("quick")==0) {
-      ListClass.goquick(n);//.print();
+      ListClass.goquick(lQuick, n);//.print();
     } else if (name.compareTo("quickho")==0) {
       ListClass.goquickho(n);//.print();
     } else if (name.compareTo("quickarray")==0) {
@@ -260,7 +251,7 @@ final class ListClass {
     return (n*25 + 1345) % 10000 + (n*713 + 1345) % 100000;
   }
 
-  static  ListClass randlist(int n)
+  public static  ListClass randlist(int n)
   {
     ListClass l = null;
     int aux = 0;
@@ -352,10 +343,8 @@ final class ListClass {
 
 
   /**************************************************/
-  static void goquick(int n)
+  static void goquick(ListClass l, int n)
   {
-    ListClass l = randlist(5000);
-
     while(n-->0) {
       quick(l);
     }

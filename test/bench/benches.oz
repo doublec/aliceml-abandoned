@@ -85,11 +85,17 @@ proc {Dotimes N P}
    end
 end
 
+fun {GetTime}
+   Time = {Property.get time} % was run (run + gc)
+in
+   Time.total % was run
+end
+
 fun {Dobench P}
-   TimeBefore = {Property.get time}.total %% was run
+   TimeBefore = {GetTime}
    {P}
 in
-   {Property.get time}.total - TimeBefore
+   {GetTime} - TimeBefore
 end
 
 fun {DobenchN N P}
@@ -192,11 +198,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fun {Fib N}
-   case N
-   of 0 then 1
-   [] 1 then 1
-   [] N then {Fib N-2} + {Fib N-1}
-   end
+   if N < 2 then 1 else {Fib N-2} + {Fib N - 1} end
+%    case N
+%    of 0 then 1
+%    [] 1 then 1
+%    [] N then {Fib N-2} + {Fib N-1}
+%    end
 end
 
 fun {ConcFib N}
@@ -253,7 +260,11 @@ end
 fun {FibThread N}
    case 2<N then thread {FibThread N-2} end + thread {FibThread N-1} end else 1 end
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+fun {TailRec N}
+   case 0<N then {TailRec N - 1} else 0 end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -609,7 +620,7 @@ in
    [] fibffun then Fun = proc{$} {FibFFun N _} end
    [] fibthread then Fun = proc{$} {FibThread N _} end
    [] nrev   then Fun = proc{$} {Nrev {Genlist N} _} end
-   [] nrevfun then Fun = proc{$} {MyRev {Genlist N} _} end
+   [] nrevfun then L = {Genlist N} in Fun = proc{$} {MyRev L _} end
    [] quick then L = {Randlist 5000} in
       Fun = proc{$} {Dotimes N proc {$} {Quick L _} end} end
    [] quickho then L = {Randlist 5000} in
@@ -622,6 +633,7 @@ in
       Fun = proc{$} {Dotimes N proc{$} {QuickThread {ListToArray L} _} end} end
    [] queens then Fun = proc{$} {Queens N _} end
    [] deriv  then Fun = proc{$} {GoDeriv N} end
+   [] tailrec then Fun = proc{$} {TailRec N _} end
    [] mandel then Fun = proc{$} {MandelLoop1 0 0 _} end
    [] threadcrea then Fun = proc{$} {ThreadCrea N _} end
    [] threadcomm then Fun = proc{$} {ThreadComm N} end
@@ -653,18 +665,19 @@ end
 %% {DoIt Bench N ARg} --> Run Bench with Arg N times
 proc {Benches Iter}
    {Doit fib        Iter 31}
-   {Doit concfib    Iter 20}
-   {Doit threadcrea Iter 100000}
+%   {Doit concfib    Iter 20}
+%   {Doit threadcrea Iter 100000}
    {Doit tak        Iter 8}
 %   {Doit cpstak     Iter 8}
    {Doit nrevfun     Iter 3000}
-%   {Doit quick      Iter 30}
+   {Doit quick      Iter 30}
 %   {Doit quickho    Iter 30}
 %   {Doit quickarray Iter 30}
 %   {Doit queens     Iter 10}
    {Doit deriv      Iter 30}
+%   {Doit tailrec    Iter 1000000}
 end
 
-{Benches 8}
+{Benches 10}
 {Application.exit 0}
 end

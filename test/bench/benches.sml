@@ -1,10 +1,3 @@
-import structure OS from "x-alice:/lib/system/OS"
-import structure Component from "x-alice:/lib/system/Component"
-import structure Url from "x-alice:/lib/system/Url"
-import structure AliceTimer from "AliceTimer"
-import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Reflect from "x-alice:/lib/system/Reflect"
-
 (* Tools *)
 
 fun genlistaux(0,m,acc) = acc
@@ -29,11 +22,20 @@ fun app(nil,ys)   = ys
 fun dotimes(0,p) = 0
   | dotimes(n,p) = (p(); dotimes(n-1,p));
 
+(* WW: *)
+(* fun int32toInt(n) = IntInf.toInt(n); *)
+
+fun int32toInt(n) = Int32.toInt(n);
 
 fun dobench(proc) = 
-    (AliceTimer.start ();
-     proc ();
-     AliceTimer.check ())
+    let 
+	val start = Timer.startCPUTimer()
+	val ignored = proc()
+	val {usr=u,sys=s,gc=g} = Timer.checkCPUTimer(start)
+	val ut = Time.toMilliseconds(u)
+	val gt = Time.toMilliseconds(g)
+    in int32toInt(ut) (* ut - gt *)
+    end;
 
 fun dobenchn (0, _) = []
   | dobenchn (n, proc) =
@@ -42,14 +44,6 @@ fun dobenchn (0, _) = []
 fun sum([],res) = res
   | sum(x::xs,res) = sum(xs,res+x);
 
-
-fun min([], res) = res
-  | min(x::xs, res) =
-    let
-	val res' = if x < res then x else res
-    in
-	min(xs, res')
-    end
 
 fun avrg(l, len) = sum(l,0) div len;
 
@@ -60,11 +54,7 @@ fun dobenchavrg(n,proc) =
 	(avrg(aux,n),aux)
     end
 
-fun dobenchmin(n, proc) =
-    case dobenchn(n, proc)
-     of rs as (r::rs') => (min(rs', r), rs)
-      | _ => raise Subscript
- 
+
 (* dobenchavrg(10,fn()=>app(genlist(1000),[])); *)
 
 (* Benches *)
@@ -74,25 +64,6 @@ fun dobenchmin(n, proc) =
 fun fib n = if n < 2 then 1 else fib(n-2)+fib(n-1);
 (* fun fib (0|1) = 1
   | fib n = fib(n-2)+fib(n-1); *)
-
-fun concfib (0|1) = 1
-  | concfib n =
-    let
-      val n1 = spawn concfib(n - 1)
-      val n2 = spawn concfib(n - 2)
-    in
-      n1 + n2
-    end;
-
-(* This is expected to be slower due to queueing of threads *)
-fun concfib2 (0|1) = 1
-  | concfib2 n =
-    let
-      val n2 = spawn concfib2(n - 2)
-      val n1 = spawn concfib2(n - 1)
-    in
-      n1 + n2
-    end;
 
 fun fibf(n:real) = 
     if Real.<(2.0, n) 
@@ -120,6 +91,10 @@ fun cpstak(x,y,z) = cpstakaux(x,y,z,fn(a)=>a);
 
 (**************************************************************)
 
+fun tailRec(n) = if n = 0 then 0 else tailRec (n - 1);
+
+(**************************************************************)
+
 (* Make app visible to nrev during runtime compilation *)
 val _ = app(nil, nil);
 
@@ -136,9 +111,6 @@ and partition ([],a,left,right,cont): int list =
   | partition(x::xs,a,left,right,cont) =
     if x < a then partition(xs,a,x::left,right,cont)
     else partition(xs,a,left,x::right,cont);
-
-(* Make quickaux visible *)
-val _ = quickaux([], [])
 
 fun quick l = quickaux(l,[]);
 
@@ -345,72 +317,7 @@ fun goderiv(n) =
 
 (**************************************************************)
 
-fun threadcrea 0 = ()
-  | threadcrea n =
-    (Future.await (spawn ()); threadcrea (n - 1))
-
-(**************************************************************)
-(*
-local
-  fun mkList n     = mklist' n nil
-  and mklist' 0 xs = xs
-    | mklist' n xs = mklist' (n - 1) (n::xs)
-
-  val xs = mkList 50000
-in
-  fun pickleList () =
-      let
-	structure S = Pickle.SaveVal(val file = "list.stc"
-				     type t = int list
-				     val x = xs)
-      in
-	()
-      end
-
-  fun unpickleList () =
-    let
-      structure S = Pickle.LoadVal(val file = "list.stc"
-				   type t = int list)
-    in
-      ()
-    end
-end
-
-(**************************************************************)
-
-val ext = Component.extension
-
-local
-   val c = Component.load (Url.fromString
-			     "x-alice:/lib/fundamental/Core")
-   structure RC = Reflect.Reflect(signature S = sig end structure X = ())
-   val inf = Component.inf c
-   val component = Component.create (inf, RC.x)
-in
-  fun pickleTypes () = Component.save("types." ^ ext, component)
-
-  fun unpickleTypes () = Component.load(Url.fromString ("types." ^ ext))
-end
-
-(**************************************************************)
-
-val coreName = "Core." ^ ext
-val newCoreName = "newcore." ^ ext
-
-fun loadComponent () = (Component.load(Url.fromString newCoreName); ())
-
-local
-  val c = Component.load (Url.fromString coreName)
-in
-fun saveComponent () = (Component.save(newCoreName, c); ())
-end
-
-(**************************************************************)
-*)
 fun getit("fib",n)    = (fn()=>fib(n))
-  | getit("concfib",n) = (fn()=>Future.await (concfib n))
-  | getit("concfib2",n) = (fn()=>Future.await (concfib2 n))
-  | getit("threadcrea",n) = (fn()=>(threadcrea n; 1))
   | getit("fibf",n)   = (fn()=>(fibf(real(n));1))
   | getit("tak",n)    = (fn()=>(tak(3*n,2*n,n)))
   | getit("cpstak",n) = (fn()=>(cpstak(3*n,2*n,n)))
@@ -425,20 +332,15 @@ fun getit("fib",n)    = (fn()=>fib(n))
   | getit("mandel",n) = (fn()=>(mandelloop(0,0);1))
   | getit("mandeliter",n) = (fn()=>(mandeliter()))
   | getit("deriv",n)  = (fn()=>(goderiv(n);1))
-(*  | getit("picklelist",n) = (fn () => (pickleList (); 1))
-  | getit("unpicklelist",n) = (fn () => (unpickleList (); 1))
-  | getit("loadcomponent",n) = (fn () => (loadComponent (); 1))
-  | getit("savecomponent",n) = (fn () => (saveComponent (); 1))
-  | getit("savetypes",n) = (fn () => (pickleTypes (); 1))
-  | getit("loadtypes",n) = (fn () => (unpickleTypes (); 1)) *)
+  | getit("tailrec",n) = (fn()=>tailRec(n))
   | getit(bench,n)    = (fn()=>(print("unknown\n");1));
 
-fun printBench(name, n, (min, times)) =
+fun printBench(name, n, (mean, times)) =
     (TextIO.print name;
      TextIO.print "(";
      TextIO.print (Int.toString n);
      TextIO.print ") = ";
-     TextIO.print (Int.toString min);
+     TextIO.print (Int.toString mean);
      TextIO.print " mean, [";
      List.app (fn n => (TextIO.print ((Int.toString n) ^ " "))) times;
      TextIO.print "]\n";
@@ -468,18 +370,8 @@ fun doitall(iter) =
       );
 
 fun benches(iter) =
-(*      [doit("picklelist",iter, 50000), *)
-(*       doit("unpicklelist",iter, 50000), *)
-(*       doit("savecomponent",iter, 8), *)
-(*       doit("loadcomponent",iter, 8), *)
-(*       doit("savetypes",iter, 8), *)
-(*       doit("loadtypes",iter, 8)] *)
-
     [doit("fib",iter,31),
 (*       doit("fibf",iter,31), *)
-(*       doit("concfib",iter,20), *)
-(*       doit("concfib2",iter,20), *)
-(*       doit("threadcrea",iter,100000), *)
      doit("tak",iter,8),
 (*       doit("cpstak",iter,8), *)
      doit("nrev",iter,3000),
@@ -490,6 +382,8 @@ fun benches(iter) =
 (*       doit("mandel",iter,4711), *)
      doit("deriv",iter,30)]
 
-val _ = benches 10;
+(* Turn of noisy GC *)
+val _ = SMLofNJ.Internals.GC.messages false;
 
+val _ = benches 10;
 val _ = OS.Process.exit OS.Process.success
