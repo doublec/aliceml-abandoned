@@ -60,7 +60,91 @@ define(_error,`
 	// END MACRO: ERROR($1,$2)
 ')
 dnl
+dnl General:
+dnl
+define(_BINOP,`
+    _BUILTIN(capitalize($1)) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"General.$2");
+	    DMLValue number1 = args[0].request();
+	    if (number1 instanceof Int) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Int) {
+		    return new Int(((Int) number1).getInt() $2 ((Int) number2).getInt());
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else if (number1 instanceof Word) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Word) {
+		    return new Word(((Word) number1).getLong() $2 ((Word) number2).getLong());
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else if (number1 instanceof Real) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Real) {
+		    return new Real(((Real) number1).getFloat() $2 ((Real) number2).getFloat());
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else {
+		return _error("argument 1 not number type",val);
+	    }
+	}
+    }
+    _FIELD(General,$1);') 
+define(_COMPARE,`
+    _BUILTIN(capitalize($1)) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"General.$2");
+	    DMLValue number1 = args[0].request();
+	    if (number1 instanceof Int) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Int) {
+		    return (((Int) number1).getInt() $2 ((Int) number2).getInt() ?
+			    Constants.dmltrue :
+			    Constants.dmlfalse);
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else if (number1 instanceof Word) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Word) {
+		    return (((Word) number1).getLong() $2 ((Word) number2).getLong() ?
+			    Constants.dmltrue :
+			    Constants.dmlfalse);
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else if (number1 instanceof Real) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof Real) {
+		    return (((Real) number1).getFloat() $2 ((Real) number2).getFloat() ?
+			    Constants.dmltrue :
+			    Constants.dmlfalse);
+		} else {
+		    return _error("arguments of different number type",val);
+		}
+	    } else if (number1 instanceof de.uni_sb.ps.dml.runtime.String) {
+		DMLValue number2 = args[1].request();
+		if (number2 instanceof de.uni_sb.ps.dml.runtime.String) {
+		    return (((de.uni_sb.ps.dml.runtime.String) number1).getString().
+			    compareTo(((de.uni_sb.ps.dml.runtime.String) number2).getString()) $2 0  ?
+			    Constants.dmltrue :
+			    Constants.dmlfalse);
+		} else {
+		    return _error("arguments of different type",val);
+		}
+	    } else {
+		return _error("argument 1 not string or number type",val);
+	    }
+	}
+    }
+    _FIELD(General,$1);')
+dnl
 dnl _BUILTIN(name)
+dnl
 define(_BUILTIN,`
 	// Builtin $1
 	final public static class $1 extends Builtin')
@@ -68,5 +152,8 @@ dnl _APPLY(val)
 define(_APPLY,`
 	// apply
 	final public DMLValue apply(DMLValue $1) throws java.rmi.RemoteException' )
-dnl FIELD(fieldname)
-define(_FIELD,`final public static DMLValue $1 = new capitalize($1)()')
+dnl FIELD(class,fieldname)
+define(_FIELD,`final public static DMLValue $2 = new capitalize($2)();
+	static {
+	  Builtin.builtins.put("$1.$2",$2);
+	}')

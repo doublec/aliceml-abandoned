@@ -86,7 +86,7 @@ rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Exporter_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Port_Stub.class
 
-all:	link $(files) rmi
+all:	link $(files) rmi $(M4INCL)
 
 link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)

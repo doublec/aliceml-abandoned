@@ -45,7 +45,7 @@ final public class General {
 	}
     }
     /** <code>val ! : 'a ref -> 'a</code>*/
-    _FIELD(deref);
+    _FIELD(General,deref);
 
     _BUILTIN(Assign) {
 	_APPLY(val) {
@@ -59,7 +59,7 @@ final public class General {
 	}
     }
     /** <code>val := : ('a ref * 'a) -> unit</code>*/
-    _FIELD(assign);
+    _FIELD(General,assign);
 
     _BUILTIN(O) {
 	final public class CO extends Builtin {
@@ -80,7 +80,7 @@ final public class General {
 	}
     }
     /** <code>val o : (('b -> 'c) * ('a -> 'b)) -> 'a -> 'c </code>*/
-    _FIELD(o);
+    _FIELD(General,o);
 
     _BUILTIN(Before) {
 	_APPLY(val) {
@@ -90,7 +90,7 @@ final public class General {
     }
     /** <code>val before : ('a * unit) -> 'a</code>*/
     // wirft einfach das zweite Argument weg
-    _FIELD(before);
+    _FIELD(General,before);
 
     _BUILTIN(Ignore) {
 	_APPLY(_) {
@@ -98,7 +98,7 @@ final public class General {
 	}
     }
     /** <code>val ignore : 'a -> unit </code>*/
-    _FIELD(ignore);
+    _FIELD(General,ignore);
 
     _BUILTIN(Lvar) {
 	_APPLY(_) {
@@ -106,7 +106,7 @@ final public class General {
 	}
     }
     /** <code>val lvar : _ -> lvar</code>*/
-    _FIELD(lvar);
+    _FIELD(General,lvar);
 
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     _BUILTIN(Ref) {
@@ -116,7 +116,7 @@ final public class General {
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/
-    _FIELD(ref);
+    _FIELD(General,ref);
 
     _BUILTIN(Spawn) {
 	_APPLY(val) {
@@ -130,7 +130,7 @@ final public class General {
      *  spawn startet einen neuen de.uni_sb.ps.dml.runtime.Thread, der das Argument
      *  von <code>apply</code> appliziert.
      */
-    _FIELD(spawn);
+    _FIELD(General,spawn);
 
     _BUILTIN(Equals) {
 	_APPLY(val) {
@@ -144,7 +144,7 @@ final public class General {
 	}
     }
     /** <code>val equals : ('a * 'b) -> bool</code>*/
-    _FIELD(equals);
+    _FIELD(General,equals);
 
     _BUILTIN(Pickle) {
 	_APPLY(val) {
@@ -180,8 +180,7 @@ final public class General {
 	    return Constants.dmlunit;
 	}
     }
-
-    _FIELD(pickle);
+    _FIELD(General,pickle);
 
     _BUILTIN(Unpickle) {
 	_APPLY(val) {
@@ -214,21 +213,50 @@ final public class General {
 	    return result;
 	}
     }
+    _FIELD(General,unpickle);
 
-    _FIELD(unpickle);
+
+    _BUILTIN(Uminus) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"General.~");
+	    DMLValue number = args[0].request();
+	    if (number instanceof Int) {
+		return new Int(-((Int) number).getInt());
+	    } else if (number instanceof Word) {
+		return new Word(-((Word) number).getLong());
+	    } else if (number instanceof Real) {
+		return new Real(-((Real) number).getFloat());
+	    } else {
+		return _error("argument not Number",val);
+	    }
+	}
+    }
+    _FIELD(General,uminus);
+
+    _BINOP(plus,+);
+    _BINOP(minus,-);
+    _BINOP(div,/);
+    _BINOP(mod,%);
+    _BINOP(mult,*);
+    _COMPARE(greater,>);
+    _COMPARE(geq,>=);
+    _COMPARE(less,<);
+    _COMPARE(leq,<=);
+
+    _BUILTIN(Neq) {
+	_APPLY(val) {
+	    _fromTuple(args,val,2,"General.<>");
+	    if (args[0].request().equals(args[1].request())) {
+		return Constants.dmltrue;
+	    } else {
+		return Constants.dmlfalse;
+	    }
+	}
+    }
+    _FIELD(General,neq);
 
     // val exnName : exn -> string 
     // val exnMessage : exn -> string
-
-    //  /*
-//   * $Date$
-//   * $Revision$
-//   * $Author$
-//   */
-
-//  package de.uni_sb.ps.dml.builtin;
-
-//  import de.uni_sb.ps.dml.runtime.*;
 
 //  final public class Not extends Builtin {
 
@@ -239,22 +267,8 @@ final public class General {
 //  	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("primitive not operation failed\nBAD ARGUMENT: "+val)).raise();
 //      }
 //  }
-//  /*
-//   * $Date$
-//   * $Revision$
-//   * $Author$
-//   */
 
-//  package de.uni_sb.ps.dml.builtin;
-
-//  import de.uni_sb.ps.dml.runtime.*;
-//  /** <code>exchange : ref * 'a -> 'b</code>
-//   *  stopft Argument #2 in die Referenz, die als #1 übergeben wurde;
-//   *  gibt den vorherigen Inhalt zurück
-//   */
-//  final public class Exchange extends Builtin {
-
-//    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
+    //    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 //        // soll das hier synchronized sein auf val?
 //        val = val.request();
 //        synchronized (val) {

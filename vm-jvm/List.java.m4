@@ -25,7 +25,7 @@ final public class List {
 	}
     }
     /** <code>val null : 'a list -> bool</code>*/
-    _FIELD(isNull);
+    _FIELD(List,isNull);
 
     _BUILTIN(Length) {
 	_APPLY(val) {
@@ -43,7 +43,7 @@ final public class List {
 	}
     }
     /** <code>val length : 'a list -> int </code>*/
-    _FIELD(length);
+    _FIELD(List,length);
 
     _BUILTIN(Append) {
 	_APPLY(val) {
@@ -71,7 +71,7 @@ final public class List {
 	}
     }
     /** <code>val @ : ('a list * 'a list) -> 'a list </code>*/
-    _FIELD(append);
+    _FIELD(List,append);
 
     _BUILTIN(Hd) {
 	_APPLY(val) {
@@ -86,7 +86,7 @@ final public class List {
 	}
     }
     /** <code>val hd : 'a list -> 'a </code>*/
-    _FIELD(hd);
+    _FIELD(List,hd);
 
     _BUILTIN(Tl) {
 	_APPLY(val) {
@@ -101,7 +101,7 @@ final public class List {
 	}
     }
     /** <code>val tl : 'a list -> 'a list</code>*/
-    _FIELD(tl);
+    _FIELD(List,tl);
 
     _BUILTIN(Last) {
 	_APPLY(val) {
@@ -125,7 +125,7 @@ final public class List {
 	}
     }
     /** <code>val last : 'a list -> 'a </code>*/
-    _FIELD(last);
+    _FIELD(List,last);
 
     _BUILTIN(GetItem) {
 	_APPLY(val) {
@@ -142,7 +142,7 @@ final public class List {
 	}
     }
     /** <code>val getItem : 'a list -> ('a * 'a list) option </code>*/
-    _FIELD(getItem);
+    _FIELD(List,getItem);
 
     _BUILTIN(Nth) {
 	_APPLY(val) {
@@ -177,7 +177,7 @@ final public class List {
 	}
     }
     /** <code>val nth : ('a list * int) -> 'a</code>*/
-    _FIELD(nth);
+    _FIELD(List,nth);
 
     _BUILTIN(Take) {
 	_APPLY(val) {
@@ -217,7 +217,7 @@ final public class List {
 	}
     }
     /** <code>val take : ('a list * int) -> 'a list </code>*/
-    _FIELD(take);
+    _FIELD(List,take);
 
     _BUILTIN(Drop) {
 	_APPLY(val) {
@@ -252,7 +252,7 @@ final public class List {
 	}
     }
     /** <code>val drop : ('a list * int) -> 'a list</code>*/
-    _FIELD(drop);
+    _FIELD(List,drop);
 
     _BUILTIN(Rev) {
 	_APPLY(val) {
@@ -278,7 +278,7 @@ final public class List {
 	}
     }
     /** <code>val rev : 'a list -> 'a list </code>*/
-    _FIELD(rev);
+    _FIELD(List,rev);
 
     _BUILTIN(Concat) {
 	_APPLY(val) {
@@ -316,7 +316,7 @@ final public class List {
 	}
     }
     /** <code>val concat : 'a list list -> 'a list </code>*/
-    _FIELD(concat);
+    _FIELD(List,concat);
 
     _BUILTIN(RevAppend) {
 	_APPLY(val) {
@@ -342,7 +342,7 @@ final public class List {
 	}
     }
     /** <code>val revAppend : ('a list * 'a list) -> 'a list </code>*/
-    _FIELD(revAppend);
+    _FIELD(List,revAppend);
 
     _BUILTIN(App) {
 	_APPLY(val) {
@@ -368,7 +368,7 @@ final public class List {
 	}
     }
     /** <code>val app : ('a -> unit) -> 'a list -> unit </code>*/
-    _FIELD(app);
+    _FIELD(List,app);
 
     _BUILTIN(Map) {
 	_APPLY(val) {
@@ -402,7 +402,7 @@ final public class List {
 	}
     }
     /** <code>val map : ('a -> 'b) -> 'a list -> 'b list </code>*/
-    _FIELD(map);
+    _FIELD(List,map);
 
     _BUILTIN(MapPartial) {
 	_APPLY(val) {
@@ -438,7 +438,7 @@ final public class List {
 	}
     }
     /** <code>val mapPartial : ('a -> 'b option) -> 'a list -> 'b list </code>*/
-    _FIELD(mapPartial);
+    _FIELD(List,mapPartial);
 
     _BUILTIN(Find) {
 	_APPLY(val) {
@@ -469,7 +469,7 @@ final public class List {
 	}
     }
     /** <code>val find : ('a -> bool) -> 'a list -> 'a option </code>*/
-    _FIELD(find);
+    _FIELD(List,find);
 
     _BUILTIN(Filter) {
 	_APPLY(val) {
@@ -505,7 +505,7 @@ final public class List {
 	}
     }
     /** <code>val filter : ('a -> bool) -> 'a list -> 'a list </code>*/
-    _FIELD(filter);
+    _FIELD(List,filter);
 
     _BUILTIN(Partition) {
 	_APPLY(val) {
@@ -548,7 +548,7 @@ final public class List {
 	}
     }
     /** <code>val partition : ('a -> bool) -> 'a list -> ('a list * 'a list) </code>*/
-    _FIELD(partition);
+    _FIELD(List,partition);
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
@@ -591,7 +591,7 @@ final public class List {
 	}
     }
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
-    _FIELD(foldl);
+    _FIELD(List,foldl);
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
@@ -646,7 +646,7 @@ final public class List {
 	}
     }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
-    _FIELD(foldr);
+    _FIELD(List,foldr);
 
     _BUILTIN(Exists) {
 	_APPLY(val) {
@@ -677,7 +677,7 @@ final public class List {
 	}
     }
     /** <code>val exists : ('a -> bool) -> 'a list -> bool </code>*/
-    _FIELD(exists);
+    _FIELD(List,exists);
 
     _BUILTIN(All) {
 	_APPLY(val) {
@@ -708,7 +708,7 @@ final public class List {
 	}
     }
     /** <code>val all : ('a -> bool) -> 'a list -> bool </code>*/
-    _FIELD(all);
+    _FIELD(List,all);
 
     _BUILTIN(Tabulate) {
 	_APPLY(val) {
@@ -731,5 +731,5 @@ final public class List {
 	}
     }
     /** <code>val tabulate : (int * (int -> 'a)) -> 'a list }</code>*/
-    _FIELD(tabulate);
+    _FIELD(List,tabulate);
 }

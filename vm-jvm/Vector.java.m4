@@ -281,7 +281,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val fromList : 'a list -> 'a vector </code>*/
-    _FIELD(fromList);
+    _FIELD(Vector,fromList);
 
     _BUILTIN(Tabulate) {
 	_APPLY(val) {
@@ -296,7 +296,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val tabulate : (int * (int -> 'a)) -> 'a vector </code>*/
-    _FIELD(tabulate);
+    _FIELD(Vector,tabulate);
 
     _BUILTIN(Length) {
 	_APPLY(val) {
@@ -309,7 +309,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val length : 'a vector -> int </code>*/
-    _FIELD(length);
+    _FIELD(Vector,length);
 
     _BUILTIN(Sub) {
 	_APPLY(val) {
@@ -327,7 +327,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val sub : ('a vector * int) -> 'a </code>*/
-    _FIELD(sub);
+    _FIELD(Vector,sub);
 
     _BUILTIN(Extract) {
 	_APPLY(val) {
@@ -362,7 +362,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val extract : ('a vector * int * int option) -> 'a vector </code>*/
-    _FIELD(extract);
+    _FIELD(Vector,extract);
 
     _BUILTIN(Concat) {
 	_APPLY(val) {
@@ -372,7 +372,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val concat : 'a vector list -> 'a vector </code>*/
-    _FIELD(concat);
+    _FIELD(Vector,concat);
 
     _BUILTIN(Mapi) {
 	_APPLY(val) {
@@ -412,7 +412,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val mapi : ((int * 'a) -> 'b) -> ('a vector * int * int option) -> 'b vector </code>*/
-    _FIELD(mapi);
+    _FIELD(Vector,mapi);
 
     _BUILTIN(Map) {
 	_APPLY(val) {
@@ -432,7 +432,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val map : ('a -> 'b) -> 'a vector -> 'b vector </code>*/
-    _FIELD(map);
+    _FIELD(Vector,map);
 
     _BUILTIN(Appi) {
 	_APPLY(val) {
@@ -472,7 +472,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val appi : ((int * 'a) -> unit) -> ('a vector * int * int option) -> unit </code>*/
-    _FIELD(appi);
+    _FIELD(Vector,appi);
 
     _BUILTIN(App) {
 	_APPLY(val) {
@@ -492,7 +492,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val app : ('a -> unit) -> 'a vector -> unit </code>*/
-    _FIELD(app);
+    _FIELD(Vector,app);
 
     _BUILTIN(Foldli) {
 	_APPLY(val) {
@@ -542,7 +542,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val foldli : ((int * 'a * 'b) -> 'b) -> 'b -> ('a vector * int * int option) -> 'b </code>*/
-    _FIELD(foldli);
+    _FIELD(Vector,foldli);
 
     _BUILTIN(Foldri) {
 	_APPLY(val) {
@@ -592,7 +592,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val foldri : ((int * 'a * 'b) -> 'b) -> 'b -> ('a vector * int * int option) -> 'b </code>*/
-    _FIELD(foldri);
+    _FIELD(Vector,foldri);
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
@@ -620,7 +620,7 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a vector -> 'b </code>*/
-    _FIELD(foldl);
+    _FIELD(Vector,foldl);
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
@@ -648,5 +648,5 @@ final public class Vector implements DMLValue {
 	}
     }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a vector -> 'b</code>*/
-    _FIELD(foldr);
+    _FIELD(Vector,foldr);
 }

@@ -55,7 +55,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val ~ : int -> int </code>*/
-    _FIELD(uminus);
+    _FIELD(Int,uminus);
 
     _BUILTIN(Mult) {
 	_APPLY(val) {
@@ -74,7 +74,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val * : (int * int) -> int </code>*/
-    _FIELD(mult);
+    _FIELD(Int,mult);
 
     _BUILTIN(Div) {
 	_APPLY(val) {
@@ -97,7 +97,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val div : (int * int) -> int </code>*/
-    _FIELD(div);
+    _FIELD(Int,div);
 
     _BUILTIN(Mod) {
 	_APPLY(val) {
@@ -120,7 +120,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val mod : (int * int) -> int </code>*/
-    _FIELD(mod);
+    _FIELD(Int,mod);
 
     /** <code>val quot : (int * int) -> int </code>*/
     final public static DMLValue quot = div;
@@ -145,7 +145,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val + : (int * int) -> int </code>*/
-    _FIELD(plus);
+    _FIELD(Int,plus);
 
     _BUILTIN(Minus) {
 	_APPLY(val) {
@@ -164,7 +164,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val - : (int * int) -> int </code>*/
-    _FIELD(minus);
+    _FIELD(Int,minus);
 
     _BUILTIN(Compare) {
 	_APPLY(val) {
@@ -189,7 +189,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val compare : (int * int) -> order </code>*/
-    _FIELD(compare);
+    _FIELD(Int,compare);
 
     _BUILTIN(Greater) {
 	_APPLY(val) {
@@ -212,9 +212,9 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val > : (int * int) -> bool </code>*/
-    _FIELD(greater);
+    _FIELD(Int,greater);
 
-    _BUILTIN(Groreq) {
+    _BUILTIN(Geq) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.>=");
 	    DMLValue v = args[0].request();
@@ -235,7 +235,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val >= : (int * int) -> bool </code>*/
-    _FIELD(groreq);
+    _FIELD(Int,geq);
 
     _BUILTIN(Less) {
 	_APPLY(val) {
@@ -258,9 +258,9 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val < : (int * int) -> bool </code>*/
-    _FIELD(less);
+    _FIELD(Int,less);
 
-    _BUILTIN(Leoreq) {
+    _BUILTIN(Leq) {
 	_APPLY(val) {
 	    _fromTuple(args,val,2,"Int.<=");
 	    DMLValue v = args[0].request();
@@ -281,7 +281,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val <= : (int * int) -> bool </code>*/
-    _FIELD(leoreq);
+    _FIELD(Int,leq);
 
     _BUILTIN(Min) {
 	_APPLY(val) {
@@ -304,7 +304,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val min : (int * int) -> int </code>*/
-    _FIELD(min);
+    _FIELD(Int,min);
 
     _BUILTIN(Max) {
 	_APPLY(val) {
@@ -327,7 +327,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val max : (int * int) -> int </code>*/
-    _FIELD(max);
+    _FIELD(Int,max);
 
     _BUILTIN(Abs) {
 	_APPLY(val) {
@@ -341,7 +341,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val abs : int -> int </code>*/
-    _FIELD(abs);
+    _FIELD(Int,abs);
 
     _BUILTIN(Sign) {
 	_APPLY(val) {
@@ -361,7 +361,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val sign : int -> Int.int </code>*/
-    _FIELD(sign);
+    _FIELD(Int,sign);
 
     _BUILTIN(SameSign) {
 	_APPLY(val) {
@@ -386,7 +386,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val sameSign : (int * int) -> bool </code>*/
-    _FIELD(sameSign);
+    _FIELD(Int,sameSign);
 
     _BUILTIN(ToString) {
 	_APPLY(val) {
@@ -401,7 +401,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val toString : int -> string </code>*/
-    _FIELD(toString);
+    _FIELD(Int,toString);
 
     _BUILTIN(FromString) {
 	_APPLY(val) {
@@ -420,7 +420,7 @@ final public class Int extends SCon {
 	}
     }
     /** <code>val fromString : string -> int option </code>*/
-    _FIELD(fromString);
+    _FIELD(Int,fromString);
 
     /** <code>val scan : java.lang.StringCvt.radix -> (char, 'a) java.lang.StringCvt.reader -> 'a -> (int * 'a) option </code>*/
     /** <code>val fmt : java.lang.StringCvt.radix -> int -> string </code>*/

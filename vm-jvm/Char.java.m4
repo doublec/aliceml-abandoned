@@ -6,13 +6,61 @@
 
 package de.uni_sb.ps.dml.runtime;
 
-final public class Char {
+final public class Char extends SCon {
+    private char ch = '_';
+
+    public Char(char c) {
+	ch=c;
+    }
+
+    final public boolean equals(java.lang.Object o) {
+	return (o instanceof Char) && (((Char) o).ch==ch);
+    }
+
+    final public java.lang.String toString() {
+	return ch+" : char";
+    }
+
+    final public char getChar() {
+	return ch;
+    }
     // eqtype string
     /** <code>val minChar : char </code>*/
     /** <code>val maxChar : char </code>*/
     /** <code>val maxOrd : int </code>*/
+    _BUILTIN(Ord) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"Char.ord");
+	    DMLValue ch = args[0].request();
+	    if (ch instanceof Char) {
+		return new Int(((Char) ch).ch);
+	    } else {
+		return _error("argument not char",val);
+	    }
+	}
+    }
     /** <code>val ord : char -> int </code>*/
+    _FIELD(Char,ord);
+
+    _BUILTIN(Chr) {
+	_APPLY(val) {
+	    _fromTuple(args,val,1,"Char.chr");
+	    DMLValue ch = args[0].request();
+	    if (ch instanceof Int) {
+		int i = ((Int) ch).getInt(); // better?: ch.value
+		if (i <= Character.MAX_VALUE && i >= Character.MIN_VALUE) {
+		    return new Char((char) i);
+		} else {
+		    return General.Chr;
+		}
+	    } else {
+		return _error("argument not char",val);
+	    }
+	}
+    }
     /** <code>val chr : int -> char </code>*/
+    _FIELD(Char,chr);
+
     /** <code>val succ : char -> char </code>*/
     /** <code>val pred : char -> char </code>*/
     /** <code>val < : (char * char) -> bool </code>*/

@@ -7,6 +7,9 @@
 package de.uni_sb.ps.dml.runtime;
 
 abstract public class Builtin implements DMLValue {
+
+    public static java.util.Hashtable builtins = new java.util.Hashtable();
+
     public Builtin() {
 	super();
     }
@@ -23,4 +26,8 @@ abstract public class Builtin implements DMLValue {
     _request_id ;
     _getValue_id ;
     _raise ;
+
+    static DMLValue getBuiltin(java.lang.String name) {
+	return (DMLValue) builtins.get(name);
+    }
 }

@@ -256,7 +256,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val fromList : 'a list -> 'a array </code>*/
-    _FIELD(fromList);
+    _FIELD(Array,fromList);
 
     _BUILTIN(Tabulate) {
 	_APPLY(val) {
@@ -271,7 +271,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val tabulate : (int * (int -> 'a)) -> 'a array </code>*/
-    _FIELD(tabulate);
+    _FIELD(Array,tabulate);
 
     _BUILTIN(Length) {
 	_APPLY(val) {
@@ -284,7 +284,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val length : 'a array -> int </code>*/
-    _FIELD(length);
+    _FIELD(Array,length);
 
     _BUILTIN(Sub) {
 	_APPLY(val) {
@@ -302,7 +302,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val sub : ('a array * int) -> 'a </code>*/
-    _FIELD(sub);
+    _FIELD(Array,sub);
 
     _BUILTIN(Update) {
 	_APPLY(val) {
@@ -321,7 +321,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val update : ('a array * int * 'a) -> unit </code>*/
-    _FIELD(update);
+    _FIELD(Array,update);
 
     _BUILTIN(Extract) {
 	_APPLY(val) {
@@ -356,7 +356,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val extract : ('a array * int * int option) -> 'a vector </code>*/
-    _FIELD(extract);
+    _FIELD(Array,extract);
 
     _BUILTIN(Copy) {
 	_APPLY(val) {
@@ -398,7 +398,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val copy : {src : 'a array, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
-    _FIELD(copy);
+    _FIELD(Array,copy);
 
     _BUILTIN(CopyVec) {
 	_APPLY(val) {
@@ -440,7 +440,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val copyVec : {src : 'a vector, si : int, len : int option, dst : 'a array, di : int} -> unit </code>*/
-    _FIELD(copyVec);
+    _FIELD(Array,copyVec);
 
     _BUILTIN(Appi) {
 	_APPLY(val) {
@@ -481,7 +481,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val appi : ((int * 'a) -> unit) -> ('a array * int * int option) -> unit </code>*/
-    _FIELD(appi);
+    _FIELD(Array,appi);
 
     _BUILTIN(App) {
 	_APPLY(val) {
@@ -501,7 +501,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val app : ('a -> unit) -> 'a array -> unit </code>*/
-    _FIELD(app);
+    _FIELD(Array,app);
 
     _BUILTIN(Foldli) {
 	_APPLY(val) {
@@ -550,7 +550,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val foldli : ((int * 'a * 'b) -> 'b) -> 'b -> ('a array * int * int option) -> 'b </code>*/
-    _FIELD(foldli);
+    _FIELD(Array,foldli);
 
     _BUILTIN(Foldri) {
 	_APPLY(val) {
@@ -599,7 +599,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val foldri : ((int * 'a * 'b) -> 'b) -> 'b -> ('a array * int * int option) -> 'b </code>*/
-    _FIELD(foldri);
+    _FIELD(Array,foldri);
 
     _BUILTIN(Foldl) {
 	_APPLY(val) {
@@ -627,7 +627,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a array -> 'b </code>*/
-    _FIELD(foldl);
+    _FIELD(Array,foldl);
 
     _BUILTIN(Foldr) {
 	_APPLY(val) {
@@ -655,7 +655,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a array -> 'b </code>*/
-    _FIELD(foldr);
+    _FIELD(Array,foldr);
 
     _BUILTIN(Modifyi) {
 	_APPLY(val) {
@@ -695,7 +695,7 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val modifyi : ((int * 'a) -> 'a) -> ('a array * int * int option) -> unit </code>*/
-    _FIELD(modifyi);
+    _FIELD(Array,modifyi);
 
     _BUILTIN(Modify) {
 	_APPLY(val) {
@@ -716,5 +716,5 @@ final public class Array implements DMLValue {
 	}
     }
     /** <code>val modify : ('a -> 'a) -> 'a array -> unit</code>*/
-    _FIELD(modify);
+    _FIELD(Array,modify);
 }

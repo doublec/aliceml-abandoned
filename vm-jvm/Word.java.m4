@@ -43,6 +43,8 @@ final public class Word extends SCon {
     final public long getLong() {
 	return value;
     }
+
+
     /** <code>val wordSize : int </code>*/
     /** <code>val toLargeWord : word -> LargeWord.word </code>*/
     /** <code>val toLargeWordX : word -> LargeWord.word </code>*/

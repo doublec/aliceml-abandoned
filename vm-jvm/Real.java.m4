@@ -68,7 +68,7 @@ final public class Real extends SCon {
 	}
     }
     /** <code>val + : (real * real) -> real </code>*/
-    _FIELD(plus);
+    _FIELD(Real,plus);
 
     _BUILTIN(Minus) {
 	_APPLY(val) {
@@ -87,7 +87,7 @@ final public class Real extends SCon {
 	}
     }
     /** <code>val - : (real * real) -> real </code>*/
-    _FIELD(minus);
+    _FIELD(Real,minus);
 
 
     _BUILTIN(Mult) {
@@ -107,7 +107,7 @@ final public class Real extends SCon {
 	}
     }
     /** <code>val * : (real * real) -> real </code>*/
-    _FIELD(mult);
+    _FIELD(Real,mult);
 
     _BUILTIN(Div) {
 	_APPLY(val) {
@@ -126,7 +126,7 @@ final public class Real extends SCon {
 	}
     }
     /** <code>val / : (real * real) -> real </code>*/
-    _FIELD(div);
+    _FIELD(Real,div);
 
     /** <code>val *+ : real * real * real -> real </code>*/
     /** <code>val *- : real * real * real -> real </code>*/
@@ -171,7 +171,7 @@ final public class Real extends SCon {
 	}
     }
     /** <code>val fromString : string -> real option </code>*/
-    _FIELD(fromString);
+    _FIELD(Real,fromString);
 
     /** <code>val scan : (char, 'a) java.lang.StringCvt.reader -> (real, 'a) java.lang.StringCvt.reader </code>*/
     /** <code>val toManExp : real -> {man : real, exp : int} </code>*/
