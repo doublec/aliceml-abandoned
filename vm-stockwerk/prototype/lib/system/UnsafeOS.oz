@@ -130,25 +130,11 @@ define
    tuple(I_success: value(0)
 	 I_failure: value(1)
 	 I_system: OzOS.system#r_v
-	 I_atExn: missing('OS.Process.atExn')
-/*
-	    fun {$ P}
-	       {Property.put 'errors.handler'
-		proc {$ E}
-		   case E of system(kernel(terminate) ...) then
-		      skip
-		   [] error(alice(Exn ...) ...) then
-		      _ = {P Exn}
-		   else
-		      {Error.printException E}
-		      if {System.onToplevel} then
-			 {Application.exit 1}
-		      end
-		   end
-		end}
-	       unit
-	    end
-*/
+	 I_atExn:
+	    fun {$ Closure}
+	       {Property.put 'alice.atExn' Closure}
+	       tuple()
+	    end#r_v
 	 I_exit: proc {$ N _} {Application.exit N} end#r_v
 	 I_getEnv:
 	    fun {$ S}
