@@ -121,6 +121,11 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputTest (q, VecTest ids) =
 	    (f (q, "vecTest"); outputList outputId (q, ids); r q)
 
+	fun outputFunFlag (q, PrintName s) =
+	    (f (q, "printName"); outputAtom (q, s); r q)
+	  | outputFunFlag (q, AuxiliaryOf stamp) =
+	    (f (q, "auxiliaryOf"); outputStamp (q, stamp); r q)
+
 	fun outputArgs outputX (q, OneArg id) =
 	    (f (q, "oneArg"); outputX (q, id); r q)
 	  | outputArgs outputX (q, TupArgs ids) =
@@ -199,9 +204,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, SelExp (coord, lab)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); r q)
-	  | outputExp (q, FunExp (coord, string, argsBodyList)) =
+	  | outputExp (q, FunExp (coord, flags, argsBodyList)) =
 	    (f (q, "funExp"); outputCoord (q, coord); m q;
-	     outputAtom (q, string); m q;
+	     outputList outputFunFlag (q, flags); m q;
 	     outputList (outputPair (outputArgs outputId, outputBody))
 	     (q, argsBodyList); r q)
 	  | outputExp (q, AppExp (coord, id, args)) =

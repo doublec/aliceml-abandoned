@@ -266,7 +266,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		fun return exp' = O.ReturnStm (infoExp exp, exp')
 		val body = translateExp (exp, return, Goto nil)
 	    in
-		f (O.FunExp (coord, "", [(O.OneArg id, body)]))::
+		f (O.FunExp (coord, nil, [(O.OneArg id, body)]))::
 		translateCont cont
 	    end
 	  | translateExp (AppExp (coord, ConExp (_, longid, true), exp2),

@@ -20,6 +20,8 @@ signature IMPERATIVE_GRAMMAR =
 
 	(* Identifiers *)
 
+	type stamp = IntermediateGrammar.stamp
+
 	datatype name = datatype IntermediateGrammar.name
 	datatype id = datatype IntermediateGrammar.id
 
@@ -41,6 +43,10 @@ signature IMPERATIVE_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of lab * id
 	  | VecTest of id list
+
+	datatype funFlag =
+	    PrintName of string
+	  | AuxiliaryOf of stamp
 
 	datatype 'a args =
 	    OneArg of 'a
@@ -73,7 +79,7 @@ signature IMPERATIVE_GRAMMAR =
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab
 	  | VecExp of coord * id list
-	  | FunExp of coord * string * (id args * body) list
+	  | FunExp of coord * funFlag list * (id args * body) list
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * id * id args
 	  | SelAppExp of coord * lab * id
