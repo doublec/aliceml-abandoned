@@ -72,7 +72,7 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	end
 
 	fun outputLit (q, WordLit w) =
-	    (outputTuple (q, "WordLit", 1); outputLargeWord (q, w))
+	    (outputTuple (q, "WordLit", 1); ignore (outputWord (q, 31, w)))
 	  | outputLit (q, IntLit n) =
 	    (outputTuple (q, "IntLit", 1); outputLargeInt (q, n))
 	  | outputLit (q, CharLit c) =
