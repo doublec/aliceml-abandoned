@@ -21,10 +21,8 @@
 #include "alice/LazySelInterpreter.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 #include "alice/AliceConcreteCode.hh"
-#if LIGHTNING
 #include "alice/NativeCodeJitter.hh"
 #include "alice/NativeCodeInterpreter.hh"
-#endif
 
 word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
@@ -123,7 +121,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
   PrimitiveTable::Init();
-#if LIGHTNING
+#if HAVE_LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
 #if defined(JIT_STORE_DEBUG)
