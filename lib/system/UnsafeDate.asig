@@ -15,6 +15,7 @@ signature UNSAFE_DATE_COMPONENT =
     sig
 	    structure UnsafeDate :
 	    sig
+            local
             type tm = int (* seconds [0..61] (due to leap seconds) *)
                     * int (* minutes [0..59] *)
                     * int (* hours [0..23] *)
@@ -28,11 +29,12 @@ signature UNSAFE_DATE_COMPONENT =
                                 = 0 : it's not in effect
                                 < 0 : we have no idea wether it is in effect
                                       or not *)
-
+            in
             val fromTimeLocal : IntInf.t -> tm
             val fromTimeUniv :  IntInf.t -> tm 
             val toTime :        tm -> IntInf.t
             val fmt :           string * tm -> string
             val toString :      tm -> string
+            end
 	    end
     end
