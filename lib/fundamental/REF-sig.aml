@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,6 +30,10 @@ sig
     val := :		'a ref * 'a -> unit
     val :=: :		'a ref * 'a ref -> unit
     val exchange :	'a ref * 'a -> 'a
+
     val equal :		'a ref * 'a ref -> bool
-    val map :		('a -> 'a) -> 'a ref -> 'a ref
+
+    val app :		('a -> unit) -> 'a ref -> unit
+    val map :		('a -> 'b) -> 'a ref -> 'b ref
+    val modify :	('a -> 'a) -> 'a ref -> unit
 end

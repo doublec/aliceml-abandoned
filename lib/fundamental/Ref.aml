@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,10 +16,9 @@
  *)
 
 import structure __pervasive                          from "Pervasive"
-import datatype ref                                   from "ToplevelTypes"
+import type unit datatype ref                         from "ToplevelTypes"
 import infix 3 := val ! and op = and op := and op :=: from "ToplevelValues"
 import signature REF                                  from "REF-sig"
-
 
 structure Ref :> REF =							(**)
   struct
@@ -32,6 +31,16 @@ structure Ref :> REF =							(**)
     val op :=:				= op :=:
     val equal				= op =
 
-    __primitive val exchange : 'a ref * 'a -> 'a = "Ref.exchange"
-    fun map f (r as ref x)		= ref(f x)
+    __primitive val exchange :	'a ref * 'a -> 'a	= "Ref.exchange"
+    __primitive val hole :	unit -> 'a		= "Hole.hole"
+    __primitive val future :	'a -> 'a		= "Hole.future"
+    __primitive val fill :	'a * 'a  -> unit	= "Hole.fill"
+
+    fun app f (ref x)			= f x
+    fun map f (ref x)			= ref(f x)
+    fun modify f r			= let val h = hole()
+					      val x = exchange(r, future h)
+					  in
+					      fill(h, f x)
+					  end
   end
