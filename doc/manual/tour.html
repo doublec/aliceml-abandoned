@@ -702,6 +702,25 @@ Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
 <P>The order in which the threads will read from the channel is
 non-deterministic, but no value will ever get lost or read twice.</P>
 
+<?php subsection("promises-examples", "More examples") ?>
+
+<P>There is a small interactive demo demonstrating dataflow synchronisation
+using streams:</P>
+
+<UL>
+  <LI> <A href="examples/streams.aml"><TT>streams.aml</TT></A> </LI>
+</UL>
+
+<P>Compile with:</P>
+
+<PRE class=code>
+alicec streams.aml</PRE>
+
+<P>Run with:</P>
+
+<PRE class=code>
+alicerun streams</PRE>
+
 
 <?php section("packages", "packages") ?>
 
@@ -1184,6 +1203,19 @@ component managers. Component managers essentially allow to achieve what is
 often called <EM>sandbox security</EM> for untrusted components. See the <A
 href="library/component-manager.html">library reference</A> for more
 detail.</P>
+
+
+<?php subsection("components-example", "Application example") ?>
+
+<P>The implementation of an interpreter for a simple functional language
+demonstrates how an application can be divided into components:</P>
+
+<UL>
+  <LI> <A href="examples/interpreter/">source directory</A> </LI>
+  <LI> <A href="examples/interpreter.tar"><TT>tar file</TT></A> </LI>
+</UL>
+
+<P>See <TT>readme.txt</TT> for build instructions.</P>
 
 
 

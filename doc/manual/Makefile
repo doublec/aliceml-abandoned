@@ -14,7 +14,7 @@ INSTALLFILES_0 = \
 	incompatibilities.html limitations.html \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
-	interop.html examples.html tour.html sitemap.html \
+	interop.html tour.html sitemap.html \
 	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg inspector-3.jpg \
 	inspector-conc-1.jpg inspector-conc-2.jpg inspector-conc-3.jpg \
 	inspector-conc-4.jpg inspector-conc-5.jpg inspector-conc-6.jpg \
@@ -54,7 +54,7 @@ INSTALLFILES_EXAMPLES_INTERPRETER_0 = \
 	Token.aml Syntax.aml LEXER-sig.aml Lexer.aml PARSER-sig.aml \
 	Parser.aml ENV-sig.aml Env.aml TYPE-sig.aml Type.aml VALUE-sig.aml \
 	Value.aml ELAB-sig.aml Elab.aml EVAL-sig.aml Eval.aml Main.aml \
-	Makefile README
+	Makefile readme.txt
 INSTALLFILES_EXAMPLES_INTERPRETER = \
 	$(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/examples/interpreter/%)
 INSTALLFILES = \
