@@ -386,14 +386,20 @@ dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
 dnl
 AC_DEFUN(AC_PATH_SEAM,
   [ac_seam_ok=""
+   AC_REQUIRE([AC_PROG_SEAMTOOL])
    AC_LANG_PUSH(C++)
+   ac_link_save=${ac_link}
+   ac_link='${SEAMTOOL} link -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext >&5'
    AC_CHECK_LIB(seam, InitSeam, ac_seam_ok="${ac_seam_ok}x")
    AC_CHECK_HEADER(Seam.hh, ac_seam_ok="${ac_seam_ok}x")
+   ac_link=${ac_link_save}
    AC_LANG_POP
    if test "${ac_seam_ok}" = "xx"; then
       ifelse([$1], , :, [$1])
    else
-      ifelse([$2], , :, [$2])
+      ifelse([$2], ,
+      [AC_MSG_ERROR([seam library and/or headers not found.])],
+      [$2])
    fi
 ])dnl
 
