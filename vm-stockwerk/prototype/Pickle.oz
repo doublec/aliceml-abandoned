@@ -106,13 +106,7 @@ define
 	 end
       end
       meth getUInt($)
-	 case InputStreamBase, getByte($) of eob then eob
-	 elseof B then
-	    if B >= 0x80 then
-	       InputStreamBase, GetUInt(B - 0x80 0x80 $)
-	    else B
-	    end
-	 end
+	 InputStreamBase, GetUInt(0 1 $)
       end
       meth GetUInt(X N $)
 	 case InputStreamBase, getByte($) of eob then eob
