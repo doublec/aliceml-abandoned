@@ -939,13 +939,15 @@ define
 			      end
 			   end
 			abstract:
-			   fun {$ primitive(_ _ _ F)}
+			   fun {$ primitive(_ _ _ Transform)}
 			      %--** how to signal sitedness?
-			      transform(AlicePrimitive {ByteString.make F})
+			      Transform
 			   end)
 
    fun {ImportField F X}
-      case X of P#Spec then closure(primitive(Interpreter P Spec F))
+      case X of P#Spec then
+	 closure(primitive(Interpreter P Spec
+			   transform(AlicePrimitive {ByteString.make F})))
       [] value(Y) then Y   %--** cannot be abstracted again
       [] missing(_) then {Value.byNeedFail X}   %--**
       else {ImportOzModule X}
