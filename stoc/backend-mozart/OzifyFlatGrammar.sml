@@ -227,7 +227,7 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputList (outputTriple (outputCon, outputConArgs outputIdDef,
 				       outputBody)) (q, conBodyList); r q)
 	  | outputTests (q, VecTests vecBodyList) =
-	    (f (q, "litTests");
+	    (f (q, "vecTests");
 	     outputList (outputPair (outputList outputIdDef, outputBody))
 	     (q, vecBodyList); r q)
 	and outputExp (q, LitExp (info, lit)) =
