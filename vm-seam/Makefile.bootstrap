@@ -332,7 +332,7 @@ SOURCEDIRS = \
 ##
 
 TOPINCLUDES0 = \
-	Base.hh Stow.hh
+	Base.hh Stow.hh Alice.hh
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
 	StatusWord.hh Value.hh WeakDictionary.hh Store.hh
