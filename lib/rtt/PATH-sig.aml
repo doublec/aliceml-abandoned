@@ -29,8 +29,16 @@ sig
     val name :		name -> path
     val hidden :	name -> path
     val dot :		path * lab -> path
+    val instance :	path -> path
 
-  (* Inspection, projection and conversion *)
+  (* Inspection *)
+
+    datatype desc =
+	  Name   of name
+	| Hidden of name
+	| Dot    of path * lab
+
+    val inspect :	path -> desc
 
     exception Path
 
