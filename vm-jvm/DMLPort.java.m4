@@ -1,8 +1,9 @@
 package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
+import java.rmi.RemoteException;
 
-final public class DMLPort implements DMLValue, DMLRemoteValue, RemotePort {
+final public class DMLPort implements DMLValue, RemotePort {
 
     DMLValue first = null;
     DMLLVar last = null;
@@ -12,7 +13,7 @@ final public class DMLPort implements DMLValue, DMLRemoteValue, RemotePort {
 	first = last;
     }
 
-    final public DMLValue send(DMLValue msg) {
+    final public DMLValue send(DMLValue msg) throws RemoteException {
 	DMLLVar newLast = new DMLLVar();
 	synchronized (last) {
 	    last.bind(new Cons(msg,newLast));
@@ -21,7 +22,7 @@ final public class DMLPort implements DMLValue, DMLRemoteValue, RemotePort {
 	return DMLConstants.dmlunit;
     }
 
-    final public DMLValue recieve() {
+    final public DMLValue recieve() throws RemoteException {
 	DMLValue ret = null;
 	synchronized (first) {
 	    ret = ((Cons) first.request()).car;

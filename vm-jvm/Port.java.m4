@@ -1,6 +1,7 @@
 package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
+import java.rmi.RemoteException;
 
 final public class Port {
     final public static class NewPort extends DMLBuiltin {
@@ -18,7 +19,12 @@ final public class Port {
 	    if (!(p instanceof DMLPort))
 		return error("argument #1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;
-	    return port.send(args[1]);
+	    try {
+		return port.send(args[1]);
+	    } catch (RemoteException r) {
+		System.err.println(r);
+		return null;
+	    }
 	}
     }
     final public static Send send = new Send();
@@ -30,7 +36,12 @@ final public class Port {
 	    if (!(p instanceof DMLPort))
 		return error("argument #1 not DMLPort",val);
 	    DMLPort port = (DMLPort) p;
-	    return port.recieve();
+	    try {
+		return port.recieve();
+	    } catch (RemoteException r) {
+		System.err.println(r);
+		return null;
+	    }
 	}
     }
     final public static Recieve recieve = new Recieve();
