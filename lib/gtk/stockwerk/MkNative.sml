@@ -1,5 +1,5 @@
 
-functor MkUnsafe(structure TypeManager : TYPE_MANAGER
+functor MkNative(structure TypeManager : TYPE_MANAGER
 		 structure Special : SPECIAL
 		 val space : Util.spaces
 		 val tree : TypeTree.tree) :> GENERATOR = 
@@ -7,21 +7,20 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	open TypeTree
 	open TypeManager
 
-	val unsafeName = "Unsafe"^Util.spaceName(space)
+	val nativeName = "Native"^Util.spaceName(space)
 
 	(* Indentation constant *)
 	val sigIndent = Util.indent 2
 	val wrIndent = "  "
 
         val siginfo = {
- 	     name = unsafeName^".asig" ,
+ 	     name = nativeName^".asig" ,
 	     intro =        
  	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n\n",
-		  "signature UNSAFE_", Util.strUpper(Util.spaceName space), 
-		  "_COMPONENT =\n",
+		  "signature ", Util.strUpper nativeName, "_COMPONENT =\n",
 		  "sig\n",
-		  Util.indent 1, "structure ", unsafeName, " :\n",
+		  Util.indent 1, "structure ", nativeName, " :\n",
 		  Util.indent 1, "sig\n",
 		  sigIndent, "exception TypeMismatch of string\n"] ,
 	     outro = 
@@ -30,11 +29,11 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
             } : Util.fileInfo
 
 	val wrapperinfo = {
-             name = unsafeName^".cc" ,
+             name = nativeName^".cc" ,
 	     intro = 
 		 ["// This is a generated file. ",
 		  "Modifications may get lost.\n\n",
-		  "#include \"UnsafeUtils.hh\"\n"] @
+		  "#include \"NativeUtils.hh\"\n"] @
 		 (map (fn s => "#include \""^s^"\"\n") Special.includeFiles)@
 		 ["\n\n"] ,
              outro = []
@@ -46,7 +45,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    val wname = Util.computeWrapperName(space,funName)^
 		          (if doinout then "'" else "")
 	    val aType = getAliceFunType (wname,ret,arglist,doinout)
-		           getAliceUnsafeType
+		           getAliceNativeType
 	    val cType = getCFunType (funName,ret,arglist,true)
 	in
 	    [sigIndent, "(* ", cType," *)\n",
@@ -60,7 +59,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    val wrapperDecl = 
 		["// ", getCFunType(funName,ret,arglist,false), 
 		 "\nDEFINE", Int.toString(numIns (arglist,doinout)), 
-		 "(", unsafeName, "_", Util.computeWrapperName(space,funName), 
+		 "(", nativeName, "_", Util.computeWrapperName(space,funName), 
 		 if doinout then "_" else "", ") {\n"]
 
             (* declaration of input or input/output arguments *)
@@ -215,9 +214,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	    val al = splitArgTypes arglist
 	    val wname = Util.computeWrapperName(space,funName)
 	    fun line l io = 
-		[wrIndent, "INIT_STRUCTURE(record, \"",unsafeName,
+		[wrIndent, "INIT_STRUCTURE(record, \"",nativeName,
 		 "\", \"", wname, if io then "'" else "", "\", ", 
-		 unsafeName, "_", wname, if io then "_" else "", ", ",
+		 nativeName, "_", wname, if io then "_" else "", ", ",
 		 Int.toString(numIns(l,io)), ", true);\n"]
 	in
 	    line al false @ (if numOuts(al,false)>0 then line al true else nil)
@@ -247,7 +246,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		   Int.toString (length includeEntries), ", ",
 		   Int.toString (numItems), ");\n\n"
 		 ]
-	    val footer = ["  RETURN_STRUCTURE(\"", unsafeName,
+	    val footer = ["  RETURN_STRUCTURE(\"", nativeName,
 			  "$\", record);\n}\n"]
 	in
 	    header@
@@ -259,10 +258,10 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	val myItems = Util.filters [isItemOfSpace space, checkItem] 
 		      (myItems' @ Special.changedFuns @ Special.specialFuns)
 
-        (* main function for creating unsafe files *)
+        (* main function for creating native files *)
         fun create() =
 	let
-	    val _ = print ("Generating "^unsafeName^"\n")
+	    val _ = print ("Generating "^nativeName^"\n")
 	    val s = Util.openFile siginfo
 	    val w = Util.openFile wrapperinfo
 

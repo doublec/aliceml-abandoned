@@ -1,22 +1,20 @@
-#ifndef _UNSAFE_GTK_SPECIAL_HH_
-#define _UNSAFE_GTK_SPECIAL_HH_ { 2, UnsafeGtkSpecialInit }
+#ifndef _NATIVE_GTK_SPECIAL_HH_
+#define _NATIVE_GTK_SPECIAL_HH_ { 2, NativeGtkSpecialInit }
 
-DEFINE1(UnsafeGtk_TypeMismatch) {
+DEFINE1(NativeGtk_TypeMismatch) {
   Constructor *ccVal = Constructor::FromWord(TypeMismatchConstructor);
   ConVal *conVal     = ConVal::New(ccVal, 1);
   conVal->Init(0, x0);
   RETURN(conVal->ToWord());
 } END
 
-void UnsafeGtkSpecialInit(Record *record) {
+void NativeGtkSpecialInit(Record *record) {
   record->Init("'TypeMismatch", TypeMismatchConstructor);
-  INIT_STRUCTURE(record, "UnsafeGtk", "TypeMismatch",
-		 UnsafeGtk_TypeMismatch, 1, true);
+  INIT_STRUCTURE(record, "NativeGtk", "TypeMismatch",
+		 NativeGtk_TypeMismatch, 1, true);
 }
 
-static word tail = 0;
-
-DEFINE0(UnsafeGtk_init) {
+DEFINE0(NativeGtk_init) {
   /*
   DECLARE_GLIST(argvlist, Properties::commandLineArguments, GList, g_list, 
 		DECLARE_CSTRING);
@@ -37,21 +35,15 @@ DEFINE0(UnsafeGtk_init) {
 
 } END
 
-DEFINE1(UnsafeGtk_setEventStream) {
-  tail = x0;
-  RootSet::Add(tail);
-  RETURN_UNIT;
-} END
-
-DEFINE0(UnsafeGtk_null) {
+DEFINE0(NativeGtk_null) {
   RETURN(Store::UnmanagedPointerToWord(NULL));
 } END
 
-DEFINE0(UnsafeGtk_gtkTrue) {
+DEFINE0(NativeGtk_gtkTrue) {
   RETURN(Store::IntToWord(TRUE));
 } END
 
-DEFINE0(UnsafeGtk_gtkFalse) {
+DEFINE0(NativeGtk_gtkFalse) {
   RETURN(Store::IntToWord(FALSE));
 } END
 
@@ -61,6 +53,14 @@ void push_front(word *paramlist, word value) {
   cons->Init(1,*paramlist);
   *paramlist = cons->ToWord();
 }
+
+static word tail = 0;
+
+DEFINE1(NativeGtk_setEventStream) {
+  tail = x0;
+  RootSet::Add(tail);
+  RETURN_UNIT;
+} END
 
 void generic_marshaller(GClosure *closure, GValue *return_value, 
 			guint n_param_values, const GValue *param_values, 
@@ -164,7 +164,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
 
 }
 
-DEFINE4(UnsafeGtk_signalConnect) {
+DEFINE4(NativeGtk_signalConnect) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_INT(funid,x2);
@@ -179,7 +179,7 @@ DEFINE4(UnsafeGtk_signalConnect) {
   RETURN(Store::IntToWord(static_cast<int>(ret)));
 } END
 
-DEFINE2(UnsafeGtk_signalDisconnect) {
+DEFINE2(NativeGtk_signalDisconnect) {
   DECLARE_UNMANAGED_POINTER(obj,x0);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_disconnect(G_OBJECT(obj), static_cast<gulong>(handler_id));

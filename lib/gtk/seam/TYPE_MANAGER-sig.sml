@@ -5,12 +5,10 @@ signature TYPE_MANAGER =
 	type arginfo = argtype * string * TypeTree.ty
 
 	val removeTypeRefs :      TypeTree.ty -> TypeTree.ty
-(*	val isReal :              TypeTree.intKind -> bool
-	val isString :            TypeTree.ty -> bool *)
 
 	val getCType :            TypeTree.ty -> string
 	val getAliceType :        TypeTree.ty -> string
-	val getAliceUnsafeType :  TypeTree.ty -> string
+	val getAliceNativeType :  TypeTree.ty -> string
 
 	val isOutArg :            TypeTree.ty -> bool
 	val splitArgTypes :       TypeTree.ty list -> arginfo list

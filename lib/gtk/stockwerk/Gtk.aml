@@ -1,6 +1,6 @@
 
 import structure GtkUtils from "GtkUtils"
-import structure UnsafeGtk from "UnsafeGtk"
+import structure NativeGtk from "NativeGtk"
 import structure GtkEnums from "GtkEnums"
 import structure GtkCore from "GtkCore"
 import signature GTK from "GTK-sig"
@@ -22,9 +22,9 @@ struct
       | OBJECT of object
       | LIST of object list
 
-    val NULL : object = UnsafeGtk.null()
-    val TRUE : int = UnsafeGtk.gtkTrue()
-    val FALSE : int = UnsafeGtk.gtkFalse()
+    val NULL : object = NativeGtk.null()
+    val TRUE : int = NativeGtk.gtkTrue()
+    val FALSE : int = NativeGtk.gtkFalse()
 
     local
 	val signalTable = ref nil : 
@@ -33,7 +33,7 @@ struct
 	    
 	fun doSignalConnect (obj, signame, callback, after) =
 	    let
-		val connid = UnsafeGtk.signalConnect(obj,signame,
+		val connid = NativeGtk.signalConnect(obj,signame,
 						     !lastNumber,after)
 		val newtab = (!lastNumber,obj,connid,callback)::(!signalTable)
 	    in
@@ -50,7 +50,7 @@ struct
 	    doSignalConnect (obj, signame, callback, true)
 	    
 	fun signalDisconnect (obj, connid) =
-	    ( UnsafeGtk.signalDisconnect(obj,connid) ;
+	    ( NativeGtk.signalDisconnect(obj,connid) ;
 	      signalTable := List.filter  (fn (_,_,connid',_)=>connid<>connid')
 				          (!signalTable)
 	    )
@@ -59,7 +59,7 @@ struct
 	    let
 		fun find (_,obj',connid,callback') =
 		    if (obj = obj') andalso (callback = callback')
-			then ( UnsafeGtk.signalDisconnect(obj,connid) ; false )
+			then ( NativeGtk.signalDisconnect(obj,connid) ; false )
 			else true
 	    in
 		signalTable := List.filter find (!signalTable)
@@ -102,7 +102,7 @@ struct
 	    end
     val eventStream : int list = Promise.future(Promise.promise())
     in
-	val _ = UnsafeGtk.setEventStream eventStream
+	val _ = NativeGtk.setEventStream eventStream
 	val _ = spawn (listener (ref eventStream))
 	val _ = spawn (mainLoop initPoll)
     end

@@ -4,7 +4,7 @@ local
 in
     structure SGTK = MkSpecial (val space = Util.GTK)
 
-    structure UGTK = MkUnsafe(structure TypeManager = TypeManager
+    structure UGTK = MkNative(structure TypeManager = TypeManager
                               structure Special = SGTK
 			      val space = Util.GTK
 			      val tree = tree)
@@ -19,7 +19,7 @@ in
 
     structure SGDK = MkSpecial (val space = Util.GDK)
 
-    structure UGDK = MkUnsafe(structure TypeManager = TypeManager
+    structure UGDK = MkNative(structure TypeManager = TypeManager
 			      structure Special = SGDK
 			      val space = Util.GDK
 			      val tree = tree)

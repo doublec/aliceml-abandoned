@@ -10,18 +10,7 @@ struct
       | removeTypeRefs (ARRAY (x,t))   = ARRAY(x, removeTypeRefs t)
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
       | removeTypeRefs t               = t
-(*
-    fun isReal FLOAT      = true
-      | isReal DOUBLE     = true
-      | isReal LONGDOUBLE = true
-      | isReal _          = false
-*)
-(*
-    fun isString t = 
-	(case (removeTypeRefs t) of
-            (POINTER (NUMERIC (_, CHAR))) => true
-	  | _                             => false)
-*)
+
     local
 	fun numericToCType sign kind =
 	    (if sign then "" else "unsigned ")^
@@ -70,7 +59,7 @@ struct
       | getAliceType (ENUMREF name)        = name
       | getAliceType (TYPEREF (_,t))       = getAliceType t
 	 
-    fun getAliceUnsafeType t =
+    fun getAliceNativeType t =
 	let 
 	    val s = getAliceType t
 	in  

@@ -5,8 +5,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 
 	val includeFiles =
 	    case space of
-		Util.GTK => ["UnsafeGtkSpecial.hh"]
-	      | Util.GDK => ["UnsafeGdkSpecial.hh"]
+		Util.GTK => ["NativeGtkSpecial.hh"]
+	      | Util.GDK => ["NativeGdkSpecial.hh"]
 	      | _        => nil
 
         (* ignoreFuns: do not generate any code for: *)

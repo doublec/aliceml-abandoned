@@ -7,7 +7,7 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 	open TypeTree
 	open TypeManager
 
-	val unsafeName = "Unsafe"^Util.spaceName(space)
+	val nativeName = "Native"^Util.spaceName(space)
 	val safeName = Util.spaceName(space)^"Core"
 
 	(* Indentation constants *)
@@ -37,7 +37,7 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
              intro =
 		["(* This is a generated file. ",
 		 "Modifications may get lost. *)\n\n",
-		 "import structure ",unsafeName," from \"",unsafeName, "\"\n",
+		 "import structure ",nativeName," from \"",nativeName, "\"\n",
 		 "import structure GtkUtils from \"GtkUtils\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
 		 "import structure GdkEnums from \"GdkEnums\"\n",
@@ -88,14 +88,14 @@ functor MkCore(structure TypeManager : TYPE_MANAGER
 	    if generateSimple
 	    then
 		[wrIndent, "val ", wname, " = ", 
-		 unsafeName, ".", wname, "\n"]
+		 nativeName, ".", wname, "\n"]
 	    else
 		[wrIndent, "fun ", wname, "(", 
 		 Util.makeTuple ", " "" (map (fn info => #2info) ins), 
 		 ") =\n",
 		 wrIndent, wrIndent, "let val (",
 		 Util.makeTuple ", " "x" (map (fn info => #2info) outs), 
-		 ") = ", unsafeName, ".", wname, "(",
+		 ") = ", nativeName, ".", wname, "(",
 		 Util.makeTuple ", " "" (map (convEnum true) ins), ")\n", 
 		 wrIndent, wrIndent, "in (",
 		 Util.makeTuple ", " "x" (map (convEnum false) outs), ")\n",

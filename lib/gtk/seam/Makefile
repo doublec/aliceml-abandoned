@@ -2,7 +2,7 @@
 COMPS = Gtk Gdk
 COMPSCAP = GTK GDK
 
-NATIVES = $(COMPS:%=Unsafe%)
+NATIVES = $(COMPS:%=Native%)
 
 UNSAFE = $(NATIVES:%=%.asig) $(NATIVES:%=%.cc)
 
