@@ -22,7 +22,7 @@
 class Interpreter;
 
 // Known StackFrame Types
-typedef enum {
+enum FrameLabel {
   MIN_STACK_FRAME             = MIN_DATA_LABEL,
   // Primitive Frames
   PUSHCALL_FRAME              = MIN_STACK_FRAME,
@@ -61,9 +61,9 @@ typedef enum {
   FD_INPUT_FRAME,
   // End of Frames
   MAX_STACK_FRAME = FD_INPUT_FRAME
-} FrameLabel;
+};
 
-class StackFrame: private Block {
+class DllExport StackFrame: private Block {
 protected:
   enum { INTERPRETER_POS, BASE_SIZE };
 public:
