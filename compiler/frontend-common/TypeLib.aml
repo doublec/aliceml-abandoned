@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -35,12 +35,22 @@ struct
     type var		= Type.var			(* verify *)
     val typlab_row	= typlab "row"
     type row		= Type.row			(* verify *)
+    val typlab_constraint = typlab "contraint"
+    type constraint	= Type.constraint		(* verify *)
 
 
   (* Operations *)
 
     type lab		= Label.t
     type path		= Path.t
+
+    val lab_unconstrained = vallab "Unconstrained"
+    val _		= Type.Unconstrained : constraint	(* verify *)
+    val lab_intensional	= vallab "Intensional"
+    val _		= Type.Intensional : constraint		(* verify *)
+    val lab_extensional	= vallab "Extensional"
+    val _		= Type.Extensional : path * path list -> constraint
+								(* verify *)
 
     val lab_starKind	= vallab "starKind"
     val _		= Type.starKind : unit -> kind		(* verify *)
@@ -75,7 +85,7 @@ struct
     val _		= Type.apply : typ * typ -> typ		(* verify *)
 
     val lab_newVar	= vallab "newVar"
-    val _		= Type.newVar : kind -> var		(* verify *)
+    val _		= Type.newVar : kind * constraint -> var (* verify *)
     val lab_kind	= vallab "kind"
     val _		= Type.kind : typ -> kind		(* verify *)
 
