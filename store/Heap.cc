@@ -27,18 +27,31 @@
 #else
 # include <cstdlib>
 # include <unistd.h>
+
+#if HAVE_LIGHTNING
+# include <sys/mman.h> // mprotect
+# include <errno.h>
+
+# define PAGE_SIZE 4096
+# undef STORE_MEM_ALIGN
+# define STORE_MEM_ALIGN PAGE_SIZE
+#endif
 #endif
 
 void HeapChunk::Alloc(u_int size) {
 #if HAVE_VIRTUALALLOC
   block = (char *) VirtualAlloc(NULL, size,
-				(MEM_RESERVE | MEM_COMMIT),
-				PAGE_READWRITE);
-  Assert(block != NULL);
+				MEM_RESERVE | MEM_COMMIT,
+#if HAVE_LIGHTNING
+				PAGE_READWRITE
+#else
+				PAGE_EXECUTE_READWRITE
+#endif
+				);
 #else
   block = (char *) std::malloc(size);
-  Assert(block != NULL);
 #endif
+  Assert(block != NULL);
 }
 
 void HeapChunk::Free() {
@@ -60,6 +73,24 @@ HeapChunk::HeapChunk(u_int size, HeapChunk *chain) : prev(NULL) {
   max  = (base + size - sizeof(word)); // Header must always fit
   top  = base;
   next = chain;
+#if HAVE_LIGHTNING
+  // Recent Linux kernels disallow EXEC by default
+  if (mprotect(base, (max - base + sizeof(word)),
+	       PROT_READ | PROT_WRITE | PROT_EXEC) == -1) {
+    switch (errno) {
+    case EINVAL:
+      Error("mprotect: invalid pointer or not a multiple of PAGESIZE");
+    case EFAULT:
+      Error("mprotect: the memory cannot be accessed");
+    case EACCES:
+      Error("mprotect: The memory cannot be given the specified access");
+    case ENOMEM:
+      Error("mprotect: internal kernel structures could not be allocated");
+    default:
+      Error("mprotect: unknown error");
+    }
+  }
+#endif							       
   if (chain != NULL)
     chain->SetPrev(this);
   memset(base, 1, size);
