@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Andy Walter <anwalt@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andy Walter, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 structure Backend=
     struct
 	open Common
@@ -7,10 +19,10 @@ structure Backend=
 	(* Hashtabelle für Stamps. *)
 	structure StampHash = MakeHashImpMap(type t=stamp val hash=Stamp.hash)
 
-	(* Scoped Sets für Stamps. Wird zur Berechnung der freien
+	(* Mengen von Stamps. Wird u.a. zur Berechnung der freien
 	 Variablen benutzt. *)
-	structure ScopedStampSet = MakeHashScopedImpSet(type t=stamp
-							val hash=Stamp.hash)
+	structure StampSet = MakeHashScopedImpSet(type t=stamp
+						  val hash=Stamp.hash)
 
 	(* Hashtabelle für Listen von Strings. Wird benötigt bei der
 	 statischen Berechnung der Recordaritäten. *)
