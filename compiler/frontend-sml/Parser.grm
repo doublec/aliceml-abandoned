@@ -283,6 +283,8 @@
 %left  BAR		(* L/R is arbitrary *)
 %left  DO		(* L/R is arbitrary *)
 %left  ELSE		(* L/R is arbitrary *)
+%left  LAZY		(* L/R is arbitrary *)
+%left  SPAWN		(* L/R is arbitrary *)
 %left  RAISE		(* L/R is arbitrary *)
 %right HANDLE
 %right ORELSE
