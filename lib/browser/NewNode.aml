@@ -64,9 +64,9 @@ struct
            => (case unApply (Type.inspect(t)) of 
                (Type.Con path, ts) => newPath (va,t,p,i,d,path)
              | _ => raise createGraph_unknownNode)   
-         | Type.Prod(row) =>  raise createGraph_unknownNode  
-	 | Type.Mu(sum) => createGraph(va,sum,p,i,d)
-         | Type.Sum(row) =>  raise createGraph_unknownNode  
+         | Type.Prod(row) => treatProd (va,t,p,i,d,row)
+	 | Type.Mu(sum) => createGraph (va,sum,p,i,d)
+         | Type.Sum(row) => treatSum (va,t,p,i,d,row)   
          | _ => raise  createGraph_unknownNode) 
 
     (* treatProd *)
@@ -226,7 +226,9 @@ struct
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE => createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
+	   NONE => if d > !max_depth
+		       then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,setGroup)
+		   else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
          | SOME create => let val doc = create (!max_width,d,v,t)
                           in docToNode (doc,p,i,d) 
 			  end )
@@ -234,8 +236,43 @@ struct
     (* docToNode *)
     and docToNode (doc,p,i,d) =
         (case doc of
-           SIMPLE(r) => createSimple (#desc(r),p,i,#rep(r),DEFAULT,setGroup)
-         | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
+         SIMPLE(r) 
+	   => let val color = 
+	             (case #desc(r) of 
+		      INTERPUNCT => (case #rep(r) of ", " => SEP_COLOR
+		                                   | " = " => EQU_COLOR
+						   | ("{" | "}" | "(" | ")"
+                                                          | "#[" | "]" )  
+						     => BRACK_COLOR
+						   | _ => LABEL_COLOR)
+		    | VALUE(rr) 
+		      => (case Type.inspect(#typ(rr)) of
+			  Type.Con path
+			  => (if Path.equal(path,PervasiveType.path_int)
+				  then INT_COLOR
+			      else
+			       if Path.equal(path,PervasiveType.path_real)
+				   then REAL_COLOR
+			       else 
+			        if Path.equal(path,PervasiveType.path_char)
+				    then CHAR_COLOR
+				else 
+				 if Path.equal(path,PervasiveType.path_string)
+				     then STR_COLOR
+				 else
+	                          if Path.equal(path,PervasiveType.path_word) 
+				      then WORD_COLOR
+				  else 
+				   if Path.equal(path,PervasiveType.path_exn)
+				       then EXN_COLOR
+				   else 
+				    if Path.equal(path,PervasiveType.path_ref)
+					then REF_COLOR
+				    else DEFAULT)
+			| _ => DEFAULT) )
+	      in createSimple (#desc(r),p,i,#rep(r),color,setGroup)
+	      end
+        | CONCAT(r) => let val na = Array.array(Vector.length(#kids(r)),
 						 Empty)
                             val concat = createConcat(#desc(r),p,i,na,~1,~1,
 						      setGroup)
