@@ -730,8 +730,8 @@ struct
 
   (* Signature construction *)
 
-    fun newSig'(isr,zs)	= (ref isr, ref NONE, GlobalStamp.new()::zs)
-    fun newSig isr	= newSig'(isr, [])
+    fun newSig'(is,zs)	= (ref is, ref NONE, GlobalStamp.new()::zs)
+    fun newSig is	= newSig'(is, [])
     fun emptySig()	= newSig []
 
     fun hide(FIX(l,q))	= true
