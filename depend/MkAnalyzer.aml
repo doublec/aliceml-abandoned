@@ -51,7 +51,12 @@ functor MkAnalyzer(structure Parser: PARSER
 		    SOME(Url.toString url)
 	      | (SOME "file", NONE) =>
 		    SOME(Url.toString (Url.setScheme (url, NONE)))
-	      | _ => NONE
+	      | (SOME "x-alice", NONE) => NONE
+	      | _ =>
+		    (TextIO.output(TextIO.stdErr,
+				   "warning: ignoring URI " ^
+				   Url.toString url ^ "\n");
+		     NONE)
 
 	fun pathFloor filename =
 	    let
@@ -74,11 +79,7 @@ functor MkAnalyzer(structure Parser: PARSER
 		case parseUrl url of
 		    SOME targetFilename =>
 			SOME (pathFloor targetFilename ^ "." ^ extension)
-		  | NONE =>
-			(TextIO.output(TextIO.stdErr,
-				       "warning: ignoring URI " ^
-				       Url.toString url ^ "\n");
-			 NONE)
+		  | NONE => NONE
 	    end
 
 	fun analyze (desc, source) =
