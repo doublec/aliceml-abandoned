@@ -148,11 +148,14 @@ struct
     in
 	fun listener nil                         = ()
 	  | listener ((connid,obj,args)::stream) =
-	    ( NativeCore.signalMapCondGet(connid, dummyHandler) (obj, args)
-	      handle e =>
-		  TextIO.output (TextIO.stdErr,
-				 "*** Gtk signal handler raised exception " ^
-				 Exn.name e ^ " ***\n") ;
+	    ( Exn.catch
+	      (fn packet =>
+		  ( TextIO.output (TextIO.stdErr,
+				   "*** Gtk signal handler raised exception " ^
+				   Exn.name (Exn.fromPacket packet) ^
+				   " ***\n*** Backtrace:\n") ;
+		    Exn.dumpTrace packet ))
+	      (fn _ => NativeCore.signalMapCondGet(connid, dummyHandler) (obj, args)) ;
 	      listener stream )
     end
 
