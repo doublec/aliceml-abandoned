@@ -31,7 +31,7 @@ structure EventHandler : GUISIGNALS_SIG =
         fun on_delete1_activate _ = GuiMain.delete()
         fun on_syntax_colouring_activate _ = GuiMain.syntax()
         fun on_find_activate _ = GuiMain.search()
-        fun on_find_and_replace_activate _ = GuiMain.replaceSearch()
+        fun on_replace_activate _ = GuiMain.replaceSearch()
 	fun on_find_again_activate arg = GuiMain.searchAgain arg
         fun on_feedregion_activate _ = GuiMain.feedRegion()
         fun on_feedfile_activate _ = GuiMain.feedFile()
@@ -50,4 +50,5 @@ structure EventHandler : GUISIGNALS_SIG =
 	fun on_switch_to_compiler_activate _ = GuiMain.switchTo 1
 	fun on_switch_to_io_activate _ = GuiMain.switchTo 2
 	fun on_select_fonts_activate _ = GuiMain.selectFont ()
+	fun on_syntax_colouring_activate _ = GuiMain.activateSyntax()
     end

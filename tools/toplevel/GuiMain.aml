@@ -272,24 +272,26 @@ structure GuiMain =
 	fun bufferMenus activate =
 	    (app (fn w => Gtk.widgetSetSensitive(w,activate))
 	     [Gui.save1,Gui.save_as1,Gui.go_to_line,
-	      Gui.undo,Gui.find,Gui.find_and_replace,
-	      Gui.feedregion,Gui.feedfile,
-	      Gui.indent_region, Gui.outdent_region];
+	      Gui.undo,Gui.find,Gui.replace,Gui.find_again,
+	      Gui.feedregion,Gui.feedfile,Gui.syntax_colouring,
+	      Gui.compilefile,Gui.indent_region, Gui.outdent_region];
 	     app (fn w => Gtk.widgetSetSensitive(w,not activate))
 	     [Gui.back_in_history,Gui.forward_in_history])
 
         fun changeFocus view _ =
 	    let
 		val _ = curtextview := view
+		val _ = case getCurrentPage() of
+		    NONE =>
+			Gtk.widgetSetSensitive(Gui.compilefile,false)
+		  | SOME id =>
+			(Option.app (fn _ => Gtk.widgetSetSensitive(Gui.compilefile,true))
+			 (Buffer.getFileName id);
+			 Gtk.checkMenuItemSetActive(Gui.syntax_colouring,
+					     Buffer.getSyntaxHighlighting id))
 		val _ = case view of
 		    BUFFER _ => bufferMenus true
 		  | _ => bufferMenus false
-		val _ = case getCurrentPage() of
-		    NONE => Gtk.widgetSetSensitive(Gui.compilefile,false)
-		  | SOME id =>
-			Option.app (fn _ => Gtk.widgetSetSensitive(Gui.compilefile,true))
-			(Buffer.getFileName id)
-					  
 	    in ()
 	    end
 
@@ -659,6 +661,13 @@ structure GuiMain =
                   | _ => ();
                 Gtk.widgetDestroy dia                
             end
+
+	fun activateSyntax () =
+	    case getCurrentPage() of
+		NONE => ()
+	      | SOME id =>
+		    Buffer.setSyntaxHighlighting
+		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);

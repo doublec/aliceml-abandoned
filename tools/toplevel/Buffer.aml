@@ -40,6 +40,7 @@ structure Buffer =
                      tags: tags,
                      undo: undo list ref,
                      lastSearchPos: int ref,
+		     highlightActive : bool ref,
 		     highlight: int option Promise.promise ref}
 
       val bufferMap : buffer BufferMap.map = BufferMap.map()
@@ -57,14 +58,16 @@ structure Buffer =
 
       val delay = Time.fromMilliseconds(Int.toLarge 400)
       val never = Promise.future(Promise.promise())
+      val infinity = Option.getOpt(Int.maxInt, 1073741823)
 
-      fun highlightGuard'(buf, plaintag, promRef, signal, offset) =
+      fun highlightGuard'(buf, plaintag, promRef, signal, offset, active) =
 	  case Future.awaitEither(Promise.future(!promRef), signal)
 	   of FST NONE => () (* buffer closed *)
 	    | FST(SOME offset') =>  (* wakeup by change before delay is over *)
 	         (promRef := Promise.promise();
-		  highlightGuard'(buf, plaintag, promRef, Future.alarm delay, Int.min(offset,offset')))
+		  highlightGuard'(buf, plaintag, promRef, Future.alarm delay, Int.min(offset,offset'), active))
 	    | SND _ => (* delay over *)
+	      if !active then
 	      let
 		  val prom = Promise.promise()
 		  val inter = Promise.future prom
@@ -73,12 +76,14 @@ structure Buffer =
                   promRef := prom;
 		  spawn (await inter; kill := true);
 		  BufferHighlight.highlightOffset(buf, offset, plaintag, kill);
-		  if !kill then () else promRef := Promise.promise();
-		  highlightGuard'(buf, plaintag, promRef, never, 0)
+		  highlightGuard'(buf, plaintag, promRef, never, infinity, active)
 	      end
+	      else
+                  (promRef := Promise.promise();
+		   highlightGuard'(buf, plaintag, promRef, never, infinity, active))
 
-      fun highlightGuard(buf, plaintag, promRef) =
-          highlightGuard'(buf, plaintag, promRef, never, 0)
+      fun highlightGuard(buf, plaintag, promRef, active) =
+          highlightGuard'(buf, plaintag, promRef, never, infinity, active)
 
       (* Cursor *)
       fun getCursorIter buf =
@@ -313,6 +318,30 @@ structure Buffer =
       fun getBuffer id =
           #buf (BufferMap.lookupExistent(bufferMap, id))
 
+      fun getSyntaxHighlighting id =
+          !(#highlightActive (BufferMap.lookupExistent(bufferMap, id)))
+
+      fun setSyntaxHighlighting(id, active) =
+	  let
+	      val {buf,highlightActive,highlight,...} =
+		  BufferMap.lookupExistent(bufferMap, id)
+	  in
+	      highlightActive := active;
+	      if active then
+		  Promise.fulfill(!highlight, SOME 0)
+	      else
+		  let
+		      val startiter = Gtk.textIterNew()
+		      val enditer = Gtk.textIterNew()
+		  in
+		      Gtk.textBufferGetStartIter(buf, startiter);
+		      Gtk.textBufferGetEndIter(buf, enditer);
+		      Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
+		      Promise.fulfill(!highlight, SOME 0)
+		  end
+		  
+	  end
+
       fun getBufferByName f =
 	  case BufferMap.find
 	      (fn {file,...} => case !file of SOME f' => f' = f | _ => false) bufferMap of
@@ -357,12 +386,21 @@ structure Buffer =
 					       relativeTo=OS.FileSys.getDir()})
 		  file
 
+	      val highlightActive =
+		  case file of
+		      NONE => true
+		    | SOME f =>
+			  String.isSuffix ".aml" f orelse
+			  String.isSuffix ".sml" f orelse
+			  String.isSuffix ".asig" f
+
               val ret = {id=id,file=ref file,
                          fileLabel=label1,
                          view=newSource,buf=buf,
                          tags=makeTags buf,
                          undo=ref [SAVE_MARKER],
                          lastSearchPos=ref 0,
+			 highlightActive = ref highlightActive,
 			 highlight=ref(Promise.promise())}
           in
               if loadFile then
@@ -387,7 +425,8 @@ structure Buffer =
               Gtk.signalConnect(buf, "begin-user-action", userAction(id,true));
               Gtk.signalConnect(buf, "end-user-action", userAction(id,false));
               BufferMap.insertDisjoint(bufferMap, id, ret);
-	      spawn highlightGuard (buf, #plain(#tags ret), #highlight ret);
+	      spawn highlightGuard (buf, #plain(#tags ret),
+				    #highlight ret, #highlightActive ret);
               ret
           end
 
