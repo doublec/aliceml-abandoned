@@ -13,6 +13,14 @@
     store that holds all data at runtime. 
   </P>
 
+  <P>
+    <B>Note:</B>
+    This is a low-level module that should be used with care. Some of its
+    functionality can compromise abstractions to a certain extent. For
+    example, it is not encouraged to apply <TT>deepWait</TT> to values
+    that contain instances of abstract types.
+  </P>
+
 <?php section("import", "import") ?>
 
   <PRE>
