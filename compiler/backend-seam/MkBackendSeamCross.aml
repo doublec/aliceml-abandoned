@@ -18,7 +18,6 @@ import signature PHASE               from "../infrastructure/PHASE-sig"
 import structure MkTracingPhase      from "../infrastructure/MkTracingPhase"
 import structure EmptyContext        from "../infrastructure/EmptyContext"
 import structure Target              from "../infrastructure/Target"
-import structure FlatGrammar         from "../backend-common/FlatGrammar"
 import structure PrimPickle          from "PrimPickle"
 import structure Value               from "ValueCross"
 import structure AbstractCodeGrammar from "AbstractCodeGrammar"
@@ -44,14 +43,14 @@ functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
     in
 	MkTracingPhase(structure Phase =
 			   struct
-			       structure C = EmptyContext
-			       structure I = FlatGrammar
+			       structure C = CodeGenPhase.C
+			       structure I = CodeGenPhase.I
 			       structure O = Target
 
-			       fun translate () x =
+			       fun translate context x =
 				   let
-				       val value =
-					   CodeGenPhase.translate () x
+				       val (value, _) =
+					   CodeGenPhase.translate context x
 				   in
 				       Target.FOREIGN {save = save value,
 						       sign = sign value}
