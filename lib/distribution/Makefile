@@ -43,7 +43,7 @@ endif
 
 ALICESOURCES = \
 	HttpServerMain.aml HttpClientMain.aml \
-	REMOTE-sig.aml Remote.aml \
+	REMOTE-sig.aml Remote.aml HttpRemote.aml MkRemote.aml \
 	TestServer.aml TestClient.aml \
 	RemoteServer.aml
 
