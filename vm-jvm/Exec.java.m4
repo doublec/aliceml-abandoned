@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.tools;
 
@@ -56,10 +56,10 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    Cons c = new Cons(new de.uni_sb.ps.dml.runtime.String(arg[argc++]),null);
 	    arglist = c;
 	    for(int i=argc; i<arglength; i++) {
-		c.setCdr(new Cons(new de.uni_sb.ps.dml.runtime.String(arg[i]),null));
-		c = (Cons) c.getCdr();
+		c.cdr = new Cons(new de.uni_sb.ps.dml.runtime.String(arg[i]),null);
+		c = (Cons) c.cdr;
 	    }
-	    c.setCdr(List.nil);
+	    c.cdr = List.nil;
 	}
     }
 
