@@ -46,7 +46,8 @@ typedef int socklen_t;
   } while (res < 0 && GetLastError() == EINTR);
 #endif
 
-//--** finalization of sockets to be done
+//--** encapsulate sockets into IODesc
+//     (for sitedness, finalization, and never closing more than once)
 
 static int SetNonBlocking(int sock, bool flag) {
   unsigned long arg = flag;
@@ -138,6 +139,7 @@ DEFINE2(UnsafeSocket_client) {
   if (sock < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
+  SetNonBlocking(sock, true);
 
   hostent *entry = gethostbyname(host->ExportC());
   if (!entry) {
@@ -177,7 +179,8 @@ DEFINE1(UnsafeSocket_input1) {
  retry:
   Interruptible(n, recv(sock, reinterpret_cast<char *>(&c), 1, 0));
   if (n < 0) {
-    if (GetLastError() == EWOULDBLOCK) {
+    int error = GetLastError();
+    if (error == EWOULDBLOCK) {
       Future *future = IOHandler::WaitReadable(sock);
       if (future != INVALID_POINTER) {
 	REQUEST(future->ToWord());
@@ -185,6 +188,8 @@ DEFINE1(UnsafeSocket_input1) {
 	goto retry;
       }
     } else {
+      //--** map ECONNRESET to IO.Io {cause = ClosedStream, ...}
+      //--** std::fprintf(stderr, "recv failed: %d\n", error);
       RAISE(Store::IntToWord(0)); //--** IO.Io
     }
   } else if (n == 0) { // EOF
