@@ -81,6 +81,20 @@ structure TestSuite :
          * Verifier functions
          *
          *)
+         
+
+    fun vSeq x space =
+    let
+    	val xDom = Vector.map ( fn xi=>FS.Reflect.lowerBound (space, xi) ) x  
+    in
+    	Vector.isSorted (fn (x1,x2) =>     	
+    		if Pair.snd (Vector.sub (x1,0)) < Pair.fst (Vector.sub (x2,(Vector.length x2)-1) )
+    		then LESS 
+    		else if Pair.snd (Vector.sub (x2,0)) < Pair.fst (Vector.sub (x1,(Vector.length x1)-1) )
+    		then GREATER
+    		else raise Unordered
+    	) xDom
+    end
 	
 	fun vUnion1 (a,b,c) = (IntInf.orb(b,c) = a)
 	
@@ -130,6 +144,8 @@ structure TestSuite :
 	
 	fun vEquals1 (a,b) = a=b
 	
+	fun vSeqU (x,a) space = 
+		if (vSeq x space) andalso ((vBoolN vPartitionN1) (x,a) space) then true else false
 	
 	fun vConvex a space = 
 	let
@@ -311,6 +327,12 @@ structure TestSuite :
             GecodeTest.narySet ("PartitionN",max,seeds,arity,
                                 FS.partitionN,
                                 vBoolN vPartitionN1)
+(*
+        fun seqU arity max seeds =
+            GecodeTest.narySet ("SeqU",max,seeds,arity,
+                                FS.seqU,
+                                vSeqU)
+*)                              
         fun equals max seeds =
             GecodeTest.binarySet ("Equals",max,seeds,
                                    FS.equals,
