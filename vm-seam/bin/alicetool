@@ -1,5 +1,24 @@
 #!/bin/sh
 
+set -e
+
+find_in () {
+    search_for=$1
+    found_in=""
+    shift
+    for d in "$@"; do
+	if test -f "$d/${search_for}" -o -h "$d/${search_for}"; then
+	    found_in=$d && break
+	fi
+    done
+    if test -z "${found_in}"; then
+	echo "$cmd: error: could not find ${search_for} in either of" >&2
+	for d in "$@"; do echo "  $d" >&2; done
+	exit 1
+    fi
+    echo "${found_in}"
+}
+
 if [ $# -lt 1 ]; then
     echo "usage: $0 [--verbose|-v] (makedepend|c++|ld) <option> ..." >&2
     exit 2
@@ -11,15 +30,21 @@ if test -z "${ALICE_HOME}"; then
   ALICE_HOME=$(dirname $(dirname $0))
 fi
 
+if test -z "${SEAM_HOME}"; then
+    SEAM_HOME=$(find_in seam.exe "$PROGRAMFILES/Seam/bin")
+    SEAM_HOME=$(dirname "$SEAM_HOME")
+fi
+SEAM_HOME=$(abs_path "$SEAM_HOME")
+
 case "$mode" in
     makedepend)
-	exec seamtool -I$ALICE_HOME/include makedepend "$@"
+	exec "$SEAM_HOME/bin/seamtool" -I"$ALICE_HOME"/include makedepend "$@"
 	;;
     c++)
-	exec seamtool -I$ALICE_HOME/include c++ "$@"
+	exec "$SEAM_HOME/bin/seamtool" -I"$ALICE_HOME"/include c++ "$@"
 	;;
     ld)
-	exec seamtool ld "$@" "$ALICE_HOME/alice.dll"
+	exec "$SEAM_HOME/bin/seamtool" ld "$@" "$ALICE_HOME/alice.dll"
 	;;
     *)
 	echo $0: unknown mode \`$1\' >&2
