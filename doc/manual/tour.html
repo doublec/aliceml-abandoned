@@ -1356,10 +1356,18 @@ Server.compute (fib, 30)
 <TT>30</TT>, to the server, which evaluates it. When it is done, it returns the
 result.</P>
 
-<P>You will have noticed that this remote call is synchronous, i.e. the client
-will not proceed before the server delivers the result. However, a synchronous
-call can trivially be transformed into an asynchrounous one using <A
-href="#concurrency">functional threads</A>!</P>
+<P>It is important to note that only establishing the initial connection
+requires a dynamic type check with this idiom! All subsequent uses of the
+transferred structure in general, and the contained proxy in particular do
+not require any check. Communication via proxies is always statically
+type-safe!</P>
+
+<?php subsection("distribution-async", "Asynchronous communication") ?>
+
+<P>You will have noticed that the remote call to the server is synchronous,
+i.e. the client will not proceed before the server delivers the result.
+However, a synchronous call can trivially be transformed into an asynchronous
+one using <A href="#concurrency">functional threads</A>!</P>
 
 <PRE class=code>
 spawn Server.compute (fib, 30)
