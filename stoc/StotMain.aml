@@ -1,26 +1,18 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure OS
-from "../lib/system/OS"
+import structure OS          from "../lib/system/OS"
+import structure CommandLine from "../lib/system/CommandLine"
+import structure SMLToMozartToplevel from "top/SMLToMozartToplevel"
 
-import
-    structure CommandLine
-from "../lib/system/CommandLine"
-
-import
-    structure SMLToMozartEmacsToplevel
-from "top/SMLToMozartEmacsToplevel"
-
-val _ =
-    OS.Process.exit (SMLToMozartEmacsToplevel.stot (CommandLine.arguments ()))
+val _ = OS.Process.exit(SMLToMozartToplevel.stot(CommandLine.arguments()))

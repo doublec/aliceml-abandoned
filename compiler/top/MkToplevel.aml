@@ -1,0 +1,92 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "../../lib/system/TextIO"
+import structure OS     from "../../lib/system/OS"
+
+import structure Error                from "../infrastructure/Error"
+import structure MkOptionParser       from "MkOptionParser"
+import signature RECURSIVE_COMPILER   from "RECURSIVE_COMPILER-sig"
+import signature INTERACTIVE_TOPLEVEL from "INTERACTIVE_TOPLEVEL-sig"
+
+
+functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER) :
+    INTERACTIVE_TOPLEVEL =
+struct
+    structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
+
+    fun usage() = TextIO.output(TextIO.stdErr, "Usage: stot [options]\n" ^
+						OptionParser.helpText)
+
+    val header     = "Stockhausen Operette 2\n"
+    val prompt     = "> "
+    val contPrompt = "  "
+
+    fun readInput() =
+	case readInput' prompt of [] => NONE
+				| ss => SOME(String.concat ss)
+
+    and readInput' prompt =
+	let
+	    val _    = TextIO.print prompt
+	    val line = TextIO.inputLine(TextIO.stdIn)
+	    val size = String.size line
+	in
+	    if size = 0 then
+		[]
+	    else if size > 1 andalso String.sub(line, size-2) = #";" then
+		[line]
+	    else
+		line :: readInput' contPrompt
+	end
+
+    fun eval(source, compilerContext, targetContext) =
+	let
+	    val (compilerContext, target) =
+		RecursiveCompiler.compileString compilerContext source
+	in
+	    RecursiveCompiler.Target.apply targetContext target;
+	    (compilerContext, targetContext)
+	end
+	handle Error.Error _ => (compilerContext, targetContext)
+
+    fun loop(compilerContext, targetContext) =
+	case readInput()
+	  of SOME source => loop(eval(source, compilerContext, targetContext))
+	   | NONE        => ()
+
+    fun stot'(_::_) = (usage(); OS.Process.failure)
+      | stot' nil =
+	let
+	    open RecursiveCompiler.Switches
+	    val dumpSig = !Debug.dumpElaborationSig
+	    val _ = Debug.dumpElaborationSig := false
+	    val (compilerContext, targetContext) =
+		eval("", RecursiveCompiler.empty,
+			 RecursiveCompiler.Target.C.new())
+	in
+	    Debug.dumpElaborationSig := dumpSig;
+	    Language.implicitImport  := false;
+	    loop(compilerContext, targetContext);
+	    OS.Process.success
+	end
+
+    fun stot arguments =
+	let
+	    open RecursiveCompiler.Switches
+	in
+	    Debug.dumpPhases := false;
+	    Language.reexportImport := true;
+	    stot'(OptionParser.parse arguments)
+	end
+end

@@ -43,7 +43,7 @@
 	   :prefix "stockhausen-")))
 
 (eval-and-compile
-  (eval '(defcustom stockhausen-stot-command "stot"
+  (eval '(defcustom stockhausen-stot-command "stot-emacs"
 	   "*Command used to start the Stockhausen interactive toplevel."
 	   :type 'string
 	   :group 'stockhausen)))
