@@ -141,12 +141,14 @@ DEFINE2(UnsafeUnix_execute) {
   }
   // Populate arguments array
   char *argArr[nbArgs];
+  argArr[0] = prog->ExportC();
   args = x1;
-  u_int i = 0;
+  u_int i = 1;
   while ((tagVal = TagVal::FromWord(args)) != INVALID_POINTER) {
     argArr[i++] = String::FromWord(tagVal->Sel(0))->ExportC();
     args = tagVal->Sel(1);
   }
+  argArr[i] = NULL;
   int pid = fork();
   switch (pid) {
   case 0: // Child process
@@ -167,7 +169,7 @@ DEFINE2(UnsafeUnix_execute) {
       dup(sv[1]);
       dup(sv[1]);
       // Execute command
-      if (execvp(prog->ExportC(), argArr) < 0) {
+      if (execvp(argArr[0], argArr) < 0) {
 	fprintf(stderr, "execvp failed\n");
 	exit(-1);
       }
