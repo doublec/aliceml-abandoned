@@ -17,8 +17,8 @@ import structure PPComponent from "x-alice:/lib/system/PPComponent"
 import structure PPMismatch  from "x-alice:/lib/rtt/PPMismatch"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 
-import structure SMLToSeamRecursiveCompiler
-from "x-alice:/compiler/top/SMLToSeamRecursiveCompiler"
+import structure RecursiveCompiler
+from "x-alice:/compiler/top/RecursiveCompiler"
 
 import signature EVALUATOR from "EVALUATOR-sig"
 
