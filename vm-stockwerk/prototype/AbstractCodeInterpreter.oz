@@ -428,21 +428,26 @@ define
 	       elseof ThenInstr then
 		  {Emulate ThenInstr Closure L TaskStack}
 	       end
-	    elsecase {NAryConCase 1 {Width NAryCases} C.1 NAryCases Closure L}
-	    of tuple(_ IdDefs ThenInstr) then N in
-	       N = {Width IdDefs}
-	       for J in 1..N do
-		  case IdDefs.J of tag(!IdDef Id) then
-		     L.Id := C.(J + 1)
-		  [] !Wildcard then skip
-		  end
-	       end
-	       {Emulate ThenInstr Closure L TaskStack}
-	    [] request(Transient) then NewFrame in
+	    elsecase {Deref C.1} of Transient=transient(_) then NewFrame in
 	       NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
 	       request(Transient args() NewFrame|TaskStack)
-	    [] unit then
-	       {Emulate ElseInstr Closure L TaskStack}
+	    elseof C1 then
+	       case {NAryConCase 1 {Width NAryCases} C1 NAryCases Closure L}
+	       of tuple(_ IdDefs ThenInstr) then N in
+		  N = {Width IdDefs}
+		  for J in 1..N do
+		     case IdDefs.J of tag(!IdDef Id) then
+			L.Id := C.(J + 1)
+		     [] !Wildcard then skip
+		     end
+		  end
+		  {Emulate ThenInstr Closure L TaskStack}
+	       [] request(Transient) then NewFrame in
+		  NewFrame = frame(Me tag(TupArgs vector()) Instr Closure L)
+		  request(Transient args() NewFrame|TaskStack)
+	       [] unit then
+		  {Emulate ElseInstr Closure L TaskStack}
+	       end
 	    end
 	 end
       [] tag(!VecTest IdRef IdDefsInstrVec ElseInstr) then V0 in
