@@ -31,13 +31,12 @@ public:
   static void Init() {
     self = new NativeCodeInterpreter();
   }
+  static word FastPushCall(word continuation, Closure *closure);
+  static word TailPushCall(Closure *closure);
   // Handler Methods
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
   // Frame Handling
   virtual void PushCall(Closure *closure);
-#if defined(ALICE_IMPLICIT_KILL)
-  virtual void PurgeFrame(word frame);
-#endif
   // Execution
   virtual Result Run();
   virtual Result Handle();

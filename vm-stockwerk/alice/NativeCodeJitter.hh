@@ -23,17 +23,21 @@
 class HashTable;
 class TagVal;
 class LivenessTable;
-#if defined(ALICE_IMPLICIT_KILL)
-class LivenessInformation;
-#endif
 
 typedef enum {
   FUTURE_BYNEED,
   CHAR_ORD,
   INT_OPPLUS,
+  INT_OPSUB,
   INT_OPMUL,
   INT_OPLESS
 } INLINED_PRIMITIVE;
+
+typedef enum {
+  NORMAL_CALL,
+  SELF_CALL,
+  NATIVE_CALL
+} CALL_MODE;
 
 #define ALICE_REGISTER_NB 3
 
@@ -43,6 +47,7 @@ protected:
   static u_int codeBufferSize;
 
   static word initialPC;
+  static word initialNoCCCPC;
   static word instructionStartPC;
 
   static const u_int SHARED_TABLE_SIZE = 512;
@@ -51,11 +56,10 @@ protected:
   static LivenessTable *livenessTable;
   static LivenessTable *livenessFreeList;
   static Tuple *assignment;
-#if defined(ALICE_IMPLICIT_KILL)
-  static LivenessInformation *livenessInfo;
-  static u_int rowIndex;
-#endif
   static word inlineTable;
+  static word defaultContinuation;
+  static u_int currentNLocals;
+  static TagVal *currentArgs;
   // Environment Accessors
   static u_int RefToIndex(word ref);
   static u_int LocalEnvSel(u_int Dest, u_int Ptr, u_int pos);
@@ -68,26 +72,31 @@ protected:
   // StackFrame Accessors
   static void Prepare();
   static void Finish();
+  static void Reset();
   static void SaveRegister();
   static void RestoreRegister();
-  static void PushCall(u_int Closure);
-  static void DirectCall(Interpreter *interpreter);
-  static void TailCall(u_int Closure, bool isSelf);
+  static void PushCall(u_int Closure, CALL_MODE mode, u_int offset);
+  static void DirectCall(Interpreter *interpreter, void *ptr);
+  static void TailCall(u_int Closure, CALL_MODE mode, u_int offset);
   static void BranchToOffset(u_int wOffset);
   static u_int GetRelativePC();
   static void SetRelativePC(word pc);
   // Calling Convention Conversion
-  static void CompileCCC(TagVal *idDefArgs);
+  static void CompileCCC(TagVal *idDefArgs, bool update = false);
   // NativeCodeJitter Instruction Helpers
   static u_int LoadIdRefKill(u_int Dest, word idRef);
   static void Await(u_int Ptr, word pc);
   static u_int LoadIdRef(u_int Dest, word idRef, word pc);
-  static void KillVariables(word pc);
+  static void KillVariables();
   static void BlockOnTransient(u_int Ptr, word pc);
   static void LookupTestTable(u_int Key, u_int table);
-  static void InlineAppPrim(INLINED_PRIMITIVE primitive, TagVal *pc);
+  static u_int CompilePrimitive(INLINED_PRIMITIVE primitive,
+				Vector *actualIdRefs);
   static void NormalAppPrim(Closure *closure, TagVal *pc);
-  static void AppVar(TagVal *pc, bool isSelf);
+  static void CompileContinuation(TagVal *idDefArgsInstrOpt);
+  static void LoadArguments(TagVal *actualArgs);
+  static void AppVarPrim(TagVal *pc, Interpreter *interpreter, void *ptr);
+  static void AppVar(TagVal *pc, word wClosure);
   // NativeCodeJitter Instructions
   static TagVal *InstrKill(TagVal *pc);
   static TagVal *InstrPutVar(TagVal *pc);
@@ -133,6 +142,9 @@ public:
   // NativeCodeJitter Methods
   static word GetInitialPC() {
     return initialPC;
+  }
+  static word GetDefaultContinuation() {
+    return defaultContinuation;
   }
   static NativeConcreteCode *Compile(TagVal *abstractCode);
   static void PrintPC(const char *instr);
