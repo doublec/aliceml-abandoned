@@ -7,8 +7,8 @@ Group
 
 is
 
+    ../../lib/rtt/name.cm
     ../infrastructure/target.cm
-    ../common/name.cm
     ../common/id-stamp.cm
     flat-grammar.cm
 

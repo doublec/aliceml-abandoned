@@ -7,8 +7,8 @@ Group
 is
 
     ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
     ../infrastructure/sources.cm
-    ../common/name.cm
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
     ../backend-common/engine.cm

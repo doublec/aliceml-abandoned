@@ -5,8 +5,8 @@ group
 is
 
     ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
     ../common/id-stamp.cm
-    ../common/name.cm
 
     flat-grammar.cm
 

@@ -1,10 +1,4 @@
 Group
-	signature NAME
-	structure Name
-	signature LABEL
-	structure Label
-	signature TYPE
-	structure Type
 	signature INTERMEDIATE_GRAMMAR
 	functor   MkIntermediateGrammar
 	signature PP_INTERMEDIATE_GRAMMAR
@@ -15,11 +9,11 @@ Group
 
 is
 	../../lib/utility/sources.cm
+	../lib/rtt/type.cm
+	../lib/rtt/interface.cm
 	../infrastructure/source.cm
 	../infrastructure/pp-misc.cm
 	id-stamp.cm
-	type.cm
-	interface.cm
 
 	INTERMEDIATE_GRAMMAR-sig.aml
 	MkIntermediateGrammar.aml

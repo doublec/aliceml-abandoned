@@ -8,6 +8,8 @@ Group
 is
 
     ../../lib/utility/sources.cm
+    ../../lib/rtt/name.cm
+    ../../lib/rtt/type.cm
     ../infrastructure/crash.cm
     ../infrastructure/source.cm
     ../common/id-stamp.cm
