@@ -1,0 +1,287 @@
+<?php include("macros.php3"); ?>
+<?php heading("The GtkCanvas structure", "The <TT>GtkCanvas</TT> structure"); ?>
+
+<?php section("synopsis", "synopsis"); ?>
+
+  <PRE>
+    signature GTK_CANVAS
+    structure GtkCanvas : GTK_CANVAS</PRE>
+
+ <P>
+   The <TT>GtkCanvas</TT> structure provides access to a canvas implementation
+   based on the Tcl/Tk canvas widget.
+ </P>
+
+ <P>See also:
+   <A href="gdk.html"><TT>Gdk</TT></A>,
+   <A href="gtk.html"><TT>Gtk</TT></A>,
+ </P>
+
+  <?php section("import", "import"); ?>
+
+  <PRE>
+    import signature GTK_CANVAS from "x-alice:/lib/gtk/GTK_CANVAS-sig"
+    import stucture GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"</PRE>
+
+  <?php section("interface", "interface"); ?>
+
+  <PRE>
+        signature GTK_CANVAS =
+	sig
+	    type object
+
+	    datatype inputSource =
+		GDK_SOURCE_MOUSE
+	      | GDK_SOURCE_PEN
+	      | GDK_SOURCE_ERASER
+	      | GDK_SOURCE_CURSOR
+	      | GDK_SOURCE_ALICEDUMMY
+
+	    datatype crossingMode =
+		GDK_CROSSING_NORMAL
+	      | GDK_CROSSING_GRAB
+	      | GDK_CROSSING_UNGRAB
+	      | GDK_CROSSING_ALICEDUMMY
+
+	    datatype notifyType =
+		GDK_NOTIFY_ANCESTOR
+	      | GDK_NOTIFY_VIRTUAL
+	      | GDK_NOTIFY_INFERIOR
+	      | GDK_NOTIFY_NONLINEAR
+	      | GDK_NOTIFY_NONLINEAR_VIRTUAL
+	      | GDK_NOTIFY_UNKNOWN
+	      | GDK_NOTIFY_ALICEDUMMY
+
+	    datatype visibilityState =
+		GDK_VISIBILITY_UNOBSCURED
+	      | GDK_VISIBILITY_PARTIAL
+	      | GDK_VISIBILITY_FULLY_OBSCURED
+	      | GDK_VISIBILITY_ALICEDUMMY
+
+	    datatype event =
+		GDK_EXPOSE of {window:object, send:bool, area:object, count:int}
+	      | GDK_MOTION_NOTIFY of
+		{window:object, send:bool, time:int,
+		 x:real, y:real, pressure:real,
+		 xtilt:real, ytilt:real,
+		 state:int, is_hint:int, source:inputSource,
+		 deveceid:int, x_root:real, y_root:real}
+	      | GDK_BUTTON_PRESS of
+		{window:object, send:bool, time:int,
+		 x:real, y:real, pressure:real,
+		 xtilt:real, ytilt:real,
+		 state:int, button:int, source:inputSource,
+		 deveceid:int, x_root:real, y_root:real}
+	      | GDK_2BUTTON_PRESS of
+		{window:object, send:bool, time:int,
+		 x:real, y:real, pressure:real,
+		 xtilt:real, ytilt:real,
+		 state:int, button:int, source:inputSource,
+		 deveceid:int, x_root:real, y_root:real}
+	      | GDK_3BUTTON_PRESS of
+		{window:object, send:bool, time:int,
+		 x:real, y:real, pressure:real,
+		 xtilt:real, ytilt:real,
+		 state:int, button:int, source:inputSource,
+		 deveceid:int, x_root:real, y_root:real}
+	      | GDK_BUTTON_RELEASE of
+		{window:object, send:bool, time:int,
+		 x:real, y:real, pressure:real,
+		 xtilt:real, ytilt:real,
+		 state:int, button:int, source:inputSource,
+		 deveceid:int, x_root:real, y_root:real}
+	      | GDK_KEY_PRESS of
+		{window:object, send:bool, time:int, state:int,
+		 keyval:int, length:int, string:string}
+	      | GDK_KEY_RELEASE of
+		{window:object, send:bool, time:int, state:int,
+		 keyval:int, length:int, string:string}
+	      | GDK_ENTER_NOTIFY of
+		{window:object, send:bool, subwindow:object, time:int,
+		 x:real, y:real, x_root:real, y_root:real,
+		 mode:crossingMode, detail:notifyType,
+		 focus:bool, state:int}
+	      | GDK_LEAVE_NOTIFY of
+		{window:object, send:bool, subwindow:object, time:int,
+		 x:real, y:real, x_root:real, y_root:real,
+		 mode:crossingMode, detail:notifyType,
+		 focus:bool, state:int}
+	      | GDK_FOCUS_CHANGE of {window:object, send:bool, hasFocus:bool}
+	      | GDK_CONFIGURE    of
+		{window:object, send:bool, x:int, y:int,
+		 width:int, height:int}
+	      | GDK_VISIBILITY_NOTIFY of
+		{window: object, send: bool, state:visibilityState}
+	      | GDK_NO_EXPOSE of
+		{window:object, send:bool, area:object, count:int}
+	      | GDK_NOTHING
+	      | GDK_DELETE
+	      | GDK_DESTROY
+	      | GDK_MAP
+	      | GDK_UNMAP
+	      | GDK_PROPERTY_NOTIFY
+	      | GDK_SELECTION_CLEAR
+	      | GDK_SELECTION_REQUEST
+	      | GDK_SELECTION_NOTIFY
+	      | GDK_PROXIMITY_IN
+	      | GDK_PROXIMITY_OUT
+	      | GDK_DRAG_ENTER
+	      | GDK_DRAG_LEAVE
+	      | GDK_DRAG_MOTION
+	      | GDK_DRAG_STATUS
+	      | GDK_DROP_START
+	      | GDK_DROP_FINISHED
+	      | GDK_CLIENT_EVENT
+	      | UNSUPPORTED
+
+	    datatype canvas_item_type =
+		GROUP |
+		WIDGET | TEXT | IMAGE |
+		LINE | RECTANGLE | ELLIPSE | POLYGON
+
+	    datatype arg =
+		INT    of int
+	      | DOUBLE of real
+	      | STRING of string
+	      | OBJECT of object
+	      | POINTS of int list
+	      | EVENT  of event
+
+                    val imageGetType : unit -> int
+                    val init : unit -> unit
+                    val lineGetType : unit -> int
+                    val loadAlpha : string -> object
+                    val destroyImage : object -> unit
+                    val polygonGetType : unit -> int
+                    val reGetType : unit -> int
+                    val rectGetType : unit -> int
+                    val ellipseGetType : unit -> int
+                    val textGetType : unit -> int
+                    val typeInit : unit -> unit
+                    val pointsNew : int -> object
+                    val pointsRef : object -> object
+                    val pointsFree : object -> unit
+                    val getMiterPoints : real * real * real * real * real * real * real * real * real * real * real -> int * real * real * real * real
+                    val getButtPoints : real * real * real * real * real * int * real * real * real * real -> real * real * real * real
+                    val polygonToPoint : real * int * real * real -> real * real
+                    val renderSvp : object * object * int -> unit
+                    val updateSvp : object * object * object -> unit
+                    val updateSvpClip : object * object * object * object -> unit
+                    val itemResetBounds : object -> unit
+                    val itemUpdateSvp : object * object * object -> unit
+                    val itemUpdateSvpClip : object * object * object * object -> unit
+                    val itemRequestRedrawSvp : object * object -> unit
+                    val updateBbox : object * int * int * int * int -> unit
+                    val bufEnsureBuf : object -> unit
+                    val joinGdkToArt : int -> int
+                    val capGdkToArt : int -> int
+                    val widgetGetType : unit -> int
+                    val itemGetType : unit -> int
+                    val itemNew : object * canvas_item_type * ((string * arg) list) -> object
+                    val itemSet : object * string * arg -> unit
+                    val itemNewv : object * int * int * object -> object
+                    val itemConstruct : object * object * string * object -> unit
+                    val itemConstructv : object * object * int * object -> unit
+                    val itemSetv : object * int * object -> unit
+                    val itemSetValist : object * string * object -> unit
+                    val itemMove : object * real * real -> unit
+                    val itemAffineRelative : object * object -> unit
+                    val itemAffineAbsolute : object * object -> unit
+                    val itemScale : object * real * real * real * real -> unit
+                    val itemRotate : object * real * real * real -> unit
+                    val itemRaise : object * int -> unit
+                    val itemLower : object * int -> unit
+                    val itemRaiseToTop : object -> unit
+                    val itemLowerToBottom : object -> unit
+                    val itemShow : object -> unit
+                    val itemHide : object -> unit
+                    val itemGrab : object * object * object * int -> int
+                    val itemUngrab : object * int -> unit
+                    val itemW2i : object * real * real -> real * real
+                    val itemI2w : object * real * real -> real * real
+                    val itemI2wAffine : object * real -> real
+                    val itemI2cAffine : object * real -> real
+                    val itemReparent : object * object -> unit
+                    val itemGrabFocus : object -> unit
+                    val itemGetBounds : object * real * real * real * real -> real * real * real * real
+                    val itemRequestUpdate : object -> unit
+                    val groupGetType : unit -> int
+                    val groupChildBounds : object * object -> unit
+                    val getType : unit -> int
+                    val new : int -> object
+                    val popvisual : object -> unit
+                    val imageItemNew : object * object * object * int * int * int * int * int -> object
+                    val newAa : unit -> object
+                    val root : object -> object
+                    val setScrollRegion : object * real * real * real * real -> unit
+                    val getScrollRegion : object * real * real * real * real -> real * real * real * real
+                    val setPixelsPerUnit : object * real -> unit
+                    val scrollTo : object * int * int -> unit
+                    val getScrollOffsets : object * int * int -> int * int
+                    val updateNow : object -> unit
+                    val getItemAt : object * real * real -> object
+                    val requestRedrawUta : object * object -> unit
+                    val requestRedraw : object * int * int * int * int -> unit
+                    val w2cAffine : object * real -> real
+                    val w2c : object * real * real * int * int -> int * int
+                    val w2cD : object * real * real * real * real -> real * real
+                    val c2w : object * int * int * real * real -> real * real
+                    val windowToWorld : object * real * real * real * real -> real * real
+                    val worldToWindow : object * real * real * real * real -> real * real
+                    val getColor : object * string * object -> int
+                    val getColorPixel : object * int -> int
+                    val setStippleOrigin : object * object -> unit
+                    val canvasGetFieldLayout : object -> object
+                    val canvasGetFieldIdleId : object -> int
+                    val canvasGetFieldRoot : object -> object
+                    val canvasGetFieldRootDestroyId : object -> int
+                    val canvasGetFieldScrollX1 : object -> real
+                    val canvasGetFieldScrollY1 : object -> real
+                    val canvasGetFieldScrollX2 : object -> real
+                    val canvasGetFieldScrollY2 : object -> real
+                    val canvasGetFieldPixelsPerUnit : object -> real
+                    val canvasGetFieldRedrawX1 : object -> int
+                    val canvasGetFieldRedrawY1 : object -> int
+                    val canvasGetFieldRedrawX2 : object -> int
+                    val canvasGetFieldRedrawY2 : object -> int
+                    val canvasGetFieldRedrawArea : object -> object
+                    val canvasGetFieldDrawXofs : object -> int
+                    val canvasGetFieldDrawYofs : object -> int
+                    val canvasGetFieldZoomXofs : object -> int
+                    val canvasGetFieldZoomYofs : object -> int
+                    val canvasGetFieldState : object -> int
+                    val canvasGetFieldCurrentItem : object -> object
+                    val canvasGetFieldNewCurrentItem : object -> object
+                    val canvasGetFieldGrabbedItem : object -> object
+                    val canvasGetFieldGrabbedEventMask : object -> int
+                    val canvasGetFieldFocusedItem : object -> object
+                    val canvasGetFieldPickEvent : object -> object
+                    val canvasGetFieldCloseEnough : object -> int
+                    val canvasGetFieldCc : object -> object
+                    val canvasGetFieldPixmapGc : object -> object
+                    val canvasGetFieldNeedUpdate : object -> object
+                    val canvasGetFieldNeedRedraw : object -> object
+                    val canvasGetFieldNeedRepick : object -> object
+                    val canvasGetFieldLeftGrabbedItem : object -> object
+                    val canvasGetFieldInRepick : object -> object
+                    val canvasGetFieldAa : object -> object
+                    val canvasItemGetFieldObject : object -> object
+                    val canvasItemGetFieldCanvas : object -> object
+                    val canvasItemGetFieldParent : object -> object
+                    val canvasItemGetFieldX1 : object -> real
+                    val canvasItemGetFieldY1 : object -> real
+                    val canvasItemGetFieldX2 : object -> real
+                    val canvasItemGetFieldY2 : object -> real
+                    val canvasItemGetFieldXform : object -> object
+                    val canvasGroupGetFieldItem : object -> object
+                    val canvasGroupGetFieldItemList : object -> object list
+                    val canvasGroupGetFieldItemListEnd : object -> object list
+
+	end</PRE>
+
+  <?php section("description", "description"); ?>
+
+  <P>We do not give a full documentation here. We rather recommend
+     to read the Porting <A href="">Guide</A>.
+
+<?php footing(); ?>
