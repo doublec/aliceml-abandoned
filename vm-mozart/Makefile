@@ -141,7 +141,8 @@ LIBNATIVES = \
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
 	Fundamental.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
-	BOOL-sig.aml CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
+	BOOL-sig.aml BYTE-sig.aml \
+	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
 	LOCK-sig.aml MATH-sig.aml MONO_ARRAY-sig.aml MONO_VECTOR-sig.aml \
 	MONO_ARRAY_SLICE-sig.aml MONO_VECTOR_SLICE-sig.aml \
@@ -151,7 +152,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	TEXT-sig.aml THREAD-sig.aml TIME-sig.aml UNIQUE_STRING-sig.aml \
 	VECTOR-sig.aml VECTOR_PAIR-sig.aml VECTOR_SLICE-sig.aml \
 	WORD-sig.aml PACKAGE-sig.aml \
-	Alt.aml Array.aml ArraySlice.aml Bool.aml Char.aml \
+	Alt.aml Array.aml ArraySlice.aml Bool.aml Byte.aml Char.aml \
 	CharArray.aml CharArraySlice.aml CharVector.aml CharVectorSlice.aml \
 	Future.aml General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml \
 	LargeReal.aml LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml \
@@ -380,15 +381,17 @@ BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
 	$(ALLSOURCES:%=build1/%)
 
-INSTALL1DIRS = build1/install build1/install/bin \
-	build1/install/compiler build1/install/linker
+INSTALL1DIRS = build1/install build1/install/bin build1/install/lib \
+	build1/install/lib/system build1/install/compiler build1/install/linker
 INSTALL1TOPFILES = VMMain.ozf
 INSTALL1BINFILES = alicerun alicec aliceserv alicelink
+INSTALL1LIBFILES = system/ComponentManager.ozf
 INSTALL1COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
 INSTALL1LINKERFILES = Main.ozf
 INSTALL1FILES = \
 	$(INSTALL1TOPFILES:%=build1/install/%) \
 	$(INSTALL1BINFILES:%=build1/install/bin/%) \
+	$(INSTALL1LIBFILES:%=build1/install/lib/%) \
 	$(INSTALL1COMPILERFILES:%=build1/install/compiler/%) \
 	$(INSTALL1LINKERFILES:%=build1/install/linker/%)
 
@@ -565,6 +568,9 @@ $(INSTALL1DIRS):
 build1/install/VMMain.ozf: build1/LinkedVMMain.ozf
 	install -c -m 444 $< $@
 
+build1/install/lib/%: build1/lib/%
+	install -c -m 444 $< $@
+
 build1/install/compiler/CompilerMain.ozf: \
 	build1/compiler/LinkedCompilerMain.ozf
 	install -c -m 444 $< $@
@@ -597,7 +603,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/compiler
 INSTALL2TOPFILES = VMMain.ozf alicec.import
 INSTALL2BINFILES = alicerun alicec aliceserv alicelink alicedep
-INSTALL2LIBFILES = rtt/RTT.ozf
+INSTALL2LIBFILES = rtt/RTT.ozf system/ComponentManager.ozf
 INSTALL2COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
