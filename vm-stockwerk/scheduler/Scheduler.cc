@@ -76,27 +76,27 @@ void Scheduler::Run() {
 	  taskStack->PopFrame(nvars);
 	  for (int i = nvars; i--; ) {
 	    switch (transient[i]->GetLabel()) {
-	    HOLE:
+	    case HOLE:
 	      taskStack->PushFrame(1);
 	      taskStack->PutWord(0, GlobalPrimitives::Hole_Hole);
 	      goto raise;
-	    FUTURE:
+	    case FUTURE:
 	      taskStack->PushFrame(1);
 	      taskStack->PutInt(0, 0);
 	      static_cast<Future *>(transient[i])->
 		AddToWaitQueue(currentThread);
 	      break;
-	    CANCELLED:
+	    case CANCELLED:
 	      taskStack->PushFrame(1);
 	      taskStack->PutWord(0, transient[i]->GetArg());
 	      goto raise;
-	    BYNEED:
+	    case BYNEED:
 	      //--** Perform application:
 	      //--** How in hell can we do this without knowing what a
 	      //--** closure is?
 	      break;
 	    default:
-	      Assert(0);
+	      Error("invalid transient label");
 	      break;
 	    }
 	  }
