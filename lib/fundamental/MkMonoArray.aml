@@ -20,8 +20,8 @@
 import structure __pervasive                    from "Pervasive"
 import type unit and int and vector and array
        datatype bool and option and list        from "ToplevelTypes"
-import infix 4 = < > >= infixr 5 :: infix 6 + -
-       val op = and op < and op > and op >=
+import infix 4 = <> < > >= infixr 5 :: infix 6 + -
+       val op = and op <> and op < and op > and op >=
        val op + and op -                        from "ToplevelValues"
 import structure General                        from "General"
 import structure List                           from "List"
@@ -153,8 +153,8 @@ struct
 				  f(sub'(a,i)) andalso all'(f,a,i+1)
 
     fun exists  f a		= exists'(f,a,0)			(**)
-    and exists'(f,a,i) 		= i = length a orelse
-				  f(sub'(a,i)) orelse exists'(f,a,i+1)
+    and exists'(f,a,i) 		= i <> length a andalso
+				  (f(sub'(a,i)) orelse exists'(f,a,i+1))
 
     fun find  f a					= find'(f,a,0)	(**)
     and find'(f,a,i) where (i = length a)		= NONE
