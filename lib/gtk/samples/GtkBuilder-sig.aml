@@ -35,11 +35,14 @@ in
 	      | VPane       of {up:GtkWidget, down:GtkWidget}
 	      | Adjustment  of {value:real, lower:real, upper:real, 
 				step_inc:real, page_inc:real, page_size:real}
+	      | AccelLabel  of string
 	      | Label       of string
+	      | Arrow       of {artyp:int, arshadow:int}
 	      | Entry       of {max:int option}
 	      | Button      of string * GtkSignalHandler list
 	      | CheckButton of string * GtkSignalHandler list
 	      | Text        of {xdim:real, ydim:real, text:string list}
+	      | Canvas      of {width:int, height:int}
 	      | Calendar    of GtkSignalHandler list
 	      | Notebook    of bool * ({label:string, note:GtkWidget} list)
 	      | Tree        of GtkTreeItem list
@@ -64,8 +67,9 @@ in
 	    and GtkButtonBoxStyle =
 		DefaultStyle | SpreadStyle | EdgeStyle | StartStyle | EndStyle
 	    and GtkMenuItem =
-		MenuItem of string * GtkSignalHandler list
-	      | SubMenu  of string * GtkMenuItem list
+		MenuItem      of string * GtkSignalHandler list
+	      | CheckMenuItem of string * GtkSignalHandler list
+	      | SubMenu       of string * GtkMenuItem list
 	    and GtkTreeItem =
 		TreeItem of string
 	      | SubTree  of string * GtkTreeItem list
@@ -82,7 +86,18 @@ in
 		SB_RIGHT_ARROW | SB_UP_ARROW | SHUTTLE | SIZING | SPIDER | SPRAYCAN |
 		STAR | TARGET | TCROSS | TOP_LEFT_ARROW | TOP_LEFT_CORNER | TOP_RIGHT_CORNER |
 		TOP_SIDE | TOP_TEE | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM
+	    and CanvasItem =
+		Group     of {parent:object, x:real, y:real}
+	      | Lines     of {parent:object, coords:(int * int) list, width_pixels:int,
+			      fill_color:object}
+	      | Rectangle of {parent:object, x1:real, y1:real, x2:real, y2:real,
+			      fill_color:object, outline_color:object}
+	      | Ellipse   of {parent:object, x1:real, y1:real, x2:real, y2:real,
+			      fill_color:object, outline_color:object}
+	      | CText     of {parent:object, x:real, y:real, text:string, font: string,
+			      fill_color:object, anchor:int}
 
 	    val MakeWidget : GtkWidget -> object
+	    val MakeCanvasItem : CanvasItem -> object
 	end
 end

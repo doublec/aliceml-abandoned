@@ -1,5 +1,5 @@
 import structure Inspector  from "x-alice:/lib/tools/Inspector"
-import structure GtkCore    from "x-alice:/lib/gtk/Gtk"
+import structure GtkCore    from "x-alice:/lib/gtk/GtkCore"
 import structure Gtk        from "x-alice:/lib/gtk/Gtk"
 import structure GtkBuilder from "GtkBuilder"
 
@@ -16,7 +16,7 @@ in
 	val entries = [BoxStart(false, false, 0, start1), BoxStart(false, false, 0, start2),
 		       BoxEnd(false, false, 0, end1), BoxEnd(false, false, 0, end2)]
 	val child   = VBox {homogeneous=false, spacing=0, entries=entries}
-	fun DestroyHandler () = Inspector.inspect "Destroy was called!"
+	fun DestroyHandler _ = Inspector.inspect "Destroy was called!"
 	val widget  = Toplevel {title="Vertical Box", border=10,
 				handler=[Handler("destroy", DestroyHandler)], inner=child}
     in
@@ -130,7 +130,7 @@ in
 
 	val w = Promise.promise ()
 
-	fun updateDate cal =
+	fun updateDate(cal, _) =
 	    let
 		val (year, month, day) = Gtk.calendarGetDate cal
 		val date               = ((Int.toString (month + 1)) ^ "/" ^
