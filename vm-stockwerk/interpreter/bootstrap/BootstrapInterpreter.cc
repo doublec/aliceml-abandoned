@@ -55,14 +55,15 @@ void BootstrapInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   ConcreteCode *concreteCode = closure->GetConcreteCode();
   Assert(concreteCode->GetInterpreter() == this);
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
-  // datatype function = Function of int * idDef args * instr
+  // datatype function = Function of int * int * idDef args * instr
   Assert(Store::WordToInt(function->Sel(0)) == closure->GetSize());
   taskStack->PushFrame(FRAME_SIZE);
   taskStack->PutUnmanagedPointer(INTERPRETER_POS, this);
-  taskStack->PutWord(PC_POS, function->Sel(2));
+  taskStack->PutWord(PC_POS, function->Sel(3));
   taskStack->PutWord(CLOSURE_POS, closure->ToWord());
-  taskStack->PutWord(LOCAL_ENV_POS, Environment::New()->ToWord());
-  taskStack->PutWord(FORMAL_ARGS_POS, function->Sel(1));
+  u_int nlocals = Store::WordToInt(function->Sel(1));
+  taskStack->PutWord(LOCAL_ENV_POS, Environment::New(nlocals)->ToWord());
+  taskStack->PutWord(FORMAL_ARGS_POS, function->Sel(2));
 }
 
 void BootstrapInterpreter::PopFrame(TaskStack *taskStack) {
@@ -93,6 +94,18 @@ inline void PushState(TaskStack *taskStack,
   taskStack->PushFrame(1);					\
   taskStack->PutWord(0, w);					\
   return Result(Result::REQUEST, 1);				\
+}
+
+inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
+  TagVal *tagVal = TagVal::FromWord(idRef);
+  switch (Pickle::GetIdRef(tagVal)) {
+  case Pickle::Local:
+    return localEnv->Lookup(tagVal->Sel(0));
+  case Pickle::Global:
+    return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
+  default:
+    Error("BootstrapInterpreter::GetIdRef: invalid idRef tag");
+  }
 }
 
 //
@@ -157,9 +170,23 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
   while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
   loop:
     switch (Pickle::GetInstr(pc)) {
+    case Pickle::Kill: // of id vector * instr
+      {
+	Vector *kills = Vector::FromWord(pc->Sel(0));
+	for (u_int i = kills->GetLength(); i--; )
+	  localEnv->Kill(kills->Sub(i));
+	pc = TagVal::FromWord(pc->Sel(1));
+      }
+      break;
     case Pickle::PutConst: // of id * value * instr
       {
 	localEnv->Add(pc->Sel(0), pc->Sel(1));
+	pc = TagVal::FromWord(pc->Sel(2));
+      }
+      break;
+    case Pickle::PutVar: // of id * idRef  * instr
+      {
+	localEnv->Add(pc->Sel(0), GetIdRef(pc->Sel(1), globalEnv, localEnv));
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
@@ -169,28 +196,21 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(1));
       }
       break;
-    case Pickle::PutGlobal: // of id * int * instr
+    case Pickle::PutTag: // of id * int * idRef vector * instr
       {
-	localEnv->Add(pc->Sel(0),
-		      globalEnv->Sub(Store::WordToInt(pc->Sel(1))));
-	pc = TagVal::FromWord(pc->Sel(2));
-      }
-      break;
-    case Pickle::PutTag: // of id * int * id vector * instr
-      {
-	Vector *ids = Vector::FromWord(pc->Sel(2));
-	u_int nargs = ids->GetLength();
+	Vector *idRefs = Vector::FromWord(pc->Sel(2));
+	u_int nargs = idRefs->GetLength();
 	TagVal *tagVal = TagVal::New(Store::WordToInt(pc->Sel(1)), nargs);
 	for (u_int i = nargs; i--; )
-	  tagVal->Init(i, localEnv->Lookup(ids->Sub(i)));
+	  tagVal->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), tagVal->ToWord());
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::PutCon: // of id * con * id vector * instr
+    case Pickle::PutCon: // of id * con * idRef vector * instr
       {
-	Vector *ids = Vector::FromWord(pc->Sel(2));
-	u_int nargs = ids->GetLength();
+	Vector *idRefs = Vector::FromWord(pc->Sel(2));
+	u_int nargs = idRefs->GetLength();
 	TagVal *conBlock = TagVal::FromWord(pc->Sel(1));
 	word suspendWord;
 	switch (Pickle::GetCon(conBlock)) {
@@ -208,130 +228,144 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	if (constructor == INVALID_POINTER) SUSPEND(suspendWord);
 	ConVal *conVal = ConVal::New(constructor, nargs);
 	for (u_int i = nargs; i--; )
-	  conVal->Init(i, localEnv->Lookup(ids->Sub(i)));
+	  conVal->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), conVal->ToWord());
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::PutRef: // of id * id * instr
+    case Pickle::PutRef: // of id * idRef * instr
       {
-	word contents = localEnv->Lookup(pc->Sel(1));
+	word contents = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	localEnv->Add(pc->Sel(0), Cell::New(contents)->ToWord());
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutTup: // of id * id vector * instr
+    case Pickle::PutTup: // of id * idRef vector * instr
       {
-	Vector *ids = Vector::FromWord(pc->Sel(1));
-	u_int nargs = ids->GetLength();
+	Vector *idRefs = Vector::FromWord(pc->Sel(1));
+	u_int nargs = idRefs->GetLength();
 	Tuple *tuple = Tuple::New(nargs);
 	for (u_int i = nargs; i--; )
-	  tuple->Init(i, localEnv->Lookup(ids->Sub(i)));
+	  tuple->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), tuple->ToWord());
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutSel: // of id * int * id * instr
+    case Pickle::PutVec: // of id * idRef vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(2));
-	Tuple *tuple = Tuple::FromWord(suspendWord);
-	if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
-	localEnv->Add(pc->Sel(0), tuple->Sel(Store::WordToInt(pc->Sel(1))));
-	pc = TagVal::FromWord(pc->Sel(3));
-      }
-      break;
-    case Pickle::PutVec: // of id * id vector * instr
-      {
-	Vector *ids = Vector::FromWord(pc->Sel(1));
-	u_int nargs = ids->GetLength();
+	Vector *idRefs = Vector::FromWord(pc->Sel(1));
+	u_int nargs = idRefs->GetLength();
 	Vector *vector = Vector::New(nargs);
 	for (u_int i = nargs; i--; )
-	  vector->Init(i, localEnv->Lookup(ids->Sub(i)));
+	  vector->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), vector->ToWord());
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutFun: // of id * id vector * function * instr
+    case Pickle::PutFun: // of id * idRef vector * function * instr
       {
-	Vector *ids = Vector::FromWord(pc->Sel(1));
-	u_int nglobals = ids->GetLength();
+	Vector *idRefs = Vector::FromWord(pc->Sel(1));
+	u_int nglobals = idRefs->GetLength();
 	Closure *closure = Closure::New(Prepare(pc->Sel(2)), nglobals);
 	for (u_int i = nglobals; i--; )
-	  closure->Init(i, localEnv->Lookup(ids->Sub(i)));
+	  closure->Init(i, GetIdRef(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::Kill: // of id vector * instr
+    case Pickle::AppPrim: // of idDef * string * idRef vector * instr option
       {
-	Vector *kills = Vector::FromWord(pc->Sel(0));
-	for (u_int i = kills->GetLength(); i--; )
-	  localEnv->Kill(kills->Sub(i));
-	pc = TagVal::FromWord(pc->Sel(1));
-      }
-      break;
-    case Pickle::AppPrim: // of id * string * id vector * instr
-      {
-	// Save our state for return:
-	Vector *formalIds = Vector::New(1);
-	formalIds->Init(0, pc->Sel(0));
-	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
-	formalArgs->Init(0, formalIds->ToWord());
-	PushState(taskStack, this, TagVal::FromWord(pc->Sel(3)),
-		  globalEnv, localEnv, formalArgs);
+	TagVal *instrOpt = TagVal::FromWord(pc->Sel(3));
+	if (instrOpt != INVALID_POINTER) { // SOME instr
+	  // Save our state for return:
+	  Vector *formalIds = Vector::New(1);
+	  formalIds->Init(0, pc->Sel(0));
+	  TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
+	  formalArgs->Init(0, formalIds->ToWord());
+	  PushState(taskStack, this, TagVal::FromWord(instrOpt->Sel(0)),
+		    globalEnv, localEnv, formalArgs);
+	}
 	// Push a call frame for the primitive:
 	String *name = String::FromWord(pc->Sel(1));
 	taskStack->PushCall(Closure::FromWord(Primitive::Lookup(name)));
-	Vector *actualIds = Vector::FromWord(pc->Sel(2));
-	u_int nargs = actualIds->GetLength();
+	Vector *actualIdRefs = Vector::FromWord(pc->Sel(2));
+	u_int nargs = actualIdRefs->GetLength();
 	taskStack->PushFrame(nargs);
 	for (u_int i = nargs; i--; )
-	  taskStack->PutWord(i, localEnv->Lookup(actualIds->Sub(i)));
+	  taskStack->PutWord(i, GetIdRef(actualIdRefs->Sub(i),
+					 globalEnv, localEnv));
 	return Result(Result::CONTINUE, nargs);
       }
       break;
-    case Pickle::AppVar: // of id args * id * id args * instr
+    case Pickle::AppVar: // of idDef args * idRef * idRef args * instr option
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(1));
+	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Closure *closure = Closure::FromWord(suspendWord);
 	if (closure == INVALID_POINTER) SUSPEND(suspendWord);
-	PushState(taskStack, this, TagVal::FromWord(pc->Sel(3)),
-		  globalEnv, localEnv, TagVal::FromWord(pc->Sel(0)));
+	TagVal *instrOpt = TagVal::FromWord(pc->Sel(3));
+	if (instrOpt != INVALID_POINTER) { // SOME instr
+	  // Save our state for return:
+	  PushState(taskStack, this, TagVal::FromWord(instrOpt->Sel(0)),
+		    globalEnv, localEnv, TagVal::FromWord(pc->Sel(0)));
+	}
 	taskStack->PushCall(closure);
 	TagVal *actualArgs = TagVal::FromWord(pc->Sel(2));
 	switch (Pickle::GetArgs(actualArgs)) {
 	case Pickle::OneArg:
 	  taskStack->PushFrame(1);
-	  taskStack->PutWord(0, localEnv->Lookup(actualArgs->Sel(0)));
+	  taskStack->PutWord(0, GetIdRef(actualArgs->Sel(0),
+					 globalEnv, localEnv));
 	  return Result(Result::CONTINUE, -1);
 	case Pickle::TupArgs:
 	  {
-	    Vector *actualIds = Vector::FromWord(actualArgs->Sel(0));
-	    u_int nargs = actualIds->GetLength();
+	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
+	    u_int nargs = actualIdRefs->GetLength();
 	    taskStack->PushFrame(nargs);
 	    for (u_int i = nargs; i--; )
-	      taskStack->PutWord(i, localEnv->Lookup(actualIds->Sub(i)));
+	      taskStack->PutWord(i, GetIdRef(actualIdRefs->Sub(i),
+					     globalEnv, localEnv));
 	    return Result(Result::CONTINUE, nargs);
 	  }
 	}
       }
       break;
-    case Pickle::GetTup: // of idDef vector * id * instr
+    case Pickle::AppConst: // of idDef args * value * idRef args * instr option
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(1));
+	//--** AppConst not implemented yet
+      }
+      break;
+    case Pickle::GetRef: // of id * idRef * instr
+      {
+	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
+	Cell *cell = Cell::FromWord(suspendWord);
+	if (cell == INVALID_POINTER) SUSPEND(suspendWord);
+	localEnv->Add(pc->Sel(0), cell->Access());
+	pc = TagVal::FromWord(pc->Sel(2));
+      }
+      break;
+    case Pickle::GetTup: // of idDef vector * idRef * instr
+      {
+	word suspendWord = GetIdRef(pc->Sel(1), globalEnv, localEnv);
 	Tuple *tuple = Tuple::FromWord(suspendWord);
 	if (tuple == INVALID_POINTER) SUSPEND(suspendWord);
 	Vector *idDefs = Vector::FromWord(pc->Sel(0));
 	Assert(tuple->GetWidth() == idDefs->GetLength());
 	for (u_int i = idDefs->GetLength(); i--; ) {
 	  TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	  if (idDef != INVALID_POINTER) // SOME id
+	  if (idDef != INVALID_POINTER) // IdDef id
 	    localEnv->Add(idDef->Sel(0), tuple->Sel(i));
 	}
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::Try: // of instr * id * instr
+    case Pickle::Raise: // of idRef
+      {
+	taskStack->PushFrame(1);
+	taskStack->PutWord(0, GetIdRef(pc->Sel(0), globalEnv, localEnv));
+	return Result(Result::RAISE);
+      }
+      break;
+    case Pickle::Try: // of instr * idDef * instr
       {
 	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
 	Vector *vector = Vector::New(1);
@@ -355,9 +389,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(0));
       }
       break;
-    case Pickle::IntTest: // of id * (int * instr) vector * instr
+    case Pickle::IntTest: // of idRef * (int * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	int value = Store::WordToInt(suspendWord);
 	if (value == INVALID_INT) SUSPEND(suspendWord);
 	Vector *tests = Vector::FromWord(pc->Sel(1));
@@ -372,9 +406,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::RealTest: // of id * (real * instr) vector * instr
+    case Pickle::RealTest: // of idRef * (real * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Real *real = Real::FromWord(suspendWord);
 	if (real == INVALID_POINTER) SUSPEND(suspendWord);
 	double value = real->GetValue();
@@ -390,9 +424,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::StringTest: // of id * (string * instr) vector * instr
+    case Pickle::StringTest: // of idRef * (string * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	String *string = String::FromWord(suspendWord);
 	if (string == INVALID_POINTER) SUSPEND(suspendWord);
 	const char *value = string->GetValue();
@@ -412,10 +446,10 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       }
       break;
     case Pickle::TagTest:
-      // of id * (int * instr) vector
-      //       * (int * idDef vector * instr) vector * instr
+      // of idRef * (int * instr) vector
+      //          * (int * idDef vector * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	TagVal *tagVal = TagVal::FromWord(suspendWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
 	  int tag = Store::WordToInt(suspendWord);
@@ -440,7 +474,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	      Assert(tagVal->GetWidth() == idDefs->GetLength());
 	      for (u_int i = idDefs->GetLength(); i--; ) {
 		TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-		if (idDef != INVALID_POINTER) // SOME id
+		if (idDef != INVALID_POINTER) // IdDef id
 		  localEnv->Add(idDef->Sel(0), tagVal->Sel(i));
 	      }
 	      pc = TagVal::FromWord(triple->Sel(2));
@@ -452,10 +486,10 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
       }
       break;
     case Pickle::ConTest:
-      // of id * (con * instr) vector
-      //       * (con * idDef vector * instr) vector * instr
+      // of idRef * (con * instr) vector
+      //          * (con * idDef vector * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	ConVal *conVal = ConVal::FromWord(suspendWord);
 	if (conVal == INVALID_POINTER) SUSPEND(suspendWord);
 	if (conVal->IsConVal()) { // non-nullary constructor
@@ -480,7 +514,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	      Assert(conVal->GetWidth() == idDefs->GetLength());
 	      for (u_int i = idDefs->GetLength(); i--; ) {
 		TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-		if (idDef != INVALID_POINTER) // SOME id
+		if (idDef != INVALID_POINTER) // IdDef id
 		  localEnv->Add(idDef->Sel(0), conVal->Sel(i));
 	      }
 	      pc = TagVal::FromWord(triple->Sel(2));
@@ -513,9 +547,9 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(3));
       }
       break;
-    case Pickle::VecTest: // of id * (idDef vector * instr) vector * instr
+    case Pickle::VecTest: // of idRef * (idDef vector * instr) vector * instr
       {
-	word suspendWord = localEnv->Lookup(pc->Sel(0));
+	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	Vector *vector = Vector::FromWord(suspendWord);
 	if (vector == INVALID_POINTER) SUSPEND(suspendWord);
 	u_int value = vector->GetLength();
@@ -527,7 +561,7 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  if (idDefs->GetLength() == value) {
 	    for (u_int i = value; i--; ) {
 	      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	      if (idDef != INVALID_POINTER) // SOME id
+	      if (idDef != INVALID_POINTER) // IdDef id
 		localEnv->Add(idDef->Sel(0), vector->Sub(i));
 	    }
 	    pc = TagVal::FromWord(pair->Sel(1));
@@ -537,21 +571,23 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::Return: // of id args
+    case Pickle::Return: // of idRef args
       {
 	TagVal *returnArgs = TagVal::FromWord(pc->Sel(0));
 	switch (Pickle::GetArgs(returnArgs)) {
 	case Pickle::OneArg:
 	  taskStack->PushFrame(1);
-	  taskStack->PutWord(0, localEnv->Lookup(returnArgs->Sel(0)));
+	  taskStack->PutWord(0, GetIdRef(returnArgs->Sel(0),
+					 globalEnv, localEnv));
 	  return Result(Result::CONTINUE, -1);
 	case Pickle::TupArgs:
 	  {
-	    Vector *returnIds = Vector::FromWord(returnArgs->Sel(0));
-	    u_int nargs = returnIds->GetLength();
+	    Vector *returnIdRefs = Vector::FromWord(returnArgs->Sel(0));
+	    u_int nargs = returnIdRefs->GetLength();
 	    taskStack->PushFrame(nargs);
 	    for (u_int i = nargs; i--; )
-	      taskStack->PutWord(i, localEnv->Lookup(returnIds->Sub(i)));
+	      taskStack->PutWord(i, GetIdRef(returnIdRefs->Sub(i),
+					     globalEnv, localEnv));
 	    return Result(Result::CONTINUE, nargs);
 	  }
 	}

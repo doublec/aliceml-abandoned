@@ -19,6 +19,19 @@
 
 class Pickle {
 public:
+  //
+  // All constructors here must be lexicographically ordered
+  // so that the right integer tags are computed.
+  //
+
+  enum idDef {
+    IdDef, Wildcard
+  };
+
+  enum idRef {
+    Local, Global
+  };
+
   enum con {
     Con, StaticCon
   };
@@ -27,16 +40,19 @@ public:
     OneArg, TupArgs
   };
 
+  enum instr {
+    AppConst, AppPrim, AppVar, ConTest, EndHandle, EndTry, GetRef, GetTup,
+    IntTest, Kill, PutCon, PutConst, PutFun, PutNew, PutRef, PutTag, PutTup,
+    PutVar, PutVec, Raise, RealTest, Return, StringTest, TagTest, Try, VecTest
+  };
+
   enum function {
     Function
   };
 
-  enum instr {
-    AppPrim, AppVar, ConTest, EndHandle, EndTry, GetTup, IntTest, Kill,
-    PutCon, PutConst, PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag,
-    PutTup, PutVec, RealTest, Return, StringTest, TagTest, Try, VecTest
-  };
-
+  static idRef GetIdRef(TagVal *tagVal) {
+    return static_cast<idRef>(tagVal->GetTag());
+  }
   static con GetCon(TagVal *tagVal) {
     return static_cast<con>(tagVal->GetTag());
   }

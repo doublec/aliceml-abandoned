@@ -20,21 +20,25 @@
 #include "datalayer/Alice.hh"
 
 class Environment: private Array {
-private:
-  static const u_int size = 19;
 public:
   using Array::ToWord;
 
-  static Environment *New() {
+  static Environment *New(u_int size) {
     return static_cast<Environment *>(Array::New(size));
   }
   static Environment *FromWord(word w) {
     return static_cast<Environment *>(Array::FromWord(w));
   }
 
-  void Add(word id, word value);
-  word Lookup(word id);
-  void Kill(word id);
+  void Add(word id, word value) {
+    Update(Store::WordToInt(id), value);
+  }
+  word Lookup(word id) {
+    return Sub(Store::WordToInt(id));
+  }
+  void Kill(word id) {
+    Update(Store::WordToInt(id), Store::IntToWord(0));
+  }
 };
 
 #endif __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__
