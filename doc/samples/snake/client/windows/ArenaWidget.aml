@@ -15,9 +15,9 @@ import structure Gdk           from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas     from "x-alice:/lib/gtk/GtkCanvas"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
 import structure Inspector     from "x-alice:/lib/tools/Inspector"
-(*
+
 import structure GtkBuilder    from "../GtkBuilder"
-*)
+
 import structure Protocol      from "../../common/Protocol"
 import structure Color         from "../../common/Color"
 import structure Pos           from "../../common/Pos"
@@ -94,7 +94,7 @@ structure P = Protocol
 structure ArenaWidget :> ARENAWIDGET =
 struct
 
-    type arena_field = Gtk.object * Protocol.field
+    type arena_field = Gtk.object * P.field
 	
     type arena_widget = 
 	{
@@ -236,7 +236,7 @@ struct
 	    body
 	end
 
-    fun insertGate (canvas, x, y, gatecol) = 
+    fun insertOpenGate (canvas, x, y, gatecol) = 
 	let
 	    val gate = 
 		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
@@ -251,6 +251,31 @@ struct
 				    ("y2", Gtk.DOUBLE (real cellSize)),
 				    ("fill_color_gdk", Gtk.OBJECT gatecol),
 				    ("outline_color_gdk", Gtk.OBJECT black)])
+	in
+	    gate
+	end
+
+    fun insertClosedGate (canvas, x, y, gatecol) = 
+	let
+	    val gate = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x",Gtk.DOUBLE (real x)),
+				    ("y",Gtk.DOUBLE (real y))])
+		
+	    val ground = 
+		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT gatecol),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
+
+	    val cross = 
+		GtkCanvas.itemNew (gate, GtkCanvas.LINE,
+				   [("points",Gdk.POINTS [1,20,400]),
+				    ("fill_color_gdk",Gtk.OBJECT black),
+				    ("width_pixels",Gtk.INT 2)])
 	in
 	    gate
 	end
@@ -318,9 +343,14 @@ struct
                                         (insertWall (can, x, y), field))
                     | P.GOODY n    => Array2.update (arena, r, c, 
                                         (insertGoodie (can, x, y, n), field))
-                    | P.GATE col    => Array2.update (arena, r, c, 
-                                        (insertGate (can, x, y, color col), 
-                                            field))
+                    | P.GATE (col,P.CLOSED) => Array2.update (arena, r, c, 
+                                        (insertClosedGate (can, x, y, 
+							   color col), 
+					 field))
+                    | P.GATE (col,P.OPEN) => Array2.update (arena, r, c, 
+                                        (insertOpenGate (can, x, y, 
+							 color col), 
+					 field))
                     | P.SNAKE_HEAD (d, col) => 
                         Array2.update (arena, r, c, 
                             (insertHead (can, x, y, d, color col), field))
@@ -382,7 +412,7 @@ struct
 	end
 
 end
-(*
+
 fun testfield () =
     let
 
@@ -402,7 +432,7 @@ fun testfield () =
 		      P.WALL);
         Array2.update(testfield,4,5, P.WALL);
 	Array2.update(testfield,4,8,
-		      P.GATE(Color.fromString "brown"));
+		      P.GATE(Color.fromString "brown", P.CLOSED));
 	testfield
     end
 
@@ -429,4 +459,4 @@ fun test () =
     end
 
 val _ = test ()
-*)
+
