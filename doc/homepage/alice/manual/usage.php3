@@ -102,7 +102,6 @@
        ;; Enable fontification
        (require 'sml-font)
   </PRE>
-<<<<<<< usage.php3
   <P>To use ml mode version 3.9.5, extract this
      <A HREF="sml-mode-3.9.5.tgz">archive</A>
      and follow the installation instructions given in
