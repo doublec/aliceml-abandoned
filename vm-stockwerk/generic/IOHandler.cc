@@ -93,6 +93,7 @@ namespace {
 	  return;
 	}
       }
+      Assert(0);
     }
     int EnterIntoFDSet(fd_set *fdSet) {
       int max = -1;
