@@ -113,7 +113,7 @@ void PreloadWorker::PushFrame(Thread *thread) {
 
 Worker::Result PreloadWorker::Run() {
   PreloadFrame *frame = PreloadFrame::FromWordDirect(Scheduler::GetFrame());
-  if (Scheduler::nArgs == Scheduler::ONE_ARG) { 
+  if (Scheduler::nArgs == Scheduler::ONE_ARG) {
     Class *theClass = Class::FromWord(Scheduler::currentArgs[0]);
     Assert(theClass != INVALID_POINTER);
     Hole *hole = frame->GetHole();
@@ -569,65 +569,62 @@ word ClassLoader::ResolveClass(JavaString *name) {
   ClassTable *classTable = GetClassTable();
   word wClass = classTable->Lookup(name);
   if (wClass == (word) 0) {
-    ConcreteCode *concreteCode =
-      ConcreteCode::New(ResolveInterpreter::self, 0);
-    Closure *closure = Closure::New(concreteCode->ToWord(), 3);
-    closure->Init(0, ToWord());
-    closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_CLASS));
-    closure->Init(2, name->ToWord());
-    wClass = Byneed::New(closure->ToWord())->ToWord();
+    if (name->CharAt(0) == '[') { // special handling of array types
+      u_int n = name->GetLength();
+      u_int index = 0;
+      u_int dimensions = 1;
+      while (dimensions < n && name->CharAt(dimensions) == '[') dimensions++;
+      index += dimensions;
+      n -= dimensions;
+      Assert(n > 0);
+      switch (n--, name->CharAt(index++)) {
+      case 'B':
+	wClass = PrimitiveType::New(PrimitiveType::Byte)->ToWord();
+	break;
+      case 'C':
+	wClass = PrimitiveType::New(PrimitiveType::Char)->ToWord();
+	break;
+      case 'D':
+	wClass = PrimitiveType::New(PrimitiveType::Double)->ToWord();
+	break;
+      case 'F':
+	wClass = PrimitiveType::New(PrimitiveType::Float)->ToWord();
+	break;
+      case 'I':
+	wClass = PrimitiveType::New(PrimitiveType::Int)->ToWord();
+	break;
+      case 'J':
+	wClass = PrimitiveType::New(PrimitiveType::Long)->ToWord();
+	break;
+      case 'S':
+	wClass = PrimitiveType::New(PrimitiveType::Short)->ToWord();
+	break;
+      case 'Z':
+	wClass = PrimitiveType::New(PrimitiveType::Boolean)->ToWord();
+	break;
+      case 'L':
+	{
+	  u_int endIndex = index;
+	  while (n--, name->CharAt(endIndex++) != ';');
+	  wClass = ResolveClass(name->Substring(index, endIndex - 1));
+	  break;
+	}
+      default:
+	Error("invalid descriptor"); //--** return failed future?
+      }
+      while (dimensions--) wClass = ArrayType::New(wClass)->ToWord();
+      Assert(n == 0);
+    } else {
+      ConcreteCode *concreteCode =
+	ConcreteCode::New(ResolveInterpreter::self, 0);
+      Closure *closure = Closure::New(concreteCode->ToWord(), 3);
+      closure->Init(0, ToWord());
+      closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_CLASS));
+      closure->Init(2, name->ToWord());
+      wClass = Byneed::New(closure->ToWord())->ToWord();
+    }
     classTable->Insert(name, wClass);
   }
-  return wClass;
-}
-
-word ClassLoader::ResolveType(JavaString *name) {
-  //--** cache results
-  u_int n = name->GetLength();
-  u_int index = 0;
-  u_int dimensions = 0;
-  while (dimensions < n && name->CharAt(dimensions) == '[') dimensions++;
-  index += dimensions;
-  n -= dimensions;
-  Assert(n > 0);
-  word wClass;
-  switch (n--, name->CharAt(index++)) {
-  case 'B':
-    wClass = PrimitiveType::New(PrimitiveType::Byte)->ToWord();
-    break;
-  case 'C':
-    wClass = PrimitiveType::New(PrimitiveType::Char)->ToWord();
-    break;
-  case 'D':
-    wClass = PrimitiveType::New(PrimitiveType::Double)->ToWord();
-    break;
-  case 'F':
-    wClass = PrimitiveType::New(PrimitiveType::Float)->ToWord();
-    break;
-  case 'I':
-    wClass = PrimitiveType::New(PrimitiveType::Int)->ToWord();
-    break;
-  case 'J':
-    wClass = PrimitiveType::New(PrimitiveType::Long)->ToWord();
-    break;
-  case 'S':
-    wClass = PrimitiveType::New(PrimitiveType::Short)->ToWord();
-    break;
-  case 'Z':
-    wClass = PrimitiveType::New(PrimitiveType::Boolean)->ToWord();
-    break;
-  case 'L':
-    {
-      u_int endIndex = index;
-      while (n--, name->CharAt(endIndex++) != ';');
-      wClass = ResolveClass(name->Substring(index, endIndex - 1));
-      break;
-    }
-  default:
-    Error("invalid descriptor"); //--** return failed future?
-  }
-  while (dimensions--) wClass = ArrayType::New(wClass)->ToWord();
-  Assert(n == 0);
   return wClass;
 }
 
