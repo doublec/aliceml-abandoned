@@ -365,8 +365,7 @@ define
 	 {{Assembler.assemble
 	   (lbl(StartLabel)|
 	    definition(x(0) EndLabel
-		       pid('Toplevel abstraction' 2 pos('' 1 0) nil
-			   NLiveRegs)
+		       pid('Component' 2 pos(Filename 1 0) nil NLiveRegs)
 		       unit {List.mapInd GRegs fun {$ I _} g(I) end}
 		       Code1)|
 	    endDefinition(StartLabel)|
