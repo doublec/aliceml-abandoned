@@ -4,7 +4,6 @@ Stockwerk:
 -- rename Pickle.oz to PrimPickle.oz (what is the relation to UnsafeComponent?)
 -- proxies
 -- non-blocking I/O (Pickle, UnsafeIO, UnsafeSocket, UnsafeComponent)
--- component manager and spaces in path names => %20
 -- globalize constructors
 -- what code annotations do we need for the JITter?
 
