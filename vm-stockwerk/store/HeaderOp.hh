@@ -20,7 +20,15 @@ class HeaderOp {
 public:
   // Header Creation and Access
   static u_int EncodeHeader(BlockLabel l, u_int s, u_int gen) {
-    return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT));
+    if (s > MAX_BLOCKSIZE) {
+      return (((gen + 1) << GEN_GC_SHIFT) |
+	      (1 << SIZESHIFT_SHIFT) |
+	      (((s + BIGSIZE_MIN) >> (1 << SIZESHIFT_SHIFT)) << SIZE_SHIFT) |
+	      (((u_int) l) << TAG_SHIFT));
+    }
+    else {
+      return (((gen + 1) << GEN_GC_SHIFT) | (s << SIZE_SHIFT) | (((u_int) l) << TAG_SHIFT));
+    }
   }
   static u_int GetHeader(Block *p) {
     AssertStore(p != INVALID_POINTER);
@@ -42,7 +50,8 @@ public:
   }
   static u_int DecodeSize(Block *p) {
     AssertStore(p != INVALID_POINTER);
-    return (u_int) ((((u_int *) p)[-1] & SIZE_MASK) >> SIZE_SHIFT);
+    u_int h = ((u_int *) p)[-1];
+    return (u_int) (((h & SIZE_MASK) >> SIZE_SHIFT) >> (h & SIZESHIFT_MASK));
   }
   // Generation Access
   static u_int DecodeGeneration(Block *p) {

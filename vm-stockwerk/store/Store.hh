@@ -80,7 +80,7 @@ private:
 	continue;
       }
       curChunkTop = newtop;
-      FillBlock((u_int *) p, ((size / sizeof(u_int)) + 2));
+      // FillBlock((u_int *) p, ((size / sizeof(u_int)) + 1));
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
       totalMem += size;
 #endif
@@ -89,14 +89,14 @@ private:
   }
   static Block *InternalAllocBlock(BlockLabel l, u_int s) {
     AssertStore(s > INVALID_BLOCKSIZE);
-    AssertStore(s <= MAX_BLOCKSIZE);
+    AssertStore(s <= MAX_BIGBLOCKSIZE);
     return (Block *) Store::Alloc(BlockMemSize(s), HeaderOp::EncodeHeader(l, s, 0));
   }
   static void DoGC(word &root, const u_int gen);
 public:
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
-     static u_int totalMem;
-     static u_int oldTotalMem;
+  static u_int totalMem;
+  static u_int gcLiveMem;
 #endif
   // Init Functions
   static void InitStore(u_int mem_max[STORE_GENERATION_NUM], u_int mem_free);
