@@ -1,15 +1,17 @@
 import structure Ant from "Ant"
 import structure Instructions from "Instructions"
-import structure World from "World"
+import structure World              from "World"
 import structure InstructionsParser from "InstructionsParser"
-import structure WorldParser from "WorldParser"
+import structure WorldParser        from "WorldParser"
+import structure Viewer             from "Viewer"
+
 
 structure Simulator :
           (fun step : World.world *
                       'a Instructions.ant * 
                       'a Instructions.ant *
                       Ant.id -> unit
-           fun simulate : bool * bool * bool * bool * int *
+           fun simulate : bool * bool * bool * bool * bool * int *
                           string * string * string -> unit
                                                       ) =
   struct
@@ -96,6 +98,7 @@ structure Simulator :
       else ()
 
   fun simulate(showStatus, showWorlds, showAnts, drawWorlds,
+                visualize,
                rounds,
                redAnt, blackAnt, world) =
       let
@@ -108,6 +111,12 @@ structure Simulator :
             | loop'(size, n, f) = (f (size-n); loop'(size,n-1,f))
           fun loop n f = loop'(n,n,f)
       in
+          if visualize then
+            let val viewer = Viewer.viewer () 
+            in
+                World.setUpdateCellV (Viewer.updateCell viewer)
+            end
+          else ();
           if showStatus then
               (print ("Starting with "^Int.toString noOfAnts^" ants\n");
                print (Int.toString rounds^" rounds.\n");

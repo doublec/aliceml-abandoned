@@ -4,6 +4,7 @@ val showStatus = ref false
 val showWorlds = ref false
 val drawWorlds = ref false
 val showAnts = ref false
+val visualize = ref false
 val rounds = ref 10000
 
 fun parseArgs ("-s"::r) = (showStatus:=true; parseArgs r)
@@ -15,6 +16,7 @@ fun parseArgs ("-s"::r) = (showStatus:=true; parseArgs r)
                                parseArgs r)
   | parseArgs ("-r"::noOfRounds::r) = (rounds:=valOf(Int.fromString noOfRounds);
                                        parseArgs r)
+  | parseArgs ("-v"::r) = (visualize := true; parseArgs r)
   | parseArgs r = r
 
 val args = parseArgs (CommandLine.arguments())
@@ -23,6 +25,11 @@ val (ant1,ant2,world) = case args of [a,b,c] => (a,b,c)
                                            OS.Process.exit OS.Process.failure)
 
 
-val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts, !drawWorlds,
-                           !rounds,ant1,ant2,world)
-val _ = OS.Process.exit OS.Process.success
+val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts, !drawWorlds, 
+                            !visualize, !rounds,ant1,ant2,world)
+
+val _ =
+    if !visualize then
+        ()
+    else
+        OS.Process.exit OS.Process.success

@@ -30,6 +30,14 @@ structure World =
   (* world = x_size * cell array *)
   type world = int * cell array * Ant.ant AntMap.map
 
+  
+  val updateCellVR = ref (fn (w, x, y) => ())
+
+  fun updateCellV a = (!updateCellVR) a
+ 
+  fun setUpdateCellV f = updateCellVR := f
+
+
   (* Managing the world *)
 
   fun newWorld(x_size, y_size) = (x_size,
@@ -47,10 +55,11 @@ structure World =
 
   fun getCellAt((xs, cells,_):world, (x,y)) =
       Array.sub(cells, xs*y+x)
-  fun initCellAt((xs, cells,antMap):world, (x,y), cell) =
+
+  fun initCellAt(w as (xs, cells,antMap):world, (x,y), cell) =
       (Array.update(cells, xs*y+x, cell);
        Option.app (fn a => AntMap.insert(antMap,#id a, a)) (!(#ant cell));
-       ())
+       updateCellV (w, x, y))
 
   (* Geometry *)
   local open Instructions
@@ -97,15 +106,17 @@ structure World =
           val ant = #ant cell
       in
           Ant.setCoords(a, pos);
-          ant := SOME a
+          ant := SOME a;
+          updateCellV (world, x, y)
       end
 
-  fun clearAntAt(world, pos) =
+  fun clearAntAt(world, pos as (x, y)) =
       let
           val cell = getCellAt(world, pos)
           val ant = #ant cell
       in
-          ant := NONE
+          ant := NONE;
+          updateCellV (world, x, y)
       end
 
   fun findAnt((_,_,antMap):world, id) =
@@ -123,8 +134,9 @@ structure World =
       end
 
   fun foodAt(world, pos) = !(#food (getCellAt(world, pos)))
-  fun setFoodAt(world, pos, f) = 
-      #food (getCellAt(world, pos)) := f
+  fun setFoodAt(world, pos as (x, y), f) = 
+      (#food (getCellAt(world, pos)) := f;
+       updateCellV (world, x, y))
              
   fun anthillAt(world, pos, Ant.Red) =
       #redHill (getCellAt(world, pos))
@@ -132,12 +144,15 @@ structure World =
       #blackHill (getCellAt(world, pos))
     
   (* Chemistry *)
-  fun changeMarkerAt(world, pos, Ant.Red, marker, flag) =
-          Array.update(#redMarkers (getCellAt(world, pos)),
-                       marker, flag)
-    | changeMarkerAt(world, pos, Ant.Black, marker, flag) =
-          Array.update(#blackMarkers (getCellAt(world, pos)),
-                       marker, flag)
+  fun changeMarkerAt(world, pos as (x, y), Ant.Red, marker, flag) =
+          (Array.update(#redMarkers (getCellAt(world, pos)),
+                       marker, flag);
+           updateCellV (world, x, y))
+    | changeMarkerAt(world, pos as (x, y), Ant.Black, marker, flag) =
+          (Array.update(#blackMarkers (getCellAt(world, pos)),
+                       marker, flag);
+           updateCellV (world, x, y))
+
 
   fun setMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,true)
   fun clearMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,false)

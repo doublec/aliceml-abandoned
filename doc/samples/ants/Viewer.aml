@@ -1,0 +1,181 @@
+import structure Gtk    from "x-alice:/lib/gtk/Gtk"
+import structure Gdk    from "x-alice:/lib/gtk/Gdk"
+import structure Ctrl   from "x-alice:/lib/utility/Ctrl"
+import structure World  from "World"
+import structure Print  from "x-alice:/lib/system/Print"
+import structure Ant    from "Ant"
+
+
+structure Viewer :>
+sig
+    type viewer
+
+    val viewer : unit -> viewer 
+
+    val updateCell : viewer -> World.world * int * int -> unit 
+end
+=
+struct
+
+    datatype viewer = G of {
+            window      :   Gtk.object,
+            drawingArea :   Gtk.object,
+            pixmap      :   Gtk.object,
+            rockC       :   Gtk.object,
+            redAntC     :   Gtk.object,
+            blackAntC   :   Gtk.object,
+            emptySpotC  :   Gtk.object,
+            redHillC    :   Gtk.object,
+            blackHillC  :   Gtk.object,
+            foodCs      :   Gtk.object vector
+        }
+
+
+    fun size w =
+        let
+            val wd = Gtk.widgetAuxInfoGetFieldWidth w
+            val ht = Gtk.widgetAuxInfoGetFieldHeight w
+        in
+            (404, 400)
+        end
+
+    fun allocColor colorName =
+        let
+            val colormap= Gdk.colormapGetSystem ()
+            val color   = Gdk.colorNew (0, 0, 0)
+            val _       = Gdk.colorParse (colorName, color)
+            val _       = Gdk.colormapAllocColor (colormap, color, 
+                                                    false, true) 
+        in
+            color
+        end
+
+    fun viewer () =
+        let
+            val window  = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+            val _       = Gtk.windowSetTitle (window, "ANTS")
+            val box     = Gtk.vboxNew (false, 0)
+            val _       = Gtk.containerAdd (window, box)
+            val area    = Gtk.drawingAreaNew ()
+            val _       = Gtk.widgetSetUsize (area, 404, 400);
+            val _       = Gtk.boxPackStartDefaults (box, area)
+            val bt      = Gtk.buttonNewWithLabel "Quit"
+            val _       = Gtk.boxPackStart (box, bt, false, false, 0)
+            val pixmapP = Promise.promise ()
+            val pixmap  = Promise.future pixmapP
+
+            fun expose (widget, Gtk.EVENT (Gtk.EVENT_EXPOSE { area_x, area_y, 
+                                                 area_width, area_height,
+                                                ... }) :: _) =
+                let
+                    val w       = Gtk.widgetGetFieldWindow widget 
+                    val style   = Gtk.widgetGetStyle widget
+                    val gc      = Gtk.styleGetFieldWhiteGc style
+                in
+                    if Future.isFuture pixmap 
+                        then ()
+                        else
+                            Gdk.drawDrawable (w, gc, pixmap, area_x, area_y, 
+                                area_x, area_y, area_width, area_height) 
+                end
+
+            fun configure (widget, _) =
+                let
+                    val w       = Gtk.widgetGetFieldWindow widget
+                    val (width, 
+                        height) = size w
+                    val p       = Gdk.pixmapNew (w, width, height, ~1)
+                    val style   = Gtk.widgetGetStyle widget
+                    val gc      = Gtk.styleGetFieldWhiteGc style
+                in
+                    if Future.isFuture pixmap then
+                        (Promise.fulfill (pixmapP, p);
+                        Gdk.drawRectangle (p, gc, true, 0, 0, width, height);
+                        print "configured\n")
+                    else ()
+                end
+
+            (* allocate colors *)
+            val redAntC     = allocColor "red"
+            val blackAntC   = allocColor "darkbrown"
+            val rockC       = allocColor "darkgray"
+            val redHillC    = allocColor "lightred"
+            val blackHillC  = allocColor "lightbrown"
+            val emptySpotC  = allocColor "green"
+            val foodCs      = Vector.map allocColor #[
+                                "000020",   (* 1 *)
+                                "000040",
+                                "000060",
+                                "000070", 
+                                "000080",   (* 5 *)
+                                "000090",
+                                "0000A0",
+                                "0000B0",
+                                "0000C0"]
+        in
+            Gtk.signalConnect (area, "expose_event", expose);
+            Gtk.signalConnect (area, "configure_event", configure);
+            Gtk.signalConnect (bt, "clicked", fn _ => OS.Process.exit OS.Process.success); 
+          (*  Gtk.widgetSetEvents (area,   *)
+            Gtk.widgetShowAll window;
+            Thread.sleep (Time.fromSeconds 1);
+            G { drawingArea = area, pixmap, window,
+                redAntC, blackAntC, rockC, redHillC, blackHillC,
+                emptySpotC, foodCs}
+        end
+
+
+    fun updateCell (td as G { pixmap, ... }) (world, x, y) =
+        let
+            val _       = assert 0 <= x andalso x < 100 
+                            andalso 0 <= y andalso y < 100
+            val cell    = World.getCellAt (world, (x, y))
+        in
+            if Future.isFuture pixmap then ()
+            else tilePlot' (td, x, y, cell)
+        end
+
+        
+    and tilePlot' (G { drawingArea = area, pixmap, 
+                        rockC, redAntC, blackAntC, emptySpotC, 
+                        blackHillC, redHillC, foodCs,... }, 
+                xc, yc, cell) =
+        let
+            val w       = Gtk.widgetGetFieldWindow area
+            val gc      = Gdk.gcNew w 
+
+           (* every second row is indented *) 
+            val x       = xc * 4 + (if yc mod 2 <> 0 then 2 else 0)         
+            val y       = yc * 4 
+
+            fun drawRect c = 
+                (Gdk.gcSetForeground (gc, c);
+                 Gdk.drawRectangle (pixmap, gc, true, x, y, 4, 4))
+
+            fun drawIRect c =
+                (Gdk.gcSetForeground (gc, c);
+                 Gdk.drawRectangle (pixmap, gc, true, x + 1, y+1, 2, 2))
+
+        in
+            if #rocky cell then
+                drawRect rockC
+            else 
+                (if #redHill cell then drawRect redHillC
+                 else if #blackHill cell then drawRect blackHillC
+                 else if !(#food cell) > 0 then 
+                        drawRect (Vector.sub (foodCs, !(#food cell) - 1))
+                 else drawRect emptySpotC;
+                 case ! (#ant cell) of
+                    NONE    => ()
+                 |  SOME a  => 
+                    if #color a = Ant.Red then
+                        drawIRect redAntC
+                    else 
+                        drawIRect blackAntC );
+                   
+            Gdk.drawRectangle (pixmap, gc, true, x, y, 4, 4);
+            Gtk.widgetQueueDrawArea (area,x, y, 4, 4)
+        end
+
+end 
+
