@@ -124,10 +124,6 @@ protected:
     BYTE_CODE_POS, // JavaByteCode | int(0)
     SIZE
   };
-private:
-  u_int GetAccessFlags() {
-    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
-  }
 public:
   using Block::ToWord;
 
@@ -153,6 +149,12 @@ public:
     return static_cast<MethodInfo *>(b);
   }
 
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
+  bool IsPublic() {
+    return (GetAccessFlags() & ACC_PUBLIC) != 0;
+  }
   bool IsStatic() {
     return (GetAccessFlags() & ACC_STATIC) != 0;
   }
@@ -206,10 +208,6 @@ protected:
     RUNTIME_CONSTANT_POOL_POS, // RuntimeConstantPool
     SIZE
   };
-private:
-  u_int GetAccessFlags() {
-    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
-  }
 public:
   using Block::ToWord;
 
@@ -240,6 +238,9 @@ public:
     return static_cast<ClassInfo *>(b);
   }
 
+  u_int GetAccessFlags() {
+    return Store::DirectWordToInt(GetArg(ACCESS_FLAGS_POS));
+  }
   bool IsInterface() {
     return (GetAccessFlags() & ACC_INTERFACE) != 0;
   }
