@@ -33,4 +33,38 @@ invoked. The virtual machine will <EM>not</EM> be terminated automatically,
 even if no live threads are left.</P>
 
 
+<?php section("environment-variables", "environment variables") ?>
+
+<DL>
+  <DT><TT>STOCKHOME</TT>
+  <DD>specifies the directory where Alice is installed.  If not set,
+    <TT>alicerun</TT> guesses its name by looking in the following
+    directories, in that order:
+    <OL>
+      <LI><TT>/usr/share/alice</TT>, which is the default installation
+	path on some Unix variants
+      <LI><TT>%PROGRAMFILES%/Alice</TT>, which is the default installation
+	path on Windows
+      <LI>The parent directory of the directory in which <TT>alicerun</TT>
+	resides.
+    </OL>
+  <DT><TT>ALICE_LOAD_PREFIX</TT>
+  <DT><TT>ALICE_LOAD_SUFFIX</TT>
+  <DD>specify resolving methods to use when trying to access components.
+    Components are resolved with the following methods, in order:
+    <OL><!--** mozart -->
+      <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
+	before any of the following.</P>
+      <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
+	for compatibility with Oz.</P>
+      <LI><P>Otherwise, the URL is tried with the platform's default component
+	extension appended, which is <TT>.ozf</TT>.</P>
+      <LI><P>If that fails, the URL is tried as-is, for compatibility
+	with Oz.</P>
+      <LI><P>If that fails, and <TT>ALICE_LOAD_SUFFIX</TT> is set, its methods
+	are tried at this point.</P>
+    </OL>
+</DL>
+
+
 <?php footing() ?>
