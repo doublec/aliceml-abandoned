@@ -9,8 +9,8 @@ end
 exception Error of string
 
 local
-    val localscount = ref 0
-    and maxlocals   = ref 0
+    val localscount = ref 1 (* in 0 ist this, in 1 ist das Argument *)
+    and maxlocals   = ref 1
     and stack : ((int * int) list) ref = ref nil
 in
     val rec
@@ -19,16 +19,17 @@ in
 				     !localscount)
     and
 	dropLocals = fn (x) => (localscount := !localscount - x;
-				if !localscount < 0 then raise Error("localscount < 0") else ())
+				if !localscount < 1 then raise Error("localscount < 1") else ())
     and
 	pushLocals = fn () => ( stack := (!localscount,!maxlocals)::(!stack);
-			       localscount := 0;
-			       maxlocals   := 0)
+			       localscount := 1;
+			       maxlocals   := 1)
     and
 	popLocals = fn () =>
 	case !stack of
 	    ((lc,ml)::rest) => (stack := rest; localscount := lc; maxlocals := ml)
 	  | nil => raise Error("empty locals stack")
+    and maxLocals = fn () => ! maxlocals
 end
 
 local
@@ -160,7 +161,12 @@ and
      | (Case (exp, match)) =>
 	expCode(exp) @ matchCode(match)
      | (Explist liste) =>
-	flatten (map expCode liste)
+	let
+	    val rec
+		eiter = fn exp::nil => expCode(exp) | (exp::exps) => expCode(exp)@[Pop]@eiter(exps) | _ => raise Error "eiter"
+	in
+	    eiter liste
+	end
      | (lambda as Fn (JVMString name,freevars,match)) =>
 	let
 	    val names = flatten (map Load freevars)
@@ -171,7 +177,7 @@ and
 	    (
 	     pushLocals();
 	     pushClass(name);
-	     ExpCodeClass(lambda);
+	     expCodeClass(lambda);
 	     popLocals();
 	     popClass();
 	     result)
@@ -328,18 +334,239 @@ and
 	     F,
 	     Invokespecial (skon,"<init>",jtype)]
 	end
-    | VId(vid) => []
+    | VId(Shortvid(vidname, Defining loc)) => (
+				      loc  := nextFreeLocal();
+				      nil)
+    | VId(Shortvid(_,Bound b)) => (case !b of
+				       Shortvid (_,Defining wherever) =>
+					   [Aload (!wherever)]
+				     | _ => raise Error "invalid vid")
+    | VId(Shortvid(vidname,Free)) =>
+	[Aload 0,
+	 Getfield (getCurrentClass()^vidname, CVal)]
+    | While(exp1,exp2) =>
+	let
+	    val beforelabel = aNewLabel()
+	    and truelabel   = aNewLabel()
+	    and falselabel  = aNewLabel()
+	    and e1 = expCode(exp1)
+	    and e2 = expCode(exp2)
+	in
+	    [Label beforelabel] @
+	    e1 @
+	    [Invokevirtual (CVal,"request","()"^CVal),
+	     Dup,
+	     Getstatic (CConstants^"/dmltrue",CConstructor0),
+	     Ifacmp truelabel,
+	     Getstatic (CConstants^"/dmlfalse",CConstructor0),
+	     Ifacmp falselabel,
+	     New CException0,
+	     Dup,
+	     Getstatic CMatch,
+	     Invokespecial (CException0,"<init>","("^CExName^")V"),
+	     Athrow,
+	     Label truelabel,
+	     Pop] @
+	    e2 @
+	    [Goto beforelabel,
+	     Label falselabel]
+	end
+    | _ => raise Error "Fußschuß"
 and
-    patCode= fn (_) => Swap::nil
+    patCode = fn
+    Patas(Shortvid(_, Defining loc), pat) =>
+	(loc := nextFreeLocal();
+	 [Dup,
+	  Astore (!loc)] @
+	 patCode(pat))
+  | Patcon(Shortvid(vidname, Bound loc), pat) =>
+	let
+	    val faillabel = aNewLabel()
+	    and endlabel = aNewLabel()
+	    and p = patCode(pat)
+	in
+	    [Invokevirtual (CVal, "request", "()"^CVal),
+	     Dup,
+	     Instanceof CConstructor1,
+	     Ifeq faillabel,
+	     Checkcast CConstructor1,
+	     Dup,
+	     Getfield (CConstructor0^"/name",CString),
+	     Ldc (JVMString vidname),
+	     Invokevirtual (CString, "equals", "("^CString^")I"),
+	     Ifeq faillabel,
+	     Invokevirtual (CVal, "getContent", "()"^CVal)] @
+	    p @
+	    [Goto endlabel,
+	     Label faillabel,
+	     Pop,
+	     Label endlabel]
+	end
+  | Patex(Shortvid(vidname, Bound loc), pat) =>
+	let
+	    val faillabel = aNewLabel()
+	    and endlabel = aNewLabel()
+	    and p = patCode(pat)
+	in
+	    [Invokevirtual (CVal, "request", "()"^CVal),
+	     Dup,
+	     Instanceof CException1,
+	     Ifeq faillabel,
+	     Checkcast CException1,
+	     Dup,
+	     Getfield (CException0^"/name",CString),
+	     Ldc (JVMString vidname),
+	     Invokevirtual (CString, "equals", "("^CString^")I"),
+	     Ifeq faillabel,
+	     Invokevirtual (CVal, "getContent", "()"^CVal)] @
+	    p @
+	    [Goto endlabel,
+	     Label faillabel,
+	     Pop,
+	     Label endlabel]
+	end
+  | Patopenrec(reclabs) =>
+	let
+	    val faillabel = aNewLabel()
+	    and endlabel = aNewLabel()
+	    and loc = nextFreeLocal()
+	    val prc = patRowCode(reclabs, loc)
+	in
+	    [Dup,
+	     Instanceof CRecord,
+	     Ifeq faillabel,
+	     Checkcast CRecord,
+	     Astore loc] @
+	    prc @
+	    [Goto endlabel,
+	     Label faillabel,
+	     Pop,
+	     Aconst 0,
+	     Label endlabel]
+	end
+  | Patrec _ => raise Error "not yet understood"
+  | Patscon (scon) =>
+	[Invokevirtual (CVal, "request", "()"^CVal)] @
+	expCode(SCon scon) @
+	[Invokevirtual (CVal, "equals", "("^CVal^")I")]
+  | Patvid (Shortvid vid) =>
+	(case vid of
+	     (_, Defining loc) => (loc := nextFreeLocal();
+				   [Astore (!loc), Aconst 1])
+	   | (_, Bound def) => (case !def of
+				    Shortvid (_,Defining loc) =>
+					[Aload (!loc),
+					 Invokevirtual (CVal, "equals", "("^CVal^")I")]
+				  | _ => raise Error "patvid bound def")
+	   | (_, Free) => raise Error "patvid free"
+		 )
+  | _ => raise Error "patCode Patas"
 and
-    matchCode = fn (_) => Dup::nil
+    patRowCode = fn
+    (labpat::reclabs,i) =>
+	let
+	    val patRowCodeSingle = fn
+		((lab,pat), i) =>
+		    let
+			val undef = aNewLabel()
+			and endlabel = aNewLabel()
+			and p = patCode(pat)
+			and l = case lab of RecStringlabel s => s | RecIntlabel k => Int.toString(k)
+		    in
+			[Aload i,
+			 Ldc (JVMString l),
+			 Invokevirtual (CRecord, "getByLabel", "("^CString^")"^CVal),
+			 Dup,
+			 Ifnull undef] @
+			p @
+			[Goto endlabel,
+			 Label undef,
+			 Pop,
+			 Aconst 0,
+			 Label endlabel]
+		    end
+	    val skiplabel = aNewLabel()
+	    and head = patRowCodeSingle(labpat,i)
+	    and prc = patRowCode(reclabs,i)
+	in
+	    head @
+	    [Dup,
+	     Ifeq skiplabel,
+	     Pop] @
+	    prc @
+	    [Label skiplabel]
+	end
+  | (nil, _) => [Aconst 1]
+
+and
+    matchCode =
+    fn Mrule patexplist =>
+    let
+	val endlabel = aNewLabel()
+	val ruleCode =
+	    fn (pat,exp) =>
+	    let
+		val eigenerendlabel = aNewLabel()
+		val p = patCode(pat)
+		val e = expCode(exp)
+	    in
+		p @
+		[Dup,
+		 Ifeq eigenerendlabel] @
+		e @
+		[Swap,
+		 Label eigenerendlabel,
+		 Ifneq endlabel]
+	    end
+	val rc = flatten (map ruleCode patexplist)
+    in
+	rc @
+	[New CException0,
+	 Dup,
+	 Getstatic CMatch,
+	 Invokespecial (CException0,"<init>","("^CExName^")V"),
+	 Athrow,
+	 Label endlabel]
+    end
 and
     Load = fn (JVMString name) => [Aload 0, Getfield ( getCurrentClass(), name)]
   | (JVMInt i) => [Aload i]
-  | _ => raise Error("cannot load crap")
+  | _ => raise Error("cannot load scrap")
 and
-    ExpCodeClass = fn (_) => ()
+    expCodeClass =
+    fn Fn (JVMString name,freevars,match) =>
+    let
+	val access = [CPublic]
+	val rec fields = fn
+	    (JVMString var)::vars =>
+		(Field ([FPrivate],var, Classtype CVal))::(fields(vars))
+	  | nil => nil
+	  | _ => raise Error "fields in expcodeclass"
+	val fieldlist = fields freevars
+	val rec args = fn _::vars => CVal^args(vars) | nil => ""
+	val rec initbody = fn
+	    ((JVMString var)::nil,i) =>
+		[Aload i,
+		 Putfield (name^"/"^var, CVal),
+		 Return]
+	  | ((JVMString var)::vars,i) =>
+		[Dup,
+		 Aload i,
+		 Putfield (name^"/"^var, CVal)]@
+		initbody(vars,i+1)
+	  | _ => raise Error "initbody"
+	val init = Method([MPublic],"<init>","("^args(freevars)^")V",Limits (length freevars, 3),(Aload 0)::initbody(freevars,1))
+	val mcm = matchCode match
+	val stack = raise Error "Hallo"
+	val applY = Method ([MPublic],"apply","("^CVal^")"^CVal,Limits (maxLocals(),stack),(Aload 1) :: (mcm @ [Areturn]))
+    in
+	Class(access,name,CFcnClosure,fieldlist,[init,applY])
+    end
+     | _ => raise Error "expCodeClass"
 and
-    getCurrentClass = fn () => "Hier bin ich"
-and
-    atCodeInt = fn (_) => Pop
+    atCodeInt =
+    fn i =>
+    if i >= ~1 andalso i<=5 then Iconst i else
+	if i >= ~128 andalso i <= 127 then Bipush i else
+	    if i >= ~32768 andalso i <= 32767 then Sipush i
+	    else Ldc (JVMInt i)

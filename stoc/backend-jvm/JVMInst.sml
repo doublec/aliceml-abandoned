@@ -17,9 +17,7 @@ datatype
   | Aconst of int
   | Aload of int
   | Anewarray of classname
-  | AtCodeFloat of real
-  | AtCodeInt of int   (* iconst_?, bipush, sipush, ldc :*)
-  | AtCodeString of string
+  | Areturn
   | Athrow
   | Bipush of int
   | Catch of classname * label * label * label
@@ -34,6 +32,7 @@ datatype
   | Ifeq  of label
   | Ifneq of label
   | Ifnull of label
+  | Ireturn of int
   | Instanceof of classname
   | Invokespecial of classname * methodname * methodsig
   | Invokevirtual of classname * methodname * methodsig
@@ -43,6 +42,7 @@ datatype
   | Pop
   | Putfield of classname * fieldname
   | Putstatic of classname * fieldname
+  | Return
   | Sipush of int
   | Swap
   | Tableswitch of int * (label list) * label
@@ -64,10 +64,10 @@ and
     CPublic | CFinal | CSuper | CAbstract | CInterface
 and
     FIELDACCESS =
-    FPublic | FPrivat | FProtected | FStatic | FFinal | FVolatile | FTransient
+    FPublic | FPrivate | FProtected | FStatic | FFinal | FVolatile | FTransient
 and
     METHODACCESS =
-    MPublic | MPrivat | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
+    MPublic | MPrivate | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
 and
     LIMITS =
     Limits of int * int
