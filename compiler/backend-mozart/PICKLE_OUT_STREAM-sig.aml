@@ -24,10 +24,12 @@ signature PICKLE_OUT_STREAM =
 	val outputLargeReal: outstream * LargeReal.real -> unit
 	val outputAtom: outstream * string -> label
 	val outputTuple: outstream * string * int -> label
+	    (* followed by as many terms as the tuple is wide,
+	     * in reverse order *)
 	val outputList: (outstream * 'a -> 'b) -> outstream * 'a list -> label
 	val outputBool: outstream * bool -> label
 	val outputUnit: outstream -> label
-	val outputString: outstream * string -> unit
+	val outputString: outstream * string -> label
 	val outputRef: (outstream * 'a -> 'b) -> outstream * 'a ref -> label
 	val outputShared: outstream * label -> unit
     end

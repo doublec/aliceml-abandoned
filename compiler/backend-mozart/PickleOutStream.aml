@@ -36,7 +36,7 @@
  * tuple ::= 0x08 label number term term*number // subtrees in reverse order
  * list ::= 0x09 label term (list | 0x01 term)
  *
- * extension ::= 0x24 bytestring
+ * extension ::= 0x24 label bytestring
  * bytestring ::= 0x03 string
  *
  * cell ::= 0x2E label term
@@ -210,8 +210,12 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 	  | marshalList (q, nil, _) = (inc1 q; outputAtom (q, "nil"))
 
 	fun outputString (q, s) =
-	    (dec1 q; outputByte (q, EXTENSION); outputByte (q, EX_BYTESTRING);
-	     marshalString (q, s))
+	    let
+		val label = newLabel q
+	    in
+		dec1 q; outputByte (q, EXTENSION); marshalNumber (q, label);
+		outputByte (q, EX_BYTESTRING); marshalString (q, s); label
+	    end
 
 	fun outputRef outputX (q, ref x) =
 	    let
