@@ -18,9 +18,9 @@ signature PICKLE =
 	    Con of id
 	  | StaticCon of value
 
-	datatype args =
-	    OneArg of id
-	  | TupArgs of id vector
+	datatype 'a args =
+	    OneArg of 'a
+	  | TupArgs of 'a vector
 
 	datatype function = Function of int * idDef args * instr
 
