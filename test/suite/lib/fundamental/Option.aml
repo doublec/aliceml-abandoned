@@ -35,6 +35,33 @@ struct
 	 Test.test (fn x => Option.join x = NONE) (SOME NONE);
 	 Test.test (fn x => Option.join x = NONE) NONE)
 
+    fun testGetOpt () =
+	(Test.test (fn x => Option.getOpt x = 2) (NONE, 2);
+	 Test.test (fn x => Option.getOpt x = 3) (SOME 3, 2))
+
+    fun testEqual () =
+	let
+	    val t = Int.equal
+	in
+	    (Test.test (fn x => Option.equal t x = true) (NONE, NONE);
+	     Test.test (fn x => Option.equal t x = false) (SOME 0, NONE);
+	     Test.test (fn x => Option.equal t x = false) (NONE, SOME 0);
+	     Test.test (fn x => Option.equal t x = true) (SOME 0, SOME 0);
+	     Test.test (fn x => Option.equal t x = false) (SOME 0, SOME 1))
+	end
+
+    fun testCollate () =
+	let
+	    val t = Int.compare
+	in
+	    (Test.test (fn x => Option.collate t x = EQUAL) (NONE, NONE);
+	     Test.test (fn x => Option.collate t x = GREATER) (SOME 0, NONE);
+	     Test.test (fn x => Option.collate t x = LESS) (NONE, SOME 0);
+	     Test.test (fn x => Option.collate t x = EQUAL) (SOME 0, SOME 0);
+	     Test.test (fn x => Option.collate t x = LESS) (SOME 0, SOME 1);
+	     Test.test (fn x => Option.collate t x = GREATER) (SOME 1, SOME 0))
+	end
+
     fun testFilter () = 
 	let 
 	    fun test x = x <= 15 andalso x > 5

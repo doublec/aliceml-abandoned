@@ -43,23 +43,68 @@ struct
 	 Test.test (fn x => Alt.getSnd x = 0) (SND 0, 1))
 
     fun testApp () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	    fun t2 i = n := i
+	in 
+	    (Test.test (fn x => (Alt.app (t1, t2) x; !n = fst x)) (FST 1);
+	     Test.test (fn x => (Alt.app (t1, t2) x; !n = snd x)) (SND 1))
+	end
 
     fun testAppFst () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	in
+	    (Test.test (fn x => (Alt.appFst t1 x; !n = 0)) (SND 1);
+	     Test.test (fn x => (Alt.appFst t1 x; !n = fst x)) (FST 1))
+	end
 
-    fun testAppSnd () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testAppSnd () =
+	let
+	    val n = ref 0
+	    fun t1 i = n := i
+	in
+	    (Test.test (fn x => (Alt.appSnd t1 x; !n = 0)) (FST 1);
+	     Test.test (fn x => (Alt.appSnd t1 x; !n = snd x)) (SND 1))
+	end
 
     fun testMap () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val t1 = Real.fromInt
+	    val t2 = Real.round
+	in 
+	  (Test.test (fn x => Alt.map (t1, t2) x = FST (t1 (fst x))) (FST 1);
+	   Test.test (fn x => Alt.map (t1, t2) x = SND (t2 (snd x))) (SND 2.0))
+	end
 		
     fun testMapFst () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val t = Real.fromInt
+	in
+	    (Test.test (fn x => Alt.mapFst t x = Alt.map (t, id) x) (FST 1);
+	     Test.test (fn x => Alt.mapFst t x = Alt.map (t, id) x) (SND 1))
+	end
+
+    fun testMapSnd () =
+	let
+	    val t = Real.fromInt
+	in
+	    (Test.test (fn x => Alt.mapSnd t x = Alt.map (id, t) x) (FST 1);
+	     Test.test (fn x => Alt.mapSnd t x = Alt.map (id, t) x) (SND 1))
+	end
+
+    fun testMapBoth () =
+	let
+	    val t = Real.fromInt
+
+	    fun test x = Alt.mapSnd t (Alt.mapFst t x)
+	in
+	    (Test.test (fn x => Alt.mapBoth t x = test x) (FST 1);
+	     Test.test (fn x => Alt.mapBoth t x = test x) (SND 1))
+	end
 		    
-    fun testMapSnd () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-			
     fun testEqual () =
 	let
 	    val equal1 = (Int.equal, Bool.equal)
@@ -95,17 +140,18 @@ struct
 
 
     val suite = ("Alt", [("testIsFst", testIsFst), 
-                          ("testIsSnd", testIsSnd),
-                          ("testFst", testFst),
-                          ("testSnd", testSnd),
- 			  ("testGetFst", testGetFst), 
-	                  ("testGetSnd", testSnd),
-			  ("testApp", testApp),
-			  ("testAppFst", testAppFst),
-			  ("testAppSnd", testAppSnd),
-			  ("testMap", testMap),
-			  ("testMapFst", testMapFst),
-			  ("testMapSnd", testMapSnd),
-			  ("testEqual", testEqual),
-			  ("testCollate", testCollate)])
+                         ("testIsSnd", testIsSnd),
+                         ("testFst", testFst),
+                         ("testSnd", testSnd),
+ 			 ("testGetFst", testGetFst), 
+	                 ("testGetSnd", testSnd),
+			 ("testApp", testApp),
+			 ("testAppFst", testAppFst),
+			 ("testAppSnd", testAppSnd),
+			 ("testMap", testMap),
+			 ("testMapFst", testMapFst),
+			 ("testMapSnd", testMapSnd),
+			 ("testMapBoth", testMapBoth),
+			 ("testEqual", testEqual),
+			 ("testCollate", testCollate)])
 end

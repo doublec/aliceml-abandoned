@@ -33,9 +33,9 @@ struct
 	    val test1  = (Int.toLarge (valOf Int.maxInt)) + Int.toLarge 1000000
 	    val test2  = Int.toLarge 1000000
 	in
-	 (Test.test 
-	      (fn x => (Int.fromLarge x; true) handle Overflow => false) test1;
-	     Test.test (fn x => (Int.fromLarge x; true)                ) test2)
+	 (Test.test (fn x => (Int.fromLarge x; true) 
+			           handle Overflow => false) test1;
+	  Test.test (fn x => (Int.fromLarge x; true)) test2)
 	end
 
     fun testHash () = 
@@ -47,9 +47,74 @@ struct
 		(Test.test 
 		     (fn x => if x < 0 then abs x = ~ x else abs x = x))
 
+    fun testArithmetic () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testCompare () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMod () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSign () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromLarge () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSameSign () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMin () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromString () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testQuot () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScan () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testEqual () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testRem () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromInt () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testDiv () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFmt () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMax () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
     val suite = ("Integer", [("testHash", testHash),
 			     ("testMinInt", testMinInt),
 			     ("testMaxInt", testMaxInt),
 			     ("testPrecision", testPrecision),
-			     ("testAbs", testAbs)])
+			     ("testAbs", testAbs),
+			     ("testArithmetic", testArithmetic),
+			     ("testCompare", testCompare),
+			     ("testMod", testMod),
+			     ("testSign", testSign),
+			     ("testToFromLarge", testToFromLarge),
+			     ("testSameSign", testSameSign),
+			     ("testMin", testMin),
+			     ("testToFromString", testToFromString),
+			     ("testQuot", testQuot),
+			     ("testScan", testScan),
+			     ("testEqual", testEqual),
+			     ("testRem", testRem),
+			     ("testToFromInt", testToFromInt),
+			     ("testDiv", testDiv),
+			     ("testFmt", testFmt),
+			     ("testMax", testMax)])
 end

@@ -36,6 +36,7 @@ val allTests = [TestBool.suite, TestOption.suite,
 		TestTime.suite
 		(*TestCompiler.suite*)]
 
+fun usage () = print "nenene\n"
 
 fun runTests conf = 
     Report.runAll TextIO.stdOut conf allTests
@@ -58,7 +59,8 @@ fun main () =
 		 NONE    => start Test.defaultConfig
 	       | SOME t1 => (start {timeout = t1,
 				   separate = valOf b1,
-				   showMissing = valOf b2}) handle _ => start Test.defaultConfig
+				   showMissing = valOf b2}) 
+		 handle _ => usage ()
 	 end
        | _ => ()
 

@@ -29,6 +29,114 @@ struct
 	Gen.try 10 (Gen.oneOfFreq allGenStrFreq)
 	   (Test.test (fn s => true))
 
+    fun testArithmetic () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    val suite = ("String", [("testSize", testSize)])
+    fun testCompare () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsPrefix () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSubstring () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testExtract () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testConcatWith () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScanC () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTokens () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromCString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTabulate () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testScan () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testEqual () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTranslate () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsSuffix () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testCollate () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsSubstring () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testConcat2 () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testStr () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testImplodeExplode () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSub () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testHash () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testConcat () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMaxSize () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromWide () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testMap () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFields () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("String", [("testSize", testSize),
+			    ("testArithmetic", testArithmetic),
+			    ("testCompare", testCompare),
+			    ("testIsPrefix", testIsPrefix),
+			    ("testSubstring", testSubstring),
+			    ("testExtract", testExtract),
+			    ("testConcatWith", testConcatWith),
+			    ("testScanC", testScanC),
+			    ("testTokens", testTokens),
+			    ("testToFromCString", testToFromCString),
+			    ("testTabulate", testTabulate),
+			    ("testScan", testScan),
+			    ("testEqual", testEqual),
+			    ("testTranslate", testTranslate),
+			    ("testIsSuffix", testIsSuffix),
+			    ("testCollate", testCollate),
+			    ("testIsSubstring", testIsSubstring),
+			    ("testConcat2", testConcat2),
+			    ("testStr", testStr),
+			    ("testSub", testSub),
+			    ("testHash", testHash),
+			    ("testImplodeExplode", testImplodeExplode),
+			    ("testToFromString", testToFromString),
+			    ("testConcat", testConcat),
+			    ("testMaxSize", testMaxSize),
+			    ("testToFromWide", testToFromWide),
+			    ("testMap", testMap),
+			    ("testFields", testFields)])
 end
