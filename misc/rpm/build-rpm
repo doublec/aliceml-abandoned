@@ -24,7 +24,7 @@ rpmmacros=${HOME}/.rpmmacros
 
 if test -f ${rpmmacros}; then
     echo -n "Backing up ${rpmmacros}... "
-    rpmmacros_old=$(mktemp)
+    rpmmacros_old=$(mktemp /tmp/RPMMACROS.XXXXXX)
     cp ${rpmmacros} ${rpmmacros_old}
     echo "done."
 else
@@ -34,7 +34,7 @@ fi
 # Create the temporary RPM directory hierarchy and register it in
 # the ${rpmmacros} file.
 
-rpmroot=$(mktemp -d)
+rpmroot=$(mktemp -d /tmp/RPMROOT.XXXXXX)
 echo "%_topdir ${rpmroot}" > ${rpmmacros}
 
 echo -n "Creating RPM file structure... "
