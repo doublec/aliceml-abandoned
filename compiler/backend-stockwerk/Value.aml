@@ -1,0 +1,40 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure FlatGrammar from "../backend-common/FlatGrammar"
+import signature VALUE       from "VALUE-sig"
+
+structure Value (*: VALUE*) =
+    struct
+    	datatype 'a t =
+	    Prim of string
+	  | Int of LargeInt.int
+	  | String of String.string
+	  | WideString of WideString.string
+	  | Real of Real.real
+	  | TaggedValue of LargeInt.int * 'a t vector
+	  | Tuple of 'a t vector
+	  | Vector of 'a t vector
+	  | Closure of 'a * 'a t vector
+	  | Sign of FlatGrammar.sign
+
+	fun prim name = Prim name
+	fun int i = Int i
+	fun string s = String s
+	fun wideString s = WideString s
+	fun real r = Real r
+	fun taggedValue (i, values) = TaggedValue (i, values)
+	fun tuple values = Tuple values
+	fun vector values = Vector values
+	fun closure (function, values) = Closure (function, values)
+	fun sign sign = Sign sign
+    end

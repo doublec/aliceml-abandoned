@@ -6,7 +6,7 @@ Group is
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
 
-    pickle-grammar.cm
+    abstract-code-grammar.cm
 
     PRIM_PICKLE-sig.aml
     PrimPickle.aml
