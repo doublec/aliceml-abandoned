@@ -65,6 +65,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		(stms @ [stm], id')
 	    end
 
+	fun decsToIdExpList (O.ValDec (_, id, exp', _)::rest, coord) =
+	    (id, exp')::decsToIdExpList (rest, coord)
+	  | decsToIdExpList (O.IndirectStm (_, ref (SOME body))::rest, coord) =
+	    decsToIdExpList (body, coord) @ decsToIdExpList (rest, coord)
+	  | decsToIdExpList (_::_, coord) =
+	    Error.error (coord, "not admissible")
+	  | decsToIdExpList (nil, _) = nil
+
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
 	  | translateCont (Decs (nil, cont)) = translateCont cont
@@ -111,13 +119,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 					      O.ValDec (infoExp exp, id, exp',
 							false),
 					      Goto decs)) nil idExpList
-		val idExpList' =
-		    List.map (fn dec =>
-			      case dec of
-				  O.ValDec (_, id, exp', _) => (id, exp')
-				| _ =>
-				      Error.error (coord, "not admissible"))
-		    decs'
+		val idExpList' = decsToIdExpList (decs', coord)
 		val rest =
 		    O.RecDec (coord, idExpList', false)::aliasDecs @
 		    translateCont cont
