@@ -15,9 +15,6 @@ Group is
 	MkListSort.aml
 
 	HASH_KEY-sig.aml
-	IntHashKey.aml
-	LargeIntHashKey.aml
-	StringHashKey.aml
 
 	SIMPLE_IMP_MAP-sig.aml
 	../../bootstrap/MkRefMap.sml
