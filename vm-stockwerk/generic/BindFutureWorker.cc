@@ -74,13 +74,13 @@ Worker::Result BindFutureWorker::Run() {
   word arg = Scheduler::currentArgs[0];
   if (IsCyclic(arg, future)) { // cancel future with Cyclic exception
     future->Become(CANCELLED_LABEL, Hole::cyclicExn);
-    Scheduler::currentData = Hole::cyclicExn;
-    Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
-    return Worker::RAISE;
+    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+    Scheduler::currentArgs[0] = future->ToWord();
+    return Worker::CONTINUE;
   } else { // actually bind the future
     future->Become(REF_LABEL, arg);
-    //Scheduler::nArgs = Scheduler::ONE_ARG;
-    //Scheduler::currentArgs[0] = arg;
+    Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
+    // Scheduler::currentArgs[0] is already set to `arg'
     return Worker::CONTINUE;
   }
 }
