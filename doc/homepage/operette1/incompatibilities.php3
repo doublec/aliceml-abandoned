@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - SML Incompatibilities",
+<?php heading("Stockhausen Operette 1 - SML Incompatibilities",
 		"incompati <BR> bilities <BR> with SML") ?>
 
 
@@ -14,9 +14,9 @@
   </P>
 
   <P>
-    Another limitation of the current implementation is the lack of support
+    Another limitation of Stockhausen Operette 1 is the lack of support
     for overloading: the toplevel arithmetic operators are only defined for
-    type <TT>int</TT>. Moreover, Alice currently does not distinguish
+    type <TT>int</TT>. Moreover, Stockhausen currently does not distinguish
     equality types: equality is permitted on any type. Both features will
     probably be subsumed when we add something similar to type classes
     to the language in a later step.
@@ -146,7 +146,7 @@
 <?php section("conarity", "constructor arity") ?>
 
   <P>
-    For interoperability reasons, Alice currently has the concept of
+    For interoperability reasons, Stockhausen currently has the concept of
     syntactic arity for constructors. For example, in
   </P>
 
@@ -170,7 +170,7 @@
     <LI>
       <P>
         The following program will not elaborate in the current version of
-        Alice:
+        Stockhausen:
       </P>
 
       <PRE>

@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Examples", "examples") ?>
+<?php heading("Stockhausen Operette 1 - Examples", "examples") ?>
 
 
 
