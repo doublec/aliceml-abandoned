@@ -1,4 +1,5 @@
 functor Intermediate(type info
+		     val dummy: info
                      val output_info: TextIO.outstream * info -> unit)
   : INTERMEDIATE =
   struct
@@ -65,13 +66,34 @@ functor Intermediate(type info
 	| AltPat    of info * pat list
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
-	| WithPat   of info * pat * dec
+	| WithPat   of info * pat * dec list
 
     (* Declarations *)
 
     and dec =
 	  ValDec    of info * id list * exp		(* distinct ids *)
 	| ConDec    of info * id * bool (* has args *)
+
+
+    (* Predefined *)
+
+    val id_false	= Id(dummy, ~1, ExId "false")
+    val id_true		= Id(dummy, ~2, ExId "true")
+    val id_nil		= Id(dummy, ~3, ExId "nil")
+    val id_cons		= Id(dummy, ~4, ExId "::")
+    val id_ref		= Id(dummy, ~5, ExId "ref")
+    val id_Match	= Id(dummy, ~6, ExId "Match")
+    val id_Bind		= Id(dummy, ~7, ExId "Bind")
+    val id_eq		= Id(dummy, ~8, ExId "=")
+
+    val longid_false	= ShortId(dummy, id_false)
+    val longid_true	= ShortId(dummy, id_true)
+    val longid_nil	= ShortId(dummy, id_nil)
+    val longid_cons	= ShortId(dummy, id_cons)
+    val longid_ref	= ShortId(dummy, id_ref)
+    val longid_Match	= ShortId(dummy, id_Match)
+    val longid_Bind	= ShortId(dummy, id_Bind)
+    val longid_eq	= ShortId(dummy, id_eq)
 
 
     (* Projections *)
@@ -342,10 +364,10 @@ functor Intermediate(type info
 					  ; output_pat(q,p) ; m(q)
 					  ; output_exp(q,e) ; r(q)
 					  )
-      | output_pat(q, WithPat(i,p,d))	= ( f(q,"WithPat")
+      | output_pat(q, WithPat(i,p,ds))	= ( f(q,"WithPat")
 					  ; output_info(q,i) ; m(q)
 					  ; output_pat(q,p) ; m(q)
-					  ; output_dec(q,d) ; r(q)
+					  ; output_list output_dec (q,ds) ; r(q)
 					  )
 
     and output_dec(q, ValDec(i,xs,e))	= ( f(q,"ValDec")

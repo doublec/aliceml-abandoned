@@ -63,7 +63,7 @@ signature INTERMEDIATE =
 	| AltPat    of info * pat list
 	| NegPat    of info * pat
 	| GuardPat  of info * pat * exp
-	| WithPat   of info * pat * dec
+	| WithPat   of info * pat * dec list
 
     (* Declarations *)
 
@@ -72,26 +72,47 @@ signature INTERMEDIATE =
 	| ConDec    of info * id * bool (* has args *)
 
 
+    (* Predefined *)
+
+    val id_false :	id
+    val id_true :	id
+    val id_nil :	id
+    val id_cons :	id
+    val id_ref :	id
+    val id_Match :	id
+    val id_Bind :	id
+    val id_eq :		id
+
+    val longid_false :	longid
+    val longid_true :	longid
+    val longid_nil :	longid
+    val longid_cons :	longid
+    val longid_ref :	longid
+    val longid_Match :	longid
+    val longid_Bind :	longid
+    val longid_eq :	longid
+
+
     (* Operations *)
 
-    val info_lab:    lab	-> info
-    val info_id:     id		-> info
-    val info_longid: longid	-> info
-    val info_exp:    exp	-> info
-    val info_field:  'a field	-> info
-    val info_match:  match	-> info
-    val info_pat:    pat	-> info
-    val info_dec:    dec	-> info
+    val info_lab :	lab	-> info
+    val info_id :	id	-> info
+    val info_longid :	longid	-> info
+    val info_exp :	exp	-> info
+    val info_field :	'a field-> info
+    val info_match :	match	-> info
+    val info_pat :	pat	-> info
+    val info_dec :	dec	-> info
 
-    val output_lit:    TextIO.outstream * lit		-> unit
-    val output_lab:    TextIO.outstream * lab		-> unit
-    val output_id:     TextIO.outstream * id		-> unit
-    val output_longid: TextIO.outstream * longid	-> unit
-    val output_exp:    TextIO.outstream * exp		-> unit
-    val output_field: (TextIO.outstream * 'a -> unit) ->
-                       TextIO.outstream * 'a field	-> unit
-    val output_match:  TextIO.outstream * match		-> unit
-    val output_pat:    TextIO.outstream * pat		-> unit
-    val output_dec:    TextIO.outstream * dec		-> unit
+    val output_lit :	TextIO.outstream * lit		-> unit
+    val output_lab :	TextIO.outstream * lab		-> unit
+    val output_id :	TextIO.outstream * id		-> unit
+    val output_longid :	TextIO.outstream * longid	-> unit
+    val output_exp :	TextIO.outstream * exp		-> unit
+    val output_field : (TextIO.outstream * 'a -> unit)	->
+			TextIO.outstream * 'a field	-> unit
+    val output_match :	TextIO.outstream * match	-> unit
+    val output_pat :	TextIO.outstream * pat		-> unit
+    val output_dec :	TextIO.outstream * dec		-> unit
 
   end
