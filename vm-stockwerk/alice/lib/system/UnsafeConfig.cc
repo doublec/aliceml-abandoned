@@ -20,9 +20,9 @@ static inline int GetPlatform() {
 #endif
 }
 
-word UnsafeConfig(void) {
-  Tuple *t = Tuple::New(2);
-  t->Init(0, Store::IntToWord(GetPlatform()));
-  t->Init(1, String::New("stockwerk")->ToWord());
-  RETURN_STRUCTURE(t);
+word UnsafeConfig() {
+  Record *record = Record::New(2);
+  record->Init("platform", Store::IntToWord(GetPlatform()));
+  record->Init("vm", String::New("stockwerk")->ToWord());
+  RETURN_STRUCTURE("UnsafeConfig$", record);
 }
