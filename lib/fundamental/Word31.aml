@@ -16,7 +16,7 @@ import structure __pervasive
 import type int and bool                    from "ToplevelTypes"
 import structure MkWord                     from "MkWord"
 
-structure Word31 = MkWord(structure BaseWord = struct
+structure Word31 = MkWord(
     type word = LargeWord.word
 
     val wordSize = 31
@@ -48,4 +48,4 @@ structure Word31 = MkWord(structure BaseWord = struct
     __primitive val op > :   word * word -> bool = "Word31.>"
     __primitive val op <= :  word * word -> bool = "Word31.<="
     __primitive val op >= :  word * word -> bool = "Word31.>="
-end)
+)
