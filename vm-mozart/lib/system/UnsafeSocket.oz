@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000-2001
+%%%   Leif Kornstaedt, 2000-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -50,7 +50,6 @@ define
 			end
 		     inputN:
 			fun {$ Socket N} Cs in
-			   %--** must only return less than N chars at EOF
 			   {Socket read(list: ?Cs size: N)}
 			   {ByteString.make Cs}
 			end
@@ -69,9 +68,9 @@ define
 			   unit
 			end
 		     output:
-			fun {$ Socket S}
+			fun {$ Socket S 0}
 			   try
-			      {Socket write(vs: S)}
+			      {Socket write(vs: S len: $)}
 			   catch E then
 			      {Exception.raiseError
 			       alice(IoException(name:
@@ -79,8 +78,8 @@ define
 						 function:
 						    {ByteString.make 'output'}
 						 cause: E))} %--** not type exn
+			      unit
 			   end
-			   unit
 			end
 		     close:
 			fun {$ Socket}
