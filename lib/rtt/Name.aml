@@ -26,5 +26,5 @@ struct
       | hash InId			= 0
 
     fun toString(ExId s)		= s
-      | toString InId			= "?"
+      | toString InId			= "_"
 end
