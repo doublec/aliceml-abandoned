@@ -9,4 +9,4 @@ then
 fi
 export STOCKHOME
 
-exec $STOCKHOME/bin/stow x-alice:/stoc.ozf "$@"
+exec $STOCKHOME/bin/stow x-alice:/stoc "$@"
