@@ -69,16 +69,6 @@ define
       end
    end
 
-   fun {ByneedInterpreterPushCall _ _}
-      {Exception.raiseError byneedInterpreterPushCall} unit
-   end
-
-   fun {ByneedInterpreterAbstract _}
-      {Exception.raiseError byneedInterpreterAbstract} unit
-   end
-
    Me = byneedInterpreter(run: ByneedInterpreterRun
-			  handle: ByneedInterpreterHandle
-			  pushCall: ByneedInterpreterPushCall
-			  abstract: ByneedInterpreterAbstract)
+			  handle: ByneedInterpreterHandle)
 end
