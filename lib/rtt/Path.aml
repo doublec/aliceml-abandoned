@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,7 +30,7 @@ allow a pretty printer to perform some special action.
 
 *******************************************************************************)
 
-import structure GlobalStamp from "../utility/GlobalStamp"
+import structure GlobalStamp from "../data/GlobalStamp"
 import structure Name        from "Name"
 import structure Label       from "Label"
 import signature PATH        from "PATH-sig"
@@ -53,7 +53,7 @@ struct
   (* Creation *)
 
     fun pervasive s	= (GlobalStamp.fromString s, ref(NAME(Name.ExId s)))
-    fun new p'		= (GlobalStamp.new(), ref p')
+    fun new p'		= (GlobalStamp.stamp(), ref p')
 
     fun invent()	= new(NAME(Name.InId))
     fun name n		= new(NAME n)
