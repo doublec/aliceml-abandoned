@@ -21,6 +21,7 @@ signature SIMPLIFY_MATCH =
 	type pos = selector list
 	type typ = Type.t
 
+	(*--** These do not need to store the type any more: *)
 	datatype test =
 	    LitTest of I.lit
 	  | TagTest of Label.t

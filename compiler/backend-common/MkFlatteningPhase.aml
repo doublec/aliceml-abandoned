@@ -46,12 +46,13 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	(* Translation *)
 
-	fun stmInfo region = {region = region, liveness = ref O.Unknown}
+	fun stm_info region = {region = region, liveness = ref O.Unknown}
 
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
-	  | share stms =
-	    [O.SharedStm (stmInfo Source.nowhere, stms, Stamp.new ())]
+	  | share (stms as stm::_) =
+	    [O.SharedStm (stm_info (#region (O.infoStm stm)), stms,
+			  Stamp.new ())]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -63,11 +64,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = Id (info, Stamp.new (), Name.InId)
-		val info' = exp_info (#region info, Type.unknown Type.STAR)
-		    (*--** missing type for longid translation *)
 		val stm =
-		    O.ValDec (stmInfo (#region info), id',
-			      O.SelAppExp (info', label, id))
+		    O.ValDec (stm_info (#region info), id',
+			      O.SelAppExp (info, label, id))
 	    in
 		(stms @ [stm], id')
 	    end
@@ -82,9 +81,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | decsToIdExpList (nil, _) = nil
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
-	    [O.TestStm (stmInfo (#region info), id,
+	    [O.TestStm (stm_info (#region info), id,
 			[(O.TagTest label_true, thenStms)],
-			[O.TestStm (stmInfo (#region info), id,
+			[O.TestStm (stm_info (#region info), id,
 				    [(O.TagTest label_false, elseStms)],
 				    errStms)])]
 
@@ -101,7 +100,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateCont (Share (ref (SOME stms), _)) = stms
 	and translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
-		fun declare exp' = O.ValDec (stmInfo (#region info), id, exp')
+		fun declare exp' = O.ValDec (stm_info (#region info), id, exp')
 	    in
 		translateExp (exp, declare, cont)
 	    end
@@ -117,9 +116,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val aliasDecs =
 		    List.map (fn (fromId, toId, info) =>
 			      let
-				  val toExp = O.VarExp (info, toId)
+				  val toExp = O.VarExp (id_info info, toId)
 			      in
-				  O.ValDec (stmInfo (#region (infoId fromId)),
+				  O.ValDec (stm_info (#region (infoId fromId)),
 					    fromId, toExp)
 			      end) aliases
 		val subst = List.map (fn (id1, id2, _) => (id1, id2)) aliases
@@ -128,15 +127,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    (fn ((id, exp), decs) =>
 		     translateExp (substExp (exp, subst),
 				   fn exp' =>
-				   O.ValDec (stmInfo (#region (infoExp exp)),
+				   O.ValDec (stm_info (#region (infoExp exp)),
 					     id, exp'),
 				   Goto decs)) nil idExpList
 		val idExpList' = decsToIdExpList (decs', #region info)
 		val rest =
-		    O.RecDec (stmInfo (#region info), idExpList')::
+		    O.RecDec (stm_info (#region info), idExpList')::
 		    aliasDecs @ translateCont cont
 		val errStms =
-		    share [O.RaiseStm (stmInfo (#region info), id_Bind)]
+		    share [O.RaiseStm (stm_info (#region info), id_Bind)]
 	    in
 		List.foldr
 		(fn ((longid1, longid2), rest) =>
@@ -146,7 +145,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		 in
 		     (*--** the following ConTest has wrong arity *)
 		     stms1 @ stms2 @
-		     [O.TestStm (stmInfo (#region info), id1,
+		     [O.TestStm (stm_info (#region info), id1,
 				 [(O.ConTest id2, rest)], errStms)]
 		 end) rest constraints
 	    end
@@ -159,8 +158,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | unfoldTerm (exp, cont) =
 	    let
 		val info = infoExp exp
-		val id' = freshId info
-		fun declare exp' = O.ValDec (stmInfo (#region info), id', exp')
+		val id' = freshId (id_info info)
+		fun declare exp' =
+		    O.ValDec (stm_info (#region info), id', exp')
 		val stms = translateExp (exp, declare, cont)
 	    in
 		(stms, id')
@@ -203,34 +203,36 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		(stms, O.OneArg id)
 	    end
 	and translateExp (LitExp (info, lit), f, cont) =
-	    f (O.LitExp (info, lit))::translateCont cont
+	    f (O.LitExp (id_info info, lit))::translateCont cont
 	  | translateExp (PrimExp (info, s), f, cont) =
-	    f (O.PrimExp (info, s))::translateCont cont
+	    f (O.PrimExp (id_info info, s))::translateCont cont
 	  | translateExp (NewExp (info, isNAry), f, cont) =
-	    f (O.NewExp (info, makeConArity (info, isNAry)))::
+	    f (O.NewExp (id_info info, makeConArity (#typ info, isNAry)))::
 	    translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		stms @ f (O.VarExp (info, id))::translateCont cont
+		stms @ f (O.VarExp (id_info info, id))::translateCont cont
 	    end
 	  | translateExp (TagExp (info, Lab (_, label), isNAry), f, cont) =
-	    f (O.TagExp (info, label, makeConArity (info, isNAry)))::
+	    f (O.TagExp (id_info info, label,
+			 makeConArity (#typ info, isNAry)))::
 	    translateCont cont
 	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		stms @ f (O.ConExp (info, id, makeConArity (info, isNAry)))::
+		stms @ f (O.ConExp (id_info info, id,
+				    makeConArity (#typ info, isNAry)))::
 		translateCont cont
 	    end
 	  | translateExp (RefExp info, f, cont) =
-	    f (O.RefExp info)::translateCont cont
+	    f (O.RefExp (id_info info))::translateCont cont
 	  | translateExp (TupExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, ids) =
 		    List.foldr (fn (exp, (stms, ids)) =>
 				let
@@ -240,13 +242,14 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				    (stms', id::ids)
 				end) (rest, nil) exps
 	    in
-		r := SOME (f (O.TupExp (info, ids))::translateCont cont);
+		r := SOME (f (O.TupExp (id_info info, ids))::
+			   translateCont cont);
 		stms
 	    end
 	  | translateExp (ProdExp (info, expFields), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, fields) =
 		    List.foldr (fn (Field (_, Lab (_, label), exp),
 				    (stms, fields)) =>
@@ -259,19 +262,19 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val exp' =
 		    case LabelSort.sort fields of
 			(fields', LabelSort.Tup _) =>
-			    O.TupExp (info, List.map #2 fields')
+			    O.TupExp (id_info info, List.map #2 fields')
 		      | (fields', LabelSort.Rec) =>
-			    O.RecExp (info, fields')
+			    O.RecExp (id_info info, fields')
 	    in
 		r := SOME (f exp'::translateCont cont);
 		stms
 	    end
 	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
-	    f (O.SelExp (info, label))::translateCont cont
+	    f (O.SelExp (id_info info, label))::translateCont cont
 	  | translateExp (VecExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, ids) =
 		    List.foldr (fn (exp, (stms, ids)) =>
 				let
@@ -281,7 +284,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				    (stms', id::ids)
 				end) (rest, nil) exps
 	    in
-		r := SOME (f (O.VecExp (info, ids))::translateCont cont);
+		r := SOME (f (O.VecExp (id_info info, ids))::
+			   translateCont cont);
 		stms
 	    end
 	  | translateExp (FunExp (info, matches), f, cont) =
@@ -291,44 +295,44 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			      let
 				  val region = #region info
 				  fun return exp' =
-				      O.ReturnStm (stmInfo region, exp')
+				      O.ReturnStm (stm_info region, exp')
 			      in
 				  (#region (infoExp exp), pat,
 				   translateExp (exp, return, Goto nil))
 			      end)
 		    matches
 		val region = #region (infoMatch (List.hd matches))
-		val errStms = [O.RaiseStm (stmInfo region, id_Match)]
+		val errStms = [O.RaiseStm (stm_info region, id_Match)]
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
 		val body = translateGraph (graph, mapping)
 	    in
 		checkReachability consequents;
-		f (O.FunExp (info, Stamp.new (), nil, args, body))::
+		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
 (*--**DEBUG
 	  | translateExp (FunExp (info, matches), f, cont) =
 	    let
 		val region = #region (infoMatch (List.hd matches))
-		fun return exp' = O.ReturnStm (stmInfo region, exp')
+		fun return exp' = O.ReturnStm (stm_info region, exp')
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
 			      (#region (infoExp exp), pat,
 			       translateExp (exp, return, Goto nil))) matches
 		val r = ref NONE
-		val errStms = [O.IndirectStm (stmInfo region, r)]
+		val errStms = [O.IndirectStm (stm_info region, r)]
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
 		val body = translateGraph (graph, mapping)
 		val id = freshId info
 	    in
 		checkReachability consequents;
-		r := SOME [O.ValDec (stmInfo region, id,
-				     O.ConAppExp (info, id_Match,
+		r := SOME [O.ValDec (stm_info region, id,
+				     O.ConAppExp (id_info info, id_Match,
 						  args, O.Unary)),
-			   O.RaiseStm (stmInfo region, id)];
-		f (O.FunExp (info, Stamp.new (), nil, args, body))::
+			   O.RaiseStm (stm_info region, id)];
+		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
 *)
@@ -336,11 +340,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				  exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, args) = unfoldArgs (exp2, rest, isNAry)
-		val conArity = makeConArity (info', isNAry)
+		val conArity = makeConArity (#typ info', isNAry)
 	    in
-		r := SOME (f (O.TagAppExp (info, label, args, conArity))::
+		r := SOME (f (O.TagAppExp
+			      (id_info info, label, args, conArity))::
 			   translateCont cont);
 		stms
 	    end
@@ -348,54 +353,57 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			  f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, args) = unfoldArgs (exp2, rest, isNAry)
 		val (stms1, id1) = translateLongid longid
-		val conArity = makeConArity (info', isNAry)
+		val conArity = makeConArity (#typ info', isNAry)
 	    in
-		r := SOME (f (O.ConAppExp (info, id1, args, conArity))::
+		r := SOME (f (O.ConAppExp
+			      (id_info info, id1, args, conArity))::
 			   translateCont cont);
 		stms1 @ stms2
 	    end
 	  | translateExp (AppExp (info, RefExp _, exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id) = unfoldTerm (exp2, Goto rest)
 	    in
-		(r := SOME (f (O.RefAppExp (info, id))::translateCont cont);
+		(r := SOME (f (O.RefAppExp (id_info info, id))::
+			    translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (AppExp (info, SelExp (_, Lab (_, label)), exp2),
 			  f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
 	    in
-		(r := SOME (f (O.SelAppExp (info, label, id2))::
+		(r := SOME (f (O.SelAppExp (id_info info, label, id2))::
 			    translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (AppExp (info, exp1, exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, args) = unfoldArgs (exp2, rest, true)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		r := SOME (f (O.VarAppExp (info, id1, args))::
+		r := SOME (f (O.VarAppExp (id_info info, id1, args))::
 			   translateCont cont);
 		stms1
 	    end
 	  | translateExp (AdjExp (info, exp1, exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		r := SOME (f (O.AdjExp (info, id1, id2))::translateCont cont);
+		r := SOME (f (O.AdjExp (id_info info, id1, id2))::
+			   translateCont cont);
 		stms1
 	    end
 	  | translateExp (UpExp (_, exp), f, cont) =
@@ -415,15 +423,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (WhileExp (info, exp1, exp2), f, cont) =
 	    let
 		val r = ref NONE
-		val cont' = Goto [O.IndirectStm (stmInfo (#region info), r)]
+		val cont' = Goto [O.IndirectStm (stm_info (#region info), r)]
 		fun eval exp' =
-		    O.EvalStm (stmInfo (#region (infoExp exp2)), exp')
+		    O.EvalStm (stm_info (#region (infoExp exp2)), exp')
 		val info' = infoExp exp1
-		val id = freshId info'
+		val id = freshId (id_info info')
 		val trueBody = translateExp (exp2, eval, cont')
 		val falseBody = translateExp (TupExp (info, nil), f, cont)
 		val errorBody =
-		    [O.RaiseStm (stmInfo (#region info'), id_Match)]
+		    [O.RaiseStm (stm_info (#region info'), id_Match)]
 		val stms1 =
 		    translateIf (info', id, trueBody, falseBody, errorBody)
 		val stms2 =
@@ -448,7 +456,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			translateExp
 			(exp,
 			 fn exp' =>
-			 O.EvalStm (stmInfo (#region (infoExp exp)), exp'),
+			 O.EvalStm (stm_info (#region (infoExp exp)), exp'),
 			 Goto stms)
 	    in
 		List.foldr (fn (exp, stms) => translate (exp, stms)) nil exps
@@ -467,23 +475,25 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 	    in
-		r := SOME [O.RaiseStm (stmInfo (#region info), id)];
+		r := SOME [O.RaiseStm (stm_info (#region info), id)];
 		stms
 	    end
 	  | translateExp (HandleExp (info, exp, matches), f, cont) =
 	    let
 		val info' = infoExp exp
-		val id' = freshId info'
+		val info'' = id_info info'
+		val id' = freshId info''
 		val stamp = Stamp.new ()
 		val cont' =
-		    Goto [O.EndHandleStm (stmInfo (#region info), stamp)]
-		fun f' exp' = O.ValDec (stmInfo (#region info'), id', exp')
+		    Goto [O.EndHandleStm (stm_info (#region info), stamp)]
+		fun f' exp' = O.ValDec (stm_info (#region info'), id', exp')
 		val tryBody = translateExp (exp, f', cont')
-		val catchInfo = exp_info (#region info, PreboundType.typ_exn)
-		val catchId = freshId catchInfo
+		val catchInfo =
+		    {region = #region info, typ = PreboundType.typ_exn}
+		val catchId = freshId (id_info catchInfo)
 		val catchVarExp =
 		    VarExp (catchInfo, ShortId (id_info catchInfo, catchId))
 		val matches' =
@@ -494,12 +504,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val catchBody =
 		    simplifyCase (#region info, catchVarExp, matches',
 				  catchId, true)
-		val info'' = id_info info'
 		val contBody =
 		    translateExp  (VarExp (info', ShortId (info'', id')),
 				   f, cont)
 	    in
-		[O.HandleStm (stmInfo (#region info), tryBody,
+		[O.HandleStm (stm_info (#region info), tryBody,
 			      catchId, catchBody, contBody, stamp)]
 	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
@@ -526,9 +535,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info = infoExp exp
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-		val errStms = [O.RaiseStm (stmInfo (#region info), id_Match)]
+		val errStms = [O.RaiseStm (stm_info (#region info), id_Match)]
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1;
@@ -542,12 +551,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	and simplifyCase (region, exp, matches, raiseId, isReraise) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo region, r)]
+		val rest = [O.IndirectStm (stm_info region, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 		val errStms =
 		    if isReraise then
-			[O.ReraiseStm (stmInfo region, raiseId)]
-		    else [O.RaiseStm (stmInfo region, raiseId)]
+			[O.ReraiseStm (stm_info region, raiseId)]
+		    else [O.RaiseStm (stm_info region, raiseId)]
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));
@@ -558,15 +567,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	and simplifyCase (region, exp, matches, raiseId, isReraise) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo region, r)]
+		val rest = [O.IndirectStm (stm_info region, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 		val id' = freshId (infoExp exp)
 		val errStms =
-		    [O.ValDec (stmInfo region, id',
+		    [O.ValDec (stm_info region, id',
 			       O.ConAppExp (infoExp exp, raiseId,
 					    O.OneArg id, O.Unary)),
-		     if isReraise then O.ReraiseStm (stmInfo region, id')
-		     else O.RaiseStm (stmInfo region, id')]
+		     if isReraise then O.ReraiseStm (stm_info region, id')
+		     else O.RaiseStm (stm_info region, id')]
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));
@@ -598,12 +607,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info = infoExp exp
 		val r = ref NONE
-		val rest = [O.IndirectStm (stmInfo (#region info), r)]
+		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val subst = mappingsToSubst (mapping0, mapping)
 		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
 		val thenStms = translateGraph (thenGraph, mapping)
 		val elseStms = translateGraph (elseGraph, mapping)
-		val errStms = [O.RaiseStm (stmInfo (#region info), id_Match)]
+		val errStms = [O.RaiseStm (stm_info (#region info), id_Match)]
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1;
@@ -625,22 +634,21 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, test', mapping') =
 		    translateTest (test, pos, mapping)
 	    in
-		stms @ [O.TestStm (stmInfo Source.nowhere, id,
+		stms @ [O.TestStm (stm_info Source.nowhere, id,
 				   [(test',
 				     translateGraph (thenGraph, mapping'))],
 				   translateGraph (elseGraph, mapping'))]
 	    end
 	and translateTypArgs (O.OneArg typ, pos, mapping) =
 	    let
-		val id = freshId (exp_info (Source.nowhere, typ))
+		val id = freshId {region = Source.nowhere}
 	    in
 		(O.OneArg id, (pos, id)::mapping)
 	    end
 	  | translateTypArgs (O.TupArgs typs, pos, mapping) =
 	    let
 		val ids =
-		    List.map (fn typ =>
-			      freshId (exp_info (Source.nowhere, typ))) typs
+		    List.map (fn _ => freshId {region = Source.nowhere}) typs
 	    in
 		(O.TupArgs ids,
 		 List.foldri
@@ -651,9 +659,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTypArgs (O.RecArgs labelTypList, pos, mapping) =
 	    let
 		val labelIdList =
-		    List.map
-		    (fn (label, typ) =>
-		     (label, freshId (exp_info (Source.nowhere, typ))))
+		    List.map (fn (label, _) =>
+			      (label, freshId {region = Source.nowhere}))
 		    labelTypList
 	    in
 		(O.RecArgs labelIdList,
@@ -689,7 +696,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateTest (RefAppTest typ, pos, mapping) =
 	    let
-		val id = freshId (exp_info (Source.nowhere, typ))
+		val id = freshId {region = Source.nowhere}
 		val mapping' =
 		    (LABEL (Label.fromString "ref")::pos, id)::mapping
 	    in
@@ -698,8 +705,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTest (TupTest typs, pos, mapping) =
 	    let
 		val ids =
-		    List.map (fn typ =>
-			      freshId (exp_info (Source.nowhere, typ))) typs
+		    List.map (fn _ => freshId {region = Source.nowhere}) typs
 		val mapping' =
 		    List.foldli
 		    (fn (i, id, mapping) =>
@@ -711,9 +717,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTest (RecTest labelTypList, pos, mapping) =
 	    let
 		val labelIdList =
-		    List.map (fn (label, typ) =>
-			      (label,
-			       freshId (exp_info (Source.nowhere, typ))))
+		    List.map (fn (label, _) =>
+			      (label, freshId {region = Source.nowhere}))
 		    labelTypList
 		val mapping' =
 		    ListPair.foldr (fn ((label, _), (_, i), mapping) =>
@@ -724,7 +729,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    end
 	  | translateTest (LabTest (label, typ), pos, mapping) =
 	    let
-		val id = freshId (exp_info (Source.nowhere, typ))
+		val id = freshId {region = Source.nowhere}
 		val mapping' = ((LABEL label::pos), id)::mapping
 	    in
 		(nil, O.LabTest (label, id), mapping')
@@ -732,8 +737,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateTest (VecTest typs, pos, mapping) =
 	    let
 		val ids =
-		    List.map (fn typ =>
-			      freshId (exp_info (Source.nowhere, typ))) typs
+		    List.map (fn _ => freshId {region = Source.nowhere}) typs
 		val mapping' =
 		    List.foldli
 		    (fn (i, id, mapping) =>
@@ -748,7 +752,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	fun translate () (desc, (imports, (exportExp, sign))) =
 	    let
 		fun export exp =
-		    O.ExportStm (stmInfo (#region (infoExp exportExp)), exp)
+		    O.ExportStm (stm_info (#region (infoExp exportExp)), exp)
 	    in
 		(imports, (translateExp (exportExp, export, Goto nil), sign))
 	    end

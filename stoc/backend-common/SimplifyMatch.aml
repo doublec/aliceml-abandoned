@@ -129,8 +129,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val (posPatList, args) =
 		    makeAppArgs (pat, isNAry, LABEL label::pos)
 		val typ = Type.inArrow (typPat pat, #typ info)
-		val info' = exp_info (Source.nowhere, typ)
-		val conArity = makeConArity (info', isNAry)
+		val conArity = makeConArity (typ, isNAry)
 	    in
 		List.foldl (fn ((pos, pat), (rest, mapping)) =>
 			    makeTestSeq (pat, pos, rest, mapping))
@@ -145,8 +144,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val (posPatList, args) =
 		    makeAppArgs (pat, isNAry, longidToSelector longid::pos)
 		val typ = Type.inArrow (typPat pat, #typ info)
-		val info' = exp_info (Source.nowhere, typ)
-		val conArity = makeConArity (info', isNAry)
+		val conArity = makeConArity (typ, isNAry)
 	    in
 		List.foldl (fn ((pos, pat), (rest, mapping)) =>
 			    makeTestSeq (pat, pos, rest, mapping))
@@ -587,7 +585,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	    fun process (ONE, graph, consequents, info) =
 		let
-		    val id = freshId info
+		    val id = freshId (id_info info)
 		in
 		    (O.OneArg id, graph, [(nil, id)], consequents)
 		end
@@ -595,8 +593,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 consequents, _) =
 		let
 		    val ids =
-			List.map (fn typ =>
-				  freshId (exp_info (Source.nowhere, typ)))
+			List.map (fn _ => freshId {region = Source.nowhere})
 			typs
 		    val labelIdList =
 			List.mapi (fn (i, id) =>
@@ -613,9 +610,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 consequents, _) =
 		let
 		    val labelIdList =
-			List.map (fn (label, typ) =>
-				  (label,
-				   freshId (exp_info (Source.nowhere, typ))))
+			List.map (fn (label, _) =>
+				  (label, freshId {region = Source.nowhere}))
 			labelTypList
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>

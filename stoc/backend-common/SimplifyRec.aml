@@ -67,7 +67,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun patToExp (JokPat info) =
 	    let
-		val id = freshId info
+		val id = freshId (id_info info)
 	    in
 		(VarPat (info, id), VarExp (info, ShortId (id_info info, id)))
 	    end
@@ -80,8 +80,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val (pat', exp') = patToExp pat
 		val info' =
-		    exp_info (#region info,
-			      Type.inArrow (#typ (infoPat pat), #typ info))
+		    {region = #region info,
+		     typ = Type.inArrow (#typ (infoPat pat), #typ info)}
 	    in
 		(TagPat (info, lab, SOME pat', isNAry),
 		 AppExp (info, TagExp (info', lab, isNAry), exp'))
@@ -92,8 +92,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val (pat', exp') = patToExp pat
 		val info' =
-		    exp_info (#region info,
-			      Type.inArrow (#typ (infoPat pat), #typ info))
+		    {region = #region info,
+		     typ = Type.inArrow (#typ (infoPat pat), #typ info)}
 	    in
 		(ConPat (info, longid, SOME pat', isNAry),
 		 AppExp (info, ConExp (info', longid, isNAry), exp'))
@@ -102,7 +102,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val (pat', exp') = patToExp pat
 		val info' =
-		    exp_info (#region info, mkRefTyp (#typ (infoPat pat)))
+		    {region = #region info,
+		     typ = mkRefTyp (#typ (infoPat pat))}
 	    in
 		(RefPat (info, pat'), AppExp (info, RefExp info', exp'))
 	    end
@@ -376,7 +377,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			val info = {region = Source.nowhere}
 		    in
 			[Field (info, Lab (info, label),
-				I.JokPat (exp_info (Source.nowhere, typ)))]
+				I.JokPat {region = Source.nowhere, typ = typ})]
 		    end
 		val patFields' =
 		    List.foldr adjoin patFields labelTypList

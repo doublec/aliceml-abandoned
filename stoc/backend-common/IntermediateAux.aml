@@ -15,11 +15,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure I = IntermediateGrammar
 	open I
 
-	fun id_info ({region, ...}: exp_info): id_info = {region = region}
-	fun exp_info (region, typ): exp_info = {region = region, typ = typ}
+	fun id_info {region, typ = _} = {region = region}
 
-	fun freshId (info: exp_info) =
-	    Id (id_info info, Stamp.new (), Name.InId)
+	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
@@ -271,7 +269,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)
 	  | relax (VarPat (info, id), subst) =
 	    let
-		val id' = freshId info
+		val id' = freshId (id_info info)
 	    in
 		(VarPat (info, id'), (id, id', info)::subst)
 	    end
@@ -364,7 +362,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		      | (_, _) =>
 			    raise Crash.Crash "IntermediateAux.parseRow 2"
 	in
-	    fun makeConArity ({typ, ...}: I.exp_info, isNAry) =
+	    fun makeConArity (typ, isNAry) =
 		if Type.isArrow typ then
 		    if isNAry then
 			let

@@ -603,19 +603,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))
 	and genArgs (OneArg id) = emitId id
 	  | genArgs (TupArgs ids) =
-	    let
-		val info = {region = Source.nowhere,
-			    typ = Type.unknown Type.STAR}   (*--** type *)
-	    in
-		genExp (TupExp (info, ids), BOTH)
-	    end
+	    genExp (TupExp ({region = Source.nowhere}, ids), BOTH)
 	  | genArgs (RecArgs labelIdList) =
-	    let
-		val info = {region = Source.nowhere,
-			    typ = Type.unknown Type.STAR}   (*--** type *)
-	    in
-		genExp (RecExp (info, labelIdList), BOTH)
-	    end
+	    genExp (RecExp ({region = Source.nowhere}, labelIdList), BOTH)
 	and genBody (stm::stms) =
 	    (case #liveness (infoStm stm) of
 		 ref (Kill set) => kill set

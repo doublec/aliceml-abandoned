@@ -13,20 +13,28 @@
 structure FlatGrammar: FLAT_GRAMMAR =
     (*--** the above signature constraint should be opaque, but SML/NJ bombs *)
     struct
-	(* Literals *)
+	(* Annotations *)
+
+	datatype livenessInfo =
+	    Unknown
+	  | LoopStart   (* internal *)
+	  | LoopEnd   (* internal *)
+	  | Use of StampSet.t   (* internal *)
+	  | Kill of StampSet.t
+
+	type id_info = {region: Source.region}
+	type stm_info = {region: Source.region, liveness: livenessInfo ref}
+	type exp_info = {region: Source.region}
+
+	(* Statements and Expressions *)
 
 	datatype lit = datatype IntermediateGrammar.lit
 
-	(* Identifiers *)
-
 	type stamp = Stamp.t
 	type name = Name.t
-
-	datatype id = datatype IntermediateGrammar.id
-
 	type label = Label.t
 
-	(* Expressions and Declarations *)
+	datatype id = datatype IntermediateGrammar.id
 
 	datatype conArity =
 	    Nullary
@@ -44,17 +52,6 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | TupArgs of 'a list
 	  | RecArgs of (label * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
-
-	datatype livenessInfo =
-	    Unknown
-	  | LoopStart   (* internal *)
-	  | LoopEnd   (* internal *)
-	  | Use of StampSet.t   (* internal *)
-	  | Kill of StampSet.t
-
-	type id_info = {region: Source.region}
-	type stm_info = {region: Source.region, liveness: livenessInfo ref}
-	type exp_info = {region: Source.region, typ: Type.t}
 
 	datatype test =
 	    LitTest of lit
