@@ -18,11 +18,12 @@
 #include "Base.hh"
 
 class Block;
+class ConcreteRepresentation;
 
 class DllExport ConcreteRepresentationHandler {
 public:
   // returns INVALID_POINTER if there is none
-  virtual Block *GetAbstractRepresentation(Block *blockWithHandler) = 0;
+  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *) = 0;
 };
 
 #endif

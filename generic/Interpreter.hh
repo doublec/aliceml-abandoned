@@ -36,7 +36,7 @@ public:
   // Interpreter Constructor
   Interpreter() {}
   // ConcreteRepresentation Methods
-  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
+  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure) = 0;
   // Runtime compilation

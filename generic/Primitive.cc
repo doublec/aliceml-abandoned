@@ -70,7 +70,7 @@ public:
   }
   static Result Run(PrimitiveInterpreter *interpreter);
   // Handler Methods
-  virtual Block *GetAbstractRepresentation(Block *blockWithHandler);
+  virtual Block *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure);
   // Execution
@@ -118,11 +118,11 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
 }
 
 Block *
-PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
+PrimitiveInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   if (sited) {
     return INVALID_POINTER;
   } else {
-    ConcreteCode *concreteCode = static_cast<ConcreteCode *>(blockWithHandler);
+    ConcreteCode *concreteCode = static_cast<ConcreteCode *>(b);
     return Store::DirectWordToBlock(concreteCode->Get(0));
   }
 }
