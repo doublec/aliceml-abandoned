@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2003
  *   Andreas Rossberg, 2000
  *
  * Last change:
@@ -25,16 +25,19 @@ signature URL =
 	type fragment = string option
 
 	exception Malformed
+	exception NotLocal
+
+	(* Constructing URLs *)
 
 	val empty: url
-	val fromString: string -> url              (* Malformed *)
-	val toString: url -> string
-	val toStringRaw: url -> string   (*--** replace by getLocalPath *)
-	val isAbsolute: url -> bool
-	val resolve: url -> url -> url
-	val equal: url * url -> bool
-	val compare: url * url -> order
-	val hash: url -> int
+	val setScheme: url * scheme -> url         (* Malformed *)
+	val setAuthority: url * authority -> url   (* Malformed *)
+	val setDevice: url * device -> url         (* Malformed *)
+	val makeAbsolutePath: url -> url
+	val makeRelativePath: url -> url
+	val setPath: url * path -> url
+	val setQuery: url * query -> url           (* Malformed *)
+	val setFragment: url * fragment -> url
 
 	(* Accessing URL Constituents *)
 
@@ -46,12 +49,15 @@ signature URL =
 	val getQuery: url -> query
 	val getFragment: url -> fragment
 
-	val setScheme: url * scheme -> url         (* Malformed *)
-	val setAuthority: url * authority -> url   (* Malformed *)
-	val setDevice: url * device -> url         (* Malformed *)
-	val makeAbsolutePath: url -> url
-	val makeRelativePath: url -> url
-	val setPath: url * path -> url
-	val setQuery: url * query -> url           (* Malformed *)
-	val setFragment: url * fragment -> url
+	(* Operations on URLs *)
+
+	val fromString: string -> url              (* Malformed *)
+	val toString: url -> string
+	val toStringRaw: url -> string
+	val toLocalFile: url -> string             (* NotLocal *)
+	val isAbsolute: url -> bool
+	val resolve: url -> url -> url
+	val equal: url * url -> bool
+	val compare: url * url -> order
+	val hash: url -> int
     end
