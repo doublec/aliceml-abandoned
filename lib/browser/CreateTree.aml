@@ -62,14 +62,12 @@ struct
     (* adopted from stockhausen/lib/system/PPValue.aml *)
 
      fun lookupPath(sign, modLab, typLab) =
-	 let
-	     val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
+	 let val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
 	     val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
 	     val typ'  = if Type.isApply typ 
 			     then #1(Type.asApply typ) 
 			 else typ
-	 in
-	     Type.asCon typ'
+	 in Type.asCon typ'
 	 end
 
     (* newTree *)
@@ -93,11 +91,14 @@ struct
 					     then UnsafeValue.same(asValue(#1(t)),va)   
 					 else (* structural equality *)
 					     asValue(#1(t)) = va  
-		      val new_relman = ( case List.find f relman of
-					 NONE => RelMan.update(reldict,
-							       (ind,(V va,ref 1,!relnumber)::relman))
-			               | SOME (rv,co,nu) => co := !co + 1
-				        ; valOf(RelMan.lookup(reldict,ind)) )
+		      val new_relman = 
+			  ( case List.find f relman of
+				NONE (* Einfuegen des neuen Wertes *)
+				=> RelMan.update(reldict,
+						 (ind,(V va,ref 1,!relnumber)::relman))
+			      | SOME (rv,co,nu) (* Wert schon vorhanden - Zaehler wird erhoeht *)
+				=> co := !co + 1
+			   ; valOf(RelMan.lookup(reldict,ind)) )
 		      val (rva,count,number) = valOf(List.find f new_relman)
 		      val str = "Ref"^Int.toString(number)
 		      val node = if !count = 1 
@@ -119,7 +120,7 @@ struct
 	    then createLimit(createValue(va,t),DEPTH_LIMIT,p,i,d,root)
 	else if (isSome(opt) andalso valOf(opt) > !max_width) 
                  orelse (isListType t andalso !max_width = 0)
-		 (* BREITENFILTER (fuer Listen) *)
+	       (* BREITENFILTER (fuer Listen bei geschachtelter Darstellung) *)
 		 then  let val desc = if isListType t then createValue(va,t)
 				      else INTERPUNCT
 		       in 
@@ -567,7 +568,7 @@ struct
 	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d+1,root) ) 
   	     
 (* spezielle Behandlung von Futures *)
-   
+ 
     (* createFutureNode *)
     and createFutureNode (va,t,p,i,d,root) = 
 	let val desc = createValue(va,t)
@@ -596,85 +597,68 @@ struct
           ; simple )
 	end 	
   
-(* entsprechende Funktionen zur internen Darstellung von Strukturen und
-   Funktoren - analog zu newNode, createGraph und createUsualGraph (s.o.) *)
+(********* entsprechende Funktionen zur internen Darstellung von MODULEN *********)
+(*********   Code analog zu newTree, createGraph und createUsualGraph    *********)
 
     (* newTreeInf *)
     and newTreeInf (va,t,i,root) = createGraphInf (va,t,Empty,i,0,root)
-			         
- 
-    (* createGraphInf *)
-    and createGraphInf (va,t,p,i,d,root) = 
-	if !(Settings.relmode) 
-	    then let val ind = if p = Empty then i else getAncIndex p
-		     val relman = case RelMan.lookup(reldict,ind)
-			 of SOME x => x
-		          | NONE => []
-		     val desc = createIValue(va,t) 
-                     val str = "Ref"^Int.toString(!relnumber)
-                     val f = fn t: value * int ref * int
-			     => isModule (#1(t)) andalso
-			        if !tokenmode (* token equality *)
-				    then UnsafeValue.same(asModule(#1(t)),va)   
-				else (* structural equality *)
-				    asModule(#1(t)) = va 
-		 (* Suche, ob der Wert bereits dargestellt worden ist *) 
-		 in 
-		     (case List.find f relman of   
-		      NONE (* erstmalige Darstellung des Wertes, da er noch nicht 
-                              dargestellt worden ist *) 
-		      => let val count = ref 1
-			     val node = createRelNode (desc,Empty,p,i,d,
-						       count,str^" as ",
-						       relman,root)
-			     val c = createUsualGraphInf (va,t,node,0,d,root) 
-			     (* rekursiver Aufbau des Inhalts *)
-			     val actrelman =  valOf(RelMan.lookup(reldict,ind))
-				 handle Option => []
-			     val new_relman = (M va,count,!relnumber-1)::actrelman
-			 in (setContent (node,c)   
-			     ; RelMan.update(reldict,(ind,new_relman)) 
-			     (* Anhaengen der neuen RelNode an den Relationsmanager *)
-			     ; node )
-			 end     
-		    | SOME (rva,count,number) (* Wert bereits dargestellt - Referenzbildung *)
-		      => let val str = "Ref "^Int.toString(number)	
-			     val node = createRelRefNode (desc,p,i,d,str,root)
-			 in ( count := !count + 1
-			     ; if !count > 0 
-				   then let val c = createUsualGraphInf (va,t,node,0,d,root)
-					    val actrelman = valOf(RelMan.lookup(reldict,ind))
-						handle Option => []
-					    val new_relman = (M va,count,!relnumber-1)::actrelman
-					in ( setContent (node,c)   
-					    ; RelMan.update(reldict,(ind,new_relman)) )
-					end 
-			       else ()    
-			    ; node)
-			 end)
-		 end
-	else (* kein Relationsmodus *) 
-	    createUsualGraphInf (va,t,p,i,d,root)
-	    
-    (* createUsualGraphInf *)
+
+     and createGraphInf (va,t,p,i,d,root) =
+	 if !relmode (* Konstruktion im Relationsmodus *)
+	     then let val ind = if p = Empty then i else getAncIndex p 
+		      val desc = createIValue(va,t) 
+		      val relman = 
+			    case RelMan.lookup(reldict,ind)
+			      of SOME x => x (* Relationsmanager existiert bereits *)
+		               | NONE => []
+		      val f = fn t: value * int ref * int
+			      => isModule (#1(t)) 
+			         andalso if !tokenmode (* token equality *)
+					     then UnsafeValue.same(asModule(#1(t)),va)   
+					 else (* structural equality *)
+					     asModule(#1(t)) = va  
+		      val new_relman = 
+			  ( case List.find f relman of
+				NONE (* Einfuegen des neuen Wertes *)
+				=> RelMan.update(reldict,
+						 (ind,(M va,ref 1,!relnumber)::relman))
+			      | SOME (rv,co,nu) 
+				=> co := !co + 1 (* Wert schon vorhanden - Zaehler wird erhoeht *)
+			   ; valOf(RelMan.lookup(reldict,ind)) )
+		      val (rva,count,number) = valOf(List.find f new_relman)
+		      val str = "Ref"^Int.toString(number)
+		      val node = if !count = 1 
+				     then createRelNode (desc,Empty,p,i,d,count,
+							 str^" as ",relman,root)
+				 else createRelRefNode(desc,p,i,d,str,root) 
+		  in ( if !count = 1 
+			   then let val c = createUsualGraphInf (va,t,node,0,d,root)
+				in setContent (node,c)  
+				end 
+		       else ()
+                     ; node )
+		  end 
+	 else createUsualGraphInf (va,t,p,i,d,root) 
+ 			         
+    (* createUsualGraphInf *) 
     and createUsualGraphInf (va,t,p,i,d,root) = 
-	if d > !max_depth (* TIEFENFILTER *)	
-	    then let val desc = createIValue(va,t) 
-		 in createLimit(desc,DEPTH_LIMIT,p,i,d,root)
+	if d > !max_depth (* TIEFENFILTER *)	  
+	    then let val desc = createIValue(va,t)  
+		 in createLimit(desc,DEPTH_LIMIT,p,i,d,root) 
 		 end 
-	else (* maximale Tiefe nicht ueberschritten *)
-	(case Inf.inspect t of 
-	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s))
-		       in treatSig (va,t,p,i,d,ilist,root)
-		       end 
+	else (* maximale Tiefe nicht ueberschritten *)  
+	(case Inf.inspect t of  
+	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s)) 
+		       in treatSig (va,t,p,i,d,ilist,root) 
+		       end  
        | Inf.Arrow(path,i1,i2) 
-	 => createSimple (createIValue(va,t),p,i,d,"functor",
-			       DEFAULT,root)
-       | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d,root)
-       | Inf.Sing(m) => let val ti = #2(Inf.asMod(m))
-			  in createUsualGraphInf (va,ti,p,i,d,root)
-			  end
-       | _ => createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) )
+	 => createSimple (createIValue(va,t),p,i,d,"functor", 
+			       DEFAULT,root) 
+       | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d,root) 
+       | Inf.Sing(m) => let val ti = #2(Inf.asMod(m)) 
+			in createUsualGraphInf (va,ti,p,i,d,root)
+			end 
+       | _ => createSimple (INTERPUNCT,p,i,d,"_",DEFAULT,root) ) 
 
 
     (* treatSig *)

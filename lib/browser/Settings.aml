@@ -19,8 +19,8 @@ import signature SETTINGS from "SETTINGS-sig"
 structure Settings :> SETTINGS = 
 struct 
 
-    val max_width = ref 10
-    val max_depth = ref 5
+    val max_width = ref 30
+    val max_depth = ref 8
 
     val max_x = ref 0.0
     val max_y = ref 0.0 
