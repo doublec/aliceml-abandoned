@@ -74,7 +74,7 @@ public:
 			      Closure *closure,
 			      Tuple *immediateArgs,
 			      word continuation,
-			      int nbLocals) {
+			      u_int nbLocals) {
     u_int frSize      = BASE_SIZE + nbLocals;
     StackFrame *frame = StackFrame::New(NATIVE_CODE_FRAME, interpreter, frSize);
     frame->InitArg(PC_POS, pc);
@@ -124,7 +124,7 @@ static inline word MakeNativeFrame(word continuation, Closure *closure) {
   NativeConcreteCode *concreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
   Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
-  int nLocals = concreteCode->GetNLocals();
+  u_int nLocals        = concreteCode->GetNLocals();
   Chunk *code          = concreteCode->GetNativeCode();
   Tuple *immediateArgs = concreteCode->GetImmediateArgs();
   return NativeCodeFrame::New(NativeCodeInterpreter::self,
