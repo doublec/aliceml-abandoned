@@ -45,7 +45,7 @@ int main(void) {
 
   printf("SIZE_MASK is %x\n", StringToHexValue("00011111111111111110000000000000"));
   
-  Store::InitStore(memLimits, 75);
+  Store::InitStore(memLimits, 75, 20);
   
   std::printf("Allocating...\n");
   p = Store::AllocBlock(Store::MakeLabel(0), 1);

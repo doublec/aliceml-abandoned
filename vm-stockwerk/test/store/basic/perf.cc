@@ -125,14 +125,14 @@ int main(void) {
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
     memLimits[i] = (i + 1) * STORE_MEMCHUNK_SIZE;
   }
-  Store::InitStore(memLimits, 75);
+  Store::InitStore(memLimits, 75, 20);
 
   p = Store::AllocBlock(MIN_DATA_LABEL, 1);
   std::printf("Creating List...\n");
   Store::gcLiveMem = 0;
   Store::totalMem = 0;
   gettimeofday(&start_t, INVALID_POINTER);
-  p->InitArg(0, CreateList(2000000));
+  p->InitArg(0, CreateList(4000000));
   gettimeofday(&end_t, INVALID_POINTER);
   std::printf("Done\n");
   Store::ResetTime();
