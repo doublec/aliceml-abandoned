@@ -137,8 +137,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Real.compare", SOME (TupArity 2));
 		ins ("Real.floor", SOME Unary);
 		ins ("Real.fromInt", SOME Unary);
-		ins ("Real.negInf", NONE);
-		ins ("Real.posInf", NONE);
 		ins ("Real.precision", NONE);
 		ins ("Real.realCeil", SOME Unary);
 		ins ("Real.realFloor", SOME Unary);
