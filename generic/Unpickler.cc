@@ -95,7 +95,7 @@ public:
   }
   u_int GetUInt() {
     int shift = 0;
-    int freeBits = sizeof(u_int) * 8 - 1; //--** use store constant
+    int freeBits = sizeof(u_int) * 8 - 1;
     u_int value = 0;
     u_char b;
     do {
