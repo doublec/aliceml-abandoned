@@ -21,6 +21,7 @@
 #include "emulator/Unpickler.hh"
 #include "emulator/BootLinker.hh"
 #include "emulator/Properties.hh"
+#include "emulator/Alice.hh"
 
 // Make Interpreter visible
 #include "emulator/PushCallInterpreter.hh"
@@ -80,16 +81,28 @@ int main(int argc, char *argv[]) {
   Unpickler::Init();
   BootLinker::Init(builtins);
   BootLinker::SetTraceMode(1);
+  // Parse command line
   if (argc < 2) {
     fprintf(stderr, "usage: %s component\n", argv[0]);
     exit(0);
   }
   else {
+    Chunk *rootUrl      = NewChunk(argv[1]);
+    word urlWord        = rootUrl->ToWord();
+    argv++; argc--;
+    Properties::rootUrl = urlWord;
+    Chunk *bootUrl      = NewChunk("lib/system/Boot"); // to be done
+    // Initialize Properties::commandLineArguments:
+    word tail = Store::IntToWord(1); // nil
+    argv++; argc--;
+    for (u_int i = argc; i--; ) {
+      TagVal *cons = TagVal::New(0, 2); // ::
+      cons->Init(0, String::New(argv[i])->ToWord());
+      cons->Init(1, tail);
+      tail = cons->ToWord();
+    }
+    Properties::commandLineArguments = tail;
     // Link and Execute Component
-    // to be done: Argument transfer to app
-    Chunk *rootUrl  = NewChunk(argv[1]);
-    Chunk *bootUrl  = NewChunk("lib/system/Boot");
-    word urlWord    = rootUrl->ToWord();
     RootSet::Add(urlWord);
     word module = BootLinker::Link(bootUrl); // might yield GC
     RootSet::Remove(urlWord);
