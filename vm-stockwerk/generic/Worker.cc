@@ -19,6 +19,7 @@
 #include "generic/Interpreter.hh"
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
+#include "generic/Tuple.hh"
 
 #if PROFILE
 #include "generic/String.hh"
