@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Test     from "../src/Test"
+
+signature TESTSUITE =
+sig
+
+    val suite: Test.test_suite
+
+end
