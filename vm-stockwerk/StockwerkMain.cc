@@ -34,11 +34,15 @@ static prim_table builtins[] =
 
 static inline
 Chunk *NewChunk(const char *s) {
-  u_int len  = strlen(s) + 1;
+  u_int len  = strlen(s);
   Chunk *p   = Store::AllocChunk(len);
   char *base = p->GetBase();
-  memcpy(base, p, len);
+  memcpy(base, s, len);
   return p;
+}
+
+static void Print(Chunk *c) {
+  fprintf(stderr, "'%*s'\n", c->GetSize(), c->GetBase());
 }
 
 int main(int argc, char *argv[]) {
@@ -73,8 +77,8 @@ int main(int argc, char *argv[]) {
   else {
     // Link and Execute Component
     // to be done: Argument transfer to app
-    Chunk *rootUrl  = NewChunk(argv[1]);
-    Chunk *bootUrl  = NewChunk("lib/system/Boot");
+    Chunk *rootUrl  = NewChunk(argv[1]); BootLinker::Print(rootUrl);
+    Chunk *bootUrl  = NewChunk("lib/system/Boot"); BootLinker::Print(bootUrl);
     word module     = BootLinker::Link(bootUrl);
     Tuple *tuple    = Tuple::FromWord(module);
     Assert(tuple->GetWidth() == 1);

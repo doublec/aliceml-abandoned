@@ -432,17 +432,27 @@ void BootLinker::Init(char *home, prim_table *builtins) {
 			       INITIAL_TABLE_SIZE)->ToWord();
   RootSet::Add(moduleTable);
   aliceHome = home;
+  // Initialize Interpreters
+  ApplyInterpreter::Init();
+  EnterInterpreter::Init();
+  LinkInterpreter::Init();
+  LoadInterpreter::Init();
   // Import builtin native Modules
   while (builtins->name != NULL) {
+    fprintf(stderr, "BootLinker::Init: found builtins\n");
     GetModuleTable()->
       InsertItem(String::New(builtins->name)->ToWord(), builtins->module);
     builtins++;
   }
 }
 
+void BootLinker::Print(Chunk *c) {
+  fprintf(stderr, "'%*s'\n", c->GetSize(), c->GetBase());
+}
+
 void BootLinker::Trace(const char *prefix, Chunk *key) {
   if (traceFlag) {
-    fprintf(stderr, "%s %*s\n", prefix, key->GetSize(), key->GetBase());
+    fprintf(stderr, "%s '%*s'\n", prefix, key->GetSize(), key->GetBase());
   }
 }
 
@@ -472,11 +482,15 @@ Chunk *BootLinker::MakeFileName(Chunk *key) {
   // Hack to ensure 0x00 terminated strings
   u_int hSize  = strlen(aliceHome);
   u_int kSize  = key->GetSize();
-  Chunk *path  = Store::AllocChunk(hSize + kSize + 1);
+  Chunk *path  = Store::AllocChunk(hSize + kSize + 5);
   char *base   = path->GetBase();
   strcpy(base, aliceHome);
   strncpy(base + hSize, key->GetBase(), kSize);
   base[hSize + kSize] = (char) 0x00;
+  strcat(base, ".stc");
+  base[hSize + kSize + 4] = (char) 0x00;
+  fprintf(stderr, "MakeFileName: result:");
+  Print(path);
   return path;
 }
 

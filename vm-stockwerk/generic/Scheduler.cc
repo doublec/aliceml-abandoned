@@ -38,6 +38,21 @@ void Scheduler::Init() {
   RootSet::Add(root);
 }
 
+static const char *ResultToString(Interpreter::Result result) {
+  switch (result) {
+  case Interpreter::CONTINUE:
+    return "CONTINUE";
+  case Interpreter::PREEMPT:
+    return "PREEMPT";
+  case Interpreter::RAISE:
+    return "RAISE";
+  case Interpreter::REQUEST:
+    return "REQUEST";
+  case Interpreter::TERMINATE:
+    return "TERMINATE";
+  }
+}
+
 void Scheduler::Run() {
   //--** start timer thread
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
@@ -50,13 +65,11 @@ void Scheduler::Run() {
     while (!nextThread) {
       preempt = false;
       Interpreter *interpreter = taskStack->GetInterpreter();
-      fprintf(stderr, "Executing frame %s, %s\n",
-	      interpreter->Identify(),
-	      interpreter->ToString(Store::IntToWord(0), taskStack));
+      //      fprintf(stderr, "Executing frame %s\n", interpreter->Identify());
       Interpreter::Result result =
 	interpreter->Run(currentThread->GetArgs(), taskStack);
     interpretResult:
-      fprintf(stderr, "Got result %d\n", result);
+      //      fprintf(stderr, "Got result %s\n", ResultToString(result));
       switch (result) {
       case Interpreter::CONTINUE:
 	currentThread->SetArgs(currentArgs);

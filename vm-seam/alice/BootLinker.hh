@@ -46,6 +46,7 @@ public:
   static word Link(Chunk *url);
   // BootLinker Static Constructor
   static void Init(char *home, prim_table *table);
+  static void Print(Chunk *c);
 };
 
 #endif
