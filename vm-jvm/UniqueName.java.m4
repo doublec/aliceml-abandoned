@@ -47,7 +47,7 @@ public class UniqueName extends Name {
     final protected Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(name);
-	if (o==null) {
+	if (o == null) {
 	    GName.gNames.put(name,this);
 	    return this;
 	} else {

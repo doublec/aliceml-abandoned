@@ -92,24 +92,26 @@ final public class List {
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue first,v1);
-	    if (first==nil)
+	    if (first == nil)
 		return v2;
 	    else if (first instanceof Cons) {
 		Cons newList = new Cons(null,null);
 		Cons cons = newList;
-		while (first!=nil) {
+		while (first != nil) {
 		    if (first instanceof Cons) {
 			Cons fc = (Cons) first;
 			cons.cdr = new Cons(fc.car,null);
 			cons=(Cons) cons.cdr;
 			_REQUEST(first,fc.cdr);
 		    } else {
-			_RAISENAME(General.Match);
+			System.err.println(first);
+			dnl _RAISENAME(General.Match);
 		    }
 		}
 		cons.cdr = v2;
 		return newList.cdr;
 	    } else {
+		System.err.println(first);
 		_RAISENAME(General.Match);
 	    }
 	}
