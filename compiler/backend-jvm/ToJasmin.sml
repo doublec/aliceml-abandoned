@@ -732,7 +732,7 @@ structure ToJasmin =
 			     let
 				 fun flatten (switch::switches, lab::labels) =
 				     flatten (switches, labels)^
-				     ("\t"^int32ToString switch^
+				     ("\t"^int32ToString switch^" "^
 				      LabelMerge.condJump lab^"\n")
 				   | flatten _ = ""
 			     in
