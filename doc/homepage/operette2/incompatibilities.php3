@@ -9,7 +9,7 @@
 
   <P>
     Most Alice extensions to SML'97 are conservative. There are some
-    incompatibilies to SML'97 however. Most of them are quite pathological,
+    incompatibilies with SML'97 however. Most of them are quite pathological,
     caught on compile time, and can easily be fixed in an SML compatible way.
   </P>
 
@@ -124,7 +124,7 @@
   </PRE>
 
   <P>
-    Both these declarations are legal in SML'97 due to some artefact of the
+    Both these declarations are legal in SML'97 due as an artefact of the
     formal language specification and would introduce a function named
     <TT>NONE</TT>, hiding the constructor status of <TT>NONE</TT>. In Alice it
     produces a type clash because it is interpreted as trying to match
@@ -205,6 +205,10 @@
       </PRE>
     </LI>
   </UL>
+
+  <P>
+    The same restrictions are imposed in Moscow ML.
+  </P>
 
   <P>
     Fix:
