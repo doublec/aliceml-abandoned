@@ -36,16 +36,23 @@ structure ToJasmin =
 		     enter rest)
 		  | enter (_::rest) = enter rest
 		  | enter nil = ()
-		fun merge (Label lab'::Goto lab''::rest) =
-		    Goto (directJump lab'')::merge rest
-		  | merge (Label lab'::(rest as (Label lab''::_))) =
-		    merge rest
-		  | merge (x::rest) = x::merge rest
-		  | merge nil = nil
+		fun deadCode (Label lab'::Goto lab''::rest, false) =
+		    Goto (directJump lab'')::deadCode (rest, true)
+		  | deadCode (Label lab'::(rest as (Label lab''::_)), dead) =
+		    deadCode (rest,dead)
+		  | deadCode ((l as Label _)::rest, true) =
+		    l::deadCode (rest, false)
+		  | deadCode (x::rest, true) =
+		    deadCode (rest, true)
+		  | deadCode ((l as Goto _)::rest, false) =
+		    l::deadCode (rest, true)
+		  | deadCode (x::rest, false) =
+		    x::deadCode (rest, false)
+		  | deadCode (nil, _) = nil
 	    in
 	    labelMerge := StringHash.new();
 	    enter insts;
-	    merge insts
+	    deadCode (insts, false)
 	    end
 
 	local
