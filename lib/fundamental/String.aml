@@ -68,7 +68,7 @@ struct
 				  (isSubstring''(s1,s2,i,0)
 				  orelse isSubstring'(s1,s2,i+1))
     and isSubstring''(s1,s2,i,j)= j = size s1 orelse
-				  sub'(s1,i) = sub'(s2,i+j) andalso
+				  sub'(s1,j) = sub'(s2,i+j) andalso
 				  isSubstring''(s1,s2,i,j+1)
 
     __primitive val op < :	string * string -> bool  = "String.<"

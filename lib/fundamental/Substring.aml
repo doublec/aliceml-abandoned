@@ -77,11 +77,11 @@ struct
 				  andalso isSuffix'(s,ss,i1-1,i2-1)
 
     fun isSubstring s ss	= isSubstring'(s,ss,0)
-    and isSubstring'(s,ss,i)	= i + String.size s < size ss
-				  andalso isSubstring''(s,ss,i,0)
-				  orelse isSubstring'(s,ss,i+1)
+    and isSubstring'(s,ss,i)	= i + String.size s <= size ss andalso
+				  (isSubstring''(s,ss,i,0)
+				  orelse isSubstring'(s,ss,i+1))
     and isSubstring''(s,ss,i,j)	= j = String.size s orelse
-				  String.sub(s,i) = sub(ss,i+j) andalso
+				  String.sub(s,j) = sub(ss,i+j) andalso
 				  isSubstring''(s,ss,i,j+1)
 
     fun tokens  f s		= tokens'(f,s,0,0,nil)
