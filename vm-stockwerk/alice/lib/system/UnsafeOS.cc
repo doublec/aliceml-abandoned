@@ -1,9 +1,11 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//   Leif Kornstaedt <kornstaedt@ps.uni-sb.de>
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
+//   Leif Kornstaedt, 2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -41,43 +43,25 @@ static word SysErrConstructor;
 // UnsafeOS.FileSys Structure
 //
 
-DEFINE1(FileSys_chDir) {
+DEFINE1(UnsafeOS_FileSys_chDir) {
   DECLARE_STRING(name, x0);
-  int res = chdir(name->ExportC());
-  if (res) {
+  if (chdir(name->ExportC())) {
     const char *err = "chDir: cannot change directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
-  else {
-    RETURN_UNIT;
-  }
+  RETURN_UNIT;
 } END
 
-DEFINE1(FileSys_fileSize) {
-  DECLARE_STRING(name, x0);
-  struct stat info;
-  int res = stat(name->ExportC(), &info);
-  if (res) {
-    RETURN_INT(info.st_size);
-  }
-  else {
-    const char *err = "fileSize: cannot get file size";
-    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
-  }
-} END
-
-DEFINE0(FileSys_getDir) {
+DEFINE0(UnsafeOS_FileSys_getDir) {
   char buf[MAX_PATH];
-  if (getcwd(buf, MAX_PATH)) {
-    RETURN(String::New(buf)->ToWord());
-  }
-  else {
+  if (!getcwd(buf, MAX_PATH)) {
     const char *err = "getDir: cannot get directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
+  RETURN(String::New(buf)->ToWord());
 } END
 
-DEFINE1(FileSys_mkDir) {
+DEFINE1(UnsafeOS_FileSys_mkDir) {
   DECLARE_STRING(name, x0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int res = mkdir(name->ExportC());
@@ -87,40 +71,53 @@ DEFINE1(FileSys_mkDir) {
 		  S_IRGRP | S_IWGRP | S_IXGRP |
 		  S_IROTH | S_IWOTH | S_IXOTH);
 #endif
-  if (!res) {
-    RETURN_UNIT;
-  } else {
+  if (res) {
     const char *err = "mkDir: cannot create directory";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
+  RETURN_UNIT;
 } END
 
-DEFINE1(FileSys_modTime) {
+DEFINE1(UnsafeOS_FileSys_isDir) {
   DECLARE_STRING(name, x0);
   struct stat info;
-  int res = stat(name->ExportC(), &info);
-  if (!res) {
-    RETURN_INT(info.st_mtime * 100000000);
+  if (stat(name->ExportC(), &info)) {
+    const char *err = "isDir: cannot get file attributes";
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
-  else {
+  RETURN_BOOL(S_ISDIR(info.st_mode));
+} END
+
+DEFINE1(UnsafeOS_FileSys_fileSize) {
+  DECLARE_STRING(name, x0);
+  struct stat info;
+  if (stat(name->ExportC(), &info)) {
+    const char *err = "fileSize: cannot get file size";
+    RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
+  }
+  RETURN_INT(info.st_size);
+} END
+
+DEFINE1(UnsafeOS_FileSys_modTime) {
+  DECLARE_STRING(name, x0);
+  struct stat info;
+  if (stat(name->ExportC(), &info)) {
     const char *err = "modTime: cannot get file time";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
+  RETURN_INT(info.st_mtime * 1000000);
 } END
 
-DEFINE1(FileSys_remove) {
+DEFINE1(UnsafeOS_FileSys_remove) {
   DECLARE_STRING(name, x0);
-  int res = unlink(name->ExportC());
-  if (!res) {
-    RETURN_UNIT;
-  }
-  else {
+  if (unlink(name->ExportC())) {
     const char *err = "remove: cannot remove file";
     RAISE_SYS_ERR(String::New(err)->ToWord(), Store::IntToWord(0));
   }
+  RETURN_UNIT;
 } END
 
-DEFINE0(FileSys_tmpName) {
+DEFINE0(UnsafeOS_FileSys_tmpName) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   char prefix[MAX_PATH];
   DWORD ret = GetTempPath(sizeof(prefix),prefix);
@@ -143,72 +140,71 @@ DEFINE0(FileSys_tmpName) {
 #endif
 } END
 
-static word FileSys(void) {
-  Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeClosure("UnsafeOS.FileSys.chDir",
-				    FileSys_chDir, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeOS.FileSys.fileSize",
-				    FileSys_fileSize, 1, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeOS.FileSys.getDir",
-				    FileSys_getDir, 0, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeOS.FileSys.mkDir",
-				    FileSys_mkDir, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeOS.FileSys.modTime",
-				    FileSys_modTime, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeOS.Filesys.remove",
-				    FileSys_remove, 1, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeOS.FileSys.tmpName",
-				    FileSys_tmpName, 1, true));
-  return t->ToWord();
+static word UnsafeOS_FileSys() {
+  Record *record = Record::New(8);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "chDir",
+		 UnsafeOS_FileSys_chDir, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "getDir",
+		 UnsafeOS_FileSys_getDir, 0, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "mkDir",
+		 UnsafeOS_FileSys_mkDir, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "isDir",
+		 UnsafeOS_FileSys_isDir, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "fileSize",
+		 UnsafeOS_FileSys_fileSize, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "modTime",
+		 UnsafeOS_FileSys_modTime, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "remove",
+		 UnsafeOS_FileSys_remove, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.FileSys", "tmpName",
+		 UnsafeOS_FileSys_tmpName, 1, true);
+  return record->ToWord();
 }
 
 //
 // UnsafeOS.Process Structure
 //
 
-DEFINE1(Process_system) {
+DEFINE1(UnsafeOS_Process_system) {
   DECLARE_STRING(command, x0);
   RETURN_INT(system(command->ExportC()));
 } END
 
-DEFINE1(Process_atExn) {
+DEFINE1(UnsafeOS_Process_exit) {
+  DECLARE_INT(code, x0);
+  exit(code);
+} END
+
+DEFINE1(UnsafeOS_Process_atExn) {
   DECLARE_CLOSURE(closure, x0);
   Properties::atExn = closure->ToWord();
   RETURN_UNIT;
 } END
 
-DEFINE1(Process_exit) {
-  DECLARE_INT(code, x0);
-  exit(code);
-  RETURN_UNIT;
-} END
-
-DEFINE1(Process_getEnv) {
+DEFINE1(UnsafeOS_Process_getEnv) {
   DECLARE_STRING(envVar, x0);
   char *envVal = getenv(envVar->ExportC());
   if (envVal != NULL) {
     TagVal *val = TagVal::New(1, 1); // SOME
     val->Init(0, String::New(envVal)->ToWord());
     RETURN(val->ToWord());
-  }
-  else {
+  } else
     RETURN(Store::IntToWord(0)); // NONE
-  }
 } END
 
-static word Process(void) {
-  Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure("UnsafeOS.Process.atExn",
-				    Process_atExn, 1, true));
-  t->Init(1, Primitive::MakeClosure("UnsafeOS.Process.exit",
-				    Process_exit, 1, true));
-  t->Init(2, Store::IntToWord(1)); // Process.failure
-  t->Init(3, Primitive::MakeClosure("UnsafeOS.Process.getEnv",
-				    Process_getEnv, 1, true));
-  t->Init(4, Store::IntToWord(0)); // Process.success
-  t->Init(5, Primitive::MakeClosure("UnsafeOS.Process.system",
-				    Process_system, 1, true));
-  return t->ToWord();
+static word UnsafeOS_Process() {
+  Record *record = Record::New(6);
+  record->Init("success", Store::IntToWord(0));
+  record->Init("failure", Store::IntToWord(1));
+  INIT_STRUCTURE(record, "UnsafeOS.Process", "system",
+		 UnsafeOS_Process_system, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.Process", "exit",
+		 UnsafeOS_Process_exit, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.Process", "atExn",
+		 UnsafeOS_Process_atExn, 1, true);
+  INIT_STRUCTURE(record, "UnsafeOS.Process", "getEnv",
+		 UnsafeOS_Process_getEnv, 1, true);
+  return record->ToWord();
 }
 
 //
@@ -223,16 +219,16 @@ DEFINE2(UnsafeOS_SysErr) {
   RETURN(conVal->ToWord());
 } END
 
-word UnsafeOS(void) {
+word UnsafeOS() {
   SysErrConstructor =
     UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
   RootSet::Add(SysErrConstructor);
 
-  Tuple *t = Tuple::New(4);
-  t->Init(0, Primitive::MakeClosure("UnsafeOS.SysErr",
-				    UnsafeOS_SysErr, 2, true));
-  t->Init(1, FileSys());
-  t->Init(2, Process());
-  t->Init(3, SysErrConstructor);
-  RETURN_STRUCTURE(t);
+  Record *record = Record::New(4);
+  record->Init("'SysErr", SysErrConstructor);
+  INIT_STRUCTURE(record, "UnsafeOS", "SysErr",
+		 UnsafeOS_SysErr, 2, true);
+  record->Init("FileSys$", UnsafeOS_FileSys());
+  record->Init("Process$", UnsafeOS_Process());
+  RETURN_STRUCTURE("UnsafeOS$", record);
 }

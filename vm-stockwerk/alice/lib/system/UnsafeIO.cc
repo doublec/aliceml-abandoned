@@ -1,8 +1,6 @@
 //
 // Authors:
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-//
-// Contributors:
 //   Leif Kornstaedt <kornstaedt@ps.uni-sb.de>
 //
 // Copyright:
@@ -112,7 +110,6 @@ static String *Concat(String *a, const char *b, u_int bLen) {
 static const u_int bufSize = 8192;
 static char buf[bufSize];
 
-// Builtins
 DEFINE3(UnsafeIO_Io) {
   ConVal *conVal = ConVal::New(Constructor::FromWordDirect(IoConstructor), 3);
   conVal->Init(0, x0);
@@ -121,21 +118,21 @@ DEFINE3(UnsafeIO_Io) {
   RETURN(conVal->ToWord());
 } END
 
+DEFINE2(UnsafeIO_openIn) {
+  DECLARE_BOOL(binary, x0);
+  DECLARE_STRING(name, x1);
+  const char *flags = (binary ? "rb" : "r");
+  std::FILE *file = std::fopen(name->ExportC(), flags);
+  if (file != NULL) {
+    RETURN(InStream::New(file, name)->ToWord());
+  } else {
+    RAISE_IO(Store::IntToWord(0), "openIn", name);
+  }
+} END
+
 DEFINE1(UnsafeIO_closeIn) {
   DECLARE_INSTREAM(stream, x0);
   std::fclose(stream->GetStream());
-  RETURN_UNIT;
-} END
-
-DEFINE1(UnsafeIO_closeOut) {
-  DECLARE_OUTSTREAM(stream, x0);
-  std::fclose(stream->GetStream());
-  RETURN_UNIT;
-} END
-
-DEFINE1(UnsafeIO_flushOut) {
-  DECLARE_OUTSTREAM(stream, x0);
-  std::fflush(stream->GetStream());
   RETURN_UNIT;
 } END
 
@@ -180,6 +177,18 @@ DEFINE1(UnsafeIO_inputLine) {
   RETURN(b->ToWord());
 } END
 
+DEFINE2(UnsafeIO_openOut) {
+  DECLARE_BOOL(binary, x0);
+  DECLARE_STRING(name, x1);
+  const char *flags = (binary ? "wb" : "w");
+  std::FILE *file = std::fopen(name->ExportC(), flags);
+  if (file != NULL) {
+    RETURN(OutStream::New(file, name)->ToWord());
+  } else {
+    RAISE_IO(Store::IntToWord(0), "openOut", name);
+  }
+} END
+
 DEFINE2(UnsafeIO_openAppend) {
   DECLARE_BOOL(binary, x0);
   DECLARE_STRING(name, x1);
@@ -192,28 +201,16 @@ DEFINE2(UnsafeIO_openAppend) {
   }
 } END
 
-DEFINE2(UnsafeIO_openIn) {
-  DECLARE_BOOL(binary, x0);
-  DECLARE_STRING(name, x1);
-  const char *flags = (binary ? "rb" : "r");
-  std::FILE *file = std::fopen(name->ExportC(), flags);
-  if (file != NULL) {
-    RETURN(InStream::New(file, name)->ToWord());
-  } else {
-    RAISE_IO(Store::IntToWord(0), "openIn", name);
-  }
+DEFINE1(UnsafeIO_closeOut) {
+  DECLARE_OUTSTREAM(stream, x0);
+  std::fclose(stream->GetStream());
+  RETURN_UNIT;
 } END
 
-DEFINE2(UnsafeIO_openOut) {
-  DECLARE_BOOL(binary, x0);
-  DECLARE_STRING(name, x1);
-  const char *flags = (binary ? "wb" : "w");
-  std::FILE *file = std::fopen(name->ExportC(), flags);
-  if (file != NULL) {
-    RETURN(OutStream::New(file, name)->ToWord());
-  } else {
-    RAISE_IO(Store::IntToWord(0), "openOut", name);
-  }
+DEFINE1(UnsafeIO_flushOut) {
+  DECLARE_OUTSTREAM(stream, x0);
+  std::fflush(stream->GetStream());
+  RETURN_UNIT;
 } END
 
 DEFINE2(UnsafeIO_output) {
@@ -245,38 +242,41 @@ DEFINE1(UnsafeIO_print) {
   RETURN_UNIT;
 } END
 
-word UnsafeIO(void) {
+word UnsafeIO() {
   IoConstructor = UniqueConstructor::New(String::New("IO.Io"))->ToWord();
   RootSet::Add(IoConstructor);
 
-  Tuple *t = Tuple::New(16);
-  t->Init(0, IoConstructor);
-  t->Init(1, Primitive::MakeClosure("UnsafeIO.Io",
-				    UnsafeIO_Io, 3, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeIO.closeIn",
-				    UnsafeIO_closeIn, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeIO.closeOut",
-				    UnsafeIO_closeOut, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeIO.flushOut",
-				    UnsafeIO_flushOut, 1, true));
-  t->Init(5, Primitive::MakeClosure("UnsafeIO.inputAll",
-				    UnsafeIO_inputAll, 1, true));
-  t->Init(6, Primitive::MakeClosure("UnsafeIO.inputLine",
-				    UnsafeIO_inputLine, 1, true));
-  t->Init(7, Primitive::MakeClosure("UnsafeIO.openAppend",
-				    UnsafeIO_openAppend, 2, true));
-  t->Init(8, Primitive::MakeClosure("UnsafeIO.openIn",
-				    UnsafeIO_openIn, 2, true));
-  t->Init(9, Primitive::MakeClosure("UnsafeIO.openOut",
-				    UnsafeIO_openOut, 2, true));
-  t->Init(10, Primitive::MakeClosure("UnsafeIO.output",
-				     UnsafeIO_output, 2, true));
-  t->Init(11, Primitive::MakeClosure("UnsafeIO.output1",
-				     UnsafeIO_output1, 2, true));
-  t->Init(12, Primitive::MakeClosure("UnsafeIO.print",
-				     UnsafeIO_print, 1, true));
-  t->Init(13, OutStream::New(stderr, String::New("stderr"))->ToWord());
-  t->Init(14, InStream::New(stdin, String::New("stdin"))->ToWord());
-  t->Init(15, OutStream::New(stdout, String::New("stdout"))->ToWord());
-  RETURN_STRUCTURE(t);
+  Record *record = Record::New(16);
+  record->Init("'Io", IoConstructor);
+  INIT_STRUCTURE(record, "UnsafeIO", "Io",
+		 UnsafeIO_Io, 3, true);
+  record->Init("stdIn",
+	       InStream::New(stdin, String::New("stdin"))->ToWord());
+  record->Init("stdOut",
+	       OutStream::New(stdout, String::New("stdout"))->ToWord());
+  record->Init("stdErr",
+	       OutStream::New(stderr, String::New("stderr"))->ToWord());
+  INIT_STRUCTURE(record, "UnsafeIO", "openIn",
+		 UnsafeIO_openIn, 2, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "closeIn",
+		 UnsafeIO_closeIn, 1, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "inputAll",
+		 UnsafeIO_inputAll, 1, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "inputLine",
+		 UnsafeIO_inputLine, 1, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "openOut",
+		 UnsafeIO_openOut, 2, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "openAppend",
+		 UnsafeIO_openAppend, 2, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "closeOut",
+		 UnsafeIO_closeOut, 1, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "flushOut",
+		 UnsafeIO_flushOut, 1, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "output",
+		 UnsafeIO_output, 2, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "output1",
+		 UnsafeIO_output1, 2, true);
+  INIT_STRUCTURE(record, "UnsafeIO", "print",
+		 UnsafeIO_print, 1, true);
+  RETURN_STRUCTURE("UnsafeIO$", record);
 }
