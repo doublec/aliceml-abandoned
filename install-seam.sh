@@ -100,6 +100,9 @@ export TIMEDIR
 ##
 ## Build Libraries
 ##
+PATH=$prefix/bin:$PATH
+export PATH
+unset ALICE_HOME
 (cd lib/distribution && make TARGET=stockwerk depend) || exit 1
 (cd lib/distribution && make TARGET=stockwerk all PREFIX=$prefix install) || exit 1
 
