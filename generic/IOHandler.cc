@@ -29,9 +29,7 @@ static const BlockLabel ENTRY_LABEL = (BlockLabel) MIN_DATA_LABEL;
 
 class Entry: private Block {
 private:
-  static const u_int FD_POS     = 0;
-  static const u_int FUTURE_POS = 1;
-  static const u_int SIZE       = 2;
+  enum { FD_POS, FUTURE_POS, SIZE };
 public:
   using Block::ToWord;
 
