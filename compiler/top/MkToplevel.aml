@@ -118,6 +118,7 @@ struct
 	    open RecursiveCompiler.Switches
 	in
 	    Debug.dumpPhases := false;
+	    Language.allowUnclosedComponents := true;
 	    Language.reexportImport := true;
 	    main'(OptionParser.parse arguments)
 	end

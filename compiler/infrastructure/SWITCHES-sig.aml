@@ -29,6 +29,7 @@ sig
     sig
 	datatype rtt_level = NO_RTT | CORE_RTT | FULL_RTT
 
+	val allowUnclosedComponents :		bool ref
 	val rttLevel :				rtt_level ref
 	val silentFailExp :			bool ref
 	val reexportImport :			bool ref

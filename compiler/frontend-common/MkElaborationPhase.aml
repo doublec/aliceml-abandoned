@@ -2222,7 +2222,8 @@ struct
 	    val anns'  = elabAnns(E, desc, anns)
 	    val s      = Inf.empty()
 	    val decs'  = elabDecs(E, s, decs)
-	    val _      = Inf.close s handle Inf.Unclosed lnt =>
+	    val _      = if !Switches.Language.allowUnclosedComponents then ()
+			 else Inf.close s handle Inf.Unclosed lnt =>
 			     error(i, E.CompUnclosed lnt)
 	    val anns'' = if !Switches.Language.retainFullImport then anns'
 			 else stripAnns(E, anns')
