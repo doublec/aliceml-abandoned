@@ -1,0 +1,34 @@
+import "x-alice:/lib/tools/Inspector"
+
+structure TestCoreRTT =
+struct
+    type a = unit
+    type b = int -> int -> int
+    type c = exn * int * real
+    type d = {2:real, 5:string, aa:int, zz:word, Q:char}
+    type ('a,'b) e = a * (b * c) * 'a
+    datatype f = A | B of unit | C of c | D of int * int | E of c * int | F of f
+    datatype 'a g = A | B of 'a g * int | C of ('a * 'a) g
+    type h = f g
+    type i
+
+    structure X :>
+    sig
+	type t
+	type 'a u
+	type 'a v = unit
+	type 'a w = 'a
+    end =
+    struct
+	datatype t = T of int
+	type 'a u = string
+	type 'a v = a
+	type 'a w = 'a
+    end
+
+    open X
+
+    structure _ = Inspector.InspectType(type t =
+			{a:a, b:b, c:c, d:d, e:({},{})e, f:f, g:{}g, h:h, i:i,
+			 t:t, u:{}u, v:{}v, w:{}w})
+end
