@@ -480,6 +480,17 @@ ClassObject *Class::GetClassObject() {
   return classObject;
 }
 
+bool Class::Implements(Class *aClass) {
+  Assert(aClass->IsInterface());
+  Table *interfaceTable = GetInterfaceTable();
+  for (u_int i = interfaceTable->GetCount(); i--; ) {
+    Table *virtualTable = Table::FromWordDirect(interfaceTable->Get(i));
+    if (Class::FromWord(virtualTable->Get(0)) == aClass)
+      return true;
+  }
+  return false;
+}
+
 //
 // ArrayType Implementation
 //

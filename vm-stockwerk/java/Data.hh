@@ -204,6 +204,17 @@ public:
   Closure *GetStaticMethod(u_int index) {
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
   }
+
+  bool Extends(Class *aClass) {
+    Assert(!aClass->IsInterface());
+    Class *theClass = this;
+  loop:
+    if (theClass == aClass) return true;
+    theClass = theClass->GetSuperClass();
+    if (theClass == INVALID_POINTER) return false;
+    goto loop;
+  }
+  bool Implements(Class *aClass);
 };
 
 class DllExport PrimitiveType: protected Type {
@@ -455,13 +466,10 @@ public:
     return theClass;
   }
   bool IsInstanceOf(Class *aClass) {
-    Assert(!aClass->IsInterface());
-    Class *theClass = GetClass();
-  loop:
-    if (theClass == aClass) return true;
-    theClass = theClass->GetSuperClass();
-    if (theClass == INVALID_POINTER) return false;
-    goto loop;
+    if (aClass->IsInterface())
+      return GetClass()->Implements(aClass);
+    else
+      return GetClass()->Extends(aClass);
   }
   Lock *GetLock() {
     word wLock = GetArg(LOCK_POS);
