@@ -10,7 +10,7 @@
 
 \vspace*{\fill}
 \begin{center}
-\Huge{\bf{Ein Browser f\"{u}r Alice}}
+\LARGE{\bf{Ein Browser f\"{u}r Alice}}
 \end{center}
 
 \vspace{1cm}
@@ -18,12 +18,12 @@
 \begin{center}
   \begin{minipage}[center]{10cm}
     \begin{tabbing} 
-      \large{Bernadette Blum} \hspace{1cm}\= \large{Marvin Schiller}\\
-      blum@ps.uni-sb.de \> schiller@ps.uni-sb.de\\[1cm]
+      Bernadette Blum \hspace{1cm}\= Marvin Schiller\\
+      \small{blum@ps.uni-sb.de} \> \small{schiller@ps.uni-sb.de} \\[1cm]
 
       Betreuer: \\[2mm]
-      \large{Thorsten Brunklaus} \> \large{Andreas Rossberg}\\
-      brunklaus@ps.uni-sb.de \> rossberg@ps.uni-sb.de
+      Thorsten Brunklaus \> Andreas Rossberg \\
+      \small{brunklaus@ps.uni-sb.de} \> \small{rossberg@ps.uni-sb.de}
 
     \end{tabbing}
   \end{minipage}
@@ -34,32 +34,36 @@
 \Large{6. Mai 2003}
 \end{center}
 
-\vspace{1cm}
+\vspace{8mm}
 
 \begin{center}
-  \begin{minipage}[center]{5cm}
-    Leitung:\\
-    \large{Prof. Dr. Gert Smolka}\\
-    smolka@ps.uni-sb.de
+  \begin{minipage}[center]{15cm}
+    \begin{tabbing}
+     Leitung: \\
+     Prof. Dr. Gert Smolka \hspace{1cm}\= \small Fachbereich Informatik \\ 
+    \small{smolka@ps.uni-sb.de} \> \small Universit\"{a}t des Saarlandes\\ 
+    \> \small Im Stadtwald \\
+    \> \small  66123 Saarbr\"{u}cken \\[5mm]
+    \end{tabbing}
   \end{minipage}
 \end{center}
 
-\vspace{5mm}
+\vspace{4mm}
 
-\begin{center}
-  \begin{minipage}[center]{5cm}
-    Fachbereich Informatik\\
-    Universit\"{a}t des Saarlandes\\
-    Im Stadtwald \\
-    66123 Saarbr\"{u}cken
-  \end{minipage}
-\end{center}
+%%%
+%%% \begin{center}
+%%%  \begin{minipage}[center]{5cm}
+%%%     \small
+%%%     Fachbereich Informatik\\
+%%%     Universit\"{a}t des Saarlandes\\
+%%%     Im Stadtwald \\
+%%%     66123 Saarbr\"{u}cken \\[5mm]
+%%%  \end{minipage}
+%%% \end{center}
 
-\vspace*{\fill}
-
-\end{titlepage}
 
 \begin{abstract}
+\normalsize
 Dieser Bericht zeigt Design und Implementierung eines 
 interaktven Browser-Tools f\"{u}r die funktionale Programmiersprache 
 Alice. Da Alice-Werte nicht selbstbeschreibend sind, 
@@ -74,6 +78,9 @@ Unser Design kn\"{u}pft weitgehend an Thorsten Brunklaus' ''Oz Inspektor''
 \cite{br:oz} an.
 \end{abstract}
 
+\vspace*{\fill}
+
+\end{titlepage}
 
 %%% EINFUEHRUNG ==========================================================
 
@@ -228,37 +235,41 @@ gleich dargestellt.
 
 \subsection{Transientenverwaltung}
 
+\newpage
+
 \subsection{Module}
 
 \begin{center}
 \epsfig{file = module_bw.ps, width = 13cm}
 \linebreak Abbildung 4.6: Module des Browsers
-\end center
+\end{center}
 
-Abbildung 4.6 zeigt die Module des Browsers.
-Dieser verf\"{u}gt \"{u}ber zwei Module, die 
-die Datentypen der internen Beschreibung  - doc und node - enthalten. 
-Neben den Datentypen beinhalten die Module \"{u}ber 
-entsprechende Accessoren.
-Da diese w\"{a}hrend der 
-Erzeugnung, der Anordnungsberechnung, dem Zeichnen 
-und der Darstellungsab\"{a}nderung verwendet werden, 
-werden diese Module in vielen anderen Modulen benutzt.\\
-Das Modul GtkSupport kapselt die Gtk-Funktionalit\"{a}t 
-gegen\"{u}ber allen anderen Modulen des Browsers ab. 
-Als einziges Modul hat es direkten Zugriff auf die 
-Gtk-Prozeduren. Die anderen Module des Browsers 
-greifen dabei auf GtkSupport zur\"{u}ck.
-Die Module CreateTree, Layout, und Draw repr\"{a}sentieren 
-die drei Phasen des Inspektionsvorgangs, w\"ahrend das Modul 
-Update die notwendigen Mechanismen repr\"asentiert, 
-um die Darstellung an Ver\"{a}nderungen anzupassen. 
-Das Modul Widget verf\"{u}gt \"{u}ber die 
-graphische Benutzeroberfl\"{a}che und steuert 
-die Darstellungserzeugung bzw. Ver\"{a}nderung. 
-Letztendlich macht das Modul UnsafeInspector die f\"{u}r den 
-Benutzer relevanten Prozeduren und Datentypen nach au\ss en sichtbar.
-
+Abbildung 4.6 zeigt die Module des Browsers. 
+Diese lassen sich nach ihrer Funktionalit\"at gruppieren.
+\newline
+Die Basismodule Doc und Node enthalten die Datentypen
+der internen Beschreibung - doc und node - und die
+entsprechenden Accessoren. Da diese w\"{a}hrend der 
+Erzeugnung, der Anordnungsberechnung, des Zeichnens 
+und der Darstellungsaktualisierung verwendet werden, 
+werden sie von vielen anderen Modulen benutzt. Zur Gruppe 
+der Basismodule z\"ahlt auch das Modul GtkSupport, das die
+Gtk-Funktionalit\"at gegen\"uber allen anderen Modulen des 
+Browsers abkapselt. Als einziges Modul hat es direkten Zugriff 
+auf die Gtk-Prozeduren, alle anderen Module greifen auf 
+GtkSupport zur\"uck. \newline \hspace*{5mm}
+Zur zweiten Gruppe geh\"oren die Module CreateTree, Layout, Draw 
+und Update. CreateTree, Layout, und Draw repr\"{a}sentieren 
+die drei Phasen des Inspektionsvorgangs, w\"ahrend  Update die 
+notwendigen Mechanismen zur Aktualisierung der Darstellung
+enth\"alt. \newline \hspace*{5mm}
+Mithilfe der Module Widget und UnsafeInspector wird die 
+Benutzerschnittstelle erzeugt. Widget verf\"ugt \"uber die 
+graphische Benutzeroberfl\"ache und steuert die 
+Darstellungserzeugung bzw. -ver\"anderung. UnsafeInspector macht 
+die f\"ur den Benutzer relevanten Prozeduren und Datentypen nach 
+au\ss en sichtbar. \newline \hspace*{5mm}
+Alle Aktionen des Browsers \"uber den Server synchronisiert.
 
 
 %%% AUSBLICK ===========================================================
