@@ -1,29 +1,7 @@
-(*
- * (c) Andreas Rossberg 1999-2001
- *
- * Standard ML lexical analysis
- *
- * Definition, sections 2.1-2.5, 3.1
- *
- * Notes:
- *   Since all lexical classes must be disjoint:
- *   - There is no single class ID, use ALPHA|SYMBOL|STAR|EQUALS.
- *   - There is no class LAB, use ALPHA|SYMBOL|NUMERIC|DIGIT|STAR.
- *   - ID does not contain `=' and `*', those are EQUALS and STAR.
- *   - LONGID does not contain unqualified ids (but allows for `=' and `*').
- *   - INT does not contain positive decimal integers without leading 0,
- *     and single DIGIT integers, those are in NUMERIC, DIGIT, and ZERO.
- *   - NUMERIC does not contain single digit numbers, those are in DIGIT.
- *   - DIGIT does not contain 0, that is ZERO.
- *
- *   The lexer uses a global variable to recognise nested comments, so it is
- *   not reentrant.
- *)
-
 use "../LEXER-sig.sml";
 use "../Lexer.sml";
 
-    val nesting = ref 0		(* non-reentrant side-effect way :-P *)
+fun e () = OS.Process.exit OS.Process.success
 
 regexp
   formatting = [" \t\n\011\012\013"]+ and
@@ -42,7 +20,8 @@ regexp
   hexword    = "0wx" hexdigit + and
 
   exp        = "E" | "e" and
-  real       = ( decint "." digit + ( exp  decint )?) | ( decint  exp  decint ) and
+  real       = ( decint "." digit + ( exp  decint )?) |
+               ( decint  exp  decint ) and
 
   numericlab = ["1-9"] digit * and
   alphanumid =  letter ( letter  |  digit  | ["_'"])* and
@@ -64,6 +43,8 @@ regexp
 
 val EOF = ref false
 
+val nesting = ref 0
+
 lexer lex =
 
 
@@ -80,7 +61,8 @@ lexer lex =
   ":"		=> (print yytext ) |
   ":>"		=> (print yytext ) |
   ";"		=> (print yytext ) |
-  "="		=> (print (yytext ^ "(* line " ^ Int.toString yyline ^ ", column " ^ Int.toString yycol ^ "*)") ) |
+  "="		=> (print (yytext ^ "(* line " ^ Int.toString yyline
+                                  ^ ",column " ^ Int.toString yycol ^ "*)") ) |
   "=>"		=> (print yytext ) |
   "["		=> (print yytext ) |
   "]"		=> (print yytext ) |
@@ -97,7 +79,8 @@ lexer lex =
   "datatype"	=> (print yytext) |
   "do"		=> (print yytext) |
   "else"	=> (print yytext) |
-  "end" 	=> (print (yytext ^ "(* line " ^ Int.toString yyline ^ ", column " ^ Int.toString yycol ^ "*)") ) |
+  "end" 	=> (print (yytext ^ "(* line " ^ Int.toString yyline
+                                  ^ ",column " ^ Int.toString yycol ^ "*)") ) |
   "eqtype"	=> (print yytext) |
   "exception"	=> (print yytext) |
   "fn"		=> (print yytext) |
@@ -149,7 +132,9 @@ lexer lex =
 
    "(*"         => (nesting := 1 ; comment()) |
    "\""         => (print "\n\n\n\n\n\nERROR\n\n\n\n\n\n") |
-   eof          => ( EOF:= true; print ("\nEOF\n" ^ " line " ^ Int.toString yyline ^ ", column " ^ Int.toString yycol ^ "\n") ) 
+   eof          => (EOF:= true;
+                    print ("\nEOF\n" ^ " line " ^ Int.toString yyline
+                         ^ ",column " ^ Int.toString yycol ^ "\n") ) 
 
 
 and comment =
@@ -157,5 +142,14 @@ and comment =
    "*)" => (nesting := !nesting - 1;
 	    if !nesting = 0 then lex() else comment() ) |
    _    => (comment() )
+
+
+fun go s =
+    let
+	val l = (EOF := false; lex s)
+    in
+	while not (!EOF) do
+	    l ()
+    end
 
 
