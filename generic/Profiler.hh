@@ -20,6 +20,8 @@
 
 #include "store/Store.hh"
 
+#if PROFILE
+
 class ProfileEntry;
 class StackFrame;
 class ConcreteCode;
@@ -37,7 +39,7 @@ protected:
 public:
   // Profiler Static Constructor
   static void Init();
-  
+
   static void SampleHeap(); // Scheduler::Run
   static void AddHeap(StackFrame *frame); // Scheduler::Run
   static void IncCalls(StackFrame *frame); // TaskStack::PushCall
@@ -45,5 +47,7 @@ public:
   static void IncInstances(TagVal *template_); // Interpreter::Specialize
   static void DumpInfo();
 };
+
+#endif
 
 #endif

@@ -23,7 +23,7 @@ class TaskStack;
 class Closure;
 class Backtrace;
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 class StackFrame;
 class ConcreteCode;
 class String;
@@ -56,7 +56,7 @@ public:
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;
-#if defined(ALICE_PROFILE)
+#if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);

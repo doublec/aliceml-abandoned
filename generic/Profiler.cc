@@ -16,7 +16,7 @@
 #pragma implementation "generic/Profiler.hh"
 #endif
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #include "generic/RootSet.hh"
 #include "generic/Interpreter.hh"
@@ -32,7 +32,7 @@ protected:
   static const u_int NB_HEAP_POS      = 2;
   static const u_int NB_CLOSURES_POS  = 3;
   static const u_int NB_INSTANCES_POS = 4;
-  static const u_int SIZE             = 5; 
+  static const u_int SIZE             = 5;
 
   void Modify(u_int index, u_int value) {
     u_int v = Store::DirectWordToInt(Sel(index));
@@ -118,9 +118,11 @@ ProfileEntry *Profiler::GetEntry(TagVal *template_) {
   else {
     Tuple *coord = Tuple::FromWordDirect(template_->Sel(0));
     String *name = String::FromWordDirect(coord->Sel(0));
-    u_int line   = Store::DirectWordToInt(coord->Sel(1));
     char buf[1024]; // to be done
-    std::sprintf(buf, "%s:%d\n", name->ExportC(), line);
+    std::sprintf(buf, "Alice template %.*s, line %d, column %d",
+		 (int) name->GetSize(), name->GetValue(),
+		 Store::DirectWordToInt(coord->Sel(1)),
+		 Store::DirectWordToInt(coord->Sel(2)));
     ProfileEntry *entry = ProfileEntry::New(String::New(buf));
     t->InsertItem(key, entry->ToWord());
     return entry;
@@ -152,8 +154,8 @@ void Profiler::IncCalls(StackFrame *frame) {
 
 void Profiler::IncClosures(word cCode) {
   ConcreteCode *concreteCode = ConcreteCode::FromWord(cCode);
-  ProfileEntry *entry = GetEntry(concreteCode);
-  entry->IncClosures();
+  if (concreteCode != INVALID_POINTER)
+    GetEntry(concreteCode)->IncClosures();
 }
 
 void Profiler::IncInstances(TagVal *template_) {
@@ -163,17 +165,16 @@ void Profiler::IncInstances(TagVal *template_) {
 
 static FILE *logFile;
 
-static void PrintInfo(word key, word value) {
+static void PrintInfo(word /*key*/, word value) {
   Tuple *entry      = Tuple::FromWordDirect(value);
   String *name      = String::FromWordDirect(entry->Sel(0));
   u_int calls       = Store::DirectWordToInt(entry->Sel(1));
   u_int heap        = Store::DirectWordToInt(entry->Sel(2));
   u_int closures    = Store::DirectWordToInt(entry->Sel(3));
   u_int specialized = Store::DirectWordToInt(entry->Sel(4));
-  std::fprintf(logFile, "%d %d %d %d %.2f %x %s\n",
+  std::fprintf(logFile, "%d %d %d %d %.2f   %s\n",
 	       calls, closures, heap, specialized,
-	       ((float) heap / (float) calls),
-	       key,
+	       calls? static_cast<float>(heap) / calls: 0.0,
 	       name->ExportC());
 }
 
