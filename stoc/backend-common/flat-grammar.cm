@@ -7,8 +7,8 @@ Group
 
 is
 
-    ../error/sources.cm
     ../misc/sources.cm
+    ../infrastructure/source.cm
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm
 

@@ -1,14 +1,8 @@
-Group
-
-
-is
+Group is
 
 	../misc/sources.cm
-	../error/sources.cm
+	../infrastructure/sources.cm
 	../common/sources.cm
-	../top/switches.cm
-	../top/phase.cm
-	../top/composer.cm
 	abstract-grammar.cm
 
 	StringMap.sml

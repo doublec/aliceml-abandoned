@@ -1,9 +1,15 @@
 Group is
 
-	../error/sources.cm
+	source.cm
 
-	PHASE.sig
-	TARGET.sig
+	ERROR.sig
+	Error.sml
+
+	CONTEXT.sig
 	EmptyContext.sml
 
+	REPRESENTATION.sig
+
+	PHASE.sig
+	PHASE_ERROR.sig
 	ComposePhases.sml

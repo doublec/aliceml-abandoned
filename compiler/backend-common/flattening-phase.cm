@@ -4,13 +4,12 @@ Group
 
 is
 
-    ../error/sources.cm
     ../misc/sources.cm
+    ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../common/type.cm
     ../common/intermediate-grammar.cm
     ../common/prebound.cm
-    ../top/phase.cm
 
     flat-grammar.cm
 

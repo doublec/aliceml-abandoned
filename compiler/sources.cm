@@ -1,1 +1,7 @@
-Alias top/sources.cm
+Group
+
+	structure Main
+
+is
+
+	top/sources.cm

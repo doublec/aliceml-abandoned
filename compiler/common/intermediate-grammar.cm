@@ -14,7 +14,7 @@ Group
 is
 
 	../misc/sources.cm
-	../error/sources.cm
+	../infrastructure/source.cm
 	id-stamp.cm
 	type.cm
 	interface.cm

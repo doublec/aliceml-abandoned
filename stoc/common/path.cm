@@ -15,7 +15,7 @@ Group
 is
 
 	../misc/sources.cm
-	../error/sources.cm
+	../infrastructure/crash.cm
 	name.cm
 
 	PATH.sig

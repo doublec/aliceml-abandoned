@@ -1,11 +1,10 @@
 Group is
 
-    ../error/sources.cm
     ../misc/sources.cm
+    ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
-    ../top/sources.cm
 
     Abbrev.sml
     JVMInst.sml

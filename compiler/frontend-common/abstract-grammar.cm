@@ -13,7 +13,7 @@ Group
 is
 
 	../misc/sources.cm
-	../error/sources.cm
+	../infrastructure/source.cm
 	../common/prebound.cm
 	../common/name.cm
 	../common/fixity.cm

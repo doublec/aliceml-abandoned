@@ -12,7 +12,6 @@ Group
 is
 
 	../misc/sources.cm
-	../error/sources.cm
 	name.cm
 	id-stamp.cm
 	path.cm

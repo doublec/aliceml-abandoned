@@ -7,13 +7,12 @@ Group
 
 is
 
-    ../error/sources.cm
     ../misc/sources.cm
+    ../infrastructure/sources.cm
     ../common/id-stamp.cm
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
-    ../top/phase.cm
-    ../top/engine.cm
+    ../backend-common/engine.cm
 
     (* Externalisation (into Oz syntax) *)
 

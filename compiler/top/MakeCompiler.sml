@@ -12,25 +12,34 @@ functor MakeCompiler(
 	structure BackendCommon:    PHASE where I = FrontendCommon.O
 	structure BackendSpecific:  PHASE where I = BackendCommon.O
 					  where O = Target
+	structure FrontendSpecificInitialContext: INITIAL_CONTEXT
+					  where type t = FrontendSpecific.C.t
+	structure FrontendCommonInitialContext:   INITIAL_CONTEXT
+					  where type t = FrontendCommon.C.t
+	structure BackendCommonInitialContext:    INITIAL_CONTEXT
+					  where type t = BackendCommon.C.t
+	structure BackendSpecificInitialContext:  INITIAL_CONTEXT
+					  where type t = BackendSpecific.C.t
        ) :> COMPILER where Source = Source
 		     where Target = Target
   =
   struct
+    structure Source = Source
+    structure Target = Target
+
     type context =
-	{ feSpec: FrontendSpecific.C.t
-	, feComm: FrontendCommon.C.t
-	, beComm: BackendCommon.C.t
-	, beSpec: BackendSpecific.C.t
+	{ feSpec : FrontendSpecific.C.t
+	, feComm : FrontendCommon.C.t
+	, beComm : BackendCommon.C.t
+	, beSpec : BackendSpecific.C.t
 	}
 
-(*UNFINISHED: Do we need this here? Somehow compromises our modularization.
     val initial =
-	{ feSpec = FrontendSpecific.C.initial()
-	, feComm = FrontendCommon.C.initial()
-	, beComm = BackendCommon.C.initial()
-	, beSpec = BackendSpecific.C.initial()
+	{ feSpec = FrontendSpecificInitialContext.initial()
+	, feComm = FrontendCommonInitialContext.initial()
+	, beComm = BackendCommonInitialContext.initial()
+	, beSpec = BackendSpecificInitialContext.initial()
 	}
-*)
 
     fun clone {feSpec,feComm,beComm,beSpec} =
 	{ feSpec = FrontendSpecific.C.clone feSpec
@@ -42,10 +51,10 @@ functor MakeCompiler(
     fun compile(C, source) =
 	let
 	    val C' = clone C
-	    val f  = FrontendSpecific.translate(#feSpec C')
-		   o FrontendCommon.translate(#feComm C')
+	    val f  = BackendSpecific.translate(#beSpec C')
 		   o BackendCommon.translate(#beComm C')
-		   o BackendSpecific.translate(#beSpec C')
+		   o FrontendCommon.translate(#feComm C')
+		   o FrontendSpecific.translate(#feSpec C')
 	in
 	    (C', f source)
 	end

@@ -4,7 +4,7 @@ Group is
 
 	ml-yacc-lib.cm
 	../misc/sources.cm
-	../error/sources.cm
+	../infrastructure/sources.cm
 
 	(* SML syntax *)
 
@@ -45,8 +45,6 @@ Group is
 	../frontend-common/sources.cm
 	../common/name.cm
 	../common/prebound.cm
-	../top/phase.cm
-	../top/composer.cm
 
 	(* Translation into abstract syntax (binding analysis) *)
 

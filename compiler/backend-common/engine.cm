@@ -1,10 +1,14 @@
 Group
 
+    signature TARGET
     signature CODE
     signature ENGINE
     functor MakeEngine
 
 is
 
+    ../infrastructure/target.cm
+
+    CODE.sig
     ENGINE.sig
     MakeEngine.sml

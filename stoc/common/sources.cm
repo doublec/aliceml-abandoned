@@ -1,9 +1,4 @@
-Group
-
-is
-
-	../misc/sources.cm
-	../error/sources.cm
+Group is
 
 	prebound.cm
 	type.cm

@@ -4,7 +4,7 @@ Group
 
 is
 
-    ../error/sources.cm
+    ../infrastructure/sources.cm
     ../common/id-stamp.cm
 
     flat-grammar.cm

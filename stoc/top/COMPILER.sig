@@ -12,6 +12,6 @@ signature COMPILER =
 
     type context
 
-    (* val initial: context *)
+    val initial: context
     val compile: context * Source.t -> context * Target.t  (* [Error.Error] *)
   end

@@ -10,13 +10,6 @@
  *   $Revision$
  *)
 
-signature CODE =
-    sig
-	type t
-
-	val externalize: TextIO.outstream * t -> unit
-    end
-
 signature ENGINE =
     sig
 	type t

@@ -1,16 +1,6 @@
-Group
+Group is
 
-    signature SIGNATURE
-    structure Signature
-    signature COMPOSER
-    structure Composer
+	../misc/sources.cm
 
-is
-
-    ../misc/sources.cm
-    ../common/sources.cm
-
-    SIGNATURE.sig
-    Signature.sml
-    COMPOSER.sig
-    Composer.sml
+	SIGNATURE.sig
+	COMPOSER.sig

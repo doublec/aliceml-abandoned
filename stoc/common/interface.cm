@@ -1,7 +1,7 @@
 Group is
 
-	../error/sources.cm
 	../misc/sources.cm
+	../infrastructure/crash.cm
 	path.cm
 	type.cm
 	fixity.cm

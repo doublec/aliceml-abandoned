@@ -1,20 +1,15 @@
-Group
-
-    signature MAIN
-    structure Main
-
-is
+Group is
 
     ../misc/sources.cm
+    ../infrastructure/sources.cm
     ../frontend-sml/sources.cm
     ../frontend-common/sources.cm
     ../backend-common/sources.cm
     ../backend-mozart/sources.cm
     ../backend-com+/sources.cm
-    switches.cm
-    phase.cm
+
     composer.cm
-    engine.cm
+    compiler.cm
 
     MAIN.sig
     Main.sml
