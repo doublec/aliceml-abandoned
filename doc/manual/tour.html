@@ -127,7 +127,11 @@ fac 12
 <I>val it : int = 479001600</I></PRE>
 
 <DIV class=note>
-<P><I>Note:</I> If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). You can also put it into background with Ctrl-Z (Ctrl-D on Windows). The result of a background computation will be represented by futures, see <A href="#concurrency">discussion of concurrency</A> below. The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows).</P>
+<P><I>Note:</I> If a computation takes too long you can abort it in the interactive toplevel by entering Ctrl-C (Ctrl-Break on Windows). You can also put it into background with Ctrl-Z (Ctrl-D on Windows). The result of a background computation will be represented by futures, see <A href="#concurrency">discussion of concurrency</A> below. The interactive toplevel is exited with Ctrl-D (Ctrl-Z on Windows), or by calling <TT>exit()</TT>.
+</P>
+<P>
+Depending on the shell used, Ctrl sequences may not work as expected under Windows.
+</P>
 </DIV>
 
 <?php subsection("interactive-inspector", "The Inspector") ?>

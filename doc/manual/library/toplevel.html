@@ -132,8 +132,18 @@
   </TT>
 
   <P>
-    The <TT>use</TT> function is only available in the <A href="../interactive.html">interactive toplevel</A>.
+    The following functions are only available in the
+    <A href="../interactive.html">interactive toplevel</A>:
   </P>
+
+  <TT>
+  <TABLE>
+    <TR> <TD>val exit : 'a -> unit</TD> <TD><I>primitive</I></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val inspect : 'a -> unit</TD> <TD><A href="inspector.html">Inspector.inspect</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val printVal : 'a -> unit</TD> <TD><A href="print.html">Print.printVal</A></TD> <TD>(*)</TD> </TR>
+    <TR> <TD>val use : string -> unit</TD> <TD></TT><I>primitive</I><TT></TD> </TR>
+  </TABLE>
+  </TT>
 
   <P>
     All arithmetic functions are overloaded:
