@@ -27,6 +27,7 @@ sig
     val invent :	unit -> path
     val pervasive :	string -> path
     val name :		name -> path
+    val hidden :	name -> path
     val dot :		path * lab -> path
 
   (* Inspection, projection and conversion *)
@@ -34,13 +35,15 @@ sig
     exception Path
 
     val isName :	path -> bool
+    val isHidden :	path -> bool
     val isDot :		path -> bool
     val asName :	path -> name				(* Path *)
+    val asHidden :	path -> name				(* Path *)
     val asDot :		path -> path * lab			(* Path *)
 
     val fromString :	string -> path
     val fromLab :	lab  -> path
-    val toLab :		path -> lab
+    val toLab :		path -> lab				(* Path *)
 
   (* Comparison and hashing *)
 
@@ -49,6 +52,5 @@ sig
 
   (* Transformation *)
 
-    val hiddenPrefix :	string
     val hide :		path -> unit				(* Path *)
 end
