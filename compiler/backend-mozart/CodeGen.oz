@@ -198,7 +198,21 @@ define
       [] testStm(Region Id TestBodyList ElseBody) then Reg in
 	 Reg = {GetReg Id State}
 	 case {GetTestPrefix TestBodyList Reg nil State ReturnReg}
-	 of matches(Matches Rest) then ElseVInstr in
+	 of matches([onScalar(true TrueVInstr) 
+		     onScalar(false FalseVInstr)] Rest)
+	 then ElseVInstr in
+	    VHd = vTestBool(_ Reg TrueVInstr FalseVInstr ElseVInstr
+			    {TranslateRegion Region State} VTl)
+	    {TranslateStm testStm(Region Id Rest ElseBody)
+	     ElseVInstr nil State ReturnReg}
+	 [] matches([onScalar(false FalseVInstr)
+		     onScalar(true TrueVInstr)] Rest)
+	 then ElseVInstr in
+	    VHd = vTestBool(_ Reg TrueVInstr FalseVInstr ElseVInstr
+			    {TranslateRegion Region State} VTl)
+	    {TranslateStm testStm(Region Id Rest ElseBody)
+	     ElseVInstr nil State ReturnReg}
+	 [] matches(Matches Rest) then ElseVInstr in
 	    VHd = vMatch(_ Reg ElseVInstr Matches
 			 {TranslateRegion Region State} VTl)
 	    {TranslateStm testStm(Region Id Rest ElseBody)
