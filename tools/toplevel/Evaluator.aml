@@ -24,7 +24,7 @@ import signature EVALUATOR from "EVALUATOR-sig"
 
 structure Evaluator : EVALUATOR =
 struct
-    structure Compiler = SMLToSeamRecursiveCompiler
+    structure Compiler = RecursiveCompiler
 
     (* Output stream *)
 
