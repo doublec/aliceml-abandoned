@@ -77,7 +77,7 @@ PrimitiveInterpreter::Run(TaskStack *taskStack, int nargs) {
 	  return Result(Result::CONTINUE, 1);
 	}
 	taskStack->PushFrame(arity - 1);
-	Assert(static_cast<int>(tuple->GetWidth()) == arity); //--**
+	Assert(tuple->GetWidth() == arity);
 	for (u_int i = arity; i--; )
 	  taskStack->PutWord(i, tuple->Sel(i));
       }
