@@ -12,7 +12,6 @@
 
 import structure Url       from "../lib/utility/Url"
 import structure Signature from "../lib/system/Signature"
-import structure Label     from "../lib/rtt/Label"
 
 signature MY_COMPONENT =
     sig
@@ -25,12 +24,12 @@ signature MY_COMPONENT =
 	val load: Url.t -> t                      (* Io, Corrupt *)
 	val save: string * t -> unit              (* Io, Sited *)
 
-	val imports: t -> (Label.t * string * sign) vector
-	val body: t -> ((Label.t * str) vector -> str)
+	val imports: t -> (string * sign) vector
+	val body: t -> (str vector -> str)
 	val sign: t -> sign
 
-	val new: {imports: (Label.t * string * sign) vector,
-		  body: (Label.t * str) vector -> str,
+	val new: {imports: (string * sign) vector,
+		  body: str vector -> str,
 		  sign: sign} -> t
 
 	val stripImportSigns: t -> t
