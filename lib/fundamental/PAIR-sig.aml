@@ -35,6 +35,6 @@ sig
 
     val equal :		('a * 'a -> bool) * ('b * 'b -> bool) ->
 			    ('a,'b) pair * ('a,'b) pair -> bool
-    val compare :	('a * 'a -> order) * ('b * 'b -> order) ->
+    val collate :	('a * 'a -> order) * ('b * 'b -> order) ->
 			    ('a,'b) pair * ('a,'b) pair -> order
 end
