@@ -13,7 +13,7 @@
 signature IMP_MAP =
 sig
     type key
-    __eqeqtype 'a map
+    (*__eqeqtype*)eqtype 'a map
     type 'a t = 'a map
 
     exception Unknown of key
