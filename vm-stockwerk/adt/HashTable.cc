@@ -60,7 +60,7 @@ static inline int CompareBlocks(Block *a, Block *b) {
   u_int bl = (b->GetSize() * sizeof(word));
 
   if (al == bl) {
-    return std::strncmp((char *) a->GetBase(), (char *) b->GetBase(), al);
+    return std::memcmp((char *) a->GetBase(), (char *) b->GetBase(), al);
   }
 
   return 1;
