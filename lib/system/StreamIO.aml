@@ -284,12 +284,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		else ()
 	    end
 
-	fun lineEnd (buf, i) =
+	fun lineEnd (buf, 0) = NONE
+	  | lineEnd (buf, i) =
 	    let
 		val i' = i - 1
 	    in
 		if Vector.sub (buf, i') = someElem then SOME i
-		else if i' = 0 then NONE
 		else lineEnd (buf, i')
 	    end
 
