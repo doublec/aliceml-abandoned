@@ -123,19 +123,24 @@ struct
 
     fun switch (bs : stmt list) =
 	let
-	    val l = newlabel "switch"
+	    val l1 = newlabel "switch"
+            val l2 = newlabel "switchout"
 	in
 	    fn st =>
 	    let
 		val fs = List.map (fn b => #2 (b st)) bs
 	    in
-		(1, switch' l 0 fs)
+		(1, fn k => Concat(Goto(expandlabel st l1),
+                                   switch' l1 l2 st 0 fs k))
 	    end
 	end
-    and switch' l st   []    k = Label(expandlabel 6 l, k)
-      | switch' l st (f::fs) k = Concat(Label(expandlabel st l,
-					      f (Goto(expandlabel 6 l))),
-					switch' l (st+1) fs k)
+    and switch' l1 l2 st i   []    k = Label(expandlabel st l2, k)
+      | switch' l1 l2 st i (f::fs) k = 
+        if i = st
+        then Concat(Label(expandlabel st l1, f (Goto(expandlabel st l2))),
+					switch' l1 l2 st (i+1) fs k)
+        else Concat(f (Goto(expandlabel st l2)), switch' l1 l2 st (i+1) fs k)
+
 
   (* Combinators *)
 
