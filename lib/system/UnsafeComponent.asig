@@ -33,9 +33,10 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val getInitialTable: unit -> (string * 'sign * 'str) vector
 
-		val save: string * 'component -> unit   (* IO.Io *)
-		val load: string -> 'component          (* IO.Io *)
-		val linkNative: string -> 'component    (* Native, Corrupt *)
+		val save: string * 'component -> unit   (* OS.SysErr, Sited *)
+		val load: string -> 'component          (* OS.SysErr, NotFound,
+							   Corrupt *)
+		val linkNative: string -> 'component    (* Native *)
 
 		val pack_: 'component -> string         (* Sited *)
 		val unpack_: string -> 'component       (* Corrupt *)
