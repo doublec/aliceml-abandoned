@@ -13,7 +13,7 @@
  *)
 
 signature TEXT_IO_COMPONENT =
-    struct
+    sig
 	structure TextIO:
 	    sig
 		type instream
