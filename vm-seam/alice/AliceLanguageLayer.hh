@@ -42,7 +42,7 @@ public:
 
   static concrete_constructor concreteCodeConstructor;
 
-  static void Init(const char *home, int argc, char *argv[]);
+  static void Init(const char *home, int argc, const char *argv[]);
 };
 
 #endif

@@ -59,7 +59,7 @@ static word AliceConstructorHandler(word x) {
   return constructor->ToWord();
 }
 
-void AliceLanguageLayer::Init(const char *home, int argc, char *argv[]) {
+void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
   String *alicePrimitiveValue = String::New("Alice.primitive.value");
   TransformNames::primitiveValue = alicePrimitiveValue->ToWord();
   RootSet::Add(TransformNames::primitiveValue);
