@@ -24,9 +24,13 @@
 #include <cstdlib>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#define DllExport __declspec(dllexport)
+# if defined(STOCKWERK_FOREIGN)
+#  define DllExport __declspec(dllimport)
+# else
+#  define DllExport __declspec(dllexport)
+# endif
 #else
-#define DllExport
+# define DllExport
 #endif
 
 void AssertOutline(const char *file, int line, const char *message);
