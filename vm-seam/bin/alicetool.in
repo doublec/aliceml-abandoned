@@ -80,7 +80,7 @@ case "$mode" in
 	exec seamtool ${verbose} compile -I"${includedir}" "$@"
 	;;
     link)
-	exec seamtool ${verbose} link "$@" -L"${seamlibdir}" alice.dll
+	exec seamtool ${verbose} link "$@" "${seamlibdir}"/alice.dll
 	;;
     *)
 	echo "$0: unknown mode \`$1\'" >&2

@@ -22,5 +22,5 @@ bin_SCRIPTS = \
 	bin/alicerun \
 	bin/alicetool
 
-pkginclude_HEADERS = \
+include_HEADERS = \
 	Alice.hh
