@@ -13,6 +13,7 @@
  *   - WHEN keyword for guarded patterns
  *   - NON keyword added for negated patterns
  *   - WITHVAL and WITHFUN keywords for bindings inside pattern
+ *   - PRIMITIVE, OVERLOAD, INSTANCE, PREBOUND, and EQEQTYPE keywords added
  *
  * Notes:
  *   Since all lexical classes must be disjoint:
@@ -274,6 +275,11 @@
   <INITIAL>"|"		=> ( token(BAR,       yypos, yytext) );
   <INITIAL>"}"		=> ( token(RBRACE,    yypos, yytext) );
 
+  <INITIAL>"__eqtype"	=> ( token(EQEQTYPE,  yypos, yytext) );
+  <INITIAL>"__instance"	=> ( token(INSTANCE,  yypos, yytext) );
+  <INITIAL>"__overload"	=> ( token(OVERLOAD,  yypos, yytext) );
+  <INITIAL>"__prebound"	=> ( token(PREBOUND,  yypos, yytext) );
+  <INITIAL>"__primitive"=> ( token(PRIMITIVE, yypos, yytext) );
   <INITIAL>"abstype"	=> ( token(ABSTYPE,   yypos, yytext) );
   <INITIAL>"and"	=> ( token(AND,       yypos, yytext) );
   <INITIAL>"andalso"	=> ( token(ANDALSO,   yypos, yytext) );

@@ -1,3 +1,8 @@
+(* This will vanish after bootstrapping. The compiler does then start
+ * with an empty(!) environment, builtin entities have to be obtained via
+ * the __prebound construct.
+ *)
+
 structure BindEnv0 :> BIND_ENV0 =
   struct
 

@@ -19,6 +19,8 @@ functor MakeAbstractGrammar(type info) :>
 
     type stamp      = Stamp.t
 
+    val stamp_prebound = Prebound.stamp_Prebound
+
     datatype name   = ExId of string | InId
 
     datatype lab    = Lab     of info * string
@@ -30,6 +32,7 @@ functor MakeAbstractGrammar(type info) :>
 
     datatype exp =
 	  LitExp    of info * lit		(* literal *)
+	| PrimExp   of info * string * typ	(* primitive values *)
 	| VarExp    of info * longid		(* variable *)
 	| ConExp    of info * int * longid	(* constructor *)
 	| RefExp    of info			(* reference constructor *)
@@ -158,6 +161,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoLongid(LongId(i,_,_))	= i
 
     fun infoExp(LitExp(i,_))		= i
+      | infoExp(PrimExp(i,_,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i))		= i

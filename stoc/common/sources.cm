@@ -14,7 +14,7 @@ is
 	../misc/sources.cm
 	../error/sources.cm
 
-	id-stamp.cm
+	prebound.cm
 	intermediate-grammar.cm
 
 	PREBOUND.sig

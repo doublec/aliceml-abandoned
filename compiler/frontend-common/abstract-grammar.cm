@@ -10,7 +10,7 @@ is
 
 	../misc/sources.cm
 	../error/sources.cm
-	../common/id-stamp.cm
+	../common/prebound.cm
 
 	ABSTRACT_GRAMMAR.sig
 	MakeAbstractGrammar.sml

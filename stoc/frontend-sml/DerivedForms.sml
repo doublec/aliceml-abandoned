@@ -134,7 +134,10 @@ structure DerivedForms :> DERIVED_FORMS =
     fun equalTyCon(G.TyCon(_,tycon1), G.TyCon(_,tycon2)) = tycon1 = tycon2
     fun equalTyVar(G.TyVar(_,tyvar1), G.TyVar(_,tyvar2)) = tyvar1 = tyvar2
 
-    fun lookupTyCon(tycon, G.TypBind(_, tyvarseq, tycon', ty, typbind_opt)) =
+    fun lookupTyCon(tycon, G.NEWTypBind(i, tyvarseq, tycon', typbind_opt)) =
+	    Error.error(i, "invalid type binding inside withtype")
+
+      | lookupTyCon(tycon, G.EQUALTypBind(_,tyvarseq,tycon', ty, typbind_opt)) =
 	    if equalTyCon(tycon, tycon') then
 		(tyvarseq, ty)
 	    else
@@ -230,16 +233,11 @@ structure DerivedForms :> DERIVED_FORMS =
     fun toTy tyvar = G.TYVARTy(G.infoTyVar tyvar, tyvar)
 
     fun toTypBind(G.NEWTypDesc(I, tyvarseq, tycon, typdesc_opt)) =
-	let
-	    val G.Seq(I',tyvarseq') = tyvarseq
-	    val tyseq = G.Seq(I', List.map toTy tyvarseq')
-	    val ty    = G.TYCONTy(I, tyseq, G.SHORTLong(I,tycon))
-	in
-	    G.TypBind(I, tyvarseq, tycon, ty, Option.map toTypBind typdesc_opt)
-	end
+	    G.NEWTypBind(I, tyvarseq, tycon, Option.map toTypBind typdesc_opt)
 
       | toTypBind(G.EQUALTypDesc(I, tyvarseq, tycon, ty, typdesc_opt)) =
-	    G.TypBind(I, tyvarseq, tycon, ty, Option.map toTypBind typdesc_opt)
+	    G.EQUALTypBind(I, tyvarseq, tycon, ty,
+			      Option.map toTypBind typdesc_opt)
 
     (* Functions to handle rewriting of withtype specifications *)
 
@@ -271,7 +269,8 @@ structure DerivedForms :> DERIVED_FORMS =
 	    val longtycon = G.SHORTLong(I_tycon, tycon)
 	    val ty        = G.TYCONTy(I_tycon, tyseq,longtycon)
 	in
-	    G.TypBind(I, tyvarseq, tycon, ty, Option.map redeclare datbind_opt)
+	    G.EQUALTypBind(I, tyvarseq, tycon, ty,
+			      Option.map redeclare datbind_opt)
 	end
 
 

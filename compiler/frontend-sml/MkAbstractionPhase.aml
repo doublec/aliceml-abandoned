@@ -866,7 +866,42 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
 	   end
 
+	 | PRIMITIVEDec(i, vid as VId(_,vid'), ty, scon) =>
+	   let
+		val (id',stamp) = trVId_bind E vid
+		val  typ'       = trTy E ty
+		val  lit'       = trSCon E scon
+		val  s          = case lit'
+				    of O.StringLit s => s
+				     | _ => error(i, "string required")
+		val  pat'       = O.VarPat(O.infoId id', id')
+		val  exp'       = O.PrimExp(i, s, typ')
+		val  _          = insertVal(E, vid', (i, stamp, V))
+	   in
+		O.ValDec(i, pat', exp') :: acc
+	   end
+
 	 | TYPEDec(i, typbind) =>
+	   let
+		val E'    = Env.new()
+		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
+		val  _    = union(E,E')
+	   in
+		decs'
+	   end
+
+	 | EQTYPEDec(i, typbind) =>
+	   (* UNFINISHED *)
+	   let
+		val E'    = Env.new()
+		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
+		val  _    = union(E,E')
+	   in
+		decs'
+	   end
+
+	 | EQEQTYPEDec(i, typbind) =>
+	   (* UNFINISHED *)
 	   let
 		val E'    = Env.new()
 		val decs' = trTypBindo' (E,E',acc) (SOME typbind)
@@ -917,6 +952,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		decs'
 	   end
 
+	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
+	   let
+		val _     = trStrId_bind E strid
+		val stamp = O.stamp_prebound
+		val E'    = Env.new() (*UNFINISHED*)
+		val _     = insertStr(E, strid', (i',stamp,E'))
+	   in
+		[]
+	   end
+
 	 | SIGNATUREDec(i, sigbind) =>
 	   let
 		val E'    = Env.new()
@@ -965,6 +1010,29 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | SEQDec(i, dec1, dec2) =>
 		trDec' (E, trDec' (E,acc) dec1) dec2
+
+	 | OVERLOADDec(i, vid, tyvar, ty) =>
+	   (*UNFINISHED*)
+	   let
+		val (id',stamp) = trVId_bind E vid
+		val _           = insertScope E
+		val id1'        = trTyVar_bind E tyvar
+		val _           = insertScope E
+		val ids'        = trAllTy E ty
+		val typ'        = alltyp(ids', trTy E ty)
+		val _           = deleteScope E
+		val _           = deleteScope E
+	   in
+		acc
+	   end
+
+	 | INSTANCEDec(i, vid, longtycon, longvid) =>
+	   (*UNFINISHED*)
+		acc
+
+	 | INSTANCESCONDec(i, scon, longtycon) =>
+	   (*UNFINISHED*)
+		acc
 
 	 | INFIXDec(i, n, VId(i',vid')) =>
 		( insertInf(E, vid', (i', SOME(LEFT, n)))
@@ -1369,7 +1437,25 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trTypBindo' (E,E',acc) =
 	fn NONE => acc
 
-	 | SOME(TypBind(_, tyvarseq,tycon as TyCon(i',tycon'), ty, typbindo)) =>
+	 | SOME(NEWTypBind(_, tyvarseq, tycon as TyCon(i',tycon'), typbindo)) =>
+	   let
+		val i           = Source.over(infoSeq tyvarseq, i')
+		val (id',stamp) = trTyCon_bind E tycon
+		val _           = insertScope E
+		val ids'        = trTyVarSeq E tyvarseq
+		val _           = deleteScope E
+		val funtyp'     = funtyp(ids', O.AbsTyp(i'))
+		val dec'        = O.TypDec(i, id', funtyp')
+		val _ = insertDisjointTy(E', tycon', (i', stamp, Env.new()))
+			handle CollisionTy _ =>
+			       errorTyCon("duplicate type construtor ", tycon,
+					  " in binding group")
+	   in
+		trTypBindo' (E,E', dec'::acc) typbindo
+	   end
+
+	 | SOME(EQUALTypBind(_, tyvarseq, tycon as TyCon(i',tycon'), ty,
+								typbindo)) =>
 	   let
 		val i           = Source.over(infoSeq tyvarseq, infoTy ty)
 		val (id',stamp) = trTyCon_bind E tycon
@@ -1686,6 +1772,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		(* UNFINISHED *)
 		trTypDesco' (E,acc) (SOME typdesc)
 
+	 | EQEQTYPESpec(i, typdesc) =>
+		(* UNFINISHED *)
+		trTypDesco' (E,acc) (SOME typdesc)
+
 	 | DATATYPESpec(i, datdesc) =>
 	   let
 		val  _     = trDatDesco_lhs E (SOME datdesc)
@@ -1754,6 +1844,18 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   | SHARINGSpec(i, spec, _) ) =>
 		(* UNFINISHED *)
 		trSpec' (E,acc) spec
+
+	 | OVERLOADSpec(i, vid, tyvar, ty) =>
+	   (*UNFINISHED*)
+		acc
+
+	 | INSTANCESpec(i, vid, longtycon, longvid) =>
+	   (*UNFINISHED*)
+		acc
+
+	 | INSTANCESCONSpec(i, scon, longtycon) =>
+	   (*UNFINISHED*)
+		acc
 
 	 | INFIXSpec(i, n, vid as VId(i',vid')) =>
 		(insertDisjointInf(E, vid', (i', SOME(Infix.LEFT, n)))

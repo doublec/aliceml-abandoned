@@ -48,8 +48,15 @@ UNFINISHED: obsolete after bootstrapping:
     fun trId(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
       | trId(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId s)
 
-    fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
-      | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid y, trLab a)
+    fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId x)
+      | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
+
+    fun trLongid(y as I.LongId(i, I.ShortId(_,x), I.Lab(_,a))) =
+	if x = Prebound.stamp_Prebound then
+	    O.ShortId(i, Prebound.nameToStamp a, O.ExId a)
+	else trLongid' y
+
+      | trLongid y = trLongid' y
 
 
     (* Extract bound ids from declarations. *)
@@ -108,6 +115,7 @@ UNFINISHED: obsolete after bootstrapping:
     (* Expressions *)
 
     fun trExp(I.LitExp(i,l))		= O.LitExp(i, trLit l)
+      | trExp(I.PrimExp(i,s,t))		= O.PrimExp(i, s)
       | trExp(I.VarExp(i,y))		= O.VarExp(i, trLongid y)
       | trExp(I.ConExp(i,k,y))		= let val y' = trLongid y in
 					      curryExp(i,k,O.ConExp(i,y',k>0))

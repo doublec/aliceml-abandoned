@@ -9,10 +9,13 @@
  *   - guarded patterns
  *   - negated patterns
  *   - withval patterns
+ *   - abstract type declarations
  *   - open datatypes and free construct declarations via con
  *   - removed exception declarations (made into a derived form with con)
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to singe id (multi ids made DF)
+ *   - some hacks to build libraries: primitive value declarations,
+ *     overloading declarations, special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - unified strdec and topdec
@@ -117,22 +120,29 @@ signature INPUT_GRAMMAR =
     (* Declarations *)
 
     and Dec =
-	  VALDec         of Info * TyVarSeq * ValBind
-	| FUNDec         of Info * TyVarSeq * FvalBind
-	| TYPEDec        of Info * TypBind
-	| DATATYPEDec    of Info * DatBind
-	| REPLICATIONDec of Info * TyCon * LongTyCon
-	| CONSTRUCTORDec of Info * DconBind
-	| STRUCTUREDec   of Info * StrBind
-	| SIGNATUREDec   of Info * SigBind
-	| FUNCTORDec     of Info * FunBind
-	| LOCALDec       of Info * Dec * Dec
-	| OPENDec        of Info * LongStrId
-	| EMPTYDec       of Info
-	| SEQDec         of Info * Dec * Dec
-	| INFIXDec       of Info * int * VId
-	| INFIXRDec      of Info * int * VId
-	| NONFIXDec      of Info * VId
+	  VALDec          of Info * TyVarSeq * ValBind
+	| FUNDec          of Info * TyVarSeq * FvalBind
+	| PRIMITIVEDec    of Info * VId * Ty * SCon
+	| TYPEDec         of Info * TypBind
+	| EQTYPEDec       of Info * TypBind
+	| EQEQTYPEDec     of Info * TypBind
+	| DATATYPEDec     of Info * DatBind
+	| REPLICATIONDec  of Info * TyCon * LongTyCon
+	| CONSTRUCTORDec  of Info * DconBind
+	| STRUCTUREDec    of Info * StrBind
+	| PREBOUNDDec     of Info * StrId
+	| SIGNATUREDec    of Info * SigBind
+	| FUNCTORDec      of Info * FunBind
+	| LOCALDec        of Info * Dec * Dec
+	| OPENDec         of Info * LongStrId
+	| EMPTYDec        of Info
+	| SEQDec          of Info * Dec * Dec
+	| OVERLOADDec     of Info * VId * TyVar * Ty
+	| INSTANCEDec     of Info * VId * LongTyCon * LongVId
+	| INSTANCESCONDec of Info * SCon * LongTyCon
+	| INFIXDec        of Info * int * VId
+	| INFIXRDec       of Info * int * VId
+	| NONFIXDec       of Info * VId
 
     (* Bindings *)
 
@@ -144,7 +154,8 @@ signature INPUT_GRAMMAR =
 	  FvalBind       of Info * Match * FvalBind option
 
     and TypBind =
-	  TypBind        of Info * TyVarSeq * TyCon * Ty * TypBind option
+	  NEWTypBind     of Info * TyVarSeq * TyCon * TypBind option
+	| EQUALTypBind   of Info * TyVarSeq * TyCon * Ty * TypBind option
 
     and DatBind =
 	  CLOSEDDatBind  of Info * TyVarSeq * TyCon * ConBind * DatBind option
@@ -227,24 +238,28 @@ signature INPUT_GRAMMAR =
     (* Specifications *)
 
     and Spec =
-	  VALSpec         of Info * ValDesc
-	| TYPESpec        of Info * TypDesc
-	| EQTYPESpec      of Info * TypDesc
-	| DATATYPESpec    of Info * DatDesc
-	| REPLICATIONSpec of Info * TyCon * LongTyCon
-	| CONSTRUCTORSpec of Info * DconDesc
-	| STRUCTURESpec   of Info * StrDesc
-	| SIGNATURESpec   of Info * SigDesc
-	| FUNCTORSpec     of Info * FunDesc
-	| INCLUDESpec     of Info * SigExp
-	| EMPTYSpec       of Info
-	| SEQSpec         of Info * Spec * Spec
-	| SHARINGTYPESpec of Info * Spec * LongTyCon list
+	  VALSpec          of Info * ValDesc
+	| TYPESpec         of Info * TypDesc
+	| EQTYPESpec       of Info * TypDesc
+	| EQEQTYPESpec     of Info * TypDesc
+	| DATATYPESpec     of Info * DatDesc
+	| REPLICATIONSpec  of Info * TyCon * LongTyCon
+	| CONSTRUCTORSpec  of Info * DconDesc
+	| STRUCTURESpec    of Info * StrDesc
+	| SIGNATURESpec    of Info * SigDesc
+	| FUNCTORSpec      of Info * FunDesc
+	| INCLUDESpec      of Info * SigExp
+	| EMPTYSpec        of Info
+	| SEQSpec          of Info * Spec * Spec
+	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
-	| SHARINGSpec     of Info * Spec * LongStrId list
-	| INFIXSpec       of Info * int * VId
-	| INFIXRSpec      of Info * int * VId
-	| NONFIXSpec      of Info * VId
+	| SHARINGSpec      of Info * Spec * LongStrId list
+	| OVERLOADSpec     of Info * VId * TyVar * Ty
+	| INSTANCESpec     of Info * VId * LongTyCon * LongVId
+	| INSTANCESCONSpec of Info * SCon * LongTyCon
+	| INFIXSpec        of Info * int * VId
+	| INFIXRSpec       of Info * int * VId
+	| NONFIXSpec       of Info * VId
 
     and ValDesc =
 	  ValDesc         of Info * Op * VId * Ty * ValDesc option

@@ -298,6 +298,14 @@ structure Type :> TYPE =
 	   | LESS    => FLD(l1, t1, r1)
 	   | GREATER => FLD(l2, t2, extendRow(l1,t2,r2))
 
+    fun tupToRow ts =
+	let
+	    fun loop(n,  []  ) = NIL
+	      | loop(n, t::ts) = FLD(Lab.fromInt n, t, loop(n+1,ts))
+	in
+	    loop(1,ts)
+	end
+
 
     (* Closure *)
 
@@ -338,7 +346,7 @@ structure Type :> TYPE =
 	    fun unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
-	    fun unifyRow(r1,r2,ROWorSUM) =
+	    fun unifyRow(r1, r2, ROWorSUM) =
 		let
 		    fun loop(NIL, false, NIL, false) = NIL
 		      | loop(NIL, false, RHO, _    ) = NIL
@@ -379,6 +387,12 @@ structure Type :> TYPE =
 
 	       | (TUP(ts1), TUP(ts2)) =>
 		 recurse (ListPair.app unify) (ts1,ts2)
+
+	       | (TUP(ts), ROW(r)) =>
+		 recurse unifyRow (tupToRow ts, r, ROW)
+
+	       | (ROW(r), TUP(ts)) =>
+		 recurse unifyRow (r, tupToRow ts, ROW)
 
 	       | (ROW(r1), ROW(r2)) =>
 		 recurse unifyRow (r1,r2,ROW)
