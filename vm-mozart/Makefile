@@ -513,7 +513,9 @@ build1/tools/depend/SMLLexer.lex: tools/depend/SMLLexer.lex
 
 build1/tools/depend/SMLLexer.aml: build1/tools/depend/SMLLexer.lex.sml \
 	tools/depend/SMLLexer.aml.header Rel2.import
-	cat Rel2.import $(SRCTOP)/tools/depend/SMLLexer.aml.header $< > $@
+	sed s/Unsafe.//g $< > $@.temp
+	cat Rel2.import $(SRCTOP)/tools/depend/SMLLexer.aml.header $@.temp > $@
+	rm $@.temp
 
 build1/tools/depend/SMLParser.grm: tools/depend/SMLParser.grm
 	cp $< $@
