@@ -10,7 +10,6 @@
 *)
 
 import structure Gtk        from "GtkSupport"
-import structure Gdk        from "GtkSupport"
 
 import structure Color      from "../../common/Color"
 

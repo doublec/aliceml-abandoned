@@ -25,12 +25,10 @@ fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
         tournamentStarted   = Remote.proxy $ #tournamentStarted c,
         levelStarted        = Remote.proxy $ #levelStarted c,
         playerDisconnected  = Remote.proxy $ #playerDisconnected c,
-        abort               = Remote.proxy $ #abort c,
         countdown           = Remote.proxy $ #countdown c,
         tick                = Remote.proxy $ #tick c,
         playersDied         = Remote.proxy $ #playersDied c,
         playersFinished     = Remote.proxy $ #playersFinished c,
-        levelFinished       = Remote.proxy $ #levelFinished c,
         tournamentFinished  = Remote.proxy $ #tournamentFinished c
     }
 
@@ -116,22 +114,18 @@ fun main () =
                 (*
                 fun locked name f = Lock.sync lock f 
                 *)
-                fun abort _ = ()
                 fun playersDied _ = ()
                 fun playersFinished _ = ()
-                fun levelFinished _ = ()
             in
                {
                    playersJoined        = locked "playersJoined" playersJoined,
                    tournamentStarted    = locked "tournamentStarted" tournamentStarted,
                    levelStarted         = locked "levelStarted" levelStarted,
                    playerDisconnected   = locked "playerDisconnected" playerDisconnected,
-                   abort                = locked "abort" abort,
                    countdown            = locked "countdown" countdown,
                    tick                 = locked "tick" tick,
                    playersDied          = locked "playersDied" playersDied,
                    playersFinished      = locked "playersFinished" playersFinished,
-                   levelFinished        = locked "levelFinished" levelFinished,
                    tournamentFinished   = locked "tournamentFinished" tournamentFinished
                 }
             end 

@@ -86,7 +86,7 @@ struct
             (#gamePoints info := 0;
              #deathCount info := !(#deathCount info) + 1;
              if isSome maxLives andalso 
-                    ! (#deathCount info) > valOf maxLives then
+                    ! (#deathCount info) >= valOf maxLives then
                (#state p := BURIED (info, ref NONE);
                 print "buried\n")
              else

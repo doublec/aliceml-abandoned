@@ -149,7 +149,6 @@ struct
 
         (* GENERIC *)
         playerDisconnected : string * Color.color -> unit,
-        abort :              unit    -> unit,
 
         (* PLAY MODE *)
 	countdown :         int -> unit,
@@ -163,9 +162,6 @@ struct
         
 	playersDied :       (string * Color.color) list -> unit,
 	playersFinished :   (string * Color.color) list -> unit,
-
-        levelFinished :     unit -> unit,
-	(** levelFinished is called when a level is finished *)
 
 	tournamentFinished : Highscore.highscore -> unit
 	(** [tournamentFinished h] is called when the tournament 

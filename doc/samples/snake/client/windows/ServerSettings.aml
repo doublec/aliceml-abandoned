@@ -9,7 +9,7 @@
 *
 *)
 
-import signature SERVERSETTINGS from "SERVERSETTINGS"
+import signature SERVERSETTINGS from "SERVERSETTINGS-sig"
 
 import structure Gtk            from "GtkSupport"
 

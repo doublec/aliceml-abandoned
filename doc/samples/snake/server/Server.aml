@@ -657,20 +657,24 @@ struct
                 let
                     val PDESC pdesc = DynArray.sub (partDescs, id)
                     val ev          = #event pdesc
+		    val st	    = #state pdesc
                 in
-                    (* we await ev here to make sure that
-                       Protocol exception is raised as early
-                       as possible
-                     *)
-                    f (id, Future.await ev, a)
+		    if not (PState.isDisconnected st) then
+                    	f (id, Future.await ev, a)
+		    else
+			raise P.Protocol unknownClientMsg
                 end)
                 
             fun updateEvent0 (id, f) = RWLock.sync lock (fn () =>
                 let
                     val PDESC pdesc = DynArray.sub (partDescs, id)
                     val ev          = #event pdesc
+		    val st	    = #state pdesc
                 in
-                    f (id, Future.await ev)
+		    if not (PState.isDisconnected st) then
+                    	f (id, Future.await ev)
+		    else
+			raise P.Protocol unknownClientMsg
                 end)
                 
             fun turn id = updateEvent1 (id, fn (id, ev, dir) => 
