@@ -10,13 +10,12 @@
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive           from "Pervasive"
-import type unit and bool datatype ref from "ToplevelTypes"
+import structure __pervasive                       from "Pervasive"
+import __primitive type unit and bool datatype ref from "ToplevelTypes"
 
 signature REF =								(**)
 sig
