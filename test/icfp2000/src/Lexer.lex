@@ -5,6 +5,8 @@ type pos           = int
 type svalue        = Tokens.svalue
 type lexresult     = (svalue, pos) token
 
+exception Error of int * string
+
 fun eof() = EOF(~1,~1)
 
 fun toLRPos(yypos, yytext) =
@@ -69,6 +71,5 @@ string     = "\"" {printable}* "\"";
 				     String.extract(yytext, 1,
 				     	SOME(String.size yytext - 2))) );
 
-<INITIAL> "\""		=> ( Error.error(yypos, "invalid string") );
-<INITIAL> .		=> ( Error.error(yypos, "illegal character " ^
-Int.toString(Char.ord(String.sub(yytext,0)))) );
+<INITIAL> "\""		=> ( raise Error(yypos, "invalid string") );
+<INITIAL> .		=> ( raise Error(yypos, "illegal character") );
