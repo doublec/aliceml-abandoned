@@ -23,6 +23,8 @@
 
 #define WORDS_NEEDED(n, t) \
   ((sizeof(t) * n + sizeof(word) - 1) / sizeof(word))
+#define MAX_SIZE(t) \
+  (MAX_BLOCKSIZE * sizeof(word) / sizeof(t))
 
 class Alice {
 public:
@@ -54,7 +56,7 @@ public:
 
 class Array: private Block {
 public:
-  static const u_int maxLen = 0x0FFFFFFF; //--** is this correct?
+  static const u_int maxLen = MAX_BLOCKSIZE;
 
   using Block::ToWord;
 
@@ -238,7 +240,7 @@ class String: private Block {
 private:
   static const u_int LEN_POS = 1;
 public:
-  static const u_int maxSize = 0x3FFFFFFF; //--** is this correct?
+  static const u_int maxSize = MAX_SIZE(char);
 
   using Block::ToWord;
 
@@ -407,7 +409,7 @@ public:
 
 class Vector: private Block {
 public:
-  static const u_int maxLen = 0x0FFFFFFF; //--** is this correct?
+  static const u_int maxLen = MAX_BLOCKSIZE;
 
   using Block::ToWord;
 
@@ -447,7 +449,7 @@ class WideString: private Block {
 private:
   static const u_int LEN_POS = 1;
 public:
-  static const u_int maxSize = 0x1FFFFFFF; //--** is this correct?
+  static const u_int maxSize = MAX_SIZE(wchar_t);
 
   using Block::ToWord;
 
