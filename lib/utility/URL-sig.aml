@@ -32,6 +32,7 @@ signature URL =
 	val toStringRaw: url -> string   (*--** replace by getLocalPath *)
 	val isAbsolute: url -> bool
 	val resolve: url -> url -> url
+	val equal: url * url -> bool
 	val compare: url * url -> order
 	val hash: url -> int
 
