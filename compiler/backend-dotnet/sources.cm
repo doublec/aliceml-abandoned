@@ -11,6 +11,8 @@ is
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
 
+    SKELETON.sig
+    Skeleton.sml
     IL.sig
     IL.sml
     System.sml

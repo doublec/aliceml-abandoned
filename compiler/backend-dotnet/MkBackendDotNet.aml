@@ -23,13 +23,7 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	fun apply () component =
 	    raise Crash.Crash "ComPlusTarget.apply: not implemented"
 
-	fun save () filename component =
-	    let
-		val outstream = TextIO.openOut filename
-	    in
-		IL.outputProgram (outstream, component);
-		TextIO.closeOut outstream
-	    end
+	fun save () filename component = IL.outputProgram (filename, component)
     end
 
 functor MakeBackendComPlus

@@ -42,6 +42,7 @@ signature CODE_STORE =
 	val defineMethod: class * IL.id * FlatGrammar.id list -> unit
 	val emit: IL.instr -> unit
 	val emitId: FlatGrammar.id -> unit
+	val emitBox: IL.ty * IL.dottedname -> unit
 	val declareLocal: FlatGrammar.id -> unit
 	val kill: StampSet.t -> unit
 	val saveRegState: unit -> savedRegState

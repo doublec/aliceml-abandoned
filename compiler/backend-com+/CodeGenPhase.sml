@@ -201,14 +201,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     declareArgs (TupArgs ids, false))
 
 	fun genLit (WordLit w) =
-	    (emit (LdcI4 (LargeWord.toInt w)); emit (Box System.Int32))
+	    (emit (LdcI4 (LargeWord.toInt w)); emitBox (Int32Ty, System.Int32))
 	  | genLit (IntLit i) =
-	    (emit (LdcI4 (LargeInt.toInt i)); emit (Box System.Int32))
+	    (emit (LdcI4 (LargeInt.toInt i)); emitBox (Int32Ty, System.Int32))
 	  | genLit (CharLit c) =
-	    (emit (LdcI4 (Char.ord c)); emit (Box System.Char))
+	    (emit (LdcI4 (Char.ord c)); emitBox (Int32Ty, System.Char))
 	  | genLit (StringLit s) = emit (Ldstr s)
 	  | genLit (RealLit s) =
-	    (emit (LdcR8 s); emit (Box System.Double))
+	    (emit (LdcR8 s); emitBox (Float64Ty, System.Double))
 
 	(*--** remove global state *)
 	val sharedLabels: label StampMap.t = StampMap.new ()
@@ -243,9 +243,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    let
 		val ((line, _), _) = #region info
 	    in
-		emitId id; (*--** emit (LdcI4 line); *)
-		emit (Newobj (Alice.Exception,
-			      [System.ObjectTy (*--** , Int32Ty *)]));
+		emitId id; emit (LdcI4 line);
+		emit (Newobj (Alice.Exception, [System.ObjectTy, Int32Ty]));
 		emit Throw
 	    end
 	  | genStm (ReraiseStm (_, _)) = emit Rethrow
@@ -392,7 +391,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    emit (Newobj (System.Guid, nil))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (TagExp (_, _, n, NONE), PREPARE) =
-	    (emit (LdcI4 n); emit (Box System.Int32))
+	    (emit (LdcI4 n); emitBox (Int32Ty, System.Int32))
 	  | genExp (TagExp (_, _, n, SOME _), PREPARE) =
 	    (emit (LdcI4 n);
 	     emit (Newobj (Alice.TagConstructor, [Int32Ty])))
@@ -402,8 +401,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (Alice.ConConstructor, [System.ObjectTy])))
 	  | genExp (StaticConExp (_, _, _), _) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genExp: StaticConExp"
-	  | genExp (RefExp _, PREPARE) =
-	    emit (Ldsfld (Alice.Prebound.General, "ref", System.ObjectTy))
+	  | genExp (RefExp info, PREPARE) =
+	    genExp (PrimExp (info, "General.ref"), PREPARE)
 	  | genExp (TupExp (_, nil), PREPARE) = emit Ldnull
 	  | genExp (TupExp (_, nil), FILL) = ()
 	  | genExp (TupExp (_, nil), BOTH) = emit Ldnull
@@ -474,7 +473,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		  TupArgs (ids as [_, _, _, _, _, _, _]) |
 		  TupArgs (ids as [_, _, _, _, _, _, _, _]) |
 		  TupArgs (ids as [_, _, _, _, _, _, _, _, _])) =>
-		     (defineMethod (stamp, "Apply", nil);
+		     (defineMethod (stamp, "Apply", ids);
 		      genBody body; closeMethod ())
 	       | (RecArgs (labelIdList as [_, _]) |
 		  RecArgs (labelIdList as [_, _, _]) |

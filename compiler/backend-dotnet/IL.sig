@@ -116,6 +116,7 @@ signature IL =
 	  | Ldfld of dottedname * id * ty
 	  | Ldlen
 	  | Ldloc of int
+	  | Ldloca of int
 	  | Ldnull
 	  | Ldsfld of dottedname * id * ty
 	  | Ldstr of string
@@ -171,5 +172,5 @@ signature IL =
 	type program = decl list * sign
 	type t = program
 
-	val outputProgram: TextIO.outstream * program -> unit
+	val outputProgram: string * program -> unit
     end

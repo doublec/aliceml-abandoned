@@ -116,6 +116,7 @@ structure IL :> IL =
 	  | Ldfld of dottedname * id * ty
 	  | Ldlen
 	  | Ldloc of int
+	  | Ldloca of int
 	  | Ldnull
 	  | Ldsfld of dottedname * id * ty
 	  | Ldstr of string
@@ -266,6 +267,7 @@ structure IL :> IL =
 	  | eval (Ldfld (_, _, _)) = (pop 1; push 1)
 	  | eval Ldlen = (pop 1; push 1)
 	  | eval (Ldloc _) = push 1
+	  | eval (Ldloca _) = push 1
 	  | eval Ldnull = push 1
 	  | eval (Ldsfld (_, _, _)) = push 1
 	  | eval (Ldstr _) = push 1
@@ -305,10 +307,18 @@ structure IL :> IL =
 
 	(* Output IL Syntax *)
 
-	fun outputDottedname (q, [id]) = outputId (q, id)
-	  | outputDottedname (q, id::idr) =
-	    (outputId (q, id); output1 (q, #"."); outputDottedname (q, idr))
-	  | outputDottedname (_, nil) = raise Crash.Crash "IL.outputDottedname"
+	fun outputDottedname' (q, [id]) = outputId (q, id)
+	  | outputDottedname' (q, id::idr) =
+	    (outputId (q, id); output1 (q, #"."); outputDottedname' (q, idr))
+	  | outputDottedname' (_, nil) =
+	    raise Crash.Crash "IL.outputDottedname'"
+
+	fun outputDottedname (q, dottedname as "System"::_) =
+	    (output (q, "[mscorlib]"); outputDottedname' (q, dottedname))
+	  | outputDottedname (q, dottedname as "Alice"::_) =
+	    (output (q, "[Alice]"); outputDottedname' (q, dottedname))
+	  | outputDottedname (q, dottedname) =
+	    outputDottedname' (q, dottedname)
 
 	fun outputClassAttr (q, (isPublic, inheritance)) =
 	    (if isPublic then output (q, "public ")
@@ -484,6 +494,11 @@ structure IL :> IL =
 	     else if i < 256 then
 		 (output (q, ".s "); output (q, Int.toString i))
 	     else (output1 (q, #" "); output (q, Int.toString i)))
+	  | outputInstr (q, Ldloca i) =
+	    (output (q, "ldloca");
+	     if i < 256 then
+		 (output (q, ".s "); output (q, Int.toString i))
+	     else (output1 (q, #" "); output (q, Int.toString i)))
 	  | outputInstr (q, Ldnull) = output (q, "ldnull")
 	  | outputInstr (q, Ldsfld (dottedname, id, ty)) =
 	    (output (q, "ldsfld "); outputTy (q, ty); output1 (q, #" ");
@@ -623,7 +638,13 @@ structure IL :> IL =
 		outputId (q, id); output (q, " extends ");
 		outputDottedname (q, super);
 		outputImplements (q, interfaces);
-		output (q, " {\n"); outputClassDecls (q, members);
+		output (q, " {\n");
+		output (q, (".comtype " ^
+			    (case attr of
+				 (true, _) => "public "
+			       | (false, _) => "") ^ "'"));
+		outputId (q, id); output (q, "'\n{\n}\n");
+		outputClassDecls (q, members);
 		output (q, "}\n");
 		case namespace of
 		    nil => ()
@@ -645,5 +666,34 @@ structure IL :> IL =
 	    (outputDecl (q, decl); output1 (q, #"\n"); outputDecls (q, declr))
 	  | outputDecls (_, nil) = ()
 
-	fun outputProgram (q, (decls, _)) = outputDecls (q, decls)
+	fun basename filename =   (*--** replace by OS.Path.splitBaseExt *)
+	    let
+		fun cutPath ((#"/" | #"\\")::rest) = nil
+		  | cutPath (c::rest) = c::cutPath rest
+		  | cutPath nil = nil
+		val cs = cutPath (List.rev (String.explode filename))
+		fun cutExtension (#"."::rest) =
+		    (case rest of
+			 (#"/" | #"\\")::_ => cs
+		       | _::_ => rest
+		       | nil => cs)
+		  | cutExtension ((#"/" | #"\\")::_) = cs
+		  | cutExtension (_::rest) = cutExtension rest
+		  | cutExtension nil = cs
+	    in
+		String.implode (List.rev (case cs of
+					      #"."::_ => cs
+					    | _ => cutExtension cs))
+	    end
+
+	fun outputProgram (filename, (decls, _)) =
+	    let
+		val name = basename filename
+		val q = TextIO.openOut filename
+	    in
+		output (q, Skeleton.module name);
+		output (q, Skeleton.externals);
+		outputDecls (q, decls);
+		TextIO.closeOut q
+	    end
     end

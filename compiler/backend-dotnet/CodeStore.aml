@@ -34,7 +34,8 @@ structure CodeStore :> CODE_STORE =
 	type classAttrState = (extends * implements) option ref
 	type scope = reg ScopedMap.t
 	type classDeclsState = classDecl list ref
-	type regState = scope * index ref * index ref * index list ref
+	type regState =
+	    scope * index ref * index ref * IL.ty list ref * index list ref
 	type savedRegState = index list
 	type instrsState = IL.instr list ref
 
@@ -48,17 +49,22 @@ structure CodeStore :> CODE_STORE =
 	    let
 		open Prebound
 		val scope = ScopedMap.new ()
-		fun prebind (stamp, dottedname, id) =
-		    ScopedMap.insert
-		    (scope, stamp, Prebound (dottedname, id, System.ObjectTy))
+		fun prebind (stamp, name) =
+		    let
+			val (dottedname, id) = Builtins.lookupField name
+		    in
+			ScopedMap.insertDisjoint
+			(scope, stamp,
+			 Prebound (dottedname, id, System.ObjectTy))
+		    end
 	    in
-		prebind (valstamp_false, Alice.Prebound, "false");
-		prebind (valstamp_true, Alice.Prebound, "true");
-		prebind (valstamp_nil, Alice.Prebound, "nil");
-		prebind (valstamp_cons, Alice.Prebound, "cons");
-		prebind (valstamp_ref, Alice.Prebound, "ref");
-		prebind (valstamp_match, Alice.Prebound.General, "Match");
-		prebind (valstamp_bind, Alice.Prebound.General, "Bind");
+		prebind (valstamp_false, "Bool.false");
+		prebind (valstamp_true, "Bool.true");
+		prebind (valstamp_nil, "List.nil");
+		prebind (valstamp_cons, "List.cons");
+		prebind (valstamp_ref, "General.ref");
+		prebind (valstamp_match, "General.Match");
+		prebind (valstamp_bind, "General.Bind");
 		scope
 	    end
 
@@ -69,9 +75,9 @@ structure CodeStore :> CODE_STORE =
 	fun init dottedname =
 	    (namespace := dottedname;
 	     classes := Map.new ();
-	     env := [(Stamp.new (), "main", 0,
-		      (ScopedMap.clone preboundScope, ref 0, ref 0, ref nil),
-		      ref nil)])
+	     env := [(Stamp.new (), "Main", 0,
+		      (ScopedMap.clone preboundScope, ref 0, ref 0,
+		       ref nil, ref nil), ref nil)])
 
 	fun defineClass (stamp, extends, implements) =
 	    let
@@ -118,8 +124,9 @@ structure CodeStore :> CODE_STORE =
 		List.foldl (fn (Id (_, stamp, _), i) =>
 			    (ScopedMap.insertDisjoint (scope, stamp, Arg i);
 			     i + 1)) 1 args;
-		env := (stamp, id, List.length args,
-			(scope, ref 0, ref 0, ref nil), ref nil)::(!env)
+		env :=
+		(stamp, id, List.length args,
+		 (scope, ref 0, ref 0, ref nil, ref nil), ref nil)::(!env)
 	    end
 
 	fun emit instr =
@@ -137,7 +144,7 @@ structure CodeStore :> CODE_STORE =
 		    className stamp
 		end
 
-	    fun lookup ((_, _, _, (scope, ri, _, _), _)::envr, stamp) =
+	    fun lookup ((_, _, _, (scope, ri, _, _, _), _)::envr, stamp) =
 		(case ScopedMap.lookup (scope, stamp) of
 		     SOME reg => reg
 		   | NONE =>
@@ -172,9 +179,20 @@ structure CodeStore :> CODE_STORE =
 	    (emit (Comment ("load " ^ Stamp.toString stamp));
 	     emitStamp stamp)
 
+	fun emitBox (ty, dottedname) =
+	    (*--** store local type *)
+	    let
+		val (_, _, _, (_, _, ri, tysRef, _), _) = List.hd (!env)
+		val index = !ri
+	    in
+		tysRef := ty::(!tysRef); ri := index + 1;
+		emit (Stloc index); emit (Ldloca index); emit (Box dottedname)
+	    end
+
 	fun declareLocal (Id (_, stamp, _)) =
 	    let
-		val (_, _, _, (scope, _, ri, indicesRef), _) = List.hd (!env)
+		val (_, _, _, (scope, _, ri, tysRef, indicesRef), _) =
+		    List.hd (!env)
 	    in
 		emit (Comment ("store " ^ Stamp.toString stamp));
 		case ScopedMap.lookup (scope, stamp) of
@@ -184,7 +202,10 @@ structure CodeStore :> CODE_STORE =
 			let
 			    val i =
 				case indicesRef of
-				    ref nil => !ri before ri := !ri + 1
+				    ref nil =>
+					!ri before
+					(ri := !ri + 1;
+					 tysRef := System.ObjectTy::(!tysRef))
 				  | ref (index::rest) =>
 					index before indicesRef := rest
 			in
@@ -195,7 +216,7 @@ structure CodeStore :> CODE_STORE =
 
 	fun kill set =
 	    let
-		val (_, _, _, (scope, _, _, indicesRef), _) = List.hd (!env)
+		val (_, _, _, (scope, _, _, _, indicesRef), _) = List.hd (!env)
 	    in
 		StampSet.app
 		(fn stamp =>
@@ -209,14 +230,14 @@ structure CodeStore :> CODE_STORE =
 
 	fun saveRegState () =
 	    let
-		val (_, _, _, (_, _, _, ref indices), _) = hd (!env)
+		val (_, _, _, (_, _, _, _, ref indices), _) = hd (!env)
 	    in
 		indices
 	    end
 
 	fun restoreRegState indices =
 	    let
-		val (_, _, _, (_, _, _, indicesRef), _) = hd (!env)
+		val (_, _, _, (_, _, _, _, indicesRef), _) = hd (!env)
 	    in
 		indicesRef := indices
 	    end
@@ -225,7 +246,8 @@ structure CodeStore :> CODE_STORE =
 
 	fun closeMethod () =
 	    case !env of
-		(stamp, id, narg, (scope, _, ref nloc, _), ref instrs)::envr =>
+		(stamp, id, narg, (scope, _, _, ref tys, _),
+		 ref instrs)::envr =>
 		    let
 			val (_, _, classDeclsRef) =
 			    Map.lookupExistent (!classes, stamp)
@@ -235,7 +257,7 @@ structure CodeStore :> CODE_STORE =
 			val method =
 			    Method (id, (Public, Virtual),
 				    args narg, System.ObjectTy,
-				    (args nloc, false), List.rev instrs)
+				    (List.rev tys, false), List.rev instrs)
 			val newClassDecls =
 			    ScopedMap.foldi
 			    (fn (stamp, reg, classDecls) =>
@@ -268,11 +290,12 @@ structure CodeStore :> CODE_STORE =
 	    let
 		val mainMethod =
 		    case !env of
-			[(_, id, 0, (_, _, ref n, _), ref instrs)] =>
-			    Class (["Main"], (true, SealedClass),
-				   ["System", "Object"], nil,
-				   [Method (id, (Public, Static), nil,
-					    System.ObjectTy, (args n, false),
+			[(_, id, 0, (_, _, _, ref tys, _), ref instrs)] =>
+			    Class (["Execute"], (true, SealedClass),
+				   System.Object, nil,
+				   [Method (id, (Public, Static),
+					    [System.ObjectTy], System.ObjectTy,
+					    (List.rev tys, false),
 					    List.rev instrs)])
 		      | _ => raise Crash.Crash "CodeStore.close"
 	    in

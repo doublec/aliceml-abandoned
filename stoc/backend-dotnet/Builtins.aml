@@ -16,51 +16,44 @@ structure Builtins :> BUILTINS =
 
 	val builtinTable =
 	    let
-		val map: (IL.dottedname * string) Map.t = Map.new ()
-		val Char = ["Char"]
-		val General = ["General"]
-		val GlobalStamp = ["GlobalStamp"]
-		val Int = ["Int"]
-		val Real = ["Real"]
-		val String = ["String"]
-		val Word = ["Word"]
+		val map = Map.new ()
 	    in
-		Map.insert (map, "=", (nil, "opeq"));
-		Map.insert (map, "<>", (nil, "opnoteq"));
-		Map.insert (map, "Char.<", (Char, "opless"));
-		Map.insert (map, "Char.>", (Char, "opgreater"));
-		Map.insert (map, "Char.<=", (Char, "oplessEq"));
-		Map.insert (map, "Char.>=", (Char, "opgreaterEq"));
-		Map.insert (map, "General.:=", (General, "assign"));
-		Map.insert (map, "Int.~", (Int, "opnegate"));
-		Map.insert (map, "Int.+", (Int, "opadd"));
-		Map.insert (map, "Int.-", (Int, "opsub"));
-		Map.insert (map, "Int.*", (Int, "opmul"));
-		Map.insert (map, "Int.<", (Int, "opless"));
-		Map.insert (map, "Int.>", (Int, "opgreater"));
-		Map.insert (map, "Int.<=", (Int, "oplessEq"));
-		Map.insert (map, "Int.>=", (Int, "opgreaterEq"));
-		Map.insert (map, "Real.~", (Real, "opnegate"));
-		Map.insert (map, "Real.+", (Real, "opadd"));
-		Map.insert (map, "Real.-", (Real, "opsub"));
-		Map.insert (map, "Real.*", (Real, "opmul"));
-		Map.insert (map, "Real./", (Real, "opdiv"));
-		Map.insert (map, "Real.<", (Real, "opless"));
-		Map.insert (map, "Real.>", (Real, "opgreater"));
-		Map.insert (map, "Real.<=", (Real, "oplessEq"));
-		Map.insert (map, "Real.>=", (Real, "opgreaterEq"));
-		Map.insert (map, "String.^", (String, "append"));
-		Map.insert (map, "String.<", (String, "opless"));
-		Map.insert (map, "String.>", (String, "opgreater"));
-		Map.insert (map, "String.<=", (String, "oplessEq"));
-		Map.insert (map, "String.>=", (String, "opgreaterEq"));
-		Map.insert (map, "Word.fromInt'", (Word, "fromIntQuote"));
-		Map.insert (map, "Word.+", (Word, "opadd"));
-		Map.insert (map, "Word.-", (Word, "opsub"));
-		Map.insert (map, "Word.*", (Word, "opmul"));
-		Map.insert (map, "Word.<<", (Word, "shl"));
-		Map.insert (map, "Word.>>", (Word, "shr"));
-		Map.insert (map, "Word.~>>", (Word, "arithshr"));
+		Map.insert (map, "=", "opeq");
+		Map.insert (map, "<>", "opnoteq");
+		Map.insert (map, "Char.<", "Char_opless");
+		Map.insert (map, "Char.>", "Char_opgreater");
+		Map.insert (map, "Char.<=", "Char_oplessEq");
+		Map.insert (map, "Char.>=", "Char_opgreaterEq");
+		Map.insert (map, "General.:=", "General_assign");
+		Map.insert (map, "Int.~", "Int_opnegate");
+		Map.insert (map, "Int.+", "Int_opadd");
+		Map.insert (map, "Int.-", "Int_opsub");
+		Map.insert (map, "Int.*", "Int_opmul");
+		Map.insert (map, "Int.<", "Int_opless");
+		Map.insert (map, "Int.>", "Int_opgreater");
+		Map.insert (map, "Int.<=", "Int_oplessEq");
+		Map.insert (map, "Int.>=", "Int_opgreaterEq");
+		Map.insert (map, "Real.~", "Real_opnegate");
+		Map.insert (map, "Real.+", "Real_opadd");
+		Map.insert (map, "Real.-", "Real_opsub");
+		Map.insert (map, "Real.*", "Real_opmul");
+		Map.insert (map, "Real./", "Real_opdiv");
+		Map.insert (map, "Real.<", "Real_opless");
+		Map.insert (map, "Real.>", "Real_opgreater");
+		Map.insert (map, "Real.<=", "Real_oplessEq");
+		Map.insert (map, "Real.>=", "Real_opgreaterEq");
+		Map.insert (map, "String.^", "String_append");
+		Map.insert (map, "String.<", "String_opless");
+		Map.insert (map, "String.>", "String_opgreater");
+		Map.insert (map, "String.<=", "String_oplessEq");
+		Map.insert (map, "String.>=", "String_opgreaterEq");
+		Map.insert (map, "Word.fromInt'", "Word_fromIntQuote");
+		Map.insert (map, "Word.+", "Word_opadd");
+		Map.insert (map, "Word.-", "Word_opsub");
+		Map.insert (map, "Word.*", "Word_opmul");
+		Map.insert (map, "Word.<<", "Word_shl");
+		Map.insert (map, "Word.>>", "Word_shr");
+		Map.insert (map, "Word.~>>", "Word_arithshr");
 		map
 	    end
 
@@ -69,44 +62,12 @@ structure Builtins :> BUILTINS =
 		SOME res => res
 	      | NONE =>
 		    let
-			val ids =
-			    List.rev (String.tokens (fn c => c = #".") name)
+			val res = String.map (fn #"." => #"_" | c => c) name
 		    in
-			(List.rev (List.tl ids), List.hd ids)
+			Map.insertDisjoint (builtinTable, name, res); res
 		    end
 
-	fun allTails (ids as _::rest) = ids::allTails rest
-	  | allTails nil = nil
+	fun lookupClass name = ["Alice", "Builtins", lookup name]
 
-	local
-	    fun sep' (x::xr, s) = s::x::sep' (xr, s)
-	      | sep' (nil, _) = nil
-	in
-	    fun sep (x::xr, s) = String.concat (x::sep' (xr, s))
-	      | sep (nil, _) = ""
-	end
-
-	fun makePath dottedname =
-	    sep (List.map (fn dottedname => sep (List.rev dottedname, "$"))
-		 (List.rev (allTails (List.rev dottedname))), "/")
-
-	fun lookupClass name =
-	    (* Alice.opeq *)
-	    (* Alice.Array/Array$sub *)
-	    (* Alice.Unsafe/Unsafe$Array/Unsafe$Array$sub *)
-	    let
-		val (dottedname, id) = lookup name
-	    in
-		["Alice", makePath (dottedname @ [id])]
-	    end
-
-	fun lookupField name =
-	    (* Alice.Prebound::opeq *)
-	    (* Alice.Prebound/Prebound$Array::sub *)
-	    (* Alice.Prebound/Prebound$Unsafe/Prebound$Unsafe$Array::sub *)
-	    let
-		val (dottedname, id) = lookup name
-	    in
-		(["Alice", makePath ("Prebound"::dottedname)], id)
-	    end
+	fun lookupField name = (["Alice", "Prebound"], lookup name)
     end
