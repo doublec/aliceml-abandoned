@@ -20,13 +20,17 @@ final public class Int implements DMLValue {
     final public static Int ONE  = new Int(1);
 
     /** java-int Wert */
-    final protected int value;
+    final public int value;
 
     /** Baut einen neuen Int mit Wert <code>value</code>.
      *  @param value <code>int</code> Wert, der dem Int entspricht.
      */
     public Int(int value) {
 	this.value=value;
+    }
+
+    final public static boolean equals(Int i, Int j) {
+	return i.value == j.value;
     }
 
     /** Gleichheit auf Integer-Werten */

@@ -8,12 +8,12 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class ConValTuple4 implements DMLConVal {
 
-    protected DMLValue fst = null;
-    protected DMLValue snd = null;
-    protected DMLValue thr = null;
-    protected DMLValue fur = null;
+    public DMLValue fst = null;
+    public DMLValue snd = null;
+    public DMLValue thr = null;
+    public DMLValue fur = null;
 
-    protected Constructor constructor=null;
+    final public Constructor constructor;
 
     public ConValTuple4(Constructor con) {
 	constructor = con;

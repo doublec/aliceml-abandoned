@@ -10,7 +10,7 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class NoGood implements DMLValue {
 
-    private GName gName = null;
+    final protected GName gName;
 
     public NoGood(GName gn) {
 	gName = gn;

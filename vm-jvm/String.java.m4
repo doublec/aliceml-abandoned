@@ -16,13 +16,17 @@ package de.uni_sb.ps.dml.runtime;
 final public class String implements DMLValue {
 
     /** java-String Wert */
-    final protected java.lang.String value;
+    final public java.lang.String value;
 
     /** Baut einen neuen STRING  mit Inhalt <code>value</code>.
      *  @param value <code>String</code> Wert, der dem STRING  entspricht.
      */
     public String(java.lang.String value) {
 	this.value=value;
+    }
+
+    final public static boolean equals(STRING s, STRING t) {
+	return s.equals(t);
     }
 
     /** Testet Gleichheit der Java-Strings */

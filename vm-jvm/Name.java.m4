@@ -8,7 +8,7 @@ package de.uni_sb.ps.dml.runtime;
 
 public class Name implements DMLValue {
 
-    java.lang.String name = null;
+    final protected java.lang.String name;
     GName gName = null;
 
     public Name(java.lang.String name) {

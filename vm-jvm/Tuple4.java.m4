@@ -10,10 +10,10 @@ package de.uni_sb.ps.dml.runtime;
  */
 final public class Tuple4 implements DMLTuple {
 
-    final protected DMLValue fst;
-    final protected DMLValue snd;
-    final protected DMLValue thr;
-    final protected DMLValue fur;
+    final public DMLValue fst;
+    final public DMLValue snd;
+    final public DMLValue thr;
+    final public DMLValue fur;
 
     public Tuple4(DMLValue eins,
 		  DMLValue zwei,

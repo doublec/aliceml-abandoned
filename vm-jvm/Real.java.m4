@@ -16,13 +16,18 @@ package de.uni_sb.ps.dml.runtime;
 final public class Real implements DMLValue {
 
     /** java-float Wert */
-    final protected float value;
+    final public float value;
 
     /** Baut einen neuen Real mit Inhalt <code>value</code>.
      *  @param value <code>float</code> Wert, der dem Real entspricht.
      */
     public Real(float value) {
 	this.value=value;
+    }
+
+
+    final public static boolean equals(Real r, Real s) {
+	return r.value == s.value;
     }
 
     /** Gleichheit der Real-Werte (Java-Floats) */

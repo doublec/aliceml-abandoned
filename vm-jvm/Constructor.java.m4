@@ -8,17 +8,15 @@ package de.uni_sb.ps.dml.runtime;
 
 public class Constructor implements DMLValue {
 
-    java.lang.String name = null;
+    final public java.lang.String name;
     GName gName = null;
 
     public Constructor() {
-	super();
 	this.name="unnamed";
 	this.gName = null;
     }
 
     public Constructor(java.lang.String name) {
-	super();
 	this.name=name;
 	this.gName = null;
     }

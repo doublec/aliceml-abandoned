@@ -11,7 +11,7 @@ package de.uni_sb.ps.dml.runtime;
  */
 public class Tuple implements DMLTuple {
 
-    final protected DMLValue vals[];
+    final public DMLValue vals[];
 
     public Tuple(DMLValue[] v) {
 	vals=v;

@@ -8,8 +8,8 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class RecordArity implements java.io.Serializable {
 
-    Label[] labels = null;
-    java.util.Hashtable hashtable=null;
+    final protected Label[] labels;
+    final protected java.util.Hashtable hashtable;
 
     public RecordArity(Label[] labels) {
 	int l = labels.length;

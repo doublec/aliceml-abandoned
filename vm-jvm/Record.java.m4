@@ -13,17 +13,19 @@ final public class Record extends Tuple {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
-    RecordArity arity=null;
+    final protected RecordArity arity;
 
     public Record (Label[] ls, DMLValue[] vals) {
 	super(vals);
 	java.lang.Object ar=null;
-	arity=new RecordArity(ls);
-	ar=arityHash.get(arity);
-	if (ar==null)
+	RecordArity ra = new RecordArity(ls);
+	ar=arityHash.get(ra);
+	if (ar==null) {
+	    arity = ra;
 	    arityHash.put(arity,arity);
-	else
+	} else {
 	    arity =(RecordArity) ar;
+	}
     }
 
     /** funktioniert nur, wenn records unique sind. */

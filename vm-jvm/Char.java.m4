@@ -8,10 +8,14 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class Char implements DMLValue {
 
-    final protected char value;
+    final public char value;
 
     public Char(char c) {
 	value=c;
+    }
+
+    final public static boolean equals(Char b, Char c) {
+	return b.value == c.value;
     }
 
     final public boolean equals(java.lang.Object o) {

@@ -16,12 +16,12 @@ public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
     public DMLValue tail=null;
 
-    private NoGood ng = null;
+    protected NoGood ng = null;
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
      *  die der java.lang.Thread ausführt.
      *  Die Funktion sollte den Typ fcn : unit -> 'a haben.
      */
-    private DMLValue fcn=null;
+    protected DMLValue fcn=null;
 
     /** Gesamtzahl de.uni_sb.ps.dml.runtime.Threads */
     public static int totalNumber=0;

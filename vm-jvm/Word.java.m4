@@ -16,13 +16,17 @@ package de.uni_sb.ps.dml.runtime;
 final public class Word implements DMLValue {
 
     /** java-long Wert */
-    final protected long value;
+    final public long value;
 
     /** Baut ein neues Word mit Wert <code>value</code>.
      *  @param value <code>long</code> Wert, der dem Word entspricht.
      */
     public Word(long value) {
 	this.value=value;
+    }
+
+    final public static boolean equals(Word v, Word w) {
+	return v.value == w.value;
     }
 
     /** Gleichheit auf Long-Werten */
