@@ -241,8 +241,8 @@ struct
     exception Ticket = RemotePort.Ticket
 
     fun offer value =
-        (* make the snapshot here: can raise Sited exception *)
         Url.toString (RemotePort.export (UnsafeRemote.packValue value))
+	handle UnsafeRemote.Sited => raise Pickle.Sited
 
     fun take ticket =
         let
