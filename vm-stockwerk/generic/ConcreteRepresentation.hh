@@ -22,8 +22,7 @@
 
 class ConcreteRepresentation: private Block {
 protected:
-  static const u_int HANDLER_POS = 0;
-  static const u_int BASE_SIZE   = 1;
+  enum { HANDLER_POS, BASE_SIZE };
 public:
   using Block::ToWord;
 
