@@ -13,7 +13,6 @@
 
 #include "Alice.hh"
 #include "GecodeSpace.hh"
-#include "gecode-int.hh"
 
 // STAMPS
 // 

@@ -1,0 +1,14 @@
+import structure Space  from "Space"
+import structure FD     from "FD"
+import structure Linear from "Linear"
+import structure FS     from "FS"
+
+import signature CONSTRAINTS from "CONSTRAINTS-sig"
+
+structure Constraints : CONSTRAINTS =
+  struct
+     structure Space = Space
+     structure FD = FD
+     structure Linear = Linear
+     structure FS = FS
+  end

@@ -31,7 +31,9 @@ TARGETS = \
 	SEARCH-sig.stc \
 	Search.stc \
 	LINEAR-sig.stc \
-	Linear.stc
+	Linear.stc \
+	CONSTRAINTS-sig.stc \
+	Constraints.stc
 
 MAKEDEPEND = alicetool makedepend
 

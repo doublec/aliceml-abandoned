@@ -16,7 +16,6 @@
 
 #include "gecode-int.hh"
 #include "gecode-set.hh"
-//#include "gecode-search.hh"
 
 #define makeintvarargs(a,vars)                                 \
   IntVarArgs a(vars.size());                                   \

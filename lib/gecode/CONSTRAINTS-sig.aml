@@ -1,0 +1,20 @@
+import signature SPACE  from "SPACE-sig"
+import signature FD     from "FD-sig"
+import signature LINEAR from "LINEAR-sig"
+import signature FS     from "FS-sig"
+
+signature CONSTRAINTS =
+  sig
+      structure Space  : SPACE
+      structure FD     : FD
+                         where type space = Space.space
+      structure Linear : LINEAR
+                         where type space = Space.space
+                         where type intvar = FD.intvar
+                         where type boolvar = FD.boolvar
+                         where type conlevel = FD.conlevel
+      structure FS     : FS
+                         where type space  = Space.space
+                         where type intvar = FD.intvar
+                         where type boolvar = FD.boolvar
+  end
