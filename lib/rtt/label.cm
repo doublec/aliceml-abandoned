@@ -1,0 +1,10 @@
+Group
+	structure Name
+	signature LABEL
+	structure Label
+is
+	../utility/sources.cm
+	name.cm
+
+	LABEL-sig.aml
+	Label.aml
