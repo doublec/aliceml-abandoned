@@ -826,8 +826,8 @@ struct
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
 
-      | trMod(E, I.PrimMod(i,"Unreflect",j)) =
-	(* [prim "Unreflect" : (x : Value.t; interface I) -> I]
+      | trMod(E, I.PrimMod(i,"Reify",j)) =
+	(* [prim "Reify" : (x : Value.t; interface I) -> I]
 	 * = fun {[x]=x1, [I]=x2} -> x1
 	 *)
 	(let
@@ -871,8 +871,8 @@ struct
 	end
 	handle Type.Type => raise Crash.Crash "trPrimMod: Reflect")
 
-      | trMod(E, I.PrimMod(i,"UnreflectSig",j)) =
-	(* [prim "UnreflectSig" : (x : Inf.t) -> (interface I)]
+      | trMod(E, I.PrimMod(i,"ReifySig",j)) =
+	(* [prim "ReifySig" : (x : Inf.t) -> (interface I)]
 	 * = fun {[x]=x1} -> {[I]=x1}
 	 *)
 	(let
