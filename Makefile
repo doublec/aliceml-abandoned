@@ -28,8 +28,8 @@
 #
 # After a build is complete, you can use Alice by setting $PATH and $ALICE_HOME
 # properly:
-#   PATH=<dir>/alice-distribution/bin:<dir>/alice-distribution/lib/seam:$PATH
-#   ALICE_HOME=<dir>/alice-distribution/share/alice
+#   PATH=<dir>/distro/bin:<dir>/distro/lib/seam:$PATH
+#   ALICE_HOME=<dir>/distro/share/alice
 # For Gtk to function properly you must also have its installation directory in
 # path:
 #   PATH=<gtk-dir>/bin:<gtk-dir>/lib:$PATH
@@ -62,12 +62,15 @@
 
 CVSROOT = :pserver:anoncvs:anoncvs@ps.uni-sb.de:/services/alice/CVS
 GECODECVSROOT = rossberg@ps.uni-sb.de:/services/gecode/CVS
-DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual
+DOC = /cygdrive/z/root/home/ps/httpd/html/alice/manual-devel
 
 # From here on no change should be needed
 
 PWD := $(shell pwd)
-PREFIX = $(PWD)/alice-distribution
+PREFIX = $(PWD)/distro
+
+PKG_CONFIG_PATH := $(PWD)/seam-support/install/lib/pkgconfig:$(PKG_CONFIG_PATH)
+export PKG_CONFIG_PATH
 
 all:
 	@echo To build distro, run:
@@ -100,7 +103,7 @@ update:
 	(cd alice/sources && cvs -q -d $(CVSROOT) update -dP)
 
 clean-distro:
-	rm -rf alice-distribution
+	rm -rf distro
 clean-seam:
 	(cd seam/build && rm -rf *)
 clean-gecode:
@@ -156,6 +159,7 @@ build: build-seam build-gecode build-alice-ll build-alice-bootstrap
 
 cleanbuild: clean build
 
+.PHONY: docs
 docs:
 	rm -rf docs && \
 	cp -r $(DOC) docs && \
@@ -167,22 +171,29 @@ docs-offline:
 	(cd docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true)
 
 build-win:
+	PATH="$(PREFIX)/bin:$(PATH)" && \
 	(cd alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install)
 unbuild-win:
 	rm -f $(PREFIX)/bin/alice*.exe &&
 	make rebuild-alice-ll
 
-distro: build-win
+build-xml-dll:
+	cp $(PWD)/seam-support/install/bin/cygxml2-2.dll distro/bin
+
+.PHONY: distro
+distro: build-win build-xml-dll
 	(rm -rf ../InstallShield/Files/Alice) && \
-	(cp -r alice-distribution ../InstallShield/Files/Alice) && \
+	(cp -r distro ../InstallShield/Files/Alice) && \
 	(mkdir ../InstallShield/Files/Alice/doc) && \
 	(cp docs/Alice.chm ../InstallShield/Files/Alice/doc/) && \
 	echo Distro prepared. Run InstallShield/Scripts/Alice/Alice.ism.
 
 run:
-	ALICE_HOME="$(PREFIX)/share/alice" && \
+	ALICE_HOME=`cygpath -m "$(PREFIX)/share/alice"` && \
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	alice
 
-runraw:
-	alicerun x-alice:/compiler/ToplevelMain
+rungui:
+	ALICE_HOME=`cygpath -m "$(PREFIX)/share/alice"` && \
+	PATH="$(PREFIX)/bin:$(PATH)" && \
+	alicerunwin x-alice:/tools/Toplevel --gui
