@@ -1,0 +1,11 @@
+Group
+
+	signature INTERMEDIATE_GRAMMAR
+	structure IntermediateGrammar
+	structure Stamp
+
+is
+
+	intermediate-grammar.cm
+
+	Stamp.sml
