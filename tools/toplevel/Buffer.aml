@@ -380,6 +380,15 @@ structure Buffer =
       fun getView id =
           #view (BufferMap.lookupExistent(bufferMap, id))
 
+      fun getFileNames () =
+	  BufferMap.fold (fn ({file,...},fs) => 
+			  case !file of NONE => fs
+			   | SOME f => f::fs) nil bufferMap
+
+      fun haveModified () =
+	  BufferMap.exists (fn {buf,...} => Gtk.textBufferGetModified buf)
+	  bufferMap
+
       fun buffer {notebook,id,file,loadFile} =
           let
               val fileName = Option.getOpt(file, "New file "^Int.toString id)

@@ -732,6 +732,17 @@ print ("["^text^"]");
 		    Buffer.setSyntaxHighlighting
 		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
+	fun doQuit () = (Config.saveHistory (!OutputWriters.history,
+					     Buffer.getFileNames());
+			 OS.Process.exit OS.Process.success)
+        fun quit () = if Buffer.haveModified ()
+			  then
+			      FileDialog.modifiedWarning
+			      ("There are modified files.",
+			       "Discard changes and quit anyway or cancel?",
+			       doQuit, () )
+		      else doQuit ()
+
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
              Gtk.signalConnect(Gui.compilerout, "focus-in-event",
@@ -744,21 +755,14 @@ print ("["^text^"]");
 	     Gtk.windowSetDefaultSize(Gui.mainwidget,
 				      Config.sizeX,Config.sizeY);
 	     Gtk.widgetShowAll Gui.mainwidget;
-             Gtk.widgetGrabFocus (Gui.compilerout)
-             )                      
+             Gtk.widgetGrabFocus (Gui.compilerout);
+	     OS.Process.atExit quit)                      
 
 	fun initDone () =
-	    Gtk.textViewSetEditable(Gui.compilerout, true)
+	    (Gtk.textViewSetEditable(Gui.compilerout, true);
+	     Gtk.widgetSetSensitive(Gui.feed1, true);
+	     app openGivenFile (Config.loadOpenFiles ()))
 
 	fun preferences () = 
 	    Preferences.showDialog()
-
-	fun doQuit () = (Config.saveHistory (!OutputWriters.history);
-			 OS.Process.exit OS.Process.success)
-        fun quit () = if List.all Buffer.close (!pages) then
-			 doQuit ()
-                      else FileDialog.modifiedWarning
-			  ("There are modified files.",
-			   "Discard changes and quit anyway or cancel?",
-			   doQuit, () )
     end

@@ -158,7 +158,7 @@ structure Config =
 	      commentColor := mkRgbColor C.commentColor;
 
 	      historySize := C.historySize
-	  end handle (OS.SysErr _ | IO.Io _ | Component.Mismatch _) => ()
+	  end handle (OS.SysErr _ | IO.Io _ | Package.Mismatch _) => ()
 
       fun save() =
 	  let
@@ -181,21 +181,17 @@ structure Config =
 	      "Could not save configuration data."
 
      (* History management *)
-      type history = {prev : string list, current : string,
-		      next : string list}
-
       fun loadHistory() =
 	  let
-	      type history = {prev : string list, current : string,
-			      next : string list}
 	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
 	      val p = Pickle.load (cDir^"/History."^Pickle.extension)
-	      structure C = unpack p : (val history : history)
+	      structure C = unpack p : (val history : string list)
 	  in
-	      C.history
-	  end handle IO.Io _ => {prev=[], current="",next=[]}
+	      {prev=C.history, current="", next=[]}
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) =>
+	      {prev=[], current="",next=[]}
 
-      fun saveHistory {prev,current,next} =
+      fun saveHistory ({prev,current,next}, openFiles) =
 	  let
 	      val cDir = createConfigDir ()
 	      val prev =
@@ -204,15 +200,24 @@ structure Config =
 	      val prev =
 		  if List.length prev <= !historySize then rev prev
 		  else rev (List.take (prev, !historySize))
-	      val history = {prev=prev,
-			     current="",
-			     next=[]}
 	      structure C = struct
-				val history = history
+				val history = prev
+				val openFiles = openFiles
 			    end
 	  in
 	      Pickle.save(cDir^"/History."^Pickle.extension,
-			  pack C : (val history : history))
+			  pack C : (val history : string list
+				    val openFiles : string list))
 	  end
+
+     (* Restore open files *)
+      fun loadOpenFiles() =
+	  let
+	      val cDir = OS.FileSys.getApplicationConfigDir "Toplevel"
+	      val p = Pickle.load (cDir^"/History."^Pickle.extension)
+	      structure C = unpack p : (val openFiles : string list)
+	  in
+	      C.openFiles
+	  end handle (IO.Io _ | OS.SysErr _ | Package.Mismatch _) => nil
 
    end

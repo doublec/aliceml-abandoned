@@ -429,6 +429,7 @@
 	  <child>
 	    <widget class="GtkMenuItem" id="feed1">
 	      <property name="visible">True</property>
+              <property name="sensitive">False</property>
 	      <property name="label" translatable="yes">Eval</property>
 	      <property name="use_underline">True</property>
 
@@ -438,6 +439,7 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="feedregion">
 		      <property name="visible">True</property>
+                      <property name="sensitive">False</property>
 		      <property name="label" translatable="yes">Feed _Region</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedregion_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
@@ -460,6 +462,7 @@
 		  <child>
 		    <widget class="GtkImageMenuItem" id="feedfile">
 		      <property name="visible">True</property>
+                      <property name="sensitive">False</property>
 		      <property name="label" translatable="yes">Feed _File</property>
 		      <property name="use_underline">True</property>
 		      <signal name="activate" handler="on_feedfile_activate" last_modification_time="Mon, 28 Feb 2005 12:58:14 GMT"/>
