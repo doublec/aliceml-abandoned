@@ -31,7 +31,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | CELL
 		  | CONSTRUCTOR
 		  | CON_VAL
-		  | GLOBAL_STAMP
 		  | VECTOR
 		  | TAG of LargeInt.int
 
@@ -84,9 +83,8 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		  | toInt CELL         = 1
 		  | toInt CONSTRUCTOR  = 2
 		  | toInt CON_VAL      = 3
-		  | toInt GLOBAL_STAMP = 4
-		  | toInt VECTOR       = 5
-		  | toInt (TAG i)      = 6 + i
+		  | toInt VECTOR       = 4
+		  | toInt (TAG i)      = 5 + i
 	    end
 
 	type context = {outstream: PrimPickle.outstream,
