@@ -27,9 +27,10 @@ signature UNSAFE_SEARCH_COMPONENT =
 		val searchAll : 'a
 		val searchAllDepth : 'a
 		val searchAllDepthS : 'a
-		val searchAllBAB : 'a
-		val searchAllBABS : 'a
-		val searchAllRestart : 'a
-		val searchAllRestartS : 'a
+		val searchBest : 'a
+		val searchBestBAB : 'a
+		val searchBestBABS : 'a
+		val searchBestRestart : 'a
+		val searchBestRestartS : 'a
 	    end
     end
