@@ -1,8 +1,12 @@
-#ifndef __memchunk_hh__
-#define __memchunk_hh__
+#ifndef __MEMCHUNK_HH__
+#define __MEMCHUNK_HH__
 
-#include <stdlib.h>
-#include <string.h>
+#if defined(INTERFACE)
+#pragma interface
+#endif
+
+#include <cstdlib>
+#include <cstring>
 #include "base.hh"
 
 #define MEMCHUNK_SIZE (1024 * 128)
@@ -13,11 +17,11 @@ protected:
   char *block, *top, *max;
 public:
   MemChunk(MemChunk *prv, MemChunk *nxt, u_int s) : prev(prv), next(nxt) {
-    block = top = (char *) malloc(s); Assert(block != NULL);
+    block = top = (char *) std::malloc(s); Assert(block != NULL);
     max   = (block + s);
   }
   ~MemChunk() {
-    Assert(block != NULL); free(block);
+    Assert(block != NULL); std::free(block);
   }
 
   int FitsInChunk(u_int s)      { return ((top + s) < max); }
@@ -30,7 +34,7 @@ public:
   void SetNext(MemChunk *nxt)   { next = nxt; }
   MemChunk *GetPrev()           { return prev; }
   void SetPrev(MemChunk *prv)   { prev = prv; }
-  void InitBlock(u_int size)    { memset(block, 1, size); }
+  void InitBlock(u_int size)    { std::memset(block, 1, size); }
 };
 
 #endif

@@ -1,5 +1,9 @@
-#ifndef __value_hh__
-#define __value_hh__
+#ifndef __VALUE_HH__
+#define __VALUE_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include <string.h>
 #include "base.hh"
@@ -10,6 +14,9 @@ class Block {
 protected:
   word ar[2];
 public:
+  word *GetBase() {
+    return ar;
+  }
   t_label GetLabel() {
     return HeaderOp::DecodeLabel(this);
   }
@@ -30,10 +37,20 @@ public:
     Assert(f > INVALID_FIELD);
     Assert(f <= GetSize());
     if (!PointerOp::IsInt(v) &&
-	(HeaderOp::GetHeader(PointerOp::RemoveTag(v)) < HeaderOp::GetHeader(this))) {
+	(HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v)) < HeaderOp::DecodeGeneration(this))) {
       Store::AddToIntgenSet(ToWord()); // Attention: static binding
     }
     ar[f] = v;
+  }
+  Block *Enlarge() {
+    u_int size    = GetSize();
+    u_int newsize = ((size * 3) >> 1);
+    Block *b   = Store::AllocBlock(GetLabel(), newsize);
+
+    memcpy(b + 1, ar + 1, size * sizeof(word));
+    memset(b + (size + 1), 1, (newsize - size) * sizeof(word));
+
+    return b;
   }
   word ToWord() {
     return PointerOp::EncodeBlock(this);
@@ -43,13 +60,13 @@ public:
 class Transient : private Block {
 protected:
   void PerformBind(word v, t_label l) {
-    switch (GetLabel()) {
-    case PROMISE:
-    case FUTURE:
+    t_label label = GetLabel();
+
+    if ((label == BlockLabel::PROMISE) || (label == BlockLabel::FUTURE)) {
       ReplaceArg(1, v);
-      HeaderOp::EncodeLabel(this, REF);
-      break;
-    default:
+      HeaderOp::EncodeLabel(this, BlockLabel::REF);
+    }
+    else {
       Assert(0);
     }
   }
@@ -62,7 +79,7 @@ public:
     Assert(f >INVALID_FIELD);
     Assert(f <= GetSize());
     if (!PointerOp::IsInt(v) &&
-	(HeaderOp::GetHeader(PointerOp::RemoveTag(v)) < HeaderOp::GetHeader(this))) {
+	(HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v)) < HeaderOp::DecodeGeneration(this))) {
       Store::AddToIntgenSet(ToWord()); // Attention: static binding
     }
     ar[f] = v;
@@ -71,10 +88,10 @@ public:
     return PointerOp::EncodeTransient(this);
   }
   void Bind(word v) {
-    PerformBind(v, REF);
+    PerformBind(v, BlockLabel::REF);
   }
   void Cancel(word ex) {
-    PerformBind(ex, CANCELLED);
+    PerformBind(ex, BlockLabel::CANCELLED);
   }
 };
 
@@ -82,7 +99,7 @@ class Stack : private Block {
 protected:
   Stack *Enlarge() {
     u_int size = Block::GetSize();
-    Stack *s   = (Stack *) Store::AllocBlock(STACK, (size << 1));
+    Stack *s   = (Stack *) Store::AllocBlock(BlockLabel::STACK, (size << 1));
     
     memcpy(s + 1, ar + 1, size * sizeof(word));
     memset(s + (size + 1), 1, size * sizeof(word));
@@ -108,7 +125,7 @@ public:
 
     InitArg(1, Store::IntToWord(top + fsize));
     if ((top + fsize)  > (int) max) {
-      return Enlarge();
+      return Stack::Enlarge();
     }
     else {
       return this;
@@ -126,7 +143,7 @@ public:
     u_int max = Block::GetSize();
 
     if ((top + fsize)  > (int) max) {
-      return Enlarge();
+      return Stack::Enlarge();
     }
     else {
       return this;
@@ -164,7 +181,7 @@ public:
       return this;
     }
     else {
-      Stack *s = Enlarge();
+      Stack *s = Stack::Enlarge();
 
       s->ReplaceArg((u_int) top, v);
       return s;
@@ -190,7 +207,7 @@ public:
   }
 
   static Stack *New(u_int s) {
-    Stack *gs = (Stack *) Store::AllocBlock(STACK, (s + 1));
+    Stack *gs = (Stack *) Store::AllocBlock(BlockLabel::STACK, (s + 1));
 
     gs->InitStack();
     return gs;

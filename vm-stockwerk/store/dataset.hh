@@ -1,5 +1,9 @@
-#ifndef __dataset_hh__
-#define __dataset_hh__
+#ifndef __DATASET_HH__
+#define __DATASET_HH__
+
+#if defined(INTERFACE)
+#pragma interface
+#endif
 
 #include "types.hh"
 #include "memchunk.hh"
@@ -9,8 +13,8 @@ protected:
   u_int size, pos;
   u_int *mem;
 public:
-  DataSet() : size(MEMCHUNK_SIZE), pos(0) { mem = (u_int *) malloc(MEMCHUNK_SIZE); }
-  ~DataSet()                              { Assert(mem != NULL); free(mem);}
+  DataSet() : size(MEMCHUNK_SIZE), pos(0) { mem = (u_int *) std::malloc(MEMCHUNK_SIZE); }
+  ~DataSet()                              { Assert(mem != NULL); std::free(mem);}
 
   u_int GetSize()              { return pos; }
   word GetArg(u_int f)         { Assert(f < size); return (word) mem[f]; }
@@ -19,7 +23,7 @@ public:
   void Pop()                   { Assert(pos > 0); pos--; }
   void Push(word v) {
     if (pos >= size) {
-      size += MEMCHUNK_SIZE; mem = (u_int *) realloc(mem, size);
+      size += MEMCHUNK_SIZE; mem = (u_int *) std::realloc(mem, size);
     }
     Assert(mem != NULL); mem[pos++] = (u_int) v;
   }

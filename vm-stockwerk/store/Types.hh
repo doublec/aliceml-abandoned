@@ -1,5 +1,5 @@
-#ifndef __types_hh__
-#define __types_hh__
+#ifndef __TYPES_HH__
+#define __TYPES_HH__
 
 #include "headerdef.hh"
 
@@ -14,23 +14,6 @@ typedef struct {
   unsigned int *dummy_entry;
 } word_s;
 typedef word_s * word;
-
-// Tuple Labels (Block Tags)
-typedef enum {
-  TAG0      = 0,
-  TAG1      = 1,
-  TAG2      = 2,
-  TAG3      = 3,
-  TAG4      = 4,
-  STACK     = HeaderDef::MAX_TAGSIZE - 6,
-  MAX_LSIZE = HeaderDef::MAX_TAGSIZE - 6,
-  CHUNK     = HeaderDef::MAX_TAGSIZE - 5,
-  PROMISE   = HeaderDef::MAX_TAGSIZE - 4,
-  FUTURE    = HeaderDef::MAX_TAGSIZE - 3,
-  REF       = HeaderDef::MAX_TAGSIZE - 2,
-  CANCELLED = HeaderDef::MAX_TAGSIZE - 1,
-  BYNEED    = HeaderDef::MAX_TAGSIZE
-} t_label;
 
 // Pointer Tags
 typedef enum {
