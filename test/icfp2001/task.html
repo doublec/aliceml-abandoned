@@ -3,12 +3,12 @@
 <HTML>
 <HEAD><TITLE>ICFP 2001 Programming Contest 
 Challenge Task 
-version 3</TITLE>
+version 5</TITLE>
 <META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <META name="GENERATOR" content="hevea 1.06-5 of 2000-09-09">
 </HEAD>
 <BODY >
-<!--HEVEA command line is: hevea task.tex -->
+<!--HEVEA command line is: hevea -fix task.tex -->
 <!--HTMLHEAD-->
 <!--ENDHTML-->
 <!--CUT DEF section 1 -->
@@ -17,7 +17,7 @@ version 3</TITLE>
 
 <H1 ALIGN=center>ICFP 2001 Programming Contest<BR>
 Challenge Task<BR>
-version 3</H1>
+version 5</H1>
 
 <H3 ALIGN=center>Damien Doligez, Luc Maranget, Pierre Weis</H3>
 <DIV ALIGN=center><I>This document is also available as </I><A HREF="task.pdf"><I>PDF</I></A><I>, </I><A HREF="task.ps"><I>Postcript</I></A><I> and </I><A HREF="task.txt"><I>plain text</I></A><I>.</I></DIV><BR>
@@ -113,7 +113,9 @@ EM state
 There are 4 non-printing characters: SPC (ASCII code 0x20), CR
 (ASCII code 0x0D), LF (ASCII code 0x0A), and TAB (ASCII code 0x09).
 Any sequence of these characters is called white space and is
-equivalent to one SPC character, except where the TT attribute is set.
+equivalent to one SPC character, except where the TT attribute is set
+(there are other conditions that prevent spaces from being collapsed,
+see section&nbsp;<A HREF="#spec">3</A>).
 In the parts of the document where TT is set,
 the whitespace characters
 are significant and must be preserved exactly.
@@ -165,7 +167,7 @@ The BNF grammar of documents is given below.<BR>
 <BR>
 <!--TOC section Specification-->
 
-<H2>3&nbsp;&nbsp; Specification</H2><!--SEC END -->
+<H2>3&nbsp;&nbsp; Specification<A NAME="spec"></A></H2><!--SEC END -->
 This section defines the <EM>meaning</EM> of a document.
 Two documents are said to be equivalent if they have the same meaning.<BR>
 <BR>
@@ -205,7 +207,7 @@ if it is a printing character, output it, decorated by the current
  0 then <B>color</B> is set to <I>w</I>. If the <B>tt</B> flag is true
  in the current
  context, then output the input character decorated by the current
- space context; else if the previous character was
+ space context; else if the previous output character was
  a SPC decorated with the same space context then do nothing;
  otherwise, output a SPC decorated with the current space context.
 
@@ -392,7 +394,7 @@ input on any of the inputs will also be eliminated.
 to the size of their outputs on a well-chosen set of inputs. The
 inputs will be generated using a variety of techniques such as hand-writing,
 translation from HTML, random generation. These inputs can be big
-(up to a few megabytes).
+(up to five megabytes).
 
 <LI>Speed of optimisation. If the top programs are very close to
 each other using the previous criterion, we will use speed as a tie breaker.
