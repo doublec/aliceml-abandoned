@@ -218,6 +218,6 @@ int WeakDictionary::IsMember(word key) {
 word WeakDictionary::GetItem(word key) {
   u_int keyval    = FindKey(key);
   HashNode *entry = GetEntry(keyval);
-  
+  Assert(!entry->IsEmpty());
   return entry->GetValue(); // should raise invalid_key something
 }
