@@ -63,7 +63,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 
         local
 	    val enumDecls = ref nil
-	    fun addToList n = if not (List.exists (fn n'=>n=n') (!enumDecls))
+	    fun addToList n = if not (Util.contains n (!enumDecls))
 		                   then (enumDecls := (n::(!enumDecls)) ; true)
                                    else false
 	    fun addEnum (ENUMREF n)     = 
@@ -101,7 +101,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	      | getUnrefFun' "_GtkObject" = ("GtkCore.GtkObjectRef", true)
 	      | getUnrefFun' "_GtkWidget" = ("GtkCore.GtkWidgetRef", true)
 	      | getUnrefFun' name        = 
-		  if List.exists (fn n=>n=name) deleteObjects
+		  if Util.contains name deleteObjects
 		      then ("GtkCore.DeleteRef", false)
 		      else getUnrefFun' (getParentClass name (!classes))
 	in
