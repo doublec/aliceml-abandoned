@@ -61,32 +61,33 @@
 	  | REMOVE_ACTION   of string
 
 	datatype option =
-	    NUMBER            of color *                 action
-	  | FUNCTION          of color *                 action
-	  | STRING            of color *                 action
-	  | HOLE              of color *                 action
-	  | FUTURE            of color *                 action
-	  | CONSTRUCTOR       of color *                 action
-	  | REFERENCE         of                         action
-	  | FD                of                         action
-	  | FSET              of                         action
-	  | TUPLE             of color * width * depth * action
-	  | RECORD            of color * width * depth * action
-	  | LIST              of color * width * depth * action
-	  | CONSTRUCTED_VALUE of         width * depth * action
-	  | VECTOR            of color * width * depth * action
-	  | RECORD_LABEL      of color
+	    NUMBER             of color *                 action
+	  | FUNCTION           of color *                 action
+	  | STRING             of color *                 action
+	  | HOLE               of color *                 action
+	  | FUTURE             of color *                 action
+	  | CONSTRUCTOR        of color *                 action
+	  | REFERENCE          of                         action
+	  | FD                 of                         action
+	  | FSET               of                         action
+	  | TUPLE              of color * width * depth * action
+	  | RECORD             of color * width * depth * action
+	  | LIST               of color * width * depth * action
+	  | CONSTRUCTED_VALUE  of         width * depth * action
+	  | VECTOR             of color * width * depth * action
+	  | RECORD_LABEL       of color
 	  (* relation mode *)
-	  | ALIAS_DEFINITION  of color
-	  | ALIAS_REFERENCE   of color
+	  | ALIAS_DEFINITION   of color
+	  | ALIAS_REFERENCE    of color
 	  (* ellipses *)
-	  | WIDTH_ARROW       of color
-	  | DEPTH_ARROW       of color
-	  | PARENTHESES       of color
-	  | MISC              of color
-	  | TYPEDINDICATOR    of color
-	  | PROMISE           of color
-	  | PACKAGE           of color
+	  | WIDTH_ARROW        of color
+	  | DEPTH_ARROW        of color
+	  | PARENTHESES        of color
+	  | MISC               of color
+	  | TYPEDINDICATOR     of color
+	  | PROMISE            of color
+	  | PACKAGE            of color
+          | CELL_POLL_INTERVAL of int
 
 	exception ConfigurationError
 
