@@ -61,5 +61,11 @@ PANGO_ENUMS-sig.aml
 PANGO_ENUMS-sig.alc
 PangoEnums.aml
 PangoEnums.alc
+MISC_ENUMS-sig.aml
+MISC_ENUMS-sig.alc
+MiscEnums.aml
+MiscEnums.alc
+Key.aml
+Key.alc
 gtkclean.c
 lastgenerate
