@@ -96,7 +96,9 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		     [POINTER VOID, NUMERIC (true,false,INT), 
 		      NUMERIC (true,false,INT)]),
 		FUNC("gnome_canvas_item_new", POINTER VOID,
-		     [POINTER VOID, NUMERIC (true,false,INT)])]
+		     [POINTER VOID, NUMERIC (true,false,INT)]),
+		FUNC("gnome_canvas_set_background_color", VOID,
+		     [POINTER VOID, POINTER (STRUCTREF "_GdkColor")])]
 	  | _ => nil
 
        (* changedFuns: assume different type information for: *)

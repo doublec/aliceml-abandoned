@@ -35,4 +35,13 @@ DEFINE2(NativeGnomeCanvas_itemNew) {
   RETURN(OBJECT_TO_WORD(ret,TYPE_GTK_OBJECT));
 } END
 
+DEFINE2(NativeGnomeCanvas_setBackgroundColor) {
+  DECLARE_OBJECT(canvas,x0);
+  DECLARE_OBJECT(color,x1);
+  GtkStyle *style=gtk_style_copy(gtk_widget_get_default_style());
+  style->bg[GTK_STATE_NORMAL]=*(static_cast<GdkColor *>(color));
+  gtk_widget_set_style(static_cast<GtkWidget *>(canvas), style);
+  RETURN_UNIT;
+} END
+
 #endif
