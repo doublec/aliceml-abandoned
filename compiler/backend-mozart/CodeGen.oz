@@ -166,6 +166,14 @@ define
 				  [Reg0 FeatureReg {State.cs newReg($)}
 				   {MakeReg Id State}]
 				  ThenVInstr ElseVInstr VTl)
+	 [] vecTest(Ids) then ThenVInstr0 in
+	    VHd = vMatch(_ Reg0 ElseVInstr
+			 [onRecord('#' {Length Ids} ThenVInstr0)]
+			 {TranslateCoord Coord State} VTl)
+	    {FoldL Ids
+	     proc {$ VHd Id VTl}
+		VHd = vGetVariable(_ {MakeReg Id State} VTl)
+	     end ThenVInstr0 ThenVInstr}
 	 end
 	 {TranslateBody Body1 ?ThenVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?ElseVInstr nil State ReturnReg}
@@ -265,6 +273,12 @@ define
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
       [] selExp(_ Lab) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
+      [] vecExp(_ nil) then
+	 VHd = vEquateConstant(_ '#' Reg VTl)
+      [] vecExp(_ Ids) then
+	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
+			     {Map Ids
+			      fun {$ Id} value({GetReg Id State}) end} VTl)
       [] funExp(Coord _ _ oneArg(Id)#Body|ArgsBodyList) then
 	 Body2 PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
       in
