@@ -27,12 +27,12 @@ struct
 
     (* Output stream *)
 
-    val logWidth  = ref 120
-    val logStream = TextIO.mkOutstream (TextIO.getOutstream TextIO.stdErr)
+    val logWidth  = Compiler.Switches.Global.errWidth
+    val logStream = Compiler.Switches.Global.errOut
     val traceStream = Compiler.Switches.Debug.logOut
 
-    fun setLogStream os = (TextIO.setOutstream (logStream, os);
-			   Compiler.setErrorStream os)
+    fun setLogWidth n = logWidth := n
+    fun setLogStream os = TextIO.setOutstream (logStream, os)
     fun setTraceStream os = TextIO.setOutstream (traceStream, os)
 
 
@@ -187,11 +187,14 @@ struct
 
     (* Initialization *)
 
+    val implicitImport = "x-alice:/alice.import"
+    val currentContext = ref Compiler.Context.empty
+
     fun defaults () = (* override defaults from MkSwitches here *)
 	let
 	    open Compiler.Switches
 	in
-	    Language.implicitImportFile := SOME "x-alice:/alice.import";
+	    Language.implicitImportFile := SOME implicitImport;
 	    Language.allowUnclosedComponents := true;
 	    Language.reexportImport := true;
 	    Language.retainFullImport := true;
@@ -204,22 +207,22 @@ struct
 	let
 	    open Compiler.Switches
 	    val dummySignal = Promise.future (Promise.promise ())
+	    val p           = Promise.promise ()
+	    val context     = Ref.exchange (currentContext, Promise.future p)
 	in
 	    defaults ();
 	    Language.unsafeImport := true;
 	    case evalString (false, Compiler.Context.empty, "", dummySignal)
 	     of NONE =>
-		spawn raise Compiler.Crash "could not initialise environment"
+		raise Compiler.Crash "could not initialise environment"
 	      | SOME context =>
 		(Language.implicitImportFile := NONE;
 		 Language.unsafeImport := false;
-		 context)
+		 Promise.fulfill (p, context))
 	end
 
 
-    (* Public *)
-
-    val currentContext = ref (init ())
+    (* Evaluation *)
 
     fun loopUses (context, signal) =
 	let
@@ -238,8 +241,6 @@ struct
 	      | nil => (Promise.fulfill (new, nil); context)
 	end
 
-    val currentContext = ref (init ())
-
     fun eval (source, signal) =
 	let
 	    val p       = Promise.promise ()
@@ -250,5 +251,44 @@ struct
 	      | SOME context' =>
 		Promise.fulfill (p, loopUses (context', signal));
 	    TextIO.output (traceStream, "-- Ready.\n")
+	end
+
+
+    (* Compilation *)
+
+    fun compile infile =
+	let
+	    open Compiler.Switches
+	    val implicitImportFile      = !Language.implicitImportFile
+	    val reexportImport          = !Language.reexportImport
+	    val retainFullImport        = !Language.retainFullImport
+	    val allowUnclosedComponents = !Language.allowUnclosedComponents
+	    val inaccessibleExport      = !Warn.inaccessibleExport
+	    val outfile = OS.Path.joinBaseExt {base = OS.Path.base infile,
+	    				       ext  = SOME Component.extension}
+	in
+	    Language.implicitImportFile := SOME implicitImport;
+	    Language.reexportImport     := false;
+	    Language.retainFullImport   := false;
+	    Language.allowUnclosedComponents := false;
+	    Warn.inaccessibleExport     := true;
+	    Compiler.compileFileToFile (infile, outfile)
+	    handle Compiler.Error => ()
+		 | Compiler.Crash s =>
+		       TextIO.output (logStream,
+				      "internal failure at " ^ s ^ "\n")
+		 | Assert (file, line) =>
+		       TextIO.output (logStream,
+				      "internal assertion failure at " ^
+				      file ^ ":" ^ Int.toString line ^ "\n")
+		 | exn =>
+		       TextIO.output (logStream,
+				      "internal exception " ^
+				      General.exnName exn ^ "\n");
+	    Language.implicitImportFile := implicitImportFile;
+	    Language.reexportImport     := reexportImport;
+	    Language.retainFullImport   := retainFullImport;
+	    Language.allowUnclosedComponents := allowUnclosedComponents;
+	    Warn.inaccessibleExport     := inaccessibleExport
 	end
 end

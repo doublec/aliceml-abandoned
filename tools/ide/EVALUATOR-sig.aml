@@ -14,7 +14,10 @@ signature EVALUATOR =
 sig
     datatype signal	= INTERRUPT | STOP
 
+    val init		: unit -> unit
     val eval		: string * signal -> unit
+    val compile		: string -> unit
+    val setLogWidth	: int -> unit
     val setLogStream	: TextIO.StreamIO.outstream -> unit
     val setTraceStream	: TextIO.StreamIO.outstream -> unit
 end
