@@ -60,7 +60,12 @@ define
    VECTOR       = 5
    LabelOffset  = 6
 
+   IoException = {NewUniqueName 'IO.Io'}
    CorruptException = {NewUniqueName 'Component.Corrupt'}
+
+   I_cause    = 2
+   I_function = 3
+   I_name     = 4
 
    %%-------------------------------------------------------------------
    %% Unpickling
@@ -415,11 +420,19 @@ define
 	 end
       toString: fun {$ _} 'Pickle Load' end)
 
-   fun {Load Filename TaskStack} X in
-      X = tuple(_)
-      continue(args({New FileInputStream init(Filename)} {NewDictionary} 0)
-	       unpickling(UnpickleInterpreter X 0 1)|
-	       pickleLoad(PickleLoadInterpreter X)|TaskStack.2)
+   fun {Load Filename TaskStack}
+      try X in
+	 X = tuple(_)
+	 continue(args({New FileInputStream init(Filename)} {NewDictionary} 0)
+		  unpickling(UnpickleInterpreter X 0 1)|
+		  pickleLoad(PickleLoadInterpreter X)|TaskStack.2)
+      catch E=system(os(os ...) ...) then
+	 exception(nil con(IoException
+			   I_name: Filename
+			   I_function: {ByteString.make 'load'}
+			   I_cause: E)   %--** cause not of type exn
+		   TaskStack.2)
+      end
    end
 
    %%-------------------------------------------------------------------
@@ -641,9 +654,17 @@ define
       toString: fun {$ _} 'Pickle Save' end)
 
    fun {Save Filename X TaskStack}
-      continue(args(0 {New FileOutputStream init(Filename)} nil)
-	       pickling(PicklingInterpreter X)|
-	       pickleSave(PickleSaveInterpreter)|TaskStack.2)
+      try
+	 continue(args(0 {New FileOutputStream init(Filename)} nil)
+		  pickling(PicklingInterpreter X)|
+		  pickleSave(PickleSaveInterpreter)|TaskStack.2)
+      catch E=system(os(os ...) ...) then
+	 exception(nil con(IoException
+			   I_name: Filename
+			   I_function: {ByteString.make 'save'}
+			   I_cause: E)   %--** cause not of type exn
+		   TaskStack.2)
+      end
    end
 
    PickleComponent = tuple(Pickle)
