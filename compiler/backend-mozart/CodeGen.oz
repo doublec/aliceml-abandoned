@@ -293,6 +293,18 @@ define
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] tagExp(_ Label nullary) then
 	 VHd = vEquateConstant(_ {TranslateLabel Label} Reg VTl)
+      [] tagExp(Coord Label unary) then
+	 Label2 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
+      in
+	 Label2 = {TranslateLabel Label}
+	 PredId = pid(Label2 2 {TranslateCoord Coord State} nil NLiveRegs)
+	 {State.cs startDefinition()}
+	 {State.cs newReg(?ArgReg)}
+	 {State.cs newReg(?ResReg)}
+	 VInstr = vEquateRecord(_ Label2 1 ResReg [value(ArgReg)] nil)
+	 {State.cs
+	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
+	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] tagExp(_ Label tuple(0)) then Label2 in
 	 Label2 = {TranslateLabel Label}
 	 VHd = vEquateConstant(_ fun {$ unit} Label2 end Reg VTl)
