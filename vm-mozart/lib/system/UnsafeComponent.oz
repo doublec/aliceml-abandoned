@@ -179,7 +179,7 @@ define
 			{Pickle.saveWithCells {ComponentToFunctor Component}
 			 Filename '' 9}
 		     catch error(dp(generic 'pickle:nogoods' ...) ...)
-		     then {Exception.raiseError alice(SitedException)} unit
+		     then {Exception.raiseError alice(SitedException)}
 		     end
 		     unit
 		  end
