@@ -49,7 +49,9 @@ signature REF =
     val exchange :	'a ref * 'a -> 'a
 
     val equal :		'a ref * 'a ref -> bool
-    val map :		('a -> 'a) -> 'a ref -> 'a ref
+    val app :		('a -> unit) -> 'a ref -> unit
+    val map :		('a -> 'b) -> 'a ref -> 'b ref
+    val modify :	('a -> 'a) -> 'a ref -> unit
   end
 
 
@@ -66,7 +68,9 @@ structure Ref : REF =
     fun exchange(r as ref x1, x2)	= (r := x2 ; x1)
 
     val equal				= op =
-    fun map f (r as ref x)		= ref(f x)
+    fun app f (ref x)			= f x
+    fun map f (ref x)			= ref(f x)
+    fun modify f (r as ref x)		= r := f(!r)
   end
 
 
@@ -290,13 +294,11 @@ signature LIST =
 
     type 'a t = 'a list
 
-    val append :	'a list * 'a list -> 'a list
     val sub :		'a list * int -> 'a
 
     val appr :		('a -> unit) -> 'a list -> unit
     val appi :		(int * 'a -> unit) -> 'a list -> unit
     val appri :		(int * 'a -> unit) -> 'a list -> unit
-    val mapr :		('a -> 'b) -> 'a list -> 'b list
     val mapi :		(int * 'a -> 'b) -> 'a list -> 'b list
     val foldli :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
     val foldri :	(int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
@@ -555,17 +557,12 @@ structure String =
     fun toWide s	= s
     fun fromWide s	= s
 
-    val maxLen		= maxSize
-    val length		= size
-    val append		= op ^
-    val fromList	= implode
-    val toList		= explode
     val tabulate	= implode o List.tabulate
 
-    fun separate s' ss		= concat(separate'(s', ss))
-    and separate'(s', nil)	= nil
-      | separate'(s', s::nil)	= s::nil
-      | separate'(s', s::ss)	= s::s'::separate'(s', ss)
+    fun concatWith s' ss	= concat(concatWith'(s', ss))
+    and concatWith'(s', nil)	= nil
+      | concatWith'(s', s::nil)	= s::nil
+      | concatWith'(s', s::ss)	= s::s'::concatWith'(s', ss)
 
     fun isSuffix s1 s2			= isSuffix'(s1,s2,size s1-1,size s2-1)
     and isSuffix'(s1,s2,i1,i2)		= i1 = ~1 orelse
@@ -590,19 +587,11 @@ signature STRING =
     val equal :		string * string -> bool
     val hash :		string -> int
 
-    val maxLen :	int
-    val length :	string -> int
-    val append :	string * string -> string
-
     val toWide :	string -> WideString.string
     val fromWide :	WideString.string -> string
 
-    val fromList :	Char.char list -> string
-    val toList :	string -> Char.char list
     val tabulate :	int * (int -> Char.char) -> string
-
-    val separate :	string -> string list -> string
-
+    val concatWith :	string -> string list -> string
     val isSuffix :	string -> string -> bool
   end
 
@@ -625,6 +614,8 @@ signature SUBSTRING =
 
     val equal :	substring * substring -> bool
     val hash :	substring -> int
+
+    val appr :	(Char.char -> unit) -> substring -> unit
   end
 
 structure Substring =
@@ -633,7 +624,11 @@ structure Substring =
 
     fun hash ss		= String.hash(string ss)
     fun equal(ss, st)	= string ss = string st
+
+    fun appr f ss	= List.appr f (explode ss)
   end
+
+structure WideSubstring = Substring
 
 
 (*****************************************************************************
@@ -769,6 +764,7 @@ signature REAL =
     type t = real
 
     val equal : real * real -> bool
+    val hash :  real -> int
   end
 
 
@@ -779,6 +775,7 @@ structure Real : REAL =
     type t	= real
 
     val equal	= op ==
+    fun hash x	= raise Fail "Real.hash"
   end
 
 
@@ -789,6 +786,7 @@ structure LargeReal : REAL =
     type t	= real
 
     val equal	= op ==
+    fun hash x	= raise Fail "Real.hash"
   end
 
 
@@ -805,9 +803,8 @@ signature VECTOR =
 
     val toList :	'a vector -> 'a list
 
-    val append :	'a vector * 'a vector -> 'a vector
     val rev :		'a vector -> 'a vector
-    val replace :	'a vector * int * 'a -> 'a vector
+    val update :	'a vector * int * 'a -> 'a vector
 
     val appr :		('a -> unit) -> 'a vector -> unit
     val appri :		(int * 'a -> unit) -> 'a vector * int * int option
@@ -836,13 +833,11 @@ structure Vector : VECTOR =
     and toList'(v, ~1, xs)	= xs
       | toList'(v, i, xs)	= toList'(v, i-1, sub(v,i)::xs)
 
-    fun append(v1,v2)		= concat[v1,v2]
-
     fun rev v			= let val len = length v
 				      fun f i = sub(v, len-i-1)
 				  in tabulate(len, f) end
 
-    fun replace(v,i,x)		= let fun f j = if i = j then x else sub(v,j)
+    fun update(v,i,x)		= let fun f j = if i = j then x else sub(v,j)
 				  in tabulate(length v, f) end
 
     fun sliceLength(v,i,NONE)	= if i > length v then raise Subscript else
@@ -1040,7 +1035,7 @@ signature ARRAY =
     val toList :	'a array -> 'a list
 
     val swap :		'a array * int * int -> unit
-    val reverse :	'a array -> unit
+    val rev :		'a array -> unit
 
     val appr :		('a -> unit) -> 'a array -> unit
     val appri :		(int * 'a -> unit) -> 'a array * int * int option
@@ -1077,10 +1072,10 @@ structure Array : ARRAY =
 				      update(a, j, x)
 				  end
 
-    fun reverse a		= let fun reverse'(i,j) =
+    fun rev a			= let fun rev'(i,j) =
 				      if i >= j then () else
-					  (swap(a,i,j) ; reverse'(i+1, j-1))
-				  in reverse'(0, length a - 1) end
+					  (swap(a,i,j) ; rev'(i+1, j-1))
+				  in rev'(0, length a - 1) end
 
     fun sliceLength(v,i,NONE)	= if i > length v then raise Subscript else
 				  length v - i
@@ -1197,5 +1192,20 @@ structure Time : TIME =
 
 infix 3 :=:
 
+type ('a,'b) pair = 'a * 'b
+
 val op :=:	= General.:=:
+val id		= General.id
+val const	= General.const
+val curry	= General.curry
+val uncurry	= General.uncurry
 val flip	= General.flip
+val inverse	= General.inverse
+
+exception Alt	= Alt.Alt
+val fst		= Alt.fst
+val snd		= Alt.snd
+val isFst	= Alt.isFst
+val isSnd	= Alt.isSnd
+val isNone	= Option.isNone
+val appr	= List.appr
