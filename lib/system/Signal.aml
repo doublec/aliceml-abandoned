@@ -12,8 +12,9 @@
  *)
 
 import structure UnsafeSignal from "UnsafeSignal"
+import signature SIGNAL       from "SIGNAL-sig"
 
-structure Signal =
+structure Signal :> SIGNAL =
     struct
         datatype signal = SIGINT
 	open UnsafeSignal
