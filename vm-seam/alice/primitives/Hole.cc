@@ -3,15 +3,15 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "emulator/Transients.hh"
-#include "emulator/Authoring.hh"
+#include "generic/Transients.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(Hole_fail) {
   Transient *transient = Store::WordToTransient(x0);
