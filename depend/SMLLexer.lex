@@ -176,15 +176,15 @@
   string     = "\""({stringchar} | {gap})*"\"";
   char       = "#"{string};
 
-  interpunct = [\(\),\.;\[\]\{\}];
+  interpunct = [(),.;] | "[" | "]" | "{" | "}";
   token      = {int} | {word} | {real} |
-	       {tyvar} | {alphanumid} | {symbolicid} | "_";
+	       {tyvar} | {alphanumid} | {symbolicid} | "_" | {interpunct};
 
 %%
 
   <INITIAL>{formatting}	=> ( continue() );
-  <INITIAL>{token}	=> ( token(OTHER,  yypos, yytext) );
   <INITIAL>"import"	=> ( token(IMPORT, yypos, yytext) );
+  <INITIAL>{token}	=> ( token(OTHER,  yypos, yytext) );
   <INITIAL>{string}	=> ( tokenOf(STRING, toString, yypos, yytext) );
 
   <INITIAL>"(*"		=> ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() );
