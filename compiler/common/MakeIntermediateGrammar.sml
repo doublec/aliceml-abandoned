@@ -13,7 +13,9 @@ functor MakeIntermediateGrammar(type info) :>
 	| IntLit    of LargeInt.int
 	| CharLit   of WideChar.char
 	| StringLit of WideString.string
-	| RealLit   of LargeReal.real
+(*	| RealLit   of LargeReal.real
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string
 
     (* Identifiers *)
 
@@ -147,15 +149,5 @@ functor MakeIntermediateGrammar(type info) :>
       | infoDec(ConDec(i,_,_))		= i
       | infoDec(PrimDec(i,_,_))		= i
       | infoDec(RecDec(i,_))		= i
-
-
-    (* This is obsolete after bootstrapping *)
-
-    fun eqLit(WordLit   w1, WordLit   w2)	= w1 = w2
-      | eqLit(IntLit    i1, IntLit    i2)	= i1 = i2
-      | eqLit(CharLit   c1, CharLit   c2)	= c1 = c2
-      | eqLit(StringLit s1, StringLit s2)	= s1 = s2
-      | eqLit(RealLit   r1, RealLit   r2)	= LargeReal.==(r1,r2)
-      | eqLit             _			= false
 
   end

@@ -110,7 +110,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun derec' (WildPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (coord, lit1), LitExp (_, lit2)) =
-	    if eqLit (lit1, lit2) then (nil, nil)
+	    if lit1 = lit2 then (nil, nil)
 	    else Error.error (coord, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
 	  | derec' (ConPat (coord, longid1, NONE),
@@ -220,7 +220,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun unify (WildPat _, pat2) = (nil, pat2)
 	  | unify (pat1, WildPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (coord, lit1), LitPat (_, lit2)) =
-	    if eqLit(lit1, lit2) then (nil, pat1)   (*--** what about widths? *)
+	    if lit1 = lit2 then (nil, pat1)   (*--** what about widths? *)
 	    else Error.error (coord, "pattern never matches")
 	  | unify (VarPat (coord, id), pat2) = (nil, AsPat (coord, id, pat2))
 	  | unify (pat1, VarPat (coord, id)) = (nil, AsPat (coord, id, pat1))

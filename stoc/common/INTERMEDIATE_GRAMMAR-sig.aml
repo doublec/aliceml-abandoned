@@ -12,7 +12,9 @@ signature INTERMEDIATE_GRAMMAR =
 	| IntLit    of LargeInt.int
 	| CharLit   of WideChar.char
 	| StringLit of WideString.string
-	| RealLit   of LargeReal.real
+(*	| RealLit   of LargeReal.real
+UNFINISHED: obsolete after bootstrapping:
+*)	| RealLit   of string
 
     (* Identifiers *)
 
@@ -107,9 +109,5 @@ signature INTERMEDIATE_GRAMMAR =
     val infoMatch :	match	-> info
     val infoPat :	pat	-> info
     val infoDec :	dec	-> info
-
-    (* This is obsolete after bootstrapping *)
-
-    val eqLit :		lit * lit -> bool
 
   end

@@ -148,7 +148,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
 	  | longidEq (_, _) = false
 
-	fun testEq (LitTest lit1, LitTest lit2) = eqLit (lit1, lit2)
+	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
 	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =
 	    (* approximation: consider constructors equal if same long id *)
 	    longidEq (longid1, longid2) andalso hasArgs1 = hasArgs2
@@ -157,8 +157,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testEq (VecTest n1, VecTest n2) = n1 = n2
 	  | testEq (_, _) = false
 
-	fun areParallelTests (LitTest lit1, LitTest lit2) =
-	    not (eqLit (lit1, lit2))
+	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
 	  | areParallelTests (LitTest _, TupTest _) = true
 	  | areParallelTests (TupTest _, LitTest _) = true
 	  | areParallelTests (LitTest _, RecTest _) = true
