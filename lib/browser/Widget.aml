@@ -356,10 +356,11 @@ fun scrollY (y,scrolled,vadj) =
 
 (* Popup window for selection *)
  fun makePopup {node = n, widthhandler = w, depthhandler = d, 
-		   reinspecthandler = r, forcehandler = f} = 
+		   reinspecthandler = r, forcehandler = f, deletehandler = del} = 
 	let 
 	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT)
-	    val force_active = (Node.isByneed n) handle _ => false 
+	    val force_active = (Node.isByneed n) handle _ => false
+	    val delete_active = getParent(n) = Empty
 	    val width_item_list = [EntryObj(LABEL("-5"),
 					      [Handler("activate",w(~5))],
 						       true),
@@ -459,7 +460,10 @@ fun scrollY (y,scrolled,vadj) =
 					    reinspect_active),
 				  EntryObj(LABEL("force evaluation"),
 					   [Handler("activate",f)],
-					   force_active)],
+					   force_active),
+				   EntryObj(LABEL("delete tree"),
+					    [Handler("activate",fn _ => del n)],
+					    delete_active)],
 			  sensitive = true}])
 		;()))
 	end
@@ -855,7 +859,42 @@ struct
 						50),0,SOME(50)))
 		     ;()) handle _ => ()
 	 end
-    
+   
+ fun deleteNode Empty = ()
+   | deleteNode node  =   (Array.app deleteNode (getKids(node))
+	     ; objectDestroy(getGroup(node))
+	     ; (if not(Future.isDetermined(UnsafeValue.cast (getValue(getDesc(node)))))	
+	     then case Dictionaries.Transient.iterLookup
+		 (Dictionaries.transdict,fn (v,n) => 
+		  v = getValue(getDesc(node))) 
+		 of
+		     SOME (n,i) => Dictionaries.Transient.delete
+			 (Dictionaries.transdict,i)
+		   | NONE => ()
+	       else ()) handle Match => ())
+   
+
+    fun deleteNodeTree node = 
+	let 
+	    val dy = ~1 - get_ydim(node)
+	in
+	( deleteNode node
+	  ;case Dictionaries.Main.lookup(Dictionaries.maindict,getIndex(node))  
+	 of 
+	     SOME (n,sep) => if not(sep = GtkSupport.uglyNULL) 
+				 then objectDestroy(sep) 
+				     else ()
+	       | NONE => ()
+	 ;if getParent(node)=Empty 
+	      then (Dictionaries.Main.delete(Dictionaries.maindict,
+					    getIndex(node))
+		    ;Dictionaries.RelMan.delete(Dictionaries.reldict,
+					    getIndex(node)))
+	  else ()
+	 ;incr_act_line(dy)
+	 ;Update.iterMove(dy,getIndex(node)+1))
+	end
+ 
 (* Handelt Mouseclick *)
      fun handleEvent [Gdk.EVENT(event)] = Server.serve (fn () =>
      let
@@ -912,7 +951,8 @@ struct
 				    widthhandler = handleWidth(n), 
 				    depthhandler = handleDepth(n), 
 				    reinspecthandler = handleReinspect(n),
-				    forcehandler = handleForce(n)})
+				    forcehandler = handleForce(n),
+				    deletehandler = deleteNodeTree})
 					    ;())
 				    | _   => () ) 
 				end
@@ -1093,19 +1133,7 @@ fun setVisible (x,y) = let
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
 
-    fun deleteNode node = (Array.app deleteNode (getKids(node))
-			   ; widgetDestroy(getGroup(node))
-			   ; (* Test, ob Transient und Austrag aus 
-			      Transient Dictionary *)())
-
-    fun deleteNodeTree node = 
-	(deleteNode node
-	 ;if getParent(node)=Empty 
-	      then (Dictionaries.Main.delete(Dictionaries.maindict,
-					    getIndex(node))
-		    ;Dictionaries.RelMan.delete(Dictionaries.reldict,
-					    getIndex(node)))
-	  else ())
+   
 	 
 end (* structure Widget end *)
 

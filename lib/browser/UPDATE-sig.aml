@@ -32,6 +32,8 @@ signature UPDATE =
 	val incrActLine: (int -> unit) ref
 	val resize:      (unit -> unit) ref
 
+	val iterMove: int * int -> unit
+
         (* constraint watcher *) 
         val watcher: 
 	    'a  * Reflect.value * 

@@ -26,7 +26,7 @@ sig
 	dictionary * int * (elemtype -> bool) -> (elemtype * int) option 
     val iterLookup : 
 	dictionary * (elemtype -> bool) -> (elemtype * int) option 
-    val dict2list  : dictionary * int -> elemtype list
+    val dict2list  : dictionary -> elemtype list
     val delete     : dictionary * int -> unit
     val insertI    : dictionary * elemtype -> int
     val update     : dictionary * (int * elemtype) -> unit

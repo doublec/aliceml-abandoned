@@ -78,18 +78,20 @@ struct
 		else iterLookup'(dict,i+1,f) 
 	     end
 
-    fun dict2list ((a,fill_count,next_i) as dict,i) = 
+    fun iterLookup(dict,f) = iterLookup'(dict,0,f) 
+
+    fun dict2list' ((a,fill_count,next_i) as dict,i,li) = 
 	if i < 0 orelse i >= (!next_i)
-	    then nil
+	    then rev(li)
 	else let 
 		 val found = lookup (dict,i)
 	     in
 		  case found of 
-		              NONE => dict2list(dict,i-1)
-			    | SOME x => dict2list(dict,i-1)@[x]
+		              NONE => dict2list'(dict,i-1,li)
+			    | SOME x => dict2list'(dict,i-1,x::li)
 	     end
 
-    fun iterLookup(dict,f) = iterLookup'(dict,0,f) 
+    fun dict2list dict = dict2list'(dict,0,nil)
 
     (* deletes all objects with specified key *)
     fun delete  ((a,fill_count,_),key) = 

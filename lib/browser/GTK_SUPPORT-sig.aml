@@ -25,6 +25,7 @@ signature GTK_SUPPORT =
 (* Primitve Gtk Instructions *)
 
 	    val widgetDestroy: tag -> unit
+	    val objectDestroy: tag -> unit
 
 (* Window Creation Toolkit *)
     

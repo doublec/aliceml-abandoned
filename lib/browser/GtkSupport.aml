@@ -33,7 +33,7 @@ structure GtkSupport :> GTK_SUPPORT =
 (************ Primitive Gtk Instructions **************)
 
 fun widgetDestroy widget = Gtk.widgetDestroy(widget)
-
+fun objectDestroy object = Gtk.objectDestroy(object)
 
 (************ Window creation helpers ******************)
 
