@@ -32,11 +32,13 @@
 extern word UnsafeMkRefMap(void);
 extern word UnsafeReflect(void);
 extern word UnsafeIO(void);
+extern word UnsafeComponent(void);
 
 static prim_table builtins[] =
 { { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
   { "lib/system/UnsafeReflect", UnsafeReflect},
   { "lib/system/UnsafeIO", UnsafeIO},
+  { "lib/system/UnsafeComponent", UnsafeComponent},
   {NULL, NULL} };
 
 static inline
