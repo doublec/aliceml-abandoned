@@ -138,9 +138,7 @@ void AliceLanguageLayer::Init(const char *home, int argc, const char *argv[]) {
 #else
   u_int codeSizeInChunks = 50; // was 40
 #endif
-  NativeCodeJitter::Init((codeSizeInChunks+
-                          NativeCodeJitter::codeBufferSecurity)
-                         * STORE_MEMCHUNK_SIZE);
+  NativeCodeJitter::Init(codeSizeInChunks * STORE_MEMCHUNK_SIZE);
 
   const char *jitMode = std::getenv("ALICE_JIT_MODE");
   if (jitMode != NULL && !strcmp(jitMode, "0"))

@@ -66,11 +66,13 @@ typedef struct {
 } CallInfo;
 
 #define ALICE_REGISTER_NB 3
+#define CODE_BUFFER_SECURITY STORE_MEMCHUNK_SIZE
 
 class NativeCodeJitter : public JITAlice, ImmediateEnv {
 protected:
   static word inlineTable;
   static u_int codeBufferSize;
+  static u_int boolTest;
 
   word initialPC;
   word initialNoCCCPC;
@@ -265,7 +267,6 @@ protected:
   void CheckCodeBuffer(void);
 public:
   static void Init(u_int codeSize);
-  static u_int codeBufferSecurity;
 
   NativeCodeJitter();
   ~NativeCodeJitter();
