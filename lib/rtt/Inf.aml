@@ -254,6 +254,10 @@ struct
 
     nonfix mod
 
+    fun mapr  f   xs		= mapr'(f,xs)
+    and mapr'(f,  nil )		= nil
+      | mapr'(f, x::xs)		= let val xs' = mapr'(f,xs) in f x :: xs' end
+
     fun dummy _			= raise Assert.failure
     val modFwd			= ref(dummy : path * inf -> mod)
     val apply'Fwd		= ref(dummy : inf * mod -> inf)
@@ -1356,8 +1360,7 @@ TextIO.print "\n";
     and buildSig(c, j, toInf, s) =
 	let
 	    val change = ref false
-	    val items' = List.mapr (fn item => buildItem(c,change,item))
-				   (items s)
+	    val items' = mapr (fn item => buildItem(c,change,item)) (items s)
 	in
 	    if !change
 	    then buildNew(c, j, toInf(newSig items'))
