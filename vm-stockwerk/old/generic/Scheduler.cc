@@ -48,7 +48,6 @@ void Scheduler::Run() {
       int offset = nargs == -1? 1: nargs;
       TaskManager *taskManager =
 	static_cast<TaskManager *>(taskStack->GetUnmanagedPointer(offset));
-      Assert(taskManager != NULL);
       preempt = false;
       TaskManager::Result result = taskManager->Run(taskStack, nargs);
     interpretResult:
