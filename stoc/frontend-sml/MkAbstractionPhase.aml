@@ -22,7 +22,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     fun errorFunId(s1, FunId(i,x), s2)	= error(i, s1 ^ FunId.toString x ^ s2)
 
     fun errorVId'(s1, E, vid', s2) =
-	errorVId(s1, VId((#1 o valOf o lookupVal)(E, vid'), vid'), s2)
+	errorVId(s1, VId((#1 o Option.valOf o lookupVal)(E, vid'), vid'), s2)
 
 
     (* Miscellanous helpers *)

@@ -110,7 +110,7 @@
 		     )
 	   |   _  => toInt'(s, DEC, i)
 
-    and toInt'(s,b,i) = valOf(scanString (LargeInt.scan b) s)
+    and toInt'(s,b,i) = Option.valOf(scanString (LargeInt.scan b) s)
 			handle Overflow =>
 			       Error.error(i, "integer constant too big")
 
@@ -120,7 +120,7 @@
 	   | ( (#"x",_) | (_,#"x") ) => toWord'(String.extract(s,3,NONE), HEX,i)
 	   |            _            => toWord'(String.extract(s,2,NONE), DEC,i)
 
-    and toWord'(s,b,i) = valOf(scanString (LargeWord.scan b) s)
+    and toWord'(s,b,i) = Option.valOf(scanString (LargeWord.scan b) s)
 			 handle Overflow =>
 				Error.error(i, "word constant too big")
 
@@ -130,7 +130,7 @@
     fun toString(s,i) =
 	let
             fun base(s,b,m) =
-		Char.chr(valOf(scanString (Int.scan b) s))
+		Char.chr(Option.valOf(scanString (Int.scan b) s))
 		handle (Chr | Overflow) =>
 			 Error.error(i, m ^ " escape character too big")
 
