@@ -7,6 +7,7 @@ Group
 
 is
 
+    ../../lib/system/signature.cm
     ../../lib/utility/sources.cm
     ../../lib/rtt/name.cm
     ../../lib/rtt/type.cm
@@ -14,7 +15,6 @@ is
     ../infrastructure/source.cm
     ../common/id-stamp.cm
     ../common/intermediate-grammar.cm
-    ../top/composer.cm
 
     FLAT_GRAMMAR-sig.aml
     FlatGrammar.aml
