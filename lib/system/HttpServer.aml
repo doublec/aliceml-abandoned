@@ -11,7 +11,7 @@
  *)
 
 import structure MkHashImpMap  from "../utility/MkHashImpMap"
-(*import structure TextIO      from "TextIO"*)
+import structure TextIO        from "TextIO"
 import structure Url           from "Url"
 import structure Socket        from "Socket"
 import structure Http          from "Http"
@@ -20,6 +20,15 @@ import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 structure HttpServer :> HTTP_SERVER =
     struct
 	type handler = Http.request -> Http.response
+
+	val logOut: TextIO.outstream option ref = ref NONE
+
+	fun trace s =
+	    case !logOut of
+		SOME q => TextIO.output (q, s)
+	      | NONE => ()
+
+	val idleTime = ref (Time.fromSeconds 30)
 
 	val myPort: int option ref = ref NONE
 
@@ -66,13 +75,13 @@ structure HttpServer :> HTTP_SERVER =
 			     (Http.parseFieldValue s)
 	      | NONE => nil
 
-	val idleTime = ref (Time.fromSeconds 30)
-
 	fun closeIdle (tokens, socket) =
 	    (Future.awaitEither (Future.alarm (!idleTime), tokens);
 	     if Future.isDetermined tokens then
 		 closeIdle (List.tl tokens, socket)
-	     else Socket.close socket)
+	     else
+		 (trace "closing idle connection\n";
+		  Socket.close socket)
 
 	fun handleConnection (socket, host, port) =
 	    let
@@ -84,10 +93,8 @@ structure HttpServer :> HTTP_SERVER =
 	    end
 	and handleConnection' (socket, host, port, sendToken) =
 	    let
-(*--** replace by some logging facility
-		val _ = TextIO.print ("connection from " ^ host ^ ":" ^
-				      Int.toString port ^ "\n")
-*)
+		val _ = trace ("connection from " ^ host ^ ":" ^
+			       Int.toString port ^ "\n")
 		val request = Http.readRequest socket
 		val _ = sendToken ()
 		val handler = findHandler (#uri request)
@@ -105,9 +112,7 @@ structure HttpServer :> HTTP_SERVER =
 	    end
 	    handle Http.Format =>
 		       Socket.close socket
-(*--** replace by some logging facility
-		       before TextIO.print "protocol error\n"
-*)
+		       before trace "protocol error\n"
 		 | Http.Closed => ()
 
 	fun start portOpt =
