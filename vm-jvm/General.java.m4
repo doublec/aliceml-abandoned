@@ -107,8 +107,8 @@ final public class General {
     /** Ref-Zellen-Konstruktor, entspricht etwa NewCell oder so.*/
     final public static class Ref extends DMLBuiltin {
 	final synchronized public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
-	    // --> Tuple?
-	    return new RefContent(val);
+	    DMLValue[] args = fromTuple(val,1,"General.ref");
+	    return new Reference(args[0]);
 	}
     }
     /** <code>val ref : 'a -> ref 'a</code>*/

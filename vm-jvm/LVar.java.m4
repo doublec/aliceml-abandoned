@@ -1,10 +1,10 @@
 package de.uni_sb.ps.dml.runtime;
 
-public class DMLLVar implements DMLRemoteValue {
+public class DMLLVar extends java.rmi.server.UnicastRemoteObject implements DMLRemoteValue {
 
     protected DMLValue ref=null;
 
-    public DMLLVar() { }
+    public DMLLVar() throws java.rmi.RemoteException { }
 
     final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
 	if (ref==null)

@@ -1,10 +1,10 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class ServerManager implements SManager {
+final public class ServerManager extends java.rmi.server.UnicastRemoteObject implements SManager {
 
     CManager contentOwner;
 
-    public ServerManager(CManager initial) {
+    public ServerManager(CManager initial) throws java.rmi.RemoteException {
 	contentOwner=initial;
     }
 

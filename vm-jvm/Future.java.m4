@@ -8,11 +8,11 @@ public class DMLFuture extends DMLLVar {
     /** Dieser Konstruktor wird nur mit DMLLVar als Argument aufgerufen.
      *  @param v DMLLVar
      */
-    public DMLFuture() {
-	ref=null;
+    public DMLFuture() throws java.rmi.RemoteException {
     }
 
-    public DMLFuture(DMLValue v) {
+    public DMLFuture(DMLValue v) throws java.rmi.RemoteException {
+	super();
 	ref=v;
     }
 

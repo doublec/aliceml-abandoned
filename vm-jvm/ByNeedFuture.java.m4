@@ -8,7 +8,8 @@ public class DMLByNeedFuture extends DMLFuture {
     private DMLValue closure = null;
     private DMLLVar ref = null;
 
-    public DMLByNeedFuture(DMLValue v) {
+    public DMLByNeedFuture(DMLValue v) throws java.rmi.RemoteException {
+	super();
 	closure=v;
 	ref = new DMLLVar();
     }

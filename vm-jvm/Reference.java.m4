@@ -6,7 +6,7 @@ final public class Reference implements DMLConVal, DMLReference {
     DMLValue content = null;
     ClientManager cmgr = null;
 
-    public Reference(DMLValue content) {
+    public Reference(DMLValue content) throws java.rmi.RemoteException {
 	this.content=content;
 	cmgr = new ClientManager(this);
 	mgr = new ServerManager(cmgr);
@@ -123,11 +123,33 @@ final public class Reference implements DMLConVal, DMLReference {
 	content = val;
 	return ret;
     }
+    private void writeObject(java.io.ObjectOutputStream stream)
+	throws IOException {
+	if (mgr==null) {
+	    ClientManager CMGR=null;
+	    if (cmgr==null)
+		CMGR = new ClientManager(this);
+	    ServerManager MGR = new ServerManager(CMGR);
+	    mgr=MGR;
+	    DMLValue t = content;
+	    content = null;
+	    out.defaultWriteObject();
+	    cmgr=CMGR;
+	    content = t;
+	} else {
+	    ClientManager CMGR = cmgr;
+	    cmgr=null;
+	    DMLValue t = content;
+	    content = null;
+	    out.defaultWriteObject();
+	    content = t;
+	    cmgr = CMGR;
+	}
+    }
 
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
 	in.defaultReadObject();
-	content=null;
 	cmgr = new ClientManager(this);
     }
 }
