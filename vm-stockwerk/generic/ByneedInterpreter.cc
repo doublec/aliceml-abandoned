@@ -13,15 +13,15 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/ByneedInterpreter.hh"
+#pragma implementation "generic/ByneedInterpreter.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/Backtrace.hh"
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Transients.hh"
-#include "emulator/ByneedInterpreter.hh"
+#include "generic/Backtrace.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Transients.hh"
+#include "generic/ByneedInterpreter.hh"
 
 // ByneedFrame
 class ByneedFrame: private StackFrame {
