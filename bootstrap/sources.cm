@@ -1,5 +1,6 @@
 Group is
 
+	smlnj-lib.cm
 	ExtendedBasis.sml
 	DummyFuture.sml
 	DummyLock.sml
