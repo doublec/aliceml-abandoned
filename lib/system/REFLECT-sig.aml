@@ -19,7 +19,7 @@ sig
     type value
     type module
 
-    val realToVector: real -> Word8.word vector
+    val realToVector: real -> Word8Vector.vector
 
     val reflectPackage :    Package.package -> module * Inf.t
     val reflectValPackage : Package.val_package -> value * Type.t

@@ -14,7 +14,7 @@ structure Reflect =
 		      | 0wx00 => (fn i => i + 96)
 		      | _ => raise Match
 	    in
-		Vector.tabulate
+		Word8Vector.tabulate
 		    (8, fn i => Word8Vector.sub (vec, mkIndex i))
 	    end
     end

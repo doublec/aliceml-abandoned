@@ -173,7 +173,7 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	    in
 		outputChunk (context,
 			     Vector.tabulate
-			     (8, fn i => Vector.sub (vec, i)));
+				 (8, fn i => Word8Vector.sub (vec, i)));
 		()
 	    end
 

@@ -37,7 +37,7 @@ define
 	 of 3|&3|&#|&2|3|Rest then A B C D E F G H Inter in
 	    {IntToVector {UnmarshalNumber Rest ?Inter} ?E ?F ?G ?H}
 	    {IntToVector {UnmarshalNumber Inter _} ?A ?B ?C ?D}
-	    '#[]'(A B C D E F G H)
+	    {ByteString.make [A B C D E F G H]}
 	 end
       end
    end

@@ -24,9 +24,7 @@ structure Reflect :> REFLECT =
 	type module
 
 	val cast = UnsafeValue.cast
-
-	fun realToVector r =
-	    Vector.map Word8.fromInt (UnsafeReflect.realToVector r)
+	val realToVector = UnsafeReflect.realToVector
 
 	(* TODO: Q&D, has to correspond to translation and Package module *)
 	type package'

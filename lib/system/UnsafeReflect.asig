@@ -18,7 +18,7 @@ signature UNSAFE_REFLECT_COMPONENT =
 	    sig
 		val cast: 'a -> 'b
 
-		val realToVector: real -> int vector
+		val realToVector: real -> Word8Vector.vector
 
 		functor Reflect(signature S structure X: S): (val x: unit)
 		functor Unreflect(val x: unit signature S): S
