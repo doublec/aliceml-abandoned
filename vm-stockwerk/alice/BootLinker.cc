@@ -167,6 +167,25 @@ public:
   virtual void DumpFrame(word frame);
 };
 
+class BootInterpreter: public Interpreter {
+private:
+  static BootInterpreter *self;
+public:
+  // BootInterpreter Constructor
+  BootInterpreter(): Interpreter() {}
+  // BootInterpreter Static Constructor
+  static void Init() {
+    self = new BootInterpreter();
+  }
+  // Frame Handling
+  static void PushFrame(Thread *thread, String *key);
+  // Execution
+  virtual Result Run();
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
 //
 // Interpreter Frames
 //
@@ -275,6 +294,29 @@ public:
   }
 };
 
+class BootFrame: private StackFrame {
+private:
+  enum { KEY_POS, SIZE };
+public:
+  using Block::ToWord;
+  // BootFrame Accessors
+  String *GetKey() {
+    return String::FromWordDirect(StackFrame::GetArg(KEY_POS));
+  }
+  // BootFrame Constructor
+  static BootFrame *New(Interpreter *interpreter, String *key) {
+    StackFrame *frame = StackFrame::New(BOOT_FRAME, interpreter, SIZE);
+    frame->InitArg(KEY_POS, key->ToWord());
+    return static_cast<BootFrame *>(frame);
+  }
+  // BootFrame Untagging
+  static BootFrame *FromWordDirect(word frame) {
+    StackFrame *p = StackFrame::FromWordDirect(frame);
+    Assert(p->GetLabel() == BOOT_FRAME);
+    return static_cast<BootFrame *>(p);
+  }
+};
+
 //
 // Interpreter Implementations
 //
@@ -311,8 +353,8 @@ const char *ApplyInterpreter::Identify() {
   return "ApplyInterpreter";
 }
 
-void ApplyInterpreter::DumpFrame(word frameWord) {
-  ApplyFrame *frame = ApplyFrame::FromWordDirect(frameWord);
+void ApplyInterpreter::DumpFrame(word wFrame) {
+  ApplyFrame *frame = ApplyFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Apply %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -338,8 +380,8 @@ const char *EnterInterpreter::Identify() {
   return "EnterInterpreter";
 }
 
-void EnterInterpreter::DumpFrame(word frameWord) {
-  EnterFrame *frame = EnterFrame::FromWordDirect(frameWord);
+void EnterInterpreter::DumpFrame(word wFrame) {
+  EnterFrame *frame = EnterFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Enter %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -402,8 +444,8 @@ const char *LinkInterpreter::Identify() {
   return "LinkInterpreter";
 }
 
-void LinkInterpreter::DumpFrame(word frameWord) {
-  LinkFrame *frame = LinkFrame::FromWordDirect(frameWord);
+void LinkInterpreter::DumpFrame(word wFrame) {
+  LinkFrame *frame = LinkFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Link %.*s\n", (int) key->GetSize(), key->GetValue());
 }
@@ -436,10 +478,40 @@ const char *LoadInterpreter::Identify() {
   return "LoadInterpreter";
 }
 
-void LoadInterpreter::DumpFrame(word frameWord) {
-  LoadFrame *frame = LoadFrame::FromWordDirect(frameWord);
+void LoadInterpreter::DumpFrame(word wFrame) {
+  LoadFrame *frame = LoadFrame::FromWordDirect(wFrame);
   String *key = frame->GetKey();
   std::fprintf(stderr, "Load %.*s\n", (int) key->GetSize(), key->GetValue());
+}
+
+// BootInterpreter
+BootInterpreter *BootInterpreter::self;
+
+void BootInterpreter::PushFrame(Thread *thread, String *key) {
+  thread->PushFrame(BootFrame::New(self, key)->ToWord());
+}
+
+Interpreter::Result BootInterpreter::Run() {
+  BootFrame *frame = BootFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  String *key = frame->GetKey();
+  Component *component = BootLinker::LookupComponent(key);
+  Assert(component != INVALID_POINTER);
+  Record *record = Record::FromWord(component->GetStr());
+  Assert(record != INVALID_POINTER);
+  word boot = record->PolySel(UniqueString::New(String::New("boot")));
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] = Properties::rootUrl;
+  return Scheduler::PushCall(boot);
+}
+
+const char *BootInterpreter::Identify() {
+  return "BootInterpreter";
+}
+
+void BootInterpreter::DumpFrame(word wFrame) {
+  BootFrame *frame = BootFrame::FromWordDirect(wFrame);
+  String *key = frame->GetKey();
+  std::fprintf(stderr, "Boot %.*s\n", (int) key->GetSize(), key->GetValue());
 }
 
 //
@@ -464,6 +536,7 @@ void BootLinker::Init(NativeComponent *nativeComponents) {
   EnterInterpreter::Init();
   LinkInterpreter::Init();
   LoadInterpreter::Init();
+  BootInterpreter::Init();
   // Enter built-in native components
   while (nativeComponents->name != NULL) {
     word (*init)(void) = nativeComponents->init;
@@ -492,21 +565,9 @@ Component *BootLinker::LookupComponent(String *key) {
   }
 }
 
-static word urlWord;
-
-word BootLinker::Link(String *url) {
+void BootLinker::Link(String *url) {
   traceFlag = getenv("ALICE_TRACE_BOOT_LINKER") != NULL;
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
+  BootInterpreter::PushFrame(thread, url);
   LoadInterpreter::PushFrame(thread, url);
-  urlWord = url->ToWord();
-  RootSet::Add(urlWord);
-  Scheduler::Run();
-  RootSet::Remove(urlWord);
-  Component *component = LookupComponent(String::FromWordDirect(urlWord));
-  if (component == INVALID_POINTER) {
-    return Store::IntToWord(0);
-  }
-  else {
-    return component->GetStr();
-  }
 }
