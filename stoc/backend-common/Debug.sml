@@ -26,11 +26,11 @@ structure Debug :> DEBUG =
 	fun posToString pos =
 	    seqToString "." (fn x => x) (List.rev ("e"::pos))
 
-	fun labToString (Lab (_, s)) = s
+	fun labToString (Lab (_, label)) = Label.toString label
 
-	fun idToString (Id (_, stamp, InId)) =
+	fun idToString (Id (_, stamp, Name.InId)) =
 	    "$" ^ Stamp.toString stamp
-	  | idToString (Id (_, stamp, ExId s)) =
+	  | idToString (Id (_, stamp, Name.ExId s)) =
 	    s ^ "$" ^ Stamp.toString stamp
 
 	fun longidToString (LongId (_, longid, lab)) =
@@ -60,11 +60,16 @@ structure Debug :> DEBUG =
 	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
 	  | patToString (TupPat (_, pats)) =
 	    "(" ^ listToString patToString pats ^ ")"
-	  | patToString (RowPat (_, patFields, hasDots)) =
-	    "{" ^
-	    listToString (fn Field (_, lab, pat) =>
-			  labToString lab ^ ": " ^ patToString pat) patFields ^
-	    (if hasDots then ", ..." else "") ^ "}"
+	  | patToString (RowPat (_, patFields)) =
+	    let
+		val hasDots = true   (*--** derive from info type *)
+	    in
+		"{" ^
+		listToString (fn Field (_, lab, pat) =>
+			      labToString lab ^ ": " ^ patToString pat)
+		patFields ^
+		(if hasDots then ", ..." else "") ^ "}"
+	    end
 	  | patToString (VecPat (_, pats)) =
 	    "#[" ^ listToString patToString pats ^ "]"
 	  | patToString (AsPat (_, pat1, pat2)) =

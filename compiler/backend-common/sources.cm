@@ -1,6 +1,8 @@
 Group is
 
     ../common/sources.cm
+    ../common/name.cm
+    ../common/type.cm
     ../error/sources.cm
     ../misc/sources.cm
 
