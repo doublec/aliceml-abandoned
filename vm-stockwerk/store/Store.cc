@@ -648,7 +648,7 @@ void Store::DoGC(word &root) {
 #if defined(STORE_DEBUG)
   std::printf("Done GC.\n");
 #endif
-#if defined(STORE_DEBUG) 
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   gettimeofday(&end_t, INVALID_POINTER);
   sum_t->tv_sec  += (end_t.tv_sec - start_t.tv_sec);
   sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);

@@ -169,7 +169,7 @@ WeakDictionary *WeakDictionary::New(hashkeytype type, BlockLabel l, u_int size) 
 
   Block *p      = Store::AllocBlock(l, SIZE);
   Block *arr    = Store::AllocBlock(HASHNODEARRAY_LABEL, size);
-  u_int percent = (size * FILL_RATIO);
+  u_int percent = (u_int) (size * FILL_RATIO);
 
   p->InitArg(COUNTER_POS, Store::IntToWord(0));
   p->InitArg(PERCENT_POS, Store::IntToWord(percent));
