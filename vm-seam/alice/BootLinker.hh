@@ -47,13 +47,13 @@ public:
     Block *p = Store::AllocBlock((BlockLabel) ENTRY_LABEL, SIZE);
     p->InitArg(SIGN_POS, sign);
     p->InitArg(STR_POS, str);
-    return static_cast<Component *>(p);
+    return STATIC_CAST(Component *, p);
   }
   // Component Untagging
   static Component *FromWordDirect(word entry) {
     Block *p = Store::DirectWordToBlock(entry);
     Assert(p->GetLabel() == (BlockLabel) ENTRY_LABEL);
-    return static_cast<Component *>(p);
+    return STATIC_CAST(Component *, p);
   }
 };
 

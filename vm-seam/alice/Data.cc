@@ -33,7 +33,7 @@ public:
 
 Transform *
 ConstructorHandler::GetAbstractRepresentation(ConcreteRepresentation *b) {
-  Constructor *constructor = static_cast<Constructor *>(b);
+  Constructor *constructor = STATIC_CAST(Constructor *, b);
   return constructor->GetTransform();
 }
 
@@ -72,7 +72,7 @@ Constructor *Constructor::New(String *name, ::Block *guid) {
     b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, MakeConstructorTransform(name, wKey)->ToWord());
     constructorMap->Put(wKey, b->ToWord());
-    return static_cast<Constructor *>(b);
+    return STATIC_CAST(Constructor *, b);
   }
 }
 
