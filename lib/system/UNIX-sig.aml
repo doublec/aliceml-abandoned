@@ -1,0 +1,28 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO from "TextIO"
+
+signature UNIX =
+sig
+    type proc
+(*  type signal TODO*)
+
+    val execute :	string * string list -> proc
+(*TODO
+    val executeInEnv :	string * string list * string list -> proc
+    val reap :		proc -> OS.Process.status 
+    val kill :		proc * signal -> unix
+*)
+    val streamsOf :	proc -> TextIO.instream * TextIO.outstream
+end
