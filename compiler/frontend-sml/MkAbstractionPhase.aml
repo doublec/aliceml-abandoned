@@ -118,7 +118,7 @@ import signature ABSTRACTION_PHASE from "ABSTRACTION_PHASE-sig"
 type sig_loader = Source.desc * Url.t -> BindEnvFromSig.sign
 
 functor MkAbstractionPhase(
-		val loadSign :       sig_loader
+		val loadSig :        sig_loader
 		structure Switches : SWITCHES
 	) :> ABSTRACTION_PHASE =
 struct
@@ -3449,7 +3449,7 @@ struct
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = loadSign(desc, url)
+		val s     = loadSig(desc, url)
 		val E''   = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
 		val imps' = trImp (E,E'') imp
@@ -3466,7 +3466,7 @@ struct
 	 | IMPORTALLAnn(i, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = loadSign(desc, url)
+		val s     = loadSig(desc, url)
 		val E''   = BindEnvFromSig.envFromSig(i, s)
 		val E'''  = BindEnv.new()
 		val imps' = Vector.rev(Vector.fromList
