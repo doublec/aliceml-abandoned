@@ -290,8 +290,8 @@ AliceDll word UnsafeSocket() {
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
   Record *record = Record::New(8);
-  INIT_STRUCTURE(record, "UnsafeSocket", "server",
-		 UnsafeSocket_server, 1);
+  INIT_STRUCTURE_N(record, "UnsafeSocket", "server",
+		   UnsafeSocket_server, 1, 2);
   INIT_STRUCTURE(record, "UnsafeSocket", "accept",
 		 UnsafeSocket_accept, 1);
   INIT_STRUCTURE(record, "UnsafeSocket", "client",

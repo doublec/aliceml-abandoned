@@ -85,13 +85,15 @@ void PrimitiveTable::Register(const char *name, word value) {
 }
 
 void PrimitiveTable::Register(const char *name,
-			      Interpreter::function value, u_int arity) {
+			      Interpreter::function value,
+			      u_int inArity, u_int outArity) {
   word transformName = AliceLanguageLayer::TransformNames::primitiveFunction;
   Transform *abstract =
     Transform::New(Store::DirectWordToChunk(transformName),
 		   String::New(name)->ToWord());
-  word function = Primitive::MakeFunction(name, value, arity, abstract);
-  word closure  = Closure::New(function, 0)->ToWord();
+  word function =
+    Primitive::MakeFunction(name, value, inArity, outArity, abstract);
+  word closure = Closure::New(function, 0)->ToWord();
   Register(name, closure);
   ChunkMap::FromWordDirect(functionTable)->
     Put(String::New(name)->ToWord(), function);

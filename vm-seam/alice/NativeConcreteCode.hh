@@ -63,6 +63,7 @@ public:
   virtual u_int GetFrameSize(StackFrame *sFrame);
   virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(StackFrame *sFrame);
