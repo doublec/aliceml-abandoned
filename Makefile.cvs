@@ -6,6 +6,7 @@
 # This is a temporary hack.
 
 cvs:
-	./autoconf
-	./aclocal
-	./automake --add-missing
+	aclocal
+	autoconf
+	libtoolize
+	automake --add-missing
