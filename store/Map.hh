@@ -13,7 +13,7 @@
 #define __STORE__MAP_HH__
 
 #if defined(INTERFACE)
-#pragma interface "store/IntMap.hh"
+#pragma interface "store/Map.hh"
 #endif
 
 #include "store/BaseMap.hh"
