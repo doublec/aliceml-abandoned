@@ -20,7 +20,7 @@
   </P>
 
   <UL>
-    <LI>Linux (tar files of the installation build on Red Hat 7.2):
+    <LI>Linux (tar files of the installation built on Red Hat 7.2):
 
     <UL>
       <LI><A href="download/mozart-devel.tgz"><TT>mozart-devel.tgz</TT></A></LI>
