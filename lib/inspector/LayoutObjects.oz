@@ -125,8 +125,7 @@ define
       end
       meth isVert($)
 	 case {Label @value}
-	 of fd          then false
-	 [] 'Promise__' then false
+	 of 'Promise__' then false
 	 [] 'Package__' then false
 	 else true
 	 end
@@ -139,8 +138,7 @@ define
       end
       meth isVert($)
 	 case {Label @value}
-	 of fd          then false
-	 [] 'Promise__' then false
+	 of 'Promise__' then false
 	 [] 'Package__' then false
 	 else true
 	 end
