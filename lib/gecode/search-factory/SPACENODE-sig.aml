@@ -1,20 +1,41 @@
 import structure Space from "x-alice:/lib/gecode/Space"
 import structure Path  from "Path"
 
-(* Simplified signature, for everyday use. *)
 signature SPACENODE =
 sig
-  type space_node
-  type t = space_node
+  (* Totally thread-safe. *)
 
   exception Child
+  exception NotAssigned
 
-  (* Create a root node, gives the recomputation distance. *)
-  (* This function can only be called ONCE. *)
-  val root : (Space.space * int) -> space_node
+  type space_node
+  type t = space_node
+  type solution  (* Only needed for Branch & Bound. Otherwise, can be unit. *)
 
+  (* Returns a space_node corresponding to the root space Policy.root. *)
+  val root : space_node
+  val fromPath : solution Path.t -> space_node
+
+  (* newChild (mom, i)
+   * Creates a new space_node as child of node mom with alternative number i.
+   * Raises Child if this alternative does not exist. *)
   val newChild : space_node * int -> space_node
+
+  (* getSpace node
+   * returns a clone of the computation space associated with this node. *)
   val getSpace : space_node -> Space.space
+
+  (* Like Space.status.
+   * In case of Branch & Bound, may raise NotAssigned
+   * if the problem is under-specified, that is,
+   * if the node is solved but not all variables are assigned. *)
   val status : space_node -> Space.status
-  val getPath : space_node -> unit Path.t
+
+  (* Returns the path corresponding to this node. *)
+  val getPath : space_node -> solution Path.t
+
+  (* B&B : Signals a solution found elsewhere (e.g. distributed search) *)
+  val addSolution : solution -> unit
+
 end
+

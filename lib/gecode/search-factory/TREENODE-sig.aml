@@ -1,19 +1,24 @@
-import structure Space  from "x-alice:/lib/gecode/Space"
+import structure Space from "x-alice:/lib/gecode/Space"
 import structure Path  from "Path"
+import structure Debug from "Debug"
 
-(* Simplified signature, for everyday use. *)
-signature TREENODE =
+signature TREENODE = 
 sig
-
   exception Child
+  exception NotAssigned
+
+  (* Debug level *)
+  val mask : Debug.db_mask
 
   type tree_node
   type t = tree_node
+  type solution  (* Only needed for Branch & Bound. Otherwise, can be unit. *)
 
-  (* Create a root node, gives the recomputation distance. *)
-  val root : (Space.space * int) -> tree_node
+  (* Returns a tree_node corresponding to the root space Policy.root. *)
+  val root : tree_node
+  val fromPath : solution Path.t -> tree_node
 
-  (* Returns the left (right) child, raise ???Exception if no child. *)
+  (* Returns the left (right) child, raise Child if no child. *)
   val getLeft  : tree_node -> tree_node
   val getRight : tree_node -> tree_node
 
@@ -21,10 +26,16 @@ sig
    * returns the computation space associated with this node. *)
   val getSpace : tree_node -> Space.space
 
-  (* Like Space.status *)
+  (* Like Space.status.
+   * In case of Branch & Bound, may raise NotAssigned
+   * if the problem is under-specified, that is,
+   * if the node is solved but not all variables are assigned. *)
   val status : tree_node -> Space.status
 
   (* Returns the path corresponding to this node. *)
-  val getPath : tree_node -> unit Path.t
+  val getPath : tree_node -> solution Path.t
+
+  (* B&B : Signals a solution found elsewhere (e.g. distributed search) *)
+  val addSolution : solution -> unit
 
 end

@@ -4,11 +4,10 @@ ALICEDEP = alicedep
 ALICEC_OPTS =
 
 SOURCES = Debug.aml \
-          Path.aml \
-          MKSPACENODE-sig.aml MkSpaceNode.aml \
-          SPACENODE-sig.aml SpaceNode.aml \
-          MKTREENODE-sig.aml MkTreeNode.aml \
-          TREENODE-sig.aml TreeNode.aml \
+          Path.aml Policy.aml \
+          SPACENODE-sig.aml MkSpaceNode.aml \
+          TREENODE-sig.aml MkTreeNode.aml TreeNode.aml \
+          SEARCH-sig.aml MkSearch.aml \
           Test.aml
 
 COMPONENTS = $(SOURCES:%.aml=%.stc)

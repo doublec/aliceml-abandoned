@@ -1,0 +1,93 @@
+import structure Space    from "x-alice:/lib/gecode/Space"
+import structure Path     from "Path"
+import signature SEARCH   from "SEARCH-sig"
+import signature TREENODE from "TREENODE-sig"
+import structure Debug    from "Debug"
+
+functor MkSearch (TreeNode : TREENODE) 
+  :> SEARCH where type path = TreeNode.solution Path.t =
+struct
+
+  fun print msg = Debug.dbPrint (Debug.dbSearch, TreeNode.mask, msg)
+  fun printPath n = Path.toString (TreeNode.getPath n) ^ "\n"
+
+  type path = TreeNode.solution Path.t
+
+  val started = lazy () (* Tells whether the search has already started. *)
+  val finished = ref false (* Tells if the search is finished. *)
+  fun isFinished () = !finished
+
+  val root = TreeNode.root
+  val unexplored = ref [root]
+
+  fun init path =
+    if Future.isDetermined started then raise (Fail "MkSearch.init")
+    else
+      (print "Search : new root path" ;
+       unexplored := [TreeNode.fromPath path]) (* See (1) below *)
+
+  (* Atomically update the list of unexplored nodes. 
+   * The argument f is such that f(old) returns (new, res)
+   * Where 'new' is the new list and 'res' is returned as a result. *)
+  fun updateNodes f =
+    let
+      val p = Promise.promise ()
+      val l = Ref.exchange (unexplored, Promise.future p)
+      val (ll, res) = f l
+    in
+      Promise.fulfill (p, ll) ;
+      res
+    end
+
+  fun getNode () = updateNodes (fn [] => ([], NONE) | x :: xs => (xs, SOME x))
+  fun addNode nd = updateNodes (fn l => (nd :: l, ()))
+  
+  fun nextStep () =
+    (started ;
+     case getNode () of
+       NONE => (finished := true ; NONE)
+     | SOME n => 
+         case TreeNode.status n of
+           Space.FAILED => (print ("A failure at path " ^ (printPath n)); NONE)
+         | Space.SOLVED => (print ("A solution at path " ^ (printPath n));
+                            SOME (TreeNode.getSpace n))
+         | Space.BRANCH desc =>
+             let
+               val _ = print ("A branch at path " ^ (printPath n))
+               val left = TreeNode.getLeft n
+               val right = TreeNode.getRight n
+             in
+               addNode right ;
+               addNode left ;
+               NONE
+             end)
+           
+  fun nextSolved () =
+    case nextStep () of
+      NONE => if !finished then NONE else nextSolved ()
+    | s    => s      
+
+  (* This is not called often. It does not have to be efficient. *)
+  fun getLast (accu, []) = assert false
+    | getLast (accu, x :: []) = (List.rev accu, SOME (TreeNode.getPath x))
+    | getLast (accu, x :: xs) = getLast (x :: accu, xs)
+
+  fun getUnexploredPath () = updateNodes
+     (fn l => case l of ([] | [_]) => (l, NONE) | _ => getLast ([], l))
+
+  fun getOneSolution read = Option.map read (nextSolved ())
+
+  fun getAll (read, accu) =
+    case nextSolved () of
+      NONE => accu
+    | SOME sp => getAll (read, read sp :: accu)
+
+  fun getAllSolutions read = getAll (read, [])
+    
+
+end
+
+
+(* (1) There is no race condition at this point _because_ getUnexploredPath
+ *     returns None when there is only one element in the queue. *)
+

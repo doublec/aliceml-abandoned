@@ -1,0 +1,38 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+
+import structure Debug from "Debug"
+
+(* Recomputation policy and optimizations. *)
+signature POLICY =
+sig
+  val root : Space.space
+  val copyq : int -> bool (* All spaces s.t. copyq depth = true are cloned *)
+
+  (* Branch and bound *)
+  type sol
+  val readSolution : Space.space -> sol
+  val bound : (Space.space * sol -> unit) option (* bound the given space *)
+  val compare : sol * sol -> bool (* true if sol-1 better than sol-2. See (a) *)
+
+  (* Debug level *)
+  val mask : Debug.db_mask
+end
+
+(* (a) : The function 'compare' is used by space nodes and tree nodes only
+ *       if you use the function fromPath or addSolution.
+ *       In particular, it is not used by local Branch and Bound search *)
+
+functor BasicPolicy (val root : Space.space val rdist : int) :> POLICY =
+struct
+
+  val root = root
+  fun copyq d = d mod rdist = 0
+        
+  type sol = unit
+  fun readSolution _ = ()
+  val bound = NONE
+  fun compare (_, _) = false
+
+  val mask = Debug.dbZero
+
+end

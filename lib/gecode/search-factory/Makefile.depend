@@ -2,43 +2,43 @@ Debug.stc:
 
 Path.stc:
 
-MKSPACENODE-sig.stc: \
-	Debug.stc \
-	Path.stc
-
-MkSpaceNode.stc: \
-	Debug.stc \
-	MKSPACENODE-sig.stc \
-	MKSPACENODE-sig.stc \
-	Path.stc
+Policy.stc: \
+	Debug.stc
 
 SPACENODE-sig.stc: \
 	Path.stc
 
-SpaceNode.stc: \
+MkSpaceNode.stc: \
 	Debug.stc \
+	Policy.stc \
 	SPACENODE-sig.stc \
-	MkSpaceNode.stc \
 	Path.stc
-
-MKTREENODE-sig.stc: \
-	MKSPACENODE-sig.stc \
-	Path.stc
-
-MkTreeNode.stc: \
-	MKTREENODE-sig.stc \
-	MKTREENODE-sig.stc \
-	MkSpaceNode.stc
 
 TREENODE-sig.stc: \
-	Path.stc
+	Path.stc \
+	Debug.stc
+
+MkTreeNode.stc: \
+	Policy.stc \
+	TREENODE-sig.stc \
+	MkSpaceNode.stc
 
 TreeNode.stc: \
 	TREENODE-sig.stc \
-	SpaceNode.stc
+	Policy.stc \
+	MkTreeNode.stc
+
+SEARCH-sig.stc: \
+
+MkSearch.stc: \
+	Path.stc \
+	SEARCH-sig.stc \
+	TREENODE-sig.stc \
+	Debug.stc
 
 Test.stc: \
 	Debug.stc \
 	TreeNode.stc \
-	Path.stc
+	MkTreeNode.stc \
+	MkSearch.stc
 

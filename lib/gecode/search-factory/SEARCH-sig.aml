@@ -1,0 +1,31 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+
+signature SEARCH =
+sig
+
+  type path
+    
+  (* Optional: sets the top node of the search (root-node by default) *)
+  (* Raise Fail if the search has already begun. *)
+  val init : path -> unit
+
+  (* Get next solution *)
+  val nextSolved : unit -> Space.space option
+
+  (* Indicates if the search is finished. *)
+  val isFinished : unit -> bool
+
+  (* Get one solution.
+   * The argument is a function reading a solution from a space. *)
+  val getOneSolution : (Space.space -> 'a) -> 'a option
+
+  (* Get all solutions.
+   * The argument is a function reading a solution from a space. 
+   * In the case of Branch & Bound, the first solution is the best. *)
+  val getAllSolutions : (Space.space -> 'a) -> 'a list
+
+  (* Get the path corresponding to some unexplored node,
+   * usually the highest available in the tree 
+   * Thread-safe. *)
+  val getUnexploredPath : unit -> path option
+end

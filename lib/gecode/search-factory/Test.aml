@@ -4,9 +4,9 @@ import structure FD         from "x-alice:/lib/gecode/FD"
 
 (* import structure Explorer   from "x-alice:/tools/Explorer" *)
 
-import structure TreeNode from "TreeNode"
+import structure TreeNode   from "TreeNode"
 import structure MkTreeNode from "MkTreeNode"
-import structure Path from "Path"
+import structure MkSearch   from "MkSearch"
 
 open Debug
 
@@ -39,7 +39,7 @@ fun script space =
     val sum   = FD.intvar (space, #[(0, size*max)])
     val kvars = Vector.tabulate
       (size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
-    fun getSolution space = Vector.map (toInt space) vars
+    fun readSolution space = Vector.map (toInt space) vars
     fun bound (space, sol) =
       let
         val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
@@ -66,7 +66,7 @@ fun script space =
      FD.linear (space, kvars, FD.EQ, 0, cn) ;
      
      FD.branch (space, reif2, FD.B_NONE, FD.B_MIN);
-     (getSolution, bound, vars))
+     (readSolution, bound, vars))
   end
 
 fun queens space n cl =
@@ -76,13 +76,13 @@ fun queens space n cl =
 	val v = rangeVec(space, n, (0, n-1))
 	val v1 = Vector.tabulate (n, fn n => (n, Vector.sub(v,n)))
 	val v2 = Vector.tabulate (n, fn n => (~n, Vector.sub(v,n)))
-        fun getSolution space = Vector.map (toInt space) v
+        fun readSolution space = Vector.map (toInt space) v
     in
 	distinctOffset(space, v1, cl);
 	distinctOffset(space, v2, cl);
 	distinct(space, v, cl);
 	branch(space, v, B_SIZE_MIN, B_MIN);
-	(getSolution, fn (_,_) => (), v)
+	(readSolution, fn (_,_) => (), v)
     end
 
 fun queensScript space = queens space 6 cn
@@ -96,7 +96,7 @@ val rdist = 3
 
 (* The initial root space. *)
 val root = Space.new () 
-val (getSolution, bound, _) = script root
+val (readSolution, bound, _) = script root
 
 val mask = dbAll
 
@@ -105,46 +105,26 @@ structure TreeNode1 = MkTreeNode (val root = root
                                  fun copyq d = d mod rdist = 0
                                  type sol = int Vector.t
                                  val bound = SOME bound
-                                 val getSolution = getSolution
+                                 val readSolution = readSolution
+                                 val compare = lazy (assert false)
                                  val mask = mask)
-val rootnode1 = TreeNode1.root
 
 (* Simple tree *)
-structure TreeNode2 = TreeNode
-val rootnode2 = TreeNode2.root (root, rdist)
+structure TreeNode2 = TreeNode (val root = root val rdist = rdist)
 
 (* CHOOSE HERE *)
-val rootnode = rootnode1
 structure TreeNode = TreeNode1
 
-fun printd arg = Debug.dbPrint (mask, dbSearch, arg)
+structure Search = MkSearch TreeNode
 
-val nbsol = ref 0
+val sols = Search.getAllSolutions readSolution
 
-fun print_path node =
-  (print (Path.print (TreeNode.getPath node)) ;
-   print "\n")
-
-fun search node =
-  case TreeNode.status node of
-    Space.FAILED => (printd "A failure at " ; print_path node)
-  | Space.SOLVED =>
-    (
-    printd "A solution (namely " ;
-    printd (printSol (getSolution (TreeNode.getSpace node))) ;
-    printd ") at " ; print_path node ;
-    nbsol := !nbsol + 1)
-
-  | Space.BRANCH _ =>
-    (
-     printd "A branch at " ; print_path node ;
-     search (TreeNode.getLeft node) ;
-     search (TreeNode.getRight node) )
-  
 val _ =
-  (search rootnode ;
-   print "I found " ; print (Int.toString (!nbsol)) ;
+  (print "I found " ; print (Int.toString (List.length sols)) ;
    print " solutions.\n" ;
+   print "Namely,\n" ;
+   List.app (fn sol => print (printSol sol ^ "\n")) sols ;
+   print "\n" ;
    (* OS.Process.exit OS.Process.success ; *)
    () )
 

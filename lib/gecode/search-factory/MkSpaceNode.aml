@@ -1,17 +1,20 @@
-import structure Debug       from "Debug"
-import signature MKSPACENODE from "MKSPACENODE-sig"
-import signature POLICY      from "MKSPACENODE-sig"
-import structure Space       from "x-alice:/lib/gecode/Space"
-import structure Path        from "Path"
+import structure Debug     from "Debug"
+import signature POLICY    from "Policy"
+import signature SPACENODE from "SPACENODE-sig"
+import structure Space     from "x-alice:/lib/gecode/Space"
+import structure FD        from "x-alice:/lib/gecode/FD"
+import structure Path      from "Path"
 
-structure MkSpaceNode :> MKSPACENODE = fct (Policy:POLICY) =>
+functor MkSpaceNode (Policy:POLICY)
+  :> SPACENODE where type solution = Policy.sol =
 struct
 
   open Debug
 
+  type solution = Policy.sol
   exception Child
+  exception NotAssigned = FD.NotAssigned
 
-  type path = int list
   datatype space_node = Node of node_rep
   withtype node_rep =
     {mom    : space_node ,  (* Ancestor *)
@@ -29,8 +32,8 @@ struct
 
   val undefined = lazy assert false
 
-  val best = ref undefined
-  val bestId = ref 0  (* ID Number of the current best solution *)
+  val globalBest = ref undefined
+  val globalBestId = ref 0  (* ID Number of the current best solution *)
 
   val root =
     let 
@@ -43,10 +46,10 @@ struct
           space  = spaceref ,
           copy   = copyref ,
           status = status ,
-          bestId = !bestId ,
+          bestId = !globalBestId ,
           best   = NONE ,
           depth  = 0 }
-    end
+    end    
 
   fun status    (Node node) = #status node
   fun depth     (Node node) = #depth  node
@@ -58,18 +61,43 @@ struct
       NONE => (false, undefined)
     | SOME b => (true, b)
         
-  fun setBest sol =
-    (best := sol ;
-     bestId := !bestId + 1 ;
-     dbPrint (dbBaB, "Updated best solution.\n"))
+  fun setBestIfCond (sol,condf) =
+    let
+      val p = Promise.promise ()
+      val currentBest = Ref.exchange (globalBest, Promise.future p)
+      val _           = if !globalBestId = 0 then () (* No need to wait *)
+                        else ignore(Future.await currentBest)
+      val currentId   = !globalBestId
+    in
+      if condf (currentBest, currentId)
+        then
+          (globalBestId := currentId + 1 ;
+           Promise.fulfill (p, sol) ;
+           dbPrint (dbBaB, "Updated best solution.\n") ;
+           true)
+        else (Promise.fulfill (p, currentBest); false)
+    end
     
+  (* Compare the solution in the given SOLVED space
+   * with the current best one. *)
+  fun hardCompare space =
+    let val testSpace = Space.clone space 
+    in
+      assert (Space.status testSpace = Space.SOLVED) ;
+      bound (testSpace, !globalBest) ;
+      case Space.status testSpace of
+        Space.SOLVED => true (* Better. *)
+      | Space.FAILED => false
+      | _ => assert false
+    end
+
   (* Tail-recursive getPath *)
   fun getTailPath (Node node, tail) =
     let
       val altNum = #altNum node
       val newtail = case #best node of   (* May trigger computation of lazy *)
-                      NONE   => Path.Branch altNum :: tail
-                    | SOME b => Path.Branch altNum :: Path.Better b :: tail
+                      NONE   => (altNum, NONE) :: tail
+                    | SOME b => (altNum, SOME b) :: tail
     in
       if altNum = 0 then tail
       else getTailPath (#mom node, newtail)
@@ -85,7 +113,7 @@ struct
     in
       dbPrint(dbRecomp,
               "Recomputing node at PATH " ^ 
-              (Path.print (getPath (Node node))) ^ "\n");
+              (Path.toString (getPath (Node node))) ^ "\n");
       case status mom of
         Space.BRANCH descr =>
           (Space.commit (space, #altNum node, descr) ;
@@ -111,11 +139,10 @@ struct
           (rspace := NONE ;
            if acopy = NONE andalso Policy.copyq (#depth node)
              then (dbPrint (dbClone, "CLONE at path " ^ 
-                            (Path.print (getPath (Node node))) ^ "\n") ;
+                            (Path.toString (getPath (Node node))) ^ "\n") ;
                    rcopy := SOME (Space.clone s))
              else () ;
-           s)
-          
+           s)          
     end
 
   fun updateRef (r,v) = (assert (!r = NONE) ; r:=SOME v ; v)
@@ -145,8 +172,8 @@ struct
       val bestSol = lazy
         let
           (* Is there a best solution to apply? *)
-          val currentBestId = !bestId
-          val currentBest = !best (* Harmless race condition *)        
+          val currentBestId = !globalBestId
+          val currentBest = !globalBest (* Harmless race condition *)        
           val _ = assert currentBestId >= momBestId
         in
           if currentBestId > momBestId
@@ -170,24 +197,33 @@ struct
                     Space.BRANCH descr => descr
                   | _ => raise Child
 
-      val (bestId, bestSol) = if bab then getIdSol node else (0, NONE)
+      val (newBestId, newBestSol) = if bab then getIdSol node else (0, NONE)
       val status = lazy
         let
           val space = updateRef (spaceRef, getWorkingSpace node)
           val _ = Space.commit (space, i, descr)
           val _ =
             (* If a new best solution is present, bound the node. *)
-            case bestSol of  (* May trigger computation of lazy value. *)
+            case newBestSol of  (* May trigger computation of lazy value. *)
               NONE => ()
             | SOME best => bound (space, best)
                 
           val status = Space.status space
         in
           (* When a solution is found, BOUND *)
-          if status = Space.SOLVED andalso bab
-            then setBest (Policy.getSolution space)
+          if status = Space.SOLVED andalso bab then
+            let
+              val solution = Policy.readSolution space
+              (* This solution is not always better than previous solutions:
+               * the current node might have been bound too early
+               * (e.g. because of a call to getPath)
+               * Hence, we have to check if this new solution is the best. *)
+            in
+              ignore(setBestIfCond
+                     (solution, (fn (_, bestId) =>
+                                 newBestId = bestId orelse hardCompare space)))
+            end
           else () ;
-
           status  
         end
     in
@@ -196,9 +232,54 @@ struct
             space  = spaceRef ,
             copy   = ref NONE ,
             status = status,
-            bestId = bestId ,
-            best   = bestSol ,
+            bestId = newBestId ,
+            best   = newBestSol ,
             depth  = depth node + 1 }
     end
+
+  (* Apply the path element to the given space *)
+  fun applyPath space ((n, b), (parent, best)) =
+    let 
+      val _ = case Space.status space of
+                Space.BRANCH descr => Space.commit (space, n, descr)
+              | _ => raise Child
+
+      val newBest = case b of
+                      NONE => best
+                    | SOME bb => (bound (space, bb); b)
+
+      val newNode = Node {mom    = parent ,
+                          altNum = n ,
+                          space  = ref NONE ,
+                          copy   = ref NONE ,
+                          status = Space.status space,
+                          bestId = 0 ,
+                          best   = b ,
+                          depth  = depth parent + 1}
+    in
+      (newNode, newBest)
+    end
+    
+  fun fromPath path =
+    let
+      val space = getSpace root
+      val (node, pbest) = List.foldl (applyPath space) (root, NONE) path
+    in
+      if bab then 
+        case pbest of
+          NONE => node
+        | SOME sol =>
+            if setBestIfCond (sol, fn (best, _) => Policy.compare (sol, best))
+              then 
+                let val Node rnode = node 
+                in
+                  Node {rnode where bestId = !globalBestId}
+                end
+            else node
+      else node
+    end
+
+  fun addSolution sol =
+    ignore(setBestIfCond (sol, fn (best, _) => Policy.compare (sol, best)))
 
 end

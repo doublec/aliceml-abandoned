@@ -9,18 +9,19 @@
 
 structure Path =
 struct
-    datatype 'a item =
-	Branch of int
-      | Better of 'a
-
-    (* A path in the search tree. *)
-    type 'a path = ('a item) list
-    type t = path
-
-    fun print [] = "[]"
-      | print ((Branch n) :: xs) =
-          (Int.toString n ^ "-" ^ print xs)
-      | print ((Better _) :: xs) =
-          ("Better(x)-" ^ print xs)
-
+  
+  (* An element of the path is the branch number
+   * and a possible 'best' constraint. *)
+  type 'a item = int * ('a option)
+    
+  (* A path in the search tree. *)
+  type 'a path = ('a item) list
+  type t = path
+    
+  fun toString [] = "[]"
+    | toString ((n, NONE) :: xs) =
+    (Int.toString n ^ "-" ^ toString xs)
+    | toString ((n, SOME _) :: xs) =
+    (Int.toString n ^ "{*}-" ^ toString xs)
+    
 end

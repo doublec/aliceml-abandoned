@@ -1,29 +1,10 @@
-import signature TREENODE   from "TREENODE-sig"
-import structure SpaceNode from "SpaceNode"
+import structure Space       from "x-alice:/lib/gecode/Space"
+import signature TREENODE    from "TREENODE-sig"
+import functor   BasicPolicy from "Policy"
+import structure MkTreeNode  from "MkTreeNode"
 
-structure TreeNode :> TREENODE =
-struct
-
-  exception Child = SpaceNode.Child
-
-  datatype tree_node = Node of node_rep
-  withtype node_rep = {spacenode : SpaceNode.t ,
-                       left      : tree_node ,
-                       right     : tree_node}
-  type t = tree_node
-
-  fun fromSpaceNode spaceNode = 
-    Node {spacenode = spaceNode ,
-          left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) ,
-          right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 2)) }
-
-  fun root (sp, rdist) = fromSpaceNode (SpaceNode.root (sp, rdist))
-
-  fun getLeft  (Node node) = #left node
-  fun getRight (Node node) = #right node
-                        
-  fun getSpace (Node node) = SpaceNode.getSpace (#spacenode node)
-  fun getPath  (Node node) = SpaceNode.getPath  (#spacenode node)
-  fun status   (Node node) = SpaceNode.status   (#spacenode node)
-
+local
+signature ARG = (val root : Space.space val rdist : int)
+in
+functor TreeNode (Arg:ARG) :> TREENODE = MkTreeNode (BasicPolicy Arg)
 end
