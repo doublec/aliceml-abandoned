@@ -23,7 +23,10 @@ structure Main :> MAIN =
     val parse      = ParsingPhase.parse
     fun abstract x = (AbstractionPhase.translate (BindEnv.copy BindEnv0.E0) o parse) x
     fun elab x     = (ElaborationPhase.elab (Env.copy Env0.E0) o abstract) x
-    val translate  = TranslationPhase.translate o abstract
+    fun elab' x    = let val y = abstract x in
+			ElaborationPhase.elab (Env.copy Env0.E0) y ; y
+		     end
+    val translate  = TranslationPhase.translate o elab'
     val imperatify = MatchCompilationPhase.translate o translate
     val ilify      = CodeGenPhase.genComponent o imperatify
 
