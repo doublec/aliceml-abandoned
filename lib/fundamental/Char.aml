@@ -19,7 +19,7 @@ import structure __pervasive                            from "Pervasive"
 import type char and string and int
        datatype bool and order and option and list      from "ToplevelTypes"
 import infix 4 = < > <= >= infixr 5 :: infix 6 + - infix 7 * div mod
-       val op = and op < and op <= and op >=
+       val op = and op < and op <= and op > and op >=
        val op + and op - and op * and op div and op mod
        val abs                                          from "ToplevelValues"
 import structure General                                from "General"
@@ -47,19 +47,20 @@ struct
       | succ c				= chr(ord c + 1)
 
     __primitive val Int_compare : int * int -> order     = "Int.compare"
-    __primitive val String_size : string -> int          = "String.size"
-    __primitive val String_sub :  string * int -> char   = "String.sub"
+    __primitive val String_size : string -> int          = "CharVector.length"
+    __primitive val String_sub :  string * int -> char   = "CharVector.sub"
     __primitive val String_str :  char -> string         = "String.str"
-    __primitive val String_implode : char list -> string = "String.implode"
+    __primitive val String_implode : char list -> string = "CharVector.fromList"
 
     val equal            = op =
     val hash             = ord
 
     fun compare(c1,c2)   = Int_compare(ord c1, ord c2)
 
-    fun contains  s c    = contains'(s, c, String_size s)
+    fun contains "" c    = false
+      | contains  s c    = contains'(s, c, String_size s - 1)
     and contains'(s,c,i) =
-	String_sub(s,i) = c orelse i >= 0 andalso contains'(s, c, i-1)
+	String_sub(s,i) = c orelse i > 0 andalso contains'(s, c, i-1)
 
     fun notContains s c = Bool.not(contains s c)
 
