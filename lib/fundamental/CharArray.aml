@@ -22,9 +22,15 @@ structure CharArray = MkMonoArray(
     __primitive val maxLen: int = "CharArray.maxLen"
 
     __primitive val array: int * Vector.elem -> array = "CharArray.array"
+    __primitive val extract : array * int * int -> Vector.t =
+							 "CharArray.extract"
     __primitive val fromList: Vector.elem list -> array = "CharArray.fromList"
+    __primitive val fromVector : Vector.t -> array = "CharArray.fromVector"
     __primitive val length: array -> int = "CharArray.length"
     __primitive val sub: array * int -> Vector.elem = "CharArray.sub"
+    __primitive val tabulate: int * (int -> Vector.elem) -> array =
+							"CharArray.tabulate"
+    __primitive val toList: array -> Vector.elem list = "CharArray.toList"
     __primitive val update: array * int * Vector.elem -> unit =
 							 "CharArray.update"
 )

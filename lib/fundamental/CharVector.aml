@@ -23,6 +23,7 @@ structure CharVector = MkMonoVector(
 
     __primitive val maxLen: int = "CharVector.maxLen"
     __primitive val fromList: elem list -> vector = "CharVector.fromList"
+    __primitive val toList: vector -> elem list = "CharVector.toList"
     __primitive val length: vector -> int = "CharVector.length"
     __primitive val sub: vector * int -> elem = "CharVector.sub"
     __primitive val concat: vector list -> vector = "CharVector.concat"

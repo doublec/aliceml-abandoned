@@ -12,212 +12,55 @@
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                          from "Pervasive"
-import type unit and int
-       datatype bool and order and option and list    from "ToplevelTypes"
-import infix 4 = <> < > <= >= infixr 5 ::
-       infix 6 + - infix 7 div
-       val op = and op <>
-       val op < and op > and op <= and op >=
-       val op + and op - and op div                   from "ToplevelValues"
-import structure General                              from "General"
-import structure List                                 from "List"
-import signature MONO_VECTOR                          from "MONO_VECTOR-sig"
-import signature MONO_ARRAY                           from "MONO_ARRAY-sig"
+import structure __pervasive      from "Pervasive"
+import type unit and int and list from "ToplevelTypes"
+import functor   MkArray          from "MkArray"
+import signature MONO_VECTOR      from "MONO_VECTOR-sig"
+import signature MONO_ARRAY       from "MONO_ARRAY-sig"
 
-functor MkMonoArray(BaseMonoArray: sig
-    structure Vector: MONO_VECTOR
-    type array
-
-    val maxLen: int
-
-    val array: int * Vector.elem -> array
-    val fromList: Vector.elem list -> array
-    val length: array -> int
-    val sub: array * int -> Vector.elem
-    val update: array * int * Vector.elem -> unit
-end) :> MONO_ARRAY
-    where type Vector.vector = BaseMonoArray.Vector.vector
-      and type Vector.elem = BaseMonoArray.Vector.elem
-      and type array = BaseMonoArray.array =
+functor MkMonoArray(structure Vector : MONO_VECTOR
+		    type array
+		    val maxLen :     int
+		    val length :     array -> int
+		    val sub :        array * int -> Vector.elem
+		    val update :     array * int * Vector.elem -> unit
+		    val array :      int * Vector.elem -> array
+		    val tabulate :   int * (int -> Vector.elem) -> array
+		    val fromList :   Vector.elem list -> array
+		    val toList :     array -> Vector.elem list
+		    val fromVector : Vector.t -> array
+		    val extract :    array * int * int -> Vector.t
+		   ) : MONO_ARRAY =
 struct
-    open BaseMonoArray
+    type elem   = Vector.elem
+    type vector = Vector.vector
+    type array  = array
+    type t      = array
 
-    type t = array							(**)
-    type elem = Vector.elem
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
 
-    val sub' = sub            (*INEFFICIENT*)
-    val vsub' = Vector.sub    (*INEFFICIENT*)
-    val update' = update      (*INEFFICIENT*)
+    structure Array = MkArray(type 'a array   = array
+			      type dst_array  = array
+			      type 'a vector  = vector
+			      type dst_vector = vector
+			      val maxLen      = maxLen
+			      val length      = cast length
+			      val sub         = cast sub
+			      val update      = cast update
+			      val dlength     = cast length
+			      val dupdate     = cast update
+			      val dextract    = cast extract
+			      val vlength     = cast Vector.length
+			      val vsub        = cast Vector.sub)
+    open Array
 
-    val new			= array					(**)
-
-    fun toList a		= toList'(a, length a - 1, [])		(**)
-    and toList'(a, ~1, xs)	= xs
-      | toList'(a, i, xs)	= toList'(a, i-1, sub'(a,i)::xs)
-
-    fun sliceLength(a,i,NONE) where (i > length a)
-				= raise General.Subscript
-      | sliceLength(a,i,NONE)	= length a - i
-      | sliceLength(a,i,SOME n) where (i+n > length a orelse n < 0)
-				= raise General.Subscript
-      | sliceLength(a,i,SOME n)	= n
-
-    fun tabulate(n,f)		= fromList(List.tabulate(n,f)) (*INEFFICIENT*)
-    fun extract(a,i,no)		= Vector.tabulate(sliceLength(a,i,no),
-						  fn k => sub'(a,i+k))
-
-    fun fromVector v		= tabulate(Vector.length v, fn i => vsub'(v,i))
-    fun toVector a		= Vector.tabulate(length a, fn i => sub'(a,i))
-					(**) (*INEFFICIENT*)
-
-    fun swap(a,i,j)		= let val x = sub(a,i) in		(**)
-				      update(a, i, sub(a,j)) ;
-				      update(a, j, x)
-				  end
-
-    fun rev a			= let fun rev'(i,j) =			(**)
-				      if i >= j then () else
-					  (swap(a,i,j) ; rev'(i+1, j-1))
-				  in rev'(0, length a - 1) end
-
-    fun copy {src,si,len,dst,di} =
-	let
-	    val d = di - si
-	    val n = case len of NONE    => length src
-			      | SOME n' => si+n'
-	    fun copy' i where (i = n)	= ()
-	      | copy' i			= ( update'(dst, i+d, sub'(src,i))
-					  ; copy'(i+1) )
-	in
-	    copy' si
-	end
-
-    fun copyVec {src,si,len,dst,di} =
-	let
-	    val d = di - si
-	    val n = case len of NONE    => Vector.length src
-			      | SOME n' => si+n'
-	    fun copy' i where (i = n)	= ()
-	      | copy' i			= ( update'(dst, i+d, vsub'(src,i))
-					  ; copy'(i+1) )
-	in
-	    copy' si
-	end
-
-    fun app  f a		= app'(f,a,0)
-    and app'(f,a,i) where (i = length a)
-				= ()
-      | app'(f,a,i)		= (f(sub'(a,i)) ; app'(f,a,i+1))
-
-    fun appr  f v		= appr'(f, v, length v - 1)		(**)
-    and appr'(f,v,~1)		= ()
-      | appr'(f,v,i)		= (f(sub'(v,i)) ; appr'(f,v,i-1))
-
-    fun modify  f a		= modify'(f,a,0)
-    and modify'(f,a,i) where (i = length a)
-				= ()
-      | modify'(f,a,i)		= (update'(a,i,f(sub'(a,i))) ; modify'(f,a,i+1))
-
-    fun foldl  f x a		= foldl'(f,x,a,0)
-    and foldl'(f,x,a,i) where (i = length a)
-				= x
-      | foldl'(f,x,a,i)		= foldl'(f, f(sub'(a,i),x), a, i+1)
-
-    fun foldr  f x a		= foldr'(f, x, a, length a - 1)
-    and foldr'(f,x,a,~1)	= x
-      | foldr'(f,x,a,i)		= foldr'(f, f(sub'(a,i),x), a, i-1)
-
-    fun appi f (a,i,no)		= appi'(f, a, i, sliceLength(a,i,no))
-    and appi'(f,a,i,0)		= ()
-      | appi'(f,a,i,n)		= (f(i, sub'(a,i)) ; appi'(f,a,i+1,n-1))
-
-    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no)) (**)
-    and appri'(f,v,i,j)	where (i < j)
-				= ()
-      | appri'(f,v,i,j)		= (f(i, sub'(v,i)) ; appri'(f,v,i-1,j))
-
-    fun modifyi f (a,i,no)	= modifyi'(f, a, i, sliceLength(a,i,no))
-    and modifyi'(f,a,i,0)	= ()
-      | modifyi'(f,a,i,n)	= (update'(a, i, f(i, sub'(a,i))) ;
-				   modifyi'(f,a,i+1,n-1))
-
-    fun foldli f x (a,i,no)	= foldli'(f, x, a, i, sliceLength(a,i,no))
-    and foldli'(f,x,a,i,0)	= x
-      | foldli'(f,x,a,i,n)	= foldli'(f, f(i, sub'(a,i), x), a, i+1, n-1)
-
-    fun foldri f x (a,i,no)	= foldri'(f, x, a, i-1 + sliceLength(a,i,no), i)
-    and foldri'(f,x,a,i,j) where (i < j)
-				= x
-      | foldri'(f,x,a,i,j)	= foldri'(f, f(i, sub'(a,i),x), a, i-1, j)
-
-    fun all  f a		= all'(f,a,0)				(**)
-    and all'(f,a,i)		= i = length a orelse
-				  f(sub'(a,i)) andalso all'(f,a,i+1)
-
-    fun exists  f a		= exists'(f,a,0)			(**)
-    and exists'(f,a,i)		= i <> length a andalso
-				  (f(sub'(a,i)) orelse exists'(f,a,i+1))
-
-    fun find  f a					= find'(f,a,0)	(**)
-    and find'(f,a,i) where (i = length a)		= NONE
-      | find'(f,a,i) withval x = sub'(a,i) where (f x)	= SOME x
-      | find'(f,a,i)					= find'(f,a,i+1)
-
-    fun equal  eq (a1,a2)	= length a1 = length a2 andalso		(**)
-				  equal'(eq,a1,a2,0)
-    and equal'(eq,a1,a2,i)	= i = length a1 orelse
-				  eq(sub(a1,i), sub(a2,i)) andalso
-				  equal'(eq,a1,a2,i+1)
-
-    fun compare  cmp (a1,a2)	= compare'(cmp,a1,a2,0)			(**)
-    and compare'(cmp,a1,a2,i)	= case (i = length a1, i = length a2)
-				    of (true,  true)  => EQUAL
-				     | (true,  false) => LESS
-				     | (false, true)  => GREATER
-				     | (false, false) =>
-				  case cmp(sub'(a1,i), sub'(a2,i))
-				    of EQUAL => compare'(cmp,a1,a2,i+1)
-				     | other => other
-
-    fun isSorted compare a	= isSorted'(compare,a,1)		(**)
-    and isSorted'(compare,a,i)	= i >= length a orelse
-				  compare(sub(a,i-1), sub(a,i)) <> GREATER
-				  andalso isSorted'(compare,a,i+1)
-
-    fun sort compare a =						(**)
-    let
-	fun partition(i,j,p) where (i = j) = j
-	  | partition(i,j,p) where (compare(sub(a,i),p) <> GREATER) =
-		partition(i+1,j,p)
-	  | partition(i,j,p) where (compare(p,sub(a,j-1)) = LESS) =
-		partition(i,j-1,p)
-	  | partition(i,j,p) =
-		(swap(a,i,j-1); partition(i+1,j-1,p))
-
-	fun sort(i,j) where (j-i <= 1) = ()
-	  | sort(i,j) where (j-i = 2)  =
-		if compare(sub(a,i), sub(a,j-1)) <> GREATER then ()
-		else swap(a,i,j-1)
-	  | sort(i,j) =
-	    let
-		val mid = (i+j) div 2
-		val _ = if compare(sub(a,i), sub(a,mid)) <> GREATER then ()
-			else swap(a,i,mid)
-		val _ = if compare(sub(a,mid), sub(a,j-1)) <> GREATER then ()
-			else (swap(a,mid,j-1);
-			      if compare(sub(a,i),sub(a,mid)) <> GREATER then ()
-			      else swap(a,i,mid))
-		val k = partition(i+1,j-1, sub(a,mid))
-	    in
-		sort(i,k); sort(k,j)
-	    end
-    in
-	sort(0, length a)
-    end
+    val array          = cast array
+    val tabulate       = cast tabulate
+    val fromList       = cast fromList
+    val toList         = cast toList
+    val fromVector     = cast fromVector
 end

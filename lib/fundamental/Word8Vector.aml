@@ -15,7 +15,7 @@
 import structure __pervasive  from "Pervasive"
 import type int and list      from "ToplevelTypes"
 import structure Word8        from "Word8"
-import structure MkMonoVector from "MkMonoVector"
+import functor   MkMonoVector from "MkMonoVector"
 
 structure Word8Vector = MkMonoVector(
     type vector
@@ -23,6 +23,7 @@ structure Word8Vector = MkMonoVector(
 
     __primitive val maxLen: int = "Word8Vector.maxLen"
     __primitive val fromList: elem list -> vector = "Word8Vector.fromList"
+    __primitive val toList: vector -> elem list = "Word8Vector.toList"
     __primitive val length: vector -> int = "Word8Vector.length"
     __primitive val sub: vector * int -> elem = "Word8Vector.sub"
     __primitive val concat: vector list -> vector = "Word8Vector.concat"

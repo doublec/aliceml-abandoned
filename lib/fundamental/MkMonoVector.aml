@@ -11,139 +11,39 @@
  *   $Revision$
  *)
 
-
 (*
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                       from "Pervasive"
-import type int and vector
-       datatype bool and order and option and list from "ToplevelTypes"
-import infix 4 = <> < > >= infixr 5 :: infix 6 + -
-       val op = and op <> and op < and op > and op >=
-       val op + and op -                           from "ToplevelValues"
-import structure General                           from "General"
-import structure Bool                              from "Bool"
-import structure List                              from "List"
-import signature MONO_VECTOR                       from "MONO_VECTOR-sig"
+import structure __pervasive from "Pervasive"
+import type int and list     from "ToplevelTypes"
+import functor   MkVector    from "MkVector"
+import signature MONO_VECTOR from "MONO_VECTOR-sig"
 
-functor MkMonoVector(BaseMonoVector: sig
-    type vector
-    type elem
-
-    val maxLen: int
-    val fromList: elem list -> vector
-    val length: vector -> int
-    val sub: vector * int -> elem
-    val concat: vector list -> vector
-    val tabulate: int * (int -> elem) -> vector
-end) :> MONO_VECTOR
-    where type vector = BaseMonoVector.vector
-      and type elem = BaseMonoVector.elem =
+functor MkMonoVector(type elem
+		     type vector
+		     val maxLen :   int
+		     val length :   vector -> int
+		     val sub :      vector * int -> elem
+		     val tabulate : int * (int -> elem) -> vector
+		     val fromList : elem list -> vector
+		     val toList :   vector -> elem list
+		     val concat :   vector list -> vector) : MONO_VECTOR =
 struct
-    open BaseMonoVector
+    type elem   = elem
+    type vector = vector
+    type t      = vector
 
-    type t = vector							(**)
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
 
-    val sub' = sub (*INEFFICIENT*)
-
-    fun toList v		= toList'(v, length v - 1, [])		(**)
-    and toList'(v, ~1, xs)	= xs
-      | toList'(v, i, xs)	= toList'(v, i-1, sub'(v,i)::xs)
-
-    fun sliceLength(v,i,NONE) where (i > length v)
-				= raise General.Subscript
-      | sliceLength(v,i,NONE)	= length v - i
-      | sliceLength(v,i,SOME n) where (i+n > length v orelse n < 0)
-				= raise General.Subscript
-      | sliceLength(v,i,SOME n)	= n
-
-    fun extract(v,0,NONE)	= v
-      | extract(v,i,no)		= tabulate(sliceLength(v,i,no),
-					   fn k => sub'(v,i+k))
-
-    fun rev v			= let val len = length v		(**)
-				      fun f i = sub'(v, len-i-1)
-				  in tabulate(len, f) end
-
-    fun update(v,i,x)		= let fun f j where (i = j) = x		(**)
-					| f j               = sub(v,j)
-				  in tabulate(length v, f) end
-
-    fun map f v			= tabulate(length v, fn i => f(sub'(v,i)))
-    fun mapi f (v,i,no)		= tabulate(sliceLength(v,i,no),
-					   fn k => f(i+k, sub'(v,i+k)))
-
-    fun app  f v		= app'(f,v,0)
-    and app'(f,v,i) where (i = length v)
-				= ()
-      | app'(f,v,i)		= (f(sub'(v,i)) ; app'(f,v,i+1))
-
-    fun appr  f v		= appr'(f, v, length v - 1)		(**)
-    and appr'(f,v,~1)		= ()
-      | appr'(f,v,i)		= (f(sub'(v,i)) ; appr'(f,v,i-1))
-
-    fun foldl  f x v		= foldl'(f,x,v,0)
-    and foldl'(f,x,v,i) where (i = length v)
-				= x
-      | foldl'(f,x,v,i)		= foldl'(f, f(sub'(v,i),x), v, i+1)
-
-    fun foldr  f x v		= foldr'(f, x, v, length v - 1)
-    and foldr'(f,x,v,~1)	= x
-      | foldr'(f,x,v,i)		= foldr'(f, f(sub'(v,i),x), v, i-1)
-
-    fun appi f (v,i,no)		= appi'(f, v, i, sliceLength(v,i,no))
-    and appi'(f,v,i,0)		= ()
-      | appi'(f,v,i,n)		= (f(i, sub'(v,i)) ; appi'(f,v,i+1,n-1))
-
-    fun appri f (v,i,no)	= appri'(f, v, i, i-1+sliceLength(v,i,no)) (**)
-    and appri'(f,v,i,j)	where (i < j)
-				= ()
-      | appri'(f,v,i,j)		= (f(i, sub'(v,i)) ; appri'(f,v,i-1,j))
-
-    fun foldli f x (v,i,no)	= foldli'(f, x, v, i, sliceLength(v,i,no))
-    and foldli'(f,x,v,i,0)	= x
-      | foldli'(f,x,v,i,n)	= foldli'(f, f(i, sub'(v,i), x), v, i+1, n-1)
-
-    fun foldri f x (v,i,no)	= foldri'(f, x, v, i-1+sliceLength(v,i,no), i)
-    and foldri'(f,x,v,i,j) where (i < j)
-				= x
-      | foldri'(f,x,v,i,j)	= foldri'(f, f(i, sub'(v,i),x), v, i-1, j)
-
-    fun all  f v		= all'(f,v,0)				(**)
-    and all'(f,v,i) 		= i = length v orelse
-				  f(sub'(v,i)) andalso all'(f,v,i+1)
-
-    fun exists  f v		= exists'(f,v,0)			(**)
-    and exists'(f,v,i) 		= i <> length v andalso
-				  (f(sub'(v,i)) orelse exists'(f,v,i+1))
-
-    fun find  f v					= find'(f,v,0)	(**)
-    and find'(f,v,i) where (i = length v)		= NONE
-      | find'(f,v,i) withval x = sub'(v,i) where (f x)	= SOME x
-      | find'(f,v,i)					= find'(f,v,i+1)
-
-    fun equal  eq (v1,v2)	= length v1 = length v2 andalso		(**)
-				  equal'(eq,v1,v2,0)
-    and equal'(eq,v1,v2,i)	= i = length v1 orelse
-				  eq(sub'(v1,i), sub'(v2,i)) andalso
-				  equal'(eq,v1,v2,i+1)
-
-    fun compare  cmp (v1,v2)	= compare'(cmp,v1,v2,0)			(**)
-    and compare'(cmp,v1,v2,i)	= case (i = length v1, i = length v2)
-				    of (true,  true)  => EQUAL
-				     | (true,  false) => LESS
-				     | (false, true)  => GREATER
-				     | (false, false) =>
-				  case cmp(sub'(v1,i), sub'(v2,i))
-				    of EQUAL => compare'(cmp,v1,v2,i+1)
-				     | other => other
-
-    fun isSorted compare v	= isSorted'(compare,v,1)		(**)
-    and isSorted'(compare,v,i)	= i >= length v orelse
-				  compare(sub(v,i-1), sub(v,i)) <> GREATER
-				  andalso isSorted'(compare,v,i+1)
-
-    fun sort compare		= sort'(List.sort compare)		(**)
-    and sort' sortList v	= fromList(sortList(toList v))
+    structure Vector = MkVector(type 'a vector  = vector
+				type dst_vector = vector
+				val maxLen      = maxLen
+				val length      = cast length
+				val sub         = cast sub
+				val tabulate    = cast tabulate
+				val fromList    = cast fromList
+				val toList      = cast toList
+				val concat      = cast concat)
+    open Vector
 end
