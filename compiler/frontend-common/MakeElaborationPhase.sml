@@ -1748,7 +1748,7 @@ struct
 				   (t1, O.NoDesc(typInfo(i',t1)))
 				 | I.SomeDesc(i',typ) =>
 				   let
-				      val (t2,typ')  = elabStarTyp(E, typ)
+				      val (t2,typ') = elabStarTyp(E, typ)
 				   in
 				      if Type.matches(t2,t1) then
 					  (t2, O.SomeDesc(typInfo(i',t2), typ'))
