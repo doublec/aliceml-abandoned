@@ -73,7 +73,7 @@
     <TR> <TD><A href="remote.php3"><TT>REMOTE</TT></A></TD> </TR>
   </TABLE>
 
-  <P><TT>lib/constraints/</TT>:</P>
+  <P><TT>lib/constraints</TT>:</P>
 
   <TABLE>
     <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
@@ -152,7 +152,7 @@
     <TR> <TD><A href="remote.php3"><TT>Remote</TT></A></TD> </TR>
   </TABLE>
 
-  <P><TT>lib/constraints/</TT>:</P>
+  <P><TT>lib/constraints</TT>:</P>
 
   <TABLE>
     <TR> <TD><A href="fd.php3"><TT>FD</TT></A></TD> </TR>
