@@ -17,9 +17,11 @@ import structure Type from "x-alice:/lib/rtt/Type"
 import structure PathMap from "x-alice:/lib/rtt/PathMap"
 import structure Types from "Types"
 
-open Types
+open Types 
 
 signature MK_PATH_TABLE =
 sig
+
     val pathTable: (int * int * 'a * Type.t -> doc) PathMap.map
+
 end;
