@@ -165,7 +165,7 @@ struct
             fun allParticipants p = List.map #2 (List.filter p 
                                     (PMap.toList participants))
             
-            (* [allPlayers ()] returns all snakes which are either
+            (* [allPlayers ()] returns all snakes which are 
                still playing.
              *)
             fun allPlayers ()   = allParticipants 
@@ -433,7 +433,7 @@ struct
                     log ("Server", ("sending initial points"));
                     sendPoints (_file_, _line_);
 
-                    {levels, oldArena, newArena=arena, goodies = 0}
+                    {levels, oldArena, ticks = 0, newArena=arena, goodies = 0}
                 end
             
             
@@ -476,8 +476,9 @@ struct
             fun mayAppList f [] = ()
               | mayAppList f l  = f l
 
+
             val tick    = Lock.sync lock (fn {levels, oldArena, newArena, 
-                                                                goodies} =>
+                                                ticks, goodies} =>
                 let
                     val _       = log ("Server", "tick")
                     val players = allPlayers ()
@@ -672,14 +673,27 @@ struct
   
                     (* test wether there are any living snakes left *)
                     case allNonFinished () of
-                        []  => (
-                        log ("Server", "no more players left");
-                        finishLevel levels)
-                    |   _   => ( 
-                        (* swap old & new arena *)
-                        log ("Server", "players left --> play next round");
-                        {levels, oldArena = newArena, newArena = oldArena,
-                            goodies })
+                        []  => 
+                        (* no more players left --> finish *)
+                        finishLevel levels
+                    |   _   => 
+                        let
+                            val timeout = #timeout config
+                            (* estimated period of time we have played yet *)
+                            val time    = ticks * Time.toSeconds (#tick config)
+                        in
+                            (* timeout expired ? *)
+                            if (* isSome timeout andalso 
+                                    time >= Time.toSeconds (valOf timeout) *)
+                               time >= Time.toSeconds timeout then
+                                (* timeout expired --> finish *)
+                                finishLevel levels
+                            else
+                                (* players and time left continue *)
+                                {levels, oldArena = newArena, 
+                                    newArena = oldArena,
+                                    ticks = ticks + 1, goodies }
+                        end
                 end)
 
 
