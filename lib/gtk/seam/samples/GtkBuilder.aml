@@ -336,41 +336,35 @@ in
 		    (Gtk.notebookSetShowTabs(note, showlabel);
 		     MakeNoteEntries(note, entries); note)
 		end
-	    and MakeTreeItems(tree, parent, handler, nil)                  = ()
-	      | MakeTreeItems(tree, parent, handler, (TreeItem title)::ir) =
+	    and MakeTreeItems(tree, parent, nil)   = ()
+	      | MakeTreeItems(tree, parent, i::ir) =
 		let
 		    val iter = Gtk.treeIterNew()
+		    val (title, sub) = case i of
+			                 TreeItem t    => (t, NONE)
+				       | SubTree (t,s) => (t, SOME s)
 		in
 		    (Gtk.treeStoreAppend(tree, iter, parent);
 		     Gtk.treeStoreSet(tree, iter, [Gtk.INT 0, Gtk.STRING title,
 						  Gtk.INT ~1]);
-		     MakeTreeItems(tree, parent, handler, ir))
-(*		     Gtk.signalConnect(item, "select",
-				       fn event => handler(title, "select"));
-		     Gtk.signalConnect(item, "deselect",
-				       fn event => handler(title, "deselect"));*)
-		end
-	      | MakeTreeItems(tree,parent,handler,(SubTree(title, sub))::ir) =
-		let
-		    val iter = Gtk.treeIterNew()
-		in
-		    (Gtk.treeStoreAppend(tree, iter, parent);
-		     Gtk.treeStoreSet(tree, iter, [Gtk.INT 0, Gtk.STRING title,
-						  Gtk.INT ~1]);
-		     MakeTreeItems(tree, iter, handler, sub);
-		     MakeTreeItems(tree, parent, handler, ir))
+		     (if sub=NONE then () else MakeTreeItems(tree, iter, 
+							     valOf sub));
+		     MakeTreeItems(tree, parent, ir))
 		end
 	    and MakeTree(entries, handler) =
 		let
-		    val tree = Gtk.treeStoreNew (1, [Gtk.INT 64])
-		    val _ = MakeTreeItems(tree, Gtk.NULL, handler, entries)
-		    val treev = Gtk.treeViewNewWithModel tree		    
+		    val tree = Gtk.treeStoreNew ()
+		    val _ = MakeTreeItems(tree, Gtk.NULL, entries)
+		    val treev = Gtk.treeViewNewWithModel tree
+		    fun callback (tv, _) =
+			    handler(Gtk.treeViewGetSelectedString tv, "select")
 		in
 		    (Gtk.treeViewSetHeadersVisible(treev, false);
 		     Gtk.treeViewInsertColumnWithAttributes
 		       (treev, ~1, "", Gtk.cellRendererTextNew(), 
 			[Gtk.STRING "text", Gtk.INT 0]);
 		     Gtk.treeViewExpandAll treev;
+		     Gtk.signalConnect(treev, "cursor-changed", callback);
 		     treev)
 		end
 	    and MakeButtonBoxEntries (box, nil)      = ()
