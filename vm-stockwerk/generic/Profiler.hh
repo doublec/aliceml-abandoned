@@ -42,7 +42,7 @@ public:
 
   static void SampleHeap(); // Scheduler::Run
   static void AddHeap(StackFrame *frame); // Scheduler::Run
-  static void IncCalls(StackFrame *frame); // TaskStack::PushCall
+  static void IncCalls(StackFrame *frame); // Scheduler::PushCall
   static void IncClosures(word cCode);  // Interpreter::Close
   static void IncInstances(TagVal *template_); // Interpreter::Specialize
   static void DumpInfo();

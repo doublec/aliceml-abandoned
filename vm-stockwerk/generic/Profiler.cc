@@ -27,12 +27,10 @@
 
 class ProfileEntry : private Tuple {
 protected:
-  static const u_int NAME_POS         = 0;
-  static const u_int NB_CALLS_POS     = 1;
-  static const u_int NB_HEAP_POS      = 2;
-  static const u_int NB_CLOSURES_POS  = 3;
-  static const u_int NB_INSTANCES_POS = 4;
-  static const u_int SIZE             = 5;
+  enum {
+    NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS, NB_INSTANCES_POS,
+    SIZE
+  };
 
   void Modify(u_int index, u_int value) {
     u_int v = Store::DirectWordToInt(Sel(index));
