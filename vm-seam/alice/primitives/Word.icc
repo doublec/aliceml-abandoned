@@ -15,17 +15,22 @@
 #include <cstdio>
 #include "emulator/Authoring.hh"
 
+#define DECLARE_WORD(w, x)			\
+  DECLARE_INT(w, x);				\
+  w &= static_cast<u_int>(-1) >> 1;
+#define RETURN_WORD(w) RETURN_INT(w)
+
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
-    DECLARE_INT(i, x0);				\
-    DECLARE_INT(j, x1);				\
-    RETURN_INT(i op j);				\
+    DECLARE_WORD(i, x0);			\
+    DECLARE_WORD(j, x1);			\
+    RETURN_WORD(i op j);			\
   } END
 
 #define WORD_WORD_TO_BOOL_OP(name, op)		\
   DEFINE2(name) {				\
-    DECLARE_INT(i, x0);				\
-    DECLARE_INT(j, x1);				\
+    DECLARE_WORD(i, x0);			\
+    DECLARE_WORD(j, x1);			\
     RETURN_BOOL(i op j);			\
   } END
 
@@ -42,72 +47,72 @@ WORD_WORD_TO_BOOL_OP(Word_oplessEq, <=)
 WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 
 DEFINE2(Word_opshr) {
-  DECLARE_INT(i, x0);
-  DECLARE_INT(j, x1);
-  RETURN_INT((i & 0x7FFFFFFF) >> j);
+  DECLARE_WORD(i, x0);
+  DECLARE_WORD(j, x1);
+  RETURN_WORD(i >> j);
 } END
 
 DEFINE2(Word_oparithshr) {
-  DECLARE_INT(i, x0);
-  DECLARE_INT(j, x1);
+  DECLARE_WORD(i, x0);
+  DECLARE_WORD(j, x1);
   //--** this can be improved on many architectures
   if (i < 0) {
-    RETURN_INT((i >> j) | ~(static_cast<unsigned int>(~1) >> j));
+    RETURN_WORD((i >> j) | ~(static_cast<u_int>(~1) >> j));
   } else {
-    RETURN_INT(i >> j);
+    RETURN_WORD(i >> j);
   }
 } END
 
 WORD_WORD_TO_WORD_OP(Word_andb, &)
 
 DEFINE2(Word_div) {
-  DECLARE_INT(i, x0);
-  DECLARE_INT(j, x1);
+  DECLARE_WORD(i, x0);
+  DECLARE_WORD(j, x1);
   if (j == 0)
     RAISE(PrimitiveTable::General_Div);
-  RETURN_INT(i / j);
+  RETURN_WORD(i / j);
 } END
 
 DEFINE2(Word_fromIntQuote) { //--** should be fromInt (not Quote)
-  DECLARE_INT(i, x1);
-  RETURN(x1);
+  DECLARE_WORD(i, x1);
+  RETURN_WORD(i);
 } END
 
 DEFINE2(Word_fromWordQuote) { //--** size?
-  DECLARE_INT(w, x1);
-  RETURN(x1);
+  DECLARE_WORD(w, x1);
+  RETURN_WORD(w);
 } END
 
 DEFINE2(Word_fromWordXQuote) { //--** size?
-  DECLARE_INT(w, x1);
-  RETURN(x1);
+  DECLARE_WORD(w, x1);
+  RETURN_WORD(w);
 } END
 
 WORD_WORD_TO_WORD_OP(Word_mod, %)
 
 DEFINE1(Word_notb) {
-  DECLARE_INT(i, x0);
-  RETURN_INT(~i);
+  DECLARE_WORD(i, x0);
+  RETURN_WORD(~i);
 } END
 
 WORD_WORD_TO_WORD_OP(Word_orb, |)
 
 DEFINE1(Word_toInt) {
-  DECLARE_INT(i, x0);
-  if (i < 0)
-    RAISE(PrimitiveTable::General_Overflow);
-  RETURN(x0);
+  DECLARE_WORD(i, x0);
+  //--** if (i < 0)
+  //--**  RAISE(PrimitiveTable::General_Overflow);
+  RETURN_WORD(i);
 } END
 
 DEFINE1(Word_toIntX) {
-  DECLARE_INT(i, x0);
-  RETURN(x0);
+  DECLARE_WORD(i, x0);
+  RETURN_WORD(i);
 } END
 
 DEFINE1(Word_toString) {
   //--** inelegant; string is traversed twice
-  static char buf[200];
-  DECLARE_INT(i, x0);
+  static char buf[20];
+  DECLARE_WORD(i, x0);
   std::sprintf(buf, "%x", i);
   RETURN(String::New(buf)->ToWord());
 } END
