@@ -20,7 +20,7 @@ sig
 
     (* Branch and bound search engine *)
     val searchBest :
-        (Space.space -> 'a) * (Space.space *  Space.space * 'a -> unit) ->
+        (Space.space -> 'a * (Space.space *  Space.space -> unit)) ->
 	(Space.space * 'a) option
 
     structure Recompute : sig

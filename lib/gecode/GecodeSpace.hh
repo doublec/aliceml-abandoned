@@ -21,13 +21,17 @@
   IntVarArgs a(vars.size());                                   \
 { int s = vars.size(); for (int i=s; i--;) a[i] = is[vars[i]]; }
 
-#define intvar2boolvar(intvar)        \
-  static_cast<BoolVar>(intvar.core())
+#define intvar2boolvar(b, intvar)        \
+  BoolVar b(intvar.core());
 
 #define makeboolvarargs(a,vars)           \
   BoolVarArgs a(vars.size());             \
-{ int s = vars.size(); for (int i=s; i--;) \
-  a[i] = intvar2boolvar(is[vars[i]]); }
+  { int s = vars.size();                  \
+    for (int i=s; i--;) {                 \
+      intvar2boolvar(tmp, is[vars[i]]);   \
+      a[i] = tmp;                         \
+    }                                     \
+  }
 
 #define makefsvarargs(a,vars)                                 \
   SetVarArgs a(vars.size());                              \

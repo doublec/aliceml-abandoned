@@ -58,15 +58,15 @@ struct
 	    (dfe 0 (Space.clone s); NONE) handle (Found s) => SOME (s, root)
 	end
 
-    fun searchBest (p, constrain) =
+    fun searchBest p =
 	let
 	    val s = Space.new()
-	    val root = p s
+	    val (root, constrain) = p s
 	    fun babe fs bs best =
 		case fs of
 		    nil =>
 		    (case bs of nil => best
-			      | b::br => (constrain(b, valOf best, root);
+			      | b::br => (constrain(b, valOf best);
 					  babe [b] br best))
 		  | f::fr =>
 		    case Space.status f of

@@ -32,7 +32,8 @@ int GecodeSpace::new_boolvar(void) {
 
   BoolVarArray tmp(this,1);
 
-  is[noOfIntVars] = static_cast<IntVar>(tmp[0]);
+  IntVar i(tmp[0].core());
+  is[noOfIntVars] = i;
 
   noOfIntVars++;
   return noOfIntVars-1;

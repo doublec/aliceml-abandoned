@@ -66,11 +66,12 @@ struct
    fun intvarVec(space,n, v) = Vector.tabulate (n, fn _ => intvar(space,v))
    fun range(space,r) = intvar (space,#[r])
    fun rangeVec(space,n,r) = intvarVec(space, n, #[r])
-   fun boolvar space = UnsafeGecode.new_boolvar space
-   fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 		 
    fun intvar2boolvar(space,d) = (UnsafeGecode.int_dom(space,d,#[(0,1)]); d)
    val boolvar2intvar = fn x => x
+
+   fun boolvar space = intvar2boolvar(space, intvar(space, #[(0,1)]))
+   fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 
    fun dListFromList' nil _ = nil
      | dListFromList' ([x]) min = [(min,x)]

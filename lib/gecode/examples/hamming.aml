@@ -25,9 +25,8 @@ fun appTail f nil = ()
 fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
 
 
-fun hamming bits dist num =
+fun hamming bits dist num space =
     let
-	val space = Space.new()
         val root = List.tabulate (num,
                                   fn _ => FS.upperBound(space,#[(0,bits-1)]))
     in
@@ -50,11 +49,10 @@ fun hamming bits dist num =
                        end) root;
         (* distribution *)
         FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
-        (Vector.fromList root,space)
+        (Vector.fromList root)
      end
 
-val (root,space) = hamming 7 2 8
-val (SOME sol) = Search.searchOne space
+val (SOME (sol, root)) = Search.searchOne (hamming 7 2 8)
 val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
 val _ = Print.printVal s
 val _ = print "\n"

@@ -22,7 +22,7 @@ fun appTail f nil = ()
 
 fun cardProd f = appTail (fn x => List.app (fn y => f(x,y)))
 
-fun steiner n =
+fun steiner n space =
     if n mod 6 <> 1 andalso n mod 6 <> 3 then
         raise Empty
     else
@@ -31,7 +31,6 @@ fun steiner n =
             val n1n1 = n1*n1
             val len = (n*(n-1)) div 6
 
-	    val space = Space.new()
             val root = List.tabulate (len,
                                         fn _ => FS.upperBound(space,#[(1,n)]))
         in
@@ -71,11 +70,10 @@ fun steiner n =
             (* distribution *)
             FS.setvarbranch(space,Vector.fromList root,FS.FSB_NONE,FS.FSB_MIN);
             (*FS.randomBranch(space,Vector.fromList root,1);*)
-            (Vector.fromList root,space)
+            (Vector.fromList root)
         end
 
-val (root,space) = steiner 9
-val (SOME sol) = Search.searchOne space
+val (SOME (sol, root)) = Search.searchOne (steiner 9)
 val s = Vector.map (fn v => FS.Reflect.lowerBound(sol,v)) root
 val _ = Print.printVal s
 val _ = print "\n"

@@ -108,7 +108,8 @@
    if (myStamp != stamp && myStamp != pstamp)                   \
      RAISE(UnsafeGecode::InvalidVarConstructor);                \
    varIdx = Store::DirectWordToInt(varIntern->Sel(0));          \
-   v = intvar2boolvar(s->is[varIdx]);                           \
+   intvar2boolvar(b, s->is[varIdx]);                            \
+   v = b;                                                       \
  }                                                              \
  DBGMSG("DECLARE_VAR done.");
 
