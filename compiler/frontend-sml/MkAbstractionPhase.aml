@@ -37,20 +37,27 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    O.SelMod(i, longidToMod longid, lab)
 
 
+    fun alltyp(  [],    typ) = typ
+      | alltyp(id::ids, typ) = O.AllTyp(O.infoTyp typ, id, alltyp(ids, typ))
+
     fun funtyp(  [],    typ) = typ
       | funtyp(id::ids, typ) = O.FunTyp(O.infoTyp typ, id, funtyp(ids, typ))
 
-    fun apptyp(    [],     typ1)     = typ1
+    fun apptyp(    [],     typ1) = typ1
       | apptyp(typ2::typs, typ1) =
 	let val i = Source.over(O.infoTyp typ2, O.infoTyp typ1) in
 	    apptyp(typs, O.AppTyp(i, typ1, typ2))
 	end
 
+    fun typvardecs(  [],    decs) = decs
+      | typvardecs(id::ids, decs) = [O.TypvarDec(O.infoId id, id,
+						 typvardecs(ids, decs))]
 
     fun lookupIdStatus(E, vid') =
 	case lookupVal(E, vid')
 	  of NONE             => V
 	   | SOME(i,stamp,is) => is
+
 
 
     (* Constants and identifiers *)
@@ -466,7 +473,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trTyVarSeq E (Seq(i, tyvars)) = List.map (trSeqTyVar E) tyvars
 
-
     and trSeqTyVar E (tyvar as TyVar(i, tyvar')) =
 	let
 	    val (id',stamp) = trTyVar_bind E tyvar
@@ -479,33 +485,63 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
+    and trAllTy E =
+	fn TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
+	   if isSome(lookupVar(E, tyvar')) then
+		[]
+	   else
+	   let
+		val (id',stamp) = trTyVar_bind E tyvar
+		val  _          = insertVar(E, tyvar', (i, stamp))
+	   in
+		[id']
+	   end
+
+	 | TYCONTy(i, tyseq, longtycon) => trAllTySeq E tyseq
+	 | RECORDTy(i, tyrowo)          => trAllTyRowo E tyrowo
+	 | ARROWTy(i, ty1, ty2)         => trAllTy E ty1 @ trAllTy E ty2
+	 | PARTy(i, ty)                 => trAllTy E ty
+
+    and trAllTyRowo E =
+	fn NONE                               => []
+	 | SOME(ROWTyRow(i, lab, ty, tyrowo)) =>
+		trAllTy E ty @ trAllTyRowo E tyrowo
+
+    and trAllTySeq E (Seq(i, tys)) = List.concat(List.map (trAllTy E) tys)
+
+
+
     (* Declarations *)
 
     and trDec E =
 	fn VALDec(i, tyvarseq, valbind) =>
-	   (* BUG: ignore tyvarseq *)
 	   let
-		val E'    = Env.new()
+		val  E'   = Env.new()
+		val ids'  = trTyVarSeq E' tyvarseq
+		val  _    = insertScope E'
 		val decs' = trValBindo (E,E') (SOME valbind)
+		val  _    = delete2ndScope E'
 		val  _    = union(E,E')
 	   in
-		decs'
+		typvardecs(ids', decs')
 	   end
 
 	 | FUNDec(i, tyvarseq, fvalbind) =>
-	   (* BUG: ignore tyvarseq *)
 	   let
 		val E'    = Env.new()
 		val (ids',fmatches) = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _    = union(E,E')
+		val  _    = insertScope E
+		val ids'' = trTyVarSeq E tyvarseq
 		val exps' = trFmatches_rhs E fmatches
+		val  _    = delete2ndScope E
 		val decs' = ListPair.map
 				(fn(id',exp') =>
 				 O.ValDec(O.infoExp exp',
 					  O.VarPat(O.infoId id', id'), exp'))
 				(ids',exps')
 	   in
-		[O.RecDec(i, decs')]
+		typvardecs(ids', [O.RecDec(i, decs')])
 	   end
 
 	 | TYPEDec(i, typbind) =>
@@ -1293,7 +1329,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val  i          = Source.over(i', infoTy ty)
 		val (id',stamp) = trVId_bind E vid
-		val  typ'       = trTy E ty
+		val  _          = insertScope E
+		val  ids'       = trAllTy E ty
+		val  typ'       = alltyp(ids', trTy E ty)
+		val  _          = deleteScope E
 		val  _          = insertDisjointVal(E, vid', (i', stamp, V))
 				  handle CollisionVal vid' =>
 				     errorVId("duplicate value or constructor ",
