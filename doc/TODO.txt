@@ -249,7 +249,7 @@ steps 3 and 4):
 
    Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
 
-   Rename RTT to DummyRTT to be consistent with other dummies.
+   Rename RTTDummy to DummyRTT to be consistent with other dummies.
 
 11. Enrich native components with runtime types. (LK/AR)
 
