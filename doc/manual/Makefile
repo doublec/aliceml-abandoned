@@ -49,7 +49,7 @@ INSTALLFILES_LIBRARY_0 = \
 	gtk-overview.html gdk.html gtk.html gtk-canvas.html \
         inspector.html explorer.html
 INSTALLFILES_EXAMPLES_0 = \
-	streams.aml smolka.aml interpreter.tar
+	streams.aml smolka.aml scramble.aml interpreter.tar
 INSTALLFILES_EXAMPLES_INTERPRETER_0 = \
 	Token.aml Syntax.aml LEXER-sig.aml Lexer.aml PARSER-sig.aml \
 	Parser.aml ENV-sig.aml Env.aml TYPE-sig.aml Type.aml VALUE-sig.aml \
