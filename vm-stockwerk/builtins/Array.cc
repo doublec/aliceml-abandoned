@@ -16,18 +16,20 @@
 
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
-  if (length < 0)
+  if (length < 0 || length > Array::maxLen)
     RAISE(GlobalPrimitives::General_Size);
   Array *array = Array::New(length);
-  for (int i = length; i--; )
+  for (u_int i = length; i--; )
     array->Init(i, x1);
   RETURN(array->ToWord());
 } END
 
 DEFINE1(Array_fromList) {
   DECLARE_LIST(tagVal, length, x0);
+  if (length > Array::maxLen)
+    RAISE(GlobalPrimitives::General_Size);
   Array *array = Array::New(length);
-  int i = 0;
+  u_int i = 0;
   while (tagVal != INVALID_POINTER) {
     array->Init(i++, tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
@@ -61,7 +63,7 @@ void Primitive::RegisterArray() {
   Register("Array.array", Array_array, 2);
   Register("Array.fromList", Array_fromList, 1);
   Register("Array.length", Array_length, 1);
-  Register("Array.maxLen", Store::IntToWord(0x3FFFFFFF));
+  Register("Array.maxLen", Store::IntToWord(Array::maxLen));
   Register("Array.sub", Array_sub, 2);
   Register("Array.update", Array_update, 3);
 }

@@ -16,8 +16,10 @@
 
 DEFINE1(Vector_fromList) {
   DECLARE_LIST(tagVal, length, x0);
+  if (length > Vector::maxLen)
+    RAISE(GlobalPrimitives::General_Size);
   Vector *vector = Vector::New(length);
-  int i = 0;
+  u_int i = 0;
   while (tagVal != INVALID_POINTER) {
     vector->Init(i++, tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
@@ -38,10 +40,45 @@ DEFINE2(Vector_sub) {
   RETURN(vector->Sub(index));
 } END
 
+DEFINE2(Vector_tabulate) {
+  DECLARE_INT(length, x0);
+  DECLARE_CLOSURE(closure, x1);
+  if (length < 0 || static_cast<u_int>(length) > Vector::maxLen)
+    RAISE(GlobalPrimitives::General_Size);
+  taskStack->PushFrame(3);
+  taskStack->PutWord(0, Store::IntToWord(0));
+  taskStack->PutWord(1, Vector::New(length)->ToWord());
+  taskStack->PutWord(2, closure->ToWord());
+  taskStack->
+    PushCall(Closure::FromWord(GlobalPrimitives::Vector_tabulate_cont));
+  taskStack->PushCall(closure);
+  RETURN_INT(0);
+} END
+
+DEFINE1(Vector_tabulate_cont) {
+  //--** could use Unsafe variants
+  u_int index = Store::WordToInt(taskStack->GetWord(0));
+  Vector *vector = Vector::FromWord(taskStack->GetWord(1));
+  Closure *closure = Closure::FromWord(taskStack->GetWord(2));
+  vector->Init(index, x0); //--** must use ReplaceArg!
+  index++;
+  if (index == vector->GetLength())
+    RETURN(vector->ToWord());
+  taskStack->PushFrame(3);
+  taskStack->PutWord(0, Store::IntToWord(index));
+  taskStack->PutWord(1, vector->ToWord());
+  taskStack->PutWord(2, closure->ToWord());
+  taskStack->
+    PushCall(Closure::FromWord(GlobalPrimitives::Vector_tabulate_cont));
+  taskStack->PushCall(closure);
+  RETURN_INT(index);
+} END
+
 void Primitive::RegisterVector() {
   Register("Vector.fromList", Vector_fromList, 1);
-  Register("Vector.maxLen", Store::IntToWord(0x3FFFFFFF));
+  Register("Vector.maxLen", Store::IntToWord(Vector::maxLen));
   Register("Vector.length", Vector_length, 1);
   Register("Vector.sub", Vector_sub, 2);
-  //--** tabulate
+  Register("Vector.tabulate", Vector_tabulate, 2);
+  Register("Vector.tabulate/cont", Vector_tabulate_cont, 1);
 }

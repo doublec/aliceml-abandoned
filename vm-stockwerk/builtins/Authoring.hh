@@ -46,6 +46,7 @@
   if (a == INVALID_POINTER) { REQUEST(x); } else {}
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
+#define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
 #define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
 #define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
@@ -53,7 +54,7 @@
 
 //--** does not work for infinite lists
 #define DECLARE_LIST_ELEMS(tagVal, length, x, cmd)			\
-  int length = 0;							\
+  u_int length = 0;							\
   TagVal *tagVal;							\
   { word list = x;						\
     while ((tagVal = TagVal::FromWord(list)) != INVALID_POINTER) {	\

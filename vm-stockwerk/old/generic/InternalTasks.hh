@@ -38,7 +38,12 @@ public:
   static word General_Subscript;
   static word Hole_Cyclic;
   static word Hole_Hole;
+  static word Internal_applyUnit;
+  static word Internal_bind;
+  static word Internal_byneedHandler;
+  static word Internal_popHandler;
   static word Internal_raise;
+  static word Vector_tabulate_cont;
 
   static void Init();
 };

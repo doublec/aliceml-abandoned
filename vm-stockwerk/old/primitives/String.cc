@@ -73,7 +73,7 @@ DEFINE1(String_explode) {
   DECLARE_STRING(string, x0);
   char *base = string->GetValue();
   word list = Store::IntToWord(1); // nil
-  for (int i = string->GetLength(); i--; ) {
+  for (u_int i = string->GetLength(); i--; ) {
     TagVal *cons = TagVal::New(0, 2);
     cons->Init(0, Store::IntToWord(base[i]));
     cons->Init(1, list);
@@ -84,9 +84,11 @@ DEFINE1(String_explode) {
 
 DEFINE1(String_implode) {
   DECLARE_LIST_ELEMS(tagVal, length, x0, DECLARE_INT(c, tagVal->Sel(0)));
+  if (length > String::maxSize)
+    RAISE(GlobalPrimitives::General_Size);
   String *string = String::New(length);
   char *base = string->GetValue();
-  int i = 1;
+  u_int i = 1;
   while (tagVal != INVALID_POINTER) {
     base[i++] = Store::WordToInt(tagVal->Sel(0));
     tagVal = TagVal::FromWord(tagVal->Sel(1));
@@ -136,7 +138,7 @@ void Primitive::RegisterString() {
   Register("String.compare", String_compare, 2);
   Register("String.explode", String_explode, 1);
   Register("String.implode", String_implode, 1);
-  Register("String.maxSize", Store::IntToWord(0x3FFFFFFF));
+  Register("String.maxSize", Store::IntToWord(String::maxSize));
   Register("String.size", String_size, 1);
   Register("String.sub", String_sub, 1);
   Register("String.substring", String_substring, 3);

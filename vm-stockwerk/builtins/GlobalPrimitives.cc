@@ -26,7 +26,12 @@ word GlobalPrimitives::General_Size;
 word GlobalPrimitives::General_Subscript;
 word GlobalPrimitives::Hole_Cyclic;
 word GlobalPrimitives::Hole_Hole;
+word GlobalPrimitives::Internal_applyUnit;
+word GlobalPrimitives::Internal_bind;
+word GlobalPrimitives::Internal_byneedHandler;
+word GlobalPrimitives::Internal_popHandler;
 word GlobalPrimitives::Internal_raise;
+word GlobalPrimitives::Vector_tabulate_cont;
 
 void GlobalPrimitives::Init() {
   General_Chr = Primitive::Lookup(String::New("General.Chr"));
@@ -38,5 +43,12 @@ void GlobalPrimitives::Init() {
   Future_await = Primitive::Lookup(String::New("Future.await"));
   Hole_Cyclic = Primitive::Lookup(String::New("Hole.Cyclic"));
   Hole_Hole = Primitive::Lookup(String::New("Hole.Hole"));
+  Internal_applyUnit = Primitive::Lookup(String::New("Internal.applyUnit"));
+  Internal_bind = Primitive::Lookup(String::New("Internal.bind"));
+  Internal_byneedHandler =
+    Primitive::Lookup(String::New("Internal.byneedHandler"));
+  Internal_popHandler = Primitive::Lookup(String::New("Internal.popHandler"));
   Internal_raise = Primitive::Lookup(String::New("Internal.raise"));
+  Vector_tabulate_cont =
+    Primitive::Lookup(String::New("Vector.tabulate/cont"));
 }
