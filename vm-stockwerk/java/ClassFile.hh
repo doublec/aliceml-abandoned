@@ -66,9 +66,11 @@ private:
   bool ParseFieldAttributes(u_int &offset, FieldInfo *fieldInfo,
 			    ConstantPool *constantPool,
 			    RuntimeConstantPool *runtimeConstantPool);
-  Table *ParseMethods(u_int &offset, ConstantPool *constantPool,
+  Table *ParseMethods(u_int &offset, JavaString *className,
+		      ConstantPool *constantPool,
 		      RuntimeConstantPool *runtimeConstantPool);
-  MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool,
+  MethodInfo *ParseMethodInfo(u_int &offset, JavaString *className,
+			      ConstantPool *constantPool,
 			      RuntimeConstantPool *runtimeConstantPool);
   bool ParseMethodAttributes(u_int &offset, MethodInfo *methodInfo,
 			     ConstantPool *constantPool,
