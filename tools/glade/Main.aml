@@ -65,7 +65,7 @@ structure Main :> MAIN =
 	 \-?, -h, --help, --usage\n\
 	 \    Display this message.\n\
 	 \-o FILE, --output FILE\n\
-	 \    Specify the output file name (mandatory).\n");
+	 \    Specify the output file name.\n");
 	       status)
 
       fun help () = usage(NONE, OS.Process.success)
