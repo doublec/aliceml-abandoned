@@ -55,6 +55,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
         val fixedIntRange =
             LargeInt.abs (Int.toLarge (valOf FixedInt.minInt)) +
             maxFixedInt + Int.toLarge 1
+	    handle Overflow => Int.toLarge 0 (* if LargeInt = FixedInt *)
 
 	fun translateLit (IntLit i) =
             (V.int (FixedInt.fromLarge i) (*--** IntInf? *)
@@ -62,7 +63,7 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
                     raise Crash.Crash "CodeGenPhase.translateLit int")
 	  | translateLit (WordLit w) =
             (let
-                 val li = LargeWord.toLargeInt w
+                 val li = LargeWord.toLargeIntX w
              in
                  if li > maxFixedInt then
                      V.int (FixedInt.fromLarge (li - fixedIntRange))
