@@ -56,9 +56,8 @@ define
    CELL         = 1
    CONSTRUCTOR  = 2
    CON_VAL      = 3
-   GLOBAL_STAMP = 4
-   VECTOR       = 5
-   LabelOffset  = 6
+   VECTOR       = 4
+   LabelOffset  = 5
 
    IoException = {NewUniqueName 'IO.Io'}
    CorruptException = {NewUniqueName 'Component.Corrupt'}
@@ -306,7 +305,6 @@ define
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 Size)|
 			      {PushUnpickleFrame X I + 1 N Rest})
-		  [] !GLOBAL_STAMP then fail   %--** same as CONSTRUCTOR?
 		  [] !VECTOR then
 		     case {InputStream getByte($)} of eob then
 			continue(Args input(InputInterpreter)|TaskStack)
@@ -319,8 +317,8 @@ define
 			   Env.Count := Y
 			   {InputStream commit()}
 			   continue(args(InputStream Env Count + 1)
-				    unpickling(UnpickleInterpreter
-					       Y 0 Size - 1)|
+				    unpickling(UnpickleInterpreter Y 0
+					       Size - 1)|
 				    {PushUnpickleFrame X I + 1 N Rest})
 			end
 		     end
@@ -515,7 +513,7 @@ define
 	       {OutputStream putByteString(X)}
 	       continue(args(Id + 1 OutputStream X#Id|Seen) Rest)
 	    [] name then
-	       %--** globalize
+	       %--** globalize?
 	       {OutputStream putByte(BLOCK)}
 	       {OutputStream putUInt(CONSTRUCTOR)}
 	       {OutputStream putUInt(1)}
@@ -596,7 +594,9 @@ define
 	    [] array then
 	       {OutputStream putByte(BLOCK)}
 	       {OutputStream putUInt(ARRAY)}
-	       {OutputStream putUInt({Array.high X} + 1)}
+	       {OutputStream putUInt({Array.high X} + 2)}
+	       {OutputStream putByte(POSINT)}
+	       {OutputStream putUInt({Width X})}
 	       continue(args(Id + 1 OutputStream X#Id|Seen)
 			{ForThread {Array.high X} 0 ~1
 			 fun {$ Rest I}
