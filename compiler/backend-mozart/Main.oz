@@ -20,8 +20,7 @@ import
    Frontend(translateVirtualString)
    CodeGen(translate)
 prepare
-   OptSpecs = record(help(rightmost char: "h?" default: false)
-		     debug(rightmost default: false))
+   OptSpecs = record(help(rightmost char: "h?" default: false))
 define
    class TextFile from Open.file Open.text end
 
@@ -87,8 +86,8 @@ define
       case {ReadCommand File} of 'buildFunctor'#[Code] then
 	 case {Frontend.translateVirtualString Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
-	 elseof AST then Id in
-	    Id = {Put {CodeGen.translate AST OptRec.debug}}
+	 [] AST=Filename#_#_ then Id in
+	    Id = {Put {CodeGen.translate AST Filename#'.ozm'}}
 	    {System.printInfo 'Result: '#Id#'\n\n'}
 	 end
       [] 'saveValue'#[OutFilename Id] then

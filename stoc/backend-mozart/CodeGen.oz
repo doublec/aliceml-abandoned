@@ -16,10 +16,11 @@ import
    System(printName printError)
    Narrator('class')
    ErrorListener('class')
+   Open(file)
    CodeStore('class')
    Prebound(builtinTable env)
    Assembler(assemble)
-   Word at '../../vm-mozart/Word.so{native}'
+   Word at '/home/kornstae/stockhausen/vm-mozart/Word.so{native}'
 export
    Translate
 define
@@ -234,17 +235,18 @@ define
 	     proc {$ VHd Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	     end ThenVInstr0 ThenVInstr}
-	 [] recTest(FeatureIdList) then Arity ThenVInstr0 in
-	    Arity = {Map FeatureIdList fun {$ F#_} F end}
+	 [] recTest(LabelIdList) then Arity ThenVInstr0 in
+	    Arity = {Map LabelIdList
+		     fun {$ Label#_} {TranslateLabel Label} end}
 	    VHd = vMatch(_ Reg0 ElseVInstr [onRecord('#' Arity ThenVInstr0)]
 			 {TranslateCoord Coord State} VTl)
-	    {FoldL FeatureIdList
+	    {FoldL LabelIdList
 	     proc {$ VHd _#Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	     end ThenVInstr0 ThenVInstr}
-	 [] labTest(Feature Id) then
-	    VHd = vInlineDot(_ Reg0 Feature {MakeReg Id State} true
-			     unit ThenVInstr)
+	 [] labTest(Label Id) then
+	    VHd = vInlineDot(_ Reg0 {TranslateLabel Label}
+			     {MakeReg Id State} true unit ThenVInstr)
 	 [] vecTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord('#' {Length Ids} ThenVInstr0)]
@@ -346,11 +348,13 @@ define
 	 %--** this is a workaround for duplicate features (due to structs)
 	 Rec = {FoldL LabelIdList
 		fun {$ Rec Label#Id}
-		   {AdjoinAt Rec Label value({GetReg Id State})}
+		   {AdjoinAt Rec {TranslateLabel Label}
+		    value({GetReg Id State})}
 		end '#'}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] selExp(_ Label) then
-	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
+      [] selExp(_ Label) then Label2 in
+	 Label2 = {TranslateLabel Label}
+	 VHd = vEquateConstant(_ fun {$ X} X.Label2 end Reg VTl)
       [] vecExp(_ nil) then
 	 VHd = vEquateConstant(_ '#' Reg VTl)
       [] vecExp(_ Ids) then
@@ -375,7 +379,8 @@ define
 	 PredId NLiveRegs ResReg FormalRegs ArgReg
 	 BodyVInstr ThenVInstr ElseVInstr MatchReg ElseVInter GRegs Code
       in
-	 PredId = pid({VirtualString.toAtom 'line '#Coord.1}
+	 PredId = pid({VirtualString.toAtom
+		       State.filename#':'#Coord.1#'.'#Coord.2}
 		      2 {TranslateCoord Coord State} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ResReg)}
@@ -388,13 +393,14 @@ define
 	    BodyVInstr = vTestConstant(_ ArgReg unit
 				       ThenVInstr ElseVInstr
 				       {TranslateCoord Coord State} nil)
-	 [] recArgs(FeatureIdList) then Arity ThenVInstr0 in
+	 [] recArgs(LabelIdList) then Arity ThenVInstr0 in
 	    {State.cs newReg(?ArgReg)}
-	    Arity = {Map FeatureIdList fun {$ F#_} F end}
+	    Arity = {Map LabelIdList
+		     fun {$ Label#_} {TranslateLabel Label} end}
 	    BodyVInstr = vMatch(_ ArgReg ElseVInstr
 				[onRecord('#' Arity ThenVInstr0)]
 				{TranslateCoord Coord State} nil)
-	    {FoldL FeatureIdList
+	    {FoldL LabelIdList
 	     proc {$ VHd _#Id VTl}
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	     end ThenVInstr0 ThenVInstr}
@@ -429,7 +435,8 @@ define
 	 [] recArgs(LabelIdList) then
 	    {State.cs newReg(?ArgReg)}
 	    VHd = vEquateRecord(_ '#'
-				{Map LabelIdList fun {$ Label#_} Label end}
+				{Map LabelIdList
+				 fun {$ Label#_} {TranslateLabel Label} end}
 				ArgReg
 				{Map LabelIdList
 				 fun {$ _#Id} value({GetReg Id State}) end}
@@ -438,7 +445,7 @@ define
 	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
 			      {TranslateCoord Coord State} VTl)
       [] selAppExp(Coord Label Id) then
-	 VHd = vInlineDot(_ {GetReg Id State} Label Reg false
+	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLabel Label} Reg false
 			  {TranslateCoord Coord State} VTl)
       [] tagAppExp(_ Label oneArg(Id) unary) then
 	 VHd = vEquateRecord(_ {TranslateLabel Label} 1 Reg
@@ -461,7 +468,8 @@ define
 			     VTl)
       [] tagAppExp(_ Label recArgs(LabelIdList) _) then
 	 VHd = vEquateRecord(_ {TranslateLabel Label}
-			     {Map LabelIdList fun {$ Label#_} Label end} Reg
+			     {Map LabelIdList
+			      fun {$ Label#_} {TranslateLabel Label} end} Reg
 			     {Map LabelIdList
 			      fun {$ _#Id} value({GetReg Id State}) end}
 			     VTl)
@@ -501,13 +509,15 @@ define
       in
 	 Pos = {TranslateCoord Coord State}
 	 {State.cs newReg(?ArityReg)}
-	 VHd = vEquateConstant(_ {Map LabelIdList fun {$ Label#_} Label end}
+	 VHd = vEquateConstant(_ {Map LabelIdList
+				  fun {$ Label#_} {TranslateLabel Label} end}
 			       ArityReg VInter1)
 	 VInter1 = vCallBuiltin(_ 'Record.make'
 				[{GetReg Id State} ArityReg Reg] Pos VInter2)
 	 {List.foldL LabelIdList
 	  proc {$ VHd Label#Id VTl}
-	     VHd = vInlineDot(_ Reg Label {GetReg Id State} true Pos VTl)
+	     VHd = vInlineDot(_ Reg {TranslateLabel Label}
+			      {GetReg Id State} true Pos VTl)
 	  end VInter2 VTl}
       [] refAppExp(Coord Id) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
@@ -535,7 +545,13 @@ define
        end VHd VTl}
    end
 
-   fun {Translate Filename#Import#Body Debug}
+   proc {WriteFile VS File} F in
+      F = {New Open.file init(name: File flags: [write create truncate])}
+      {F write(vs: VS)}
+      {F close()}
+   end
+
+   fun {Translate Filename#Import#Body AssemblyFilename}
       NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
       State VInstr VInter GRegs Code NLiveRegs
    in
@@ -548,7 +564,7 @@ define
       {CS newReg(?ImportReg)}
       {CS newReg(?ExportReg)}
       State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS
-		    filename: Filename)
+		    filename: {VirtualString.toAtom Filename})
       {FoldL Import
        proc {$ VHd (Id=id(_ Stamp _))#_ VTl}
 	  VHd = vInlineDot(_ ImportReg {VirtualString.toAtom Stamp}
@@ -571,8 +587,8 @@ define
 	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
 	  Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
 	  switches ?P ?VS}
-	 if Debug then
-	    {System.printError VS}
+	 case AssemblyFilename of unit then skip
+	 else {WriteFile VS AssemblyFilename}
 	 end
 	 {P}
 	 {Functor.new

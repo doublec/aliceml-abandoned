@@ -16,7 +16,6 @@ structure MozartEngine =
 		    [case OS.Process.getEnv "STOC_MOZART" of
 			 SOME s => s
 		       | NONE => "stoc-mozart.exe"])
-		    (*--** for debugging: ..., "--debug" *)
 	       structure Code = OzifyFlatGrammar)
 
 structure MozartTargetContext :> CONTEXT where type t = MozartEngine.t =
