@@ -9,7 +9,7 @@ PREFIX = $(PWD)/alice-distribution
 
 all:
 	@echo To build distro, run:
-	@echo make build
+	@echo make cleanbuild
 	@echo make docs
 	@echo make distro
 	@echo Optionally, run \`make update\' first.
@@ -36,19 +36,36 @@ update:
 	(cd gecode/sources && cvs -q -d $(GECODECVSROOT) update -dP) && \
 	(cd alice/sources && cvs -q -d $(CVSROOT) update -dP)
 
+clean-distro:
+	rm -rf alice-distribution
+clean-seam:
+	(cd seam/build && rm -rf *)
+clean-gecode:
+	(cd seam/build && rm -rf *)
+clean-alice-ll:
+	(cd alice/build && rm -rf *)
+clean-alice-bootstrap:
+	(cd alice/sources && make distclean)
+
+clean: clean-distro clean-seam clean-gecode clean-alice-ll clean-alice-bootstrap
+
 build-seam:
-	rm -rf alice-distribution && \
 	(cd seam/sources && make -f Makefile.cvs) && \
-	(cd seam/build && rm -rf * && $(PWD)/conf-seam && make install)
+	(cd seam/build && $(PWD)/conf-seam && make install)
+rebuild-seam:
+	(cd seam/build && make install)
 
 build-gecode:
 	(cd gecode/sources && make -f Makefile.cvs) && \
-	(cd gecode/build && rm -rf * && $(PWD)/conf-gecode && make install)
+	(cd gecode/build && $(PWD)/conf-gecode && make install)
+rebuild-gecode:
+	(cd gecode/build && make install)
 
 build-alice-ll:
 	(cd alice/sources/vm-seam && make -f Makefile.cvs) && \
-	(cd alice/build && rm -rf * && $(PWD)/conf-alice && make install) && \
-	(cd alice/sources && make distclean || true)
+	(cd alice/build && $(PWD)/conf-alice && make install)
+rebuild-alice-ll:
+	(cd alice/build && make install)
 
 build-alice-bootstrap:
 	(cp alice/build/Makefile.bootstrap alice/sources/vm-seam) && \
@@ -57,6 +74,12 @@ build-alice-bootstrap:
 	      TARGET=seam \
 	      GECODEDIR=$(PWD)/gecode/install \
 	      bootstrap-smlnj reinstall-seam)
+rebuild-alice-bootstrap:
+	(cd alice/sources && \
+	 make PREFIX="$(PREFIX)" \
+	      TARGET=seam \
+	      GECODEDIR=$(PWD)/gecode/install \
+	      reinstall-seam)
 
 build: build-seam build-gecode build-alice-ll build-alice-bootstrap
 	@echo Build complete.
@@ -65,6 +88,8 @@ build: build-seam build-gecode build-alice-ll build-alice-bootstrap
 	@echo PATH=$(PREFIX)/bin:PATH
 	@echo ALICE_HOME=$(PREFIX)/share/alice
 
+cleanbuild: clean build
+
 docs:
 	rm -rf docs && \
 	cp -r $(DOC) docs && \
@@ -72,8 +97,10 @@ docs:
 	(cd docs && /c/Programme/HTML\ Help\ Workshop/hhc Alice || true) && \
 	echo Docs built.
 
-distro:
-	(cd alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install) && \
+build-win:
+	(cd alice/sources/vm-seam/bin/windows && make all PREFIX=$(PREFIX) install)
+
+distro: build-win
 	(rm -rf ../InstallShield/Files/Alice) && \
 	(cp -r alice-distribution ../InstallShield/Files/Alice) && \
 	(mkdir ../InstallShield/Files/Alice/doc) && \
@@ -85,5 +112,5 @@ run:
 	PATH="$(PREFIX)/bin:$(PATH)" && \
 	alice
 
-rr:
+runraw:
 	alicerun x-alice:/compiler/ToplevelMain
