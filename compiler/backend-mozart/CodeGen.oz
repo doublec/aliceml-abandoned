@@ -13,7 +13,7 @@
 functor
 import
    CompilerSupport(isBuiltin) at 'x-oz://boot/CompilerSupport'
-   Word(toInt) at 'x-oz://boot/Word'
+   Word(make toInt) at 'x-oz://boot/Word'
    System(printName)
    Narrator('class')
    ErrorListener('class')
@@ -334,7 +334,7 @@ define
 
    fun {TranslateExp Exp Reg VTl State}
       case Exp of 'LitExp'(_ Lit) then Constant in
-	 Constant = case Lit of 'WordLit'(W) then W
+	 Constant = case Lit of 'WordLit'(W) then {Word.make 31 {Word.toInt W}}
 		    [] 'IntLit'(I) then I
 		    [] 'CharLit'(C) then C
 		    [] 'StringLit'(S) then S
