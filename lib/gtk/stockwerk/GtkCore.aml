@@ -1,8 +1,99 @@
 import structure NativeGtk from "NativeGtk"
+import structure GtkTypes from "GtkTypes"
 import signature GTK_CORE from "GTK_CORE-sig"
 
 structure GtkCore :> GTK_CORE =
 struct
-    val _ = NativeGtk.init ()
-    fun init () = ()
+    val NULL = NativeGtk.null()
+    val TRUE = NativeGtk.gtkTrue()
+    val FALSE = NativeGtk.gtkFalse()
+
+    type object = GtkTypes.object
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+
+    type callBackFunction = object * arg list -> unit
+
+    local
+	val signalTable = ref nil : 
+	    (int * object * int * callBackFunction) list ref
+	val lastNumber = ref 0
+	    
+	fun doSignalConnect (obj, signame, callback, after) =
+	    let
+		val connid = NativeGtk.signalConnect(obj,signame,
+						     !lastNumber,after)
+		val newtab = (!lastNumber,obj,connid,callback)::(!signalTable)
+	    in
+		(signalTable := newtab ;
+		 lastNumber := (!lastNumber) + 1 ;
+		 connid)
+	    end
+
+    in
+	
+	fun signalConnect (obj, signame, callback) = 
+	    doSignalConnect (obj, signame, callback, false)
+	fun signalConnectAfter(obj, signame, callback) =
+	    doSignalConnect (obj, signame, callback, true)
+	    
+	fun signalDisconnect (obj, connid) =
+	    ( NativeGtk.signalDisconnect(obj,connid) ;
+	      signalTable := List.filter  (fn (_,_,connid',_)=>connid<>connid')
+				          (!signalTable)
+	    )
+
+	fun signalDisconnectByFunc (obj, callback) = 
+	    let
+		fun find (_,obj',connid,callback') =
+		    if (obj = obj') andalso (callback = callback')
+			then ( NativeGtk.signalDisconnect(obj,connid) ; false )
+			else true
+	    in
+		signalTable := List.filter find (!signalTable)
+	    end
+
+	fun listener nil                       = ()
+	  | listener (funid::argcount::stream) =
+	      ( List.app 
+	          (fn (funid',_,_,f)=>if funid=funid' then f(NULL,nil) else ())
+		  (!signalTable) ;
+	        listener (List.drop(stream,argcount)) 
+              )
+    end
+
+    fun sleep ms = Future.await (Future.alarm (Time.fromMilliseconds ms))
+
+    val initPoll = 10
+    val maxPoll = 50
+    val pollStep = 5
+
+    fun mainLoop sTime =
+	let
+	    val haveEvents = (NativeGtk.eventsPending() = TRUE)
+	    val sTimeNew = 
+		if haveEvents then initPoll
+		    else sTime + (if sTime >= maxPoll then 0 else pollStep)
+	in
+	    (if haveEvents then NativeGtk.mainIteration() else false ;
+		 sleep sTime;  
+		 mainLoop sTimeNew)
+	end
+
+    fun init () = 
+    let
+	val eventStream : int list = NativeGtk.getEventStream()
+	val _ = NativeGtk.init ()
+	val _ = spawn (listener eventStream)
+	val _ = spawn (mainLoop initPoll)
+    in
+	()
+    end
+      handle _ => ()
 end

@@ -26,7 +26,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	val specialFuns = case space of
 	    Util.GTK => 
 		[FUNC("gtk_init", VOID, nil),
-		 FUNC("gtk_set_event_stream", VOID, [POINTER VOID]),
+		 FUNC("gtk_get_event_stream", POINTER VOID, nil),
 		 FUNC("gtk_signal_connect", NUMERIC (false, false, LONG), 
 		      [POINTER VOID, STRING true, 
 		       NUMERIC (true, false, INT), BOOL]),
@@ -53,7 +53,7 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
        val ignoreSafeFuns =
 	   case space of
 	       Util.GTK => ["gtk_init",
-			    "gtk_set_event_stream",
+			    "gtk_get_event_stream",
 			    "gtk_main",
 			    "gtk_signal_connect",
 			    "gtk_signal_disconnect",

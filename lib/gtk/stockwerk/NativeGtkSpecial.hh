@@ -51,17 +51,25 @@ DEFINE0(NativeGtk_gtkFalse) {
 
 static word tail = 0;
 
-DEFINE1(NativeGtk_setEventStream) {
-  tail = x0;
-  RootSet::Add(tail);
-  RETURN_UNIT;
+DEFINE0(NativeGtk_getEventStream) {
+  if (tail) {
+    ConVal *conVal =
+      ConVal::New(Constructor::FromWordDirect(TypeMismatchConstructor), 1);
+    conVal->Init(0, String::New("stream exists")->ToWord());     
+    RAISE(conVal->ToWord());
+  }
+  else {
+    tail = (Future::New())->ToWord();
+    RootSet::Add(tail);
+    RETURN(tail);
+  }
 } END
 
-void push_front(word *paramlist, word value) {
+void push_front(word *list, word value) {
   TagVal *cons = TagVal::New(0,2);
   cons->Init(0,value);
-  cons->Init(1,*paramlist);
-  *paramlist = cons->ToWord();
+  cons->Init(1,*list);
+  *list = cons->ToWord();
 }
 
 void generic_marshaller(GClosure *closure, GValue *return_value, 

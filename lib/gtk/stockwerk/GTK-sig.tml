@@ -1,4 +1,5 @@
 import structure GtkTypes from "GtkTypes"
+import structure GtkCore  from "GtkCore"
 import structure GtkEnums from "GtkEnums"
 import structure GdkEnums from "GdkEnums"
 
@@ -7,15 +8,6 @@ sig
 
 <<< "GTK_ENUMS-sig.aml" >>>
 <<< "GTK_UNSAFE-sig.aml" >>>
+<<< "GTK_CORE-sig.aml" >>>
 
-    val NULL : object
-    val TRUE : int
-    val FALSE : int
-
-    type callBackFunction = object * object list -> unit
-    val signalConnect      : object * string * callBackFunction -> int
-    val signalConnectAfter : object * string * callBackFunction -> int
-
-    val signalDisconnect       : object * int -> unit
-    val signalDisconnectByFunc : object * callBackFunction -> unit
 end

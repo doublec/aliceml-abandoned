@@ -1,17 +1,16 @@
 
 *** Allgemein/Ideen ***
 
-- stockwerk-gtk-binding in den CVS main trunk
+* stockwerk-gtk-binding in den CVS main trunk
 - stockhausen neu bauen
 
 * Enums
 - GC (Weak Dictionary)
 - datatypes/Signals bauen
-- Dateien komplett umbenennen, 
-  Problem: UnsafeGtk.cc->NativeGtk.cc ist inkonsequent
+* Dateien komplett umbenennen, 
 
-- Test-Programm besser
-X Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
+* Test-Programm besser
+- Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
 
 * Problem: beim Benutzen der UnsafeGtk-Komponente gibt es einen segfault
 * casting-Mist in UnsafeGtk.cc ueberpruefen

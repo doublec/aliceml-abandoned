@@ -38,7 +38,7 @@ rungenerator: gtkclean.c
 	rm -f $(OUTDIR)/*
 	rmdir $(OUTDIR)
 
-$(GENFILES): rungenerator ;
+# $(GENFILES): rungenerator ;
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
 	gawk -f includesig.awk -v filename=includesig.awk < $< > $@

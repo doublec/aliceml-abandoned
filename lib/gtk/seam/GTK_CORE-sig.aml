@@ -1,4 +1,27 @@
+import structure GtkTypes from "GtkTypes"
+
 signature GTK_CORE =
-    sig
-	val init : unit -> unit
-    end
+sig
+(**)type object = GtkTypes.object
+
+    val NULL : object
+    val TRUE : int
+    val FALSE : int
+
+    datatype arg = 
+	BOOL of bool
+      | INT of int
+      | REAL of real
+      | STRING of string
+      | OBJECT of object
+      | LIST of object list
+
+    type callBackFunction = object * arg list -> unit
+    val signalConnect      : object * string * callBackFunction -> int
+    val signalConnectAfter : object * string * callBackFunction -> int
+
+    val signalDisconnect       : object * int -> unit
+    val signalDisconnectByFunc : object * callBackFunction -> unit
+
+(**)val init : unit -> unit
+end

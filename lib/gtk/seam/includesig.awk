@@ -17,5 +17,8 @@ BEGIN {
 	system(call); 
 	print "(* end of " $2 " *)\n"
       }
-      else if (body == 0 || printlines == 1) print $0;
+      else 
+	if (body == 0 || printlines == 1) 
+	  if (!match ($0, /^\(\*\*\)/)) 
+	    print $0;
 }
