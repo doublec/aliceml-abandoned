@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg & Leif Kornstaedt, 2001-2003
+ *   Andreas Rossberg & Leif Kornstaedt, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -23,8 +23,8 @@ struct
 
     val errorMsg = UnsafeOS.errorMsg
 
-    fun errorName _ = ""
-    fun syserror  _ = NONE
+    fun errorName _ = "" (*--** *)
+    fun syserror  _ = NONE  (*--** *)
 
     structure FileSys =
     struct
