@@ -526,73 +526,7 @@ prepare
 		det: [det det any(det)]
 		imods: [false false]
 	)
-'Float.atan':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
 'Float.ceil':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.\'/\'':
-	builtin(
-		types: ['float' 'float' 'float']
-		det: [det det any(det)]
-		imods: [false false]
-	)
-'Float.exp':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.cos':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.atan2':
-	builtin(
-		types: ['float' 'float' 'float']
-		det: [det det any(det)]
-		imods: [false false]
-	)
-'Float.toInt':
-	builtin(
-		types: ['float' 'int']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.acos':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.round':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.toString':
-	builtin(
-		types: ['float' 'string']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.sqrt':
-	builtin(
-		types: ['float' 'float']
-		det: [det any(det)]
-		imods: [false]
-	)
-'Float.sin':
 	builtin(
 		types: ['float' 'float']
 		det: [det any(det)]
@@ -610,15 +544,123 @@ prepare
 		det: [det any(det)]
 		imods: [false]
 	)
+'Float.tan':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.atan':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.cos':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.fMod':
+	builtin(
+		types: ['float' 'float' 'float']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Float.acos':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.round':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.sqrt':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.sin':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
 'Float.asin':
 	builtin(
 		types: ['float' 'float']
 		det: [det any(det)]
 		imods: [false]
 	)
-'Float.tan':
+'Float.tanh':
 	builtin(
 		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.atanh':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.cosh':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.exp':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.acosh':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.toInt':
+	builtin(
+		types: ['float' 'int']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.sinh':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.asinh':
+	builtin(
+		types: ['float' 'float']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Float.\'/\'':
+	builtin(
+		types: ['float' 'float' 'float']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Float.atan2':
+	builtin(
+		types: ['float' 'float' 'float']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Float.toString':
+	builtin(
+		types: ['float' 'string']
 		det: [det any(det)]
 		imods: [false]
 	)
@@ -710,6 +752,13 @@ prepare
 		det: [det any(det)]
 		imods: [false]
 	)
+'Name.\'<\'':
+	builtin(
+		types: ['name' 'name' 'bool']
+		det: [det det any(det)]
+		imods: [false false]
+		test: true
+	)
 'Name.new':
 	builtin(
 		types: ['name']
@@ -722,6 +771,12 @@ prepare
 		det: [det any(det)]
 		imods: [false]
 		test: true
+	)
+'Name.hash':
+	builtin(
+		types: ['name' 'int']
+		det: [det any(det)]
+		imods: [false]
 	)
 'Number.\'+\'':
 	builtin(
@@ -826,6 +881,12 @@ prepare
 		types: ['record' 'record']
 		det: [det any(det)]
 		imods: [false]
+	)
+'Port.sendRecv':
+	builtin(
+		types: ['port' 'value' 'value']
+		det: [det any any]
+		imods: [false false]
 	)
 'Port.new':
 	builtin(
@@ -1254,6 +1315,18 @@ prepare
 		det: [any any(det)]
 		imods: [false]
 	)
+'Value.dotAssign':
+	builtin(
+		types: ['recordCOrChunk' 'feature' 'value']
+		det: [detOrKinded det any]
+		imods: [false false false]
+	)
+'Value.byNeedFail':
+	builtin(
+		types: ['value' 'value']
+		det: [any any]
+		imods: [false]
+	)
 'Value.\'.\'':
 	builtin(
 		types: ['recordCOrChunk' 'feature' 'value']
@@ -1396,6 +1469,109 @@ prepare
 		det: [det det det any(det)]
 		imods: [false false false]
 	)
+'Word.size':
+	builtin(
+		types: ['value' 'int']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Word.xorb':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.is':
+	builtin(
+		types: ['value' 'bool']
+		det: [det any(det)]
+		imods: [false]
+		test: true
+	)
+'Word.make':
+	builtin(
+		types: ['int' 'int' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'<<\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'~>>\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.mod':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'>>\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.orb':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.div':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.toIntX':
+	builtin(
+		types: ['value' 'int']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Word.toInt':
+	builtin(
+		types: ['value' 'int']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Word.\'*\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'+\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.notb':
+	builtin(
+		types: ['value' 'value']
+		det: [det any(det)]
+		imods: [false]
+	)
+'Word.\'-\'':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.andb':
+	builtin(
+		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
 'InterFault.interDistHandlerDeInstall':
 	builtin(
 		types: ['value' 'value' 'bool']
@@ -1409,6 +1585,93 @@ prepare
 		det: [any any any(det)]
 		imods: [false false]
 		test: true
+	)
+'WeakDictionary.condGet':
+	builtin(
+		types: ['value' 'feature' 'value' 'value']
+		det: [det det any any]
+		imods: [false false false]
+	)
+'WeakDictionary.close':
+	builtin(
+		types: ['value']
+		det: [det]
+		imods: [false]
+	)
+'WeakDictionary.removeAll':
+	builtin(
+		types: ['value']
+		det: [det]
+		imods: [false]
+	)
+'WeakDictionary.member':
+	builtin(
+		types: ['value' 'feature' 'bool']
+		det: [det det any(det)]
+		imods: [false false]
+		test: true
+	)
+'WeakDictionary.put':
+	builtin(
+		types: ['value' 'feature' 'value']
+		det: [det det det]
+		imods: [false false false]
+	)
+'WeakDictionary.entries':
+	builtin(
+		types: ['value' list(pair('feature' 'value'))]
+		det: [det any(det)]
+		imods: [false]
+	)
+'WeakDictionary.new':
+	builtin(
+		types: [list(pair('feature' 'value')) 'value']
+		det: [any any(det)]
+		imods: nil
+	)
+'WeakDictionary.isEmpty':
+	builtin(
+		types: ['value' 'bool']
+		det: [det any(det)]
+		imods: [false]
+		test: true
+	)
+'WeakDictionary.is':
+	builtin(
+		types: ['value' 'bool']
+		det: [det any(det)]
+		imods: [false]
+		test: true
+	)
+'WeakDictionary.keys':
+	builtin(
+		types: ['value' list('feature')]
+		det: [det any(det)]
+		imods: [false]
+	)
+'WeakDictionary.remove':
+	builtin(
+		types: ['value' 'feature']
+		det: [det det]
+		imods: [false false]
+	)
+'WeakDictionary.get':
+	builtin(
+		types: ['value' 'feature' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'WeakDictionary.toRecord':
+	builtin(
+		types: ['literal' 'value' 'record']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'WeakDictionary.items':
+	builtin(
+		types: ['value' list('value')]
+		det: [det any(det)]
+		imods: [false]
 	)
 		     )
 
@@ -1460,7 +1723,7 @@ prepare
        else {E Name doesNotReturn}
        end
     end}
-
+define
    fun {GetBuiltinInfo Name}
       {CondSelect BuiltinTable Name noInformation}
    end
