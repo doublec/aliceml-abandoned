@@ -1,3 +1,5 @@
+__prebound Prebound
+
 (*
 import
 val show: 'a -> {}
@@ -10,8 +12,6 @@ infixr 5  :: @
 infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
-
-__prebound Prebound
 
 type     int    = Prebound.int
 datatype list   = datatype Prebound.list
