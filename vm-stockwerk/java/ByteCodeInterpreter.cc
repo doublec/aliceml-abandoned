@@ -56,7 +56,6 @@ static bool IsSubtypeOf(Type *type1, Type *type2) {
       return false;
     case JavaLabel::ArrayType:
       {
-	//--** problem: element types can be futures
 	Type *elementType1 = static_cast<ArrayType *>(type1)->GetElementType();
 	Type *elementType2 = static_cast<ArrayType *>(type2)->GetElementType();
 	return IsSubtypeOf(elementType1, elementType2);
@@ -105,7 +104,6 @@ static bool IsInstanceOf(word value, Type *type) {
       return false;
     case JavaLabel::ArrayType:
       {
-	//--** problem: element types can be futures
 	Type *elementType1 = static_cast<ObjectArray *>(b)->GetElementType();
 	Type *elementType2 = static_cast<ArrayType *>(type)->GetElementType();
 	return IsSubtypeOf(elementType1, elementType2);
@@ -2127,6 +2125,8 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	//--** to be done
 	JavaDebug::Print("MULTIANEWARRAY");
+	Error("not implemented");
+	/*
 	word wType = GET_POOL_VALUE(GET_POOL_INDEX());
 	Type *type = Type::FromWord(wType);
 	if (type == INVALID_POINTER)
@@ -2138,10 +2138,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    RAISE_VM_EXCEPTION(NegativeArraySizeException, "multianewarray");
 	  }
 	  ObjectArray *arr = ObjectArray::New(type, count);
-	  type = static_cast<Type *>(ArrayType::New(type->ToWord()));
+	  type = static_cast<Type *>(ArrayType::New(type));
 	}
 	frame->Push(type->ToWord());
 	pc += 4;
+	*/
       }
       break;
     case Instr::NEW:

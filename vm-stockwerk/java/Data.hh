@@ -282,9 +282,9 @@ protected:
 public:
   using Block::ToWord;
 
-  static ArrayType *New(word wType) {
+  static ArrayType *New(Type *elementType) {
     Block *b = Store::AllocBlock(JavaLabel::ArrayType, SIZE);
-    b->InitArg(ELEMENT_TYPE_POS, wType);
+    b->InitArg(ELEMENT_TYPE_POS, elementType->ToWord());
     b->InitArg(CLASS_OBJECT_POS, null);
     return static_cast<ArrayType *>(b);
   }
@@ -752,6 +752,8 @@ public:
   static void Init();
 
   static JavaString *New(BaseArray *array, u_int offset, u_int length) {
+    Assert(offset <= array->GetLength() &&
+	   offset + length <= array->GetLength());
     Object *object = Object::New(wClass, SIZE);
     object->InitInstanceField(VALUE_INDEX, array->ToWord());
     object->InitInstanceField(OFFSET_INDEX, JavaInt::ToWord(offset));
