@@ -640,8 +640,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
 		val funInfo = {region = region,
-			       typ = Type.inArrow (Type.inTuple nil, typ)}
-		val pat = JokPat {region = region, typ = Type.inTuple nil}
+			       typ = Type.inArrow (Type.inTuple #[], typ)}
+		val pat = JokPat {region = region, typ = Type.inTuple #[]}
 		val funExp = FunExp (funInfo, [Match (id_info info, pat, exp)])
 		val (stms, id) = unfoldTerm (funExp, Goto rest)
 	    in

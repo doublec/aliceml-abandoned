@@ -23,7 +23,7 @@ signature TYPE =
 
     val unknown :	kind      -> typ
     val inArrow :	typ * typ -> typ
-    val inTuple :	typ list  -> typ
+    val inTuple :	typ vector -> typ
     val inProd :	row       -> typ
     val inSum :		row       -> typ
     val inVar :		var       -> typ
@@ -58,7 +58,7 @@ signature TYPE =
     exception Type
 
     val asArrow :	typ -> typ * typ		(* Type *)
-    val asTuple :	typ -> typ list			(* Type *)
+    val asTuple :	typ -> typ vector		(* Type *)
     val asProd :	typ -> row			(* Type *)
     val asSum :		typ -> row			(* Type *)
     val asVar :		typ -> var			(* Type *)
@@ -86,13 +86,13 @@ signature TYPE =
 
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
-    val extendRow :	lab * typ list * row -> row	(* Row *)
+    val extendRow :	lab * typ vector * row -> row	(* Row *)
 
     val openRowType :	typ -> unit			(* Row *)
 
     val isEmptyRow :	row -> bool
     val isUnknownRow :	row -> bool
-    val headRow :	row -> lab * typ list		(* Row *)
+    val headRow :	row -> lab * typ vector		(* Row *)
     val tailRow :	row -> row			(* Row *)
 
   (* Copying and instantiation *)

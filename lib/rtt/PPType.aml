@@ -187,12 +187,12 @@ text "(" ^^
 		    parenPrec p (2, doc)
 		end
 
-	      | ppTypPrec' p (TUPLE [] | PROD NIL) =
+	      | ppTypPrec' p (TUPLE #[] | PROD NIL) =
 		    text "unit"
 
 	      | ppTypPrec' p (TUPLE ts) =
 		let
-		    val doc = ppStarList (ppTypPrec 4) ts
+		    val doc = ppStarList (ppTypPrec 4) (Vector.toList ts)
 		in
 		    parenPrec p (3, fbox(below(nest doc)))
 		end
@@ -259,7 +259,7 @@ text "(" ^^
 	      | ppSum(FIELD(l,ts,NIL))	= ppField(l,ts)
 	      | ppSum(FIELD(l,ts,r))	= ppField(l,ts) ^/^ text "|" ^/^ ppSum r
 
-	    and ppField(l,[]) = ppLab l
+	    and ppField(l,#[]) = ppLab l
 	      | ppField(l,ts) =
 		    abox(
 			hbox(
@@ -267,7 +267,7 @@ text "(" ^^
 			    text ":"
 			) ^^
 			below(break ^^
-			    ppCommaList ppTyp ts
+			    ppCommaList ppTyp (Vector.toList ts)
 			)
 		    )
 

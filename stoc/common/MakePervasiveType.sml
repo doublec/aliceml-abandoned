@@ -82,14 +82,14 @@ functor MakePervasiveType(val labid_false :	string
     val typ_list	= Type.unknown(ARROW(STAR,STAR))
     val var_list	= Type.var STAR
     val typ_var		= Type.inVar var_list
-    val typ_cons	= Type.inTuple [typ_var, Type.inApply(typ_list,typ_var)]
+    val typ_cons	= Type.inTuple #[typ_var,Type.inApply(typ_list,typ_var)]
 
-    val row_bool	= Type.extendRow(lab_false, [],
-			  Type.extendRow(lab_true, [], Type.emptyRow()))
-    val row_list	= Type.extendRow(lab_cons, [typ_cons],
-			  Type.extendRow(lab_nil, [], Type.emptyRow()))
+    val row_bool	= Type.extendRow(lab_false, #[],
+			  Type.extendRow(lab_true, #[], Type.emptyRow()))
+    val row_list	= Type.extendRow(lab_cons, #[typ_cons],
+			  Type.extendRow(lab_nil, #[], Type.emptyRow()))
 
-    val typ_unit	= Type.inTuple []
+    val typ_unit	= Type.inTuple #[]
     val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
 					Type.inMu(Type.inSum row_bool))
     val typ_int		= Type.inCon con_int

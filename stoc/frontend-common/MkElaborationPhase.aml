@@ -114,7 +114,7 @@ functor MakeElaborationPhase(
 	    val (a,vallab') = elabLab(E, vallab)
 	    val (ts,xs')    = ListPair.unzip(List.map (fn x => elabX(E,x)) xs)
 	in
-	    ( a, ts, O.Field(nonInfo(i), vallab', xs') )
+	    ( a, Vector.fromList ts, O.Field(nonInfo(i), vallab', xs') )
 	end
 
     and elabFields(elabX, E, r, fields) =
@@ -212,7 +212,7 @@ functor MakeElaborationPhase(
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val  t1         = Type.unknown(Type.STAR)
-	    val  r          = Type.extendRow(a, [t1], Type.unknownRow())
+	    val  r          = Type.extendRow(a, #[t1], Type.unknownRow())
 	    val  t          = Type.inArrow(t1, Type.inSum r)
 	in
 	    ( t, O.TagExp(typInfo(i,t), vallab', k) )
@@ -237,7 +237,7 @@ functor MakeElaborationPhase(
       | elabExp(E, I.TupExp(i, exps)) =
 	let
 	    val (ts,exps') = elabExps(E, exps)
-	    val  t         = Type.inTuple ts
+	    val  t         = Type.inTuple(Vector.fromList ts)
 	in
 	    ( t, O.TupExp(typInfo(i,t), exps') )
 	end
@@ -254,7 +254,7 @@ functor MakeElaborationPhase(
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val  t1         = Type.unknown(Type.STAR)
-	    val  r          = Type.extendRow(a, [t1], Type.unknownRow())
+	    val  r          = Type.extendRow(a, #[t1], Type.unknownRow())
 	    val  t          = Type.inArrow(Type.inProd r, t1)
 	in
 	    ( t, O.SelExp(typInfo(i,t), vallab') )
@@ -495,7 +495,7 @@ functor MakeElaborationPhase(
       | elabPat(E, s, I.TupPat(i, pats)) =
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
-	    val  t         = Type.inTuple ts
+	    val  t         = Type.inTuple(Vector.fromList ts)
 	in
 	    ( t, O.TupPat(typInfo(i,t), pats') )
 	end
@@ -591,7 +591,7 @@ functor MakeElaborationPhase(
 	let
 	    val (a,vallab') = elabLab(E, vallab)
 	    val  t1         = Type.unknown(Type.STAR)
-	    val  r          = Type.extendRow(a, [t1], Type.unknownRow())
+	    val  r          = Type.extendRow(a, #[t1], Type.unknownRow())
 	    val  t          = Type.inArrow(t1, Type.inSum r)
 	in
 	    ( t, O.TagPat(typInfo(i,t), vallab', k) )
@@ -792,7 +792,7 @@ functor MakeElaborationPhase(
       | elabTyp(E, I.TupTyp(i, typs)) =
 	let
 	    val (ts,typs') = elabStarTyps(E, typs)
-	    val  t         = Type.inTuple ts
+	    val  t         = Type.inTuple(Vector.fromList ts)
 	in
 	    ( t, O.TupTyp(typInfo(i,t), typs') )
 	end

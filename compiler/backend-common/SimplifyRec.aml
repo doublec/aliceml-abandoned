@@ -319,7 +319,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		else nil
 	    else
 		case Type.headRow row of
-		    (label, [typ]) => (label, typ)::parseRow (Type.tailRow row)
+		    (label, #[typ]) => (label, typ)::parseRow (Type.tailRow row)
 		  | (_, _) => raise Crash.Crash "SimplifyRec.parseRow"
 
 	fun getField (Field (_, _, pat)) = pat
@@ -367,7 +367,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		val labelTypList =
 		    if Type.isTuple typ then
 			List.mapi (fn (i, typ) => (Label.fromInt (i + 1), typ))
-			(Type.asTuple typ)
+			(Vector.toList (Type.asTuple typ))
 		    else parseRow (Type.asProd typ)
 		fun adjoin (labelTyp as (label, _), patFields as
 			    (Field (_, Lab (_, label'), _)::rest)) =

@@ -80,7 +80,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			val (rest, hasDots) = parseRow (Type.tailRow row)
 		    in
 			case Type.headRow row of
-			    (label, [typ]) => ((label, typ)::rest, hasDots)
+			    (label, #[typ]) => ((label, typ)::rest, hasDots)
 			  | (_, _) =>
 				raise Crash.Crash "SimplifyMatch.parseRow"
 		    end
@@ -92,7 +92,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			else
 			    (List.mapi (fn (i, typ) =>
 					(Label.fromInt (i + 1), typ))
-			     (Type.asTuple typ), false)
+			     (Vector.toList (Type.asTuple typ)), false)
 		    val (labelTypList', arity) = LabelSort.sort labelTypList
 		in
 		    (labelTypList', arity, hasDots)
@@ -577,12 +577,13 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			else nil
 		    else
 			(case Type.headRow row of
-			     (label, [typ]) => (label, typ)
+			     (label, #[typ]) => (label, typ)
 			   | (_, _) => raise MustBeUnary)::
 			convert (Type.tailRow row)
 	    in
 		fun typToArity typ =
-		    if Type.isTuple typ then TUP (Type.asTuple typ)
+		    if Type.isTuple typ then
+			TUP (Vector.toList (Type.asTuple typ))
 		    else if Type.isProd typ then
 			(case LabelSort.sort (convert (Type.asProd typ)) of
 			     (labelTypList, LabelSort.Tup _) =>

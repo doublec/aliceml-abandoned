@@ -378,7 +378,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    else if Type.isMu typ then
 		typToArity (Type.asMu typ)
 	    else if Type.isTuple typ then
-		TupArity (List.length (Type.asTuple typ))
+		TupArity (Vector.length (Type.asTuple typ))
 	    else if Type.isProd typ then
 		rowToArity (Type.asProd typ)
 	    else if Type.isSum typ then

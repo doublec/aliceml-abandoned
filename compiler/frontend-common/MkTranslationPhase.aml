@@ -96,13 +96,13 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 		let
 		    val (l,t,s,d) = Inf.asValItem i
 		in
-		    Type.extendRow(trLabel l, [t], r)
+		    Type.extendRow(trLabel l, #[t], r)
 		end
 	    else if Inf.isModItem i then
 		let
 		    val (l,j,d) = Inf.asModItem i
 		in
-		    Type.extendRow(trModLabel l, [infToTyp j], r)
+		    Type.extendRow(trModLabel l, #[infToTyp j], r)
 		end
 	    else
 		r
@@ -271,7 +271,7 @@ structure TranslationPhase :> TRANSLATION_PHASE =
 
     fun idsToRow'(     [],    r) = r
       | idsToRow'((x,t)::ids, r) =
-	Type.extendRow(Label.fromName(O.name x), [t], r)
+	Type.extendRow(Label.fromName(O.name x), #[t], r)
 
     fun idsToRow ids = idsToRow'(ids, Type.emptyRow())
 

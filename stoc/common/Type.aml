@@ -87,7 +87,7 @@ structure TypePrivate =
 	| LINK   of typ		(* forward (needed for unification) *)
 	| MARK   of typ'	(* for traversal *)
 	| FUN    of typ * typ	(* arrow type *)
-	| TUPLE  of typ list	(* tuple *)
+	| TUPLE  of typ vector	(* tuple *)
 	| PROD   of row		(* record *)
 	| SUM    of row		(* sum type (datatype) *)
 	| VAR    of kind * int	(* bound variable or skolem types *)
@@ -102,7 +102,7 @@ structure TypePrivate =
     and row =						(* [rho,r] *)
 	  NIL
 	| RHO   of int ref * row
-	| FIELD of lab * typ list * row
+	| FIELD of lab * typ vector * row
 
     withtype typ = typ' ref				(* [tau,t] *)
     and      var = typ' ref				(* [alpha,a] *)
@@ -197,12 +197,12 @@ structure TypePrivate =
       | app1'(( FUN(t1,t2)
 	      | APPLY(t1,t2)
 	      | ABBREV(t1,t2)), f)	= ( f t1 ; f t2 )
-      | app1'(( TUPLE ts ), f)		= List.app f ts
+      | app1'(( TUPLE ts ), f)		= Vector.app f ts
       | app1'(( PROD r
 	      | SUM r ), f)		= appRow(r,f)
       | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
-    and appRow(FIELD(_,ts,r), f)	= ( List.app f ts ; appRow(r,f) )
+    and appRow(FIELD(_,ts,r), f)	= ( Vector.app f ts ; appRow(r,f) )
       | appRow(RHO(_,r), f)		= appRow(r,f)
       | appRow(NIL, f)			= ()
 
@@ -218,12 +218,12 @@ structure TypePrivate =
       | foldl1'(( FUN(t1,t2)
 		| APPLY(t1,t2)
 		| ABBREV(t1,t2)), f, a)	= f(t2, f(t1,a))
-      | foldl1'(( TUPLE ts ), f, a)	= List.foldl f a ts
+      | foldl1'(( TUPLE ts ), f, a)	= Vector.foldl f a ts
       | foldl1'(( PROD r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
       | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
 
-    and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
+    and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, Vector.foldl f a ts)
       | foldlRow(RHO(_,r), f, a)	= foldlRow(r, f, a)
       | foldlRow(NIL, f, a)		= a
 
@@ -304,7 +304,7 @@ structure TypePrivate =
 		end
 
 	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
-	      | clone'(TUPLE ts)	= TUPLE(List.map clone ts)
+	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
 	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(CON c)		= CON c
@@ -316,7 +316,8 @@ structure TypePrivate =
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Crash.Crash "Type.clone"
 
-	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
+	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
+						cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
 	      | cloneRow(NIL)		= NIL
 
@@ -367,7 +368,7 @@ structure TypePrivate =
 		end
 
 	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
-	      | clone'(TUPLE ts)	= TUPLE(List.map clone ts)
+	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
 	      | clone'(PROD r)		= PROD(cloneRow r)
 	      | clone'(SUM r)		= SUM(cloneRow r)
 	      | clone'(CON c)		= CON c
@@ -379,7 +380,8 @@ structure TypePrivate =
 	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Crash.Crash "Type.clone"
 
-	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
+	    and cloneRow(FIELD(a,ts,r))	= FIELD(a, Vector.map clone ts,
+						cloneRow r)
 	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
 	      | cloneRow(NIL)		= NIL
 
@@ -614,21 +616,21 @@ structure TypePrivate =
     fun unknownRow()	= RHO(ref(!level), NIL)
     fun emptyRow()	= NIL
 
-    fun extendRow(l,ts, NIL)      = FIELD(l,ts,NIL)
-      | extendRow(l,ts, RHO(n,r)) = RHO(n, extendRow(l,ts,r))
+    fun extendRow(l,ts,NIL)      = FIELD(l,ts,NIL)
+      | extendRow(l,ts,RHO(n,r)) = RHO(n, extendRow(l,ts,r))
       | extendRow(l1,ts1, r1 as FIELD(l2,ts2,r2)) =
 	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
 	   | LESS    => FIELD(l1, ts1, r1)
 	   | GREATER => FIELD(l2, ts2, extendRow(l1,ts1,r2))
 
-    fun tupToRow ts =
-	let
-	    fun loop(n,  []  ) = NIL
-	      | loop(n, t::ts) = FIELD(Label.fromInt n, [t], loop(n+1,ts))
-	in
-	    loop(1,ts)
-	end
+    fun tupToRow  ts			= tupToRow'(ts,0)
+    and tupToRow'(ts,i)			= if i = Vector.length ts then
+					      NIL
+					  else
+					      FIELD(Label.fromInt(i+1),
+						    #[Vector.sub(ts,i)],
+						    tupToRow'(ts,i+1))
 
     fun openRow(r as RHO _)		= r
       | openRow r			= RHO(ref(!level), r)
@@ -807,7 +809,7 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recur unifyPair (tt1,tt2)
 
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 (recur unifyList (ts1,ts2)
+			 (recur unifyVector (ts1,ts2)
 			  handle Domain => raise Unify(t1,t2))
 
 		       | (TUPLE(ts), PROD(r)) =>
@@ -856,10 +858,11 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
-	    and unifyList(  [],      []   ) = ()
-	      | unifyList(t1::ts1, t2::ts2) =
-		( unify(t1,t2) ; unifyList(ts1,ts2) )
-	      | unifyList _ = raise Domain
+	    and unifyVector(ts1,ts2) =
+		if Vector.length ts1 <> Vector.length ts2 then
+		    raise Domain
+		else
+		    VectorPair.app unify (ts1,ts2)
 
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
@@ -881,7 +884,7 @@ val timer = Timer.startRealTimer()
 		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
 			     r2 as FIELD(l2,ts2,r2'), b2) =
 			(case Label.compare(l1,l2)
-			   of EQUAL   => ( unifyList(ts1,ts2)
+			   of EQUAL   => ( unifyVector(ts1,ts2)
 					   handle Domain => raise Unify(t1,t2)
 					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
 			    | LESS    => if not b2 then raise Unify(t1,t2) else
@@ -976,7 +979,7 @@ end*)
 			 recur equalsPair (tt1,tt2)
 
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 recur equalsList (ts1,ts2)
+			 recur equalsVector (ts1,ts2)
 
 		       | ( (TUPLE(ts), PROD(r))
 			 | (PROD(r),   TUPLE(ts)) ) =>
@@ -1017,10 +1020,9 @@ end*)
 	    and equalsPair((t11,t12), (t21,t22)) =
 		equals(t11,t21) andalso equals (t12,t22)
 
-	    and equalsList(  [],      []   ) = true
-	      | equalsList(t1::ts1, t2::ts2) =
-		equals(t1,t2) andalso equalsList(ts1,ts2)
-	      | equalsList _ = false
+	    and equalsVector(ts1,ts2) =
+		Vector.length ts1 = Vector.length ts2 andalso
+		VectorPair.all equals (ts1,ts2)
 
 (*DEBUG
 and equalsRow rr =
@@ -1031,7 +1033,7 @@ fun f() = ()
 	    and equalsRow(NIL,              NIL)              = true
 	      | equalsRow(RHO(_,r1),        RHO(_,r2))        = equalsRow(r1,r2)
 	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
-		l1 = l2 andalso equalsList(ts1,ts2) andalso equalsRow(r1,r2)
+		l1 = l2 andalso equalsVector(ts1,ts2) andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
 (*in
 equalsRow rr
