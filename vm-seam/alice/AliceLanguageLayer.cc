@@ -36,17 +36,11 @@ word AliceLanguageLayer::TransformNames::constructor;
 concrete_constructor AliceLanguageLayer::concreteCodeConstructor;
 
 static word AlicePrimitiveValueHandler(word x) {
-  TagVal *tagVal = TagVal::FromWordDirect(x);
-  Assert(tagVal->GetTag() == 0);
-  tagVal->AssertWidth(1);
-  return PrimitiveTable::LookupValue(Chunk::FromWordDirect(tagVal->Sel(0)));
+  return PrimitiveTable::LookupValue(Chunk::FromWordDirect(x));
 }
 
 static word AlicePrimitiveFunctionHandler(word x) {
-  TagVal *tagVal = TagVal::FromWordDirect(x);
-  Assert(tagVal->GetTag() == 0);
-  tagVal->AssertWidth(1);
-  return PrimitiveTable::LookupFunction(Chunk::FromWordDirect(tagVal->Sel(0)));
+  return PrimitiveTable::LookupFunction(Chunk::FromWordDirect(x));
 }
 
 static word AliceFunctionHandler(word x) {
