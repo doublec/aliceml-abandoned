@@ -168,7 +168,7 @@ define
 	    'block': fun {$ Desc} {Desc block()} unit end
 	    'setPos': fun {$ Desc Pos} {Desc setPos(Pos)} unit end
 	    'endPos': fun {$ _} raise unimplemented end end %--**
-	    'verify': fun {$ Desc} {Desc verifyPos($)} end
+	    'verifyPos': fun {$ Desc} {Desc verifyPos($)} end
 
 	    %% Reader operations supported by all readers
 	    'avail': fun {$ _} 'NONE' end
