@@ -140,6 +140,8 @@ libs-mozart:
 	(cd lib/constraints && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/distribution && make depend) || exit 1 ;\
 	(cd lib/distribution && make all PREFIX=$(PREFIX) install) || exit 1 ;\
+	(cd lib/test && make all SH_EXT=ozf PREFIX=$(PREFIX) install) \
+	|| exit 1 ;\
 	(cd lib/gtk && autoconf && \
 	 ./configure --with-gtk-canvas-dir=/opt/gtk-canvas) || exit 1 ;\
 	(cd lib/gtk && make all PREFIX=$(PREFIX) install) || exit 1
@@ -176,6 +178,8 @@ libs-seam:
 	(cd lib/distribution && make TARGET=seam depend) || exit 1 ;\
 	(cd lib/distribution && \
 	 make TARGET=seam all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
+	(cd lib/test && \
+	 make SH_EXT=stc all PREFIX=$(PREFIX)/share/alice install) || exit 1 ;\
 	(cd lib/gtk/stockwerk && ./BUILD_ALL) || exit 1 ;\
 	(cd lib/gtk/stockwerk && make install) || exit 1 ;\
 	(cd lib/browser && make depend) || exit 1 ;\
