@@ -17,7 +17,7 @@ import
    PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
 export
-   Translate
+   '$CodeGenPhase': CodeGenPhase
 define
    SOME = 'SOME'
    NUM = 'NUM'
@@ -260,4 +260,7 @@ define
       {Pickle.save F OutFilename}
       unit
    end
+
+   CodeGenPhase =
+   'CodeGenPhase'(translate: Translate)
 end
