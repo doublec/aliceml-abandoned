@@ -164,8 +164,6 @@ structure Main :> MAIN =
     fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
     fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
 
-    fun compileForMozart(n1,n2)	= processFile (mozartify n1 n2) n1
-
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)
 
@@ -196,12 +194,20 @@ structure Main :> MAIN =
 
     fun compileSign filename =
 	let
+	    val _ =
+		TextIO.print ("### reading signature file " ^ filename ^ "\n")
 	    val (_, (_, sign)) = translateFile filename
+	    val _ = TextIO.print "### done\n"
 	in
 	    case Inf.items sign of
 		[item] => Inf.asSig (valOf (#3 (Inf.asInfItem item)))
 	      | _ => raise Crash.Crash "Composer.compileSign"
 	end
+
+    fun compileForMozart (sourceFilename, targetFilename) =
+	(TextIO.print ("### compiling file " ^ sourceFilename ^ "\n");
+	 processFile (mozartify sourceFilename targetFilename) sourceFilename
+	 before TextIO.print ("### wrote file " ^ targetFilename ^ "\n"))
 
     fun acquireSign url =
 	let
