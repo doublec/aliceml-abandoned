@@ -38,50 +38,12 @@ public:
   jit_state lightning;
   LightningState() {}
 };
+
+// We have to redefine _jit - make compiler happy
+inline void _jit_make_compiler_happy(void) { _jit = _jit; }
+
 // Lightning macros refer to the defined state
 #define _jit this->lightning
-
-// Provide own jump/branch macros
-// This is to eliminate the "value computed not used" warning
-// in case the destination label is already known
-
-// Lightning Jumps
-#define drop_jit_jmpi(O1) \
-  { jit_insn *dummy = jit_jmpi(O1); dummy = dummy; }
-
-#define drop_jit_jmpr(O1) \
-  { jit_insn *dummy = jit_jmpr(O1); dummy = dummy; }
-
-// Lightning Branches (ui part only)
-#define drop_jit_blti_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_blti_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_bltr_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bltr_ui(O1, O2, O3); dummy = dummy; }
-
-#define drop_jit_blei_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_blei_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_bler_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bler_ui(O1, O2, O3); dummy = dummy; }
-
-#define drop_jit_bgti_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bgti_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_bgtr_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bgtr_ui(O1, O2, O3); dummy = dummy; }
-
-#define drop_jit_bgei_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bgei_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_bger_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bger_ui(O1, O2, O3); dummy = dummy; }
-
-#define drop_jit_beqi_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_beqi_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_beqr_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_beqr_ui(O1, O2, O3); dummy = dummy; }
-
-#define drop_jit_bnei_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bnei_ui(O1, O2, O3); dummy = dummy; }
-#define drop_jit_bner_ui(O1, O2, O3) \
-  { jit_insn *dummy = jit_bner_ui(O1, O2, O3); dummy = dummy; }
 
 extern "C" {
   void disassemble(std::FILE *, char *, char *);
@@ -96,7 +58,7 @@ protected:
   // Position independent procedure call and restore caller-saved registers
   // Side-Effect: Result is returned in JIT_R0
   void Call(u_int nbArgs, void *proc) {
-    jit_movi_p(JIT_R0, proc);
+    (void) jit_movi_p(JIT_R0, proc);
     if (nbArgs != 0) {
       jit_callr(JIT_R0);
       // TODO: Find correct platform test
@@ -191,7 +153,7 @@ protected:
     jit_insn *succeeded = jit_bltr_p(jit_forward(), Ptr, JIT_MYFP);
     Prepare(0);
     Finish((void *) JITStore::AllocHeapChunk);
-    drop_jit_jmpi(loop);
+    (void) jit_jmpi(loop);
     jit_patch(succeeded);
     jit_str_p(JIT_R0, Ptr);
     jit_subi_p(Ptr, Ptr, size);
@@ -217,7 +179,7 @@ public:
     u_int tag = REF_LABEL << TAG_SHIFT;
     jit_insn *unbound_transient = jit_bnei_ui(jit_forward(), JIT_R0, tag);
     jit_ldxi_p(Ptr, Ptr, 1 * sizeof(word));
-    drop_jit_jmpi(loop); // Continue deref
+    (void) jit_jmpi(loop);
     jit_patch(unbound_transient);
     jit_xori_ui(Ptr, Ptr, TRTAG); // Restore tag
     jit_patch(no_transient);
@@ -260,7 +222,7 @@ public:
     u_int tag = REF_LABEL << TAG_SHIFT;
     ref[0] = jit_bnei_ui(jit_forward(), JIT_R0, tag); // Transient branch
     jit_ldxi_p(Ptr, Ptr, 1 * sizeof(word));
-    drop_jit_jmpi(loop); // Continue deref
+    (void) jit_jmpi(loop);
     jit_patch(no_transient);
     ref[1] = jit_beqi_ui(jit_forward(), JIT_R0, BLKTAG); // Block Branch
   }
@@ -281,7 +243,7 @@ public:
     u_int tag = REF_LABEL << TAG_SHIFT;
     ref[0] = jit_bnei_ui(jit_forward(), JIT_R0, tag); // Transient branch
     jit_ldxi_p(Ptr, Ptr, 1 * sizeof(word));
-    drop_jit_jmpi(loop); // Continue deref
+    (void) jit_jmpi(loop);
   }
   void SetTransientTag(u_int Ptr) {
     jit_xori_ui(Ptr, Ptr, TRTAG);

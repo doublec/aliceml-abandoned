@@ -110,7 +110,7 @@ public:
     jit_insn *succeeded = jit_bltr_p(jit_forward(), Dest, JIT_R0);
     JITStore::Prepare(0);
     JITStore::Finish((void *) Scheduler::EnlargeTaskStack);
-    drop_jit_jmpi(loop);
+    (void) jit_jmpi(loop);
     jit_patch(succeeded);
     jit_sti_p(&Scheduler::stackTop, Dest);
 #endif
@@ -172,14 +172,14 @@ public:
   void StackFrame_New(u_int This, u_int size, Worker *worker) {
     u_int frSize = STACKFRAME_BASE_SIZE + size;
     Scheduler_PushFrame(This, frSize);
-    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+    (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(This, STACKFRAME_WORKER_POS, JIT_R0);
   }
   // Side Effect: Scratches JIT_R0
   void StackFrame_NewNoCheck(u_int This, u_int size, Worker *worker) {
     u_int frSize = STACKFRAME_BASE_SIZE + size;
     Scheduler_PushFrameNoCheck(This, frSize);
-    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+    (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(This, STACKFRAME_WORKER_POS, JIT_R0);
   }
   // Side Effect: Scratches JIT_R0
@@ -188,14 +188,14 @@ public:
     Scheduler_PopAndPushFrame(This,
 			      STACKFRAME_BASE_SIZE + oldSize,
 			      STACKFRAME_BASE_SIZE + newSize);
-    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+    (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(This, STACKFRAME_WORKER_POS, JIT_R0);
   }
   void StackFrame_GetWorkerW(u_int Dest, u_int This) {
     StackFrame_GetArg(Dest, This, STACKFRAME_WORKER_POS);
   }
   void StackFrame_PutWorker(u_int Dest, Worker *worker) {
-    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
+    (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(worker));
     StackFrame_InitArg(Dest, STACKFRAME_WORKER_POS, JIT_R0);
   }
   void StackFrame_Sel(u_int Dest, u_int This, u_int pos) {
@@ -261,7 +261,7 @@ public:
     JITStore::AllocBlock(This, CONCRETE_LABEL,
 			 CONCRETEREPRESENTATION_BASE_SIZE + size);
     ConcreteRepresentationHandler *handler = interpreter;
-    jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(handler));
+    (void) jit_movi_p(JIT_R0, Store::UnmanagedPointerToWord(handler));
     JITStore::InitArg(This, CONCRETEREPRESENTATION_HANDLER_POS, JIT_R0);
   }
   void ConcreteCode_Sel(u_int Dest, u_int This, u_int pos) {
@@ -275,7 +275,7 @@ public:
   void Hole_New(u_int This) {
     JITStore::AllocTransient(This, HOLE_LABEL);
     // no associated future
-    jit_movi_p(JIT_R0, Store::IntToWord(0));
+    (void) jit_movi_p(JIT_R0, Store::IntToWord(0));
     JITStore::InitArg(This, TRANSIENT_REF_POS, JIT_R0);
   }
 
