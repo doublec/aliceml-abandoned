@@ -190,6 +190,42 @@ structure TestSuite :
 	
 		val vSelectUnion1 = vSelectSomething1 vUnionN1
 		val vSelectInter1 = vSelectSomething1 vInterN1
+		
+		
+		(*
+		 *Counters for IntInf based verifiers
+		 *
+		 *)
+		 
+		 	fun b2II b = if b then IntInf.fromInt 1 else IntInf.fromInt 0
+			
+			val one = IntInf.fromInt 1
+			val zero = IntInf.fromInt 0
+			
+			fun countTernaryVerifier1 (max, (a,b,c), v, acc) =
+			let
+				val acc = (b2II (v(a,b,c))) + acc
+			in
+				if (a < max) then countTernaryVerifier1 (max, (a+one,b,c), v, acc)
+				else if (b < max) then countTernaryVerifier1 (max, (zero,b+one,c), v, acc)
+					else if (c < max) then countTernaryVerifier1 (max, (zero,zero,c+one), v, acc)			
+						else acc
+			end
+		
+			fun countTernaryVerifier(max,v) = countTernaryVerifier1(IntInf.fromInt max, (zero,zero,zero), v, zero)
+		
+			fun countBinaryVerifier1 (max, (a,b), v, acc) =
+			let
+				val acc = (b2II (v(a,b))) + acc
+			in
+				if (a < max) then countBinaryVerifier1 (max, (a+one,b), v, acc)
+				else if (b < max) then countBinaryVerifier1 (max, (zero,b+one), v, acc)
+					else acc
+			end
+		
+			fun countBinaryVerifier(max,v) = countBinaryVerifier1(IntInf.fromInt max, (zero,zero), v, zero)
+		 
+		 
 
 
         (*
