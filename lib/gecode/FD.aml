@@ -55,8 +55,8 @@ struct
 
    open UnsafeGecode
 
-   type 'problem fdvar
-   type 'problem boolvar
+   type fdvar
+   type boolvar
 
    datatype domain_element =
 	    SINGLE of int
