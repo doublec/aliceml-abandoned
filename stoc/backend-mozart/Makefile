@@ -3,7 +3,7 @@
 FUNCTORS = Builtins.ozf Prebound.ozf \
 	CodeStore.ozf CodeGen.ozf Assembler.ozf Main.ozf
 
-#OZCFLAGS = -p
+OZCFLAGS = -p
 
 .oz.ozf:
 	ozc $(OZCFLAGS) -c $< -o $@

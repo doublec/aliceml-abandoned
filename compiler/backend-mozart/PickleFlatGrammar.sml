@@ -145,10 +145,10 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputVector (outputPair (outputLabel, outputIdDef))
 	     (q, labelIdDefVec);
 	     outputStmInfo (q, info))
-	  | outputStm (q, TryStm (info, tryBody, idDef, handleBody)) =
-	    (outputTuple (q, "TryStm", 4); outputBody (q, handleBody);
-	     outputIdDef (q, idDef); outputBody (q, tryBody);
-	     outputStmInfo (q, info))
+	  | outputStm (q, TryStm (info, tryBody, idDef1, idDef2, handleBody)) =
+	    (outputTuple (q, "TryStm", 5); outputBody (q, handleBody);
+	     outputIdDef (q, idDef2); outputIdDef (q, idDef1);
+	     outputBody (q, tryBody); outputStmInfo (q, info))
 	  | outputStm (q, EndTryStm (info, body)) =
 	    (outputTuple (q, "EndTryStm", 2); outputBody (q, body);
 	     outputStmInfo (q, info))

@@ -20,12 +20,12 @@ export
    RaiseAliceException
    UnwrapAliceException
 define
-   proc {RaiseAliceException E}
-      {Exception.'raiseError' alice(E)}
+   proc {RaiseAliceException E Coord}
+      {Exception.'raiseError' alice(E Coord)}
    end
 
    fun {UnwrapAliceException E}
-      case E of error(alice(InnerE) ...) then InnerE
+      case E of error(alice(InnerE ...) ...) then InnerE
       else {Exception.'raise' E} unit
       end
    end
@@ -72,7 +72,9 @@ define
 	 fun {$ N Init}
 	    if 0 =< N andthen N < BuiltinTable.'Array.maxLen' then
 	       {Array.new 0 N - 1 Init}
-	    else {RaiseAliceException BuiltinTable.'General.Size'} unit
+	    else
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Size')}
+	       unit
 	    end
 	 end
       'Array.fromList':
@@ -90,7 +92,8 @@ define
 	    try
 	       {Array.get A I}
 	    catch error(kernel(array ...) ...) then
-	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Subscript')}
+	       unit
 	    end
 	 end
       'Array.update':
@@ -98,7 +101,7 @@ define
 	    try
 	       {Array.put A I X}
 	    catch error(kernel(array ...) ...) then
-	       {RaiseAliceException BuiltinTable.'General.Subscript'}
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Subscript')}
 	    end
 	    unit
 	 end
@@ -111,7 +114,9 @@ define
       'Char.chr':
 	 fun {$ C}
 	    if {Char.is C} then C
-	    else {RaiseAliceException BuiltinTable.'General.Chr'} unit
+	    else
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Chr')}
+	       unit
 	    end
 	 end
       'Char.isAlpha': Char.isAlpha
@@ -197,19 +202,20 @@ define
 	    try
 	       X = {Value.byNeedFail error(alice(FutureException(E)))}
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'Hole.Hole'}
+	       {Exception.'raiseError' alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    unit
 	 end
       'Hole.fill':
 	 fun {$ X Y}
 	    if {IsDet X} then   %--** test and bind must be atomic
-	       {RaiseAliceException BuiltinTable.'Hole.Hole'}
+	       {Exception.'raiseError' alice(BuiltinTable.'Hole.Hole')}
 	    end
 	    try
 	       X = Y
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'Hole.Hole'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'Hole.Hole')}
+	       unit
 	    end
 	 end
       'Hole.future':
@@ -249,7 +255,8 @@ define
 		  (X1 - X2 - 1) div X2
 	       end
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Int.maxInt': 'NONE'
@@ -269,7 +276,8 @@ define
 		  end
 	       end
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Int.precision': 'NONE'
@@ -278,7 +286,8 @@ define
 	    try
 	       X1 div X2
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Int.rem':
@@ -286,7 +295,8 @@ define
 	    try
 	       X1 mod X2
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Int.toString':
@@ -369,7 +379,8 @@ define
 	    try
 	       {ByteString.get S I}
 	    catch system(kernel('ByteString.get' ...) ...) then
-	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Subscript')}
+	       unit
 	    end
 	 end
       'String.substring':
@@ -377,7 +388,8 @@ define
 	    try
 	       {ByteString.slice S I I + J}
 	    catch system(kernel('ByteString.slice' ...) ...) then
-	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Subscript')}
+	       unit
 	    end
 	 end
       'String.str':
@@ -418,7 +430,8 @@ define
 	    try
 	       V.(I + 1)
 	    catch error(kernel('.' ...) ...) then
-	       {RaiseAliceException BuiltinTable.'General.Subscript'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Subscript')}
+	       unit
 	    end
 	 end
       'Vector.tabulate':
@@ -426,7 +439,7 @@ define
 	    try
 	       V = {Tuple.make '#[]' N}
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Size'}
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Size')}
 	    end
 	    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
 	    V
@@ -443,7 +456,8 @@ define
 	    try
 	       {BootWord.'div' W1 W2}
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Word.fromInt\'': BootWord.make
@@ -452,7 +466,8 @@ define
 	    try
 	       {BootWord.'mod' W1 W2}
 	    catch _ then
-	       {RaiseAliceException BuiltinTable.'General.Div'} unit
+	       {Exception.'raiseError' alice(BuiltinTable.'General.Div')}
+	       unit
 	    end
 	 end
       'Word.notb': BootWord.notb

@@ -145,13 +145,13 @@ define
 	     VHd = vGetVariable(_ {MakeReg IdDef State} VTl)
 	  end ThenVInstr VInter}
 	 VInter = {TranslateBody Body State ReturnReg IsTry}
-      [] ['TryStm'(Region TryBody IdDef HandleBody)]
+      [] ['TryStm'(Region TryBody IdDef1 IdDef2 HandleBody)]
       then Reg1 Coord TryVInstr HandleVInstr Reg2 HandleVInter in
-	 {State.cs newReg(?Reg1)}
+	 Reg1 = {MakeReg IdDef1 State}
 	 Coord = {TranslateRegion Region State}
 	 VHd = vExHandler(_ TryVInstr Reg1 HandleVInstr Coord nil _)
 	 TryVInstr = {TranslateBody TryBody State ReturnReg true|IsTry}
-	 Reg2 = {MakeReg IdDef State}
+	 Reg2 = {MakeReg IdDef2 State}
 	 HandleVInstr = vCallConstant(_ UnwrapAliceException
 				      [Reg1 Reg2] Coord HandleVInter)
 	 HandleVInter = {TranslateBody HandleBody State ReturnReg IsTry}
@@ -279,26 +279,36 @@ define
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
 		      {TranslateRegion Region State} nil)
 	 Matches = {Record.foldR VecBodyVec
-		    fun {$ IdDefs#Body In} ThenVInstr0 ThenVInstr in
-		       {Record.foldL IdDefs
-			proc {$ VHd IdDef VTl}
-			   VHd = vGetVariable(_ {MakeReg IdDef State} VTl)
-			end ThenVInstr0 ThenVInstr}
-		       ThenVInstr = {TranslateBody Body State ReturnReg IsTry}
-		       onRecord('#[]' {Width IdDefs} ThenVInstr0)|In
+		    fun {$ IdDefs#Body In}
+		       case IdDefs of '#[]' then ThenVInstr in
+			  ThenVInstr = {TranslateBody Body State ReturnReg
+					IsTry}
+			  onScalar('#[]' ThenVInstr)|In
+		       else ThenVInstr0 ThenVInstr in
+			  {Record.foldL IdDefs
+			   proc {$ VHd IdDef VTl}
+			      VHd = vGetVariable(_ {MakeReg IdDef State} VTl)
+			   end ThenVInstr0 ThenVInstr}
+			  ThenVInstr = {TranslateBody Body State ReturnReg
+					IsTry}
+			  onRecord('#[]' {Width IdDefs} ThenVInstr0)|In
+		       end
 		    end nil}
 	 ElseVInstr = {TranslateBody ElseBody State ReturnReg IsTry}
-      [] ['RaiseStm'(Region Id)] then Coord VInter in
+      [] ['RaiseStm'(Region Id)] then Coord CoordReg VInter1 VInter2 in
 	 Coord = {TranslateRegion Region State}
-	 VHd = vCallConstant(_ RaiseAliceException [{GetReg Id State}]
-			     Coord VInter)
-	 VInter = if IsTry.1 then vPopEx(_ Coord nil)
-		  else nil
-		  end
+	 {State.cs newReg(?CoordReg)}
+	 VHd = vEquateConstant(_ Coord CoordReg VInter1)
+	 VInter1 = vCallConstant(_ RaiseAliceException
+				 [{GetReg Id State} CoordReg] Coord VInter2)
+	 VInter2 = if IsTry.1 then vPopEx(_ Coord nil)
+		   else nil
+		   end
       [] ['ReraiseStm'(Region Id)] then Coord VInter in
+	 %--** Mozart does not update the stack trace
 	 Coord = {TranslateRegion Region State}
-	 VHd = vCallConstant(_ RaiseAliceException [{GetReg Id State}]
-			     Coord VInter)
+	 VHd = vCallBuiltin(_ 'Exception.\'raise\'' [{GetReg Id State}]
+			    Coord VInter)
 	 VInter = if IsTry.1 then vPopEx(_ Coord nil)
 		  else nil
 		  end
