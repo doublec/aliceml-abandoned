@@ -34,24 +34,24 @@ public:
   // Worker Constructor
   Worker() {}
   // Calling Convention Conversion
-  static SeamDll void Construct();
+  static SeamMemberDll void Construct();
   //   Deconstruct returns 1 iff argument needs to be requested,
   //   in which case it sets Scheduler::currentData as a side-effect;
   //   returns 0 iff deconstruction was immediately successful
-  static SeamDll u_int Deconstruct();
+  static SeamMemberDll u_int Deconstruct();
   // Frame Handling
   virtual u_int GetFrameSize(StackFrame *sFrame) = 0;
-  virtual SeamDll void PurgeFrame(StackFrame *sFrame);
+  virtual SeamMemberDll void PurgeFrame(StackFrame *sFrame);
   // Execution
   virtual Result Run(StackFrame *sFrame) = 0;
-  virtual SeamDll Result Handle(word data);
+  virtual SeamMemberDll Result Handle(word data);
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(StackFrame *sFrame) = 0;
 #if PROFILE
   // Profiling
-  virtual SeamDll word GetProfileKey(StackFrame *sFrame);
-  virtual SeamDll String *GetProfileName(StackFrame *sFrame);
+  virtual SeamMemberDll word GetProfileKey(StackFrame *sFrame);
+  virtual SeamMemberDll String *GetProfileName(StackFrame *sFrame);
 #endif
 };
 

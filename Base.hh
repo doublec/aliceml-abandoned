@@ -41,6 +41,13 @@
 # define SeamDll
 #endif
 
+// We surely have a ms compiler (-Ze option enabled)
+#if defined(_MSC_EXTENSIONS)
+#define SeamMemberDll
+#else
+#define SeamMemberDll SeamDll
+#endif
+
 SeamDll void AssertOutline(const char *file, int line, const char *message);
 
 #define AssertBase(cond, message)				\

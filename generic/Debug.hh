@@ -24,7 +24,8 @@
 
 class SeamDll Debug {
 public:
-  static u_int maxWidth, maxDepth;
+  static u_int maxWidth;
+  static u_int maxDepth;
   static void Dump(word x);
   static void DumpTo(FILE *file, word x);
 };

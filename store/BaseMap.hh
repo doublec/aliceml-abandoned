@@ -55,14 +55,14 @@ protected:
   }
   MapNode *FindKey(word key, word nodes, word & prev);
   void RemoveEntry(u_int i, word prev, MapNode *node);
-  SeamDll void Resize();
+  SeamMemberDll void Resize();
 public:
-  SeamDll void Put(word key, word value);
-  SeamDll void Remove(word key);
+  SeamMemberDll void Put(word key, word value);
+  SeamMemberDll void Remove(word key);
 
-  SeamDll bool IsMember(word key);
-  SeamDll word Get(word key);
-  SeamDll word CondGet(word key, word alternative); 
+  SeamMemberDll bool IsMember(word key);
+  SeamMemberDll word Get(word key);
+  SeamMemberDll word CondGet(word key, word alternative); 
 
   u_int GetSize() {
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
@@ -82,7 +82,7 @@ public:
 
   void Apply(item_apply func);
 
-  static SeamDll BaseMap<T> *New(BlockLabel l, u_int size);
+  static SeamMemberDll BaseMap<T> *New(BlockLabel l, u_int size);
 };
 
 #endif

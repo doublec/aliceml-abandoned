@@ -24,7 +24,8 @@ class StackFrame;
 class SeamDll TaskStack: private DynamicBlock {
 private:
   static const u_int INITIAL_SIZE = 20;
-  static word emptyTask, emptyStack;
+  static word emptyTask;
+  static word emptyStack;
 public:
   static const u_int initialNumberOfFrames = 1;
 

@@ -66,7 +66,7 @@ public:
   void ReplaceArg(u_int pos, s_int value) {
     InitArg(pos, value);
   }
-  SeamDll word Clone();
+  SeamMemberDll word Clone();
 };
 
 // to be done: better solution

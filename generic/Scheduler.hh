@@ -42,7 +42,8 @@ public:
 
   // Scheduler public data
   static TaskStack *currentTaskStack; // Task stack
-  static word *stackTop, *stackMax;   // Task stack top and max
+  static word *stackTop;              // Task stack top
+  static word *stackMax;              // Task stack max
   static u_int nArgs;                 // Number of arguments
   static word currentArgs[maxArgs];   // Arguments
   static word currentData;            // Transient or exception

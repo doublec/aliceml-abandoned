@@ -22,7 +22,7 @@
 
 class SeamDll ConcreteCode: private ConcreteRepresentation {
 public:
-  using Block::ToWord;
+  using ConcreteRepresentation::ToWord;
   using ConcreteRepresentation::Init;
   using ConcreteRepresentation::Get;
 
