@@ -1,4 +1,16 @@
-#include "emulator/Authoring.hh"
+//
+// Author:
+//   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+//
+// Copyright:
+//   Thorsten Brunklaus, 2002
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
+#include "alice/primitives/Authoring.hh"
 
 DEFINE2(Ref_assign) {
   DECLARE_CELL(cell, x0);

@@ -3,14 +3,14 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 void PrimitiveTable::RegisterOption() {
   RegisterUniqueConstructor("Option.Option");

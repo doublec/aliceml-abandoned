@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000
+//   Leif Kornstaedt, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -14,7 +14,7 @@
 
 #include <cmath>
 #include <cstdio>
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 #define REAL_TO_REAL(name, op)				\
   DEFINE1(name) {					\
