@@ -139,6 +139,17 @@ struct
 				    => if checkConcKids (#kids(r),0)
 	                                 then true
 				       else checkContKids (a,i+1)
+			   (* 	  | RelNode(r) 
+				    => if !(#counter(r)) = 1 
+					   then (case !(#content(r)) of 
+						 Concat(rr)  
+					         => if checkConcKids 
+						            (#kids(rr),0) 
+							then true 
+						    else checkContKids (a,i+1) 
+					       | Container(rr) => true 
+					       | _ => checkContKids (a,i+1) ) 
+				       else checkContKids (a,i+1) *)
 				  | _ => checkContKids (a,i+1) )
 
     and checkConcKids (a,i) = if i >=  Array.length(a) 
@@ -149,6 +160,17 @@ struct
                                     => if checkConcKids(#kids(r),0)
 					   then true
 				       else checkConcKids (a,i+1)
+                            (*      | RelNode(r) 
+                                    => if !(#counter(r)) = 1 
+					   then (case !(#content(r)) of 
+						 Concat(rr)  
+						 => if checkConcKids 
+						            (#kids(rr),0) 
+							then true 
+						    else checkConcKids (a,i+1) 
+					       | Container(rr) => true 
+					       | _ => checkConcKids (a,i+1) ) 
+				       else checkConcKids (a,i+1) *)
                                   | _ => checkConcKids (a,i+1) )
 
    and setsVertical n = case n of
@@ -191,6 +213,7 @@ struct
 		  then a
 	      else iterTake' (str,i+1, String.append(a,Char.toString(test)))
 	   end  
+
 end
 
 end

@@ -34,11 +34,11 @@ struct
 			    val n = NewNode.newNode(v,t)
 			in
 			    ( Layout.layout(n)
-                            ;  DrawNodes.draw(n,0,!WindowManager.act_line)
-                            ; WindowManager.incr_act_line
-			                     (Layout.get_ydim(n) + 1)
-			    ; (!WindowManager.show) () )
-			end
+			     ;  DrawNodes.draw(n,0,!WindowManager.act_line)
+			     ; WindowManager.incr_act_line
+			             (Layout.get_ydim(n) + 1)
+			     ; (!WindowManager.show) () )
+			end 
 			    
     fun set_width w = Settings.max_width := w
 

@@ -7,12 +7,24 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 UnsafeInspector.init();
 
 (* Testen des Relationsmodus *)
+
+(***)
+
 UnsafeInspector.set_relmode true;
 
-structure EList = Reflect.ReflectType ( type t = (int * int) * (int * int));
+structure EList = Reflect.ReflectType 
+    ( type t = ((int * int) * (int * int)) list );
 val e_list = EList.x;
 
-UnsafeInspector.inspect (((2,2),(2,2)),e_list);
+UnsafeInspector.inspect ([((2,2),(2,2)),((2,3),(2,3))],e_list);
+
+structure EVect = Reflect.ReflectType
+    ( type t = int vector vector);
+val e_vect = EVect.x;
+
+UnsafeInspector.inspect (#[#[1,2],#[1,2]],e_vect);
+
+(***)
 
 (* Interger *)
 structure SInt = Reflect.ReflectType ( type t = int);
@@ -89,7 +101,7 @@ UnsafeInspector.inspect (B (4,4), t_S);
 UnsafeInspector.inspect (C #[5.0,7.0], t_S);
 UnsafeInspector.inspect (D A, t_S);
 UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);
-UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
+UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0],#[1.0,2.0]], t_S);
 
 (* Liste *)
 structure Liste = Reflect.ReflectType

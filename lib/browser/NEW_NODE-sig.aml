@@ -68,7 +68,7 @@ sig
 	Reflect.value * Type.t * node * int * int *  Path.path -> node
     
     val docToNode: doc * node * int * int -> node
-    
+
     val createSimple: 
         desc * node * int * string * color_class * (node -> Gtk.object) 
 	-> node

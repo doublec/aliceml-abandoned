@@ -26,7 +26,7 @@ structure Layout :> LAYOUT =
 struct
 
     exception LayoutError
-
+(*
     fun findAdequ n = let val ind = getAncIndex n
 			  val relman = RelManDictionary.return(ind,
 							       NewNode.reldict)
@@ -37,7 +37,7 @@ struct
 			                  relman of
 			  NONE => Empty 
                         | SOME x => x)
-		      end 
+		      end    *)
 
     fun sum_up (li,f,g) = if List.length(li) = 0
 			      then 0
@@ -124,14 +124,10 @@ struct
 			       then max (li,calc_xdim) 
 			   else sum_up (li,calc_xdim,calc_l_xdim) 
 			end
-      | RelNode(r) => (case findAdequ n of
-		       RelNode(rr) 
-		       =>if !(#counter(rr)) = 1
-			     then String.length(#rep(r)) + 
-				  calc_xdim (!(#content(r)))
-			 else calc_xdim (!(#content(r)))
-                     | _ => calc_xdim (!(#content(r))) )
-
+     | RelNode(r) => if !(#counter(r)) = 1 
+			 then calc_xdim (!(#content(r))) 
+		     else String.length(#rep(r)) + 
+			 calc_xdim (!(#content(r)))  
       | RelRefNode(r) => !(#width(r))
       | Limit(r) => 1
       | Empty => 0

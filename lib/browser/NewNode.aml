@@ -48,17 +48,22 @@ struct
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
                             val i = MainDictionary.insert(Empty,dict)
 			    val _ = RelManDictionary.update(i,reldict,nil)
+                            val _ = relnumber := 0
 			    val node =  createGraph (va,t,Empty,i,0)
 			in (MainDictionary.insert(node,dict) ; node)
 			end
   
     (* createGraph *)
     and createGraph (va,t,p,i,d) = 
-	if !relmode 
-	    then let val ind = if p = Empty then i else getAncIndex p
+	if !relmode  
+	    then if Type.isCon t 
+		 orelse (Type.isApply t
+                         andalso Type.isCon(#1(Type.asApply(t))) )
+		     then createUsualGraph (va,t,p,i,d)
+		 else
+		 let val ind = if p = Empty then i else getAncIndex p
                      val relman = RelManDictionary.return(ind,reldict)
-                     val l = List.length(relman)
-                     val str = "Ref"^Int.toString(l)
+                     val str = "Ref"^Int.toString(!relnumber)
 		 in 
 		     (case List.find (fn x   
 				     => if getDesc(x) = INTERPUNCT  
@@ -69,28 +74,37 @@ struct
 		      => let val desc = createValue(va,t,NO_ACTIONS)   
 			     val node =     
 				 createRelNode (desc,Empty,p,i,str^" as ",
-						relman,setGroup)   
-			     val c = createUsualGraph (va,t,node,0,d)   
+						relman,setGroup) 
+			     val _ = relnumber := (!relnumber) + 1 
+			     val c = createUsualGraph (va,t,node,0,d)  
 			 in ( case c of    
 			          Simple(_) => c
                                 | Empty => c    
                                 | _ => ( setContent (node,c)   
 					; RelManDictionary.update(ind,
-					       		     reldict, 
+								  reldict, 
 					        List.append([node],relman))
 					; node ) )
 			 end      
 		    | SOME n => let val rep = ( case n of 
 					        RelNode(rr) => #rep(rr)
-                                              | _ => "")
-				    val str = iterTake rep		       
+					      | _ => "")
+				    val str = iterTake rep	
+				    val m = incrCounter n 
 				    val node = 
-			            createRelRefNode (INTERPUNCT,p,i,
-						      str,n,setGroup)
-                                in (incrCounter n
-				   ; node)
+					createRelRefNode (INTERPUNCT,p,i,
+							  str,m,setGroup)
+				    val actrelman = 
+					RelManDictionary.return(ind,reldict)
+				    val part = List.partition (fn x => x = n)
+					                      actrelman
+				    val restlist = #1(part)
+				in (RelManDictionary.update(ind,
+							    reldict,
+					         List.append([m],restlist))
+                                    ; node)
 				end)
-		 end  
+		 end
 	else createUsualGraph (va,t,p,i,d)
 
     (* createUsualGraph *)
@@ -164,13 +178,13 @@ struct
 		       val rbra = createSimple (INTERPUNCT,concat,2,
 						"]",BRACK_COLOR,setGroup)
 		       val cont = createContainer (desc,concat,1,na,~1,~1,~1,
-						   setGroup)
-		       val last = let val inva = UnsafeValue.cast(List.last(l))
-		                         : Reflect.value
-				  in createGraph(inva,inty,cont,length-1,d+1)
-				  end      		   
+						   setGroup)	   
 		       val nodearray = listElemArray(List.take(l,length-1),
 						     length-1,inty,cont,d,b)
+		       val last = let val inva = UnsafeValue.cast(List.last(l))
+			                         : Reflect.value
+				  in createGraph(inva,inty,cont,length-1,d+1)
+				  end      	
 		   in ( Array.update(na,length-1,last)
                       ; copyArray(nodearray,na)
 		      ; Array.update(getKids(concat),0,lbra)
@@ -182,9 +196,9 @@ struct
     
     (* ListElemArray *)
     and listElemArray(list,length,listtyp,p,d,b) = 
-	let val rl = ref (length - 1)
+	let val rl = ref 0
 	    val na = Array.array(length,Empty)
-	in ( while !rl >= 0 do
+	in ( while !rl < length do
             (let val concat = createConcat(INTERPUNCT,p,!rl,
 					   Array.array(2,Empty),
                                            ~1,~1,setGroup) 
@@ -197,7 +211,7 @@ struct
 	     in ( Array.update(getKids(concat),0,elem)
                 ; Array.update(getKids(concat),1,sep)
                 ; Array.update(na,!rl,concat))
-	     end ; rl := !rl - 1)
+	     end ; rl := !rl + 1)
 	   ; na )
 	end
                                              
@@ -366,9 +380,54 @@ struct
 	   NONE => if d > !max_depth
 		       then createLimit(INTERPUNCT,DEPTH_LIMIT,p,i,d,setGroup)
 		   else createSimple(INTERPUNCT,p,i,"_",DEFAULT,setGroup)
-         | SOME create => let val doc = create (!max_width,d,v,t)
-                          in docToNode (doc,p,i,d) 
-			  end )
+         | SOME create 
+	   => let val doc = create (!max_width,d,v,t)
+	      in if !relmode
+		     then let val ind = if p = Empty then i else getAncIndex p
+			      val relman = RelManDictionary.return(ind,reldict)
+			      val str = "Ref"^Int.toString(!relnumber)
+			  in 
+			      (case List.find 
+				   (fn x => if getDesc(x) = INTERPUNCT  
+						then false  
+					    else getValue(getDesc(x)) = v)  
+				   relman of   
+			       NONE 
+			       => let val desc = createValue(v,t,NO_ACTIONS)
+				      val node =     
+				      createRelNode (desc,Empty,p,i,str^" as ",
+						     relman,setGroup) 
+				      val _ = relnumber := (!relnumber) + 1 
+				      val c = docToNode(doc,node,0,d)
+				  in ( case c of    
+				      Simple(_) => c
+				    | Empty => c    
+				    | _ => ( setContent (node,c)   
+					    ; RelManDictionary.update(ind,
+								      reldict, 
+						    List.append([node],relman))
+					    ; node ) )
+				  end      
+			     | SOME n => let val rep = ( case n of 
+							RelNode(rr) => #rep(rr)
+						      | _ => "")
+					     val str = iterTake rep	
+					     val m = incrCounter n
+					     val node = 
+					     createRelRefNode (INTERPUNCT,p,i,
+							       str,m,setGroup)
+					     val part = 
+						 List.partition (fn x => x = n)
+						                relman
+					     val restlist = #1(part)
+					 in (RelManDictionary.update(ind,
+								     reldict,
+						   List.append([m],restlist))
+					     ; node)
+					 end)
+			  end   
+		 else docToNode (doc,p,i,d) 
+	      end )
 
     (* docToNode *)
     and docToNode (doc,p,i,d) =
@@ -413,13 +472,14 @@ struct
 						 Empty)
                             val concat = createConcat(#desc(r),p,i,na,~1,~1,
 						      setGroup)
-                            val rl = ref (Vector.length(#kids(r)) - 1)
-			in (while !rl >= 0 do
+                            val rl = ref 0
+			in (while !rl <= (Vector.length(#kids(r)) - 1) do
 			    (Array.update(na,
 					  !rl,
-					  docToNode(Vector.sub(#kids(r),!rl),
-						    concat,!rl,d))
-			     ; rl := !rl - 1)
+					  docToNode(Vector.sub(#kids(r),
+								   !rl),
+							concat,!rl,d))
+			     ; rl := !rl + 1)
 			    ; concat)
 			end
          | CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
@@ -427,19 +487,19 @@ struct
                                val container = createContainer(#desc(r),p,i,
                                                                na,~1,~1,~1,
 							       setGroup)
-			       val rl = ref (Vector.length(#kids(r)) - 1)
-			   in (while !rl >= 0 do
+			       val rl = ref 0
+			   in (while !rl <= (Vector.length(#kids(r)) - 1) do
 			       (Array.update(na,
 					     !rl,
 					     docToNode(Vector.sub(#kids(r),
 								  !rl),
 						       container,!rl,d+1))
-				; rl := !rl - 1)
+				; rl := !rl + 1)
 			       ; container)
 			   end
          | LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
          | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
-		
+
     (* createSimple *) 
     and createSimple (desc,p,i,str,color,f) = Simple {desc = desc, 
 						      parent = p,

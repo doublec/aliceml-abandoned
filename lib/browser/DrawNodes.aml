@@ -181,13 +181,10 @@ struct
 			      | _ => let val (new_x,new_y) = atomDraw (n,x,y)
 				     in draw (!(#content(r)),new_x,new_y)
 				     end)
-		      else (case findAdequ n of
-                            RelNode(rr) 
-                            => if !(#counter(rr)) = 1
-				   then (x+get_xdim(!(#content(r))),
-					 y+get_ydim(!(#content(r))) )
-			       else (x+get_xdim(n),y+get_ydim(n))
-                          | _ => (x+get_xdim(n),y+get_ydim(n)) )
+		      else if !(#counter(r)) = 1
+			       then (x+get_xdim(!(#content(r))),
+				     y+get_ydim(!(#content(r))) )
+			   else (x+get_xdim(n),y+get_ydim(n))
       | _ => raise DrawError
 
     (* drawRelRefNode *)
