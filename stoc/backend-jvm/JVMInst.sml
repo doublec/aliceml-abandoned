@@ -1,9 +1,10 @@
 structure JVMInst =
     struct
 	type label = string
-	and classname = string
-	and fieldname = string
-	and methodname = string;
+	type classname = string
+	type fieldname = string
+	type methodname = string
+	type stamp = IntermediateGrammar.stamp
 	datatype ARG =
 	    Arraysig
 	  | Boolsig
@@ -37,19 +38,20 @@ structure JVMInst =
 	  | Dup
 	  | Fconst of int
 	  | Getfield of fieldname * classname * int (* int is dimension. 0 if no array *)
-	  | Getself
+	  | Getself of string
 	  | Getstatic of fieldname * classname * int (* int is dimension. 0 if no array *)
 	  | Goto of label
 	  | Iadd
 	  | Iconst of int
 	  | Ifacmpeq of label
 	  | Ifacmpne of label
-	  | Ificmpeq of label
-	  | Ificmpne of label
 	  | Ifeq  of label
+	  | Ificmpeq of label
 	  | Ificmplt of label
+	  | Ificmpne of label
 	  | Ifneq of label
 	  | Ifnull of label
+	  | Ifstatic of (stamp * INSTRUCTION list * INSTRUCTION list)
 	  | Iload of int
 	  | Instanceof of classname
 	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
@@ -77,7 +79,7 @@ structure JVMInst =
 	and
 	    METHOD =
 	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * LIMITS *
-	    INSTRUCTION list * INSTRUCTION list
+	    INSTRUCTION list * INSTRUCTION list * bool
 	and
 	    FIELDTYPE =
 	    Classtype of classname * int (* int is dimension. 0, if no array *)

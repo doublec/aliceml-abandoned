@@ -22,6 +22,7 @@ structure CodeGen =
 	open JVMInst
 	open ToJasmin
 	open Abbrev
+	open Backend
 
 	val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
@@ -42,20 +43,6 @@ structure CodeGen =
 	  | Exp of exp
 	exception Debug of deb
 
-	(* Hashtabelle für Stamps. *)
-	structure StampHash = MakeHashImpMap(type t=stamp val hash=Stamp.hash)
-
-	(* Scoped Sets für Stamps. Wird zur Berechnung der freien
-	 Variablen benutzt. *)
-	structure ScopedStampSet = MakeHashScopedImpSet(type t=stamp val hash=Stamp.hash)
-
-	(* Hashtabelle für Listen von Strings. Wird benötigt bei der
-	 statischen Berechnung der Recordaritäten. *)
-	structure StringListHash = MakeHashImpMap(StringListHashKey)
-
-	(* Hashtabelle für Integers. Wird benötigt zum statischen
-	 Generieren von Integerkonstanten. *)
-	structure IntHash = MakeHashImpMap (type t=int fun hash n=n)
 
 	(* Labelzähler, aNewLabel liefert einen neuen String "label?", ? ist Zahl.
 	 Den ersten Stack brauchen wir, damit für jede Klasse wieder bei label1
@@ -88,8 +75,6 @@ structure CodeGen =
 
 	(* Dieser Label steht am Ende der Registerinitialisierung von Methoden. *)
 	val afterInit = "labelAfterInit"
-
-	val toplevel = Stamp.new()
 
 	(* Lokales JVM-Register, in dem das Übersetzungsergebnis festgehalten wird. *)
 	val mainpickle = ref ~1 (* JVM-Register, in dem Struktur steht *)
@@ -164,19 +149,6 @@ structure CodeGen =
 		fun getInitial () = (!initial)
 	    end
 
-	(* Funktionenstack *)
-	structure Lambda =
-	    struct
-		fun printstack (x::xs) = (print (Int.toString x^", "); printstack xs)
-		  | printstack nil = print "\n"
-		val stack = ref (toplevel::nil)
-		fun push (Id(_,stamp',_)) = (printstack (stamp'::(!stack)); stack := (stamp'::(!stack)))
-		fun pop () = (printstack (tl (!stack)); stack := tl(!stack))
-
-		(* Lambda.top () liefert stets die aktuelle Funktion *)
-		fun top () = hd(!stack)
-	    end
-
 	(* Zuordnung von Funktionen-Ids auf Freie Variablen
 	 und von beliebigen Ids auf den formalen Parameter der umgebenden Funktion.
 	 Der formale Parameter einer Funktion ist immer eindeutig, während eine Funktion
@@ -206,29 +178,6 @@ structure CodeGen =
 		      | SOME stamp'' => stamp''
 	    end
 
-	(* Zuordnung von formalen Parametern auf zugehoerige Funktions-Stamps *)
-	structure LambdaIds =
-	    struct
-		val lambdas:id StampHash.t=StampHash.new ()
-
-		val stack = ref [Id ((0,0),toplevel,InId)]:id list ref
-
-		fun pushFun ids = stack:=(ids::(!stack))
-		fun popFun () = stack:=tl(!stack)
-
-		fun setId () = StampHash.insert(lambdas,Lambda.top(),hd(!stack))
-
-		fun getId id' =
-		    case StampHash.lookup(lambdas, id')
-			of NONE => Id ((0,0),toplevel,InId)
-		      | SOME id'' => id''
-
-		(* feststellen, ob eine Applikation selbstrekursiv ist. xxx *)
-		fun isSelfCall stamp' =
-		    case StampHash.lookup(lambdas, Lambda.top()) of
-			NONE => false
-		      | SOME id'' => stamp'=stampFromId(id'')
-	    end
 
 	(* Die innerste Catch-Klausel muß in der Exceptiontable ganz oben stehen.
 	 Die Liste muß also umgedreht werden *)
@@ -384,7 +333,7 @@ structure CodeGen =
 		    val free:ScopedStampSet.t= ScopedStampSet.new ()
 
 		    fun insert (Id (_,stamp',_)) =
-			 if LambdaIds.isSelfCall stamp'
+			 if Lambda.isSelfCall stamp'
 			     then ()
 			 else
 			     (print ("eintrage stamp "^(Int.toString stamp')^"... ");
@@ -417,7 +366,7 @@ structure CodeGen =
 	      | freeVarsExp (SelExp _) = ()
 	      | freeVarsExp (FunExp(_,_, idbodys)) =
 		let
-		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',_)),body')::idbodys') =
+		    fun freeVarsFun ((OneArg (id' as Id (_,stamp',name)),body')::idbodys') =
 			(fV.enter();
 			 Lambda.push id';
 			 freeVarsDecs body';
@@ -425,8 +374,12 @@ structure CodeGen =
 			 FreeVars.setVars (stamp',fV.get ());
 			 FreeVars.setFun id';
 			 freeVarsFun idbodys';
-			 LambdaIds.setId();
+			 Lambda.setId();
 			 Lambda.pop ();
+			 case name of
+			     ExId name' => Lambda.assignName
+				 (stamp',name')
+			   | InId => ();
 			 fV.exit())
 		      | freeVarsFun _ = () (* xxx noch bearbeiten! xxx *)
 		in
@@ -462,20 +415,20 @@ structure CodeGen =
 	      | freeVarsDec (SharedStm(_,body',raf as ref 0)) = (raf := ~1; freeVarsDecs body')
 	      | freeVarsDec (SharedStm _) = ()
 	      | freeVarsDec (ValDec(_,id',exp', _)) =
-		(LambdaIds.pushFun id';
+		(Lambda.pushFun id';
 		 freeVarsExp exp';
 		 FreeVars.setFun id';
 		 fV.delete id';
-		 LambdaIds.popFun ())
+		 Lambda.popFun ())
 	      | freeVarsDec (RecDec(_,idsexps, _)) =
 		let
 		    fun freeVarsRecDec ((id',exp')::rest) =
-			(LambdaIds.pushFun id';
+			(Lambda.pushFun id';
 			 freeVarsExp exp';
 			 FreeVars.setFun id';
 			 freeVarsRecDec rest;
 			 fV.delete id';
-			 LambdaIds.popFun ())
+			 Lambda.popFun ())
 		      | freeVarsRecDec nil = ()
 		in
 		    freeVarsRecDec idsexps
@@ -531,12 +484,16 @@ structure CodeGen =
 	fun classNameFromId (Id(_,stamp',ExId name')) = Class.getInitial()^"$class"^name'^(Int.toString stamp')
 	  | classNameFromId (Id (_,stamp',InId)) = Class.getInitial()^"$class"^(Int.toString stamp')
 
+	fun classNameFromStamp stamp' =
+	    Class.getInitial()^"$class"^(Lambda.getName stamp')
+
 	(* Einstiegspunkt *)
 	fun genProgramCode (name, program) =
 	    (Class.setInitial name;
 	     let
 		 (* freie Variablen berechnen. *)
 		 val _ = app freeVarsDec program
+		 val _ = Lambda.createIdsLambdaTable()
 		 val _ = print "freie Variablen berechnet.\n"
 		 (* val _ = app annotateTailDec program*)
 		 (* Alle Deklarationen übersetzen *)
@@ -563,20 +520,20 @@ structure CodeGen =
 				    Dup,
 				    Invokespecial (name, "<init>", ([], [Voidsig])),
 				    Invokevirtual (CThread, "start", ([], [Voidsig])),
-				    Return], nil)
+				    Return], nil, false)
 		 (* Standardinitialisierung. Die Superklasse wird aufgerufen. *)
 
 		 val clinit = Method([MPublic],"<clinit>",([],[Voidsig]),
 				   Locals 6,
 				     Integers.generate(
 						      RecordLabel.generate()),
-				   nil)
+				   nil, false)
 
 		 val init = Method([MPublic],"<init>",([],[Voidsig]),
 				   Locals 1,
 				   [Aload 0,
 				    Invokespecial (CDMLThread, "<init>", ([], [Voidsig])),
-				    Return], nil)
+				    Return], nil, false)
 		 (* In run wird die Toplevel-Umgebung aufgebaut. Alle Objekte werden erzeugt
 		  und initialisiert, die Funktionsabschluesse werden gebildet. Anschliessend
 		  wird das Ergebnis zusammen mit den Classfiles in ein Pickle geschrieben.
@@ -610,7 +567,7 @@ structure CodeGen =
 						      [Classsig CVal])),
 				    Pop,
 				    Return],
-				  Catch.top())
+				  Catch.top(), false)
 		 (* die Hauptklasse *)
 		 val class = Class([CPublic],
 				   name,
@@ -645,10 +602,10 @@ structure CodeGen =
 		val loc = Local.assign(id', Local.nextFree())
 	    in
 		print "ValDec\n";
-		LambdaIds.pushFun id';
+		Lambda.pushFun id';
 		(expCode exp' @
 		 [Comment "Store 2", Astore loc])
-		before LambdaIds.popFun()
+		before Lambda.popFun()
 	    end
 	  | decCode (RecDec (_, nil, _)) = nil
 	  | decCode (RecDec (_,idexps as ((recid,_)::_),_)) =
@@ -728,9 +685,9 @@ structure CodeGen =
 		    (* 2. Schritt *)
 		local
 		    fun evalexp ((id',exp')::idexps') =
-			(LambdaIds.pushFun id';
+			(Lambda.pushFun id';
 			 (expCode exp')
-			 before LambdaIds.popFun())
+			 before Lambda.popFun())
 			@
 			(Pop::
 			 evalexp idexps')
@@ -931,7 +888,7 @@ structure CodeGen =
 
 	  | decCode (ReturnStm (_,ap as AppExp(_,id' as (Id (_,stamp',_)),arg'))) =
 		(* Tailcall Applikation *)
-		if LambdaIds.isSelfCall stamp' then
+		if Lambda.isSelfCall stamp' then
 		    idArgCode arg' @
 		    [Astore 1,
 		     Goto afterInit]
@@ -1004,45 +961,46 @@ structure CodeGen =
 	    in
 		if bstamp<>("","",0) then [Getstatic bstamp]
 		else
-		    if FreeVars.getFun stamp' = Lambda.top ()
-			(* Falls stamp' im aktuellen Lambda gebunden
-			 wurde, kann die Variable direkt aus einem
-			 JVM-Register geladen werden. *)
-			then
-			    (print "in";
-			     if stamp'=(stampFromId (LambdaIds.getId
-						     (Lambda.top())))
-				 then (* Zugriff auf die aktuelle
-				       Funktion. Bei dynamischen Methoden
-				       steht diese in Register 0, bei
-				       statischen im Feld
-				       actualClass/instance *)
-				     [Getself]
-			     else
-				 if stamp' = Lambda.top() then
-				     (* Stamp ist der formale Parameter der
-				      aktuellen Funktion. Dieser liegt
-				      immer in Register 1. *)
-				     [Comment "Hi.Parm",
-				      Aload 1]
-				 else
-				     [Comment "Hi6",
-				      Aload (Local.get stamp')]
-				     before print "out\n")
+		    if stamp'=(stampFromId (Lambda.getId
+					    (Lambda.top())))
+			then (* Zugriff auf die aktuelle
+			      Funktion. Bei dynamischen Methoden
+			      steht diese in Register 0, bei
+			      statischen im Feld
+			      actualClass/instance *)
+			    [Getself (classNameFromId (Lambda.getId (Lambda.top()))^"/instance")]
 		    else
-			(* Es handelt sich um eine freie Variable, die
-			 beim Abschluss bilden in ein Feld der
-			 aktuellen Klasse kopiert wurde. *)
-			[Comment ("Hi. Stamp="^(Int.toString stamp')^
-				  ". Lambda.top = "^Int.toString (Lambda.top())^
-				  " in "^Int.toString (Local.get stamp')^
-				  ". Fun = "^(Int.toString
-					      (FreeVars.getFun
-					       stamp'))^
-				  "Id (Lambda.top) ="^(Int.toString (stampFromId
-								     (LambdaIds.getId(Lambda.top()))))^"\n"),
-			 Aload 0,
-			 Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)]
+			if FreeVars.getFun stamp' = Lambda.top ()
+			    (* Falls stamp' im aktuellen Lambda gebunden
+			     wurde, kann die Variable direkt aus einem
+			     JVM-Register geladen werden. *)
+			    then
+				if stamp' = Lambda.top() then
+				    (* Stamp ist der formale Parameter der
+				     aktuellen Funktion. Dieser liegt
+				     immer in Register 1. *)
+				    [Comment "Hi.Parm",
+				     Aload 1]
+				else
+				    [Comment "Hi6",
+				     Aload (Local.get stamp')]
+			else
+			    (* Es handelt sich um eine freie Variable, die
+			     beim Abschluss bilden in ein Feld der
+			     aktuellen Klasse kopiert wurde.
+			     In diesem Fall kann apply nicht als statisch
+			     deklariert werden. *)
+			    (Lambda.noSapply ();
+			     [Comment ("Hi. Stamp="^(Int.toString stamp')^
+				       ". Lambda.top = "^Int.toString (Lambda.top())^
+				       " in "^Int.toString (Local.get stamp')^
+				       ". Fun = "^(Int.toString
+						   (FreeVars.getFun
+						    stamp'))^
+				       "Id (Lambda.top) ="^(Int.toString (stampFromId
+									  (Lambda.getId(Lambda.top()))))^"\n"),
+			      Aload 0,
+			      Getfield (Class.getCurrent()^"/"^(fieldNameFromId id'), CVal,0)])
 	    end
 	and
 	    idArgCode (OneArg id') = idCode id'
@@ -1101,15 +1059,28 @@ structure CodeGen =
 
 	and
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
-	    if stamp'=stamp_builtin then
-		idArgCode ida'' @
-		[Invokestatic (CBuiltin, "getBuiltin",
-			       ([Classsig CStr], [Classsig CVal]))]
-	    else
-		idCode id' @
-		(idArgCode ida'') @
-		[Invokeinterface (CVal, "apply",
-				  ([Classsig CVal], [Classsig CVal]))]
+	    let
+		val idacode = idArgCode ida''
+	    in
+		if stamp'=stamp_builtin then
+		    idacode @
+		    [Invokestatic (CBuiltin, "getBuiltin",
+				   ([Classsig CStr], [Classsig CVal]))]
+		else
+		    [Ifstatic (stamp',
+			       idacode @
+			       [Invokestatic (classNameFromStamp
+					      (Lambda.getLambda stamp'),
+					      "sapply",
+					      ([Classsig CVal],
+					       [Classsig CVal]))],
+			       idCode id' @
+			       idacode @
+			       [Invokeinterface (CVal, "apply",
+						 ([Classsig CVal],
+						  [Classsig CVal]))])]
+	    end
+
 	  | expCode (BuiltinAppExp (_, name, ids)) =
 		(case name of
 		     "print" => (Getstatic COut::
@@ -1126,12 +1097,12 @@ structure CodeGen =
 	    (*    ^ self-tail-call ist anders *)
 	    (*let*)
 		(*val simpleCall = false *)(* keine wilde Wurschtelei nach apply *)
-(*val selfTailCall = LambdaIds.isSelfCall exp'
+(*val selfTailCall = Lambda.isSelfCall exp'
  andalso tailPosition *)(* spricht für sich *)
 	  (*val (startlabel,endlabel) = (Label.new(), Label.new())
 		val _ = print ("Toplevel ist "^Int.toString toplevel^", Lambdatop ist "^Int.toString(Lambda.top ())^"\n")
 		val tailCallApp = if tailPosition andalso (Lambda.top ()<>toplevel)
-				      then if LambdaIds.isSelfCall exp'
+				      then if Lambda.isSelfCall exp'
 					       then
 						   [Astore 1,
 						    Goto afterInit]
@@ -1208,7 +1179,7 @@ structure CodeGen =
 							CVal, 0)]
 				     else
 					 if FreeVars.getFun stamp'' = Lambda.top() then
-					     if stamp'' <> stampFromId(LambdaIds.getId stamp')
+					     if stamp'' <> stampFromId(Lambda.getId stamp')
 						 then
 						     (print ("mache "^Int.toString stamp'^" in "^Int.toString(Lambda.top())^"\n");
 						      (* if Local.get id' = ~1 then
@@ -1428,34 +1399,38 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		    val initRegister = initializeLocals (Local.max ())
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
+		val ap =
+		    initRegister @
+		    e @
+		    [Areturn]
 		val applY = Method ([MPublic],
 				    "apply",
 				    ([Classsig CVal], [Classsig CVal]),
 				    Locals (Local.max()+1),
-				    initRegister @
-				    e @
-				    [Areturn],
-				    Catch.top())
+				    ap,
+				    Catch.top(), false)
 		val sapply = Method ([MPublic, MStatic],
-				    "sapply",
-				    ([Classsig CVal], [Classsig CVal]),
-				    Locals (Local.max()+1),
-				    initRegister @
-				    e @
-				    [Areturn],
-				    Catch.top())
+				     "sapply",
+				     ([Classsig CVal], [Classsig CVal]),
+				     Locals (Local.max()),
+				     ap,
+				     Catch.top(), true)
 		(* die Standard-Initialisierung *)
 		val init = Method ([MPublic],"<init>",([], [Voidsig]), Locals 1,
 				   [Aload 0,
 				    Invokespecial (CFcnClosure, "<init>",
 						   ([], [Voidsig])),
 				    Return],
-				   nil)
+				   nil,
+				   false)
 
 		(* die ganze Klasse *)
 		val class = Class([CPublic],className,
 				  CFcnClosure,fieldscode,
-				  [applY, init])
+				  (applY::init::
+				   (if Lambda.sapplyPossible () then
+					[sapply]
+				    else nil)))
 	    in
 		schreibs(className^".j",classToJasmin class)
 	    end

@@ -1,12 +1,14 @@
 structure ToJasmin =
     struct
+	open Backend
 	open JVMInst
 
 	exception Error of string
 	exception Debug of string*INSTRUCTION list
 
 	val actclass= ref ""
-	val actmeth = ref ""
+	val stackneed = ref 0
+	val stackmax = ref 0
 
 	fun makeArityString (0,x) = x
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
@@ -78,7 +80,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Dup = 1
 	  | stackNeedInstruction (Fconst _) = 1
 	  | stackNeedInstruction (Getfield _) = 0
-	  | stackNeedInstruction Getself = 1
+	  | stackNeedInstruction (Getself _) = 1
 	  | stackNeedInstruction (Getstatic _) = 1
 	  | stackNeedInstruction (Goto _) = 0
 	  | stackNeedInstruction Iadd = ~1
@@ -91,6 +93,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Ificmpne _) = ~2
 	  | stackNeedInstruction (Ifneq _) = ~1
 	  | stackNeedInstruction (Ifnull _) = ~1
+	  | stackNeedInstruction (Ifstatic _) = 0
 	  | stackNeedInstruction (Iload _) = 1
 	  | stackNeedInstruction (Instanceof _) = 0
 	  | stackNeedInstruction (Invokeinterface (_,_, (arglist,[Voidsig]))) = ~1-(siglength arglist)
@@ -115,7 +118,7 @@ structure ToJasmin =
 	  | stackNeedInstruction Swap = 0
 	  | stackNeedInstruction (Tableswitch _) = ~1
 
-	fun stackNeed (inst::insts,need,max) =
+	(*fun stackNeed (inst::insts,need,max) =
 				  let
 				      val nd = stackNeedInstruction inst
 				  in
@@ -132,86 +135,107 @@ structure ToJasmin =
 					      " Max="^Int.toString max^" in "^(!actclass)^"."^
 					      (!actmeth)^".\n")
 				   else ();
-				       max)
+				       max)*)
 
 	local
-	    fun instructionToJasmin (Astore j) =
-		if j<4 then
-		    "astore_"^Int.toString j
-		else "astore "^Int.toString j
-	      | instructionToJasmin Aastore  = "aastore"
-	      | instructionToJasmin Aaload = "aaload"
-	      | instructionToJasmin Aconst_null = "aconst_null"
-	      | instructionToJasmin (Aload j) =
-		    if j<4 then
-			"aload_"^Int.toString j
-		    else "aload "^Int.toString j
-	      | instructionToJasmin (Anewarray cn) = "anewarray "^cn
-	      | instructionToJasmin Areturn = "areturn"
-	      | instructionToJasmin Arraylength = "arraylength"
-	      | instructionToJasmin Athrow = "athrow"
-	      | instructionToJasmin (Bipush i) = "bipush "^intToString i
-	      | instructionToJasmin (Catch(cn,from,to,use)) =
+	    fun instructionToJasmin (Astore j, s) =
+		let
+		    val i = if s then j-1 else j
+		in
+		    if i<4 then
+			"astore_"^Int.toString i
+		    else "astore "^Int.toString i
+		end
+	      | instructionToJasmin (Aastore,_)  = "aastore"
+	      | instructionToJasmin (Aaload,_) = "aaload"
+	      | instructionToJasmin (Aconst_null,_) = "aconst_null"
+	      | instructionToJasmin (Aload j, s) =
+		let
+		    val i = if s then j-1 else j
+		in
+		    if i<4 then
+			"aload_"^Int.toString i
+		    else "aload "^Int.toString i
+		end
+	      | instructionToJasmin (Anewarray cn,_) = "anewarray "^cn
+	      | instructionToJasmin (Areturn,_) = (print (!actclass);"areturn")
+	      | instructionToJasmin (Arraylength,_) = "arraylength"
+	      | instructionToJasmin (Athrow,_) = "athrow"
+	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
+	      | instructionToJasmin (Catch(cn,from,to,use),_) =
 		".catch "^cn^" from "^from^" to "^to^" using "^use
-	      | instructionToJasmin (Checkcast cn) = "checkcast "^cn
-	      | instructionToJasmin (Comment c) = "\t; "^c
-	      | instructionToJasmin Dup = "dup"
-	      | instructionToJasmin (Fconst i) =
+	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
+	      | instructionToJasmin (Comment c,_) = "\t; "^c
+	      | instructionToJasmin (Dup,_) = "dup"
+	      | instructionToJasmin (Fconst i,_) =
 		if i=0 then
 		    "fconst_0"
 		else if i=1 then
 		    "fconst_1"
 		     else "fconst_2"
-	      | instructionToJasmin (Getfield(fieldn, ty,arity)) = "getfield "^fieldn^" "^
+	      | instructionToJasmin (Getfield(fieldn, ty,arity),_) = "getfield "^fieldn^" "^
 			 (makeArityString (arity, ""))^"L"^ty^";"
-	      | instructionToJasmin Getself = "aload_0"
-	      | instructionToJasmin (Getstatic(fieldn, ty,arity)) = "getstatic "^fieldn^" "^
-			 (makeArityString (arity, ""))^"L"^ty^";"
-	      | instructionToJasmin (Goto l) = "goto "^l
-	      | instructionToJasmin (Iconst i) =
-			 if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
-	      | instructionToJasmin Iadd = "iadd"
-	      | instructionToJasmin (Ifacmpeq l) = "if_acmpeq "^l
-	      | instructionToJasmin (Ifacmpne l) = "if_acmpne "^l
-	      | instructionToJasmin (Ifeq l) = "ifeq "^l
-	      | instructionToJasmin (Ificmpeq l) = "if_icmpeq "^l
-	      | instructionToJasmin (Ificmplt l) = "if_icmplt "^l
-	      | instructionToJasmin (Ificmpne l) = "if_icmpne "^l
-	      | instructionToJasmin (Ifneq l) = "ifne "^l
-	      | instructionToJasmin (Ifnull l) = "ifnull "^l
-	      | instructionToJasmin (Iload j) =
-			     if j<4 then
-				 "iload_"^Int.toString j
-			     else "iload "^Int.toString j
-	      | instructionToJasmin (Istore j) =
-				 if j<4 then
-				     "istore_"^Int.toString j
-				 else "istore "^Int.toString j
-	      | instructionToJasmin Ireturn = "ireturn"
-	      | instructionToJasmin (Instanceof cn) = "instanceof "^cn
-	      | instructionToJasmin (Invokeinterface(cn,mn,ms as (arg,ret))) =
+	      | instructionToJasmin (Getself name,s) =
+			 if s then
+			     "getstatic "^name
+			 else
+			     "aload_0"
+	      | instructionToJasmin (Getstatic(fieldn, ty,arity),_) = "getstatic "^fieldn^" "^
+			     (makeArityString (arity, ""))^"L"^ty^";"
+	      | instructionToJasmin (Goto l,_) = "goto "^l
+	      | instructionToJasmin (Iconst i,_) =
+			     if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
+	      | instructionToJasmin (Iadd,_) = "iadd"
+	      | instructionToJasmin (Ifacmpeq l,_) = "if_acmpeq "^l
+	      | instructionToJasmin (Ifacmpne l,_) = "if_acmpne "^l
+	      | instructionToJasmin (Ifeq l,_) = "ifeq "^l
+	      | instructionToJasmin (Ificmpeq l,_) = "if_icmpeq "^l
+	      | instructionToJasmin (Ificmplt l,_) = "if_icmplt "^l
+	      | instructionToJasmin (Ificmpne l,_) = "if_icmpne "^l
+	      | instructionToJasmin (Ifneq l,_) = "ifne "^l
+	      | instructionToJasmin (Ifnull l,_) = "ifnull "^l
+	      | instructionToJasmin (Ifstatic _,_) = raise Error ""
+	      | instructionToJasmin (Iload j,s) =
+				 let
+				     val i = if s then j-1 else j
+				 in
+				     if i<4 then
+					 "iload_"^Int.toString i
+				     else "iload "^Int.toString i
+				 end
+	      | instructionToJasmin (Istore j,s) =
+				 let
+				     val i = if s then j-1 else j
+				 in
+				     if i<4 then
+				     "istore_"^Int.toString i
+				     else "istore "^Int.toString i
+				 end
+	      | instructionToJasmin (Ireturn,_) = "ireturn"
+	      | instructionToJasmin (Instanceof cn,_) = "instanceof "^cn
+	      | instructionToJasmin (Invokeinterface(cn,mn,ms as (arg,ret)),_) =
 			     "invokeinterface "^cn^"/"^mn^
 			     (descriptor2string ms)^" "^Int.toString(length arg + 1)
-	      | instructionToJasmin (Invokespecial(cn,mn,ms)) =
+	      | instructionToJasmin (Invokespecial(cn,mn,ms),_) =
 			     "invokespecial "^cn^"/"^mn^(descriptor2string ms)
-	      | instructionToJasmin (Invokestatic(cn,mn,ms)) =
+	      | instructionToJasmin (Invokestatic(cn,mn,ms),_) =
 			     "invokestatic "^cn^"/"^mn^(descriptor2string ms)
-	      | instructionToJasmin (Invokevirtual(cn,mn,ms)) =
+	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
-	      | instructionToJasmin (Label l) = l^": "
-	      | instructionToJasmin (Ldc(JVMString s)) = "ldc \""^s^"\""
-	      | instructionToJasmin (Ldc(JVMFloat r)) = "ldc "^Real.toString r
-	      | instructionToJasmin (Ldc(JVMInt i)) = "ldc "^intToString i
-	      | instructionToJasmin (New cn) = "new "^cn
-	      | instructionToJasmin Pop = "pop"
-	      | instructionToJasmin (Putfield(cn,f,arity)) = "putfield "^cn^" "^
+	      | instructionToJasmin (Label l,_) = l^": "
+	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^s^"\""
+	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^Real.toString r
+	      | instructionToJasmin (Ldc(JVMInt i),_) = "ldc "^intToString i
+	      | instructionToJasmin (New cn,_) = "new "^cn
+	      | instructionToJasmin (Pop,_) = "pop"
+	      | instructionToJasmin (Putfield(cn,f,arity),_) = "putfield "^cn^" "^
 			     (makeArityString (arity, ""))^"L"^f^";"
-	      | instructionToJasmin (Putstatic(cn,f,arity)) = "putstatic "^cn^" "^
+	      | instructionToJasmin (Putstatic(cn,f,arity),_) = "putstatic "^cn^" "^
 			     (makeArityString (arity, ""))^"L"^f^";"
-	      | instructionToJasmin Return = "return"
-	      | instructionToJasmin (Sipush i) = "sipush "^intToString i
-	      | instructionToJasmin Swap = "swap"
-	      | instructionToJasmin (Tableswitch(low,labellist, label)) =
+	      | instructionToJasmin (Return,_) = "return"
+	      | instructionToJasmin (Sipush i,_) = "sipush "^intToString i
+	      | instructionToJasmin (Swap,_) = "swap"
+	      | instructionToJasmin (Tableswitch(low,labellist, label),_) =
 			     let
 				 fun flatten (lab::labl) = ("\t"^lab^"\n")^(flatten labl)
 				   | flatten nil = ""
@@ -221,21 +245,37 @@ structure ToJasmin =
 				   "default: "^label
 			       end
 	in
-	    fun instructionsToJasmin (i::is, need, max) =
+	    fun instructionsToJasmin (insts, need, max, staticapply) =
 		let
-		    val nd = stackNeedInstruction i
 		    fun noStack (Comment _) = true
 		      | noStack _ = false
+		    fun recurse (i::is, need, max) =
+			let
+			    val nd = stackNeedInstruction i
+			in
+			    (case i of
+				 Ifstatic (stamp', then', else') =>
+				     recurse
+				     (if Lambda.isStatic stamp' then
+					  then'
+				      else else',
+					  need, max)
+			       | _ =>
+					  (if noStack i then "" else
+						((*"\t\t.line "^line()^*)
+						 "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n")^
+						(instructionToJasmin (i, staticapply))^"\n")^
+						(if nd<0 then
+						     recurse (is, nd+need, max)
+						 else recurse (is, nd+need, Int.max(nd+need,max)))
+			end
+		      | recurse (nil,need,max) =
+			(stackneed:= need;
+			 stackmax := max;
+			 "")
 		in
-		    (if noStack i then "" else
-			 ((*"\t\t.line "^line()^*)
-			  "\t; Stack: "^Int.toString need^" Max: "^Int.toString max)^"\n")^
-		    (instructionToJasmin i)^"\n"^
-		    (if nd<0 then
-			instructionsToJasmin (is, nd+need, max)
-		     else instructionsToJasmin (is, nd+need, Int.max(nd+need,max)))
+		    recurse (insts, need, max)
 		end
-	      | instructionsToJasmin (nil,_,_) = ""
 	end
 
 	local
@@ -256,17 +296,36 @@ structure ToJasmin =
 	      | fieldsToJasmin nil = ""
 	end
 
-	fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs, instructions, catches)) =
+	fun methodToJasmin (Method(access,methodname,methodsig,Locals perslocs,
+				   instructions, catches, staticapply)) =
 	    let
 		val mcc = mAccessToString access
+		val catchinsts = instructionsToJasmin(catches,0,0, staticapply)
+		(* Seiteneffekt: stackneed und stackmax werden gesetzt *)
+		val insts = instructionsToJasmin(instructions,0,0, staticapply)
+(*		val _ = if methodname="sapply" then
+		    raise Debug (methodname, instructions) else ()*)
 	    in
-		actmeth:=methodname;
-		".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
-		".limit locals "^Int.toString(perslocs+1)^"\n"^
-		".limit stack "^Int.toString(stackNeed (instructions,0,0))^"\n"^
-		instructionsToJasmin(instructions,0,0)^"\n"^
-		instructionsToJasmin(catches,0,0)^"\n"^
-		".end method\n"
+		(* apply hat derzeit immer ein doppeltes Areturn am Ende.
+		 Wird spaeter wegoptimiert. *)
+		(if !stackneed <> 0 andalso
+		     (methodname<>"apply") andalso
+		     (methodname<>"sapply")
+		     orelse
+		     !stackneed <> ~1
+		     andalso
+		     ((methodname="apply")
+		      orelse (methodname="sapply"))
+		     then
+			 print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
+				" in "^(!actclass)^"."^methodname^".\n")
+		 else ();
+		     ".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
+		     ".limit locals "^Int.toString(perslocs+1)^"\n"^
+		     ".limit stack "^Int.toString (!stackmax)^"\n"^
+		     insts^"\n"^
+		     catchinsts^"\n"^
+		     ".end method\n")
 	    end
 	fun methodsToJasmin (m::ms) = (methodToJasmin m)^(methodsToJasmin ms)
 	  | methodsToJasmin nil = ""
