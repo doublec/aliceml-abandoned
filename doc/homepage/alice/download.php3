@@ -48,7 +48,8 @@
     <P>
       To install, execute both programs and follow the instructions.
       If you have trouble installing Mozart, please read the
-      <A href="http://www.mozart-oz.org/download/ftp.cgi?action=windows">installtion notes</A>.
+      <A href="http://www.mozart-oz.org/download/ftp.cgi?action=windows">
+      installation notes for Windows</A>.
     </P>
   </UL>
 
