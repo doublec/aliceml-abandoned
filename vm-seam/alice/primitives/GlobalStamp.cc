@@ -13,8 +13,6 @@
 #include <cstdio>
 #include "emulator/Authoring.hh"
 
-typedef unsigned char u_char;
-
 static int counter = 0;
 
 DEFINE2(GlobalStamp_compare) {

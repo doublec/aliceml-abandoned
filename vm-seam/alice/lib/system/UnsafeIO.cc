@@ -83,16 +83,16 @@ public:
 static String *ExportString(String *s) {
   u_int sLen = s->GetSize();
   String *e  = String::New(sLen + 1);
-  char *eb   = e->GetValue();
+  u_char *eb = e->GetValue();
   memcpy(eb, s->GetValue(), sLen);
-  eb[sLen] = 0x00;
+  eb[sLen] = '\0';
   return e;
 }
 
 static String *Concat(String *a, char *b, u_int bLen) {
   u_int aLen = a->GetSize();
   String *s  = String::New(aLen + bLen);
-  char *sb   = s->GetValue();
+  u_char *sb = s->GetValue();
   memcpy(sb, a->GetValue(), aLen);
   memcpy(sb + aLen, b, bLen);
   return s;
@@ -182,7 +182,7 @@ DEFINE2(UnsafeIO_openAppend) {
   DECLARE_STRING(s, x1);
   const char *flags = (b ? "wab" : "wa");
   String *name = ExportString(s);
-  FILE *file   = fopen(name->GetValue(), flags);
+  FILE *file   = fopen(reinterpret_cast<char *>(name->GetValue()), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, s)->ToWord());
   }
@@ -196,7 +196,7 @@ DEFINE2(UnsafeIO_openIn) {
   DECLARE_STRING(s, x1);
   const char *flags = (b ? "rb" : "r");
   String *name = ExportString(s);
-  FILE *file   = fopen(name->GetValue(), flags);
+  FILE *file   = fopen(reinterpret_cast<char *>(name->GetValue()), flags);
   if (file != NULL) {
     RETURN(InStream::New(file, s)->ToWord());
   }
@@ -210,7 +210,7 @@ DEFINE2(UnsafeIO_openOut) {
   DECLARE_STRING(s, x1);
   const char *flags = (b ? "wb" : "w");
   String *name = ExportString(s);
-  FILE *file   = fopen(name->GetValue(), flags);
+  FILE *file   = fopen(reinterpret_cast<char *>(name->GetValue()), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, s)->ToWord());
   }

@@ -570,7 +570,7 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	word suspendWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	String *string = String::FromWord(suspendWord);
 	if (string == INVALID_POINTER) SUSPEND(suspendWord);
-	const char *value = string->GetValue();
+	const u_char *value = string->GetValue();
 	u_int length = string->GetSize();
 	Vector *tests = Vector::FromWord(pc->Sel(1));
 	u_int ntests = tests->GetLength();

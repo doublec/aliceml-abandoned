@@ -21,7 +21,7 @@ DEFINE2(String_opconcat) {
   int length1 = string1->GetSize();
   int length2 = string2->GetSize();
   String *newString = String::New(length1 + length2);
-  char *base = newString->GetValue();
+  u_char *base = newString->GetValue();
   std::memcpy(base, string1->GetValue(), length1);
   std::memcpy(base + length1, string2->GetValue(), length2);
   RETURN(newString->ToWord());
@@ -70,7 +70,7 @@ DEFINE2(String_compare) {
 
 DEFINE1(String_explode) {
   DECLARE_STRING(string, x0);
-  char *base = string->GetValue();
+  u_char *base = string->GetValue();
   word list = Store::IntToWord(1); // nil
   for (u_int i = string->GetSize(); i--; ) {
     TagVal *cons = TagVal::New(0, 2); // ::
@@ -86,7 +86,7 @@ DEFINE1(String_implode) {
   if (length > String::maxSize)
     RAISE(PrimitiveTable::General_Size);
   String *string = String::New(length);
-  char *base = string->GetValue();
+  u_char *base = string->GetValue();
   u_int i = 0;
   while (tagVal != INVALID_POINTER) {
     base[i++] = Store::WordToInt(tagVal->Sel(0));

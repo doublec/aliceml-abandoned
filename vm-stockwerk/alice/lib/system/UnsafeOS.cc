@@ -25,14 +25,14 @@
 static String *ExportString(String *s) {
   u_int sLen = s->GetSize();
   String *e  = String::New(sLen + 1);
-  char *eb   = e->GetValue();
+  u_char *eb = e->GetValue();
   memcpy(eb, s->GetValue(), sLen);
   eb[sLen] = 0x00;
   return e;
 }
 
 static char *ExportChar(String *s) {
-  return ExportString(s)->GetValue();
+  return reinterpret_cast<char *>(ExportString(s)->GetValue());
 }
 
 // Global OS.sysErr Exception
@@ -141,7 +141,7 @@ DEFINE0(FileSys_tmpName) {
   RETURN(String::New(s));
 #else
   String *s = String::New("/tmp/aliceXXXXXX");
-  mkstemp(s->GetValue());
+  mkstemp(reinterpret_cast<char *>(s->GetValue())); // to be done
   RETURN(s->ToWord());
 #endif
 } END

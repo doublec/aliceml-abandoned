@@ -269,8 +269,8 @@ public:
   u_int GetSize() {
     return Chunk::GetSize();
   }
-  char *GetValue() {
-    return GetBase();
+  u_char *GetValue() {
+    return reinterpret_cast<u_char *>(GetBase());
   }
 };
 

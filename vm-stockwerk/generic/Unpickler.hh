@@ -19,8 +19,6 @@
 
 #include "emulator/Interpreter.hh"
 
-typedef unsigned char u_char;
-
 class Unpickler {
 public:
   // Exceptions
