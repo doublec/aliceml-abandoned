@@ -1,13 +1,34 @@
 Group is
 
 	../../lib/utility/sources.cm
+	../../lib/rtt/name.cm
+	../../lib/rtt/label.cm
+	../../lib/rtt/path.cm
 	../../lib/rtt/type.cm
+	../../lib/rtt/fixity.cm
 	../../lib/rtt/interface.cm
 	../infrastructure/sources.cm
 	../common/intermediate-grammar.cm
 	../common/check.cm
-	reflection.cm
 	typed-grammar.cm
+
+	NAME_TRANSLATION-sig.aml
+	NameTranslation.aml
+	LABEL_TRANSLATION-sig.aml
+	LabelTranslation.aml
+	PATH_TRANSLATION-sig.aml
+	PathTranslation.aml
+	TYPE_TRANSLATION-sig.aml
+	TypeTranslation.aml
+	PERVASIVE_TYPE_TRANSLATION-sig.aml
+	PervasiveTypeTranslation.aml
+	FIXITY_TRANSLATION-sig.aml
+	FixityTranslation.aml
+	INF_TRANSLATION-sig.aml
+	InfTranslation.aml
+
+	TRANSLATION_ENV-sig.aml
+	TranslationEnv.aml
 
 	TRANSLATION_PHASE-sig.aml
 	MkTranslationPhase.aml
