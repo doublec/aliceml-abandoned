@@ -1208,7 +1208,7 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
       if (interpreter == NativeCodeInterpreter::self) {
 	NativeConcreteCode *nativeCode =
 	  static_cast<NativeConcreteCode *>(concreteCode);
-	closure->PutConcreteCode(concreteCode->ToWord());
+	closure->SetConcreteCode(concreteCode->ToWord());
 	info.mode    = NATIVE_CALL;
 	info.closure = ImmediateEnv::Register(closure->ToWord());
 	info.nLocals = nativeCode->GetNLocals();
