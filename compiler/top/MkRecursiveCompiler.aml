@@ -119,30 +119,36 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	fun parseUrl url =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		(NONE, NONE) =>
-		    Url.toString url
+		    Url.toStringRaw url
 	      | (SOME "file", NONE) =>
-		    Url.toString (Url.setScheme (url, NONE))
+		    Url.toStringRaw (Url.setScheme (url, NONE))
 	      | (SOME "x-alice", NONE) =>
 		    stockhome () ^
-		    Url.toString (Url.setScheme (Url.makeRelativePath url,
-						 NONE))
+		    Url.toStringRaw (Url.setScheme (Url.makeRelativePath url,
+						    NONE))
 	      | _ => raise Crash.Crash "MkBatchCompiler.parseUrl"
 
 	fun readFile filename =
 	    let
 		val file   = TextIO.openIn filename
+		    handle IO.Io _ =>
+			   Error.error (Source.nowhere,
+					"could not open " ^ filename)
 		val source = TextIO.inputAll file
+		    handle IO.Io _ =>
+			   Error.error (Source.nowhere,
+					"error reading " ^ filename)
 		val _      = TextIO.closeIn file
 	    in
 		source
 	    end
 
-	fun isBaseSig desc =
+	fun isBaseSig desc =   (*--** only needed for .NET backend *)
 	    case Source.url desc of
 		SOME url =>
 		    parseUrl url =
-		    parseUrl (Url.fromString (stockhome () ^ "lib/Base." ^
-					      ".asig"))
+		    parseUrl (resolveWrtCwd (Url.fromString (stockhome () ^
+							     "Base.asig")))
 	      | NONE => false
 
 	fun processBasic process (desc, s) =
