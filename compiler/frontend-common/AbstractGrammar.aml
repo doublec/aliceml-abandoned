@@ -35,8 +35,8 @@ struct
     type exp_info	= Source.region
     type pat_info	= Source.region
     type 'a row_info	= Source.region
-    type 'a field_info	= Source.region
-    type match_info	= Source.region
+    type 'a fld_info	= Source.region
+    type mat_info	= Source.region
     type typ_info	= Source.region
     type mod_info	= Source.region
     type inf_info	= Source.region
@@ -51,7 +51,8 @@ structure AbstractGrammar = MkAbstractGrammar(AbstractInfo)
 
 structure PPAbstractGrammar = MkPPAbstractGrammar(
 	structure AbstractGrammar = AbstractGrammar
-	fun ppInfo _		= PrettyPrint.empty
+	fun ppInfo((l,c), _)	= PrettyPrint.text
+				   ("@" ^ Int.toString l ^ "." ^ Int.toString c)
 	val ppFixInfo		= ppInfo
 	val ppVallabInfo	= ppInfo
 	val ppTyplabInfo	= ppInfo
@@ -69,8 +70,8 @@ structure PPAbstractGrammar = MkPPAbstractGrammar(
 	val ppExpInfo		= ppInfo
 	val ppPatInfo		= ppInfo
 	val ppRowInfo		= fn _ => ppInfo
-	val ppFieldInfo		= fn _ => ppInfo
-	val ppMatchInfo		= ppInfo
+	val ppFldInfo		= fn _ => ppInfo
+	val ppMatInfo		= ppInfo
 	val ppTypInfo		= ppInfo
 	val ppModInfo		= ppInfo
 	val ppInfInfo		= ppInfo
