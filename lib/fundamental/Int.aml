@@ -1,0 +1,143 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                  from "Pervasive"
+import type char and string and int
+       datatype bool and order and option     from "ToplevelTypes"
+import infix 4 = <> > < >= <=
+       infix 6 + -
+       infix 7 * div mod
+       val op = and op <>
+       and op > and op < and op >= and op <=
+       val   ~  and abs  and op +  and op -
+       and op * and op div and op mod         from "ToplevelValues"
+import structure Char                         from "Char"
+import structure StringCvt                    from "StringCvt"
+import signature INTEGER                      from "INTEGER-sig"
+
+
+structure Int : INTEGER =
+struct
+    type int = int
+    type t   = int							(**)
+
+    __primitive val minInt :    int option = "Int.minInt"
+    __primitive val maxInt :    int option = "Int.maxInt"
+    __primitive val precision : int option = "Int.precision"
+
+    fun toInt i		= i
+    fun fromInt i	= i
+    fun toLarge i	= i
+    fun fromLarge i	= i
+
+    val ~		= ~
+    val op +		= op +
+    val op -		= op -
+    val op *		= op *
+    val op div		= op div
+    val op mod		= op mod
+
+    val op <		= op <
+    val op >		= op >
+    val op <=		= op <=
+    val op >=		= op >=
+
+    __primitive val quot : int * int -> int = "Int.quot"
+    __primitive val rem :  int * int -> int = "Int.rem"
+
+    __primitive val compare : int * int -> order = "Int.compare"
+
+    val abs			= abs
+
+    fun min(i,j)		= if i < j then i else j
+    fun max(i,j)		= if i > j then i else j
+
+    fun sign i where (i>0)	= 1
+      | sign i where (i<0)	= ~1
+      | sign i			= 0
+
+    fun sameSign(i,j)		= sign i = sign j
+
+
+    open StringCvt
+
+    fun decval c = Char.ord c - Char.ord #"0"
+    fun hexval c =
+	if Char.ord #"0" <= Char.ord c andalso Char.ord c <= Char.ord #"9"
+	then Char.ord c - Char.ord #"0"
+	else (Char.ord c - Char.ord #"A" + 10) mod 32
+
+    fun skipWSget (getc, src) = getc (dropl Char.isSpace getc src)
+
+    fun isBinDigit #"0" = true
+      | isBinDigit #"1" = true
+      | isBinDigit _    = false
+
+    fun isOctDigit c = Char.ord c >= Char.ord #"0" andalso
+		       Char.ord c <= Char.ord #"7"
+
+    fun scan radix getc source =
+	let
+	    val (isDigit, factor) = case radix of
+				      BIN => (isBinDigit,       2)
+				    | OCT => (isOctDigit,       8)
+				    | DEC => (Char.isDigit,    10)
+				    | HEX => (Char.isHexDigit, 16)
+
+	    fun dig1 (sgn, NONE) = NONE
+	      | dig1 (sgn, SOME (c, rest)) =
+		let
+		    fun digr (res, src) =
+			case getc src of
+			    NONE => SOME (sgn * res, src)
+			  | SOME (c', rest') =>
+				if isDigit c' then
+				    digr (factor * res + hexval c', rest')
+				else
+				    SOME (sgn * res, src)
+		in
+		    if isDigit c then digr (hexval c, rest) else NONE
+		end
+
+	    fun getdigs (sgn, after0, inp) =
+		case dig1 (sgn, inp) of
+		    NONE => SOME (0, after0)
+		  | res => res
+
+	    fun hexopt (sgn, NONE) = NONE
+	      | hexopt (sgn, SOME (#"0", after0)) =
+		if radix <> HEX then getdigs (sgn, after0, getc after0)
+		else
+		    (case getc after0 of
+			 NONE => SOME(0, after0)
+		       | SOME ((#"x" | #"X"), rest) =>
+			     getdigs (sgn, after0, getc rest)
+		       | inp => getdigs (sgn, after0, inp))
+	      | hexopt (sgn, inp) = dig1 (sgn, inp)
+
+	    fun sign NONE = NONE
+	      | sign(SOME (#"~", rest)) = hexopt (~1, getc rest)
+	      | sign(SOME (#"-", rest)) = hexopt (~1, getc rest)
+	      | sign(SOME (#"+", rest)) = hexopt (1, getc rest)
+	      | sign inp = hexopt (1, inp)
+	in
+	    sign (skipWSget (getc, source))
+	end
+
+    __primitive val toString : int -> string = "Int.toString"
+
+    val fromString = scanString(scan DEC)   (*TODO: crashes *)
+end
