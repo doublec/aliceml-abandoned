@@ -66,6 +66,7 @@ ThrowWorker::Throwable ThrowWorker::ArrayStoreException;
 ThrowWorker::Throwable ThrowWorker::ClassCastException;
 ThrowWorker::Throwable ThrowWorker::ClassCircularityError;
 ThrowWorker::Throwable ThrowWorker::ClassFormatError;
+ThrowWorker::Throwable ThrowWorker::IndexOutOfBoundsException;
 ThrowWorker::Throwable ThrowWorker::InstantiationError;
 ThrowWorker::Throwable ThrowWorker::NegativeArraySizeException;
 ThrowWorker::Throwable ThrowWorker::NoClassDefFoundError;
@@ -94,6 +95,7 @@ void ThrowWorker::Init() {
   ::Init("java/lang/ClassCastException", ClassCastException);
   ::Init("java/lang/ClassCircularityError", ClassCircularityError);
   ::Init("java/lang/ClassFormatError", ClassFormatError);
+  ::Init("java/lang/IndexOutOfBoundsException", IndexOutOfBoundsException);
   ::Init("java/lang/InstantiationError", InstantiationError);
   ::Init("java/lang/NegativeArraySizeException", NegativeArraySizeException);
   ::Init("java/lang/NoClassDefFoundError", NoClassDefFoundError);

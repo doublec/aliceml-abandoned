@@ -36,6 +36,7 @@ public:
   static Throwable ClassCastException;
   static Throwable ClassCircularityError;
   static Throwable ClassFormatError;
+  static Throwable IndexOutOfBoundsException;
   static Throwable InstantiationError;
   static Throwable NegativeArraySizeException;
   static Throwable NoClassDefFoundError;
