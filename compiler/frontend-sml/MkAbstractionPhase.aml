@@ -704,7 +704,8 @@ struct
 	   let
 		val i1'    = Source.over(i', infoExp exp)
 		val field' = O.Field(i1', trLab E lab, trExp E exp)
-		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+		val _      = insertDisjointFld(E, lab', i')
+			     handle CollisionFld _ =>
 				error(i', E.ExpRowLabDuplicate lab')
 		val (_,fields') = trExpRowo' E exprowo
 	   in
@@ -850,16 +851,15 @@ struct
 		     * an upper scope where the variable is already bound.
 		     * We have to reuse the stamp found there.
 		     *)
-		    val _ = if Option.isSome(lookupScopeVal(E', vid')) then
-			       error(i', E.PatVIdDuplicate vid')
-			    else ()
 		    val (valid',stamp) =
 			case lookupVal(E', vid')
 			  of NONE            => trVId_bind E vid
 			   | SOME(_,stamp,_) => ( O.Id(i', stamp,
 						   Name.ExId(VId.toString vid'))
 						, stamp )
-		    val _ = insertVal(E', vid', (i',stamp,V))
+		    val _ = insertDisjointVal(E', vid', (i',stamp,V))
+			    handle CollisionVal _ =>
+				error(i', E.PatVIdDuplicate vid')
 		 in
 		    O.VarPat(i, valid')
 		 end
@@ -915,7 +915,8 @@ struct
 	   let
 		val i1'    = Source.over(i', infoPat pat)
 		val field' = O.Field(i1', trLab E lab, trPat (E,E') pat)
-		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+		val _      = insertDisjointFld(E, lab', i')
+			     handle CollisionFld _ =>
 				error(i', E.PatRowLabDuplicate lab')
 		val (_,fields',dots') = trPatRowo' (E,E') patrowo
 	   in
@@ -1105,7 +1106,8 @@ struct
 	   let
 		val i1'    = Source.over(i', infoTy ty)
 		val field' = O.Field(i1', trLab E lab, trTy E ty)
-		val _      = insertFld(E, lab', i') handle CollisionFld _ =>
+		val _      = insertDisjointFld(E, lab', i')
+			     handle CollisionFld _ =>
 				error(i', E.TyRowLabDuplicate lab')
 		val (_,fields') = trTyRowo' E tyrowo
 	   in
@@ -1134,12 +1136,13 @@ struct
     and trValTyVarSeq E (Seq(i, tyvars)) = List.map (trValSeqTyVar E) tyvars
 
     and trValSeqTyVar E (tyvar as TyVar(i, tyvar')) =
+	(* No shadowing is allowed for tyvars *)
 	if Option.isSome(lookupVar(E, tyvar')) then
 	    error(i, E.ValTyVarSeqDuplicate tyvar')
 	else
 	let
 	    val (varid',stamp) = trTyVar_bind E tyvar
-	    val  _             = insertVar(E, tyvar', (i, stamp))
+	    val  _             = insertDisjointVar(E, tyvar', (i, stamp))
 	in
 	    varid'
 	end
@@ -1154,7 +1157,7 @@ struct
 	   else
 	   let
 		val (varid',stamp) = trTyVar_bind E tyvar
-		val  _             = insertVar(E, tyvar', (i, stamp))
+		val  _             = insertDisjointVar(E, tyvar', (i, stamp))
 	   in
 		[varid']
 	   end
