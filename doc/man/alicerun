@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#!/bin/sh
+
+usage () {
+    echo "Usage: $0 <url> <args>                                                 "
+    echo "Run the Alice virtual machine.                                         "
+    echo "                                                                       "
+    echo "Executes the application given by <url>, denoting a compiled component."
+    echo "The component is located, loaded and evaluated using the root component"
+    echo "manager. The component may be a Mozart component (Mozart \"functor\"). "
+    echo "                                                                       "
+    echo "The application can access the remaining command line arguments via the"
+    echo "CommandLine library structure. To terminate an application, the        "
+    echo "OS.Process.terminate function must be invoked. The virtual machine will"
+    echo "not be terminated automatically, even if no live threads are left.     "
+}
+
+version () {
+    echo "$0 0.9.3                                                   "
+    echo "Alice virtual machine                                      "
+    echo "                                                           "
+    echo "Copyright (C) 2003  Programming Systems Lab.               "
+    echo "See the source for copying conditions.                     "
+}
+
+case $1 in
+    --version) version ;;
+    --help) usage ;;
+    *) usage ;;
+esac
+exit 0
