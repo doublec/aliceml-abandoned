@@ -21,9 +21,10 @@
  *	include longsigid_1 ... longsigid_n
  *	==>
  *	include longsigid_1 ; ... ; include longsigid_n
+ *   - derived forms for primitive declarations similar to specifications:
  *
  * We did NOT introduce a sharing signature ... and signature ... derived form
- * similar to types, because we consider that completely broken.
+ * similar to types, because we consider that one completely broken.
  *
  * Notes:
  * - Two phrases named Fmatch and Fmrule have been added to factorize FvalBind.
@@ -440,6 +441,22 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.SEQDec(I, G.NONFIXDec(I,longvid), NONFIXMULTIDec(I,longvids))
 
 
+    fun PRIMITIVEEXCEPTIONDec(I, op_opt, vid, ty_opt, s) =
+	    G.PRIMITIVECONSTRUCTORDec(I, op_opt, vid, ty_opt, G.Seq(I,[]),
+					 longtycon_EXN(I), s)
+
+    fun PRIMITIVEFUNCTORSPECDec(I, funid, spec, sigexp, s) =
+	let
+	    val I'      = G.infoSigExp sigexp
+	    val strid   = G.StrId(I', StrId.invent())
+	    val sigexp1 = G.SIGSigExp(G.infoSpec spec, spec)
+	in
+	    (* UNFINISHED: to translate, I either need LETSigExp,
+	       or LOCALSpec+OPENSpec. *)
+	    G.PRIMITIVEFUNCTORDec(I, funid, strid, sigexp1, sigexp, s)
+	end
+
+
     fun NEWExBind(I, op_opt, vid, ty_opt, dconbind_opt) =
 	    G.NEWDconBind(I, op_opt, vid, ty_opt,
 			     G.Seq(I,[]), longtycon_EXN(I), dconbind_opt)
@@ -550,7 +567,7 @@ structure DerivedForms :> DERIVED_FORMS =
 
     fun NEWExDesc(I, op_opt, vid, ty_opt, dcondesc_opt) =
 	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-			  G.SHORTLong(I, tycon_EXN(I)), dcondesc_opt)
+			  longtycon_EXN(I), dcondesc_opt)
 
     fun SPECFunDesc(I, funid, spec, sigexp, fundesc_opt) =
 	let

@@ -123,14 +123,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and Dec =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
-	| PRIMITIVEDec    of Info * Op * VId * Ty * string
 	| TYPEDec         of Info * TypBind
 	| EQTYPEDec       of Info * TypBind
 	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORDec  of Info * DconBind
-	| PREBOUNDDec     of Info * StrId
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
 	| FUNCTORDec      of Info * FunBind
@@ -138,6 +136,13 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
+	| PREBOUNDDec     of Info * StrId
+	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
+	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
+					       * TyVarSeq * LongTyCon * string
+	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
+	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
+								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -247,7 +252,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| DATATYPESpec     of Info * DatDesc
 	| REPLICATIONSpec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORSpec  of Info * DconDesc
-	| PREBOUNDSpec     of Info * StrId
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
 	| FUNCTORSpec      of Info * FunDesc
@@ -257,6 +261,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
+	| PREBOUNDSpec     of Info * StrId
 	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
 	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon
@@ -359,14 +364,12 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoDec(VALDec(I,_,_))				= I
       | infoDec(FUNDec(I,_,_))				= I
-      | infoDec(PRIMITIVEDec(I,_,_,_,_))		= I
       | infoDec(TYPEDec(I,_))				= I
       | infoDec(EQTYPEDec(I,_))				= I
       | infoDec(EQEQTYPEDec(I,_))			= I
       | infoDec(DATATYPEDec(I,_))			= I
       | infoDec(REPLICATIONDec(I,_,_))			= I
       | infoDec(CONSTRUCTORDec(I,_))			= I
-      | infoDec(PREBOUNDDec(I,_))			= I
       | infoDec(STRUCTUREDec(I,_))			= I
       | infoDec(SIGNATUREDec(I,_))			= I
       | infoDec(FUNCTORDec(I,_))			= I
@@ -374,6 +377,11 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(OPENDec(I,_))				= I
       | infoDec(EMPTYDec(I))				= I
       | infoDec(SEQDec(I,_,_))				= I
+      | infoDec(PREBOUNDDec(I,_))			= I
+      | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
+      | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
+      | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
+      | infoDec(PRIMITIVEFUNCTORDec(I,_,_,_,_,_))	= I
       | infoDec(OVERLOADDec(I,_,_,_,_))			= I
       | infoDec(INSTANCEDec(I,_,_,_,_))			= I
       | infoDec(INSTANCESCONDec(I,_,_))			= I
@@ -453,7 +461,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(DATATYPESpec(I,_))			= I
       | infoSpec(REPLICATIONSpec(I,_,_))		= I
       | infoSpec(CONSTRUCTORSpec(I,_))			= I
-      | infoSpec(PREBOUNDSpec(I,_))			= I
       | infoSpec(STRUCTURESpec(I,_))			= I
       | infoSpec(SIGNATURESpec(I,_))			= I
       | infoSpec(FUNCTORSpec(I,_))			= I
@@ -463,6 +470,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(SHARINGTYPESpec(I,_,_))		= I
       | infoSpec(SHARINGSIGNATURESpec(I,_,_))		= I
       | infoSpec(SHARINGSpec(I,_,_))			= I
+      | infoSpec(PREBOUNDSpec(I,_))			= I
       | infoSpec(OVERLOADSpec(I,_,_,_,_))		= I
       | infoSpec(INSTANCESpec(I,_,_,_,_))		= I
       | infoSpec(INSTANCESCONSpec(I,_,_))		= I

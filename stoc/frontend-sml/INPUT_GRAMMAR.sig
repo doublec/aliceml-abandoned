@@ -123,14 +123,12 @@ signature INPUT_GRAMMAR =
     and Dec =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
-	| PRIMITIVEDec    of Info * Op * VId * Ty * string
 	| TYPEDec         of Info * TypBind
 	| EQTYPEDec       of Info * TypBind
 	| EQEQTYPEDec     of Info * TypBind
 	| DATATYPEDec     of Info * DatBind
 	| REPLICATIONDec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORDec  of Info * DconBind
-	| PREBOUNDDec     of Info * StrId
 	| STRUCTUREDec    of Info * StrBind
 	| SIGNATUREDec    of Info * SigBind
 	| FUNCTORDec      of Info * FunBind
@@ -138,6 +136,13 @@ signature INPUT_GRAMMAR =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
+	| PREBOUNDDec     of Info * StrId
+	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
+	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
+					       * TyVarSeq * LongTyCon * string
+	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
+	| PRIMITIVEFUNCTORDec     of Info * FunId * StrId * SigExp * SigExp
+								   * string
 	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
 	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
@@ -247,7 +252,6 @@ signature INPUT_GRAMMAR =
 	| DATATYPESpec     of Info * DatDesc
 	| REPLICATIONSpec  of Info * TyCon * LongTyCon
 	| CONSTRUCTORSpec  of Info * DconDesc
-	| PREBOUNDSpec     of Info * StrId
 	| STRUCTURESpec    of Info * StrDesc
 	| SIGNATURESpec    of Info * SigDesc
 	| FUNCTORSpec      of Info * FunDesc
@@ -257,6 +261,7 @@ signature INPUT_GRAMMAR =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
+	| PREBOUNDSpec     of Info * StrId
 	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
 	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon

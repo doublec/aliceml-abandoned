@@ -20,9 +20,10 @@
  *	include longsigid_1 ... longsigid_n
  *	==>
  *	include longsigid_1 ; ... ; include longsigid_n
+ *   - derived forms for primitive declarations similar to specifications:
  *
  * We did NOT introduce a sharing signature ... and signature ... derived form
- * similar to types, because we consider that completely broken.
+ * similar to types, because we consider that one completely broken.
  *
  * Notes:
  * - Two phrases named Fmatch and Fmrule have been added to factorize FvalBind.
@@ -133,6 +134,9 @@ signature DERIVED_FORMS =
     val INFIXMULTIDec:	Info * int option * VId list		-> Dec
     val INFIXRMULTIDec:	Info * int option * VId list		-> Dec
     val NONFIXMULTIDec:	Info * VId list				-> Dec
+
+    val PRIMITIVEEXCEPTIONDec:   Info * Op * VId * Ty option * string  -> Dec
+    val PRIMITIVEFUNCTORSPECDec: Info * FunId * Spec * SigExp * string -> Dec
 
     val NEWExBind:    Info * Op * VId * Ty option * ExBind option    -> ExBind
     val EQUALExBind:  Info * Op * VId * Op * LongVId * ExBind option -> ExBind

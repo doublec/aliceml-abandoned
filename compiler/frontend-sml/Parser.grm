@@ -90,8 +90,14 @@
 (*										*)
 (* To avoid hardwiring certain library issues, we further added the following	*)
 (* low-level constructs:							*)
-(*	  dec     ::= __primitive <op> vid : ty = string			*)
-(*	          ::= __prebound strid						*)
+(*	  dec     ::= __prebound strid						*)
+(*	          ::= __primitive val <op> vid : ty = string			*)
+(*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
+(*	          ::= __primitive exception <op> vid <of ty> = string (DF)	*)
+(*	          ::= __primitive structure strid : sigexp = string		*)
+(*	          ::= __primitive functor funid ( strid : sigexp ) : sigexp	*)
+(*						 		   = string	*)
+(*	          ::= __primitive functor funid ( spec ) : sigexp = string (DF)	*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
 (*	          ::= __instance <op> vid with longtycon = longvid		*)
 (*	          ::= __instance scon with longtycon				*)
@@ -649,9 +655,6 @@
 				 Seq(I(defaultPos,defaultPos), []), fvalbind) )
 	| FUN tyvarseq1 fvalbind
 			( FUNDec(I(FUNleft,fvalbindright), tyvarseq1, fvalbind))
-	| PRIMITIVE OP_opt vid COLON ty EQUALS STRING
-			( PRIMITIVEDec(I(PRIMITIVEleft,STRINGright),
-				       OP_opt, vid, ty, STRING) )
 	| TYPE typbind	( TYPEDec(I(TYPEleft,typbindright), typbind) )
 	| EQTYPE typbind
 			( EQTYPEDec(I(EQTYPEleft,typbindright), typbind) )
@@ -674,8 +677,6 @@
 					 dconbind) )
 	| EXCEPTION exbind
 			( EXCEPTIONDec(I(EXCEPTIONleft,exbindright), exbind) )
-	| PREBOUND strid
-			( PREBOUNDDec(I(PREBOUNDleft,stridright), strid) )
 	| STRUCTURE strbind
 			( STRUCTUREDec(I(STRUCTUREleft,strbindright), strbind) )
 	| SIGNATURE sigbind
@@ -685,6 +686,30 @@
 	| OPEN longstrid_list1
 			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
 				       longstrid_list1) )
+	| PREBOUND strid
+			( PREBOUNDDec(I(PREBOUNDleft,stridright), strid) )
+	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
+			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
+					  OP_opt, vid, ty, STRING) )
+	| PRIMITIVE CONSTRUCTOR OP_opt vid OF_ty_opt COLON tyvarseq longtycon
+	  EQUALS STRING
+			( PRIMITIVECONSTRUCTORDec(I(PRIMITIVEleft,STRINGright),
+						  OP_opt, vid, OF_ty_opt,
+						  tyvarseq, longtycon, STRING) )
+	| PRIMITIVE EXCEPTION OP_opt vid OF_ty_opt EQUALS STRING
+			( PRIMITIVEEXCEPTIONDec(I(PRIMITIVEleft,STRINGright),
+						OP_opt, vid, OF_ty_opt, STRING))
+	| PRIMITIVE STRUCTURE strid COLON sigexp EQUALS STRING
+			( PRIMITIVESTRUCTUREDec(I(PRIMITIVEleft,STRINGright),
+						strid, sigexp, STRING) )
+	| PRIMITIVE FUNCTOR funid LPAR strid COLON sigexp RPAR COLON sigexp
+	  EQUALS STRING
+			( PRIMITIVEFUNCTORDec(I(PRIMITIVEleft,STRINGright),
+					      funid, strid, sigexp1, sigexp2,
+					      STRING) )
+	| PRIMITIVE FUNCTOR funid LPAR spec RPAR COLON sigexp EQUALS STRING
+			( PRIMITIVEFUNCTORSPECDec(I(PRIMITIVEleft,STRINGright),
+						  funid, spec, sigexp, STRING) )
 	| OVERLOAD OP_opt vid WITH tyvar COLON ty
 			( OVERLOADDec(I(OVERLOADleft,tyright),
 				      OP_opt, vid, tyvar, ty) )
@@ -1289,8 +1314,6 @@
 					  dcondesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
-	| PREBOUND strid
-			( PREBOUNDSpec(I(PREBOUNDleft,stridright), strid) )
 	| STRUCTURE strdesc
 			( STRUCTURESpec(I(STRUCTUREleft,strdescright), strdesc))
 	| SIGNATURE sigdesc
@@ -1302,6 +1325,8 @@
 	| INCLUDE longsigid_list2
 			( INCLUDEMULTISpec(I(INCLUDEleft,longsigid_list2right),
 					   longsigid_list2) )
+	| PREBOUND strid
+			( PREBOUNDSpec(I(PREBOUNDleft,stridright), strid) )
 	| OVERLOAD OP_opt vid WITH tyvar COLON ty
 			( OVERLOADSpec(I(OVERLOADleft,tyright),
 				       OP_opt, vid, tyvar, ty))

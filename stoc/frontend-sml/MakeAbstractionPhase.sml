@@ -71,6 +71,29 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | annexp(exp, typ::typs) = annexp(O.AnnExp(O.infoTyp typ, exp, typ), typs)
 
 
+    fun alltyp(ids,typ) =
+	List.foldr (fn(id,typ) => O.AllTyp(O.infoTyp typ, id, typ)) typ ids
+
+    fun funtyp(ids,typ) =
+	List.foldr (fn(id,typ) => O.FunTyp(O.infoTyp typ, id, typ)) typ ids
+
+    fun apptyp(ids,typ) =
+	List.foldr (fn(id,typ) => O.ArrTyp(O.infoTyp typ, id, typ)) typ ids
+
+    fun apptyp(typs,typ) =
+	List.foldl (fn(typ1,typ2) =>
+	      O.AppTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
+	    ) typ typs
+
+    fun arrtyp(typs,typ) =
+	List.foldr (fn(typ1,typ2) =>
+	      O.ArrTyp(Source.over(O.infoTyp typ1, O.infoTyp typ2), typ1, typ2)
+	    ) typ typs
+
+    fun typvardecs(ids,decs) =
+	List.foldr (fn(id,decs)=> [O.TypvarDec(O.infoId id, id, decs)]) decs ids
+
+(*UNFINISHED: obsolete
     fun alltyp(  [],    typ) = typ
       | alltyp(id::ids, typ) = O.AllTyp(O.infoTyp typ, id, alltyp(ids, typ))
 
@@ -83,9 +106,16 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    apptyp(typs, O.AppTyp(i, typ1, typ2))
 	end
 
+    fun arrtyp(    [],     typ1) = typ1
+      | arrtyp(typ2::typs, typ1) =
+	let val i = Source.over(O.infoTyp typ2, O.infoTyp typ1) in
+	    O.ArrTyp(i, typ2, arrtyp(typs, typ1))
+	end
+
     fun typvardecs(  [],    decs) = decs
       | typvardecs(id::ids, decs) = [O.TypvarDec(O.infoId id, id,
 						 typvardecs(ids, decs))]
+*)
 
     fun lookupIdStatus(E, vid') =
 	case lookupVal(E, vid')
@@ -893,22 +923,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
 	   end
 
-	 | PRIMITIVEDec(i, _, vid as VId(_,vid'), ty, s) =>
-	   let
-		val (id',stamp) = trVId_bind E vid
-		val  _          = insertScope E
-		val  ids'       = trAllTy E ty
-		val  typ'       = trTy E ty
-		val  _          = deleteScope E
-		val  pat'       = O.VarPat(O.infoId id', id')
-		val  exp'       = O.PrimExp(i, s, typ')
-		val  dec'       = O.ValDec(i, pat', exp')
-		val  _          = insertVal(E, vid', (i, stamp, V))
-	   in
-		if List.null ids' then dec' :: acc
-				  else typvardecs(ids', [dec']) @ acc
-	   end
-
 	 | TYPEDec(i, typbind) =>
 	   let
 		val E'    = Env.new()
@@ -972,15 +986,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		decs'
 	   end
 
-	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
-	   let
-		val  _           = trStrId_bind E strid
-		val (_,stamp,E') = prebound E
-		val  _           = insertStr(E, strid', (i',stamp,E'))
-	   in
-		acc
-	   end
-
 	 | STRUCTUREDec(i, strbind) =>
 	   let
 		val E'    = Env.new()
@@ -1038,6 +1043,83 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | SEQDec(i, dec1, dec2) =>
 		trDec' (E, trDec' (E,acc) dec1) dec2
+
+	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
+	   let
+		val  _           = trStrId_bind E strid
+		val (_,stamp,E') = prebound E
+		val  _           = insertStr(E, strid', (i',stamp,E'))
+	   in
+		acc
+	   end
+
+	 | PRIMITIVEVALDec(i, _, vid as VId(i',vid'), ty, s) =>
+	   let
+		val (id',stamp) = trVId_bind E vid
+		val  _          = insertScope E
+		val  ids'       = trAllTy E ty
+		val  typ'       = trTy E ty
+		val  _          = deleteScope E
+		val  pat'       = O.VarPat(i', id')
+		val  exp'       = O.PrimExp(i, s, typ')
+		val  dec'       = O.ValDec(i, pat', exp')
+		val  _          = insertVal(E, vid', (i, stamp, V))
+	   in
+		if List.null ids' then dec' :: acc
+				  else typvardecs(ids', [dec']) @ acc
+	   end
+
+	 | PRIMITIVECONSTRUCTORDec
+		(i, _, vid as VId(i',vid'), tyo, tyvarseq, longtycon, s) =>
+	   let
+		val  id1'        = inventId i
+		val (id2',stamp) = trVId_bind E vid
+		val  _           = insertScope E
+		val (ids',typ')  = trTyVarSeqLongTyCon E (tyvarseq, longtycon)
+		val  typs'       = trTyo E tyo
+		val  _           = deleteScope E
+		val  typ1'       = arrtyp(typs',typ')
+		val  pat1'       = O.VarPat(i', id1')
+		val  exp1'       = O.PrimExp(i, s, typ1')
+		val  dec1'       = O.ValDec(i, pat1', exp1')
+		val  con'        = O.Con(i', id2', [])
+		val  typ2'       = O.SingTyp(i, O.ShortId(i',id1'))
+		val  dec2'       = O.ConDec(i, con', typ2')
+		val  k           = List.length typs'
+		val  _           = insertVal(E, vid', (i', stamp, C k))
+	   in
+		dec2':: (if List.null ids' then dec1' :: acc
+					   else typvardecs(ids', [dec1']) @ acc)
+	   end
+
+	 | PRIMITIVESTRUCTUREDec(i, strid as StrId(i',strid'), sigexp, s) =>
+	   let
+		val (id',stamp) = trStrId_bind E strid
+		val (inf',E')   = trSigExp E sigexp
+		val  mod'       = O.PrimMod(i, s, inf')
+		val  dec'       = O.ModDec(i, id', mod')
+		val  _          = insertStr(E, strid', (i, stamp, E'))
+	   in
+		dec' :: acc
+	   end
+
+	 | PRIMITIVEFUNCTORDec(i, funid as FunId(i1,funid'),
+			strid as StrId(i2,strid'), sigexp1, sigexp2, s) =>
+	   let
+		val (id1',stamp1) = trFunId_bind E funid
+		val (id2',stamp2) = trStrId_bind E strid
+		val (inf1',E1)    = trSigExp E sigexp1
+		val  _            = insertScope E
+		val  _            = insertStr(E, strid', (i2, stamp2, E1))
+		val (inf2',E2)    = trSigExp E sigexp2
+		val  _            = deleteScope E
+		val  inf'         = O.ArrInf(i, id1', inf1', inf2')
+		val  mod'         = O.PrimMod(i, s, inf')
+		val  dec'         = O.ModDec(i, id1', mod')
+		val  _            = insertFun(E, funid', (i1, stamp1, E2))
+	   in
+		dec' :: acc
+	   end
 
 	 | OVERLOADDec(i, _, vid, tyvar, ty) =>
 	   (*UNFINISHED*)
@@ -1840,15 +1922,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | CONSTRUCTORSpec(i, dcondesc) =>
 		trDconDesco' (E,acc) (SOME dcondesc)
 
-	 | PREBOUNDSpec(i, strid as StrId(i',strid')) =>
-	   let
-		val  _           = trStrId_bind E strid
-		val (_,stamp,E') = prebound E
-		val  _           = insertStr(E, strid', (i',stamp,E'))
-	   in
-		acc
-	   end
-
 	 | STRUCTURESpec(i, strdesc) =>
 		trStrDesco' (E,acc) (SOME strdesc)
 
@@ -1890,6 +1963,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   | SHARINGSpec(i, spec, _) ) =>
 		(* UNFINISHED *)
 		trSpec' (E,acc) spec
+
+	 | PREBOUNDSpec(i, strid as StrId(i',strid')) =>
+	   let
+		val  _           = trStrId_bind E strid
+		val (_,stamp,E') = prebound E
+		val  _           = insertStr(E, strid', (i',stamp,E'))
+	   in
+		acc
+	   end
 
 	 | OVERLOADSpec(i, _, vid, tyvar, ty) =>
 	   (*UNFINISHED*)
