@@ -2303,7 +2303,7 @@ struct
 		val (mod',F1) = trStrExp E strexp
 		val (inf',F2) = trSigExp E sigexp
 	   in
-		( O.UpMod(i, mod', inf'), F2 )
+		( O.AbsMod(i, mod', inf'), F2 )
 	   end
 
 	 | FCTStrExp(i, strpat, strexp) =>
@@ -3001,10 +3001,11 @@ struct
 
     and trOpenImp (E,i) (E',acc) =
 	(foldiSigs(trOpenImpSig(E,i))
-	(foldiStrs(trOpenImpStr(E,i))
 	(foldiTys (trOpenImpTy (E,i))
 	(foldiVals(trOpenImpVal(E,i))
-	(foldiInfs(trOpenImpInf(E,i)) acc E') E') E') E') E')
+	(foldiInfs(trOpenImpInf(E,i))
+	(foldiStrs(trOpenImpStr(E,i)) acc E') E') E') E') E')
+	(* Structures have to go first so that __pervasive is the 1st import! *)
 
     and trOpenImpInf (E,i) (vid', (_,inf), acc) =
 	let
