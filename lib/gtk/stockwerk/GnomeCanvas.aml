@@ -12,18 +12,15 @@ struct
     open GnomeCanvasEnums 
     open GnomeCanvasUnsafe
 
-    fun itemCreate (root, ty, list) =
+    fun itemCreate (root, ty, arglist) =
     let
-	val findNonReal = fn ((_,GtkTypes.REAL _),e) => e | (a,e) => a
-	fun processArgs nil = ("", GtkTypes.OBJECT GtkCore.NULL, nil)
-	  | processArgs ((fst, fstarg)::ar) =
-	     (fst, fstarg, fstarg::
-	      (foldr (fn ((a,v),e) => [GtkTypes.STRING a, v]@e) nil ar))
-
-        val (fst,fstarg,args) = processArgs list
-	val (dummy,dummyarg) = foldr findNonReal (fst,fstarg) list
-	val item = itemNew(root, ty, dummy, [dummyarg])
-	val _ = if null args then () else itemSetValist(item, fst, args)
+	fun flatten nil = nil
+	  | flatten ((a,b)::args) = [GtkTypes.STRING a, b]@(flatten args)
+	val item = itemNew(root, ty)
+	val _ = case arglist of
+	            nil => ()
+		  | (fst,fstarg)::args => 
+			itemSetValist(item, fst, (fstarg::flatten(args)))
     in
 	item
     end

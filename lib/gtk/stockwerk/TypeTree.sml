@@ -3,9 +3,6 @@ structure TypeTree =
    struct
       exception EStruct
       exception EUnion
-      exception EFunction
-      exception EArray
-      exception EEllipses
 
       datatype num_kind = 
 	 CHAR
