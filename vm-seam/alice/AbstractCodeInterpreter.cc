@@ -249,6 +249,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   // Execution
   while (!(Scheduler::TestPreempt() || Store::NeedGC())) {
   loop:
+    Assert(pc != INVALID_POINTER);
     switch (Pickle::GetInstr(pc)) {
     case Pickle::Kill: // of id vector * instr
       {
