@@ -117,12 +117,12 @@ public class MarshalOutputStream extends ObjectOutputStream
      * that need to be serialized as proxy objects.  RemoteProxy.getProxy
      * is called to check for and find the stub.
      */
-    protected Object replaceObject(Object obj) throws IOException {
-	if (obj instanceof Remote) {
-	    obj = RemoteProxy.getProxy((Remote)obj);
-	}
-	return obj;
-    }
+//      protected Object replaceObject(Object obj) throws IOException {
+//  	if (obj instanceof Remote) {
+//  	    obj = RemoteProxy.getProxy((Remote)obj);
+//  	}
+//  	return obj;
+//      }
 
     /**
      * annotateClass is extended to serialize a location from which
