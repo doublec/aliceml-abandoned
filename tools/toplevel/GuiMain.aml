@@ -27,38 +27,6 @@ import structure BufferHighlight from "BufferHighlight"
 
 structure GuiMain =
     struct
-	(* Stream redirection *)
-
-	val (stdin, stdInText) = Stream.stream ()
-	val reader = TextPrimIO.openVectorListRd stdInText
-	val progStdIn = TextIO.StreamIO.mkInstream (reader, "")
-	val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)
-
-	val (stdOutText, writer) = TextPrimIO.openVectorListWr ()
-	val progStdOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)
-
-	val (stdErrText, writer) = TextPrimIO.openVectorListWr ()
-	val progStdErr = TextIO.StreamIO.mkOutstream (writer, IO.NO_BUF)
-	val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)
-
-	val (outText, writer) = TextPrimIO.openVectorListWr ()
-	val compilerOut = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = Evaluator.setOutStream compilerOut
-
-	val (inText, writer) = TextPrimIO.openVectorListWr ()
-	val compilerIn = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-
-	val (errText, writer) = TextPrimIO.openVectorListWr ()
-	val compilerErr = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = Evaluator.setErrStream compilerErr
-
-	val (traceText, writer) = TextPrimIO.openVectorListWr ()
-	val compilerTrace = TextIO.StreamIO.mkOutstream (writer, IO.LINE_BUF)
-	val _ = Evaluator.setTraceStream compilerTrace
-
-        val (rowCol, rowColStream) = Stream.stream ()
-
         (* Buffers *)
 
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
@@ -105,7 +73,7 @@ structure GuiMain =
                     else String.extract(str, i, NONE)
 	    in
                 evalSignal := SOME signalP;
-		if echo then TextIO.StreamIO.output (compilerIn, find(0,text))
+		if echo then TextIO.StreamIO.output (OutputWriters.compilerIn, find(0,text))
                 else ();
 		spawn (Evaluator.eval (text, signal);
                        evalSignal := NONE)
@@ -302,7 +270,7 @@ structure GuiMain =
                 val iter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
             in
-                Stream.send(rowCol,
+                Stream.send(OutputWriters.rowCol,
                             (1 + Gtk.textIterGetLine iter,
                              Gtk.textIterGetLineOffset iter))
             end
@@ -498,15 +466,7 @@ structure GuiMain =
                                changeFocus COMPILER);
              Gtk.signalConnect(Gui.progout, "focus-in-event",
                                changeFocus STDSTREAMS);
-	     OutputWriters.makeWriters {inStream = inText,
-					outStream = outText,
-					errStream = errText,
-					traceStream = traceText,
-					stdOutStream = stdOutText,
-					stdErrStream = stdErrText,
-                                        stdInStream = stdin,
-                                        rowColStream = rowColStream,
-                                        eval=eval false};
+	     OutputWriters.makeWriters (eval false);
              Gtk.windowAddAccelGroup(Gui.mainwidget,
                                      Gui.Helpers.accelGroup);
              Gtk.widgetAddAccelerator(Gui.undo, "activate",

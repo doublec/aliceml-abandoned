@@ -4,17 +4,70 @@ import structure Gui from "Gui"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Core from "x-alice:/lib/gtk/Core"
 import structure Config from "Config"
+import structure Evaluator from "Evaluator"
 import structure BufferHighlight from "BufferHighlight"
 
 structure OutputWriters =
    struct
       open Config
 
+      (* Stream redirection *)
+
+      fun markWriter (mark, TextPrimIO.WR ops) =
+	  let
+	      val mark' = Substring.full (String.str mark)
+	      val writeVec = Option.valOf (#writeVec ops)
+	      fun marked f sl = (writeVec mark'; f sl)
+	  in
+	      TextPrimIO.WR {ops where
+			     writeVec = Option.map marked (#writeVec ops),
+			     writeArr = Option.map marked (#writeArr ops),
+			     writeVecNB = Option.map marked (#writeVecNB ops),
+			     writeArrNB = Option.map marked (#writeArrNB ops)}
+	  end
+
+      val (stdin, stdInText) = Stream.stream ()
+      val stdInReader = TextPrimIO.openVectorListRd stdInText
+      val progStdIn = TextIO.StreamIO.mkInstream (stdInReader, "")
+      val _ = TextIO.setInstream (TextIO.stdIn, progStdIn)
+
+      val (stdText, stdWriter) = TextPrimIO.openVectorListWr ()
+
+      val stdOutWriter = markWriter (#"\001", stdWriter)
+      val progStdOut = TextIO.StreamIO.mkOutstream (stdOutWriter, IO.LINE_BUF)
+      val _ = TextIO.setOutstream (TextIO.stdOut, progStdOut)
+
+      val stdErrWriter = markWriter (#"\002", stdWriter)
+      val progStdErr = TextIO.StreamIO.mkOutstream (stdErrWriter, IO.NO_BUF)
+      val _ = TextIO.setOutstream (TextIO.stdErr, progStdErr)
+
+      val (compilerText, compilerWriter) = TextPrimIO.openVectorListWr ()
+
+      val compilerInWriter = markWriter (#"\000", compilerWriter)
+      val compilerIn = TextIO.StreamIO.mkOutstream (compilerInWriter, IO.LINE_BUF)
+
+      val compilerOutWriter = markWriter (#"\001", compilerWriter)
+      val compilerOut = TextIO.StreamIO.mkOutstream (compilerOutWriter, IO.LINE_BUF)
+      val _ = Evaluator.setOutStream compilerOut
+
+      val compilerErrWriter = markWriter (#"\002", compilerWriter)
+      val compilerErr = TextIO.StreamIO.mkOutstream (compilerErrWriter, IO.LINE_BUF)
+      val _ = Evaluator.setErrStream compilerErr
+
+      val (traceText, compilerTraceWriter) = TextPrimIO.openVectorListWr ()
+      val compilerTrace = TextIO.StreamIO.mkOutstream (compilerTraceWriter, IO.LINE_BUF)
+      val _ = Evaluator.setTraceStream compilerTrace
+
+      val (rowCol, rowColText) = Stream.stream ()
+
+
+      (* Highlight *)
+
       val highlight = BufferHighlight.highlight
 
       val stdFont = Gtk.pangoFontDescriptionFromString "Courier"
 
-      fun fillBuf view buffer handler tags highlight text =
+      fun fillBuf (view, buffer, handler, tags, highlight, text) =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
@@ -51,13 +104,13 @@ structure OutputWriters =
 
       val rowColId = Gtk.statusbarGetContextId(Gui.statusbar1, "rowcol")
       val _ = Gtk.statusbarPush(Gui.statusbar1,rowColId,
-                                "L 0       C 0");
+                                "L 0, C 0");
 
       fun setRowCol (row, col) =
           let
               val r = Int.toString row
               val c = Int.toString col
-              val msg = "L"^r^"      C"^c
+              val msg = "L "^r^", C "^c
           in
               (Gtk.statusbarPop(Gui.statusbar1, rowColId);
                Gtk.statusbarPush(Gui.statusbar1, rowColId, msg);
@@ -134,39 +187,42 @@ structure OutputWriters =
             else ()
           | compilerInsert _ _ = () (* Gtk is crazy *)
 
-      fun makeWriters {inStream,
-                       outStream,
-		       errStream,
-		       traceStream,
-                       stdOutStream,
-		       stdErrStream,
-                       stdInStream,
-                       rowColStream,
-                       eval} =
+      fun makeWriters eval =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
               val {err=pErr,log=pLog,plain=pStd,noedit=pNoEd,...} = makeTags progBuf
               val {err=cErr,log=cLog,plain=cStd,noedit=cNoEd,...} = makeTags compilerBuf
               val pSig = Gtk.signalConnect(progBuf, "insert-text",
-                                           progInInsert (stdInStream, pNoEd))
+                                           progInInsert (stdin, pNoEd))
               val cSig = Gtk.signalConnect(compilerBuf, "insert-text",
                                            compilerInsert (eval, cNoEd));
+
+              fun forward (widget, buf, signal, noed, styles, highlights) =
+		  let
+		      fun receive (text, mark) =
+			  if String.size text = 0 then mark else
+			  if String.sub (text, 0) < #"\010"
+			  then receive (String.extract (text, 1, NONE),
+					Char.ord (String.sub (text, 0)))
+			  else (fillBuf (widget, buf, signal,
+					 [Vector.sub (styles, mark), noed],
+					 Vector.sub (highlights, mark), text);
+				mark)
+		  in
+		      receive
+		  end
           in
               Gtk.widgetModifyFont(Gui.compilerout, stdFont);
               Gtk.textViewSetBuffer(Gui.progout, progBuf);
               Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
-              spawn app (fillBuf Gui.compilerout compilerBuf
-                                 cSig [cStd,cNoEd] highlight) inStream;
-              spawn app (fillBuf Gui.compilerout compilerBuf
-                                 cSig [cLog,cNoEd] highlight) outStream;
-              spawn app (fillBuf Gui.compilerout compilerBuf
-                                 cSig [cErr,cNoEd] (const ())) errStream;
-              spawn app setStatus traceStream;
-              spawn app (fillBuf Gui.progout progBuf
-                                 pSig [pStd,pNoEd] (const ())) stdOutStream;
-              spawn app (fillBuf Gui.progout progBuf
-                                 pSig [pErr,pNoEd] (const ())) stdErrStream;
-              spawn app setRowCol rowColStream
+	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,
+				    #[cStd, cLog, cErr],
+				    #[highlight, highlight, const ()])) 1 compilerText;
+	      spawn foldl (forward (Gui.progout, progBuf, pSig, pNoEd,
+				    #[pStd, pStd, pErr],
+				    #[const (), const (), const ()])) 1 stdText;
+              spawn app setStatus traceText;
+              spawn app setRowCol rowColText
           end
    end

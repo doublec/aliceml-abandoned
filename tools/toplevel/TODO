@@ -3,26 +3,24 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* output stream synchronisation (how?)
 * paste should delete tags
-* highlighting displaced due to prompt (ok?)
 * jump-to-error does not work for compile
   (how do we detect whether we feeded something from a buffer or used
   the toplevel directly? We have to give eval a filename for buffers!)
-* undo after open deletes buffer (ok?)
 * scroll to bottom after layout change or resize
+* prompt is feeded
 * propagate output width on init and after resize
 * gui hangs when files are given on command line
 * switch layout compiler and i/o buffer
 * undo shortcut not shown in menu
 * colorize compiler output?
 * dialogues at mouse position
-* about dialogue missing (ok?)
 
 Missing Features:
 
 * signal shortcuts (Ctrl-B, Ctrl-I?)
-* shortcur for compile (Ctrl-K?)
+* shortcut for compile (Ctrl-K?)
+* shortcut for jump-to-error (Ctrl-E?)
 * cumulative undo
 * redo
 * overwrapping search

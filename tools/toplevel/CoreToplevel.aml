@@ -230,7 +230,6 @@ struct
 	in
 	    case evalString (true, env, source, signal)
 	     of NONE      => Promise.fulfill (p, env)
-before print "[1]"
 	      | SOME env' => Promise.fulfill (p, loopUses (env', signal))
 	end
 
