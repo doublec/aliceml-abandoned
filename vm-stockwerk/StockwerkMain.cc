@@ -122,18 +122,8 @@ int main(int argc, char *argv[]) {
     }
     Properties::commandLineArguments = tail;
     // Link and Execute Component
-    word module = BootLinker::Link(bootUrl); // might yield GC
-    if (module != Store::IntToWord(0)) {
-      Record *record = Record::FromWord(module);
-      word boot = record->PolySel(UniqueString::New(String::New("boot")));
-      Scheduler::NewThread(boot, Scheduler::ONE_ARG, Properties::rootUrl);
-      // Restart Scheduler to execute module
-      Scheduler::Run(true);
-#if PROFILE
-      Profiler::DumpInfo();
-#endif
-      exit(0);
-    }
-    exit(1);
+    BootLinker::Link(bootUrl);
+    Scheduler::Run();
+    exit(0);
   }
 }
