@@ -85,6 +85,7 @@ usage () {
     echo "Options:                                                   " >&2
     echo "  -h, --help       display this message and exit           " >&2
     echo "  --alicelibdir    [$pkgdatadir/lib]                       " >&2
+    echo "  --alicetoolsdir  [$pkgdatadir/tools]                     " >&2
     exit 2
 }
 
@@ -102,21 +103,11 @@ if test $# -le 0; then usage; fi
 while test $# -gt 0; do
         case $1 in
         --alicelibdir)  echo "$pkgdatadir/lib" ;;
+        --alicetoolsdir)  echo "$pkgdatadir/tools" ;;
         *)         usage ;;
         esac
 
         shift
 done
-
-#echo "ldata: '"$ldata"'"
-#echo "execdir: '"$execdir"'"
-#echo "bindir: '"$bindir"'"
-#echo "pkglibdir: '"$pkglibdir"'"
-#echo "pkgincludedir: '"$pkgincludedir"'"
-#echo "version: '"$version"'"
-#echo "socket: '"$socket"'"
-#echo "port: '"$port"'"
-#echo "ldflags: '"$ldflags"'"
-#echo "client_libs: '"$client_libs"'"
 
 exit 0
