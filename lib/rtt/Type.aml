@@ -176,20 +176,6 @@ struct
     fun resetLevel()	= level := 1
 
 
-  (* Follow a path of links (performing path compression on the fly) *)
-
-    fun follow(ref(LINK t))	= follow t
-      | follow t		= t
-
-(*DEBUG
-    fun follow'(ref(LINK t))	= follow' t
-      | follow' t		= t
-
-    fun follow(t as ref(LINK u))= let val v = follow' u in t := LINK v ; v end
-      | follow t		= t
-*)
-
-
   (* Kinds *)
 
     exception Kind
@@ -344,11 +330,11 @@ struct
 		    t2
 		end
 
-	    and clone t1 =
-		let val t11 = follow t1 in
-		    case !t11 of (MARK _ | VAR _ | HOLE _) => t11
-			       | t11'                      => dup t11
-		end
+	    and clone(ref(LINK t))	= clone t
+	      | clone(t as ref(MARK _
+			      |VAR _
+			      |HOLE _))	= t
+	      | clone t			= dup t
 
 	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
 	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
@@ -410,11 +396,11 @@ struct
 		    t2
 		end
 
-	    and clone t1 =
-		let val t11 = follow t1 in
-		    case !t11 of (MARK _ | VAR _ | HOLE _) => t11
-			       | t11'                      => dup t11
-		end
+	    and clone(ref(LINK t))	= clone t
+	      | clone(t as ref(MARK _
+			      |VAR _
+			      |HOLE _))	= t
+	      | clone t			= dup t
 
 	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
 	      | clone'(TUPLE ts)	= TUPLE(Vector.map clone ts)
@@ -470,14 +456,14 @@ struct
 			)
 		    | _ => raise Assert.failure
 		)
-	      | reduceApply(t1 as ref(LINK _), to) =
-		    reduceApply(follow t1, to)
+	      | reduceApply(ref(LINK t1), to) =
+		    reduceApply(t1, to)
 
 	      | reduceApply(ref(ABBREV(t11,t12)), to) =
 		    reduceApply(t12, SOME(Option.getOpt(to,t11)))
 	      (*
 	      | reduceApply(ref(MU t11), to) =
-		    reduceApply(follow t11, to)
+		    reduceApply(t11, to)
 	      *)
 	      | reduceApply _ = ()
 	in
@@ -500,18 +486,10 @@ struct
     and reduceEta2(t as ref(LAMBDA _), modified) =
 	let
 	    fun reduceLambda(ref(LAMBDA(a,t1)), vs) =
-		reduceLambda(t1, a::vs)
+		    reduceLambda(t1, a::vs)
 
 	      | reduceLambda(ref(APPLY(t1,t2)), a::vs) =
-		let
-		    val t2' = follow t2
-		    val a'  = follow a
-		in
-		    if t2' = a' andalso not(occurs(a',t1)) then
-			reduceLambda(t1, vs)
-		    else
-			modified
-		end
+		    reduceLambda'(t1, t2, a, vs)
 
 	      | reduceLambda(t1, []) =
 		    ( t := LINK t1 ; reduceEta2(t1, true) )
@@ -523,6 +501,16 @@ struct
 		    reduceLambda(t2, vs)
 
 	      | reduceLambda _ = modified
+
+	    and reduceLambda'(t1, ref(LINK t2), a, vs) =
+		    reduceLambda'(t1,t2,a,vs)
+	      | reduceLambda'(t1, t2, ref(LINK a), vs) =
+		    reduceLambda'(t1,t2,a,vs)
+	      | reduceLambda'(t1, t2, a, vs) =
+		if t2 = a andalso not(occurs(a,t1)) then
+		    reduceLambda(t1, vs)
+		else
+		    modified
 	in
 	    reduceLambda(t, [])
 	end
@@ -619,8 +607,12 @@ struct
 
     exception Type
 
-    fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
-    fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
+    fun isAbbrev(ref(LINK t))			= isAbbrev t
+      | isAbbrev(ref(ABBREV _))			= true
+      | isAbbrev _				= false
+    fun asAbbrev(ref(LINK t))			= asAbbrev t
+      | asAbbrev(ref(ABBREV tt))		= tt
+      | asAbbrev _				= raise Type
 
     fun asType(ref(LINK t))			= asType t
       | asType(ref(ABBREV(_,t)))		= asType t
@@ -930,11 +922,10 @@ if isLambda t2 then raise Assert.failure else (* should always be MU! *)
 	let
 	    val trail = ref []
 
-	    fun unify(t1,t2) =
+	    fun unify(t1, ref(LINK t2)) = unify(t1,t2)
+	      | unify(ref(LINK t1), t2) = unify(t1,t2)
+	      | unify(t1 as ref t1', t2 as ref t2') =
 		let
-		    val t1 as ref t1' = follow t1
-		    val t2 as ref t2' = follow t2
-
 		    fun recur f x =
 			( t1 := LINK t2
 			; trail := (t1,t1') :: !trail
@@ -1116,11 +1107,10 @@ if isLambda t1 then raise Assert.failure else
 	let
 	    val trail = ref []
 
-	    fun equals(t1,t2) =
+	    fun equals(t1, ref(LINK t2)) = equals(t1,t2)
+	      | equals(ref(LINK t1), t2) = equals(t1,t2)
+	      | equals(t1 as ref t1', t2 as ref t2') =
 		let
-		    val t1 as ref t1' = follow t1
-		    val t2 as ref t2' = follow t2
-
 		    fun recur p x =
 			( t1 := LINK t2
 			; trail := (t1,t1') :: !trail
