@@ -1,41 +1,41 @@
 package de.uni_sb.ps.dml.runtime;
 
-/** Diese Klasse repräsentiert DMLString.
- *  @see DMLInt
- *  @see DMLReal
- *  @see DMLSCon
+/** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.String.
+ *  @see Int
+ *  @see Real
+ *  @see SCon
  *  @see DMLValue
- *  @see DMLWord
+ *  @see Word
  */
-final public class DMLString extends DMLSCon {
+final public class String extends SCon {
 
     /** java-String Wert */
-    private String value=null;
+    private java.lang.String value=null;
 
     /** Testet Gleichheit der Java-Strings */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLString) &&
-	    (((DMLString) val).value.equals(this.value));
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof de.uni_sb.ps.dml.runtime.String) &&
+	    (((de.uni_sb.ps.dml.runtime.String) val).value.equals(this.value));
     }
 
-    /** Baut einen neuen DMLString mit Inhalt <code>value</code>.
-     *  @param value <code>String</code> Wert, der dem DMLString entspricht.
+    /** Baut einen neuen de.uni_sb.ps.dml.runtime.String mit Inhalt <code>value</code>.
+     *  @param value <code>String</code> Wert, der dem de.uni_sb.ps.dml.runtime.String entspricht.
      */
-   public DMLString(String value) {
+   public String(java.lang.String value) {
 	this.value=value;
     }
     
-    /** Stringdarstellung des Wertes erzeugen.
-     *  @return String Stringdarstellung des Wertes
+    /** java.lang.Stringdarstellung des Wertes erzeugen.
+     *  @return java.lang.String java.lang.Stringdarstellung des Wertes
      */
-    final public String toString() {
+    final public java.lang.String toString() {
 	return "\""+value+"\": string";
     }
 
-    /** Den Java-Wert des DMLString auslesen.
-     *  @return String Java-Wert der dem DMLString-Wert entspricht
+    /** Den Java-Wert des de.uni_sb.ps.dml.runtime.String auslesen.
+     *  @return java.lang.String Java-Wert der dem de.uni_sb.ps.dml.runtime.String-Wert entspricht
      */
-    final public String getString() {
+    final public java.lang.String getString() {
 	return value;
     }
 }

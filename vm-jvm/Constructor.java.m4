@@ -1,35 +1,35 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLConstructor implements DMLValue {
+final public class Constructor implements DMLValue {
 
     static java.util.Hashtable gNames = new java.util.Hashtable();
-    String name = null;
+    java.lang.String name = null;
     GName gName = null;
 
-    public DMLConstructor() {
+    public Constructor() {
 	super();
 	this.name="unnamed";
 	this.gName = null;
     }
 
-    public DMLConstructor(GName g) {
+    public Constructor(GName g) {
 	super();
 	this.name="unnamed";
 	this.gName=g;
     }
 
-    public DMLConstructor(String name) {
+    public Constructor(java.lang.String name) {
 	super();
 	this.name=name;
 	this.gName = null;
     }
 
     /** Pointergleichheit */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return (val == this);
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return this.name+" : constructor";
     }
 
@@ -46,7 +46,7 @@ final public class DMLConstructor implements DMLValue {
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
     final public GName globalize() {

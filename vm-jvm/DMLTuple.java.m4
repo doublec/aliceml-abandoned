@@ -1,7 +1,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 /** Tuple-Darstellung in DML.
- *  @see DMLRecord
+ *  @see Record
  */
 public interface DMLTuple extends DMLValue {
     /** gibt den i-ten Eintrag des Tuples oder Records*/

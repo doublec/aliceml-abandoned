@@ -3,14 +3,14 @@ package de.uni_sb.ps.dml.runtime;
 /** Wrapper, um DML-Werte als Exception werfen zu können.
  *  @see DMLValue#raise()
  */
-final public class DMLExceptionWrapper extends RuntimeException {
+final public class ExceptionWrapper extends RuntimeException {
 
     private DMLValue value = null;
 
     /** Baut einen neuen ExceptionWrapper.
      *  @param val der Wert der als Exception geworfen werden soll
      */
-    public DMLExceptionWrapper(DMLValue val){
+    public ExceptionWrapper(DMLValue val){
 	value=val;
     }
 
@@ -21,10 +21,10 @@ final public class DMLExceptionWrapper extends RuntimeException {
 	return value;
     }
 
-    /** Stringdarstellung des ExceptionWrappers.
-     *  @return String Stringdarstellung des ExceptionWrappers
+    /** java.lang.Stringdarstellung des ExceptionWrappers.
+     *  @return java.lang.String java.lang.Stringdarstellung des ExceptionWrappers
      */
-    final public String toString() {
+    final public java.lang.String toString() {
 	return "\n\t"+value+" as exception";
     }
 }

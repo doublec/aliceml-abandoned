@@ -1,54 +1,54 @@
 package de.uni_sb.ps.dml.runtime;
-/** Diese Klasse repräsentiert DMLThreads.
- *  Threads sind First-Class; indem das Interface <code>DMLValue</code>
+/** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
+ *  java.lang.Threads sind First-Class; indem das Interface <code>DMLValue</code>
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.
  *  @see DMLValue
  */
-public class DMLThread extends Thread implements DMLValue {
+public class Thread extends java.lang.Thread implements DMLValue {
     /** Hier wird die Continuation für die Tail-Calls übergeben. */
     public DMLValue tail=null;
 
     /** Die Funktion (oder etwas, das zu einer Funktion wird),
-     *  die der Thread ausführt.
+     *  die der java.lang.Thread ausführt.
      *  Die Funktion sollte den Typ fcn : unit -> 'a haben.
      */
     private DMLValue fcn=null;
 
-    /** Gesamtzahl DMLThreads */
+    /** Gesamtzahl de.uni_sb.ps.dml.runtime.Threads */
     public static int totalNumber=0;
 
-    /** Nummer des Threads */
+    /** Nummer des java.lang.Threads */
     private int threadNumber=0;
 
-    public DMLThread() {
+    public Thread() {
 	super();
     }
     
-    /** Erzeugt einen neuen DMLThread.
+    /** Erzeugt einen neuen de.uni_sb.ps.dml.runtime.Thread.
      *  @param v sollte eine Funktion f : unit-> 'a sein.
      */
-    public DMLThread(DMLValue v) {
+    public Thread(DMLValue v) {
 	this.fcn=v;
 	threadNumber=totalNumber++;
     }
 
-    /** Appliziert den DMLValue des Threads.
+    /** Appliziert den DMLValue des java.lang.Threads.
      *  Der Wert wird mit Argument unit appliziert. Der Rückgabewert wird
      *  verworfen.
      */
     public void run() {
 	try {
-	    fcn.apply(DMLConstants.dmlunit);
+	    fcn.apply(Constants.dmlunit);
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	}
     }
 
-    /** Stringdarstellung des DMLThread.
-     *  Gibt die Nummer des Threads, den Status und die Gesamtzahl
-     *  der bisher erzeugten Threads an.
+    /** java.lang.Stringdarstellung des de.uni_sb.ps.dml.runtime.Thread.
+     *  Gibt die Nummer des java.lang.Threads, den Status und die Gesamtzahl
+     *  der bisher erzeugten java.lang.Threads an.
      */
-    final public String toString() {
+    final public java.lang.String toString() {
 	return "Thread["+threadNumber+"] ("+fcn+")\n"
 	    +"Is a leif: "+this.isAlive()
 	    +"Is interrupted: "+this.isInterrupted();
@@ -69,16 +69,16 @@ public class DMLThread extends Thread implements DMLValue {
      *  @return DMLValue es wird immer eine Exception geworfen.
      */
     final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
     }
 
-    /** Verpackt den Thread und wirft den ExceptionWrapper. */
+    /** Verpackt den java.lang.Thread und wirft den ExceptionWrapper. */
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
-    /** Die Methode verhindert, daß Threads gepickelt werden können.*/
+    /** Die Methode verhindert, daß java.lang.Threads gepickelt werden können.*/
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+	Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle de.uni_sb.ps.dml.runtime.Thread")).raise();
     }
 }

@@ -68,7 +68,7 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return (val instanceof Reference) &&
 	    this.content.equals(((Reference)val).content);
     }
@@ -86,11 +86,11 @@ final public class Reference implements DMLConVal, DMLReference {
 	    content=mgr.request(cmgr);
 	}
 	content=val;
-	return DMLConstants.dmlunit;
+	return Constants.dmlunit;
     }
 
-    final public String toString() {
-	String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
+    final public java.lang.String toString() {
+	java.lang.String s = (mgr==null ? "no server-manager, " : "server: "+mgr+", ");
 	s+= (cmgr==null ? "no client-manager, " : "client: "+cmgr+", ");
 	s+=(content==null?"remote":content.toString())+" : ref";
 	return s;
@@ -106,15 +106,15 @@ final public class Reference implements DMLConVal, DMLReference {
     }
 
     final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
-    final public DMLConstructor getConstructor() {
-	return DMLConstants.reference;
+    final public Constructor getConstructor() {
+	return Constants.reference;
     }
 
     final public synchronized DMLValue exchange(DMLValue val) throws java.rmi.RemoteException {
@@ -128,8 +128,10 @@ final public class Reference implements DMLConVal, DMLReference {
 
     private void writeObject(java.io.ObjectOutputStream out)
 	throws java.io.IOException {
-	if (out instanceof DMLObjectOutputStream) // damit beim Pickling keine Probleme auftreten
+	if (out instanceof PickleOutputStream) {// damit beim Pickling keine Probleme auftreten
+	    out.defaultWriteObject();
 	    return;
+	}
 	try {
 	    if (mgr==null) {
 		ClientManager CMGR=null;
@@ -158,9 +160,12 @@ final public class Reference implements DMLConVal, DMLReference {
 
     private void readObject(java.io.ObjectInputStream in)
 	throws java.io.IOException, ClassNotFoundException {
-	if (in instanceof DMLObjectInputStream) // Pickling !
+	if (in instanceof PickleInputStream) { // Pickling !
+	    in.defaultReadObject();
 	    return;
+	} else {
 	in.defaultReadObject();
 	cmgr = new ClientManager(this);
+	}
     }
 }

@@ -6,9 +6,9 @@ final public class ConValTuple3 implements DMLConVal {
     DMLValue snd = null;
     DMLValue thr = null;
 
-    DMLConstructor constructor=null;
+    Constructor constructor=null;
 
-    public ConValTuple3(DMLConstructor con,
+    public ConValTuple3(Constructor con,
 			DMLValue eins,
 			DMLValue zwei,
 			DMLValue drei) {
@@ -25,7 +25,7 @@ final public class ConValTuple3 implements DMLConVal {
     public DMLValue get4() { throw new ArrayIndexOutOfBoundsException(); }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return (val instanceof ConValTuple5) &&
 	    fst.equals(((ConValTuple5) val).fst) &&
 	    snd.equals(((ConValTuple5) val).snd) &&
@@ -38,14 +38,14 @@ final public class ConValTuple3 implements DMLConVal {
 
     final public DMLValue assign(DMLValue val) {
 	try {
-	    return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot assign "+val+" to "+this)).raise();
 	} catch (java.rmi.RemoteException r) {
 	    System.out.println(r);
 	    return null;
 	}
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return constructor+"("+fst+", "+snd+", "+thr+") : constructed value";
     }
 
@@ -59,7 +59,7 @@ final public class ConValTuple3 implements DMLConVal {
 
     final public DMLValue apply(DMLValue v) {
 	try {
-	    return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
 	} catch (java.rmi.RemoteException r) {
 	    System.out.println(r);
 	    return null;
@@ -67,10 +67,10 @@ final public class ConValTuple3 implements DMLConVal {
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
-    final public DMLConstructor getConstructor() {
+    final public Constructor getConstructor() {
 	return constructor;
     }
 }

@@ -6,7 +6,7 @@ public interface DMLConVal extends DMLValue {
     public DMLValue getContent() throws java.rmi.RemoteException;
 
     /** liefert den Constructor */
-    public DMLConstructor getConstructor() throws java.rmi.RemoteException;
+    public Constructor getConstructor() throws java.rmi.RemoteException;
 
     /** wird nur bei Ref funktionieren */
     public DMLValue assign(DMLValue val) throws java.rmi.RemoteException;

@@ -5,7 +5,7 @@ final public class GName implements java.io.Serializable {
     private static long gidcount = 0l;
     private int arity = 0;
     private long gid = 0l;
-    private String osname = null;
+    private java.lang.String osname = null;
     private long time = 0l;
 
     public GName(int ar) {
@@ -24,7 +24,7 @@ final public class GName implements java.io.Serializable {
 	return osname.hashCode();
     }
 
-    public boolean equals(Object o) {
+    public boolean equals(java.lang.Object o) {
 	return (o instanceof GName) && osname.equals(((GName) o).osname);
     }
 }

@@ -1,10 +1,10 @@
 package de.uni_sb.ps.dml.runtime;
 
-public class DMLLVar extends java.rmi.server.UnicastRemoteObject implements DMLRemoteValue {
+public class LVar extends java.rmi.server.UnicastRemoteObject implements DMLRemoteValue {
 
     protected DMLValue ref=null;
 
-    public DMLLVar() throws java.rmi.RemoteException { }
+    public LVar() throws java.rmi.RemoteException { }
 
     final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
 	if (ref==null)
@@ -23,23 +23,23 @@ public class DMLLVar extends java.rmi.server.UnicastRemoteObject implements DMLR
 	return ref;
     }
 
-    synchronized public DMLValue bind(DMLValue v) throws java.rmi.RemoteException { // bindet Variable und startet Threads aus suspendVector-Liste
+    synchronized public DMLValue bind(DMLValue v) throws java.rmi.RemoteException { // bindet Variable und startet java.lang.Threads aus suspendVector-Liste
 	ref=v;
 	this.notifyAll();
-	return DMLConstants.dmlunit;
+	return Constants.dmlunit;
     }
 
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	try {
-	    return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
+	    return (val instanceof LVar) && this.request().equals(((LVar) val).request());
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	    return false;
 	}
     }
 
-    public String toString() {
+    public java.lang.String toString() {
 	DMLValue val;
 	try {
 	    val=this.getValue();
@@ -47,7 +47,7 @@ public class DMLLVar extends java.rmi.server.UnicastRemoteObject implements DMLR
 	    System.err.println(r);
 	    return null;
 	}
-	if (val instanceof DMLLVar) return "<unresolved>: lvar";
+	if (val instanceof LVar) return "<unresolved>: lvar";
 	return val.toString();
     }
 
@@ -57,12 +57,12 @@ public class DMLLVar extends java.rmi.server.UnicastRemoteObject implements DMLR
     }
 
     final public DMLValue raise()  throws java.rmi.RemoteException {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
-    /** DMLLVar und DMLFuture werden beim pickeln ersetzt, falls sie gebunden sind.
+    /** LVar und Future werden beim pickeln ersetzt, falls sie gebunden sind.
 	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLLVar")).raise();
+	Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle LVar")).raise();
     }
 }

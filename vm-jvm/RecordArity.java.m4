@@ -1,15 +1,15 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLRecordArity implements java.io.Serializable {
+final public class RecordArity implements java.io.Serializable {
 
-    DMLLabel[] labels = null;
+    Label[] labels = null;
     java.util.Hashtable hashtable=null;
 
-    public DMLRecordArity(DMLLabel[] labels) {
+    public RecordArity(Label[] labels) {
 	this(labels, new DMLValue[labels.length]);
     }
 
-    public DMLRecordArity(DMLLabel[] labels, DMLValue[] vals) {
+    public RecordArity(Label[] labels, DMLValue[] vals) {
 	super();
 	int i=0;
 	hashtable=new java.util.Hashtable();
@@ -20,8 +20,8 @@ final public class DMLRecordArity implements java.io.Serializable {
 	}
     }
 
-    final public int getIndexOfLabel(DMLLabel l) {
-	Object idx=hashtable.get(l);
+    final public int getIndexOfLabel(Label l) {
+	java.lang.Object idx=hashtable.get(l);
 	if (idx==null)
 	    return -1;
 	else
@@ -29,15 +29,15 @@ final public class DMLRecordArity implements java.io.Serializable {
     }
 
     /** gibt den i-ten Label zurueck */
-    final public DMLLabel getLabel(int i) {
+    final public Label getLabel(int i) {
 	return labels[i];
     }
 
-    final public boolean equals(Object o) {
+    final public boolean equals(java.lang.Object o) {
 	int i=0;
-	if (!(o instanceof DMLRecordArity))
+	if (!(o instanceof RecordArity))
 	    return false;
-	DMLRecordArity other = (DMLRecordArity) o;
+	RecordArity other = (RecordArity) o;
 	if (labels.length != other.labels.length)
 	    return false;
 	for(i=0; i<labels.length; i++) {

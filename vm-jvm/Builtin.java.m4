@@ -1,16 +1,16 @@
 package de.uni_sb.ps.dml.runtime;
 
-abstract public class DMLBuiltin implements DMLValue {
-    public DMLBuiltin() {
+abstract public class Builtin implements DMLValue {
+    public Builtin() {
 	super();
     }
 
     /** Gleicheit der FQ-Klassennamen */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return this.getClass().equals(val.getClass());
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return "builtin function: "+this.getClass();
     }
 
@@ -23,6 +23,6 @@ abstract public class DMLBuiltin implements DMLValue {
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 }

@@ -4,9 +4,9 @@ final public class ConVal implements DMLConVal {
 
     DMLValue content=null;
 
-    DMLConstructor constructor=null;
+    Constructor constructor=null;
 
-    public ConVal(DMLConstructor constructor, DMLValue content) {
+    public ConVal(Constructor constructor, DMLValue content) {
 	this.constructor = constructor;
 	this.content = content;
     }
@@ -43,7 +43,7 @@ final public class ConVal implements DMLConVal {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return (val instanceof ConVal) &&
 	    (this.constructor == ((ConVal)val).constructor) &&
 	    this.content.equals(((ConVal)val).content);
@@ -55,21 +55,21 @@ final public class ConVal implements DMLConVal {
 
     /** setzt Wert auf val und gibt alten Wert zurueck */
     final public DMLValue assign(DMLValue val) {
-	if (this.constructor == DMLConstants.reference) {
+	if (this.constructor == Constants.reference) {
 	    DMLValue v=this.content;
 	    this.content=val;
-	    return DMLConstants.dmlunit;
+	    return Constants.dmlunit;
 	}
 	else
 	    try {
-		return DMLConstants.runtimeError.apply(new DMLString("cannot assign "+val+" to "+this)).raise();
+		return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot assign "+val+" to "+this)).raise();
 	    } catch (java.rmi.RemoteException r) {
 		System.err.println(r);
 		return null;
 	    }
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return constructor+"("+content+") : constructed value";
     }
 
@@ -83,7 +83,7 @@ final public class ConVal implements DMLConVal {
 
     final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
 	try {
-	    return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+	    return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
 	} catch (java.rmi.RemoteException r) {
 	    System.out.println(r);
 	    return null;
@@ -91,17 +91,17 @@ final public class ConVal implements DMLConVal {
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	if (this.constructor == DMLConstants.reference)
-	    DMLConstants.runtimeError.apply(new DMLString("cannot pickle referencev")).raise();
+	if (this.constructor == Constants.reference)
+	    Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot pickle referencev")).raise();
 	else
 	    out.defaultWriteObject();
     }
 
-    final public DMLConstructor getConstructor() {
+    final public Constructor getConstructor() {
 	return constructor;
     }
 }

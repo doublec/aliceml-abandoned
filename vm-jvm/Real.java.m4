@@ -1,38 +1,38 @@
 package de.uni_sb.ps.dml.runtime;
 
-/** Diese Klasse repräsentiert DMLReal.
- *  @see DMLInt
- *  @see DMLSCon
- *  @see DMLString
+/** Diese Klasse repräsentiert Real.
+ *  @see Int
+ *  @see SCon
+ *  @see de.uni_sb.ps.dml.runtime.String
  *  @see DMLValue
- *  @see DMLWord
+ *  @see Word
  */
-final public class DMLReal extends DMLSCon {
+final public class Real extends SCon {
 
     /** java-float Wert */
     private float value=0.0f;
 
     /** Gleichheit der Real-Werte (Java-Floats) */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLReal) && (((DMLReal) val).value==this.value);
+    final public boolean equals(java.lang.Object val) {
+	return (val instanceof Real) && (((Real) val).value==this.value);
     }
 
-    /** Baut einen neuen DMLReal mit Inhalt <code>value</code>.
-     *  @param value <code>float</code> Wert, der dem DMLReal entspricht.
+    /** Baut einen neuen Real mit Inhalt <code>value</code>.
+     *  @param value <code>float</code> Wert, der dem Real entspricht.
      */
-    public DMLReal(float value) {
+    public Real(float value) {
 	this.value=value;
     }
 
-    /** Stringdarstellung des Wertes erzeugen.
-     *  @return String Stringdarstellung des Wertes
+    /** java.lang.Stringdarstellung des Wertes erzeugen.
+     *  @return java.lang.String java.lang.Stringdarstellung des Wertes
      */
-    final public String toString() {
+    final public java.lang.String toString() {
 	return value+": real";
     }
     
-    /** Den Java-Wert des DMLReal auslesen.
-     *  @return float Java-Wert der dem DMLReal-Wert entspricht
+    /** Den Java-Wert des Real auslesen.
+     *  @return float Java-Wert der dem Real-Wert entspricht
      */
     final public float getFloat() {
 	return value;

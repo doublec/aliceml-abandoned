@@ -1,28 +1,28 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLConstants {
+final public class Constants {
 
-    public static final DMLName dmlunit = new DMLName("unit");
-    public static final DMLName dmltrue = new DMLName("true");
-    public static final DMLName dmlfalse= new DMLName("false");
-    public static final DMLName dmlnil  = new DMLName("nil");
+    public static final Name dmlunit = new Name("unit");
+    public static final Name dmltrue = new Name("true");
+    public static final Name dmlfalse= new Name("false");
+    public static final Name dmlnil  = new Name("nil");
 
-    public static final DMLName dmlmatch = new DMLName("[Match]");
-    public static final DMLName dmlbind  = new DMLName("[Bind]");
-    public static final DMLName none  = new DMLName("NONE");
+    public static final Name dmlmatch = new Name("[Match]");
+    public static final Name dmlbind  = new Name("[Bind]");
+    public static final Name none  = new Name("NONE");
 
-    public static final DMLConstructor some = new DMLConstructor("SOME");
-    public static final DMLConstructor runtimeError = new DMLConstructor("runtimeError");
-    public static final DMLConstructor reference    = new DMLConstructor("reference");
-    public static final DMLConstructor cons         = new DMLConstructor("cons");
+    public static final Constructor some = new Constructor("SOME");
+    public static final Constructor runtimeError = new Constructor("runtimeError");
+    public static final Constructor reference    = new Constructor("reference");
+    public static final Constructor cons         = new Constructor("cons");
 
     /** Diese Exception gibt's, um java-Exceptions zu verpacken */
-    public static final DMLConstructor javaAPIException = new DMLConstructor("javaAPIException");
+    public static final Constructor javaAPIException = new Constructor("javaAPIException");
 
     /** Diese Exception zeigt wirkliche FEHLER des Benutzers an:
      *  - nicht-existierende Methoden/Konstructoren
      *  - Sicherheitsfehler
      */
-    public static final DMLConstructor javaAPIError = new DMLConstructor("javaAPIError");
+    public static final Constructor javaAPIError = new Constructor("javaAPIError");
 
 }

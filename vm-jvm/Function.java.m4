@@ -1,16 +1,16 @@
 package de.uni_sb.ps.dml.runtime;
 
-abstract public class DMLFunction implements DMLValue {
-    public DMLFunction() {
+abstract public class Function implements DMLValue {
+    public Function() {
 	super();
     }
 
     /** Gleicheit der FQ-Klassennamen */
-    final public boolean equals(Object val) {
+    final public boolean equals(java.lang.Object val) {
 	return this.getClass().equals(val.getClass());
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return "compiled function: "+this.getClass();
     }
 
@@ -23,6 +23,6 @@ abstract public class DMLFunction implements DMLValue {
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 }

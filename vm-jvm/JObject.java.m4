@@ -1,10 +1,10 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLObject implements DMLValue {
+final public class JObject implements DMLValue {
 
-    Object javaObject = null;
+    java.lang.Object javaObject = null;
 
-    public DMLObject(Object o) {
+    public JObject(java.lang.Object o) {
 	super();
 	javaObject=o;
     }
@@ -18,18 +18,18 @@ final public class DMLObject implements DMLValue {
     }
 
     final public DMLValue apply(DMLValue v) throws java.rmi.RemoteException {
-	return DMLConstants.runtimeError.apply( new DMLString("cannot apply "+this+" to "+v)).raise();
+	return Constants.runtimeError.apply( new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+v)).raise();
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
-    final public Object getObject() {
+    final public java.lang.Object getObject() {
 	return javaObject;
     }
 
-    final public String toString() {
+    final public java.lang.String toString() {
 	return javaObject.getClass().getName()+": "+javaObject+" : APIObject";
     }
 }

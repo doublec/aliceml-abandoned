@@ -1,29 +1,29 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
+final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;
     boolean waitforbind = false;
 
-    public DMLObjectOutputStream() throws java.io.IOException {
+    public PickleOutputStream() throws java.io.IOException {
 	if (fcn==null)
 	    try{
-		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFunction");
+		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
 		System.err.println("Class zum Vergleichen: "+fcn);
 	    } catch (ClassNotFoundException e) {
-		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as DMLObjectOutputStream.");
+		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
 		e.printStackTrace();
 	    }
 	enableReplaceObject(true);
     }
 
-    public DMLObjectOutputStream(java.io.OutputStream out) throws java.io.IOException {
+    public PickleOutputStream(java.io.OutputStream out) throws java.io.IOException {
 	if (fcn==null)
 	    try{
-		fcn=Class.forName("de.uni_sb.ps.dml.runtime.DMLFunction");
+		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
 		System.err.println("Class zum Vergleichen: "+fcn);
 	    } catch (ClassNotFoundException e) {
-		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as DMLObjectOutputStream.");
+		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
 		e.printStackTrace();
 	    }
 	enableReplaceObject(true);
@@ -36,10 +36,10 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
     final protected void annotateClass(Class cls) throws java.io.IOException {
 	if (fcn.isAssignableFrom(cls.getSuperclass())) {
 	    byte[] bytes = null;
-	    String name = cls.getName();
+	    java.lang.String name = cls.getName();
 	    ClassLoader cl = cls.getClassLoader();
-	    if (cl==DMLLoader.loader)
-		bytes = ((DMLLoader) cl).getBytes(name);
+	    if (cl==PickleClassLoader.loader)
+		bytes = ((PickleClassLoader) cl).getBytes(name);
 	    else {
 		java.io.InputStream in = null;
 		java.io.DataInputStream din = null;
@@ -72,25 +72,25 @@ final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 	    writeBoolean(false);
     }
 
-    /** DMLLVar/DMLFuture werden durch ihren Inhalt ersetzt. Falls @field waitforbind true ist,
+    /** LVar/Future werden durch ihren Inhalt ersetzt. Falls @field waitforbind true ist,
 	wird gewartet, bis die logische Variable gebunden ist. Falls @field waitforbind false ist
-	und die logische Variable ungebunden, wirft DMLLVar.writeObject eine Exception. */
+	und die logische Variable ungebunden, wirft LVar.writeObject eine Exception. */
 
-    final protected Object replaceObject(Object obj) {
-	if (obj instanceof DMLLVar)
+    final protected java.lang.Object replaceObject(java.lang.Object obj) {
+	if (obj instanceof LVar)
 	    try {
 		if (waitforbind)
-		    obj = ((DMLLVar) obj).request();
+		    obj = ((LVar) obj).request();
 		else
-		    obj = ((DMLLVar) obj).getValue();
+		    obj = ((LVar) obj).getValue();
 	    } catch (java.rmi.RemoteException r) {
 		System.err.println(r);
 	    }
-	if (obj instanceof DMLConstructor)
-	    return ((DMLConstructor) obj).globalize();
+	if (obj instanceof Constructor)
+	    return ((Constructor) obj).globalize();
 	else
-	    if (obj instanceof DMLName)
-		return ((DMLName) obj).globalize();
+	    if (obj instanceof Name)
+		return ((Name) obj).globalize();
 	    else
 		return obj;
     }

@@ -1,7 +1,7 @@
 package de.uni_sb.ps.dml.runtime;
 
 /** Tuple-Darstellung in DML.
- *  @see DMLRecord
+ *  @see Record
  */
 public class Tuple implements DMLTuple {
 
@@ -17,9 +17,9 @@ public class Tuple implements DMLTuple {
     public DMLValue get3() { return vals[3]; }
     public DMLValue get4() { return vals[4]; }
 
-    public boolean equals(Object val) {
+    public boolean equals(java.lang.Object val) {
 	if (!(val instanceof Tuple) ||
-	     (val instanceof DMLRecord))
+	     (val instanceof Record))
 	    return false;
 	else {
 	    Tuple r = (Tuple) val;
@@ -33,8 +33,8 @@ public class Tuple implements DMLTuple {
 	}
     }
 
-    public String toString() {
-	String s="(";
+    public java.lang.String toString() {
+	java.lang.String s="(";
 	int i;
 	for (i=0; i<vals.length;i++) {
 	    if (i>0) s+=", ";
@@ -66,10 +66,10 @@ public class Tuple implements DMLTuple {
     }
 
     final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+val)).raise();
+	return Constants.runtimeError.apply(new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 }

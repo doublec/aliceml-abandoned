@@ -1,13 +1,13 @@
 package de.uni_sb.ps.dml.runtime;
 
-final public class DMLObjectInputStream extends java.io.ObjectInputStream {
+final public class PickleInputStream extends java.io.ObjectInputStream {
 
-    public DMLObjectInputStream() throws java.io.IOException {
+    public PickleInputStream() throws java.io.IOException {
 	super();
 	enableResolveObject(true);
     }
 
-    public DMLObjectInputStream(java.io.InputStream in)  throws java.io.IOException {
+    public PickleInputStream(java.io.InputStream in)  throws java.io.IOException {
 	super(in);
     }
 
@@ -16,23 +16,23 @@ final public class DMLObjectInputStream extends java.io.ObjectInputStream {
 	    int length = readInt();
 	    byte[] bytes = new byte[length];
 	    read(bytes,0,length);
-	    DMLLoader.loader.enter(osc.getName(),bytes);
-	    return DMLLoader.loader.loadClass(osc.getName());
+	    PickleClassLoader.loader.enter(osc.getName(),bytes);
+	    return PickleClassLoader.loader.loadClass(osc.getName());
 	}
 	else
 	    return super.resolveClass(osc);
     }
 
-    final protected Object resolveObject(Object obj) {
+    final protected java.lang.Object resolveObject(java.lang.Object obj) {
 	if (obj instanceof GName) {
-	    Object o = DMLConstructor.gNames.get(obj);
+	    java.lang.Object o = Constructor.gNames.get(obj);
 	    if (o==null) {
 		DMLValue newc = null;
 		if (((GName) obj).isName())
-		    newc = new DMLName((GName) obj);
+		    newc = new Name((GName) obj);
 		else
-		    newc = new DMLConstructor((GName) obj);
-		DMLConstructor.gNames.put(obj,newc);
+		    newc = new Constructor((GName) obj);
+		Constructor.gNames.put(obj,newc);
 		return newc;
 	    }
 	    else
