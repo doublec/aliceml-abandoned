@@ -26,6 +26,7 @@ structure RunTests =
       [
        union, (* ok *)
        unionN 4, (* ok *)
+       partitionN 4,
        inter, (* ok *)
        interN 4,
        subset, (* ok *)
