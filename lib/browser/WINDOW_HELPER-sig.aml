@@ -44,4 +44,6 @@ val fontHeight: string -> int
 
 val createRectangle: Gtk.object * real * real * real * real -> Gtk.object
 
+val setVisible: int * int -> unit
+
 end

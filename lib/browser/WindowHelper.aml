@@ -18,6 +18,7 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkColorTable from "MkColorTable" (* to be verified *)
+import structure Settings from "Settings"
 import signature WINDOW_HELPER from "WINDOW_HELPER-sig"
 
 
@@ -235,6 +236,17 @@ fun createRectangle (group,x1,y1,x2,y2) =
       ("outline_color_gdk", 
        Gtk.OBJECT (MkColorTable.allocColor(50000,0,0)))]) 
 
+fun setVisible (x,y) = let
+			   val w = fontWidth(!Settings.font)
+			   val h = fontHeight(!Settings.font)
+			   val rx =  Real.fromInt(w * x)
+			   val ry =  Real.fromInt(h * (y+1))
+		       in
+			   (if Real.> (rx,!(Settings.max_x)) 
+				then Settings.max_x := rx 
+			    else ()
+				; Settings.max_y := Real.+(!Settings.max_y,ry))
+		       end
 
 end
 

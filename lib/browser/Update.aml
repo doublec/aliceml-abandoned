@@ -22,6 +22,7 @@ import structure MainDictionary from "MainDictionary"
 import structure TransientDictionary from "TransientDictionary"
 import structure Dictionaries from "Dictionaries"
 import structure Layout from "Layout"
+import structure WindowHelper from "WindowHelper"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Server from "Server"
@@ -118,9 +119,11 @@ struct
 			  ; let val dy =  Layout.get_ydim(anc) - old_ydim
 			    in ( WindowManager.incr_act_line dy
 				; iterMove (Dictionaries.dict,dy,
-					    getIndex(n) + 1,
+					    getIndex(anc) + 1,
 					MainDictionary.getHighestIndexAssigned
-					    (Dictionaries.dict)) )
+					    (Dictionaries.dict))
+				;  WindowHelper.setVisible(Layout.get_xdim(anc),dy)
+				;  TextIO.print (" dy is " ^Int.toString(dy) ^ "\n"))
 			    end)
 		      end )
 	    val mapped_li = List.map update new_li 
