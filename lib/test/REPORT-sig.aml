@@ -9,6 +9,7 @@
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
 import structure Test from "Test"
 
 signature REPORT =

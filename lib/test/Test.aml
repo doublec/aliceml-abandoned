@@ -11,7 +11,7 @@
  *)
 
 import signature TEST        from "TEST-sig"
-import structure MkSeparate  from "x-alice:/lib/test/MkSeparate"
+import structure MkSeparate  from "MkSeparate"
 
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 import structure PPValue     from "x-alice:/lib/system/PPValue"
