@@ -44,11 +44,12 @@ import structure Inspector from "x-alice:/lib/tools/Inspector"
 local 
 open GtkSupport Node Doc Color PervasiveType
 
-(*********** Knotensuche ***************)
+(***           Node Search              ***)
 
     exception NodeFound of node
     exception unknown
 
+    (* checks if a point lies in the bounding box of a node tree *)
     fun inBoundingBox (node,x,y) = 
 	let
 	    val xdim = get_xdim(node)
@@ -60,23 +61,26 @@ open GtkSupport Node Doc Color PervasiveType
 	    andalso y < ydim
 	end
 
+    (* auxiliary functions for node search *)
     fun isInterpunct node = case getDesc(node) 
 	of INTERPUNCT => true
       | _ => false
 
-    fun interpunctMayBeSelected (Limit _ | RelNode _ | RelRefNode _ ) = true
+    fun interpunctMayBeSelected (Limit _ | RelNode _ | RelRefNode _ ) = 
+	true
       | interpunctMayBeSelected  _ = false
 
-    fun justifyFound (node,SOME(n) as found) =if isInterpunct(node)
-					     then if node = n 
-					     	 then SOME(getParent(node))
-						     else found
-					    else found
-      | justifyFound (node,NONE)     = NONE
+    fun justifyFound (node,SOME(n) as found) =
+	if isInterpunct(node)
+	    then if node = n 
+		     then SOME(getParent(node))
+		 else found
+	else found
+      | justifyFound (node,NONE) = NONE
+	    
 
-
-    (* durchsucht einen Baum aus nodes, bis der tiefste Knoten 
-     gefunden wird, der an der Suchposition liegt *)
+    (* searches node tree for deepest node that corresponds to the 
+       search coordinates *)
     fun treeSearch ((Simple _ as node | Limit _ as node),x,y)  = 
 	if inBoundingBox(node,x,y) then 
 	    if not(isInterpunct node) 
@@ -91,13 +95,14 @@ open GtkSupport Node Doc Color PervasiveType
       | treeSearch (RelNode(r) as node,x,y) =  (case !(#counter(r)) of
 			  1  =>  treeSearch(!(#content(r)),x,y)
 			| _  =>  let
-				     val labellength =  String.size(#rep(r))
+				     val labellength = 
+						    String.size(getRep(node))
 				     val label_in_bb = x>=0
 					 andalso x < labellength
 					 andalso y = 0
 				 in
 				     if label_in_bb then SOME(node) 
-					 else treeSearch(!(#content(r)),
+					 else treeSearch(getContent(node),
 							 x - labellength,
 							 y)
 				 end)
@@ -165,8 +170,8 @@ open GtkSupport Node Doc Color PervasiveType
       | treeSearch _ = NONE
 
 
-    (* Iterator fuer die Knotensuche - durchlaeuft das Dictionary 
-     und sucht mit treeSearch *)
+    (* iterates through the dictinary until it 
+       finds a node tree at the search position *)
     fun iterate (dict,x,y,i,highest_i) = 
 	if i > highest_i 
 	    then NONE
@@ -189,8 +194,7 @@ open GtkSupport Node Doc Color PervasiveType
 	      |_ => NONE
 				   
 					
-    (* Suchprozedur fuer den Knoten, der sich an einer 
-     besitmmten Postition auf der Canvas befindet *)
+    (* Searches the node that is at a specified position on the canvas *)
     fun search (real_x, real_y) = 
 	let
 	    val int_x = (Real.trunc(real_x))
@@ -205,40 +209,40 @@ open GtkSupport Node Doc Color PervasiveType
 	   iterate (Dictionaries.maindict,x,y,0,highest_i)
 	end
 
-(*********** Ende Knotensuche ***************)
+(***       Separation Line Resize Mechanism     ***)
 
-(*********** Beginn Separationslinien-Grossenanpassungsmechnismus 
-               /  Separation Line Resize Mechanism  ***************)
+(* iterates through main dictionary and sets sep line sizes *)
+    fun  resizeSepLinesIterate(dict,x,i,highest_i) =
+	if i > highest_i 
+	    then ()
+	else 
+	    (case Dictionaries.Main.lookup(dict,i) of
+		 NONE =>
+		     resizeSepLinesIterate(dict,x,i+1,highest_i)
+	       | SOME (_,line) => 
+		     if line = uglyNULL 
+			 then  resizeSepLinesIterate(dict,x,i+1,highest_i)
+		     else
+			 (resizeSepLine(line,x)
+			  ;resizeSepLinesIterate(dict,x,i+1,highest_i)))
 
-fun  resizeSepLinesIterate(dict,x,i,highest_i) =
-     if i > highest_i 
-	 then ()
-     else 
-	 (case Dictionaries.Main.lookup(dict,i) of
-	      NONE =>
-		  resizeSepLinesIterate(dict,x,i+1,highest_i)
-	    | SOME (_,line) => 
-		  if line = uglyNULL 
-		      then  resizeSepLinesIterate(dict,x,i+1,highest_i)
-		  else
-		      (resizeSepLine(line,x)
-		       ;resizeSepLinesIterate(dict,x,i+1,highest_i)))
-
-fun resizeSepLines (dict,rx) = 
-     let 
-	 val x = Real.trunc rx
-	 val highest_i = Dictionaries.Main.getHighestIndexAssigned(dict)
-     in
-	 resizeSepLinesIterate(dict,x,0,highest_i)
-     end
-
-(*********** End  Separation Line Resize Mechanism  ***************)
+    (* sets all separation lines to a specified length *)
+    fun resizeSepLines (dict,rx) = 
+	let 
+	    val x = Real.trunc rx
+	    val highest_i = Dictionaries.Main.getHighestIndexAssigned(dict)
+	in
+	    resizeSepLinesIterate(dict,x,0,highest_i)
+	end
 
 in
+
 
 structure Widget :> WIDGET =
 struct
 
+    (***    Window and Window Attributes    ***)
+    
     val window = toplevelWindowNew()
     val canvas = ref uglyNULL
     val canvasroot = ref uglyNULL
@@ -247,15 +251,31 @@ struct
     val act_line = ref 0
 
     fun incr_act_line dy = act_line := !act_line + dy
+
+    val (status,postType,postMode) = createStatusbar() 
+
 	
+    (* determines the vertical length of the canvas *) 
+
     fun getScreenMaxY() = Real.fromInt(Settings.getFontHeight() * 
 			     !act_line)	
 
+
+    (* determines the horizontal length of the canvas *)
+
     fun getScreenMaxX() =  Real.fromInt(Settings.getFontWidth() * 
 			     !Update.screen_max_x) 
-	
-    (* soll den Knoten und die Markierungen enthalten, die momentan 
-     ausgewaehlt sind *)
+
+    fun setScreenX x = if x > (!(Update.screen_max_x))
+			   then  Update.screen_max_x := x
+		       else ()
+
+    (* scrollbar *)
+    val (scrolled,hadj,vadj) =  
+	createScrollWindowDefaults(20.0,50.0,getScreenMaxX(), getScreenMaxY())
+
+			   
+    (* contains the node and the markings of the currently selected node *)
     val selection = ref NONE
     
     fun destroySelectionMarkings () = case !selection of 
@@ -267,6 +287,7 @@ struct
 	NONE => Node.Empty
       | SOME(n,_,_) => n  
 
+    (* handles the user's request to shut the window *)
     fun DeleteWindow _ = (widgetHideAll(window)
 		    ;Update.screen_max_x := 0
 		    ;Dictionaries.Main.dumpAll(Dictionaries.maindict)
@@ -274,22 +295,19 @@ struct
 		    ;act_line := 0
 		    ;alive:= false)
 
-    val (status,postType,postMode) = createStatusbar() 
-
-   
-	 
-    val (scrolled,hadj,vadj) =  
-	createScrollWindowDefaults(20.0,50.0,getScreenMaxX(), getScreenMaxY())
-
+    
+    (* needed to keep Gtk going when using MS Windows *)
     fun freezeThaw(x) = (layoutFreeze(x)
 		       ; layoutThaw(x))
 
-     fun show() = if !alive then widgetShowAll(window) else ()
+    (* makes the Window visible *)
+    fun show() = if !alive then widgetShowAll(window) else ()
+
     
-(************************ Fenstergrossen-Anpassungsmechnismus 
-                          / Resize Mechanism *******************************)
+(***         Canvas Resize Mechanism        ****)
 
 
+    (* computes horizontal portion of canvas *)
      fun canvaswidth (hadj) = 
 	 let
 	     val page_sh = adjustmentGetFieldPageSize(hadj)
@@ -321,42 +339,35 @@ struct
 			     ; ())
 			end))
 	 
-(*****************************************************************************)
 
-(**************************** Stop Button Mechnism****************************)
+     (***       Stop Button Mechnism         ****)
 
-        val stopflag = Update.stopflag
-
-	val _ = signalConnect(stopButton,
-		  "activate",
-		  fn _ => (stopButtonSetActive(false)
-			   ; Settings.set_width 0
-			   ; Settings.set_depth 0
-                           ; stopflag := true)) 
-	    
-    
-    
-
-     fun setStopButtonOnOff(f,n) = 
-	 (Server.serve(fn() => stopButtonSetActive(true))
-	  ;f n
-	  ; TextIO.print("STOP_BUTTON: f n done\n")
-	  ; Server.serve(fn() => stopButtonSetActive(false)))
+     val stopflag = Update.stopflag
+	 
+     (* handles user request to stop *)
+     val _ = signalConnect(stopButton,
+			   "activate",
+			   fn _ => (stopButtonSetActive(false)
+				    ; Settings.set_width 0
+				    ; Settings.set_depth 0
+				    ; stopflag := true)) 
 	 
 
-(**************************** Handler ****************************)
-		    
+     (***             Update Handler            ***)
+		
      fun update_reinspect n = 
 	 Update.reinspect(n,
-			  CreateTree.createGraph,
-			  CreateTree.createGraphInf,!canvasroot)
+			  CreateTree.createTree,
+			  CreateTree.createTreeInf,!canvasroot)
 	 
+     (* handles reinspect request *)
      fun handleReinspect node = 
-	 fn _ => ( setStopButtonOnOff(update_reinspect,node ))
+	 fn _ => (update_reinspect node)
      
-     fun handleReinspectSelection _ = 
-	 setStopButtonOnOff(update_reinspect, getSelectionNode())
+     (* handles reinspect request *)
+     fun handleReinspectSelection _ = update_reinspect (getSelectionNode())
   
+     (* handles shrink request *)	 
      fun handleShrinkSelection _  = 
 	 let
 	 val update_shrink 
@@ -368,47 +379,51 @@ struct
 		 if diff >= 0 
 		     then ()
 		 else Update.foldDepth(n,diff-1,
-				       CreateTree.createGraph,
-				       CreateTree.createGraphInf,
+				       CreateTree.createTree,
+				       CreateTree.createTreeInf,
 				       !canvasroot)
 			    end
 	 in
-	     setStopButtonOnOff(update_shrink, getSelectionNode())
+	     update_shrink (getSelectionNode())
 	 end
 
+     (* handles expand request *)
      fun handleExpandSelection _  = 
 	 let
 	     val update_expand =  fn n 
 			     => Update.foldDepth(n,1,
-						 CreateTree.createGraph,
-						 CreateTree.createGraphInf,
+						 CreateTree.createTree,
+						 CreateTree.createTreeInf,
 						 !canvasroot)
 	 in
-	 setStopButtonOnOff(update_expand, getSelectionNode())
+	 update_expand (getSelectionNode())
 	 end
 
+     (* folds width *)
      fun handleWidth node =  
 	 let
 	     val update_width = 
 		 fn (n,i) => Update.foldWidth(n,i,
-					       CreateTree.createGraph,
-					       CreateTree.createGraphInf,
+					       CreateTree.createTree,
+					       CreateTree.createTreeInf,
 					       !canvasroot)
 	 in
-	     fn i => fn _ => setStopButtonOnOff(update_width,(node,i))
+	     fn i => fn _ => update_width(node,i)
 	 end
      
+     (* folds depth *)
      fun handleDepth node =
 	 let
 	     val update_depth = 
 		 fn (n,i) => Update.foldDepth(n,i,
-					       CreateTree.createGraph,
-					       CreateTree.createGraphInf,
+					       CreateTree.createTree,
+					       CreateTree.createTreeInf,
 					       !canvasroot)
 	 in
-	     fn i => fn _ => setStopButtonOnOff(update_depth,(node,i))
+	     fn i => fn _ => update_depth(node,i)
 	 end
 
+     (* handles force evaluation request *)
      fun handleForce node _ = 
 	 let
 	     val update_force =  fn n 
@@ -419,12 +434,13 @@ struct
 				in Future.await(b_future) 
 				end
 	 in
-	     setStopButtonOnOff
-	     (update_force, getSelectionNode())
+	     update_force (getSelectionNode())
 	 end
 
+     (***       Node Tree Deletion Mechanism     ***)
 
-     (* Node-Baeume loeschen *)
+     
+     (* prepares deletion of one node *)
 
      fun deleteNode Empty = ()
        | deleteNode (Simple(r) as node)  =   
@@ -439,8 +455,8 @@ struct
 			 => let val new_l =  
 			 #2(List.partition (fn n => 
 					    getParent(n) = getParent(node)
-					    andalso getIndex(n) = getIndex(node))
-			    l)
+					    andalso getIndex(n) = 
+					    getIndex(node)) l)
 			    in if null new_l 
 				   then ( Thread.terminate(thr) 
 					 ; Dictionaries.Transient.delete
@@ -448,9 +464,7 @@ struct
 			       else Dictionaries.Transient.update
 				   (Dictionaries.transdict,(i,(v,thr,new_l)))
 			    end 
-			
 		       | NONE => ()
-			    
 	     else ()) handle _ => ())
        | deleteNode (RelNode(r) as node) = (deleteNode (getContent(node))
 					    ; objectDestroy(getGroup(node))) 
@@ -458,8 +472,10 @@ struct
        | deleteNode (Limit(r) as node) = objectDestroy(getGroup(node))
        | deleteNode node =  ( Array.app deleteNode (getKids(node))
 			     ; objectDestroy(getGroup(node)))
+	
 	 
-	 
+     (* deletes one node tree *)
+
      fun deleteNodeTree node = 
 	 let 
 	     val root_node = case getParent(node) of 
@@ -468,144 +484,151 @@ struct
 	       | _ => Empty
 	     val dy = ~1 - get_ydim(root_node)
 	 in
-	( deleteNode root_node
-	  ;case Dictionaries.Main.lookup(Dictionaries.maindict,
-					 getIndex(root_node))  
-	 of 
-	     SOME (n,sep) => if not(sep = GtkSupport.uglyNULL) 
-				 then objectDestroy(sep) 
-				     else ()
-	       | NONE => ()
-	 ;if not(root_node = Empty) 
-	      then (Dictionaries.Main.delete(Dictionaries.maindict,
-					    getIndex(root_node))
-		    ;Dictionaries.RelMan.delete(Dictionaries.reldict,
-					    getIndex(root_node)))
-	  else ()
-	 ;incr_act_line(dy)
-	 ;Update.iterMove(dy,getIndex(root_node)+1)
-	 ;Update.setVisible 0
-	 ;(!(resize)) ()) 
-	end
+	     ( deleteNode root_node
+	      ;case Dictionaries.Main.lookup(Dictionaries.maindict,
+					     getIndex(root_node))  
+	      of 
+		  SOME (n,sep) => if not(sep = GtkSupport.uglyNULL) 
+				      then objectDestroy(sep) 
+				  else ()
+		| NONE => ()
+	      ;if not(root_node = Empty) 
+		   then (Dictionaries.Main.delete(Dictionaries.maindict,
+						  getIndex(root_node))
+			 ;Dictionaries.RelMan.delete(Dictionaries.reldict,
+						     getIndex(root_node)))
+	       else ()
+	      ;incr_act_line(dy)
+	      ;Update.iterMove(dy,getIndex(root_node)+1)
+	      ;Update.setVisible 0
+	      ;(!(resize)) ()) 
+	 end
 
-    (* Mechanismus zum "Neu-Inspizieren" (wird fuer font-Groesse-
-     Aenderungen benutzt) *)
+    (* mechanism for "re"-inspecting all datastructures - needed for 
+       font resize*)
 
-    val inspectFct = ref (fn _ => ())
-    val inspectInfFct = ref (fn _ => ())
+     val inspectFct = ref (fn _ => ())
+     val inspectInfFct = ref (fn _ => ())
 
-    fun uninspect() = 
-	let
-	    val li = Dictionaries.Main.dict2list(Dictionaries.maindict)
-	    val desc_li = rev(List.foldl 
-			      (fn ((n,sep),li) => (getDesc(n))::li ) nil li)
-	in
-	    (List.app (fn (n,sep) => deleteNodeTree n) li
-	     ; desc_li)
-	end
+     (* folds all datastuctures into a list and deletes representations *)
+     fun uninspect() = 
+	 let
+	     val li = Dictionaries.Main.dict2list(Dictionaries.maindict)
+	     val desc_li = rev(List.foldl 
+			       (fn ((n,sep),li) => (getDesc(n))::li ) nil li)
+	 in
+	     (List.app (fn (n,sep) => deleteNodeTree n) li
+	      ; desc_li)
+	 end
+     
+     (* inspects everything anew *)
+     fun re_inspect() = 
+	 let 
+	     val li = uninspect()
+	 in
+	     List.app (fn d => case d of 
+		       VALUE(r) => (!inspectFct) (#value(r),#typ(r))
+		     | I_VALUE(r) => (!inspectInfFct)  (#value(r),#typ(r))
+		     | _ => ()) li
+	 end
 
-    fun re_inspect() = 
-	let 
-	    val li = uninspect()
-	in
-	    List.app (fn d => case d of 
-		      VALUE(r) => (!inspectFct) (#value(r),#typ(r))
-		    | I_VALUE(r) => (!inspectInfFct)  (#value(r),#typ(r))
-		    | _ => ()) li
-	end
-
- (* Handles ok Button in Preferences Window *)
+     (* Handles ok Button in Preferences Window *)
      fun okHandler(w,
 	      width_s,
 	      depth_s,
 	      font_s, 
 	      treemode_button,
 	      relmode_button, 
-	      tokenmode_button) = (fn _ => 
-	       		   (  Settings.max_width := 
-			    spinButtonGetValueAsInt(width_s) 
-			    ;Settings.max_depth := 
-			    spinButtonGetValueAsInt(depth_s)
-			    (* Fontgroesse *) 
-			    ;  let
-				  val new_size = 
-				      spinButtonGetValueAsInt(font_s)
-			      in
-				  if !Settings.fontSize = new_size then ()
-				  else ( Settings.setFontSize(new_size)
-				       ; re_inspect())
-			      end 
-			    ;Settings.relmode := (
-			    toggleButtonGetActive(relmode_button) = true
-						  orelse 
-			   toggleButtonGetActive(tokenmode_button) = true)
-			    ;Settings.tokenmode :=  
-			    toggleButtonGetActive(tokenmode_button) = true
-			    ;widgetDestroy(w)
-			    ;if 
-			    toggleButtonGetActive(treemode_button) = true 
-				 then (Dictionaries.RelMan.dumpAll
-				       (Dictionaries.reldict)
-				       ; relnumber := 0)
-			     else ()))
+	      tokenmode_button) = 
+	 (fn _ => 
+	  (  Settings.max_width := 
+	   spinButtonGetValueAsInt(width_s) 
+	   ;Settings.max_depth := 
+	   spinButtonGetValueAsInt(depth_s)
+	   (* font size *) 
+	   ;  let
+		  val new_size = 
+		      spinButtonGetValueAsInt(font_s)
+	      in
+		  if !Settings.fontSize = new_size then ()
+		  else ( Settings.setFontSize(new_size)
+			; re_inspect())
+	      end
+	   (* relmode settings *)
+	   ;Settings.relmode := 
+	      (toggleButtonGetActive(relmode_button) = true
+	       orelse 
+	       toggleButtonGetActive(tokenmode_button) = true)
+	   ;Settings.tokenmode :=  
+	      toggleButtonGetActive(tokenmode_button) = true
+	   ;widgetDestroy(w)
+	   ;if 
+	      toggleButtonGetActive(treemode_button) = true 
+		   then (Dictionaries.RelMan.dumpAll
+			 (Dictionaries.reldict)
+			 ; relnumber := 0)
+	       else ()))
 
     
      (* Preferences Window Handler *)
-     fun Preferences _ = Server.serve (fn () =>
-       	   let	
-           (* Width & Depth Settings *)
-	   val width_lab = labelNew("Set Width Limit to...")	       
-	   val width_s = createSpinButton{init =(!Settings.max_width) , 
+     fun Preferences _ = 
+	 Server.serve 
+	 (fn () =>
+	  let	
+	      (* Width & Depth Settings *)
+	      val width_lab = labelNew("Set Width Limit to...")	       
+	      val width_s = createSpinButton{init =(!Settings.max_width) , 
+					     lower = 0, 
+					     upper = 100, 
+					     inc = 1, 
+					     dec = 0}
+	      val depth_s = createSpinButton{init =(!Settings.max_depth) , 
 					   lower = 0, 
-					   upper = 100, 
-					   inc = 1, 
-					   dec = 0}
-	    val depth_s = createSpinButton{init =(!Settings.max_depth) , 
-					   lower = 0, 
-					   upper = 100, 
-					   inc = 1, 
-					   dec = 0}
-	    val depth_lab = labelNew("Set Depth Limit to...")
-	    val table = createTable{rows = 2, cols = 4, 
-				    entries = [(width_lab,0,2,0,1),
-				     (width_s,2,3,0,1),
-				     (depth_lab,0,2,1,2),
-				     (depth_s,2,3,1,2)]}
-	    val frame = createFrame("",table)
-	    (* Mode Settings *)
-	    val treemode_button =radioButtonNewWithLabel(uglyNULL, 
-       			      "Tree Mode")
-	    val group = radioButtonGroup(treemode_button)
-	    val tokenmode_button = radioButtonNewWithLabel(group, 
-				"Relational Mode - Token Equality")
-	    val group = radioButtonGroup(tokenmode_button)
-	    val relmode_button = radioButtonNewWithLabel(group, 
+					     upper = 100, 
+					     inc = 1, 
+					     dec = 0}
+	      val depth_lab = labelNew("Set Depth Limit to...")
+	      val table = createTable{rows = 2, cols = 4, 
+				      entries = [(width_lab,0,2,0,1),
+						 (width_s,2,3,0,1),
+						 (depth_lab,0,2,1,2),
+						 (depth_s,2,3,1,2)]}
+	      val frame = createFrame("",table)
+	      (* Mode Settings *)
+	      val treemode_button =radioButtonNewWithLabel(uglyNULL, 
+							   "Tree Mode")
+	      val group = radioButtonGroup(treemode_button)
+	      val tokenmode_button = 
+		  radioButtonNewWithLabel(group, 
+				      "Relational Mode - Token Equality")
+	      val group = radioButtonGroup(tokenmode_button)
+	      val relmode_button = 
+		  radioButtonNewWithLabel(group, 
 				"Relational Mode - Structural Equality")
-	    val _ = if !Settings.tokenmode 
-			then toggleButtonSetActive(tokenmode_button,true )
+	      val _ = if !Settings.tokenmode 
+			  then toggleButtonSetActive(tokenmode_button,true )
 		    else if !Settings.relmode then 
 			toggleButtonSetActive(relmode_button,true )
 			else
 			toggleButtonSetActive(treemode_button,true )
 
-	    val radiobox = createVBoxDefaults[treemode_button,
-					      relmode_button,
-					      tokenmode_button]
-
-	    val font_lab = labelNew("Set Font Size to...")	
-	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
-					  lower = 8, 
-					   upper = 50, 
-					   inc = 1, 
-					   dec = 0}
-	    val app_table = createTable{rows = 2, cols = 4, 
-				    entries = [(font_lab,0,2,0,1),
-					       (font_s,2,3,0,1)]}
-
-	    (* Buttonbox *)
-
-	    val w = toplevelWindowNew()
-	    val bbox = createButtonBox{buttons = 
+	      val radiobox = createVBoxDefaults[treemode_button,
+						relmode_button,
+						tokenmode_button]
+		  
+	      val font_lab = labelNew("Set Font Size to...")	
+	      val font_s = createSpinButton{init =(!Settings.fontSize) , 
+					    lower = 8, 
+					    upper = 50, 
+					    inc = 1, 
+					    dec = 0}
+	      val app_table = createTable{rows = 2, cols = 4, 
+					  entries = [(font_lab,0,2,0,1),
+						     (font_s,2,3,0,1)]}
+	      (* Buttonbox *)
+	      val w = toplevelWindowNew()
+	      val bbox = 
+		  createButtonBox{buttons = 
 		      [BObj("ok",[Handler("clicked",
 					  (okHandler(w,
 						     width_s,
@@ -660,7 +683,8 @@ struct
 				    ,true),
 			   EntryObj(SEP, [],true),
 			   EntryObj(LABEL "Reinspect",
-				    [Handler("activate",handleReinspectSelection)]
+				   [Handler("activate",
+					    handleReinspectSelection)]
 				    ,true)],
 		  sensitive = true}   ,
 		 MenuObj
@@ -676,7 +700,7 @@ struct
 	val _ = menuItemRightJustify(stopButton)
 
  
-(* Sendet Typinformation eines Knotens an den Statusbar *)
+	(* function sends type informations to statusbar *)
 	fun postT n = 
 	 let  
 	     val desc = Node.getDesc(n)
@@ -693,7 +717,9 @@ struct
 			     (String.size(text)) > positions_displayed 
 			     then
 				 postType("  " 
-			      ^String.extract(text, 0,SOME( positions_displayed)) 
+			      ^String.extract(text, 
+					      0,
+					      SOME( positions_displayed)) 
 					  ^ " ... ")
 			 else
 			     postType("  " ^ text)
@@ -709,145 +735,149 @@ struct
 		     ;()) handle _ => ()
 	 end
    
-
-
-fun makePopup n = 
-	let 
-	    val w = handleWidth(n)
-	    val d = handleDepth(n)
-	    val r = handleReinspect(n)
-	    val f = handleForce(n)
-	    val width_active =not(case n of 
-				  Limit(r) => getSort(n) = Node.DEPTH_LIMIT
-				    |  _ => false )
-	    val depth_active =not(case n of 
-				  Limit(r) => getSort(n) = Node.WIDTH_LIMIT
-				    |  _ => false )	
-	    val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
-	    val force_active = (Node.isByneed n) handle _ => false
-	    val delete_active = getParent(n) = Empty orelse 
-		                (isRelNode(getParent(n)) 
-				 andalso getParent(getParent(n)) = Empty)
-	    val width_item_list = [EntryObj(LABEL("-5"),
-					      [Handler("activate",w(~5))],
-						       true),
-				   EntryObj(LABEL("-4"),
-					    [Handler("activate",w(~4))],
-					    true),
-				   EntryObj(LABEL("-3"),
-					      [Handler("activate",w(~3))],
-					         true),
-				     EntryObj(LABEL("-2"),
-					      [Handler("activate",w(~2))],
-					      true),
-				     EntryObj(LABEL("-1"),
-					      [Handler("activate",w(~1))],
-					      true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+1"),
-					      [Handler("activate",w(1))],
-					      true),
-				     EntryObj(LABEL("+2"),
-					      [Handler("activate",w(2))],
-					      true),
-				     EntryObj(LABEL("+3"),
-					      [Handler("activate",w(3))],
-					      true),
-				     EntryObj(LABEL("+4"),
-					      [Handler("activate",w(4))],
-						       true),
-				     EntryObj(LABEL("+5"),
-					      [Handler("activate",w(5))]
-					      ,true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+10"),
-					      [Handler("activate",w(10))],
-					      true) 
-				     ]
+	(* creates popup when a node is clicked on *)
+	fun makePopup n = 
+	    let 
+		val w = handleWidth(n)
+		val d = handleDepth(n)
+		val r = handleReinspect(n)
+		val f = handleForce(n)
+		val width_active =not(case n of 
+				  Limit(r) => 
+					  getSort(n) = Node.DEPTH_LIMIT
+				|  _ => false )
+		val depth_active =not(case n of 
+					  Limit(r) => 
+					      getSort(n) = Node.WIDTH_LIMIT
+					|  _ => false )	
+		val reinspect_active = not(Node.getDesc(n) = Node.INTERPUNCT) 
+		val force_active = (Node.isByneed n) handle _ => false
+		val delete_active = getParent(n) = Empty orelse 
+		    (isRelNode(getParent(n)) 
+		     andalso getParent(getParent(n)) = Empty)
+		val width_item_list = [EntryObj(LABEL("-5"),
+						[Handler("activate",w(~5))],
+						true),
+				       EntryObj(LABEL("-4"),
+						[Handler("activate",w(~4))],
+						true),
+				       EntryObj(LABEL("-3"),
+						[Handler("activate",w(~3))],
+						true),
+				       EntryObj(LABEL("-2"),
+						[Handler("activate",w(~2))],
+						true),
+				       EntryObj(LABEL("-1"),
+						[Handler("activate",w(~1))],
+						true),
+				       EntryObj(SEP,[],true),
+				       EntryObj(LABEL("+1"),
+						[Handler("activate",w(1))],
+						true),
+				       EntryObj(LABEL("+2"),
+						[Handler("activate",w(2))],
+						true),
+				       EntryObj(LABEL("+3"),
+						[Handler("activate",w(3))],
+						true),
+				       EntryObj(LABEL("+4"),
+						[Handler("activate",w(4))],
+						true),
+				       EntryObj(LABEL("+5"),
+						[Handler("activate",w(5))]
+						,true),
+				       EntryObj(SEP,[],true),
+				       EntryObj(LABEL("+10"),
+						[Handler("activate",w(10))],
+						true) 
+				       ]
 		val depth_item_list = [EntryObj(LABEL("-5"),
-					      [Handler("activate",d(~5))],
-						       true),
-				   EntryObj(LABEL("-4"),
-					    [Handler("activate",d(~4))],
-					    true),
-				   EntryObj(LABEL("-3"),
-					      [Handler("activate",d(~3))],
-					         true),
-				     EntryObj(LABEL("-2"),
-					      [Handler("activate",d(~2))],
-					      true),
-				     EntryObj(LABEL("-1"),
-					      [Handler("activate",d(~1))],
-					      true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+1"),
-					      [Handler("activate",d(1))],
-					      true),
-				     EntryObj(LABEL("+2"),
-					      [Handler("activate",d(2))],
-					      true),
-				     EntryObj(LABEL("+3"),
-					      [Handler("activate",d(3))],
-					      true),
-				     EntryObj(LABEL("+4"),
-					      [Handler("activate",d(4))],
-						       true),
-				     EntryObj(LABEL("+5"),
-					      [Handler("activate",d(5))]
-					      ,true),
-				     EntryObj(SEP,[],true),
-				     EntryObj(LABEL("+10"),
-					      [Handler("activate",d(10))],
-					      true) 
-				     ]
-	in
-	case n of
-       Node.RelRefNode _ => ()
-      | _ =>
-	Server.serve (fn () => 
-	       (createMenu
-		(PopupObj
-		 [MenuObj{title = "Explore Tree",
-			  items = [MenuObj
-				   {title = "width",
-				    items = width_item_list,
-				    sensitive = width_active},
-				   MenuObj
-				   {title = "depth",
-				    items = depth_item_list,
-				    sensitive = depth_active}],
-			  sensitive = true},
-		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),
-					    [Handler("activate",r)],
-					    reinspect_active),
-				  EntryObj(LABEL("force evaluation"),
-					   [Handler("activate",f)],
-					   force_active),
-				   EntryObj(LABEL("delete tree"),
-					    [Handler("activate",
-					   fn _ => deleteNodeTree n)],
-					    delete_active)],
-			  sensitive = true}])
-		;()))
-	end
-
-(* Handelt Mouseclick *)
-     fun handleEvent event = Server.serve (fn () =>
-     let
-	 val font_width = !Settings.fontWidth
-	 val font_height = !Settings.fontHeight  
-	 val position = getMouseClickEventInfo(event,hadj,vadj) 
-     (* uses Gdk datatype -> GtkSupport *)
-     in
-	case position of 
-	  SOME ((x,y),b)=> 
-		let 
-		    val node = search(x,y)      
-		in 
-		    (case node of 
-			    SOME(n) => 
-				let 
+						[Handler("activate",d(~5))],
+						true),
+				       EntryObj(LABEL("-4"),
+						[Handler("activate",d(~4))],
+						true),
+				       EntryObj(LABEL("-3"),
+						[Handler("activate",d(~3))],
+						true),
+				       EntryObj(LABEL("-2"),
+						[Handler("activate",d(~2))],
+						true),
+				       EntryObj(LABEL("-1"),
+						[Handler("activate",d(~1))],
+						true),
+				       EntryObj(SEP,[],true),
+				       EntryObj(LABEL("+1"),
+						[Handler("activate",d(1))],
+						true),
+				       EntryObj(LABEL("+2"),
+						[Handler("activate",d(2))],
+						true),
+				       EntryObj(LABEL("+3"),
+						[Handler("activate",d(3))],
+						true),
+				       EntryObj(LABEL("+4"),
+						[Handler("activate",d(4))],
+						true),
+				       EntryObj(LABEL("+5"),
+						[Handler("activate",d(5))]
+						,true),
+				       EntryObj(SEP,[],true),
+				       EntryObj(LABEL("+10"),
+						[Handler("activate",d(10))],
+						true) 
+				       ]
+	    in
+		case n of
+		    Node.RelRefNode _ => ()
+		  | _ =>
+		   Server.serve 
+		   (fn () => 
+		    (createMenu
+		     (PopupObj
+		      [MenuObj{title = "Explore Tree",
+			       items = [MenuObj
+					{title = "width",
+					 items = width_item_list,
+					 sensitive = width_active},
+					MenuObj
+					{title = "depth",
+					 items = depth_item_list,
+					 sensitive = depth_active}],
+			       sensitive = true},
+		       MenuObj{title = "Actions",
+			       items = [EntryObj(LABEL("reinspect"),
+						 [Handler("activate",r)],
+						 reinspect_active),
+					EntryObj(LABEL("force evaluation"),
+						 [Handler("activate",f)],
+						 force_active),
+					EntryObj(LABEL("delete tree"),
+						 [Handler("activate",
+					        fn _ => deleteNodeTree n)],
+						 delete_active)],
+			       sensitive = true}])
+		     ;()))
+	    end
+	
+	(* Handles Mouseclick *)
+	fun handleEvent event = 
+	    Server.serve 
+	    (fn () =>
+	     let
+		 val font_width = !Settings.fontWidth
+		 val font_height = !Settings.fontHeight  
+		 val position = getMouseClickEventInfo(event,hadj,vadj) 
+	     (* uses Gdk datatype -> GtkSupport *)
+	     in
+		 case position of 
+		     SOME ((x,y),b)=> 
+			 let 
+			     val node = search(x,y)      
+			 in 
+			     (case node of 
+				  SOME(n) => 
+				      let 
 				    val ydim =Node.get_ydim(n) 
 				    val group = Node.getGroup(n)
 				    val x2 = Real.fromInt(font_width 
@@ -887,153 +917,153 @@ fun makePopup n =
 			  | NONE => ( setSelectionMenuSensitive(bar,false)
 				     ; destroySelectionMarkings()
 					 ; selection := NONE))
-		    end
-        | NONE => ()
-     end)
+			 end
+		   | NONE => ()
+	     end)
 
-(* Handlet Tastendruck *)
-     fun handleWindowEvent event = 
-	 Server.serve (fn () => 
-		       handleGdkKeyPress(event,
-					 scrolled,
-					 hadj,
-					 vadj,
-					 getScreenMaxX(),
-					 getScreenMaxY()))
+	(* Handles Key Press *)
+	fun handleWindowEvent event = 
+	    Server.serve (fn () => 
+			  handleGdkKeyPress(event,
+					    scrolled,
+					    hadj,
+					    vadj,
+					    getScreenMaxX(),
+					    getScreenMaxY()))
 
-(**************************************************************************)
 
-(* Neuanlegen / Wiedereroeffnen des Fensters (eine neue Canvas wird eingefuegt) *)
-     fun new _ = if !alive then()
-		 else
-		     let
-			 val _ = if !canvas =GtkSupport.uglyNULL
-				     then ()
-				 else objectDestroy(!canvas)
-			 structure DA  =  
-			     MkDrawingArea(val xsize = getScreenMaxX() 
-					   val ysize = getScreenMaxY()) 
-			     : DRAWING_AREA
-		     in
-			 (canvas := DA.canvas
-			  ;canvasroot := DA.root
-			  ;resize :=  (handleResize(scrolled,hadj,vadj,DA.resize))
-			  ;Update.resize := !resize
-			  ;containerAdd(scrolled,DA.canvas)
-			  ;signalConnect(scrolled,"size_allocate",
-					 fn _ => !resize())
-			  ;signalConnect(hadj,"value_changed",fn _ => 
-					 freezeThaw(DA.canvas))
-			  ;signalConnect(vadj,"value_changed",fn _ => 
-					 freezeThaw(DA.canvas)) 
-			  ;signalConnect(DA.canvas,"event",handleEvent)
-			  ;widgetShowAll(window)
-			  ; alive :=true) 
-		     end
+	(* Creation / Reopening of the Window (a new canvas gets attached) *)
+	    
+	fun new _ = if !alive then()
+		    else
+			let
+			    val _ = if !canvas =GtkSupport.uglyNULL
+					then ()
+				    else objectDestroy(!canvas)
+			    structure DA  =  
+				MkDrawingArea(val xsize = getScreenMaxX() 
+					      val ysize = getScreenMaxY()) 
+				: DRAWING_AREA
+			in
+			    (canvas := DA.canvas
+			     ;canvasroot := DA.root
+			     ;resize :=  (handleResize(scrolled,
+						       hadj,
+						       vadj,
+						       DA.resize))
+			     ;Update.resize := !resize
+			     ;containerAdd(scrolled,DA.canvas)
+			     ;signalConnect(scrolled,"size_allocate",
+					    fn _ => !resize())
+			     ;signalConnect(hadj,"value_changed",fn _ => 
+					    freezeThaw(DA.canvas))
+			     ;signalConnect(vadj,"value_changed",fn _ => 
+					    freezeThaw(DA.canvas)) 
+			     ;signalConnect(DA.canvas,"event",handleEvent)
+			     ;widgetShowAll(window)
+			     ; alive :=true) 
+			end
 		 
-     val _ = new() (* erzeugt initiales Fenster *)
+	val _ = new() (* creates initial window *)
 
-	 (* Fensterinitialisierung *)
-     val _ = (windowSetTitle (window, "Alice Browser V 0.9")
-	      ; widgetSetUsize (window, 200, 100) 
-	      ; windowSetDefaultSize(window, 600,500)
-	      ;signalConnect (window, "delete-event", DeleteWindow)
-	      ;setSelectionMenuSensitive (bar,false)  
-	      ;containerAdd(window,createVBox[(bar,
-						    false 
-						   ,false,
-						    0),
-						  (scrolled,
-						   (* Gtk.EXPAND *) true,
-						   (* Gtk.FILL *) true,0),
-						  (status, 
-						   false ,
+	(* window initialisation *)
+	val _ = (windowSetTitle (window, "Alice Browser V 0.9")
+		 ; widgetSetUsize (window, 200, 100) 
+		 ; windowSetDefaultSize(window, 600,500)
+		 ;signalConnect (window, "delete-event", DeleteWindow)
+		 ;setSelectionMenuSensitive (bar,false)  
+		 ;containerAdd(window,createVBox[(bar,
+						  false 
+						  ,false,
+						  0),
+						 (scrolled,
+						 (* Gtk.EXPAND *) true,
+						 (* Gtk.FILL *) true,0),
+						 (status, 
+						  false ,
 						  false  ,0)])
-	      ;signalConnect(window,"event",handleWindowEvent))
+		 ;signalConnect(window,"event",handleWindowEvent))
 
-(**** Initialisierung ****)
+	(**** Browser Initialisation ****)
 
      
 
-     val path_promise = CreateTree.lookupPath(CreateTree.coreSign,
-					   "Promise","promise")   
-	 
-     val path_package = CreateTree.lookupPath(CreateTree.packageSign,
-					   "Package","package") 
-	 
-     val path_val_package = CreateTree.lookupPath(CreateTree.packageSign,
-					       "Package","val_package") 
+	val path_promise = CreateTree.lookupPath(CreateTree.coreSign,
+						 "Promise","promise")   
+	    
+	val path_package = CreateTree.lookupPath(CreateTree.packageSign,
+						 "Package","package") 
+	    
+	val path_val_package = CreateTree.lookupPath(CreateTree.packageSign,
+						     "Package","val_package") 
+	    
+	fun init () = 
+	    ( registerType(path_int, createInt)
+	     ; registerType(path_string, createString)
+	     ; registerType(path_char, createChar)
+	     ; registerType(path_word, createWord)
+	     ; registerType(path_real, createReal)
+	     ; registerType(path_exn, createExn)
+	     ; registerType(path_ref, createRef)
+	     ; registerType(path_vec, createVector)
+	     ; registerType(path_array, createArray)
+	     ; registerType(path_promise, createPromise)
+	     ; registerType(path_package, createPackage)  
+	     ; registerType(path_val_package, createValPackage) 
+	     
+	     ; registerColor(INT_COLOR,  allocColor(0,45000,0))
+	     ; registerColor(REAL_COLOR, allocColor(0,45000,0))
+	     ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
+	     ; registerColor(STR_COLOR, allocColor(45000,0,50000)) 
+	     ; registerColor(WORD_COLOR, allocColor(0,43000,0))
+	     ; registerColor(EXN_COLOR,  allocColor (60000,40000,0))
+	     ; registerColor(REF_COLOR, allocColor(0,0,0))
+	     ; registerColor(LABEL_COLOR, allocColor (0,10000,65535))
+	     ; registerColor(SEP_COLOR, allocColor(0,0,0))
+	     ; registerColor(EQU_COLOR, allocColor(0,0,0))
+	     ; registerColor(LIMIT_COLOR, allocColor (10000,60000,10000))
+	     ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
+	     ; registerColor(REL_COLOR, allocColor (60000,20000,0))
+	     ; registerColor(DEFAULT, allocColor(0,0,0)) 
+	    
+	    ; Update.incrActLine := (fn dy => incr_act_line dy) )
+	    
 
-     fun init () = ( registerType(path_int, createInt)
-		   ; registerType(path_string, createString)
-		   ; registerType(path_char, createChar)
-		   ; registerType(path_word, createWord)
-		   ; registerType(path_real, createReal)
-		   ; registerType(path_exn, createExn)
-		   ; registerType(path_ref, createRef)
-		   ; registerType(path_vec, createVector)
-		   ; registerType(path_array, createArray)
-                   ; registerType(path_promise, createPromise)
-                   ; registerType(path_package, createPackage)  
-		   ; registerType(path_val_package, createValPackage) 
- 
-		   ; registerColor(INT_COLOR,  allocColor(0,45000,0))
-		   ; registerColor(REAL_COLOR, allocColor(0,45000,0))
-		   ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     
-		   ; registerColor(STR_COLOR, allocColor(45000,0,50000)) 
-		   ; registerColor(WORD_COLOR, allocColor(0,43000,0))
-		   ; registerColor(EXN_COLOR,  allocColor (60000,40000,0))
-		   ; registerColor(REF_COLOR, allocColor(0,0,0))
-		   ; registerColor(LABEL_COLOR, allocColor (0,10000,65535))
-		   ; registerColor(SEP_COLOR, allocColor(0,0,0))
-	           ; registerColor(EQU_COLOR, allocColor(0,0,0))
-	           ; registerColor(LIMIT_COLOR, allocColor (10000,60000,10000))
-	           ; registerColor(BRACK_COLOR, allocColor (0,5000,47000))
-	           ; registerColor(REL_COLOR, allocColor (60000,20000,0))
-	           ; registerColor(DEFAULT, allocColor(0,0,0)) 
-	           
-	           ; Update.incrActLine := (fn dy => incr_act_line dy) )
 
-(**** Ende Initialisierung ****)
 
-fun setScreenX x = if x > (!(Update.screen_max_x))
-			   then  Update.screen_max_x := x
-			       else ()
+	(***         Inspection            ***)
 
-(********** Inspizieren **********)
-
-    fun inspect(v,t) = 
-	let
-	    val va = UnsafeValue.cast v: Reflect.value
-	    val i = Dictionaries.Main.
-		        getHighestIndexAssigned(Dictionaries.maindict) +1
-	    val root = (new()
-		       ; relnumber := 0
-		       ;!canvasroot)
-	    val save_settings = (!Settings.max_width,!Settings.max_depth)
-	    val n = (stopButtonSetActive(true)
-		     ;CreateTree.newTree(va,t,i,root))		
-            val line = (stopButtonSetActive(false)
-			; if !stopflag 
-			      then ( Settings.set_width(#1(save_settings))
-				    ; Settings.set_depth(#2(save_settings))
-				    ; stopflag := false )
-				  else ()
-			;Layout.layout(n)
-			;setScreenX(get_xdim(n))
-			;createSepLine(root,!act_line,canvaswidth(hadj),
-				       Settings.getFontHeight()))
-	in
-	    ( Draw.draw(n,0,!act_line,false)
-	    ; incr_act_line(get_ydim(n) + 1)
-	    ; TextIO.print ("Widget: changing actline by " 
-			    ^ Int.toString (get_ydim(n)+1)
-			    ^ "\n")
-	    ; (!resize)()
-	    ; show()
-	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
-	end 
-			   
+	fun inspect(v,t) = 
+	    let
+		val va = UnsafeValue.cast v: Reflect.value
+		val i = Dictionaries.Main.
+		    getHighestIndexAssigned(Dictionaries.maindict) +1
+		val root = (new()
+			    ; relnumber := 0
+			    ;!canvasroot)
+		val save_settings = (!Settings.max_width,!Settings.max_depth)
+		val n = (stopButtonSetActive(true)
+			 ;CreateTree.newTree(va,t,i,root))		
+		val line = (stopButtonSetActive(false)
+			    ; if !stopflag 
+				  then ( Settings.set_width(#1(save_settings))
+					; Settings.set_depth(#2(save_settings))
+					; stopflag := false )
+			      else ()
+				  ;Layout.layout(n)
+				  ;setScreenX(get_xdim(n))
+				  ;createSepLine(root,
+						 !act_line,canvaswidth(hadj),
+						 Settings.getFontHeight()))
+	    in
+		( Draw.draw(n,0,!act_line,false)
+		 ; incr_act_line(get_ydim(n) + 1)
+		 ; (!resize)()
+		 ; show()
+		 ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
+		 ;())
+	    end 
+	
     fun inspectInf(v,t) = 
 	let
 	    val va = UnsafeValue.cast v: Reflect.module
@@ -1065,10 +1095,10 @@ fun setScreenX x = if x > (!(Update.screen_max_x))
 	    ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
 	end 
    
-val _ = (inspectFct := inspect
-	 ;inspectInfFct := inspectInf)
+    val _ = (inspectFct := inspect
+	     ;inspectInfFct := inspectInf)
 	 
-
+	
 end (* structure Widget end *)
 
 end (* local end *)

@@ -18,10 +18,15 @@ import structure Inf from "x-alice:/lib/rtt/Inf"
 
 signature WIDGET =
 sig
-    (* Inspizieren *)
-    val inspect: 'a * Type.t -> unit
+    
+    (* inspection *)
+    
+    val inspect:    'a * Type.t -> unit
     val inspectInf: 'a * Inf.t -> unit
-    (* Initialisierung *)
+
+    
+    (* initialization *)
+
     val init: unit -> unit
 
 end
