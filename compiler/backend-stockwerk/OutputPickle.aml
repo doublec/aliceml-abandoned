@@ -127,7 +127,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 					  Word8.fromInt (i mod 0x100)::cs
 				      end) nil (String.explode s)))
 
-
 	fun outputReal (context, r) =
 	    let
 		val vec = Unsafe.blastWrite r
