@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,7 +20,9 @@ sig
     type sign = Inf.sign
     type kind = Inf.kind
 
-    val ppInf :	 inf -> doc
+    val ppInf :  inf -> doc
+    val ppInf' : inf -> doc
     val ppSig :  sign -> doc
+    val ppSig' : sign -> doc
     val ppKind : kind -> doc
 end

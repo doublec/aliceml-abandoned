@@ -185,35 +185,36 @@ struct
 
   (* Interfaces *)
 
-    fun ppInf          j  = ppInf'([],rootPrec,j)
-    and ppInf'(ps,prec,j) =
+    fun ppInf  j = ppInf''([],true,rootPrec,j)
+    and ppInf' j = ppInf''([],false,rootPrec,j)
+    and ppInf''(ps,full,prec,j) =
 	if isAbbrev j then
 	    let
 		val (j1,j2) = asAbbrev j
 	    in
 		if not debug
-		then ppInf'(ps,prec,j1)
+		then ppInf''(ps,full,prec,j1)
 		else
 		parenPrec prec (asPrec,
 		    fbox(
-			ppInf'(ps, asPrec+1, j1) ^^
+			ppInf''(ps, full, asPrec+1, j1) ^^
 			text " as" ^/^
-			ppInf'(ps, asPrec+1, j2)
+			ppInf''(ps, full, asPrec+1, j2)
 		    )
 		)
 	    end
 	else case inspect j
 	 of Top   => text "any"
 	  | Con p => PPPath.ppPath' ps p
-	  | Sig s => ppSig'(ps, s)
+	  | Sig s => ppSig''(ps, full, s)
 	  | (Arrow _ | Exist _ | Lambda _) =>
 	    let
 		val (binds,j') = unbind j
 	    in
 		parenPrec prec (bindPrec,
 		    abox(below(
-			List.foldr (ppBind ps) empty binds ^/^
-			ppInf'(ps, bindPrec+1, j')
+			List.foldr (ppBind(ps,full)) empty binds ^/^
+			ppInf''(ps, full, bindPrec+1, j')
 		    ))
 		)
 	    end
@@ -223,7 +224,7 @@ struct
 	    in
 		parenPrec prec (appPrec,
 		    fbox(below(nest(
-			ppInf'(ps, appPrec, j') ^/^
+			ppInf''(ps, full, appPrec, j') ^/^
 			List.foldr (fn(p,doc) => PPPath.ppPath' ps p ^/^ doc)
 				   empty ps'
 		    )))
@@ -233,21 +234,21 @@ struct
 	    let
 		val (p,j') = asMod m
 	    in
-		if not debug then ppInf'(ps,prec,j') else
+		if not debug then ppInf''(ps,full,prec,j') else
 		fbox(below(nest(
 		    text "<" ^^
 		    PPPath.ppPath' ps p ^^ text " :" ^/^
-		    ppInf'(ps, rootPrec, j') ^^
+		    ppInf''(ps, full, rootPrec, j') ^^
 		    text ">"
 		)))
 	    end
 
-    and ppBind ps ((head,sep,p,j), doc) =
+    and ppBind (ps,full) ((head,sep,p,j), doc) =
 	text head ^^
 	text "(" ^^
 	fbox(below(nest(
 	    PPPath.ppPath p ^^ text " :" ^/^
-	    ppInf'(p::ps, rootPrec, j)
+	    ppInf''(p::ps, full, rootPrec, j)
 	))) ^^
 	text ")" ^^
 	text sep ^/^
@@ -258,21 +259,26 @@ struct
 
     and ppSig s =
 	vbox(below(
-	    List.foldr (ppItem([], LabelSet.set())) empty (items s)
+	    List.foldr (ppItem([], LabelSet.set(), true)) empty (items s)
 	))
 
-    and ppSig'(ps,s) =
+    and ppSig' s =
+	vbox(below(
+	    List.foldr (ppItem([], LabelSet.set(), false)) empty (items s)
+	))
+
+    and ppSig''(ps,full,s) =
 	abox(below(
 	    nest(
 		text "sig" ^/^
 		vbox(
-		    List.foldr (ppItem(ps, LabelSet.set())) empty (items s)
+		    List.foldr (ppItem(ps,LabelSet.set(),full)) empty (items s)
 		)
 	    ) ^/^
 	    text "end"
 	))
 
-    and ppItem (ps,ls) (item,doc) =
+    and ppItem (ps,ls,full) (item,doc) =
 	case inspectItem item
 	 of FixItem(l,f) =>
 	    let
@@ -399,7 +405,7 @@ struct
 		     then ppLab(Path.toLab p)
 		     else PPPath.ppPath' ps p) ^/^
 		    text ":" ^/^
-		    ppInf'(p::ps, rootPrec, j') ^/^
+		    ppInf''(p::ps, full, rootPrec, j') ^/^
 		    (case po
 		     of NONE   => empty
 		      | SOME p =>
@@ -438,20 +444,22 @@ struct
 		     then ppLab(Path.toLab p)
 		     else PPPath.ppPath' ps p) ^/^
 		    abox(
-			List.foldr (ppBind ps) empty bds'
+			List.foldr (ppBind(ps,full)) empty bds'
 		    ) ^/^
 		    (case jo
 		     of NONE   => empty
 		      | SOME j =>
 			text "=" ^/^
-			ppInf'(ps, rootPrec, j)
+			(if full
+			 then ppInf''(ps, full, rootPrec, j)
+			 else text "...")
 		    )
 		))
 	    end
 	  | HiddenItem item' =>
 		if not debug
 		then doc
-		else text "? " ^^ ppItem (ps,ls) (item', doc)
+		else text "? " ^^ ppItem (ps,ls,full) (item', doc)
 
 
   (* Kinds *)
@@ -467,13 +475,13 @@ struct
 	    in
 		parenPrec prec (bindPrec,
 		    abox(below(
-			List.foldr (ppBind ps) empty binds ^/^
+			List.foldr (ppBind(ps,true)) empty binds ^/^
 			ppKind'(ps, bindPrec+1, k')
 		    ))
 		)
 	    end
 	  | SingKind j =>
 		text "<" ^^
-		ppInf'(ps, rootPrec, j) ^^
+		ppInf''(ps, true, rootPrec, j) ^^
 		text ">"
 end
