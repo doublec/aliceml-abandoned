@@ -2278,6 +2278,7 @@ namespace Alice {
 		    }
 		}
 		//--** would be easier to convert to Url object and back.
+		//--** see class System.Web.HttpUrl
 		url = url.Replace('/', '\\');
 		int index;
 		while ((index = url.IndexOf("\\\\")) != -1) {
