@@ -908,7 +908,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (p != INVALID_POINTER) {
 	  u_int length;
 	  switch (p->GetLabel()) {
-	  case CHUNK_LABEL:
+	  case JavaLabel::BaseArray:
 	    length = static_cast<BaseArray *>(p)->GetLength();
 	    break;
 	  case JavaLabel::ObjectArray:
@@ -2069,7 +2069,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	Object *object = Object::FromWord(frame->Pop());
 	if (object != INVALID_POINTER) {
-	  Lock *lock     = INVALID_POINTER; // to be done: object->GetLock();
+	  Lock *lock     = object->GetLock();
 	  Future *future = lock->Acquire();
 	  if (future != INVALID_POINTER) {
 	    frame->Push(object->ToWord());
@@ -2086,7 +2086,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       {
 	Object *object = Object::FromWord(frame->Pop());
 	if (object != INVALID_POINTER) {
-	  Lock *lock = INVALID_POINTER; // to be done: object->GetLock();
+	  Lock *lock = object->GetLock();
 	  // This is safe for verified code; otherwise
 	  // IllegalMonitorStateException might be raised
 	  lock->Release();
