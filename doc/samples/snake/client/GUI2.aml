@@ -1,44 +1,103 @@
 import signature GUI2       from "GUI2-sig"
 
+structure GUI2 :> GUI2 =
+struct
 
-datatype error = 
-    ERROR of string
- |  CONN_ERROR of string
+    datatype error = 
+        ERROR of string
+     |  CONN_ERROR of string
 
-exception Error of string
+    exception Error of string
 
-type callbacks = {
-    (* called initially *)
-    startServer :   (string * Color.color) option * Config.config -> (string, error) alt,
-    connect :       string -> error option,
+    type callbacks = {
+        (* called initially *)
+        startServer :   (string * Color.color) option * Config.config -> (string, error) alt,
+        connect :       string -> error option,
 
-    (* called during a running game *)
-    turn :          Protocol.direction -> error option,
-    changeView :    Protocol.view_hint -> error option,
-    giveUp :        unit -> error option,
+        (* called during a running game *)
+        turn :          Protocol.direction -> error option,
+        changeView :    Protocol.view_hint -> error option,
+        giveUp :        unit -> error option,
 
-    (* called during the join phase *)
-    play :          string * Color.color -> error option,
-    watch :         unit -> error option
+        (* called during the join phase *)
+        play :          string * Color.color -> error option,
+        watch :         unit -> error option
 
-    (* called anytime *)
-    disconnect :    unit -> unit
-}
-
-
-datatype gui_state =
-    INITIAL 
-|   LEVEL_RUNNING of ArenaWidget.arena_widget 
-|   CONNECT of Connection.connection_widget
-|   WAIT of Wait.wait_widget
-|   SERVER_SETTINGS of ServerSettings.server_settings_widget
-|   PLAYER_SETTINGS of PlayerSettings.player_settings_widget
-|   HIGHSCORE of Highscore.highscore_widget
-
-type gui = {
-    mainWindow :    mainwindow_type,
-    state :         gui_state ref
-}
+        (* called anytime *)
+        disconnect :    unit -> unit
+    }
 
 
-    
+    datatype gui_state =
+        INITIAL 
+    |   LEVEL_RUNNING of ArenaWidget.arena_widget 
+    |   CONNECT of Connection.connection_widget
+    |   WAIT of Wait.wait_widget
+    |   SERVER_SETTINGS of ServerSettings.server_settings_widget
+    |   PLAYER_SETTINGS of PlayerSettings.player_settings_widget
+    |   HIGHSCORE of Highscore.highscore_widget
+
+    type gui = {
+        mainWindow :    mainwindow_type,
+        callbacks :     callbacks
+        state :         gui_state ref
+    }
+
+    fun start callbacks =
+        let
+            val state   = ref INITIAL 
+            val mainw   = MainWindow.mkMainWindow (startClientCB (state, callbacks), 
+                                                   startServerCB (state, callbacks),
+                                                   quitCB (state, callbacks) )
+        in
+            { mainWindow = mainw, callbacks, state }
+        end
+
+    (* menuItem `start client' pressed *)
+    and startClientCB (state, callbacks) mainWindow =
+        (* display connection window. *)
+        state := CONNECT (Connection.mkConnectionWindow (MainWindow.getWindow mainWindow, 
+                            connectCB (state, mainWindow, callbacks),
+                            cancelConnectCB (state, mainWindow, callbacks)) )
+                                    
+
+    (* this function is called by the ConnectionWindow.  If an
+       error occurs when connecting this function should return
+       SOME msg, this msg is then displayed by the window and
+       the user is given the possibility to retry entering the
+       ticket and connecting *)
+    and connectCB (state, mainWindow, callbacks : callbacks) ticket =
+        case state of
+            CONNECT _ => 
+            (case #connect callbacks ticket of
+                NONE    =>  (* connection was successful ;-) *)
+                ( (* display player settings window *)
+                state := PLAYER_SETTINGS (PlayerSettings.mkPlayerSettings ...);
+                (* inform the connectionWindow that everything went well,
+                   the window will close itself in this case *)
+                NONE)
+            (* if an error occurs inform the connectionWindow,
+               so that it displays that message and stays visible and active *)
+            |   SOME (CONN_ERROR msg) => SOME msg
+            |   SOME (ERROR msg)      => SOME msg)
+
+        |   _           => assert false 
+
+    (* this function is called by the ConnectionWindow. The connectionWindow.
+       should have already closed itself before calling this function. *)
+    and cancelConnectCB (state, mainWindow, callbacks) =
+        case state of
+            CONNECT _   => state := INITIAL
+        |   _           => assert false
+
+    (* menuItem `start server' pressed *)
+    and startServerCB state mainWindow =
+        
+
+    (* menuItem `quit' pressed *)
+    and quitCB state mainWindow =
+
+
+        
+        
+end    
