@@ -15,6 +15,8 @@
 #ifndef __GLOBAL_PRIMITIVES_HH__
 #define __GLOBAL_PRIMITIVES_HH__
 
+#pragma interface "builtins/GlobalPrimitives.hh"
+
 #include "store/store.hh"
 
 //

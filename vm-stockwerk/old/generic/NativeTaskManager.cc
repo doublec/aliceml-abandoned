@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#pragma implementation "builtin/Primitive.hh"
+
 #include "scheduler/TaskStack.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"

@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __BOOTSTRAP_INTERPRETER_HH__
-#define __BOOTSTRAP_INTERPRETER_HH__
+#ifndef __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
+#define __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__
+
+#pragma interface "interpreter/bootstrap/BootstrapInterpreter.hh"
 
 #include "scheduler/Interpreter.hh"
 
@@ -23,4 +25,4 @@ public:
   Result Run(TaskStack *taskStack, int nargs);
 };
 
-#endif __BOOTSTRAP_INTERPRETER_HH__
+#endif __INTERPRETER__BOOTSTRAP__BOOTSTRAP_INTERPRETER_HH__

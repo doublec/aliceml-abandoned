@@ -10,8 +10,9 @@
 //   $Revision$
 //
 
+#pragma implementation "interpreter/bootstrap/BootstrapInterpreter.hh"
+
 #include "scheduler/Scheduler.hh"
-#include "scheduler/TaskStack.hh"
 #include "datalayer/alicedata.hh"
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"

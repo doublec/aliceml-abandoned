@@ -10,8 +10,10 @@
 //   $Revision$
 //
 
-#ifndef __ENVIRONMENT_HH__
-#define __ENVIRONMENT_HH__
+#ifndef __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__
+#define __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__
+
+#pragma interface "interpreter/bootstrap/Environment.hh"
 
 #include "datalayer/alicedata.hh"
 
@@ -33,4 +35,4 @@ public:
   void Kill(word id);
 };
 
-#endif __ENVIRONMENT_HH__
+#endif __INTERPRETER__BOOTSTRAP__ENVIRONMENT_HH__

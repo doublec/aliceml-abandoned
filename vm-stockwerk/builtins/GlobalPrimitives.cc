@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#pragma implementation "builtins/GlobalPrimitives.hh"
+
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 

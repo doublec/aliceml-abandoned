@@ -10,6 +10,8 @@
 //   $Revision$
 //
 
+#pragma implementation "interpreter/bootstrap/Environment.hh"
+
 #include "interpreter/bootstrap/Environment.hh"
 
 static const u_int ENTRY_SIZE = 3;

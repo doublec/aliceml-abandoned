@@ -13,6 +13,8 @@
 #ifndef __BUILTINS__PRIMITIVE_HH__
 #define __BUILTINS__PRIMITIVE_HH__
 
+#pragma interface "builtins/Primitive.hh"
+
 #include "datalayer/alicedata.hh"
 
 class TaskStack;
