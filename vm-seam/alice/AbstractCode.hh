@@ -23,7 +23,7 @@
 // Opcodes
 class AliceDll AbstractCode {
 public:
-  static const u_int functionWidth = 6;
+  static const u_int functionWidth = 7;
 
   //
   // All constructors here must be lexicographically ordered

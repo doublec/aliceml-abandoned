@@ -86,6 +86,7 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 #define LASTINSTROPT      OPT(pc->Sel(operand++), LastInstr);
 #define INSTRS            VECTOR(pc->Sel(operand++), Instr);
 #define INT               Int(pc->Sel(operand++));
+#define INTOPT            OPT(pc->Sel(operand++), Int);
 #define STRING            Value(pc->Sel(operand++));
 #define VALUE             Value(pc->Sel(operand++));
 #define TEMPLATE          Template(pc->Sel(operand++));
@@ -197,7 +198,8 @@ private:
     Int(templ->Sel(1));
     VECTOR(templ->Sel(2), Value);
     ARGS(templ->Sel(3), IdDef);
-    Instr(templ->Sel(4));
+    INTOPT(templ->Sel(4));
+    Instr(templ->Sel(5));
     std::fprintf(file, " )");
   }
   void IntInstr(word w) {

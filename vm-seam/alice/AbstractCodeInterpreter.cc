@@ -219,7 +219,8 @@ AbstractCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
 void AbstractCodeInterpreter::PushCall(Closure *closure) {
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  // Function of coord * int * int * idDef vector * instr * liveness
+  // Function of coord * int * int * idDef vector *
+  //   outArity option * instr * liveness
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   switch (AbstractCode::GetAbstractCode(abstractCode)) {
   case AbstractCode::Function:
@@ -228,7 +229,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
       Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
       u_int nLocals = localNames->GetLength();
       AbstractCodeFrame::New(AbstractCodeInterpreter::self,
-			     abstractCode->Sel(4), closure,
+			     abstractCode->Sel(5), closure,
 			     Environment::New(nLocals),
 			     abstractCode->Sel(3));
     }
@@ -439,6 +440,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	abstractCode->Init(3, template_->Sel(3));
 	abstractCode->Init(4, template_->Sel(4));
 	abstractCode->Init(5, template_->Sel(5));
+	abstractCode->Init(6, template_->Sel(6));
 	// Construct concrete code from abstract code:
 	word wConcreteCode =
 	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
@@ -463,6 +465,7 @@ Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
 	abstractCode->Init(3, template_->Sel(3));
 	abstractCode->Init(4, template_->Sel(4));
 	abstractCode->Init(5, template_->Sel(5));
+	abstractCode->Init(6, template_->Sel(6));
 	// Construct concrete code from abstract code:
 	word wConcreteCode =
 	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
@@ -929,6 +932,16 @@ u_int AbstractCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
   Vector *idDefs = Vector::FromWordDirect(abstractCode->Sel(3));
   u_int nArgs = idDefs->GetLength();
   return nArgs;
+}
+
+u_int AbstractCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
+  Assert(concreteCode->GetInterpreter() == AbstractCodeInterpreter::self);
+  AliceConcreteCode *aliceConcreteCode =
+    STATIC_CAST(AliceConcreteCode *, concreteCode);
+  TagVal *abstractCode = aliceConcreteCode->GetAbstractCode();
+  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
+  return ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
+	  Store::DirectWordToInt(outArityOpt->Sel(0)));
 }
 
 const char *AbstractCodeInterpreter::Identify() {
