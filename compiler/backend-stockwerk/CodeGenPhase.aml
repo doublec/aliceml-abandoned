@@ -194,7 +194,9 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 						 | NONE => rest) nil set
 			    val ids = List.mapPartial getLocal idRefs
 			in
-			    O.Kill (Vector.fromList ids, instr)
+			    case ids of
+				nil => instr
+			      | _ => O.Kill (Vector.fromList ids, instr)
 			end
 		  | ref _ => instr
 	    end
