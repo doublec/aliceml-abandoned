@@ -23,6 +23,8 @@ sig
 
     val pathEscape : char option
     val pathSeparator : char
+
+    val buildDate : Date.date
 end
 
 structure Config : CONFIG =
@@ -50,4 +52,6 @@ struct
 	case platform of
 	    WIN32 => #";"
 	  | UNIX => #":"
+
+    val buildDate = Date.fromTimeLocal (Time.now ())
 end
