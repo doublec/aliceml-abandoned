@@ -6,6 +6,7 @@ signature GEOMETRY =
 	type mat
 
 	val negVec: vec -> vec
+	val rezVec: vec -> vec
 	val addVec: vec * vec -> vec
 	val subVec: vec * vec -> vec
 	val mulScalVec: real * vec -> vec
@@ -18,6 +19,7 @@ signature GEOMETRY =
 	val unitMat: mat
 	val translationMat: vec -> mat
 	val scaleMat: vec -> mat
+	val uscaleMat: real -> mat
 	val rotationXMat: angle -> mat
 	val rotationYMat: angle -> mat
 	val rotationZMat: angle -> mat
@@ -25,7 +27,7 @@ signature GEOMETRY =
     end
 
 
-structure Geometry : GEOMETRY =
+structure Geometry :> GEOMETRY =
     struct
 	open Real
 	open Math
@@ -38,6 +40,7 @@ structure Geometry : GEOMETRY =
 	type point = vec
 
 	fun negVec (x1, x2, x3)                 = ( ~x1,    ~x2,    ~x3  )
+	fun rezVec (x1, x2, x3)                 = (1.0/x1, 1.0/x2, 1.0/x3)
 	fun mulScalVec (k, (x1, x2, x3))        = (  k*x1,   k*x2,   k*x3)
 	fun addVec ((x1, x2, x3), (y1, y2, y3)) = ( x1+y1,  x2+y2,  x3+y3)
 	fun subVec ((x1, x2, x3), (y1, y2, y3)) = ( x1-y1,  x2-y2,  x3-y3)
@@ -81,6 +84,8 @@ structure Geometry : GEOMETRY =
 	    ( sx, 0.0, 0.0, 0.0,
 	     0.0,  sy, 0.0, 0.0,
 	     0.0, 0.0,  sz, 0.0)
+
+	fun uscaleMat s = scaleMat(s,s,s)
 
 	fun rotationXMat a =
 	    let
