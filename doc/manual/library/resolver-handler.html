@@ -8,13 +8,21 @@
     signature RESOLVER_HANDLER</PRE>
 
   <P>
-    This signature represents handlers as used by <A href="resolver.html"
-    >resolvers</A> to find resources such as components.  A <EM>handler</EM>
-    is a function that takes a uniform resource identifier (URI), which is
-    a symbolic name for a resource, and returns a uniform resource locator
-    (URL) with which to attempt to actually locate the resource.  A handler
-    may or may not be <EM>applicable</EM>, which means that it actually
-    may or may not return a URL.
+    This signature defines functions for defining and applying rules to
+    rewrite resource names, represented as uniform resource identifiers (URIs).
+    For example, <A href="resolver.html">resolvers</A> use rewriting to locate
+    resources such as components.  In this case, the client considers the
+    result of rewriting to be a uniform resource locator (URL), with which
+    it attempts to actually access the resource.  Clients may also use
+    rewriting to perform the reverse operation, namely to abstract a URL
+    into a URI again.
+  </P>
+
+  <P>
+    On the programming language level, a <EM>handler</EM> is a function that
+    takes a URI and transforms it into another URI.  A handler may or may not
+    be <EM>applicable</EM>, which means that it actually may or may not return
+    a URI.
   </P>
 
   <P>
@@ -46,6 +54,8 @@
 	val <A href="#custom">custom</A> : string * (<A href="url.html#t">Url.t</A> -> <A href="url.html#t">Url.t</A> option) -> handler
 
 	val <A href="#parse">parse</A> : string -> handler list
+
+	val <A href="#apply">apply</A> : handler list -> <A href="url.html#t">Url.t</A> -> (<A href="url.html#t">Url.t</A> * handler list) option
     end</PRE>
 
 <?php section("description", "description") ?>
@@ -145,6 +155,19 @@
 	handlers and returns this.  Raises <TT><A href="#Syntax">Syntax</A
 	></TT> if the string is not well-formed.  The concrete syntax is
 	specified by implementations of this signature.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="apply">apply</A> <I>handlers</I> <I>url</I></TT>
+    </DT>
+    <DD>
+      <P>rewrites <I>url</I> using <I>handlers</I>.  The <I>handlers</I>
+	are tested for applicability in order.  If an applicable handler is
+	found, returns <TT>SOME (<I>url'</I>, <I>handlers'</I>)</TT>, where
+	<TT><I>url'</I></TT> is the result of the applicable handler and
+	<TT><I>handlers'</I></TT> is the list of handlers that have not
+	been tested for applicability.  If no handler is applicable,
+	returns <TT>NONE</TT>.</P>
     </DD>
   </DL>
 
