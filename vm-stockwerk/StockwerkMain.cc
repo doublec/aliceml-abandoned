@@ -30,6 +30,10 @@
 #include "alice/Data.hh" //--**
 #include "alice/AliceLanguageLayer.hh"
 
+#if defined(ALICE_PROFILE)
+#include "generic/Profiler.hh"
+#endif
+
 extern word UnsafeConfig(void);
 extern word UnsafeIO(void);
 extern word UnsafeOS(void);
@@ -68,10 +72,10 @@ static u_int mb(u_int n) {
 int main(int argc, char *argv[]) {
   // Setup the store
   u_int memLimits[STORE_GENERATION_NUM];
-  memLimits[0] = mb(4);
+  memLimits[0] = mb(16);
   memLimits[1] = mb(15);
-  memLimits[2] = mb(30);
-  Store::InitStore(memLimits, 75, 20);
+  memLimits[2] = mb(35);
+  Store::InitStore(memLimits, 67, 20);
   // Setup Datastructures
   RootSet::Init();
   UniqueString::Init();
@@ -79,6 +83,9 @@ int main(int argc, char *argv[]) {
   TaskStack::Init();
   IOHandler::Init();
   Scheduler::Init();
+#if defined(ALICE_PROFILE)
+  Profiler::Init();
+#endif
   // Setup Interpreters and Services
   PushCallInterpreter::Init();
   ByneedInterpreter::Init();
