@@ -104,28 +104,22 @@ define
 	 VHd = vMatch(_ {GetReg Id State} {NoElse Region $ nil State}
 		      [onRecord('#' Arity ThenVInstr)]
 		      {TranslateRegion Region State} nil)
-      [] handleStm(Region Body1 IdDef Body2 Body3 Stamp) then
-	 Reg1 Reg2 Coord TryVInstr CatchVInstr CatchVInter VInter
+      [] handleStm(Region TryBody IdDef HandleBody) then
+	 Reg1 Reg2 Coord TryVInstr HandleVInstr HandleVInter VInter
       in
 	 {State.cs newReg(?Reg1)}
 	 Reg2 = {MakeReg IdDef State}
 	 Coord = {TranslateRegion Region State}
-	 VHd = vExHandler(_ TryVInstr Reg1 CatchVInstr Coord VInter _)
-	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
-	 {Dictionary.put State.shareDict Stamp unit}
-	 CatchVInstr = vCallConstant(_ UnwrapAliceException
-				     [Reg1 Reg2] Coord CatchVInter)
-	 {TranslateBody Body2 ?CatchVInter nil State ReturnReg}
-	 {TranslateBody Body3 ?VInter VTl=nil State ReturnReg}
-      [] endHandleStm(Region Stamp) then
-	 if {Dictionary.member State.shareDict Stamp} then
-	    %% This statement ends the `handle' part
-	    VHd = VTl
-	 else
-	    %% This statement ends the `try' part
-	    VHd = vPopEx(_ {TranslateRegion Region State} VTl)
-	 end
-	 VTl = nil
+	 VHd = vExHandler(_ TryVInstr Reg1 HandleVInstr Coord nil _)
+	 {TranslateBody TryBody ?TryVInstr nil State ReturnReg}
+	 HandleVInstr = vCallConstant(_ UnwrapAliceException
+				      [Reg1 Reg2] Coord HandleVInter)
+	 {TranslateBody HandleBody ?HandleVInter nil State ReturnReg}
+      [] endTryStm(Region Body) then
+	 VHd = vPopEx(_ {TranslateRegion Region State} VInter)
+	 {TranslateBody Body VInter VTl State ReturnReg}
+      [] endHandleStm(Region Body) then
+	 {TranslateBody Body VHd VTl State ReturnReg}
       [] testStm(Region Id litTests(LitBodyList=wordLit(_)#_|_) ElseBody) then
 	 IntReg Coord Matches VInter ElseVInstr
       in

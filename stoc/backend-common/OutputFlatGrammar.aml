@@ -128,15 +128,17 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				   SEQ #[S (Label.toString label), S "=",
 					 IDDEF idDef]) labelIdDefVector),
 		  S "} = ", ID id]
-	  | outputStm (HandleStm (_, body1, idDef, body2, body3, stamp),
-		       shared) =
-	    SEQ #[S "try ", S (Stamp.toString stamp), IN, NL,
-		  outputBody (body1, shared), EX, NL,
-		  S "catch ", IDDEF idDef, IN, NL,
-		  outputBody (body2, shared), EX, NL,
-		  S "cont", IN, NL, outputBody (body3, shared), EX]
-	  | outputStm (EndHandleStm (_, stamp), _) =
-	    SEQ #[S "leave ", S (Stamp.toString stamp)]
+	  | outputStm (TryStm (_, tryBody, idDef, handleBody), shared) =
+	    let
+		val handleOutput = outputBody (handleBody, shared)
+	    in
+		SEQ #[S "try", IN, NL, outputBody (tryBody, shared), EX, NL,
+		      S "handle ", IDDEF idDef, IN, NL, handleOutput]
+	    end
+	  | outputStm (EndTryStm (_, body), shared) =
+	    SEQ #[S "(* end try *)", outputBody (body, shared)]
+	  | outputStm (EndHandleStm (_, body), shared) =
+	    SEQ #[S "(* end handle *)", EX, NL, outputBody (body, shared)]
 	  | outputStm (TestStm (_, id, tests, body), shared) =
 	    SEQ #[S "case ", ID id, S " of", IN, NL,
 		  outputTests (tests, shared),

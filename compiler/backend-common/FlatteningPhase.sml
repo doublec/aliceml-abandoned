@@ -584,33 +584,31 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info' = infoExp exp
 		val id' = freshIntermediateId info'
-		val stamp = Stamp.new ()
-		val cont' =
-		    Goto [O.EndHandleStm (stm_info (#region info), stamp)]
+		val contBody =
+		    share (translateExp (VarExp (info', ShortId (info', id')),
+					 f, cont))
 		fun f' exp' =
 		    O.ValDec (stm_info (#region info'),
 			      O.IdDef (translateId id'), exp')
-		val tryBody = translateExp (exp, f', cont')
-		val catchInfo = {region = #region info,
-				 typ = PervasiveType.typ_exn}
-		val catchId = freshIntermediateId catchInfo
-		val catchVarExp =
-		    VarExp (catchInfo, ShortId (catchInfo, catchId))
+		val tryCont =
+		    Goto [O.EndTryStm (stm_info (#region info), contBody)]
+		val tryBody = translateExp (exp, f', tryCont)
+		val exnInfo = {region = #region info,
+			       typ = PervasiveType.typ_exn}
+		val exnId = freshIntermediateId exnInfo
+		val exnVarExp = VarExp (exnInfo, ShortId (exnInfo, exnId))
+		val handleCont =
+		    Goto [O.EndHandleStm (stm_info (#region info), contBody)]
 		val matches' =
 		    Vector.map (fn Match (_, pat, exp) =>
-			      (#region (infoExp exp), pat,
-			       translateExp (exp, f', cont')))
-		    matches
-		val catchBody =
-		    simplifyCase (#region info, catchVarExp, matches',
-				  catchVarExp, true)
-		val contBody =
-		    translateExp (VarExp (info', ShortId (info', id')),
-				  f, cont)
+				(#region (infoExp exp), pat,
+				 translateExp (exp, f', handleCont))) matches
+		val handleBody =
+		    simplifyCase (#region info, exnVarExp, matches',
+				  exnVarExp, true)
 	    in
-		[O.HandleStm (stm_info (#region info), tryBody,
-			      O.IdDef (translateId catchId),
-			      catchBody, contBody, stamp)]
+		[O.TryStm (stm_info (#region info), tryBody,
+			   O.IdDef (translateId exnId), handleBody)]
 	    end
 	  | translateExp (FailExp info, f, cont) =
 	    let

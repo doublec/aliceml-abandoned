@@ -71,8 +71,12 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  (* the following must always be last *)
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
-	  | HandleStm of stm_info * body * idDef * body * body * stamp
-	  | EndHandleStm of stm_info * stamp
+	  | TryStm of stm_info * body * idDef * body
+	  | EndTryStm of stm_info * body
+	  | EndHandleStm of stm_info * body
+	    (* all bodies of EndTryStm/EndHandleStm corresponding to an
+	     * exception handler are identical (and - if necessary - are
+	     * marked by a SharedStm node) *)
 	  | TestStm of stm_info * id * tests * body
 	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 	  | ReturnStm of stm_info * exp
@@ -117,7 +121,8 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | infoStm (ProdDec (info, _, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
 	  | infoStm (ReraiseStm (info, _)) = info
-	  | infoStm (HandleStm (info, _, _, _, _, _)) = info
+	  | infoStm (TryStm (info, _, _, _)) = info
+	  | infoStm (EndTryStm (info, _)) = info
 	  | infoStm (EndHandleStm (info, _)) = info
 	  | infoStm (TestStm (info, _, _, _)) = info
 	  | infoStm (SharedStm (info, _, _)) = info

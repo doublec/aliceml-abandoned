@@ -181,15 +181,16 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "prodDec"); outputStmInfo (q, info); m q;
 	     outputVector (outputPair (outputLabel, outputIdDef))
 	     (q, labelIdDefVec); m q; outputId (q, id); r q)
-	  | outputStm (q, HandleStm (info, body1, idDef, body2, body3,
-				     stamp)) =
-	    (f (q, "handleStm"); outputStmInfo (q, info); m q;
-	     outputBody (q, body1); m q; outputIdDef (q, idDef); m q;
-	     outputBody (q, body2); m q; outputBody (q, body3); m q;
-	     outputStamp (q, stamp); r q)
-	  | outputStm (q, EndHandleStm (info, stamp)) =
+	  | outputStm (q, TryStm (info, tryBody, idDef, handleBody)) =
+	    (f (q, "tryStm"); outputStmInfo (q, info); m q;
+	     outputBody (q, tryBody); m q; outputIdDef (q, idDef); m q;
+	     outputBody (q, handleBody); r q)
+	  | outputStm (q, EndTryStm (info, body)) =
+	    (f (q, "endTryStm"); outputStmInfo (q, info); m q;
+	     outputBody (q, body); r q)
+	  | outputStm (q, EndHandleStm (info, body)) =
 	    (f (q, "endHandleStm"); outputStmInfo (q, info); m q;
-	     outputStamp (q, stamp); r q)
+	     outputBody (q, body); r q)
 	  | outputStm (q, TestStm (info, id, tests, body)) =
 	    (f (q, "testStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); m q; outputTests (q, tests); m q;

@@ -10,6 +10,23 @@
  *   $Revision$
  *)
 
+(*
+ * This file implements value propagation (a variant on constant propagation
+ * and constant folding).  For each program point, an approximation of the
+ * environment that it will see at run-time is computed, and if possible,
+ * the computations are simplified to take advantage of these minimal
+ * assumptions.
+ *
+ * This analysis is - for now - not interprocedural.
+ *)
+
+(*
+ * We need to implement our own maps because the ones provided by
+ * the library are not fit for our purposes:  The iterators yield
+ * all elements of the map, regardless of their scope and whether
+ * they are shadowed; this would introduce a severe performance bug.
+ *)
+
 signature SCOPED_IMP_MAP =
     sig
 	type key
@@ -83,11 +100,23 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun idOf (IdDef id) = id
 	  | idOf (Wildcard) = raise Crash.Crash "ValuePropagationPhase.idOf"
 
+	fun conEq (Con (Id (_, stamp, _)), Con (Id (_, stamp', _))) =
+	    stamp = stamp'
+	  | conEq (StaticCon stamp, StaticCon stamp') = stamp = stamp'
+	  | conEq (_, _) = false
+
 	structure IdMap =
 	    MakeHashScopedImpMap(type t = id
 				 val equals = idEq
 				 fun hash (Id (_, stamp, _)) =
 				     Stamp.hash stamp)
+
+	(*
+	 * The `value' data type represents the approximation of the value
+	 * a given identifier will have at a given program point.  Only the
+	 * values which can actually be used to simplify computations are
+	 * stored.
+	 *)
 
 	datatype value =
 	    LitVal of lit
@@ -135,8 +164,37 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (SelAppExp (_, _, _, _, _)) = UnknownVal
 	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
 
+	(*
+	 * For each identifier, we store in the environment whether it
+	 * has been declared on the top level (i.e., outside any function)
+	 * and what approximation we can give about its value.
+	 *)
+
 	type isToplevel = bool
 	type env = (value * isToplevel) IdMap.t
+
+	(*
+	 * Value propagation performed on a given sequence of statements
+	 * is only correct if we give it a value environment that we can
+	 * minimally assume to hold at run-time at this program point.
+	 * For control-flow junctions, this means we have to merge all
+	 * incoming environment in order to build an environment of
+	 * correct assumptions for the remainder of the control path.
+	 *
+	 * The control-flow junctions in our language are the SharedStm
+	 * nodes.  In order to have the correct environment when performing
+	 * value propagation on a SharedStm, therefore, we need to have
+	 * analyzed all paths leading to this SharedStm.  In general this
+	 * means that we have to build an abstract control-flow graph
+	 * containing only the SharedStms as nodes and having edges from
+	 * a node n to a node m iff there is a control-flow branch leading
+	 * from n to m (ignoring loops in the control-flow graph).
+	 * If we analyze SharedStms in an order conforming with the
+	 * topological ordering of the graph's nodes, then the minimal
+	 * environments (as defined above) are correctly computed.
+	 *
+	 * sortShared computes an appropriate ordering on the SharedStms.
+	 *)
 
 	datatype sharedEntry =
 	    UNIQUE
@@ -161,14 +219,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | sortStm (ProdDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (RaiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (ReraiseStm (_, _), _, _, _, _) = ()
-	      | sortStm (HandleStm (_, body1, _, body2, body3, stamp),
+	      | sortStm (TryStm (_, tryBody, _, handleBody),
 			 pred, edgeMap, shared, path) =
-		(node (edgeMap, stamp);
-		 sortBody (body1, pred, edgeMap, shared, path);
-		 sortBody (body2, pred, edgeMap, shared, path);
-		 sortBody (body3, stamp, edgeMap, shared, path))
-	      | sortStm (EndHandleStm (_, stamp), pred, edgeMap, _, _) =
-		edge (edgeMap, pred, stamp)
+		(sortBody (tryBody, pred, edgeMap, shared, path);
+		 sortBody (handleBody, pred, edgeMap, shared, path))
+	      | sortStm (EndTryStm (_, body), pred, edgeMap, shared, path) =
+		sortBody (body, pred, edgeMap, shared, path)
+	      | sortStm (EndHandleStm (_, body), pred, edgeMap, shared, path) =
+		sortBody (body, pred, edgeMap, shared, path)
 	      | sortStm (TestStm (_, _, tests, body),
 			 pred, edgeMap, shared, path) =
 		(sortTests (tests, pred, edgeMap, shared, path);
@@ -230,15 +288,21 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		end
 	end
 
+	(*
+	 * As outlined above, we need to compute the value environments we
+	 * can minimally assume to hold at every given program point.  For
+	 * control-flow junctions, this means that we have to combine the
+	 * environments from all branches.
+	 *
+	 * `unionEnv' takes two environments and returns the combined minimal
+	 * environment.  It is reflexive and associative, so an arbitrary
+	 * number of environments can be combined using `unionEnv.'
+	 *)
+
 	fun idDefEq (IdDef (Id (_, stamp, _)), IdDef (Id (_, stamp', _))) =
 	    stamp = stamp'
 	  | idDefEq (Wildcard, Wildcard) = true
 	  | idDefEq (_, _) = false
-
-	fun conEq (Con (Id (_, stamp, _)), Con (Id (_, stamp', _))) =
-	    stamp = stamp'
-	  | conEq (StaticCon stamp, StaticCon stamp') = stamp = stamp'
-	  | conEq (_, _) = false
 
 	fun argsMin (args as OneArg idDef, OneArg idDef') =
 	    if idDefEq (idDef, idDef') then args else OneArg Wildcard
@@ -525,24 +589,20 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    end
 	  | vpStm (stm as ReraiseStm (info, id), env, _, _) =
 	    ReraiseStm (info, deref (id, env))
-	  | vpStm (HandleStm (info, body1, idDef, body2, body3, stamp),
+	  | vpStm (TryStm (info, tryBody, idDef, handleBody),
 		   env, isToplevel, shared) =
 	    let
-		val bodyOptRef = ref (SOME body3)
-		val entry = SHARED_ANN (bodyOptRef, IdMap.cloneTop env)
-		val _ = StampMap.insertDisjoint (shared, stamp, entry)
-		val body1 = vpBodyScope (body1, env, isToplevel, shared)
+		val tryBody = vpBodyScope (tryBody, env, isToplevel, shared)
 		val _ = declare (env, idDef, (CaughtExnVal, isToplevel))
-		val body2 = vpBody (body2, env, isToplevel, shared)
-		val info' = {region = #region info, liveness = ref Unknown}
-		val body3 = [IndirectStm (info', bodyOptRef)]
+		val handleBody =
+		    vpBodyScope (handleBody, env, isToplevel, shared)
 	    in
-		HandleStm (info, body1, idDef, body2, body3, stamp)
+		TryStm (info, tryBody, idDef, handleBody)
 	    end
-	  | vpStm (stm as EndHandleStm (_, stamp), env, _, shared) =
-	    (case StampMap.lookupExistent (shared, stamp) of
-		 SHARED_ANN (_, env') => (unionEnv (env', env); stm)
-	       | _ => raise Crash.Crash "ValuePropagationPhase.vpStm")
+	  | vpStm (EndTryStm (info, body), env, isToplevel, shared) =
+	    EndTryStm (info, vpBodyScope (body, env, isToplevel, shared))
+	  | vpStm (EndHandleStm (info, body), env, isToplevel, shared) =
+	    EndHandleStm (info, vpBodyScope (body, env, isToplevel, shared))
 	  | vpStm (stm as TestStm (info, id, _, _), env, isToplevel, shared) =
 	    let
 		val id = deref (id, env)

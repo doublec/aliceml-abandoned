@@ -181,12 +181,17 @@ structure BackendStockwerk: PHASE =
 	    O.Raise (lookup (env, id))
 	  | translateStm (ReraiseStm (_, id), env) = (*--** do better *)
 	    O.Raise (lookup (env, id))
+	  | translateStm (HandleStm (_, tryBody, idDef, handleBody), env) =
+	    O.Try (translateBody (tryBody, env),
+		   translateIdDef (idDef, env),
+		   translateBody (handleBody, env))
+	  | translateStm (EndTryStm (_, body), env) =
+	    O.EndTry (translateBody (body, env))
+	  | translateStm (EndHandleStm (_, body), env) =
+	    O.EndHandle (translateBody (body, env))
 
 (*--** MISSING
-	  | HandleStm of stm_info * body * idDef * body * body * stamp
-	  | EndHandleStm of stm_info * stamp
 	  | TestStm of stm_info * id * tests * body
-	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
 *)
 
 	  | translateStm (TestStm (_, id, LitTests #[], elseBody),
@@ -241,6 +246,16 @@ structure BackendStockwerk: PHASE =
 								     env))
 					       | _ => raise Match) litTests,
 				 translateBody (elseBody, env)))
+
+(*--** MISSING
+	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
+*)
+
+	  | translateStm (ReturnStm (_, TupExp (_, ids)), env) =
+	    O.Return (O.TupArgs (translateIds (ids, env)))
+	  | translateStm (ReturnStm (_, ProdExp (_, labelIdVec)), env) =
+	    O.Return (O.TupArgs (Vector.map (fn (_, id) => lookup (env, id))
+				 labelIdVec))
 	  | translateStm (ReturnStm (_, exp), env) =
 	    let
 		val id = fresh env
@@ -305,9 +320,12 @@ structure BackendStockwerk: PHASE =
 		      translateIds (argsToVector args, env), instr)
 	  | translateExp (RefAppExp (_, id), id', instr, env) =
 	    O.PutRef (id', lookup (env, id), instr)
-	  | translateExp (SelAppExp (_, Tuple n, _, index, id),
-			  id', instr, env) =
+	  | translateExp (SelAppExp (_, prod, _, index, id), id', instr, env) =
 	    let
+		val n =
+		    case prod of
+			Tuple n => n
+		      | Product labels => Vector.length labels
 		fun wild _ = O.Wildcard
 	    in
 		O.GetTup (Vector.fromList

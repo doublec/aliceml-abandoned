@@ -159,6 +159,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 
 	(*--** remove global state *)
 	val sharedLabels: label StampMap.t = StampMap.new ()
+	val handlerCont: (label * body) option ref = ref NONE
 
 	fun genStm (ValDec (_, idDef, exp)) =
 	    (genExp (exp, BOTH); declareLocal idDef)
@@ -179,23 +180,35 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; declareArgs (TupArgs idDefs, true))
 	  | genStm (ProdDec (info, labelIdDefVec, id)) =
 	    (emitId id; declareArgs (ProdArgs labelIdDefVec, true))
-	  | genStm (HandleStm (_, tryBody, idDef, catchBody, contBody,
-			       stamp)) =
+	  | genStm (TryStm (_, tryBody, idDef, handleBody)) =
 	    let
 		val label1 = newLabel ()
 		val label2 = newLabel ()
 		val label3 = newLabel ()
+		val oldHandlerCont = !handlerCont
 	    in
-		StampMap.insertDisjoint (sharedLabels, stamp, label3);
+		handlerCont := NONE;
 		emit (Try (label1, label2, Alice.Exception, label2, label3));
 		emit (Label label1); genBody tryBody;
 		emit (Label label2);
 		emit (Ldfld (Alice.Exception, "Value", System.ObjectTy));
-		declareLocal idDef;
-		genBody catchBody; emit (Label label3); genBody contBody
+		declareLocal idDef; genBody handleBody;
+		emit (Label label3);
+		case !handlerCont of
+		    SOME (label, contBody) =>
+			(emit (Label label); genBody contBody)
+		  | NONE => ();
+		handlerCont := oldHandlerCont
 	    end
-	  | genStm (EndHandleStm (_, stamp)) =
-	    emit (Leave (StampMap.lookupExistent (sharedLabels, stamp)))
+	  | genStm (EndTryStm (_, body) | EndHandleStm (_, body)) =
+	    (case !handlerCont of
+		 SOME (label, _) => emit (Leave label)
+	       | NONE =>
+		     let
+			 val label = newLabel ()
+		     in
+			 handlerCont := SOME (label, body); emit (Leave label)
+		     end)
 	  | genStm (stm as TestStm (_, id, tests, elseBody)) =
 	    (emitId id; emitAwait (); genTests (tests, elseBody))
 	  | genStm (RaiseStm (info, id)) =
