@@ -13,7 +13,7 @@
  *
  *)
 
-import structure FD     from "x-alice:/lib/constraints/FD"
+import structure FD     from "FD"
 import signature CONSTR from "CONSTR-sig"
 
 structure Constr =
@@ -356,10 +356,9 @@ structure Constr =
 	end
 
 	fun termToFD (fd v) = v
-	  | termToFD _       = raise Subscript
+	  | termToFD _      = raise Subscript
 
-	fun distribute(mode, v) =
-	    ignore(Thread.spawn(fn () => FD.distribute(mode, Vector.map termToFD v)))
+	fun distribute(mode, v) = spawn FD.distribute(mode, Vector.map termToFD v)
 
 	fun distinct v = FD.distinct (Vector.map termToFD v)
 
