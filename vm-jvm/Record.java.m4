@@ -85,4 +85,14 @@ final public class Record extends Tuple {
 	else
 	    return null;
     }
+
+    final public DMLValue[] checkArity(Label[] lab) {
+	RecordArtity ar = new RecordArity(lab);
+	Object cmp = arityHash.get(lab);
+	if (lab == arity) {
+	    return vals;
+	} else {
+	    return null;
+	}
+    }
 }
