@@ -15,17 +15,17 @@ import structure Space from "Space"
 signature SEARCH =
 sig
     (* Standard search engines, full copying *)
-    val searchOne : Space.space -> Space.space option
-    val searchAll : Space.space -> Space.space list
+    val searchOne : (Space.space -> 'a) -> (Space.space * 'a) option
+    val searchAll : (Space.space -> 'a) -> Space.space list * 'a
 
     (* Branch and bound search engine *)
     val searchBest :
-        Space.space * (Space.space *  Space.space -> unit) ->
-	Space.space option
+        (Space.space -> 'a) * (Space.space *  Space.space * 'a -> unit) ->
+	(Space.space * 'a) option
 
     structure Recompute : sig
         (* batch recomputation with fixed distance *)
-        val searchOne  : Space.space * int -> Space.space option
-        val searchAll  : Space.space * int -> Space.space list
+        val searchOne  : (Space.space -> 'a) * int -> (Space.space * 'a) option
+        val searchAll  : (Space.space -> 'a) * int -> Space.space list * 'a
     end
 end

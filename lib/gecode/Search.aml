@@ -16,8 +16,10 @@ import structure Space        from "Space"
 structure Search :> SEARCH =
 struct
 
-    fun searchAll s =
+    fun searchAll p =
 	let
+	    val s = Space.new()
+	    val root = p s
 	    fun dfe s =
 		case Space.status s of
 		    Space.FAILED => (Space.discard s; nil)
@@ -31,11 +33,13 @@ struct
 			(dfe s)@(dfe c)
 		    end
 	in
-	    dfe (Space.clone s)
+	    (dfe (Space.clone s), root)
 	end
 
-    fun searchOne s =
+    fun searchOne p =
 	let
+	    val s = Space.new()
+	    val root = p s
 	    exception Found of Space.space
 	    fun dfe depth s =
 		case Space.status s of
@@ -51,16 +55,18 @@ struct
 			dfe (depth+1) c
 		    end
 	in
-	    (dfe 0 (Space.clone s); NONE) handle (Found s) => SOME s
+	    (dfe 0 (Space.clone s); NONE) handle (Found s) => SOME (s, root)
 	end
 
-    fun searchBest (space, constrain) =
+    fun searchBest (p, constrain) =
 	let
+	    val s = Space.new()
+	    val root = p s
 	    fun babe fs bs best =
 		case fs of
 		    nil =>
 		    (case bs of nil => best
-			      | b::br => (constrain(b, valOf best);
+			      | b::br => (constrain(b, valOf best, root);
 					  babe [b] br best))
 		  | f::fr =>
 		    case Space.status f of
@@ -76,7 +82,9 @@ struct
 			    babe (f::c::fr) bs best
 			end
 	in
-	    babe [Space.clone space] nil NONE
+	    case babe [Space.clone s] nil NONE of
+		NONE   => NONE
+	      | SOME s => SOME (s, root)
 	end
 
     structure Recompute = struct
@@ -90,8 +98,10 @@ struct
               c
           end
               
-      fun searchOne (s, m) =
+      fun searchOne (p, m) =
           let
+	      val s = Space.new()
+	      val root = p s
               exception Found of Space.space
               fun dfre s r is d =
                   case Space.status s of
@@ -122,11 +132,13 @@ struct
               val s' = Space.clone s
           in
               (dfre s' s' nil m; NONE)
-              handle Found s => SOME s
+              handle Found s => SOME (s, root)
           end
               
-      fun searchAll (s, m) =
+      fun searchAll (p, m) =
           let
+	      val s = Space.new()
+	      val root = p s
               fun dfre s r is d =
                   case Space.status s of
                       Space.SOLVED => [s]
@@ -155,7 +167,7 @@ struct
                            end
               val s' = Space.clone s
           in
-              dfre s' s' nil m
+              (dfre s' s' nil m, root)
           end
 
     end

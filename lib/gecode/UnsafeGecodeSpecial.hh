@@ -63,26 +63,26 @@
 
 #define DEFINE6(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 6);			\
+    Assert(Scheduler::GetNArgs() == 6);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];		\
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);
 
 #define DEFINE7(name)					\
   static Worker::Result name() {			\
-    Assert(Scheduler::nArgs == 6);			\
+    Assert(Scheduler::GetNArgs() == 7);			\
     POP_PRIM_SELF(); \
-    word x0 = Scheduler::currentArgs[0];		\
-    word x1 = Scheduler::currentArgs[1];		\
-    word x2 = Scheduler::currentArgs[2];		\
-    word x3 = Scheduler::currentArgs[3];		\
-    word x4 = Scheduler::currentArgs[4];                \
-    word x5 = Scheduler::currentArgs[5];                \
-    word x6 = Scheduler::currentArgs[6];
+    word x0 = Scheduler::GetCurrentArg(0);		\
+    word x1 = Scheduler::GetCurrentArg(1);		\
+    word x2 = Scheduler::GetCurrentArg(2);		\
+    word x3 = Scheduler::GetCurrentArg(3);		\
+    word x4 = Scheduler::GetCurrentArg(4);              \
+    word x5 = Scheduler::GetCurrentArg(5);              \
+    word x6 = Scheduler::GetCurrentArg(6);
 
 #define CHECK_SPACE(s) if (!s) RAISE(UnsafeGecode::InvalidSpaceConstructor);
 
