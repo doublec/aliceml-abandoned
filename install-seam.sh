@@ -98,6 +98,11 @@ export TIMEDIR
 (cd vm-stockwerk && make -f Makefile.bootstrap PREFIX=$prefix install) || exit 1
 
 ##
+## Install documentation
+##
+(cd doc/manual && make PREFIX=$prefix/doc) || exit 1
+
+##
 ## Finish
 ##
 echo Done.

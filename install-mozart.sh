@@ -44,6 +44,7 @@ unset STOCKHOME
 (cd lib/gtk && autoconf && ./configure --with-gtk-canvas-dir=/opt/gtk-canvas) || exit 1
 #(cd lib/gtk && make depend) || exit 1
 (cd lib/gtk && make all PREFIX=$prefix install) || exit 1
+(cd doc/manual && make PREFIX=$prefix/doc) || exit 1
 
 echo Done.
 echo Time for build 1:
