@@ -37,15 +37,16 @@ local
 	 ("fill_color_gdk", Gtk.OBJECT white),
 	 ("outline_color_gdk", Gtk.OBJECT black)]
     val ritem = GnomeCanvas.itemCreate (root, GnomeCanvas.rectGetType(), rargs)
-(*
+
     val cargs =
-       [("fill_color", Gtk.STRING "blue"),
-	("x1", Gtk.REAL 10.0),
-	("y1", Gtk.REAL 10.0),
-	("x2", Gtk.REAL 90.0),
-	("y2", Gtk.REAL 90.0)]
+       [("fill_color", Gtk.STRING "yellow"),
+	("outline_color", Gtk.STRING "blue"),
+	("x1", Gtk.REAL 90.0),
+	("y1", Gtk.REAL 120.0),
+	("x2", Gtk.REAL 170.0),
+	("y2", Gtk.REAL 200.0)]
     val citem = GnomeCanvas.itemCreate(root,GnomeCanvas.ellipseGetType(),cargs)
-*)
+
 
     fun show s = print (s^"\n")
     fun showDelta (x,y) = 
@@ -99,13 +100,14 @@ local
     val targs =
 	[("text", Gtk.STRING "Dies ist ein Test"),
 	 ("x", Gtk.REAL 100.0),
-	 ("y", Gtk.REAL 100.0),
-	 ("font", 
-     Gtk.STRING "-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"),
+	 ("y", Gtk.REAL 150.0),
+	 ("font", Gtk.STRING "Sans 10"),
+	     (*"-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"*)
 	 ("fill_color_gdk", Gtk.OBJECT black)]
     val titem = GnomeCanvas.itemCreate (root, GnomeCanvas.textGetType(), targs)
 
     val _ = Gtk.signalConnect (pitem, "event", canvasEvent)
+    val _ = Gtk.signalConnect (citem, "event", canvasEvent)
 
 			       
 in

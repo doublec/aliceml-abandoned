@@ -41,8 +41,8 @@ local
 	(CText
 	 {parent=root, x=10.0, y=10.0,
 	  text="Press Button to move Canvas Item below",
-	  font="-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1",
-	  fill_color=black, anchor=2 (*Gtk.ANCHOR_NORTH_WEST*)})
+	  font="Sans 10", (*"-adobe-helvetica-medium-r-normal--12-*-72-72-p-*-iso8859-1"*)
+	  fill_color=black, anchor=Gtk.ANCHOR_NORTH_WEST})
 
     (* Create Rectangle Item *)
     val rectItem = MakeCanvasItem
@@ -53,7 +53,8 @@ local
     local
 	fun toggleColor(item, fill, outline) =
 	    (GnomeCanvas.itemSet(item, "fill_color_gdk", Gtk.OBJECT fill);
-	     GnomeCanvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline))
+	     GnomeCanvas.itemSet(item, "outline_color_gdk",Gtk.OBJECT outline);
+	     GnomeCanvas.updateNow canvas)
 
 	val pressed = ref false
 	val buttonx = ref (0.0)
@@ -76,6 +77,7 @@ local
 			      val newy = Real.- (y, !buttony)
 			  in
 			      (GnomeCanvas.itemMove(item, newx, newy);
+			       GnomeCanvas.updateNow canvas;
 			       buttonx := x;
 			       buttony := y)
 			  end

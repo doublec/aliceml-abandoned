@@ -108,7 +108,7 @@ in
 			      fill_color:Gtk.object, outline_color:Gtk.object}
 	      | CText     of {parent:Gtk.object, x:real, y:real,
 			      text:string, font: string,
-			      fill_color:Gtk.object, anchor:int}
+			      fill_color:Gtk.object, anchor:Gtk.GtkAnchorType}
 
 	    val MakeWidget : GtkWidget -> Gtk.object
 	    val MakeCanvasItem : CanvasItem -> Gtk.object

@@ -112,7 +112,7 @@ in
 			      fill_color:Gtk.object, outline_color:Gtk.object}
 	      | CText     of {parent:Gtk.object, x:real, y:real,
 			      text:string, font: string,
-			      fill_color:Gtk.object, anchor:int}
+			      fill_color:Gtk.object, anchor:Gtk.GtkAnchorType}
 	    (*
 	     * Helper Functions
 	     *)
@@ -279,7 +279,7 @@ in
 				("font", Gtk.STRING font),
 				("x", Gtk.REAL x), ("y", Gtk.REAL y),
 				("fill_color_gdk", Gtk.OBJECT fill),
-				("anchor", Gtk.INT anchor)]
+				("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt anchor))]
 		in
  		    GnomeCanvas.itemCreate(parent, 
 					   GnomeCanvas.textGetType(), args)

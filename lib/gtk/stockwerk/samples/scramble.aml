@@ -129,7 +129,7 @@ local
 	   | true  => (Array.sub(posArr, i) = i)
 		 andalso checkVictory(posArr, (i + 1)))
 
-    fun fillBoard(board as (itemArr, posArr), i, parent) =
+    fun fillBoard(board as (itemArr, posArr), i, canvas) =
        (case (i < 15) of
 	  false => (Array.update(itemArr, 15, NONE);
 		    Array.update(posArr, i, 15))
@@ -146,7 +146,7 @@ local
 	    val tX = Real.+(X1, 25.0)
 	    val tY = Real.+(Y1, 25.0)
 
-	    val group = GnomeCanvas.itemCreate(parent,
+	    val group = GnomeCanvas.itemCreate(GnomeCanvas.root canvas,
 			    GnomeCanvas.groupGetType(),
 			    [("x", Gtk.REAL X1),
 			     ("y", Gtk.REAL Y1)])
@@ -167,20 +167,22 @@ local
 			    ("x", Gtk.REAL 25.0),
 			    ("y", Gtk.REAL 25.0),
 			    ("font", Gtk.STRING font),
-			    ("anchor", Gtk.INT 0(*Gtk.ANCHOR_CENTER*)),
+			    ("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER)),
 			    ("fill_color_gdk", Gtk.OBJECT black)])
 			 
 	    fun pieceEvent (_, [Gdk.EVENT event]) = serve
 	        (fn () =>
 		     (case event of
 			  Gdk.EVENT_ENTER_NOTIFY _ =>
-			      GnomeCanvas.itemSetValist(text,
-						        "fill_color_gdk",
-						        [Gtk.OBJECT white])
+			      (GnomeCanvas.itemSetValist(text,
+							 "fill_color_gdk",
+							 [Gtk.OBJECT white]);
+			       GnomeCanvas.updateNow canvas)
 			| Gdk.EVENT_LEAVE_NOTIFY _ =>
-			      GnomeCanvas.itemSetValist(text,
-						        "fill_color_gdk",
-							[Gtk.OBJECT black])
+			      (GnomeCanvas.itemSetValist(text,
+							 "fill_color_gdk",
+							 [Gtk.OBJECT black]);
+			       GnomeCanvas.updateNow canvas)
 			| Gdk.EVENT_BUTTON_PRESS _ =>
 			  let
 			      val pos = Array.sub(posArr, i)
@@ -203,6 +205,7 @@ local
 					Array.update(itemArr, newpos, 
 						     SOME group);
 					GnomeCanvas.itemMove(group, mx, my);
+					GnomeCanvas.updateNow canvas;
 					checkVictory(posArr, 0); ())
 				   end)
 			  end
@@ -210,8 +213,8 @@ local
 	in
 	    (Array.update(itemArr, i, SOME group);
 	     Array.update(posArr, i, i);
-	     Gtk.signalConnect(group, "event", (fn x => print "!\n";pieceEvent));
-	     fillBoard(board, (i + 1), parent))
+	     Gtk.signalConnect(group, "event", pieceEvent);
+	     fillBoard(board, (i + 1), canvas))
 	end)
 	     
     fun createBoard canvas =
@@ -220,7 +223,7 @@ local
 	    val itemArr = Array.array(16, NONE)
 	    val board   = (itemArr, posArr)
 	in
-	    (fillBoard(board, 0, GnomeCanvas.root canvas); board)
+	    (fillBoard(board, 0, canvas); board)
 	end
     
     val board = Hole.hole ()
