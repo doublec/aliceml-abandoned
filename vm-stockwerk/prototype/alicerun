@@ -1,0 +1,15 @@
+#!/bin/sh
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"
+then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; /bin/pwd)`
+fi
+
+ALICE_LOAD=pattern=x-alice:/?{x}=$STOCKHOME/?{x}.stc
+
+export ALICE_LOAD
+
+exec ozengine $STOCKHOME/Main.ozf "$@"
