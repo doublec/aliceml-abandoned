@@ -7,4 +7,15 @@ OBJS = Environment.o BootstrapInterpreter.o
 
 .PHONY: all header clean distclean
 
-all: $(OBJS)
+all: libbootstrapinterpreter.a
+
+libbootstrapinterpreter.a: $(OBJS)
+	ar rc $@ $(OBJS) && ranlib $@
+
+clean:
+	rm -f $(OBJS)
+
+veryclean: clean
+	rm -f libbootstrapinterpreter.a
+
+distclean: veryclean
