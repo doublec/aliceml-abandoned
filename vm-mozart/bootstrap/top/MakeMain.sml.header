@@ -84,7 +84,7 @@ from "x-alice:/frontend-common/MakeTranslationPhase.ozf"
 
 import   (*DEBUG*)
     structure PPIntermediateGrammar
-from "x-alice:/frontend-common/IntermediateGrammar.ozf"
+from "x-alice:/common/IntermediateGrammar.ozf"
 
 import   (*DEBUG*)
     structure FlatteningPhase
