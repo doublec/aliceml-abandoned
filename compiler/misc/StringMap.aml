@@ -1,0 +1,1 @@
+structure StringMap = MakeHashImpMap(StringHashKey)
