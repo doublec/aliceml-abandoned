@@ -24,7 +24,7 @@ signature NODE_SEARCH =
 sig
     val treeSearch: node * int * int * int * int -> int * int * node option
     val iterate: MainDictionary.dictionary * int * int * int * int * int ->
-	node option
-	val search: MainDictionary.dictionary * real * real -> node option
+	int * int *node option
+	val search: MainDictionary.dictionary * real * real -> int * int * node option
 end
 end;

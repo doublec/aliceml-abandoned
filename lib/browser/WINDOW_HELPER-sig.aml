@@ -42,4 +42,6 @@ val createRadioButtons : RadioButtonObj list -> Gtk.object
 val fontWidth : string -> int
 val fontHeight: string -> int
 
+val createRectangle: Gtk.object * real * real * real * real -> Gtk.object
+
 end

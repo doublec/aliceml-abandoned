@@ -16,6 +16,8 @@
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure MkColorTable from "MkColorTable" (* to be verified *)
 import signature WINDOW_HELPER from "WINDOW_HELPER-sig"
 
 
@@ -149,6 +151,19 @@ fun fontWidth font_name = let
 			  in
 			      Gdk.stringWidth(font,"W")
 			  end
+
+fun createRectangle (group,x1,y1,x2,y2) = 
+    GtkCanvas.itemNew 
+    ( group, 
+     GtkCanvas.RECTANGLE,
+     [("x1", Gtk.DOUBLE x1),
+      ("y1", Gtk.DOUBLE y1),
+      ("x2", Gtk.DOUBLE x2),
+      ("y2", Gtk.DOUBLE y2),
+      ("fill_color_gdk", 
+       Gtk.OBJECT(MkColorTable.allocColor(65535,60000,60000))),
+      ("outline_color_gdk", 
+       Gtk.OBJECT (MkColorTable.allocColor(50000,0,0)))]) 
 
 
 end

@@ -17,6 +17,7 @@ import structure TextIO from "x-alice:/lib/system/TextIO"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure MkDrawingArea from "MkDrawingArea"
 import structure WindowHelper from "WindowHelper"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
@@ -24,6 +25,7 @@ import structure Settings from "Settings"
 import structure Dictionaries from "Dictionaries"
 import structure NodeSearch from "NodeSearch" 
 import structure DrawNodes from "DrawNodes"
+import structure Layout from "Layout"
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 local 
@@ -45,6 +47,8 @@ struct
   
     val alive = ref true
 
+    val selection = ref NONE
+
     fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
 
     val _  = Gtk.signalConnect (window, "delete-event", Delete)
@@ -56,7 +60,6 @@ struct
     fun about _ = 
 	let
 	    val dialog = Gtk.dialogNew()
-	   (* val _ = Gtk.widgetSetUsize(dialog,200,150) *)
 	    val _ = Gtk.windowSetTitle(dialog,"information")
 	    val ok = Gtk.buttonNewWithLabel("OK")
 	    val l = 
@@ -224,23 +227,101 @@ struct
     val _ = Gtk.containerAdd(scrolled,DA.canvas)
     val _ = Gtk.containerAdd(window,vbox)
 
-	fun handleEvent [Gdk.EVENT(event)] = case event of
-	    Gdk.GDK_BUTTON_PRESS(r) => let 
-		val valueh = Gtk.adjustmentGetFieldValue(hadj)
-		val valuev = Gtk.adjustmentGetFieldValue(vadj)
-		val x = Real.+ (#x(r),valueh)
-		val y = Real.+ (#y(r),valuev)
-		val node = NodeSearch.search(Dictionaries.dict,x,y)
+    val lowest_layer  = GtkCanvas.itemNew(DA.root, 
+			  GtkCanvas.GROUP,
+			  [("x", Gtk.DOUBLE 0.0), 
+			   ("y", Gtk.DOUBLE 0.0)])
+
+
+    fun makePopup {widthhandler = w, depthhandler = d, reinspecthandler = r} = let
+			val menu = Gtk.menuNew()
+	                val submenu1 = Gtk.menuItemNewWithLabel("Explore Tree")
+			val submenu2 = Gtk.menuItemNewWithLabel("Filter")
+			val submenu3 = Gtk.menuItemNewWithLabel("Actions") 
+			val _ = Gtk.menuAppend(menu,submenu1)
+			val _ = Gtk.menuAppend(menu,submenu2)
+			val _ = Gtk.menuAppend(menu,submenu3) 
+			val sm1 = Gtk.menuNew()
+			val sm2 = Gtk.menuNew()
+			val sm3 = Gtk.menuNew() 
+			val _ = Gtk.menuItemSetSubmenu(submenu1,sm1)
+			val _ = Gtk.menuItemSetSubmenu(submenu2,sm2)
+			val _ = Gtk.menuItemSetSubmenu(submenu3,sm3)
+			val _ = createMenuEntry(sm1,(LABEL("width"),[]))
+			val _ = createMenuEntry(sm1,(LABEL("depth"),[]))
+			val _ = createMenuEntry(sm3,(LABEL("reinspect"),[]))  
+		     in
+			 menu
+		     end
+
+    fun handleEvent [Gdk.EVENT(event)] = let
+					     val valueh = Gtk.adjustmentGetFieldValue(hadj)
+					     val valuev = Gtk.adjustmentGetFieldValue(vadj)   
+	in
+	    case event of
+		Gdk.GDK_BUTTON_PRESS(r) => 
+		    let 
+			val x = Real.+ (#x(r),valueh)
+			val y = Real.+ (#y(r),valuev)
+			val (node_x,node_y,node) = 
+			    NodeSearch.search(Dictionaries.dict,x,y)
 		    in
-			Inspector.inspect (node)
-			end
-		| _ => ()
-
-	val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
+			case #button(r) of
+			    1 =>
+				let
+				    val (node_x_real,node_y_real) = 
+					(Real.fromInt(fontWidth(!Settings.font)*node_x),
+					 Real.fromInt(fontHeight(!Settings.font)*node_y)) 
+				in
+				    (case node of 
+					 SOME(n) => let
+							val x2 = Real.+(node_x_real,
+									Real.fromInt(fontWidth(!Settings.font) 
+										     * Layout.get_xdim(n)))
+							val y2 = Real.+ (node_y_real,
+									 Real.fromInt(fontHeight(!Settings.font) 
+										      *Layout.get_ydim(n)))
+							val re =createRectangle(lowest_layer,
+										  node_x_real,
+										  node_y_real,
+										  x2,
+										  y2)
+							val _ = GtkCanvas.itemLowerToBottom(re)
+							val _ = case !selection of 
+							    NONE => ()
+							  | SOME(_,rect) => Gtk.objectDestroy(rect)
+							val _ = selection := SOME (n,re)
+						    in
+							()
+						    end
+				       | NONE => ()   )
+				end
+			  | 3 => let
+				     val x = Real.+ (#x(r),valueh)
+				     val y = Real.+ (#y(r),valuev)
+				     val (node_x,node_y,node) = 
+					 NodeSearch.search(Dictionaries.dict,x,y)
+				     val menu = makePopup({widthhandler = [], depthhandler = [], reinspecthandler = []})
+				 in
+				     (case node of 
+					  SOME(n) => (Gtk.menuPopup(menu,
+								    uglyNULL,
+								    uglyNULL,
+								    uglyNULL,
+								    uglyNULL,
+								    3,0);
+						      Gtk.widgetShowAll(menu))
+					| NONE => ()   )  
+				 end
+			  | _ => ()
+		    end
+	      | _ => ()
+					 end
+				     
+    val _ = Gtk.signalConnect(DA.canvas,"event",handleEvent)
 	
-
     val canvas = DA.canvas
-    val canvasroot = DA.root
+    val canvasroot = lowest_layer
     val resize = handleResize
     fun show() = if !alive then Gtk.widgetShowAll(window) else ()
 	

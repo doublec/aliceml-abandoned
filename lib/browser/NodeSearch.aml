@@ -29,6 +29,7 @@ in
 structure NodeSearch :> NODE_SEARCH =
 struct
 
+    (* historic code fragment - not in use *)
     fun treeSearchSimple (node,x,y,cur_pos_x,cur_pos_y,rep) = 
 	let
 	        val _ = TextIO.print("visiting simple" ^ rep ^ " at cur_pos_x: " ^ Int.toString(cur_pos_x)
@@ -46,8 +47,9 @@ struct
 				       NONE)
 	    end
 
-exception unknown
+    exception unknown
 
+    (* historic code fragment - not in use *)
     fun treeSearch (node,x,y,cur_pos_x,cur_pos_y) = case node of
 	Simple(r) => treeSearchSimple (node,x,y,cur_pos_x,cur_pos_y,#rep(r))
       | RelNode(r) =>  treeSearchSimple (node,x,y,cur_pos_x,cur_pos_y,#rep(r))
@@ -187,7 +189,7 @@ exception unknown
 
     fun iterate (dict,x,y,cur_pos_y,i,highest_i) = 
 	if i > highest_i 
-	      then NONE 
+	      then (0,0,NONE) 
 	  else
 	      case MainDictionary.lookup(dict,i) of
         NONE => iterate(dict,x,y,cur_pos_y,i+1,highest_i)
@@ -198,7 +200,7 @@ exception unknown
 		     in
 			 case nodefound of
         NONE => iterate (dict,x,y,new_y+2,i+1,highest_i)
-      | SOME n => SOME n
+      | SOME n => (new_x,new_y,nodefound)
 	    end
 						     
     fun search (dict,real_x, real_y) = 
