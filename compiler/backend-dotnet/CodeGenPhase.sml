@@ -105,7 +105,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun emitRecordArity labs =
 	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
 	     appi (fn (i, lab) =>
-		   (emit Dup; emit (LdcI4 i); emit (Ldstr lab);
+		   (emit Dup; emit (LdcI4 i);
+		    emit (Ldstr (Label.toString lab));
 		    emit (StelemRef))) labs;
 	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
 			 [ArrayTy System.StringTy], StockWerk.RecordArityTy)))
@@ -231,7 +232,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit Dup; emit (Isinst StockWerk.Record);
 		emit (B (FALSE, elseLabel));
 		emit (Castclass StockWerk.Record); emit Dup;
-		emit (Ldstr lab);
+		emit (Ldstr (Label.toString lab));
 		emit (Call (true, StockWerk.Record, "CondSelect",
 			    [System.StringTy], StockWerk.StockWertTy));
 		emit Dup; emit (B (TRUE, thenLabel));
@@ -471,8 +472,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     labIdList;
 	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
 					      ArrayTy StockWerk.StockWertTy])))
-	  | genExp (SelExp (_, s), BOTH) =
-	    (emit (Ldstr s);
+	  | genExp (SelExp (_, lab), BOTH) =
+	    (emit (Ldstr (Label.toString lab));
 	     emit (Newobj (StockWerk.Selector, [System.StringTy])))
 	  | genExp (VecExp (_, ids), PREPARE) =
 	    (emit (LdcI4 (List.length ids));
@@ -549,8 +550,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emitId id; genExp (RecExp (coord, labIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (SelAppExp (_, s, id), BOTH) =
-	    (emitId id; emit (Ldstr s);
+	  | genExp (SelAppExp (_, lab, id), BOTH) =
+	    (emitId id; emit (Ldstr (Label.toString lab));
 	     emit (Callvirt (StockWerk.StockWert, "Select", [System.StringTy],
 			     StockWerk.StockWertTy)))
 	  | genExp (ConAppExp (_, id, _), PREPARE) =

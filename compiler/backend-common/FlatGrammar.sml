@@ -21,12 +21,12 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	(* Identifiers *)
 
-	type stamp = IntermediateGrammar.stamp
+	type stamp = Stamp.t
+	type name = Name.t
 
-	datatype name = datatype IntermediateGrammar.name
 	datatype id = datatype IntermediateGrammar.id
 
-	type lab = string
+	type lab = Label.t
 
 	(* Expressions and Declarations *)
 

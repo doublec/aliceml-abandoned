@@ -20,22 +20,22 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Tests *)
 
+	type pos = Label.t list
+
 	datatype test =
 	    LitTest of lit
 	  | ConTest of longid * bool   (* has args *)
 	  | RefTest
 	  | TupTest of int
-	  | RecTest of string list
+	  | RecTest of Label.t list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of string
+	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * exp
 	  | DecTest of mapping * O.coord * dec list
-	withtype mapping = (string list * id) list
+	withtype mapping = (pos * id) list
 
 	(* Test Sequences *)
-
-	type pos = string list
 
 	datatype testSeqElem =
 	    Test of pos * test
@@ -45,8 +45,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Test Sequence Construction *)
 
-	structure StringLabelSort =
-	    MakeLabelSort(type 'a t = string fun get x = x)
+	structure LabelSort =
+	    MakeLabelSort(type 'a t = Label.t fun get x = x)
 
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
@@ -56,39 +56,48 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (ConPat (_, longid, patOpt, _), pos, rest, mapping) =
 	    (case patOpt of
 		 SOME pat =>
-		     makeTestSeq (pat, ""::pos,
+		     makeTestSeq (pat, Label.fromString ""::pos,
 				  Test (pos, ConTest (longid, true))::rest,
 				  mapping)
 	       | NONE => (Test (pos, ConTest (longid, false))::rest, mapping))
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
-	    makeTestSeq (pat, ""::pos, Test (pos, RefTest)::rest, mapping)
+	    makeTestSeq (pat, Label.fromString ""::pos,
+			 Test (pos, RefTest)::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Int.toString i::pos, rest, mapping))
+		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
 	    (Test (pos, TupTest (List.length pats))::rest, mapping)
 	    pats
-	  | makeTestSeq (RowPat (_, patFields, true), pos, rest, mapping) =
-	    List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
-			makeTestSeq (pat, s::pos, rest, mapping))
-	    (List.foldl (fn (Field (_, Lab (_, s), _), rest) =>
-			 Test (pos, LabTest s)::rest) rest patFields,
-	     mapping) patFields
-	  | makeTestSeq (RowPat (_, patFields, false), pos, rest, mapping) =
+	  | makeTestSeq (RowPat (_, patFields), pos, rest, mapping) =
 	    let
-		val labs =
-		    List.map (fn Field (_, Lab (_, s), _) => s) patFields
-		val test =
-		    case StringLabelSort.sort labs of
-			(_, StringLabelSort.Tup i) => TupTest i
-		      | (labs', StringLabelSort.Rec) => RecTest labs'
+		val hasDots = true   (*--** deduce from info type *)
 	    in
-		List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
-			    makeTestSeq (pat, s::pos, rest, mapping))
-		(Test (pos, test)::rest, mapping) patFields
+		if hasDots then
+		    List.foldl (fn (Field (_, Lab (_, s), pat),
+				    (rest, mapping)) =>
+				makeTestSeq (pat, s::pos, rest, mapping))
+		    (List.foldl (fn (Field (_, Lab (_, l), _), rest) =>
+				 Test (pos, LabTest l)::rest) rest patFields,
+		     mapping) patFields
+		else
+		    let
+			val labels =
+			    List.map (fn Field (_, Lab (_, label), _) => label)
+			    patFields
+			val test =
+			    case LabelSort.sort labels of
+				(_, LabelSort.Tup i) => TupTest i
+			      | (labels', LabelSort.Rec) => RecTest labels'
+		    in
+			List.foldl (fn (Field (_, Lab (_, s), pat),
+					(rest, mapping)) =>
+				    makeTestSeq (pat, s::pos, rest, mapping))
+			(Test (pos, test)::rest, mapping) patFields
+		    end
 	    end
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    foldli (fn (i, pat, (rest, mapping)) =>
-		    makeTestSeq (pat, Int.toString i::pos, rest, mapping))
+		    makeTestSeq (pat, Label.fromInt i::pos, rest, mapping))
 	    (Test (pos, VecTest (List.length pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
@@ -358,7 +367,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    datatype args =
 		ONE
 	      | TUP of int
-	      | REC of string list
+	      | REC of Label.t list
 
 	    exception NonArgable
 
@@ -366,14 +375,16 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | normalize (_, ConPat (_, _, _, _), _) = ONE
 	      | normalize (_, RefPat (_, _), _) = ONE
 	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
-	      | normalize (_, RowPat (_, patFields, false), _) =
+	      | normalize (_, RowPat (_, patFields), _) =
+		(*--** only if info type is a closed record *)
 		let
-		    val labs =
-			List.map (fn Field (_, Lab (_, s), _) => s) patFields
+		    val labels =
+			List.map (fn Field (_, Lab (_, label), _) => label)
+			patFields
 		in
-		    case StringLabelSort.sort labs of
-			(_, StringLabelSort.Tup i) => TUP i
-		      | (labs', StringLabelSort.Rec) => REC labs'
+		    case LabelSort.sort labels of
+			(_, LabelSort.Tup i) => TUP i
+		      | (labels', LabelSort.Rec) => REC labels'
 		end
 	      | normalize (_, VecPat (_, _), _) = ONE
 	      | normalize (_, _, _) = raise NonArgable
@@ -390,7 +401,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    fun makeArg (match, argsMatchesList) =
 		insertMatch (argsMatchesList, normalize match, match)
 
-	    fun freshId coord = Id (coord, Stamp.new (), InId)
+	    fun freshId coord = Id (coord, Stamp.new (), Name.InId)
 
 	    fun process (ONE, graph, consequents, id) =
 		(O.OneArg id, graph, [(nil, id)], consequents)
@@ -403,7 +414,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val ids = List.map #2 intIdList
 		    val mapping =
 			List.foldr (fn ((i, id), mapping) =>
-				    ([Int.toString i], id)::mapping)
+				    ([Label.fromInt i], id)::mapping)
 			nil intIdList
 		in
 		    if i = i' then ()

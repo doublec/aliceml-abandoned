@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
+functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
     where type 'a t = 'a t =
     struct
 	type 'a t = 'a t
@@ -28,22 +28,13 @@ functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
 		(x1::xr1, x2::xr2)
 	    end
 
-	fun labelLess (x1, x2) =
-	    let
-		val s1 = get x1
-		val s2 = get x2
-	    in
-		case Int.fromString s1 of
-		    SOME i1 =>
-			(case Int.fromString s2 of
-			     SOME i2 => i1 < i2
-			   | NONE => true)
-		  | NONE => String.< (s1, s2)
-	    end
+	fun labelLess (x1, x2) = Label.compare (get x1, get x2)
 
 	fun merge (xs as x::xr, ys as y::yr) =
-	    if labelLess (x, y) then x::merge (xr, ys)
-	    else y::merge (xs, yr)
+	    (case labelLess (x, y) of
+		 LESS => x::merge (xr, ys)
+	       | EQUAL => raise Crash.Crash "MakeLabelSort.merge"
+	       | GREATER => y::merge (xs, yr))
 	  | merge (nil, ys) = ys
 	  | merge (xs, nil) = xs
 
@@ -57,7 +48,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> string) :> LABEL_SORT
 	    end
 
 	fun isTuple (x::xr, i) =
-	    if get x = Int.toString i then isTuple (xr, i + 1)
+	    if get x = Label.fromInt i then isTuple (xr, i + 1)
 	    else NONE
 	  | isTuple (nil, i) = SOME (i - 1)
 

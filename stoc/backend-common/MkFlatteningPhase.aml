@@ -19,17 +19,21 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-	val id_false = Id (Source.nowhere, Prebound.stamp_false, ExId "false")
-	val id_true = Id (Source.nowhere, Prebound.stamp_true, ExId "true")
-	val id_Match = Id (Source.nowhere, Prebound.stamp_Match, ExId "Match")
-	val id_Bind = Id (Source.nowhere, Prebound.stamp_Bind, ExId "Bind")
+	val id_false =
+	    Id (Source.nowhere, Prebound.stamp_false, Name.ExId "false")
+	val id_true =
+	    Id (Source.nowhere, Prebound.stamp_true, Name.ExId "true")
+	val id_Match =
+	    Id (Source.nowhere, Prebound.stamp_Match, Name.ExId "Match")
+	val id_Bind =
+	    Id (Source.nowhere, Prebound.stamp_Bind, Name.ExId "Bind")
 
 	val longid_true = ShortId (Source.nowhere, id_true)
 	val longid_false = ShortId (Source.nowhere, id_false)
 
 	structure FieldLabelSort =
-	    MakeLabelSort(type 'a t = string * id
-			  fun get (s, _) = s)
+	    MakeLabelSort(type 'a t = Label.t * id
+			  fun get (label, _) = label)
 
 	type mapping = (pos * id) list
 
@@ -330,6 +334,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (f (O.AdjExp (coord, id1, id2))::translateCont cont);
 		stms1
 	    end
+	  | translateExp (UpExp (_, exp), f, cont) =
+	    translateExp (exp, f, cont)   (*--** *)
 	  | translateExp (AndExp (coord, exp1, exp2), f, cont) =
 	    translateExp (IfExp (coord, exp1,
 				 exp2, VarExp (coord, longid_false)), f, cont)
@@ -570,24 +576,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId Source.nowhere
-		val mapping' = ((""::pos), id')::mapping
+		val mapping' = ((Label.fromString ""::pos), id')::mapping
 	    in
 		(stms, O.ConTest (id, SOME id'), mapping')
 	    end
 	  | translateTest (RefTest, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
-		val mapping' = ((""::pos), id)::mapping
+		val mapping' = ((Label.fromString ""::pos), id)::mapping
 	    in
 		(nil, O.RefTest id, mapping')
 	    end
 	  | translateTest (TupTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
-		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
-			    (Int.toString i::pos, id)::mapping) mapping ids
+			    (Label.fromInt i::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.TupTest ids, mapping')
 	    end
@@ -612,19 +618,17 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest (VecTest n, pos, mapping) =
 	    let
 		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
-		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val labs = List.tabulate (n, fn i => Label.fromInt (i + 1))
 		val mapping' =
 		    foldli (fn (i, id, mapping) =>
-			    (Int.toString i::pos, id)::mapping) mapping ids
+			    (Label.fromInt i::pos, id)::mapping) mapping ids
 	    in
 		(nil, O.VecTest ids, mapping')
 	    end
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    raise Crash.Crash "MatchCompilationPhase.translateTest"
 
-	fun getPrintName (Id (_, _, ExId s)) = s
-	  | getPrintName (Id (_, _, InId)) =
-	    raise Crash.Crash "MatchCompilationPhase.getPrintName"
+	fun getPrintName (Id (_, _, name)) = Label.fromName name
 
 	structure IdSort =
 	    MakeLabelSort(type 'a t = id

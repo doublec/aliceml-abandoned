@@ -154,8 +154,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    let
 		val n = length exps
 	    in
-		if List.all (fn Field (_, Lab (_, s), _) =>
-			     case Int.fromString s of
+		if List.all (fn Field (_, Lab (_, label), _) =>
+			     case Label.toInt label of
 				 SOME i => i >= 1 andalso i <= n
 			       | NONE => false) patFields
 		then
@@ -314,8 +314,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (coord, pats))
 	    end
-	  | preprocess (I.RowPat (coord, patFields, hasDots)) =
+	  | preprocess (I.RowPat (coord, patFields)) =
 	    let
+		val hasDots = true   (*--** deduce from info type *)
 		val (patFields', arity) = FieldSort.sort patFields
 		val (constraints, patFields'') =
 		    List.foldr (fn (Field (coord, lab, pat), (cr, fieldr)) =>

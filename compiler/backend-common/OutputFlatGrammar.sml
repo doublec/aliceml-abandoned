@@ -37,9 +37,9 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 		  | format' NL =
 		    "\n" ^ String.concat (List.tabulate
 					  (!indent, fn _ => "  "))
-		  | format' (ID (Id (_, stamp, InId))) =
+		  | format' (ID (Id (_, stamp, Name.InId))) =
 		    "$" ^ Stamp.toString stamp
-		  | format' (ID (Id (_, stamp, ExId s))) =
+		  | format' (ID (Id (_, stamp, Name.ExId s))) =
 		    s ^ "$" ^ Stamp.toString stamp
 		  | format' (CO s) = "   (* " ^ s ^ " *)"
 		  | format' NULL = ""
@@ -94,7 +94,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputArgs (RecArgs labIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
@@ -107,10 +108,11 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputTest (RecTest labIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
 	  | outputTest (LabTest (lab, id)) =
-	    SEQ [S ("{" ^ lab ^ "="), ID id, S "...}"]
+	    SEQ [S ("{" ^ Label.toString lab ^ "="), ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -167,9 +169,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (RecExp (_, labIdList)) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (lab, id) =>
-				       SEQ [S (lab ^ "="), ID id]) labIdList),
+				       SEQ [S (Label.toString lab ^ "="),
+					    ID id]) labIdList),
 		 S "}"]
-	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ lab)]
+	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ Label.toString lab)]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, s, argsBodyList)) =
@@ -181,7 +184,7 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputExp (AppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (SelAppExp (_, lab, id)) =
-	    SEQ [S ("#" ^ lab ^ " "), ID id]
+	    SEQ [S ("#" ^ Label.toString lab ^ " "), ID id]
 	  | outputExp (ConAppExp (_, id, args)) =
 	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, args)) =

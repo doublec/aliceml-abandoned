@@ -23,7 +23,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    fun foldli f z xs = foldli' (xs, f, z, 1)
 	end
 
-	fun freshId coord = Id (coord, Stamp.new (), InId)
+	fun freshId coord = Id (coord, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
@@ -51,6 +51,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (AdjExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (UpExp (_, exp), id) = occursInExp (exp, id)
 	  | occursInExp (AndExp (_, exp1, exp2), id) =
 	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
 	  | occursInExp (OrExp (_, exp1, exp2), id) =
@@ -83,7 +84,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInPat (RefPat (_, pat), id) = occursInPat (pat, id)
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
-	  | occursInPat (RowPat (_, patFields, _), id) =
+	  | occursInPat (RowPat (_, patFields), id) =
 	    List.exists (fn Field (_, _, pat) => occursInPat (pat, id))
 	    patFields
 	  | occursInPat (VecPat (_, pats), id) =
@@ -110,7 +111,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		patternVariablesOf' (pat, ids)
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (RowPat (_, fieldPats, _), ids) =
+	      | patternVariablesOf' (RowPat (_, fieldPats), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (VecPat (_, pats), ids) =
@@ -174,6 +175,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    AppExp (coord, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (AdjExp (coord, exp1, exp2), subst) =
 	    AdjExp (coord, substExp (exp1, subst), substExp (exp2, subst))
+	  | substExp (UpExp (coord, exp), subst) =
+	    UpExp (coord, substExp (exp, subst))
 	  | substExp (AndExp (coord, exp1, exp2), subst) =
 	    AndExp (coord, substExp (exp1, subst), substExp (exp2, subst))
 	  | substExp (OrExp (coord, exp1, exp2), subst) =
@@ -211,11 +214,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RefPat (coord, substPat (pat, subst))
 	  | substPat (TupPat (coord, pats), subst) =
 	    TupPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RowPat (coord, patFields, hasDots), subst) =
+	  | substPat (RowPat (coord, patFields), subst) =
 	    RowPat (coord,
 		    List.map (fn Field (coord, lab, pat) =>
 			      Field (coord, lab, substPat (pat, subst)))
-		    patFields, hasDots)
+		    patFields)
 	  | substPat (VecPat (coord, pats), subst) =
 	    VecPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (AsPat (coord, pat1, pat2), subst) =
@@ -298,7 +301,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (coord, pats'), subst')
 	    end
-	  | relax (RowPat (coord, patFields, hasDots), subst) =
+	  | relax (RowPat (coord, patFields), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
@@ -309,7 +312,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 (Field (coord, lab, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RowPat (coord, patFields', hasDots), subst')
+		(RowPat (coord, patFields'), subst')
 	    end
 	  | relax (VecPat (coord, pats), subst) =
 	    let

@@ -98,17 +98,17 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, RealLit x) =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
-	fun outputLab (q, s) =
-	    case Int.fromString s of
-		NONE => outputAtom (q, s)
+	fun outputLab (q, lab) =
+	    case Label.toInt lab of
+		NONE => outputAtom (q, Label.toString lab)
 	      | SOME n => outputInt (q, n)
 
 	fun outputId (q, Id (coord, stamp, name)) =
 	    (f (q, "id"); outputCoord (q, coord); m q;
 	     outputStamp (q, stamp); m q;
 	     case name of
-		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)
-	       | InId => output (q, "inId");
+		 Name.ExId s => (f (q, "exId"); outputAtom (q, s); r q)
+	       | Name.InId => output (q, "inId");
 	     r q)
 
 	fun outputTest (q, LitTest lit) =

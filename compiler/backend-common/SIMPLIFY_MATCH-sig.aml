@@ -15,20 +15,20 @@ signature SIMPLIFY_MATCH =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
+	type pos = Label.t list
+
 	datatype test =
 	    LitTest of I.lit
 	  | ConTest of I.longid * bool   (* has args *)
 	  | RefTest
 	  | TupTest of int
-	  | RecTest of string list
+	  | RecTest of Label.t list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of string
+	  | LabTest of Label.t
 	  | VecTest of int
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.info * I.dec list
-	withtype mapping = (string list * I.id) list
-
-	type pos = string list
+	withtype mapping = (pos * I.id) list
 
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
