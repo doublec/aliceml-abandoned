@@ -5,10 +5,11 @@
 
   <PRE>
     signature SUBSTRING
-    structure Substring : SUBSTRING where type string = string
-				      and type char   = char
-    structure WideSubstring : SUBSTRING where type string = WideString.t
-					  and type char   = WideChar.t
+    structure Substring : SUBSTRING where type char      = Char.t
+				      and type string    = CharVector.t
+				      and type substring = CharVectorSlice.t
+    structure WideSubstring : SUBSTRING where type char   = WideChar.t
+					  and type string = WideString.t
   </PRE>
 
   <P>
@@ -17,7 +18,8 @@
   </P>
 
   <P>See also:
-    <A href="string.php3"><TT>STRING</TT></A>
+    <A href="string.php3"><TT>STRING</TT></A>,
+    <A href="mono-vector-slice.php3"><TT>MONO_VECTOR_SLICE</TT></A>
   </P>
 
 <?php section("import", "import") ?>
