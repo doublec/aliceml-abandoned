@@ -46,7 +46,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Test Sequence Construction *)
 
-	fun typPat pat = IntermediateInfo.typ (infoPat pat)
+	fun typPat pat = #typ (infoPat pat)
 
 	local
 	    fun parseRow row =
@@ -58,7 +58,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			case Type.headRow row of
 			    (label, [typ]) => ((label, typ)::rest, hasDots)
 			  | (_, _) =>
-				raise Crash.Crash "IntermediateAux.parseRow"
+				raise Crash.Crash "SimplifyMatch.parseRow"
 		    end
 	in
 	    fun getRow typ =
@@ -89,8 +89,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (rest, (pos, id)::mapping)
 	  | makeTestSeq (ConPat (info, longid, isNAry), pos, rest, mapping) =
 	    let
-		val typ = IntermediateInfo.typ info
-		val info' = (Source.nowhere, SOME typ)
+		val info' = exp_info (Source.nowhere, #typ info)
 		val conArity = makeConArity (info', isNAry)
 	    in
 		(Test (pos, ConTest (longid, NONE, conArity))::rest, mapping)
@@ -98,8 +97,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (AppPat (_, ConPat (info, longid, isNAry), pat),
 			 pos, rest, mapping) =
 	    let
-		val typ = Type.inArrow (typPat pat, IntermediateInfo.typ info)
-		val info' = (Source.nowhere, SOME typ)
+		val typ = Type.inArrow (typPat pat, #typ info)
+		val info' = exp_info (Source.nowhere, typ)
 		val conArity = makeConArity (info', isNAry)
 	    in
 		makeTestSeq (pat, longidToLabel longid::pos,
@@ -117,7 +116,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
 			makeTestSeq (pat, label::pos, rest, mapping))
-	    (case getRow (IntermediateInfo.typ info) of
+	    (case getRow (#typ info) of
 		 (labelTypList, _, true) =>
 		     List.foldl (fn ((label, typ), rest) =>
 				 Test (pos, LabTest (label, typ))::rest)
@@ -347,12 +346,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
-	type consequent = (O.coord * O.body option ref)
+	type consequent = (Source.region * O.body option ref)
 
 	fun buildGraph (matches, elseExp) =
 	    let
 		val (graph, consequents) =
-		    List.foldr (fn ((coord, pat, thenExp),
+		    List.foldr (fn ((region, pat, thenExp),
 				    (elseTree, consequents)) =>
 				let
 				    val pat' = separateAlt pat
@@ -363,7 +362,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				in
 				    (mergeIntoTree (List.rev testSeq,
 						    leaf, elseTree),
-				     (coord, r)::consequents)
+				     (region, r)::consequents)
 				end) (Default, nil) matches
 		val elseGraph = Leaf (elseExp, ref NONE)
 	    in
@@ -442,8 +441,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		(List.exists (fn (_, pat, _) => deconstructs pat) matches)
 		handle (BindsAll | SideEffect) => false
 
-	    fun freshId info = Id (info, Stamp.new (), Name.InId)
-
 	    fun process (ONE, graph, consequents, info) =
 		let
 		    val id = freshId info
@@ -454,7 +451,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			 consequents, _) =
 		let
 		    val ids =
-			List.map (fn typ => freshId (Source.nowhere, SOME typ))
+			List.map (fn typ =>
+				  freshId (exp_info (Source.nowhere, typ)))
 			typs
 		    val labelIdList =
 			Misc.List_mapi (fn (i, id) =>
@@ -471,7 +469,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		let
 		    val labelIdList =
 			List.map (fn (label, typ) =>
-				  (label, freshId (Source.nowhere, SOME typ)))
+				  (label,
+				   freshId (exp_info (Source.nowhere, typ))))
 			labelTypList
 		    val mapping =
 			List.foldr (fn ((label, id), mapping) =>

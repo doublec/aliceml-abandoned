@@ -15,22 +15,22 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	structure I = IntermediateGrammar
 
 	open I
-	val region = IntermediateInfo.region
+	open IntermediateAux
 
 	type constraint = longid * longid
 	type binding = id * exp
-	type alias = id * id
+	type alias = id * id * exp_info
 
 	datatype pat =
-	    WildPat of info
-	  | LitPat of info * lit
-	  | VarPat of info * id
-	  | ConPat of info * longid * pat option * bool
-	  | RefPat of info * pat
-	  | TupPat of info * pat list
-	  | RowPat of info * pat field list
-	  | VecPat of info * pat list
-	  | AsPat of info * id * pat
+	    WildPat of pat_info
+	  | LitPat of pat_info * lit
+	  | VarPat of pat_info * id
+	  | ConPat of pat_info * longid * pat option * bool
+	  | RefPat of pat_info * pat
+	  | TupPat of pat_info * pat list
+	  | RowPat of pat_info * pat field list
+	  | VecPat of pat_info * pat list
+	  | AsPat of pat_info * id * pat
 
 	fun infoPat (WildPat info) = info
 	  | infoPat (LitPat (info, _)) = info
@@ -62,22 +62,21 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun patToExp (WildPat info) =
 	    let
-		val id = IntermediateAux.freshId info
+		val id = freshId info
 	    in
-		(VarPat (info, id), VarExp (info, ShortId (info, id)))
+		(VarPat (info, id), VarExp (info, ShortId (id_info info, id)))
 	    end
 	  | patToExp (pat as LitPat (info, lit)) = (pat, LitExp (info, lit))
 	  | patToExp (pat as VarPat (info, id)) =
-	    (pat, VarExp (info, ShortId (info, id)))
+	    (pat, VarExp (info, ShortId (id_info info, id)))
 	  | patToExp (pat as ConPat (info, longid, NONE, _)) =
 	    (pat, ConExp (info, longid, false))
 	  | patToExp (ConPat (info, longid, SOME pat, isNAry)) =
 	    let
 		val (pat', exp') = patToExp pat
 		val info' =
-		    (IntermediateInfo.region info,
-		     SOME (Type.inArrow (IntermediateInfo.typ (infoPat pat),
-					 IntermediateInfo.typ info)))
+		    exp_info (#region info,
+			      Type.inArrow (#typ (infoPat pat), #typ info))
 	    in
 		(ConPat (info, longid, SOME pat', isNAry),
 		 AppExp (info, ConExp (info', longid, isNAry), exp'))
@@ -85,7 +84,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (RefPat (info, pat)) =
 	    let
 		val (pat', exp') = patToExp pat
-		val info' = (IntermediateInfo.region info, NONE)
+		val info' = exp_info (#region info, Type.unknown Type.STAR)
 		    (*--** type of ref constructor *)
 	    in
 		(RefPat (info, pat'), AppExp (info, RefExp info', exp'))
@@ -117,12 +116,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(VecPat (info, pats'), VecExp (info, exps'))
 	    end
 	  | patToExp (pat as AsPat (info, id, _)) =
-	    (pat, VarExp (info, ShortId (info, id)))
+	    (pat, VarExp (info, ShortId (id_info info, id)))
 
 	fun derec' (WildPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =
 	    if lit1 = lit2 then (nil, nil)
-	    else Error.error (region info, "pattern never matches")
+	    else Error.error (#region info, "pattern never matches")
 	  | derec' (VarPat (_, id), exp) = (nil, [([id], exp)])
 	  | derec' (ConPat (_, longid1, NONE, _),
 		    ConExp (_, longid2, false)) =
@@ -199,7 +198,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | unify (pat1, WildPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
 	    if lit1 = lit2 then (nil, pat1)
-	    else Error.error (region info, "pattern never matches")
+	    else Error.error (#region info, "pattern never matches")
 	  | unify (VarPat (info, id), pat2) = (nil, AsPat (info, id, pat2))
 	  | unify (pat1, VarPat (info, id)) = (nil, AsPat (info, id, pat1))
 	  | unify (pat1 as ConPat (_, longid, NONE, _),
@@ -258,7 +257,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		in
 		    (constraints, VecPat (info, pats))
 		end
-	    else Error.error (region info, "pattern never matches")
+	    else Error.error (#region info, "pattern never matches")
 	  | unify (AsPat (info, id, pat1), pat2) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
@@ -267,7 +266,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | unify (pat1, pat2 as AsPat (_, _, _)) = unify (pat2, pat1)
 	  | unify (pat, _) =
-	    Error.error (region (infoPat pat), "pattern never matches")
+	    Error.error (#region (infoPat pat), "pattern never matches")
 
 	fun parseRow row =
 	    if Type.isEmptyRow row then
@@ -312,7 +311,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    end
 	  | preprocess (I.RowPat (info, patFields)) =
 	    let
-		val typ = IntermediateInfo.typ info
+		val typ = #typ info
 		val labelTypList =
 		    if Type.isTuple typ then
 			Misc.List_mapi (fn (i, typ) =>
@@ -324,8 +323,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    if label = label' then patFields
 		    else adjoin (labelTyp, rest)
 		  | adjoin ((label, typ), nil) =
-		    [Field (info, Lab (info, label),
-			    I.WildPat (Source.nowhere, SOME typ))]
+		    let
+			val info = {region = Source.nowhere}
+		    in
+			[Field (info, Lab (info, label),
+				I.WildPat (exp_info (Source.nowhere, typ)))]
+		    end
 		val patFields' =
 		    List.foldr adjoin patFields labelTypList
 		val (patFields'', arity) = FieldSort.sort patFields'
@@ -367,16 +370,16 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		(constraints1 @ constraints2 @ constraints3, pat')
 	    end
 	  | preprocess (I.AltPat (info, _)) =
-	    Error.error (region info,
+	    Error.error (#region info,
 			 "alternative pattern not allowed in val rec")
 	  | preprocess (I.NegPat (info, _)) =
-	    Error.error (region info,
+	    Error.error (#region info,
 			 "negated pattern not allowed in val rec")
 	  | preprocess (I.GuardPat (info, _, _)) =
-	    Error.error (region info,
+	    Error.error (#region info,
 			 "guard pattern not allowed in val rec")
 	  | preprocess (I.WithPat (info, _, _)) =
-	    Error.error (region info,
+	    Error.error (#region info,
 			 "with pattern not allowed in val rec")
 	  | preprocess (I.RefPat _ | I.AppPat (_, _, _)) =
 	    raise Crash.Crash "SimplifyRec.preprocess"
@@ -389,11 +392,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    List.foldr (fn ((ids, exp), (rest, subst)) =>
 				let
 				    val toId = List.hd ids
+				    val info = infoExp exp
 				in
 				    ((toId, exp)::rest,
 				     List.foldr
 				     (fn (fromId, subst) =>
-				      (fromId, toId)::subst)
+				      (fromId, toId, info)::subst)
 				     subst (List.tl ids))
 				end) (nil, nil) idsExpList
 		val (constraints'', idExpList', aliases') = derec decr

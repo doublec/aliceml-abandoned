@@ -12,8 +12,6 @@
 
 signature IMPERATIVE_GRAMMAR =
     sig
-	type coord = Source.region
-
 	(* Literals *)
 
 	datatype lit = datatype IntermediateGrammar.lit
@@ -56,8 +54,8 @@ signature IMPERATIVE_GRAMMAR =
 	  | Use of StampSet.t   (* internal *)
 	  | Kill of StampSet.t
 
-	type stmInfo = coord * livenessInfo ref
-	type expInfo = IntermediateInfo.t
+	type stm_info = {region: Source.region, liveness: livenessInfo ref}
+	type exp_info = {region: Source.region, typ: Type.t}
 
 	datatype test =
 	    LitTest of lit
@@ -70,43 +68,43 @@ signature IMPERATIVE_GRAMMAR =
 	  | VecTest of id list
 
 	datatype stm =
-	    ValDec of stmInfo * id * exp * isToplevel
-	  | RecDec of stmInfo * (id * exp) list * isToplevel
+	    ValDec of stm_info * id * exp * isToplevel
+	  | RecDec of stm_info * (id * exp) list * isToplevel
 	    (* all ids distinct *)
-	  | EvalStm of stmInfo * exp
-	  | RaiseStm of stmInfo * id
-	  | ReraiseStm of stmInfo * id
+	  | EvalStm of stm_info * exp
+	  | RaiseStm of stm_info * id
+	  | ReraiseStm of stm_info * id
 	  (* the following must always be last *)
-	  | HandleStm of stmInfo * body * id * body * body * shared
-	  | EndHandleStm of stmInfo * shared
-	  | TestStm of stmInfo * id * test * body * body
-	  | SharedStm of stmInfo * body * shared   (* used at least twice *)
-	  | ReturnStm of stmInfo * exp
-	  | IndirectStm of stmInfo * body option ref
-	  | ExportStm of stmInfo * exp
+	  | HandleStm of stm_info * body * id * body * body * shared
+	  | EndHandleStm of stm_info * shared
+	  | TestStm of stm_info * id * test * body * body
+	  | SharedStm of stm_info * body * shared   (* used at least twice *)
+	  | ReturnStm of stm_info * exp
+	  | IndirectStm of stm_info * body option ref
+	  | ExportStm of stm_info * exp
 	and exp =
-	    LitExp of expInfo * lit
-	  | PrimExp of expInfo * string
-	  | NewExp of expInfo * string option * conArity
-	  | VarExp of expInfo * id
-	  | ConExp of expInfo * id * conArity
-	  | RefExp of expInfo
-	  | TupExp of expInfo * id list
-	  | RecExp of expInfo * (label * id) list
+	    LitExp of exp_info * lit
+	  | PrimExp of exp_info * string
+	  | NewExp of exp_info * string option * conArity
+	  | VarExp of exp_info * id
+	  | ConExp of exp_info * id * conArity
+	  | RefExp of exp_info
+	  | TupExp of exp_info * id list
+	  | RecExp of exp_info * (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of expInfo * label
-	  | VecExp of expInfo * id list
-	  | FunExp of expInfo * stamp * funFlag list * id args * body
-	  | AppExp of expInfo * id * id args
-	  | SelAppExp of expInfo * label * id
-	  | ConAppExp of expInfo * id * id args * conArity
-	  | RefAppExp of expInfo * id args
-	  | PrimAppExp of expInfo * string * id list
-	  | AdjExp of expInfo * id * id
+	  | SelExp of exp_info * label
+	  | VecExp of exp_info * id list
+	  | FunExp of exp_info * stamp * funFlag list * id args * body
+	  | AppExp of exp_info * id * id args
+	  | SelAppExp of exp_info * label * id
+	  | ConAppExp of exp_info * id * id args * conArity
+	  | RefAppExp of exp_info * id args
+	  | PrimAppExp of exp_info * string * id list
+	  | AdjExp of exp_info * id * id
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign
 	type component = (id * sign * Url.t) list * (body * sign)
 
-	val infoStm: stm -> stmInfo
+	val infoStm: stm -> stm_info
     end

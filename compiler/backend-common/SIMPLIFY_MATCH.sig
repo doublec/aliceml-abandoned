@@ -44,11 +44,11 @@ signature SIMPLIFY_MATCH =
 	  | Optimized of (pos * test) list * (pos * test) list
 	  | Translated of O.body
 
-	type consequent = (O.coord * O.body option ref)
+	type consequent = (Source.region * O.body option ref)
 
-	val buildGraph: (O.coord * I.pat * O.body) list * O.body ->
+	val buildGraph: (Source.region * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
-	val buildFunArgs: (O.coord * I.pat * O.body) list * O.body ->
+	val buildFunArgs: (Source.region * I.pat * O.body) list * O.body ->
 	    O.id O.args * testGraph * mapping * consequent list
     end

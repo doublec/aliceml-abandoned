@@ -79,13 +79,22 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (output1 (q, #"("); outputA (q, a);
 	     output1 (q, #"#"); outputB (q, b); output1 (q, #")"))
 
-	fun outputCoord (q, ((ll, lc), (rl, rc))) =
-	    (output (q, Int.toString ll); output1 (q, #"#");
-	     output (q, Int.toString lc); output1 (q, #"#");
-	     output (q, Int.toString rl); output1 (q, #"#");
-	     output (q, Int.toString rc))
+	local
+	    fun outputRegion (q, ((ll, lc), (rl, rc))) =
+		(output (q, Int.toString ll); output1 (q, #"#");
+		 output (q, Int.toString lc); output1 (q, #"#");
+		 output (q, Int.toString rl); output1 (q, #"#");
+		 output (q, Int.toString rc))
+	in
+	    fun outputIdInfo (q, info: IntermediateInfo.id_info) =
+		outputRegion (q, #region info)
 
-	fun outputInfo (q, (coord, _)) = outputCoord (q, coord)   (*--** *)
+	    fun outputStmInfo (q, info: stm_info) =
+		outputRegion (q, #region info)
+
+	    fun outputExpInfo (q, info: exp_info) =
+		outputRegion (q, #region info)
+	end
 
 	fun outputLit (q, WordLit w) =
 	    (f (q, "wordLit"); outputLargeWord (q, w); r q)
@@ -104,7 +113,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	      | NONE => outputAtom (q, Label.toString label)
 
 	fun outputId (q, Id (info, stamp, name)) =
-	    (f (q, "id"); outputInfo (q, info); m q;
+	    (f (q, "id"); outputIdInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
 	     case name of
 		 Name.ExId s => (f (q, "exId"); outputAtom (q, s); r q)
@@ -150,105 +159,105 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputList (outputPair (outputLab, outputX)) (q, labIdList); r q)
 
 	fun outputStm (q, ValDec (info, id, exp, isToplevel)) =
-	    (f (q, "valDec"); outputInfo (q, info); m q;
+	    (f (q, "valDec"); outputStmInfo (q, info); m q;
 	     outputId (q, id); m q; outputExp (q, exp); m q;
 	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, RecDec (info, idExpList, isToplevel)) =
-	    (f (q, "recDec"); outputInfo (q, info); m q;
+	    (f (q, "recDec"); outputStmInfo (q, info); m q;
 	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
 	     outputBool (q, isToplevel); r q)
 	  | outputStm (q, EvalStm (info, exp)) =
-	    (f (q, "evalStm"); outputInfo (q, info); m q;
+	    (f (q, "evalStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
 	  | outputStm (q, HandleStm (info, body1, id, body2, body3, shared)) =
 	    (shared := gen ();
-	     f (q, "handleStm"); outputInfo (q, info); m q;
+	     f (q, "handleStm"); outputStmInfo (q, info); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
 	     outputBody (q, body2); m q; outputBody (q, body3); m q;
 	     outputInt (q, !shared); r q)
 	  | outputStm (q, EndHandleStm (info, ref i)) =
-	    (f (q, "endHandleStm"); outputInfo (q, info); m q;
+	    (f (q, "endHandleStm"); outputStmInfo (q, info); m q;
 	     outputInt (q, i); r q)
 	  | outputStm (q, TestStm (info, id, test, body1, body2)) =
-	    (f (q, "testStm"); outputInfo (q, info); m q;
+	    (f (q, "testStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); m q; outputTest (q, test); m q;
 	     outputBody (q, body1); m q; outputBody (q, body2); r q)
 	  | outputStm (q, RaiseStm (info, id)) =
-	    (f (q, "raiseStm"); outputInfo (q, info); m q;
+	    (f (q, "raiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputStm (q, ReraiseStm (info, id)) =
-	    (f (q, "reraiseStm"); outputInfo (q, info); m q;
+	    (f (q, "reraiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputStm (q, SharedStm (info, body, shared)) =
 	    (if !shared = 0 then
 		 (shared := gen ();
-		  f (q, "sharedStm"); outputInfo (q, info); m q;
+		  f (q, "sharedStm"); outputStmInfo (q, info); m q;
 		  outputBody (q, body); m q)
 	     else
 		 f (q, "refStm");
 	     outputInt (q, !shared); r q)
 	  | outputStm (q, ReturnStm (info, exp)) =
-	    (f (q, "returnStm"); outputInfo (q, info); m q;
+	    (f (q, "returnStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
 	  | outputStm (q, IndirectStm (_, ref bodyOpt)) =
 	    (output (q, "/* indirect */");
 	     List.app (fn stm => (m q; outputStm (q, stm))) (valOf bodyOpt))
 	  | outputStm (q, ExportStm (info, exp)) =
-	    (f (q, "exportStm"); outputInfo (q, info); m q;
+	    (f (q, "exportStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
 	and outputExp (q, LitExp (info, lit)) =
-	    (f (q, "litExp"); outputInfo (q, info); m q;
+	    (f (q, "litExp"); outputExpInfo (q, info); m q;
 	     outputLit (q, lit); r q)
 	  | outputExp (q, PrimExp (info, string)) =
-	    (f (q, "primExp"); outputInfo (q, info); m q;
+	    (f (q, "primExp"); outputExpInfo (q, info); m q;
 	     outputAtom (q, string); r q)
 	  | outputExp (q, NewExp (info, stringOpt, conArity)) =
-	    (f (q, "newExp"); outputInfo (q, info); m q;
+	    (f (q, "newExp"); outputExpInfo (q, info); m q;
 	     outputOption outputAtom (q, stringOpt); m q;
 	     outputConArity (q, conArity); r q)
 	  | outputExp (q, VarExp (info, id)) =
-	    (f (q, "varExp"); outputInfo (q, info); m q;
+	    (f (q, "varExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputExp (q, ConExp (info, id, conArity)) =
-	    (f (q, "conExp"); outputInfo (q, info); m q;
+	    (f (q, "conExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputConArity (q, conArity); r q)
 	  | outputExp (q, RefExp info) =
-	    (f (q, "refExp"); outputInfo (q, info); r q)
+	    (f (q, "refExp"); outputExpInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
-	    (f (q, "tupExp"); outputInfo (q, info); m q;
+	    (f (q, "tupExp"); outputExpInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
 	  | outputExp (q, RecExp (info, labIdList)) =
-	    (f (q, "recExp"); outputInfo (q, info); m q;
+	    (f (q, "recExp"); outputExpInfo (q, info); m q;
 	     outputList (outputPair (outputLab, outputId)) (q, labIdList); r q)
 	  | outputExp (q, VecExp (info, ids)) =
-	    (f (q, "vecExp"); outputInfo (q, info); m q;
+	    (f (q, "vecExp"); outputExpInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
 	  | outputExp (q, SelExp (info, lab)) =
-	    (f (q, "selExp"); outputInfo (q, info); m q;
+	    (f (q, "selExp"); outputExpInfo (q, info); m q;
 	     outputLab (q, lab); r q)
 	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
-	    (f (q, "funExp"); outputInfo (q, info); m q;
+	    (f (q, "funExp"); outputExpInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputArgs outputId (q, args); m q; outputBody (q, body); r q)
 	  | outputExp (q, AppExp (info, id, args)) =
-	    (f (q, "appExp"); outputInfo (q, info); m q;
+	    (f (q, "appExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, SelAppExp (info, lab, id)) =
-	    (f (q, "selAppExp"); outputInfo (q, info); m q;
+	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
 	     outputLab (q, lab); m q; outputId (q, id); r q)
 	  | outputExp (q, ConAppExp (info, id, args, conArity)) =
-	    (f (q, "conAppExp"); outputInfo (q, info); m q;
+	    (f (q, "conAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
 	  | outputExp (q, RefAppExp (info, args)) =
-	    (f (q, "refAppExp"); outputInfo (q, info); m q;
+	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputArgs outputId (q, args); r q)
 	  | outputExp (q, PrimAppExp (info, string, ids)) =
-	    (f (q, "primAppExp"); outputInfo (q, info); m q;
+	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
 	  | outputExp (q, AdjExp (info, id1, id2)) =
-	    (f (q, "adjExp"); outputInfo (q, info); m q;
+	    (f (q, "adjExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 

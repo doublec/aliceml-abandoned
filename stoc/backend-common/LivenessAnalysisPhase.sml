@@ -93,10 +93,11 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanTest (LabTest (_, id), lset) = del (lset, id)
 	  | scanTest (VecTest ids, lset) = delList (lset, ids)
 
-	fun setInfo ((_, r as ref (Unknown | LoopStart | LoopEnd)), set) =
+	fun setInfo ({liveness = r as ref (Unknown | LoopStart | LoopEnd),
+		      ...}: stm_info, set) =
 	    r := Use set
-	  | setInfo ((_, ref (Use _)), _) = ()
-	  | setInfo ((_, ref (Kill _)), _) =
+	  | setInfo ({liveness = ref (Use _), ...}, _) = ()
+	  | setInfo ({liveness = ref (Kill _), ...}, _) =
 	    raise Crash.Crash "LivenessAnalysisPhase.setInfo"
 
 	(* Annotate the `Use' set at each statement *)
@@ -175,8 +176,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody ([SharedStm (i as (_, r as ref Unknown), body, _)],
-		      initial) =
+	  | scanBody ([SharedStm (i as {liveness = r as ref Unknown, ...},
+				  body, _)], initial) =
 	    let
 		val _ = r := LoopStart
 		val set = lazyValOf (scanBody (body, initial))
@@ -184,13 +185,15 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody ([SharedStm (i as (_, r as ref LoopStart), body, _)],
-		      initial) =
+	  | scanBody ([SharedStm (i as {liveness = r as ref LoopStart, ...},
+				  body, _)], initial) =
 	    (r := LoopEnd; scanBody (body, initial))
-	  | scanBody ([SharedStm ((_, r as ref LoopEnd), _, _)],
-		      initial) = Copy (StampSet.new ())   (*--** or initial? *)
-	  | scanBody ([SharedStm ((_, ref (Use set')), _, _)], _) = Orig set'
-	  | scanBody ([SharedStm ((_, ref (Kill _)), _, _)], _) =
+	  | scanBody ([SharedStm ({liveness = r as ref LoopEnd, ...},
+				  _, _)], initial) =
+	    Copy (StampSet.new ())   (*--** or initial? *)
+	  | scanBody ([SharedStm ({liveness = ref (Use set'), ...},
+				  _, _)], _) = Orig set'
+	  | scanBody ([SharedStm ({liveness = ref (Kill _), ...}, _, _)], _) =
 	    raise Crash.Crash "LivenessAnalysisPhase.scanStm 1"
 	  | scanBody ([ReturnStm (i, exp)], _) =
 	    let
@@ -289,7 +292,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		initTest (test, set'); initBody (body1, set');
 		initBody (body2, set)
 	    end
-	  | initStm (SharedStm ((_, ref (Kill _)), _, _), _) = ()
+	  | initStm (SharedStm ({liveness = ref (Kill _), ...}, _, _), _) = ()
 	  | initStm (SharedStm (_, body, _), set) = initBody (body, set)
 	  | initStm (ReturnStm (_, exp), _) = initExp exp
 	  | initStm (IndirectStm (_, ref bodyOpt), set) =
@@ -303,10 +306,10 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    end
 	  | initExp _ = ()
 	and initBody (stm::stms, defSet) =
-	    (case infoStm stm of
-		 (_, ref (Unknown | LoopStart | LoopEnd)) =>
+	    (case #liveness (infoStm stm) of
+		 ref (Unknown | LoopStart | LoopEnd) =>
 		     raise Crash.Crash "LivenessAnalysisPhase.initBody"
-	       | (_, r as ref (Use useSet)) =>
+	       | r as ref (Use useSet) =>
 		     let
 			 val killSet = StampSet.new ()
 		     in
@@ -320,7 +323,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 			 r := Kill killSet;
 			 initBody (stms, defSet)
 		     end
-	       | (_, ref (Kill _)) => ())
+	       | ref (Kill _) => ())
 	  | initBody (nil, _) = ()
 
 	fun annotate (_, (body, _)) =

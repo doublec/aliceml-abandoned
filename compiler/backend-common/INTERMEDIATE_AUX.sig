@@ -15,7 +15,10 @@ signature INTERMEDIATE_AUX =
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val freshId: I.info -> I.id
+	val id_info: I.exp_info -> I.id_info
+	val exp_info: Source.region * Type.t -> I.exp_info
+
+	val freshId: I.exp_info -> I.id
 
 	val idEq: I.id * I.id -> bool
 
@@ -31,5 +34,5 @@ signature INTERMEDIATE_AUX =
 
 	val separateAlt: I.pat -> I.pat
 
-	val makeConArity: I.info * bool -> O.conArity
+	val makeConArity: I.exp_info * bool -> O.conArity
     end

@@ -91,7 +91,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
-	fun emitCoord (s, ((a, b), _)) =
+	fun emitRegion (s, ((a, b), _)) =
 	    emit (Comment (s ^ " at " ^ Int.toString a ^ "." ^ Int.toString b))
 
 	fun emitRecordArity labelIdList =
@@ -295,10 +295,15 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		genTestStm (id, testBodyList, fn () => genBody elseBody)
 	    end
-	  | genStm (RaiseStm ((((i, _), (_, _)), _), id)) =
-	    (emitId id; emit (LdcI4 i);
-	     emit (Newobj (StockWerk.ExceptionWrapper,
-			   [StockWerk.StockWertTy, Int32Ty])); emit Throw)
+	  | genStm (RaiseStm (info, id)) =
+	    let
+		val ((line, _), (_, _)) = #region info
+	    in
+		emitId id; emit (LdcI4 line);
+		emit (Newobj (StockWerk.ExceptionWrapper,
+			      [StockWerk.StockWertTy, Int32Ty]));
+		emit Throw
+	    end
 	  | genStm (ReraiseStm (_, _)) = emit Rethrow
 	  | genStm (SharedStm (_, body, shared as ref 0)) =
 	    let
@@ -475,8 +480,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     (emit Dup; emit (LdcI4 i); emitId id;
 			      emit StelemRef)) ids;
 	     emit Pop)
-	  | genExp (FunExp ((coord, _), stamp, _, args, body), PREPARE) =
-	    (emitCoord ("FunExp", coord); emit (Newobj (className stamp, nil));
+	  | genExp (FunExp (info, stamp, _, args, body), PREPARE) =
+	    (emitRegion ("FunExp", #region info);
+	     emit (Newobj (className stamp, nil));
 	     case args of
 		 TupArgs nil =>
 		     defineClass (stamp, StockWerk.Procedure0, nil)
@@ -507,7 +513,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		      genBody body; closeMethod ())
 	       | _ =>
 		     let
-			 val info = (Source.nowhere, NONE)
+			 val info = {region = Source.nowhere}
 			 val id = Id (info, Stamp.new (), Name.InId)
 			 val test =
 			     case args of
@@ -552,12 +558,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     [StockWerk.StockWertTy, StockWerk.StockWertTy,
 			      StockWerk.StockWertTy, StockWerk.StockWertTy],
 			     StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, TupArgs ids), BOTH) =
-	    (emitId id; genExp (TupExp (coord, ids), BOTH);
+	  | genExp (AppExp (info, id, TupArgs ids), BOTH) =
+	    (emitId id; genExp (TupExp (info, ids), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
-	  | genExp (AppExp (coord, id, RecArgs labelIdList), BOTH) =
-	    (emitId id; genExp (RecExp (coord, labelIdList), BOTH);
+	  | genExp (AppExp (info, id, RecArgs labelIdList), BOTH) =
+	    (emitId id; genExp (RecExp (info, labelIdList), BOTH);
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
 	  | genExp (SelAppExp (_, label, id), BOTH) =
@@ -594,14 +600,24 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (exp, BOTH) =
 	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))
 	and genArgs (OneArg id) = emitId id
-	  | genArgs (TupArgs ids) =   (*--** type below *)
-	    genExp (TupExp ((Source.nowhere, NONE), ids), BOTH)
-	  | genArgs (RecArgs labelIdList) =   (*--** type below *)
-	    genExp (RecExp ((Source.nowhere, NONE), labelIdList), BOTH)
+	  | genArgs (TupArgs ids) =
+	    let
+		val info = {region = Source.nowhere,
+			    typ = Type.unknown Type.STAR}   (*--** type *)
+	    in
+		genExp (TupExp (info, ids), BOTH)
+	    end
+	  | genArgs (RecArgs labelIdList) =
+	    let
+		val info = {region = Source.nowhere,
+			    typ = Type.unknown Type.STAR}   (*--** type *)
+	    in
+		genExp (RecExp (info, labelIdList), BOTH)
+	    end
 	and genBody (stm::stms) =
-	    (case infoStm stm of
-		 (_, ref (Kill set)) => kill set
-	       | (_, ref _) => ();
+	    (case #liveness (infoStm stm) of
+		 ref (Kill set) => kill set
+	       | ref _ => ();
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 

@@ -68,19 +68,21 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 
 	val sort = StampSet.fold insert nil
 
-	fun outputInfo (_, ref (Unknown | LoopStart | LoopEnd)) = NULL
-	  | outputInfo (_, ref (Use set)) =
+	fun outputLiveness (ref (Unknown | LoopStart | LoopEnd)) = NULL
+	  | outputLiveness (ref (Use set)) =
 	    if StampSet.isEmpty set then SEQ [S "(* use *)", NL]
 	    else
 		SEQ [S (List.foldl (fn (stamp, s) =>
 				    s ^ " " ^ Stamp.toString stamp)
 			"(* use" (sort set)), S " *)", NL]
-	  | outputInfo (_, ref (Kill set)) =
+	  | outputLiveness (ref (Kill set)) =
 	    if StampSet.isEmpty set then SEQ [S "(* kill *)", NL]
 	    else
 		SEQ [S (List.foldl (fn (stamp, s) =>
 				    s ^ " " ^ Stamp.toString stamp)
 			"(* kill" (sort set)), S "*)", NL]
+
+	fun outputInfo ({liveness, ...}: stm_info) = outputLiveness liveness
 
 	fun outputLit (WordLit w) = "word " ^ LargeWord.toString w
 	  | outputLit (IntLit i) = "int " ^ LargeInt.toString i

@@ -268,8 +268,10 @@ structure CodeGen =
 	    Multi (create (classname, [Dup]))
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
-	fun lineExpInfo ((((line, _), _), _): ImperativeGrammar.expInfo) = line
-	fun lineStmInfo ((((line, _), _), _): ImperativeGrammar.stmInfo) = line
+	fun lineExpInfo ({region = ((line, _), _), ...}:
+			 ImperativeGrammar.expInfo) = line
+	fun lineStmInfo ({region = ((line, _), _), ...}:
+			 ImperativeGrammar.stmInfo) = line
 
 	(* entry point *)
 	fun genComponentCode (debug, verbose, optimize, lmaa, lines, wait, name, (components, (program, _))) =

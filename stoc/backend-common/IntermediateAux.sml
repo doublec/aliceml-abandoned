@@ -15,7 +15,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure I = IntermediateGrammar
 	open I
 
-	fun freshId info = Id (info, Stamp.new (), Name.InId)
+	fun id_info ({region, ...}: exp_info): id_info = {region = region}
+	fun exp_info (region, typ): exp_info = {region = region, typ = typ}
+
+	fun freshId (info: exp_info) =
+	    Id (id_info info, Stamp.new (), Name.InId)
 
 	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
 
@@ -246,13 +250,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		val (pat', subst) = relax (pat, nil)
 		val decs =
 		    List.map
-		    (fn (id, id') =>
+		    (fn (id, id', info) =>
 		     let
-			 val info = infoId id
-			 val exp = VarExp (info, ShortId (info, id'))
+			 val info' = id_info info
+			 val exp = VarExp (info, ShortId (info', id'))
 		     in
-			 (*--** the pattern below does not carry its type *)
-			 ValDec (info, VarPat (info, id), exp)
+			 ValDec (info', VarPat (info, id), exp)
 		     end) subst
 	    in
 		case decs of
@@ -265,7 +268,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    let
 		val id' = freshId info
 	    in
-		(VarPat (info, id'), (id, id')::subst)
+		(VarPat (info, id'), (id, id', info)::subst)
 	    end
 	  | relax (pat as ConPat (_, _, _), subst) = (pat, subst)
 	  | relax (pat as RefPat _, subst) = (pat, subst)
@@ -327,14 +330,16 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | relax (GuardPat (info, pat, exp), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
+		val subst'' = List.map (fn (id1, id2, _) => (id1, id2)) subst'
 	    in
-		(GuardPat (info, pat', substExp (exp, subst')), subst')
+		(GuardPat (info, pat', substExp (exp, subst'')), subst')
 	    end
 	  | relax (WithPat (info, pat, decs), subst) =
 	    let
 		val (pat', subst') = relax (pat, subst)
+		val subst'' = List.map (fn (id1, id2, _) => (id1, id2)) subst'
 	    in
-		(WithPat (info, pat', substDecs (decs, subst')), subst')
+		(WithPat (info, pat', substDecs (decs, subst'')), subst')
 	    end
 
 	structure O = ImperativeGrammar
@@ -353,9 +358,9 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		      | (_, _) =>
 			    raise Crash.Crash "IntermediateAux.parseRow 2"
 	in
-	    fun makeConArity (info, isNAry) =
+	    fun makeConArity (info: I.exp_info, isNAry) =
 		let
-		    val typ = IntermediateInfo.typ info
+		    val typ = #typ info
 		in
 		    if Type.isArrow typ then
 			if isNAry then
@@ -374,7 +379,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			    end
 			else Unary
 		    else Nullary
-		end handle IntermediateInfo.Info => Nullary
-		(*--** NewExp is missing its type, therefore the `handle' *)
+		end
 	end
     end
