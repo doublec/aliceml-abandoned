@@ -10,11 +10,11 @@
  *   $Revision$
  *)
 
-import structure TextIO        from "x-alice:/lib/system/TextIO"
-import structure Socket        from "x-alice:/lib/system/Socket"
-import structure FromEqHashKey from "x-alice:/lib/utility/HASH_KEY-sig"
-import structure MkHashImpMap  from "x-alice:/lib/utility/MkHashImpMap"
-import structure Url           from "x-alice:/lib/utility/Url"
+import structure TextIO        from "TextIO"
+import structure Socket        from "Socket"
+import structure FromEqHashKey from "../utility/HASH_KEY-sig"
+import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure Url           from "../utility/Url"
 import structure Http          from "Http"
 import signature HTTP_SERVER   from "HTTP_SERVER-sig"
 
@@ -93,23 +93,10 @@ structure HttpServer :> HTTP_SERVER =
 			serverPort
 		    end
 
-	fun registerFor (uri, handler) =
+	fun register (uri, handler) =
 	    let
 		val uri' = Url.setPath (Url.empty, Url.getPath uri)
 	    in
 		UrlMap.insert (handlerMap, uri', handler)
-	    end
-
-	val counter = ref 0
-
-	fun register handler =
-	    let
-		val p = Promise.promise ()
-		val n = Ref.exchange (counter, Promise.future p)
-		val uri = Url.setPath (Url.empty, ["export", Int.toString n])
-	    in
-		Promise.fulfill (p, n + 1);
-		registerFor (uri, handler);
-		uri
 	    end
     end
