@@ -293,7 +293,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    graphToString (elseGraph, level + 1)
 	  | graphToString (Leaf (body, _), level) =
 	    indent level ^ "leaf " ^
-	    (Source.regionToString (#region (O.infoStm (List.hd body)))) ^ "\n"
+	    (Source.regionToString (O.infoStm (List.hd body))) ^ "\n"
 	  | graphToString (Default, level) = indent level ^ "default\n"
 
 	fun mappingToString' ((pos, _)::mapping) =
@@ -496,7 +496,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	end
 
 	type consequent = Source.region * O.body option ref
-	type mapping' = (pos * O.id) list
+	type mapping' = (pos * O.idRef) list
 
 	fun buildGraph (matches, elseBody) =
 	    let
@@ -569,22 +569,23 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			       deconstructs pat orelse b) false matches)
 		handle (BindsAll | SideEffect | NotNAry) => false
 
-	    fun process (Arity.Unary, graph, consequents, info) =
+	    fun process (Arity.Unary, graph, consequents, region) =
 		let
-		    val id = O.freshId (id_info info)
+		    val id = O.freshId region
 		in
-		    (O.OneArg (O.IdDef id), graph, [(nil, id)], consequents)
+		    (O.OneArg (O.IdDef id), graph, [(nil, O.IdRef id)],
+		     consequents)
 		end
 	      | process (Arity.Tuple n, Node (nil, TupTest _, ref graph, _, _),
 			 consequents, _) =
 		let
 		    val ids =
-			Vector.tabulate
-			(n, fn _ => O.freshId {region = Source.nowhere})
+			Vector.tabulate (n, fn _ => O.freshId Source.nowhere)
 		    val mapping =
 			Vector.foldri (fn (i, id, mapping) =>
-				       ([LABEL (Label.fromInt (i + 1))], id)::
-				       mapping) nil (ids, 0, NONE)
+					  ([LABEL (Label.fromInt (i + 1))],
+					   O.IdRef id)::mapping)
+				      nil (ids, 0, NONE)
 		    val idDefs = Vector.map O.IdDef ids
 		in
 		    (O.TupArgs idDefs, graph, mapping, consequents)
@@ -595,16 +596,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		let
 		    val labelIdVec =
 			Vector.map (fn label =>
-				    (label,
-				     O.freshId {region = Source.nowhere}))
-			labels
+				       (label, O.freshId Source.nowhere))
+				   labels
 		    val mapping =
 			Vector.foldr (fn ((label, id), mapping) =>
-				      ([LABEL label], id)::mapping)
-			nil labelIdVec
+					 ([LABEL label], O.IdRef id)::mapping)
+				     nil labelIdVec
 		    val labelIdDefVec =
 			Vector.map (fn (label, id) => (label, O.IdDef id))
-			labelIdVec
+				   labelIdVec
 		in
 		    (O.ProdArgs labelIdDefVec, graph, mapping, consequents)
 		end
@@ -619,7 +619,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			else Arity.Unary
 		    val (graph, consequents) = buildGraph (matches, errStms)
 		in
-		    process (arity, graph, consequents, info)
+		    process (arity, graph, consequents, #region info)
 		end
 	end
     end
