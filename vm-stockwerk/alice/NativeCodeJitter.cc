@@ -49,12 +49,10 @@
 // NativeCodeFrame
 class NativeCodeFrame : private Generic::StackFrame {
 protected:
-  static const u_int PC_POS             = 0;
-  static const u_int CODE_POS           = 1;
-  static const u_int CLOSURE_POS        = 2;
-  static const u_int IMMEDIATE_ARGS_POS = 3;
-  static const u_int CONTINUATION_POS   = 4;
-  static const u_int BASE_SIZE          = 5;
+  enum {
+    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS, CONTINUATION_POS,
+    BASE_SIZE
+  };
 public:
   // Side-Effect: Scratches JIT_R0, JIT_FP
   static void New(u_int This, u_int nLocals) {
@@ -108,9 +106,7 @@ public:
 // NativeCodeHandlerFrame
 class NativeCodeHandlerFrame : private Generic::StackFrame {
 protected:
-  static const u_int PC_POS    = 0;
-  static const u_int FRAME_POS = 1;
-  static const u_int BASE_SIZE = 2;
+  enum { PC_POS, FRAME_POS, BASE_SIZE };
 public:
   static void New(u_int This) {
     u_int size = Generic::StackFrame::BASE_SIZE + BASE_SIZE;
@@ -193,10 +189,7 @@ u_int RegisterBank::top;
 
 class MemoryNode : public Tuple {
 protected:
-  static const u_int INDEX_POS = 0;
-  static const u_int END_POS   = 1;
-  static const u_int NEXT_POS  = 2;
-  static const u_int SIZE      = 3;
+  enum { INDEX_POS, END_POS, NEXT_POS, SIZE };
 
   static u_int index;
 public:
@@ -441,9 +434,7 @@ public:
 // LivenessTable
 class LivenessTable : private Chunk {
 protected:
-  static const char DEAD  = 0;
-  static const char ALIVE = 1;
-  static const char KILL  = 2;
+  enum { DEAD, ALIVE, KILL };
 
   void Set(u_int i, char v) {
     Assert(i < this->GetSize());

@@ -20,8 +20,7 @@
 
 class RaiseFrame: private StackFrame {
 private:
-  static const u_int EXN_POS = 0;
-  static const u_int SIZE    = 1;
+  enum { EXN_POS, SIZE };
 public:
   using StackFrame::ToWord;
   // RaiseFrame Accessors

@@ -44,12 +44,10 @@ public:
 
 class DllExport NativeConcreteCode : private ConcreteCode {
 protected:
-  static const u_int TRANSFORM_POS     = 0;
-  static const u_int NATIVE_CODE_POS   = 1;
-  static const u_int IMMEDIATE_ENV_POS = 2;
-  static const u_int NLOCALS_POS       = 3;
-  static const u_int SKIP_CCC_PC_POS   = 4;
-  static const u_int SIZE              = 5;
+  enum {
+    TRANSFORM_POS, NATIVE_CODE_POS, IMMEDIATE_ENV_POS, NLOCALS_POS,
+    SKIP_CCC_PC_POS, SIZE
+  };
 public:
   using Block::ToWord;
   using ConcreteCode::GetInterpreter;

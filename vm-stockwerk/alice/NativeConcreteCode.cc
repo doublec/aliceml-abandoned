@@ -28,8 +28,7 @@
 // LazyCompile Frame
 class LazyCompileFrame : private StackFrame {
 private:
-  static const u_int CLOSURE_POS = 0;
-  static const u_int SIZE        = 1;
+  enum { CLOSURE_POS, SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;

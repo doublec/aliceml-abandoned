@@ -76,11 +76,7 @@ public:
 // AbstractCodeInterpreter StackFrames
 class AbstractCodeFrame: public StackFrame {
 protected:
-  static const u_int PC_POS          = 0;
-  static const u_int CLOSURE_POS     = 1;
-  static const u_int LOCAL_ENV_POS   = 2;
-  static const u_int FORMAL_ARGS_POS = 3;
-  static const u_int SIZE            = 4;
+  enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;

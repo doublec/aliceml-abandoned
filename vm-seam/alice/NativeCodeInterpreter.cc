@@ -33,12 +33,10 @@
 //
 class NativeCodeFrame : public StackFrame {
 protected:
-  static const u_int PC_POS             = 0;
-  static const u_int CODE_POS           = 1;
-  static const u_int CLOSURE_POS        = 2;
-  static const u_int IMMEDIATE_ARGS_POS = 3;
-  static const u_int CONTINUATION_POS   = 4;
-  static const u_int BASE_SIZE          = 5;
+  enum {
+    PC_POS, CODE_POS, CLOSURE_POS, IMMEDIATE_ARGS_POS, CONTINUATION_POS,
+    BASE_SIZE
+  };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
@@ -94,9 +92,7 @@ public:
 
 class NativeCodeHandlerFrame : public StackFrame {
 protected:
-  static const u_int PC_POS    = 0;
-  static const u_int FRAME_POS = 1;
-  static const u_int BASE_SIZE = 2;
+  enum { PC_POS, FRAME_POS, BASE_SIZE };
 public:
   using Block::ToWord;
   using StackFrame::GetInterpreter;
