@@ -13,13 +13,16 @@
  *
  *)
 
+import signature GTK from "x-alice:/lib/gtk/GTK-sig";
+import structure Gtk from "x-alice:/lib/gtk/Gtk";
+(**)
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
-
+(**)
 import structure UnsafeInspector from "UnsafeInspector";
-
-open UnsafeInspector;
+(**)
+open UnsafeInspector Promise;
 
 
 (*****************************************************************************)
@@ -62,18 +65,17 @@ sig
     val add : t * t -> t
     val mul : t * t -> t
     val square : t -> t 
-end; 
+end;
 structure Complex :> COMPLEX = 
 struct
     type t = real * real
-
     fun complex x = x
-
+    (**)
     fun add((a,b),(c,d)) = (Real.+(a,c),Real.+(b,d))
-
+    (**)
     fun mul((a,b),(c,d)) = (Real.-(Real.*(a,c),Real.*(b,d)),
 			    Real.+(Real.*(a,d),Real.*(b,c)))
-
+    (**)
     fun square(a,b) = (Real.-(Real.*(a,a),Real.*(b,b)),
 		       Real.*(2.0,Real.*(a,b)))
 end;
@@ -103,7 +105,7 @@ registerType(Type.asCon(Comp.x),createComplex);
 (* inspection *)
 
 inspect(Complex.complex(3.0,5.0),Comp.x);
-
+(**)
 inspect([Complex.complex(3.0,5.0),
 	 Complex.complex(4.0,6.0),
 	 Complex.complex(5.0,7.0)],
@@ -120,6 +122,7 @@ structure T = Reflect.ReflectSig(signature S = COMPLEX);
 
 inspectMod (V.x,T.x);
 
+
 (*****************************************************************************)
 
 (******************************** DEMO 3 *************************************)
@@ -129,16 +132,18 @@ inspectMod (V.x,T.x);
 datatype foo = Foo of foo * foo
              | S
              | T
-
 val fst = Foo(Foo(T,S),Foo(T,S))
 val rec snd = Foo(snd,snd)
 
 (* type reflection *)
+
 structure DataType = Reflect.ReflectType (type t = foo);
 
 (* inspection *)
+
 inspect(fst,DataType.x);
 inspect(snd,DataType.x);
+
 
 (*****************************************************************************)
 
@@ -166,3 +171,239 @@ structure Matrix = Reflect.ReflectType(type t = int vector vector);
 
 inspect(my_matrix,Matrix.x);
 
+
+(*****************************************************************************)
+
+(******************************** DEMO 5 *************************************)
+
+(*** type reflection ***)
+
+structure Record = Reflect.ReflectType
+                   (type t = {A: int list, B: int list, 
+			      AplusB: int list, AzipB: int list, 
+			      AtoString: string list, Bdiv10: real list});
+
+(* functions to combinate of streams *)
+
+fun build f x = 
+    let
+        val p = promise ()
+    in 
+        spawn f (x,p);  
+        future p 
+    end 
+(**)
+fun continue x p = 
+    let 
+        val p' = promise () 
+    in
+        fulfill (p, x::future p');  
+        p' 
+    end
+(**) 
+fun finish p = fulfill (p,nil) 
+(**)
+fun plus xsys                   = build plus' xsys 
+and plus' ((x::xs, y::ys), p)   = plus' ((xs,ys), continue (x+y) p)
+  | plus' (      _,        p)   = finish p 
+(**)
+fun zip xsys                    = build zip' xsys 
+and zip' ((x::xs, ys), p)       = zip' ((ys,xs), continue x p)
+  | zip' (      _,     p)       = finish p 
+(**)
+fun map f xs                    = build (map' f) xs 
+and map' f (x::xs, p)           = map' f (xs, continue (f x) p)
+  | map' f ( nil,  p)           = finish p 
+
+(* main *)
+
+fun main() = 
+    let
+        val p1          = promise ()
+        val p2          = promise ()
+	val A           = future p1
+        val B           = future p2
+        val AplusB      = plus (A,B)
+        val AzipB       = zip (A,B)
+        val AtoString   = map Int.toString A
+	val Bdiv10      = map (fn n => real n / 10.0) B    
+    in
+	inspect ({A, B, AplusB, AzipB, AtoString, Bdiv10},Record.x); 
+        loop (p1,p2) 
+    end
+(**)
+and loop pp = 
+    ( TextIO.print "Enter \"k n\" to put number n on stream k (k=1,2)\n"
+    ; loop' pp
+    )
+(**)
+and loop' (p1,p2) =
+    case (TextIO.print "> "; TextIO.inputLine TextIO.stdIn)
+      of "exit\n"   => ()
+       | s    =>
+    case String.tokens Char.isSpace s
+      of non [_,_] => loop (p1,p2)
+       | [s1,s2]   =>
+    case (Int.fromString s1, Int.fromString s2)
+      of non (SOME (1|2), SOME _) => loop (p1,p2)
+       | (SOME k, SOME n)         =>
+         let
+             val p' = promise ()
+         in
+             if k = 1 then
+                (fulfill (p1, n::future p'); loop' (p',p2))
+             else
+                (fulfill (p2, n::future p'); loop' (p1,p'))
+         end
+(**)
+val _ = main()
+
+
+(****************************************************************************)
+                  (*     MORE EXAMPLES    *)
+(*****************************************************************************)
+
+
+(********************************** 1 ****************************************)
+
+(* CYCLIC LIST WITH FUTURE *)
+
+val my_promise = Promise.promise();
+val my_future = Promise.future(my_promise);
+val my_list = 1::2::3::my_future
+
+(* type relection *)
+
+structure List = Reflect.ReflectType(type t = int list);
+
+(* inspection *)
+
+inspect(my_list,List.x);
+
+(*****)
+
+(* Update *)
+ 
+Promise.fulfill(my_promise,my_list);
+
+
+(*****************************************************************************)
+
+(********************************** 2 ****************************************)
+
+(* STRUCTURE GTK *)
+
+(* type reflection *)
+
+structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
+
+structure T = Reflect.ReflectSig(signature S = GTK);
+
+(* inspection *)
+
+inspectMod (V.x,T.x);
+
+
+(*****************************************************************************)
+
+(********************************** 3 ****************************************)
+
+(* PACKAGE *)
+
+signature TEST =
+sig
+    type t
+    val test: string
+    val foo: string -> string
+    signature S
+end;
+structure Test = 
+struct
+    type t = string
+    val test = "hi"
+    fun foo str = str^"@"
+    signature S = sig
+		      val x : string
+		  end
+end;
+
+(* type reflection *)
+
+structure P = Package.Pack (signature S = TEST structure X = Test);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+(* inspection *)
+
+inspect(P.package,Pack.x);
+
+      
+(*****************************************************************************)
+
+(********************************** 4 ****************************************)
+
+(* VECTOR WITH PROMISES AND FUTURES *)
+
+val prom = Promise.promise(); 
+val fut = Promise.future(prom); 
+
+(* type reflection *)
+
+structure Vector =  Reflect.ReflectType 
+    (type t = (int * int Promise.promise) vector);
+  
+(* inspection *)
+
+inspect(#[(fut,prom),(fut,prom),(fut,prom),(fut,prom)],
+			Vector.x); 
+
+(* update *)
+
+Promise.fulfill(prom,44); 
+
+
+(*****************************************************************************)
+
+(********************************** 5 ****************************************)
+
+
+(*** STRUCTURAL AND TOKEN SIMILARITY ***)
+
+val my_list = [1,2,3];
+val my_list' = [1,2,3];
+val my_ref = ref 1;
+val my_ref' = ref 1
+
+structure Similarities =  Reflect.ReflectType
+              (type t = {first: int list * int list * int list,
+			 second: int ref * int ref * int ref * int ref});
+
+UnsafeInspector.inspect({first = (my_list,my_list,my_list'),
+			 second = (my_ref,my_ref',my_ref',my_ref')},
+			Similarities.x);
+
+
+(*****************************************************************************)
+
+(******************************** 5 *************************************)
+
+(* STREAMS *)
+
+fun first i = Future.concur(fn () => ( Thread.sleep (Time.fromSeconds 1)
+(**)                                      ; i::(first(i+1))));
+fun second i = Future.concur(fn () => ( Thread.sleep (Time.fromSeconds 2)
+				       ; i::(second(i+2))));
+(**)    
+fun third (s1::xs,s2::ys) =  Future.concur(fn () => (s1+s2)::third(xs,ys));
+(**)
+val a = first(0);
+val b = second(0);
+
+(* type reflection *)
+
+structure IntList = Reflect.ReflectType (type t = int list);
+
+(* inspection *)
+
+inspect(a, IntList.x);
+inspect (b, IntList.x);
+inspect (third(a,b), IntList.x);
