@@ -20,14 +20,14 @@
 #include "generic/Backtrace.hh"
 
 // to be done: better solution without hacks
-#define POP_PRIM_SELF() \
-  StackFrame *prim_frame = Scheduler::GetFrame(); \
-  Worker *prim_self = prim_frame->GetWorker(); \
-  Scheduler::PopFrame(1); \
+#define POP_PRIM_SELF()					\
+  StackFrame *prim_frame = Scheduler::GetFrame();	\
+  Worker *prim_self = prim_frame->GetWorker();		\
+  Scheduler::PopFrame(1);				\
   prim_self = prim_self;
 
-#define PUSH_PRIM_SELF() \
-  NEW_STACK_FRAME(self_frame, prim_self, 0); \
+#define PUSH_PRIM_SELF()			\
+  NEW_STACK_FRAME(self_frame, prim_self, 0);	\
   self_frame = self_frame;
 
 #define DEFINE0(name)					\
@@ -107,16 +107,16 @@
 
 #define RAISE(w) {						\
   Scheduler::currentData = w;					\
-  PUSH_PRIM_SELF() \
-  word prim_wFrame = self_frame->Clone(); \
-  Scheduler::PopFrame(); \
-  Scheduler::currentBacktrace = Backtrace::New(prim_wFrame); \
+  PUSH_PRIM_SELF()						\
+  word prim_wFrame = self_frame->Clone();			\
+  Scheduler::PopFrame();					\
+  Scheduler::currentBacktrace = Backtrace::New(prim_wFrame);	\
   return Worker::RAISE;						\
 }
 
 #define REQUEST(w) {				\
   Scheduler::currentData = w;			\
-  PUSH_PRIM_SELF() \
+  PUSH_PRIM_SELF()				\
   return Worker::REQUEST;			\
 }
 
