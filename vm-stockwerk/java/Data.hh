@@ -25,15 +25,16 @@ typedef unsigned short u_wchar; //--**
 class JavaLabel {
 public:
   static const BlockLabel Array               = MIN_DATA_LABEL;
-  static const BlockLabel Lock                = (BlockLabel) (Array + 1);
-  static const BlockLabel FieldInfo           = (BlockLabel) (Array + 2);
-  static const BlockLabel ExceptionTableEntry = (BlockLabel) (Array + 3);
-  static const BlockLabel JavaByteCode        = (BlockLabel) (Array + 4);
-  static const BlockLabel MethodInfo          = (BlockLabel) (Array + 5);
-  static const BlockLabel ClassInfo           = (BlockLabel) (Array + 6);
-  static const BlockLabel Class               = (BlockLabel) (Array + 7);
-  static const BlockLabel Object              = (BlockLabel) (Array + 8);
-  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 9);
+  static const BlockLabel JavaArray           = (BlockLabel) (Array + 1);
+  static const BlockLabel Lock                = (BlockLabel) (Array + 2);
+  static const BlockLabel FieldInfo           = (BlockLabel) (Array + 3);
+  static const BlockLabel ExceptionTableEntry = (BlockLabel) (Array + 4);
+  static const BlockLabel JavaByteCode        = (BlockLabel) (Array + 5);
+  static const BlockLabel MethodInfo          = (BlockLabel) (Array + 6);
+  static const BlockLabel ClassInfo           = (BlockLabel) (Array + 7);
+  static const BlockLabel Class               = (BlockLabel) (Array + 8);
+  static const BlockLabel Object              = (BlockLabel) (Array + 9);
+  static const BlockLabel ConstantPool        = (BlockLabel) (Array + 10);
 };
 
 static const word null = Store::IntToWord(0);
@@ -62,16 +63,13 @@ public:
 class DllExport Array: private Block {
 protected:
   enum {
-    CLASS_POS, // Class
     SIZE_POS, // int
     BASE_SIZE
     // ... elements
   };
 public:
-  static Array *New(word type, u_int length) {
-    //--** represent arrays depending on type
+  static Array *New(u_int length) {
     Block *b = Store::AllocBlock(JavaLabel::Array, BASE_SIZE + length);
-    b->InitArg(CLASS_POS, type);
     b->InitArg(SIZE_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
     return static_cast<Array *>(b);
@@ -84,6 +82,35 @@ public:
   static Array *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::Array);
+    return static_cast<Array *>(b);
+  }
+};
+
+class DllExport JavaArray: private Block {
+protected:
+  enum {
+    CLASS_POS, // Class
+    SIZE_POS, // int
+    BASE_SIZE
+    // ... elements
+  };
+public:
+  static Array *New(word type, u_int length) {
+    //--** array representation depends on type
+    Block *b = Store::AllocBlock(JavaLabel::JavaArray, BASE_SIZE + length);
+    b->InitArg(CLASS_POS, type);
+    b->InitArg(SIZE_POS, Store::IntToWord(length));
+    for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
+    return static_cast<Array *>(b);
+  }
+  static Array *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::JavaArray);
+    return static_cast<Array *>(b);
+  }
+  static Array *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::JavaArray);
     return static_cast<Array *>(b);
   }
 };
