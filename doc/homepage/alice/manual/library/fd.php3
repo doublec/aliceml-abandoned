@@ -443,7 +443,7 @@
     </DD>
 
     <DT>
-      <TT>plus (<I>x</I>, <I>y<I>, <I>z</I>)</TT>
+      <TT>plus (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the sum of <I>x</I> and <I>y</I>. The propagator
@@ -474,7 +474,7 @@
     </DD>
 
     <DT>
-      <TT>power (<I>x</I>, <I>i<I>, <I>z</I>)</TT>
+      <TT>power (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the result of <I>x</I> raised to the power of <I>i</I>.
@@ -483,7 +483,7 @@
     </DD>
 
     <DT>
-      <TT>divI (<I>x</I>, <I>i<I>, <I>z</I>)</TT>
+      <TT>divI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the result of the integer division of <I>x</I> by <I>i</I>.
@@ -495,7 +495,7 @@
     </DD>
 
     <DT>
-      <TT>modI (<I>x</I>, <I>i<I>, <I>z</I>)</TT>
+      <TT>modI (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the result of <I>x</I> modulus <I>i</I>.
@@ -534,7 +534,7 @@
     </DD>
 
     <DT>
-      <TT>divD (<I>x</I>, <I>i<I>, <I>z</I>)</TT>
+      <TT>divD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the result of the integer division of <I>x</I> by <I>i</I>.
@@ -542,7 +542,7 @@
     </DD>
 
     <DT>
-      <TT>modD (<I>x</I>, <I>i<I>, <I>z</I>)</TT>
+      <TT>modD (<I>x</I>, <I>i</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the result of <I>x</I> modulus <I>i</I>.
