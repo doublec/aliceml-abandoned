@@ -28,7 +28,8 @@ struct
 
     structure RelMan = MkDictionary(type t = (Node.value * int ref * int) list)
 
-    structure Transient = MkDictionary(type t = Reflect.value * Node.node list)
+    structure Transient = MkDictionary(type t = Reflect.value * Thread.thread * 
+					        Node.node list)
 
     type main = Main.dictionary
     type relman = RelMan.dictionary

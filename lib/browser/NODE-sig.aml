@@ -33,7 +33,7 @@ sig
 
     datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 	
-    datatype status = CLEAN | DIRTY | DAZZLED | DEAD
+    datatype status = CLEAN | DIRTY | DAZZLED 
 	
     datatype color_class = INT_COLOR 
                          | REAL_COLOR
@@ -185,6 +185,10 @@ sig
     (* Erzeugung einer Gtk-Gruppe fuer eine node *)
 	
     val setGroup:  GtkSupport.tag * node -> GtkSupport.tag
+
+    (* Status wird auf DAZZLED gesetzt *)
+
+    val setDazzled: node -> unit
 
     (* low-level-Konstruktion der verschiedenen node-Arten *)
 

@@ -36,7 +36,7 @@ struct
 
     datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
 	
-    datatype status = CLEAN | DIRTY | DAZZLED | DEAD
+    datatype status = CLEAN | DIRTY | DAZZLED
 
     datatype color_class = INT_COLOR 
                          | REAL_COLOR
@@ -368,6 +368,23 @@ struct
       | RelNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
       | RelRefNode(r) => GtkSupport.newTag(#group(r),0.0,0.0) 
 
+    (* setDazzled *)
+
+    fun setDazzled n = case n of
+	Simple(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Concat(r) => ( #status(r) := DAZZLED
+		      ; setDazzled(getParent(n)) )
+      | Container(r) => ( #status(r) := DAZZLED
+			 ; setDazzled(getParent(n)) )
+      | RelNode(r) => ( #status(r) := DAZZLED
+ 		       ; setDazzled(getParent(n)) )
+      | RelRefNode(r) => ( #status(r) := DAZZLED
+			  ; setDazzled(getParent(n)) )
+      | Limit(r) => ( #status(r) := DAZZLED
+		     ; setDazzled(getParent(n)) )
+      | Empty => () 
+
 
    (* low-level-Konstruktion der verschiedenen node-Arten *)
 
@@ -467,10 +484,8 @@ struct
 			 (Future.isLazy(future)) handle _ => false
 		     end
 
-    fun isDepthLimit n = getSort(n) = DEPTH_LIMIT
-	handle Match => false
+    fun isDepthLimit n = isLimit n andalso getSort(n) = DEPTH_LIMIT
 
-    fun isWidthLimit n = getSort(n) = WIDTH_LIMIT
-	handle Match => false
+    fun isWidthLimit n = isLimit n andalso getSort(n) = WIDTH_LIMIT
 
 end
