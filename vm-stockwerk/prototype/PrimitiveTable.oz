@@ -663,21 +663,24 @@ define
 	      'Unsafe.cast': fun {$ X} X end#i_v
 	      'Unsafe.getPrimitiveByName':
 		 fun {$ Name} Values.{VirtualString.toAtom Name} end#r_v
+	      'Unsafe.makeFunction':
+		 fun {$ X}
+		    case X of tuple(tuple(F L C) NG NL IdDefArgs Instr) then
+		       function(AbstractCodeInterpreter.interpreter
+				{VirtualString.toAtom F}#L#C
+				NG NL IdDefArgs Instr
+				transform(AliceFunction X))
+		    end
+		 end#r_v
 	      'Unsafe.makeClosure':
 		 fun {$ Function Vs} Closure in
 		    Closure = {MakeTuple closure {Width Vs} + 1}
-		    case Function
-		    of tag(0 tuple(F L C) NG NL IdDefArgs Instr) then
-		       Closure.1 = function(AbstractCodeInterpreter.interpreter
-					    {VirtualString.toAtom F}#L#C
-					    NG NL IdDefArgs Instr
-					    transform(AliceFunction Function))
-		    end
+		    Closure.1 = Function
 		    for I in 1..{Width Vs} do
 		       Closure.(I + 1) = Vs.I
 		    end
 		    Closure
-		 end#rr_v
+		 end#ir_v
 	      'Unsafe.makeTaggedValue':
 		 fun {$ I Vs} T in
 		    T = {MakeTuple tag {Width Vs} + 1}
@@ -857,6 +860,15 @@ define
 	    case {Deref T.2} of Transient=transient(_) then
 	       request(Transient args(T.1 Transient) TaskStack)
 	    elseof T2 then {F T.1 T2 TaskStack}
+	    end
+	 end
+      [] ir_v then
+	 case {Deconstruct Args} of Transient=transient(_) then
+	    request(Transient Args TaskStack)
+	 elseof T then
+	    case {Deref T.2} of Transient=transient(_) then
+	       request(Transient args(T.1 Transient) TaskStack)
+	    elseof T2 then continue(arg({F T.1 T2}) Rest)
 	    end
 	 end
       [] ri_t then
