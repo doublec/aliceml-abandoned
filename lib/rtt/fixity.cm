@@ -1,4 +1,6 @@
-Group is
-
+Group
+	signature FIXITY
+	structure Fixity
+is
 	FIXITY-sig.aml
 	Fixity.aml

@@ -1,10 +1,23 @@
-Group is
+Group
+	structure Name
+	structure Label
+	structure Path
+	structure PathSet
+	structure PathMap
+	structure Type
+	signature INF
+	structure Inf
 
-	../misc/sources.cm
-	../infrastructure/crash.cm
+	structure PPPath
+	structure PPType
+	structure PPInf
+is
+	../utility/sources.cm
+	pp-misc.cm
+	fixity.cm
+	label.cm
 	path.cm
 	type.cm
-	fixity.cm
 
 	INF-sig.aml
 	Inf.aml
