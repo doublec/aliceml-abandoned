@@ -26,6 +26,7 @@ import structure Bool                                     from "Bool"
 import structure Int                                      from "Int"
 import structure Char                                     from "Char"
 import structure StringCvt                                from "StringCvt"
+import structure Substring                                from "Substring"
 import signature REAL                                     from "REAL-sig"
 
 
@@ -178,6 +179,15 @@ struct
 	   | SOME(#"+", src') => (1.0, src')
 	   | _                => (1.0, src)
 
+    fun scanTextual ss getc src =
+	if Substring.size ss = 0 then SOME src else
+	case getc src
+	  of SOME(c, src') =>
+	     if Char.toLower c = Substring.sub(ss, 0)
+	     then scanTextual (Substring.triml 1 ss) getc src'
+	     else NONE
+	   | NONE => NONE
+
     fun scanFractional getc src =
         case getc src
 	  of SOME(c, src') =>
@@ -252,6 +262,15 @@ struct
 	    val       src1  = StringCvt.skipWS getc src
 	    val (sign,src2) = scanSign getc src1
 	in
+	    case scanTextual (Substring.full "infinity") getc src2
+	      of SOME src3 => SOME(sign * posInf, src3)
+	       | NONE =>
+	    case scanTextual (Substring.full "inf") getc src2
+	      of SOME src3 => SOME(sign * posInf, src3)
+	       | NONE =>
+	    case scanTextual (Substring.full "nan") getc src2
+	      of SOME src3 => SOME(0.0 * posInf, src3)
+	       | NONE =>
 	    case scanMantissa getc src2
 	      of NONE => NONE
 	       | SOME(man, src3) =>
