@@ -2,6 +2,7 @@ Core language:
 
 + binary literals
 + longids as context-free syntax
++ allow op in signatures
 - allow with type instead of withtype?
 
 - var annotations in types?
@@ -22,6 +23,8 @@ Core language:
 + rec expressions derived form
 * nonlinear patterns? (better not, requires structural equality)
 
++ allow rebinding of =
++ allow rebinding of builtin identifiers
 * heavier overloaded literals (allow 4*3.3 and 0wx3f<<6)
 * overloaded vector expressions and patterns (poly vector or mono vectors)
 * make real an eqtype
