@@ -15,6 +15,7 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure MkDrawingArea from "MkDrawingArea"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
 
@@ -22,9 +23,11 @@ functor MkWindow () :> MK_WINDOW =
 struct
 
     type tag = Gtk.object
+
+    val uglyNULL = UnsafeValue.cast () : Gtk.object
 	
     val window = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-    val _  = (Gtk.windowSetTitle (window, "Wee Inspector")
+    val _  = (Gtk.windowSetTitle (window, "Alice Browser V 0.1")
 	      ; Gtk.widgetSetUsize (window, 600, 400)   )
   
     val alive = ref true
@@ -32,18 +35,100 @@ struct
     fun Delete _ = (Gtk.widgetDestroy(window);alive:= false)
     val _  = Gtk.signalConnect (window, "delete-event", Delete)
 
+
+    val vbox = Gtk.vboxNew( 0 ,4)
+   
+
+	val bar = Gtk.menuBarNew()
+	    
+	    val item1 = Gtk.menuItemNewWithLabel("Inspector")
+	    val item2 = Gtk.menuItemNewWithLabel("Selection")
+	    val item3 = Gtk.menuItemNewWithLabel("Options")	
+
+		val _ = Gtk.menuBarAppend(bar,item1)
+		val _ = Gtk.menuBarAppend(bar,item2)
+		val _ = Gtk.menuBarAppend(bar,item3)
+
+		    val menu1 = Gtk.menuNew()
+		    val menu2 = Gtk.menuNew()
+		    val menu3 = Gtk.menuNew()
+
+		    val _ = Gtk.menuItemSetSubmenu(item1,menu1)
+		    val _ = Gtk.menuItemSetSubmenu(item2,menu2)
+		    val _ = Gtk.menuItemSetSubmenu(item3,menu3)
+
+		    val item11 = Gtk.menuItemNewWithLabel("about")
+		    val item12 = Gtk.menuItemNewWithLabel("close")
+		    val item13 = Gtk.menuItemNewWithLabel("iconify")
+			
+		    val _  = Gtk.signalConnect (item12,"activate", Delete)
+			
+
+		    fun about _ = let
+			
+				      val dialog = Gtk.dialogNew()
+				      val _ = Gtk.widgetSetUsize(dialog,200,150)
+				      val _ = Gtk.windowSetTitle(dialog,"important information")
+				      val ok = Gtk.buttonNewWithLabel("OK")
+				      val l = Gtk.labelNew("Alice Browser \n Created by \n Bernadette Blum & Marvin Schiller")
+					  
+				      fun ddialog _ = Gtk.widgetDestroy(dialog)
+				      val _ = Gtk.signalConnect(ok,"clicked",ddialog) 
+				      val _ = Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),ok)
+				      val _ = Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
+				      val _ = Gtk.widgetShowAll(dialog)
+				  in
+				      ()
+				  end
+		    val _  = Gtk.signalConnect (item11,"activate", about)
+			
+			
+		    val _ = Gtk.menuAppend(menu1,item11)
+		    val _ = Gtk.menuAppend(menu1,item12)
+		    val _ = Gtk.menuAppend(menu1,item13)
+			
+			
+		    val _ = Gtk.boxPackStart(vbox,bar,0,0,0)    
+	
+			
+		    val status = Gtk.statusbarNew()
+    val st_context = Gtk.statusbarGetContextId(status,"st")
+    val id = Gtk.statusbarPush(status,st_context,"Inspector Window started successfully")
+	
+	
+    val _ = Gtk.boxPackEnd(vbox,status,0,0,0)
+
+
+
+
+   
+
+
     structure A = 
 	struct
-	    val x = 1000.0
+	    val x = 700.0
 	    val y = 700.0
 	    val root = window
 	end
     
-    structure DA  =  MkDrawingArea(structure AreaArgs = A) 
+    structure DA  =  MkDrawingArea(structure AreaArgs = A) 	
+
+    val scrolled = Gtk.scrolledWindowNew(uglyNULL,uglyNULL)
+    val _ = Gtk.scrolledWindowSetPolicy(scrolled,Gtk.POLICY_ALWAYS,Gtk.POLICY_ALWAYS)
+	
+    val _ = Gtk.boxPackStart(vbox,scrolled,Gtk.EXPAND,Gtk.FILL,0) 
+
+    val _ = Gtk.scrolledWindowAddWithViewport(scrolled,DA.canvas)
+	
+    val _ = Gtk.containerAdd(window,vbox)
+	
 
     val canvas = DA.canvas
-    val canvasroot = DA.root  
-   
+    val canvasroot = DA.root
+
+
     fun show() = if !alive then Gtk.widgetShowAll(window) else ()
 	
 end
+
+

@@ -30,6 +30,7 @@ struct
     val _ =  (let
 		  val x = A.x
 		  val y = A.y
+		  val _ = Gtk.widgetSetUsize(canvas, Real.trunc x, Real.trunc y );
 		  val _ = GtkCanvas.setScrollRegion 
 		      (canvas,0.0,0.0,x,y)
 		  val _ =  GtkCanvas.itemNew 
@@ -44,7 +45,7 @@ struct
 			("outline_color_gdk", 
 			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))]) 
 	      in
-		  Gtk.containerAdd(AreaArgs.root,canvas)  
+		 (* Gtk.containerAdd(AreaArgs.root,canvas) *) ()  
 	      end)
     val root = GtkCanvas.root(canvas)
 	
