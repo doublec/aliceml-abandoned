@@ -277,6 +277,17 @@ namespace Generic {
     }
   };
 
+  class Hole : public ::Transient {
+  public:
+    // Side-Effect: Scratches JIT_R0, JIT_FP
+    static void New(u_int This) {
+      JITStore::AllocTransient(This, HOLE_LABEL);
+      // no associated future
+      jit_movi_p(JIT_R0, Store::IntToWord(0));
+      JITStore::InitArg(This, REF_POS, JIT_R0);
+    }
+  };
+
   class Byneed : public ::Transient {
   public:
     // Side-Effect: Scratches JIT_R0, JIT_FP
