@@ -69,6 +69,7 @@ static inline int IsCyclic(word x, Future *future) {
 
 Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
   ByneedFrame *frame = ByneedFrame::FromWordDirect(taskStack->GetFrame());
+  taskStack->PopFrame();
   Future *future = frame->GetFuture();
   future->ScheduleWaitingThreads();
   Interpreter::Construct();
@@ -79,10 +80,9 @@ Interpreter::Result ByneedInterpreter::Run(TaskStack *taskStack) {
     Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
     return Interpreter::RAISE;
   } else { // actually bind the future
-    taskStack->PopFrame();
     future->Become(REF_LABEL, arg);
-    Scheduler::nArgs = Scheduler::ONE_ARG;
-    Scheduler::currentArgs[0] = arg;
+    //Scheduler::nArgs = Scheduler::ONE_ARG;
+    //Scheduler::currentArgs[0] = arg;
     return Interpreter::CONTINUE;
   }
 }
