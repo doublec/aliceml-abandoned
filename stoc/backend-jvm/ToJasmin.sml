@@ -476,7 +476,8 @@ structure ToJasmin =
 			 deadCode (Lab (lab', false), rest)
 
 		  | deadCode (Non, Goto lab''::rest) =
-			 Goto lab'' :: deadCode (Jump Got, rest)
+			 (LabelMerge.setReachable lab'';
+			  Goto lab'' :: deadCode (Jump Got, rest))
 
 		  | deadCode (Non, Areturn::rest) =
 			 Areturn :: deadCode (Jump ARet, rest)
@@ -780,7 +781,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Catch(cn,from,to,use), _) =
 		".catch "^cn^" from "^LabelMerge.condJump from^
 		" to "^LabelMerge.condJump to^" using "^
-		LabelMerge.condJump use^"\n"
+		LabelMerge.condJump use
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -915,7 +916,8 @@ structure ToJasmin =
 			       when throwing exceptions. *)
 			      | Athrow => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Catch (_, try, to, catch) =>
-				    LabelMerge.checkSizeAt (catch, 1)
+				    (LabelMerge.checkSizeAt (catch, 1);
+				     sizeAfter)
 			      | Goto label =>
 				    (LabelMerge.checkSizeAt (label, sizeAfter);
 				     LabelMerge.leave (is, sizeAfter))
