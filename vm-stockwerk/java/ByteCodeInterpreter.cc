@@ -698,15 +698,24 @@ Worker::Result ByteCodeInterpreter::Run() {
 	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
-	    Object *object = Object::FromWord(value);
 	    Type *type     = array->GetElementType();
-	    if (type->GetLabel() == JavaLabel::Class &&
-		(object == INVALID_POINTER ||
-		 object->IsInstanceOf(static_cast<Class *>(type))))
-	      array->Store(index, value);
-	    else {
-	      RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
+	    switch (type->GetLabel()) {
+	    case JavaLabel::Class:
+	      {
+		Object *object = Object::FromWord(value);
+		if (object != INVALID_POINTER &&
+		    !object->IsInstanceOf(static_cast<Class *>(type))) {
+		  RAISE_VM_EXCEPTION(ArrayStoreException, "AASTORE");
+		}
+	      }
+	      break;
+	    case JavaLabel::PrimitiveType:
+	      Error("invalid type");
+	    case JavaLabel::ArrayType:
+	      //--** to be done
+	      break;
 	    }
+	    array->Store(index, value);
 	  }
 	  else {
 	    RAISE_VM_EXCEPTION(ArrayIndexOutOfBoundsException, "AASTORE");
@@ -1646,7 +1655,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("IF_ICMPEQ");
 	s_int v2 = JavaInt::FromWord(frame->Pop());
 	s_int v1 = JavaInt::FromWord(frame->Pop());
-	printf("%d ==? %d\n", (int) (v1), (int) (v2));
 	if (v1 == v2)
 	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
@@ -1658,7 +1666,6 @@ Worker::Result ByteCodeInterpreter::Run() {
 	JavaDebug::Print("IF_ICMPNE");
 	s_int v2 = JavaInt::FromWord(frame->Pop());
 	s_int v1 = JavaInt::FromWord(frame->Pop());
-	printf("%d !=? %d\n", (int) (v1), (int) (v2));
 	if (v1 != v2)
 	  pc += static_cast<s_int16>(GET_POOL_INDEX());
 	else
@@ -1854,7 +1861,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wMethodRef);
 	// Set continuation
 	frame->SetPC(-2);
-	frame->SetContPC(pc + 3);
+	frame->SetContPC(pc + 5);
 	u_int nArgs = methodRef->GetNumberOfArguments();
 	// to be done: support more arguments
 	Assert(nArgs + 1 < Scheduler::maxArgs);
