@@ -232,15 +232,15 @@ structure Backend=
 	(* Store for the exception table entries. Nested exception handles
 	 are stored in the wrong order (innerst first), so we have to
 	 reverse the list when creating the exception table. *)
-	(* xxx handles need no longer be instructions. *)
 	(* xxx use FIFO representation and don't reverse the list *)
 	structure Catch =
 	    struct
-		val stack=ref (nil:INSTRUCTION list list)
-		val liste=ref (nil:INSTRUCTION list)
+		val stack=ref (nil:CATCH list list)
+		val liste=ref (nil:CATCH list)
 
 		fun add x = liste := x::(!liste)
-		fun push () = (stack := (!liste)::(!stack); liste:=nil)
+		fun push () = (stack := (!liste)::(!stack);
+			       liste:=nil)
 		fun pop () = let
 				 val t = !liste
 			     in
@@ -299,7 +299,7 @@ structure Backend=
 		(* get the name of the static JVM field of an arity *)
 		fun staticfield number =
 		    (Class.getLiteralName()^"/"^(fieldname number),
-		     [Arraysig, Classsig CLabel])
+		     [Arraysig, Classsig CString])
 
 		(* create a new record arity and return its JVM field *)
 		fun insert (strings as (s::_)) =
@@ -321,11 +321,7 @@ structure Backend=
 					val c =
 					    (Dup::
 					     (atCodeInt n)::
-					     (New CLabel)::
-					     Dup::
 					     (Ldc (JVMString str))::
-					     (Invokespecial (CLabel, "<init>",
-							     ([Classsig CString], [Voidsig])))::
 					     Aastore::
 					     acc)
 					val d = LargeInt.+ (n, Int.toLarge 1)
@@ -333,7 +329,7 @@ structure Backend=
 					if d=(Int.toLarge size)
 					    then
 						(atCodeInt (Int.toLarge size)::
-						 (Anewarray CLabel)::
+						 (Anewarray CString)::
 						 c,d)
 					else (c,d)
 				    end
@@ -360,7 +356,7 @@ structure Backend=
 		    (fn (number, fields) =>
 		     Field ([FPublic, FStatic],
 			    fieldname number,
-			    [Arraysig, Classsig CLabel])::fields)
+			    [Arraysig, Classsig CString])::fields)
 		    nil
 		    arity
 	    end

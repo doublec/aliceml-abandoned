@@ -798,7 +798,7 @@ structure CodeGen =
 			Getstatic (RecordLabel.insert
 				   (stringids2strings (stringid, nil))) ::
 			Invokevirtual (CRecord, "checkArity",
-				       ([Arraysig, Classsig CLabel],
+				       ([Arraysig, Classsig CString],
 					[Arraysig, Classsig CVal])) ::
 			Dup ::
 			Ifnull ilselabel ::
@@ -1082,7 +1082,7 @@ structure CodeGen =
 			  Anewarray CVal,
 			  Multi (load (ids,0)),
 			  Invokespecial (CRecord,"<init>",
-					 ([Arraysig, Classsig CLabel,
+					 ([Arraysig, Classsig CString,
 					   Arraysig, Classsig CVal],
 					  [Voidsig])),
 			  Astore mp,
@@ -1237,7 +1237,7 @@ structure CodeGen =
 		Anewarray CVal ::
 		Multi (load (labid,0)) ::
 		Invokespecial (CRecord,"<init>",
-			       ([Arraysig, Classsig CLabel,
+			       ([Arraysig, Classsig CString,
 				 Arraysig, Classsig CVal],
 				[Voidsig])) ::
 		Comment "Record ]" ::
@@ -1479,30 +1479,27 @@ structure CodeGen =
 				   parm, a0, a2, a3, a4, ra) =
 		    let
 			val l = length ids
+			val _ = Catch.push ()
+			val b'' = if l = 0 orelse (l>=2 andalso l<=4) then
+			    decListCode body'' else nil
+			val c = Catch.pop ()
 		    in
 			case l of
-			    0 => (Catch.push ();
-				  createApplies
-				  (rest, parm,
-				   (decListCode body'', Catch.pop ()),
+			    0 => (createApplies
+				  (rest, parm, (b'',c),
 				   a2, a3, a4, ra))
-			  | 2 => (Catch.push ();
-				  Register.assignParms (ids,1);
+			  | 2 => (Register.assignParms (ids,1);
 				  createApplies
-				  (rest, parm, a0,
-				   (decListCode body'', Catch.pop ()),
+				  (rest, parm, a0, (b'',c),
 				   a3, a4, ra))
-			  | 3 => (Catch.push ();
-				  Register.assignParms (ids,1);
+			  | 3 => (Register.assignParms (ids,1);
 				  createApplies
 				  (rest, parm, a0, a2,
-				   (decListCode body'', Catch.pop ()),
-				   a4, ra))
-			  | 4 => (Catch.push ();
-				  Register.assignParms (ids,1);
+				   (b'',c), a4, ra))
+			  | 4 => (Register.assignParms (ids,1);
 				  createApplies
 				  (rest, parm, a0, a2, a3,
-				   (decListCode body'', Catch.pop ()), ra))
+				    (b'',c), ra))
 			  | _ => createApplies
 				(rest, parm, a0, a2, a3, a4,
 				 [TestStm (dummyCoord,
@@ -1516,8 +1513,13 @@ structure CodeGen =
 					     RecTest labids,
 					     body'', ra)])
 		  | createApplies (nil, parm, a0, a2, a3, a4, ra) =
-		    (Catch.push ();
-		     (a0, a2, a3, a4, (decListCode ra, Catch.pop ())))
+		    let
+			val _ = Catch.push ()
+			val br = decListCode ra
+			val c = Catch.pop ()
+		    in
+			(a0, a2, a3, a4, (br,c))
+		    end
 		  | createApplies (_, _, _, _, _, _, _) = raise Mitch
 
 		val ((ap0,ex0), (ap2,ex2), (ap3,ex3), (ap4,ex4), (ad, exd)) =
@@ -1693,7 +1695,7 @@ structure CodeGen =
 			 makeDummyApply 3,
 			 makeDummyApply 4)
 		    else
-			(makeApplyMethod (nil,"apply",1,ap,Catch.top()),
+			(makeApplyMethod (nil,"apply",1,ap,Catch.top()@exd),
 			 makeApplyMethod (nil,"apply0",0,ap0,ex0),
 			 makeApplyMethod (nil,"apply2",2,ap2,ex2),
 			 makeApplyMethod (nil,"apply3",3,ap3,ex3),
@@ -1701,7 +1703,7 @@ structure CodeGen =
 
 		(* static apply methods. Generated only if there are
 		 no free variables in the function *)
-		val sapplY = makeApplyMethod ([MStatic],"sapply",1,ap,Catch.top())
+		val sapplY = makeApplyMethod ([MStatic],"sapply",1,ap,Catch.top()@exd)
 		val sapply0 = makeApplyMethod ([MStatic],"sapply0",0,ap0,ex0)
 		val sapply2 = makeApplyMethod ([MStatic],"sapply2",2,ap2,ex2)
 		val sapply3 = makeApplyMethod ([MStatic],"sapply3",3,ap3,ex3)

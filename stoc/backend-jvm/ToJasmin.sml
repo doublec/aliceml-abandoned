@@ -607,7 +607,6 @@ structure ToJasmin =
 	  | stackNeedInstruction Arraylength = 0
 	  | stackNeedInstruction Athrow = ~1
 	  | stackNeedInstruction (Bipush _) = 1
-	  | stackNeedInstruction (Catch _) = 1
 	  | stackNeedInstruction (Checkcast _) = 0
 	  | stackNeedInstruction (Comment _) = 0
 	  | stackNeedInstruction Dup = 1
@@ -656,6 +655,18 @@ structure ToJasmin =
 	  | stackNeedInstruction (Lookupswitch _) = ~1
 	  | stackNeedInstruction (Var _) = 0
 
+	(* generate Jasmin code for Catches *)
+	fun catchesToJasmin (catches, out) =
+	    let
+		fun catchToJasmin (Catch(cn,from,to,use)) =
+		    (LabelMerge.checkSizeAt (use, 1);
+		     TextIO.output(out,".catch "^cn^" from "^(LabelMerge.condJump from)^
+				   " to "^(LabelMerge.condJump to)^" using "^
+				   (LabelMerge.condJump use)^"\n"))
+	    in
+		app catchToJasmin catches
+	    end
+
 	local
 	    (* generate Jasmin code for an instruction *)
 	    fun instructionToJasmin (Astore j, s) =
@@ -682,9 +693,6 @@ structure ToJasmin =
 	      | instructionToJasmin (Arraylength,_) = "arraylength"
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
-	      | instructionToJasmin (Catch(cn,from,to,use),_) =
-		".catch "^cn^" from "^(LabelMerge.condJump from)^" to "^
-		(LabelMerge.condJump to)^" using "^(LabelMerge.condJump use)
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -818,7 +826,6 @@ structure ToJasmin =
 			       are handled, so we have to ensure an empty stack
 			       when throwing exceptions. *)
 			      | Athrow => LabelMerge.leaveMethod (sizeAfter, is)
-			      | Catch (_, _, _, handler) => LabelMerge.checkSizeAt (handler, 1)
 			      | Goto label =>
 				    (LabelMerge.checkSizeAt (label, sizeAfter);
 				     LabelMerge.leave (is, sizeAfter))
@@ -894,11 +901,7 @@ structure ToJasmin =
 				      methodname^
 				      (descriptor2string methodsig)^"\n");
 			actmeth := methodname;
-			instructionsToJasmin
-			(catches,
-			 false,
-			 staticapply,
-			 io);
+			catchesToJasmin (catches, io);
 			instructionsToJasmin
 			(optimize (instructions, perslocs, parmscount),
 			 true,

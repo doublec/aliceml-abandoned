@@ -50,7 +50,6 @@ structure Abbrev  =
 	val CWord          = "de/uni_sb/ps/dml/runtime/Word"
 	val CChar          = "de/uni_sb/ps/dml/runtime/Char"
 	val CInternalError = "de/uni_sb/ps/dml/runtime/DMLInternalError"
-	val CLabel         = "de/uni_sb/ps/dml/runtime/Label"
 	val CLVal          = "de/uni_sb/ps/dml/runtime/LVar"
 	val CReal          = "de/uni_sb/ps/dml/runtime/Real"
 	val CRecord        = "de/uni_sb/ps/dml/runtime/Record"
