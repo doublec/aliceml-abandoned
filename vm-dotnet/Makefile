@@ -1,11 +1,13 @@
-OBJS = Alice.dll stow.exe Base.dll IO.dll OS.dll TextIO.dll CommandLine.dll
+OBJS = \
+	Alice.dll stow.exe Base.dll \
+	IO.dll OS_Process.dll TextIO.dll CommandLine.dll
 SIGS = IO.asig OS.asig TextIO.asig CommandLine.asig
 INSPECTOR_OBJS = Win32.dll Canvas.dll Dialog.dll Tools.dll
 
 all: stoc-com+.x86-win32 $(OBJS) $(SIGS) inspector streams.dll
 
-stoc-com+.x86-win32: ../stoc/stoc-com+.x86-win32
-	copy "..\stoc\stoc-com+.x86-win32" "stoc-com+.x86-win32"
+stoc-com+.x86-win32: ../bootstrap/stoc-com+.x86-win32
+	copy "..\bootstrap\stoc-com+.x86-win32" "stoc-com+.x86-win32"
 
 Alice.dll: Alice.cs
 	csc -nologo -t:library Alice.cs
@@ -14,7 +16,7 @@ stow.exe: stow.cs Alice.dll
 	csc -nologo -t:exe -r:Alice.dll stow.cs
 
 stow.il: stow.exe
-	ildasm /nobar /text /out=stow.il stow.exe
+	ildasm /nobar /out=stow.il stow.exe
 
 HashCode.exe: HashCode.cs
 	csc -nologo -t:exe HashCode.cs
@@ -28,8 +30,8 @@ Base.dll: Base.aml stoc-com+.x86-win32 Skeleton.il
 IO.dll: IO.cs
 	csc -nologo -t:library IO.cs
 
-OS.dll: OS.cs Alice.dll
-	csc -nologo -t:library -r:Alice.dll OS.cs
+OS_Process.dll: OS_Process.cs Alice.dll
+	csc -nologo -t:library -r:Alice.dll OS_Process.cs
 
 TextIO.dll: TextIO.cs Alice.dll
 	csc -nologo -t:library -r:Alice.dll TextIO.cs
@@ -72,7 +74,6 @@ clean:
 veryclean: clean
 
 distclean: veryclean
-	@-del /F /Q Base.aml
 	@-del /F /Q $(OBJS)
 	@-del /F /Q $(INSPECTOR_OBJS)
 	@-del /F /Q HashCode.exe
@@ -81,3 +82,5 @@ distclean: veryclean
 	@-del /F /Q streams.dll
 	@-del /F /Q stow.exe
 	@-del /F /Q stoc-com+.x86-win32
+	@-del /F /Q concfib.dll.il hamming.dll.il infer.dll.il inflist.dll.il
+	@-del /F /Q concfib.dll hamming.dll infer.dll inflist.dll

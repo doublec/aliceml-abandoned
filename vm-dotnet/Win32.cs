@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Win32.Constants;
 using Win32.Datatypes;
 
@@ -558,7 +559,7 @@ namespace Win32 {
 	}
     }
     namespace Datatypes {
-	[sysstruct(format=StructFormatEnum.Auto)] public class Msg {
+	[StructLayout(LayoutKind.Sequential)] public class Msg {
 	    public int wnd;
 	    public int message;
 	    public int w;
@@ -567,26 +568,27 @@ namespace Win32 {
 	    public int x;
 	    public int y;
 	}
-	[sysstruct] public class PaintStruct {
+	[StructLayout(LayoutKind.Sequential)] public class PaintStruct {
 	    public int dc;
 	    public bool erase;
 	    public Rect paint;
 	    public bool restore;
 	    public bool inc_update;    
-	    [nativetype(System.Runtime.InteropServices.UnmanagedType.ByValArray, size=32)]
+//--** use MarshalAs
+	    [MarshalAs(UnmanagedType.ByValArray, SizeConst=32)]
 		public byte[] reserved;
 	}
-	[sysstruct] public struct Point {
+	[StructLayout(LayoutKind.Sequential)] public struct Point {
 	    public int x;
 	    public int y;
 	}
-	[sysstruct] public class Rect {
+	[StructLayout(LayoutKind.Sequential)] public class Rect {
 	    public int left;
 	    public int top;
 	    public int right;
 	    public int bottom;
 	}
-	[sysstruct] public class ScrollInfo {
+	[StructLayout(LayoutKind.Sequential)] public class ScrollInfo {
 	    public int cbSize;
 	    public int fMask;
 	    public int nMin;
@@ -595,7 +597,7 @@ namespace Win32 {
 	    public int nPos;
 	    public int nTrackPos;
 	}
-	[sysstruct(format=StructFormatEnum.Auto)] public class TextMetric {
+	[StructLayout(LayoutKind.Sequential)] public class TextMetric {
 	    public int Height;
 	    public int Ascent;
 	    public int Descent;
@@ -617,7 +619,7 @@ namespace Win32 {
 	    public byte PitchAndFamily;
 	    public byte CharSet;
 	}
-	[sysstruct(format=StructFormatEnum.Auto)] public class WndClassEx {
+	[StructLayout(LayoutKind.Sequential)] public class WndClassEx {
 	    public int cbSize; // sizeof=48
 	    public int style;
 	    public WinCB lpfnWndProc;
@@ -634,7 +636,7 @@ namespace Win32 {
     }
     namespace API {
 	public class Error {
-	    [sysimport(dll="KERNEL32",charset=System.Runtime.InteropServices.CharSet.Auto, setLastError=true)]
+	    [DllImport("KERNEL32", CharSet=CharSet.Auto, SetLastError=true)]
 		public static extern int FormatMessage
 		(
 		 int dwFlags,                        // source and processing options
@@ -668,109 +670,103 @@ namespace Win32 {
 	    }
 	}
 	public class GDI {
-	    [sysimport(dll="gdi32.dll")]
+	    [DllImport("gdi32.dll")]
 		public static extern int GetStockObject(int obj);
-	    [sysimport(dll="gdi32.dll")]
-		public static extern int GetTextMetrics(int dc, [in,out] TextMetric tm);
-	    [sysimport(dll="gdi32.dll")]
+	    [DllImport("gdi32.dll")]
+		public static extern int GetTextMetrics(int dc, [In,Out] TextMetric tm);
+	    [DllImport("gdi32.dll")]
 		public static extern int TextOut(int dc, int x, int y, string text, int len);
-	    [sysimport(dll="gdi32.dll")]
+	    [DllImport("gdi32.dll")]
 		public static extern int SetTextAlign(int dc, int mode);
-	    [sysimport(dll="gdi32.dll")]
+	    [DllImport("gdi32.dll")]
 		public static extern int SetTextColor(int dc, uint rgbcolor);
-	    [sysimport(dll="gdi32.dll")]
+	    [DllImport("gdi32.dll")]
 		public static extern int SelectObject(int dc, int font);
 	}
 	public class Kernel {
-	    [sysimport(dll="kernel32.dll")]
+	    [DllImport("kernel32.dll")]
 		public static extern int GetModuleHandle(string name);
 	}
 	public class User {
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int LoadIcon(int instance, int id);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int LoadCursor(int instance, int id);
-	    [sysimport(dll="user32.dll")]
-		public static extern int RegisterClassExA([in, out] WndClassEx w);
-	    [sysimport(dll="user32.dll", setLastError=true)]
+	    [DllImport("user32.dll")]
+		public static extern int RegisterClassExA([In, Out] WndClassEx w);
+	    [DllImport("user32.dll", SetLastError=true)]
 		public static extern int CreateWindowExA
-		(
-		 int dwExStyle,
-		 [nativetype(System.Runtime.InteropServices.UnmanagedType.LPTStr)]
-		 String lpClassName,
-		 [nativetype(System.Runtime.InteropServices.UnmanagedType.LPTStr)]
-		 String lpWindowName,
+		(int dwExStyle,
+		 [MarshalAs(UnmanagedType.LPTStr)] String lpClassName,
+		 [MarshalAs(UnmanagedType.LPTStr)] String lpWindowName,
 		 uint dwStyle, int X, int Y, int nWidth, int nHeight,
 		 int hWndParent, int hMenu, int hInstance, int lpParam);
 	
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern void ShowWindow(int wnd, int show);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern void UpdateWindow(int wnd);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern bool MoveWindow(int wnd, int x, int y,
 						     int width, int height, bool rp);
-	    [sysimport(dll="user32.dll")]
-		public static extern int GetMessage([in,out] Msg m, int wnd, int min, int max);
-	    [sysimport(dll="user32.dll")]
-		public static extern int TranslateMessage([in, out] Msg m);
-	    [sysimport(dll="user32.dll")]
-		public static extern int DispatchMessage([in, out] Msg m);
+	    [DllImport("user32.dll")]
+		public static extern int GetMessage([In,Out] Msg m, int wnd, int min, int max);
+	    [DllImport("user32.dll")]
+		public static extern int TranslateMessage([In, Out] Msg m);
+	    [DllImport("user32.dll")]
+		public static extern int DispatchMessage([In, Out] Msg m);
 	
-	    [sysimport(dll="user32.dll")]
-		public static extern int BeginPaint(int wnd, [in,out] PaintStruct ps);
+	    [DllImport("user32.dll")]
+		public static extern int BeginPaint(int wnd, [In,Out] PaintStruct ps);
 	
-	    [sysimport(dll="user32.dll")]
-		public static extern int EndPaint(int wnd, [in,out] PaintStruct ps);
+	    [DllImport("user32.dll")]
+		public static extern int EndPaint(int wnd, [In,Out] PaintStruct ps);
 	
-	    [sysimport(dll="user32.dll")]
-		public static extern void GetClientRect(int wnd, [in,out] Rect rect);
+	    [DllImport("user32.dll")]
+		public static extern void GetClientRect(int wnd, [In,Out] Rect rect);
 	
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern void DrawText(int dc, string text,int count, Rect rect, int format);
 	
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern void PostQuitMessage(int code);
 	
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int DefWindowProc(int wnd, int msg, int w, int l);
 	
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int FillRect(int dc, Rect rect, int brush);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int MessageBoxW
-		(
-		 int handle,
-		 [nativetype(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
-		 string text,
-		 [nativetype(System.Runtime.InteropServices.UnmanagedType.LPWStr)]
-		 string caption,
+		(int handle,
+		 [MarshalAs(UnmanagedType.LPWStr)] string text,
+		 [MarshalAs(UnmanagedType.LPWStr)] string caption,
 		 int type);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int GetSystemMetrics(int sm);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int GetDC(int wnd);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int ReleaseDC(int wnd, int dc);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int SetScrollRange(int wnd, int bar, int minpos, int maxpos, bool redraw);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int SetScrollPos(int wnd, int bar, int pos, bool redraw);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int GetScrollPos(int wnd, int bar);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int SetScrollInfo(int wnd, int bar, ScrollInfo si, bool redraw);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern bool ShowScrollBar(int wnd, int bar, bool view);
-	    [sysimport(dll="user32.dll")]
-		public static extern bool GetScrollInfo(int wnd, int bat, [in, out] ScrollInfo si);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
+		public static extern bool GetScrollInfo(int wnd, int bat, [In, Out] ScrollInfo si);
+	    [DllImport("user32.dll")]
 		public static extern int InvalidateRect(int wnd, Rect r, bool erase);
-	    [sysimport(dll="user32.dll")]
+	    [DllImport("user32.dll")]
 		public static extern int ScrollWindowEx(int wnd, int dx, int dy, Rect scroll, Rect clip,
 							int rgn, Rect update, int flags);
-	    [sysimport(dll="user32.dll")]
-		public static extern int GetUpdateRect(int wnd, [in, out] Rect rect, bool erase);
+	    [DllImport("user32.dll")]
+		public static extern int GetUpdateRect(int wnd, [In, Out] Rect rect, bool erase);
 	}
     }
     public delegate int WinCB(int wnd, int msg, int w, int l);
