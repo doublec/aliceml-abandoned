@@ -560,7 +560,7 @@ AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
    AC_MSG_CHECKING(whether to use GNU lightning)
    if test "${enable_lightning:-yes}" = "yes"; then
       AC_REQUIRE([AC_CANONICAL_HOST])dnl
-      if test -d "${srcdir}"/lightning; then
+      if test -f "${srcdir}/lightning/lightning.h"; then
         have_lightning=yes
         AC_DEFINE(HAVE_LIGHTNING, 1)
         AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)
