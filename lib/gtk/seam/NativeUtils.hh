@@ -134,7 +134,7 @@ inline void __parentObject(word wContainer, word wWidget) {
   // Strengthen new container object
   __refObject(wContainer);
   // TODO: tuple with update?
-  STATIC_CAST(Block *, widget)->ReplaceArg(2, wContainer);
+  STATIC_CAST(Block *, widget)->ReplaceArgUnchecked(2, wContainer);
 }
 
 // Convert a C pointer to an object tuple.
