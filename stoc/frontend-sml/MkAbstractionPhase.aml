@@ -664,13 +664,13 @@ functor MakeAbstractionPhase(
 		O.FunExp(i, matches')
 	   end
 
-	| PACKExp(i, longstrid) =>
-	  let
+	 | PACKExp(i, longstrid) =>
+	   let
 		val (modlongid',E') = trLongStrId E longstrid
 		val  mod'           = modlongidToMod modlongid'
-	  in
+	   in
 		O.PackExp(i, mod')
-	  end
+	   end
 
 
     and trAppExp E =
@@ -720,10 +720,20 @@ functor MakeAbstractionPhase(
 		fn(i',exp') => O.SelExp(i', lab', exp')
 	   end
 	 | PARAtExp(i, exp) =>
-		 trAppliedAppExp E exp
+		trAppliedExp E exp
 	 | atexp =>
 	   let
 		val exp1' = trAtExp E atexp
+	   in
+		fn(i',exp2') => O.AppExp(i', exp1', exp2')
+	   end
+
+    and trAppliedExp E =
+	fn exp as (ATEXPExp _|APPExp _)	=>
+		trAppliedAppExp E (Infix.exp (infEnv E) exp)
+ 	 | exp =>
+	   let
+		val exp1' = trExp E exp
 	   in
 		fn(i',exp2') => O.AppExp(i', exp1', exp2')
 	   end
@@ -930,9 +940,15 @@ functor MakeAbstractionPhase(
 		 ( fn(i',pat') => O.RefPat(i', pat') )
 	   )
 	 | PARAtPat(i, pat) =>
-		trAppliedAppPat (E,E') pat
+		trAppliedPat (E,E') pat
 	 | atpat =>
 		error(I.infoAtPat atpat, E.AppPatNonCon)
+
+    and trAppliedPat (E,E') =
+	fn pat as (ATPATPat _|APPPat _)	=>
+		trAppliedAppPat (E,E') (Infix.pat (infEnv E) pat)
+	 | pat =>
+		error(I.infoPat pat, E.AppPatNonCon)
 
 
     and trPats (E,E') pats =
@@ -3004,8 +3020,8 @@ functor MakeAbstractionPhase(
 		  of SOME(_,_,T _) => ()
 		   | SOME(_,_,_)   => error(i', E.ConItemNonCon vid')
 		   | NONE          => error(i', E.ConItemUnbound vid');
-		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ConItemDuplicate vid');
 		trConItemo' (E,E',typids',typ', field'::acc1,
 			     imp2'::imp1'::acc2) conitemo
@@ -3029,8 +3045,8 @@ functor MakeAbstractionPhase(
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')
 	   in
-		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
 		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
 	   end
@@ -3062,8 +3078,8 @@ functor MakeAbstractionPhase(
 					| NONE =>
 					  error(i', E.DconItemUnbound vid')
 	   in
-		( insertDisjointVal(E', conVId vid', (i', stamp1, V))
-		; insertDisjointVal(E', vid',  (i', stamp2, C k))
+		( insertDisjointVal(E, conVId vid', (i', stamp1, V))
+		; insertDisjointVal(E, vid',  (i', stamp2, C k))
 		) handle CollisionVal _ => error(i', E.ImpVIdDuplicate vid');
 		trDconItemo' (E,E', imp2'::imp1'::acc) dconitemo
 	   end
