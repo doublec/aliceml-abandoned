@@ -29,7 +29,7 @@ endif
 PRIMITIVE_MODULES = \
 	Unqualified Array Char Future General GlobalStamp Hole Int \
 	List Math Option Real Ref String Thread UniqueString Unsafe \
-	Vector Word8 Word8Vector Word31
+	Vector Word8 Word8Array Word8Vector Word31
 LIB_SYSTEM_MODULES = \
 	Config IODesc IO OS CommandLine Component Debug Socket Rand Value \
 	Reflect
