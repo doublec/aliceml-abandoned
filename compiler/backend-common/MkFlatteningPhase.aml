@@ -88,8 +88,50 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    Decs of dec list * continuation
 	  | Goto of O.body
 	  | Share of O.body option ref * continuation
-	  | EndTry of Source.region * continuation
-	  | EndHandle of Source.region * continuation
+
+	(* Helper Functions for Inspecting Types *)
+
+	fun makeArrowType (argTyp, resultTyp) =
+	    case Type.inspect resultTyp of
+		Type.All (var, typ) =>
+		    Type.all (var, makeArrowType (argTyp, typ))
+	      | _ => Type.arrow (argTyp, resultTyp)
+
+	fun getResultType typ =
+	    case Type.inspect typ of
+		Type.Arrow (_, typ) => typ
+	      | Type.All (_, typ) => getResultType typ
+	      | _ => raise Crash.Crash "MkFlatteningPhase.getResultType"
+
+	(* The set of pathes of abstract types known not to be product types *)
+	val nonProdTypesSet =
+	    let
+		val set = PathSet.set ()
+	    in
+		Vector.app (fn path => PathSet.insert (set, path))
+			   #[PervasiveType.path_int,
+			     PervasiveType.path_word,
+			     PervasiveType.path_real,
+			     PervasiveType.path_char,
+			     PervasiveType.path_string,
+			     PervasiveType.path_vec,
+			     PervasiveType.path_array,
+			     PervasiveType.path_ref,
+			     PervasiveType.path_exn];
+	        set
+	    end
+
+	fun typToOutArity typ =
+	    case Type.inspect typ of
+		(Type.Prod _ | Type.Apply _ | Type.Unknown _) => NONE
+	      | Type.Con path =>
+		    if PathSet.member (nonProdTypesSet, path) then
+			SOME Arity.Unary
+		    else NONE
+	      | (Type.Var _ | Type.Arrow _ | Type.Sum _) => SOME Arity.Unary
+	      | Type.Mu typ => typToOutArity typ
+	      | (Type.All _ | Type.Exist _ | Type.Lambda _) =>
+		    raise Crash.Crash "MkFlatteningPhase.typToOutArity"
 
 	(* Helper Functions for Inspecting Types *)
 
@@ -224,15 +266,15 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	(* Translation *)
 
-	fun translateId (Id (info, stamp, name)) =
-	    O.Id (#region info, stamp, name)
+	fun translateId (Id (info, stamp, name)) = O.Id (info, stamp, name)
 
 	fun translateLongid (ShortId (_, id)) =
 	    (nil, O.IdRef (translateId id))
-	  | translateLongid (LongId ({region, ...}, longid, Lab (_, label))) =
+	  | translateLongid (LongId (info as {region, ...},
+				     longid, Lab (_, label))) =
 	    let
 		val (stms, idRef) = translateLongid longid
-		val id' = O.Id (region, Stamp.stamp (), Name.InId)
+ 		val id' = O.Id (info, Stamp.stamp (), Name.InId)
 		val stm =
 		    O.ValDec (region, O.IdDef id',
 			      O.LazyPolySelExp (region, label, idRef))
@@ -251,14 +293,14 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	val boolLabels = #[PervasiveType.lab_false, PervasiveType.lab_true]
 
-	fun translateIf (info: exp_info, idRef, thenStms, elseStms, errStms) =
-	    [O.TestStm (#region info, idRef,
+	fun raisePrim (region, name) = [O.RaiseStm (region, O.Prim name)]
+
+	fun translateIf (region, idRef, thenStms, elseStms) =
+	    [O.TestStm (region, idRef,
 			O.TagTests (boolLabels,
 				    #[(1, O.TupArgs #[], thenStms),
-				      (0, O.TupArgs #[], elseStms)]), errStms)]
-
-	fun raisePrim (region, name) =
-	    [O.RaiseStm (region, O.Prim name)]
+				      (0, O.TupArgs #[], elseStms)]),
+			raisePrim (region, "General.Match"))]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -271,10 +313,6 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		r := SOME stms; stms
 	    end
 	  | translateCont (Share (ref (SOME stms), _)) = stms
-	  | translateCont (EndTry (region, cont)) =
-	    [O.EndTryStm (region, translateCont cont)]
-	  | translateCont (EndHandle (region, cont)) =
-	    [O.EndHandleStm (region, translateCont cont)]
 	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
 				  NewExp info'), cont) =
 	    O.ValDec (#region info, O.IdDef (translateId id),
@@ -286,14 +324,37 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		translateExp (exp, declare, cont)
 	    end
-	  | translateDec (ValDec (info, pat, exp), cont) =
+	  | translateDec (ValDec (info as {region, ...}, pat, exp), cont) =
 	    let
-		val region = #region info
-		val matches = #[(region, pat, translateCont cont)]
-		val info = {region = region, typ = PervasiveType.typ_exn}
+		val r = ref NONE
+		val rest = [O.IndirectStm (region, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		simplifyCase (region, exp, matches,
-			      PrimExp (info, "General.Bind"), true)
+		if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+		then
+		    let
+			val typ = #typ (infoExp exp)
+			val matches =
+			    #[(region, pat,
+			       O.Exit (region, O.CondExit typ, idRef)::
+			       translateCont cont)]
+		    in
+			r := SOME (O.Entry (region,
+					    O.CondEntry (typ, idRef))::
+				   simplifyCase(region, idRef, matches,
+						O.Prim "General.Bind",
+						true))
+		    end
+		else
+		    let
+			val matches = #[(region, pat, translateCont cont)]
+		    in
+			r := 
+			SOME (simplifyCase (region, idRef, matches,
+					    O.Prim "General.Bind",
+					    true))
+		    end;
+		stms
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
@@ -491,11 +552,13 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			 val argId = O.freshId (#region info)
 			 val stm = O.ValDec (#region info, O.IdDef argId, exp')
 			 val (stms1, conIdRef) = translateLongid longid
-			 val exp'' =
-			     O.ConExp (#region info, conIdRef,
-				       O.OneArg (O.IdRef argId))
+			 val args = O.OneArg (O.IdRef argId)
+			 val exp'' = O.ConExp (#region info, conIdRef, args)
+			 val typ = #typ (infoLongid longid)
+			 val entry = O.ConEntry (typ, conIdRef, args)
 		     in
-			 r := SOME (stm::f exp''::translateCont cont);
+			 r := SOME (stm::stepPoint (info, entry, exp'',
+						    O.ConExit, f, cont));
 			 stms1 @ stms2
 		     end
 	       | arity =>
@@ -503,10 +566,14 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			 val r = ref NONE
 			 val rest = [O.IndirectStm (#region info, r)]
 			 val (stms2, args) = unfoldArgs (exp, rest)
-			 val (stms1, idRef1) = translateLongid longid
-			 val (stms', exp') = conExp (info, idRef1, args, arity)
+			 val (stms1, conIdRef) = translateLongid longid
+			 val (stms', exp') =
+			     conExp (info, conIdRef, args, arity)
+			 val typ = #typ (infoLongid longid)
+			 val entry = O.ConEntry (typ, conIdRef, args)
 		     in
-			 r := SOME (stms' @ f exp'::translateCont cont);
+			 r := SOME (stms' @ stepPoint (info, entry, exp',
+						       O.ConExit, f, cont));
 			 stms1 @ stms2
 		     end)
 	  | translateExp (ConExp (info, longid, exp), f, cont) =
@@ -515,9 +582,12 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms2, argIdRef) = unfoldTerm (exp, Goto rest)
 		val (stms1, conIdRef) = translateLongid longid
-		val exp' = O.ConExp (#region info, conIdRef, O.OneArg argIdRef)
+		val args = O.OneArg argIdRef
+		val exp' = O.ConExp (#region info, conIdRef, args)
+		val typ = #typ (infoLongid longid)
+		val entry = O.ConEntry (typ, conIdRef, args)
 	    in
-		r := SOME (f exp'::translateCont cont);
+		r := SOME (stepPoint (info, entry, exp', O.ConExit, f, cont));
 		stms1 @ stms2
 	    end
 	  | translateExp (RefExp (info, exp), f, cont) =
@@ -535,10 +605,14 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
+		val typ = #typ (infoExp exp)
 	    in
-		(r := SOME (f (O.PrimAppExp (#region info, "Future.await",
-					     #[idRef]))::translateCont cont);
-		 stms)
+		r := SOME (stepPoint (info,
+				      O.StrictEntry (typ, idRef),
+				      O.PrimAppExp (#region info,
+						    "Future.await", #[idRef]),
+				      O.StrictExit, f, cont));
+		stms
 	    end
 	  | translateExp (TupExp (info, exps), f, cont) =
 	    let
@@ -590,10 +664,15 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms2, idRef2) = unfoldTerm (exp, Goto rest)
 		val (prod, n) = labelToIndex (#typ (infoExp exp), label)
+		val typ = #typ (infoExp exp)
+		val resTyp = #typ info
 	    in
-		(r := SOME (f (O.SelExp (#region info, prod, label, n,
-					 idRef2))::translateCont cont);
-		 stms2)
+		r := SOME (stepPoint (info,
+				      O.SelEntry (prod, label, n, typ, idRef2),
+				      O.SelExp (#region info,
+						prod, label, n, idRef2),
+				      O.SelExit resTyp, f, cont));
+		stms2
 	    end
 	  | translateExp (VecExp (info, exps), f, cont) =
 	    let
@@ -632,8 +711,9 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val outArityOpt = typToOutArity (getResultType (#typ info))
 	    in
 		checkReachability consequents;
-		f (O.FunExp (#region info, Stamp.stamp (), nil, args,
-			     outArityOpt, body))::translateCont cont
+		f (O.FunExp (#region info, Stamp.stamp (), nil,
+			     #typ info, args, outArityOpt, body))::
+		translateCont cont
 	    end
 	  | translateExp (AppExp (info, exp1, exp2), f, cont) =
 	    let
@@ -641,9 +721,12 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms2, args) = unfoldFunArgs (exp2, rest)
 		val (stms1, idRef1) = unfoldTerm (exp1, Goto stms2)
+		val typ = #typ (infoExp exp1)
 	    in
-		r := SOME (f (O.VarAppExp (#region info, idRef1, args))::
-			   translateCont cont);
+		r := SOME (stepPoint (info,
+				      O.AppEntry (typ, idRef1, args),
+				      O.VarAppExp (#region info, idRef1, args),
+				      O.AppExit, f, cont));
 		stms1
 	    end
 	  | translateExp (AndExp (info, exp1, exp2), f, cont) =
@@ -674,14 +757,41 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		translateExp (IfExp (info, exp1, exp3, exp2), f, cont)
 	    end
-	  | translateExp (IfExp (_, exp1, exp2, exp3), f, cont) =
-	    let
-		val cont' = Share (ref NONE, cont)
-		val stms2 = translateExp (exp2, f, cont')
-		val stms3 = translateExp (exp3, f, cont')
-	    in
-		simplifyIf (exp1, stms2, stms3)
-	    end
+	  | translateExp (IfExp (info as {region, typ}, exp1, exp2, exp3),
+			  f, cont) =
+	    if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+	    then
+		let
+		    val r = ref NONE
+		    val rest = [O.IndirectStm (region, r)]
+		    val (stms, arbiterIdRef) = unfoldTerm (exp1, Goto rest)
+		    val r' = ref NONE
+		    val rest' = [O.IndirectStm (region, r')]
+		    val resId = O.freshId region
+		    fun f' exp' = O.ValDec (region, O.IdDef resId, exp')
+		    val cont' = Share (ref NONE, Goto rest')
+		    val stms2 = translateExp (exp2, f', cont')
+		    val stms3 = translateExp (exp3, f', cont')
+		    val argTyp = #typ (infoExp exp1)
+		in
+		    r := SOME (O.Entry (region,
+					O.CondEntry (argTyp, arbiterIdRef))::
+			       translateIf (region, arbiterIdRef,
+					    stms2, stms3));
+		    r' := SOME (O.Exit (region, O.CondExit typ,
+					O.IdRef resId)::
+				f (O.VarExp (region, O.IdRef resId))::
+				translateCont cont);
+		    stms
+		end
+	    else
+		let
+		    val cont' = Share (ref NONE, cont)
+		    val stms2 = translateExp (exp2, f, cont')
+		    val stms3 = translateExp (exp3, f, cont')
+		in
+		    simplifyIf (exp1, stms2, stms3)
+		end
 	  | translateExp (SeqExp (_, exp1, exp2), f, cont) =
 	    let
 		val stms2 = translateExp (exp2, f, cont)
@@ -690,55 +800,116 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		translateExp (exp1, eval, Goto stms2)
 	    end
-	  | translateExp (CaseExp (info, exp, mats), f, cont) =
+	  | translateExp (CaseExp (info as {region, typ}, exp, mats),
+			  f, cont) =
 	    let
-		val cont' = Share (ref NONE, cont)
-		val matches' =
-		    Vector.map (fn Mat (_, pat, exp) =>
-				(#region (infoExp exp), pat,
-				 translateExp (exp, f, cont'))) mats
-		val region = #region info
-		val info = {region = region, typ = PervasiveType.typ_exn}
+		val r = ref NONE
+		val rest = [O.IndirectStm (region, r)]
+		val (stms, idRef) = unfoldTerm (exp, Goto rest)
 	    in
-		simplifyCase (region, exp, matches',
-			      PrimExp (info, "General.Match"), true)
+		if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+		then
+		    let
+			val r' = ref NONE
+			val rest' = [O.IndirectStm (region, r')]
+			val cont' = Share (ref NONE, Goto rest')
+			val resId = O.freshId region
+			val resIdRef = O.IdRef resId
+			fun f' exp' = O.ValDec (region, O.IdDef resId, exp')
+			val matches =
+			    Vector.map (fn Mat (_, pat, exp) =>
+					   (#region (infoExp exp), pat,
+					    translateExp (exp, f', cont')))
+				       mats
+			val argTyp = #typ (infoExp exp)
+		    in
+			r := 
+			SOME (O.Entry (region,
+				       O.CondEntry (argTyp, idRef))::
+			      simplifyCase(region, idRef, matches,
+					   O.Prim "General.Match", 
+					   true));
+			r' := SOME (O.Exit (region, O.CondExit typ, resIdRef)::
+				    f (O.VarExp (region, resIdRef))::
+				    translateCont cont)
+		    end
+		else
+		    let
+			val cont' = Share (ref NONE, cont)
+			val matches =
+			    Vector.map (fn Mat (_, pat, exp) =>
+					   (#region (infoExp exp), pat,
+					    translateExp (exp, f, cont'))) mats
+		    in
+			r := 
+			SOME (simplifyCase (region, idRef, matches,
+					    O.Prim "General.Match", 
+					    true))
+		    end;
+		stms
 	    end
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
+		val region = #region info
 	    in
-		r := SOME [O.RaiseStm (#region info, idRef)]; stms
+		if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+		then r := SOME ([O.Entry (region, O.RaiseEntry idRef),
+				 O.RaiseStm (region, idRef)])
+		else r := SOME [O.RaiseStm (region, idRef)];
+		stms
 	    end
-	  | translateExp (HandleExp (info, exp, mats), f, cont) =
+	  | translateExp (HandleExp (info as {region, typ}, exp, mats),
+			  f, cont) =
 	    let
-		val info' = infoExp exp
-		val id' = freshIntermediateId info'
-		val contBody =
-		    share (translateExp (VarExp (info', ShortId (info', id')),
-					 f, cont))
-		fun f' exp' =
-		    O.ValDec (#region info', O.IdDef (translateId id'), exp')
-		val tryCont = EndTry (#region info, Goto contBody)
+		val resId = O.freshId region
+		val contBody = share (f (O.VarExp (region, O.IdRef resId))::
+				      translateCont cont)
+		fun f' exp' = O.ValDec (region, O.IdDef resId, exp')
+		val tryCont = Goto [O.EndTryStm (region, contBody)]
 		val tryBody = translateExp (exp, f', tryCont)
-		val exnInfo = {region = #region info,
-			       typ = PervasiveType.typ_exn}
-		val packageId = freshIntermediateId exnInfo
-		val exnId = freshIntermediateId exnInfo
-		val exnVarExp = VarExp (exnInfo, ShortId (exnInfo, exnId))
-		val handleCont = EndHandle (#region info, Goto contBody)
-		val matches' =
-		    Vector.map (fn Mat (_, pat, exp) =>
-				(#region (infoExp exp), pat,
-				 translateExp (exp, f', handleCont))) mats
-		val handleBody =
-		    simplifyCase (#region info, exnVarExp, matches',
-				  exnVarExp, false)
+		val packageId = O.freshId region
+		val exnId = O.freshId region
+		val exnIdRef = O.IdRef exnId
 	    in
-		[O.TryStm (#region info, tryBody,
-			   O.IdDef (translateId packageId),
-			   O.IdDef (translateId exnId), handleBody)]
+		if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+		then
+		    let
+			val handleCont =
+			    Goto [O.Exit (region, O.HandleExit typ,
+					  O.IdRef resId),
+				  O.EndHandleStm (region, contBody)]
+			val matches' =
+			    Vector.map
+				(fn Mat (_, pat, exp) =>
+				    (#region (infoExp exp), pat,
+				     translateExp (exp, f', handleCont))) mats
+			val handleBody =
+			    O.Entry (region, O.HandleEntry (O.IdRef exnId))::
+			    simplifyCase (region, exnIdRef, matches', 
+					  exnIdRef, false)
+		    in
+			[O.TryStm (region, tryBody, O.IdDef packageId,
+				   O.IdDef exnId, handleBody)]
+		    end
+		else
+		    let
+			val handleCont =
+			    Goto [O.EndHandleStm (region, contBody)]
+			val matches' =
+			    Vector.map
+				(fn Mat (_, pat, exp) =>
+				    (#region (infoExp exp), pat,
+				     translateExp (exp, f', handleCont))) mats
+			val handleBody =
+			    simplifyCase (region, exnIdRef, matches', exnIdRef,
+					  false)
+		    in
+			[O.TryStm (region, tryBody, O.IdDef packageId,
+				   O.IdDef exnId, handleBody)]
+		    end
 	    end
 	  | translateExp (FailExp info, f, cont) =
 	    if !Switches.Language.silentFailExp then
@@ -782,9 +953,12 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		    FunExp (funInfo, #[Mat ({region = region}, pat, exp)])
 		val (stms, idRef) = unfoldTerm (funExp, Goto rest)
 	    in
-		(r := SOME (f (O.PrimAppExp (#region info, "Future.concur",
-					     #[idRef]))::translateCont cont);
-		 stms)
+		r := SOME (stepPoint (info,
+				      O.SpawnEntry,
+				      O.PrimAppExp (#region info,
+						    "Future.concur", #[idRef]),
+				      O.SpawnExit typ, f, cont));
+		stms
 	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
 	    let
@@ -816,32 +990,24 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
-		val errStms = raisePrim (#region info, "General.Match")
-		val stms1 =
-		    translateIf (info, idRef, thenStms, elseStms, errStms)
 	    in
-		r := SOME stms1; stms
+		r := SOME (translateIf (#region info, idRef,
+					thenStms, elseStms));
+		stms
 	    end
 	and checkReachability consequents =
 	    List.app (fn (region, ref bodyOpt) =>
 		      if isSome bodyOpt then ()
 		      else Error.warn' (region, "unreachable expression"))
 	    consequents
-	and simplifyCase (region, exp, matches, raiseExp, check) =
+ 	and simplifyCase (region, idRef, matches, raiseIdRef, check) =
 	    let
-		val r = ref NONE
-		val rest = [O.IndirectStm (region, r)]
-		val (stms, idRef) = unfoldTerm (exp, Goto rest)
-		val r' = ref NONE
-		val rest' = [O.IndirectStm (region, r')]
-		val (errStms, raiseIdRef) = unfoldTerm (raiseExp, Goto rest')
-		val (graph, consequents) = buildGraph (matches, errStms, check)
+		val errStms = [O.RaiseStm (region, raiseIdRef)]
+ 		val (graph, consequents) = buildGraph (matches, errStms, check)
 		val (body, _) = translateGraph (graph, [(nil, idRef)], region)
 	    in
-		r := SOME body;
-		r' := SOME [O.RaiseStm (region, raiseIdRef)];
 		checkReachability consequents;
-		stms
+		body
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Cooked {...})),
@@ -913,11 +1079,10 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		    translateGraph (thenGraph, mapping, region)
 		val (elseStms, mapping'') =
 		    translateGraph (elseGraph, mapping', region)
-		val errStms = raisePrim (#region info, "General.Match")
-		val stms1 =
-		    translateIf (info, idRef, thenStms, elseStms, errStms)
 	    in
-		r := SOME stms1; (stms, mapping'')
+		r := SOME (translateIf (#region info, idRef,
+					thenStms, elseStms));
+		(stms, mapping'')
 	    end
 	  | translateNode (_, DecTest (_, mapping0, decs),
 			   thenGraph, _, mapping, region) =
@@ -1040,6 +1205,20 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(Vector.fromList labelIdDefList, mapping)
 	    end
+	and stepPoint (info as {region, ...}, entryPoint, exp, exitPoint,
+		       f, cont) =
+	    if !Switches.CodeGen.debugMode andalso region <> Source.nowhere
+	    then
+		let
+		    val resId = O.freshId region
+		in
+		    O.Entry (region, entryPoint)::
+		    O.ValDec (region, O.IdDef resId, exp)::
+		    O.Exit (region, exitPoint, O.IdRef resId)::
+		    f (O.VarExp (region, O.IdRef resId))::
+		    translateCont cont
+		end
+	    else f exp::translateCont cont
 
 	fun translate (desc, _, (imports, decs, idFlds, sign)) =
 	    let

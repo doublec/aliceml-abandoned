@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Type                  from "../../lib/rtt/Type"
 import structure Stamp                 from "../common/Stamp"
 import structure StampMap              from "../common/StampMap"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
@@ -22,9 +23,9 @@ signature ENVIRONMENT =
 	type t
 
 	val startTop: string * AbstractCodeGrammar.value StampMap.t -> t
-	val endTop: t -> string vector
+	val endTop: t -> (string * Type.t) option vector
 	val startFn: t -> unit
-	val endFn: t -> FlatGrammar.id vector * string vector
+	val endFn: t -> FlatGrammar.id vector * (string * Type.t) option vector
 	val filename: t -> string
 	val declare: t * FlatGrammar.id -> AbstractCodeGrammar.id
 	val fresh: t -> AbstractCodeGrammar.id

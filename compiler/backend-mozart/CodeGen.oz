@@ -145,7 +145,11 @@ define
    end
 
    proc {TranslateBody Stms State ReturnReg IsTry ?VHd}
-      case Stms of 'LastUse'(_ _)|Body then
+      case Stms of 'Entry'(_ _)|Body then
+	 VHd = {TranslateBody Body State ReturnReg IsTry}
+      [] 'Exit'(_ _ _)|Body then
+	 VHd = {TranslateBody Body State ReturnReg IsTry}
+      [] 'LastUse'(_ _)|Body then
 	 VHd = {TranslateBody Body State ReturnReg IsTry}
       [] 'ValDec'(_ IdDef Exp)|Body then VInter in
 	 VHd = {TranslateExp Exp {MakeReg IdDef State} VInter State}

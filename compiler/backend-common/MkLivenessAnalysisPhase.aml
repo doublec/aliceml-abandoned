@@ -42,7 +42,7 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | sideEffecting (ProdExp (_, _)) = false
 	  | sideEffecting (PolyProdExp (_, _)) = false
 	  | sideEffecting (VecExp (_, _)) = false
-	  | sideEffecting (FunExp (_, _, _, _, _, _)) = false
+	  | sideEffecting (FunExp (_, _, _, _, _, _, _)) = false
 	  | sideEffecting (PrimAppExp (_, "Future.byneed", _)) = false
 	  | sideEffecting (LazyPolySelExp (_, _, _)) = false
 	  | sideEffecting _ = true
@@ -70,7 +70,9 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    (allDefsStm (stm, set, nested, shared);
 	     allDefsBody (stms, set, nested, shared))
 	  | allDefsBody (nil, _, _, _) = ()
-	and allDefsStm (LastUse (_, _), _, _, _) = ()
+	and allDefsStm (Entry (_, _), _, _, _) = ()
+	  | allDefsStm (Exit (_, _, _), _, _, _) = ()
+	  | allDefsStm (LastUse (_, _), _, _, _) = ()
 	  | allDefsStm (ValDec (_, idDef, _), set, _, _) = ins (set, idDef)
 	  | allDefsStm (RecDec (_, idDefExpVec), set, _, _) =
 	    Vector.app (fn (idDef, exp) => ins (set, idDef)) idDefExpVec
@@ -224,7 +226,72 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	  | isNamed (IdDef (Id (_, _, Name.InId))) = false
 	  | isNamed Wildcard = false
 
-	fun laBody (LastUse (_, _)::stms, shared, dontKill) =
+	fun laEntryPoint (ConEntry (typ, idRef, idRefArgs), use, dontKill) =
+	    let
+		val idRef = laIdRef (idRef, use, dontKill)
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, ConEntry (typ, idRef, idRefArgs))
+	    end
+	  | laEntryPoint (SelEntry (prod, label, n, typ, idRef),
+			  use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], SelEntry (prod, label, n, typ, idRef))
+	    end
+	  | laEntryPoint (StrictEntry (typ, idRef), use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], StrictEntry (typ, idRef))
+	    end
+	  | laEntryPoint (AppEntry (typ, idRef, idRefArgs), use, dontKill) =
+	    let
+		val idRef = laIdRef (idRef, use, dontKill)
+		val (lastUses, idRefArgs) =
+		    laIdRefArgs (idRefArgs, use, dontKill)
+	    in
+		(lastUses, AppEntry (typ, idRef, idRefArgs))
+	    end
+	  | laEntryPoint (CondEntry (typ, idRef), use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], CondEntry (typ, idRef))
+	    end
+	  | laEntryPoint (RaiseEntry idRef, use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], RaiseEntry idRef)
+	    end
+	  | laEntryPoint (HandleEntry idRef, use, dontKill) =
+	    let
+		val idref = laIdRef (idRef, use, dontKill)
+	    in
+		(#[], HandleEntry idRef)
+	    end
+	  | laEntryPoint (SpawnEntry, _, _) = (#[], SpawnEntry)
+
+	fun laBody (Entry (info, entryPoint)::stms, shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val (lastUses, entryPoint) =
+		    laEntryPoint (entryPoint, use, dontKill)
+	    in
+		(Entry (info, entryPoint)::lastUse (lastUses, stms), use)
+	    end
+	  | laBody (Exit (info, exitPoint, idRef)::stms,
+		    shared, dontKill) =
+	    let
+		val (stms, use) = laBody (stms, shared, dontKill)
+		val idRef = laIdRef (idRef, use, dontKill)
+	    in
+		(Exit (info, exitPoint, idRef)::stms, use)
+	    end
+	  | laBody (LastUse (_, _)::stms, shared, dontKill) =
 	    (*--** add assertion: ids \cap use(stms) = \emptyset *)
 	    laBody (stms, shared, dontKill)
 	  | laBody (ValDec (info, idDef, exp)::stms, shared, dontKill) =
@@ -539,7 +606,8 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 	    in
 		(lastUses, VecExp (info, idRefs))
 	    end
-	  | laExp (FunExp (info, stamp, flags, idDefArgs, outArityOpt, body),
+	  | laExp (FunExp (info, stamp, flags, typ, idDefArgs, 
+			   outArityOpt, body),
 		   use, dontKill) =
 	    let
 		val (body, use') = laBody (body, StampMap.map (), IdSet.set ())
@@ -547,8 +615,10 @@ functor MkLivenessAnalysisPhase(Switches: SWITCHES) :>
 		val lastUses = difference' (use', use, dontKill)
 	    in
 		IdSet.union (use, use');
-		(lastUses,
-		 FunExp (info, stamp, flags, idDefArgs, outArityOpt, body))
+ 		(lastUses,
+ 		 FunExp (info, stamp, flags, typ, 
+			 idDefArgs, outArityOpt, body))
+
 	    end
 	  | laExp (PrimAppExp (info, name, idRefs), use, dontKill) =
 	    let

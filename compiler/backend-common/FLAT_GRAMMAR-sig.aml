@@ -25,7 +25,7 @@ signature FLAT_GRAMMAR =
     sig
 	(* Annotations *)
 
-	type id_info = Source.region
+	type id_info = {region: Source.region, typ: Type.t}
 	type stm_info = Source.region
 	type exp_info = Source.region
 
@@ -71,9 +71,31 @@ signature FLAT_GRAMMAR =
 	    Tuple of int
 	  | Product of label vector
 
+	datatype entry_point =
+	    ConEntry of Type.t * idRef * idRef args
+	  | SelEntry of prod * label * int * Type.t * idRef
+	  | StrictEntry of Type.t * idRef
+	  | AppEntry of Type.t * idRef * idRef args
+	  | CondEntry of Type.t * idRef
+	  | RaiseEntry of idRef
+	  | HandleEntry of idRef
+	  | SpawnEntry
+
+	datatype exit_point =
+	    ConExit
+	  | SelExit of Type.t
+	  | StrictExit
+	  | AppExit
+	  | CondExit of Type.t
+	  | RaiseExit of Type.t
+	  | HandleExit of Type.t
+	  | SpawnExit of Type.t
+
 	datatype stm =
 	  (* the following may never be last *)
-	    LastUse of stm_info * id vector
+	    Entry of stm_info * entry_point
+	  | Exit of stm_info * exit_point * idRef
+	  | LastUse of stm_info * id vector
 	  | ValDec of stm_info * idDef * exp
 	  | RecDec of stm_info * (idDef * exp) vector
 	  | RefDec of stm_info * idDef * idRef
@@ -111,10 +133,10 @@ signature FLAT_GRAMMAR =
 	  | PolyProdExp of exp_info * (label * idRef) vector
 	    (* sorted, all labels distinct *)
 	  | VecExp of exp_info * idRef vector
-	  | FunExp of exp_info * stamp * funFlag list * idDef args *
-		      Arity.t option * body
-	  | PrimAppExp of exp_info * string * idRef vector
-	    (* no calling convention required conversion for in-arguments *)
+	  | FunExp of exp_info * stamp * funFlag list *
+		      Type.t * idDef args * Arity.t option * body
+ 	  | PrimAppExp of exp_info * string * idRef vector
+ 	    (* no calling convention required conversion for in-arguments *)
 	  | VarAppExp of exp_info * idRef * idRef args
 	  | DirectAppExp of exp_info * idRef * idRef args
 	    (* no calling convention required conversion for in-arguments *)
@@ -133,7 +155,7 @@ signature FLAT_GRAMMAR =
 	      sign: sign}
 	type t = component
 
-	val freshId: id_info -> id
+	val freshId: Source.region -> id
 	val infoStm: stm -> stm_info
 	val litEq: lit * lit -> bool
     end

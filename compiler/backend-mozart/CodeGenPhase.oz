@@ -78,8 +78,27 @@ define
       end
    end
 
+   fun {TrEntryPoint EntryPoint}
+      case EntryPoint of 'ConEntry'(IdRef Args) then
+	 'ConEntry'({TrIdRef IdRef} {TrArgs Args TrIdRef})
+      [] 'SelEntry'(Prod Label N IdRef) then
+	 'SelEntry'({TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
+      [] 'StrictEntry'(IdRef) then 'StrictEntry'({TrIdRef IdRef})
+      [] 'AppEntry'(IdRef Args) then
+	 'AppEntry'({TrIdRef IdRef} {TrArgs Args TrIdRef})
+      [] 'CondEntry'(IdRef) then 'CondEntry'({TrIdRef IdRef})
+      [] 'RaiseEntry'(IdRef) then 'RaiseEntry'({TrIdRef IdRef})
+      [] 'HandleEntry'(IdRef) then 'HandleEntry'({TrIdRef IdRef})
+      [] 'SpawnEntry' then 'SpawnEntry'
+      end
+   end
+
    proc {TrStm Stm Hd Tl ShareDict}
-      case Stm of 'LastUse'(Info Ids) then
+      case Stm of 'Entry'(Info EntryPoint) then
+	 Hd = 'Entry'(Info {TrEntryPoint EntryPoint})|Tl
+      [] 'Exit'(Info ExitPoint IdRef) then
+	 Hd = 'Exit'(Info ExitPoint {TrIdRef IdRef})|Tl
+      [] 'LastUse'(Info Ids) then
 	 Hd = 'LastUse'(Info {Record.map Ids TrId})|Tl
       [] 'ValDec'(Info IdDef Exp) then
 	 Hd = 'ValDec'(Info {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
@@ -179,7 +198,7 @@ define
 			   {TrLabel Label}#{TrIdRef IdRef}
 			end})
       [] 'VecExp'(Info IdRefs) then 'VecExp'(Info {Record.map IdRefs TrIdRef})
-      [] 'FunExp'(Info Stamp Flags Args OutArityOpt Body) then
+      [] 'FunExp'(Info Stamp Flags _ Args OutArityOpt Body) then
 	 'FunExp'(Info Stamp {Map Flags TrFunFlag}
 		  {TrArgs Args TrIdDef} OutArityOpt
 		  {TrBody Body $ nil ShareDict})

@@ -76,7 +76,7 @@ structure PickleFlatGrammar :> CODE
 	    fun outputRegion (q, region) =
 		outputPair (outputIntPair, outputIntPair) (q, region)
 	in
-	    fun outputIdInfo (q, info: id_info) = outputRegion (q, info)
+	    fun outputIdInfo (q, info: id_info) = outputRegion (q, #region info)
 	    fun outputStmInfo (q, info: stm_info) = outputRegion (q, info)
 	    fun outputExpInfo (q, info: exp_info) = outputRegion (q, info)
 	end
@@ -154,7 +154,50 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "Product", 1);
 	     outputVector outputLabel (q, labels))
 
-	fun outputStm (q, LastUse (info, ids)) =
+	fun outputEntryPoint (q, ConEntry (typ, idRef, args)) =
+	    (outputTuple (q, "ConEntry", 2); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef))
+	  | outputEntryPoint (q, SelEntry (prod, label, n, typ, idRef)) =
+	    (outputTuple (q, "SelEntry", 4); outputIdRef (q, idRef);
+	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod))
+	  | outputEntryPoint (q, StrictEntry (typ, idRef)) =
+	    (outputTuple (q, "StrictEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, AppEntry (typ ,idRef, args)) =
+	    (outputTuple (q, "AppEntry", 2); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef))
+	  | outputEntryPoint (q, CondEntry (typ, idRef)) =
+	    (outputTuple (q, "CondEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, RaiseEntry  idRef) =
+	    (outputTuple (q, "RaiseEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, HandleEntry idRef) =
+	    (outputTuple (q, "HandleEntry", 1); outputIdRef (q, idRef))
+	  | outputEntryPoint (q, SpawnEntry) =
+	    ignore (outputAtom (q, "SpawnEntry"))
+
+	fun outputExitPoint (q, ConExit) =
+	    ignore (outputAtom (q, "ConExit"))
+	  | outputExitPoint (q, SelExit typ) =
+	    ignore (outputAtom (q, "SelExit"))
+	  | outputExitPoint (q, StrictExit) =
+	    ignore (outputAtom (q, "StrictExit"))
+	  | outputExitPoint (q, AppExit) =
+	    ignore (outputAtom (q, "AppExit"))
+	  | outputExitPoint (q, CondExit typ) =
+	    ignore (outputAtom (q, "CondExit"))
+	  | outputExitPoint (q, RaiseExit typ) =
+	    ignore (outputAtom (q, "RaiseExit"))
+	  | outputExitPoint (q, HandleExit typ) =
+	    ignore (outputAtom (q, "HandleExit"))
+	  | outputExitPoint (q, SpawnExit typ) =
+	    ignore (outputAtom (q, "SpawnExit"))
+
+	fun outputStm (q, Entry (info, entryPoint)) =
+	    (outputTuple (q, "Entry", 2); outputEntryPoint (q, entryPoint);
+	     outputStmInfo (q, info))
+	  | outputStm (q, Exit (info, exitPoint, idRef)) =
+	    (outputTuple (q, "Exit", 3); outputIdRef (q, idRef);
+	     outputExitPoint (q, exitPoint); outputStmInfo (q, info))
+	  | outputStm (q, LastUse (info, ids)) =
 	    (outputTuple (q, "LastUse", 2); outputVector outputId (q, ids);
 	     outputStmInfo (q, info))
 	  | outputStm (q, ValDec (info, idDef, exp)) =
@@ -263,10 +306,10 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VecExp (info, idRefs)) =
 	    (outputTuple (q, "VecExp", 2);
 	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
-	  | outputExp (q, FunExp (info, stamp, flags, args, outArityOpt,
+	  | outputExp (q, FunExp (info, stamp, flags, _, args, outArityOpt, 
 				  body)) =
 	    (outputTuple (q, "FunExp", 6); outputBody (q, body);
-	     outputOption outputArity (q, outArityOpt);
+ 	     outputOption outputArity (q, outArityOpt);
 	     outputArgs outputIdDef (q, args);
 	     outputList outputFunFlag (q, flags);
 	     outputStamp (q, stamp); outputExpInfo (q, info))

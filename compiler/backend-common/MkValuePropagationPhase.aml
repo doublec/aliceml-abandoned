@@ -243,7 +243,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    end
 	  | expToValue (VecExp (_, idRefs)) =
 	    VecVal (Vector.map idRefToValue idRefs)
-	  | expToValue (FunExp (_, stamp, _, args, _, body)) =
+	  | expToValue (FunExp (_, stamp, _, _, args, _, body)) =
 	    FunVal (stamp, args, body)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
 	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
@@ -309,7 +309,9 @@ functor MkValuePropagationPhase(val isCross: bool
 		    StampMap.insert (edgeMap, pred, succ::stamps)
 		end
 
-	    fun sortStm (LastUse (_, _), _, _, _, _) = ()
+	    fun sortStm (Entry (_, _), _, _, _, _) = ()
+	      | sortStm (Exit (_, _, _), _, _, _, _) = ()
+	      | sortStm (LastUse (_, _), _, _, _, _) = ()
 	      | sortStm (ValDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (RecDec (_, _), _, _, _, _) = ()
 	      | sortStm (RefDec (_, _, _), _, _, _, _) = ()
@@ -416,7 +418,10 @@ functor MkValuePropagationPhase(val isCross: bool
 			     patchIdDef (idDef, lazySels) @ rest) nil
 			 labelIdDefVec
 
-	fun patchBody ((stm as ValDec (_, idDef, _))::stms, lazySels, shared) =
+	fun patchBody ((stm as (Entry (_, _) | Exit (_, _, _) |
+				LastUse (_, _)))::stms, lazySels, shared) =
+	    stm::patchBody (stms, lazySels, shared)
+	  | patchBody ((stm as ValDec (_, idDef, _))::stms, lazySels, shared) =
 	    stm::patchIdDef (idDef, lazySels) @
 	    patchBody (stms, lazySels, shared)
 	  | patchBody ((stm as RecDec (_, idDefExpVec))::stms,
@@ -529,11 +534,11 @@ functor MkValuePropagationPhase(val isCross: bool
 	    if stamp = stamp' then value else UnknownVal
 	  | valueMin (value as CaughtExnVal id, CaughtExnVal id') =
 	    if idEq (id, id') then value else UnknownVal
-          | valueMin (ReflectVal (rvalue, eager),
-                      ReflectVal (rvalue', eager')) =
-            if UnsafeValue.same (rvalue, rvalue') then
+	  | valueMin (ReflectVal (rvalue, eager),
+		      ReflectVal (rvalue', eager')) =
+	    if UnsafeValue.same (rvalue, rvalue') then
 		ReflectVal (rvalue, eager orelse eager')
-            else UnknownVal
+	    else UnknownVal
 	  | valueMin (FailedVal, FailedVal) = FailedVal
 	  | valueMin (_, _) = UnknownVal
 	and argsMin (args as OneArg value, OneArg value') =
@@ -800,37 +805,37 @@ functor MkValuePropagationPhase(val isCross: bool
 	    Arity.Product (Vector.map #1 labelIdVec)
 
 	fun adaptArity (_, Arity.Unary, args as OneArg _, _, f) = (nil, f args)
-	  | adaptArity (info, Arity.Unary, TupArgs idRefs, _, f) =
+	  | adaptArity (region, Arity.Unary, TupArgs idRefs, _, f) =
 	    (* construct tuple *)
 	    let
-		val id = freshId info
+		val id = freshId region
 	    in
-		([ValDec (info, IdDef id, TupExp (info, idRefs))],
+		([ValDec (region, IdDef id, TupExp (region, idRefs))],
 		 f (OneArg (IdRef id)))
 	    end
-	  | adaptArity (info, Arity.Unary, ProdArgs labelIdRefVec, _, f) =
+	  | adaptArity (region, Arity.Unary, ProdArgs labelIdRefVec, _, f) =
 	    (* construct product *)
 	    let
-		val id = freshId info
+		val id = freshId region
 	    in
-		([ValDec (info, IdDef id,
-			  ProdExp (info, labelIdRefVec))],
+		([ValDec (region, IdDef id,
+			  ProdExp (region, labelIdRefVec))],
 		 f (OneArg (IdRef id)))
 	    end
-	  | adaptArity (info, Arity.Tuple n, OneArg idRef, env, f) =
+	  | adaptArity (region, Arity.Tuple n, OneArg idRef, env, f) =
 	    (* deconstruct tuple (try statically) *)
 	    (case getIdRefs (idRef, Tuple n, env) of
 		 SOME idRefs => (nil, f (TupArgs idRefs))
 	       | NONE =>
 		     let
-			 val ids = Vector.tabulate (n, fn _ => freshId info)
+			 val ids = Vector.tabulate (n, fn _ => freshId region)
 		     in
-			 ([TupDec (info, Vector.map IdDef ids, idRef)],
+			 ([TupDec (region, Vector.map IdDef ids, idRef)],
 			  f (TupArgs (Vector.map IdRef ids)))
 		     end)
 	  | adaptArity (_, Arity.Tuple _, args as TupArgs _, _, f) =
 	    (nil, f args)
-	  | adaptArity (info, Arity.Product labels, OneArg idRef, env, f) =
+	  | adaptArity (region, Arity.Product labels, OneArg idRef, env, f) =
 	    (* deconstruct product (try statically) *)
 	    (case getIdRefs (idRef, Product labels, env) of
 		 SOME idRefs =>
@@ -838,7 +843,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	       | NONE =>
 		     let
 			 val labelIdVec =
-			     Vector.map (fn label => (label, freshId info))
+			     Vector.map (fn label => (label, freshId region))
 					labels
 			 val labelIdDefVec =
 			     Vector.map (fn (label, id) => (label, IdDef id))
@@ -847,7 +852,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			     Vector.map (fn (label, id) => (label, IdRef id))
 					labelIdVec
 		     in
-			 ([ProdDec (info, labelIdDefVec, idRef)],
+			 ([ProdDec (region, labelIdDefVec, idRef)],
 			  f (ProdArgs labelIdRefVec))
 		     end)
 	  | adaptArity (_, Arity.Product _, args as ProdArgs _, _, f) =
@@ -1135,62 +1140,84 @@ functor MkValuePropagationPhase(val isCross: bool
 		    end
 	    end
 
-	datatype outArityInfo =
-	    UNKNOWN
-	  | KNOWN of Arity.t
-	  | AMBIGUOUS
+	fun vpEntryPoint (ConEntry (typ, idRef, args), env) =
+	    ConEntry (typ, deref (idRef, env), derefArgs (args, env))
+	  | vpEntryPoint (SelEntry (prod, label, n, typ, idRef), env) =
+	    SelEntry (prod, label, n, typ, deref (idRef, env))
+	  | vpEntryPoint (StrictEntry (typ, idRef), env) =
+	    StrictEntry (typ, deref (idRef, env))
+	  | vpEntryPoint (AppEntry (typ, idRef, args), env) =
+	    AppEntry (typ, deref (idRef, env), derefArgs (args, env))
+	  | vpEntryPoint (CondEntry (typ, idRef), env) =
+	    CondEntry (typ, deref (idRef, env))
+	  | vpEntryPoint (RaiseEntry idRef, env) =
+	    RaiseEntry (deref (idRef, env))
+	  | vpEntryPoint (HandleEntry idRef, env) =
+	    HandleEntry (deref (idRef, env))
+	  | vpEntryPoint (SpawnEntry, _) = SpawnEntry
+ 	datatype outArityInfo =
+ 	    UNKNOWN
+ 	  | KNOWN of Arity.t
+ 	  | AMBIGUOUS
+ 
+ 	fun vpOutArity (TupExp (_, idRefs), _, outArityInfo) =
+ 	    vpOutArity' (outArityInfo,
+ 			 SOME (Arity.Tuple (Vector.length idRefs)))
+ 	  | vpOutArity (ProdExp (_, labelIdRefs), _, outArityInfo) =
+ 	    vpOutArity' (outArityInfo,
+ 			 SOME (Arity.Product (Vector.map #1 labelIdRefs)))
+ 	  | vpOutArity (VarExp (_, idRef), env, outArityInfo) =
+ 	    vpOutArity' (outArityInfo, SOME Arity.Unary)
+ 	  | vpOutArity ((VarAppExp (_, idRef, _) | DirectAppExp (_, idRef, _)),
+ 			env, outArityInfo) =
+ 	    let
+ 		val outArityOpt =
+ 		    case lookupEnv (env, idRef) of
+ 			(ReflectVal (rvalue, eager), _) =>
+ 			    getOutArity (rvalue, eager)
+ 		      | (_, _) => NONE
+ 	    in
+ 		vpOutArity' (outArityInfo, outArityOpt)
+ 	    end
+ 	  | vpOutArity (PrimAppExp (_, name, _), env, outArityInfo) =
+ 	    let
+ 		val outArity =
+ 		    if isCross then ~2
+ 		    else UnsafeValue.outArity (UnsafeValue.prim name)
+ 	    in
+ 		vpOutArity' (outArityInfo,
+ 			     case outArity of
+ 				 ~2 => NONE
+ 			       | ~1 => SOME Arity.Unary
+ 			       | n => SOME (Arity.Tuple n))
+ 	    end
+ 	  | vpOutArity (FunAppExp (_, idRef, stamp, _), env,
+ 			outArityInfo as (_, stamp', funMap)) =
+ 	    (* self recursion does not invalidate computed arity data *)
+ 	    if stamp = stamp' then ()
+ 	    else vpOutArity' (outArityInfo,
+ 			      case StampMap.lookup (funMap, stamp) of
+ 				  SOME arityOpt => arityOpt
+ 				| NONE => NONE)
+ 	  | vpOutArity (_, _, outArityInfo) =
+ 	    vpOutArity' (outArityInfo, SOME Arity.Unary)
+ 	and vpOutArity' ((SOME (r as ref _), _, _), NONE) = r := AMBIGUOUS
+ 	  | vpOutArity' ((SOME (r as ref UNKNOWN), stamp, _), SOME arity) =
+ 	    r := KNOWN arity
+ 	  | vpOutArity' ((SOME (r as ref (KNOWN arity)), stamp, _),
+ 			 SOME arity') =
+ 	    if arity <> arity' then r := AMBIGUOUS else ()
+ 	  | vpOutArity' ((SOME (ref AMBIGUOUS), _, _), _) = ()
+ 	  | vpOutArity' ((NONE, _, _), _) = ()
+ 
 
-	fun vpOutArity (TupExp (_, idRefs), _, outArityInfo) =
-	    vpOutArity' (outArityInfo,
-			 SOME (Arity.Tuple (Vector.length idRefs)))
-	  | vpOutArity (ProdExp (_, labelIdRefs), _, outArityInfo) =
-	    vpOutArity' (outArityInfo,
-			 SOME (Arity.Product (Vector.map #1 labelIdRefs)))
-	  | vpOutArity (VarExp (_, idRef), env, outArityInfo) =
-	    vpOutArity' (outArityInfo, SOME Arity.Unary)
-	  | vpOutArity ((VarAppExp (_, idRef, _) | DirectAppExp (_, idRef, _)),
-			env, outArityInfo) =
-	    let
-		val outArityOpt =
-		    case lookupEnv (env, idRef) of
-			(ReflectVal (rvalue, eager), _) =>
-			    getOutArity (rvalue, eager)
-		      | (_, _) => NONE
-	    in
-		vpOutArity' (outArityInfo, outArityOpt)
-	    end
-	  | vpOutArity (PrimAppExp (_, name, _), env, outArityInfo) =
-	    let
-		val outArity =
-		    if isCross then ~2
-		    else UnsafeValue.outArity (UnsafeValue.prim name)
-	    in
-		vpOutArity' (outArityInfo,
-			     case outArity of
-				 ~2 => NONE
-			       | ~1 => SOME Arity.Unary
-			       | n => SOME (Arity.Tuple n))
-	    end
-	  | vpOutArity (FunAppExp (_, idRef, stamp, _), env,
-			outArityInfo as (_, stamp', funMap)) =
-	    (* self recursion does not invalidate computed arity data *)
-	    if stamp = stamp' then ()
-	    else vpOutArity' (outArityInfo,
-			      case StampMap.lookup (funMap, stamp) of
-				  SOME arityOpt => arityOpt
-				| NONE => NONE)
-	  | vpOutArity (_, _, outArityInfo) =
-	    vpOutArity' (outArityInfo, SOME Arity.Unary)
-	and vpOutArity' ((SOME (r as ref _), _, _), NONE) = r := AMBIGUOUS
-	  | vpOutArity' ((SOME (r as ref UNKNOWN), stamp, _), SOME arity) =
-	    r := KNOWN arity
-	  | vpOutArity' ((SOME (r as ref (KNOWN arity)), stamp, _),
-			 SOME arity') =
-	    if arity <> arity' then r := AMBIGUOUS else ()
-	  | vpOutArity' ((SOME (ref AMBIGUOUS), _, _), _) = ()
-	  | vpOutArity' ((NONE, _, _), _) = ()
-
-	fun vpBody (ValDec (info, idDef, exp)::stms,
+	fun vpBody (Entry (info, entryPoint)::stms, state as {env, ...}) =
+	    Entry (info, vpEntryPoint (entryPoint, env))::vpBody (stms, state)
+	  | vpBody (Exit (info, exitPoint, idRef)::stms, state as {env, ...}) =
+	    Exit (info, exitPoint, deref (idRef, env))::vpBody (stms, state)
+	  | vpBody ((stm as LastUse (_, _))::stms, state) =
+	    stm::vpBody (stms, state)
+	  | vpBody (ValDec (info, idDef, exp)::stms,
 		    state as {env, isToplevel, lazySels,
 			      outArityInfo = (_, _, funMap), ...}) =
 	    let
@@ -1201,8 +1228,8 @@ functor MkValuePropagationPhase(val isCross: bool
 		stms' @ ValDec (info, idDef, exp)::vpBody (stms, state)
 	    end
 	  | vpBody (RecDec (info, idDefExpVec)::stms,
-		    state as {env, isToplevel, lazySels,
-			      outArityInfo = (_, _, funMap), ...}) =
+ 		    state as {env, isToplevel, lazySels,
+ 			      outArityInfo = (_, _, funMap), ...}) =
 	    let
 		val _ =
 		    Vector.app
@@ -1708,7 +1735,7 @@ functor MkValuePropagationPhase(val isCross: bool
 			(nil, VarExp (info, Value (rvalue, eager)))
 		  | NONE => (nil, VecExp (info, idRefs))
 	    end
-	  | vpExp (FunExp (info, stamp, flags, args, outArityOpt, body),
+	  | vpExp (FunExp (info, stamp, flags, typ, args, outArityOpt, body),
 		   env, isToplevel, lazySels, funMap) =
 	    let
 		val _ = IdMap.insertScope env
@@ -1729,15 +1756,15 @@ functor MkValuePropagationPhase(val isCross: bool
 				       flags then flags
 			else IsToplevel::flags
 		    else List.filter (fn IsToplevel => false | _ => true) flags
-		val outArityOpt =
-		    case outArityInfo of
-			(SOME (ref (UNKNOWN | AMBIGUOUS)), _, _) => NONE
-		      | (SOME (ref (KNOWN arity)), _, _) => SOME arity
-		      | (NONE, _, _) => outArityOpt
-	    in
-		StampMap.insertDisjoint (funMap, stamp, outArityOpt);
-		IdMap.removeScope env;
-		(nil, FunExp (info, stamp, flags, args, outArityOpt,
+ 		val outArityOpt =
+ 		    case outArityInfo of
+ 			(SOME (ref (UNKNOWN | AMBIGUOUS)), _, _) => NONE
+ 		      | (SOME (ref (KNOWN arity)), _, _) => SOME arity
+ 		      | (NONE, _, _) => outArityOpt
+ 	    in
+ 		StampMap.insertDisjoint (funMap, stamp, outArityOpt);
+ 		IdMap.removeScope env;
+		(nil, FunExp (info, stamp, flags, typ, args, outArityOpt,
 			      patchArgs (args, lazySels) @
 			      patchBody (body, lazySels, StampMap.map ())))
 	    end

@@ -11,6 +11,7 @@
  *)
 
 import structure Atom                  from "../../lib/data/Atom"
+import structure Type                  from "../../lib/rtt/Type"
 import structure Label                 from "../../lib/rtt/Label"
 import structure Stamp                 from "../common/Stamp"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
@@ -29,6 +30,10 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	    IdDef of id
 	  | Wildcard
 
+	datatype annotation =
+	    Debug of (string * Type.t) option vector * Type.t
+	  | Simple of int
+
 	type coord = string * int * int
 
 	type liveness = int vector
@@ -38,7 +43,9 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	type outArity = int
 
 	datatype instr =
-	    Kill of id vector * instr
+	    Entry of coord * entry_point * instr
+	  | Exit of coord * exit_point * idRef * instr
+	  | Kill of id vector * instr
 	  | PutVar of id * idRef * instr
 	  | PutNew of id * string * instr
 	  | PutTag of id * int * idRef vector * instr
@@ -80,11 +87,31 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	  | LastUseLocal of id
 	  | Global of int
 	and template =
-	    Template of coord * int * string vector *
+	    Template of coord * int * 
+                        annotation *
 			idDef vector * outArity option * instr * liveness
 	and abstractCode =
-	    Function of coord * value option vector * string vector *
+	    Function of coord * value option vector *
+			annotation *
 			idDef vector * outArity option * instr * liveness
+	and entry_point =
+	    ConEntry of Type.t * idRef * idRef vector
+	  | SelEntry of int * Type.t * idRef
+	  | StrictEntry of Type.t * idRef
+	  | AppEntry of Type.t * idRef * idRef vector
+	  | CondEntry of Type.t * idRef
+	  | RaiseEntry of idRef
+	  | HandleEntry of idRef
+	  | SpawnEntry
+	and exit_point =
+	    ConExit
+	  | SelExit of Type.t
+	  | StrictExit
+	  | AppExit
+	  | CondExit of Type.t
+	  | RaiseExit of Type.t
+	  | HandleExit of Type.t
+	  | SpawnExit of Type.t
 	withtype value = abstractCode Value.t
 
 	type t = value * (Stamp.t * Label.t) vector

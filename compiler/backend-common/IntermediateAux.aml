@@ -314,7 +314,27 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    Vector.app (fn (_, idRef) => usedVarsIdRef (idRef, set, used))
 		       labelIdRefVec
 
-	fun usedVarsStm (O.LastUse (_, ids), set, used, _) =
+	fun usedVarsEntryPoint (O.ConEntry (_, idRef, args), set, used) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsEntryPoint (O.SelEntry (_, _, _, _, idRef), set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsEntryPoint (O.StrictEntry (_, idRef), set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsEntryPoint (O.AppEntry (_, idRef, args), set, used) =
+	    (usedVarsIdRef (idRef, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsEntryPoint (O.CondEntry (_, idRef), set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsEntryPoint (O.RaiseEntry idRef, set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsEntryPoint (O.HandleEntry idRef, set, used) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsEntryPoint (O.SpawnEntry, _, _) = ()
+
+	fun usedVarsStm (O.Entry (_, entryPoint), set, used, _) =
+	    usedVarsEntryPoint (entryPoint, set, used)
+	  | usedVarsStm (O.Exit (_, _, idRef), set, used, _) =
+	    usedVarsIdRef (idRef, set, used)
+	  | usedVarsStm (O.LastUse (_, ids), set, used, _) =
 	    Vector.app (fn id => usedVarsId (id, set, used)) ids
 	  | usedVarsStm (O.ValDec (_, _, exp), set, used, shared) =
 	    usedVarsExp (exp, set, used, shared)
@@ -386,7 +406,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		       labelIdRefVec
 	  | usedVarsExp (O.VecExp (_, idRefs), set, used, _) =
 	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs
-	  | usedVarsExp (O.FunExp (_, _, _, _, _, body), set, used, shared) =
+	  | usedVarsExp (O.FunExp (_, _, _, _, _, _, body), 
+			 set, used, shared) =
 	    usedVarsBody (body, set, used, shared)
 	  | usedVarsExp (O.PrimAppExp (_, _, idRefs), set, used, _) =
 	    Vector.app (fn idRef => usedVarsIdRef (idRef, set, used)) idRefs

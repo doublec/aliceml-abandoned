@@ -116,7 +116,38 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 						S "=", formatX x])
 			      labelXVector), S "}"]
 
-	fun formatStm (LastUse (_, ids), _) =
+	fun formatEntryPoint (ConEntry (_, idRef, args)) =
+	    SEQ #[S "con ", IDREF idRef, S " ", formatArgs IDREF args]
+	  | formatEntryPoint (SelEntry (_, label, n, _, idRef)) =
+	    SEQ #[S "sel #", S (Label.toString label),
+		  S "/", I n, S " ", IDREF idRef]
+	  | formatEntryPoint (StrictEntry (_, idRef)) =
+	    SEQ #[S "strict ", IDREF idRef]
+	  | formatEntryPoint (AppEntry (_, idRef, args)) =
+	    SEQ #[S "app ", IDREF idRef, S " ", formatArgs IDREF args]
+	  | formatEntryPoint (CondEntry (_, idRef)) =
+	    SEQ #[S "cond ", IDREF idRef]
+	  | formatEntryPoint (RaiseEntry idRef) =
+	    SEQ #[S "raise ", IDREF idRef]
+	  | formatEntryPoint (HandleEntry idRef) =
+	    SEQ #[S "handle ", IDREF idRef]
+	  | formatEntryPoint SpawnEntry = S "spawn"
+
+	fun formatExitPoint ConExit = "con"
+	  | formatExitPoint (SelExit _) = "sel"
+	  | formatExitPoint StrictExit = "strict"
+	  | formatExitPoint AppExit = "app"
+	  | formatExitPoint (CondExit _) = "cond"
+	  | formatExitPoint (RaiseExit _) = "raise"
+	  | formatExitPoint (HandleExit _) = "handle"
+	  | formatExitPoint (SpawnExit _) = "spawn"
+
+	fun formatStm (Entry (_, entryPoint), _) =
+	    SEQ #[S "entry ", formatEntryPoint entryPoint]
+	  | formatStm (Exit (_, exitPoint, idRef), _) =
+	    SEQ #[S "exit ", S (formatExitPoint exitPoint), S " = ",
+		  IDREF idRef]
+	  | formatStm (LastUse (_, ids), _) =
 	    SEQ #[S "last ", SEP (S ", ", Vector.map ID ids)]
 	  | formatStm (ValDec (_, idDef, exp), _) =
 	    SEQ #[S "val ", IDDEF idDef, S " = ", IN, formatExp exp, EX]
@@ -224,20 +255,21 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 					 labelIdVector), S "...}"]
 	  | formatExp (VecExp (_, idRefs)) =
 	    SEQ #[S "#[", SEP (S ", ", Vector.map IDREF idRefs), S "]"]
-	  | formatExp (FunExp (_, _, _, args, outArityOpt, body)) =
-	    SEQ #[NL, S "fn ", formatArgs IDDEF args,
-		  case outArityOpt of
-		      SOME Arity.Unary => S " : 1"
-		    | SOME (Arity.Tuple n) => SEQ #[S " : ", S (Int.toString n)]
-		    | SOME (Arity.Product labels) =>
-		      SEQ #[S " : {",
-			    SEP (S ",",
-				 Vector.map (fn label =>
-						S (Label.toString label))
-					    labels),
-			    S "}"]
-		    | NONE => S "",
-		  S " =>", IN, NL, formatBody (body, StampSet.set ()), EX]
+	  | formatExp (FunExp (_, _, _, _, args, outArityOpt, body)) =
+ 	    SEQ #[NL, S "fn ", formatArgs IDDEF args,
+ 		  case outArityOpt of
+ 		      SOME Arity.Unary => S " : 1"
+ 		    | SOME (Arity.Tuple n) => 
+			  SEQ #[S " : ", S (Int.toString n)]
+ 		    | SOME (Arity.Product labels) =>
+ 		      SEQ #[S " : {",
+ 			    SEP (S ",",
+ 				 Vector.map (fn label =>
+ 						S (Label.toString label))
+ 					    labels),
+ 			    S "}"]
+ 		    | NONE => S "",
+ 		  S " =>", IN, NL, formatBody (body, StampSet.set ()), EX]
 	  | formatExp (PrimAppExp (_, name, idRefs)) =
 	    SEQ #[S "prim \"", S name, S "\" (",
 		  SEP (S ", ", Vector.map IDREF idRefs), S ")"]

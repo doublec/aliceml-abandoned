@@ -175,7 +175,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 
 	structure IdSet = IntermediateAux.IdSet
 
-	fun genStm (LastUse (_, ids)) = kill ids
+	fun genStm (Entry (_, _)) = ()
+	  | genStm (Exit (_, _, _)) = ()
+	  | genStm (LastUse (_, ids)) = kill ids
 	  | genStm (ValDec (_, idDef, exp)) = (genExp exp; declareLocal idDef)
 	  | genStm (RecDec (_, idDefExpVec)) =
 	    let
@@ -537,7 +539,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					 #[StringTy, ObjectTy], VoidTy))))
 			labelIdRefVec)
 	  | genExp (VecExp (info, ids)) = genExp (TupExp (info, ids))
-	  | genExp (FunExp (info, stamp, _, args, _, body)) =
+	  | genExp (FunExp (info, stamp, _, _, args, _, body)) =
 	    (emitRegion ("FunExp", info);
 	     emit (Newobj (className stamp, #[]));
 	     case args of
