@@ -19,7 +19,6 @@
 #include <cstdio>
 #include "generic/Scheduler.hh"
 #include "alice/Data.hh"
-#include "alice/StackFrame.hh"
 #include "alice/LazySelInterpreter.hh"
 
 // LazySel Frame
@@ -27,22 +26,17 @@ class LazySelFrame: private StackFrame {
 private:
   enum { RECORD_POS, LABEL_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static LazySelFrame *New(Interpreter *interpreter, word record,
 			   UniqueString *label) {
-    StackFrame *frame =
-      StackFrame::New(LAZY_SELECTION_FRAME, interpreter, SIZE);
+    NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(RECORD_POS, record);
     frame->InitArg(LABEL_POS, label->ToWord());
     return static_cast<LazySelFrame *>(frame);
   }
-  static LazySelFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == LAZY_SELECTION_FRAME);
-    return static_cast<LazySelFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   word GetRecord() {
     return GetArg(RECORD_POS);
   }
@@ -58,20 +52,25 @@ LazySelInterpreter *LazySelInterpreter::self;
 
 void LazySelInterpreter::PushCall(Closure *closure0) {
   LazySelClosure *closure = static_cast<LazySelClosure *>(closure0);
-  LazySelFrame *frame =
-    LazySelFrame::New(self, closure->GetRecord(), closure->GetLabel());
-  Scheduler::PushFrame(frame->ToWord());
+  LazySelFrame::New(self, closure->GetRecord(), closure->GetLabel());
 }
 
-Worker::Result LazySelInterpreter::Run() {
-  LazySelFrame *frame = LazySelFrame::FromWordDirect(Scheduler::GetFrame());
+u_int LazySelInterpreter::GetFrameSize(StackFrame *sFrame) {
+  LazySelFrame *frame = static_cast<LazySelFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result LazySelInterpreter::Run(StackFrame *sFrame) {
+  LazySelFrame *frame = static_cast<LazySelFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   word wRecord = frame->GetRecord();
   Transient *transient = Store::WordToTransient(wRecord);
   if (transient == INVALID_POINTER) { // is determined
-    Scheduler::PopFrame();
+    UniqueString *label = frame->GetLabel();
+    Scheduler::PopFrame(frame->GetSize());
     Scheduler::nArgs = Scheduler::ONE_ARG;
-    Scheduler::currentArgs[0] =
-      Record::FromWord(wRecord)->PolySel(frame->GetLabel());
+    Scheduler::currentArgs[0] = Record::FromWord(wRecord)->PolySel(label);
     return Worker::CONTINUE;
   } else { // need to request
     Scheduler::currentData = wRecord;
@@ -87,8 +86,8 @@ const char *LazySelInterpreter::Identify() {
   return "LazySelInterpreter";
 }
 
-void LazySelInterpreter::DumpFrame(word frameWord) {
-  LazySelFrame *frame = LazySelFrame::FromWordDirect(frameWord);
-  std::fprintf(stderr, "Select %s\n",
-	       frame->GetLabel()->ToString()->ExportC());
+void LazySelInterpreter::DumpFrame(StackFrame *sFrame) {
+  LazySelFrame *frame = static_cast<LazySelFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  std::fprintf(stderr, "Select %s\n", frame->GetLabel()->ToString()->ExportC());
 }

@@ -24,7 +24,6 @@
 #include "generic/Transients.hh"
 #include "generic/Closure.hh"
 #include "alice/Data.hh"
-#include "alice/StackFrame.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/LazySelInterpreter.hh"
@@ -113,16 +112,12 @@ class AbstractCodeFrame: public StackFrame {
 protected:
   enum { PC_POS, CLOSURE_POS, LOCAL_ENV_POS, FORMAL_ARGS_POS, SIZE };
 public:
-  using Block::ToWord;
-
   // AbstractCodeFrame Accessors
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   bool IsHandlerFrame() {
-    if (GetLabel() == ABSTRACT_CODE_HANDLER_FRAME) {
-      return true;
-    } else {
-      Assert(GetLabel() == ABSTRACT_CODE_FRAME);
-      return false;
-    }
+    return false; // to be done
   }
   TagVal *GetPC() {
     return TagVal::FromWordDirect(StackFrame::GetArg(PC_POS));
@@ -148,55 +143,25 @@ public:
 				Closure *closure,
 				Environment *env,
 				word formalArgs) {
-    StackFrame *frame =
-      StackFrame::New(ABSTRACT_CODE_FRAME, interpreter, SIZE);
+    NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(PC_POS, pc);
     frame->InitArg(CLOSURE_POS, closure->ToWord());
     frame->InitArg(LOCAL_ENV_POS, env->ToWord());
     frame->InitArg(FORMAL_ARGS_POS, formalArgs);
     return static_cast<AbstractCodeFrame *>(frame);
   }
-  // AbstractCodeFrame Untagging
-  static AbstractCodeFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == ABSTRACT_CODE_FRAME ||
-	   p->GetLabel() == ABSTRACT_CODE_HANDLER_FRAME);
-    return static_cast<AbstractCodeFrame *>(p);
-  }
-};
-
-class AbstractCodeHandlerFrame: public AbstractCodeFrame {
-public:
-  // AbstractCodeHandlerFrame Constructor
-  static AbstractCodeHandlerFrame *New(Interpreter *interpreter,
-				       word pc,
-				       Closure *closure,
-				       Environment *env,
-				       word args) {
-    StackFrame *frame =
-      StackFrame::New(ABSTRACT_CODE_HANDLER_FRAME, interpreter, SIZE);
-    frame->InitArg(PC_POS, pc);
-    frame->InitArg(CLOSURE_POS, closure->ToWord());
-    frame->InitArg(LOCAL_ENV_POS, env->ToWord());
-    frame->InitArg(FORMAL_ARGS_POS, args);
-    return static_cast<AbstractCodeHandlerFrame *>(frame);
-  }
 };
 
 // Interpreter Helper
 inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv,
 		      TagVal *formalArgs) {
-  AbstractCodeFrame *frame =
-    AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
-			   globalEnv, localEnv, formalArgs->ToWord());
-  Scheduler::PushFrame(frame->ToWord());
+  AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
+			 globalEnv, localEnv, formalArgs->ToWord());
 }
 
 inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv) {
-  AbstractCodeFrame *frame =
-    AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
-			   globalEnv, localEnv, Store::IntToWord(0));
-  Scheduler::PushFrame(frame->ToWord());
+  AbstractCodeFrame::New(AbstractCodeInterpreter::self, pc->ToWord(),
+			 globalEnv, localEnv, Store::IntToWord(0));
 }
 
 inline word
@@ -273,12 +238,10 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
       abstractCode->AssertWidth(AbstractCode::functionWidth);
       Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
       u_int nLocals = localNames->GetLength();
-      AbstractCodeFrame *frame =
-	AbstractCodeFrame::New(AbstractCodeInterpreter::self,
-			       abstractCode->Sel(4), closure,
-			       Environment::New(nLocals),
-			       abstractCode->Sel(3));
-      Scheduler::PushFrame(frame->ToWord());
+      AbstractCodeFrame::New(AbstractCodeInterpreter::self,
+			     abstractCode->Sel(4), closure,
+			     Environment::New(nLocals),
+			     abstractCode->Sel(3));
     }
     break;
   default:
@@ -287,6 +250,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 }
 
 #define REQUEST(w) {				\
+  Scheduler::PopFrame(frame->GetSize());        \
   PushState(pc, globalEnv, localEnv);		\
   Scheduler::currentData = w;			\
   Scheduler::nArgs = 0;				\
@@ -294,17 +258,22 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
 }
 
 #define CHECK_PREEMPT() {			\
+  Scheduler::PopFrame(frame->GetSize());        \
   if (StatusWord::GetStatus() != 0)		\
     return Worker::PREEMPT;			\
   else						\
     return Worker::CONTINUE;			\
 }
 
-Worker::Result AbstractCodeInterpreter::Run() {
-  AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  Assert(frame->GetWorker() == this);
-  Assert(!frame->IsHandlerFrame());
+u_int AbstractCodeInterpreter::GetFrameSize(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result AbstractCodeInterpreter::Run(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   TagVal *pc = frame->GetPC();
   Closure *globalEnv = frame->GetClosure();
   Environment *localEnv = frame->GetLocalEnv();
@@ -335,7 +304,6 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	} else {
 	  if (Worker::Deconstruct()) {
 	    // Scheduler::currentData has been set by Worker::Deconstruct
-	    Scheduler::PushFrameNoCheck(frame->ToWord());
 	    return Worker::REQUEST;
 	  }
 	  Assert(Scheduler::nArgs == nArgs);
@@ -532,6 +500,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::AppPrim:
       // of value * idRef vector * (idDef * instr) option
       {
+	Scheduler::PopFrame(frame->GetSize());
 	TagVal *idDefInstrOpt = TagVal::FromWord(pc->Sel(2));
 	if (idDefInstrOpt != INVALID_POINTER) { // SOME (idDef * instr)
 	  // Save our state for return
@@ -555,6 +524,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::DirectAppVar:
       // of idRef * idRef args * (idDef args * instr) option
       {
+	Scheduler::PopFrame(frame->GetSize());
 	TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
 	if (idDefArgsInstrOpt != INVALID_POINTER) { // SOME ...
 	  // Save our state for return
@@ -668,7 +638,7 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	if (transient != INVALID_POINTER) REQUEST(transient->ToWord());
 	KillIdRef(pc->Sel(0), pc, globalEnv, localEnv);
 	Scheduler::currentData = requestWord;
-	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
+	Scheduler::currentBacktrace = Backtrace::New(frame->Clone());
 	return Worker::RAISE;
       }
       break;
@@ -694,7 +664,6 @@ Worker::Result AbstractCodeInterpreter::Run() {
 	Tuple *exnData = Tuple::New(2);
 	exnData->Init(0, pc->Sel(3));
 	exnData->Init(1, formalArgs->ToWord());
-	Scheduler::PushFrame(frame->ToWord());
 	Scheduler::PushHandler(exnData->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
@@ -702,7 +671,6 @@ Worker::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::EndTry: // of instr
       {
 	Scheduler::PopHandler();
-	Scheduler::PopFrame();
 	pc = TagVal::FromWordDirect(pc->Sel(0));
       }
       break;
@@ -978,8 +946,9 @@ Worker::Result AbstractCodeInterpreter::Run() {
 }
 
 Worker::Result AbstractCodeInterpreter::Handle(word data) {
-  AbstractCodeFrame *frame =
-    AbstractCodeFrame::FromWordDirect(Scheduler::GetFrame());
+  StackFrame *sFrame = Scheduler::GetFrame();
+  Assert(sFrame->GetWorker() == this);
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
   Tuple *package = Tuple::New(2);
   word exn = Scheduler::currentData;
   package->Init(0, exn);
@@ -1013,8 +982,9 @@ const char *AbstractCodeInterpreter::Identify() {
   return "AbstractCodeInterpreter";
 }
 
-void AbstractCodeInterpreter::DumpFrame(word frameWord) {
-  AbstractCodeFrame *frame = AbstractCodeFrame::FromWordDirect(frameWord);
+void AbstractCodeInterpreter::DumpFrame(StackFrame *sFrame) {
+  AbstractCodeFrame *frame = static_cast<AbstractCodeFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   Closure *closure = frame->GetClosure();
   AliceConcreteCode *concreteCode =
     AliceConcreteCode::FromWord(closure->GetConcreteCode());

@@ -16,7 +16,6 @@
 #include <cstdio>
 #include "store/Map.hh"
 #include "generic/Tuple.hh"
-#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
@@ -199,30 +198,27 @@ public:
   }
   // Frame Handling
   static void PushFrame(ImpMapEntry *entry);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ImpMapInsertFrame: private StackFrame {
 private:
   enum { ENTRY_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static ImpMapInsertFrame *New(Worker *worker, ImpMapEntry *entry) {
-    StackFrame *frame = StackFrame::New(IMPMAP_INSERT_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     return static_cast<ImpMapInsertFrame *>(frame);
   }
-  static ImpMapInsertFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == IMPMAP_INSERT_FRAME);
-    return static_cast<ImpMapInsertFrame *>(p);
+  
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
   }
-
   ImpMapEntry *GetEntry() {
     return ImpMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -231,13 +227,20 @@ public:
 ImpMapInsertWorker *ImpMapInsertWorker::self;
 
 void ImpMapInsertWorker::PushFrame(ImpMapEntry *entry) {
-  Scheduler::PushFrame(ImpMapInsertFrame::New(self, entry)->ToWord());
+  ImpMapInsertFrame::New(self, entry);
 }
 
-Worker::Result ImpMapInsertWorker::Run() {
-  ImpMapInsertFrame *frame =
-    ImpMapInsertFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int ImpMapInsertWorker::GetFrameSize(StackFrame *sFrame) {
+  ImpMapInsertFrame *frame = static_cast<ImpMapInsertFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ImpMapInsertWorker::Run(StackFrame *sFrame) {
+  ImpMapInsertFrame *frame = static_cast<ImpMapInsertFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ImpMapEntry *entry = frame->GetEntry();
+  Scheduler::PopFrame(frame->GetSize());
   Construct();
   entry->SetValue(Scheduler::currentArgs[0]);
   Scheduler::nArgs = 0;
@@ -248,7 +251,7 @@ const char *ImpMapInsertWorker::Identify() {
   return "ImpMapInsertWorker";
 }
 
-void ImpMapInsertWorker::DumpFrame(word) {
+void ImpMapInsertWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "UnsafeImpMap.insertWithi\n");
 }
 
@@ -268,34 +271,31 @@ public:
   }
   // Frame Handling
   static void PushFrame(ImpMapEntry *entry, word closure, operation op);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ImpMapIteratorFrame: private StackFrame {
 private:
   enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static ImpMapIteratorFrame *New(Worker *worker,
 				   ImpMapEntry *entry, word closure,
 				   ImpMapIteratorWorker::operation op) {
-    StackFrame *frame = StackFrame::New(IMPMAP_ITERATOR_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
     return static_cast<ImpMapIteratorFrame *>(frame);
   }
-  static ImpMapIteratorFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == IMPMAP_ITERATOR_FRAME);
-    return static_cast<ImpMapIteratorFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   ImpMapEntry *GetEntry() {
     return ImpMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -315,14 +315,18 @@ ImpMapIteratorWorker *ImpMapIteratorWorker::self;
 
 void ImpMapIteratorWorker::PushFrame(ImpMapEntry *entry,
 				      word closure, operation op) {
-  ImpMapIteratorFrame *frame =
-    ImpMapIteratorFrame::New(self, entry, closure, op);
-  Scheduler::PushFrame(frame->ToWord());
+  ImpMapIteratorFrame::New(self, entry, closure, op);
 }
 
-Worker::Result ImpMapIteratorWorker::Run() {
-  ImpMapIteratorFrame *frame =
-    ImpMapIteratorFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ImpMapIteratorWorker::GetFrameSize(StackFrame *sFrame) {
+  ImpMapIteratorFrame *frame = static_cast<ImpMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ImpMapIteratorWorker::Run(StackFrame *sFrame) {
+  ImpMapIteratorFrame *frame = static_cast<ImpMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ImpMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
@@ -330,7 +334,7 @@ Worker::Result ImpMapIteratorWorker::Run() {
   if (nextEntry != INVALID_POINTER)
     frame->SetEntry(nextEntry);
   else
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -362,8 +366,9 @@ const char *ImpMapIteratorWorker::Identify() {
   return "ImpMapIteratorWorker";
 }
 
-void ImpMapIteratorWorker::DumpFrame(word wFrame) {
-  ImpMapIteratorFrame *frame = ImpMapIteratorFrame::FromWordDirect(wFrame);
+void ImpMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
+  ImpMapIteratorFrame *frame = static_cast<ImpMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {
   case app: name = "app"; break;
@@ -392,35 +397,31 @@ public:
   }
   // Frame Handling
   static void PushFrame(ImpMapEntry *entry, word closure, operation op);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class ImpMapFindFrame: private StackFrame {
 private:
   enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static ImpMapFindFrame *New(Worker *worker,
 			       ImpMapEntry *entry, word closure,
 			       ImpMapFindWorker::operation op) {
-    StackFrame *frame =
-      StackFrame::New(IMPMAP_FIND_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
     return static_cast<ImpMapFindFrame *>(frame);
   }
-  static ImpMapFindFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == IMPMAP_FIND_FRAME);
-    return static_cast<ImpMapFindFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   ImpMapEntry *GetEntry() {
     return ImpMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -440,13 +441,18 @@ ImpMapFindWorker *ImpMapFindWorker::self;
 
 void ImpMapFindWorker::PushFrame(ImpMapEntry *entry,
 				  word closure, operation op) {
-  ImpMapFindFrame *frame = ImpMapFindFrame::New(self, entry, closure, op);
-  Scheduler::PushFrame(frame->ToWord());
+  ImpMapFindFrame::New(self, entry, closure, op);
 }
 
-Worker::Result ImpMapFindWorker::Run() {
-  ImpMapFindFrame *frame =
-    ImpMapFindFrame::FromWordDirect(Scheduler::GetFrame());
+u_int ImpMapFindWorker::GetFrameSize(StackFrame *sFrame) {
+  ImpMapFindFrame *frame = static_cast<ImpMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result ImpMapFindWorker::Run(StackFrame *sFrame) {
+  ImpMapFindFrame *frame = static_cast<ImpMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   ImpMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
@@ -469,14 +475,14 @@ Worker::Result ImpMapFindWorker::Run() {
       }
       return Scheduler::PushCall(closure);
     } else {
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       Scheduler::nArgs = Scheduler::ONE_ARG;
       Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
       return Worker::CONTINUE;
     }
   case 1: // true
     {
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       TagVal *some = TagVal::New(1, 1); // SOME ...
       switch (op) {
       case find:
@@ -505,8 +511,9 @@ const char *ImpMapFindWorker::Identify() {
   return "ImpMapFindWorker";
 }
 
-void ImpMapFindWorker::DumpFrame(word wFrame) {
-  ImpMapFindFrame *frame = ImpMapFindFrame::FromWordDirect(wFrame);
+void ImpMapFindWorker::DumpFrame(StackFrame *sFrame) {
+  ImpMapFindFrame *frame = static_cast<ImpMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {
   case find: name = "find"; break;

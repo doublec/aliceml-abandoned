@@ -13,7 +13,6 @@
 #include <cstdio>
 #include "store/Map.hh"
 #include "generic/Tuple.hh"
-#include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
@@ -189,30 +188,27 @@ public:
   }
   // Frame Handling
   static void PushFrame(CellMapEntry *entry);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class CellMapInsertFrame: private StackFrame {
 private:
   enum { ENTRY_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static CellMapInsertFrame *New(Worker *worker, CellMapEntry *entry) {
-    StackFrame *frame = StackFrame::New(CELLMAP_INSERT_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     return static_cast<CellMapInsertFrame *>(frame);
   }
-  static CellMapInsertFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_INSERT_FRAME);
-    return static_cast<CellMapInsertFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   CellMapEntry *GetEntry() {
     return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -221,13 +217,20 @@ public:
 CellMapInsertWorker *CellMapInsertWorker::self;
 
 void CellMapInsertWorker::PushFrame(CellMapEntry *entry) {
-  Scheduler::PushFrame(CellMapInsertFrame::New(self, entry)->ToWord());
+  CellMapInsertFrame::New(self, entry);
 }
 
-Worker::Result CellMapInsertWorker::Run() {
-  CellMapInsertFrame *frame =
-    CellMapInsertFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+u_int CellMapInsertWorker::GetFrameSize(StackFrame *sFrame) {
+  CellMapInsertFrame *frame = static_cast<CellMapInsertFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result CellMapInsertWorker::Run(StackFrame *sFrame) {
+  CellMapInsertFrame *frame = static_cast<CellMapInsertFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
+  Scheduler::PopFrame(frame->GetSize());
   Construct();
   entry->SetValue(Scheduler::currentArgs[0]);
   Scheduler::nArgs = 0;
@@ -238,7 +241,7 @@ const char *CellMapInsertWorker::Identify() {
   return "CellMapInsertWorker";
 }
 
-void CellMapInsertWorker::DumpFrame(word) {
+void CellMapInsertWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "UnsafeCell.Map.insertWithi\n");
 }
 
@@ -258,34 +261,31 @@ public:
   }
   // Frame Handling
   static void PushFrame(CellMapEntry *entry, word closure, operation op);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class CellMapIteratorFrame: private StackFrame {
 private:
   enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static CellMapIteratorFrame *New(Worker *worker,
 				   CellMapEntry *entry, word closure,
 				   CellMapIteratorWorker::operation op) {
-    StackFrame *frame = StackFrame::New(CELLMAP_ITERATOR_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
     return static_cast<CellMapIteratorFrame *>(frame);
   }
-  static CellMapIteratorFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_ITERATOR_FRAME);
-    return static_cast<CellMapIteratorFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   CellMapEntry *GetEntry() {
     return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -305,14 +305,18 @@ CellMapIteratorWorker *CellMapIteratorWorker::self;
 
 void CellMapIteratorWorker::PushFrame(CellMapEntry *entry,
 				      word closure, operation op) {
-  CellMapIteratorFrame *frame =
-    CellMapIteratorFrame::New(self, entry, closure, op);
-  Scheduler::PushFrame(frame->ToWord());
+  CellMapIteratorFrame::New(self, entry, closure, op);
 }
 
-Worker::Result CellMapIteratorWorker::Run() {
-  CellMapIteratorFrame *frame =
-    CellMapIteratorFrame::FromWordDirect(Scheduler::GetFrame());
+u_int CellMapIteratorWorker::GetFrameSize(StackFrame *sFrame) {
+  CellMapIteratorFrame *frame = static_cast<CellMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result CellMapIteratorWorker::Run(StackFrame *sFrame) {
+  CellMapIteratorFrame *frame = static_cast<CellMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
@@ -320,7 +324,7 @@ Worker::Result CellMapIteratorWorker::Run() {
   if (nextEntry != INVALID_POINTER)
     frame->SetEntry(nextEntry);
   else
-    Scheduler::PopFrame();
+    Scheduler::PopFrame(frame->GetSize());
   switch (op) {
   case app:
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -352,8 +356,9 @@ const char *CellMapIteratorWorker::Identify() {
   return "CellMapIteratorWorker";
 }
 
-void CellMapIteratorWorker::DumpFrame(word wFrame) {
-  CellMapIteratorFrame *frame = CellMapIteratorFrame::FromWordDirect(wFrame);
+void CellMapIteratorWorker::DumpFrame(StackFrame *sFrame) {
+  CellMapIteratorFrame *frame = static_cast<CellMapIteratorFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {
   case app: name = "app"; break;
@@ -382,35 +387,31 @@ public:
   }
   // Frame Handling
   static void PushFrame(CellMapEntry *entry, word closure, operation op);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 };
 
 class CellMapFindFrame: private StackFrame {
 private:
   enum { ENTRY_POS, CLOSURE_POS, OPERATION_POS, SIZE };
 public:
-  using StackFrame::ToWord;
-
   static CellMapFindFrame *New(Worker *worker,
 			       CellMapEntry *entry, word closure,
 			       CellMapFindWorker::operation op) {
-    StackFrame *frame =
-      StackFrame::New(CELLMAP_FIND_FRAME, worker, SIZE);
+    NEW_STACK_FRAME(frame, worker, SIZE);
     frame->InitArg(ENTRY_POS, entry->ToWord());
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(OPERATION_POS, Store::IntToWord(op));
     return static_cast<CellMapFindFrame *>(frame);
   }
-  static CellMapFindFrame *FromWordDirect(word frame) {
-    StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == CELLMAP_FIND_FRAME);
-    return static_cast<CellMapFindFrame *>(p);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   CellMapEntry *GetEntry() {
     return CellMapEntry::FromWordDirect(GetArg(ENTRY_POS));
   }
@@ -430,13 +431,18 @@ CellMapFindWorker *CellMapFindWorker::self;
 
 void CellMapFindWorker::PushFrame(CellMapEntry *entry,
 				  word closure, operation op) {
-  CellMapFindFrame *frame = CellMapFindFrame::New(self, entry, closure, op);
-  Scheduler::PushFrame(frame->ToWord());
+  CellMapFindFrame::New(self, entry, closure, op);
 }
 
-Worker::Result CellMapFindWorker::Run() {
-  CellMapFindFrame *frame =
-    CellMapFindFrame::FromWordDirect(Scheduler::GetFrame());
+u_int CellMapFindWorker::GetFrameSize(StackFrame *sFrame) {
+  CellMapFindFrame *frame = static_cast<CellMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result CellMapFindWorker::Run(StackFrame *sFrame) {
+  CellMapFindFrame *frame = static_cast<CellMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
@@ -459,14 +465,14 @@ Worker::Result CellMapFindWorker::Run() {
       }
       return Scheduler::PushCall(closure);
     } else {
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       Scheduler::nArgs = Scheduler::ONE_ARG;
       Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
       return Worker::CONTINUE;
     }
   case 1: // true
     {
-      Scheduler::PopFrame();
+      Scheduler::PopFrame(frame->GetSize());
       TagVal *some = TagVal::New(1, 1); // SOME ...
       switch (op) {
       case find:
@@ -495,8 +501,9 @@ const char *CellMapFindWorker::Identify() {
   return "CellMapFindWorker";
 }
 
-void CellMapFindWorker::DumpFrame(word wFrame) {
-  CellMapFindFrame *frame = CellMapFindFrame::FromWordDirect(wFrame);
+void CellMapFindWorker::DumpFrame(StackFrame *sFrame) {
+  CellMapFindFrame *frame = static_cast<CellMapFindFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   const char *name;
   switch (frame->GetOperation()) {
   case find: name = "find"; break;

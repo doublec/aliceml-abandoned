@@ -122,13 +122,13 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 
 DEFINE2(UnsafeComponent_save) {
   DECLARE_STRING(filename, x0);
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Pickler::Save(filename, x1);
 } END
 
 DEFINE1(UnsafeComponent_load) {
   DECLARE_STRING(filename, x0);
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Unpickler::Load(filename);
 } END
 
@@ -160,13 +160,13 @@ DEFINE1(UnsafeComponent_linkNative) {
 } END
 
 DEFINE1(UnsafeComponent_pack_) {
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Pickler::Pack(x0);
 } END
 
 DEFINE1(UnsafeComponent_unpack_) {
   DECLARE_STRING(string, x0);
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Unpickler::Unpack(string);
 } END
 

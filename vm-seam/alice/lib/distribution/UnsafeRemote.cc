@@ -63,13 +63,13 @@ DEFINE1(UnsafeRemote_setCallback) {
 } END
 
 DEFINE1(UnsafeRemote_packValue) {
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Pickler::Pack(x0);
 } END
 
 DEFINE1(UnsafeRemote_unpackValue) {
   DECLARE_STRING(packedValue, x0);
-  Scheduler::PushFrameNoCheck(prim_self);
+  PUSH_PRIM_SELF();
   return Unpickler::Unpack(packedValue);
 } END
 

@@ -31,19 +31,19 @@ public:
   static void Init() {
     self = new NativeCodeInterpreter();
   }
-  static word FastPushCall(word continuation, Closure *closure);
-  static word TailPushCall(Closure *closure);
+  static StackFrame *FastPushCall(word continuation, Closure *closure);
   // Handler Methods
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling
   virtual void PushCall(Closure *closure);
+  virtual u_int GetFrameSize(StackFrame *sFrame);
   // Execution
-  virtual Result Run();
+  virtual Result Run(StackFrame *sFrame);
   virtual Result Handle(word data);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   // Debugging
   virtual const char *Identify();
-  virtual void DumpFrame(word frame);
+  virtual void DumpFrame(StackFrame *sFrame);
 #if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);

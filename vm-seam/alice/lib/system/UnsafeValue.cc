@@ -15,7 +15,6 @@
 #include "generic/Transients.hh"
 #include "generic/ConcreteCode.hh"
 #include "alice/Authoring.hh"
-#include "alice/StackFrame.hh"
 
 //
 // RequestInterpreter
@@ -30,10 +29,11 @@ public:
     self = new RequestInterpreter();
   }
 
-  virtual Result Run();
+  virtual u_int GetFrameSize(StackFrame *sFrame);
+  virtual Result Run(StackFrame *sFrame);
   virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
+  virtual void DumpFrame(StackFrame *sFrame);
 
   virtual void PushCall(Closure *closure);
 };
@@ -42,21 +42,17 @@ class RequestFrame: public StackFrame {
 protected:
   enum { QUEUE_POS, BYNEED_POS, AGAIN_POS, SIZE };
 public:
-  using Block::ToWord;
-
   static RequestFrame *New(Interpreter *interpreter, word queue, word byneed) {
-    StackFrame *frame = StackFrame::New(REQUEST_FRAME, interpreter, SIZE);
+    NEW_STACK_FRAME(frame, interpreter, SIZE);
     frame->InitArg(QUEUE_POS, queue);
     frame->InitArg(BYNEED_POS, byneed);
     frame->InitArg(AGAIN_POS, false);
     return static_cast<RequestFrame *>(frame);
   }
-  static RequestFrame *FromWordDirect(word wFrame) {
-    StackFrame *frame = StackFrame::FromWordDirect(wFrame);
-    Assert(frame->GetLabel() == REQUEST_FRAME);
-    return static_cast<RequestFrame *>(frame);
-  }
 
+  u_int GetSize() {
+    return StackFrame::GetSize() + SIZE;
+  }
   Queue *GetQueue() {
     return Queue::FromWord(StackFrame::GetArg(QUEUE_POS));
   }
@@ -73,11 +69,18 @@ public:
 
 RequestInterpreter *RequestInterpreter::self;
 
-Worker::Result RequestInterpreter::Run() {
-  RequestFrame *frame = RequestFrame::FromWordDirect(Scheduler::GetFrame());
+u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
+  RequestFrame *frame = static_cast<RequestFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
+  return frame->GetSize();
+}
+
+Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
+  RequestFrame *frame = static_cast<RequestFrame *>(sFrame);
+  Assert(sFrame->GetWorker() == this);
   if (frame->GetAgain()) {
-    Scheduler::PopFrame();
     Queue *queue = frame->GetQueue();
+    Scheduler::PopFrame(frame->GetSize());
     while (!queue->IsEmpty()) {
       Thread *thread = Thread::FromWordDirect(queue->Dequeue());
       Scheduler::ResumeThread(thread);
@@ -98,16 +101,13 @@ const char *RequestInterpreter::Identify() {
   return "RequestInterpreter";
 }
 
-void RequestInterpreter::DumpFrame(word) {
+void RequestInterpreter::DumpFrame(StackFrame *) {
   //--** to be done: insert useful stuff
   return;
 }
 
 void RequestInterpreter::PushCall(Closure *closure) {
-  RequestFrame *frame =
-    RequestFrame::New(RequestInterpreter::self,
-		      closure->Sub(0), closure->Sub(1));
-  Scheduler::PushFrame(frame->ToWord());
+  RequestFrame::New(RequestInterpreter::self, closure->Sub(0), closure->Sub(1));
 }
 
 //
