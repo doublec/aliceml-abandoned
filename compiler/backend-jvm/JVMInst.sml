@@ -54,6 +54,7 @@ structure JVMInst =
 	  | Comment of string
 	  | Dup
 	  | Fconst of int
+	  | Get of INSTRUCTION list
 	  | Getfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Getself of string
 	  | Getstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
@@ -80,7 +81,9 @@ structure JVMInst =
 	  | Label of label
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
+	  | Multi of INSTRUCTION list
 	  | New of classname
+	  | Nop
 	  | Pop
 	  | Putfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
 	  | Putstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
