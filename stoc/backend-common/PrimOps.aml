@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -86,9 +86,9 @@ structure PrimOps :> PRIM_OPS =
 		ins ("General.Size", NONE);
 		ins ("General.Span", NONE);
 		ins ("General.Subscript", NONE);
-		ins ("General.exchange", SOME (Tuple 3));
+		ins ("General.exchange", SOME (Tuple 2));
 		ins ("General.exnName", SOME Unary);
-		ins ("GlobalStamp.new", SOME Unary);
+		ins ("GlobalStamp.new", SOME (Tuple 0));
 		ins ("GlobalStamp.fromString", SOME Unary);
 		ins ("GlobalStamp.toString", SOME Unary);
 		ins ("GlobalStamp.compare", SOME (Tuple 2));
@@ -98,10 +98,10 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Hole.fail", SOME (Tuple 2));
 		ins ("Hole.fill", SOME (Tuple 2));
 		ins ("Hole.future", SOME Unary);
-		ins ("Hole.hole", SOME Unary);
+		ins ("Hole.hole", SOME (Tuple 0));
 		ins ("Hole.isFailed", SOME Unary);
 		ins ("Hole.isHole", SOME Unary);
-		ins ("Int.~", SOME (Tuple 2));
+		ins ("Int.~", SOME Unary);
 		ins ("Int.+", SOME (Tuple 2));
 		ins ("Int.-", SOME (Tuple 2));
 		ins ("Int.*", SOME (Tuple 2));
@@ -115,9 +115,9 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.maxInt", NONE);
 		ins ("Int.minInt", NONE);
 		ins ("Int.mod", SOME (Tuple 2));
+		ins ("Int.precision", NONE);
 		ins ("Int.quot", SOME (Tuple 2));
 		ins ("Int.rem", SOME (Tuple 2));
-		ins ("Int.precision", NONE);
 		ins ("Int.toString", SOME Unary);
 		ins ("List.Empty", NONE);
 		ins ("Math.acos", SOME Unary);
@@ -126,7 +126,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Math.asinh", SOME Unary);
 		ins ("Math.atan", SOME Unary);
 		ins ("Math.atanh", SOME Unary);
-		ins ("Math.atan2", SOME Unary);
+		ins ("Math.atan2", SOME (Tuple 2));
 		ins ("Math.cos", SOME Unary);
 		ins ("Math.cosh", SOME Unary);
 		ins ("Math.e", NONE);
@@ -140,7 +140,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Math.tan", SOME Unary);
 		ins ("Math.tanh", SOME Unary);
 		ins ("Option.Option", NONE);
-		ins ("Real.~", SOME (Tuple 2));
+		ins ("Real.~", SOME Unary);
 		ins ("Real.+", SOME (Tuple 2));
 		ins ("Real.-", SOME (Tuple 2));
 		ins ("Real.*", SOME (Tuple 2));
@@ -176,7 +176,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("String.substring", SOME (Tuple 3));
 		ins ("String.str", SOME Unary);
 		ins ("Thread.Terminate", NONE);
-		ins ("Thread.current", SOME Unary);
+		ins ("Thread.current", SOME (Tuple 0));
 		ins ("Thread.isSuspended", SOME Unary);
 		ins ("Thread.raiseIn", SOME (Tuple 2));
 		ins ("Thread.resume", SOME Unary);
@@ -193,23 +193,23 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Vector.length", SOME Unary);
 		ins ("Vector.sub", SOME (Tuple 2));
 		ins ("Vector.tabulate", SOME (Tuple 2));
-		ins ("Word.fromInt'", SOME Unary);
-		ins ("Word.toInt", SOME Unary);
-		ins ("Word.toIntX", SOME Unary);
 		ins ("Word.+", SOME (Tuple 2));
 		ins ("Word.-", SOME (Tuple 2));
 		ins ("Word.*", SOME (Tuple 2));
-		ins ("Word.div", SOME (Tuple 2));
-		ins ("Word.mod", SOME (Tuple 2));
-		ins ("Word.orb", SOME (Tuple 2));
-		ins ("Word.xorb", SOME (Tuple 2));
-		ins ("Word.andb", SOME (Tuple 2));
-		ins ("Word.notb", SOME Unary);
 		ins ("Word.<<", SOME (Tuple 2));
 		ins ("Word.>>", SOME (Tuple 2));
 		ins ("Word.~>>", SOME (Tuple 2));
+		ins ("Word.andb", SOME (Tuple 2));
+		ins ("Word.div", SOME (Tuple 2));
+		ins ("Word.fromInt'", SOME (Tuple 2));
+		ins ("Word.mod", SOME (Tuple 2));
+		ins ("Word.notb", SOME Unary);
+		ins ("Word.orb", SOME (Tuple 2));
+		ins ("Word.toInt", SOME Unary);
+		ins ("Word.toIntX", SOME Unary);
 		ins ("Word.toString", SOME Unary);
 		ins ("Word.wordSize", NONE);
+		ins ("Word.xorb", SOME (Tuple 2));
 		map
 	    end
 
