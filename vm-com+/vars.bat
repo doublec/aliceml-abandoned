@@ -6,7 +6,7 @@ SET PATH=C:\CorSDK\bin;C:\CorSDK\samples;C:\CorSDK\Compiler\VC;%PATH%
 SET INCLUDE=C:\Windows\System;
 SET LIB=C:\CorSDK\Compiler\VC;C:\Programme\DevStudio\VC\lib;C:\Windows\System;
 
-SET CORPATH=C:\Windows\System;
+SET CORPATH=..\..\vm-com+;C:\Windows\System;
 
 SET PATH=C:\Progra~1\smlnj\bin;%PATH%
 SET CM_PATH=C:\Progra~1\smlnj\lib
