@@ -18,9 +18,7 @@ DEFINE1(UnsafeValue_cast) {
 } END
 
 DEFINE2(UnsafeValue_same) {
-  x0 = PointerOp::Deref(x0);
-  x1 = PointerOp::Deref(x1);
-  RETURN_BOOL(x0 == x1);
+  RETURN_BOOL(PointerOp::Deref(x0) == PointerOp::Deref(x1));
 } END
 
 DEFINE3(UnsafeValue_proj) {
@@ -52,7 +50,8 @@ DEFINE3(UnsafeValue_projTagged) {
 DEFINE1(UnsafeValue_con) {
   DECLARE_CONVAL(conVal, x0);
   Constructor *constructor =
-    conVal->IsConVal()? conVal->GetConstructor(): Constructor::FromWord(x0);
+    conVal->IsConVal()? conVal->GetConstructor():
+    static_cast<Constructor *>(static_cast<Block *>(conVal));
   RETURN(constructor->ToWord());
 } END
 
