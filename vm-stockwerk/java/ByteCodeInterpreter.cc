@@ -1293,8 +1293,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
 	Future *future = lock->Acquire();
-	if (future != INVALID_POINTER)
-	  REQUEST(future->ToWord());
+	if (future != INVALID_POINTER) {
+	  frame->SetPC(pc);
+	  return classObj->Initialize(future);
+	}
 	word value = classObj->GetStaticField(fieldRef->GetIndex());
 	lock->Release();
 	frame->Push(value);
@@ -1671,8 +1673,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
 	Future *future = lock->Acquire();
-	if (future != INVALID_POINTER)
-	  REQUEST(future->ToWord());
+	if (future != INVALID_POINTER) {
+	  frame->SetPC(pc);
+	  return classObj->Initialize(future);
+	}
 	// Set continuation
 	frame->SetPC(-2);
 	frame->SetContPC(pc + 3);
@@ -1968,8 +1972,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    Class *classObj = static_cast<Class *>(type);
 	    Lock *lock = classObj->GetLock();
 	    Future *future = lock->Acquire();
-	    if (future != INVALID_POINTER)
-	      REQUEST(future->ToWord());
+	    if (future != INVALID_POINTER) {
+	      frame->SetPC(pc);
+	      return classObj->Initialize(future);
+	    }
 	    Object *object = Object::New(classObj);
 	    Assert(object != INVALID_POINTER);
 	    frame->Push(object->ToWord());
@@ -2065,8 +2071,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	Assert(classObj != INVALID_POINTER);
 	Lock *lock = classObj->GetLock();
 	Future *future = lock->Acquire();
-	if (future != INVALID_POINTER)
-	  REQUEST(future->ToWord());
+	if (future != INVALID_POINTER) {
+	  frame->SetPC(pc);
+	  return classObj->Initialize(future);
+	}
 	classObj->PutStaticField(fieldRef->GetIndex(), frame->Pop());
 	lock->Release();
 	pc += 3;

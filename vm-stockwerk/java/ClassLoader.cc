@@ -57,93 +57,8 @@ public:
 };
 
 //
-// InitializeClassWorker
-//
-
-class InitializeClassWorker: public Worker {
-public:
-  static InitializeClassWorker *self;
-private:
-  InitializeClassWorker() {}
-public:
-  static void Init() {
-    self = new InitializeClassWorker();
-  }
-
-  static void PushFrame(Class *theClass);
-
-  virtual Result Run();
-  virtual Result Handle();
-  virtual const char *Identify();
-  virtual void DumpFrame(word wFrame);
-};
-
-class InitializeClassFrame: private StackFrame {
-protected:
-  enum { CLASS_POS, SIZE };
-public:
-  using Block::ToWord;
-
-  static InitializeClassFrame *New(Class *theClass) {
-    StackFrame *frame = StackFrame::New(INITIALIZE_CLASS_FRAME,
-					InitializeClassWorker::self, SIZE);
-    frame->InitArg(CLASS_POS, theClass->ToWord());
-    return static_cast<InitializeClassFrame *>(frame);
-  }
-  static InitializeClassFrame *FromWordDirect(word x) {
-    StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == INITIALIZE_CLASS_FRAME);
-    return static_cast<InitializeClassFrame *>(frame);
-  }
-
-  Class *GetClass() {
-    return Class::FromWordDirect(GetArg(CLASS_POS));
-  }
-};
-
-InitializeClassWorker *InitializeClassWorker::self;
-
-void InitializeClassWorker::PushFrame(Class *theClass) {
-  InitializeClassFrame *frame = InitializeClassFrame::New(theClass);
-  Scheduler::PushFrame(frame->ToWord());
-}
-
-Worker::Result InitializeClassWorker::Run() {
-  InitializeClassFrame *frame =
-    InitializeClassFrame::FromWordDirect(Scheduler::GetFrame());
-  Class *theClass = frame->GetClass();
-  theClass->GetLock()->Release();
-  Scheduler::PopFrame();
-  Scheduler::nArgs = Scheduler::ONE_ARG;
-  Scheduler::currentArgs[0] = theClass->ToWord();
-  return CONTINUE;
-}
-
-Worker::Result InitializeClassWorker::Handle() {
-  InitializeClassFrame *frame =
-    InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
-  Class *theClass = frame->GetClass();
-  theClass->GetLock()->Release();
-  //--** mark theClass as unusable (initialization failed)
-  Scheduler::currentBacktrace->Enqueue(frame->ToWord());
-  return RAISE;
-}
-
-const char *InitializeClassWorker::Identify() {
-  return "InitializeClassWorker";
-}
-
-void InitializeClassWorker::DumpFrame(word wFrame) {
-  InitializeClassFrame *frame = InitializeClassFrame::FromWordDirect(wFrame);
-  Class *theClass = frame->GetClass();
-  std::fprintf(stderr, "Initialize class %s\n",
-	       theClass->GetClassInfo()->GetName()->ExportC());
-}
-
-//
 // BuildClassWorker
 //
-
 class BuildClassWorker: public Worker {
 public:
   static BuildClassWorker *self;
@@ -215,20 +130,14 @@ Worker::Result BuildClassWorker::Run() {
     //--** throws an IncompatibleClassChangeError
   }
   Scheduler::PopFrame();
-  if (!classInfo->Verify())
-    Error("VerifyError"); //--** raise VerifyError
-  Class *theClass = classInfo->Prepare();
-  // Run static initializer:
-  Closure *classInitializer = theClass->GetClassInitializer();
-  if (classInitializer == INVALID_POINTER) {
-    theClass->GetLock()->Release();
-    Scheduler::nArgs = Scheduler::ONE_ARG;
-    Scheduler::currentArgs[0] = theClass->ToWord();
+  if (!classInfo->Verify()) {
+    ThrowWorker::PushFrame(ThrowWorker::VerifyError, classInfo->GetName());
+    Scheduler::nArgs = 0;
     return CONTINUE;
   }
-  InitializeClassWorker::PushFrame(theClass);
-  Scheduler::nArgs = 0;
-  return Scheduler::PushCall(classInitializer->ToWord());
+  Scheduler::nArgs = Scheduler::ONE_ARG;
+  Scheduler::currentArgs[0] = classInfo->Prepare()->ToWord();
+  return CONTINUE;
 }
 
 const char *BuildClassWorker::Identify() {
@@ -244,7 +153,6 @@ void BuildClassWorker::DumpFrame(word wFrame) {
 //
 // ResolveInterpreter
 //
-
 class ResolveInterpreter: public Interpreter {
 public:
   enum type {
@@ -337,15 +245,18 @@ Worker::Result ResolveInterpreter::Run() {
       ClassFile *classFile = ClassFile::NewFromFile(filename);
       if (classFile == INVALID_POINTER) {
 	ThrowWorker::PushFrame(ThrowWorker::NoClassDefFoundError, name);
+	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
       ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
       if (classInfo == INVALID_POINTER) {
 	ThrowWorker::PushFrame(ThrowWorker::ClassFormatError, name);
+	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
       if (!classInfo->GetName()->Equals(name)) {
 	ThrowWorker::PushFrame(ThrowWorker::NoClassDefFoundError, name);
+	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
       Scheduler::PopFrame();
@@ -439,6 +350,7 @@ Worker::Result ResolveInterpreter::Run() {
       if (wSuper == Store::IntToWord(0)) {
 	JavaString *s = name->Concat(descriptor);
 	ThrowWorker::PushFrame(ThrowWorker::NoSuchMethodError, s);
+	Scheduler::nArgs = 0;
 	return CONTINUE;
       }
       frame->SetClass(Class::FromWord(wSuper));
@@ -480,13 +392,11 @@ void ResolveInterpreter::DumpFrame(word wFrame) {
 //
 // ClassLoader Method Implementations
 //
-
 word ClassLoader::bootstrapClassLoader;
 
 void ClassLoader::Init() {
   bootstrapClassLoader = ClassLoader::New()->ToWord();
   RootSet::Add(bootstrapClassLoader);
-  InitializeClassWorker::Init();
   BuildClassWorker::Init();
   ResolveInterpreter::Init();
 }

@@ -22,6 +22,7 @@
 
 void JavaLanguageLayer::Init() {
   NativeMethodTable::Init();
+  Class::Init();
   ClassLoader::Init();
   ThrowWorker::Init();
   ByteCodeInterpreter::Init();

@@ -14,8 +14,119 @@
 #pragma implementation "java/Data.hh"
 #endif
 
+#include "generic/Backtrace.hh"
 #include "java/ClassInfo.hh"
+#include "java/StackFrame.hh"
 #include "java/NativeMethodTable.hh"
+
+//
+// InitializeClassWorker
+//
+class InitializeClassWorker: public Worker {
+public:
+  static InitializeClassWorker *self;
+private:
+  InitializeClassWorker() {}
+public:
+  static void Init() {
+    self = new InitializeClassWorker();
+  }
+
+  static void PushFrame(Class *theClass, u_int nArgs, word args);
+
+  virtual Result Run();
+  virtual Result Handle();
+  virtual const char *Identify();
+  virtual void DumpFrame(word wFrame);
+};
+
+class InitializeClassFrame: private StackFrame {
+protected:
+  enum { CLASS_POS, NARGS_POS, ARGS_POS, SIZE };
+public:
+  using Block::ToWord;
+
+  static InitializeClassFrame *New(Class *theClass, u_int nArgs, word args) {
+    StackFrame *frame = StackFrame::New(INITIALIZE_CLASS_FRAME,
+					InitializeClassWorker::self, SIZE);
+    frame->InitArg(CLASS_POS, theClass->ToWord());
+    frame->InitArg(NARGS_POS, nArgs);
+    frame->InitArg(ARGS_POS, args);
+    return static_cast<InitializeClassFrame *>(frame);
+  }
+  static InitializeClassFrame *FromWordDirect(word x) {
+    StackFrame *frame = StackFrame::FromWordDirect(x);
+    Assert(frame->GetLabel() == INITIALIZE_CLASS_FRAME);
+    return static_cast<InitializeClassFrame *>(frame);
+  }
+
+  Class *GetClass() {
+    return Class::FromWordDirect(GetArg(CLASS_POS));
+  }
+  void RestoreArgs() {
+    Scheduler::nArgs = Store::DirectWordToInt(GetArg(NARGS_POS));
+    word args = GetArg(ARGS_POS);
+    switch (Scheduler::nArgs) {
+    case 0:
+      break;
+    case Scheduler::ONE_ARG:
+      Scheduler::currentArgs[0] = args;
+      break;
+    default:
+      Block *b = Store::DirectWordToBlock(args);
+      Assert(b->GetLabel() == ARGS_LABEL);
+      for (u_int i = Scheduler::nArgs; i--; )
+	Scheduler::currentArgs[i] = b->GetArg(i);
+      break;
+    }
+  }
+};
+
+InitializeClassWorker *InitializeClassWorker::self;
+
+void InitializeClassWorker::PushFrame(Class *theClass, u_int nArgs,
+				      word args) {
+  InitializeClassFrame *frame =
+    InitializeClassFrame::New(theClass, nArgs, args);
+  Scheduler::PushFrame(frame->ToWord());
+}
+
+Worker::Result InitializeClassWorker::Run() {
+  InitializeClassFrame *frame =
+    InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  frame->GetClass()->GetLock()->Release();
+  frame->RestoreArgs();
+  return CONTINUE;
+}
+
+Worker::Result InitializeClassWorker::Handle() {
+  InitializeClassFrame *frame =
+    InitializeClassFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  Class *theClass = frame->GetClass();
+  theClass->GetLock()->Release();
+  Error("static initializer raised an exception");
+  //--** mark theClass as unusable (initialization failed)
+  Scheduler::currentBacktrace->Enqueue(frame->ToWord());
+  return RAISE;
+}
+
+const char *InitializeClassWorker::Identify() {
+  return "InitializeClassWorker";
+}
+
+void InitializeClassWorker::DumpFrame(word wFrame) {
+  InitializeClassFrame *frame = InitializeClassFrame::FromWordDirect(wFrame);
+  Class *theClass = frame->GetClass();
+  std::fprintf(stderr, "Initialize class %s\n",
+	       theClass->GetClassInfo()->GetName()->ExportC());
+}
+
+//
+// Class Implementation
+//
+void Class::Init() {
+  InitializeClassWorker::Init();
+}
 
 Class *Class::New(ClassInfo *classInfo) {
   // Precondition: parent class has already been created
@@ -54,8 +165,6 @@ Class *Class::New(ClassInfo *classInfo) {
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
   // Create the class lock:
   Lock *lock = Lock::New();
-  Future *future = lock->Acquire();
-  Assert(future == INVALID_POINTER); future = future;
   // Allocate class proper:
   Block *b = Store::AllocBlock(JavaLabel::Class,
 			       BASE_SIZE + nStaticFields + nStaticMethods);
@@ -126,9 +235,13 @@ Class *Class::New(ClassInfo *classInfo) {
     }
     i++;
   }
-  b->InitArg(CLASS_INITIALIZER_POS, 
-	     classInitializer == INVALID_POINTER?
-	     null: classInitializer->ToWord());
+  if (classInitializer == INVALID_POINTER) {
+    b->InitArg(CLASS_INITIALIZER_POS, null);
+  } else {
+    b->InitArg(CLASS_INITIALIZER_POS, classInitializer->ToWord());
+    Future *future = lock->Acquire(); // indicate pending initialization
+    Assert(future == INVALID_POINTER); future = future;
+  }
   return static_cast<Class *>(b);
 }
 
@@ -147,4 +260,31 @@ Class *Class::GetSuperClass() {
   Class *super = Class::FromWord(wSuper);
   Assert(super != INVALID_POINTER);
   return super;
+}
+
+Worker::Result Class::Initialize(Future *future) {
+  word wClassInitializer = GetArg(CLASS_INITIALIZER_POS);
+  if (wClassInitializer == null) {
+    Scheduler::currentData = future->ToWord();
+    return Worker::REQUEST;
+  }
+  future->RemoveFromWaitQueue(Scheduler::GetCurrentThread());
+  ReplaceArg(CLASS_INITIALIZER_POS, 0);
+  word args;
+  switch (Scheduler::nArgs) {
+  case 0:
+    args = Store::IntToWord(0);
+    break;
+  case Scheduler::ONE_ARG:
+    args = Scheduler::currentArgs[0];
+    break;
+  default:
+    Block *b = Store::AllocBlock(ARGS_LABEL, Scheduler::nArgs);
+    for (u_int i = Scheduler::nArgs; i--; )
+      b->InitArg(i, Scheduler::currentArgs[i]);
+    args = b->ToWord();
+    break;
+  }
+  InitializeClassWorker::PushFrame(this, Scheduler::nArgs, args);
+  return Scheduler::PushCall(wClassInitializer);
 }

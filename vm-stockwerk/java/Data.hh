@@ -21,6 +21,7 @@
 #include <cstring>
 #include "generic/Closure.hh"
 #include "generic/Transients.hh"
+#include "generic/Worker.hh"
 
 typedef u_char u_int8;
 typedef short s_int16; //--** ensure that this is always 16-bit
@@ -99,6 +100,8 @@ protected:
 public:
   using Block::ToWord;
 
+  static void Init();
+
   static Class *New(class ClassInfo *classInfo);
   static Class *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -142,6 +145,7 @@ public:
   Closure *GetStaticMethod(u_int index) {
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
   }
+  Worker::Result Initialize(Future *future);
 };
 
 class DllExport BaseType: protected Type {
