@@ -590,8 +590,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 
-	fun translate () (desc, component as (imports, (body, _))) =
+	fun translate () (desc, component as (imports, (body, exportSign))) =
 	    (init ["Test"];
 	     Assert.assert (List.length imports = 0);   (*--** implement *)
-	     genBody body; close())
+	     genBody body;
+	     (close(), exportSign))
     end

@@ -167,7 +167,8 @@ signature IL =
 	  | GlobalMethod of
 	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
-	type program = decl list
+	type sign = FlatGrammar.sign
+	type program = decl list * sign
 	type t = program
 
 	val outputProgram: TextIO.outstream * program -> unit

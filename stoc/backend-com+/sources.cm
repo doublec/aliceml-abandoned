@@ -1,7 +1,7 @@
 Group
 
-    structure CodeGenPhase
-    structure IL
+    functor MakeComPlusTarget
+    functor MakeBackendComPlus
 
 is
 
@@ -10,7 +10,6 @@ is
     ../common/id-stamp.cm
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
-    ../backend-common/liveness-analysis-phase.cm
 
     IL.sig
     IL.sml
@@ -22,3 +21,4 @@ is
     CodeStore.sml
     CODE_GEN_PHASE.sig
     CodeGenPhase.sml
+    MakeBackendComPlus.sml

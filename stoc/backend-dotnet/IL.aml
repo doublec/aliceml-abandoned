@@ -167,7 +167,8 @@ structure IL :> IL =
 	  | GlobalMethod of
 	    id * isPublic * ty list * ty * isEntrypoint * locals * instr list
 
-	type program = decl list
+	type sign = FlatGrammar.sign
+	type program = decl list * sign
 	type t = program
 
 	(* Output to File *)
@@ -639,9 +640,10 @@ structure IL :> IL =
 	     outputLocals (q, locals); outputInstrs (q, instrs, nil);
 	     output (q, "}\n"))
 
-	fun outputProgram (q, [decl]) = outputDecl (q, decl)
-	  | outputProgram (q, decl::declr) =
-	    (outputDecl (q, decl); output1 (q, #"\n");
-	     outputProgram (q, declr))
-	  | outputProgram (_, nil) = ()
+	fun outputDecls (q, [decl]) = outputDecl (q, decl)
+	  | outputDecls (q, decl::declr) =
+	    (outputDecl (q, decl); output1 (q, #"\n"); outputDecls (q, declr))
+	  | outputDecls (_, nil) = ()
+
+	fun outputProgram (q, (decls, _)) = outputDecls (q, decls)
     end

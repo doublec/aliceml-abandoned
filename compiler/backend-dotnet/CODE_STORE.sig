@@ -47,5 +47,5 @@ signature CODE_STORE =
 	val saveRegState: unit -> savedRegState
 	val restoreRegState: savedRegState -> unit
 	val closeMethod: unit -> unit
-	val close: unit -> IL.program
+	val close: unit -> IL.decl list
     end
