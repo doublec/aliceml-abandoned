@@ -129,7 +129,7 @@ struct
 
 	fun signFromInf inf = SOME (Signature.fromSig (Inf.asSig inf))
 
-	functor Eval(val url: Url.t val component: component signature S): S =
+	functor Eval(val component: component val url: Url.t signature S): S =
 	    let
 		structure Sig = Reflect.ReflectSig(signature S = S)
 		val str = eval (url, component)
