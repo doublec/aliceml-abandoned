@@ -36,6 +36,7 @@ extern word UnsafeIO(void);
 extern word UnsafeComponent(void);
 extern word UnsafeOS(void);
 extern word UnsafeConfig(void);
+extern word UnsafeDebug(void);
 
 static prim_table builtins[] =
 { { "lib/utility/UnsafeMkRefMap", UnsafeMkRefMap},
@@ -44,6 +45,7 @@ static prim_table builtins[] =
   { "lib/system/UnsafeComponent", UnsafeComponent},
   { "lib/system/UnsafeOS", UnsafeOS},
   { "lib/system/UnsafeConfig", UnsafeConfig},
+  { "lib/system/UnsafeDebug", UnsafeDebug},
   {NULL, NULL} };
 
 static inline
@@ -91,8 +93,8 @@ int main(int argc, char *argv[]) {
   else {
     // Link and Execute Component
     // to be done: Argument transfer to app
-    Chunk *rootUrl  = NewChunk(argv[1]); BootLinker::Print(rootUrl);
-    Chunk *bootUrl  = NewChunk("lib/system/Boot"); BootLinker::Print(bootUrl);
+    Chunk *rootUrl  = NewChunk(argv[1]);
+    Chunk *bootUrl  = NewChunk("lib/system/Boot");
     word urlWord    = rootUrl->ToWord();
     RootSet::Add(urlWord);
     word module = BootLinker::Link(bootUrl); // might yield GC
