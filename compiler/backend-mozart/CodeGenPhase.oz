@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000-2001
+%%%   Leif Kornstaedt, 2000-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -22,10 +22,6 @@ import
 export
    'CodeGenPhase$': CodeGenPhase
 define
-   fun {TrInfo '#'(region: Region ...)}
-      Region
-   end
-
    fun {TrName Name}
       {Record.map Name VirtualString.toAtom}
    end
@@ -42,12 +38,18 @@ define
    end
 
    fun {TrId 'Id'(Info Stamp Name)}
-      'Id'({TrInfo Info} Stamp {TrName Name})
+      'Id'(Info Stamp {TrName Name})
    end
 
    fun {TrIdDef IdDef}
       case IdDef of 'IdDef'(Id) then 'IdDef'({TrId Id})
       [] 'Wildcard' then 'Wildcard'
+      end
+   end
+
+   fun {TrIdRef IdRef}
+      case IdRef of 'IdRef'(Id) then 'IdRef'({TrId Id})
+      [] 'LastIdRef'(Id) then 'LastIdRef'({TrId Id})
       end
    end
 
@@ -74,32 +76,34 @@ define
    end
 
    proc {TrStm Stm Hd Tl ShareDict}
-      case Stm of 'ValDec'(Info IdDef Exp) then
-	 Hd = 'ValDec'({TrInfo Info} {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
-      [] 'RefDec'(Info IdDef Id) then
-	 Hd = 'RefDec'({TrInfo Info} {TrIdDef IdDef} {TrId Id})|Tl
-      [] 'TupDec'(Info IdDefs Id) then
-	 Hd = 'TupDec'({TrInfo Info} {Record.map IdDefs TrIdDef} {TrId Id})|Tl
-      [] 'ProdDec'(Info LabelIdDefVec Id) then
-	 Hd = 'ProdDec'({TrInfo Info}
+      case Stm of 'LastUse'(Info Ids) then
+	 Hd = 'LastUse'(Info {Record.map Ids TrId})|Tl
+      [] 'ValDec'(Info IdDef Exp) then
+	 Hd = 'ValDec'(Info {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
+      [] 'RefDec'(Info IdDef IdRef) then
+	 Hd = 'RefDec'(Info {TrIdDef IdDef} {TrIdRef IdRef})|Tl
+      [] 'TupDec'(Info IdDefs IdRef) then
+	 Hd = 'TupDec'(Info {Record.map IdDefs TrIdDef} {TrIdRef IdRef})|Tl
+      [] 'ProdDec'(Info LabelIdDefVec IdRef) then
+	 Hd = 'ProdDec'(Info
 			{Record.map LabelIdDefVec
 			 fun {$ Label#IdDef}
 			    {TrLabel Label}#{TrIdDef IdDef}
-			 end} {TrId Id})|Tl
-      [] 'RaiseStm'(Info Id) then
-	 Hd = 'RaiseStm'({TrInfo Info} {TrId Id})|Tl
-      [] 'ReraiseStm'(Info Id) then
-	 Hd = 'ReraiseStm'({TrInfo Info} {TrId Id})|Tl
+			 end} {TrIdRef IdRef})|Tl
+      [] 'RaiseStm'(Info IdRef) then
+	 Hd = 'RaiseStm'(Info {TrIdRef IdRef})|Tl
+      [] 'ReraiseStm'(Info IdRef) then
+	 Hd = 'ReraiseStm'(Info {TrIdRef IdRef})|Tl
       [] 'TryStm'(Info TryBody IdDef1 IdDef2 HandleBody) then
-	 Hd = 'TryStm'({TrInfo Info} {TrBody TryBody $ nil ShareDict}
+	 Hd = 'TryStm'(Info {TrBody TryBody $ nil ShareDict}
 		       {TrIdDef IdDef1} {TrIdDef IdDef2}
 		       {TrBody HandleBody $ nil ShareDict})|Tl
       [] 'EndTryStm'(Info Body) then
-	 Hd = 'EndTryStm'({TrInfo Info} {TrBody Body $ nil ShareDict})|Tl
+	 Hd = 'EndTryStm'(Info {TrBody Body $ nil ShareDict})|Tl
       [] 'EndHandleStm'(Info Body) then
-	 Hd = 'EndHandleStm'({TrInfo Info} {TrBody Body $ nil ShareDict})|Tl
-      [] 'TestStm'(Info Id Tests Body) then
-	 Hd = 'TestStm'({TrInfo Info} {TrId Id}
+	 Hd = 'EndHandleStm'(Info {TrBody Body $ nil ShareDict})|Tl
+      [] 'TestStm'(Info IdRef Tests Body) then
+	 Hd = 'TestStm'(Info {TrIdRef IdRef}
 			case Tests of 'LitTests'(LitBodyVec) then
 			   'LitTests'({Record.map LitBodyVec
 				       fun {$ Lit#Body}
@@ -114,8 +118,9 @@ define
 				       end})
 			[] 'ConTests'(ConBodyVec) then
 			   'ConTests'({Record.map ConBodyVec
-				       fun {$ Id#Args#Body}
-					  {TrId Id}#{TrArgs Args TrIdDef}#
+				       fun {$ IdRef#Args#Body}
+					  {TrIdRef IdRef}#
+					  {TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
 			[] 'VecTests'(VecBodyVec) then
@@ -129,56 +134,55 @@ define
       [] 'SharedStm'(Info Body Stamp) then
 	 case {Dictionary.condGet ShareDict Stamp unit} of unit then NewStm in
 	    {Dictionary.put ShareDict Stamp NewStm}
-	    NewStm = 'SharedStm'({TrInfo Info} {TrBody Body $ nil ShareDict}
+	    NewStm = 'SharedStm'(Info {TrBody Body $ nil ShareDict}
 				 Stamp)
 	    Hd = NewStm|Tl
 	 elseof Stm then
 	    Hd = Stm|Tl
 	 end
       [] 'ReturnStm'(Info Exp) then
-	 Hd = 'ReturnStm'({TrInfo Info} {TrExp Exp ShareDict})|Tl
+	 Hd = 'ReturnStm'(Info {TrExp Exp ShareDict})|Tl
       [] 'IndirectStm'(_ BodyOptRef) then
 	 case {Access BodyOptRef} of 'SOME'(Body) then
 	    {TrBody Body Hd Tl ShareDict}
 	 end
       [] 'ExportStm'(Info Exp) then
-	 Hd = 'ExportStm'({TrInfo Info} {TrExp Exp ShareDict})|Tl
+	 Hd = 'ExportStm'(Info {TrExp Exp ShareDict})|Tl
       end
    end
 
    fun {TrExp Exp ShareDict}
-      case Exp of 'LitExp'(Info Lit) then 'LitExp'({TrInfo Info} Lit)
+      case Exp of 'LitExp'(Info Lit) then 'LitExp'(Info Lit)
       [] 'PrimExp'(Info String) then
-	 'PrimExp'({TrInfo Info} {VirtualString.toAtom String})
-      [] 'NewExp'(Info Name) then 'NewExp'({TrInfo Info} {TrName Name})
-      [] 'VarExp'(Info Id) then 'VarExp'({TrInfo Info} {TrId Id})
+	 'PrimExp'(Info {VirtualString.toAtom String})
+      [] 'NewExp'(Info Name) then 'NewExp'(Info {TrName Name})
+      [] 'VarExp'(Info IdRef) then 'VarExp'(Info {TrIdRef IdRef})
       [] 'TagExp'(Info Label N Args) then
-	 'TagExp'({TrInfo Info} {TrLabel Label} N {TrArgs Args TrId})
-      [] 'ConExp'(Info Id Args) then
-	 'ConExp'({TrInfo Info} {TrId Id} {TrArgs Args TrId})
-      [] 'RefExp'(Info Id) then 'RefExp'({TrInfo Info} {TrId Id})
-      [] 'TupExp'(Info Ids) then 'TupExp'({TrInfo Info} {Record.map Ids TrId})
-      [] 'ProdExp'(Info LabelIdVec) then
-	 'ProdExp'({TrInfo Info}
-		   {Record.map LabelIdVec
-		    fun {$ Label#Id} {TrLabel Label}#{TrId Id} end})
-      [] 'VecExp'(Info Ids) then 'VecExp'({TrInfo Info} {Record.map Ids TrId})
+	 'TagExp'(Info {TrLabel Label} N {TrArgs Args TrIdRef})
+      [] 'ConExp'(Info IdRef Args) then
+	 'ConExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
+      [] 'RefExp'(Info IdRef) then 'RefExp'(Info {TrIdRef IdRef})
+      [] 'TupExp'(Info IdRefs) then 'TupExp'(Info {Record.map IdRefs TrIdRef})
+      [] 'ProdExp'(Info LabelIdRefVec) then
+	 'ProdExp'(Info
+		   {Record.map LabelIdRefVec
+		    fun {$ Label#IdRef} {TrLabel Label}#{TrIdRef IdRef} end})
+      [] 'VecExp'(Info IdRefs) then 'VecExp'(Info {Record.map IdRefs TrIdRef})
       [] 'FunExp'(Info Stamp Flags Args Body) then
-	 'FunExp'({TrInfo Info} Stamp {Map Flags TrFunFlag}
+	 'FunExp'(Info Stamp {Map Flags TrFunFlag}
 		  {TrArgs Args TrIdDef} {TrBody Body $ nil ShareDict})
-      [] 'PrimAppExp'(Info String Ids) then
-	 'PrimAppExp'({TrInfo Info} {VirtualString.toAtom String}
-		      {Record.map Ids TrId})
-      [] 'VarAppExp'(Info Id Args) then
-	 'VarAppExp'({TrInfo Info} {TrId Id} {TrArgs Args TrId})
-      [] 'SelAppExp'(Info Prod Label N Id) then
-	 'SelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N {TrId Id})
-      [] 'LazySelAppExp'(Info Prod Label N Id) then
-	 'LazySelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N
-			 {TrId Id})
-      [] 'FunAppExp'(Info Id Stamp Args) then
-	 'FunAppExp'({TrInfo Info} {TrId Id} Stamp {TrArgs Args TrId})
-      [] 'FailExp'(Info) then 'FailExp'({TrInfo Info})
+      [] 'PrimAppExp'(Info String IdRefs) then
+	 'PrimAppExp'(Info {VirtualString.toAtom String}
+		      {Record.map IdRefs TrIdRef})
+      [] 'VarAppExp'(Info IdRef Args) then
+	 'VarAppExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
+      [] 'SelAppExp'(Info Prod Label N IdRef) then
+	 'SelAppExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
+      [] 'LazySelAppExp'(Info Prod Label N IdRef) then
+	 'LazySelAppExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
+      [] 'FunAppExp'(Info IdRef Stamp Args) then
+	 'FunAppExp'(Info {TrIdRef IdRef} Stamp {TrArgs Args TrIdRef})
+      [] 'FailExp'(Info) then 'FailExp'(Info)
       end
    end
 
@@ -191,11 +195,11 @@ define
 
    fun {TrComponent Import#Body#ExportDesc#Sign}
       {Record.map Import
-       fun {$ IdDef#Sign#U}
-	  {TrIdDef IdDef}#Sign#{VirtualString.toAtom {Url.toString U}}
+       fun {$ Id#Sign#U}
+	  {TrId Id}#Sign#{VirtualString.toAtom {Url.toString U}}
        end}#{TrBody Body $ nil {NewDictionary}}#
-      {Record.map ExportDesc fun {$ Label#Id} {TrLabel Label}#{TrId Id} end}#
-      Sign
+      {Record.map ExportDesc
+       fun {$ Label#Id} {TrLabel Label}#{TrId Id} end}#Sign
    end
 
    fun {Translate Env Desc Component} InFilename in

@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2001
+ *   Leif Kornstaedt, 1999-2002
  *   Andreas Rossberg, 1999
  *
  * Last change:
@@ -90,14 +90,9 @@ structure PickleFlatGrammar :> CODE
 	    fun outputRegion (q, region) =
 		outputPair (outputIntPair, outputIntPair) (q, region)
 	in
-	    fun outputIdInfo (q, info: id_info) =
-		outputRegion (q, #region info)
-
-	    fun outputStmInfo (q, info: stm_info) =
-		outputRegion (q, #region info)
-
-	    fun outputExpInfo (q, info: exp_info) =
-		outputRegion (q, #region info)
+	    fun outputIdInfo (q, info: id_info) = outputRegion (q, info)
+	    fun outputStmInfo (q, info: stm_info) = outputRegion (q, info)
+	    fun outputExpInfo (q, info: exp_info) = outputRegion (q, info)
 	end
 
 	fun outputLit (q, WordLit w) =
@@ -133,6 +128,11 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "IdDef", 1); outputId (q, id))
 	  | outputIdDef (q, Wildcard) = ignore (outputAtom (q, "Wildcard"))
 
+	fun outputIdRef (q, IdRef id) =
+	    (outputTuple (q, "IdRef", 1); outputId (q, id))
+	  | outputIdRef (q, LastIdRef id) =
+	    (outputTuple (q, "LastIdRef", 1); outputId (q, id))
+
 	fun outputFunFlag (q, PrintName s) =
 	    (outputTuple (q, "PrintName", 1); ignore (outputAtom (q, s)))
 	  | outputFunFlag (q, AuxiliaryOf stamp) =
@@ -154,19 +154,22 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "Product", 1);
 	     outputVector outputLabel (q, labels))
 
-	fun outputStm (q, ValDec (info, idDef, exp)) =
+	fun outputStm (q, LastUse (info, ids)) =
+	    (outputTuple (q, "LastUse", 2); outputVector outputId (q, ids);
+	     outputStmInfo (q, info))
+	  | outputStm (q, ValDec (info, idDef, exp)) =
 	    (outputTuple (q, "ValDec", 3); outputExp (q, exp);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))
-	  | outputStm (q, RefDec (info, idDef, id)) =
-	    (outputTuple (q, "RefDec", 3); outputId (q, id);
+	  | outputStm (q, RefDec (info, idDef, idRef)) =
+	    (outputTuple (q, "RefDec", 3); outputIdRef (q, idRef);
 	     outputIdDef (q, idDef); outputStmInfo (q, info))
-	  | outputStm (q, TupDec (info, idDefs, id)) =
-	    (outputTuple (q, "TupDec", 3); outputId (q, id);
+	  | outputStm (q, TupDec (info, idDefs, idRef)) =
+	    (outputTuple (q, "TupDec", 3); outputIdRef (q, idRef);
 	     outputVector outputIdDef (q, idDefs); outputStmInfo (q, info))
-	  | outputStm (q, ProdDec (info, labelIdDefVec, id)) =
-	    (outputTuple (q, "ProdDec", 3); outputId (q, id);
+	  | outputStm (q, ProdDec (info, labelIdDefVec, idRef)) =
+	    (outputTuple (q, "ProdDec", 3); outputIdRef (q, idRef);
 	     outputVector (outputPair (outputLabel, outputIdDef))
-	     (q, labelIdDefVec);
+			  (q, labelIdDefVec);
 	     outputStmInfo (q, info))
 	  | outputStm (q, TryStm (info, tryBody, idDef1, idDef2, handleBody)) =
 	    (outputTuple (q, "TryStm", 5); outputBody (q, handleBody);
@@ -178,14 +181,15 @@ structure PickleFlatGrammar :> CODE
 	  | outputStm (q, EndHandleStm (info, body)) =
 	    (outputTuple (q, "EndHandleStm", 2); outputBody (q, body);
 	     outputStmInfo (q, info))
-	  | outputStm (q, TestStm (info, id, tests, body)) =
+	  | outputStm (q, TestStm (info, idRef, tests, body)) =
 	    (outputTuple (q, "TestStm", 4); outputBody (q, body);
-	     outputTests (q, tests); outputId (q, id); outputStmInfo (q, info))
-	  | outputStm (q, RaiseStm (info, id)) =
-	    (outputTuple (q, "RaiseStm", 2); outputId (q, id);
+	     outputTests (q, tests); outputIdRef (q, idRef);
 	     outputStmInfo (q, info))
-	  | outputStm (q, ReraiseStm (info, id)) =
-	    (outputTuple (q, "ReraiseStm", 2); outputId (q, id);
+	  | outputStm (q, RaiseStm (info, idRef)) =
+	    (outputTuple (q, "RaiseStm", 2); outputIdRef (q, idRef);
+	     outputStmInfo (q, info))
+	  | outputStm (q, ReraiseStm (info, idRef)) =
+	    (outputTuple (q, "ReraiseStm", 2); outputIdRef (q, idRef);
 	     outputStmInfo (q, info))
 	  | outputStm (q, SharedStm (info, body, stamp)) =
 	    (case StampMap.lookup (visited, stamp) of
@@ -218,7 +222,7 @@ structure PickleFlatGrammar :> CODE
 					    outputBody)) (q, tagBodyVec))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
-	     outputVector (outputTriple (outputId, outputArgs outputIdDef,
+	     outputVector (outputTriple (outputIdRef, outputArgs outputIdDef,
 					 outputBody)) (q, conBodyVec))
 	  | outputTests (q, VecTests vecBodyVec) =
 	    (outputTuple (q, "VecTests", 1);
@@ -233,50 +237,52 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, NewExp (info, name)) =
 	    (outputTuple (q, "NewExp", 2); outputName (q, name);
 	     outputExpInfo (q, info))
-	  | outputExp (q, VarExp (info, id)) =
-	    (outputTuple (q, "VarExp", 2); outputId (q, id);
+	  | outputExp (q, VarExp (info, idRef)) =
+	    (outputTuple (q, "VarExp", 2); outputIdRef (q, idRef);
 	     outputExpInfo (q, info))
 	  | outputExp (q, TagExp (info, label, n, args)) =
-	    (outputTuple (q, "TagExp", 4); outputArgs outputId (q, args);
+	    (outputTuple (q, "TagExp", 4); outputArgs outputIdRef (q, args);
 	     outputInt (q, n); outputLabel (q, label); outputExpInfo (q, info))
-	  | outputExp (q, ConExp (info, id, args)) =
-	    (outputTuple (q, "ConExp", 3); outputArgs outputId (q, args);
-	     outputId (q, id); outputExpInfo (q, info))
-	  | outputExp (q, RefExp (info, id)) =
-	    (outputTuple (q, "RefExp", 2); outputId (q, id);
+	  | outputExp (q, ConExp (info, idRef, args)) =
+	    (outputTuple (q, "ConExp", 3); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef); outputExpInfo (q, info))
+	  | outputExp (q, RefExp (info, idRef)) =
+	    (outputTuple (q, "RefExp", 2); outputIdRef (q, idRef);
 	     outputExpInfo (q, info))
-	  | outputExp (q, TupExp (info, ids)) =
-	    (outputTuple (q, "TupExp", 2); outputVector outputId (q, ids);
-	     outputExpInfo (q, info))
-	  | outputExp (q, ProdExp (info, labelIdVec)) =
+	  | outputExp (q, TupExp (info, idRefs)) =
+	    (outputTuple (q, "TupExp", 2);
+	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
+	  | outputExp (q, ProdExp (info, labelIdRefVec)) =
 	    (outputTuple (q, "ProdExp", 2);
-	     outputVector (outputPair (outputLabel, outputId)) (q, labelIdVec);
-	     outputExpInfo (q, info))
-	  | outputExp (q, VecExp (info, ids)) =
-	    (outputTuple (q, "VecExp", 2); outputVector outputId (q, ids);
-	     outputExpInfo (q, info))
+	     outputVector (outputPair (outputLabel, outputIdRef))
+			  (q, labelIdRefVec); outputExpInfo (q, info))
+	  | outputExp (q, VecExp (info, idRefs)) =
+	    (outputTuple (q, "VecExp", 2);
+	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
 	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
 	    (outputTuple (q, "FunExp", 5); outputBody (q, body);
 	     outputArgs outputIdDef (q, args);
 	     outputList outputFunFlag (q, flags);
 	     outputStamp (q, stamp); outputExpInfo (q, info))
-	  | outputExp (q, PrimAppExp (info, name, ids)) =
-	    (outputTuple (q, "PrimAppExp", 3); outputVector outputId (q, ids);
+	  | outputExp (q, PrimAppExp (info, name, idRefs)) =
+	    (outputTuple (q, "PrimAppExp", 3);
+	     outputVector outputIdRef (q, idRefs);
 	     outputAtom (q, name); outputExpInfo (q, info))
-	  | outputExp (q, VarAppExp (info, id, args)) =
-	    (outputTuple (q, "VarAppExp", 3); outputArgs outputId (q, args);
-	     outputId (q, id); outputExpInfo (q, info))
-	  | outputExp (q, SelAppExp (info, prod, label, n, id)) =
-	    (outputTuple (q, "SelAppExp", 5); outputId (q, id);
+	  | outputExp (q, VarAppExp (info, idRef, args)) =
+	    (outputTuple (q, "VarAppExp", 3); outputArgs outputIdRef (q, args);
+	     outputIdRef (q, idRef); outputExpInfo (q, info))
+	  | outputExp (q, SelAppExp (info, prod, label, n, idRef)) =
+	    (outputTuple (q, "SelAppExp", 5); outputIdRef (q, idRef);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
 	     outputExpInfo (q, info))
-	  | outputExp (q, LazySelAppExp (info, prod, label, n, id)) =
-	    (outputTuple (q, "LazySelAppExp", 5); outputId (q, id);
+	  | outputExp (q, LazySelAppExp (info, prod, label, n, idRef)) =
+	    (outputTuple (q, "LazySelAppExp", 5); outputIdRef (q, idRef);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
 	     outputExpInfo (q, info))
-	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
-	    (outputTuple (q, "FunAppExp", 4); outputArgs outputId (q, args);
-	     outputStamp (q, stamp); outputId (q, id); outputExpInfo (q, info))
+	  | outputExp (q, FunAppExp (info, idRef, stamp, args)) =
+	    (outputTuple (q, "FunAppExp", 4); outputArgs outputIdRef (q, args);
+	     outputStamp (q, stamp); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
 	  | outputExp (q, FailExp info) =
 	    (outputTuple (q, "FailExp", 1); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
@@ -308,7 +314,7 @@ structure PickleFlatGrammar :> CODE
 		StampMap.deleteAll visited;
 		outputPair (outputString,
 			    outputQuadruple (outputVector
-					     (outputTriple (outputIdDef,
+					     (outputTriple (outputId,
 							    outputUnit',
 							    outputUrl)),
 					     outputBody,
