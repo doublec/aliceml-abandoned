@@ -10,3 +10,5 @@ cvs:
 	autoconf
 	libtoolize
 	automake --add-missing
+
+.PHONY: cvs
