@@ -11,7 +11,7 @@ Core language:
 - record update
 + vector constants and patterns
 - list and vector comprehensions
-* generalized rec
++ generalized rec
 + pattern guards
 + alternative patterns
 - negated patterns
