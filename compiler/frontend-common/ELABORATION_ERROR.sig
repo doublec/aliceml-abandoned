@@ -30,10 +30,10 @@ signature ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
-	| ConPatFewArgs		of longid
-	| ConPatManyArgs	of longid
-	| ConPatUnify		of unify_error
 	| VecPatUnify		of unify_error
+	| AppPatArrTyp		of typ
+	| AppPatFunUnify	of unify_error
+	| AppPatUnify		of unify_error
 	| AsPatUnify		of unify_error
 	| AltPatUnify		of unify_error
 	| GuardPatUnify		of unify_error

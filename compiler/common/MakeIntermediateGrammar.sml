@@ -42,7 +42,7 @@ UNFINISHED: obsolete after bootstrapping:
 			(* all labels distinct *)
 	| SelExp    of info * lab		(* field selector *)
 	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * id * exp		(* function / functor *)
+	| FunExp    of info * match list	(* function / functor *)
 	| AppExp    of info * exp * exp		(* application *)
 	| AdjExp    of info * exp * exp		(* record adjunction *)
 	| UpExp     of info * exp		(* up cast *)
@@ -66,14 +66,16 @@ UNFINISHED: obsolete after bootstrapping:
 	  WildPat   of info			(* wildcard *)
 	| LitPat    of info * lit		(* literal *)
 	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * longid * pat option * bool (* constructed *)
+	| ConPat    of info * longid * bool	(* constructed *)
 			(* bool : is n-ary *)
 			(* pat present iff longid has arguments *)
-	| RefPat    of info * pat		(* reference *)
+	| RefPat    of info			(* reference *)
 	| TupPat    of info * pat list		(* tuple *)
 	| RowPat    of info * pat field list	(* record *)
 			(* all labels distinct *)
 	| VecPat    of info * pat list		(* vector *)
+	| AppPat    of info * pat * pat		(* constructor application *)
+			(* first must be ConPat or RefPat *)
 	| AsPat     of info * pat * pat		(* conjunction *)
 	| AltPat    of info * pat list		(* disjunction *)
 			(* all patterns bind same ids *)
@@ -119,7 +121,7 @@ UNFINISHED: obsolete after bootstrapping:
       | infoExp(RowExp(i,_))		= i
       | infoExp(SelExp(i,_))		= i
       | infoExp(VecExp(i,_))		= i
-      | infoExp(FunExp(i,_,_))		= i
+      | infoExp(FunExp(i,_))		= i
       | infoExp(AppExp(i,_,_))		= i
       | infoExp(AdjExp(i,_,_))		= i
       | infoExp(UpExp(i,_))		= i
@@ -139,11 +141,12 @@ UNFINISHED: obsolete after bootstrapping:
     fun infoPat(WildPat(i))		= i
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
-      | infoPat(ConPat(i,_,_,_))	= i
-      | infoPat(RefPat(i,_))		= i
+      | infoPat(ConPat(i,_,_))		= i
+      | infoPat(RefPat(i))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(RowPat(i,_))		= i
       | infoPat(VecPat(i,_))		= i
+      | infoPat(AppPat(i,_,_))		= i
       | infoPat(AsPat(i,_,_))		= i
       | infoPat(AltPat(i,_))		= i
       | infoPat(NegPat(i,_))		= i

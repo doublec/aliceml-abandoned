@@ -52,10 +52,8 @@ structure Debug :> DEBUG =
 	fun patToString (WildPat _) = "_"
 	  | patToString (LitPat (_, lit)) = litToString lit
 	  | patToString (VarPat (_, id)) = idToString id
-	  | patToString (ConPat (_, longid, NONE, _)) = longidToString longid
-	  | patToString (ConPat (_, longid, SOME pat, _)) =
-	    "(" ^ longidToString longid ^ " " ^ patToString pat ^ ")"
-	  | patToString (RefPat (_, pat)) = "(ref " ^ patToString pat ^ ")"
+	  | patToString (ConPat (_, longid, _)) = longidToString longid
+	  | patToString (RefPat _) = "ref"
 	  | patToString (TupPat (_, pats)) =
 	    "(" ^ listToString patToString pats ^ ")"
 	  | patToString (RowPat (info, patFields)) =
@@ -80,6 +78,8 @@ structure Debug :> DEBUG =
 	    end
 	  | patToString (VecPat (_, pats)) =
 	    "#[" ^ listToString patToString pats ^ "]"
+	  | patToString (AppPat (_, pat1, pat2)) =
+	    "(" ^ patToString pat1 ^ " " ^ patToString pat2 ^ "]"
 	  | patToString (AsPat (_, pat1, pat2)) =
 	    "(" ^ patToString pat1 ^ " as " ^ patToString pat2 ^ ")"
 	  | patToString (AltPat (_, pats)) =

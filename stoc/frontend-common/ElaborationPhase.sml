@@ -214,12 +214,12 @@ val _=print "\n"
 	    ( t', O.VarExp(typInfo(i,t'), longid') )
 	end
 
-      | elabExp(E, I.ConExp(i, n, longid)) =
+      | elabExp(E, I.ConExp(i, k, longid)) =
 	let
 	    val (t,longid') = elabValLongid(E, longid)
 	    val  t'         = Type.instance t
 	in
-	    ( t', O.ConExp(typInfo(i,t'), n, longid') )
+	    ( t', O.ConExp(typInfo(i,t'), k, longid') )
 	end
 
       | elabExp(E, I.RefExp(i)) =
@@ -266,13 +266,13 @@ val _=print "\n"
 	    ( t, O.VecExp(typInfo(i,t), exps') )
 	end
 
-      | elabExp(E, I.FunExp(i, id, exp)) =
+      | elabExp(E, I.FunExp(i, matchs)) =
 	let
-	    val (t1,p,id') = elabValId_bind(E, Inf.empty(), Inf.VALUE, id)
-	    val (t2,exp')  = elabExp(E, exp)
-	    val  t         = Type.inArrow(t1,t2)
+	    val  t1          = Type.unknown Type.STAR
+	    val (t2,matchs') = elabMatchs(E, t1, matchs)
+	    val  t           = Type.inArrow(t1,t2)
 	in
-	    ( t, O.FunExp(typInfo(i,t), id', exp') )
+	    ( t, O.FunExp(typInfo(i,t), matchs') )
 	end
 
       | elabExp(E, I.AppExp(i, exp1, exp2)) =
@@ -487,43 +487,6 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	    ( t, O.VarPat(typInfo(i,t), id') )
 	end
 
-      | elabPat(E, s, I.ConPat(i, longid, pats)) =
-	let
-	    fun elabArgs(t1, []) =
-		if Type.isArrow t1 then
-		    error(i, E.ConPatFewArgs(longid))
-		else
-		    t1
-
-	      | elabArgs(t1, t2::ts) =
-		let
-		    val  t11  = Type.unknown Type.STAR
-		    val  t12  = Type.unknown Type.STAR
-		    val  t1'  = Type.inArrow(t11,t12)
-		    val  _    = Type.unify(t1',t1) handle Type.Unify(t3,t4) =>
-				    error(i, E.ConPatManyArgs(longid))
-		    val  _    = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
-				    error(i, E.ConPatUnify(t11, t2, t3, t4))
-		in
-		    elabArgs(t12, ts)
-		end
-
-	    val (t1,longid') = elabValLongid(E, longid)
-	    val  t1'         = Type.instance t1
-	    val (ts,pats')   = elabPats(E, s, pats)
-	    val  t           = elabArgs(t1',ts)
-	in
-	    ( t, O.ConPat(typInfo(i,t), longid', pats') )
-	end
-
-      | elabPat(E, s, I.RefPat(i, pat)) =
-	let
-	    val (t1,pat') = elabPat(E, s, pat)
-	    val  t        = refTyp(E, t1)
-	in
-	    ( t, O.RefPat(typInfo(i,t), pat') )
-	end
-
       | elabPat(E, s, I.TupPat(i, pats)) =
 	let
 	    val (ts,pats') = elabPats(E, s, pats)
@@ -607,9 +570,54 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	    ( t, O.WithPat(typInfo(i,t), pat', decs') )
 	end
 
+      | elabPat(E, s, pat as ( I.ConPat _ | I.RefPat _ | I.AppPat _ )) =
+	let
+	    val tpat' as (t,pat') = elabAppPat(E, s, pat)
+	in
+	    if Type.isArrow t then
+		error(I.infoPat pat, E.AppPatArrTyp(t))
+	    else
+		tpat'
+	end
+
+
+    and elabAppPat(E, s, I.ConPat(i, k, longid)) =
+	let
+	    val (t,longid') = elabValLongid(E, longid)
+	    val  t'         = Type.instance t
+	in
+	    ( t', O.ConPat(typInfo(i,t'), k, longid') )
+	end
+
+      | elabAppPat(E, s, I.RefPat(i)) =
+	let
+	    val ta = Type.unknown(Type.STAR)
+	    val t  = Type.inArrow(ta, refTyp(E, ta))
+	in
+	    ( t, O.RefPat(typInfo(i,t)) )
+	end
+
+      | elabAppPat(E, s, I.AppPat(i, pat1, pat2)) =
+	let
+	    val (t1,pat1') = elabAppPat(E, s, pat1)
+	    val (t2,pat2') = elabPat(E, s, pat2)
+	    val  t11       = Type.unknown Type.STAR
+	    val  t12       = Type.unknown Type.STAR
+	    val  t1'       = Type.inArrow(t11,t12)
+	    val  _         = Type.unify(t1',t1) handle Type.Unify(t3,t4) =>
+				error(i, E.AppPatFunUnify(t1', t1, t3, t4))
+	    val  _         = Type.unify(t11,t2) handle Type.Unify(t3,t4) =>
+				error(i, E.AppPatUnify(t11, t2, t3, t4))
+	in
+	    ( t12, O.AppPat(typInfo(i,t12), pat1', pat2') )
+	end
+
+      | elabAppPat(E, s, pat) = raise Crash.Crash "Elab.elabAppPat: invalid con"
+
 
     and elabPats(E, s, pats) =
 	ListPair.unzip(List.map (fn pat => elabPat(E,s,pat)) pats)
+
 
 
   (* Types *)

@@ -267,9 +267,9 @@ structure InfPrivate =
      * substitution for a subpath then there also is a substitution for
      * the complete path.
      *
-     * Realisations need not be fully expanded (would be nice to have this
-     * property because it would make substitution more efficient, but
-     * full expansion is difficult to achieve for the intersect function).
+     * Realisations need not be idempotent (fully expanded). Would be nice
+     * to have this property because it would make substitution more efficient,
+     * but full expansion is difficult to achieve for the intersect function).
      *)
 
     and realise (rea: rea, j as ref j')	= j := realise'(rea, j')

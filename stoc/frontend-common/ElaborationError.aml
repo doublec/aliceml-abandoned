@@ -41,10 +41,10 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| MatchPatUnify		of unify_error
 	| MatchExpUnify		of unify_error
 	(* Patterns *)
-	| ConPatFewArgs		of longid
-	| ConPatManyArgs	of longid
-	| ConPatUnify		of unify_error
 	| VecPatUnify		of unify_error
+	| AppPatArrTyp		of typ
+	| AppPatFunUnify	of unify_error
+	| AppPatUnify		of unify_error
 	| AsPatUnify		of unify_error
 	| AltPatUnify		of unify_error
 	| GuardPatUnify		of unify_error
@@ -264,18 +264,18 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["inconsistent","types","in","branches","of","`case':"],
 	  par["does","not","agree","with","previous","type"], ue)
-      | ppError(ConPatFewArgs y) =
-	  par["missing","argument","to","constructor",ppLongid y,"in","pattern"]
-      | ppError(ConPatManyArgs y) =
-	  par["surplus","argument","to","constructor",ppLongid y,"in","pattern"]
-      | ppError(ConPatUnify ue) =
-	ppUnify4(
-	  par["ill-typed","constructor","argument:"],
-	  par["does","not","match","argument","type"], ue)
       | ppError(VecPatUnify ue) =
 	ppUnify2(
 	  par["inconsistent","types","in","vector","pattern:"],
 	  par["does","not","agree","with","previous","element","type"], ue)
+      | ppError(AppPatArrTyp t) =
+	  par["missing","argument","to","constructor","in","pattern"]
+      | ppError(AppPatFunUnify ue) =
+	  par["surplus","argument","to","constructor","in","pattern"]
+      | ppError(AppPatUnify ue) =
+	ppUnify4(
+	  par["ill-typed","constructor","argument:"],
+	  par["does","not","match","argument","type"], ue)
       | ppError(AsPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","`as'","pattern:"],

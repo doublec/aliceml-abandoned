@@ -40,7 +40,7 @@ UNFINISHED: obsolete after bootstrapping:
 			(* all labels distinct *)
 	| SelExp    of info * lab		(* field selector *)
 	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * id * exp		(* function / functor *)
+	| FunExp    of info * match list	(* function / functor *)
 	| AppExp    of info * exp * exp		(* application *)
 	| AdjExp    of info * exp * exp		(* record adjunction *)
 	| UpExp     of info * exp		(* up cast *)
@@ -64,14 +64,16 @@ UNFINISHED: obsolete after bootstrapping:
 	  WildPat   of info			(* wildcard *)
 	| LitPat    of info * lit		(* literal *)
 	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * longid * pat option * bool (* constructed *)
+	| ConPat    of info * longid * bool	(* constructed *)
 			(* bool : is n-ary *)
 			(* pat present iff longid has arguments *)
-	| RefPat    of info * pat		(* reference *)
+	| RefPat    of info			(* reference *)
 	| TupPat    of info * pat list		(* tuple *)
 	| RowPat    of info * pat field list	(* record *)
 			(* all labels distinct *)
 	| VecPat    of info * pat list		(* vector *)
+	| AppPat    of info * pat * pat		(* constructor application *)
+			(* first must be ConPat or RefPat *)
 	| AsPat     of info * pat * pat		(* conjunction *)
 	| AltPat    of info * pat list		(* disjunction *)
 			(* all patterns bind same ids *)
@@ -90,7 +92,7 @@ UNFINISHED: obsolete after bootstrapping:
 			 *     RefExp, TupExp, RowExp, VecExp, FunExp, AppExp
 			 * (3) AppExps may only contain ConExp or RefExp
 			 *     as first argument
-			 * (4) if an VarExp on the LHS structurally corresponds
+			 * (4) if an VarPat on the LHS structurally corresponds
 			 *     to an VarExp on the RHS then the RHS id may not
 			 *     be bound on the LHS *)
 	| RecDec    of info * dec list		(* recursive definition *)

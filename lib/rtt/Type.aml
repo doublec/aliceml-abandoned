@@ -823,9 +823,9 @@ if kind' t1' <> k2 then raise Assert.failure else
 	end
 
     (*
-     * Realisations need not be fully expanded (would be nice to have this
-     * property because it would make substitution more efficient, but
-     * full expansion is difficult to achieve for the intersect function).
+     * Realisations need not be idempotent (fully expanded). Would be nice
+     * to have this property because it would make substitution more efficient,
+     * but full expansion is difficult to achieve for the intersect function).
      *)
 
     fun realise(rea, t) =

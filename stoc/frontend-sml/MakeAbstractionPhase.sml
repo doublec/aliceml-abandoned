@@ -501,20 +501,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val i'       = infoMatch match
 		val matches' = trMatcho E (SOME match)
-
-		val (id',exp') =
-		    case matches'
-		      of [O.Match(_,O.JokPat(i),exp')]     => (inventId i, exp')
-		       | [O.Match(_,O.VarPat(i,id'),exp')] => (id',exp')
-		       | _                                 =>
-			 let
-			    val id'      = inventId i
-			    val varexp'  = O.VarExp(i, O.ShortId(i, id'))
-			 in
-			    (id', O.CaseExp(i', varexp', matches'))
-			 end
 	   in
-		O.FunExp(i, id', exp')
+		O.FunExp(i, matches')
 	   end
 
 	| PACKExp(i, longstrid) =>
@@ -564,8 +552,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SCONAtPat(i, scon)	=> O.LitPat(i, trSCon E scon)
 	 | LONGVIDAtPat(_, _, longvid as SHORTLong(i, vid as VId(i',vid'))) =>
 	   (case lookupIdStatus(E, vid')
-	      of C _ => O.ConPat(i, #1(trLongVId E longvid), [])
-	       | R   => O.RefPat(i, O.JokPat(i)) (* BUG: a real hack! *)
+	      of C k => O.ConPat(i, k, #1(trLongVId E longvid))
+	       | R   => O.RefPat(i)
 	       | V   =>
 		 let
 		    (* If inside an alternative pattern then E' contains
@@ -588,8 +576,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   )
 	 | LONGVIDAtPat(i, _, longvid) =>
 	   (case trLongVId E longvid
-	      of (longid', C _) => O.ConPat(i, longid', [])
-	       | (longid', R)   => O.RefPat(i, O.JokPat(i)) (* BUG: HACK! *)
+	      of (longid', C k) => O.ConPat(i, k, longid')
+	       | (longid', R)   => O.RefPat(i)
 	       | (longid', V)   => error(i, E.PatLongVIdVar)
 	   )
 	 | RECORDAtPat(i, patrowo) =>
@@ -701,11 +689,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val pat2' = trAtPat (E,E') atpat
 	   in
 		case pat1'
-		  of O.ConPat(i', longid, pats') =>
-			O.ConPat(i, longid, pats'@[pat2'])
-
-		   | O.RefPat(i', O.JokPat _) =>  (* BUG: a real hack! *)
-			O.RefPat(i, pat2')
+		  of ( O.ConPat _ | O.RefPat _ | O.AppPat _ ) =>
+			O.AppPat(i, pat1', pat2')
 
 		   | _ => error(i, E.AppPatNonCon)
 	   end
@@ -1331,21 +1316,32 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trFmatch_rhs E (Match(i, fmrule, fmatcho)) =
 	   let
 		val (match',arity) = trFmrule_rhs E fmrule
-		val  matches'      = trFmatcho_rhs (E,arity) fmatcho
-
-		val ids'           = List.tabulate(arity, fn _ => inventId i)
-		val exps'          = List.map(fn id' =>
+		val  matches'      = match' :: trFmatcho_rhs (E,arity) fmatcho
+		val  i'            = O.infoMatch match'
+	   in
+		if arity = 1 then
+		    O.FunExp(i', matches')
+		else
+		    let
+			val ids'     = List.tabulate(arity, fn _ => inventId i)
+			val exps'    = List.map(fn id' =>
 						O.VarExp(Source.nowhere,
 						O.ShortId(Source.nowhere, id')))
 					      ids'
-		val i'             = O.infoMatch match'
-		val tupexp'        = tupexp(i', exps')
-		val caseexp'       = O.CaseExp(i', tupexp', match'::matches')
+			val tupexp'  = tupexp(i', exps')
+			val caseexp' = O.CaseExp(i', tupexp', matches')
 
-		fun funexp    []      = caseexp'
-		  | funexp(id'::ids') = O.FunExp(i', id', funexp ids')
-	   in
-		funexp ids'
+			fun funexp    []      = caseexp'
+			  | funexp(id'::ids') =
+			    let
+				val pat'   = O.VarPat(i, id')
+				val match' = O.Match(i, pat', funexp ids')
+			    in
+				O.FunExp(i', [match'])
+			    end
+		    in
+			funexp ids'
+		    end
 	   end
 
     and trFmatcho_rhs (E,arity) fmatcho =

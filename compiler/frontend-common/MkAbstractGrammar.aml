@@ -34,7 +34,7 @@ functor MakeAbstractGrammar(type info) :>
 	| RowExp    of info * exp row		(* row (record) *)
 	| SelExp    of info * lab		(* row selector *)
 	| VecExp    of info * exp list		(* vector *)
-	| FunExp    of info * id  * exp		(* function *)
+	| FunExp    of info * match list	(* function *)
 	| AppExp    of info * exp * exp		(* application *)
 	| CompExp   of info * exp * exp		(* adjunction *)
 	| AndExp    of info * exp * exp		(* short-circuit conjunction *)
@@ -60,11 +60,12 @@ functor MakeAbstractGrammar(type info) :>
 	  JokPat    of info			(* joker (wildcard) *)
 	| LitPat    of info * lit		(* literal *)
 	| VarPat    of info * id		(* variable *)
-	| ConPat    of info * longid * pat list	(* constructor (fully applied)*)
-	| RefPat    of info * pat		(* reference *)
+	| ConPat    of info * int * longid	(* constructor (fully applied)*)
+	| RefPat    of info			(* reference (fully applied) *)
 	| TupPat    of info * pat list		(* tuple *)
 	| RowPat    of info * pat row		(* row (record) *)
 	| VecPat    of info * pat list		(* vector *)
+	| AppPat    of info * pat * pat		(* constructor application *)
 	| AsPat     of info * pat * pat		(* as (layered) pattern *)
 	| AltPat    of info * pat list		(* alternative pattern *)
 	| NegPat    of info * pat		(* negated pattern *)
@@ -180,7 +181,7 @@ functor MakeAbstractGrammar(type info) :>
       | infoExp(RowExp(i,_))		= i
       | infoExp(SelExp(i,_))		= i
       | infoExp(VecExp(i,_))		= i
-      | infoExp(FunExp(i,_,_))		= i
+      | infoExp(FunExp(i,_))		= i
       | infoExp(AppExp(i,_,_))		= i
       | infoExp(CompExp(i,_,_))		= i
       | infoExp(AndExp(i,_,_))		= i
@@ -203,10 +204,11 @@ functor MakeAbstractGrammar(type info) :>
       | infoPat(LitPat(i,_))		= i
       | infoPat(VarPat(i,_))		= i
       | infoPat(ConPat(i,_,_))		= i
-      | infoPat(RefPat(i,_))		= i
+      | infoPat(RefPat(i))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(RowPat(i,_))		= i
       | infoPat(VecPat(i,_))		= i
+      | infoPat(AppPat(i,_,_))		= i
       | infoPat(AsPat(i,_,_))		= i
       | infoPat(AltPat(i,_))		= i
       | infoPat(NegPat(i,_))		= i

@@ -112,7 +112,12 @@ structure TranslationPhase :> TRANSLATION_PHASE =
   (* Curry-convert expressions *)
 
     fun funExp(i,    [],     exp') = exp'
-      | funExp(i, id'::ids', exp') = O.FunExp(i, id', funExp(i, ids', exp'))
+      | funExp(i, id'::ids', exp') =
+	let
+	    val match' = O.Match(i, O.VarPat(i, id'), funExp(i, ids', exp'))
+	in
+	    O.FunExp(i, [match'])
+	end
 
     fun curryExp(i, (0|1), exp') = exp'
       | curryExp(i,   k,   exp') =
@@ -177,11 +182,12 @@ UNFINISHED: obsolete after bootstrapping:
     and idsPat xs' (I.JokPat(i))	= ()
       | idsPat xs' (I.LitPat(i,l))	= ()
       | idsPat xs' (I.VarPat(i,x))	= idsId trId xs' x
-      | idsPat xs' (I.ConPat(i,y,ps))	= idsPats xs' ps
-      | idsPat xs' (I.RefPat(i,p))	= idsPat xs' p
+      | idsPat xs' (I.ConPat(i,k,y))	= ()
+      | idsPat xs' (I.RefPat(i))	= ()
       | idsPat xs' (I.TupPat(i,ps))	= idsPats xs' ps
       | idsPat xs' (I.RowPat(i,r))	= idsRow idsPat xs' r
       | idsPat xs' (I.VecPat(i,ps))	= idsPats xs' ps
+      | idsPat xs' (I.AppPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
       | idsPat xs' (I.AsPat(i,p1,p2))	= ( idsPat xs' p1 ; idsPat xs' p2 )
       | idsPat xs' (I.AltPat(i,ps))	= idsPats xs' ps
       | idsPat xs' (I.NegPat(i,p))	= idsPat xs' p
@@ -231,7 +237,7 @@ UNFINISHED: obsolete after bootstrapping:
       | trExp(I.RowExp(i,r))		= O.RowExp(trInfo i, trExpRow r)
       | trExp(I.SelExp(i,a))		= O.SelExp(trInfo i, trLab a)
       | trExp(I.VecExp(i,es))		= O.VecExp(trInfo i, trExps es)
-      | trExp(I.FunExp(i,x,e))		= O.FunExp(trInfo i, trId x, trExp e)
+      | trExp(I.FunExp(i,ms))		= O.FunExp(trInfo i, trMatchs ms)
       | trExp(I.AppExp(i,e1,e2))	= O.AppExp(trInfo i, trExp e1, trExp e2)
       | trExp(I.CompExp(i,e1,e2))	= O.AdjExp(trInfo i, trExp e1, trExp e2)
       | trExp(I.AndExp(i,e1,e2))	= O.AndExp(trInfo i, trExp e1, trExp e2)
@@ -265,14 +271,14 @@ UNFINISHED: obsolete after bootstrapping:
     and trPat(I.JokPat(i))		= O.WildPat(trInfo i)
       | trPat(I.LitPat(i,l))		= O.LitPat(trInfo i, trLit l)
       | trPat(I.VarPat(i,x))		= O.VarPat(trInfo i, trId x)
-      | trPat(I.ConPat(i,y,ps))		= O.ConPat(trInfo i, trLongid y,
-						   trArgPats ps, false)
-      | trPat(I.RefPat(i,p))		= O.RefPat(trInfo i, trPat p)
+      | trPat(I.ConPat(i,k,y))		= O.ConPat(trInfo i, trLongid y, false)
+      | trPat(I.RefPat(i))		= O.RefPat(trInfo i)
       | trPat(I.TupPat(i,ps))		= O.TupPat(trInfo i, trPats ps)
       | trPat(I.RowPat(i,r))		= let val (fs',b') = trPatRow r in
 					      O.RowPat(trInfo i, fs')
 					  end
       | trPat(I.VecPat(i,ps))		= O.VecPat(trInfo i, trPats ps)
+      | trPat(I.AppPat(i,p1,p2))	= O.AppPat(trInfo i, trPat p1, trPat p2)
       | trPat(I.AsPat(i,p1,p2))		= O.AsPat(trInfo i, trPat p1, trPat p2)
       | trPat(I.AltPat(i,ps))		= O.AltPat(trInfo i, trPats ps)
       | trPat(I.NegPat(i,p))		= O.NegPat(trInfo i, trPat p)
@@ -310,7 +316,11 @@ UNFINISHED: obsolete after bootstrapping:
 					      O.AppExp(i',O.SelExp(i',trLab' a),
 						      trMod m)
 					  end
-      | trMod(I.FunMod(i,x,j,m))	= O.FunExp(trInfo i, trId' x, trMod m)
+      | trMod(I.FunMod(i,x,j,m))	= let val i' = trInfo i
+					      val p' = O.VarPat(i', trId' x)
+					      val m' = O.Match(i',p',trMod m) in
+					      O.FunExp(trInfo i, [m'])
+					  end
       | trMod(I.AppMod(i,m1,m2))	= O.AppExp(trInfo i, trMod m1, trMod m2)
       | trMod(I.AnnMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
       | trMod(I.UpMod(i,m,j))		= O.UpExp(trInfo i, trMod m)
