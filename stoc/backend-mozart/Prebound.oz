@@ -21,6 +21,13 @@ export
    BuiltinTable
    Env
 define
+   fun {NumberCompare I J}
+      if I == J then 'EQUAL'
+      elseif I < J then 'LESS'
+      else 'GREATER'
+      end
+   end
+
    fun {StringLess S1 S2}
       {VirtualString.toAtom S1} < {VirtualString.toAtom S2}   %--** inefficient
    end
@@ -59,35 +66,9 @@ define
 
    BuiltinTable =
    builtinTable(
-      '=': fun {$ X Y} X == Y end
+      '=': Value.'=='
       ':=': fun {$ X Y} {Assign X Y} unit end
-      '~': Number.'~'   %--** overloaded for word
-      '+': fun {$ X1 X2} X1 + X2 end   %--** overloaded for word
-      '-': fun {$ X1 X2} X1 - X2 end   %--** overloaded for word
-      '*': fun {$ X1 X2} X1 * X2 end   %--** overloaded for word
-      '<':
-	 fun {$ X1 X2}
-	    if {ByteString.is X1} then {StringLess X1 X2} else X1 < X2 end
-	 end
-      '>':
-	 fun {$ X1 X2}
-	    if {ByteString.is X1} then {StringLess X2 X1} else X1 > X2 end
-	 end
-      '<=':
-	 fun {$ X1 X2}
-	    if {ByteString.is X1} then {Not {StringLess X2 X1}}
-	    else X1 =< X2
-	    end
-	 end
-      '>=':
-	 fun {$ X1 X2}
-	    if {ByteString.is X1} then {Not {StringLess X1 X2}}
-	    else X1 >= X2
-	    end
-	 end
-      '<>': fun {$ X1 X2} X1 \= X2 end
-      'Application.exit':   %--** does not belong here
-	 proc {$ I _} {Application.exit I} end
+      '<>': Value.'\\='
       'Array.array':
 	 fun {$ N Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
@@ -154,17 +135,18 @@ define
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
-      'Int.abs':
-	 fun {$ I} {Abs I} end
-      'Int.compare':
-	 fun {$ I J}
-	    if I == J then 'EQUAL'
-	    elseif I < J then 'LESS'
-	    else 'GREATER'
-	    end
-	 end
+      'Int.~': Number.'~'
+      'Int.+': Number.'+'
+      'Int.-': Number.'-'
+      'Int.*': Number.'*'
+      'Int.<': Value.'<'
+      'Int.>': Value.'>'
+      'Int.<=': Value.'=<'
+      'Int.>=': Value.'>='
+      'Int.abs': Abs
+      'Int.compare': NumberCompare
       'Int.div':
-	 fun {$ X1 X2}   %--** overloaded for word
+	 fun {$ X1 X2}
 	    try
 	       X1 div X2
 	    catch _ then
@@ -172,7 +154,7 @@ define
 	    end
 	 end
       'Int.mod':
-	 fun {$ X1 X2}   %--** overloaded for word
+	 fun {$ X1 X2}
 	    try
 	       X1 mod X2
 	    catch _ then
@@ -183,8 +165,30 @@ define
 	 fun {$ I} {ByteString.make {Int.toString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Option.Option': {NewUniqueName 'Option.Option'}
+      'Real.~': Number.'~'
+      'Real.+': Number.'+'
+      'Real.-': Number.'-'
+      'Real.*': Number.'*'
+      'Real./': Float.'/'
+      'Real.<': Value.'<'
+      'Real.>': Value.'>'
+      'Real.<=': Value.'=<'
+      'Real.>=': Value.'>='
+      'Real.compare': NumberCompare
+      'Real.fromInt': IntToFloat
+      'Real.trunc':
+	 fun {$ R}
+	    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
+	 end
       'String.^':
 	 fun {$ S1 S2} {ByteString.append S1 S2} end
+      'String.<': StringLess
+      'String.>':
+	 fun {$ X1 X2} {StringLess X2 X1} end
+      'String.<=':
+	 fun {$ X1 X2} {Not {StringLess X2 X1}} end
+      'String.>=':
+	 fun {$ X1 X2} {Not {StringLess X1 X2}} end
       'String.str':
 	 fun {$ C} {ByteString.make [C]} end
       'String.size':
@@ -214,29 +218,29 @@ define
 	 end
       'String.explode':
 	 fun {$ S} {ByteString.toString S} end
-      'Thread.getCurrent':
+      'Thread.Terminate': kernel(terminate)
+      'Thread.current':
 	 fun {$ unit} {Thread.this} end
-      'Thread.getState':
-	 fun {$ T}
-	    case {Thread.state T} of runnable then 'RUNNABLE'
-	    [] blocked then 'BLOCKED'
-	    [] terminated then 'TERMINATED'
-	    end
-	 end
-      'Thread.injectException':
+      'Thread.isSuspended': Thread.isSuspended
+      'Thread.raiseIn':
 	 fun {$ T E} {Thread.injectException T E} unit end
-      'Thread.isSuspended':
-	 fun {$ T} {Thread.isSuspended T} end
-      'Thread.preempt':
-	 fun {$ T} {Thread.preempt T} unit end
       'Thread.resume':
 	 fun {$ T} {Thread.resume T} unit end
       'Thread.sleep':
 	 fun {$ N} {Delay N} unit end
       'Thread.spawn':
 	 fun {$ P} thread {P unit} end end
+      'Thread.state':
+	 fun {$ T}
+	    case {Thread.state T} of runnable then 'RUNNABLE'
+	    [] blocked then 'BLOCKED'
+	    [] terminated then 'TERMINATED'
+	    end
+	 end
       'Thread.suspend':
 	 fun {$ T} {Thread.suspend T} unit end
+      'Thread.yield':
+	 fun {$ T} {Thread.preempt T} unit end
       'Transient.ByNeed': {NewUniqueName 'Transient.ByNeed'}
       'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
       'Transient.Future': {NewUniqueName 'Transient.Future'}
@@ -291,10 +295,7 @@ define
       'Word.>>': BootWord.'>>'
       'Word.~>>': BootWord.'~>>'
       'Word.toString':
-	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
-      'Debug.show': fun {$ X} {System.show X} unit end
-      'Debug.print': fun {$ X} {System.printInfo X} unit end
-      'Debug.browse': fun {$ X} {Browser.browse X} unit end)
+	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end)
 
    Env = env('false': false
 	     'true': true
