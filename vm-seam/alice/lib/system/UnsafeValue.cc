@@ -44,7 +44,7 @@ public:
     frame->InitArg(QUEUE_POS, queue);
     frame->InitArg(BYNEED_POS, byneed);
     frame->InitArg(AGAIN_POS, false);
-    return static_cast<RequestFrame *>(frame);
+    return STATIC_CAST(RequestFrame *, frame);
   }
 
   u_int GetSize() {
@@ -67,13 +67,13 @@ public:
 RequestInterpreter *RequestInterpreter::self;
 
 u_int RequestInterpreter::GetFrameSize(StackFrame *sFrame) {
-  RequestFrame *frame = static_cast<RequestFrame *>(sFrame);
+  RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
-  RequestFrame *frame = static_cast<RequestFrame *>(sFrame);
+  RequestFrame *frame = STATIC_CAST(RequestFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   if (frame->GetAgain()) {
     Queue *queue = frame->GetQueue();
@@ -122,7 +122,7 @@ DEFINE1(UnsafeValue_awaitRequest) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER) RETURN(x0);
   if (transient->GetLabel() == BYNEED_LABEL) {
-    Closure *closure = static_cast<Byneed *>(transient)->GetClosure();
+    Closure *closure = STATIC_CAST(Byneed *, transient)->GetClosure();
     word wConcreteCode = closure->GetConcreteCode();
     ConcreteCode *concreteCode = ConcreteCode::FromWord(wConcreteCode);
     Queue *queue;
@@ -294,8 +294,8 @@ DEFINE1(UnsafeValue_inArity) {
   if (concreteCode == INVALID_POINTER) REQUEST(wConcreteCode);
   Interpreter *interpreter = concreteCode->GetInterpreter();
   u_int arity = interpreter->GetInArity(concreteCode);
-  RETURN_INT(arity == static_cast<u_int>(INVALID_INT)? -2:
-	     arity == Scheduler::ONE_ARG? -1: static_cast<s_int>(arity));
+  RETURN_INT(arity == STATIC_CAST(u_int, INVALID_INT)? -2:
+	     arity == Scheduler::ONE_ARG? -1: STATIC_CAST(s_int, arity));
 } END
 
 DEFINE1(UnsafeValue_outArity) {

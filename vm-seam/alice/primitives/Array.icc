@@ -58,7 +58,7 @@ public:
     frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(INDEX_POS, index);
     frame->InitArg(NUMBEROFELEMENTS_POS, numberOfElements);
-    return static_cast<ArrayTabulateFrame *>(frame);
+    return STATIC_CAST(ArrayTabulateFrame *, frame);
   }
 
   u_int GetSize() {
@@ -89,13 +89,13 @@ void ArrayTabulateWorker::PushFrame(XArray *array,
 }
 
 u_int ArrayTabulateWorker::GetFrameSize(StackFrame *sFrame) {
-  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  ArrayTabulateFrame *frame = STATIC_CAST(ArrayTabulateFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   return frame->GetSize();
 }
 
 Worker::Result ArrayTabulateWorker::Run(StackFrame *sFrame) {
-  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  ArrayTabulateFrame *frame = STATIC_CAST(ArrayTabulateFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   XArray *array = frame->GetArray();
   word closure    = frame->GetClosure();
@@ -128,7 +128,7 @@ const char *ArrayTabulateWorker::Identify() {
 }
 
 void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
-  ArrayTabulateFrame *frame = static_cast<ArrayTabulateFrame *>(sFrame);
+  ArrayTabulateFrame *frame = STATIC_CAST(ArrayTabulateFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
   std::fprintf(stderr, STRINGIFY(XArray)".tabulate %d of %d\n",
 	       frame->GetIndex(), frame->GetNumberOfElements());
@@ -139,7 +139,7 @@ void ArrayTabulateWorker::DumpFrame(StackFrame *sFrame) {
 //
 DEFINE2(Array_array) {
   DECLARE_INT(length, x0);
-  if (static_cast<u_int>(length) > XArray::maxLen)
+  if (STATIC_CAST(u_int, length) > XArray::maxLen)
     RAISE(PrimitiveTable::General_Size);
   XArray *array = XArray::New(length);
   for (u_int i = length; i--; )
@@ -151,7 +151,7 @@ DEFINE3(Array_extract) {
   DECLARE_XARRAY(array, x0);
   DECLARE_INT(i, x1);
   DECLARE_INT(n, x2);
-  if (i < 0 || n < 0 || static_cast<u_int>(i + n) > array->GetLength())
+  if (i < 0 || n < 0 || STATIC_CAST(u_int, i + n) > array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   XVector *vector = XVector::New(n);
   for (u_int j = n; j--; ) vector->Init(j, array->Sub(i + j));
@@ -193,7 +193,7 @@ DEFINE1(Array_length) {
 DEFINE2(Array_sub) {
   DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (static_cast<u_int>(index) >= array->GetLength())
+  if (STATIC_CAST(u_int, index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   RETURN(array->Sub(index));
 } END
@@ -202,7 +202,7 @@ DEFINE2(Array_tabulate) {
   DECLARE_INT(length, x0);
   if (length == 0) {
     RETURN(XArray::New(0)->ToWord());
-  } else if (length < 0 || static_cast<u_int>(length) > XVector::maxLen) {
+  } else if (length < 0 || STATIC_CAST(u_int, length) > XVector::maxLen) {
     RAISE(PrimitiveTable::General_Size);
   } else {
     word wClosure = x1;
@@ -229,7 +229,7 @@ DEFINE1(Array_toList) {
 DEFINE3(Array_update) {
   DECLARE_XARRAY(array, x0);
   DECLARE_INT(index, x1);
-  if (static_cast<u_int>(index) >= array->GetLength())
+  if (STATIC_CAST(u_int, index) >= array->GetLength())
     RAISE(PrimitiveTable::General_Subscript);
   array->Update(index, x2);
   RETURN_UNIT;

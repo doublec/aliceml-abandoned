@@ -200,7 +200,7 @@ DEFINE2(UnsafeSocket_inputN) {
   DECLARE_INT(sock, x0);
   DECLARE_INT(count, x1);
 
-  if (count < 0 || static_cast<u_int>(count) > String::maxSize) {
+  if (count < 0 || STATIC_CAST(u_int, count) > String::maxSize) {
     RAISE(PrimitiveTable::General_Size);
   }
   String *buffer = String::New(count);
@@ -219,7 +219,7 @@ DEFINE2(UnsafeSocket_inputN) {
       RAISE_SOCK_ERR(); //--** IO.Io
     }
   } else if (n == 0) {
-    RETURN(String::New(static_cast<u_int>(0))->ToWord());
+    RETURN(String::New(STATIC_CAST(u_int, 0))->ToWord());
   } else if (n == count) {
     RETURN(buffer->ToWord());
   } else {
@@ -255,7 +255,7 @@ DEFINE3(UnsafeSocket_output) {
   DECLARE_STRING(string, x1);
   DECLARE_INT(offset, x2);
 
-  Assert(offset >= 0 && static_cast<u_int>(offset) < string->GetSize());
+  Assert(offset >= 0 && STATIC_CAST(u_int, offset) < string->GetSize());
   u_char *buffer = string->GetValue() + offset;
   u_int count = string->GetSize() - offset;
  retry:
