@@ -1,20 +1,20 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Core from "x-alice:/lib/gtk/Core"
-import structure Highlight from "Highlight"
+import structure Highlight from "HighlightString"
 
 structure BufferHighlight =
    struct
-      fun colorRegion buf offset (style, r,c,r',c') =
+      fun colorRegion buf offset (style, x, x') =
           let
               open Highlight
               val startiter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetStartIter(buf,startiter)
-              val _ = Gtk.textIterSetLine(startiter, r-1+offset)
-              val _ = Gtk.textIterSetLineOffset(startiter, c)
+              val _ = Gtk.textIterSetLine(startiter, offset)
+              val _ = Gtk.textIterForwardChars(startiter, x)
               val enditer = Gtk.textIterNew()
               val _ = Gtk.textBufferGetStartIter(buf,enditer)
-              val _ = Gtk.textIterSetLine(enditer, r'-1+offset)
-              val _ = Gtk.textIterSetLineOffset(enditer, c')
+              val _ = Gtk.textIterSetLine(enditer, offset)
+              val _ = Gtk.textIterForwardChars(enditer, x')
               val tag = case style of
                             PLAIN => "plain"
                           | RESERVED => "reserved"
@@ -26,10 +26,6 @@ structure BufferHighlight =
                                            startiter, enditer)
           end
 
-      fun breakLines str =
-          Substring.fields (fn #"\n" => true | _ => false)
-                           (Substring.full str)
-                           
       fun highlight (buf, startiter, enditer) =
           if Gtk.textIterGetChar startiter = ord #"#" then ()
           else
@@ -37,8 +33,7 @@ structure BufferHighlight =
                   val offset = Gtk.textIterGetLine startiter
                   val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
                   val str = Core.utf8ToLatin1 str
-                  val lines = breakLines str
-                  val regions = Highlight.scan lines
+                  val regions = Highlight.scan str
               in
                 app (colorRegion buf offset) regions
               end

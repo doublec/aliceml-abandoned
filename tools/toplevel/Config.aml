@@ -7,20 +7,24 @@ structure Config =
       val cmap   = Gdk.colormapGetSystem ()
       val ugly = Gdk.colorNew(0xf0f0, 0x2020, 0xa0a0)
       val black = Gdk.colorNew(0, 0, 0)
-      val red = Gdk.colorNew(65535, 0, 0)
-      val blue = Gdk.colorNew(0, 0, 65535)
-      val white = Gdk.colorNew(65535, 65535, 65535)
+      val red = Gdk.colorNew(0xffff, 0, 0)
+      val orange = Gdk.colorNew(0xffff, 0x8000, 0)
+      val blue = Gdk.colorNew(0, 0, 0xe000)
+      val green = Gdk.colorNew(0, 0x8000, 0)
+      val white = Gdk.colorNew(0xffff, 0xffff, 0xffff)
 
-      val reservedColor = ugly
-      val errorColor = ugly
-      val stringColor = blue
+      val reservedColor = blue
+      val errorColor = red
+      val stringColor = orange
       val plainColor = black
-      val commentColor = red
+      val commentColor = green
 
       val _ = Gdk.colormapAllocColor(cmap, black, false, true)
       val _ = Gdk.colormapAllocColor(cmap, white, false, true)
       val _ = Gdk.colormapAllocColor(cmap, ugly, false, true)
       val _ = Gdk.colormapAllocColor(cmap, red, false, true)
+      val _ = Gdk.colormapAllocColor(cmap, orange, false, true)
+      val _ = Gdk.colormapAllocColor(cmap, green, false, true)
       val _ = Gdk.colormapAllocColor(cmap, blue, false, true)
       val stdFont = Gtk.pangoFontDescriptionFromString "Courier"   
 

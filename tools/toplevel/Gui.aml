@@ -17,7 +17,7 @@ structure Gui =
 
     val mainwidget = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
     val _ = Gtk.widgetShow mainwidget
-    val _ = Gtk.windowSetTitle(mainwidget,"Alice IDE")
+    val _ = Gtk.windowSetTitle(mainwidget,"Alice")
     val vbox1 = Gtk.vboxNew(false,0)
     val _ = Gtk.widgetShow vbox1
     val menubar1 = Gtk.menuBarNew()

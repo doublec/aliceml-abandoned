@@ -100,6 +100,8 @@ struct
 		orelse Char.isSpace (Substring.sub (s, x+1))
 		then scanStringGap (ss, s, y', x', y, x+1, rs)
 		else scanString (ss, s, y', x', y, x+2, rs)
+	    else if Char.ord c < 32 then
+		scanPlain (ss, s, y, x+1, x+1, (ERRONEOUS, y',x', y,x+1)::rs)
 	    else
 		scanString (ss, s, y', x', y, x+1, rs)
 	end

@@ -15,7 +15,7 @@ SOURCES = \
 	EVALUATOR-sig.aml \
 	Evaluator.aml \
 	Use.aml \
-	Highlight.aml \
+	Highlight.aml HighlightString.aml \
 	Buffer.aml \
 	FileDialog.aml \
 	SearchDialog.aml \

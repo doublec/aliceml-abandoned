@@ -5,7 +5,7 @@
 
 <widget class="GtkWindow" id="mainwidget">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">Alice IDE</property>
+  <property name="title" translatable="yes">Alice</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
