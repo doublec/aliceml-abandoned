@@ -31,10 +31,18 @@ public class UniqueConstructor extends Constructor {
     }
 
     /** Such an object always exists on the machine.
+     *  Still there could be no entry in the hashtable if the
+     *  library has not yet been loaded.
      */
     final private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
-	return GName.gNames.get(name);
+	Object o = GName.gNames.get(name);
+	if (o == null) {
+	    GName.gNames.put(name,this);
+	    return this;
+	} else {
+	    return o;
+	}
     }
 
     final public java.lang.String toString() {

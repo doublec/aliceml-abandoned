@@ -61,15 +61,14 @@ public class Constructor implements DMLValue {
 
     /** Beim Einlesen wird nachgeschaut, ob bereits ein Objekt mit
      *  diesem GName existiert. Falls nicht, wird das aktuelle
-     *  Objekt mit einem neuen GName in die Hashtabelle
+     *  Objekt mit seinem GName in die Hashtabelle
      *  eingetragen. Sonst wird das Objekt aus der Hashtabelle
      *  zurückgeliefert.
      */
     private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
-	java.lang.Object o = GName.gNames.get(gName);
-	if (o==null) {
-	    gName=new GName();
+	Object o = GName.gNames.get(gName);
+	if (o == null) {
 	    GName.gNames.put(gName,this);
 	    return this;
 	} else {

@@ -20,6 +20,7 @@ final public class GName implements java.io.Serializable {
 
     public GName() {
 	id = new java.rmi.dgc.VMID();
+//  	System.out.println("created GName "+id);
     }
 
     final public int hashCode() {

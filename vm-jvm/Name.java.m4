@@ -17,7 +17,6 @@ public class Name implements DMLValue {
     GName gName = null;
 
     public Name() {
-	super();
 	this.gName=null;
     }
 
@@ -47,8 +46,7 @@ public class Name implements DMLValue {
     private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
 	java.lang.Object o = GName.gNames.get(gName);
-	if (o==null) {
-	    gName=new GName();
+	if (o == null) {
 	    GName.gNames.put(gName,this);
 	    return this;
 	} else {

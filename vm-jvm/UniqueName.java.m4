@@ -42,6 +42,12 @@ public class UniqueName extends Name {
      */
     private java.lang.Object readResolve()
 	throws java.io.ObjectStreamException {
-	    return GName.gNames.get(name);
+	Object o = GName.gNames.get(name);
+	if (o == null) {
+	    GName.gNames.put(name,this);
+	    return this;
+	} else {
+	    return o;
+	}
     }
 }

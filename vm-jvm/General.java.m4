@@ -233,16 +233,19 @@ final public class General {
 	final public static DMLValue apply(java.lang.String name,
 					   DMLValue val1,
 					   DMLValue val2) throws java.rmi.RemoteException {
+	    java.util.zip.GZIPOutputStream zip = null;
 	    ExceptionWrapper ex=null;
 	    java.io.FileOutputStream outf=null;
 	    PickleOutputStream out=null;
 	    try{
 		outf=new java.io.FileOutputStream(name);
-		out=new PickleOutputStream(outf);
+		zip = new java.util.zip.GZIPOutputStream(outf);
+		out=new PickleOutputStream(zip);
 		out.writeObject(val1);
 		out.writeObject(val2);
 		outf.flush();
 		out.flush();
+		zip.close();
 	    } catch (Exception e) {
 		System.err.println(e);
 		e.printStackTrace();
@@ -276,12 +279,14 @@ final public class General {
 	    }
 	    java.lang.String wherefrom=((STRING) fst).value;
 	    ExceptionWrapper ex=null;
+	    java.util.zip.GZIPInputStream zip = null;
 	    java.io.FileInputStream inf=null;
 	    PickleInputStream in=null;
 	    DMLValue result = null;
 	    try{
-		inf=new java.io.FileInputStream(wherefrom);
-		in=new PickleInputStream(inf);
+		inf = new java.io.FileInputStream(wherefrom);
+		zip = new java.util.zip.GZIPInputStream(inf);
+		in=new PickleInputStream(zip);
 		in.readObject();
 		result=(DMLValue) in.readObject();
 	    } catch (Exception e) {
@@ -292,6 +297,7 @@ final public class General {
 	    finally {
 		try {
 		    inf.close();
+		    zip.close();
 		} catch (Exception e) {
 		    System.err.println(e);}
 		if (ex != null)
