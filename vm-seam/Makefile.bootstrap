@@ -328,6 +328,36 @@ SOURCEDIRS = \
 	compiler/backend-dotnet compiler/backend-stockwerk linker depend
 
 ##
+## Include Files for the Foreign Function Interface
+##
+
+TOPINCLUDES0 = \
+	Base.hh Stow.hh
+STOREINCLUDES0 = \
+	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
+	StatusWord.hh Value.hh WeakDictionary.hh Store.hh
+ADTINCLUDES0 = \
+	HashTable.hh Queue.hh Stack.hh
+GENERICINCLUDES0 = \
+	FinalizationSet.hh Transform.hh ConcreteRepresentationHandler.hh \
+	ConcreteRepresentation.hh ConcreteCode.hh Closure.hh Thread.hh \
+	ThreadQueue.hh Tuple.hh String.hh StackFrame.hh Backtrace.hh \
+	Pickle.hh Debug.hh RootSet.hh UniqueString.hh Properties.hh \
+	TaskStack.hh IOHandler.hh SignalHandler.hh Scheduler.hh \
+	Transients.hh Interpreter.hh Primitive.hh PushCallInterpreter.hh \
+	ByneedInterpreter.hh Unpickler.hh Pickler.hh Profiler.hh
+ALICEINCLUDES0 = \
+	Guid.hh Data.hh AbstractCode.hh AbstractCodeInterpreter.hh \
+	AliceConcreteCode.hh NativeCodeInterpreter.hh NativeConcreteCode.hh \
+	PrimitiveTable.hh AliceLanguageLayer.hh
+INCLUDES = \
+	$(TOPINCLUDES0) \
+	$(STOREINCLUDES0:%=store/%) \
+	$(ADTINCLUDES0:%=adt/%) \
+	$(GENERICINCLUDES0:%=generic/%) \
+	$(ALICEINCLUDES0:%=alice/%)
+
+##
 ## Main Target and Generally Applicable Rules
 ##
 
@@ -619,12 +649,16 @@ $(INSTALL2LIBFILES:%=build2/install/lib/%): build2/install/%: build2/%
 BUILD3DIRS = build3 $(SOURCEDIRS:%=build3/%)
 BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
-INSTALL3DIRS = build3/install build3/install/bin \
+INSTALL3DIRS = \
+	build3/install build3/install/include build3/install/include/store \
+	build3/install/include/adt build3/install/include/generic \
+	build3/install/include/alice build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/compiler build3/install/compiler/top \
 	build3/install/linker build3/install/depend
+INSTALL3INCLUDEFILES = $(INCLUDES)
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
@@ -639,6 +673,7 @@ INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
 	build3/install/stow.exe \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
+	$(INSTALL3INCLUDEFILES:%=build3/install/include/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
@@ -733,6 +768,9 @@ $(INSTALL3DIRS):
 build3/install/stow.exe: build1/install/stow.exe
 	install -c -m 555 $< $@
 
+build3/install/include/%: %
+	install -c -m 444 $< $@
+
 build3/install/%.import: build3/%.import
 	install -c -m 444 $< $@
 
@@ -780,10 +818,13 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 ## Global Installation
 ##
 
-INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
-	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
-	$(PREFIX)/lib/ml-yacc $(PREFIX)/compiler $(PREFIX)/compiler/top \
-	$(PREFIX)/linker $(PREFIX)/depend
+INSTALLDIRS = \
+	$(PREFIX) $(PREFIX)/include $(PREFIX)/include/store \
+	$(PREFIX)/include/adt $(PREFIX)/include/generic \
+	$(PREFIX)/include/alice $(PREFIX)/bin $(PREFIX)/lib \
+	$(PREFIX)/lib/fundamental $(PREFIX)/lib/system $(PREFIX)/lib/utility \
+	$(PREFIX)/lib/rtt $(PREFIX)/lib/ml-yacc $(PREFIX)/compiler \
+	$(PREFIX)/compiler/top $(PREFIX)/linker $(PREFIX)/depend
 INSTALLFILES = \
 	$(PREFIX)/stow.exe \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
