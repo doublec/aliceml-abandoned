@@ -15,6 +15,7 @@ import
    Inspector('nodes' : TreeNodes)
 %   HelperComponent('nodes' : Helper) at 'Helper'
 export
+   nameGrDrawObject      : NameGrDrawObject
    vectorIndDrawObject   : VectorIndDrawObject
    vectorGrIndDrawObject : VectorGrIndDrawObject
    listGrMDrawObject     : ListGrMDrawObject
@@ -24,6 +25,7 @@ define
    local
       DrawObjects = TreeNodes.'draw'
    in
+      OzFreeGrDrawObject        = DrawObjects.freeGrDrawObject
       LabelTupleDrawObject      = DrawObjects.labelTupleDrawObject
       LabelTupleIndDrawObject   = DrawObjects.labelTupleIndDrawObject
       LabelTupleGrDrawObject    = DrawObjects.labelTupleGrDrawObject
@@ -32,6 +34,12 @@ define
       PipeTupleGrSDrawObject    = DrawObjects.pipeTupleGrSDrawObject
    end
 
+   %%
+   %% Simple Objects
+   %%
+   
+   class NameGrDrawObject from OzFreeGrDrawObject end
+   
    %%
    %% Container Objects
    %%
