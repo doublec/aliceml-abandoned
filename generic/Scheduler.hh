@@ -51,7 +51,7 @@ public:
   static void Init();
 
   // Scheduler Main Function
-  static void Run();
+  static void Run(bool waitForever = false);
 
   // Scheduler Accessors
   static Thread *GetCurrentThread() {

@@ -17,6 +17,7 @@
 #endif
 
 #include <cstdio>
+#include "unistd.h"
 #include "generic/RootSet.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
@@ -25,6 +26,7 @@
 #include "generic/ByneedInterpreter.hh"
 #include "generic/PushCallInterpreter.hh"
 #include "generic/IOHandler.hh"
+#include "generic/SignalHandler.hh"
 
 #if PROFILE
 #include "generic/Profiler.hh"
@@ -92,8 +94,7 @@ inline void Scheduler::FlushThread() {
   }
 }
 
-void Scheduler::Run() {
-  //--** start timer thread
+void Scheduler::Run(bool waitForever = false) {
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
   retry:
     SwitchToThread();
@@ -194,11 +195,17 @@ void Scheduler::Run() {
       RootSet::DoGarbageCollection();
       threadQueue = ThreadQueue::FromWordDirect(root);
     }
+    if (StatusWord::GetStatus(SignalHandler::SignalStatus()))
+      SignalHandler::HandlePendingSignals();
     IOHandler::Poll();
   }
-  IOHandler::Block();
-  if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
-    goto retry;
+  // Check for both incoming signals and io
+  do {
+    IOHandler::Block();
+    SignalHandler::HandlePendingSignals();
+    if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
+      goto retry;
+  } while (waitForever);
 }
 
 Interpreter::Result Scheduler::PushCall(word wClosure) {
