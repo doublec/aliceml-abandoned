@@ -6,24 +6,6 @@ import java.rmi.RemoteException;
 import java.rmi.RMISecurityManager;
 import java.rmi.server.*;
 
-interface Export extends java.rmi.Remote {
-    public DMLValue get(java.lang.String what) throws java.rmi.RemoteException;
-}
-
-final class Exporter extends java.rmi.server.UnicastRemoteObject implements Export {
-
-    java.util.Hashtable hash = null;
-
-    public Exporter() throws java.rmi.RemoteException {}
-
-    public Exporter(java.util.Hashtable h) throws java.rmi.RemoteException {
-	hash=h;
-    }
-
-    public DMLValue get(java.lang.String what) throws java.rmi.RemoteException {
-	return (DMLValue) hash.get(what);
-    }
-}
 final public class Connection {
     static java.util.Hashtable export = null;
     static Exporter exp = null;
