@@ -104,9 +104,7 @@ ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-stockwerk
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --stockwerk
 
-ALICEC_OPTS = \
-	--check-intermediate \
-	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
@@ -138,7 +136,7 @@ LIBNATIVES =
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
-	Fundamental.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
+	Core.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
 	BOOL-sig.aml BYTE-sig.aml \
 	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
@@ -650,7 +648,7 @@ INSTALL3TOPFILES = alicec.import alice.import COPYING
 INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
-	fundamental/Fundamental.stc
+	fundamental/Core.stc
 INSTALL3COMPILERFILES = CompilerMain.stc ToplevelMain.stc
 INSTALL3COMPILERTOPFILES = \
 	SMLToStockwerkRecursiveCompiler.stc
@@ -683,7 +681,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
-	build3/lib/fundamental/LinkedFundamental.stc \
+	build3/lib/fundamental/Core.stc \
 	build3/lib/system/Boot.stc \
 	build3/compiler/LinkedCompilerMain.stc \
 	build3/compiler/LinkedToplevelMain.stc \
@@ -704,14 +702,14 @@ build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 build3/%.stc: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
 
-build3/lib/fundamental/LinkedFundamental.stc: \
-	build3/lib/fundamental/Fundamental.stc
+build3/lib/fundamental/LinkedPervasive.stc: \
+	build3/lib/fundamental/Pervasive.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) \
 	--exclude build3/lib/utility/Unsafe \
 	--exclude build3/lib/system/Unsafe \
 	--include build3 \
 	--rewrite build3/=../../ --rewrite x-alice:/=../../ \
-	build3/lib/fundamental/Fundamental -o $@
+	build3/lib/fundamental/Pervasive -o $@
 
 build3/compiler/LinkedCompilerMain.stc: build3/compiler/CompilerMain.stc
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
@@ -769,8 +767,12 @@ build3/install/COPYING: ../COPYING
 build3/install/bin/%: bin/%
 	install -c -m 555 $< $@
 
-build3/install/lib/fundamental/Fundamental.stc: \
-	build3/lib/fundamental/LinkedFundamental.stc
+build3/install/lib/fundamental/Pervasive.stc: \
+	build3/lib/fundamental/LinkedPervasive.stc
+	install -c -m 444 $< $@
+
+build3/install/lib/fundamental/Core.stc: \
+	build3/lib/fundamental/Core.stc
 	install -c -m 444 $< $@
 
 build3/install/lib/%: build3/lib/%

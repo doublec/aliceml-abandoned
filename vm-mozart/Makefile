@@ -101,9 +101,7 @@ ALICEC0 = $(BOOTSTRAPDIR)/alicec # --profile
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
 ALICEC2 = STOCKHOME=build1/install build1/install/bin/alicec --mozart
 
-ALICEC_OPTS = \
-	--check-intermediate \
-	--no-dump-elaboration-sig --implicit-import-file - $(ALICEC_EXTRA_OPTS)
+ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 ALICEC_EXTRA_OPTS = 
 
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
@@ -134,7 +132,7 @@ LIBNATIVES = \
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
-	Fundamental.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
+	Core.aml ALT-sig.aml ARRAY-sig.aml ARRAY_SLICE-sig.aml \
 	BOOL-sig.aml BYTE-sig.aml \
 	CHAR-sig.aml FUTURE-sig.aml GENERAL-sig.aml HOLE-sig.aml \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
@@ -609,7 +607,8 @@ INSTALL3BINFILES = $(INSTALL1BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
-	fundamental/Fundamental.ozf
+	fundamental/Pervasive.ozf fundamental/Core.ozf \
+	fundamental/PACKAGE-sig.ozf fundamental/Package.ozf
 INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
 	SMLToMozartRecursiveCompiler.ozf \
@@ -643,7 +642,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 
 build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	$(LIBNATIVES:%=build3/%) \
-	build3/lib/fundamental/LinkedFundamental.ozf \
+	build3/lib/fundamental/Core.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
 	build3/compiler/LinkedCompileServerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
@@ -670,11 +669,11 @@ build3/alice.import: lib/fundamental/Fundamental.import lib/Other.import \
 build3/%.ozf: build3/%.aml
 	$(ALICEC2) $(ALICEC_OPTS) -c $< -o $@
 
-build3/lib/fundamental/LinkedFundamental.ozf: \
-	build3/lib/fundamental/Fundamental.ozf
+build3/lib/fundamental/LinkedPervasive.ozf: \
+	build3/lib/fundamental/Pervasive.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../../ \
 	--include build3 \
-	build3/lib/fundamental/Fundamental -o $@
+	build3/lib/fundamental/Pervasive -o $@
 
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
@@ -756,8 +755,12 @@ build3/install/bin/%.bat: %.bat
 build3/install/bin/%: %
 	install -c -m 555 $< $@
 
-build3/install/lib/fundamental/Fundamental.ozf: \
-	build3/lib/fundamental/LinkedFundamental.ozf
+build3/install/lib/fundamental/Pervasive.ozf: \
+	build3/lib/fundamental/LinkedPervasive.ozf
+	install -c -m 444 $< $@
+
+build3/install/lib/fundamental/Core.ozf: \
+	build3/lib/fundamental/Core.ozf
 	install -c -m 444 $< $@
 
 build3/install/lib/%: build3/lib/%
