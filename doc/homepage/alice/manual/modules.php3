@@ -399,6 +399,23 @@ end</PRE>
 expressions. Derived forms have been marked with (*).</P>
 
 
+<?php subsection("syntax-exps", "Expressions") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:></TT> <I>atsigexp</I> </TD>
+    <TD> packing </TD>
+  </TR>
+</TABLE>
+
+
 <?php subsection("syntax-structs", "Structures") ?>
 
 <TABLE class=bnf>
@@ -459,6 +476,11 @@ expressions. Derived forms have been marked with (*).</P>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+    <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> unpacking </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
     <TD> functor </TD>
   </TR>
@@ -486,7 +508,7 @@ expressions. Derived forms have been marked with (*).</P>
 
 <TABLE class=bnf>
   <TR>
-    <TD> <I>sigexp</I> </TD>
+    <TD> <I>atsigexp</I> </TD>
     <TD align="center">::=</TD>
 <!--
     <TD> <TT>any</TT> </TD>
@@ -540,13 +562,13 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <I>appsigexp</I> </TD>
     <TD> </TD>
   </TR>
+-->
   <TR>
     <TD> <I>sigexp</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>atsigexp</I> </TD>
     <TD> </TD>
   </TR>
--->
   <TR>
     <TD></TD> <TD></TD>
     <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>

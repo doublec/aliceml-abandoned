@@ -156,6 +156,11 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <TT>rec</TT> <I>pat</I> <TT>=></TT> <I>exp</I> </TD>
     <TD> recursion (*) </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>strexp</I> <TT>:></TT> <I>sigexp</I> </TD>
+    <TD> packing </TD>
+  </TR>
 
   <TR></TR>
   <TR>
@@ -377,9 +382,15 @@ ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+    <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> unpacking </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
     <TD> functor </TD>
   </TR>
+
   <TR></TR>
   <TR>
     <TD> <I>strpat</I> </TD>

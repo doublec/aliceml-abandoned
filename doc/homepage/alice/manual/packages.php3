@@ -347,4 +347,34 @@ that allow packaging of simple core values. Essentially, this provides a type
 <EM>dynamic</EM>, as available in a few other languages.</P>
 
 
+
+<?php section("syntax", "syntax summary") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>exp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:></TT> <I>atsigexp</I> </TD>
+    <TD> packing </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>strexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>unpack</TT> <I>infexp</I> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> unpacking </TD>
+  </TR>
+</TABLE>
+
+
 <?php footing() ?>
