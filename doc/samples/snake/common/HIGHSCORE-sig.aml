@@ -38,11 +38,6 @@ sig
 
     val empty: highscore
 
-    val load:   unit -> highscore
-    (* load the highscore, create a new one if no highscore exists *)
-
-    val save:   highscore -> unit
-
     val merge:  highscore * points list * int * int -> highscore
     (** [merge (h,p,player,level)] merges the highscore [h] with 
      the result of a tournament and the amount of player and played
