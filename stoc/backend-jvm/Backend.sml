@@ -15,7 +15,7 @@ structure Backend=
 	open Common
 	 Abbrev
 
-	type stamp=IntermediateGrammar.stamp
+	type stamp = Stamp.t
 	type label = JVMInst.label
 
 	(* Hashtable of Stamps. *)
@@ -384,7 +384,7 @@ structure Backend=
 					      s')
 				       | _ => va)
 			      | NONE => if stamp'=stamp'' then NONE else
-					 SOME (SOME (VarExp (dummyCoord, (Id (dummyCoord, stamp'', InId)))))
+					 SOME (SOME (VarExp (dummyExpInfo, (Id (dummyExpInfo, stamp'', Name.InId)))))
 			      | foo => foo
 		    in
 			if !OPTIMIZE >= 3 then
@@ -422,8 +422,8 @@ structure Backend=
 	    struct
 		fun code (name, ids, stampcodes, parmcode) =
 		    let
-			val label1 = Label.new()
-			val label2 = Label.new()
+			val label1 = JLabel.new()
+			val label2 = JLabel.new()
 
 			fun compare iftrue =
 			    [iftrue,
@@ -456,11 +456,11 @@ structure Backend=
 			    (case (ty'', ConstProp.get stamp'') of
 				 (IntType, SOME (LitExp (_, IntLit l))) => atCodeInt l
 			       | _ => let
-					  val good = Label.new ()
-					  val handle' = Label.new ()
+					  val good = JLabel.new ()
+					  val handle' = JLabel.new ()
 				      in
 					  Multi [Catch ("java/lang/ClassCastException", good,
-							handle', Label.matchlabel),
+							handle', JLabel.matchlabel),
 						 stampcode'',
 						 Dup,
 						 Instanceof ITransient,

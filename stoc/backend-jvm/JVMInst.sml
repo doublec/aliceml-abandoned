@@ -16,7 +16,7 @@ structure JVMInst =
 	type classname = string
 	type fieldname = string
 	type methodname = string
-	type stamp = IntermediateGrammar.stamp
+	type stamp = Stamp.t
 	datatype ARG =
 	    Arraysig
 	  | Boolsig

@@ -12,20 +12,20 @@
 
 (* Information of all kind about functions *)
 functor MakeLambda(structure StampSet:IMP_SET
-		       where type item=IntermediateGrammar.stamp
-			     structure StampHash:IMP_MAP
-				 where type key=IntermediateGrammar.stamp
-				       structure StampIntSet:IMP_SET
-					   where type item=IntermediateGrammar.stamp * int
-						 structure StampIntHash:IMP_MAP
-						     where type key=IntermediateGrammar.stamp * int
-							   val toplevel:IntermediateGrammar.stamp) =
+		       where type item=Stamp.t
+		   structure StampHash:IMP_MAP
+		       where type key=Stamp.t
+		   structure StampIntSet:IMP_SET
+		       where type item=Stamp.t * int
+		   structure StampIntHash:IMP_MAP
+		       where type key=Stamp.t * int
+		   val toplevel:Stamp.t) =
     struct
 	open ImperativeGrammar
 	open Common
 	open Abbrev
 
-	type stamp=IntermediateGrammar.stamp
+	type stamp=Stamp.t
 
 	(* non top-level functions must be pickled explicitly *)
 	val pickleFn: StampSet.set StampHash.t = StampHash.new()
@@ -75,8 +75,8 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 	(* get the name of a function *)
 	fun getId stamp' =
-	    case StampHash.lookup(lambdas, stamp')
-		of NONE => Id (dummyCoord, stamp', InId)
+	    case StampHash.lookup(lambdas, stamp') of
+		NONE => Id (dummyExpInfo, stamp', Name.InId)
 	      | SOME id'' => id''
 
 	(* return the function stamp that corresponds to a name (stamp) *)
@@ -178,7 +178,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 			if isSome (StampIntHash.lookup (recApplies, (!actual, i)))
 			    then ()
 			else
-			    (StampIntHash.insert (recApplies, (!actual, i),(dest, !counter, Label.new ()));
+			    (StampIntHash.insert (recApplies, (!actual, i),(dest, !counter, JLabel.new ()));
 			     vprint (1, "inserting "^Stamp.toString (!actual)^
 				     ":"^Int.toString i^" for "^Stamp.toString (dest)^" at "^
 				     Int.toString (!counter)^"\n");
@@ -198,7 +198,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		fun countUp (0, akku) = akku
 		  | countUp (n, akku) = countUp (n-1, (n-1)::akku)
 
-		val errorlabel = Label.new ()
+		val errorlabel = JLabel.new ()
 	    in
 		counter := 0;
 		app insertRec' idexps;

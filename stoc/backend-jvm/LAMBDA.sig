@@ -12,7 +12,7 @@
 
 signature LAMBDA =
     sig
-	type stamp = IntermediateGrammar.stamp
+	type stamp = Stamp.t
 	type id = IntermediateGrammar.id
 
 	val push           : id -> unit

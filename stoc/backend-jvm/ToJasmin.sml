@@ -46,7 +46,7 @@ structure ToJasmin =
 	  | opToJump Return = Ret
 	  | opToJump _ = Got
 
-	fun labtoString (Lab (label', _)) = Label.toString label'
+	fun labtoString (Lab (label', _)) = JLabel.toString label'
 	  | labtoString (Jump Got) = "Goto"
 	  | labtoString (Jump Ret) = "Return"
 	  | labtoString (Jump IRet) = "Ireturn"
@@ -80,7 +80,7 @@ structure ToJasmin =
 	     operation there would be some kind of return, do so. *)
 	    fun directJump lab' =
 		case IntHash.lookup(!labelMerge, lab') of
-		    NONE => "goto "^Label.toString lab'
+		    NONE => "goto "^JLabel.toString lab'
 		  | SOME (Lab (lab'', _)) => directJump lab''
 		  | SOME (Jump Ret) => "return"
 		  | SOME (Jump ARet) => "areturn"
@@ -106,7 +106,7 @@ structure ToJasmin =
 				       print ("Stack verification error: Size = "^
 					      Int.toString s^" or "^
 					      Int.toString size^
-					      " at "^Label.toString l'^" of "^(!actclass)^
+					      " at "^JLabel.toString l'^" of "^(!actclass)^
 					      "."^(!actmeth)^".\n")
 				   else ();
 				       size)
@@ -134,19 +134,19 @@ structure ToJasmin =
 		     then
 			 print ("Stack verification error: Size = "^
 				Int.toString sizeAfter^" leaving "^(!actclass)^
-				"."^(!actmeth)^" after "^Label.toString (!lastLabel)^".\n")
+				"."^(!actmeth)^" after "^JLabel.toString (!lastLabel)^".\n")
 		 else ();
 		     leave (rest, sizeAfter))
 
 	    (* merge two labels *)
 	    fun merge (l', l'') =
-		(vprint (2, "Merging "^Label.toString l'^" and "^
+		(vprint (2, "Merging "^JLabel.toString l'^" and "^
 			 labtoString l''^".\n");
 		 IntHash.insert (!labelMerge, l', l''))
 
 	    (* mark a lable as reachable *)
 	    fun setReachable l' =
-		(vprint (2, "Label "^Label.toString l'^" marked reachable\n");
+		(vprint (2, "Label "^JLabel.toString l'^" marked reachable\n");
 		 IntSet.insert (!reachable, l'))
 
 	    (* check whether a lable is reachable or not *)
@@ -155,7 +155,7 @@ structure ToJasmin =
 		    isSome (IntHash.lookup (!labelMerge, l'))
 		    orelse IntSet.member (!reachable, l')
 		in
-		    vprint (2, "Label "^Label.toString l'^" is "^
+		    vprint (2, "Label "^JLabel.toString l'^" is "^
 			    (if result then "" else "not ")^
 				 "reachable.\n");
 		    result
@@ -166,7 +166,7 @@ structure ToJasmin =
 		let
 		    val result =IntSet.member (!usedlabel, l')
 		in
-		    vprint (2, "Label "^Label.toString l'^" is "^
+		    vprint (2, "Label "^JLabel.toString l'^" is "^
 			    (if result then "" else "not ")^
 				 "used.\n");
 			result
@@ -174,7 +174,7 @@ structure ToJasmin =
 
 	    (* mark a lable as used *)
 	    fun setUsed l' =
-		(vprint (2, "Label "^Label.toString l'^" marked as used\n");
+		(vprint (2, "Label "^JLabel.toString l'^" marked as used\n");
 		 IntSet.insert (!usedlabel, l'))
 	    end
 
@@ -883,7 +883,7 @@ structure ToJasmin =
 	      | instructionToJasmin (Invokevirtual(cn,mn,ms),_) =
 			     "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
 	      | instructionToJasmin (Isub,_) = "isub"
-	      | instructionToJasmin (Label l,_) = Label.toString l^": "
+	      | instructionToJasmin (Label l,_) = JLabel.toString l^": "
 	      | instructionToJasmin (Lcmp,_) = "lcmp"
 	      | instructionToJasmin (Ldc(JVMString s),_) = "ldc \""^String.toCString s^"\""
 	      | instructionToJasmin (Ldc(JVMFloat r),_) = "ldc "^realToString r
