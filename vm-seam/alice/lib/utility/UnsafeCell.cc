@@ -118,7 +118,7 @@ public:
     ReplaceArg(HEAD_POS, entry->ToWord());
     hashTable->Put(wKey, entry->ToWord());
   }
-  void Delete(Cell *key) {
+  void Remove(Cell *key) {
     word wKey = key->ToWord();
     Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(wKey));
@@ -129,7 +129,7 @@ public:
     if (result != Store::IntToWord(1))
       ReplaceArg(HEAD_POS, result);
   }
-  void DeleteAll() {
+  void RemoveAll() {
     GetHashTable()->Clear();
     ReplaceArg(HEAD_POS, 0);
   }
@@ -565,12 +565,12 @@ DEFINE4(UnsafeCell_Map_insertWithi) {
   }
 } END
 
-DEFINE3(UnsafeCell_Map_deleteWith) {
+DEFINE3(UnsafeCell_Map_removeWith) {
   word closure = x0;
   DECLARE_CELL_MAP(cellMap, x1);
   DECLARE_CELL(key, x2);
   if (cellMap->Member(key)) {
-    cellMap->Delete(key);
+    cellMap->Remove(key);
     RETURN_UNIT;
   } else {
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -579,9 +579,9 @@ DEFINE3(UnsafeCell_Map_deleteWith) {
   }
 } END
 
-DEFINE1(UnsafeCell_Map_deleteAll) {
+DEFINE1(UnsafeCell_Map_removeAll) {
   DECLARE_CELL_MAP(cellMap, x0);
-  cellMap->DeleteAll();
+  cellMap->RemoveAll();
   RETURN_UNIT;
 } END
 
@@ -682,10 +682,10 @@ static word UnsafeCell_Map() {
 		 UnsafeCell_Map_clone, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "insertWithi",
 		 UnsafeCell_Map_insertWithi, 4);
-  INIT_STRUCTURE(record, "UnsafeCell.Map", "deleteWith",
-		 UnsafeCell_Map_deleteWith, 3);
-  INIT_STRUCTURE(record, "UnsafeCell.Map", "deleteAll",
-		 UnsafeCell_Map_deleteAll, 1);
+  INIT_STRUCTURE(record, "UnsafeCell.Map", "removeWith",
+		 UnsafeCell_Map_removeWith, 3);
+  INIT_STRUCTURE(record, "UnsafeCell.Map", "removeAll",
+		 UnsafeCell_Map_removeAll, 1);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "lookup",
 		 UnsafeCell_Map_lookup, 2);
   INIT_STRUCTURE(record, "UnsafeCell.Map", "isEmpty",

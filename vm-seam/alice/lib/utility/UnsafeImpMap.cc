@@ -120,7 +120,7 @@ public:
     ReplaceArg(HEAD_POS, entry->ToWord());
     hashTable->Put(key, entry->ToWord());
   }
-  void Delete(word key) {
+  void Remove(word key) {
     Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(key));
     ImpMapEntry *entry =
@@ -130,7 +130,7 @@ public:
     if (result != Store::IntToWord(1))
       ReplaceArg(HEAD_POS, result);
   }
-  void DeleteAll() {
+  void RemoveAll() {
     GetHashTable()->Clear();
     ReplaceArg(HEAD_POS, 0);
   }
@@ -560,12 +560,12 @@ DEFINE4(UnsafeImpMap_insertWithi) {
   }
 } END
 
-DEFINE3(UnsafeImpMap_deleteWith) {
+DEFINE3(UnsafeImpMap_removeWith) {
   word closure = x0;
   DECLARE_IMP_MAP(impMap, x1);
   DECLARE_KEY(key, x2);
   if (impMap->Member(key)) {
-    impMap->Delete(key);
+    impMap->Remove(key);
     RETURN_UNIT;
   } else {
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -574,9 +574,9 @@ DEFINE3(UnsafeImpMap_deleteWith) {
   }
 } END
 
-DEFINE1(UnsafeImpMap_deleteAll) {
+DEFINE1(UnsafeImpMap_removeAll) {
   DECLARE_IMP_MAP(impMap, x0);
-  impMap->DeleteAll();
+  impMap->RemoveAll();
   RETURN_UNIT;
 } END
 
@@ -681,10 +681,10 @@ AliceDll word UnsafeImpMap() {
 		 UnsafeImpMap_clone, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "insertWithi",
 		 UnsafeImpMap_insertWithi, 4);
-  INIT_STRUCTURE(record, "UnsafeImpMap", "deleteWith",
-		 UnsafeImpMap_deleteWith, 3);
-  INIT_STRUCTURE(record, "UnsafeImpMap", "deleteAll",
-		 UnsafeImpMap_deleteAll, 1);
+  INIT_STRUCTURE(record, "UnsafeImpMap", "removeWith",
+		 UnsafeImpMap_removeWith, 3);
+  INIT_STRUCTURE(record, "UnsafeImpMap", "removeAll",
+		 UnsafeImpMap_removeAll, 1);
   INIT_STRUCTURE(record, "UnsafeImpMap", "lookup",
 		 UnsafeImpMap_lookup, 2);
   INIT_STRUCTURE(record, "UnsafeImpMap", "isEmpty",
