@@ -268,6 +268,7 @@ public:
   }
 
   virtual Result Run();
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
   virtual const char *Identify();
   virtual void DumpFrame(word wFrame);
   virtual void PushCall(Closure *closure);
@@ -559,6 +560,10 @@ Worker::Result ResolveInterpreter::Run() {
   default:
     Error("invalid resolution type");
   }
+}
+
+u_int ResolveInterpreter::GetInArity(ConcreteCode *) {
+  return 0;
 }
 
 void ResolveInterpreter::PushCall(Closure *closure) {

@@ -2445,6 +2445,13 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
   return Worker::RAISE;
 }
 
+u_int ByteCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
+  Assert(concreteCode->GetInterpreter() == ByteCodeInterpreter::self);
+  JavaByteCode *byteCode = static_cast<JavaByteCode *>(concreteCode);
+  u_int arity = byteCode->GetMethodInfo()->GetNumberOfArguments();
+  return arity == 1? Scheduler::ONE_ARG: arity;
+}
+
 const char *ByteCodeInterpreter::Identify() {
   return "ByteCodeInterpreter";
 }

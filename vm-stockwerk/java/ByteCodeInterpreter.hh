@@ -19,21 +19,19 @@
 #include "generic/Interpreter.hh"
 
 class DllExport ByteCodeInterpreter : public Interpreter {
-public:
-  // Exported ByteCodeIntpreter Instance
-  static ByteCodeInterpreter *self;
-  // ByteCodeInterpreter Constructor
+private:
   ByteCodeInterpreter() : Interpreter() {}
-  // ByteCodeInterpreter Static Constructor
+public:
+  static ByteCodeInterpreter *self;
+
   static void Init();
-  // Handler Methods
+
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
-  // Frame Handling
-  virtual void PushCall(Closure *closure);
-  // Execution
+
   virtual Result Run();
   virtual Result Handle();
-  // Debugging
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(word wFrame);
 
