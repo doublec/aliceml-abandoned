@@ -11,4 +11,8 @@ all:
 clean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
 
-distclean: clean
+veryclean:
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
+
+distclean:
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
