@@ -84,4 +84,7 @@ structure InfReflection :> INF_REFLECTION =
     val lab_inDependent	= Label.fromString "inDependent"
     val _		= Inf.inDependent : path * inf * kind -> kind (*verify*)
 
+    val lab_intersect	= Label.fromString "intersect"
+    val _		= Inf.intersect : inf * inf -> inf	(* verify *)
+
   end

@@ -34,6 +34,12 @@ struct
     open TypedInfo
 
 
+  (* UNFINISHED... *)
+
+    fun unfinished i funname casename =
+	Error.error(i, "Translation." ^ funname ^ ": " ^ casename ^
+		       " not implementeed yet")
+
   (* Recognize sum type constructors (tags) *)
 
     fun decomposeConarrow t =
@@ -76,16 +82,22 @@ struct
   (* Auxiliaries for reflection *)
 
     open PervasiveType
-    open LabelReflection
-    open PathReflection
+    open InfReflection
     open TypeReflection
+    open PathReflection
+    open LabelReflection
+
+    val typ_icon		= InfReflection.typ_con
+    val typ_ikind		= InfReflection.typ_kind
 
     val modname_label'		= trModName modname_label
     val modname_path'		= trModName modname_path
     val modname_type'		= trModName modname_type
+    val modname_inf'		= trModName modname_inf
     val lab_label'		= Label.fromName modname_label'
     val lab_path'		= Label.fromName modname_path'
     val lab_type'		= Label.fromName modname_type'
+    val lab_inf'		= Label.fromName modname_inf'
 
     val longidr_pervasive	= ref(NONE : O.longid option)
     fun longid_pervasive()	= case !longidr_pervasive
@@ -100,6 +112,7 @@ struct
     fun info_label()		= info_pervasiveDot lab_label'
     fun info_path()		= info_pervasiveDot lab_path'
     fun info_type()		= info_pervasiveDot lab_type'
+    fun info_inf()		= info_pervasiveDot lab_inf'
 
     val typ_typtyp		= Type.inTuple #[typ_typ, typ_typ]
     val typ_vartyp		= Type.inTuple #[typ_var, typ_typ]
@@ -107,6 +120,9 @@ struct
     val typ_kindkind		= Type.inTuple #[typ_kind, typ_kind]
     val typ_kindToVar		= Type.inArrow(typ_kind, typ_var)
     val typ_kindkindToKind	= Type.inArrow(typ_kindkind, typ_kind)
+    val typ_infinf		= Type.inTuple #[typ_inf, typ_inf]
+    val typ_pathinfinf		= Type.inTuple #[typ_path, typ_inf, typ_inf]
+    val typ_infpathinf		= Type.inTuple #[typ_inf, typ_path, typ_inf]
 
     val info_nowhere		= nonInfo(Source.nowhere)
     val info_nowhere'		= typInfo(Source.nowhere, typ_typ(*UNFINISHED*))
@@ -118,63 +134,33 @@ struct
 						      modname_label'
     fun longid_path()		= longid_pervasiveDot(info_path()) modname_path'
     fun longid_type()		= longid_pervasiveDot(info_type()) modname_type'
+    fun longid_inf()		= longid_pervasiveDot(info_inf())  modname_inf'
     fun longid_labelDot l'	= O.LongId(info_nowhere', longid_label(), l')
     fun longid_pathDot l'	= O.LongId(info_nowhere', longid_path(), l')
     fun longid_typeDot l'	= O.LongId(info_nowhere', longid_type(), l')
+    fun longid_infDot l'	= O.LongId(info_nowhere', longid_inf(), l')
 
-    fun labOp(a,e')		= let val r   = #region(O.infoExp e')
+    fun yOp (mkY,typ) (a,e')	= let val r   = #region(O.infoExp e')
 				      val l'  = O.Lab(nonInfo r, a)
 				      val t   = #typ(O.infoExp e')
-				      val t1  = Type.inArrow(t, typ_lab)
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_labelDot l')
+				      val t1  = Type.inArrow(t, typ)
+				      val e1' = O.VarExp(typInfo(r,t1), mkY l')
 				  in
-				      O.AppExp(typInfo(r, typ_lab), e1', e')
+				      O.AppExp(typInfo(r, typ), e1', e')
 				  end
-    fun pathOp(a,e')		= let val r   = #region(O.infoExp e')
-				      val l'  = O.Lab(nonInfo r, a)
-				      val t   = #typ(O.infoExp e')
-				      val t1  = Type.inArrow(t, typ_path)
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_pathDot l')
-				  in
-				      O.AppExp(typInfo(r, typ_path), e1', e')
-				  end
-    fun typOp(a,e')		= let val r   = #region(O.infoExp e')
-				      val t   = #typ(O.infoExp e')
-				      val l'  = O.Lab(nonInfo r, a)
-				      val t1  = Type.inArrow(t, typ_typ)
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_typeDot l')
-				  in
-				      O.AppExp(typInfo(r, typ_typ), e1', e')
-				  end
-    fun unitTypOp(a,e')		= let val r   = #region(O.infoExp e')
-				      val t   = #typ(O.infoExp e')
-				      val l'  = O.Lab(nonInfo r, a)
-				      val t1  = Type.inArrow(t, typ_unit)
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_typeDot l')
-				  in
-				      O.AppExp(typInfo(r, typ_unit), e1', e')
-				  end
-    fun varOp e'		= let val r   = #region(O.infoExp e')
-				      val l'  = O.Lab(nonInfo r, lab_var)
-				      val t1  = typ_kindToVar
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_typeDot l')
-				  in
-				      O.AppExp(typInfo(r, typ_var), e1', e')
-				  end
-    fun rowOp(a,e')		= let val r   = #region(O.infoExp e')
-				      val l'  = O.Lab(nonInfo r, a)
-				      val t   = #typ(O.infoExp e')
-				      val t1  = Type.inArrow(t, typ_row)
-				      val e1' = O.VarExp(typInfo(r,t1),
-							 longid_typeDot l')
-				  in
-				      O.AppExp(typInfo(r, typ_row), e1', e')
-				  end
+
+    val labOp			= yOp(longid_labelDot, typ_lab)
+    val pathOp			= yOp(longid_pathDot,  typ_path)
+    val typOp			= yOp(longid_typeDot,  typ_typ)
+    val varOp			= yOp(longid_typeDot,  typ_var)
+    val rowOp			= yOp(longid_typeDot,  typ_row)
+    val unitTypOp		= yOp(longid_typeDot,  typ_unit)
+    val sigOp			= yOp(longid_infDot,   typ_sign)
+    val infOp			= yOp(longid_infDot,   typ_inf)
+    val kindOp			= yOp(longid_infDot,   typ_ikind)
+    val unitInfOp		= yOp(longid_infDot,   typ_unit)
+    val pathInfOp		= yOp(longid_infDot,   typ_path)
+
 
   (* Runtime kinds and sorts *)
 
@@ -292,15 +278,20 @@ struct
 		in
 		    Type.extendRow(trModLabel l, infToTyp j, r)
 		end
-	    else (*UNFINISHED: interfaces*)
+	    else if Inf.isInfItem i then
+		let
+		    val (l,k,d) = Inf.asInfItem i
+		in
+		    Type.extendRow(trInfLabel l, typ_inf, r)
+		end
+	    else (* fixity *)
 		r
 	end
 
-    (*UNFINISHED: use punning*)
     fun trValInfo i		= i
     fun trTypInfo {region}	= {region=region, typ=typ_typ}
     fun trModInfo {region,inf}	= {region=region, typ=infToTyp inf}
-    fun trInfInfo {region}	= {region=region, typ=typ_typ}  (*UNFINISHED*)
+    fun trInfInfo {region}	= {region=region, typ=typ_inf}
 
     fun updatePervasive(I.Id(i,z,n) : I.modid, j) =
 	if n <> name_pervasive then () else
@@ -428,13 +419,16 @@ struct
 			    Switches.Bootstrap.NO_RTT then
 			(O.VarExp(i,y), isntIdentity)
 		    else let
+		(* UNFINISHED: Is this bullshit? We have to do realisations,
+		 * don't we?
+		 *)
 			val e1' = trKind r k
 			val e2' = trSort r (Type.CLOSED)
 			val lit = O.StringLit(String.toWide(Label.toString a))
 			val e3' = pathOp(lab_fromLab,
 				   labOp(lab_fromString,
 					 O.LitExp(typInfo(r,typ_string), lit)))
-			val e'  = O.TupExp(typInfo(r,typ_con), #[e1',e2',e2'])
+			val e'  = O.TupExp(typInfo(r,typ_con), #[e1',e2',e3'])
 		    in
 			(typOp(lab_inCon, e'), true)
 		    end
@@ -464,7 +458,29 @@ struct
 		upItems(withAbs, r, x, items, s1, isntIdentity',
 			O.Field(i',l',exp')::fields)
 	    end
-	else (*UNFINISHED: interfaces*)
+	else if Inf.isInfItem item then
+	    let
+		val (a,k,d) = Inf.asInfItem item
+		val    i    = typInfo(r, typ_inf)
+		val    i'   = nonInfo r
+		val    l'   = O.Lab(i', trInfLabel a)
+		val    y    = O.LongId(i,x,l')
+		val (exp,isntIdentity') =
+		    if not withAbs orelse Option.isSome d
+		    orelse !Switches.Bootstrap.rttLevel <>
+			    Switches.Bootstrap.FULL_RTT then
+			(O.VarExp(i,y), isntIdentity)
+		    else let
+		(* UNFINISHED: No idea how to do it yet. *)
+		    in
+			unfinished r "upItems" "runtime interface abstraction"
+		    end
+		val exp' = O.LazyExp(i,exp)
+	    in
+		upItems(withAbs, r, x, items, s1, isntIdentity',
+			O.Field(i',l',exp')::fields)
+	    end
+	else (* fixity *)
 	    upItems(withAbs, r, x, items, s1, isntIdentity, fields)
 
 
@@ -836,14 +852,30 @@ struct
       | trTyp'(I.PackTyp(i,j)) =
 	(* [pack j] = Type.inPack[j] *)
 	(*UNFINISHED*)
-	raise Crash.Crash "TranslationPhase.trTyp: PackTyp"
+	unfinished (#region i) "trTyp" "runtime package types"
 
       | trTyp'(I.SingTyp(i,y)) =
 	(* [sing y] = Type.inSing[y] *)
 	(*UNFINISHED*)
-	raise Crash.Crash "TranslationPhase.trTyp: SingTyp"
+	unfinished (#region i) "trTyp" "runtime singleton types"
 
       | trTyp'(I.AbsTyp(i,so)) =
+	raise Crash.Crash "TranslationPhase.trTyp: AbsTyp"
+
+      | trTyp'(I.ExtTyp(i,so)) =
+	raise Crash.Crash "TranslationPhase.trTyp: ExtTyp"
+
+    and trTypRep t =
+	if !Switches.Bootstrap.rttLevel = Switches.Bootstrap.NO_RTT then
+	    O.FailExp(typInfo(#region(I.infoTyp t), typ_typ))
+	else
+	    case trTypRep' t
+	      of NONE    => trTyp' t
+	       | SOME e' => e'
+
+    and trTypRep'(I.FunTyp(i,x,t)) = trTypRep' t
+
+      | trTypRep'(I.AbsTyp(i,so)) =
 	(* [abstract] = Type.inCon(<<kind>>, CLOSED, Path.invent()) *)
 	let
 	    val r   = #region i
@@ -855,10 +887,10 @@ struct
 					O.LitExp(typInfo(r,typ_string), lit)))
 	    val e'  = O.TupExp(typInfo(r, typ_con), #[e1',e2',e3'])
 	in
-	    typOp(lab_inCon, e')
+	    SOME(typOp(lab_inCon, e'))
 	end
 
-      | trTyp'(I.ExtTyp(i,so)) =
+      | trTypRep'(I.ExtTyp(i,so)) =
 	(* [abstract] = Type.inCon(<<kind>>, OPEN, Path.invent()) *)
 	let
 	    val r   = #region i
@@ -870,8 +902,11 @@ struct
 					O.LitExp(typInfo(r,typ_string), lit)))
 	    val e'  = O.TupExp(typInfo(r, typ_con), #[e1',e2',e3'])
 	in
-	    typOp(lab_inCon, e')
+	    SOME(typOp(lab_inCon, e'))
 	end
+
+      | trTypRep' t = NONE
+
 
     and trTypRow(I.Row(i,fs,b)) =
 	(* [f1,...,fn]     = [f1](...[fn](Type.emptyRow())...)
@@ -901,10 +936,158 @@ struct
     and trBindTyp a (i,x,t,k) =
 	let
 	    val r  = #region(I.infoId x)
-	    val p' = O.VarPat(typInfo(#region(I.infoId x), typ_var), trTypid x)
-	    val d' = O.ValDec(nonInfo(#region i), p', varOp(trKind r k))
+	    val p' = O.VarPat(typInfo(r, typ_var), trTypid x)
+	    val d' = O.ValDec(nonInfo(#region i), p', varOp(lab_var,trKind r k))
 	    val e' = typOp(a, O.TupExp(typInfo(#region i, typ_vartyp),
 				       #[trVarTyp r x, trTyp' t]))
+	in
+	    O.LetExp(O.infoExp e', #[d'], e')
+	end
+
+
+  (* Interfaces *)
+
+    and trInf j =
+	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	    O.FailExp(typInfo(#region(I.infoInf j), typ_inf))
+	else
+	    trInf' j
+
+    and trInf'(I.TopInf(i)) =
+	(* [any] = Inf.inTop() *)
+	let
+	    val e' = O.TupExp(typInfo(#region i, typ_unit), #[])
+	in
+	    infOp(lab_inTop, e')
+	end
+
+      | trInf'(I.ConInf(i,y)) =
+	(* [y] = {[y]} *)
+	O.VarExp(typInfo(#region i, typ_inf), trInflongid y)
+
+      | trInf'(I.SigInf(i,ss)) =
+	(* [sig ss end] = let val s = Inf.empty() in [ss]; Inf.inSig s end *)
+	let
+	    val i'  = typInfo(#region i, typ_sign)
+	    val x'  = O.Id(i', Stamp.new(), Name.InId)
+	    val p'  = O.VarPat(i', x')
+	    val e1' = O.TupExp(typInfo(#region i, typ_unit), #[])
+	    val d'  = O.ValDec(nonInfo(#region i), p', sigOp(lab_empty, e1'))
+	    val e2' = infOp(lab_inSig, O.VarExp(i', O.ShortId(i', x')))
+	    val e'  = O.SeqExp(i', Vector.append(trSpecs x' ss, #[e2']))
+	in
+	    O.LetExp(O.infoExp e', #[d'], e')
+	end
+
+      | trInf'(I.FunInf(i,x,j1,j2)) =
+	(* [fn(x:j1) => j2] = let val {[x]} = Path.invent()
+	 *                    in Inf.inLambda([x],[j1],[j2]) end
+	 *)
+	trBindInf lab_inLambda (i,x,j1,j2)
+
+      | trInf'(I.AppInf(i,j,m)) =
+	(* [j m] = Inf.inApply([j],[m],???) *)
+	(*UNFINISHED*)
+	let
+	    val r   = #region i
+	    val e1' = trInf' j
+	    val e2' = trMod m			(* V UNFINISHED! V *)
+	    val e3' = infOp(lab_inTop, O.TupExp(typInfo(r, typ_unit), #[]))
+	    val e'  = O.TupExp(typInfo(r, typ_infpathinf), #[e1',e2',e3'])
+	in
+	    infOp(lab_inApply, e')
+	end
+
+      | trInf'(I.CompInf(i,j1,j2)) =
+	(* [j1 where j2] = Inf.intersect([j1],[j2]) *)
+	let
+	    val e' = O.TupExp(typInfo(#region i, typ_infinf),
+			      #[trInf j1, trInf j2])
+	in
+	    infOp(lab_intersect, e')
+	end
+
+      | trInf'(I.ArrInf(i,x,j1,j2)) =
+	(* [fct(x:j1) -> j2] = let val {[x]} = Path.invent()
+	 *                     in Inf.inArrow([x],[j1],[j2]) end
+	 *)
+	trBindInf lab_inArrow (i,x,j1,j2)
+
+      | trInf'(I.LetInf(i,ds,j)) =
+	(* [let ds in j end] = let [ds] in [j] end *)
+	O.LetExp(typInfo(#region i, typ_inf), trDecs ds, trInf' j)
+
+      | trInf'(I.SingInf(i,m)) =
+	(* [sing m] = Inf.inSing[m] *)
+	(*UNFINISHED*)
+	unfinished (#region i) "trTyp" "runtime singleton interfaces"
+
+      | trInf'(I.AbsInf(i,so)) =
+	raise Crash.Crash "TranslationPhase.trInf: AbsInf"
+
+    and trInfRep j =
+	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	    O.FailExp(typInfo(#region(I.infoInf j), typ_inf))
+	else
+	    case trInfRep'(fn k' => k', j)
+	      of NONE    => trInf' j
+	       | SOME e' => e'
+
+    and trInfRep'(mkKind, I.FunInf(i,x,j1,j2)) =
+	(* [fn(x:j1) => j2]_MkKind = [j2]_<fn k => MkKind
+	 *                                 let val {[x]} = Path.invent()
+	 *                                 in Inf.inDependent([x],[j1],<k>) end>
+	 *)
+	let
+	    fun mkKind' e3' =
+		let
+		    val r   = #region(I.infoId x)
+		    val i'  = typInfo(r, typ_path)
+		    val x'  = trModid x
+		    val p'  = O.VarPat(i', x')
+		    val e0' = pathOp(lab_invent,
+				     O.TupExp(typInfo(r,typ_unit), #[]))
+		    val d'  = O.ValDec(nonInfo(#region i), p', e0')
+		    val e1' = O.VarExp(i', O.ShortId(i', x'))
+		    val e'  = kindOp(lab_inDependent,
+				     O.TupExp(typInfo(#region i,typ_pathinfinf),
+					      #[e1', trInf' j1, e3']))
+		in
+		    mkKind(O.LetExp(O.infoExp e', #[d'], e'))
+		end
+	in
+	    trInfRep'(mkKind', j2)
+	end
+
+      | trInfRep'(mkKind, I.AbsInf(i,so)) =
+	(* [abstract]_MkKind = Inf.inCon(MkKind<Inf.inGround()>,
+	 *                               Path.invent())
+	 *)
+	let
+	    val r   = #region i
+	    val a   = Path.toLab(#2(Inf.asCon(#inf i)))
+	    val lit = O.StringLit(String.toWide(Label.toString a))
+	    val e1' = mkKind(kindOp(lab_inGround,
+				    O.TupExp(typInfo(r,typ_unit), #[])))
+	    val e2' = pathOp(lab_fromLab, labOp(lab_fromString,
+					O.LitExp(typInfo(r,typ_string), lit)))
+	in
+	    SOME(typOp(lab_inCon, O.TupExp(typInfo(r, typ_icon), #[e1',e2'])))
+	end
+
+      | trInfRep'(mkKind, j) = NONE
+
+    and trBindInf a (i,x,j1,j2) =
+	let
+	    val r   = #region(I.infoId x)
+	    val i'  = typInfo(r, typ_path)
+	    val x'  = trModid x
+	    val p'  = O.VarPat(i', x')
+	    val e1' = pathOp(lab_invent, O.TupExp(typInfo(r, typ_unit), #[]))
+	    val d'  = O.ValDec(nonInfo(#region i), p', e1')
+	    val e2' = O.VarExp(i', O.ShortId(i', x'))
+	    val e'  = infOp(a, O.TupExp(typInfo(#region i, typ_pathinfinf),
+					#[e2', trInf' j1, trInf j2]))
 	in
 	    O.LetExp(O.infoExp e', #[d'], e')
 	end
@@ -917,8 +1100,8 @@ struct
     and trDecs'(ds, ds')		= Vector.foldl trDec ds' ds
     and trDec(I.ValDec(i,p,e), ds')	= O.ValDec(i, trPat p, trExp e) :: ds'
       | trDec(I.TypDec(i,x,t), ds')	= let val r  = #region(I.infoId x)
-					      val e' = trTyp t
-					      val t  = #typ(O.infoExp e')
+					      val e' = trTypRep t
+					      val t  = typ_typ
 					  in O.ValDec(i, O.VarPat(typInfo(r,t),
 							trTypid x), e')
 					  end :: ds'
@@ -930,7 +1113,12 @@ struct
 					  end :: ds'
 					  before
 					  updatePervasive(x, #inf(I.infoMod m))
-      | trDec(I.InfDec(i,x,j), ds')	= ds' (*UNFINISHED*)
+      | trDec(I.InfDec(i,x,j), ds')	= let val r  = #region(I.infoId x)
+					      val e' = trInfRep j
+					      val t  = typ_inf
+					  in O.ValDec(i, O.VarPat(typInfo(r,t),
+							trInfid x), e')
+					  end :: ds'
       | trDec(I.FixDec(i,x,q), ds')	= ds'
       | trDec(I.VarDec(i,x,d), ds')	= trDec(d, ds')
       | trDec(I.RecDec(i,ds), ds')	= O.RecDec(i, trRecDecs ds) ::
@@ -972,7 +1160,7 @@ struct
 					      val i'  = typInfo(r, typ_typ)
 					      val y'  = O.ShortId(i', trTypid x)
 					      val e1' = O.VarExp(i', y')
-					      val e2' = trTyp t
+					      val e2' = trTypRep t
 					      val i'' = typInfo(r, typ_typtyp)
 					      val e'  = O.TupExp(i'',#[e1',e2'])
 					  in O.ValDec(nonInfo r,
@@ -980,6 +1168,93 @@ struct
 						 unitTypOp(lab_fill, e'))
 					  end :: ds'
       | trRHSRecDec(_, ds')		= ds'
+
+
+  (* Specifications *)
+
+    and trSpecs x' ss = #[]	(*UNFINISHED*)
+(*
+    and trSpecs x' ss			= Vector.rev
+					  (Vector.fromList(trSpecs' x'(ss, [])))
+    and trSpecs' x' (ss, ss')		= Vector.foldl (trSpec x') ss' ss
+
+    and trSpec x' (I.ValSpec(i,x,t), ss') = 
+	(* [val x : t]_s = Inf.extendVal(s, Inf.newVal(s,[{x}]), [t], *)
+	let
+	in
+	end
+
+    O.ValSpec(i, trValid x, trTyp t)::ds'
+      | trSpec(I.TypSpec(i,x,t), ds')	= let val r  = #region(I.infoId x)
+					      val e' = trTypRep t
+					      val t  = typ_typ
+					  in O.ValSpec(i, O.VarPat(typInfo(r,t),
+							trTypid x), e')
+					  end :: ds'
+      | trSpec(I.ModSpec(i,x,m), ds')	= let val r  = #region(I.infoId x)
+					      val e' = trMod m
+					      val t  = #typ(O.infoExp e')
+					  in O.ValSpec(i, O.VarPat(typInfo(r,t),
+							 trModid x), e')
+					  end :: ds'
+					  before
+					  updatePervasive(x, #inf(I.infoMod m))
+      | trSpec(I.InfSpec(i,x,j), ds')	= let val r  = #region(I.infoId x)
+					      val e' = trInfRep j
+					      val t  = typ_inf
+					  in O.ValSpec(i, O.VarPat(typInfo(r,t),
+							trInfid x), e')
+					  end :: ds'
+      | trSpec(I.FixSpec(i,x,q), ds')	= ds'
+      | trSpec(I.VarSpec(i,x,d), ds')	= trSpec(d, ds')
+      | trSpec(I.RecSpec(i,ds), ds')	= O.RecSpec(i, trRecSpecs ds) ::
+					      trRHSRecSpecs ds @
+					      trLHSRecSpecs ds @ ds'
+      | trSpec(I.LocalSpec(i,ds), ds')	= trSpecs'(ds, ds')
+
+
+    and trRecSpecs ds			= Vector.rev
+					   (Vector.fromList(trRecSpecs'(ds, [])))
+    and trRecSpecs'(ds, ds')		= Vector.foldl trRecSpec ds' ds
+    and trRecSpec(I.TypSpec(i,x,t), ds')	= ds'
+      | trRecSpec(d,ds')			= trSpec(d,ds')
+
+
+    and trLHSRecSpecs ds			= List.rev(trLHSRecSpecs'(ds, []))
+    and trLHSRecSpecs'(ds, ds')		= Vector.foldl trLHSRecSpec ds' ds
+    and trLHSRecSpec(I.TypSpec(i,x,t), ds')
+					= let val r  = #region i
+					      val i' = typInfo(r, typ_typ)
+					  in O.ValSpec(nonInfo r,
+						O.VarPat(i', trTypid x),
+						if !Switches.Bootstrap.rttLevel=
+						    Switches.Bootstrap.NO_RTT
+						then O.FailExp(i')
+						else typOp(lab_unknown,
+						   trKind r (Type.kind
+							 (#typ(I.infoTyp t)))))
+					  end :: ds'
+      | trLHSRecSpec(_, ds')		= ds'
+
+    and trRHSRecSpecs ds			= List.rev(trRHSRecSpecs'(ds, []))
+    and trRHSRecSpecs'(ds, ds')		= Vector.foldl trRHSRecSpec ds' ds
+    and trRHSRecSpec(I.TypSpec(i,x,t), ds')
+					= if !Switches.Bootstrap.rttLevel =
+					      Switches.Bootstrap.NO_RTT
+					  then ds' else
+					  let val r   = #region i
+					      val i'  = typInfo(r, typ_typ)
+					      val y'  = O.ShortId(i', trTypid x)
+					      val e1' = O.VarExp(i', y')
+					      val e2' = trTypRep t
+					      val i'' = typInfo(r, typ_typtyp)
+					      val e'  = O.TupExp(i'',#[e1',e2'])
+					  in O.ValSpec(nonInfo r,
+						 O.JokPat(typInfo(r,typ_unit)),
+						 unitTypOp(lab_fill, e'))
+					  end :: ds'
+      | trRHSRecSpec(_, ds')		= ds'
+*)
 
 
   (* Imports and annotations *)
@@ -1015,7 +1290,7 @@ struct
 					  :: ds'
 					  before
 					  updatePervasive(x, #inf(I.infoDesc d))
-      | trImp y t (I.InfImp(i,x,d),ds')	= ds' (*UNFINISHED*)
+      | trImp y t (I.InfImp(i,x,d),ds')	= idToDec(trInfid x, y, t, typ_inf)::ds'
       | trImp y t (I.FixImp(i,x,d),ds')	= ds'
       | trImp y t (I.RecImp(i,is), ds')	= trImps(is, y, t, ds')
 
