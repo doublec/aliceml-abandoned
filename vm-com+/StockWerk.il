@@ -147,6 +147,10 @@
       ldc.i4 0
       ret
     }
+    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
+      ldc.i4 0
+      ret
+    }
   }
 
   .class abstract public Global extends StockWerk.StockWert
@@ -221,12 +225,7 @@
       ldfld int32 StockWerk.Int::Value
       ldarg.0
       ldfld int32 StockWerk.Int::Value
-      beq.s retTrue
-    retFalse:
-      ldc.i4 0
-      ret
-    retTrue:
-      ldc.i4 1
+      ceq
       ret
     testTransient:
       ldarg.1
@@ -237,6 +236,9 @@
       callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
       starg.s 1
       br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
     }
   }
 
@@ -400,7 +402,10 @@
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.Promise::Ref
       brtrue.s raise
-      //--** if arg 0 and arg 1 are variants of the same transient, raise Fulfill
+      ldarg.1
+      ldarg.0
+      callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
+      brtrue.s raise
       ldarg.0
       ldarg.1
       stfld class StockWerk.StockWert StockWerk.Promise::Ref
@@ -443,6 +448,21 @@
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
     }
+    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
+      ldarg.0
+      ldfld class StockWerk.StockWert StockWerk.Promise::Ref
+      dup
+      brfalse.s testEqual
+      ldarg.1
+      tail. callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
+      ret
+    testEqual:
+      pop
+      ldarg.0
+      ldarg.1
+      ceq
+      ret
+    }
   }
 
   .class sealed public Future extends StockWerk.Transient {
@@ -475,6 +495,13 @@
       ldarg.0
       ldfld class StockWerk.Promise StockWerk.Future::Prom
       tail. call instance class StockWerk.StockWert StockWerk.Promise::RequestInternal()
+      ret
+    }
+    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
+      ldarg.0
+      ldfld class StockWerk.Promise StockWerk.Future::Prom
+      ldarg.1
+      tail. callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
       ret
     }
   }
@@ -538,6 +565,10 @@
       ldarg.0
       ldfld int32 StockWerk.ByNeed::State
       switch(apply, wait, raise, deref)
+    wait:
+      ldarg.0
+      call instance void System.Object::Wait()
+      br.s retry
     apply:
       ldarg.0
       ldc.i4 1
@@ -549,8 +580,11 @@
         ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
         ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
         callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
+        ldloc.0
         stloc.0
-        //--** if loc.0 and arg.0 are variants of the same transient, throw an exception
+        ldarg.0
+        callvirt instance bool StockWerk.StockWert::IsVariantOf(class StockWerk.Transient)
+        brtrue.s raiseFulfill
         ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
@@ -559,6 +593,10 @@
         stfld int32 StockWerk.ByNeed::State
         ldloc.0
         ret
+      raiseFulfill:
+        ldsfld class StockWerk.StockWert StockWerk.Prebound::Fulfill
+        newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+        throw
       } catch StockWerk.ExceptionWrapper {
         ldfld class StockWerk.StockWert StockWerk.ExceptionWrapper::Value
         stloc.0
@@ -572,10 +610,6 @@
         newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
         throw
       }
-    wait:
-      ldarg.0
-      call instance void System.Object::Wait()
-      br.s retry
     raise:
       ldarg.0
       call void System.CriticalSection::Exit(class System.Object)
@@ -588,6 +622,12 @@
       call void System.CriticalSection::Exit(class System.Object)
       ldarg.0
       ldfld class StockWerk.StockWert StockWerk.ByNeed::Ref
+      ret
+    }
+    .method virtual public bool IsVariantOf(class StockWerk.Transient) {
+      ldarg.0
+      ldarg.1
+      ceq
       ret
     }
   }
