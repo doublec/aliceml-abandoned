@@ -596,11 +596,11 @@ sig
 end
 </PRE>
 
-<P>Arbitrarily many messages may be sent to a channel using <TT>put</TT>. The
-<TT>get</TT> operation takes the oldest message out of the channel. It suspends
-if none is available. A more advanced design might distinguish between read and
-write view of a channel, but we chose to ignore that here for the sake of
-simplicity.</P>
+<P>An arbitrary number of messages may be sent to a channel using <TT>put</TT>.
+The <TT>get</TT> operation takes the oldest message out of the channel. It
+suspends if none is available. A more advanced design might distinguish between
+read and write view of a channel, but we chose to ignore that here for the sake
+of simplicity.</P>
 
 <P>A straight-forward implementation uses promises and references:</P>
 

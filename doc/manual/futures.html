@@ -108,15 +108,15 @@ form. It allows convenient formulation of lazy functions. For example, a lazy
 variant of the <TT>map</TT> function on lists can be written</P>
 
 <PRE class=code>
-fun lazy mapl f   []    = nil
-       | mapl f (x::xs) = f x :: mapl f xs</PRE>
+fun lazy mapz f   []    = nil
+       | mapz f (x::xs) = f x :: mapz f xs</PRE>
 
 <P>This formulation is equivalent to</P>
 
 <PRE class=code>
-fun mapl f xs = lazy (case xs of
+fun mapz f xs = lazy (case xs of
                            []   => nil
-                        | x::xs => f x :: mapl f xs)</PRE>
+                        | x::xs => f x :: mapz f xs)</PRE>
 
 
 
