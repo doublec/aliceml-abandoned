@@ -39,26 +39,26 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
 
-(*--** __primitive use : string -> unit = "use" *)
+(*--** __primitive val use : string -> unit = "use" *)
 
-__primitive op=  : ''a * ''a -> bool = "="
-__primitive op<> : ''a * ''a -> bool = "<>"
+__primitive val op=  : ''a * ''a -> bool = "="
+__primitive val op<> : ''a * ''a -> bool = "<>"
 
 
 (* Overloaded Identifiers *)
 
-__primitive op~ :	int -> int = "~"
+__primitive val op~ :	int -> int = "~"
 
-__primitive op+ :	int * int -> int = "+"
-__primitive op- :	int * int -> int = "-"
-__primitive op* :	int * int -> int = "*"
-__primitive op div :	int * int -> int = "div"
-__primitive op mod :	int * int -> int = "mod"
+__primitive val op+ :	int * int -> int = "+"
+__primitive val op- :	int * int -> int = "-"
+__primitive val op* :	int * int -> int = "*"
+__primitive val op div:	int * int -> int = "div"
+__primitive val op mod:	int * int -> int = "mod"
 
-__primitive op< :	int * int -> bool = "<"
-__primitive op> :	int * int -> bool = ">"
-__primitive op<= :	int * int -> bool = "<="
-__primitive op>= :	int * int -> bool = ">="
+__primitive val op< :	int * int -> bool = "<"
+__primitive val op> :	int * int -> bool = ">"
+__primitive val op<= :	int * int -> bool = "<="
+__primitive val op>= :	int * int -> bool = ">="
 
 
 (* General *)
@@ -84,7 +84,7 @@ structure General =
 
     fun !(ref v) = v
 
-    __primitive op:= : 'a ref * 'a -> unit = ":="
+    __primitive val op:= : 'a ref * 'a -> unit = ":="
 
     fun (f o g) a  = f(g a)
     fun a before b = a
@@ -316,14 +316,14 @@ structure Char =
     struct
 	type char = char
 
-	__primitive ord : char -> int = "Char.ord"
-	__primitive chr : int -> char = "Char.chr"
+	__primitive val ord : char -> int = "Char.ord"
+	__primitive val chr : int -> char = "Char.chr"
 
-	__primitive isDigit :    char -> bool = "Char.isDigit"
-	__primitive isHexDigit : char -> bool = "Char.isHexDigit"
-	__primitive isSpace :    char -> bool = "Char.isSpace"
+	__primitive val isDigit :    char -> bool = "Char.isDigit"
+	__primitive val isHexDigit : char -> bool = "Char.isHexDigit"
+	__primitive val isSpace :    char -> bool = "Char.isSpace"
 
-	__primitive toCString :  char -> string = "Char.toCString"
+	__primitive val toCString :  char -> string = "Char.toCString"
     end
 
 
@@ -335,13 +335,14 @@ structure String =
 
 	(*--** Subscript exceptions are not raised *)
 
-	__primitive op^ : string * string -> string = "String.^"
-	__primitive toCString : string -> string = "String.toCString"
-	__primitive str : char -> string = "String.str"
-	__primitive size : string -> int = "String.size"
-	__primitive substring: string * int * int -> string = "String.substring"
-	__primitive sub : string * int -> char = "String.sub"
-	__primitive explode : string -> char list = "String.explode"
+	__primitive val op^ : string * string -> string = "String.^"
+	__primitive val toCString : string -> string = "String.toCString"
+	__primitive val str : char -> string = "String.str"
+	__primitive val size : string -> int = "String.size"
+	__primitive val substring : string * int * int -> string =
+							"String.substring"
+	__primitive val sub : string * int -> char = "String.sub"
+	__primitive val explode : string -> char list = "String.explode"
 
 	fun extract (s, i, NONE) = substring (s, i, size s - i)
 	  | extract (s, i, SOME j) = substring (s, i, j)
@@ -354,7 +355,8 @@ structure String =
 
 	fun compare (s, t) =
 	    let
-		__primitive compare' : string * string -> int = "String.compare'"
+		__primitive val compare' : string * string -> int =
+							"String.compare'"
 		val i = compare' (s, t)
 	    in
 		if i = 0 then EQUAL else if i < 0 then LESS else GREATER
@@ -513,13 +515,13 @@ structure Int :> INTEGER =
 
 	fun compare (i, j) =
 	    let
-		__primitive compare' : int * int -> int = "Int.compare'"
+		__primitive val compare' : int * int -> int = "Int.compare'"
 		val n = compare' (i, j)
 	    in
 		if n = 0 then EQUAL else if n < 0 then LESS else GREATER
 	    end
 
-	__primitive toString : int -> string = "Int.toString"
+	__primitive val toString : int -> string = "Int.toString"
 
 	val op>= = op>=
 	val op< = op<
@@ -559,11 +561,11 @@ structure Array =
     struct
 	__eqtype 'a array
 
-	__primitive array : int * 'a -> 'a array = "Array.array"
-	__primitive fromList : 'a list -> 'a array = "Array.fromList"
-	__primitive length : 'a array -> int = "Array.length"
-	__primitive sub : 'a array * int -> 'a = "Array.sub"
-	__primitive update : 'a array * int * 'a -> unit = "Array.update"
+	__primitive val array : int * 'a -> 'a array = "Array.array"
+	__primitive val fromList : 'a list -> 'a array = "Array.fromList"
+	__primitive val length : 'a array -> int = "Array.length"
+	__primitive val sub : 'a array * int -> 'a = "Array.sub"
+	__primitive val update : 'a array * int * 'a -> unit = "Array.update"
 
 	fun copy {src, si, len, dst, di} =
 	    let
@@ -611,8 +613,8 @@ structure Vector =
     struct
 	eqtype 'a vector
 
-	__primitive fromList : 'a list -> 'a vector = "Vector.fromList"
-	__primitive sub : 'a vector * int -> 'a = "Vector.sub"
+	__primitive val fromList : 'a list -> 'a vector = "Vector.fromList"
+	__primitive val sub : 'a vector * int -> 'a = "Vector.sub"
 
 	fun tabulate (n, f) = fromList (List.tabulate (n, f))
     end

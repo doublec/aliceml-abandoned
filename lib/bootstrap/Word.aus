@@ -17,24 +17,24 @@ structure Word =
 	type word = word
 
 	local
-	    __primitive fromInt' : int * int -> word = "Word.fromInt'"
+	    __primitive val fromInt' : int * int -> word = "Word.fromInt'"
 	in
 	    fun fromInt x = fromInt' (31, x)
 	    fun fromLargeInt x = fromInt' (31, x)
 	end
 
-	__primitive toInt : word -> int = "Word.toInt"
-	__primitive toLargeInt : word -> LargeInt.int = "Word.toInt"
-	__primitive toIntX : word -> int = "Word.toIntX"
-	__primitive op+ : word * word -> word = "Word.+"
-	__primitive orb : word * word -> word = "Word.orb"
-	__primitive xorb : word * word -> word = "Word.xorb"
-	__primitive andb : word * word -> word = "Word.andb"
-	__primitive notb : word * word -> word = "Word.notb"
-	__primitive op<< : word * word -> word = "Word.<<"
-	__primitive op>> : word * word -> word = "Word.>>"
-	__primitive op~>> : word * word -> word = "Word.~>>"
-	__primitive toString : word -> string = "Word.toString"
+	__primitive val toInt : word -> int = "Word.toInt"
+	__primitive val toLargeInt : word -> LargeInt.int = "Word.toInt"
+	__primitive val toIntX : word -> int = "Word.toIntX"
+	__primitive val op+ : word * word -> word = "Word.+"
+	__primitive val orb : word * word -> word = "Word.orb"
+	__primitive val xorb : word * word -> word = "Word.xorb"
+	__primitive val andb : word * word -> word = "Word.andb"
+	__primitive val notb : word * word -> word = "Word.notb"
+	__primitive val op<< : word * word -> word = "Word.<<"
+	__primitive val op>> : word * word -> word = "Word.>>"
+	__primitive val op~>> : word * word -> word = "Word.~>>"
+	__primitive val toString : word -> string = "Word.toString"
 
 	val op>= = op>=
 
