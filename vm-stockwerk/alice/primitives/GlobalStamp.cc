@@ -36,22 +36,22 @@ DEFINE2(GlobalStamp_compare) {
       int result =
 	std::memcmp(string1->GetValue(), string2->GetValue(), length);
       if (result < 0) {
-	RETURN_INT(2); // LESS
+	RETURN_INT(Types::LESS);
       } else if (result > 0) {
-	RETURN_INT(1); // GREATER
+	RETURN_INT(Types::GREATER);
       } else if (length1 < length2) {
-	RETURN_INT(2); // LESS
+	RETURN_INT(Types::LESS);
       } else if (length1 > length2) {
-	RETURN_INT(1); // GREATER
+	RETURN_INT(Types::GREATER);
       } else {
-	RETURN_INT(0); // EQUAL
+	RETURN_INT(Types::EQUAL);
       }
     } else {
-      RETURN_INT(1); // GREATER
+      RETURN_INT(Types::GREATER);
     }
   } else {
     if (globalStamp2->GetLabel() == CHUNK_LABEL) {
-      RETURN_INT(2); // LESS
+      RETURN_INT(Types::LESS);
     } else {
       Tuple *tuple1 = static_cast<Tuple *>(globalStamp1);
       Tuple *tuple2 = static_cast<Tuple *>(globalStamp2);
@@ -59,18 +59,18 @@ DEFINE2(GlobalStamp_compare) {
       Guid *guid2 = Guid::FromWordDirect(tuple2->Sel(0));
       int result = Guid::Compare(guid1, guid2);
       if (result < 0) {
-	RETURN_INT(2); // LESS
+	RETURN_INT(Types::LESS);
       } else if (result > 0) {
-	RETURN_INT(1); // GREATER
+	RETURN_INT(Types::GREATER);
       }
       u_int counter1 = Store::DirectWordToInt(tuple1->Sel(1));
       u_int counter2 = Store::DirectWordToInt(tuple2->Sel(1));
       if (counter1 < counter2) {
-	RETURN_INT(2); // LESS
+	RETURN_INT(Types::LESS);
       } else if (counter1 > counter2) {
-	RETURN_INT(1); // GREATER
+	RETURN_INT(Types::GREATER);
       } else {
-	RETURN_INT(0); // EQUAL
+	RETURN_INT(Types::EQUAL);
       }
     }
   }
