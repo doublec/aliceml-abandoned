@@ -22,6 +22,6 @@ signature LIVENESS_ANALYSIS_PHASE =
 	structure I: FLAT_GRAMMAR = FlatGrammar
 	structure O: FLAT_GRAMMAR = FlatGrammar
 
-	val translate: C.t -> Source.desc * I.t -> O.t
+	val translate: Source.desc * C.t * I.t -> C.t * O.t
     end
 
