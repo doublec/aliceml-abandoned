@@ -6,28 +6,26 @@
 
 <?php section("overview", "overview") ?>
 
-<P>A <EM>future</EM> is a place-holder for the undetermined result of a
+<P>A <EM>future</EM> is a placeholder for the undetermined result of a
 (concurrent) computation. Once the computation delivers a result, the
-associated future is eliminated by globally replacing it with the result value.
-That value may be a future on its own.</P>
+associated future is eliminated by globally replacing it with the result
+(which may itself be a future). If the computation terminates with an
+exception, the future is <EM>failed</EM> with the corresponding exception.</P>
 
-<P>Whenever a future is <EM>requested</EM> by a concurrent computation, i.e. it
-tries to access its value, that computation automatically synchronizes on the
-future by blocking until it becomes determined or failed.</P>
-
-<P>If the computation associated with a future terminates with an exception,
-the future is <EM>failed</EM>. A failed future carries the corresponding
-exception and reraises it on every request.</P>
+<P>A computation is said to <EM>request</EM> a future when the computation
+tries to access the future's value.  The computation automatically blocks
+until the future becomes determined or failed.  Requesting a failed future
+re-raises the exception with which the future was failed.</P>
 
 <P>There are three basic kinds of futures:</P>
 
 <UL>
-  <LI> <A href="#spawn"><EM>concurrent futures</EM></A> stand for the
-	result of an concurrent computation </LI>
-  <LI> <A href="#lazy"><EM>lazy futures</EM></A> stand for the
-	result of a computation that is only performed on request </LI>
-  <LI> <A href="#promise"><EM>promised futures</EM></A> stand for the
-	a value that is delivered through an explicit operation </LI>
+  <LI> <A href="#spawn"><EM>concurrent futures</EM></A> are placeholders
+	for the result of a concurrent computation, </LI>
+  <LI> <A href="#lazy"><EM>lazy futures</EM></A> are placeholders for the
+	result of a computation that is only performed on request, </LI>
+  <LI> <A href="#promise"><EM>promised futures</EM></A> are placeholders
+	for a value that is delivered through an explicit operation. </LI>
 </UL>
 
 
@@ -38,12 +36,11 @@ exception and reraises it on every request.</P>
 <PRE class=code>
 spawn <I>exp</I></PRE>
 
-<P>which evaluates the expression <TT><I>exp</I></TT> in new thread and returns
-immediately with a future of its result. When the expression has been
-evaluated, the future is globally replaced by the result. We speak of
-<EM>functional threads</EM>. See the below discussion on <A
-href="#failed">failed futures</A> for the treatment of possible error
-conditions.</P>
+<P>which evaluates the expression <TT><I>exp</I></TT> in a new thread and
+returns immediately with a future of its result. When the expression has
+been evaluated, the future is globally replaced by the result. See the
+discussion on <A href="#failed">failed futures</A> for details about the
+treatment of possible error conditions.</P>
 
 
 <?php subsection("spawn-example", "Example") ?>
@@ -76,12 +73,13 @@ href="#syntax">below</A> for a precise definition of this derived form.</P>
 <PRE class=code>
 lazy <I>exp</I></PRE>
 
-<P>A lazy expression immediately evaluates to a lazy future of the result of
+<P>which immediately evaluates to a lazy future of the result of
 <TT><I>exp</I></TT>. As soon as a thread <A href="#request">requests</A> the
-future, the computation is initiated in a new thread. The lazy future is
-replaced by a concurrent future and evaluation proceeds similar to <A
-href="#spawn"><TT>spawn</TT></A>. In particular, <A href="#failed">failure</A>
-is handled consistently.</P>
+future, the computation is initiated in a new thread and the lazy future is
+replaced by a concurrent future. Thereafter, evaluation proceeds similarly
+to <A href="#spawn"><TT>spawn</TT></A>, including treatment of <A
+href="#failed">failure</A>. Note that <TT><I>exp</I></TT> is evaluated
+at most once.</P>
 
 
 <?php subsection("lazy-example", "Example") ?>
@@ -96,15 +94,15 @@ fun enum n = lazy n :: enum (n+1)</PRE>
 
 <?php subsection("lazy-sugar", "Syntactic sugar") ?>
 
-<P>Analogous to <A href="#spawn-sugar"><TT>spawn</TT></A>, a derived form is
+<P>Similarly to <A href="#spawn-sugar"><TT>spawn</TT></A>, a derived form is
 provided for defining lazy functions:</P>
 
 <PRE class=code>
 fun lazy f x y = exp</PRE>
 
 <P>See <A href="#syntax">below</A> for a precise definition of this derived
-form. It allows convenient formulation of lazy functions. For example, a lazy
-variant of the <TT>map</TT> function on lists can be written</P>
+form. It enables convenient formulation of lazy functions. For example, a lazy
+variant of the <TT>map</TT> function on lists can be written as:</P>
 
 <PRE class=code>
 fun lazy mapl f   []    = nil
@@ -121,15 +119,15 @@ fun mapl f xs = lazy (case xs of
 
 <?php section("promise", "promises") ?>
 
-<P><EM>Promises</EM> are explicit handles for futures. A promise is created
-through the polymorphic library function <A
+<P><EM>Promises</EM> are explicit handles for futures. Promises are created
+by the polymorphic library function <A
 href="library/promise.html"><TT>Promise.promise</TT></A>:
 
 <PRE class=code>
 val p = Promise.promise ()</PRE>
 
-<P>Associated with every promise is a future. Creating a new promise also
-creates a fresh future. The future can be extracted as
+<P>A future is associated with every promise: Creating a new promise also
+creates a fresh future. The future can be extracted as follows:
 
 <PRE class=code>
 val f = Promise.future p</PRE>
@@ -152,7 +150,7 @@ operations <TT>promise</TT>, <TT>future</TT> and <TT>fulfill</TT> correspond to
 
 <P>Promises essentially represent a more structured form of "logic variables"
 as found in logic programming languages. Their presence allows application of
-diverse idioms from concurrent logic programming to ML. Examples can be found in
+idioms from concurrent logic programming to ML. Examples can be found in
 the documentation of the <A href="library/promise.html#examples"><TT>Promise</TT></A>
 structure.</P>
 
