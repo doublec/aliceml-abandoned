@@ -26,6 +26,7 @@
     into a single red triangle. 
   </P>
   <P>See also:
+    <A href="http://www.ps.uni-sb.de/alice/manual/constraints.php3"><TT>Constraints</TT></A>,
     <A href="fd.php3"><TT>FD</TT></A>,
     <A href="linear.php3"><TT>Linear</TT></A>,
     <A href="fs.php3"><TT>FS</TT></A>,
