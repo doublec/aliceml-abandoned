@@ -62,10 +62,10 @@ word UnsafeComponent(void) {
   t->Init(3, SitedConstructor);
   t->Init(4, String::New("stc")->ToWord());
   t->Init(5, Primitive::MakeClosure("UnsafeComponent.getInitialTable",
-				    UnsafeComponent_getInitialTable, 0));
+				    UnsafeComponent_getInitialTable, 0, true));
   t->Init(6, Primitive::MakeClosure("UnsafeComponent.load",
-				    UnsafeComponent_load, 1));
+				    UnsafeComponent_load, 1, true));
   t->Init(7, Primitive::MakeClosure("UnsafeComponent.save",
-				    UnsafeComponent_save, 2));
+				    UnsafeComponent_save, 2, true));
   RETURN_STRUCTURE(t);
 }

@@ -26,9 +26,10 @@ public:
   // Primitive C Type
   typedef Interpreter::Result (*function)(word, TaskStack *);
   // Primitive Function
-  static word MakeFunction(const char *name, function value, u_int arity);
-  static word MakeClosure(const char *name, function value, u_int arity);
-  static word MakeClosure(function value, u_int arity);
+  static word MakeFunction(const char *name, function value,
+			   u_int arity, bool sited = false);
+  static word MakeClosure(const char *name, function value,
+			  u_int arity, bool sited = false);
 };
 
 #endif

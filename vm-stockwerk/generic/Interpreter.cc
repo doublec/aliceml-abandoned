@@ -88,7 +88,7 @@ void Interpreter::PrepareForGC(Block *) {
 }
 
 Block *Interpreter::GetAbstractRepresentation() {
-  Error("Interpreter::GetAbstractRepresentation must never be called");
+  return INVALID_POINTER;
 }
 
 void Interpreter::PushCall(TaskStack *, Closure *) {

@@ -78,11 +78,17 @@ word UnsafeReflect(void) {
     littleEndian = false;
 
   Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure("UnsafeReflect_Reflect", UnsafeReflect_Reflect, 1));
-  t->Init(1, Primitive::MakeClosure("UnsafeReflect_ReflectSig", UnsafeReflect_ReflectSig, 1));
-  t->Init(2, Primitive::MakeClosure("UnsafeReflect_Unreflect", UnsafeReflect_Unreflect, 1));
-  t->Init(3, Primitive::MakeClosure("UnsafeReflect_UnreflectSig", UnsafeReflect_UnreflectSig, 1));
-  t->Init(4, Primitive::MakeClosure("UnsafeReflect_cast", UnsafeReflect_cast, 1));
-  t->Init(5, Primitive::MakeClosure("UnsafeReflect_realToVector", UnsafeReflect_realToVector, 1));
+  t->Init(0, Primitive::MakeClosure("UnsafeReflect_Reflect",
+				    UnsafeReflect_Reflect, 1, true));
+  t->Init(1, Primitive::MakeClosure("UnsafeReflect_ReflectSig",
+				    UnsafeReflect_ReflectSig, 1, true));
+  t->Init(2, Primitive::MakeClosure("UnsafeReflect_Unreflect",
+				    UnsafeReflect_Unreflect, 1, true));
+  t->Init(3, Primitive::MakeClosure("UnsafeReflect_UnreflectSig",
+				    UnsafeReflect_UnreflectSig, 1, true));
+  t->Init(4, Primitive::MakeClosure("UnsafeReflect_cast",
+				    UnsafeReflect_cast, 1, true));
+  t->Init(5, Primitive::MakeClosure("UnsafeReflect_realToVector",
+				    UnsafeReflect_realToVector, 1, true));
   RETURN_STRUCTURE(t);
 }

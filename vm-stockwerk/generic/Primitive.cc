@@ -53,10 +53,13 @@ private:
   Primitive::function function;
   u_int arity;
   u_int frameSize;
+  bool sited;
 public:
   PrimitiveInterpreter(const char *s, Primitive::function f,
-		       u_int n, u_int m):
-    name(s), function(f), arity(n), frameSize(m + 1) {}
+		       u_int n, u_int m, bool local):
+    name(s), function(f), arity(n), frameSize(m + 1), sited(local) {}
+  // Handler Methods
+  virtual Block *GetAbstractRepresentation();
   // Frame Handling
   virtual void PushCall(TaskStack *taskStack, Closure *closure);
   // Execution
@@ -69,6 +72,15 @@ public:
 //
 // PrimitiveInterpreter Functions
 //
+Block *PrimitiveInterpreter::GetAbstractRepresentation() {
+  if (sited) {
+    return INVALID_POINTER;
+  }
+  else {
+    return INVALID_POINTER; // to be done
+  }
+}
+
 void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
 	 GetInterpreter() == this);
@@ -115,19 +127,15 @@ void PrimitiveInterpreter::DumpFrame(word) {
 // Primitive Functions
 //
 word Primitive::MakeFunction(const char *name,
-			     Primitive::function value, u_int arity) {
+			     Primitive::function value, u_int arity, bool s) {
   // to be done (transforms)
   ConcreteCode *concreteCode =
-    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0), 0);
+    ConcreteCode::New(new PrimitiveInterpreter(name, value, arity, 0, s), 0);
   return concreteCode->ToWord();
 }
 
 word Primitive::MakeClosure(const char *name, 
-			    Primitive::function value, u_int arity) {
-  word concreteCode = MakeFunction(name, value, arity);
+			    Primitive::function value, u_int arity, bool s) {
+  word concreteCode = MakeFunction(name, value, arity, s);
   return Closure::New(concreteCode, 0)->ToWord();
-}
-
-word Primitive::MakeClosure(Primitive::function value, u_int arity) {
-  return MakeClosure(NULL, value, arity);
 }

@@ -26,8 +26,8 @@ DEFINE0(UnsafeCommandLine_arguments) {
 word UnsafeCommandLine(void) {
   Tuple *t = Tuple::New(2);
   t->Init(0, Primitive::MakeClosure("UnsafeCommandLine_arguments",
-				    UnsafeCommandLine_arguments, 0));
+				    UnsafeCommandLine_arguments, 0, true));
   t->Init(1, Primitive::MakeClosure("UnsafeCommandLine_name",
-				    UnsafeCommandLine_name, 0));
+				    UnsafeCommandLine_name, 0, true));
   RETURN_STRUCTURE(t);
 }

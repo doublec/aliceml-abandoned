@@ -26,7 +26,8 @@ word UnsafeDebug(void) {
   //--** InspectType
   //--** Print
   //--** inspect
-  t->Init(5, Primitive::MakeClosure("UnsafeDebug_print", UnsafeDebug_print, 1));
+  t->Init(5, Primitive::MakeClosure("UnsafeDebug_print",
+				    UnsafeDebug_print, 1, true));
   //--** setPrintDepth
   //--** setPrintWidth
   //--** toString

@@ -148,13 +148,20 @@ DEFINE0(FileSys_tmpName) {
 
 static word FileSys(void) {
   Tuple *t = Tuple::New(8);
-  t->Init(0, Primitive::MakeClosure("FileSys.chDir", FileSys_chDir, 1));
-  t->Init(1, Primitive::MakeClosure("FileSys.fileSize", FileSys_fileSize, 1));
-  t->Init(2, Primitive::MakeClosure("FileSys.getDir", FileSys_getDir, 0));
-  t->Init(3, Primitive::MakeClosure("FileSys.mkDir", FileSys_mkDir, 1));
-  t->Init(4, Primitive::MakeClosure("FileSys.modTime", FileSys_modTime, 1));
-  t->Init(5, Primitive::MakeClosure("Filesys.remove", FileSys_remove, 1));
-  t->Init(6, Primitive::MakeClosure("FileSys.tmpName", FileSys_tmpName, 1));
+  t->Init(0, Primitive::MakeClosure("FileSys.chDir",
+				    FileSys_chDir, 1, true));
+  t->Init(1, Primitive::MakeClosure("FileSys.fileSize",
+				    FileSys_fileSize, 1, true));
+  t->Init(2, Primitive::MakeClosure("FileSys.getDir",
+				    FileSys_getDir, 0, true));
+  t->Init(3, Primitive::MakeClosure("FileSys.mkDir",
+				    FileSys_mkDir, 1, true));
+  t->Init(4, Primitive::MakeClosure("FileSys.modTime",
+				    FileSys_modTime, 1, true));
+  t->Init(5, Primitive::MakeClosure("Filesys.remove",
+				    FileSys_remove, 1, true));
+  t->Init(6, Primitive::MakeClosure("FileSys.tmpName",
+				    FileSys_tmpName, 1, true));
   return t->ToWord();
 }
 
@@ -191,12 +198,12 @@ DEFINE1(Process_getEnv) {
 
 static word Process(void) {
   Tuple *t = Tuple::New(6);
-  t->Init(0, Primitive::MakeClosure("Process.atExn", Process_atExn, 1));
-  t->Init(1, Primitive::MakeClosure("Process.exit", Process_exit, 1));
+  t->Init(0, Primitive::MakeClosure("Process.atExn", Process_atExn, 1, true));
+  t->Init(1, Primitive::MakeClosure("Process.exit", Process_exit, 1, true));
   t->Init(2, Store::IntToWord(1)); // Process.failure
-  t->Init(3, Primitive::MakeClosure("Process.getEnv", Process_getEnv, 1));
+  t->Init(3, Primitive::MakeClosure("Process.getEnv", Process_getEnv, 1, true));
   t->Init(4, Store::IntToWord(0)); // Process.success
-  t->Init(5, Primitive::MakeClosure("Process.system", Process_system, 1));
+  t->Init(5, Primitive::MakeClosure("Process.system", Process_system, 1, true));
   return t->ToWord();
 }
 
@@ -216,7 +223,8 @@ word UnsafeOS(void) {
   RootSet::Add(SysErrConstructor);
 
   Tuple *t = Tuple::New(4);
-  t->Init(0, Primitive::MakeClosure("UnsafeOS.SysErr", UnsafeOS_SysErr, 2));
+  t->Init(0, Primitive::MakeClosure("UnsafeOS.SysErr",
+				    UnsafeOS_SysErr, 2, true));
   t->Init(1, FileSys());
   t->Init(2, Process());
   t->Init(3, SysErrConstructor);
