@@ -44,7 +44,7 @@ in
 	      "Usage: sml @SMLload=Binding [options]\n\n"^
 	      "Options are:\n"^
 	      "--help:          This helpscreen\n"^
-	      "--create_basic : Creates the Basic C-Binding c.asig and c.cc\n"^
+	      "--create-types : Creates the Basic C-Binding c.asig and c.cc\n"^
 	      "                 which es needed for each Binding.\n"^
 	      "-h file        : The Headerfile to work on.\n"^
 	      "-i file        : Additional include file for the binding.\n\n")
@@ -64,7 +64,7 @@ in
 	    if is_option_set "--help" args then
 		printHelp()
 
-	    else if is_option_set "--create_basic" args then
+	    else if is_option_set "--create-types" args then
 		(Binding.createBasicBinding "C")
 
 	    else if length(get_option_list "-h" args) <> 0 then
