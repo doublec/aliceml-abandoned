@@ -1,31 +1,33 @@
-## -*- Makefile -*-
-##
-## Author:
-##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
-## 
-## Copyright:
-##   Thorsten Brunklaus, 2000
-## 
-## Last change:
-##   $Date$ by $Author$
-##   $Revision$
-## 
+###
+### Authors:
+###   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+### 
+### Copyright:
+###   Thorsten Brunklaus, 2000
+###   Leif Kornstaedt, 2001
+### 
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+### 
 
-SMLC     = stoc
-SMLFLAGS =
+STOC = stoc
+STOCOPTS =
 
-SMLSRCS = Money.sml \
-          Photo.sml \
-          Inspector.sml
+ALICESOURCES = Money.aml Photo.aml
+COMPONENTS = $(ALICESOURCES:%.aml=%.ozf)
 
-SMLOBJS = Money.ozf \
-          Photo.ozf \
-          Inspector.ozf
+%.ozf : %.aml
+	$(STOC) $(STOCOPTS) -c $< -o $@
 
-all: $(SMLOBJS)
+.PHONY: all clean veryclean distclean
 
-%.ozf : %.sml
-	$(SMLC) $(SMLFLAGS) -c $< -o $@
+all: $(COMPONENTS)
 
 clean:
-	rm -f $(SMLOBJS) *.ozp *.ozm
+	-rm -f $(COMPONENTS) *.ozp *.ozm
+
+veryclean: clean
+
+distclean: veryclean
