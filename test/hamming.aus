@@ -62,14 +62,17 @@ fun merge (xs, ys) =
 		    else if x < y then x::merge (xr, ys)
 		    else y::merge (xs, yr))
 
-val rest = promise ()
-val hamming = 1::rest
-
-val _ = fulfill (rest, merge (map (fn i => 2 * i) hamming,
-			      merge (map (fn i => 3 * i) hamming,
-				     map (fn i => 5 * i) hamming)))
-
 fun loop 0 = ()
-  | loop n = (nth (hamming, 1500); loop (n - 1))
+  | loop n =
+    let
+	val rest = promise ()
+	val hamming = 1::rest
+    in
+	fulfill (rest, merge (map (fn i => 2 * i) hamming,
+			      merge (map (fn i => 3 * i) hamming,
+				     map (fn i => 5 * i) hamming)));
+	nth (hamming, 1500);
+	loop (n - 1)
+    end
 
-val _ = show (loop 500)
+val _ = show (loop 100)
