@@ -2,11 +2,11 @@
  * Lazy streams demo.
  *)
 
-import structure TextIO from "x-alice:TextIO.dll"
-import structure Tools  from "x-alice:Tools.dll"
-import val readLine     from "x-alice:Dialog.dll"
+import val print        from "x-alice:/TextIO.dll"
+import structure OS     from "x-alice:/OS.dll"
+import structure Tools  from "x-alice:/Tools.dll"
+import val readLine     from "x-alice:/Dialog.dll"
 
-open TextIO
 open Promise
 
 
@@ -43,24 +43,25 @@ and map' f (x::xs, p)		= map' f (xs, continue (f x) p)
 
 
 fun loop(p1, p2) =
-    case (readLine ())
+    case readLine ()
       of ""   => ()
        | "\n" => loop(p1,p2)
        | s    =>
     case String.tokens Char.isSpace s
       of nil     => loop(p1,p2)
        | [s1,s2] =>
-    case (Int.fromString s1, Int.fromString s2)
-       of (SOME k, SOME n) =>
-	 let
-	     val p' = promise()
-	 in
-	     if k = 1 then
-		(fulfill(p1, n :: future p') ; loop(p',p2))
-	     else
-		(fulfill(p2, n :: future p') ; loop(p1,p'))
-	 end
-       | _ => loop(p1,p2)
+	     (case (Int.fromString s1, Int.fromString s2)
+	        of (SOME k, SOME n) =>
+		    let
+		        val p' = promise()
+		    in
+		        case k
+			  of 1 => (fulfill(p1, n :: future p') ; loop(p',p2))
+			   | 2 => (fulfill(p2, n :: future p') ; loop(p1,p'))
+		           | _ => (print "error parsing input\n"; loop(p1,p2))
+		    end
+	         | _ => (print "error parsing input\n"; loop(p1,p2)))
+       | _ => (print "error parsing input\n"; loop(p1,p2))
 and main() =
     let
 	val p1		= promise()
@@ -83,9 +84,8 @@ and main() =
 				    ]
     in
 	Tools.inspect({A, B, AplusB, AtoChar, AzipB, Bdiv10}, ty) ;
-	loop(p1,p2)
+	loop(p1,p2);
+	OS.Process.exit OS.Process.success
     end
 
 val _ = main()
-
-
