@@ -20,8 +20,12 @@ signature UNSAFE_VALUE_COMPONENT =
     sig
 	structure UnsafeValue:
 	    sig
+		(* Label vectors must always be sorted *)
+
 		val cast: 'a_value -> 'a
 		val same: 'a * 'a -> bool
+
+		(* Projections *)
 
 		val proj: 'prod_value * Label.t vector * int -> 'value
 		val projTuple: 'tuple_value * int * int -> 'value
@@ -33,8 +37,25 @@ signature UNSAFE_VALUE_COMPONENT =
 		val con: 'ext_value -> 'con_value
 		val projConstructed: 'ext_value * Label.t vector * int -> 'value
 		val projConstructedTuple: 'ext_value * int * int -> 'value
-		val conName: 'con_value -> Name.t
 
 		val projPoly: 'prod_value * Label.t -> 'value
+
+		(* Construction *)
+
+		val prod: (Label.t * 'value) vector -> 'prod_value
+		val tuple: 'value vector -> 'tuple_value
+
+		val tagged: Label.t vector * int *
+			    (Label.t * 'value) vector -> 'sum_value
+		val taggedTuple: Label.t vector * int *
+				 'value vector -> 'sum_value
+
+		val closure: 'code * 'value vector -> 'closure_value
+
+		val prim: string -> 'value
+
+		(* Inspection *)
+
+		val conName: 'con_value -> Name.t
 	    end
     end

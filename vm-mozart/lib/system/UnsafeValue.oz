@@ -61,6 +61,17 @@ define
       end
    end
 
+   fun {LabelToOz Label}
+      case Label of 'NUM'(I) then I
+      [] 'ALPHA'(S) then
+	 case {VirtualString.toAtom S} of 'true' then true
+	 [] 'false' then false
+	 [] '::' then '|'
+	 [] A then A
+	 end
+      end
+   end
+
    Value =
    'Value'('cast': fun {$ A} A end
 	   'same': System.eq
@@ -73,22 +84,44 @@ define
 	   'con': Label
 	   'projConstructed': ProjRecord
 	   'projConstructedTuple': ProjTuple
+	   'projPoly':
+	      fun {$ X Label}
+		 try X.{LabelToOz Label}
+		 catch E then {Handle projPoly(X Label) E 0}
+		 end
+	      end
+	   'prod':
+	      fun {$ LabelValueVec}
+		 {List.toRecord '#'
+		  {Record.foldR LabelValueVec
+		   fun {$ Label#Value In}
+		      {LabelToOz Label}#Value|In
+		   end nil}}
+	      end
+	   'tuple':
+	      fun {$ X} {Adjoin X '#'} end
+	   'tagged':
+	      fun {$ Labels I LabelValueVec}
+		 {List.toRecord {LabelToOz Labels.(I + 1)}
+		  {Record.foldR LabelValueVec
+		   fun {$ Label#Value In}
+		      {LabelToOz Label}#Value|In
+		   end nil}}
+	      end
+	   'taggedTuple':
+	      fun {$ Labels I Values} Tag in
+		 {Adjoin Values {LabelToOz Labels.(I + 1)}}
+	      end
+	   'closure':
+	      fun {$ Code Values}
+		 {Handle closure(Code Values) notImplemented 0}   %--**
+	      end
+	   'prim':
+	      fun {$ Name}
+		 {Handle prim(Name) notImplemented 0}   %--**
+	      end
 	   'conName':
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
-	      end
-	   'projPoly':
-	      fun {$ X L}
-		 try
-		    case L of 'NUM'(I) then X.I
-		    [] 'ALPHA'(S) then
-		       case {VirtualString.toAtom S} of 'true' then X.true
-		       [] 'false' then X.false
-		       [] '::' then X.'|'
-		       [] A then X.A
-		       end
-		    end
-		 catch E then {Handle projPoly(X L) E 0}
-		 end
 	      end)
 end
