@@ -36,6 +36,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
       | longidToMod(O.LongId(i, longid, lab)) =
 	    O.SelMod(i, longidToMod longid, lab)
 
+    fun tupexp(i, [exp]) = exp
+      | tupexp(i,  exps) = O.TupExp(i, exps)
+
+    fun tuppat(i, [pat]) = pat
+      | tuppat(i,  pats) = O.TupPat(i, pats)
+
 
     fun alltyp(  [],    typ) = typ
       | alltyp(id::ids, typ) = O.AllTyp(O.infoTyp typ, id, alltyp(ids, typ))
@@ -510,7 +516,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   )
 	 | RECORDAtPat(i, patrowo) => O.RowPat(i, trPatRowo (E,E',nil) patrowo)
 	 | TUPLEAtPat(i, pats)     => O.TupPat(i, trPats (E,E') pats)
-	 | VECTORAtPat(i, pats)    => O.TupPat(i, trPats (E,E') pats)
+	 | VECTORAtPat(i, pats)    => O.VecPat(i, trPats (E,E') pats)
 	 | ALTAtPat(i, pats)       =>
 	   (* BUG: bindings not allowed *)
 	   let
@@ -1034,7 +1040,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 						O.ShortId(Source.nowhere, id')))
 					      ids'
 		val i'             = O.infoMatch match'
-		val tupexp'        = O.TupExp(i', exps')
+		val tupexp'        = tupexp(i', exps')
 		val caseexp'       = O.CaseExp(i', tupexp', match'::matches')
 
 		fun funexp    []      = caseexp'
@@ -1075,7 +1081,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val pats' = trFappPat_rhs (E,E') fpat
 	   in
-		( O.TupPat(i, pats'), List.length pats' )
+		( tuppat(i, pats'), List.length pats' )
 	   end
 
 	 | TYPEDPat(i, fpat, ty) =>
