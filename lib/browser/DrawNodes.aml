@@ -98,10 +98,10 @@ struct
 								    !i-1))
 				     then 
 				     let val li' = List.take(kids_list,!i-1)
-				     in sum_up(li',get_xdim) +
+				     in sum_up(li',get_xdim,get_l_xdim) +
 				        get_l_xdim(List.nth(kids_list,!i-1))
 				     end 
-				 else sum_up(li,get_xdim)
+				 else sum_up(li,get_xdim,get_l_xdim)
                              val max_ydim =  max(li,get_ydim)
                          in draw (List.nth(kids_list,!i),
 				  x + sum_xdim,

@@ -21,7 +21,11 @@ import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
 import structure Dictionary from "Dictionary"
 
+local
+
 open Types 
+
+in
 
 signature NEW_NODE =
 sig
@@ -88,4 +92,6 @@ sig
 	(Reflect.value * Type.t  * node * int * int * 'a list_desc -> node) 
 	-> node
 
-end;
+end
+
+end

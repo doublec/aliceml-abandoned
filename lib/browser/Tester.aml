@@ -17,6 +17,13 @@ val t_char = Char.x;
 
 UnsafeInspector.inspect (#"7", t_char);
 
+(* Ausnahme *)
+structure Exn = Reflect.ReflectType ( type t = exn);
+val t_exn = Exn.x;
+exception Error;
+
+UnsafeInspector.inspect (Error,t_exn);
+
 (* Referenz *)
 structure Ref = Reflect.ReflectType ( type t = string vector ref);
 val t_ref = Ref.x;
@@ -33,7 +40,7 @@ UnsafeInspector.inspect (#[1.0,2.0], t_vec);
 structure Mat = Reflect.ReflectType ( type t = real vector vector);
 val t_mat = Mat.x;
 
-UnsafeInspector.inspect (#[#[1.0]],t_mat);
+UnsafeInspector.inspect (#[#[1.0,2.0],#[3.0,4.0]],t_mat);
 
 (* Array *)
 structure Arr = Reflect.ReflectType ( type t = string array);
@@ -76,11 +83,12 @@ UnsafeInspector.inspect (E {bla = "hello", blubb = #"w"}, t_S);
 UnsafeInspector.inspect (F #[#[1.0,2.0],#[3.0,4.0]], t_S);
 
 (* Liste *)
-structure IntList = Reflect.ReflectType
+structure Liste = Reflect.ReflectType
     (type t = (string vector vector * int vector vector) list);
-val t_list = IntList.x;
+val t_list = Liste.x;
 
 UnsafeInspector.inspect ([{1 = #[#["hi","du"],#["guck","mal"]], 
 			   2 = #[#[0,8,1,5],#[4,7,1,1]]},
 			  {1 = #[#["ich","kann"],#["Listen","zeichnen"]], 
 			   2 = #[#[0,8,1,5],#[4,7,1,1]]}],t_list);
+

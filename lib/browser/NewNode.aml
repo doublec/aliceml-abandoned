@@ -83,46 +83,59 @@ struct
     (* listdescToNode *)
     and listdescToNode (va,t,p,i,d,ld) = 
        case ld of 
-	Indet(l,f) => Empty (* spaeter fuer Futures erweitern! *)
+	Indet(l,f) 
+	=> let val desc = createValue(va,t,NO_ACTIONS)
+               val length = List.length l
+	       val na = Array.array(length,Empty)
+	       val inty = #2(Type.asApply(t))   
+	       val cont = createContainer (desc,p,i,na,~1,~1,~1,setGroup)
+	       val nodearray = listElemArray(l,length,inty,cont,d,true)
+	       val future = createSimple (INTERPUNCT,cont,length,"_",DEFAULT,
+					  setGroup)
+	   in ( Array.update(na,length,future)
+	      ; copyArray(nodearray,na)
+	      ; cont )
+	   end
       | Det(l,b) 
         => let val desc = createValue(va,t,NO_ACTIONS)
-               val na = if b then Array.array(List.length(l) + 1,Empty)
-			else Array.array(List.length(l),Empty)
-               val concat = createConcat(desc,p,i,Array.array(3,Empty),
-					 ~1,~1,setGroup)
-	       val lbraNode = createSimple (INTERPUNCT,concat,0,
-					    "[",BRACK_COLOR,setGroup)
-	       val rbraNode = createSimple (INTERPUNCT,concat,2,
-                                            "]",BRACK_COLOR,setGroup)
-               val container = 
-		   if b = true 
-		       then createContainer(desc,p,i,na,~1,~1,~1,setGroup)
-		   else createContainer(INTERPUNCT,concat,1,na,~1,~1,~1,
-					setGroup)
-               val length = List.length l
-               val rl = ref (length - 1)
+	       val length = List.length l
+               val na = if b then Array.array(length + 1,Empty)
+			else Array.array(length,Empty)
 	       val inty = #2(Type.asApply(t))   
-               val last = let val inva = UnsafeValue.cast(List.last(l))
+	   in if b
+		  then let val cont = createContainer (desc,p,i,na,~1,~1,~1,
+						       setGroup)
+			   val nodearray = listElemArray(l,length,inty,cont,
+							 d,b)
+			   val limit = createLimit (INTERPUNCT,WIDTH_LIMIT,
+						    cont,length,d+1,setGroup)
+		       in ( Array.update(na,length,limit)
+			  ; copyArray(nodearray,na)
+			  ; cont )
+		       end
+	      else let val concat = createConcat(desc,p,i,Array.array(3,Empty),
+						 ~1,~1,setGroup) 
+		       val lbra = createSimple (INTERPUNCT,concat,0,
+						"[",BRACK_COLOR,setGroup)
+		       val rbra = createSimple (INTERPUNCT,concat,2,
+						"]",BRACK_COLOR,setGroup)
+		       val cont = createContainer (desc,concat,1,na,~1,~1,~1,
+						   setGroup)
+		       val last = let val inva = UnsafeValue.cast(List.last(l))
 		                         : Reflect.value
-			  in createGraph(inva,inty,container,!rl,d+1)
-			  end
-               val nodearray = listElemArray(List.take(l,length-1),length-1,
-					     inty,container,d,b)
-	   in ( Array.update(na,!rl,last)
-	      ; copyArray(nodearray,na) 
-	      ; if b 
-		    then let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
-						     container,length,d+1,
-						     setGroup)
-			 in ( Array.update(na,length,limit)
-			     ; container )
-			 end 
-		else ( Array.update(getKids(concat),0,lbraNode)
-		     ; Array.update(getKids(concat),1,container)
-		     ; Array.update(getKids(concat),2,rbraNode)
-		     ; concat ) )
+				  in createGraph(inva,inty,cont,length-1,d+1)
+				  end      		   
+		       val nodearray = listElemArray(List.take(l,length-1),
+						     length-1,inty,cont,d,b)
+		   in ( Array.update(na,length-1,last)
+                      ; copyArray(nodearray,na)
+		      ; Array.update(getKids(concat),0,lbra)
+		      ; Array.update(getKids(concat),1,cont)
+		      ; Array.update(getKids(concat),2,rbra)
+		      ; concat )
+		   end
 	   end
-
+    
     (* ListElemArray *)
     and listElemArray(list,length,listtyp,p,d,b) = 
 	let val rl = ref (length - 1)
@@ -251,7 +264,7 @@ struct
 						  (#1(List.nth(lt_list,i))),
 						  proj(va,l_vector,i),
 						  #2(List.nth(lt_list,i)),
-						  container,i,d,l)) )
+						  container,i,d,al)) )
 	    val _ = copyArray(nodes,getKids(container))
 	in
 	    container

@@ -24,10 +24,13 @@ struct
 
     exception LayoutError
 
-    fun sum_up (li,f) = if List.length(li) = 0
-			    then 0
-			else f(hd(li)) + sum_up(tl(li),f) 
-
+    fun sum_up (li,f,g) = if List.length(li) = 0
+			      then 0
+			  else ( if setsVertical(hd(li)) 
+				     then g(hd(li))
+				 else f(hd(li)) )
+			      + sum_up(tl(li),f,g) 
+			      
     and max (li,f) = case List.length(li) of
 	             0 => 0
 		   | 1 => f(hd(li))     
@@ -87,11 +90,11 @@ struct
 
     and calc_xdim n = case n of
 	Simple(r) => !(#width(r))
-      | Concat(r) => sum_up (Array.toList(#kids(r)),calc_xdim)
+      | Concat(r) => sum_up (Array.toList(#kids(r)),calc_xdim,calc_l_xdim)
       | Container(r) => let val li = Array.toList(#kids(r))
 			in if setsVertical n 
 			       then max (li,calc_xdim) 
-			   else sum_up (li,calc_xdim) 
+			   else sum_up (li,calc_xdim,calc_l_xdim) 
 			end
       | Limit(r) => 1
       | Empty => 0
@@ -99,7 +102,8 @@ struct
     and calc_ydim n = case n of
 	Concat(r) => max (Array.toList(#kids(r)),calc_ydim)
       | Container(r) => if setsVertical n 
-			    then sum_up (Array.toList(#kids(r)),calc_ydim)
+			    then sum_up (Array.toList(#kids(r)),calc_ydim,
+					 calc_ydim)
 			else max (Array.toList(#kids(r)),calc_ydim)
       | Empty => 0
       | _ => 1
