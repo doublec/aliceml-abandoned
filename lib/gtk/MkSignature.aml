@@ -108,12 +108,12 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	val widgetGetCode =
 	    [indent, "val widgetGet : object * string -> arg\n"]
     
-	(* CanvasItemNew and -Configure Code *)
+	(* CanvasItemNew and -Set Code *)
 	val canvasItemCode =
 	    [indent,
 	     "val itemNew : object * int * ((string * arg) list) -> object\n",
 	     indent,
-	     "val itemConfigure : object * ((string * arg) list) -> unit\n"]
+	     "val itemSet : object * string * arg -> unit\n"]
 
 	(* ColorSelectionGetColor and -SetColor Code *)
 	val colorSelectionGetColorCode =
@@ -128,6 +128,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	  | emit (FUNCTION("gtk_signal_block", _))      = ()
 	  | emit (FUNCTION("gtk_signal_unblock", _))    = ()
 	  | emit (FUNCTION("gtk_signal_emit", _))       = ()
+	  | emit (FUNCTION("gtk_canvas_item_set", _))   = ()
 	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
 	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
 	  | emit (FUNCTION("gtk_color_selection_get_color", _)) =
@@ -156,7 +157,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    fun emitField' p {field, ptrs, alias} =
 		let
 		    val alias = Util.firstUpper (Util.translateName alias)
-		    val name  = (p ^ "GetField" ^ alias)
+		    val name  = ((Util.firstLower p) ^ "GetField" ^ alias)
 		    val t     = IN(field ^ ptrs)
 		in
 		    psl [indent, "val ", name,
