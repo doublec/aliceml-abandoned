@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,24 +12,34 @@
 
 (* Error handling. *)
 
-import structure TextIO val print from "../../lib/system/TextIO"
-import signature ERROR            from "ERROR-sig"
-import structure Source           from "Source"
+import structure TextIO      from "../../lib/system/TextIO"
+import signature ERROR       from "ERROR-sig"
+import structure Source      from "Source"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 
 structure Error :> ERROR =
 struct
+    open PrettyPrint
+    infixr ^^
+
     (* Import *)
 
     type region = Source.region
 
     (* Export *)
 
-    exception Error of region * string
+    exception Error of region * doc
 
-    fun print(reg, s) =
-        TextIO.output(TextIO.stdErr,
-		      Source.regionToString reg ^ ": " ^ s ^ "\n")
+    fun print(reg, doc) =
+        output(TextIO.stdErr,
+	       text(Source.regionToString reg ^ ": ") ^^ doc ^^ break, 78)
 
     fun error(reg, message) = ( print(reg,message) ; raise Error(reg,message) )
-    fun warn (reg, message) =   print(reg, "warning: " ^ message)
+    fun warn (reg, message) =   print(reg, text "warning: " ^^ message)
+
+    (*UNFINISHED: provisory*)
+    fun error'(reg, s) = error(reg, text s)
+    fun warn'(reg, s)  = warn(reg, text s)
+    fun unfinished(region, phasename, casename) =
+	error(region, text(phasename ^ ": "^ casename ^ " not implemented yet"))
 end

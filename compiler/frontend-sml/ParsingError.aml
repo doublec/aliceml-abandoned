@@ -88,10 +88,6 @@ struct
 
   (* Export *)
 
-    fun errorToString e   = PrettyPrint.toString(ppError e, 75)
-    fun warningToString w = PrettyPrint.toString(ppWarning w, 75)
-
-    fun error(region, e)  = Error.error(region, errorToString e)
-    fun warn(region, w)   = Error.warn(region, warningToString w)
-
+    fun error(region, e)  = Error.error(region, ppError e)
+    fun warn(region, w)   = Error.warn(region, ppWarning w)
 end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,18 +12,23 @@
 
 (* Error handling. *)
 
-import structure Source from "Source"
+import structure Source      from "Source"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 
 signature ERROR =
 sig
     (* Import *)
 
     type region = Source.region
+    type doc    = PrettyPrint.doc
 
     (* Export *)
 
-    exception Error of region * string
+    exception Error of region * doc
 
-    val error :	region * string -> 'a
-    val warn :	region * string -> unit
+    val error :		region * doc -> 'a
+    val warn :		region * doc -> unit
+    val error' :	region * string -> 'a
+    val warn' :		region * string -> unit
+    val unfinished :	region * string * string -> 'a
  end
