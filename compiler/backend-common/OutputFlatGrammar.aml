@@ -137,7 +137,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    in
 		SEQ #[S "try", IN, NL, formatBody (tryBody, shared), EX, NL,
 		      S "handle ", IDDEF idDef1, S ", ", IDDEF idDef2, IN, NL,
-		      handleFormat]
+		      handleFormat, EX]
 	    end
 	  | formatStm (EndTryStm (_, body), shared) =
 	    SEQ #[S "(* end try *)", NL, formatBody (body, shared)]
