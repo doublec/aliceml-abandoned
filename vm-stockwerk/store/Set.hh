@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000-2001
+//   Thorsten Brunklaus, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -16,48 +16,48 @@
 #pragma interface "store/Set.hh"
 #endif
 
-class Set : private Block {
-private:
-  enum { TOP_POS };
-
-  Set *Enlarge(u_int oldsize, u_int newsize) {
-    Block *p = Store::AllocBlock(GENSET_LABEL, newsize);
-
-    std::memcpy(p->GetBase(), GetBase(), oldsize * sizeof(u_int));
-    return (Set *) p;
+class Set : private DynamicBlock {
+protected:
+  Set *Enlarge(u_int oldsize, u_int newsize, u_int gen) {
+    DynamicBlock *p = Store::AllocDynamicBlock(newsize, 0, gen);
+    std::memcpy(p->GetBase(), GetBase(), (oldsize + 1) * sizeof(u_int));
+    return static_cast<Set *>(p);
   }
 public:
-  using Block::InitArg;
-  using Block::GetArg;
-  using Block::ToWord;
+  using DynamicBlock::InitArg;
+  using DynamicBlock::GetArg;
+  using DynamicBlock::GetArgUnchecked;
+  using DynamicBlock::ToWord;
 
   u_int GetSize() {
-    return (u_int) (Store::DirectWordToInt(GetArg(TOP_POS)) - 1);
+    return GetScanSize();
   }
-  void MakeEmpty() {
-    ((Block *) this)->InitArg(TOP_POS, 1);
+  void Clear() {
+    SetScanSize(0);
   }
-  Set *Push(word v) {
-    u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
-    u_int max = Block::GetSize();
-    Set *p    = ((top < max) ? this : Enlarge(max, (max * 3) >> 1));
-
-    p->InitArg(TOP_POS, (top + 1));
+  Set *Add(word v, u_int gen = STORE_GEN_OLDEST) {
+    u_int top = GetScanSize();
+    u_int max = DynamicBlock::GetSize();
+    Set *p    = ((top < max) ? this : Enlarge(max, (max * 3) >> 1, gen));
+    p->SetScanSize(top + 1);
     p->InitArg(top, v);
     return p;
   }
-
-  static Set *New(u_int s) {
-    Block *p = Store::AllocBlock(GENSET_LABEL, (s + 1));
-
-    p->InitArg(TOP_POS, Store::IntToWord((TOP_POS + 1)));
-    return (Set *) p;
+  void AddUnchecked(word v) {
+    u_int top = GetScanSize();
+    SetScanSize(top + 1);
+    InitArg(top, v);
   }
-  static Set *FromWord(word x) {
-    Block *p = Store::DirectWordToBlock(x);
+  Set *Export(u_int gen) {
+    u_int size = GetScanSize();
+    return Enlarge(size, size, gen);
+  }
 
-    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == GENSET_LABEL));
-    return (Set *) p;
+  static Set *New(u_int s, u_int gen = STORE_GEN_OLDEST) {
+    return static_cast<Set *>(Store::AllocDynamicBlock(s, 0, gen));
+  }
+  static Set *FromWordDirect(word x) {
+    return static_cast<Set *>(DynamicBlock::FromWordDirect(x));
   }
 };
 

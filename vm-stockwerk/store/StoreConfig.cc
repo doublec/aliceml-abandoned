@@ -126,16 +126,17 @@ static void CreateLabel(std::FILE *f, unsigned long size) {
   }
 
   std::fprintf(f, "\n  MAX_HELPER_LABEL    = 0x%lx,\n", (size - 8));
-  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%lx,\n", (size - 6));
-  std::fprintf(f, "  MIN_TRANSIENT_LABEL = 0x%lx,\n", (size - 6)); 
-  std::fprintf(f, "  HOLE_LABEL          = 0x%lx,\n", (size - 6));
-  std::fprintf(f, "  FUTURE_LABEL        = 0x%lx,\n", (size - 5));
-  std::fprintf(f, "  REF_LABEL           = 0x%lx,\n", (size - 4));
-  std::fprintf(f, "  CANCELLED_LABEL     = 0x%lx,\n", (size - 3));
-  std::fprintf(f, "  BYNEED_LABEL        = 0x%lx,\n", (size - 2));
-  std::fprintf(f, "  MAX_TRANSIENT_LABEL = 0x%lx,\n", (size - 2));
-  std::fprintf(f, "  CHUNK_LABEL         = 0x%lx,\n", (size - 1));
-  std::fprintf(f, "  WEAK_MAP_LABEL      = 0x%lx,\n", size);
+  std::fprintf(f, "  MIN_STORE_LABEL     = 0x%lx,\n", (size - 7));
+  std::fprintf(f, "  MIN_TRANSIENT_LABEL = 0x%lx,\n", (size - 7)); 
+  std::fprintf(f, "  HOLE_LABEL          = 0x%lx,\n", (size - 7));
+  std::fprintf(f, "  FUTURE_LABEL        = 0x%lx,\n", (size - 6));
+  std::fprintf(f, "  REF_LABEL           = 0x%lx,\n", (size - 5));
+  std::fprintf(f, "  CANCELLED_LABEL     = 0x%lx,\n", (size - 4));
+  std::fprintf(f, "  BYNEED_LABEL        = 0x%lx,\n", (size - 3));
+  std::fprintf(f, "  MAX_TRANSIENT_LABEL = 0x%lx,\n", (size - 3));
+  std::fprintf(f, "  CHUNK_LABEL         = 0x%lx,\n", (size - 2));
+  std::fprintf(f, "  WEAK_MAP_LABEL      = 0x%lx,\n", (size - 1));
+  std::fprintf(f, "  DYNAMIC_LABEL       = 0x%lx,\n", size);
   std::fprintf(f, "  MAX_STORE_LABEL     = 0x%lx\n", size);
 
   std::fprintf(f, "} BlockLabel;\n\n");

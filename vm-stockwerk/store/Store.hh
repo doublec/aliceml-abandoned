@@ -50,8 +50,7 @@ protected:
   static void CheneyScan(HeapChunk *chunk, char *scan, const u_int gen);
   static void FinalizeCheneyScan(HeapChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(const u_int gen);
-  static Block *HandleWeakDictionaries(const u_int gen);
-  static Block *AddToFinSet(Block *p, word value, const u_int gen);
+  static void HandleWeakDictionaries(const u_int gen);
   static char *Store::Alloc(const u_int g, const BlockLabel l, const u_int s) {
     u_int header = HeaderOp::EncodeHeader(l, s,
 					  (g == STORE_GENERATION_NUM - 1) ?
@@ -70,11 +69,11 @@ protected:
     }
   }
   static Block *InternalAlloc(u_int g, BlockLabel l, u_int s) {
-    AssertStore(g <= STORE_GEN_OLDEST);
+    AssertStore(g <= (STORE_GENERATION_NUM - 1));
     AssertStore(s <= MAX_BIGBLOCKSIZE);
     return (Block *) Store::Alloc(g, l, HeaderOp::TranslateSize(s));
   }
-  static Block *GC(word &root, const u_int gen);
+  static void GC(word &root, const u_int gen);
 public:
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static u_int totalMem;
@@ -116,6 +115,11 @@ public:
   static Transient *AllocTransient(BlockLabel l) {
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAlloc(0, l, 1);
+  }
+  static DynamicBlock *AllocDynamicBlock(u_int size, u_int scan, u_int g = 0) {
+    Block *p = Store::InternalAlloc(g, DYNAMIC_LABEL, size + 1);
+    ((word *) p)[1] = PointerOp::EncodeInt(scan);
+    return (DynamicBlock *) p;
   }
   // Conversion Functions
   static word IntToWord(s_int v) {
@@ -163,6 +167,10 @@ public:
   static void *DirectWordToUnmanagedPointer(word x) {
     AssertStore(((u_int) x & INTMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
+  }
+  // Calculate Block Size according to given size (used only for assertions)
+  static u_int SizeToBlockSize(u_int size) {
+    return HeaderOp::TranslateSize(size);
   }
   static void JITReplaceArg(u_int i, Block *p, word v);
   static void MemStat();

@@ -48,5 +48,6 @@ class Block;
 class Transient;
 class Chunk;
 class WeakDictionary;
+class DynamicBlock;
 
 #endif
