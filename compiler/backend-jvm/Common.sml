@@ -58,6 +58,8 @@ structure Common=
 	    (if stamp'=toplevel then "" else "class"^(Stamp.toString stamp'))
 	fun classNameFromId (Id (_,stamp',_)) = classNameFromStamp stamp'
 
+	val dummyIdInfo: IntermediateInfo.id_info =
+	    {region = Source.nowhere}
 	val dummyExpInfo: ImperativeGrammar.exp_info =
 	    {region = Source.nowhere, typ = Type.unknown Type.STAR}
 	val dummyStmInfo: ImperativeGrammar.stm_info =
@@ -65,7 +67,7 @@ structure Common=
 
 	 (* A dummy stamp/id we sometimes write but should never read *)
 	 val illegalStamp = Stamp.new()
-	 val illegalId = Id (dummyExpInfo, illegalStamp, Name.InId)
+	 val illegalId = Id (dummyIdInfo, illegalStamp, Name.InId)
 
 	 (* compiler options *)
 	 val DEBUG = ref 0
@@ -82,11 +84,11 @@ structure Common=
 	 val parm3Stamp = Stamp.new ()
 	 val parm4Stamp = Stamp.new ()
 	 val parm5Stamp = Stamp.new ()
-	 val parm1Id = Id (dummyExpInfo, parm1Stamp, Name.InId)
-	 val parm2Id = Id (dummyExpInfo, parm2Stamp, Name.InId)
-	 val parm3Id = Id (dummyExpInfo, parm3Stamp, Name.InId)
-	 val parm4Id = Id (dummyExpInfo, parm4Stamp, Name.InId)
-	 val parm5Id = Id (dummyExpInfo, parm5Stamp, Name.InId)
+	 val parm1Id = Id (dummyIdInfo, parm1Stamp, Name.InId)
+	 val parm2Id = Id (dummyIdInfo, parm2Stamp, Name.InId)
+	 val parm3Id = Id (dummyIdInfo, parm3Stamp, Name.InId)
+	 val parm4Id = Id (dummyIdInfo, parm4Stamp, Name.InId)
+	 val parm5Id = Id (dummyIdInfo, parm5Stamp, Name.InId)
 	 val parmIds = #[nil, [parm1Id],[parm1Id,parm2Id],
 			 [parm1Id,parm2Id,parm3Id],
 			 [parm1Id,parm2Id,parm3Id,parm4Id],
@@ -94,7 +96,7 @@ structure Common=
 
 	 (* Stamp and Id for 'this'-Pointer *)
 	 val thisStamp = Stamp.new ()
-	 val thisId = Id (dummyExpInfo, thisStamp, Name.InId)
+	 val thisId = Id (dummyIdInfo, thisStamp, Name.InId)
 
 	 datatype APPLY =
 	  (* Invokevirtual recapply (# of params, code class, code position, code label)*)

@@ -384,7 +384,7 @@ structure Backend=
 					      s')
 				       | _ => va)
 			      | NONE => if stamp'=stamp'' then NONE else
-					 SOME (SOME (VarExp (dummyExpInfo, (Id (dummyExpInfo, stamp'', Name.InId)))))
+					 SOME (SOME (VarExp (dummyExpInfo, (Id (dummyIdInfo, stamp'', Name.InId)))))
 			      | foo => foo
 		    in
 			if !OPTIMIZE >= 3 then

@@ -76,7 +76,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	(* get the name of a function *)
 	fun getId stamp' =
 	    case StampHash.lookup(lambdas, stamp') of
-		NONE => Id (dummyExpInfo, stamp', Name.InId)
+		NONE => Id (dummyIdInfo, stamp', Name.InId)
 	      | SOME id'' => id''
 
 	(* return the function stamp that corresponds to a name (stamp) *)

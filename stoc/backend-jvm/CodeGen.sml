@@ -154,7 +154,7 @@ structure CodeGen =
 		FreeVars.addVars (destClass, newfree);
 		StampSet.app (fn x => StampSet.insert (free,x)) newfree;
 		vprint (2,"FunExp: ");
-		FreeVars.setFun (Id (dummyExpInfo, thisFun, Name.InId), curFun)
+		FreeVars.setFun (Id (dummyIdInfo, thisFun, Name.InId), curFun)
 	    end
 	  | freeVarsExp (PrimAppExp (_, _, ids), free, curFun) =
 	    List.app
@@ -268,10 +268,7 @@ structure CodeGen =
 	    Multi (create (classname, [Dup]))
 	  | createOrLoad (SOME (Id (_,stamp'',_)), _) = Aload stamp''
 
-	fun lineExpInfo ({region = ((line, _), _), ...}:
-			 ImperativeGrammar.expInfo) = line
-	fun lineStmInfo ({region = ((line, _), _), ...}:
-			 ImperativeGrammar.stmInfo) = line
+	fun lineRegion ((line, _), _) = line
 
 	(* entry point *)
 	fun genComponentCode (debug, verbose, optimize, lmaa, lines, wait, name, (components, (program, _))) =
@@ -379,15 +376,15 @@ structure CodeGen =
 	and decCode (ValDec(info', id',
 			    exp' as FunExp (_, thisFun, _, _, _),_), curFun, curCls) =
 	    (Lambda.setId (thisFun, id');
-	     [Line (lineStmInfo info'),
+	     [Line (lineRegion (#region info')),
 	      Multi (expCode (exp', curFun, curCls)),
 	      Astore thisFun])
 	  | decCode (ValDec(info', Id (_,stamp',_),
 			    ConAppExp (_,id'',idargs,_),_), curFun, curCls) =
-	    Line (lineStmInfo info') ::
+	    Line (lineRegion (#region info')) ::
 	    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 	  | decCode (ValDec(info', Id (_,stamp',_), exp',_), curFun, curCls) =
-	    [Line (lineStmInfo info'),
+	    [Line (lineRegion (#region info')),
 	     Multi (expCode (exp', curFun, curCls)),
 	     Astore stamp']
 
@@ -448,7 +445,7 @@ structure CodeGen =
 		  | fillClosure (_,akku) = akku
 
 	    in
-		Line (lineStmInfo info) ::
+		Line (lineRegion (#region info)) ::
 		(* 1st step *)
 		(List.foldr
 		 emptyClosure
@@ -458,7 +455,7 @@ structure CodeGen =
 	    end
 
 	  | decCode (RaiseStm(info',id'), curFun, curCls) =
-	    [Line (lineStmInfo info'),
+	    [Line (lineRegion (#region info')),
 	     New CExWrap,
 	     Dup,
 	     idCode (id', curFun, curCls),
@@ -467,7 +464,7 @@ structure CodeGen =
 	     Athrow]
 
 	  | decCode (ReraiseStm(info',id'), curFun, curCls) =
-	    [Line (lineStmInfo info'),
+	    [Line (lineRegion (#region info')),
 	     New CExWrap,
 	     Dup,
 	     idCode (id', curFun, curCls),
@@ -555,7 +552,7 @@ structure CodeGen =
 					case inst of
 					    TestStm (info', _, t'',b',b'')
 					    => generateBody
-					    (Line (lineStmInfo info') ::
+					    (Line (lineRegion (#region info')) ::
 					     Label lab ::
 					     Multi (decListCode (body', curFun, curCls)) ::
 					     akku,
@@ -870,7 +867,7 @@ structure CodeGen =
 		    (decListCode (body'', curFun, curCls)) ::
 		    [Label danach]
 	    in
-		Line (lineStmInfo info') ::
+		Line (lineRegion (#region info')) ::
 		(case checkForSwitch (test', body'', 0) of
 		     (true, _, _) => generateSwitch (JLabel.new ())
 		   | _ => normalTest ())
@@ -892,13 +889,13 @@ structure CodeGen =
 
 	  | decCode (ReturnStm (info,AppExp(_,Id (_,stamp,_),arg)), curFun, curCls) =
 		(* tailcall application *)
-		[Line (lineStmInfo info),
+		[Line (lineRegion (#region info)),
 		 Multi (invokeRecApply (stamp, arg, curFun, true, curCls, false)),
 		 Areturn]
 
 	  | decCode (ReturnStm (info, exp), curFun, curCls) =
 		(* ordinary Return *)
-		[Line (lineStmInfo info),
+		[Line (lineRegion (#region info)),
 		 Multi (expCode (exp, curFun, curCls)),
 		 Areturn]
 
@@ -909,7 +906,7 @@ structure CodeGen =
 			val cont = JLabel.new()
 		    in
 			shared' := cont;
-			Line (lineStmInfo info) ::
+			Line (lineRegion (#region info)) ::
 			(* Catch should be the last instruction here to
 			 generate the correct order. However, we reverse
 			 the order here and in ToJasmin which makes dead
@@ -928,12 +925,12 @@ structure CodeGen =
 
 	  | decCode (EndHandleStm (info, ref cont), _, _) =
 		    [Comment "EndHandleStm",
-		     Line (lineStmInfo info),
+		     Line (lineRegion (#region info)),
 		     Goto cont]
 
 	  | decCode (EvalStm (info, exp), curFun, curCls) =
 		    Comment ("EvalStm. curFun = "^Stamp.toString curFun^" curCls = "^Stamp.toString curCls) ::
-		    Line (lineStmInfo info) ::
+		    Line (lineRegion (#region info)) ::
 		    Multi (expCode (exp, curFun, curCls)) ::
 		    [Pop]
 
@@ -941,7 +938,7 @@ structure CodeGen =
 		    let
 			val stamp' = Stamp.new()
 		    in
-			Line (lineStmInfo info) ::
+			Line (lineRegion (#region info)) ::
 			Multi (expCode (exp, curFun, curCls)) ::
 			Astore stamp' ::
 			(if !VERBOSE >= 1 then
@@ -967,7 +964,7 @@ structure CodeGen =
 
 	and
 	    idCode (Id (info,stamp,_), curFun, curCls) =
-	    Multi [Line (lineExpInfo info),
+	    Multi [Line (lineRegion (#region info)),
 		   stampCode (stamp, curFun, curCls)]
 
 	and
@@ -1330,18 +1327,18 @@ structure CodeGen =
 
 	and expCode (AppExp(info, Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
-	    Line (lineExpInfo info) ::
+	    Line (lineRegion (#region info)) ::
 	    invokeRecApply (stamp', args, curFun, false, curCls, false)
 
 	  | expCode (NewExp (info, _, _), _, _) =
 	    (*--** genericity? *)
-	    if Type.isArrow (valOf (IntermediateInfo.typ info)) then
-		[Line (lineExpInfo info),
+	    if Type.isArrow (#typ info) then
+		[Line (lineRegion (#region info)),
 		 New CConstructor,
 		 Dup,
 		 Invokespecial (CConstructor, "<init>", ([],[Voidsig]))]
 	    else
-		[Line (lineExpInfo info),
+		[Line (lineRegion (#region info)),
 		 New CName,
 		 Dup,
 		 Invokespecial (CName, "<init>", ([],[Voidsig]))]
@@ -1369,7 +1366,7 @@ structure CodeGen =
 	    end
 
 	  | expCode (PrimExp (info, name), _, curCls) =
-	    [Line (lineExpInfo info),
+	    [Line (lineRegion (#region info)),
 	     Getstatic (Literals.insert (curCls, StringLit name)),
 	     Invokestatic MGetBuiltin]
 
@@ -1379,32 +1376,32 @@ structure CodeGen =
 	    (* 1st build closure: - instantiate class *)
 	    (*                    - set free variables via putfields *)
 	    (* 2nd generate corresponding class file *)
-	    Line (lineExpInfo info) ::
+	    Line (lineRegion (#region info)) ::
 	    createFun(thisFun, [(args, body)], upperFun, upperCls, true)
 
 	  | expCode (RecExp(_, nil),_,_) =
 	    raise (Crash.Crash "CodeGen.expCode: empty RecExp")
 
 	  | expCode (RecExp(info,labid),curFun,curCls) =
-	    Line (lineExpInfo info) ::
+	    Line (lineRegion (#region info)) ::
 	    createRecord (NONE, labid, nil, curFun, curCls)
 
 	  | expCode (LitExp(info',lit'),_,curCls) =
-	    [Line (lineExpInfo info'),
+	    [Line (lineRegion (#region info')),
 	     Getstatic (Literals.insert (curCls, lit'))]
 
 	  | expCode (TupExp(info,longids), curFun, curCls) =
-	    Line (lineExpInfo info) ::
+	    Line (lineRegion (#region info)) ::
 	    createTuple (NONE, longids, nil, curFun, curCls)
 
 	  | expCode (VarExp(info',id' as Id (_, stamp', _)), curFun, curCls) =
 	    (case ConstProp.get stamp' of
-		 NONE => [Line (lineExpInfo info'),
+		 NONE => [Line (lineRegion (#region info')),
 			  idCode (id', curFun, curCls)]
 	       | SOME exp' => expCode (exp', curFun, curCls))
 
 	  | expCode (AdjExp (info', id', id''), curFun, curCls) =
-	    [Line (lineExpInfo info'),
+	    [Line (lineRegion (#region info')),
 	     Getstatic (Literals.insert (curCls, StringLit "General.adjoin")),
 	     Invokestatic MGetBuiltin,
 	     idCode (id', curFun, curCls),
@@ -1412,7 +1409,7 @@ structure CodeGen =
 	     Invokevirtual (mApply 2)]
 
 	  | expCode (SelExp(info',lab'),_,_) =
-	    Line (lineExpInfo info') ::
+	    Line (lineRegion (#region info')) ::
 	    (case Label.toInt lab' of
 		 NONE =>
 		     [New CSelString,
@@ -1428,27 +1425,27 @@ structure CodeGen =
 				     ([Intsig],[Voidsig]))])
 
 	  | expCode (ConExp (info', id', _), curFun, curCls) =
-	    [Line (lineExpInfo info'),
+	    [Line (lineRegion (#region info')),
 	     Comment "ConExp",
 	     idCode (id', curFun, curCls)]
 
 	  | expCode (RefExp info,_,_) =
-	    [Line (lineExpInfo info),
+	    [Line (lineRegion (#region info)),
 	     Getstatic BRef]
 
 	  | expCode (ConAppExp (info', id', idargs, _), curFun, curCls) =
-	    Line (lineExpInfo info') ::
+	    Line (lineRegion (#region info')) ::
 	    createConVal (NONE, id', idargs, curFun, curCls)
 
 	  | expCode (RefAppExp (info, idargs), curFun, curCls) =
-	    Line (lineExpInfo info) ::
+	    Line (lineRegion (#region info)) ::
 	    createRefAppExp (NONE, idargs, nil, curFun, curCls)
 
 	  | expCode (SelAppExp (info', label', id'), curFun, curCls) =
 	    let
 		val afterthrow = JLabel.new ()
 	    in
-		Line (lineExpInfo info') ::
+		Line (lineRegion (#region info')) ::
 		idCode (id', curFun, curCls) ::
 		Dup ::
 		Instanceof ITuple ::
@@ -1667,10 +1664,6 @@ structure CodeGen =
 		classToJasmin (class)
 	    end
 	  | expCodeClass _ = raise (Crash.Crash "CodeGen.expCodeClass")
-	and
-	    compile prog = genComponentCode (0,0,2,false,false,false,"Emil", Main.imperatifyString prog)
-	and
-	    compileFile (f, optimize) = genComponentCode (0,0,optimize,false,false,false,"Emil", Main.imperatifyFile f)
 
 	(* make array of value list *)
 	and
