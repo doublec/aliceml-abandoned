@@ -82,14 +82,10 @@ define
       end
    in
       fun {Load U TaskStack}
-	 %--** try to load a Stockhausen pickle
 	 HU  = {HackInfo {ByteString.toString U}}
 	 URL = {OzURL.make HU}
       in
-	 if {IsOzScheme URL} then
-	    %--** just acquire (do not link)
-	    tag(EVALUATED NONE {Module.link [HU]}.1)
-	 elseif {IsNative URL} then
+	 if {IsOzScheme URL} orelse {IsNative URL} then
 	    tag(EVALUATED NONE {Module.link [HU]}.1)
 	 else
 	    try continue(arg({Pickle.load HU}) TaskStack.2)
