@@ -1,0 +1,58 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Path from "x-alice:/lib/rtt/Path"
+
+
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure Types from "Types"
+import structure Dictionary from "Dictionary"
+
+open Types 
+
+signature NEW_NODE =
+sig
+    val max_width: int ref
+    
+    val max_depth: int ref 
+	
+    val dict: Dictionary.dictionary
+
+    val newNode: 'a * Type.t -> node
+    
+    val createGraph: Reflect.value * Type.t  * node * int * int -> node
+    
+    val newPath: 
+	Reflect.value * Type.t * node * int * int *  Path.path -> node
+    
+    val docToNode: doc * node * int * int -> node
+    
+    val createSimple: 
+        desc * node * int * string * color_class * (node -> Gtk.object) 
+	-> node
+    
+    val createConcat: 
+	desc * node * int * node array * int * int * (node -> Gtk.object) 
+	-> node
+	
+    val createContainer: 
+	desc * node * int * node array * int * int * int * (node -> Gtk.object)        -> node
+    
+    val createLimit: desc * limit * node * int * int * (node -> Gtk.object) 
+	-> node
+
+end;

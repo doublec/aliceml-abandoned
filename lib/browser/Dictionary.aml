@@ -1,0 +1,51 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Types from "Types"
+import signature DICTIONARY from "DICTIONARY-sig"
+
+open Types
+
+structure Dictionary :> DICTIONARY = 
+struct
+    type dictionary = node array ref
+	
+    val empty = (let val a = Array.array(0,Empty)
+                 in ref a end)
+
+    fun copy (a,b,j) = 
+	if j >= 0 
+        then (Array.update(b,j,Array.sub(a,j));copy(a,b,j-1)) 
+	else ()
+    
+    fun insert' (x,a,i) = (if Array.sub(!a,i) = Empty 
+                           then (Array.update(!a,i,x); i)
+                           else insert' (x,a,i+1))
+                           handle General.Subscript 
+                           => let val b = !a 
+                              in
+                              (a := Array.array(2*i+1,Empty)
+                              ; Array.update(!a,i,x); copy(b,!a,i-1); i)
+                              end 
+
+    fun insert (x,a) = insert'(x,a,0)
+                           
+    fun delete (i,a) = Array.update(!a,i,Empty)   
+      
+    fun return (i,a) = Array.sub(!a,i)
+
+end
+
+

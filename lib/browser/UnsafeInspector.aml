@@ -1,0 +1,44 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
+import structure NewNode from "NewNode"
+import structure CreateDoc from "CreateDoc"
+import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
+
+open CreateDoc
+
+structure UnsafeInspector :> UNSAFE_INSPECTOR = 
+struct
+    
+    fun inspect (v,t) = () (* !!!!! *)
+
+    fun set_width w = NewNode.max_width := w
+
+    fun set_depth d = NewNode.max_depth := d
+
+    fun init () = ( registerType(PervasiveType.path_int, createInt)
+		  ; registerType(PervasiveType.path_string, createString)
+		  ; registerType(PervasiveType.path_char, createChar)
+		  ; registerType(PervasiveType.path_word, createWord)
+	          ; registerType(PervasiveType.path_real, createReal)
+	          ; registerType(PervasiveType.path_exn, createExn)
+	          ; registerType(PervasiveType.path_ref, createRef)
+	          ; registerType(PervasiveType.path_vec, createVector)
+	          ; registerType(PervasiveType.path_array, createArray) )
+	
+    val _  = init ()
+
+end

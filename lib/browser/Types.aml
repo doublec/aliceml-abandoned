@@ -1,0 +1,94 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure Reflect from "x-alice:/lib/system/Reflect" 
+import signature TYPES from "TYPES-sig"
+
+structure Types :> TYPES = 
+struct
+
+    datatype actions = NO_ACTIONS (* wird spaeter erweitert *)
+    
+    datatype desc =
+	INTERPUNCT
+      | VALUE of {value : Reflect.value,
+		  typ : Type.t,
+		  actions : actions}
+	
+   datatype limit = DEPTH_LIMIT | WIDTH_LIMIT
+
+   datatype status = CLEAN | DIRTY | DAZZLED
+
+   datatype color_class = COLOR (* wird spaeter ersetzt *)
+
+   datatype node = 
+       Simple of {desc : desc, 
+		  parent : node,
+		  index : int,
+		  rep : string, 
+                  width : int ref,
+		  color : color_class, 
+		  status : status ref,
+		  group : Gtk.object}
+       
+     | Concat of {desc : desc, 
+		  parent : node,
+		  index : int,
+		  kids : node array, 
+		  width : int ref,
+		  height : int ref,
+		  status : status ref,
+		  group : Gtk.object}
+       
+     | Container of {desc : desc, 
+		     parent : node,
+		     index : int,
+		     kids : node array, 
+		     width : int ref,
+		     height : int ref,
+                     l_width : int ref,
+		     status : status ref,
+		     group : Gtk.object}
+       
+     | Limit of {desc : desc, 
+                 sort : limit,
+		 parent : node,
+		 index : int, 
+		 depth : int,
+		 status : status ref,
+		 group : Gtk.object}
+      
+    | Empty 
+
+   datatype doc = 
+       
+       SIMPLE of {desc : desc, 
+		  rep : string, 
+		  color : color_class }
+
+     | CONCAT of {desc : desc, 
+		  kids : doc vector }
+
+     | CONTAINER of {desc : desc, 
+		     kids : doc vector }
+
+     | LIMIT of {desc : desc, 
+		 sort : limit }
+       
+     | EMBEDDED of Reflect.value * Type.t   
+
+end

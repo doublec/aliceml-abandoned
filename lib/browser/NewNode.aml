@@ -1,0 +1,111 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+import structure Type from "x-alice:/lib/rtt/Type"
+import structure PathMap from "x-alice:/lib/rtt/PathMap"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure Dictionary from "Dictionary"
+import structure MkPathTable from "MkPathTable"
+import signature NEW_NODE from "NEW_NODE-sig"
+
+open Types
+open Helper
+open MkPathTable
+
+structure NewNode :> NEW_NODE =
+struct
+
+    val max_width = ref 15
+    val max_depth = ref 5
+    val dict = Dictionary.empty
+
+    (* newNode *)
+    fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
+                            val i = Dictionary.insert(Empty,dict)
+			    val node =  createGraph (va,t,Empty,i,0)
+			in (Dictionary.insert(node,dict) ; node)
+			end
+
+    (* createGraph *)
+    and createGraph (va,t,p,i,d) = 
+	(case Type.inspect t of
+	   Type.Con path 
+	   => newPath (va,t,p,i,d,path)
+         | _ => Empty ) (* !!! *)
+
+    (* newPath *)
+    and newPath (v,t,p,i,d,path) =
+        (case PathMap.lookup(pathTable, path) of
+	   NONE => Empty (* !!! *)
+         | SOME create => let val doc = create (!max_width,d,v,t)
+                          in docToNode (doc,p,i,d) 
+			  end )
+
+    (* docToNode *)
+    and docToNode (doc,p,i,d) =
+        (case doc of
+           SIMPLE(r) => createSimple (#desc(r),p,i,#rep(r),COLOR,setGroup)
+         | CONCAT(r) => Empty (* !!! *)
+         | CONTAINER(r) => Empty (* !!! *) 
+         | LIMIT(r) => Empty (* !!! *) 
+         | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
+		
+    (* createSimple *) 
+    and createSimple (desc,p,i,str,color,f) = Simple {desc = desc, 
+						      parent = p,
+						      index = i,
+						      rep = str,
+						      width = 
+						      ref(String.length(str)), 
+						      color = color, 
+						      status = ref DAZZLED,
+						      group = f(p)}
+
+    (* createConcat *)
+    and createConcat (desc,p,i,na,w,h,f) =  Concat {desc = desc,
+						    parent = p,
+						    index  = i,
+						    kids = na, 
+						    width  = ref w,
+						    height = ref h,
+						    status = ref DAZZLED,
+						    group = f(p)}
+
+    (* createContainer *)
+    and createContainer (desc,p,i,na,w,h,l_w,f) =  
+	Container {desc = desc, 
+		   parent = p,
+		   index = i,
+		   kids = na, 
+		   width = ref w,
+		   height = ref h,
+		   l_width = ref l_w,
+		   status = ref DAZZLED,
+		   group = f(p)}
+
+    (* createLimit *)
+    and createLimit (desc,sort,p,i,d,f) =  Limit  {desc = desc,
+						   sort = sort, 
+						   parent = p,
+						   index  = i,
+						   depth = d,
+						   status = ref DAZZLED,
+						   group = f(p)}
+	
+
+end
+

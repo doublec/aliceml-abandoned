@@ -1,0 +1,10 @@
+import structure NewNode from "NewNode";
+import structure UnsafeInspector from "UnsafeInspector";
+import structure Reflect from "x-alice:/lib/system/Reflect";
+
+UnsafeInspector.init();
+
+structure SInt = Reflect.ReflectType ( type t = int);
+val t_int = SInt.x;
+
+val test1 = NewNode.newNode(44,t_int);
