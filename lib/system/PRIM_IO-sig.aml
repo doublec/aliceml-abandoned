@@ -57,6 +57,8 @@ signature PRIM_IO =
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
+	val openVectorListRd: vector list -> reader
+	val openVectorListWr: unit -> vector list * writer
 	val openVector: vector -> reader
 	val nullRd: unit -> reader
 	val nullWr: unit -> writer

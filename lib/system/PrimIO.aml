@@ -73,8 +73,9 @@ functor PrimIO(structure Vector: MONO_VECTOR
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
-	fun openVector v =
+	fun openVectorListRd vs =
 	    let
+		val list = ref vs
 		val pos = ref 0
 		val closed = ref false
 		fun check f x =
@@ -88,47 +89,133 @@ functor PrimIO(structure Vector: MONO_VECTOR
 		    end
 
 		fun readVec sz =
+		    case !list of
+			[] => Vector.fromList []
+		      | v::vs =>
 		    let
 			val p = !pos
 			val n = Int.min (Vector.length v - p, sz)
-			val src = VectorSlice.slice (v, p, SOME n)
-				  handle General.Subscript => raise General.Size
 		    in
-			pos := p + n;
-			VectorSlice.vector src
+			if n = 0 then
+			    (list := vs; pos := 0; readVec sz)
+			else
+			    VectorSlice.vector
+				(VectorSlice.slice (v, p, SOME n))
+			    before pos := p + n
+			    handle General.Subscript => raise General.Size
 		    end
 
 		fun readArr sl =
+		    case !list of
+			[] => 0
+		      | v::vs =>
 		    let
 			val p = !pos
 			val (buf, di, sz) = ArraySlice.base sl
 			val n = Int.min (Vector.length v - p, sz)
-			val src = VectorSlice.slice (v, p, SOME n)
 		    in
-			ArraySlice.copyVec {src = src, dst = buf, di = di};
-			pos := p + n;
-			n
+			if n = 0 then
+			    (list := vs; pos := 0; readArr sl)
+			else
+			    (ArraySlice.copyVec
+				 {src = VectorSlice.slice (v, p, SOME n),
+				  dst = buf, di = di};
+			     pos := p + n;
+			     n)
+			    handle General.Subscript => raise General.Size
 		    end
+
+		fun block () =
+		    case !list of
+			[] => ()
+		      | v::vs => if !pos < Vector.length v then ()
+				 else (list := vs; pos := 0; block ())
+
+		fun canInput () =
+		    not (Future.isFuture (!list)) andalso
+		    case !list of
+			[] => true
+		      | v::vs => not (Future.isFuture v) andalso
+				 (!pos < Vector.length v orelse
+				  (list := vs; pos := 0; canInput ()))
 	    in
 		RD {name = "vector",
-		    chunkSize = Vector.length v,
+		    chunkSize = 1,
 		    readVec = SOME (check readVec),
 		    readArr = SOME (check readArr),
-		    readVecNB = SOME (check (fn x => if Future.isFuture v
-						     then NONE
-						     else SOME (readVec x))),
-		    readArrNB = SOME (check (fn x => if Future.isFuture v
-						     then NONE
-						     else SOME (readArr x))),
-		    block = SOME (check (fn () => ignore (Future.await v))),
-		    canInput = SOME (check (fn () => not (Future.isFuture v))),
+		    readVecNB = SOME (check (fn x => if canInput ()
+						     then SOME (readVec x)
+						     else NONE)),
+		    readArrNB = SOME (check (fn x => if canInput ()
+						     then SOME (readArr x)
+						     else NONE)),
+		    block = SOME (check block),
+		    canInput = SOME (check canInput),
 		    avail = check (fn () => NONE),
 		    getPos = NONE,
 		    setPos = NONE,
 		    endPos = NONE,
 		    verifyPos = NONE,
-		    close = fn () => closed := true,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
 		    ioDesc = NONE}
+	    end
+
+	fun openVector v = openVectorListRd [v]
+
+	fun openVectorListWr () =
+	    let
+		val p = Promise.promise ()
+		val vs = Promise.future p
+		val list = ref p
+		val closed = ref false
+		fun check f x =
+		    let
+			val p = Promise.promise ()
+		    in
+			if Ref.exchange (closed, Promise.future p) then
+			    (Promise.fulfill (p, true);
+			     raise IO.ClosedStream)
+			else (f x before Promise.fulfill (p, false))
+		    end
+
+		fun writeVec sl =
+		    let
+			val v = VectorSlice.vector sl
+			val p = Promise.promise ()
+		    in
+			Promise.fulfill (!list, v::(Promise.future p));
+			list := p;
+			Vector.length v
+		    end
+
+		fun writeArr sl =
+		    let
+			val v = ArraySlice.vector sl
+			val p = Promise.promise ()
+		    in
+			Promise.fulfill (!list, v::(Promise.future p));
+			list := p;
+			Vector.length v
+		    end
+	    in
+		(vs,
+		 WR {name = "vector",
+		     chunkSize = 1,
+		     writeVec = SOME (check writeVec),
+		     writeArr = SOME (check writeArr),
+		     writeVecNB = SOME (check (SOME o writeVec)),
+		     writeArrNB = SOME (check (SOME o writeArr)),
+		     block = SOME (check id),
+		     canOutput = SOME (check (const true)),
+		     getPos = NONE,
+		     setPos = NONE,
+		     endPos = NONE,
+		     verifyPos = NONE,
+		     close = fn () => Ref.modify (fn b => b orelse
+						  true before
+						  Promise.fulfill (!list, nil))
+						 closed,
+		     ioDesc = NONE})
 	    end
 
 	fun nullRd (): reader =
@@ -157,7 +244,7 @@ functor PrimIO(structure Vector: MONO_VECTOR
 		    setPos = NONE,
 		    endPos = NONE,
 		    verifyPos = NONE,
-		    close = fn () => closed := true,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
 		    ioDesc = NONE}
 	    end
 
@@ -186,7 +273,7 @@ functor PrimIO(structure Vector: MONO_VECTOR
 		    setPos = NONE,
 		    endPos = NONE,
 		    verifyPos = NONE,
-		    close = fn () => closed := true,
+		    close = fn () => Ref.modify (fn b => b orelse true) closed,
 		    ioDesc = NONE}
 	    end
 

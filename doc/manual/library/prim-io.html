@@ -105,20 +105,45 @@
 	     close :      unit -> unit,
 	     ioDesc :     OS.IO.iodesc option}
 
-	val openVector :    vector -> reader
-	val nullRd :        unit -> reader
-	val nullWr :        unit -> writer
-	val augmentReader : reader -> reader
-	val augmentWriter : writer -> writer
+	val openVector :       vector -> reader
+	val openVectorListRd : vector list -> reader
+	val openVectorListWr : unit -> vector list * writer
+	val nullRd :           unit -> reader
+	val nullWr :           unit -> writer
+	val augmentReader :    reader -> reader
+	val augmentWriter :    writer -> writer
     end
   </PRE>
 
 <?php section("description", "description") ?>
 
   <P>
-    Like the Standard ML Basis'
+    Items not described here are as in the Standard ML Basis'
     <A href="http://www.standardml.org/Basis/prim-io.html"><TT>PRIM_IO</TT></A> signature and
     <A href="http://www.standardml.org/Basis/prim-io-fn.html"><TT>PrimIO</TT></A> functor.
   </P>
+
+  <DL>
+    <DT>
+      <TT>openVectorListRd <I>l</I></TT>
+    </DT>
+    <DD>
+      <P>Creates a reader whose content is the concatenation of the elements
+      from the list <TT><I>l</I></TT>. The list may contain futures, in which
+      case reading will block as soon as the reader has moved to the future
+      position.</P>
+    </DD>
+
+    <DT>
+      <TT>openVectorListWr ()</TT>
+    </DT>
+    <DD>
+      <P>Creates a list future <TT><I>l</I></TT>  and a writer. The list
+      behaves as a concurrent stream, that is, whenever data is passed to the
+      writer, <TT><I>l</I></TT> is extended by one element containg the
+      respective data as a vector. When the writer is closed, the list's tail
+      will become <TT>nil</TT>.
+    </DD>
+  </DL>
 
 <?php footing() ?>
