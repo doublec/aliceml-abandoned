@@ -1,8 +1,4 @@
 import
-    structure Stamp
-from "x-alice:/common/Stamp.ozf"
-
-import
     structure Label
 from "x-alice:/common/Label.ozf"
 
