@@ -272,13 +272,22 @@ struct
 				    ("outline_color_gdk", Gtk.OBJECT black)])
 
 	    val cross = 
-		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 3.0),
-				    ("y1", Gtk.DOUBLE 3.0),
-				    ("x2", Gtk.DOUBLE (real (cellSize - 3))),
-				    ("y2", Gtk.DOUBLE (real (cellSize - 3))),
-				    ("fill_color_gdk", Gtk.OBJECT gatecol),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
+		let
+		    val font  = "-*-arial-bold-*-*-24-*-*-*-*-*-*-*-*"
+		    val x = Real.fromInt cellSize2
+		    val y = Real.fromInt cellSize2
+		    val anchor = Gtk.ANCHOR_CENTER
+		    val color = black
+		in
+		    GtkCanvas.itemNew (gate, GtkCanvas.TEXT,
+				       [("text", GtkCanvas.STRING "X"),
+					("font", GtkCanvas.STRING font),
+					("x", GtkCanvas.DOUBLE x), 
+					("y", GtkCanvas.DOUBLE y),
+					("fill_color_gdk", 
+					 GtkCanvas.OBJECT color),
+					("anchor", GtkCanvas.INT anchor)])
+		end
 	in
 	    gate
 	end

@@ -45,7 +45,7 @@ struct
 
             fun abort () = ()
 
-            fun countdown n = ()
+            fun countdown n = #countdown guiGame n
 
             fun update diffs = #update guiGame diffs
             

@@ -113,6 +113,7 @@ struct
 	(Text.mkTextWindow (title, msg); reset' ())
 
 
+
     (* initializing the procedures from model_game *)
     val turn'       = ref (fn d => ())
     val changeView' = ref (fn h => ())
@@ -130,6 +131,35 @@ struct
 		     HighscoreIO.save h)
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
+
+	    val oldNumber = ref (Gtk.null ())
+	    val color  = Gdk.allocColor (0, 65535, 65535)
+
+		
+	    fun countdown 0 = if !oldNumber <> Gtk.null ()
+				  then Gtk.objectDestroy (!oldNumber)
+			      else ()
+	      | countdown n =
+		let
+		    val num    = Int.toString n
+		    val font   = "-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*"
+		    val x      = 300.0
+		    val y      = 250.0
+		    val anchor = Gtk.ANCHOR_CENTER
+		    val args   = [("text", GtkCanvas.STRING num),
+				  ("font", GtkCanvas.STRING font),
+				  ("x", GtkCanvas.DOUBLE x), 
+				  ("y", GtkCanvas.DOUBLE y),
+				  ("fill_color_gdk", GtkCanvas.OBJECT color),
+				  ("anchor", GtkCanvas.INT anchor)]
+		    val root = GtkCanvas.root canvas
+		    val num = GtkCanvas.itemNew (root, GtkCanvas.TEXT, args)
+		in
+		    if !oldNumber <> Gtk.null ()
+			then Gtk.objectDestroy (!oldNumber)
+		    else ();
+			oldNumber := num
+		end
 
 	    fun tick remainingTime =
 		let
@@ -174,7 +204,7 @@ struct
 	    Gtk.widgetShow canvas;
 	    Gtk.widgetShow rightHBox;
 	    assert (Future.isFuture $ Promise.future guiGame) 
-	    do Promise.fulfill (guiGame, {startLevel, update, 
+	    do Promise.fulfill (guiGame, {startLevel, update, countdown, 
 					  updatePoints, headPosition,
 					  tick,
 					  gameFinished});

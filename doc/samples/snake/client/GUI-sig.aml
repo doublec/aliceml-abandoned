@@ -41,6 +41,7 @@ sig
     type gui_game = 
 	{
 	 startLevel   : Protocol.level_info -> unit,
+	 countdown    : int -> unit,
 	 update       : (Pos.pos * Protocol.field) list -> unit,
 	 updatePoints : (Highscore.points * int option) list -> unit,
 	 headPosition : Pos.pos -> unit,
