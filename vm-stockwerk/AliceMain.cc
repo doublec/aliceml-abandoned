@@ -59,6 +59,7 @@ static void InitAlice(int argc, const char *argv[]) {
       Error("could not determine installation directory");
     }
     AliceLanguageLayer::Init(home, argc, argv);
+    BootLinker::Init(nativeComponents);
     initialized = true;
   }
 }
@@ -69,12 +70,14 @@ void Start(int argc, const char *argv[]) {
     std::exit(2);
   }
   InitAlice(argc, argv);
-  BootLinker::Init(nativeComponents);
-  BootLinker::Link(String::New("lib/system/Boot")); //--** to be done
+  Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
+  String *url = String::FromWordDirect(AliceLanguageLayer::rootUrl);
+  BootLinker::Link(thread, url);
 }
 
 Worker::Result Load(String *name) {
   const char *argv[] = {""};
   InitAlice(1, argv);
-  Error("alice.dll: Load not implemented");   //--** to be done
+  BootLinker::Link(name);
+  return Worker::CONTINUE;
 }
