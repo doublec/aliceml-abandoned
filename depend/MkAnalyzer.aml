@@ -51,10 +51,6 @@ functor MkAnalyzer(structure Parser: PARSER
 		    SOME(Url.toString url)
 	      | (SOME "file", NONE) =>
 		    SOME(Url.toString (Url.setScheme (url, NONE)))
-	      | (SOME "x-alice", NONE) =>
-		    SOME(home () ^
-			 Url.toString (Url.setScheme (Url.makeRelativePath url,
-						      NONE)))
 	      | _ => NONE
 
 	fun pathFloor filename =
