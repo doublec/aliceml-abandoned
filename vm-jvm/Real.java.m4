@@ -1,9 +1,15 @@
 /*
- * $Date$
+ * Author: 
+ *      Daniel Simon, <dansim@ps.uni-sb.de>
+ * 
+ * Copyright:
+ *      Daniel Simon, 1999
+ *
+ * Last change:
+ *    $Date$ by $Author$
  * $Revision$
- * $Author$
+ * 
  */
-
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert Real.
@@ -171,7 +177,7 @@ final public class Real implements DMLValue {
     /** <code>val fromString : string -> real option </code>*/
     _FIELD(Real,fromString);
 
-    /** <code>val scan : (char, 'a) java.lang.StringCvt.reader -> (real, 'a) java.lang.StringCvt.reader </code>*/
+    /** <code>val scan : (char, 'a) StringCvt.reader -> (real, 'a) StringCvt.reader </code>*/
     /** <code>val toManExp : real -> {man : real, exp : int} </code>*/
     /** <code>val fromManExp : {man : real, exp : int} -> real </code>*/
     /** <code>val split : real -> {whole : real, frac : real} </code>*/

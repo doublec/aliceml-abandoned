@@ -1,9 +1,15 @@
 /*
- * $Date$
+ * Author: 
+ *      Daniel Simon, <dansim@ps.uni-sb.de>
+ * 
+ * Copyright:
+ *      Daniel Simon, 1999
+ *
+ * Last change:
+ *    $Date$ by $Author$
  * $Revision$
- * $Author$
+ * 
  */
-
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
@@ -84,7 +90,4 @@ public class Thread extends java.lang.Thread implements DMLValue {
     }
 
     _apply_fails ;
-    _request_id ;
-    _getValue_id ;
-    _raise ;
 }

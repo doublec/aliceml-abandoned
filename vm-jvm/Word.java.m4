@@ -1,9 +1,15 @@
 /*
- * $Date$
+ * Author: 
+ *      Daniel Simon, <dansim@ps.uni-sb.de>
+ * 
+ * Copyright:
+ *      Daniel Simon, 1999
+ *
+ * Last change:
+ *    $Date$ by $Author$
  * $Revision$
- * $Author$
+ * 
  */
-
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert Word.
@@ -232,5 +238,5 @@ final public class Word implements DMLValue {
     /** <code>val toString : word -> string </code>*/
     _FIELD(Word,toString);
     /** <code>val fromString : string -> word option </code>*/
-    /** <code>val scan : java.lang.StringCvt.radix -> (char, 'a) java.lang.StringCvt.reader -> 'a -> (word, 'a) option</code>*/
+    /** <code>val scan : StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a -> (word, 'a) option</code>*/
 }
