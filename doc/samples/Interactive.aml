@@ -14,16 +14,18 @@
 
 (* How to start the system: C-u M-x run-sml RET stot RET --rtt-level=full *)
 
-TextIO.print "hello, world\n"
+TextIO.print "hello, world\n";
 
 import "x-alice:/lib/tools/Inspector"
 
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
 val inspect = Inspector.inspect
 
-inspect ({hello = "hello, world"}, 3 + 8)
+inspect ({hello = "hello, world"}, 3 + 8);
 
 val rec infiniteList = 1::infiniteList;
-inspect infiniteList
+inspect infiniteList;
 
 
 (***********************************************************************
@@ -31,6 +33,9 @@ inspect infiniteList
  **********************************************************************)
 
 (*TODO*)
+
+open Future
+open Promise
 
 
 (***********************************************************************
@@ -55,11 +60,15 @@ val  value = {a = 0, b = "Knob the dopp.", c = susp, d = [4, 0, 2, 42]}
 type ty    = {a : int, b : string, c : unit, d : int list}
 
 structure P = Package.PackVal(val x = value type t = ty)
+
+inspect P.package;
+
 structure X = Package.UnpackVal(val package = P.package type t = ty)
+val value' = X.x
 
-val _ = print(if #b X.x = #b value then "Yeah!\n" else raise Fail "Ouch!")
+val _ = print(if #b value' = #b value then "Yeah!\n" else raise Fail "Ouch!")
 
-val _ = #c X.x = ()
+val _ = #c value' = ()
 
 
 (*
@@ -91,9 +100,15 @@ structure Length    = Package.Unpack(val package = P.package
 				     signature S = (val f: 'a list -> int))
 structure IntLength = Package.Unpack(val package = P.package
 				      signature S = (val f: int list -> int))
+structure RealLength = Package.Unpack(val package = P.package
+				      signature S = (val f: real list -> int))
+
+structure _ = Package.Unpack(val package = P.package
+			     signature S = (val f: real option -> int))
 
 val _  = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
 val _  = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
+val _  = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
 
 
 (*
@@ -122,12 +137,48 @@ structure P    = Package.Pack(structure X = Num
 			      signature S = NUM where type t = Num.t)
 structure Num' = Package.Unpack(val package = P.package
 				signature S = NUM where type t = Num.t)
+structure Num'' = Package.Unpack(val package = P.package
+				 signature S = NUM)
+structure P'   = Package.Pack(structure X = Num''
+			      signature S = NUM where type t = Num''.t)
+structure _ = Package.Unpack(val package = P'.package
+			     signature S = NUM where type t = Num.t)
+
+Num'.add(Num'.fromInt 1, Num.fromInt 2);
+
+Num''.add(Num''.fromInt 1, Num.fromInt 2); (* error *)
 
 val n1 = Num.fromInt 2
 val n2 = Num'.fromInt 53
 val n3 = Num.add(n1,n2)
 val _  = print("2 + 53 = " ^ Int.toString(Num'.toInt n3) ^ "\n")
 
+
+(*
+ * Packing a datatype.
+ *)
+
+signature S =
+sig
+    datatype t = A | B of int
+    val x: t
+end
+
+structure S =
+struct
+    datatype t = A | B of int
+    val x = B 5
+end
+
+structure P = Package.Pack(structure X = S
+			   signature S = S)
+
+datatype t = A | B of int
+
+structure S' = Package.Unpack(val package = P.package
+			      signature S = sig val x: t end)
+
+inspect S'.x;
 
 (*
  * Part 5:
@@ -339,9 +390,46 @@ structure _ = Pickle.Save(val file = file
  **********************************************************************)
 
 import structure FD       from "x-alice:/lib/constraints/FD"
-import structure Space    from "x-alice:/lib/constraints/Space"
+(*import structure Space    from "x-alice:/lib/constraints/Space"*)
 import structure Search   from "x-alice:/lib/constraints/Search"
 import structure Explorer from "x-alice:/lib/constraints/Explorer"
+
+val x = FD.range (1, 5)
+val y = FD.range (1, 5)
+
+inspect (x, y);
+
+FD.less (x, y);
+
+FD.notequal (x, FD.fromInt 3);
+
+FD.equal (x, FD.fromInt 1);
+
+fun money() =
+    let
+	val digits as #[S, E, N, D, M, O, R, Y] = FD.rangeVec(8, (0,9))
+	val send                                = FD.fd NONE
+	val more                                = FD.fd NONE
+	val money                               = FD.fd NONE
+	val zero                                = FD.fromInt 0
+    in
+	FD.sumC(#[(1000, S), (100, E), (10, N), (1, D)],
+		FD.EQUAL, send);
+	FD.sumC(#[(1000, M), (100, O), (10, R), (1, E)],
+		FD.EQUAL, more);
+	FD.sumC(#[(10000, M), (1000, O), (100, N), (10, E), (1, Y)],
+		FD.EQUAL, money);
+	FD.notequal(S, zero);
+	FD.notequal(M, zero);
+	FD.distinct(digits);
+	FD.plus(send, more, money);
+	FD.distribute(FD.FIRSTFAIL, digits);
+	{S, E, N, D, M, O, R, Y}
+    end
+
+(* Inspect the solution *)
+(*val _ = Inspector.inspect(Search.searchAll money)*)
+val _ = Explorer.exploreAll money
 
 structure Photo =
     struct
@@ -398,34 +486,6 @@ structure Photo =
 
 	(* Explore the Solution(s) *)
 	val _ = Explorer.exploreBest(photo, pruner)
-    end
-
-structure Money =
-    struct
-	fun money() =
-	    let
-		val digits as #[S, E, N, D, M, O, R, Y] = FD.rangeVec(8, (0,9))
-		val send                                = FD.fd NONE
-		val more                                = FD.fd NONE
-		val money                               = FD.fd NONE
-		val zero                                = FD.fromInt 0
-	    in
-		FD.sumC(#[(1000, S), (100, E), (10, N), (1, D)],
-			FD.EQUAL, send);
-		FD.sumC(#[(1000, M), (100, O), (10, R), (1, E)],
-			FD.EQUAL, more);
-		FD.sumC(#[(10000, M), (1000, O), (100, N), (10, E), (1, Y)],
-			FD.EQUAL, money);
-		FD.notequal(S, zero);
-		FD.notequal(M, zero);
-		FD.distinct(digits);
-		FD.plus(send, more, money);
-		FD.distribute(FD.FIRSTFAIL, digits);
-		{S, E, N, D, M, O, R, Y}
-	    end
-
-	(* Inspect the solution *)
-	val _ = Inspector.inspect(Search.searchAll money)
     end
 
 
