@@ -664,7 +664,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::IntTest: // of idRef * (int * instr) vector * instr
       {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
-	int value = Store::WordToInt(requestWord);
+	s_int value = Store::WordToInt(requestWord);
 	if (value == INVALID_INT) REQUEST(requestWord);
 	KillIdRef(pc->Sel(0), localEnv);
 	Vector *tests = Vector::FromWordDirect(pc->Sel(1));
@@ -682,10 +682,10 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::CompactIntTest: // of idRef * int * instrs * instr
       {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
-	int value = Store::WordToInt(requestWord);
+	s_int value = Store::WordToInt(requestWord);
 	if (value == INVALID_INT) REQUEST(requestWord);
 	KillIdRef(pc->Sel(0), localEnv);
-	int offset = Store::DirectWordToInt(pc->Sel(1));
+	s_int offset = Store::DirectWordToInt(pc->Sel(1));
 	u_int index = static_cast<u_int>(value - offset);
 	Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	if (index < tests->GetLength())
@@ -743,7 +743,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	word requestWord = GetIdRef(pc->Sel(0), globalEnv, localEnv);
 	TagVal *tagVal = TagVal::FromWord(requestWord);
 	if (tagVal == INVALID_POINTER) { // nullary constructor or transient
-	  int tag = Store::WordToInt(requestWord);
+	  s_int tag = Store::WordToInt(requestWord);
 	  if (tag == INVALID_INT) REQUEST(requestWord);
 	  KillIdRef(pc->Sel(0), localEnv);
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(1));
@@ -757,7 +757,7 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	  }
 	} else { // non-nullary constructor
 	  KillIdRef(pc->Sel(0), localEnv);
-	  int tag = tagVal->GetTag();
+	  s_int tag = tagVal->GetTag();
 	  Vector *tests = Vector::FromWordDirect(pc->Sel(2));
 	  u_int ntests = tests->GetLength();
 	  for (u_int i = 0; i < ntests; i++) {
