@@ -19,11 +19,10 @@ import
    System(printError)
    Resolve(trace)
    Error(registerFormatter exceptionToMessage)
-   ComposerComponent('Composer$': Composer) at 'compiler/top/Composer'
+   UrlComponent('Url$': Url) at 'lib/utility/Url'
+   SignatureComponent('Signature$': Signature) at 'lib/system/Signature'
+   BootComponent('boot': Boot) at 'lib/system/Boot'
 define
-   Spec = record(mode: start
-		 typecheck(rightmost type: bool default: true))
-
    proc {Usage N}
       {System.printError 'Usage: alicerun <name> <args> ...\n'}
       {Application.exit N}
@@ -43,7 +42,7 @@ define
       [] sig(_#unit)#_ then ok
       [] _#sig(_#unit) then ok
       [] sig(S1)#sig(S2) then
-	 if {Composer.'Sig$'.matches S1 S2} then ok
+	 if {Signature.matches S1 S2} then ok
 	 else no('signature mismatch')
 	 end
       else ok
@@ -113,29 +112,14 @@ define
        {FormatFutureExn InnerE}
     end}
 
-   try
-      Args = {Application.getArgs Spec}
-   in
-      case Args.1 of Name|Rest then
-	 ModuleManager =
-	 if Args.typecheck then
-	    {Property.put 'ozl.checkExpImp' CheckExpImpExtended}
-	    {Property.put 'ozl.checkImpImp' CheckImpImp}
-	    {New Module.manager init(CheckExpImpExtended)}
-	 else
-	    {New Module.manager init()}
-	 end
-      in
-	 {Property.put 'alice.modulemanager' ModuleManager}
-	 {Property.put 'ozd.args' Rest}
-	 {Property.put 'errors.depth' 20}
-	 {Property.put 'errors.width' 10}
-	 {Wait {ModuleManager link(url: Name $)}}
-      [] nil then
-	 {Usage 2}
-      end
-   catch error(ap(usage VS) ...) then
-      {System.printError 'Usage error: '#VS#'\n'}
+   case {Application.getArgs plain} of Name|Rest then
+      {Property.put 'ozl.checkExpImp' CheckExpImpExtended}
+      {Property.put 'ozl.checkImpImp' CheckImpImp}
+      {Property.put 'ozd.args' Rest}
+      {Property.put 'errors.depth' 20}
+      {Property.put 'errors.width' 10}
+      {Boot {Url.fromString {ByteString.make Name}} _}
+   [] nil then
       {Usage 2}
    end
 end

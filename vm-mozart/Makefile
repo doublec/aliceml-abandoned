@@ -35,8 +35,8 @@
 ## build1-all:
 ##    A complete source tree is created in subdirectory build1.
 ##    The native components are created using ozc.  The component
-##    compiler/CompilerMain.ozf (and all its imports, transitively)
-##    are built using the hybrid compiler via recursive invocation.
+##    Build1.ozf (and all its imports, transitively) are built
+##    using the hybrid compiler via recursive invocation.
 ## build1-install:
 ##    A minimal but working system (only consisting of a compiler,
 ##    without libraries) is installed to subdirectory build1/install.
@@ -124,7 +124,8 @@ MLYACC = ml-yacc
 ##
 
 LIBSYSTEMNATIVES0 = \
-	Config IO TextIO OS Unix CommandLine Pickle Debug Socket Rand
+	Config IO TextIO OS Unix CommandLine Component Debug Socket Rand \
+	Reflect
 LIBUTILITYNATIVES0 = \
 	MkRefMap
 LIBNATIVES = \
@@ -150,8 +151,11 @@ LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
 	CONFIG-sig.aml IO-sig.aml TEXT_IO-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
-	PICKLE-sig.aml DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml \
-	$(LIBSYSTEMNATIVES0:%=%.aml)
+	COMPONENT_MANAGER-sig.aml COMPONENT-sig.aml DEBUG-sig.aml \
+	SOCKET-sig.aml REFLECT-sig.aml URL_MAP-sig.aml UrlMap.aml \
+	$(LIBSYSTEMNATIVES0:%=%.aml) \
+	PICKLE-sig.aml Pickle.aml SIGNATURE-sig.aml Signature.aml \
+	RAND-sig.aml Boot.aml ComponentManager.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
@@ -188,9 +192,9 @@ COMPILERINFRASTRUCTURESOURCES0 = \
 	Error.aml SWITCHES-sig.aml MkSwitches.aml CONTEXT-sig.aml \
 	REPRESENTATION-sig.aml PHASE-sig.aml PHASE_ERROR-sig.aml \
 	ComposePhases.aml MkTracingPhase.aml MkResultDumpingPhase.aml \
-	MkContextDumpingPhase.aml EmptyContext.aml SIGNATURE-sig.aml \
-	COMPOSER-sig.aml TARGET-sig.aml MkHashScopedImpSet.aml \
-	MkHashScopedImpMap.aml StringMap.aml PP_MISC-sig.aml PPMisc.aml
+	MkContextDumpingPhase.aml EmptyContext.aml TARGET-sig.aml \
+	Target.aml MkHashScopedImpSet.aml MkHashScopedImpMap.aml \
+	StringMap.aml PP_MISC-sig.aml PPMisc.aml
 COMPILERINFRASTRUCTURESOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES0:%=compiler/infrastructure/%)
 
@@ -260,7 +264,7 @@ COMPILERBACKENDDOTNETSOURCES = \
 	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
 
 COMPILERTOPSOURCES0 = \
-	Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
+	COMPILER-sig.aml MkCompiler.aml SignTable.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
 	SMLToDotNetRecursiveCompiler.aml \
@@ -316,7 +320,9 @@ alicec1-%: build1-install
 ########################################################################
 
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
-BUILD1SOURCES = build1/lib/fundamental/RTT.aml $(ALLSOURCES:%=build1/%)
+BUILD1SOURCES = \
+	build1/Build1.aml build1/lib/fundamental/RTT.aml \
+	$(ALLSOURCES:%=build1/%)
 
 INSTALL1DIRS = build1/install build1/install/bin build1/install/compiler
 INSTALL1TOPFILES = VMMain.ozf
@@ -339,6 +345,9 @@ Rel1.import: lib/fundamental/Fundamental.import
 
 Rel2.import: lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
+
+build1/Build1.aml: Build1.aml
+	cp $< $@
 
 build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
 	cp $< $@
@@ -431,10 +440,9 @@ build1/%.ozf: build1/%.aml
 
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
-	$(BUILD1SOURCES) \
 	$(LIBNATIVES:%=build1/%) \
 	$(BUILD1OZSOURCES:%.oz=%.ozf) \
-	build1/compiler/CompilerMain.ozf
+	build1/Build1.ozf
 
 build1/LinkedVMMain.ozf: build1/VMMain.ozf $(BUILD1OZLINPUTS)
 	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
@@ -574,8 +582,9 @@ INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
 	fundamental/Fundamental.ozf
 INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
-INSTALL3COMPILERTOPFILES = Composer.ozf \
-	SMLToMozartRecursiveCompiler.ozf SMLToDotNetRecursiveCompiler.ozf
+INSTALL3COMPILERTOPFILES = \
+	SMLToMozartRecursiveCompiler.ozf \
+	SMLToDotNetRecursiveCompiler.ozf
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
@@ -603,9 +612,9 @@ build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
-	build3/compiler/top/LinkedComposer.ozf \
 	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
-	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf
+	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf \
+	build3/LinkedVMMain.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 	cp $< $@
@@ -632,6 +641,10 @@ build3/lib/fundamental/LinkedFundamental.ozf: \
 	build3/lib/fundamental/Fundamental.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) $< -o $@
 
+build3/LinkedVMMain.ozf: build3/VMMain.ozf build3/lib/utility/Url.ozf \
+	build3/lib/system/Signature.ozf build3/lib/system/Boot.ozf
+	$(ALICELINK0) $(ALICELINK_OPTS) --include=.. $< -o $@
+
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../ \
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
@@ -642,21 +655,16 @@ build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	--exclude=$(TOP3)/SMLToMozartRecursiveCompiler \
 	--exclude=$(TOP3)/SMLToDotNetRecursiveCompiler $< -o $@
 
-build3/compiler/top/LinkedComposer.ozf: build3/compiler/top/Composer.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ $< -o $@
-
 build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToMozartRecursiveCompiler.ozf \
 	$(COMPILERBACKENDMOZARTSOURCES:%.oz=build3/%.ozf)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler \
-	--exclude=$(BUILD3)/compiler/top/Composer $< -o $@
+	--include=$(BUILD3)/compiler $< -o $@
 
 build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite=$(BUILD3)/=../../ \
-	--include=$(BUILD3)/compiler \
-	--exclude=$(BUILD3)/compiler/top/Composer $< -o $@
+	--include=$(BUILD3)/compiler $< -o $@
 
 ##
 ## Installing Build 3
@@ -667,7 +675,10 @@ build3-install: build3-all $(INSTALL3DIRS) $(INSTALL3FILES)
 $(INSTALL3DIRS):
 	mkdir -p $@
 
-$(INSTALL3TOPFILES:%=build3/install/%): build3/install/%: build3/%
+build3/install/VMMain.ozf: build3/LinkedVMMain.ozf
+	install -c -m 444 $< $@
+
+build3/install/Default.import: build3/Default.import
 	install -c -m 444 $< $@
 
 build3/install/bin/%.bat: %.bat
