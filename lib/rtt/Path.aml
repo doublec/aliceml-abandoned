@@ -45,7 +45,7 @@ struct
     type lab	= Label.t
     type stamp	= GlobalStamp.t
 
-    datatype path' = NAME of name | DOT of path * lab
+    datatype path' = NAME of name | HIDDEN of name | DOT of path * lab
     withtype path  = stamp * path' ref
     type t = path
 
@@ -56,6 +56,7 @@ struct
     fun new p'		= (GlobalStamp.new(), ref p')
     fun invent()	= new(NAME(Name.InId))
     fun name n		= new(NAME n)
+    fun hidden n	= new(HIDDEN n)
     fun dot pl		= new(DOT pl)
     fun fromLab l	= new(NAME(Label.toName l))
     fun fromString s	= new(NAME(Name.ExId s))
@@ -64,19 +65,24 @@ struct
 
     exception Path
 
-    fun isName (_, ref(NAME _))	= true
-      | isName  _		= false
-    fun isDot  (_, ref(DOT _))	= true
-      | isDot   _		= false
+    fun isName (_, ref(NAME _))		= true
+      | isName  _			= false
+    fun isHidden (_, ref(HIDDEN _))	= true
+      | isHidden  _			= false
+    fun isDot  (_, ref(DOT _))		= true
+      | isDot   _			= false
 
-    fun asName (_, ref(NAME n))	= n
-      | asName  _		= raise Path
-    fun asDot  (_, ref(DOT pl))	= pl
-      | asDot   _		= raise Path
+    fun asName (_, ref(NAME n))		= n
+      | asName  _			= raise Path
+    fun asHidden (_, ref(HIDDEN n))	= n
+      | asHidden  _			= raise Path
+    fun asDot  (_, ref(DOT pl))		= pl
+      | asDot   _			= raise Path
 
-    fun toLab (_, ref(NAME n))	= Label.fromName n
-      | toLab (_, ref(DOT pl))	= #2 pl
-
+    fun toLab (_, ref(DOT(_,l)))	= l
+      | toLab (_, ref(HIDDEN _))	= raise Path
+      | toLab (_, ref(NAME n))		= Label.fromName n
+					  handle Domain => raise Path
 
   (* Comparison and hashing *)
 
@@ -86,10 +92,8 @@ struct
 
   (* Hiding *)
 
-    val hiddenPrefix			= "\000"
-
     fun hide (_, r as ref p')		= r := hide' p'
-    and hide'(NAME Name.InId)		= NAME Name.InId
-      | hide'(NAME(Name.ExId s))	= NAME(Name.ExId(hiddenPrefix ^ s))
-      | hide'(DOT _)			= raise Path
+    and hide'(NAME name)		= HIDDEN name
+      | hide'(p' as HIDDEN _)		= p'
+      | hide'(DOT(_,l))			= HIDDEN(Label.toName l)
 end
