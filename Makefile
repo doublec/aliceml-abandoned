@@ -11,7 +11,8 @@ OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
 OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
 
-TARGET=seam
+TARGET=<no-target-specified>
+DEFAULT_TARGET=seam
 
 PLATFORM = $(shell bootstrap/platform.sh smlnj)
 ifeq ($(PLATFORM:%win32=win32), win32)
@@ -43,7 +44,9 @@ endif
 ##
 ## Do it!
 ##
-install: install-$(TARGET) man
+install:
+	make TARGET=$(DEFAULT_TARGET) install-rec
+install-rec: install-$(TARGET)-rec man
 	@echo -------------------------------------------------------------------------------
 	@echo Installation of Alice for $(PLATFORM) complete.
 	@echo Time for build 1:
@@ -125,7 +128,9 @@ distclean: veryclean
 ##
 ## Install Alice on Mozart
 ##
-install-mozart: install-common bootstrap-mozart libs-mozart
+install-mozart:
+	make TARGET=mozart install
+install-mozart-rec: install-common bootstrap-mozart libs-mozart
 
 bootstrap-mozart:
 	unset ALICE_HOME ;\
@@ -162,7 +167,9 @@ libs-mozart:
 ##
 ## Install Alice on Seam
 ##
-install-seam: install-common bootstrap-seam libs-seam
+install-seam:
+	make TARGET=seam install
+install-seam-rec: install-common bootstrap-seam libs-seam
 
 bootstrap-seam: build-seam
 	unset ALICE_HOME ;\
