@@ -4,5 +4,6 @@ import structure GlobalStamp from "x-alice:/lib/utility/GlobalStamp"
 val _ = let
 	    val stamp = GlobalStamp.new ()
 	in
-	    Inspector.inspect (stamp, stamp)
+	    (Inspector.inspect (stamp, stamp);
+	     Inspector.inspect (Overflow, Overflow))
 	end
