@@ -33,17 +33,17 @@ struct
 
     val allColors = ref (List.map Color.toString Color.all)
 
-    val playerAdjust1 = ref (Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						1.0, 1.0, 1.0))
-    val playerAdjust2 = ref (Gtk.adjustmentNew (50.0, 0.0, 100.0, 
-						1.0, 1.0, 1.0))
-    val playerText = ref (Gtk.textNew (!playerAdjust1, !playerAdjust2))
-    val colorCombo = ref (Gtk.comboNew ())
+    val playerAdjust1 = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						1.0, 1.0, 1.0)
+    val playerAdjust2 = Gtk.adjustmentNew (50.0, 0.0, 100.0, 
+						1.0, 1.0, 1.0)
+    val playerText = Gtk.textNew (playerAdjust1, playerAdjust2)
+    val colorCombo = Gtk.comboNew ()
 
 
 
     fun insertColors colors = 
-	Gtk.comboSetPopdownStrings (!colorCombo, colors)
+	Gtk.comboSetPopdownStrings (colorCombo, colors)
 
     val alreadyConn = ref nil
 
@@ -54,7 +54,7 @@ struct
 	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
 	    val front = colorToGdkColor color
 	in
-	    Gtk.textInsert(!playerText, font, front, 
+	    Gtk.textInsert(playerText, font, front, 
 			   white, name ^ "\n", ~1);
 	    alreadyConn := (name, color) :: !alreadyConn
 	end
@@ -66,7 +66,7 @@ struct
 	    val white = Gdk.allocColor (0xffff, 0xffff, 0xffff)
 	    val black = Gdk.allocColor (0 ,0, 0)
 	in
-	    Gtk.textInsert(!playerText, font, black, 
+	    Gtk.textInsert(playerText, font, black, 
 			   white, 
 			   name ^
 	                   " has disconnected" ^
@@ -105,13 +105,7 @@ struct
 
 
 	    fun resetWindowRefs () =
-		(alreadyConn := [];
-		 colorCombo := Gtk.comboNew ();
-		 playerAdjust1 := Gtk.adjustmentNew (50.0, 0.0, 100.0,
-						     1.0, 1.0, 1.0);
-		 playerAdjust2 := Gtk.adjustmentNew (50.0, 0.0, 100.0,
-						     1.0, 1.0, 1.0);
-		 playerText := Gtk.textNew (!playerAdjust1, !playerAdjust2))
+		(alreadyConn := [])
 
 	    val started = 
 		ref (fn () => 
@@ -128,7 +122,7 @@ struct
 		    val spareColors = removeColor' ()
 		in
 		    allColors := spareColors;
-		    Gtk.comboSetPopdownStrings (!colorCombo, spareColors)
+		    Gtk.comboSetPopdownStrings (colorCombo, spareColors)
 		end
 
 	    fun insertColor col = 
@@ -136,7 +130,7 @@ struct
 		    val colors = (Color.toString col)::(!allColors)
 		in
 		    allColors := colors;
-		    Gtk.comboSetPopdownStrings (!colorCombo, colors)
+		    Gtk.comboSetPopdownStrings (colorCombo, colors)
 		end
 
 	    val colorlock = Lock.lock ()
@@ -198,7 +192,7 @@ struct
 				val name = Gtk.entryGetText nameText
 				val color = Color.fromString (
 				    Gtk.entryGetText 
-				    (Gtk.comboGetFieldEntry (!colorCombo)))
+				    (Gtk.comboGetFieldEntry colorCombo))
 			    in 
 				alreadyConn := 
 				(name, color) :: (!alreadyConn);
@@ -223,8 +217,7 @@ struct
 				       (joined, disconnected, started),
 				       {reset, gameMode}))
 			   | SND     errorMsg     => 
-				 reset (SOME ("ERROR!!", errorMsg)));
-			print "PlayerSettings, geil"
+				 reset (SOME ("ERROR!!", errorMsg)))
 		end
 
 	in
@@ -255,7 +248,7 @@ struct
 	    
 	    Gtk.containerSetBorderWidth (playerSettings, 10);
 	    Gtk.miscSetAlignment (connectedLabel, 0.0, 0.5);
-	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry (!colorCombo), 
+	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo, 
 				  false);
 	    Gtk.windowSetDefaultSize(playerSettings, 300, 400);
 	    Gtk.scrolledWindowSetPolicy (playerScrolledWindow, 
@@ -267,7 +260,7 @@ struct
 	    Gtk.boxPackStart (nameHBox, nameText, true, false, 0);
 
 	    Gtk.boxPackStart (colorHBox, colorLabel, false, false, 0);
-	    Gtk.boxPackStart (colorHBox, !colorCombo, true, false, 0);
+	    Gtk.boxPackStart (colorHBox, colorCombo, true, false, 0);
 
 	    Gtk.boxPackStart (buttonHBox, readyButton, true, true, 5);
 	    Gtk.boxPackStart (buttonHBox, cancelButton, true, true, 5);
@@ -285,7 +278,7 @@ struct
 	    Gtk.boxPackStart (settingsVBox, separator4, false, false, 5);
 	    Gtk.boxPackStart (settingsVBox, buttonHBox, false, false, 5);
 	    
-	    Gtk.containerAdd (playerScrolledWindow, !playerText);
+	    Gtk.containerAdd (playerScrolledWindow, playerText);
 	    Gtk.containerAdd (playerSettings, settingsVBox);
 	    Gtk.widgetShowAll playerSettings
 
