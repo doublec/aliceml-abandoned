@@ -63,18 +63,46 @@ structure TestSuite :
 	in
 		v1 (a,b)
 	end
-                      
+	
+	fun vBoolN v1 (a,x) space =
+	let 
+            val a = vdom2II ( FS.Reflect.lowerBound (space,a))
+            val x = Vector.map (fn xi=> vdom2II ( FS.Reflect.lowerBound (space,xi))) x
+    in
+    	v1(a,x)
+    end
+                                  
         (*
          * Verifier functions
          *
          *)
 	
 	fun vUnion1 (a,b,c) = (IntInf.orb(b,c) = a)
-
+	
+	fun vUnionN1 (u,x) = 
+		(Vector.foldl IntInf.orb (IntInf.fromInt 0) x) = u
+	
 	fun vInter1 (a,b,c) = (IntInf.andb(b,c) = a)
+
+	fun vInterN1 (i,x) = 
+		(Vector.foldl IntInf.andb (Vector.sub (x,0)) x) = i
+
+	(*These two expect lists instead of vectors!*)
+	fun vDisjointN2 (_, nil) = true
+	| vDisjointN2 (u, h::t) =
+		if (IntInf.andb (u,h) = IntInf.fromInt 0) then vDisjointN2( IntInf.orb (u,h),t)
+		else false;
+
+	fun vPartitionN2 (p,u, nil) = (p = u)
+	| vPartitionN2 (p,u, h::t) =
+		if (IntInf.andb (u,h) = IntInf.fromInt 0) then vPartitionN2(p, IntInf.orb(u,h), t)
+		else false;
+
 
 	fun vSubSet1 (a,b) =
 		IntInf.andb (IntInf.xorb(a,b),a)= IntInf.fromInt 0		
+		
+	
 	fun vNoSubSet1 (root2 as (a,b))  = 
             if not (vSubSet1 root2) then true else
             (print "root: (";
@@ -136,6 +164,11 @@ structure TestSuite :
     	             print "\n";
         	         false)
 					else true
+
+
+
+
+
         (*
          * Test cases
          *
