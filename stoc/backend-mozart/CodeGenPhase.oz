@@ -103,9 +103,10 @@ define
 	 Hd = 'RaiseStm'({TrInfo Info} {TrId Id})|Tl
       [] 'ReraiseStm'(Info Id) then
 	 Hd = 'ReraiseStm'({TrInfo Info} {TrId Id})|Tl
-      [] 'TryStm'(Info TryBody IdDef HandleBody) then
+      [] 'TryStm'(Info TryBody IdDef1 IdDef2 HandleBody) then
 	 Hd = 'TryStm'({TrInfo Info} {TrBody TryBody $ nil ShareDict}
-		       {TrIdDef IdDef} {TrBody HandleBody $ nil ShareDict})|Tl
+		       {TrIdDef IdDef1} {TrIdDef IdDef2}
+		       {TrBody HandleBody $ nil ShareDict})|Tl
       [] 'EndTryStm'(Info Body) then
 	 Hd = 'EndTryStm'({TrInfo Info} {TrBody Body $ nil ShareDict})|Tl
       [] 'EndHandleStm'(Info Body) then
