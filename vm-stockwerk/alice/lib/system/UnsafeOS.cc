@@ -20,7 +20,7 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
-#define Interruptible(t, res, call) t res = call; res = res;
+#define Interruptible(res, call) int res = call; res = res;
 #else
 #include <errno.h>
 #define Interruptible(res, call)		\

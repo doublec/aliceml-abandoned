@@ -22,7 +22,7 @@
 #include <windows.h>
 #include <winsock.h>
 #define GetLastError() WSAGetLastError()
-#define Interruptible(t, res, call) t res = call; res = res;
+#define Interruptible(res, call) int res = call; res = res;
 #else
 #include <sys/socket.h>
 #define GetLastError() errno

@@ -32,7 +32,7 @@ typedef int socklen_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define EINPROGRESS WSAEINPROGRESS
 #define GetLastError() (WSAGetLastError())
-#define Interruptible(t, res, call) t res = call; res = res;
+#define Interruptible(res, call) int res = call; res = res;
 #else
 #define ioctlsocket ioctl
 #define closesocket close
