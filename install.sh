@@ -19,7 +19,7 @@ echo Trying to install Stockhausen to $prefix...
 PLATFORM=x86-linux
 
 OPTS1= # '--dump-phases' # --dump-abstraction-result' # --dump-intermediate'
-OPTS2=
+OPTS2= # '--dump-phases'
 OPTS3= # '--dump-phases' # --dump-intermediate'
 
 rm -f bootstrap/alicec-mozart.$PLATFORM #bootstrap/alicedep.$PLATFORM
