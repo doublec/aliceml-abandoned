@@ -83,7 +83,7 @@ public:
   intvar new_intvar(DomSpec&);
   boolvar new_boolvar(void);
 
-  void commit(int alt, BranchDesc*);
+  void commit(int, BranchDesc*);
 
   // Inspect variable information
   int int_getMin(intvar);

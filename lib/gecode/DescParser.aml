@@ -1,3 +1,5 @@
+import structure Print from  "x-alice:/lib/system/Print"
+
 structure DescParser =
 struct
   datatype var_types = IntVar | BoolVar | SetVar | List of var_types
@@ -15,6 +17,10 @@ struct
     | stripWhitespace (s where (Char.isSpace(String.sub(s, 0)))) =
       stripWhitespace (String.extract(s, 1, NONE))
     | stripWhitespace s = s
+
+  fun removeTrailingN (s where (String.sub (s, String.size s - 1) = #"\n")) =
+      String.substring(s, 0, String.size s -2)
+    | removeTrailingN s = s
 
   fun parseArg "intvar" = Var IntVar
     | parseArg "boolvar" = Var BoolVar
@@ -55,13 +61,33 @@ struct
                                parseArg (stripWhitespace outarg))
         | _ => raise Empty
 
+  fun parseName s =
+      let
+          val ts = String.tokens (fn #" " => true | _ => false) s
+          val (ret, n) = List.split(ts, List.length ts - 1)
+          val ret = stripWhitespace (foldr (fn (s, ss) =>
+                                               s^" "^ss) "" ret)
+      in
+          case n of
+              [name] => (name, ret)
+            | _ => raise Overflow
+      end
+
   fun parseLine "" = NONE
     | parseLine "\n" = NONE
     | parseLine (s where (String.isPrefix "//" s)) = NONE
     | parseLine s  =
-      case String.tokens (fn #":" => true | _ => false) s of
-          [name, def] => SOME (stripWhitespace name, parseDecl def)
-        | _ => raise Empty
+      case String.tokens (fn #"(" => true | #")"=> true | _ => false)
+                         (removeTrailingN s) of
+          [nameAndRet, argTypes] =>
+          let
+              val (name, retType) = parseName nameAndRet
+          in
+              SOME (stripWhitespace name,
+                    (parseInArgs argTypes,
+                     parseArg retType))
+          end
+        | s => raise Overflow
 
   fun parseFile' f =
       case TextIO.inputLine f
