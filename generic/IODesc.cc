@@ -513,14 +513,14 @@ IODesc::result IODesc::GetNumberOfAvailableBytes(int &out) {
   case TYPE_FORWARDED:
     {
       unsigned long arg;
-      out = ioctlsocket(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(out);
+      out = ioctlsocket(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(arg);
       return result_ok;
     }
 #else
   case TYPE_FD:
     {
       unsigned long arg;
-      out = ioctl(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(out);
+      out = ioctl(GetFD(), FIONREAD, &arg)? -1: static_cast<int>(arg);
       return result_ok;
     }
 #endif
