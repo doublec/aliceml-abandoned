@@ -1,6 +1,5 @@
 Stockwerk:
 -- Rename Pickle.oz to PrimPickle.oz
--- vielleicht doch noch eine Instruktion Sel zusaetzlich zu GetTup
 
 Extended Basis Library:
 -- Thread.raiseIn can raise an exception (Terminated)
