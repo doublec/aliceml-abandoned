@@ -1,9 +1,21 @@
+NATIVES = SelectFD SelectFS SelectUnion SelectInter SeqUnion SelectThe
+PLATFORM = $(shell oztool platform)
+
 .PHONY:	all clean
 
-all:	Linked.ozf
+all:	$(NATIVES:%=%.so-$(PLATFORM)) runme
 
-Linked.ozf:	Main.ozf Smurf.ozf
-	alicelink -v -z9 $< -o $@ --include=x-alice
+runme: Linked.ozf
+	ozl -z9 -x $< -o $@
+
+Linked.ozf:	Main.ozf Select.ozf Smurf.ozf
+	alicelink -v $< -o $@ --include=x-alice
+
+%.o: %.cc
+	oztool c++ -O3 -c $< -o $@
+
+%.so-$(PLATFORM): %.o
+	oztool ld -o $@ $<
 
 %.ozf:	%.aml
 	alicec -c $< -o $@
@@ -12,7 +24,7 @@ Linked.ozf:	Main.ozf Smurf.ozf
 	ozc -c $< -o $@
 
 clean:
-	rm *.ozf *.ozm
+	rm *.o *.so-* *.ozf *.ozm
 
 Tag.ozf:	
 Doc.ozf:	Tag.ozf
