@@ -8,7 +8,7 @@ dnl
 
 AC_REVISION([$Id$])
 AC_PREREQ(2.53)
-AC_INIT(Seam, 1.0, stockhausen@ps.uni-sb.de)
+AC_INIT(Seam, 1.0, stockhausen@ps.uni-sb.de, seam)
 AC_CONFIG_SRCDIR(Seam.hh)
 AC_CONFIG_SUBDIRS([store adt generic])
 
@@ -19,80 +19,103 @@ AC_PROG_MAKE_SET
 AC_PROG_CXX
 AC_PROG_INSTALL
 
+AC_LANG(C++)
+AC_SUBST(INCLUDES)
+AC_SUBST(LIBS)
+
 dnl
 dnl  zlib
 dnl
-AC_MSG_CHECKING([whether to build with zlib])
-AC_ARG_WITH([zlib],
-	    AC_HELP_STRING([--with-zlib=DIR],
-			   [use the zlib file compression library
-			    (default: no)]),
-	    HAVE_ZLIB=1
-	    ZLIBINCLUDES="-I$with_zlib/include"
-	    ZLIBLIBS="-L$with_zlib/lib -lz"
-	    result=yes,
-	    HAVE_ZLIB=0
-	    ZLIBINCLUDES=""
-	    ZLIBLIBS=""
-	    result=no)
-AC_MSG_RESULT($result)
-AC_SUBST(HAVE_ZLIB)
-AC_SUBST(ZLIBINCLUDES)
-AC_SUBST(ZLIBLIBS)
+AC_CACHE_CHECK([whether to build with zlib], [seam_cv_with_zlib],
+  [AC_ARG_WITH([zlib],
+    AC_HELP_STRING([--with-zlib=DIR],
+		   [use the zlib file compression library
+		    (default: yes if found)]),
+    [seam_cv_with_zlib="$with_zlib"],
+    [ac_save_LIBS="$LIBS"
+     LIBS="-lz $LIBS"
+     AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <zlib.h>]],
+				    [[gzFile f = gzopen("a", "rb");]]),
+		    seam_cv_with_zlib=yes,
+		    LIBS="$ac_save_LIBS"
+		    seam_cv_with_zlib=no)])])
+
+case "$seam_cv_with_zlib" in
+    yes)
+	AC_DEFINE(HAVE_ZLIB, 1)
+	;;
+    no)
+	AC_DEFINE(HAVE_ZLIB, 0)
+	;;
+    *)
+	AC_DEFINE(HAVE_ZLIB, 1)
+	INCLUDES="$INCLUDES -I$seam_cv_with_zlib/include"
+	LIBS="$LIBS -L$seam_cv_with_zlib/lib -lz"
+	;;
+esac
 
 dnl
 dnl  GNU Lightning
 dnl
-AC_MSG_CHECKING([whether to build with GNU Lightning])
-AC_ARG_WITH([lightning],
-	    AC_HELP_STRING([--with-lightning=DIR],
-			   [use GNU Lightning to enable run-time
-			    native code generation (default: no)]),
-	    HAVE_LIGHTNING=1
-	    LIGHTNINGINCLUDES="-I$with_lightning/include"
-	    result=yes,
-	    HAVE_LIGHTNING=0
-	    LIGHTNINGINCLUDES=""
-	    result=no)
-AC_MSG_RESULT($result)
-AC_SUBST(HAVE_LIGHTNING)
-AC_SUBST(LIGHTNINGINCLUDES)
+AC_CACHE_CHECK([whether to build with GNU Lightning], [seam_cv_with_lightning],
+  [AC_ARG_WITH([lightning],
+    AC_HELP_STRING([--with-lightning=DIR],
+		   [use GNU Lightning to enable run-time native
+		    code generation (default: yes if found)]),
+    [seam_cv_with_lightning="$with_lightning"],
+    [AC_COMPILE_IFELSE(AC_LANG_SOURCE([[#include <lightning.h>]]),
+		       seam_cv_with_lightning=yes,
+		       seam_cv_with_lightning=no)])])
+
+case "$seam_cv_with_lightning" in
+    yes)
+	AC_DEFINE(HAVE_LIGHTNING, 1)
+	;;
+    no)
+	AC_DEFINE(HAVE_LIGHTNING, 0)
+	;;
+    *)
+	AC_DEFINE(HAVE_LIGHTNING, 1)
+	INCLUDES="$INCLUDES -I$seam_cv_with_lightning/include"
+	;;
+esac
 
 dnl
 dnl  Profiler
 dnl
-AC_MSG_CHECKING([whether to build with user-level profiling support])
-AC_ARG_ENABLE([profiler],
-	      AC_HELP_STRING([--enable-profiler],
-			     [build with user-level profiling support]),
-	      PROFILE=1
-	      result=yes,
-	      PROFILE=0
-	      result=no)
-AC_SUBST(PROFILE)
-AC_MSG_RESULT($result)
+AC_CACHE_CHECK([whether to build with user-level profiling support],
+  [seam_cv_enable_profiler],
+  [AC_ARG_ENABLE([profiler],
+		 AC_HELP_STRING([--enable-profiler],
+				[build with user-level profiling support
+				 (default: no)]),
+		 [seam_cv_enable_profiler="$enable_profiler"],
+		 [seam_cv_enable_profiler=no])])
+
+case "$seam_cv_enable_profiler" in
+    yes)
+	AC_DEFINE(PROFILE, 1)
+	;;
+    no)
+	AC_DEFINE(PROFILE, 0)
+	;;
+esac
 
 dnl
 dnl  These are hacks!
 dnl
 case $(uname) in
     CYGWIN*)
-	SEAM_MACHINE_FLAGS=-mno-cygwin
-	SEAM_LDFLAGS=
-	SEAM_LIBS="-lwsock32 -lmsvcrt"
-	SUPPORTDIR=$PWD/../alice/support/install/mingw32
+	LIBS="$LIBS -lwsock32"
 	;;
     *)
-	SEAM_MACHINE_FLAGS=
-	SEAM_LDFLAGS="-Wl,--export-dynamic -Ur"
-	SEAM_LIBS="-lm -ldl"
-	SUPPORTDIR=$PWD/../alice/support/install/linux
+	LDFLAGS="$LDFLAGS -Wl,--export-dynamic -Ur"
+	LIBS="$LIBS -lm -ldl"
 	;;
 esac
-AC_SUBST(SEAM_MACHINE_FLAGS)
-AC_SUBST(SEAM_LDFLAGS)
-AC_SUBST(SEAM_LIBS)
-AC_SUBST(SUPPORTDIR)
 
+dnl
+dnl  Output Files
+dnl
 AC_CONFIG_FILES([Makefile Makefile.vars seamtool])
 AC_OUTPUT

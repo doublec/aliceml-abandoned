@@ -1,4 +1,5 @@
 ## -*- Makefile -*-
+## @configure_input@
 ##
 ## Author:
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
@@ -11,13 +12,8 @@
 ##   $Revision$
 ## 
 
-DEFINES = \
-	-DHAVE_ZLIB=@HAVE_ZLIB@ \
-	-DLIGHTNING=@HAVE_LIGHTNING@ \
-	-DPROFILE=@PROFILE@
-INCLUDES = -I$(SRCTOP) -I$(BUILDTOP) @ZLIBINCLUDES@ @LIGHTNINGINCLUDES@
-
-MACHINE_FLAGS = -mcpu=pentium @SEAM_MACHINE_FLAGS@
+DEFINES = @DEFS@
+INCLUDES = -I$(SRCTOP) -I$(BUILDTOP) @INCLUDES@ @CPPFLAGS@
 
 CXX_WARNING_FLAGS = \
 	-Wall -W -Wundef -Wpointer-arith -Wcast-qual -Wcast-align \
@@ -29,23 +25,23 @@ CXX_DEBUG_FLAGS = \
 	-fno-inline-functions -fimplement-inlines -ggdb
 
 CXX_OPTIMIZE_FLAGS = \
-	-pipe -march=pentium3 -O3 -fomit-frame-pointer \
+	-pipe -mcpu=pentium -march=pentium3 -O3 -fomit-frame-pointer \
 	-fforce-mem -fforce-addr -finline-limit=2500 \
 	-fno-implement-inlines -fno-keep-static-consts \
 	-fno-implicit-templates -fno-implicit-inline-templates
 
-CXX = @CXX@ $(MACHINE_FLAGS)
+CXX = @CXX@
 
 #CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
 CXXFLAGS = $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
 
-LD = @CXX@ $(MACHINE_FLAGS)
+LD = @CXX@
 LD_DEBUG_FLAGS = 
 LD_OPTIMIZE_FLAGS = -Wl,-S
 
-#LDFLAGS = $(MACHINE_FLAGS) $(LD_DEBUG_FLAGS) @SEAM_LDFLAGS@
-LDFLAGS = $(LD_OPTIMIZE_FLAGS) @SEAM_LDFLAGS@
+#LDFLAGS = $(MACHINE_FLAGS) $(LD_DEBUG_FLAGS) @LDFLAGS@
+LDFLAGS = $(LD_OPTIMIZE_FLAGS) @LDFLAGS@
 
-LIBS = @SEAM_LIBS@ @ZLIBLIBS@
+LIBS = @LIBS@
 
 MAKEDEPEND = $(CXX) -M $(DEFINES) $(INCLUDES)
