@@ -381,6 +381,7 @@
         ldsfld class StockWerk.StockWert StockWerk.Prebound::Unit
         callvirt instance class StockWerk.StockWert StockWerk.StockWert::Apply(class StockWerk.StockWert)
         stloc.0
+        //--** if loc.0 and arg.0 are variants of the same transient, throw an exception
         ldarg.0
         ldloc.0
         stfld class StockWerk.StockWert StockWerk.ByNeed::Ref
