@@ -1,3 +1,6 @@
+dnl
+dnl $Date$ $Author$ $Revision$
+dnl
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT()
 
@@ -44,4 +47,4 @@ dnl Checks for library functions.
 AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(sml-cm)
-AC_OUTPUT(Makefile tools/Makefile test/Makefile)
+AC_OUTPUT(../../benchmarks/Makefile Makefile tools/Makefile test/Makefile)
