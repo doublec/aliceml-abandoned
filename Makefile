@@ -19,7 +19,7 @@ include $(TOPDIR)/Makefile.rules
 SUBDIRS = store adt generic alice java
 SUBDIRSR = java alice generic adt store
 
-SRCS = Base.cc InitSeam.o AliceMain.cc
+SRCS = Base.cc InitSeam.cc AliceMain.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 
