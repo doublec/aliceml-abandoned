@@ -20,6 +20,8 @@ signature REFLECT =
 
 	val realToVector: real -> Word8.word vector
 
+	val reflectPackage : Package.package -> value * Inf.t
+
 	functor Reflect(signature S structure X : S) : (val x : value)
 	functor Unreflect(val x : value signature S) : S
 	functor ReflectSig(signature S) : (val x : Inf.t)
