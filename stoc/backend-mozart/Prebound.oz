@@ -14,13 +14,20 @@ functor
 import
    BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootWord at 'x-oz://boot/Word'
-   System(show printInfo printName)
-   Browser(browse)
-   Application(exit)
 export
    BuiltinTable
    Env
 define
+   fun {ExnName N}
+      case {VirtualString.toString {Value.toVirtualString N 0 0}}
+      of "<N>" then ""
+      elseof &<|&N|&:|& |Rest then
+	 case {Reverse Rest} of &>|Rest then
+	    {ByteString.make {Reverse Rest}}
+	 end
+      end
+   end
+
    fun {NumberCompare I J}
       if I == J then 'EQUAL'
       elseif I < J then 'LESS'
@@ -122,10 +129,8 @@ define
       'General.Subscript': {NewUniqueName 'General.Subscript'}
       'General.exchange':
 	 fun {$ C New} {Exchange C $ New} end
-      'General.exnName':
-	 fun {$ E} {ByteString.make {System.printName E}} end
-      'General.exnMessage':
-	 fun {$ E} {ByteString.make {System.printName E}} end
+      'General.exnName': ExnName
+      'General.exnMessage': ExnName
       'GlobalStamp.new':
 	 fun {$ unit} {NewName} end
       'GlobalStamp.fromString':
