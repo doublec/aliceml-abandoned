@@ -16,6 +16,6 @@ signature LIVENESS =
     sig
 	structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 
-	val analyze: AbstractCodeGrammar.idDef AbstractCodeGrammar.args *
+	val analyze: AbstractCodeGrammar.idDef vector *
 		     AbstractCodeGrammar.instr -> int vector
     end
