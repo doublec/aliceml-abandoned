@@ -81,8 +81,6 @@
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(b);
 
-//--** actually, when issuing a REQUEST, it's the builtin itself that should
-// be activated directly next time the thread becomes RUNNABLE.
 #define REQUEST(w) {							\
   taskStack->PushFrame(1);						\
   taskStack->PutWord(0, w);						\
