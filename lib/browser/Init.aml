@@ -13,52 +13,28 @@
  *
  *)
 
-import structure Inf from "x-alice:/lib/rtt/Inf"
-import structure Type from "x-alice:/lib/rtt/Type"
 import structure PervasiveType from "x-alice:/lib/rtt/PervasiveType"
-import structure Label from "x-alice:/lib/rtt/Label"
-import structure Component from "x-alice:/lib/system/Component"
-(*
-import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
-*)
-import structure Url from "x-alice:/lib/utility/Url" 
 import structure Types from "Types"
 import structure Helper from "Helper"
 import structure Settings from "Settings"
 import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
+import structure NewNodeHelper from "NewNodeHelper"
 import structure MkColorTable from "MkColorTable"
 import structure WindowManager from "WindowManager"
 import structure Update from "Update"
 import signature INIT from "INIT-sig"
 
 local 
-    open Types CreateDoc MkColorTable NewNode
+    open Types CreateDoc MkColorTable NewNode NewNodeHelper
 in
    
 structure Init :> INIT = 
 struct
-
-(*
-    val sign = Inf.asSig(Option.valOf 
-		(Component.inf(ComponentManager.link 
-		  (Url.fromString "x-alice:/lib/fundamental/Fundamental")))) 
-     
-    fun lookupPath(modLab,typLab) = 
-	let 
-            val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
-	    val typ = Inf.lookupTyp'(sign', Label.fromString typLab) 
-	    val typ' = if Type.isApply typ  
-			   then #1(Type.asApply typ)  
-		       else typ 
-	in 
-	    Type.asCon typ' 
-	end 
       
-    val path_promise = lookupPath("Promise","promise") 
+    val path_promise = lookupPath("Promise","promise")   
 
-    val path_package = lookupPath("Package","package") 
-*)
+    val path_package = lookupPath("Package","package")   
  
     (* init *)
     fun init () = ( registerType(PervasiveType.path_int, createInt)
@@ -70,8 +46,8 @@ struct
 		   ; registerType(PervasiveType.path_ref, createRef)
 		   ; registerType(PervasiveType.path_vec, createVector)
 		   ; registerType(PervasiveType.path_array, createArray)
-               (*  ; registerType(path_promise, createPromise)
-                   ; registerType(path_package, createPackage)  *)  
+                   ; registerType(path_promise, createPromise)
+                   ; registerType(path_package, createPackage)   
 		   ; registerColor(INT_COLOR,  allocColor(0,45000,0))
 		   ; registerColor(REAL_COLOR, allocColor(0,45000,0))
 		   ; registerColor(CHAR_COLOR, allocColor(45000,0,50000))     

@@ -33,7 +33,6 @@ import structure NewNodeHelper from "NewNodeHelper"
 import signature UPDATE from "UPDATE-sig"
 
 import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 local
     open Types Helper 
@@ -191,7 +190,9 @@ struct
 					     va)) l) of 
 	      NONE => () 
 	    | SOME((vv,ll),i)  
-	      => ( Future.await(future)
+	      => ( if Future.isLazy  future
+		       then Future.await(future) (* spaeter aendern! *)
+		   else Future.await(future)
 		  ; let val new_l = #2(valOf(TransientDictionary.lookup
 					     (Dictionaries.transdict,i)))
 		    in Server.serve(fn () => tell(va,new_l,f,g))
@@ -199,14 +200,11 @@ struct
 	
     (* reinspect *)
     and reinspect (n,f,g) = 
-       (Thread.thread
-	(fn () =>
         let val va = getValue(getDesc(n))
 	in  Server.serve(fn () => update(n,va,f,g))
 	end
-	     handle General.Match => raise UpdateError)
-      ; () )
-
+    handle General.Match => raise UpdateError
+	
     (* foldDepth *)
     and foldDepth (n,i,f,g) = 
 	Server.serve

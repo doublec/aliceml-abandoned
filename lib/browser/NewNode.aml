@@ -61,17 +61,6 @@ struct
 			    val line = Services.createSepLine
 				(!WindowManager.canvasroot,
 				 !WindowManager.act_line)
-			    val (x1,y1,x2,y2) = Services.getCoordinates(
-							 getGroup(node))
-			    val _ = TextIO.print("NEWNODE: x1 = "
-						 ^ Int.toString(x1)
-						 ^ " y1 = "
-						 ^ Int.toString(y1)
-						 ^ " x2 = "
-						  ^ Int.toString(x2)
-						 ^ " y2 = "
-						  ^ Int.toString(y2)
-						 ^" \n" )
 			in (MainDictionary.insertI(dict,(node,line)) ; node)
 			end
   
@@ -175,7 +164,17 @@ struct
            | Type.Apply(t1,t2)
              => (case unApply (Type.inspect(t)) of 
                  (Type.Con path, ts) 
-		  => newPath (va,t,p,i,d,path)
+		  => let val p_path = 
+		         if String.equal(Label.toString(Path.toLab(path)),
+					 "promise")
+			     then lookupPath("Promise","promise") 
+			 else if String.equal(Label.toString(Path.toLab(path)),
+					      "package")
+				  then lookupPath("Package","packagee")
+			      else path 
+		     in 
+			 newPath (va,t,p,i,d,p_path)
+		     end 
 		| _ => let val typ = #1(Type.asApply(t)) 
 		       in if Type.equal(typ,compList) (* Liste *)
 			      then let val vv = castList va

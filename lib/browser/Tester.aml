@@ -99,7 +99,7 @@ UnsafeInspector.inspect ([promise2,promise1,promise2],Prom.x);
 
 Promise.fulfill(promise1,#"o");
 
-Promise.fulfill(promise2,"n");
+Promise.fulfill(promise2,#"n");
 
 (***)
 

@@ -1,4 +1,4 @@
-import structure NewNodeInf from "NewNodeInf";
+import structure NewNode from "NewNode";
 import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
@@ -45,8 +45,6 @@ val v = V.x;
 
 structure T = Reflect.ReflectSig(signature S = TEST);
 val t = T.x;
-
-val n = NewNodeInf.newNodeInf (v,t);
 
 UnsafeInspector.inspectInf (v,t);
 
