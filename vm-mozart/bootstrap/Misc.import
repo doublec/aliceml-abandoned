@@ -19,25 +19,29 @@ structure WideString: STRING = String
 structure Misc: MISC
 
 ###misc/IMP_SET.sig
-functor MakeHashImpSet(Item: HASH_KEY): IMP_SET where type item = Item.t
+functor MakeHashImpSet(Item: HASH_KEY):
+  IMP_SET where type item = Item.t
 
 ###misc/IMP_MAP.sig
-functor MakeHashImpMap(Key: HASH_KEY): IMP_MAP where type key = Key.t
+functor MakeHashImpMap(Key: HASH_KEY):
+  IMP_MAP where type key = Key.t
 
 ###misc/SCOPED_IMP_SET.sig
 functor MakeScopedImpSet(ImpSet: IMP_SET):
   SCOPED_IMP_SET where type item = ImpSet.item
 
-functor MakeHashScopedImpSet(Item: HASH_KEY): SCOPED_IMP_SET
+functor MakeHashScopedImpSet(Item: HASH_KEY):
+  SCOPED_IMP_SET where type item = Item.t
 
 ###misc/SCOPED_IMP_MAP.sig
 functor MakeScopedImpMap(ImpMap: IMP_MAP):
   SCOPED_IMP_MAP where type key = ImpMap.key
 
-functor MakeHashScopedImpMap(Key: HASH_KEY): SCOPED_IMP_MAP
+functor MakeHashScopedImpMap(Key: HASH_KEY):
+  SCOPED_IMP_MAP where type key = Key.t
 
 ###misc/STAMP.sig
-functor MakeStamp(): STAMP
+functor MakeStamp(_: sig end): STAMP   (*--** argument is a workaround *)
 
 ###misc/PRETTY_PRINT.sig
 structure PrettyPrint: PRETTY_PRINT

@@ -27,9 +27,6 @@ structure PPPath: PP_PATH
 structure PPType: PP_TYPE
 
 ###common/INTERMEDIATE_GRAMMAR.sig
-functor MakeIntermediateGrammar(type info):
-  INTERMEDIATE_GRAMMAR where type info = info
-
 structure IntermediateInfo:
   sig
     type lab_info	= { region: Source.region }
@@ -51,6 +48,7 @@ structure IntermediateGrammar: INTERMEDIATE_GRAMMAR
   where type field_info = IntermediateInfo.field_info
   where type match_info = IntermediateInfo.match_info
   where type dec_info = IntermediateInfo.dec_info
+  where type sign = unit
 
 ###common/PREBOUND.sig
 structure Prebound: PREBOUND

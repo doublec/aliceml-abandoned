@@ -5,30 +5,34 @@ import
 ###frontend-sml/Parser.grm.sig
 ###frontend-sml/LEXER_ERROR.sig
 
-functor Lexer(structure Tokens:     Parser_TOKENS
-	      structure LexerError: LEXER_ERROR
-		  where type token = (Tokens.svalue, int) Tokens.token): LEXER
-
-signature LEXER_ERRORS =
-  sig
-    type error
-    type token
-    exception Error of Source.pos * error
-    exception EOF of Source.pos -> token
-    val toString: error -> string
-  end
+functor Lexer(S: sig
+		     structure Tokens: Parser_TOKENS
+		     structure LexerError: LEXER_ERROR
+			 where type token = (Tokens.svalue, int) Tokens.token
+		 end): LEXER
+  where type ('a,'b) UserDeclarations.token = ('a,'b) S.Tokens.token
+  where type UserDeclarations.pos = int
+  where type UserDeclarations.svalue = S.Tokens.svalue
+  where type UserDeclarations.lexresult = (S.Tokens.svalue, int) S.Tokens.token
 
 functor CountPosLexer(
-	structure Lexer: LEXER
-	where type UserDeclarations.pos = int
-	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
-	structure LexerError: LEXER_ERRORS
-	where type token =
-		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
-) : LEXER
+	S: sig
+	       structure Lexer: LEXER
+		   where type UserDeclarations.pos = int
+		   where type ('a,'b) UserDeclarations.token =
+		      ('a,'b) LrParser.Token.token
+	       structure LexerError: LEXER_ERROR
+		   where type token =
+		      (Lexer.UserDeclarations.svalue, int) LrParser.Token.token
+	       val error : Source.region * LexerError.error -> 'a
+	   end): LEXER
+  where UserDeclarations = S.Lexer.UserDeclarations
 
-functor LexerError(structure Tokens: Parser_TOKENS type error): LEXER_ERROR
-  where type token = (Tokens.svalue, int) Tokens.token
-  where type error = error
+functor LexerError(S: sig
+			  structure Tokens: Parser_TOKENS
+			  type error
+		      end): LEXER_ERROR
+  where type token = (S.Tokens.svalue, int) S.Tokens.token
+  where type error = S.error
 
 from "FrontendSMLLexer.ozf"

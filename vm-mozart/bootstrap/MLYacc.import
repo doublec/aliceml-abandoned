@@ -2,16 +2,20 @@
 
 import
 
-##-/opt/smlnj/src/ml-yacc/lib/base.sig
-functor Join(structure Lex : LEXER
-	     structure ParserData: PARSER_DATA
-	     structure LrParser : LR_PARSER
-	     sharing ParserData.LrTable = LrParser.LrTable
-	     sharing ParserData.Token = LrParser.Token
-	     sharing type Lex.UserDeclarations.svalue = ParserData.svalue
-	     sharing type Lex.UserDeclarations.pos = ParserData.pos
-	     sharing type Lex.UserDeclarations.token = ParserData.Token.token)
-    : PARSER
+###../lib/bootstrap/ml-yacc/base.sig
+functor Join(S: sig
+		    structure Lex: LEXER
+		    structure ParserData: PARSER_DATA
+		    structure LrParser: LR_PARSER
+		    sharing ParserData.LrTable = LrParser.LrTable
+		    sharing ParserData.Token = LrParser.Token
+		    sharing type Lex.UserDeclarations.svalue =
+			ParserData.svalue
+		    sharing type Lex.UserDeclarations.pos = ParserData.pos
+		    sharing type Lex.UserDeclarations.token =
+			ParserData.Token.token
+		end): PARSER
+
 structure LrParser: LR_PARSER
 
 from "MLYacc.ozf"
