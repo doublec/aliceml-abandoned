@@ -104,7 +104,7 @@
     </DD>
 
     <DT>
-      <TT><A name="eval">eval</A> (<I>url</I>, <I>comp</I></TT>
+      <TT><A name="eval">eval</A> (<I>url</I>, <I>comp</I>)</TT>
     </DT>
     <DD>
       <P>evaluates <TT><I>comp</I></TT>, rooted at <TT><I>url</I></TT>,
@@ -117,6 +117,11 @@
 	<TT><I>url</I></TT> as a base url, which should be absolute. Raises
 	<TT><A href="component.html#Failure">Component.Failure</A></TT> if
 	evaluation of the component fails.</P>
+
+	<P>Note that, while most components may export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure
+	(cf. <TT><A href="#link">link</A></TT>).</P>
     </DD>
 
     <DT>
@@ -129,6 +134,18 @@
 	the component.  If the component table
 	has no entry for <TT><I>url</I></TT> yet, a new entry is created
 	immediately.</P>
+
+	<P>Note that, while most library components export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure. For instance, in order to link the
+	<TT><A href="text-io.html">TextIO</A></TT> component manually, the
+	returned package has to be unpacked as follows:</P>
+	<PRE>
+	structure TextIOComp = unpack link(Url.fromString "x-alice:/lib/system/TextIO")
+	                            : (structure TextIO : TEXT_IO)
+	open TextIOComp</PRE>
+	<P>The <TT>open</TT> declaration will pull the actual <TT>TextIO</TT>
+	structure into scope.</P>
     </DD>
 
     <DT>
@@ -162,6 +179,11 @@
 	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
 	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
 	cause if the component does not match <TT><I>S</I></TT>.</P>
+
+	<P>Note that, while most components may export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure
+	(cf. <TT><A href="#Link-fn">Link</A></TT>).</P>
     </DD>
 
     <DT>
@@ -175,6 +197,18 @@
 	<TT><A href="component.html#Failure">Component.Failure</A></TT> with
 	<TT><A href="component.html#Mismatch">Component.Mismatch</A></TT> as
 	cause if the component does not match <TT><I>S</I></TT>.</P>
+
+	<P>Note that, while most library components export a single structure,
+	their export is <I>not</I> simply that structure, but a structure that
+	<I>contains</I> that structure. For instance, in order to link the
+	<TT><A href="text-io.html">TextIO</A></TT> component manually, the
+	following call to <TT>Link</TT> is necessary:</P>
+	<PRE>
+	structure TextIOComp = Link (val url = Url.fromString "x-alice:/lib/system/TextIO"
+	                             signature S = (structure TextIO : TEXT_IO))
+	open TextIOComp</PRE>
+	<P>The <TT>open</TT> declaration will pull the actual <TT>TextIO</TT>
+	structure into scope.</P>
     </DD>
 
     <DT>
