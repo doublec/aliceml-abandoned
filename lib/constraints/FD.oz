@@ -99,6 +99,9 @@ define
    fun {FromIntFun X}
       X
    end
+   fun {ToFutureFun X}
+      X
+   end
    fun {IsBinFun X}
       {FD.reflect.max X} =< 1
    end
@@ -454,6 +457,7 @@ define
 		  'bin'            : BinFun
 		  'binVec'         : BinVecFun
 		  'toInt'          : ToIntFun
+		  'future'         : ToFutureFun
 		  'fromInt'        : FromIntFun
 		  'isBin'          : IsBinFun
 		  'sum'            : SumFun

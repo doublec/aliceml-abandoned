@@ -43,6 +43,7 @@ signature FD_COMPONENT =
 
 		(* Conversion *)
 		val toInt : fd -> int
+                val future : fd -> int
 		val fromInt : int -> fd
 		val isBin : fd -> bool
 
