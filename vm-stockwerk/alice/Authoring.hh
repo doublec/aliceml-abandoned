@@ -41,4 +41,6 @@
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
+#define DECLARE_IOSTREAM(file, x) DECLARE_BLOCKTYPE(FILE, file, x);
+
 #endif

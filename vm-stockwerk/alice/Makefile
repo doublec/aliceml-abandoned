@@ -55,7 +55,8 @@ PRIMITIVESSRCS = Primitive.cc \
                  Word.cc
 
 UNSAFESSRCS = UnsafeMkRefMap.cc \
-              UnsafeReflect.cc
+              UnsafeReflect.cc \
+              UnsafeIO.cc
 
 SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \
