@@ -253,6 +253,8 @@ steps 3 and 4):
 
 12. Adapt inspector, gtk, constraints to new build procedure. (LK/TB)
 
+12a. Move .header files to stoc.
+
 ==================
  AFTER OPERETTE 2
 ==================
@@ -277,6 +279,8 @@ steps 3 and 4):
 
    The same can be done for FRONTENDSMLSOURCES0, which would
    become FRONTENDSPECIFICFILES0.
+
+   Build hybrid system as build0.
 
 16. Clean up lib/system/UnsafePickle.
 
