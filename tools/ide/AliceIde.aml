@@ -13,6 +13,9 @@ structure AliceIde =
         val curtextview = ref AliceIdeGUI.scratchpad
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
 
+        val numberOfPages = ref 1
+        val currentPage = ref 0
+
         fun write stream text =
             let
                 val p = Promise.promise()
@@ -95,4 +98,40 @@ structure AliceIde =
             in
                 ignore (Gtk.textBufferDeleteSelection(buf, true, true))
             end
+
+        fun new() =
+            let
+                val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
+                val scrolledwindow2_ya = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
+                val scrolledwindow2 = Gtk.scrolledWindowNew(scrolledwindow2_xa,scrolledwindow2_ya)
+                val _ = Gtk.scrolledWindowSetShadowType(scrolledwindow2,Gtk.SHADOW_NONE)
+                val _ = Gtk.widgetShow scrolledwindow2
+
+                val newSource = Gtk.textViewNew()
+                val _ = Gtk.widgetShow newSource
+                val _ = Gtk.textViewSetEditable(newSource,true)
+                val _ = Gtk.textViewSetJustification(newSource,Gtk.JUSTIFY_LEFT)
+                val _ = Gtk.textViewSetWrapMode(newSource,Gtk.WRAP_NONE)
+                val _ = Gtk.textViewSetCursorVisible(newSource,true)
+                val _ = Gtk.textViewSetPixelsAboveLines(newSource,0)
+                val _ = Gtk.textViewSetPixelsBelowLines(newSource,0)
+                val _ = Gtk.textViewSetPixelsInsideWrap(newSource,0)
+                val _ = Gtk.textViewSetLeftMargin(newSource,0)
+                val _ = Gtk.textViewSetRightMargin(newSource,0)
+                val _ = Gtk.textViewSetIndent(newSource,0)
+                val _ = Gtk.textBufferSetText(Gtk.textViewGetBuffer newSource,"",~1)
+                val _ = Gtk.containerAdd(scrolledwindow2,newSource)
+                val label1 = Gtk.labelNew("New File"^Int.toString (!numberOfPages))
+                val _ = Gtk.widgetShow label1
+                val _ = Gtk.notebookAppendPage(AliceIdeGUI.notebook1,
+                                               scrolledwindow2, label1)
+            in
+                numberOfPages := (!numberOfPages) + 1
+            end
+
+        fun switchPage(cur,view) = (currentPage := cur; curtextview := view)
+
+        fun close () = if !currentPage=0 then ()
+                       else (Gtk.notebookRemovePage(AliceIdeGUI.notebook1, !currentPage);
+                             currentPage := Gtk.notebookGetCurrentPage AliceIdeGUI.notebook1)
     end

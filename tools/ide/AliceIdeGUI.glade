@@ -305,6 +305,7 @@
 	      <property name="tab_pos">GTK_POS_TOP</property>
 	      <property name="scrollable">False</property>
 	      <property name="enable_popup">False</property>
+	      <signal name="switch_page" handler="on_notebook1_switch_page" last_modification_time="Mon, 28 Feb 2005 16:00:03 GMT"/>
 
 	      <child>
 		<widget class="GtkScrolledWindow" id="scrolledwindow2">

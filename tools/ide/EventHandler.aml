@@ -1,12 +1,16 @@
 import signature ALICEIDEGUISIGNALS_SIG from "AliceIdeGUISignals"
 import structure AliceIde from "AliceIde"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Print from "x-alice:/lib/system/Print"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
 structure EventHandler : ALICEIDEGUISIGNALS_SIG =
     struct
-        val on_new1_activate = const ()
+        fun on_new1_activate _ = AliceIde.new()
         val on_open1_activate = const ()
         val on_save1_activate = const ()
         val on_save_as1_activate = const ()
+        fun on_close1_activate _ = AliceIde.close()
         val on_compilefile_activate = const ()
         val on_quit1_activate = const ()
         fun on_cut1_activate _ = AliceIde.cut()
@@ -18,4 +22,13 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
         fun on_feedselection_activate _ = AliceIde.feedSelection()
         fun on_feedfile_activate _ = AliceIde.feedFile()
         val on_about1_activate = const()
+        fun on_notebook1_switch_page (object,_) =
+            let
+                val curPage = Gtk.notebookGetCurrentPage(object)
+                val scrWin = Gtk.notebookGetNthPage(object, curPage)
+                val textView = Gtk.binGetChild scrWin
+            in
+                AliceIde.switchPage(curPage,textView)
+            end
+               
     end

@@ -14,6 +14,7 @@ signature ALICEIDEGUISIGNALS_SIG =
     val on_open1_activate : Gtk.callback_function
     val on_save1_activate : Gtk.callback_function
     val on_save_as1_activate : Gtk.callback_function
+    val on_close1_activate : Gtk.callback_function
     val on_compilefile_activate : Gtk.callback_function
     val on_quit1_activate : Gtk.callback_function
     val on_cut1_activate : Gtk.callback_function
@@ -25,6 +26,7 @@ signature ALICEIDEGUISIGNALS_SIG =
     val on_feedselection_activate : Gtk.callback_function
     val on_feedfile_activate : Gtk.callback_function
     val on_about1_activate : Gtk.callback_function
+    val on_notebook1_switch_page : Gtk.callback_function
   end
 
 functor AliceIdeGUISignals(structure S : ALICEIDEGUISIGNALS_SIG) =
@@ -33,6 +35,7 @@ functor AliceIdeGUISignals(structure S : ALICEIDEGUISIGNALS_SIG) =
     val open1_on_open1_activate = Gtk.signalConnect(AliceIdeGUI.open1, "activate",S.on_open1_activate)
     val save1_on_save1_activate = Gtk.signalConnect(AliceIdeGUI.save1, "activate",S.on_save1_activate)
     val save_as1_on_save_as1_activate = Gtk.signalConnect(AliceIdeGUI.save_as1, "activate",S.on_save_as1_activate)
+    val close1_on_close1_activate = Gtk.signalConnect(AliceIdeGUI.close1, "activate",S.on_close1_activate)
     val compilefile_on_compilefile_activate = Gtk.signalConnect(AliceIdeGUI.compilefile, "activate",S.on_compilefile_activate)
     val quit1_on_quit1_activate = Gtk.signalConnect(AliceIdeGUI.quit1, "activate",S.on_quit1_activate)
     val cut1_on_cut1_activate = Gtk.signalConnect(AliceIdeGUI.cut1, "activate",S.on_cut1_activate)
@@ -44,6 +47,7 @@ functor AliceIdeGUISignals(structure S : ALICEIDEGUISIGNALS_SIG) =
     val feedselection_on_feedselection_activate = Gtk.signalConnect(AliceIdeGUI.feedselection, "activate",S.on_feedselection_activate)
     val feedfile_on_feedfile_activate = Gtk.signalConnect(AliceIdeGUI.feedfile, "activate",S.on_feedfile_activate)
     val about1_on_about1_activate = Gtk.signalConnect(AliceIdeGUI.about1, "activate",S.on_about1_activate)
+    val notebook1_on_notebook1_switch_page = Gtk.signalConnect(AliceIdeGUI.notebook1, "switch_page",S.on_notebook1_switch_page)
   end
 
 (* Created by alice-glade *)
