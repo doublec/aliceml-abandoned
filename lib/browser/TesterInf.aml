@@ -5,7 +5,7 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
 import structure Inf from "x-alice:/lib/rtt/Inf";
 
-(*
+
 import signature FD from "x-alice:/lib/constraints/FD-sig";
 import structure FD from "x-alice:/lib/constraints/FD";
 
@@ -13,7 +13,7 @@ structure V = Reflect.Reflect(signature S = FD structure X = FD);
 structure T = Reflect.ReflectSig(signature S = FD);
 
 UnsafeInspector.inspectInf(V.x,T.x);
-*)
+
 
 signature SIMPLE = 
 sig
@@ -49,6 +49,11 @@ structure T = Reflect.ReflectSig(signature S = TEST);
 val t = T.x;
 
 UnsafeInspector.inspectInf (v,t);
+
+structure V = Reflect.Reflect(signature S = GTK structure X = Gtk);
+structure T = Reflect.ReflectSig(signature S = GTK);
+
+UnsafeInspector.inspectInf (V.x,T.x);
 
 (*****)
 
