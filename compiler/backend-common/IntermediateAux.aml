@@ -340,19 +340,41 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure O = ImperativeGrammar
 	open O
 
-	fun makeConArity (info, isNAry) =
-	    let
-		val typ = IntermediateInfo.typ info
-	    in
-		if Type.isArrow typ then
-		    if isNAry then
-			let
-			    val (argTyp, _) = Type.asArrow typ
-			in
-			(*--** makeConArity not implemented for Tuple/Record *)
-			    raise Crash.Crash "IntermediateAux.makeConArity"
-			end
-		    else Unary
-		else Nullary
-	    end handle IntermediateInfo.Info => Nullary   (*--** NewExp is missing its type *)
+	local
+	    fun parseRow row =
+		if Type.isEmptyRow row then
+		    if Type.isUnknownRow row then
+			raise Crash.Crash "IntermediateAus.parseRow 1"
+		    else nil
+		else
+		    case Type.headRow row of
+			(label, [typ]) =>
+			    (label, typ)::parseRow (Type.tailRow row)
+		      | (_, _) =>
+			    raise Crash.Crash "IntermediateAux.parseRow 2"
+	in
+	    fun makeConArity (info, isNAry) =
+		let
+		    val typ = IntermediateInfo.typ info
+		in
+		    if Type.isArrow typ then
+			if isNAry then
+			    let
+				val (argTyp, _) = Type.asArrow typ
+			    in
+				if Type.isTuple argTyp then
+				    Tuple (List.length (Type.asTuple argTyp))
+				else if Type.isRow argTyp then
+				    case LabelSort.sort
+					(parseRow (Type.asRow typ)) of
+					(_, LabelSort.Tup i) => Tuple i
+				      | (labelTypList, LabelSort.Rec) =>
+					    Record (List.map #1 labelTypList)
+				     else Unary
+			    end
+			else Unary
+		    else Nullary
+		end handle IntermediateInfo.Info => Nullary
+		(*--** NewExp is missing its type, therefore the `handle' *)
+	end
     end
