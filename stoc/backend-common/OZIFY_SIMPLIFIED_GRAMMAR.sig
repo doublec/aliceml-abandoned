@@ -14,10 +14,9 @@
 
 signature OZIFYSIMPLIFIED =
     sig
-	structure Simplified: SIMPLIFIED
+	structure Simplified: SIMPLIFIED = Simplified
 	val outputList:
 	    (TextIO.outstream * 'a -> unit) ->
 	    TextIO.outstream * 'a list -> unit
 	val outputDec: TextIO.outstream * Simplified.dec -> unit
     end
-where Simplified = Simplified

@@ -12,10 +12,8 @@
 
 signature SIMPLIFY =
     sig
-	structure Intermediate: INTERMEDIATE
-	structure Simplified: SIMPLIFIED
+	structure Intermediate: INTERMEDIATE = PostTranslationIntermediate
+	structure Simplified: SIMPLIFIED = Simplified
 
 	val simplifyDec: Intermediate.dec -> Simplified.dec
     end
-where Intermediate = PostTranslationIntermediate
-where Simplified = Simplified
