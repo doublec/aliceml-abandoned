@@ -104,7 +104,7 @@ define
 			  {TranslateCoord Coord State} VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
 	 {Assign Shared false}
-	 CatchVInstr = vInlineDot(_ Reg1 1 Reg2 false unit CatchVInter)
+	 CatchVInstr = vInlineDot(_ Reg1 1 Reg2 true unit CatchVInter)
 	 {TranslateBody Body2 ?CatchVInter nil State ReturnReg}
 	 {TranslateBody Body3 ?VInter nil State ReturnReg}
       [] endHandleStm(Coord Shared) then
@@ -130,25 +130,92 @@ define
 				     [Reg0 TmpReg {State.cs newReg($)}]
 				     ThenVInstr ElseVInstr VTl)
 	    end
-	 [] tagTest(Label none _) then
+	 [] tagTest(Label) then
 	    VHd = vTestConstant(_ Reg0 {TranslateLabel Label}
 				ThenVInstr ElseVInstr unit VTl)
-	 [] tagTest(Label some(Id2) _) then ThenVInstr0 in
+	 [] tagAppTest(Label oneArg(Id) unary) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
 			 [onRecord({TranslateLabel Label} 1 ThenVInstr0)]
 			 unit VTl)
-	    ThenVInstr0 = vGetVariable(_ {MakeReg Id2 State} ThenVInstr)
-	 [] conTest(Id none _) then
+	    ThenVInstr0 = vGetVariable(_ {MakeReg Id State} ThenVInstr)
+	 [] tagAppTest(Label oneArg(Id) tuple(0)) then ThenVInstr0 in
+	    VHd = vTestConstant(_ Reg0 {TranslateLabel Label}
+				ThenVInstr0 ElseVInstr unit VTl)
+	    ThenVInstr0 = vEquateConstant(_ unit {MakeReg Id State}
+					  ThenVInstr)
+	 [] tagAppTest(Label oneArg(Id) ConArity) then
+	    ThenVInstr0 LabelReg ThenVInstr1
+	 in
+	    VHd = vMatch(_ Reg0 ElseVInstr
+			 [onRecord({TranslateLabel Label} ConArity.1
+				   ThenVInstr0)]
+			 unit VTl)
+	    {State.cs newReg(?LabelReg)}
+	    ThenVInstr0 = vEquateConstant(_ '#' LabelReg ThenVInstr1)
+	    ThenVInstr1 = vCallBuiltin(_ 'Record.adjoin'
+				       [Reg0 LabelReg {MakeReg Id State}]
+				       unit ThenVInstr)
+	 [] tagAppTest(Label tupArgs(nil) _) then
+	    VHd = vTestConstant(_ Reg0 {TranslateLabel Label}
+				ThenVInstr ElseVInstr unit VTl)
+	 [] tagAppTest(Label tupArgs(Ids=_|_) _) then ThenVInstr0 in
+	    VHd = vMatch(_ Reg0 ElseVInstr
+			 [onRecord({TranslateLabel Label} {Length Ids}
+				   ThenVInstr0)]
+			 unit VTl)
+	    {FoldL Ids
+	     proc {$ VHd Id VTl}
+		VHd = vGetVariable(_ {MakeReg Id State} VTl)
+	     end ThenVInstr0 ThenVInstr}
+	 [] tagAppTest(Label recArgs(LabelIdList) _) then ThenVInstr0 in
+	    VHd = vMatch(_ Reg0 ElseVInstr
+			 [onRecord({TranslateLabel Label}
+				   {Map LabelIdList fun {$ Label#_} Label end}
+				   ThenVInstr0)]
+			 unit VTl)
+	    {FoldL LabelIdList
+	     proc {$ VHd _#Id VTl}
+		VHd = vGetVariable(_ {MakeReg Id State} VTl)
+	     end ThenVInstr0 ThenVInstr}
+	 [] conTest(Id) then
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
-	 [] conTest(Id1 some(Id2) _) then NameReg ThenVInstr0 in
-	    NameReg = {GetReg Id1 State}
-	    VHd = vTestBuiltin(_ 'Record.testLabel'
-			       [Reg0 NameReg {State.cs newReg($)}]
+	 [] conAppTest(Id1 oneArg(Id2) tuple(0)) then ThenVInstr0 in
+	    VHd = vTestBuiltin(_ 'Value.\'==\''
+			       [Reg0 {GetReg Id1 State} {State.cs newReg($)}]
 			       ThenVInstr0 ElseVInstr VTl)
-	    ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id2 State} false
-				     unit ThenVInstr)
+	    ThenVInstr0 = vEquateConstant(_ unit {MakeReg Id2 State}
+					  ThenVInstr)
+	 [] conAppTest(Id tupArgs(nil) _) then
+	    VHd = vTestBuiltin(_ 'Value.\'==\''
+			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
+			       ThenVInstr ElseVInstr VTl)
+	 [] conAppTest(Id Args ConArity) then ThenVInstr0 in
+	    VHd = vTestBuiltin(_ 'Record.testLabel'
+			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
+			       ThenVInstr0 ElseVInstr VTl)
+	    case Args#ConArity of oneArg(Id)#unary then
+	       ThenVInstr0 = vInlineDot(_ Reg0 1 {MakeReg Id State} true
+					unit ThenVInstr)
+	    [] oneArg(Id)#_ then LabelReg ThenVInstr1 in
+	       {State.cs newReg(?LabelReg)}
+	       ThenVInstr0 = vEquateConstant(_ '#' LabelReg ThenVInstr1)
+	       ThenVInstr1 = vCallBuiltin(_ 'Record.adjoin'
+					  [Reg0 LabelReg {MakeReg Id State}]
+					  unit ThenVInstr)
+	    [] tupArgs(Ids=_|_)#_ then
+	       {List.foldLInd Ids
+		proc {$ I VHd Id VTl}
+		   VHd = vInlineDot(_ Reg0 I {MakeReg Id State} true unit VTl)
+		end ThenVInstr0 ThenVInstr}
+	    [] recArgs(LabelIdList)#_ then
+	       {FoldL LabelIdList
+		proc {$ VHd Label#Id VTl}
+		   VHd = vInlineDot(_ Reg0 Label {MakeReg Id State} true
+				    unit VTl)
+		end ThenVInstr0 ThenVInstr}
+	    end
 	 [] refAppTest(Id) then ThenVInstr0 in
 	    VHd = vTestBuiltin(_ 'Cell.is' [Reg0 {State.cs newReg($)}]
 			       ThenVInstr0 ElseVInstr VTl)
@@ -176,7 +243,7 @@ define
 		VHd = vGetVariable(_ {MakeReg Id State} VTl)
 	     end ThenVInstr0 ThenVInstr}
 	 [] labTest(Feature Id) then
-	    VHd = vInlineDot(_ Reg0 Feature {MakeReg Id State} false
+	    VHd = vInlineDot(_ Reg0 Feature {MakeReg Id State} true
 			     unit ThenVInstr)
 	 [] vecTest(Ids) then ThenVInstr0 in
 	    VHd = vMatch(_ Reg0 ElseVInstr
@@ -212,23 +279,6 @@ define
       end
    end
 
-   proc {TranslateArgs Args Reg VHd VTl State}
-      case Args of oneArg(Id) then
-	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] tupArgs(nil) then
-	 VHd = vEquateConstant(_ unit Reg VTl)
-      [] tupArgs(Ids) then
-	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
-			     {Map Ids
-			      fun {$ Id} value({GetReg Id State}) end} VTl)
-      [] recArgs(LabIdList) then Arity in
-	 Arity = {Map LabIdList fun {$ Lab#_} Lab end}
-	 VHd = vEquateRecord(_ '#' Arity Reg
-			     {Map LabIdList
-			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
-      end
-   end
-
    proc {TranslateExp Exp Reg VHd VTl State}
       case Exp of litExp(_ Lit) then
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
@@ -241,36 +291,36 @@ define
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] tagExp(_ Label nullary) then
 	 VHd = vEquateConstant(_ {TranslateLabel Label} Reg VTl)
-      [] tagExp(Coord Label _) then
-	 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
-      in
-	 PredId = pid({VirtualString.toAtom Label} 2
-		      {TranslateCoord Coord State} nil NLiveRegs)
-	 {State.cs startDefinition()}
-	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?ResReg)}
-	 VInstr = vEquateRecord(_ {TranslateLabel Label} 1 ResReg
-				[value(ArgReg)] nil)
-	 {State.cs
-	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
-	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] tagExp(_ Label tuple(0)) then Label2 in
+	 Label2 = {TranslateLabel Label}
+	 VHd = vEquateConstant(_ fun {$ unit} Label2 end Reg VTl)
+      [] tagExp(_ Label _) then Label2 in
+	 Label2 = {TranslateLabel Label}
+	 VHd = vEquateConstant(_ fun {$ X} {Adjoin X Label2} end Reg VTl)
       [] conExp(_ Id nullary) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(Coord Id _) then
-	 Pos PredId NLiveRegs ArgReg TmpReg ResReg
-	 VInstr NameReg VInter1 VInter2 GRegs Code
+      [] conExp(Coord Id ConArity) then
+	 Pos PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
 	 Pos = {TranslateCoord Coord State}
 	 PredId = pid({GetPrintName Id State} 2 Pos nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
-	 {State.cs newReg(?TmpReg)}
 	 {State.cs newReg(?ResReg)}
-	 VInstr = vEquateConstant(_ 1 TmpReg VInter1)
-	 NameReg = {GetReg Id State}
-	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
-				Pos VInter2)
-	 VInter2 = vInlineDot(_ ResReg 1 ArgReg false Pos nil)
+	 case ConArity of unary then WidthReg VInter1 VInter2 in
+	    {State.cs newReg(?WidthReg)}
+	    VInstr = vEquateConstant(_ 1 WidthReg VInter1)
+	    VInter1 = vCallBuiltin(_ 'Tuple.make'
+				   [{GetReg Id State} WidthReg ResReg]
+				   Pos VInter2)
+	    VInter2 = vInlineDot(_ ResReg 1 ArgReg true Pos nil)
+	 [] tuple(0) then VInter in
+	    VInstr = vCallBuiltin(_ 'Value.wait' [ArgReg] Pos VInter)
+	    VInter = vUnify(_ ResReg {GetReg Id State} nil)
+	 else
+	    VInstr = vCallBuiltin(_ 'Record.adjoin'
+				  [ArgReg {GetReg Id State} ResReg] Pos nil)
+	 end
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
@@ -292,15 +342,15 @@ define
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
-      [] recExp(_ LabIdList) then Rec in
-	 %--** workaround for duplicate features
-	 Rec = {FoldL LabIdList
-		fun {$ Rec Lab#Id}
-		   {AdjoinAt Rec Lab value({GetReg Id State})}
+      [] recExp(_ LabelIdList) then Rec in
+	 %--** this is a workaround for duplicate features (due to structs)
+	 Rec = {FoldL LabelIdList
+		fun {$ Rec Label#Id}
+		   {AdjoinAt Rec Label value({GetReg Id State})}
 		end '#'}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
-      [] selExp(_ Lab) then
-	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
+      [] selExp(_ Label) then
+	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
       [] vecExp(_ nil) then
 	 VHd = vEquateConstant(_ '#' Reg VTl)
       [] vecExp(_ Ids) then
@@ -364,37 +414,104 @@ define
 			  fun {$ Id Rest} {GetReg Id State}|Rest end [Reg]}
 			 {TranslateCoord Coord State} VTl)
       [] appExp(Coord Id Args) then ArgReg VInter in
-	 {State.cs newReg(?ArgReg)}
-	 {TranslateArgs Args ArgReg VHd VInter State}
+	 case Args of oneArg(Id) then
+	    VHd = VInter
+	    ArgReg = {GetReg Id State}
+	 [] tupArgs(nil) then
+	    {State.cs newReg(?ArgReg)}
+	    VHd = vEquateConstant(_ unit ArgReg VInter)
+	 [] tupArgs(Ids=_|_) then
+	    {State.cs newReg(?ArgReg)}
+	    VHd = vEquateRecord(_ '#' {Length Ids} ArgReg
+				{Map Ids
+				 fun {$ Id} value({GetReg Id State}) end}
+				VInter)
+	 [] recArgs(LabelIdList) then
+	    {State.cs newReg(?ArgReg)}
+	    VHd = vEquateRecord(_ '#'
+				{Map LabelIdList fun {$ Label#_} Label end}
+				ArgReg
+				{Map LabelIdList
+				 fun {$ _#Id} value({GetReg Id State}) end}
+				VInter)
+	 end
 	 VInter = vDeconsCall(_ {GetReg Id State} ArgReg Reg
 			      {TranslateCoord Coord State} VTl)
-      [] selAppExp(Coord Lab Id) then
-	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
+      [] selAppExp(Coord Label Id) then
+	 VHd = vInlineDot(_ {GetReg Id State} Label Reg false
 			  {TranslateCoord Coord State} VTl)
-      [] tagAppExp(_ Label Args _) then ArgReg VInter in
-	 {State.cs newReg(?ArgReg)}
-	 {TranslateArgs Args ArgReg VHd VInter State}
-	 VInter = vEquateRecord(_ {TranslateLabel Label} 1 Reg
-				[value(ArgReg)] VTl)
-      [] conAppExp(Coord Id Args _) then
-	 Pos TmpReg VInter1 NameReg ResReg VInter2 ArgReg VInter3 VInter4
+      [] tagAppExp(_ Label oneArg(Id) unary) then
+	 VHd = vEquateRecord(_ {TranslateLabel Label} 1 Reg
+			     [value({GetReg Id State})] VTl)
+      [] tagAppExp(Coord Label oneArg(Id) tuple(0)) then VInter in
+	 VHd = vCallBuiltin(_ 'Value.wait' [{GetReg Id State}]
+			    {TranslateCoord Coord State} VInter)
+	 VInter = vEquateConstant(_ {TranslateLabel Label} Reg VTl)
+      [] tagAppExp(Coord Label oneArg(Id) _) then LabelReg VInter in
+	 {State.cs newReg(?LabelReg)}
+	 VHd = vEquateConstant(_ {TranslateLabel Label} LabelReg VInter)
+	 VInter = vCallBuiltin(_ 'Record.adjoin'
+			       [{GetReg Id State} LabelReg Reg]
+			       {TranslateCoord Coord State} VTl)
+      [] tagAppExp(_ Label tupArgs(nil) _) then
+	 VHd = vEquateConstant(_ {TranslateLabel Label} Reg VTl)
+      [] tagAppExp(_ Label tupArgs(Ids=_|_) _) then
+	 VHd = vEquateRecord(_ {TranslateLabel Label} {Length Ids} Reg
+			     {Map Ids fun {$ Id} value({GetReg Id State}) end}
+			     VTl)
+      [] tagAppExp(_ Label recArgs(LabelIdList) _) then
+	 VHd = vEquateRecord(_ {TranslateLabel Label}
+			     {Map LabelIdList fun {$ Label#_} Label end} Reg
+			     {Map LabelIdList
+			      fun {$ _#Id} value({GetReg Id State}) end}
+			     VTl)
+      [] conAppExp(Coord Id1 oneArg(Id2) unary) then
+	 Pos WidthReg VInter1 VInter2
       in
 	 Pos = {TranslateCoord Coord State}
-	 {State.cs newReg(?TmpReg)}
-	 VHd = vEquateConstant(_ 1 TmpReg VInter1)
-	 NameReg = {GetReg Id State}
-	 {State.cs newReg(?ResReg)}
-	 VInter1 = vCallBuiltin(_ 'Tuple.make' [NameReg TmpReg ResReg]
-				Pos VInter2)
-	 {State.cs newReg(?ArgReg)}
-	 {TranslateArgs Args ArgReg VInter2 VInter3 State}
-	 VInter3 = vInlineDot(_ ResReg 1 ArgReg false Pos VInter4)
-	 VInter4 = vUnify(_ Reg ResReg VTl)
-      [] refAppExp(Coord Id) then ArgReg VInter in
-	 {State.cs newReg(?ArgReg)}
-	 VHd = vUnify(_ ArgReg {GetReg Id State} VInter)
-	 VInter = vCallBuiltin(_ 'Cell.new' [ArgReg Reg]
-			       {TranslateCoord Coord State} VTl)
+	 {State.cs newReg(?WidthReg)}
+	 VHd = vEquateConstant(_ 1 WidthReg VInter1)
+	 VInter1 = vCallBuiltin(_ 'Tuple.make'
+				[{GetReg Id1 State} WidthReg Reg] Pos VInter2)
+	 VInter2 = vInlineDot(_ Reg 1 {GetReg Id2 State} true Pos VTl)
+      [] conAppExp(Coord Id1 oneArg(Id2) tuple(0)) then VInter in
+	 VHd = vCallBuiltin(_ 'Value.wait' [{GetReg Id2 State}]
+			    {TranslateCoord Coord State} VInter)
+	 VInter = vUnify(_ Reg {GetReg Id1 State} VTl)
+      [] conAppExp(Coord Id1 oneArg(Id2) _) then
+	 VHd = vCallBuiltin(_ 'Record.adjoin'
+			    [{GetReg Id2 State} {GetReg Id1 State} Reg]
+			    {TranslateCoord Coord State} VTl)
+      [] conAppExp(_ Id tupArgs(nil) _) then
+	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
+      [] conAppExp(Coord Id tupArgs(Ids=_|_) _) then
+	 Pos WidthReg VInter1 VInter2
+      in
+	 Pos = {TranslateCoord Coord State}
+	 {State.cs newReg(?WidthReg)}
+	 VHd = vEquateConstant(_ {Length Ids} WidthReg VInter1)
+	 VInter1 = vCallBuiltin(_ 'Tuple.make'
+				[{GetReg Id State} WidthReg Reg] Pos VInter2)
+	 {List.foldLInd Ids
+	  proc {$ I VHd Id VTl}
+	     VHd = vInlineDot(_ Reg I {GetReg Id State} true Pos VTl)
+	  end VInter2 VTl}
+      [] conAppExp(Coord Id recArgs(LabelIdList) _) then
+	 Pos ArityReg VInter1 VInter2
+      in
+	 Pos = {TranslateCoord Coord State}
+	 {State.cs newReg(?ArityReg)}
+	 VHd = vEquateConstant(_ {Map LabelIdList fun {$ Label#_} Label end}
+			       ArityReg VInter1)
+	 VInter1 = vCallBuiltin(_ 'Record.make'
+				[{GetReg Id State} ArityReg Reg] Pos VInter2)
+	 {List.foldL LabelIdList
+	  proc {$ VHd Label#Id VTl}
+	     VHd = vInlineDot(_ Reg Label {GetReg Id State} true Pos VTl)
+	  end VInter2 VTl}
+      [] refAppExp(Coord Id) then
+	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
+			    {TranslateCoord Coord State} VTl)
       [] primAppExp(Coord Builtinname Ids) then Value Regs in
 	 Value = Prebound.builtinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
@@ -425,11 +542,7 @@ define
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
-	    init(proc {$ getSwitch(S $)}
-		    case S of mergecon then true
-		    else false
-		    end
-		 end Reporter)}
+	    init(proc {$ getSwitch(_ $)} false end Reporter)}
       {MakeRegDict CS ?RegDict ?Prebound}
       {CS startDefinition()}
       {CS newReg(?ImportReg)}
@@ -458,10 +571,10 @@ define
 	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
 	  Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
 	  switches ?P ?VS}
-	 {P}
 	 if Debug then
 	    {System.printError VS}
 	 end
+	 {P}
 	 {Functor.new
 	  {List.toRecord 'import' {Map Import
 				   fun {$ id(_ Stamp _)#URL}

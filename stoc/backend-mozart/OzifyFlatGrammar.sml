@@ -122,6 +122,15 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	       | Name.InId => output (q, "inId");
 	     r q)
 
+	fun outputArgs outputX (q, OneArg id) =
+	    (f (q, "oneArg"); outputX (q, id); r q)
+	  | outputArgs outputX (q, TupArgs ids) =
+	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
+	  | outputArgs outputX (q, RecArgs labelIdList) =
+	    (f (q, "recArgs");
+	     outputList (outputPair (outputLabel, outputX)) (q, labelIdList);
+	     r q)
+
 	fun outputConArity (q, Nullary) = output (q, "nullary")
 	  | outputConArity (q, Unary) = output (q, "unary")
 	  | outputConArity (q, Tuple i) =
@@ -131,13 +140,17 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 
 	fun outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
-	  | outputTest (q, TagTest (label, idOpt, conArity)) =
-	    (f (q, "tagTest"); outputLabel (q, label); m q;
-	     outputOption outputId (q, idOpt); m q;
+	  | outputTest (q, TagTest label) =
+	    (f (q, "tagTest"); outputLabel (q, label); r q)
+	  | outputTest (q, TagAppTest (label, args, conArity)) =
+	    (f (q, "tagAppTest"); outputLabel (q, label); m q;
+	     outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
-	  | outputTest (q, ConTest (id, idOpt, conArity)) =
-	    (f (q, "conTest"); outputId (q, id); m q;
-	     outputOption outputId (q, idOpt); m q;
+	  | outputTest (q, ConTest id) =
+	    (f (q, "conTest"); outputId (q, id); r q)
+	  | outputTest (q, ConAppTest (id, args, conArity)) =
+	    (f (q, "conAppTest"); outputId (q, id); m q;
+	     outputArgs outputId (q, args); m q;
 	     outputConArity (q, conArity); r q)
 	  | outputTest (q, RefAppTest id) =
 	    (f (q, "refAppTest"); outputId (q, id); r q)
@@ -157,15 +170,6 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "printName"); outputAtom (q, s); r q)
 	  | outputFunFlag (q, AuxiliaryOf stamp) =
 	    (f (q, "auxiliaryOf"); outputStamp (q, stamp); r q)
-
-	fun outputArgs outputX (q, OneArg id) =
-	    (f (q, "oneArg"); outputX (q, id); r q)
-	  | outputArgs outputX (q, TupArgs ids) =
-	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
-	  | outputArgs outputX (q, RecArgs labelIdList) =
-	    (f (q, "recArgs");
-	     outputList (outputPair (outputLabel, outputX)) (q, labelIdList);
-	     r q)
 
 	fun outputStm (q, ValDec (info, id, exp, isToplevel)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;

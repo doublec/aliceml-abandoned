@@ -49,12 +49,6 @@ define
       end
    end
 
-   fun {ImportList Xs}
-      case Xs of '|'(C#Cr) then C|{ImportList Cr}
-      [] nil then nil
-      end
-   end
-
    BuiltinTable =
    builtinTable(
       'show': fun {$ X} {System.show X} unit end
@@ -102,11 +96,10 @@ define
       'Array.array':
 	 fun {$ N Init} {Array.new 0 N - 1 Init} end
       'Array.fromList':
-	 fun {$ Xs} Xs2 N A in
-	    Xs2 = {ImportList Xs}
-	    N = {Length Xs2}
+	 fun {$ Xs} N A in
+	    N = {Length Xs}
 	    A = {Array.new 0 N - 1 unit}
-	    {List.forAllInd Xs2 proc {$ I X} {Array.put A I - 1 X} end}
+	    {List.forAllInd Xs proc {$ I X} {Array.put A I - 1 X} end}
 	    A
 	 end
       'Array.length':
@@ -194,12 +187,7 @@ define
 	    end
 	 end
       'String.explode':
-	 fun {$ S}
-	    {List.foldR {ByteString.toString S}
-	     fun {$ C Cr}
-		'|'('#'(C Cr))
-	     end nil}
-	 end
+	 fun {$ S} {ByteString.toString S} end
       'Thread.getCurrent':
 	 fun {$ unit} {Thread.this} end
       'Thread.getState':
@@ -235,7 +223,7 @@ define
 	 fun {$ unit} _ end
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
-	 fun {$ Xs} {List.toTuple vector {ImportList Xs}} end
+	 fun {$ Xs} {List.toTuple vector Xs} end
       'Vector.sub':
 	 fun {$ V I}
 	    try
