@@ -103,7 +103,7 @@ in
 	      | TREK | UL_ANGLE | UMBRELLA | UR_ANGLE | WATCH | XTERM
 	    and CanvasItem =
 		Group     of {parent:Gtk.object, x:real, y:real}
-	      | Lines     of {parent:Gtk.object, coords:(int * int) list,
+	      | Lines     of {parent:Gtk.object, coords: int list,
 			      width_pixels:int,
 			      fill_color:Gtk.object}
 	      | Rectangle of {parent:Gtk.object, x1:real, y1:real,
@@ -242,7 +242,7 @@ in
 		let
 		    val args = [("x", DOUBLE y), ("y", DOUBLE y)]
 		in
-		    GtkCanvas.itemNew(parent, GtkCanvas.groupGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.GROUP, args)
 		end
 	    and MakeCanvasLine({parent=parent, coords=coords,
 				width_pixels=width, fill_color=fill}) =
@@ -251,7 +251,7 @@ in
 				("fill_color_gdk", OBJECT fill),
 				("width_pixels", INT width)]
 		in
-		    GtkCanvas.itemNew(parent, GtkCanvas.lineGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.LINE, args)
 		end
 	    and MakeCanvasRectangle({parent=parent,
 				     x1=x1, y1=y1, x2=x2, y2=y2,
@@ -262,7 +262,7 @@ in
 				("fill_color_gdk", OBJECT fill),
 				("outline_color_gdk", OBJECT outline)]
 		in
-		    GtkCanvas.itemNew(parent, GtkCanvas.rectGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.RECTANGLE, args)
 		end
 	    and MakeCanvasEllipse({parent=parent,
 				   x1=x1, y1=y1, x2=x2, y2=y2,
@@ -273,7 +273,7 @@ in
 				("fill_color_gdk", OBJECT fill),
 				("outline_color_gdk", OBJECT outline)]
 		in
-		    GtkCanvas.itemNew(parent, GtkCanvas.ellipseGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.ELLIPSE, args)
 		end
 	    and MakeCanvasText({parent=parent, x=x, y=y, text=text, font=font,
 				fill_color=fill, anchor=anchor}) =
@@ -284,7 +284,7 @@ in
 				("fill_color_gdk", OBJECT fill),
 				("anchor", INT anchor)]
 		in
-		    GtkCanvas.itemNew(parent, GtkCanvas.textGetType (), args)
+		    GtkCanvas.itemNew(parent, GtkCanvas.TEXT, args)
 		end
 	    and MakeCanvasItem item =
 		(case item of
