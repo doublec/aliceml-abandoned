@@ -24,11 +24,6 @@
 #define WSAGetLastError() errno
 #endif
 
-#include "store/Store.hh"
-#include "generic/RootSet.hh"
-#include "generic/Tuple.hh"
-#include "generic/Scheduler.hh"
-#include "generic/IODesc.hh"
 #include "alice/Authoring.hh"
 
 static word ClosedStreamConstructor;
@@ -365,7 +360,7 @@ DEFINE1(UnsafeIODesc_openAppend) {
 #endif
 } END
 
-word UnsafeIODesc() {
+AliceDll word UnsafeIODesc() {
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
