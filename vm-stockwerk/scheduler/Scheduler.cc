@@ -67,7 +67,6 @@ void Scheduler::Run() {
 	break;
       case Interpreter::Result::REQUEST:
 	{
-	  currentThread->SetState(Thread::BLOCKED);
 	  int nvars = result.nargs;
 	  Assert(nvars > 0);
 	  Transient *transient[nvars];
@@ -108,6 +107,7 @@ void Scheduler::Run() {
     }
     if (Store::NeedGC()) {
       //--** add threads waiting for I/O as well as properties
+      threadPool->PurgeAll();
       threadPool =
 	ThreadPool::FromWord(Store::DoGC(threadPool->ToWord(),
 					 storeConfig->max_gen - 1));

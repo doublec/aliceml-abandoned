@@ -76,6 +76,7 @@ DEFINE1(Thread_suspend) {
   //--** remove from runnable queue if it's in there
   DECLARE_THREAD(thread, x0);
   thread->Suspend();
+  thread->GetTaskStack()->Purge();
   RETURN_UNIT;
 } END
 

@@ -28,6 +28,7 @@ public:
 
   Thread *Dequeue(); //--** implement; returns INVALID_POINTER if queue empty
   void Enqueue(Thread *thread); //--** implement
+  void PurgeAll(); //--** implement
 };
 
 #endif __SCHEDULER__THREADPOOL_HH__

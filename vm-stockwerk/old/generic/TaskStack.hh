@@ -19,13 +19,13 @@
 
 class TaskStack: private Stack {
 private:
-  static const u_int initialSize = 8; // words
+  static const u_int threshold = 8; // words
 public:
   using Stack::ToWord;
   using Stack::IsEmpty;
 
   static TaskStack *New() {
-    return static_cast<TaskStack *>(Stack::New(initialSize));
+    return static_cast<TaskStack *>(Stack::New(threshold));
   }
   static TaskStack *FromWord(word x) {
     return static_cast<TaskStack *>(Stack::FromWord(x));
@@ -38,12 +38,16 @@ public:
   void PopFrame(u_int size) {
     ClearFrame(size);
   }
+  void PushCall(Closure *closure) {
+    closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
+  }
   void Clear() {
     ClearFrame(GetSize());
     Blank(0);
   }
-  void PushCall(Closure *closure) {
-    closure->GetConcreteCode()->GetInterpreter()->PushCall(this, closure);
+  void Purge() {
+    Blank(threshold);
+    //--** should call Interpreter::PurgeFrame on each frame
   }
 
   // Accessing the current frame:

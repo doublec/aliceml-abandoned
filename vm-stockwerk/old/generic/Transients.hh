@@ -53,6 +53,8 @@ public:
   }
 
   void AddToWaitQueue(Thread *thread) {
+    thread->SetState(Thread::BLOCKED);
+    thread->GetTaskStack()->Purge();
     Queue::FromWord(GetArg())->Enqueue(thread->ToWord());
   }
   void ScheduleWaitingThreads() {
