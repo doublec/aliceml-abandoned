@@ -17,7 +17,6 @@ import structure Inspector from "x-alice:/lib/tools/Inspector"
 
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure BrowserSupport from "x-alice:/lib/system/BrowserSupport"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Types from "Types"
 import structure Helper from "Helper"
@@ -99,10 +98,13 @@ struct
 		  ; iterMove (dict,dy,i+1,highest_i) )
 		  
     (* update *)
-    and update (n,va,f,g) = 
+    and update (node,va,f,g) = 
 	(TextIO.print("started update") 
-	 ;setDazzled n 
-	 ; let val ind = getAncIndex n 
+	 ; let val  n = if !(Settings.relmode) 
+	                    andalso isRelNode(getParent(node))
+			    then getParent(node)
+			else node
+	       val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val old_ydim = Helper.get_ydim(anc)
@@ -123,17 +125,19 @@ struct
 			   then findRelNode(node,va)
 		       else ()
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
-	   in (Gtk.objectDestroy(getGroup(n))
-	       ; TextIO.print(" ....old object destroyed\n")
-	       ; if isRelNode new  
-		     then let val ri_rel =  
+	   in ( setDazzled n
+	       ; Gtk.objectDestroy(getGroup(n))
+	       ; if !(Settings.relmode) 
+		     then let val rn_list = getRelNodeList new
+			      val ri_rel =  
 			      case ReinspectedRelDict.lookup 
 				  (Dictionaries.ri_reldict,ind)  
 				   of SOME x => x 
 				    | NONE => [] 
-			  in ReinspectedRelDict.update(Dictionaries.ri_reldict,
-						       (ind, 
-					           [new]@ri_rel)) 
+			  in List.app (fn n 
+				      => ReinspectedRelDict.update
+				       (Dictionaries.ri_reldict,
+					(ind, [n]@ri_rel)) ) rn_list 
 			  end  
 		 else () 
                ; Layout.layout(node) 
@@ -149,14 +153,7 @@ struct
 		     ; Layout.setVisible(Helper.get_xdim(node),dy)) 
 		 end
 	       ; TextIO.print(" Iter move done \n") )
-	   end ) handle MissingColor => Inspector.inspect ("MissingColor")
-	         handle DrawError => Inspector.inspect ("DrawError")
-		     handle General.Subscript =>
-			 Inspector.inspect ("General.Subscript")
-			 handle Match =>Inspector.inspect ("Match")
-			 handle General.Match =>
-			     Inspector.inspect ("General.Match")
-			     handle _ =>  Inspector.inspect ("sth. else")
+	   end ) 
 
     (* findRelNode *)
     and findRelNode(anc,va) = 
@@ -214,7 +211,7 @@ struct
 	      NONE => () 
 	    | SOME((vv,ll),i)  
 	      => ( if Future.isLazy  future
-		       then BrowserSupport.waitRequest(future)
+		       then UnsafeValue.awaitRequest(future)
 		   else Future.await(future)
 		  ; let val new_l = #2(valOf(TransientDictionary.lookup
 					     (Dictionaries.transdict,i)))
@@ -222,17 +219,13 @@ struct
 		    end ) ))
 	
     (* reinspect *)
-    and reinspect (n,f,g) = ( TextIO.print("Reinspect started \n")
-        ;let val va = getReflectValue n
+    and reinspect (n,f,g) = 
+        let val va = getReflectValue n
 			           : Reflect.value
 	in  Server.serve(fn () => 
-			 (if !(Settings.relmode) 
-			      andalso isRelNode(getParent(n)) 
-			      then ()
-			  else update(n,va,f,g) ; !Window.resize()) )
+			 (update(n,va,f,g) ; !Window.resize()) )
 	end
-   (* handle General.Match => raise UpdateError *)
-handle _ => Inspector.inspect("exception at reinspect"))
+        handle General.Match => raise UpdateError
 	
     (* foldDepth *)
     and foldDepth (n,i,f,g) = 
@@ -285,42 +278,6 @@ handle _ => Inspector.inspect("exception at reinspect"))
 	      ; Settings.set_width(old_width) )
 	 end )
 
-(*
-    (* fold *)
-    and fold (n,f,g) =  
-	let val ind = getAncIndex n  
-	    val (anc,ancline) = valOf(MainDictionary.lookup  
-					(Dictionaries.dict,ind))  
-	    val old_ydim = Helper.get_ydim(anc)  
-	    val va = getReflectValue n  
-	    val va_inf = UnsafeValue.cast va : Reflect.module 
-	    val (p,index) = getNoRelAnc n 
-	    val new =  
-		case getDesc n of  
-		    INTERPUNCT => raise Match
-		  | VALUE(r) => f (va,#typ(r),p,index,getDepth(n)) 
-		  | I_VALUE(r) => g (va_inf,#typ(r),p,index,getDepth(n)) 
-	    val _ = updateChild(p,index,new)   
-	    val node = if getParent(new) = Empty then new else anc
-	    val (_,y_pos) = GtkSupport.getPosition(getGroup(anc)) 
-	    val _ = TextIO.print("FOLD: Werte erfolgreich berechnet!\n")
-	in ( Gtk.objectDestroy(getGroup(n)) 
-	    ; Layout.layout(node) 
-	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline))) 
-	    ; TextIO.print("FOLD: rufe jetzt draw auf\n")
-	    ; DrawNodes.draw(node,0,y_pos,true)  
-            ; TextIO.print("FOLD: draw geschafft :-)!\n")
-	    ; let val dy =  Helper.get_ydim(node) - old_ydim 
-	      in ( Window.incr_act_line dy 
-		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
-			      MainDictionary.getHighestIndexAssigned 
-			      (Dictionaries.dict)) 
-		  ; Layout.setVisible(Helper.get_xdim(node),dy)) 
-	      end  
-	    ; !Window.resize() ) 
-	end  
-*)
-
     (* findHighestDepth *)
     and findHighestDepth n = case n of
 	Concat(r) => max(Array.toList(#kids(r)),
@@ -359,6 +316,15 @@ handle _ => Inspector.inspect("exception at reinspect"))
 		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
 			    #kids(r)) )
       |  _ => ()
+
+    (* getRelNodeList *)
+    and getRelNodeList n = case n of
+        RelNode(r) => n::getRelNodeList(!(#content(r)))
+      | Concat(r) => Array.foldl (fn (n,l) => getRelNodeList(n)@l) 
+	             [] (#kids(r))
+      | Container(r) => Array.foldl (fn (n,l) => getRelNodeList(n)@l) 
+		        [] (#kids(r))
+      | _ => nil
    
 end (* struct *)
 
