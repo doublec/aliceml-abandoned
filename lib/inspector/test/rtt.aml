@@ -1,0 +1,3 @@
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+
+structure _ = Inspector.InspectSig(signature S = sig end)

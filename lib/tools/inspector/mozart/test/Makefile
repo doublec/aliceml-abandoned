@@ -3,11 +3,11 @@ STOCOPTS =
 
 SRCS = values.aml \
        relation.aml \
-       killer.aml
+       killer.aml \
+       rtt.aml \
+       names.aml
 
-OBJS = values.ozf \
-       relation.ozf \
-       killer.ozf
+OBJS = $(SRCS:%.aml=%.ozf)
 
 %.ozf : %.aml
 	$(STOC) $(STOCOPTS) -c $< -o $@
