@@ -419,8 +419,8 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 	     "      {Object signalUnblock(SignalId)}\n",
              "      unit\n",
              "   end\n",
-	     "   fun {SignalEmit Object SignalId}\n",
-	     "      {Object signalEmit(SignalId)}\n",
+	     "   fun {SignalEmit Object Signal}\n",
+	     "      {Object signalEmit(Signal)}\n",
              "      unit\n",
              "   end\n"
 	     ]
