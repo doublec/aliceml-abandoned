@@ -133,7 +133,10 @@ namespace Alice {
     }
     class TagVal {
 	int Tag;
-	Object Value;
+	public Object Value;
+	public TagVal(int tag) {
+	    Tag = tag;
+	}
 	public TagVal(int tag, Object value) {
 	    Tag   = tag;
 	    Value = value;
@@ -147,7 +150,10 @@ namespace Alice {
     }
     class ConVal {
 	Object Id;
-	Object Value;
+	public Object Value;
+	public ConVal(Object id) {
+	    Id = id;
+	}
 	public ConVal(Object id, Object v) {
 	    Id    = id;
 	    Value = v;
