@@ -27,37 +27,37 @@ inline word PointerToObjectRegister(void *p, int type) {
 
 ///////////////////////////////////////////////////////////////////////
 
-DEFINE0(NativeGtkCore_null) {
+DEFINE0(NativeCore_null) {
   RETURN(PointerToObject(NULL,TYPE_UNKNOWN));
 } END
 
-DEFINE0(NativeGtkCore_gtkTrue) {
+DEFINE0(NativeCore_gtkTrue) {
   RETURN(INT_TO_WORD(TRUE));
 } END
 
-DEFINE0(NativeGtkCore_gtkFalse) {
+DEFINE0(NativeCore_gtkFalse) {
   RETURN(INT_TO_WORD(FALSE));
 } END
 
-DEFINE1(NativeGtkCore_unrefObject) {
+DEFINE1(NativeCore_unrefObject) {
   DECLARE_OBJECT_WITH_TYPE(p,type,x0);
   //! g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
   __unrefObject(p,type);  
   RETURN(x0);
 } END
 
-DEFINE1(NativeGtkCore_hasSignals) {
+DEFINE1(NativeCore_hasSignals) {
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   RETURN(BOOL_TO_WORD(type == TYPE_GTK_OBJECT));
 } END
 
-DEFINE1(NativeGtkCore_printObject) {
+DEFINE1(NativeCore_printObject) {
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
   RETURN_UNIT;
 } END
 
-DEFINE0(NativeGtkCore_forceGC) {
+DEFINE0(NativeCore_forceGC) {
   StatusWord::SetStatus(Store::GCStatus());
   RETURN_UNIT;
 } END
@@ -415,7 +415,7 @@ void generic_marshaller(GClosure *closure, GValue *return_value,
     g_value_set_boolean(return_value, (isDelete != 0) ? TRUE : FALSE);
 }
 
-DEFINE3(NativeGtkCore_signalConnect) {
+DEFINE3(NativeCore_signalConnect) {
   DECLARE_OBJECT(obj,x0);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
@@ -432,14 +432,14 @@ DEFINE3(NativeGtkCore_signalConnect) {
   RETURN(INT_TO_WORD(static_cast<int>(connid)));
 } END
 
-DEFINE2(NativeGtkCore_signalDisconnect) {
+DEFINE2(NativeCore_signalDisconnect) {
   DECLARE_OBJECT(obj,x0);
   DECLARE_INT(handler_id,x1);
   g_signal_handler_disconnect(G_OBJECT(obj), static_cast<gulong>(handler_id));
   RETURN_UNIT;
 } END
 
-DEFINE0(NativeGtkCore_getEventStream) {
+DEFINE0(NativeCore_getEventStream) {
   if (!eventStream) {
     eventStream = (Future::New())->ToWord();
     RootSet::Add(eventStream);
@@ -462,7 +462,7 @@ public:
   }
 };
 
-DEFINE1(NativeGtkCore_weakMapAdd) {
+DEFINE1(NativeCore_weakMapAdd) {
   // x0 = (pointer, type)
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("adding Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
@@ -471,7 +471,7 @@ DEFINE1(NativeGtkCore_weakMapAdd) {
   RETURN_UNIT;
 } END
 
-DEFINE1(NativeGtkCore_weakMapIsMember) {
+DEFINE1(NativeCore_weakMapIsMember) {
   // x0 = (pointer, type)
   DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("is member? Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
@@ -479,7 +479,7 @@ DEFINE1(NativeGtkCore_weakMapIsMember) {
 	 (WeakMap::FromWord(weakDict)->IsMember(Tuple::FromWord(x0)->Sel(0))));
 } END
 
-DEFINE2(NativeGtkCore_weakMapCondGet) {
+DEFINE2(NativeCore_weakMapCondGet) {
   // x0 = (pointer, type), x1 = alternative  
   WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1);
   //!  g_message("condget");
@@ -488,7 +488,7 @@ DEFINE2(NativeGtkCore_weakMapCondGet) {
 
 ////////////////////////////////////////////////////////////////////////
 
-DEFINE3(NativeGtkCore_signalMapAdd) {
+DEFINE3(NativeCore_signalMapAdd) {
   // x0 = connid to add, x1 = callback-fn, x2 = object
   Map::FromWord(signalMap)->Put(x0,x1);
 
@@ -500,18 +500,18 @@ DEFINE3(NativeGtkCore_signalMapAdd) {
   RETURN_UNIT;
 } END
 
-DEFINE1(NativeGtkCore_signalMapRemove) {
+DEFINE1(NativeCore_signalMapRemove) {
   // x0 = connid to remove 
   Map::FromWord(signalMap)->Remove(x0);
   RETURN_UNIT;
 } END
 
-DEFINE2(NativeGtkCore_signalMapCondGet) {
+DEFINE2(NativeCore_signalMapCondGet) {
   // x0 = connid to get, x1 = alternative
   RETURN(Map::FromWord(signalMap)->CondGet(x0,x1));
 } END
 
-DEFINE1(NativeGtkCore_signalMapGetConnIds) {
+DEFINE1(NativeCore_signalMapGetConnIds) {
   // x0 = object
   DECLARE_OBJECT(p,x0);
   word key = Store::UnmanagedPointerToWord(p);
@@ -523,11 +523,11 @@ DEFINE1(NativeGtkCore_signalMapGetConnIds) {
 
 //////////////////////////////////////////////////////////////////////
 
-DEFINE0(NativeGtkCore_isLoaded) {
+DEFINE0(NativeCore_isLoaded) {
   RETURN(BOOL_TO_WORD(signalMap != 0));
 } END
 
-DEFINE0(NativeGtkCore_init) {
+DEFINE0(NativeCore_init) {
   if (!signalMap) {
     signalMap = Map::New(256)->ToWord();
     RootSet::Add(signalMap);
@@ -544,11 +544,11 @@ DEFINE0(NativeGtkCore_init) {
   RETURN_UNIT;
 } END
 
-DEFINE0(NativeGtkCore_eventsPending) {
+DEFINE0(NativeCore_eventsPending) {
   RETURN(BOOL_TO_WORD(gtk_events_pending()));
 } END
 
-DEFINE0(NativeGtkCore_mainIteration) {
+DEFINE0(NativeCore_mainIteration) {
   gtk_main_iteration();
   RETURN_UNIT;
 } END
@@ -557,53 +557,53 @@ DEFINE0(NativeGtkCore_mainIteration) {
 
 word InitComponent() {
   Record *record = CreateRecord(21);
-  INIT_STRUCTURE(record, "NativeGtkCore", "isLoaded",
-		 NativeGtkCore_isLoaded, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "init", 
-		 NativeGtkCore_init, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "eventsPending", 
-		 NativeGtkCore_eventsPending, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "mainIteration", 
-		 NativeGtkCore_mainIteration, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "null", 
-		 NativeGtkCore_null, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "gtkTrue", 
-		 NativeGtkCore_gtkTrue, 0);
-  INIT_STRUCTURE(record, "NativeGtkCore", "gtkFalse", 
-		 NativeGtkCore_gtkFalse, 0);
+  INIT_STRUCTURE(record, "NativeCore", "isLoaded",
+		 NativeCore_isLoaded, 0);
+  INIT_STRUCTURE(record, "NativeCore", "init", 
+		 NativeCore_init, 0);
+  INIT_STRUCTURE(record, "NativeCore", "eventsPending", 
+		 NativeCore_eventsPending, 0);
+  INIT_STRUCTURE(record, "NativeCore", "mainIteration", 
+		 NativeCore_mainIteration, 0);
+  INIT_STRUCTURE(record, "NativeCore", "null", 
+		 NativeCore_null, 0);
+  INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
+		 NativeCore_gtkTrue, 0);
+  INIT_STRUCTURE(record, "NativeCore", "gtkFalse", 
+		 NativeCore_gtkFalse, 0);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "unrefObject", 
-		 NativeGtkCore_unrefObject, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "hasSignals", 
-		 NativeGtkCore_hasSignals, 1);
+  INIT_STRUCTURE(record, "NativeCore", "unrefObject", 
+		 NativeCore_unrefObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "hasSignals", 
+		 NativeCore_hasSignals, 1);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "printObject", 
-		 NativeGtkCore_printObject, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "forceGC",
-		 NativeGtkCore_forceGC, 0);
+  INIT_STRUCTURE(record, "NativeCore", "printObject", 
+		 NativeCore_printObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "forceGC",
+		 NativeCore_forceGC, 0);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalConnect", 
-		 NativeGtkCore_signalConnect, 3);
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalDisconnect", 
-		 NativeGtkCore_signalDisconnect, 3);
-  INIT_STRUCTURE(record, "NativeGtkCore", "getEventStream", 
-		 NativeGtkCore_getEventStream, 0);
+  INIT_STRUCTURE(record, "NativeCore", "signalConnect", 
+		 NativeCore_signalConnect, 3);
+  INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
+		 NativeCore_signalDisconnect, 3);
+  INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
+		 NativeCore_getEventStream, 0);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapAdd", 
-		 NativeGtkCore_weakMapAdd, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapIsMember", 
-		 NativeGtkCore_weakMapIsMember, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "weakMapCondGet", 
-		 NativeGtkCore_weakMapCondGet, 2);
+  INIT_STRUCTURE(record, "NativeCore", "weakMapAdd", 
+		 NativeCore_weakMapAdd, 1);
+  INIT_STRUCTURE(record, "NativeCore", "weakMapIsMember", 
+		 NativeCore_weakMapIsMember, 1);
+  INIT_STRUCTURE(record, "NativeCore", "weakMapCondGet", 
+		 NativeCore_weakMapCondGet, 2);
 
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapAdd",
-		 NativeGtkCore_signalMapAdd, 3);
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapRemove",
-		 NativeGtkCore_signalMapRemove, 1);
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapCondGet",
-		 NativeGtkCore_signalMapCondGet, 2);
-  INIT_STRUCTURE(record, "NativeGtkCore", "signalMapGetConnIds",
-		 NativeGtkCore_signalMapGetConnIds, 1);
+  INIT_STRUCTURE(record, "NativeCore", "signalMapAdd",
+		 NativeCore_signalMapAdd, 3);
+  INIT_STRUCTURE(record, "NativeCore", "signalMapRemove",
+		 NativeCore_signalMapRemove, 1);
+  INIT_STRUCTURE(record, "NativeCore", "signalMapCondGet",
+		 NativeCore_signalMapCondGet, 2);
+  INIT_STRUCTURE(record, "NativeCore", "signalMapGetConnIds",
+		 NativeCore_signalMapGetConnIds, 1);
 
-  RETURN_STRUCTURE("NativeGtkCore$", record);
+  RETURN_STRUCTURE("NativeCore$", record);
 }

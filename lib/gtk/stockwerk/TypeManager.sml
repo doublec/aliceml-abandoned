@@ -66,16 +66,16 @@ struct
     end
 
     fun getAliceType VOID                  = "unit"
-      | getAliceType (ELLIPSES true)       = "GtkCore.arg"
-      | getAliceType (ELLIPSES false)      = "GtkCore.arg list"
+      | getAliceType (ELLIPSES true)       = "Core.arg"
+      | getAliceType (ELLIPSES false)      = "Core.arg list"
       | getAliceType BOOL                  = "bool"
       | getAliceType (NUMERIC (_,false,_)) = "int"
       | getAliceType (NUMERIC (_,true,_))  = "real"
-      | getAliceType (POINTER _)           = "GtkCore.object"
+      | getAliceType (POINTER _)           = "Core.object"
       | getAliceType (STRING _)            = "string"
       | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " array"
       | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
-      | getAliceType (FUNCTION _)          = "GtkCore.object"
+      | getAliceType (FUNCTION _)          = "Core.object"
       | getAliceType (STRUCTREF _)         = raise EStruct
       | getAliceType (UNIONREF _)          = raise EUnion
       | getAliceType (ENUMREF name)        = 
@@ -86,11 +86,17 @@ struct
 	let 
 	    val s = getAliceType t
 	in  
-	    (*if (Util.checkPrefix "object" s orelse Util.checkPrefix "arg" s)
-		then "'"^s 
-	        else*) case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
+	    case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
 	end
       
+    fun safeToUnsafe vname (ENUMREF ename)     = ename^"ToInt "^vname
+      | safeToUnsafe vname _                   = vname
+
+    fun unsafeToSafe vname (ENUMREF ename)     = "IntTo"^ename^" "^vname
+      | unsafeToSafe vname (POINTER _)         = "Core.addObject "^vname
+      | unsafeToSafe vname (LIST(_,POINTER _)) = "map Core.addObject "^vname
+      | unsafeToSafe vname _                   = vname
+
     local
 	fun isOutArg (t as (POINTER (NUMERIC _)))      = true
 	  | isOutArg (POINTER (POINTER (STRUCTREF _))) = true
@@ -191,4 +197,3 @@ struct
     end
 
 end
-

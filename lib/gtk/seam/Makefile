@@ -11,7 +11,7 @@ ENUMCOMPSCAP = PANGO
 
 # The following native components will be compiled
 # (in addition to the generated ones)
-NATIVECOMPS = GtkCore
+NATIVECOMPS = Core
 
 # names of generated files
 ENUMS = $(COMPSCAP:%=%_ENUMS-sig.aml) $(COMPS:%=%Enums.aml) \
@@ -29,7 +29,7 @@ OUTDIR = output
 LASTGENERATE = lastgenerate
 
 # names of all files to compile
-CORE = GTK_CORE-sig.aml GtkCore.aml
+CORE = CORE-sig.aml Core.aml
 MAINFILES = $(COMPS:%=%.aml)
 CPPSOURCES = $(NATIVES:%=%.cc)
 ALICESOURCES = $(CORE) $(ENUMS) $(UNSAFE) $(GENSIGS) $(MAINFILES)

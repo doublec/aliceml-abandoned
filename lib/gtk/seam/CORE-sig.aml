@@ -1,5 +1,5 @@
 
-signature GTK_CORE =
+signature CORE =
 sig
 (**)type object
 

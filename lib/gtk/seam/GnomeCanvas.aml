@@ -1,12 +1,12 @@
 
-import structure GtkCore from "GtkCore"
+import structure Core from "Core"
 import structure GnomeCanvasEnums from "GnomeCanvasEnums"
 import structure GnomeCanvasUnsafe from "GnomeCanvasUnsafe"
 import signature GNOME_CANVAS from "GNOME_CANVAS-sig"
 
 structure GnomeCanvas :> GNOME_CANVAS =
 struct
-    open GtkCore
+    open Core
     val _ = init()
     open GnomeCanvasEnums 
     open GnomeCanvasUnsafe
@@ -14,7 +14,7 @@ struct
     fun itemCreate (root, ty, arglist) =
     let
 	fun flatten nil = nil
-	  | flatten ((a,b)::args) = [GtkCore.STRING a, b]@(flatten args)
+	  | flatten ((a,b)::args) = [Core.STRING a, b]@(flatten args)
 	val item = itemNew(root, ty)
 	val _ = case arglist of
 	            nil => ()

@@ -1,7 +1,7 @@
-import structure NativeGtkCore from "NativeGtkCore"
-import signature GTK_CORE from "GTK_CORE-sig"
+import structure NativeCore from "NativeCore"
+import signature CORE from "CORE-sig"
 
-structure GtkCore :> GTK_CORE =
+structure Core :> CORE =
 struct
     type object
 
@@ -89,20 +89,20 @@ struct
       | LIST of object list
       | EVENT of event
 
-    val NULL = NativeGtkCore.null()
-    val TRUE = NativeGtkCore.gtkTrue()
-    val FALSE = NativeGtkCore.gtkFalse()
+    val NULL = NativeCore.null()
+    val TRUE = NativeCore.gtkTrue()
+    val FALSE = NativeCore.gtkFalse()
 
     type callBackFunction = object * arg list -> unit
 
-    val printObject = NativeGtkCore.printObject
-    val forceGC = NativeGtkCore.forceGC
+    val printObject = NativeCore.printObject
+    val forceGC = NativeCore.forceGC
 
     (* signal table functions *)
     fun doSignalConnect (obj,signame,callback,after) =
 	let
-	    val connid = NativeGtkCore.signalConnect (obj,signame,after)
-	    val _      = NativeGtkCore.signalMapAdd (connid,callback,obj)
+	    val connid = NativeCore.signalConnect (obj,signame,after)
+	    val _      = NativeCore.signalMapAdd (connid,callback,obj)
 	in
 	    connid
 	end
@@ -116,14 +116,14 @@ struct
 	val signalConnectAfter = checkSignalConnect true
 
 	fun signalDisconnect (obj, connid) =
-	    ( NativeGtkCore.signalDisconnect(obj,connid) ;
-	      NativeGtkCore.signalMapRemove connid )
+	    ( NativeCore.signalDisconnect(obj,connid) ;
+	      NativeCore.signalMapRemove connid )
     end
 
     (* event stream listener *)
     local
 	fun runCallback(connid, obj, args) =
-	    NativeGtkCore.signalMapCondGet(connid, fn _ => ()) (obj,args)
+	    NativeCore.signalMapCondGet(connid, fn _ => ()) (obj,args)
     in
 	fun listener nil                         = ()
 	  | listener ((connid,obj,args)::stream) =
@@ -148,29 +148,29 @@ struct
 		   - die Gtk-Hauptschleife entdeckt irgendwann, dass es keine
 		     Gtk-Referenz mehr gibt, und entfernt das Objekt komplett*)
 
-		fun event _ = List.app NativeGtkCore.signalMapRemove
-		                       (NativeGtkCore.signalMapGetConnIds obj)
+		fun event _ = List.app NativeCore.signalMapRemove
+		                       (NativeCore.signalMapGetConnIds obj)
 	    in
 		( doSignalConnect(obj,"destroy",event,true) ; () )
 	    end
 
 	fun newObject obj =
-	    ( if NativeGtkCore.hasSignals obj
+	    ( if NativeCore.hasSignals obj
 		  then addDestroyEvent obj
 	          else () ;
-	      NativeGtkCore.weakMapAdd obj ;
+	      NativeCore.weakMapAdd obj ;
 	      obj )
     in
 	fun addObject obj =
 	    if obj = NULL then obj else
 	    let
-		val obj' = NativeGtkCore.weakMapCondGet(obj,NULL)
+		val obj' = NativeCore.weakMapCondGet(obj,NULL)
 (*!		val _ = print "condget done.\n"
 		val _ = TextIO.flushOut TextIO.stdOut*)
 	    in
 		if obj' = NULL 
 		    then newObject obj 
-		    else NativeGtkCore.unrefObject obj'
+		    else NativeCore.unrefObject obj'
 	    end 
     end
 
@@ -184,24 +184,24 @@ struct
 
 	fun mainLoop sTime =
 	let
-	    val haveEvents = NativeGtkCore.eventsPending()
+	    val haveEvents = NativeCore.eventsPending()
 	    val sTimeNew = 
 		if haveEvents then initPoll
 		    else sTime + (if sTime >= maxPoll then 0 else pollStep)
 	in
-	    (if haveEvents then NativeGtkCore.mainIteration() else () ;
+	    (if haveEvents then NativeCore.mainIteration() else () ;
 		 sleep sTime;  
 		 mainLoop sTimeNew)
 	end
     end
 
     (* Init Core Module *)
-    fun init () = if NativeGtkCore.isLoaded() then () else
+    fun init () = if NativeCore.isLoaded() then () else
 	let
 	    val eventStream : (int * object * arg list) list = 
-	                                     NativeGtkCore.getEventStream()
+	                                     NativeCore.getEventStream()
 	in
-	    NativeGtkCore.init ();
+	    NativeCore.init ();
 	    spawn (listener eventStream);
 	    spawn (mainLoop initPoll)
 	end

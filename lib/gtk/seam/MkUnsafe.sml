@@ -18,7 +18,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 	     intro = 
 	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n\n",
-		  "import structure GtkCore from \"GtkCore\"\n",
+		  "import structure Core from \"Core\"\n",
 	          "import structure GnomeCanvasEnums ",
 		    "from \"GnomeCanvasEnums\"\n",
 		  "import structure GtkEnums from \"GtkEnums\"\n",
@@ -38,7 +38,7 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		["(* This is a generated file. ",
 		 "Modifications may get lost. *)\n\n",
 		 "import structure ",nativeName," from \"",nativeName, "\"\n",
-		 "import structure GtkCore  from \"GtkCore\"\n",
+		 "import structure Core  from \"Core\"\n",
 	          "import structure GnomeCanvasEnums ",
 		    "from \"GnomeCanvasEnums\"\n",
 		 "import structure GtkEnums from \"GtkEnums\"\n",
@@ -78,39 +78,26 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		        (if doinout then "'" else "")
 	    val (ins, outs') = splitInOuts (arglist, doinout)
 	    val outs = if ret = VOID then outs' else (OUT,"ret",ret)::outs'
-	    val generateSimple = ref true
-	    fun convArgs toNative (_,vname, t) =
-	       (case removeTypeRefs t of
-		    ENUMREF ename =>
-			(generateSimple := false ;
-			 (if toNative then ename^"ToInt" else "IntTo"^ename)
-			 ^" "^vname)
-		  | POINTER t'    =>
-			if toNative 
-			    then vname 
-			    else (generateSimple := false ; 
-				  "GtkCore.addObject "^vname)
-		  | LIST (_,POINTER t') =>
-			if toNative 
-			    then vname 
-			    else (generateSimple := false ;
-				  "map GtkCore.addObject "^vname)
-		  | _ => vname)
-	    val fullWrapperCode = 		       
+	    val insConv = 
+		map (fn (_,vname,t)=>safeToUnsafe vname (removeTypeRefs t)) ins
+	    val outsConv = 
+		map (fn (_,vname,t)=>unsafeToSafe vname (removeTypeRefs t))outs
+	    fun noConv (_,vname,_) = vname
+            val generateSimple = (insConv@outsConv) = map noConv (ins@outs)
+	in
+	    if generateSimple then
+		[wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
+	    else
 		[wrIndent, "fun ", wname, "(", 
 		 Util.makeTuple ", " "" (map (fn info => #2info) ins), 
 		 ") =\n",
 		 wrIndent, wrIndent, "let val (",
 		 Util.makeTuple ", " "x" (map (fn info => #2info) outs), 
 		 ") = ", nativeName, ".", wname, "(",
-		 Util.makeTuple ", " "" (map (convArgs true) ins), ")\n", 
+		 Util.makeTuple ", " "" insConv, ")\n", 
 		 wrIndent, wrIndent, "in (",
-		 Util.makeTuple ", " "x" (map (convArgs false) outs), ")\n",
+		 Util.makeTuple ", " "x" outsConv, ")\n",
 		 wrIndent, wrIndent, "end\n"]
-	in
-	    if (!generateSimple)
-	    then [wrIndent, "val ", wname, " = ", nativeName, ".", wname, "\n"]
-	    else fullWrapperCode
 	end	
 
 	(* SIGNATURE AND WRAPPER ENTRIES *)

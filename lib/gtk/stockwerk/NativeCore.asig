@@ -1,6 +1,6 @@
-signature NATIVE_GTK_CORE_COMPONENT =
+signature NATIVE_CORE_COMPONENT =
 sig
-    structure NativeGtkCore :
+    structure NativeCore :
     sig
 	val isLoaded : unit -> bool
 	

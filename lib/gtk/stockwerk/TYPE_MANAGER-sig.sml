@@ -10,6 +10,9 @@ signature TYPE_MANAGER =
 	val getAliceType :        TypeTree.ty -> string
 	val getAliceNativeType :  TypeTree.ty -> string
 
+	val safeToUnsafe :        string -> TypeTree.ty -> string
+        val unsafeToSafe :        string -> TypeTree.ty -> string
+
 	val splitArgTypes :       TypeTree.ty list -> arginfo list
 	val splitArgTypesNoOuts : TypeTree.ty list -> arginfo list
 	val splitInOuts :         arginfo list * bool -> 

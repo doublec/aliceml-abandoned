@@ -1,4 +1,4 @@
-import structure GtkCore from "GtkCore"
+import structure Core from "Core"
 import structure PangoEnums from "PangoEnums"
 import structure GdkEnums from "GdkEnums"
 import structure GtkEnums from "GtkEnums"
@@ -7,9 +7,9 @@ import structure GnomeCanvasEnums from "GnomeCanvasEnums"
 signature GNOME_CANVAS =
 sig
 
-    type object = GtkCore.object
+    type object = Core.object
 
-<<< "GTK_CORE-sig.aml" >>>
+<<< "CORE-sig.aml" >>>
 <<< "GNOME_CANVAS_ENUMS-sig.aml" >>>
 <<< "GNOME_CANVAS_UNSAFE-sig.aml" >>>
 

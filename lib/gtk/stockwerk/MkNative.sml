@@ -17,7 +17,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	     intro =        
  	         ["(* This is a generated file. ",
 		  "Modifications may get lost. *)\n",
-		  "import structure GtkCore from \"GtkCore\"\n\n",
+		  "import structure Core from \"Core\"\n\n",
 		  "signature ", Util.strUpper nativeName, "_COMPONENT =\n",
 		  "sig\n",
 		  Util.indent 1, "structure ", nativeName, " :\n",
@@ -105,7 +105,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		  | inDeclare (FUNCTION _)        = "DECLARE_OBJECT"
 		  | inDeclare (ENUMREF _)         = "DECLARE_ENUM"
 		  | inDeclare (TYPEREF (_,t))     = inDeclare t
-		  | inDeclare _                   = "DECLARE_UNKNWON";
+		  | inDeclare _                   = "DECLARE_UNKNOWN";
 		val xcounter = ref 0
 		fun xcinc () = let val x = Int.toString (!xcounter) 
 			       in  (xcounter := !xcounter+1 ; x)
