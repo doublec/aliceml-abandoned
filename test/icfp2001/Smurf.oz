@@ -281,10 +281,11 @@ define
       end
 
       %% Unused elements are immediate daughters of the root
-      for I in FirstElementI..LastElementI do W in
+      for I in FirstElementI..LastElementI do W IsEpsilon in
 	 W = V.I
-	 (W.tag =: Epsilon) =: {FS.reified.equal W.scope FS.value.empty}
-	 (W.tag =: Epsilon) =<: (W.mother =: RootI)
+	 IsEpsilon = (W.tag =: Epsilon)
+	 IsEpsilon =: {FS.reified.equal W.scope FS.value.empty}
+	 IsEpsilon =<: (W.mother =: RootI)
       end
 
       %--** Break symmetries
@@ -316,9 +317,31 @@ define
 %	  for I in 1..{Width V} collect: Collect do
 %	     {Collect V.I.daughters}
 %	  end}
-	 {FD.distribute naive
-	  for I in 2..{Width V} collect: Collect do
-	     {Collect V.I.mother}
+/*
+	 {FD.distribute ff
+	  {Append
+	   for I in 1..{Width V} collect: Collect do
+	      case {CondSelect V.I mother unit} of unit then skip
+	      elseof Mother then {Collect Mother}
+	      end
+	   end
+	   for I in 1..{Width V} collect: Collect do
+	      case {CondSelect V.I tag unit} of unit then skip
+	      elseof Tag then {Collect Tag}
+	      end
+	   end}}
+*/
+	 {FD.distribute ff
+	  for I in 1..{Width V} collect: Collect do
+	     case {CondSelect V.I mother unit} of unit then skip
+	     elseof Mother then {Collect Mother}
+	     end
+	  end}
+	 {FD.distribute ff
+	  for I in 1..{Width V} collect: Collect do
+	     case {CondSelect V.I tag unit} of unit then skip
+	     elseof Tag then {Collect Tag}
+	     end
 	  end}
       end
    end
@@ -382,9 +405,9 @@ define
    end
 \else
    fun {Smurf Meaning NumberOfElements} O Docs in
-      {Explorer.one {Script Meaning NumberOfElements}}
-%      {Explorer.best {Script Meaning NumberOfElements} Order}
-%      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}}
+%      {Explorer.one {Script Meaning NumberOfElements}}
+      {Explorer.best {Script Meaning NumberOfElements} Order}
+      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}}
       _
    end
 \endif
