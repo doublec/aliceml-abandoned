@@ -116,7 +116,7 @@ public:
   // Allocation Functions
   static Block *AllocBlock(BlockLabel l, u_int s) {
     AssertStore(l >= MIN_DATA_LABEL);
-    AssertStore(l <= MAX_HELPER_LABEL);
+    AssertStore(l <= MAX_STORE_LABEL); // to be done
     return InternalAllocBlock(l, s);
   }
   static Chunk *AllocChunk(u_int s) {
@@ -148,7 +148,7 @@ public:
     return p;
   }
   static Transient *DirectWordToTransient(word v) {
-    AssertStore(((u_int) x & TAGMASK) == TRTAG);
+    AssertStore(((u_int) v & TAGMASK) == TRTAG);
     Transient *p = PointerOp::DirectDecodeTransient(PointerOp::Deref(v));
     Store::CheckAlive((char *) p);
     return p;
@@ -185,7 +185,7 @@ public:
     return p;
   }
   static void *DirectWordToUnmanagedPointer(word x) {
-    AssertStore(((u_int) x & TAGMASK) == BLKTAG);
+    AssertStore(((u_int) x & TAGMASK) == INTTAG);
     return PointerOp::DirectDecodeUnmanagedPointer(x);
   }
   // Calculate Block Size according to given size (used only for assertions)
