@@ -176,7 +176,12 @@ structure Main :> MAIN =
 	    val m = String.size fro
 	in
 	    if n > m andalso String.substring (filename, n - m, m) = fro then
-		SOME (String.substring (filename, 0, n - m) ^ to)
+		let
+		    val newname = String.substring (filename, 0, n - m) ^ to
+		in
+		    if existsFile newname then SOME newname
+		    else NONE
+		end
 	    else NONE
 	end
 
@@ -207,7 +212,13 @@ structure Main :> MAIN =
 		case changeExtension (targetFilename, ".ozf", ".sml") of
 		    SOME sourceFilename =>
 			compileForMozart (sourceFilename, targetFilename)
-		  | NONE => Inf.empty ()
+		  | NONE =>
+			case changeExtension (targetFilename,
+					      ".ozf", ".sig") of
+			    SOME sourceFilename =>
+				compileForMozart (sourceFilename,
+						  targetFilename)
+			  | NONE => Inf.empty ()
 	end
 
     val _ = Composer.setAcquisitionMethod acquireSign
