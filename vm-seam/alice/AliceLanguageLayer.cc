@@ -15,7 +15,6 @@
 #endif
 
 #include "generic/RootSet.hh"
-#include "generic/Transients.hh"
 #include "generic/Tuple.hh"
 #include "generic/Unpickler.hh"
 #include "alice/AliceLanguageLayer.hh"
@@ -85,7 +84,6 @@ void AliceLanguageLayer::Init() {
   RootSet::Add(remoteCallback);
 
   Constructor::Init();
-  Hole::InitExceptions(); //--** should not be here
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
