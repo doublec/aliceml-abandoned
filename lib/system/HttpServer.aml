@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2002
+ *   Leif Kornstaedt, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -59,22 +59,49 @@ structure HttpServer :> HTTP_SERVER =
 			  | nil => notFoundHandler
 	    end
 
+	fun parseConnectionHeader ({headers, ...}: Http.request) =
+	    case Http.StringMap.lookup (headers, "connection") of
+		SOME s =>
+		    List.map (fn Http.TOKEN s => s | _ => raise Http.Format)
+			     (Http.parseFieldValue s)
+	      | NONE => nil
+
+	val idleTime = ref (Time.fromSeconds 30)
+
+	fun closeIdle (tokens, socket) =
+	    (Future.awaitEither (Future.alarm (!idleTime), tokens);
+	     if Future.isDetermined tokens then
+		 closeIdle (List.tl tokens, socket)
+	     else Socket.close socket)
+
 	fun handleConnection (socket, host, port) =
+	    let
+		val (stream, tokens) = Stream.stream ()
+		fun sendToken () = Stream.send (stream, ())
+	    in
+		spawn handleConnection' (socket, host, port, sendToken);
+		spawn closeIdle (tokens, socket)
+	    end
+	and handleConnection' (socket, host, port, sendToken) =
 	    let
 (*--** replace by some logging facility
 		val _ = TextIO.print ("connection from " ^ host ^ ":" ^
 				      Int.toString port ^ "\n")
 *)
 		val request = Http.readRequest socket
+		val _ = sendToken ()
 		val handler = findHandler (#uri request)
 		val response = handler request
 		    handle _ =>
 			   Http.makeResponse
 			       {statusCode = 501, contentType = "text/plain",
 				body = "Internal server error"}
+		val connectionTokens = parseConnectionHeader request
 	    in
 		Http.writeResponse (socket, response);
-		Socket.close socket
+		if List.exists (fn s => s = "close") connectionTokens then
+		    Socket.close socket
+		else handleConnection' (socket, host, port, sendToken)
 	    end
 	    handle Http.Format =>
 		       Socket.close socket
