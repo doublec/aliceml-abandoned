@@ -741,7 +741,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				     (IdMap.insert (env, id,
 						    (VarVal id', isToplevel'));
 				      Wildcard)
-			       | (_, _) => idDef) (idDefs, idDefs')
+			       | (_, _) => idDef') (idDefs, idDefs')
 		      | (_, _) => idDefs
 	    in
 		Vector.app (fn idDef =>
