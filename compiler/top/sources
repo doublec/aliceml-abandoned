@@ -18,6 +18,7 @@
 ../misc/Assert.sml
 ../misc/HASH_KEY.sig
 ../misc/StringHashKey.sml
+../misc/LargeIntHashKey.sml
 ../misc/Wide.sml
 ../misc/MISC.sig
 ../misc/Misc.sml
