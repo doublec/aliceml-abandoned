@@ -131,8 +131,17 @@ int main(void) {
   std::printf("Creating List...\n");
   Store::gcLiveMem = 0;
   Store::totalMem = 0;
+  gettimeofday(&start_t, INVALID_POINTER);
   p->InitArg(0, CreateList(2000000));
+  gettimeofday(&end_t, INVALID_POINTER);
   std::printf("Done\n");
+  Store::ResetTime();
+  double all_time = (((end_t.tv_sec - start_t.tv_sec) * 1000) +
+		    ((end_t.tv_usec - start_t.tv_usec) / 1000));
+  double all_mb  = ((0.0 + Store::totalMem) / (1024 * 1024));
+  double all_mss = all_mb / all_time * 1000;
+
+  std::printf("Allocated %g MB in %g ms at %g MB/s.\n", all_mb, all_time, all_mss);
   root = p->ToWord();
   Store::MemStat();
   gettimeofday(&start_t, INVALID_POINTER);
