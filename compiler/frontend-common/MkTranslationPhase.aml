@@ -107,7 +107,8 @@ struct
 				     | NONE => raise Crash.Crash
 					"TranslationPhase.longid_pervasive"
 
-    fun info_pervasiveDot a	= let val i = O.infoLongid(longid_pervasive())
+    fun info_pervasiveDot a	= let
+				      val i = O.infoLongid(longid_pervasive())
 				      val r = Type.asProd(#typ i)
 				      val t = Type.lookupRow(r,a)
 				  in typInfo(#region i, t) end
@@ -519,9 +520,16 @@ struct
 		val    a'    = trModLabel a
 		val    l'    = O.Lab(i', a')
 		val    y1    = O.LongId(i2,x1,l')
-		val    t3    = Type.lookupRow
-				    (Type.asProd'(#typ(O.infoLongid x2)), a')
-		val    y2    = O.LongId(typInfo(r,t3),x2,l')
+		val    y2    = if not isOpaque
+			       orelse !Switches.Bootstrap.rttLevel <>
+				       Switches.Bootstrap.FULL_RTT
+			       then y1 (*unused*)
+			       else let
+				   val row = Type.asProd'(#typ(O.infoLongid x2))
+				   val typ = Type.lookupRow(row, a')
+			       in
+				   O.LongId(typInfo(r,typ),x2,l')
+			       end
 		val (exp,isntIdentity') =
 		    case upInf(isOpaque, isntIdentity, y1,j1,y2,j2, r,t1,t2)
 		      of NONE => (if isOpaque then O.UpExp(i2, O.VarExp(i1,y1))
@@ -854,7 +862,9 @@ struct
 	 *                val    x1  = [m]
 	 *            in [x1 : j1 :> x2 = j2]
 	 *)
-	let
+	if !Switches.Bootstrap.rttLevel <> Switches.Bootstrap.FULL_RTT then
+	    trTransCoerceMod(#region i, m, #inf i)
+	else let
 	    val r   = #region i
 	    val i'  = nonInfo r
 	    val j1  = #inf(I.infoMod m)
