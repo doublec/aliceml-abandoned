@@ -30,8 +30,9 @@ functor MkCompiler(
 	structure FrontendSpecific: PHASE where type I.t = Source.t
 	structure FrontendCommon:   PHASE where type I.t = FrontendSpecific.O.t
 	structure BackendCommon:    PHASE where type I.t = FrontendCommon.O.t
-	structure BackendSpecific:  PHASE where type I.t = BackendCommon.O.t
-					  where type O.t = Target.t
+	structure BackendSpecific:  BACKEND_SPECIFIC
+					where type I.t = BackendCommon.O.t
+					where type O.t = Target.t
        ) :> COMPILER =
 struct
     structure Switches = Switches
@@ -70,4 +71,6 @@ struct
 	    (C', target)
 	end
 	handle Error.Error _ => raise Error
+
+    val isCrossCompiler = BackendSpecific.isCross
 end

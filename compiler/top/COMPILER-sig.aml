@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2001
+ *   Leif Kornstaedt, 2000-2002
  *   Andreas Rossberg, 2000
  *
  * Last change:
@@ -34,4 +34,6 @@ sig
     val empty:   context
     val compile: context * Source.desc * Source.t ->
 		 context * Target.t  (* [Error.Error] *)
+
+    val isCrossCompiler: bool
 end
