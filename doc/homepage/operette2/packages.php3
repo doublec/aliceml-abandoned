@@ -270,15 +270,19 @@
   </P>
 
   <PRE>
-	structure P =
-	let
-	    structure A0' = A0 :> S
-	in
-	    Package.Pack(structure X = A0'
-			 signature S = S where type t = A0'.t)
-	end
+	structure P = Package.Pack(structure X = A0
+				   signature S = S where type t = X.t)
   </PRE>
+<!--
+  <P>
+    Or if you actually want the abstraction:
+  </P>
 
+  <PRE>
+	structure P = Package.Pack(structure X = A0 :> S
+				   signature S = S where type t = X.t)
+  </PRE>
+-->
   <P>
     This bug will be corrected very shortly.
     Note that it does not compromise soundness, though.
