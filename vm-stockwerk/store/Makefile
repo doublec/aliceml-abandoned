@@ -1,3 +1,18 @@
+## -*- Makefile -*-
+##
+## Authors:
+##   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+## 
+## Copyright:
+##   Thorsten Brunklaus, 2000
+##   Leif Kornstaedt, 2000
+## 
+## Last change:
+##   $Date$ by $Author$
+##   $Revision$
+## 
+
 TOPDIR = ..
 
 include $(TOPDIR)/Makefile.vars
