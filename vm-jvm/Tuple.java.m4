@@ -19,7 +19,9 @@ import java.rmi.RemoteException;
  */
 public class Tuple implements DMLTuple {
 
-    final public DMLValue vals[];
+    public DMLValue vals[];
+
+    public Tuple() {}
 
     public Tuple(DMLValue[] v) {
 	vals=v;

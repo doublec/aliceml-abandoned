@@ -21,11 +21,10 @@ final public class Record implements DMLTuple {
 
     static private Hashtable arityHash = new Hashtable();
 
-    final public DMLValue vals[];
+    public DMLValue vals[];
     final public RecordArity arity;
 
-    public Record (java.lang.String[] ls, DMLValue[] vals) {
-	this.vals = vals;
+    public Record (java.lang.String[] ls) {
 	RecordArity ra = new RecordArity(ls);
 	Object ar=arityHash.get(ra);
 	if (ar == null) {
