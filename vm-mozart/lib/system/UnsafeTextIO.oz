@@ -16,7 +16,7 @@ import
    System(printInfo)
    Open(file text)
 export
-   '$TextIO': TextIO
+   'TextIO$': TextIO
    Print
 define
    IoException = {NewUniqueName 'IO.Io'}

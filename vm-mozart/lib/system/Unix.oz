@@ -14,7 +14,7 @@ functor
 import
    Open(pipe text)
 export
-   '$Unix': Unix
+   'Unix$': Unix
 define
    class TextPipe from Open.pipe Open.text end
 

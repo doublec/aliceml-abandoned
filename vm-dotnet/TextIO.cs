@@ -154,20 +154,20 @@ public class Execute {
 	object stdOut = new StreamWrapper("stdout", System.Console.Out);
 
 	return new object[2] {
-	    new object[13] {             // $TextIO
-		new TextIO_closeIn(),    // $TextIO.closeIn
-		new TextIO_closeOut(),   // $TextIO.closeOut
-		new TextIO_flushOut(),   // $TextIO.flushOut
-		new TextIO_inputAll(),   // $TextIO.inputAll
-		new TextIO_inputLine(),  // $TextIO.inputLine
-		new TextIO_openIn(),     // $TextIO.openIn
-		new TextIO_openOut(),    // $TextIO.openOut
-		new TextIO_output(),     // $TextIO.output
-		new TextIO_output1(),    // $TextIO.output1
-		print,                   // $TextIO.print
-		stdErr,                  // $TextIO.stdErr
-		stdIn,                   // $TextIO.stdIn
-		stdOut                   // $TextIO.stdOut
+	    new object[13] {             // TextIO$
+		new TextIO_closeIn(),    // TextIO$.closeIn
+		new TextIO_closeOut(),   // TextIO$.closeOut
+		new TextIO_flushOut(),   // TextIO$.flushOut
+		new TextIO_inputAll(),   // TextIO$.inputAll
+		new TextIO_inputLine(),  // TextIO$.inputLine
+		new TextIO_openIn(),     // TextIO$.openIn
+		new TextIO_openOut(),    // TextIO$.openOut
+		new TextIO_output(),     // TextIO$.output
+		new TextIO_output1(),    // TextIO$.output1
+		print,                   // TextIO$.print
+		stdErr,                  // TextIO$.stdErr
+		stdIn,                   // TextIO$.stdIn
+		stdOut                   // TextIO$.stdOut
 	    },
 	    print                        // print
 	};

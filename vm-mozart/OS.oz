@@ -15,10 +15,10 @@ import
    OS(system getEnv)
    Application(exit)
 export
-   '$OS': OS_Module
+   'OS$': OS_Module
 define
    OS_Module =
-   'OS'('$Process':
+   'OS'('Process$':
 	   'Process'('success': 0
 		     'failure': 1
 		     'system': OS.system

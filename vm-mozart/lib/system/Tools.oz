@@ -17,7 +17,7 @@ import
    Browser(browse)
    Inspector(inspect)
 export
-   '$Tools': Tools
+   'Tools$': Tools
 define
    Tools = 'Tools'('setPrintDepth':
 		      fun {$ N} {Property.put 'print.depth' N} unit end

@@ -14,7 +14,7 @@ functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
 export
-   '$IO': IO
+   'IO$': IO
 define
    IO = 'IO'('Io': {NewUniqueName 'IO.Io'})
 end

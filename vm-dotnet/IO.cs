@@ -14,8 +14,8 @@
 public class Execute {
     public static object Main(object obj) {
 	return new object[1] {
-	    new object[1] {     // $IO
-		"IO.Io"         // $IO.Io
+	    new object[1] {     // IO$
+		"IO.Io"         // IO$.Io
 	    }
 	};
     }

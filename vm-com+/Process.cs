@@ -44,13 +44,13 @@ class OS_Process_getEnv: Procedure {
 public class Execute {
     public static object Main(object obj) {
 	return new object[1] {
-	    new object[1] {                    // $OS
-		new object[5] {                // $OS.$Process
-		    new OS_Process_exit(),     // $OS.$Process.exit
-		    1,                         // $OS.$Process.failure
-		    new OS_Process_getEnv(),   // $OS.$Process.getEnv
-		    0,                         // $OS.$Process.success
-		    new OS_Process_system(),   // $OS.$Process.system
+	    new object[1] {                    // OS$
+		new object[5] {                // OS$.Process$
+		    new OS_Process_exit(),     // OS$.Process$.exit
+		    1,                         // OS$.Process$.failure
+		    new OS_Process_getEnv(),   // OS$.Process$.getEnv
+		    0,                         // OS$.Process$.success
+		    new OS_Process_system(),   // OS$.Process$.system
 		}
 	    }
 	};

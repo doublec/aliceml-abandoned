@@ -15,7 +15,7 @@ import
    Property(get)
    Application(getArgs)
 export
-   '$CommandLine': CommandLine
+   'CommandLine$': CommandLine
 define
    CommandLine =
    'CommandLine'('name':

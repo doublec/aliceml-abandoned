@@ -14,7 +14,7 @@ functor
 import
    System(show)
 export
-   '$Debug': Debug
+   'Debug$': Debug
 define
    fun {Show X}
       {System.show X} unit
@@ -22,5 +22,5 @@ define
 
    Debug =
    'Debug'('show': Show
-	   '$Show': Show)
+	   'Show$': Show)
 end
