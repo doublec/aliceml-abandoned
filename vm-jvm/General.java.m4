@@ -507,4 +507,18 @@ final public class General {
     }
     // val exnName : exn -> string
     // val exnMessage : exn -> string
+
+    _BUILTIN(Terminate) {
+	final public DMLValue apply0() throws java.rmi.RemoteException {
+	    System.exit(0);
+	    return Constants.dmlunit;
+	}
+	_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(_) {
+	    System.exit(0);
+	    return Constants.dmlunit;
+	}
+    }
+    /** <code>val lvar : _ -> lvar</code>*/
+    _FIELD(General,terminate);
 }
