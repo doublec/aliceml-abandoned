@@ -381,7 +381,7 @@ define
 	 {OzDomainToAliceDomain {FD.reflect.dom X}}
       end
       fun {DistFun M X}
-	 {FD.distribute {AliceDistToOzDist M} X}
+	 thread {FD.distribute {AliceDistToOzDist M} X} end
 	 unit
       end
       fun {ChooseFun M X}
