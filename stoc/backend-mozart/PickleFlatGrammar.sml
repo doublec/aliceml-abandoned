@@ -260,22 +260,19 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun externalize (q, (filename, (imports, (stms, _)))) =
 	    let
 		val q' = openOut ()
-		val filename = OS.FileSys.fullPath (OS.FileSys.tmpName ())
-		val outstream = BinIO.openOut filename
+		val filename' = filename ^ ".ozp"
+		val outstream = BinIO.openOut filename'
 	    in
 		StampMap.deleteAll visited;
-		outputQuadruple (outputString,
-				 outputVector (outputTriple (outputIdDef,
-							     outputUnit',
-							     outputUrl)),
-				 outputBody,
-				 outputUnit')
-		(q', (filename, imports, stms, ()));
-
+		outputPair (outputString,
+			    outputPair (outputVector
+					(outputTriple (outputIdDef,
+						       outputUnit',
+						       outputUrl)),
+					outputPair (outputBody, outputUnit')))
+		(q', (filename, (imports, (stms, ()))));
 		BinIO.output (outstream, closeOut q');
 		BinIO.closeOut outstream;
-
-		(*--** write something to q *)
-		()
+		TextIO.output (q,  OS.FileSys.fullPath filename')
 	    end
     end

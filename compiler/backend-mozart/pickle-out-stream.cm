@@ -4,6 +4,7 @@ Group
 
 is
 
+    ../misc/sources.cm
     ../infrastructure/crash.cm
 
     crc.cm

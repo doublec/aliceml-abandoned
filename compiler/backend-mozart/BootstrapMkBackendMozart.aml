@@ -13,10 +13,11 @@
 structure MozartEngine =
     MakeEngine(fun cmd () =
 		   ("/bin/sh",
-		    [case OS.Process.getEnv "STOC_MOZART" of
+		    [(*--**"/opt/mozart-1.1.1/bin/ozd", "-p",*)
+		     case OS.Process.getEnv "STOC_MOZART" of
 			 SOME s => s
 		       | NONE => "stoc-mozart.exe"])
-	       structure Code = OzifyFlatGrammar)
+	       structure Code = PickleFlatGrammar)
 
 structure MozartTargetContext: CONTEXT =
     struct

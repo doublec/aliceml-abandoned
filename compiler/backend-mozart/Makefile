@@ -1,7 +1,9 @@
 .SUFFIXES: .oz .ozf
 
-FUNCTORS = Frontend.ozf Builtins.ozf Prebound.ozf \
+FUNCTORS = Builtins.ozf Prebound.ozf \
 	CodeStore.ozf CodeGen.ozf Assembler.ozf Main.ozf
+
+#OZCFLAGS = -p
 
 .oz.ozf:
 	ozc $(OZCFLAGS) -c $< -o $@

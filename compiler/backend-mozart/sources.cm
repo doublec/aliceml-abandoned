@@ -1,6 +1,6 @@
 Group
 
-    structure OzifyFlatGrammar
+    structure PickleFlatGrammar
     functor MakeMozartTarget
     functor MakeBackendMozart
 
@@ -15,5 +15,6 @@ is
 
     (* Externalisation (into Oz syntax) *)
 
-    OzifyFlatGrammar.sml
+    pickle-out-stream.cm
+    PickleFlatGrammar.sml
     MakeBackendMozart.sml

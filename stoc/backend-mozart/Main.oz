@@ -16,8 +16,7 @@ import
    System(printInfo printError gcDo)
    Application(getArgs exit)
    Property(get)
-   Pickle(saveWithCells)
-   Frontend(translateVirtualString)
+   Pickle(load saveWithCells)
    CodeGen(translate)
 prepare
    OptSpecs = record(help(rightmost char: "h?" default: false))
@@ -90,7 +89,7 @@ define
 
    proc {Loop File}
       case {ReadCommand File} of 'buildFunctor'#[Code] then
-	 case {Frontend.translateVirtualString Code} of unit then
+	 case {Pickle.load Code} of unit then
 	    {System.printInfo 'Result: ~1\n\n'}
 	 [] Filename#AST then F VS in
 	    F#VS#_ = {CodeGen.translate Filename AST}
