@@ -56,7 +56,7 @@ mozart_build() {
 alice_get_cvs() {
     log_start_section Retrieving Alice from CVS
     cd $buildtop
-    execute cvs -d :ext:$USER@cvs.ps.uni-sb.de:/services/ps/CVS get stockhausen
+    execute cvs -d :ext:$USER@cvs.ps.uni-sb.de:/services/ps/CVS get alice
     log_end_section
 }
 

@@ -32,7 +32,7 @@ Procedure:
       (to see whether it broke due to changes in the environment).
     * If last-successful-build was successful, generate
       diffs between last-successful-build and HEAD.
-* Run build for the Stockwerk backend.
+* Run build for the SEAM backend.
 
 Outcome:
 * Total time and disk space taken.
