@@ -210,23 +210,26 @@
     }
     .method static public class StockWerk.RecordArity MakeRecordArity(class System.String[]) {
       ldarg.0
-      newobj instance void StockWerk.RecordArity::.ctor()
+      newobj instance void StockWerk.RecordArity::.ctor(class System.String[])
       call instance class System.Object StockWerk.RecordArity::GetRealObject()
       castclass StockWerk.RecordArity
       ret
     }
     .method virtual public int32 GetHashCode() {
-      .locals(int32, int32)
+      .locals(int32, int32, class System.String[])
       ldc.i4.0
       stloc.0
       ldc.i4.0
       stloc.1
+      ldarg.0
+      ldfld class System.String[] StockWerk.RecordArity::Labels
+      stloc.2
     loop:
       ldloc.0
-      ldarg.1
+      ldloc.2
       ldlen
       bge.s return
-      ldarg.1
+      ldloc.2
       ldloc.0
       ldelem.ref
       callvirt instance int32 System.Object::GetHashCode()
@@ -321,7 +324,7 @@
       ldelem.ref
       ldarg.1
       call bool System.String::Equals(class System.String, class System.String)
-      beq.s return
+      brtrue.s return
       ldloc.1
       ldc.i4.1
       add
@@ -1212,7 +1215,7 @@
       stfld class StockWerk.RecordArity StockWerk.Record::Arity
       ldarg.0
       ldarg.2
-      stfld class StockWerk.StockWert StockWerk.Tuple::Values
+      stfld class StockWerk.StockWert[] StockWerk.Record::Values
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -1270,7 +1273,7 @@
     }
     .method virtual public class StockWerk.StockWert Select(class System.String) {
       ldarg.0
-      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Record::Values
       ldarg.0
       ldfld class StockWerk.RecordArity StockWerk.Record::Arity
       ldarg.1
