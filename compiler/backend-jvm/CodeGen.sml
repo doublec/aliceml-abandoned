@@ -480,6 +480,84 @@ structure CodeGen =
 		val elselabel = Label.new ()
 		val stampcode' = stampCode stamp'
 
+		fun checkForTableSwitch (test', body'') =
+		    (case body'' of
+			 TestStm (_, Id (_, stamp'', _), test'', body''', body'''')::_
+			 =>
+			 (if stamp' = stamp'' then
+			      (case
+				   (test', test'') of
+				   (LitTest (WordLit a), LitTest (WordLit b)) =>
+				       LargeWord.+(a,Word.toLargeWord (Word.fromInt 1))=b
+				 | (LitTest (IntLit a), LitTest (IntLit b)) =>
+				       LargeInt.+(a,Int.toLarge 1)=b
+				 | (LitTest (CharLit a), LitTest (CharLit b)) => ord a+1 = ord b
+				 | _ => false)
+			  else false)
+		       | _ => false)
+
+		fun generateTableSwitch () =
+		    let
+			fun generateBody (akku, labelList, body', next as (test', body'')) =
+			    let
+				val lab = Label.new ()
+			    in
+				if checkForTableSwitch next
+				    then
+					case body'' of
+					    TestStm (_, _, t'', b', b'') :: _
+					    => generateBody
+					    (Label lab ::
+					     Multi (decListCode body') ::
+					     akku,
+					     lab :: labelList,
+					     b',
+					     (t'', b''))
+				else
+				    let
+					val behind = Label.new ()
+				    in
+					(Label lab ::
+					 Multi (decListCode body') ::
+					 Multi akku ::
+					 Label behind ::
+					 decListCode body'',
+					 lab :: labelList,
+					 behind)
+				    end
+			    end
+			val (bod, labs, behind) = generateBody (nil, nil, body', (test', body''))
+		    in
+			case test' of
+			    LitTest (WordLit startwert) =>
+				stampcode' ::
+				Instanceof CWord ::
+				Ifeq elselabel ::
+				stampcode' ::
+				Checkcast CWord ::
+				Getfield (CWord^"/value", [Intsig]) ::
+				Tableswitch (LargeWord.toInt startwert, labs, behind) ::
+				bod
+			  | LitTest (IntLit startwert) =>
+				stampcode' ::
+				Instanceof CInt ::
+				Ifeq elselabel ::
+				stampcode' ::
+				Checkcast CInt ::
+				Getfield (CInt^"/value", [Intsig]) ::
+				Tableswitch (LargeInt.toInt startwert, labs, behind) ::
+				bod
+			  | LitTest (CharLit startwert) =>
+				stampcode' ::
+				Instanceof CChar ::
+				Ifeq elselabel ::
+				stampcode' ::
+				Checkcast CChar ::
+				Getfield (CChar^"/value", [Charsig]) ::
+				Tableswitch (ord startwert, labs, behind) ::
+				bod
+		    end
+
 		fun testCode (LitTest lit') =
 		    (case lit' of
 			 WordLit w' =>
@@ -682,14 +760,18 @@ structure CodeGen =
 		  | testCode (test') = raise Debug (Test test')
 
 	    in
-		Multi (testCode test') ::
-		Multi
-		(decListCode body') ::
-		Goto danach ::
-		Label elselabel ::
-		Multi
-		(decListCode body'') ::
-		[Label danach]
+		if checkForTableSwitch (test', body'')
+		    then
+			generateTableSwitch ()
+		else
+		    Multi (testCode test') ::
+		    Multi
+		    (decListCode body') ::
+		    Goto danach ::
+		    Label elselabel ::
+		    Multi
+		    (decListCode body'') ::
+		    [Label danach]
 	    end
 
 	  | decCode (SharedStm(_,body',da as ref schonda)) =
