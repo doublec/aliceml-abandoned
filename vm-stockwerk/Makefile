@@ -3,7 +3,7 @@
 ##   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 ## 
 ## Copyright:
-##   Leif Kornstaedt, 2000-2002
+##   Leif Kornstaedt, 2000-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -19,7 +19,7 @@ include $(TOPDIR)/Makefile.rules
 SUBDIRS = store adt generic alice java
 SUBDIRSR = java alice generic adt store
 
-SRCS = Base.cc StockwerkMain.cc
+SRCS = Base.cc AliceMain.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 

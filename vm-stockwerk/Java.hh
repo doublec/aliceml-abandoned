@@ -13,7 +13,7 @@
 #ifndef __JAVA_HH__
 #define __JAVA_HH__
 
-#include "Stockwerk.hh"
+#include "Alice.hh"
 #include "java/Data.hh"
 #include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"

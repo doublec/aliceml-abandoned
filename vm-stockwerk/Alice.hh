@@ -13,7 +13,7 @@
 #ifndef __ALICE_HH__
 #define __ALICE_HH__
 
-#include "Stockwerk.hh"
+#include "Seam.hh"
 #include "alice/Guid.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
@@ -28,5 +28,7 @@
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
+
+DllExport int AliceMain(char *home, u_int argc, char *argv[]);
 
 #endif

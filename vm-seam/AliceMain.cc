@@ -84,7 +84,7 @@ static u_int mb(u_int n) {
   return n << 20;
 }
 
-DllExport int StockwerkMain(char *home, u_int argc, char *argv[]) {
+DllExport int AliceMain(char *home, u_int argc, char *argv[]) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   WSADATA wsa_data;
   WORD req_version = MAKEWORD(1, 1);

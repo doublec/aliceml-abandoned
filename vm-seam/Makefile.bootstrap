@@ -361,7 +361,7 @@ SOURCEDIRS = \
 ##
 
 TOPINCLUDES0 = \
-	Base.hh Stockwerk.hh Alice.hh
+	Base.hh Seam.hh Alice.hh
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
 	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh BaseMap.hh \

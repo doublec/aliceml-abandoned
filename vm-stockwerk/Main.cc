@@ -10,12 +10,12 @@
 //   $Revision$
 //
 
-#include "Stockwerk.hh"
+#include "Alice.hh"
 
 int main(int argc, char *argv[]) {
   char *home = std::getenv("ALICE_HOME");
   if (home == NULL) {
     Error("could not determine installation directory");
   }
-  std::exit(StockwerkMain(home, argc, argv));
+  std::exit(AliceMain(home, argc, argv));
 }
