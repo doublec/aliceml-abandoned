@@ -5,7 +5,7 @@ signature UNSAFE_VALUE =
 	(* Label vectors must always be sorted *)
 
 	val cast: 'a_value -> 'a
-	val same: 'a * 'a -> bool
+	val same: 'a * 'b -> bool
 	val awaitRequest : 'a -> 'a
 
 	(* Projections *)
@@ -42,8 +42,8 @@ signature UNSAFE_VALUE =
 	val conName: 'con_value -> Name.t
 
 	(* These return one of:
-	 *   -2      could not be determined
-	 *   -1      single-argument
+	 *   ~2      could not be determined
+	 *   ~1      single-argument
 	 *   n >= 0  tuple/record with n fields
 	 *)
 	val inArity: 'function_value -> int
