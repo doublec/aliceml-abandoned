@@ -20,7 +20,6 @@
 #endif
 
 #include <cstring>
-#include "Seam.hh"
 #include "alice/Base.hh"
 
 class Transform;
