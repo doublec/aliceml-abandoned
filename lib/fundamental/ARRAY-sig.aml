@@ -43,7 +43,7 @@ sig
     val sub :		'a array * int -> 'a
     val update :	'a array * int * 'a -> unit
     val swap :		'a array * int * int -> unit			(**)
-    val reverse :	'a array -> unit				(**)
+    val rev :		'a array -> unit				(**)
     val extract :	'a array * int * int option -> 'a vector
     val copy :		{di:int, dst:'a array, len:int option,
 			 si:int, src:'a array} -> unit
