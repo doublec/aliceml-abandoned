@@ -34,7 +34,8 @@ signature SERVICES =
 	val createSepLine : tag * int -> tag
 	val resizeSepLines: MainDictionary.dictionary * real -> unit
 	val yPosSepLine   : tag * tag -> unit
-	val yPosSepRel    : tag * int -> unit    
-
+	val yPosSepRel    : tag * int -> unit  
+	val createArrowRight: tag * int * int * int * int * color-> tag
+	val createArrowDown: tag * int * int * int * int * color -> tag
 	    
     end 

@@ -227,5 +227,38 @@ import signature SERVICES from "SERVICES-sig"
 	       end 
    
 
+	   fun translate (nil,h,v,h_off,v_off) = nil
+	     | translate (x1::x2::xr,h,v,h_off,v_off) = 
+	       ((x1 * h) div 8 + h_off)::
+	       ((x2 * v) div 8 + v_off)::translate(xr,h,v,h_off,v_off)
+	     | translate _ = raise Match
+
+	   fun createArrow(group,points,color) =  
+	       GtkCanvas.itemNew(group,
+			       GtkCanvas.POLYGON,
+			        [("points", 
+			 Gdk.POINTS points),
+				 ("fill_color_gdk",
+		  Gtk.OBJECT(color)),
+				 ("outline_color_gdk",
+		      Gdk.OBJECT(MkColorTable.allocColor(0,0,0))),
+				 ("width_pixels", Gdk.INT 1)])
+
+	       
+	   fun createArrowRight(group,h,v,h_off,v_off,color) = let
+			   val points = [4,0, 4,2, 0,2, 0,6, 4,6, 4,8, 8,4]
+			   val points' = translate(points,h,v,h_off,v_off)
+	      in
+		 createArrow(group,points',color)
+	      end
+
+	   fun createArrowDown(group,h,v,h_off,v_off,color) = let
+			   val points = [2,0, 2,4, 0,4, 4,8, 8,4, 6,4, 6,0]
+			   val points' = translate(points,h,v,h_off,v_off)
+	      in
+		 createArrow(group,points',color)
+	      end
+	     
+
 	   end
        
