@@ -38,19 +38,19 @@ public:
     OneArg, TupArgs
   };
 
-  enum function {
-    Function
-  };
-
   enum instr {
-    AppPrim, AppVar, CompactIntTest, CompactTagTest, ConTest, DirectAppVar,
-    EndHandle, EndTry, GetRef, GetTup, IntTest, Kill, LazySel, PutCon, PutFun,
-    PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest, Reraise,
-    Return, Sel, Shared, StringTest, TagTest, Try, VecTest
+    AppPrim, AppVar, Close, CompactIntTest, CompactTagTest, ConTest,
+    DirectAppVar, EndHandle, EndTry, GetRef, GetTup, IntTest, Kill, LazySel,
+    PutCon, PutNew, PutRef, PutTag, PutTup, PutVar, PutVec, Raise, RealTest,
+    Reraise, Return, Sel, Shared, Specialize, StringTest, TagTest, Try, VecTest
   };
 
   enum idRef {
-    Global, Immediate, Local
+    Global, Immediate, Local, Toplevel
+  };
+
+  enum abstractCode {
+    Function, Specialized
   };
 
   static con GetCon(TagVal *tagVal) {
@@ -64,6 +64,9 @@ public:
   }
   static idRef GetIdRef(TagVal *tagVal) {
     return static_cast<idRef>(tagVal->GetTag());
+  }
+  static abstractCode GetAbstractCode(TagVal *tagVal) {
+    return static_cast<abstractCode>(tagVal->GetTag());
   }
 };
 
