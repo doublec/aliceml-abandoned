@@ -14,3 +14,4 @@ Group is
     Renderer.sml
 
     PPMFile.sml
+    Main.sml

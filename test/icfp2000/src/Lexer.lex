@@ -29,7 +29,7 @@ fun tokenOf(yypos, yytext, TOKEN, arg) =
 %header	(functor Lexer(structure Tokens : Parser_TOKENS));
 
 whitechar  = [\ \t\n\011\012\013];
-comment    = "%" [^\n\011]+ ("\n"|"\011");
+comment    = "%" [^\n\011]*;
 whitespace = ({whitechar} | {comment})+;
 
 letter     = [A-Za-z];
@@ -70,4 +70,5 @@ string     = "\"" {printable}* "\"";
 				     	SOME(String.size yytext - 2))) );
 
 <INITIAL> "\""		=> ( Error.error(yypos, "invalid string") );
-<INITIAL> .		=> ( Error.error(yypos, "illegal character") );
+<INITIAL> .		=> ( Error.error(yypos, "illegal character " ^
+Int.toString(Char.ord(String.sub(yytext,0)))) );

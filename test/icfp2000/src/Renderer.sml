@@ -305,6 +305,17 @@ structure Renderer :> RENDERER =
 		val left = (w + delta) / 2.0
 		val base = (0.0, 0.0, ~1.0)
 	    in
+print("ambientR = " ^ Real.toString(#red ambient) ^ "\n");
+print("ambientG = " ^ Real.toString(#green ambient) ^ "\n");
+print("ambientB = " ^ Real.toString(#blue ambient) ^ "\n");
+print("|lights| = " ^ Int.toString(List.length lights) ^ "\n");
+print("vision = " ^ Real.toString vision ^ "\n");
+print("width = " ^ Int.toString width ^ "\n");
+print("height = " ^ Int.toString height ^ "\n");
+print("depth = " ^ Int.toString depth ^ "\n");
+print("delta = " ^ Real.toString delta ^ "\n");
+print("top = " ^ Real.toString top ^ "\n");
+print("left = " ^ Real.toString left ^ "\n");
 		fn (x, y) =>
 		let
 		    val dir = (left + delta * Real.fromInt x,

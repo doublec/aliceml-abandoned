@@ -36,7 +36,7 @@ tokenlist:
 tokengroup:
 	  token				( token )
 	| LBRACE tokenlist RBRACE	( Machine.Function tokenlist )
-	| LBRACK tokenlist RBRACE	( Machine.Array tokenlist )
+	| LBRACK tokenlist RBRACK	( Machine.Array tokenlist )
 
 token:
 	  IDENTIFIER			( case Machine.operator IDENTIFIER

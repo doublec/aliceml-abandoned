@@ -79,7 +79,7 @@ struct
       | operator "point"	= SOME Point
       | operator "pointlight"	= SOME Pointlight
       | operator "real"		= SOME RealI
-      | operator "reander"	= SOME Render
+      | operator "render"	= SOME Render
       | operator "rotatex"	= SOME RotateX
       | operator "rotatey"	= SOME RotateY
       | operator "rotatez"	= SOME RotateZ
