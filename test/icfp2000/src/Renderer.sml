@@ -225,11 +225,13 @@ structure Renderer :> RENDERER =
 	and diff' ((x as (_, _, Entry), A)::xr, Outside) = x::diff' (xr, InA)
 	  | diff' ((x as (_, _, Entry), B)::xr, Outside) = diff' (xr, InB)
 	  | diff' ((x as (_, _, Exit), A)::xr, InA) = x::diff' (xr, Outside)
-	  | diff' (((l, s, Entry), B)::xr, InA) = (l, s, Exit)::diff' (xr, InAB)
+	  | diff' (((l, (id, surface, w2o, normal), Entry), B)::xr, InA) =
+	    (l, (id, surface, w2o, negVec o normal), Exit)::diff' (xr, InAB)
 	  | diff' ((x as (_, _, Entry), A)::xr, InB) = diff' (xr, InAB)
 	  | diff' ((x as (_, _, Exit), B)::xr, InB) = diff' (xr, Outside)
 	  | diff' ((x as (_, _, Exit), A)::xr, InAB) = diff' (xr, InB)
-	  | diff' (((l, s, Exit), B)::xr, InAB) = (l, s, Entry)::diff' (xr, InA)
+	  | diff' (((l, (id, surface, w2o, normal), Exit), B)::xr, InAB) =
+	    (l, (id, surface, w2o, negVec o normal), Entry)::diff' (xr, InA)
 	  | diff' (nil, _) = nil
 	  | diff' (_, _) = raise Crash
 
