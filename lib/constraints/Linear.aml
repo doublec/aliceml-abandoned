@@ -63,7 +63,8 @@ structure Linear :> LINEAR =
 	fun flatten (Id t)               = (Id t)
 	  | flatten (BinOp(label, a, b)) = Op(label, flatten'(label, a, [b]))
 	and flatten'(label, t as BinOp(oplabel, a, b), ts) =
-	    if label = oplabel then flatten'(label, a, b::ts) else map flatten (t::ts)
+	    if label = oplabel then flatten'(label, a, b::ts)
+	    else map flatten (t::ts)
 	  | flatten'(label, t, ts) = map flatten (t::ts)
 
 	fun isAtomic (Id _) = true
@@ -76,7 +77,8 @@ structure Linear :> LINEAR =
 	fun getInt (Id(op` i)) = i
 	  | getInt _           = raise Subscript
 
-	fun isPlainSum ts = not (List.exists (fn (Id _) => false | _ => true) ts)
+	fun isPlainSum ts =
+	    not (List.exists (fn (Id _) => false | _ => true) ts)
 
 	fun checkConst (Op(MUL, [Id(op`(_)), Id(fd _)])) = false
 	  | checkConst (Id _)                            = false
@@ -90,8 +92,8 @@ structure Linear :> LINEAR =
 	  | allAtomic _             = true
 
 	fun isNSum ts =
-	    not (List.exists (fn (Op(MUL, (Id(op` _))::tr)) => allAtomic tr | _ => true) ts)
-
+	    not (List.exists
+		 (fn (Op(MUL, (Id(op` _))::tr)) => allAtomic tr | _ => true) ts)
 
 	fun  analyzeSum ts = if isPlainSum ts then SUM
 			    else if isConstSum ts then SUMC
@@ -125,7 +127,8 @@ structure Linear :> LINEAR =
 
 	fun createSumCVector (Op(PLUS, ts)) = Vector.fromList (map makeConst ts)
 	  | createSumCVector (Op(Mul, [Id (op` i), Id (fd v)])) = #[(i, v)]
-	  | createSumCVector (Op(Mul, [Id (op` i), Id (op` v)])) = #[(i, FD.fromInt v)]
+	  | createSumCVector (Op(Mul, [Id (op` i), Id (op` v)])) =
+	    #[(i, FD.fromInt v)]
 	  | createSumCVector _  = raise Subscript
 
 	fun splitInt (ts as ((Id (fd _))::_)) = (1, ts)
@@ -140,8 +143,9 @@ structure Linear :> LINEAR =
 	  | createSumCNEntry (t as (Id _)) = (1, Vector.fromList([getAtomic t]))
 	  | createSumCNEntry  _            = raise Subscript
 
-	fun createSumCNVector (Op(PLUS, ts)) = Vector.fromList (map createSumCNEntry ts)
-	  | createSumCNVector _              = raise Subscript
+	fun createSumCNVector (Op(PLUS, ts)) =
+	    Vector.fromList (map createSumCNEntry ts)
+	  | createSumCNVector _ = raise Subscript
 
 	fun negateSum (i, v) = (~i, v)
 
@@ -174,7 +178,8 @@ structure Linear :> LINEAR =
 
 	(* Handle Variable Aliasing *)
 	local
-	    fun member(v, vs) = List.exists (fn (_, x) => FD.Reflect.eq(x, v)) vs
+	    fun member(v, vs) =
+		List.exists (fn (_, x) => FD.Reflect.eq(x, v)) vs
 
 	    fun simplify'(v, vs, newvec) =
 		let
@@ -206,7 +211,8 @@ structure Linear :> LINEAR =
 		       | e::er => checkReturn (simplify(vs, vs, (nil, nil))))
 		end
 	    
-	    fun simplifySumVector v = simplifySumCVector (Vector.map (fn x => (1, x)) v)
+	    fun simplifySumVector v =
+		simplifySumCVector (Vector.map (fn x => (1, x)) v)
 	end
 
 	fun postSum(a, rel, b) =
@@ -223,22 +229,26 @@ structure Linear :> LINEAR =
 		val v = simplifySumVector (createSumVector a)
 	    in
 		(case (Vector.exists (fn (i, v) => i <> 1) v) of
-		     false => FD.Reified.sum(Vector.map (fn (_, x) => x) v, rel, b, c)
+		     false => FD.Reified.sum(Vector.map
+					     (fn (_, x) => x) v, rel, b, c)
 		   | true  => FD.Reified.sumC(v, rel, b, c))
 	    end
 
 	fun postSimpleSum(a, b, rel) =
 	    (case analyze a of
 		 SUM    => postSum(a, rel, b)
-	       | SUMC   => FD.sumC(simplifySumCVector (createSumCVector a), rel, b)
-	       | SUMCN  => FD.sumCN(createSumCNVector a, rel, b) (* to be done *)
+	       | SUMC   =>
+		     FD.sumC(simplifySumCVector (createSumCVector a), rel, b)
+	       | SUMCN  => FD.sumCN(createSumCNVector a, rel, b)(* to be done *)
 	       | NEGSUM =>
 		     let
 			 val Op(MINUS, ts) = a
 		     in
 			 (case analyzeSum ts of
-			      SUM   => FD.sumC(simplifySumCVector (makeNegSum ts), rel, b)
-			    | SUMC  => FD.sumC(simplifySumCVector (makeNegSumC ts), rel, b)
+			      SUM   => FD.sumC(simplifySumCVector
+					       (makeNegSum ts), rel, b)
+			    | SUMC  => FD.sumC(simplifySumCVector
+					       (makeNegSumC ts), rel, b)
 			    | SUMCN => () (* to be done *))
 		     end
 	       | _     => ())
@@ -246,16 +256,19 @@ structure Linear :> LINEAR =
 	fun postSimpleReifiedSum(a, b, c, rel) =
 	    (case analyze a of
 		 SUM    => postReifiedSum(a, rel, b, c)
-	       | SUMC   => FD.Reified.sumC(simplifySumCVector (createSumCVector a), rel, b, c)
+	       | SUMC   => FD.Reified.sumC(simplifySumCVector
+					   (createSumCVector a), rel, b, c)
 	       | SUMCN  => FD.Reified.sumCN(createSumCNVector a, rel, b, c) (* to be done *)
 	       | NEGSUM =>
 		     let
 			 val Op(MINUS, ts) = a
 		     in
 			 (case analyzeSum ts of
-			      SUM   => FD.Reified.sumC(simplifySumCVector (makeNegSum ts),
+			      SUM   => FD.Reified.sumC(simplifySumCVector
+						       (makeNegSum ts),
 						       rel, b, c)
-			    | SUMC  => FD.Reified.sumC(simplifySumCVector (makeNegSumC ts),
+			    | SUMC  => FD.Reified.sumC(simplifySumCVector
+						       (makeNegSumC ts),
 						       rel, b, c)
 			    | SUMCN => () (* to be done *))
 		     end
@@ -269,8 +282,8 @@ structure Linear :> LINEAR =
 	  | getConstTerm (t as (Id _))                      = (1, getAtomic t)
 	  | getConstTerm _                                  = raise Subscript
 
-	fun getTerms(SUM, (Op(PLUS, ts)))      = (map (fn x => (1, getAtomic x)) ts)
-	  | getTerms(SUMC,(Op(PLUS, ts)))      = map getConstTerm ts
+	fun getTerms(SUM, (Op(PLUS, ts))) = (map (fn x => (1, getAtomic x)) ts)
+	  | getTerms(SUMC,(Op(PLUS, ts))) = map getConstTerm ts
 	  | getTerms(SUMC,(t as (Op(MUL, _)))) = [getConstTerm t] 
 	  | getTerms _                         = raise Subscript
 	    
@@ -287,7 +300,8 @@ structure Linear :> LINEAR =
 			     val zero = FD.fromInt 0
 			     val sums = (ats @ (map negateSum bts))
 			 in
-			     FD.sumC(simplifySumCVector (Vector.fromList sums), rel, zero)
+			     FD.sumC(simplifySumCVector (Vector.fromList sums),
+				     rel, zero)
 			 end
 		   | SUMCN => () (* to be done *))
 	    end
@@ -305,18 +319,20 @@ structure Linear :> LINEAR =
 			     val zero = FD.fromInt 0
 			     val sums = (ats @ (map negateSum bts))
 			 in
-			     FD.Reified.sumC(simplifySumCVector (Vector.fromList sums),
+			     FD.Reified.sumC(simplifySumCVector
+					     (Vector.fromList sums),
 					     rel, zero, c)
 			 end
 		   | SUMCN => () (* to be done *))
 	    end
-
+	
 	fun post'(a, b, rel) =
 	    let
 		val a' = flatten (transform a)
 		val b' = flatten (transform b)
 	    in
-		if bothAtomic(a', b') then postBinaryRel(getAtomic a', getAtomic b', rel)
+		if bothAtomic(a', b') then
+		    postBinaryRel(getAtomic a', getAtomic b', rel)
 		else if isAtomic b'   then postSimpleSum(a', getAtomic b', rel)
                 else postNormalizedSum(a', b', rel)
 	    end
@@ -327,7 +343,8 @@ structure Linear :> LINEAR =
 		val b' = flatten (transform b)
 		val c' = flatten (transform c)
 	    in
-		if isAtomic b' then postSimpleReifiedSum(a', getAtomic b', getAtomic c', rel)
+		if isAtomic b' then
+		    postSimpleReifiedSum(a', getAtomic b', getAtomic c', rel)
 		else postNormalizedReifiedSum(a', b', getAtomic c', rel)
 	    end
 
@@ -352,13 +369,15 @@ structure Linear :> LINEAR =
 
 	    fun bin () = fd(FD.bin ())
 
-	    fun vec(n, domain) = (Vector.map fdToTerm (FD.fdVec(n, convertDomain domain)))
+	    fun vec(n, domain) =
+		(Vector.map fdToTerm (FD.fdVec(n, convertDomain domain)))
 	end
 
 	fun termToFD (fd v) = v
 	  | termToFD _      = raise Subscript
 
-	fun distribute(mode, v) = spawn FD.distribute(mode, Vector.map termToFD v)
+	fun distribute(mode, v) =
+	    spawn FD.distribute(mode, Vector.map termToFD v)
 
 	fun distinct v = FD.distinct (Vector.map termToFD v)
 
