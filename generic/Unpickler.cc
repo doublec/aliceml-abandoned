@@ -508,7 +508,7 @@ public:
   // UnpickleFrame Constructor
   static UnpickleFrame *New(Interpreter *interpreter,
 			    word x, u_int i, u_int n) {
-    StackFrame *frame = StackFrame::New(UNPICKLE_FRAME, interpreter, SIZE);
+    StackFrame *frame = StackFrame::New(UNPICKLING_FRAME, interpreter, SIZE);
     frame->InitArg(BLOCK_POS, x);
     frame->InitArg(INDEX_POS, Store::IntToWord(i));
     frame->InitArg(NUM_ELEMS_POS, Store::IntToWord(n));
@@ -517,7 +517,7 @@ public:
   // UnpickleFrame Untagging
   static UnpickleFrame *FromWordDirect(word frame) {
     StackFrame *p = StackFrame::FromWordDirect(frame);
-    Assert(p->GetLabel() == UNPICKLE_FRAME);
+    Assert(p->GetLabel() == UNPICKLING_FRAME);
     return static_cast<UnpickleFrame *>(p);
   }
 
