@@ -596,8 +596,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	and genArgs (OneArg id) = emitId id
 	  | genArgs (TupArgs ids) =   (*--** type below *)
 	    genExp (TupExp ((Source.nowhere, NONE), ids), BOTH)
-	  | genArgs (RecArgs idExpList) =   (*--** type below *)
-	    genExp (RecExp ((Source.nowhere, NONE), idExpList), BOTH)
+	  | genArgs (RecArgs labelIdList) =   (*--** type below *)
+	    genExp (RecExp ((Source.nowhere, NONE), labelIdList), BOTH)
 	and genBody (stm::stms) =
 	    (case infoStm stm of
 		 (_, ref (Kill set)) => kill set
