@@ -14,7 +14,7 @@
 //
 
 #include <cstdio>
-#include "store/WeakDictionary.hh"
+#include "store/Map.hh"
 #include "generic/Tuple.hh"
 #include "alice/StackFrame.hh"
 #include "alice/Authoring.hh"
@@ -94,15 +94,15 @@ private:
 
   static const u_int initialSize = 8; //--** to be determined
 
-  BlockHashTable *GetHashTable() {
-    return BlockHashTable::FromWordDirect(GetArg(HASHTABLE_POS));
+  Map *GetHashTable() {
+    return Map::FromWordDirect(GetArg(HASHTABLE_POS));
   }
 public:
   using Block::ToWord;
 
   static ImpMap *New() {
     Block *b = Store::AllocBlock(IMPMAP_LABEL, SIZE);
-    b->InitArg(HASHTABLE_POS, BlockHashTable::New(initialSize)->ToWord());
+    b->InitArg(HASHTABLE_POS, Map::New(initialSize)->ToWord());
     b->InitArg(HEAD_POS, 0);
     return static_cast<ImpMap *>(b);
   }
@@ -114,21 +114,21 @@ public:
   }
 
   void Insert(word key, word value) {
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     Assert(!hashTable->IsMember(key));
     word head = GetArg(HEAD_POS);
     ImpMapEntry *headEntry = head == Store::IntToWord(0)?
       INVALID_POINTER: ImpMapEntry::FromWordDirect(head);
     ImpMapEntry *entry = ImpMapEntry::New(key, value, headEntry);
     ReplaceArg(HEAD_POS, entry->ToWord());
-    hashTable->InsertItem(key, entry->ToWord());
+    hashTable->Put(key, entry->ToWord());
   }
   void Delete(word key) {
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(key));
     ImpMapEntry *entry =
-      ImpMapEntry::FromWordDirect(hashTable->GetItem(key));
-    hashTable->DeleteItem(key);
+      ImpMapEntry::FromWordDirect(hashTable->Get(key));
+    hashTable->Remove(key);
     word result = entry->Unlink();
     if (result != Store::IntToWord(1))
       ReplaceArg(HEAD_POS, result);
@@ -138,16 +138,16 @@ public:
     ReplaceArg(HEAD_POS, 0);
   }
   ImpMapEntry *LookupEntry(word key) {
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     Assert(hashTable->IsMember(key));
-    return ImpMapEntry::FromWordDirect(hashTable->GetItem(key));
+    return ImpMapEntry::FromWordDirect(hashTable->Get(key));
   }
   word Lookup(word key) {
-    BlockHashTable *hashTable = GetHashTable();
+    Map *hashTable = GetHashTable();
     if (hashTable->IsMember(key)) {
       TagVal *some = TagVal::New(1, 1); // SOME ...
       ImpMapEntry *entry =
-	ImpMapEntry::FromWordDirect(hashTable->GetItem(key));
+	ImpMapEntry::FromWordDirect(hashTable->Get(key));
       some->Init(0, entry->GetValue());
       return some->ToWord();
     } else {
