@@ -15,15 +15,14 @@
 #endif
 
 #include <cstdio>
-#include "generic/TaskStack.hh"
 #include "generic/Scheduler.hh"
+#include "generic/StackFrame.hh"
 #include "generic/PushCallInterpreter.hh"
 
 // PushCall Frame
-class PushCallFrame : private StackFrame {
+class PushCallFrame: private StackFrame {
 private:
-  static const u_int CLOSURE_POS = 0;
-  static const u_int SIZE        = 1;
+  enum { CLOSURE_POS, SIZE };
 public:
   using Block::ToWord;
 
@@ -51,15 +50,18 @@ public:
 //
 PushCallInterpreter *PushCallInterpreter::self;
 
-void PushCallInterpreter::PushFrame(TaskStack *taskStack, word closure) {
-  taskStack->PushFrame(PushCallFrame::New(self, closure)->ToWord());
+void PushCallInterpreter::PushFrame(word closure) {
+  Scheduler::PushFrame(PushCallFrame::New(self, closure)->ToWord());
 }
 
-Interpreter::Result PushCallInterpreter::Run(TaskStack *taskStack) {
-  word closure =
-    PushCallFrame::FromWordDirect(taskStack->GetFrame())->GetClosure();
-  taskStack->PopFrame();
-  return taskStack->PushCall(closure);
+void PushCallInterpreter::PushFrame(Thread *thread, word closure) {
+  thread->PushFrame(PushCallFrame::New(self, closure)->ToWord());
+}
+
+Interpreter::Result PushCallInterpreter::Run() {
+  PushCallFrame *frame =
+    PushCallFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  return Scheduler::PushCall(frame->GetClosure());
 }
 
 const char *PushCallInterpreter::Identify() {
