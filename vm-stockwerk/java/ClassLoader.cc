@@ -180,7 +180,7 @@ public:
 
   static ResolveFrame *New(ClassLoader *classLoader, JavaString *name) {
     StackFrame *frame =
-      StackFrame::New(RESOLVE_CLASS_FRAME, ResolveInterpreter::self, SIZE);
+      StackFrame::New(RESOLVE_FRAME, ResolveInterpreter::self, SIZE);
     frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     frame->InitArg(RESOLVE_TYPE_POS, ResolveInterpreter::RESOLVE_CLASS);
     frame->InitArg(NAME_POS, name->ToWord());
@@ -191,7 +191,7 @@ public:
 			   word theClass, JavaString *name,
 			   JavaString *descriptor) {
     StackFrame *frame =
-      StackFrame::New(RESOLVE_CLASS_FRAME, ResolveInterpreter::self, SIZE);
+      StackFrame::New(RESOLVE_FRAME, ResolveInterpreter::self, SIZE);
     frame->InitArg(CLASS_LOADER_POS, classLoader->ToWord());
     frame->InitArg(RESOLVE_TYPE_POS, resolveType);
     frame->InitArg(CLASS_POS, theClass);
@@ -201,7 +201,7 @@ public:
   }
   static ResolveFrame *FromWordDirect(word x) {
     StackFrame *frame = StackFrame::FromWordDirect(x);
-    Assert(frame->GetLabel() == RESOLVE_CLASS_FRAME);
+    Assert(frame->GetLabel() == RESOLVE_FRAME);
     return static_cast<ResolveFrame *>(frame);
   }
 
@@ -237,7 +237,10 @@ Worker::Result ResolveInterpreter::Run() {
   case RESOLVE_CLASS:
     {
       JavaString *name = frame->GetName();
-      ClassFile *classFile = ClassFile::NewFromFile(name);
+      JavaString *filename = name->Concat(JavaString::New(".class"));
+      ClassFile *classFile = ClassFile::NewFromFile(filename);
+      if (classFile == INVALID_POINTER)
+	Error("NoClassDefFoundError"); //--** raise NoClassDefFoundError
       ClassInfo *classInfo = classFile->Parse(frame->GetClassLoader());
       if (classInfo == INVALID_POINTER)
 	Error("ClassFormatError"); //--** raise ClassFormatError
@@ -374,7 +377,7 @@ ClassTable *ClassLoader::GetClassTable() {
   return ClassTable::FromWordDirect(GetArg(CLASS_TABLE_POS));
 }
 
-word ClassLoader::ResolveClassByNeed(JavaString *name) {
+word ClassLoader::ResolveClass(JavaString *name) {
   ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
   Closure *closure = Closure::New(concreteCode->ToWord(), 3);
   closure->Init(0, ToWord());
@@ -422,9 +425,9 @@ word ClassLoader::ResolveType(JavaString *name) {
     case 'L':
       {
 	u_int i = 0;
-	while (p[i++] != ';');
-	n -= i + 1;
-	wClass = ResolveClassByNeed(JavaString::New(p, i));
+	while (p[i++] != ';') n--;
+	i--, n--;
+	wClass = ResolveClass(JavaString::New(p, i));
 	break;
       }
     default:
@@ -443,7 +446,7 @@ word ClassLoader::ResolveFieldRef(JavaString *className, JavaString *name,
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
   closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_FIELD));
-  closure->Init(2, ResolveType(className));
+  closure->Init(2, ResolveClass(className));
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
@@ -455,7 +458,7 @@ word ClassLoader::ResolveMethodRef(JavaString *className, JavaString *name,
   Closure *closure = Closure::New(concreteCode->ToWord(), 5);
   closure->Init(0, ToWord());
   closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_METHOD));
-  closure->Init(2, ResolveType(className));
+  closure->Init(2, ResolveClass(className));
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();
@@ -469,7 +472,7 @@ word ClassLoader::ResolveInterfaceMethodRef(JavaString *className,
   closure->Init(0, ToWord());
   u_int resolveType = ResolveInterpreter::RESOLVE_INTERFACE_METHOD;
   closure->Init(1, Store::IntToWord(resolveType));
-  closure->Init(2, ResolveType(className));
+  closure->Init(2, ResolveClass(className));
   closure->Init(3, name->ToWord());
   closure->Init(4, descriptor->ToWord());
   return Byneed::New(closure->ToWord())->ToWord();

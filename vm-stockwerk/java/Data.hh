@@ -230,11 +230,11 @@ class DllExport JavaString: private Chunk {
 public:
   using Chunk::ToWord;
 
-  u_wchar *GetBase() {
-    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
-  }
   u_int GetLength() {
     return GetSize() / sizeof(u_wchar);
+  }
+  u_wchar *GetBase() {
+    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
   }
 
   static JavaString *New(u_int length) {
@@ -268,6 +268,16 @@ public:
     if (string->GetLength() != length) return false;
     return !std::memcmp(GetBase(), string->GetBase(),
 			length * sizeof(u_wchar));
+  }
+  JavaString *Concat(JavaString *otherString) {
+    u_int length = GetLength();
+    u_int otherLength = otherString->GetLength();
+    JavaString *resultString = JavaString::New(length + otherLength);
+    u_wchar *p = resultString->GetBase();
+    std::memcpy(p, GetBase(), length * sizeof(u_wchar));
+    std::memcpy(p + length, otherString->GetBase(),
+		otherLength * sizeof(u_wchar));
+    return resultString;
   }
   JavaString *Intern() {
     return this; //--**

@@ -26,7 +26,6 @@ protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:
   ClassTable *GetClassTable();
-  word ResolveClassByNeed(JavaString *name);
 public:
   using Block::ToWord;
 
@@ -39,6 +38,7 @@ public:
     return static_cast<ClassLoader *>(b);
   }
 
+  word ResolveClass(JavaString *name); // Class or Future
   word ResolveType(JavaString *name); // Type or Future
   word ResolveFieldRef(JavaString *className, JavaString *name,
 		       JavaString *descriptor); // FieldRef or Future

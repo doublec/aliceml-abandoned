@@ -95,7 +95,7 @@ void Startup() {
   RunMainWorker::Init();
   ClassLoader *classLoader = ClassLoader::New();
   char buf[512];
-  std::sprintf(buf, "L%s;",
+  std::sprintf(buf, "%s",
 	       String::FromWordDirect(Properties::rootUrl)->ExportC());
   for (u_int i = std::strlen(buf); i--; )
     if (buf[i] == '.') buf[i] = '/';

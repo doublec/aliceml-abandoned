@@ -55,7 +55,7 @@ public:
   }
 
   CONSTANT_tag GetTag() {
-    return static_cast<CONSTANT_tag>(static_cast<int>(GetLabel()));
+    return static_cast<CONSTANT_tag>(GetLabel() - MIN_DATA_LABEL);
   }
   word Resolve(ConstantPool *constantPool, ClassLoader *classLoader);
 };
@@ -93,11 +93,16 @@ public:
     Assert(entry->GetTag() == CONSTANT_Utf8);
     return JavaString::FromWordDirect(entry->GetArg(0));
   }
+  JavaString *GetClassName(u_int index) {
+    ConstantPoolEntry *entry = Get(index);
+    Assert(entry->GetTag() == CONSTANT_Class);
+    return GetUtf8(Store::DirectWordToInt(entry->GetArg(0)));
+  }
   JavaString *GetNameAndType(u_int index, JavaString *&descriptor) {
     ConstantPoolEntry *entry = Get(index);
     Assert(entry->GetTag() == CONSTANT_NameAndType);
-    descriptor = JavaString::FromWordDirect(entry->GetArg(1));
-    return JavaString::FromWordDirect(entry->GetArg(0));
+    descriptor = GetUtf8(Store::DirectWordToInt(entry->GetArg(1)));
+    return GetUtf8(Store::DirectWordToInt(entry->GetArg(0)));
   }
 };
 
@@ -107,16 +112,16 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
   case CONSTANT_Class:
     {
       u_int nameIndex = Store::DirectWordToInt(GetArg(0));
-      return classLoader->ResolveType(constantPool->GetUtf8(nameIndex));
+      return classLoader->ResolveClass(constantPool->GetUtf8(nameIndex));
     }
   case CONSTANT_Fieldref:
     {
       //--** All fields of interfaces must have their ACC_PUBLIC, ACC_STATIC,
       //--** and ACC_FINAL flags set and may not have any of the other flags
       //--** in Table 4.4 set
-      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetUtf8(classNameIndex);
+      JavaString *className = constantPool->GetClassName(classIndex);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
@@ -124,9 +129,9 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
     }
   case CONSTANT_Methodref:
     {
-      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetUtf8(classNameIndex);
+      JavaString *className = constantPool->GetClassName(classIndex);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
@@ -134,9 +139,9 @@ word ConstantPoolEntry::Resolve(ConstantPool *constantPool,
     }
   case CONSTANT_InterfaceMethodref:
     {
-      u_int classNameIndex = Store::DirectWordToInt(GetArg(0));
+      u_int classIndex = Store::DirectWordToInt(GetArg(0));
       u_int nameAndTypeIndex = Store::DirectWordToInt(GetArg(1));
-      JavaString *className = constantPool->GetUtf8(classNameIndex);
+      JavaString *className = constantPool->GetClassName(classIndex);
       JavaString *descriptor;
       JavaString *name =
 	constantPool->GetNameAndType(nameAndTypeIndex, descriptor);
@@ -296,7 +301,7 @@ RuntimeConstantPool *ClassFile::ResolveConstantPool(ConstantPool *constantPool,
   u_int constantPoolCount = constantPool->GetSize();
   RuntimeConstantPool *runtimeConstantPool =
     RuntimeConstantPool::New(constantPoolCount);
-  for (u_int j = 1; j < constantPoolCount; j++) {
+  for (u_int j = 1; j <= constantPoolCount; j++) {
     word resolved = constantPool->Get(j)->Resolve(constantPool, classLoader);
     runtimeConstantPool->Init(j, resolved);
   }
@@ -479,7 +484,9 @@ void ClassFile::SkipAttributes(u_int &offset) {
 }
 
 ClassFile *ClassFile::NewFromFile(JavaString *filename) {
+  fprintf(stderr, "fopen %s\n", filename->ExportC());
   FILE *f = std::fopen(filename->ExportC(), "rb");
+  if (f == NULL) return INVALID_POINTER;
   if (std::fseek(f, 0, SEEK_END)) {
     std::fclose(f);
     return INVALID_POINTER;
