@@ -201,6 +201,15 @@ DEFINE2(NativeGtk_objectGetDouble) {
   RETURN_REAL(ret);
 } END
 
+DEFINE3(NativeGtk_objectSetObject) {
+  DECLARE_OBJECT(obj, x0);
+  DECLARE_STRING(property, x1);
+  DECLARE_OBJECT(val, x2);
+
+  g_object_set(obj, property->ExportC(), val, NULL);
+  RETURN_UNIT;
+} END
+
 static void specialDeleteRangeEvent(GObject *obj,
                                     GtkTextIter *iter1,
                                     GtkTextIter *iter2, gpointer) {
