@@ -36,8 +36,18 @@
   <P>
     Welcome to the submission home page of team "Helikopter", formed for
     participation at the
-    <A HREF="http://www.cs.cornell.edu/icfp/">ICFP 2000 Functional Programming
+    <A href="http://www.cs.cornell.edu/icfp/">ICFP 2000 Functional Programming
     Contest</A>.
+  </P>
+
+  <P>
+    In this year's contest the
+    <A href="http://www.cs.cornell.edu/icfp/task.htm">task</A> was to write
+    a raytracing engine together with an interpreter for its Postscript-like
+    description language within 72 hours. With the resulting program you are
+    able to model and render arbitrary 3D sceneries. A special feature of the
+    rendering language was its procedural texturing where you pass
+    higher-order functions to describe the surface of each individual object.
   </P>
 
   <P>
@@ -127,7 +137,9 @@
       positions.
     </LI>
     <LI>
-      Total LOC is around 1300 (not counting generated files).
+      Total LOC is around 1300 (not counting generated files) which seems
+      pretty short compared to the other entries we have seen (even the Haskell
+      one...).
     </LI>
   </UL>
 
