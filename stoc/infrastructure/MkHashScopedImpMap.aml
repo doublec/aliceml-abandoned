@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import signature HASH_KEY     from "HASH_KEY-sig"
-import functor MkScopedImpMap from "MkScopedImpMap"
-import functor MkHashImpMap   from "MkHashImpMap"
+import signature HASH_KEY     from "../../lib/utility/HASH_KEY-sig"
+import functor MkScopedImpMap from "../../lib/utility/MkScopedImpMap"
+import functor MkHashImpMap   from "../../lib/utility/MkHashImpMap"
 
 functor MkHashScopedImpMap(Key: HASH_KEY) = MkScopedImpMap(MkHashImpMap(Key))

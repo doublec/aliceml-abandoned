@@ -13,8 +13,8 @@
 
 (* The Komponist *)
 
+import structure Url       from "../../lib/utility/Url"
 import signature SIGNATURE from "SIGNATURE-sig"
-import structure Url       from "../misc/Url"
 
 signature COMPOSER =
     sig

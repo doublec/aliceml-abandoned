@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import functor   MkHashImpMap  from "MkHashImpMap"
-import structure StringHashKey from "StringHashKey"
+import functor   MkHashImpMap  from "../../lib/utility/MkHashImpMap"
+import structure StringHashKey from "../../lib/utility/StringHashKey"
 
 structure StringMap = MkHashImpMap(StringHashKey)

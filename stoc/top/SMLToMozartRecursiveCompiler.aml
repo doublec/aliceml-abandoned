@@ -18,7 +18,7 @@ from "../../lib/system/TextIO"
 
 import
     structure Url
-from "../misc/Url"
+from "../../lib/utility/Url"
 
 import
     structure Crash

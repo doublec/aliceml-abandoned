@@ -128,24 +128,30 @@ LIBFUNDAMENTALSOURCES0 = \
 	Substring.aml Thread.aml Time.aml Toplevel.aml Vector.aml \
 	VectorPair.aml WideChar.aml WideString.aml Word.aml
 LIBSYSTEMSOURCES0 = $(NATIVECOMPONENTS:%=%.asig)
-MLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
+LIBUTILITYSOURCES0 = \
+	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
+	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
+	HASH_KEY-sig.aml LargeIntHashKey.aml StringHashKey.aml \
+	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
+	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
+	MkScopedImpMap.aml LIST_SORT-sig.aml MkListSort.aml \
+	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
+	PRETTY_PRINT-sig.aml PrettyPrint.aml
+LIBRTTSOURCES0 = \
+	NAME-sig.aml Name.aml LABEL-sig.aml Label.aml PATH-sig.aml Path.aml \
+	PathSet.aml PathMap.aml FIXITY-sig.aml Fixity.aml TYPE-sig.aml \
+	Type.aml INF-sig.aml Inf.aml PERVASIVE_TYPE-sig.aml \
+	MkPervasiveType.aml PervasiveType.aml PP_MISC-sig.aml PPMisc.aml \
+	PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml PPType.aml PP_INF-sig.aml \
+	PPInf.aml
+LIBMLYACCSOURCES0 = base-sig.aml join.aml lrtable.aml stream.aml parser2.aml
 
 LIBSOURCES = \
 	$(LIBFUNDAMENTALSOURCES0:%=lib/fundamental/%) \
 	$(LIBSYSTEMSOURCES0:%=lib/system/%) \
-	$(MLYACCSOURCES0:%=lib/ml-yacc/%)
-
-STOCMISCSOURCES0 = \
-	ASSERT-sig.aml Assert.aml HASH_KEY-sig.aml StringHashKey.aml \
-	LargeIntHashKey.aml IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml \
-	MkHashImpMap.aml SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml \
-	MkHashScopedImpSet.aml SCOPED_IMP_MAP-sig.aml MkScopedImpMap.aml \
-	MkHashScopedImpMap.aml StringMap.aml STAMP-sig.aml MkStamp.aml \
-	GLOBAL_STAMP-sig.aml GlobalStamp.aml PRETTY_PRINT-sig.aml \
-	PrettyPrint.aml PP_MISC-sig.aml PPMisc.aml URL-sig.aml Url.aml \
-	LIST_SORT-sig.aml MkListSort.aml DEPTH_FIRST_SEARCH-sig.aml \
-	MkDepthFirstSearch.aml
-STOCMISCSOURCES = $(STOCMISCSOURCES0:%=stoc/misc/%)
+	$(LIBUTILITYSOURCES0:%=lib/utility/%) \
+	$(LIBRTTSOURCES0:%=lib/rtt/%) \
+	$(LIBMLYACCSOURCES0:%=lib/ml-yacc/%)
 
 STOCINFRASTRUCTURESOURCES0 = \
 	CRASH-sig.aml Crash.aml SOURCE-sig.aml Source.aml ERROR-sig.aml \
@@ -153,29 +159,25 @@ STOCINFRASTRUCTURESOURCES0 = \
 	REPRESENTATION-sig.aml PHASE-sig.aml PHASE_ERROR-sig.aml \
 	ComposePhases.aml MkTracingPhase.aml MkResultDumpingPhase.aml \
 	MkContextDumpingPhase.aml EmptyContext.aml SIGNATURE-sig.aml \
-	COMPOSER-sig.aml TARGET-sig.aml
+	COMPOSER-sig.aml TARGET-sig.aml MkHashScopedImpSet.aml \
+	MkHashScopedImpMap.aml StringMap.aml PP_MISC-sig.aml PPMisc.aml
 STOCINFRASTRUCTURESOURCES = \
 	$(STOCINFRASTRUCTURESOURCES0:%=stoc/infrastructure/%)
 
 STOCCOMMONSOURCES0 = \
-	Stamp.aml StampSet.aml StampMap.aml NAME-sig.aml Name.aml \
-	LABEL-sig.aml Label.aml PATH-sig.aml Path.aml PathSet.aml PathMap.aml \
-	TYPE-sig.aml Type.aml PP_PATH-sig.aml PPPath.aml PP_TYPE-sig.aml \
-	PPType.aml FIXITY-sig.aml Fixity.aml INF-sig.aml Inf.aml \
-	PP_INF-sig.aml PPInf.aml INTERMEDIATE_GRAMMAR-sig.aml \
+	Stamp.aml StampSet.aml StampMap.aml INTERMEDIATE_GRAMMAR-sig.aml \
 	MkIntermediateGrammar.aml PP_INTERMEDIATE_GRAMMAR-sig.aml \
 	MkPPIntermediateGrammar.aml IntermediateGrammar.aml \
-	CHECK_INTERMEDIATE-sig.aml CheckIntermediate.aml \
-	PERVASIVE_TYPE-sig.aml MkPervasiveType.aml PervasiveType.aml \
+	CHECK_INTERMEDIATE-sig.aml CheckIntermediate.aml
+STOCCOMMONSOURCES = $(STOCCOMMONSOURCES0:%=stoc/common/%)
+
+STOCFRONTENDCOMMONSOURCES0 = \
 	LABEL_REFLECTION-sig.aml LabelReflection.aml \
 	PATH_REFLECTION-sig.aml PathReflection.aml \
 	TYPE_REFLECTION-sig.aml TypeReflection.aml \
 	PERVASIVE_TYPE_REFLECTION-sig.aml PervasiveTypeReflection.aml \
 	FIXITY_REFLECTION-sig.aml FixityReflection.aml \
-	INF_REFLECTION-sig.aml InfReflection.aml
-STOCCOMMONSOURCES = $(STOCCOMMONSOURCES0:%=stoc/common/%)
-
-STOCFRONTENDCOMMONSOURCES0 = \
+	INF_REFLECTION-sig.aml InfReflection.aml \
 	ABSTRACT_GRAMMAR-sig.aml MkAbstractGrammar.aml \
 	PP_ABSTRACT_GRAMMAR-sig.aml MkPPAbstractGrammar.aml \
 	AbstractGrammar.aml TypedGrammar.aml ENV-sig.aml Env.aml \
@@ -225,14 +227,14 @@ STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
 STOCTOPSOURCES = $(STOCTOPSOURCES0:%=stoc/top/%)
 
 STOCSOURCES = \
-	$(STOCMISCSOURCES) $(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
+	$(STOCINFRASTRUCTURESOURCES) $(STOCCOMMONSOURCES) \
 	$(STOCFRONTENDCOMMONSOURCES) $(STOCFRONTENDSMLSOURCES) \
 	$(STOCBACKENDCOMMONSOURCES) $(STOCBACKENDMOZARTSOURCES) \
 	$(STOCTOPSOURCES)
 ALLSOURCES = Init.oz $(LIBSOURCES) $(STOCSOURCES)
 
 SOURCEDIRS = \
-	lib lib/fundamental lib/system lib/ml-yacc \
+	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
 	stoc stoc/misc stoc/infrastructure stoc/common \
 	stoc/frontend-common stoc/frontend-sml \
 	stoc/backend-common stoc/backend-mozart stoc/top
@@ -287,7 +289,7 @@ Rel1.import: ../../lib/fundamental/Fundamental.import
 Rel2.import: ../../lib/fundamental/Fundamental.import
 	sed 's|x-alice:/|../../|g' < $< > $@
 
-build1/lib/fundamental/%: ../../lib/fundamental/%
+build1/lib/fundamental/%.aml: ../../lib/fundamental/%.aml
 	cp $< $@
 
 build1/lib/fundamental/RTT.aml: ../../lib/fundamental/RTTDummy.aml
@@ -299,10 +301,7 @@ build1/lib/system/%.oz: ../%.oz
 build1/lib/system/%.asig: ../../lib/system/%.asig Rel2.import
 	cat Rel2.import $< > $@
 
-build1/lib/ml-yacc/%.aml: ../../lib/ml-yacc/%.aml Rel2.import
-	cat Rel2.import $< > $@
-
-build1/stoc/misc/%.aml: ../../stoc/misc/%.aml Rel2.import
+build1/lib/%.aml: ../../lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/stoc/infrastructure/%.aml: ../../stoc/infrastructure/%.aml Rel2.import
@@ -404,12 +403,15 @@ build1/install/bin/%: %
 ### BUILD 2
 ########################################################################
 
-BUILD2DIRS = build2 build2/lib build2/lib/fundamental build2/lib/system
+BUILD2DIRS = \
+	build2 build2/lib build2/lib/fundamental build2/lib/system \
+	build2/lib/utility build2/lib/rtt
 BUILD2SOURCES = $(LIBFUNDAMENTALSOURCES0:%=build2/lib/fundamental/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib build2/install/lib/fundamental \
-	build2/install/lib/system
+	build2/install/lib/system build2/install/lib/utility \
+	build2/install/lib/rtt
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
 INSTALL2LIBFILES = \
@@ -426,6 +428,9 @@ INSTALL2FILES = \
 
 $(BUILD2DIRS):
 	mkdir -p $@
+
+build2/lib/fundamental/RTT.aml: build1/lib/fundamental/RTT.aml
+	cp $< $@
 
 build2/%.aml: build1/%.aml
 	cp $< $@
@@ -491,7 +496,8 @@ BUILD3SOURCES = $(ALLSOURCES:%=build3/%)
 
 INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib build3/install/lib/fundamental \
-	build3/install/lib/system
+	build3/install/lib/system build3/install/lib/utility \
+	build3/install/lib/rtt
 INSTALL3TOPFILES = stow.ozf stoc.ozf stot.ozf Default.import
 INSTALL3BINFILES = stow stoc stol stot
 INSTALL3LIBFILES = \

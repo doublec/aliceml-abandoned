@@ -11,7 +11,7 @@
  *)
 
 import signature SIGNATURE from "../infrastructure/SIGNATURE-sig"
-import structure Inf       from "../common/Inf"
+import structure Inf       from "../../lib/rtt/Inf"
 
 structure Signature : SIGNATURE =
 struct

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import signature HASH_KEY     from "HASH_KEY-sig"
-import functor MkScopedImpSet from "MkScopedImpSet"
-import functor MkHashImpSet   from "MkHashImpSet"
+import signature HASH_KEY     from "../../lib/utility/HASH_KEY-sig"
+import functor MkScopedImpSet from "../../lib/utility/MkScopedImpSet"
+import functor MkHashImpSet   from "../../lib/utility/MkHashImpSet"
 
 functor MkHashScopedImpSet(Item: HASH_KEY) = MkScopedImpSet(MkHashImpSet(Item))

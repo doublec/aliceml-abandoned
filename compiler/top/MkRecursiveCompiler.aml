@@ -28,7 +28,15 @@ from "../../lib/system/UnsafePickle"
 
 import
     structure Url
-from "../misc/Url"
+from "../../lib/utility/Url"
+
+import
+    structure Path
+from "../../lib/rtt/Path"
+
+import
+    structure Inf
+from "../../lib/rtt/Inf"
 
 import
     structure Crash
@@ -45,14 +53,6 @@ from "../infrastructure/Error"
 import
     signature COMPOSER
 from "../infrastructure/COMPOSER-sig"
-
-import
-    structure Path
-from "../common/Path"
-
-import
-    structure Inf
-from "../common/Inf"
 
 import
     structure Signature

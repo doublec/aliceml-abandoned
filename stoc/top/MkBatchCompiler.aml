@@ -24,7 +24,7 @@ from "../../lib/system/UnsafePickle"
 
 import
     structure Url
-from "../misc/Url"
+from "../../lib/utility/Url"
 
 import
     structure Crash
