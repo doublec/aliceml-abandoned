@@ -33,9 +33,17 @@ public:
     AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) EMPTYTAG);
     return (word) ((u_int) p | (u_int) BLKTAG);
   }
+  static Block *DirectDecodeBlock(word p) {
+    return (Block *) ((char *) p - (u_int) BLKTAG);
+  }
   static Block *DecodeBlock(word p) {
-    return (Block *) ((((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) ?
-		      ((char *) p - (u_int) BLKTAG) : INVALID_POINTER);
+    if (((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG)
+      return DirectDecodeBlock(p);
+    else
+      return (Block *) INVALID_POINTER;
+  }
+  static Chunk *DirectDecodeChunk(word p) {
+    return (Chunk *) ((char *) p - (u_int) BLKTAG);
   }
   static Chunk *DecodeChunk(word p) {
     if (((u_int) p & (u_int) TAGMASK) == (u_int) BLKTAG) {
@@ -49,9 +57,14 @@ public:
     AssertStore(((u_int) p & (u_int) TAGMASK) == (u_int) EMPTYTAG);
     return (word) ((u_int) p | (u_int) TRTAG);
   }
+  static Transient *DirectDecodeTransient(word p) {
+    return (Transient *) ((char *) p - (u_int) TRTAG);
+  }
   static Transient *DecodeTransient(word p) {
-    return (Transient *) ((((u_int) p & (u_int) TAGMASK) == (u_int) TRTAG) ?
-			  ((char *) p - (u_int) TRTAG) : INVALID_POINTER);
+    if (((u_int) p & (u_int) TAGMASK) == (u_int) TRTAG)
+      return DirectDecodeTransient(p);
+    else
+      return (Transient *) INVALID_POINTER;
   }
   // int Test
   static int IsInt(word v) {
@@ -63,23 +76,27 @@ public:
     AssertStore(v <= MAX_VALID_INT);
     return (word) ((((u_int) v) << 1) | (u_int) INTTAG);
   }
+  static int DirectDecodeInt(word v) {
+    return (int) (((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) ?
+		  ((1 << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) :
+		  ((u_int) v >> 1));
+  }
   static int DecodeInt(word v) {
-    // some things need to be done
-    if ((((u_int) v) & INTMASK) != INTTAG) {
+    if ((((u_int) v) & INTMASK) == INTTAG)
+      return DirectDecodeInt(v);
+    else
       return (int) INVALID_INT;
-    }
-    else {
-      return (int) (((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) ?
-		    ((1 << (STORE_WORD_WIDTH - 1)) | ((u_int) v >> 1)) : ((u_int) v >> 1));
-    }
   }
   static word EncodeUnmanagedPointer(void *v) {
     AssertStore(((u_int) v & (1 << (STORE_WORD_WIDTH - 1))) == 0);
     return (word) (((u_int) v << 1) | (u_int) INTTAG); 
   }
+  static void *DirectDecodeUnmanagedPointer(word v) {
+    return (void *) ((u_int) v >> 1);
+  }
   static void *DecodeUnmanagedPointer(word v) {
     AssertStore((u_int) v & INTMASK);
-    return (void *) ((u_int) v >> 1);
+    return DirectDecodeUnmanagedPointer(v);
   }
   static void EncodeHandler(Block *p, Handler *h) {
     AssertStore(p->GetLabel() == HANDLERBLOCK_LABEL);
