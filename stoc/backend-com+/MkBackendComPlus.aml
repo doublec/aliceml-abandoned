@@ -10,6 +10,58 @@
  *   $Revision$
  *)
 
+import
+    structure OS
+from "../../lib/system/OS"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
+    signature SWITCHES
+from "../infrastructure/SWITCHES-sig"
+
+import
+    signature PHASE
+from "../infrastructure/PHASE-sig"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    signature SIGNATURE
+from "../infrastructure/SIGNATURE-sig"
+
+import
+    structure MkTracingPhase
+from "../infrastructure/MkTracingPhase"
+
+import
+    signature TARGET
+from "../infrastructure/TARGET-sig"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    structure IL
+from "IL"
+
+import
+    structure CodeGenPhase
+from "CodeGenPhase"
+
 functor MkComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
     TARGET =
     struct
@@ -39,12 +91,16 @@ functor MkComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	    raise Crash.Crash "MkBackendComPlus.apply: not implemented"
     end
 
-functor MkBackendComPlus
-    (ComPlusTarget: TARGET where type t = IL.t): PHASE =
-    struct
-	structure C = EmptyContext
-	structure I = FlatGrammar
-	structure O = ComPlusTarget
+functor MkBackendComPlus(structure Switches: SWITCHES
+			 structure ComPlusTarget: TARGET
+			     where type t = IL.t): PHASE =
+    MkTracingPhase(structure Phase =
+		       struct
+			   structure C = EmptyContext
+			   structure I = FlatGrammar
+			   structure O = ComPlusTarget
 
-	val translate = CodeGenPhase.translate
-    end
+			   val translate = CodeGenPhase.translate
+		       end
+		   structure Switches = Switches
+		   val name = "Code Generation")
