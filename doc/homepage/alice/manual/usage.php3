@@ -81,11 +81,13 @@
     <LI>Setting up the Emacs SML mode
   </UL>
   <P>First make sure that the environment variables <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
-    point to the installation directory of the Mozart system and the Alice system, respectively.</P>
+    point to the installation directory of the Mozart system and
+    the Alice system, respectively.</P>
 
-  <P>Now you have to decide to either use SML mode version 3.3 or SML mode 3.9.3.
+  <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.5.
     Both of them have their advantages and disadvantages.
-    (Note: Within PSL the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
+    (Note: Within Programming Systems Lab
+    the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
 
   <P>To use SML mode version 3.3, install this
     <A HREF="sml-mode-3.3.tgz">archive</A>
@@ -100,8 +102,9 @@
        ;; Enable fontification
        (require 'sml-font)
   </PRE>
-  <P>To use SML mode version 3.9.3, extract this
-     <A HREF="sml-mode-3.9.3.tgz">archive</A>
+<<<<<<< usage.php3
+  <P>To use ml mode version 3.9.5, extract this
+     <A HREF="sml-mode-3.9.5.tgz">archive</A>
      and follow the installation instructions given in
     <TT>INSTALL</TT>. Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
     Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT> and adjust the
