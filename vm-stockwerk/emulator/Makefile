@@ -32,36 +32,14 @@ INTERPRETERSRCS = Interpreter.cc \
                   Unpickler.cc \
                   BootLinker.cc
 
-PRIMITIVESSRCS = Primitive.cc \
-                 PrimitiveTable.cc \
-                 Array.cc \
-                 Char.cc \
-                 Future.cc \
-                 General.cc \
-                 GlobalStamp.cc \
-                 Hole.cc \
-                 Int.cc \
-                 LargeWord.cc \
-                 List.cc \
-                 Math.cc \
-                 Option.cc \
-                 Real.cc \
-                 Ref.cc \
-                 String.cc \
-                 Thread.cc \
-                 Unqualified.cc \
-                 Unsafe.cc \
-                 Vector.cc \
-                 Word.cc
+PRIMITIVES = \
+	Unqualified Array Char Future General GlobalStamp Hole Int LargeWord \
+	List Math Option Real Ref String Thread Unsafe Vector Word
+PRIMITIVESSRCS = Primitive.cc PrimitiveTable.cc $(PRIMITIVES:%=%.cc)
 
-UNSAFESSRCS = UnsafeMkRefMap.cc \
-              UnsafeReflect.cc \
-              UnsafeIO.cc \
-              UnsafeComponent.cc \
-              UnsafeOS.cc \
-              UnsafeConfig.cc \
-              UnsafeDebug.cc \
-              UnsafeCommandLine.cc
+UNSAFE_SYSTEM = Config IO OS CommandLine Component Debug Rand Reflect
+UNSAFE_UTILITY = MkRefMap
+UNSAFESSRCS = $(UNSAFE_SYSTEM:%=Unsafe%.cc) $(UNSAFE_UTILITY:%=Unsafe%.cc)
 
 SRCS = $(GENERICSRCS) \
        $(PRIMITIVESSRCS) \

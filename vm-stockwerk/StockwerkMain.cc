@@ -38,7 +38,7 @@ extern word UnsafeCommandLine(void);
 extern word UnsafeComponent(void);
 extern word UnsafeDebug(void);
 //extern word UnsafeSocket(void); //--** missing
-//extern word UnsafeRand(void); //--** missing
+extern word UnsafeRand(void); //--** missing
 extern word UnsafeReflect(void);
 extern word UnsafeMkRefMap(void);
 //extern word UnsafeAddr(void); //--** missing
@@ -52,7 +52,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeComponent",   UnsafeComponent},
   {"lib/system/UnsafeDebug",       UnsafeDebug},
 //{"lib/system/UnsafeSocket",      UnsafeSocket}, //--** missing
-//{"lib/system/UnsafeRand",        UnsafeRand}, //--** missing
+  {"lib/system/UnsafeRand",        UnsafeRand},
   {"lib/system/UnsafeReflect",     UnsafeReflect},
   {"lib/utility/UnsafeMkRefMap",   UnsafeMkRefMap},
 //{"lib/utility/UnsafeAddr",       UnsafeAddr},
