@@ -12,12 +12,12 @@
  *   $Revision$
  *
  *)
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkSupport from "GtkSupport"
 
 signature DRAWING_AREA =
 sig
-    type tag = Gtk.object
+    type tag = GtkSupport.tag
     val canvas: tag
     val root: tag
-    val resize: real * real * Gtk.object * real * real * real * real -> unit
+    val resize: real * real * tag * real * real * real * real -> unit
 end
