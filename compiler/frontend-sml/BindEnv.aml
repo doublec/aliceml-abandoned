@@ -12,8 +12,8 @@
 
 import structure Crash              from "../infrastructure/Crash"
 import structure Source             from "../infrastructure/Source"
-import structure StringHashKey      from "../misc/StringHashKey"
-import structure MkHashScopedImpMap from "../misc/MkHashScopedImpMap"
+import structure StringHashKey      from "../../lib/utility/StringHashKey"
+import structure MkHashScopedImpMap from "../infrastructure/MkHashScopedImpMap"
 import structure Stamp              from "../common/Stamp"
 import structure Lab                from "Lab"
 import structure VId
