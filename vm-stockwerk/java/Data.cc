@@ -14,6 +14,8 @@
 #pragma implementation "java/Data.hh"
 #endif
 
+#include <cstdio>
+
 #include "generic/RootSet.hh"
 #include "generic/String.hh"
 #include "generic/Backtrace.hh"
@@ -75,7 +77,7 @@ public:
       Scheduler::currentArgs[0] = args;
       break;
     default:
-      Block *b = Store::DirectWordToBlock(args);
+      ::Block *b = Store::DirectWordToBlock(args);
       Assert(b->GetLabel() == ARGS_LABEL);
       for (u_int i = Scheduler::nArgs; i--; )
 	Scheduler::currentArgs[i] = b->GetArg(i);

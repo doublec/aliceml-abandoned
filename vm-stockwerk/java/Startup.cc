@@ -14,6 +14,8 @@
 #pragma implementation "java/Startup.hh"
 #endif
 
+#include <cstdio>
+
 #include "generic/String.hh"
 #include "generic/Worker.hh"
 #include "generic/Properties.hh"
