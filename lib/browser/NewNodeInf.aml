@@ -136,30 +136,27 @@ struct
 	if d > !(Settings.max_depth)
 	    then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,p,i,d,
 			      setGroup)
-	else let val uppercont = createContainer(createIValue(va,t,NO_ACTIONS),
-						 p,i,d,Array.array(3,Empty),
-						 ~1,~1,~1,setGroup)
-		 val s_begin = createSimple(INTERPUNCT,uppercont,0,d,"struct",
+	else let val a_length = 2 + List.length(ilist)
+		 val container = 
+	             createContainer(createIValue(va,t,NO_ACTIONS),
+				     p,i,d,Array.array(a_length,Empty),
+				     ~1,~1,~1,setGroup)
+		 val s_begin = createSimple(INTERPUNCT,container,0,d,"struct",
 					    DEFAULT,setGroup)
-		 val container = createContainer(INTERPUNCT,uppercont,1,d,
-						Array.array(List.length(ilist),
-							    Empty),
-						 ~1,~1,~1,setGroup)
-		 val s_end = createSimple(INTERPUNCT,uppercont,2,d,"end",
-					  DEFAULT,setGroup)
-	     in ( Array.update(getKids(uppercont),0,s_begin)
-		 ; Array.update(getKids(uppercont),1,container)
-		 ; Array.update(getKids(uppercont),2,s_end)
-                 ; setItems (va,ilist,container,d+1)
-		 ; uppercont )
-	     end 
+		 val s_end = createSimple(INTERPUNCT,container,a_length-1,d,
+					  "end",DEFAULT,setGroup)
+	     in ( Array.update(getKids(container),0,s_begin) 
+		 ; Array.update(getKids(container),a_length-1,s_end) 
+                 ; setItems (va,ilist,container,d+1) 
+		 ; container ) 
+	     end   
 
     (* setItems *)
     and setItems (va,ilist,p,d) = 
-	let val l = ref 0
-	in while !l <= List.length(ilist) - 1 do
+	let val l = ref 1
+	in while !l <= List.length(ilist) do
 	    (let val node = let val vv = UnsafeValue.cast va
-				val item = (List.nth(ilist,!l))
+				val item = (List.nth(ilist,!l-1))
 				val label = itemToLabel(item)
 				val in_vv = UnsafeValue.projPoly(vv,label)
 			    in createItemNode(in_vv,item,p,!l,d) 
