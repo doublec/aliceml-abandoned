@@ -166,6 +166,14 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/date.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Debug">
+			<param name="Local" value="library/sf-debug.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Engine">
+			<param name="Local" value="library/sf-distributed.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Exn">
 			<param name="Local" value="library/exn.html">
 			</OBJECT>
@@ -322,6 +330,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 			<param name="Local" value="library/pair.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Path">
+			<param name="Local" value="library/sf-path.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Pickle">
 			<param name="Local" value="library/pickle.html">
 			</OBJECT>
@@ -332,6 +344,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Print">
 			<param name="Local" value="library/print.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Problem">
+			<param name="Local" value="library/sf-problem.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Promise">
@@ -364,6 +380,10 @@ NOTE: Any page hooked in here must also be added to sitemap.html!
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Search">
 			<param name="Local" value="library/search.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Search (search-factory)">
+			<param name="Local" value="library/sf-search.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Socket">
