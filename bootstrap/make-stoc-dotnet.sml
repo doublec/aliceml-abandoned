@@ -25,18 +25,15 @@ local
 	end
 
     fun stoc args = SMLToComPlusBatchCompiler.stoc args
-	handle Crash.Crash message =>
-		(TextIO.output (TextIO.stdErr, "CRASH: " ^ message ^ "\n");
-		 OS.Process.failure)
-	     | e =>
-		let
-		    val hist  = List.rev(SMLofNJ.exnHistory e)
-		    val trace = String.concat(List.map (fn s => s ^ "\n") hist)
-		in
-		    TextIO.output (TextIO.stdErr, "uncaught exception " ^
-						  exnName e ^ ":\n" ^ trace);
-		    OS.Process.failure
-		end
+	handle e =>
+	let
+	    val hist  = List.rev(SMLofNJ.exnHistory e)
+	    val trace = String.concat(List.map (fn s => s ^ "\n") hist)
+	in
+	    TextIO.output (TextIO.stdErr, "uncaught exception " ^
+					  exnName e ^ ":\n" ^ trace);
+	    OS.Process.failure
+	end
 
     fun main _ = OS.Process.exit (stoc (getArgs ()))
 in
