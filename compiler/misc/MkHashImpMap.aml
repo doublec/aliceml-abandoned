@@ -38,6 +38,10 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun hash(t,k)		= Key.hash k mod Array.length t
     fun isEntryFor k (k',_)	= k = k'
 
+    fun member((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
+				    List.exists (isEntryFor k) kas
+				  end
+
     fun lookup((ref t,_), k)	= let val kas = Array.sub(t, hash(t,k)) in
 				    Option.map #2 (List.find (isEntryFor k) kas)
 				  end

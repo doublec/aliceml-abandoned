@@ -29,6 +29,7 @@ signature IMP_MAP =
     val lookup :	'a map * key -> 'a option
     val lookupExistent:	'a map * key -> 'a		(* Lookup *)
 
+    val member :	'a map * key -> bool
     val size :		'a map -> int
     val isEmpty :	'a map -> bool
 

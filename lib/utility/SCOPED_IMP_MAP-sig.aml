@@ -47,6 +47,9 @@ signature SCOPED_IMP_MAP =
     val lookupExistent :	'a map * key -> 'a		(* Lookup *)
     val lookupExistentScope :	'a map * key -> 'a		(* Lookup *)
 
+    val member :		'a map * key -> bool
+    val memberScope :		'a map * key -> bool
+
     val size :			'a map -> int
     val sizeScope :		'a map -> int
 

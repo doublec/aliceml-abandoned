@@ -43,6 +43,10 @@ functor MakeScopedImpMap(ImpMap: IMP_MAP) :>
     fun lookupScope(ref ms, k)		= ImpMap.lookup(List.hd ms, k)
     fun lookupExistentScope(ref ms, k)	= ImpMap.lookupExistent(List.hd ms, k)
 
+    fun member(ref ms, k)	= ( lookup'(ms, k) ; true )
+				  handle Lookup _ => false
+    fun memberScope(ref ms, k)	= ImpMap.member(List.hd ms, k)
+
     fun isEmptyScope(ref ms)	= ImpMap.isEmpty(List.hd ms)
     fun isEmpty(ref ms)		= List.all ImpMap.isEmpty ms
 
