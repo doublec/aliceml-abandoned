@@ -169,17 +169,18 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			    Target.COMPONENT {component, ...} =>
 				valOf (Component.sign (component ()))
 			  | Target.FOREIGN {sign, ...} => sign
-		    val inf = (valOf (#3 (Inf.asInfItem (List.hd (Inf.items
-						(Signature.toSig sign)))))
+		    val inf = (Inf.asSingKind
+			       (#2 (Inf.asInfItem
+				    (List.hd (Inf.items
+					      (Signature.toSig sign)))))
 			      handle Future.Future e => raise Future.innerExn e)
-			      handle e as ( Inf.Interface | List.Empty
-			             | Inf.Item | Option.Option) =>
+			      handle e as ( Inf.Interface | Inf.Kind | Inf.Item
+			             | List.Empty | Option.Option) =>
 				Error.error (Source.nowhere,
 					"signature file " ^ sigFilename ^
 					" does not contain a proper\
 					\ signature declaration")
 		in
-		    Inf.strengthen (Path.invent(), inf);
 		    Signature.fromSig (Inf.asSig inf)
 		end
 	in
