@@ -22,15 +22,7 @@ SRCTOP = $(srcdir)/..
 include $(BUILDTOP)/Makefile.vars
 include $(SRCTOP)/Makefile.rules
 
-LIGHTNING_SOURCES0 = JITStore.cc
-
-ifdef LIGHTNING
-LIGHTNING_SOURCES = $(LIGHTNING_SOURCES0)
-else
-LIGHTNING_SOURCES =
-endif
-
-SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc $(LIGHTNING_SOURCES)
+SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc JITStore.cc
 OBJS = $(SOURCES:%.cc=%.o)
 
 all: StoreConfig.hh $(OBJS)
