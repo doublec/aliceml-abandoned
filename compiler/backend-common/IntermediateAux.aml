@@ -398,6 +398,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.FunAppExp (_, id, _, args), set, used, _) =
 	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.FailExp _, _, _, _) = ()
 	and usedVarsBody (stm::stms, set, used, shared) =
 	    (usedVarsStm (stm, set, used, shared);
 	     usedVarsBody (stms, set, used, shared))

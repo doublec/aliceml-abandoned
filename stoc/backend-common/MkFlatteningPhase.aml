@@ -729,21 +729,7 @@ functor MkFlatteningPhase(val loadSign:
 			   O.IdDef (translateId exnId), handleBody)]
 	    end
 	  | translateExp (FailExp info, f, cont) =
-	    let
-		val region = #region info
-		val info' = {region = region}
-		val holeId = O.freshId info'
-		val exnId = O.freshId info'
-	    in
-		O.ValDec (stm_info region, O.IdDef holeId,
-			  O.PrimAppExp (info', "Hole.hole", #[]))::
-		O.ValDec (stm_info region, O.IdDef exnId,
-			  O.PrimExp (info', "Hole.Hole"))::
-		O.ValDec (stm_info region, O.Wildcard,
-			  O.PrimAppExp (info', "Hole.fail",
-					#[holeId, exnId]))::
-		f (O.VarExp (info', holeId))::translateCont cont
-	    end
+	    f (O.FailExp {region = #region info})::translateCont cont
 	  | translateExp (LazyExp (info as {region, typ}, exp), f, cont) =
 	    let
 		val r = ref NONE

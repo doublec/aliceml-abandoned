@@ -146,6 +146,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | RefAppExp of exp_info * id
 	  | SelAppExp of exp_info * prod * label * int * id
 	  | FunAppExp of exp_info * id * stamp * id args
+	  | FailExp of exp_info
 	withtype body = stm list
 
 	type sign = Signature.t

@@ -319,6 +319,8 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
 	    (outputTuple (q, "FunAppExp", 4); outputArgs outputId (q, args);
 	     outputStamp (q, stamp); outputId (q, id); outputExpInfo (q, info))
+	  | outputExp (q, FailExp info) =
+	    (outputTuple (q, "FailExp", 1); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
 	fun parseDesc desc =

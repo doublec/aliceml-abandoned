@@ -229,6 +229,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | RefAppVal of idDef
 	  | CaughtExnVal of id
 	  | UnknownVal
+	  | FailedVal
 
 	fun mapArgs f (OneArg x) = OneArg (f x)
 	  | mapArgs f (TupArgs xs) = TupArgs (Vector.map f xs)
@@ -262,6 +263,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | expToValue (RefAppExp (_, id)) = RefAppVal (IdDef id)
 	  | expToValue (SelAppExp (_, _, _, _, _)) = UnknownVal
 	  | expToValue (FunAppExp (_, _, _, _)) = UnknownVal
+	  | expToValue (FailExp _) = FailedVal
 
 	(*
 	 * For each identifier, we store in the environment whether it
@@ -1046,6 +1048,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    doSel (info, prod, label, n, deref (id, env), env)
 	  | vpExp (FunAppExp (info, id, stamp, args), env, _, _) =
 	    FunAppExp (info, id, stamp, derefArgs (args, env))
+	  | vpExp (FailExp info, _, _, _) = FailExp info
 	and vpBody (stm::stms, env, isToplevel, shared, export) =
 	    vpStm (stm, env, isToplevel, shared, export)::
 	    vpBody (stms, env, isToplevel, shared, export)

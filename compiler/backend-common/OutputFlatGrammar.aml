@@ -276,6 +276,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ #[S "#", S (Label.toString label), S "/", I n, S " ", ID id]
 	  | outputExp (FunAppExp (_, id, _, args)) =
 	    SEQ #[ID id, S " ", outputArgs ID args]
+	  | outputExp (FailExp _) = S "fail"
 	and outputBody (stms, shared) =
 	    SEP (NL, Vector.fromList (List.map
 				      (fn stm =>

@@ -291,6 +291,7 @@ structure LivenessAnalysisPhase1 :>
 	  | scanExp (SelAppExp (_, _, _, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
+	  | scanExp (FailExp _, lset) = lset
 
 	fun translate () (_, component as (_, body, _, _)) =
 	    (scanBody body; component)

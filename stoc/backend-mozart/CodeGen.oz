@@ -110,8 +110,7 @@ define
       case Coord of pos(Filename I J) then ExnReg VInter in
 	 {State.cs newReg(?ExnReg)}
 	 VInter = vCallBuiltin(_ 'Exception.raiseError' [ExnReg] Coord nil)
-	 vEquateRecord(_ kernel 4 ExnReg [constant(noElse) constant(Filename)
-					  constant(I) constant(J)] VInter)
+	 vEquateConstant(_ kernel(noElse Filename I J) ExnReg VInter)
       end
    end
 
@@ -553,6 +552,13 @@ define
 		    {TranslateRegion Region State} VTl)
       [] 'FunAppExp'(Region Id _ Args) then
 	 {TranslateExp 'VarAppExp'(Region Id Args) Reg VTl State}
+      [] 'FailExp'(Region) then Coord in
+	 Coord = {TranslateRegion Region State}
+	 case Coord of pos(Filename I J) then ExnReg VInter in
+	    {State.cs newReg(?ExnReg)}
+	    VInter = vCallBuiltin(_ 'Value.byNeedFail' [ExnReg Reg] Coord VTl)
+	    vEquateConstant(_ alice(failed Filename I J) ExnReg VInter)
+	 end
       end
    end
 

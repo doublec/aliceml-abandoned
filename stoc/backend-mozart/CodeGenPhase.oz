@@ -191,6 +191,7 @@ define
 	 'SelAppExp'({TrInfo Info} {TrProd Prod} {TrLabel Label} N {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
 	 'FunAppExp'({TrInfo Info} {TrId Id} Stamp {TrArgs Args TrId})
+      [] 'FailExp'(Info) then 'FailExp'({TrInfo Info})
       end
    end
 

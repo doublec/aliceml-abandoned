@@ -461,6 +461,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateExp (FunAppExp (info, id, _, args), id', instr, env) =
 	    (*--** translate to AppConst *)
 	    translateExp (VarAppExp (info, id, args), id', instr, env)
+	  | translateExp (FailExp info, id', instr, env) = (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.translateExp: FailExp"
 	and translateIgnore (LitExp (_, _), instr, _) = instr
 	  | translateIgnore (PrimExp (_, _), instr, _) = instr
 	  | translateIgnore (NewExp _, instr, _) = instr
@@ -488,6 +490,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	  | translateIgnore (FunAppExp (info, id, _, args), instr, env) =
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
+	  | translateIgnore (FailExp _, instr, _) = instr
 
 	fun translate () (desc, (imports, body, _, sign)) =
 	    let
