@@ -16,7 +16,9 @@
 
 #include "java/ClassLoader.hh"
 #include "java/JavaLanguageLayer.hh"
+#include "java/ByteCodeInterpreter.hh"
 
 void JavaLanguageLayer::Init() {
   ClassLoader::Init();
+  ByteCodeInterpreter::Init();
 }
