@@ -263,12 +263,11 @@ structure Buffer =
 	  let
               val startiter = Gtk.textIterNew()
               val enditer = Gtk.textIterNew()
-	      val _ = Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
-	      val _ = Gtk.textIterSetLine(startiter,
-					  Gtk.textIterGetLine startiter)
-	      val _ = Gtk.textIterGetLineOffset enditer = 0 orelse
-		      Gtk.textIterForwardLine enditer
 	  in
+	      Gtk.textBufferGetSelectionBounds(buf, startiter, enditer);
+	      Gtk.textIterSetLineOffset(startiter, 0);
+	      Gtk.textIterGetLineOffset enditer = 0
+	      orelse Gtk.textIterForwardLine enditer;
 	      selectRange(buf, startiter, enditer)
 	  end
 
