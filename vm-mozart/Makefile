@@ -135,6 +135,7 @@ LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES = \
 	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
+	lib/system/UnsafeValue.ozf \
 	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
 
 LIBFUNDAMENTALSOURCES0 = \
@@ -156,7 +157,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	WideChar.aml WideString.aml Word.aml Word8.aml Word8Vector.aml \
 	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
-	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
+	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) UnsafeValue.asig \
 	CONFIG-sig.aml IO-sig.aml BIN_IO-sig.aml BinIO.aml \
 	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
 	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml COMPONENT-sig.aml \
@@ -678,7 +679,7 @@ INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
-	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) \
+	$(filter %.ozf, $(LIBSOURCES0:%.asig=%.ozf)) system/UnsafeValue.asig \
 	fundamental/Fundamental.ozf
 INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
