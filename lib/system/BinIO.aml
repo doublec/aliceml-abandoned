@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure UnsafeIODesc from "UnsafeIODesc"
+import structure IODesc       from "IODesc"
 import structure IO           from "IO"
 import structure BinPrimIO    from "BinPrimIO"
 import structure StreamIO     from "StreamIO"
@@ -29,117 +29,11 @@ structure BinIO :> BIN_IO =
 			 structure Vector = Word8Vector)
 	open BinImperativeIO
 
-	fun mkReader iodesc =
-	    let
-		val cap = UnsafeIODesc.capabilities iodesc
-		val rcap = UnsafeIODesc.readerCapabilities iodesc
-	    in
-		BinPrimIO.RD
-		    {name = UnsafeIODesc.name iodesc,
-		     chunkSize = UnsafeIODesc.chunkSize iodesc,
-		     readVec =
-			 if #readVec rcap then
-			     SOME (fn n => UnsafeIODesc.readVec (iodesc, n))
-			 else NONE,
-		     readArr =
-			 if #readArr rcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.readArr
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     readVecNB =
-			 if #readVecNB rcap then
-			     SOME (fn n => UnsafeIODesc.readVecNB (iodesc, n))
-			 else NONE,
-		     readArrNB =
-			 if #readArrNB rcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.readArrNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     block =
-			 if #block cap then
-			     SOME (fn () => UnsafeIODesc.block iodesc)
-			 else NONE,
-		     canInput =
-			 if #canInput rcap then
-			     SOME (fn () => UnsafeIODesc.canInput iodesc)
-			 else NONE,
-		     avail = fn () => UnsafeIODesc.avail iodesc,
-		     getPos = NONE, (*--** *)
-		     setPos =
-			 if #setPos cap then
-			     SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
-			 else NONE,
-		     endPos =
-			 if #endPos cap then
-			     SOME (fn () => UnsafeIODesc.endPos iodesc)
-			 else NONE,
-		     verifyPos =
-			 if #verifyPos cap then
-			     SOME (fn () => UnsafeIODesc.verifyPos iodesc)
-			 else NONE,
-		     close = fn () => UnsafeIODesc.close iodesc,
-		     ioDesc = SOME iodesc}
-	    end
-
-	fun mkWriter iodesc =
-	    let
-		val cap = UnsafeIODesc.capabilities iodesc
-		val wcap = UnsafeIODesc.writerCapabilities iodesc
-	    in
-		BinPrimIO.WR
-		    {name = UnsafeIODesc.name iodesc,
-		     chunkSize = UnsafeIODesc.chunkSize iodesc,
-		     writeVec =
-			 if #writeVec wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeVec
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeArr =
-			 if #writeArr wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeArr
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeVecNB =
-			 if #writeVecNB wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeVecNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     writeArrNB =
-			 if #writeArrNB wcap then
-			     SOME (fn {buf, i, sz} => UnsafeIODesc.writeArrNB
-							  {iodesc, buf, i, sz})
-			 else NONE,
-		     block =
-			 if #block cap then
-			     SOME (fn () => UnsafeIODesc.block iodesc)
-			 else NONE,
-		     canOutput =
-			 if #canOutput wcap then
-			     SOME (fn () => UnsafeIODesc.canOutput iodesc)
-			 else NONE,
-		     getPos = NONE, (*--** *)
-		     setPos =
-			 if #setPos cap then
-			     SOME (fn pos => UnsafeIODesc.setPos (iodesc, pos))
-			 else NONE,
-		     endPos =
-			 if #endPos cap then
-			     SOME (fn () => UnsafeIODesc.endPos iodesc)
-			 else NONE,
-		     verifyPos =
-			 if #verifyPos cap then
-			     SOME (fn () => UnsafeIODesc.verifyPos iodesc)
-			 else NONE,
-		     close = fn () => UnsafeIODesc.close iodesc,
-		     ioDesc = SOME iodesc}
-	    end
-
 	fun openIn name =
 	    let
-		val iodesc = UnsafeIODesc.openIn name
+		val reader = BinPrimIO.RD (IODesc.openIn name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openIn", name}
-		val reader = mkReader iodesc
 		val v = Word8Vector.fromList nil
 	    in
 		BinImperativeIO.mkInstream (BinStreamIO.mkInstream (reader, v))
@@ -147,10 +41,9 @@ structure BinIO :> BIN_IO =
 
 	fun openOut name =
 	    let
-		val iodesc = UnsafeIODesc.openOut name
+		val writer = BinPrimIO.WR (IODesc.openOut name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openOut", name}
-		val writer = mkWriter iodesc
 	    in
 		BinImperativeIO.mkOutstream
 		    (BinStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
@@ -158,10 +51,9 @@ structure BinIO :> BIN_IO =
 
 	fun openAppend name =
 	    let
-		val iodesc = UnsafeIODesc.openAppend name
+		val writer = BinPrimIO.WR (IODesc.openAppend name)
 		    handle cause =>
 			raise IO.Io {cause, function = "openAppend", name}
-		val writer = mkWriter iodesc
 	    in
 		BinImperativeIO.mkOutstream
 		    (BinStreamIO.mkOutstream (writer, IO.BLOCK_BUF))
