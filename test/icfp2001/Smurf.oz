@@ -226,9 +226,10 @@ define
 		   {Collect V.I.eqdown}
 		end
 
-      for I in FirstNonRootI..LastNonRootI do W in
+      for I in FirstElementI..LastElementI do W in
 	 W = V.I
-	 W.down = {Select.union Eqdowns W.daughters}
+%	 W.down = {Select.union Eqdowns W.daughters}
+	 W.down = {FS.union W.downE W.scope}
 	 W.eqdown = {FS.partition [{FS.value.singl I} W.down]}
       end
 
@@ -315,7 +316,6 @@ define
 	 W.downE = {SeqUnion EqdownEs W.daughtersE}
 	 {FS.int.convex W.eqdownE}
 	 W.isDownEmpty = {FS.reified.equal W.down FS.value.empty}
-	 W.down = {FS.union W.downE W.scope}
       end
 
 %--**
