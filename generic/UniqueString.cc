@@ -14,7 +14,7 @@
 #pragma implementation "generic/UniqueString.hh"
 #endif
 
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
 #include "generic/UniqueString.hh"
 
@@ -23,21 +23,20 @@ static const u_int initialTableSize = 16; // to be checked
 static word uniqueStringTable;
 
 void UniqueString::Init() {
-  uniqueStringTable =
-    HashTable::New(HashTable::BLOCK_KEY, initialTableSize)->ToWord();
+  uniqueStringTable = ChunkMap::New(initialTableSize)->ToWord();
   RootSet::Add(uniqueStringTable);
 }
 
 UniqueString *UniqueString::New(String *string) {
-  HashTable *hashTable = HashTable::FromWordDirect(uniqueStringTable);
+  ChunkMap *map = ChunkMap::FromWordDirect(uniqueStringTable);
   word key = string->ToWord();
-  if (hashTable->IsMember(key)) {
-    return UniqueString::FromWordDirect(hashTable->GetItem(key));
+  if (map->IsMember(key)) {
+    return UniqueString::FromWordDirect(map->Get(key));
   } else {
     Block *b = Store::AllocBlock(UNIQUESTRING_LABEL, SIZE);
     b->InitArg(STRING_POS, key);
     b->InitArg(HASH_VALUE_POS, Store::IntToWord(string->Hash()));
-    hashTable->InsertItem(key, b->ToWord());
+    map->Put(key, b->ToWord());
     return static_cast<UniqueString *>(b);
   }
 }
