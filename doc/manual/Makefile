@@ -52,7 +52,8 @@ INSTALLFILES_EXAMPLES_0 = \
 INSTALLFILES_EXAMPLES_INTERPRETER_0 = \
 	Token.aml Syntax.aml LEXER-sig.aml Lexer.aml PARSER-sig.aml \
 	Parser.aml ENV-sig.aml Env.aml TYPE-sig.aml Type.aml VALUE-sig.aml \
-	Value.aml ELAB-sig.aml Elab.aml EVAL-sig.aml Eval.aml Main.aml README
+	Value.aml ELAB-sig.aml Elab.aml EVAL-sig.aml Eval.aml Main.aml \
+	Makefile README
 INSTALLFILES_EXAMPLES_INTERPRETER = \
 	$(INSTALLFILES_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/examples/interpreter/%)
 INSTALLFILES = \
