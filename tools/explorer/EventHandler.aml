@@ -23,6 +23,7 @@ import structure ExplorerNode   from "ExplorerNode"
 import structure ExplorerSearch from "ExplorerSearch"
 import structure OptionsWindow  from "OptionsWindow"
 import structure ExplorerGUI    from "ExplorerGUI"
+import structure SaveWindow     from "SaveWindow"
 
 structure EventHandler =
   struct
@@ -297,4 +298,6 @@ structure EventHandler =
   fun zoomToFitHandler (serve, state : Types.explorer_state option ref) _ =
       serve (fn () => zoomToFit state)
 
+  fun saveHandler (serve, state : Types.explorer_state option ref) _ =
+      serve (fn () => SaveWindow.newSaveWindow(serve, state))
 end

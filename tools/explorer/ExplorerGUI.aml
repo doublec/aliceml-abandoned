@@ -6,8 +6,6 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-import structure Url from "x-alice:/lib/system/Url"
-
 structure ExplorerGUI =
   struct
     structure Helpers = struct
@@ -28,7 +26,6 @@ structure ExplorerGUI =
     val _ = Gtk.widgetShow menuitem1
     val menuitem1_menu = Gtk.menuNew()
     val save = Gtk.imageMenuItemNewFromStock("gtk-save",Helpers.accelGroup)
-    val _ = Gtk.widgetSetSensitive(save,false)
     val _ = Gtk.widgetShow save
     val save_as = Gtk.imageMenuItemNewFromStock("gtk-save-as",Helpers.accelGroup)
     val _ = Gtk.widgetSetSensitive(save_as,false)

@@ -103,7 +103,7 @@ structure MainWindow :> MAINWINDOW =
 
           structure Signals : EXPLORERGUISIGNALS_SIG =
             struct
-              fun on_save_activate _ = ()
+              val on_save_activate = EventHandler.saveHandler (serve, state)
               fun on_save_as_activate _ = ()
               val on_reset_activate =
                   EventHandler.resetHandler

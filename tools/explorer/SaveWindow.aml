@@ -1,0 +1,116 @@
+(*
+ * Authors:
+ *   Guido Tack <tack@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Guido Tack, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Gtk   from "x-alice:/lib/gtk/Gtk"
+import structure Core  from "x-alice:/lib/gtk/Core"
+import structure PS from "x-alice:/lib/postscript/PS"
+import structure Types          from "Types"
+
+structure SaveWindow =
+  struct
+  
+  val black = {r=0.0,g=0.0,b=0.0}
+  val blue = {r=0.39,g=0.44,b=1.0}
+  val white = {r=1.0,g=1.0,b=1.0}
+  val red = {r=0.93,g=0.17,b=0.17}
+  val green = {r=0.23,g=0.7,b=0.44}
+  val lightgray = {r=0.92,g=0.92,b=0.92}
+
+  fun negP(x,y)=(x,~y)
+  fun psChoice center = PS.Circle {center=negP center,
+                                        radius=10,
+                                        outline=black,
+                                        fill=blue}
+  fun psUnknown(x,y) = PS.Triangle {c1=(x,~y+10),
+                                         c2=(x-9,~y-9),
+                                         c3=(x+9,~y-9),
+                                         outline=black,
+                                         fill=lightgray}  
+  fun psFailed(c1,c2) = PS.Rectangle {c1=negP c1,c2=negP c2,
+                                           outline=black,
+                                           fill=red}
+  fun psSolved c1 = PS.Diamond {c1=negP c1,radius=10,
+                                     outline=black,
+                                     fill=green}
+  fun psLine(c1,c2) = PS.Line {a=negP c1,b=negP c2,
+                                    outline=black}
+  fun psHidden(x,y) = PS.Triangle {c1=(x,~y+10),
+                                        c2=(x-16,~y-38),
+                                        c3=(x+16,~y-38),
+                                        outline=black,
+                                        fill=red}
+
+  fun buildPsTree depth momX (Types.N ({offset,status,hidden,...},_,children)) =
+      let
+          val myX = momX+(!offset) div 256
+          val myY = depth*38
+          val node =  if !hidden then
+                          psHidden(myX,myY)
+                      else case !status of
+                          Types.FAILED => psFailed((myX-7,myY-7),(myX+7,myY+7))
+                        | Types.SOLVED => psSolved(myX,myY+10)
+                        | Types.CHOICE => psChoice(myX,myY)
+                        | Types.UNKNOWN => psUnknown(myX,myY)
+          val connection = if depth=0 then NONE
+                           else if !hidden then
+                               SOME (psLine((myX,myY-10),(momX,myY-28)))
+                           else case !status of
+                                    Types.FAILED => SOME (psLine((myX,myY-7),(momX,myY-28)))
+                                  | Types.SOLVED => SOME (psLine((myX,myY-10),(momX,myY-28)))
+                                  | Types.CHOICE => SOME (psLine((myX,myY-10),(momX,myY-28)))
+                                  | Types.UNKNOWN => SOME (psLine((myX,myY-10),(momX,myY-28)))
+          val children = if !hidden then nil else
+                         List.concat (List.map (buildPsTree (depth+1) myX) (Vector.toList (!children)))
+      in
+          case connection of NONE =>
+                             node::children
+                           | SOME c => c::node::children
+      end
+
+  fun showErrorWindow sw msg =
+      let
+          val md = Gtk.messageDialogNew(sw, Gtk.DIALOG_MODAL,
+                                        Gtk.MESSAGE_ERROR, Gtk.BUTTONS_CLOSE,
+                                        msg, Core.LIST nil)
+      in
+          Gtk.dialogRun md;
+          Gtk.widgetDestroy md
+      end
+
+  fun okHandler (sw, serve, state : Types.explorer_state option ref) _ =
+      serve (fn () =>
+                case !state of SOME {tree={tree,...},...} =>
+                let
+                    val filename = Gtk.fileSelectionGetFilename sw
+                in
+                    ((PS.emit (filename, buildPsTree 0 0 (!tree)))
+                     handle _ => 
+                            showErrorWindow sw "Something went wrong!\n");
+                    Gtk.widgetDestroy sw
+                end
+                             | NONE => ())
+
+  fun cancelHandler sw _ = Gtk.widgetDestroy sw
+
+  fun newSaveWindow (serve, state : Types.explorer_state option ref) =
+      let
+          val sw = Gtk.fileSelectionNew("Save as PostScript")
+          val ok = Gtk.fileSelectionGetFieldOkButton sw
+          val cancel = Gtk.fileSelectionGetFieldCancelButton sw
+      in
+          Gtk.fileSelectionSetFilename(sw, "tree.eps");
+          Gtk.signalConnect(ok, "clicked", okHandler (sw, serve, state));
+          Gtk.signalConnect(cancel, "clicked", cancelHandler sw);
+          Gtk.widgetShowAll sw
+      end
+
+  end

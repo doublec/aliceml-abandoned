@@ -6,8 +6,6 @@
 
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 
-import structure Url from "x-alice:/lib/system/Url"
-
 import structure ExplorerGUI from "ExplorerGUI"
 
 signature EXPLORERGUISIGNALS_SIG =
