@@ -36,7 +36,8 @@ structure Resolver: RESOLVER =
 		exception Syntax
 
 		fun expandUrl url =
-		    Url.resolve (Url.fromString (OS.FileSys.getDir ())) url
+		    Url.resolve (Url.fromString (OS.FileSys.getDir () ^ "/"))
+				url
 
 		fun baseUrl url =
 		    let
