@@ -11,13 +11,13 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/PushCallInterpreter.hh"
+#pragma implementation "generic/PushCallInterpreter.hh"
 #endif
 
 #include <cstdio>
-#include "emulator/TaskStack.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/PushCallInterpreter.hh"
+#include "generic/TaskStack.hh"
+#include "generic/Scheduler.hh"
+#include "generic/PushCallInterpreter.hh"
 
 // PushCall Frame
 class PushCallFrame : private StackFrame {
