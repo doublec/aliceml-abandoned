@@ -22,9 +22,9 @@
 #include "store/Store.hh"
 
 #define WORDS_NEEDED(n, t) \
-  ((sizeof(t) * n + sizeof(word) - 1) / sizeof(word))
+  ((sizeof(t) * n + sizeof(u_int) - 1) / sizeof(u_int))
 #define MAX_SIZE(t) \
-  (MAX_BLOCKSIZE * sizeof(word) / sizeof(t))
+  (MAX_BLOCKSIZE * sizeof(u_int) / sizeof(t))
 
 class Alice {
 public:
@@ -215,27 +215,24 @@ public:
   }
 };
 
-class Real: private Block {
-private:
-  static const u_int SIZE = WORDS_NEEDED(1, double);
+class Real: private Chunk {
 public:
   using Block::ToWord;
 
-  static Real *New(double v) {
-    Block *b = Store::AllocChunk(SIZE);
-    memcpy(b->GetBase(), &v, sizeof(double));
-    return static_cast<Real *>(b);
+  static Real *New(double value) {
+    Chunk *chunk = Store::AllocChunk(sizeof(double));
+    memcpy(chunk->GetBase(), &value, sizeof(double));
+    return static_cast<Real *>(chunk);
   }
   static Real *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == CHUNK_LABEL && b->GetSize() == SIZE);
-    return static_cast<Real *>(b);
+    Chunk *chunk = Store::WordToChunk(x);
+    Assert(chunk == INVALID_POINTER || chunk->GetSize() == sizeof(double));
+    return static_cast<Real *>(chunk);
   }
   static Real *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CHUNK_LABEL && b->GetSize() == SIZE);
-    return static_cast<Real *>(b);
+    Chunk *chunk = Store::DirectWordToChunk(x);
+    Assert(chunk->GetSize() == sizeof(double));
+    return static_cast<Real *>(chunk);
   }
 
   double GetValue() {
@@ -245,48 +242,37 @@ public:
   }
 };
 
-class String: private Block {
-private:
-  static const u_int LEN_POS = 1;
+class String: private Chunk {
 public:
   static const u_int maxSize = MAX_SIZE(char);
 
   using Block::ToWord;
 
   static String *New(u_int len) {
-    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, len);
-    return static_cast<String *>(b);
-  }
-  static String *New(const char *str) {
-    u_int len  = strlen(str);
-    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, len);
-    memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
-    return static_cast<String *>(b);
+    return static_cast<String *>(Store::AllocChunk(len));
   }
   static String *New(const char *str, u_int len) {
-    Block *b = Store::AllocChunk(WORDS_NEEDED(len, char) + 1);
-    b->InitArg(LEN_POS, len);
-    memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str, len);
-    return static_cast<String *>(b);
+    Chunk *chunk = Store::AllocChunk(len);
+    memcpy(chunk->GetBase(), str, len);
+    return static_cast<String *>(chunk);
+  }
+  static String *New(const char *str) {
+    return New(str, strlen(str));
   }
   static String *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
-    return static_cast<String *>(b);
+    Chunk *chunk = Store::WordToChunk(x);
+    return static_cast<String *>(chunk);
   }
   static String *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CHUNK_LABEL);
-    return static_cast<String *>(b);
+    Chunk *chunk = Store::DirectWordToChunk(x);
+    return static_cast<String *>(chunk);
   }
 
-  char *GetValue() {
-    return reinterpret_cast<char *>(GetBase() + 1);
+  u_int GetSize() {
+    return Chunk::GetSize();
   }
-  u_int GetLength() {
-    return Store::DirectWordToInt(GetArg(LEN_POS));
+  char *GetValue() {
+    return GetBase();
   }
 };
 
@@ -451,7 +437,7 @@ public:
   }
 };
 
-class WideString: private Block {
+class WideString: private Chunk {
 private:
   static const u_int LEN_POS = 1;
 public:
@@ -460,25 +446,25 @@ public:
   using Block::ToWord;
 
   static WideString *New(wchar_t *str, u_int len) {
-    Block *b = Store::AllocChunk(WORDS_NEEDED(len, wchar_t) + 1);
-    b->InitArg(LEN_POS, len);
-    memcpy(reinterpret_cast<char *>(b->GetBase() + 1), str,
-	   len * sizeof(wchar_t));
-    return static_cast<WideString *>(b);
+    u_int nchars = len * sizeof(wchar_t);
+    Chunk *chunk = Store::AllocChunk(nchars);
+    memcpy(chunk->GetBase(), str, nchars);
+    return static_cast<WideString *>(chunk);
   }
   static WideString *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER || b->GetLabel() == CHUNK_LABEL);
-    return static_cast<WideString *>(b);
+    Chunk *chunk = Store::WordToChunk(x);
+    return static_cast<WideString *>(chunk);
   }
   static WideString *FromWordDirect(word x) {
-    Block *b = Store::DirectWordToBlock(x);
-    Assert(b->GetLabel() == CHUNK_LABEL);
-    return static_cast<WideString *>(b);
+    Chunk *chunk = Store::DirectWordToChunk(x);
+    return static_cast<WideString *>(chunk);
   }
 
+  u_int GetSize() {
+    return Chunk::GetSize() / sizeof(wchar_t);
+  }
   wchar_t *GetValue() {
-    return reinterpret_cast<wchar_t *>(GetBase() + 1);
+    return reinterpret_cast<wchar_t *>(GetBase());
   }
 };
 
