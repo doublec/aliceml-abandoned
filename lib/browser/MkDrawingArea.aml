@@ -40,7 +40,7 @@ struct
 			("x2", Gtk.DOUBLE x),
 			("y2", Gtk.DOUBLE y),
 			("fill_color_gdk", 
-			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0))),
+		       Gtk.OBJECT(MkColorTable.allocColor(65535,65535,65535))),
 			("outline_color_gdk", 
 			 Gtk.OBJECT (MkColorTable.allocColor(0,0,0)))]) 
 	      in
