@@ -37,7 +37,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInExp (RefExp _, _) = false
 	  | occursInExp (TupExp (_, exps), id) =
 	    List.exists (fn exp => occursInExp (exp, id)) exps
-	  | occursInExp (RowExp (_, expFields), id) =
+	  | occursInExp (ProdExp (_, expFields), id) =
 	    List.exists (fn Field (_, _, exp) => occursInExp (exp, id))
 	    expFields
 	  | occursInExp (SelExp (_, _), _) = false
@@ -73,7 +73,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn Match (_, pat, exp) =>
 		       occursInPat (pat, id) orelse occursInExp (exp, id))
 	    matches
-	and occursInPat (WildPat _, _) = false
+	and occursInPat (JokPat _, _) = false
 	  | occursInPat (LitPat (_, _), _) = false
 	  | occursInPat (VarPat (_, _), _) = false
 	  | occursInPat (TagPat (_, _, _), _) = false
@@ -81,7 +81,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | occursInPat (RefPat _, id) = false
 	  | occursInPat (TupPat (_, pats), id) =
 	    List.exists (fn pat => occursInPat (pat, id)) pats
-	  | occursInPat (RowPat (_, patFields), id) =
+	  | occursInPat (ProdPat (_, patFields), id) =
 	    List.exists (fn Field (_, _, pat) => occursInPat (pat, id))
 	    patFields
 	  | occursInPat (VecPat (_, pats), id) =
@@ -100,7 +100,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn dec => occursInDec (dec, id)) decs
 
 	local
-	    fun patternVariablesOf' (WildPat _, ids) = ids
+	    fun patternVariablesOf' (JokPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids
 	      | patternVariablesOf' (VarPat (_, id), ids) = id::ids
 	      | patternVariablesOf' (TagPat (_, _, _), ids) = ids
@@ -108,7 +108,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	      | patternVariablesOf' (RefPat _, ids) = ids
 	      | patternVariablesOf' (TupPat (_, pats), ids) =
 		foldr patternVariablesOf' ids pats
-	      | patternVariablesOf' (RowPat (_, fieldPats), ids) =
+	      | patternVariablesOf' (ProdPat (_, fieldPats), ids) =
 		foldr (fn (Field (_, _, pat), ids) =>
 		       patternVariablesOf' (pat, ids)) ids fieldPats
 	      | patternVariablesOf' (VecPat (_, pats), ids) =
@@ -161,11 +161,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substExp (exp as RefExp _, _) = exp
 	  | substExp (TupExp (info, exps), subst) =
 	    TupExp (info, List.map (fn exp => substExp (exp, subst)) exps)
-	  | substExp (RowExp (info, expFields), subst) =
-	    RowExp (info,
-		    List.map (fn Field (info, label, exp) =>
-			      Field (info, label, substExp (exp, subst)))
-		    expFields)
+	  | substExp (ProdExp (info, expFields), subst) =
+	    ProdExp (info,
+		     List.map (fn Field (info, label, exp) =>
+			       Field (info, label, substExp (exp, subst)))
+		     expFields)
 	  | substExp (exp as SelExp (_, _), _) = exp
 	  | substExp (VecExp (info, exps), subst) =
 	    VecExp (info, List.map (fn exp => substExp (exp, subst)) exps)
@@ -202,7 +202,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.map (fn Match (info, pat, exp) =>
 		      Match (info, substPat (pat, subst),
 			     substExp (exp, subst))) matches
-	and substPat (pat as WildPat _, _) = pat
+	and substPat (pat as JokPat _, _) = pat
 	  | substPat (pat as LitPat (_, _), _) = pat
 	  | substPat (pat as VarPat (_, _), _) = pat
 	  | substPat (pat as TagPat (_, _, _), _) = pat
@@ -211,11 +211,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	  | substPat (pat as RefPat _, subst) = pat
 	  | substPat (TupPat (info, pats), subst) =
 	    TupPat (info, List.map (fn pat => substPat (pat, subst)) pats)
-	  | substPat (RowPat (info, patFields), subst) =
-	    RowPat (info,
-		    List.map (fn Field (info, label, pat) =>
-			      Field (info, label, substPat (pat, subst)))
-		    patFields)
+	  | substPat (ProdPat (info, patFields), subst) =
+	    ProdPat (info,
+		     List.map (fn Field (info, label, pat) =>
+			       Field (info, label, substPat (pat, subst)))
+		     patFields)
 	  | substPat (VecPat (info, pats), subst) =
 	    VecPat (info, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (AppPat (info, pat1, pat2), subst) =
@@ -267,7 +267,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    nil => pat'
 		  | _::_ => WithPat (infoPat pat', pat', decs)
 	    end
-	and relax (pat as WildPat _, subst) = (pat, subst)
+	and relax (pat as JokPat _, subst) = (pat, subst)
 	  | relax (pat as LitPat (_, _), subst) = (pat, subst)
 	  | relax (VarPat (info, id), subst) =
 	    let
@@ -290,7 +290,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(TupPat (info, pats'), subst')
 	    end
-	  | relax (RowPat (info, patFields), subst) =
+	  | relax (ProdPat (info, patFields), subst) =
 	    let
 		val (patFields', subst') =
 		    List.foldr
@@ -301,7 +301,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			 (Field (info, label, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
-		(RowPat (info, patFields'), subst')
+		(ProdPat (info, patFields'), subst')
 	    end
 	  | relax (VecPat (info, pats), subst) =
 	    let

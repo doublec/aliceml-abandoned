@@ -103,7 +103,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Misc.List_mapi (fn (i, pat) =>
 			     (LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
 	     O.TupArgs (List.map typPat pats))
-	  | makeAppArgs (pat as RowPat (info, patFields), true, pos) =
+	  | makeAppArgs (pat as ProdPat (info, patFields), true, pos) =
 	    (case getRow (#typ info) of
 		 (_, _, true) => ([(pos, pat)], O.OneArg (#typ info))
 	       | (labelTypList, LabelSort.Tup _, false) =>
@@ -116,7 +116,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		      O.RecArgs labelTypList))
 	  | makeAppArgs (pat, _, pos) = ([(pos, pat)], O.OneArg (typPat pat))
 
-	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
+	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
@@ -162,7 +162,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	     makeTestSeq (pat, LABEL (Label.fromInt (i + 1))::pos,
 			  rest, mapping))
 	    (Test (pos, TupTest (List.map typPat pats))::rest, mapping) pats
-	  | makeTestSeq (RowPat (info, patFields), pos, rest, mapping) =
+	  | makeTestSeq (ProdPat (info, patFields), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, label), pat), (rest, mapping)) =>
 			makeTestSeq (pat, LABEL label::pos, rest, mapping))
 	    (case getRow (#typ info) of
@@ -561,14 +561,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    exception SideEffect   (* precondition 2 not satisfied *)
 	    exception NotNAry
 
-	    fun deconstructs (WildPat _) = false
+	    fun deconstructs (JokPat _) = false
 	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
 	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
 	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
 	      | deconstructs (RefPat _) = raise NotNAry
 	      | deconstructs (TupPat (_, _)) = true
-	      | deconstructs (RowPat (_, _)) = true
+	      | deconstructs (ProdPat (_, _)) = true
 	      | deconstructs (VecPat (_, _)) = raise NotNAry
 	      | deconstructs (AppPat (_, _, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =

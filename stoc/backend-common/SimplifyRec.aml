@@ -22,25 +22,25 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	type alias = id * id * exp_info
 
 	datatype pat =
-	    WildPat of pat_info
+	    JokPat of pat_info
 	  | LitPat of pat_info * lit
 	  | VarPat of pat_info * id
 	  | TagPat of pat_info * lab * pat option * bool
 	  | ConPat of pat_info * longid * pat option * bool
 	  | RefPat of pat_info * pat
 	  | TupPat of pat_info * pat list
-	  | RowPat of pat_info * pat field list
+	  | ProdPat of pat_info * pat field list
 	  | VecPat of pat_info * pat list
 	  | AsPat of pat_info * id * pat
 
-	fun infoPat (WildPat info) = info
+	fun infoPat (JokPat info) = info
 	  | infoPat (LitPat (info, _)) = info
 	  | infoPat (VarPat (info, _)) = info
 	  | infoPat (TagPat (info, _, _, _)) = info
 	  | infoPat (ConPat (info, _, _, _)) = info
 	  | infoPat (RefPat (info, _)) = info
 	  | infoPat (TupPat (info, _)) = info
-	  | infoPat (RowPat (info, _)) = info
+	  | infoPat (ProdPat (info, _)) = info
 	  | infoPat (VecPat (info, _)) = info
 	  | infoPat (AsPat (info, _, _)) = info
 
@@ -52,7 +52,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    if s = s' then SOME x else select (fieldr, s')
 	  | select (nil, _) = NONE
 
-	fun unalias (WildPat _) = (nil, NONE)
+	fun unalias (JokPat _) = (nil, NONE)
 	  | unalias (VarPat (_, id)) = ([id], NONE)
 	  | unalias (AsPat (_, id, pat)) =
 	    let
@@ -65,7 +65,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	fun mkRefTyp typ =
 	    Type.inArrow (typ, Type.inApply (PreboundType.typ_ref, typ))
 
-	fun patToExp (WildPat info) =
+	fun patToExp (JokPat info) =
 	    let
 		val id = freshId info
 	    in
@@ -112,7 +112,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(TupPat (info, pats'), TupExp (info, exps'))
 	    end
-	  | patToExp (RowPat (info, patFields)) =
+	  | patToExp (ProdPat (info, patFields)) =
 	    let
 		val (patFields', expFields') =
 		    List.foldr (fn (Field (info, label, pat),
@@ -124,7 +124,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 				     Field (info, label, exp)::expFields)
 				end) (nil, nil) patFields
 	    in
-		(RowPat (info, patFields'), RowExp (info, expFields'))
+		(ProdPat (info, patFields'), ProdExp (info, expFields'))
 	    end
 	  | patToExp (VecPat (info, pats)) =
 	    let
@@ -135,7 +135,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (pat as AsPat (info, id, _)) =
 	    (pat, VarExp (info, ShortId (id_info info, id)))
 
-	fun derec' (WildPat _, exp) = (nil, [(nil, exp)])
+	fun derec' (JokPat _, exp) = (nil, [(nil, exp)])
 	  | derec' (LitPat (info, lit1), LitExp (_, lit2)) =
 	    if lit1 = lit2 then (nil, nil)
 	    else Error.error (#region info, "pattern never matches")
@@ -171,7 +171,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			    in
 				(cs @ cr, idsExps @ idsExpr)
 			    end) (nil, nil) (pats, exps)
-	  | derec' (TupPat (_, pats), RowExp (_, expFields)) =
+	  | derec' (TupPat (_, pats), ProdExp (_, expFields)) =
 	    (case FieldSort.sort expFields of
 		 (expFields', FieldSort.Tup _) =>
 		     ListPair.foldr
@@ -184,9 +184,9 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	       | (_, FieldSort.Rec) =>
 		     raise Crash.Crash
 			 "SimplifyRec.derec' 1 type inconsistency")
-	  | derec' (RowPat (_, _), TupExp (_, _)) =
+	  | derec' (ProdPat (_, _), TupExp (_, _)) =
 	    raise Crash.Crash "SimplifyRec.derec' 2 type inconsistency"
-	  | derec' (RowPat (_, patFields), RowExp (_, expFields)) =
+	  | derec' (ProdPat (_, patFields), ProdExp (_, expFields)) =
 	    let
 		val (expFields', _) = FieldSort.sort expFields
 	    in
@@ -223,8 +223,8 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | derec' (pat, _) =
 	    raise Crash.Crash "SimplifyRec.derec' 3 internal error"
 
-	fun unify (WildPat _, pat2) = (nil, pat2)
-	  | unify (pat1, WildPat _) = (nil, pat1)
+	fun unify (JokPat _, pat2) = (nil, pat2)
+	  | unify (pat1, JokPat _) = (nil, pat1)
 	  | unify (pat1 as LitPat (info, lit1), LitPat (_, lit2)) =
 	    if lit1 = lit2 then (nil, pat1)
 	    else Error.error (#region info, "pattern never matches")
@@ -272,7 +272,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (info, pats))
 	    end
-	  | unify (RowPat (info, patFields1), RowPat (_, patFields2)) =
+	  | unify (ProdPat (info, patFields1), ProdPat (_, patFields2)) =
 	    let
 		val (constraints, patFields) =
 		    ListPair.foldr (fn (Field (info, label, pat1),
@@ -284,7 +284,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 					 Field (info, label, pat)::patFieldr)
 				    end) (nil, nil) (patFields1, patFields2)
 	    in
-		(constraints, RowPat (info, patFields))
+		(constraints, ProdPat (info, patFields))
 	    end
 	  | unify (VecPat (info, pats1), VecPat (_, pats2)) =
 	    if length pats1 = length pats2 then
@@ -322,7 +322,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 
 	fun getField (Field (_, _, pat)) = pat
 
-	fun preprocess (I.WildPat info) = (nil, WildPat info)
+	fun preprocess (I.JokPat info) = (nil, JokPat info)
 	  | preprocess (I.LitPat (info, lit)) = (nil, LitPat (info, lit))
 	  | preprocess (I.VarPat (info, id)) = (nil, VarPat (info, id))
 	  | preprocess (I.TagPat (info, label, isNAry)) =
@@ -359,7 +359,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    in
 		(constraints, TupPat (info, pats))
 	    end
-	  | preprocess (I.RowPat (info, patFields)) =
+	  | preprocess (I.ProdPat (info, patFields)) =
 	    let
 		val typ = #typ info
 		val labelTypList =
@@ -377,7 +377,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			val info = {region = Source.nowhere}
 		    in
 			[Field (info, Lab (info, label),
-				I.WildPat (exp_info (Source.nowhere, typ)))]
+				I.JokPat (exp_info (Source.nowhere, typ)))]
 		    end
 		val patFields' =
 		    List.foldr adjoin patFields labelTypList
@@ -395,7 +395,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			FieldSort.Tup i =>
 			    TupPat (info, List.map getField patFields''')
 		      | FieldSort.Rec =>
-			    RowPat (info, patFields''')
+			    ProdPat (info, patFields''')
 	    in
 		(constraints, pat')
 	    end

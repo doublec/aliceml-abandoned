@@ -178,7 +178,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, O.TupArgs ids)
 	    end
-	  | unfoldArgs (RowExp (_, expFields), rest, true) =
+	  | unfoldArgs (ProdExp (_, expFields), rest, true) =
 	    let
 		val (stms, labelIdList) =
 		    List.foldr (fn (Field (_, Lab (_, label), exp),
@@ -243,7 +243,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		r := SOME (f (O.TupExp (info, ids))::translateCont cont);
 		stms
 	    end
-	  | translateExp (RowExp (info, expFields), f, cont) =
+	  | translateExp (ProdExp (info, expFields), f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
