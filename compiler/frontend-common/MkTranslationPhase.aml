@@ -2182,7 +2182,6 @@ struct
 	    val x'   = O.Id(i', Stamp.new(), Name.InId)
 	    val ds'' = trImps(E, is, O.ShortId(i',x'), ds')
 	    val _    = Type.unify(t, infToTyp(E, Inf.sign s))
-	    val _    = Inf.compressSig s
 	in
 	    ( (x',Inf.sign s,u)::xjus', ds'' )
 	end
@@ -2210,8 +2209,9 @@ struct
 	    val  ids'        = ids(E,ds)
 	    val  fs'         = Vector.map (idToFld (fn x' => x')) ids'
 	    val  s           = #sign i
-	    val  _           = Inf.compressSig s
 	in
+	    Inf.compressSig s;
+	    Vector.app (fn(x,j,u) => Inf.compress j) xjus';
 	    ( xjus', ds', fs', Inf.sign s )
 	end
 
