@@ -1058,7 +1058,10 @@ structure ToJasmin =
 		      | recurse (nil,need,max) =
 			if enterstack then
 			    TextIO.output
-			    (ziel, !finish^".limit stack "^Int.toString max^"\n")
+			    (ziel, !finish^".limit stack "^Int.toString
+			     (* xxx dirty hack to make verifier happy when compiling without optimization *)
+			     (if !OPTIMIZE <=1 then max+100 else max)
+				  ^"\n")
 			 else ()
 		in
 		    recurse (insts, 0, 0)
