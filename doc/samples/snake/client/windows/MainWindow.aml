@@ -126,8 +126,7 @@ struct
 			 ^ (Int.toString gamePoints) ^ "\n\n")
 		    fun toString () = List.foldl toString' "" plist
 		in
-		   Inspector.inspect("MainWIndow", "pointsList", plist, toString ());
-	 Gtk.labelSetText (!pointsLabel, toString ())
+		    Gtk.labelSetText (!pointsLabel, toString ())
 		end
 
 	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
@@ -251,7 +250,7 @@ struct
 		(case event of
 		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
 		   |            _                  	=> ())
-	      |  canvasEvent       x            = Inspector.inspect x
+	      |  canvasEvent       x            = ()
 
 	in
 

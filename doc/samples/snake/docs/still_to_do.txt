@@ -5,8 +5,6 @@ in schriftarten
 
 questionwindow geht net - warum?
 
-layout von serversettingswindow
-
 blinken im mainwindow bei gateöffnen
 
 anzeigen von noch verfügbarer zeit
