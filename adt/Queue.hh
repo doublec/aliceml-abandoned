@@ -181,6 +181,8 @@ public:
       nentries -= oldSize;
     u_int newSize = ((nentries * 3 / 2 + 1) + oldSize) / 2;
     Assert(newSize != 0 && newSize > nentries);
+    if (newSize < 2)
+      newSize = 2; // size may not be 1!
     if (newSize >= oldSize) { // do not make it bigger
       newSize = oldSize;
     } else {
