@@ -10,6 +10,7 @@
  *   $Revision$
  *)
 
+import structure Component             from "../../lib/system/Component"
 import signature COMPONENT_MANAGER
     from "../../lib/system/COMPONENT_MANAGER-sig"
 import signature SWITCHES              from "../infrastructure/SWITCHES-sig"
@@ -22,23 +23,24 @@ import structure Value                 from "Value"
 import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
 import structure MkCodeGenPhase        from "MkCodeGenPhase"
 
-functor MkBackendStockwerk(structure ComponentManager: COMPONENT_MANAGER
+functor MkBackendStockwerk(structure ComponentManager:
+			       COMPONENT_MANAGER
+				   where type component = Component.t
 			   structure Switches: SWITCHES): PHASE =
     let
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
 	structure CodeGenPhase = MkCodeGenPhase(AbstractCodeGrammar)
 
-	__primitive val cast: 'a -> 'b = "Unsafe.cast"
+	__primitive val cast: AbstractCodeGrammar.t -> Component.t =
+	    "Unsafe.cast"
 
 	fun translate () x =
 	    let
-		val value = CodeGenPhase.translate () x
-		fun component () = cast value
-		fun eval url =
-		    ignore (ComponentManager.eval (url, cast value))
-	    in
+		val component = cast (CodeGenPhase.translate () x)
 		(*--** eval needs to enrich the environment *)
-		Target.COMPONENT {component, eval}
+		fun eval url = ignore (ComponentManager.eval (url, component))
+	    in
+		Target.COMPONENT {component = fn () => component, eval}
 	    end
     in
 	MkTracingPhase(structure Phase =
