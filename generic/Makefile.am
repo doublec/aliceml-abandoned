@@ -26,6 +26,7 @@ libgeneric_la_SOURCES = \
 	StackFrame.cc \
 	Stream.cc \
 	TaskStack.cc \
+	Time.cc \
 	Transients.cc \
 	UniqueString.cc \
 	Unpickler.cc \
@@ -66,6 +67,7 @@ dist_genericinclude_HEADERS = \
 	Stream.hh \
 	String.hh \
 	TaskStack.hh \
+	Time.hh \
 	Thread.hh \
 	ThreadQueue.hh \
 	Transform.hh \

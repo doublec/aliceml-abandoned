@@ -60,6 +60,7 @@
 #include "generic/DllLoader.hh"
 #include "generic/Authoring.hh"
 #include "generic/JitterGenericData.hh"
+#include "generic/Time.hh"
 #if DEBUGGER
 #include "generic/Debugger.hh"
 #include "generic/Stream.hh"

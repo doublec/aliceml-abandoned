@@ -26,6 +26,7 @@
 #include "generic/ConcreteCode.hh"
 #include "generic/Tuple.hh"
 #include "generic/Scheduler.hh"
+#include "generic/Time.hh"
 
 class ProfileEntry : private Tuple {
 protected:
@@ -85,54 +86,9 @@ double Profiler::sampleTime;
 
 static double startTime;
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__)
-#include <windows.h>
-#include <cmath>
-
-static double shift;
-static double precision;
-
-static inline double LargeIntToDouble(LARGE_INTEGER *li) {
-  double x1 = ((double)(unsigned int) li->HighPart) * shift;
-  double x2 = ((double)(unsigned int) li->LowPart);
-  return (x1 + x2);
-}
-
-static void InitTime() {
-  LARGE_INTEGER buf;
-  // buf = counts per second
-  if (!QueryPerformanceFrequency(&buf)) {
-    fprintf(stderr, "Profiler: unable to query performance count frequency\n");
-    fflush(stderr);
-    exit(0);
-  }
-  shift = std::pow((double) 2.0, (double) STORE_WORD_WIDTH);
-  // We want microseconds
-  precision = LargeIntToDouble(&buf) / (double) 1000000;
-}
-
 double Profiler::SampleTime() {
-  LARGE_INTEGER buf;
-  if (!QueryPerformanceCounter(&buf)) {
-    fprintf(stderr, "Profiler: unable to query performance counter\n");
-    fflush(stderr);
-    exit(0);
-  }
-  return (LargeIntToDouble(&buf) / precision);
+  return Time::GetElapsedMicroseconds();
 }
-#else
-#include <sys/time.h>
-
-static void InitTime() {
-  return;
-}
-
-double Profiler::SampleTime() {
-  struct timeval tv;
-  gettimeofday(&tv, 0);
-  return ((double)tv.tv_sec*1000000.0+(double)tv.tv_usec);
-}
-#endif
 
 void Profiler::Init() {
   table = Map::New(256)->ToWord(); // to be done
