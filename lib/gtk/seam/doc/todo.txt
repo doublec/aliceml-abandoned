@@ -15,6 +15,7 @@ setenv ALICE_TRACE_RESOLVER 1
 * datatypes/Signals bauen
 * Dateien komplett umbenennen, 
 * libgnomecanvas statt GtkCanvas installieren
+- GnomeCanvas-Bindings
 - Windows
 
 * Test-Programm besser
