@@ -17,6 +17,9 @@ structure PPPath :> PP_PATH =
       | ppHiddenLab(i,l)	= text "?" ^^ ppHiddenLab(i-1, l)
 
     fun ppPath(ref(PLAIN n))	= ppName n
-      | ppPath(ref(DOT(p,l,i)))	= ppPath p ^^ text "." ^^ ppHiddenLab(i, l)
+      | ppPath(ref(URL _))	= raise Crash.Crash "PPPath.ppPath: URL path"
+      | ppPath(ref(DOT(p,l,i)))	= (case !p of URL _ => text ""
+					    | _     => ppPath p ^^ text ".")
+				  ^^ ppHiddenLab(i, l)
 
   end

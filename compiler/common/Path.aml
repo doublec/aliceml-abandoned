@@ -11,13 +11,12 @@ structure PathPrivate =
 
     type lab   = Lab.t
     type name  = Name.t
+    type url   = Url.t
 
     datatype path' =
-	  PLAIN  of name
-	| DOT    of path * lab * int
-	(*UNFINISHED
-	| IMPORT of string * lab * int
-	*)
+	  PLAIN of name
+	| URL   of url
+	| DOT   of path * lab * int
 
     withtype path = path' ref
     type t = path
@@ -27,6 +26,7 @@ structure PathPrivate =
 
     fun invent()		= ref(PLAIN(Name.InId))
     fun fromLab l		= ref(PLAIN(Lab.toName l))
+    fun fromUrl url		= ref(URL url)
     fun path pln		= ref(DOT pln)
 
     fun toLab(ref(PLAIN n))	= Lab.fromName n
@@ -41,11 +41,14 @@ structure PathPrivate =
 
   (* Ordering and hashing *)
 
+    fun idx(PLAIN _)		= 0
+      | idx(URL _)		= 1
+      | idx(DOT _)		= 2
+
     fun compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
 						  else compare'(p1', p2')
-    and compare'(PLAIN _,       DOT _)		= LESS
-      | compare'(DOT _,         PLAIN _)	= GREATER
-      | compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
+    and compare'(PLAIN(x1),     PLAIN(x2))	= Name.compare(x1,x2)
+      | compare'(URL(u1),       URL(u2))	= Url.compare(u1,u2)
       | compare'(DOT(p1,l1,n1), DOT(p2,l2,n2))	= (case compare(p1,p2)
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
@@ -53,8 +56,10 @@ structure PathPrivate =
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
 						   Int.compare(n1,n2))
+      | compare'(p1,            p2)		= Int.compare(idx p1, idx p2)
 
     fun hash(ref(PLAIN x))	= Name.hash x
+      | hash(ref(URL u))	= Url.hash u
       | hash(ref(DOT(p,l,n)))	= Lab.hash l
 
 
@@ -77,6 +82,7 @@ structure PathPrivate =
 		  | NONE    =>
 		case !p1
 		 of p' as PLAIN _ => ref p'
+		  | p' as URL _   => p1
 		  | DOT(p,l,n)    => ref(DOT(clone p, l, n))
 	in
 	    clone p

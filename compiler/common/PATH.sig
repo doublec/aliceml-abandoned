@@ -8,6 +8,7 @@ signature PATH =
 
     type lab   = Lab.t
     type name  = Name.t
+    type url   = Url.t
 
     eqtype path
     type t = path
@@ -16,6 +17,7 @@ signature PATH =
 
     val invent :	unit -> path
     val fromLab :	lab  -> path
+    val fromUrl :	url  -> path
     val toLab :		path -> lab
     val path :		path * lab * int -> path
 
