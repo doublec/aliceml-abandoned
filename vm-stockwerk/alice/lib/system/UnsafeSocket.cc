@@ -3,7 +3,7 @@
 //   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 //
 // Copyright:
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -286,20 +286,20 @@ word UnsafeSocket() {
   // to be done: Windows Socket startup moved to UnsafeIO.cc
   Record *record = Record::New(8);
   INIT_STRUCTURE(record, "UnsafeSocket", "server",
-		 UnsafeSocket_server, 1, true);
+		 UnsafeSocket_server, 1);
   INIT_STRUCTURE(record, "UnsafeSocket", "accept",
-		 UnsafeSocket_accept, 1, true);
+		 UnsafeSocket_accept, 1);
   INIT_STRUCTURE(record, "UnsafeSocket", "client",
-		 UnsafeSocket_client, 2, true);
+		 UnsafeSocket_client, 2);
   INIT_STRUCTURE(record, "UnsafeSocket", "input1",
-		 UnsafeSocket_input1, 1, true);
+		 UnsafeSocket_input1, 1);
   INIT_STRUCTURE(record, "UnsafeSocket", "inputN",
-		 UnsafeSocket_inputN, 2, true);
+		 UnsafeSocket_inputN, 2);
   INIT_STRUCTURE(record, "UnsafeSocket", "output1",
-		 UnsafeSocket_output1, 2, true);
+		 UnsafeSocket_output1, 2);
   INIT_STRUCTURE(record, "UnsafeSocket", "output",
-		 UnsafeSocket_output, 3, true);
+		 UnsafeSocket_output, 3);
   INIT_STRUCTURE(record, "UnsafeSocket", "close",
-		 UnsafeSocket_close, 1, true);
+		 UnsafeSocket_close, 1);
   RETURN_STRUCTURE("UnsafeSocket$", record);
 }
