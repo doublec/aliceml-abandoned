@@ -72,106 +72,128 @@ void push_front(word *list, word value) {
   *list = cons->ToWord();
 }
 
+enum { BOOL, INT, LIST, OBJECT, REAL, STRING };
+GType G_LIST_TYPE = g_type_from_name("GList");
+GType G_SLIST_TYPE = g_type_from_name("GSList");
+
+word create_param(int tag, word value) {
+  TagVal *param = TagVal::New(tag,1);
+  param->Init(0, value);
+  return param->ToWord();
+}
+
+word create_object(GType t, gpointer p) {
+  int tag = OBJECT;
+  word value;
+  if (g_type_is_a(t, G_LIST_TYPE)) {
+    tag = LIST;
+    value = GListToObjectList(static_cast<GList*>(p));
+  }
+  else
+    if (g_type_is_a(t, G_SLIST_TYPE)) {
+      tag = LIST;
+      value = GSListToObjectList(static_cast<GSList*>(p));
+    }
+    else
+      value = Store::UnmanagedPointerToWord(p);
+  return create_param(tag, value);
+}
+
 void generic_marshaller(GClosure *closure, GValue *return_value, 
 			guint n_param_values, const GValue *param_values, 
 			gpointer , gpointer marshal_data) {
 
   int funid = GPOINTER_TO_INT(closure->data);
-  g_print("event occured: %d\n", funid);
-  g_print("event has %d params\n", n_param_values);
+  //  g_print("event occured: %d\n", funid);
+  //  g_print("event has %d params\n", n_param_values);
 
   Future *oldfuture = static_cast<Future*>(Store::WordToTransient(tail));
   tail = (Future::New())->ToWord();
-  word paramlist = tail;
-  word value;
-  TagVal *cons;
+  word stream = tail;
+  word paramlist = Store::IntToWord(Types::nil);
+  gpointer widget = NULL;
 
   for (int i = n_param_values-1; i >= 0; i--) {
-    value = Store::IntToWord(0);
+    word value;
 
     const GValue *val = param_values + i;
 
+    /*
     GTypeQuery q;
     memset(&q, 0, sizeof(q));
     g_type_query(G_VALUE_TYPE(val), &q);
     g_print("Param #%d, Type: %ld, Name: %s\n", i, G_VALUE_TYPE(val), 
 	    q.type_name);
+    */
 
     switch(G_VALUE_TYPE(val)) {
     case G_TYPE_CHAR:   
-      g_print("CHAR = %c\n", g_value_get_char(val));
-      value = Store::IntToWord(static_cast<int>(g_value_get_char(val)));
+      value = create_param(INT, 
+		   Store::IntToWord(static_cast<int>(g_value_get_char(val))));
       break;
     case G_TYPE_UCHAR:  
-      g_print("UCHAR = %c\n", g_value_get_uchar(val));
+      value = create_param(INT, 
+                 Store::IntToWord(static_cast<int>(g_value_get_uchar(val))));
       break;
     case G_TYPE_BOOLEAN:
-      g_print("BOOLEAN = %d\n", g_value_get_boolean(val));
-      value = Store::IntToWord(static_cast<int>(g_value_get_boolean(val)));
+      value = create_param(BOOL, BOOL_TO_WORD(g_value_get_boolean(val)));
       break;
     case G_TYPE_INT:    
-      g_print("INT = %i\n", g_value_get_int(val));
-      value = Store::IntToWord(g_value_get_int(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_int(val)));
       break;
-    case G_TYPE_UINT:   g_print("UINT = %i\n", g_value_get_uint(val));
-                        break;
+    case G_TYPE_UINT:   
+      value = create_param(INT, Store::IntToWord(g_value_get_uint(val)));
+      break;
     case G_TYPE_LONG:   
-      g_print("LNG = %li\n", g_value_get_long(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_long(val)));
       break;
     case G_TYPE_ULONG:  
-      g_print("ULONG = %li\n", g_value_get_ulong(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_ulong(val)));
       break;
     case G_TYPE_INT64:  
-      g_print("INT64 = %lli\n", g_value_get_int64(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_int64(val)));
       break;
     case G_TYPE_UINT64: 
-      g_print("UINT64 = %lli\n", g_value_get_uint64(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_uint64(val)));
       break;
     case G_TYPE_ENUM:   
-      g_print("ENUM = %d\n", g_value_get_enum(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_enum(val)));
       break;
     case G_TYPE_FLAGS:  
-      g_print("FLAGS = %d\n", g_value_get_flags(val));
+      value = create_param(INT, Store::IntToWord(g_value_get_flags(val)));
       break;
     case G_TYPE_FLOAT:  
-      g_print("FLOAT = %f\n", g_value_get_float(val));
+      value = create_param(REAL, Real::New(g_value_get_float(val))->ToWord());
       break;
     case G_TYPE_DOUBLE: 
-      g_print("DOUBLE = %f\n", g_value_get_double(val));
+      value = create_param(REAL, Real::New(g_value_get_double(val))->ToWord());
       break;
     case G_TYPE_STRING: 
-      g_print("STRING = %s\n", g_value_get_string(val));
+     value = create_param(STRING, 
+			  String::New(g_value_get_string(val))->ToWord());
       break;
-    case G_TYPE_POINTER:
-      g_print("POINTER = %p\n", g_value_get_pointer(val));
-      break;
-    case G_TYPE_OBJECT: 
-      g_print("OBJECT = %p\n", g_value_get_object(val));
-      break;
-    case G_TYPE_PARAM:  
-      g_print("PARAM = %s\n", g_value_get_param(val)->name);
-      break;
-    case G_TYPE_BOXED:  
-      g_print("BOXED = %p\n", g_value_get_boxed(val));
-      break;
-    default:            
-      g_print("NOT A FUNDAMENTAL TYPE\n");
+    default:
+      //  g_print("NAFT AS POINTER: %p\n", g_value_peek_pointer(val));
+      if (i==0)
+	widget = g_value_peek_pointer(val);
+      else
+	value = create_object(G_VALUE_TYPE(val), g_value_peek_pointer(val));
     }
-    push_front(&paramlist,value);
+    if (!widget) push_front(&paramlist,value);
   }
-
-  push_front(&paramlist, Store::IntToWord(n_param_values));
-  push_front(&paramlist, Store::IntToWord(funid));
   
-  oldfuture->ScheduleWaitingThreads();
-  oldfuture->Become(REF_LABEL, paramlist);
+  Tuple *tup = Tuple::New(3);
+  tup->Init(0,Store::IntToWord(funid));
+  tup->Init(1,Store::UnmanagedPointerToWord(widget));
+  tup->Init(2,paramlist);
+  
+  push_front(&stream,tup->ToWord());
 
-  //  gtk_widget_ref(widget);
-  //  gtk_widget_unref(widget);
+  oldfuture->ScheduleWaitingThreads();
+  oldfuture->Become(REF_LABEL, stream);
 
   //if (G_VALUE_HOLDS(return_value, G_TYPE_BOOLEAN))
   //    g_value_set_boolean(return_value, FALSE);
-
 }
 
 DEFINE4(NativeGtk_signalConnect) {

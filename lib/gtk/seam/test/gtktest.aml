@@ -13,6 +13,8 @@ in
 
   val gdkpic = Gdk.pixbufNewFromXpmData Image.pixmap
   val i = imageNewFromPixbuf(gdkpic)
+  val ibox = eventBoxNew()
+  val _ = containerAdd(ibox, i)
 
   val b = buttonNewWithLabel "Test"
 
@@ -25,16 +27,36 @@ in
 
   val box = vboxNew(false,0)
 
-  val _ = ( boxPackStart(box,b ,false,false,0) ;
-	    boxPackStart(box,tv,false,false,0) ;
-	    boxPackStart(box,c ,false,false,0) ;
-	    boxPackStart(box,i ,false,false,0) ;
+  val _ = ( boxPackStart(box,b,   false,false,0) ;
+	    boxPackStart(box,tv,  false,false,0) ;
+	    boxPackStart(box,c,   false,false,0) ;
+	    boxPackStart(box,ibox,false,false,0) ;
 	    containerAdd (w,box) ;
  	    widgetShowAll w )
       
-  fun cb (widget, arglist) = ( print "callback function called !!!\n" )
+  fun cb (widget, arglist) = 
+  let
+      val table = [(w,"Window"),(i,"Image"),(ibox,"ImageBox"),(b,"Button"),
+		   (tb,"TextBuffer"),(tv,"TextView"),(c,"Combo")]
+      fun getobj ob = foldl (fn ((x,n),e) => if x=ob then n else e) "???" table
+      fun show (BOOL b)    = "BOOL: "^(Bool.toString b)
+	| show (INT i)     = "INT: "^(Int.toString i)
+	| show (REAL r)    = "REAL: "^(Real.toString r)
+	| show (STRING s)  = "STRING: "^s
+	| show (OBJECT ob) = "OBJECT: "^(getobj ob)
+	| show (LIST l)    = "LIST"
+  in
+      ( print (">callback function called for widget: "^(getobj widget)^"<\n");
+        print ("Number of arguments: "^(Int.toString (length arglist))^"\n");
+        List.app (fn a => print ((show a)^"\n")) arglist;
+        print "---\n"
+      )
+  end
+
+  fun delete_event _ = OS.Process.exit OS.Process.success
 
   val s1 = signalConnectAfter(b,"clicked",cb)
   val s2 = signalConnect(tb,"insert_text",cb)
-
+  val s3 = signalConnect(ibox,"button_press_event",cb)
+  val s4 = signalConnect(w,"delete_event",delete_event)
 end

@@ -68,7 +68,7 @@ word createExn(void *pointer, const gchar *tname, const gchar* funname,
   String::New(reinterpret_cast<const char *>(s))->ToWord()
 
 #define __RETURN_LIST_HELP(lname,ltype,convertfun)          \
-  word tail = Store::IntToWord(1); /*nil*/                  \
+  word tail = Store::IntToWord(Types::nil);                 \
   for (guint i = ltype##_length(lname); i > 0; i--) {       \
     TagVal *cons = TagVal::New(0,2);                        \
     cons->Init(0,convertfun(ltype##_nth_data(lname,i-1)));  \

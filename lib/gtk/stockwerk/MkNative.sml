@@ -160,7 +160,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 
 		fun retConv (NUMERIC(_,false,_)) n="Store::IntToWord("^n^")"
 		  | retConv (NUMERIC(_,true ,_)) n="Real::New("^n^")->ToWord()"
-		  | retConv BOOL       n="Store::IntToWord(!!("^n^"))"
+		  | retConv BOOL       n="BOOL_TO_WORD("^n^")"
 		  | retConv(POINTER _) n="Store::UnmanagedPointerToWord("^n^")"
                   | retConv (STRING _) n="String::New(reinterpret_cast<"^
 		                         "const char *>("^n^"))->ToWord()"

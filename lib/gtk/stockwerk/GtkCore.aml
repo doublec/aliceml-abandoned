@@ -59,12 +59,12 @@ struct
 		signalTable := List.filter find (!signalTable)
 	    end
 
-	fun listener nil                       = ()
-	  | listener (funid::argcount::stream) =
+	fun listener nil                        = ()
+	  | listener ((funid,obj,args)::stream) =
 	      ( List.app 
-	          (fn (funid',_,_,f)=>if funid=funid' then f(NULL,nil) else ())
+	          (fn (funid',_,_,f)=>if funid=funid' then f(obj,args) else ())
 		  (!signalTable) ;
-	        listener (List.drop(stream,argcount)) 
+	        listener stream
               )
     end
 
@@ -88,7 +88,8 @@ struct
 
     fun init () = 
     let
-	val eventStream : int list = NativeGtk.getEventStream()
+	val eventStream : (int * object * arg list) list = 
+	                                     NativeGtk.getEventStream()
 	val _ = NativeGtk.init ()
 	val _ = spawn (listener eventStream)
 	val _ = spawn (mainLoop initPoll)
