@@ -48,21 +48,21 @@ public:
 };
 
 // PrimitiveInterpreter: An interpreter that runs primitives
-class PrimitiveInterpreter: public PrimitiveArity {
+class PrimitiveInterpreter: public Interpreter {
 private:
   const char *name;
-  Primitive::function function;
+  Interpreter::function function;
   word frame;
+  u_int arity;
   bool sited;
 public:
-  PrimitiveInterpreter(const char *_name, Primitive::function _function,
-		       u_int _arity, bool _sited): PrimitiveArity(_arity),
-    name(_name), function(_function), sited(_sited) {
-    primitive = true;
+  PrimitiveInterpreter(const char *_name, Interpreter::function _function,
+		       u_int _arity, bool _sited):
+    name(_name), function(_function), arity(_arity), sited(_sited) {
     frame = PrimitiveFrame::New(this)->ToWord();
     RootSet::Add(frame);
   }
-  Primitive::function GetFunction() {
+  Interpreter::function GetFunction() {
     return function;
   }
   static Interpreter::Result Run(PrimitiveInterpreter *interpreter);
@@ -75,6 +75,9 @@ public:
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
+  // Runtime compilation
+  virtual u_int GetArity();
+  virtual Interpreter::function GetCFunction();
 };
 
 //
@@ -138,11 +141,18 @@ void PrimitiveInterpreter::DumpFrame(word) {
     std::fprintf(stderr, "Primitive\n");
 }
 
+u_int PrimitiveInterpreter::GetArity() {
+  return arity;
+}
+
+Interpreter::function PrimitiveInterpreter::GetCFunction() {
+  return GetFunction();
+}
 //
 // Primitive Functions
 //
 
-word Primitive::MakeFunction(const char *name, Primitive::function function,
+word Primitive::MakeFunction(const char *name, Interpreter::function function,
 			     u_int arity, bool sited) {
   PrimitiveInterpreter *interpreter =
     new PrimitiveInterpreter(name, function, arity, sited);
@@ -157,7 +167,7 @@ word Primitive::MakeFunction(const char *name, Primitive::function function,
   return concreteCode->ToWord();
 }
 
-word Primitive::MakeClosure(const char *name, Primitive::function function,
+word Primitive::MakeClosure(const char *name, Interpreter::function function,
 			    u_int arity, bool sited) {
   word concreteCode = MakeFunction(name, function, arity, sited);
   return Closure::New(concreteCode, 0)->ToWord();
@@ -174,6 +184,6 @@ Interpreter::Result Primitive::ExecuteNoCCC(Interpreter *interpreter) {
   PrimitiveInterpreter *primitive =
     static_cast<PrimitiveInterpreter *>(interpreter);
   Scheduler::PushFrame(PrimitiveFrame::New(primitive)->ToWord());
-  Primitive::function function = primitive->GetFunction();
+  Interpreter::function function = primitive->GetFunction();
   return function();
 }
