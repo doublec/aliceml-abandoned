@@ -32,7 +32,7 @@
 		 end)</PRE>
    <P>
      Given the <I>money script</I> from
-     <A href="http://www.ps.uni-sb.de/alice/manual/constraints.php3">here</A,
+     <A href="http://www.ps.uni-sb.de/alice/manual/constraints.php3">here</A>,
      a solution can be searched by invoking
    </P>
    <PRE>
