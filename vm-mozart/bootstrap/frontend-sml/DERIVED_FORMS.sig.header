@@ -1,7 +1,0 @@
-import
-    signature INPUT_GRAMMAR
-from "INPUT_GRAMMAR"
-
-import
-    structure InputGrammar
-from "InputGrammar"

@@ -1,7 +1,0 @@
-import
-    structure MakeBatchCompiler
-from "MakeBatchCompiler"
-
-import
-    structure SMLToMozartRecursiveCompiler
-from "SMLToMozartRecursiveCompiler"

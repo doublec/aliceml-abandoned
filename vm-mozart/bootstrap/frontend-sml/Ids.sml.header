@@ -1,7 +1,0 @@
-import
-    structure MakeStamp
-from "../misc/MakeStamp"
-
-import
-    structure MakeId
-from "MakeId"

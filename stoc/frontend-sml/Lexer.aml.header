@@ -4,7 +4,7 @@ from "../infrastructure/Crash"
 
 import
     signature Parser_TOKENS
-from "PARSER"
+from "PARSER-sig"
 
 import
     structure ParsingError
@@ -12,8 +12,8 @@ from "ParsingError"
 
 import
     signature LEXER_ERROR
-from "LEXER_ERROR"
+from "LEXER_ERROR-sig"
 
 import
-    structure LexerError
-from "LexerError"
+    structure MkLexerError
+from "MkLexerError"

@@ -1,6 +1,6 @@
 import
     signature TOKEN
-from "../../lib/ml-yacc/base"
+from "../../lib/ml-yacc/base-sig"
 
 import
     structure Source
@@ -28,8 +28,8 @@ from "InputGrammar"
 
 import
     signature DERIVED_FORMS
-from "DERIVED_FORMS"
+from "DERIVED_FORMS-sig"
 
 import
     signature Parser_TOKENS
-from "PARSER"
+from "PARSER-sig"

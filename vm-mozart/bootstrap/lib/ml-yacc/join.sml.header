@@ -1,8 +1,0 @@
-import
-    signature PARSER_DATA
-    signature LEXER
-    signature LR_PARSER
-    signature PARSER
-    signature ARG_LEXER
-    signature ARG_PARSER
-from "base.ozf"

@@ -1,7 +1,0 @@
-import
-    signature SIGNATURE
-from "../infrastructure/SIGNATURE"
-
-import
-    structure Inf
-from "../common/Inf"

@@ -1,7 +1,0 @@
-import
-    structure TextIO
-from "../../lib/TextIO"
-
-import
-    signature PRETTY_PRINT
-from "PRETTY_PRINT"

@@ -1,2 +1,0 @@
-import structure TextIO   from "../../lib/TextIO"
-import signature SWITCHES from "SWITCHES"
