@@ -53,7 +53,7 @@ signature GLOBAL_TABLE =
 	val lookup: t * key -> value option
 	val insert: t * key * value -> unit
 	val exchange: t * key * value option -> value option
-	val delete: t * key -> value option
+	val remove: t * key -> value option
     end
 
 structure GlobalTable :> GLOBAL_TABLE =
@@ -83,13 +83,13 @@ structure GlobalTable :> GLOBAL_TABLE =
 	       | NONE => NONE)
 	    before StampMap.insert (map, key, newOpt)
 
-	fun delete ((lock, map), key) =
-	    Lock.sync lock delete' (map, key)
-	and delete' (map, key) =
+	fun remove ((lock, map), key) =
+	    Lock.sync lock remove' (map, key)
+	and remove' (map, key) =
 	    (case StampMap.lookup (map, key) of
 		 SOME oldOpt => oldOpt
 	       | NONE => NONE)
-	    before StampMap.delete (map, key)
+	    before StampMap.remove (map, key)
     end
 
 signature MOBILE_CELL =
@@ -164,7 +164,7 @@ structure MobileCell :> MOBILE_CELL =
 		      | NONE =>
 			    let
 				fun returnState () =
-				    case GlobalTable.delete
+				    case GlobalTable.remove
 					     (stateTable, stamp) of
 					SOME value => cast value
 				      | NONE => raise Assert.failure
