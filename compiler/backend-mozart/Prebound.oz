@@ -56,12 +56,6 @@ prepare
       end
    end
 
-   Hex = hex(&0 &1 &2 &3 &4 &5 &6 &7 &8 &9 &a &b &c &d &e &f)
-
-   fun {ToHex X}
-      if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16 + 1)
-   end
-
    FutureException = {NewUniqueName 'Future.Future'}
 
    BuiltinTable =
@@ -313,8 +307,6 @@ prepare
 	       unit
 	    end
 	 end
-      'Int.toString':
-	 fun {$ I} {ByteString.make {IntToString I}} end
       'List.Empty': {NewUniqueName 'List.Empty'}
       'Math.acos': Acos
       'Math.acosh': Float.acosh
@@ -471,6 +463,10 @@ prepare
       'Word.<<': BootWord.'<<'
       'Word.>>': BootWord.'>>'
       'Word.~>>': BootWord.'~>>'
+      'Word.<': BootWord.'<'
+      'Word.>': BootWord.'>'
+      'Word.<=': BootWord.'=<'
+      'Word.>=': BootWord.'>='
       'Word.andb': BootWord.'andb'
       'Word.div':
 	 fun {$ W1 W2}
@@ -495,8 +491,6 @@ prepare
       'Word.orb': BootWord.orb
       'Word.toInt': BootWord.toInt
       'Word.toIntX': BootWord.toIntX
-      'Word.toString':
-	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
       'Word.wordSize': 31
       'Word.xorb': BootWord.'xorb')
 end

@@ -695,12 +695,6 @@ prepare
 		det: [det any(det)]
 		imods: [false]
 	)
-'Int.toString':
-	builtin(
-		types: ['int' 'string']
-		det: [det any(det)]
-		imods: [false]
-	)
 'Int.div':
 	builtin(
 		types: ['int' 'int' 'int']
@@ -1521,6 +1515,30 @@ prepare
 'Word.\'>>\'':
 	builtin(
 		types: ['value' 'value' 'value']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'<\'':
+	builtin(
+		types: ['value' 'value' 'bool']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'>\'':
+	builtin(
+		types: ['value' 'value' 'bool']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'=<\'':
+	builtin(
+		types: ['value' 'value' 'bool']
+		det: [det det any(det)]
+		imods: [false false]
+	)
+'Word.\'>=\'':
+	builtin(
+		types: ['value' 'value' 'bool']
 		det: [det det any(det)]
 		imods: [false false]
 	)

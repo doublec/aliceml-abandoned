@@ -116,7 +116,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Int.precision", NONE);
 		ins ("Int.quot", SOME (Tuple 2));
 		ins ("Int.rem", SOME (Tuple 2));
-		ins ("Int.toString", SOME Unary);
 		ins ("List.Empty", NONE);
 		ins ("Math.acos", SOME Unary);
 		ins ("Math.acosh", SOME Unary);
@@ -199,6 +198,10 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word.<<", SOME (Tuple 2));
 		ins ("Word.>>", SOME (Tuple 2));
 		ins ("Word.~>>", SOME (Tuple 2));
+		ins ("Word.<", SOME (Tuple 2));
+		ins ("Word.>", SOME (Tuple 2));
+		ins ("Word.<=", SOME (Tuple 2));
+		ins ("Word.>=", SOME (Tuple 2));
 		ins ("Word.andb", SOME (Tuple 2));
 		ins ("Word.div", SOME (Tuple 2));
 		ins ("Word.fromInt'", SOME (Tuple 2));
@@ -207,7 +210,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word.orb", SOME (Tuple 2));
 		ins ("Word.toInt", SOME Unary);
 		ins ("Word.toIntX", SOME Unary);
-		ins ("Word.toString", SOME Unary);
 		ins ("Word.wordSize", NONE);
 		ins ("Word.xorb", SOME (Tuple 2));
 		map
