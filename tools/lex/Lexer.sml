@@ -6,7 +6,8 @@ structure Lexer :> LEXER =
 
 	fun lError s = (print ("Lex Error: " ^ s ^ "\n"); raise Error)
 
-	(* lexer : takes an automaton and a string with position-references
+	(* lexer :
+	 * takes an automaton and a string with position-references
 	 * and returns the lexing function : unit -> 'a
 	 * x is a tuple of the lexids in the same lexbind list
 	 *)
@@ -92,18 +93,23 @@ structure Lexer :> LEXER =
 					getAction ())
 			       | p => let
 					  val len = length (!stateStack) - 1
-					  val yytext = substring (string, !lexPos - len, len)
+					  val yytext =
+					      substring (string, !lexPos - len,
+							 len)
 					      handle Subscript => ""
 					  val newLines = ref (!newLines)
 					  val lines = ref 0
-					  val yycol = (while !firstPos < hd (!newLines) do (newLines := tl (!newLines);
-											    lines := !lines + 1);
-						       !firstPos - hd (!newLines)  ) 
+					  val yycol =
+					      (while !firstPos<hd (!newLines) do
+						   (newLines := tl (!newLines);
+						    lines := !lines + 1);
+						   !firstPos - hd (!newLines) ) 
 				      in
 					  stateStack := [1];
 					  numBack := 0;
 					  newLines := [hd (!newLines)];
-					  action (x, p, yytext, !lineNum - !lines, yycol)
+					  action (x, p, yytext,
+						  !lineNum - !lines, yycol)
 				      end))
 
 
@@ -116,15 +122,21 @@ structure Lexer :> LEXER =
 			val state = hd (!stateStack)
 
 			fun getTrans (s, c) =
-			    if bigTable then ord( String.sub (s, 2 * c) ) * 256 + ord( String.sub (s, 2 * c + 1) )
+			    if bigTable
+				then ord( String.sub (s, 2 * c) ) * 256 +
+				    ord( String.sub (s, 2 * c + 1) )
 			    else ord( String.sub (s, c) )
 		    in
-			if chr = 10 then (newLines := !lexPos :: (!newLines); lineNum := !lineNum + 1) else ();
-			getTrans( Vector.sub( dtran,  Vector.sub (pointer, state) ), chr )
+			if chr = 10 then (newLines := !lexPos :: (!newLines);
+					  lineNum := !lineNum + 1)
+			else ();
+			getTrans( Vector.sub( dtran,
+					     Vector.sub (pointer, state)), chr)
 		    end
 
 
-		(* lex' : unit -> 'b, returns the longest match token from the actual position on
+		(* lex' : unit -> 'a
+		 * returns the longest match token from the actual position on
 		 *)
 		and lex' () = ( firstPos := !lexPos; lex () )
 
@@ -133,10 +145,13 @@ structure Lexer :> LEXER =
 			val chr = actChar ()
 		    in
 			case trans chr of
-			    0 => (if chr = 10 then (newLines := tl (!newLines); lineNum := !lineNum - 1) else ();
+			    0 => (if chr = 10 then (newLines := tl (!newLines);
+						    lineNum := !lineNum - 1)
+				  else ();
 				  getAction () )
 			  | n => (stateStack := n :: (!stateStack) ;
-				  if chr = 256 then () else lexPos := !lexPos + 1;
+				  if chr = 256 then ()
+				  else lexPos := !lexPos + 1;
 				  lex () )
 		    end
 	    in
