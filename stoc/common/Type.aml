@@ -660,13 +660,20 @@ structure TypePrivate =
     fun isUnknownRow(RHO _)		= true
       | isUnknownRow _			= false
 
-    fun headRow(FIELD(l,ts,r))		= (l,ts)
+    fun headRow(FIELD(a,ts,r))		= (a,ts)
       | headRow(RHO(_,r))		= headRow r
       | headRow(NIL)			= raise Row
 
-    fun tailRow(FIELD(l,ts,r))		= r
+    fun tailRow(FIELD(a,ts,r))		= r
       | tailRow(RHO(n,r))		= RHO(n, tailRow r)
       | tailRow(NIL)			= raise Row
+
+    fun lookupRow(NIL, a)		= (print(Label.toString a);raise Row)
+      | lookupRow(RHO(_,r), a)		= lookupRow(r,a)
+      | lookupRow(FIELD(a',ts,r), a)	= case Label.compare(a',a)
+					    of EQUAL   => ts
+					     | LESS    => lookupRow(r,a)
+					     | GREATER => (print(Label.toString a);raise Row)
 
 
   (* Closure *)

@@ -102,6 +102,7 @@ signature TYPE =
     val isUnknownRow :	row -> bool
     val headRow :	row -> lab * typ vector		(* [Row] *)
     val tailRow :	row -> row			(* [Row] *)
+    val lookupRow :	row * lab -> typ vector		(* [Row] *)
 
   (* Copying and instantiation *)
 
