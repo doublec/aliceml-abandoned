@@ -113,9 +113,7 @@ int main(int argc, char *argv[]) {
     }
     Properties::commandLineArguments = tail;
     // Link and Execute Component
-    RootSet::Add(urlWord);
     word module = BootLinker::Link(bootUrl); // might yield GC
-    RootSet::Remove(urlWord);
     if (module != Store::IntToWord(0)) {
       Tuple *tuple    = Tuple::FromWord(module);
       tuple->AssertWidth(1);
