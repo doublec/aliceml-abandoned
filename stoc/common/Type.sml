@@ -269,18 +269,16 @@ before print"MARK updated (by dup)\n"
 
     (* Reduction to some sort of head normal form *)
 
-    (*UNFINISHED: how reduce APP(REC(...(REC(LAM _),_)))? *)
-
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
     fun reduce1(t as ref(APP(t1,t2)))	= 
-(print">reduce1 APP\n";
+(*(print">reduce APP\n";*)
  reduceApp(t, t1, t2)
-;print"<reduce1\n")
+(*;print"<reduce\n")*)
       | reduce1 _			=
-(print">reduce1\n";
+(*(print">reduce\n";*)
  ()
-;print"<reduce1\n")
+(*;print"<reduce\n")*)
 
 (*    fun reduce1(t as ref(APP(t1,t2))) =
 	(case follow t1
@@ -301,14 +299,21 @@ before print"MARK updated (by dup)\n"
 	   of LAM(a,t3) =>
 		( a := LINK t2
 		; t := LINK t3
+(*DEBUG*)
+(*;print"-reduce APP(LAM)\n"*)
 		; reduce1 t
 		)
 	    | _ => Crash.crash "Type.reduceApp"
 	)
+      | reduceApp(t, ref(LINK t3), t2) =
+	    reduceApp(t, follow t3, t2)
+(*DEBUG*)
+(*;print"-reduce APP(LINK)\n")*)
       | reduceApp(t, ref(REC t3), t2) =
-	( reduceApp(t, follow t3, t2)
-	; t := REC(ref(!t))
-	)
+	    (*UNFINISHED: do we need to keep the REC? somehow? *)
+	    reduceApp(t, follow t3, t2)
+(*DEBUG*)
+(*;print"-reduce APP(REC)\n")*)
       | reduceApp(t, t1, t2) = ()
 
 
@@ -325,8 +330,8 @@ before print"MARK updated (by dup)\n"
     fun inCon c		= ref(CON c)
     fun inAll at	= ref(ALL at)
     fun inExist at	= ref(EX at)
-    fun inLambda at	= let val t = ref(LAM at) in reduce1 t ; t end
-    fun inApp(t1,t2)	= let val t = ref(APP(clone t1,t2)) in reduce1 t ; t end
+    fun inLambda at	= ref(LAM at)
+    fun inApp(t1,t2)	= let val t = ref(APP(t1,t2)) in reduce1 t ; t end
     fun inRec t		= ref(REC t)
 
     fun var k		= ref(VAR(k, !level))
@@ -337,7 +342,7 @@ before print"MARK updated (by dup)\n"
     exception Type
 
     fun asType(ref(LINK t | REC t))	= asType t
-      | asType(t as ref(APP _))	= ( reduce1 t ; asType' t )
+      | asType(t as ref(APP _))		= ( reduce1 t ; asType' t )
       | asType(ref t')			= t'
 
     and asType'(ref(t' as APP _))	= t'
@@ -420,7 +425,7 @@ end)
 	case Lab.compare(l1,l2)
 	  of EQUAL   => raise Row
 	   | LESS    => FLD(l1, ts1, r1)
-	   | GREATER => FLD(l2, ts2, extendRow(l1,ts2,r2))
+	   | GREATER => FLD(l2, ts2, extendRow(l1,ts1,r2))
 
     fun tupToRow ts =
 	let
@@ -465,29 +470,49 @@ end)
     fun occurs(t1,t2) =
 	let
 (*(*DEBUG*)
-val _=print">occurs\n"
-*)
+val _=print">occurs\n"*)
+
 	    exception Occurs
 
-	    fun occurs(t2 as ref t2') =
+	    fun occurs t2 =
 		if t1 = t2 then
 		    raise Occurs
 		else
+		    case !t2
+		      of MARK _ => ()
+		       | t2'    =>
 (*(*DEBUG*)
-(print"MARK set (by occurs)\n";
-*)
-		    ( t2 := MARK t2' ; occurs' t2' )
-(*)
-*)
-
-	    and occurs'(REC _ | MARK _) = ()
-	      | occurs' t2'             = app1'(t2', occurs)
+(print("MARK set (by occurs) at " ^ pr t2' ^ "\n");*)
+			 ( t2 := MARK t2' ; app1'(t2', occurs) )
 	in
 	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
 (*(*DEBUG*)
-before print"<occurs\n"
-*)
+before print"<occurs\n"*)
 	end
+
+    fun occursIllegally(t1,t2) =
+	let
+(*(*DEBUG*)
+val _=print">occursIllegally\n"*)
+
+	    exception Occurs
+
+	    fun occurs t2 =
+		if t1 = t2 then
+		    raise Occurs
+		else
+		    case !t2
+		      of (REC _ | MARK _) => ()
+		       | t2'              =>
+(*(*DEBUG*)
+(print("MARK set (by occursIllegally) at " ^ pr t2' ^ "\n");*)
+			 ( t2 := MARK t2' ; app1'(t2', occurs) )
+	in
+	    (( occurs t2 ; false ) handle Occurs => true) before unmark t2
+(*(*DEBUG*)
+before print"<occursIllegally\n"*)
+	end
+
 
     fun unify(t1,t2) =
 	let
@@ -535,16 +560,25 @@ before print"<occurs\n"
 				else t1 := LINK t2
 
 	       | (HOLE(k1,_), _) =>
-		 if k1 <> kind' t2' orelse occurs(t1,t2) then
+		 if k1 <> kind' t2' orelse occursIllegally(t1,t2) then
 		     raise Unify(t1,t2)
 		 else
 		     t1 := LINK t2
 
 	       | (_, HOLE(k2,_)) =>
-		 if k2 <> kind' t1' orelse occurs(t2,t1) then
+		 if k2 <> kind' t1' orelse occursIllegally(t2,t1) then
 		     raise Unify(t1,t2)
 		 else
 		     t2 := LINK t1
+
+	       | (REC(t3), REC(t4)) =>
+		 recurse unify (t3,t4)
+
+	       | (REC(t3), _) =>
+		 ( t2 := REC(ref t2') ; unify(t1,t2) )
+
+	       | (_, REC(t3)) =>
+		 ( t1 := REC(ref t1') ; unify(t1,t2) )
 
 	       | (ARR(tt1), ARR(tt2)) =>
 		 recurse unifyPair (tt1,tt2)
@@ -579,15 +613,6 @@ before print"<occurs\n"
 
 	       | (APP(tt1), APP(tt2)) =>
 		 recurse unifyPair (tt1,tt2)
-
-	       | (REC(t3), REC(t4)) =>
-		 recurse unify (t3,t4)
-
-	       | (REC(t3), _) =>
-		 ( t2 := REC(ref t2') ; unify(t1,t2) )
-
-	       | (_, REC(t3)) =>
-		 ( t1 := REC(ref t1') ; unify(t1,t2) )
 
 	       | _ => raise Unify(t1,t2)
 	end

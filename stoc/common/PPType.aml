@@ -63,20 +63,21 @@ structure PPType :> PP_TYPE =
 
     (* Precedence:
      *  0 : sums (con of ty1 | ... | con of tyn), kind annotation (ty : kind)
-     *	1 : function arrow (ty1 -> ty2), binders (LAM ty1 . ty2)
-     *	2 : tuple (ty1 * ... * tyn)
-     *	3 : constructed type (tyseq tycon)
+     *	1 : binders (LAM ty1 . ty2)
+     *	2 : function arrow (ty1 -> ty2)
+     *	3 : tuple (ty1 * ... * tyn)
+     *	4 : constructed type (tyseq tycon)
      *)
 
     fun ppType t = fbox(below(ppTypePrec 0 t))
 
     and ppTypePrec p (t as ref(REC t1 | MARK(REC t1))) =
 (*DEBUG*)
-(print("pping " ^ pr(!t) ^ "\n");
-	if true orelse occurs(t,t1) then
+((*print("[pp " ^ pr(!t) ^ "]");*)
+	if occurs(t,t1) then
 	    let
-val _=print"recursive\n"
-		val t'  = makeVar t
+(*val _=print"recursive\n"
+*)		val t'  = makeVar t
 		val doc = (case t' of MARK _ => text "!MU" | _ => text "MU") ^/^
 			    abox(
 				hbox(
@@ -95,15 +96,17 @@ val _=print"recursive\n"
 		    fbox(below(nest doc))
 	    end
 	else
-(print"not recursive\n";
-	    ( reduce1 t1 ; ppTypePrec p t1 )
-))
+(*(print"not recursive\n";*)
+	    ppTypePrec p t1
+)
 
-(*      | ppTypePrec  p (ref t') = ppTypePrec' p t'
-(*DEBUG*)
-*)    | ppTypePrec  p (t as ref t') =
+      | ppTypePrec p (t as ref(APP _)) = ( reduce1 t ; ppTypePrec' p (!t) )
+
+      | ppTypePrec  p (ref t') = ppTypePrec' p t'
+(*(*DEBUG*)
+    | ppTypePrec p (t as ref t') =
 let
-val _=print("pping " ^ pr t' ^ "\n")
+(*val _=print("[pp " ^ pr t' ^ "]")*)
 in
 
 	if foldl1'(t', fn(t1,b) => b orelse occurs(t,t1), false) then
@@ -129,11 +132,9 @@ val _=print"RECURSIVE!\n"
 		    fbox(below(nest doc))
 	    end
 	else
-(print"OK\n";
 	    ppTypePrec' p t'
-)
 end
-
+*)
 
     and ppTypePrec' p (HOLE(k,n)) =
 	if k = STAR then
@@ -156,9 +157,9 @@ end
 
       | ppTypePrec' p (ARR(t1,t2)) =
 	let
-	    val doc = ppTypePrec 2 t1 ^/^ text "->" ^/^ ppTypePrec 1 t2
+	    val doc = ppTypePrec 3 t1 ^/^ text "->" ^/^ ppTypePrec 2 t2
 	in
-	    if p > 1 then
+	    if p > 2 then
 		paren doc
 	    else
 		doc
@@ -169,9 +170,9 @@ end
 
       | ppTypePrec' p (TUP ts) =
 	let
-	    val doc = ppStarList (ppTypePrec 3) ts
+	    val doc = ppStarList (ppTypePrec 4) ts
 	in
-	    if p > 2 then
+	    if p > 3 then
 		paren doc
 	    else
 		fbox(below(nest doc))
@@ -216,7 +217,7 @@ end
 	let
 	    val doc = text "FN" ^/^ ppBinder(a,t)
 	in
-	    if p > 0 then
+	    if p > 1 then
 		paren doc
 	    else
 		fbox(below doc)
@@ -226,7 +227,7 @@ end
 	let
 	    val (t,ts) = uncurry(ref t')
 	in
-	    fbox(nest(ppSeqPrec ppTypePrec 3 ts ^/^ ppTypePrec 4 t))
+	    fbox(nest(ppSeqPrec ppTypePrec 4 ts ^/^ ppTypePrec 5 t))
 	end
 
 (*DEBUG

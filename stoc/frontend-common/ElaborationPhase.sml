@@ -134,24 +134,23 @@ structure ElaborationPhase :> ELABORATION_PHASE =
     fun elabValId(E, id as I.Id(i, stamp, name)) =
 	(* May be binding occurance *)
 	let
-(*(*DEBUG*)
+(*DEBUG*)
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
-val _=print("lookup value " ^ x ^ ": ")
+val _=print("-- lookup val " ^ x ^ " : ")
 val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupVal(E, stamp))), 600)
 ;print "\n")
 handle Lookup _ => ()
-*)
+
 	    val t = Type.instance(#2(lookupVal(E, stamp)))
 		    handle Lookup _ =>
 			let val t = Type.unknown Type.STAR in
-(*(*DEBUG*)
-print "not found\n";
-*)
+(*DEBUG*)
+print "'_? (* not found *)\n";
 			    insertVal(E, stamp, (id,t)) ; t
 			end
 (*(*DEBUG*)
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
-val _=print("instantiated " ^ x ^ ": ")
+val _=print("-- instantiated " ^ x ^ " : ")
 val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
 ;print "\n")
 *)
@@ -649,7 +648,7 @@ val _=print "\n";
 	let
 (*DEBUG*)
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
-val _=print("lookup value " ^ x ^ ": ")
+val _=print("-- lookup type " ^ x ^ " = ")
 val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupTyp(E, stamp))), 600)
 ;print "\n")
 handle Lookup _ => ()
@@ -833,6 +832,8 @@ print"not found\n";
 
   (* Type representations *)
 
+    (*UNFINISHED: do full traversal to enter all nested constructors *)
+
     and elabTypRep(E, id', buildKind, I.ConTyp(i, longid)) =
 	let
 	    val (t,longid') = elabTypLongid(E, longid)
@@ -870,9 +871,8 @@ print"not found\n";
 	end
 
       | elabTypRep(E, id', buildKind, I.SumTyp(i, cons)) =
-	(*UNFINISHED: enter constructors*)
 	let
-	    val (t,cons') = elabCons(E, cons)
+	    val (t,cons') = elabConReps(E, cons)
 	in
 	    ( t, O.SumTyp(typInfo(i,t), cons') )
 	end
@@ -1188,9 +1188,9 @@ print "\n") andthen
 (*DEBUG*)
 appVals (fn(x,(id,t)) =>
 (let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
-in print("val " ^ x ^ ": ") end;
+in print("val " ^ x ^ " : ") end;
 PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600);
-print " (not generalised)\n")) (copyScope E) andthen
+print " (* not generalised *)\n")) (copyScope E) andthen
 				mergeScope E
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
@@ -1233,17 +1233,16 @@ val _=print "\n"
 	    val (t1,id')  = elabTypId(E, k, id)
 	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
 	    val  _        = Type.exitLevel()
-(*DEBUG*)
-val _=print"DatDec unification\n"
-val _=print("t1 = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
-val _=print "\n"
-val _=print("t2 = ")
-val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t2, 600)
-val _=print "\n"
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
 ((*DEBUG*)
+print"DatDec unification failure:\n";
+print("t1 = ");
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600);
+print "\n";
+print("t2 = ");
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t2, 600);
+print "\n";
 print("t3 = ");
 PrettyPrint.output(TextIO.stdOut, PPType.ppType t3, 600);
 print "\n";
@@ -1298,7 +1297,7 @@ fun a andthen b = b
 	    val _      = appVals (fn(x,(id,t)) =>
 (*DEBUG*)
 (let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
-in print("val " ^ x ^ ": ") end;
+in print("val " ^ x ^ " : ") end;
 PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.close t), 600);
 print "\n") andthen
 					insertVal(E, x, (id, Type.close t))) E'
