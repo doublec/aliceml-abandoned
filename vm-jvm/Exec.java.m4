@@ -15,6 +15,7 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 
     public void run() {
 	DMLValue v = null;
+	DMLValue t = null;
 	try {
 	    FileInputStream fin = new FileInputStream(argv[0]);
 	    PickleInputStream in = new PickleInputStream(fin);
@@ -22,7 +23,9 @@ public class Exec extends de.uni_sb.ps.dml.runtime.Thread {
 	    System.out.println(r);
 	    v=((Record) r).getByLabel("main").apply(Constants.dmlunit);
 	    while (tail!=null) {
-		v=tail.apply(v);
+		t = tail;
+		tail = null;
+		v=t.apply(v);
 	    }
     } catch (Exception e) {
 	    System.err.println(e);
