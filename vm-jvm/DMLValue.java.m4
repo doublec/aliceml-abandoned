@@ -6,6 +6,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 public interface DMLValue extends java.io.Serializable {
 
+
     /** gibt Wert \in Wert zurueck */
     public DMLValue getValue();
 

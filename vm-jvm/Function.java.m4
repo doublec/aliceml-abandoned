@@ -1,7 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
 abstract public class DMLFunction implements DMLValue {
-
     public DMLFunction() {
 	super();
     }

@@ -2,6 +2,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLWord extends DMLSCon {
 
+    
   /** Gleichheit auf Integer-Werten */
   final public boolean equals(Object val) {
     return (val instanceof DMLWord) && (((DMLWord)val).value==this.value);

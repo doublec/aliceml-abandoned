@@ -4,7 +4,7 @@ final public class DMLInt extends DMLSCon {
 
   /** Gleichheit auf Integer-Werten */
   final public boolean equals(Object val) {
-    return (val instanceof DMLInt) && (((DMLInt)val).value==this.value);
+    return (val instanceof DMLInt) && (((DMLInt) val).value==this.value);
   }
 
   public DMLInt(int value) {

@@ -1,6 +1,7 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLConstants {
+
     public static final DMLName dmlunit = new DMLName("unit");
     public static final DMLName dmltrue = new DMLName("boolean");
     public static final DMLName dmlfalse= new DMLName("boolean");

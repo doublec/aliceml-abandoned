@@ -1,7 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLFuture extends DMLLVar {
-
     public DMLFuture(DMLValue v) {
 	super();
 	ref=v;

@@ -2,6 +2,8 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 public class DMLLVar implements DMLValue {
 
+    protected DMLValue ref=null;
+
     public DMLLVar() {
 	super();
     }
@@ -10,10 +12,8 @@ public class DMLLVar implements DMLValue {
 	if (ref==null)
 	    return this;
 	else
-	    if (ref instanceof DMLLVar)
-		return ref.getValue();
-	    else
-		return ref;
+	    ref=ref.getValue();
+	return ref;
     }
 
     final public DMLValue request() { // gibt Wert zurück wenn verfügbar
@@ -21,18 +21,14 @@ public class DMLLVar implements DMLValue {
 	    try {
 		this.wait();
 	    } catch (java.lang.InterruptedException e) {}
-	if (ref instanceof DMLLVar)
-	    return ref.request();
-	else
-	    return ref.getValue();
+	ref=ref.request();
+	return ref;
     }
 
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
     final public boolean equals(Object val) {
 	return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
     }
-
-    protected DMLValue ref=null;
 
     public DMLValue bind(DMLValue v) { // bindet Variable und startet Threads aus suspendVector-Liste
 	ref=v;
@@ -57,8 +53,7 @@ public class DMLLVar implements DMLValue {
 
     /** DMLLVar und DMLFuture werden beim pickeln ersetzt, falls sie gebunden sind.
 	Nicht gebunde logische Variablen dürfen nicht gepickelt werden. */
-    
     final private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
-	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLThread")).raise();
+	DMLConstants.runtimeError.apply(new DMLString("cannot pickle DMLLVar")).raise();
     }
 }

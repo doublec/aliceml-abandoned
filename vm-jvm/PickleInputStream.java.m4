@@ -28,7 +28,7 @@ final public class DMLObjectInputStream extends java.io.ObjectInputStream {
 	    Object o = DMLConstructor.gNames.get(obj);
 	    if (o==null) {
 		DMLValue newc = null;
-		if (((GName)obj).isName())
+		if (((GName) obj).isName())
 		    newc = new DMLName((GName) obj);
 		else
 		    newc = new DMLConstructor((GName) obj);

@@ -3,7 +3,6 @@ package de.uni_sb.ps.DML.DMLRuntime;
 final public class DMLName implements DMLValue {
 
     String name = null;
-
     GName gName = null;
 
     public DMLName(String name) {

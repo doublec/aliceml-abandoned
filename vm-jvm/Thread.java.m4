@@ -2,6 +2,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLThread extends Thread implements DMLValue {
 
+    public DMLValue tail=null;
     DMLValue fcn=null;
 
     /** Gesamtzahl DMLThreads */

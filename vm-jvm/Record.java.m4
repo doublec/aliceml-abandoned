@@ -15,7 +15,7 @@ final public class DMLRecord extends DMLTuple {
 	if (ar==null)
 	    arityHash.put(arity,arity);
 	else
-	    arity = (DMLRecordArity) ar;
+	    arity =(DMLRecordArity) ar;
     }
 
     /** funktioniert nur, wenn records unique sind. */

@@ -3,6 +3,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 final public class DMLConVal implements DMLValue {
 
     DMLValue content=null;
+
     DMLConstructor constructor=null;
 
     public DMLConVal(DMLConstructor constructor, DMLValue content) {

@@ -3,9 +3,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 final public class DMLConstructor implements DMLValue {
 
     static java.util.Hashtable gNames = new java.util.Hashtable();
-
     String name = null;
-
     GName gName = null;
 
     public DMLConstructor() {

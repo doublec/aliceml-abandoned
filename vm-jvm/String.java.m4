@@ -5,7 +5,7 @@ final public class DMLString extends DMLSCon {
   /** Testet Gleichheit der Java-Strings */
   final public boolean equals(Object val) {
     return (val instanceof DMLString) &&
-      (((DMLString)val).value.equals(this.value));
+      (((DMLString) val).value.equals(this.value));
   }
 
   public DMLString(String value) {
