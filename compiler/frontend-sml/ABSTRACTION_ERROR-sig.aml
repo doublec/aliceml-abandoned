@@ -34,6 +34,7 @@ sig
 	| StrIdUnbound		of StrId.t
 	| SigIdUnbound		of SigId.t
 	| LongStrIdNonStruct
+	| ConTyConShadowed	of TyCon.t * VId.t
 	(* Expressions *)
 	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab.t

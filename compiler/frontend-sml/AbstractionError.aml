@@ -49,6 +49,7 @@ struct
 	| StrIdUnbound		of StrId.t
 	| SigIdUnbound		of SigId.t
 	| LongStrIdNonStruct
+	| ConTyConShadowed	of TyCon.t * VId.t
 	(* Expressions *)
 	| ExpConArgSuperfluous
 	| ExpRowLabDuplicate	of Lab.t
@@ -174,6 +175,9 @@ struct
 	  ppUnbound(classSigId, sigid)
       | ppError(LongStrIdNonStruct) =
 	  textpar["module","in","long","identifier","is","not","a","structure"]
+      | ppError(ConTyConShadowed(tycon, vid)) =
+	  textpar["datatype",ppTyCon tycon,"belonging","to","constructor",
+		  ppVId vid,"is","not","accessible"]
       (* Expressions *)
       | ppError(ExpConArgSuperfluous) =
 	  textpar["superfluous","constructor","argument"]
