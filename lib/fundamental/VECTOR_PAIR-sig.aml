@@ -34,16 +34,16 @@ sig
     val find :		('a * 'b -> bool) -> 'a vector * 'b vector
 					  -> ('a * 'b) option
 
-    val appi :		(int * 'a * 'b -> unit) ->
-			   'a vector * 'b vector * int * int option -> unit
-    val appri :		(int * 'a * 'b -> unit) ->
-			   'a vector * 'b vector * int * int option -> unit
+    val appi :		(int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
+    val appri :		(int * 'a * 'b -> unit) -> 'a vector * 'b vector -> unit
     val mapi :		(int * 'a * 'b -> 'c) ->
-			   'a vector * 'b vector * int * int option -> 'c vector
+			   'a vector * 'b vector -> 'c vector
     val foldli :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
-			   'a vector * 'b vector * int * int option -> 'c
+			   'a vector * 'b vector -> 'c
     val foldri :	(int * 'a * 'b * 'c -> 'c) -> 'c ->
-			   'a vector * 'b vector * int * int option -> 'c
-    val findi :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector
-						-> (int * 'a * 'b) option
+			   'a vector * 'b vector -> 'c
+    val alli :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val existsi :	(int * 'a * 'b -> bool) -> 'a vector * 'b vector -> bool
+    val findi :		(int * 'a * 'b -> bool) -> 'a vector * 'b vector ->
+						   (int * 'a * 'b) option
 end
