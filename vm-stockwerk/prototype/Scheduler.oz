@@ -85,15 +85,61 @@ define
       end
    end
 
-   class Scheduler
-      attr
-	 QueueHd: unit QueueTl: unit CurrentThread: unit
-	 SignalSources: unit PendingSignals: unit
+   class SignalManager
+      attr PendingSignalsHd: unit PendingSignalsTl: unit SignalSources: unit
       meth init() Empty in
+	 PendingSignalsHd <- Empty
+	 PendingSignalsTl <- Empty
+	 SignalSources <- {Array.new 0 INITIAL_SIGNAL_SOURCES_SIZE - 1 unit}
+      end
+      meth processPendingSignals()
+	 if {IsFree @PendingSignalsHd} then skip
+	 elsecase @PendingSignalsHd of Id|Rest then
+	    PendingSignalsHd <- Rest
+	    case @SignalSources.Id of transient(TransientState) then
+	       case {Access TransientState} of future(Ts) then
+		  for T in Ts do
+		     {self wakeup(T)}
+		  end
+	       end
+	       {Assign TransientState ref(tuple())}
+	    end
+	    @SignalSources.Id := unit
+	    SignalManager, processPendingSignals()
+	 end
+      end
+      meth registerSignalSource(?Id ?Transient) A in
+	 A = @SignalSources
+	 for I in 0..{Array.high A} break: Break do
+	    case A.I of unit then
+	       Id = I
+	       A.Id := Transient
+	       {Break}
+	    end
+	 end
+	 if {IsFree Id} then NewA in   % enlargen array
+	    Id = {Array.high A} + 1
+	    NewA = {Array.new 0 (Id * 3 div 2 - 1) unit}
+	    for I in 0..{Array.high A} do
+	       NewA.I := A.I
+	    end
+	    SignalSources <- NewA
+	    NewA.Id := Transient
+	 end
+	 Transient = transient({NewCell future(nil)})
+      end
+      meth emitSignal(Id) NewTl in
+	 @PendingSignalsTl = Id|NewTl
+	 PendingSignalsTl <- NewTl
+      end
+   end
+
+   class Scheduler from SignalManager
+      attr QueueHd: unit QueueTl: unit CurrentThread: unit
+      meth init() Empty in
+	 SignalManager, init()
 	 QueueHd <- Empty
 	 QueueTl <- Empty
-	 SignalSources <- {Array.new 0 INITIAL_SIGNAL_SOURCES_SIZE - 1 unit}
-	 PendingSignals <- nil
       end
       meth newThread(closure: Closure <= unit
 		     args: Args <= args()
@@ -122,18 +168,8 @@ define
 	 @CurrentThread
       end
       meth run() Hd = @QueueHd in
-	 case @PendingSignals of Id|Rest then
-	    PendingSignals <- Rest
-	    case @SignalSources.Id of transient(TransientState) then
-	       case {Access TransientState} of future(Ts) then
-		  for T in Ts do
-		     Scheduler, wakeup(T)
-		  end
-	       end
-	       {Assign TransientState ref(tuple())}
-	    end
-	    @SignalSources.Id := unit
-	 elseif {IsFree Hd} then
+	 Scheduler, processPendingSignals()
+	 if {IsFree Hd} then
 	    skip   %--** wait for I/O or asynchronous signals
 	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
@@ -200,29 +236,6 @@ define
 	 %--** when can this be done in the current thread?
 	 TaskStack = [byneedFrame(ByneedInterpreter.interpreter Transient)]
 	 Scheduler, newThread(closure: Closure taskStack: TaskStack)
-      end
-      meth registerSignalSource(?Id ?Transient) A in
-	 A = @SignalSources
-	 for I in 0..{Array.high A} break: Break do
-	    case A.I of unit then
-	       Id = I
-	       A.Id := Transient
-	       {Break}
-	    end
-	 end
-	 if {IsFree Id} then NewA in   % enlargen array
-	    Id = {Array.high A} + 1
-	    NewA = {Array.new 0 (Id * 3 div 2 - 1) unit}
-	    for I in 0..{Array.high A} do
-	       NewA.I := A.I
-	    end
-	    SignalSources <- NewA
-	    NewA.Id := Transient
-	 end
-	 Transient = transient({NewCell future(nil)})
-      end
-      meth emitSignal(Id)
-	 PendingSignals <- Id|@PendingSignals
       end
    end
 
