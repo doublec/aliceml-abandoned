@@ -188,8 +188,8 @@ struct
 						   verbose=false}; !r)
 	    val structureName = structureName ()
 	    val structureName2 = "rmConstrStatus"^(timeStamp())
+	    val structureName3 = "ErrorStuct"^(timeStamp())
 
-	    (* to be done: code for parser *)
 	    fun parserDecToString  [] = ""
 	      | parserDecToString  ((name,ty,sr)::ds) =
 		let val prefix = case ty of
@@ -208,13 +208,15 @@ struct
 			^"    val table = J.generatedLrTable\n"
 			^"    val saction = J.SAction.actions\n"
 			^"    val void = J.SValue.VOID\n"
+			^"    val error = "^structureName3^".error\n"
 			^"    fun extract (J.SValue."^(NormalForm.start)^" a) =\n"
 			^"        case a () of (J.SValue.S"^(Int.toString n)^" b) => b\n"
 			^"in\n    extract (J.LrParser.parse {arg=arg,\n" 
 			^"                            lexer=lexer2,\n"
 			^"                            saction=saction,\n"
 			^"                            table=table,\n"
-			^"                            void=void})\nend\nend\n"
+			^"                            void=void,\n"
+			^"                            error=error})\nend\nend\n"
 		in
 		    (currParser := !currParser + 1; cr s)
 		end
@@ -223,7 +225,14 @@ struct
 		"(* ---hack: remove constructor bindings in scope *)\n"
 		^"structure "^structureName2^" = \nstruct\n"
 		^(undoBinding termlist)^"end\n(* --- *)\n\n"
-	    val p = (A.MLCode [hack]) ::p
+	    val errorDef =
+		"(* ---error function for syntax errors: adapt to needs *)\n"
+		^"structure "^structureName3^" = \nstruct\n"
+		^"  (* val error : position-type -> string -> unit *)\n" 
+		^"  val error = fn pos => fn (errormsg :string) => ()\n"
+		^"end\n(* --- *)\n\n"
+
+	    val p = (A.MLCode [errorDef, hack]) ::p
  
 	    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
 	      | absSynToString _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
@@ -272,6 +281,4 @@ struct
 end
 
 
-(* test environment 
-let val _ = Compiler.Control.Print.printDepth := 80 in () end
-*)
+

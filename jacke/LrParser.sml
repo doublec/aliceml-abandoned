@@ -20,7 +20,8 @@ signature LR_PARSER_ENG =
 				LrTable.nonterm *
 				     ('_b * '_c * '_c) *
 				     ((LrTable.state *('_b * '_c * '_c)) list),
-				     void : '_b
+		     void : '_b,
+		     error: '_c -> string -> unit  
 		     } -> '_b
     end
 
@@ -64,7 +65,8 @@ structure LrParserEng : LR_PARSER_ENG =
 		      lexer : unit -> ('_b,'_c) token,
 		      saction : int * '_c * ('_b,'_c) stack * 'a ->
 				nonterm * ('_b * '_c * '_c) * ('_b,'_c) stack,
-		      void : '_b} =>
+		      void : '_b,
+		      error} =>
  let fun prAction(stack as (state, _) :: _, 
 		  next as (TOKEN (term,_)), action) =
              (println "Parse: state stack:";
@@ -99,7 +101,7 @@ structure LrParserEng : LR_PARSER_ENG =
 		    in parseStep(next,(goto(state,nonterm),value)::stack)
 		    end
                | ERROR => let val (_,leftPos,rightPos) = value
-		          in (*ErrorMsg.error leftPos "syntax error\n";*)
+		          in error leftPos "syntax error\n";
 			     raise ParseError
 			  end
   	       | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
