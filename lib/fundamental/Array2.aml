@@ -95,16 +95,16 @@ struct
    fun update (a as {values, rows, cols}, row, col, v) =
        Array.update (values, index (a, row, col), v)
 
-   val dummy = lazy raise General.Fail "dummy value accessed (inside Array2)"
+   fun dummy () = lazy raise General.Fail "dummy value accessed (inside Array2)"
 
        
-   fun fromList [] = { rows = 0, cols = 0, values = Array.array (0, dummy) }
+   fun fromList [] = { rows = 0, cols = 0, values = Array.array (0, dummy ()) }
      | fromList l = 
        let val rows = List.length l 
 	   val cols = List.length (List.hd l)
        in
 	   if cols = 0 then
-	       array (rows, cols, dummy)
+	       array (rows, cols, dummy ())
 	   else
 	       let val res = { rows = rows,
 			  cols = cols, 
@@ -163,7 +163,7 @@ struct
        
    fun tabulate trv (rows, cols, f) =
        if rows = 0 orelse cols = 0 then
-	   array (rows, cols, dummy)
+	   array (rows, cols, dummy ())
        else
 	   let val v = Array.array (rows * cols, f (0, 0))
 	       val res = { values = v, rows = rows, cols = cols }
