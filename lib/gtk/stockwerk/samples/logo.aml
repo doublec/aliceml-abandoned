@@ -40,11 +40,11 @@ local
     val MyCanvas = GnomeCanvas.new()
     val root     = GnomeCanvas.root MyCanvas
 
-    val image = Gtk.imageNewFromFile("logo.jpg")
+    val image = Gtk.imageNewFromFile("logo.png")
     val ibox = Gtk.eventBoxNew()
 
     val (xstart, ystart) = (10,10)
-    val (xdelta, ydelta) = (20,20)
+    val (xdelta, ydelta) = (1,1)
     val (ximagesize, yimagesize) = (254, 80)
     val (xcanvassize, ycanvassize) = (400, 400)
 
@@ -67,16 +67,16 @@ local
 			    then ydelta 
 			    else ~ydelta
 	in
-	    (sleep 300;
+	    (sleep 10;
 	     GnomeCanvas.itemMove(item, Real.fromInt xdnew,Real.fromInt ydnew);
 	     GnomeCanvas.updateNow MyCanvas;
 	     serve (move(x+xdnew, y+ydnew, xdnew, ydnew)))
 	end
    
     fun toBlue    _ = 
-	Gtk.imageSetFromFile(image, "logo-blue.jpg")
+	Gtk.imageSetFromFile(image, "logo-blue.png")
     fun toRainbow _ = 
-	Gtk.imageSetFromFile(image, "logo.jpg")
+	Gtk.imageSetFromFile(image, "logo.png")
 
     fun delete _  = OS.Process.exit OS.Process.success
     val window    = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
