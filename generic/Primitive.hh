@@ -23,9 +23,8 @@
 
 class DllExport Primitive {
 public:
-  static word MakeFunction(Transform *abstract, const char *name,
-			   Interpreter::function function,
-			   u_int arity, bool sited = false);
+  static word MakeFunction(const char *name, Interpreter::function function,
+			   u_int arity, Transform *abstract);
 
   // Push a new primitive frame and call primitive directly
   static Worker::Result Execute(Interpreter *interpreter);
