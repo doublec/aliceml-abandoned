@@ -15,8 +15,8 @@
 // -- StockWert implements ISerializable with the default serialization
 //    behaviour
 // -- replicable data structures (literals, tuples, records, names,
-//    constructors, and constructed values except references) inherit the
-//    default serialization mechanism
+//    constructors including the reference constructor, and constructed
+//    values except references) inherit the default serialization mechanism
 // -- the abstract class Global represents entities that have a Guid.
 //    Global overrides GetObjectData to generate a Guid upon serialization,
 //    then fall back to StockWert::GetObjectData.  Global implements
@@ -26,7 +26,8 @@
 // -- Transient overrides GetObjectData to request itself, then to fall back
 //    to StockWert::GetObjectData.  Transient implements IObjectReference to
 //    remove the indirection upon deserialization
-// -- Thread implements ISerializable::GetObjectData to throw an exception
+// -- Thread and Ref implement ISerializable::GetObjectData to throw a
+//    Pickle exception
 //
 
 //--** use brinst and brnull instead of brtrue and brfalse
@@ -66,48 +67,47 @@
     }
   }
 
-  .class sealed public State extends System.Object {
-    .field static private initonly class System.Collections.Hashtable GuidTable
+  .class sealed public RecordArity extends System.Object {
+    .field public static class System.Collections.Hashtable ArityTable
+    .field public class System.String[] Labels
     .method public static void .cctor() {
       newobj instance void System.Collections.Hashtable::.ctor()
-      stsfld class System.Collections.Hashtable StockWerk.State::GuidTable
+      stsfld class System.Collections.Hashtable StockWerk.RecordArity::ArityTable
       ret
     }
-    .method public static class System.Object Globalize(class StockWerk.StockWert) {
-      .locals(value class System.Guid, class System.Object)
-      ldloca.s 0
-      call instance void System.Guid::.ctor()
-      ldloca.s 0
-      box System.Guid
+    .method public void .ctor(class System.String[]) {
+      ldarg.0
+      call instance void System.Object::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class System.String[] StockWerk.RecordArity::Labels
+      ret
+    }
+    .method virtual public int32 GetHashCode() {
+      .locals(int32, int32)
+      ldc.i4 0
+      stloc.0
+      ldc.i4 0
       stloc.1
-      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-      ldloc.1
-      ldarg.0
-      newobj instance void System.WeakReference::.ctor(class System.Object)
-      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
-      ldloc.1
-      ret
-    }
-    .method public static class StockWerk.StockWert Localize(class System.Object, class StockWerk.StockWert) {
-      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-      ldarg.0
-      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
-      dup
-      brfalse.s enter
-      castclass System.WeakReference
-      call instance class System.Object System.WeakReference::get$Target()
-      dup
-      brfalse.s enter
-      castclass StockWerk.StockWert
-      ret
-    enter:
-      pop
-      ldsfld class System.Collections.Hashtable StockWerk.State::GuidTable
-      ldarg.0
+    loop:
+      ldloc.0
       ldarg.1
-      newobj instance void System.WeakReference::.ctor(class System.Object)
-      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldlen
+      bge.s return
       ldarg.1
+      ldloc.0
+      ldelem.ref
+      callvirt instance int32 System.Object::GetHashCode()
+      ldloc.1
+      xor
+      stloc.1
+      ldloc.0
+      ldc.i4 1
+      add
+      stloc.0
+      br.s loop
+    return:
+      ldloc.1
       ret
     }
   }
@@ -186,6 +186,7 @@
       ret
     }
     .method virtual public void PopulateData(class System.Reflection.MemberInfo[0 ...], value class System.Variant[0 ...]) {
+      .locals(int32)
       ldc.i4 0
       stloc.0
     loop:
@@ -223,7 +224,13 @@
   }
 
   .class abstract public Global extends StockWerk.StockWert implements System.Serialization.IObjectReference {
+    .field static private initonly class System.Collections.Hashtable GuidTable
     .field public class System.Object Guid   //--** use private instead of public
+    .method public static void .cctor() {
+      newobj instance void System.Collections.Hashtable::.ctor()
+      stsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
+      ret
+    }
     .method public void .ctor() {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
@@ -232,22 +239,53 @@
       stfld class System.Object StockWerk.Global::Guid
       ret
     }
+    .method public static class System.Object Globalize(class StockWerk.StockWert) {
+      .locals(value class System.Guid, class System.Object)
+      ldloca.s 0
+      call instance void System.Guid::.ctor()
+      ldloca.s 0
+      box System.Guid
+      stloc.1
+      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
+      ldloc.1
+      ldarg.0
+      newobj instance void System.WeakReference::.ctor(class System.Object)
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldloc.1
+      ret
+    }
+    .method public static class StockWerk.StockWert Localize(class System.Object, class StockWerk.StockWert) {
+      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
+      ldarg.0
+      call instance class System.Object System.Collections.Hashtable::get$Item(class System.Object)
+      dup
+      brfalse.s enter
+      castclass System.WeakReference
+      call instance class System.Object System.WeakReference::get$Target()
+      dup
+      brfalse.s enter
+      castclass StockWerk.StockWert
+      ret
+    enter:
+      pop
+      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
+      ldarg.0
+      ldarg.1
+      newobj instance void System.WeakReference::.ctor(class System.Object)
+      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ldarg.1
+      ret
+    }
     .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       brtrue.s serialize
       ldarg.0
       dup
-      call class System.Object StockWerk.State::Globalize(class StockWerk.StockWert)
+      call class System.Object StockWerk.Global::Globalize(class StockWerk.StockWert)
       stfld class System.Object StockWerk.Global::Guid
     serialize:
-/*--**
-      ldarg.0
-      ldarg.1
-      ldarg.2
-      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamContext)
-      ret
-*/
+      //--** workaround until value parameters work correctly:
       .locals(value class System.Serialization.SerializationInfo)
       ldloca.s 0
       ldarg.0
@@ -261,12 +299,19 @@
       call void System.Serialization.SerializationInfoGenerator::PopulateSerializationInfo(class System.Object, value class System.Serialization.SerializationInfo)
       ldloc.0
       ret
+/*
+      ldarg.0
+      ldarg.1
+      ldarg.2
+      tail. call instance value class System.Serialization.SerializationInfo StockWerk.StockWert::GetObjectData(int32, value class System.Serialization.StreamContext)
+      ret
+*/
     }
     .method virtual public class System.Object GetRealObject() {
       ldarg.0
       ldfld class System.Object StockWerk.Global::Guid
       ldarg.0
-      tail. call class StockWerk.StockWert StockWerk.State::Localize(class System.Object, class StockWerk.StockWert)
+      tail. call class StockWerk.StockWert StockWerk.Global::Localize(class System.Object, class StockWerk.StockWert)
       ret
     }
   }
@@ -419,6 +464,26 @@
       newobj instance void StockWerk.Ref::.ctor(class StockWerk.StockWert)
       ret
     }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.RefConstructor
+      brfalse.s testTransient
+      ldc.i4 1
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
+    }
   }
 
   .class sealed public Ref extends StockWerk.StockWert {
@@ -450,8 +515,139 @@
   }
 
   //
-  //--** Tuples and Records
+  // Tuples and Records
   //
+
+  .class public Tuple extends StockWerk.StockWert {
+    .field public initonly class StockWerk.StockWert[] Values
+    .method public void .ctor(class StockWerk.StockWert[]) {
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.StockWert StockWerk.Tuple::Values
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
+    retry:
+      ldarg.1
+      isinst StockWerk.Tuple
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Tuple
+      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      dup
+      stloc.1
+      ldlen
+      ldarg.0
+      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      dup
+      stloc.0
+      ldlen
+      bne.un.s retFalse
+      ldc.i4 0
+      stloc.2
+    loop:
+      ldloc.2
+      ldloc.0
+      ldlen
+      bge.s retTrue
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      ldloc.1
+      ldloc.2
+      ldelem.ref
+      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      brfalse.s retFalse
+      ldloc.2
+      ldc.i4 1
+      add
+      stloc.2
+      br.s loop
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
+    retTrue:
+      ldc.i4 1
+      ret
+    }
+  }
+
+  .class sealed public Record extends StockWerk.Tuple {
+    .field public initonly class StockWerk.RecordArity Arity
+    .method public void .ctor(class StockWerk.RecordArity, class StockWerk.StockWert[]) {
+      ldarg.0
+      ldarg.2
+      call instance void StockWerk.Tuple::.ctor(class StockWerk.StockWert[])
+      ldarg.0
+      ldarg.1
+      stfld class StockWerk.RecordArity StockWerk.Record::Arity
+      ret
+    }
+    .method virtual public bool Equals(class StockWerk.StockWert) {
+      .locals(class StockWerk.StockWert[], class StockWerk.StockWert[], int32)
+    retry:
+      ldarg.1
+      isinst StockWerk.Record
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Record
+      dup
+      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      stloc.1
+      ldfld class StockWerk.RecordArity StockWerk.Record::Arity
+      ldarg.0
+      ldfld class StockWerk.RecordArity StockWerk.Record::Arity
+      bne.un.s retFalse
+      ldarg.0
+      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      stloc.0
+      ldc.i4 0
+      stloc.2
+    loop:
+      ldloc.2
+      ldloc.0
+      ldlen
+      bge.s retTrue
+      ldloc.0
+      ldloc.2
+      ldelem.ref
+      ldloc.1
+      ldloc.2
+      ldelem.ref
+      callvirt instance bool StockWerk.StockWert::Equals(class StockWerk.StockWert)
+      brfalse.s retFalse
+      ldloc.2
+      ldc.i4 1
+      add
+      stloc.2
+      br.s loop
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      castclass StockWerk.Transient
+      callvirt instance class StockWerk.StockWert StockWerk.Transient::Request()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4 0
+      ret
+    retTrue:
+      ldc.i4 1
+      ret
+    }
+  }
 
   //
   // Transients
