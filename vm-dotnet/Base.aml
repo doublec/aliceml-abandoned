@@ -300,6 +300,8 @@ structure ListPair =
 
 structure Char =
     struct
+	type char = int   (*--** *)
+
 	val ord = builtin "Char.ord"
 	val chr = builtin "Char.chr"
 	val isDigit = builtin "Char.isDigit"
@@ -308,6 +310,7 @@ structure Char =
 	val toCString = builtin "Char.toCString"
     end
 
+type char = Char.char
 val ord = Char.ord
 val chr = Char.chr
 
@@ -315,6 +318,8 @@ val chr = Char.chr
 
 structure String =
     struct
+	type string = int   (*--** *)
+
 	(*--** Subscript exceptions are not raised *)
 
 	val op^ = builtin "String.^"
@@ -344,6 +349,7 @@ structure String =
 	      | _ => false
     end
 
+type string = String.string
 val str = String.str
 val implode = String.implode
 val substring = String.substring
@@ -402,6 +408,10 @@ structure StringCvt :> STRING_CVT =
 
 signature INT =
     sig
+	type int
+
+	val + : int * int -> int
+
 	val scan:
 	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
 	    (int * 'a) option
@@ -415,7 +425,11 @@ signature INT =
 
 structure Int :> INT =
     struct
+	type int = int   (*--** *)
+
 	open StringCvt
+
+	val op+ = op+
 
 	fun decval c = Char.ord c - Char.ord #"0"
 	fun hexval c =
@@ -485,12 +499,16 @@ structure Int :> INT =
 	val fromString = scanString (scan DEC)   (*--** crashes *)
     end
 
+type int = Int.int
+
 structure LargeInt = Int
 
 (* Word *)
 
 structure Word =
     struct
+	type word = int   (*--** *)
+
 	local
 	    val fromInt' = builtin "Word.fromInt'"
 	in
@@ -569,12 +587,16 @@ structure Word =
 	end
     end
 
+type word = Word.word
+
 structure LargeWord = Word
 
 (* Array *)
 
 structure Array =
     struct
+	type array = int   (*--** *)
+
 	val array = builtin "Array.array"
 	val fromList = builtin "Array.fromList"
 	val length = builtin "Array.length"
@@ -618,6 +640,8 @@ structure Array =
 	    end
     end
 
+type array = Array.array
+
 (* Vector *)
 
 structure Vector =
@@ -640,6 +664,7 @@ structure TextIO =
 	val closeIn = builtin "TextIO.closeIn"
 
 	val stdOut = builtin "TextIO.stdOut"
+	val stdErr = builtin "TextIO.stdErr"
 	val openOut = builtin "TextIO.openOut"
 	val output = builtin "TextIO.output"
 	val output1 = builtin "TextIO.output1"
