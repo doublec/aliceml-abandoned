@@ -918,7 +918,7 @@ val _=print "\n"
 	    val (a,id')         = elabVarId_bind(E, k, id)
 	    val (t1,gen,w,typ') = elabTypRep(E, p,
 				      fn k' => Type.ARROW(k, buildKind k'), typ)
-            val t               = Type.inLambda(a,t1)
+            val  t              = if gen then t1 else Type.inLambda(a,t1)
 	in
 	    ( t, gen, w, O.FunTyp(typInfo(i,t), id', typ') )
 	end
@@ -1615,6 +1615,16 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	let
 	    val (t0,p,_,id') = elabTypId(E, id)
 	    val (t,_,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
+
+
+fun ppKind(Type.STAR)		= "*"
+  | ppKind(Type.ARROW(k1,k2))	= "(" ^ ppKind k1 ^ " -> " ^ ppKind k2 ^ ")"
+val k0 = Type.kind t0
+val k1 = Type.kind t
+val _ = print("k0 = " ^ ppKind k0 ^ "\n")
+val _ = print("k1 = " ^ ppKind k1 ^ "\n")
+val _ = print(if k0 = k1 then "Yes!\n" else "oops...\n")
+val _ = TextIO.flushOut(TextIO.stdOut)
 	    val  _           = Type.unify(t, t0)
 	    val  _           = elabTypId_bind(E, p, t, w, id)
 				(* Updates type sort *)
