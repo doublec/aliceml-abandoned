@@ -51,6 +51,7 @@ signature TYPE =
     val isLambda :	typ -> bool
     val isApply :	typ -> bool
     val isMu :		typ -> bool
+    val isAbbrev :	typ -> bool
 
   (* Projections *)
 
@@ -67,6 +68,7 @@ signature TYPE =
     val asLambda :	typ -> var * typ		(* Type *)
     val asApply :	typ -> typ * typ		(* Type *)
     val asMu :		typ -> typ			(* Type *)
+    val asAbbrev : 	typ -> typ * typ		(* Type *)
 
   (* Complex extractions *)
 

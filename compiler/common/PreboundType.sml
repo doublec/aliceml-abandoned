@@ -19,14 +19,16 @@ structure PreboundType :> PREBOUND_TYPE =
     val path_ref	= Prebound.typpath_ref
     val path_exn	= Prebound.typpath_exn
 
+    val con_bool	= (STAR, CLOSED, path_bool)
     val con_word	= (STAR, CLOSED, path_word)
     val con_int		= (STAR, CLOSED, path_int)
     val con_char	= (STAR, CLOSED, path_char)
     val con_string	= (STAR, CLOSED, path_string)
     val con_real	= (STAR, CLOSED, path_real)
     val con_exn		= (STAR, CLOSED, path_exn)
-    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
+    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
+    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
 
     val lab_false	= Label.fromName(Prebound.valname_false)
     val lab_true	= Label.fromName(Prebound.valname_true)
@@ -50,11 +52,13 @@ structure PreboundType :> PREBOUND_TYPE =
     val typ_char	= Type.inCon con_char
     val typ_string	= Type.inCon con_string
     val typ_real	= Type.inCon con_real
-    val typ_bool	= Type.inMu(Type.inSum row_bool)
+    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
+					Type.inMu(Type.inSum row_bool))
     val typ_exn		= Type.inCon con_exn
     val typ_ref		= Type.inCon con_ref
     val typ_vec		= Type.inCon con_vec
     val _		= Type.unify(typ_list,
+			    Type.inAbbrev(Type.inCon con_list,
 				Type.inMu(Type.inLambda(var_list,
-							Type.inSum row_list)))
+							Type.inSum row_list))))
   end

@@ -858,29 +858,10 @@ structure Unix :> UNIX =
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:12:33  rossberg
+ * Revision 1.6  2000-04-05 12:42:09  rossberg
  *
- * - Switched to structural datatypes.
- *
- * This caused a major breakdown in elaboration efficiency - from about 30s to
- * 7min time and nearly 1 gig memory usage during bottstrapping. I implemented
- * the following optimizations:
- *
- * - Some ugly hacking to maintain sharing during interface instantiation.
- * - Slightly improved representation of rows (put row var in front).
- *
- * We got back to ca. 2min and 100meg for bootstrapping elaboration. Still
- * lousy... But to do better I definitely need a profiler - profiling manually
- * for two days sucks!
- *
- * There are two other possible sources of inefficiency I see:
- *
- * - Cloning always copies complete type graph. We could avoid cloning subgraphs
- *   that contain no or only global variables/constructors. But an efficient
- *   algorithm for minimal cloning seems non-obvious for cyclic graphs.
- * - The check for interface closedness: walks all types without taking advantage
- *   of sharing between different types. Didn't cause significant speedup when
- *   turned off, however.
+ * - Improved error messages given on signature mismatch.
+ * - Improved handling of abbreviations (and can bootstrap again).
  *
  * Revision 1.3  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
@@ -1201,29 +1182,15 @@ signature ARG_PARSER =
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:12:33  rossberg
+ * Revision 1.6  2000-04-05 12:42:09  rossberg
  *
- * - Switched to structural datatypes.
+ * - Improved error messages given on signature mismatch.
+ * - Improved handling of abbreviations (and can bootstrap again).
  *
- * This caused a major breakdown in elaboration efficiency - from about 30s to
- * 7min time and nearly 1 gig memory usage during bottstrapping. I implemented
- * the following optimizations:
+ * Revision 1.5  2000/03/30 13:37:26  rossberg
  *
- * - Some ugly hacking to maintain sharing during interface instantiation.
- * - Slightly improved representation of rows (put row var in front).
- *
- * We got back to ca. 2min and 100meg for bootstrapping elaboration. Still
- * lousy... But to do better I definitely need a profiler - profiling manually
- * for two days sucks!
- *
- * There are two other possible sources of inefficiency I see:
- *
- * - Cloning always copies complete type graph. We could avoid cloning subgraphs
- *   that contain no or only global variables/constructors. But an efficient
- *   algorithm for minimal cloning seems non-obvious for cyclic graphs.
- * - The check for interface closedness: walks all types without taking advantage
- *   of sharing between different types. Didn't cause significant speedup when
- *   turned off, however.
+ * Switched arguments in Join functors because sharing broke with our move to
+ * structural datatypes. :-(
  *
  * Revision 1.4  1999/11/15 12:21:54  rossberg
  * Reverted to original state because we can deal with sharing now.
@@ -1345,29 +1312,10 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:12:33  rossberg
+ * Revision 1.6  2000-04-05 12:42:09  rossberg
  *
- * - Switched to structural datatypes.
- *
- * This caused a major breakdown in elaboration efficiency - from about 30s to
- * 7min time and nearly 1 gig memory usage during bottstrapping. I implemented
- * the following optimizations:
- *
- * - Some ugly hacking to maintain sharing during interface instantiation.
- * - Slightly improved representation of rows (put row var in front).
- *
- * We got back to ca. 2min and 100meg for bootstrapping elaboration. Still
- * lousy... But to do better I definitely need a profiler - profiling manually
- * for two days sucks!
- *
- * There are two other possible sources of inefficiency I see:
- *
- * - Cloning always copies complete type graph. We could avoid cloning subgraphs
- *   that contain no or only global variables/constructors. But an efficient
- *   algorithm for minimal cloning seems non-obvious for cyclic graphs.
- * - The check for interface closedness: walks all types without taking advantage
- *   of sharing between different types. Didn't cause significant speedup when
- *   turned off, however.
+ * - Improved error messages given on signature mismatch.
+ * - Improved handling of abbreviations (and can bootstrap again).
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1443,29 +1391,10 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:12:33  rossberg
+ * Revision 1.6  2000-04-05 12:42:09  rossberg
  *
- * - Switched to structural datatypes.
- *
- * This caused a major breakdown in elaboration efficiency - from about 30s to
- * 7min time and nearly 1 gig memory usage during bottstrapping. I implemented
- * the following optimizations:
- *
- * - Some ugly hacking to maintain sharing during interface instantiation.
- * - Slightly improved representation of rows (put row var in front).
- *
- * We got back to ca. 2min and 100meg for bootstrapping elaboration. Still
- * lousy... But to do better I definitely need a profiler - profiling manually
- * for two days sucks!
- *
- * There are two other possible sources of inefficiency I see:
- *
- * - Cloning always copies complete type graph. We could avoid cloning subgraphs
- *   that contain no or only global variables/constructors. But an efficient
- *   algorithm for minimal cloning seems non-obvious for cyclic graphs.
- * - The check for interface closedness: walks all types without taking advantage
- *   of sharing between different types. Didn't cause significant speedup when
- *   turned off, however.
+ * - Improved error messages given on signature mismatch.
+ * - Improved handling of abbreviations (and can bootstrap again).
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -1503,29 +1432,10 @@ end;
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:12:33  rossberg
+ * Revision 1.6  2000-04-05 12:42:09  rossberg
  *
- * - Switched to structural datatypes.
- *
- * This caused a major breakdown in elaboration efficiency - from about 30s to
- * 7min time and nearly 1 gig memory usage during bottstrapping. I implemented
- * the following optimizations:
- *
- * - Some ugly hacking to maintain sharing during interface instantiation.
- * - Slightly improved representation of rows (put row var in front).
- *
- * We got back to ca. 2min and 100meg for bootstrapping elaboration. Still
- * lousy... But to do better I definitely need a profiler - profiling manually
- * for two days sucks!
- *
- * There are two other possible sources of inefficiency I see:
- *
- * - Cloning always copies complete type graph. We could avoid cloning subgraphs
- *   that contain no or only global variables/constructors. But an efficient
- *   algorithm for minimal cloning seems non-obvious for cyclic graphs.
- * - The check for interface closedness: walks all types without taking advantage
- *   of sharing between different types. Didn't cause significant speedup when
- *   turned off, however.
+ * - Improved error messages given on signature mismatch.
+ * - Improved handling of abbreviations (and can bootstrap again).
  *
  * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
@@ -3228,6 +3138,7 @@ signature PP_MISC =
 
     val nest:		doc -> doc
 
+    val quote:		doc -> doc
     val paren:		doc -> doc
     val brace:		doc -> doc
     val brack:		doc -> doc
@@ -3237,7 +3148,9 @@ signature PP_MISC =
     val ppSeq:		('a -> doc) -> 'a list -> doc
     val ppSeqPrec:	(int -> 'a -> doc) -> int -> 'a list -> doc
 
-    val paragraph:	string list -> doc
+    val par:		doc list -> doc
+    val textpar:	string list -> doc
+    val indent:		doc -> doc
 
   end
 (* src # 36 ../misc/PPMisc.sml *)
@@ -3259,9 +3172,14 @@ structure PPMisc :> PP_MISC =
 
     val nest = nest 3
 
-    fun paren doc = text "(" ^^ fbox(below doc) ^^ text ")"
-    fun brace doc = text "{" ^^ fbox(below doc) ^^ text "}"
-    fun brack doc = text "[" ^^ fbox(below doc) ^^ text "]"
+    fun quote doc  = text "`" ^^ doc ^^ text "'"
+    fun paren doc  = text "(" ^^ fbox(below doc) ^^ text ")"
+    fun brace doc  = text "{" ^^ fbox(below doc) ^^ text "}"
+    fun brack doc  = text "[" ^^ fbox(below doc) ^^ text "]"
+
+    fun indent doc = nest(break ^^ below doc) ^^ break
+    val par        = fbox o List.foldr (fn(doc',doc) => doc' ^/^ doc) empty
+    val textpar    = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
     fun ppCommaList ppX   []    = empty
       | ppCommaList ppX   [x]   = ppX x
@@ -3278,9 +3196,6 @@ structure PPMisc :> PP_MISC =
       | ppSeqPrec ppXPrec n  xs = paren(ppCommaList (ppXPrec 0) xs)
 
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
-
-
-    val paragraph = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
   end
 (* src # 37 ../misc/URL.sig *)
@@ -4093,6 +4008,7 @@ signature PATH =
 
     val strengthen :	path * (path * lab * int) -> unit
 
+    val clone :		path -> path
     val instance :	('rea * path -> path option) -> 'rea * path -> path
 
   end
@@ -4186,6 +4102,9 @@ structure PathPrivate =
 	in
 	    clone p
 	end
+
+    fun clone p = instance (fn _ => NONE) ((), p)
+
   end
 
 
@@ -4230,6 +4149,7 @@ signature TYPE =
     val inLambda :	var * typ -> typ
     val inApply :	typ * typ -> typ
     val inMu :		typ       -> typ
+    val inAbbrev :	typ * typ -> typ
 
     val var :		kind -> var
 
@@ -4246,6 +4166,8 @@ signature TYPE =
     val isExist :	typ -> bool
     val isLambda :	typ -> bool
     val isApply :	typ -> bool
+    val isMu :		typ -> bool
+    val isAbbrev :	typ -> bool
 
   (* Projections *)
 
@@ -4261,6 +4183,8 @@ signature TYPE =
     val asExist :	typ -> var * typ		(* Type *)
     val asLambda :	typ -> var * typ		(* Type *)
     val asApply :	typ -> typ * typ		(* Type *)
+    val asMu :		typ -> typ			(* Type *)
+    val asAbbrev : 	typ -> typ * typ		(* Type *)
 
   (* Complex extractions *)
 
@@ -4292,6 +4216,11 @@ signature TYPE =
     val instance :	typ -> typ
     val skolem :	typ -> typ
     val clone :		typ -> typ
+
+    type clone_state
+    val cloneStart :	unit -> clone_state
+    val cloneCont :	clone_state -> typ -> typ
+    val cloneFinish :	clone_state -> unit
 
     val realise :	typ_rea  * typ -> unit
     val realisePath :	path_rea * typ -> unit
@@ -4332,6 +4261,37 @@ unification or by inspection. Not all applications can be reduced (in
 particular applications to abstract type constructors) so we deal with some
 sort of head normal form.
 
+We don't normally do eta-reduction, since it is expensive. During unification
+eta reduction is not needed since lambdas may only show up there under very
+restrictive circumstances anyway (see below). Eta-reduction is still needed
+however for equals, to equate eta-convertible type functions. It's done on
+demand.
+
+On Sharing:
+
+For efficiency reasons, we try to maximise sharing of type structures. This
+reduces space cost and speeds up comparison and unification, as a simple
+reference comparison often suffices. Not only unification but even the equality
+test (used by module type checking) merges types silently whenever possible.
+
+There are several cases where we have to clone a type:
+
+* Type functions before reduction of type application.
+* Type schemes (types with toplevel quantifiers) on instantiation.
+* All sorts of types on signature instantiation.
+
+For the first two it would be sufficient to only clone subgraphs containing the
+variables bound by the lambdas/quantifiers; for the third we only would need to
+clone subgraphs containing signature-local constructors. But since minimizing
+cloning is difficult in the presence of cycles (we have recursive types) and
+the pay-off is unclear, we currently don't do it.
+
+It is very important to maintain sharing between subgraphs of different type
+terms on signature instantiation. Not doing this can lead to a quadratic blowup
+of type terms during module type checking, particularly desastrous in the
+presence of structural datatypes. Therefor we need a special-and-ugly interface
+for cloning a sequence of related types.
+
 On Recursive Types:
 
 Stockhausen makes datatypes structural sum types. This is a problem since
@@ -4348,13 +4308,19 @@ functions. As a consequence, List(Int) and IntList will not be compatible in
 the following example:
 
 	List a  = Nil | Cons(a, List a)
-	IntList = Nil | Cons(Int,IntList)
+	IntList = Nil | Cons(Int, IntList)
 
 Maybe this can be made a bit more permissive, but in general it seems
 impossible to have non-uniform datatypes as well as arbitrary recursive types.
 
 It is also unclear to me whether some sort of hash-consing can be applied to
 recursive types or even recursive type functions.
+
+On Type Abbreviations:
+
+We try to maintain type abbreviations to generate more user friendly output.
+This is managed through a special node ABBREV, which refers to the original
+type term as well as to the reduced/substituted one.
 
 *******************************************************************************)
 
@@ -4371,26 +4337,26 @@ structure TypePrivate =
     type con  = kind * sort * path			(* [chi,c] *)
 
     datatype typ' =					(* [tau',t'] *)
-	  HOLE  of kind * int	(* variable for inference *)
-	| LINK  of typ		(* forward (needed for unification) *)
-	| MARK  of typ'		(* for traversal *)
-	| FUN   of typ * typ	(* arrow type *)
-	| TUPLE of typ list	(* tuple *)
-	| PROD  of row		(* record *)
-	| SUM   of row		(* sum type (datatype) *)
-	| VAR   of kind * int	(* bound variable or skolem types *)
-	| CON   of con		(* constructor (of arbitrary kind) *)
-	| ALL   of var * typ	(* universal quantification *)
-	| EXIST of var * typ	(* existential quantification *)
+	  HOLE   of kind * int	(* variable for inference *)
+	| LINK   of typ		(* forward (needed for unification) *)
+	| MARK   of typ'	(* for traversal *)
+	| FUN    of typ * typ	(* arrow type *)
+	| TUPLE  of typ list	(* tuple *)
+	| PROD   of row		(* record *)
+	| SUM    of row		(* sum type (datatype) *)
+	| VAR    of kind * int	(* bound variable or skolem types *)
+	| CON    of con		(* constructor (of arbitrary kind) *)
+	| ALL    of var * typ	(* universal quantification *)
+	| EXIST  of var * typ	(* existential quantification *)
 	| LAMBDA of var * typ	(* abstraction (type function) *)
-	| APPLY of typ * typ	(* application *)
-	| MU    of typ		(* recursive type barrier *)
+	| APPLY  of typ * typ	(* application *)
+	| MU     of typ		(* recursive type barrier *)
+	| ABBREV of typ * typ	(* abbreviations *)
 
     and row =						(* [rho,r] *)
 	  NIL
-	| RHO of int ref
+	| RHO   of int ref * row
 	| FIELD of lab * typ list * row
-	(* NOTE: representation of rows is suboptimal - change it some day *)
 
     withtype typ = typ' ref				(* [tau,t] *)
     and      var = typ' ref				(* [alpha,a] *)
@@ -4402,7 +4368,7 @@ structure TypePrivate =
 
     (*
      * We establish the following invariants:
-     * - rows are sorted by label
+     * - rows are sorted by label, rho variables appear as head only
      * - types are always in head normal form
      * - sequential quantifiers are ordered such that the bound variables
      *   appear in depth-first leftmost traversal order inside the body
@@ -4424,15 +4390,17 @@ structure TypePrivate =
       | pr(LINK _)	= "LINK"
       | pr(MARK _)	= "MARK"
       | pr(HOLE _)	= "HOLE"
+      | pr(ABBREV _)	= "ABBREV"
 
 
   (* Level management *)
 
-    val level = ref 1
+    val globalLevel	= 0
+    val level		= ref(globalLevel+1)
 
-    fun enterLevel() = level := !level+1
-    fun exitLevel()  = level := !level-1
-    fun resetLevel() = level := 1
+    fun enterLevel()	= level := !level+1
+    fun exitLevel()	= level := !level-1
+    fun resetLevel()	= level := 1
 
 
   (* Follow a path of links (performing path compression on the fly) *)
@@ -4458,6 +4426,7 @@ structure TypePrivate =
     fun kind(ref t')		= kind' t'
 
     and kind'(LINK t | MU t)	= kind t
+      | kind'(ABBREV(_,t))	= kind t
       | kind'(HOLE(k,_))	= k
       | kind'(VAR(k,_))		= k
       | kind'(CON(k,_,_))	= k
@@ -4480,14 +4449,16 @@ structure TypePrivate =
 	      | EXIST(_,t)
 	      | LAMBDA(_,t)), f)	= f t
       | app1'(( FUN(t1,t2)
-	      | APPLY(t1,t2)), f)	= ( f t1 ; f t2 )
+	      | APPLY(t1,t2)
+	      | ABBREV(t1,t2)), f)	= ( f t1 ; f t2 )
       | app1'(( TUPLE ts ), f)		= List.app f ts
       | app1'(( PROD r
 	      | SUM r ), f)		= appRow(r,f)
       | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
     and appRow(FIELD(_,ts,r), f)	= ( List.app f ts ; appRow(r,f) )
-      | appRow(_, f)			= ()
+      | appRow(RHO(_,r), f)		= appRow(r,f)
+      | appRow(NIL, f)			= ()
 
 
     fun foldl1'(( HOLE _
@@ -4499,14 +4470,16 @@ structure TypePrivate =
 		| EXIST(_,t)
 		| LAMBDA(_,t)), f, a)	= f(t,a)
       | foldl1'(( FUN(t1,t2)
-		| APPLY(t1,t2)), f, a)	= f(t2, f(t1,a))
+		| APPLY(t1,t2)
+		| ABBREV(t1,t2)), f, a)	= f(t2, f(t1,a))
       | foldl1'(( TUPLE ts ), f, a)	= List.foldl f a ts
       | foldl1'(( PROD r
 		| SUM r ), f, a)	= foldlRow(r,f,a)
       | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
 
     and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
-      | foldlRow(_, f, a)		= a
+      | foldlRow(RHO(_,r), f, a)	= foldlRow(r, f, a)
+      | foldlRow(NIL, f, a)		= a
 
 
     fun unmark(t as ref(MARK t')) 	=
@@ -4594,21 +4567,79 @@ structure TypePrivate =
 	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
-(*DEBUG*)
-| clone'(LINK _) = raise Crash.Crash "Type.clone: LINK"
-| clone'(MARK _) = raise Crash.Crash "Type.clone: MARK"
-| clone'(HOLE _) = raise Crash.Crash "Type.clone: HOLE"
-| clone'(VAR _)  = raise Crash.Crash "Type.clone: VAR"
-(*
+	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
 	      | clone' _		= raise Crash.Crash "Type.clone"
-*)
+
 	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
-	      | cloneRow r		= r
+	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
+	      | cloneRow(NIL)		= NIL
 
 	    val t2 = clone t
 	in
 	    List.app op:= (!trail) ;
 	    unmark t2 ;
+	    t2
+	end
+
+
+  (* Continuous cloning *)
+
+    type clone_state = { trail: (typ * typ') list ref, typs: typ list ref }
+
+    fun cloneStart() = {trail = ref [], typs = ref []}
+    fun cloneFinish{trail,typs} = 
+	( List.app op:= (!trail)
+	; List.app unmark (!typs)
+	)
+
+    fun cloneCont {trail,typs} t =
+	let
+	    fun dup'(t1 as ref t1') =
+		let
+		    val _   = trail := (t1,t1') :: !trail
+		    val t2  = ref(MARK t1')
+		    val _   = t1 := LINK t2
+		in
+		    t2
+		end
+
+	    fun dup(t1 as ref t1') =
+		let
+		    val _   = trail := (t1,t1') :: !trail
+		    val t2  = ref(MARK t1')
+		    val _   = t1 := LINK t2
+		    val t2' = MARK(clone' t1')
+		    val _   = t2 := t2'
+		in
+		    t2
+		end
+
+	    and clone t1 =
+		let val t11 = follow t1 in
+		    case !t11 of (MARK _ | VAR _ | HOLE _) => t11
+			       | t11'                      => dup t11
+		end
+
+	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
+	      | clone'(TUPLE ts)	= TUPLE(List.map clone ts)
+	      | clone'(PROD r)		= PROD(cloneRow r)
+	      | clone'(SUM r)		= SUM(cloneRow r)
+	      | clone'(CON c)		= CON c
+	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dup' a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
+	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
+	      | clone'(MU t)		= MU(clone t)
+	      | clone'(ABBREV(t1,t2))	= ABBREV(clone t1, clone t2)
+	      | clone' _		= raise Crash.Crash "Type.clone"
+
+	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
+	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
+	      | cloneRow(NIL)		= NIL
+
+	    val t2 = clone t
+	in
+	    typs := t2 :: !typs ;
 	    t2
 	end
 
@@ -4631,26 +4662,33 @@ structure TypePrivate =
 
     fun reduce(t as ref(APPLY(t1,t2))) =
 	let
-	    fun reduceApply(t1 as ref(LAMBDA(a,_)), r) =
+	    fun reduceApply(t1 as ref(LAMBDA(a,_)), to) =
 		( t := HOLE(kind a, !level)
 		; case !(clone t1)
 		    of LAMBDA(a,t11) =>
 			( a := LINK t2
-			; t := (if r then MU else LINK) t11
+			; t := (case to
+				  of NONE   => LINK t11
+				   | SOME t => ABBREV(ref(APPLY(t,t2)), t11) )
 			; reduce t
 			)
 		    | _ => raise Crash.Crash "Type.reduceApply"
 		)
-	      | reduceApply(ref(LINK t11), r) =
-		    reduceApply(follow t11, r)
+	      | reduceApply(ref(LINK t11), to) =
+		    reduceApply(follow t11, to)
+
+	      | reduceApply(ref(ABBREV(t11,t12)), to) =
+		    reduceApply(follow t12, SOME(Option.getOpt(to,t11)))
 	      (*
-	      | reduceApply(ref(MU t11), r) =
-		    reduceApply(follow t11, true)
+	      | reduceApply(ref(MU t11), to) =
+		    reduceApply(follow t11, to)
 	      *)
 	      | reduceApply _ = ()
 	in
-	    reduceApply(t1, false)
+	    reduceApply(t1, NONE)
 	end
+
+      | reduce(ref(LINK t | ABBREV(_,t))) = reduce t
 
       | reduce _ = ()
 
@@ -4664,29 +4702,32 @@ structure TypePrivate =
 
     fun reduceEta(t as ref(LAMBDA _)) =
 	let
-	    fun reduceLam(ref(LAMBDA(a,t1)), vs) =
-		reduceLam(t1, a::vs)
+	    fun reduceLambda(ref(LAMBDA(a,t1)), vs) =
+		reduceLambda(t1, a::vs)
 
-	      | reduceLam(ref(APPLY(t1,t2)), a::vs) =
+	      | reduceLambda(ref(APPLY(t1,t2)), a::vs) =
 		let
 		    val t2' = follow t2
 		    val a'  = follow a
 		in
 		    if t2' = a' andalso not(occurs(a',t1)) then
-			reduceLam(t1, vs)
+			reduceLambda(t1, vs)
 		    else
 			()
 		end
 
-	      | reduceLam(t1, []) =
+	      | reduceLambda(t1, []) =
 		    ( t := LINK t1 ; reduceEta t1 )
 
-	      | reduceLam(ref(LINK t1), vs) =
-		    reduceLam(t1, vs)
+	      | reduceLambda(ref(LINK t1), vs) =
+		    reduceLambda(t1, vs)
 
-	      | reduceLam _ = ()
+	      | reduceLambda(ref(ABBREV(t1,t2)), vs) =
+		    reduceLambda(t2, vs)
+
+	      | reduceLambda _ = ()
 	in
-	    reduceLam(t, [])
+	    reduceLambda(t, [])
 	end
 
       | reduceEta(ref(LINK t)) = reduceEta t
@@ -4710,6 +4751,7 @@ structure TypePrivate =
     fun inLambda at	= ref(LAMBDA at)
     fun inApply(t1,t2)	= let val t = ref(APPLY(t1,t2)) in reduce t ; t end
     fun inMu t		= ref(MU t)
+    fun inAbbrev(t1,t2)	= ref(ABBREV(t1,t2))
 
     fun var k		= ref(VAR(k, !level))
 
@@ -4718,7 +4760,8 @@ structure TypePrivate =
 
     exception Type
 
-    fun asType(ref(LINK t | MU t))	= asType t
+    fun asType(ref(LINK t))		= asType t
+      | asType(ref(ABBREV(_,t)))	= asType t
       | asType(ref t')			= t'
 
     fun isUnknown t	= case asType t of HOLE _   => true | _ => false
@@ -4732,6 +4775,7 @@ structure TypePrivate =
     fun isExist t	= case asType t of EXIST _  => true | _ => false
     fun isLambda t	= case asType t of LAMBDA _ => true | _ => false
     fun isApply t	= case asType t of APPLY _  => true | _ => false
+    fun isMu t		= case asType t of MU _     => true | _ => false
 
     fun asArrow t	= case asType t of FUN tt    => tt | _ => raise Type
     fun asTuple t	= case asType t of TUPLE ts  => ts | _ => raise Type
@@ -4743,6 +4787,10 @@ structure TypePrivate =
     fun asExist t	= case asType t of EXIST at  => at | _ => raise Type
     fun asLambda t	= case asType t of LAMBDA at => at | _ => raise Type
     fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
+    fun asMu t		= case asType t of MU t      => t  | _ => raise Type
+
+    fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
+    fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
 
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
@@ -4763,16 +4811,23 @@ structure TypePrivate =
 
     exception Unclosed
 
-    fun checkClosedRow NIL		= ()
-      | checkClosedRow(RHO _)		= raise Unclosed
-      | checkClosedRow(FIELD(l,t,r))	= checkClosedRow r
+    fun checkClosedRow(RHO _)		= raise Unclosed
+      | checkClosedRow _		= ()
 
     fun checkClosed'(HOLE _)		= raise Unclosed
       | checkClosed'(PROD r | SUM r)	= checkClosedRow r
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( app (fn ref t' => checkClosed' t') t ; true )
+	( app (fn t as ref t' => checkClosed' t'
+	handle Unclosed =>
+(*DEBUG*)
+	( print(case !t of HOLE _ => "Hummm...\n" | _ => "Haehh?\n")
+	; t := CON(STAR,CLOSED,Path.fromLab(Label.fromString "'_ouch"))
+	; raise Unclosed
+	)
+	) t ; true )
+(*	( app (fn ref t' => checkClosed' t') t ; true )*)
 	handle Unclosed => false
 
 
@@ -4784,6 +4839,9 @@ structure TypePrivate =
      * Skolemisation does it the other way round (needed for checking rank 2
      * signature applications and existential types).
      *)
+
+    (*ASSUME that no quantifiers appear under abbreviations
+   	(this might break with higher-order polymorphism!) *)
 
     fun instance'(ref(ALL(a,t)))	= ( a := unknown'(kind a); instance' t )
       | instance'(ref(EXIST(a,t)))	= instance' t
@@ -4807,10 +4865,11 @@ structure TypePrivate =
 
     exception Row
 
-    fun unknownRow()	= RHO(ref(!level))
+    fun unknownRow()	= RHO(ref(!level), NIL)
     fun emptyRow()	= NIL
 
-    fun extendRow(l,ts, r as (RHO _ | NIL))	= FIELD(l,ts,r)
+    fun extendRow(l,ts, NIL)      = FIELD(l,ts,NIL)
+      | extendRow(l,ts, RHO(n,r)) = RHO(n, extendRow(l,ts,r))
       | extendRow(l1,ts1, r1 as FIELD(l2,ts2,r2)) =
 	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
@@ -4825,9 +4884,8 @@ structure TypePrivate =
 	    loop(1,ts)
 	end
 
-    fun openRow NIL			= RHO(ref(!level))
-      | openRow(r as RHO _)		= r
-      | openRow(FIELD(l,ts,r))		= FIELD(l, ts, openRow r)
+    fun openRow(r as RHO _)		= r
+      | openRow r			= RHO(ref(!level), r)
 
     fun openRowType(ref(LINK t))	= openRowType t
       | openRowType(t as ref(PROD r))	= t := PROD(openRow r)
@@ -4838,15 +4896,16 @@ structure TypePrivate =
     fun isEmptyRow(NIL | RHO _)		= true
       | isEmptyRow _			= false
 
-    fun isUnknownRow NIL		= false
-      | isUnknownRow(RHO _)		= true
-      | isUnknownRow(FIELD(l,ts,r))	= isUnknownRow r
+    fun isUnknownRow(RHO _)		= true
+      | isUnknownRow _			= false
 
     fun headRow(FIELD(l,ts,r))		= (l,ts)
-      | headRow _			= raise Row
+      | headRow(RHO(_,r))		= headRow r
+      | headRow(NIL)			= raise Row
 
     fun tailRow(FIELD(l,ts,r))		= r
-      | tailRow _			= raise Row
+      | tailRow(RHO(n,r))		= RHO(n, tailRow r)
+      | tailRow(NIL)			= raise Row
 
 
   (* Closure *)
@@ -4859,6 +4918,7 @@ structure TypePrivate =
 		else f
 
 	      | close(a as ref(VAR(k,n)), f) =
+		(* UNFINISHED: rethink this *)
 		(* We have to quantify over VARs as well.
 		 * The reason is that there may be several types being
 		 * closed that share parts of their graphs.
@@ -4869,7 +4929,7 @@ structure TypePrivate =
 		    fn t => f(inAll(a,t))
 		else f
 
-	      | close(ref(ALL(a,t) | EXIST(a,t)), f) =
+	      | close(ref(ALL(a,t) | EXIST(a,t) | LAMBDA(a,t)), f) =
 		( a := MARK(!a) ; f )	(* bit of a hack... *)
 
 	      | close(t as ref(PROD r), f) = ( t := PROD(closeRow r) ; f )
@@ -4877,9 +4937,8 @@ structure TypePrivate =
 
 	      | close(_, f) = f
 
-	    and closeRow NIL              = NIL
-	      | closeRow(r as RHO(ref n)) = if n > !level then NIL else r
-	      | closeRow(FIELD(l,t,r))    = FIELD(l, t, closeRow r)
+	    and closeRow(r as RHO(n,r')) = if !n > !level then r' else r
+	      | closeRow r               = r
 	in
 	    foldl close (fn t => t) t t
 	end
@@ -4896,14 +4955,17 @@ structure TypePrivate =
 	      | lift(t as ref(VAR(k,n))) =
 		    if n > !level then raise Lift t else ()
 	      | lift(ref(PROD r | SUM r)) = liftRow r
+	      | lift(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
+(*ASSERT	    assert isVar a =>*)
+if not(isVar a) then raise Assert.failure else
+		    a := VAR(kindVar a, globalLevel)
 	      | lift t = ()
 	in
 	    app lift t
 	end
 
-    and liftRow(NIL)          = ()
-      | liftRow(RHO n)        = if !n > !level then n := !level else ()
-      | liftRow(FIELD(l,t,r)) = liftRow r
+    and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
+      | liftRow _		= ()
 
 
   (* Unification *)
@@ -4920,9 +4982,8 @@ structure TypePrivate =
 		    ( liftRow r ; t := MARK t' ; app1'(t', lift) )
 	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
 
-	    and liftRow(NIL)          = ()
-	      | liftRow(RHO n')       = if !n' > n then n' := n else ()
-	      | liftRow(FIELD(l,t,r)) = liftRow r
+	    and liftRow(RHO(n',r)) = if !n' > n then n' := n else ()
+	      | liftRow _          = ()
 
 	    fun check(t as ref t') =
 		if t1 = t then
@@ -4950,6 +5011,12 @@ structure TypePrivate =
 			( t1 := LINK t2
 			; trail := (t1,t1') :: !trail
 			; f x
+			)
+
+		    fun recurBinder(a1 as ref a1', a2, t1, t2) =
+			( a1 := LINK a2
+			; trail := (a1,a1') :: !trail
+			; recur unify (t1,t2)
 			)
 		in
 		    if t1 = t2 then () else
@@ -5007,17 +5074,23 @@ if kind' t1' <> k2 then raise Assert.failure else
 			  * in normal form. *)
 			 recur unifyPair (tt1,tt2)
 
-		       | (LAMBDA(at1), LAMBDA(at2)) =>
+		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
 			 (* The only place lambdas might occur during
 			  * unification is below mu. The type functions
 			  * must be equal in that case. *)
-			 recur unifyPair (at1,at2)
+			 recurBinder(a1, a2, t11, t21)
 
 		       | (ALL(a1,t11), ALL(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: universal quantifier"
 
 		       | (EXIST(a1,t11), EXIST(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: existential quantifier"
+
+		       | (ABBREV(t11,t12), _) =>
+			 unify (t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 unify (t1,t22)
 
 		       | _ => raise Unify(t1,t2)
 		end
@@ -5027,26 +5100,39 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
-		    fun loop(NIL, false, NIL, false) = NIL
-		      | loop(NIL, false, RHO _, _  ) = NIL
-		      | loop(RHO _, _,   NIL, false) = NIL
-		      | loop(RHO n1, _,  RHO n2, _ ) =
-			    RHO(ref(Int.min(!n1, !n2)))
-		      | loop(rho as RHO _, _, FIELD(l,ts,r), b2) =
-			    FIELD(l,ts, loop(rho, true, r, b2))
-		      | loop(FIELD(l,ts,r), b1, rho as RHO _, _) =
-			    FIELD(l,ts, loop(r, b1, rho, true))
+(*DEBUG
+val timer = Timer.startRealTimer()
+*)
+		    fun loop(RHO(n1,r1), _,  RHO(n2,r2), _ ) =
+			    RHO(ref(Int.min(!n1, !n2)), loop(r1,true, r2,true))
+		      | loop(RHO(_,r1), _, r2, _) =
+			    loop(r1, true, r2, false)
+		      | loop(r1, _, RHO(_,r2), _) =
+			    loop(r1, false, r2, true)
+		      | loop(NIL, _, NIL, _) =
+			    NIL
+		      | loop(NIL, true, FIELD(l,ts,r2'), b2) =
+			    FIELD(l,ts, loop(NIL, true, r2', b2))
+		      | loop(FIELD(l,ts,r1'), b1, NIL, true) =
+			    FIELD(l,ts, loop(r1', b1, NIL, true))
 		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
 			     r2 as FIELD(l2,ts2,r2'), b2) =
 			(case Label.compare(l1,l2)
 			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
 					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
-			    | LESS    => FIELD(l1,ts1, loop(r1',b1, r2,true))
-			    | GREATER => FIELD(l2,ts2, loop(r1,true, r2',b2))
+			    | LESS    => if not b2 then raise Unify(t1,t2) else
+					 FIELD(l1,ts1, loop(r1',b1, r2,b2))
+			    | GREATER => if not b1 then raise Unify(t1,t2) else
+					 FIELD(l2,ts2, loop(r1,b1, r2',b2))
 			)
 		      | loop _ = raise Unify(t1,t2)
 		in
-		    t2 := PRODorSUM(loop(r1,false, r2,false))
+		    t2 := PRODorSUM(loop(r1, false, r2, false))
+(*DEBUG*)
+(*before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
+print("Row unification took "^Int.toString ms^"ms\n")
+before ignore(TextIO.inputLine(TextIO.stdIn))
+end*)
 		end
 	in
 	    unify(t1,t2)
@@ -5084,6 +5170,11 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 
   (* Comparison *)
+
+    (* To maximise sharing, links are kept after comparison iff the
+     * types are equal. If the types are not equal, all updates are
+     * undone. This could be optimized by keeping equal subtrees.
+     *)
 
     fun equals(t1,t2) =
 	let
@@ -5150,20 +5241,40 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 | (EXIST(a1,t11), EXIST(a2,t21)) ) =>
 			 recurBinder(a1, a2, t11, t21)
 
+		       | (ABBREV(t11,t12), _) =>
+			 equals (t12,t2)
+
+		       | (_, ABBREV(t21,t22)) =>
+			 equals (t1,t22)
+
 		       | _ => false
 		end
 
 	    and equalsPair((t11,t12), (t21,t22)) =
 		equals(t11,t21) andalso equals (t12,t22)
 
-	    and equalsRow(NIL,   NIL)   = true
-	      | equalsRow(RHO _, RHO _) = true
+(*DEBUG
+and equalsRow rr =
+let
+val timer = Timer.startRealTimer()
+fun f() = ()
+*)
+	    and equalsRow(NIL,              NIL)              = true
+	      | equalsRow(RHO(_,r1),        RHO(_,r2))        = equalsRow(r1,r2)
 	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
 		l1 = l2 andalso ListPair.all equals (ts1,ts2)
 			andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
+(*in
+equalsRow rr
+before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
+print("Row equality took "^Int.toString ms^"ms\n")
+before ignore(TextIO.inputLine(TextIO.stdIn))
+end
+end
+*)
 	in
-	    equals(t1,t2) before List.app op:= (!trail)
+	    equals(t1,t2) orelse ( List.app op:= (!trail) ; false )
 	end
 
 
@@ -5193,7 +5304,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    fun subst(t1 as ref(CON(k,s,p))) =
 		(case PathMap.lookup(rea, p)
-		   of SOME t2 => t1 := LINK(clone t2)	(* expand *)
+		   of SOME t2 => t1 := LINK t2		(* expand *)
+					(*UNFINISHED: do we have to clone t2? *)
 		    | NONE    => ()
 		)
 	      | subst(t1 as ref(APPLY _)) = apps := t1::(!apps)
@@ -5277,9 +5389,10 @@ structure PPType :> PP_TYPE =
 
     (* Helpers *)
 
-    fun uncurry(ref(APPLY(t1,t2))) = let val (t,ts) = uncurry t1
-				     in (t,ts@[t2]) end
-      | uncurry t		   = (t,[])
+    fun uncurry(ref(APPLY(t1,t2)))	= let val (t,ts) = uncurry t1
+					  in (t,ts@[t2]) end
+      | uncurry(ref(ABBREV(t1,t2)))	= uncurry t1
+      | uncurry t			= (t,[])
 
     fun parenPrec p (p',doc) =
 	if p > p' then
@@ -5367,8 +5480,8 @@ structure PPType :> PP_TYPE =
 	      | ppTypPrec p (t as ref(MU t1 | MARK(MU t1))) =
 (*DEBUG*)
 ((*print("[pp " ^ pr(!t) ^ "]");*)
-		if occurs(t,t1) then
-		    let
+(*		if occurs(t,t1) then
+*)		    let
 (*val _=print"recursive\n"
 *)			val t'  = makeVar(true, t)
 			val doc = (case t' of MARK _ => text "!MU"
@@ -5386,10 +5499,10 @@ structure PPType :> PP_TYPE =
 		    in
 			parenPrec p (1, fbox(below(nest(doc))))
 		    end
-		else
+(*		else
 (*(print"not recursive\n";*)
 		    ppTypPrec p t1
-)
+*))
 
 	      | ppTypPrec p (t as ref(APPLY _)) =
 	        ( reduce t ;
@@ -5433,6 +5546,9 @@ end
 (*DEBUG
 text "@" ^^*)
 		    ppTypPrec p t
+
+	      | ppTypPrec' p (ABBREV(t1,t2)) =
+		    ppTypPrec p t1
 
 	      | ppTypPrec' p (MARK t') =
 		    text "!" ^^ ppTypPrec' p t'
@@ -6114,14 +6230,16 @@ structure PreboundType :> PREBOUND_TYPE =
     val path_ref	= Prebound.typpath_ref
     val path_exn	= Prebound.typpath_exn
 
+    val con_bool	= (STAR, CLOSED, path_bool)
     val con_word	= (STAR, CLOSED, path_word)
     val con_int		= (STAR, CLOSED, path_int)
     val con_char	= (STAR, CLOSED, path_char)
     val con_string	= (STAR, CLOSED, path_string)
     val con_real	= (STAR, CLOSED, path_real)
     val con_exn		= (STAR, CLOSED, path_exn)
-    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
+    val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
     val con_vec		= (ARROW(STAR,STAR), CLOSED, path_vec)
+    val con_ref		= (ARROW(STAR,STAR), CLOSED, path_ref)
 
     val lab_false	= Label.fromName(Prebound.valname_false)
     val lab_true	= Label.fromName(Prebound.valname_true)
@@ -6145,13 +6263,15 @@ structure PreboundType :> PREBOUND_TYPE =
     val typ_char	= Type.inCon con_char
     val typ_string	= Type.inCon con_string
     val typ_real	= Type.inCon con_real
-    val typ_bool	= Type.inSum row_bool
+    val typ_bool	= Type.inAbbrev(Type.inCon con_bool,
+					Type.inMu(Type.inSum row_bool))
     val typ_exn		= Type.inCon con_exn
     val typ_ref		= Type.inCon con_ref
     val typ_vec		= Type.inCon con_vec
     val _		= Type.unify(typ_list,
+			    Type.inAbbrev(Type.inCon con_list,
 				Type.inMu(Type.inLambda(var_list,
-							Type.inSum row_list)))
+							Type.inSum row_list))))
   end
 (* src # 69 ../frontend-common/StringMap.sml *)
 structure StringMap = MakeHashImpMap(StringHashKey)
@@ -6205,7 +6325,7 @@ signature INF =
     type sign						(* [sigma,s] *)
     type item
     type inf						(* [jota,j] *)
-    type t = inf    
+    type t = inf
 
   (* Realisations *)
 
@@ -6228,6 +6348,7 @@ signature INF =
     val inArrow :	path * inf * inf -> inf
     val inLambda :	path * inf * inf -> inf
     val inApply :	inf * path * inf -> inf
+    val inAbbrev :	inf * inf        -> inf
 
   (* Inquiries *)
 
@@ -6237,6 +6358,7 @@ signature INF =
     val isArrow :	inf -> bool
     val isLambda :	inf -> bool
     val isApply :	inf -> bool
+    val isAbbrev :	inf -> bool
 
   (* Projections *)
 
@@ -6247,6 +6369,7 @@ signature INF =
     val asArrow :	inf -> path * inf * inf		(* Interface *)
     val asLambda :	inf -> path * inf * inf		(* Interface *)
     val asApply :	inf -> inf * path * inf		(* Interface *)
+    val asAbbrev :	inf -> inf * inf		(* Interface *)
 
   (* Cloning etc. *)
 
@@ -6334,20 +6457,20 @@ signature INF =
   (* Matching and intersection *)
 
     datatype mismatch =
-	  MissingVal  of lab
-	| MissingTyp  of lab
-	| MissingMod  of lab
-	| MissingInf  of lab
-	| MissingFix  of lab
-	| ManifestVal of lab
-	| ManifestTyp of lab
-	| ManifestMod of lab
-	| ManifestInf of lab
-	| MismatchVal of lab * typ * typ
-	| MismatchTyp of lab * tkind * tkind
-	| MismatchMod of lab * mismatch
-	| MismatchInf of lab * mismatch
-	| MismatchFix of lab * fix * fix
+	  MissingVal      of lab
+	| MissingTyp      of lab
+	| MissingMod      of lab
+	| MissingInf      of lab
+	| MissingFix      of lab
+	| ManifestVal     of lab * path option * path
+	| ManifestTyp     of lab * typ option * typ
+	| ManifestMod     of lab * path option * path
+	| ManifestInf     of lab * mismatch option
+	| MismatchVal     of lab * typ * typ
+	| MismatchTyp     of lab * tkind * tkind
+	| MismatchMod     of lab * mismatch
+	| MismatchInf     of lab * mismatch
+	| MismatchFix     of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch
@@ -6401,7 +6524,8 @@ structure InfPrivate =
 	| FUN    of path * inf * inf		(* arrow (functor) *)
 	| LAMBDA of path * inf * inf		(* abstraction (dep. function)*)
 	| APPLY  of inf * path * inf		(* application *)
-	| LINK   of inf
+	| LINK   of inf				(* forward (for substitution) *)
+	| ABBREV of inf * inf			(* abbreviations *)
 
     and item' =
 	  VAL of id *  typ  * val_sort * path def	(* value *)
@@ -6617,7 +6741,7 @@ structure InfPrivate =
 
     exception Unclosed of lab * int * typ
 
-    fun close (ref items,_) = List.app closeItem items
+    fun close (ref items,_) = ()(*List.app closeItem items*)
 
     and closeItem(ref(VAL((p,l,n), t, w, d))) =
 	if Type.isClosed t then () else
@@ -6630,21 +6754,32 @@ structure InfPrivate =
 
     (*UNFINISHED: avoid multiple cloning of curried lambdas somehow *)
 
-    fun reduce(j as ref(APPLY(j1,p,j2)))	= reduceApply(j, j1, p, j2)
-      | reduce(ref(LINK j))			= reduce j
-      | reduce _				= ()
-
-    and reduceApply(j, j1 as ref(LAMBDA _), p, j2) =
-	( case !(instance j1)
-	    of LAMBDA(p1, j11, j12) =>
-		(*UNFINISHED: do realisation *)
-		(*Path.replace(p1, p)*)
-		( j := LINK j12
-		; reduce j
+    fun reduce(j as ref(APPLY(j1,p,j2))) =
+	let
+	    fun reduceApply(j1 as ref(LAMBDA _), jo) =
+		( case !(instance j1)
+		    of LAMBDA(p1, j11, j12) =>
+			(*UNFINISHED: do realisation *)
+			(*Path.replace(p1, p)*)
+			( j := LINK j12
+			; reduce j
+			)
+		    | _ => raise Crash.Crash "Inf.reduceApply"
 		)
-	    | _ => raise Crash.Crash "Inf.reduceApply"
-	)
-      | reduceApply(j, j1, p, j2) = ()
+	      | reduceApply(ref(LINK j11), jo) =
+		    reduceApply(follow j11, jo)
+
+	      | reduceApply(ref(ABBREV(j11,j12)), jo) =
+		    reduceApply(follow j12, SOME(Option.getOpt(jo,j11)))
+
+	      | reduceApply _ = ()
+	in
+	    reduceApply(j1, NONE)
+	end
+
+      | reduce(ref(LINK j | ABBREV(_,j))) = reduce j
+
+      | reduce _ = ()
 
 
   (* Realisation *)
@@ -6672,7 +6807,7 @@ structure InfPrivate =
       | realise'(rea, j' as SIG s)	= ( realiseSig(rea, s)
 					  ; j'
 					  )
-      | realise'(rea, j' as ( FUN(_,j1,j2) | LAMBDA(_,j1,j2) )) =
+      | realise'(rea, j' as (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
 					  ( realise(rea, j1)
 					  ; realise(rea, j2)
 					  ; j'
@@ -6710,8 +6845,7 @@ structure InfPrivate =
 		       end
 	   | NONE   => ( realiseKind(rea, k) ; CON kp )
 
-    and realisePath(rea', p)		=
-	 case PathMap.lookup(rea', p)
+    and realisePath(rea', p)		= case PathMap.lookup(rea', p)
 					    of NONE    => p
 					     | SOME p' => realisePath(rea', p')
     and realisePathDef(rea', NONE  )	= NONE
@@ -6731,31 +6865,52 @@ structure InfPrivate =
 
   (* Instantiation *)
 
-    and instance j				= instanceInf(PathMap.new(), j)
+    (*
+     * This is really ugly! To maintain sharing of types in signatures
+     * at signature instantiation we have to clone types with those special
+     * functions from the Type module. This implies that we cannot apply
+     * the path realisation build up during instantiation on-the-fly to
+     * types (types cloned by Type.cloneCont may not be touched before
+     * executing Type.cloneFinish). Consequently, we have to do a second
+     * walk over the interface to perform those realisations. :-(
+     *)
 
-    and instanceInf (rea, ref j')		= ref(instanceInf'(rea, j'))
-    and instanceInf'(rea, LINK j)		= instanceInf'(rea, !j)
-      | instanceInf'(rea, TOP)			= TOP
-      | instanceInf'(rea, CON c)		= CON(instanceCon(rea, c))
-      | instanceInf'(rea, SIG s)		= SIG(instanceSig(rea, s))
-      | instanceInf'(rea, FUN(p,j1,j2))		= FUN(instancePath(rea, p),
-						      instanceInf(rea, j1),
-						      instanceInf(rea, j2))
-      | instanceInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(instancePath(rea, p),
-							 instanceInf(rea, j1),
-							 instanceInf(rea, j2))
-      | instanceInf'(rea, APPLY(j1,p,j2))	= APPLY(instanceInf(rea, j1),
-							realisePath(rea, p),
-							instanceInf(rea, j2))
+    and instance j =
+	let
+	    val rea'       = PathMap.new()
+	    val cloneState = Type.cloneStart()
+	    val j1         = instanceInf(rea', cloneState, j)
+	in
+	    Type.cloneFinish cloneState ;
+	    realiseT(rea', j1) ;
+	    j1
+	end
 
-    and instanceCon(rea, (k,p))			= ( instanceKind(rea, k),
-						    realisePath(rea, p) )
+    and instanceInf (r,z, ref j')		= ref(instanceInf'(r,z, j'))
+    and instanceInf'(r,z, LINK j)		= instanceInf'(r,z, !j)
+      | instanceInf'(r,z, TOP)			= TOP
+      | instanceInf'(r,z, CON c)		= CON(instanceCon(r,z, c))
+      | instanceInf'(r,z, SIG s)		= SIG(instanceSig(r,z, s))
+      | instanceInf'(r,z, FUN(p,j1,j2))		= FUN(instancePath(r, p),
+						      instanceInf(r,z, j1),
+						      instanceInf(r,z, j2))
+      | instanceInf'(r,z, LAMBDA(p,j1,j2))	= LAMBDA(instancePath(r, p),
+							 instanceInf(r,z, j1),
+							 instanceInf(r,z, j2))
+      | instanceInf'(r,z, APPLY(j1,p,j2))	= APPLY(instanceInf(r,z, j1),
+							realisePath(r, p),
+							instanceInf(r,z, j2))
+      | instanceInf'(r,z, ABBREV(j1,j2))	= ABBREV(instanceInf(r,z, j1),
+							 instanceInf(r,z, j2))
 
-    and instanceKind (rea, ref k')		= ref(instanceKind'(rea, k'))
-    and instanceKind'(rea, GROUND)		= GROUND
-      | instanceKind'(rea, DEP(p,j,k))		= DEP(instancePath(rea, p),
-						      instanceInf(rea, j),
-						      instanceKind(rea, k))
+    and instanceCon(r,z, (k,p))			= ( instanceKind(r,z, k),
+						    realisePath(r, p) )
+
+    and instanceKind (r,z, ref k')		= ref(instanceKind'(r,z, k'))
+    and instanceKind'(r,z, GROUND)		= GROUND
+      | instanceKind'(r,z, DEP(p,j,k))		= DEP(instancePath(r, p),
+						      instanceInf(r,z, j),
+						      instanceKind(r,z, k))
     and instancePath(rea, p) =
 	let
 	    val p' = Path.instance PathMap.lookup (rea, p)
@@ -6765,7 +6920,7 @@ structure InfPrivate =
 	    p'
 	end
 
-    and instanceSig(rea, (ref items,_)) =
+    and instanceSig(r,z, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
 
@@ -6778,9 +6933,9 @@ structure InfPrivate =
 
 	    and instanceItem'(VAL((p,l,n), t, w, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val t'   = instanceTyp(rea, t)
-		    val d'   = instancePathDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val t'   = instanceTyp(r,z, t)
+		    val d'   = instancePathDef(r, d)
 		    val item = ref(VAL((p',l,n), t', w, d'))
 		in
 		    extendSig((VAL',l), item)
@@ -6788,8 +6943,8 @@ structure InfPrivate =
 
 	      | instanceItem'(TYP((p,l,n), k, w, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val d'   = instanceTypDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val d'   = instanceTypDef(r,z, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
@@ -6797,9 +6952,9 @@ structure InfPrivate =
 
 	      | instanceItem'(MOD((p,l,n), j, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val j'   = instanceInf(rea, j)
-		    val d'   = instancePathDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val j'   = instanceInf(r,z, j)
+		    val d'   = instancePathDef(r, d)
 		    val item = ref(MOD((p',l,n), j', d'))
 		in
 		    extendSig((MOD',l), item)
@@ -6807,9 +6962,9 @@ structure InfPrivate =
 
 	      | instanceItem'(INF((p,l,n), k, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val k'   = instanceKind(rea, k)
-		    val d'   = instanceInfDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val k'   = instanceKind(r,z, k)
+		    val d'   = instanceInfDef(r,z, d)
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
@@ -6817,7 +6972,7 @@ structure InfPrivate =
 
 	      | instanceItem'(FIX((p,l,n), q)) =
 		let
-		    val p'   = instancePath(rea, p)
+		    val p'   = instancePath(r, p)
 		    val item = ref(FIX((p',l,n), q))
 		in
 		    extendSig((FIX',l), item)
@@ -6830,48 +6985,101 @@ structure InfPrivate =
     and instancePathDef(rea, NONE  )	= NONE
       | instancePathDef(rea, SOME p)	= SOME(realisePath(rea, p))
 
-    and instanceTypDef(rea, NONE  )	= NONE
-      | instanceTypDef(rea, SOME t)	= SOME(instanceTyp(rea, t))
+    and instanceTypDef(r,z, NONE  )	= NONE
+      | instanceTypDef(r,z, SOME t)	= SOME(instanceTyp(r,z, t))
 
-    and instanceInfDef(rea, NONE  )	= NONE
-      | instanceInfDef(rea, SOME j)	= SOME(instanceInf(rea, j))
+    and instanceInfDef(r,z, NONE  )	= NONE
+      | instanceInfDef(r,z, SOME j)	= SOME(instanceInf(r,z, j))
 
-    and instanceTyp(rea, t)		= let val t' = Type.clone t in
-					     Type.realisePath(rea, t') ; t'
-					  end
+    and instanceTyp(r,z, t)		= Type.cloneCont z t
+					  (* Cannot do 
+						Type.realisePath(r,t')
+					     here! *)
+
+    and realiseT (rea', ref j')			= realiseT'(rea', j')
+
+    and realiseT'(rea', LINK j)			= realiseT(rea', j)
+      | realiseT'(rea', (TOP | CON _))		= ()
+      | realiseT'(rea', SIG s)			= realiseTSig(rea', s)
+      | realiseT'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2) | ABBREV(j1,j2))) =
+						  ( realiseT(rea', j1)
+						  ; realiseT(rea', j2)
+						  )
+      | realiseT'(rea', APPLY(j1,p,j2))		= ( realiseT(rea', j1)
+						  ; realiseT(rea', j2)
+						  )
+
+    and realiseTKind (rea', ref k')		= realiseTKind'(rea', k')
+    and realiseTKind'(rea, GROUND)		= ()
+      | realiseTKind'(rea, DEP(_,j,k))		= ( realiseT(rea, j)
+						  ; realiseTKind(rea, k)
+						  )
+
+    and realiseTSig(rea', (ref items, _))	=
+	    List.app (fn item => realiseTItem(rea', item)) items
+
+    and realiseTItem(rea', ref item')		= realiseTItem'(rea', item')
+    and realiseTItem'(rea', VAL(x, t, w, d))	= realiseTTyp(rea', t)
+      | realiseTItem'(rea', TYP(x, k, w, d))	= realiseTTypDef(rea', d)
+      | realiseTItem'(rea', MOD(x, j, d))	= realiseT(rea', j)
+      | realiseTItem'(rea', INF(x, k, d))	= ( realiseTKind(rea', k)
+						  ; realiseTInfDef(rea', d)
+						  )
+      | realiseTItem'(rea', FIX _)		= ()
+
+    and realiseTCon(rea', (k,p))		= realiseTKind(rea', k)
+
+    and realiseTTypDef(rea', NONE  )		= ()
+      | realiseTTypDef(rea', SOME t)		= realiseTTyp(rea', t)
+
+    and realiseTInfDef(rea', NONE  )		= ()
+      | realiseTInfDef(rea', SOME j)		= realiseT(rea', j)
+
+    and realiseTTyp(rea', t)			= Type.realisePath(rea', t)
+
 
 
   (* Creation of singleton (shallow instantiation) *)
 
-    and singleton j				= singletonInf(PathMap.new(), j)
+    (* Creates an instance of an interface where every item is equal to
+     * to the original one.
+     *)
 
-    and singletonInf (rea, ref j')		= ref(singletonInf'(rea, j'))
-    and singletonInf'(rea, LINK j)		= singletonInf'(rea, !j)
-      | singletonInf'(rea, TOP)			= TOP
-      | singletonInf'(rea, CON c)		= CON(singletonCon(rea, c))
-      | singletonInf'(rea, SIG s)		= SIG(singletonSig(rea, s))
-      | singletonInf'(rea, FUN(p,j1,j2))	= FUN(singletonPath(rea, p),
-						      singletonInf(rea, j1),
-						      singletonInf(rea, j2))
-      | singletonInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(singletonPath(rea, p),
-							 singletonInf(rea, j1),
-							 singletonInf(rea, j2))
-      | singletonInf'(rea, APPLY(j1,p,j2))	= APPLY(singletonInf(rea, j1),
-							realisePath(rea, p),
-							singletonInf(rea, j2))
+    and singleton j =
+	let
+	    val cloneState = Type.cloneStart()
+	    val j1         = singletonInf(cloneState, j)
+	in
+	    Type.cloneFinish cloneState ;
+	    j1
+	end
 
-    and singletonCon(rea, (k,p))		= ( singletonKind(rea, k),
-						    realisePath(rea, p) )
+    and singletonInf (z, ref j')		= ref(singletonInf'(z, j'))
+    and singletonInf'(z, LINK j)		= singletonInf'(z, !j)
+      | singletonInf'(z, TOP)			= TOP
+      | singletonInf'(z, CON c)			= CON(singletonCon(z, c))
+      | singletonInf'(z, SIG s)			= SIG(singletonSig(z, s))
+      | singletonInf'(z, FUN(p,j1,j2))		= FUN(Path.clone p,
+						      singletonInf(z, j1),
+						      singletonInf(z, j2))
+      | singletonInf'(z, LAMBDA(p,j1,j2))	= LAMBDA(Path.clone p,
+							 singletonInf(z, j1),
+							 singletonInf(z, j2))
+      | singletonInf'(z, APPLY(j1,p,j2))	= APPLY(singletonInf(z, j1),
+							p,
+							singletonInf(z, j2))
+      | singletonInf'(z, ABBREV(j1,j2))		= ABBREV(singletonInf(z, j1),
+							 singletonInf(z, j2))
 
-    and singletonKind (rea, ref k')		= ref(singletonKind'(rea, k'))
-    and singletonKind'(rea, GROUND)		= GROUND
-      | singletonKind'(rea, DEP(p,j,k))		= DEP(singletonPath(rea, p),
-						      singletonInf(rea, j),
-						      singletonKind(rea, k))
+    and singletonCon(z, (k,p))			= ( singletonKind(z, k), p )
 
-    and singletonPath(rea, p) = Path.instance PathMap.lookup (rea, p)
+    and singletonKind (z, ref k')		= ref(singletonKind'(z, k'))
+    and singletonKind'(z, GROUND)		= GROUND
+      | singletonKind'(z, DEP(p,j,k))		= DEP(Path.clone p,
+						      singletonInf(z, j),
+						      singletonKind(z, k))
 
-    and singletonSig(rea, (ref items,_)) =
+    and singletonSig(z, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
 
@@ -6884,18 +7092,17 @@ structure InfPrivate =
 
 	    and singletonItem'(VAL((p,l,n), t, w, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val t'   = singletonTyp(rea, t)
-		    val d'   = singletonPathDef(rea, d)
-		    val item = ref(VAL((p',l,n), t', w, d'))
+		    val p'   = Path.clone p
+		    val t'   = singletonTyp(z, t)
+		    val item = ref(VAL((p',l,n), t', w, d))
 		in
 		    extendSig((VAL',l), item)
 		end
 
 	      | singletonItem'(TYP((p,l,n), k, w, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val d'   = singletonTypDef(rea, d)
+		    val p'   = Path.clone p
+		    val d'   = singletonTypDef(z, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
@@ -6903,19 +7110,18 @@ structure InfPrivate =
 
 	      | singletonItem'(MOD((p,l,n), j, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val j'   = singletonInf(rea, j)
-		    val d'   = singletonPathDef(rea, d)
-		    val item = ref(MOD((p',l,n), j', d'))
+		    val p'   = Path.clone p
+		    val j'   = singletonInf(z, j)
+		    val item = ref(MOD((p',l,n), j', d))
 		in
 		    extendSig((MOD',l), item)
 		end
 
 	      | singletonItem'(INF((p,l,n), k, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val k'   = singletonKind(rea, k)
-		    val d'   = singletonInfDef(rea, d)
+		    val p'   = Path.clone p
+		    val k'   = singletonKind(z, k)
+		    val d'   = singletonInfDef(z, d)
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
@@ -6923,7 +7129,7 @@ structure InfPrivate =
 
 	      | singletonItem'(FIX((p,l,n), q)) =
 		let
-		    val p'   = singletonPath(rea, p)
+		    val p'   = Path.clone p
 		    val item = ref(FIX((p',l,n), q))
 		in
 		    extendSig((FIX',l), item)
@@ -6933,18 +7139,13 @@ structure InfPrivate =
 	    s
 	end
 
-    and singletonPathDef(rea, NONE  )	= NONE
-      | singletonPathDef(rea, SOME p)	= SOME(realisePath(rea, p))
+    and singletonTypDef(z, NONE  )	= NONE
+      | singletonTypDef(z, SOME t)	= SOME(singletonTyp(z, t))
 
-    and singletonTypDef(rea, NONE  )	= NONE
-      | singletonTypDef(rea, SOME t)	= SOME(singletonTyp(rea, t))
+    and singletonInfDef(z, NONE  )	= NONE
+      | singletonInfDef(z, SOME j)	= SOME(singletonInf(z, j))
 
-    and singletonInfDef(rea, NONE  )	= NONE
-      | singletonInfDef(rea, SOME j)	= SOME(singletonInf(rea, j))
-
-    and singletonTyp(rea, t)		= let val t' = Type.clone t in
-					     Type.realisePath(rea, t') ; t'
-					  end
+    and singletonTyp(z, t)		= Type.cloneCont z t
 
 
   (* Cloning (does not instantiate paths!) *)
@@ -6957,6 +7158,7 @@ structure InfPrivate =
       | clone'(FUN(p,j1,j2))	= FUN(p, clone j1, clone j2)
       | clone'(LAMBDA(p,j1,j2))	= LAMBDA(p, clone j1, clone j2)
       | clone'(APPLY(j1,p,j2))	= APPLY(clone j1, p, clone j2)
+      | clone'(ABBREV(j1,j2))	= ABBREV(clone j1, clone j2)
 
     and cloneCon (k,p)		= (cloneKind k, p)
 
@@ -7002,6 +7204,7 @@ structure InfPrivate =
     fun inArrow pjj	= ref(FUN pjj)
     fun inLambda pjj	= ref(LAMBDA pjj)
     fun inApply jpj	= let val j = ref(APPLY jpj) in reduce j ; j end
+    fun inAbbrev jj	= ref(ABBREV jj)
 
     fun pathToPath  p	= p
     fun pathToTyp k p	= Type.inCon(k, Type.CLOSED, p)
@@ -7012,7 +7215,9 @@ structure InfPrivate =
 
     exception Interface
 
-    fun asInf j		= !(follow j)
+    fun asInf(ref(LINK j))	= asInf j
+      | asInf(ref(ABBREV(_,j)))	= asInf j
+      | asInf(ref j')		= j'
 
     fun isTop j		= case asInf j of TOP      => true | _ => false
     fun isCon j		= case asInf j of CON _    => true | _ => false
@@ -7027,15 +7232,20 @@ structure InfPrivate =
     fun asLambda j	= case asInf j of LAMBDA z => z | _ => raise Interface
     fun asApply j	= case asInf j of APPLY z  => z | _ => raise Interface
 
+    fun isAbbrev j	= case !(follow j) of ABBREV _  => true | _ => false
+    fun asAbbrev j	= case !(follow j) of ABBREV jj => jj   | _ =>
+								raise Interface
     fun pathCon(_,p)	= p
     fun path j		= pathCon(asCon j)
 
 
   (* Strengthening *)
 
-    fun strengthen(p, ref(SIG s))  = strengthenSig(p, s)
-      | strengthen(p, ref(LINK j)) = strengthen(p, j)
-      | strengthen(p, _)           = ()
+    fun strengthen(p, ref(SIG s))		= strengthenSig(p, s)
+      | strengthen(p, ref(LINK j))		= strengthen(p, j)
+      | strengthen(p, ref(ABBREV(j1,j2)))	= ( strengthen(p, j1)
+						  ; strengthen(p, j2) )
+      | strengthen(p, _)			= ()
 
     and strengthenSig(p, (ref items, _)) =
 	    List.app (fn item => strengthenItem(p, item)) items
@@ -7089,10 +7299,10 @@ structure InfPrivate =
       | strengthenPathDef(p, d)		= d
 
     and strengthenTypDef(p, k, NONE)	= SOME(pathToTyp k p)
-      | strengthenTypDef(p, k, d)	= d
+      | strengthenTypDef(p, k, SOME t)	= SOME(Type.inAbbrev(pathToTyp k p,t))
 
     and strengthenInfDef(p, k, NONE)	= SOME(pathToInf k p)
-      | strengthenInfDef(p, k, d)	= d
+      | strengthenInfDef(p, k, SOME j)	= SOME(inAbbrev(pathToInf k p,j))
 
 
   (* Kinds *)
@@ -7117,25 +7327,26 @@ structure InfPrivate =
       | kind'(LAMBDA(p,j1,j2))	= inDependent(p, j1, kind j2)
       | kind'(APPLY(j1,p,j2))	= (*UNFINISHED*) inGround()
       | kind'(LINK j)		= kind j
+      | kind'(ABBREV(j1,j2))	= kind j2
 
 
   (* Matching *)
 
     datatype mismatch =
-	  MissingVal  of lab
-	| MissingTyp  of lab
-	| MissingMod  of lab
-	| MissingInf  of lab
-	| MissingFix  of lab
-	| ManifestVal of lab
-	| ManifestTyp of lab
-	| ManifestMod of lab
-	| ManifestInf of lab
-	| MismatchVal of lab * typ * typ
-	| MismatchTyp of lab * tkind * tkind
-	| MismatchMod of lab * mismatch
-	| MismatchInf of lab * mismatch
-	| MismatchFix of lab * fix * fix
+	  MissingVal      of lab
+	| MissingTyp      of lab
+	| MissingMod      of lab
+	| MissingInf      of lab
+	| MissingFix      of lab
+	| ManifestVal     of lab * path option * path
+	| ManifestTyp     of lab * typ option * typ
+	| ManifestMod     of lab * path option * path
+	| ManifestInf     of lab * mismatch option
+	| MismatchVal     of lab * typ * typ
+	| MismatchTyp     of lab * tkind * tkind
+	| MismatchMod     of lab * mismatch
+	| MismatchInf     of lab * mismatch
+	| MismatchFix     of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch
@@ -7146,15 +7357,53 @@ structure InfPrivate =
     exception Mismatch of mismatch
 
 
-    fun matchDef (equals, err) (l ,_,       NONE   ) = ()
-      | matchDef (equals, err) (l, NONE,    SOME _ ) = raise Mismatch(err l)
-      | matchDef (equals, err) (l, SOME x1, SOME x2) =
-	    if equals(x1,x2) then () else raise Mismatch(err l)
 
-    fun matchValDef x = matchDef(op=, ManifestVal) x
-    fun matchTypDef x = matchDef(Type.equals, ManifestTyp) x
-    fun matchModDef x = matchDef(op=, ManifestMod) x
-    fun matchInfDef x = matchDef(equals, ManifestInf) x
+    fun match(j1,j2) =
+	let
+	    val rea = emptyRea()
+	in
+	    match'(rea, j1, j2) ;
+	    rea
+	end
+
+    and match'(rea, _, ref TOP) = ()
+      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+	if p1 = p2 then
+	    ()
+	else
+	    raise Mismatch(Incompatible(j1,j2))
+
+      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
+
+      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
+	( realise(rea, j21)
+	; match'(rea, j21, j11) handle Mismatch mismatch =>
+		raise Mismatch(MismatchDom mismatch)
+	; realise(rea, j12)
+	; match'(rea, j12, j22) handle Mismatch mismatch =>
+		raise Mismatch(MismatchRan mismatch)
+	)
+
+      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    ()
+
+      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
+	( match'(rea, j11, j21)
+	; if p1 = p2 then () else
+	      raise Mismatch(IncompatibleArg(p1,p2))
+	)
+
+      | match'(rea, ref(LINK j1), j2)		= match'(rea, j1, j2)
+      | match'(rea, j1, ref(LINK j2))		= match'(rea, j1, j2)
+      | match'(rea, ref(ABBREV(_,j1)), j2)	= match'(rea, j1, j2)
+      | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	( match'(rea, j1, j22)
+(*	; j2 := ABBREV(j21,j1)
+*)	)
+
+      | match'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+
 
     and matchSig(rea, (ref items1, m1), s2 as (ref items2, m2)) =
 	let
@@ -7197,6 +7446,8 @@ structure InfPrivate =
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | matchNested(ref(LINK j1), j2) = matchNested(j1, j2)
 	      | matchNested(j1, ref(LINK j2)) = matchNested(j1, j2)
+	      | matchNested(ref(ABBREV(_,j1)), j2) = matchNested(j1, j2)
+	      | matchNested(j1, ref(ABBREV(_,j2))) = matchNested(j1, j2)
 	      | matchNested _ = ()
 
 	    val pairs = pair(m1, items2, [])
@@ -7268,70 +7519,89 @@ structure InfPrivate =
 	    raise Mismatch(MismatchTypSort(l, w1, w2))
 
 
-    and match'(rea, _, ref TOP) = ()
-      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
-	    ()
-	else
-	    raise Mismatch(Incompatible(j1,j2))
+    and matchValDef(l, _,    NONE)	= ()
+      | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
+      | matchValDef(l, SOME p1, SOME p2) =
+	    if p1 = p2 then () else raise Mismatch(ManifestVal(l, SOME p1, p2))
 
-      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
+    and matchTypDef(l, _,    NONE)	= ()
+      | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
+      | matchTypDef(l, SOME t1, SOME t2) =
+	    if Type.equals(t1,t2) then () else
+		raise Mismatch(ManifestTyp(l, SOME t1, t2))
 
-      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	( realise(rea, j21)
-	; match'(rea, j21, j11) handle Mismatch mismatch =>
-		raise Mismatch(MismatchDom mismatch)
-	; realise(rea, j12)
-	; match'(rea, j12, j22) handle Mismatch mismatch =>
-		raise Mismatch(MismatchRan mismatch)
-	)
+    and matchModDef(l, _,    NONE)	= ()
+      | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
+      | matchModDef(l, SOME p1, SOME p2) =
+	    if p1 = p2 then () else raise Mismatch(ManifestMod(l, SOME p1, p2))
 
-      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    ()
-
-      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
-	( match'(rea, j11, j21)
-	; if p1 = p2 then () else
-	      raise Mismatch(IncompatibleArg(p1,p2))
-	)
-
-      | match'(rea, ref(LINK j1), j2)	= match'(rea, j1, j2)
-      | match'(rea, j1, ref(LINK j2))	= match'(rea, j1, j2)
-      | match'(rea, j1,j2)		= raise Mismatch(Incompatible(j1,j2))
+    and matchInfDef(l, _,    NONE)	= ()
+      | matchInfDef(l, NONE, SOME j2)	= raise Mismatch(ManifestInf(l,NONE))
+      | matchInfDef(l, SOME j1, SOME j2) =
+	    equalise(j1,j2) handle Mismatch mismatch =>
+		raise Mismatch(ManifestInf(l, SOME mismatch))
 
 
-    and equals(j1,j2) = (*UNFINISHED*) true
-
+    and equalise(j1,j2) = (*UNFINISHED*) ()
     and equaliseKind(k1,k2) = (*UNFINISHED*) ()
-
-
-    fun match(j1,j2) =
-	let
-	    val rea = emptyRea()
-	in
-	    match'(rea, j1, j2) ;
-	    rea
-	end
 
 
 
   (* Intersection *)
 
+    fun intersect(j1,j2) =
+	let
+	    val j1' = clone j1
+	    val j2' = clone j2
+	    val rea = emptyRea()
+	in
+	    intersect'(rea, j1', j2')
+	end
+
+    and intersect'(rea, j1, ref TOP) = j1
+      | intersect'(rea, ref TOP, j2) = j2
+      | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+	if p1 = p2 then
+	    j1
+	else
+	    raise Mismatch(Incompatible(j1,j2))
+
+      | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
+	    ( intersectSig(rea, s1, s2) ; j1 )
+
+      | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: FUN"
+
+      | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: LAMBDA"
+
+      | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: APPLY"
+
+      | intersect'(rea, ref(LINK j1), j2)	= intersect'(rea, j1, j2)
+      | intersect'(rea, j1, ref(LINK j2))	= intersect'(rea, j1, j2)
+
+      | intersect'(rea, j1 as ref(ABBREV(j11,j12)), j2)	=
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j12, j2)
+	; j1 := ABBREV(j11,j2)
+	; j1
+	)
+      | intersect'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j1, j22)
+	; j2 := ABBREV(j21,j1)
+	; j2
+	)
+      | intersect'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+
+
     (* UNFINISHED: does ignore dependencies on second argument signature *)
 
-    fun intersectDef (equals, err) (l, NONE,    NONE   ) = NONE
-      | intersectDef (equals, err) (l, NONE,    SOME z ) = SOME z
-      | intersectDef (equals, err) (l, SOME z,  NONE   ) = SOME z
-      | intersectDef (equals, err) (l, SOME z1, SOME z2) =
-	    if equals(z1,z2) then SOME z1 else raise Mismatch(err l)
-
-    fun intersectValDef x = intersectDef(op=, ManifestVal) x
-    fun intersectTypDef x = intersectDef(Type.equals, ManifestTyp) x
-    fun intersectModDef x = intersectDef(op=, ManifestMod) x
-    fun intersectInfDef x = intersectDef(equals, ManifestInf) x
-
-    fun intersectSig(rea, s1 as (itemsr1 as ref items1, m1),
+    and intersectSig(rea, s1 as (itemsr1 as ref items1, m1),
 			  s2 as (itemsr2 as ref items2, m2)) =
 	let
 	    fun pairDef(rea', toZ, b, x1, NONE, x2, SOME z) =
@@ -7384,6 +7654,8 @@ structure InfPrivate =
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | pairNested(ref(LINK j1), j2) = pairNested(j1, j2)
 	      | pairNested(j1, ref(LINK j2)) = pairNested(j1, j2)
+	      | pairNested(ref(ABBREV(_,j1)), j2) = pairNested(j1, j2)
+	      | pairNested(j1, ref(ABBREV(_,j2))) = pairNested(j1, j2)
 	      | pairNested _ = ()
 
 	    val (pairs,left) = pair(m1, items2, [], [])
@@ -7476,43 +7748,33 @@ structure InfPrivate =
 	    CLOSED
 
 
-    and intersect'(rea, j1, ref TOP) = j1
-      | intersect'(rea, ref TOP, j2) = j2
-      | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
-	    j1
-	else
-	    raise Mismatch(Incompatible(j1,j2))
+    and intersectValDef(l, NONE,    NONE)	= NONE
+      | intersectValDef(l, SOME p1, NONE)	= SOME p1
+      | intersectValDef(l, NONE,    SOME p2)	= SOME p2
+      | intersectValDef(l, SOME p1, SOME p2)	=
+	    if p1 = p2 then SOME p1 else
+		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
-      | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
-	    ( intersectSig(rea, s1, s2) ; j1 )
+    and intersectTypDef(l, NONE,    NONE)	= NONE
+      | intersectTypDef(l, SOME t1, NONE)	= SOME t1
+      | intersectTypDef(l, NONE,    SOME t2)	= SOME t2
+      | intersectTypDef(l, SOME t1, SOME t2)	=
+	    if Type.equals(t1,t2) then SOME t1 else
+		raise Mismatch(ManifestTyp(l, SOME t1, t2))
 
-      | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: FUN"
+    and intersectModDef(l, NONE,    NONE)	= NONE
+      | intersectModDef(l, SOME p1, NONE)	= SOME p1
+      | intersectModDef(l, NONE,    SOME p2)	= SOME p2
+      | intersectModDef(l, SOME p1, SOME p2)	=
+	    if p1 = p2 then SOME p1 else
+		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
-      | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: LAMBDA"
-
-      | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: APPLY"
-
-      | intersect'(rea, ref(LINK j1), j2) = intersect'(rea, j1, j2)
-      | intersect'(rea, j1, ref(LINK j2)) = intersect'(rea, j1, j2)
-      | intersect'(rea, j1,j2)            = raise Mismatch(Incompatible(j1,j2))
-
-
-    fun intersect(j1,j2) =
-	let
-	    val j1' = clone j1
-	    val j2' = clone j2
-	    val rea = emptyRea()
-	in
-	    intersect'(rea, j1', j2')
-	end
-
+    and intersectInfDef(l, NONE,    NONE)	= NONE
+      | intersectInfDef(l, SOME j1, NONE)	= SOME j1
+      | intersectInfDef(l, NONE,    SOME j2)	= SOME j2
+      | intersectInfDef(l, SOME j1, SOME j2)	=
+	    ( equalise(j1,j2) ; SOME j1 ) handle Mismatch mismatch =>
+		raise Mismatch(ManifestInf(l, SOME mismatch))
   end
 
 
@@ -8472,6 +8734,9 @@ structure PPInf :> PP_INF =
 				 (ppInf j) ps))
 	end
 
+      | ppInf'(ABBREV(j1,j2)) =
+	    ppInf j1
+
       | ppInf'(LINK j) =
 (*DEBUG
 text "@" ^^*)
@@ -8718,8 +8983,6 @@ structure ElaborationError :> ELABORATION_ERROR =
 
     infixr ^^ ^/^
 
-    val par = paragraph
-
   (* Types *)
 
     type lab    = Label.t
@@ -8807,16 +9070,17 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
     fun ppLongid y = ppQuoted(ppLongid' y)
 
+    fun ppLab a = Label.toString a
 
-    fun ppLab a = ppQuoted(Label.toString a)
+    val ppPath = PPPath.ppPath
+    val ppTyp  = PPType.ppTyp
+    val ppInf  = PPInf.ppInf
 
 
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
 	vbox(
-	    d1 ^^
-	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    d2 ^^
-	    nest(break ^^ below(PPType.ppTyp t2))
+	    d1 ^^ indent(PPType.ppTyp t1) ^^
+	    d2 ^^ indent(PPType.ppTyp t2)
 	)
 
     fun ppUnify4(d1, d2, (t1,t2,t3,t4)) =
@@ -8828,272 +9092,302 @@ structure ElaborationError :> ELABORATION_ERROR =
 	in
 	    if td3 = td1 andalso td4 = td2 then
 		vbox(
-		    d1 ^^
-		    nest(break ^^ below td1) ^/^
-		    d2 ^^
-		    nest(break ^^ below td2)
+		    d1 ^^ indent td1 ^^
+		    d2 ^^ indent td2
 		)
 	    else
 		vbox(
-		    d1 ^^
-		    nest(break ^^ below td1) ^/^
-		    d2 ^^
-		    nest(break ^^ below td2) ^/^
-		    par["because","type"] ^^
-		    nest(break ^^ below td3) ^/^
-		    par["does","not","unify","with"] ^^
-		    nest(break ^^ below td4)
+		    d1 ^^ indent td1 ^^
+		    d2 ^^ indent td2 ^^
+		    textpar["because","type"] ^^ indent td3 ^^
+		    textpar["does","not","unify","with"] ^^ indent td4
 		)
 	end
 
     fun ppMismatch(d, im) =
         vbox(
-	    d ^/^
-	    par(ppMismatch' im)
+	    d ^^
+	    ppMismatch' im
 	)
 
     and ppMismatch'(Inf.MissingVal a) =
-	    ["value",ppLab a,"is","missing"]
+	    indent(textpar["val",ppLab a]) ^^
+	    textpar["is","missing"]
       | ppMismatch'(Inf.MissingTyp  a) =
-	    ["type",ppLab a,"is","missing"]
+	    indent(textpar["type",ppLab a]) ^^
+	    textpar["is","missing"]
       | ppMismatch'(Inf.MissingMod  a) =
-	    ["module",ppLab a,"is","missing"]
+	    indent(textpar["structure",ppLab a]) ^^
+	    textpar["is","missing"]
       | ppMismatch'(Inf.MissingInf  a) =
-	    ["signature",ppLab a,"is","missing"]
+	    indent(textpar["signature",ppLab a]) ^^
+	    textpar["is","missing"]
       | ppMismatch'(Inf.MissingFix  a) =
-	    ["fixity","of",ppLab a,"is","unspecified"]
-      | ppMismatch'(Inf.ManifestVal a) =
-	    ["value",ppLab a,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestTyp a) =
-	    ["type",ppLab a,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestMod a) =
-	    ["module",ppLab a,"does","not","match","manifest","specification"]
-      | ppMismatch'(Inf.ManifestInf a) =
-	    ["signature",ppLab a,
-	     "does","not","match","manifest","specification"]
+	    textpar["fixity","of",ppQuoted(ppLab a),"is","unspecified"]
+      | ppMismatch'(Inf.ManifestVal(a,po,p)) =
+	    indent(par([text"val",text(ppLab a)] @
+		(case po of NONE => [] | SOME p' => [text"=",ppPath p']))) ^^
+	    textpar["does","not","match","manifest","specification"] ^^
+	    indent(par[text"val",text(ppLab a),text"=",ppPath p])
+      | ppMismatch'(Inf.ManifestTyp(a,to,t)) =
+	    indent(
+		case to of NONE => textpar["type",ppLab a]
+		| SOME t' => par[text"type",text(ppLab a),text"=",ppTyp t']) ^^
+	    textpar["does","not","match","manifest","specification"] ^^
+	    indent(par[text"type",text(ppLab a),text"=",ppTyp t])
+      | ppMismatch'(Inf.ManifestMod(a,po,p)) =
+	    indent(par([text"structure",text(ppLab a)] @
+		(case po of NONE => [] | SOME p' => [text"=",ppPath p']))) ^^
+	    textpar["does","not","match","manifest","specification"] ^^
+	    indent(par[text"structure",text(ppLab a),text"=",ppPath p])
+      | ppMismatch'(Inf.ManifestInf(a,NONE)) =
+	    indent(textpar["signature",ppLab a]) ^^
+	    textpar["does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestInf(a,SOME im)) =
+	    indent(textpar["signature",ppLab a]) ^^
+	    textpar["does","not","match","manifest","specification,",
+		"because"] ^^
+	    ppMismatch' im
       | ppMismatch'(Inf.MismatchVal(a,t1,t2)) =
-	    ["value",ppLab a,"has","incompatible","type"]
+	    indent(par([text"val",text(ppLab a),text":",ppTyp t1])) ^^
+	    textpar["does","not","match"] ^^
+	    indent(par([text"val",text(ppLab a),text":",ppTyp t2]))
       | ppMismatch'(Inf.MismatchTyp(a,k1,k2)) =
-	    ["type",ppLab a,"has","incompatible","arity"]
-      | ppMismatch'(Inf.MismatchMod(a, Inf.Incompatible _)) =
-	    ["module",ppLab a,"has","incompatible","signature"]
-      | ppMismatch'(Inf.MismatchMod(a, im as Inf.IncompatibleArg _)) =
-	    ["module",ppLab a,"has","incompatible","signature,","because"]
-	    @ ppMismatch' im
+	    indent(textpar["type",ppLab a]) ^^
+	    textpar["has","incompatible","arity"]
+      | ppMismatch'(Inf.MismatchMod(a, Inf.Incompatible(j1,j2))) =
+	    indent(par([text"structure",text(ppLab a),text":",ppInf j1])) ^^
+	    textpar["does","not","match"] ^^
+	    indent(par([text"structure",text(ppLab a),text":",ppInf j2]))
+      | ppMismatch'(Inf.MismatchMod(a, im as Inf.IncompatibleArg(p1,p2))) =
+	    indent(textpar["structure",ppLab a]) ^^
+	    textpar["has","incompatible","signature,",
+		"because","signature","argument"] ^^
+	    indent(ppPath p1) ^^
+	    textpar["does","not","equal"] ^^
+	    indent(ppPath p2)
       | ppMismatch'(Inf.MismatchMod(a,im)) =
-	    ["module",ppLab a,"has","incompatible","signature,",
-	     "because","nested"] @ ppMismatch' im
-      | ppMismatch'(Inf.MismatchInf(a, Inf.Incompatible _)) =
-	    ["signature",ppLab a,"is","incompatible"]
-      | ppMismatch'(Inf.MismatchInf(a, im as Inf.IncompatibleArg _)) =
-	    ["signature",ppLab a,"is","incompatible","because"]
-	    @ ppMismatch' im
+	    indent(textpar["structure",ppLab a]) ^^
+	    textpar["has","incompatible","signature,","because"] ^^
+	    ppMismatch' im
       | ppMismatch'(Inf.MismatchInf(a,im)) =
-	    ["signature",ppLab a,"is","incompatible,","because","nested"]
-	    @ ppMismatch' im
+	    indent(textpar["signature",ppLab a]) ^^
+	    textpar["is","incompatible"]
       | ppMismatch'(Inf.MismatchFix(a,q1,q2)) =
-	    ["fixity","of",ppLab a,"is","different"]
+	    textpar["fixity","of",ppQuoted(ppLab a),"is","different"]
       | ppMismatch'(Inf.MismatchValSort(a,w1,w2)) =
-	    ["value",ppLab a,"is","not","a","constructor"]
+	    indent(textpar["val",ppLab a]) ^^
+	    textpar["is","not","a","constructor"]
       | ppMismatch'(Inf.MismatchTypSort(a,w1,w2)) =
-	    ["type",ppLab a,"is","not","an","open","datatype"]
+	    indent(textpar["val",ppLab a]) ^^
+	    textpar["is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
-	    ["functor","signature","is","incompatible","because","argument"]
-	    @ ppMismatch' im
+	    textpar["functor","argument","signature","is","incompatible,",
+		"because"] ^^
+	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
-	    ["functor","signature","is","incompatible","because","result"]
-	    @ ppMismatch' im
+	    textpar["functor","result","signature","is","incompatible,",
+		"because"] ^^
+	    ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
-	    ["signatures","are","incompatible"]
+	    textpar["signature"] ^^
+	    indent(ppInf j1) ^^
+	    textpar["is","not","compatible","to"] ^^
+	    indent(ppInf j2)
       | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
-	    ["applied","signature","arguments","are","incompatible"]
+	    textpar["applied","signature","argument"] ^^
+	    textpar["signature"] ^^
+	    indent(ppPath p1) ^^
+	    textpar["does","not","equal"] ^^
+	    indent(ppPath p2)
 
 
     fun ppUnclosed(d, (a,n,t)) =
 	vbox(
 	    d ^^
-	    nest(break ^^
+	    indent(
 		fbox(nest(
 		    text(Label.toString a) ^/^
 		    text ":" ^/^
 		    below(PPType.ppTyp t)
 		))
-	    ) ^/^
-	    par["contains","free","type","variable",
-		"or","unresolved","record","type"]
+	    ) ^^
+	    textpar["contains","free","type","variable",
+		    "or","unresolved","record","type"]
 	)
 
 
     fun ppError(VecExpUnify ue) =
 	ppUnify2(
-	  par["inconsistent","types","in","vector","expression:"],
-	  par["does","not","agree","with","previous","element","type"], ue)
+	  textpar["inconsistent","types","in","vector","expression:"],
+	  textpar["does","not","agree","with","previous","element","type"], ue)
       | ppError(AppExpFunUnify ue) =
 	ppUnify2(
-	  par["applied","value","is","not","a","function:"],
-	  par["does","not","match","function","type"], ue)
+	  textpar["applied","value","is","not","a","function:"],
+	  textpar["does","not","match","function","type"], ue)
       | ppError(AppExpArgUnify ue) =
 	ppUnify4(
-	  par["argument","type","mismatch:"],
-	  par["does","not","match","argument","type"], ue)
+	  textpar["argument","type","mismatch:"],
+	  textpar["does","not","match","argument","type"], ue)
       | ppError(CompExpNoRow t) =
 	vbox(
-	    par["specialization","type","is","not","a","record:"] ^^
+	    textpar["specialization","type","is","not","a","record:"] ^^
 	    nest(break ^^ PPType.ppTyp t)
 	)
       | ppError(CompExpUnify ue) =
 	ppUnify4(
-	  par["mismatch","on","record","update:"],
-	  par["does","not","match","type"], ue)
+	  textpar["mismatch","on","record","update:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(AndExpUnify ue) =
 	ppUnify2(
-	  par["operand","of","`andalso'","is","not","a","boolean:"],
-	  par["does","not","match","type"], ue)
+	  textpar["operand","of","`andalso'","is","not","a","boolean:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(OrExpUnify ue) =
 	ppUnify2(
-	  par["operand","of","`orelse'","is","not","a","boolean:"],
-	  par["does","not","match","type"], ue)
+	  textpar["operand","of","`orelse'","is","not","a","boolean:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(IfExpCondUnify ue) =
 	ppUnify2(
-	  par["operand","of","`if'","is","not","a","boolean:"],
-	  par["does","not","match","type"], ue)
+	  textpar["operand","of","`if'","is","not","a","boolean:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(IfExpBranchUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","branches","of","`if':"],
-	  par["does","not","agree","with","type"], ue)
+	  textpar["inconsistent","types","in","branches","of","`if':"],
+	  textpar["does","not","agree","with","type"], ue)
       | ppError(WhileExpCondUnify ue) =
 	ppUnify2(
-	  par["operand","of","`while'","is","not","a","boolean:"],
-	  par["does","not","match","type"], ue)
+	  textpar["operand","of","`while'","is","not","a","boolean:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(RaiseExpUnify ue) =
 	ppUnify2(
-	  par["operand","of","`raise'","is","not","an","exception:"],
-	  par["does","not","match","type"], ue)
+	  textpar["operand","of","`raise'","is","not","an","exception:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(HandleExpUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","branches","of","`handle':"],
-	  par["does","not","agree","with","type"], ue)
+	  textpar["inconsistent","types","in","branches","of","`handle':"],
+	  textpar["does","not","agree","with","type"], ue)
       | ppError(AnnExpUnify ue) =
 	ppUnify4(
-	  par["expression","does","not","match","annotation:"],
-	  par["does","not","match","type"], ue)
+	  textpar["expression","does","not","match","annotation:"],
+	  textpar["does","not","match","type"], ue)
       (* Patterns *)
       | ppError(MatchPatUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","`case'","patterns:"],
-	  par["does","not","agree","with","previous","type"], ue)
+	  textpar["inconsistent","types","in","`case'","patterns:"],
+	  textpar["does","not","agree","with","previous","type"], ue)
       | ppError(MatchExpUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","branches","of","`case':"],
-	  par["does","not","agree","with","previous","type"], ue)
+	  textpar["inconsistent","types","in","branches","of","`case':"],
+	  textpar["does","not","agree","with","previous","type"], ue)
       | ppError(VecPatUnify ue) =
 	ppUnify2(
-	  par["inconsistent","types","in","vector","pattern:"],
-	  par["does","not","agree","with","previous","element","type"], ue)
+	  textpar["inconsistent","types","in","vector","pattern:"],
+	  textpar["does","not","agree","with","previous","element","type"], ue)
       | ppError(AppPatArrTyp t) =
-	  par["missing","argument","to","constructor","in","pattern"]
+	  textpar["missing","argument","to","constructor","in","pattern"]
       | ppError(AppPatFunUnify ue) =
-	  par["surplus","argument","to","constructor","in","pattern"]
+	  textpar["surplus","argument","to","constructor","in","pattern"]
       | ppError(AppPatUnify ue) =
 	ppUnify4(
-	  par["ill-typed","constructor","argument:"],
-	  par["does","not","match","argument","type"], ue)
+	  textpar["ill-typed","constructor","argument:"],
+	  textpar["does","not","match","argument","type"], ue)
       | ppError(AsPatUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","`as'","pattern:"],
-	  par["does","not","agree","with","type"], ue)
+	  textpar["inconsistent","types","in","`as'","pattern:"],
+	  textpar["does","not","agree","with","type"], ue)
       | ppError(AltPatUnify ue) =
 	ppUnify4(
-	  par["inconsistent","types","in","pattern","alternatives:"],
-	  par["does","not","agree","with","previous","type"], ue)
+	  textpar["inconsistent","types","in","pattern","alternatives:"],
+	  textpar["does","not","agree","with","previous","type"], ue)
       | ppError(GuardPatUnify ue) =
 	ppUnify2(
-	  par["pattern","guard","is","not","a","boolean:"],
-	  par["does","not","match","type"], ue)
+	  textpar["pattern","guard","is","not","a","boolean:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(AnnPatUnify ue) =
 	ppUnify4(
-	  par["pattern","does","not","match","annotation:"],
-	  par["does","not","match","type"], ue)
+	  textpar["pattern","does","not","match","annotation:"],
+	  textpar["does","not","match","type"], ue)
       (* Types *)
       | ppError(StarTypKind k) =
-	  par["missing","arguments","in","type","expression"]
+	  textpar["missing","arguments","in","type","expression"]
       | ppError(AppTypFunKind k) =
-	  par["type","expression","is","not","a","type","function"]
+	  textpar["type","expression","is","not","a","type","function"]
       | ppError(AppTypArgKind(k1,k2)) =
-	  par["missing","arguments","in","type","expression"]
+	  textpar["missing","arguments","in","type","expression"]
       | ppError(RefTypKind k) =
-	  par["missing","arguments","in","type","expression"]
+	  textpar["missing","arguments","in","type","expression"]
       (* Declarations *)
       | ppError(ValDecUnify ue) =
 	ppUnify4(
-	  par["expression","does","not","match","pattern","type:"],
-	  par["does","not","match","type"], ue)
+	  textpar["expression","does","not","match","pattern","type:"],
+	  textpar["does","not","match","type"], ue)
       | ppError(ValDecLift(x,a)) =
-	  par["could not generalize","type","of",ppId x,
+	  textpar["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
       (* Modules *)
       | ppError(ModLongidInf(y,j)) =
-	  par["module",ppLongid y,"is","not","a","structure"]
+	  textpar["module",ppLongid y,"is","not","a","structure"]
       | ppError(StrModUnclosed lnt) =
 	ppUnclosed(
-	  par["structure","is","not","closed:"], lnt)
+	  textpar["structure","is","not","closed:"], lnt)
       | ppError(SelModInf j) =
-	  par["module","expression","is","not","a","structure"]
+	  textpar["module","expression","is","not","a","structure"]
       | ppError(AppModFunMismatch j) =
-	  par["applied","module","is","not","a","functor"]
+	  textpar["applied","module","is","not","a","functor"]
 	  (* UNFINISHED: print actual signature j *)
       | ppError(AppModArgMismatch im) =
 	ppMismatch(
-	  par["module","expression","does","not","match",
+	  textpar["module","expression","does","not","match",
 	      "functor","parameter","signature:"], im)
       | ppError(AnnModMismatch im) =
 	ppMismatch(
-	  par["module","expression","does","not","match","signature:"], im)
+	  textpar["module","expression","does","not","match","signature:"], im)
       (* Interfaces *)
       | ppError(GroundInfKind k) =
-	  par["missing","arguments","in","signature","expression"]
+	  textpar["missing","arguments","in","signature","expression"]
       | ppError(CompInfMismatch im) =
 	ppMismatch(
-	  par["inconsistency","at","signature","specialization:"], im)
+	  textpar["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
-	  par["module","expression","is","not","a","path"]
+	  textpar["module","expression","is","not","a","path"]
       (* Imports *)
       | ppError(ValItemMismatch(a,t1,t2)) =
 	vbox(
-	    par["type","annotation","of","value",ppLab a] ^^
+	    textpar["type","annotation","of","value",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    par["does","not","match","component","export","type"] ^^
+	    textpar["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
       | ppError(ConItemMismatch(a,t1,t2)) =
 	vbox(
-	    par["type","of","constructor",ppLab a] ^^
+	    textpar["type","of","constructor",ppLab a] ^^
 	    nest(break ^^ below(PPType.ppTyp t1)) ^/^
-	    par["does","not","match","component","export","type"] ^^
+	    textpar["does","not","match","component","export","type"] ^^
 	    nest(break ^^ below(PPType.ppTyp t2))
 	)
       | ppError(TypItemMismatch(a,k1,k2)) =
-	  par["type",ppLab a,"exported","by","component",
-	      "has","incompatible","arity"]
+	  textpar["type",ppLab a,"exported","by","component",
+		  "has","incompatible","arity"]
       | ppError(ModItemMismatch(a,im)) =
 	ppMismatch(
-	  par["module",ppLab a,"exported","by","component","does","not","match",
-	      "signature,","because"], im)
+	  textpar["module",ppLab a,"exported","by","component","does","not",
+		  "match","signature,","because"], im)
       | ppError(InfItemMismatch(a,im)) =
 	ppMismatch(
-	  par["signature",ppLab a,"exported","by","component","is",
-	      "incompatible,","because"], im)
+	  textpar["signature",ppLab a,"exported","by","component","is",
+		  "incompatible,","because"], im)
       | ppError(FixItemMismatch(a,f1,f2)) =
-	  par["fixity","status","for",ppLab a,"does","not","match","export"]
+	  textpar["fixity","status","for",ppLab a,"does","not","match",
+		  "export"]
       (* Components *)
       | ppError(CompUnclosed ant) =
 	ppUnclosed(
-	  par["component","is","not","closed:"], ant)
+	  textpar["component","is","not","closed:"], ant)
 
     fun ppWarning(NotGeneralized(x,t)) =
 	vbox(
-	    par["type","of",ppId x,"cannot","be","generalized","due","to",
+	    textpar["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
 	    nest(break ^^ PPType.ppTyp t)
 	)
@@ -9145,6 +9439,9 @@ functor MakeElaborationPhase(Composer: COMPOSER') :> ELABORATION_PHASE =
     open TypedInfo
 
     nonfix mod
+
+(*DEBUG*)
+val lev = ref 0
 
   (* Error *)
 
@@ -9223,9 +9520,8 @@ functor MakeElaborationPhase(Composer: COMPOSER') :> ELABORATION_PHASE =
 	let
 	    val  r0         = (if b then Type.unknownRow else Type.emptyRow)()
 	    val (r,fields') = elabFields(elabX, E, r0, fields)
-	    val  t          = Type.inProd r
 	in
-	    ( t, O.Row(nonInfo(i), fields', b) )
+	    ( r, O.Row(nonInfo(i), fields', b) )
 	end
 
     and elabField(elabX, E, I.Field(i, lab, xs)) =
@@ -9345,7 +9641,7 @@ val _=print "\n"
       | elabExp(E, I.TagExp(i, lab, k)) =
 	let
 	    val (a,lab') = elabLab(E, lab)
-	    val  t1      = Type.unknown Type.STAR
+	    val  t1      = Type.unknown(Type.STAR)
 	    val  r       = Type.extendRow(a, [t1], Type.unknownRow())
 	    val  t       = Type.inArrow(t1, Type.inSum r)
 	in
@@ -9378,7 +9674,8 @@ val _=print "\n"
 
       | elabExp(E, I.ProdExp(i, exprow)) =
 	let
-	    val (t,exprow') = elabRow(elabExp, E, exprow)
+	    val (r,exprow') = elabRow(elabExp, E, exprow)
+	    val  t          = Type.inProd r
 	in
 	    ( t, O.ProdExp(typInfo(i,t), exprow') )
 	end
@@ -9386,7 +9683,7 @@ val _=print "\n"
       | elabExp(E, I.SelExp(i, lab)) =
 	let
 	    val (a,lab') = elabLab(E, lab)
-	    val  t1      = Type.unknown Type.STAR
+	    val  t1      = Type.unknown(Type.STAR)
 	    val  r       = Type.extendRow(a, [t1], Type.unknownRow())
 	    val  t       = Type.inArrow(Type.inProd r, t1)
 	in
@@ -9406,7 +9703,7 @@ val _=print "\n"
 
       | elabExp(E, I.FunExp(i, matchs)) =
 	let
-	    val  t1          = Type.unknown Type.STAR
+	    val  t1          = Type.unknown(Type.STAR)
 	    val (t2,matchs') = elabMatchs(E, t1, matchs)
 	    val  t           = Type.inArrow(t1,t2)
 	in
@@ -9417,8 +9714,8 @@ val _=print "\n"
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  t11       = Type.unknown Type.STAR
-	    val  t12       = Type.unknown Type.STAR
+	    val  t11       = Type.unknown(Type.STAR)
+	    val  t12       = Type.unknown(Type.STAR)
 	    val  t1'       = Type.inArrow(t11,t12)
 	    val  _         = Type.unify(t1,t1') handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
@@ -9517,7 +9814,7 @@ val _=print "\n"
 	let
 	    val (t1,exp') = elabExp(E, exp)
 	    val  te       = exnTyp E
-	    val  t        = Type.unknown Type.STAR
+	    val  t        = Type.unknown(Type.STAR)
 	    val  _        = Type.unify(t1,te) handle Type.Unify(t2,t3) =>
 				error(I.infoExp exp,
 				      E.RaiseExpUnify(t1, te, t2, t3))
@@ -9594,7 +9891,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 
     and elabMatchs(E, t1, matchs) =
 	let
-	    val t2 = Type.unknown Type.STAR
+	    val t2 = Type.unknown(Type.STAR)
 
 	    fun elabMatch1 match = elabMatch(E, t1, t2, match)
 	in
@@ -9606,7 +9903,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 
     and elabPat(E, s, I.JokPat(i)) =
 	let
-	    val t = Type.unknown Type.STAR
+	    val t = Type.unknown(Type.STAR)
 	in
 	    ( t, O.JokPat(typInfo(i,t)) )
 	end
@@ -9635,7 +9932,8 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 
       | elabPat(E, s, I.ProdPat(i, patrow)) =
 	let
-	    val (t,patrow') = elabRow(fn(E,pat) => elabPat(E,s,pat), E, patrow)
+	    val (r,patrow') = elabRow(fn(E,pat) => elabPat(E,s,pat), E, patrow)
+	    val  t          = Type.inProd r
 	in
 	    ( t, O.ProdPat(typInfo(i,t), patrow') )
 	end
@@ -9722,7 +10020,7 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
     and elabAppPat(E, s, I.TagPat(i, lab, k)) =
 	let
 	    val (a,lab') = elabLab(E, lab)
-	    val  t1      = Type.unknown Type.STAR
+	    val  t1      = Type.unknown(Type.STAR)
 	    val  r       = Type.extendRow(a, [t1], Type.unknownRow())
 	    val  t       = Type.inArrow(t1, Type.inSum r)
 	in
@@ -9749,8 +10047,8 @@ val _ = Inf.strengthenSig(Path.fromLab(Label.fromString "?let"), s)
 	let
 	    val (t1,pat1') = elabAppPat(E, s, pat1)
 	    val (t2,pat2') = elabPat(E, s, pat2)
-	    val  t11       = Type.unknown Type.STAR
-	    val  t12       = Type.unknown Type.STAR
+	    val  t11       = Type.unknown(Type.STAR)
+	    val  t12       = Type.unknown(Type.STAR)
 	    val  t1'       = Type.inArrow(t11,t12)
 	    val  _         = Type.unify(t1',t1) handle Type.Unify(t3,t4) =>
 				error(i, E.AppPatFunUnify(t1', t1, t3, t4))
@@ -9804,8 +10102,9 @@ val _=print("-- insert type " ^ x ^ "(" ^ Stamp.toString stamp ^ ") = ")
 val _=PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t, 60)
 val _=print "\n"
 *)
+	    val t' = Type.inAbbrev(Type.inCon(Type.kind t,w,p), t)
 	    (*UNFINISHED: use punning: *)
-	    val _ = insertTyp(E, stamp, {id=id, path=p, typ=t, sort=w})
+	    val _  = insertTyp(E, stamp, {id=id, path=p, typ=t', sort=w})
 	in
 	    O.Id(nonInfo(i), stamp, name)
 	end
@@ -9945,14 +10244,16 @@ val _=print "\n"
 
       | elabTyp(E, I.ProdTyp(i, typrow)) =
 	let
-	    val (t,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val (r,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val  t          = Type.inProd r
 	in
 	    ( t, O.ProdTyp(typInfo(i,t), typrow') )
 	end
 
       | elabTyp(E, I.SumTyp(i, typrow)) =
 	let
-	    val (t,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val (r,typrow') = elabRow(elabStarTyp, E, typrow)
+	    val  t          = Type.inSum r
 	in
 	    ( t, O.SumTyp(typInfo(i,t), typrow') )
 	end
@@ -10310,8 +10611,9 @@ val _=print("-- insert interface " ^ x ^ "(" ^ Stamp.toString stamp ^ ") =\n")
 val _=PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j, 75)
 val _=print "\n"
 *)
+	    val j' = Inf.inAbbrev(Inf.inCon(Inf.kind j,p), j)
 	    (*UNFINISHED: use punning: *)
-	    val _ = insertInf(E, stamp, {id=id, path=p, inf=j})
+	    val _  = insertInf(E, stamp, {id=id, path=p, inf=j'})
 	in
 	    O.Id(nonInfo(i), stamp, name)
 	end
@@ -10682,9 +10984,30 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	end
 
 
-    and elabDecs(E, s, decs)        = elabDecs'(E, s, [], decs)
-    and elabDecs'(E, s, vars, decs) =
+      and elabDecs(E, s, decs)        = elabDecs'(E, s, [], decs)
+      and elabDecs'(E, s, vars, decs) =
 	    List.map (fn dec => elabDec(E, s, vars, dec)) decs
+(*DEBUG
+and elabDecs(E, s, decs)        = (lev:= !lev+1;elabDecs'(E, s, [], decs) before lev:= !lev-1)
+and elabDecs'(E, s, vars, decs) =
+    List.map (fn dec => elabDec'(E, s, vars, dec)) decs
+and elabDec' bla =
+( print("Elaborating declaration at "^Source.regionToString(I.infoDec(#4 bla))^" (level "^Int.toString(!lev)^"): "^
+    (case #4 bla
+       of I.ValDec _ => "ValDec"
+        | I.ConDec _ => "ConDec"
+	| I.TypDec _ => "TypDec"
+	| I.ModDec _ => "ModDec"
+	| I.InfDec _ => "InfDec"
+	| I.FixDec _ => "FixDec"
+	| I.VarDec _ => "VarDec"
+	| I.RecDec _ => "RecDec"
+	| I.LocalDec _ => "LocalDec"
+    )
+  ^"\n")
+(*; TextIO.inputLine(TextIO.stdIn)*)
+; elabDec bla )
+*)
 
 
   (* Recursive declarations *)
@@ -10714,6 +11037,26 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 
     and elabRHSRecDecs(E, s, rtpats', decs) =
 	    List.map (fn dec => elabRHSRecDec(E, s, rtpats', dec)) decs
+(*DEBUG
+and elabRHSRecDecs(E, s, rtpats', decs) =
+    List.map (fn dec => elabRHSRecDec'(E, s, rtpats', dec)) decs
+and elabRHSRecDec' bla =
+( print("Elaborating rec declaration at "^Source.regionToString(I.infoDec(#4 bla))^" (level "^Int.toString(!lev)^"): "^
+    (case #4 bla
+       of I.ValDec _ => "ValDec"
+        | I.ConDec _ => "ConDec"
+	| I.TypDec _ => "TypDec"
+	| I.ModDec _ => "ModDec"
+	| I.InfDec _ => "InfDec"
+	| I.FixDec _ => "FixDec"
+	| I.VarDec _ => "VarDec"
+	| I.RecDec _ => "RecDec"
+	| I.LocalDec _ => "LocalDec"
+    )
+  ^"\n")
+(*; TextIO.inputLine(TextIO.stdIn)*)
+; elabRHSRecDec bla )
+*)
 
     and elabRHSRecDec(E, s, r as ref((t1,pat')::tpats'), I.ValDec(i, pat, exp))=
 	let
@@ -10731,10 +11074,11 @@ print(if w = Inf.CONSTRUCTOR then " (* constructor *)\n" else if isPoly then "\n
 	let
 	    val (t0,p,_,id') = elabTypId(E, id)
 	    val (t,_,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  _           = Type.unify(t, t0)
-	    val  _           = elabTypId_bind(E, p, t, w, id)
+	    val  t1          = #2(Type.asAbbrev t0)
+	    val  _           = Type.unify(Type.inMu t, t1)
+	    val  _           = elabTypId_bind(E, p, t1, w, id)
 				(* Updates type sort *)
-	    val  _           = Inf.extendTyp(s, p, Type.kind t, w, SOME t)
+	    val  _           = Inf.extendTyp(s, p, Type.kind t1, w, SOME t1)
 (*DEBUG
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("type " ^ x ^ " = ")
@@ -10879,6 +11223,28 @@ print "\n\
 
     and elabSpecs(E, s, specs) =
 	List.map (fn spec => elabSpec(E, s, spec)) specs
+(*DEBUG
+and elabSpecs(E, s, specs) =
+( lev:= !lev+1;
+  List.map (fn spec => elabSpec'(E, s, spec)) specs
+  before lev:= !lev-1
+)
+and elabSpec' bla =
+( print("Elaborating specification at "^Source.regionToString(I.infoSpec(#3 bla))^" (level "^Int.toString(!lev)^"): "^
+    (case #3 bla
+       of I.ValSpec _ => "ValSpec"
+        | I.ConSpec _ => "ConSpec"
+	| I.TypSpec _ => "TypSpec"
+	| I.ModSpec _ => "ModSpec"
+	| I.InfSpec _ => "InfSpec"
+	| I.FixSpec _ => "FixSpec"
+	| I.RecSpec _ => "RecSpec"
+	| I.ExtSpec _ => "ExtSpec"
+    )
+  ^"\n")
+(*; TextIO.inputLine(TextIO.stdIn)*)
+; elabSpec bla )
+*)
 
 
   (* Recursive specifications *)
@@ -10905,6 +11271,25 @@ print "\n\
 
     and elabRHSRecSpecs(E, s, specs) =
 	List.map (fn spec => elabRHSRecSpec(E, s, spec)) specs
+(*DEBUG
+and elabRHSRecSpecs(E, s, specs) =
+    List.map (fn spec => elabRHSRecSpec'(E, s, spec)) specs
+and elabRHSRecSpec' bla =
+( print("Elaborating rec specification at "^Source.regionToString(I.infoSpec(#3 bla))^" (level "^Int.toString(!lev)^"): "^
+    (case #3 bla
+       of I.ValSpec _ => "ValSpec"
+        | I.ConSpec _ => "ConSpec"
+	| I.TypSpec _ => "TypSpec"
+	| I.ModSpec _ => "ModSpec"
+	| I.InfSpec _ => "InfSpec"
+	| I.FixSpec _ => "FixSpec"
+	| I.RecSpec _ => "RecSpec"
+	| I.ExtSpec _ => "ExtSpec"
+    )
+  ^"\n")
+(*; TextIO.inputLine(TextIO.stdIn)*)
+; elabRHSRecSpec bla )
+*)
 
     and elabRHSRecSpec(E, s, I.RecSpec(i, specs)) =
 	let
@@ -10917,11 +11302,12 @@ print "\n\
 	let
 	    val (t0,p,_,id')   = elabTypId(E, id)
 	    val (t,gen,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  _             = Type.unify(t, t0)
-	    val  _             = elabTypId_bind(E, p, t, w, id)
+	    val  t1            = #2(Type.asAbbrev t0)
+	    val  _             = Type.unify(Type.inMu t, t1)
+	    val  _             = elabTypId_bind(E, p, t1, w, id)
 				 (* Updates type sort *)
-	    val  _             = Inf.extendTyp(s, p, Type.kind t, w,
-					       if gen then NONE else SOME t)
+	    val  _             = Inf.extendTyp(s, p, Type.kind t1, w,
+					       if gen then NONE else SOME t1)
 	in
 	    O.TypSpec(nonInfo(i), id', typ')
 	end
@@ -11173,9 +11559,14 @@ print "\n\
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
-val _ = print "Component signature:\n"
-val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
-val _ = print "\n"
+val n = List.foldl (fn(i,n) => if Inf.isInfItem i then n+1 else n) 0 (Inf.items s)
+val _ = if n < ~160 then
+  print "Component signature too large to be printed\n"
+else
+( print "Component signature:\n"
+; PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
+; print "\n"
+)
 	in
 	    O.Comp(nonInfo(i), anns', decs')
 	end
@@ -12899,8 +13290,6 @@ structure ParsingError :> PARSING_ERROR =
 
     infixr ^^ ^/^
 
-    val par = paragraph
-
   (* Types *)
 
     type VId = VId.t
@@ -12934,38 +13323,38 @@ structure ParsingError :> PARSING_ERROR =
     fun ppVId vid	= ppQuoted(VId.toString vid)
 
     fun ppError(UnclosedComment) =
-	  par["unclosed","comment"]
+	  textpar["unclosed","comment"]
       | ppError(InvalidChar c) =
-	  par["invalid","character",ppQuoted(Char.toCString c)]
+	  textpar["invalid","character",ppQuoted(Char.toCString c)]
       | ppError(InvalidString) =
-	  par["invalid","string","constant"]
+	  textpar["invalid","string","constant"]
       | ppError(IntTooLarge) =
-	  par["integer","constant","too","large"]
+	  textpar["integer","constant","too","large"]
       | ppError(WordTooLarge) =
-	  par["word","constant","too","large"]
+	  textpar["word","constant","too","large"]
       | ppError(RealTooLarge) =
-	  par["real","constant","too","large"]
+	  textpar["real","constant","too","large"]
       | ppError(CharLengthInvalid "") =
-	  par["empty","character","constant"]
+	  textpar["empty","character","constant"]
       | ppError(CharLengthInvalid s) =
-	  par["multiple","characters","in","character","constant"]
+	  textpar["multiple","characters","in","character","constant"]
       | ppError(EscapeCharTooLarge uc) =
-	  par[if uc then "unicode" else "ASCII",
-	      "escape","character","too","large"]
+	  textpar[if uc then "unicode" else "ASCII",
+		  "escape","character","too","large"]
       (* Parser *)
       | ppError(SyntaxError s) =
-	  par(String.tokens (fn c => c = #" ") s)
+	  textpar(String.tokens (fn c => c = #" ") s)
       (* Derived forms *)
       | ppError(WithtypeInvalid) =
-	  par["invalid","type","binding","inside","withtype"]
+	  textpar["invalid","type","binding","inside","withtype"]
       | ppError(WithtypeArityMismatch) =
-	  par["type","has","wrong","arity"]
+	  textpar["type","has","wrong","arity"]
       (* Infix *)
       | ppError(InfixMisplaced vid) =
-	  par["misplaced","infix","identifier",ppVId vid]
+	  textpar["misplaced","infix","identifier",ppVId vid]
       | ppError(AssocConflict(vid1,vid2)) =
-	  par["conflicting","infix","associativity","between","operators",
-	      ppVId vid1,"and",ppVId vid2]
+	  textpar["conflicting","infix","associativity","between","operators",
+		  ppVId vid1,"and",ppVId vid2]
 
 
     fun ppWarning w = empty
@@ -13080,8 +13469,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 
     infixr ^^ ^/^
 
-    val par = paragraph
-
   (* Types *)
 
     type Lab	= Lab.t
@@ -13195,9 +13582,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     val classSigId	= (ppSigId, ["signature"])
 
     fun ppUnbound((ppId,class), id) =
-	  par(["unknown"] @ class @ [ppId id])
+	  textpar(["unknown"] @ class @ [ppId id])
     fun ppUnboundImport((ppId,class), id) =
-	  par(class @ [ppId id,"is","not","exported","by","component"])
+	  textpar(class @ [ppId id,"is","not","exported","by","component"])
 
     fun ppError(VIdUnbound vid) =
 	  ppUnbound(classVId, vid)
@@ -13210,97 +13597,101 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
       | ppError(PreboundFirstClass) =
-	  par["invalid","use","of","pseudo","structure"]
+	  textpar["invalid","use","of","pseudo","structure"]
       (* Expressions *)
       | ppError(ExpRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       (* Patterns *)
       | ppError(PatVIdDuplicate vid) =
-	  par["duplicate","variable",ppVId vid,"in","pattern",
-	      "or","binding","group"]
+	  textpar["duplicate","variable",ppVId vid,"in","pattern",
+		  "or","binding","group"]
       | ppError(WithPatVIdDuplicate vid) =
-	  par["pattern","variable",ppVId vid,"redefined",
-	      "inside","value","binding"]
+	  textpar["pattern","variable",ppVId vid,"redefined",
+		  "inside","value","binding"]
       | ppError(PatLongVIdVar) =
-	  par["non-constructor","long","identifier","in","pattern"]
+	  textpar["non-constructor","long","identifier","in","pattern"]
       | ppError(PatRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       | ppError(AppPatNonCon) =
-	  par["application","of","non-constructor","in","pattern"]
+	  textpar["application","of","non-constructor","in","pattern"]
       | ppError(AltPatInconsistent) =
-	  par["inconsistent","pattern","alternative"]
+	  textpar["inconsistent","pattern","alternative"]
       (* Types *)
       | ppError(TyRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       | ppError(TyVarSeqDuplicate tyvar) =
-	  par(["duplicate"] @ #2 classTyVar @ [ppTyVar tyvar])
+	  textpar(["duplicate"] @ #2 classTyVar @ [ppTyVar tyvar])
       | ppError(ValTyVarSeqDuplicate tyvar) =
-	  par(["duplicate","or","shadowing"] @ #2 classTyVar @ [ppTyVar tyvar])
+	  textpar(["duplicate","or","shadowing"] @ #2 classTyVar @
+		  [ppTyVar tyvar])
       (* Declarations and bindings *)
       | ppError(FvalBindDuplicate vid) =
-	  par["duplicate","function",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","function",ppVId vid,"in","binding","group"]
       | ppError(FvalBindArityInconsistent) =
-	  par["inconsistent","function","arity","in","function","clause"]
+	  textpar["inconsistent","function","arity","in","function","clause"]
       | ppError(FvalBindArityZero) =
-	  par["no","arguments","in","function","clause"]
+	  textpar["no","arguments","in","function","clause"]
       | ppError(FvalBindNameInconsistent vid) =
-	  par["inconsistent","function","name",ppVId vid,
-	      "in","function","clause"]
+	  textpar["inconsistent","function","name",ppVId vid,
+		  "in","function","clause"]
       | ppError(FvalBindNameMissing) =
-	  par["no","function","name","in","function","clause"]
+	  textpar["no","function","name","in","function","clause"]
       | ppError(FvalBindNameCon vid) =
-	  par["redefining","constructor",ppVId vid,"as","value"]
+	  textpar["redefining","constructor",ppVId vid,"as","value"]
       | ppError(FvalBindPatInvalid) =
-	  par["invalid","function","clause"]
+	  textpar["invalid","function","clause"]
       | ppError(TypBindDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @
-	      [ppTyCon tycon,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","binding","group"])
       | ppError(DatBindDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @
-	      [ppTyCon tycon,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","binding","group"])
       | ppError(DatBindConDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
       | ppError(ConBindDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconBindDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
       | ppError(DconBindNonCon) =
-	  par["non-constructor","on","constructor","binding",
-	      "right","hand","side"]
+	  textpar["non-constructor","on","constructor","binding",
+		  "right","hand","side"]
       | ppError(StrBindDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @
-	      [ppStrId strid,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classStrId @
+		  [ppStrId strid,"in","binding","group"])
       | ppError(SigBindDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @
-	      [ppSigId sigid,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classSigId @
+		  [ppSigId sigid,"in","binding","group"])
       (* Specifications and descriptions *)
       | ppError(SpecFixDuplicate vid) =
-	  par(["duplicate","fixity","specification","for"] @ #2 classVId @
-	      [ppVId vid,"in","signature"])
+	  textpar(["duplicate","fixity","specification","for"] @ #2 classVId @
+		  [ppVId vid,"in","signature"])
       | ppError(SpecVIdDuplicate vid) =
-	  par(["duplicate"] @ #2 classVId @ [ppVId vid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","signature"])
       | ppError(SpecTyConDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","signature"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","signature"])
       | ppError(SpecStrIdDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classStrId @
+		  [ppStrId strid,"in","signature"])
       | ppError(SpecSigIdDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classSigId @
+		  [ppSigId sigid,"in","signature"])
       | ppError(ConDescDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconDescNonCon) =
-	  par["non-constructor","on","constructor","description",
-	      "right","hand","side"]
+	  textpar["non-constructor","on","constructor","description",
+		  "right","hand","side"]
       (* Imports and items *)
       | ppError(ImpVIdDuplicate vid) =
-	  par(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
+	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
       | ppError(ImpTyConDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","import"])
+	  textpar(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","import"])
       | ppError(ImpStrIdDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","import"])
+	  textpar(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","import"])
       | ppError(ImpSigIdDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
+	  textpar(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
       | ppError(ConItemDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(ValItemUnbound vid) =
 	  ppUnboundImport(classVId, vid)
       | ppError(TypItemUnbound tycon) =
@@ -13316,22 +13707,22 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigItemUnbound sigid) =
 	  ppUnboundImport(classSigId, sigid)
       | ppError(ConItemNonCon vid) =
-	  par["value",ppVId vid,"exported","by","component","is",
-	      "not","a","constructor"]
+	  textpar["value",ppVId vid,"exported","by","component","is",
+		  "not","a","constructor"]
       | ppError(DconItemNonCon vid) =
-	  par["value",ppVId vid,"exported","by","component","is",
-	      "not","a","constructor"]
+	  textpar["value",ppVId vid,"exported","by","component","is",
+		  "not","a","constructor"]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
-	  par(#2 classTyCon @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classTyCon @ [ppId x,"is","external","to","signature"])
       | ppError(SharingExternalSig x) =
-	  par(#2 classSigId @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classSigId @ [ppId x,"is","external","to","signature"])
       | ppError(SharingExternalStr x) =
-	  par(#2 classStrId @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classStrId @ [ppId x,"is","external","to","signature"])
 
 
     fun ppShadowed((ppId,class), id) =
-	  par(class @ [ppId id,"shadows","previous","one"])
+	  textpar(class @ [ppId id,"shadows","previous","one"])
 
     fun ppWarning(VIdShadowed vid) =
 	  ppShadowed(classVId, vid)
@@ -27966,23 +28357,7 @@ functor LexerError(structure Tokens: Parser_TOKENS
     type lexresult     = (svalue, pos) token
 
 
-  (* Handling nested comments *)
-
-    val nesting = ref 0		(* non-reentrant side-effect way :-P *)
-
-
-    fun eof() =
-	if !nesting = 0 then
-	    raise LexerError.EOF(fn i => Tokens.EOF i)
-	else
-	    raise LexerError.EOF(fn i => error(i, E.UnclosedComment))
-
-
-
-  (* Some helpers to create tokens *)
-
-    open Tokens
-
+  (* Source positions *)
 
     fun toLRPos(yypos, yytext) =
 	let
@@ -27990,6 +28365,28 @@ functor LexerError(structure Tokens: Parser_TOKENS
 	in
 	    (yypos, yypos + String.size yytext)
 	end
+
+
+  (* Handling nested comments *)
+
+    val nesting = ref [] : int list ref
+
+    fun nest yypos = nesting := yypos :: !nesting
+    fun unnest ()  = ( nesting := List.tl(!nesting) ; List.null(!nesting) )
+
+    fun eof() =
+	case !nesting
+	  of []    => raise LexerError.EOF(fn i => Tokens.EOF i)
+	   | i0::_ =>
+		raise LexerError.EOF(fn(i1,i2) =>
+					error((i0,i2), E.UnclosedComment))
+
+
+
+  (* Some helpers to create tokens *)
+
+    open Tokens
+
 
     fun token(TOKEN, yypos, yytext) =
         TOKEN(toLRPos(yypos, yytext))
@@ -36704,10 +37101,9 @@ let fun continue() = lex() in
 | 57 => ( token(EQEQTYPE,  yypos, yytext) )
 | 574 => ( tokenOf(ALPHA,   toId,     yypos, yytext) )
 | 577 => ( tokenOf(SYMBOL,  toId,     yypos, yytext) )
-| 580 => ( nesting := 1 ; YYBEGIN COMMENT ; continue() )
-| 583 => ( nesting := !nesting+1 ; continue() )
-| 586 => ( nesting := !nesting-1 ;
-			     if !nesting = 0 then YYBEGIN INITIAL else () ;
+| 580 => ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() )
+| 583 => ( nest(yypos-2) ; continue() )
+| 586 => ( if unnest() then YYBEGIN INITIAL else () ;
 			     continue() )
 | 588 => ( continue() )
 | 590 => ( continue() )

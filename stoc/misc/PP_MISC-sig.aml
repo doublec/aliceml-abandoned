@@ -9,6 +9,7 @@ signature PP_MISC =
 
     val nest:		doc -> doc
 
+    val quote:		doc -> doc
     val paren:		doc -> doc
     val brace:		doc -> doc
     val brack:		doc -> doc
@@ -18,6 +19,8 @@ signature PP_MISC =
     val ppSeq:		('a -> doc) -> 'a list -> doc
     val ppSeqPrec:	(int -> 'a -> doc) -> int -> 'a list -> doc
 
-    val paragraph:	string list -> doc
+    val par:		doc list -> doc
+    val textpar:	string list -> doc
+    val indent:		doc -> doc
 
   end

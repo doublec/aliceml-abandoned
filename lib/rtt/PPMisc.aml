@@ -16,9 +16,14 @@ structure PPMisc :> PP_MISC =
 
     val nest = nest 3
 
-    fun paren doc = text "(" ^^ fbox(below doc) ^^ text ")"
-    fun brace doc = text "{" ^^ fbox(below doc) ^^ text "}"
-    fun brack doc = text "[" ^^ fbox(below doc) ^^ text "]"
+    fun quote doc  = text "`" ^^ doc ^^ text "'"
+    fun paren doc  = text "(" ^^ fbox(below doc) ^^ text ")"
+    fun brace doc  = text "{" ^^ fbox(below doc) ^^ text "}"
+    fun brack doc  = text "[" ^^ fbox(below doc) ^^ text "]"
+
+    fun indent doc = nest(break ^^ below doc) ^^ break
+    val par        = fbox o List.foldr (fn(doc',doc) => doc' ^/^ doc) empty
+    val textpar    = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
     fun ppCommaList ppX   []    = empty
       | ppCommaList ppX   [x]   = ppX x
@@ -35,8 +40,5 @@ structure PPMisc :> PP_MISC =
       | ppSeqPrec ppXPrec n  xs = paren(ppCommaList (ppXPrec 0) xs)
 
     fun ppSeq ppX = ppSeqPrec (fn _ => ppX) 0
-
-
-    val paragraph = fbox o List.foldr (fn(s,doc) => text s ^/^ doc) empty
 
   end

@@ -1659,10 +1659,11 @@ and elabRHSRecDec' bla =
 	let
 	    val (t0,p,_,id') = elabTypId(E, id)
 	    val (t,_,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  _           = Type.unify(Type.inMu t, t0)
-	    val  _           = elabTypId_bind(E, p, t0, w, id)
+	    val  t1          = #2(Type.asAbbrev t0)
+	    val  _           = Type.unify(Type.inMu t, t1)
+	    val  _           = elabTypId_bind(E, p, t1, w, id)
 				(* Updates type sort *)
-	    val  _           = Inf.extendTyp(s, p, Type.kind t0, w, SOME t0)
+	    val  _           = Inf.extendTyp(s, p, Type.kind t1, w, SOME t1)
 (*DEBUG
 val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
 val _= print("type " ^ x ^ " = ")
@@ -1886,11 +1887,12 @@ and elabRHSRecSpec' bla =
 	let
 	    val (t0,p,_,id')   = elabTypId(E, id)
 	    val (t,gen,w,typ') = elabTypRep(E, p, fn k'=>k', typ)
-	    val  _             = Type.unify(Type.inMu t, t0)
-	    val  _             = elabTypId_bind(E, p, t0, w, id)
+	    val  t1            = #2(Type.asAbbrev t0)
+	    val  _             = Type.unify(Type.inMu t, t1)
+	    val  _             = elabTypId_bind(E, p, t1, w, id)
 				 (* Updates type sort *)
-	    val  _             = Inf.extendTyp(s, p, Type.kind t0, w,
-					       if gen then NONE else SOME t0)
+	    val  _             = Inf.extendTyp(s, p, Type.kind t1, w,
+					       if gen then NONE else SOME t1)
 	in
 	    O.TypSpec(nonInfo(i), id', typ')
 	end
@@ -2142,12 +2144,14 @@ and elabRHSRecSpec' bla =
 	    val _     = Inf.close s handle Inf.Unclosed lnt =>
 			    error(i, E.CompUnclosed lnt)
 (*DEBUG*)
-val _ = print "Component signature:\n"
-val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
-val _ = print "\n"
-(*
-val _ = print "Output of component signature disabled\n"
-*)
+val n = List.foldl (fn(i,n) => if Inf.isInfItem i then n+1 else n) 0 (Inf.items s)
+val _ = if n > 20 then
+  print "(Component signature too large to be printed)\n"
+else
+( print "Component signature:\n"
+; PrettyPrint.output(TextIO.stdOut, PPInf.ppSig s, 78)
+; print "\n"
+)
 	in
 	    O.Comp(nonInfo(i), anns', decs')
 	end

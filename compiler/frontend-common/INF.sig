@@ -52,6 +52,7 @@ signature INF =
     val isArrow :	inf -> bool
     val isLambda :	inf -> bool
     val isApply :	inf -> bool
+    val isAbbrev :	inf -> bool
 
   (* Projections *)
 
@@ -62,6 +63,7 @@ signature INF =
     val asArrow :	inf -> path * inf * inf		(* Interface *)
     val asLambda :	inf -> path * inf * inf		(* Interface *)
     val asApply :	inf -> inf * path * inf		(* Interface *)
+    val asAbbrev :	inf -> inf * inf		(* Interface *)
 
   (* Cloning etc. *)
 
@@ -149,20 +151,20 @@ signature INF =
   (* Matching and intersection *)
 
     datatype mismatch =
-	  MissingVal  of lab
-	| MissingTyp  of lab
-	| MissingMod  of lab
-	| MissingInf  of lab
-	| MissingFix  of lab
-	| ManifestVal of lab
-	| ManifestTyp of lab
-	| ManifestMod of lab
-	| ManifestInf of lab
-	| MismatchVal of lab * typ * typ
-	| MismatchTyp of lab * tkind * tkind
-	| MismatchMod of lab * mismatch
-	| MismatchInf of lab * mismatch
-	| MismatchFix of lab * fix * fix
+	  MissingVal      of lab
+	| MissingTyp      of lab
+	| MissingMod      of lab
+	| MissingInf      of lab
+	| MissingFix      of lab
+	| ManifestVal     of lab * path option * path
+	| ManifestTyp     of lab * typ option * typ
+	| ManifestMod     of lab * path option * path
+	| ManifestInf     of lab * mismatch option
+	| MismatchVal     of lab * typ * typ
+	| MismatchTyp     of lab * tkind * tkind
+	| MismatchMod     of lab * mismatch
+	| MismatchInf     of lab * mismatch
+	| MismatchFix     of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch

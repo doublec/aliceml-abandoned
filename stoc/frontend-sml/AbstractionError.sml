@@ -8,8 +8,6 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 
     infixr ^^ ^/^
 
-    val par = paragraph
-
   (* Types *)
 
     type Lab	= Lab.t
@@ -123,9 +121,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     val classSigId	= (ppSigId, ["signature"])
 
     fun ppUnbound((ppId,class), id) =
-	  par(["unknown"] @ class @ [ppId id])
+	  textpar(["unknown"] @ class @ [ppId id])
     fun ppUnboundImport((ppId,class), id) =
-	  par(class @ [ppId id,"is","not","exported","by","component"])
+	  textpar(class @ [ppId id,"is","not","exported","by","component"])
 
     fun ppError(VIdUnbound vid) =
 	  ppUnbound(classVId, vid)
@@ -138,97 +136,101 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigIdUnbound sigid) =
 	  ppUnbound(classSigId, sigid)
       | ppError(PreboundFirstClass) =
-	  par["invalid","use","of","pseudo","structure"]
+	  textpar["invalid","use","of","pseudo","structure"]
       (* Expressions *)
       | ppError(ExpRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       (* Patterns *)
       | ppError(PatVIdDuplicate vid) =
-	  par["duplicate","variable",ppVId vid,"in","pattern",
-	      "or","binding","group"]
+	  textpar["duplicate","variable",ppVId vid,"in","pattern",
+		  "or","binding","group"]
       | ppError(WithPatVIdDuplicate vid) =
-	  par["pattern","variable",ppVId vid,"redefined",
-	      "inside","value","binding"]
+	  textpar["pattern","variable",ppVId vid,"redefined",
+		  "inside","value","binding"]
       | ppError(PatLongVIdVar) =
-	  par["non-constructor","long","identifier","in","pattern"]
+	  textpar["non-constructor","long","identifier","in","pattern"]
       | ppError(PatRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       | ppError(AppPatNonCon) =
-	  par["application","of","non-constructor","in","pattern"]
+	  textpar["application","of","non-constructor","in","pattern"]
       | ppError(AltPatInconsistent) =
-	  par["inconsistent","pattern","alternative"]
+	  textpar["inconsistent","pattern","alternative"]
       (* Types *)
       | ppError(TyRowLabDuplicate lab) =
-	  par(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
+	  textpar(["duplicate"] @ #2 classLab @ [ppLab lab,"in","record"])
       | ppError(TyVarSeqDuplicate tyvar) =
-	  par(["duplicate"] @ #2 classTyVar @ [ppTyVar tyvar])
+	  textpar(["duplicate"] @ #2 classTyVar @ [ppTyVar tyvar])
       | ppError(ValTyVarSeqDuplicate tyvar) =
-	  par(["duplicate","or","shadowing"] @ #2 classTyVar @ [ppTyVar tyvar])
+	  textpar(["duplicate","or","shadowing"] @ #2 classTyVar @
+		  [ppTyVar tyvar])
       (* Declarations and bindings *)
       | ppError(FvalBindDuplicate vid) =
-	  par["duplicate","function",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","function",ppVId vid,"in","binding","group"]
       | ppError(FvalBindArityInconsistent) =
-	  par["inconsistent","function","arity","in","function","clause"]
+	  textpar["inconsistent","function","arity","in","function","clause"]
       | ppError(FvalBindArityZero) =
-	  par["no","arguments","in","function","clause"]
+	  textpar["no","arguments","in","function","clause"]
       | ppError(FvalBindNameInconsistent vid) =
-	  par["inconsistent","function","name",ppVId vid,
-	      "in","function","clause"]
+	  textpar["inconsistent","function","name",ppVId vid,
+		  "in","function","clause"]
       | ppError(FvalBindNameMissing) =
-	  par["no","function","name","in","function","clause"]
+	  textpar["no","function","name","in","function","clause"]
       | ppError(FvalBindNameCon vid) =
-	  par["redefining","constructor",ppVId vid,"as","value"]
+	  textpar["redefining","constructor",ppVId vid,"as","value"]
       | ppError(FvalBindPatInvalid) =
-	  par["invalid","function","clause"]
+	  textpar["invalid","function","clause"]
       | ppError(TypBindDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @
-	      [ppTyCon tycon,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","binding","group"])
       | ppError(DatBindDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @
-	      [ppTyCon tycon,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","binding","group"])
       | ppError(DatBindConDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
       | ppError(ConBindDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconBindDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","binding","group"]
+	  textpar["duplicate","constructor",ppVId vid,"in","binding","group"]
       | ppError(DconBindNonCon) =
-	  par["non-constructor","on","constructor","binding",
-	      "right","hand","side"]
+	  textpar["non-constructor","on","constructor","binding",
+		  "right","hand","side"]
       | ppError(StrBindDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @
-	      [ppStrId strid,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classStrId @
+		  [ppStrId strid,"in","binding","group"])
       | ppError(SigBindDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @
-	      [ppSigId sigid,"in","binding","group"])
+	  textpar(["duplicate"] @ #2 classSigId @
+		  [ppSigId sigid,"in","binding","group"])
       (* Specifications and descriptions *)
       | ppError(SpecFixDuplicate vid) =
-	  par(["duplicate","fixity","specification","for"] @ #2 classVId @
-	      [ppVId vid,"in","signature"])
+	  textpar(["duplicate","fixity","specification","for"] @ #2 classVId @
+		  [ppVId vid,"in","signature"])
       | ppError(SpecVIdDuplicate vid) =
-	  par(["duplicate"] @ #2 classVId @ [ppVId vid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","signature"])
       | ppError(SpecTyConDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","signature"])
+	  textpar(["duplicate"] @ #2 classTyCon @
+		  [ppTyCon tycon,"in","signature"])
       | ppError(SpecStrIdDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classStrId @
+		  [ppStrId strid,"in","signature"])
       | ppError(SpecSigIdDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","signature"])
+	  textpar(["duplicate"] @ #2 classSigId @
+		  [ppSigId sigid,"in","signature"])
       | ppError(ConDescDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(DconDescNonCon) =
-	  par["non-constructor","on","constructor","description",
-	      "right","hand","side"]
+	  textpar["non-constructor","on","constructor","description",
+		  "right","hand","side"]
       (* Imports and items *)
       | ppError(ImpVIdDuplicate vid) =
-	  par(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
+	  textpar(["duplicate"] @ #2 classVId @ [ppVId vid,"in","import"])
       | ppError(ImpTyConDuplicate tycon) =
-	  par(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","import"])
+	  textpar(["duplicate"] @ #2 classTyCon @ [ppTyCon tycon,"in","import"])
       | ppError(ImpStrIdDuplicate strid) =
-	  par(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","import"])
+	  textpar(["duplicate"] @ #2 classStrId @ [ppStrId strid,"in","import"])
       | ppError(ImpSigIdDuplicate sigid) =
-	  par(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
+	  textpar(["duplicate"] @ #2 classSigId @ [ppSigId sigid,"in","import"])
       | ppError(ConItemDuplicate vid) =
-	  par["duplicate","constructor",ppVId vid,"in","datatype"]
+	  textpar["duplicate","constructor",ppVId vid,"in","datatype"]
       | ppError(ValItemUnbound vid) =
 	  ppUnboundImport(classVId, vid)
       | ppError(TypItemUnbound tycon) =
@@ -244,22 +246,22 @@ structure AbstractionError :> ABSTRACTION_ERROR =
       | ppError(SigItemUnbound sigid) =
 	  ppUnboundImport(classSigId, sigid)
       | ppError(ConItemNonCon vid) =
-	  par["value",ppVId vid,"exported","by","component","is",
-	      "not","a","constructor"]
+	  textpar["value",ppVId vid,"exported","by","component","is",
+		  "not","a","constructor"]
       | ppError(DconItemNonCon vid) =
-	  par["value",ppVId vid,"exported","by","component","is",
-	      "not","a","constructor"]
+	  textpar["value",ppVId vid,"exported","by","component","is",
+		  "not","a","constructor"]
       (* Sharing translation *)
       | ppError(SharingExternalTy x) =
-	  par(#2 classTyCon @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classTyCon @ [ppId x,"is","external","to","signature"])
       | ppError(SharingExternalSig x) =
-	  par(#2 classSigId @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classSigId @ [ppId x,"is","external","to","signature"])
       | ppError(SharingExternalStr x) =
-	  par(#2 classStrId @ [ppId x,"is","external","to","signature"])
+	  textpar(#2 classStrId @ [ppId x,"is","external","to","signature"])
 
 
     fun ppShadowed((ppId,class), id) =
-	  par(class @ [ppId id,"shadows","previous","one"])
+	  textpar(class @ [ppId id,"shadows","previous","one"])
 
     fun ppWarning(VIdShadowed vid) =
 	  ppShadowed(classVId, vid)

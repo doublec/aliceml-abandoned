@@ -171,8 +171,12 @@ text "@" ^^*)
 		    ppTypPrec p t
 
 	      | ppTypPrec' p (ABBREV(t1,t2)) =
+(*DEBUG
+text "(" ^^
+*)
 		    ppTypPrec p t1
-
+(*^/^ text "as" ^/^ ppTypPrec p t2 ^^ text ")"
+*)
 	      | ppTypPrec' p (MARK t') =
 		    text "!" ^^ ppTypPrec' p t'
 

@@ -8,8 +8,6 @@ structure ParsingError :> PARSING_ERROR =
 
     infixr ^^ ^/^
 
-    val par = paragraph
-
   (* Types *)
 
     type VId = VId.t
@@ -43,38 +41,38 @@ structure ParsingError :> PARSING_ERROR =
     fun ppVId vid	= ppQuoted(VId.toString vid)
 
     fun ppError(UnclosedComment) =
-	  par["unclosed","comment"]
+	  textpar["unclosed","comment"]
       | ppError(InvalidChar c) =
-	  par["invalid","character",ppQuoted(Char.toCString c)]
+	  textpar["invalid","character",ppQuoted(Char.toCString c)]
       | ppError(InvalidString) =
-	  par["invalid","string","constant"]
+	  textpar["invalid","string","constant"]
       | ppError(IntTooLarge) =
-	  par["integer","constant","too","large"]
+	  textpar["integer","constant","too","large"]
       | ppError(WordTooLarge) =
-	  par["word","constant","too","large"]
+	  textpar["word","constant","too","large"]
       | ppError(RealTooLarge) =
-	  par["real","constant","too","large"]
+	  textpar["real","constant","too","large"]
       | ppError(CharLengthInvalid "") =
-	  par["empty","character","constant"]
+	  textpar["empty","character","constant"]
       | ppError(CharLengthInvalid s) =
-	  par["multiple","characters","in","character","constant"]
+	  textpar["multiple","characters","in","character","constant"]
       | ppError(EscapeCharTooLarge uc) =
-	  par[if uc then "unicode" else "ASCII",
-	      "escape","character","too","large"]
+	  textpar[if uc then "unicode" else "ASCII",
+		  "escape","character","too","large"]
       (* Parser *)
       | ppError(SyntaxError s) =
-	  par(String.tokens (fn c => c = #" ") s)
+	  textpar(String.tokens (fn c => c = #" ") s)
       (* Derived forms *)
       | ppError(WithtypeInvalid) =
-	  par["invalid","type","binding","inside","withtype"]
+	  textpar["invalid","type","binding","inside","withtype"]
       | ppError(WithtypeArityMismatch) =
-	  par["type","has","wrong","arity"]
+	  textpar["type","has","wrong","arity"]
       (* Infix *)
       | ppError(InfixMisplaced vid) =
-	  par["misplaced","infix","identifier",ppVId vid]
+	  textpar["misplaced","infix","identifier",ppVId vid]
       | ppError(AssocConflict(vid1,vid2)) =
-	  par["conflicting","infix","associativity","between","operators",
-	      ppVId vid1,"and",ppVId vid2]
+	  textpar["conflicting","infix","associativity","between","operators",
+		  ppVId vid1,"and",ppVId vid2]
 
 
     fun ppWarning w = empty

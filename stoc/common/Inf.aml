@@ -744,6 +744,9 @@ structure InfPrivate =
     fun asLambda j	= case asInf j of LAMBDA z => z | _ => raise Interface
     fun asApply j	= case asInf j of APPLY z  => z | _ => raise Interface
 
+    fun isAbbrev j	= case !(follow j) of ABBREV _  => true | _ => false
+    fun asAbbrev j	= case !(follow j) of ABBREV jj => jj   | _ =>
+								raise Interface
     fun pathCon(_,p)	= p
     fun path j		= pathCon(asCon j)
 
@@ -842,20 +845,20 @@ structure InfPrivate =
   (* Matching *)
 
     datatype mismatch =
-	  MissingVal  of lab
-	| MissingTyp  of lab
-	| MissingMod  of lab
-	| MissingInf  of lab
-	| MissingFix  of lab
-	| ManifestVal of lab
-	| ManifestTyp of lab
-	| ManifestMod of lab
-	| ManifestInf of lab
-	| MismatchVal of lab * typ * typ
-	| MismatchTyp of lab * tkind * tkind
-	| MismatchMod of lab * mismatch
-	| MismatchInf of lab * mismatch
-	| MismatchFix of lab * fix * fix
+	  MissingVal      of lab
+	| MissingTyp      of lab
+	| MissingMod      of lab
+	| MissingInf      of lab
+	| MissingFix      of lab
+	| ManifestVal     of lab * path option * path
+	| ManifestTyp     of lab * typ option * typ
+	| ManifestMod     of lab * path option * path
+	| ManifestInf     of lab * mismatch option
+	| MismatchVal     of lab * typ * typ
+	| MismatchTyp     of lab * tkind * tkind
+	| MismatchMod     of lab * mismatch
+	| MismatchInf     of lab * mismatch
+	| MismatchFix     of lab * fix * fix
 	| MismatchValSort of lab * val_sort * val_sort
 	| MismatchTypSort of lab * typ_sort * typ_sort
 	| MismatchDom     of mismatch
@@ -866,15 +869,53 @@ structure InfPrivate =
     exception Mismatch of mismatch
 
 
-    fun matchDef (equals, err) (l ,_,       NONE   ) = ()
-      | matchDef (equals, err) (l, NONE,    SOME _ ) = raise Mismatch(err l)
-      | matchDef (equals, err) (l, SOME x1, SOME x2) =
-	    if equals(x1,x2) then () else raise Mismatch(err l)
 
-    fun matchValDef x = matchDef(op=, ManifestVal) x
-    fun matchTypDef x = matchDef(Type.equals, ManifestTyp) x
-    fun matchModDef x = matchDef(op=, ManifestMod) x
-    fun matchInfDef x = matchDef(equals, ManifestInf) x
+    fun match(j1,j2) =
+	let
+	    val rea = emptyRea()
+	in
+	    match'(rea, j1, j2) ;
+	    rea
+	end
+
+    and match'(rea, _, ref TOP) = ()
+      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+	if p1 = p2 then
+	    ()
+	else
+	    raise Mismatch(Incompatible(j1,j2))
+
+      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
+
+      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
+	( realise(rea, j21)
+	; match'(rea, j21, j11) handle Mismatch mismatch =>
+		raise Mismatch(MismatchDom mismatch)
+	; realise(rea, j12)
+	; match'(rea, j12, j22) handle Mismatch mismatch =>
+		raise Mismatch(MismatchRan mismatch)
+	)
+
+      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    ()
+
+      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
+	( match'(rea, j11, j21)
+	; if p1 = p2 then () else
+	      raise Mismatch(IncompatibleArg(p1,p2))
+	)
+
+      | match'(rea, ref(LINK j1), j2)		= match'(rea, j1, j2)
+      | match'(rea, j1, ref(LINK j2))		= match'(rea, j1, j2)
+      | match'(rea, ref(ABBREV(_,j1)), j2)	= match'(rea, j1, j2)
+      | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	( match'(rea, j1, j22)
+(*	; j2 := ABBREV(j21,j1)
+*)	)
+
+      | match'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+
 
     and matchSig(rea, (ref items1, m1), s2 as (ref items2, m2)) =
 	let
@@ -917,6 +958,8 @@ structure InfPrivate =
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | matchNested(ref(LINK j1), j2) = matchNested(j1, j2)
 	      | matchNested(j1, ref(LINK j2)) = matchNested(j1, j2)
+	      | matchNested(ref(ABBREV(_,j1)), j2) = matchNested(j1, j2)
+	      | matchNested(j1, ref(ABBREV(_,j2))) = matchNested(j1, j2)
 	      | matchNested _ = ()
 
 	    val pairs = pair(m1, items2, [])
@@ -988,86 +1031,89 @@ structure InfPrivate =
 	    raise Mismatch(MismatchTypSort(l, w1, w2))
 
 
-    and match'(rea, _, ref TOP) = ()
-      | match'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
-	    ()
-	else
-	    raise Mismatch(Incompatible(j1,j2))
+    and matchValDef(l, _,    NONE)	= ()
+      | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
+      | matchValDef(l, SOME p1, SOME p2) =
+	    if p1 = p2 then () else raise Mismatch(ManifestVal(l, SOME p1, p2))
 
-      | match'(rea, ref(SIG s1), ref(SIG s2)) = matchSig(rea, s1, s2)
+    and matchTypDef(l, _,    NONE)	= ()
+      | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
+      | matchTypDef(l, SOME t1, SOME t2) =
+	    if Type.equals(t1,t2) then () else
+		raise Mismatch(ManifestTyp(l, SOME t1, t2))
 
-      | match'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	( realise(rea, j21)
-	; match'(rea, j21, j11) handle Mismatch mismatch =>
-		raise Mismatch(MismatchDom mismatch)
-	; realise(rea, j12)
-	; match'(rea, j12, j22) handle Mismatch mismatch =>
-		raise Mismatch(MismatchRan mismatch)
-	)
+    and matchModDef(l, _,    NONE)	= ()
+      | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
+      | matchModDef(l, SOME p1, SOME p2) =
+	    if p1 = p2 then () else raise Mismatch(ManifestMod(l, SOME p1, p2))
 
-      | match'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    ()
-
-      | match'(rea, ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
-	( match'(rea, j11, j21)
-	; if p1 = p2 then () else
-	      raise Mismatch(IncompatibleArg(p1,p2))
-	)
-
-      | match'(rea, ref(LINK j1), j2)		= match'(rea, j1, j2)
-      | match'(rea, j1, ref(LINK j2))		= match'(rea, j1, j2)
-      | match'(rea, ref(ABBREV(_,j1)), j2)	= match'(rea, j1, j2)
-      | match'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
-	( match'(rea, j1, j22)
-	; j2 := ABBREV(j21,j1)
-	)
-
-      | match'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+    and matchInfDef(l, _,    NONE)	= ()
+      | matchInfDef(l, NONE, SOME j2)	= raise Mismatch(ManifestInf(l,NONE))
+      | matchInfDef(l, SOME j1, SOME j2) =
+	    equalise(j1,j2) handle Mismatch mismatch =>
+		raise Mismatch(ManifestInf(l, SOME mismatch))
 
 
-    and equals(j1,j2) = (*UNFINISHED*) true
-
+    and equalise(j1,j2) = (*UNFINISHED*) ()
     and equaliseKind(k1,k2) = (*UNFINISHED*) ()
-
-
-    fun match(j1,j2) =
-	let
-	    val rea = emptyRea()
-	in
-	    match'(rea, j1, j2) ;
-	    rea
-	end
 
 
 
   (* Intersection *)
 
+    fun intersect(j1,j2) =
+	let
+	    val j1' = clone j1
+	    val j2' = clone j2
+	    val rea = emptyRea()
+	in
+	    intersect'(rea, j1', j2')
+	end
+
+    and intersect'(rea, j1, ref TOP) = j1
+      | intersect'(rea, ref TOP, j2) = j2
+      | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
+	if p1 = p2 then
+	    j1
+	else
+	    raise Mismatch(Incompatible(j1,j2))
+
+      | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
+	    ( intersectSig(rea, s1, s2) ; j1 )
+
+      | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: FUN"
+
+      | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: LAMBDA"
+
+      | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
+	(*UNFINISHED*)
+	    raise Crash.Crash "Inf.intersect: APPLY"
+
+      | intersect'(rea, ref(LINK j1), j2)	= intersect'(rea, j1, j2)
+      | intersect'(rea, j1, ref(LINK j2))	= intersect'(rea, j1, j2)
+
+      | intersect'(rea, j1 as ref(ABBREV(j11,j12)), j2)	=
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j12, j2)
+	; j1 := ABBREV(j11,j2)
+	; j1
+	)
+      | intersect'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
+	(*UNFINISHED: need some node for intersection... *)
+	( intersect'(rea, j1, j22)
+	; j2 := ABBREV(j21,j1)
+	; j2
+	)
+      | intersect'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
+
+
     (* UNFINISHED: does ignore dependencies on second argument signature *)
 
-    fun intersectDef (equals, err) (l, NONE,    NONE   ) = NONE
-      | intersectDef (equals, err) (l, NONE,    SOME z ) = SOME z
-      | intersectDef (equals, err) (l, SOME z,  NONE   ) = SOME z
-      | intersectDef (equals, err) (l, SOME z1, SOME z2) =
-	    if equals(z1,z2) then SOME z1 else raise Mismatch(err l)
-
-(*DEBUG*)
-fun Type_equals(t1,t2) =
-Type.equals(t1,t2) orelse
-(
-print "Manifest mismatch:\n";
-PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t1, 80);
-print "\nand:\n";
-PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t2, 80);
-print "\n";
-false)
-    fun intersectValDef x = intersectDef(op=, ManifestVal) x
-    fun intersectTypDef x = intersectDef(Type_equals, ManifestTyp) x
-    fun intersectModDef x = intersectDef(op=, ManifestMod) x
-    fun intersectInfDef x = intersectDef(equals, ManifestInf) x
-
-    fun intersectSig(rea, s1 as (itemsr1 as ref items1, m1),
+    and intersectSig(rea, s1 as (itemsr1 as ref items1, m1),
 			  s2 as (itemsr2 as ref items2, m2)) =
 	let
 	    fun pairDef(rea', toZ, b, x1, NONE, x2, SOME z) =
@@ -1120,6 +1166,8 @@ false)
 		(*UNFINISHED: when introducing functor paths*) ()
 	      | pairNested(ref(LINK j1), j2) = pairNested(j1, j2)
 	      | pairNested(j1, ref(LINK j2)) = pairNested(j1, j2)
+	      | pairNested(ref(ABBREV(_,j1)), j2) = pairNested(j1, j2)
+	      | pairNested(j1, ref(ABBREV(_,j2))) = pairNested(j1, j2)
 	      | pairNested _ = ()
 
 	    val (pairs,left) = pair(m1, items2, [], [])
@@ -1212,56 +1260,33 @@ false)
 	    CLOSED
 
 
-    and intersect'(rea, j1, ref TOP) = j1
-      | intersect'(rea, ref TOP, j2) = j2
-      | intersect'(rea, j1 as ref(CON(_,p1)), j2 as ref(CON(_,p2))) =
-	if p1 = p2 then
-	    j1
-	else
-	    raise Mismatch(Incompatible(j1,j2))
+    and intersectValDef(l, NONE,    NONE)	= NONE
+      | intersectValDef(l, SOME p1, NONE)	= SOME p1
+      | intersectValDef(l, NONE,    SOME p2)	= SOME p2
+      | intersectValDef(l, SOME p1, SOME p2)	=
+	    if p1 = p2 then SOME p1 else
+		raise Mismatch(ManifestVal(l, SOME p1, p2))
 
-      | intersect'(rea, j1 as ref(SIG s1), ref(SIG s2)) =
-	    ( intersectSig(rea, s1, s2) ; j1 )
+    and intersectTypDef(l, NONE,    NONE)	= NONE
+      | intersectTypDef(l, SOME t1, NONE)	= SOME t1
+      | intersectTypDef(l, NONE,    SOME t2)	= SOME t2
+      | intersectTypDef(l, SOME t1, SOME t2)	=
+	    if Type.equals(t1,t2) then SOME t1 else
+		raise Mismatch(ManifestTyp(l, SOME t1, t2))
 
-      | intersect'(rea, ref(FUN(p1,j11,j12)), ref(FUN(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: FUN"
+    and intersectModDef(l, NONE,    NONE)	= NONE
+      | intersectModDef(l, SOME p1, NONE)	= SOME p1
+      | intersectModDef(l, NONE,    SOME p2)	= SOME p2
+      | intersectModDef(l, SOME p1, SOME p2)	=
+	    if p1 = p2 then SOME p1 else
+		raise Mismatch(ManifestMod(l, SOME p1, p2))
 
-      | intersect'(rea, ref(LAMBDA(p1,j11,j12)), ref(LAMBDA(p2,j21,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: LAMBDA"
-
-      | intersect'(rea, j1 as ref(APPLY(j11,p1,j12)), ref(APPLY(j21,p2,j22))) =
-	(*UNFINISHED*)
-	    raise Crash.Crash "Inf.intersect: APPLY"
-
-      | intersect'(rea, ref(LINK j1), j2)	= intersect'(rea, j1, j2)
-      | intersect'(rea, j1, ref(LINK j2))	= intersect'(rea, j1, j2)
-
-      | intersect'(rea, j1 as ref(ABBREV(j11,j12)), j2)	=
-	(*UNFINISHED: need some node for intersection... *)
-	( intersect'(rea, j12, j2)
-	; j1 := ABBREV(j11,j2)
-	; j1
-	)
-      | intersect'(rea, j1, j2 as ref(ABBREV(j21,j22))) =
-	(*UNFINISHED: need some node for intersection... *)
-	( intersect'(rea, j1, j22)
-	; j2 := ABBREV(j21,j1)
-	; j2
-	)
-      | intersect'(rea, j1,j2) = raise Mismatch(Incompatible(j1,j2))
-
-
-    fun intersect(j1,j2) =
-	let
-	    val j1' = clone j1
-	    val j2' = clone j2
-	    val rea = emptyRea()
-	in
-	    intersect'(rea, j1', j2')
-	end
-
+    and intersectInfDef(l, NONE,    NONE)	= NONE
+      | intersectInfDef(l, SOME j1, NONE)	= SOME j1
+      | intersectInfDef(l, NONE,    SOME j2)	= SOME j2
+      | intersectInfDef(l, SOME j1, SOME j2)	=
+	    ( equalise(j1,j2) ; SOME j1 ) handle Mismatch mismatch =>
+		raise Mismatch(ManifestInf(l, SOME mismatch))
   end
 
 

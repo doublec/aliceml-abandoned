@@ -534,6 +534,9 @@ structure TypePrivate =
     fun asApply t	= case asType t of APPLY tt  => tt | _ => raise Type
     fun asMu t		= case asType t of MU t      => t  | _ => raise Type
 
+    fun isAbbrev t	= case !(follow t) of ABBREV _  => true | _ => false
+    fun asAbbrev t	= case !(follow t) of ABBREV tt => tt | _ => raise Type
+
     fun pathCon(_,_,p)	= p
     fun path t		= pathCon(asCon t)
 
@@ -582,12 +585,15 @@ structure TypePrivate =
      * signature applications and existential types).
      *)
 
+    (*ASSUME that no quantifiers appear under abbreviations
+   	(this might break with higher-order polymorphism!) *)
+
     fun instance'(ref(ALL(a,t)))	= ( a := unknown'(kind a); instance' t )
       | instance'(ref(EXIST(a,t)))	= instance' t
       | instance' t			= t
 
     fun instance(t as ref(ALL _| EXIST _))	= instance'(clone t)
-      | instance(ref(LINK t | ABBREV(_,t)))	= instance t
+      | instance(ref(LINK t))			= instance t
       | instance t				= t
 
     fun skolem'(ref(ALL(a,t)))		= skolem' t
@@ -595,7 +601,7 @@ structure TypePrivate =
       | skolem' t			= t
 
     fun skolem(t as ref(ALL _| EXIST _))	= skolem'(clone t)
-      | skolem(ref(LINK t | ABBREV(_,t)))	= skolem t
+      | skolem(ref(LINK t))			= skolem t
       | skolem t				= t
 
 
@@ -912,7 +918,7 @@ end*)
 
     (* To maximise sharing, links are kept after comparison iff the
      * types are equal. If the types are not equal, all updates are
-     * undone. This could be optimized by keeping equal subtrees.
+     * undone. This could be optimized by keeping equal subtrees, but what for?
      *)
 
     fun equals(t1,t2) =
