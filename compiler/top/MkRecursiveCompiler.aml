@@ -162,7 +162,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	    process
 	    (desc,
 	     if not(!Switches.Language.implicitImport)
-	     orelse isBaseSig desc then s
+	     orelse isBaseSig desc then "\n" ^ s
 	     else
 		 let
 		     val name = Option.getOpt
