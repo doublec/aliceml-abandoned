@@ -112,6 +112,7 @@ struct
 	      | get (PPrec (bnf,sym,p1,p2)) = (sym,p1,p2)::(get bnf)
 	      | get (PTransform (bnf,_,_,_)) = get bnf
 	      | get (PAlt (bnfl,_,_)) = List.concat (List.map get bnfl)
+	      | get _ = []
 	    val rs = List.filter (fn PRuleDec _ => true | _ => false) p
 	    val rs = List.concat (List.map (fn PRuleDec (r,_,_) => r) rs)
 	    val rhs = List.concat 
@@ -120,17 +121,17 @@ struct
 	    rhs
 	end
 
-    
+
     val semanticalAnalysis = fn p =>
 	let
 	    val tokens = tokens p (* may issue warning *)
-		
+	    val nonterms = nonterms p
+	    val symbols = symbols p
+
 	    (* tokens and nonterms disjoint? all symbols defined as either 
 	     terminal or nonterminal ? *)
 	    fun checkRules p = 
-		let val nonterms = nonterms p
-		    val symbols = symbols p
-		    fun disjoint l1 l2 = 
+		let fun disjoint l1 l2 = 
 			not (List.exists 
 			     (fn x => List.exists (fn y => x=y) l2) l1)
 		    val _ = if not (disjoint tokens nonterms)
@@ -172,9 +173,25 @@ struct
 		    val _ = mult assocs
 		in () 
 		end  
+
+	    (* all start symbols defined as parsers *)
+	    fun checkParsers p =
+		let val distribPos = fn p1 => fn p2 => 
+		        List.map (fn (_,_,x) => (x,p1,p2))
+		    val startsyms = List.concat
+			(List.map (fn (PParserDec (l,p1,p2)) => distribPos p1 p2 l
+		      | _ => []) p)
+		    fun def [] = ()
+		      | def ((s,p1,_)::syms) =
+			if List.exists (fn y => y=s) nonterms then def syms
+			else (E.error p1 ("undefined start symbol "^s);
+			      def syms)
+		in def startsyms 
+		end
 	in
 	    (checkRules p;
 	     checkAssocs p;
+	     checkParsers p;
 	     if !E.anyErrors then raise E.Error else ())
 	end
 end
