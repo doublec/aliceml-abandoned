@@ -238,12 +238,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val id = freshId coord
 		val longid = ShortId (coord, id)
-		val raiseExp = RaiseExp (coord, VarExp (coord, longid))
-		val reraise = Match (coord, WildPat coord, raiseExp)
-		val exp' = CaseExp (coord, VarExp (coord, longid),
-				    matches @ [reraise])
+		val varExp = VarExp (coord, longid)
+		val matches' =
+		    List.map (fn Match (_, pat, exp) =>
+			      (infoExp exp, pat, simplifyExp exp)) matches
 	    in
-		O.HandleExp (coord, simplifyExp exp, id, simplifyExp exp')
+		O.HandleExp (coord, simplifyExp exp, id,
+			     simplifyCase (coord, varExp, matches', longid))
 	    end
 	  | simplifyExp (LetExp (coord, decs, exp)) =
 	    O.LetExp (coord, simplifyDecs decs, simplifyExp exp)
