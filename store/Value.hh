@@ -35,6 +35,7 @@ public:
   }
   void InitArg(u_int f, word v) {
     AssertStore(f < GetSize());
+    AssertStore(v != (word) 0);
     ((word *) this)[f + 1] = v;
   }
   void InitArg(u_int f, int v) {
@@ -42,6 +43,7 @@ public:
   }
   void ReplaceArg(u_int f, word v) {
     AssertStore(f < GetSize());
+    AssertStore(v != (word) 0);
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);

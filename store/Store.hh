@@ -30,8 +30,13 @@ class Set;
 struct timeval;
 #endif
 
+class JITStore;
+class Profiler;
+
 class Store {
 protected:
+  friend class JITStore;
+  friend class Profiler;
   static MemChunk *roots[STORE_GENERATION_NUM];
   static u_int memMax[STORE_GENERATION_NUM];
   static u_int memFree;
@@ -200,6 +205,7 @@ public:
     u_int ws = (1 + (((size + sizeof(u_int)) - 1) / sizeof(u_int)));
     return (HeaderOp::TranslateSize(ws) * sizeof(u_int));
   }
+  static void JITReplaceArg(u_int i, Block *p, word v);
   static void MemStat();
 #if defined(STORE_GC_DEBUG)
   static void VerifyGC(word root);
