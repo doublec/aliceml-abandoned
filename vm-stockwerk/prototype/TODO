@@ -2,7 +2,6 @@ Stockwerk:
 -- Rename Pickle.oz to PrimPickle.oz
 
 Extended Basis Library:
--- Thread.raiseIn can raise an exception (Terminated)
 -- Future.byneed and Future.concur suspend on their argument
 -- geworfene Exceptions sollen immer evaluiert sein
 -- yield sollte immer auf currentThread operieren
