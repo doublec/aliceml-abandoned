@@ -40,14 +40,7 @@ struct
     val playerText = ref (Gtk.textNew (!playerAdjust1, !playerAdjust2))
     val colorCombo = ref (Gtk.comboNew ())
 
-    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
-	 if Gtk.toggleButtonGetActive spectator
-	    then
-		(Gtk.widgetSetSensitive (nameBox, false);
-		 Gtk.widgetSetSensitive (colorBox, false))
-	else
-	    (Gtk.widgetSetSensitive (nameBox, true);
-	     Gtk.widgetSetSensitive (colorBox, true))
+
 
     fun insertColors colors = 
 	Gtk.comboSetPopdownStrings (!colorCombo, colors)
@@ -66,7 +59,7 @@ struct
 	    alreadyConn := (name, color) :: !alreadyConn
 	end
 
- fun removePlayer (name, color) = 
+    fun removePlayer (name, color) = 
 	let
 	    val font = 
 		Gdk.fontLoad ("-*-arial-bold-*-*-*-*-*-*-*-*-*-*-*")
@@ -177,6 +170,24 @@ struct
 		 Gtk.widgetDestroy playerSettings;
 		 reset NONE)
 
+	    fun changedNameText () =
+		if Gtk.entryGetText nameText = ""
+		    then Gtk.widgetSetSensitive (readyButton, false)
+		else Gtk.widgetSetSensitive (readyButton, true)
+
+	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
+		if Gtk.toggleButtonGetActive spectator
+		    then
+			(Gtk.widgetSetSensitive (nameBox, false);
+			 Gtk.widgetSetSensitive (colorBox, false);
+			 Gtk.widgetSetSensitive (readyButton, true))
+		else
+		    (Gtk.widgetSetSensitive (nameBox, true);
+		     Gtk.widgetSetSensitive (colorBox, true);
+		     if Gtk.entryGetText nameText = ""
+			 then Gtk.widgetSetSensitive (readyButton, false)
+		     else ())
+
 	    fun okClickedCB spectator = 
 		let
 		    fun return () = 
@@ -212,7 +223,8 @@ struct
 				       (joined, disconnected, started),
 				       {reset, gameMode}))
 			   | SND     errorMsg     => 
-				 reset (SOME ("ERROR!!", errorMsg)))
+				 reset (SOME ("ERROR!!", errorMsg)));
+			print "PlayerSettings, geil"
 		end
 
 	in
@@ -222,16 +234,23 @@ struct
 	    Gtk.windowSetTitle (playerSettings, "Player Settings");
 	    Gtk.windowSetPosition (playerSettings, Gtk.WIN_POS_CENTER);
 	    
-	    Gtk.signalConnect (playerSettings, "delete-event", 
+	    Gtk.signalConnect (playerSettings,
+			       "delete-event", 
 			       fn _ => mainQuit ());
-	    Gtk.signalConnect (spectatorCheckButton, "clicked", 
+	    Gtk.signalConnect (spectatorCheckButton, 
+			       "clicked", 
 			       fn _ => 
 			       pressedSpectatorButton (spectatorCheckButton, 
 						       nameHBox, 
 						       colorHBox));
-	    Gtk.signalConnect (readyButton, "clicked", 
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
+	    Gtk.signalConnect (readyButton, 
+			       "clicked", 
 			       fn _ => okClickedCB spectatorCheckButton);
-	    Gtk.signalConnect (cancelButton, "clicked",
+	    Gtk.signalConnect (cancelButton, 
+			       "clicked",
 			       fn _ => mainQuit ());
 	    
 	    Gtk.containerSetBorderWidth (playerSettings, 10);

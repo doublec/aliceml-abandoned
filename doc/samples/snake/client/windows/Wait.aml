@@ -184,7 +184,7 @@ struct
 		 (joined, disconnected, started),
 		 {reset, gameMode}) =>
 		let
-
+		    val _ = print "Wait, beginning"
 		    val waiting          = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 		    val dialogVBox       = Gtk.vboxNew (false, 0)
 		    val connectedLabel   = Gtk.labelNew "Connected Players : "
@@ -202,7 +202,7 @@ struct
 			 Gtk.widgetDestroy waiting;
 			 reset NONE)
 
-
+		    val _ = print "Wait, setting gui"
 		    val _ = joined := (fn xs => List.app insert xs)
 
 		    val _ = disconnected := 
@@ -218,22 +218,24 @@ struct
 		    fun playersJoined x = !joined x
 			(* they haven't to be fulfilled because they where
 			 fulfilled in PlayerSettingsWindow *)
-
+		    val _ = print "Wait, done setting gui"
 
 
 			
 		in
-	    
+		    print "Wait, beginning executing";
 		    playersJoined alreadyConnected;
 		    Gtk.windowSetModal (waiting,true);
 		    Gtk.windowSetTitle (waiting, "Waiting...");
 		    Gtk.windowSetPosition (waiting, Gtk.WIN_POS_CENTER);
 
+		    print "Wait, signal connecting";
 		    (* trivial signal connection *)
 		    Gtk.signalConnect (waiting, "delete-event", 
 				       fn _ => mainQuit ());
 		    Gtk.signalConnect (disconnectButton, "clicked", 
 				       fn _ => mainQuit ());
+		    print "Wait, signal connecting done";
 
 		    (* sets default widget settings *)
 		    Gtk.containerSetBorderWidth (waiting, 10);

@@ -28,20 +28,7 @@ struct
 
     val allColors = List.map Color.toString Color.all
 
-    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
-	if Gtk.toggleButtonGetActive spectator
-	    then
-		(Gtk.widgetSetSensitive (nameBox, false);
-		 Gtk.widgetSetSensitive (colorBox, false))
-	else
-	    (Gtk.widgetSetSensitive (nameBox, true);
-	     Gtk.widgetSetSensitive (colorBox, true))
 
-    fun pressedInfinityButton (button, scale) =
-	if Gtk.toggleButtonGetActive button
-	    then Gtk.widgetSetSensitive (scale, false)
-	else
-	    Gtk.widgetSetSensitive (scale, true)
 
     val colorCombo  = ref (Gtk.comboNew ())	
 
@@ -95,7 +82,6 @@ struct
 	    val leftVBox           = Gtk.vboxNew (false, 10)
 	    val rightHBox          = Gtk.hboxNew (false, 10)
 	    val separator5         = Gtk.hseparatorNew ()
-
 
 	    fun mkScale scaleNew (box, label, value, lower, upper) = 
 		let
@@ -155,6 +141,30 @@ struct
 		(colorCombo := Gtk.comboNew ();
 		 Gtk.widgetDestroy serverSettings;
 		 reset NONE)
+		
+	    fun changedNameText () = 
+		if Gtk.entryGetText nameText = ""
+		    then Gtk.widgetSetSensitive (okButton, false)
+		else  Gtk.widgetSetSensitive (okButton, true)
+
+	    fun pressedSpectatorButton (spectator, nameBox, colorBox) =
+		if Gtk.toggleButtonGetActive spectator
+		    then
+			(Gtk.widgetSetSensitive (nameBox, false);
+			 Gtk.widgetSetSensitive (colorBox, false);
+			 Gtk.widgetSetSensitive (okButton, true))
+		else
+		    (Gtk.widgetSetSensitive (nameBox, true);
+		     Gtk.widgetSetSensitive (colorBox, true);
+		     if Gtk.entryGetText nameText = "" 
+			 then Gtk.widgetSetSensitive (okButton, false)
+		     else ())
+		    
+	    fun pressedInfinityButton (button, scale) =
+		if Gtk.toggleButtonGetActive button
+		    then Gtk.widgetSetSensitive (scale, false)
+		else
+		    Gtk.widgetSetSensitive (scale, true)
 
 	    fun readValues () = 
 		let
@@ -291,6 +301,7 @@ struct
 	    Gtk.windowSetTitle (serverSettings, "Server Settings");
 	    Gtk.windowSetPosition (serverSettings, Gtk.WIN_POS_CENTER);
 	    Gtk.containerSetBorderWidth (serverSettings, 10);
+	    Gtk.widgetSetSensitive (okButton, false);
 	    
 	    Gtk.signalConnect (serverSettings, 
 			       "delete-event", 
@@ -327,6 +338,9 @@ struct
 			       "clicked",
 			       fn _ =>
 			       setValues (Config.defaultSingle));
+	    Gtk.signalConnect (nameText, 
+			       "changed",
+			       fn _ => changedNameText ());
 	    Gtk.signalConnect (okButton, "clicked", 
 			       fn _ => okClickedCB 
 			       spectatorRadioButton);
@@ -354,9 +368,6 @@ struct
 	    Gtk.boxPackStart (loadSaveHBox2, saveConfigButton, false, false, 5);
 	    Gtk.boxPackStart (loadSaveHBox2, loadSingleButton, false, false, 5);
 
-(*	    Gtk.boxPackStart (levelsHBox, levelsCheckButton, true, false, 15);
-	    Gtk.boxPackStart (livesHBox, livesCheckButton, true, false, 15);
-*)	    
 	    Gtk.tableAttachDefaults (table, levelsCheckButton, 0, 1, 0, 1);
 	    Gtk.tableAttachDefaults (table, livesCheckButton, 0, 1, 1, 2);
 	    Gtk.tableAttachDefaults (table, levelsHBox, 1, 2, 0, 1);
@@ -370,9 +381,7 @@ struct
 	    Gtk.boxPackStart (leftVBox, separator1, false, false, 2);
 	    Gtk.boxPackStart (leftVBox, table, false, false, 0);
 
-(*	    Gtk.boxPackStart (leftVBox, livesHBox, false, false, 5);
-	    Gtk.boxPackStart (leftVBox, levelsHBox, false, false, 5);
-*)	    Gtk.boxPackStart (leftVBox, separator3, false, false, 5);
+	    Gtk.boxPackStart (leftVBox, separator3, false, false, 5);
 	    Gtk.boxPackStart (leftVBox, loadSaveHBox1, false, false, 5);
 	    Gtk.boxPackStart (leftVBox, loadSaveHBox2, false, false, 5);
 	    
