@@ -23,13 +23,13 @@ import structure MkDrawingArea from "MkDrawingArea"
 import structure WindowHelper from "WindowHelper"
 import structure Settings from "Settings"
 import structure Dictionaries from "Dictionaries"
+import structure RelManDictionary from "RelManDictionary"
 import structure NodeSearch from "NodeSearch" 
 import structure DrawNodes from "DrawNodes"
 import structure Layout from "Layout"
 import structure Server from "Server"
 import structure Services from "Services"
-import structure Helper from "Helper" (* to be verified *)
-(* import structure Update from "Update" (* to be verified *)
+import structure Helper from "Helper"  (* 
 import structure NewNode from "NewNode" (* to be verified *) *)
 import signature MK_WINDOW from "MK_WINDOW-sig"
 
@@ -104,23 +104,30 @@ struct
 	let	
 	    val vbox = Gtk.vboxNew(0,4)
 	    (* Width & Depth Settings *)
-	    val inner_vbox = Gtk.vboxNew(0,4)
-	    val inner_hbox1 = Gtk.hboxNew(0,4)
-	    val width_lab = Gtk.labelNew("Set Width Limit to...")
+	  (*  val inner_vbox = Gtk.vboxNew(0,4)
+	     val inner_hbox1 = Gtk.hboxNew(0,4)  *)
+	    val width_lab = Gtk.labelNew("Set Width Limit to...") 
 	    val a = Gtk.adjustmentNew(Real.fromInt(!Settings.max_width), 
 				      0.0, 100.0, 1.0, 0.0, 0.0)
 	    val width_s = Gtk.spinButtonNew(a,1.0,0)
-	    val _ = Gtk.boxPackStart(inner_hbox1,width_lab,0,0,0)
-	    val _ = Gtk.boxPackStart(inner_hbox1,width_s,0,0,0)
-	    val inner_hbox2 = Gtk.hboxNew(0,4)
+	  (*  val _ = Gtk.boxPackStart(inner_hbox1,width_lab,0,0,0)
+	    val _ = Gtk.boxPackStart(inner_hbox1,width_s,0,0,0) 
+	    val inner_hbox2 = Gtk.hboxNew(0,4) *)
 	    val depth_lab = Gtk.labelNew("Set Depth Limit to...")
 	    val a2 = Gtk.adjustmentNew(Real.fromInt(!Settings.max_depth)
 				       , 0.0, 100.0, 1.0, 0.0, 0.0)	
 	    val depth_s = Gtk.spinButtonNew(a2,1.0,0)
-	    val _ = Gtk.boxPackStart(inner_hbox2,depth_lab,0,0,0)
+	  (*  val _ = Gtk.boxPackStart(inner_hbox2,depth_lab,0,0,0)
 	    val _ = Gtk.boxPackStart(inner_hbox2,depth_s,0,0,0)
 	    val _ = Gtk.boxPackStart(inner_vbox,inner_hbox1,0,0,0)
-	    val _ = Gtk.boxPackStart(inner_vbox,inner_hbox2,0,0,0)
+	    val _ = Gtk.boxPackStart(inner_vbox,inner_hbox2,0,0,0) *)
+
+	    val table = createTable{rows = 2, cols = 2, 
+				    entries = [(width_lab,0,1,0,1),
+				     (width_s,1,2,0,1),
+				     (depth_lab,0,1,1,2),
+				     (depth_s,1,2,1,2)]}
+
 	    (* Mode Settings *)
 	    val radiobox =  Gtk.vboxNew(0,4)
 	    val treemode_button = Gtk.radioButtonNewWithLabel(uglyNULL, 
@@ -161,6 +168,10 @@ struct
 							       true 
 						       else false)
 			val _ =   Gtk.widgetDestroy(w)
+			val _ = if 
+			       Gtk.toggleButtonGetActive(relmode_button) = 1
+			       then RelManDictionary.dumpAll(Dictionaries.reldict)
+				   else ()
 			in
 					()
 			end))]),
@@ -171,7 +182,7 @@ struct
 				       borderwidth = 20}
   
 
-	    val n = createNotebook[("Width & Depth Limit Settings",inner_vbox),
+	    val n = createNotebook[("Width & Depth Limit Settings",table),
 				   ("Mode Settings",radiobox)] 
 	    val _ = Gtk.windowSetTitle (w, "Preferences")
 	    val _ = Gtk.boxPackStart(vbox,n,0,0,0)

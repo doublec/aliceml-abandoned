@@ -223,6 +223,18 @@ fun createButtonBox {buttons = l, borderwidth = b} =
 				    (createButton b))) l
 			 ; bbox)
 		    end
+
+fun createTable {rows = r, cols = c, entries = l}   = 
+    let 
+	val table = Gtk.tableNew(r,c,1)
+	val attach = (fn (obj,x1,x2,y1,y2) 
+		      => Gtk.tableAttachDefaults(table,
+						 obj,x1,x2,y1,y2))
+    in
+	(List.app attach l
+	 ; table )
+    end
+
 end
 
  

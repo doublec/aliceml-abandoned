@@ -58,5 +58,8 @@ val copyArray : 'a Array.array * 'a Array.array -> unit
 val createButton : ButtonObj -> Gtk.object
 val createButtonBox: {buttons: ButtonObj list, borderwidth: int}
     -> Gtk.object
+val createTable: {rows : int, cols : int, 
+		  entries : (Gtk.object * int * int * int * int) list} 
+    -> Gtk.object
 
 end
