@@ -209,9 +209,9 @@ structure OutputPickle :> OUTPUT_PICKLE =
 	  | outputInstr (context, PutVar (id, idRef, instr)) =
 	    (outputBlock (context, Label.putVar, 3); outputId (context, id);
 	     outputIdRef (context, idRef); outputInstr (context, instr))
-	  | outputInstr (context, PutNew (id, instr)) =
-	    (outputBlock (context, Label.putNew, 2); outputId (context, id);
-	     outputInstr (context, instr))
+	  | outputInstr (context, PutNew (id, s, instr)) =
+	    (outputBlock (context, Label.putNew, 3); outputId (context, id);
+	     outputString (context, s); outputInstr (context, instr))
 	  | outputInstr (context, PutTag (id, tag, idRefs, instr)) =
 	    (outputBlock (context, Label.putTag, 4); outputId (context, id);
 	     outputInt (context, LargeInt.fromInt tag);

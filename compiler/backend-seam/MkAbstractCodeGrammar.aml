@@ -43,7 +43,7 @@ functor MkAbstractCodeGrammar(Value: VALUE): ABSTRACT_CODE_GRAMMAR =
 	    Kill of id vector * instr
 	  | PutConst of id * value * instr
 	  | PutVar of id * idRef * instr
-	  | PutNew of id * instr
+	  | PutNew of id * string * instr
 	  | PutTag of id * int * idRef vector * instr
 	  | PutCon of id * idRef * idRef vector * instr
 	  | PutRef of id * idRef * instr
