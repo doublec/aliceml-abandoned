@@ -12,15 +12,22 @@
 
 functor
 import
-   Application(getCmdArgs)
-   Property(put)
+   Application(getArgs exit)
+   Property(put get)
    Module(link)
+   System(printError)
    Word at 'Word.so{native}'
 define
    {Wait Word}
-   case {Application.getCmdArgs plain} of Name|Rest then M in
+   {Property.put 'errors.depth' 10}
+   {Property.put 'errors.width' 10}
+   case {Application.getArgs plain} of Name|Rest then M in
       {Property.put 'ozd.args' Rest}
       [M] = {Module.link [Name]}
       {Wait M}
+   [] nil then
+      {System.printError
+       'usage: '#{Property.get 'application.url'}#' <name> <args> ...\n'}
+      {Application.exit 2}
    end
 end
