@@ -6,16 +6,19 @@ IMAGES = events-c events-alice layout generator
 EPSS = $(IMAGES:%=%.eps)
 
 
-all: $(DVIS) $(PSS) # $(PDFS)
+all: $(DVIS) $(PSS) $(PDFS)
 
 %.dvi: %.tex
 	(latex $< && latex $< && latex $<)  # for cross-refs
 
 %.ps: %.dvi
-	dvips $< -o $@
+	dvips -Ppdf $< -o $@
 
-%.pdf: %.tex
-	pdflatex $<
+#%.pdf: %.tex
+#	pdflatex $<
+
+%.pdf: %.ps
+	ps2pdf $<
 
 report_final.dvi: $(EPSS)
 
