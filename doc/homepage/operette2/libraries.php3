@@ -264,11 +264,64 @@
   </UL>
 
   <PRE>
-	structure Inspector:
+	signature INSPECTOR =
 	    sig
-		val inspect : 'a -> unit
-		val inspectN : int * 'a -> unit
-		val configure : 'a -> unit
+		type value
+
+		datatype color =
+		    KEEP_COLOR
+		  | SET_COLOR       of {red: int, green: int, blue: int}
+		datatype width =
+		    KEEP_WIDTHS
+		  | REPLACE_WIDTHS  of int vector
+		  | APPEND_WIDTH    of int
+		  | REMOVE_WIDTH    of int
+		datatype depth =
+		    KEEP_DEPTHS
+		  | REPLACE_DEPTHS  of int vector
+		  | APPEND_DEPTH    of int
+		  | REMOVE_DEPTH    of int
+		datatype action =
+		    KEEP_ACTIONS
+		  | REPLACE_ACTIONS of (string * (value -> unit)) vector
+		  | APPEND_ACTION   of string * (value -> unit)
+		  | REMOVE_ACTION   of string
+
+		datatype option =
+		    NUMBER            of color *                 action
+		  | FUNCTION          of color *                 action
+		  | STRING            of color *                 action
+		  | HOLE              of color *                 action
+		  | FUTURE            of color *                 action
+		  | CONSTRUCTOR       of color *                 action
+		  | REFERENCE         of                         action
+		  | FD                of                         action
+		  | FSET              of                         action
+		  | TUPLE             of color * width * depth * action
+		  | RECORD            of color * width * depth * action
+		  | LIST              of color * width * depth * action
+		  | CONSTRUCTED_VALUE of         width * depth * action
+		  | VECTOR            of color * width * depth * action
+		  | RECORD_LABEL      of color
+		  (* relation mode *)
+		  | ALIAS_DEFINITION  of color
+		  | ALIAS_REFERENCE   of color
+		  (* ellipses *)
+		  | WIDTH_ARROW       of color
+		  | DEPTH_ARROW       of color
+		  | PARENTHESES       of color
+		  | MISC              of color
+
+		exception ConfigurationError
+
+		val inspect: 'a -> unit
+		val inspectN: int * 'a -> unit
+		val configure: option vector -> unit   (* ConfigurationError *)
+
+		functor InspectType(type t): any
+		functor InspectSig(signature S): any
+		functor InspectValSig(type t val x: t signature S): any
+		functor Inspect(signature S structure X: S): any
 	    end</PRE>
 
 <?php section("gui", "gui") ?>
@@ -280,24 +333,51 @@
 
   <UL>
     <LI>
+      <TT><A name="gtkcore">structure</A>
+      <A href="http://developer.gnome.org/doc/API/gtk/index.html">GtkCore</A>
+      <BR>from "x-alice:/lib/gtk/GtkCore"</TT>
+    </LI>
+    <LI>
       <TT><A name="gtk">structure</A>
-      <A href="http://developer.gnome.org/doc/API/gtk/index.html">GTK</A>
+      <A href="http://developer.gnome.org/doc/API/gtk/index.html">Gtk</A>
       <BR>from "x-alice:/lib/gtk/GTK"</TT>
     </LI>
     <LI>
       <TT><A name="gdk">structure</A>
-      <A href="http://developer.gnome.org/doc/API/gdk/index.html">GDK</A>
+      <A href="http://developer.gnome.org/doc/API/gdk/index.html">Gdk</A>
       <BR>from "x-alice:/lib/gtk/GDK"</TT>
     </LI>
   </UL>
 
   <P>
-    Both modules contain almost the full set of functions originally
+    All modules together contain almost the full set of functions originally
     provided by the toolkit.  The functions are available under names
     following the so-called "camel casing" scheme, with the library
     prefix removed, i.e., <TT>gtk_foo_bar</TT> would be available as
-    <TT>GTK.fooBar</TT> and <TT>gdk_foo_baz</TT> as <TT>GDK.fooBaz</TT>,
+    <TT>Gtk.fooBar</TT> and <TT>gdk_foo_baz</TT> as <TT>Gdk.fooBaz</TT>,
     respectively.
   </P>
 
+  <P>
+    Upon this, we provide the GnomeCanvas via the component:
+  </P>
+
+  <UL>
+    <LI>
+      <TT><A name="canvas">structure</A>
+      <A href="http://developer.gnome.org/doc/API/libgnomeui/book1.html">Canvas</A>
+      <BR>from "x-alice:/lib/gtk/Canvas"</TT>
+    </LI>
+  </UL>
+
+  <P>
+    The functions are also available under names following the "camel casing" scheme,
+    with the <TT>gnome_canvas</TT> prefix removed, i. e., <TT>gnome_canvas_new</TT> would be
+    available as <TT>Canvas.new</TT>.
+  </P>
+
+  <P>
+    Besides reading the documentation provided by GTK itself, it is recommended to take
+    a look into the samples shipped with Operette 2.
+  </P>
 <?php footing() ?>
