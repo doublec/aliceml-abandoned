@@ -10,50 +10,15 @@
  *   $Revision$
  *)
 
-import structure Types            from "Types"
 import structure FD               from "x-alice:/lib/gecode/FD"
 import structure FS               from "x-alice:/lib/gecode/FS"
 import structure Space            from "x-alice:/lib/gecode/Space"
-import structure Inspector'       from "x-alice:/lib/tools/Inspector"
 import structure Inspector        from "x-alice:/lib/tools/Inspector"
-
-import structure Type             from "x-alice:/lib/rtt/Type"
-import structure Path             from "x-alice:/lib/rtt/Path"
-import structure Inf              from "x-alice:/lib/rtt/Inf"
-import structure Label            from "x-alice:/lib/rtt/Label"
-import structure Url              from "x-alice:/lib/system/Url"
-import structure Component        from "x-alice:/lib/system/Component"
-import structure ComponentManager from "x-alice:/lib/system/ComponentManager"
-import structure Reflect from "x-alice:/lib/system/Reflect" 
-import structure UnsafeValue      from  "x-alice:/lib/system/UnsafeValue"
 
 structure ExplorerInspect =
   struct
-
-    val coreSign = Inf.asSig(#2 
-	     (Reflect.reflectPackage(ComponentManager.link 
-	       (Url.fromString "x-alice:/lib/fundamental/Core")))) 
-
-    val fdSig = Inf.asSig(#2
-	     (Reflect.reflectPackage(ComponentManager.link
-	       (Url.fromString "x-alice:/lib/gecode/FD"))))
-
-    val fsSig = Inf.asSig(#2
-	     (Reflect.reflectPackage(ComponentManager.link
-	       (Url.fromString "x-alice:/lib/gecode/FS"))))
-                
-    fun lookupTyp(sign, modLab, typLab) =
-        let
-	    val sign' = Inf.asSig(Inf.lookupMod(sign, Label.fromString modLab))
-	    val typ   = Inf.lookupTyp'(sign', Label.fromString typLab)
-        in
-	    if Type.isApply typ then #1(Type.asApply typ) else typ
-        end
-            
-    fun lookupPath(sign, modLab, typLab) =
-        Type.asCon(lookupTyp(sign, modLab, typLab))
       
-    fun createFD s (m_width,d,va,t) = 
+    fun createFD s (depth,v,t,_,_) = 
         let
             fun addCommas nil = nil
               | addCommas [x] = [x]
@@ -65,8 +30,7 @@ structure ExplorerInspect =
                                            else Int.toString x^".."^
                                                 Int.toString y) bs))
 
-            val descr = Inspector.VALUE{value=va,typ=t}
-            val v = UnsafeValue.cast va : FD.intvar
+            val descr = Inspector.Value(v,t)
             val rep =
                 let
                     val dom = FD.Reflect.dom(s,v)
@@ -75,49 +39,46 @@ structure ExplorerInspect =
                 end
                     handle Space.InvalidVar => "invalid"
             val cont =
-            Inspector.CONTAINER{desc = descr,
-               kids= #[Inspector.SIMPLE{desc = descr,
-	                                rep = rep,
-	                                color = Inspector.INT_COLOR}]}
+            Inspector.container (descr,
+				 Array.fromVector
+				 #[Inspector.simple(descr,
+						    (rep,
+						     Inspector.intStyle))])
         in 
-	    Inspector.CONCAT{desc = descr,
-		   kids = #[Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "intvar{|",
-				   color = Inspector.BRACK_COLOR},
-			    cont,
-			    Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "|}",
-				   color = Inspector.BRACK_COLOR}] }
+	    Inspector.concat{prefix=
+			     [("intvar{|",
+			       Inspector.brackStyle)],
+			     tree=cont,
+			     suffix=
+			     [("|}",
+			       Inspector.brackStyle)],
+			     orient=Inspector.Son}
         end
 
-    fun createBool s (m_width,d,va,t) = 
+    fun createBool s (depth,v,t,_,_) = 
         let
-            val descr = Inspector.VALUE{value=va,typ=t}
-            val v = UnsafeValue.cast va : FD.boolvar
+            val descr = Inspector.Value(v,t)
             val rep = (if FD.Reflect.boolVal(s,v) then "true" else "false")
                 handle FD.NotAssigned => "undet"
                      | Space.InvalidVar => "invalid"
             val cont =
-            Inspector.CONTAINER{desc = descr,
-               kids= #[Inspector.SIMPLE{desc = descr,
-	                                rep = rep,
-	                                color = Inspector.INT_COLOR}]}
+            Inspector.container (descr,
+				 Array.fromVector
+				 #[Inspector.simple(descr,
+						    (rep,
+						     Inspector.intStyle))])
         in 
-	    Inspector.CONCAT{desc = descr,
-		   kids = #[Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "boolvar{|",
-				   color = Inspector.BRACK_COLOR},
-			    cont,
-			    Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "|}",
-				   color = Inspector.BRACK_COLOR}] }
+	    Inspector.concat{prefix=
+			     [("boolvar{|",
+			       Inspector.brackStyle)],
+			     tree=cont,
+			     suffix=
+			     [("|}",
+			       Inspector.brackStyle)],
+			     orient=Inspector.Son}
         end
 
-    fun createFS s (m_width,d,va,t) =
+    fun createFS s (depth,v,t,_,_) = 
         let
             fun addCommas nil = nil
               | addCommas [x] = [x]
@@ -128,9 +89,8 @@ structure ExplorerInspect =
                                            if x=y then Int.toString x
                                            else Int.toString x^".."^
                                                 Int.toString y) bs))
-                           
-            val descr = Inspector.VALUE{value=va,typ=t}
-            val v = UnsafeValue.cast va : FS.setvar
+
+            val descr = Inspector.Value(v,t)
             val lb = FS.Reflect.lowerBound(s,v)
             val lbs = String.concat (boundsToString lb)
             val ub = FS.Reflect.upperBound(s,v)
@@ -154,35 +114,27 @@ structure ExplorerInspect =
                         "<"^lbs^"> / <"^ubs^"> ("^card^")"
                 end
                     handle Space.InvalidVar => "invalid"
-
             val cont =
-            Inspector.CONTAINER{desc = descr,
-               kids= #[Inspector.SIMPLE{desc = descr,
-	                                rep = rep,
-	                                color = Inspector.INT_COLOR}]}
-        in
-	    Inspector.CONCAT{desc = descr,
-		   kids = #[Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "setvar{|",
-				   color = Inspector.BRACK_COLOR},
-			    cont,
-			    Inspector.SIMPLE{desc =
-                                   Inspector.INTERPUNCT,
-				   rep = "|}",
-				   color = Inspector.BRACK_COLOR}] }
+            Inspector.container (descr,
+				 Array.fromVector
+				 #[Inspector.simple(descr,
+						    (rep,
+						     Inspector.intStyle))])
+        in 
+	    Inspector.concat{prefix=
+			     [("setvar{|",
+			       Inspector.brackStyle)],
+			     tree=cont,
+			     suffix=
+			     [("|}",
+			       Inspector.brackStyle)],
+			     orient=Inspector.Son}
         end
      
     fun inspect t root s =
-        let
-            val fdPath = lookupPath(fdSig, "FD", "intvar")
-            val boolPath = lookupPath(fdSig, "FD", "boolvar")
-            val fsPath = lookupPath(fsSig, "FS", "setvar")
-        in
-            Inspector.registerType(fdPath, createFD s);
-            Inspector.registerType(boolPath, createBool s);
-            Inspector.registerType(fsPath, createFS s);
-            Inspector'.inspect' t root
-        end
+	(Inspector.register (createFD s);
+	 Inspector.register (createBool s);
+	 Inspector.register (createFS s);
+	 Inspector.inspectVal t root)
 
   end
