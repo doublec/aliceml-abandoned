@@ -12,6 +12,15 @@
 #ifndef __BASE_HH__
 #define __BASE_HH__
 
+#ifndef MAX_PATH
+# ifdef _POSIX_PATH_MAX
+#  define MAX_PATH _POSIX_PATH_MAX
+# else
+// use some reasonable default
+#  define MAX_PATH (1025)
+# endif
+#endif
+
 void AssertOutline(const char *file, int line, const char *message);
 #define AssertBase(cond, message)					\
   if (!(cond)) { AssertOutline(__FILE__, __LINE__, message); exit(0); } else;
