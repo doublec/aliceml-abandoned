@@ -34,7 +34,7 @@
 // These must be extern "C" because the symbols are accessed
 // via GetProcAddress/dlsym.  We cannot use the AliceDll macro
 // because it would expand to __declspec(dllexport) here.
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_DLLS
 extern "C" __declspec(dllexport) word InitComponent();
 #else
 extern "C" word InitComponent();
