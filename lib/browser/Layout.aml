@@ -22,10 +22,6 @@ open Node
 structure Layout :> LAYOUT = 
 struct
 
-    fun st (a,_,_) = a
-    fun nd (_,b,_) = b
-    fun rd (_,_,c) = c
-
     fun maxi select  = fn (triple,m) => Int.max(select(triple),m)
     fun sum select  = fn (triple,s) => select(triple) + s 
 
@@ -51,37 +47,37 @@ struct
 				      Int.>=((#3(List.nth(li,no_kids -2))),
 				        (#1(List.nth(li,no_kids -2))))
 					 then 
-					     List.foldl (sum(st)) 0 li
-				     else List.foldl (sum(st)) 0 li'
-				 else  List.foldl (sum(st)) 0 li
-			val lx = List.foldl (sum(rd)) 0 li
+					     List.foldl (sum(#1)) 0 li
+				     else List.foldl (sum(#1)) 0 li'
+				 else  List.foldl (sum(#1)) 0 li
+			val lx = List.foldl (sum(#3)) 0 li
 		    in
 			(xd,lx)
 		    end
-	    val ydim = List.foldl (maxi(nd)) 0 li
+	    val ydim = List.foldl (maxi(#2)) 0 li
 	in
 	    (#width(r) := xdim  
 	     ; #height(r) := ydim
 	     ; #l_width(r) := l_xdim
-	     ; if !(#status(r)) = DAZZLED 
-		   then #status(r) := DIRTY
+	     ; if !(getStatus(n)) = DAZZLED 
+		   then getStatus(n) := DIRTY
 	       else ()
 		   ; (xdim,ydim,l_xdim))   
 	end )
       | layout (Container(r) as n) = 
 	( (* Window.testIfStop() *) ()
-	;if !(#status(r)) = DAZZLED
+	;if !(getStatus(n)) = DAZZLED
 	    then
 		let 
 		    val no_kids = Array.length(getKids(n))
 		    val li = List.tabulate(no_kids, 
 			      	   (fn i => layout(Array.sub(getKids(n),i))))
 		    val xdim = if (setsVertical n)
-				   then List.foldl (maxi(st)) 0 li
-			       else List.foldl (sum(st)) 0 li
+				   then List.foldl (maxi(#1)) 0 li
+			       else List.foldl (sum(#1)) 0 li
 		    val ydim = if (setsVertical n)
-				   then List.foldl (sum(nd)) 0 li
-			       else List.foldl (maxi(nd)) 0 li
+				   then List.foldl (sum(#2)) 0 li
+			       else List.foldl (maxi(#2)) 0 li
 		    val l_xdim =  if (setsVertical n) 
 				      then if no_kids = 0
 					       then 0
@@ -90,44 +86,44 @@ struct
 		in (#width(r) := xdim  
 		    ; #height(r) := ydim
 		    ; #l_width(r) := l_xdim
-		    ; #status(r) := DIRTY
+		    ; getStatus(n) := DIRTY
 		    ; (xdim,ydim,l_xdim))   
 		end
 	else (get_xdim(n),get_ydim(n),get_l_xdim(n))) 
       | layout (Simple(r) as n) = 
-	    (if !(#status(r)) = DAZZLED
-		 then #status(r) := DIRTY
+	    (if !(getStatus(n)) = DAZZLED
+		 then getStatus(n) := DIRTY
 	     else ()
 		 ; (get_xdim(n),get_ydim(n),get_xdim(n)) )
       | layout (Limit(r) as n) = 
-		 (if !(#status(r)) = DAZZLED
-		      then #status(r) := DIRTY
+		 (if !(getStatus(n)) = DAZZLED
+		      then getStatus(n) := DIRTY
 		  else ()
 		      ; (get_xdim(n),get_ydim(n),get_xdim(n)) )
       | layout (RelRefNode(r) as n) = 
-		      (if !(#status(r)) = DAZZLED
-			   then #status(r) := DIRTY
+		      (if !(getStatus(n)) = DAZZLED
+			   then getStatus(n) := DIRTY
 		       else ()
 			   ; (get_xdim(n),get_ydim(n),get_xdim(n)) ) 
       | layout (RelNode(r) as n) 
 	    = ((* Window.testIfStop() *) ()
 	       ;let
-		   val (cxdim,cydim,clxdim) = layout(!(#content(r)))
-		   val l_xdim = clxdim +  (if isSimple (!(#content(r)))
+		   val (cxdim,cydim,clxdim) = layout(getContent(n))
+		   val l_xdim = clxdim +  (if isSimple (getContent(n))
 			                orelse !(#counter(r)) = 1 
 						then 0 
-					    else String.size(#rep(r)))
+					    else String.size(getRep(n)))
 		in
-		    (if !(#status(r)) = DAZZLED
-			 then let val xdim = if isSimple (!(#content(r)))
+		    (if !(getStatus(n)) = DAZZLED
+			 then let val xdim = if isSimple (getContent(n))
 			     orelse !(#counter(r)) = 1 
 						 then cxdim 
-					     else String.size(#rep(r)) + 
+					     else String.size(getRep(n)) + 
 						 cxdim
 				  val ydim =  cydim
 			      in (#width(r) := xdim  
 				  ; #height(r) := ydim
-				  ; #status(r) := DIRTY) 
+				  ; getStatus(n) := DIRTY) 
 			      end   
 		     else ()
 			 ; (get_xdim(n),get_ydim(n),l_xdim) )
