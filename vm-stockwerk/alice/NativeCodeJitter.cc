@@ -2502,7 +2502,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   jit_flush_code(start, end);
   // Copy generated code
   u_int size    = (end - start);
-  ::Chunk *code = Store::AllocChunk(size);
+  ::Chunk *code = Store::AllocChunk(size, STORE_GEN_OLDEST);
   memcpy(code->GetBase(), start, size);
   Assert(size <= codeBufferSize);
 #if defined(JIT_CODE_SIZE_PROFILE)
