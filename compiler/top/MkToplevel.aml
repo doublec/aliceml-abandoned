@@ -43,13 +43,13 @@ struct
                                    "Usage: alice [options]\n" ^
 				   OptionParser.helpText)
 
-    val date       = Config.buildDate
-    val banner     = "Alice 1.0.0 (\"" ^
+    val banner     = "Alice 1.0 (\"" ^
 		     (case Config.vm
 		       of "mozart" => "Stockhausen Operette 4 Original Mix"
 		        | "seam" => "Kraftwerk Release 1"
 			| _ => "Alien Invaderz Breakz Mix"
-		     ) ^ "\"), mastered " ^ Date.fmt "%Y/%m/%d" date ^ "\n"
+		     ) ^ "\"), mastered " ^
+		     Date.fmt "%Y/%m/%d" Config.buildDate ^ "\n"
     val bye        = "That's all, said Humpty Dumpty. Good-bye.\n"
     val prompt     = "- "
     val contPrompt = "  "
