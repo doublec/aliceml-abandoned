@@ -19,13 +19,13 @@ future by blocking until it becomes determined or failed.</P>
 
 <UL>
   <LI> <A href="#spawn"><EM>concurrent futures</EM></A> stand for the
-	result of a concurrent computation </LI>
+	result of a concurrent computation, </LI>
   <LI> <A href="#lazy"><EM>lazy futures</EM></A> stand for the
-	result of a computation that is only performed on request </LI>
+	result of a computation that is only performed on request, </LI>
   <LI> <A href="#promise"><EM>promised futures</EM></A> stand for the
-	a value that is delivered through an explicit operation </LI>
+	a value that is delivered through an explicit operation, </LI>
   <LI> <A href="#failed"><EM>failed futures</EM></A> represent
-	the result of a computation that terminated with an exception </LI>
+	the result of a computation that terminated with an exception. </LI>
 </UL>
 
 
@@ -164,7 +164,7 @@ structure.</P>
 with an exception, that future cannot be eliminated. Instead, it turns into a
 <EM>failed future</EM>. Promised futures can be failed explicitly by means of
 the <A href="library/promise.html"><TT>Promise.fail</TT></A> function.
-Requestin a failed future never blocks. Instead, any
+Requesting a failed future does not block. Instead, any
 attempt to request a failed future will re-raise the
 exception that was the cause of the failure.</P>
 
