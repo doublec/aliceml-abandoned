@@ -30,11 +30,15 @@ class TableAllocator;
 typedef enum {
   HOLE_HOLE,
   FUTURE_BYNEED,
+#if HAVE_JIT_FP
   CHAR_ORD,
   INT_OPPLUS,
   INT_OPSUB,
   INT_OPMUL,
   INT_OPLESS
+#else
+  CHAR_ORD
+#endif
 } INLINED_PRIMITIVE;
 
 typedef enum {

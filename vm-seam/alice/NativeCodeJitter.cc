@@ -582,14 +582,18 @@ void NativeCodeJitter::KillIdRef(word idRef) {
 
 void NativeCodeJitter::GlobalEnvSel(u_int Dest, u_int Ptr, word pos) {
   Assert(Dest != Ptr);
+#if HAVE_JIT_FP
   Assert(Dest != JIT_FP); // We do not have segment override prefix
+#endif
   NativeCodeFrame_GetClosure(Dest, Ptr);
   Closure_Sel(Dest, Dest, Store::WordToInt(pos));
 }
 
 void NativeCodeJitter::ImmediateSel(u_int Dest, u_int Ptr, u_int pos) {
   Assert(Dest != Ptr);
+#if HAVE_JIT_FP
   Assert(Dest != JIT_FP); // We do not have segment override prefix
+#endif
   NativeCodeFrame_GetImmediateArgs(Dest, Ptr);
   JITStore::GetArg(Dest, Dest, pos);
 }
@@ -805,8 +809,14 @@ void NativeCodeJitter::TailCall(CallInfo *info) {
 void NativeCodeJitter::BranchToOffset(u_int wOffset) {
   Assert(wOffset == JIT_R0);
   JITStore::DirectWordToInt(wOffset, wOffset);
-  NativeCodeFrame_GetCode(JIT_FP, JIT_V2);
-  jit_addr_ui(wOffset, wOffset, JIT_FP);
+#if !HAVE_JIT_FP
+  jit_pushr_ui(JIT_MYFP);
+#endif
+  NativeCodeFrame_GetCode(JIT_MYFP, JIT_V2);
+  jit_addr_ui(wOffset, wOffset, JIT_MYFP);
+#if !HAVE_JIT_FP
+  jit_popr_ui(JIT_MYFP);
+#endif
   jit_jmpr(wOffset);
 }
 
@@ -1053,6 +1063,7 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       Result = LoadIdRef(JIT_V1, actualIdRefs->Sub(0), instrPC);
     }
     break;
+#if HAVE_JIT_FP
   case INT_OPPLUS:
     {
       // to be done: check for overflow
@@ -1114,6 +1125,7 @@ u_int NativeCodeJitter::InlinePrimitive(word wPrimitive, Vector *actualIdRefs) {
       boolTest = 1;
     }
     break;
+#endif
   default:
     Result = JIT_R0;
     Error("CompilePrimitive: illegal inline");
@@ -1422,12 +1434,19 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
   if (request) {
     word instrPC  = Store::IntToWord(GetRelativePC());
     u_int closure = LoadIdRef(JIT_V1, pc->Sel(0), instrPC);
+#if HAVE_JIT_FP
     jit_movr_p(JIT_FP, closure); // Save closure
+#endif
     Closure_GetConcreteCode(JIT_V1, closure);
     Await(JIT_V1, instrPC);
     Assert(info.mode == NORMAL_CALL);
     JITStore::Prepare(2, false);
+#if HAVE_JIT_FP
     jit_pusharg_ui(JIT_FP); // Derefed Closure
+#else
+    closure = ReloadIdRef(JIT_R0, pc->Sel(0));
+    jit_pusharg_ui(closure); // Derefed Closure
+#endif
     jit_pusharg_ui(JIT_V1); // Derefed ConcreteCode
   }
   LoadArguments(actualArgs);
@@ -2599,10 +2618,12 @@ static InlineEntry inlines[] = {
   { HOLE_HOLE,     "Hole.hole" },
   { FUTURE_BYNEED, "Future.byneed" },
   { CHAR_ORD,      "Char.ord" },
+#if HAVE_JIT_FP
   { INT_OPPLUS,    "Int.+" },
   { INT_OPSUB,     "Int.-" },
   { INT_OPMUL,     "Int.*" },
   { INT_OPLESS,    "Int.<" },
+#endif
   { STATIC_CAST(INLINED_PRIMITIVE, 0), NULL }
 };
 #endif
