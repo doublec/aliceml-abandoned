@@ -66,12 +66,12 @@ structure Backend=
 	    end
 
 	(* Verwaltung der lokalen JVM-Register *)
-	structure Local =
+	structure Register =
 	    struct
 		local
 		    val localscount = ref 1
-		    val stack:int list ref = ref nil
-		    val register: int StampHash.t    = StampHash.new ()
+		    val stack:(int * int StampHash.t) list ref = ref nil
+		    val register: int StampHash.t ref   = ref (StampHash.new ())
 		    val lambda  : int StampHash.t  = StampHash.new ()
 		    val fields  : string StampHash.t = StampHash.new ()
 		in
@@ -80,27 +80,30 @@ structure Backend=
 				       !localscount)
 
 		    (* Betreten bzw. Verlassen einer (Unter-) Funktion . *)
-		    fun push () = (stack := (!localscount)::(!stack);
-					 localscount := 1)
+		    fun push () = (stack := (!localscount, !register)::(!stack);
+				   localscount := 1;
+				   register := StampHash.new())
 		    fun pop () =
 			case !stack of
-			    ((lc)::rest) => (stack := rest; localscount := lc)
+			    ((lc,regs)::rest) => (stack := rest;
+						  localscount := lc;
+						  register := regs)
 			  | nil => raise Error("empty locals stack")
 		    fun max () = !localscount
 
 		    (* Zuordnung von Ids zu JVM-Registern *)
 		    fun assign (Id(_,stamp',InId), wohin) =
-			(StampHash.insert (register, stamp', wohin);
+			(StampHash.insert (!register, stamp', wohin);
 			 wohin)
 		      | assign (Id(_,stamp',ExId name), wohin) =
-			(StampHash.insert (register, stamp', wohin);
+			(StampHash.insert (!register, stamp', wohin);
 			 StampHash.insert (fields, stamp', name);
 			 wohin)
 
 		    fun get stamp' =
-			case StampHash.lookup (register, stamp') of
+			case StampHash.lookup (!register, stamp') of
 			    NONE => 1 (* nichtgebundene Stamps sind formale Parameter. *)
-			  | SOME register => register
+			  | SOME reg => reg
 
 		    (* Zuordnung von Ids zu JVM-Registern mit definierender Funktion *)
 		    (* xxx inzwischen überflüssig ? *)
@@ -121,7 +124,7 @@ structure Backend=
 				| SOME x => x^", "^(Stamp.toString stamp'))^")")::
 			 rest')
 			rest
-			register
+			(!register)
 		end
 	    end
 
