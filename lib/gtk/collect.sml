@@ -32,7 +32,7 @@ structure Collect : COLLECT =
 	  | IGNORED
 	and ARGVAL = ARG of CType * int
 
-	datatype PTRVAL = PNormal | PObject | PString
+	datatype PTRVAL = PNormal | PObject | PString | PList
 
 	fun intKindToString CHAR       = "char"
 	  | intKindToString SHORT      = "short"
@@ -53,7 +53,7 @@ structure Collect : COLLECT =
 	       | NONE                       => Tid.toString i)
 
 	fun transform (Void, tab)                    = VALUE("void")
-	  | transform (Ellipses, tab)                = IGNORED
+	  | transform (Ellipses, tab)                = VALUE("...")
 	  | transform (Qual(_, t), tab)              = transform(t, tab)
 	  | transform (Numeric(_, _, s, ik, _), tab) =
 	    VALUE((signToString s) ^ (intKindToString ik))
@@ -113,16 +113,17 @@ structure Collect : COLLECT =
 				c::cr => (Char.toLower c)::cr
 			      | nil   => nil)
 
-	fun checkPrefix(p, s) =
-	    (case String.tokens (fn #"_" => true | _ => false) s of
-		 s::_ => (case String.compare(p, s) of
-			      EQUAL => true
-			    | _     => false)
-	       | _    => false)
+	fun checkPrefix(nil, s)       = true
+	  | checkPrefix(p::pr, s::sr) = (case String.compare(p, s) of
+					     EQUAL => checkPrefix(pr, sr)
+					   | _     => false)
+	  | checkPrefix(_, _)         = false
+
+	fun splitString s = String.tokens (fn #"_" => true | _ => false) s
 		 
-	fun hasPrefix(p, FUNCTION(s, _)) = checkPrefix(p, s)
+	fun hasPrefix(p, FUNCTION(s, _)) = checkPrefix(p, splitString s)
 	  | hasPrefix(p, ENUM(cs))       = (case cs of
-						CONSTANT(s,_)::_ => checkPrefix(p, s)
+						CONSTANT(s,_)::_ => checkPrefix(p, splitString s)
 					      | _                => false)
 	  | hasPrefix(p, _)              = false
 
@@ -155,33 +156,41 @@ structure Collect : COLLECT =
 	  | createName (s::nil) = s
 	  | createName (s::sr)  = s ^ "_" ^ createName sr
 
-	fun transConstName(CONSTANT(s, v)) =
-	    (case String.tokens (fn #"_" => true | _ => false) s of
-		 _::sr => CONSTANT(createName sr, v)
-	       |  nil  => CONSTANT(s, v))
-	  | transConstName v               = v
+	fun cutPrefix(i, nil)   = ""
+	  | cutPrefix(i, s::sr) = if (i = 1) then createName sr else cutPrefix((i - 1), sr)
 
+	fun transConstName(i, CONSTANT(s, v)) = CONSTANT(cutPrefix(i, splitString s), v)
+	  | transConstName(_, v)              = v
 
-	fun transEnumName (ENUM(cs)) = ENUM(map transConstName cs)
-	  | transEnumName v          = v
+	fun transEnumName(i, ENUM(cs)) = ENUM(map (fn x => transConstName(i, x)) cs)
+	  | transEnumName(_, v)        = v
 
 	fun collect file =
 	    let
-		val tree  = ParseToAst.fileToAst file
-		val ast   = #ast tree
-		val tab   = #tidtab tree
-		val defs  = collect'(ast, tab)
-		val cnsts = List.filter (fn (ENUM(_)) => true | _ => false) defs
-		val funcs = List.filter (fn (FUNCTION(_, _)) => true | _ => false) defs
-		val gtkfs = List.filter glbFilter (List.filter (fn x => hasPrefix("gtk", x)) funcs)
-		val gtkcs = List.filter (fn x => hasPrefix("GTK", x)) cnsts
-		val gdkfs = List.filter (fn x => hasPrefix("gdk", x)) funcs
-		val gdkcs = List.filter (fn x => hasPrefix("GDK", x)) cnsts
+		val tree          = ParseToAst.fileToAst file
+		val ast           = #ast tree
+		val tab           = #tidtab tree
+		val defs          = collect'(ast, tab)
+		val cnsts         = List.filter (fn (ENUM(_)) => true | _ => false) defs
+		val funcs         = List.filter (fn (FUNCTION(_, _)) => true | _ => false) defs
+		val gtkrfl        = fn x => hasPrefix(["gtk"], x)
+		val cvsfl         = fn x => hasPrefix(["gtk", "canvas"], x)
+		val gtkrcfl       = fn x => hasPrefix(["GTK"], x)
+		val cvscfl        = fn x => hasPrefix(["GTK", "CANVAS"], x)
+		val gtkrf         = List.filter glbFilter (List.filter gtkrfl funcs)
+		val gtkrc         = List.filter gtkrcfl cnsts
+		val (cvfs, gtkfs) = List.partition cvsfl gtkrf
+		val (cvcs, gtkcs) = List.partition cvscfl gtkrc
+		val gdkfs         = List.filter (fn x => hasPrefix(["gdk"], x)) funcs
+		val gdkcs         = List.filter (fn x => hasPrefix(["GDK"], x)) cnsts
+		val filCanvas     = fn "gtk" => false | "canvas" => false | _ => true
 	    in
 		(map (fn x => transName((fn "gtk" => false | _ => true), x)) gtkfs,
-		 map transEnumName gtkcs,
+		 map (fn x => transEnumName(1, x)) gtkcs,
 		 map (fn x => transName((fn "gdk" => false | _ => true), x)) gdkfs,
-		 map transEnumName gdkcs)
+		 map (fn x => transEnumName(1, x)) gdkcs,
+		 map (fn x => transName(filCanvas, x)) cvfs,
+		 map (fn x => transEnumName(2, x)) cvcs)
 	    end
 
 	val ptrLs          = ["char", "unsigned char",
@@ -209,14 +218,19 @@ structure Collect : COLLECT =
 	fun isStringPtr (POINTER(VALUE(s))) = List.exists (fn x => compare(s, x)) strLs
 	  | isStringPtr _                   = false
 
+	fun isVAList (VALUE("..."))     = true
+	  | isVAList (VALUE("va_list")) = true
+	  | isVAList _                  = false
+
 	fun checkVal v =
-		 if isObjectPtr v then PObject else (if isStringPtr v then PString else PNormal)
+		 if isObjectPtr v then PObject else
+		     (if isStringPtr v then PString else (if isVAList v then PList else PNormal))
 
-	fun emitArgs(ps, i, nil)    = ps "}\n"
-	  | emitArgs(ps, i, _::ar)  = (ps (" A" ^ (Int.toString i)); emitArgs(ps, (i + 1), ar))
+	fun emitArgs (ps, i, nil)   = ps "}\n"
+	  | emitArgs (ps, i, _::ar) = (ps (" A" ^ (Int.toString i)); emitArgs(ps, (i + 1), ar))
 
-	fun emitHeader(ps, s, nil)  = ps ("fun {" ^ s ^ " _}\n")
-	  | emitHeader(ps, s, args) = (ps ("fun {" ^ s); emitArgs(ps, 0, args))
+	fun emitHeader (ps, s, nil)  = ps ("fun {" ^ s ^ " _}\n")
+	  | emitHeader (ps, s, args) = (ps ("fun {" ^ s); emitArgs(ps, 0, args))
 
 	fun argWrapper(ps, x) =
 		 let
@@ -226,6 +240,7 @@ structure Collect : COLLECT =
 		     case checkVal ct of
 			 PObject => ps (" {ObjectToPointer A" ^ is ^ "}")
 		       | PString => ps (" {ByteString.toString A" ^ is ^ "}")
+		       | PList   => ps (" {VaArgListToOzList A" ^ is ^ "}")
 		       | PNormal => ps (" A" ^ is)
 		 end
 
@@ -246,6 +261,7 @@ structure Collect : COLLECT =
 				map pw args;
 				ps "}}\n")
 		  | PNormal => (ps ("   {Native." ^ (firstLower name)); map pw args; ps "}\n")
+		  | PList   => () (* this never happens *)
 	    end
 
 	fun returnPrimType (VALUE("void"))           = "unit"
@@ -262,6 +278,7 @@ structure Collect : COLLECT =
 	    (case checkVal v of
 		 PObject => "object"
 	       | PString => "string"
+	       | PList   => "va_arg list"
 	       | PNormal => returnPrimType v)
 
 	fun emitArgTypes(ps, nil)              = ps "unit"
@@ -309,6 +326,10 @@ structure Collect : COLLECT =
 	val expGDKFile = "GDKExport.oz"
 	val sigGDKFile = "GDK.oz.sig"
 
+	val wrpCanvasFile = "CanvasWrapper.oz"
+	val expCanvasFile = "CanvasExport.oz"
+	val sigCanvasFile = "Canvas.oz.sig"
+
 	val wrpGTKPrefix = ["%%%\n",
 			    "%%% Notice:\n",
 			    "%%%   This file is automatically generated.\n",
@@ -328,6 +349,7 @@ structure Collect : COLLECT =
 			    "%%%\n\n",
 			    "GTK = 'GTK'(\n",
 			    "         '$object' : GTKCore.'$object'\n",
+                            "         '$va_arg' : GTKCore.'$va_arg'\n",
 			    "         pointerToObject : GTKCore.pointerToObject\n",
 			    "         objectToPointer : GTKCore.objectToPointer\n",
 			    "         removeObject : GTKCore.removeObject\n",
@@ -344,7 +366,8 @@ structure Collect : COLLECT =
 			    "%%%   Please do not edit.\n",
 			    "%%%\n\n",
 			    "GDK = 'GDK'(\n",
-			    "         '$object' : GTKCore.'$object'\n"]
+			    "         '$object' : GTKCore.'$object'\n",
+			    "         '$va_arg' : GTKCore.'$va_arg'\n"]
 	    
 	val expGTKEnd = ["         )\n"]
 
@@ -366,6 +389,7 @@ structure Collect : COLLECT =
 	     "        signature GTK =\n",
 	     "            sig\n",
 	     "                type object = GTKCore.object\n\n",
+             "                datatype va_arg = datatype GTKCore.va_arg\n\n",
 	     "                val pointerToObject : object -> int\n",
 	     "                val objectToPointer : int -> object\n",
 	     "                val removeObject : int -> unit\n",
@@ -390,7 +414,8 @@ structure Collect : COLLECT =
 	     "    sig\n",
 	     "        signature GDK =\n",
 	     "            sig\n",
-	     "                type object = GTKCore.object\n\n"]
+	     "                type object = GTKCore.object\n\n",
+	     "                datatype va_arg = datatype GTKCore.va_arg\n\n"]
 
 	val sigGTKEnd =
 	    ["            end\n\n",
@@ -402,15 +427,55 @@ structure Collect : COLLECT =
 	     "        structure GDK : GDK\n",
 	     "    end\n"]
 
+	val wrpCanvasPrefix = ["%%%\n",
+			       "%%% Notice:\n",
+			       "%%%   This file is automatically generated.\n",
+			       "%%%   Please do not edit.\n",
+			       "%%%\n\n"]
+	    
+	val expCanvasPrefix = ["%%%\n",
+			       "%%% Notice:\n",
+			       "%%%   This file is automatically generated.\n",
+			       "%%%   Please do not edit.\n",
+			       "%%%\n\n",
+			       "CANVAS = 'CANVAS'(\n",
+			       "            '$object' : GTKCore.'$object'\n",
+			       "            '$va_arg' : GTKCore.'$va_arg'\n"]
+	    
+	val expCanvasEnd = ["            )\n"]
+
+	val sigCanvasPrefix =
+	    ["(*\n",
+	     " * Notice:\n",
+	     " *   This file is generated.\n",
+	     " *   Please do not edit.\n",
+	     " *\n",
+	     " *)\n",
+	     "\n",
+	     "import\n",
+	     "    structure GTKCore\n",
+	     "from \"GTKCore.ozf\"\n\n",
+	     "signature CANVAS_COMPONENT =\n",
+	     "    sig\n",
+	     "        signature CANVAS =\n",
+	     "            sig\n",
+	     "                type object = GTKCore.object\n\n",
+	     "                datatype va_arg = datatype GTKCore.va_arg\n\n"]
+
+	val sigCanvasEnd =
+	    ["            end\n\n",
+	     "        structure Canvas : CANVAS\n",
+	     "    end\n"]
+
 	fun alicegtk inFile =
 	    let
-		val (gtks, gtkcs, gdks, gdkcs) = collect inFile
-		val ws                         = ref (TextIO.openOut wrpGTKFile)
-		val is                         = ref (TextIO.openOut expGTKFile)
-		val ss                         = ref (TextIO.openOut sigGTKFile)
-		val pws                        = fn s => TextIO.output(!ws, s)
-		val pis                        = fn s => TextIO.output(!is, s)
-		val sis                        = fn s => TextIO.output(!ss, s)
+		val (gtks, gtkcs, gdks, gdkcs, gcvs, gcvcs) = collect inFile
+		val ws                                      = ref (TextIO.openOut wrpGTKFile)
+		val is                                      = ref (TextIO.openOut expGTKFile)
+		val ss                                      = ref (TextIO.openOut sigGTKFile)
+		val pws                                     = fn s => TextIO.output(!ws, s)
+		val pis                                     = fn s => TextIO.output(!is, s)
+		val sis                                     = fn s => TextIO.output(!ss, s)
 	    in
 		(writeText(pws, wrpGTKPrefix);
 		 writeText(pis, expGTKPrefix);
@@ -418,7 +483,7 @@ structure Collect : COLLECT =
 		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtks;
 		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gtkcs;
 		 writeText(pis, expGTKEnd); writeText(sis, sigGTKEnd);
-		 TextIO.closeOut (!ws); TextIO.closeOut (!is); TextIO.closeOut (!ss);
+		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
 		 ws := (TextIO.openOut wrpGDKFile);
 		 is := (TextIO.openOut expGDKFile);
 		 ss := (TextIO.openOut sigGDKFile);
@@ -428,7 +493,17 @@ structure Collect : COLLECT =
 		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdks;
 		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gdkcs;
 		 writeText(pis, expGDKEnd); writeText(sis, sigGDKEnd);
-		 TextIO.closeOut (!ws); TextIO.closeOut (!is); TextIO.closeOut (!ss))
+		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss);
+		 ws := (TextIO.openOut wrpCanvasFile);
+		 is := (TextIO.openOut expCanvasFile);
+		 ss := (TextIO.openOut sigCanvasFile);
+		 writeText(pws, wrpCanvasPrefix);
+		 writeText(pis, expCanvasPrefix);
+		 writeText(sis, sigCanvasPrefix);
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvs;
+		 app (fn x => emitWrapperInterface(pws, pis, sis, x)) gcvcs;
+		 writeText(pis, expCanvasEnd); writeText(sis, sigCanvasEnd);
+		 TextIO.closeOut(!ws); TextIO.closeOut(!is); TextIO.closeOut(!ss))
 	    end
 
     end

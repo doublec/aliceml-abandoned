@@ -17,6 +17,7 @@ export
    'GTKCore$' : GTKCore
 define
    Object
+   VaArg
    Dispatcher
 
    local
@@ -122,17 +123,27 @@ define
 	 end
       end
    in
+      %% SML va_arg list -> Oz List
+      fun {VaArgListToOzList As}
+	 case As
+	 of nil  then nil
+	 [] A|Ar then (A.1)|{VaArgListToOzList Ar} 
+	 end
+      end
+
       fun {Exit _}
 	 {Native.exit}
 	 {Dispatcher exit}
 	 unit
       end
-
+      
       %% Create Interface
       GTKCore = 'GTKCore'('$object'            : Object
+			  '$va_arg'            : VaArg
 			  pointerToObject      : PointerToObject
 			  objectToPointer      : ObjectToPointer
 			  removeObject         : RemoveObject
+			  vaArgListToOzList    : VaArgListToOzList
 			  signalConnect        : SignalConnect
 			  signalDisconnect     : SignalDisconnect
 			  signalHandlerBlock   : SignalHandlerBlock

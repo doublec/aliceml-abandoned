@@ -17,6 +17,13 @@ signature GTK_CORE_COMPONENT =
 	    sig
 		type object
 
+		datatype va_arg =
+		    va_bool   of bool
+		  | va_int    of int
+		  | va_float  of real
+		  | va_string of string
+		  | va_object of object
+
                 val pointerToObject : object -> int
                 val objectToPointer : int -> object
                 val removeObject : int -> unit
