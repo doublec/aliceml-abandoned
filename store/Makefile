@@ -8,16 +8,11 @@ OBJS = $(SRCS:%.cc=%.o)
 
 .PHONY: all clean distclean
 
-all: libstore.a #test
+all: libstore.a
 
 libstore.a: StoreConfig.hh $(OBJS)
 	ar rc libstore.a $(OBJS) || exit 1
 	ranlib libstore.a
-
-test: test.o
-	cd ../adt && make distclean all
-#	$(CXX) $(CXXFLAGS) -I.. -o test.o test.cc
-	$(LD) $(CXXFLAGS) -o $@ $< -L../adt -L../store -lstore -ladt
 
 StoreConfig.hh: StoreConfig
 	./StoreConfig
