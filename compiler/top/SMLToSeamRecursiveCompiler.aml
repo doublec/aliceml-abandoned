@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000-2002
+ *   Leif Kornstaedt, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,14 +19,14 @@ import structure MkSwitches          from "../infrastructure/MkSwitches"
 import structure MkFrontendCommon    from "../frontend-common/MkFrontendCommon"
 import structure MkFrontendSML       from "../frontend-sml/MkFrontendSML"
 import structure MkBackendCommon     from "../backend-common/MkBackendCommon"
-import structure MkBackendStockwerk  from "../backend-stockwerk/MkBackendStockwerk"
+import structure MkBackendSeam       from "../backend-seam/MkBackendSeam"
 import structure Error               from "../infrastructure/Error"
 import structure MkCompiler          from "MkCompiler"
 import structure MkRecursiveCompiler
        type sig_loader
        type mod_loader               from "MkRecursiveCompiler"
 
-structure SMLToStockwerkRecursiveCompiler =
+structure SMLToSeamRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
@@ -46,12 +46,12 @@ structure SMLToStockwerkRecursiveCompiler =
 	    MkFrontendCommon(val loadSig = loadSig
 			     structure Switches = Switches)
 
-	structure BackendStockwerk =
-	    MkBackendStockwerk(structure ComponentManager = ComponentManager
-			       structure Switches = Switches)
+	structure BackendSeam =
+	    MkBackendSeam(structure ComponentManager = ComponentManager
+			  structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(val isCross = BackendStockwerk.isCross
+	    MkBackendCommon(val isCross = BackendSeam.isCross
 			    val loadMod = loadMod
 			    structure Switches = Switches)
 
@@ -60,7 +60,7 @@ structure SMLToStockwerkRecursiveCompiler =
 		       structure FrontendSpecific = FrontendSML
 		       structure FrontendCommon   = FrontendCommon
 		       structure BackendCommon    = BackendCommon
-		       structure BackendSpecific  = BackendStockwerk)
+		       structure BackendSpecific  = BackendSeam)
 
 	structure RecursiveCompiler =
 	    MkRecursiveCompiler(structure ComponentManager = ComponentManager

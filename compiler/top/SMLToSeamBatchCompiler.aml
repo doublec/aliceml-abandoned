@@ -3,24 +3,19 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import
-    structure MkBatchCompiler
-from "MkBatchCompiler"
+import structure MkBatchCompiler            from "MkBatchCompiler"
+import structure SMLToSeamRecursiveCompiler from "SMLToSeamRecursiveCompiler"
 
-import
-    structure SMLToStockwerkRecursiveCompiler
-from "SMLToStockwerkRecursiveCompiler"
-
-structure SMLToStockwerkBatchCompiler =
+structure SMLToSeamBatchCompiler =
     MkBatchCompiler(structure RecursiveCompiler =
-			SMLToStockwerkRecursiveCompiler
+			SMLToSeamRecursiveCompiler
 		    val executableHeader =
 			"#!/bin/sh\nexec alicerun $0 \"$@\"\n"
 		    val extension = "stc")

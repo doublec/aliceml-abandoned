@@ -4,15 +4,14 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import structure MkToplevel from "MkToplevel"
-import structure SMLToStockwerkRecursiveCompiler
-					from "SMLToStockwerkRecursiveCompiler"
+import structure MkToplevel                 from "MkToplevel"
+import structure SMLToSeamRecursiveCompiler from "SMLToSeamRecursiveCompiler"
 
-structure SMLToStockwerkToplevel = MkToplevel(SMLToStockwerkRecursiveCompiler)
+structure SMLToSeamToplevel = MkToplevel(SMLToSeamRecursiveCompiler)
