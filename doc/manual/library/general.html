@@ -48,6 +48,7 @@
 	exception Size
 	exception Span
 	exception Subscript
+	exception Unordered
 
 	val exnName :    exn -> string
 	val exnMessage : exn -> string
@@ -73,11 +74,19 @@
 <?php section("description", "description") ?>
 
   <P>
-    Items not described here are as in the  Standard ML Basis'
+    Items not described here are as in the Standard ML Basis'
     <A href="http://SML.sourceforge.net/Basis/general.html"><TT>General</TT></A> structure.
   </P>
 
   <DL>
+    <DT>
+      <TT>exception Unordered</TT>
+    </DT>
+    <DD>
+      <P>Indicates that two values are incomparable with respect to a partial
+      ordering.</P>
+    </DD>
+
     <DT>
       <TT>inverse <I>order</I></TT>
     </DT>
