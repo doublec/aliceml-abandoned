@@ -13,6 +13,9 @@ struct
 
     val dbExc    = newDB 0 (* Exceptions. *)
     val dbRecomp = newDB 1 (* Recomputation. *)
+    val dbClone  = newDB 2 (* Clones. *)
+    val dbBaB    = newDB 3 (* Branch and Bound. *)
+    val dbSearch = newDB 4 (* Search. *)
 
     val dbZero = Word31.fromInt 0 (* Empty mask *)
     val dbNone = dbZero

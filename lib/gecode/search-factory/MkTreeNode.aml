@@ -1,8 +1,8 @@
-import signature POLICY      from "TREENODE-sig"
-import signature TREENODE    from "TREENODE-sig"
+import signature POLICY      from "MKTREENODE-sig"
+import signature MKTREENODE  from "MKTREENODE-sig"
 import functor   MkSpaceNode from "MkSpaceNode"
 
-functor MkTreeNode (Policy:POLICY) :> TREENODE =
+structure MkTreeNode :> MKTREENODE = fct (Policy:POLICY) =>
 struct
 
   structure SpaceNode = MkSpaceNode Policy
@@ -21,7 +21,7 @@ struct
           left  = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 1)) ,
           right = lazy fromSpaceNode (SpaceNode.newChild (spaceNode, 2)) }
 
-  fun new space = fromSpaceNode (SpaceNode.new space)
+  val root = fromSpaceNode SpaceNode.root
 
   fun getLeft  (Node node) = #left node
   fun getRight (Node node) = #right node
@@ -29,5 +29,7 @@ struct
   fun getSpace (Node node) = SpaceNode.getSpace (#spacenode node)
   fun getPath  (Node node) = SpaceNode.getPath  (#spacenode node)
   fun status   (Node node) = SpaceNode.status   (#spacenode node)
+
+  val setBest = SpaceNode.setBest
 
 end

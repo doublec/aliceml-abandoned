@@ -1,19 +1,22 @@
 Debug.stc:
 
-SPACENODE-sig.stc: \
+MKSPACENODE-sig.stc: \
+	Debug.stc
 
 MkSpaceNode.stc: \
-	SPACENODE-sig.stc \
-	SPACENODE-sig.stc
+	Debug.stc \
+	MKSPACENODE-sig.stc \
+	MKSPACENODE-sig.stc \
 
-TREENODE-sig.stc: \
-	SPACENODE-sig.stc
+MKTREENODE-sig.stc: \
+	MKSPACENODE-sig.stc
 
 MkTreeNode.stc: \
-	TREENODE-sig.stc \
-	TREENODE-sig.stc \
+	MKTREENODE-sig.stc \
+	MKTREENODE-sig.stc \
 	MkSpaceNode.stc
 
 Test.stc: \
+	Debug.stc \
 	MkTreeNode.stc \
 

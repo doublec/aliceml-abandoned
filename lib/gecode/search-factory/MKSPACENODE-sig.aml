@@ -1,0 +1,46 @@
+import structure Space from "x-alice:/lib/gecode/Space"
+import structure Debug from "Debug"
+
+(* Recomputation policy. *)
+signature POLICY =
+sig
+  val root : Space.space  (* This root space is cloned at functor application.*)
+  val copyq : int -> bool (* All spaces s.t. copyq depth = true are cloned *)
+
+  (* Branch and bound *)
+  type sol
+  val getSolution : Space.space -> sol
+  val bound : (Space.space * sol -> unit) option
+
+  val mask : Debug.db_mask
+end
+
+
+signature MKSPACENODE = fct (Policy:POLICY) ->
+sig
+  type space_node
+  type t = space_node
+
+  exception Child
+
+  (* Returns a space_node corresponding to the root space Policy.root. *)
+  val root : space_node
+
+  (* newChild (mom, i)
+   * Creates a new space_node as child of node mom with alternative number i.
+   * Raises Child if this alternative does not exist. *)
+  val newChild : space_node * int -> space_node
+
+  (* getSpace node
+   * returns the computation space associated with this node. *)
+  val getSpace : space_node -> Space.space
+
+  val status : space_node -> Space.status
+
+  (* Returns the path corresponding to this node. *)
+  val getPath : space_node -> int list
+
+  (* Sets the current best solution. *)
+  val setBest : Policy.sol -> unit
+
+end

@@ -1,3 +1,4 @@
+import structure Debug      from "Debug"
 import structure MkTreeNode from "MkTreeNode"
 import structure Space      from "x-alice:/lib/gecode/Space"
 import structure FD         from "x-alice:/lib/gecode/FD"
@@ -5,11 +6,7 @@ import structure FD         from "x-alice:/lib/gecode/FD"
 import structure Explorer   from "x-alice:/tools/Explorer"
 
 
-
-(* Recomputation Policy : fixed distance *)
-val rdist = 3
-
-structure TreeNode = MkTreeNode (fun copyq d = d mod rdist = 0)
+open Debug
 
 val itos = Int.toString
 
@@ -42,6 +39,14 @@ fun script space =
     val kvars = Vector.tabulate
       (size+1, (fn i => if i<size then (1,vars%i) else (~1, sum)))
     fun getSolution space = Vector.map (toInt space) vars
+    fun bound (space, sol) =
+      let
+        val lsum = Vector.foldl (fn (e,s) => e+s) 0 sol
+        val vsum = fromInt space lsum
+      in
+        FD.rel (space, sum, FD.LE, vsum)
+      end
+      
   in
     (* Propagators. *)
     (FD.distinct (space, vars, cn) ;
@@ -60,7 +65,7 @@ fun script space =
      FD.linear (space, kvars, FD.EQ, 0, cn) ;
      
      FD.branch (space, reif2, FD.B_NONE, FD.B_MIN);
-     (getSolution, vars))
+     (getSolution, bound, vars))
   end
 
 fun queens space n cl =
@@ -102,38 +107,51 @@ fun printSol v =
     Vector.foldl (fn (a, s) => s ^ " ; " ^ itos a) "" v
     
 
+(* Recomputation Policy : fixed distance *)
+val rdist = 3
+
 (* The initial root space. *)
 val root = Space.new () 
-val (getSolution, _) = queensScript root
-val rootnode = TreeNode.new root
+val (getSolution, bound, _) = script root
+
+val mask = dbAll
+
+structure TreeNode = MkTreeNode (val root = root
+                                 fun copyq d = d mod rdist = 0
+                                 type sol = int Vector.t
+                                 val bound = SOME bound
+                                 val getSolution = getSolution
+                                 val mask = mask)
+val rootnode = TreeNode.root
+
+fun printd arg = Debug.dbPrint (mask, dbSearch, arg)
 
 fun print_path node =
   (List.app
-   (fn i => print ((Int.toString i) ^ ", "))
+   (fn i => printd ((Int.toString i) ^ ", "))
    (TreeNode.getPath node);
-   print "\n")
+   printd "\n")
 
 val nbsol = ref 0
 
 fun search node =
   case TreeNode.status node of
-    Space.FAILED => () (* (print "A failure at " ; print_path node) *)
+    Space.FAILED => (printd "A failure at " ; print_path node)
   | Space.SOLVED =>
     (
-(*
-    print "A solution (namely " ;
-    print (printSol (getSolution (TreeNode.getSpace node))) ;
-    print ") at " ; print_path node *)
+    printd "A solution (namely " ;
+    printd (printSol (getSolution (TreeNode.getSpace node))) ;
+    printd ") at " ; print_path node ;
     nbsol := !nbsol + 1)
 
   | Space.BRANCH _ =>
     (
-     (* print "A branch at " ; print_path node ; *)
+     printd "A branch at " ; print_path node ;
      search (TreeNode.getLeft node) ;
      search (TreeNode.getRight node) )
   
 
-val explorer = Explorer.exploreAllScript queensScript
+val explorer = Explorer.exploreAllScript script
 
 val _ =
   (search rootnode ;
