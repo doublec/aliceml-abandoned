@@ -27,7 +27,7 @@ LIGHTNING_SOURCES =
 endif
 
 SOURCES = \
-	WeakDictionary.cc Memory.cc Store.cc \
+	Map.cc WeakMap.cc Memory.cc Store.cc \
 	$(LIGHTNING_SOURCES)
 
 OBJS = $(SOURCES:%.cc=%.o)
