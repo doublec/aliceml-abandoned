@@ -8,7 +8,8 @@ INSTALLFILES_0 = \
 	style.css bg.gif alice.gif macros.php3 project.html \
 	index.html people.html papers.html download.html contact.html
 INSTALLFILES_DOWNLOAD_0 = \
-	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz COPYING
+	COPYING CHANGES
+#	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
 INSTALLFILES_PAPERS_0 = \
 	intermediate.ps
 INSTALLFILES = \
@@ -50,6 +51,9 @@ $(PREFIX)/bg.gif: ../manual/bg.gif
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/COPYING: ../../COPYING
+	install -c -m 444 $< $@
+
+$(PREFIX)/download/CHANGES: ../versions/changes.txt
 	install -c -m 444 $< $@
 
 $(PREFIX)/download/%-devel.tgz:
