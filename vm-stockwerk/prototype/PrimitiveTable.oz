@@ -250,8 +250,6 @@ define
 	      'Future.alarm\'': missing('Future.alarm\'')   %--**
 %		 fun {$ X} !!{Alarm (X + 500) div 1000} end
 	      'Future.await': fun {$ X} X end#r_v
-	      'Future.awaitOne': missing('Future.awaitOne')   %--**
-%		 fun {$ X Y} {WaitOr X Y} X end
 	      'Future.byneed':
 		 fun {$ Closure} transient({NewCell byneed(Closure)}) end#r_v
 	      'Future.concur':
@@ -961,7 +959,7 @@ define
 			   transform(AlicePrimitiveFunction
 				     tag(0 {ByteString.make F}))))
       [] value(Y) then Y   %--** cannot be abstracted again
-      [] missing(_) then {Value.byNeedFail X}   %--**
+      [] missing(_) then 0 % {Value.byNeedFail X}   %--**
       else {ImportOzModule X}
       end
    end

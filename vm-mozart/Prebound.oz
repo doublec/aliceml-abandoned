@@ -131,8 +131,6 @@ prepare
 	 fun {$ X} !!{Alarm (X + 500) div 1000} end
       'Future.await':
 	 fun {$ X} {Wait X} X end
-      'Future.awaitOne':
-	 fun {$ X Y} {WaitOr X Y} X end
       'Future.byneed':
 	 fun {$ P}
 	    {ByNeed fun {$}

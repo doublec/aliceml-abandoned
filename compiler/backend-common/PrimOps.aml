@@ -59,7 +59,6 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Future.Future", NONE);
 		ins ("Future.alarm'", SOME Unary);
 		ins ("Future.await", SOME Unary);
-		ins ("Future.awaitOne", SOME (Tuple 2));
 		ins ("Future.byneed", SOME Unary);
 		ins ("Future.concur", SOME Unary);
 		ins ("Future.isFailed", SOME Unary);
