@@ -145,7 +145,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Unbox System.Char); emit (LdcI4 (WideChar.ord c));
 	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (LitTest (StringLit s), elseLabel) =
-	    (emit (Castclass System.StringTy); emit Dup; 
+	    (emit (Castclass System.StringTy); emit Dup;
 	     emit (Ldstr s);
 	     emit (Call (false, System.String, "Equals",
 			 [System.StringTy, System.StringTy], BoolTy));
@@ -177,6 +177,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emitId id; emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (Alice.ConVal, "Value", System.ObjectTy));
 	     declareArgs (args, true))
+	  | genTest (StaticConTest _, _) =   (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.genTest: StaticConTest"
+	  | genTest (StaticConAppTest _, _) =   (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.genTest: StaticConAppTest"
 	  | genTest (RefAppTest id, elseLabel) =
 	    (emit (Castclass Alice.CellTy);
 	     emit (Call (true, Alice.Cell, "Access", nil, System.ObjectTy));
@@ -396,6 +400,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (ConExp (_, id, SOME _), PREPARE) =
 	    (emitId id;
 	     emit (Newobj (Alice.ConConstructor, [System.ObjectTy])))
+	  | genExp (StaticConExp (_, _, _), _) =   (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.genExp: StaticConExp"
 	  | genExp (RefExp _, PREPARE) =
 	    emit (Ldsfld (Alice.Prebound.General, "ref", System.ObjectTy))
 	  | genExp (TupExp (_, nil), PREPARE) = emit Ldnull
@@ -551,6 +557,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genExp (ConAppExp (_, id, args), BOTH) =
 	    (emitId id; genArgs args;
 	     emit (Newobj (Alice.ConVal, [System.ObjectTy, System.ObjectTy])))
+	  | genExp (StaticConAppExp (_, _, _), _) =   (*--** implement *)
+	    raise Crash.Crash "CodeGenPhase.genExp: StaticConAppExp"
 	  | genExp (RefAppExp (_, _), PREPARE) =
 	    emit (Newobj (Alice.Cell, nil))
 	  | genExp (RefAppExp (_, id), FILL) =
