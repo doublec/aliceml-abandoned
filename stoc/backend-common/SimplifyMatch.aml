@@ -433,40 +433,42 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	    exception MustBeUnary
 
-	    fun typToArity typ =
-		if Type.isTuple typ then TUP (Type.asTuple typ)
-		else if Type.isProd typ then
-		    let
-			fun convert row =
-			    if Type.isEmptyRow row then
-				if Type.isUnknownRow row then raise MustBeUnary
-				else nil
-			    else
-				(case Type.headRow row of
-				     (label, [typ]) => (label, typ)
-				   | (_, _) => raise MustBeUnary)::
-				convert (Type.tailRow row)
-		    in
-			case LabelSort.sort (convert (Type.asProd typ)) of
-			    (labelTypList, LabelSort.Tup _) =>
-				TUP (List.map #2 labelTypList)
-			  | (labelTypList, LabelSort.Rec) => REC labelTypList
-		    end handle MustBeUnary => ONE
+	    local
+		fun convert row =
+		    if Type.isEmptyRow row then
+			if Type.isUnknownRow row then raise MustBeUnary
+			else nil
+		    else
+			(case Type.headRow row of
+			     (label, [typ]) => (label, typ)
+			   | (_, _) => raise MustBeUnary)::
+			convert (Type.tailRow row)
+	    in
+		fun typToArity typ =
+		    if Type.isTuple typ then TUP (Type.asTuple typ)
+		    else if Type.isProd typ then
+			(case LabelSort.sort (convert (Type.asProd typ)) of
+			     (labelTypList, LabelSort.Tup _) =>
+				 TUP (List.map #2 labelTypList)
+			   | (labelTypList, LabelSort.Rec) => REC labelTypList)
+			handle MustBeUnary => ONE
 		else ONE
+	    end
 
 	    exception BindsAll     (* precondition 1 not satisfied *)
 	    exception SideEffect   (* precondition 2 not satisfied *)
+	    exception NotNAry
 
 	    fun deconstructs (WildPat _) = false
-	      | deconstructs (LitPat _) = true
+	      | deconstructs (LitPat _) = raise NotNAry
 	      | deconstructs (VarPat (_, _)) = raise BindsAll
-	      | deconstructs (TagPat (_, _, _)) = true
-	      | deconstructs (ConPat (_, _, _)) = true
-	      | deconstructs (RefPat _) = true
+	      | deconstructs (TagPat (_, _, _)) = raise NotNAry
+	      | deconstructs (ConPat (_, _, _)) = raise NotNAry
+	      | deconstructs (RefPat _) = raise NotNAry
 	      | deconstructs (TupPat (_, _)) = true
 	      | deconstructs (RowPat (_, _)) = true
-	      | deconstructs (VecPat (_, _)) = true
-	      | deconstructs (AppPat (_, _, _)) = true
+	      | deconstructs (VecPat (_, _)) = raise NotNAry
+	      | deconstructs (AppPat (_, _, _)) = raise NotNAry
 	      | deconstructs (AsPat (_, pat1, pat2)) =
 		deconstructs pat1 orelse deconstructs pat2
 	      | deconstructs (AltPat (_, pats)) = List.exists deconstructs pats
@@ -477,8 +479,9 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		deconstructs pat orelse raise SideEffect
 
 	    fun checkMatches matches =
-		(List.exists (fn (_, pat, _) => deconstructs pat) matches)
-		handle (BindsAll | SideEffect) => false
+		(List.foldl (fn ((_, pat, _), b) =>
+			     deconstructs pat orelse b) false matches)
+		handle (BindsAll | SideEffect | NotNAry) => false
 
 	    fun process (ONE, graph, consequents, info) =
 		let
@@ -520,16 +523,16 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    (O.RecArgs labelIdList, graph, mapping, consequents)
 		end
 	      | process (_, _, _, _) =
-		raise Crash.Crash "SimplifyMatch.process 3"
+		raise Crash.Crash "SimplifyMatch.process"
 	in
 	    fun buildFunArgs (matches as (_, pat, _)::_, errStms) =
 		let
-		    val (graph, consequents) = buildGraph (matches, errStms)
-		    val args =
+		    val arity =
 			if checkMatches matches then typToArity (typPat pat)
 			else ONE
+		    val (graph, consequents) = buildGraph (matches, errStms)
 		in
-		    process (args, graph, consequents, infoPat pat)
+		    process (arity, graph, consequents, infoPat pat)
 		end
 	      | buildFunArgs (nil, _) =
 		raise Crash.Crash "SimplifyMatch.buildFunArgs"
