@@ -28,15 +28,16 @@ define
 		[] S then S
 		end}
 
-   fun {LoadSign U}
-      try
-	 case {Pickle.load U}.'export'
+   fun {LoadPickleAndSign U}
+      try F in
+	 F = {Pickle.load U}
+	 case F.'export'
 	 of sig(unit) then
 	    %% component produced by the hybrid compiler
 	    'NONE'
 	 [] sig(Sig) then
 	    %% Stockhausen component
-	    'SOME'(Sig)
+	    'SOME'(F#Sig)
 	 else
 	    %% non-Stockhausen component
 	    'NONE'
@@ -57,10 +58,9 @@ define
 		  'extension': Extension
 		  'load':
 		     fun {$ URL}
-			case {LoadSign URL} of 'SOME'(_#Type) then F in
-			   F = {Pickle.load URL}
+			case {LoadPickleAndSign URL} of 'SOME'(F#(_#Type)) then
 			   Type#{{Property.get 'alice.modulemanager'}
-				 apply(F $)}
+				 apply(url: URL F $)}
 			[] 'NONE' then
 			   {Exception.raiseError alice(CorruptException)} unit
 			end
@@ -72,7 +72,13 @@ define
 			  fun {$ _} Value end} Filename '' 9}
 			unit
 		     end
-		  'loadSign': LoadSign
+		  'loadSign':
+		     fun {$ URL}
+			case {LoadPickleAndSign URL}
+			of 'SOME'(_#Sign) then 'SOME'(Sign)
+			[] 'NONE' then 'NONE'
+			end
+		     end
 		  'replaceSign':
 		     fun {$ U Sig Filename} F1 F2 in
 			F1 = {Pickle.load U}
