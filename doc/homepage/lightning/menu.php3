@@ -12,7 +12,7 @@
   The System:<BR>
   <A href="usage.php3">Usage</A><BR>
   <A href="libraries.php3">Libraries</A><BR>
-  <A href="interop.php3">Lightning Interoperability</A><BR>
+  <A href="interop.php3">Interoperability</A><BR>
   <BR>
   <A href="examples.php3">Examples</A>
 </P>

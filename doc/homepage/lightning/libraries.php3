@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lighning - Libraries", "libraries") ?>
+<?php heading("Oz for NGWS - Libraries", "libraries") ?>
 
 
 
@@ -49,7 +49,7 @@
 <?php section("basis", "basis library") ?>
 
   <P>
-    Alice for Lightning only provides parts of the
+    Alice for NGWS only provides parts of the
     <A href="http://www.dina.kvl.dk/~sestoft/sml/sml-std-basis.html">SML
     Basis Library</A>. The following structures are complete:
   </P>
@@ -185,7 +185,7 @@
 
   <P>
     Structures from the Standard ML Basis Library not listed above are not
-    available in Alice for Lightning.
+    available in Alice for NGWS.
   </P>
 
   <P>

@@ -1,5 +1,5 @@
 BODY {
-	background:	url(../bg.gif) repeat-y white;
+	background:	url(bg.gif) repeat-y white;
 	position:	relative;
 	margin-left:	210px;
 	margin-right:	10px;
@@ -56,7 +56,7 @@ P.menu {
 	margin-left:	20px;
 	width:		100%;
 	font-weight:	bold;
-	background:	url(../musicemb.jpg) no-repeat white left;
+	background:	url(musicemb.jpg) no-repeat white left;
 }
 
 P.menu A {

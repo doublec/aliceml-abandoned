@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Laziness", "laziness") ?>
+<?php heading("Oz for NGWS - Laziness", "laziness") ?>
 
 
 

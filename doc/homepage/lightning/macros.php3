@@ -17,7 +17,7 @@
   <H1>
   oz<BR>
   for<BR>
-  lightning.<BR>
+  ngws.<BR>
   <BR>
   <BR>
   <?php echo($chapter) ?>
@@ -25,7 +25,7 @@
   </H1>
 
 <!--
-  <IMG align="right" src="../stockhausen.gif">
+  <IMG align="right" src="stockhausen.gif">
 -->
 
   <?php

@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Extended Module System",
+<?php heading("Oz for NGWS - Extended Module System",
 		"extended <BR> module <BR> system") ?>
 
 
