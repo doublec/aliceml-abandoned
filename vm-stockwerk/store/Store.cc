@@ -35,7 +35,6 @@
 //
 // Class Fields and Global Vars
 //
-
 MemChunk *Store::roots[STORE_GENERATION_NUM];
 u_int Store::memMax[STORE_GENERATION_NUM];
 u_int Store::memFree;
@@ -581,7 +580,32 @@ inline void Store::DoGC(word &root, const u_int gen) {
   }
   // Clear GC Flag and Calc Limits for next GC
   needGC = 0;
-  NextGCLimits();
+  // Calc Limits for next GC
+  //  u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
+  u_int wanted;
+  switch (hdrGen) {
+  case 1:
+    wanted = memMax[1];
+    break;
+  case 2:
+    {
+      // to be done: find appropriate heuristics
+      u_int usage = GetMemUsage(roots[2]);
+      if (usage >= 35 * 1024 * 1024)
+	usage -= 35 * 1024 * 1024;
+      wanted = min(memMax[2], usage * 4 + 35 * 1024 * 1024);
+    }
+    break;
+  default:
+    Error("wrong header gen");
+  }
+  // Try to align them to block size
+  s_int block_size = STORE_MEMCHUNK_SIZE;
+  s_int block_dist = wanted % block_size;
+  if (block_dist > 0)
+    block_dist = block_size - block_dist;
+  wanted += min(block_dist, ((wanted * memTolerance) / 100));
+  memMax[hdrGen] = wanted;
   // Switch back to Generation Zero and Adjust Root Set
   curChunk = roots[0];
   chunkTop = curChunk->GetTop();
@@ -602,6 +626,7 @@ void Store::DoGC(word &root) {
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "GCing...\n");
 #endif
+  //MemStat();
 #if defined(STORE_GC_DEBUG)
   std::fprintf(stderr, "Pre-GC checking...\n");
   VerifyGC(root);
@@ -651,6 +676,7 @@ void Store::DoGC(word &root) {
   std::fprintf(stderr, "Post-GC checking...\n");
   VerifyGC(root);
 #endif
+  //MemStat();
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "done.\n");
 #endif
@@ -758,8 +784,15 @@ static void Verify(MemChunk **roots, word x) {
     AssertStore(PointerOp::DecodeInt(x) != INVALID_INT);
   } else {
     Block *p = PointerOp::RemoveTag(x);
-    if (GCHelper::AlreadyMoved(p)) {
-      std::fprintf(stderr, "Verify: found forward pointer\n");
+    if (p == NULL) {
+      fprintf(stderr, "Verify: null pointer encountered: %x --> %x\n",
+	      (word) p, x);
+      PrintFailurePath();
+      AssertStore(0);
+    }
+    else if (GCHelper::AlreadyMoved(p)) {
+      std::fprintf(stderr, "Verify: found forward pointer %x (%x)\n",
+		   (word) p, x);
       PrintFailurePath();
       AssertStore(0);
     }
@@ -853,8 +886,8 @@ void Store::ForceGC(word &root, const u_int gen) {
 #endif
 
 void Store::MemStat() {
-  std::printf("---\n");
-  std::printf("ingen_set size: %u\n", intgenSet->GetSize());
+//    std::printf("---\n");
+//    std::printf("ingen_set size: %u\n", intgenSet->GetSize());
   std::fprintf(stderr, "---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM - 1; i++) {
     MemChunk *chunk = roots[i];
@@ -871,6 +904,17 @@ void Store::MemStat() {
   }
   std::fprintf(stderr, "---\n");
   std::fflush(stderr);
+}
+
+void Store::JITReplaceArg(u_int i, Block *p, word v) {
+  AssertStore(v != (word) 0);
+  if (!PointerOp::IsInt(v)) {
+    u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
+    u_int mygen  = HeaderOp::DecodeGeneration(p);
+    if ((valgen < mygen) && (!HeaderOp::IsChildish(p)))
+      Store::AddToIntgenSet(p);
+  }
+  p->InitArg(i, v);
 }
 
 #if defined(STORE_PROFILE)
