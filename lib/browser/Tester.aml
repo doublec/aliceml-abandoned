@@ -16,7 +16,7 @@ structure EList = Reflect.ReflectType
     ( type t = ((int * int) * (int * int)) list );
 val e_list = EList.x;
 
-UnsafeInspector.inspect ([((2,2),(2,2)),((2,3),(2,3))],e_list);
+UnsafeInspector.inspect ([((2,2),(2,4)),((2,4),(2,2))],e_list);
 
 structure EVect = Reflect.ReflectType
     ( type t = int vector vector);

@@ -58,7 +58,9 @@ struct
 	if !relmode  
 	    then if Type.isCon t 
 		 orelse (Type.isApply t
-                         andalso Type.isCon(#1(Type.asApply(t))) )
+                         andalso Type.isCon(#1(Type.asApply(t)))
+		         andalso not(Type.equal(compList,
+						#1(Type.asApply(t))) ) )
 		     then createUsualGraph (va,t,p,i,d)
 		 else
 		 let val ind = if p = Empty then i else getAncIndex p
@@ -76,14 +78,16 @@ struct
 				 createRelNode (desc,Empty,p,i,str^" as ",
 						relman,setGroup) 
 			     val _ = relnumber := (!relnumber) + 1 
-			     val c = createUsualGraph (va,t,node,0,d)  
+			     val c = createUsualGraph (va,t,node,0,d) 
+			     val actrelman = RelManDictionary.return(ind,
+								     reldict)
 			 in ( case c of    
 			          Simple(_) => c
                                 | Empty => c    
                                 | _ => ( setContent (node,c)   
 					; RelManDictionary.update(ind,
 								  reldict, 
-					        List.append([node],relman))
+					        List.append([node],actrelman))
 					; node ) )
 			 end      
 		    | SOME n => let val rep = ( case n of 
@@ -399,32 +403,37 @@ struct
 						     relman,setGroup) 
 				      val _ = relnumber := (!relnumber) + 1 
 				      val c = docToNode(doc,node,0,d)
+				      val actrelman = 
+					  RelManDictionary.return(ind,reldict)
 				  in ( case c of    
 				      Simple(_) => c
 				    | Empty => c    
 				    | _ => ( setContent (node,c)   
 					    ; RelManDictionary.update(ind,
 								      reldict, 
-						    List.append([node],relman))
+						    List.append([node],
+								actrelman))
 					    ; node ) )
 				  end      
-			     | SOME n => let val rep = ( case n of 
-							RelNode(rr) => #rep(rr)
-						      | _ => "")
-					     val str = iterTake rep	
-					     val m = incrCounter n
-					     val node = 
-					     createRelRefNode (INTERPUNCT,p,i,
-							       str,m,setGroup)
-					     val part = 
-						 List.partition (fn x => x = n)
-						                relman
-					     val restlist = #1(part)
-					 in (RelManDictionary.update(ind,
-								     reldict,
-						   List.append([m],restlist))
-					     ; node)
-					 end)
+			     | SOME n 
+			       => let val rep = (case n of 
+						 RelNode(rr) => #rep(rr)
+					       | _ => "")
+				      val str = iterTake rep	
+				      val m = incrCounter n
+				      val node = 
+					  createRelRefNode (INTERPUNCT,p,i,
+							    str,m,setGroup)
+				      val actrelman = 
+					  RelManDictionary.return(ind,reldict)
+				      val part = List.partition (fn x => x = n)
+					                        actrelman
+				      val restlist = #1(part)
+				  in (RelManDictionary.update(ind,
+							      reldict,
+					           List.append([m],restlist))
+				      ; node)
+				  end)
 			  end   
 		 else docToNode (doc,p,i,d) 
 	      end )

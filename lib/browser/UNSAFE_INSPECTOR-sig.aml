@@ -25,6 +25,8 @@ sig
     val set_depth: int -> unit
  
     val set_relmode: bool -> unit
+ 
+    val set_tokenmode: bool -> unit
 	
     val init: unit -> unit
 	

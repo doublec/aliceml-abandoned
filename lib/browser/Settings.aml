@@ -22,5 +22,6 @@ struct
     val max_y = ref 0.0 
     val relmode = ref false
     val relnumber = ref 0
+    val tokenmode = ref false
 
 end
