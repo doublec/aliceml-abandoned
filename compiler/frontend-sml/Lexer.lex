@@ -158,7 +158,7 @@
 		   | #"\\" => convert(k+1, #"\\"::cs)
 		   | #"^"  => let val c = String.sub(s,k+1) in
 				  convert(k+2, WideChar.chr(Char.ord c -
-							    Char.ord #"0")::cs)
+							    Char.ord #"@")::cs)
 			      end
 
 		   | #"u"  => let val s' = String.extract(s, k+1, SOME 4) in
