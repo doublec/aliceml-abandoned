@@ -28,8 +28,7 @@ import structure String                            from "String"
 import structure CharVectorSlice                   from "CharVectorSlice"
 import signature SUBSTRING                         from "SUBSTRING-sig"
 
-structure Substring :> SUBSTRING where type string = string
-				 where type char   = char =
+structure Substring : SUBSTRING =
 struct
     type char			= char
     type string			= string
