@@ -1,3 +1,15 @@
+###
+### Author:
+###   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+###
+### Copyright:
+###   Leif Kornstaedt, 2000-2001
+###
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+###
+
 PREFIX = /opt/stockhausen-devel
 
 STOC = STOC_MOZART=../../stoc/backend-mozart/stoc-mozart.exe \
