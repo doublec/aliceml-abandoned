@@ -86,4 +86,19 @@ alicelink -v --include ./ ./Foo -o LinkedFoo.ozf</PRE>
 </DL>
 
 
+<?php section("environment-variables", "environment variables") ?>
+
+<P>The static linker is parameterized by the same environment variables
+as the <A href="machine.html#environment-variables">virtual machine</A>,
+plus:</P>
+
+<DL>
+  <DT><TT>ALICE_TRACE_REWRITE</TT>
+  <DD><P>if set (its value does not matter), causes rewriting of URLs
+    to output trace messages to standard error.  Use this for debugging
+    when you have multiple (possibly overlapping) rewrite rules and you
+    want to understand the results of rewriting.</P>
+</DL>
+
+
 <?php footing() ?>

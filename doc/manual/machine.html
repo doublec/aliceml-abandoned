@@ -35,11 +35,14 @@ even if no live threads are left.</P>
 
 <?php section("environment-variables", "environment variables") ?>
 
+<P>The virtual machine is parameterized by the following
+environment variables:</P>
+
 <DL>
-  <DT><TT>STOCKHOME</TT>
-  <DD>specifies the directory where Alice is installed.  If not set,
+  <DT><P><TT>STOCKHOME</TT></P>
+  <DD><P>specifies the directory where Alice is installed.  If not set,
     <TT>alicerun</TT> guesses its name by looking in the following
-    directories, in that order:
+    directories, in that order:</P>
     <OL>
       <LI><TT>/usr/share/alice</TT>, which is the default installation
 	path on some Unix variants
@@ -48,10 +51,11 @@ even if no live threads are left.</P>
       <LI>The parent directory of the directory in which <TT>alicerun</TT>
 	resides.
     </OL>
+    <P></P>
   <DT><TT>ALICE_LOAD_PREFIX</TT>
   <DT><TT>ALICE_LOAD_SUFFIX</TT>
-  <DD>specify resolving methods to use when trying to access components.
-    Components are resolved with the following methods, in order:
+  <DD><P>specify resolving methods to use when trying to access components.
+    Components are resolved with the following methods, in order:</P>
     <OL><!--** mozart -->
       <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
 	before any of the following.</P>
