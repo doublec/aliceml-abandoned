@@ -127,8 +127,8 @@ M4 = m4
 ##
 
 LIBSYSTEMNATIVES0 = \
-	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \
-        Reflect
+	Config IODesc OS Unix CommandLine Component Debug Foreign Signal Socket \
+        Rand Reflect
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES =
