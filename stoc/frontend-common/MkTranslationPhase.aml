@@ -56,9 +56,8 @@ struct
 
     fun decodeArity t  = decodeArity'(#2(decomposeConarrow t))
     and decodeArity' t = if Type.isApply t
-			 then 1 + decodeArity'(#1(Type.asApply t))
+			 then 1 + decodeArity'(#2(Type.asApply t))
 			 else 0
-
 
   (* Names and labels *)
 
