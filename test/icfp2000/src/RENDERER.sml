@@ -21,21 +21,22 @@ sig
 	    , phong :    real }
 
     datatype object =
-	      Plane      of mat * mat * plane_face surface
-	    | Sphere     of mat * mat * sphere_face surface
-	    | Cube       of mat * mat * cube_face surface         (* Tier 2 *)
-	    | Cylinder   of mat * mat * cylinder_face surface     (* Tier 2 *)
-	    | Cone       of mat * mat * cone_face surface         (* Tier 2 *)
+	      Plane      of plane_face surface
+	    | Sphere     of sphere_face surface
+	    | Cube       of cube_face surface                     (* Tier 2 *)
+	    | Cylinder   of cylinder_face surface                 (* Tier 2 *)
+	    | Cone       of cone_face surface                     (* Tier 2 *)
 	    | Union      of object * object
 	    | Intersect  of object * object                       (* Tier 3 *)
 	    | Difference of object * object                       (* Tier 3 *)
+	    | Transform  of mat * mat * object
 
     datatype light =
 	      Directional of color * vec
 	    | Point       of color * point                        (* Tier 2 *)
 	    | Spot        of color * point * point * angle * real (* Tier 3 *)
 
-    val render :
+    val mkRender :
 	    { ambient :   color
 	    , lights :    light list
 	    , scene :     object
@@ -43,6 +44,5 @@ sig
 	    , width :     int
 	    , height :    int
 	    , depth :     int
-	    , outstream : BinIO.outstream
-	    } -> unit
+	    } -> int * int -> color
 end
