@@ -38,9 +38,9 @@
 
 	exception <A href="#Authority">Authority</A>
 
-	val <A href="#request">request</A> : Url.t * Http.request -> Http.response
-	val <A href="#get">get</A> : Url.t -> Http.response
-	val <A href="#post">post</A> : Url.t * document -> Http.response
+	val <A href="#request">request</A> : <A href="url.php3#t">Url.t</A> * <A href="http.php3#request">Http.request</A> -> <A href="http.php3#response">Http.response</A>
+	val <A href="#get">get</A> : <A href="url.php3#t">Url.t</A> -> <A href="http.php3#response">Http.response</A>
+	val <A href="#post">post</A> : <A href="url.php3#t">Url.t</A> * document -> <A href="http.php3#response">Http.response</A>
     end
   </PRE>
 

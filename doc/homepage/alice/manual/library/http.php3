@@ -30,7 +30,7 @@
 	structure <A href="#StringMap">StringMap</A> : IMP_MAP where type key = string
 
 	type <A href="#request">request</A> =
-	     {method : string, uri : Url.t, protocol : string,
+	     {method : string, uri : <A href="url.php3#t">Url.t</A>, protocol : string,
 	      headers : string StringMap.t, body : string}
 	type <A href="#response">response</A> =
 	     {protocol : string, statusCode : int, reasonPhrase : string,
@@ -41,11 +41,11 @@
 	exception <A href="#Closed">Closed</A>
 	exception <A href="#Format">Format</A>
 
-	val <A href="#readRequest">readRequest</A> : Socket.socket -> request
-	val <A href="#readResponse">readResponse</A> : Socket.socket -> response
+	val <A href="#readRequest">readRequest</A> : <A href="socket.php3#socket">Socket.socket</A> -> request
+	val <A href="#readResponse">readResponse</A> : <A href="socket.php3#socket">Socket.socket</A> -> response
 
-	val <A href="#writeRequest">writeRequest</A> : Socket.socket * request -> unit
-	val <A href="#writeResponse">writeResponse</A> : Socket.socket * response -> unit
+	val <A href="#writeRequest">writeRequest</A> : <A href="socket.php3#socket">Socket.socket</A> * request -> unit
+	val <A href="#writeResponse">writeResponse</A> : <A href="socket.php3#socket">Socket.socket</A> * response -> unit
 
 	val <A href="#reasonPhrase">reasonPhrase</A> : int -> string
 	val <A href="#makeResponse">makeResponse</A> : simple_response -> response
@@ -65,9 +65,9 @@
     </DD>
 
     <DT>
-      <TT>type <A name="request">request</A> =
-     {method : string, uri : Url.t, protocol : string,
-      headers : string StringMap.t, body : string}</TT>
+      <PRE>type <A name="request">request</A> =
+     {method : string, uri : <A href="url.php3#t">Url.t</A>, protocol : string,
+      headers : string StringMap.t, body : string}</PRE>
     </DT>
     <DD>
       <P>The type of HTTP requests.  Represents a request with <TT>method</TT>
@@ -77,9 +77,9 @@
     </DD>
 
     <DT>
-      <TT>type <A name="response">response</A> =
+      <PRE>type <A name="response">response</A> =
      {protocol : string, statusCode : int, reasonPhrase : string,
-      headers : string StringMap.t, body : string}</TT>
+      headers : string StringMap.t, body : string}</PRE>
     </DT>
     <DD>
       <P>The type of HTTP responses.  Represents a response with
@@ -89,8 +89,8 @@
     </DD>
 
     <DT>
-      <TT>type <A name="simple_response">simple_response</A> =
-     {statusCode : int, contentType : string, body : string}</TT>
+      <PRE>type <A name="simple_response">simple_response</A> =
+     {statusCode : int, contentType : string, body : string}</PRE>
     </DT>
     <DD>
       <P>The type of simplified HTTP responses.  Represents a response
@@ -183,7 +183,8 @@
   <DL><DD>
     <A href="url.php3"><TT>Url</TT></A>,
     <A href="http-client.php3"><TT>HttpClient</TT></A>,
-    <A href="http-server.php3"><TT>HttpServer</TT></A>
+    <A href="http-server.php3"><TT>HttpServer</TT></A>,
+    <A href="socket.php3"><TT>Socket</TT></A>
   </DD></DL>
 
 <?php section("examples", "examples") ?>

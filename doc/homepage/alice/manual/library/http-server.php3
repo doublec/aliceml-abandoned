@@ -26,10 +26,10 @@
   <PRE>
     signature HTTP_SERVER =
     sig
-	type <A href="#handler">handler</A> = Http.request -> Http.response
+	type <A href="#handler">handler</A> = <A href="http.php3#request">Http.request</A> -> <A href="http.php3#response">Http.response</A>
 
 	val <A href="#start">start</A> : int option -> int
-	val <A href="#register">register</A> : Url.t * handler -> unit
+	val <A href="#register">register</A> : <A href="url.php3#t">Url.t</A> * handler -> unit
     end
   </PRE>
 
@@ -38,7 +38,8 @@
   <DL>
     <DT>
       <TT>type <A name="handler">handler</A> =
-	Http.request -> Http.response</TT>
+	<A href="http.php3#request">Http.request</A> ->
+	<A href="http.php3#response">Http.response</A></TT>
     </DT>
     <DD>
       <P>The type of handlers for HTTP requests.</P>

@@ -42,18 +42,18 @@
 	exception <A href="#Sited">Sited</A>
 	exception <A href="#Corrupt">Corrupt</A>
 
-	exception <A href="#Mismatch">Mismatch</A> of {component : Url.t,
-			       request : Url.t option,
+	exception <A href="#Mismatch">Mismatch</A> of {component : <A href="url.php3#t">Url.t</A>,
+			       request : <A href="url.php3#t">Url.t</A> option,
 			       cause : Inf.mismatch}
 	exception <A href="#Eval">Eval</A> of exn
-	exception <A href="#Failure">Failure</A> of Url.t * exn
+	exception <A href="#Failure">Failure</A> of <A href="url.php3#t">Url.t</A> * exn
 
 	val <A href="#extension">extension</A>: string
 
 	functor <A href="#Create">Create</A>(signature S  structure X : S) :
 	    sig  val component : component  end
 
-	val <A href="#load">load</A>: Url.t -> component
+	val <A href="#load">load</A>: <A href="url.php3#t">Url.t</A> -> component
 	val <A href="#save">save</A>: string * component -> unit
 	val <A href="#inf">inf</A>: component -> Inf.t option
 
@@ -93,8 +93,8 @@
     </DD>
 
     <DT>
-      <PRE>exception <A name="Mismatch">Mismatch</A> of {component : Url.t,
-		       request : Url.t option,
+      <PRE>exception <A name="Mismatch">Mismatch</A> of {component : <A href="url.php3#t">Url.t</A>,
+		       request : <A href="url.php3#t">Url.t</A> option,
 		       cause : Inf.mismatch}</PRE>
     </DT>
     <DD>
@@ -117,7 +117,7 @@
     </DD>
 
     <DT>
-      <TT>exception <A name="Failure">Failure</A> of Url.t * exn</TT>
+      <TT>exception <A name="Failure">Failure</A> of <A href="url.php3#t">Url.t</A> * exn</TT>
     </DT>
     <DD>
       <P>indicates that the loading, evaluating or signature matching

@@ -44,7 +44,7 @@
   <PRE>
     signature RESOLVER =
     sig
-	structure <A href="#Handler">Handler</A> : RESOLVER_HANDLER
+	structure <A href="#Handler">Handler</A> : <A href="resolver-handler.php3">RESOLVER_HANDLER</A>
 
 	type <A href="#resolver">resolver</A>
 	type <A href="#t">t</A> = resolver

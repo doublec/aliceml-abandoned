@@ -36,8 +36,7 @@
 	type <A href="#host">host</A> = string
 	type <A href="#port">port</A> = int
 
-	val <A href="#server">server</A> : port option * (socket * host * port -> unit) ->
-	    socket * port
+	val <A href="#server">server</A> : port option * (socket * host * port -> unit) -> socket * port
 	val <A href="#client">client</A> : host * port -> socket
 
 	val <A href="#input1">input1</A> : socket -> char option

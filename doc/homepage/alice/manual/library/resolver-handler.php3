@@ -38,7 +38,7 @@
 	val <A href="#cache">cache</A>: string -> handler
 	val <A href="#prefix">prefix</A>: string * string -> handler
 	val <A href="#pattern">pattern</A>: string * string -> handler
-	val <A href="#custom">custom</A>: string * (string -> Url.t option) -> handler
+	val <A href="#custom">custom</A>: string * (string -> <A href="url.php3#t">Url.t</A> option) -> handler
 
 	val <A href="#parse">parse</A>: string -> handler list
     end

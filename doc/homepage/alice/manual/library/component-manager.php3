@@ -35,21 +35,21 @@
 	type <A href="#component">component</A>
 
 	functor <A href="#Eval-fn">Eval</A>(val component : component
-		     val url : Url.t
+		     val url : <A href="url.php3#t">Url.t</A>
 		     signature S) : S
 
-	functor <A href="#Link-fn">Link</A>(val url : Url.t
+	functor <A href="#Link-fn">Link</A>(val url : <A href="url.php3#t">Url.t</A>
 		     signature S) : S
 
-	functor <A href="#Enter-fn">Enter</A>(val url: Url.t
+	functor <A href="#Enter-fn">Enter</A>(val url: <A href="url.php3#t">Url.t</A>
 		      signature S
 		      structure X : S) : any
 
-	val <A href="#link">link</A> : Url.t -> component
-	val <A href="#enter">enter</A> : Url.t * component -> unit
-	val <A href="#lookup">lookup</A> : Url.t -> component option
+	val <A href="#link">link</A> : <A href="url.php3#t">Url.t</A> -> component
+	val <A href="#enter">enter</A> : <A href="url.php3#t">Url.t</A> * component -> unit
+	val <A href="#lookup">lookup</A> : <A href="url.php3#t">Url.t</A> -> component option
 
-	val <A href="#start">start</A> : Url.t -> unit
+	val <A href="#start">start</A> : <A href="url.php3#t">Url.t</A> -> unit
     end
   </PRE>
 
