@@ -71,6 +71,7 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	      | getInType "const gchar*" = "string"
 	      | getInType "const char*"  = "string"
 	      | getInType "void"         = "unit"
+	      | getInType "GList*"       = "object list"
 	      | getInType tStr           =
 		if isBasicType tStr then "int" else "object"
 	in
@@ -133,12 +134,13 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	     "val colorSelectionSetColor : object * real list -> unit\n"]
 
 	(* Signature Emitter *)
-	fun emit (FUNCTION("gtk_signal_connect", _))    = ()
-	  | emit (FUNCTION("gtk_signal_disconnect", _)) = ()
-	  | emit (FUNCTION("gtk_signal_block", _))      = ()
-	  | emit (FUNCTION("gtk_signal_unblock", _))    = ()
-	  | emit (FUNCTION("gtk_signal_emit", _))       = ()
-	  | emit (FUNCTION("gtk_canvas_item_set", _))   = ()
+	fun emit (FUNCTION("gtk_signal_connect", _))            = ()
+	  | emit (FUNCTION("gtk_signal_disconnect", _))         = ()
+	  | emit (FUNCTION("gtk_signal_block", _))              = ()
+	  | emit (FUNCTION("gtk_signal_unblock", _))            = ()
+	  | emit (FUNCTION("gtk_signal_emit", _))               = ()
+	  | emit (FUNCTION("gtk_canvas_item_set", _))           = ()
+	  | emit (FUNCTION("gtk_combo_set_popdown_strings", _)) = ()
 	  | emit (FUNCTION("gtk_widget_get", _))        = psl widgetGetCode
 	  | emit (FUNCTION("gtk_canvas_new", _))        = psl canvasNewCode
 	  | emit (FUNCTION("gtk_canvas_item_new", _))   = psl canvasItemCode
@@ -212,12 +214,15 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	    [indent, "val allocColor : int * int * int -> object\n"]
 
 	val gtkInits =
-	    [indent, "val signalConnect : ",
+	    [indent, "val null : object\n",
+	     indent, "val signalConnect : ",
 	     indent, "object * string * (arg list -> unit) -> int\n",
 	     indent, "val signalDisconnect : object * int -> unit\n",
 	     indent, "val signalBlock : object * int -> unit\n",
 	     indent, "val signalUnblock : object * int -> unit\n",
-	     indent, "val signalEmit : object * int -> unit\n"
+	     indent, "val signalEmit : object * int -> unit\n",
+	     indent,
+	     "val comboSetPopdownStrings : object * string list -> unit\n"
 	     ]
 
 	local
