@@ -91,13 +91,11 @@ protected:
   }
 public:
   using Block::GetLabel;
+  using Block::GetSize;
   using Block::GetArg;
   using Block::InitArg;
   using Block::ReplaceArg;
   using Block::ToWord;
-  u_int GetSize() { // GC Safe Size Assumption
-    return (u_int) Store::WordToInt(GetArg(1));
-  }
   void InitStack() {
     u_int size = Block::GetSize();
 
@@ -118,10 +116,10 @@ public:
   }
   void ClearArgFrame(u_int fsize) {
     int top    = Store::WordToInt(GetArg(1));
-    int newtop = top - fsize - 1;
+    int newtop = top - fsize;
 
     InitArg(1, Store::IntToWord(newtop));
-    InitArg(newtop, GetArg(top - 1));
+    InitArg((newtop - 1), GetArg(top - 1));
   }
   Stack *AllocFrame(u_int fsize) {
     int top   = Store::WordToInt(GetArg(1));
@@ -176,13 +174,19 @@ public:
     return GetArg((u_int) Store::WordToInt(GetArg(1)) - 1);
   }
   word Pop() {
-    int top = Store::WordToInt(GetArg(1)) - 1;
- 
+    static word zero = Store::IntToWord(0);
+    int top          = Store::WordToInt(GetArg(1)) - 1;
+    word value       = GetArg((u_int) top);
+
     InitArg(1, Store::IntToWord(top));
-    return GetArg((u_int) top);
+    InitArg(top, zero);
+    return value;
   }
   void Clear() {
+   int top = Store::WordToInt(GetArg(1));
+
     InitArg(1, Store::IntToWord(2));
+    memset(ar + 2, 1, (top - 2) * sizeof(word));
   }
 
   static Stack *New(u_int s) {
