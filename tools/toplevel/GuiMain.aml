@@ -435,16 +435,15 @@ structure GuiMain =
                         Buffer.buffer {notebook=Gui.notebook1, loadFile=true,
                                        id=(!numberOfPages), file=SOME f}
                 in
-                    Gtk.widgetGrabFocus (view);
                     Gtk.signalConnect(buf, "mark-set", markSet);
                     Gtk.signalConnect(view, "focus-in-event", changeFocus (BUFFER view));
+                    Gtk.widgetGrabFocus (view);
                     markSet (buf, nil);
                     addPage(!numberOfPages);
                     numberOfPages := (!numberOfPages) + 1;
 		    switchPage Gui.notebook1;
 		    Gtk.signalHandlerUnblock(Gui.notebook1,
 					      notebookSwitchEventId);
-		    changeFocus (BUFFER view) ();
 		    Promise.fulfill(!highlight, SOME 0);
                     checkNotebookSize()
                 end
