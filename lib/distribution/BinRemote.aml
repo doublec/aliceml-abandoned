@@ -364,7 +364,7 @@ struct
 
     val rootUrl =
 	lazy (Url.fromString
-		("http://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^ 
+		("x-alice://" ^ (UnsafeRemote.getLocalIP ()) ^ ":" ^ 
 			Int.toString (BinaryServer.start NONE) ^ "/"))
 
     val counter = ref 0
