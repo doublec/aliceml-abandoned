@@ -77,6 +77,8 @@ examples/interpreter.tar: \
 $(DIRS):
 	mkdir -p $@
 
+# For Stockwerk pages:
+# (echo '<?php $$platform = "stockwerk"; ?>'; cat $<) | php -q > $<.static
 $(PREFIX)/%.html: %.html
 	php -q $< >$<.static
 	install -c -m 444 $<.static $@
