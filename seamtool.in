@@ -4,18 +4,9 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 
 if [ $# -lt 1 ]; then
-    echo "usage: $0 [--verbose|-v] (cc|c++|ld) <option> ..." >&2
+    echo "usage: $0 [--verbose|-v] (c++|ld) <option> ..." >&2
     exit 2
 fi
-
-case `uname -s` in
-    CYGWIN*)
-	platform=windows
-	;;
-    *)
-	platform=unix
-	;;
-esac
 
 mode=$1; shift
 case "$mode" in
@@ -35,17 +26,13 @@ cmd() {
 
 case "$mode" in
     c++)
-	if [ "$platform" = windows ]; then
-	    cxxflags=-mno-cygwin
-	else
-	    cxxflags=-fPIC
-	fi
+	cxxflags="@SEAM_MACHINE_FLAGS@"
 	cmd @CXX@ $cxxflags -DLIGHTNING=@HAVE_LIGHTNING@ \
 	    -I@includedir@/seam "$@"
 	;;
     ld)
 	outputfile=""
-	ldflags=""
+	ldflags="@SEAM_MACHINE_FLAGS@"
 	libs=""
 	fileargs=""
 	while [ $# -gt 0 ]; do
@@ -70,9 +57,6 @@ case "$mode" in
 	    esac
 	done
 	libs="$libs @bindir@/seam.dll"
-	if [ "$platform" = windows ]; then
-	    ldflags="-mno-cygwin $ldflags"
-	fi
 	cmd @CXX@ -shared $ldflags -o $outputfile $fileargs $libs
 	;;
     *)
