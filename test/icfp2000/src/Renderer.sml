@@ -303,7 +303,12 @@ end*)
 print ("b = " ^ Real.toString b^ "\n");
 print ("k1 = " ^ Real.toString k1 ^ "\n");
 print ("k2 = " ^ Real.toString k2 ^ "\n");*)
-			[(k1, data, Entry), (k2, data, Exit)]
+			if k2 > ~epsilon then
+			    if k1 > ~epsilon then
+				[(k1, data, Entry), (k2, data, Exit)]
+			    else
+				[(k2, data, Exit)]
+			else nil
 		    end
 	    end
 	  | intersect' (Union' (obj1, obj2), base, dir) =
