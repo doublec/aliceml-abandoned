@@ -21,13 +21,14 @@ functor MakeEmacsToplevel(structure RecursiveCompiler: RECURSIVE_COMPILER):
 	      | line => line::readUntilEOF q
 
 	fun readSource q =
-	    case readUntilEOF q of
-		filename::line::sourceLines =>
-		    (*--** do something with filename and line *)
-		    String.concat sourceLines
-	      | _ =>
-		    (TextIO.output (TextIO.stdErr,
-				    "### invalid input ignored\n"); "")
+	    (TextIO.print "-- Ready...\n";
+	     case readUntilEOF q of
+		 filename::line::sourceLines =>
+		     (*--** do something with filename and line *)
+		     String.concat sourceLines
+	       | _ =>
+		     (TextIO.output (TextIO.stdErr,
+				     "### invalid input ignored\n"); ""))
 
 	fun eval (source, compilerContext, targetContext) =
 	    let
