@@ -32,16 +32,31 @@ public:
 
   static void Init();
 
-  static TaskStack *New() {
-    TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(threshold));
-    taskStack->PushCall(Closure::FromWordDirect(emptyTask));
-    return taskStack;
-  }
   static TaskStack *FromWord(word x) {
     return static_cast<TaskStack *>(Stack::FromWord(x));
   }
   static TaskStack *FromWordDirect(word x) {
     return static_cast<TaskStack *>(Stack::FromWordDirect(x));
+  }
+
+  // Accessing the current frame:
+  void PutWord(u_int offset, word value) {
+    PutFrameArg(offset, value);
+  }
+  word GetWord(u_int offset) {
+    return GetFrameArg(offset);
+  }
+  void PutInt(u_int offset, int i) {
+    PutFrameArg(offset, i);
+  }
+  int GetInt(u_int offset) {
+    return Store::DirectWordToInt(GetWord(offset));
+  }
+  void PutUnmanagedPointer(u_int offset, void *pointer) {
+    PutWord(offset, Store::UnmanagedPointerToWord(pointer));
+  }
+  void *GetUnmanagedPointer(u_int offset) {
+    return Store::DirectWordToUnmanagedPointer(GetWord(offset));
   }
 
   // Handling stack frames:
@@ -69,24 +84,10 @@ public:
     } while (offset != 0);
   }
 
-  // Accessing the current frame:
-  void PutWord(u_int offset, word value) {
-    PutFrameArg(offset, value);
-  }
-  word GetWord(u_int offset) {
-    return GetFrameArg(offset);
-  }
-  void PutInt(u_int offset, int i) {
-    PutFrameArg(offset, i);
-  }
-  int GetInt(u_int offset) {
-    return Store::DirectWordToInt(GetWord(offset));
-  }
-  void PutUnmanagedPointer(u_int offset, void *pointer) {
-    PutWord(offset, Store::UnmanagedPointerToWord(pointer));
-  }
-  void *GetUnmanagedPointer(u_int offset) {
-    return Store::DirectWordToUnmanagedPointer(GetWord(offset));
+  static TaskStack *New() {
+    TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(threshold));
+    taskStack->PushCall(Closure::FromWordDirect(emptyTask));
+    return taskStack;
   }
 };
 
