@@ -98,7 +98,7 @@ union
 white
 pointlight /lig1
 
--3.9 4.5 2.0 point
+-3.9 4.5 -1.0 point
 white
 pointlight /lig2
 
