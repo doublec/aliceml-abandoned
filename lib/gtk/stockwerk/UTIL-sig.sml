@@ -26,6 +26,8 @@ signature UTIL =
 	val spaceName : spaces -> string
 	val spaceFuncPrefix : spaces -> string
 	val spaceEnumPrefix : spaces -> string
+	val spaceStructPrefix : spaces -> string
+
 
 	val cutPrefix : string * string -> string
 	val checkPrefix : string -> string -> bool

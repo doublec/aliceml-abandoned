@@ -52,7 +52,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	end
 
 	(* WRAPPER CODE GENERATION *)
-        fun wrapperEntry(funName, ret, arglist, doinout) =
+        fun wrapperEntry callLine (funName, ret, arglist, doinout) =
 	let
 	    (* Wrapper declaration line *)
 	    val wrapperDecl = 
@@ -152,12 +152,15 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    end
 		val cArgList = Util.makeTuple ", " "" (map cArgList' arglist)
 	    in
-		val funCall = ["  ",
+		val funCall = if null callLine then
+		              [wrIndent,
 			       (case ret of
 				   VOID => ""
 				 | STRING _ =>"const "^(getCType ret)^" ret = "
 				 | _ => (getCType ret)^" ret = "),
 				funName, "(", cArgList, ");\n"]
+			      else
+			      [wrIndent] @ callLine
 	    end
 
 	    (* return line *)
@@ -201,19 +204,70 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 	    endDecl
 	end	    
 
+        fun makeFieldFun (sname, mname, mtype, get) =
+	let
+	    val sname' = Util.cutPrefix ("_", sname)
+	    val stype = POINTER (TYPEREF (sname', VOID))
+	in
+	    if get then
+		(sname'^"_get_field_"^mname, mtype, [stype])
+	    else
+		(sname'^"_set_field_"^mname, VOID, [stype, mtype])
+	end
+
+        (* special preparation for get/set methods *)
+        fun fieldSigEntry (sname, mname, mtype, get) =
+	let
+	    val (funName,ret,arglist) = makeFieldFun (sname,mname,mtype,get)
+	in
+	    ( getAliceType mtype ;
+	      sigEntry (funName,ret,splitArgTypes arglist,false) )
+	    handle _ => nil
+	end
+
+        fun fieldWrapperEntry (sname, mname, mtype, get) = 
+        let
+	    val (funName,ret,arglist) = makeFieldFun (sname,mname,mtype,get)
+	    val al = splitArgTypes arglist
+	    val stype = if null al then "" else getCType (#3(hd al))
+	    val svar  = if null al then "" else #2(hd al)
+	    val mvar  = if length al < 2 then "" else #2(hd(tl al))
+	    val callLine =
+		if get then
+		    [getCType mtype, " ret = (static_cast<",
+		     stype, ">(", svar,"))->", mname,";\n"]
+		else
+		    ["(static_cast<", stype, ">(", svar,"))->", mname, " = ",
+		     "static_cast<", getCType mtype, ">(", mvar, ");\n"]
+	in
+	    ( getAliceType mtype ;
+  	      wrapperEntry callLine (funName,ret,al,false) )
+	    handle _ => nil
+	end
+
         (* SIGNATURE AND WRAPPER ENTRIES *)
 	fun processItem (f as (FUNC (funName,ret,arglist))) =
-	let
-	    val al = splitArgTypes arglist
-	    fun call f = f(funName,ret,al,false) @
-		         (if numOuts(al,true) > 0
-			      then f(funName,ret,al,true) 
-			      else nil)
-	    val isspec = (List.exists (fn f' => f=f') Special.specialFuns)
-	in
-	    ( if isspec then sigEntry(funName,ret,al,false) else call sigEntry,
-	      if isspec then nil                       else call wrapperEntry )
-	end
+	    let
+		val al = splitArgTypes arglist
+		fun call f = f(funName,ret,al,false) @
+		                 (if numOuts(al,true) > 0
+				      then f(funName,ret,al,true) 
+				      else nil)
+		val spec = (List.exists (fn f' => f=f') Special.specialFuns)
+	    in
+	       (if spec then sigEntry(funName,ret,al,false) else call sigEntry,
+	        if spec then nil                 else call (wrapperEntry nil) )
+	    end
+	  | processItem (s as (STRUCT (structName, members))) =
+	    let
+	        fun call f get = 
+		    List.concat 
+		      (map (fn (mname, mtype) => f(structName,mname,mtype,get))
+		           members)
+	    in
+	        ( List.concat (map (call fieldSigEntry) [true,false]),
+		  List.concat (map (call fieldWrapperEntry) [true,false]) )
+	    end
 	  | processItem _ = ( nil , nil )
 
 	(* STRUCTURE ENTRY GENERATION *)

@@ -25,7 +25,7 @@ fuer GtkObjects gilt:
 * Dateien komplett umbenennen
 * libgnomecanvas statt GtkCanvas installieren
 * GnomeCanvas-Bindings
-- get/set-Funktionen
+- get/set-Funktionen, TODO: structs in structs sicher rausschmeissen
 - Windows
 - Namespace-Aufteilung: Gtk.Button.new ...
 - eigene Native-Hilfsfunktionen besser benennen

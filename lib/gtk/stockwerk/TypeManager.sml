@@ -152,6 +152,8 @@ struct
 	Util.checkPrefix (Util.spaceFuncPrefix(space)) n
       | isItemOfSpace space (ENUM (n,_)) =
 	Util.checkPrefix (Util.spaceEnumPrefix(space)) n
+      | isItemOfSpace space (STRUCT (n,_)) =
+	Util.checkPrefix (Util.spaceStructPrefix(space)) n
       | isItemOfSpace _ _ = false
 	
     fun checkItem (FUNC (n,ret,arglist)) =

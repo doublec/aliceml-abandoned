@@ -43,6 +43,7 @@ structure Util :> UTIL =
 	  | spaceFuncPrefix GNOMECANVAS = "gnome_canvas_"
 
 	fun spaceEnumPrefix space = spaceName space
+	fun spaceStructPrefix space = "_"^(spaceName space)
 	   
 	fun checkPrefix'(X::Xr, Y::Yr) = X = Y andalso checkPrefix'(Xr, Yr)
 	  | checkPrefix'(nil, _)       = true

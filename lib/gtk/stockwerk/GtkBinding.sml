@@ -35,7 +35,10 @@ local
 		 	     structure Special = SGC
 			     val space = Util.GNOMECANVAS)
 
-    fun main' dir =
+
+in
+
+    fun main dir =
     let
 	val tree = Parser.parse "gtkclean.c"
     in
@@ -51,15 +54,15 @@ local
 	  EGC.create tree )
     end
 
-    fun main _ =
+    fun run _ =
     let
 	val args = SMLofNJ.getArgs()
 	val dir = if null args then "." else hd args
     in
-        ( main' dir ;
+        ( main dir ;
  	  OS.Process.exit OS.Process.success )
     end
       handle _ => OS.Process.exit OS.Process.failure
-in
-    fun compile() = SMLofNJ.exportFn("GtkBinding", main)
+
+    fun compile() = SMLofNJ.exportFn("GtkBinding", run)
 end
