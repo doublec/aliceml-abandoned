@@ -16,6 +16,7 @@
 #include "emulator/RootSet.hh"
 #include "emulator/Transients.hh"
 #include "emulator/TaskStack.hh"
+#include "emulator/IOHandler.hh"
 #include "emulator/Scheduler.hh"
 #include "emulator/Guid.hh"
 #include "emulator/Primitive.hh"
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
   Properties::Init();
   Hole::Init();
   TaskStack::Init();
+  IOHandler::Init();
   Scheduler::Init();
   Guid::Init();
   Primitive::Init();
