@@ -10,40 +10,45 @@
  *   $Revision$
  *)
 
-(* Since SML allows multiple definitions of the same id in a structure,
-   labels are not enough for paths. So we added an index. *)
-
 import structure Name  from "Name"
 import structure Label from "Label"
 
-
 signature PATH =
 sig
-    (* Types *)
+  (* Types *)
 
     type name	= Name.t
     type lab	= Label.t
-
     type path
     type t	= path
 
-    (* Operations *)
+  (* Creation *)
 
     val invent :	unit -> path
     val pervasive :	string -> path
+    val name :		name -> path
+    val dot :		path * lab -> path
+
+  (* Inspection, projection and conversion *)
+
+    exception Path
+
+    val isName :	path -> bool
+    val isDot :		path -> bool
+    val asName :	path -> name				(* Path *)
+    val asDot :		path -> path * lab			(* Path *)
+
+    val fromString :	string -> path
     val fromLab :	lab  -> path
     val toLab :		path -> lab
-    val path :		path * lab * int -> path
+
+  (* Comparison and hashing *)
 
     val equals :	path * path -> bool
     val hash :		path -> int
 
-    exception Path
-    val isDot :		path -> bool
-    val asDot :		path -> path * lab * int	(* [Path] *)
+  (* Transformation *)
 
-    val strengthen :	path * lab * int * path -> unit
-
-    val clone :		path -> path
-    val instance :	('rea * path -> path option) -> 'rea * path -> path
+    val hiddenPrefix :	string
+    val hide :		path -> unit				(* Path *)
 end
