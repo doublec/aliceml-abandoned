@@ -23,7 +23,6 @@ structure CodeStore :> CODE_STORE =
 	  | Fld of index
 	  | Arg of index
 	  | Loc of index
-	  | Prebound of IL.dottedname * IL.id * IL.ty
 	withtype index = int
 
 	type class = stamp
@@ -148,8 +147,6 @@ structure CodeStore :> CODE_STORE =
 				      System.ObjectTy)))
 		  | Loc i => emit (Ldloc i)
 		  | Arg i => emit (Ldarg i)
-		  | Prebound (dottedname, id, ty) =>
-			emit (Ldsfld (dottedname, id, ty))
 	end
 
 	fun emitId (Id (_, stamp, _)) =
