@@ -374,6 +374,9 @@ structure Buffer =
       fun getSyntaxHighlighting id =
           !(#highlightActive (BufferMap.lookupExistent(bufferMap, id)))
 
+      fun forallBuffers f =
+	  BufferMap.all f bufferMap
+
       fun setSyntaxHighlighting(id, active) =
 	  let
 	      val {buf,highlightActive,highlight,...} =
@@ -474,6 +477,7 @@ structure Buffer =
 		      val fileD = TextIO.openIn f
 		      val text = TextIO.inputAll fileD
 		      val text = Gtk.latin1ToUtf8 text
+		      val _ = TextIO.closeIn fileD
 		  in
 		      Lock.sync Gtk.lock
 		      (fn () =>
@@ -500,17 +504,21 @@ structure Buffer =
               ret
           end
 
+      fun canClose id =
+          let
+              val {buf,...} = BufferMap.lookupExistent(bufferMap, id)
+	  in
+              not (Gtk.textBufferGetModified buf)
+          end
+
       fun close id =
           let
               val {file,buf,highlight,...} = BufferMap.lookupExistent(bufferMap, id)
-              val modified = Gtk.textBufferGetModified buf
 	      val prom = Promise.promise()
           in
-              not modified andalso
               (BufferMap.removeExistent(bufferMap, id);
                Promise.fulfill(prom, NONE);
-	       highlight := prom;
-	       true)
+	       highlight := prom)
           end
 
       fun save id =

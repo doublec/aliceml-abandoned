@@ -462,17 +462,19 @@ structure GuiMain =
 		  | SOME f => openGivenFile f
 	    end
        
+
+	fun saveGivenFileAs id =
+	    let
+		val file =
+		    Option.getOpt(Buffer.getFileName id,"")
+	    in
+		case FileDialog.openFile("Save file",file) of
+		    NONE => ()
+		  | SOME f => Buffer.saveAs (id, f)
+	    end
         fun saveFileAs () =
             case getCurrentPage() of NONE => ()
-                                   | SOME id =>
-		let
-		    val file =
-			Option.getOpt(Buffer.getFileName id,"")
-		in
-		    case FileDialog.openFile("Save file",file) of
-			NONE => ()
-		      | SOME f => Buffer.saveAs (id, f)
-		end
+                                   | SOME id => saveGivenFileAs id
 
         fun saveFile () =
             case getCurrentPage() of NONE => ()
@@ -493,15 +495,16 @@ structure GuiMain =
             end
 
         fun reallyClose p =
-            (removePage p;
+            (Buffer.close (getPage p);
+	     removePage p;
              Gtk.notebookRemovePage(Gui.notebook1, p);
              currentPage := Gtk.notebookGetCurrentPage Gui.notebook1)
 
         fun close () = 
 	     case getCurrentPage() of NONE => ()
 	     			    | SOME id =>
-            (if Buffer.close id then
-                 reallyClose (!currentPage)
+            (if Buffer.canClose id then
+		 reallyClose (!currentPage)
              else FileDialog.modifiedWarning
 		 ("File modified.", "Discard changes and close anyway, or cancel?",
 		  reallyClose, !currentPage);
@@ -704,19 +707,37 @@ structure GuiMain =
 		    Buffer.setSyntaxHighlighting
 		    (id, Gtk.checkMenuItemGetActive Gui.syntax_colouring)
 
+
 	val reallyQuit = ref false
 	fun doQuit () = (Config.saveHistory (History.get(),
 					     Buffer.getFileNames());
 			 reallyQuit := true;
 			 OS.Process.exit OS.Process.success)
-        fun quit () = if !reallyQuit then ()
+
+	exception DiscardAll
+	fun quitCloseOpenFiles interactive (buffer as {id,buf,file,...} : Buffer.buffer) =
+	    if Gtk.textBufferGetModified buf then
+		case FileDialog.quitWarning(interactive,Option.getOpt(!file,"New File "^Int.toString id)) of
+		    Gtk.RESPONSE_CANCEL => false
+		  | Gtk.RESPONSE_OK => (* save *) if Buffer.save id then true
+						  else (saveGivenFileAs id; true)
+		  | Gtk.RESPONSE_ACCEPT => (* save as *) (saveGivenFileAs id; true)
+		  | Gtk.RESPONSE_REJECT => (* discard all *) raise DiscardAll
+		  | Gtk.RESPONSE_CLOSE => (* discard *) true
+		  | Gtk.RESPONSE_DELETE_EVENT => if interactive then false
+						 else quitCloseOpenFiles interactive buffer
+		  | _ => raise Match (* make compiler happy *)
+	    else true
+	    
+        fun quit' interactive = if !reallyQuit then ()
 		      else if Buffer.haveModified ()
-			       then
-				   FileDialog.modifiedWarning
-				   ("There are modified files.",
-				    "Discard changes and quit anyway or cancel?",
-				    doQuit, () )
+			       then if (Buffer.forallBuffers (quitCloseOpenFiles interactive)
+					handle DiscardAll => true) then
+				   doQuit ()
+				    else ()
 			   else doQuit ()
+
+	fun quit () = quit' true
 
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);
@@ -732,7 +753,7 @@ structure GuiMain =
 				      Config.sizeX,Config.sizeY);
 	     Gtk.widgetShowAll Gui.mainwidget;
              Gtk.widgetGrabFocus (Gui.compilerout);
-	     OS.Process.atExit quit)                      
+	     OS.Process.atExit (fn () => quit' false))
 
 	fun initDone () =
 	    (Gtk.textViewSetEditable(Gui.compilerout, true);

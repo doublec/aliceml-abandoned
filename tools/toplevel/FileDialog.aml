@@ -38,32 +38,44 @@ structure FileDialog =
 
         fun modifiedWarning(msg1,msg2,close,arg) =
             let
-                val modifiedDia = Gtk.dialogNew()
-                val discard = Gtk.dialogAddButton(modifiedDia, "Discard",0)
-                val cancel = Gtk.dialogAddButton(modifiedDia, "Cancel",1)
-                val vbox = Gtk.dialogGetFieldVbox modifiedDia
-
-		val hbox1 = Gtk.hboxNew(false,0)
-		val image123 = Gtk.imageNewFromStock("gtk-dialog-warning",Gtk.IntToGtkIconSize(6))
-		val vbox4 = Gtk.vboxNew(true,0)
-		val label1 = Gtk.labelNew msg1
-		val label2 = Gtk.labelNew msg2
-		val _ = Gtk.boxPackStart(vbox4,label1,false,false,0)
-		val _ = Gtk.boxPackStart(vbox4,label2,false,false,0)
-		val _ = Gtk.boxPackStart(hbox1,image123,true,true,0)
-		val _ = Gtk.boxPackStart(hbox1,vbox4,true,true,0)
-                val _ = Gtk.containerAdd(vbox, hbox1)
+                val modifiedDia = Gui.modified_dialog
             in
-                Gtk.windowSetTitle(modifiedDia, "Modifications Not Saved");
-		Gtk.dialogSetDefaultResponse(modifiedDia, 1);
+		Gtk.labelSetText(Gui.modified_msg1, msg1);
+		Gtk.labelSetText(Gui.modified_msg2, msg2);
+		Gtk.dialogSetDefaultResponse(modifiedDia,
+					     Gtk.GtkResponseTypeToInt
+					     Gtk.RESPONSE_CANCEL);
                 (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
-                Gtk.windowSetPosition (modifiedDia, Gtk.WIN_POS_MOUSE);
                 Gtk.widgetShowAll modifiedDia;
-                if Gtk.dialogRun modifiedDia = 0 then
-                    close arg
-                else ();
-                Gtk.widgetDestroy modifiedDia
+		Gtk.widgetMap modifiedDia;
+		Gtk.windowSetModal(modifiedDia, true);
+		case Gtk.IntToGtkResponseType (Gtk.dialogRun modifiedDia) of
+		    Gtk.RESPONSE_CLOSE => close arg
+		  | _ => ();
+                Gtk.widgetUnmap modifiedDia;
+		Gtk.windowSetModal(modifiedDia, false)
             end
+
+        fun quitWarning (interactive,filename) =
+            let
+                val dia = Gui.save_on_quit_dialog
+            in
+		Gtk.widgetSetSensitive(Gui.save_on_quit_cancel_button,
+				       interactive);
+		Gtk.labelSetText(Gui.save_on_quit_label,
+				 "File '"^filename^"' was modified.");
+		Gtk.dialogSetDefaultResponse(dia,
+					     Gtk.GtkResponseTypeToInt
+					     Gtk.RESPONSE_OK);
+                (*Gtk.windowSetKeepAbove (modifiedDia, true); Gtk 2.4 *)
+                Gtk.widgetShowAll dia;
+		Gtk.widgetMap dia;
+		Gtk.windowSetModal(dia, true);
+		Gtk.IntToGtkResponseType (Gtk.dialogRun dia)
+		before (Gtk.widgetUnmap dia;
+			Gtk.windowSetModal(dia, false))
+            end
+
         fun message msg =
             let
                 val msgDia =

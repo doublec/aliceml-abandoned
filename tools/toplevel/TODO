@@ -5,7 +5,7 @@ Bugs:
 
 * Not all dialogue buttons have icons
 * Reconsider implicit imports
-* Proper save changes treatment at quit?
+* Cut&Paste with other apps doesn't work properly although it should :-(
 * Gtk.textIterFree produces segfaults, so at the moment it seems we can't properly free iterators :-(
 
 Missing Features:
