@@ -423,7 +423,7 @@ void GecodeSpace::fs_distinct(int s1, int s2) {
 void GecodeSpace::fs_distinctn(const IntArgs& vars) {
   if (!enter()) return;
   makefsvararray(a, vars);
-  ::distinctn(a);
+  ::distinct(a);
 }
 void GecodeSpace::fs_equals(int s1, int s2) {
   if (!enter()) return;
@@ -460,33 +460,33 @@ void GecodeSpace::fs_partition(int s1, int s2, int s3) {
 void GecodeSpace::fs_unionn(const IntArgs& vars, int s) {
   if (!enter()) return;
   makefsvararray(a, vars);
-  ::unionn(a, fss[s]);
+  ::fsunion(a, fss[s]);
 }
 void GecodeSpace::fs_intersectionn(const IntArgs& vars, int s) {
   if (!enter()) return;
   makefsvararray(a, vars);
-  ::intersectionn(a, fss[s]);
+  ::intersection(a, fss[s]);
 }
 void GecodeSpace::fs_partitionn(const IntArgs& vars, int s) {
   if (!enter()) return;
   makefsvararray(a, vars);
-  ::partitionn(a, fss[s]);
+  ::partition(a, fss[s]);
 }
 void GecodeSpace::fs_includeR(int d, int s, int b) {
   if (!enter()) return;
-  ::includeR(fss[s],is[d],intvar2boolvar(is[b]));
+  ::include(fss[s],is[d],intvar2boolvar(is[b]));
 }
 void GecodeSpace::fs_includeRI(int i, int s, int b) {
   if (!enter()) return;
-  ::includeR(fss[s],i,intvar2boolvar(is[b]));
+  ::include(fss[s],i,intvar2boolvar(is[b]));
 }
 void GecodeSpace::fs_equalR(int s1, int s2, int b) {
   if (!enter()) return;
-  ::equalR(fss[s1],fss[s2],intvar2boolvar(is[b]));
+  ::equal(fss[s1],fss[s2],intvar2boolvar(is[b]));
 }
 void GecodeSpace::fs_subsetR(int s1, int s2, int b) {
   if (!enter()) return;
-  ::subsetR(fss[s1],fss[s2],intvar2boolvar(is[b]));
+  ::subset(fss[s1],fss[s2],intvar2boolvar(is[b]));
 }
 void GecodeSpace::fs_selectUnion(int s, const IntArgs& vars, int ss) {
   if (!enter()) return;
