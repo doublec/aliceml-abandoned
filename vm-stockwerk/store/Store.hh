@@ -142,6 +142,8 @@ public:
     return p;
   }
   static Chunk *WordToChunk(word v) {
+    AssertStore(HeaderOp::DecodeLabel(Store::WordToBlock(v)) ==
+		CHUNK_LABEL);
     Chunk *p = PointerOp::DecodeChunk(PointerOp::Deref(v));
     return p;
   }
