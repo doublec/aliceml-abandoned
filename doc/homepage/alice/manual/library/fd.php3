@@ -308,14 +308,14 @@
     </DD>
 
     <DT>
-      <TT>binVec <I>n<I></TT>
+      <TT>binVec <I>n</I></TT>
     </DT>
     <DD>
       <P>convienience abbreviation for <TT>fdVec (n,SOME (#[RANGE(0, 1)])</TT>.
     </DD>
 
     <DT>
-      <TT>assign (<I>as</I>, <I>v<I>)</TT>
+      <TT>assign (<I>as</I>, <I>v</I>)</TT>
     </DT>
     <DD>
       <P>Every finite domain variable contained in vector <I>v</I> is assigned
@@ -358,7 +358,7 @@
     </DD>
 
     <DT>
-      <TT>sum (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sum (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -375,7 +375,7 @@
     </DD>
 
     <DT>
-      <TT>sumC (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -387,7 +387,7 @@
     </DD>
 
     <DT>
-      <TT>sumAC (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumAC (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for the absolute value of the scalar product
@@ -399,7 +399,7 @@
     </DD>
 
     <DT>
-      <TT>sumCN (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumCN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -411,7 +411,7 @@
     </DD>
 
     <DT>
-      <TT>sumACN (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumACN (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator for
@@ -423,7 +423,7 @@
     </DD>
 
     <DT>
-      <TT>sumD (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator analogous to <TT>sum</TT> but performs
@@ -433,7 +433,7 @@
     </DD>
 
     <DT>
-      <TT>sumCD (<I>v</I>, <I>rel<I>, <I>r</I>)</TT>
+      <TT>sumCD (<I>v</I>, <I>rel</I>, <I>r</I>)</TT>
     </DT>
     <DD>
       <P>creates a propagator analogous to <TT>sumC</TT> but performs
@@ -812,28 +812,28 @@
     </DD>
 
     <DT>
-      <TT>Reified.sum (<I>v</I>, <I>rel<I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>Reified.sum (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sum(v, rel, r)</TT> into <I>c</I>.
     </DD>
 
     <DT>
-      <TT>Reified.sumC (<I>v</I>, <I>rel<I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>Reified.sumC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumC(v, rel, r)</TT> into <I>c</I>.
     </DD>
 
     <DT>
-      <TT>Reified.sumAC (<I>v</I>, <I>rel<I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>Reified.sumAC (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumAC(v, rel, r)</TT> into <I>c</I>.
     </DD>
 
     <DT>
-      <TT>Reified.sumCN (<I>v</I>, <I>rel<I>, <I>r</I>, <I>c</I>)</TT>
+      <TT>Reified.sumCN (<I>v</I>, <I>rel</I>, <I>r</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>Reifies <TT>sumCN(v, rel, r)</TT> into <I>c</I>.
