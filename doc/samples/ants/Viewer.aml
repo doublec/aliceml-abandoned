@@ -174,9 +174,9 @@ struct
 
 
             fun drawMarkers (m, c) =
-                (if Array.sub (m, 3) (* food marker *) then
+                (if Array.sub (m, 4) (* food marker *) then
                     drawFood c
-                else if Array.sub (m, 4) (* boring marker *) then
+                else if Array.sub (m, 5) (* boring marker *) then
                     drawBoring c
                 else if Array.sub (m, 1) orelse Array.sub (m, 2) then
                     drawTrail c 
