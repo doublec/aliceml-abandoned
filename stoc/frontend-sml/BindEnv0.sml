@@ -30,6 +30,7 @@ structure BindEnv0 :> BIND_ENV0 =
     val _ = insertTy(E, TyCon.fromString "real",   (i, P.stamp_real,   E_empty))
     val _ = insertTy(E, TyCon.fromString "char",   (i, P.stamp_char,   E_empty))
     val _ = insertTy(E, TyCon.fromString "string", (i, P.stamp_string, E_empty))
+    val _ = insertTy(E, TyCon.fromString "vector", (i, P.stamp_vec,    E_empty))
     val _ = insertTy(E, TyCon.fromString "list",   (i, P.stamp_list,   E_list))
     val _ = insertTy(E, TyCon.fromString "ref",    (i, P.stamp_tref,   E_ref))
     val _ = insertTy(E, TyCon.fromString "exn",    (i, P.stamp_exn,    E_empty))
