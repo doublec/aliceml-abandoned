@@ -23,6 +23,14 @@
  *   - exception declarations have been made a derived form:
  *	exception exbind          ==>  constructor exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
+ *   - derived form for function declarations extended with lazy/spawn keyword:
+ *      lazy <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
+ *        ==>
+ *      <op> vid = lazy (fn vid1 => ... fn vidn => case (vid1,...,vidn) of ...)
+ *
+ *      spawn <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
+ *        ==>
+ *      <op> vid = spawn (fn vid1 => ... fn vidn => case (vid1,...,vidn) of ...)
  *   - abstype has been made a derived form:
  *	abstype datbind <withtype tybind> with dec end
  *	  ==>

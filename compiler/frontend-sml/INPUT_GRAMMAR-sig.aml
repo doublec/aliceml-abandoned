@@ -109,9 +109,10 @@ sig
     and      LongSigId = SigId Long
 
 
-    (* Optional keyword `op' *)
+    (* Optional keywords `op' and `lazy' *)
 
-    datatype Op = SANSOp | WITHOp
+    datatype Op   = SANSOp | WITHOp
+    datatype Lazy = SANSLazy | WITHLazy | WITHSpawn
 
 
     (* Expressions *)
@@ -188,7 +189,7 @@ sig
 	| RECValBind     of Info * ValBind
 
     and FvalBind =
-	  FvalBind       of Info * Match * FvalBind option
+	  FvalBind       of Info * Lazy * Match * FvalBind option
 
     and TypBind =
 	  NEWTypBind     of Info * TyVarSeq * TyCon * TypBind option

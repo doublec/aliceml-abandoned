@@ -23,6 +23,10 @@
  *   - exception declarations have been made a derived form:
  *	exception exbind          ==>  con exbind'
  *	vid <of ty> <and exbind>  ==>  vid <of ty> : exn <and exbind'>
+ *   - derived form for function declarations extended with lazy keyword:
+ *      <lazy> <op> vid atpat11 ... atpat1n <: ty1> = exp1 | ...
+ *        ==>
+ *      <op> vid = <lazy> (fn vid1 => ... fn vidn => case (vid1,...,vidn) of ...
  *   - abstype has been made a derived form:
  *	abstype datbind <withtype tybind> with dec end
  *	  ==>
@@ -134,7 +138,7 @@ sig
 
     (* Bindings *)
 
-    val FvalBind:    Info * Fmatch * FvalBind option           -> FvalBind
+    val FvalBind:    Info * Lazy * Fmatch * FvalBind option    -> FvalBind
     val Fmatch:      Info * Fmrule * Fmatch option             -> Fmatch
     val Fmrule:      Info * Fpat * Exp                         -> Fmrule
 
