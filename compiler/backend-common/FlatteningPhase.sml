@@ -29,8 +29,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	val longid_false = ShortId (Source.nowhere, id_false)
 
 	structure FieldLabelSort =
-	    MakeLabelSort(type 'a t = lab * id
-			  fun get (Lab (_, s), _) = s)
+	    MakeLabelSort(type 'a t = string * id
+			  fun get (s, _) = s)
 
 	type mapping = (pos * id) list
 
@@ -55,12 +55,12 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | Export of id list
 
 	fun translateLongid (ShortId (_, id)) = (nil, id)
-	  | translateLongid (LongId (coord, longid, lab)) =
+	  | translateLongid (LongId (coord, longid, Lab (_, s))) =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId coord
 		val stm =
-		    O.ValDec (coord, id', O.SelAppExp (coord, lab, id), false)
+		    O.ValDec (coord, id', O.SelAppExp (coord, s, id), false)
 	    in
 		(stms @ [stm], id')
 	    end
@@ -201,12 +201,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (coord, r)]
 		val (stms, fields) =
-		    List.foldr (fn (Field (_, lab, exp), (stms, fields)) =>
+		    List.foldr (fn (Field (_, Lab (_, s), exp),
+				    (stms, fields)) =>
 				let
 				    val (stms', id) =
 					unfoldTerm (exp, Goto stms)
 				in
-				    (stms', (lab, id)::fields)
+				    (stms', (s, id)::fields)
 				end) (rest, nil) expFields
 		val exp' =
 		    case FieldLabelSort.sort fields of
@@ -218,8 +219,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		r := SOME (f exp'::translateCont cont);
 		stms
 	    end
-	  | translateExp (SelExp (coord, lab), f, cont) =
-	    f (O.SelExp (coord, lab))::translateCont cont
+	  | translateExp (SelExp (coord, Lab (_, s)), f, cont) =
+	    f (O.SelExp (coord, s))::translateCont cont
 	  | translateExp (VecExp (coord, exps), f, cont) =
 	    let
 		val r = ref NONE
@@ -264,8 +265,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			(r := SOME (f (O.ConAppExp (coord, id_ref, id2))::
 				    translateCont cont);
 			 stms2)
-		  | SelExp (_, lab) =>
-			(r := SOME (f (O.SelAppExp (coord, lab, id2))::
+		  | SelExp (_, Lab (_, s)) =>
+			(r := SOME (f (O.SelAppExp (coord, s, id2))::
 				    translateCont cont);
 			 stms2)
 		  | _ =>

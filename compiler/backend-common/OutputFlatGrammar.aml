@@ -71,10 +71,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	fun outputArgs (OneArg id) = ID id
 	  | outputArgs (TupArgs ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputArgs (RecArgs stringIdList) =
+	  | outputArgs (RecArgs labIdList) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (s, id) =>
-				       SEQ [S (s ^ "="), ID id]) stringIdList),
+			     List.map (fn (lab, id) =>
+				       SEQ [S (lab ^ "="), ID id]) labIdList),
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
@@ -83,13 +83,13 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "(con ", ID id1, S ") ", ID id2]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputTest (RecTest stringIdList) =
+	  | outputTest (RecTest labIdList) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (s, id) =>
-				       SEQ [S (s ^ "="), ID id]) stringIdList),
+			     List.map (fn (lab, id) =>
+				       SEQ [S (lab ^ "="), ID id]) labIdList),
 		 S "}"]
-	  | outputTest (LabTest (s, id)) =
-	    SEQ [S ("{" ^ s ^ "="), ID id, S "...}"]
+	  | outputTest (LabTest (lab, id)) =
+	    SEQ [S ("{" ^ lab ^ "="), ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -140,10 +140,10 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
 	  | outputExp (RecExp (_, labIdList)) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (Lab (_, s), id) =>
-				       SEQ [S (s ^ "="), ID id]) labIdList),
+			     List.map (fn (lab, id) =>
+				       SEQ [S (lab ^ "="), ID id]) labIdList),
 		 S "}"]
-	  | outputExp (SelExp (_, Lab (_, s))) = SEQ [S ("#" ^ s)]
+	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ lab)]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, s, argsBodyList)) =
@@ -154,8 +154,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 				     outputBody body, EX]) argsBodyList)]
 	  | outputExp (AppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (SelAppExp (_, Lab (_, s), id)) =
-	    SEQ [S ("#" ^ s ^ " "), ID id]
+	  | outputExp (SelAppExp (_, lab, id)) =
+	    SEQ [S ("#" ^ lab ^ " "), ID id]
 	  | outputExp (ConAppExp (_, id1, id2)) =
 	    SEQ [S "(con ", ID id1, S ") ", ID id2]
 	  | outputExp (PrimAppExp (_, s, ids)) =

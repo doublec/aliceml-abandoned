@@ -21,8 +21,9 @@ signature IMPERATIVE_GRAMMAR =
 	(* Identifiers *)
 
 	datatype name = datatype IntermediateGrammar.name
-	datatype lab = datatype IntermediateGrammar.lab
 	datatype id = datatype IntermediateGrammar.id
+
+	type lab = string
 
 	(* Expressions and Declarations *)
 
@@ -31,19 +32,20 @@ signature IMPERATIVE_GRAMMAR =
 	type isToplevel = bool
 	type hasArgs = bool
 
+	(*--** annotate which identifiers are really used? *)
 	datatype test =
 	    LitTest of lit
 	  | ConTest of id * id option
 	  | TupTest of id list
-	  | RecTest of (string * id) list
+	  | RecTest of (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of string * id
+	  | LabTest of lab * id
 	  | VecTest of id list
 
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a list
-	  | RecArgs of (string * 'a) list
+	  | RecArgs of (lab * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
 	datatype stm =

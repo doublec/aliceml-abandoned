@@ -64,10 +64,6 @@ define
       pos(bogus I J)   %--**
    end
 
-   fun {TranslateLab lab(_ S)}
-      S
-   end
-
    fun {TranslateLit Lit}
       case Lit of wordLit(W) then {Word.make 31 W}
       [] intLit(I) then I
@@ -235,12 +231,12 @@ define
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
       [] recExp(_ LabIdList) then Arity in
-	 Arity = {Map LabIdList fun {$ Lab#_} {TranslateLab Lab} end}
+	 Arity = {Map LabIdList fun {$ Lab#_} Lab end}
 	 VHd = vEquateRecord(_ '#' Arity Reg
 			     {Map LabIdList
 			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
       [] selExp(_ Lab) then
-	 VHd = vEquateConstant(_ fun {$ X} X.{TranslateLab Lab} end Reg VTl)
+	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
       [] funExp(Coord PrintName ArgsBodyList) then
 	 case ArgsBodyList of [oneArg(Id)#Body] then   %--** support others
 	    PredId NLiveRegs ResReg FormalRegs VInstr GRegs Code
@@ -260,7 +256,7 @@ define
 			{TranslateCoord Coord} VTl)
 	 end
       [] selAppExp(Coord Lab Id) then
-	 VHd = vInlineDot(_ {GetReg Id State} {TranslateLab Lab} Reg false
+	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord} VTl)
       [] conAppExp(Coord id(_ ref _) Id) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]

@@ -85,14 +85,10 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, RealLit x) =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
-	fun outputLabString (q, s) =
+	fun outputLab (q, s) =
 	    case Int.fromString s of
 		NONE => outputAtom (q, s)
 	      | SOME n => outputInt (q, n)
-
-	fun outputLab (q, Lab (coord, s)) =
-	    (f (q, "lab"); outputCoord (q, coord); m q;
-	     outputLabString (q, s); r q)
 
 	fun outputId (q, Id (coord, stamp, name)) =
 	    (f (q, "id"); outputCoord (q, coord); m q;
@@ -116,12 +112,11 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     outputOption outputId (q, idOpt); r q)
 	  | outputTest (q, TupTest ids) =
 	    (f (q, "tupTest"); outputList outputId (q, ids); r q)
-	  | outputTest (q, RecTest stringIdList) =
+	  | outputTest (q, RecTest labIdList) =
 	    (f (q, "recTest");
-	     outputList (outputPair (outputLabString, outputId))
-	     (q, stringIdList); r q)
-	  | outputTest (q, LabTest (string, id)) =
-	    (f (q, "labTest"); outputLabString (q, string); output1 (q, #"#");
+	     outputList (outputPair (outputLab, outputId)) (q, labIdList); r q)
+	  | outputTest (q, LabTest (lab, id)) =
+	    (f (q, "labTest"); outputLab (q, lab); output1 (q, #"#");
 	     outputId (q, id); r q)
 	  | outputTest (q, VecTest ids) =
 	    (f (q, "vecTest"); outputList outputId (q, ids); r q)
@@ -130,10 +125,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "oneArg"); outputX (q, id); r q)
 	  | outputArgs outputX (q, TupArgs ids) =
 	    (f (q, "tupArgs"); outputList outputX (q, ids); r q)
-	  | outputArgs outputX (q, RecArgs stringIdList) =
+	  | outputArgs outputX (q, RecArgs labIdList) =
 	    (f (q, "recArgs");
-	     outputList (outputPair (outputAtom, outputX))
-	     (q, stringIdList); r q)
+	     outputList (outputPair (outputLab, outputX)) (q, labIdList); r q)
 
 	fun outputStm (q, ValDec (coord, id, exp, isToplevel)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
