@@ -743,7 +743,7 @@ structure CodeGen =
 			  Invokeinterface MRequest,
 			  Dup,
 			  storeCode (stamp', curFun, curCls),
-			  Goto retry]) ::
+			  Goto (Label.popRetry ())]) ::
 		    Label popelselabel ::
 		    Pop ::
 		    Label elselabel ::
@@ -791,6 +791,10 @@ structure CodeGen =
 		    in
 			shared' := cont;
 			Line line ::
+			(* Catch should be the last instruction here to
+			 generate the correct order. However, we reverse
+			 the order here and in ToJasmin which makes dead
+			 code elemination somewhat easier. *)
 			Catch (CExWrap, try, to, to) ::
 			Label try::
 			Multi (decListCode (trybody, curFun, curCls)) ::

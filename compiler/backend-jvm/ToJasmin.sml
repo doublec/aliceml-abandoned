@@ -66,7 +66,7 @@ structure ToJasmin =
 		     stackSizeHash := IntHash.new();
 		     usedlabel := IntSet.new())
 
-	    (* Perform a unconditional jump to a label. If the first
+	    (* Perform an unconditional jump to a label. If the first
 	     operation there would be some kind of return, do so. *)
 	    fun directJump lab' =
 		case IntHash.lookup(!labelMerge, lab') of
@@ -388,6 +388,19 @@ structure ToJasmin =
 					| SOME i => i+1)
 	    end
 
+	(* All catch instructions are reversed and placed at the very beginning of
+	 a method. *)
+	structure Catches =
+	    struct
+		val list = ref ([]: INSTRUCTION list)
+
+		fun new () = list := []
+
+		fun add c = list := c:: !list
+
+		fun get instructions = !list @ instructions
+	    end
+
 	fun optimize insts =
 	    let
 		fun deadCode (last, (c as Comment _)::rest) =
@@ -396,15 +409,16 @@ structure ToJasmin =
 		  | deadCode (last, (l as Line _):: rest) =
 		    l :: deadCode (last, rest)
 
-		  | deadCode (last, (c as Catch (ex, fromC, toC, using))::rest) =
-		    (* note that toC is not necessarily reachable.
-		     Anyhow, we have to generate the label for it. *)
-		    (LabelMerge.setReachable fromC;
+		  | deadCode (last, (c as Catch (_,fromC,toC,using))::rest) =
+		    (Catches.add c;
+		     (* note that toC is not necessarily reachable.
+		      Anyhow, we have to generate the label for it. *)
+		     LabelMerge.setReachable fromC;
 		     LabelMerge.setReachable using;
 		     LabelMerge.setUsed fromC;
 		     LabelMerge.setUsed toC;
 		     LabelMerge.setUsed using;
-		     c :: deadCode (last, rest))
+		     deadCode (last, rest))
 
 		  | deadCode (Lab (lab', dropMode),Label lab''::rest) =
 		    let
@@ -495,7 +509,8 @@ structure ToJasmin =
 		   only occur to labels that can be reached from before.
 		   Therefore, if we both don't know a label while parsing
 		   top-down and cannot reach it because it is placed after
-		   an unconditional jump, we can dump it *)
+		   an unconditional jump, we can dump it.
+		   *)
 		  | deadCode (i as Jump _, (l'' as Label lab'')::rest) =
 		    let
 			val reachable = LabelMerge.isReachable lab''
@@ -682,6 +697,23 @@ structure ToJasmin =
 			     inst ::
 			     akku)
 
+		(* instructions must be flattened to do this.
+		 With optimizations on, this is done in dead code
+		 elemination. *)
+		fun extractCatch ((c as Catch (_,fromC,toC,using))::rest) =
+		    (Catches.add c;
+		     (* note that toC is not necessarily reachable.
+		      Anyhow, we have to generate the label for it. *)
+		     LabelMerge.setReachable fromC;
+		     LabelMerge.setReachable using;
+		     LabelMerge.setUsed fromC;
+		     LabelMerge.setUsed toC;
+		     LabelMerge.setUsed using;
+		     extractCatch rest)
+		  | extractCatch (x::rest) =
+		    x :: extractCatch rest
+		  | extractCatch nil = nil
+
 		val flattened = foldr flatten nil insts
 	    in
 		if !OPTIMIZE >=1 then
@@ -700,7 +732,7 @@ structure ToJasmin =
 			    deadCode (Non, d')
 			else d'
 		    end
-		else flattened
+		else extractCatch flattened
 	    end
 
 	local
@@ -1054,13 +1086,14 @@ structure ToJasmin =
 			     nil => ()
 			   | _ =>
 				 (LabelMerge.new();
+				  Catches.new();
 				  JVMreg.new (siglength parms);
 				  TextIO.output(io,".method "^
 						(mAccessToString access)^
 						methodname^
 						(descriptor2string methodsig)^"\n");
 				  actmeth := methodname;
-				  (* Hack to satisfy Byte Code Verifier. *)
+				  (* xxx Hack to satisfy Byte Code Verifier. *)
 				  if !OPTIMIZE >= 2
 				      then
 					  finish := ""
@@ -1069,7 +1102,7 @@ structure ToJasmin =
 					   [Voidsig] => finish := "return\n"
 					 | _ => finish := "areturn\n");
 				  instructionsToJasmin
-				  (optimize instructions,
+				  (Catches.get (optimize instructions),
 				   true,
 				   staticapply,
 				   io);
