@@ -288,29 +288,29 @@
       <TT>range (<I>il</I>, <I>ih</I>)</TT>
     </DT>
     <DD>
-      <P>convienience abbreviation for <TT>fd (SOME (#[RANGE(il, ih)])</TT>.
+      <P>convenience abbreviation for <TT>fd (SOME (#[RANGE(il, ih)]))</TT>.
     </P></DD>
 
     <DT>
       <TT>rangeVec (<I>n</I>, <I>il</I>, <I>ih</I>)</TT>
     </DT>
     <DD>
-      <P>convienience abbreviation for
-         <TT>fdVec (n,SOME (#[RANGE(il, ih)])</TT>.
+      <P>convenience abbreviation for
+         <TT>fdVec (n,SOME (#[RANGE(il, ih)]))</TT>.
     </P></DD>
 
     <DT>
       <TT>bin ()</TT>
     </DT>
     <DD>
-      <P>convienience abbreviation for <TT>fd (SOME (#[RANGE(0, 1)])</TT>.
+      <P>convenience abbreviation for <TT>fd (SOME (#[RANGE(0, 1)]))</TT>.
     </P></DD>
 
     <DT>
       <TT>binVec <I>n</I></TT>
     </DT>
     <DD>
-      <P>convienience abbreviation for <TT>fdVec (n,SOME (#[RANGE(0, 1)])</TT>.
+      <P>convenience abbreviation for <TT>fdVec (n,SOME (#[RANGE(0, 1)]))</TT>.
     </P></DD>
 
     <DT>
