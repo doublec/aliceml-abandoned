@@ -47,6 +47,7 @@ define
    VecTest = 'VecTest'
    PrintName = 'PrintName'
    AuxiliaryOf = 'AuxiliaryOf'
+   IsToplevel = 'IsToplevel'
    OneArg = 'OneArg'
    TupArgs = 'TupArgs'
    RecArgs = 'RecArgs'
@@ -74,24 +75,16 @@ define
    SelExp = 'SelExp'
    VecExp = 'VecExp'
    FunExp = 'FunExp'
-   AppExp = 'AppExp'
-   SelAppExp = 'SelAppExp'
+   PrimAppExp = 'PrimAppExp'
+   VarAppExp = 'VarAppExp'
    TagAppExp = 'TagAppExp'
    ConAppExp = 'ConAppExp'
    RefAppExp = 'RefAppExp'
-   PrimAppExp = 'PrimAppExp'
+   SelAppExp = 'SelAppExp'
+   FunAppExp = 'FunAppExp'
    AdjExp = 'AdjExp'
 
-   local
-      C = {NewCell 0}
-   in
-      proc {Gen ?N}
-	 N = {Access C} + 1
-	 {Assign C N}
-      end
-   end
-
-   fun {TrAtom S}
+   fun {StringToAtom S}
       {String.toAtom {ByteString.toString S}}
    end
 
@@ -112,31 +105,34 @@ define
       end
    end
 
-   fun {TrStamp Stamp}
-      if Stamp == Prebound.valstamp_false then 'false'
-      elseif Stamp == Prebound.valstamp_true then 'true'
-      elseif Stamp == Prebound.valstamp_nil then 'nil'
-      elseif Stamp == Prebound.valstamp_cons then 'cons'
-      elseif Stamp == Prebound.valstamp_ref then 'ref'
-      elseif Stamp == Prebound.valstamp_match then 'Match'
-      elseif Stamp == Prebound.valstamp_bind then 'Bind'
-      else Stamp
-      end
-   end
-
    fun {TrName Name}
-      case Name of ExId(S) then exId({TrAtom S})
+      case Name of ExId(S) then exId({StringToAtom S})
       [] !InId then inId
       end
    end
 
    fun {TrId Id(Info Stamp Name)}
-      id({TrInfo Info} {TrStamp Stamp} {TrName Name})
+      id({TrInfo Info}
+	 if Stamp == Prebound.valstamp_false then 'false'
+	 elseif Stamp == Prebound.valstamp_true then 'true'
+	 elseif Stamp == Prebound.valstamp_nil then 'nil'
+	 elseif Stamp == Prebound.valstamp_cons then 'cons'
+	 elseif Stamp == Prebound.valstamp_ref then 'ref'
+	 elseif Stamp == Prebound.valstamp_match then 'Match'
+	 elseif Stamp == Prebound.valstamp_bind then 'Bind'
+	 else Stamp
+	 end
+	 {TrName Name})
    end
 
    fun {TrLab Lab}
       case Lab of NUM(I) then I
-      [] ALPHA(S) then {String.toAtom {ByteString.toString S}}
+      [] ALPHA(S) then
+	 case {StringToAtom S} of 'true' then true
+	 [] 'false' then false
+	 [] '::' then '|'
+	 elseof A then A
+	 end
       end
    end
 
@@ -149,8 +145,9 @@ define
    end
 
    fun {TrFunFlag FunFlag}
-      case FunFlag of PrintName(String) then printName({TrAtom String})
-      [] AuxiliaryOf(Stamp) then auxiliaryOf({TrStamp Stamp})
+      case FunFlag of PrintName(String) then printName({StringToAtom String})
+      [] AuxiliaryOf(Stamp) then auxiliaryOf(Stamp)
+      [] !IsToplevel then isToplevel
       end
    end
 
@@ -179,43 +176,55 @@ define
       end
    end
 
-   fun {TrStm Stm}
-      case Stm of ValDec(Info Id Exp IsToplevel) then
-	 valDec({TrInfo Info} {TrId Id} {TrExp Exp} IsToplevel)
-      [] RecDec(Info IdExpList IsToplevel) then
-	 recDec({TrInfo Info}
-		{Map IdExpList fun {$ Id#Exp} {TrId Id}#{TrExp Exp} end}
-		IsToplevel)
-      [] EvalStm(Info Exp) then evalStm({TrInfo Info} {TrExp Exp})
-      [] RaiseStm(Info Id) then raiseStm({TrInfo Info} {TrId Id})
-      [] ReraiseStm(Info Id) then reraiseStm({TrInfo Info} {TrId Id})
-      [] HandleStm(Info Body1 Id Body2 Body3 Shared) then
-	 {Assign Shared true}
-	 handleStm({TrInfo Info} {TrBody Body1} {TrId Id}
-		   {TrBody Body2} {TrBody Body3} Shared)
-      [] EndHandleStm(Info Shared) then endHandleStm({TrInfo Info} Shared)
-      [] TestStm(Info Id Test Body1 Body2) then
-	 testStm({TrInfo Info} {TrId Id} {TrTest Test}
-		 {TrBody Body1} {TrBody Body2})
-      [] SharedStm(Info Body Shared) then X in
-	 X = {Access Shared}
-	 if {IsInt X} then NewStm NewBody in
-	    NewStm = sharedStm({TrInfo Info} NewBody {Gen})
-	    {Assign Shared NewStm}
-	    NewBody = {TrBody Body}
-	    NewStm
-	 else X
+   proc {TrStm Stm Hd Tl ShareDict}
+      case Stm of ValDec(Info Id Exp) then
+	 Hd = valDec({TrInfo Info} {TrId Id} {TrExp Exp ShareDict})|Tl
+      [] RecDec(Info IdExpList) then
+	 Hd = recDec({TrInfo Info}
+		     {Map IdExpList
+		      fun {$ Id#Exp} {TrId Id}#{TrExp Exp ShareDict} end})|Tl
+      [] EvalStm(Info Exp) then
+	 Hd = evalStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
+      [] RaiseStm(Info Id) then
+	 Hd = raiseStm({TrInfo Info} {TrId Id})|Tl
+      [] ReraiseStm(Info Id) then
+	 Hd = reraiseStm({TrInfo Info} {TrId Id})|Tl
+      [] HandleStm(Info Body1 Id Body2 Body3 Stamp) then
+	 Hd = handleStm({TrInfo Info} {TrBody Body1 $ nil ShareDict} {TrId Id}
+			{TrBody Body2 $ nil ShareDict}
+			{TrBody Body3 $ nil ShareDict} Stamp)|Tl
+      [] EndHandleStm(Info Stamp) then
+	 Hd = endHandleStm({TrInfo Info} Stamp)|Tl
+      [] TestStm(Info Id TestBodyList Body) then
+	 Hd = testStm({TrInfo Info} {TrId Id}
+		      {Map TestBodyList
+		       fun {$ Test#Body}
+			  {TrTest Test}#{TrBody Body $ nil ShareDict}
+		       end}
+		      {TrBody Body $ nil ShareDict})|Tl
+      [] SharedStm(Info Body Stamp) then
+	 case {Dictionary.condGet ShareDict Stamp unit} of unit then NewStm in
+	    {Dictionary.put ShareDict Stamp NewStm}
+	    NewStm = sharedStm({TrInfo Info} {TrBody Body $ nil ShareDict}
+			       Stamp)
+	    Hd = NewStm|Tl
+	 elseof Stm then
+	    Hd = Stm|Tl
 	 end
-      [] ReturnStm(Info Exp) then returnStm({TrInfo Info} {TrExp Exp})
+      [] ReturnStm(Info Exp) then
+	 Hd = returnStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
       [] IndirectStm(_ BodyOptRef) then
-	 case {Access BodyOptRef} of SOME(Body) then {TrBody Body} end
-      [] ExportStm(Info Exp) then exportStm({TrInfo Info} {TrExp Exp})
+	 case {Access BodyOptRef} of SOME(Body) then
+	    {TrBody Body Hd Tl ShareDict}
+	 end
+      [] ExportStm(Info Exp) then
+	 Hd = exportStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
       end
    end
 
-   fun {TrExp Exp}
+   fun {TrExp Exp ShareDict}
       case Exp of LitExp(Info Lit) then litExp({TrInfo Info} {TrLit Lit})
-      [] PrimExp(Info String) then primExp({TrInfo Info} {TrAtom String})
+      [] PrimExp(Info String) then primExp({TrInfo Info} {StringToAtom String})
       [] NewExp(Info ConArity) then newExp({TrInfo Info} {TrConArity ConArity})
       [] VarExp(Info Id) then varExp({TrInfo Info} {TrId Id})
       [] TagExp(Info Lab ConArity) then
@@ -230,35 +239,40 @@ define
       [] SelExp(Info Lab) then selExp({TrInfo Info} {TrLab Lab})
       [] VecExp(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
       [] FunExp(Info Stamp Flags Args Body) then
-	 funExp({TrInfo Info} {TrStamp Stamp} {Map Flags TrFunFlag}
-		{TrArgs Args} {TrBody Body})
-      [] AppExp(Info Id Args) then
-	 appExp({TrInfo Info} {TrId Id} {TrArgs Args})
-      [] SelAppExp(Info Lab Id) then
-	 selAppExp({TrInfo Info} {TrLab Lab} {TrId Id})
+	 funExp({TrInfo Info} Stamp {Map Flags TrFunFlag}
+		{TrArgs Args} {TrBody Body $ nil ShareDict})
+      [] PrimAppExp(Info String Ids) then
+	 primAppExp({TrInfo Info} {StringToAtom String} {Map Ids TrId})
+      [] VarAppExp(Info Id Args) then
+	 varAppExp({TrInfo Info} {TrId Id} {TrArgs Args})
       [] TagAppExp(Info Lab Args ConArity) then
 	 tagAppExp({TrInfo Info} {TrLab Lab} {TrArgs Args}
 		   {TrConArity ConArity})
       [] ConAppExp(Info Id Args ConArity) then
 	 conAppExp({TrInfo Info} {TrId Id} {TrArgs Args} {TrConArity ConArity})
       [] RefAppExp(Info Id) then refAppExp({TrInfo Info} {TrId Id})
-      [] PrimAppExp(Info String Ids) then
-	 primAppExp({TrInfo Info} {TrAtom String} {Map Ids TrId})
+      [] SelAppExp(Info Lab Id) then
+	 selAppExp({TrInfo Info} {TrLab Lab} {TrId Id})
+      [] FunAppExp(Info Id Stamp Args) then
+	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args})
       [] AdjExp(Info Id1 Id2) then
 	 adjExp({TrInfo Info} {TrId Id1} {TrId Id2})
       end
    end
 
-   fun {TrBody Stms}
-      {Flatten {Map Stms TrStm}}
+   proc {TrBody Stms Hd Tl ShareDict}
+      {FoldL Stms
+       proc {$ Hd Stm Tl}
+	  {TrStm Stm Hd Tl ShareDict}
+       end Hd Tl}
    end
 
    fun {TrComponent Import#(Body#Sign)}
       {Map Import
        fun {$ Id#Sign#U}
-	  {TrId Id}#Sign#{TrAtom {Url.toString U}}
+	  {TrId Id}#Sign#{StringToAtom {Url.toString U}}
        end}#
-      ({TrBody Body}#Sign)
+      ({TrBody Body $ nil {NewDictionary}}#Sign)
    end
 
    fun {Translate InFilename Component OutFilename} F in
