@@ -1,0 +1,57 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive from "Pervasive"
+import datatype bool and alt from "ToplevelTypes"
+import signature ALT         from "ALT-sig"
+
+
+structure Alt : ALT =							(**)
+struct
+    datatype alt		= datatype alt
+    type ('a,'b) t		= ('a,'b) alt
+
+    exception Alt
+
+    fun isFst(FST _)		= true
+      | isFst(SND _)		= false
+    fun isSnd(FST _)		= false
+      | isSnd(SND _)		= true
+
+    fun fst(FST x)		= x
+      | fst(SND x)		= raise Alt
+    fun snd(FST x)		= raise Alt
+      | snd(SND x)		= x
+
+    fun getFst(FST x, _)	= x
+      | getFst(SND _, x)	= x
+    fun getSnd(FST _, x)	= x
+      | getSnd(SND x, _)	= x
+
+    fun app (f,g) (FST x)	= f x
+      | app (f,g) (SND x)	= g x
+    fun appFst f (FST x)	= f x
+      | appFst f (SND x)	= ()
+    fun appSnd f (FST x)	= ()
+      | appSnd f (SND x)	= f x
+
+    fun map (f,g) (FST x)	= FST(f x)
+      | map (f,g) (SND x)	= SND(g x)
+    fun mapFst f (FST x)	= FST(f x)
+      | mapFst f (SND x)	= SND x
+    fun mapSnd f (FST x)	= FST x
+      | mapSnd f (SND x)	= SND(f x)
+end
