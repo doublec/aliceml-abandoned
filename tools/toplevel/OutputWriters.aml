@@ -1,0 +1,19 @@
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure AliceIdeGUI from "AliceIdeGUI"
+
+structure OutputWriters =
+   struct
+      fun fillBuf buffer text =
+          Gtk.textBufferInsertAtCursor(buffer, text, size text)
+
+      fun makeWriters(progOut, compilerOut) =
+          let
+              val progBuf = Gtk.textBufferNew Gtk.NULL
+              val compilerBuf = Gtk.textBufferNew Gtk.NULL
+          in
+              Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
+              Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
+              spawn app (fillBuf progBuf) progOut;
+              spawn app (fillBuf compilerBuf) compilerOut
+          end
+   end

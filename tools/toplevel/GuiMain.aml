@@ -1,0 +1,98 @@
+import structure AliceIdeGUI from "AliceIdeGUI"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure Gdk from "x-alice:/lib/gtk/Gdk"
+
+structure AliceIde =
+    struct
+        val progoutP = ref (Promise.promise())
+        val compileroutP = ref (Promise.promise())
+
+        val progOut : string list = Promise.future (!progoutP)
+        val compilerOut : string list = Promise.future (!compileroutP)
+
+        val curtextview = ref AliceIdeGUI.scratchpad
+        val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
+
+        fun write stream text =
+            let
+                val p = Promise.promise()
+            in
+                Promise.fulfill(!stream, text::Promise.future p);
+                stream := p
+            end
+
+        fun feedFile() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetStartIter(buf,startiter)
+                val enditer = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetEndIter(buf,enditer)
+                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+            in
+                Gtk.textIterFree startiter;
+                Gtk.textIterFree enditer;
+                write compileroutP str
+            end
+
+        fun feedSelection() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val startiter = Gtk.textIterNew()
+                val enditer = Gtk.textIterNew()
+                val sel = Gtk.textBufferGetSelectionBounds(buf,
+                                                           startiter,enditer)
+            in
+                if sel then
+                    write compileroutP
+                          (Gtk.textBufferGetText(buf, startiter, enditer, false))
+                else ();
+                Gtk.textIterFree startiter;
+                Gtk.textIterFree enditer
+            end
+                
+        fun feedLine() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+                val cursor = Gtk.textBufferGetInsert(buf)
+                val startiter = Gtk.textIterNew()
+                val _ = Gtk.textBufferGetIterAtMark(buf,startiter,cursor)
+                val enditer = Gtk.textIterCopy(startiter)
+                val _ = Gtk.textIterSetLineOffset(startiter, 0)
+                val _ = Gtk.textIterForwardToLineEnd(enditer)
+                val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+            in
+                Gtk.textIterFree startiter;
+                Gtk.textIterFree enditer;
+                write compileroutP str
+            end
+
+        fun copy() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+            in
+                Gtk.textBufferCopyClipboard(buf, clipboard)
+            end
+
+        fun paste() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+            in
+                Gtk.textBufferPasteClipboard(buf, clipboard,
+                                             Gtk.NULL, true)
+            end
+
+        fun cut() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+            in
+                Gtk.textBufferCutClipboard(buf, clipboard, true)
+            end
+
+        fun delete() =
+            let
+                val buf = Gtk.textViewGetBuffer (!curtextview)
+            in
+                ignore (Gtk.textBufferDeleteSelection(buf, true, true))
+            end
+    end

@@ -1,0 +1,21 @@
+import signature ALICEIDEGUISIGNALS_SIG from "AliceIdeGUISignals"
+import structure AliceIde from "AliceIde"
+
+structure EventHandler : ALICEIDEGUISIGNALS_SIG =
+    struct
+        val on_new1_activate = const ()
+        val on_open1_activate = const ()
+        val on_save1_activate = const ()
+        val on_save_as1_activate = const ()
+        val on_compilefile_activate = const ()
+        val on_quit1_activate = const ()
+        fun on_cut1_activate _ = AliceIde.cut()
+        fun on_copy1_activate _ = AliceIde.copy()
+        fun on_paste1_activate _ = AliceIde.paste()
+        fun on_delete1_activate _ = AliceIde.delete()
+        fun on_feedline_activate _ = AliceIde.feedLine()
+        val on_feedparagraph_activate = const()
+        fun on_feedselection_activate _ = AliceIde.feedSelection()
+        fun on_feedfile_activate _ = AliceIde.feedFile()
+        val on_about1_activate = const()
+    end
