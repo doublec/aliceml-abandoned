@@ -50,6 +50,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	(* Translation *)
 
 	fun share nil = nil
+	  | share (stms as [O.SharedStm (_, _, _)]) = stms
 	  | share stms =   (*--** provide better coordinates *)
 	    [O.SharedStm (Source.nowhere, stms, ref backendInfoDummy)]
 
