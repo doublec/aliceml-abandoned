@@ -1,2 +1,2 @@
 #include <gtk/gtk.h>
-//#include <gtk-canvas.h>
+#include <libgnomecanvas/libgnomecanvas.h>
