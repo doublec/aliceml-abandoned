@@ -672,7 +672,11 @@ struct
 	if d > !max_depth
 	    then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,p,i,d,
 			      setGroup)
-	else let val a_length = 2 + List.length(ilist)
+	else let val ilength = List.length(ilist)
+		 val limited = ilength > !max_width
+		 val a_length = if limited 
+				    then 3 + !max_width
+				else 2 + List.length(ilist)
 		 val container = 
 	             createContainer(createIValue(va,t,NO_ACTIONS),p,i,d,
 				     Array.array(a_length,Empty),setGroup)
@@ -682,14 +686,22 @@ struct
 					  "end",DEFAULT,setGroup)
 	     in ( Array.update(getKids(container),0,s_begin) 
 		 ; Array.update(getKids(container),a_length-1,s_end) 
-                 ; setItems (va,ilist,container,d+1) 
+                 ; if not(limited)
+		       then setItems (va,ilist,container,d,ilength) 
+		   else let val limit = createLimit(INTERPUNCT,WIDTH_LIMIT,
+						    container,a_length-2,d,
+						    setGroup)
+			in ( Array.update(getKids(container),a_length-2,limit)
+                            ; setItems (va,List.take(ilist,!max_width),
+					container,d,!max_width) )
+			end 
 		 ; container ) 
 	     end   
 
     (* setItems *)
-    and setItems (va,ilist,p,d) = 
+    and setItems (va,ilist,p,d,length) = 
 	let val l = ref 1
-	in while !l <= List.length(ilist) do
+	in while !l <= length do
 	    (let val node = let val vv = UnsafeValue.cast va
 				val item = (List.nth(ilist,!l-1))
 				val label = itemToLabel(item)

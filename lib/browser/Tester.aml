@@ -47,12 +47,12 @@ UnsafeInspector.inspect (D [{1 = #[#["hi","du"],#["guck","mal"]],
 structure Test = Reflect.ReflectType (type t = int vector list);
 UnsafeInspector.inspect([#[1,2],#[1,1]],Test.x);
 
-(*
+
 structure IntList = Reflect.ReflectType (type t = (int * int) list);
 val int_list = IntList.x;
 val rec l = (3,4)::l;
 
-UnsafeInspector.inspect (l,int_list); *)
+UnsafeInspector.inspect (l,int_list); 
 
 (* Futures *)
 structure Fut = Reflect.ReflectType (type t = int vector list);

@@ -17,7 +17,7 @@
 import structure Type          from "x-alice:/lib/rtt/Type"
 import structure Label         from "x-alice:/lib/rtt/Label"
 import structure UnsafeValue   from "x-alice:/lib/system/UnsafeValue"
-import structure Reflect   from "x-alice:/lib/system/Reflect"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
 import structure Types         from "Types"
 import signature HELPER        from "HELPER-sig"
 
@@ -159,6 +159,11 @@ struct
 
     fun getSort (Limit(r)) = #sort(r)
       | getSort _  = raise Match
+
+    fun getReflectValue n = case getDesc(n) of
+	                    INTERPUNCT => raise Match
+			  | VALUE(r) => #value(r) 
+			  | I_VALUE(r) => UnsafeValue.cast (#value(r))
 
 (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)   
 

@@ -101,12 +101,13 @@ struct
 	if !(Settings.relmode) andalso isRelNode(getParent(n)) 
 	    then ()
 	else 
-	( setDazzled n 
+	(TextIO.print("UPDATE: usually started \n") 
+	 ; setDazzled n 
 	 ; let val ind = getAncIndex n 
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val old_ydim = Layout.get_ydim(anc)
-	       val (p,index) = getNoRelAnc n	 
+	       val (p,index) = getNoRelAnc n	
 	       val va_inf = UnsafeValue.cast va : Reflect.module
 	       val new =
 		   case getDesc(n) of
@@ -114,34 +115,36 @@ struct
 				     getDepth(n))
 		     | I_VALUE(r) => g(va_inf,#typ(r),p,index,
 				       getDepth(n))
-		     | INTERPUNCT => raise UpdateError 
+		     | INTERPUNCT => (TextIO.print("UPDATE: INTERPUNCT description found !!\n"); raise UpdateError) 
 	       val _ = updateChild(p,index,new)
 	       val node = if getParent(new) = Empty then new else anc
 	       val _ = if isRelRefNode new
 			   then findRelNode(node,va)
 		       else ()
 	       val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
-	   in ( Gtk.objectDestroy(getGroup(n))
-	       ; if isRelNode new 
-		     then let val ri_rel = 
-			      case ReinspectedRelDict.lookup
-				  (Dictionaries.ri_reldict,ind) 
-				   of SOME x => x
-				    | NONE => []
+               val _ = TextIO.print("UPDATE: notwendige Daten berechnet\n")
+	   in (Gtk.objectDestroy(getGroup(n))
+	       ; if isRelNode new  
+		     then let val ri_rel =  
+			      case ReinspectedRelDict.lookup 
+				  (Dictionaries.ri_reldict,ind)  
+				   of SOME x => x 
+				    | NONE => [] 
 			  in ReinspectedRelDict.update(Dictionaries.ri_reldict,
-						       (ind,
-					           [new]@ri_rel))
-			  end 
-		 else ()
-               ; Layout.layout(node)
+						       (ind, 
+					           [new]@ri_rel)) 
+			  end  
+		 else () 
+               ; Layout.layout(node) 
 	       ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	       ; DrawNodes.draw(node,0,y_pos,true) 
-	       ; let val dy =  Layout.get_ydim(node) - old_ydim
-		 in ( Window.incr_act_line dy
-		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
-				 MainDictionary.getHighestIndexAssigned
-				 (Dictionaries.dict))
-		     ; Layout.setVisible(Layout.get_xdim(node),dy))
+               ; TextIO.print("UPDATE: beginne zu zeichnen...\n") 
+	       ; DrawNodes.draw(node,0,y_pos,true)  
+	       ; let val dy =  Layout.get_ydim(node) - old_ydim 
+		 in ( Window.incr_act_line dy 
+		     ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
+				 MainDictionary.getHighestIndexAssigned 
+				 (Dictionaries.dict)) 
+		     ; Layout.setVisible(Layout.get_xdim(node),dy)) 
 		 end )
 	   end )
 
@@ -208,8 +211,9 @@ struct
 	
     (* reinspect *)
     and reinspect (n,f,g) = 
-        let val va = getValue(getDesc(n))
-	in  Server.serve(fn () => (update(n,va,f,g) ; !Window.resize()))
+        let val va = getReflectValue n
+			           : Reflect.value
+	in  Server.serve(fn () => (update(n,va,f,g) ; !Window.resize()) )
 	end
     handle General.Match => raise UpdateError
 	
@@ -219,10 +223,11 @@ struct
 	(fn () => 
 	 let val old_depth = !(Settings.max_depth)
 	 in 
-	     ( setDazzled n
-	      ; let val new_depth = findHighestDepth n + i
-		in Settings.set_depth(if new_depth < 0 then 0 else new_depth)
-		end
+	     (TextIO.print("FOLD_DEPTH: started...\n") 
+	      ; setDazzled n
+	      ; let val new_depth = findHighestDepth n + i 
+		in Settings.set_depth(if new_depth < 0 then 0 else new_depth) 
+		end 
 	      ; fold (n,f,g)
 	      ; Settings.set_depth(old_depth) )
 	 end)
@@ -247,7 +252,7 @@ struct
 	    val (anc,ancline) = valOf(MainDictionary.lookup 
 					(Dictionaries.dict,ind)) 
 	    val old_ydim = Layout.get_ydim(anc) 
-	    val va = getValue(getDesc(n))
+	    val va = getReflectValue n
 	    val va_inf = UnsafeValue.cast va : Reflect.module
 	    val (p,index) = getNoRelAnc n
 	    val new = 
@@ -258,7 +263,8 @@ struct
 	    val _ = updateChild(p,index,new)  
 	    val node = if getParent(new) = Empty then new else anc
 	    val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
-	in ( Gtk.objectDestroy(getGroup(n))
+	in ( TextIO.print("FOLD: Werte sind berechnet...\n") 
+	    ; Gtk.objectDestroy(getGroup(n))
 	    ; Layout.layout(node)
 	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
 	    ; DrawNodes.draw(node,0,y_pos,true) 
@@ -298,13 +304,13 @@ struct
       | RelNode(r) => findHighestWidth'(!(#content(r)),i,new_i)
       | Container(r) 
 	    => ( let val li = Array.toList(#kids(r))
-		     val test_i = List.length(li) - 
-			 (if isLimit(List.last(li)) then 1 else 0)
 		     val first = List.nth(li,0)
-		 in if isSimple first
-		     andalso String.equal("struct",getRep first)
-			then ()
-		    else new_i := Int.max(i,test_i)
+		     val test_i = List.length(li) - 
+			 (if isLimit(List.last(li)) then 1 else 0) -
+                         (if isSimple(first)
+			      andalso String.equal("struct",getRep first) 
+			      then 2 else 0)
+		 in  new_i := Int.max(i,test_i)
 		 end  
 		; array_map(fn no => findHighestWidth'(no,!new_i,new_i),
 			    #kids(r)) )

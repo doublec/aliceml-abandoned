@@ -52,6 +52,8 @@ sig
     val getGroup : node -> Gtk.object
     val getColor : node -> color_class
     val getSort : node -> limit
+    
+    val getReflectValue : node -> Reflect.value
 
     (* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)
     val getValueAnc : node -> node
