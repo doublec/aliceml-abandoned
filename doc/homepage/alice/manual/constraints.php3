@@ -19,6 +19,7 @@
     The problem is given as a script (nullary function)
     which then can be passed to the different search engines.
   </P>
+
   <PRE>
    fun Money () =
        let
@@ -96,7 +97,7 @@
   </PRE>
   <P>
     To start posting constraints, execute <PRE>open Constr</PRE>.
-  <P>
+  </P>
 
 <?php section("lowlevel api", "lowlevel api") ?>
   
@@ -125,7 +126,7 @@
   <P>
     Search currently supports only basic search mechanisms, such as single, best and
     all solutions search.
-  <P>
+  </P>
 
   <UL>
     <LI>
