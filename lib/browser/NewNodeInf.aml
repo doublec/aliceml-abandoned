@@ -14,6 +14,7 @@
  *)
 
 import structure Inf from "x-alice:/lib/rtt/Inf"
+import structure Path from "x-alice:/lib/rtt/Path"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Types from "Types"
@@ -147,9 +148,43 @@ struct
 	     in ( Array.update(getKids(uppercont),0,s_begin)
 		 ; Array.update(getKids(uppercont),1,container)
 		 ; Array.update(getKids(uppercont),2,s_end)
+                 ; setItems (va,ilist,container,d+1)
 		 ; uppercont )
 	     end 
-							    
+
+    (* setItems *)
+    and setItems (va,ilist,p,d) = 
+	let val l = ref 0
+	in while !l <= List.length(ilist) - 1 do
+	    (let val last = (!l = List.length(ilist) - 1)
+		 val conc = if last then Empty
+			    else createConcat(INTERPUNCT,p,!l,d+1,
+					      Array.array(2,Empty),~1,~1,
+					      setGroup)
+		 val sep = if last then Empty
+			   else createSimple (INTERPUNCT,conc,1,d,", ",
+					      SEP_COLOR,setGroup)
+		 val node = let val vv = UnsafeValue.cast va
+			    in 
+		            if last 
+				then Empty (* createItemNode !!!*)
+			    else Empty (* createItemNode !!!*)
+	     in if last 
+		    then Array.update(getKids(p),!l,node)
+		else ( Array.update(getKids(conc),0,node)
+		      ; Array.update(getKids(conc),1,sep)
+		      ; Array.update(getKids(p),!l,conc) )
+	     end
+           ; l := !l + 1)
+	end
+    
+   (* itemToLabel *)
+   and itemToLabel i = case Inf.inspectItem i of
+       FixItem(l,i) => l
+     | ValItem(l,t) => l
+     | TypItem(path,tk) => Path.toLab(path)
+						    
 end (* struct *)
 
 end
+
