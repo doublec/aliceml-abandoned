@@ -12,7 +12,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-Compiler.Profile.setProfMode true;
+(*Compiler.Profile.setProfMode true;  produces overflow during bootstrapping*)
 CM.make' "main-mozart.cm";
 
 local
