@@ -146,59 +146,51 @@ public:
   }
 };
 
-class DllExport DynamicBlock : private Block {
+class DllExport DynamicBlock : protected Block {
 protected:
-  enum {SCAN_SIZE_POS, SIZE };
+  enum {ACTIVE_SIZE, BASE_SIZE };
 public:
   using Block::GetBase;
   using Block::GetLabel;
   using Block::ToWord;
   u_int GetSize() {
-    return (Block::GetSize() - 1);
+    return (Block::GetSize() - BASE_SIZE);
+  }
+  u_int GetActiveSize() {
+    return Store::DirectWordToInt(Block::GetArg(ACTIVE_SIZE));
   }
   u_int GetScanSize() {
-    return Store::DirectWordToInt(Block::GetArg(SCAN_SIZE_POS));
+    return (GetActiveSize() + BASE_SIZE);
   }
-  void SetScanSize(u_int size) {
-    AssertStore(size <= GetSize());
-    Block::ReplaceArg(SCAN_SIZE_POS, size);
-  }
-  word GetArg(u_int f) {
-    AssertStore(f < GetScanSize());
-    return GetArgUnchecked(f);
+  void SetActiveSize(u_int size) {
+    AssertStore(size <= DynamicBlock::GetSize());
+    Block::ReplaceArg(ACTIVE_SIZE, size);
   }
   word GetArgUnchecked(u_int f) {
-    AssertStore(f < GetSize());
-    return ((word *) this)[f + 2];
+    return Block::GetArg(BASE_SIZE + f);
+  }
+  word GetArg(u_int f) {
+    AssertStore(f < GetActiveSize());
+    return GetArgUnchecked(f);
   }
   void InitArg(u_int f, word v) {
-    AssertStore(f <= GetScanSize());
-    AssertStore(v != NULL);
-    ((word *) this)[f + 2] = v;
+    AssertStore(f < GetActiveSize());
+    Block::InitArg(BASE_SIZE + f, v);
   }
   void InitArg(u_int f, s_int v) {
-    InitArg(f, Store::IntToWord(v));
+    DynamicBlock::InitArg(f, Store::IntToWord(v));
   }
   void ReplaceArg(u_int f, word v) {
-    AssertStore(f < GetScanSize());
-    AssertStore(v != NULL);
-    if (!PointerOp::IsInt(v)) {
-      u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
-      u_int mygen  = HeaderOp::DecodeGeneration(this);
-      
-      if ((valgen < mygen) && (!HeaderOp::IsChildish(this))) {
-	Store::AddToIntgenSet(this);
-      }
-    }
-    ((word *) this)[f + 2] = v;
+    AssertStore(f < GetActiveSize());
+    Block::ReplaceArg(BASE_SIZE + f, v);
   }
   void ReplaceArg(u_int f, s_int v) {
-    InitArg(f, Store::IntToWord(v));
+    DynamicBlock::ReplaceArg(f, Store::IntToWord(v));
   }
 
   static DynamicBlock *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
-    AssertStore(p->GetLabel() == DYNAMIC_LABEL);
+    AssertStore((p == INVALID_POINTER) || (p->GetLabel() == DYNAMIC_LABEL));
     return static_cast<DynamicBlock *>(p);
   }
   static DynamicBlock *FromWordDirect(word x) {

@@ -236,7 +236,10 @@ void Store::HandleInterGenerationalPointers(const u_int gen) {
       if (entryGen > gen) {
 	// Traverse entry for young references
 	bool foundYoungPtrs = false;
-	for (u_int k = entry->GetSize(); k--;) {
+	u_int entrySize =
+	  ((entry->GetLabel() == DYNAMIC_LABEL) ?
+	   ((DynamicBlock *) entry)->GetScanSize() : entry->GetSize());
+	for (u_int k = entrySize; k--;) {
 	  word wItem = PointerOp::Deref(entry->GetArg(k));
 	  if (PointerOp::IsInt(wItem))
 	    entry->InitArg(k, wItem);
