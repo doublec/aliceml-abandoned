@@ -21,14 +21,14 @@
 ## all:
 ##    Identical to build3-install.
 ## depend:
-##    Creates the file Makefile.depend, which contains the dependencies
-##    needed for Pass 3.
+##    Creates the file Makefile.bootstrap.depend, 
+##    which contains the dependencies needed for Pass 3.
 ## clean:
 ##    Removes all files created by previous builds.
 ## veryclean:
 ##    Identical to clean.
 ## distclean:
-##    Additionally removes the generated Makefile.depend.
+##    Additionally removes the generated Makefile.bootstrap.depend.
 ##
 ## Pass 1
 ## ------
@@ -123,8 +123,6 @@ ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 OZC = ozc
 MLLEX = ml-lex
 MLYACC = ml-yacc
-
-PLATFORM := $(shell oztool platform)
 
 ##
 ## Enumerate All Files Making Up the Source Tree
@@ -344,9 +342,6 @@ alicec1-%: build1-install
 
 %.o: %.cc
 	oztool c++ -c $< -o $@
-
-%.so-$(PLATFORM): %.o
-	oztool ld -o $@ $<
 
 ########################################################################
 ### BUILD 1
@@ -568,9 +563,6 @@ build2-install: build2-all $(INSTALL2DIRS) $(INSTALL2FILES)
 $(INSTALL2DIRS):
 	mkdir -p $@
 
-build2/install/%.so-$(PLATFORM): build1/install/%.so-$(PLATFORM)
-	install -c -m 555 $< $@
-
 build2/install/%.import: build2/%.import
 	install -c -m 444 $< $@
 
@@ -709,9 +701,9 @@ BUILD3ALICESOURCES = $(filter %.aml, $(BUILD3SOURCES))
 depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 	$(BUILD2SOURCES) $(BUILD3SOURCES)
 	$(ALICEDEP) $(BUILD2ALICESOURCES) $(BUILD3ALICESOURCES) \
-	> Makefile.depend
+	> Makefile.bootstrap.depend
 
--include Makefile.depend
+-include Makefile.bootstrap.depend
 
 ##
 ## Global Installation
@@ -763,4 +755,4 @@ clean:
 veryclean: clean
 
 distclean: veryclean
-	-rm -f Makefile.depend
+	-rm -f Makefile.bootstrap.depend
