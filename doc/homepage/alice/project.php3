@@ -20,7 +20,9 @@
   }
 
   $suburls =
-    array(array("text" => "People",
+    array(array("text" => "Home",
+		"url"  => "index.php3"),
+	  array("text" => "People",
 		"url"  => "people.php3"),
 	  array("text" => "Papers",
 		"url"  => "papers.php3"),
