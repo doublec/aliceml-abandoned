@@ -28,7 +28,7 @@ case "$mode" in
     c++)
 	cxxflags="@SEAM_MACHINE_FLAGS@"
 	cmd @CXX@ $cxxflags -DLIGHTNING=@HAVE_LIGHTNING@ \
-	    -I@includedir@/seam "$@"
+	    -I@includedir@/seam @LIGHTNINGINCLUDES@ "$@"
 	;;
     ld)
 	outputfile=""
