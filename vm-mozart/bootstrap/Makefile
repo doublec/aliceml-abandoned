@@ -76,11 +76,11 @@ BACKENDCOMMONSOURCES = \
 	ENGINE.sig MakeEngine.sml BackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
-BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MozartGenerationPhase.sml
+BACKENDMOZARTSOURCES = CodeGenPhase.ozf.sig MakeBackendMozart.sml
 BACKENDMOZARTFILES = $(BACKENDMOZARTSOURCES:%=backend-mozart/%)
 
 TOPSOURCES = Signature.sml Composer.sml COMPILER.sig MakeCompiler.sml \
-	SMLToMozartCompiler.sml MAIN.sig MakeMain.sml
+	MAIN.sig MakeMain.sml SMLToMozartCompiler.sml
 TOPFILES = $(TOPSOURCES:%=top/%)
 
 ALLFILES = \

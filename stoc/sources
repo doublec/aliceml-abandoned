@@ -167,7 +167,7 @@ backend-common/ENGINE.sig
 backend-common/MakeEngine.sml
 backend-common/BackendCommon.sml
 backend-mozart/OzifyFlatGrammar.sml
-backend-mozart/MozartGenerationPhase.sml
+backend-mozart/MakeBackendMozart.sml
 top/Signature.sml
 top/Composer.sml
 top/COMPILER.sig
@@ -176,4 +176,5 @@ top/Pickle.sml
 top/MAIN.sig
 top/MakeMain.sml
 top/SMLToMozartCompiler.sml
+top/SMLToMozartMain.sml
 top/Main.sml

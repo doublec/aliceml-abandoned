@@ -1,5 +1,7 @@
 Group
 
+	structure SMLToMozartMain
+	structure SMLToComPlusMain
 	structure Main
 
 is

@@ -24,8 +24,8 @@ from "x-alice:/backend-common/BackendCommon.ozf"
 
 import
     structure MakeMozartTarget
-    structure MakeMozartGenerationPhase
-from "x-alice:/backend-mozart/MozartGenerationPhase.ozf"
+    structure MakeBackendMozart
+from "x-alice:/backend-mozart/MakeBackendMozart.ozf"
 
 import
     structure Signature

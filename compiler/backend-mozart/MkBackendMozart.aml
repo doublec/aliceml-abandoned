@@ -52,8 +52,8 @@ functor MakeMozartTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	    CodeGenPhase.save (filename, component)
     end
 
-functor MakeMozartGenerationPhase(MozartTarget: TARGET
-				  where type t = CodeGenPhase.t): PHASE =
+functor MakeBackendMozart(MozartTarget: TARGET
+			  where type t = CodeGenPhase.t): PHASE =
     struct
 	structure C = EmptyContext
 	structure I = FlatGrammar
