@@ -15,7 +15,11 @@
 #include "alice/primitives/Authoring.hh"
 
 DEFINE1(General_exnName) {
-  RETURN(String::New("")->ToWord()); //--** to be determined
+  ConVal *conVal = ConVal::FromWord(x0);
+  if (conVal == INVALID_POINTER) REQUEST(x0);
+  Constructor *constructor =
+    conVal->IsConVal()? conVal->GetConstructor(): Constructor::FromWord(x0);
+  RETURN(constructor->GetName()->ToWord());
 } END
 
 void PrimitiveTable::RegisterGeneral() {
