@@ -88,7 +88,7 @@ val filled_future = let val _ = Promise.fulfill(prom2,#[124,248])
 		     end;
 *)
 
-UnsafeInspector.inspect([future],fut);
+UnsafeInspector.inspect([future,future],fut);
 
 Promise.fulfill(prom2,#[1]);
 
