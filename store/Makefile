@@ -35,7 +35,7 @@ StoreConfig.hh: StoreConfig.exe
 	./$<
 
 StoreConfig.exe: StoreConfig.o
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(LD) $(LDFLAGS) -o $@ $<
 
 clean:
 	rm -f StoreConfig.o StoreConfig StoreConfig.exe
@@ -46,7 +46,7 @@ veryclean: clean
 distclean: veryclean
 	rm -f StoreConfig.hh Makefile.depend
 
-Makefile.depend: Makefile StoreConfig.hh $(SOURCES)
+Makefile.depend: Makefile $(SOURCES) StoreConfig.hh
 	$(MAKEDEPEND) $(SOURCES) StoreConfig.cc > $@
 
 include Makefile.depend
