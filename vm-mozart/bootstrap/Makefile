@@ -1,3 +1,4 @@
+OZC = ozc
 STOC = ../../stoc/backend-mozart/stoc-mozart --image=../../stoc/top/stoc-mozart
 MERGE = ./merge.sh
 OZHOME = /usr/local/oz
@@ -220,15 +221,18 @@ COMPONENTS = \
 	FrontendCommon \
 	FrontendSMLLexer FrontendSML FrontendSMLParser FrontendSMLMain \
 	BackendCommon BackendMozart \
-	Main
+	Main Test
 
 %.ozf: %.aus
 	$(STOC) --in=$< --out=$@
 
+%.ozf: %.oz
+	$(OZC) -c $< -o $@
+
 all: stoc-mozart
 
 stoc-mozart: $(COMPONENTS:%=%.ozf)
-	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=. -x Main.ozf -o $@
+	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=. -x Test.ozf -o $@
 
 Base.aus: $(BASE_FILES)
 	$(MERGE) $(BASE_FILES) > $@
