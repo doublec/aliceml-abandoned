@@ -1,8 +1,8 @@
 import
     structure WideChar
     structure WideString
-from "misc/Wide.ozf"
+from "x-alice:/misc/Wide.ozf"
 
 import
     signature MISC
-from "misc/MISC.ozf"
+from "x-alice:/misc/MISC.ozf"

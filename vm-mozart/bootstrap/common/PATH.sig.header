@@ -1,7 +1,7 @@
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"

@@ -1,7 +1,7 @@
 import
     structure TextIO
-from "lib/TextIO.ozf"
+from "x-alice:/lib/TextIO.ozf"
 
 import
     signature PRETTY_PRINT
-from "misc/PRETTY_PRINT.ozf"
+from "x-alice:/misc/PRETTY_PRINT.ozf"

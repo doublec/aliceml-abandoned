@@ -1,3 +1,3 @@
 import
     signature LAB
-from "frontend-sml/LAB.ozf"
+from "x-alice:/frontend-sml/LAB.ozf"

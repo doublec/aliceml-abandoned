@@ -1,7 +1,7 @@
 import
     structure MakeStamp
-from "misc/MakeStamp.ozf"
+from "x-alice:/misc/MakeStamp.ozf"
 
 import
     structure MakeId
-from "frontend-sml/MakeId.ozf"
+from "x-alice:/frontend-sml/MakeId.ozf"

@@ -1,11 +1,11 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure BindEnv
-from "frontend-sml/BindEnv.ozf"
+from "x-alice:/frontend-sml/BindEnv.ozf"

@@ -4,8 +4,13 @@ OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozengine ../Init.ozf $(OZHOME)/bin/ozl
 
-NATIVESOURCES = BootWord IO TextIO OS Unix
+NATIVESOURCES = IO TextIO OS Unix
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
+
+LIBSOURCES = \
+	Base.sml BootWord.ozf.sig Word.sml IO.ozf.sig OS.ozf.sig \
+	TextIO.ozf.sig Unix.ozf.sig
+LIBFILES = $(LIBSOURCES:%=lib/%)
 
 MLYACCSOURCES = base.sig join.sml lrtable.sml stream.sml parser2.sml
 MLYACCFILES = $(MLYACCSOURCES:%=lib/ml-yacc/%)
@@ -66,17 +71,15 @@ BACKENDCOMMONSOURCES = \
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
 ALLFILES = \
-	lib/Base.sml $(NATIVEFILES) $(NATIVESOURCES:%=lib/%.ozf.sig) \
-	lib/Word.sml $(MLYACCFILES) $(ERRORFILES) $(MISCFILES) $(TOPFILES) \
-	$(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
+	$(NATIVEFILES) $(LIBFILES) $(MLYACCFILES) $(ERRORFILES) $(MISCFILES) \
+	$(TOPFILES) $(COMMONFILES) $(FRONTENDCOMMONFILES) $(FRONTENDSMLFILES) \
 	$(BACKENDCOMMONFILES) backend-mozart/CodeGenPhase.ozf.sig top/Main.sml
 
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf
 
-
 stoc-mozart:
-	OZ_LOAD=prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/lib/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/misc/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/error/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/top/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/frontend-common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/frontend-sml/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/backend-common/=./:prefix=/home/kornstae/stockhausen/vm-mozart/bootstrap/backend-mozart/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	$(OZL) -v --exclude=.. --include=.,../../stoc -x top/Main.ozf -o $@
+	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	$(OZL) -v --exclude=.. --include=x-alice:/,../../stoc -x x-alice:/top/Main.ozf -o $@
 
 %.ozf: %.oz
 	$(OZC) -c $< -o $@
@@ -91,9 +94,6 @@ $(NATIVEFILES): lib/%: ../%
 	cat Base.import $< > $@
 
 top/Main.sml: top/Main.sml.body Base.import
-	cat Base.import $< > $@
-
-lib/%.ozf.sig: ../%.ozf.sig Base.import
 	cat Base.import $< > $@
 
 lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import

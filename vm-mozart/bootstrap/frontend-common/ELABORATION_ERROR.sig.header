@@ -1,31 +1,31 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Fixity
-from "common/Fixity.ozf"
+from "x-alice:/common/Fixity.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure AbstractGrammar
-from "frontend-common/AbstractGrammar.ozf"
+from "x-alice:/frontend-common/AbstractGrammar.ozf"

@@ -1,3 +1,3 @@
 import
     structure PrettyPrint
-from "misc/PrettyPrint.ozf"
+from "x-alice:/misc/PrettyPrint.ozf"

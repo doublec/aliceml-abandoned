@@ -1,40 +1,40 @@
 import
     structure PrettyPrint
-from "misc/PrettyPrint.ozf"
+from "x-alice:/misc/PrettyPrint.ozf"
 
 import
     structure PPMisc
-from "misc/PPMisc.ozf"
+from "x-alice:/misc/PPMisc.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure PPPath
-from "common/PPPath.ozf"
+from "x-alice:/common/PPPath.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure PPType
-from "common/PPType.ozf"
+from "x-alice:/common/PPType.ozf"
 
 import
     structure Fixity
-from "common/Fixity.ozf"
+from "x-alice:/common/Fixity.ozf"
 
 import
     structure Inf
     structure InfPrivate
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     signature PP_INF
-from "common/PP_INF.ozf"
+from "x-alice:/common/PP_INF.ozf"

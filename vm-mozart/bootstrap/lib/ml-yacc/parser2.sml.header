@@ -1,17 +1,17 @@
 import
+    structure TextIO
+    val print
+from "x-alice:/lib/TextIO.ozf"
+
+import
     structure LrTable
-from "lib/ml-yacc/lrtable.ozf"
+from "x-alice:/lib/ml-yacc/lrtable.ozf"
 
 import
     structure Stream
-from "lib/ml-yacc/stream.ozf"
+from "x-alice:/lib/ml-yacc/stream.ozf"
 
 import
     signature TOKEN
     signature LR_PARSER
-from "lib/ml-yacc/base.ozf"
-
-import
-    structure TextIO
-    val print
-from "lib/TextIO.ozf"
+from "x-alice:/lib/ml-yacc/base.ozf"

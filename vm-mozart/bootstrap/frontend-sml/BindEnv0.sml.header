@@ -1,25 +1,25 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Prebound
-from "common/Prebound.ozf"
+from "x-alice:/common/Prebound.ozf"
 
 import
     structure VId
     structure TyCon
     structure StrId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"
 
 import
     structure BindEnv
-from "frontend-sml/BindEnv.ozf"
+from "x-alice:/frontend-sml/BindEnv.ozf"
 
 import
     signature BIND_ENV0
-from "frontend-sml/BIND_ENV0.ozf"
+from "x-alice:/frontend-sml/BIND_ENV0.ozf"

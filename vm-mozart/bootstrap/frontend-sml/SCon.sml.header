@@ -1,12 +1,12 @@
 import
     structure LargeWord
-from "lib/Word.ozf"
+from "x-alice:/lib/Word.ozf"
 
 import
     structure WideChar
     structure WideString
-from "misc/Wide.ozf"
+from "x-alice:/misc/Wide.ozf"
 
 import
     signature SCON
-from "frontend-sml/SCON.ozf"
+from "x-alice:/frontend-sml/SCON.ozf"

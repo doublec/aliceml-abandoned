@@ -1,85 +1,85 @@
 import (*DEBUG*)
     val print
     structure TextIO
-from "lib/TextIO.ozf"
+from "x-alice:/lib/TextIO.ozf"
 
 import (*DEBUG*)
     structure PrettyPrint
-from "misc/PrettyPrint.ozf"
+from "x-alice:/misc/PrettyPrint.ozf"
 
 import (*DEBUG*)
     structure PPPath
-from "common/PPPath.ozf"
+from "x-alice:/common/PPPath.ozf"
 
 import (*DEBUG*)
     structure PPType
-from "common/PPType.ozf"
+from "x-alice:/common/PPType.ozf"
 
 import (*DEBUG*)
     structure PPInf
-from "common/PPInf.ozf"
+from "x-alice:/common/PPInf.ozf"
 
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure Error
-from "error/Error.ozf"
+from "x-alice:/error/Error.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure PathMap
-from "common/PathMap.ozf"
+from "x-alice:/common/PathMap.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure PreboundType
-from "common/PreboundType.ozf"
+from "x-alice:/common/PreboundType.ozf"
 
 import
     structure Env
-from "frontend-common/Env.ozf"
+from "x-alice:/frontend-common/Env.ozf"
 
 import
     structure AbstractGrammar
-from "frontend-common/AbstractGrammar.ozf"
+from "x-alice:/frontend-common/AbstractGrammar.ozf"
 
 import
     structure TypedInfo
     structure TypedGrammar
-from "frontend-common/TypedGrammar.ozf"
+from "x-alice:/frontend-common/TypedGrammar.ozf"
 
 import
     structure ElaborationError
-from "frontend-common/ElaborationError.ozf"
+from "x-alice:/frontend-common/ElaborationError.ozf"
 
 import
     signature COMPOSER
-from "top/COMPOSER.ozf"
+from "x-alice:/top/COMPOSER.ozf"
 
 import
     signature ELABORATION_PHASE
-from "frontend-common/ELABORATION_PHASE.ozf"
+from "x-alice:/frontend-common/ELABORATION_PHASE.ozf"

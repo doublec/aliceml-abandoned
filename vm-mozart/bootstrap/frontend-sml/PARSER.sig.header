@@ -1,12 +1,12 @@
 import
     structure LargeWord
-from "lib/Word.ozf"
+from "x-alice:/lib/Word.ozf"
 
 import
     signature PARSER_DATA
-from "lib/ml-yacc/base.ozf"
+from "x-alice:/lib/ml-yacc/base.ozf"
 
 import
     structure WideChar
     structure WideString
-from "misc/Wide.ozf"
+from "x-alice:/misc/Wide.ozf"

@@ -1,7 +1,7 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure VId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"

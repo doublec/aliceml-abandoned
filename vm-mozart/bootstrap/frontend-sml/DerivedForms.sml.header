@@ -1,29 +1,29 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Lab
-from "frontend-sml/Lab.ozf"
+from "x-alice:/frontend-sml/Lab.ozf"
 
 import
     structure VId
     structure TyCon
     structure StrId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"
 
 import
     signature INPUT_GRAMMAR
-from "frontend-sml/INPUT_GRAMMAR.ozf"
+from "x-alice:/frontend-sml/INPUT_GRAMMAR.ozf"
 
 import
     structure InputGrammar
-from "frontend-sml/InputGrammar.ozf"
+from "x-alice:/frontend-sml/InputGrammar.ozf"
 
 import
     structure ParsingError
-from "frontend-sml/ParsingError.ozf"
+from "x-alice:/frontend-sml/ParsingError.ozf"
 
 import
     signature DERIVED_FORMS
-from "frontend-sml/DERIVED_FORMS.ozf"
+from "x-alice:/frontend-sml/DERIVED_FORMS.ozf"

@@ -1,62 +1,62 @@
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Fixity
-from "common/Fixity.ozf"
+from "x-alice:/common/Fixity.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure Prebound
-from "common/Prebound.ozf"
+from "x-alice:/common/Prebound.ozf"
 
 import
     structure PreboundType
-from "common/PreboundType.ozf"
+from "x-alice:/common/PreboundType.ozf"
 
 import
     structure VId
     structure TyCon
     structure SigId
     structure StrId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"
 
 import
     structure Infix
-from "frontend-sml/Infix.ozf"
+from "x-alice:/frontend-sml/Infix.ozf"
 
 import
     structure BindEnv
-from "frontend-sml/BindEnv.ozf"
+from "x-alice:/frontend-sml/BindEnv.ozf"
 
 import
     signature BIND_ENV_FROM_SIG
-from "frontend-sml/BIND_ENV_FROM_SIG.ozf"
+from "x-alice:/frontend-sml/BIND_ENV_FROM_SIG.ozf"

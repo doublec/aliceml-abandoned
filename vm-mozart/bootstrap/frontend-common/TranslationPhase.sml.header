@@ -1,48 +1,48 @@
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure EmptyContext
-from "top/EmptyContext.ozf"
+from "x-alice:/top/EmptyContext.ozf"
 
 import
     structure TypedInfo
     structure TypedGrammar
-from "frontend-common/TypedGrammar.ozf"
+from "x-alice:/frontend-common/TypedGrammar.ozf"
 
 import
     structure IntermediateGrammar
-from "common/IntermediateGrammar.ozf"
+from "x-alice:/common/IntermediateGrammar.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure PreboundType
-from "common/PreboundType.ozf"
+from "x-alice:/common/PreboundType.ozf"
 
 import
     structure StringMap
-from "frontend-common/StringMap.ozf"
+from "x-alice:/frontend-common/StringMap.ozf"
 
 import
     signature TRANSLATION_PHASE
-from "frontend-common/TRANSLATION_PHASE.ozf"
+from "x-alice:/frontend-common/TRANSLATION_PHASE.ozf"

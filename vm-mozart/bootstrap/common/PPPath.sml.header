@@ -1,24 +1,24 @@
 import
     structure PrettyPrint
-from "misc/PrettyPrint.ozf"
+from "x-alice:/misc/PrettyPrint.ozf"
 
 import
     structure PPMisc
-from "misc/PPMisc.ozf"
+from "x-alice:/misc/PPMisc.ozf"
 
 import
     signature PP_PATH
-from "common/PP_PATH.ozf"
+from "x-alice:/common/PP_PATH.ozf"
 
 import
     structure Path
     structure PathPrivate
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"

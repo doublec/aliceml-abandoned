@@ -1,23 +1,23 @@
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure PathMap
-from "common/PathMap.ozf"
+from "x-alice:/common/PathMap.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Fixity
-from "common/Fixity.ozf"
+from "x-alice:/common/Fixity.ozf"

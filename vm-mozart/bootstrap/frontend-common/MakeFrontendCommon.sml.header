@@ -1,27 +1,27 @@
 import
     signature COMPOSER
-from "top/COMPOSER.ozf"
+from "x-alice:/top/COMPOSER.ozf"
 
 import
     signature PHASE
-from "top/PHASE.ozf"
+from "x-alice:/top/PHASE.ozf"
 
 import
     functor ComposePhases
-from "top/ComposePhases.ozf"
+from "x-alice:/top/ComposePhases.ozf"
 
 import
     structure MakeElaborationPhase
-from "frontend-common/MakeElaborationPhase.ozf"
+from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
 
 import
     structure TranslationPhase
-from "frontend-common/TranslationPhase.ozf"
+from "x-alice:/frontend-common/TranslationPhase.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure Env
-from "frontend-common/Env.ozf"
+from "x-alice:/frontend-common/Env.ozf"

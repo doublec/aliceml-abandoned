@@ -1,27 +1,27 @@
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     signature PHASE
-from "top/PHASE.ozf"
+from "x-alice:/top/PHASE.ozf"
 
 import
     structure ComposePhases
-from "top/ComposePhases.ozf"
+from "x-alice:/top/ComposePhases.ozf"
 
 import
     signature COMPOSER
-from "top/COMPOSER.ozf"
+from "x-alice:/top/COMPOSER.ozf"
 
 import
     structure ParsingPhase
-from "frontend-sml/ParsingPhase.ozf"
+from "x-alice:/frontend-sml/ParsingPhase.ozf"
 
 import
     structure MakeAbstractionPhase
-from "frontend-sml/MakeAbstractionPhase.ozf"
+from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
 
 import
     structure BindEnv
-from "frontend-sml/BindEnv.ozf"
+from "x-alice:/frontend-sml/BindEnv.ozf"

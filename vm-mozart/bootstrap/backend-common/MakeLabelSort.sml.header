@@ -1,11 +1,11 @@
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     signature LABEL_SORT
-from "backend-common/LABEL_SORT.ozf"
+from "x-alice:/backend-common/LABEL_SORT.ozf"

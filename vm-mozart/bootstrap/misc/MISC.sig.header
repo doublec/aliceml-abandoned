@@ -1,4 +1,4 @@
 import
     structure WideChar
     structure WideString
-from "misc/Wide.ozf"
+from "x-alice:/misc/Wide.ozf"

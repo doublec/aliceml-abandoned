@@ -13,8 +13,8 @@
 functor
 import
    Pickle(save)
-   NativeWord(toInt) at '../Word.so{native}'
-   PreboundComponent('$Prebound': Prebound) at 'common/Prebound.ozf'
+   WordComponent('$Word': Word) at 'x-alice:/lib/Word.ozf'
+   PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
 export
    Translate
@@ -100,7 +100,7 @@ define
    end
 
    fun {TrLit Lit}
-      case Lit of WordLit(W) then wordLit({NativeWord.toInt W})
+      case Lit of WordLit(W) then wordLit({Word.toInt W})
       [] IntLit(I) then intLit(I)
       [] CharLit(C) then charLit(C)
       [] StringLit(S) then stringLit({ByteString.toString S})

@@ -1,38 +1,38 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Error
-from "error/Error.ozf"
+from "x-alice:/error/Error.ozf"
 
 import
     structure PrettyPrint
-from "misc/PrettyPrint.ozf"
+from "x-alice:/misc/PrettyPrint.ozf"
 
 import
     structure PPMisc
-from "misc/PPMisc.ozf"
+from "x-alice:/misc/PPMisc.ozf"
 
 import
     structure Url
-from "misc/Url.ozf"
+from "x-alice:/misc/Url.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure AbstractGrammar
-from "frontend-common/AbstractGrammar.ozf"
+from "x-alice:/frontend-common/AbstractGrammar.ozf"
 
 import
     structure Lab
-from "frontend-sml/Lab.ozf"
+from "x-alice:/frontend-sml/Lab.ozf"
 
 import
     structure VId
@@ -40,8 +40,8 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"
 
 import
     signature ABSTRACTION_ERROR
-from "frontend-sml/ABSTRACTION_ERROR.ozf"
+from "x-alice:/frontend-sml/ABSTRACTION_ERROR.ozf"

@@ -1,7 +1,7 @@
 import
     functor MakeAbstractGrammar
-from "frontend-common/MakeAbstractGrammar.ozf"
+from "x-alice:/frontend-common/MakeAbstractGrammar.ozf"
 
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"

@@ -1,3 +1,3 @@
 import
     signature FIXITY
-from "common/FIXITY.ozf"
+from "x-alice:/common/FIXITY.ozf"

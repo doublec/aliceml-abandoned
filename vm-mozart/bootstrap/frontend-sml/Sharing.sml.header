@@ -1,19 +1,19 @@
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure AbstractGrammar
-from "frontend-common/AbstractGrammar.ozf"
+from "x-alice:/frontend-common/AbstractGrammar.ozf"
 
 import
     structure AbstractionError
-from "frontend-sml/AbstractionError.ozf"
+from "x-alice:/frontend-sml/AbstractionError.ozf"
 
 import
     signature SHARING
-from "frontend-sml/SHARING.ozf"
+from "x-alice:/frontend-sml/SHARING.ozf"

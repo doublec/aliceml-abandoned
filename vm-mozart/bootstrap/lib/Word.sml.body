@@ -16,7 +16,7 @@
 
 import
     structure BootWord
-from "lib/BootWord.ozf"
+from "x-alice:/lib/BootWord.ozf"
 
 structure Word =
     struct

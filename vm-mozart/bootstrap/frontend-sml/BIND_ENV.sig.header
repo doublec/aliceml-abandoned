@@ -1,14 +1,14 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure Lab
-from "frontend-sml/Lab.ozf"
+from "x-alice:/frontend-sml/Lab.ozf"
 
 import
     structure VId
@@ -16,8 +16,8 @@ import
     structure TyCon
     structure SigId
     structure StrId
-from "frontend-sml/Ids.ozf"
+from "x-alice:/frontend-sml/Ids.ozf"
 
 import
     structure Infix
-from "frontend-sml/Infix.ozf"
+from "x-alice:/frontend-sml/Infix.ozf"

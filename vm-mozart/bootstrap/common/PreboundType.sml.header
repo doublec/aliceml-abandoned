@@ -1,19 +1,19 @@
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Prebound
-from "common/Prebound.ozf"
+from "x-alice:/common/Prebound.ozf"
 
 import
     signature PREBOUND_TYPE
-from "common/PREBOUND_TYPE.ozf"
+from "x-alice:/common/PREBOUND_TYPE.ozf"

@@ -1,11 +1,11 @@
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure StringHashKey
-from "misc/StringHashKey.ozf"
+from "x-alice:/misc/StringHashKey.ozf"
 
 import
     signature LABEL
-from "common/LABEL.ozf"
+from "x-alice:/common/LABEL.ozf"

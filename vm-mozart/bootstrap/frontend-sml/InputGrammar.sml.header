@@ -1,7 +1,7 @@
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure MakeInputGrammar
-from "frontend-sml/MakeInputGrammar.ozf"
+from "x-alice:/frontend-sml/MakeInputGrammar.ozf"

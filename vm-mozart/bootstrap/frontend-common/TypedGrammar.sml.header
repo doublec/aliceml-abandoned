@@ -1,19 +1,19 @@
 import
     functor MakeAbstractGrammar
-from "frontend-common/MakeAbstractGrammar.ozf"
+from "x-alice:/frontend-common/MakeAbstractGrammar.ozf"
 
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure Fixity
-from "common/Fixity.ozf"
+from "x-alice:/common/Fixity.ozf"
 
 import
     structure Type
-from "common/Type.ozf"
+from "x-alice:/common/Type.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"

@@ -1,35 +1,35 @@
 import
     structure LargeWord
-from "lib/Word.ozf"
+from "x-alice:/lib/Word.ozf"
 
 import
     structure Url
-from "misc/Url.ozf"
+from "x-alice:/misc/Url.ozf"
 
 import
     structure Stamp
-from "common/Stamp.ozf"
+from "x-alice:/common/Stamp.ozf"
 
 import
     structure StampSet
-from "common/StampSet.ozf"
+from "x-alice:/common/StampSet.ozf"
 
 import
     structure Name
-from "common/Name.ozf"
+from "x-alice:/common/Name.ozf"
 
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     signature FLAT_GRAMMAR
-from "backend-common/FLAT_GRAMMAR.ozf"
+from "x-alice:/backend-common/FLAT_GRAMMAR.ozf"
 
 import
     structure FlatGrammar
-from  "backend-common/FlatGrammar.ozf"
+from "x-alice:/backend-common/FlatGrammar.ozf"
 
 import
     signature OUTPUT_FLAT_GRAMMAR
-from "backend-common/OUTPUT_FLAT_GRAMMAR.ozf"
+from "x-alice:/backend-common/OUTPUT_FLAT_GRAMMAR.ozf"

@@ -1,82 +1,82 @@
 import
     structure TextIO
-from "lib/TextIO.ozf"
+from "x-alice:/lib/TextIO.ozf"
 
 import
     structure IO
-from "lib/IO.ozf"
+from "x-alice:/lib/IO.ozf"
 
 import
     structure Crash
-from "error/Crash.ozf"
+from "x-alice:/error/Crash.ozf"
 
 import
     structure Source
-from "error/Source.ozf"
+from "x-alice:/error/Source.ozf"
 
 import
     structure FromEqHashKey
-from "misc/HASH_KEY.ozf"
+from "x-alice:/misc/HASH_KEY.ozf"
 
 import
     structure MakeHashImpMap
-from "misc/MakeHashImpMap.ozf"
+from "x-alice:/misc/MakeHashImpMap.ozf"
 
 import
     structure Url
-from "misc/Url.ozf"
+from "x-alice:/misc/Url.ozf"
 
 import
     structure Inf
-from "common/Inf.ozf"
+from "x-alice:/common/Inf.ozf"
 
 import
     structure ParsingPhase
-from "frontend-sml/ParsingPhase.ozf"
+from "x-alice:/frontend-sml/ParsingPhase.ozf"
 
 import
     structure BindEnv
-from "frontend-sml/BindEnv.ozf"
+from "x-alice:/frontend-sml/BindEnv.ozf"
 
 import
     structure BindEnv0
-from "frontend-sml/BindEnv0.ozf"
+from "x-alice:/frontend-sml/BindEnv0.ozf"
 
 import
     structure MakeAbstractionPhase
-from "frontend-sml/MakeAbstractionPhase.ozf"
+from "x-alice:/frontend-sml/MakeAbstractionPhase.ozf"
 
 import
     structure Env
-from "frontend-common/Env.ozf"
+from "x-alice:/frontend-common/Env.ozf"
 
 import
     structure Env0
-from "frontend-common/Env0.ozf"
+from "x-alice:/frontend-common/Env0.ozf"
 
 import
     structure MakeElaborationPhase
-from "frontend-common/MakeElaborationPhase.ozf"
+from "x-alice:/frontend-common/MakeElaborationPhase.ozf"
 
 import
     structure TranslationPhase
-from "frontend-common/TranslationPhase.ozf"
+from "x-alice:/frontend-common/TranslationPhase.ozf"
 
 import
     structure FlatteningPhase
-from "backend-common/FlatteningPhase.ozf"
+from "x-alice:/backend-common/FlatteningPhase.ozf"
 
 import
     structure CodeGenPhase
-from "backend-mozart/CodeGenPhase.ozf"
+from "x-alice:/backend-mozart/CodeGenPhase.ozf"
 
 import
     signature SIGNATURE
-from "top/SIGNATURE.ozf"
+from "x-alice:/top/SIGNATURE.ozf"
 
 import
     structure Signature
-from "top/Signature.ozf"
+from "x-alice:/top/Signature.ozf"
 
 signature COMPOSER' =
     sig

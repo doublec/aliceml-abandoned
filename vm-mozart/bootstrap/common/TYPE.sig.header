@@ -1,15 +1,15 @@
 import
     structure Label
-from "common/Label.ozf"
+from "x-alice:/common/Label.ozf"
 
 import
     structure Path
-from "common/Path.ozf"
+from "x-alice:/common/Path.ozf"
 
 import
     structure PathSet
-from "common/PathSet.ozf"
+from "x-alice:/common/PathSet.ozf"
 
 import
     structure PathMap
-from "common/PathMap.ozf"
+from "x-alice:/common/PathMap.ozf"
