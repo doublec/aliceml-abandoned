@@ -20,7 +20,7 @@
 #include "store/WeakDictionary.hh"
 #include "generic/RootSet.hh"
 
-class FinalizationSet: public Finalization {
+class DllExport FinalizationSet: public Finalization {
 private:
   static const u_int initialSize = 4; //--** to be determined
 
