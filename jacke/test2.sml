@@ -1,16 +1,20 @@
 (* very simple (toplevel) grammar definition *)
-token PLUS | MINUS | TIMES | NUM of int
+structure arithmetic =
+struct
 
-assocl TIMES
-assocl PLUS MINUS
+    token PLUS | MINUS | TIMES | NUM of int
+
+    assocl TIMES
+    assocl PLUS MINUS
 
 
-rule exp : int = 
-      NUM 
-    | n1 as exp, oper, n2 as exp => (oper(n1,n2))
-and oper =
-      PLUS  => (op+)
-    | MINUS => (op-)
-    | TIMES => (op*)
+    rule exp : int = 
+        NUM 
+      | n1 as exp, oper, n2 as exp => (oper(n1,n2))
+    and oper =
+        PLUS  => (op+)
+      | MINUS => (op-)
+      | TIMES => (op*)
 
-parser eval = exp
+    parser eval = exp
+end
