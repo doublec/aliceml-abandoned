@@ -16,5 +16,5 @@ from "../../lib/system/OS"
 
 signature BATCH_COMPILER =
     sig
-	val stoc: string list -> OS.Process.status
+	val main : string list -> OS.Process.status
     end

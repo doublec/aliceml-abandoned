@@ -14,6 +14,6 @@ import structure OS from "../../lib/system/OS"
 
 signature INTERACTIVE_TOPLEVEL =
     sig
-	val stot: string list -> OS.Process.status
+	val main: string list -> OS.Process.status
 	val use: string -> unit
     end
