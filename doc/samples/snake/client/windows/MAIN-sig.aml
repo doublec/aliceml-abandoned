@@ -33,11 +33,14 @@ sig
 	
     type quit_cb         = unit -> unit
 
+    type disconnect_cb   = unit -> string option
+
     type give_up_cb      = mainwindow_type -> string option
 
     val mkMainWindow :   start_client_cb * start_server_cb * start_single_cb * 
 	                                turn_cb * change_view_cb * 
-					give_up_cb * quit_cb -> mainwindow_type
+					give_up_cb * disconnect_cb * 
+					quit_cb -> mainwindow_type
 
     val gameMode :       mainwindow_type -> unit
 

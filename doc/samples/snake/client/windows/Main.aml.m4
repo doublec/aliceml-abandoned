@@ -137,6 +137,8 @@ struct
 
     type quit_cb         = unit -> unit
 
+    type disconnect_cb   = unit -> string option
+
     type give_up_cb      = mainwindow_type -> string option
 
 
@@ -171,7 +173,7 @@ struct
 		    
     (* builds the mainWindow, starting in START mode *)
     fun mkMainWindow (startClientCB, startServerCB, startSingleCB, 
-		      turnCB, changeViewCB, giveUpCB, quitCB) = 
+		      turnCB, changeViewCB, giveUpCB, disconnectCB, quitCB) = 
 	let
 	    val _ = log ("mkMainWindow", "starts")
 	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
@@ -346,7 +348,13 @@ struct
 			    fun yes ()    = 
 				(log("backToStart", 
 				     "called giveUp in QuestionWindow ");
-				 disconnectCB (); reset' p)
+				 (case disconnectCB () of
+				      NONE     => ()
+				    | SOME msg => 
+					  (Text.mkTextWindow (#object p,
+							     "ERROR!",
+  				           "error while disconnecting!");())); 
+				      reset' p)
                             val answer    = {yes, no, cancel}
 			in
 			    Question.mkQuestionBox 
