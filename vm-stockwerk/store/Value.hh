@@ -115,7 +115,23 @@ public:
   u_int GetSize() {
     return Store::DirectWordToInt(GetArg(BYTESIZE_POS));
   }
-
+  // String hashing function is taken from
+  // 'Aho, Sethi, Ullman: Compilers..., page 436
+  u_int Hash() {
+    u_int len      = this->GetSize();
+    const char *s  = this->GetBase();
+    const char *sm = (s + len);
+    unsigned h = 0, g;
+    for (const char *p = s; p < sm; p++) {
+      h = (h << 4) + (*p);
+      if ((g = h & 0xf0000000)) {
+	h = h ^ (g >> 24);
+	h = h ^ g;
+      }
+    }
+    return h;
+  }
+  
   static Chunk *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
