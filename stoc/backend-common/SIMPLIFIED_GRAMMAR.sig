@@ -48,6 +48,7 @@ signature SIMPLIFIED_GRAMMAR =
 	  | RecExp of coord * (lab * longid) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab * exp option
+	  | VecExp of coord * longid list
 	  | FunExp of coord * string * (id args * exp) list
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * longid * exp * bool ref   (* is tail *)
@@ -67,6 +68,7 @@ signature SIMPLIFIED_GRAMMAR =
 	  | RecTest of (string * id) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string * id
+	  | VecTest of id list
 	and 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a list

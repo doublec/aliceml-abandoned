@@ -84,6 +84,7 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 	    (nil, O.RecTest stringIdList)
 	  | translateTest (LabTest (string, id)) =
 	    (nil, O.LabTest (string, id))
+	  | translateTest (VecTest ids) = (nil, O.VecTest ids)
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -174,6 +175,18 @@ structure ImperativePhase :> IMPERATIVE_PHASE =
 		    f (O.SelAppExp (coord, lab, id))::translateCont cont
 	    in
 		translateDec (OneDec (coord', id, exp), Goto stms)
+	    end
+	  | translateExp (VecExp (coord, longids), f, cont) =
+	    let
+		val (stms, ids) =
+		    List.foldr (fn (longid, (stms, ids)) =>
+				let
+				    val (stms', id) = translateLongid longid
+				in
+				    (stms' @ stms, id::ids)
+				end) (nil, nil) longids
+	    in
+		stms @ f (O.VecExp (coord, ids))::translateCont cont
 	    end
 	  | translateExp (FunExp (coord, string, argsExpList), f, cont) =
 	    let

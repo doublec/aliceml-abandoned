@@ -99,6 +99,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 			      Field (coord, lab, substExp (exp, subst)))
 		    expFields)
 	  | substExp (exp as SelExp (_, _), _) = exp
+	  | substExp (VecExp (coord, exps), subst) =
+	    VecExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
 	  | substExp (FunExp (coord, id, exp), subst) =
 	    FunExp (coord, id, substExp (exp, subst))
 	  | substExp (AppExp (coord, exp1, exp2), subst) =
@@ -147,6 +149,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		    List.map (fn Field (coord, lab, pat) =>
 			      Field (coord, lab, substPat (pat, subst)))
 		    patFields, hasDots)
+	  | substPat (VecPat (coord, pats), subst) =
+	    VecPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (AsPat (coord, pat1, pat2), subst) =
 	    AsPat (coord, substPat (pat1, subst), substPat (pat2, subst))
 	  | substPat (AltPat (coord, pats), subst) =

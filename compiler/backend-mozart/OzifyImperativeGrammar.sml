@@ -128,6 +128,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputTest (q, LabTest (string, id)) =
 	    (f (q, "labTest"); outputLabString (q, string); output1 (q, #"#");
 	     outputId (q, id); r q)
+	  | outputTest (q, VecTest ids) =
+	    (f (q, "vecTest"); outputList outputId (q, ids); r q)
 
 	fun outputArgs outputX (q, OneArg id) =
 	    (f (q, "oneArg"); outputX (q, id); r q)
@@ -199,6 +201,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, RecExp (coord, labIdList)) =
 	    (f (q, "recExp"); outputCoord (q, coord); m q;
 	     outputList (outputPair (outputLab, outputId)) (q, labIdList); r q)
+	  | outputExp (q, VecExp (coord, ids)) =
+	    (f (q, "vecExp"); outputCoord (q, coord); m q;
+	     outputList outputId (q, ids); r q)
 	  | outputExp (q, SelExp (coord, lab)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); r q)

@@ -28,6 +28,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | RecTest of string list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string
+	  | VecTest of int
 	  | GuardTest of mapping * exp
 	  | DecTest of mapping * O.coord * dec list
 	withtype mapping = (string list * id) list
@@ -85,6 +86,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			    makeTestSeq (pat, s::pos, rest, mapping))
 		(Test (pos, test)::rest, mapping) patFields
 	    end
+	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
+	    foldli (fn (i, pat, (rest, mapping)) =>
+		    makeTestSeq (pat, Int.toString i::pos, rest, mapping))
+	    (Test (pos, VecTest (List.length pats))::rest, mapping)
+	    pats
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
 	    let
 		val (rest', mapping') = makeTestSeq (pat1, pos, rest, mapping)
@@ -135,6 +141,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    longidEq (longid1, longid2) andalso hasArgs1 = hasArgs2
 	  | testEq (TupTest n1, TupTest n2) = n1 = n2
 	  | testEq (RecTest labs1, RecTest labs2) = labs1 = labs2
+	  | testEq (VecTest n1, VecTest n2) = n1 = n2
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
@@ -142,10 +149,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | areParallelTests (TupTest _, LitTest _) = true
 	  | areParallelTests (LitTest _, RecTest _) = true
 	  | areParallelTests (RecTest _, LitTest _) = true
+	  | areParallelTests (LitTest _, VecTest _) = true
+	  | areParallelTests (VecTest _, LitTest _) = true
 	  | areParallelTests (TupTest n1, TupTest n2) = n1 <> n2
 	  | areParallelTests (TupTest _, RecTest _) = true
 	  | areParallelTests (RecTest _, TupTest _) = true
+	  | areParallelTests (VecTest _, TupTest _) = true
+	  | areParallelTests (TupTest _, VecTest _) = true
+	  | areParallelTests (VecTest _, RecTest _) = true
+	  | areParallelTests (RecTest _, VecTest _) = true
 	  | areParallelTests (RecTest labs1, RecTest labs2) = labs1 <> labs2
+	  | areParallelTests (VecTest n1, VecTest n2) = n1 <> n2
 	  | areParallelTests (_, _) = false
 
 	local

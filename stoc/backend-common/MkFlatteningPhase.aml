@@ -161,6 +161,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		  | _::_ => O.LetExp (coord, decs', exp')
 	    end
 	  | simplifyExp (SelExp (coord, lab)) = O.SelExp (coord, lab, NONE)
+	  | simplifyExp (VecExp (coord, exps)) =
+	    let
+		val (decs', longids) =
+		    List.foldr
+		    (fn (exp, (decs', longids)) =>
+		     let
+			 val (decOpt, longid) = simplifyTerm exp
+		     in
+			 case decOpt of
+			     NONE => (decs', longid::longids)
+			   | SOME dec' => (dec'::decs', longid::longids)
+		     end) (nil, nil) exps
+		val exp' = O.VecExp (coord, longids)
+	    in
+		case decs' of
+		    nil => exp'
+		  | _::_ => O.LetExp (coord, decs', exp')
+	    end
 	  | simplifyExp (FunExp (coord, id, exp)) =
 	    (*--** name propagation, multiple argument optimization *)
 	    O.FunExp (coord, "", [(O.OneArg id, simplifyExp exp)])
@@ -390,6 +408,16 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val mapping' = ((string::pos), id)::mapping
 	    in
 		(O.LabTest (string, id), mapping')
+	    end
+	  | simplifyTest (VecTest n, pos, mapping) =
+	    let
+		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
+		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val mapping' =
+		    foldli (fn (i, id, mapping) =>
+			    (Int.toString i::pos, id)::mapping) mapping ids
+	    in
+		(O.VecTest ids, mapping')
 	    end
 	  | simplifyTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.simplifyTest"

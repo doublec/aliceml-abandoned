@@ -28,6 +28,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | RefPat of info * pat
 	  | TupPat of info * pat list
 	  | RowPat of info * pat field list * bool
+	  | VecPat of info * pat list
 	  | AsPat of info * id * pat
 
 	fun infoPat (WildPat coord) = coord
@@ -37,6 +38,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | infoPat (RefPat (coord, _)) = coord
 	  | infoPat (TupPat (coord, _)) = coord
 	  | infoPat (RowPat (coord, _, _)) = coord
+	  | infoPat (VecPat (coord, _)) = coord
 	  | infoPat (AsPat (coord, _, _)) = coord
 
 	structure FieldSort =
@@ -97,6 +99,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	  | patToExp (RowPat (coord, patFields, hasDots)) =
 	    (*--** record patterns with dots must be resolved using the rhs *)
 	    Crash.crash "SimplifyRec.patToExp"
+	  | patToExp (VecPat (coord, pats)) =
+	    let
+		val (pats', exps') = ListPair.unzip (List.map patToExp pats)
+	    in
+		(VecPat (coord, pats'), VecExp (coord, exps'))
+	    end
 	  | patToExp (pat as AsPat (coord, id, _)) =
 	    (pat, VarExp (coord, ShortId (coord, id)))
 
@@ -182,6 +190,15 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    "SimplifyRec.derec': not implemented 2"
 		else Error.error (coord, "pattern never matches")
 	    end
+	  | derec' (VecPat (coord, pats), VecExp (_, exps)) =
+	    if length pats = length exps then
+		ListPair.foldr (fn (pat, exp, (cr, idsExpr)) =>
+				let
+				    val (cs, idsExps) = derec' (pat, exp)
+				in
+				    (cs @ cr, idsExps @ idsExpr)
+				end) (nil, nil) (pats, exps)
+	    else Error.error (coord, "pattern never matches")
 	  | derec' (pat as AsPat (_, _, _), exp) =
 	    let
 		val (ids, patOpt) = unalias pat
@@ -244,6 +261,20 @@ structure SimplifyRec :> SIMPLIFY_REC =
 	    unify (pat2, pat1)
 	  | unify (RowPat (_, _, _), RowPat (_, _, _)) =
 	    Crash.crash "SimplifyRec.unify: not implemented 2"   (*--** *)
+	  | unify (VecPat (coord, pats1), VecPat (_, pats2)) =
+	    if length pats1 = length pats2 then
+		let
+		    val (constraints, pats) =
+			ListPair.foldr (fn (pat1, pat2, (cr, patr)) =>
+					let
+					    val (cs, pat) = unify (pat1, pat2)
+					in
+					    (cs @ cr, pat::patr)
+					end) (nil, nil) (pats1, pats2)
+		in
+		    (constraints, VecPat (coord, pats))
+		end
+	    else Error.error (coord, "pattern never matches")
 	  | unify (AsPat (coord, id, pat1), pat2) =
 	    let
 		val (constraints, pat) = unify (pat1, pat2)
@@ -306,6 +337,18 @@ structure SimplifyRec :> SIMPLIFY_REC =
 			    RowPat (coord, patFields'', hasDots)
 	    in
 		(constraints, pat')
+	    end
+	  | preprocess (I.VecPat (coord, pats)) =
+	    let
+		val (constraints, pats) =
+		    List.foldr (fn (pat, (cr, patr)) =>
+				let
+				    val (cs, pat) = preprocess pat
+				in
+				    (cs @ cr, pat::patr)
+				end) (nil, nil) pats
+	    in
+		(constraints, VecPat (coord, pats))
 	    end
 	  | preprocess (I.AsPat (coord, pat1, pat2)) =
 	    let

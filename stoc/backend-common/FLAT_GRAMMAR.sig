@@ -38,6 +38,7 @@ signature IMPERATIVE_GRAMMAR =
 	  | RecTest of (string * id) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string * id
+	  | VecTest of id list
 
 	datatype args = datatype SimplifiedGrammar.args
 
@@ -64,6 +65,7 @@ signature IMPERATIVE_GRAMMAR =
 	  | RecExp of coord * (lab * id) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab
+	  | VecExp of coord * id list
 	  | FunExp of coord * string * (id args * body) list
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * id * id args

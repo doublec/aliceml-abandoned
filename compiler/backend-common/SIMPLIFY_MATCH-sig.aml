@@ -23,6 +23,7 @@ signature SIMPLIFY_MATCH =
 	  | RecTest of string list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string
+	  | VecTest of int
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.info * I.dec list
 	withtype mapping = (string list * I.id) list
