@@ -19,7 +19,7 @@
 #pragma interface "generic/BootLinker.hh"
 #endif
 
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "adt/Queue.hh"
 #include "generic/String.hh"
 
@@ -64,8 +64,8 @@ private:
   static word componentTable;
   static word keyQueue;
   static u_int numberOfEntries;
-  static HashTable *GetComponentTable() {
-    return HashTable::FromWordDirect(componentTable);
+  static ChunkMap *GetComponentTable() {
+    return ChunkMap::FromWordDirect(componentTable);
   }
 public:
   // BootLinker Static Constructor
