@@ -154,12 +154,12 @@ LIBSYSTEMSOURCES0 = \
 	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
 	CONFIG-sig.aml IO-sig.aml BIN_IO-sig.aml BinIO.aml \
 	TEXT_IO-sig.aml TextIO.aml OS_FILE_SYS-sig.aml OS_PROCESS-sig.aml \
-	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
-	COMPONENT_MANAGER-sig.aml COMPONENT-sig.aml DEBUG-sig.aml \
-	SOCKET-sig.aml REFLECT-sig.aml URL_MAP-sig.aml UrlMap.aml \
+	OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml COMPONENT-sig.aml \
+	DEBUG-sig.aml SOCKET-sig.aml RAND-sig.aml REFLECT-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PICKLE-sig.aml Pickle.aml SIGNATURE-sig.aml Signature.aml \
-	RAND-sig.aml Boot.aml ComponentManager.aml
+	RESOLVER-sig.aml Resolver.aml URL_MAP-sig.aml UrlMap.aml \
+	COMPONENT_MANAGER-sig.aml ComponentManager.aml Boot.aml
 LIBUTILITYSOURCES0 = \
 	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
