@@ -1,0 +1,16 @@
+(* -*- sml -*- *)
+
+structure GlobalStamp =
+    struct
+	eqtype stamp
+	type t = stamp
+
+	__primitive val new: unit -> stamp = "GlobalStamp.new"
+	__primitive val fromString: string -> stamp = "GlobalStamp.fromString"
+	__primitive val toString: stamp -> string = "GlobalStamp.toString"
+
+	fun reset () = ()
+
+	__primitive val compare: stamp * stamp -> order = "GlobalStamp.compare"
+	__primitive val hash: stamp -> int = "GlobalStamp.hash"
+    end

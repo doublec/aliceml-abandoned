@@ -1,7 +1,0 @@
-import
-    signature GLOBAL_STAMP
-from "x-alice:/misc/GLOBAL_STAMP.ozf"
-
-import
-    structure StringHashKey
-from "x-alice:/misc/StringHashKey.ozf"

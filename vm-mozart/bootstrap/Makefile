@@ -109,6 +109,9 @@ $(NATIVEFILES): lib/%: ../%
 top/Main.sml: top/Main.sml.body Base.import
 	cat Base.import $< > $@
 
+misc/GlobalStamp.sml: misc/GlobalStamp.sml.body Base.import
+	cat Base.import $< > $@
+
 lib/ml-yacc/%: ../../lib/bootstrap/ml-yacc/% lib/ml-yacc/%.header Base.import
 	cat Base.import lib/ml-yacc/$*.header $< > $@
 
