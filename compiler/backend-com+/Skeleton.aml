@@ -36,8 +36,8 @@ structure Skeleton :> SKELETON =
 	    \}\n\
 	    \.assembly extern Alice\n\
 	    \{\n\
-	    \  .hash = (20 7E 67 DB D0 DC CA 98 D9 E7 9F 23 27 8D 6F E8\n\
-	    \           A9 B8 39 0C)\n\
+	    \  .hash = (FA E5 50 B3 AE 02 6B 88 AE 9B 9A 1A 69 B9 11 8C\n\
+	    \           27 F8 6A 6E)\n\
 	    \  .ver 0:0:0:0\n\
 	    \}\n" ^
 	    comtype ("System.Object", "mscorlib") ^
