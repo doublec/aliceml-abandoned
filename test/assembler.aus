@@ -19,8 +19,8 @@ structure Assembler =
 	type label
 	type dynamic
 
-	__primitive exception UnknownType = "Assembler.UnknownType"
-	__primitive exception UnknownMember = "Assembler.UnknownMember"
+	__primitive constructor UnknownType: exn = "Assembler.UnknownType"
+	__primitive constructor UnknownMember: exn = "Assembler.UnknownMember"
 
 	__primitive val getType: string -> typ =
 	    "Assembler.getType"   (* UnknownType *)
