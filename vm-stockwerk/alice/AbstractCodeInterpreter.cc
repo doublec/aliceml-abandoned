@@ -29,7 +29,7 @@
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #endif
 
@@ -439,7 +439,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       {
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nGlobals = idRefs->GetLength();
-#if defined(ALICE_PROFILE)
+#if PROFILE
 	Profiler::IncClosures(pc->Sel(2));
 #endif
 	Closure *closure = Closure::New(pc->Sel(2), nGlobals);
@@ -456,7 +456,7 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 					   AbstractCode::functionWidth);
 	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
 	template_->AssertWidth(AbstractCode::functionWidth);
-#if defined(ALICE_PROFILE)
+#if PROFILE
 	Profiler::IncInstances(template_);
 #endif
 	abstractCode->Init(0, template_->Sel(0));
@@ -962,7 +962,7 @@ void AbstractCodeInterpreter::DumpFrame(word frameWord) {
 	  Store::DirectWordToInt(coord->Sel(1)));
 }
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 word AbstractCodeInterpreter::GetProfileKey(StackFrame *frame) {
   AbstractCodeFrame *f = AbstractCodeFrame::FromWordDirect(frame->ToWord());
   ConcreteCode *concreteCode =
@@ -974,36 +974,31 @@ word AbstractCodeInterpreter::GetProfileKey(ConcreteCode *concreteCode) {
   return concreteCode->ToWord();
 }
 
-String *AbstractCodeInterpreter::GetProfileName(StackFrame *frame) {
-  AbstractCodeFrame *f = AbstractCodeFrame::FromWordDirect(frame->ToWord());
-  Closure *closure = f->GetClosure();
-  AliceConcreteCode *concreteCode =
-    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+static String *
+MakeProfileName(AliceConcreteCode *concreteCode, const char *type) {
   Assert(concreteCode != INVALID_POINTER);
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
   String *name = String::FromWordDirect(coord->Sel(0));
   char buf[1024]; // to be done
-  std::sprintf(buf, "Alice %s %.*s, line %d:%d",
-	       f->IsHandlerFrame()? "handler": "function",
-	       (int) name->GetSize(), name->GetValue(),
+  std::sprintf(buf, "Alice %s %.*s, line %d, column %d",
+	       type, (int) name->GetSize(), name->GetValue(),
 	       Store::DirectWordToInt(coord->Sel(1)),
 	       Store::DirectWordToInt(coord->Sel(2)));
   return String::New(buf);
 }
 
+String *AbstractCodeInterpreter::GetProfileName(StackFrame *frame) {
+  AbstractCodeFrame *f = AbstractCodeFrame::FromWordDirect(frame->ToWord());
+  Closure *closure = f->GetClosure();
+  AliceConcreteCode *concreteCode =
+    AliceConcreteCode::FromWord(closure->GetConcreteCode());
+  return MakeProfileName(concreteCode,
+			 f->IsHandlerFrame()? "handler": "function");
+}
+
 String *AbstractCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
-  AliceConcreteCode *aliceCode =
-    static_cast<AliceConcreteCode *>(concreteCode);
-  Assert(aliceCode != INVALID_POINTER);
-  TagVal *abstractCode = aliceCode->GetAbstractCode();
-  Tuple *coord = Tuple::FromWordDirect(abstractCode->Sel(0));
-  String *name = String::FromWordDirect(coord->Sel(0));
-  char buf[1024]; // to be done
-  std::sprintf(buf, "Alice function %.*s, line %d:%d",
-	       (int) name->GetSize(), name->GetValue(),
-	       Store::DirectWordToInt(coord->Sel(1)),
-	       Store::DirectWordToInt(coord->Sel(2)));
-  return String::New(buf);
+  return MakeProfileName(static_cast<AliceConcreteCode *>(concreteCode),
+			 "function");
 }
 #endif

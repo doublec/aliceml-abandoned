@@ -27,6 +27,10 @@
 #include "generic/Properties.hh"
 #include "alice/primitives/Authoring.hh"
 
+#if PROFILE
+#include "generic/Profiler.hh"
+#endif
+
 // Global OS.sysErr Exception
 static word SysErrConstructor;
 
@@ -172,6 +176,9 @@ DEFINE1(UnsafeOS_Process_system) {
 
 DEFINE1(UnsafeOS_Process_exit) {
   DECLARE_INT(code, x0);
+#if PROFILE
+  Profiler::DumpInfo();
+#endif
   exit(code);
 } END
 

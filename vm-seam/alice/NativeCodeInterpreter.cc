@@ -245,12 +245,13 @@ void NativeCodeInterpreter::DumpFrame(word frame) {
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
-  std::fprintf(stderr, "Alice(native) %s %.*s, line %d\n",
+  std::fprintf(stderr, "Alice native %s %.*s, line %d, column %d\n",
 	       frameType, (int) name->GetSize(), name->GetValue(),
-	       Store::WordToInt(coord->Sel(1)));
+	       Store::WordToInt(coord->Sel(1)),
+	       Store::WordToInt(coord->Sel(2)));
 }
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 word NativeCodeInterpreter::GetProfileKey(StackFrame *frame) {
   Block *p = (Block *) frame;
   if (p->GetLabel() == (BlockLabel) NATIVE_CODE_FRAME) {
@@ -269,16 +270,16 @@ word NativeCodeInterpreter::GetProfileKey(ConcreteCode *concreteCode) {
   return concreteCode->ToWord();
 }
 
-static String *CreateName(const char *frameType,
-			  NativeConcreteCode *concreteCode) {
+static String *
+MakeProfileName(NativeConcreteCode *concreteCode, const char *type) {
   Transform *transform =
     static_cast<Transform *>(concreteCode->GetAbstractRepresentation());
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
   Tuple *coord         = Tuple::FromWord(abstractCode->Sel(0));
   String *name         = String::FromWord(coord->Sel(0));
   char buf[1024]; // to be done
-  std::sprintf(buf, "Alice(native) %s %.*s, line %d:%d",
-	       frameType, (int) name->GetSize(), name->GetValue(),
+  std::sprintf(buf, "Alice native %s %.*s, line %d, column %d",
+	       type, (int) name->GetSize(), name->GetValue(),
 	       Store::WordToInt(coord->Sel(1)),
 	       Store::WordToInt(coord->Sel(2)));
   return String::New(buf);
@@ -301,12 +302,12 @@ String *NativeCodeInterpreter::GetProfileName(StackFrame *frame) {
   Closure *closure = codeFrame->GetClosure();
   NativeConcreteCode *nativeConcreteCode =
     NativeConcreteCode::FromWord(closure->GetConcreteCode());
-  return CreateName(frameType, nativeConcreteCode);
+  return MakeProfileName(nativeConcreteCode, frameType);
 }
 
 String *NativeCodeInterpreter::GetProfileName(ConcreteCode *concreteCode) {
   NativeConcreteCode *nativeConcreteCode =
     static_cast<NativeConcreteCode *>(concreteCode);
-  return CreateName("function", nativeConcreteCode);
+  return MakeProfileName(nativeConcreteCode, "function");
 }
 #endif

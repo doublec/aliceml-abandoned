@@ -21,7 +21,8 @@
 #include "generic/Scheduler.hh"
 #include "generic/Backtrace.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
+#include "generic/String.hh"
 #include "generic/ConcreteCode.hh"
 #endif
 
@@ -97,9 +98,7 @@ Interpreter::Handle(word exn, Backtrace *trace, TaskStack *taskStack) {
   return Interpreter::RAISE;
 }
 
-#if defined(ALICE_PROFILE)
-#include "generic/String.hh"
-
+#if PROFILE
 word Interpreter::GetProfileKey(StackFrame *) {
   return Store::UnmanagedPointerToWord(this);
 }

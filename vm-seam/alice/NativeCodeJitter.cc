@@ -41,7 +41,7 @@
 #include "alice/JitterImmediateEnv.hh"
 #include "alice/AliceLanguageLayer.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #endif
 
@@ -634,7 +634,7 @@ void NativeCodeJitter::TailCall(u_int Closure) {
   RETURN();
   jit_patch(self_call);
   jit_ldi_p(JIT_V1, &NativeCodeJitter::initialPC);
-#if defined(ALICE_PROFILE)
+#if PROFILE
   // Profiler requires scheduler to be involved
   NativeCodeFrame::PutPC(JIT_V2, JIT_V1);
   jit_pushr_ui(JIT_V2); // Frame
@@ -984,7 +984,7 @@ TagVal *NativeCodeJitter::InstrClose(TagVal *pc) {
   u_int i1 = ImmediateEnv::Register(pc->Sel(2));
   ImmediateSel(JIT_R0, JIT_V2, i1);
   Generic::Closure::InitCC(JIT_V1, JIT_R0);
-#if defined(ALICE_PROFILE)
+#if PROFILE
   Prepare();
   jit_pushr_ui(JIT_R0);
   JITStore::Call(1, (void *) Profiler::IncClosures);
@@ -1011,7 +1011,7 @@ TagVal *NativeCodeJitter::InstrSpecialize(TagVal *pc) {
   jit_pushr_ui(JIT_V0); // Save V0
   u_int i1 = ImmediateEnv::Register(pc->Sel(2)); // Save template_
   ImmediateSel(JIT_V0, JIT_V2, i1); // Load template_
-#if defined(ALICE_PROFILE)
+#if PROFILE
   Prepare();
   jit_pushr_ui(JIT_V0);
   JITStore::Call(1, (void *) Profiler::IncInstances);
@@ -1098,16 +1098,16 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
     Generic::Scheduler::PutArg(JIT_V1, i, reg);
   }
   Closure *closure = Closure::FromWord(pc->Sel(0));
-  ConcreteCode *concreteCode =
-    ConcreteCode::FromWord(closure->GetConcreteCode());
-  Interpreter *interpreter = concreteCode->GetInterpreter();
   if (idDefInstrOpt != INVALID_POINTER)
     KillVariables(contPC);
-#if defined(ALICE_PROFILE)
+#if PROFILE
   u_int i1 = ImmediateEnv::Register(closure->ToWord());
   ImmediateSel(JIT_V1, JIT_V2, i1);
   PushCall(JIT_V1);
 #else
+  ConcreteCode *concreteCode =
+    ConcreteCode::FromWord(closure->GetConcreteCode());
+  Interpreter *interpreter = concreteCode->GetInterpreter();
   DirectCall(interpreter);
 #endif
   return INVALID_POINTER;

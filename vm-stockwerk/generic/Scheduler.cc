@@ -24,7 +24,7 @@
 #include "generic/ByneedInterpreter.hh"
 #include "generic/IOHandler.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #endif
 
@@ -102,7 +102,7 @@ void Scheduler::Run() {
     bool nextThread = false;
     while (!nextThread) {
       preempt = false;
-#if defined(ALICE_PROFILE)
+#if PROFILE
       Profiler::SampleHeap();
       StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
       Interpreter *interpreter = frame->GetInterpreter();
@@ -126,7 +126,7 @@ void Scheduler::Run() {
       case Interpreter::RAISE:
 	{
 	raise:
-#if defined(ALICE_PROFILE)
+#if PROFILE
 	  Profiler::SampleHeap();
 	  frame = StackFrame::FromWordDirect(taskStack->GetFrame());
 	  interpreter = frame->GetInterpreter();

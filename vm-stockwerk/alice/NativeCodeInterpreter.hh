@@ -44,7 +44,7 @@ public:
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
-#if defined(ALICE_PROFILE)
+#if PROFILE
   // Profiling
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);

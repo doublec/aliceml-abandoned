@@ -28,7 +28,7 @@
 #include "generic/Properties.hh"
 #include "generic/Debug.hh"
 
-#if defined(ALICE_PROFILE)
+#if PROFILE
 #include "generic/Profiler.hh"
 #endif
 
@@ -93,7 +93,7 @@ Interpreter::Result TaskStack::PushCall(word closureWord) {
       ConcreteCode *concreteCode = ConcreteCode::FromWord(concreteCodeWord);
       Assert(concreteCode != INVALID_POINTER);
       concreteCode->GetInterpreter()->PushCall(this, closure);
-#if defined(ALICE_PROFILE)
+#if PROFILE
       StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
       Profiler::IncCalls(frame);
 #endif
