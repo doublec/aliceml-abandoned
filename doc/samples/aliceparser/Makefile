@@ -10,10 +10,17 @@ AliceParser.aml:	AliceParser.y
 %.alc:	%.aml
 	alicec --no-warn-conventions $< -o $@
 
-Main.alc:	AliceParser.alc AliceLexer.alc
+Main.alc:	AliceParser.alc AliceLexer.alc AliceLexer-MLLex.alc
 
 AliceLexer.alc:	AliceParser.alc
 
+AliceLexer-MLLex.aml:	AliceLexer-MLLex.lex
+	ml-lex $<
+	echo -e 'import structure AliceParser from "AliceParser"\n' | cat - $<.sml > $@
+	rm $<.sml
+
+AliceLexer-MLLex.alc:	AliceParser.alc
+
 clean:	
-	rm -f *.alc AliceLexer.aml AliceParser.aml TestAliceParser.alc
+	rm -f *.alc AliceLexer.aml AliceParser.aml AliceLexer-MLLex.aml TestAliceParser.alc
 	

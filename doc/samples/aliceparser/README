@@ -6,8 +6,8 @@ make a file called TestAliceParser.alc will be produced.  Run it by calling
 
 alicerun TestAliceParser SomeAliceSourceFile.aml  
 
-it should exit silently with exit code 0 on any valid Alice Source file, or
-report an error and exit with exit code 1 on anything else.
+It will just test the parser with the both a alicelex and a ml-lex generated
+lexer.
 
 Note that compiling the Parser will take a really long time:
 

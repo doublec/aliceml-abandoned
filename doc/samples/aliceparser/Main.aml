@@ -8,12 +8,15 @@
  * 
  *)
 
-import structure Lexer          from "x-alice:/lib/lex/Lexer"
-import structure TextIO         from "x-alice:/lib/system/TextIO"
-import structure AliceLexer     from "AliceLexer"
-import structure AliceParser    from "AliceParser"
-import structure OS             from "x-alice:/lib/system/OS"
-import structure CommandLine    from "x-alice:/lib/system/CommandLine"
+import structure Lexer                  from "x-alice:/lib/lex/Lexer"
+import structure TextIO                 from "x-alice:/lib/system/TextIO"
+import structure AliceLexer             from "AliceLexer"
+import structure AliceLexerMLLex        from "AliceLexer-MLLex"
+import structure AliceParser            from "AliceParser"
+import structure OS                     from "x-alice:/lib/system/OS"
+import structure CommandLine            from "x-alice:/lib/system/CommandLine"
+import structure Timer                  from "x-alice:/lib/system/Timer"
+
 
 fun posToString (line, col) = Int.toString line ^ "." ^ Int.toString col
 
@@ -30,9 +33,36 @@ fun parseFile file =
          OS.Process.exit OS.Process.success)
 
 
+fun parseFileMLLex file =
+    let 
+        val f           = TextIO.openIn file
+        val lexer       = AliceLexerMLLex.makeLexer (fn n => TextIO.inputN (f, n))
+    in
+        AliceParser.parseComponent lexer;
+        TextIO.closeIn f
+    end
+      handle AliceParser.Error (leftPos, rightPos) =>
+        (print ("syntax error near " ^ posToString leftPos ^ " - " ^ posToString rightPos ^ "\n");
+         OS.Process.exit OS.Process.success)
+       | e =>
+        (print (General.exnName e ^ "\n");
+         OS.Process.exit OS.Process.success)
+
+
+fun doTimed (msg, f, arg) =
+    let
+        val timer       = Timer.startRealTimer ()
+    in
+        print (msg ^ "... ");
+        f arg;
+        print (Real.toString (Time.toReal (Timer.checkRealTimer timer))  ^ "\n")
+    end
+    
 fun main [] = OS.Process.exit OS.Process.success
   | main (f :: fs) =
-    (parseFile f; main fs)
+    (doTimed ("parsing with alicelex, aliceyacc", parseFile, f);
+     doTimed ("parsing with mllex, aliceyacc", parseFileMLLex, f);
+     main fs)
 
 
 val _ = main (CommandLine.arguments ())
