@@ -13,7 +13,7 @@ changequote([[,]])
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
 ifdef([[GTK2]],[[
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
 ]],[[
 import structure GtkCanvas   from "x-alice:/lib/gtk/GtkCanvas"
 ]])
@@ -24,10 +24,10 @@ ifdef([[GTK2]],[[
 structure Canvas = 
 struct
 
-    open GnomeCanvas
+    open Canvas
 
-    fun new _ = GnomeCanvas.new ()
-    fun newAa _ = GnomeCanvas.newAa ()
+    fun new _ = Canvas.new ()
+    fun newAa _ = Canvas.newAa ()
 
     fun freeze _ = ()
     fun thaw   _ = ()
@@ -66,7 +66,7 @@ struct
 
      fun requestRedraw _ = ()
 
-     fun getScrollOffsets (object, _, _) = GnomeCanvas.getScrollOffsets object
+     fun getScrollOffsets (object, _, _) = Canvas.getScrollOffsets object
 
 
 end
