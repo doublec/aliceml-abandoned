@@ -27,6 +27,11 @@ given, it is used as the output file name, else the basename of <I>&lt;input
 file&gt;</I> is used with <TT>.ozf</TT> as extension. Compiled components can
 be executed by invoking the <A href="machine.html">virtual machine</A>.</P>
 
+<P><I>&lt;input file&gt;</I> may be a URL.  See <A
+href="#environment-variables">below</A> for notes on how it is
+interpreted. <I>&lt;output file&gt;</I> may only be omitted if
+<I>&lt;input file&gt;</I> represents a local file.</P>
+
 <!--
 <P>In the second form, <I>&lt;input file&gt;</I> is compiled as an Alice source
 and an executable component is written as output.  If <I>&lt;output
@@ -62,6 +67,21 @@ the <A href="interop.html">interop section</A> for details.</P>
   <DT><TT>--(no-)warn-shadowing</TT></DT>
   <DD><P>Warn about shadowing of identifiers (off by default,
   gives a lot of spurious warnings).</P></DD>
+</DL>
+
+
+<?php section("environment-variables", "environment variables") ?>
+
+<P><TT>alicec</TT> is parameterized by the same environment variables
+as <A href="machine.html#environment-variables"><TT>alicerun</TT></A>,
+plus:</P>
+
+<DL>
+  <DT><TT>ALICE_SOURCE_PATH</TT>
+  <DD>specifies how source file URLs are interpreted.  If set, the value
+    of this environment variable is parsed by the <TT>parse</TT> method of
+    the <A href="library/resolver.html#Handler"><TT>Resolver.Handler</TT></A>
+    structure.  If not set, uses only the default identity method.</P>
 </DL>
 
 
