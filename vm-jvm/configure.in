@@ -3,6 +3,13 @@ AC_INIT()
 
 dnl Checks for programs.
 AC_PROG_LN_S
+AC_CHECK_PROG(HASM4,m4,yes,no,$PATH)
+if test $HASM4 = "no"
+  then
+	AC_MSG_ERROR("No m4 found.");
+  else
+	m4="m4"
+fi
 AC_CHECK_PROG(HASSML,sml,yes,no,$PATH)
 if test $HASSML = "no";
   then
@@ -34,6 +41,7 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 
 dnl Checks for library functions.
 
+AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(sml-cm)
 AC_OUTPUT(Makefile)
