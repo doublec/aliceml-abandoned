@@ -35,9 +35,10 @@ sig
     val prepareWith	: env * string -> env * (unit -> package) * Inf.t
     val prepareFileWith	: env * string -> env * (unit -> package) * Inf.t
 
-    val withTraceStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
-    val withOutStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
-    val withErrStream	: TextIO.StreamIO.outstream -> ('a -> 'b) -> 'a -> 'b
-    val withOutWidth	: int -> ('a -> 'b) -> 'a -> 'b
-    val withErrWidth	: int -> ('a -> 'b) -> 'a -> 'b
+    val withStreams	: {out : TextIO.outstream option,
+			   err : TextIO.outstream option,
+			   trace : TextIO.outstream option}
+			   -> ('a -> 'b) -> 'a -> 'b
+    val withWidths	: {out : int, err : int, trace : int}
+			   -> ('a -> 'b) -> 'a -> 'b
 end

@@ -23,12 +23,13 @@ import signature COMPILER from "COMPILER-sig"
 
 structure Compiler : COMPILER =
 struct
-    (* Output stream *)
+    (* Output streams *)
 
     val outWidth  = RecursiveCompiler.Switches.Global.logWidth
     val outStream = RecursiveCompiler.Switches.Global.logOut
     val errWidth  = RecursiveCompiler.Switches.Global.errWidth
     val errStream = RecursiveCompiler.Switches.Global.errOut
+    val traceWidth = RecursiveCompiler.Switches.Debug.dumpWidth
     val traceStream = RecursiveCompiler.Switches.Debug.dumpOut
 
     fun trace (s, fileOpt) =
@@ -235,40 +236,45 @@ struct
     val prepareWith	= Lock.sync lock prepareWith
     val prepareFileWith	= Lock.sync lock prepareFileWith
 
-(*
-    val withOutStream	= Lock.sync lock withOutStream
-    val withErrStream	= Lock.sync lock withErrStream
-    val withTraceStream	= Lock.sync lock withTraceStream
-    val withOutWidth	= Lock.sync lock withOutWidth
-    val withErrWidht	= Lock.sync lock withErrWidth
-*)
-
     (* Redirection *)
 
-    fun withStream (stream, os) f x =
+    val null = TextIO.StreamIO.mkOutstream (TextPrimIO.nullWr (), IO.NO_BUF)
+
+    fun getStream NONE     = null
+      | getStream(SOME os) = TextIO.getOutstream os
+
+    fun withStreams' {out, err, trace} f x =
 	let
-	    val save = TextIO.getOutstream stream
+	    val saveOut = TextIO.getOutstream outStream
+	    val saveErr = TextIO.getOutstream errStream
+	    val saveTrace = TextIO.getOutstream traceStream
 	in
-	    TextIO.setOutstream (stream, os);
+	    TextIO.setOutstream (outStream, getStream out);
+	    TextIO.setOutstream (errStream, getStream err);
+	    TextIO.setOutstream (traceStream, getStream trace);
 	    f x finally
-	    TextIO.setOutstream (stream, save)
+	    (TextIO.setOutstream (outStream, saveOut);
+	     TextIO.setOutstream (errStream, saveErr);
+	     TextIO.setOutstream (traceStream, saveTrace))
 	end
 
-    fun withWidth (width, n) f x =
+    fun withWidths' {out, err, trace} f x =
 	let
-	    val save = !width
+	    val saveOut = !outWidth
+	    val saveErr = !errWidth
+	    val saveTrace = !traceWidth
 	in
-	    width := n;
+	    outWidth := out;
+	    errWidth := err;
+	    traceWidth := trace;
 	    f x finally
-	    width := save
+	    (outWidth := saveOut;
+	     errWidth := saveErr;
+	     traceWidth := saveTrace)
 	end
 
-    fun withOutStream os = Lock.sync lock withStream (outStream, os)
-    fun withErrStream os = Lock.sync lock withStream (errStream, os)
-    fun withTraceStream os = Lock.sync lock withStream (traceStream, os)
-
-    fun withOutWidth n = Lock.sync lock withWidth (outWidth, n)
-    fun withErrWidth n = Lock.sync lock withWidth (errWidth, n)
+    fun withStreams args f = Lock.sync lock (withStreams' args f)
+    fun withWidths args f  = Lock.sync lock (withWidths' args f)
 
 
     (* Initialization *)
