@@ -25,7 +25,6 @@
   }
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
-#define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
 #define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
 #define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
 #define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
@@ -47,8 +46,6 @@
 
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
-
-#define DECLARE_IOSTREAM(file, x) DECLARE_BLOCKTYPE(FILE, file, x);
 
 #define RETURN_STRUCTURE(t)           \
   {                                   \
