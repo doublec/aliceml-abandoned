@@ -2,7 +2,7 @@
 (*   Andreas Rossberg <rossberg@ps.uni-sb.de>			*)
 (*								*)
 (* Copyright:							*)
-(*   Andreas Rossberg, 2001					*)
+(*   Andreas Rossberg, 2001-2002				*)
 (*								*)
 (* Last change:							*)
 (*   $Date$ by $Author$	*)
@@ -174,8 +174,8 @@
 (*                ::= __primitive __eqeqtype tyvarseq tycon = string		*)
 (*	          ::= __primitive signature sigid strpat_1 ... strpat_n	(n>=0)	*)
 (*					= string				*)
-(*	  ann     ::= __primitive import imp from string			*)
-(*	  	      __primitive import string					*)
+(*	  ann     ::= import __primitive imp from string			*)
+(*	  	      import __primitive string					*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -2664,10 +2664,10 @@
 					    imp, STRING) )
 	| IMPORT STRING		( IMPORTALLAnn(I(IMPORTleft,STRINGright),
 					    STRING) )
-	| PRIMITIVE IMPORT imp FROM STRING
+	| IMPORT PRIMITIVE imp FROM STRING
 	  			( PRIMITIVEIMPORTAnn(I(IMPORTleft,STRINGright),
 						     imp, STRING) )
-	| PRIMITIVE IMPORT STRING
+	| IMPORT PRIMITIVE STRING
 				( PRIMITIVEIMPORTALLAnn(I(IMPORTleft,
 							  STRINGright), STRING))
 	| ann1 ann1 %prec SEMICOLON
