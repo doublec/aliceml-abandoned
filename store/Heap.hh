@@ -50,6 +50,7 @@ public:
 
   void Enlarge();
   void Shrink();
+  u_int GetExactSize();
   HeapChunk *GetChain()                    { return chain; }
   u_int GetSize()                          { return size; }
   u_int GetLimit()                         { return limit; }

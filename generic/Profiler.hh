@@ -25,26 +25,27 @@
 class ProfileEntry;
 class StackFrame;
 class ConcreteCode;
-class TagVal;
+class String;
 
 class SeamDll Profiler {
 protected:
   static word table;
   static u_int heapUsage;
+  static word sampleKey;
+  static String *sampleName;
 
+  static ProfileEntry *GetEntry(word key, String *name);
   static ProfileEntry *GetEntry(StackFrame *frame);
   static ProfileEntry *GetEntry(ConcreteCode *concreteCode);
-  static ProfileEntry *GetEntry(TagVal *template_);
   static u_int GetHeapTotal();
 public:
   // Profiler Static Constructor
   static void Init();
 
-  static void SampleHeap(); // Scheduler::Run
-  static void AddHeap(StackFrame *frame); // Scheduler::Run
+  static void SampleHeap(StackFrame *frame); // Scheduler::Run
+  static void AddHeap(); // Scheduler::Run
   static void IncCalls(StackFrame *frame); // Scheduler::PushCall
   static void IncClosures(word cCode);  // Interpreter::Close
-  static void IncInstances(TagVal *template_); // Interpreter::Specialize
   static void IncInstrs(word cCode); // NativeCodeJitter
   static void DumpInfo();
 };

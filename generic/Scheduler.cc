@@ -101,14 +101,14 @@ int Scheduler::Run() {
     while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
       SwitchToThread();
       for (bool nextThread = false; !nextThread; ) {
-#if PROFILE
-	Profiler::SampleHeap();
-#endif
 	StackFrame *frame = GetFrame();
 	Worker *worker = frame->GetWorker();
+#if PROFILE
+	Profiler::SampleHeap(frame);
+#endif
 	Worker::Result result = worker->Run(frame);
 #if PROFILE
-	Profiler::AddHeap(frame);
+	Profiler::AddHeap();
 #endif
       interpretResult:
 	switch (result) {
@@ -129,9 +129,6 @@ int Scheduler::Run() {
 	case Worker::RAISE:
 	  {
 	  raise:
-#if PROFILE
-	    Profiler::SampleHeap();
-#endif
 	    u_int handler;
 	    word data;
 	    currentThread->GetHandler(handler, data);
@@ -147,9 +144,13 @@ int Scheduler::Run() {
 	      frame = GetFrame();
 	    }
 	    worker = frame->GetWorker();
+#if PROFILE
+	    // to be done: at this position, the backtrace will not be counted
+	    Profiler::SampleHeap(frame);
+#endif
 	    result = worker->Handle(data);
 #if PROFILE
-	    Profiler::AddHeap(frame);
+	    Profiler::AddHeap();
 #endif
 	    goto interpretResult;
 	  }

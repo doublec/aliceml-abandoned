@@ -116,3 +116,13 @@ void Heap::Shrink() {
   chain = new HeapChunk(STORE_MEMCHUNK_SIZE, NULL);
   size  = STORE_MEMCHUNK_SIZE;
 }
+
+u_int Heap::GetExactSize() {
+  HeapChunk *chunks = chain;
+  u_int size = 0;
+  while (chunks != NULL) {
+    size += chunks->GetTop() - chunks->GetBase();
+    chunks = chunks->GetNext();
+  }
+  return size;
+}

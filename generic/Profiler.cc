@@ -17,19 +17,20 @@
 #endif
 
 #if PROFILE
+#include "store/Map.hh"
 #include "generic/Profiler.hh"
 #include "generic/RootSet.hh"
 #include "generic/Worker.hh"
 #include "generic/StackFrame.hh"
 #include "generic/String.hh"
 #include "generic/ConcreteCode.hh"
-#include "alice/Data.hh"
+#include "generic/Tuple.hh"
 
 class ProfileEntry : private Tuple {
 protected:
   enum {
-    NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS, NB_INSTANCES_POS,
-    NB_INSTRS_POS, SIZE
+    NAME_POS, NB_CALLS_POS, NB_HEAP_POS, NB_CLOSURES_POS,
+    NB_INSTRS_POS, NB_RUNS_POS, SIZE
   };
 
   void Modify(u_int index, u_int value) {
@@ -48,11 +49,11 @@ public:
   void IncClosures() {
     Modify(NB_CLOSURES_POS, 1);
   }
-  void IncInstances() {
-    Modify(NB_INSTANCES_POS, 1);
-  }
   void IncInstrs() {
     Modify(NB_INSTRS_POS, 1);
+  }
+  void IncRuns() {
+    Modify(NB_RUNS_POS, 1);
   }
   // ProfileEntry Concstructor
   static ProfileEntry *New(String *name) {
@@ -61,8 +62,8 @@ public:
     entry->Init(NB_CALLS_POS, Store::IntToWord(0));
     entry->Init(NB_HEAP_POS, Store::IntToWord(0));
     entry->Init(NB_CLOSURES_POS, Store::IntToWord(0));
-    entry->Init(NB_INSTANCES_POS, Store::IntToWord(0));
     entry->Init(NB_INSTRS_POS, Store::IntToWord(0));
+    entry->Init(NB_RUNS_POS, Store::IntToWord(0));
     return (ProfileEntry *) entry;
   }
   // ProfileEntry untagging
@@ -78,10 +79,23 @@ public:
 //
 word Profiler::table;
 u_int Profiler::heapUsage;
+word Profiler::sampleKey;
+String *Profiler::sampleName;
 
 void Profiler::Init() {
   table = Map::New(256)->ToWord(); // to be done
   RootSet::Add(table);
+}
+
+ProfileEntry *Profiler::GetEntry(word key, String *name) {
+  Map *t = Map::FromWordDirect(table);
+  if (t->IsMember(key))
+    return ProfileEntry::FromWordDirect(t->Get(key));
+  else {
+    ProfileEntry *entry = ProfileEntry::New(name);
+    t->Put(key, entry->ToWord());
+    return entry;
+  }
 }
 
 ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
@@ -99,33 +113,14 @@ ProfileEntry *Profiler::GetEntry(StackFrame *frame) {
 }
 
 ProfileEntry *Profiler::GetEntry(ConcreteCode *concreteCode) {
-  Worker *worker = concreteCode->GetWorker();
-  word key = worker->GetProfileKey(concreteCode);
+  Interpreter *interpreter = concreteCode->GetInterpreter();
+  word key = interpreter->GetProfileKey(concreteCode);
   Map *t = Map::FromWordDirect(table);
   if (t->IsMember(key))
     return ProfileEntry::FromWordDirect(t->Get(key));
   else {
-    String *name = worker->GetProfileName(concreteCode);
+    String *name = interpreter->GetProfileName(concreteCode);
     ProfileEntry *entry = ProfileEntry::New(name);
-    t->Put(key, entry->ToWord());
-    return entry;
-  }
-}
-
-ProfileEntry *Profiler::GetEntry(TagVal *template_) {
-  Map *t = Map::FromWordDirect(table);
-  word key = template_->ToWord();
-  if (t->IsMember(key))
-    return ProfileEntry::FromWordDirect(t->Get(key));
-  else {
-    Tuple *coord = Tuple::FromWordDirect(template_->Sel(0));
-    String *name = String::FromWordDirect(coord->Sel(0));
-    char buf[1024]; // to be done
-    std::sprintf(buf, "Alice template %.*s, line %d, column %d",
-		 (int) name->GetSize(), name->GetValue(),
-		 Store::DirectWordToInt(coord->Sel(1)),
-		 Store::DirectWordToInt(coord->Sel(2)));
-    ProfileEntry *entry = ProfileEntry::New(String::New(buf));
     t->Put(key, entry->ToWord());
     return entry;
   }
@@ -133,20 +128,25 @@ ProfileEntry *Profiler::GetEntry(TagVal *template_) {
 
 u_int Profiler::GetHeapTotal() {
   u_int heapTotal = 0;
-  Store::curChunk->SetTop(Store::chunkTop);
   for (u_int i = STORE_GENERATION_NUM - 1; i--;)
-    heapTotal += Store::GetMemUsage(Store::roots[i]);
+    heapTotal += Store::roots[i].GetExactSize();
   return heapTotal;
 }
 
-void Profiler::SampleHeap() {
+void Profiler::SampleHeap(StackFrame *frame) {
+  Worker *worker = frame->GetWorker();
+  sampleKey = worker->GetProfileKey(frame);
+  Map *t = Map::FromWordDirect(table);
+  if (!t->IsMember(sampleKey))
+    sampleName = worker->GetProfileName(frame);
   heapUsage = GetHeapTotal();
 }
 
-void Profiler::AddHeap(StackFrame *frame) {
+void Profiler::AddHeap() {
   u_int heapTotal     = GetHeapTotal();
-  ProfileEntry *entry = GetEntry(frame);
+  ProfileEntry *entry = GetEntry(sampleKey, sampleName);
   entry->AddHeap(heapTotal - heapUsage);
+  entry->IncRuns();
 }
 
 void Profiler::IncCalls(StackFrame *frame) {
@@ -160,11 +160,6 @@ void Profiler::IncClosures(word cCode) {
     GetEntry(concreteCode)->IncClosures();
 }
 
-void Profiler::IncInstances(TagVal *template_) {
-  ProfileEntry *entry = GetEntry(template_);
-  entry->IncInstances();
-}
-
 void Profiler::IncInstrs(word cCode) {
   ConcreteCode *concreteCode = ConcreteCode::FromWord(cCode);
   if (concreteCode != INVALID_POINTER)
@@ -174,19 +169,19 @@ void Profiler::IncInstrs(word cCode) {
 static FILE *logFile;
 
 static void PrintInfo(word /*key*/, word value) {
-  Tuple *entry      = Tuple::FromWordDirect(value);
-  String *name      = String::FromWordDirect(entry->Sel(0));
-  u_int calls       = Store::DirectWordToInt(entry->Sel(1));
-  u_int heap        = Store::DirectWordToInt(entry->Sel(2));
-  u_int closures    = Store::DirectWordToInt(entry->Sel(3));
-  u_int specialized = Store::DirectWordToInt(entry->Sel(4));
-  u_int instrs      = Store::DirectWordToInt(entry->Sel(5));
+  Tuple *entry   = Tuple::FromWordDirect(value);
+  String *name   = String::FromWordDirect(entry->Sel(0));
+  u_int calls    = Store::DirectWordToInt(entry->Sel(1));
+  u_int heap     = Store::DirectWordToInt(entry->Sel(2));
+  u_int closures = Store::DirectWordToInt(entry->Sel(3));
+  u_int instrs   = Store::DirectWordToInt(entry->Sel(4));
+  u_int runs     = Store::DirectWordToInt(entry->Sel(5));
 
   char *s = name->ExportC();
   for (char *t = s; *t; t++)
     if (*t == ',') *t = ';';
   std::fprintf(logFile, "%d, %d, %d, %d, %d, %.2f, %s\n",
-	       calls, closures, heap, specialized, instrs,
+	       runs, calls, closures, heap, instrs,
 	       calls? static_cast<float>(heap) / calls: 0.0,
 	       s);
 }

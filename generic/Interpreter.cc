@@ -38,6 +38,14 @@ Interpreter::function Interpreter::GetCFunction() {
 }
 
 #if PROFILE
+word Interpreter::GetProfileKey(StackFrame *) {
+  return Store::UnmanagedPointerToWord(this);
+}
+
+String *Interpreter::GetProfileName(StackFrame *) {
+  return String::New(this->Identify());
+}
+
 word Interpreter::GetProfileKey(ConcreteCode *concreteCode) {
   return concreteCode->ToWord();
 }

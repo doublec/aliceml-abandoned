@@ -50,8 +50,8 @@ public:
   virtual void DumpFrame(StackFrame *sFrame) = 0;
 #if PROFILE
   // Profiling
-  virtual word GetProfileKey(StackFrame *sFrame);
-  virtual String *GetProfileName(StackFrame *sFrame);
+  virtual SeamDll word GetProfileKey(StackFrame *sFrame);
+  virtual SeamDll String *GetProfileName(StackFrame *sFrame);
 #endif
 };
 
