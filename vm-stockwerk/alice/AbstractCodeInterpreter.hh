@@ -23,25 +23,21 @@
 
 class DllExport AbstractCodeInterpreter: public Interpreter {
 private:
-  // AbstractCodeInterpreter Constructor
   AbstractCodeInterpreter(): Interpreter() {}
 public:
-  // Exported AbstractCodeInterpreter Instance
   static AbstractCodeInterpreter *self;
-  // AbstractCodeInterpreter Static Constructor
+
   static void Init();
-  // Handler Methods
+
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
-  // Frame Handling
-  virtual void PushCall(Closure *closure);
-  // Execution
+
   virtual Result Run();
   virtual Result Handle();
-  // Debugging
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 #if PROFILE
-  // Profiling
   virtual word GetProfileKey(StackFrame *frame);
   virtual word GetProfileKey(ConcreteCode *concreteCode);
   virtual String *GetProfileName(StackFrame *frame);

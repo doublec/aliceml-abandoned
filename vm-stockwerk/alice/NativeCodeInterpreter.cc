@@ -193,6 +193,23 @@ Worker::Result NativeCodeInterpreter::Handle() {
   }
 }
 
+u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
+  Assert(concreteCode->GetInterpreter() == NativeCodeInterpreter::self);
+  NativeConcreteCode *nativeConcreteCode =
+    static_cast<NativeConcreteCode *>(concreteCode);
+  Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
+  TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
+  TagVal *args = TagVal::FromWordDirect(abstractCode->Sel(3));
+  switch (AbstractCode::GetArgs(args)) {
+  case AbstractCode::OneArg:
+    return Scheduler::ONE_ARG;
+  case AbstractCode::TupArgs:
+    return Vector::FromWordDirect(args->Sel(0))->GetLength();
+  default:
+    Error("invalid args tag");
+  }
+}
+
 const char *NativeCodeInterpreter::Identify() {
   return "NativeCodeInterpreter";
 }

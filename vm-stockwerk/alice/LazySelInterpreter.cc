@@ -79,6 +79,10 @@ Worker::Result LazySelInterpreter::Run() {
   }
 }
 
+u_int LazySelInterpreter::GetInArity(ConcreteCode *) {
+  return 0;
+}
+
 const char *LazySelInterpreter::Identify() {
   return "LazySelInterpreter";
 }

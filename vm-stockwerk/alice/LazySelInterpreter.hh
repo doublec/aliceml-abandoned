@@ -25,20 +25,18 @@
 #include "generic/UniqueString.hh"
 
 class LazySelInterpreter: public Interpreter {
-public:
-  // Exported LazySelInterpreter Instance
-  static LazySelInterpreter *self;
-  // LazySelInterpreter Constructor
+private:
   LazySelInterpreter(): Interpreter() {}
-  // LazySelInterpreter Static Constructor
+public:
+  static LazySelInterpreter *self;
+
   static void Init() {
     self = new LazySelInterpreter();
   }
-  // Frame Handling
-  virtual void PushCall(Closure *closure);
-  // Execution
+
   virtual Result Run();
-  // Debugging
+  virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual void PushCall(Closure *closure);
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
 };
