@@ -86,15 +86,6 @@ structure ElaborationPhase :> ELABORATION_PHASE =
       | elabLit(E, I.RealLit x)		= ( realTyp E, O.RealLit x )
 
 
-  (* Elaborate kind of type (no higher kinds yet) *)
-
-    fun elabTypKind(E, I.FunTyp(i, id, typ)) =
-	    Type.ARROW(Type.STAR, elabTypKind(E, typ))
-
-      | elabTypKind(E, _) =
-	    Type.STAR
-
-
   (* Rows (polymorphic, thus put here) *)
 
     fun elabLab(E, I.Lab(i, s)) = ( Lab.fromString s, O.Lab(nonInfo(i), s) )
@@ -672,6 +663,36 @@ print"'_? (* not found *)\n";
 	end
 
 
+    and elabTypKind(E, I.FunTyp(i, id, typ)) =
+	    Type.ARROW(Type.STAR, elabTypKind(E, typ))
+
+      | elabTypKind(E, I.ConTyp(i, longid)) =
+	let
+	    val (t,_) = elabTypLongid(E, longid)
+	in
+	    Type.kind t
+	end
+
+      | elabTypKind(E, I.VarTyp(i, id)) =
+	let
+	    val (a,_) = elabVarId(E, Type.STAR, id)
+	in
+	    Type.kindVar a
+	end
+
+      | elabTypKind(E, I.AppTyp(i, typ1, typ2)) =
+	let
+	    val k = elabTypKind(E, typ1)
+	in
+	    case k
+	      of Type.ARROW(k1,k2) => k2
+	       | _                 => error(i, E.AppTypFunKind(k))
+	end
+
+      | elabTypKind(E, _) =
+	    Type.STAR
+
+
     and elabStarTyp(E, typ) =
 	let
 	    val ttyp' as (t,typ') = elabTyp(E, typ)
@@ -785,14 +806,18 @@ print"'_? (* not found *)\n";
 	    ( t, O.ExTyp(typInfo(i,t), id', typ') )
 	end
 
+      | elabTyp(E, I.SingTyp(i, longid)) =
+	let
+	    val (t,longid') = elabValLongid(E, longid)
+	in
+	    ( t, O.SingTyp(typInfo(i,t), longid') )
+	end
+
       | elabTyp(E, I.AbsTyp(i)) =
 	Crash.crash "Elab.elabTyp: AbsTyp"
 
       | elabTyp(E, I.ExtTyp(i)) =
 	Crash.crash "Elab.elabTyp: ExtTyp"
-
-      | elabTyp(E, I.SingTyp(i, longid)) =
-	Crash.crash "Elab.elabTyp: SingTyp"
 
 
     and elabCon(E, I.Con(i, id, typs)) =

@@ -957,8 +957,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				      | O.ShortId _           => NONE
 		val _            = insertTy(E, tycon', (i', stamp, E'))
 	   in
-		O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldiVals (trOpenDecVal (E,i,longido')) acc E'
+		foldiVals (trOpenDecVal (E,i,longido'))
+		  (O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid'))::acc)
+		  E'
 	   end
 
 	 | CONSTRUCTORDec(i, dconbind) =>
@@ -1827,8 +1828,9 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			errorTyCon("duplicate type constructor ", tycon,
 				   " in signature") ;
 	   in
-		O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldiVals (trOpenSpecVal (E,i,longido')) acc E'
+		foldiVals (trOpenSpecVal (E,i,longido'))
+		 (O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid'))::acc)
+		 E'
 	   end
 
 	 | CONSTRUCTORSpec(i, dcondesc) =>
