@@ -222,6 +222,8 @@ struct
 	ignore(eval(Env.empty, nil, code))
 	handle Option.Option     => raise Error "unbound identifier"
 	     | General.Subscript => raise Error "index out of bounds"
+	     | General.Div       => raise Error "division by zero"
+	     | General.Overflow  => raise Error "overflow"
 	     | IO.Io _           => raise Error "i/o error"
 
     and eval(env, stack, nil)     = stack
