@@ -235,11 +235,10 @@ struct
 	    in
 		trace (!logStream, "evaluating " ^ Url.toString baseUrl);
 		(body imports'
-(*DEBUG
 		 handle e as (non (Failure (_, _))) =>
 		     (trace (!logStream,
 			     "evaluation failed in " ^ Url.toString baseUrl);
-		      raise Failure (baseUrl, Eval e))*))
+		      raise Failure (baseUrl, Eval e)))
 		before
 		trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
 	    end
