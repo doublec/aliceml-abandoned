@@ -11,7 +11,7 @@
  *)
 
 import structure Assert       from "../utility/Assert"
-import structure MkHashImpMap from "../utility/MkHashImpMap"
+import structure MkHashImpMap from "../data/MkHashImpMap"
 import structure Url          from "Url"
 import structure Config       from "Config"
 import structure TextIO       from "TextIO"
@@ -148,7 +148,7 @@ structure Resolver: RESOLVER =
 
 		fun pattern' (p1, p2) url =
 		    let
-			val env = StringMap.new ()
+			val env = StringMap.map ()
 		    in
 			(match (p1, String.explode (Url.toStringRaw url), env);
 			 SOME (Url.fromString (instantiate (p2, env))))
@@ -277,9 +277,9 @@ structure Resolver: RESOLVER =
 		if !traceFlag then TextIO.output (TextIO.stdErr, s) else ()
 	end
 
-	fun new {name, handlers, memoize} =
+	fun resolver {name, handlers, memoize} =
 	    {name = name, handlers = handlers,
-	     memoizeMap = if memoize then SOME (UrlMap.new #[]) else NONE}
+	     memoizeMap = if memoize then SOME (UrlMap.map #[]) else NONE}
 
 	fun exists (resolver as {memoizeMap = SOME map, ...}: resolver, url) =
 	    (case UrlMap.lookupNew (map, url) of

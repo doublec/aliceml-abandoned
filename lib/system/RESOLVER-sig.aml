@@ -24,7 +24,7 @@ signature RESOLVER =
 	    FILE of string
 	  | STRING of string
 
-	val new: {name: string, handlers: Handler.t list,
-		  memoize: bool} -> resolver
+	val resolver: {name: string, handlers: Handler.t list,
+		       memoize: bool} -> resolver
 	val localize: resolver -> Url.t -> result option
     end

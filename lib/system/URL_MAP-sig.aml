@@ -21,7 +21,7 @@ signature URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	val new: (Url.t * 'a) vector -> 'a map
+	val map: (Url.t * 'a) vector -> 'a map
 
 	val lookup: 'a map * Url.t -> 'a option
 	val lookupNew: 'a map * Url.t -> 'a lookup_result

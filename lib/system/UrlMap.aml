@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure MkHashImpMap  from "../utility/MkHashImpMap"
+import structure MkHashImpMap  from "../data/MkHashImpMap"
 import structure Url           from "Url"
 import signature URL_MAP       from "URL_MAP-sig"
 
@@ -25,9 +25,9 @@ structure UrlMap :> URL_MAP =
 	    EXISTING of 'a
 	  | NEW of 'a Promise.promise
 
-	fun new initial =
+	fun map initial =
 	    let
-		val map = UrlMap.new ()
+		val map = UrlMap.map ()
 	    in
 		Vector.app (fn (url, x) => UrlMap.insert (map, url, x))
 			   initial;
