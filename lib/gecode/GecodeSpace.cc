@@ -124,7 +124,7 @@ void GecodeSpace::eqV(const IntArgs& vars, conlevel cl) {
 }
 void GecodeSpace::eqR(int var1, int var2, int boolVar, conlevel cl) {
   if (!enter()) return;
-  ::eq(is[var1], is[var2], intvar2boolvar(is[boolVar]));
+  ::eq(is[var1], is[var2], intvar2boolvar(is[boolVar]), cl);
 }
 
 // Distinct constraints

@@ -460,8 +460,8 @@ DEFINE5(gc_eqr) {
   CHECK_SPACE(s);
   DECLARE_VAR(i, stamp, pstamp, x1);
   DECLARE_VAR(j, stamp, pstamp, x2);
-  DECLARE_INT(cl, x3);
-  DECLARE_VAR(boolVar, stamp, pstamp, x4);
+  DECLARE_VAR(boolVar, stamp, pstamp, x3);
+  DECLARE_INT(cl, x4);
   s->eqR(i, j, boolVar, UnsafeGecode::int2cl[cl]);
   DBGMSG("done");
   RETURN_UNIT;
