@@ -262,6 +262,80 @@ AC_DEFUN([AC_SEAM_CHECK_LDFLAG_SEAMTOOL],
        AC_SEAM_ADD_TO_LDFLAGS_SEAMTOOL([$1])
        AC_SEAM_ADD_TO_LDFLAGS([$1]))])
 
+dnl Macros:
+dnl   AC_SEAM_SEAMTOOL_COMMANDS
+dnl
+dnl Description:
+dnl   This macro instantiates two variables for every command
+dnl   supported by seamtool, from which later the final command
+dnl   line is built.  This happens by wrapping a preamble and a
+dnl   postamble (containing architecture-specific compiler
+dnl   options or calling conventions) around the arguments
+dnl   actually given to seamtool.
+dnl
+dnl Author:
+dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl
+AC_DEFUN([AC_SEAM_SEAMTOOL_COMMANDS],
+   [AC_REQUIRE([AC_SEAM_CHECK_CXXFLAG_SEAMTOOL])
+    AC_REQUIRE([AC_SEAM_CHECK_LDFLAG_SEAMTOOL])
+    # compile command
+    case $host_os in
+       *)
+          ac_seam_tmp="$CXX"
+          ac_seam_tmp="${ac_seam_tmp} ${DEFAULT_INCLUDES}"
+          ac_seam_tmp="${ac_seam_tmp} -I."
+          ac_seam_tmp="${ac_seam_tmp} -I${includedir}/seam"
+          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CXXFLAGS}"
+          SEAMTOOL_COMPILE_CMD_PREAMBLE="${ac_seam_tmp}"
+          SEAMTOOL_COMPILE_CMD_POSTAMBLE=""
+          ;;
+    esac
+    AC_SUBST(SEAMTOOL_COMPILE_CMD_PREAMBLE)
+    AC_SUBST(SEAMTOOL_COMPILE_CMD_POSTAMBLE)
+    # link command
+    case $host_os in
+       darwin*)
+          ac_seam_tmp="$CXX"
+          ac_seam_tmp="${ac_seam_tmp} -dynamic"
+          ac_seam_tmp="${ac_seam_tmp} -dynamiclib"
+          ac_seam_tmp="${ac_seam_tmp} -single_module"
+          ac_seam_tmp="${ac_seam_tmp} -undefined suppress"
+          ac_seam_tmp="${ac_seam_tmp} -flat_namespace"
+          SEAMTOOL_LINK_CMD_PREAMBLE="${ac_seam_tmp}"
+          ac_seam_tmp="${SEAMTOOL_LDFLAGS}"
+          ac_seam_tmp="${ac_seam_tmp} -L${libdir}"
+          ac_seam_tmp="${ac_seam_tmp} -lseam"
+          SEAMTOOL_LINK_CMD_POSTAMBLE="${ac_seam_tmp}"
+          ;;
+       *)
+          ac_seam_tmp="$CXX"
+          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_LDFLAGS}"
+          SEAMTOOL_LINK_CMD_PREAMBLE="${ac_seam_tmp}"
+          ac_seam_tmp="-shared"
+          ac_seam_tmp="${ac_seam_tmp} -L${libdir}"
+          ac_seam_tmp="${ac_seam_tmp} -lseam"
+          SEAMTOOL_LINK_CMD_POSTAMBLE="${ac_seam_tmp}"
+          ;;
+    esac
+    AC_SUBST(SEAMTOOL_LINK_CMD_PREAMBLE)
+    AC_SUBST(SEAMTOOL_LINK_CMD_POSTAMBLE)
+    # makedepend command
+    case $host_os in
+       *)
+          ac_seam_tmp="$CXX"
+          ac_seam_tmp="${ac_seam_tmp} -M"
+          ac_seam_tmp="${ac_seam_tmp} ${DEFAULT_INCLUDES}"
+          ac_seam_tmp="${ac_seam_tmp} -I."
+          ac_seam_tmp="${ac_seam_tmp} -I${includedir}/seam"
+          ac_seam_tmp="${ac_seam_tmp} ${SEAMTOOL_CXXFLAGS}"
+          SEAMTOOL_MAKEDEPEND_CMD_PREAMBLE="${ac_seam_tmp}"
+          SEAMTOOL_MAKEDEPEND_CMD_POSTAMBLE=""
+          ;;
+    esac
+    AC_SUBST(SEAMTOOL_MAKEDEPEND_CMD_PREAMBLE)
+    AC_SUBST(SEAMTOOL_MAKEDEPEND_CMD_POSTAMBLE)])
+
 # ---------------------------------------------------------------
 # Macros used in the build process of SEAM extensions
 # ---------------------------------------------------------------
@@ -415,29 +489,41 @@ AC_DEFUN([AC_SEAM_CHECK_SOCKET_FLAVOR],
       AC_LANG_PROGRAM(dnl
         [[#include <sys/select.h>]],
         [[select(0, 0, 0, 0, 0);]]),
-     [AC_MSG_RESULT(unix)
+     [AC_MSG_RESULT(posix)
+      AC_DEFINE(USE_POSIX_SELECT, 1)
       AC_DEFINE(USE_WINSOCK, 0)],
-     [ac_seam_save_LIBS="${LIBS}"
-      LIBS="${LIBS}${LIBS:+ }-lwsock32"
-      AC_RUN_IFELSE(dnl
-         AC_LANG_PROGRAM(dnl
-           [[#include <winsock.h>]],
-           [[WSADATA wsa_data;
-             WORD req_version = MAKEWORD(1, 1);
-             return WSAStartup(req_version, &wsa_data);]]),
-        [AC_MSG_RESULT(-lwsock32)
-         AC_DEFINE(USE_WINSOCK, 1)],
-        [LIBS="wsock32.lib${LIBS:+ }${LIBS}"
+     [AC_LINK_IFELSE(dnl
+        AC_LANG_PROGRAM(dnl
+          [[#include<sys/types.h>
+	    #include<sys/time.h>
+	    #include<unistd.h>]],
+          [[select(0, 0, 0, 0, 0);]]),
+	[AC_MSG_RESULT(unix)
+	 AC_DEFINE(USE_POSIX_SELECT, 0)
+	 AC_DEFINE(USE_WINSOCK, 0)],
+        [ac_seam_save_LIBS="${LIBS}"
+         LIBS="${LIBS}${LIBS:+ }-lwsock32"
          AC_RUN_IFELSE(dnl
             AC_LANG_PROGRAM(dnl
               [[#include <winsock.h>]],
               [[WSADATA wsa_data;
                 WORD req_version = MAKEWORD(1, 1);
                 return WSAStartup(req_version, &wsa_data);]]),
-           [AC_MSG_RESULT(wsock32.lib)
+           [AC_MSG_RESULT(-lwsock32)
+	    AC_DEFINE(USE_POSIX_SELECT, 0)
             AC_DEFINE(USE_WINSOCK, 1)],
-           [AC_MSG_RESULT(none)
-            LIBS="${ac_seam_save_LIBS}"])])])])dnl
+           [LIBS="wsock32.lib${LIBS:+ }${LIBS}"
+            AC_RUN_IFELSE(dnl
+               AC_LANG_PROGRAM(dnl
+                 [[#include <winsock.h>]],
+                 [[WSADATA wsa_data;
+                   WORD req_version = MAKEWORD(1, 1);
+                   return WSAStartup(req_version, &wsa_data);]]),
+              [AC_MSG_RESULT(wsock32.lib)
+	       AC_DEFINE(USE_POSIX_SELECT, 0)
+               AC_DEFINE(USE_WINSOCK, 1)],
+              [AC_MSG_ERROR(could not find suitable sockets library)
+               ])])])])])dnl
 
 dnl Macro:
 dnl   AC_SEAM_WITH_LIGHTNING
@@ -461,6 +547,7 @@ AC_DEFUN([AC_SEAM_WITH_LIGHTNING],
       AC_MSG_NOTICE([Please note that this will only work, if your local ])
       AC_MSG_NOTICE([version of GNU lightning is the same as the one that])
       AC_MSG_NOTICE([was used when building SEAM.                        ])
+      AC_CHECK_SIZEOF(long)
       if test "${with_lightning}" != "yes"; then
          CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I${with_lightning}"
          CPPFLAGS="${CPPFLAGS} -I${with_lightning}/include"
