@@ -50,21 +50,15 @@ public:
 				  int index, int numelems) {
     StackFrame *frame =
       StackFrame::New(VECTOR_TABULATE_FRAME, interpreter, SIZE);
-    frame->ReplaceArg(VECTOR_POS, vector->ToWord());
-    frame->ReplaceArg(FUN_POS, closure);
-    frame->ReplaceArg(INDEX_POS, Store::IntToWord(index));
-    frame->ReplaceArg(NUMELEM_POS, Store::IntToWord(numelems));
+    frame->InitArg(VECTOR_POS, vector->ToWord());
+    frame->InitArg(FUN_POS, closure);
+    frame->InitArg(INDEX_POS, Store::IntToWord(index));
+    frame->InitArg(NUMELEM_POS, Store::IntToWord(numelems));
     return (VectorTabulateFrame *) frame;
   }
   // VectorTabulateFrame Untagging
   static VectorTabulateFrame *FromWord(word frame) {
     Block *p = Store::WordToBlock(frame);
-    Assert(p == INVALID_POINTER ||
-	   p->GetLabel() == (BlockLabel) VECTOR_TABULATE_FRAME);
-    return (VectorTabulateFrame *) p;
-  }
-  static VectorTabulateFrame *FromWordDirect(word frame) {
-    Block *p = Store::DirectWordToBlock(frame);
     Assert(p == INVALID_POINTER ||
 	   p->GetLabel() == (BlockLabel) VECTOR_TABULATE_FRAME);
     return (VectorTabulateFrame *) p;
@@ -92,7 +86,7 @@ VectorTabulateInterpreter::Run(word args, TaskStack *taskStack) {
   word fun       = frame->GetClosure();
   int i          = frame->GetIndex();
   int n          = frame->GetNumElems();
-  vector->Init(i, Interpreter::Construct(args));
+  vector->LateInit(i, Interpreter::Construct(args));
   taskStack->PopFrame(); // Discard Frame
   if (++i == n) {
     Scheduler::currentArgs = Interpreter::OneArg(vector->ToWord());
