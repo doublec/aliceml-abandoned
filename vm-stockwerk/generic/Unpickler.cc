@@ -62,25 +62,25 @@ public:
     return Store::DirectWordToInt(Block::GetArg(HD_POS));
   }
   void SetHd(u_int hd) {
-    Block::InitArg(HD_POS, hd);
+    Block::ReplaceArg(HD_POS, hd);
   }
   u_int GetTl() {
     return Store::DirectWordToInt(Block::GetArg(TL_POS));
   }
   void SetTl(u_int tl) {
-    Block::InitArg(TL_POS, tl);
+    Block::ReplaceArg(TL_POS, tl);
   }
   u_int GetRd() {
     return Store::DirectWordToInt(Block::GetArg(RD_POS));
   }
   void SetRd(u_int rd) {
-    Block::InitArg(RD_POS, rd);
+    Block::ReplaceArg(RD_POS, rd);
   }
   u_int GetEOB() {
     return Store::DirectWordToInt(Block::GetArg(EOB_POS));
   }
   void SetEOB(u_int eob) {
-    Block::InitArg(EOB_POS, eob);
+    Block::ReplaceArg(EOB_POS, eob);
   }
   String *GetBuffer() {
     return String::FromWordDirect(Block::GetArg(BUFFER_POS));
@@ -330,14 +330,12 @@ class UnpickleArgs {
 private:
   static const u_int STREAM_POS = 0;
   static const u_int ENV_POS    = 1;
-  static const u_int COUNT_POS  = 2;
-  static const u_int SIZE       = 3;
+  static const u_int SIZE       = 2;
 public:
-  static void New(InputStream *is, word env, int count) {
+  static void New(InputStream *is, word env) {
     Scheduler::nArgs = SIZE;
     Scheduler::currentArgs[STREAM_POS] = is->ToWord();
     Scheduler::currentArgs[ENV_POS] = env;
-    Scheduler::currentArgs[COUNT_POS] = Store::IntToWord(count);
   }
   static InputStream *GetInputStream() {
     Assert(Scheduler::nArgs == SIZE);
@@ -346,10 +344,6 @@ public:
   static word GetEnv() {
     Assert(Scheduler::nArgs == SIZE);
     return Scheduler::currentArgs[ENV_POS];
-  }
-  static u_int GetCount() {
-    Assert(Scheduler::nArgs == SIZE);
-    return Store::DirectWordToInt(Scheduler::currentArgs[COUNT_POS]);
   }
 };
 
@@ -578,16 +572,13 @@ void Set(word block, u_int i, word y) {
 }
 
 static inline
-void AddToEnv(word env, u_int count, word value) {
-  Stack *stack = Stack::FromWordDirect(env);
-  Assert(stack->GetStackSize() == count); count = count;
-  stack->SlowPush(value);
+void AddToEnv(word env, word value) {
+  Stack::FromWordDirect(env)->SlowPush(value);
 }
 
 static inline
 word SelFromEnv(word env, u_int index) {
-  Stack *stack = Stack::FromWordDirect(env);
-  return stack->GetAbsoluteArg(index);
+  return Stack::FromWordDirect(env)->GetAbsoluteArg(index);
 }
 
 // End of Buffer requires rereading;
@@ -619,7 +610,6 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
   } else {
     InputStream *is = UnpickleArgs::GetInputStream();
     word env        = UnpickleArgs::GetEnv();
-    u_int count     = UnpickleArgs::GetCount();
     u_char tag      = is->GetByte();
     CHECK_EOB();
     switch (static_cast<Pickle::Tag>(tag)) {
@@ -648,10 +638,10 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Chunk *y      = Store::AllocChunk(size);
 	std::memcpy(y->GetBase(), bytes, size);
 	Set(x, i, y->ToWord());
-	AddToEnv(env, count, y->ToWord());
+	AddToEnv(env, y->ToWord());
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
-	UnpickleArgs::New(is, env, count + 1);
+	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -662,11 +652,11 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Block *block = Store::AllocBlock(static_cast<BlockLabel>(label), size);
 	word y       = block->ToWord();
 	Set(x, i, y);
-	AddToEnv(env, count, y);
+	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env, count + 1);
+	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -675,11 +665,11 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	u_int size = is->GetUInt(); CHECK_EOB();
 	word y     = Tuple::New(size)->ToWord();
 	Set(x, i, y);
-	AddToEnv(env, count, y);
+	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env, count + 1);
+	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -689,11 +679,11 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	word cc    = Store::IntToWord(0); // will be replaced by concrete code
 	word y     = Closure::New(cc, size - 1)->ToWord();
 	Set(x, i, y);
-	AddToEnv(env, count, y);
+	AddToEnv(env, y);
 	is->Commit();
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	UnpickleInterpreter::PushFrame(taskStack, y, 0, size);
-	UnpickleArgs::New(is, env, count + 1);
+	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -702,13 +692,13 @@ Interpreter::Result UnpickleInterpreter::Run(TaskStack *taskStack) {
 	Future *future = Future::New();
 	word y         = future->ToWord();
 	Set(x, i, y);
-	AddToEnv(env, count, y);
+	AddToEnv(env, y);
 	is->Commit();
 	Tuple *tuple = Tuple::New(2);
 	PushUnpickleFrame(taskStack, x, i + 1, n);
 	TransformInterpreter::PushFrame(taskStack, future, tuple);
 	UnpickleInterpreter::PushFrame(taskStack, tuple->ToWord(), 0, 2);
-	UnpickleArgs::New(is, env, count + 1);
+	UnpickleArgs::New(is, env);
 	CONTINUE();
       }
       break;
@@ -901,7 +891,7 @@ Interpreter::Result Unpickler::Unpack(String *s, TaskStack *taskStack) {
   taskStack->PopFrame();
   PickleUnpackInterpeter::PushFrame(taskStack, x);
   UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
-  UnpickleArgs::New(is, env->ToWord(), 0);
+  UnpickleArgs::New(is, env->ToWord());
   return Interpreter::CONTINUE;
 }
 
@@ -921,7 +911,7 @@ Interpreter::Result Unpickler::Load(String *filename, TaskStack *taskStack) {
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
   PickleLoadInterpreter::PushFrame(taskStack, x);
   UnpickleInterpreter::PushFrame(taskStack, x->ToWord(), 0, 1);
-  UnpickleArgs::New(is, env->ToWord(), 0);
+  UnpickleArgs::New(is, env->ToWord());
   return Interpreter::CONTINUE;
 }
 
