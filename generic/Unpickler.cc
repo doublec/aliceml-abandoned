@@ -668,7 +668,7 @@ public:
     frame->InitArg(SIZE_POS, frame->GetSize() + frSize);
     frame->InitArg(TOP_POS, SIZE+locals+1);
     frame->InitArg(LOCALS_POS, locals+1);
-    for (u_int i=locals+2; i--;) {
+    for (u_int i = frSize - SIZE; i--;) {
       frame->InitArg(SIZE+i, Store::IntToWord(0));
     }
     return STATIC_CAST(UnpickleFrame *, frame);
