@@ -112,7 +112,7 @@ struct
     val _               = Type.fix #[(typ_bool, Type.sum row_bool)]
 
 
-    exception Lookup
+    exception Lookup of string
 
     fun lookup s =
 	if      s = typid_int    then typ_int
@@ -126,5 +126,5 @@ struct
 	else if s = typid_array  then typ_array
 	else if s = typid_strict then typ_strict
 	else if s = typid_conarrow then typ_conarrow
-	else raise Lookup
+	else raise Lookup s
 end

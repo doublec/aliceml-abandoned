@@ -228,7 +228,7 @@ sig
     val asInfItem :	item -> path * kind		(* Item *)
     val asHiddenItem :	item -> item			(* Item *)
 
-    exception Lookup
+    exception Lookup of lab
 
     val lookupFix :	sign * lab -> fix		(* Lookup *)
     val lookupVal :	sign * lab -> typ		(* Lookup *)

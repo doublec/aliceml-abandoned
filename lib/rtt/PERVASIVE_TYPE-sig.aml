@@ -59,6 +59,6 @@ sig
 
     val paths :		PathSet.t
 
-    exception Lookup
+    exception Lookup of string
     val lookup :	string -> typ	(* [Lookup] *)
 end

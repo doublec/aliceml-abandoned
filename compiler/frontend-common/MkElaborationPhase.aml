@@ -862,7 +862,7 @@ struct
 
       | elabTypKind(E, I.PrimTyp(i, s)) =
 	let
-	    val t = PervasiveType.lookup s handle PervasiveType.Lookup =>
+	    val t = PervasiveType.lookup s handle PervasiveType.Lookup _ =>
 			error(i, E.PervasiveTypUnknown s)
 	in
 	    Type.kind t
@@ -916,7 +916,7 @@ struct
 
       | elabTyp'(E, allowJok, I.PrimTyp(i, s))=
 	let
-	    val t = PervasiveType.lookup s handle PervasiveType.Lookup =>
+	    val t = PervasiveType.lookup s handle PervasiveType.Lookup _ =>
 			error(i, E.PervasiveTypUnknown s)
 	in
 	    ( t, O.PrimTyp(typInfo(i,t), s) )
@@ -1413,7 +1413,7 @@ TextIO.print "\n";
       | elabInf(E, po, I.PrimInf(i, s)) =
 	let
 	    (* No pervasive interfaces yet... *)
-	    val j = (*PervasiveInf.lookup s handle PervasiveInf.Lookup =>*)
+	    val j = (*PervasiveInf.lookup s handle PervasiveInf.Lookup _ =>*)
 			error(i, E.PervasiveInfUnknown s)
 	in
 	    ( j, O.PrimInf(infInfo(i,j), s) )
@@ -1985,7 +1985,7 @@ TextIO.print "\n";
     and elabImp(E, s, s', I.FixImp(i, vallab, desc)) =
 	let
 	    val (l,vallab') = elabLab(E, vallab)
-	    val f1          = Inf.lookupFix(s, l) handle Inf.Lookup =>
+	    val f1          = Inf.lookupFix(s, l) handle Inf.Lookup _ =>
 				error(i, E.ImpMismatch(Inf.MissingFix l))
 	    val desc'       =
 		case desc
@@ -2007,7 +2007,7 @@ TextIO.print "\n";
 	let
 	    val (t0,qt,valid') = elabValid_bind(E, s, valid)
 	    val  l             = Label.fromName(O.name valid')
-	    val  t1            = Inf.lookupVal(s, l) handle Inf.Lookup =>
+	    val  t1            = Inf.lookupVal(s, l) handle Inf.Lookup _ =>
 				   error(i, E.ImpMismatch(Inf.MissingVal l))
 	    val (t2,desc')     =
 		case desc
@@ -2031,7 +2031,7 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
-	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup =>
+	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
 	    val t1 = Inf.lookupTyp'(s, l)
 	    val (k2,t2,desc') =
@@ -2056,7 +2056,7 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name modid)
 	    val p  = elabNewPath(NONE, I.name modid)
-	    val j1 = Inf.lookupMod(s, l) handle Inf.Lookup =>
+	    val j1 = Inf.lookupMod(s, l) handle Inf.Lookup _ =>
 			error(i, E.ImpMismatch(Inf.MissingMod l))
 	    val m1 = Inf.lookupMod'(s, l)
 	    val (j2,jm2,desc') =
@@ -2087,7 +2087,7 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name infid)
 	    val p  = elabNewPath(NONE, I.name infid)
-	    val k1 = Inf.lookupInf(s, l) handle Inf.Lookup =>
+	    val k1 = Inf.lookupInf(s, l) handle Inf.Lookup _ =>
 			error(i, E.ImpMismatch(Inf.MissingInf l))
 	    val j1 = Inf.lookupInf'(s, l)
 	    val (k2,j2,desc') =
@@ -2127,9 +2127,9 @@ TextIO.print "\n";
 	let
 	    val l  = Label.fromName(I.name typid)
 	    val p  = elabNewPath(NONE, I.name typid)
-	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup =>
+	    val k1 = Inf.lookupTyp(s, l) handle Inf.Lookup _ =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
-	    val t1 = Inf.lookupTyp'(s, l) handle Inf.Lookup =>
+	    val t1 = Inf.lookupTyp'(s, l) handle Inf.Lookup _ =>
 			error(i, E.ImpMismatch(Inf.MissingTyp l))
 	    val _  =
 		case desc

@@ -848,12 +848,12 @@ struct
     fun selectInf'(INF(p,k))		= asSingKind k
       | selectInf' _			= raise Assert.failure
 
-    exception Lookup
+    exception Lookup of lab
 
     fun lookup space (s,l) =
 	case Tab.lookup(tab s, (space,l))
 	 of SOME item => item
-	  | NONE      => raise Lookup
+	  | NONE      => raise Lookup l
 
     val pathTyp		= itemPath o lookup TYP'
     val pathMod		= itemPath o lookup MOD'
