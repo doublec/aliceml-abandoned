@@ -244,7 +244,7 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   case CONSTANT_Integer:
     {
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 1);
-      entry->InitArg(0, GetU4(offset)); // bytes
+      entry->InitArg(0, JavaInt::ToWord(GetU4(offset))); // bytes
       return entry;
     }
     break;
