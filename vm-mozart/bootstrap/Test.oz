@@ -184,7 +184,8 @@ define
 		 {TrBody Body1} {TrBody Body2})
       [] SharedStm(Info#Body#Shared) then
 	 if {IsInt {Access Shared}} then
-	    {Assign Shared shared({TrInfo Info} {TrBody Body} {Access Shared})}
+	    {Assign Shared
+	     sharedStm({TrInfo Info} {TrBody Body} {Access Shared})}
 	 end
 	 {Access Shared}
       [] ReturnStm(Info#Exp) then returnStm({TrInfo Info} {TrExp Exp})
@@ -227,7 +228,7 @@ define
    end
 
    fun {TrBody Stms}
-      {TrList Stms TrStm}
+      {Flatten {TrList Stms TrStm}}
    end
 
    fun {TrComponent IdStringList#Ids#Body}
