@@ -16,15 +16,16 @@ import structure Reflect         from "x-alice:/lib/system/Reflect"
 import structure UnsafeInspector from "UnsafeInspector"
 (* import signature INSPECTOR from "INSPECTOR-sig" *)
 
+structure Inspector' =
+    struct
+        fun inspect' t x = UnsafeInspector.inspect(x, t)
+    end
+
 structure Inspector (* : INSPECTOR *) =
     struct
-        local
-            fun inspect' t x = UnsafeInspector.inspect(x, t)
-	in
-	    __overload 'a inspect :  'a -> unit = inspect'
-	end
+        __overload 'a inspect :  'a -> unit = Inspector'.inspect'
 
-	functor Inspect(X : (signature S structure X : S)) : any =
+        functor Inspect(X : (signature S structure X : S)) : any =
 	    let
 		structure I = Reflect.ReflectSig X
 		structure M = Reflect.Reflect X
