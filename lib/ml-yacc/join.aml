@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.5  2000-03-30 13:37:26  rossberg
+ * Revision 1.6  2001-01-15 15:42:05  kornstae
+ * Converted to Alice sources as well.
+ *
+ * Revision 1.5  2000/03/30 13:37:26  rossberg
  *
  * Switched arguments in Join functors because sharing broke with our move to
  * structural datatypes. :-(
@@ -27,6 +30,15 @@
  * Version 109
  * 
  *)
+
+import
+    signature PARSER_DATA
+    signature LEXER
+    signature LR_PARSER
+    signature PARSER
+    signature ARG_LEXER
+    signature ARG_PARSER
+from "base.ozf"
 
 (* functor Join creates a user parser by putting together a Lexer structure,
    an LrValues structure, and a polymorphic parser structure.  Note that

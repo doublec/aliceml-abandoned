@@ -1,7 +1,10 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.1  1999-10-04 09:44:08  kornstae
+ * Revision 1.2  2001-01-15 15:42:05  kornstae
+ * Converted to Alice sources as well.
+ *
+ * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
  *    to give them a unique location for bootstrapping.
  *
@@ -15,6 +18,10 @@
  * Version 109
  * 
  *)
+
+import
+    signature STREAM
+from "base.ozf"
 
 (* Stream: a structure implementing a lazy stream.  The signature STREAM
    is found in base.sig *)
