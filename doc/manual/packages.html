@@ -8,14 +8,14 @@
 
 <P>For particular programming tasks - especially when transferring date between
 different processes - it is desirable to relax the strict static rules of ML
-and shift some of the type checking to runtime. Alice hence provides runtime
-typing through the concept of <EM>packages</EM>.
+and shift some of the type checking to runtime. For this purpose, Alice
+provides runtime typing through the concept of <EM>packages</EM>.
 
 <P>A package is a value of abstract type <TT>package</TT> that encapsulates
 some value, along with its (runtime) type. Accessing the value inside a package
 is only possible via an explicit unpack operation, which requires giving the
-expected type. A dynamic type check takes place to verify that the actual and
-the expected type match.</P>
+expected type. A dynamic type check verifies that the actual and the expected
+type match.</P>
 
 <P>Instead of just values of the core language, packages may actually contain
 arbitrary <A href="modules.html">higher-order modules</A>, paired with their
@@ -54,8 +54,8 @@ supports <A href="modules.html#local">local modules</A>, the exception may be
 handled in the usual way.</P>
 
 <P>Statically, the expression has the signature type denoted by
-<TT><I>sigexp</I></TT>, as it can only be successfully evaluated if it is able
-to deliver a suitable module. Any use of the unpacked module will be statically
+<TT><I>sigexp</I></TT>, as it can only be evaluated successfully if it
+delivers a suitable module. Any use of the unpacked module will be statically
 type-safe.</P>
 
 
@@ -120,7 +120,7 @@ Word8'.toString (Word8.fromInt 255)</PRE>
 <PRE class=code>
 structure Word' = unpack p : WORD</PRE>
 
-<P>but of course, <TT>Word'.word</TT> again is statically different from
+<P>but of course, <TT>Word'.word</TT> is again statically different from
 <TT>Word8.word</TT>.
 
 <P>Type constraints can also be used to specify sharing between different
@@ -143,8 +143,8 @@ this requirement dynamically, by specifying the necessary type equivalence.</P>
 
 <?php section("firstclass", "first-class modules") ?>
 
-<P>The main application for first-class modules in the form of packages is
-in combination with <A href="pickling.html">pickling</A> where they allow making
+<P>The main application for first-class modules in the form of packages is in
+combination with <A href="pickling.html">pickling</A>, where they allow to make
 implementations of abstract types or whole programs persistent, and with <A
 href="distribution.html">distributed programming</A>, where they enable
 transfer of program components to remote locations.</A>
@@ -199,7 +199,7 @@ List.app (fn p => let structure S = unpack p : SHAPE
 <?php section("dynamic", "dynamic typing") ?>
 
 <P>Packages rely on dynamic typing, thus types (and signatures) have a dynamic
-semantics. It is an important property of the semantics that it does not
+semantics. An important property of the semantics is that it does not
 undermine any properties of the static type system. In particular, all
 abstraction guarantees carry over from static to dynamic typing: no type
 abstraction can be broken by use of the dynamic typing implied by packages. For
@@ -231,7 +231,7 @@ representation. In particular, structures carry the contained type
 fields (and <A href="modules.html#sigmembers">signature fields</A>). This implies
 that types are passed to and returned from functors.</LI>
 
-<LI>Evaluation of a <EM>generative</EM> type declaration (e.g.
+<LI>Evaluation of a <EM>generative</EM> type declaration (e.g.,
 <TT>exttype</TT>) creates a fresh type name. Generated names are globally
 unique, so that they are valid across process boundaries and may be stored in
 <A href="pickling.html">pickles</A>.</LI>
@@ -262,12 +262,11 @@ href="library/package.html"><TT>Package.Mismatch</TT></A>.</LI>
 <P>Note that polymorphic functions are still parametric and thus can be
 interpreted in a type erasure semantics. To pass type information, a function
 has to be lifted to the functor level. Due to <A
-href="modules.html#local">local modules</A> this is possible most of the
-times.</P>
+href="modules.html#local">local modules</A> this is possible in most cases.</P>
 
 <P>Packing performs sealing to ensure consistency between the package signature
 and dynamic types contained in the packaged module. If no sealing took place,
-certain anomalies would be possible, like successful evaluation of the following
+anomalies would be possible, like successful evaluation of the following
 program:</P>
 
 <PRE class=code>
@@ -308,7 +307,7 @@ specify <TT>t</TT> <TT>=</TT> <TT>int</TT> at this point, because statically,
 <TT>X1.t</TT> is abstract since it has been unpacked abstractly.</P>
 
 <P>Transparent semantics of unpacking are necessary to allow expressing <A
-href="#packages-sharing">sharing</A>.</P>
+href="#package-sharing">sharing</A>.</P>
 
 
 <!--
@@ -342,7 +341,7 @@ functor GetMonoVector(type t) =
 <?php subsection("dynamic-limitation", "Implementation limitations") ?>
 
 <P> The dynamic semantics of sealing is currently not implemented faithfully
-for polymorphic signatures: if the signature is not statically known, because
+for polymorphic signatures: if the signature is not statically known because
 it is a functor parameter, no runtime sealing will be performed. A simple
 example is: </P>
 
@@ -430,7 +429,7 @@ val y = X.x + 1    (* Ah! *)</PRE>
 <P>Often it is not necessary to package whole modules. For convenience, the <A
 href="library/package.html"><TT>Package</TT></A> module thus provides functors
 that allow packaging of simple core values. Essentially, this provides a type
-<EM>dynamic</EM>, as available in a few other languages.</P>
+<EM>dynamic</EM>, as available in a few other statically-typed languages.</P>
 
 
 
