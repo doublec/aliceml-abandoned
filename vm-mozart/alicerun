@@ -22,11 +22,11 @@ find_in () {
 if test -z "${STOCKHOME}"; then
     dir=$(dirname "$0")
     dir=$(dirname "$dir")
-    STOCKHOME=$(find_in VMMain.ozf /usr/share/alice "$dir")
+    STOCKHOME=$(find_in VMMain.ozf /usr/share/alice "$PROGRAMFILES/Alice" "$dir")
 fi
 
 if test -z "${OZHOME}"; then
-    OZHOME=$(find_in share/Init.ozf /usr/lib/mozart /opt/mozart-devel)
+    OZHOME=$(find_in share/Init.ozf /usr/lib/mozart "$PROGRAMFILES/Mozart" /opt/mozart-stable)
 fi
 
 case $(uname) in
