@@ -672,8 +672,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
 	    Object *object = Object::FromWord(value);
-	    // to be done: array->GetType();
-	    Type *type     = INVALID_POINTER;
+	    Type *type     = array->GetType();
 	    if ((type->GetLabel() == JavaLabel::Class) &&
 		((object == INVALID_POINTER) ||
 		 object->IsInstanceOf(static_cast<Class *>(type))))
