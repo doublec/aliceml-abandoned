@@ -359,4 +359,40 @@ structure Backend=
 	  | psl (x::xs)  = Stamp.toString x^", "^(psl xs)
 	  | psl nil = ""
 
+	structure ConstProp =
+	    struct
+		val consts: exp option StampHash.t = StampHash.new ()
+
+		fun get stamp' =
+		    let
+			fun geti stamp' =
+			    case StampHash.lookup (consts, stamp') of
+				(va as SOME (SOME (VarExp (_, (Id (_,stamp'',_)))))) =>
+				    (case geti stamp'' of
+					 (s' as SOME (s'' as SOME _)) =>
+					     (StampHash.insert (consts, stamp', s'');
+					      s')
+				       | _ => va)
+			      | foo => foo
+		    in
+			if !OPTIMIZE >= 3 then
+			    case geti stamp' of
+				SOME (p as SOME (LitExp _
+			      | PrimExp _
+			      | NewExp _
+			      | VarExp _
+			      | ConExp _
+			      | RefExp _
+			      | SelExp _)) => p
+			      | _ => NONE
+			else NONE
+		    end
+
+		fun add (stamp', content) =
+		    if !OPTIMIZE >= 3 then
+			case StampHash.lookup (consts, stamp') of
+			    NONE => StampHash.insert (consts, stamp', SOME content)
+			  | SOME _ => StampHash.insert (consts, stamp', NONE)
+		    else ()
+	    end
     end

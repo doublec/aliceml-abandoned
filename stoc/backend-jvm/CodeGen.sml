@@ -16,6 +16,32 @@ structure CodeGen =
 	open ToJasmin
 	open Backend
 
+	(* constant propagation *)
+	fun constPropDec (ValDec (_, Id (_,stamp', _), exp', _)) =
+	    ConstProp.add (stamp', constPropExp exp')
+	  | constPropDec (RecDec (_, idexps, _)) =
+	    List.app
+	    (fn (Id (_, stamp', _), exp') => ConstProp.add (stamp', constPropExp exp'))
+	    idexps
+	  | constPropDec (EvalStm (_, exp')) = (constPropExp exp'; ())
+	  | constPropDec (HandleStm (_, body', _, body'', body''', shared)) =
+	    if shared = ref ~1 then () else
+		(shared := ~1;
+		 List.app constPropDec body';
+		 List.app constPropDec body'';
+		 List.app constPropDec body''')
+	  | constPropDec (TestStm (_, _, _, body', body'')) =
+		(List.app constPropDec body';
+		 List.app constPropDec body'')
+	  | constPropDec (ReturnStm (_, exp')) = (constPropExp exp'; ())
+	  | constPropDec (IndirectStm (_, ref (SOME body'))) = List.app constPropDec body'
+	  | constPropDec _ = ()
+	and
+	    constPropExp (f as FunExp (_, _, _, idargsbody)) =
+	    (List.app (fn (_, body') => List.app constPropDec body') idargsbody;
+	     f)
+	  | constPropExp x = x
+
 	(* compute destination classes *)
 	fun destClassExp (FunExp (_, thisFun, _, idbodies)) =
 	    let
@@ -31,10 +57,12 @@ structure CodeGen =
 	    end
 	  | destClassExp _ = ()
 	and
-	    destClassDec (HandleStm(_,body',id',body'', body''', _)) =
-	    (destClassDecs body''';
-	     destClassDecs body'';
-	     destClassDecs body')
+	    destClassDec (HandleStm(_,body',id',body'', body''', shared)) =
+	    if shared = ref ~2 then () else
+		(shared:= ~2;
+		 destClassDecs body''';
+		 destClassDecs body'';
+		 destClassDecs body')
 	  | destClassDec (TestStm(_,id',test',body',body'')) =
 	    (destClassDecs body'';
 	     destClassDecs body')
@@ -80,8 +108,10 @@ structure CodeGen =
 
 	(* compute free variables of expressions *)
 	fun freeVarsExp (LitExp _, _, _) = ()
-	  | freeVarsExp (VarExp (_, id'), free, curFun) =
-	    markfree(free, id', curFun, "VarExp")
+	  | freeVarsExp (VarExp (_, id' as Id (_, stamp', _)), free, curFun) =
+	    (case ConstProp.get stamp' of
+		 NONE => markfree(free, id', curFun, "VarExp")
+	       | SOME exp' => freeVarsExp (exp', free, curFun))
 	  | freeVarsExp (NewExp _, _, _) = ()
 	  | freeVarsExp (ConAppExp (_, id', idargs), free, curFun) =
 	    (markfree (free, id', curFun, "ConAppExp");
@@ -146,11 +176,13 @@ structure CodeGen =
 
 	and freeVarsDec (RaiseStm(_,id'), free, curFun) =
 	    markfree (free, id', curFun, "RaiseStm")
-	  | freeVarsDec (HandleStm(_,body',id',body'', body''', _), free, curFun) =
-	    (freeVarsDecs (body''', free, curFun);
-	     freeVarsDecs (body'', free, curFun);
-	     freeVarsDecs (body', free, curFun);
-	     markbound (free, id', curFun, "HandleStm"))
+	  | freeVarsDec (HandleStm(_,body',id',body'', body''', shared), free, curFun) =
+	    if shared = ref ~3 then () else
+		(shared :=  ~3;
+		 freeVarsDecs (body''', free, curFun);
+		 freeVarsDecs (body'', free, curFun);
+		 freeVarsDecs (body', free, curFun);
+		 markbound (free, id', curFun, "HandleStm"))
 	  | freeVarsDec (EndHandleStm _, _, _) = ()
 	  | freeVarsDec (TestStm(_,id',test',body',body''), free, curFun) =
 	    (freeVarsDecs (body'', free, curFun);
@@ -265,6 +297,8 @@ structure CodeGen =
 		     print ("parm5Stamp: "^Stamp.toString parm5Stamp^"\n"))
 		else ();
 		    let
+			(* do constant propagation *)
+			val _ = List.app constPropDec program
 			(* compute free variables and destination classes. *)
 			val _ = let
 				    val free = StampSet.new ()
@@ -1299,9 +1333,11 @@ structure CodeGen =
 		     Line line ::
 		     createTuple (NONE, longids, nil, curFun, curCls)
 
-	  | expCode (VarExp(((line,_),_),id'), curFun, curCls) =
-		     [Line line,
-		      idCode (id', curFun, curCls)]
+	  | expCode (VarExp(((line,_),_),id' as Id (_, stamp', _)), curFun, curCls) =
+		     (case ConstProp.get stamp' of
+			  NONE => [Line line,
+				   idCode (id', curFun, curCls)]
+			| SOME exp' => expCode (exp', curFun, curCls))
 
 	  | expCode (AdjExp (((line,_),_), id', id''), curFun, curCls) =
 		     [Line line,
