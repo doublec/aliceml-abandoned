@@ -604,7 +604,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/compiler build3/install/compiler/top \
 	build3/install/linker build3/install/depend
-INSTALL3TOPFILES = $(INSTALL1TOPFILES) alicec.import alice.import
+INSTALL3TOPFILES = $(INSTALL1TOPFILES) alicec.import alice.import COPYING
 INSTALL3BINFILES = $(INSTALL1BINFILES) alice
 INSTALL3LIBFILES = \
 	$(filter %.ozf, $(LIBSOURCES0:%.aml=%.ozf)) \
@@ -745,6 +745,9 @@ build3/install/VMMain.ozf: build3/VMMain.ozf
 	install -c -m 444 $< $@
 
 build3/install/%.import: build3/%.import
+	install -c -m 444 $< $@
+
+build3/install/COPYING: ../COPYING
 	install -c -m 444 $< $@
 
 build3/install/bin/%.bat: %.bat
