@@ -13,5 +13,5 @@
 signature SKELETON =
     sig
 	val module: string -> string
-	val externals: string
+	val externals: unit -> string
     end

@@ -717,7 +717,7 @@ structure IL :> IL =
 		val q = TextIO.openOut filename
 	    in
 		output (q, Skeleton.module name);
-		output (q, Skeleton.externals);
+		output (q, Skeleton.externals ());
 		outputDecls (q, decls);
 		TextIO.closeOut q
 	    end
