@@ -27,10 +27,12 @@ in
 
 signature NEW_NODE_HELPER =
 sig
+    
     val itemToLabel: Inf.item -> Label.lab
-
+    
     val setGroup: node -> Gtk.object
 
+(* low-level-Konstruktion der verschiedenen node-Arten *)
     val createSimple: 
         desc * node * int * int * string * color_class * (node -> Gtk.object) 
 	-> node
@@ -61,6 +63,10 @@ sig
 	(Reflect.value * Type.t * node * int * int * 'a list_desc -> node)
 	-> node
 
+(* Behandlung von Listen *)
+    val inspectList : int * 'a list  -> 'a list_desc 
+    val castList : 'a -> 'b list
+    
     val lookupPath: string * string -> Path.path
 
 end
