@@ -386,7 +386,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
-    <TD> <A href="modules.html#higher-strexp">functor binding</A> (<I>n</I>&ge;1) (*) </TD>
+    <TD> <A href="modules.html#higher-strexp">functor binding</A> (<I>n</I>&ge;1) (*) <SUP>2</SUP> </TD>
   </TR>
 
 <!--
@@ -397,7 +397,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
-    <TD> <A href="modules.html#paramsig">signature binding</A> (<I>n</I>&ge;0) </TD>
+    <TD> <A href="modules.html#paramsig">signature binding</A> (<I>n</I>&ge;0) <SUP>2</SUP> </TD>
   </TR>
 -->
 </TABLE>
@@ -405,6 +405,9 @@ relative to Standard ML. Derived forms are marked (*).
 <P><SUP>1</SUP>) The extended phrase class <I>dec</I> contains all of Standard
 ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
 
+<P><SUP>2</SUP>) See the <A href="modules.html#syntax-decs">module syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+bindings.</P>
 
 <?php subsection("syntax-structs", "Structures") ?>
 
@@ -444,8 +447,18 @@ ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
   <TR>
     <TD> <I>strpat</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I> </TD>
     <TD> <A href="modules.html#higher-strexp">parameter</A> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> <A href="modules.html#sugar-wildcards">anonymous parameter</A> (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> <A href="modules.html#higher-strexp">parameter</A> (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -534,6 +547,11 @@ application.</P>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
     <TD> <A href="modules.html#higher-sigexp">functor</A> </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigexp</I><SUB>1</SUB> <TT>-></TT> <I>sigexp</I><SUB>2</SUB> </TD>
+    <TD> <A href="modules.html#higher-sigexp">non-dependent functor</A> <SUP>1</SUP> </TD>
+  </TR>
 <!--
   <TR>
     <TD></TD> <TD></TD>
@@ -573,6 +591,9 @@ application.</P>
   <TR></TR>
 -->
 </TABLE>
+
+<P><SUP>1</SUP>) See the <A href="modules.html#syntax-sigs">module syntax
+summary</A> for a more precise grammar of functor signatures.</P>
 
 
 <?php subsection("syntax-specs", "Specifications") ?>
@@ -639,7 +660,7 @@ application.</P>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          <TT>:</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
-    <TD> <A href="modules.html#higher-sigexp">functor description</A> (<I>n</I>&ge;1) (*) </TD>
+    <TD> <A href="modules.html#higher-sigexp">functor description</A> (<I>n</I>&ge;1) (*) <SUP>1</SUP> </TD>
   </TR>
 
   <TR></TR>
@@ -657,11 +678,14 @@ application.</P>
     <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          &lt;<TT>=</TT> <I>sigexp</I>&gt;
          &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
-    <TD> <A href="modules.html#sigmembers">signature description</A> (<I>n</I>&ge;0) </TD>
+    <TD> <A href="modules.html#sigmembers">signature description</A> (<I>n</I>&ge;0) <SUP>1</SUP> </TD>
   </TR>
 -->
 </TABLE>
 
+<P><SUP>1</SUP>) See the <A href="modules.html#syntax-specs">module syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+specifications.</P>
 
 <?php subsection("syntax-components", "Components") ?>
 
@@ -886,7 +910,7 @@ application.</P>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
 	 <TT>:</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>funitem</I>&gt; </TD>
-    <TD> (<I>n</I>&ge;1) (*) </TD>
+    <TD> (<I>n</I>&ge;1) (*) <SUP>1</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
@@ -900,9 +924,13 @@ application.</P>
     <TD></TD> <TD></TD>
     <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
          &lt;<TT>and</TT> <I>sigitem</I>&gt; </TD>
-    <TD> (<I>n</I>&ge;1) </TD>
+    <TD> (<I>n</I>&ge;1) <SUP>1</SUP> </TD>
   </TR>
 -->
 </TABLE>
+
+<P><SUP>1</SUP>) See the <A href="components.html#syntax">component syntax
+summary</A> for a more precise grammar of functor <!--and signature-->
+items.</P>
 
 <?php footing() ?>

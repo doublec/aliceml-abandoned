@@ -78,7 +78,7 @@ include functor expressions. Similar to <TT>fun</TT> declarations,
 <TT>F</TT> above is just sugar for:</P>
 
 <PRE class=code>
-structure F = fct (X : S1) => fct (Y : S2) => struct (* ... *) end</PRE>
+structure F = fct X : S1 => fct Y : S2 => struct (* ... *) end</PRE>
 
 <P>The keyword <TT>fct</TT> starts a functor expression very much like
 <TT>fn</TT> begins a function expression in the core language. Functor
@@ -99,10 +99,15 @@ For example, functor <TT>F</TT> can be described by the following
 signature:</P>
 
 <PRE class=code>
-structure F : fct (X : S1) -> fct (Y : S2) -> sig (* ... *) end</PRE>
+structure F : fct X : S1 -> fct Y : S2 -> sig (* ... *) end</PRE>
 
-<P>As a derived form, the following SML/NJ compatible syntax is provided for
-functor descriptions in signatures:</P>
+<P>If the parameters <TT>X</TT> and <TT>Y</TT> do not appear in <TT>S2</TT> or the rest of the signature, it may be abbreviated as follows:</P>
+
+<PRE class=code>
+structure F : S1 -> S2 -> sig (* ... *) end</PRE>
+
+<P>As another derived form, the following SML/NJ compatible syntax is provided
+for functor descriptions in signatures:</P>
 
 <PRE class=code>
 functor F (X : S1) (Y : S2) : sig (* ... *) end</PRE>
@@ -492,10 +497,10 @@ expressions. Derived forms have been marked with (*).</P>
   </TR>
   <TR></TR>
   <TR>
-    <TD> <I>strpat</I> </TD>
+    <TD> <I>atstrpat</I> </TD>
     <TD align="center">::=</TD>
     <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
-    <TD> parameter </TD>
+    <TD> parameter (*) </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -506,6 +511,23 @@ expressions. Derived forms have been marked with (*).</P>
     <TD></TD> <TD></TD>
     <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
     <TD> signature as parameter (*) </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atstrpat</I>  </TD>
+    <TD> atomic (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strid</I> <TT>:</TT> <I>sigexp</I>  </TD>
+    <TD> parameter </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> <TT>:</TT> <I>sigexp</I> </TD>
+    <TD> anonymous parameter (*) </TD>
   </TR>
 </TABLE>
 
@@ -585,6 +607,11 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
     <TD> functor </TD>
   </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>atsigexp</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> non-dependent functor (*) </TD>
+  </TR>
   <TR></TR>
   <TR>
     <TD> <I>rea</I> </TD>
@@ -614,7 +641,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>signature</TT> <I>longsigid</I>
-         <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>sigexp</I> </TD>
     <TD> signature (<I>n</I>&ge;0) </TD>
   </TR>
@@ -646,7 +673,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>fundesc</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+    <TD> <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
          <TT>:</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
     <TD> functor description (<I>n</I>&ge;1) (*) </TD>
@@ -663,7 +690,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>sigdesc</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+    <TD> <I>sigid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
          &lt;<TT>=</TT> <I>sigexp</I>&gt;
          &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
     <TD> signature description (<I>n</I>&ge;0) </TD>
@@ -691,7 +718,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>funbind</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+    <TD> <I>strid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>strexp</I>
          &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
     <TD> functor binding (<I>n</I>&ge;1) (*) </TD>
@@ -701,7 +728,7 @@ expressions. Derived forms have been marked with (*).</P>
   <TR>
     <TD> <I>sigbind</I> </TD>
     <TD align="center">::=</TD>
-    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+    <TD> <I>sigid</I> <I>atstrpat</I><SUB>1</SUB> ... <I>atstrpat</I><SUB><I>n</I></SUB>
          <TT>=</TT> <I>sigexp</I>
          &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
     <TD> signature binding (<I>n</I>&ge;0) </TD>
@@ -717,13 +744,22 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>(</TT>&nbsp;<I>dec</I>&nbsp;<TT>)</TT> </TD>
     <TD> <TT>struct</TT>&nbsp;<I>dec</I>&nbsp;<TT>end</TT> </TD>
   </TR>
+  <TR></TR>
+  <TR>
+    <TD> <TT>_</TT>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
+  <TR>
+    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I> </TD>
+  </TR>
   <TR>
     <TD> <TT>(</TT>&nbsp;<TT>_</TT>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT> </TD>
-    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<TT>)</TT>&nbsp;<SUP>1</SUP> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
   </TR>
   <TR>
     <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
-    <TD> <TT>(</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>))</TT>&nbsp;<SUP>1</SUP><SUP>2</SUP> </TD>
+    <TD> <I>strid</I>&nbsp;<TT>:</TT>&nbsp;<TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT>&nbsp;<SUP>1</SUP><SUP>2</SUP> </TD>
   </TR>
   <TR></TR>
   <TR>
@@ -731,12 +767,12 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>structure</TT>&nbsp;<I>funbind</I> </TD>
   </TR>
   <TR>
-    <TD> <I>strid</I>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<!--
+    <TD> <I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<!--
 	--><TT>=</TT>&nbsp;<I>strexp</I>&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
     <TD> <I>strid</I>&nbsp;<TT>=</TT>&nbsp;<!--
-	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
-	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;<I>strexp</I>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>=></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>=></TT>&nbsp;<I>strexp</I>&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>funbind</I>&gt; </TD>
   </TR>
   <TR>
@@ -750,18 +786,22 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <TT>(</TT>&nbsp;<I>spec</I>&nbsp;<TT>)</TT> </TD>
     <TD> <TT>sig</TT>&nbsp;<I>spec</I>&nbsp;<TT>end</TT> </TD>
   </TR>
+  <TR>
+    <TD> <I>atsigexp</I>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I> </TD>
+    <TD> <TT>fct</TT>&nbsp;<I>strid</I>&nbsp;<TT>:</TT>&nbsp;<I>atsigexp</I>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<SUP>1</SUP> </TD>
+  </TR>
   <TR></TR>
   <TR>
     <TD> <TT>functor</TT>&nbsp;<I>fundesc</I> </TD>
     <TD> <TT>structure</TT>&nbsp;<I>fundesc</I> </TD>
   </TR>
   <TR>
-    <TD> <I>strid</I>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>strpat</I><SUB><I>n</I></SUB><!--
+    <TD> <I>strid</I>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;...&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB><!--
 	--><TT>:</TT>&nbsp;<I>sigexp</I>&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
     <TD> <I>strid</I>&nbsp;<TT>:</TT><!--
-	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB>1</SUB>&nbsp;<TT>-></TT>&nbsp;...&nbsp;<!--
-	--><TT>fct</TT>&nbsp;<I>strpat</I><SUB><I>n</I></SUB>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB>1</SUB>&nbsp;<TT>-></TT>&nbsp;...&nbsp;<!--
+	--><TT>fct</TT>&nbsp;<I>atstrpat</I><SUB><I>n</I></SUB>&nbsp;<TT>-></TT>&nbsp;<I>sigexp</I>&nbsp;<!--
 	-->&lt;<TT>and</TT>&nbsp;<I>fundesc</I>&gt; </TD>
   </TR>
 </TABLE>

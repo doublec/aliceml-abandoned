@@ -70,11 +70,15 @@
 (*	  typbind  ::= tyvarseq tycon						*)
 (*	  dec      ::= eqtype typbind						*)
 (*   - higher-order functors:							*)
-(*        strexp ::= strexp strexp						*)
+(*        strexp ::= strexp atstrexp						*)
 (*               ::= fct strpat => strexp					*)
-(*	  strpat  ::= ( strid : sigexp )					*)
-(*	          ::= ( _ : sigexp )	(derived form)				*)
-(*	          ::= ( spec )	        (derived form)				*)
+(*        strexp ::= fct strpat -> sigexp					*)
+(*	         ::= sigexp -> sigexp	 (derived form)				*)
+(*	  strpat  ::= strid : sigexp						*)
+(*	          ::= _ : sigexp	 (derived form)				*)
+(*	          ::= ( strid : sigexp ) (derived form)				*)
+(*	          ::= ( _ : sigexp )	 (derived form)				*)
+(*	          ::= ( spec )	         (derived form)				*)
 (*   - structure wildcards (derived form):					*)
 (*        strbind ::= _ <: sigexp> = strexp <and strbind>			*)
 (*   - curried functor declarations (derived forms):				*)
@@ -342,13 +346,13 @@
 %right HANDLE
 %right ORELSE
 %right ANDALSO
-%right WHERE
 %left  WITHVAL
 %left  WITHFUN
 %right AS
 %right NON		(* L/R is arbitrary *)
 %left  COLON COLONGREATER
 %right ARROW
+%right WHERE
 
 
 %start component
@@ -464,7 +468,9 @@
 	| atstrexp			of AtStrExp
 	| appstrexp			of AppStrExp
 	| strexp			of StrExp
+	| atstrpat			of StrPat
 	| strpat			of StrPat
+	| strpat'			of StrPat
 	| strbind			of StrBind
 	|    AND_strbind_opt		of StrBind option
 	|    strexp__AND_strbind_opt	of StrExp * StrBind option
@@ -480,7 +486,7 @@
 	| sigexp			of SigExp
 	|    sigexp'			of SigExp (* excludes where *)
 	| sigbind			of SigBind
-	|    strpat_list0		of StrPat list
+	|    atstrpat_list0		of StrPat list
 	|    AND_sigbind_opt		of SigBind option
 	|    sigexp__AND_sigbind_opt	of SigExp * SigBind option
 	|    rea__AND_sigbind_opt	of Rea * SigBind option
@@ -491,7 +497,7 @@
 	|    AND_rea_opt		of Rea option
 	|    sigexp__AND_rea_opt	of SigExp * Rea option
 	| funbind			of FunBind
-	|    strpat_list1		of StrPat list
+	|    atstrpat_list1		of StrPat list
 	|    AND_funbind_opt		of FunBind option
 	|    strexp__AND_funbind_opt	of StrExp * FunBind option
 	|    sigexp__AND_funbind_opt	of SigExp * FunBind option
@@ -927,13 +933,13 @@
 	| PRIMITIVE STRUCTURE strid COLON sigexp EQUALS STRING
 			( PRIMITIVESTRUCTUREDec(I(PRIMITIVEleft,STRINGright),
 						strid, sigexp, STRING) )
-	| PRIMITIVE FUNCTOR strid strpat_list0 COLON sigexp EQUALS STRING
+	| PRIMITIVE FUNCTOR strid atstrpat_list0 COLON sigexp EQUALS STRING
 			( PRIMITIVEFUNCTORDec(I(PRIMITIVEleft,STRINGright),
-					      strid, strpat_list0, sigexp,
+					      strid, atstrpat_list0, sigexp,
 					      STRING) )
-	| PRIMITIVE SIGNATURE sigid strpat_list0 EQUALS STRING
+	| PRIMITIVE SIGNATURE sigid atstrpat_list0 EQUALS STRING
 			( PRIMITIVESIGNATUREDec(I(PRIMITIVEleft,STRINGright),
-						sigid, strpat_list0, STRING) )
+						sigid, atstrpat_list0, STRING) )
 
      WITHTYPE_typbind_opt:
 	  WITHTYPE typbind	( SOME typbind )
@@ -1305,13 +1311,33 @@
 			( UNPACKStrExp(I(UNPACKleft,sigexpright),
 				       infexp, sigexp) )
 
-  strpat:
+  atstrpat:
 	  LPAR strid COLON sigexp RPAR
-			( StrPat(I(LPARleft,RPARright), strid, sigexp) )
+			( STRIDAtStrPat(I(LPARleft,RPARright), strid, sigexp) )
 	| LPAR UNDERBAR COLON sigexp RPAR
-			( WILDCARDStrPat(I(LPARleft,RPARright), sigexp) )
+			( WILDCARDAtStrPat(I(LPARleft,RPARright), sigexp) )
 	| LPAR spec RPAR
-			( SPECStrPat(I(LPARleft,RPARright), spec) )
+			( SPECAtStrPat(I(LPARleft,RPARright), spec) )
+  strpat:
+	  atstrpat	( ATSTRPATStrPat(I(atstrpatleft,atstrpatright),
+					 atstrpat) )
+	| strid COLON sigexp
+			( STRIDStrPat(I(stridleft,sigexpright), strid, sigexp) )
+	| UNDERBAR COLON sigexp
+			( WILDCARDStrPat(I(UNDERBARleft,sigexpright), sigexp) )
+  strpat':
+	  atstrpat	( ATSTRPATStrPat(I(atstrpatleft,atstrpatright),
+					 atstrpat) )
+	| strid COLON atsigexp
+			( STRIDStrPat(I(stridleft,atsigexpright), strid,
+				      ATSIGEXPSigExp(I(atsigexpleft,
+						       atsigexpright),
+						     atsigexp)) )
+	| UNDERBAR COLON atsigexp
+			( WILDCARDStrPat(I(UNDERBARleft,atsigexpright),
+					 ATSIGEXPSigExp(I(atsigexpleft,
+							  atsigexpright),
+							atsigexp)) )
 
   strbind:
 	  strid COLON_sigexp_opt EQUALS strexp__AND_strbind_opt
@@ -1360,9 +1386,14 @@
      sigexp__AND_strbind_opt:
 	  sigexp' AND_strbind_opt
 			( ( sigexp', AND_strbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_strbind_opt
+	| FCT strpat' ARROW sigexp__AND_strbind_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_strbind_optright),
-				      strpat, #1 sigexp__AND_strbind_opt)
+				      strpat', #1 sigexp__AND_strbind_opt)
+			  , #2 sigexp__AND_strbind_opt ) )
+	| atsigexp ARROW sigexp__AND_strbind_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_strbind_optright),
+					atsigexp, #1 sigexp__AND_strbind_opt)
 			  , #2 sigexp__AND_strbind_opt ) )
 	| sigexp WHERE rea__AND_strbind_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -1416,12 +1447,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_strbind_opt)
 			  , #2 AND_rea_opt__AND_strbind_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_strbind_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_strbind_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_strbind_opt,
 				 #2 sigexp__AND_rea_opt__AND_strbind_opt)
 			  , #3 sigexp__AND_rea_opt__AND_strbind_opt ) )
@@ -1442,11 +1473,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_strbind_opt
 			  , #2 AND_rea_opt__AND_strbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_strbind_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_strbind_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_strbind_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_strbind_opt)
+			  , #2 sigexp__AND_rea_opt__AND_strbind_opt
+			  , #3 sigexp__AND_rea_opt__AND_strbind_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_strbind_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_strbind_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_strbind_opt)
 			  , #2 sigexp__AND_rea_opt__AND_strbind_opt
 			  , #3 sigexp__AND_rea_opt__AND_strbind_opt ) )
@@ -1485,8 +1524,11 @@
 				    appsigexp, atstrexp) )
   sigexp:
 	  sigexp'	( sigexp' )
-	| FCT strpat ARROW sigexp
-			( FCTSigExp(I(FCTleft,sigexpright), strpat, sigexp) )
+	| FCT strpat' ARROW sigexp
+			( FCTSigExp(I(FCTleft,sigexpright), strpat', sigexp) )
+	| atsigexp ARROW sigexp
+			( ARROWSigExp(I(atsigexpleft,sigexpright),
+				      atsigexp, sigexp) )
 	| sigexp WHERE rea
 			( WHEREREASigExp(I(sigexpleft,rearight),
 					 sigexp, rea) )
@@ -1497,13 +1539,14 @@
 					       sigexp, longstrid1, longstrid2) )
 
   sigbind:
-	  sigid strpat_list0 EQUALS sigexp__AND_sigbind_opt
+	  sigid atstrpat_list0 EQUALS sigexp__AND_sigbind_opt
 			( SigBind(I(sigidleft,sigexp__AND_sigbind_optright),
-				  sigid, strpat_list0,
+				  sigid, atstrpat_list0,
 				  #1 sigexp__AND_sigbind_opt,
 				  #2 sigexp__AND_sigbind_opt) )
-     strpat_list0:
-	  strpat_list1	( strpat_list1 )
+     atstrpat_list0:
+	  atstrpat_list1
+			( atstrpat_list1 )
 	| (*empty*)	( [] )
 
      AND_sigbind_opt:
@@ -1513,9 +1556,14 @@
      sigexp__AND_sigbind_opt:
 	  sigexp' AND_sigbind_opt
 	  		( ( sigexp', AND_sigbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_sigbind_opt
+	| FCT strpat' ARROW sigexp__AND_sigbind_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_sigbind_optright),
-				      strpat, #1 sigexp__AND_sigbind_opt)
+				      strpat', #1 sigexp__AND_sigbind_opt)
+			  , #2 sigexp__AND_sigbind_opt ) )
+	| atsigexp ARROW sigexp__AND_sigbind_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_sigbind_optright),
+					atsigexp, #1 sigexp__AND_sigbind_opt)
 			  , #2 sigexp__AND_sigbind_opt ) )
 	| sigexp WHERE rea__AND_sigbind_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -1569,12 +1617,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_sigbind_opt)
 			  , #2 AND_rea_opt__AND_sigbind_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_sigbind_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_sigbind_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_sigbind_opt,
 				 #2 sigexp__AND_rea_opt__AND_sigbind_opt)
 			  , #3 sigexp__AND_rea_opt__AND_sigbind_opt ) )
@@ -1595,11 +1643,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_sigbind_opt
 			  , #2 AND_rea_opt__AND_sigbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_sigbind_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_sigbind_opt
 			( ( FCTSigExp
-				(I(FCTleft,
+				(I(FCTexpleft,
 				   sigexp__AND_rea_opt__AND_sigbind_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_sigbind_opt)
+			  , #2 sigexp__AND_rea_opt__AND_sigbind_opt
+			  , #3 sigexp__AND_rea_opt__AND_sigbind_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_sigbind_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_sigbind_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_sigbind_opt)
 			  , #2 sigexp__AND_rea_opt__AND_sigbind_opt
 			  , #3 sigexp__AND_rea_opt__AND_sigbind_opt ) )
@@ -1640,10 +1696,10 @@
 			( FUNCTORRea(I(FUNCTORleft,AND_rea_optright),
 				     longstrid1, COLON_sigexp_opt, longstrid2,
 				     AND_rea_opt) )
-	| SIGNATURE longsigid strpat_list0 EQUALS sigexp__AND_rea_opt
+	| SIGNATURE longsigid atstrpat_list0 EQUALS sigexp__AND_rea_opt
 			( SIGNATURERea(I(SIGNATUREleft,
 					 sigexp__AND_rea_optright),
-				       longsigid, strpat_list0,
+				       longsigid, atstrpat_list0,
 				       #1 sigexp__AND_rea_opt,
 				       #2 sigexp__AND_rea_opt) )
      AND_rea_opt:
@@ -1656,9 +1712,14 @@
 (*UNFINISHED: heavy conflicts with this stuff...
 	  sigexp' AND_rea_opt
 	  		( ( sigexp', AND_rea_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_rea_optright),
-				      strpat, #1 sigexp__AND_rea_opt)
+				      strpat', #1 sigexp__AND_rea_opt)
+			  , #2 sigexp__AND_rea_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_rea_optright),
+				        atsigexp, #1 sigexp__AND_rea_opt)
 			  , #2 sigexp__AND_rea_opt ) )
 	| sigexp WHERE rea
 			( ( WHEREREASigExp(I(sigexpleft,rearight), sigexp, rea)
@@ -1669,20 +1730,21 @@
   (* Modules: Functors *)
 
   funbind:
-	  strid strpat_list1 COLON_sigexp_opt EQUALS strexp__AND_funbind_opt
+	  strid atstrpat_list1 COLON_sigexp_opt EQUALS strexp__AND_funbind_opt
 			( TRANSFunBind(I(stridleft,
 					 strexp__AND_funbind_optright),
-				       strid, strpat_list1, COLON_sigexp_opt,
+				       strid, atstrpat_list1, COLON_sigexp_opt,
 				       #1 strexp__AND_funbind_opt,
 				       #2 strexp__AND_funbind_opt) )
-	| strid strpat_list1 COLONGREATER sigexp EQUALS strexp__AND_funbind_opt
+	| strid atstrpat_list1 COLONGREATER sigexp EQUALS strexp__AND_funbind_opt
 			( OPAQFunBind(I(stridleft,strexp__AND_funbind_optright),
-				      strid, strpat_list1, sigexp,
+				      strid, atstrpat_list1, sigexp,
 				      #1 strexp__AND_funbind_opt,
 				      #2 strexp__AND_funbind_opt) )
-     strpat_list1:
-	  strpat		( strpat::[] )
-	| strpat strpat_list1	( strpat::strpat_list1 )
+     atstrpat_list1:
+	  atstrpat		( atstrpat::[] )
+	| atstrpat atstrpat_list1
+				( atstrpat::atstrpat_list1 )
 
      AND_funbind_opt:
 	  AND funbind		( SOME funbind )
@@ -1714,9 +1776,14 @@
      sigexp__AND_funbind_opt:
 	  sigexp' AND_funbind_opt
 			( ( sigexp', AND_funbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_funbind_opt
+	| FCT strpat' ARROW sigexp__AND_funbind_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_funbind_optright),
-				      strpat, #1 sigexp__AND_funbind_opt)
+				      strpat', #1 sigexp__AND_funbind_opt)
+			  , #2 sigexp__AND_funbind_opt ) )
+	| atsigexp ARROW sigexp__AND_funbind_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_funbind_optright),
+					atsigexp, #1 sigexp__AND_funbind_opt)
 			  , #2 sigexp__AND_funbind_opt ) )
 	| sigexp WHERE rea__AND_funbind_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -1770,12 +1837,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_funbind_opt)
 			  , #2 AND_rea_opt__AND_funbind_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_funbind_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_funbind_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_funbind_opt,
 				 #2 sigexp__AND_rea_opt__AND_funbind_opt)
 			  , #3 sigexp__AND_rea_opt__AND_funbind_opt ) )
@@ -1797,11 +1864,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_funbind_opt
 			  , #2 AND_rea_opt__AND_funbind_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_funbind_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_funbind_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_funbind_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_funbind_opt)
+			  , #2 sigexp__AND_rea_opt__AND_funbind_opt
+			  , #3 sigexp__AND_rea_opt__AND_funbind_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_funbind_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_funbind_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_funbind_opt)
 			  , #2 sigexp__AND_rea_opt__AND_funbind_opt
 			  , #3 sigexp__AND_rea_opt__AND_funbind_opt ) )
@@ -2029,9 +2104,14 @@
      sigexp__AND_strdesc_opt:
 	  sigexp' AND_strdesc_opt
 			( ( sigexp', AND_strdesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_strdesc_opt
+	| FCT strpat' ARROW sigexp__AND_strdesc_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_strdesc_optright),
-				      strpat, #1 sigexp__AND_strdesc_opt)
+				      strpat', #1 sigexp__AND_strdesc_opt)
+			  , #2 sigexp__AND_strdesc_opt ) )
+	| atsigexp ARROW sigexp__AND_strdesc_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_strdesc_optright),
+					atsigexp, #1 sigexp__AND_strdesc_opt)
 			  , #2 sigexp__AND_strdesc_opt ) )
 	| sigexp WHERE rea__AND_strdesc_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -2085,12 +2165,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_strdesc_opt)
 			  , #2 AND_rea_opt__AND_strdesc_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_strdesc_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_strdesc_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_strdesc_opt,
 				 #2 sigexp__AND_rea_opt__AND_strdesc_opt)
 			  , #3 sigexp__AND_rea_opt__AND_strdesc_opt ) )
@@ -2111,11 +2191,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_strdesc_opt
 			  , #2 AND_rea_opt__AND_strdesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_strdesc_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_strdesc_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_strdesc_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_strdesc_opt)
+			  , #2 sigexp__AND_rea_opt__AND_strdesc_opt
+			  , #3 sigexp__AND_rea_opt__AND_strdesc_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_strdesc_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_strdesc_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_strdesc_opt)
 			  , #2 sigexp__AND_rea_opt__AND_strdesc_opt
 			  , #3 sigexp__AND_rea_opt__AND_strdesc_opt ) )
@@ -2128,13 +2216,13 @@
 *)
 
   sigdesc:
-	  sigid strpat_list0 AND_sigdesc_opt
+	  sigid atstrpat_list0 AND_sigdesc_opt
 			( NEWSigDesc(I(sigidleft,AND_sigdesc_optright),
-				     sigid, strpat_list0, AND_sigdesc_opt) )
-	| sigid strpat_list0 EQUALS sigexp__AND_sigdesc_opt
+				     sigid, atstrpat_list0, AND_sigdesc_opt) )
+	| sigid atstrpat_list0 EQUALS sigexp__AND_sigdesc_opt
 			( EQUALSigDesc(I(sigidleft,
 					 sigexp__AND_sigdesc_optright),
-				       sigid, strpat_list0,
+				       sigid, atstrpat_list0,
 				       #1 sigexp__AND_sigdesc_opt,
 				       #2 sigexp__AND_sigdesc_opt) )
 
@@ -2145,9 +2233,14 @@
      sigexp__AND_sigdesc_opt:
 	  sigexp' AND_sigdesc_opt
 	  		( ( sigexp', AND_sigdesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_sigdesc_opt
+	| FCT strpat' ARROW sigexp__AND_sigdesc_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_sigdesc_optright),
-				      strpat, #1 sigexp__AND_sigdesc_opt)
+				      strpat', #1 sigexp__AND_sigdesc_opt)
+			  , #2 sigexp__AND_sigdesc_opt ) )
+	| atsigexp ARROW sigexp__AND_sigdesc_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_sigdesc_optright),
+					atsigexp, #1 sigexp__AND_sigdesc_opt)
 			  , #2 sigexp__AND_sigdesc_opt ) )
 	| sigexp WHERE rea__AND_sigdesc_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -2201,12 +2294,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_sigdesc_opt)
 			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_sigdesc_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_sigdesc_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_sigdesc_opt,
 				 #2 sigexp__AND_rea_opt__AND_sigdesc_opt)
 			  , #3 sigexp__AND_rea_opt__AND_sigdesc_opt ) )
@@ -2227,11 +2320,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_sigdesc_opt
 			  , #2 AND_rea_opt__AND_sigdesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_sigdesc_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_sigdesc_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_sigdesc_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_sigdesc_opt)
+			  , #2 sigexp__AND_rea_opt__AND_sigdesc_opt
+			  , #3 sigexp__AND_rea_opt__AND_sigdesc_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_sigdesc_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_sigdesc_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_sigdesc_opt)
 			  , #2 sigexp__AND_rea_opt__AND_sigdesc_opt
 			  , #3 sigexp__AND_rea_opt__AND_sigdesc_opt ) )
@@ -2244,9 +2345,9 @@
 *)
 
   fundesc:
-	  strid strpat_list0 COLON sigexp__AND_fundesc_opt
+	  strid atstrpat_list0 COLON sigexp__AND_fundesc_opt
 			( FunDesc(I(stridleft,sigexp__AND_fundesc_optright),
-				  strid, strpat_list0,
+				  strid, atstrpat_list0,
 				  #1 sigexp__AND_fundesc_opt,
 				  #2 sigexp__AND_fundesc_opt) )
      AND_fundesc_opt:
@@ -2256,9 +2357,14 @@
      sigexp__AND_fundesc_opt:
 	  sigexp' AND_fundesc_opt
 			( ( sigexp', AND_fundesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_fundesc_opt
+	| FCT strpat' ARROW sigexp__AND_fundesc_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_fundesc_optright),
-				      strpat, #1 sigexp__AND_fundesc_opt)
+				      strpat', #1 sigexp__AND_fundesc_opt)
+			  , #2 sigexp__AND_fundesc_opt ) )
+	| atsigexp ARROW sigexp__AND_fundesc_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_fundesc_optright),
+					atsigexp, #1 sigexp__AND_fundesc_opt)
 			  , #2 sigexp__AND_fundesc_opt ) )
 	| sigexp WHERE rea__AND_fundesc_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -2312,12 +2418,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_fundesc_opt)
 			  , #2 AND_rea_opt__AND_fundesc_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_fundesc_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_fundesc_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_fundesc_opt,
 				 #2 sigexp__AND_rea_opt__AND_fundesc_opt)
 			  , #3 sigexp__AND_rea_opt__AND_fundesc_opt ) )
@@ -2339,11 +2445,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_fundesc_opt
 			  , #2 AND_rea_opt__AND_fundesc_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_fundesc_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_fundesc_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_fundesc_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_fundesc_opt)
+			  , #2 sigexp__AND_rea_opt__AND_fundesc_opt
+			  , #3 sigexp__AND_rea_opt__AND_fundesc_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_fundesc_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_fundesc_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_fundesc_opt)
 			  , #2 sigexp__AND_rea_opt__AND_fundesc_opt
 			  , #3 sigexp__AND_rea_opt__AND_fundesc_opt ) )
@@ -2500,9 +2614,14 @@
      sigexp__AND_stritem_opt:
 	  sigexp' AND_stritem_opt
 			( ( sigexp', AND_stritem_opt ) )
-	| FCT strpat ARROW sigexp__AND_stritem_opt
+	| FCT strpat' ARROW sigexp__AND_stritem_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_stritem_optright),
-				      strpat, #1 sigexp__AND_stritem_opt)
+				      strpat', #1 sigexp__AND_stritem_opt)
+			  , #2 sigexp__AND_stritem_opt ) )
+	| atsigexp ARROW sigexp__AND_stritem_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_stritem_optright),
+					atsigexp, #1 sigexp__AND_stritem_opt)
 			  , #2 sigexp__AND_stritem_opt ) )
 	| sigexp WHERE rea__AND_stritem_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -2556,12 +2675,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_stritem_opt)
 			  , #2 AND_rea_opt__AND_stritem_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_stritem_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_stritem_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_stritem_opt,
 				 #2 sigexp__AND_rea_opt__AND_stritem_opt)
 			  , #3 sigexp__AND_rea_opt__AND_stritem_opt ) )
@@ -2582,11 +2701,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_stritem_opt
 			  , #2 AND_rea_opt__AND_stritem_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_stritem_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_stritem_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_stritem_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_stritem_opt)
+			  , #2 sigexp__AND_rea_opt__AND_stritem_opt
+			  , #3 sigexp__AND_rea_opt__AND_stritem_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_stritem_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_stritem_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_stritem_opt)
 			  , #2 sigexp__AND_rea_opt__AND_stritem_opt
 			  , #3 sigexp__AND_rea_opt__AND_stritem_opt ) )
@@ -2602,9 +2729,9 @@
 	  sigid AND_sigitem_opt
 			( PLAINSigItem(I(sigidleft,AND_sigitem_optright),
 				       sigid, AND_sigitem_opt) )
-	| sigid strpat_list1 AND_sigitem_opt
+	| sigid atstrpat_list1 AND_sigitem_opt
 			( DESCSigItem(I(sigidleft,AND_sigitem_optright),
-				      sigid, strpat_list1, AND_sigitem_opt) )
+				      sigid, atstrpat_list1, AND_sigitem_opt) )
      AND_sigitem_opt:
 	  AND sigitem	( SOME sigitem )
 	| (*empty*)	( NONE )
@@ -2613,9 +2740,9 @@
 	  strid AND_funitem_opt
 			( PLAINFunItem(I(stridleft,AND_funitem_optright),
 				      strid, AND_funitem_opt) )
-	| strid strpat_list0 COLON sigexp__AND_funitem_opt
+	| strid atstrpat_list0 COLON sigexp__AND_funitem_opt
 			( DESCFunItem(I(stridleft,sigexp__AND_funitem_optright),
-				      strid, strpat_list0,
+				      strid, atstrpat_list0,
 				      #1 sigexp__AND_funitem_opt,
 				      #2 sigexp__AND_funitem_opt) )
      AND_funitem_opt:
@@ -2625,9 +2752,14 @@
      sigexp__AND_funitem_opt:
 	  sigexp' AND_funitem_opt
 			( ( sigexp', AND_funitem_opt ) )
-	| FCT strpat ARROW sigexp__AND_funitem_opt
+	| FCT strpat' ARROW sigexp__AND_funitem_opt
 			( ( FCTSigExp(I(FCTleft,sigexp__AND_funitem_optright),
-				      strpat, #1 sigexp__AND_funitem_opt)
+				      strpat', #1 sigexp__AND_funitem_opt)
+			  , #2 sigexp__AND_funitem_opt ) )
+	| atsigexp ARROW sigexp__AND_funitem_opt
+			( ( ARROWSigExp(I(atsigexpleft,
+					  sigexp__AND_funitem_optright),
+					atsigexp, #1 sigexp__AND_funitem_opt)
 			  , #2 sigexp__AND_funitem_opt ) )
 	| sigexp WHERE rea__AND_funitem_opt
 			( ( WHEREREASigExp(I(sigexpleft,
@@ -2681,12 +2813,12 @@
 				       longstrid1, COLON_sigexp_opt, longstrid2,
 				       #1 AND_rea_opt__AND_funitem_opt)
 			  , #2 AND_rea_opt__AND_funitem_opt ) )
-	| SIGNATURE longsigid strpat_list0 EQUALS
+	| SIGNATURE longsigid atstrpat_list0 EQUALS
 					sigexp__AND_rea_opt__AND_funitem_opt
 			( ( SIGNATURERea
 				(I(SIGNATUREleft,
 				   sigexp__AND_rea_opt__AND_funitem_optright),
-				 longsigid, strpat_list0,
+				 longsigid, atstrpat_list0,
 				 #1 sigexp__AND_rea_opt__AND_funitem_opt,
 				 #2 sigexp__AND_rea_opt__AND_funitem_opt)
 			  , #3 sigexp__AND_rea_opt__AND_funitem_opt ) )
@@ -2708,11 +2840,19 @@
 	  		( ( sigexp'
 		          , #1 AND_rea_opt__AND_funitem_opt
 			  , #2 AND_rea_opt__AND_funitem_opt ) )
-	| FCT strpat ARROW sigexp__AND_rea_opt__AND_funitem_opt
+	| FCT strpat' ARROW sigexp__AND_rea_opt__AND_funitem_opt
 			( ( FCTSigExp
 				(I(FCTleft,
 				   sigexp__AND_rea_opt__AND_funitem_optright),
-				 strpat,
+				 strpat',
+				 #1 sigexp__AND_rea_opt__AND_funitem_opt)
+			  , #2 sigexp__AND_rea_opt__AND_funitem_opt
+			  , #3 sigexp__AND_rea_opt__AND_funitem_opt ) )
+	| atsigexp ARROW sigexp__AND_rea_opt__AND_funitem_opt
+			( ( ARROWSigExp
+				(I(atsigexpleft,
+				   sigexp__AND_rea_opt__AND_funitem_optright),
+				 atsigexp,
 				 #1 sigexp__AND_rea_opt__AND_funitem_opt)
 			  , #2 sigexp__AND_rea_opt__AND_funitem_opt
 			  , #3 sigexp__AND_rea_opt__AND_funitem_opt ) )

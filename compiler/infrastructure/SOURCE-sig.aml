@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -28,6 +28,7 @@ sig
     val toString:		source -> string
 
     val nowhere:		region
+    val at:			region -> region
     val span:			region * region -> region
     val between:		region * region -> region
 

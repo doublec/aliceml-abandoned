@@ -105,6 +105,7 @@ sig
     type Fpat      = Pat
     type AppStrExp = StrExp
     type AppSigExp = SigExp
+    type AtStrPat  = StrPat
     type ExDesc    = EconDesc
     type ExItem    = EconItem
     type FunBind
@@ -195,9 +196,15 @@ sig
     val DECAtStrExp:      Info * Dec -> AtStrExp
     val FCTStrExp:        Info * StrPat * StrExp -> StrExp
 
+    (* Structure patterns *)
+
+    val STRIDAtStrPat:    Info * StrId * SigExp -> AtStrPat
+    val WILDCARDAtStrPat: Info * SigExp         -> AtStrPat
+    val SPECAtStrPat:     Info * Spec           -> AtStrPat
+
+    val ATSTRPATStrPat:   Info * AtStrPat       -> StrPat
     val STRIDStrPat:      Info * StrId * SigExp -> StrPat
     val WILDCARDStrPat:   Info * SigExp         -> StrPat
-    val SPECStrPat:       Info * Spec           -> StrPat
 
     (* Functor bindings *)
 
@@ -231,6 +238,7 @@ sig
 
     val SPECAtSigExp:     Info * Spec                              -> AtSigExp
     val FCTSigExp:        Info * StrPat * SigExp                   -> SigExp
+    val ARROWSigExp:      Info * AtSigExp * SigExp                 -> SigExp
     val WHEREREASigExp:   Info * SigExp * Rea                      -> SigExp
     val WHERELONGSTRIDSigExp:
 			  Info * SigExp * LongStrId * LongStrId    -> SigExp

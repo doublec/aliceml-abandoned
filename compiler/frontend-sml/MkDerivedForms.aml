@@ -147,6 +147,7 @@ struct
     type Fpat      = G.Pat
     type Ty        = G.Ty
     type TyVarSeq  = G.TyVarSeq
+    type AtStrPat  = G.StrPat
     type StrPat    = G.StrPat
     type AppStrExp = G.StrExp
     type FunBind   = G.StrBind
@@ -565,6 +566,15 @@ struct
 	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), letexp)
 	end
 
+    fun ARROWSigExp(I, atsigexp, sigexp) =
+	let
+	    val I1      = G.infoAtSigExp atsigexp
+	    val strid   = G.StrId(Source.at I1, StrId.invent())
+	    val sigexp1 = G.ATSIGEXPSigExp(I1, atsigexp)
+	in
+	    G.FCTSigExp(I, G.StrPat(I1, strid, sigexp1), sigexp)
+	end
+
 
     (* Declarations *)
 
@@ -674,7 +684,6 @@ struct
     (* Structure expressions *)
 
     val DECAtStrExp = G.STRUCTAtStrExp
-    val STRIDStrPat = G.StrPat
 
     fun FCTStrExp(I, strpat as G.StrPat(I1, G.StrId(I2, strid'), sigexp),
 		     strexp) =
@@ -691,16 +700,24 @@ struct
 	    G.FCTStrExp(I, G.StrPat(I1, strid, sigexp), letexp)
 	end
 
-    fun WILDCARDStrPat(I, sigexp) =
+    (* Structure patterns *)
+
+    val STRIDAtStrPat = G.StrPat
+
+    fun WILDCARDAtStrPat(I, sigexp) =
 	    G.StrPat(I, G.StrId(I, StrId.invent()), sigexp)
 
-    fun SPECStrPat(I, spec) =
+    fun SPECAtStrPat(I, spec) =
 	let
 	    val I' = G.infoSpec spec
 	in
 	    G.StrPat(I, G.StrId(I, StrId.fromString ""),
 		     G.ATSIGEXPSigExp(I', G.SIGAtSigExp(I', spec)))
 	end
+
+    val ATSTRPATStrPat = Pair.snd
+    val STRIDStrPat    = G.StrPat
+    val WILDCARDStrPat = WILDCARDAtStrPat
 
 
     (* Functor bindings *)
