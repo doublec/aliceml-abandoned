@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000-2001
+%%%   Leif Kornstaedt, 2000-2002
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -13,10 +13,11 @@
 functor
 import
    Open(pipe text)
+   UnsafeIO(stdText)
 export
    'UnsafeUnix$': Unix
 define
-   class TextPipe from Open.pipe Open.text
+   class TextPipe from Open.pipe Open.text UnsafeIO.stdText
       attr cmd
       meth init(cmd: Cmd args: Args)
 	 cmd <- Cmd
@@ -24,20 +25,6 @@ define
       end
       meth getName($)
 	 @cmd
-      end
-      meth inputAll($)
-	 {ByteString.make Open.pipe, read(list: $ size: all)}
-      end
-      meth inputLine($)
-	 case TextPipe, getS($) of false then {ByteString.make ""}
-	 elseof S then {ByteString.make S#'\n'}
-	 end
-      end
-      meth output(S)
-	 Open.pipe, write(vs: S)
-      end
-      meth output1(C)
-	 Open.pipe, write(vs: [C])
       end
    end
 
