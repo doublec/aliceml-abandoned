@@ -40,13 +40,12 @@ structure PreboundType :> PREBOUND_TYPE =
     val typ_var		= Type.inVar var_list
     val typ_cons	= Type.inTuple [typ_var, Type.inApply(typ_list,typ_var)]
 
-    val row_unit	= Type.emptyRow()
     val row_bool	= Type.extendRow(lab_false, [],
 			  Type.extendRow(lab_true, [], Type.emptyRow()))
     val row_list	= Type.extendRow(lab_cons, [typ_cons],
 			  Type.extendRow(lab_nil, [], Type.emptyRow()))
 
-    val typ_unit	= Type.inProd row_unit
+    val typ_unit	= Type.inTuple []
     val typ_int		= Type.inCon con_int
     val typ_word	= Type.inCon con_word
     val typ_char	= Type.inCon con_char
