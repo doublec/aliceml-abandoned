@@ -1,4 +1,4 @@
-SOURCES = GUI-sig.aml
+SOURCES = GUI-sig.aml GTKBULILDER-sig.aml GtkBuilder.aml ArenaWidget.aml ARENAWIDGET-sig.aml
 
 ROOT = Main
 
