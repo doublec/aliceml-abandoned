@@ -407,24 +407,6 @@ namespace Alice {
 		Value = exn;
 	    }
 	}
-	public class TagConstructor: Procedure {
-	    int Tag;
-	    public TagConstructor(int tag) {
-		Tag = tag;
-	    }
-	    public override object Apply(object x) {
-		return new TagVal(Tag, x);
-	    }
-	}
-	public class ConConstructor: Procedure {
-	    object Id;
-	    public ConConstructor(object id) {
-		Id = id;
-	    }
-	    public override object Apply(object x) {
-		return new ConVal(Id, x);
-	    }
-	}
 	public class Selector: Procedure {
 	    int Index;
 	    public Selector(int index) {
