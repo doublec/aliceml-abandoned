@@ -76,7 +76,7 @@ fun main () =
                 SND ("Ticket invalid!  Most probably from a different alice application.")
 
         (* called when user wants to create own server *)
-        fun startServer (player, config : Config.config): (Gui.model_start * Gui.gui_join Promise.promise, string) alt = 
+        fun startServer (player, config : Config.config) = 
             let
                 (* both creation of client and creation of server
                    depends on each other, but Client.startClient
@@ -87,6 +87,9 @@ fun main () =
                 val server                  = Promise.promise () 
                 val (client, model_join)    = Client.startClient (gui_join, 
                                                 Promise.future server)
+                fun disconnect () =
+                    (* TODO: implement *)
+                    ()
 
                 fun startGame res () = 
                     let
@@ -112,12 +115,14 @@ fun main () =
                         (* server does not want to play himself *)
                         (* put him into spectator mode *)
                     let val res = #watch model_join () in
-                        FST ({ start = startGame res}, gui_join_p)
+                        FST ({ start = startGame res, disconnect}, 
+                                gui_join_p, ticket)
                     end
                 |   SOME p      =>
                         (* server wants to play ;-) *)
                     let val res = #play model_join p in
-                        FST ({ start = startGame res}, gui_join_p)
+                        FST ({ start = startGame res, disconnect}, 
+                                gui_join_p, ticket)
                     end
             end
         val model_initial   = { connect, startServer } : Gui.model_initial

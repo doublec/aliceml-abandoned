@@ -28,7 +28,7 @@ struct
             fun countdown n = ()
 
             fun update diffs = #update guiGame diffs
-
+            
 	    fun headPosition p = #headPosition guiGame p
 
             fun tick remainingTime = () 
@@ -66,6 +66,8 @@ struct
                 (#watch server ();
                  FST ({ turn, changeView, giveUp }, promise))
 
+            fun disconnect () = #disconnect server ()
+            
             val lock = Lock.lock ()
         in
             (* return locked but not yet proxied client interface! *)
@@ -86,7 +88,8 @@ struct
                updatePoints         = Lock.sync lock updatePoints
             },
             {   play                = play,
-                watch               = watch
+                watch               = watch,
+                disconnect          = disconnect
             })
         end
        
