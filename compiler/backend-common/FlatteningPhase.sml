@@ -89,9 +89,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | testConArity (_, _, _) =
 	    raise Crash.Crash "FlatteningPhase.testConArity"
 
-	fun tagAppTest (label, args, conArity) =
+	fun tagAppTest (label, n, args, conArity) =
 	    testConArity (args, conArity,
-			  fn args => O.TagAppTest (label, args))
+			  fn args => O.TagAppTest (label, n, args))
 
 	fun conAppTest (id, args, conArity) =
 	    testConArity (args, conArity,
@@ -122,9 +122,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | expConArity (_, _, _) =
 	    raise Crash.Crash "FlatteningPhase.expConArity"
 
-	fun tagAppExp (info, label, args, conArity) =
+	fun tagAppExp (info, label, n, args, conArity) =
 	    expConArity (args, conArity,
-			 fn args => O.TagAppExp (info, label, args))
+			 fn args => O.TagAppExp (info, label, n, args))
 
 	fun conAppExp (info, id, args, conArity) =
 	    expConArity (args, conArity,
@@ -137,9 +137,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = Id (info, Stamp.new (), Name.InId)
+		val n = ~1   (*--** compute *)
 		val stm =
 		    O.ValDec (stm_info (#region info), id',
-			      O.SelAppExp (info, label, id))
+			      O.SelAppExp (info, label, n, id))
 	    in
 		(stms @ [stm], id')
 	    end
@@ -155,9 +156,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stm_info (#region info), id,
-			[(O.TagTest label_true, thenStms)],
+			[(O.TagTest (label_true, 1), thenStms)],
 			[O.TestStm (stm_info (#region info), id,
-				    [(O.TagTest label_false, elseStms)],
+				    [(O.TagTest (label_false, 0), elseStms)],
 				    errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
@@ -289,7 +290,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		stms @ f (O.VarExp (id_info info, id))::translateCont cont
 	    end
 	  | translateExp (TagExp (info, Lab (_, label), isNAry), f, cont) =
-	    f (O.TagExp (id_info info, label,
+	    f (O.TagExp (id_info info, label, labelToIndex (#typ info, label),
 			 makeConArity (#typ info, isNAry)))::
 	    translateCont cont
 	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
@@ -343,7 +344,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		stms
 	    end
 	  | translateExp (SelExp (info, Lab (_, label)), f, cont) =
-	    f (O.SelExp (id_info info, label))::translateCont cont
+	    let
+		val n = labelToIndex (#typ info, label)
+	    in
+		f (O.SelExp (id_info info, label, n))::translateCont cont
+	    end
 	  | translateExp (VecExp (info, exps), f, cont) =
 	    let
 		val r = ref NONE
@@ -415,9 +420,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, args) = unfoldArgs (exp2, rest, isNAry)
+		val n = labelToIndex (#typ info', label)
+		val conArity = makeConArity (#typ info', isNAry)
 		val (idTestOpt, exp') =
-		    tagAppExp (id_info info, label, args,
-			       makeConArity (#typ info', isNAry))
+		    tagAppExp (id_info info, label, n, args, conArity)
 	    in
 		case idTestOpt of
 		    NONE =>
@@ -460,14 +466,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			    translateCont cont);
 		 stms2)
 	    end
-	  | translateExp (AppExp (info, SelExp (_, Lab (_, label)), exp2),
+	  | translateExp (AppExp (info, SelExp (info', Lab (_, label)), exp2),
 			  f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
+		val n = labelToIndex (#typ info', label)
 	    in
-		(r := SOME (f (O.SelAppExp (id_info info, label, id2))::
+		(r := SOME (f (O.SelAppExp (id_info info, label, n, id2))::
 			    translateCont cont);
 		 stms2)
 	    end
@@ -759,11 +766,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    (nil, O.LitTest lit, nil, mapping)
 	  | translateTest (TagTest label, _, mapping) =
 	    (nil, O.TagTest label, nil, mapping)
-	  | translateTest (TagAppTest (label, args, conArity), pos, mapping) =
+	  | translateTest (TagAppTest (label, n, args, conArity),
+			   pos, mapping) =
 	    let
 		val (idArgs, mapping') =
 		    translateTypArgs (args, LABEL label::pos, mapping)
-		val (test, thenStms) = tagAppTest (label, idArgs, conArity)
+		val (test, thenStms) = tagAppTest (label, n, idArgs, conArity)
 	    in
 		(nil, test, thenStms, mapping')
 	    end
@@ -816,12 +824,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(nil, O.RecTest labelIdList, nil, mapping')
 	    end
-	  | translateTest (LabTest (label, typ), pos, mapping) =
+	  | translateTest (LabTest (label, n, typ), pos, mapping) =
 	    let
 		val id = freshId {region = Source.nowhere}
 		val mapping' = ((LABEL label::pos), id)::mapping
 	    in
-		(nil, O.LabTest (label, id), nil, mapping')
+		(nil, O.LabTest (label, n, id), nil, mapping')
 	    end
 	  | translateTest (VecTest typs, pos, mapping) =
 	    let

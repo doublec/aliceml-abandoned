@@ -28,15 +28,15 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t
-	  | TagAppTest of Label.t * typ O.args * O.conArity
+	  | TagTest of Label.t * int
+	  | TagAppTest of Label.t * int * typ O.args * O.conArity
 	  | ConTest of I.longid
 	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of Label.t * typ
+	  | LabTest of Label.t * int * typ
 	  | VecTest of typ list
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.dec list
@@ -121,20 +121,26 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (TagPat (_, Lab (_, label), _), pos, rest, mapping) =
-	    (Test (pos, TagTest label)::rest, mapping)
+	  | makeTestSeq (TagPat (info, Lab (_, label), _),
+			 pos, rest, mapping) =
+	    let
+		val n = labelToIndex (#typ info, label)
+	    in
+		(Test (pos, TagTest (label, n))::rest, mapping)
+	    end
 	  | makeTestSeq (AppPat (_, TagPat (info, Lab (_, label), isNAry),
 				 pat), pos, rest, mapping) =
 	    let
 		val (posPatList, args) =
 		    makeAppArgs (pat, isNAry, LABEL label::pos)
-		val typ = Type.inArrow (typPat pat, #typ info)
+		val typ = #typ info
+		val n = labelToIndex (typ, label)
 		val conArity = makeConArity (typ, isNAry)
 	    in
 		List.foldl (fn ((pos, pat), (rest, mapping)) =>
 			    makeTestSeq (pat, pos, rest, mapping))
-		(Test (pos, TagAppTest (label, args, conArity))::rest, mapping)
-		posPatList
+		(Test (pos, TagAppTest (label, n, args, conArity))::rest,
+		 mapping) posPatList
 	    end
 	  | makeTestSeq (ConPat (_, longid, _), pos, rest, mapping) =
 	    (Test (pos, ConTest longid)::rest, mapping)
@@ -166,7 +172,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (case getRow (#typ info) of
 		 (labelTypList, _, true) =>
 		     List.foldl (fn ((label, typ), rest) =>
-				 Test (pos, LabTest (label, typ))::rest)
+				 let
+				     val n = labelToIndex (#typ info, label)
+				 in
+				     Test (pos, LabTest (label, n, typ))::rest
+				 end)
 		     rest labelTypList
 	       | (labelTypList, LabelSort.Tup _, false) =>
 		     Test (pos, TupTest (List.map #2 labelTypList))::rest
@@ -247,13 +257,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | litToString (RealLit s) = s
 
 	fun testToString (LitTest lit) = "lit " ^ litToString lit
-	  | testToString (TagTest label | TagAppTest (label, O.OneArg _, _)) =
-	    "tag " ^ Label.toString label
-	  | testToString (TagAppTest (label, O.TupArgs typs, _)) =
-	    "tag " ^ Label.toString label ^
+	  | testToString (TagTest (label, n) |
+			  TagAppTest (label, n, O.OneArg _, _)) =
+	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n
+	  | testToString (TagAppTest (label, n, O.TupArgs typs, _)) =
+	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^
 	    " tup " ^ Int.toString (List.length typs)
-	  | testToString (TagAppTest (label, O.RecArgs labelTypList, _)) =
-	    "tag " ^ Label.toString label ^ " rec"
+	  | testToString (TagAppTest (label, n, O.RecArgs labelTypList, _)) =
+	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " rec"
 	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
 	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
 	    "con tup " ^ Int.toString (List.length typs)
@@ -263,7 +274,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testToString (TupTest typs) =
 	    "tup " ^ Int.toString (List.length typs)
 	  | testToString (RecTest labelTyplist) = "rec"
-	  | testToString (LabTest (label, _)) = "lab " ^ Label.toString label
+	  | testToString (LabTest (label, n, _)) =
+	    "lab " ^ Label.toString label ^ "/" ^ Int.toString n
 	  | testToString (VecTest typs) =
 	    "vec " ^ Int.toString (List.length typs)
 	  | testToString (GuardTest (_, _)) = "guard"
@@ -313,10 +325,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | argsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (TagTest label1, TagTest label2) = label1 = label2
-	  | testEq (TagAppTest (label1, args1, _),
-		    TagAppTest (label2, args2, _)) =
-	    label1 = label2 andalso argsEq (args1, args2)
+	  | testEq (TagTest (_, n1), TagTest (_, n2)) = n1 = n2
+	  | testEq (TagAppTest (_, n1, args1, _),
+		    TagAppTest (_, n2, args2, _)) =
+	    n1 = n2 andalso argsEq (args1, args2)
 	  | testEq (ConTest longid1, ConTest longid2) =
 	    longidToSelector longid1 = longidToSelector longid2
 	  | testEq (ConAppTest (longid1, args1, _),

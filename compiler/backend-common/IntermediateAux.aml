@@ -349,36 +349,65 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	structure O = FlatGrammar
 	open O
 
-	local
-	    fun parseRow row =
-		if Type.isEmptyRow row then
-		    if Type.isUnknownRow row then
-			raise Crash.Crash "IntermediateAux.parseRow 1"
-		    else nil
-		else
-		    case Type.headRow row of
-			(label, [typ]) =>
-			    (label, typ)::parseRow (Type.tailRow row)
-		      | (_, _) =>
-			    raise Crash.Crash "IntermediateAux.parseRow 2"
-	in
-	    fun makeConArity (typ, isNAry) =
-		if Type.isArrow typ then
-		    if isNAry then
-			let
-			    val (argTyp, _) = Type.asArrow typ
-			in
-			    if Type.isTuple argTyp then
-				Tuple (List.length (Type.asTuple argTyp))
-			    else if Type.isProd argTyp then
-				case LabelSort.sort
-					(parseRow (Type.asProd argTyp)) of
-				    (_, LabelSort.Tup i) => Tuple i
-				  | (labelTypList, LabelSort.Rec) =>
-					Record (List.map #1 labelTypList)
-			    else Unary
-			end
-		    else Unary
-		else Nullary
-	end
+	fun parseRow' row =
+	    if Type.isEmptyRow row then
+		if Type.isUnknownRow row then
+		    raise Crash.Crash "IntermediateAux.parseRow' 1"
+		else nil
+	    else
+		case Type.headRow row of
+		    (label, [typ]) =>
+			(label, typ)::parseRow' (Type.tailRow row)
+		  | (_, _) => raise Crash.Crash "IntermediateAux.parseRow' 2"
+
+	fun parseRow row = LabelSort.sort (parseRow' row)
+
+	fun makeConArity (typ, isNAry) =
+	    if Type.isArrow typ then
+		if isNAry then
+		    let
+			val (argTyp, _) = Type.asArrow typ
+		    in
+			if Type.isTuple argTyp then
+			    Tuple (List.length (Type.asTuple argTyp))
+			else if Type.isProd argTyp then
+			    case parseRow (Type.asProd argTyp) of
+				(_, LabelSort.Tup i) => Tuple i
+			      | (labelTypList, LabelSort.Rec) =>
+				    Record (List.map #1 labelTypList)
+			else Unary
+		    end
+		else Unary
+	    else Nullary
+
+	fun find ((label, _)::rest, label', i) =
+	    if label = label' then i else find (rest, label', i + 1)
+	  | find (nil, _, _) = raise Crash.Crash "IntermediateAux.find"
+
+	fun rowToIndex (row, label) =
+	    case parseRow row of
+		(_, LabelSort.Tup _) =>
+		    LargeInt.toInt (valOf (Label.toLargeInt label)) - 1
+	      | (labelTypList, LabelSort.Rec) => find (labelTypList, label, 0)
+
+	fun labelToIndex (typ, label) =
+	    if Type.isArrow typ then
+		labelToIndex (#2 (Type.asArrow typ), label)
+	    else if Type.isAll typ then
+		labelToIndex (#2 (Type.asAll typ), label)
+	    else if Type.isExist typ then
+		labelToIndex (#2 (Type.asExist typ), label)
+	    else if Type.isLambda typ then
+		labelToIndex (#2 (Type.asLambda typ), label)
+	    else if Type.isApply typ then
+		labelToIndex (#1 (Type.asApply typ), label)
+	    else if Type.isMu typ then
+		labelToIndex (Type.asMu typ, label)
+	    else if Type.isTuple typ then
+		LargeInt.toInt (valOf (Label.toLargeInt label)) - 1
+	    else if Type.isProd typ then
+		rowToIndex (Type.asProd typ, label)
+	    else if Type.isSum typ then
+		rowToIndex (Type.asSum typ, label)
+	    else raise Crash.Crash "IntermediateAux.labelToIndex"
     end

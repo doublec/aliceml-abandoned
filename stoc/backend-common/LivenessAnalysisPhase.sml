@@ -83,8 +83,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    (StampSet.union (set, set'); lset)
 
 	fun scanTest (LitTest _, lset) = lset
-	  | scanTest (TagTest _, lset) = lset
-	  | scanTest (TagAppTest (_, args), lset) =
+	  | scanTest (TagTest (_, _), lset) = lset
+	  | scanTest (TagAppTest (_, _, args), lset) =
 	    processArgs (args, lset, del)
 	  | scanTest (ConTest id, lset) = ins (lset, id)
 	  | scanTest (ConAppTest (id, args), lset) =
@@ -93,7 +93,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
 	  | scanTest (RecTest labIdList, lset) =
 	    List.foldl (fn ((_, id), lset) => del (lset, id)) lset labIdList
-	  | scanTest (LabTest (_, id), lset) = del (lset, id)
+	  | scanTest (LabTest (_, _, id), lset) = del (lset, id)
 	  | scanTest (VecTest ids, lset) = delList (lset, ids)
 
 	fun setInfo ({liveness = r as ref (Unknown | LoopStart | LoopEnd),
@@ -229,14 +229,14 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (PrimExp (_, _), lset) = lset
 	  | scanExp (NewExp (_, _), lset) = lset
 	  | scanExp (VarExp (_, id), lset) = ins (lset, id)
-	  | scanExp (TagExp (_, _, _), lset) = lset
+	  | scanExp (TagExp (_, _, _, _), lset) = lset
 	  | scanExp (ConExp (_, id, _), lset) = ins (lset, id)
 	  | scanExp (StaticConExp (_, _, _), lset) = lset
 	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
 	  | scanExp (RecExp (_, labIdList), lset) =
 	    List.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdList
-	  | scanExp (SelExp (_, _), lset) = lset
+	  | scanExp (SelExp (_, _, _), lset) = lset
 	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
 	  | scanExp (FunExp (_, _, _, args, body), lset) =
 	    let
@@ -248,14 +248,14 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
 	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (TagAppExp (_, _, args), lset) =
+	  | scanExp (TagAppExp (_, _, _, args), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (StaticConAppExp (_, _, args), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
-	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (SelAppExp (_, _, _, id), lset) = ins (lset, id)
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
@@ -273,15 +273,16 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
 
 	fun initTest (LitTest _, _) = ()
-	  | initTest (TagTest _, _) = ()
-	  | initTest (TagAppTest (_, args), set) = processArgs (args, set, ins)
+	  | initTest (TagTest (_, _), _) = ()
+	  | initTest (TagAppTest (_, _, args), set) =
+	    processArgs (args, set, ins)
 	  | initTest (ConTest _, _) = ()
 	  | initTest (ConAppTest (_, args), set) = processArgs (args, set, ins)
 	  | initTest (RefAppTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =
 	    List.app (fn (_, id) => ins (set, id)) labIdList
-	  | initTest (LabTest (_, id), set) = ins (set, id)
+	  | initTest (LabTest (_, _, id), set) = ins (set, id)
 	  | initTest (VecTest ids, set) = insList (set, ids)
 
 	fun initStm (ValDec (_, id, exp), set) = (ins (set, id); initExp exp)

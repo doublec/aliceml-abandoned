@@ -54,15 +54,15 @@ signature FLAT_GRAMMAR =
 
 	datatype test =
 	    LitTest of lit
-	  | TagTest of label
-	  | TagAppTest of label * id args
+	  | TagTest of label * int
+	  | TagAppTest of label * int * id args
 	  | ConTest of id
 	  | ConAppTest of id * id args
 	  | RefAppTest of id
 	  | TupTest of id list
 	  | RecTest of (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of label * id
+	  | LabTest of label * int * id
 	  | VecTest of id list
 
 	datatype stm =
@@ -85,23 +85,23 @@ signature FLAT_GRAMMAR =
 	  | PrimExp of exp_info * string
 	  | NewExp of exp_info * conArity
 	  | VarExp of exp_info * id
-	  | TagExp of exp_info * label * conArity
+	  | TagExp of exp_info * label * int * conArity
 	  | ConExp of exp_info * id * conArity
 	  | StaticConExp of exp_info * stamp * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
 	  | RecExp of exp_info * (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of exp_info * label
+	  | SelExp of exp_info * label * int
 	  | VecExp of exp_info * id list
 	  | FunExp of exp_info * stamp * funFlag list * id args * body
 	  | PrimAppExp of exp_info * string * id list
 	  | VarAppExp of exp_info * id * id args
-	  | TagAppExp of exp_info * label * id args
+	  | TagAppExp of exp_info * label * int * id args
 	  | ConAppExp of exp_info * id * id args
 	  | StaticConAppExp of exp_info * stamp * id args
 	  | RefAppExp of exp_info * id
-	  | SelAppExp of exp_info * label * id
+	  | SelAppExp of exp_info * label * int * id
 	  | FunAppExp of exp_info * id * stamp * id args
 	  | AdjExp of exp_info * id * id
 	withtype body = stm list

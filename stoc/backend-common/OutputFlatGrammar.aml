@@ -19,6 +19,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	datatype format =
 	    SEQ of format list
 	  | S of string
+	  | I of int
 	  | IN
 	  | EX
 	  | NL
@@ -32,6 +33,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		val indent = ref 0
 		fun format' (SEQ fs) = String.concat (List.map format' fs)
 		  | format' (S s) = s
+		  | format' (I n) = Int.toString n
 		  | format' IN = (indent := !indent + 1; "")
 		  | format' EX = (indent := !indent - 1; "")
 		  | format' NL =
@@ -97,15 +99,16 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputArgs (RecArgs labelIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
-				       SEQ [S (Label.toString label ^ "="),
+				       SEQ [S (Label.toString label), S "=",
 					    ID id]) labelIdList),
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
-	  | outputTest (TagTest label) =
-	    SEQ [S "tag ", S (Label.toString label)]
-	  | outputTest (TagAppTest (label, args)) =
-	    SEQ [S "(tag ", S (Label.toString label), S ") ", outputArgs args]
+	  | outputTest (TagTest (label, n)) =
+	    SEQ [S "tag ", S (Label.toString label), S "/", I n]
+	  | outputTest (TagAppTest (label, n, args)) =
+	    SEQ [S "(tag ", S (Label.toString label), S "/", I n, S ") ",
+		 outputArgs args]
 	  | outputTest (ConTest id) =
 	    SEQ [S "con ", ID id]
 	  | outputTest (ConAppTest (id, args)) =
@@ -116,11 +119,12 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputTest (RecTest labelIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
-				       SEQ [S (Label.toString label ^ "="),
+				       SEQ [S (Label.toString label), S "=",
 					    ID id]) labelIdList),
 		 S "}"]
-	  | outputTest (LabTest (label, id)) =
-	    SEQ [S ("{" ^ Label.toString label ^ "="), ID id, S "...}"]
+	  | outputTest (LabTest (label, n, id)) =
+	    SEQ [S "{", S (Label.toString label), S "/", I n, S "=",
+		 ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -151,10 +155,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputStm (ReraiseStm (_, id), _) = SEQ [S "reraise ", ID id]
 	  | outputStm (SharedStm (_, body, stamp), shared) =
 	    if visit (stamp, shared) then
-		SEQ [S ("label " ^ (Stamp.toString stamp) ^ ":"), NL,
+		SEQ [S "label ", S (Stamp.toString stamp), S ":", NL,
 		     outputBody (body, shared)]
 	    else
-		SEQ [S ("goto " ^ (Stamp.toString stamp))]
+		SEQ [S "goto ", S (Stamp.toString stamp)]
 	  | outputStm (ReturnStm (_, exp), _) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
 	  | outputStm (IndirectStm (_, ref bodyOpt), shared) =
@@ -162,11 +166,12 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
-	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
+	  | outputExp (PrimExp (_, s)) = SEQ [S "prim \"", S s, S "\""]
 	  | outputExp (NewExp (_, conArity)) = outputCon conArity
 	  | outputExp (VarExp (_, id)) = ID id
-	  | outputExp (TagExp (_, label, conArity)) =
-	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
+	  | outputExp (TagExp (_, label, n, conArity)) =
+	    SEQ [outputTag conArity, S " ", S (Label.toString label),
+		 S "/", I n]
 	  | outputExp (ConExp (_, id, conArity)) =
 	    SEQ [outputCon conArity, S " ", ID id]
 	  | outputExp (StaticConExp (_, stamp, conArity)) =
@@ -177,30 +182,31 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (RecExp (_, labelIdList)) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
-				       SEQ [S (Label.toString label ^ "="),
+				       SEQ [S (Label.toString label), S "=",
 					    ID id]) labelIdList),
 		 S "}"]
-	  | outputExp (SelExp (_, label)) =
-	    SEQ [S ("#" ^ Label.toString label)]
+	  | outputExp (SelExp (_, label, n)) =
+	    SEQ [S "#", S (Label.toString label), S "/", I n]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, _, args, body)) =
 	    SEQ [NL, S "fn ", outputArgs args, S " =>",
 		 IN, NL, outputBody (body, StampSet.new ()), EX]
 	  | outputExp (PrimAppExp (_, s, ids)) =
-	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
+	    SEQ [S "prim\"", S s, S "\" ", SEP (S ", ", List.map ID ids)]
 	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (TagAppExp (_, label, args)) =
-	    SEQ [S "(tag ", S (Label.toString label), S ") ", outputArgs args]
+	  | outputExp (TagAppExp (_, label, n, args)) =
+	    SEQ [S "(tag ", S (Label.toString label), S "/", I n, S ") ",
+		 outputArgs args]
 	  | outputExp (ConAppExp (_, id, args)) =
 	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
 	  | outputExp (StaticConAppExp (_, stamp, args)) =
 	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
-	  | outputExp (SelAppExp (_, label, id)) =
-	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
+	  | outputExp (SelAppExp (_, label, n, id)) =
+	    SEQ [S "#", S (Label.toString label), S "/", I n, S " ", ID id]
 	  | outputExp (AdjExp (_, id1, id2)) =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]
 	  | outputExp (FunAppExp (_, id, _, args)) =
@@ -214,7 +220,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    format (SEQ [SEQ (List.map
 			      (fn (id, _, url) =>
 			       SEQ [S "import ", ID id,
-				    S (" from " ^ Url.toString url ^ "\n")])
+				    S " from ", S (Url.toString url), S "\n"])
 			      importList), outputBody (body, StampSet.new ()),
 			 NL])
     end

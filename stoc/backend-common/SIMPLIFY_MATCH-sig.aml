@@ -24,15 +24,15 @@ signature SIMPLIFY_MATCH =
 	(*--** These do not need to store the type any more: *)
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t
-	  | TagAppTest of Label.t * typ O.args * O.conArity
+	  | TagTest of Label.t * int
+	  | TagAppTest of Label.t * int * typ O.args * O.conArity
 	  | ConTest of I.longid
 	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of Label.t * typ
+	  | LabTest of Label.t * int * typ
 	  | VecTest of typ list
 	  | GuardTest of mapping * I.exp
 	  | DecTest of mapping * I.dec list
