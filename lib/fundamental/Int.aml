@@ -64,7 +64,10 @@ struct
 
     __primitive val compare : int * int -> order = "Int.compare"
 
+    val equal			= op =
     val abs			= abs
+
+    fun hash i			= abs i handle Overflow => 0
 
     fun min(i,j)		= if i < j then i else j
     fun max(i,j)		= if i > j then i else j
