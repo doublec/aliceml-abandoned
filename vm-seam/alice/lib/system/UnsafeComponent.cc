@@ -115,7 +115,7 @@ DEFINE1(UnsafeComponent_linkNative) {
     RAISE(Unpickler::Corrupt);
   }
 #endif
-  TagVal *component = TagVal::New(1, 2);   // EVALUATED {
+  TagVal *component = TagVal::New(0, 2);   // EVALUATED {
   component->Init(0, Store::IntToWord(0)); //   inf = NONE,
   component->Init(1, InitComponent());     //   mod = ... }
   RETURN(component->ToWord());
