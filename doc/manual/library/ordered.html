@@ -1,0 +1,56 @@
+<?php include("macros.php3"); ?>
+<?php heading("The ORDERED signature", "The <TT>ORDERED</TT> signature") ?>
+
+<?php section("synopsis", "synopsis") ?>
+
+  <PRE>
+    signature ORDERED
+  </PRE>
+
+  <P>
+    An abstract signature for types that provide an ordering, useful for
+    functor arguments. Note that most basic types in the fundamental library
+    match this signature.
+  </P>
+
+  <P>See also:
+    <A href="hashable.html"><TT>HASHABLE</TT></A>
+  </P>
+
+<?php section("import", "import") ?>
+
+  <PRE>
+    import signature ORDERED from "x-alice:/lib/data/ORDERED-sig"</PRE>
+
+<?php section("interface", "interface") ?>
+
+  <PRE>
+    signature ORDERED =
+    sig
+	type t
+
+	val compare :  t * t -> order
+    end
+  </PRE>
+
+<?php section("description", "description") ?>
+
+  <DL>
+    <DT>
+      <TT>type t</TT>
+    </DT>
+    <DD>
+      <P>The abstract type of ordered values.</P>
+    </DD>
+
+    <DT>
+      <TT>compare (<I>x1</I>, <I>x2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns the relative order of <TT><I>x1</I></TT> and
+      <TT><I>x2</I></TT>. May raise <TT>Unordered</TT> if both values are
+      incomparable in a partial ordering.</P>
+    </DD>
+  </DL>
+
+<?php footing() ?>

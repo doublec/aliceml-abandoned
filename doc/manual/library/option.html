@@ -41,7 +41,7 @@
 	exception Option
 
 	val equal :          ('a * 'a -> bool) -> 'a option * 'a option -> bool
-	val compare :        ('a * 'a -> order) -> 'a option * 'a option -> order
+	val collate :        ('a * 'a -> order) -> 'a option * 'a option -> order
 
 	val isSome :         'a option -> bool
 	val isNone :         'a option -> bool
