@@ -338,35 +338,6 @@ public:
   static int FromWord(word value) {
     return Store::DirectWordToInt(value);
   }
-  static word Add(word a, word b) {
-    int ai = FromWord(a);
-    int bi = FromWord(b);
-    return ToWord(ai + bi);
-  }
-  static word Sub(word a, word b) {
-    int ai = FromWord(a);
-    int bi = FromWord(b);
-    return ToWord(ai - bi);
-  }
-  static word Mul(word a, word b) {
-    int ai = FromWord(a);
-    int bi = FromWord(b);
-    return ToWord(ai * bi);
-  }
-  static word Div(word a, word b) {
-    int ai = FromWord(a);
-    int bi = FromWord(b);
-    return ToWord(ai / bi);
-  }
-  static word Rem(word a, word b) {
-    int ai = FromWord(a);
-    int bi = FromWord(b);
-    return ToWord(ai % bi);
-  }
-  static word Neg(word a) {
-    int ai = FromWord(a);
-    return ToWord(0 - ai);
-  }
   static word Zero() {
     return Store::IntToWord(0);
   }
@@ -459,38 +430,75 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LALOAD:
     case Instr::SALOAD:
       {
-	u_int index      = Store::DirectWordToInt(frame->Pop());
-	ObjectArray *arr = ObjectArray::FromWord(frame->Pop());
-	if (arr != INVALID_POINTER) {
-	  if (index < arr->GetLength()) {
-	    frame->Push(arr->Get(index));
-	  }
+	u_int index        = JavaInt::FromWord(frame->Pop());
+	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetLength())
+	    frame->Push(array->Get(index));
 	  else {
-	    // to be done: raise invalid something
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
 	  }
 	}
 	else {
 	  // to be done: raise NullPointerException
 	  Error("NullPointerException");
 	}
+	pc += 1;
       }
       break;
     case Instr::AASTORE:
+      {
+	word value         = frame->Pop();
+	u_int index        = Store::DirectWordToInt(frame->Pop());
+	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetLength()) {
+	    Object *object = Object::FromWord(value);
+	    // to be done: array->GetType();
+	    Type *type     = INVALID_POINTER;
+	    if ((type->GetLabel() == JavaLabel::Class) &&
+		object->IsInstanceOf(static_cast<Class *>(type)))
+	      array->Assign(index, value);
+	    else {
+	      // to be done: raise ArrayStoreException
+	      Error("ArrayStoreException");
+	    }
+	  }
+	  else {
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
+	  }
+	}
+	else {
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
+	}
+	pc += 1;
+      }
+      break;
     case Instr::DASTORE: // reals are boxed
     case Instr::FASTORE: // reals are boxed
     case Instr::IASTORE:
     case Instr::LASTORE:
     case Instr::SASTORE:
       {
-	word value  = frame->Pop();
-	u_int index = Store::DirectWordToInt(frame->Pop());
-	ObjectArray *arr  = ObjectArray::FromWordDirect(frame->Pop());
-	if (index < arr->GetLength()) {
-	  arr->Assign(index, value);
+	word value         = frame->Pop();
+	u_int index        = Store::DirectWordToInt(frame->Pop());
+	ObjectArray *array = ObjectArray::FromWord(frame->Pop());
+	if (array != INVALID_POINTER) {
+	  if (index < array->GetLength())
+	    array->Assign(index, value);
+	  else {
+	    // to be done: raise ArrayIndexOutOfBoundsException
+	    Error("ArrayIndexOutOfBoundsException");
+	  }
 	}
 	else {
-	  // to be done: raise invalid something
+	  // to be done: raise NullPointerException
+	  Error("NullPointerException");
 	}
+	pc += 1;
       }
       break;
     case Instr::ACONST_NULL:
@@ -602,7 +610,7 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::ISTORE:
     case Instr::LSTORE:
       {
-	frame->SetEnv((u_int) GET_BYTE_INDEX(), frame->Pop());
+	frame->SetEnv(GET_BYTE_INDEX(), frame->Pop());
 	pc += 2;
       }
       break;
@@ -739,87 +747,52 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DADD:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to be done
-	frame->Push(res->ToWord());
-	pc += 1;
+	Error("not implemented");
       }
       break;
     case Instr::DCMPG:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DCMPL:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DCONST_0:
       {
-	Chunk *res = Store::AllocChunk(0);
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DCONST_1:
       {
-	Chunk *res = Store::AllocChunk(0);
-	// to be done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DDIV:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DMUL:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DNEG:
       {
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DREM:
       {
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DSUB:
       {
-	Chunk *v2 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *v1 = Store::DirectWordToChunk(frame->Pop());
-	Chunk *res = v1;
-	// to bo done
-	frame->Push(res->ToWord());
+	Error("not implemented");
       }
       break;
     case Instr::DUP:
@@ -1036,17 +1009,17 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IADD:
       {
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
-	frame->Push(JavaInt::Add(v1, v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 + v2));
 	pc += 1;
       }
       break;
     case Instr::IAND:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 & v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 & v2));
 	pc += 1;
       }
       break;
@@ -1094,10 +1067,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IDIV:
       {
-	word v2 = frame->Pop();
-	word v1 = frame->Pop();
-	if (JavaInt::FromWord(v2) != 0)
-	  frame->Push(JavaInt::Div(v1, v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	if (v2 != 0)
+	  frame->Push(JavaInt::ToWord(v1 / v2));
 	else {
 	  // to be done: raise ArithmeticException
 	  Error("ArithmeticException");
@@ -1233,24 +1206,26 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IINC:
       {
-	u_int index = code[++pc];
-	int inc     = static_cast<int>(code[++pc]);
-	int v       = Store::DirectWordToInt(frame->GetEnv(index));
-	v += inc;
-	frame->SetEnv(index, Store::IntToWord(v));
+	u_int index = GET_BYTE_INDEX();
+	int v       = JavaInt::FromWord(frame->GetEnv(index));
+	v += static_cast<int>(code[pc + 2]);
+	frame->SetEnv(index, JavaInt::ToWord(v));
+	pc += 3;
       }
       break;
     case Instr::IMUL:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 * v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 * v2));
+	pc += 1;
       }
       break;
     case Instr::INEG:
       {
-	int v = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(0-v));
+	int v = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(0-v));
+	pc += 1;
       }
       break;
     case Instr::INSTANCEOF:
@@ -1357,41 +1332,47 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IOR:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 || v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 || v2));
+	pc += 1;
       }
       break;
     case Instr::IREM:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
 	if (v2 != 0)
-	  frame->Push(Store::IntToWord(v1 % v2));
+	  frame->Push(JavaInt::ToWord(v1 % v2));
 	else {
 	  // to be done: raise ArithmeticException
+	  Error("ArithmeticException");
 	}
+	pc += 1;
       }
       break;
     case Instr::ISHL:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 << v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 << v2));
+	pc += 1;
       }
       break;
     case Instr::ISHR:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 >> v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 >> v2));
+	pc += 1;
       }
       break;
     case Instr::ISUB:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 - v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 - v2));
+	pc += 1;
       }
       break;
     case Instr::IUSHR:
@@ -1401,27 +1382,20 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::IXOR:
       {
-	int v2 = Store::DirectWordToInt(frame->Pop());
-	int v1 = Store::DirectWordToInt(frame->Pop());
-	frame->Push(Store::IntToWord(v1 ^ v2));
+	int v2 = JavaInt::FromWord(frame->Pop());
+	int v1 = JavaInt::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(v1 ^ v2));
+	pc += 1;
       }
       break;
     case Instr::JSR:
       {
-	unsigned char b1    = code[pc + 1];
-	unsigned char b2    = code[pc + 2];
-	signed short offset = ((b1 << 8) | b2);
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::JSR_W:
       {
-	unsigned char b1  = code[pc + 1];
-	unsigned char b2  = code[pc + 2];
-	unsigned char b3  = code[pc + 3];
-	unsigned char b4  = code[pc + 4];
-	signed int offset = ((b1 << 24) | (b2 << 16) | (b3 << 8) | b4);
-	// to be done
+	Error("not implemented");
       }
     case Instr::L2D:
       {
@@ -1454,6 +1428,10 @@ Worker::Result ByteCodeInterpreter::Run() {
       }
       break;
     case Instr::LCONST_0:
+      {
+	Error("not implemented");
+      }
+      break;
     case Instr::LCONST_1:
       {
 	Error("not implemented");
@@ -1461,19 +1439,13 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LDC:
       {
-	u_int index = code[++pc];
-	word value  = Store::IntToWord(0); // to be done
-	frame->Push(value);
+	Error("not implemented");
       }
       break;
     case Instr::LDC_W:
     case Instr::LDC2_W:
       {
-	unsigned char b1 = code[++pc];
-	unsigned char b2 = code[++pc];
-	u_int index      = ((b1 << 8) | b2);
-	word value       = Store::IntToWord(0); // to be done
-	frame->Push(value);
+	Error("not implemented");
       }
     case Instr::LDIV:
       {
@@ -1492,16 +1464,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::LOOKUPSWITCH:
       {
-	// Skip the zero padding bytes
-	pc++;
-	for (u_int i = 3; i--;)
-	  if (code[pc] == 0)
-	    pc++;
-	unsigned char b1 = code[pc++];
-	unsigned char b2 = code[pc++];
-	unsigned char b3 = code[pc++];
-	unsigned char b4 = code[pc++];
-	// to be done
+	Error("not implemented");
       }
       break;
     case Instr::LOR:
@@ -1552,18 +1515,15 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (type == INVALID_POINTER)
 	  REQUEST(wType);
 	u_int nDims = (u_int) code[pc + 3];
-	for (u_int i = nDims; i >= 1; i--) {
+	for (u_int i = nDims; i--;) {
 	  int count = JavaInt::FromWord(frame->Pop());
 	  if (count < 0) {
 	    // to be done: raise NegativeArraySizeException
 	    Error("NegativeArraySizeException");
 	  }
-	  Type *arrayType = static_cast<Type *>(ArrayType::New(type->ToWord()));
-	  ObjectArray *arr = ObjectArray::New(arrayType, count);
-	  if (arr == INVALID_POINTER)
-	    arr = arr;
-	  else {
-	  }
+	  ObjectArray *arr = ObjectArray::New(type, count);
+	  arr = arr;
+	  type = static_cast<Type *>(ArrayType::New(type->ToWord()));
 	}
 	frame->Push(type->ToWord());
 	pc += 4;
@@ -1769,7 +1729,7 @@ const char *ByteCodeInterpreter::Identify() {
   return "ByteCodeInterpreter";
 }
 
-void ByteCodeInterpreter::DumpFrame(word frame) {
+void ByteCodeInterpreter::DumpFrame(word) {
   //--** nicer output
   std::fprintf(stderr, "Java method\n");
 }
