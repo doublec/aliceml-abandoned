@@ -1,0 +1,114 @@
+(*
+ * Authors:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt and Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure TextIO   from "../lib/TextIO"
+import structure Assert   from "../lib/utility/Assert"
+import structure Url      from "../lib/utility/Url"
+import signature ANALYZER from "ANALYZER-sig"
+
+
+functor MkAnalyzer(structure Parser: PARSER
+		   val extension: string): ANALYZER =
+    struct
+	fun warn message =
+	    TextIO.output (TextIO.stdErr, "warning: " ^ message ^ "\n")
+
+	local
+	    val homeref: string option ref = ref NONE
+	in
+	    fun stockhome () =
+		case !homeref of
+		    NONE =>
+			let
+			    val home =
+				case OS.Process.getEnv "STOCKHOME" of
+				    SOME s => s ^ "/"
+				  | NONE => (warn "STOCKHOME not set"; "")
+			in
+			    homeref := SOME home; home
+			end
+		  | SOME home => home
+	end
+
+	fun parseUrl url =
+	    case (Url.getScheme url, Url.getAuthority url) of
+		(NONE, NONE) =>
+		    Url.toString url
+	      | (SOME "file", NONE) =>
+		    Url.toString (Url.setScheme (url, NONE))
+	      | (SOME "x-alice", NONE) =>
+		    stockhome () ^
+		    Url.toString (Url.setScheme (Url.makeRelativePath url,
+						 NONE))
+	      | _ => raise Assert.failure
+
+	fun pathCeil filename =
+	    let
+		val fro = "." ^ extension
+		val n = String.size filename
+		val m = String.size fro
+	    in
+		if n > m andalso String.substring (filename, n - m, m) = fro
+		then filename
+		else filename ^ fro
+	    end
+
+	fun pathFloor filename =
+	    let
+		val fro = "." ^ extension
+		val n = String.size filename
+		val m = String.size fro
+	    in
+		if n > m andalso String.substring (filename, n - m, m) = fro
+		then String.substring (filename, 0, n - m)
+		else filename
+	    end
+
+	fun urlCeil url =
+	    case List.rev (Url.getPath url) of
+		last::rest => Url.setPath (url, List.rev (pathCeil last::rest))
+	      | nil => url
+
+	fun analyzeImport (desc, url) =
+	    let
+		val url =
+		    case desc of
+			SOME base => Url.resolve base url
+		      | NONE => url
+		val targetFilename = parseUrl url
+	    in
+		pathFloor targetFilename ^ "." ^ extension
+	    end
+
+	fun analyze (desc, source) =
+	    List.map (fn s => analyzeImport (desc, Url.fromString s))
+	    (Parser.parse source)
+
+	fun readFile filename =
+	    let
+		val file   = TextIO.openIn filename
+		val source = TextIO.inputAll file
+		val _      = TextIO.closeIn file
+	    in
+		source
+	    end
+
+	fun analyzeString source = analyze (NONE, source)
+
+	fun analyzeFile filename =
+	    let
+		val url = Url.fromString filename
+	    in
+		analyze (SOME url, readFile (parseUrl url))
+	    end
+    end
