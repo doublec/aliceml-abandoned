@@ -19,7 +19,6 @@
 #include "generic/Tuple.hh"
 #include "generic/ConcreteRepresentationHandler.hh"
 
-class TaskStack;
 class Closure;
 class Backtrace;
 
@@ -29,14 +28,10 @@ class ConcreteCode;
 class String;
 #endif
 
-class Interpreter : public ConcreteRepresentationHandler {
+class Interpreter: public ConcreteRepresentationHandler {
 public:
   enum Result {
-    CONTINUE,
-    PREEMPT,
-    RAISE,
-    REQUEST,
-    TERMINATE
+    CONTINUE, PREEMPT, SUSPEND, RAISE, REQUEST, TERMINATE
   };
   // Interpreter Constructor
   Interpreter() {}
@@ -49,11 +44,11 @@ public:
   //   returns 0 iff deconstruction was immediately successful
   static u_int Deconstruct();
   // Frame Handling
-  virtual void PushCall(TaskStack *taskStack, Closure *closure);
+  virtual void PushCall(Closure *closure);
   virtual void PurgeFrame(word frame);
   // Execution
-  virtual Result Run(TaskStack *taskStack) = 0;
-  virtual Result Handle(TaskStack *taskStack);
+  virtual Result Run() = 0;
+  virtual Result Handle();
   // Debugging
   virtual const char *Identify() = 0;
   virtual void DumpFrame(word frame) = 0;

@@ -35,16 +35,6 @@ namespace Generic {
     }
   };
 
-  class TaskStack : public ::Stack {
-  public:
-    static void PopFrames(u_int Stack, u_int nbFrames) {
-      JITStore::GetArg(JIT_R0, Stack, TOP_POS);
-      // nbFrames << 1 = Store::IntToWord(nbFrames) - 1
-      jit_subi_p(JIT_R0, JIT_R0, nbFrames << 1);
-      JITStore::InitArg(Stack, TOP_POS, JIT_R0);
-    }
-  };
-
   class Scheduler {
   protected:
     static void Sel(void *addr, u_int Dest) {
@@ -90,6 +80,11 @@ namespace Generic {
     }
     static void SetCurrentBacktrace(u_int Value) {
       Put(&::Scheduler::currentBacktrace, Value);
+    }
+    static void PopFrames(u_int n) {
+      jit_ldi_ui(JIT_R0, &::Scheduler::nFrames);
+      jit_subi_ui(JIT_R0, JIT_R0, n);
+      jit_sti_ui(&::Scheduler::nFrames, JIT_R0);
     }
   };
 
