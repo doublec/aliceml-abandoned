@@ -182,7 +182,8 @@ define
    Epsilon = 1
    MaxTag = {Width Tags} = 26
 
-   ILLEGAL_EPSILON = {FS.value.make 1#27}
+   ILLEGAL_DATA    = {FS.value.singl Epsilon}
+   ILLEGAL_EPSILON = {FS.value.make 1#26}
    ILLEGAL_B       = {FS.value.make 1#2}
    ILLEGAL_I       = {FS.value.make 1#3}
    ILLEGAL_TT      = {FS.value.make 1#4}
@@ -222,8 +223,9 @@ define
 		     down:       {FS.value.make FirstNonRootI#LastNonRootI}
 		     eqdown:     {FS.value.make FirstVertexI#LastVertexI}
 		     scope:      {FS.value.make FirstDataItemI#LastDataItemI}
+		     attributes: RootAttributes
 		     depth:      0
-		     attributes: RootAttributes)
+		     illegalup:  FS.value.empty)
 
       %% Initialize element vertices
       for I in FirstElementI..LastElementI do
@@ -235,6 +237,8 @@ define
 	 Attributes = {MkElementAttributes}
 	 Depth      = {FD.int 1#NumberOfElements}
 	 MinDepth   = 1
+	 Illegal    = {FS.var.upperBound 1#MaxTag}
+	 IllegalUp  = {FS.var.upperBound 1#MaxTag}
 	 Tag        = {FD.int 1#MaxTag}
       in
 	 Mother \=: I
@@ -246,6 +250,8 @@ define
 		       attributes: Attributes
 		       depth:      Depth
 		       mindepth:   MinDepth
+		       illegal:    Illegal
+		       illegalup:  IllegalUp
 		       tag:        Tag)
       end
 
@@ -261,6 +267,7 @@ define
 	  Attributes = {MkDataItemAttributes Property IsSpace}
 	  Depth      = {FD.int 1#(NumberOfElements + 1)}
 	  MinDepth   = {FD.int 1#(NumberOfElements + 1)}
+	  IllegalUp  = ILLEGAL_DATA
        in
 	  {ComputeMinDepth Attributes MinDepth}
 	  V.I = dataItem(mother:     Mother
@@ -271,6 +278,7 @@ define
 			 attributes: Attributes
 			 depth:      Depth
 			 mindepth:   MinDepth
+			 illegalup:  IllegalUp
 			 text:       Text)
        end}
 
@@ -366,6 +374,24 @@ define
 	    end
 	 end
       end
+
+      %% Propagation of illegal tag sets
+/*
+      IllegalUps = for I in FirstVertexI..LastVertexI collect: Collect do
+		      {Collect V.I.illegalup}
+		   end
+      TagIllegals = for I in 1..MaxTag collect: Collect do
+		       {Collect Tags.I.illegal}
+		    end
+
+      for I in FirstElementI..LastElementI do W TagIllegal in
+	 W = V.I
+%	 {FS.exclude W.tag W.illegal}
+	 W.illegal = {Select.inter IllegalUps W.daughters}
+	 TagIllegal = {Select.fs TagIllegals W.tag}
+	 W.illegalup = {FS.union TagIllegal W.illegal}
+      end
+*/
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
