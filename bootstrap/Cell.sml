@@ -17,7 +17,7 @@ struct
     type 'a cell		= Stamp.t * 'a ref
     type 'a t			= 'a cell
 
-    fun new x			= (Stamp.new(), ref x)
+    fun cell x			= (Stamp.stamp(), ref x)
     fun content (_, ref x)	= x
     fun stamp (z, _)		= z
     fun replace((_,r), x)	= r := x
