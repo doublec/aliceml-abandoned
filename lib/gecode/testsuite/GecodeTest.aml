@@ -93,7 +93,7 @@ structure GecodeTest :
       in
           Vector.app (fn v => FS.subset (space, v, top)) root;
           prop(space, root);
-	  FS.randomBranch(space, root, seed, true);
+	  FS.randomBranch(space, root, seed);
 	  (*FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);*)
 	  (root, space)
       end
