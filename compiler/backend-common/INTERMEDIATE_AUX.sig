@@ -18,6 +18,10 @@ signature INTERMEDIATE_AUX =
 
 	val freshId: Intermediate.info -> Intermediate.id
 
+	val idEq: Intermediate.id * Intermediate.id -> bool
+
+	val occursInMatches: Intermediate.match list * Intermediate.id -> bool
+
 	val patternVariablesOf: Intermediate.pat -> Intermediate.id list
 
 	type subst = (Intermediate.id * Intermediate.id) list

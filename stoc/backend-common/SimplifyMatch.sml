@@ -141,8 +141,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun labEq (Lab (_, s1), Lab (_, s2)) = s1 = s2
 
-	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
-
 	fun longidEq (ShortId (_, id1), ShortId (_, id2)) = idEq (id1, id2)
 	  | longidEq (LongId (_, longid1, lab1), LongId (_, longid2, lab2)) =
 	    longidEq (longid1, longid2) andalso labEq (lab1, lab2)
@@ -326,6 +324,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
+	type consequent = (O.coord * O.body option ref)
+
 	fun buildGraph (matches, elseExp) =
 	    let
 		val (graph, consequents) =
@@ -351,4 +351,91 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			(propagateElses (graph, elseGraph);
 			 (optimizeGraph graph, consequents))
 	    end
+
+	local
+	    datatype args =
+		ONE
+	      | TUP of int
+	      | REC of string list
+
+	    exception NonArgable
+
+	    fun normalize (_, LitPat (_, _), _) = ONE
+	      | normalize (_, ConPat (_, _, _), _) = ONE
+	      | normalize (_, RefPat (_, _), _) = ONE
+	      | normalize (_, TupPat (_, pats), _) = TUP (List.length pats)
+	      | normalize (_, RowPat (_, patFields, true), _) =
+		let
+		    val labs =
+			List.map (fn Field (_, Lab (_, s), _) => s) patFields
+		in
+		    case StringLabelSort.sort labs of
+			(_, StringLabelSort.Tup i) => TUP i
+		      | (labs', StringLabelSort.Rec) => REC labs'
+		end
+	      | normalize (_, VecPat (_, _), _) = ONE
+	      | normalize (_, _, _) = raise NonArgable
+
+	    fun insertMatch ((ONE, matches)::rest, ONE, match) =
+		(ONE, match::matches)::rest
+	      | insertMatch (argsMatchesList, ONE, match) =
+		(ONE, [match])::argsMatchesList
+	      | insertMatch ((args, matches)::rest, args', match) =
+		if args = args' then (args, match::matches)::rest
+		else (args, matches)::insertMatch (rest, args', match)
+	      | insertMatch (nil, args', match) = [(args', [match])]
+
+	    fun makeArg (match, argsMatchesList) =
+		insertMatch (argsMatchesList, normalize match, match)
+
+	    fun freshId coord = Id (coord, Stamp.new (), InId)
+
+	    fun process (ONE, graph, consequents, id) =
+		(O.OneArg id, graph, [(nil, id)], consequents)
+	      | process (TUP i, Node (nil, TupTest i', ref graph, _, _),
+			 consequents, _) =
+		let
+		    val intIdList =
+			List.tabulate
+			(i, fn i => (i + 1, freshId Source.nowhere))
+		    val ids = List.map #2 intIdList
+		    val mapping =
+			List.foldr (fn ((i, id), mapping) =>
+				    ([Int.toString i], id)::mapping)
+			nil intIdList
+		in
+		    if i = i' then ()
+		    else Crash.crash "SimplifyMatch.process 1";
+		    (O.TupArgs ids, graph, mapping, consequents)
+		end
+	      | process (REC labs, Node (nil, RecTest labs', ref graph, _, _),
+			 consequents, _) =
+		let
+		    val labIdList =
+			List.map (fn lab => (lab, freshId Source.nowhere)) labs
+		    val mapping =
+			List.foldr (fn ((lab, id), mapping) =>
+				    ([lab], id)::mapping) nil labIdList
+		in
+		    if labs = labs' then ()
+		    else Crash.crash "SimplifyMatch.process 2";
+		    (O.RecArgs labIdList, graph, mapping, consequents)
+		end
+	      | process (_, _, _, _) = Crash.crash "SimplifyMatch.process"
+	in
+	    fun buildFunArgs (id, matches, errStms) =
+		let
+		    val argsMatchesList =
+			(List.foldl makeArg nil matches)
+			handle NonArgable => [(ONE, matches)]
+		in
+		    List.map (fn (args, matches) =>
+			      let
+				  val (graph, consequents) =
+				      buildGraph (matches, errStms)
+			      in
+				  process (args, graph, consequents, id)
+			      end) argsMatchesList
+		end
+	end
     end

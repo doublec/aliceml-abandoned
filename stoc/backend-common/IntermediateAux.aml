@@ -25,6 +25,79 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun freshId coord = Id (coord, Stamp.new (), InId)
 
+	fun idEq (Id (_, stamp1, _), Id (_, stamp2, _)) = stamp1 = stamp2
+
+	fun occursInDec (ValDec (_, pat, exp), id) =
+	    occursInPat (pat, id) orelse occursInExp (exp, id)
+	  | occursInDec (ConDec (_, _, _), _) = false
+	  | occursInDec (RecDec (_, decs), id) =
+	    List.exists (fn dec => occursInDec (dec, id)) decs
+	and occursInExp (LitExp (_, _), _) = false
+	  | occursInExp (PrimExp (_, _), _) = false
+	  | occursInExp (VarExp (_, ShortId (_, id)), id') = idEq (id, id')
+	  | occursInExp (VarExp (_, LongId (_, _, _)), _) = false
+	  | occursInExp (ConExp (_, _, _), _) = false
+	  | occursInExp (RefExp _, _) = false
+	  | occursInExp (TupExp (_, exps), id) =
+	    List.exists (fn exp => occursInExp (exp, id)) exps
+	  | occursInExp (RowExp (_, expFields), id) =
+	    List.exists (fn Field (_, _, exp) => occursInExp (exp, id))
+	    expFields
+	  | occursInExp (SelExp (_, _), _) = false
+	  | occursInExp (VecExp (_, exps), id) =
+	    List.exists (fn exp => occursInExp (exp, id)) exps
+	  | occursInExp (FunExp (_, _, exp), id) = occursInExp (exp, id)
+	  | occursInExp (AppExp (_, exp1, exp2), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (AdjExp (_, exp1, exp2), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (AndExp (_, exp1, exp2), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (OrExp (_, exp1, exp2), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (IfExp (_, exp1, exp2, exp3), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id) orelse
+	    occursInExp (exp3, id)
+	  | occursInExp (WhileExp (_, exp1, exp2), id) =
+	    occursInExp (exp1, id) orelse occursInExp (exp2, id)
+	  | occursInExp (SeqExp (_, exps), id) =
+	    List.exists (fn exp => occursInExp (exp, id)) exps
+	  | occursInExp (CaseExp (_, exp, matches), id) =
+	    occursInExp (exp, id) orelse occursInMatches (matches, id)
+	  | occursInExp (RaiseExp (_, exp), id) = occursInExp (exp, id)
+	  | occursInExp (HandleExp (_, exp, matches), id) =
+	    occursInExp (exp, id) orelse occursInMatches (matches, id)
+	  | occursInExp (LetExp (_, decs, exp), id) =
+	    List.exists (fn dec => occursInDec (dec, id)) decs orelse
+	    occursInExp (exp, id)
+	and occursInMatches (matches, id) =
+	    List.exists (fn Match (_, pat, exp) =>
+		       occursInPat (pat, id) orelse occursInExp (exp, id))
+	    matches
+	and occursInPat (WildPat _, _) = false
+	  | occursInPat (LitPat (_, _), _) = false
+	  | occursInPat (VarPat (_, _), _) = false
+	  | occursInPat (ConPat (_, _, NONE), _) = false
+	  | occursInPat (ConPat (_, _, SOME pat), id) = occursInPat (pat, id)
+	  | occursInPat (RefPat (_, pat), id) = occursInPat (pat, id)
+	  | occursInPat (TupPat (_, pats), id) =
+	    List.exists (fn pat => occursInPat (pat, id)) pats
+	  | occursInPat (RowPat (_, patFields, _), id) =
+	    List.exists (fn Field (_, _, pat) => occursInPat (pat, id))
+	    patFields
+	  | occursInPat (VecPat (_, pats), id) =
+	    List.exists (fn pat => occursInPat (pat, id)) pats
+	  | occursInPat (AsPat (_, pat1, pat2), id) =
+	    occursInPat (pat1, id) orelse occursInPat (pat2, id)
+	  | occursInPat (AltPat (_, pats), id) =
+	    List.exists (fn pat => occursInPat (pat, id)) pats
+	  | occursInPat (NegPat (_, pat), id) = occursInPat (pat, id)
+	  | occursInPat (GuardPat (_, pat, exp), id) =
+	    occursInPat (pat, id) orelse occursInExp (exp, id)
+	  | occursInPat (WithPat (_, pat, decs), id) =
+	    occursInPat (pat, id) orelse
+	    List.exists (fn dec => occursInDec (dec, id)) decs
+
 	local
 	    fun patternVariablesOf' (WildPat _, ids) = ids
 	      | patternVariablesOf' (LitPat (_, _), ids) = ids

@@ -260,13 +260,22 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		stms
 	    end
 	  | translateExp (FunExp (coord, id, exp), f, cont) =
-	    (*--** name propagation, multiple argument optimization *)
 	    let
 		fun return exp' = O.ReturnStm (infoExp exp, exp')
-		val body = translateExp (exp, return, Goto nil)
+		val argsBodyList =
+		    case exp of
+			CaseExp (_, VarExp (_, ShortId (_, id')), matches) =>
+			    if idEq (id, id')
+				andalso not (occursInMatches (matches, id))
+			    then translateFunBody (coord, id, matches, return)
+			    else
+				[(O.OneArg id,
+				  translateExp (exp, return, Goto nil))]
+		      | _ =>
+			    [(O.OneArg id,
+			      translateExp (exp, return, Goto nil))]
 	    in
-		f (O.FunExp (coord, nil, [(O.OneArg id, body)]))::
-		translateCont cont
+		f (O.FunExp (coord, nil, argsBodyList))::translateCont cont
 	    end
 	  | translateExp (AppExp (coord, ConExp (_, longid, true), exp2),
 			  f, cont) =
@@ -450,6 +459,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 					elseStms, errStms)])];
 		stms
 	    end
+	and checkReachability consequents =
+	    List.app (fn (coord, ref bodyOpt) =>
+		      if isSome bodyOpt then ()
+		      else Error.error (coord, "unreachable expression"))
+	    consequents
 	and simplifyCase (coord, exp, matches, raiseId) =
 	    let
 		val r = ref NONE
@@ -459,11 +473,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));
-		List.app (fn (coord, ref bodyOpt) =>
-			  if isSome bodyOpt then ()
-			  else Error.error (coord, "unreachable expression"))
-		consequents;
+		checkReachability consequents;
 		stms
+	    end
+	and translateFunBody (coord, id, matches, return) =
+	    let
+		val matches' =
+		    List.map (fn Match (_, pat, exp) =>
+			      (infoExp exp, pat,
+			       translateExp (exp, return, Goto nil))) matches
+		val errStms = [O.RaiseStm (coord, id_Match)]
+	    in
+		List.map (fn (args, graph, mapping, consequents) =>
+			  let
+			      val stms = translateGraph (graph, mapping)
+			  in
+			      checkReachability consequents;
+			      (args, stms)
+			  end) (buildFunArgs (id, matches', errStms))
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =
