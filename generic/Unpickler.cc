@@ -155,10 +155,8 @@ public:
       } else {
 	return false;
       }
-      break;
     case STRING_INPUT_STREAM:
       return (GetRd() >= GetTl());
-      break;
     default:
       Error("InputStream::IsEOF: illegal node type");
     }
@@ -192,8 +190,9 @@ public:
     do {
       b = GetByte(); if (IsEOB()) return 0;
       u_char c = b & 0x7F;
-      if (c >= (u_char) (1 << freeBits))
-	Error("Unpickler: integer out of range"); //--** raise exception
+      if ((u_int) c >= (u_int) (1 << freeBits)) {
+      	Error("Unpickler: integer out of range"); //--** raise exception
+      }
       value |= c << shift;
       shift += 7;
       freeBits -= 7;
