@@ -54,6 +54,14 @@ define
 	 case {Access TransientState} of ref(Y) then {Deref Y}
 	 else X
 	 end
+      else X
+      end
+   end
+
+   fun {IsCyclic X TransientState}
+      case {Deref X} of transient(TransientState2) then
+	 TransientState2 == TransientState
+      else false
       end
    end
 
@@ -92,93 +100,105 @@ define
       end
    end
 
+   CONS = 0
+   NIL = 1
+
+   fun {StringExplode S I N}
+      if I == N then NIL
+      else tuple(CONS {ByteString.get S I} {StringExplode S I + 1 N})
+      end
+   end
+
    Primitives =
-   primitives('=':
-		 fun {$ X Y} if X == Y then 1 else 0 end end   %--**
-	      '<>':
-		 fun {$ X Y} if X \= Y then 1 else 0 end end   %--**
+   primitives('=': Value.'=='#rr_b
+	      '<>': Value.'\\='#rr_b
 	      'Array.array':
-		 fun {$ N X}
+		 fun {$ N X TaskStack}
 		    if 0 =< N andthen N < Primitives.'Array.maxLen' then
-		       {Array.new 0 N - 1 X}
-		    else exception(Primitives.'General.Size')
+		       continue(arg({Array.new 0 N - 1 X}) TaskStack.2)
+		    else exception(nil Primitives.'General.Size' TaskStack.2)
 		    end
-		 end
-	      'Array.fromList':
+		 end#rr_t
+	      'Array.fromList': missing('Array.fromList')   %--**
+/*
 		 fun {$ Xs} N A in
-		    N = {Length Xs}
+		    N = {Length Xs}   %--**
 		    A = {Array.new 0 N - 1 unit}
 		    for X in Xs I in 0..N - 1 do
 		       A.I := X
 		    end
 		    A
-		 end
-	      'Array.length': fun {$ A} {Array.high A} + 1 end
+		 end#li_v
+*/
+	      'Array.length': fun {$ A} {Array.high A} + 1 end#r_v
 	      'Array.maxLen': 0x7FFFFFF
 	      'Array.sub':
-		 fun {$ A I}
-		    try {Array.get A I}
+		 fun {$ A I TaskStack}
+		    try continue(arg({Array.get A I}) TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(Primitives.'General.Subscript')
+		       exception(nil Primitives.'General.Subscript'
+				 TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Array.update':
-		 fun {$ A I X}
-		    try {Array.put A I X} tuple
+		 fun {$ A I X TaskStack}
+		    try
+		       {Array.put A I X}
+		       continue(args() TaskStack.2)
 		    catch error(kernel(array ...) ...) then
-		       exception(Primitives.'General.Subscript')
+		       exception(nil Primitives.'General.Subscript'
+				 TaskStack.2)
 		    end
-		 end
-	      'Char.<': fun {$ C1 C2} if C1 < C2 then 1 else 0 end end
-	      'Char.>': fun {$ C1 C2} if C1 > C2 then 1 else 0 end end
-	      'Char.<=': fun {$ C1 C2} if C1 =< C2 then 1 else 0 end end
-	      'Char.>=': fun {$ C1 C2} if C1 >= C2 then 1 else 0 end end
-	      'Char.ord': fun {$ C} C end
+		 end#rri_t
+	      'Char.<': Value.'<'#rr_b
+	      'Char.>': Value.'>'#rr_b
+	      'Char.<=': Value.'=<'#rr_b
+	      'Char.>=': Value.'>='#rr_b
+	      'Char.ord': fun {$ C} C end#r_v
 	      'Char.chr':
-		 fun {$ C}
-		    if {Char.is C} then C
-		    else exception(Primitives.'General.Chr')
+		 fun {$ C TaskStack}
+		    if {Char.is C} then continue(arg(C) TaskStack.2)
+		    else exception(nil Primitives.'General.Chr' TaskStack.2)
 		    end
-		 end
-	      'Char.isAlpha':
-		 fun {$ C} if {Char.isAlpha C} then 1 else 0 end end
-	      'Char.isAlphaNum':
-		 fun {$ C} if {Char.isAlNum C} then 1 else 0 end end
-	      'Char.isCntrl':
-		 fun {$ C} if {Char.isCntrl C} then 1 else 0 end end
-	      'Char.isDigit':
-		 fun {$ C} if {Char.isDigit C} then 1 else 0 end end
-	      'Char.isGraph':
-		 fun {$ C} if {Char.isGraph C} then 1 else 0 end end
-	      'Char.isHexDigit':
-		 fun {$ C} if {Char.isXDigit C} then 1 else 0 end end
-	      'Char.isLower':
-		 fun {$ C} if {Char.isLower C} then 1 else 0 end end
-	      'Char.isPrint':
-		 fun {$ C} if {Char.isPrint C} then 1 else 0 end end
-	      'Char.isPunct':
-		 fun {$ C} if {Char.isPunct C} then 1 else 0 end end
-	      'Char.isSpace':
-		 fun {$ C} if {Char.isSpace C} then 1 else 0 end end
-	      'Char.isUpper':
-		 fun {$ C} if {Char.isUpper C} then 1 else 0 end end
-	      'Char.toLower': Char.toLower
-	      'Char.toUpper': Char.toUpper
+		 end#r_t
+	      'Char.isAlpha': Char.isAlpha#r_b
+	      'Char.isAlphaNum': Char.isAlNum#r_b
+	      'Char.isCntrl': Char.isCntrl#r_b
+	      'Char.isDigit': Char.isDigit#r_b
+	      'Char.isGraph': Char.isGraph#r_b
+	      'Char.isHexDigit': Char.isXDigit#r_b
+	      'Char.isLower': Char.isLower#r_b
+	      'Char.isPrint': Char.isPrint#r_b
+	      'Char.isPunct': Char.isPrint#r_b
+	      'Char.isSpace': Char.isSpace#r_b
+	      'Char.isUpper': Char.isUpper#r_b
+	      'Char.toLower': Char.toLower#r_v
+	      'Char.toUpper': Char.toUpper#r_v
 	      'Future.Future': {NewUniqueName 'Future.Future'}
 	      'Future.alarm\'': missing('Future.alarm\'')   %--**
 %		 fun {$ X} !!{Alarm (X + 500) div 1000} end
 	      'Future.await':
-		 fun {$ X0}
+		 fun {$ X0 TaskStack}
 		    case {Deref X0} of Transient=transient(_) then
-		       request(Transient)
-		    elseof X then X
+		       request(Transient arg(Transient) TaskStack)
+		    elseof X then continue(arg(X) TaskStack)
 		    end
-		 end
+		 end#i_t
 	      'Future.awaitOne': missing('Future.awaitOne')   %--**
 %		 fun {$ X Y} {WaitOr X Y} X end
 	      'Future.byneed':
-		 fun {$ Closure} transient({NewCell byneed(Closure)}) end
-	      'Future.concur': missing('Future.concur')   %--**
+		 fun {$ Closure}
+		    transient({NewCell byneed(Closure)})
+		 end#r_v   %--** or i_v?
+	      'Future.concur':
+		 fun {$ Closure TaskStack} Transient TaskStack in
+		    Transient = transient({NewCell future(nil)})
+		    TaskStack = [byneedFrame(ByneedInterpreter.interpreter
+					     Transient)]
+		    Scheduler, newThread(Closure args() taskStack: TaskStack)
+		    continue(arg(Transient) TaskStack)
+		 end#r_t   %--** or i_t?
+
 /*
 	      fun {$ P}
 		 !!thread
@@ -193,7 +213,7 @@ define
 		   end
 	      end
 */
-	      'Future.isFailed': IsFailed
+	      'Future.isFailed': IsFailed#i_v
 	      'Future.isFuture':
 		 fun {$ X}
 		    case {Deref X} of transient(TransientState) then
@@ -202,7 +222,7 @@ define
 		       end
 		    else 0
 		    end
-		 end
+		 end#i_v
 	      'General.Bind': {NewUniqueName 'General.Bind'}
 	      'General.Chr': {NewUniqueName 'General.Chr'}
 	      'General.Div': {NewUniqueName 'General.Div'}
@@ -228,24 +248,26 @@ define
 		       end
 		    elseof S then {ByteString.make S}
 		    end
-		 end
-	      'GlobalStamp.new': fun {$ _} {NewName} end
+		 end#r_v
+	      'GlobalStamp.new': fun {$} {NewName} end#n_v
 	      'GlobalStamp.fromString':
-		 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
+		 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end#r_v
 	      'GlobalStamp.toString':
-		 fun {$ N} {ByteString.make {Value.toVirtualString N 0 0}} end
+		 fun {$ N}
+		    {ByteString.make {Value.toVirtualString N 0 0}}
+		 end#r_v
 	      'GlobalStamp.compare':
 		 fun {$ N1 N2}
 		    if N1 == N2 then EQUAL
 		    elseif {BootName.'<' N1 N2} then LESS
 		    else GREATER
 		    end
-		 end
-	      'GlobalStamp.hash': BootName.hash
+		 end#rr_v
+	      'GlobalStamp.hash': fun {$ N} {BootName.hash N} end#r_v
 	      'Hole.Cyclic': {NewUniqueName 'Future.Cyclic'}
 	      'Hole.Hole': {NewUniqueName 'Promise.Promise'}
 	      'Hole.fail':
-		 fun {$ X Exn}
+		 fun {$ X Exn TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
 			  %--** exception wrapping
@@ -261,52 +283,59 @@ define
 				{Assign TransientState2 NewTransientState}
 			     end
 			  end
-			  tuple()
-		       else request(Transient)
+			  continue(args() TaskStack.2)
+		       else request(Transient args(Transient Exn) TaskStack)
 		       end
-		    else exception(Primitives.'Hole.Hole')
+		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
 		    end
-		 end
+		 end#ir_t   %--** or ii_t?
 	      'Hole.fill':
-		 fun {$ X Y}
-		    %--** cyclic
+		 fun {$ X Y TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
-			  NewTransientState = ref(Y)
-		       in
-			  {Assign TransientState NewTransientState}
-			  case MyFuture of noFuture then skip
-			  [] transient(TransientState2) then
-			     case {Access TransientState2} of future(Ts) then
-				for T in Ts do
-				   {Scheduler.object enqueue(T)}
+			  if {IsCyclic Y TransientState} then
+			     exception(nil Primitives.'Hole.Cyclic'
+				       TaskStack.2)
+			  else
+			     NewTransientState = ref(Y)
+			  in
+			     {Assign TransientState NewTransientState}
+			     case MyFuture of noFuture then skip
+			     [] transient(TransientState2) then
+				case {Access TransientState2}
+				of future(Ts) then
+				   for T in Ts do
+				      {Scheduler.object enqueue(T)}
+				   end
+				   {Assign TransientState2 NewTransientState}
 				end
-				{Assign TransientState2 NewTransientState}
 			     end
+			     continue(args() TaskStack.2)
 			  end
-			  tuple()
-		       else request(Transient)
+		       else request(Transient args(Transient Y) TaskStack)
 		       end
-		    else exception(Primitives.'Hole.Hole')
+		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
 		    end
-		 end
+		 end#ii_t
 	      'Hole.future':
-		 fun {$ X}
+		 fun {$ X TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
-			  case MyFuture of noFuture then NewFuture in
-			     NewFuture = transient({NewCell future(nil)})
-			     {Assign TransientState hole(NewFuture)}
-			     NewFuture
-			  else MyFuture
-			  end
-		       else request(Transient)
+			  Res = case MyFuture of noFuture then NewFuture in
+				   NewFuture = transient({NewCell future(nil)})
+				   {Assign TransientState hole(NewFuture)}
+				   NewFuture
+				else MyFuture
+				end
+		       in
+			  continue(arg(Res) TaskStack.2)
+		       else request(Transient arg(Transient) TaskStack)
 		       end
-		    else exception(Primitives.'Hole.Hole')
+		    else exception(nil Primitives.'Hole.Hole' TaskStack.2)
 		    end
-		 end
-	      'Hole.hole': fun {$} transient({NewCell hole(noFuture)}) end
-	      'Hole.isFailed': IsFailed
+		 end#i_t
+	      'Hole.hole': fun {$} transient({NewCell hole(noFuture)}) end#n_v
+	      'Hole.isFailed': IsFailed#i_v
 	      'Hole.isHole':
 		 fun {$ X}
 		    case {Deref X} of transient(TransientState) then
@@ -315,167 +344,171 @@ define
 		       end
 		    else 0
 		    end
-		 end
-	      'Int.~': Number.'~'
-	      'Int.+': Number.'+'
-	      'Int.-': Number.'-'
-	      'Int.*': Number.'*'
-	      'Int.<': fun {$ I J} if I < J then 1 else 0 end end
-	      'Int.>': fun {$ I J} if I > J then 1 else 0 end end
-	      'Int.<=': fun {$ I J} if I =< J then 1 else 0 end end
-	      'Int.>=': fun {$ I J} if I >= J then 1 else 0 end end
-	      'Int.abs': Abs
-	      'Int.compare': NumberCompare
+		 end#i_v
+	      'Int.~': Number.'~'#r_v
+	      'Int.+': Number.'+'#rr_v
+	      'Int.-': Number.'-'#rr_v
+	      'Int.*': Number.'*'#rr_v
+	      'Int.<': Value.'<'#rr_b
+	      'Int.>': Value.'>'#rr_b
+	      'Int.<=': Value.'=<'#rr_b
+	      'Int.>=': Value.'>='#rr_b
+	      'Int.abs': Abs#r_v
+	      'Int.compare': NumberCompare#rr_v
 	      'Int.div':
-		 fun {$ X1 X2}
+		 fun {$ X1 X2 TaskStack}
 		    try B1 B2 in
 		       B1 = {Int.isNat X1}
 		       B2 = {Int.isNat X2}
-		       if B1 == B2 then
-			  X1 div X2
-		       elseif B2 then
-			  (X1 - X2 + 1) div X2
-		       else
-			  (X1 - X2 - 1) div X2
-		       end
-		    catch _ then exception(Primitives.'General.Div')
+		       continue(arg(if B1 == B2 then
+				       X1 div X2
+				    elseif B2 then
+				       (X1 - X2 + 1) div X2
+				    else
+				       (X1 - X2 - 1) div X2
+				    end) TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Int.maxInt': NONE
 	      'Int.minInt': NONE
 	      'Int.mod':
-		 fun {$ X1 X2}
+		 fun {$ X1 X2 TaskStack}
 		    try A in
 		       A = X1 mod X2
-		       if A == 0 then A
-		       elseif A < 0 then
-			  if X2 =< 0 then A
-			  else A + X2
-			  end
-		       else   % A > 0
-			  if X2 < 0 then A + X2
-			  else A
-			  end
-		       end
-		    catch _ then exception(Primitives.'General.Div')
+		       continue(arg(if A == 0 then A
+				    elseif A < 0 then
+				       if X2 =< 0 then A
+				       else A + X2
+				       end
+				    else   % A > 0
+				       if X2 < 0 then A + X2
+				       else A
+				       end
+				    end) TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Int.precision': NONE
 	      'Int.quot':
-		 fun {$ I J}
-		    try I div J
-		    catch _ then exception(Primitives.'General.Div')
+		 fun {$ I J TaskStack}
+		    try continue(arg(I div J) TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'Int.rem':
-		 fun {$ I J}
-		    try I mod J
-		    catch _ then exception(Primitives.'General.Div')
+		 fun {$ I J TaskStack}
+		    try continue(arg(I mod J) TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'List.Empty': {NewUniqueName 'List.Empty'}
-	      'Math.acos': fun {$ X} {F2C {Acos {C2F X}}} end
-	      'Math.acosh': fun {$ X} {F2C {Float.acosh {C2F X}}} end
-	      'Math.asin': fun {$ X} {F2C {Asin {C2F X}}} end
-	      'Math.asinh': fun {$ X} {F2C {Float.asinh {C2F X}}} end
-	      'Math.atan': fun {$ X} {F2C {Atan {C2F X}}} end
-	      'Math.atanh': fun {$ X} {F2C {Float.atanh {C2F X}}} end
-	      'Math.atan2': fun {$ X Y} {F2C {Atan2 {C2F X} {C2F Y}}} end
-	      'Math.cos': fun {$ X} {F2C {Cos {C2F X}}} end
-	      'Math.cosh': fun {$ X} {F2C {Float.cosh {C2F X}}} end
+	      'Math.acos': fun {$ X} {F2C {Acos {C2F X}}} end#r_v
+	      'Math.acosh': fun {$ X} {F2C {Float.acosh {C2F X}}} end#r_v
+	      'Math.asin': fun {$ X} {F2C {Asin {C2F X}}} end#r_v
+	      'Math.asinh': fun {$ X} {F2C {Float.asinh {C2F X}}} end#r_v
+	      'Math.atan': fun {$ X} {F2C {Atan {C2F X}}} end#r_v
+	      'Math.atanh': fun {$ X} {F2C {Float.atanh {C2F X}}} end#r_v
+	      'Math.atan2': fun {$ X Y} {F2C {Atan2 {C2F X} {C2F Y}}} end#rr_v
+	      'Math.cos': fun {$ X} {F2C {Cos {C2F X}}} end#r_v
+	      'Math.cosh': fun {$ X} {F2C {Float.cosh {C2F X}}} end#r_v
 	      'Math.e': {F2C 2.71828182846}
-	      'Math.exp': fun {$ X} {F2C {Exp {C2F X}}} end
-	      'Math.ln': fun {$ X} {F2C {Log {C2F X}}} end
+	      'Math.exp': fun {$ X} {F2C {Exp {C2F X}}} end#r_v
+	      'Math.ln': fun {$ X} {F2C {Log {C2F X}}} end#r_v
 	      'Math.pi': {F2C 3.14159265359}
 	      'Math.pow':
-		 fun {$ X Y} {F2C {BootFloat.fPow {C2F X} {C2F Y}}} end
-	      'Math.sin': fun {$ X} {F2C {Sin {C2F X}}} end
-	      'Math.sinh': fun {$ X} {F2C {Float.sinh {C2F X}}} end
-	      'Math.sqrt': fun {$ X} {F2C {Sqrt {C2F X}}} end
-	      'Math.tan': fun {$ X} {F2C {Tan {C2F X}}} end
-	      'Math.tanh': fun {$ X} {F2C {Float.tanh {C2F X}}} end
+		 fun {$ X Y} {F2C {BootFloat.fPow {C2F X} {C2F Y}}} end#rr_v
+	      'Math.sin': fun {$ X} {F2C {Sin {C2F X}}} end#r_v
+	      'Math.sinh': fun {$ X} {F2C {Float.sinh {C2F X}}} end#r_v
+	      'Math.sqrt': fun {$ X} {F2C {Sqrt {C2F X}}} end#r_v
+	      'Math.tan': fun {$ X} {F2C {Tan {C2F X}}} end#r_v
+	      'Math.tanh': fun {$ X} {F2C {Float.tanh {C2F X}}} end#r_v
 	      'Option.Option': {NewUniqueName 'Option.Option'}
-	      'Real.~': fun {$ X} {F2C ~{C2F X}} end
-	      'Real.+': fun {$ X Y} {F2C {C2F X} + {C2F Y}} end
-	      'Real.-': fun {$ X Y} {F2C {C2F X} - {C2F Y}} end
-	      'Real.*': fun {$ X Y} {F2C {C2F X} * {C2F Y}} end
-	      'Real./': fun {$ X Y} {F2C {C2F X} / {C2F Y}} end
-	      'Real.<': fun {$ X Y} if {C2F X} < {C2F Y} then 1 else 0 end end
-	      'Real.>': fun {$ X Y} if {C2F X} > {C2F Y} then 1 else 0 end end
+	      'Real.~': fun {$ X} {F2C ~{C2F X}} end#r_v
+	      'Real.+': fun {$ X Y} {F2C {C2F X} + {C2F Y}} end#rr_v
+	      'Real.-': fun {$ X Y} {F2C {C2F X} - {C2F Y}} end#rr_v
+	      'Real.*': fun {$ X Y} {F2C {C2F X} * {C2F Y}} end#rr_v
+	      'Real./': fun {$ X Y} {F2C {C2F X} / {C2F Y}} end#rr_v
+	      'Real.<':
+		 fun {$ X Y} if {C2F X} < {C2F Y} then 1 else 0 end end#rr_v
+	      'Real.>':
+		 fun {$ X Y} if {C2F X} > {C2F Y} then 1 else 0 end end#rr_v
 	      'Real.<=':
-		 fun {$ X Y} if {C2F X} =< {C2F Y} then 1 else 0 end end
+		 fun {$ X Y} if {C2F X} =< {C2F Y} then 1 else 0 end end#rr_v
 	      'Real.>=':
-		 fun {$ X Y} if {C2F X} >= {C2F Y} then 1 else 0 end end
-	      'Real.ceil':
-		 fun {$ R}
-		    {FloatToInt {Ceil {C2F R}}}
-		 end
-	      'Real.compare': fun {$ X Y} {NumberCompare {C2F X} {C2F Y}} end
-	      'Real.floor':
-		 fun {$ R}
-		    {FloatToInt {Floor {C2F R}}}
-		 end
-	      'Real.fromInt': fun {$ X} {F2C {IntToFloat X}} end
+		 fun {$ X Y} if {C2F X} >= {C2F Y} then 1 else 0 end end#rr_v
+	      'Real.ceil': fun {$ R} {FloatToInt {Ceil {C2F R}}} end#r_v
+	      'Real.compare':
+		 fun {$ X Y} {NumberCompare {C2F X} {C2F Y}} end#rr_v
+	      'Real.floor': fun {$ R} {FloatToInt {Floor {C2F R}}} end#r_v
+	      'Real.fromInt': fun {$ X} {F2C {IntToFloat X}} end#r_v
 	      'Real.precision': 52
-	      'Real.realCeil': fun {$ X} {F2C {Ceil {C2F X}}} end
-	      'Real.realFloor': fun {$ X} {F2C {Floor {C2F X}}} end
-	      'Real.realRound': fun {$ X} {F2C {Round {C2F X}}} end
+	      'Real.realCeil': fun {$ X} {F2C {Ceil {C2F X}}} end#r_v
+	      'Real.realFloor': fun {$ X} {F2C {Floor {C2F X}}} end#r_v
+	      'Real.realRound': fun {$ X} {F2C {Round {C2F X}}} end#r_v
 	      'Real.realTrunc':
 		 fun {$ R0} R = {C2F R0} in
 		    {F2C if R >= 0.0 then {Floor R} else {Ceil R} end}
-		 end
-	      'Real.rem': fun {$ X Y} {F2C {Float.'mod' {C2F X} {C2F Y}}} end
-	      'Real.round': fun {$ R} {FloatToInt {Round {C2F R}}} end
+		 end#r_v
+	      'Real.rem':
+		 fun {$ X Y} {F2C {Float.'mod' {C2F X} {C2F Y}}} end#rr_v
+	      'Real.round': fun {$ R} {FloatToInt {Round {C2F R}}} end#r_v
 	      'Real.toString':
-		 fun {$ R} {ByteString.make {FloatToString {C2F R}}} end
+		 fun {$ R} {ByteString.make {FloatToString {C2F R}}} end#r_v
 	      'Real.trunc':
 		 fun {$ R0} R = {C2F R0} in
 		    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
-		 end
+		 end#r_v
 	      'Ref.:=':
-		 fun {$ R X} {Assign R X} tuple end
+		 fun {$ R X} {Assign R X} tuple() end#rr_v
 	      'Ref.exchange':
-		 fun {$ R X} {Exchange R $ X} end
-	      'String.^': ByteString.append
+		 fun {$ R X} {Exchange R $ X} end#rr_v
+	      'String.^': ByteString.append#rr_v
 	      'String.<':
 		 fun {$ S1 S2}
 		    if {StringCompare S1 S2} == LESS then 1 else 0 end
-		 end
+		 end#rr_v
 	      'String.>':
 		 fun {$ S1 S2}
 		    if {StringCompare S1 S2} == GREATER then 1 else 0 end
-		 end
+		 end#rr_v
 	      'String.<=':
 		 fun {$ S1 S2}
 		    if {StringCompare S1 S2} \= GREATER then 1 else 0 end
-		 end
+		 end#rr_v
 	      'String.>=':
 		 fun {$ S1 S2}
 		    if {StringCompare S1 S2} \= LESS then 1 else 0 end
-		 end
-	      'String.compare': StringCompare
-	      'String.explode': ByteString.toString
-	      'String.implode': ByteString.make
+		 end#rr_v
+	      'String.compare': StringCompare#rr_v
+	      'String.explode':
+		 fun {$ S} {StringExplode S 0 {ByteString.length S}} end#r_v
+	      'String.implode': missing('String.implode')   %--** ByteString.make
 	      'String.maxSize': 0x7FFFFFFF
-	      'String.size': ByteString.length
+	      'String.size': ByteString.length#r_v
 	      'String.sub':
-		 fun {$ S I}
+		 fun {$ S I TaskStack}
 		    try
-		       {ByteString.get S I}
+		       continue(arg({ByteString.get S I}) TaskStack.2)
 		    catch system(kernel('ByteString.get' ...) ...) then
-		       exception(Primitives.'General.Subscript')
+		       exception(nil Primitives.'General.Subscript'
+				 TaskStack.2)
 		    end
-		 end
+		 end#rr_t
 	      'String.substring':
-		 fun {$ S I J}
+		 fun {$ S I J TaskStack}
 		    try
-		       {ByteString.slice S I I + J}
+		       continue(arg({ByteString.slice S I I + J}) TaskStack.2)
 		    catch system(kernel('ByteString.slice' ...) ...) then
-		       exception(Primitives.'General.Subscript')
+		       exception(nil Primitives.'General.Subscript'
+				 TaskStack.2)
 		    end
-		 end
-	      'String.str':
-		 fun {$ C} {ByteString.make [C]} end
+		 end#rrr_t
+	      'String.str': fun {$ C} {ByteString.make [C]} end#r_v
 	      'Thread.Terminate': missing('Thread.Terminate')   %--**
 	      'Thread.current': missing('Thread.current')   %--**
 	      'Thread.isSuspended': missing('Thread.isSuspended')   %--**
@@ -505,20 +538,21 @@ define
 	      'Thread.yield':
 		 fun {$ T} {Thread.preempt T} unit end
 */
-	      'Unsafe.Array.sub': Array.get
+	      'Unsafe.Array.sub': Array.get#rr_v
 	      'Unsafe.Array.update':
-		 fun {$ A I X} {Array.put A I X} tuple end
-	      'Unsafe.String.sub': ByteString.get
-	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end
-	      'Unsafe.cast': fun {$ X} X end
-	      'Vector.fromList': fun {$ Xs} {List.toTuple vector Xs} end
+		 fun {$ A I X} {Array.put A I X} tuple() end#rrr_v
+	      'Unsafe.String.sub': ByteString.get#rr_v
+	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end#rr_v
+	      'Unsafe.cast': fun {$ X} X end#i_v
+	      'Vector.fromList': missing('Vector.fromList')   %--** fun {$ Xs _} {List.toTuple vector Xs} end
 	      'Vector.maxLen': 0x7FFFFFF
-	      'Vector.length': Width
+	      'Vector.length': Width#r_v
 	      'Vector.sub':
-		 fun {$ V I}
-		    try V.(I + 1)
+		 fun {$ V I TaskStack}
+		    try continue(arg(V.(I + 1)) TaskStack.2)
 		    catch error(kernel('.' ...) ...) then
-		       exception(Primitives.'General.Subscript')
+		       exception(nil Primitives.'General.Subscript'
+				 TaskStack.2)
 		    end
 		 end
 	      'Vector.tabulate': missing('Vector.tabulate')   %--**
@@ -529,51 +563,63 @@ define
 		    V
 		 end
 */
-	      'Word.+': fun {$ X Y} {W2I {BootWord.'+' {I2W X} {I2W Y}}} end
-	      'Word.-': fun {$ X Y} {W2I {BootWord.'-' {I2W X} {I2W Y}}} end
-	      'Word.*': fun {$ X Y} {W2I {BootWord.'*' {I2W X} {I2W Y}}} end
-	      'Word.<<': fun {$ X Y} {W2I {BootWord.'<<' {I2W X} {I2W Y}}} end
-	      'Word.>>': fun {$ X Y} {W2I {BootWord.'>>' {I2W X} {I2W Y}}} end
+	      'Word.+':
+		 fun {$ X Y} {W2I {BootWord.'+' {I2W X} {I2W Y}}} end#rr_v
+	      'Word.-':
+		 fun {$ X Y} {W2I {BootWord.'-' {I2W X} {I2W Y}}} end#rr_v
+	      'Word.*':
+		 fun {$ X Y} {W2I {BootWord.'*' {I2W X} {I2W Y}}} end#rr_v
+	      'Word.<<':
+		 fun {$ X Y} {W2I {BootWord.'<<' {I2W X} {I2W Y}}} end#rr_v
+	      'Word.>>':
+		 fun {$ X Y} {W2I {BootWord.'>>' {I2W X} {I2W Y}}} end#rr_v
 	      'Word.~>>':
-		 fun {$ X Y} {W2I {BootWord.'~>>' {I2W X} {I2W Y}}} end
+		 fun {$ X Y} {W2I {BootWord.'~>>' {I2W X} {I2W Y}}} end#rr_v
 	      'Word.<':
 		 fun {$ W1 W2}
 		    if {BootWord.'<' {I2W W1} {I2W W2}} then 1 else 0 end
-		 end
+		 end#rr_v
 	      'Word.>':
 		 fun {$ W1 W2}
 		    if {BootWord.'>' {I2W W1} {I2W W2}} then 1 else 0 end
-		 end
+		 end#rr_v
 	      'Word.<=':
 		 fun {$ W1 W2}
 		    if {BootWord.'<=' {I2W W1} {I2W W2}} then 1 else 0 end
-		 end
+		 end#rr_v
 	      'Word.>=':
 		 fun {$ W1 W2}
 		    if {BootWord.'>=' {I2W W1} {I2W W2}} then 1 else 0 end
-		 end
+		 end#rr_v
 	      'Word.andb':
-		 fun {$ X Y} {W2I {BootWord.'andb' {I2W X} {I2W Y}}} end
+		 fun {$ X Y} {W2I {BootWord.'andb' {I2W X} {I2W Y}}} end#rr_v
 	      'Word.div':
-		 fun {$ W1 W2}
-		    try {W2I {BootWord.'div' {I2W W1} {I2W W2}}}
-		    catch _ then exception(Primitives.'General.Div')
+		 fun {$ W1 W2 TaskStack}
+		    try
+		       continue(arg({W2I {BootWord.'div' {I2W W1} {I2W W2}}})
+				TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
 		 end
-	      'Word.fromInt\'': fun {$ 31 X} X end
+	      'Word.fromInt\'': fun {$ 31 X} X end#rr_v   %--** size
 	      'Word.mod':
-		 fun {$ W1 W2}
-		    try {W2I {BootWord.'mod' {I2W W1} {I2W W2}}}
-		    catch _ then exception(Primitives.'General.Div')
+		 fun {$ W1 W2 TaskStack}
+		    try
+		       continue(arg({W2I {BootWord.'mod' {I2W W1} {I2W W2}}})
+				TaskStack.2)
+		    catch _ then
+		       exception(nil Primitives.'General.Div' TaskStack.2)
 		    end
 		 end
-	      'Word.notb': fun {$ X} {W2I {BootWord.notb {I2W X}}} end
-	      'Word.orb': fun {$ X Y} {W2I {BootWord.orb {I2W X} {I2W Y}}} end
-	      'Word.toInt': fun {$ X} X end
-	      'Word.toIntX': fun {$ X} {BootWord.toIntX {I2W X}} end
+	      'Word.notb': fun {$ X} {W2I {BootWord.notb {I2W X}}} end#r_v
+	      'Word.orb':
+		 fun {$ X Y} {W2I {BootWord.orb {I2W X} {I2W Y}}} end#rr_v
+	      'Word.toInt': fun {$ X} X end#r_v
+	      'Word.toIntX': fun {$ X} {BootWord.toIntX {I2W X}} end#r_v
 	      'Word.wordSize': 31
 	      'Word.xorb':
-		 fun {$ X Y} {W2I {BootWord.'xorb' {I2W X} {I2W Y}}} end)
+		 fun {$ X Y} {W2I {BootWord.'xorb' {I2W X} {I2W Y}}} end#rr_v)
 
    fun {Construct Args}
       case Args of arg(X) then X
@@ -587,26 +633,88 @@ define
       end
    end
 
+   fun {PrimitiveInterpreterRun Args TaskStack}
+      case TaskStack of primitive(_ F Spec)|Rest then
+	 case Spec of n_v then continue(arg({F}) Rest)
+	 [] i_t then {F {Construct Args} TaskStack}
+	 [] i_v then continue(arg({F {Construct Args}}) Rest)
+	 [] r_t then X = {Construct Args} in
+	    case {Deref X} of Transient=transient(_) then
+	       request(Transient arg(Transient) TaskStack)
+	    elseof Y then {F Y TaskStack}
+	    end
+	 [] r_v then X = {Construct Args} in
+	    case {Deref X} of Transient=transient(_) then
+	       request(Transient arg(Transient) TaskStack)
+	    elseof Y then continue(arg({F Y}) Rest)
+	    end
+	 [] r_b then X = {Construct Args} in
+	    case {Deref X} of Transient=transient(_) then
+	       request(Transient arg(Transient) TaskStack)
+	    elseof Y then continue(arg(if {F Y} then 1 else 0 end) Rest)
+	    end
+	 [] ii_t then T = {Deconstruct Args} in {F T.1 T.2 TaskStack}
+	 [] ir_t then T = {Deconstruct Args} in
+	    case {Deref T.2} of Transient=transient(_) then
+	       request(Transient args(T.1 Transient) TaskStack)
+	    elseof T2 then {F T.1 T2 TaskStack}
+	    end
+	 [] rr_t then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then {F T1 T2 TaskStack}
+	       end
+	    end
+	 [] rr_v then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then continue(arg({F T1 T2}) Rest)
+	       end
+	    end
+	 [] rr_b then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient) TaskStack)
+	       elseof T2 then
+		  continue(arg(if {F T1 T2} then 1 else 0 end) Rest)
+	       end
+	    end
+	 [] rri_t then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then {F T1 T2 T.3 TaskStack}
+	       end
+	    end
+	 [] rrr_t then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2 T.3) TaskStack)
+	    elseof T1 then
+	       case {Deref T.2} of Transient=transient(_) then
+		  request(Transient args(T1 Transient T.3) TaskStack)
+	       elseof T2 then
+		  case {Deref T.3} of Transient=transient(_) then
+		     request(Transient args(T1 T2 Transient) TaskStack)
+		  elseof T3 then {F T1 T2 T3 TaskStack}
+		  end
+	       end
+	    end
+	 end
+      end
+   end
+
    Interpreter =
-   primitiveInterpreter(run:
-			   fun {$ Args TaskStack}
-			      case TaskStack of primitive(_ F)|Rest then
-				 Res = case {Procedure.arity F} of 1 then {F}
-				       [] 2 then {F {Construct Args}}
-				       [] 3 then T = {Deconstruct Args} in
-					  {F T.1 T.2}
-				       [] 4 then T = {Deconstruct Args} in
-					  {F T.1 T.2 T.3}
-				       end
-			      in
-				 case Res of exception(Exn) then
-				    exception(nil Exn Rest)
-				 [] request(Transient) then
-				    request(Transient Args TaskStack)
-				 elseof Res then continue(arg(Res) Rest)
-				 end
-			      end
-			   end
+   primitiveInterpreter(run: PrimitiveInterpreterRun
 			handle:
 			   fun {$ Debug Exn TaskStack}
 			      case TaskStack of Frame|Rest then
@@ -615,7 +723,7 @@ define
 			   end
 			pushCall:
 			   fun {$ Closure TaskStack}
-			      case Closure of closure(P=primitive(_ _)) then
+			      case Closure of closure(P=primitive(_ _ _)) then
 				 P|TaskStack
 			      end
 			   end)
@@ -623,7 +731,7 @@ define
    fun {ImportOzModule Module}
       {Record.map Module
        fun {$ X}
-	  if {IsProcedure X} then closure(primitive(Interpreter X))
+	  case X of P#Spec then closure(primitive(Interpreter P Spec))
 	  else X
 	  end
        end}
