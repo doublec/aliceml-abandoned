@@ -40,15 +40,15 @@ void Scheduler::Run() {
     TaskStack *taskStack = currentThread->GetTaskStack();
     int nargs = taskStack->GetInt(0);
     taskStack->PopFrame(1);
-    Interpreter::Result result(Interpreter::Result::CONTINUE, nargs);
-    while (result.code == Interpreter::Result::CONTINUE) {
+    bool nextThread = false;
+    while (!nextThread) {
       int offset = nargs == -1? 1: nargs;
       Interpreter *interpreter =
 	static_cast<Interpreter *>(taskStack->GetUnmanagedPointer(offset));
       Assert(interpreter != NULL);
       preempt = false;
       //--** reset time slice?
-      result = interpreter->Run(taskStack, nargs);
+      Interpreter::Result result = interpreter->Run(taskStack, nargs);
       switch (result.code) {
       case Interpreter::Result::CONTINUE:
 	nargs = result.nargs;
@@ -57,6 +57,7 @@ void Scheduler::Run() {
 	taskStack->PushFrame(1);
 	taskStack->PutInt(0, result.nargs);
 	threadQueue->Enqueue(currentThread);
+	nextThread = true;
 	break;
       case Interpreter::Result::RAISE:
       raise:
@@ -95,10 +96,11 @@ void Scheduler::Run() {
 	      goto raise;
 	    case FUTURE_LABEL:
 	      taskStack->PushFrame(1);
-	      taskStack->PutInt(0, 0);
+	      taskStack->PutInt(0, 0); // nargs
+	      taskStack->Purge();
 	      currentThread->SetState(Thread::BLOCKED);
-	      currentThread->GetTaskStack()->Purge();
 	      static_cast<Future *>(transient)->AddToWaitQueue(currentThread);
+	      nextThread = true;
 	      break;
 	    case CANCELLED_LABEL:
 	      taskStack->PushFrame(1);
@@ -121,7 +123,7 @@ void Scheduler::Run() {
 		// Push a task that pops the handler after the application:
 		primitive = GlobalPrimitives::Internal_popHandler;
 		taskStack->PushCall(Closure::FromWordDirect(primitive));
-		// Push a task that applies the closure then run it:
+		// Push a task that awaits and applies the closure then run it:
 		primitive = GlobalPrimitives::Internal_applyUnit;
 		taskStack->PushCall(Closure::FromWordDirect(primitive));
 		taskStack->PushFrame(1);
@@ -139,6 +141,7 @@ void Scheduler::Run() {
       case Interpreter::Result::TERMINATE:
 	taskStack->Clear(); // now subject to garbage collection
 	currentThread->SetState(Thread::TERMINATED);
+	nextThread = true;
 	break;
       }
     }
