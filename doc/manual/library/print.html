@@ -50,7 +50,7 @@
     <DD>
       <P>
         Raised by function <TT>register</TT> when the passed printer does
-	not operate on an abstract type.
+	not operate on a suitable abstract type.
       </P>
     </DD>
 
@@ -110,7 +110,7 @@
 	This includes the case that <TT><I>t</I></TT> is not an abstract type,
 	or that <TT><I>f</I></TT> is not fully polymorphic in the type
 	arguments <I>tyseq</I> to <TT><I>t</I></TT>.
-	Note that these rules also exclude <TT><I>f</I></TT> from being
+	Note that these rules also preclude <TT><I>f</I></TT> from being
 	<EM>too polymorphic</EM>, i.e. being of type <TT>'a -> string</TT>,
 	because in that case no type name could be derived.
       </P>
