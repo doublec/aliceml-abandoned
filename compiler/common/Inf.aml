@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure Assert       from "../utility/Assert"
-import functor   MkHashImpMap from "../utility/MkHashImpMap"
+import structure Assert       from "../misc/Assert"
+import functor   MkHashImpMap from "../misc/MkHashImpMap"
 import structure Name         from "Name"
 import structure Label        from "Label"
 import structure Path         from "Path"

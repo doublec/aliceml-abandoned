@@ -16,7 +16,7 @@
  *   labels are not enough for paths. So we added an index.
  *)
 
-import structure GlobalStamp from "../utility/GlobalStamp"
+import structure GlobalStamp from "../misc/GlobalStamp"
 import structure Name        from "Name"
 import structure Label       from "Label"
 import signature PATH        from "PATH-sig"
