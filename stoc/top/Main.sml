@@ -107,16 +107,20 @@ structure Main :> MAIN =
 	    TextIO.output1 (outstream, #"\n")
 	end
 
-    fun mozartify inFilename outFilename s =
-	let
-	    val component as (_, (_, exportSign)) = flatten s
-	    val engine = MozartEngine.start ()
-	in
-	    MozartTarget.save engine outFilename
-	    (MozartGenerationPhase.translate inFilename component);
-	    MozartEngine.stop engine;
-	    exportSign
-	end
+    local
+	val engine: MozartEngine.t option ref = ref NONE
+    in
+	fun mozartify inFilename outFilename s =
+	    let
+		val component as (_, (_, exportSign)) = flatten s
+	    in
+		if isSome (!engine) then ()
+		else engine := SOME (MozartEngine.start ());
+		MozartTarget.save (valOf (!engine)) outFilename
+		(MozartGenerationPhase.translate inFilename component);
+		exportSign
+	    end
+    end
 
     fun comify outstream s =
 	let
