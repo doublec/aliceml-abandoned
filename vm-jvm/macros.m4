@@ -343,3 +343,24 @@ define(_BUILTTUP,`
 	return apply(new Tuple4(v1,v2,v3,v4));
 	}
 ')
+dnl UNAME(fieldname,fullname)
+define(UNAME,`    final public static Name $1;
+    static {
+	Object o = GName.gNames.get("$2");
+	if (o == null) {
+	    $1 = new UniqueName("$2");
+	} else {
+	    $1 = (Name) o;
+	}
+    }
+')
+define(UCONS,`    final public static Constructor $1;
+    static {
+	Object o = GName.gNames.get("$2");
+	if (o == null) {
+	    $1 = new UniqueConstructor("$2");
+	} else {
+	    $1 = (Constructor) o;
+	}
+    }
+')

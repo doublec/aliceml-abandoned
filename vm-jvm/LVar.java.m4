@@ -129,6 +129,6 @@ final public class LVar extends UnicastRemoteObject
     }
 
     /** <code> exception Fulfill </code>*/
-    final public static Name Fulfill = new UniqueName("LVar.Fullfil");
-    final public static Name Rebind = new UniqueName("LVar.Rebind");
+    UNAME(Fulfill,LVar.Fullfil);
+    UNAME(Rebind,LVar.Rebind);
 }

@@ -21,9 +21,7 @@ public class UniqueConstructor extends Constructor {
 
     public UniqueConstructor(java.lang.String name) {
 	this.name = name;
-	if (GName.gNames.get(name)==null) {
-	    GName.gNames.put(name,this);
-	}
+	GName.gNames.put(name,this);
     }
     /** @see UniqueName */
     final private void writeObject(java.io.ObjectOutputStream out)

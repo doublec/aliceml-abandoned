@@ -15,7 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 import java.rmi.RemoteException;
 
 final public class List {
-    final public static Name nil = new UniqueName("List.nil");
+    UNAME(nil,List.nil);
 
     final public static class ConsConstructor extends UniqueConstructor {
 
@@ -32,10 +32,19 @@ final public class List {
 	    return new Cons(v1,v2);
 	}
     }
-    final public static Constructor cons = new ConsConstructor("List.cons");
+
+    final public static Constructor cons;
+    static {
+	Object o = GName.gNames.get("List.cons");
+	if (o== null) {
+	    cons = new ConsConstructor("List.cons");
+	} else {
+	    cons = (Constructor) o;
+	}
+    }
 
     /** <code>exception Empty</code>*/
-    final public static Name Empty = new UniqueName("List.Empty");
+    UNAME(Empty,List.Empty);
 
     _BUILTIN(IsNull) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;

@@ -22,9 +22,7 @@ public class UniqueName extends Name {
 
     public UniqueName(java.lang.String name) {
 	this.name = name;
-	if (GName.gNames.get(name)==null) {
-		GName.gNames.put(name,this);
-	}
+	GName.gNames.put(name,this);
     }
 
     public java.lang.String toString() {

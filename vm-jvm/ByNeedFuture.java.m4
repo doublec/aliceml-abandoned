@@ -115,6 +115,6 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	return request().apply4(v1,v2,v3,v4);
     }
 
-    final public static Constructor ByNeed = new UniqueConstructor("ByNeed");
-    final public static Constructor Rebind = new UniqueConstructor("ByNeedFuture.Rebind");
+    UCONS(ByNeed,ByNeed);
+    UCONS(Rebind,ByNeedFuture.Rebind);
 }

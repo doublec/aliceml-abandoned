@@ -14,29 +14,29 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class General {
     /** <code>datatype order = LESS | EQUAL | GREATER</code>*/
-    final public static Name LESS = new UniqueName("order.LESS");
-    final public static Name EQUAL = new UniqueName("order.EQUAL");
-    final public static Name GREATER = new UniqueName("order.GREATER");
+    UNAME(LESS,order.LESS);
+    UNAME(EQUAL,order.EQUAL);
+    UNAME(GREATER,order.GREATER);
     /** <code>exception Bind</code>*/
-    final public static Name Bind = new UniqueName("General.Bind");
+    UNAME(Bind,General.Bind);
     /** <code>exception Chr</code>*/
-    final public static Name Chr = new UniqueName("General.Chr");
+    UNAME(Chr,General.Chr);
     /** <code>exception Div</code>*/
-    final public static Name Div = new UniqueName("General.Div");
+    UNAME(Div,General.Div);
     /** <code>exception Domain</code>*/
-    final public static Name Domain = new UniqueName("General.Domain");
+    UNAME(Domain,General.Domain);
     /** <code>exception Fail of string </code>*/
-    final public static Constructor Fail = new UniqueConstructor("General.Fail");
+    UCONS(Fail,General.Fail);
     /** <code>exception Match</code>*/
-    final public static Name Match = new UniqueName("General.Match");
+    UNAME(Match,General.Match);
     /** <code>exception Overflow</code>*/
-    final public static Name Overflow = new UniqueName("General.Overflow");
+    UNAME(Overflow,General.Overflow);
     /** <code>exception Size</code>*/
-    final public static Name Size = new UniqueName("General.Size");
+    UNAME(Size,General.Size);
     /** <code>exception Span</code>*/
-    final public static Name Span = new UniqueName("General.Span");
+    UNAME(Span,General.Span);
     /** <code>exception Subscript</code>*/
-    final public static Name Subscript = new UniqueName("General.Subscript");
+    UNAME(Subscript,General.Subscript);
 
     _BUILTIN(Deref) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;

@@ -102,6 +102,6 @@ final public class Future extends UnicastRemoteObject
 	return ref.apply4(v1,v2,v3,v4);
     }
 
-    final public static Name Fulfill = new UniqueName("LVar.Fullfil");
-    final public static Name Rebind = new UniqueName("LVar.Rebind");
+    UNAME(Fulfill,LVar.Fullfil);
+    UNAME(Rebind,LVar.Rebind);
 }

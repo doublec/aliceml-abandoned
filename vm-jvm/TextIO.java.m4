@@ -15,7 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 import java.io.*;
 
 final public class TextIO {
-    final public static Name IO = new UniqueName("TextIO.IO");
+    UNAME(IO,TextIO.IO);
 
     final public static class IStream implements DMLValue {
 	InputStream in = null;
