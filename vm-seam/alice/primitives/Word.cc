@@ -21,12 +21,21 @@
 #define NONBITS (STORE_WORD_WIDTH - WORD_PRECISION)
 #define NONBITS_EXP (1 << NONBITS)
 
+inline int mydiv(signed int a, signed int b) {
+  // This function is only here to bypass a constant folding bug in g++.
+  // If we define RETURN_WORD as
+  //   RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
+  // then RETURN_WORD(0x80000000) evaluates to RETURN_WORD(0x80000000)
+  // instead of RETURN_WORD(0).
+  return a / b;
+}
+
 #define DECLARE_WORD(w, x)						\
   u_int w = Store::WordToInt(x);					\
-  if (static_cast<int>(w) == INVALID_INT) { REQUEST(x); } else {}	\
+  if (static_cast<s_int>(w) == INVALID_INT) { REQUEST(x); } else {}	\
   w &= static_cast<u_int>(-1) >> NONBITS;
 #define RETURN_WORD(w) \
-  RETURN_INT(static_cast<s_int>((w) * NONBITS_EXP) / NONBITS_EXP)
+  RETURN_INT(mydiv(static_cast<s_int>((w) * NONBITS_EXP), NONBITS_EXP))
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
