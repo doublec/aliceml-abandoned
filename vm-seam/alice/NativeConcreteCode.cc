@@ -78,6 +78,10 @@ u_int LazyCompileInterpreter::GetInArity(ConcreteCode *) {
   return 0;
 }
 
+u_int LazyCompileInterpreter::GetOutArity(ConcreteCode *) {
+  return INVALID_INT; // TODO: Correct arity needed here?
+}
+
 const char *LazyCompileInterpreter::Identify() {
   return "LazyCompileInterpreter";
 }
@@ -136,7 +140,7 @@ void NativeConcreteCode::Disassemble(std::FILE *file) {
 	  String::FromWordDirect(coord->Sel(0))->ExportC(),
 	  Store::DirectWordToInt(coord->Sel(1)),
 	  Store::DirectWordToInt(coord->Sel(2)));
-  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(4));
+  TagVal *pc = TagVal::FromWordDirect(abstractCode->Sel(5));
   AbstractCode::Disassemble(file, pc);
 }
 
