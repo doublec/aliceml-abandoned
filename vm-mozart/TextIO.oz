@@ -15,7 +15,7 @@ import
    System(printInfo)
    Open(file)
 export
-   'TextIO': TextIO
+   '$TextIO': TextIO
    Print
 define
    fun {TextIOInputAll F}
