@@ -44,12 +44,18 @@ public:
 
   static HashTable *New(hashkeytype type, u_int size) {
     return (HashTable *) WeakDictionary::New((WeakDictionary::hashkeytype) type,
-					     HASHTABLE_LABEL, size);
+					     HASHTABLE_LABEL, size, Store::IntToWord(0));
   }
   static HashTable *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHTABLE_LABEL));
+    return (HashTable *) p;
+  }
+  static HashTable *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
+
+    Assert(p->GetLabel() == HASHTABLE_LABEL);
     return (HashTable *) p;
   }
 };
