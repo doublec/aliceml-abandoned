@@ -13,7 +13,7 @@ struct
     __primitive functor ByNeed :    fct(signature S functor F : fct(_:any) -> S) -> S = "ByNeed"
 
     (* Pack some core values *)
-(*
+
     type t = int
     type 'a u = string
     type 'a v = 'a
@@ -46,7 +46,7 @@ struct
 	handle UnpackVal => print "oooh...\n"
 
     val _ = List.app unwrapVal [P1.x, P2.x, P3.x, P4.x, P5.x, P6.x]
-*)
+
 
     (* Pack real modules *)
 
@@ -63,11 +63,11 @@ struct
     structure X2 = X0 :> S0
     structure X3 = X0 :  S1
     structure X4 = X0 :> S1
-    structure X5 = X2 :  S0  (*crashes at runtime!*)
-(*    structure X6 = X2 :> S0
+    structure X5 = X2 :  S0
+    structure X6 = X2 :> S0
 
     signature S2 = S0 where type t = X2.t
-    signature S3 = S0 where type t = X3.t
+    signature S3 = S0 where type t = X6.t
 
     structure P00 = Pack(structure X = X0 signature S = S0)
     structure P01 = Pack(structure X = X0 signature S = S1)
@@ -95,8 +95,8 @@ struct
  (* structure P53 = Pack(structure X = X5 signature S = S3) illegal *)
     structure P60 = Pack(structure X = X6 signature S = S0)
  (* structure P61 = Pack(structure X = X6 signature S = S1) illegal *)
- (* structure P62 = Pack(structure X = X0 signature S = S2) illegal *)
-    structure P63 = Pack(structure X = X0 signature S = S3)
+ (* structure P62 = Pack(structure X = X6 signature S = S2) illegal *)
+    structure P63 = Pack(structure X = X6 signature S = S3)
 
     functor TryUnpack(val b : bool val x : package signature S) =
     struct
@@ -174,26 +174,25 @@ struct
     structure Y631 = TryUnpack(val b = false val x = P63.x signature S = S1)
     structure Y632 = TryUnpack(val b = false val x = P63.x signature S = S2)
     structure Y633 = TryUnpack(val b = true  val x = P63.x signature S = S3)
-*)
+
     (* The following Yxxx should fail, but don't in Operette 2 *)
-(*
+
     structure X000 = Unpack(val x = P00.x signature S = S0)
     structure X200 = Unpack(val x = P20.x signature S = S0)
     structure X600 = Unpack(val x = P60.x signature S = S0)
     signature S4 = S0 where type t = X000.t (* should be <> int *)
     signature S5 = S0 where type t = X200.t (* should be <> int *)
     signature S6 = S0 where type t = X600.t (* should be <> int *)
-*)
 (*
-    structure Y014 = TryUnpack(val b = true val x = P01.x signature S = S4)
-    structure Y015 = TryUnpack(val b = true val x = P01.x signature S = S5)
-    structure Y016 = TryUnpack(val b = true val x = P01.x signature S = S6)
-    structure Y024 = TryUnpack(val b = true val x = P02.x signature S = S4)
-    structure Y025 = TryUnpack(val b = true val x = P02.x signature S = S5)
-    structure Y026 = TryUnpack(val b = true val x = P02.x signature S = S6)
-    structure Y064 = TryUnpack(val b = true val x = P06.x signature S = S4)
-    structure Y065 = TryUnpack(val b = true val x = P06.x signature S = S5)
-    structure Y066 = TryUnpack(val b = true val x = P06.x signature S = S6)
+    structure Y104 = TryUnpack(val b = true val x = P10.x signature S = S4)
+    structure Y105 = TryUnpack(val b = true val x = P10.x signature S = S5)
+    structure Y106 = TryUnpack(val b = true val x = P10.x signature S = S6)
+    structure Y204 = TryUnpack(val b = true val x = P20.x signature S = S4)
+    structure Y205 = TryUnpack(val b = true val x = P20.x signature S = S5)
+    structure Y206 = TryUnpack(val b = true val x = P20.x signature S = S6)
+    structure Y604 = TryUnpack(val b = true val x = P60.x signature S = S4)
+    structure Y605 = TryUnpack(val b = true val x = P60.x signature S = S5)
+    structure Y606 = TryUnpack(val b = true val x = P60.x signature S = S6)
 *)
     val _ = TextIO.print "Finished. (Press Return) "
     val _ = TextIO.inputLine(TextIO.stdIn)

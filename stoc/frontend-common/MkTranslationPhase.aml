@@ -823,7 +823,9 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 
       | trPrimMod(i,"Pack",j) =
 	(* Pack : (interface I; module X : I) -> (x : package) *)
-	(* = fn {[X]=x1,[I]=x2} -> {[x']=cast (CoerceOpaq (?,x2) x1,x2)} *)
+	(* = fn {[X]=x1,[I]=x2} ->
+	 *   let val x3 = #1(x2())
+	 *   in {[x'] = cast (CoerceOpaq (?,x3) x1, x3)} end *)
 	(*UNFINISHED*)
 	(let
 	    val  i'     = trModInfo i
@@ -835,14 +837,22 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
 	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  t3     = #2(Type.asArrow t12)
+	    val  x3'    = O.Id(typInfo(r,typ_inf), Stamp.new(), Name.InId)
 	    val  p'     = O.ProdPat(typInfo(r,t1),
 				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
 				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+	    val  a1'    = O.Lab(nonInfo r, Label.fromInt 1)
+	    val  d'     = O.ValDec(nonInfo r, idToPat x3',
+				   O.SelExp(typInfo(r,typ_inf), a1',
+					    O.AppExp(typInfo(r,t3),
+						     idToExp x2', trUnit r)))
 	    val  e1'    = O.CastExp(typInfo(r,t21), 
 				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
-					 #[idToExp x1', idToExp x2']))
-	    val  e'     = O.ProdExp(typInfo(r,t2),
-				    #[O.Field(i0', O.Lab(i0',l3), e1')])
+					 #[idToExp x1', idToExp x3']))
+	    val  i2     = typInfo(r,t2)
+	    val  e2'    = O.ProdExp(i2, #[O.Field(i0', O.Lab(i0',l3), e1')])
+	    val  e'     = O.LetExp(i2, #[d'], e2')
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
@@ -851,7 +861,7 @@ val _ = TextIO.inputLine(TextIO.stdIn)
       | trPrimMod(i,"Unpack",j) =
 	(* Unpack : (x : package; interface I) -> I *)
 	(* = fn {[x]=x1,[S]=x2} -> let (x11,x12) = cast x1 in
-	 *                             Inf.match(x12,x2);
+	 *                             Inf.match(x12, #1(x2()));
 	 *                             CoerceTrans (x12,x2) x11
 	 *                         end *)
 	(let
@@ -875,8 +885,12 @@ val _ = TextIO.inputLine(TextIO.stdIn)
 	    val  e1'    = O.CastExp(i1', idToExp x1')
 	    val  d'     = O.ValDec(nonInfo r, p1', e1')
 
+	    val  t3     = #2(Type.asArrow t12)
+	    val  a1'    = O.Lab(nonInfo r, Label.fromInt 1)
+	    val  e11'   = O.AppExp(typInfo(r,t3), idToExp x2', trUnit r)
+	    val  e12'   = O.SelExp(typInfo(r,typ_inf), a1', e11')
 	    val  e1'    = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
-					      #[idToExp x12', idToExp x2']))
+					      #[idToExp x12', e12']))
 	    val  e2'    = idToExp x11' (*UNFINISHED*)
 	    val  e'     = O.LetExp(i2', #[d'], O.SeqExp(i2', #[e1', e2']))
 	in
