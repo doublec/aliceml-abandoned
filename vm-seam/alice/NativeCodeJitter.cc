@@ -2488,7 +2488,7 @@ TagVal *NativeCodeJitter::InstrShared(TagVal *pc) {
   word stamp = pc->Sel(0);
   if (sharedTable->IsMember(stamp)) {
     u_int offset = Store::DirectWordToInt(sharedTable->Get(stamp));
-    (void) jit_jmpi(codeBuffer + offset);
+    (void) jit_jmpi(((char *) codeBuffer + offset));
     return INVALID_POINTER;
   }
   else {
