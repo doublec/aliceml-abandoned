@@ -10,7 +10,9 @@ structure Buffer =
       structure BufferMap = MkHashImpMap(Int)
 
       datatype undo = INSERT of (int * int)
-                    | DELETE of (int * int)
+                    | DELETE of (int * string)
+                    | WAIT_INSERT of (int * int)
+                    | WAIT_DELETE of (int * string)
 
       type tags = {err : Gtk.object,
                    std : Gtk.object,
@@ -94,29 +96,63 @@ structure Buffer =
                   Gtk.labelSetText(fileLabel, fileName)
           end
 
-      fun deleteRange id (obj, [Gtk.OBJECT iter1, Gtk.OBJECT iter2]) = ()
-(*          let
-              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
-              val del_start = 0 (*Gtk.textIterGetOffset iter1*)
-              val del_end = 0 (*Gtk.textIterGetOffset iter2*)
-          in
-              print ("delete "^
-                     Int.toString del_start^" "^
-                     Int.toString del_end^"\n");
-              undo := DELETE(del_start, del_end) :: (!undo)
-          end*)
-        | deleteRange _ _ = print "Gtk is crazy"
-
-      fun insertText id (buf,[Gtk.OBJECT iter, _, Gtk.INT length]) =
+      fun deleteText id (buf,[Gtk.INT off, Gtk.INT _, Gtk.STRING txt]) =
           let
               val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
-              val cursor = getCursorIter buf
-              val newOff = Gtk.textIterGetOffset cursor
-              val oldOff = newOff - length
           in
-              undo := INSERT(oldOff, newOff) :: (!undo)
+              case (!undo) of
+                  ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
+                  undo := ur
+                | _ =>
+                  undo := DELETE(off, txt) :: (!undo)
           end
-        | insertText _ _ = print "Gtk is crazy"
+        | deleteText _ _ = print "Gtk is crazy: delete"
+
+      fun insertText id (buf,[Gtk.INT off, _, Gtk.INT length]) =
+          let
+              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+          in
+              case (!undo) of
+                  ((WAIT_INSERT _ | WAIT_DELETE _)::ur) =>
+                  undo := ur
+                | _ =>
+                  undo := INSERT(off, off+length) :: (!undo)
+          end
+        | insertText _ _ = print "Gtk is crazy: insert"
+
+      fun undo id =
+          let
+              val {undo,buf,...} = BufferMap.lookupExistent(bufferMap, id)
+          in
+              case (!undo) of nil => ()
+                            | (DELETE(off,txt)::ur) =>
+                              let
+                                  val iter = Gtk.textIterNew()
+                              in
+                                  Gtk.textBufferGetIterAtOffset(buf,
+                                                                iter,
+                                                                off);
+                                  undo := WAIT_DELETE(off,txt) :: ur;
+                                  Gtk.textBufferInsert(buf, iter, txt,
+                                                       String.size txt)
+                              end
+                            | (INSERT(off1,off2)::ur) =>
+                              let
+                                  val startiter = Gtk.textIterNew()
+                                  val enditer = Gtk.textIterNew()
+                              in
+                                  Gtk.textBufferGetIterAtOffset(buf,
+                                                                startiter,
+                                                                off1);
+                                  Gtk.textBufferGetIterAtOffset(buf,
+                                                                enditer,
+                                                                off2);
+                                  undo := WAIT_INSERT(off1,off2) :: ur;
+                                  Gtk.textBufferDelete(buf, startiter,
+                                                       enditer)
+                              end
+                            | _ => ()
+          end
 
       fun buffer {notebook,id,file,loadFile} =
           let
@@ -154,7 +190,8 @@ structure Buffer =
                          undo=ref nil,
                          lastSearchPos=ref 0}
               val _ = Gtk.signalConnect(buf, "modified-changed", modifiedChanged id)
-              val _ = Gtk.signalConnect(buf, "delete-range", deleteRange id)
+              val _ = Gtk.textBufferConnectSpecialSignals buf
+              val _ = Gtk.signalConnect(buf, "delete-text", deleteText id)
               val _ = Gtk.signalConnect(buf, "insert-text", insertText id)
           in
               if loadFile then

@@ -213,6 +213,8 @@ structure AliceIde =
                 eval (str^"\n")
             end
             
+        fun undo() = Buffer.undo (getCurrentPage())
+
         fun copy() =
             let
                 val buf = Gtk.textViewGetBuffer (!curtextview)
@@ -264,10 +266,7 @@ structure AliceIde =
                                              startiter, enditer)
             end
 
-        fun insertText buf _ = ()
-        fun deleteRange buf _ = ()
-
-        fun breakLines str = map (fn s => s^"\n") (String.fields (fn #"\n" => true | _ => false) str)
+        fun breakLines str = String.fields (fn #"\n" => true | _ => false) str
 
         fun syntax() =
             let
@@ -461,9 +460,14 @@ structure AliceIde =
 					stdOutStream = stdOutText,
 					stdErrStream = stdErrText,
                                         stdInStream = stdin,
-                                        rowColStream = rowColStream};
+                                        rowColStream = rowColStream,
+                                        eval=eval};
              Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
                                      AliceIdeGUI.Helpers.accelGroup);
+             Gtk.widgetAddAccelerator(AliceIdeGUI.undo, "activate",
+                                      AliceIdeGUI.Helpers.accelGroup,
+                                      Key.keyvalToInt Key.K_Z,
+                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED);
              Gtk.widgetAddAccelerator(AliceIdeGUI.feedparagraph, "activate",
                                       AliceIdeGUI.Helpers.accelGroup,
                                       Key.keyvalToInt Key.K_Return,

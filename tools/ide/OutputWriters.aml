@@ -8,7 +8,7 @@ import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 structure OutputWriters =
    struct
 
-      fun fillBuf view buffer tag text =
+      fun fillBuf view buffer tags text =
           let
               val iter = Gtk.textIterNew()
               val _ = Gtk.textBufferGetEndIter(buffer,iter)
@@ -18,7 +18,7 @@ structure OutputWriters =
           in
 	      Gtk.textBufferInsert(buffer, iter, text, size text);
 	      Gtk.textBufferGetIterAtOffset (buffer, start, startOffset) ;
-              Gtk.textBufferApplyTag(buffer,tag,start,iter);
+              app (fn t => Gtk.textBufferApplyTag(buffer,t,start,iter)) tags;
               Gtk.textBufferMoveMark(buffer,
                                      Gtk.textBufferGetInsert buffer,
                                      iter);
@@ -72,72 +72,47 @@ structure OutputWriters =
 	val _ = Gdk.colormapAllocColor(cmap, white, false, true)
 	val _ = Gdk.colormapAllocColor(cmap, textColor, false, true)
 
-        fun progInInsert (shadowBuf,off,stdInStream) (buf,
-                          [Gtk.OBJECT _,
-                           Gtk.STRING txt,
-                           Gtk.INT size]) =
-            let
-                val iter = Gtk.textIterNew()
-                val cursor = Gtk.textBufferGetInsert buf
-                val _ = Gtk.textBufferGetIterAtMark(buf,iter,cursor)
-                val myOff = Gtk.textIterGetOffset iter
-            in
-                if myOff >= (!off) then
-                    let
-                        val iter' = Gtk.textIterNew()
-                        val newOff = myOff - (!off)
-                        val newOff =
-                            if Gtk.textBufferGetCharCount shadowBuf < newOff
-                            then Gtk.textBufferGetCharCount shadowBuf
-                            else newOff
-                    in
-                        Gtk.textBufferGetStartIter(shadowBuf, iter');
-                        Gtk.textIterSetOffset(iter', newOff);
-                        Gtk.textBufferInsert(shadowBuf, iter', txt, size)
-                    end
-                else ();
-                if String.sub(txt, String.size txt - 1) = #"\n" then
-                    let
-                        val startiter = Gtk.textIterNew()
-                        val _ = Gtk.textBufferGetStartIter(shadowBuf,startiter)
-                        val enditer = Gtk.textIterNew()
-                        val _ = Gtk.textBufferGetEndIter(shadowBuf,enditer)
-                        val str = Gtk.textBufferGetText(shadowBuf, startiter, enditer, false)
-                        val str = Core.utf8ToLatin1 str
-                    in
-                        Stream.send(stdInStream, str);
-                        Gtk.textBufferDelete(shadowBuf,startiter,enditer);
-                        off := myOff
-                    end
-                else ()
-            end
-          | progInInsert _ _ = print "Gtk is crazy"
+        fun progInInsert (stdInStream,noedit) (buf, [Gtk.OBJECT _,
+                                            Gtk.STRING txt,
+                                            Gtk.INT size]) =
+            if String.sub(txt, String.size txt - 1) = #"\n" then
+                let
+                    val enditer = Gtk.textIterNew()
+                    val cursor = Gtk.textBufferGetInsert buf
+                    val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
+                    val startiter = Gtk.textIterCopy enditer
+                    val _ = Gtk.textIterBackwardToTagToggle(startiter,noedit)
+                    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                    val str = Core.utf8ToLatin1 str
+                    val _ = Stream.send(stdInStream, str)
+                in
+                    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                end
+            else ()
+          | progInInsert _ _ = () (* Gtk is crazy *)
 
-        fun progInDelete (shadowBuf,off) (buf,
-                          [Gtk.OBJECT iter,
-                           Gtk.STRING txt,
-                           Gtk.INT size]) =
-            let
-                val myOff = Gtk.textIterGetOffset iter
-            in
-                if myOff >= (!off) then
-                    let
-                        val iter' = Gtk.textIterNew()
-                        val iter'' = Gtk.textIterNew()
-                    in
-                        Gtk.textBufferGetStartIter(buf, iter');
-                        Gtk.textBufferGetStartIter(buf, iter'');
-                        Gtk.textIterSetOffset(iter', myOff - (!off));
-                        Gtk.textIterSetOffset(iter'',
-                                              myOff - (!off) + size);
-                        Gtk.textBufferDelete(shadowBuf,iter',iter'')
-                    end
-                else ()
-            end
-          | progInDelete _ _ = print "Gtk is crazy"
+        fun compilerInsert (eval,noedit) (buf, [Gtk.OBJECT _,
+                                            Gtk.STRING txt,
+                                            Gtk.INT size]) =
+            if String.sub(txt, String.size txt - 1) = #"\n" then
+                let
+                    val enditer = Gtk.textIterNew()
+                    val cursor = Gtk.textBufferGetInsert buf
+                    val _ = Gtk.textBufferGetIterAtMark(buf,enditer,cursor)
+                    val startiter = Gtk.textIterCopy enditer
+                    val _ = Gtk.textIterBackwardToTagToggle(startiter,noedit)
+                    val str = Gtk.textBufferGetText(buf, startiter, enditer, false)
+                    val str = Core.utf8ToLatin1 str
+                    val _ = eval str
+                in
+                    Gtk.textBufferApplyTag(buf, noedit, startiter, enditer)
+                end
+            else ()
+          | compilerInsert _ _ = () (* Gtk is crazy *)
 
       fun makeTags buf =
           {errorTag = Gtk.textBufferCreateTag(buf, "error", "foreground-gdk", Gtk.OBJECT textColor),
+           noeditTag = Gtk.textBufferCreateTag(buf, "noedit", "editable", Gtk.BOOL false),
            logTag = Gtk.textBufferCreateTag(buf, "log", "style", Gtk.INT (PangoEnums.PangoStyleToInt PangoEnums.STYLE_ITALIC)),
            stdTag = Gtk.textBufferCreateTag(buf, "std", "foreground-gdk", Gtk.OBJECT black)}
           
@@ -148,26 +123,27 @@ structure OutputWriters =
                        stdOutStream,
 		       stdErrStream,
                        stdInStream,
-                       rowColStream} =
+                       rowColStream,
+                       eval} =
           let
               val progBuf = Gtk.textBufferNew Gtk.NULL
-              val shadowBuf = Gtk.textBufferNew Gtk.NULL
+(*              val shadowBuf = Gtk.textBufferNew Gtk.NULL*)
               val compilerBuf = Gtk.textBufferNew Gtk.NULL
-              val {errorTag=pErr,logTag=pLog,stdTag=pStd} = makeTags progBuf
-              val {errorTag=cErr,logTag=cLog,stdTag=cStd} = makeTags compilerBuf
+              val {errorTag=pErr,logTag=pLog,stdTag=pStd,noeditTag=pNoEd,...} = makeTags progBuf
+              val {errorTag=cErr,logTag=cLog,stdTag=cStd,noeditTag=cNoEd,...} = makeTags compilerBuf
           in
               Gtk.textViewSetBuffer(AliceIdeGUI.progout, progBuf);
               Gtk.signalConnect(progBuf, "insert-text",
-                                progInInsert (shadowBuf, ref 0, stdInStream));
-              Gtk.signalConnect(progBuf, "delete-range",
-                                progInDelete (shadowBuf, ref 0));
+                                progInInsert (stdInStream, pNoEd));
+              Gtk.signalConnect(compilerBuf, "insert-text",
+                                compilerInsert (eval, cNoEd));
               Gtk.textViewSetBuffer(AliceIdeGUI.compilerout, compilerBuf);
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cStd) inStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cLog) outStream;
-              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf cErr) errStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf [cStd,cNoEd]) inStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf [cLog,cNoEd]) outStream;
+              spawn app (fillBuf AliceIdeGUI.compilerout compilerBuf [cErr,cNoEd]) errStream;
               spawn app setStatus traceStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf pStd) stdOutStream;
-              spawn app (fillBuf AliceIdeGUI.progout progBuf pErr) stdErrStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf [pStd,pNoEd]) stdOutStream;
+              spawn app (fillBuf AliceIdeGUI.progout progBuf [pErr,pNoEd]) stdErrStream;
               spawn app setRowCol rowColStream
           end
    end

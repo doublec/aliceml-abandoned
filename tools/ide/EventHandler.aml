@@ -11,6 +11,7 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
         fun on_close1_activate _ = AliceIde.close()
         val on_compilefile_activate = const ()
         fun on_quit1_activate _ = AliceIde.quit()
+        fun on_undo_activate _ = AliceIde.undo()
         fun on_cut1_activate _ = AliceIde.cut()
         fun on_copy1_activate _ = AliceIde.copy()
         fun on_paste1_activate _ = AliceIde.paste()
