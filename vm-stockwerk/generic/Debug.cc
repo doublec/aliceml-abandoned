@@ -62,36 +62,37 @@ static void Print(Chunk *c) {
   std::fprintf(stderr, "'%.*s'\n", (int) c->GetSize(), c->GetBase());
 }
 
-static void PerformDump(word x, u_int index, u_int level, u_int depth) {
+static void
+PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   word_data w;
   if (depth > Debug::maxDepth) {
-    std::fprintf(stderr, "%*c...\n", level, ' ');
+    std::fprintf(file, "%*c...\n", level, ' ');
   }
   else if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
-    std::fprintf(stderr, "%*cTRANSIENT(%s)[%d]\n", level, ' ',
+    std::fprintf(file, "%*cTRANSIENT(%s)[%d]\n", level, ' ',
 		 TransLabel(w.pb->GetLabel()), index);
-    PerformDump(w.pb->GetArg(0), 0, level + 2, depth + 1);
-    std::fprintf(stderr, "%*cENDTRANSIENT\n", level, ' ');
+    PerformDump(file, w.pb->GetArg(0), 0, level + 2, depth + 1);
+    std::fprintf(file, "%*cENDTRANSIENT\n", level, ' ');
   }
   else if ((w.pc = Store::WordToChunk(x)) != INVALID_POINTER) {
-    std::fprintf(stderr, "%*cCHUNK(%d)[%d]=", level, ' ',
+    std::fprintf(file, "%*cCHUNK(%d)[%d]=", level, ' ',
 	    w.pc->GetSize(), index);
     Print(w.pc);
   }
   else if ((w.pb = Store::WordToBlock(x)) != INVALID_POINTER) {
     u_int size  = w.pb->GetSize();
-    std::fprintf(stderr, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
+    std::fprintf(file, "%*cBLOCK(%s=%d, %d)[%d]\n", level, ' ',
 		 TransLabel(w.pb->GetLabel()), w.pb->GetLabel(), size, index);
     u_int showSize = (size <= Debug::maxWidth ? size : Debug::maxWidth);
     for (u_int i = 0; i < showSize; i++) {
-      PerformDump(w.pb->GetArg(i), i, level + 2, depth + 1);
+      PerformDump(file, w.pb->GetArg(i), i, level + 2, depth + 1);
     }
-    std::fprintf(stderr, "%*cENDBLOCK\n", level, ' ');
+    std::fprintf(file, "%*cENDBLOCK\n", level, ' ');
   }
   // Assume Int
   else {
     w.pi = Store::WordToInt(x);
-    std::fprintf(stderr, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
+    std::fprintf(file, "%*cINT[%d]=%d\n", level, ' ', index, w.pi);
   }
 }
 
@@ -100,5 +101,9 @@ u_int Debug::maxWidth = 190;
 u_int Debug::maxDepth = 6;
 
 void Debug::Dump(word x) {
-  PerformDump(x, 0, 0, 0);
+  PerformDump(stderr, x, 0, 0, 0);
+}
+
+void Debug::DumpTo(FILE *file, word x) {
+  PerformDump(file, x, 0, 0, 0);
 }
