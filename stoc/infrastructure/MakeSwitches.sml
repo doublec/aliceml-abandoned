@@ -5,5 +5,5 @@ functor MakeSwitches() :> SWITCHES =
     val printComponentSig		= ref true
     val implicitImport			= ref true
     val outputAssembly			= ref false
-    val rttLevel			= ref FULL_RTT
+    val rttLevel			= ref NO_RTT
   end
