@@ -12,12 +12,15 @@
 
 functor
 import
+   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Open(socket text)
    Property(get)
    System(show)
 export
    'UnsafeSocket$': Socket
 define
+   IoException = {NewUniqueName 'IO.Io'}
+
    class TextSocket from Open.socket Open.text end
 
    ConvertLine ConvertAll
@@ -93,12 +96,30 @@ define
 			end
 		     output:
 			fun {$ Socket S}
-			   {Socket write(vs: S)}
+			   try
+			      {Socket write(vs: S)}
+			   catch E then
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'output'}
+						 cause: E))} %--** not type exn
+			   end
 			   unit
 			end
 		     output1:
 			fun {$ Socket C}
-			   {Socket write(vs: [C])}
+			   try
+			      {Socket write(vs: [C])}
+			   catch E then
+			      {Exception.raiseError
+			       alice(IoException(name:
+						    {ByteString.make 'socket'}
+						 function:
+						    {ByteString.make 'output1'}
+						 cause: E))} %--** not type exn
+			   end
 			   unit
 			end
 		     flushOut:
