@@ -13,7 +13,7 @@
 functor
 import
    Explorer(object one best all)
-%   InspectorComponent('Inspector$': Inspector) at 'x-alice:/lib/tools/Inspector'
+   InspectorComponent('Inspector$': Inspector) at 'x-alice:/lib/tools/Inspector'
 export
    'UnsafeExplorer$' : UnsafeExplorer
 define
@@ -56,14 +56,10 @@ define
       unit
    end
 
+   %% Setup Alice Inspector
+   {Inspector.configure nothing _}
    %% Change Default Explorer Bindings
    {Explorer.object option(visual title:'Alice Explorer')}
-%   {Explorer.object delete(information all)}
-%    {Explorer.object add(information
-% 			proc {$ I X}
-% 			   {Inspector.inspect '#[]'(I X) _}
-% 			end
-% 			label: 'Inspect')}
    
    %% Create Explorer Interface
    UnsafeExplorer = 'UnsafeExplorer'('exploreOne'    : ExploreOneFun
