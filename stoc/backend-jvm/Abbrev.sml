@@ -18,7 +18,6 @@ structure Abbrev  =
 	val CObject           = "java/lang/Object"
 	val CPrintStream   = "java/io/PrintStream"
 	val CString        = "java/lang/String"
-	val CThread        = "java/lang/Thread"
 	val CVector        = "java/util/Vector"
 	val CClass         = "java/lang/Class"
 	val CCompilerException = "java/lang/RuntimeException"
@@ -33,6 +32,7 @@ structure Abbrev  =
 	val FOut           = ("java/lang/System/out", [Classsig CPrintStream])
 
 	(* runtime classes *)
+	val CThread        = "de/uni_sb/ps/dml/runtime/Thread"
 	val CName          = "de/uni_sb/ps/dml/runtime/Name"
 	val CCons          = "de/uni_sb/ps/dml/runtime/Cons"
 	val CConstructor   = "de/uni_sb/ps/dml/runtime/Constructor"
