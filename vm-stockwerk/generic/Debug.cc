@@ -39,20 +39,24 @@ static const char *TransLabel(BlockLabel l) {
     return "BYNEED";
   case HASHTABLE_LABEL:
     return "HASHTABLE";
+  case BLOCKHASHTABLE_LABEL:
+    return "BLOCKHASHTABLE";
   case QUEUE_LABEL:
     return "QUEUE";
   case STACK_LABEL:
     return "STACK";
+  case UNIQUESTRING_LABEL:
+    return "UNIQUESTRING";
   case THREAD_LABEL:
     return "THREAD";
-  case TUPLE_LABEL:
-    return "TUPLE";
-  case CONCRETE_LABEL:
-    return "CONCRETE";
-  case ARGS_LABEL:
-    return "ARGS";
   case CLOSURE_LABEL:
     return "CLOSURE";
+  case TUPLE_LABEL:
+    return "TUPLE";
+  case TRANSFORM_LABEL:
+    return "TRANSFORM";
+  case ARGS_LABEL:
+    return "ARGS";
   default:
     return "UNKNOWN";
   }
