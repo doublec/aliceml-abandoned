@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,7 +30,7 @@
  *   - ANY keyword for top signature
  *   - PACK and UNPACK keyword for first class structures
  *   - IMPORT and FROM keywords added
- *   - PRIMITIVE, EQEQTYPE, REFTYPE, and PERVASIVE keywords added
+ *   - PRIMITIVE, OVERLOAD, EQEQTYPE, REFTYPE, and PERVASIVE keywords added
  *
  * Notes:
  *   Since all lexical classes must be disjoint:
@@ -301,6 +301,7 @@
   <INITIAL>"}"		=> ( token(RBRACE,    yypos, yytext) );
 
   <INITIAL>"__eqeqtype"	=> ( token(EQEQTYPE,  yypos, yytext) );
+  <INITIAL>"__overload"	=> ( token(OVERLOAD,  yypos, yytext) );
   <INITIAL>"__pervasive"=> ( token(PERVASIVE, yypos, yytext) );
   <INITIAL>"__primitive"=> ( token(PRIMITIVE, yypos, yytext) );
   <INITIAL>"__reftype"	=> ( token(REFTYPE,   yypos, yytext) );
