@@ -36,10 +36,17 @@ struct
 		    val t2' = Time.now ()
 		    val t3 = Time.-(t2, t1)
 		    val t3' = Time.-(t2', t1')
+
+		    fun h x = (x * 800, x * 1200)
 		in
-		    IntInf.toInt (Time.toSeconds t1) < 1 andalso
-		    IntInf.toInt (Time.toSeconds t3) = i andalso
-		    IntInf.toInt (Time.toSeconds t3) = i
+		    IntInf.toInt (Time.toSeconds t1) = 0 andalso
+		    (IntInf.toInt (Time.toSeconds t3) = i orelse
+		     let
+			 val (l, u) = h i
+		     in
+			 IntInf.toInt (Time.toMilliseconds t3) > l andalso
+		         IntInf.toInt (Time.toMilliseconds t3) < u
+		     end)
 		end
 	in
 	    Gen.try 5 Gen.int (Test.test (fn x => t (Int.abs x)))

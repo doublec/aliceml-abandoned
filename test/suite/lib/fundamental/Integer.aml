@@ -69,12 +69,16 @@ struct
     fun testArithmetic () = 
 	let
 	    fun tS (x1, x2) = if x2 = 0 then Int.sameSign (x1, ~1)
-			      else x1 div x2 = 0
+			      else (Int.sameSign (x1, ~1) andalso 
+				    Int.sameSign (x2, 1)) orelse
+				   if Int.sameSign (x1, x2) andalso
+				      Int.sameSign (x1, ~1) then
+				       ((Int.abs x2) div (Int.abs x1) = 0)
+				   else if x1 = 0 then Int.sameSign (x2, 1)
+				   else x1 div x2 = 0
 	    fun tE (x1, 0) = x1 = 0
-	      | tE (x1, x2) = (x1 div x2 = 1 orelse x1 div x2 = ~1)
-		               andalso (x1 mod x2 = 0)
+	      | tE (x1, x2) = x1 div x2 = 1 andalso (x1 mod x2 = 0)
 	    fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
-	    fun getInt () = Gen.int (Random.int (valOf Int.maxInt) + 1)
 	    fun t' (x1, x2) = 
 		((tS (x1, x2)) = (x1 < x2)) andalso
 		((tG (x1, x2)) = (x1 > x2)) andalso
@@ -184,8 +188,14 @@ struct
 
     fun testQuot () = 
 	let
-	    fun t (a, b) = if b <> 0 then a = b * (Int.quot (a, b)) + (a mod b)
-			   else true
+	    fun t (a, b) = 
+		let
+		    val r = SOME (Int.quot (a, b)) handle Div => NONE
+		in
+		    if Option.isSome r 
+		    then a = b * (valOf r) + (Int.rem (a, b))
+		    else b = 0
+		end
 	in
 	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) (Test.test t)
 	end

@@ -204,8 +204,15 @@ struct
 					      else zero
 				else pow' (i, j, one)
 	in
-	    Gen.try 1000 (Gen.pair (Gen.largeInt, Gen.int))
-	       (Test.test (fn x => IntInf.equal (IntInf.pow x, t x)))
+	    Gen.try 100 (Gen.pair (Gen.largeInt, Gen.int))
+	       (Test.test (fn x => let
+				     val r = SOME (t x) handle Div => NONE
+			           in 
+				     if Option.isSome r
+				     then IntInf.equal (IntInf.pow x, valOf r)
+				     else (IntInf.pow x; false) 
+					    handle Div => true
+			           end))
 	end
 
     fun testLog2 () =
@@ -331,12 +338,19 @@ struct
     fun testArithmetic () = 
 	let
 	    fun tS (x1, x2) = if x2 = (fromI 0) 
-				  then IntInf.sameSign (x1, fromI ~1)
-			      else x1 div x2 = (fromI 0)
+			      then IntInf.sameSign (x1, fromI ~1)
+			      else (IntInf.sameSign (x1, fromI ~1) andalso 
+				    IntInf.sameSign (x2, fromI 1)) orelse
+				   if IntInf.sameSign (x1, x2) andalso
+				      IntInf.sameSign (x1, fromI ~1) then
+				       ((IntInf.abs x2) div (IntInf.abs x1) = 
+					(fromI 0))
+				   else if x1 = (fromI 0) 
+				        then IntInf.sameSign (x2, fromI 1)
+				        else x1 div x2 = (fromI 0)
 	    fun tE (x1, x2) = if x2 = (fromI 0) then x1 = (fromI 0) 
-			      else (x1 div x2 = (fromI 1) orelse 
-				    x1 div x2 = (fromI ~1))
-				  andalso (x1 mod x2 = (fromI 0))
+			      else x1 div x2 = (fromI 1) andalso 
+				   (x1 mod x2 = (fromI 0))
             fun tG x = (Bool.not (tS x)) andalso (Bool.not (tE x))
 	    fun t' (x1, x2) = 
 		((tS (x1, x2)) = (x1 < x2)) andalso

@@ -760,8 +760,7 @@ struct
 	end
 
     fun testExistsEq () = 
-	Test.test (fn _ => raise Test.MissingFunction) ()
-(*	let
+	let
 	    val xs = ref nil
 	    val ys = ref nil
 
@@ -782,11 +781,10 @@ struct
 				   before (xs := nil;
 					   ys := nil)))
 	end
-*)
+
 
     fun testExistsiEq () = 
-	Test.test (fn _ => raise Test.MissingFunction) ()
-(*	let
+	let
 	    val xs = ref nil
 	    val ys = ref nil
 
@@ -809,7 +807,7 @@ struct
 				   before (xs := nil;
 					   ys := nil)))
 	end
-*)
+
 
     fun testFilter () =
 	let
@@ -846,8 +844,7 @@ struct
 	end
 
     fun testFilterEq () =
-	Test.test (fn _ => raise Test.MissingFunction) ()
-(*	let
+	let
 	    val xs = ref nil
 	    val ys = ref nil
 		     
@@ -868,21 +865,23 @@ struct
 				   before (xs := nil;
 					   ys := nil)))
 	end
-*)
+
 
     fun testFilteriEq () =
-	Test.test (fn _ => raise Test.MissingFunction) ()
-(*	let
+	let
 	    val xs = ref nil
 	    val ys = ref nil
+
+	    fun g (i, (a, b)) = (i, a, b)
 		     
-	    fun f x (a, b) = (x := (a, b) :: !x; a = b)
+	    fun f x (i, a, b) = (x := (a, b) :: !x; a = b andalso a = i)
 
 	    fun t x = 
 		let
 		    val r = SOME (ListPair.filteriEq (f xs) x)
 				 handle UnequalLengths => NONE
-		    val r1 = SOME (List.filteri (f ys) (ListPair.zipEq x))
+		    val r1 = 
+		 SOME (List.map g (List.filteri (f ys o g) (ListPair.zipEq x)))
 			     handle UnequalLengths => NONE
 		in
 		    r = r1
@@ -893,7 +892,7 @@ struct
 				   before (xs := nil;
 					   ys := nil)))
 	end
-*)
+
 
     fun testFind () =
 	let

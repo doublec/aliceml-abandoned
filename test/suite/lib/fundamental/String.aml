@@ -56,9 +56,11 @@ struct
 	    fun t (a, b, c) = 
 		 String.extract (a, b, c) = t' (a, b, c)
 		        handle Subscript =>
-		            a = "" orelse (if Option.isSome c
-					   then b + (valOf c) > String.size a
-					   else b > String.size a)
+		            a = "" orelse b < 0 orelse
+			    (if Option.isSome c
+			     then ((valOf c) < 0 orelse 
+				   b + (valOf c) > String.size a)
+			     else b > String.size a)
 	in
 	    Gen.try 1000 (Gen.triple (Gen.string, Gen.int, Gen.option Gen.int))
 	        (Test.test t)
