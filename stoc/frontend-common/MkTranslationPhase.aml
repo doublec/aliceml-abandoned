@@ -952,13 +952,13 @@ val _ = TextIO.inputLine(TextIO.stdIn)
      *                   in [z : j12 :> x3 = j22] end
      *	[x1 : j1 :> x2 = j2] = x1
      *
-     *	[x1 . val y:t1 :> x2 . val y:t2] = val y = lazy x1.y
-     *	[x1 . constructor y:t1 :> x2 . val y:t2] = val y = lazy (x1.y)
-     *  [x1 . type y:k1 :> x2 . type y:k2 = t2] = type y = lazy (x2.y)
+     *	[x1 . val y:t1 :> x2 . val y:t2] = val y = x1.y
+     *	[x1 . constructor y:t1 :> x2 . val y:t2] = val y = x1.y
+     *  [x1 . type y:k1 :> x2 . type y:k2 = t2] = type y = x2.y
      *	[x1 . structure y:j1 :> x2 . structure y:j2] =
-     *	   structure y = lazy [x1.y : j1 :> x2.y = j2]
+     *	   structure y = [x1.y : j1 :> x2.y = j2]
      *  [x1 . interface y:k1 :> x2 . interface y:k2 = j2] =
-     *     interface y = lazy (x2.y)
+     *     interface y = x2.y
      *
      * Here in [x1 : j1 :> x2 = j2] the structure is bound to x1 and has
      * signature j1, while the instance structure representing the generative
@@ -1090,7 +1090,7 @@ print"\n";
 		val    i'    = nonInfo r
 		val    l'    = O.Lab(i', trValLabel a)
 		val    y1    = O.LongId(i1,x1,l')
-		val    exp   = O.LazyExp(i2, O.UpExp(i2, O.VarExp(i1,y1)))
+		val    exp   = O.UpExp(i2, O.VarExp(i1,y1))
 	    in
 		upItems(isOpaque, isntIdentity, x1, s1, x2, items, r,
 			O.Field(i',l',exp)::fields)
@@ -1120,7 +1120,7 @@ print"\n";
 		val i'  = nonInfo r
 		val l'  = O.Lab(i', trTypLabel a)
 		val y   = O.LongId(i, x, l')
-		val exp = O.LazyExp(i, O.VarExp(O.infoLongid y, y))
+		val exp = O.VarExp(O.infoLongid y, y)
 	    in
 		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
 			O.Field(i',l',exp)::fields)
@@ -1152,10 +1152,9 @@ print"\n";
 		      of NONE => (if isOpaque then O.UpExp(i2, O.VarExp(i1,y1))
 		 			     else O.VarExp(i1,y1), isntIdentity)
 		       | SOME exp => (exp, true)
-		val  exp' = O.LazyExp(i2,exp)
 	    in
 		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
-			O.Field(i',l',exp')::fields)
+			O.Field(i',l',exp)::fields)
 	    end
 	else if Inf.isInfItem item then
 	    let
@@ -1185,7 +1184,7 @@ print"\n";
 		val i'  = nonInfo r
 		val l'  = O.Lab(i', trInfLabel a)
 		val y   = O.LongId(i1, x, l')
-		val exp = O.LazyExp(i2, O.UpExp(i2, O.VarExp(i1, y)))
+		val exp = O.UpExp(i2, O.VarExp(i1, y))
 	    in
 		upItems(isOpaque, isntIdentity', x1, s1, x2, items, r,
 			O.Field(i',l',exp)::fields)
@@ -1921,7 +1920,7 @@ print"\n";
 	end
 
       | trSpec s' (I.ModSpec(i,x,j), ds') =
-	(* [module x : j]_s = val (x1,$x) = [j]
+	(* [module x : j]_s = val (x1,x$) = [j]
 	 *                    val _  = Inf.extendMod(s,
 	 *                                  Inf.newMod(s, Label.fromString "x"),
 	 *                                  x1, NONE)
@@ -2152,7 +2151,7 @@ print"\n";
 	    val i' = nonInfo(#region i)
 	    val y' = O.LongId(i, y, O.Lab(i', Label.fromName n))
 	in
-	    O.ValDec(i', idToPat x', O.LazyExp(i, O.VarExp(i, y')))
+	    O.ValDec(i', idToPat x', O.VarExp(i, y'))
 	end
 
     fun trAnns a_s =
