@@ -62,6 +62,10 @@ environment variables:</P>
     <OL><!--** mozart -->
       <LI><P>If <TT>ALICE_LOAD_PREFIX</TT> is set, its methods are tried
 	before any of the following.</P>
+      <LI><P>The URL is tried below the <TT>.alice/cache</TT>
+	directory in the user's home directory, in a <A
+	href="library/resolver-handler.html#cache">cache-style</A>
+	structure.</P>
       <LI><P>If the URL uses the <TT>x-oz</TT> scheme, it is tried as-is,
 	for compatibility with Oz.</P>
       <LI><P>Otherwise, the URL is tried with the platform's default component
