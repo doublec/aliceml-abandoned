@@ -26,7 +26,7 @@ static void InitJava() {
   }
 }
 
-void Start(int argc, char *argv[]) {
+void Start(int argc, const char *argv[]) {
   if (argc < 2) {
     std::fprintf(stderr, "usage: %s <classfile> <args...>\n", argv[0]);
     std::exit(2);

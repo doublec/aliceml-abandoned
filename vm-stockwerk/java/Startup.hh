@@ -19,6 +19,6 @@
 
 #include "java/Base.hh"
 
-JavaDll void Startup(int argc, char *argv[]);
+JavaDll void Startup(int argc, const char *argv[]);
 
 #endif

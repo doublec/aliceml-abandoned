@@ -100,7 +100,7 @@ void RunMainWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Run `void main(String[] args)'\n");
 }
 
-void Startup(int argc, char *argv[]) {
+void Startup(int argc, const char *argv[]) {
   RunMainWorker::Init();
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
