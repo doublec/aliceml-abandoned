@@ -86,9 +86,11 @@ void AliceLanguageLayer::Init() {
   Unpickler::RegisterHandler(aliceConstructor, AliceConstructorHandler);
 
   Constructor::Init();
+  Hole::InitExceptions(); //--** should not be here
   Guid::Init();
   LazySelInterpreter::Init();
   AbstractCodeInterpreter::Init();
+  PrimitiveTable::Init();
 #if LIGHTNING
   NativeCodeInterpreter::Init();
   // to be done: Memory should be enlarged dynamically
@@ -102,6 +104,4 @@ void AliceLanguageLayer::Init() {
 #else
   concreteCodeConstructor = AliceConcreteCode::New;
 #endif
-  Hole::InitExceptions(); //--** should not be here
-  PrimitiveTable::Init();
 }
