@@ -289,14 +289,6 @@ COMPILERBACKENDMOZARTSOURCES0 = \
 COMPILERBACKENDMOZARTSOURCES = \
 	$(COMPILERBACKENDMOZARTSOURCES0:%=compiler/backend-mozart/%)
 
-COMPILERBACKENDDOTNETSOURCES0 = \
-	SKELETON-sig.aml Skeleton.aml IL-sig.aml IL.aml System.aml \
-	Alice.aml BUILTINS-sig.aml Builtins.aml CODE_STORE-sig.aml \
-	CodeStore.aml CODE_GEN_PHASE-sig.aml CodeGenPhase.aml \
-	MkBackendDotNet.aml
-COMPILERBACKENDDOTNETSOURCES = \
-	$(COMPILERBACKENDDOTNETSOURCES0:%=compiler/backend-dotnet/%)
-
 COMPILERBACKENDSEAMSOURCES0 = \
 	PRIM_PICKLE-sig.aml PrimPickle.aml VALUE-sig.aml Value.aml \
 	ABSTRACT_CODE_GRAMMAR-sig.aml MkAbstractCodeGrammar.aml \
@@ -312,12 +304,10 @@ COMPILERTOPSOURCES0 = \
 	DEPENDENCY-sig.aml Dependency.aml \
 	RECURSIVE_COMPILER-sig.aml MkRecursiveCompiler.aml \
 	SMLToMozartRecursiveCompiler.aml \
-	SMLToDotNetRecursiveCompiler.aml \
 	SMLToSeamRecursiveCompiler.aml \
 	OPTION_PARSER-sig.aml MkOptionParser.aml \
 	BATCH_COMPILER-sig.aml MkBatchCompiler.aml \
 	SMLToMozartBatchCompiler.aml \
-	SMLToDotNetBatchCompiler.aml \
 	SMLToSeamBatchCompiler.aml \
 	INTERACTIVE_TOPLEVEL-sig.aml MkToplevel.aml \
 	SMLToMozartToplevel.aml SMLToSeamToplevel.aml
@@ -328,7 +318,7 @@ COMPILERSOURCES = \
 	$(COMPILERINFRASTRUCTURESOURCES) $(COMPILERCOMMONSOURCES) \
 	$(COMPILERFRONTENDCOMMONSOURCES) $(COMPILERFRONTENDSMLSOURCES) \
 	$(COMPILERBACKENDCOMMONSOURCES) $(COMPILERBACKENDMOZARTSOURCES) \
-	$(COMPILERBACKENDDOTNETSOURCES) $(COMPILERBACKENDSEAMSOURCES) \
+	$(COMPILERBACKENDSEAMSOURCES) \
 	$(COMPILERTOPSOURCES) $(COMPILERSOURCES0:%=compiler/%)
 
 LINKERSOURCES0 = \
@@ -351,7 +341,7 @@ SOURCEDIRS = \
 	compiler compiler/infrastructure compiler/common compiler/top \
 	compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-seam linker depend
+	compiler/backend-seam linker depend
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -478,9 +468,6 @@ build1/compiler/backend-mozart/%.aml: compiler/backend-mozart/%.aml Rel2.import
 
 build1/compiler/backend-mozart/%.asig: compiler/backend-mozart/%.asig \
 	Rel2.import
-	cat Rel2.import $< > $@
-
-build1/compiler/backend-dotnet/%.aml: compiler/backend-dotnet/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
 build1/compiler/backend-seam/%.aml: compiler/backend-seam/%.aml \
@@ -633,9 +620,7 @@ INSTALL3LIBFILES = \
 	fundamental/PACKAGE-sig.ozf fundamental/Package.ozf
 INSTALL3COMPILERFILES = $(INSTALL1COMPILERFILES) ToplevelMain.ozf
 INSTALL3COMPILERTOPFILES = \
-	SMLToMozartRecursiveCompiler.ozf \
-	SMLToDotNetRecursiveCompiler.ozf \
-	SMLToSeamRecursiveCompiler.ozf
+	SMLToMozartRecursiveCompiler.ozf SMLToSeamRecursiveCompiler.ozf
 INSTALL3LINKERFILES = Main.ozf
 INSTALL3DEPENDFILES = Main.ozf
 INSTALL3FILES = \
@@ -669,7 +654,6 @@ build3-all: build2-all $(BUILD3DIRS) $(BUILD3SOURCES) \
 	build3/compiler/LinkedCompileServerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
 	build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf \
-	build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf \
 	build3/VMMain.ozf
 
 build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
@@ -700,7 +684,6 @@ build3/lib/fundamental/LinkedPervasive.ozf: \
 build3/compiler/LinkedCompilerMain.ozf: build3/compiler/CompilerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompilerMain -o $@
@@ -709,7 +692,6 @@ build3/compiler/LinkedCompileServerMain.ozf: \
 	build3/compiler/CompileServerMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/CompileServerMain -o $@
@@ -717,7 +699,6 @@ build3/compiler/LinkedCompileServerMain.ozf: \
 build3/compiler/LinkedToplevelMain.ozf: build3/compiler/ToplevelMain.ozf
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../?{x}" \
 	--exclude build3/compiler/top/SMLToMozartRecursiveCompiler \
-	--exclude build3/compiler/top/SMLToDotNetRecursiveCompiler \
 	--exclude build3/compiler/top/SMLToSeamRecursiveCompiler \
 	--include build3/compiler \
 	build3/compiler/ToplevelMain -o $@
@@ -730,12 +711,6 @@ build3/compiler/top/LinkedSMLToMozartRecursiveCompiler.ozf: \
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}"="../../?{x}" \
 	--include build3/compiler \
 	build3/compiler/top/SMLToMozartRecursiveCompiler -o $@
-
-build3/compiler/top/LinkedSMLToDotNetRecursiveCompiler.ozf: \
-	build3/compiler/top/SMLToDotNetRecursiveCompiler.ozf
-	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite "build3/?{x}=../../?{x}" \
-	--include build3/compiler \
-	build3/compiler/top/SMLToDotNetRecursiveCompiler -o $@
 
 build3/compiler/top/LinkedSMLToSeamRecursiveCompiler.ozf: \
 	build3/compiler/top/SMLToSeamRecursiveCompiler.ozf
