@@ -1,14 +1,14 @@
 signature ELABORATION_ERROR =
   sig
 
-    type lab    = Label.t
-    type typ    = Type.t
-    type var    = Type.var
-    type kind   = Type.kind
-    type inf	= Inf.t
-    type fix    = Fixity.t
-    type id     = AbstractGrammar.id
-    type longid = AbstractGrammar.longid
+    type lab       = Label.t
+    type typ       = Type.t
+    type var       = Type.var
+    type kind      = Type.kind
+    type inf	   = Inf.t
+    type fix       = Fixity.t
+    type valid     = AbstractGrammar.valid
+    type modlongid = AbstractGrammar.modlongid
 
     type unify_error  = typ * typ * typ * typ
     type inf_mismatch = Inf.mismatch
@@ -46,9 +46,9 @@ signature ELABORATION_ERROR =
 	| RefTypKind		of kind
 	(* Declarations *)
 	| ValDecUnify		of unify_error
-	| ValDecLift		of id * var
+	| ValDecLift		of valid * var
 	(* Long ids *)
-	| ModLongidInf		of longid * inf
+	| ModlongidInf		of modlongid * inf
 	(* Modules *)
 	| StrModUnclosed	of lab * int * typ
 	| SelModInf		of inf
@@ -76,7 +76,7 @@ signature ELABORATION_ERROR =
 	| CompUnclosed		of lab * int * typ
 
     datatype warning =
-	  NotGeneralized	of id * typ
+	  NotGeneralized	of valid * typ
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit

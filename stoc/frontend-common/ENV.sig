@@ -1,7 +1,10 @@
 signature ENV =
   sig
 
-    type id    = AbstractGrammar.id
+    type valid = AbstractGrammar.valid
+    type typid = AbstractGrammar.typid
+    type modid = AbstractGrammar.modid
+    type infid = AbstractGrammar.infid
     type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
@@ -11,11 +14,11 @@ signature ENV =
     type env
     type t = env
 
-    type val_entry = { id: id, path: path, typ: typ, sort: Inf.val_sort }
-    type typ_entry = { id: id, path: path, typ: typ, sort: Inf.typ_sort }
-    type var_entry = { id: id, var: var }
-    type mod_entry = { id: id, path: path, inf: inf }
-    type inf_entry = { id: id, path: path, inf: inf }
+    type val_entry = { id: valid, path: path, typ: typ, sort: Inf.val_sort }
+    type typ_entry = { id: typid, path: path, typ: typ, sort: Inf.typ_sort }
+    type var_entry = { id: typid, var: var }
+    type mod_entry = { id: modid, path: path, inf: inf }
+    type inf_entry = { id: infid, path: path, inf: inf }
 
     exception Collision of stamp
     exception Lookup    of stamp

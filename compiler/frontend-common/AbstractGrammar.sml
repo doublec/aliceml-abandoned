@@ -1,9 +1,18 @@
 structure AbstractInfo =
   struct
     type fix_info	= Source.region
-    type lab_info	= Source.region
-    type id_info	= Source.region
-    type longid_info	= Source.region
+    type vallab_info	= Source.region
+    type typlab_info	= Source.region
+    type modlab_info	= Source.region
+    type inflab_info	= Source.region
+    type valid_info	= Source.region
+    type typid_info	= Source.region
+    type modid_info	= Source.region
+    type infid_info	= Source.region
+    type vallongid_info	= Source.region
+    type typlongid_info	= Source.region
+    type modlongid_info	= Source.region
+    type inflongid_info	= Source.region
     type exp_info	= Source.region
     type pat_info	= Source.region
     type 'a row_info	= Source.region
@@ -18,9 +27,6 @@ structure AbstractInfo =
     type imp_info	= Source.region
     type ann_info	= Source.region
     type comp_info	= Source.region
-
-    fun labToIdInfo r	= r
-    fun idToLabInfo r	= r
   end
 
 structure AbstractGrammar = MakeAbstractGrammar(AbstractInfo)

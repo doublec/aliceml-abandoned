@@ -17,7 +17,7 @@
  *   - removed abstype (made into a derived form with local)
  *   - simplified open and fixity declarations to single id (multi ids made DF)
  *   - some hacks to build libraries: primitive value declarations,
- *     overloading declarations, special eqtype declarations and specifications
+ *     special eqtype declarations and specifications
  *
  * Extensions and modifications to module language:
  *   - components
@@ -146,16 +146,13 @@ signature INPUT_GRAMMAR =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
+	| INFIXDec        of Info * int * VId
+	| INFIXRDec       of Info * int * VId
+	| NONFIXDec       of Info * VId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
 	| PRIMITIVESTRUCTUREDec   of Info * StrId * SigExp * string
-	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
-	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
-	| INSTANCESCONDec of Info * SCon * LongTyCon
-	| INFIXDec        of Info * int * VId
-	| INFIXRDec       of Info * int * VId
-	| NONFIXDec       of Info * VId
 
     (* Bindings *)
 
@@ -280,9 +277,6 @@ signature INPUT_GRAMMAR =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
-	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
-	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
-	| INSTANCESCONSpec of Info * SCon * LongTyCon
 	| INFIXSpec        of Info * int * VId
 	| INFIXRSpec       of Info * int * VId
 	| NONFIXSpec       of Info * VId

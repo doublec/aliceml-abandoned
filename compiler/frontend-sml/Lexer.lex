@@ -16,7 +16,7 @@
  *   - ANY keyword for top signature
  *   - PACK and UNPACK keyword for first class structures
  *   - IMPORT and FROM keywords added
- *   - PRIMITIVE, OVERLOAD, INSTANCE, PREBOUND, and EQEQTYPE keywords added
+ *   - PRIMITIVE, PREBOUND, and EQEQTYPE keywords added
  *
  * Notes:
  *   Since all lexical classes must be disjoint:
@@ -278,8 +278,6 @@
   <INITIAL>"}"		=> ( token(RBRACE,    yypos, yytext) );
 
   <INITIAL>"__eqtype"	=> ( token(EQEQTYPE,  yypos, yytext) );
-  <INITIAL>"__instance"	=> ( token(INSTANCE,  yypos, yytext) );
-  <INITIAL>"__overload"	=> ( token(OVERLOAD,  yypos, yytext) );
   <INITIAL>"__prebound"	=> ( token(PREBOUND,  yypos, yytext) );
   <INITIAL>"__primitive"=> ( token(PRIMITIVE, yypos, yytext) );
   <INITIAL>"abstype"	=> ( token(ABSTYPE,   yypos, yytext) );

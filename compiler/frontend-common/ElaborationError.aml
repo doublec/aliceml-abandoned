@@ -10,14 +10,14 @@ structure ElaborationError :> ELABORATION_ERROR =
 
   (* Types *)
 
-    type lab    = Label.t
-    type typ    = Type.t
-    type var    = Type.var
-    type kind   = Type.kind
-    type inf	= Inf.t
-    type fix    = Fixity.t
-    type id     = AbstractGrammar.id
-    type longid = AbstractGrammar.longid
+    type lab       = Label.t
+    type typ       = Type.t
+    type var       = Type.var
+    type kind      = Type.kind
+    type inf	   = Inf.t
+    type fix       = Fixity.t
+    type valid     = AbstractGrammar.valid
+    type modlongid = AbstractGrammar.modlongid
 
     type unify_error  = typ * typ * typ * typ
     type inf_mismatch = Inf.mismatch
@@ -55,9 +55,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| RefTypKind		of kind
 	(* Declarations *)
 	| ValDecUnify		of unify_error
-	| ValDecLift		of id * var
+	| ValDecLift		of valid * var
 	(* Long ids *)
-	| ModLongidInf		of longid * inf
+	| ModlongidInf		of modlongid * inf
 	(* Modules *)
 	| StrModUnclosed	of lab * int * typ
 	| SelModInf		of inf
@@ -85,20 +85,20 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| CompUnclosed		of lab * int * typ
 
     datatype warning =
-	  NotGeneralized	of id * typ
+	  NotGeneralized	of valid * typ
 
 
   (* Pretty printing *)
 
     fun ppQuoted s	= "`" ^ s ^ "'"
 
-    fun ppLab'(AbstractGrammar.Lab(_,l)) = Label.toString l
+    fun ppLab'(AbstractGrammar.Lab(_,a)) = Label.toString a
 
     fun ppId'(AbstractGrammar.Id(_,_,n)) = Name.toString n
     fun ppId x = ppQuoted(ppId' x)
 
     fun ppLongid'(AbstractGrammar.ShortId(_,x))  = ppId' x
-      | ppLongid'(AbstractGrammar.LongId(_,y,l)) = ppLongid' y ^ "." ^ ppLab' l
+      | ppLongid'(AbstractGrammar.LongId(_,y,a)) = ppLongid' y ^ "." ^ ppLab' a
     fun ppLongid y = ppQuoted(ppLongid' y)
 
     fun ppLab a = Label.toString a
@@ -363,7 +363,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
       (* Modules *)
-      | ppError(ModLongidInf(y,j)) =
+      | ppError(ModlongidInf(y,j)) =
 	  textpar["module",ppLongid y,"is","not","a","structure"]
       | ppError(StrModUnclosed lnt) =
 	ppUnclosed(

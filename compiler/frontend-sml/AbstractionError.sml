@@ -16,7 +16,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
     type TyCon	= TyCon.t
     type StrId	= StrId.t
     type SigId	= SigId.t
-    type id	= AbstractGrammar.id
+    type typid	= AbstractGrammar.typid
+    type infid	= AbstractGrammar.infid
+    type modid	= AbstractGrammar.modid
 
     datatype error =
 	(* Infix *)
@@ -85,9 +87,9 @@ structure AbstractionError :> ABSTRACTION_ERROR =
 	(* Components *)
 	| CompCorrupt		of Url.t
 	(* Sharing translation *)
-	| SharingExternalTy	of id
-	| SharingExternalSig	of id
-	| SharingExternalStr	of id
+	| SharingExternalTy	of typid
+	| SharingExternalSig	of infid
+	| SharingExternalStr	of modid
 
     datatype warning =
 	(* Shadowing *)

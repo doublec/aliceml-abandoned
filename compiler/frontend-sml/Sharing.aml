@@ -18,7 +18,7 @@ structure Sharing :> SHARING =
   struct
 
     open AbstractGrammar
-
+(*
     nonfix mod
 
   (* Class *)
@@ -29,15 +29,16 @@ structure Sharing :> SHARING =
 
     structure E = AbstractionError
 
-    fun error(class, LongId(_, longid, _)) = error(STR, longid)
-      | error(TYP, ShortId(i,id)) = E.error(i, E.SharingExternalTy id)
-      | error(SIG, ShortId(i,id)) = E.error(i, E.SharingExternalSig id)
-      | error(STR, ShortId(i,id)) = E.error(i, E.SharingExternalStr id)
+    fun error(class, LongId(_, modlongid, _)) = error(STR, modlongid)
+      | error(TYP, ShortId(i,typid)) = E.error(i, E.SharingExternalTy typid)
+      | error(SIG, ShortId(i,modid)) = E.error(i, E.SharingExternalSig modid)
+      | error(STR, ShortId(i,infid)) = E.error(i, E.SharingExternalStr infid)
 
   (* Find ids in a list of longids *)
 
-    fun isRootedAt(ShortId(_, id),       stamp') = stamp id = stamp'
-      | isRootedAt(LongId(_, longid, _), stamp') = isRootedAt(longid, stamp')
+    fun isRootedAt(ShortId(_, modid),       stamp') = stamp modid = stamp'
+      | isRootedAt(LongId(_, modlongid, _), stamp') =
+        isRootedAt(modlongid, stamp')
 
     fun findId(stamp, [], longids') = NONE
       | findId(stamp, longid::longids, longids') =
@@ -93,17 +94,15 @@ structure Sharing :> SHARING =
 
     fun constrain(class, inf1, ShortId _, longid) =
 	    raise Crash.Crash "Sharing.constrain"
-      | constrain(class, inf1, LongId(i, longid', lab), longid) =
+      | constrain(class, inf1, LongId(i, longid', Lab(i0,a)), longid) =
 	let
 	    fun buildSig(ShortId(i, id), inf) = inf
-	      | buildSig(LongId(_, longid, lab), inf) =
-		let val i = infoLab lab in
-		    SigInf(i, [ModSpec(i, labToId lab, inf)])
-		end
+	      | buildSig(LongId(_, longid, Lab(i,a)), inf) =
+		    SigInf(i, [ModSpec(i, Id(i, Stamp.new(), Label.toName a),
+					  inf)])
 
-	    val i0    = infoLab lab
 	    val i1    = infoLongid longid
-	    val id0   = labToId lab
+	    val id0   = Id(i0, Stamp.new(), Label.toName a)
 	    val spec0 = case class
 			  of TYP => TypSpec(i0, id0, ConTyp(i1, longid))
 			   | SIG => InfSpec(i0, id0, ConInf(i1, longid))
@@ -180,5 +179,8 @@ structure Sharing :> SHARING =
     val shareTyp = share TYP
     val shareSig = share SIG
     val shareStr = share STR
-
+*)
+fun shareTyp(ss,_) = ss
+fun shareSig(ss,_) = ss
+fun shareStr(ss,_) = ss
   end

@@ -128,14 +128,8 @@
 (*	  dec     ::= __primitive val <op> vid : ty = string			*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
-(*	          ::= __overload <op> vid with tyvar : ty			*)
-(*	          ::= __instance <op> vid with longtycon = longvid		*)
-(*	          ::= __instance scon with longtycon				*)
 (*	          ::= __eqtype typbind						*)
 (*	  spec    ::= __eqtype typdesc						*)
-(*	          ::= __overload <op> vid with tyvar : ty			*)
-(*	          ::= __instance <op> vid with longtycon = longvid		*)
-(*	          ::= __instance scon with longtycon				*)
 (*	  ann     ::= __prebound strid						*)
 (*										*)
 (* Notes:									*)
@@ -211,7 +205,7 @@
 	| CONSTRUCTOR | NON | WITHFUN | WITHVAL | DOT | HASHBRACK
 	| ANY | FCT | PACK | UNPACK
 	| IMPORT | FROM
-	| PRIMITIVE | OVERLOAD | INSTANCE | PREBOUND | EQEQTYPE
+	| PRIMITIVE | PREBOUND | EQEQTYPE
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -236,7 +230,7 @@
 	 CONSTRUCTOR NON WITHFUN WITHVAL
 	 ANY FCT PACK UNPACK
 	 IMPORT FROM
-	 PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
+	 PRIMITIVE PREBOUND EQEQTYPE
 
 %eop     EOF
 %noshift EOF
@@ -247,7 +241,7 @@
 %right VAL FUN TYPE EQTYPE DATATYPE ABSTYPE CONSTRUCTOR EXCEPTION
        STRUCTURE FUNCTOR SIGNATURE
        IMPORT
-       PRIMITIVE OVERLOAD INSTANCE PREBOUND EQEQTYPE
+       PRIMITIVE PREBOUND EQEQTYPE
 %right LOCAL OPEN INFIX INFIXR NONFIX INCLUDE
 %right AND
 %left  DARROW		(* L/R is arbitrary *)
@@ -760,6 +754,15 @@
 	| OPEN longstrid_list1
 			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
 				       longstrid_list1) )
+	| INFIX d_opt vid_list1
+			( INFIXMULTIDec(I(INFIXleft,vid_list1right),
+					d_opt, vid_list1) )
+	| INFIXR d_opt vid_list1
+			( INFIXRMULTIDec(I(INFIXRleft,vid_list1right),
+					 d_opt, vid_list1) )
+	| NONFIX vid_list1
+			( NONFIXMULTIDec(I(NONFIXleft,vid_list1right),
+					 vid_list1) )
 	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
 			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
 					  OP_opt, vid, ty, STRING) )
@@ -771,24 +774,6 @@
 	| PRIMITIVE STRUCTURE strid COLON sigexp EQUALS STRING
 			( PRIMITIVESTRUCTUREDec(I(PRIMITIVEleft,STRINGright),
 						strid, sigexp, STRING) )
-	| OVERLOAD OP_opt vid WITH tyvar COLON ty
-			( OVERLOADDec(I(OVERLOADleft,tyright),
-				      OP_opt, vid, tyvar, ty) )
-	| INSTANCE OP_opt vid WITH longtycon EQUALS longvid
-			( INSTANCEDec(I(INSTANCEleft,longvidright),
-				      OP_opt, vid, longtycon, longvid) )
-	| INSTANCE scon WITH longtycon
-			( INSTANCESCONDec(I(INSTANCEleft,longtyconright),
-					  scon, longtycon) )
-	| INFIX d_opt vid_list1
-			( INFIXMULTIDec(I(INFIXleft,vid_list1right),
-					d_opt, vid_list1) )
-	| INFIXR d_opt vid_list1
-			( INFIXRMULTIDec(I(INFIXRleft,vid_list1right),
-					 d_opt, vid_list1) )
-	| NONFIX vid_list1
-			( NONFIXMULTIDec(I(NONFIXleft,vid_list1right),
-					 vid_list1) )
 
      WITHTYPE_typbind_opt:
 	  WITHTYPE typbind	( SOME typbind )
@@ -1708,15 +1693,6 @@
 			( FUNCTORSpec(I(FUNCTORleft,fundescright), fundesc))
 	| INCLUDE sigexp
 			( INCLUDESpec(I(INCLUDEleft,sigexpright), sigexp) )
-	| OVERLOAD OP_opt vid WITH tyvar COLON ty
-			( OVERLOADSpec(I(OVERLOADleft,tyright),
-				       OP_opt, vid, tyvar, ty))
-	| INSTANCE OP_opt vid WITH longtycon EQUALS longvid
-			( INSTANCESpec(I(INSTANCEleft,longvidright),
-				       OP_opt, vid, longtycon, longvid) )
-	| INSTANCE scon WITH longtycon
-			( INSTANCESCONSpec(I(INSTANCEleft,longtyconright),
-					   scon, longtycon) )
 	| INFIX d_opt vid_list1
 			( INFIXMULTISpec(I(INFIXleft,vid_list1right), d_opt,
 					 vid_list1) )

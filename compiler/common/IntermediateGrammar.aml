@@ -2,7 +2,7 @@ structure IntermediateInfo =
   struct
     type lab_info	= { region: Source.region }
     type id_info	= { region: Source.region }
-    type longid_info	= { region: Source.region }
+    type longid_info	= { region: Source.region, typ: Type.t option }
     type exp_info	= { region: Source.region, typ: Type.t }
     type pat_info	= { region: Source.region, typ: Type.t }
     type 'a field_info	= { region: Source.region }

@@ -1,7 +1,10 @@
 structure Env :> ENV =
   struct
 
-    type id    = AbstractGrammar.id
+    type valid = AbstractGrammar.valid
+    type typid = AbstractGrammar.typid
+    type modid = AbstractGrammar.modid
+    type infid = AbstractGrammar.infid
     type stamp = Stamp.t
     type path  = Path.t
     type typ   = Type.t
@@ -20,11 +23,11 @@ structure Env :> ENV =
 		 | MOD of mod_entry
 		 | INF of inf_entry
 
-    withtype val_entry = { id: id, path: path, typ: typ, sort: Inf.val_sort }
-    and      typ_entry = { id: id, path: path, typ: typ, sort: Inf.typ_sort }
-    and      var_entry = { id: id, var: var }
-    and      mod_entry = { id: id, path: path, inf: inf }
-    and      inf_entry = { id: id, path: path, inf: inf }
+    withtype val_entry = { id: valid, path: path, typ: typ, sort: Inf.val_sort }
+    and      typ_entry = { id: typid, path: path, typ: typ, sort: Inf.typ_sort }
+    and      var_entry = { id: typid, var: var }
+    and      mod_entry = { id: modid, path: path, inf: inf }
+    and      inf_entry = { id: infid, path: path, inf: inf }
 
     type t = env
 

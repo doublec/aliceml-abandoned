@@ -1,9 +1,18 @@
 structure TypedInfo =
   struct
     type fix_info	= { region: Source.region, fix: Fixity.t }
-    type lab_info	= { region: Source.region }
-    type id_info	= { region: Source.region }
-    type longid_info	= { region: Source.region }
+    type vallab_info	= { region: Source.region }
+    type typlab_info	= { region: Source.region }
+    type modlab_info	= { region: Source.region }
+    type inflab_info	= { region: Source.region }
+    type valid_info	= { region: Source.region }
+    type typid_info	= { region: Source.region }
+    type modid_info	= { region: Source.region }
+    type infid_info	= { region: Source.region }
+    type vallongid_info	= { region: Source.region }
+    type typlongid_info	= { region: Source.region }
+    type modlongid_info	= { region: Source.region, inf: Inf.t }
+    type inflongid_info	= { region: Source.region }
     type exp_info	= { region: Source.region, typ: Type.t }
     type pat_info	= { region: Source.region, typ: Type.t }
     type 'a row_info	= { region: Source.region }
@@ -18,9 +27,6 @@ structure TypedInfo =
     type imp_info	= { region: Source.region }
     type ann_info	= { region: Source.region, sign: Inf.sign }
     type comp_info	= { region: Source.region, sign: Inf.sign }
-
-    fun labToIdInfo i	= i
-    fun idToLabInfo i	= i
 
     fun nonInfo r	= { region = r }
     fun fixInfo(r,f)	= { region = r, fix = f }
