@@ -12,7 +12,6 @@
 
 import signature FD           from "FD-sig"
 import structure UnsafeGecode from "UnsafeGecode"
-import structure UnsafeValue  from "x-alice:/lib/system/UnsafeValue"
 
 structure FD :> FD =
 struct
@@ -56,7 +55,7 @@ struct
    open UnsafeGecodeFD
 
    type intvar
-   type boolvar
+   type boolvar = intvar
 		 
    fun intvar(space,v) = UnsafeGecodeFD.intvar(space,
 					       v)
@@ -67,7 +66,7 @@ struct
    fun boolvarVec(space,n) = Vector.tabulate (n, fn _ => boolvar space)
 		 
    fun intvar2boolvar(space,d) = (dom(space,d,#[(0,1)]);
-				  UnsafeValue.cast d)
+				  d)
 
    structure Reified =
        struct
@@ -94,7 +93,7 @@ struct
 		   if min<>max(s,v) then raise NotAssigned
 		   else min
 	       end
-	   val boolvar2intvar = UnsafeValue.cast
+	   val boolvar2intvar = fn x => x
 	   fun boolVal v = value(boolvar2intvar v)=1
        end
 
