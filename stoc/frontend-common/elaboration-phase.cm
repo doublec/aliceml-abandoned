@@ -7,10 +7,10 @@ Group is
 	abstract-grammar.cm
 	typed-grammar.cm
 
-	ENV.sig
-	Env.sml
+	ENV-sig.aml
+	Env.aml
 
-	ELABORATION_ERROR.sig
-	ElaborationError.sml
-	ELABORATION_PHASE.sig
-	MakeElaborationPhase.sml
+	ELABORATION_ERROR-sig.aml
+	ElaborationError.aml
+	ELABORATION_PHASE-sig.aml
+	MkElaborationPhase.aml

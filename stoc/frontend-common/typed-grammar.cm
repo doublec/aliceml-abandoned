@@ -8,4 +8,4 @@ Group is
 	../common/interface.cm
 	abstract-grammar.cm
 
-	TypedGrammar.sml
+	TypedGrammar.aml

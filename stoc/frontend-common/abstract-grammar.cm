@@ -5,10 +5,10 @@ Group is
 	../common/name.cm
 	../common/fixity.cm
 
-	ABSTRACT_GRAMMAR.sig
-	MakeAbstractGrammar.sml
+	ABSTRACT_GRAMMAR-sig.aml
+	MkAbstractGrammar.aml
 
-	PP_ABSTRACT_GRAMMAR.sig
-	MakePPAbstractGrammar.sml
+	PP_ABSTRACT_GRAMMAR-sig.aml
+	MkPPAbstractGrammar.aml
 
-	AbstractGrammar.sml
+	AbstractGrammar.aml

@@ -1,5 +1,6 @@
 Group is
 
+	../misc/sources.cm
 	../infrastructure/sources.cm
 	../common/type.cm
 	../common/interface.cm
@@ -8,7 +9,5 @@ Group is
 	../common/check.cm
 	typed-grammar.cm
 
-	StringMap.sml
-
-	TRANSLATION_PHASE.sig
-	MakeTranslationPhase.sml
+	TRANSLATION_PHASE-sig.aml
+	MkTranslationPhase.aml

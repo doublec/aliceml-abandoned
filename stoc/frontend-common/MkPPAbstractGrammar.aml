@@ -1,4 +1,29 @@
-functor MakePPAbstractGrammar(
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature ABSTRACT_GRAMMAR    from "ABSTRACT_GRAMMAR-sig"
+import signature PP_ABSTRACT_GRAMMAR from "PP_ABSTRACT_GRAMMAR-sig"
+
+import structure Stamp               from "../common/Stamp"
+import structure Name                from "../common/Name"
+import structure Label               from "../common/Label"
+import structure Fixity              from "../common/Fixity"
+
+import structure PrettyPrint         from "../misc/PrettyPrint"
+import structure PPMisc              from "../misc/PPMisc"
+import structure Url                 from "../misc/Url"
+
+
+functor MkPPAbstractGrammar(
 	structure AbstractGrammar : ABSTRACT_GRAMMAR
 	val ppFixInfo :       AbstractGrammar.fix_info -> PrettyPrint.doc
 	val ppVallabInfo :    AbstractGrammar.vallab_info -> PrettyPrint.doc
@@ -29,7 +54,7 @@ functor MakePPAbstractGrammar(
 	val ppImpInfo :       AbstractGrammar.imp_info  -> PrettyPrint.doc
 	val ppAnnInfo :       AbstractGrammar.ann_info  -> PrettyPrint.doc
 	val ppCompInfo :      AbstractGrammar.comp_info -> PrettyPrint.doc
-    ) :> PP_ABSTRACT_GRAMMAR where type comp = AbstractGrammar.comp =
+    ) : PP_ABSTRACT_GRAMMAR =
 struct
 
   (* Import *)

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
 Invariants of the typed grammar:
 - every node is annotated with its type.
 - exp and pat nodes carry their instantiated type.
@@ -13,8 +25,17 @@ Invariants of the typed grammar:
   quantified in the case of higher-order quantification).
 *)
 
+import functor MkAbstractGrammar   from "MkAbstractGrammar"
+import functor MkPPAbstractGrammar from "MkPPAbstractGrammar"
+
+import structure Source            from "../infrastructure/Source"
+import structure Fixity            from "../common/Fixity"
+import structure Type              from "../common/Type"
+import structure Inf               from "../common/Inf"
+
+
 structure TypedInfo =
-  struct
+struct
     type fix_info	= { region: Source.region, fix: Fixity.t }
     type vallab_info	= { region: Source.region }
     type typlab_info	= { region: Source.region }
@@ -49,6 +70,6 @@ structure TypedInfo =
     fun varInfo(r,a)	= { region = r, var = a }
     fun infInfo(r,j)	= { region = r, inf = j }
     fun sigInfo(r,s)	= { region = r, sign = s }
-  end
+end
 
-structure TypedGrammar = MakeAbstractGrammar(TypedInfo)
+structure TypedGrammar = MkAbstractGrammar(TypedInfo)
