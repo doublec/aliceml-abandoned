@@ -29,7 +29,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun size(ref n, _)		= n
     fun isEmpty(ref n, _)	= n = 0
 
-    fun copy(ref n, ref t) =
+    fun clone(ref n, ref t) =
 	let
 	    val t' = Array.array(Array.length t, EMPTY)
 	in

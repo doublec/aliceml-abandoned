@@ -27,7 +27,7 @@ functor MakeHashImpMap(Key: HASH_KEY) :> IMP_MAP where type key = Key.t =
     fun fold f			= foldi(fn(k,a,b) => f(a,b))
 
 
-    fun copy(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
+    fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
 				  in
 				      Array.copy{src=t, dst=t', si=0, di=0,
 						 len=NONE} ;

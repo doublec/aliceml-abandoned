@@ -20,7 +20,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun fold f a (ref t, _)	= Array.foldl(fn(ks,a) => List.foldl f a ks) a t
 
 
-    fun copy(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
+    fun clone(ref t, ref n)	= let val t' = Array.array(Array.length t, [])
 				  in
 				      Array.copy{src=t, dst=t', si=0, di=0,
 						 len=NONE} ;

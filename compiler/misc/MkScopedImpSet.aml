@@ -13,8 +13,8 @@ functor MakeScopedImpSet(ImpSet: IMP_SET) :>
     val scopeSize = 19
 
     fun new()			= ref[ImpSet.new()]
-    fun copy(ref ss)		= ref(List.map ImpSet.copy ss)
-    fun copyScope(ref ss)	= ref[ImpSet.copy(List.hd ss)]
+    fun clone(ref ss)		= ref(List.map ImpSet.clone ss)
+    fun cloneScope(ref ss)	= ref[ImpSet.clone(List.hd ss)]
     fun insertScope r		= r := ImpSet.new() :: !r
     fun deleteScope r		= r := List.tl(!r)
     fun splitScope(r as ref ss)	= ( deleteScope r ; ref[List.hd ss] )

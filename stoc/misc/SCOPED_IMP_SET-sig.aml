@@ -14,8 +14,8 @@ signature SCOPED_IMP_SET =
 
     val new :			unit -> set
 
-    val copy :			set -> set
-    val copyScope :		set -> set
+    val clone :			set -> set
+    val cloneScope :		set -> set
 
     val insertScope :		set -> unit
     val inheritScope :		set * set -> unit

@@ -27,7 +27,7 @@ functor MakeHashImpSet(Item: HASH_KEY) :> IMP_SET where type item = Item.t =
     fun isEmpty(ref n, _)	= n = 0
 
 
-    fun copy(ref n, ref t) =
+    fun clone(ref n, ref t) =
 	let
 	    val t' = Array.array(Array.length t, EMPTY)
 	in

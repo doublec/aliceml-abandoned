@@ -10,7 +10,7 @@ signature IMP_MAP =
     exception Lookup    of key
 
     val new :		unit -> 'a map
-    val copy :		'a map -> 'a map
+    val clone :		'a map -> 'a map
 
     val delete :	'a map * key -> unit
     val deleteExistent:	'a map * key -> unit		(* Delete *)

@@ -9,7 +9,7 @@ signature IMP_SET =
     exception Collision of item
 
     val new :		unit -> set
-    val copy :		set -> set
+    val clone :		set -> set
 
     val delete :	set * item -> unit
     val deleteExistent:	set * item -> unit		(* Delete *)
