@@ -26,7 +26,7 @@ static word MakeKey(JavaString *className, JavaString *name,
 word NativeMethodTable::wTable;
 
 void NativeMethodTable::Init() {
-  wTable = HashTable::New(HashTable::BLOCK_KEY, initialSize)->ToWord();
+  wTable = ChunkMap::New(initialSize)->ToWord();
   RootSet::Add(wTable);
   Dump(JavaString::New("Dump"));
   java_lang_Class(JavaString::New("java/lang/Class"));
@@ -55,10 +55,10 @@ void NativeMethodTable::Init() {
 void NativeMethodTable::Register(JavaString *className, JavaString *name,
 				 JavaString *descriptor, Closure *closure,
 				 bool /*--** isVirtual */) {
-  HashTable *table = HashTable::FromWordDirect(wTable);
+  ChunkMap *table = ChunkMap::FromWordDirect(wTable);
   word key = MakeKey(className, name, descriptor);
   Assert(!table->IsMember(key));
-  table->InsertItem(key, closure->ToWord());
+  table->Put(key, closure->ToWord());
 }
 
 void NativeMethodTable::Register(JavaString *className, const char *name,
@@ -81,8 +81,8 @@ void NativeMethodTable::Register(JavaString *className, const char *name,
 
 Closure *NativeMethodTable::Lookup(JavaString *className, JavaString *name,
 				   JavaString *descriptor) {
-  HashTable *table = HashTable::FromWordDirect(wTable);
+  ChunkMap *table = ChunkMap::FromWordDirect(wTable);
   word key = MakeKey(className, name, descriptor);
   if (!table->IsMember(key)) return INVALID_POINTER;
-  return Closure::FromWordDirect(table->GetItem(key));
+  return Closure::FromWordDirect(table->Get(key));
 }

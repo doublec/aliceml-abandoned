@@ -17,7 +17,7 @@
 #pragma interface "java/NativeMethodTable.hh"
 #endif
 
-#include "adt/HashTable.hh"
+#include "adt/ChunkMap.hh"
 #include "generic/RootSet.hh"
 #include "generic/Interpreter.hh"
 #include "generic/Closure.hh"
