@@ -16,14 +16,13 @@ import signature IO_DESC      from "IO_DESC-sig"
 
 structure IODesc :> IO_DESC =
     struct
-	type ('vector, 'array, 'pos) reader =
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) reader =
 	    {name: string,
 	     chunkSize: int,
 	     readVec: (int -> 'vector) option,
-	     readArr: ({buf: 'array, i: int, sz: int option} -> int) option,
+	     readArr: ('array_slice -> int) option,
 	     readVecNB: (int -> 'vector option) option,
-	     readArrNB:
-		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     readArrNB: ('array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canInput: (unit -> bool) option,
 	     avail: unit -> int option,
@@ -34,15 +33,13 @@ structure IODesc :> IO_DESC =
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
-	type ('vector, 'array, 'pos) writer =
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) writer =
 	    {name: string,
 	     chunkSize: int,
-	     writeVec: ({buf: 'vector, i: int, sz: int option} -> int) option,
-	     writeArr: ({buf: 'array, i: int, sz: int option} -> int) option,
-	     writeVecNB:
-		 ({buf: 'vector, i: int, sz: int option} -> int option) option,
-	     writeArrNB:
-		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     writeVec: ('vector_slice -> int) option,
+	     writeArr: ('array_slice -> int) option,
+	     writeVecNB: ('vector_slice -> int option) option,
+	     writeArrNB: ('array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canOutput: (unit -> bool) option,
 	     getPos: (unit -> 'pos) option,
@@ -51,6 +48,9 @@ structure IODesc :> IO_DESC =
 	     verifyPos: (unit -> 'pos) option,
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
+
+	__primitive val cast : 'a -> 'b = "Unsafe.cast"
+	(*--** need to cast slices to their representation *)
 
 	fun mkReader iodesc =
 	    let
@@ -65,8 +65,12 @@ structure IODesc :> IO_DESC =
 		     else NONE,
 		 readArr =
 		     if #readArr rcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.readArr
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.readArr {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 readVecNB =
 		     if #readVecNB rcap then
@@ -74,8 +78,12 @@ structure IODesc :> IO_DESC =
 		     else NONE,
 		 readArrNB =
 		     if #readArrNB rcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.readArrNB
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.readArrNB {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 block =
 		     if #block cap then
@@ -112,23 +120,39 @@ structure IODesc :> IO_DESC =
 		 chunkSize = UnsafeIODesc.chunkSize iodesc,
 		 writeVec =
 		     if #writeVec wcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.writeVec
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeVec {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 writeArr =
 		     if #writeArr wcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.writeArr
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeArr {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 writeVecNB =
 		     if #writeVecNB wcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.writeVecNB
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeVecNB {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 writeArrNB =
 		     if #writeArrNB wcap then
-			 SOME (fn {buf, i, sz} => UnsafeIODesc.writeArrNB
-						      {iodesc, buf, i, sz})
+			 SOME (fn sl =>
+			       let
+			           val (buf, i, sz) = cast sl
+			       in
+				   UnsafeIODesc.writeArrNB {iodesc, buf, i, sz}
+			       end)
 		     else NONE,
 		 block =
 		     if #block cap then

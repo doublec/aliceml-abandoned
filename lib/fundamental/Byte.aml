@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -35,10 +35,8 @@ struct
     __primitive val bytesToString : Word8Vector.t -> string = "Byte.bytesToString"
     __primitive val stringToBytes : string -> Word8Vector.t = "Byte.stringToBytes"
 
-    fun unpackStringVec sl =
-	bytesToString(Word8VectorSlice.vector(Word8VectorSlice.slice sl))
-    fun unpackString sl =
-	bytesToString(Word8ArraySlice.vector(Word8ArraySlice.slice sl))
+    fun unpackStringVec sl = bytesToString(Word8VectorSlice.vector sl)
+    fun unpackString sl    = bytesToString(Word8ArraySlice.vector sl)
 
     fun packString(a,i,ss) =
 	CharVectorSlice.appi

@@ -15,13 +15,12 @@ import structure Config          from "Config"
 import signature TEXT_TRANSLATOR from "TEXT_TRANSLATOR-sig"
 
 functor MkTextTranslator(structure PrimIO: PRIM_IO
-			     where type elem = Char.char
-			       and type vector = CharVector.vector
-			       and type array = CharArray.array) :>
-    TEXT_TRANSLATOR where type PrimIO.elem = PrimIO.elem
-		      and type PrimIO.vector = PrimIO.vector
-		      and type PrimIO.array = PrimIO.array
-		      and type PrimIO.pos = PrimIO.pos =
+			     where type elem = Char.t
+			       and type vector = CharVector.t
+			       and type vector_slice = CharVectorSlice.t
+			       and type array = CharArray.t
+			       and type array_slice = CharArraySlice.t) :
+    TEXT_TRANSLATOR =
     struct
 	structure PrimIO = PrimIO
 
@@ -50,8 +49,13 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 		      | NONE => NONE
 		val readArr =
 		    case readArr of
-			SOME f => SOME (fn {buf, i, sz} =>
-					   tra (buf, i, f {buf, i, sz}))
+			SOME f => SOME (fn sl =>
+					let
+					    val (buf, i, sz) =
+						CharArraySlice.base sl
+					in
+					    tra (buf, i, f sl)
+					end)
 		      | NONE => NONE
 		val readVecNB =
 		    case readVecNB of
@@ -62,10 +66,15 @@ functor MkTextTranslator(structure PrimIO: PRIM_IO
 		      | NONE => NONE
 		val readArrNB =
 		    case readArrNB of
-			SOME f => SOME (fn {buf, i, sz} =>
-					   case f {buf, i, sz} of
+			SOME f => SOME (fn sl =>
+					let
+					    val (buf, i, sz) =
+						CharArraySlice.base sl
+					in
+					   case f sl of
 					       SOME n => SOME (tra (buf, i, n))
-					     | NONE => NONE)
+					     | NONE => NONE
+					end)
 		      | NONE => NONE
 	    in
 		PrimIO.RD {name, chunkSize, readVec, readArr, readVecNB,

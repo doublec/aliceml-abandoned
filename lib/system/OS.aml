@@ -90,7 +90,7 @@ struct
     struct
 	eqtype iodesc
 
-	val hash = UnsafeIODesc.hash
+	fun hash iodesc = Word.fromInt (UnsafeIODesc.hash iodesc)
 	val compare = UnsafeIODesc.compare
 
 	datatype iodesc_kind =

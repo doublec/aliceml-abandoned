@@ -43,8 +43,8 @@ local
 
     fun fileToString (file, lines) =
 	(case TextIO.inputLine file of
-	     ""   => (TextIO.closeIn file; rev lines)
-	   | line => fileToString(file, line::lines))
+	     NONE      => (TextIO.closeIn file; rev lines)
+	   | SOME line => fileToString(file, line::lines))
 
     val keys = ["abstype", "and", "andalso", "as", "case", "datatype",
 		"do", "else", "end", "exception", "fn", "fun", "handle",
@@ -240,8 +240,8 @@ local
 
 	fun printResult () =
 	    (case TextIO.inputLine instream of
-		 "" => showResult "interpreter terminated."
-	       | s  => (showResult s; printResult ()))
+		 NONE   => showResult "interpreter terminated."
+	       | SOME s => (showResult s; printResult ()))
     in
 	fun listenToShell () = spawn (printResult ())
 

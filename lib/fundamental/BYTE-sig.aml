@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,6 +20,8 @@ import __primitive
 import __primitive structure Word8                      from "Word8"
 import __primitive structure Word8Vector                from "Word8Vector"
 import __primitive structure Word8Array                 from "Word8Array"
+import __primitive structure Word8VectorSlice           from "Word8VectorSlice"
+import __primitive structure Word8ArraySlice            from "Word8ArraySlice"
 import __primitive structure Substring                  from "Substring"
 
 signature BYTE =
@@ -28,7 +30,7 @@ sig
     val charToByte :      char -> Word8.t
     val bytesToString :   Word8Vector.t -> string
     val stringToBytes :   string -> Word8Vector.t
-    val unpackStringVec : Word8Vector.t * int * int option -> string
-    val unpackString :    Word8Array.t * int * int option -> string
+    val unpackStringVec : Word8VectorSlice.t -> string
+    val unpackString :    Word8ArraySlice.t -> string
     val packString :      Word8Array.t * int * Substring.t -> unit
 end

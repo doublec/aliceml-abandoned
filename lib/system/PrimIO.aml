@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2002-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,22 +15,27 @@ import structure OS      from "OS"
 import structure IO      from "IO"
 import signature PRIM_IO from "PRIM_IO-sig"
 
-functor PrimIO(structure V: MONO_VECTOR
-	       structure A: MONO_ARRAY
-		   where type vector = V.vector
-		     and type elem = V.elem
-	       val someElem: A.elem
+functor PrimIO(structure Vector: MONO_VECTOR
+	       structure Array: MONO_ARRAY
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+	       structure VectorSlice: MONO_VECTOR_SLICE
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+	       structure ArraySlice: MONO_ARRAY_SLICE
+		   where type elem = Vector.elem
+		     and type vector = Vector.t
+		     and type array = Array.t
+		     and type vector_slice = VectorSlice.t
+	       val someElem: Vector.elem
 	       eqtype pos
-	       val compare: pos * pos -> order) :>
-    PRIM_IO
-	where type elem = A.elem
-	  and type vector = A.vector
-	  and type array = A.array
-	  and type pos = pos =
+	       val compare: pos * pos -> order) : PRIM_IO =
     struct
-	type elem = A.elem
-	type vector = A.vector
-	type array = A.array
+	type elem = Vector.elem
+	type vector = Vector.t
+	type vector_slice = VectorSlice.t
+	type array = Array.t
+	type array_slice = ArraySlice.t
 
 	type pos = pos
 	val compare = compare
@@ -39,10 +44,9 @@ functor PrimIO(structure V: MONO_VECTOR
 	    {name: string,
 	     chunkSize: int,
 	     readVec: (int -> vector) option,
-	     readArr: ({buf: array, i: int, sz: int option} -> int) option,
+	     readArr: (array_slice -> int) option,
 	     readVecNB: (int -> vector option) option,
-	     readArrNB:
-		 ({buf: array, i: int, sz: int option} -> int option) option,
+	     readArrNB: (array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canInput: (unit -> bool) option,
 	     avail: unit -> int option,
@@ -56,12 +60,10 @@ functor PrimIO(structure V: MONO_VECTOR
 	datatype writer = WR of
 	    {name: string,
 	     chunkSize: int,
-	     writeVec: ({buf: vector, i: int, sz: int option} -> int) option,
-	     writeArr: ({buf: array, i: int, sz: int option} -> int) option,
-	     writeVecNB:
-		 ({buf: vector, i: int, sz: int option} -> int option) option,
-	     writeArrNB:
-		 ({buf: array, i: int, sz: int option} -> int option) option,
+	     writeVec: (vector_slice -> int) option,
+	     writeArr: (array_slice -> int) option,
+	     writeVecNB: (vector_slice -> int option) option,
+	     writeArrNB: (array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canOutput: (unit -> bool) option,
 	     getPos: (unit -> pos) option,
@@ -70,21 +72,6 @@ functor PrimIO(structure V: MONO_VECTOR
 	     verifyPos: (unit -> pos) option,
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
-
-	fun v_extract (v, i, n) = V.tabulate (n, fn j => V.sub (v, i + j))
-	fun a_extract (a, i, n) = V.tabulate (n, fn j => A.sub (a, i + j))
-	fun a_extract' (a, i, SOME n) = a_extract (a, i, n)
-	  | a_extract' (a, i, NONE) = a_extract (a, i, A.length a - i)
-
-	fun a_copyVecSlice' (src, si, dst, di, 0) = ()
-	  | a_copyVecSlice' (src, si, dst, di, len) =
-	    (A.update (dst, di, V.sub (src, si));
-	     a_copyVecSlice' (src, si + 1, dst, di + 1, len - 1))
-	fun a_copyVecSlice {src, si, dst, di, len} =
-	    if si < 0 orelse di < 0 orelse si + len > V.length src
-				    orelse di + len > A.length dst
-	    then raise General.Subscript
-	    else a_copyVecSlice' (src, si, dst, di, len)
 
 	fun openVector v =
 	    let
@@ -103,32 +90,28 @@ functor PrimIO(structure V: MONO_VECTOR
 		fun readVec sz =
 		    let
 			val p = !pos
-			val n = Int.min (V.length v - p, sz)
+			val n = Int.min (Vector.length v - p, sz)
+			val src = VectorSlice.slice (v, p, SOME n)
+				  handle General.Subscript => raise General.Size
 		    in
-			case Int.compare (n, 0) of
-			    LESS => raise General.Size
-			  | EQUAL => raise General.Domain
-			  | GREATER => (pos := p + n; v_extract (v, p, n))
+			pos := p + n;
+			VectorSlice.vector src
 		    end
 
-		fun readArr {buf, i, sz} =
+		fun readArr sl =
 		    let
 			val p = !pos
-			val sz = Option.getOpt (sz, A.length buf - i)
-			val n = Int.min (V.length v - p, sz)
+			val (buf, di, sz) = ArraySlice.base sl
+			val n = Int.min (Vector.length v - p, sz)
+			val src = VectorSlice.slice (v, p, SOME n)
 		    in
-			case Int.compare (n, 0) of
-			    LESS => raise General.Size
-			  | EQUAL => raise General.Domain
-			  | GREATER => (pos := p + n;
-					a_copyVecSlice {src = v, si = p,
-							len = n,
-							dst = buf, di = i};
-					n)
+			ArraySlice.copyVec {src = src, dst = buf, di = di};
+			pos := p + n;
+			n
 		    end
 	    in
 		RD {name = "vector",
-		    chunkSize = V.length v,
+		    chunkSize = Vector.length v,
 		    readVec = SOME (check readVec),
 		    readArr = SOME (check readArr),
 		    readVecNB = SOME (check (fn x => if Future.isFuture v
@@ -148,13 +131,6 @@ functor PrimIO(structure V: MONO_VECTOR
 		    ioDesc = NONE}
 	    end
 
-	fun len (len, i, sz) =
-	    (if i < 0 orelse i > len then raise General.Subscript else ();
-	     case sz of
-		 SOME sz =>
-		     if sz > len - i then raise General.Size else sz
-	       | NONE => len - i)
-
 	fun nullRd (): reader =
 	    let
 		val closed = ref false
@@ -170,9 +146,9 @@ functor PrimIO(structure V: MONO_VECTOR
 	    in
 		RD {name = "null",
 		    chunkSize = 1,
-		    readVec = SOME (check (V.fromList nil)),
+		    readVec = SOME (check (Vector.fromList nil)),
 		    readArr = SOME (check 0),
-		    readVecNB = SOME (check (SOME (V.fromList nil))),
+		    readVecNB = SOME (check (SOME (Vector.fromList nil))),
 		    readArrNB = SOME (check (SOME 0)),
 		    block = SOME (check ()),
 		    canInput = SOME (check true),
@@ -200,18 +176,12 @@ functor PrimIO(structure V: MONO_VECTOR
 	    in
 		WR {name = "null",
 		    chunkSize = 1,
-		    writeVec = SOME (fn {buf, i, sz} =>
-					check len (V.length buf, i, sz)),
-		    writeArr = SOME (fn {buf, i, sz} =>
-					check len (A.length buf, i, sz)),
-		    writeVecNB =
-			SOME (fn {buf, i, sz} =>
-				 check (SOME o len) (V.length buf, i, sz)),
-		    writeArrNB =
-			SOME (fn {buf, i, sz} =>
-				 check (SOME o len) (A.length buf, i, sz)),
-		    block = SOME (check (fn () => ())),
-		    canOutput = SOME (check (fn () => true)),
+		    writeVec = SOME (check VectorSlice.length),
+		    writeArr = SOME (check ArraySlice.length),
+		    writeVecNB = SOME (check (SOME o VectorSlice.length)),
+		    writeArrNB = SOME (check (SOME o ArraySlice.length)),
+		    block = SOME (check ignore),
+		    canOutput = SOME (check (const true)),
 		    getPos = NONE,
 		    setPos = NONE,
 		    endPos = NONE,
@@ -229,10 +199,11 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome readArr then
 			SOME (fn sz =>
 			      let
-				  val buf = A.array (sz, someElem)
-				  val i = valOf readArr {buf, i = 0, sz = NONE}
+				  val buf = Array.array (sz, someElem)
+				  val i = valOf readArr (ArraySlice.full buf)
+				  val sl = ArraySlice.slice (buf, 0, SOME i)
 			      in
-				  a_extract (buf, 0, i)
+				  ArraySlice.vector sl
 			      end)
 		    else if isSome block then (*--** first read, then block *)
 			if isSome readVecNB then
@@ -242,43 +213,41 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn sz =>
 				  let
 				      val _ = valOf block ()
-				      val buf = A.array (sz, someElem)
-				      val i = valOf (valOf readArrNB
-						  {buf, i = 0, sz = NONE})
+				      val buf = Array.array (sz, someElem)
+				      val iOpt = valOf readArrNB
+						 (ArraySlice.full buf)
+				      val sl = ArraySlice.slice (buf, 0, iOpt)
 				  in
-				      a_extract (buf, 0, i)
+				      ArraySlice.vector sl
 				  end)
 			else NONE
 		    else NONE
 		val readArr' =
 		    if isSome readArr then readArr
 		    else if isSome readVec then
-			SOME (fn {buf, i, sz} =>
+			SOME (fn sl =>
 			      let
-				  val k = case sz of
-					     SOME k => k
-					   | NONE => A.length buf - i
-				  val v = valOf readVec k
+				  val (buf, di, sz) = ArraySlice.base sl
+				  val v = valOf readVec sz
 			      in
-				  A.copyVec {src = v, dst = buf, di = i};
-				  V.length v
+				  Array.copyVec {src = v, dst = buf, di = di};
+				  Vector.length v
 			      end)
 		    else if isSome block then (*--** first read, then block *)
 			if isSome readArrNB then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  (valOf block ();
-				   valOf (valOf readArrNB {buf, i, sz})))
+				   valOf (valOf readArrNB sl)))
 			else if isSome readVecNB then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  let
 				      val _ = valOf block ()
-				      val k = case sz of
-						  SOME k => k
-						| NONE => A.length buf - i
-				      val v = valOf (valOf readVecNB k)
+				      val (buf, di, sz) = ArraySlice.base sl
+				      val v = valOf (valOf readVecNB sz)
 				  in
-				      A.copyVec {src = v, dst = buf, di = i};
-				      V.length v
+				      Array.copyVec {src = v, dst = buf,
+						     di = di};
+				      Vector.length v
 				  end)
 			else NONE
 		    else NONE
@@ -287,12 +256,14 @@ functor PrimIO(structure V: MONO_VECTOR
 		    else if isSome readArrNB then
 			SOME (fn sz =>
 			      let
-				  val buf = A.array (sz, someElem)
+				  val buf = Array.array (sz, someElem)
 			      in
-				  case valOf readArrNB {buf,i=0,sz=NONE} of
-				      SOME i =>
-					  SOME (a_extract (buf, 0, i))
-				    | NONE => NONE
+				  case valOf readArrNB (ArraySlice.full buf) of
+				      NONE => NONE
+				    | some =>
+					  SOME (ArraySlice.vector
+						(ArraySlice.slice
+						 (buf, 0, some)))
 			      end)
 		    else if Option.isSome canInput then
 			if Option.isSome readVec then
@@ -304,11 +275,13 @@ functor PrimIO(structure V: MONO_VECTOR
 			    SOME (fn sz =>
 				  if valOf canInput () then
 				      let
-					  val buf = A.array (sz, someElem)
-					  val i =
-					      valOf readArr {buf, i=0, sz=NONE}
+					  val buf = Array.array (sz, someElem)
+					  val i = valOf readArr
+							(ArraySlice.full buf)
+					  val sl =
+					      ArraySlice.slice (buf, 0, SOME i)
 				      in
-					  SOME (a_extract (buf, 0, i))
+					  SOME (ArraySlice.vector sl)
 				      end
 				  else NONE)
 			else NONE
@@ -316,36 +289,33 @@ functor PrimIO(structure V: MONO_VECTOR
 		val readArrNB' =
 		    if Option.isSome readArrNB then readArrNB
 		    else if Option.isSome readVecNB then
-			SOME (fn {buf, i, sz} =>
+			SOME (fn sl =>
 			      if valOf canInput () then
 				  let
-				      val k = case sz of
-						  SOME k => k
-						| NONE => A.length buf - i
-				      val v = valOf readVec k
+				      val (buf, di, sz) = ArraySlice.base sl
+				      val v = valOf (valOf readVecNB sz)
 				  in
-				      A.copyVec {src = v, dst = buf, di = i};
-				      SOME (V.length v)
+				      Array.copyVec {src = v, dst = buf,
+				 		     di = di};
+				      SOME (Vector.length v)
 				  end
 			      else NONE)
 		    else if Option.isSome canInput then
 			if Option.isSome readArr then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canInput () then
-				      SOME (valOf readArr {buf, i, sz})
+				      SOME (valOf readArr sl)
 				  else NONE)
 			else if Option.isSome readVec then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canInput () then
 				      let
-					  val k = case sz of
-						      SOME k => k
-						    | NONE => A.length buf - i
-					  val v = valOf readVec k
+					  val (buf, di, sz) = ArraySlice.base sl
+					  val v = valOf readVec sz
 				      in
-					  A.copyVec {src = v, dst = buf,
-						     di = i};
-					  SOME (V.length v)
+					  Array.copyVec {src = v, dst = buf,
+							 di = di};
+					  SOME (Vector.length v)
 				      end
 				  else NONE)
 			else NONE
@@ -364,86 +334,88 @@ functor PrimIO(structure V: MONO_VECTOR
 		val writeVec' =
 		    if isSome writeVec then writeVec
 		    else if isSome writeArr then
-			SOME (fn {buf, i, sz} =>
+			SOME (fn sl =>
 			      let
-				  val n = len (V.length buf, i, sz)
-				  val a = A.array (n, someElem)
+				  val sz = VectorSlice.length sl
+				  val a = Array.array (sz, someElem)
 			      in
-				  a_copyVecSlice {src = buf, si = i, len = n,
-						  dst = a, di = 0};
-				  valOf writeArr {buf = a, i = 0, sz = NONE}
+				  ArraySlice.copyVec {src = sl, dst = a,
+						      di = 0};
+				  valOf writeArr (ArraySlice.full a)
 			      end)
 		    else if isSome block then (*--** first write, then block *)
 			if isSome writeVecNB then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  (valOf block ();
-				   valOf (valOf writeVecNB {buf, i, sz})))
+				   valOf (valOf writeVecNB sl)))
 			else if isSome writeArrNB then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  let
 				      val _ = valOf block ()
-				      val n = len (V.length buf, i, sz)
-				      val a = A.array (n, someElem)
+				      val sz = VectorSlice.length sl
+				      val a = Array.array (sz, someElem)
 				  in
-				      a_copyVecSlice {src = buf, si = i,
-						      len = n, dst = a,
-						      di = 0};
+				      ArraySlice.copyVec {src = sl, dst = a,
+							  di = 0};
 				      valOf (valOf writeArrNB
-					  {buf = a, i = 0, sz = SOME n})
+					     (ArraySlice.full a))
 				  end)
 			else NONE
 		    else NONE
 		val writeArr' =
 		    if isSome writeArr then writeArr
 		    else if isSome writeVec then
-			SOME (fn {buf, i, sz} =>
-			      valOf writeVec
-				  {buf = a_extract' (buf, i, sz),
-				   i = 0, sz = NONE})
+			SOME (fn sl =>
+			      let
+				  val v = ArraySlice.vector sl
+			      in
+				  valOf writeVec (VectorSlice.full v)
+			      end)
 		    else if isSome block then (*--** first write, then block *)
 			if isSome writeArrNB then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  (valOf block ();
-				   valOf (valOf writeArrNB {buf, i, sz})))
+				   valOf (valOf writeArrNB sl)))
 			else if isSome writeVecNB then
-			    SOME (fn {buf, i, sz} =>
-				  (valOf block ();
-				   valOf (valOf writeVecNB
-				       {buf = a_extract' (buf, i, sz),
-					i = 0, sz = NONE})))
+			    SOME (fn sl =>
+				  let
+				      val _ = valOf block ()
+				      val v = ArraySlice.vector sl
+				  in
+				      valOf (valOf writeVecNB
+					     (VectorSlice.full v))
+				  end)
 			else NONE
 		    else NONE
 		val writeVecNB' =
 		    if isSome writeVecNB then writeVecNB
 		    else if isSome writeArrNB then
-			SOME (fn {buf, i, sz} =>
+			SOME (fn sl =>
 			      let
-				  val n = len (V.length buf, i, sz)
-				  val a = A.array (n, someElem)
+				  val sz = VectorSlice.length sl
+				  val a = Array.array (sz, someElem)
 			      in
-				  a_copyVecSlice {src = buf, si = i, len = n,
-						  dst = a, di = 0};
-				  valOf writeArrNB
-				      {buf = a, i = 0, sz = SOME n}
+				  ArraySlice.copyVec {src = sl, dst = a,
+						      di = 0};
+				  valOf writeArrNB (ArraySlice.full a)
 			      end)
 		    else if isSome canOutput then
 			if isSome writeVec then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canOutput () then
-				      SOME (valOf writeVec {buf, i, sz})
+				      SOME (valOf writeVec sl)
 				  else NONE)
 			else if isSome writeArr then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canOutput () then
 				      let
-					  val n = len (V.length buf, i, sz)
-					  val a = A.array (n, someElem)
+					  val sz = VectorSlice.length sl
+					  val a = Array.array (sz, someElem)
 				      in
-					  a_copyVecSlice {src = buf, si = i,
-							  len = n, dst = a,
-							  di = 0};
+					  ArraySlice.copyVec {src = sl,
+							      dst = a, di = 0};
 					  SOME (valOf writeArr
-						{buf = a, i = 0, sz = NONE})
+						(ArraySlice.full a))
 				      end
 				  else NONE)
 			else NONE
@@ -451,22 +423,27 @@ functor PrimIO(structure V: MONO_VECTOR
 		val writeArrNB' =
 		    if isSome writeArrNB then writeArrNB
 		    else if isSome writeVecNB then
-			SOME (fn {buf, i, sz} =>
-			      valOf writeVecNB
-				  {buf = a_extract' (buf, i, sz), i = 0,
-				   sz = NONE})
+			SOME (fn sl =>
+			      let
+				  val v = ArraySlice.vector sl
+			      in
+				  valOf writeVecNB (VectorSlice.full v)
+			      end)
 		    else if isSome canOutput then
 			if isSome writeArr then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canOutput () then
-				      SOME (valOf writeArr {buf, i, sz})
+				      SOME (valOf writeArr sl)
 				  else NONE)
 			else if isSome writeVec then
-			    SOME (fn {buf, i, sz} =>
+			    SOME (fn sl =>
 				  if valOf canOutput () then
-				      SOME (valOf (valOf writeVecNB
-					  {buf = a_extract' (buf, i, sz),
-					   i = 0, sz = NONE}))
+				      let
+					  val v = ArraySlice.vector sl
+				      in
+					  SOME (valOf writeVec
+						(VectorSlice.full v))
+				      end
 				  else NONE)
 			else NONE
 		    else NONE
@@ -476,5 +453,4 @@ functor PrimIO(structure V: MONO_VECTOR
 		    writeArrNB = writeArrNB', block, canOutput, getPos,
 		    setPos, endPos, verifyPos, close, ioDesc}
 	    end
-
     end

@@ -56,8 +56,8 @@ structure Socket :> SOCKET =
 
 	fun inputLine socket =
 	    case UnsafeSocket.input1 socket of
-		SOME c => String.implode (c::inputLine' socket)
-	      | NONE => ""
+		SOME c => SOME (String.implode (c::inputLine' socket))
+	      | NONE => NONE
 	and inputLine' socket =
 	    case UnsafeSocket.input1 socket of
 		SOME #"\n" => [#"\n"]

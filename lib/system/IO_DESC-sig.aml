@@ -14,14 +14,13 @@ import structure OS from "OS"
 
 signature IO_DESC =
     sig
-	type ('vector, 'array, 'pos) reader =
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) reader =
 	    {name: string,
 	     chunkSize: int,
 	     readVec: (int -> 'vector) option,
-	     readArr: ({buf: 'array, i: int, sz: int option} -> int) option,
+	     readArr: ('array_slice -> int) option,
 	     readVecNB: (int -> 'vector option) option,
-	     readArrNB:
-		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     readArrNB: ('array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canInput: (unit -> bool) option,
 	     avail: unit -> int option,
@@ -32,15 +31,13 @@ signature IO_DESC =
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
-	type ('vector, 'array, 'pos) writer =
+	type ('vector, 'array, 'vector_slice, 'array_slice, 'pos) writer =
 	    {name: string,
 	     chunkSize: int,
-	     writeVec: ({buf: 'vector, i: int, sz: int option} -> int) option,
-	     writeArr: ({buf: 'array, i: int, sz: int option} -> int) option,
-	     writeVecNB:
-		 ({buf: 'vector, i: int, sz: int option} -> int option) option,
-	     writeArrNB:
-		 ({buf: 'array, i: int, sz: int option} -> int option) option,
+	     writeVec: ('vector_slice -> int) option,
+	     writeArr: ('array_slice -> int) option,
+	     writeVecNB: ('vector_slice -> int option) option,
+	     writeArrNB: ('array_slice -> int option) option,
 	     block: (unit -> unit) option,
 	     canOutput: (unit -> bool) option,
 	     getPos: (unit -> 'pos) option,
@@ -50,11 +47,11 @@ signature IO_DESC =
 	     close: unit -> unit,
 	     ioDesc: OS.IO.iodesc option}
 
-	val stdIn: (CharVector.t, CharArray.t, Position.t) reader
-	val stdOut: (CharVector.t, CharArray.t, Position.t) writer
-	val stdErr: (CharVector.t, CharArray.t, Position.t) writer
+	val stdIn: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) reader
+	val stdOut: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
+	val stdErr: (CharVector.t, CharArray.t, CharVectorSlice.t, CharArraySlice.t, Position.t) writer
 
-	val openIn: string -> ('vector, 'array, 'pos) reader
-	val openOut: string -> ('vector, 'array, 'pos) writer
-	val openAppend: string -> ('vector, 'array, 'pos) writer
+	val openIn: string -> ('v, 'a, 'vsl, 'asl, 'pos) reader
+	val openOut: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
+	val openAppend: string -> ('v, 'a, 'vsl, 'asl, 'pos) writer
     end

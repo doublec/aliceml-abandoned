@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2001
+ *   Leif Kornstaedt and Andreas Rossberg, 2000-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -27,7 +27,7 @@ signature SOCKET =
 
 	val input1: socket -> char option
 	val inputN: socket * int -> vector
-	val inputLine: socket -> vector
+	val inputLine: socket -> vector option
 	val output: socket * vector -> unit
 	val output1: socket * char -> unit
 

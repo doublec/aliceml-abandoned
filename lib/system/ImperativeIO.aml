@@ -20,6 +20,8 @@ functor ImperativeIO(structure StreamIO: STREAM_IO
     IMPERATIVE_IO
 	where type StreamIO.instream = StreamIO.instream
 	  and type StreamIO.outstream = StreamIO.outstream
+	  and type StreamIO.reader = StreamIO.reader
+	  and type StreamIO.writer = StreamIO.writer
 	  and type StreamIO.vector = StreamIO.vector
 	  and type StreamIO.elem = StreamIO.elem
 	  and type StreamIO.pos = StreamIO.pos =

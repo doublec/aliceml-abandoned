@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -42,9 +42,11 @@ struct
     fun toSeconds t		= t div 1000000
     fun toMilliseconds t	= t div 1000
     fun toMicroseconds t	= t
+    fun toNanoseconds t		= t * 1000
     fun fromSeconds n		= n * 1000000
     fun fromMilliseconds n	= n * 1000
     fun fromMicroseconds n	= n
+    fun fromNanoseconds n	= n div 1000
 
     val equal			= op =
     val hash			= LargeInt.hash

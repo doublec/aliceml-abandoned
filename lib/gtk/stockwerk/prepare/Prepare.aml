@@ -57,11 +57,11 @@ local
 
     fun filterLines fin fout =
 	case inputLine fin of
-	    "" => ()
-	| line => (case filterLine line of
-		       "" => ()
-		     | l  => output(fout, l^"\n")
-		   ; filterLines fin fout)
+	  NONE      => ()
+	| SOME line => (case filterLine line of
+			   "" => ()
+			 | l  => output(fout, l^"\n")
+		       ; filterLines fin fout)
 in
     fun prepare inFile outFile =
 	let

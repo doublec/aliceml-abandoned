@@ -40,7 +40,7 @@ structure Http :> HTTP =
 
 	fun readLine socket =
 	    let
-		val s = Socket.inputLine socket handle _ => raise Closed
+		val s = valOf (Socket.inputLine socket) handle _ => raise Closed
 		val n = String.size s
 	    in
 		if n < 2

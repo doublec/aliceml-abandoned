@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -39,9 +39,11 @@ sig
     val toSeconds :		time -> LargeInt.int
     val toMilliseconds :	time -> LargeInt.int
     val toMicroseconds :	time -> LargeInt.int
+    val toNanoseconds :		time -> LargeInt.int
     val fromSeconds :		LargeInt.int -> time
     val fromMilliseconds :	LargeInt.int -> time
     val fromMicroseconds :	LargeInt.int -> time
+    val fromNanoseconds :	LargeInt.int -> time
 
     val op + :			time * time -> time
     val op - :			time * time -> time
