@@ -1,6 +1,12 @@
-# $Date$ $Author$ $Revision$
-# Makefile fuer Runtime
+# Author: 
+#      Daniel Simon, <dansim@ps.uni-sb.de>
 #
+# Copyright:
+#      Daniel Simon, 1999
+#
+# Last change:
+#    $Date$ by $Author$
+# $Revision$
 
 SHELL   = /bin/bash
 

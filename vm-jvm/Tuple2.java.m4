@@ -67,10 +67,10 @@ final public class Tuple2 implements DMLTuple {
 	if (level<1) {
 	    return "...";
 	} else {
-	return "("+fst.toString(level-1)+", "+snd.toString(level-1)+")";
+	    return "("+fst.toString(level-1)+", "+snd.toString(level-1)+")";
+	}
     }
-    }
-    
+
     /** gibt den i-ten Eintrag des Tuples oder Records*/
     final public DMLValue get(int i) {
 	switch (i) {
