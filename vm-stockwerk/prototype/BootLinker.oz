@@ -64,27 +64,11 @@ define
    local
       ModuleManager = {New Module.manager init}
    in
-      for Url in Natives do OzModule Module in
-	 OzModule = {ModuleManager link(url: AliceHome#Url#'.ozf' $)}
+      for Key in Natives do OzModule Module in
+	 OzModule = {ModuleManager link(url: AliceHome#Key#'.ozf' $)}
 	 Module = {PrimitiveTable.importOzModule OzModule.module}
-	 ModuleTable.{VirtualString.toAtom Url} := NONE#Module
+	 ModuleTable.{VirtualString.toAtom Key} := NONE#Module
       end
-   end
-
-   proc {Link Url ?Module} Key in
-      Key = {VirtualString.toAtom Url}
-      %--** this thread creation is not nice
-      {Scheduler.object
-       newThread(closure(
-		    function(
-		       interpreter(
-			  pushCall:
-			     fun {$ _ Rest}
-				loadFrame(LoadInterpreter Key)|Rest
-			     end)))
-		 args())}
-      {Scheduler.object run()}
-      Module = ModuleTable.Key.2
    end
 
    fun {Construct Args}
@@ -93,7 +77,12 @@ define
       end
    end
 
-   %--** add handle/toString methods:
+   proc {Link Url ?Module} Key in
+      Key = {VirtualString.toAtom Url}
+      {Scheduler.object newThread(taskStack: [loadFrame(LoadInterpreter Key)])}
+      {Scheduler.object run()}
+      Module = ModuleTable.Key.2
+   end
 
    LoadInterpreter =
    loadInterpreter(
@@ -105,7 +94,12 @@ define
 	       continue(arg({Pickle.load AliceHome#Key#'.stc'})
 			linkFrame(LinkInterpreter Key)|Rest)
 	    end
-	 end)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ loadFrame(_ Key)} 'Load '#Key end)
 
    LinkInterpreter =
    linkInterpreter(
@@ -131,25 +125,35 @@ define
 			    end ApplyFrame|EnterFrame|Rest})
 	       end
 	    end
-	 end)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ linkFrame(_ Key)} 'Link '#Key end)
 
    ApplyInterpreter =
    applyInterpreter(
       run:
 	 fun {$ _ TaskStack}
-	    case TaskStack of applyFrame(_ BodyClosure Imports Url)|Rest then
-	       {Trace '[boot-linker] applying '#Url}
+	    case TaskStack of applyFrame(_ BodyClosure Imports Key)|Rest then
+	       {Trace '[boot-linker] applying '#Key}
 	       N = {Width Imports}
 	       Modules = {MakeTuple vector N}
 	    in
 	       for I in 1..N do Key in
-		  Key = {URL.toAtom {URL.resolve Url Imports.I.2}}
+		  Key = {URL.toAtom {URL.resolve Key Imports.I.2}}
 		  Modules.I = ModuleTable.Key.2
 	       end
 	       continue(arg(Modules)
 			{BodyClosure.1.1.pushCall BodyClosure Rest})
 	    end
-	 end)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ applyFrame(_ _ _ Key)} 'Apply '#Key end)
 
    EnterInterpreter =
    enterInterpreter(
@@ -161,5 +165,10 @@ define
 	       ModuleTable.Key := Sign#Module
 	       continue(arg(Module) Rest)
 	    end
-	 end)
+	 end
+      handle:
+	 fun {$ Debug Exn Frame|Rest}
+	    exception(Frame|Debug Exn Rest)
+	 end
+      toString: fun {$ enterFrame(_ Key _)} 'Enter '#Key end)
 end
