@@ -6,7 +6,7 @@
 
 <?php section("overview", "overview") ?>
 
-<P>For particular programming tasks - especially when transferring date between
+<P>For particular programming tasks - especially when transferring data between
 different processes - it is desirable to relax the strict static rules of ML
 and shift some of the type checking to runtime. For this purpose, Alice ML
 provides runtime typing through the concept of <EM>packages</EM>.
@@ -276,8 +276,8 @@ structure X = struct type t = int val x = 9 end
 val p1 = pack X :> S
 structure X1 = unpack p1 : S
 
-val p2 = pack X1 :> S where type t = X1.t
-structure X2 = unpack p2 : S where type t = int</PRE>
+val p2 = pack X1 :> (S where type t = X1.t)
+structure X2 = unpack p2 : (S where type t = int)</PRE>
 
 <P>Here, <TT>X</TT> has a transparent type <TT>t</TT> <TT>=</TT> <TT>int</TT>,
 but the package signature makes it abstract. Consequently, unpacking it under
@@ -294,10 +294,10 @@ successfully:</P>
 signature S = sig    type t       val x : t end
 structure X = struct type t = int val x = 9 end
 
-val p1 = pack X :> S where type t = int
+val p1 = pack X :> (S where type t = int)
 structure X1 = unpack p1 : S
 
-val p2 = pack X1 :> S where type t = X1.t
+val p2 = pack X1 :> (S where type t = X1.t)
 structure X2 = unpack p2 : S where type t = int</PRE>
 
 <P>In this case, the second <TT>pack</TT> expression makes the signature of

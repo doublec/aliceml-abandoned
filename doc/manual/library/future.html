@@ -131,7 +131,7 @@
       terminates returning the future itself, the future is failed with
       exception <TT>Cyclic</TT>.
       Equivalent to <TT>spawn f()</TT>.</P>
-      <P>Note that a raising an exception synchronizes on the exception
+      <P>Note that raising an exception synchronizes on the exception
       value, so that no cycle can occur if the computation tries to raise its
       own future as an exception. It rather blocks forever.</P>
     </DD>
@@ -266,7 +266,7 @@
   <P>
     The following function waits for a given amount of time for the
     result of a computation (passed as a future) to become available.
-    It returns <TT>SOME <I>v</I><TT> if a valid result is available within the
+    It returns <TT>SOME <I>v</I></TT> if a valid result is available within the
     time limit, <TT>NONE</TT> otherwise.
   </P>
 
