@@ -15,9 +15,6 @@ Group is
 
 	SPECIAL-sig.sml
 	MkSpecial.sml
-        CommonTypeList.sml
-        GtkPositiveTypeList.sml
-        GdkPositiveTypeList.sml
 
 	GENERATOR-sig.sml
 	MkNativeHelper.sml

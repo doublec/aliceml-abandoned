@@ -32,23 +32,6 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	      | Util.GNOMECANVAS => ("NativeGnomeCanvasSpecial.hh", "", 0)
 	      | _ => ("", "", 0)
 
-        fun testType (t, l) =
-            (* If the type looks like _GtkType we also test for
-               GtkType
-             *)
-            Util.contains t l orelse (t <> "" andalso String.sub (t, 0) = #"_" andalso 
-                Util.contains (String.extract (t, 1, NONE)) l)
-
-        fun testPositiveTypeList t =
-            case space of
-                Util.GTK => testType (t, CommonTypeList.common_type_list @
-                                         GtkPositiveTypeList.gtk_positive_type_list)
-              | Util.GDK => testType (t, CommonTypeList.common_type_list @
-                                         GdkPositiveTypeList.gdk_positive_type_list) 
-              | Util.GNOMECANVAS => true
-              (* FIXME: find a GnomeCanvasPositiveTypeList.gnome_canvas_positive_type_list *)
-              | _ => true
-
               
         (* ignoreItems: do not generate any code for: *)
 	val ignoreItems = 
@@ -180,48 +163,12 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 		       LIST ("GList", STRING (true, true))])]
 	 | _ => nil
 
-       (* ignoreType: true if this type should be ignored *)
-       fun ignoreType (ENUMREF t)       = not (testPositiveTypeList t)
-         | ignoreType (STRUCTREF t)     = not (testPositiveTypeList t)
-         | ignoreType (UNIONREF t)      = not (testPositiveTypeList t) 
-         | ignoreType (TYPEREF (_, t))  = ignoreType t (* not (testPositiveTypeList n) *)
-         | ignoreType _                 = false
-         
        (* isIgnored: true if no binding should be generated for an item *)
        fun isIgnored (FUNC (n, retT, argsT)) = 
 	   (Util.contains n ignoreItems) orelse
-           (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns) orelse
-           (* also ignore functions which use values of a type we deceided ignore *)
-           ignoreType retT orelse List.exists ignoreType argsT
-         
-	 | isIgnored (STRUCT (n, _)) = not (testPositiveTypeList n) orelse 
-                                        Util.contains n ignoreItems
-	 | isIgnored (ENUM (n, _)) = not (testPositiveTypeList n) orelse 
-                                        Util.contains n ignoreItems
+           (List.exists (fn (FUNC (n',_,_)) => n=n' | _ => false) changedFuns) 
+	 | isIgnored (STRUCT (n, _)) = Util.contains n ignoreItems
+	 | isIgnored (ENUM (n, _)) = Util.contains n ignoreItems
 	 | isIgnored _ = false
 
-        (*
-       fun isIgnored (t as FUNC (n, retT, argsT)) =
-            Util.contains n ignoreItems orelse
-            List.exists (fn (FUNC  (n', _, _)) => n = n' | _ => false) changedFuns orelse
-            (if ignoreType retT then (
-                debugDecl ("due to return type " ^ tyToString retT ^ " ignoring", t);
-                true)
-             else
-                case List.find ignoreType argsT of
-                    SOME at     => (debugDecl ("due to argument type " ^ tyToString at ^
-                                                "ignoring", t); true)
-                  | NONE        => false
-            )
-       	 | isIgnored (t as STRUCT (n, _)) = 
-            if not (testPositiveTypeList n) then
-               (debugDecl ("ignoring", t); true)
-            else Util.contains n ignoreItems
-	 | isIgnored (t as ENUM (n, _)) = 
-            if not (testPositiveTypeList n) then
-                (debugDecl ("ignoring", t); true)
-            else Util.contains n ignoreItems
-	 | isIgnored _ = false
-        *)
-         
     end
