@@ -73,6 +73,8 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\t\tDo not generate code for runtime types.\n\
 	      \\t--rtt-level=core\n\
 	      \\t\tDo only generate code for core runtime types.\n\
+	      \\t--rtt-level=full\n\
+	      \\t\tFull support for runtime types.\n\
 	      \Debug options:\n\
 	      \\t--version\n\
 	      \\t\tPrint compiler version.\n\
@@ -170,6 +172,9 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	     options rest)
 	  | options ("--rtt-level=core"::rest) =
 	    (Bootstrap.rttLevel := Bootstrap.CORE_RTT;
+	     options rest)
+	  | options ("--rtt-level=full"::rest) =
+	    (Bootstrap.rttLevel := Bootstrap.FULL_RTT;
 	     options rest)
 	  | options ("--implicit-import-file"::file::rest) =
 	    (Bootstrap.implicitImportFile := SOME file;
