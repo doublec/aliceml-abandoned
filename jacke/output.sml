@@ -4,6 +4,9 @@ struct
     (* evaluate only after parse? *)
     val closure = false
 
+    (* print description file *)
+    val description = true
+
     structure A = AbsSyn
 
     fun cr s = s^"\n"
@@ -14,6 +17,35 @@ struct
 	in 
 	    time
 	end
+
+    fun warning s = TextIO.print ("Warning: "^s^"\n")
+
+    fun error s = TextIO.print ("Error: "^s^"\n")
+	
+    local open MakeLrTable.Errs
+    in
+	fun issueWarnings errs =
+	    let val rr = (List.length) 
+		(List.filter (fn (RR _) => true | _ => false) errs)
+		val sr = (List.length) 
+		(List.filter (fn (SR _) => true | _ => false) errs)
+		val nr = (List.length) 
+		(List.filter (fn (NOT_REDUCED _) => true | _ => false) errs)
+	    in
+		(if rr>0 
+		     then warning 
+			 ((Int.toString rr)^" reduce/reduce conflict(s)")
+		 else ();
+		 if sr>0 
+		     then warning 
+			 ((Int.toString sr)^" shift/reduce conflict(s)")
+		 else ();
+		 if nr>0 
+		     then warning
+			 ((Int.toString nr)^" rule(s) not reduced")
+		 else ())
+	    end
+    end 
 
     fun structureName () =
 	let val name = "JackeDeclarationsStruct__"
@@ -191,14 +223,22 @@ struct
 	    val Grammar.GRAMMAR{terms,
 				nonterms,
 				termToString,
-				nontermToString,...} = grammar
+				nontermToString,
+				rules=grammarRules,
+				...} = grammar
+
+	    fun symbolToString (Grammar.NONTERM s) = nontermToString s
+	      | symbolToString (Grammar.TERM s) = termToString s
 	    val nontermlist = map nontermToString 
 		(List.tabulate (nonterms, fn x => Grammar.NT x))
-	    val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
-	    val lrTable = (PrintStruct.makeStruct {table=table,
+	    val (table,stateErrs,corePrint,errs) 
+		= MakeLrTable.mkTable (grammar,true)
+	    val entries = (PrintStruct.makeStruct {table=table,
 						   name="generatedLrTable",
 						   print=print,
-						   verbose=false}; !r)
+						   verbose=false})
+	    val lrTableString = !r
+	    val _ = issueWarnings errs
 	    val structureName = structureName ()
 	    val structureName2 = "rmConstrStatus"^(timeStamp())
 	    val structureName3 = "ErrorStuct"^(timeStamp())
@@ -282,18 +322,40 @@ struct
 
 	    val code = List.foldr (fn (x,r) => x^" "^r) "\n" 
 		         (List.map 
-			  (absSynToString  lrTable)
+			  (absSynToString  lrTableString)
 			  (removeRuleDecs true p))
 	    val outfile = TextIO.openOut (filename^".out")
+	    val _ = TextIO.output(outfile,code)
+	    val _ = TextIO.flushOut outfile
+	    val _ = TextIO.closeOut outfile
+
 	in
-	    (TextIO.output(outfile,code);
-	     TextIO.flushOut outfile;
-	     TextIO.closeOut outfile;
-	     TextIO.print ("Written output to "^filename^".out\n"))
+	    if description then
+			 let val f = TextIO.openOut (filename ^ ".desc")
+	     val say = fn s=> TextIO.output(f,s)
+	     val printRule =
+	        let val rules = Array.fromList grammarRules
+	        in fn say => 
+		   let val prRule = fn {lhs,rhs,precedence,rulenum} =>
+		     ((say o nontermToString) lhs; say " : ";
+		      app (fn s => (say (symbolToString s); say " ")) rhs)
+	           in fn i => prRule (Array.sub(rules,i))
+	           end
+	        end
+	 in Verbose.printVerbose
+	    {termToString=termToString,nontermToString=nontermToString,
+	     table=table, stateErrs=stateErrs,errs = errs,entries = entries,
+	     print=say, printCores=corePrint,printRule=printRule};
+	    TextIO.closeOut f;
+	    TextIO.print ("Written output to "^filename^".out\n"^
+			  "Written description file "^filename^".desc\n")
+	 end
+	    else
+		TextIO.print ("Written output to "^filename^".out\n")
 	end 
-    handle _ => 
+ (*   handle _ => 
 	TextIO.print ("Some error(s) occurred while processing "^filename^"\n")
-       
+       *)
 end
 
 
