@@ -46,8 +46,6 @@
  *)
 
 
-    open Tokens
-
     structure E = ParsingError
 
     val error = LexerError.error
@@ -359,8 +357,7 @@
   <INITIAL>{char}	=> ( tokenOf(CHAR,    toChar,   yypos, yytext) );
 
   <INITIAL>{tyvar}	=> ( tokenOf(TYVAR,   toId,     yypos, yytext) );
-  <INITIAL>{alphanumid}	=> ( tokenOf(ALPHA,   toId,     yypos, yytext) );
-  <INITIAL>{symbolicid}	=> ( tokenOf(SYMBOL,  toId,     yypos, yytext) );
+  <INITIAL>{id}		=> ( tokenOf(ALPHA,   toId,     yypos, yytext) );
 
 
   <INITIAL>"(*"		=> ( nest(yypos-2) ; YYBEGIN COMMENT ; continue() );
