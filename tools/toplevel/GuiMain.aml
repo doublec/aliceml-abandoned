@@ -22,7 +22,6 @@ import structure Config from "Config"
 import structure FileDialog from "FileDialog"
 import structure SearchDialog from "SearchDialog"
 import structure Core from "x-alice:/lib/gtk/Core"
-import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure BufferHighlight from "BufferHighlight"
 
 structure GuiMain =
@@ -517,8 +516,7 @@ structure GuiMain =
                 val (file, error) =
                     case String.tokens (fn #":" => true | _ => false) s of
                         [s1,s2] => (NONE, s1)
-                      | [s1,s2,s3] => (SOME s1, s2)
-                      | _ => raise Match (* make compiler happy *)
+                      | (s1::s2::s3::_) => (SOME s1, s2)
                 val (s11,s12,s21,s22) =
                     case
                     String.tokens (fn #"-" => true

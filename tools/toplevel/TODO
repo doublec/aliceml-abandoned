@@ -3,7 +3,6 @@ TODO list for the Alice IDE
 
 Bugs:
 
-* Jump-to-error doesn't really work when compiling files
 * scroll to bottom after layout change or resize
 * propagate output width on init and after resize
 * cannot make window smaller
