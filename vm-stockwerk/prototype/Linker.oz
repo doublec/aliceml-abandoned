@@ -40,7 +40,13 @@ define
 		  fun {$ X} 'lib/utility/Unsafe'#X end}}
    end
 
-   Trace = {NewCell {OS.getEnv 'ALICE_TRACE_BOOT_LINKER'} \= false}
+   TraceFlag = {NewCell {OS.getEnv 'ALICE_TRACE_BOOT_LINKER'} \= false}
+
+   proc {Trace V}
+      if {Access TraceFlag} then
+	 {System.showError V}
+      end
+   end
 
    AliceHome = {Property.get 'alice.home'}
 
@@ -67,25 +73,93 @@ define
 
    proc {Link Url ?Module} Key in
       Key = {VirtualString.toAtom Url}
-      case {Dictionary.condGet ModuleTable Key unit} of unit then
-	 if {Access Trace} then
-	    {System.showError '[boot-linker] loading '#Url}
-	 end
-	 case {Pickle.load AliceHome#Url#'.stc'} of tag(!EVALUATED Sign X) then
-	    ModuleTable.Key := Sign#Module
-	    Module = X
-	 [] tag(!UNEVALUATED BodyClosure Imports Sign) then N Modules in
-	    ModuleTable.Key := Sign#Module
-	    N = {Width Imports}
-	    Modules = {MakeTuple vector N}
-	    for I in 1..N do Url2 in
-	       Url2 = {URL.toVirtualString {URL.resolve Url Imports.I.2}}
-	       Modules.I = {Link Url2}
-	    end
-	    {Scheduler.object newThread(BodyClosure arg(Modules) ?Module)}
-	    {Scheduler.object run()}
-	 end
-      elseof _#M then Module = M
+      %--** this thread creation is not nice
+      {Scheduler.object
+       newThread(closure(
+		    function(
+		       interpreter(
+			  pushCall:
+			     fun {$ _ Rest}
+				loadFrame(LoadInterpreter Key)|Rest
+			     end)))
+		 args())}
+      {Scheduler.object run()}
+      Module = ModuleTable.Key.2
+   end
+
+   fun {Construct Args}
+      case Args of arg(X) then X
+      [] args(...) then {Adjoin Args tuple}
       end
    end
+
+   %--** add handle/toString methods:
+
+   LoadInterpreter =
+   loadInterpreter(
+      run:
+	 fun {$ _ TaskStack}
+	    case TaskStack of loadFrame(_ Key)|Rest then
+	       %--** interpreter
+	       {Trace '[boot-linker] loading '#Key}
+	       continue(arg({Pickle.load AliceHome#Key#'.stc'})
+			linkFrame(LinkInterpreter Key)|Rest)
+	    end
+	 end)
+
+   LinkInterpreter =
+   linkInterpreter(
+      run:
+	 fun {$ Args TaskStack}
+	    case TaskStack of linkFrame(_ Key)|Rest then
+	       {Trace '[boot-linker] linking '#Key}
+	       case {Construct Args} of tag(!EVALUATED Sign X) then
+		  continue(arg(X) enterFrame(EnterInterpreter Key Sign)|Rest)
+	       [] tag(!UNEVALUATED BodyClosure Imports Sign) then
+		  ApplyFrame = applyFrame(ApplyInterpreter
+					  BodyClosure Imports Key)
+		  EnterFrame = enterFrame(EnterInterpreter Key Sign)
+	       in
+		  continue(args()
+			   {Record.foldR Imports
+			    fun {$ Import Rest} Key2 in
+			       Key2 = {URL.toAtom {URL.resolve Key Import.2}}
+			       if {Not {Dictionary.member ModuleTable Key2}}
+			       then loadFrame(LoadInterpreter Key2)|Rest
+			       else Rest
+			       end
+			    end ApplyFrame|EnterFrame|Rest})
+	       end
+	    end
+	 end)
+
+   ApplyInterpreter =
+   applyInterpreter(
+      run:
+	 fun {$ _ TaskStack}
+	    case TaskStack of applyFrame(_ BodyClosure Imports Url)|Rest then
+	       {Trace '[boot-linker] applying '#Url}
+	       N = {Width Imports}
+	       Modules = {MakeTuple vector N}
+	    in
+	       for I in 1..N do Key in
+		  Key = {URL.toAtom {URL.resolve Url Imports.I.2}}
+		  Modules.I = ModuleTable.Key.2
+	       end
+	       continue(arg(Modules)
+			{BodyClosure.1.1.pushCall BodyClosure Rest})
+	    end
+	 end)
+
+   EnterInterpreter =
+   enterInterpreter(
+      run:
+	 fun {$ Args TaskStack}
+	    case TaskStack of enterFrame(_ Key Sign)|Rest then Module in
+	       {Trace '[boot-linker] entering '#Key}
+	       Module = {Construct Args}
+	       ModuleTable.Key := Sign#Module
+	       continue(arg(Module) Rest)
+	    end
+	 end)
 end
