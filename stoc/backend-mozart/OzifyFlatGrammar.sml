@@ -293,9 +293,9 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputString (q, filename); h q; l q;
 	     outputList (fn (q, (id, _, url)) =>
 			 (l q; outputId (q, id);
-			  h q; outputString (q, "unit");
+			  h q; output (q, "unit");
 			  h q; outputString (q, Url.toString url); r q))
 	     (q, importList);
 	     h q; l q; outputList outputStm (q, stms); h q;
-	     outputString (q, "unit"); r q; r q)
+	     output (q, "unit"); r q; r q)
     end
