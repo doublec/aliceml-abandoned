@@ -36,8 +36,8 @@ local
     val colormap = Gdk.colormapGetSystem ()
     val black    = Gdk.allocColor(0,0,0)
     val white    = Gdk.allocColor(65535,65535,65535)
-    val _        = Gdk.colormapAllocColor(colormap, black, 0, 1)
-    val _        = Gdk.colormapAllocColor(colormap, white, 0, 1)
+    val _        = Gdk.colormapAllocColor(colormap, black, false, true)
+    val _        = Gdk.colormapAllocColor(colormap, white, false, true)
 
     (* Create Text Item *)
     val textItem = MakeCanvasItem

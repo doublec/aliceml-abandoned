@@ -50,8 +50,8 @@ local
     val map   = Gdk.colormapGetSystem ()
     val black = Gdk.allocColor(0,0,0)
     val white = Gdk.allocColor(65535, 65535, 65535)
-    val _     = Gdk.colormapAllocColor(map, black, 0, 1)
-    val _     = Gdk.colormapAllocColor(map, white, 0, 1)
+    val _     = Gdk.colormapAllocColor(map, black, false, true)
+    val _     = Gdk.colormapAllocColor(map, white, false, true)
 
     exception Error
     
@@ -86,7 +86,7 @@ local
 	    val color  = Gdk.allocColor(0, 0, 0)
 	    val colStr = "#" ^(makeHeX r) ^ (makeHeX g) ^ (makeHeX b)
 	    val _      = Gdk.colorParse(colStr, color) 
-	    val _      = Gdk.colormapAllocColor(map, color, 0, 1)
+	    val _      = Gdk.colormapAllocColor(map, color, false, true)
 	in
 	    color
 	end
@@ -282,7 +282,7 @@ local
 
     fun fifteen () =
 	let
-	    val vbox      = Gtk.vboxNew(0, 4)
+	    val vbox      = Gtk.vboxNew(false, 4)
  	    val alignment = Gtk.alignmentNew(0.5, 0.5, 0.0, 0.0)
 	    val frame     = Gtk.frameNew "" 
 	    val canvas    = createCanvas ()
@@ -290,7 +290,7 @@ local
 	in
 	    (Gtk.containerSetBorderWidth(vbox, 4);
 	     Gtk.widgetShow vbox;
-	     Gtk.boxPackStart(vbox, alignment, 1, 1, 0);
+	     Gtk.boxPackStart(vbox, alignment, true, true, 0);
 	     Gtk.widgetShow alignment;
 	     Gtk.frameSetShadowType(frame, Gtk.SHADOW_IN);
 	     Gtk.containerAdd(alignment, frame);
@@ -298,7 +298,7 @@ local
 	     Gtk.containerAdd(frame, canvas);
 	     Gtk.widgetShow canvas;
 	     Hole.fill(board, createBoard canvas);
-	     Gtk.boxPackStart(vbox, button, 0, 0, 0);
+	     Gtk.boxPackStart(vbox, button, false, false, 0);
 	     Gtk.signalConnect(button, "clicked", scrambleEvent canvas board);
 	     Gtk.widgetShow button;
 	     vbox)
@@ -316,7 +316,7 @@ local
 	     Gtk.containerSetBorderWidth(window, 4);
              Gtk.windowSetTitle(window, "Canvas Demo");
 	     Gtk.containerAdd(window, notebook);
-	     Gtk.notebookSetShowTabs(notebook, 1);
+	     Gtk.notebookSetShowTabs(notebook, true);
 	     Gtk.notebookAppendPage(notebook, f_page, f_label);
 	     Gtk.widgetShowAll window)
 	end

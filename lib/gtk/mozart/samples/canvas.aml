@@ -27,8 +27,8 @@ local
     val map      = Gdk.colormapGetSystem ()
     val black    = Gdk.allocColor (0,0,0)
     val white    = Gdk.allocColor (65535,65535,65535)
-    val _        = Gdk.colormapAllocColor (map, black, 0, 1)
-    val _        = Gdk.colormapAllocColor (map, white, 0, 1)
+    val _        = Gdk.colormapAllocColor (map, black, false, true)
+    val _        = Gdk.colormapAllocColor (map, white, false, true)
     val MyCanvas = GtkCanvas.new 0
     val root     = GtkCanvas.root MyCanvas
 
