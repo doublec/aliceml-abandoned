@@ -160,9 +160,9 @@ local
     local
 	val enter        = ref true
 	val fileSel      = Gtk.fileSelectionNew "Select File to view"
-(*	val okButton     = Gtk.fileSelectionGetFieldOkButton fileSel
+	val okButton     = Gtk.fileSelectionGetFieldOkButton fileSel
 	val cancelButton = Gtk.fileSelectionGetFieldCancelButton fileSel
-*)
+
 	fun okHandler _ = serve
 	    (fn () =>
 	     let
@@ -177,10 +177,10 @@ local
 	fun cancelHandler _ =
 	    serve (fn () => (Gtk.widgetUnmap fileSel;
 			     enter := true))
-(*
+
 	val _  = Gtk.signalConnect(okButton, "clicked", okHandler)
 	val _  = Gtk.signalConnect(cancelButton, "clicked", cancelHandler)
-*)
+
     in
 	fun readFileName () =
 	    (case !enter of
