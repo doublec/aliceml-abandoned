@@ -3,7 +3,7 @@
 //   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
 //
 // Copyright:
-//   Thorsten Brunklaus, 2000-2001
+//   Thorsten Brunklaus, 2000-2002
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -116,10 +116,11 @@ inline HashNode *WeakDictionary::FindKey(word key, word nodes, word & prev) {
 void WeakDictionary::Resize() {
   u_int oldsize = GetTableSize();
   u_int newsize = oldsize << 1;
-  u_int percent = (u_int) (1 + (newsize * FILL_RATIO));
   Block *oldp   = GetTable();
   Block *newp   = Store::AllocBlock((BlockLabel) HASHNODEARRAY_LABEL, newsize);
-  SetCounter(0);
+  // Correct possibly blown up size
+  newsize = newp->GetSize();
+  u_int percent = (u_int) (1 + (newsize * FILL_RATIO));
   SetPercent(percent);
   ReplaceArg(TABLE_POS, newp->ToWord());
   // init the new table with zero
@@ -130,8 +131,13 @@ void WeakDictionary::Resize() {
   for (u_int i = oldsize; i--;) {
     word nodes = oldp->GetArg(i);
     while (nodes != Store::IntToWord(0)) {
-      HashNode *node = HashNode::FromWordDirect(nodes);
-      InsertItem(node->GetKey(), node->GetValue());
+      HashNode *node   = HashNode::FromWordDirect(nodes);
+      word key         = node->GetKey();
+      u_int hashed_key = HashKey(key);
+      word keyNodes    = newp->GetArg(hashed_key);
+      word value       = node->GetValue(); 
+      word newKeyNodes = HashNode::New(key, value, keyNodes)->ToWord();
+      newp->InitArg(hashed_key, newKeyNodes);
       nodes = node->GetNext();
     }
   }
@@ -231,12 +237,12 @@ void BlockHashTable::Rehash() {
 	nodes = node->GetNext(); // Order is important
 	// Remove from old chain
 	if (prev == Store::IntToWord(0))
-	  table->InitArg(i, nodes);
+	  table->ReplaceArg(i, nodes);
 	else
-	  HashNode::FromWordDirect(prev)->SetNextDirect(nodes);
+	  HashNode::FromWordDirect(prev)->SetNext(nodes);
 	// Insert into new chain
-	node->SetNextDirect(table->GetArg(hashed_key));
-	table->InitArg(hashed_key, node->ToWord());
+	node->SetNext(table->GetArg(hashed_key));
+	table->ReplaceArg(hashed_key, node->ToWord());
       }
       else {
 	prev = nodes;
