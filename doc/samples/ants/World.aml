@@ -289,4 +289,13 @@ structure World =
 			else " "
 		)
 
+	fun drawWorld((xs,cells):world) =
+            Array.appi (fn (i,c) =>
+                           let val (x,y) = indexToCoords(xs,i) 
+                           	   val _ = if (x=0) then print "\n" else ()
+                           in
+                               print (cellToChar c)
+                           end) cells
+
+
   end
