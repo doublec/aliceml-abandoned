@@ -1,6 +1,12 @@
 
 *** Allgemein/Ideen ***
 
+- install -C ?
+- Record bauen - wie? (Zugriff auf Event-Records stuerzt ab)
+- Kernroutinen aus NativeGtkSpecial in eigene DLL tun
+- Komponenten auf hinreichende Modularisierung ueberpruefen
+
+
 Garbage Collection:
 fuer alle Objekte gilt:
 - beim Erstellen im WeakDictionary abspeichern (falls nicht schon da?) + ref()

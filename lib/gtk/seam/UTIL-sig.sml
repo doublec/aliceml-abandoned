@@ -47,6 +47,7 @@ signature UTIL =
         (* Filter stuff *)
 	val filters : ('a -> bool) list -> 'a list -> 'a list
 	val funNot : ('a -> bool) -> 'a -> bool
+	val contains : ''a -> ''a list -> bool
 	val removeDuplicates : ('a * 'a -> bool) -> 'a list -> 'a list
 
         (* File stuff *)
