@@ -10,13 +10,11 @@
  *   $Revision$
  *)
 
-import signature STREAM_IO from "STREAM_IO-sig"
+import signature TEXT_STREAM_IO from "TEXT_STREAM_IO-sig"
 
 signature TEXT_IO =
     sig
-	structure StreamIO: STREAM_IO
-	    where type vector = string
-	      and type elem = char
+	structure StreamIO: TEXT_STREAM_IO
 
 	type vector = StreamIO.vector
 	type elem = StreamIO.elem
