@@ -15,7 +15,6 @@ is
     arity.cm
 
     LABEL_SORT-sig.aml
-    MkLabelSort.aml
     LabelSort.aml
 
     intermediate-aux.cm
