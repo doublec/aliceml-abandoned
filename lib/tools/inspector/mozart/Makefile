@@ -81,7 +81,7 @@ $(PREFIX)/lib/tools/%.ozf: Linked%.ozf
 ##
 
 clean:
-	-rm -f $(OZLINPUTS) UnsafeInspector.ozf Inspector.ozf INSPECTOR-sig.ozf LinkedInspector.ozf
+	-rm -f $(OZLINPUTS) UnsafeInspector.ozf Inspector.ozf INSPECTOR-sig.ozf LinkedInspector.ozf *.ozm
 
 veryclean: clean
 
