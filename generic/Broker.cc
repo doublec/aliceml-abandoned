@@ -14,7 +14,7 @@
 #pragma implementation "generic/Broker.hh"
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -60,7 +60,7 @@ static void *LoadLanguageLayer(String *languageId) {
     std::memcpy(filename->GetValue(), languageId->GetValue(), n);
     std::memcpy(filename->GetValue() + n, ".dll", 4);
     void *handle =
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
       (void *) LoadLibrary(filename->ExportC());
 #else
       dlopen(filename->ExportC(), RTLD_NOW | RTLD_GLOBAL);
@@ -69,8 +69,7 @@ static void *LoadLanguageLayer(String *languageId) {
       languageLayerTable->Put(wLanguageId,
 			      Store::UnmanagedPointerToWord(handle));
     else {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#else
+#if HAVE_DLOPEN
       std::fprintf(stderr, "dlopen(%s) failed: %s\n",
 		   filename->ExportC(), dlerror());
 #endif
@@ -86,7 +85,7 @@ void Broker::Start(String *languageId, int argc, char *argv[]) {
     Error("could not link language layer library");
   }
   void (*Start)(int, char *[]) =
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
     reinterpret_cast<void (*)(int, char *[])>
     (GetProcAddress((HMODULE) handle, "Start"));
 #else
@@ -102,7 +101,7 @@ Worker::Result Broker::Load(String *languageId, String *key) {
   void *handle = LoadLanguageLayer(languageId);
   if (handle == NULL) RAISE(BrokerError);
   Worker::Result (*Load)(String *) =
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if !HAVE_DLOPEN
     reinterpret_cast<Worker::Result (*)(String *)>
     (GetProcAddress((HMODULE) handle, "Load"));
 #else
