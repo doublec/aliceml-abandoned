@@ -20,6 +20,12 @@ class Helper {
     public static int Max(int a, int b) {
 	return ((a > b) ? a : b);
     }
+    public static void Print(System.String s) {
+	return;
+    }
+    public static void PrintLn(System.String s) {
+	return;
+    }
 }
 
 class LineEntry {
@@ -40,7 +46,7 @@ class CanvasEntry {
     System.Collections.Hashtable home;
     Object key;
     public CanvasEntry(Canvas visual, int x, int y, String text, uint color,
-		       System.Collections.Hashtable home, Object Key) {
+		       System.Collections.Hashtable home, Object key) {
 	this.visual = visual;
 	this.x      = x;
 	this.y      = y;
@@ -64,41 +70,13 @@ class CanvasInfo {
     public int cyPage;
 }
 
-class CanvasPrintXY : Alice.Values.Procedure4 {
-    static protected Canvas canvas;
-    public CanvasPrintXY(Canvas canvas) {
-	CanvasPrintXY.canvas = canvas;
-    }
-    static public Object StaticApply(Object x, Object y, Object text, Object color) {
-	Console.WriteLine("Alice calls PrintXY");
-	canvas.PrintXY((int) x, (int) y, (System.String) text, (int) color);
-	return Alice.Prebound.unit;
-    }
-    public override Object Apply(Object x, Object y, Object text, Object color) {
-	return StaticApply(x, y, text, color);
-    }
-}
-
-class CanvasFlush : Alice.Values.Procedure {
-    static protected Canvas canvas;
-    public CanvasFlush(Canvas canvas) {
-	CanvasFlush.canvas = canvas;
-    }
-    static public Object StaticApply(Object obj) {
-	canvas.Flush();
-	return Alice.Prebound.unit;
-    }
-    public override Object Apply(Object obj) {
-	return StaticApply(obj);
-    }
-}
-
 class Canvas {
     static String clName = "Canvas";
     int wnd;
     int instance;
     CanvasInfo info;
     System.Collections.Hashtable lines;
+    System.Collections.Hashtable tagDict;
     LineEntry removeLine;
     int maxX;
     int maxY;
@@ -115,6 +93,7 @@ class Canvas {
 	curVertPos = 0;
 	info       = new CanvasInfo();
 	lines      = new System.Collections.Hashtable();
+	tagDict    = new System.Collections.Hashtable();
 	removeLine = new LineEntry();
     }
     public void CreateWindow(int parent, int instance, int width, int height) {
@@ -140,27 +119,28 @@ class Canvas {
 	
 	switch (msg) {
 	case WinMsg.Create:
-	    Console.WriteLine("Canvas: Create Msg");
+	    Helper.PrintLn((System.String) "Canvas: Create Msg");
 	    return 0;
 	case WinMsg.Paint:
-	    Console.WriteLine("Canvas: Paint Msg");
+	    Helper.PrintLn((System.String) "Canvas: Paint Msg");
 	    //User.GetUpdateRect(wnd, rect, false);
 	    dc = User.BeginPaint(wnd, ps);
-	    //	    User.GetClientRect(wnd, rect);
+	    User.GetClientRect(wnd, rect);
 	    
-	    //ps.paint.left   = rect.left;
-	    //ps.paint.top    = rect.top;
-	    //ps.paint.right  = rect.right;
-	    //ps.paint.bottom = rect.bottom;
-
-	    DrawAllItems(dc, curVertPos, Helper.Min((curVertPos + info.cyPage), maxY));
+	    ps.paint.left   = rect.left;
+	    ps.paint.top    = rect.top;
+	    ps.paint.right  = rect.right;
+	    ps.paint.bottom = rect.bottom;
+	    
 	    Undraw(dc);
+	    DrawAllItems(dc, curVertPos, Helper.Min((curVertPos + info.cyPage), maxY));
 
 	    User.EndPaint(wnd, ps);
+
 	    return 0;
 	case WinMsg.VScroll: {
 	    int newVertPos;
-	    Console.WriteLine("Canvas: VScroll Msg");
+	    Helper.PrintLn((System.String) "Canvas: VScroll Msg");
 
 	    switch (Helper.LoWord(w)) {
 	    case ScrollBar.Top:
@@ -203,7 +183,7 @@ class Canvas {
 	case WinMsg.HScroll: {
 	    int newHorzPos;
 
-	    Console.WriteLine("Canvas: HScroll Msg");
+	    Helper.PrintLn((System.String) "Canvas: HScroll Msg");
 	    switch (Helper.LoWord(w)) {
 	    case ScrollBar.LineLeft:
 		newHorzPos = Helper.Max(0, (curHorzPos - 1));
@@ -236,7 +216,7 @@ class Canvas {
 	    return 0;
 	}
 	case WinMsg.Destroy:
-	    Console.WriteLine("Canvas: Destroy Msg");
+	    Helper.PrintLn((System.String) "Canvas: Destroy Msg");
 	    User.PostQuitMessage(0);
 	    return 0;
 	}
@@ -244,9 +224,9 @@ class Canvas {
 	return User.DefWindowProc(wnd, msg, w, l);
     }
     public void AdjustSize(int width, int height) {
-	Console.WriteLine("Canvas: AdjustSize");
-	Console.Write("width "); Console.WriteLine(width);
-	Console.Write("height "); Console.WriteLine(height);
+	Helper.PrintLn((System.String) "Canvas: AdjustSize");
+	Helper.Print((System.String) "width "); Helper.PrintLn(((Int32) width).ToString());
+	Helper.Print((System.String) "height "); Helper.PrintLn(((Int32) height).ToString());
 	
 	ComputeFontMetrics(wnd, width, height);
 	scrollMaxY = Helper.Max(maxY - info.cyPage, 0);
@@ -311,38 +291,59 @@ class Canvas {
 		    Object ItemKey = (Int32) k;
 		    if (line.ContainsKey(ItemKey)) {
 			CanvasEntry ce = (CanvasEntry) line[ItemKey];
-			if ((ce.x + ce.text.Length) >= curHorzPos) {
-			    GDI.SetTextColor(dc, ce.color);
-			    GDI.TextOut(dc,
-					(ce.x - curHorzPos) * info.cxChar,
-					(ce.y - startY) * info.cyChar,
-					ce.text, ce.text.Length);
-			}
+			GDI.SetTextColor(dc, ce.color);
+			Helper.Print((System.String) "DrawAllItems: ");
+			Helper.PrintLn((System.String) ce.text);
+			GDI.TextOut(dc,
+				    (ce.x - curHorzPos) * info.cxChar,
+				    (ce.y - startY) * info.cyChar,
+				    ce.text, ce.text.Length);
 		    }
 		}
 	    }
 	}
     }
-    public void PrintXY(int x, int y, String text, int color) {
-	//	lock (this) {
-	Object Key      = (Int32) y;
-	LineEntry entry = null;
-	Object itemKey  = null;
-	    
-	maxY = Helper.Max(maxY, y);
-	maxX = Helper.Max(maxX, (x + text.Length));
-	if (lines.ContainsKey(Key)) {
-	    entry = (LineEntry) lines[Key];
+    void Put(System.Collections.Hashtable dict, Object index, Object val) {
+	if (dict.ContainsKey(index)) {
+	    dict[index] = val;
 	}
 	else {
-	    entry = new LineEntry();
-	    lines.Add(Key, entry);
+	    dict.Add(index, val);
 	}
-	itemKey = (Int32) entry.max;
-	entry.max += 1;
-	entry.line.Add(itemKey,
-		       new CanvasEntry(this, x, y, text, (uint) color, entry.line, itemKey));
-	//	}
+    }
+    public void PrintXY(int x, int y, String text, int tag, int color) {
+	lock (this) {
+	    Object Key         = (Int32) y;
+	    LineEntry entry    = null;
+	    Object itemKey     = null;
+	    CanvasEntry cEntry = null;
+	    
+	    maxY = Helper.Max(maxY, y);
+	    maxX = Helper.Max(maxX, (x + text.Length));
+	    if (lines.ContainsKey(Key)) {
+		entry = (LineEntry) lines[Key];
+	    }
+	    else {
+		entry = new LineEntry();
+		lines.Add(Key, entry);
+	    }
+	    itemKey = (Int32) entry.max;
+	    entry.max += 1;
+	    if (itemKey == null) {
+		Helper.PrintLn((System.String) "Canvas:printXY: null itemKey problem");
+	    }
+	    cEntry  = new CanvasEntry(this, x, y, text, (uint) color, entry.line, itemKey);
+	    Put(entry.line, itemKey, cEntry);
+	    Put(tagDict, (Int32) tag, cEntry);
+	    Flush();
+	}
+    }
+    public void ClearXY(int tag) {
+	lock (this) {
+	    ((CanvasEntry) tagDict[tag]).Undraw();
+	    tagDict.Remove(tag);
+	    Flush();
+	}
     }
     public void AddToRemoveLine(CanvasEntry entry) {
 	Int32 Key = (Int32) removeLine.max;
@@ -353,32 +354,45 @@ class Canvas {
     public void Undraw(int dc) {
 	for (int i = 0; i < removeLine.max; i++) {
 	    CanvasEntry entry = (CanvasEntry) removeLine.line[(Int32) i];
-	    int newX          = (entry.x + Helper.Min(entry.text.Length, info.cxPage));
-	    int maxX          = (curHorzPos + info.cxPage);
 	    int maxY          = (curVertPos + info.cyPage);
 	    
-	    if ((entry.x >= curHorzPos) && (newX <= maxX) &&
-		(entry.y >= curVertPos) && (entry.y <= maxY)) {
-		GDI.SetTextColor(dc, 0xFFFFFF);
-		GDI.TextOut(dc,
-			    (entry.x - curHorzPos) * info.cxChar,
-			    (entry.y - curVertPos) * info.cyChar,
-			    entry.text, entry.text.Length);
+	    if ((entry.y >= curVertPos) && (entry.y <= maxY)) {
+		Rect rect = new Rect();
+		int newX  = (entry.x - curHorzPos);
+		int newY  = (entry.y - curVertPos);
+
+		Helper.Print((System.String) "Undraw: ");
+		Helper.PrintLn(entry.text);
+		Helper.PrintLn(((Int32) entry.x).ToString());
+		Helper.PrintLn(((Int32) entry.y).ToString());
+		
+		rect.left   = newX * info.cxChar;
+		rect.top    = newY * info.cyPage;
+		rect.right  = (newX + entry.text.Length) * info.cxChar;
+		rect.bottom = (newY + 1) * info.cyChar;
+		User.FillRect(dc, rect, GDI.GetStockObject(Brush.White));
+
+//  		GDI.SetTextColor(dc, 0xFFFFFF);
+//  		GDI.TextOut(dc,
+//  			    (entry.x - curHorzPos) * info.cxChar,
+//  			    (entry.y - curVertPos) * info.cyChar,
+//  			    entry.text, entry.text.Length);
 	    }
+	    removeLine.line.Remove(i);
 	}
+	removeLine.max = 0;
     }
     public void Flush() {
-	//	lock (this) {
 	User.InvalidateRect(wnd, null, false);
 	scrollMaxY = Helper.Max(maxY - info.cyPage, 0);
 	scrollMaxX = Helper.Max(maxX - info.cxPage, 0);
 	User.SetScrollRange(wnd, ScrollBar.Vert, 0, scrollMaxY, true);
 	User.SetScrollRange(wnd, ScrollBar.Horz, 0, scrollMaxX, true);
-	//	}
     }
 }
 
 class TreeNode {
+    protected static int curTag = 0;
     protected Canvas visual;
     protected TreeNode parent;
     protected Object val;
@@ -400,6 +414,7 @@ class TreeNode {
 	this.visual = visual;
 	this.dazzle = true;
 	this.dirty  = true;
+	this.tag    = curTag++;
     }
     public int GetXDim() {
 	return xDim;
@@ -418,6 +433,9 @@ class TreeNode {
     public virtual int GetLastXDim() {
 	return xDim;
     }
+    public virtual bool IsHorzMode() {
+	return true;
+    }
     public virtual void Layout() {
 	xDim = 0;
 	yDim = 1;
@@ -425,17 +443,12 @@ class TreeNode {
     public virtual void Draw(int x, int y) {
 	return;
     }
-    public virtual void Undraw(int x, int y) {
+    public virtual void Undraw() {
 	return;
-    }
-    public void Notify() {
-	dazzle = true;
-	if (parent != null) {
-	    parent.Notify();
-	}
     }
     public virtual void Replace(TreeNode parent, Object val, Object tyVal,
 				int index, int depth) {
+	Helper.PrintLn((System.String) "TreeNode: Replace: something goes wrong");
 	throw new System.Exception("Unable to Replace base type");
     }
 
@@ -443,9 +456,14 @@ class TreeNode {
 
 class SimpleNode : TreeNode {
     protected String str;
+    protected int x;
+    protected int y;
+    protected int color;
     public SimpleNode(TreeNode parent, Object val, Object tyVal,
 		      int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0;
+    }
     public override void Layout() {
 	if (dazzle) {
 	    str    = CreateString();
@@ -455,15 +473,26 @@ class SimpleNode : TreeNode {
 	    dirty  = true;
 	}
     }
+    protected void DoDraw(int x, int y) {
+	this.x = x;
+	this.y = y;
+	visual.PrintXY(x, y, str, tag, color);
+    }
     public override void Draw(int x, int y) {
 	if (dirty) {
-	    visual.PrintXY(x, y, str, 0);
+	    DoDraw(x, y);
 	    dirty = false;
 	}
+	else {
+	    if ((x != this.x) || (this.y != y)) {
+		visual.ClearXY(tag);
+		DoDraw(x, y);
+	    }
+	}
     }
-    public override void Undraw(int x, int y) {
+    public override void Undraw() {
 	if (!dirty) {
-	    visual.PrintXY(x, y, str, 0xFFFFFF);
+	    visual.ClearXY(tag);
 	    dirty = true;
 	}
     }
@@ -476,16 +505,32 @@ class SimpleNode : TreeNode {
 class IntNode : SimpleNode {
     public IntNode(TreeNode parent, Object val, Object tyVal,
 		   int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0xF020A0;
+    }
     public override String CreateString() {
-	return val.ToString();
+	if (val is Int32) {
+	    int tmp = (int) val;
+
+	    if (tmp < 0) {
+		return System.String.Concat("~", ((Int32) Math.Abs(tmp)).ToString());
+	    }
+	    else {
+		return val.ToString();
+	    }
+	}
+	else { 
+	    return val.ToString();
+	}
     }
 }
 
 class WordNode : SimpleNode {
     public WordNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0xF020A0;
+    }
     public override String CreateString() {
 	return System.String.Concat("0wx", val.ToString());
     }
@@ -494,7 +539,9 @@ class WordNode : SimpleNode {
 class CharNode : SimpleNode {
     public CharNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0x8F8FBC;
+    }
     public override String CreateString() {
 	return System.String.Concat("#\"", val.ToString(), "\"");
     }
@@ -503,16 +550,20 @@ class CharNode : SimpleNode {
 class BoolNode : SimpleNode {
     public BoolNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0xF020A0;
+    }
     public override String CreateString() {
-	return val.ToString();
+	return (val.Equals((Int32) 0) ? "false" : "true");
     }
 }
 
 class FunNode : SimpleNode {
     public FunNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0;
+    }
     public override String CreateString() {
 	return "<Fun>";
     }
@@ -521,7 +572,9 @@ class FunNode : SimpleNode {
 class StringNode : SimpleNode {
     public StringNode(TreeNode parent, Object val, Object tyVal,
 		      int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0x2222b2;
+    }
     public override String CreateString() {
 	return System.String.Concat("\"", val.ToString(), "\"");
     }
@@ -530,7 +583,9 @@ class StringNode : SimpleNode {
 class SimpleStringNode : SimpleNode {
     public SimpleStringNode(TreeNode parent, Object val, Object tyVal,
 			    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0;
+    }
     public override String CreateString() {
 	return val.ToString();
     }
@@ -539,46 +594,63 @@ class SimpleStringNode : SimpleNode {
 class RealNode : SimpleNode {
     public RealNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0xF020A0;
+    }
     public override String CreateString() {
 	return System.String.Concat(val.ToString());
     }
 }
 
 class FutureNode : SimpleNode {
+    static Object Lock = new Object();
     Thread myThread;
-    int x;
-    int y;
     public FutureNode(TreeNode parent, Object val, Object tyVal,
 		      int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {}
+	base(parent, val, tyVal, index, visual, depth) {
+	color = 0x0000FF;
+    }
     public override String CreateString() {
 	return "<Future>";
     }
     public override void Draw(int x, int y) {
 	if (dirty) {
-	    visual.PrintXY(x, y, str, 0);
-	    this.x = x;
-	    this.y = y;
+	    DoDraw(x, y);
 	    dirty = false;
 	    myThread = new Thread(new ThreadStart(this.Run));
 	    myThread.Start();
 	}
+	else {
+	    if ((this.x != x) || (this.y != y)) {
+		visual.ClearXY(tag);
+		DoDraw(x, y);
+	    }
+	}
     }
-    public override void Undraw(int x, int y) {
+    public override void Undraw() {
 	if (!dirty) {
-	    visual.PrintXY(x, y, str, 0xFFFFFF);
+	    visual.ClearXY(tag);
 	    dirty = true;
 	    myThread.Abort();
 	}
     }
     public virtual void Run() {
+	Helper.PrintLn((System.String) "FutureNode:Run: Thread Launched");
 	val = ((Alice.Values.Transient) val).Await();
-	Inspector.GetInspector().Update(this);
+	Helper.Print((System.String) "FutureNode:Run: calling update with");
+	Helper.PrintLn((System.String) val.ToString());
+	lock (Lock) {
+	    Inspector.GetInspector().Update(this);
+	}
     }
     public void Link() {
-	visual.PrintXY(x, y, str, 0xFFFFFF);
-	parent.Replace(parent, val, tyVal, index, depth);
+	visual.ClearXY(tag);
+	if (parent != null) {
+	    parent.Replace(parent, val, tyVal, index, depth);
+	}
+	else {
+	    Inspector.GetInspector().Replace(parent, val, tyVal, index, depth);
+	}
     }
 }
 
@@ -589,6 +661,9 @@ class SeparatorNode : TreeNode {
 			 int index, Canvas visual, String sep) :
 	base(parent, val, tyVal, index, visual, 0) {
 	this.sep = new SimpleStringNode(this, sep, "sep", 0, visual, 0);
+    }
+    public override bool IsHorzMode() {
+	return ((TreeNode) val).IsHorzMode();
     }
     public override void Layout() {
 	TreeNode tval = (TreeNode) val;
@@ -605,9 +680,17 @@ class SeparatorNode : TreeNode {
     }
     public override void Draw(int x, int y) {
 	TreeNode tval = (TreeNode) val;
-	Console.WriteLine("Enter SeparatorNode draw");
+	Helper.PrintLn((System.String) "Enter SeparatorNode draw");
 	tval.Draw(x, y);
 	sep.Draw((x + tval.GetLastXDim()), (y + yDim - 1));
+    }
+    public void ChangeNode(TreeNode node) {
+	if (val is LabelNode) {
+	    ((LabelNode) val).ChangeNode(node);
+	}
+	else {
+	    val = node;
+	}
     }
     public void ChangeSep(string sep) {
 	this.sep = new SimpleStringNode(this, sep, "sep", 0, visual, 0);
@@ -621,6 +704,9 @@ class LabelNode : TreeNode {
 		     int index, Canvas visual, String label) :
 	base(parent, val, tyVal, index, visual, 0) {
 	this.label = new SimpleStringNode(this, label, "label", 0, visual, 0);
+    }
+    public override bool IsHorzMode() {
+	return ((TreeNode) val).IsHorzMode();
     }
     public override void Layout() {
 	TreeNode tval = (TreeNode) val;
@@ -640,6 +726,9 @@ class LabelNode : TreeNode {
 	label.Draw(x, y);
 	((TreeNode) val).Draw(x + label.GetXDim(), y);
     }
+    public void ChangeNode(TreeNode node) {
+	val = node;
+    }
 }
 
 class ContainerNode : TreeNode {
@@ -649,7 +738,6 @@ class ContainerNode : TreeNode {
     protected System.Collections.Hashtable items;
     protected int width;
     protected int maxWidth;
-    protected bool showBraces;
     protected bool horzMode;
     public ContainerNode(TreeNode parent, Object val, Object tyVal,
 			 int index, Canvas visual, int depth) :
@@ -657,15 +745,17 @@ class ContainerNode : TreeNode {
 	items      = new System.Collections.Hashtable();
 	width      = 0;
 	maxWidth   = 0;
-	showBraces = false;
     }
     bool CheckHorzMode() {
 	for (int i = 1; i <= width; i++) {
-	    if (items[i] is ContainerNode) {
+	    if (!((TreeNode) items[i]).IsHorzMode()) {
 		return false;
 	    }
 	}
 	return true;
+    }
+    public override bool IsHorzMode() {
+	return false;
     }
     void HorzLayout() {
 	xDim = 0;
@@ -731,46 +821,26 @@ class ContainerNode : TreeNode {
 	}
     }
     public override void Draw(int x, int y) {
-	if (dirty) {
-	    if (horzMode) {
-		HorzDraw(x, y);
-	    }
-	    else {
-		VertDraw(x, y);
-	    }
-	    dirty = false;
+	if (horzMode) {
+	    HorzDraw(x, y);
 	}
-    }
-    void HorzUndraw(int x, int y) {
-	for (int i = 1; i <= width; i++) {
-	    TreeNode node = (TreeNode) items[i];
-
-	    node.Undraw(x, y);
-	    x += node.GetXDim();
+	else {
+	    VertDraw(x, y);
 	}
+	dirty = false;
     }
-    void VertUndraw(int x, int y) {
-	for (int i = 1; i <= width; i++) {
-	    TreeNode node = (TreeNode) items[i];
-
-	    node.Undraw(x, y);
-	    y += node.GetYDim();
-	}
-    }
-    public override void Undraw(int x, int y) {
+    public override void Undraw() {
 	if (!dirty) {
-	    if (horzMode) {
-		HorzUndraw(x, y);
+	    for (int i = 1; i <= width; i++) {
+		((TreeNode) items[i]).Undraw();
 	    }
-	    else {
-		VertUndraw(x, y);
-	    }
-	    dirty = true;
 	}
     }
-    public override void Replace(TreeNode parent, Object val, Object tyVal,
-				 int index, int depth) {
-	items[index] = Inspector.CreateNode(parent, val, tyVal, index, depth);
+    public void Notify() {
+	dazzle = true;
+	if (parent != null) {
+	    ((ContainerNode) parent).Notify();
+	}
     }
 }
 
@@ -778,27 +848,32 @@ class TupleNode : ContainerNode {
     public TupleNode(TreeNode parent, Object val, Object tyVal,
 		     int index, Canvas visual, int depth) :
 	base(parent, val, tyVal, index, visual, depth) {
-	Object[] arr  = (Object[]) val;
-	int maxAWidth = Inspector.GetWidth();
+	Object[] arr = (Object[]) val;
 
-	maxWidth   = arr.Length;
-	width      = Helper.Min(maxWidth, maxAWidth);
-	showBraces = true;
-	obrace     = new SimpleStringNode(this, "(", "string", 0, visual, 0);
-	cbrace     = new SimpleStringNode(this, ")", "string", 0, visual, 0);
-	CreateNodes(1, arr, (Object[]) tyVal);
+	maxWidth = arr.Length;
+	width    = Helper.Min(maxWidth, Inspector.GetWidth());
+
+	CreateBraces();
+	PerformInsertion(1, arr, (Object[]) tyVal);
     }
-    void CreateNodes(int i, Object[] arr, Object[] tyVal) {
+    public virtual void CreateBraces() {
+	obrace = new SimpleStringNode(this, "(", "string", 0, visual, 0);
+	cbrace = new SimpleStringNode(this, ")", "string", 0, visual, 0);
+    }
+    public virtual TreeNode CreateChildNode(Object val, Object tyVal, int index, int depth) {
+	return Inspector.CreateNode(this, val, tyVal, index, depth);
+    }
+    public virtual void PerformInsertion(int i, Object[] arr, Object[] tyVal) {
 	int newDepth  = (depth + 1);
 	TreeNode node = null;
 	
-	Console.Write("Enter CreateNodes: ");
-	Console.WriteLine(width);
+	Helper.Print((System.String) "Enter Tuple CreateNodes: ");
+	Helper.PrintLn(((Int32) width).ToString());
 
 	for (; (i <= width); i++) {
 	    int arrI = (i - 1);
 	    
-	    node = Inspector.CreateNode(this, arr[arrI], tyVal[arrI], i, newDepth);
+	    node = CreateChildNode(arr[arrI], tyVal[arrI], i, newDepth);
 	    items.Add(i, new SeparatorNode(this, node, "sep", i, visual, ","));
 	}
 	if (width < maxWidth) {
@@ -818,17 +893,29 @@ class TupleNode : ContainerNode {
 	}
     }
     public override void Draw(int x, int y) {
-	if (dirty) {
-	    obrace.Draw(x, y);
-	    base.Draw(x + obrace.GetXDim(), y);
-	    cbrace.Draw((x + lxDim - 1), (y + yDim - 1));
+	obrace.Draw(x, y);
+	base.Draw(x + obrace.GetXDim(), y);
+	cbrace.Draw((x + lxDim - 1), (y + yDim - 1));
+    }
+    public override void Undraw() {
+	if (!dirty) {
+	    obrace.Undraw();
+	    base.Undraw();
+	    cbrace.Undraw();
 	}
     }
-    public override void Undraw(int x, int y) {
-	if (!dirty) {
-	    obrace.Undraw(x, y);
-	    base.Undraw(x + obrace.GetXDim(), y);
-	    cbrace.Undraw((x + lxDim - 1), (y + yDim - 1));
+    public override void Replace(TreeNode parent, Object val, Object tyVal,
+				 int index, int depth) {
+	if (index < width) {
+	    TreeNode node = Inspector.CreateNode(parent, val, tyVal, index, depth);
+	    ((SeparatorNode) items[index]).ChangeNode(node);
+	}
+	else {
+	    items[index] = Inspector.CreateNode(parent, val, tyVal, index, depth);
+	}
+	dazzle = true;
+	if (parent != null) {
+	    ((ContainerNode) parent).Notify();
 	}
     }
 }
@@ -836,41 +923,36 @@ class TupleNode : ContainerNode {
 class RecordNode : TupleNode {
     public RecordNode(TreeNode parent, Object val, Object tyVal,
 		      int index, Canvas visual, int depth) :
-	base(parent, val, tyVal, index, visual, depth) {
-	Object[] arr  = (Object[]) val;
-	int maxAWidth = Inspector.GetWidth();
-
-	maxWidth   = arr.Length;
-	width      = Helper.Min(maxWidth, maxAWidth);
-	showBraces = true;
-	obrace     = new SimpleStringNode(this, "{", "string", 0, visual, 0);
-	cbrace     = new SimpleStringNode(this, "}", "string", 0, visual, 0);
-	CreateNodes(1, arr, (Object[]) tyVal);
+	base(parent, val, tyVal, index, visual, depth) {}
+    public override void CreateBraces() {
+	obrace = new SimpleStringNode(this, "{", "string", 0, visual, 0);
+	cbrace = new SimpleStringNode(this, "}", "string", 0, visual, 0);
     }
-    void CreateNodes(int i, Object[] arr, Object[] tyVal) {
-	int newDepth  = (depth + 1);
-	TreeNode node = null;
+    public override TreeNode CreateChildNode(Object val, Object tyVal, int index, int depth) {
+	Object[] entry = ((Types.Tuple) tyVal).types;
+	String str     = System.String.Concat(((Types.String) entry[0]).label, "=");
+	TreeNode node  = Inspector.CreateNode(this, val, entry[1], index, depth);
 
-	Console.Write("Enter CreateNodes: ");
-	Console.WriteLine(width);
-
-	for (; (i <= width); i++) {
-	    int arrI       = (i - 1);
-	    Object[] entry = (Object[]) tyVal[arrI]; 
-	    String str     = System.String.Concat(((Types.String) entry[0]).label, ":");
-	    
-	    node = Inspector.CreateNode(this, arr[arrI], entry[1], i, newDepth);
-	    items.Add(i, new LabelNode(this, node, "sep", i, visual, str));
+	return new LabelNode(this, node, "sep", index, visual, str);
+    }
+    public override void Replace(TreeNode parent, Object val, Object tyVal,
+				 int index, int depth) {
+	TreeNode node = Inspector.CreateNode(parent, val, tyVal, index, depth);
+	if (index < width) {
+	    ((SeparatorNode) items[index]).ChangeNode(node);
 	}
-
-	if (width < maxWidth) {
-	    width += 1;
-	    items.Add(width, new StringNode(this, "...", "string", width, visual, newDepth));
+	else {
+	    ((LabelNode) items[index]).ChangeNode(node);
+	}
+	dazzle = true;
+	if (parent != null) {
+	    ((ContainerNode) parent).Notify();
 	}
     }
 }
 
 class ListNode : ContainerNode {
+    protected bool showBraces;
     public ListNode(TreeNode parent, Object val, Object tyVal,
 		    int index, Canvas visual, int depth) :
 	base(parent, val, tyVal, index, visual, depth) {
@@ -878,36 +960,123 @@ class ListNode : ContainerNode {
 
 	maxWidth   = maxAWidth;
 	width      = maxAWidth;
-	showBraces = true;
 	obrace     = new SimpleStringNode(this, "[", "string", 0, visual, 0);
 	cbrace     = new SimpleStringNode(this, "]", "string", 0, visual, 0);
-	CreateNodes(1, val, (Types.List) tyVal);
+	PerformInsertion(1, val, (Types.List) tyVal);
     }
-    void CreateNodes(int i, Object val, Types.List tyVal) {
+    void Put(int i, Object node) {
+	if (items.ContainsKey(i)) {
+	    items[i] = node;
+	}
+	else {
+	    items.Add(i, node);
+	}
+    }
+    void PerformInsertion(int i, Object val, Types.List tyVal) {
 	int newDepth  = (depth + 1);
+
+	Helper.Print((System.String) "Enter List: PerformInsertion with");
+	Helper.PrintLn((System.String) val.ToString());
 
 	while (i <= width) {
 	    if (val is Alice.Values.TagVal) {
 		Alice.Values.TagVal tval = (Alice.Values.TagVal) val;
 
+		Helper.Print((System.String) "List: PerformInsertion: Tag of TagVal is ");
+		Helper.PrintLn(((Int32) tval.GetTag()).ToString());
 		if (tval.GetTag() == 0) {
 		    Object[] values = (Object[]) tval.Value;
 		    TreeNode node = Inspector.CreateNode(this, values[0], tyVal.type, i, newDepth);
-		    items.Add(i, new SeparatorNode(this, node, "sep", i, visual, "::"));
 
-		    val = values[0];
+		    Put(i, new SeparatorNode(this, node, "sep", i, visual, "::"));
+		    val = values[1];
 		    i++;
 		}
 	    }
-	    else if (val is System.Int32) {
-		width = i;
-		items.Add(i, new SimpleStringNode(this, "nil", "string", i, visual, newDepth));
-	    }
 	    else {
-		width = i;
-		items.Add(i, Inspector.CreateNode(this, val, tyVal.type, i, newDepth));
+		if (Alice.Builtins.Future_isFuture.StaticApply(val).Equals((Int32) 1)) {
+		    width      = i;
+		    showBraces = false;
+		    if (Alice.Builtins.Future_isFailed.StaticApply(val).Equals((Int32) 1)) {
+			Put(i, new SimpleStringNode(this, "<Failed>", tyVal, index,
+						    visual, newDepth));
+		    }
+		    else {
+			Put(i, Inspector.CreateNode(this, val, tyVal, i, newDepth));
+		    }
+		}
+		else if ((val is System.Int32) && (((Int32) val) == (Int32) 1)) {
+		    width      = (i - 1);
+		    showBraces = true;
+		    ChangeSeparator();
+		}
+		else {
+		    width      = i;
+		    showBraces = false;
+		    Put(i, Inspector.CreateNode(this, val, tyVal.type, i, newDepth));
+		}
+		break;
 	    }
 	}
+	Helper.PrintLn((System.String) "Leaving ListNode: PerformInsertion");
+    }
+    void ChangeSeparator() {
+	for (int i = 1; i < width; i++) {
+	    ((SeparatorNode) items[i]).ChangeSep(",");
+	}
+	((SeparatorNode) items[width]).ChangeSep(""); // Ugly Hack
+    }
+    public override void Layout() {
+	if (dazzle) {
+	    if (showBraces) {
+		base.Layout();
+		obrace.Layout();
+		cbrace.Layout();
+		AdjustXYDim(obrace.GetXDim(), cbrace.GetXDim());
+	    }
+	    else {
+		base.Layout();
+	    }
+	}
+    }
+    public override void Draw(int x, int y) {
+	if (showBraces) {
+	    obrace.Draw(x, y);
+	    base.Draw(x + obrace.GetXDim(), y);
+	    cbrace.Draw((x + lxDim - 1), (y + yDim - 1));
+	}
+	else {
+	    base.Draw(x, y);
+	}
+    }
+    public override void Undraw() {
+	if (!dirty) {
+	    if (showBraces) {
+		obrace.Undraw();
+		base.Undraw();
+		cbrace.Undraw();
+	    }
+	    else {
+		base.Undraw();
+	    }
+	}
+    }
+    public override void Replace(TreeNode parent, Object val, Object tyVal,
+				 int index, int depth) {
+
+	if ((index < width) || (showBraces)) {
+	    TreeNode node = Inspector.CreateNode(parent, val, tyVal, index, depth);
+	    ((SeparatorNode) items[index]).ChangeNode(node);
+	}
+	else {
+	    width = maxWidth;
+	    PerformInsertion(index, val, (Types.List) this.tyVal);
+	}
+	dazzle = true;
+	if (parent != null) {
+	    ((ContainerNode) parent).Notify();
+	}
+			     
     }
 }
 
@@ -949,12 +1118,6 @@ namespace Types {
     public class List {
 	public Object type;
 	public List(Object type) {
-	    this.type = type;
-	}
-    }
-    public class Ref {
-	public Object type;
-	public Ref(Object type) {
 	    this.type = type;
 	}
     }
@@ -1050,14 +1213,14 @@ class Inspector {
     }
     public static TreeNode CreateNode(TreeNode parent, Object val,
 				      Object tyVal, int index, int depth) {
+	Helper.Print((System.String) "Inspector: CreateNode: val is ");
+	Helper.PrintLn((System.String) val.ToString());
+	Helper.Print((System.String) "Inspector: CreateNode: tyVal is ");
+	Helper.PrintLn((System.String) tyVal.ToString());
 	if (depth <= maxDepth) {
-	    while (tyVal is Types.Ref) {
-		tyVal = ((Types.Ref) tyVal).type;
-	    }
-
 	    if (Alice.Builtins.Future_isFuture.StaticApply(val).Equals((Int32) 1)) {
 		if (Alice.Builtins.Future_isFailed.StaticApply(val).Equals((Int32) 1)) {
-		    return new StringNode(parent, "<Failed>", tyVal, index, canvas, depth);
+		    return new SimpleStringNode(parent, "<Failed>", tyVal, index, canvas, depth);
 		}
 		else {
 		    return new FutureNode(parent, val, tyVal, index, canvas, depth);
@@ -1089,6 +1252,7 @@ class Inspector {
 				     index, canvas, depth);
 	    }
 	    else if (tyVal is Types.Record) {
+		Helper.PrintLn((System.String) "Creating new Record Node");
 		return new RecordNode(parent, val, ((Types.Record) tyVal).types,
 				      index, canvas, depth);
 	    }
@@ -1096,7 +1260,8 @@ class Inspector {
 		return new ListNode(parent, val, tyVal, index, canvas, depth);
 	    }
 	    else {
-		Console.WriteLine("CreateNode: Something went wrong");
+		Helper.Print((System.String) "Inspector.CreateNode: Something went wrong:");
+		Helper.PrintLn((System.String) tyVal.ToString());
 		throw new UnknownTypeException(tyVal);
 	    }
 	}
@@ -1126,24 +1291,25 @@ class Inspector {
 	    for (; (i <= maxNum); i++) {
 		TreeNode node = (TreeNode) items[i];
 
-		node.Undraw(0, newY);
+		node.Undraw();
 		node.Layout();
 		node.Draw(0, newY);
 		newY += node.GetYDim();
 	    }
 	    curY = newY;
+	    canvas.Flush();
 	}
     }
     public void Inspect(Object val, Object tyVal) {
-	//	lock (this) {
-	maxNum += 1;
-	TreeNode node = CreateNode(null, val, tyVal, maxNum, 0);
-	items.Add(maxNum, node);
-	node.Layout();
-	node.Draw(0, curY);
-	curY += node.GetYDim();
-	canvas.Flush();
-	//	}
+	lock (this) {
+	    maxNum += 1;
+	    TreeNode node = CreateNode(null, val, tyVal, maxNum, 0);
+	    items.Add(maxNum, node);
+	    node.Layout();
+	    node.Draw(0, curY);
+	    curY += node.GetYDim();
+	    canvas.Flush();
+	}
     }
 }
 
@@ -1151,13 +1317,10 @@ class TranslateType {
     static int index = 0;
     static System.Collections.Hashtable table = new System.Collections.Hashtable();
 
-    public static int PutType(Object tyVal) {
+    public static int NewType(Object tyVal) {
 	index += 1;
 	table.Add(index, tyVal);
 	return index;
-    }
-    public static Object GetType(int index) {
-	return table[index];
     }
     public static Object[] TranslateBlock(Object[] src) {
 	int len      = src.Length;
@@ -1170,19 +1333,43 @@ class TranslateType {
 	return dst;
     }
     public static Object Translate(Object tyVal) {
-	if (tyVal is Types.Tuple) {
+	tyVal = table[tyVal];
+
+	Helper.Print((System.String) "Translate: tyVal is ");
+	Helper.PrintLn((System.String) tyVal.ToString());
+	if (tyVal is Types.Int) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Word) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Real) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Char) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Bool) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.String) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Fun) {
+	    return tyVal;
+	}
+	else if (tyVal is Types.Tuple) {
 	    return new Types.Tuple(TranslateBlock(((Types.Tuple) tyVal).types));
 	}
 	else if (tyVal is Types.Record) {
 	    return new Types.Record(TranslateBlock(((Types.Record) tyVal).types));
 	}
-	else if (tyVal is System.Int32) {
-	    Console.Write("Translate: "); Console.WriteLine(table[tyVal].ToString());
-	    return table[tyVal];
+	else if (tyVal is Types.List) {
+	    return new Types.List(Translate(((Types.List) tyVal).type));
 	}
 	else {
-	    Console.Write("Translate: something went wrong: ");
-	    Console.WriteLine(tyVal.ToString());
+	    Helper.Print((System.String) "Translate: unknown tyVal: ");
+	    Helper.PrintLn((System.String) tyVal.ToString());
 	    return tyVal;
 	}
     }
@@ -1193,22 +1380,22 @@ class MakeBasicType : Alice.Values.Procedure {
 	String str = (System.String) obj;
 
 	if (str.Equals("int")) {
-	    return TranslateType.PutType(new Types.Int());
+	    return TranslateType.NewType(new Types.Int());
 	}
 	else if (str.Equals("word")) {
-	    return TranslateType.PutType(new Types.Word());
+	    return TranslateType.NewType(new Types.Word());
 	}
 	else if (str.Equals("char")) {
-	    return TranslateType.PutType(new Types.Char());
+	    return TranslateType.NewType(new Types.Char());
 	}
 	else if (str.Equals("real")) {
-	    return TranslateType.PutType(new Types.Real());
+	    return TranslateType.NewType(new Types.Real());
 	}
 	else if (str.Equals("bool")) {
-	    return TranslateType.PutType(new Types.Bool());
+	    return TranslateType.NewType(new Types.Bool());
 	}
 	else {
-	    return TranslateType.PutType(new Types.String((System.String) str));
+	    return TranslateType.NewType(new Types.String((System.String) str));
 	}
     }
     public override Object Apply(Object obj) {
@@ -1218,7 +1405,7 @@ class MakeBasicType : Alice.Values.Procedure {
 
 class MakeArrowType : Alice.Values.Procedure3 {
     public static Object StaticApply(Object a, Object b, Object c) {
-	return TranslateType.PutType(new Types.Fun());
+	return TranslateType.NewType(new Types.Fun());
     }
     public override Object Apply(Object a, Object b, Object c) {
 	return StaticApply(a, b, c);
@@ -1227,7 +1414,7 @@ class MakeArrowType : Alice.Values.Procedure3 {
 
 class MakeListType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.PutType(new Types.List(obj));
+	return TranslateType.NewType(new Types.List(obj));
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
@@ -1236,7 +1423,7 @@ class MakeListType : Alice.Values.Procedure {
 
 class MakeRecordType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.PutType(new Types.Record((Object[]) obj));
+	return TranslateType.NewType(new Types.Record((Object[]) obj));
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
@@ -1245,7 +1432,7 @@ class MakeRecordType : Alice.Values.Procedure {
 
 class MakeTupleType : Alice.Values.Procedure {
     public static Object StaticApply(Object obj) {
-	return TranslateType.PutType(new Types.Tuple((Object[]) obj));
+	return TranslateType.NewType(new Types.Tuple((Object[]) obj));
     }
     public override Object Apply(Object obj) {
 	return StaticApply(obj);
@@ -1253,11 +1440,10 @@ class MakeTupleType : Alice.Values.Procedure {
 }
 
 class InspectApply : Alice.Values.Procedure2 {
-    public static Object StaticApply(Object obj, Object ty) {
-	Console.WriteLine("Entered Inspect Wrapper");
-	Inspector.GetInspector().Inspect(obj,
-					 TranslateType.Translate(TranslateType.Translate(ty)));
-	Console.WriteLine("Leaving Inspect Wrapper");
+    public static Object StaticApply(Object val, Object ty) {
+	Helper.PrintLn((System.String) "Entered Inspect Wrapper");
+	Inspector.GetInspector().Inspect(val, TranslateType.Translate(ty));
+	Helper.PrintLn((System.String) "Leaving Inspect Wrapper");
 	return Alice.Prebound.unit;
     }
     public override Object Apply(Object val, Object ty) {
@@ -1271,7 +1457,7 @@ public class Execute {
 	Inspector insp = new Inspector(canvas);
 	Object[] val   = new Object[6];
 	
-	Console.WriteLine("Entered Canvas::Main");
+	Helper.PrintLn((System.String) "Entered Canvas::Main");
 	new Thread(new ThreadStart(insp.Run)).Start();
 	val[0] = new InspectApply();
         val[1] = new MakeArrowType();
@@ -1279,7 +1465,7 @@ public class Execute {
 	val[3] = new MakeListType();
 	val[4] = new MakeRecordType();
 	val[5] = new MakeTupleType();
-	Console.WriteLine("Leaving Canvas::Main");
+	Helper.PrintLn((System.String) "Leaving Canvas::Main");
 	return val;
     }
 }
