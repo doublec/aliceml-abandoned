@@ -40,37 +40,37 @@ const char *AbstractCode::GetOpcodeName(TagVal *pc) {
 #define OPT(w, X) {				\
   TagVal *opt = TagVal::FromWord(w);		\
   if (opt == INVALID_POINTER)			\
-    fprintf(file, " NONE");			\
+    std::fprintf(file, " NONE");		\
   else {					\
-    fprintf(file, " SOME");			\
+    std::fprintf(file, " SOME");		\
     X(opt->Sel(0));				\
   }						\
 }
 
 #define TUPLE(w, X, Y) {			\
   Tuple *tuple = Tuple::FromWordDirect(w);	\
-  fprintf(file, " (");				\
+  std::fprintf(file, " (");			\
   X(tuple->Sel(0));				\
   Y(tuple->Sel(1));				\
-  fprintf(file, " )");				\
+  std::fprintf(file, " )");			\
 }
 
 #define TRIPLE(w, X, Y, Z) {			\
   Tuple *tuple = Tuple::FromWordDirect(w);	\
-  fprintf(file, " (");				\
+  std::fprintf(file, " (");			\
   X(tuple->Sel(0));				\
   Y(tuple->Sel(1));				\
   Z(tuple->Sel(2));				\
-  fprintf(file, " )");				\
+  std::fprintf(file, " )");			\
 }
 
 #define VECTOR(w, X) {					\
   Vector *vector = Vector::FromWordDirect(w);		\
-  fprintf(file, " %d#[", vector->GetLength());		\
+  std::fprintf(file, " %d#[", vector->GetLength());	\
   for (u_int i = 0; i < vector->GetLength(); i++) {	\
     X(vector->Sub(i));					\
   }							\
-  fprintf(file, " ]");					\
+  std::fprintf(file, " ]");				\
 }
 
 #define ARGS(w, X) {				\
@@ -128,34 +128,34 @@ private:
   void Instr(word w) {
     TagVal *instr = TagVal::FromWordDirect(w);
     todo->SlowPush(instr->ToWord());
-    fprintf(file, " %p", instr);
+    std::fprintf(file, " %p", instr);
   }
   void LastInstr(word w) {
     TagVal *instr = TagVal::FromWordDirect(w);
     if (done->IsMember(w))
-      fprintf(file, " %p", instr);
+      std::fprintf(file, " %p", instr);
     else
       todo->SlowPush(instr->ToWord());
   }
   void Int(word w) {
-    fprintf(file, " %d", Store::DirectWordToInt(w));
+    std::fprintf(file, " %d", Store::DirectWordToInt(w));
   }
   void Value(word value) {
-    int i = Store::WordToInt(value);
+    s_int i = Store::WordToInt(value);
     if (i != INVALID_INT)
-      fprintf(file, " int(%d)", i);
+      std::fprintf(file, " int(%d)", i);
     else {
       //--** treat chunks specially
       immediates->Enqueue(value);
-      fprintf(file, " %p", value);
+      std::fprintf(file, " %p", value);
     }
   }
   void IdDef(word w) {
     TagVal *idDef = TagVal::FromWord(w);
     if (idDef == INVALID_POINTER)
-      fprintf(file, " Wildcard");
+      std::fprintf(file, " Wildcard");
     else
-      fprintf(file, " IdDef(%d)", Store::DirectWordToInt(idDef->Sel(0)));
+      std::fprintf(file, " IdDef(%d)", Store::DirectWordToInt(idDef->Sel(0)));
   }
   void IdDefs(word w) {
     VECTOR(w, IdDef);
@@ -164,19 +164,19 @@ private:
     TagVal *idRef = TagVal::FromWordDirect(w);
     switch (AbstractCode::GetIdRef(idRef)) {
     case AbstractCode::Immediate:
-      fprintf(file, " Immediate(");
+      std::fprintf(file, " Immediate(");
       Value(idRef->Sel(0));
-      fprintf(file, " )");
+      std::fprintf(file, " )");
       break;
     case AbstractCode::Local:
-      fprintf(file, " Local(%d)", Store::DirectWordToInt(idRef->Sel(0)));
+      std::fprintf(file, " Local(%d)", Store::DirectWordToInt(idRef->Sel(0)));
       break;
     case AbstractCode::LastUseLocal:
-      fprintf(file, " LastUseLocal(%d)",
-	      Store::DirectWordToInt(idRef->Sel(0)));
+      std::fprintf(file, " LastUseLocal(%d)",
+		   Store::DirectWordToInt(idRef->Sel(0)));
       break;
     case AbstractCode::Global:
-      fprintf(file, " Global(%d)", Store::DirectWordToInt(idRef->Sel(0)));
+      std::fprintf(file, " Global(%d)", Store::DirectWordToInt(idRef->Sel(0)));
       break;
     }
   }
@@ -190,17 +190,17 @@ private:
     TUPLE(w, IdDefArgs, Instr);
   }
   void Label(word w) {
-    fprintf(file, " %s",
-	    UniqueString::FromWordDirect(w)->ToString()->ExportC());
+    std::fprintf(file, " %s",
+		 UniqueString::FromWordDirect(w)->ToString()->ExportC());
   }
   void Template(word w) {
     TagVal *templ = TagVal::FromWordDirect(w);
-    fprintf(file, " Template(");
+    std::fprintf(file, " Template(");
     Int(templ->Sel(1));
     Int(templ->Sel(2));
     ARGS(templ->Sel(3), IdDef);
     Instr(templ->Sel(4));
-    fprintf(file, " )");
+    std::fprintf(file, " )");
   }
   void IntInstr(word w) {
     TUPLE(w, Int, Instr);
@@ -245,7 +245,7 @@ void Disassembler::Start() {
       continue;
     done->InsertItem(pc->ToWord(), Store::IntToWord(0));
     operand = 0;
-    fprintf(file, "%p %s", pc, AbstractCode::GetOpcodeName(pc));
+    std::fprintf(file, "%p %s", pc, AbstractCode::GetOpcodeName(pc));
     switch (AbstractCode::GetInstr(pc)) {
     case AbstractCode::Kill:
       IDS LASTINSTR break;
@@ -316,14 +316,14 @@ void Disassembler::Start() {
     default:
       Error("AbstractCode::Disassemble: unknown instr tag");
     }
-    fprintf(file, "\n");
+    std::fprintf(file, "\n");
   }
 }
 
 void Disassembler::DumpImmediates() {
   while (!immediates->IsEmpty()) {
     word value = immediates->Dequeue();
-    fprintf(file, "\nValue at %p:\n\n", value);
+    std::fprintf(file, "\nValue at %p:\n\n", value);
     Debug::DumpTo(file, value);
   }
 }
