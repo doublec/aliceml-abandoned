@@ -47,15 +47,31 @@
     word x2 = Scheduler::currentArgs[2];
 #define END }
 
-#define RETURN(w) {				\
+#define RETURN0 {				\
+  Scheduler::nArgs = 0;				\
+  return Interpreter::CONTINUE;			\
+}
+#define RETURN1(w) {				\
   Scheduler::nArgs = Scheduler::ONE_ARG;	\
   Scheduler::currentArgs[0] = w;		\
   return Interpreter::CONTINUE;			\
 }
-#define RETURN_UNIT {				\
-  Scheduler::nArgs = 0;				\
+#define RETURN2(w1, w2) {			\
+  Scheduler::nArgs = 2;				\
+  Scheduler::currentArgs[0] = w1;		\
+  Scheduler::currentArgs[1] = w2;		\
   return Interpreter::CONTINUE;			\
 }
+#define RETURN3(w1, w2, w3) {			\
+  Scheduler::nArgs = 3;				\
+  Scheduler::currentArgs[0] = w1;		\
+  Scheduler::currentArgs[1] = w2;		\
+  Scheduler::currentArgs[2] = w3;		\
+  return Interpreter::CONTINUE;			\
+}
+
+#define RETURN(w) RETURN1(w)
+
 #define RETURN_INT(i) RETURN(Store::IntToWord(i));
 #define RETURN_BOOL(b) RETURN_INT(!!(b));
 

@@ -48,6 +48,8 @@
 #define DECLARE_LIST(tagVal, length, x)					\
   DECLARE_LIST_ELEMS(tagVal, length, x, ;)
 
+#define RETURN_UNIT RETURN0
+
 #define RETURN_STRUCTURE(t)           \
   {                                   \
     Tuple *structure = Tuple::New(1); \

@@ -94,10 +94,7 @@ DEFINE1(UnsafeSocket_server) {
   if (getsockname(sock, reinterpret_cast<sockaddr *>(&addr), &addrLen) < 0) {
     RAISE(Store::IntToWord(0)); //--** IO.Io
   }
-  Tuple *tuple = Tuple::New(2);
-  tuple->Init(0, Store::IntToWord(sock));
-  tuple->Init(1, Store::IntToWord(ntohs(addr.sin_port)));
-  RETURN(tuple->ToWord());
+  RETURN2(Store::IntToWord(sock), Store::IntToWord(ntohs(addr.sin_port)));
 } END
 
 DEFINE1(UnsafeSocket_accept) {
@@ -121,11 +118,9 @@ DEFINE1(UnsafeSocket_accept) {
   }
   SetNonBlocking(client, true);
 
-  Tuple *tuple = Tuple::New(3);
-  tuple->Init(0, Store::IntToWord(client));
-  tuple->Init(1, String::New(GetHostName(&addr))->ToWord());
-  tuple->Init(2, Store::IntToWord(ntohs(addr.sin_port)));
-  RETURN(tuple->ToWord());
+  RETURN3(Store::IntToWord(client),
+	  String::New(GetHostName(&addr))->ToWord(),
+	  Store::IntToWord(ntohs(addr.sin_port)));
 } END
 
 DEFINE2(UnsafeSocket_client) {

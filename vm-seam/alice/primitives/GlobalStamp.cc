@@ -99,10 +99,7 @@ DEFINE1(GlobalStamp_hash) {
 } END
 
 DEFINE0(GlobalStamp_new) {
-  Tuple *tuple = Tuple::New(2);
-  tuple->Init(0, Guid::vmGuid);
-  tuple->Init(1, Store::IntToWord(counter++));
-  RETURN(tuple->ToWord());
+  RETURN2(Guid::vmGuid, Store::IntToWord(counter++));
 } END
 
 DEFINE1(GlobalStamp_toString) {
