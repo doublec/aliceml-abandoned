@@ -1,1 +1,0 @@
-- Inside scripts no types or signatures may be declared. [RTTs use stamps.]
