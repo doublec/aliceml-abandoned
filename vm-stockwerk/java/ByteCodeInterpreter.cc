@@ -993,7 +993,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	    REQUEST(wFieldRef);
 	  Object *object = Object::FromWord(wObject);
 	  Assert(object != INVALID_POINTER);
-	  frame->Push(object->GetInstanceField(fieldRef->GetIndex()));
+	  word value = object->GetInstanceField(fieldRef->GetIndex()); 
+	  frame->Push(value);
 	}
 	else {
 	  // to be done: raise NullPointerException
@@ -1011,7 +1012,8 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  REQUEST(wFieldRef);
 	Class *classObj = fieldRef->GetClass();
 	Assert(classObj != INVALID_POINTER);
-	frame->Push(classObj->GetStaticField(fieldRef->GetIndex()));
+	word value = classObj->GetStaticField(fieldRef->GetIndex()); 
+	frame->Push(value);
 	pc += 3;
       }
       break;
@@ -1533,7 +1535,8 @@ Worker::Result ByteCodeInterpreter::Run() {
     case Instr::LDC:
       {
 	JavaDebug::Print("LDC");
-	frame->Push(GET_POOL_VALUE(GET_BYTE_INDEX()));
+	word value = GET_POOL_VALUE(GET_BYTE_INDEX()); 
+	frame->Push(value);
 	pc += 2;
       }
       break;
