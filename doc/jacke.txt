@@ -61,7 +61,7 @@ the intended return value.
 
 The `as' expression allows a subexpression result to be named, so that it is
 available in the following expressions (e.g. to transform it or to use it
-inside attribute applications. As short hand, expressions only consisting of a
+inside attribute applications). As short hand, expressions only consisting of a
 symbol identifier "symid" behave as if the expression "symid as symid" had been
 written. This often allows more compact rules and corresponds to the scheme
 used to name the results of subderivations in New Jersey's ML-Yacc.
