@@ -13,7 +13,6 @@
 #ifndef __ALICE__JITTER_ALICE_DATA_HH__
 #define __ALICE__JITTER_ALICE_DATA_HH__
 
-#include "store/JITStore.hh"
 #include "alice/Data.hh"
 
 namespace JITAlice {

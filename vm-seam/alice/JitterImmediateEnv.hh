@@ -13,9 +13,7 @@
 #ifndef __ALICE_JITTER_IMMEDIATE_ENV_HH__
 #define __ALICE_JITTER_IMMEDIATE_ENV_HH__
 
-#include "store/Store.hh"
-#include "generic/Tuple.hh"
-#include "generic/RootSet.hh"
+#include "Seam.hh"
 
 class ImmediateEnv {
 protected:
