@@ -19,7 +19,7 @@
 
 #include "generic/String.hh"
 
-class Guid: private String {
+class DllExport Guid: private String {
 public:
   using Block::ToWord;
   using String::Hash;
