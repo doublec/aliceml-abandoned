@@ -25,6 +25,7 @@
 #include "generic/RootSet.hh"
 #include "generic/FinalizationSet.hh"
 #include "generic/Tuple.hh"
+#include "generic/UniqueString.hh"
 #include "generic/ConcreteCode.hh"
 #include "generic/Closure.hh"
 #include "generic/Backtrace.hh"
@@ -38,8 +39,6 @@
 #if BOTTOM_UP_PICKLER
 #include "generic/NewPickle.hh"
 #endif
-
-#include "alice/Data.hh" //--** should not be here
 
 #define COMPRESSIONLEVEL "9"
 
@@ -728,9 +727,6 @@ void Pickler::Init() {
   PickleSaveWorker::Init();
   PicklePackWorker::Init();
 #endif
-}
-
-void Pickler::InitExceptions() {
-  Sited = UniqueConstructor::New(String::New("Component.Sited"))->ToWord();
+  Sited = UniqueString::New(String::New("Component.Sited"))->ToWord();
   RootSet::Add(Sited);
 }
