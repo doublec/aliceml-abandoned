@@ -11,7 +11,7 @@ requires approximately 35 MB of Harddisk space.</P>
 
 <?php section("packages", "Packages") ?>
 
-<P>The following packages provide <A href="download/CHANGES">version 1.0</A>
+<P>The following packages provide <A href="download/CHANGES">version 1.1</A>
 of the Alice programming system. All packages include the full <A
 href="manual/">manual</A> web pages.</P>
 
@@ -20,20 +20,23 @@ href="manual/">manual</A> web pages.</P>
 <P>As a self installing executable:</P>
 
 <UL>
-  <LI><A href="download/alice-1.0-3.exe"><TT>alice-1.0-3.exe</TT></A></LI>
+  <LI><A href="download/alice-1.1-1.exe"><TT>alice-1.1-1.exe</TT></A></LI>
 </UL>
 
+<!--
 <P>With package version 2 we fixed the <TT>alicerun</TT> command, and version 3 replaces a misconfigured GMP library.</P>
+-->
 
 <P><B>Note:</B> You have to uninstall all previous versions of Alice before
 installing the packages.</P>
 
+<!--
 <P><B>Note 2:</B> If you install Alice as administrator and want to use it as a user, it may be necessary to set the following paths manually for the user account:
 <PRE>
 ALICE_HOME=C:\Program Files\Alice\share\alice
 PATH=<alice-dir>\bin;<alice-dir>\lib\seam;<alice-dir>\gtk\bin;<alice-dir>\gtk\lib:%PATH%</PRE>
 where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This will be fixed in future pakages.</P>
-
+-->
 <!--
 <P><B>Note:</B> Previous packages for Windows contained a misconfigured GMP library, causing problems on some Windows boxes when using large integers or time values. If you experienced these, please upgrade.</P>
 -->
@@ -43,25 +46,37 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 <P>For Red Hat Linux:</P>
 
 <UL>
-  <LI><A href="download/alice-1.0-1.i386.rpm"><TT>alice-1.0-1.i386.rpm</TT></A></LI>
+  <LI><A
+  href="download/alice-complete-1.1-1.i386.rpm"><TT>alice-complete-1.1-1.i386.rpm</TT></A></LI>
+  <LI>Alternatively, install binary packages of the individual
+  components Alice consists of, or use the source rpms to build Alice
+  for a different platform. You can find the necessary packages <A
+  HREF="download/rpm">in the rpm download directory</A>.
 </UL>
 
 <P>For Debian Linux:</P>
 
 <UL>
-  <LI>Soon to come.</LI>
-<!--
-  <LI><A HREF="download/alice_1.0-1_all.deb"><TT>alice_1.0-1_all.deb</TT></A></LI>
--->
+  <LI>Add <TT>deb http://www.ps.uni-sb.de/alice/download/debian
+  testing</TT> to your <TT>sources.list</TT>. You need to apt-get the
+  package <TT>alice-runtime</TT>.</LI>
+  <LI>Alternatively, use <TT>deb-src</TT> to retrieve and install
+  source packages. Please note that we cannot provide a source package
+  for Gecode at the moment, as it is not yet released. You will have
+  to either use the binary version or install <TT>alice-runtime</TT>
+  using the <TT>--force-depends</TT> command line option.
 </UL>
 
-<P>For other Linuces (binary tarball):</P>
+<P>For other Linuces:</P>
 
 <UL>
-  <LI><A HREF="download/alice-1.0-1.i386-linux.tgz"><TT>alice-1.0-1.i386-linux.tgz</TT></A></LI>
+  <LI><A
+  HREF="download/alice-1.1-1.i386-linux.tgz"><TT>alice-1.1-1.i386-linux.tgz</TT></A>
+  (binary tarball, see below for installation instructions)</LI>
+  <LI><A HREF="download/sources/">source packages</A> (see README file for installation instructions)</LI>
 </UL>
 
-<P>You can unpack this tarball to the root directory, it will install
+<P>You can unpack the binary tarball to the root directory, it will install
   Alice under /opt/alice-seam. After unpacking, add
   /opt/alice-seam/bin to your PATH.</P>
 
@@ -69,10 +84,19 @@ where <TT>&lt;alice-dir&gt;</TT>denotes the Alice installation directory. This w
 
 <P>For Mac OS X:</P>
 
-<UL>
-  <LI>Soon to come.</LI>
-</UL>
+<P>Please note that the Mac OS version currently does not contain the
+just-in-time native code compiler - it will therefore run considerably
+slower than Alice on x86.</P>
 
+<P>You need the <A HREF="http://fink.sourceforge.net/">Fink</A>
+system, which provides Mac OS packages of many common Unix
+applications. The Alice packages depend on the gtk libraries, libxml2,
+and libgmp.</P>
+
+<P>
+Please install <A HREF="download/fink">all the packages for
+darwin-powerpc</A> using the dpkg command-line tool.
+</P>
 
 <?php subsection("license", "License") ?>
 
