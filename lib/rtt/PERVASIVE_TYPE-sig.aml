@@ -22,7 +22,6 @@ sig
     type lab		= Label.t
     type name		= Name.t
     type path		= Path.t
-    type con		= Type.con
     type typ		= Type.typ
 
     val lab_false :	lab
@@ -45,18 +44,6 @@ sig
     val path_strict :	path
     val path_conarrow :	path
 
-    val con_int :	con
-    val con_word :	con
-    val con_real :	con
-    val con_char :	con
-    val con_string :	con
-    val con_vec :	con
-    val con_array :	con
-    val con_ref :	con
-    val con_exn :	con
-    val con_strict :	con
-    val con_conarrow :	con
-
     val typ_bool :	typ
     val typ_int :	typ
     val typ_word :	typ
@@ -73,5 +60,5 @@ sig
     val paths :		PathSet.t
 
     exception Lookup
-    val lookup :	string -> con	(* [Lookup] *)
+    val lookup :	string -> typ	(* [Lookup] *)
 end
