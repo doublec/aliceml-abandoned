@@ -72,9 +72,9 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)UniqueConstructor.class \
 	$(CLASSROOT)$(RUNTIME)UniqueName.class \
 	$(CLASSROOT)$(RUNTIME)Vector.class \
-	$(CLASSROOT)$(RUNTIME)Word.class 
+	$(CLASSROOT)$(RUNTIME)Word.class
 
-rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
+rmifil= $(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 	$(CLASSROOT)$(RUNTIME)Future_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ByNeedFuture_Stub.class \
 	$(CLASSROOT)$(RUNTIME)ServerManager_Stub.class \
@@ -85,7 +85,7 @@ rmifil=	$(CLASSROOT)$(RUNTIME)LVar_Stub.class \
 rmipatch = $(CLASSROOT)sun/rmi/server/MarshalOutputStream.class \
 	   $(CLASSROOT)sun/rmi/server/MarshalInputStream.class
 
-all:	link $(files) rmi $(M4INCL) $(rmipatch)
+all:    link $(files) rmi $(M4INCL) $(rmipatch)
 
 link:
 	test -d $(CLASSROOT) || mkdir $(CLASSROOT)
@@ -95,10 +95,10 @@ link:
 	CLASSPATH=$(CLASSROOT):$(CLASSPATH) $(JAVAC) $(JFLAGS) -d $(CLASSROOT) *java && \
 	$(RMIC) $(RMIFLAGS) -d $(CLASSROOT) $(rt)LVar $(rt)Future $(rt)ServerManager $(rt)ClientManager $(rt)Exporter $(rt)Port $(rt)ByNeedFuture)
 
-rmi:	$(rmifil)
+rmi:    $(rmifil)
 
 clean:
-	rm *java; \
+	rm *.java; \
 	exit 0
 
 distclean: clean
