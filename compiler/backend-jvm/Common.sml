@@ -39,9 +39,6 @@ structure Common=
 	(* extract the stamp from an Id *)
 	fun stampFromId (Id (_, stamp', _)) = stamp'
 
-	(* JVM-Register where compilation result is stored to *)
-	val mainpickle = ref (Stamp.new ()) (* stamp for main structure *)
-
 	val _ = Compiler.Control.Print.printLength := 10000;
 	val _ = Compiler.Control.Print.printDepth := 10000;
 	val _ = SMLofNJ.Internals.GC.messages false
