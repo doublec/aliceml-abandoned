@@ -12,8 +12,8 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
 #include "adt/HashTable.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE0(UnsafeMkRefMap_new) {
   RETURN(HashTable::New(HashTable::INT_KEY, 8)->ToWord());
