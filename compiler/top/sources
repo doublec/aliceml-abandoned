@@ -39,6 +39,7 @@
 ../common/IntermediateGrammar.sml
 ../common/PREBOUND.sig
 ../common/Prebound.sml
+../frontend-common/StringMap.sml
 ../frontend-common/NAME.sig
 ../frontend-common/Name.sml
 ../frontend-common/ABSTRACT_GRAMMAR.sig
