@@ -16,11 +16,16 @@ import
    Open(file)
 export
    'TextIO': TextIO
+   Print
 define
    fun {TextIOInputAll F}
       case {F getS($)} of false then ""
       [] S then S#'\n'#{TextIOInputAll F}
       end
+   end
+
+   fun {Print X}
+      {System.printInfo X} '#'
    end
 
    TextIO =
@@ -49,6 +54,5 @@ define
 	 fun {$ F#C} {F write(vs: [C])} '#' end
       'closeOut':
 	 fun {$ F} {F close()} '#' end
-      'print':
-	 fun {$ X} {System.printInfo X} '#' end)
+      'print': Print)
 end
