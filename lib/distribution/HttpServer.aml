@@ -77,7 +77,7 @@ structure HttpServer :> HTTP_SERVER =
 		Socket.close socket
 	    end
 	    handle Http.Format =>
-		       (TextIO.print "format error\n";
+		       (TextIO.print "protocol error\n";
 			Socket.close socket)
 		 | Http.Closed => ()
 
