@@ -91,14 +91,14 @@
 
 # Configurable directories
 
-SRCDIR = ../..
+SRCTOP = ../..
 BOOTSTRAPDIR = ../../bootstrap
 OZHOME = /opt/mozart-1.1.1
 PREFIX = /opt/stockhausen-devel
 
 # No configuration needed from here
 
-VPATH = $(SRCDIR)
+VPATH = $(SRCTOP)
 
 STOC0 = $(BOOTSTRAPDIR)/stoc-mozart
 STOC1 = STOCKHOME=build1/install build1/install/bin/stoc
