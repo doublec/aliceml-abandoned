@@ -1,7 +1,9 @@
 signature LEXER_ERRORS =
   sig
     type error
+    type token
     exception Error of Source.pos * error
+    exception EOF of Source.pos -> token
     val toString: error -> string
   end
 
@@ -10,6 +12,8 @@ functor CountPosLexer(
 	where type UserDeclarations.pos = int
 	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
 	structure LexerError: LEXER_ERRORS
+	where type token =
+		(Lexer.UserDeclarations.svalue, int) LrParser.Token.token
 ) : LEXER =
   struct
 
@@ -21,39 +25,50 @@ functor CountPosLexer(
 
     fun makeLexer yyinput =
 	let
-	    val lin = ref 1
-	    val col = ref 0
-	    val buf = ref ""
-	    val pos = ref 0
+	    val lin  = ref 1
+	    val col  = ref 0
+	    val pos  = ref 0
+	    val buf  = ref ""	(* current buffer *)
+	    val buf' = ref ""	(* next buffer *)
+	    val off  = ref 0	(* offset to start of current buffer *)
+	    val off' = ref 0	(* offset for next buffer *)
 
-	    fun count(pos, newPos, lin, col) =
-		if pos = newPos then
+	    fun count(i, i', lin, col) =
+		if i = i' then
 		    (lin,col)
-		else case String.sub(!buf, pos)
-		    of #"\n" => count(pos+1, newPos, lin+1, 0)
-		     | #"\t" => count(pos+1, newPos, lin, col+8-(col mod 8))
-		     |  _    => count(pos+1, newPos, lin, col+1)
+		else (case String.sub(!buf, i)
+		    of #"\n" => count(i+1, i', lin+1, 0)
+		     | #"\t" => count(i+1, i', lin, col+8-(col mod 8))
+		     |  _    => count(i+1, i', lin, col+1)
+		) handle Subscript =>
+		let
+		    val n = String.size(!buf)
+		in
+		    buf  := !buf' ;
+		    buf' := ""    ;
+		    off  := !off' ;
+		    count(0, i'-n, lin, col)
+		end
 
 	    fun transform(pos1, pos2) =
 		let
-		    val pos1' as (lin1,col1) = count(!pos, pos1, !lin, !col)
-		    val pos2' as (lin2,col2) = count(pos1, pos2, lin1, col1)
+		    val n0 = !off
+		    val pos1' as (l1,c1) = count(!pos-n0, pos1-n0, !lin, !col)
+		    val n0 = !off
+		    val pos2' as (l2,c2) = count(pos1-n0, pos2-n0, l1, c1)
 		in
-		    lin := lin2 ;
-		    col := col2 ;
+		    lin := l2 ;
+		    col := c2 ;
 		    pos := pos2 ;
 		    (pos1',pos2')
 		end
 
 	    fun yyinput' n =
 		let
-		    val  s    = yyinput n
-		    val (l,c) = count(!pos, String.size(!buf), !lin, !col) ;
+		    val s = yyinput n
 		in
-		    lin := l ;
-		    col := c ;
-		    buf := s ;
-		    pos := 0 ;
+		    buf' := s ;
+		    off' := !off + String.size(!buf) ;
 		    s
 		end
 
@@ -61,7 +76,9 @@ functor CountPosLexer(
 	in
 	    fn () =>
 		let
-		    val LrParser.Token.TOKEN(term, (svalue,pos1,pos2)) = lexer()
+		    val LrParser.Token.TOKEN(term, (svalue,pos1,pos2)) =
+			lexer() handle LexerError.EOF f =>
+			let val pos = !off'+String.size(!buf') in f(pos,pos) end
 		    val (pos1', pos2') = transform(pos1, pos2)
 		in
 		    LrParser.Token.TOKEN(term, (svalue, pos1', pos2'))

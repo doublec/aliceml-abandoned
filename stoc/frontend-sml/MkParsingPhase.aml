@@ -11,7 +11,10 @@ structure ParsingPhase :> PARSING_PHASE =
     structure LrVals = LrVals(structure Token        = LrParser.Token
 			      structure DerivedForms = DerivedForms)
 
-    structure Lexer  = Lexer (structure Tokens = LrVals.Tokens)
+    structure LexerError = LexerError(structure Tokens = LrVals.Tokens)
+
+    structure Lexer  = Lexer (structure Tokens     = LrVals.Tokens
+			      structure LexerError = LexerError)
 
     structure Lexer' = CountPosLexer(structure Lexer      = Lexer
 				     structure LexerError = LexerError)

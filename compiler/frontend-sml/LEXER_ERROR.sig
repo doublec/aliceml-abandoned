@@ -1,6 +1,8 @@
 signature LEXER_ERROR =
   sig
 
+    type token
+
     datatype error =
 	  UnclosedComment
 	| InvalidChar of char
@@ -12,6 +14,7 @@ signature LEXER_ERROR =
 	| EscapeCharTooLarge of bool
 
     exception Error of Source.pos * error
+    exception EOF of Source.pos -> token
 
     val nowhere :	Source.pos
     val error :		Source.pos * error -> 'a

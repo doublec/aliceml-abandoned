@@ -1,5 +1,7 @@
-structure LexerError :> LEXER_ERROR =
+functor LexerError(structure Tokens: Parser_TOKENS) : LEXER_ERROR =
   struct
+
+    type token = (Tokens.svalue, int) Tokens.token
 
     datatype error =
 	  UnclosedComment
@@ -12,6 +14,7 @@ structure LexerError :> LEXER_ERROR =
 	| EscapeCharTooLarge of bool
 
     exception Error of Source.pos * error
+    exception EOF of Source.pos -> token
 
 
     val nowhere = (0,0)

@@ -51,9 +51,9 @@
 
     fun eof() =
 	if !nesting = 0 then
-	    Tokens.EOF(nowhere)
+	    raise EOF(fn i => Tokens.EOF i)
 	else
-	    error(nowhere, UnclosedComment)
+	    raise EOF(fn i => error(i, UnclosedComment))
 
 
 
@@ -189,7 +189,9 @@
 %%
 
 
-%header	( functor Lexer(structure Tokens: Parser_TOKENS) );
+%header	( functor Lexer(structure Tokens:     Parser_TOKENS
+			structure LexerError: LEXER_ERROR
+			  where type token = (Tokens.svalue,int) Tokens.token));
 
 %s COMMENT;
 
