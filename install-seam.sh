@@ -88,7 +88,7 @@ rm -f bootstrap/alicec-stockwerk.$SMLPLATFORM #bootstrap/alicedep.$SMLPLATFORM
 ##
 ## Bootstrap Alice on the Stockwerk
 ##
-unset STOCKHOME
+unset ALICE_HOME
 TIMEDIR=`pwd`/time
 export TIMEDIR
 (cd vm-stockwerk && make -f Makefile.bootstrap depend) || exit 1

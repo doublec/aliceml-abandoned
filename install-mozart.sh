@@ -34,7 +34,7 @@ rm -f bootstrap/alicec-mozart.$PLATFORM #bootstrap/alicedep.$PLATFORM
 (cd vm-mozart && make PREFIX=$prefix install) || exit 1
 PATH=$prefix/bin:$PATH
 export PATH
-unset STOCKHOME
+unset ALICE_HOME
 (cd lib/inspector && make depend) || exit 1
 (cd lib/inspector && make all PREFIX=$prefix install) || exit 1
 (cd lib/constraints && make depend) || exit 1
