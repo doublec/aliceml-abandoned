@@ -1,16 +1,9 @@
-%\define DEBUG
-
 functor
 import
    FD
    FS
    Search
    Space
-\ifdef DEBUG
-   System
-   Inspector
-   Explorer
-\endif
    Select at 'Select.ozf'
    TagComponent('Tag$': Tag) at 'Tag.ozf'
 export
@@ -86,8 +79,7 @@ define
 		case A of size then Out = I
 		else Out = In
 		end
-	     end
-	  illegal: ILLEGAL_SIZE)
+	     end)
    end
 
    fun {MkColorTag Color I}
@@ -96,33 +88,28 @@ define
 		case A of color then Out = I
 		else Out = In
 		end
-	     end
-	  illegal: ILLEGAL_COLOR)
+	     end)
    end
 
-   Tags = tags(tag(p: proc {$ _ In Out} Out = In end   % epsilon
-		   illegal: ILLEGAL_EPSILON)
+   Tags = tags(tag(p: proc {$ _ In Out} Out = In end)   % epsilon
 	       tag(name: 'B'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 2
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_B)
+		      end)
 	       tag(name: 'I'
 		   p: proc {$ A In Out}
 			 case A of i then Out = 2
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_I)
+		      end)
 	       tag(name: 'TT'
 		   p: proc {$ A In Out}
 			 case A of tt then Out = 2
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_TT)
+		      end)
 	       {MkSizeTag 1}
 	       {MkSizeTag 2}
 	       {MkSizeTag 3}
@@ -146,22 +133,19 @@ define
 			 case A of u then Out = {FD.min {FD.plus In 1} 4}
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_U)
+		      end)
 	       tag(name: 'EM'
 		   p: proc {$ A In Out}
 			 case A of ems then Out = {Select.fd [2 1 3] In}
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_EMS)
+		      end)
 	       tag(name: 'S'
 		   p: proc {$ A In Out}
 			 case A of ems then Out = 3
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_EMS)
+		      end)
 	       tag(name: 'PL'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 1
@@ -171,33 +155,16 @@ define
 			 [] u then Out = 1
 			 else Out = In
 			 end
-		      end
-		   illegal: ILLEGAL_PL))
+		      end))
 
    Epsilon = 1
-   MaxTag = {Width Tags} = 26
-
-   ILLEGAL_DATA    = {FS.value.singl Epsilon}
-   ILLEGAL_EPSILON = FS.value.empty
-   ILLEGAL_B       = {FS.value.make 1#2}
-   ILLEGAL_I       = {FS.value.make 1#3}
-   ILLEGAL_TT      = {FS.value.make 1#4}
-   ILLEGAL_SIZE    = {FS.value.make 1#14}
-   ILLEGAL_COLOR   = {FS.value.make 1#22}
-   ILLEGAL_U       = {FS.value.make 1#22}
-   ILLEGAL_EMS     = {FS.value.make 1#25}
-   ILLEGAL_PL      = {FS.value.make 1#26}
+   MaxTag = {Width Tags}
 
    RootI = 1
 
    proc {Constrain Meaning SourceCost ?Res}
       NumberOfElements = SourceCost div Tag.minCost
       NumberOfDataItems = {Length Meaning}
-
-\ifdef DEBUG
-      {System.show numberOf(elements:  NumberOfElements
-			    dataItems: NumberOfDataItems)}
-\endif
 
       FirstElementI     = RootI + 1
       LastElementI      = FirstElementI + NumberOfElements - 1
@@ -219,8 +186,7 @@ define
 		     eqdown:     {FS.value.make FirstVertexI#LastVertexI}
 		     scope:      {FS.value.make FirstDataItemI#LastDataItemI}
 		     attributes: RootAttributes
-		     depth:      0
-		     illegalup:  FS.value.empty)
+		     depth:      0)
 
       %% Initialize element vertices
       for I in FirstElementI..LastElementI do
@@ -232,8 +198,6 @@ define
 	 Attributes = {MkElementAttributes}
 	 Depth      = {FD.int 1#NumberOfElements}
 	 MinDepth   = 1
-	 Illegal    = {FS.var.upperBound 1#MaxTag}
-	 IllegalUp  = {FS.var.upperBound 1#MaxTag}
 	 Tag        = {FD.int 1#MaxTag}
       in
 	 Mother \=: I
@@ -245,8 +209,6 @@ define
 		       attributes: Attributes
 		       depth:      Depth
 		       mindepth:   MinDepth
-		       illegal:    Illegal
-		       illegalup:  IllegalUp
 		       tag:        Tag)
       end
 
@@ -262,7 +224,6 @@ define
 	  Attributes = {MkDataItemAttributes Property IsSpace}
 	  Depth      = {FD.int 1#(NumberOfElements + 1)}
 	  MinDepth   = {FD.int 1#(NumberOfElements + 1)}
-	  IllegalUp  = ILLEGAL_DATA
        in
 	  {ComputeMinDepth Attributes MinDepth}
 	  V.I = dataItem(mother:     Mother
@@ -273,20 +234,8 @@ define
 			 attributes: Attributes
 			 depth:      Depth
 			 mindepth:   MinDepth
-			 illegalup:  IllegalUp
 			 text:       Text)
        end}
-
-      V.2.mother = 1
-      V.3.mother = 1
-      V.4.mother = 3
-      V.5.mother = 4
-      V.2.tag = Epsilon
-      V.3.tag = 3
-      V.4.tag = 2
-      V.2.illegalup = ILLEGAL_EPSILON
-      V.4.illegalup = ILLEGAL_B
-      V.3.illegalup = ILLEGAL_I
 
       %% Treeness Constraints
       Eqdowns = for I in FirstVertexI..LastVertexI collect: Collect do
@@ -381,33 +330,6 @@ define
 	 end
       end
 
-      %% Propagation of illegal tag sets
-      IllegalUps = for I in FirstVertexI..LastVertexI collect: Collect do
-		      {Collect V.I.illegalup}
-		   end
-      TagIllegals = for I in 1..MaxTag collect: Collect do
-		       {Collect Tags.I.illegal}
-		    end
-
-      for I in FirstElementI..LastElementI do W Permitted ExtraTags TagIllegal in
-	 W = V.I
-	 {FS.exclude W.tag W.illegal}
-
-	 %% one way of saying W.illegal = {Select.inter IllegalUps W.daughters}
-
-	 Permitted = {Select.union {Map IllegalUps FS.compl} W.daughters}
-
-	 ExtraTags = {FS.var.upperBound [Epsilon]}
-	 {FS.card ExtraTags} =: {FS.reified.equal W.daughters FS.value.empty}
-
-	 W.illegal = {FS.intersect
-		      {FS.compl {FS.union Permitted ExtraTags}}
-		      {FS.value.make 1#MaxTag}}
-
-	 TagIllegal = {Select.fs TagIllegals W.tag}
-	 W.illegalup = {FS.union TagIllegal W.illegal}
-      end
-
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
 		    if I \= Epsilon then
@@ -436,49 +358,6 @@ define
 	    {FD.distribute ff [AMother]}
 	    {Distribute}
 	 [] nil then
-/*
-	    %% Step 2: Pick leftmost data item with non-det mother.
-	    %%         Determine its mother.
-	    Mothers = for I in FirstDataItemI..LastDataItemI collect: Collect
-		      do
-			 if {Not {IsDet V.I.mother}} then
-			    {Collect V.I.mother}
-			 end
-		      end
-	 in
-	    case Mothers of Mother|_ then
-	       {FD.distribute ff [Mother]}
-	       {Distribute}
-	    [] nil then
-	       %% Step 3: Pick a node with non-det down set.
-	       %%         Set cardinality to lower bound in one branch,
-	       %%         greater than lower bound in the other.
-	       Downs = for I in FirstElementI..LastElementI collect: Collect do
-			  Down = V.I.down
-		       in
-			  if {Not {IsDet Down}} then
-			     {Collect Down#{FS.reflect.cardOf.lowerBound Down}}
-			  end
-		       end
-	    in
-	       case Downs of _|_ then
-		  MinDown#MinCard = {List.foldR Downs
-				     fun {$ This=_#I In=_#J}
-					if I < J then This else In end
-				     end unit#FS.sup}
-	       in
-		  choice {FS.cardRange MinCard MinCard MinDown}
-		  []     {FS.cardRange MinCard + 1 FS.sup MinDown}
-		  end
-		  {Distribute}
-	       else
-		  Tags = for I in FirstElementI..LastElementI collect: Collect
-			 do {Collect V.I.tag}
-			 end
-		  {FD.distribute ff Tags}
-	       end
-	    end
-*/
 	    {FD.distribute ff
 	     {Append
 	      for I in 1..{Width V} collect: Collect do
@@ -495,23 +374,7 @@ define
       end
    in
       Res = V#Cost
-
-/*
-      {FD.distribute ff
-       {Append
-	for I in 1..{Width V} collect: Collect do
-	   case {CondSelect V.I mother unit} of unit then skip
-	   elseof Mother then {Collect Mother}
-	   end
-	end
-	for I in 1..{Width V} collect: Collect do
-	   case {CondSelect V.I tag unit} of unit then skip
-	   elseof Tag then {Collect Tag}
-	   end
-	end}}
-*/
-
-%      {Distribute}
+      {Distribute}
    end
 
    fun {Script Meaning SourceCost}
@@ -553,7 +416,6 @@ define
       end
    end
 
-\ifndef DEBUG
    local
       proc {SmurfSub O Docs}
 	 case {O next($)} of [Res] then DocsRest in
@@ -571,15 +433,6 @@ define
 	 !!Docs
       end
    end
-\else
-   fun {Smurf Meaning SourceCost}
-%      {Inspector.inspect {Reverse Meaning}}
-%      {Explorer.one {Script Meaning SourceCost}}
-      {Explorer.best {Script Meaning SourceCost} Order}
-%      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning SourceCost} Order}.1}}
-      _
-   end
-\endif
 
    SmurfModule = 'Smurf'(smurf: Smurf)
 end
