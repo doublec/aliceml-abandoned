@@ -56,11 +56,15 @@ JackeParser.aml JACKE_PARSER-sig.aml:	jacke.grm
 	echo -e 'import signature PARSER_DATA from "Sigs"\n' > JACKE_PARSER-sig.aml
 	awk -f $(FIXPARSER) < jacke.grm.sig  >> JACKE_PARSER-sig.aml
 	cat JackeParser.aml.header jacke.grm.sml > JackeParser.aml
+	rm jacke.grm.sml
+	rm jacke.grm.sig
+
 
 Lexer.aml: Jacke.lex  
 	ml-lex Jacke.lex
 	echo -e 'import signature Parser_TOKENS signature Parser_LRVALS from "JACKE_PARSER-sig"\nimport structure ErrorMsg from "ErrorMsg"' > Lexer.aml
 	cat Jacke.lex.sml >> Lexer.aml
-	
+	rm Jacke.lex.sml
+
 
 -include Makefile.depend
