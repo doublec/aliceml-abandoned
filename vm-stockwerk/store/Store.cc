@@ -688,6 +688,7 @@ void Store::DoGC(word &root) {
   //MemStat();
 #if defined(STORE_DEBUG)
   std::fprintf(stderr, "done.\n");
+  std::fflush(stderr); // Thanks to Windows
 #endif
 }
 
