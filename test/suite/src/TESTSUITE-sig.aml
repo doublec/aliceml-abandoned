@@ -15,6 +15,9 @@ import structure Test     from "x-alice:/lib/test/Test"
 signature TESTSUITE =
 sig
 
+    val randomize: unit -> unit
+    (* see Gen.randomize *)
+
     val suite: Test.test_suite
 
 end

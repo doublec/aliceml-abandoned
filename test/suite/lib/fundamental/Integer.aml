@@ -19,6 +19,8 @@ import structure Test      from "../../src/Test"
 
 structure TestInteger :> TESTSUITE = (* the integer test suite *)
 struct
+
+    val randomize = Gen.randomize
     
     fun testPrecision () =
 	Test.test (fn _ => valOf Int.precision = 31) ()
@@ -49,8 +51,11 @@ struct
 	end
 
     fun testHash () = 
-       (Test.test (fn x => Int.hash x = (valOf Int.maxInt)) (valOf Int.maxInt);
-	Test.test (fn x => Int.hash x = 0)                  (valOf Int.minInt))
+       let
+	   fun t x = Int.hash x = (Int.abs x handle Overflow => 0)
+       in
+	   Gen.try 1000 Gen.int (Test.test t)
+       end
  
     fun testAbs () =
 	Gen.try 10000 Gen.int 

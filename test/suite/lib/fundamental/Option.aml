@@ -18,6 +18,8 @@ import structure Test      from "../../src/Test"
 structure TestOption :> TESTSUITE =
 struct
 
+    val randomize = Gen.randomize
+
     fun testIsSome () =
 	(Test.test (fn x => Option.isSome x = true) (SOME 0);
 	 Test.test (fn x => Option.isSome x = false) NONE)

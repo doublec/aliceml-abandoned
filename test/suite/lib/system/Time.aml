@@ -20,6 +20,8 @@ import structure Time      from "x-alice:/lib/system/Time"
 structure TestTime :> TESTSUITE = (* the time test suite *)
 struct
 
+    val randomize = Gen.randomize
+
     open Time
 
     fun testToFromString () = 

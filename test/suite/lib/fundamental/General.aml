@@ -20,6 +20,8 @@ import structure Random    from "x-alice:/lib/utility/Random";
 structure TestGeneral :> TESTSUITE =
 struct
 
+    val randomize = Gen.randomize
+
     fun testInverse () =
 	(Test.test (fn x => General.inverse x = GREATER) LESS;
 	 Test.test (fn x => General.inverse x = LESS)    GREATER;

@@ -27,6 +27,23 @@ import structure TestIntInf   from "lib/fundamental/IntInf"
 import structure TestTime     from "lib/system/Time"
 import structure TestCompiler from "lib/compiler/Compiler"
 
+fun randomizeTests () = 
+    let
+	val allTests = [TestCompiler.randomize,
+			TestAlt.randomize,
+			TestBool.randomize,
+			TestChar.randomize,
+			TestGeneral.randomize,
+			TestOption.randomize, 
+			TestString.randomize,
+			TestIEEEReal.randomize,
+			TestInteger.randomize,
+			TestIntInf.randomize(*,
+			TestTime.randomize*)]
+    in
+	List.app (fn x => x ()) allTests
+    end
+
 val allTests = [TestCompiler.suite,
 		TestAlt.suite,
 		TestBool.suite,
@@ -35,8 +52,8 @@ val allTests = [TestCompiler.suite,
 		TestOption.suite, 
 		TestString.suite,
 		TestIEEEReal.suite,
-		TestInteger.suite
-		(*TestIntInf.suite,
+		TestInteger.suite,
+		TestIntInf.suite(*,
 		TestTime.suite*)]
 
 val beg = ref (Time.now ())
@@ -63,12 +80,14 @@ fun start cfg =
 fun main () = 
     case CommandLine.arguments () of
 	 []                           => start Test.defaultConfig
-       | [timeout, sep, showMissing]  => 
+       | [timeout, sep, showMissing, randomize]  => 
 	 let
 	     val t = Time.fromString timeout
 	     val b1 = Bool.fromString sep
 	     val b2 = Bool.fromString showMissing
+	     val b3 = (*Bool.fromString randomize*) true
 	 in 
+	     if b3 then randomizeTests () else ();
 	     case t of
 		 NONE    => start Test.defaultConfig
 	       | SOME t1 => (start {timeout = t1,

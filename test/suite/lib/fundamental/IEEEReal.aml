@@ -12,10 +12,13 @@
 
 import signature TESTSUITE from "../../src//TESTSUITE-sig"
 
+import structure Gen       from "x-alice:/lib/test/Gen"
 import structure Test      from "../../src/Test"
 
 structure TestIEEEReal :> TESTSUITE = (* the IEEEReal test suite *)
 struct
+
+    val randomize = Gen.randomize
 
     fun testGetRoundingMode () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()

@@ -18,6 +18,8 @@ import structure Test      from "../../src/Test"
 structure TestAlt :> TESTSUITE = (* the alt test suite *)
 struct
 
+    val randomize = Gen.randomize
+
     fun testIsFst () = 
 	(Test.test (fn x => Alt.isFst x =  true) (FST 0);
 	 Test.test (fn x => Alt.isFst x = false) (SND 0))

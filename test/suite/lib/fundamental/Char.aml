@@ -19,14 +19,16 @@ import structure Test      from "../../src/Test"
 structure TestChar :> TESTSUITE = (* the char test suite *)
 struct
 
+    val randomize = Gen.randomize
+
     fun testMinChar () =
-	Test.test (fn _ => Char.minChar = #"\^@") ()
+	Test.test (fn c => Char.minChar = c) #"\^@"
 	
     fun testMaxChar () =
-	Test.test (fn _ => Char.maxChar = #"\255") ()
+	Test.test (fn c => Char.maxChar = c) #"\255"
 
     fun testMaxOrd () =
-	Test.test (fn _ => Char.maxOrd = 255) ()
+	Test.test (fn i => Char.maxOrd = i) 255
 
     fun testChr () =
 	(Test.test (fn n => Char.chr n = Char.minChar) 0;
@@ -287,13 +289,39 @@ struct
 	end
 
     fun testToFromWide () =
+	let
+	    fun t c = c = Char.fromWide (Char.toWide c)
+	in
+	    Gen.try 1000 Gen.char (Test.test t)
+	end
+
+    fun testFromString () =
+	let
+	    fun t s = Char.fromString s = 
+		        StringCvt.scanString Char.scan s
+			 handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToString () = 
+	Test.test (fn _ => raise Test.NotYetImplemented) ()	
+
+    fun testFromCString () =
+	let
+	    fun t s = Char.fromString s = 
+		        StringCvt.scanString Char.scanC s
+			 handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToCString () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
-    fun testToFromString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-    fun testToFromCString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
     fun testScan () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
     fun testScanC () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
@@ -327,8 +355,10 @@ struct
 			  ("isCntrl", testIsCntrl),
 			  ("isAscii", testIsAscii),
 			  ("toFromWide", testToFromWide),
-			  ("toFromString", testToFromString),
-			  ("toFromCString", testToFromCString),
+			  ("fromString", testFromString),
+			  ("toString", testToString),
+			  ("fromCString", testFromCString),
+			  ("toCString", testToCString),
 			  ("scan", testScan),
 			  ("scanC", testScanC)])
 end

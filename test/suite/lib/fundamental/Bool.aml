@@ -18,6 +18,8 @@ import structure Test      from "../../src/Test"
 structure TestBool :> TESTSUITE = (* the bool test suite *)
 struct
 
+    val randomize = Gen.randomize
+
     fun testNot () = 
 	(Test.test (fn x => Bool.not x = false) true;
 	 Test.test (fn x => Bool.not x = true) false)

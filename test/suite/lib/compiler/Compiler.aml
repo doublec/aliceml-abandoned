@@ -23,6 +23,8 @@ import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
 structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
 struct
 
+    fun randomize () = ()
+
     val url = Url.fromString "x-alice:/lib/test/Gen"
 
     val comp = Component.load url

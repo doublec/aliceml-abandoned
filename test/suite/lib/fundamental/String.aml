@@ -19,6 +19,8 @@ import structure Test      from "../../src/Test"
 structure TestString :> TESTSUITE =
 struct
 
+    val randomize = Gen.randomize
+
     fun strGen0 _ = Gen.string 1
     fun strGen1 _ = Gen.string (Random.int (String.maxSize div 25))
     val allGenString = [strGen0, strGen1]
@@ -124,12 +126,6 @@ struct
 			                 t (explode s1,  explode s2)))
 	end
 
-    fun testStr () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testArithmetic () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-
     fun testSubstring () =
 	let
 	    fun t (s, i, j) = if i > 0 then t (List.tl s, i - 1, j)
@@ -142,9 +138,6 @@ struct
 					 j < 0 orelse 
 					 String.size (s) < (i + j)))
 	end
-
-    fun testScanC () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testTokens () =
 	let
@@ -177,17 +170,97 @@ struct
 			              List.rev (t (h c) (explode s) [])))
 	end
 
-    fun testToFromCString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+    fun testTranslate () =
+	let
+	    fun t f s = String.concat (List.map f (String.explode s))
+
+	    fun f c = String.str (Char.chr ((Char.ord c + 5) mod Char.maxOrd))
+	in
+	    Gen.try 1000 Gen.string 
+	       (Test.test (fn s => String.translate f s = t f s))
+	end
 
     fun testTabulate () =
+	let
+	    fun t (n, f) = String.tabulate (n, f) = 
+		String.implode (List.tabulate (n, f))
+		     handle Size => n < 0 orelse String.maxSize < n
+
+	    fun f i = Char.chr ((i + 5) mod Char.maxOrd)
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn i => t (i, f)))
+	end
+
+    fun testStr () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
+    fun testArithmetic () =
+	let
+	    fun tS'' nil = false
+	      | tS'' xs  = Char.< (List.hd xs)
+	    
+	    fun tS' (nil, nil) xs = tS'' (List.rev xs)
+	      | tS' (nil,  _ ) _  = true
+	      | tS' ( _ , nil) _  = false
+	      | tS' (chr1::c1, chr2::c2) xs = 
+		  if Char.equal (chr1, chr2) then tS' (c1, c2) xs
+		      else tS' (c1, c2) ((chr1, chr2)::xs)
+
+	    fun tS (s1, s2) = tS' (String.explode s1, String.explode s2) []
+
+	    fun tG    s     = Bool.not (tS s orelse String.equal s)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.string , Gen.string))
+	      (Test.test (fn s => String.< s = tS s andalso 
+			          String.> s = tG s))
+	end
+
+    fun testHash () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToFromWide () =
+	let
+	    fun t s = s = String.fromWide (String.toWide s)
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testToString () =
+	let
+	    fun t s = String.toString s = String.translate Char.toString s
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testFromString () = 
+	let
+	    fun t s = String.fromString s = 
+		      StringCvt.scanString String.scan s 
+		        handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
     fun testScan () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
-    fun testTranslate () =
+    fun testScanC () =
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testToCString () =
+	let
+	    fun t s = String.toCString s = String.translate Char.toCString s
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
+
+    fun testFromCString () = 
+	let
+	    fun t s = String.fromCString s = 
+		      StringCvt.scanString String.scanC s
+		        handle Match => true
+	in
+	    Gen.try 1000 Gen.string (Test.test t)
+	end
 
     fun testCollate () =
 	let
@@ -199,15 +272,6 @@ struct
 	    Gen.try 1000 (Gen.pair (Gen.string, Gen.string)) 
 	      (Test.test (fn x => String.compare x = String.collate t x))
 	end
-
-    fun testToFromWide () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testHash () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
-
-    fun testToFromString () =
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
 
     fun testFields () =
 	let
@@ -318,7 +382,8 @@ struct
 			    ("concatWith", testConcatWith),
 			    ("scanC", testScanC),
 			    ("tokens", testTokens),
-			    ("toFromCString", testToFromCString),
+			    ("toCString", testToCString),
+			    ("fromCString", testFromCString),
 			    ("tabulate", testTabulate),
 			    ("scan", testScan),
 			    ("equal", testEqual),
@@ -332,7 +397,8 @@ struct
 			    ("hash", testHash),
 			    ("implodeExplode", testImplodeExplode),
 			    ("implode", testImplode),
-			    ("toFromString", testToFromString),
+			    ("toString", testToString),
+			    ("fromString", testFromString),
 			    ("concat", testConcat),
 			    ("maxSize", testMaxSize),
 			    ("toFromWide", testToFromWide),
