@@ -20,5 +20,4 @@ final public class DMLWord extends DMLSCon {
   final public long getInt() {
     return value;
   }
-
 }

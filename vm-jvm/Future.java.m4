@@ -1,25 +1,26 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLFuture extends DMLLVal {
+final public class DMLFuture extends DMLLVar {
 
-  public DMLFuture(DMLLVal lval) {
-    super();
-    ref=lval;
-  }
+    public DMLFuture(DMLValue v) {
+	super();
+	ref=v;
+    }
 
-  /** bind ist nicht erlaubt und wirft RuntimeError */
-  final public DMLValue bind(DMLValue v) {
-    throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("cannot bind future to "+v));
-  }
+    /** bind ist nicht erlaubt und wirft RuntimeError */
+    final public DMLValue bind(DMLValue v) {
+	return DMLConstants.runtimeError.apply(new DMLString("cannot bind future to "+v)).raise();
+    }
 
-  final public String toString() {
-    DMLValue val=this.getValue();
-    if (val instanceof DMLLVal) return "<unresolved>: future";
-    return val.toString();
-  }
+    final public String toString() {
+	DMLValue val=this.getValue();
+	if (val instanceof DMLLVar)
+	    return "<unresolved>: future";
+	else
+	    return val.toString();
+    }
 
-  final public DMLValue apply(DMLValue val) {
-    throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("future cannot be applied.\n\t"+this+" applied to "+val));
-  }
-
+    final public DMLValue apply(DMLValue val) {
+	return ref.apply(val);
+    }
 }

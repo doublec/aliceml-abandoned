@@ -1,39 +1,41 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLCoExName extends DMLValue {
+final public class DMLConstructor implements DMLValue {
 
-  public DMLCoExName(String name, int arity) {
-    super();
-    this.name=name;
-    this.arity=arity;
-  }
+    String name = null;
+
+    public DMLConstructor() {
+	super();
+	this.name="unnamed";
+    }
+
+    public DMLConstructor(String name) {
+	super();
+	this.name=name;
+    }
+
+    /** Gleichheit des Namens und der Stelligkeit */
+    final public boolean equals(Object val) {
+	return (val == this);
+    }
+
+    final public String toString() {
+	return this.name+" : constructor";
+    }
+
+    final public DMLValue apply(DMLValue val) {
+	return new DMLConVal(this,val);
+    }
 
     final public DMLValue getValue() {
 	return this;
     }
-    
+
     final public DMLValue request() {
 	return this;
     }
-    
-    /** Gleichheit des Namens und der Stelligkeit */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLCoExName) &&
-	    ((DMLCoExName)val).name.equals(this.name) &&
-	    this.arity==((DMLCoExName)val).arity;
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
     }
-    
-    final public String toString() {
-	return this.name+"/"+this.arity+" : constructor/exceptionname";
-    }
-    
-    final public DMLValue apply(DMLValue val) {
-	if (arity == 0)
-	    throw new DMLCoEx1(DMLConstants.runtimeError,new DMLString("nullary exceptionname cannot be applied.\n\t"+this+" applied to "+val));
-	else
-	    return new DMLCoEx1(name,val);
-    }
-    
-    String name=null;
-    int arity=0;
 }

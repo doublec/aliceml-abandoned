@@ -1,34 +1,44 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLCoEx1 extends DMLCoEx {
+final public class DMLConVal implements DMLValue {
 
-  DMLValue content=null;
+    DMLValue content=null;
+    DMLConstructor constructor=null;
 
-    public DMLCoEx1(String name, DMLValue content) {
+    public DMLConVal(DMLConstructor constructor, DMLValue content) {
 	super();
-	this.name = new DMLCoExName(name,1);
+	this.constructor = constructor;
 	this.content = content;
     }
 
-    public DMLCoEx1(DMLCoExName exname, DMLValue content) {
-	super();
-	if (exname.arity!=1) throw new DMLCoEx1(DMLConstants.runtimeError,new DMLString("operator exception/0 is not a function."));
-	this.name=exname;
-	this.content=content;
+    /** Gleichheit der  und Inhalte */
+    final public boolean equals(Object val) {
+	return (val instanceof DMLConVal) &&
+	    (this.constructor == ((DMLConVal)val).constructor) &&
+	    this.content.equals(((DMLConVal)val).content);
     }
 
-    /** Gleichheit der Namen und Inhalte */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLCoEx1) &&
-	    (this.name == ((DMLCoEx1)val).name) &&
-	    this.content.equals(((DMLCoEx1)val).content);
-    }
-    
     final public DMLValue getContent() {
 	return content;
     }
-    
-  final public String toString() {
-    return name+"("+content+") : exn";
-  }
+
+    final public String toString() {
+	return constructor+"("+content+") : constructed value";
+    }
+
+    final public DMLValue getValue() {
+	return this;
+    }
+
+    final public DMLValue request() {
+	return this;
+    }
+
+    final public DMLValue apply(DMLValue v) {
+	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    }
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
+    }
 }

@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLTuple extends DMLValue {
+final public class DMLTuple implements DMLValue {
 
     DMLValue vals[]=null;
 
@@ -35,7 +35,7 @@ final public class DMLTuple extends DMLValue {
     }
 
     final public DMLValue apply(DMLValue val) {
-	throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("cannot apply tuple.\n\t"+this+" applied to "+val));
+	throw DMLConstants.runtimeError.apply(new DMLString("cannot apply tuple.\n\t"+this+" applied to "+val));
     }
 
     /** gibt den i-ten Eintrag des Tuples */
@@ -50,5 +50,21 @@ final public class DMLTuple extends DMLValue {
 
     final public DMLValue[] getVals() {
 	return vals;
+    }
+
+    final public DMLValue getValue() {
+	return this;
+    }
+
+    final public DMLValue request() {
+	return this;
+    }
+
+    final public DMLValue apply(DMLValue v) {
+	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    }
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
     }
 }

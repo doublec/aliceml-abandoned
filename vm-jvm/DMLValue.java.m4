@@ -4,19 +4,17 @@ package de.uni_sb.ps.DML.DMLRuntime;
    Darstellung von Werten in DML, Mutter aller Klassen
 */
 
-abstract public class DMLValue extends RuntimeException implements java.io.Serializable {
+public interface DMLValue extends java.io.Serializable {
 
     /** gibt Wert \in Wert zurueck */
-    public DMLValue getValue() {
-	return this;
-    }
+    public DMLValue getValue();
 
     /** gibt Wert \in Wert \minus LVar zurueck */
-    public DMLValue request() {
-	return this;
-    }
+    public DMLValue request();
 
-    abstract public DMLValue apply(DMLValue val);
+    public DMLValue apply(DMLValue val);
 
-    abstract public String toString();
+    public String toString();
+
+    public DMLValue raise();
 }

@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLRecord extends DMLValue {
+final public class DMLRecord implements DMLValue {
 
     static private java.util.Hashtable arityHash = new java.util.Hashtable();
 
@@ -67,10 +67,6 @@ final public class DMLRecord extends DMLValue {
 	    return null;
     }
 
-    final public DMLValue apply(DMLValue val) {
-	throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("cannot apply record.\n\t"+this+" applied to "+val));
-    }
-
     DMLRecordArity arity=null;
 
     /** gibt den i-ten Eintrag des Records */
@@ -92,5 +88,21 @@ final public class DMLRecord extends DMLValue {
 
     final public DMLRecordArity getRecordArity() {
 	return arity;
+    }
+
+    final public DMLValue getValue() {
+	return this;
+    }
+
+    final public DMLValue request() {
+	return this;
+    }
+
+    final public DMLValue apply(DMLValue v) {
+	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    }
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
     }
 }

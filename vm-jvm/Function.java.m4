@@ -1,8 +1,8 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-abstract public class DMLFcnClosure extends DMLValue {
+abstract public class DMLFunction implements DMLValue {
 
-    public DMLFcnClosure() {
+    public DMLFunction() {
 	super();
     }
 
@@ -13,5 +13,17 @@ abstract public class DMLFcnClosure extends DMLValue {
 
     final public String toString() {
 	return "compiled function: "+this.getClass();
+    }
+
+    final public DMLValue getValue() {
+	return this;
+    }
+
+    final public DMLValue request() {
+	return this;
+    }
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
     }
 }

@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final public class DMLName extends DMLValue {
+final public class DMLName implements DMLValue {
 
     String name = null;
 
@@ -18,7 +18,23 @@ final public class DMLName extends DMLValue {
 	return name+" : name";
     }
 
+    final public boolean equals(Object o) {
+	return (this == o);
+    }
+
+    final public DMLValue getValue() {
+	return this;
+    }
+
+    final public DMLValue request() {
+	return this;
+    }
+
     final public DMLValue apply(DMLValue v) {
-	throw DMLConstants.runtimeerror.apply(new DMLString("cannot apply "+this+" to "+v));
+	return DMLConstants.runtimeError.apply(new DMLString("cannot apply "+this+" to "+v)).raise();
+    }
+
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
     }
 }

@@ -1,8 +1,8 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-public class DMLLVal extends DMLValue {
+public class DMLLVar implements DMLValue {
 
-    public DMLLVal() {
+    public DMLLVar() {
 	super();
     }
 
@@ -10,7 +10,7 @@ public class DMLLVal extends DMLValue {
 	if (ref==null)
 	    return this;
 	else
-	    if (ref instanceof DMLLVal)
+	    if (ref instanceof DMLLVar)
 		return ref.getValue();
 	    else
 		return ref;
@@ -18,14 +18,18 @@ public class DMLLVal extends DMLValue {
 
     final public DMLValue request() { // gibt Wert zurück wenn verfügbar
 	if (ref==null)
-	    this.wait();
-	if (ref instanceof DMLLVal) return ref.request();
-	else return ref.getValue();
+	    try {
+		this.wait();
+	    } catch (java.lang.InterruptedException e) {}
+	if (ref instanceof DMLLVar)
+	    return ref.request();
+	else
+	    return ref.getValue();
     }
 
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
     final public boolean equals(Object val) {
-	return (val instanceof DMLLVal) && this.request().equals(((DMLLVal) val).request());
+	return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
     }
 
     protected DMLValue ref=null;
@@ -38,12 +42,16 @@ public class DMLLVal extends DMLValue {
 
     public String toString() {
 	DMLValue val=this.getValue();
-	if (val instanceof DMLLVal) return "<unresolved>: lval";
+	if (val instanceof DMLLVar) return "<unresolved>: lvar";
 	return val.toString();
     }
 
-    public DMLValue apply(DMLValue val) {
-	throw new DMLCoEx1(DMLConstants.runtimeError, new DMLString("logic value cannot be applied.\n\t"+this+" applied to "+val));
+
+    public DMLValue apply(DMLValue v) {
+	return this.request().apply(v);
     }
 
+    final public DMLValue raise() {
+	throw new DMLExceptionWrapper(this);
+    }
 }
