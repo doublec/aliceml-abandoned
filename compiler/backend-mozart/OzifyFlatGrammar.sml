@@ -12,7 +12,6 @@
  *   $Revision$
  *)
 
-
 structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
     struct
 	open FlatGrammar
@@ -20,14 +19,14 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	type t = string * FlatGrammar.t
 
 	local
-	    val count = ref 0
+	    (*--** remove global state *)
+	    val visited = StampSet.new ()
 	in
-	    fun gen () =
-		let
-		    val n = !count + 1
-		in
-		    count := n; n
-		end
+	    fun init () = StampSet.deleteAll visited
+
+	    fun visit stamp =
+		not (StampSet.member (visited, stamp)) before
+		StampSet.insert (visited, stamp)
 	end
 
 	val output = TextIO.output
@@ -84,10 +83,10 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 
 	local
 	    fun outputRegion (q, ((ll, lc), (rl, rc))) =
-		(output (q, Int.toString ll); h q;
-		 output (q, Int.toString lc); h q;
-		 output (q, Int.toString rl); h q;
-		 output (q, Int.toString rc))
+		(l q; output (q, Int.toString ll); h q;
+		 output (q, Int.toString lc); r q; h q;
+		 l q; output (q, Int.toString rl); h q;
+		 output (q, Int.toString rc); r q)
 	in
 	    fun outputIdInfo (q, info: id_info) =
 		outputRegion (q, #region info)
@@ -113,7 +112,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	fun outputLabel (q, label) =
 	    case Label.toLargeInt label of
 		SOME n => outputLargeInt (q, n)
-	      | NONE => outputAtom (q, Label.toString label)
+	      | NONE =>
+		    case Label.toString label of
+			"true" => output (q, "true")
+		      | "false" => output (q, "false")
+		      | "::" => output (q, "'|'")
+		      | s => outputAtom (q, s)
 
 	fun outputId (q, Id (info, stamp, name)) =
 	    (f (q, "id"); outputIdInfo (q, info); m q;
@@ -171,45 +175,43 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	    (f (q, "printName"); outputAtom (q, s); r q)
 	  | outputFunFlag (q, AuxiliaryOf stamp) =
 	    (f (q, "auxiliaryOf"); outputStamp (q, stamp); r q)
+	  | outputFunFlag (q, IsToplevel) = output (q, "IsToplevel")
 
-	fun outputStm (q, ValDec (info, id, exp, isToplevel)) =
+	fun outputStm (q, ValDec (info, id, exp)) =
 	    (f (q, "valDec"); outputStmInfo (q, info); m q;
-	     outputId (q, id); m q; outputExp (q, exp); m q;
-	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, RecDec (info, idExpList, isToplevel)) =
+	     outputId (q, id); m q; outputExp (q, exp); r q)
+	  | outputStm (q, RecDec (info, idExpList)) =
 	    (f (q, "recDec"); outputStmInfo (q, info); m q;
-	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
-	     outputBool (q, isToplevel); r q)
+	     outputList (outputPair (outputId, outputExp)) (q, idExpList); r q)
 	  | outputStm (q, EvalStm (info, exp)) =
 	    (f (q, "evalStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
-	  | outputStm (q, HandleStm (info, body1, id, body2, body3, shared)) =
-	    (shared := gen ();
-	     f (q, "handleStm"); outputStmInfo (q, info); m q;
+	  | outputStm (q, HandleStm (info, body1, id, body2, body3, stamp)) =
+	    (f (q, "handleStm"); outputStmInfo (q, info); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
 	     outputBody (q, body2); m q; outputBody (q, body3); m q;
-	     outputInt (q, !shared); r q)
-	  | outputStm (q, EndHandleStm (info, ref i)) =
+	     outputStamp (q, stamp); r q)
+	  | outputStm (q, EndHandleStm (info, stamp)) =
 	    (f (q, "endHandleStm"); outputStmInfo (q, info); m q;
-	     outputInt (q, i); r q)
-	  | outputStm (q, TestStm (info, id, test, body1, body2)) =
+	     outputStamp (q, stamp); r q)
+	  | outputStm (q, TestStm (info, id, testBodyList, body)) =
 	    (f (q, "testStm"); outputStmInfo (q, info); m q;
-	     outputId (q, id); m q; outputTest (q, test); m q;
-	     outputBody (q, body1); m q; outputBody (q, body2); r q)
+	     outputId (q, id); m q;
+	     outputList (outputPair (outputTest, outputBody))
+	     (q, testBodyList); m q; outputBody (q, body); r q)
 	  | outputStm (q, RaiseStm (info, id)) =
 	    (f (q, "raiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
 	  | outputStm (q, ReraiseStm (info, id)) =
 	    (f (q, "reraiseStm"); outputStmInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputStm (q, SharedStm (info, body, shared)) =
-	    (if !shared = 0 then
-		 (shared := gen ();
-		  f (q, "sharedStm"); outputStmInfo (q, info); m q;
+	  | outputStm (q, SharedStm (info, body, stamp)) =
+	    (if visit stamp then
+		 (f (q, "sharedStm"); outputStmInfo (q, info); m q;
 		  outputBody (q, body); m q)
 	     else
-		 f (q, "refStm");
-	     outputInt (q, !shared); r q)
+		f (q, "refStm");
+	     outputStamp (q, stamp); r q)
 	  | outputStm (q, ReturnStm (info, exp)) =
 	    (f (q, "returnStm"); outputStmInfo (q, info); m q;
 	     outputExp (q, exp); r q)
@@ -257,12 +259,12 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
 	     outputArgs outputId (q, args); m q; outputBody (q, body); r q)
-	  | outputExp (q, AppExp (info, id, args)) =
-	    (f (q, "appExp"); outputExpInfo (q, info); m q;
+	  | outputExp (q, PrimAppExp (info, string, ids)) =
+	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
+	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
+	  | outputExp (q, VarAppExp (info, id, args)) =
+	    (f (q, "varAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
-	  | outputExp (q, SelAppExp (info, label, id)) =
-	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
-	     outputLabel (q, label); m q; outputId (q, id); r q)
 	  | outputExp (q, TagAppExp (info, label, args, conArity)) =
 	    (f (q, "tagAppExp"); outputExpInfo (q, info); m q;
 	     outputLabel (q, label); m q; outputArgs outputId (q, args); m q;
@@ -274,16 +276,21 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputExp (q, RefAppExp (info, id)) =
 	    (f (q, "refAppExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, PrimAppExp (info, string, ids)) =
-	    (f (q, "primAppExp"); outputExpInfo (q, info); m q;
-	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)
+	  | outputExp (q, SelAppExp (info, label, id)) =
+	    (f (q, "selAppExp"); outputExpInfo (q, info); m q;
+	     outputLabel (q, label); m q; outputId (q, id); r q)
+	  | outputExp (q, FunAppExp (info, id, stamp, args)) =
+	    (f (q, "funAppExp"); outputExpInfo (q, info); m q;
+	     outputId (q, id); m q; outputStamp (q, stamp); m q;
+	     outputArgs outputId (q, args); r q)
 	  | outputExp (q, AdjExp (info, id1, id2)) =
 	    (f (q, "adjExp"); outputExpInfo (q, info); m q;
 	     outputId (q, id1); m q; outputId (q, id2); r q)
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
 	fun externalize (q, (filename, (importList, (stms, _)))) =
-	    (outputString (q, filename); h q; l q;
+	    (init ();
+	     outputString (q, filename); h q; l q;
 	     outputList (fn (q, (id, _, url)) =>
 			 (l q; outputId (q, id);
 			  h q; outputString (q, "unit");

@@ -9,6 +9,7 @@ is
 
     ../error/sources.cm
     ../misc/sources.cm
+    ../common/id-stamp.cm
     ../common/prebound.cm
     ../backend-common/flat-grammar.cm
     ../top/phase.cm

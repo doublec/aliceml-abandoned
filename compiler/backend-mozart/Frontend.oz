@@ -46,48 +46,47 @@ define
       end
    end
 
-   proc {Share I ShareDict NewStm}
-      if {Dictionary.member ShareDict I} then
-	 NewStm = {Dictionary.get ShareDict I}
+   proc {Share Stamp ShareDict NewStm}
+      if {Dictionary.member ShareDict Stamp} then
+	 NewStm = {Dictionary.get ShareDict Stamp}
       else
-	 {Dictionary.put ShareDict I NewStm}
+	 {Dictionary.put ShareDict Stamp NewStm}
       end
    end
 
    fun {ShareStm Stm ShareDict}
-      case Stm of valDec(Coord Id Exp IsToplevel) then
-	 valDec(Coord Id {ShareExp Exp ShareDict} IsToplevel)
-      [] recDec(Coord IdExpList IsToplevel) then
-	 recDec(Coord {Map IdExpList
-		       fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end}
-		IsToplevel)
-      [] evalStm(Coord Exp) then evalStm(Coord {ShareExp Exp ShareDict})
-      [] handleStm(Coord Body1 Id Body2 Body3 I) then X in
-	 X = {NewCell true}
-	 {Share I ShareDict X}
-	 handleStm(Coord {ShareBody Body1 ShareDict} Id
-		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict} X)
-      [] endHandleStm(Coord I) then
-	 endHandleStm(Coord {Share I ShareDict})
-      [] testStm(Coord Id Test Body1 Body2) then
-	 testStm(Coord Id Test
-		 {ShareBody Body1 ShareDict} {ShareBody Body2 ShareDict})
+      case Stm of valDec(Region Id Exp) then
+	 valDec(Region Id {ShareExp Exp ShareDict})
+      [] recDec(Region IdExpList) then
+	 recDec(Region
+		{Map IdExpList fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end})
+      [] evalStm(Region Exp) then evalStm(Region {ShareExp Exp ShareDict})
+      [] handleStm(Region Body1 Id Body2 Body3 Stamp) then
+	 handleStm(Region {ShareBody Body1 ShareDict} Id
+		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict}
+		   Stamp)
+      [] endHandleStm(_ _) then Stm
+      [] testStm(Region Id TestBodyList Body) then
+	 testStm(Region Id
+		 {Map TestBodyList
+		  fun {$ Test#Body} Test#{ShareBody Body ShareDict} end}
+		 {ShareBody Body ShareDict})
       [] raiseStm(_ _) then Stm
       [] reraiseStm(_ _) then Stm
-      [] sharedStm(Coord Body I) then NewStm in
-	 {Share I ShareDict NewStm}
-	 NewStm = sharedStm(Coord {ShareBody Body ShareDict} I)
-      [] refStm(I) then
-	 {Share I ShareDict}
-      [] returnStm(Coord Exp) then
-	 returnStm(Coord {ShareExp Exp ShareDict})
+      [] sharedStm(Region Body Stamp) then NewStm in
+	 {Share Stamp ShareDict NewStm}
+	 NewStm = sharedStm(Region {ShareBody Body ShareDict} Stamp)
+      [] refStm(Stamp) then
+	 {Share Stamp ShareDict}
+      [] returnStm(Region Exp) then
+	 returnStm(Region {ShareExp Exp ShareDict})
       [] exportStm(_ _) then Stm
       end
    end
 
    fun {ShareExp Exp ShareDict}
-      case Exp of funExp(Coord Stamp Flags Args Body) then
-	 funExp(Coord Stamp Flags Args {ShareBody Body ShareDict})
+      case Exp of funExp(Region Stamp Flags Args Body) then
+	 funExp(Region Stamp Flags Args {ShareBody Body ShareDict})
       else Exp
       end
    end
