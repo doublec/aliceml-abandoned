@@ -15,6 +15,7 @@ import structure Signature          from "../lib/system/Signature"
 import structure FromEqHashKey      from "../lib/utility/HASH_KEY-sig"
 import structure MkHashImpMap       from "../lib/utility/MkHashImpMap"
 import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
+import structure MkListSort         from "../lib/utility/MkListSort"
 import structure Url                from "../lib/utility/Url"
 import structure Label              from "../lib/rtt/Label"
 import signature LINK               from "LINK-sig"
@@ -110,6 +111,9 @@ structure Link :> LINK =
 	    MkDepthFirstSearch(structure Key = UrlHashKey
 			       structure Map = UrlMap)
 
+	structure Sort =
+	    MkListSort(type 'a t = string val compare = String.compare)
+
 	fun sort (includeMap, excludeMap) =
 	    let
 		val graph = UrlMap.new ()
@@ -143,11 +147,11 @@ structure Link :> LINK =
 	    let
 		fun getComponent url =
 		    UrlMap.lookupExistent (componentMap, url)
-		val excludes =
+		val includes =
 		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
 						      url::rest)
-						  nil excludeMap)
-		val includes =
+						  nil includeMap)
+		val excludes =
 		    Vector.fromList (UrlMap.foldi (fn (url, _, rest) =>
 						      url::rest)
 						  nil excludeMap)
@@ -234,24 +238,24 @@ structure Link :> LINK =
 		    let
 			val order = sort (includeMap, excludeMap)
 			val includes =
+			    root::
 			    List.filter (fn url =>
 					    url <> root andalso
 					    UrlMap.member (includeMap, url))
-					order @ [root]
-			val imports =
-			    List.filter (fn url =>
-					    UrlMap.member (excludeMap, url))
 					order
+			val imports =
+			    Sort.sort (UrlMap.foldi
+					   (fn (url, _, rest) =>
+					       rewrite (Url.toString url)::
+					       rest) nil excludeMap)
 		    in
 			TextIO.print ("Included components:\n");
-			List.app (fn url =>
-				     TextIO.print ("   " ^ Url.toString url ^
-						   "\n")) includes;
+			List.appr (fn url =>
+				      TextIO.print ("   " ^ Url.toString url ^
+						    "\n")) includes;
 			TextIO.print ("Imports (after rewrite):\n");
-			List.app (fn url =>
-				     TextIO.print ("   " ^
-						   rewrite (Url.toString url) ^
-						   "\n")) imports
+			List.app (fn s => TextIO.print ("   " ^ s ^ "\n"))
+				 imports
 		    end
 		else ();
 		build (root, componentMap, includeMap, excludeMap, rewrite)
