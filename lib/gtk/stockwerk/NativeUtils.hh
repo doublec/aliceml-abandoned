@@ -67,7 +67,7 @@ enum { TYPE_GTK_OBJECT, TYPE_G_OBJECT, TYPE_OWN, TYPE_UNKNOWN };
 enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
 
 #define VDATA_MAX_LEN 1024
-#define ELLIP_MAX_ARGS 10
+#define ELLIP_MAX_ARGS 1
 
 #define __PUT_VALUE(vtype, F, x, pos) {    \
   F(value, x);                             \
@@ -75,8 +75,8 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   pos += sizeof(vtype);                    \
 }
 
-#define __PUT_VALIST_ITEM(pos, end, listitem) {     \
-  TagVal *tv = TagVal::FromWord(listitem->Sel(0));  \
+#define __PUT_VALIST_ITEM(pos, end, tvw) {          \
+  TagVal *tv = TagVal::FromWord(tvw);               \
   if (pos < end) {                                  \
     switch (tv->GetTag()) {                         \
     case BOOL: __PUT_VALUE(bool, DECLARE_BOOL, tv->Sel(0), pos); break;       \
@@ -97,16 +97,24 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
   {                                                         \
     gint8 *l##__pos = l, *l##__end = &(l[VDATA_MAX_LEN]);   \
     DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
-      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
+      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval->Sel(0)) ); \
   }                                                       
 
-#define DECLARE_ELLIPSES(l, x)                              \
-  int l[ELLIP_MAX_ARGS+1];                                  \
-  memset(l, 0, sizeof(l));                                  \
-  {                                                         \
-    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[ELLIP_MAX_ARGS]);  \
-    DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
-      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
+//#define DECLARE_ELLIPSES(l, x)                              \
+//  int l[ELLIP_MAX_ARGS+1];                                  \
+//  memset(l, 0, sizeof(l));                                  \
+//  {                                                         \
+//    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[ELLIP_MAX_ARGS]);  \
+//    DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
+//      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
+//  }                                                         
+
+#define DECLARE_ELLIPSES(l, x)            \
+  double l[2];                            \
+  memset(l, 0, sizeof(l));                \
+  {                                       \
+    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[1]); \
+    __PUT_VALIST_ITEM(l##__pos, l##__end, x);                 \
   }                                                         
 
 /***********************************************************************/

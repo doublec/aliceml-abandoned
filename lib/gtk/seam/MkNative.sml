@@ -160,7 +160,7 @@ functor MkNative(structure TypeManager : TYPE_MANAGER
 		    "reinterpret_cast<"^getCType t^"*>(&"^name^")"
 		  | cArgList' (IN,name,(ELLIPSES true)) = 
                     let
-			val nums = List.tabulate(20, 
+			val nums = List.tabulate(2,
 				      (fn i => name^"["^Int.toString(i)^"]"))
 		    in
 			Util.makeTuple ", " "" nums

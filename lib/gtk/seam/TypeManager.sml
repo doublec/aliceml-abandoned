@@ -46,7 +46,8 @@ struct
     end
 
     fun getAliceType VOID                  = "unit"
-      | getAliceType (ELLIPSES _)          = "arg list"
+      | getAliceType (ELLIPSES true)       = "arg"
+      | getAliceType (ELLIPSES false)      = "arg list"
       | getAliceType BOOL                  = "bool"
       | getAliceType (NUMERIC (_,false,_)) = "int"
       | getAliceType (NUMERIC (_,true,_))  = "real"

@@ -157,7 +157,7 @@ static inline word ExposeEvent(GdkEvent* event, int label) {
   t->Init(4, Store::IntToWord(ev->count));
   t->Init(5, PointerToObjectRegister(ev->region,TYPE_UNKNOWN));
   t->Init(6, BOOL_TO_WORD(ev->send_event));
-  t->Init(7, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
@@ -169,7 +169,7 @@ static inline word MotionEvent(GdkEvent* event, int label) {
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, Store::IntToWord(ev->state));
   t->Init(4, Store::IntToWord(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(6, Real::New(ev->x)->ToWord());
   t->Init(7, Real::New(ev->x_root)->ToWord());
   t->Init(8, Real::New(ev->y)->ToWord());
@@ -186,7 +186,7 @@ static inline word ButtonEvent(GdkEvent* event, int label) {
   t->Init(3, Store::IntToWord(ev->state));
   //  g_message("%d", ev->time);
   t->Init(4, Store::IntToWord(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(6, Real::New(ev->x)->ToWord());
   t->Init(7, Real::New(ev->x_root)->ToWord());
   t->Init(8, Real::New(ev->y)->ToWord());
@@ -205,7 +205,7 @@ static inline word KeyEvent(GdkEvent* event, int label) {
   t->Init(5, Store::IntToWord(ev->state));
   t->Init(6, String::New(ev->string)->ToWord());
   t->Init(7, Store::IntToWord(ev->time));
-  t->Init(8, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(8, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
@@ -217,10 +217,10 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(2, GdkCrossingModeToDatatype(ev->mode));
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, Store::IntToWord(ev->state));
-  t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_GTK_OBJECT));
+  t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_G_OBJECT));
   //  g_message("%d", ev->time);
   t->Init(6, Store::IntToWord(ev->time));
-  t->Init(7, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(8, Real::New(ev->x)->ToWord());
   t->Init(9, Real::New(ev->x_root)->ToWord());
   t->Init(10, Real::New(ev->y)->ToWord());
@@ -233,7 +233,7 @@ static inline word FocusEvent(GdkEvent* event, int label) {
   TagVal *t = TagVal::New(label, 3);
   t->Init(0, BOOL_TO_WORD(ev->in));
   t->Init(1, BOOL_TO_WORD(ev->send_event));
-  t->Init(2, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(2, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
@@ -243,7 +243,7 @@ static inline word ConfigureEvent(GdkEvent* event, int label) {
   t->Init(0, Store::IntToWord(ev->height));
   t->Init(1, BOOL_TO_WORD(ev->send_event));
   t->Init(2, Store::IntToWord(ev->width));
-  t->Init(3, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(3, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(4, Store::IntToWord(ev->x));
   t->Init(5, Store::IntToWord(ev->y));
   return t->ToWord();
@@ -254,14 +254,14 @@ static inline word VisibilityEvent(GdkEvent* event, int label) {
   TagVal *t = TagVal::New(label, 3);
   t->Init(0, BOOL_TO_WORD(ev->send_event));
   t->Init(1, GdkVisibilityStateToDatatype(ev->state));
-  t->Init(2, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(2, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
 static inline word NoExposeEvent(GdkEvent* event, int label) {
   GdkEventNoExpose *ev = reinterpret_cast<GdkEventNoExpose*>(event);
   TagVal *t = TagVal::New(label, 2);
-  t->Init(0, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));  
+  t->Init(0, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));  
   t->Init(1, BOOL_TO_WORD(ev->send_event));
   return t->ToWord();
 }
@@ -274,7 +274,7 @@ static inline word ScrollEvent(GdkEvent* event, int label) {
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, Store::IntToWord(ev->state));
   t->Init(4, Store::IntToWord(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_GTK_OBJECT));
+  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
   t->Init(6, Real::New(ev->x)->ToWord());
   t->Init(7, Real::New(ev->x_root)->ToWord());
   t->Init(8, Real::New(ev->y)->ToWord());
