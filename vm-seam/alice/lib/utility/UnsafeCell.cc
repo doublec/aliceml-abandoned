@@ -83,7 +83,6 @@ public:
   }
 };
 
-#ifdef BLOCK_HASH_TABLES_WORK
 //--** CellMaps should be picklable
 class CellMap: private Block {
 private:
@@ -172,76 +171,6 @@ public:
       return CellMapEntry::FromWordDirect(head);
   }
 };
-#else
-class CellMap: private Block {
-private:
-  enum { HEAD_POS, SIZE };
-public:
-  using Block::ToWord;
-
-  static CellMap *New() {
-    Block *b = Store::AllocBlock(CELLMAP_LABEL, SIZE);
-    b->InitArg(HEAD_POS, 0);
-    return static_cast<CellMap *>(b);
-  }
-  static CellMap *FromWord(word x) {
-    Block *b = Store::WordToBlock(x);
-    Assert(b == INVALID_POINTER ||
-	   b->GetLabel() == CELLMAP_LABEL && b->GetSize() == SIZE);
-    return static_cast<CellMap *>(b);
-  }
-
-  CellMapEntry *GetHead() {
-    word head = GetArg(HEAD_POS);
-    if (head == Store::IntToWord(0))
-      return INVALID_POINTER;
-    else
-      return CellMapEntry::FromWordDirect(head);
-  }
-  void Insert(Cell *key, word value) {
-    ReplaceArg(HEAD_POS, CellMapEntry::New(key, value, GetHead())->ToWord());
-  }
-  CellMapEntry *LookupEntry(Cell *key) {
-    CellMapEntry *entry = GetHead();
-    while (entry != INVALID_POINTER) {
-      if (entry->GetKey() == key)
-	return entry;
-      entry = entry->GetNext();
-    }
-    return INVALID_POINTER;
-  }
-  void Delete(Cell *key) {
-    word result = LookupEntry(key)->Unlink();
-    if (result != Store::IntToWord(1))
-      ReplaceArg(HEAD_POS, result);
-  }
-  void DeleteAll() {
-    ReplaceArg(HEAD_POS, 0);
-  }
-  word Lookup(Cell *key) {
-    CellMapEntry *entry = LookupEntry(key);
-    if (entry != INVALID_POINTER) {
-      TagVal *some = TagVal::New(1, 1); // SOME ...
-      some->Init(0, entry->GetValue());
-      return some->ToWord();
-    } else
-      return Store::IntToWord(0); // NONE
-  }
-  bool Member(Cell *key) {
-    return LookupEntry(key) != INVALID_POINTER;
-  }
-  bool IsEmpty() {
-    return GetHead() == INVALID_POINTER;
-  }
-  u_int GetSize() {
-    u_int count = 0;
-    for (CellMapEntry *entry = GetHead(); entry != INVALID_POINTER;
-	 entry = entry->GetNext())
-      count++;
-    return count;
-  }
-};
-#endif
 
 #define DECLARE_CELL_MAP(cellMap, x) DECLARE_BLOCKTYPE(CellMap, cellMap, x)
 
