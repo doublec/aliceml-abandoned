@@ -15,11 +15,12 @@
  *)
 
 import structure __pervasive                           from "Pervasive"
-import type unit and int and vector and array and list from "ToplevelTypes"
-import val op =                                        from "ToplevelValues"
-import structure VectorSlice                           from "VectorSlice"
+import __primitive
+       type unit and int and vector and array and list from "ToplevelTypes"
+import __primitive val op =                            from "ToplevelValues"
+import __primitive structure VectorSlice               from "VectorSlice"
 import functor   MkArraySlice                          from "MkArraySlice"
-import signature ARRAY_SLICE                           from "ARRAY_SLICE-sig"
+import __primitive signature ARRAY_SLICE               from "ARRAY_SLICE-sig"
 
 structure ArraySlice :> ARRAY_SLICE =
 struct
