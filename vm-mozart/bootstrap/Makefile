@@ -92,6 +92,10 @@ MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
+bootstrap:
+	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
+	make STOC='$(PREFIX)/bin/stoc --noprintcomponentsig --nodefaultimport' all
+
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
 	$(OZL) -z9 --include=x-alice: -v x-alice:/$< -o $@
@@ -153,10 +157,10 @@ backend-common/%: ../../stoc/backend-common/% backend-common/%.header \
 	cat Base.import backend-common/$*.header $< > $@
 
 %.ozf: %.sml
-	$(STOC) $< $@
+	$(STOC) -c $< -o $@
 
 %.ozf: %.sig
-	$(STOC) $< $@
+	$(STOC) -c $< -o $@
 
 install: all $(INSTALLDIRS) $(INSTALLFILES)
 

@@ -12,7 +12,13 @@ then
 fi
 
 PATH=$OZHOME/bin:$STOCKHOME/bin:$PATH
-OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+
+if test -z "${OZ_LOAD}"
+then
+  OZ_LOAD=prefix=http\\://www.mozart-oz.org/home-$OZVERSION/=$OZHOME/
+fi
+
+OZ_LOAD=prefix=x-alice\\:=$STOCKHOME/:$OZ_LOAD
 
 export OZHOME PATH OZ_LOAD
 
