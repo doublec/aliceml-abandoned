@@ -38,7 +38,7 @@
 	type domain = domain_element list
 
 	datatype term =
-	    fd of FD.fd
+	    FD of FD.fd
 	  | `  of int
 	  | `+ of term * term
 	  | `- of term * term
@@ -80,7 +80,7 @@
 
     <DT>
       <TT>datatype term =<BR>
-          &nbsp;&nbsp;&nbsp;&nbsp;fd of FD.fd<BR>
+          &nbsp;&nbsp;&nbsp;&nbsp;FD of FD.fd<BR>
           &nbsp;&nbsp;| `&nbsp;&nbsp;of int<BR>
           &nbsp;&nbsp;| `+ of term * term<BR>
           &nbsp;&nbsp;| `- of term * term<BR>
@@ -90,7 +90,7 @@
       <P>This datatype is used to post arithmetic constraints.
       </P>
       <UL>
-        <LI><TT>fd <I>x</I></TT> injects the finite domain
+        <LI><TT>FD <I>x</I></TT> injects the finite domain
             variable <I>x</I> into a term.
         <LI><TT>` <I>i</I></TT> injects a integer value <I>i</I> into a term.
         <LI><TT>`+(<I>x</I>,<I>y</I>)</TT> denotes the sum
