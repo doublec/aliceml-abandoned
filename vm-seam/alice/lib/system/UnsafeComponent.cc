@@ -10,7 +10,6 @@
 //   $Revision$
 //
 
-#include "Base.hh"
 #include <cstdio>
 #include <cstring>
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -19,11 +18,6 @@
 #include <dlfcn.h>
 #endif
 
-#include "generic/RootSet.hh"
-#include "generic/Tuple.hh"
-#include "generic/RootSet.hh"
-#include "generic/Unpickler.hh"
-#include "generic/Pickler.hh"
 #include "alice/Authoring.hh"
 #include "alice/BootLinker.hh"
 
@@ -170,7 +164,7 @@ DEFINE1(UnsafeComponent_unpack_) {
   return Unpickler::Unpack(string);
 } END
 
-word UnsafeComponent() {
+AliceDll word UnsafeComponent() {
   NotFoundConstructor =
     UniqueConstructor::New("NotFound", "UnsafeComponent.NotFound")->ToWord();
   RootSet::Add(NotFoundConstructor);
