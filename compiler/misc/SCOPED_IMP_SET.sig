@@ -15,11 +15,13 @@ signature SCOPED_IMP_SET =
     val new :			unit -> set
 
     val copy :			set -> set
-    val copyScope:		set -> set
+    val copyScope :		set -> set
 
     val insertScope :		set -> unit
+    val inheritScope :		set * set -> unit
     val deleteScope :		set -> unit
     val delete2ndScope :	set -> unit
+    val splitScope :		set -> set
 
     val mergeScope :		set -> unit
     val mergeDisjointScope :	set -> unit			(* Collision *)
