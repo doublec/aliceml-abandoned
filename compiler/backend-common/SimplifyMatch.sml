@@ -215,15 +215,76 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | Optimized of (pos * test) list * (pos * test) list
 	  | Translated of O.body
 
+	(* Debugging *)
+
+	fun posToString' (LABEL l::rest) =
+	    Label.toString l ^ "." ^ posToString' rest
+	  | posToString' (LONGID _::rest) =
+	    "<longid>." ^ posToString' rest
+	  | posToString' nil = "<e>"
+
+	fun posToString pos = posToString' (List.rev pos)
+
+	fun indent 0 = ""
+	  | indent n = "  " ^ indent (n - 1)
+
+	fun testToString (LitTest _) = "lit"
+	  | testToString (TagTest (label, _, _)) =
+	    "tag " ^ Label.toString label
+	  | testToString (ConTest (_, _, _)) = "con"
+	  | testToString (RefTest _) = "ref"
+	  | testToString (TupTest typs) =
+	    "tup " ^ Int.toString (List.length typs)
+	  | testToString (RecTest labelTyplist) = "rec"
+	  | testToString (LabTest (label, _)) = "lab " ^ Label.toString label
+	  | testToString (VecTest typs) =
+	    "vec " ^ Int.toString (List.length typs)
+	  | testToString (GuardTest (_, _)) = "guard"
+	  | testToString (DecTest (_, decs)) =
+	    "dec " ^ Int.toString (List.length decs)
+
+	fun graphToString (Node (pos, test, ref thenGraph, ref elseGraph, _),
+			   level) =
+	    indent level ^
+	    posToString pos ^ ": " ^
+	    testToString test ^ "\n" ^
+	    graphToString (thenGraph, level + 1) ^
+	    graphToString (elseGraph, level + 1)
+	  | graphToString (Leaf (_, _), level) = indent level ^ "leaf\n"
+	  | graphToString (Default, level) = indent level ^ "default\n"
+
+	fun mappingToString' ((pos, _)::mapping) =
+	    " " ^ posToString pos ^ mappingToString' mapping
+	  | mappingToString' nil = ""
+
+	fun mappingToString mapping =
+	    "dom(mapping) =" ^ mappingToString' mapping ^ "\n"
+
+	fun testSeqToString' (Test (pos, test)::rest) =
+	    posToString pos ^ ": " ^ testToString test ^ "\n" ^
+	    testSeqToString' rest
+	  | testSeqToString' (Neg testSeq::rest) =
+	    "<neg>\n" ^ testSeqToString' testSeq ^ "</neg>\n" ^
+	    testSeqToString' rest
+	  | testSeqToString' (Alt testSeqs::rest) =
+	    List.foldr (fn (testSeq, s) =>
+			"<alt>\n" ^ testSeqToString' testSeq ^ s)
+	    "</alt>\n" testSeqs ^
+	    testSeqToString' rest
+	  | testSeqToString' nil = ""
+
+	fun testSeqToString testSeq =
+	    "<seq>\n" ^ testSeqToString' testSeq ^ "</seq>\n"
+
 	(* Construction of Test Trees Needing Backtracking *)
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
 	  | testEq (TagTest (label1, _, _), TagTest (label2, _, _)) =
 	    label1 = label2
-	  | testEq (ConTest (_, _, _), ConTest (_, _, _)) = false
-	    (*--** use longidEq as better approximation *)
-	  | testEq (TupTest _, _) = true
-	  | testEq (RecTest _, _) = true
+	  | testEq (ConTest (longid1, _, _), ConTest (longid2, _, _)) =
+	    longidToSelector longid1 = longidToSelector longid2
+	  | testEq (TupTest _, TupTest _) = true
+	  | testEq (RecTest _, RecTest _) = true
 	  | testEq (VecTest typs1, VecTest typs2) =
 	    List.length typs1 = List.length typs2
 	  | testEq (_, _) = false

@@ -48,6 +48,11 @@ signature SIMPLIFY_MATCH =
 	  | Optimized of (pos * test) list * (pos * test) list
 	  | Translated of O.body
 
+	val posToString: pos -> string
+	val testToString: test -> string
+	val graphToString: testGraph * int -> string
+	val mappingToString: mapping -> string
+
 	type consequent = (Source.region * O.body option ref)
 
 	val buildGraph: (Source.region * I.pat * O.body) list * O.body ->
