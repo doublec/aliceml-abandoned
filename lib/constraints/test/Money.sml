@@ -18,27 +18,25 @@ import structure Tools  from "x-alice:/lib/Tools.ozf"
 
 structure Money =
     struct
-	open FD
-
-	fun money () =
+	fun money() =
 	    let
-		val digits as #[S, E, N, D, M, O, R, Y] = fdvector(#[RANGE(0,9)], 8)
-		val send                                = decl ()
-		val more                                = decl ()
-		val money                               = decl ()
-		val zero                                = fromInt 0
+		val digits as #[S, E, N, D, M, O, R, Y] = FD.rangeVec(8, (0, 9))
+		val send                                = FD.fd NONE
+		val more                                = FD.fd NONE
+		val money                               = FD.fd NONE
+		val zero                                = FD.fromInt 0
 	    in
-		(sumC(#[1000, 100, 10, 1], #[S, E, N, D], EQUAL, send);
-		 sumC(#[1000, 100, 10, 1], #[M, O, R, E], EQUAL, more);
-		 sumC(#[10000, 1000, 100, 10, 1], #[M, O, N, E, Y], EQUAL, money);
-		 notequal(S, zero);
-		 notequal(M, zero);
-		 distinct(digits);
-		 plus(send, more, money);
-		 distribute(FIRSTFAIL, digits);
-		 {S, E, N, D, M, O, R, Y})
+		FD.sumC(#[(1000, S), (100, E), (10, N), (1, D)], FD.EQUAL, send);
+		FD.sumC(#[(1000, M), (100, O), (10, R), (1, E)], FD.EQUAL, more);
+		FD.sumC(#[(10000, M), (1000, O), (100, N), (10, E), (1, Y)], FD.EQUAL, money);
+		FD.notequal(S, zero);
+		FD.notequal(M, zero);
+		FD.distinct(digits);
+		FD.plus(send, more, money);
+		FD.distribute(FD.FIRSTFAIL, digits);
+		{S, E, N, D, M, O, R, Y}
 	    end
 
 	(* Inspect the solution *)
-	val sol = Tools.inspect (Search.searchAll money)
+	val _ = Tools.inspect(Search.searchAll money)
     end

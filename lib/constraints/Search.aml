@@ -19,7 +19,7 @@ structure Search :> SEARCH =
 	open Space
 	open List
 
-	type 'a order = 'a * 'a -> unit
+	type 'a pruner = 'a * 'a -> unit
 	    
 	local
 	    fun doSearchOne s =
