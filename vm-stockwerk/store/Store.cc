@@ -32,7 +32,15 @@
 #include "store/Store.hh"
 #include "store/Memory.hh"
 #include "store/GCHelper.hh"
+
+// Using Set in a anonymous namespace prevents
+// class Set from appearing outside
+namespace {
 #include "store/Set.hh"
+
+  Set *intgenSet = INVALID_POINTER;
+  Set *wkDictSet = INVALID_POINTER;
+};
 
 // Status Word
 u_int StatusWord::status;
@@ -51,9 +59,6 @@ char *Store::chunkMax;
 
 u_int Store::hdrGen;
 u_int Store::dstGen;
-
-Set *Store::intgenSet = INVALID_POINTER;
-Set *Store::wkDictSet = INVALID_POINTER;
 
 #if defined(STORE_PROFILE)
 u_int Store::totalMem  = 0;
