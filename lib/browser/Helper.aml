@@ -16,7 +16,10 @@
 import structure Gdk       from "x-alice:/lib/gtk/Gdk"
 import structure Gtk       from "x-alice:/lib/gtk/Gtk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Type      from "x-alice:/lib/rtt/Type"
+import structure Label     from "x-alice:/lib/rtt/Label"
 import structure Types     from "Types"
+import structure Window    from "Window"
 import signature HELPER    from "HELPER-sig"
 
 open Types
@@ -40,6 +43,29 @@ struct
       | Container(r) => createGroupItem(#group(r),0.0,0.0) 
       | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
       | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
-      | Empty => raise Match (* !!!!! *)
+      | Empty        => createGroupItem(GtkCanvas.root(Window.canvas),0.0,0.0)
     
+    fun isApply t = case t of Type.Apply(_,_) => true
+                           | _ => false 
+
+    fun unApply(Type.Apply(t1,t2))
+       = let val t = ref (Type.inspect(t1)) 
+             val l = ref [t2]
+         in (while isApply (!t) do
+             ( case !t of 
+               Type.Apply(t11,t12) => (t := (Type.inspect(t11)) 
+				       ; l:= [t12]@(!l))
+             | _ => () ) ; (!t,!l))
+	 end
+
+    fun row2list row = case Type.inspectRow(row) of 
+	Type.EmptyRow => nil
+      | Type.UnknownRow => nil
+      | Type.FieldRow(lab,t,row2) => 
+	    (lab,t)::row2list(row2)
+
+    fun labelvector (ll:(Label.lab * Type.typ) list) = 
+	Vector.tabulate ((List.length(ll)), 
+			 (fn i =>(#1( List.nth(ll,i))) ) )  
+
 end;
