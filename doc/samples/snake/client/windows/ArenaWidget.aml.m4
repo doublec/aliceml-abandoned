@@ -15,6 +15,7 @@ import structure Gtk           from "GtkSupport"
 import structure Gdk           from "GtkSupport"
 import structure Canvas        from "GtkSupport"
 import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+import val log'                from "../../common/Log"
 
 import signature ARENAWIDGET   from "ARENAWIDGET-sig"
 import structure Protocol      from "../../common/Protocol"
@@ -39,7 +40,9 @@ import structure Color         from "../../common/Color"
 
 *)
 
-
+fun log'' t (f, v) = log' t ("ArenaWidget." ^ f, v)
+    
+__overload 'a log: string * 'a -> unit = log''
 
 structure ArenaWidget :> ARENAWIDGET =
 struct
@@ -116,6 +119,7 @@ struct
 
     fun removeFromItemCache (r, c, object, field, ca) = 
 	let
+	   val _ = log ("remoceFromItemCache", "removing oject from ItemCache")
 	    val newList = 
 		List.filter (fn (v, w, x, y) => 
 			     not(r = v andalso
@@ -143,6 +147,7 @@ struct
     fun initLevel ({canvas, state, itemCache}, 
 		   {dimensions = dim} : P.level_info) =
 	let
+	    val _ = log ("initLevel", "starts")
 	    val (rows, cols) = dim
 	    val _ = Gtk.widgetSetSizeRequest (canvas, windowWidth, 
 					      windowHeight)
@@ -157,7 +162,8 @@ struct
 	    val arena = Array2.array (rows, cols, (Gtk.null, P.EMPTY))
 	in
 	    state     := arena;
-	    itemCache := nil
+	    itemCache := nil;
+	    log ("initLevel", "ends")
 	end
 	
 
@@ -374,6 +380,7 @@ struct
 
     fun changeView (a:arena_widget, (y, x)) =
 	let
+	    val _ = log ("changeView", "starts")
 	    val obj = toObject a
 	    val minX = 0
 	    val maxX = arenaWidth a
@@ -383,12 +390,14 @@ struct
 	    val y    = y * cellSize - windowHeight2
 
 	in
-	    Canvas.scrollTo (obj, x, y)
+	    Canvas.scrollTo (obj, x, y);
+	    log ("changeView", "ends")
 	end
 
     fun update (a as {canvas, state = ref arena, itemCache}, difflist, pos) =
 	let
-            val root = Canvas.root canvas
+            val _ = log ("update", "start")
+	    val root = Canvas.root canvas
 	(*    val (x1, y1, x2, y2) = Canvas.getScrollRegion (0, 0, 0, 0)
 
 	    val _ = if Config.platform = WIN32
@@ -402,12 +411,14 @@ struct
                 NONE    => ()
             |   SOME p  => changeView (a, p));
 	    Canvas.thaw canvas;
-	    Canvas.updateNow canvas
+	    Canvas.updateNow canvas;
+	    log ("update", "ends")
 	end 
 
     fun startCountDown (a, w, h) =
         let
-            val obj         = toObject a
+            val _ = log ("startCountDown", "start")
+	    val obj         = toObject a
             val oldNumber   = ref (Gtk.null)
             val color       = white
            
@@ -440,7 +451,8 @@ struct
                     changeObj numObj
                 end
         in
-            display
+            display;
+	    log ("startCountDown", "ends")
         end
                 
 end

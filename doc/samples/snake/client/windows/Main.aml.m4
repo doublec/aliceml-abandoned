@@ -15,6 +15,7 @@ import structure Gtk            from "GtkSupport"
 import structure Gdk            from "GtkSupport"
 
 import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
+import val log'                 from "../../common/Log"
 
 import structure Color          from "../../common/Color"
 import structure Protocol       from "../../common/Protocol"
@@ -32,11 +33,15 @@ import structure Question       from "Question"
 
 open Ctrl
 
+fun log'' t (f, v) = log' t ("MainWindow." ^ f, v)
+    
+__overload 'a log: string * 'a -> unit = log''
 
 (* converts a Highscore.highscore into a string 
    differentiated by newlines *)
 fun highscoreToString score =
     let
+	val _ = log ("highscoreToString", "begins")
 	fun pToString p = (if p <= 9 then "    " 
 				else if p <= 99 then "   "
 				else if p <= 999 then "  " 
@@ -56,23 +61,27 @@ fun highscoreToString score =
 		""	=> "Highscore is empty."
 	    |	s 	=> s
     in
-	toString score
+	log ("highscoreToString", "ends") before toString score
     end
 
 (* creates a string from a given time with : h : m : s *)
   fun timeToString t =
     let
+	val _ = log ("timeToString", "begins")
 	val time    = Time.toSeconds t
 	val hours   = LargeInt.toInt (time div Int.toLarge 3600)
-	val minutes = LargeInt.toInt ((time mod Int.toLarge 3600) div Int.toLarge 60)
-	val seconds = LargeInt.toInt ((time mod Int.toLarge 3600) mod Int.toLarge 60)
+	val minutes = 
+                LargeInt.toInt ((time mod Int.toLarge 3600) div Int.toLarge 60)
+	val seconds = 
+                LargeInt.toInt ((time mod Int.toLarge 3600) mod Int.toLarge 60)
         
         fun toStr d =
             (if d <= 9 
                 then "0"
                 else "") ^ Int.toString d 
     in
-	toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
+	log ("timeToString", "ends") 
+            before toStr hours ^ " : " ^ toStr minutes ^ " : " ^ toStr seconds 
     end
 
 
@@ -85,18 +94,20 @@ struct
     type radar_visibility = bool
 
     datatype mode = START | GAME of radar_visibility
-    val mode = ref START
 
 
     (* builds the mainWindow, starting in START mode *)
     fun mkMainWindow ({connect, startServer}, gui) = 
 	let
-
+	    val _ = log ("mkMainWindow", "starts")
 	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
 			
 	    (* initialising the canvas widget *)
 	    val arena  = ArenaWidget.initialize ()
 	    val canvas = ArenaWidget.toObject arena
+
+	    (* shows in which mode the window is *)
+	    val mode = ref START
 
 	    (* the menu bar items which sensitivity get 
 	     changed some times *)
@@ -159,6 +170,7 @@ struct
 	     by setting and fullfilling guiGame and updating functionality *)
 	    fun gameMode ({disconnect}, {turn, changeView, giveUp}, guiGameP) =
 		let
+		    val _ = log ("gameMode", "fullfilling guiGame")
 		    fun gameFinished h = 
 			(reset (SOME ("Highscore", highscoreToString h)))
 			
@@ -170,7 +182,8 @@ struct
                     
                     fun countdown n =
                         let 
-                            val displ = case !displayCountDown of
+                            val _ = log ("countdown", n)
+			    val displ = case !displayCountDown of
                                 NONE    =>
 				let 
 				    val (width, height) = 
@@ -192,6 +205,7 @@ struct
 		     by newlines *)
 		    fun updatePoints plist =
 			let
+			    val _ = log ("updatePoints", "starts")
 			    fun pToString p = (if p <= 9 then "    " 
 						else if p <= 99 then "   "
 						else if p <= 999 then "  " 
@@ -222,6 +236,8 @@ struct
                                   ^ "\n\n</i></span>")
 			    fun toString () = List.foldl toString' "" plist
 			in
+			    log("updatePoints", "ends with setting markups") 
+			       before
 			    Gtk.labelSetMarkup (pointsLabel, toString ())
 			end
 		    
@@ -232,11 +248,13 @@ struct
 			
 		    fun tick (pts, diffs, headPos, remainingTime) =
 			let
+			    val _ = log ("tick", "starts")
 			    val timeStr = (timeToString remainingTime) ^ "\n"
 			in
 			    Gtk.labelSetText (timeLabel, timeStr);
                             update (diffs, headPos);
-                            Option.app updatePoints pts
+                            log ("tick", "ends") 
+			    before Option.app updatePoints pts
 			end
 	
 		in
@@ -254,13 +272,15 @@ struct
 		    turn' := turn;
 		    changeView' := changeView;
 		    giveUp' := giveUp;
-		    disconnect' := disconnect
+		    disconnect' := disconnect;
+		    log ("gameMode", "ends")
 		end
 
-	    fun giveUp () = (!giveUp' ()) 
+	    fun giveUp () = (log("giveUp", "has been called");!giveUp' ()) 
 	          handle Error.Error msg => reset (SOME ("ERROR!", msg))
 
-	    fun disconnect () = (!disconnect' ())
+	    fun disconnect () = (log("disconnect", "hast been called");
+				 !disconnect' ())
 	   	  handle Error.Error msg => reset (SOME ("ERROR!", msg))
 
 
@@ -269,9 +289,11 @@ struct
 
 	    fun backToStart () = 
 		(case !mode of
-		    START  => OS.Process.exit OS.Process.success 
+		    START  => (log ("backToStart", "in START mode");
+			       mainQuit ())
 		  | GAME _ =>
 			let
+			    val _ = log ("backToStart", "in GAME mode")
 			    fun cancel () = ()
 			    fun no ()     = ()
 			    fun yes ()    = (disconnect (); reset NONE)
@@ -284,21 +306,25 @@ struct
 			
 	    (* procedure called by pressing Client - button *)
 	    fun startClient () = 
-                  Connection.mkConnectToServer ({connect}, {reset, gameMode})
+                  (log ("startClient", "has been called");
+		   Connection.mkConnectToServer ({connect}, {reset, gameMode}))
  	               handle Error.Error msg => reset (SOME ("Error!", msg))
 	    (* procedure called by pressing Server - button *)
 	    fun startMultiPlayer () = 
-		  ServerSettings.mkServerSettings ({startServer}, 
-                                                             {reset, gameMode})
+		  (log ("startMultiPlayer", "has been called");
+		   ServerSettings.mkServerSettings ({startServer}, 
+                                                            {reset, gameMode}))
  	               handle Error.Error msg => reset (SOME ("Error!", msg))
             (* procedure called by pressing SinglePlayer - button *)
 	    fun startSinglePlayer () = 
-		  EnterName.mkEnterName {startServer, reset, gameMode}
+		  (log ("startSinglePlayer", "has been called");
+		   EnterName.mkEnterName {startServer, reset, gameMode})
  	               handle Error.Error msg => reset (SOME ("Error!", msg))
 
 	    (* converts canvasEvents into direction or view_hint *)
 	    fun key keyval = 
-		 (case !mode of
+		 (log ("key", "key has been pushed");
+		  case !mode of
 	              GAME b =>
 			  (case Gdk.keyvalName keyval of
 			        "Up"      => !turn' Protocol.UP
@@ -332,7 +358,7 @@ struct
 
 
 	in
-
+	    log ("mkMainWindow", "initializing the whole stuff");
 	    mode := START;
 	    Gtk.windowSetTitle (mainWindow, "Alice Snake");
 	    Gtk.windowSetDefaultSize (mainWindow, 800, 500);
@@ -391,7 +417,7 @@ struct
 	    Gtk.widgetShowAll mainWindow;
 
 	    Gtk.widgetHide rightHBox;
-	    Gtk.widgetHide radarWidget
-		
+	    Gtk.widgetHide radarWidget;
+	    log ("mkmainWindow", "ends with initializing the stuff")
 	end
 end
