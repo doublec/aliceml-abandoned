@@ -43,14 +43,14 @@ public:
   }
 
   word Lookup(JavaString *name) {
-    word wName = name->ToWord();
+    word wName = name->ToArray()->ToWord();
     if (IsMember(wName))
       return GetItem(wName);
     else
       return word(0);
   }
   void Insert(JavaString *name, word wClass) {
-    word wName = name->ToWord();
+    word wName = name->ToArray()->ToWord();
     Assert(!IsMember(wName));
     InsertItem(wName, wClass);
   }
@@ -434,14 +434,14 @@ word ClassLoader::ResolveClass(JavaString *name) {
 word ClassLoader::ResolveType(JavaString *name) {
   //--** cache results
   u_int n = name->GetLength();
-  u_wchar *p = name->GetBase();
+  u_int index = 0;
   u_int dimensions = 0;
-  while (dimensions < n && p[dimensions] == '[') dimensions++;
-  p += dimensions;
+  while (dimensions < n && name->CharAt(dimensions) == '[') dimensions++;
+  index += dimensions;
   n -= dimensions;
   Assert(n > 0);
   word wClass;
-  switch (n--, *p++) {
+  switch (n--, name->CharAt(index++)) {
   case 'B':
     wClass = BaseType::New(BaseType::Byte)->ToWord();
     break;
@@ -468,10 +468,9 @@ word ClassLoader::ResolveType(JavaString *name) {
     break;
   case 'L':
     {
-      u_int i = 0;
-      while (p[i++] != ';') n--;
-      i--, n--;
-      wClass = ResolveClass(JavaString::New(p, i));
+      u_int endIndex = index;
+      while (n--, name->CharAt(endIndex++) != ';');
+      wClass = ResolveClass(name->Substring(index, endIndex - 1));
       break;
     }
   default:

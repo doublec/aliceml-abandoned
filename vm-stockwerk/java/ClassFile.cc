@@ -272,8 +272,8 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
   case CONSTANT_Utf8:
     {
       u_int reprLen = GetU2(offset);
-      JavaString *string = JavaString::New(reprLen); // pessimistic assumption
-      u_wchar *p = string->GetBase();
+      BaseArray *array =
+	BaseArray::New(BaseType::Char, reprLen); // pessimistic assumption
       u_int index = 0;
       u_int reprEnd = offset + reprLen;
       while (offset < reprEnd) {
@@ -282,19 +282,20 @@ ConstantPoolEntry *ClassFile::ParseConstantPoolEntry(u_int &offset) {
 	  u_int y = GetU1(offset);
 	  if ((x & 0xE0) == 0xC0) { // two-byte representation
 	    Assert((y & 0xC0) == 0x80);
-	    p[index++] = ((x & 0x1F) << 6) | (y & 0x3F);
+	    array->StoreChar(index++, ((x & 0x1F) << 6) | (y & 0x3F));
 	  } else { // three-byte representation
 	    u_int z = GetU1(offset);
 	    Assert((x & 0xF0) == 0xE0);
 	    Assert((y & 0xC0) == 0x80 && (z & 0xC0) == 0x80);
-	    p[index++] = ((x & 0xF) << 12) | ((y & 0x3F) << 6) | (z & 0x3F);
+	    u_int c = ((x & 0xF) << 12) | ((y & 0x3F) << 6) | (z & 0x3F);
+	    array->StoreChar(index++, c);
 	  }
 	} else {
 	  Assert(x != 0 && x < 0xF0);
-	  p[index++] = x;
+	  array->StoreChar(index++, x);
 	}
       }
-      if (index < reprLen) string = JavaString::New(p, index);
+      JavaString *string = JavaString::New(array, 0, index);
       ConstantPoolEntry *entry = ConstantPoolEntry::New(tag, 2);
       entry->InitArg(0, string->ToWord());
       return entry;

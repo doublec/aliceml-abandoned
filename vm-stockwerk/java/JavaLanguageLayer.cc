@@ -21,9 +21,10 @@
 #include "java/JavaLanguageLayer.hh"
 
 void JavaLanguageLayer::Init() {
-  NativeMethodTable::Init();
   Class::Init();
   ClassLoader::Init();
+  JavaString::Init();
   ThrowWorker::Init();
+  NativeMethodTable::Init();
   ByteCodeInterpreter::Init();
 }

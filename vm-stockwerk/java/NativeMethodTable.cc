@@ -19,7 +19,8 @@
 
 static word MakeKey(JavaString *className, JavaString *name,
 		    JavaString *descriptor) {
-  return className->Concat("#")->Concat(name)->Concat(descriptor)->ToWord();
+  JavaString *s = className->Concat("#")->Concat(name)->Concat(descriptor);
+  return s->ToArray()->ToWord();
 }
 
 word NativeMethodTable::wTable;

@@ -14,6 +14,7 @@
 #pragma implementation "java/Data.hh"
 #endif
 
+#include "generic/RootSet.hh"
 #include "generic/Backtrace.hh"
 #include "java/ClassInfo.hh"
 #include "java/StackFrame.hh"
@@ -182,7 +183,7 @@ Class *Class::New(ClassInfo *classInfo) {
 	initialValue = fieldInfo->GetConstantValue();
       else {
 	JavaString *descriptor = fieldInfo->GetDescriptor();
-	switch (descriptor->GetBase()[0]) {
+	switch (descriptor->CharAt(0)) {
 	case '[': case 'L':
 	  initialValue = null;
 	  break;
@@ -308,4 +309,16 @@ Worker::Result Class::RunInitializer() {
   }
   InitializeClassWorker::PushFrame(this, Scheduler::nArgs, args);
   return Scheduler::PushCall(wClassInitializer);
+}
+
+//
+// JavaString Implementation
+//
+word JavaString::wClass = Store::IntToWord(0);
+
+void JavaString::Init() {
+  //--** not nice: this creates a JavaString before wClass is initialized
+  ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
+  wClass = classLoader->ResolveClass(JavaString::New("java/lang/String"));
+  RootSet::Add(wClass);
 }

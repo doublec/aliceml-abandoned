@@ -18,19 +18,18 @@
 
 u_int MethodInfo::GetNumberOfArguments() {
   JavaString *descriptor = GetDescriptor();
-  u_wchar *p = descriptor->GetBase();
-  Assert(*p == '(');
-  p++;
+  Assert(descriptor->CharAt(0) == '(');
+  u_int index = 1;
   u_int nArgs = 0;
-  while (*p != ')') {
-    while (*p == '[') p++;
-    switch (*p) {
+  while (descriptor->CharAt(index) != ')') {
+    while (descriptor->CharAt(index) == '[') index++;
+    switch (descriptor->CharAt(index)) {
     case 'B': case 'C': case 'D': case 'F':
     case 'I': case 'J': case 'S': case 'Z':
-      p++;
+      index++;
       break;
     case 'L':
-      while (*p++ != ';');
+      while (descriptor->CharAt(index++) != ';');
       break;
     default:
       Error("invalid method descriptor");

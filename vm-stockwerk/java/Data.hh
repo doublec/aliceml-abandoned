@@ -58,7 +58,6 @@ public:
   static const BlockLabel Lock                = (BlockLabel) (base + 16);
   static const BlockLabel Object              = (BlockLabel) (base + 17);
   static const BlockLabel ObjectArray         = (BlockLabel) (base + 18);
-  static const BlockLabel BaseArray           = (BlockLabel) (base + 19);
 };
 
 static const word null = Store::IntToWord(0);
@@ -287,16 +286,19 @@ protected:
     BASE_SIZE
     // ... instance fields
   };
+
+  static Object *New(word wClass, u_int size) {
+    Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
+    b->InitArg(0, wClass);
+    //--** initialization incorrect for long/float/double
+    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
+    return static_cast<Object *>(b);
+  }
 public:
   using Block::ToWord;
 
   static Object *New(Class *theClass) {
-    u_int size = theClass->GetNumberOfInstanceFields();
-    Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
-    b->InitArg(0, theClass->ToWord());
-    //--** initialization incorrect for long/float/double
-    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<Object *>(b);
+    return New(theClass->ToWord(), theClass->GetNumberOfInstanceFields());
   }
   static Object *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -322,93 +324,17 @@ public:
     if (theClass == INVALID_POINTER) return false;
     goto loop;
   }
-  word GetInstanceField(u_int index) {
-    return GetArg(BASE_SIZE + index);
+  void InitInstanceField(u_int index, word value) {
+    ReplaceArg(BASE_SIZE + index, value);
   }
   void PutInstanceField(u_int index, word value) {
     ReplaceArg(BASE_SIZE + index, value);
   }
+  word GetInstanceField(u_int index) {
+    return GetArg(BASE_SIZE + index);
+  }
   Closure *GetVirtualMethod(u_int index) {
     return GetClass()->GetVirtualMethod(index);
-  }
-};
-
-//--** always store in big-endian format
-class DllExport JavaString: private Chunk {
-public:
-  using Chunk::ToWord;
-
-  u_int GetLength() {
-    return GetSize() / sizeof(u_wchar);
-  }
-  u_wchar *GetBase() {
-    return reinterpret_cast<u_wchar *>(Chunk::GetBase());
-  }
-
-  static JavaString *New(u_int length) {
-    return static_cast<JavaString *>
-      (Store::AllocChunk(sizeof(u_wchar) * length));
-  }
-  static JavaString *New(const u_wchar *s, u_int length) {
-    JavaString *string = New(length);
-    std::memcpy(string->GetBase(), s, length * sizeof(u_wchar));
-    return string;
-  }
-  static JavaString *New(const char *s, u_int length) {
-    JavaString *string = New(length);
-    u_wchar *p = string->GetBase();
-    for (u_int i = 0; i < length; i++)
-      p[i] = s[i];
-    return string;
-  }
-  static JavaString *New(const char *s) {
-    return New(s, std::strlen(s));
-  }
-  static JavaString *FromWord(word x) {
-    return static_cast<JavaString *>(Chunk::FromWord(x));
-  }
-  static JavaString *FromWordDirect(word x) {
-    return static_cast<JavaString *>(Chunk::FromWordDirect(x));
-  }
-
-  bool Equals(JavaString *string) {
-    u_int length = GetLength();
-    if (string->GetLength() != length) return false;
-    return !std::memcmp(GetBase(), string->GetBase(),
-			length * sizeof(u_wchar));
-  }
-  JavaString *Concat(JavaString *otherString) {
-    u_int length = GetLength();
-    u_int otherLength = otherString->GetLength();
-    JavaString *resultString = JavaString::New(length + otherLength);
-    u_wchar *p = resultString->GetBase();
-    std::memcpy(p, GetBase(), length * sizeof(u_wchar));
-    std::memcpy(p + length, otherString->GetBase(),
-		otherLength * sizeof(u_wchar));
-    return resultString;
-  }
-  JavaString *Concat(const char *s) {
-    u_int length = GetLength();
-    u_int otherLength = std::strlen(s);
-    JavaString *resultString = JavaString::New(length + otherLength);
-    u_wchar *p = resultString->GetBase();
-    std::memcpy(p, GetBase(), length * sizeof(u_wchar));
-    p += length;
-    for (u_int i = 0; i < otherLength; i++) p[i] = static_cast<u_char>(s[i]);
-    return resultString;
-  }
-  JavaString *Intern() {
-    return this; //--**
-  }
-
-  char *ExportC() {
-    u_int n = GetLength();
-    Chunk *chunk = Store::AllocChunk(n + 1);
-    char *p = chunk->GetBase();
-    u_wchar *q = GetBase();
-    for (u_int i = n; i--; ) p[i] = q[i];
-    p[n] = '\0';
-    return p;
   }
 };
 
@@ -462,6 +388,7 @@ public:
 };
 
 class BaseArray: private Chunk {
+  friend class JavaString;
 protected:
   enum {
     BASE_TYPE_POS, // byte (BaseType::type);
@@ -646,6 +573,134 @@ public:
     default:
       Error("invalid base type");
     }
+  }
+};
+
+class DllExport JavaString: public Object {
+private:
+  static word wClass;
+
+  enum {
+    VALUE_INDEX, // BaseArray(Char)
+    OFFSET_INDEX, // int
+    COUNT_INDEX, // int
+    SIZE
+  };
+
+  BaseArray *GetValue() {
+    return BaseArray::FromWordDirect(GetInstanceField(VALUE_INDEX));
+  }
+  u_int GetOffset() {
+    return Store::DirectWordToInt(GetInstanceField(OFFSET_INDEX));
+  }
+  u_int GetCount() {
+    return Store::DirectWordToInt(GetInstanceField(COUNT_INDEX));
+  }
+  u_char *GetBase(u_int offset) {
+    Assert(offset < GetValue()->GetLength());
+    return GetValue()->GetElementPointer(offset, 2);
+  }
+  u_char *GetBase() {
+    return GetBase(GetOffset());
+  }
+public:
+  static void Init();
+
+  static JavaString *New(BaseArray *array, u_int offset, u_int length) {
+    Object *object = Object::New(wClass, SIZE);
+    object->InitInstanceField(VALUE_INDEX, array->ToWord());
+    object->InitInstanceField(OFFSET_INDEX, Store::IntToWord(offset));
+    object->InitInstanceField(COUNT_INDEX, Store::IntToWord(length));
+    return static_cast<JavaString *>(object);
+  }
+  static JavaString *New(u_int length) {
+    return New(BaseArray::New(BaseType::Char, length), 0, length);
+  }
+  static JavaString *New(const u_wchar *s, u_int length) {
+    JavaString *string = New(length);
+    u_char *p = string->GetBase(0);
+    for (u_int i = length; i--; ) {
+      u_int i = *s++;
+      *p++ = i >> 8;
+      *p++ = i;
+    }
+    return string;
+  }
+  static JavaString *New(const char *s, u_int length) {
+    JavaString *string = New(length);
+    u_char *p = string->GetBase(0);
+    for (u_int i = length; i--; ) { *p++ = 0; *p++ = *s++; }
+    return string;
+  }
+  static JavaString *New(const char *s) {
+    return New(s, std::strlen(s));
+  }
+  static JavaString *FromWord(word x) {
+    return static_cast<JavaString *>(Object::FromWord(x));
+  }
+  static JavaString *FromWordDirect(word x) {
+    return static_cast<JavaString *>(Object::FromWordDirect(x));
+  }
+
+  u_int GetLength() {
+    return GetCount();
+  }
+  u_wchar CharAt(u_int index) {
+    u_char *p = GetBase(GetOffset() + index);
+    return (p[0] << 8) | p[1];
+  }
+  bool Equals(JavaString *otherString) {
+    u_int length = GetLength();
+    if (otherString->GetLength() != length) return false;
+    return !std::memcmp(GetBase(), otherString->GetBase(),
+			length * sizeof(u_wchar));
+  }
+  JavaString *Concat(JavaString *otherString) {
+    u_int length = GetLength();
+    u_int otherLength = otherString->GetLength();
+    JavaString *resultString = JavaString::New(length + otherLength);
+    u_char *p = resultString->GetBase(0);
+    std::memcpy(p, GetBase(), length * 2);
+    std::memcpy(p + length * 2, otherString->GetBase(), otherLength * 2);
+    return resultString;
+  }
+  JavaString *Concat(const char *s) {
+    u_int length = GetLength();
+    u_int otherLength = std::strlen(s);
+    JavaString *resultString = JavaString::New(length + otherLength);
+    u_char *p = resultString->GetBase(0);
+    std::memcpy(p, GetBase(), length * 2);
+    p += length * 2;
+    for (u_int i = otherLength; i--; ) { *p++ = 0; *p++ = *s++; }
+    return resultString;
+  }
+  JavaString *Substring(u_int beginIndex, u_int endIndex) {
+    u_int offset = GetOffset();
+    return JavaString::New(GetValue(), offset + beginIndex,
+			   endIndex - beginIndex);
+  }
+  JavaString *Intern() {
+    return this; //--**
+  }
+  BaseArray *ToArray() {
+    BaseArray *array = GetValue();
+    u_int offset = GetOffset();
+    u_int length = GetLength();
+    if (offset == 0 && length == array->GetLength()) return array;
+    BaseArray *newArray = BaseArray::New(BaseType::Char, length);
+    for (u_int i = length; i--; )
+      newArray->StoreChar(i, array->LoadChar(offset + i));
+    return newArray;
+  }
+
+  char *ExportC() {
+    u_int n = GetLength();
+    Chunk *chunk = Store::AllocChunk(n + 1);
+    char *p = chunk->GetBase();
+    u_char *q = GetBase();
+    for (u_int i = n; i--; ) p[i] = q[i * 2 + 1];
+    p[n] = '\0';
+    return p;
   }
 };
 
