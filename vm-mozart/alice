@@ -9,4 +9,4 @@ then
 fi
 export STOCKHOME
 
-exec $STOCKHOME/bin/alicerun x-alice:/compiler/ToplevelMain "$@"
+exec "$STOCKHOME/bin/alicerun" x-alice:/compiler/ToplevelMain "$@"
