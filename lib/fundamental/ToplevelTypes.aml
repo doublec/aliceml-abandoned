@@ -26,7 +26,7 @@ type    string		= __pervasive.String.string
 type 'a vector		= 'a __pervasive.Vector.vector
 type 'a array		= 'a __pervasive.Array.array
 
-datatype exn		= datatype __pervasive.General.exn
+datatype exn		= datatype __pervasive.exn
 datatype ref		= datatype __pervasive.Ref.ref
 
 datatype bool		= false | true
