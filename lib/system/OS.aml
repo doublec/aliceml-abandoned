@@ -297,11 +297,9 @@ struct
 		val arcs1 = case arcs1 of [""] => nil | _ => arcs1
 		val arcs2 = case arcs2 of [""] => nil | _ => arcs2
 	    in
-		if Bool.not isAbs2 then
-		    raise Path
-		else if Bool.not isAbs1 then
+		if Bool.not isAbs1 then
 		    path
-		else if Bool.not(vol1 = vol2) then
+		else if Bool.not isAbs2 orelse Bool.not(vol1 = vol2) then
 		    raise Path
 		else case stripCommonPrefix(arcs1, arcs2)
 		 of (nil, nil) => "."
