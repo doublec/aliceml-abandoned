@@ -31,12 +31,11 @@ static inline void Show(const char *s) {
 
 static inline void InitStore() {
   u_int limits[STORE_GENERATION_NUM];
-  
 
-  limits[0] = 1;
-  limits[1] = 2;
-  limits[2] = limits[3] = 5;
-  Store::InitStore(limits);
+  limits[0]             = 1 * STORE_MEMCHUNK_SIZE;
+  limits[1]             = 2 * STORE_MEMCHUNK_SIZE;
+  limits[2] = limits[3] = 5 * STORE_MEMCHUNK_SIZE;
+  Store::InitStore(limits, 75);
 }
 
 // Public Functions
@@ -63,6 +62,11 @@ int main(void) {
   InitStore();
   Interpreter::Init();
   Show("Store based Scheme Interpreter started\n");
+
+  Parser::interactive = 1;
+
+  setjmp(Parser::buf);
+  fn = INVALID_POINTER;
 
   while (1) {
     if (fn != INVALID_POINTER) {
