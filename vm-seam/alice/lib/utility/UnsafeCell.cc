@@ -13,7 +13,7 @@
 #include <cstdio>
 #include "store/WeakDictionary.hh"
 #include "generic/Tuple.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
 static const BlockLabel CELLMAP_LABEL = TUPLE_LABEL;

@@ -25,7 +25,7 @@
 
 #include "generic/IOHandler.hh"
 #include "generic/Transients.hh"
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 typedef int socklen_t;
