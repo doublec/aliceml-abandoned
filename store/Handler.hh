@@ -25,4 +25,4 @@ public:
   virtual Block *GetAbstractRepresentation() = 0;
 };
 
-#endif __STORE__HANDLER_HH__
+#endif

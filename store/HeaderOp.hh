@@ -79,4 +79,4 @@ public:
   }
 };
 
-#endif __STORE__HEADEROP_HH__
+#endif

@@ -37,4 +37,4 @@ public:
   }
 };
 
-#endif __STORE__GCHELPER_HH__
+#endif

@@ -78,4 +78,4 @@ public:
   u_int IsAnchor()            { return anchor; }
 };
 
-#endif __STORE__MEMORY_HH__
+#endif

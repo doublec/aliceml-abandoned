@@ -204,4 +204,4 @@ public:
   }
 };
 
-#endif __STORE__WEAKDICTIONARY_HH__
+#endif
