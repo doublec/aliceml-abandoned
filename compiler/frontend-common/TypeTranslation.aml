@@ -22,6 +22,7 @@ import structure PathLib          from "PathLib"
 import structure PervasiveTypeLib from "PervasiveTypeLib"
 import structure TypeLib          from "TypeLib"
 import structure InfLib           from "InfLib"
+import structure DynMatchLib      from "DynMatchLib"
 
 import structure TranslationEnv   from "TranslationEnv"
 import structure LabelTranslation from "LabelTranslation"
@@ -38,6 +39,7 @@ struct
     open PathLib
     open LabelLib
     open FixityLib
+    open DynMatchLib
 
     val typ_unit = Type.tuple #[]
     val var_poly = Type.newVar(Type.starKind(), Type.Unconstrained)
@@ -65,6 +67,7 @@ struct
     fun typ_sig env	= typ(env, modlab_inf,    typlab_sig)
     fun typ_ikind env	= typ(env, modlab_inf,    typlab_kind)
     fun typ_rea env	= typ(env, modlab_inf,    typlab_rea)
+    fun typ_module env	= typ(env, modlab_dynmatch, typlab_module)
 
     val lab_package	= Label.fromString "Package__"
     fun typ_package(env, t) =

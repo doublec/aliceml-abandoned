@@ -26,10 +26,10 @@ signature. This way, modules can be passed and stored as first-class values.</P>
 
 <?php subsection("package-pack", "Creating packages") ?>
 
-<P>A package is created using the <TT>pack</TT> expression:
+<P>A package is created using the <TT>pack</TT> expression:</P>
 
 <PRE class=code>
-pack <I>longstrid</I> :> <I>longsigid</I></PRE>
+pack <I>strexp</I> : <I>sigexp</I></PRE>
 
 <P>This expression creates a package containing the module denoted by
 <TT><I>longstrid</I></TT>. The module must (statically) match the given
@@ -64,7 +64,7 @@ type-safe.</P>
 <P>We can inject the library module <TT>Word8</TT> into a package:</P>
 
 <PRE class=code>
-val p = pack Word8 :> WORD</PRE>
+val p = pack Word8 : WORD</PRE>
 
 <P>This package may then be passed to some client that may unpack it as
 follows:</P>
@@ -99,29 +99,12 @@ unpacking:</P>
 <PRE class=code>
 Word'.toString (Word8.fromInt 255)   (* static type error! *)</PRE>
 
-<P>In order to make the package signature compatible with <TT>Word8</TT>, it has
-to be specified more specifically:</P>
+<P>In order to make the unpacked structure statically compatible with <TT>Word8</TT>, it has to be unpacked with a more specific signature:</P>
 
 <PRE class=code>
-val p = pack Word8 :> (WORD where type word = Word8.t)</PRE>
+structure Word8' = unpack p : WORD where type word = Word8.t</PRE>
 
-<P>Now the package can be unpacked similarly as</P>
-
-<PRE class=code>
-structure Word8' = unpack p : (WORD where type word = Word8.t)</PRE>
-
-<P>enabling</P>
-
-<PRE class=code>
-Word8'.toString (Word8.fromInt 255)</PRE>
-
-<P>Due to subtyping, it is still valid to unpack it abstractly:</P>
-
-<PRE class=code>
-structure Word' = unpack p : WORD</PRE>
-
-<P>but of course, <TT>Word'.word</TT> is again statically different from
-<TT>Word8.word</TT>.
+<P>In the scope of this declaration, the above expression is legal.</P>
 
 <P>Type constraints can also be used to specify sharing between different
 packages:</P>
@@ -131,7 +114,7 @@ fun g(p1, p2) =
     let
 	signature S  = sig type t  val x : t  val f : t -> int end
 	structure X1 = unpack p1 : S
-	structure X2 = unpack p2 : (S where type t = X1.t)
+	structure X2 = unpack p2 : S where type t = X1.t
     in
 	X2.f X1.x
     end</PRE>
@@ -139,6 +122,23 @@ fun g(p1, p2) =
 <P>In this example, the types <TT>t</TT> in both packages are unknown. However,
 they might be known to be equal. The second <TT>unpack</TT> expression enforces
 this requirement dynamically, by specifying the necessary type equivalence.</P>
+
+<P>Sometimes it is desirable to make a package fully opaque. The derived syntax</P>
+
+<PRE class=code>
+pack <I>strexp</I> :> <I>sigexp</I></PRE>
+
+<P>enables this. When <TT>Word8</TT> is packed like</P>
+
+<PRE class=code>
+val p = pack Word8 :> WORD</PRE>
+
+<P>The attempt to unpack it transparently,</P>
+
+<PRE class=code>
+structure Word8' = unpack p : WORD where type word = Word8.t</PRE>
+
+<P>will fail.</P>
 
 
 <?php section("firstclass", "first-class modules") ?>
@@ -156,8 +156,8 @@ satisfy a common signature:</P>
 
 <PRE class=code>
 structure Map = unpack (if maxElems < 100
-                        then pack BinTreeMap :> MAP)
-			else pack HashTableMap :> MAP) : MAP</PRE>
+                        then pack BinTreeMap : MAP)
+			else pack HashTableMap : MAP) : MAP</PRE>
 
 <!--
 <P>Another application is to use structures for object-oriented style
@@ -185,7 +185,7 @@ return are objects of the corresponding classes. By packing object structures
 they can be stored in a list, for example:</P>
 
 <PRE class=code>
-val shapes = [pack Rect :> SHAPE, pack Circle :> SHAPE, pack Polygon :> SHAPE]</PRE>
+val shapes = [pack Rect : SHAPE, pack Circle : SHAPE, pack Polygon : SHAPE]</PRE>
 
 <P>It is possible to iterate over <TT>l</TT> without knowing the concrete object
 types:</P>
@@ -209,13 +209,18 @@ example, the following declarations will not evaluate successfully:</P>
 signature S      = sig    type t       val x : t end
 structure X :> S = struct type t = int val x = 9 end
 
-val p = pack X :> S
+val p = pack X : S
 
 structure X' = unpack p : S where type t = int</PRE>
 
 <P>The unpacking as shown here will always fail, since the type <TT>X.t</TT> is
 dynamically abstract. The only possible type that <TT>t</TT> can be specified
-equal to is the type from the package itself (see <A
+equal to is the abstract type itself:</P>
+
+<PRE class=code>
+structure X' = unpack p : S where type t = X.t</PRE>
+
+<P>The following also works (see <A
 href="#package-sharing">sharing</A>):</P>
 
 <PRE class=code>
@@ -226,13 +231,13 @@ structure X2 = unpack p : S where type t = X1.t</PRE>
 
 <UL>
 
-<LI>All <EM>explicitly named</EM> types and signatures have a dynamic
+<LI>All <EM>explicitly declared</EM> types and signatures have a dynamic
 representation. In particular, structures carry the contained type
 fields (and <A href="modules.html#sigmembers">signature fields</A>). This implies
 that types are passed to and returned from functors.</LI>
 
-<LI>Evaluation of a <EM>generative</EM> type declaration (e.g.,
-<TT>exttype</TT>) creates a fresh type name. Generated names are globally
+<LI>Evaluation of a <EM>generative</EM> type declaration (e.g.
+<A href="types.html#exttype"><TT>exttype</TT></A>) creates a fresh type name. Generated names are globally
 unique, so that they are valid across process boundaries and may be stored in
 <A href="pickling.html">pickles</A>.</LI>
 
@@ -249,9 +254,6 @@ upon application.</LI>
 
 <LI>Packages contain the dynamic representation of their signature.</LI>
 
-<LI>Packing always seals the packaged module (as suggested by the <TT>:></TT>
-syntax).</LI>
-
 <LI>Unpacking performs a dynamic signature match between the package signature
 and the given target signature. In the case of success, it returns the packaged
 module unchanged, otherwise raises <A
@@ -264,6 +266,7 @@ interpreted in a type erasure semantics. To pass type information, a function
 has to be lifted to the functor level. Due to <A
 href="modules.html#local">local modules</A> this is possible in most cases.</P>
 
+<!--
 <P>Packing performs sealing to ensure consistency between the package signature
 and dynamic types contained in the packaged module. If no sealing took place,
 anomalies would be possible, like successful evaluation of the following
@@ -308,7 +311,7 @@ specify <TT>t</TT> <TT>=</TT> <TT>int</TT> at this point, because statically,
 
 <P>Transparent semantics of unpacking are necessary to allow expressing <A
 href="#package-sharing">sharing</A>.</P>
-
+-->
 
 <!--
 <?php subsection("dynamic-analysis", "Dynamic type analysis") ?>
@@ -321,108 +324,23 @@ functor GetMonoVector(type t) =
     let
 	val t = pack (type t = t) :> (type t = t)
 	val p = let structure _ = unpack t : (type t = char) in
-		    pack CharVector :> (MONO_VECTOR where type elem = char) end
+		    pack CharVector : (MONO_VECTOR where type elem = char) end
 		handle Package.Mismatch _ =>
 		let structure _ = unpack t : (type t = Word8.t) in
-		    pack Word8Vector :> (MONO_VECTOR where type elem = Word8.t) end
+		    pack Word8Vector : (MONO_VECTOR where type elem = Word8.t) end
 		handle Package.Mismatch _ =>
 		    pack (type elem = t
 			  open Vector
 			  type vector = elem vector
 			  type t = vector
 			  fun contains eq xs y = exists (fn x => x = y) xs
-			  fun notContains eq xs = not o contains eq xs) :>
-			 (MONO_VECTOR where type elem = t)
+			  fun notContains eq xs = not o contains eq xs)
+		       : MONO_VECTOR
     in
 	unpack p : MONO_VECTOR where type elem = t
     end</PRE>
 -->
 
-<?php subsection("dynamic-limitation", "Implementation limitations") ?>
-
-<P> The dynamic semantics of sealing is currently not implemented faithfully
-for polymorphic signatures: if the signature is not statically known because
-it is a functor parameter, no runtime sealing will be performed. A simple
-example is: </P>
-
-<PRE class=code>
-functor Abs(signature S structure X : S) = X :> S
-
-structure M  = struct type t = int val x = 13 end
-structure M' = Abs(signature S = sig type t val x : t end
-                   structure X = M)</PRE>
-
-<P>In this example, the runtime representation of <TT>M'.t</TT> will still be
-<TT>int</TT> and not an abstract type. However, since the static semantics work
-correctly, this can only be observed by going through a package:</P>
-
-<PRE class=code>
-structure P = Package.PackVal(type t = M'.t val x = M'.x)
-structure X = Package.UnpackVal(val package = P.package type t = int)
-
-val y = X.x + 1    (* Ah! *)</PRE>
-
-<P>Unpacking should fail in this example, but currently does not.</P>
-
-<!--
-  <P>
-    Since abstraction during packing uses the same mechanism,
-    packing does not properly treat abstract types either.
-    Unfortunately, this property does not only lead to a too permissive
-    treatment of abstract types, but can also cause failure for
-    examples that should work. Consider:
-  </P>
-
-  <PRE>
-	structure A0 = struct type t = int val x = 9 end
-	signature S  = sig type t val x : t end
-	structure P  = Package.Pack(structure X = A0 signature S = S)
-
-	structure A1 = Package.Unpack(val package = P.package
-				      signature S = S)
-	structure A2 = Package.Unpack(val package = P.package
-				      signature S = S where type t = A1.t)
-  </PRE>
-
-  <P>
-    The second unpack uses the type found when unpacking the first time.
-    This way, A1.t and A2.t should be the same, so that A1.x and A2.x are
-    compatible. One would expect that the second unpacking always succeeds
-    since we are unpacking the same package and already know its type
-    <TT>t</TT>. However, since no abstraction is performed on <TT>t</TT>
-    during packing, <TT>A1.t</TT> actually is <TT>int</TT>. So we are
-    trying to unpack with <TT>t = int</TT>. But the signature stored in the
-    package does not specify this equivalence, so signature matching will
-    fail during unpacking.
-  </P>
-
-  <P>
-    The problem is that the package signature and the runtime types
-    contained in the package module are inconsistent, if the signature
-    passed to <TT>Pack</TT> does not declare the most specific types. So
-    a simple workaround is to avoid this situation. For our example, this
-    can be done as follows:
-  </P>
-
-  <PRE>
-	structure P = Package.Pack(structure X = A0
-				   signature S = S where type t = X.t)
-  </PRE>
-
-  <P>
-    Or if you actually want the abstraction:
-  </P>
-
-  <PRE>
-	structure P = Package.Pack(structure X = A0 :> S
-				   signature S = S where type t = X.t)
-  </PRE>
-
-  <P>
-    This bug will be corrected very shortly.
-    Note that it does not compromise soundness, though.
-  </P>
--->
 
 <?php section("valpackage", "value packages") ?>
 
@@ -435,6 +353,8 @@ that allow packaging of simple core values. Essentially, this provides a type
 
 <?php section("syntax", "syntax summary") ?>
 
+<P>Derived forms have been marked with (*).</P>
+
 <TABLE class=bnf>
   <TR>
     <TD> <I>exp</I> </TD>
@@ -444,8 +364,13 @@ that allow packaging of simple core values. Essentially, this provides a type
   </TR>
   <TR>
     <TD></TD> <TD></TD>
+    <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:</TT> <I>atsigexp</I> </TD>
+    <TD> transparent packing </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
     <TD> <TT>pack</TT> <I>atstrexp</I> <TT>:></TT> <I>atsigexp</I> </TD>
-    <TD> packing </TD>
+    <TD> opaque packing (*) </TD>
   </TR>
 
   <TR></TR>
@@ -461,5 +386,14 @@ that allow packaging of simple core values. Essentially, this provides a type
   </TR>
 </TABLE>
 
+
+<?php subsection("syntax-derived", "Derived forms") ?>
+
+<TABLE class="bnf df">
+  <TR>
+    <TD> <TT>pack</TT>&nbsp;<I>atstrexp</I>&nbsp;<TT>:></TT>&nbsp;<I>atsigexp</I> </TD>
+    <TD> <TT>pack</TT>&nbsp;<TT>(</TT><I>atstrexp</I>&nbsp;<TT>:></TT>&nbsp;<I>atsigexp</I><TT>)</TT>&nbsp;<TT>:</TT>&nbsp;<I>atsigexp</I> </TD>
+  </TR>
+</TABLE>
 
 <?php footing() ?>

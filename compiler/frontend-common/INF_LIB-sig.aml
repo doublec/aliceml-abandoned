@@ -61,6 +61,7 @@ sig
 
     val lab_kind :		Label.t
     val lab_instance :		Label.t
+    val lab_realise :		Label.t
     val lab_match :		Label.t
     val lab_infimum :		Label.t
     val lab_mismatch :		Label.t

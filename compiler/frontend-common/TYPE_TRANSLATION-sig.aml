@@ -33,6 +33,7 @@ sig
     val typ_sig		: TranslationEnv.t -> Type.t
     val typ_ikind	: TranslationEnv.t -> Type.t
     val typ_rea		: TranslationEnv.t -> Type.t
+    val typ_module	: TranslationEnv.t -> Type.t
 
     val lab_package	: Label.t
     val typ_package	: TranslationEnv.t * Type.t -> Type.t

@@ -136,7 +136,8 @@
 (*			<and rea>					(n>=0)	*)
 (*   - no distinction between dec, strdec, and topdec				*)
 (*   - packages:								*)
-(*	  exp    ::= pack atstrexp :> atsigexp					*)
+(*	  exp    ::= pack atstrexp : atsigexp					*)
+(*	         ::= pack atstrexp :> atsigexp					*)
 (*	  strexp ::= unpack infexp : sigexp					*)
 (*   - lazy expressions:							*)
 (*	  strexp ::= lazy strexp							*)
@@ -796,9 +797,12 @@
 	| CASE exp OF match	( CASEExp(I(CASEleft,matchright), exp, match) )
 	| FN match		( FNExp(I(FNleft,matchright), match) )
 	| REC pat DARROW exp	( RECExp(I(RECleft,expright), pat, exp) )
+	| PACK atstrexp COLON atsigexp
+				( TRANSPACKExp(I(PACKleft,atsigexpright),
+					       atstrexp, atsigexp) )
 	| PACK atstrexp COLONGREATER atsigexp
-				( PACKExp(I(PACKleft,atsigexpright),
-					  atstrexp, atsigexp) )
+				( OPAQPACKExp(I(PACKleft,atsigexpright),
+					      atstrexp, atsigexp) )
 	| ASSERT exp DO exp	( ASSERTDOExp(I(ASSERTleft, exp2right),
 					      sourceDesc, ASSERT, exp1, exp2) )
 	| ASSERT exp OF pat DO exp

@@ -54,6 +54,10 @@
  *	pat withfun fvalbind where atexp
  *	==>
  *	pat withfun fvalbind end where atexp
+ *   - packages:
+ *	pack atstrexp :> atsigexp
+ *	==>
+ *	let signature sigid = atsigexp in pack (atstrexp :> sigid) : sigid end
  *   - include takes longsigids:
  *	include longsigid_1 ... longsigid_n
  *	==>
@@ -110,7 +114,8 @@ import structure SCon	       from "SCon"
 import structure Lab           from "Lab"
 import structure VId
        structure TyCon
-       structure StrId         from "Ids"
+       structure StrId
+       structure SigId         from "Ids"
 import structure InputGrammar  from "InputGrammar"
 import structure ParsingError  from "ParsingError"
 import signature DERIVED_FORMS from "DERIVED_FORMS-sig"
@@ -460,6 +465,27 @@ struct
 	    val dec       = G.VALDec(I, G.Seq(I, []), valbind)
 	in
 	    G.ATEXPExp(I, G.LETAtExp(I, dec, callVid))
+	end
+
+    val TRANSPACKExp = G.PACKExp
+
+    fun OPAQPACKExp(I, atstrexp, atsigexp) =
+	let
+	    val I1     = G.infoAtStrExp atstrexp
+	    val I2     = G.infoAtSigExp atsigexp
+
+	    val sigid  = G.SigId(I2, SigId.invent())
+	    val sigexp = G.ATSIGEXPSigExp(I2, atsigexp)
+	    val dec    = G.SIGNATUREDec(I2, G.SigBind(I2,sigid,[],sigexp, NONE))
+
+	    val atsigexp' = G.LONGSIGIDAtSigExp(I2, G.SHORTLong(I2, sigid))
+	    val strexp    = G.ATSTREXPStrExp(I1, atstrexp)
+	    val sigexp'   = G.ATSIGEXPSigExp(I2, atsigexp')
+	    val strexp'   = G.OPAQStrExp(I, strexp, sigexp')
+	    val atstrexp' = G.PARAtStrExp(I, strexp')
+	    val exp       = G.PACKExp(I, atstrexp', atsigexp')
+	in
+	    G.ATEXPExp(I, G.LETAtExp(I, dec, exp))
 	end
 
     fun FILEAtExp(I, desc) =

@@ -306,7 +306,8 @@ struct
     fun isConventionalStrId s	= String.sub(s,0) = #"_" orelse
 				  Char.isUpper(String.sub(s,0)) andalso
 				  CharVectorSlice.all Char.isAlphaNum(unprime s)
-    fun isConventionalSigId s	= Char.isUpper(String.sub(s,0)) andalso
+    fun isConventionalSigId s	= String.sub(s,0) = #"_" orelse
+				  Char.isUpper(String.sub(s,0)) andalso
 				  CharVectorSlice.all isUpperNum' (unprime s)
 
     fun trSCon E =

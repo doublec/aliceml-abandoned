@@ -34,6 +34,7 @@ import structure TypeLib             from "TypeLib"
 import structure InfLib              from "InfLib"
 import structure FixityLib           from "FixityLib"
 import structure PervasiveTypeLib    from "PervasiveTypeLib"
+import structure DynMatchLib         from "DynMatchLib"
 
 import structure NameTranslation     from "NameTranslation"
 import structure LabelTranslation    from "LabelTranslation"
@@ -70,6 +71,7 @@ struct
     open PathLib
     open LabelLib
     open FixityLib
+    open DynMatchLib
     open TypeTranslation
 
 
@@ -495,31 +497,31 @@ struct
 	O.LetExp(i, trDecs(env, decs), trExp(env, exp))
 
       | trExp(env, I.PackExp(i, mod, inf)) =
-	(* [pack mod :> inf] =
-	 *   let id1 = [inf];
-	 *       id2 = [mod :> j]
-	 *   in seal __Package(strict(id2, id1))
+	(* [pack mod : inf] =
+	 *   let id1 = [mod]
+	 *   in seal __Package(strict(id1,
+	 *		lazy __pervasive.Inf.strengthen(seal id1, [inf])))
 	 *)
 	let
 	    val r     = #region i
+	    val r1    = #region(I.infoMod mod)
+	    val r2    = #region(I.infoInf inf)
 
-	    val exp1' = trInf(env, inf)
+	    val exp1' = trMod(env, mod)
 	    val id1'  = auxId(O.infoExp exp1')
 	    val dec1' = auxDec(id1', exp1')
 
-	    val i1    = I.infoInf inf
-	    val id1   = I.Id(i1, O.stamp id1', Name.InId)
-	    val inf1  = I.ConInf(i1, I.ShortId(i1, id1))
+	    val exp2' = trInf(env, inf)
+	    val exp3' = O.SealExp(typInfo(r1, typ_module env), idExp id1')
+	    val exp4' = pervasiveAppExp(env, r, modlab_dynmatch, lab_strengthen,
+					tupExp(r, #[exp3', exp2']))
+	    val exp5' = lazyExp exp4'
 
-	    val exp2' = trOpaqCoerceMod(env, r, mod, idExp id1', #inf i1)
-	    val id2'  = auxId(O.infoExp exp2')
-	    val dec2' = auxDec(id2', exp2')
-
-	    val exp3' = O.TagExp(typInfo(r, typ_package(env, typOfExp exp2')),
+	    val exp6' = O.TagExp(typInfo(r, typ_package(env, typOfExp exp1')),
 				 O.Lab(nonInfo r, lab_package),
-				 strictExp(tupExp(r, #[idExp id2',idExp id1'])))
+				 strictExp(tupExp(r, #[idExp id1', exp5'])))
 	in
-	    letExp(#[dec1',dec2'], O.SealExp(i, exp3'))
+	    letExp(#[dec1'], O.SealExp(i, exp6'))
 	end
 
       | trExp(env, I.OverExp(i, exps, typid, typlongids, typ)) =
@@ -940,8 +942,9 @@ struct
 	    (* [x1 : j1 :> x2 = any] = () *)
 		SOME(unitExp r)
 	  | (_, Inf.Con p2) =>
-	    if Option.isNone x2o then
-	    (* [x1 : p1 :> _ = p2] = () *)
+	    (case x2o
+	     of NONE =>
+		(* [x1 : p1 :> _ = p2] = () *)
 		(*UNFINISHED: this should not be...*)
 		(* Note: If we match transparently and have two constructors
 		 * then they are necessarily the same at runtime.
@@ -956,10 +959,19 @@ struct
 		then assert false else
 		 *)
 		NONE
-	    else
-	    (* [x1 : j1 :> x2 = p] = ???? *)
-	    (*UNFINISHED: do runtime sealing (__perv.Coerce.Opaque?) *)
-		NONE
+	      | SOME x2 =>
+		(* [x1 : j1 :> x2 = p] =
+		 *      unseal __pervasive.DynMatch.seal(seal x1, x2)
+		 *)
+		let
+		    val e1 = O.SealExp(typInfo(r, typ_module env), longidExp x1)
+		    val e2 = pervasiveAppExp(env, r, modlab_dynmatch, lab_seal,
+					     tupExp(r, #[e1, longidExp x2]))
+		    val e3 = O.UnsealExp(typInfo(r, infToTyp(env,j2)), e2)
+		in
+		    SOME e3
+		end
+	    )
 	  | (Inf.Sig s1, Inf.Sig s2) =>
 	    (* [x1 : sig item1* end :> x2 = sig item2* end] =
 	     *     let x3 = lazy Inf.asSig x2 in
@@ -1440,7 +1452,7 @@ struct
 	end
 
       | trInf'(env, I.PrimInf(i, s)) =
-	(* [prim s] = __prvasive.PervasiveInf.lookup s *)
+	(* [prim s] = __pervasive.PervasiveInf.lookup s *)
 	let
 	    val r = #region i
 	in

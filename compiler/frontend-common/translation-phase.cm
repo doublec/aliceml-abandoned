@@ -26,6 +26,8 @@ elaboration-phase.cm
 	FixityLib.aml
 	INF_LIB-sig.aml
 	InfLib.aml
+	DYN_MATCH_LIB-sig.aml
+	DynMatchLib.aml
 
 	NAME_TRANSLATION-sig.aml
 	NameTranslation.aml

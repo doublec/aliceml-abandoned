@@ -2,9 +2,11 @@ Language:
 
 * Nicer syntax (derived forms) for functors.
 * Lazy and spawn syntax for modules.
+* Pack can now use a transparent annotation, as this is usually more convenient.
 
 Compiler:
 
+* Dynamic sealing has been implemented.
 * Warn about unsued imports.
 
 Interactive Toplevel:

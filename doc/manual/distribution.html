@@ -138,9 +138,9 @@ structure ComputeServer : COMPUTE_SERVER =
 struct
     val apply = proxy (fn (f, x) => f x)
 end
-val ticket = offer (pack ComputeServer :> COMPUTE_SERVER)
+val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
 val _ = Pickle.save ("/docroot/computeServer",
-		     pack (val x = ticket) :> (val x : string))</PRE>
+		     pack (val x = ticket) : (val x : string))</PRE>
 
 <P>Clients can use this service by acquiring the ticket from the well-known
 URL <TT>http://www/computeServer</TT>:</P>

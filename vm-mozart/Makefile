@@ -189,7 +189,8 @@ LIBSYSTEMSOURCES0 = \
 	TEXT_IO-sig.aml TextIO.aml IO_DESC-sig.aml OS_FILE_SYS-sig.aml \
 	OS_IO-sig.aml OS_PATH-sig.aml OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml \
 	COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
-	RAND-sig.aml REFLECT-sig.aml FOREIGN-sig.aml SIGNAL-sig.aml \
+	RAND-sig.aml REFLECT-sig.aml FOREIGN-sig.aml DYN_MATCH-sig.aml \
+	DynMatch.aml SIGNAL-sig.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PRINT-sig.aml Print.aml PICKLE-sig.aml Pickle.aml URL-sig.aml Url.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \
@@ -253,6 +254,7 @@ COMPILERFRONTENDCOMMONSOURCES0 = \
 	TYPE_LIB-sig.aml TypeLib.aml \
 	PERVASIVE_TYPE_LIB-sig.aml PervasiveTypeLib.aml \
 	INF_LIB-sig.aml InfLib.aml \
+	DYN_MATCH_LIB-sig.aml DynMatchLib.aml \
 	NAME_TRANSLATION-sig.aml NameTranslation.aml \
 	LABEL_TRANSLATION-sig.aml LabelTranslation.aml \
 	TYPE_TRANSLATION-sig.aml TypeTranslation.aml \
@@ -421,7 +423,7 @@ Rel2.import: lib/fundamental/Fundamental.import
 build1/Build1.aml: Build1.aml
 	cp $< $@
 
-build1/lib/fundamental/RTT.aml: lib/fundamental/DummyRTT.aml
+build1/lib/fundamental/RTT.aml: lib/rtt/DummyRTT.aml
 	cp $< $@
 
 build1/lib/fundamental/%.aml: lib/fundamental/%.aml
@@ -578,10 +580,12 @@ build1/install/tools/Linker.ozf:
 
 BUILD2DIRS = \
 	build2 build2/lib build2/lib/fundamental build2/lib/data \
-	build2/lib/system build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
+	build2/lib/system build2/lib/utility build2/lib/rtt build2/lib/ml-yacc \
+	build2/compiler/frontend-common
 BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
-	$(LIBSOURCES:%=build2/%)
+	$(LIBSOURCES:%=build2/%) \
+	$(COMPILERFRONTENDCOMMONSOURCES:%=build2/%)
 
 ##
 ## Creating the Source Tree for Build 2

@@ -124,6 +124,8 @@ struct
     val _		= Inf.kind : inf -> kind		(* verify *)
     val lab_instance	= vallab "instance"
     val _		= Inf.instance : path * inf -> inf * rea (* verify *)
+    val lab_realise	= vallab "realise"
+    val _		= Inf.realise : rea * inf -> inf	(* verify *)
     val lab_match	= vallab "match"
     val _		= Inf.match : inf * inf -> rea		(* verify *)
     val lab_infimum	= vallab "infimum"

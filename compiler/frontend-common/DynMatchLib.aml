@@ -1,0 +1,45 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Label         from "../../lib/rtt/Label"
+import structure Inf           from "../../lib/rtt/Inf"
+import structure Reflect       from "../../lib/system/Reflect"
+import structure DynMatch      from "../../lib/system/DynMatch"
+import signature DYN_MATCH_LIB from "DYN_MATCH_LIB-sig"
+
+structure DynMatchLib : DYN_MATCH_LIB =
+struct
+    fun vallab s	= Label.fromString s
+    fun typlab s	= Label.fromString s
+    fun modlab s	= Label.fromString s
+
+  (* Module and type field name *)
+
+    val modlab_dynmatch	= modlab "DynMatch"
+    structure DynMatch	= DynMatch				(* verify *)
+
+    val typlab_module	= typlab "module"
+    type module		= DynMatch.module			(* verify *)
+
+  (* Operations *)
+
+    type module		= DynMatch.module
+    type inf		= Inf.t
+    type rea		= Inf.rea
+
+    val lab_match	= vallab "match"
+    val _		= DynMatch.match : module * inf -> rea	(* verify *)
+    val lab_strengthen	= vallab "strengthen"
+    val _		= DynMatch.strengthen : module * inf -> inf (* verify *)
+    val lab_seal	= vallab "seal"
+    val _		= DynMatch.seal : module * inf -> module (* verify *)
+end

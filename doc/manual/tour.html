@@ -736,11 +736,11 @@ typing.</P>
 signature. Packages are created using the <TT>pack</TT> expression:</P>
 
 <PRE class=code>
-val p = pack Word8 :> WORD
+val p = pack Word8 : WORD
 <I>val p : package = package{|...|}</I></PRE>
 
 <P>This example injects the module <TT>Word8</TT> into a package. The signature
-constraint (the part following the <TT>:></TT>) is part of the pack expression.
+constraint (the part following the colon) is part of the pack expression.
 It specifies the package's signature. The packaged module must of course match
 that signature statically.<P>
 
@@ -773,7 +773,7 @@ signature specified with <TT>unpack</TT>.</P>
 packages. In particular, values can be given polymorphic type in packages:</P>
 
 <PRE class=code>
-val p = pack (val x = length) :> (val x : 'a list -> int)
+val p = pack (val x = length) : (val x : 'a list -> int)
 <I>val p : package = package{|...|}</I></PRE>
 
 <P class=note>This example uses some <A href="modules.html#sugar">syntactic
@@ -849,7 +849,7 @@ end
 <P>A package can be formed from this structure and be written to a file:</P>
 
 <PRE class=code>
-Pickle.save ("Num." ^ Pickle.extension, pack Num :> NUM)
+Pickle.save ("Num." ^ Pickle.extension, pack Num : NUM)
 <I>val it : unit = ()</I></PRE>
 
 <P>To recover the structure in another (or the same) process, one simply
@@ -875,17 +875,7 @@ because type
 does not unify with
    Num'.t</I></PRE>
 
-<P>The reason is that the <TT>pack</TT> operation performs an additional type
-abstraction - as indicated by the <TT>:></TT> operator. Consequently, the
-package will contain a fresh type <TT>t</TT>. The usual means of expressing
-type sharing can be used if that is not desired:</P>
-
-<PRE class=code>
-Pickle.save ("Num." ^ Pickle.extension, pack Num :> (NUM where type t = Num.t))
-<I>val it : unit = ()</I></PRE>
-
-<P>The package written here has a type <TT>t</TT> compatible to the original
-type <TT>Num.t</TT> and can hence be unpacked as</P>
+<P>The reason is that the signature at the <TT>unpack</TT> operation does not specify the necessary type equivalence - the types are statically incompatible, although they are known to be the same dynamically. The usual means of expressing type sharing can be used if that is not desired:</P>
 
 <PRE class=code>
 structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM where type t = Num.t
@@ -932,7 +922,7 @@ end
 signature MK_HELLO = fct (val who : string) -> sig val s : string end
 <I>signature MK_HELLO =
    fct (_id3 : sig val who : string end) -> sig val s : string end</I>
-Pickle.save ("MkHello." ^ Pickle.extension, pack MkHello :> MK_HELLO)
+Pickle.save ("MkHello." ^ Pickle.extension, pack MkHello : MK_HELLO)
 <I>val it : unit = ()</I></PRE>
 -->
 
@@ -950,8 +940,8 @@ val modfile = "Mod." ^ Pickle.extension
 signature X      = sig    type t       end
 structure X :> X = struct type t = int end
 
-Pickle.save (modfile, pack X :> X)
-Pickle.save (sigfile, pack (signature S = X) :> (signature S))
+Pickle.save (modfile, pack X : X)
+Pickle.save (sigfile, pack (signature S = X) : (signature S))
 
 structure Sig = unpack Pickle.load sigfile : (signature S)
 structure Mod = unpack Pickle.load modfile : Sig.S
@@ -1166,7 +1156,7 @@ structure Fac50 = struct val x = Fac.fac 50 end
 <I>structure Fac50 : sig val x : int end</I>
 Pickle.save ("Fac50." ^ Component.extension,
 	     pack (structure Fac50 = Fac50)
-	       :> (structure Fac50 : sig val x : int end))
+	        : (structure Fac50 : sig val x : int end))
 <I>val it : unit = ()</I></PRE>
 
 <P>Assume that calculating the factorial of 50 is an expensive computation. We
@@ -1235,7 +1225,7 @@ to other processes, for example the <TT>Num</TT> structure from the previous
 section:</P>
 
 <PRE class=code>
-val t = Remote.offer (pack Num :> NUM)
+val t = Remote.offer (pack Num : NUM)
 <I>### loaded signature from x-alice:/lib/distribution/Remote
 val t : ticket = "http://134.96.18\..."</I></PRE>
 
@@ -1320,7 +1310,7 @@ struct
     val compute = Remote.proxy (fn (f,x) => f x)
 end
 <I>structure ComputeServer : sig val compute : ('a -> 'b) * 'a -> 'b end</I>
-val ticket = Remote.offer (pack ComputeServer :> COMPUTE_SERVER)
+val ticket = Remote.offer (pack ComputeServer : COMPUTE_SERVER)
 <I>val ticket : ticket = "http://134.96.18\..."</I></PRE>
 
 <P>Assume that the local HTTP server's domain is <TT>www.mydomain.net</TT> and
@@ -1328,7 +1318,7 @@ the root of its document tree is in directory <TT>/www</TT> of the local file
 system. The server may store the ticket as a WWW document:</P>
 
 <PRE class=code>
-Pickle.save ("/www/computeserver.ticket", pack (val x = ticket) :> (val x : string))
+Pickle.save ("/www/computeserver.ticket", pack (val x = ticket) : (val x : string))
 <I>val it : unit = ()</I></PRE>
 
 <P>A client can retrieve the (dynamically created) ticket from the (statically
