@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Konrstaedt, 2002
+//   Leif Konrstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
