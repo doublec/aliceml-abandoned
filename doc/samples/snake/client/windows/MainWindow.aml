@@ -1,0 +1,71 @@
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas      from "x-alice:/lib/gtk/GtkCanvas"
+import functor MkRedBlackMap    from "x-alice:/lib/data/MkRedBlackMap"
+
+
+local
+
+    datatype mode = BEGINNING | LEVEL
+
+    fun mkMainWindow mode =
+	let
+	    fun mainQuit () = OS.Process.exit OS.Process.success
+
+	    val main_window     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val dialog_vbox1 	= Gtk.vboxNew (false, 10)
+	    val menu_m_single	= Gtk.menuItemNewWithLabel "Single-Player"
+	    val menu_m_client	= Gtk.menuItemNewWithLabel "Multi-Player Client"
+	    val menu_m_server	= Gtk.menuItemNewWithLabel "Multi-Player Server"
+	    val menu_bar	= Gtk.menuBarNew ()
+	    val menu_menu	= Gtk.menuNew ()
+	    val menu_m_item	= Gtk.menuItemNewWithLabel "Menu"
+	    val menu_highscore	= Gtk.menuNew ()
+	    val menu_hi_item	= Gtk.menuItemNewWithLabel "Highscore"
+	    val menu_quit       = Gtk.menuNew ()
+	    val menu_q_item	= Gtk.menuItemNewWithLabel "Quit"
+	    val menu_gu_item    = Gtk.menuItemNewWithLabel "Give Up"
+	    val menu_qu_item    = Gtk.menuItemNewWithLabel "Quit"
+
+	in
+
+	Gtk.windowSetTitle (main_window, "Alice Snake");
+	Gtk.windowSetDefaultSize (main_window, 800, 500);
+	Gtk.windowSetPosition (main_window, Gtk.WIN_POS_CENTER);
+
+	Gtk.menuAppend (menu_menu, menu_m_single);
+	Gtk.menuAppend (menu_menu, menu_m_client);
+	Gtk.menuAppend (menu_menu, menu_m_server);
+	Gtk.menuAppend (menu_quit, menu_gu_item);
+	Gtk.menuAppend (menu_quit, menu_qu_item);
+
+	Gtk.signalConnect (main_window, "delete-event", fn _ => mainQuit ());
+	Gtk.signalConnect (menu_hi_item, "activate", fn _ => ());
+	Gtk.signalConnect (menu_m_single, "activate", fn _ => ());
+	Gtk.signalConnect (menu_m_client, "activate", fn _ => ());
+	Gtk.signalConnect (menu_m_server, "activate", fn _ => ());
+	Gtk.signalConnect (menu_qu_item, "activate", fn _ => mainQuit ());
+	Gtk.signalConnect (menu_gu_item, "activate", fn _ => ());
+
+	Gtk.menuItemSetSubmenu (menu_m_item, menu_menu);
+	Gtk.menuItemSetSubmenu (menu_q_item, menu_quit);
+
+	if mode <> BEGINNING
+	    then (Gtk.widgetSetSensitive(menu_m_item, false);
+		  Gtk.widgetSetSensitive(menu_hi_item, false))
+	else Gtk.widgetSetSensitive(menu_gu_item, false);
+
+	Gtk.menuBarAppend (menu_bar, menu_m_item);
+	Gtk.menuBarAppend (menu_bar, menu_hi_item);
+	Gtk.menuBarAppend (menu_bar, menu_q_item);
+
+	Gtk.boxPackStart (dialog_vbox1, menu_bar, false, false, 0);
+
+	Gtk.containerAdd (main_window, dialog_vbox1);
+	Gtk.widgetShowAll main_window
+
+	end
+in
+    val _ = mkMainWindow BEGINNING
+end
+
