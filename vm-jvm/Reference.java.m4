@@ -23,18 +23,18 @@ package de.uni_sb.ps.dml.runtime;
  *     (!r1, !r2)
  *  end
  *  </code>
- *  Darf: (0, 0), (1, 0), (1, 2)
- *  Nicht: (0, 2);
+ *  May: (0, 0), (1, 0), (1, 2)
+ *  Must not: (0, 2);
  *  To avoid the second case, access methods have to be synchronized.
  */
 final public class Reference implements DMLConVal, DMLReference {
 
-    SManager mgr = null;      // Homesite-Manager
-    DMLValue content = null;
-    CManager cmgr = null;     // Clientsite-Manager
+    private SManager mgr = null;      // Homesite-Manager
+    public DMLValue content = null;
+    private CManager cmgr = null;     // Clientsite-Manager
 
-    public Reference(DMLValue content) throws java.rmi.RemoteException {
-	this.content=content;
+    public Reference(DMLValue ct) throws java.rmi.RemoteException {
+	content=ct;
     }
 
     final synchronized public DMLValue release() {

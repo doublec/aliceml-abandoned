@@ -317,16 +317,16 @@ define(_FIELD,`final public static DMLValue $2 = new capitalize($2)();
 	static {
 	  Builtin.builtins.put("$1.$2",$2);
 	}')
-define(_REQUEST,`ifelse($1,$2,`if ($2 instanceof DMLLVar) {
-	$1 = ((DMLLVar) $2).request(); }',`
-	if ($2 instanceof DMLLVar) {
-		    $1 = ((DMLLVar) $2).request();
+define(_REQUEST,`ifelse($1,$2,`if ($2 instanceof DMLTransient) {
+	$1 = ((DMLTransient) $2).request(); }',`
+	if ($2 instanceof DMLTransient) {
+		    $1 = ((DMLTransient) $2).request();
 		 } else {
 		    $1 = $2;
 		 }')')
 define(_REQUESTDEC,`$1 = null;
-		 if ($2 instanceof DMLLVar) {
-		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = ((DMLLVar) $2).request();
+		 if ($2 instanceof DMLTransient) {
+		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = ((DMLTransient) $2).request();
 		 } else {
 		    patsubst($1,`[a-zA-z]+ \([a-z]+\)',`\1') = $2;
 		 }')

@@ -15,7 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class LVar extends UnicastRemoteObject
-    implements DMLLVar {
+    implements DMLTransient {
 
     private DMLValue ref=null;
 
@@ -25,8 +25,8 @@ final public class LVar extends UnicastRemoteObject
 	if (ref == null) {
 	    return this;
 	} else {
-	    if (ref instanceof DMLLVar) {
-		ref = ((DMLLVar) ref).getValue();
+	    if (ref instanceof DMLTransient) {
+		ref = ((DMLTransient) ref).getValue();
 	    }
 	}
 	return ref;
@@ -41,8 +41,8 @@ final public class LVar extends UnicastRemoteObject
 		e.printStackTrace();
 	    }
 	}
-	if (ref instanceof DMLLVar) {
-	    ref = ((DMLLVar) ref).request();
+	if (ref instanceof DMLTransient) {
+	    ref = ((DMLTransient) ref).request();
 	}
 	return ref;
     }
@@ -55,12 +55,12 @@ final public class LVar extends UnicastRemoteObject
 	// avoid cycles
 	// path compression is performed during checking
 	boolean hasSelfRef = false;
-	while (v instanceof DMLLVar) {
+	while (v instanceof DMLTransient) {
 	    if (v == this) { // we detect a self-cycle
 		hasSelfRef = true;
 		break;
 	    }
-	    DMLValue vv = ((DMLLVar) v).getValue();
+	    DMLValue vv = ((DMLTransient) v).getValue();
 	    if (v == vv) { // we run into an unbound variable
 		// hasSelfRef = false;
 		break;

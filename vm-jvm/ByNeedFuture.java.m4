@@ -15,7 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class ByNeedFuture extends UnicastRemoteObject
-    implements DMLLVar {
+    implements DMLTransient {
     // von Future: DMLValue ref = null;
     // ref kann hier nur Function : unit -> 'a  sein.
     // diese Bedingung wird nicht geprüft
@@ -49,12 +49,12 @@ final public class ByNeedFuture extends UnicastRemoteObject
 	    try {
 		v = temp.apply0();
 
-		while (v instanceof DMLLVar) {
+		while (v instanceof DMLTransient) {
 		    if (v == this) { // we detect a self-cycle
 			hasSelfRef = true;
 			break;
 		    }
-		    DMLValue vv = ((DMLLVar) v).getValue();
+		    DMLValue vv = ((DMLTransient) v).getValue();
 		    if (v == vv) { // we run into an unbound variable
 			// hasSelfRef = false;
 			break;

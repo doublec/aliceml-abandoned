@@ -15,7 +15,7 @@ package de.uni_sb.ps.dml.runtime;
 import java.rmi.server.UnicastRemoteObject;
 
 final public class Future extends UnicastRemoteObject
-    implements DMLLVar {
+    implements DMLTransient {
 
     /** The logic value of which this is the future. */
     private DMLValue ref;
@@ -36,15 +36,15 @@ final public class Future extends UnicastRemoteObject
     }
 
     final synchronized public DMLValue getValue() throws java.rmi.RemoteException { // gibt Wert zurück ohne blockieren
-	if (ref instanceof DMLLVar) {
-	    ref = ((DMLLVar) ref).getValue();
+	if (ref instanceof DMLTransient) {
+	    ref = ((DMLTransient) ref).getValue();
 	}
 	return ref;
     }
 
     final synchronized public DMLValue request() throws java.rmi.RemoteException { // gibt Wert zurück wenn verfügbar
-	if (ref instanceof DMLLVar) {
-	    ref = ((DMLLVar) ref).request();
+	if (ref instanceof DMLTransient) {
+	    ref = ((DMLTransient) ref).request();
 	}
 	return ref;
     }

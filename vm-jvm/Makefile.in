@@ -34,7 +34,7 @@ files = $(CLASSROOT)$(RUNTIME)Array.class \
 	$(CLASSROOT)$(RUNTIME)DMLConVal.class \
 	$(CLASSROOT)$(RUNTIME)DMLPort.class \
 	$(CLASSROOT)$(RUNTIME)DMLReference.class \
-	$(CLASSROOT)$(RUNTIME)DMLLVar.class \
+	$(CLASSROOT)$(RUNTIME)DMLTransient.class \
 	$(CLASSROOT)$(RUNTIME)DMLTuple.class \
 	$(CLASSROOT)$(RUNTIME)DMLValue.class \
 	$(CLASSROOT)$(RUNTIME)ExceptionWrapper.class \

@@ -79,8 +79,8 @@ final public class General {
 	    _fromTuple(args,val,2,"General.bind");
 	}
 	_SAPPLY2(v) {
-	    if (v1 instanceof DMLLVar) {
-		return ((DMLLVar) v1).bind(v2);
+	    if (v1 instanceof DMLTransient) {
+		return ((DMLTransient) v1).bind(v2);
 	    } else {
 		_RAISENAME(General.Match);
 	    }
@@ -148,8 +148,8 @@ final public class General {
     _BUILTIN(Wait) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    if (val instanceof DMLLVar) {
-		return ((DMLLVar) val).request();
+	    if (val instanceof DMLTransient) {
+		return ((DMLTransient) val).request();
 	    } else {
 		return val;
 	    }
