@@ -139,7 +139,7 @@ struct
 			(true, index)
 		    end
 		) handle exn as IO.Io _ => raise Io (url, exn)
-		       | Inf.Mismatch m => raise Mismatch (url, hd path, m)
+		       | Inf.Mismatch m => raise Mismatch (url, hd (tl path), m)
 
 	    and include' (url, path, rea, expectedInf) =
 		case UrlMap.lookup (includes, url)
