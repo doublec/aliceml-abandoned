@@ -694,7 +694,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isModName, Type.asProd t1)
 	    val (l2,t12) = findField(isInfName, Type.asProd t1)
 	    val  x'      = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -717,7 +717,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isModName, Type.asProd t1)
 	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -739,7 +739,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isValName, Type.asProd t1)
 	    val (l2,t21) = findField(isInfName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -762,7 +762,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isInfName, Type.asProd t1)
 	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -784,7 +784,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isInfName, Type.asProd t1)
 	    val (l2,t21) = findField(isValName, Type.asProd t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -813,7 +813,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isModName, Type.asProd t1)
 	    val (l2,t12) = findField(isInfName, Type.asProd t1)
 	    val (l3,t21) = findField(isValName, Type.asProd t2)
@@ -855,7 +855,7 @@ struct
 	    val  r       = #region i'
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
-	    val (t1,t2)  = Type.asArrow' t
+	    val (t1,t2)  = Type.asArrow t
 	    val (l1,t11) = findField(isValName, Type.asProd t1)
 	    val (l2,t12) = findField(isInfName, Type.asProd t1)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
@@ -1393,13 +1393,13 @@ struct
 	(* [forall x => t] = let val $x = Type.var <<kind x>>
 	 *                   in Type.inAll($x,[t]) end
 	 *)
-	trBindTyp(E, lab_inAll, i,x,t, Type.kindVar(#1(Type.asAll'(#typ i))))
+	trBindTyp(E, lab_inAll, i,x,t, Type.kindVar(#1(Type.asAll(#typ i))))
 
       | trTyp'(E, I.ExTyp(i,x,t)) =
 	(* [exists x => t] = let val $x = Type.var <<kind x>>
 	 *                   in Type.inExists($x,[t]) end
 	 *)
-	trBindTyp(E,lab_inExist, i,x,t, Type.kindVar(#1(Type.asExist'(#typ i))))
+	trBindTyp(E,lab_inExist, i,x,t, Type.kindVar(#1(Type.asExist(#typ i))))
 
       | trTyp'(E, I.PackTyp(i,j)) =
 	(* [pack j] = Type.inPack[j] *)
@@ -2078,6 +2078,7 @@ struct
 	    (*val _   = InfHash.deleteAll infHash*)
 	    val comp' = trComp(E, component)
 	in
+	    InfHash.deleteAll infHash;
 	    comp'
 	end
 end

@@ -98,8 +98,8 @@ struct
   (* Helpers *)
 
     fun isOpenType t =
-	Type.isCon' t   andalso #2(Type.asCon' t) = Type.OPEN orelse
-	Type.isApply' t andalso isOpenType(#1(Type.asApply' t))
+	Type.isCon t   andalso #2(Type.asCon t) = Type.OPEN orelse
+	Type.isApply t andalso isOpenType(#1(Type.asApply t))
 
     fun matchesRow(r1,r2) =
 	(*UNFINISHED: allow row variables? *)
@@ -423,7 +423,7 @@ struct
 	   let
 		val  t      = #typ i
 		val  ts     = chExps E exps
-		val (t1,t2) = checked Type.asApply' t
+		val (t1,t2) = checked Type.asApply t
 			      (i, "VecExp type", #[TYPE t])
 	   in
 		check (Type.equals(t1, PervasiveType.typ_vec))
@@ -455,7 +455,7 @@ struct
 	 | FunExp(i, matchs) =>
 	   let
 		val  t      = #typ i
-		val (t1,t2) = checked Type.asArrow' t
+		val (t1,t2) = checked Type.asArrow t
 			      (i, "FunExp type", #[TYPE t])
 		val  tts    = chMatchs E matchs
 	   in
@@ -474,7 +474,7 @@ struct
 		val  t      = #typ i
 		val  t0     = chExp E exp1
 		val  t'     = chExp E exp2
-		val (t1,t2) = checked Type.asArrow' t0
+		val (t1,t2) = checked Type.asArrow t0
 			      (i, "AppExp function type", #[TYPE t0])
 	   in
 		check (Type.equals(t1,t'))
@@ -875,7 +875,7 @@ struct
 	   let
 		val  t      = #typ i
 		val  ts     = chPats E pats
-		val (t1,t2) = checked Type.asApply' t
+		val (t1,t2) = checked Type.asApply t
 			      (i, "VecPat type", #[TYPE t])
 	   in
 		check (Type.equals(t1, PervasiveType.typ_vec))
