@@ -252,6 +252,9 @@ int main(int argc, char **argv) {
     std::fprintf(f, "#define FLOAT_BIG_ENDIAN 0\n");
     std::fprintf(f, "#define FLOAT_LITTLE_ENDIAN 1\n\n");
     break;
+  case armEndian:
+    // cannot occur
+    break;
   case badSize:
     std::fprintf(stderr, "%s: `float' type is not 4 bytes\n", argv[0]);
     std::exit(1);
