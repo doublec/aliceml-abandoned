@@ -83,16 +83,34 @@ inline word Interpreter::PopValue() {
 
 // Push and Pop Frame
 inline void Interpreter::PushFrame(u_int size) {
-  Block *p = Store::AllocBlock((BlockLabel) T_FRAME, size);
-  Stack::FromWordDirect(GetRoot(FRAME_STACK))->SlowPush(p->ToWord());
+  Stack *s    = Stack::FromWordDirect(GetRoot(FRAME_STACK));
+  u_int rsize = (size + 1);
+
+  s->AllocArgFrame(rsize);
+  s->PutFrameArg(0, rsize);
 }
 
-inline void Interpreter::PushFrame(word frame) {
-  Stack::FromWordDirect(GetRoot(FRAME_STACK))->Push(frame);
+inline void Interpreter::PushTailFrame(u_int size) {
+  Stack *s    = Stack::FromWordDirect(GetRoot(FRAME_STACK));
+  u_int rsize = Store::DirectWordToInt(s->GetFrameArg(0));
+
+  for (u_int i = rsize; i--;) {
+    s->PutFrameArg(i, 0);
+  }
+  s->ClearArgFrame(rsize);
+  rsize = (size + 1);
+  s->AllocArgFrame(rsize);
+  s->PutFrameArg(0, rsize);
 }
 
-inline word Interpreter::PopFrame() {
-  return Stack::FromWordDirect(GetRoot(FRAME_STACK))->SlowPop();
+inline void Interpreter::PopFrame() {
+  Stack *s   = Stack::FromWordDirect(GetRoot(FRAME_STACK));
+  u_int size = Store::DirectWordToInt(s->GetFrameArg(0));
+
+  for (u_int i = size; i--;) {
+    s->PutFrameArg(i, 0);
+  }
+  s->ClearArgFrame(size);
 }
 
 // Push and Pop Closures
@@ -100,14 +118,17 @@ inline void Interpreter::PushClosure(word closure) {
   Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->SlowPush(closure);
 }
 
-inline word Interpreter::PopClosure() {
-  return Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->SlowPop();
+inline void Interpreter::PushTailClosure(word closure) {
+  Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->PutFrameArg(0, closure);
+}
+
+inline void Interpreter::PopClosure() {
+  Stack::FromWordDirect(GetRoot(CLOSURE_STACK))->SlowPop();
 }
 
 // Push elem i of current FRAME/CLOSURE/GLOBAL to EVAL_STACK
 inline void Interpreter::PushFrameArg(u_int i) {
-  PushValue(Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(FRAME_STACK))->Top())
-	    ->GetArg(i));
+  PushValue(Stack::FromWordDirect(GetRoot(FRAME_STACK))->GetFrameArg((1 + i)));
 }
 
 inline void Interpreter::PushClosureArg(u_int i) {
@@ -121,8 +142,7 @@ inline void Interpreter::PushGlobalArg(u_int i) {
 
 // Pop from EVAL_STACK and write to elem i of current FRAME/CLOSURE/GLOBAL
 inline void Interpreter::AssignFrameArg(u_int i) {
-  Store::DirectWordToBlock(Stack::FromWordDirect(GetRoot(FRAME_STACK))->Top())
-    ->ReplaceArg(i, PopValue());
+  Stack::FromWordDirect(GetRoot(FRAME_STACK))->PutFrameArg((1 + i), PopValue());
 }
 
 inline void Interpreter::AssignClosureArg(u_int i) {
@@ -135,12 +155,13 @@ inline void Interpreter::AssignGlobalArg(u_int i) {
 }
 
 inline word Interpreter::FetchSemiValue(IdNode *node) {
-  // Ugly Hack
-  Block *s   = Store::DirectWordToBlock(GetRoot(FRAME_STACK));
-  Block *arr = Store::DirectWordToBlock(s->GetArg(1));
-  u_int top  = Store::DirectWordToInt(s->GetArg(0));
-
-  return Store::DirectWordToBlock(arr->GetArg(top - node->GetFrame()))->GetArg(node->GetIndex());
+  Stack *s     = Stack::FromWordDirect(GetRoot(FRAME_STACK));
+  u_int offset = 0;
+  
+  for (s_int delta = (node->GetFrame() - 1); delta--;) {
+    offset += Store::DirectWordToInt(s->GetFrameArg(offset));
+  }
+  return s->GetFrameArg((1 + offset + node->GetIndex()));
 }
 
 inline void Interpreter::CreateId(u_int i, PrimType type) {
@@ -210,20 +231,6 @@ inline void Interpreter::InterpretAssign(Block *instr) {
   }
 }
 
-inline void Interpreter::InterpretRemove() {
-  PopFrame();
-  PopClosure();
-}
-
-inline void Interpreter::InterpretToggle() {
-  word tmp = PopFrame();
-  PopFrame();
-  PushFrame(tmp);
-  tmp = PopClosure();
-  PopClosure();
-  PushClosure(tmp);
-}
-
 inline void Interpreter::InterpretIf(Block *instr) {
   IfNode *node = IfNode::FromBlock(instr);
 
@@ -281,10 +288,8 @@ inline void Interpreter::InterpretApplication(Block *instr) {
   ApplicationNode *node = ApplicationNode::FromBlock(instr);
   Block *arr            = Store::DirectWordToBlock(node->GetExprArr());
   u_int size            = arr->GetSize();
-  NodeType curtype      = ((node->IsTail()) ? T_TAILAPPLY : T_APPLY);
 
-  //  std::printf("IsTail: %d, %d\n", (int) node, node->IsTail());
-  PushTask(Store::IntToWord(curtype));
+  PushTask(Store::IntToWord(((node->IsTail()) ? T_TAILAPPLY : T_APPLY)));
   for (u_int i = 0; i < size; i++) {
     PushTask(arr->GetArg(i));
   }
@@ -298,6 +303,11 @@ inline void Interpreter::InterpretBegin(Block *instr) {
   for (u_int i = size; i--;) {
     PushTask(arr->GetArg(i));
   }
+}
+
+inline void Interpreter::InterpretRemove() {
+  PopFrame();
+  PopClosure();
 }
 
 inline void Interpreter::InterpretTime() {
@@ -610,24 +620,22 @@ char *Interpreter::Interpret(word tree) {
 
     if (PointerOp::IsInt(task)) {
       switch ((NodeType) Store::DirectWordToInt(task)) {
-      case T_REMOVE:
-	InterpretRemove(); break;
       case T_TIME:
 	InterpretTime(); break;
+      case T_REMOVE:
+	InterpretRemove(); break;
       case T_TAILAPPLY: {
 	fn       = NULL;
 	Block *p = Store::DirectWordToBlock(PopValue());
 	if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
 	  ClosureNode *abs = ClosureNode::FromBlock(p);
-	  Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
-	  u_int size       = arr->GetSize();
 	
 	  PushTask(abs->GetBody());
-	  PushTask(Store::IntToWord(T_TOGGLE));
-	  PushFrame(abs->GetFrameSize());
-	  PushClosure(abs->GetEnv());
+	  PushTailFrame(abs->GetFrameSize());
+	  PushTailClosure(abs->GetEnv());
 
-	  for (u_int i = size; i--;) {
+	  Block *arr = Store::DirectWordToBlock(abs->GetArgList());
+	  for (u_int i = arr->GetSize(); i--;) {
 	    PushTask(AssignNode::New(IdNode::FromWord(arr->GetArg(i)))->ToWord());
 	  }
 	}
@@ -652,15 +660,14 @@ char *Interpreter::Interpret(word tree) {
 	Block *p = Store::DirectWordToBlock(PopValue());
 	if (p->GetLabel() == (BlockLabel) T_CLOSURE) {
 	  ClosureNode *abs = ClosureNode::FromBlock(p);
-	  Block *arr       = Store::DirectWordToBlock(abs->GetArgList());
-	  u_int size       = arr->GetSize();
 	
 	  PushTask(Store::IntToWord(T_REMOVE));
 	  PushTask(abs->GetBody());
 	  PushFrame(abs->GetFrameSize());
 	  PushClosure(abs->GetEnv());
 
-	  for (u_int i = size; i--;) {
+	  Block *arr = Store::DirectWordToBlock(abs->GetArgList());
+	  for (u_int i = arr->GetSize(); i--;) {
 	    PushTask(AssignNode::New(IdNode::FromWord(arr->GetArg(i)))->ToWord());
 	  }
 	}
@@ -694,8 +701,6 @@ char *Interpreter::Interpret(word tree) {
 	InterpretDefine(instr); break;
       case T_ASSIGN:
 	InterpretAssign(instr); break;
-      case T_TOGGLE:
-	InterpretToggle(); break;
       case T_IF:
 	InterpretIf(instr); break;
       case T_SELECTION:

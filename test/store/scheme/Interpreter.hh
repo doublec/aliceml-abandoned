@@ -35,10 +35,11 @@ protected:
   static void PushValue(word value);
   static word PopValue();
   static void PushFrame(u_int i);
-  static void PushFrame(word frame);
-  static word PopFrame();
+  static void PushTailFrame(u_int i);
+  static void PopFrame();
   static void PushClosure(word closure);
-  static word PopClosure();
+  static void PushTailClosure(word closure);
+  static void PopClosure();
   static void PushClosureArg(u_int i);
   static void PushFrameArg(u_int i);
   static void PushGlobalArg(u_int i);
@@ -53,8 +54,6 @@ protected:
   static void InterpretDeclArr(Block *instr);
   static void InterpretDefine(Block *instr);
   static void InterpretAssign(Block *instr);
-  static void InterpretRemove();
-  static void InterpretToggle();
   static void InterpretIf(Block *instr);
   static void InterpretSelection(Block *instr);
   static void InterpretValue(Block *instr);
@@ -64,6 +63,7 @@ protected:
   static void InterpretApplication(Block *instr);
   static void InterpretBegin(Block *instr);
   static void InterpretTime();
+  static void InterpretRemove();
   static char *InterpretOp(Block *p);
 public:
   static void Init();
