@@ -1,8 +1,15 @@
+%\define DEBUG
+
 functor
 import
    FD
    FS
    Search
+\ifdef DEBUG
+   System
+   Inspector
+   Explorer
+\endif
    Select at 'x-ozlib://duchier/cp/Select.ozf'
 export
    'Smurf$': SmurfModule
@@ -27,14 +34,13 @@ define
 		    elseif Property.i then 2
 		    else 1
 		    end
-		 tt: if IsSpace then {FD.int 1#2}
-		     elseif Property.tt then 2
+		 tt: if Property.tt then 2
 		     else 1
 		     end
 		 u: Property.u + 1
 		 size: case Property.size of ~1 then 11 elseof S then S + 1 end
 		 color:
-		    if IsSpace then {FD.int 1#11}
+		    if IsSpace andthen Property.u == 0 then {FD.int 1#9}
 		    elsecase Property.color of 'R' then 1
 		    [] 'G' then 2
 		    [] 'B\'' then 3
@@ -57,20 +63,24 @@ define
 		 color: {FD.int 1#9})
    end
 
-   fun {MkSizeProc I}
-      proc {$ A In Out}
-	 case A of size then Out = I
-	 else Out = In
-	 end
-      end
+   fun {MkSizeTag I}
+      tag(name: 'SIZE'(I - 1)
+	  p: proc {$ A In Out}
+		case A of size then Out = I
+		else Out = In
+		end
+	     end
+	  cost: 7)
    end
 
-   fun {MkColorProc I}
-      proc {$ A In Out}
-	 case A of color then Out = I
-	 else Out = In
-	 end
-      end
+   fun {MkColorTag Color I}
+      tag(name: 'COLOR'(Color)
+	  p: proc {$ A In Out}
+		case A of color then Out = I
+		else Out = In
+		end
+	     end
+	  cost: 7)
    end
 
    Tags = tags(tag(p: proc {$ _ In Out} Out = In end   % epsilon
@@ -99,7 +109,7 @@ define
 	       tag(name: 'PL'
 		   p: proc {$ A In Out}
 			 case A of b then Out = 1
-			 [] em then Out = 1
+			 [] ems then Out = 1
 			 [] i then Out = 1
 			 [] tt then Out = 1
 			 [] u then Out = 1
@@ -109,7 +119,7 @@ define
 		   cost: 9)
 	       tag(name: 'S'
 		   p: proc {$ A In Out}
-			 case A of em then Out = 3
+			 case A of ems then Out = 3
 			 else Out = In
 			 end
 		      end
@@ -123,96 +133,65 @@ define
 		   cost: 9)
 	       tag(name: 'U'
 		   p: proc {$ A In Out}
-			 case A of u then Out = {FD.max {FD.plus In 1} 4}
+			 case A of u then Out = {FD.min {FD.plus In 1} 4}
 			 else Out = In
 			 end
 		      end
 		   cost: 7)
-	       tag(name: 'SIZE'(0)
-		   p: {MkSizeProc 1}
-		   cost: 7)
-	       tag(name: 'SIZE'(1)
-		   p: {MkSizeProc 2}
-		   cost: 7)
-	       tag(name: 'SIZE'(2)
-		   p: {MkSizeProc 3}
-		   cost: 7)
-	       tag(name: 'SIZE'(3)
-		   p: {MkSizeProc 4}
-		   cost: 7)
-	       tag(name: 'SIZE'(4)
-		   p: {MkSizeProc 5}
-		   cost: 7)
-	       tag(name: 'SIZE'(5)
-		   p: {MkSizeProc 6}
-		   cost: 7)
-	       tag(name: 'SIZE'(6)
-		   p: {MkSizeProc 7}
-		   cost: 7)
-	       tag(name: 'SIZE'(7)
-		   p: {MkSizeProc 8}
-		   cost: 7)
-	       tag(name: 'SIZE'(8)
-		   p: {MkSizeProc 9}
-		   cost: 7)
-	       tag(name: 'SIZE'(9)
-		   p: {MkSizeProc 10}
-		   cost: 7)
-	       tag(name: 'COLOR'('R')
-		   p: {MkColorProc 1}
-		   cost: 7)
-	       tag(name: 'COLOR'('G')
-		   p: {MkColorProc 2}
-		   cost: 7)
-	       tag(name: 'COLOR'('B\'')
-		   p: {MkColorProc 3}
-		   cost: 7)
-	       tag(name: 'COLOR'('C')
-		   p: {MkColorProc 4}
-		   cost: 7)
-	       tag(name: 'COLOR'('M')
-		   p: {MkColorProc 5}
-		   cost: 7)
-	       tag(name: 'COLOR'('Y')
-		   p: {MkColorProc 6}
-		   cost: 7)
-	       tag(name: 'COLOR'('K')
-		   p: {MkColorProc 7}
-		   cost: 7)
-	       tag(name: 'COLOR'('W')
-		   p: {MkColorProc 8}
-		   cost: 7))
+	       {MkSizeTag 1}
+	       {MkSizeTag 2}
+	       {MkSizeTag 3}
+	       {MkSizeTag 4}
+	       {MkSizeTag 5}
+	       {MkSizeTag 6}
+	       {MkSizeTag 7}
+	       {MkSizeTag 8}
+	       {MkSizeTag 9}
+	       {MkSizeTag 10}
+	       {MkColorTag 'R' 1}
+	       {MkColorTag 'G' 2}
+	       {MkColorTag 'B\'' 3}
+	       {MkColorTag 'C' 4}
+	       {MkColorTag 'M' 5}
+	       {MkColorTag 'Y' 6}
+	       {MkColorTag 'K' 7}
+	       {MkColorTag 'W' 8})
 
-   RootI = 1
    Epsilon = 1
    MaxTag = {Width Tags}
 
+   RootI = 1
+
    fun {Constrain Meaning NumberOfElements}
       NumberOfDataItems = {Length Meaning}
-      NumberOfVertices = NumberOfDataItems + NumberOfElements + 1
+\ifdef DEBUG
+{System.show numberOf(elements: NumberOfElements dataItems: NumberOfDataItems)}
+\endif
 
-      FirstDataItemI = RootI + 1
-      LastDataItemI = FirstDataItemI + NumberOfDataItems - 1
-      FirstElementI = LastDataItemI + 1
+      FirstElementI = RootI + 1
       LastElementI = FirstElementI + NumberOfElements - 1
+      FirstDataItemI = LastElementI + 1
+      LastDataItemI = FirstDataItemI + NumberOfDataItems - 1
 
-      FirstNonRootI = FirstDataItemI
-      LastNonRootI = LastElementI
+      FirstNonRootI = FirstElementI
+      LastNonRootI = LastDataItemI
       FirstVertexI = RootI
-      LastVertexI = LastElementI
+      LastVertexI = LastNonRootI
 
-      V = {Tuple.make vertices NumberOfVertices}
+      V = {Tuple.make vertices NumberOfDataItems + NumberOfElements + 1}
 
       %% Initialize root vertex
       V.RootI = root(daughters: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		     scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
+		     down: {FS.value.make FirstNonRootI#LastNonRootI}
+		     eqdown: {FS.value.make FirstVertexI#LastVertexI}
+		     scope: {FS.value.make FirstDataItemI#LastDataItemI}
 		     attributes: RootAttributes)
 
       %% Initialize data item vertices
       {List.forAllInd Meaning
        proc {$ J Text#IsSpace#Property} I in
 	  I = FirstDataItemI + J - 1
-	  V.I = dataItem(mother: {FD.int FirstVertexI#LastVertexI}
+	  V.I = dataItem(mother: {FD.int [RootI FirstElementI#LastElementI]}
 			 daughters: FS.value.empty
 			 down: FS.value.empty
 			 eqdown: {FS.value.singl I}
@@ -222,35 +201,33 @@ define
        end}
 
       %% Initialize element vertices
-      for J in 1..NumberOfElements do I in
-	 I = FirstElementI + J - 1
-	 V.I = element(mother: {FD.int FirstVertexI#LastVertexI}
+      for I in FirstElementI..LastElementI do
+	 V.I = element(mother: {FD.int [RootI FirstElementI#LastElementI]}
 		       daughters:
 			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
 		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
 		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
 		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
-		       tag: {FD.int 1#MaxTag}
-		       attributes: {MkElementAttributes})
+		       attributes: {MkElementAttributes}
+		       tag: {FD.int 1#MaxTag})
       end
 
       %% Treeness Constraints
-      for I in FirstNonRootI..LastNonRootI do
+      for I in FirstElementI..LastElementI do
 	 V.I.mother \=: I
       end
 
-      Eqdowns = for I in FirstNonRootI..LastNonRootI collect: Collect do
+      Eqdowns = for I in FirstVertexI..LastVertexI collect: Collect do
 		   {Collect V.I.eqdown}
 		end
 
-      for I in FirstElementI..LastElementI do W in
+      for I in FirstNonRootI..LastNonRootI do W in
 	 W = V.I
-	 {Select.union Eqdowns W.daughters W.down}
-	 {FS.exclude I W.down}
+	 W.down = {Select.union Eqdowns W.daughters}
 	 W.eqdown = {FS.partition [{FS.value.singl I} W.down]}
       end
 
-      for I1 in FirstVertexI..LastVertexI do W1 in
+      for I1 in FirstVertexI..LastVertexI do W1 in   %--** omit data items
 	 W1 = V.I1
 	 for I2 in FirstNonRootI..LastNonRootI do
 	    if I2 \= I1 then W2 in
@@ -260,36 +237,35 @@ define
 	 end
       end
 
-      {FS.disjointN for I in FirstVertexI..LastVertexI collect: Collect do
+      {FS.value.make FirstNonRootI#LastNonRootI} =
+      {FS.partition for I in FirstVertexI..LastVertexI collect: Collect do
 		       {Collect V.I.daughters}
 		    end}
 
       %% Attribute constraints
       Attributes = {List.toRecord attributes
-		    {Map [b ems i tt u size color]
-		     fun {$ A}
+		    for A in AttributeNames collect: Collect do
+		       {Collect
 			A#for I in FirstVertexI..LastVertexI collect: Collect
 			  do {Collect V.I.attributes.A}
-			  end
-		     end}}
+			  end}
+		    end}
       Ps = for Tag in 1..MaxTag collect: Collect do {Collect Tags.Tag.p} end
 
       for I in FirstElementI..LastElementI do W in
 	 W = V.I
-	 {ForAll AttributeNames
-	  proc {$ A} Inherited in
+	 for A in AttributeNames do Inherited in
 	     Inherited = {Select.fd Attributes.A W.mother}
 	     W.attributes.A = {Select.fd
 			       {Map Ps fun {$ P} {P A Inherited} end} W.tag}
-	  end}
+	 end
       end
 
       for I in FirstDataItemI..LastDataItemI do W in
 	 W = V.I
-	 {ForAll AttributeNames
-	  proc {$ A}
-	     W.attributes.A = {Select.fd Attributes.A W.mother}
-	  end}
+	 for A in AttributeNames do
+	    W.attributes.A = {Select.fd Attributes.A W.mother}
+	 end
       end
 
       %% Scope constraints
@@ -297,12 +273,11 @@ define
 		  {Collect V.I.scope}
 	       end
 
-      {FS.int.convex V.RootI.scope}
-      {Select.union Scopes V.RootI.daughters V.RootI.scope}
+      V.RootI.scope = {Select.union Scopes V.RootI.daughters}
       for I in FirstElementI..LastElementI do W in
 	 W = V.I
 	 {FS.int.convex W.scope}
-	 {Select.union Scopes W.daughters W.scope}
+	 W.scope = {Select.union Scopes W.daughters}
       end
 
       %% Unused elements are immediate daughters of the root
@@ -311,6 +286,8 @@ define
 	 (W.tag =: Epsilon) =: {FS.reified.equal W.scope FS.value.empty}
 	 (W.tag =: Epsilon) =<: (W.mother =: RootI)
       end
+
+      %--** Break symmetries
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
@@ -331,9 +308,45 @@ define
       V#Cost
    end
 
+   fun {Script Meaning NumberOfElements}
+      proc {$ Res} V in
+	 Res = {Constrain {Reverse Meaning} NumberOfElements}
+	 V = Res.1
+%	 {FS.distribute naive
+%	  for I in 1..{Width V} collect: Collect do
+%	     {Collect V.I.daughters}
+%	  end}
+	 {FD.distribute naive
+	  for I in 2..{Width V} collect: Collect do
+	     {Collect V.I.mother}
+	  end}
+      end
+   end
+
+   proc {Order _#OldCost _#NewCost}
+      OldCost >: NewCost
+   end
+
    local
       fun {ToDocSub Daughters V}
-	 {List.foldR {FS.reflect.lowerBoundList Daughters}
+	 {List.foldR {Sort {FS.reflect.lowerBoundList Daughters}
+		      fun {$ I1 I2}
+			 case {FS.reflect.lowerBound V.I1.scope} of nil
+			 then true
+			 elseof [J1] then
+			    case {FS.reflect.lowerBound V.I2.scope} of nil
+			    then false
+			    elseof [J2] then J1 < J2
+			    elseof [J2#_] then J1 < J2
+			    end
+			 elseof [J1#_] then
+			    case {FS.reflect.lowerBound V.I2.scope} of nil
+			    then false
+			    elseof [J2] then J1 < J2
+			    elseof [J2#_] then J1 < J2
+			    end
+			 end
+		      end}
 	  fun {$ I In}
 	     case V.I of dataItem(text: Text ...) then
 		'TEXT'(Text)|In
@@ -349,21 +362,7 @@ define
       end
    end
 
-   fun {Script Meaning NumberOfElements}
-      proc {$ Res} V in
-	 Res = {Constrain {Reverse Meaning} NumberOfElements}
-	 V = Res.1
-	 {FS.distribute naive
-	  for I in 1..{Width V} collect: Collect do
-	     {Collect V.I.daughters}
-	  end}
-      end
-   end
-
-   proc {Order _#OldCost _#NewCost}
-      OldCost >: NewCost
-   end
-
+\ifndef DEBUG
    local
       proc {SmurfSub O Docs}
 	 case {O next($)} of [Res] then DocsRest in
@@ -381,6 +380,14 @@ define
 	 !!Docs
       end
    end
+\else
+   fun {Smurf Meaning NumberOfElements} O Docs in
+      {Explorer.one {Script Meaning NumberOfElements}}
+%      {Explorer.best {Script Meaning NumberOfElements} Order}
+%      {Inspector.inspect {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}}
+      _
+   end
+\endif
 
    SmurfModule = 'Smurf'(smurf: Smurf)
 end
