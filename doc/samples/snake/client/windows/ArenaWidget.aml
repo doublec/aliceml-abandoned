@@ -106,6 +106,31 @@ struct
     val windowHeight2 = windowHeight div 2
     val windowWidth2  = windowWidth  div 2
 	
+    (* operations on fieldObjects list *)
+    val fieldObjects = ref []
+
+    fun resetFieldObjects () = fieldObjects := []
+
+    fun putIntoFieldObjects (r, c, object, field) =
+	fieldObjects := (r, c, object, field) :: (!fieldObjects)
+
+    fun removeFromFieldObjects (r, c, object, field) = 
+	let
+	    val newList = 
+		List.filter (fn (v, w, x, y) => 
+			     not(r = v andalso
+				 c = w andalso
+				 field = y)) (!fieldObjects)
+	in
+	    fieldObjects := newList
+	end
+
+    val lock = Lock.lock ()
+
+    val resetFieldObjects      = Lock.sync lock resetFieldObjects
+    val putIntoFieldObjects    = Lock.sync lock putIntoFieldObjects
+    val removeFromFieldObjects = Lock.sync lock removeFromFieldObjects
+
     fun initialize () = 
         let
 	    val canvas = GtkCanvas.new 1
@@ -138,6 +163,7 @@ struct
 				    ("outline_color_gdk", Gtk.OBJECT green)])
 	    val arena = Array2.array (rows, cols, (Gtk.null (), P.EMPTY))
 	in
+	    resetFieldObjects ();
 	    state  := arena
 	end
 	
@@ -242,6 +268,25 @@ struct
 	    body
 	end
 
+    fun insertClosedGate (canvas, x, y, gatecol) = 
+	let
+	    val gate = 
+		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
+				   [("x", Gtk.DOUBLE (real x)),
+				    ("y", Gtk.DOUBLE (real y))])
+		
+	    val ground = 
+		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
+				   [("x1", Gtk.DOUBLE 0.0),
+				    ("y1", Gtk.DOUBLE 0.0),
+				    ("x2", Gtk.DOUBLE (real cellSize)),
+				    ("y2", Gtk.DOUBLE (real cellSize)),
+				    ("fill_color_gdk", Gtk.OBJECT gatecol),
+				    ("outline_color_gdk", Gtk.OBJECT black)])
+	in
+	    gate
+	end
+
     fun insertOpenGate (canvas, x, y, gatecol) = 
 	let
 	    val gate = 
@@ -258,51 +303,15 @@ struct
 				    ("fill_color_gdk", Gtk.OBJECT gatecol),
 				    ("outline_color_gdk", Gtk.OBJECT black)])
 
-	    val ground = 
+	    val opens = 
 		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 0.0),
-				    ("y1", Gtk.DOUBLE 0.0),
-				    ("x2", Gtk.DOUBLE (real cellSize)),
-				    ("y2", Gtk.DOUBLE (real cellSize)),
-				    ("fill_color_gdk", Gtk.OBJECT gatecol),
-				    ("outline_color_gdk", Gtk.OBJECT black)])
-	in
-	    gate
-	end
-
-    fun insertClosedGate (canvas, x, y, gatecol) = 
-	let
-	    val gate = 
-		GtkCanvas.itemNew (canvas, GtkCanvas.GROUP,
-				   [("x", Gtk.DOUBLE (real x)),
-				    ("y", Gtk.DOUBLE (real y))])
-		
-	    val closed = 
-		GtkCanvas.itemNew (gate, GtkCanvas.RECTANGLE,
-				   [("x1", Gtk.DOUBLE 2.0),
-				    ("y1", Gtk.DOUBLE 2.0),
-				    ("x2", Gtk.DOUBLE (real (cellSize-2))),
-				    ("y2", Gtk.DOUBLE (real (cellSize-2))),
+				   [("x1", Gtk.DOUBLE 3.0),
+				    ("y1", Gtk.DOUBLE 3.0),
+				    ("x2", Gtk.DOUBLE (real (cellSize-3))),
+				    ("y2", Gtk.DOUBLE (real (cellSize-3))),
 				    ("fill_color_gdk", Gtk.OBJECT black),
 				    ("outline_color_gdk", Gtk.OBJECT black)])
 
-(*	    val cross = 
-		let
-		    val font  = "-*-*-*-*-*-24-*-*-*-*-*-*-*-*"
-		    val x = Real.fromInt cellSize2
-		    val y = Real.fromInt cellSize2
-		    val anchor = Gtk.ANCHOR_CENTER
-		    val color = black
-		in
-		    GtkCanvas.itemNew (gate, GtkCanvas.TEXT,
-				       [("text", GtkCanvas.STRING "X"),
-					("font", GtkCanvas.STRING font),
-					("x", GtkCanvas.DOUBLE x), 
-					("y", GtkCanvas.DOUBLE y),
-					("fill_color_gdk", 
-					 GtkCanvas.OBJECT color),
-					("anchor", GtkCanvas.INT anchor)])
-		end*)
 	in
 	    gate
 	end
@@ -348,61 +357,83 @@ struct
 	    goodie
 	end
 
+    fun createNewFieldObj (r, c, field) arena canvas = 
+	let
+	    val x = cellSize * c
+	    val y = cellSize * r
+	in
+	    (* place the new one *)
+	    case field of
+		P.EMPTY                => 
+		    Array2.update (arena, r, c, (Gtk.null (), field))
+	      | P.WALL                 => 
+		    Array2.update (arena, r, c, 
+				   (insertWall (canvas, x, y), field))
+	      | P.GOODY n              => 
+		    Array2.update (arena, r, c, 
+				   (insertGoodie (canvas, x, y, n), field))
+	      | P.GATE (col, P.CLOSED) => 
+		    Array2.update (arena, r, c, 
+				   (insertClosedGate (canvas, x, y, 
+						      color col),
+				    field))
+	      | P.GATE (col, P.OPEN)   => 
+		    Array2.update (arena, r, c, 
+				   (insertOpenGate (canvas, x, y, 
+						    color col), field))
+	      | P.SNAKE_HEAD (d, col) => 
+		    Array2.update (arena, r, c, 
+				   (insertHead (canvas, x, y, d, color col), 
+				    field))
+	      | P.SNAKE_BODY col      => 
+		    Array2.update (arena, r, c, 
+				   (insertBody (canvas, x, y, color col), 
+				    field))
+	end
+
+    fun moveFieldObjTo (obj, oldR, oldC, newR, newC, field) arena _ =
+	let
+	    val deltaY = Real.fromInt (cellSize * (newR - oldR))
+	    val deltaX = Real.fromInt (cellSize * (newC - oldC))
+	in
+	    GtkCanvas.itemMove (obj, deltaX, deltaY);
+	    GtkCanvas.itemShow obj;
+	    Array2.update (arena, newR, newC, (obj, field))
+	end
+
+
+
+
+
+    fun changeField (object, oldField, r, c, field) = 
+	(if object <> Gtk.null () orelse oldField <> P.EMPTY
+	     then (putIntoFieldObjects (r, c, object, oldField);
+		   GtkCanvas.itemHide object)
+	 else ();
+	 case List.find (fn (_, _, _, f) => f = field) (!fieldObjects) of
+	     NONE                      => createNewFieldObj (r, c, field)
+	   | SOME (row, col, obj, fld) => 
+		 (removeFromFieldObjects (row, col, obj, fld);
+		  moveFieldObjTo (obj, row, col, r, c, fld)))
+
+    fun insert arena canvas ((r, c), field) = 
+	let
+	    val (rows, cols) = Array2.dimensions arena
+	    val _ = assert 0 <= r andalso r < rows andalso
+		0 <= c andalso c < cols
+	    val (obj, f) = Array2.sub (arena, r, c)
+	in
+	    if f = field (* shouldn't happen normally *)
+		then ()
+	    else changeField (obj, f, r, c, field) arena canvas
+	end
+
 
     fun update ({canvas, state = ref arena}, difflist) =
 	let
-            val can = GtkCanvas.root canvas
-
-            fun changeField (oldObj:Gtk.object, r, c, field) =
-                let
-                    val x = cellSize * c
-                    val y = cellSize * r
-                in
-                    (* destroy old object if existing *)
-                    if oldObj <> Gtk.null () 
-			then Gtk.objectDestroy oldObj
-                    else ();
-                    (* place the new one *)
-                    case field of
-		        P.EMPTY              => 
-                            Array2.update (arena, r, c, (Gtk.null (), field))
-                    |   P.WALL               => 
-			    Array2.update (arena, r, c, 
-					   (insertWall (can, x, y), field))
-                    | P.GOODY n              => 
-			    Array2.update (arena, r, c, 
-					  (insertGoodie (can, x, y, n), field))
-                    | P.GATE (col, P.CLOSED) => 
-			    Array2.update (arena, r, c, 
-					   (insertClosedGate (can, x, y, 
-							      color col),
-					    field))
-                    | P.GATE (col, P.OPEN)   => 
-			    Array2.update (arena, r, c, 
-					   (insertOpenGate (can, x, y, 
-							    color col), field))
-                    | P.SNAKE_HEAD (d, col) => 
-                        Array2.update (arena, r, c, 
-                            (insertHead (can, x, y, d, color col), field))
-                    | P.SNAKE_BODY col      => 
-                        Array2.update (arena, r, c, 
-                            (insertBody (can, x, y, color col), field))
-                end
-
-	    fun insert ((r, c), field) = 
-		let
-                    val (rows, cols)    = Array2.dimensions arena
-                    val _   = assert 0 <= r andalso r < rows andalso
-                                0 <= c andalso c < cols
-		    val (obj, f) = Array2.sub(arena, r, c)
-		in 
-		    if f = field  (* shouldn't happen normally *)
-			then () 
-		    else 
-                        changeField (obj, r, c, field)
-		end
+            val root = GtkCanvas.root canvas
 	in
-	    List.app insert difflist
+	    List.app (insert arena root) difflist
 	end 
 	
     fun arenaWidth (a:arena_widget) =
