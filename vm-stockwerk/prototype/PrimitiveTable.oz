@@ -737,10 +737,6 @@ define
       end
    end
 
-   fun {VectorTabulateInterpreterPushCall _ _}
-      {Exception.raiseError vectorTabulateInterpreterPushCall} unit
-   end
-
    VectorTabulateInterpreter =
    vectorTabulateInterpreter(run: VectorTabulateInterpreterRun
 			     handle:
@@ -748,12 +744,7 @@ define
 				   case TaskStack of Frame|Rest then
 				      exception(Frame|Debug Exn Rest)
 				   end
-				end
-			     pushCall: VectorTabulateInterpreterPushCall)
-
-   fun {ThreadRaiseInInterpreterPushCall _ _}
-      {Exception.raiseError threadRaiseInInterpreterPushCall} unit
-   end
+				end)
 
    ThreadRaiseInInterpreter =
    threadRaiseInInterpreter(run:
@@ -767,8 +758,7 @@ define
 				   case TaskStack of Frame|Rest then
 				      exception(Frame|Debug Exn Rest)
 				   end
-				end
-			    pushCall: ThreadRaiseInInterpreterPushCall)
+				end)
 
    fun {PrimitiveInterpreterRun Args TaskStack}
       case TaskStack of primitive(_ F Spec _)|Rest then
