@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Threads", "threads") ?>
+<?php heading("Stockhausen Operette 2 - Threads", "threads") ?>
 
 
 
