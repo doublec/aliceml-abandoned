@@ -203,14 +203,7 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
-#if 1 //--** hack
-  if (frame->IsHandlerFrame()) {
-    std::fprintf(stderr, "executing unexpected handler:\n");
-    taskStack->Dump();
-    taskStack->PopFrame();
-    return Interpreter::CONTINUE;
-  }
-#endif
+  Assert(!frame->IsHandlerFrame());
   Assert(frame->GetInterpreter() == this);
   TagVal *pc            = frame->GetPC();
   Closure *globalEnv    = frame->GetClosure();
