@@ -25,7 +25,7 @@ VPATH = $(SRCDIR)
 
 OZC = ozc
 OZCOPTS =
-OZL = ozl
+OZL = stol
 OZLOPTS =
 STOC = stoc
 STOCOPTS = --no-dump-elaboration-sig
