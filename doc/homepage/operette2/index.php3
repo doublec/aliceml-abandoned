@@ -27,11 +27,11 @@
 
   <UL>
     <LI> <A href="constraints.php3"><I>constraints</I></A>:
-	 solving hard problems through a powerful search mechanism
+	 solving hard problems using constraints and programmable search
     <LI> <A href="packages.php3"><I>packages</I></A>:
 	 dynamic typing and first class modules
     <LI> <A href="pickling.php3"><I>pickling</I></A>:
-	 higher-order, type-safe, and platform-independent persistency
+	 higher-order, type-safe, and platform-independent persistence
     <LI> <A href="inspector.php3"><I>inspector</I></A>:
          a tool for dynamically inspecting Alice values
     <LI> <A href="usage.php3#stot"><I>interactive development</I></A>:
