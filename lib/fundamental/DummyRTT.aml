@@ -13,17 +13,17 @@
 
 (* Needed to bootstrap the library. *)
 
-structure RTT =
-struct
-    local
-	structure __pervasive =
-	struct
-	    __primitive type 'a strict   = "strict"
-	    __primitive type 'a conarrow = "conarrow"
-	    __primitive datatype exn     = "exn"
-	end
-    in
-	structure Inf =
+local
+    structure __pervasive =
+    struct
+	__primitive type 'a strict   = "strict"
+	__primitive type 'a conarrow = "conarrow"
+	__primitive datatype exn     = "exn"
+    end
+in
+    structure __pervasive =
+    struct
+	structure Inf =		(* Required by Package *)
 	struct
 	    type mismatch
 	    exception Mismatch of mismatch
