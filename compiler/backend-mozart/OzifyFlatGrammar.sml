@@ -157,6 +157,11 @@ structure OzifyFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	  | outputTest (q, ConAppTest (id, args)) =
 	    (f (q, "conAppTest"); outputId (q, id); m q;
 	     outputArgs outputId (q, args); r q)
+	  | outputTest (q, StaticConTest stamp) =
+	    (f (q, "staticConTest"); outputStamp (q, stamp); r q)
+	  | outputTest (q, StaticConAppTest (stamp, args)) =
+	    (f (q, "staticConAppTest"); outputStamp (q, stamp); m q;
+	     outputArgs outputId (q, args); r q)
 	  | outputTest (q, RefAppTest id) =
 	    (f (q, "refAppTest"); outputId (q, id); r q)
 	  | outputTest (q, TupTest ids) =

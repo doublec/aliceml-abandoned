@@ -63,6 +63,16 @@ define
       end
    end
 
+   fun {GetStaticCon Stamp State} Dict in
+      Dict = State.shareDict
+      if {Dictionary.member Dict Stamp} then
+	 {Dictionary.get Dict Stamp}
+      else N = {NewName} in
+	 {Dictionary.put Dict Stamp N}
+	 N
+      end
+   end
+
    fun {TranslateRegion (I#J)#(_#_) State}
       pos(State.filename I J)
    end
@@ -103,6 +113,12 @@ define
 	  end ThenVInstr0 ThenVInstr}
 	 onRecord(Label {Map LabelIdList fun {$ Label#_} Label end}
 		  ThenVInstr0)
+      [] staticConTest(Stamp) then
+	 {TranslateMatch tagTest({GetStaticCon Stamp State} unit)
+	  Reg ThenVInstr State}
+      [] staticConAppTest(Stamp Args) then
+	 {TranslateMatch tagAppTest({GetStaticCon Stamp State} unit Args)
+	  Reg ThenVInstr State}
       [] tupTest(nil) then
 	 onScalar(unit ThenVInstr)
       [] tupTest(Ids) then ThenVInstr0 in
@@ -278,7 +294,8 @@ define
       [] tagExp(Region Label _ some(unary)) then
 	 PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
-	 PredId = pid(Label 2 {TranslateRegion Region State} nil NLiveRegs)
+	 PredId = pid(if {IsAtom Label} then Label else '' end
+		      2 {TranslateRegion Region State} nil NLiveRegs)
 	 {State.cs startDefinition()}
 	 {State.cs newReg(?ArgReg)}
 	 {State.cs newReg(?ResReg)}
@@ -317,6 +334,10 @@ define
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
+      [] staticConExp(Region Stamp Arity) then
+	 {TranslateExp
+	  tagExp(Region {GetStaticCon Stamp State} unit Arity)
+	  Reg VHd VTl State}
       [] refExp(Region) then
 	 Coord PredId NLiveRegs ArgReg ResReg VInstr GRegs Code
       in
@@ -494,6 +515,10 @@ define
 	  proc {$ VHd Label#Id VTl}
 	     VHd = vInlineDot(_ Reg Label {GetReg Id State} true Coord VTl)
 	  end VInter2 VTl}
+      [] staticConAppExp(Region Stamp Arity) then
+	 {TranslateExp
+	  tagAppExp(Region {GetStaticCon Stamp State} unit Arity)
+	  Reg VHd VTl State}
       [] refAppExp(Region Id) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
 			    {TranslateRegion Region State} VTl)
