@@ -156,6 +156,7 @@ LIBFUNDAMENTALSOURCES0 = \
 	Position.aml Promise.aml Real.aml Ref.aml Stream.aml String.aml \
 	StringCvt.aml Substring.aml UniqueString.aml Thread.aml Time.aml \
 	Toplevel.aml Vector.aml VectorPair.aml WideChar.aml WideString.aml \
+	WideSubstring.aml WideUniqueString.aml \
 	Word.aml Word8.aml Word8Array.aml Word8Vector.aml Word31.aml \
 	Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
