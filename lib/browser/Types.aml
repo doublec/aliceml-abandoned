@@ -45,6 +45,7 @@ struct
                         | EQU_COLOR
                         | LIMIT_COLOR
                         | BRACK_COLOR
+                        | REL_COLOR
                         | DEFAULT
 
    datatype node = 
@@ -83,9 +84,31 @@ struct
 		 depth : int,
 		 status : status ref,
 		 group : Gtk.object}
-      
-    | Empty 
 
+     | RelNode of {desc : desc, 
+		   parent : node,  
+		   index : int, 
+                   counter : int ref, 
+		   rep : string, 
+	           relman : node list, 
+                   width : int ref,
+                   height : int ref,
+		   color : color_class, 
+		   status : status ref, 
+		   group : Gtk.object}  
+       
+     | RelRefNode of {desc : desc, 
+		      parent : node, 
+		      index : int, 
+                      rep : string, 
+		      relnode : node, 
+                      width : int ref, 
+		      color : color_class, 
+		      status : status ref,  
+		      group : Gtk.object}  
+       
+     | Empty 
+       
    datatype doc = 
        
        SIMPLE of {desc : desc, 
