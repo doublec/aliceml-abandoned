@@ -188,7 +188,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    f (O.LitExp (coord, lit))::translateCont cont
 	  | translateExp (PrimExp (coord, s), f, cont) =
 	    f (O.PrimExp (coord, s))::translateCont cont
-	  | translateExp (NewExp (coord, hasArgs), f, cont) =
+	  | translateExp (NewExp (coord, _, hasArgs), f, cont) =
 	    f (O.NewExp (coord, hasArgs))::translateCont cont
 	  | translateExp (VarExp (coord, longid), f, cont) =
 	    let

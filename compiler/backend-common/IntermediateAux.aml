@@ -33,7 +33,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    List.exists (fn dec => occursInDec (dec, id)) decs
 	and occursInExp (LitExp (_, _), _) = false
 	  | occursInExp (PrimExp (_, _), _) = false
-	  | occursInExp (NewExp (_, _), _) = false
+	  | occursInExp (NewExp (_, _, _), _) = false
 	  | occursInExp (VarExp (_, ShortId (_, id)), id') = idEq (id, id')
 	  | occursInExp (VarExp (_, LongId (_, _, _)), _) = false
 	  | occursInExp (ConExp (_, _, _), _) = false
@@ -152,7 +152,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    RecDec (coord, List.map (fn dec => substDec (dec, subst)) decs)
 	and substExp (exp as LitExp (_, _), _) = exp
 	  | substExp (exp as PrimExp (_, _), _) = exp
-	  | substExp (exp as NewExp (_, _), _) = exp
+	  | substExp (exp as NewExp (_, _, _), _) = exp
 	  | substExp (VarExp (coord, longid), subst) =
 	    VarExp (coord, substLongId (longid, subst))
 	  | substExp (exp as ConExp (_, _, _), _) = exp
