@@ -33,10 +33,10 @@ public class UniqueConstructor extends Constructor {
      *  Still there could be no entry in the hashtable if the
      *  library has not yet been loaded.
      */
-    final private Object readResolve()
+    final protected Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(name);
-	System.out.println("UC: "+o);
+	// System.out.println("UC: "+o);
 	if (o==null) {
 	    GName.gNames.put(name,this);
 	    return this;

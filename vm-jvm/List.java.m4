@@ -31,18 +31,6 @@ final public class List {
 	_SAPPLY2(v) {
 	    return new Cons(v1,v2);
 	}
-
-	final private Object readResolve()
-	    throws java.io.ObjectStreamException {
-	    Object o = GName.gNames.get(name);
-	    // System.out.println("UC: "+o);
-	    if (o==null) {
-		GName.gNames.put(name,this);
-		return this;
-	    } else {
-		return o;
-	    }
-	}
     }
 
     final public static Constructor cons;

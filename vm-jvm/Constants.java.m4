@@ -51,18 +51,6 @@ final public class Constants {
 	    throws RemoteException {
 	    return new Reference(new Tuple4(v1,v2,v3,v4));
 	}
-
-	final private Object readResolve()
-	    throws java.io.ObjectStreamException {
-	    Object o = GName.gNames.get(name);
-	    // System.out.println("UC: "+o);
-	    if (o==null) {
-		GName.gNames.put(name,this);
-		return this;
-	    } else {
-		return o;
-	    }
-	}
     }
 
     public static final Constructor reference;
