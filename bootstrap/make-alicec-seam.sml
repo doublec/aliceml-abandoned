@@ -15,15 +15,6 @@ SMLofNJ.Internals.GC.messages false;
 CM.make' "main-stockwerk.cm";
 
 local
-    fun getArgs () =
-	let
-	    val args = SMLofNJ.getArgs ()
-	in
-	    case SMLofNJ.SysInfo.getOSKind () of
-		SMLofNJ.SysInfo.WIN32 => tl args
-	      | _ => args
-	end
-
     fun main' args = SMLToStockwerkBatchCompiler.main args
 	handle e =>
 	let
@@ -44,7 +35,7 @@ local
 	    OS.Process.failure
 	end
 
-    fun main _ = OS.Process.exit (main' (getArgs ()))
+    fun main _ = OS.Process.exit (main' (SMLofNJ.getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("alicec-stockwerk", main)
 end;
