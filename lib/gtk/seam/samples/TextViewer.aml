@@ -254,7 +254,6 @@ local
     fun openHandler _  = readFileName ()
     fun colorHandler _ = getTextColor ()
     fun closeHandler _ = OS.Process.exit OS.Process.success
-    (* Gtk.signalEmit(Promise.future viewer, "destroy") *)
 
     val submenu = [MenuItem("Open...", [Handler("activate", openHandler)]),
 		   MenuItem("Text color...",
