@@ -577,7 +577,7 @@ void ByteCodeInterpreter::Init() {
   self = new ByteCodeInterpreter();
 }
 
-Block *
+Transform *
 ByteCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *) {
   return NULL; // to be done
 }
