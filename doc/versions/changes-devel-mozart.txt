@@ -37,6 +37,7 @@ Interactive Toplevel:
 
 Library:
 
+* Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * ComponentManager: added load function, and logStream reference to configure
   trace destinations. Preconfigurable by value with ALICE_TRACE_COMPONENT.
   Trace messages are more informative trace messages, particularly wrt
@@ -49,6 +50,7 @@ Library:
 * Future: added ByNeed and Concur functors.
 * GlobalStamp: fixed toString.
 * Channel: new module for concurrent message channels.
+* Remote: added functor Proxy to conveniently wrap a whole module into proxies.
 * Gtk library: simplified structure, all types are now defined in GtkTypes.
 
 

@@ -30,7 +30,7 @@ signature REMOTE =
 	val offer: Package.package -> ticket              (* Pickle.Sited *)
 	val take: ticket -> Package.package               (* Ticket *)
 
-	(*--** functor Proxy(signature S functor F(): S): fct(S) -> S*)
+	functor Proxy(signature S structure X: S): S
 
 	functor Offer(signature S structure X: S):
 		(val ticket: ticket)                      (* Pickle.Sited *)

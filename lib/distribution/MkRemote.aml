@@ -1,13 +1,13 @@
 (*
- * Author:
+ * Authors:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *
- * Contributors:
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Contributor:
  *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001-2002
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,8 +19,15 @@ import signature COMPONENT_MANAGER
 import structure Url               from "x-alice:/lib/system/Url"
 import signature REMOTE            from "REMOTE-sig"
 import structure UnsafeRemote      from "UnsafeRemote"
-import structure Debug from "x-alice:/lib/system/Debug"
+(*import structure Debug from "x-alice:/lib/system/Debug"*)
 
+import structure Name  from "x-alice:/lib/rtt/Name"
+import structure Label from "x-alice:/lib/rtt/Label"
+import structure Path  from "x-alice:/lib/rtt/Path"
+import structure Type  from "x-alice:/lib/rtt/Type"
+import structure Inf   from "x-alice:/lib/rtt/Inf"
+import structure Reflect from "x-alice:/lib/system/Reflect"
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 
 (** bgrund:
     I needed quite some time to digest what exactly happens / should
@@ -173,7 +180,7 @@ end
 
 (*********** ------------------- MkRemote functor ------------------ ************)
  
-functor MkRemote(RemotePort: REMOTE_PORT) :> REMOTE =
+functor MkRemote(RemotePort: REMOTE_PORT) : REMOTE =
 struct
     exception Proxy = RemotePort.Proxy
     exception SitedArgument = RemotePort.SitedArgument
@@ -236,6 +243,96 @@ struct
         in
             fn x => dynamicCall (url, x)
         end
+
+    (*--------------------------------------------------------------
+     * Proxy modules
+     *)
+
+    exception Hidden
+
+    (* Keep in sync with compiler/frontend-common/NameTranslation! *)
+    fun trName f (Name.ExId s) = Name.ExId (f s)
+      | trName f Name.InId = Name.InId
+    fun trLab f l = Label.fromName(trName f (Label.toName l))
+    val trValLab = id
+    val trTypLab = trLab (fn s => "$" ^ s)
+    val trModLab = trLab (fn s => s ^ "$")
+    val trInfLab = trLab (fn s => "$" ^ s ^ "$")
+
+    fun proxyMod (m, j) =
+	case Inf.inspect j of
+	    Inf.Sig s =>
+		let
+		    val lvs = proxySig ([], m, Inf.items s)
+		in
+		    UnsafeValue.prodPoly (Vector.fromList lvs)
+		end
+          | Inf.Arrow(p, j1, j2) =>
+		let
+		    fun f x = proxyMod (UnsafeValue.cast m x, j2)
+		in
+		    UnsafeValue.cast (proxy f)
+		end
+          | Inf.Sing m' => proxyMod (m, #2 (Inf.asMod m'))
+	  | (Inf.Top | Inf.Con _ | Inf.Apply _) => m
+	  | Inf.Exist _ => raise Hidden
+	  | Inf.Lambda _ => raise Inf.Interface
+
+    and proxySig (lvs, m, []) = lvs
+      | proxySig (lvs, m, item::items) =
+	case Inf.inspectItem item of
+	    Inf.FixItem _ => proxySig (lvs, m, items)
+	  | Inf.ValItem (l, t) =>
+		let
+		    val l' = trValLab l
+		    val v = UnsafeValue.projPoly (m, l')
+		    val v' = proxyVal (v, t)
+		in
+		    proxySig ((l', v')::lvs, m, items)
+		end
+	  | Inf.TypItem (p, k) =>
+		let
+		    val l' = trTypLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		in
+		    proxySig ((l',v)::lvs, m, items)
+		end
+	  | Inf.ModItem (p, j) =>
+		let
+		    val l' = trModLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		    val v' = proxyMod (v, j)
+		in
+		    proxySig ((l', v')::lvs, m, items)
+		end
+	  | Inf.TypItem (p, k) =>
+		let
+		    val l' = trInfLab (Path.toLab p)
+		    val v = UnsafeValue.projPoly (m, l')
+		in
+		    proxySig ((l',v)::lvs, m, items)
+		end
+	  | Inf.HiddenItem _ => raise Hidden
+
+    and proxyVal (v, t) =
+	case Type.inspect t of
+	    Type.Arrow (t1, t2) =>
+		let
+		    fun f x = proxyVal (UnsafeValue.cast v x, t2)
+		in
+		    UnsafeValue.cast (proxy f)
+		end
+	  | (Type.All (_, t') | Type.Exist (_, t')) => proxyVal (v, t')
+	  | _ => v
+
+    functor Proxy (signature S structure X : S) =
+	let
+	    structure M = Reflect.Reflect (signature S = S structure X = X)
+	    structure J = Reflect.ReflectSig (signature S = S)
+	in
+	    Reflect.Reify (val x = proxyMod (UnsafeValue.cast M.x, J.x)
+			   signature S = S)
+	end
 
     (*--------------------------------------------------------------
      * Take and Offer
@@ -308,4 +405,3 @@ struct
                            signature S = RESULT)
         end
 end
-

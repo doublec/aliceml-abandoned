@@ -53,10 +53,10 @@
 	exception <A href="#Ticket-exn">Ticket</A>
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
-
 	val <A href="#offer">offer</A> : <A href="package.html#package">package</A> -> ticket
 	val <A href="#take">take</A> : ticket -> <A href="package.html#package">package</A>
 
+	functor <A href="#Proxy-fn">Proxy</A> (signature S  structure X : S) : S
 	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
 	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S
 
@@ -162,6 +162,46 @@
 	  <TT><I>args</I></TT> carrying further information.</P>
       </UL>
       <P>Other causes for raising <TT>Proxy</TT> are possible.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="Proxy-fn">Proxy</A> (signature S = <I>S</I>
+	structure X = <I>X</I>)</TT>
+    </DT>
+    <DD>
+      <P>returns a wrapper of structure <TT><I>X</I></TT> where all fields
+        of function type are replaced by a proxy for the respective function.
+        A function that returns a function will return a proxy, respectively
+	(i.e. the wrapping is recursively performed for curried functions).</P>
+      <P>
+        If <TT><I>X</I></TT> is a functor, then a proxy for the functor is
+	created. When the functor is applied, the resulting module will be
+	wrapped recursively (i.e. the wrapping is recursively performed for
+	curried functors <EM>and</EM> any resulting structure).</P>
+      <P>Example:</P>
+      <PRE>
+      Proxy (signature S = (val x : int val f : int -> int val g : int -> int -> int)
+             structure X = (val x = 5   fun f n = n + 1    fun f n m = n + m))</PRE>
+      <P>returns a structure that is equivalent to</P>
+      <PRE>
+      struct
+         val x = 5 
+	 val f = proxy (fn n => n + 1)
+         val g = proxy (fn n => proxy (fn m => n + m))
+      end</PRE>
+      <P>Similarly,</P>
+      <PRE>
+      Proxy (signature S = fct () -> (val x : int val f : int -> int -> int)
+             structure X = fct () => (val x = 5   fun f n m = n + m))</PRE>
+      <P>returns a <EM>proxy</EM> for a functor equivalent to</P>
+      <PRE>
+      fct () => (val x = 5  val f = proxy (fn n => proxy (fn m => n + m)))</PRE>
+      <P>Note that structure fields of non-function type will not be wrapped,
+        even if they <EM>contain</EM> function values. For example,</P>
+      <PRE>
+      Proxy (signature S = (val p : (int -> int) * (int -> int))
+             structure X = (val p = (fn n => n, fn n => n + 1)))</PRE>
+      <P>returns <TT><I>X</I></TT> unchanged.</P>
     </DD>
 
     <DT>

@@ -50,10 +50,10 @@ Library:
 
 * Constraint library now based on Gecode, with changed interface.
 * A new binding for Gtk 2.2, with a lot of interface changes.
-* Word32 added. The more efficient Word31 remains the default word type.
 * Default int type is now 31 bit, infinite precision integers are
   available through the IntInf structure.
 * FixedInt added.
+* Word32 added. LargeWord = Word32 now, but Word = Word31 remains.
 * ComponentManager: added load function, and logStream reference to configure
   trace destinations. Preconfigurable by value with ALICE_TRACE_COMPONENT.
   Trace messages are more informative trace messages, particularly wrt
@@ -67,6 +67,7 @@ Library:
 * Future: added ByNeed and Concur functors.
 * Channel: new module for concurrent message channels.
 * RefMap: new module for stable polymorphic hash tables over references.
+* Remote: added functor Proxy to conveniently wrap a whole module into proxies.
 
 Tools:
 
