@@ -15,11 +15,12 @@
 SRCTOP = ../..
 
 ALICEC = alicec
+ALICEC_OPTS = --no-warn-conventions --no-warn-unused-imports
 ALICELINK = alicelink
 ALICELINK_OPTS = -x
 ALICEDEP = alicedep
 
-SIGS		= COLOR CREATE_TREE CREATE_TREE_HELPER DICTIONARY DOC DRAW DRAWING_AREA DICTIONARIES GTK_SUPPORT LAYOUT NODE SERVER SETTINGS UNSAFE_INSPECTOR UPDATE WIDGET
+SIGS		= COLOR CREATE_TREE CREATE_TREE_HELPER DICTIONARY DOC DRAW DRAWING_AREA DICTIONARIES LAYOUT NODE SERVER SETTINGS UNSAFE_INSPECTOR UPDATE WIDGET
 
 STRUCTS		= Color CreateTree CreateTreeHelper Doc Draw Dictionaries Layout MkDictionary MkDrawingArea Node Server Settings UnsafeInspector Update GtkSupport Widget
 
@@ -27,8 +28,8 @@ SIGSOURCES 	= $(SIGS:%=%-sig.aml)
 STRUCTSOURCES	= $(STRUCTS:%=%.aml)
 SOURCES 	= $(SIGSOURCES) $(STRUCTSOURCES)
 
-SIGFILES	= $(SIGS:%=%-sig.ozf)
-STRUCTFILES	= $(STRUCTS:%=%.ozf)
+SIGFILES	= $(SIGS:%=%-sig.stc)
+STRUCTFILES	= $(STRUCTS:%=%.stc)
 FILES		= $(SIGFILES) $(STRUCTFILES)
 
 all: $(FILES)
@@ -38,10 +39,13 @@ depend:
 
 ALICELINK_INPUTS = $(SOURCES)
 
-%.ozf: %.aml
-	$(ALICEC) $<
+%.stc: %.aml
+	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 -include Makefile.depend
 
 clean: 
-	-rm *.ozf Makefile.depend
+	-rm -f *.stc
+
+distclean: clean
+	-rm -f Makefile.depend

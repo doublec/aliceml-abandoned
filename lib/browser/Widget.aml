@@ -22,6 +22,8 @@ import structure Reflect from "x-alice:/lib/system/Reflect"
 import structure Doc from "Doc"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
 
 import structure Color from "Color"
 import structure MkDrawingArea from "MkDrawingArea"
@@ -268,8 +270,8 @@ struct
 		       else ()
 
     (* scrollbar *)
-    val (scrolled,hadj,vadj) =  
-	createScrollWindowDefaults(20.0,50.0,getScreenMaxX(), getScreenMaxY())
+    val (scrolled,hadj,vadj) =
+  	createScrollWindowDefaults(20.0,50.0,getScreenMaxX(), getScreenMaxY())
 
 			   
     (* contains the node and the markings of the currently selected node *)
@@ -296,7 +298,7 @@ struct
 
     (* handles the user's request to shut the window *)
     fun DeleteWindow _ = Server.serve (fn () =>
-	(widgetHideAll(window)
+       (widgetHideAll(window)
 	 ;Update.screen_max_x := 0
 	 ;emptyAllDictionaries()
 	 ;act_line := 0
@@ -338,29 +340,6 @@ struct
 	 in
 	     h
 	 end
-
-     (* canvas resize *)	
-     fun handleResize (scrolled,hadj,vadj,resize) = 
-	 (fn _ =>  
-	  Server.serve (fn () => 
-			let
-			    val upperh = adjustmentGetFieldUpper(hadj)
-			    val valueh = adjustmentGetFieldValue(hadj)
-			    val upperv = adjustmentGetFieldUpper(vadj)
-			    val valuev = adjustmentGetFieldValue(vadj) 
-			    val page_sv = adjustmentGetFieldPageSize(vadj)
-			    val h = canvaswidth(hadj)
-			    val v = if (Real.< (page_sv,(getScreenMaxY()))) 
-					then getScreenMaxY() else page_sv
-			in
-			    (resize(h,v,scrolled,valueh,valuev,
-						     getScreenMaxX(),
-						     getScreenMaxY())
-			     ; resizeSepLines(Dictionaries.maindict,
-					      h)
-			     ; ())
-			end))
-	 
 
      (***       Stop Button Mechnism         ****)
 
@@ -909,7 +888,7 @@ struct
 	    end
 	
 	(* Handles Mouseclick *)
-	fun handleEvent event = 
+	fun handleEvent (_, event) = 
 	    Server.serve 
 	    (fn () =>
 	     let
@@ -952,7 +931,7 @@ struct
 				    ; canvasItemLowerToBottom(re) 
 				    ; canvasItemLowerToBottom(re') 
 				    ; destroySelectionMarkings()
-				    ; selection := SOME (n,re,re') 
+				    ; selection := SOME (n,re,re')
 				    ; setSelectionMenuSensitive(bar,true)
 				    ; busyButtonSetActive(false)
 				    ; case n of
@@ -980,18 +959,26 @@ struct
 	     end)
 
 	(* Handles Key Press *)
-	fun handleWindowEvent event = 
-	    Server.serve (fn () => 
-			  handleGdkKeyPress(event,
-					    scrolled,
-					    hadj,
-					    vadj,
-					    getScreenMaxX(),
-					    getScreenMaxY()))
+(*  	fun handleWindowEvent (_, event) =  *)
+(*  	    Server.serve (fn () =>  *)
+(*  			  handleGdkKeyPress(event, *)
+(*  					    scrolled, *)
+(*  					    hadj, *)
+(*  					    vadj, *)
+(*  					    getScreenMaxX(), *)
+(*  					    getScreenMaxY())) *)
 
 
 	(* Creation / Reopening of the Window (a new canvas gets attached) *)
-	    
+
+	fun mkUpdate resize _ =
+	    let
+		val scrollX = getScreenMaxX ()
+		val scrollY = getScreenMaxY ()
+	    in
+		resize (scrollX, scrollY)
+	    end
+
 	fun new _ = 
 	    Server.serve 
 	    (fn _ => if !alive then()
@@ -1001,25 +988,29 @@ struct
 					then ()
 				     else objectDestroy(!canvas)
 			     structure DA  =  
-				 MkDrawingArea(val xsize = getScreenMaxX() 
-					       val ysize = getScreenMaxY()) 
+				 MkDrawingArea(val parent  = scrolled
+					       val xsize   = 600
+					       val ysize   = 500
+					       val scrollX = getScreenMaxX ()
+					       val scrollY = getScreenMaxY ())
 				 : DRAWING_AREA
+			     val updateFun = mkUpdate (DA.update false)
+			     fun resizeFun () =
+				 (updateFun ();
+			   	  resizeSepLines (Dictionaries.maindict,
+						  canvaswidth hadj))
 			in
 			    (canvas := DA.canvas
 			     ;canvasroot := DA.root
-			     ;resize :=  (handleResize(scrolled,
-						       hadj,
-						       vadj,
-						       DA.resize))
-			     ;Update.resize := !resize
-			     ;containerAdd(scrolled,DA.canvas)
+			     ;resize := (mkUpdate (DA.update true))
+  			     ;Update.resize := updateFun
 			     ;signalConnect(scrolled,"size_allocate",
-					    fn _ => !resize())
-			     ;signalConnect(hadj,"value_changed",fn _ => 
-					    freezeThaw(DA.canvas))
-			     ;signalConnect(vadj,"value_changed",fn _ => 
-					    freezeThaw(DA.canvas)) 
-			     ;signalConnect(DA.canvas,"event",handleEvent)
+					    fn _ => Server.serve resizeFun)
+(*  			     ;signalConnect(hadj,"value_changed",fn _ =>  *)
+(*  					    freezeThaw(DA.canvas)) *)
+(*  			     ;signalConnect(vadj,"value_changed",fn _ =>  *)
+(*  					    freezeThaw(DA.canvas))  *)
+  			     ;signalConnectAfter(DA.canvas,"event",handleEvent)
 			     ;widgetShowAll(window)
 			     ; alive :=true) 
 			end)
@@ -1027,14 +1018,13 @@ struct
 	val _ = new() (* creates initial window *)
 
 	(* window initialisation *)
-	val _ = (windowSetTitle (window, "Alice Browser")
-		 ; widgetSetUsize (window, 200, 100) 
+	val _ = (windowSetTitle (window, "Alice Inspector")
 		 ; windowSetDefaultSize(window, 600,500)
 		 ;signalConnect (window, "delete-event", DeleteWindow)
-		 ;setSelectionMenuSensitive (bar,false)  
-		 ;menuBarAppend(bar,busyButton)
-		 ;menuBarAppend(bar,stopButton)
-		 ;menuItemRightJustify(stopButton) 
+(*  		 ;setSelectionMenuSensitive (bar,false)   *)
+(*  		 ;menuBarAppend(bar,busyButton) *)
+(*  		 ;menuBarAppend(bar,stopButton) *)
+(*  		 ;menuItemRightJustify(stopButton)  *)
 		 ;containerAdd(window,createVBox[(bar,
 						  false 
 						  ,false,
@@ -1044,8 +1034,8 @@ struct
 						 (* Gtk.FILL *) true,0),
 						 (status, 
 						  false ,
-						  false  ,0)])
-		 ;signalConnect(window,"event",handleWindowEvent))
+						  false  ,0)]))
+(*  		 ;signalConnect(window,"event",handleWindowEvent)) *)
 
 
 	(**** Browser Initialisation ****)
@@ -1096,14 +1086,14 @@ struct
 						  !act_line,canvaswidth(hadj),
 						  Settings.getFontHeight()))
 	     in
-		 (GtkSupport.layoutFreeze(!canvas) 
+		 ( GtkSupport.layoutFreeze(!canvas)
 		  ; Draw.draw(n,0,!act_line,false)
-		  ; GtkSupport.layoutThaw(!canvas) 
+		  ; GtkSupport.layoutThaw(!canvas)
 		  ; incr_act_line(get_ydim(n) + 1)
 		  ; (!resize)()
 		  ; show()
-		  ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
-		  ;busyButtonSetActive(false))
+		  ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line))
+		  ; busyButtonSetActive(false))
 	     end) )
 	
     fun inspectMod(v,t) = 
@@ -1131,9 +1121,9 @@ struct
 					     !act_line,canvaswidth(hadj),
 					     Settings.getFontHeight() ))
 	  in
-	      (GtkSupport.layoutFreeze(!canvas) 
+	      ( GtkSupport.layoutFreeze(!canvas)
 	       ; Draw.draw(n,0,!act_line,false)
-	       ; GtkSupport.layoutThaw(!canvas) 
+	       ; GtkSupport.layoutThaw(!canvas)
 	       ; incr_act_line(get_ydim(n) + 1)
 	       ; (!resize)()
 	       ; show()

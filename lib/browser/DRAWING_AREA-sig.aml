@@ -27,6 +27,7 @@ sig
 
     (* function to handle resize requests for this specific canvas *)
 
+    val update : bool -> real * real -> unit
     val resize: real * real * tag * real * real * real * real -> unit
 
 end

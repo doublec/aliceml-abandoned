@@ -312,12 +312,10 @@ struct
 	 =>  ( if Future.isLazy  future
 		   then UnsafeValue.awaitRequest(future)
 	       else Future.await(future)
-	     ; GtkSupport.layoutFreeze(canvas) 
 	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
 					(Dictionaries.transdict,i)))
 	       in Server.serve(fn () => tell(va,i,new_l,f,g,canvas))
-	       end
-	      ; GtkSupport.layoutThaw(canvas) ) )
+	       end ) )
 
     (* REINSPECT *)
 
@@ -334,7 +332,7 @@ struct
     fun foldDepth (n,i,f,g,canvas) = 
 	Server.serve
 	(fn () => 
-	 let val _ = TextIO.print("FOLD_DEPTH\n")
+	 let
 	     val old_depth = !(Settings.max_depth)
 	 in 
 	     ( setDazzled n

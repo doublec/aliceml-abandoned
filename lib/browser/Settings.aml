@@ -20,7 +20,7 @@ structure Settings :> SETTINGS =
 struct 
 
     (* depth and width limit settings *)
-    val max_width = ref 30
+    val max_width = ref 10
     val max_depth = ref 8
 
     (* relation mode settings *)
@@ -39,20 +39,17 @@ struct
     fun getFontWidth() = !fontWidth
 
     (* procedures to edit the settings *)
-    fun setFontSize i = 
-	(fontSize:= i
-	 ;fontname:=  
-	   ("-*-*-medium-r-normal--"
-	    ^ Int.toString(i) 
-	    ^ "-*-*-*-m-*-iso8859-1")
-	 ;font:= GtkSupport.fontLoad(!fontname)
-	 ;fontHeight := 
-	   (GtkSupport.fontGetFieldAscent(!font)+
-	    GtkSupport.fontGetFieldDescent(!font) )
-	 ;fontWidth := 
-	   (GtkSupport.stringWidth(!font,"W")))
+    fun setFontSize i =
+	let
+	    val (fontName, fontX, fontY) = GtkSupport.loadFont i
+	in
+	    fontSize   := i;
+	    fontname   := fontName;
+	    fontWidth  := fontX;
+	    fontHeight := fontY 
+	end
 
-    val _ = setFontSize 14
+    val _ = setFontSize 10
 	
     fun set_width w = max_width := w
 	

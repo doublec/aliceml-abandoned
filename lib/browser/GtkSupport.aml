@@ -14,13 +14,13 @@
  *)
 
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+import structure Gtk         from "x-alice:/lib/gtk/Gtk"
+import structure Gdk         from "x-alice:/lib/gtk/Gdk"
+import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
 
-import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
- 
-structure GtkSupport :> GTK_SUPPORT  =
+(* import structure Print from "x-alice:/lib/system/Print" *)
+
+structure GtkSupport =
     struct
 	
 	type tag = Gtk.object
@@ -41,9 +41,10 @@ structure GtkSupport :> GTK_SUPPORT  =
 	val objectDestroy = Gtk.objectDestroy
 	val containerAdd = Gtk.containerAdd
 	val signalConnect = Gtk.signalConnect
+	val signalConnectAfter = Gtk.signalConnectAfter
 	val labelNew = Gtk.labelNew
 	val radioButtonNewWithLabel = Gtk.radioButtonNewWithLabel
-	val radioButtonGroup = Gtk.radioButtonGroup
+	val radioButtonGroup = Gtk.radioButtonGetGroup
 	val toggleButtonSetActive = Gtk.toggleButtonSetActive
 	val toggleButtonGetActive = Gtk.toggleButtonGetActive
 	val spinButtonGetValueAsInt = Gtk.spinButtonGetValueAsInt
@@ -54,38 +55,57 @@ structure GtkSupport :> GTK_SUPPORT  =
 	val adjustmentGetFieldValue = Gtk.adjustmentGetFieldValue
 	val layoutFreeze = Gtk.layoutFreeze
 	val layoutThaw = Gtk.layoutThaw
-	val menuBarAppend = Gtk.menuBarAppend
+	val menuBarAppend = fn (_, _) => ()
 	val menuItemNewWithLabel = Gtk.menuItemNewWithLabel
-	val menuItemRightJustify = Gtk.menuItemRightJustify
-	val menuBarInsert = Gtk.menuBarInsert
+	val menuItemRightJustify = fn _ => ()
+	val menuBarInsert = fn (_, _, _) => ()
 	    
-	(************ GtkCanvas Primitives ********************)
-	(************ GtkCanvas Instruktionen *****************)
+	(************ GnomeCanvas Primitives ********************)
+	(************ GnomeCanvas Instruktionen *****************)
 	    
-	fun canvasNew() = GtkCanvas.new 0
-	val canvasRoot = GtkCanvas.root 
-	val canvasItemNew = GtkCanvas.itemNew
-	val canvasItemSet = GtkCanvas.itemSet
-	val canvasItemLowerToBottom = GtkCanvas.itemLowerToBottom
-	val canvasSetScrollRegion = GtkCanvas.setScrollRegion
-	val canvasRECTANGLE = GtkCanvas.RECTANGLE
-	val canvasItemMove = GtkCanvas.itemMove
+	fun canvasNew() = GnomeCanvas.new ()
+	val canvasRoot = GnomeCanvas.root 
+	val canvasItemNew = GnomeCanvas.itemCreate
+	val canvasItemSet = GnomeCanvas.itemSet
+	val canvasItemLowerToBottom = GnomeCanvas.itemLowerToBottom
+	val canvasSetScrollRegion = GnomeCanvas.setScrollRegion
+	val canvasItemMove = GnomeCanvas.itemMove
 	    
 	(************ Gdk Primitives **************************)
 	(************ Gdk Befehle    **************************)
-	    
-	val fontLoad = Gdk.fontLoad
-	val fontGetFieldAscent = Gdk.fontGetFieldAscent
-	val fontGetFieldDescent = Gdk.fontGetFieldDescent
-	val stringWidth = Gdk.stringWidth
-	    
+
 	type event = Gdk.event
+
+	(************ Font Support   **************************)
+	val fontBase = "Courier"
+	    
+	fun loadFont size =
+	    let
+		val fontName = (fontBase ^ " " ^ (Int.toString size))
+		val anchor = Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_NORTH_WEST
+		val textType = GnomeCanvas.textGetType ()
+		val textArgs =
+		    [("text", Gtk.STRING " "),
+		     ("x", Gtk.REAL 0.0),
+		     ("y", Gtk.REAL 0.0),
+		     ("anchor", Gtk.INT anchor),
+		     ("font", Gtk.STRING fontName)]
+		val canvas = GnomeCanvas.new ()
+		val rootGroup = GnomeCanvas.root canvas
+		val item =
+		    GnomeCanvas.itemCreate (rootGroup, textType, textArgs)
+		val (x1,y1, x2, y2) = GnomeCanvas.itemGetBounds item
+		val fontX = Real.trunc (x2 - x1)
+		val fontY = Real.trunc (y2 - y1)
+	    in
+		(fontName, fontX, fontY)
+	    end
 	    
 	(************ Window creation helpers ******************)
 	(************ Hilfsprozeduren zur 
 	              Menu- und Fenstererzeugung ***************)
 	    
-	val uglyNULL = UnsafeValue.cast () : Gtk.object
+	val uglyNULL = Gtk.NULL
 	    
 	(* ABSTRACTIONS FOR MENU CREATION *)
 
@@ -93,7 +113,8 @@ structure GtkSupport :> GTK_SUPPORT  =
 	datatype MenuLabel = SEP | LABEL of string
 
 	(* Handler carries signal and appropriate handler function *)
-	datatype Handler = Handler of string * (Gtk.arg list -> unit)
+	datatype Handler =
+		 Handler of string * (Gtk.object * Gtk.arg list -> unit)
 	    
 	(* represents a hierarchy of menu items *)
 	datatype MenuConstructObj = 
@@ -115,7 +136,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    let
 		val bar = Gtk.menuBarNew()
 		val create = (fn i => 
-			      Gtk.menuBarAppend(bar,createMenu(i)))  
+			      Gtk.menuShellAppend(bar,createMenu(i)))
 	    in 
 		(  (List.app create l) 
 		 ;   bar) 
@@ -124,7 +145,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    let
 		val menu = Gtk.menuNew()
 		val create = (fn i => 
-			      Gtk.menuAppend (menu,createMenu i))
+			      Gtk.menuShellAppend (menu,createMenu i))
 	    in
 		(List.app create l
 		 ;Gtk.menuPopup(menu,
@@ -142,7 +163,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 		val menu = Gtk.menuNew()
 		val _ = Gtk.menuItemSetSubmenu(menu_item,menu)
 		val create = fn i => 
-		    Gtk.menuAppend(menu,createMenu i)
+		    Gtk.menuShellAppend(menu,createMenu i)
 	    in
 		(List.app create (#items(r))
 		 ; widgetSetSensitive(menu_item,#sensitive(r)) 
@@ -199,7 +220,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    let
 		val group = if pred =  
 	            uglyNULL then  uglyNULL
-			    else Gtk.radioButtonGroup(pred)
+			    else radioButtonGroup(pred)
 		val button = Gtk.radioButtonNewWithLabel(group, stri)
 		val connect = fn Handler(str,handler) 
 		    => (Gtk.signalConnect (button,str, handler);())
@@ -295,7 +316,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 
 	fun createVBox l = 
 	    let
-		val vbox = Gtk.vboxNew(false,4)
+		val vbox = Gtk.vboxNew(false,0)
 		val p = fn (a,i,j,k) =>  Gtk.boxPackStart(vbox,a,i,j,k)
 	    in
 		(List.app p l
@@ -314,18 +335,14 @@ structure GtkSupport :> GTK_SUPPORT  =
 	(* scroll window creation *)
 	fun  createScrollWindowDefaults(inc1,inc2,max_x, max_y) =  
 	    let
-		val adj1 = Gtk.adjustmentNew(0.0,0.0,max_x ,
-					     inc1,inc2,max_x )
-		val adj2 = Gtk.adjustmentNew(0.0,0.0,max_y ,
-					     inc1,inc2,max_y ) 
-		val scrolled = Gtk.scrolledWindowNew(adj1,adj2)
+		val scrolled = Gtk.scrolledWindowNew(Gtk.NULL, Gtk.NULL)
 		val hadj = Gtk.scrolledWindowGetHadjustment(scrolled)
 		val vadj = Gtk.scrolledWindowGetVadjustment(scrolled)
 	    in
-		(Gtk.scrolledWindowSetPolicy(scrolled,
+		Gtk.scrolledWindowSetPolicy (scrolled,
 					     Gtk.POLICY_ALWAYS,
-					     Gtk.POLICY_ALWAYS)
-		 ; (scrolled,hadj,vadj))
+					     Gtk.POLICY_ALWAYS);
+		(scrolled,hadj,vadj)
 	    end
 
 	(* status bar creation, yields associated posting functions *)
@@ -368,7 +385,8 @@ structure GtkSupport :> GTK_SUPPORT  =
 
 	    (* Text Window *)
 
-	fun createTextWindow() = 
+	fun createTextWindow() = fn _ => 0
+(*
 	    let
 		val textwindow = ref uglyNULL
 		val alive = ref false
@@ -410,6 +428,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 					       Gtk.POLICY_AUTOMATIC)
 		; send)
 	    end
+*)
 
 (******************** Complex Handler Functions **************************)
 
@@ -447,13 +466,13 @@ structure GtkSupport :> GTK_SUPPORT  =
 	fun handleGdkKeyPress ([Gdk.EVENT(event)],
 			       scrolled,hadj,vadj,max_x,max_y) = 
 	    case event of 
-		Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
+		Gdk.EVENT_KEY_PRESS({keyval = 65361,...}) => 
 		    scroll(~10.0,scrolled,hadj,max_x) 
-	      | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => 
+	      | Gdk.EVENT_KEY_PRESS({keyval = 65363,...}) => 
 		    scroll(10.0,scrolled,hadj,max_x) 
-	      | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => 
+	      | Gdk.EVENT_KEY_PRESS({keyval = 65362,...}) => 
 		    scroll(~10.0,scrolled,vadj,max_y)    
-	      | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => 
+	      | Gdk.EVENT_KEY_PRESS({keyval = 65364,...}) => 
 		    scroll(10.0,scrolled,vadj,max_y)
 	      | _ => ()
 
@@ -471,7 +490,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	(* auxilliary for event handling *)
 	fun getMouseClickEventInfo ([Gdk.EVENT(event)],hadj,vadj) = 
 	    case event of
-		Gdk.GDK_BUTTON_PRESS({button = b, ...} as r) => 
+		Gdk.EVENT_BUTTON_PRESS({button = b, ...} as r) => 
 		    SOME(calcAbsoluteMousePointerPosition(#x(r),#y(r),
 							  hadj,vadj),b)
 	      | _ => NONE
@@ -480,7 +499,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	fun getSelectionMenu bar = 
 	    let
 		val menu_heading_items = UnsafeValue.cast 
-		    (Gtk.containerChildren(bar)) : Gtk.object list
+		    (Gtk.containerGetChildren(bar)) : Gtk.object list
 		val menu_heading_selection = List.nth(menu_heading_items,1)
 		val submenu = 
 		    Gtk.menuItemGetFieldSubmenu(menu_heading_selection)
@@ -494,7 +513,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 		val (menu_heading_selection,submenu) = getSelectionMenu bar
 		val selection_menu = hd
 		    (UnsafeValue.cast 
-		     (Gtk.containerChildren(menu_heading_selection)) 
+		     (Gtk.containerGetChildren(menu_heading_selection)) 
 		     : Gtk.object list)    
 	    in
 		(widgetSetSensitive(selection_menu,sensitive)
@@ -507,7 +526,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 		val (menu_heading_selection,submenu) = 
 		    getSelectionMenu bar
 		val children = UnsafeValue.cast 
-		    (Gtk.containerChildren(submenu)) : Gtk.object list
+		    (Gtk.containerGetChildren(submenu)) : Gtk.object list
 		val field = List.nth(children,i)
 	    in
 		widgetSetSensitive(field,sensitive)
@@ -531,7 +550,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	(* registers a color (specified by rgb parameters) 
                                     with the Gtk system *)
 	fun allocColor (r,g,b) = 
-	    let val c =  Gdk.allocColor (r,g,b)
+	    let val c =  Gdk.colorNew (r,g,b)
 		val _ = Gdk.colormapAllocColor (map, c, 
 						false, 
 						true)
@@ -539,22 +558,8 @@ structure GtkSupport :> GTK_SUPPORT  =
 		c
 	    end
     
-	(* creates the white rectangle as canvas background *)
-	fun createCanvasBackground(canvas,xsize,ysize) = 
-	    canvasItemNew 
-	    ( canvasRoot(canvas), 
-	     GtkCanvas.RECTANGLE,
-	     [("x1", Gtk.DOUBLE 0.0),
-	      ("y1", Gtk.DOUBLE 0.0),
-	      ("x2", Gtk.DOUBLE xsize),
-	      ("y2", Gtk.DOUBLE ysize),
-	      ("fill_color_gdk", 
-	       Gtk.OBJECT(allocColor(65535,65535,65535))),
-	      ("outline_color_gdk", 
-	       Gtk.OBJECT (allocColor(0,0,0)))]) 
-
 	(* function that sets the canvas size and associated scroll values *)
-	fun resizeCanvas (x,y,scrolled,canvas,background,valueh,valuev, 
+	fun resizeCanvas (x,y,scrolled,canvas,valueh,valuev, 
 			  max_x, max_y) =  
 	    let 
 		val adj1 = Gtk.adjustmentNew(valueh,0.0,max_x ,
@@ -562,35 +567,40 @@ structure GtkSupport :> GTK_SUPPORT  =
 		val adj2 = Gtk.adjustmentNew(valuev,0.0,max_y ,
 					     20.0,50.0,max_y )
 	    in
-		( widgetSetScrollAdjustments(scrolled,adj1,adj2) 
-		 ;canvasSetScrollRegion(canvas,0.0,0.0,x,y)
-		 ;canvasItemSet(background,"x2", Gtk.DOUBLE x)
-		 ;canvasItemSet(background,"y2", Gtk.DOUBLE y))
+		( (* widgetSetScrollAdjustments(scrolled,adj1,adj2) *)
+		 canvasSetScrollRegion(canvas,0.0,0.0,x,y))
 	    end
 
 	(* creates a Gtk group *)
-	fun newTag(parent,x,y) = 
-	    canvasItemNew(parent, 
-			  GtkCanvas.GROUP,
-			  [("x", Gtk.DOUBLE y), 
-			   ("y", Gtk.DOUBLE y)])		
-	    
+	local
+	    val groupType = GnomeCanvas.groupGetType ()
+	in
+	    fun newTag(parent,x,y) = 
+		GnomeCanvas.itemCreate (parent,
+					groupType,
+					[("x", Gtk.REAL y),
+					 ("y", Gtk.REAL y)])
+	end
 	(* prints text in the top left corner of a group *)
-	fun print00 (str,group,color,fontname) = 
-	    canvasItemNew(group, 
-			  GtkCanvas.TEXT, 
-			  [("text", Gtk.STRING str),
-			   ("font", Gtk.STRING fontname),
-			   ("fill_color_gdk", 
-			    Gtk.OBJECT(color) ),
-			   ("anchor", Gtk.INT(2))]) 
+	local
+	    val textType = GnomeCanvas.textGetType ()
+	    val anchor = Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_NORTH_WEST)
+	in
+	    fun print00 (str,group,color,fontname) = 
+		GnomeCanvas.itemCreate (group,
+					textType,
+					[("text", Gtk.STRING str),
+					 ("font", Gtk.STRING fontname),
+					 ("fill_color_gdk", Gtk.OBJECT color),
+					 ("anchor", anchor)])
+	end
 
 	(* puts a group at a specified position *)
 	fun positionGroup (group,x,y) = 
 	    if x=0.0 andalso y=0.0 then ()
 	    else 
-		(GtkCanvas.itemSet(group,"x", Gtk.DOUBLE x) 
-		 ;GtkCanvas.itemSet(group,"y", Gtk.DOUBLE y))
+		(GnomeCanvas.itemSet(group,"x", Gtk.REAL x) 
+		 ;GnomeCanvas.itemSet(group,"y", Gtk.REAL y))
 			
         (* moves a Gtk group 
 		 (arguments represent distance in characters) *)
@@ -602,14 +612,14 @@ structure GtkSupport :> GTK_SUPPORT  =
 		    val ry = Real.fromInt(y * font_height)
 		    val _ = () 
 		in
-		    GtkCanvas.itemMove(group,rx,ry)
+		    GnomeCanvas.itemMove(group,rx,ry)
 		end
 	  
 	(* queries the boundaries (in character positions) of the object *) 
 	fun getCoordinates (group,font_height,font_width) = 
 	    let
 		val (rx1,ry1,rx2,ry2) = 
-		    GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
+		    GnomeCanvas.itemGetBounds group
 		val x1 = (Real.trunc rx1) div font_width
 		val y1 = (Real.trunc ry1) div font_height
 		val x2 = (Real.trunc rx2) div font_width
@@ -619,12 +629,13 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    end
 		
 	(* same as above with only two return values *)
+	(* We use round instead of trunc *)
 	fun getPosition (group,font_height, font_width) = 
 	    let
 		val (rx1,ry1,_,_) = 
-		    GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 0.0 , 0.0)
-		val x1 = (Real.trunc rx1) div font_width
-		val y1 = (Real.trunc ry1) div font_height
+		    GnomeCanvas.itemGetBounds group
+ 		val x1 = (Real.round rx1) div font_width
+		val y1 = (Real.round ry1) div font_height
 	    in
 		(x1,y1)
 	    end
@@ -633,73 +644,71 @@ structure GtkSupport :> GTK_SUPPORT  =
 	fun itemMoveTo (group,rx,ry) = 
 	    let
 		val (rx1,ry1,_,_) = 
-		    GtkCanvas.itemGetBounds(group, 0.0 , 0.0 , 
-					    1000.0 , 1000.0)
-		val (absx,absy) = GtkCanvas.itemI2w(group,rx1,ry1)
+		    GnomeCanvas.itemGetBounds group
+		val (absx,absy) = GnomeCanvas.itemI2w' (group,rx1,ry1)
 		val dx = Real.- (rx, absx)
 		val dy = Real.- (ry, absy)
 	    in
 		if absx = rx andalso absy = ry
 		    then ()
-		else (GtkCanvas.itemMove(group,dx,dy))
+		else (GnomeCanvas.itemMove(group,dx,dy))
 	    end
 
 	(* creates horizontal Line on canvas *)
-	fun createSepLine (group,actline,x,font_height)= 
-	    if actline > 0 
-		then
+	local
+	    val lineType = GnomeCanvas.lineGetType ()
+	    val lineStyle = 
+		Gtk.INT (Gdk.GdkLineStyleToInt Gdk.LINE_ON_OFF_DASH)
+	    val lineWidth = Gtk.INT 1
+	    val lineColor = Gtk.OBJECT (allocColor (40000, 40000, 50000))
+	in
+	    fun createSepLine (group,actline,x,font_height)= 
+		if actline > 0 then
 		    let
 			val mx = Real.trunc(x)
-			val linepos = actline * font_height
-			    - (font_height div 2)
+			val linepos = actline * font_height - (font_height div 2)
 		    in
-			GtkCanvas.itemNew
-			(group,   		 
-			 GtkCanvas.LINE, 
-			 [("points", 
-			   Gdk.POINTS ([0, linepos, mx, linepos])),
-			  ("fill_color_gdk", 
-			   Gdk.OBJECT(allocColor(40000,40000,50000)) ),
-			  ("line_style",Gdk.INT(Gdk.LINE_ON_OFF_DASH)),
-			  ("width_pixels", Gdk.INT 1)])  
+			GnomeCanvas.itemCreate
+			(group,
+			 lineType,
+			 [("points",
+			   Gtk.OBJECT (GnomeCanvas.makePoints
+					   [0, linepos, mx, linepos])),
+			  ("fill_color_gdk", lineColor),
+			  ("line_style", lineStyle),
+			  ("width_pixels", lineWidth)])  
 		    end
-	    else uglyNULL 
+		else uglyNULL
+	end
 
 	(* adjusts length of a separation line *)
 	fun resizeSepLine(line,x) = 
 	    let 
 		val (rx1,ry1,rx2,ry2) = 
-		    GtkCanvas.itemGetBounds(line, 0.0,
-					    0.0,
-					    0.0,
-					    0.0)
+		    GnomeCanvas.itemGetBounds line
 		val y1 = Real.trunc(Real.+(ry1,1.0))
 	    in
-		(GtkCanvas.itemSet(line,
+		(GnomeCanvas.itemSet(line,
 				   "points", 
-				   Gdk.POINTS ([0, y1, x, y1])))
+				   Gtk.OBJECT (GnomeCanvas.makePoints
+						   [0, y1, x, y1])))
 	    end
 	
 	(* moves separation line below the group it belongs to *)
 	fun yPosSepLine (item,group,font_height) = 
 	    let
 		val (_,ry1,_,_) = 
-		    GtkCanvas.itemGetBounds(group, 0.0,
-					    0.0,
-					    0.0,
-					    0.0)
+		    GnomeCanvas.itemGetBounds group
 		val y = Real.trunc(ry1) - (font_height div 2)
 		val (_,_,lx2,_) = 
-		    GtkCanvas.itemGetBounds(item, 0.0,
-					    0.0,
-					    0.0,
-					    0.0)
+		    GnomeCanvas.itemGetBounds item
 	    in
-		GtkCanvas.itemSet(item,
+		GnomeCanvas.itemSet(item,
 				  "points", 
-				  Gdk.POINTS ([0, y, 
-					       Real.trunc(lx2), 
-					       y]))   
+				  Gtk.OBJECT (GnomeCanvas.makePoints
+						  [0, y, 
+						   Real.trunc(lx2), 
+						   y]))
 	    end 
 	
 	(* auxiliary for arrow creation *)
@@ -711,10 +720,10 @@ structure GtkSupport :> GTK_SUPPORT  =
      
 	(* creates arrow from pointset *)
 	fun createArrow(group,points,color) = 
-	    GtkCanvas.itemNew(group,
-			      GtkCanvas.POLYGON,
+	    GnomeCanvas.itemCreate(group,
+			      GnomeCanvas.polygonGetType (),
 			      [("points", 
-				Gdk.POINTS points),
+				Gdk.OBJECT (GnomeCanvas.makePoints points)),
 			       ("fill_color_gdk",
 				Gtk.OBJECT(color)),
 			       ("outline_color_gdk",
@@ -747,18 +756,27 @@ structure GtkSupport :> GTK_SUPPORT  =
 
 	(* creates simple orange coloured rectangle *)
 	fun createRectangle (group,x1,y1,x2,y2) = 
-	    GtkCanvas.itemNew 
+	    GnomeCanvas.itemCreate
 	    ( group, 
-	     GtkCanvas.RECTANGLE,
-	     [("x1", Gtk.DOUBLE x1),
-	      ("y1", Gtk.DOUBLE y1),
-	      ("x2", Gtk.DOUBLE x2),
-	      ("y2", Gtk.DOUBLE y2),
+	     GnomeCanvas.rectGetType (),
+	     [("x1", Gtk.REAL x1),
+	      ("y1", Gtk.REAL y1),
+	      ("x2", Gtk.REAL x2),
+	      ("y2", Gtk.REAL y2),
 	      ("fill_color_gdk", 
 	       Gtk.OBJECT(allocColor(65000,50000,50000))),
 	      ("outline_color_gdk", 
 	       Gtk.OBJECT (allocColor(65000,50000,50000)))]) 
+(*
+	val groupRef = ref Gtk.NULL
 
+	fun printDimensions (loc : string, group) =
+	    let
+		val ref(oldGroup) = groupRef
+		val mesg = if oldGroup = group then "old"
+			   else (groupRef := group; "new")
+	    in
+		Print.printVal (loc, mesg, GnomeCanvas.itemGetBounds group)
+	    end
+*)
 end
-
- 

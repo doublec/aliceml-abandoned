@@ -13,12 +13,18 @@
  *
  *)
 
-import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure Print from "x-alice:/lib/system/Print"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
 import structure GtkSupport from "GtkSupport"
 
 import signature DRAWING_AREA from "DRAWING_AREA-sig"
 
-functor MkDrawingArea (val xsize : real val ysize: real) : DRAWING_AREA
+functor MkDrawingArea (val parent  : Gtk.object
+		       val xsize   : int
+		       val ysize   : int
+		       val scrollX : real
+		       val scrollY : real) : DRAWING_AREA
 =
 struct
 
@@ -26,37 +32,44 @@ struct
 
     (* new canvas *)
 
-    val canvas =  GtkSupport.canvasNew()
-
+    val canvas =  GnomeCanvas.new ()
 	
     (* initial canvas settings *)
 
-    val _ =  (GtkSupport.widgetSetUsize(canvas, 
-					Real.trunc xsize, 
-					Real.trunc ysize ) 
-	      ;GtkSupport.canvasSetScrollRegion (canvas,0.0,0.0,xsize,ysize))
+    val white = GtkSupport.allocColor (65535, 65535, 65535)
+		
+    val hadj = Gtk.scrolledWindowGetHadjustment parent
+    val vadj = Gtk.scrolledWindowGetVadjustment parent
 
+    fun update needMove (scrollX, scrollY) =
+	let
+	    val xSize      = Gtk.adjustmentGetFieldPageSize hadj
+	    val ySize      = Gtk.adjustmentGetFieldPageSize vadj
+	    val newScrollX = Real.max (scrollX, xSize)
+	    val newScrollY = Real.max (scrollY, ySize)
+	in
+	    GnomeCanvas.setScrollRegion
+		(canvas, 0.0, 0.0, newScrollX, newScrollY);
+	    if needMove then
+		GnomeCanvas.scrollTo (canvas, 0, Real.trunc (newScrollY - ySize))
+	    else ()
+	end
 
-    (* background gets adjusted to the canvas *)
+    val _ =  (Gtk.widgetSetSizeRequest (canvas, xsize, ysize);
+	      Gtk.widgetModifyBg (canvas, Gtk.STATE_NORMAL, white);
+	      Gtk.containerAdd (parent, canvas))
 
-    val background =  GtkSupport.createCanvasBackground(canvas,xsize,ysize)
-
-
-    val root = GtkSupport.canvasRoot(canvas)
-
+    val root = GnomeCanvas.root canvas
 
     (* function to handle resize requests on this specific canvas *)
 
-    fun resize (h,v,scrolled,valueh,valuev,max_x,max_y)  = 
-	GtkSupport.resizeCanvas(h,v,scrolled,
-				canvas,
-				background,
-				valueh,
-				valuev, 
-				max_x, 
-				max_y)
+    fun resize (h,v,scrolled,valueh,valuev,max_x,max_y)  =
+	(Print.printVal ("resize", max_x, max_y);
+	 GtkSupport.resizeCanvas(h,v,scrolled,
+				 canvas,
+				 valueh,
+				 valuev, 
+				 max_x, 
+				 max_y))
   
 end
-
-
-    
