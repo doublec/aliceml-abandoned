@@ -57,8 +57,8 @@
     sig
 	val extension : string
 
-	val save : string * package -> unit
-	val load : string -> package
+	val save :    string * package -> unit
+	val load :    string -> package
         val saveVal : string * Package.val_package -> unit
         val loadVal : string -> Package.val_package
 
@@ -117,7 +117,7 @@
       <TT><I>S</I></TT> and writes it to the file named <TT><I>name</I></TT>,
       as with <TT>save</TT>. Equivalent to</P>
       <PRE>
-	save (<I>name</I>, pack <I>X</I> : <I>S</I>)</PRE>
+	save (<I>name</I>, pack <I>X</I> :> <I>S</I>)</PRE>
     </DD>
 
     <DT>
