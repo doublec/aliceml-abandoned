@@ -303,7 +303,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 
 	fun usedVarsIdRef ((O.IdRef id | O.LastIdRef id), set, used) =
 	    usedVarsId (id, set, used)
-	  | usedVarsIdRef ((O.Lit _ | O.Prim _ | O.Value _), _, _) = ()
+	  | usedVarsIdRef ((O.Lit _ | O.Prim _ | O.Value (_, _)), _, _) = ()
 
 	fun usedVarsArgs (O.OneArg idRef, set, used) =
 	    usedVarsIdRef (idRef, set, used)

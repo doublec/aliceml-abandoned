@@ -78,7 +78,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  | format' (IDREF (Lit lit)) = format' (LIT lit)
 		  | format' (IDREF (Prim name)) =
 		    (append "prim \""; append name; append "\"")
-		  | format' (IDREF (Value value)) = append "<val>"
+		  | format' (IDREF (Value (_, _))) = append "<val>"
 		  | format' (IDDEF (IdDef id)) = append (idToString id)
 		  | format' (IDDEF Wildcard) = append "_"
 		  | format' (CO s) = (append "   (* "; append s; append " *)")

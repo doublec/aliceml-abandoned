@@ -86,7 +86,6 @@ structure OutputPickle :> OUTPUT_PICKLE =
 		val template = TAG 0
 
 		val function    = TAG 0
-		val specialized = TAG 1
 
 		fun toInt ARRAY   = 0
 		  | toInt CELL    = 1

@@ -530,6 +530,11 @@ functor MkValuePropagationPhase(val isCross: bool
 	    if stamp = stamp' then value else UnknownVal
 	  | valueMin (value as CaughtExnVal id, CaughtExnVal id') =
 	    if idEq (id, id') then value else UnknownVal
+          | valueMin (ReflectVal (rvalue, eager),
+                      ReflectVal (rvalue', eager')) =
+            if UnsafeValue.same (rvalue, rvalue') then
+		ReflectVal (rvalue, eager orelse eager')
+            else UnknownVal
 	  | valueMin (FailedVal, FailedVal) = FailedVal
 	  | valueMin (_, _) = UnknownVal
 	and argsMin (args as OneArg value, OneArg value') =
@@ -733,7 +738,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		    else NONE
 	      | (_, _) => NONE
 
-	fun doLazySel (id, label, map, env, isToplevel) =
+	fun doLazySel (label, map, env, isToplevel) =
 	    case LabelMap.lookup (map, label) of
 		SOME id => IdRef id
 	      | NONE =>
@@ -1730,7 +1735,7 @@ functor MkValuePropagationPhase(val isCross: bool
 					map
 				    end
 		    in
-			(nil, VarExp (info, doLazySel (idRef, label, map,
+			(nil, VarExp (info, doLazySel (label, map,
 						       env, isToplevel)))
 		    end
 	    end

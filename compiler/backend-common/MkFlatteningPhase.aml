@@ -60,7 +60,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    fun adjoin (pos, mapping) =
 		case lookup' (pos, mapping) of
 		    SOME (O.IdRef id | O.LastIdRef id) => (O.IdDef id, mapping)
-		  | SOME (O.Lit _ | O.Prim _ | O.Value _) =>
+		  | SOME (O.Lit _ | O.Prim _ | O.Value (_, _)) =>
 			raise Crash.Crash "MkFlatteningPhase.adjoin"
 		  | NONE =>
 			let
@@ -72,7 +72,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun idRefStamp (O.IdRef (O.Id (_, stamp, _))) = stamp
 	  | idRefStamp (O.LastIdRef (O.Id (_, stamp, _))) = stamp
-	  | idRefStamp (O.Lit _ | O.Prim _ | O.Value _) =
+	  | idRefStamp (O.Lit _ | O.Prim _ | O.Value (_, _)) =
 	    raise Crash.Crash "MkFlatteningPhase.idRefStamp"
 
 	fun mappingsToSubst (mapping0, mapping) =
@@ -185,7 +185,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 
 	fun translateLongid (ShortId (_, id)) =
 	    (nil, O.IdRef (translateId id))
-	  | translateLongid (LongId ({region, typ}, longid, Lab (_, label))) =
+	  | translateLongid (LongId ({region, ...}, longid, Lab (_, label))) =
 	    let
 		val (stms, idRef) = translateLongid longid
 		val id' = O.Id (region, Stamp.new (), Name.InId)
