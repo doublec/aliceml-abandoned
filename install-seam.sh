@@ -21,7 +21,7 @@ export SEAM_HOME
 
 if [ "$1" = "-global" ]
 then
-   prefix=/opt/stockhausen-seam
+   prefix=/opt/alice-seam
 else
    prefix=`pwd`/install
 fi
