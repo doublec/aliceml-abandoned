@@ -287,6 +287,7 @@
       call class System.Object System.Collections.Hashtable::get$Item(class System.Object)
       dup
       brfalse.s load
+      castclass StockWerk.StockWert
       ret
     load:
       pop
@@ -524,15 +525,18 @@
       ldarg.0
       ret
     }
-    .method virtual public class System.Reflection.MemberInfo[0 ...] GetMembers(value class System.Serialization.StreamingContext) {
+    .method virtual public class System.Reflection.MemberInfo[] GetMembers(value class System.Serialization.StreamingContext) {
       ldarg.0
       callvirt instance class System.Type System.Object::GetType()
-      ldc.i4.1
-      tail. callvirt instance class System.Reflection.MemberInfo[0 ...] System.Type::GetMembers(bool)
+      ldc.i4.1   // also return private members //--** get from arg.1
+      tail. callvirt instance class System.Reflection.MemberInfo[] System.Type::GetMembers(bool)
       ret
     }
     .method virtual public value class System.Serialization.SerializationInfo GetObjectData(int32, value class System.Serialization.StreamingContext) {
       .locals(class System.Serialization.SerializationTypeData, value class System.Serialization.SerializationInfo)
+      ldloca.s 0
+      initobj System.Serialization.SerializationInfo
+      ldloca.s 0
       ldarg.0
       callvirt instance class System.Type System.Object::GetType()
       ldarg.1
@@ -551,7 +555,7 @@
       ldloc.1
       ret
     }
-    .method virtual public void PopulateData(class System.Reflection.MemberInfo[0 ...], value class System.Variant[0 ...]) {
+    .method virtual public void PopulateData(class System.Reflection.MemberInfo[], value class System.Variant[]) {
       .locals(int32)
       ldc.i4.0
       stloc.0
@@ -579,11 +583,17 @@
       ret
     }
     .method virtual public void FixupMember(class System.Reflection.MemberInfo, class System.Object) {
+      .locals(value class System.Variant)
       ldarg.1
       castclass System.Reflection.FieldInfo
       ldarg.0
+      ldloca.s 0
+      initobj System.Variant
+      ldloca.s 0
       ldarg.2
-      call value class System.Variant System.Variant::$widen(class System.Object)
+      call instance void System.Variant::.ctor(class System.Object)
+      ldloca.s 0
+      ldobj System.Variant
       tail. callvirt instance void System.Reflection.FieldInfo::SetValue(class System.Object, value class System.Variant)
       ret
     }
@@ -605,19 +615,25 @@
       stfld class System.Object StockWerk.Global::Guid
       ret
     }
+    .method public static void Enter(class System.Object, class StockWerk.StockWert) {
+      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
+      ldarg.0
+      ldarg.1
+      newobj instance void System.WeakReference::.ctor(class System.Object)
+      tail. call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      ret
+    }
     .method public static class System.Object Globalize(class StockWerk.StockWert) {
-      .locals(value class System.Guid, class System.Object)
+      .locals(value class System.Guid)
+      ldloca.s 0
+      initobj System.Guid
       ldloca.s 0
       call instance void System.Guid::.ctor()
       ldloca.s 0
       box System.Guid
-      stloc.1
-      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
-      ldloc.1
       ldarg.0
-      newobj instance void System.WeakReference::.ctor(class System.Object)
-      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
-      ldloc.1
+      call void StockWerk.Global::Enter(class System.Object, class StockWerk.StockWert)
+      ldarg.0
       ret
     }
     .method public static class StockWerk.StockWert Localize(class System.Object, class StockWerk.StockWert) {
@@ -634,11 +650,9 @@
       ret
     enter:
       pop
-      ldsfld class System.Collections.Hashtable StockWerk.Global::GuidTable
       ldarg.0
       ldarg.1
-      newobj instance void System.WeakReference::.ctor(class System.Object)
-      call instance void System.Collections.Hashtable::Add(class System.Object, class System.Object)
+      call void StockWerk.Global::Enter(class System.Object, class StockWerk.StockWert)
       ldarg.1
       ret
     }
@@ -926,6 +940,18 @@
     }
   }
 
+  .class sealed public UniqueName extends StockWerk.NamedName {
+    .method public void .ctor(class System.String) {
+      ldarg.0
+      ldarg.1
+      call instance void StockWerk.NamedName::.ctor(class System.String)
+      ldarg.0
+      ldarg.1
+      tail. call void StockWerk.Global::Enter(class System.Object, class StockWerk.StockWert)
+      ret
+    }
+  }
+
   .class public Constructor extends StockWerk.Global {
     .method public void .ctor() {
       ldarg.0
@@ -959,6 +985,18 @@
     .method virtual public class System.String ToString() {
       ldarg.0
       ldfld class System.String StockWerk.NamedName::Name
+      ret
+    }
+  }
+
+  .class sealed public UniqueConstructor extends StockWerk.NamedConstructor {
+    .method public void .ctor(class System.String) {
+      ldarg.0
+      ldarg.1
+      call instance void StockWerk.NamedConstructor::.ctor(class System.String)
+      ldarg.0
+      ldarg.1
+      tail. call void StockWerk.Global::Enter(class System.Object, class StockWerk.StockWert)
       ret
     }
   }
@@ -1298,12 +1336,12 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Tuple
-      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       dup
       stloc.1
       ldlen
       ldarg.0
-      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       dup
       stloc.0
       ldlen
@@ -1374,14 +1412,14 @@
       ldarg.1
       castclass StockWerk.Record
       dup
-      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       stloc.1
       ldfld class StockWerk.RecordArity StockWerk.Record::Arity
       ldarg.0
       ldfld class StockWerk.RecordArity StockWerk.Record::Arity
       bne.un.s retFalse
       ldarg.0
-      ldfld class StockWerk.Values[] StockWerk.Tuple::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Tuple::Values
       stloc.0
       ldc.i4.0
       stloc.2
@@ -1463,7 +1501,7 @@
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
-      stfld class StockWerk.StockWert StockWerk.Vector::Values
+      stfld class StockWerk.StockWert[] StockWerk.Vector::Values
       ret
     }
     .method virtual public bool Equals(class StockWerk.StockWert) {
@@ -1474,12 +1512,12 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Vector
-      ldfld class StockWerk.Values[] StockWerk.Vector::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
       dup
       stloc.1
       ldlen
       ldarg.0
-      ldfld class StockWerk.Values[] StockWerk.Vector::Values
+      ldfld class StockWerk.StockWert[] StockWerk.Vector::Values
       dup
       stloc.0
       ldlen
@@ -2173,31 +2211,25 @@
   .class public sealed Array extends StockWerk.StockWert {
     .field public class StockWerk.StockWert[] Values
     .method public void .ctor(int32, class StockWerk.StockWert) {
-      .locals(class StockWerk.StockWert[], int32)
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
       newarr class StockWerk.StockWert
-      stloc.0
-      ldarg.1
-      stloc.1
     loop:
-      ldloc.1
       ldarg.1
-      bge.s return
-      ldloc.0
-      ldloc.1
+      ldc.i4.0
+      blt.s return
+      dup
+      ldarg.1
       ldarg.2
       stelem.ref
-      ldloc.1
+      ldarg.1
       ldc.i4.1
-      add
-      stloc.1
+      sub
+      starg.s 1
       br.s loop
     return:
-      ldarg.0
-      ldloc.0
       stfld class StockWerk.StockWert[] StockWerk.Array::Values
       ret
     }
@@ -2335,7 +2367,7 @@
   .class sealed Array$length extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply1(class StockWerk.StockWert) {
@@ -2413,7 +2445,7 @@
   .class sealed Array$update extends StockWerk.Procedure3 {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      tail. call instance void StockWerk.Procedure3::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
@@ -2760,7 +2792,7 @@
   .class sealed Pickle$load extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure2::.ctor()
+      tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3030,7 +3062,7 @@
   .class sealed Transient$byNeed extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
-      tail. call instance void StockWerk.Procedure0::.ctor()
+      tail. call instance void StockWerk.Procedure::.ctor()
       ret
     }
     .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
@@ -3083,8 +3115,8 @@
 
 .namespace StockWerk.Builtins.Internal {
   .class public sealed Component$load extends StockWerk.Procedure0 {
-    .field private class System.String Whence
     .field private class StockWerk.Komponist Komponist
+    .field private class System.String Whence
     .method public void .ctor(class StockWerk.Komponist, class System.String) {
       ldarg.0
       call instance void StockWerk.Procedure0::.ctor()
@@ -3097,6 +3129,7 @@
       ret
     }
     .method public virtual class StockWerk.StockWert Apply0() {
+      .locals(value class System.Variant)
       ldarg.0
       ldfld class System.String StockWerk.Builtins.Internal.Component$load::Whence
       call class System.Reflection.Module System.Reflection.Module::GetModule(class System.String)
@@ -3122,8 +3155,9 @@
       ldfld class StockWerk.Komponist StockWerk.Builtins.Internal.Component$load::Komponist
       call instance void System.Variant::.ctor(class System.Object)
       callvirt instance value class System.Variant System.Reflection.MethodInfo::Invoke(class System.Object, value class System.Variant[])
-      call class System.Object System.Variant::$widen(value class System.Variant)
-      castclass StockWerk.StockWert
+      stloc.0
+      ldarga.s 0
+      call instance class System.Object System.Variant::ToObject()
       ret
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::Component
