@@ -22,7 +22,7 @@ public:
   static TaskStack *New();
 
   // Handling stack frames:
-  void PushFrame(u_int size);
+  void PushFrame(u_int size); //--** size may be 0
   void PopFrame(u_int size);
   bool IsEmpty();
   void Clear();
