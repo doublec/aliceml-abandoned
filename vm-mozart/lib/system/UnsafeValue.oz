@@ -142,5 +142,5 @@ define
 		 else ~2
 		 end
 	      end
-	   'outArity': fun {$ _ _} ~2 end)
+	   'outArity': fun {$ _} ~2 end)
 end
