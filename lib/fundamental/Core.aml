@@ -241,7 +241,7 @@ __overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
    (Int.-, IntInf.-, Word.-, Word8.-, Word32.-, Real.-)
 __overload (int, IntInf.t, word, Word8.t, Word32.t, real) as 'num
     op * : 'num * 'num -> 'num =
-    (Int.*, IntInf.*, Word.*, Word8.*, Word32.*, Real.*)
+    (Int.*, IntInf.*, Word.*, Word8.*, Word32.*, Real.* )
 __overload (int, IntInf.t, word, Word8.t, Word32.t) as 'wordint
     op div : 'wordint * 'wordint -> 'wordint =
     (Int.div, IntInf.div, Word.div, Word8.div, Word32.div)
@@ -269,4 +269,3 @@ __overload (int, IntInf.t, word, Word8.t, Word32.t, real, char, string)
     op >= : 'numtxt * 'numtxt -> bool =
     (Int.>=, IntInf.>=, Word.>=, Word8.>=, Word32.>=,
      Real.>=, Char.>=, String.>=)
-
