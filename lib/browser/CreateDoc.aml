@@ -128,9 +128,15 @@ struct
                     val conc1 = SIMPLE{desc = INTERPUNCT,
 				       rep = "ref",
                                        color = COLOR}
-                    val conc2 = EMBEDDED(ref_value,ref_typ)
-		(*	CONTAINER{desc = INTERPUNCT,
-				  kids = #[EMBEDDED(ref_value,ref_typ)]} *)
+                    val conc2 = 
+			CONTAINER{desc = INTERPUNCT,
+				  kids = #[SIMPLE{desc = INTERPUNCT,
+						       rep = "(",
+						       color = COLOR},
+					   EMBEDDED(ref_value,ref_typ),
+					   SIMPLE{desc = INTERPUNCT,
+						  rep = ")",
+						  color = COLOR}]} 
                 in CONCAT{desc = descr,
                           kids = #[conc1,conc2]}
 		end 
