@@ -1,7 +1,6 @@
 Group
 
-	signature NAME
-	structure Name
+	structure Stamp
 	signature INTERMEDIATE_GRAMMAR
 	structure IntermediateGrammar
 	signature PREBOUND

@@ -22,10 +22,14 @@ signature INTERMEDIATE_GRAMMAR =
 
     (* Identifiers *)
 
+    type stamp      = int
+
+    datatype name   = ExId of string | InId
+
     datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * Name.t
+    datatype id     = Id      of info * stamp * name
     datatype longid = ShortId of info * id
-		    | LongId  of info * longid * id
+		    | LongId  of info * longid * lab
 
     (* Expressions *)
 

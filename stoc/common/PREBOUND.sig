@@ -1,20 +1,20 @@
 signature PREBOUND =
   sig
 
-    type name   = Name.t
+    type stamp  = IntermediateGrammar.stamp
     type id     = IntermediateGrammar.id
     type longid = IntermediateGrammar.longid
 
 
-    val name_false :	name
-    val name_true :	name
-    val name_nil :	name
-    val name_cons :	name
-    val name_ref :	name
-    val name_Match :	name
-    val name_Bind :	name
-    val name_eq :	name
-    val name_assign :	name
+    val stamp_false :	stamp
+    val stamp_true :	stamp
+    val stamp_nil :	stamp
+    val stamp_cons :	stamp
+    val stamp_ref :	stamp
+    val stamp_Match :	stamp
+    val stamp_Bind :	stamp
+    val stamp_eq :	stamp
+    val stamp_assign :	stamp
 
     val id_false :	id
     val id_true :	id

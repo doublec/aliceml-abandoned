@@ -23,10 +23,14 @@ functor MakeIntermediateGrammar(type info) :>
 
     (* Identifiers *)
 
+    type stamp      = int
+
+    datatype name   = ExId of string | InId
+
     datatype lab    = Lab     of info * string
-    datatype id     = Id      of info * Name.t
+    datatype id     = Id      of info * stamp * name
     datatype longid = ShortId of info * id
-		    | LongId  of info * longid * id
+		    | LongId  of info * longid * lab
 
     (* Expressions *)
 
@@ -93,7 +97,7 @@ functor MakeIntermediateGrammar(type info) :>
     (* Projections *)
 
     fun infoLab(Lab(i,_))		= i
-    fun infoId(Id(i,_))			= i
+    fun infoId(Id(i,_,_))		= i
     fun infoLongid(ShortId(i,_))	= i
       | infoLongid(LongId(i,_,_))	= i
 
