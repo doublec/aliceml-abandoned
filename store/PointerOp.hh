@@ -30,6 +30,7 @@ public:
   }
   // Block<->Word Conversion
   static word EncodeBlock(Block *p) {
+    //--** this code assumes that BLKTAG == 0
     return (word) p;
   }
   static Block *DecodeBlock(word p) {
@@ -82,8 +83,8 @@ public:
       
       if (HeaderOp::DecodeLabel((Block *) vi) == REF_LABEL) {
 	v = ((word *) vi)[1];
+	goto loop;
       }
-      goto loop;
     }
 
     return v;
