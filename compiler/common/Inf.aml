@@ -56,6 +56,7 @@ structure InfPrivate =
     and      item = item' ref				(* [item] *)
     and      sign = item' ref list ref *		(* [sigma,s] *)
 		    item' ref list Map.t option ref
+			(* The list of items in a sig is in reverse order! *)
 
     type t = inf
 
@@ -127,13 +128,14 @@ structure InfPrivate =
 	let
 	    val map = Map.new()
 	in
-	    List.app (reinsertItem map) (!itemsr) ;
+	    (* Note that items are in reversed order so we must append
+	     * on clashes! *)
+	    List.app (fn item => Map.insertWith op@
+				 (map, (itemSpace item, itemLab item), [item]))
+		     (!itemsr) ;
 	    r := SOME map ;
 	    map
 	end
-
-    and reinsertItem map item =
-	Map.insertWith (flip op@) (map, (itemSpace item, itemLab item), [item])
 
 
   (* Signature construction *)
