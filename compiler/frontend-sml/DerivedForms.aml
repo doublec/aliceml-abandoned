@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -16,7 +16,7 @@
  * Definition, Appendix A
  *
  * Extensions and modifications:
- *   - predefined ids are taken out of a pseudo structure with empty name
+ *   - predefined ids are taken out of a pseudo structure __pervasive
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.

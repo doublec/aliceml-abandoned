@@ -9,3 +9,4 @@ Group is
     COMPONENT_MANAGER-sig.sml
     COMPONENT-sig.sml
     Component.sml
+    ComponentManager.sml

@@ -13,14 +13,13 @@
 import structure Inf       from "../rtt/Inf"
 import structure Reflect   from "Reflect"
 import structure Url       from "Url"
+import structure Component from "Component"
 
 signature COMPONENT_MANAGER =
     sig
 	exception Conflict
 
-	type component
-
-	functor Eval(val component: component
+	functor Eval(val component: Component.t
 		     val url: Url.t
 		     signature S): S                (* Component.Mismatch *)
 
@@ -31,10 +30,10 @@ signature COMPONENT_MANAGER =
 		      signature S
 		      structure X: S): any          (* Conflict *)
 
-	val eval: Url.t * component -> Reflect.module(* Component.Failure *)
-	val link: Url.t -> component                (* [Component.Failure] *)
-	val enter: Url.t * component -> unit        (* Conflict *)
-	val lookup: Url.t -> component option
+	val eval: Url.t * Component.t -> Reflect.module (* Component.Failure *)
+	val link: Url.t -> Component.t              (* [Component.Failure] *)
+	val enter: Url.t * Component.t -> unit      (* Conflict *)
+	val lookup: Url.t -> Component.t option
 
 	val start: Url.t -> unit                    (* Component.Failure *)
     end

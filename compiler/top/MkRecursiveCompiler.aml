@@ -36,7 +36,6 @@ type sig_loader = Source.desc * Url.t -> Inf.sign
 type mod_loader = Source.desc * Url.t -> Reflect.module
 
 functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
-				where type component = Component.t
 			    structure Compiler: COMPILER
 			    val extension: string): RECURSIVE_COMPILER =
     struct

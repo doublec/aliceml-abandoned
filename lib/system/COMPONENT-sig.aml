@@ -14,7 +14,6 @@ import structure Inf               from "../rtt/Inf"
 import structure Reflect           from "Reflect"
 import structure Url               from "Url"
 import structure Resolver          from "Resolver"
-import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 
 signature COMPONENT =
     sig
@@ -45,5 +44,26 @@ signature COMPONENT =
 	val inf: component -> Inf.t option
 
 	functor MkManager(val resolver: Resolver.t):
-	    COMPONENT_MANAGER where type component = component
+	    (* COMPONENT_MANAGER *)
+	    sig
+		exception Conflict
+
+		functor Eval(val component: component
+			     val url: Url.t
+			     signature S): S
+
+		functor Link(val url: Url.t
+			     signature S): S
+
+		functor Enter(val url: Url.t
+			      signature S
+			      structure X: S): any
+
+		val eval: Url.t * component -> Reflect.module
+		val link: Url.t -> component
+		val enter: Url.t * component -> unit
+		val lookup: Url.t -> component option
+
+		val start: Url.t -> unit
+	    end
     end

@@ -19,7 +19,6 @@ import structure Url               from "Url"
 import structure Resolver          from "Resolver"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure UrlMap            from "UrlMap"
-import signature COMPONENT_MANAGER from "COMPONENT_MANAGER-sig"
 import signature COMPONENT         from "COMPONENT-sig"
 
 structure Component :> COMPONENT =
@@ -105,14 +104,34 @@ struct
 
     val initialTable = lazy UnsafeComponent.getInitialTable ()
 
-    functor MkManager(val resolver: Resolver.t) :>
-	COMPONENT_MANAGER where type component = component =
+    signature COMPONENT_MANAGER =
+    sig
+	exception Conflict
+
+	functor Eval(val component: component
+		     val url: Url.t
+		     signature S): S
+
+	functor Link(val url: Url.t
+		     signature S): S
+
+	functor Enter(val url: Url.t
+		      signature S
+		      structure X: S): any
+
+	val eval: Url.t * component -> Reflect.module
+	val link: Url.t -> component
+	val enter: Url.t * component -> unit
+	val lookup: Url.t -> component option
+
+	val start: Url.t -> unit
+    end
+
+    functor MkManager(val resolver: Resolver.t) : COMPONENT_MANAGER =
     struct
 	(*--** should query and fragment be rejected instead of ignored? *)
 
 	exception Conflict
-
-	datatype component = datatype component
 
 	val map: (inf * mod) UrlMap.t =
 	    lazy UrlMap.map (Vector.map (fn (s, inf, mod) =>

@@ -49,9 +49,7 @@
     sig
 	exception <A href="#Conflict">Conflict</A>
 
-	type <A href="#component">component</A>
-
-	functor <A href="#Eval-fn">Eval</A>(val component : component
+	functor <A href="#Eval-fn">Eval</A>(val component : Component.t
 		     val url : <A href="url.html#t">Url.t</A>
 		     signature S) : S
 
@@ -62,9 +60,9 @@
 		      signature S
 		      structure X : S) : any
 
-	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> component
-	val <A href="#enter">enter</A> : <A href="url.html#t">Url.t</A> * component -> unit
-	val <A href="#lookup">lookup</A> : <A href="url.html#t">Url.t</A> -> component option
+	val <A href="#link">link</A> : <A href="url.html#t">Url.t</A> -> Component.t
+	val <A href="#enter">enter</A> : <A href="url.html#t">Url.t</A> * Component.t -> unit
+	val <A href="#lookup">lookup</A> : <A href="url.html#t">Url.t</A> -> Component.t option
 
 	val <A href="#start">start</A> : <A href="url.html#t">Url.t</A> -> unit
     end</PRE>
@@ -78,15 +76,6 @@
     <DD>
       <P>indicates an attempt to enter a component in the component table
 	while some component was already registered under that name.</P>
-    </DD>
-
-    <DT>
-      <TT>type <A name="component">component</A></TT>
-    </DT>
-    <DD>
-      <P>The type of components this component manager operates on.
-	Usually equivalent to <TT><A href="component.html#component"
-	>Component.component</A></TT>.</P>
     </DD>
 
     <DT>

@@ -16,10 +16,8 @@ signature COMPONENT_MANAGER =
     sig
 	exception Conflict
 
-	type component
-
-	val eval: Url.t * component -> Reflect.module (* Component.Failure *)
-	val link: Url.t -> component                  (* Component.Failure *)
-	val enter: Url.t * component -> unit          (* Conflict *)
-	val lookup: Url.t -> component option
+	val eval: Url.t * Component.t -> Reflect.module (* Component.Failure *)
+	val link: Url.t -> Component.t                  (* Component.Failure *)
+	val enter: Url.t * Component.t -> unit          (* Conflict *)
+	val lookup: Url.t -> Component.t option
     end

@@ -25,9 +25,7 @@ import structure Value                 from "Value"
 import structure MkAbstractCodeGrammar from "MkAbstractCodeGrammar"
 import structure MkCodeGenPhase        from "MkCodeGenPhase"
 
-functor MkBackendSeam(structure ComponentManager:
-			  COMPONENT_MANAGER
-			      where type component = Component.t
+functor MkBackendSeam(structure ComponentManager: COMPONENT_MANAGER
 		      structure Switches: SWITCHES): BACKEND_SPECIFIC =
     let
 	structure AbstractCodeGrammar = MkAbstractCodeGrammar(Value)
