@@ -59,7 +59,7 @@ define
 
    fun {OzToSig Sig}
       case Sig of sig(Sig) andthen {IsDet Sig} andthen Sig == unit then
- 	 'NONE'   % produced by the hybrid compiler
+	 'NONE'   % produced by the bootstrap compiler
       [] sig(Sig) then 'SOME'(Sig)   % Stockhausen component
       else 'NONE'   % non-Stockhausen component
       end
@@ -172,7 +172,18 @@ define
 	       'Native': fun {$ Msg} NativeException(Msg) end
 	       '\'Native': NativeException
 	       'extension': Extension
-	       'getInitialTable': fun {$ unit} '#[]' end   %--**
+	       'getInitialTable':
+		  fun {$ unit} Entries N V in
+		     Entries = {Dictionary.entries
+				{Property.get 'alice.initialComponentTable'}}
+		     N = {Length Entries}
+		     V = {MakeTuple '#[]' N}
+		     {List.forAllInd Entries
+		      proc {$ I Key#(Inf#Mod)}
+			 V.I = {ByteString.make Key}#Inf#Mod
+		      end}
+		     V
+		  end
 	       'save':
 		  fun {$ Filename Component}
 		     {Trace 'component' 'save ' Filename}
