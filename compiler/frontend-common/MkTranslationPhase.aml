@@ -529,7 +529,9 @@ struct
     fun trExps(E, es)			= Vector.map (fn e => trExp(E,e)) es
     and trExp(E, I.LitExp(i,l))		= O.LitExp(i, trLit l)
       | trExp(E, I.VarExp(i,y))		= (O.VarExp(i, trVallongid(E, y))
+(* may happen with functor derived form...
 (*DEBUG*)handle VirtualModule => (Error.warn(#region i, "15\n"); raise VirtualModule))
+*))
       | trExp(E, I.PrimExp(i,s,t))	= O.PrimExp(i, s)
       | trExp(E, I.NewExp(i,t))		= O.NewExp(i)
       | trExp(E, I.TagExp(i,l,_,e))	= O.TagExp(i, trVallab l, trExp(E,e))
@@ -628,8 +630,9 @@ struct
     and trMod(E, I.VarMod(i,y)) =
 	(* [y] = [y] *)
 (	O.VarExp(trModInfo(E,i), trModlongid(E,y))
+(* may happen with functor derived form...
 (*DEBUG*)handle VirtualModule => (Error.warn(#region i, "11\n"); raise VirtualModule))
-
+*))
       | trMod(E, I.StrMod(i,ds)) =
 	(* [struct decs end] = let [decs] in {<flds>} *)
 	let
