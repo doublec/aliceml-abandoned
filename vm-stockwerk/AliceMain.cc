@@ -78,6 +78,7 @@ void Start(int argc, const char *argv[]) {
 Worker::Result Load(String *name) {
   const char *argv[] = {""};
   InitAlice(1, argv);
-  BootLinker::Link(name);
+  if (name != NULL)
+    BootLinker::Link(name);
   return Worker::CONTINUE;
 }
