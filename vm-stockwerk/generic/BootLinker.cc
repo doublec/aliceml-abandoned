@@ -510,7 +510,6 @@ Chunk *BootLinker::MakeFileName(Chunk *key) {
   base[hSize + kSize] = (char) 0x00;
   strcat(base, ".stc");
   base[hSize + kSize + 4] = (char) 0x00;
-  Print(path);
   return path;
 }
 
