@@ -327,7 +327,7 @@ structure IL :> IL =
 	  | peephole nil = nil
 
 	fun initPeephole ty =
-	    (size := 0; maxSize := 0; Map.deleteAll map;
+	    (size := 0; maxSize := 0; Map.removeAll map;
 	     returnSize := (case ty of VoidTy => 0 | _ => 1))
 
 	(* Output IL Syntax *)
@@ -605,7 +605,7 @@ structure IL :> IL =
 		val _ = initPeephole ty
 		val instrs = peephole instrs
 	    in
-		Map.deleteAll map;
+		Map.removeAll map;
 		output (q, "    .maxstack ");
 		output (q, Int.toString (!maxSize)); output (q, "\n");
 		outputInstrs (q, instrs, nil)
