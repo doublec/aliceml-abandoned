@@ -122,6 +122,7 @@ struct
 				 typedLink (Url.resolve baseUrl importUrl,
 					    importSign, SOME baseUrl))) imports
 	    in
+		trace ("evaluating " ^ Url.toString baseUrl);
 		UnsafeComponent.apply (body, imports')
 	    end
 	  | eval (_, EVALUATED (_, str)) = Future.await str
