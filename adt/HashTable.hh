@@ -28,13 +28,19 @@ public:
   using Block::ToWord;
 
   void MakeEmpty() {
-    InitArg(KEY_POS, Store::IntToWord(-1));
+    InitArg(KEY_POS, -1);
   }
   int IsEmpty() {
     return (Store::WordToInt(GetArg(KEY_POS)) == - 1);
   }
   word GetKey() {
     return GetArg(KEY_POS);
+  }
+  int GetIntKey() {
+    return Store::WordToInt(GetKey());
+  }
+  Block *GetBlockKey() {
+    return Store::WordToBlock(GetKey());
   }
   void SetKey(word key) {
     ReplaceArg(KEY_POS, key);
@@ -49,8 +55,8 @@ public:
   static HashNode *New() {
     Block *p = Store::AllocBlock(HASHNODE_LABEL, SIZE);
 
-    p->InitArg(KEY_POS, Store::IntToWord(-1));
-    p->InitArg(VAL_POS, Store::IntToWord(0));
+    p->InitArg(KEY_POS, -1);
+    p->InitArg(VAL_POS, 0);
 
     return (HashNode *) p;
   }
@@ -70,7 +76,7 @@ public:
   };
   // this is to allow inlining
   u_int GetTableSize() {
-    return (u_int) Store::WordToBlock(GetArg(TABLE_POS))->GetSize();
+    return (u_int) Store::DirectWordToBlock(GetArg(TABLE_POS))->GetSize();
   }
 private:
   static const u_int SIZE        = 4;
@@ -96,18 +102,24 @@ protected:
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
   }
   void SetCounter(u_int counter) {
-    InitArg(COUNTER_POS, Store::IntToWord(counter));
+    InitArg(COUNTER_POS, counter);
   }
   u_int GetPercent() {
     return (u_int) Store::WordToInt(GetArg(PERCENT_POS));
   }
+  void SetPercent(u_int percent) {
+    InitArg(PERCENT_POS, percent);
+  }
   hashkeytype GetKeyType() {
     return (hashkeytype) Store::WordToInt(GetArg(TYPE_POS));
+  }
+  Block *GetTable() {
+    return Store::DirectWordToBlock(GetArg(TABLE_POS));
   }
   HashNode *GetEntry(u_int i) {
     Assert(i >= 1);
     Assert(i <= GetTableSize());
-    return HashNode::FromWord(Store::WordToBlock(GetArg(TABLE_POS))->GetArg(i));
+    return HashNode::FromWord(GetTable()->GetArg(i));
   }
 public:
   using Block::ToWord;
@@ -121,12 +133,12 @@ public:
     return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
   }
   void Clear() {
-    Block *arr = Store::WordToBlock(GetArg(TABLE_POS));
+    Block *arr = GetTable();
     u_int size = arr->GetSize();
     
-    InitArg(COUNTER_POS, Store::IntToWord(0));
+    SetCounter(0);
     for (u_int i = 1; i <= size; i++) {
-      HashNode::FromWord(GetArg(i))->MakeEmpty();
+      HashNode::FromWord(arr->GetArg(i))->MakeEmpty();
     }
   }
 
