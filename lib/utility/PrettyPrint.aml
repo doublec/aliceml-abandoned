@@ -105,8 +105,10 @@ struct
 	   | (i,H,BREAK s)::z	=> fits(w - String.size s, z)
 	   | (i,A,BREAK s)::z	=> false
 	   | (i,m,BREAK s)::z	=> true
-	   | (i,m,BOX(V,x))::z	=> fits(w, (i,A,x)::z)
-	   | (i,m,BOX(n,x))::z	=> fits(w, (i,H,x)::z)
+	   | (i,H,BOX(V,x))::z	=> fits(w, (i,A,x)::z)
+	   | (i,H,BOX(n,x))::z	=> fits(w, (i,H,x)::z)
+	   | (i,m,BOX(A,x))::z	=> fits(w, (i,V,x)::z)
+	   | (i,m,BOX(n,x))::z	=> fits(w, (i,n,x)::z)
 	   | (i,m,NEST(j,x))::z	=> fits(w, (i,m,x)::z)
 	   | (i,m,BELOW x)::z	=> fits(w, (i,m,x)::z)
 
