@@ -42,9 +42,13 @@ esac
 
 ALICE_LOAD=pattern=x-oz:'?{x}'=x-oz${ESC}:'?{x}'${SEP}pattern='?{x}'='?{x}.ozf'${SEP}pattern='?{x}'='?{x}'${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'.ozf${SEP}pattern=x-alice:/'?{x}'=$STOCKHOME/'?{x}'
 
-if [ ! -z "$ALICE_EXTRA_LOAD" ]
+if [ ! -z "$ALICE_LOAD_PREFIX" ]
 then
-    ALICE_LOAD=$ALICE_EXTRA_LOAD${SEP}$ALICE_LOAD
+    ALICE_LOAD=$ALICE_LOAD_PREFIX${SEP}$ALICE_LOAD
+fi
+if [ ! -z "$ALICE_LOAD_SUFFIX" ]
+then
+    ALICE_LOAD=$ALICE_LOAD${SEP}$ALICE_LOAD_SUFFIX
 fi
 
 OZ_LOAD=$ALICE_LOAD${SEP}$OZ_LOAD
