@@ -252,18 +252,8 @@ structure CodeGen =
 					   toplevel,
 					   RecordLabel.generate toplevel)) ::
 				   Multi decs ::
-				   (if !VERBOSE >= 1 then
-					Multi [Getstatic FOut,
-					       Aload (!mainpickle),
-					       Invokevirtual MPrint]
-				    else Nop) ::
-					Ldc (JVMString (name^".pickle")) ::
-					Aconst_null ::
-					Aload (!mainpickle) ::
-					Invokestatic MPickle ::
-					Pop ::
-					Return ::
-					nil))
+				   Return ::
+				   nil))
 
 		 val clinit = Method([MPublic],
 				     "<clinit>",
@@ -895,12 +885,23 @@ structure CodeGen =
 		    [Pop]
 
 	  | decCode (ExportStm ((((line,_),_),_),exp'), curFun, curCls) =
-		    (mainpickle := Stamp.new();
-		     [Comment "[Mainpickle ",
-		      Line line,
-		      Multi (expCode (exp', curFun, curCls)),
-		      Astore (!mainpickle),
-		      Comment "Mainpickle ]"])
+		    let
+			val stamp' = Stamp.new()
+		    in
+			[Line line,
+			 Multi (expCode (exp', curFun, curCls)),
+			 Astore stamp',
+			 (if !VERBOSE >= 1 then
+			      Multi [Getstatic FOut,
+				     Aload stamp',
+				     Invokevirtual MPrint]
+			  else Nop),
+			 Ldc (JVMString (Class.getInitial()^".pickle")),
+			 Aconst_null,
+			 Aload stamp',
+			 Invokestatic MPickle,
+			 Pop]
+		    end
 
 	  | decCode (IndirectStm (_, ref (SOME body')), curFun, curCls) =
 		     decListCode (body', curFun, curCls)
@@ -1164,19 +1165,19 @@ structure CodeGen =
 	    Comment "AppExp:" ::
 	    Line line ::
 	    invokeRecApply (stamp', args, curFun, false, curCls, true)
+
 	  | expCode (NewExp (((line,_),_), hasArgs), _, _) =
 	    if hasArgs then
 		[Line line,
 		 New CConstructor,
 		 Dup,
-		 Invokespecial (CConstructor, "<init>",
-				([],[Voidsig]))]
+		 Invokespecial (CConstructor, "<init>", ([],[Voidsig]))]
 	    else
 		[Line line,
 		 New CName,
 		 Dup,
-		 Invokespecial (CName, "<init>",
-				([],[Voidsig]))]
+		 Invokespecial (CName, "<init>", ([],[Voidsig]))]
+
 	  | expCode (PrimAppExp (pos' as ((line,_),_), name, ids), curFun, curCls) =
 		let
 		    val n = List.length ids
@@ -1365,6 +1366,7 @@ structure CodeGen =
 					Invokeinterface (ITuple, "get",
 							 ([Intsig], [Classsig IVal]))])
 			  end
+
 	  | expCode (VecExp (_,ids), _, curCls) =
 			  let
 			      fun f ((id' as Id(_,stamp',_))::rest, i, akku) =
