@@ -53,8 +53,8 @@ struct
     type exp_info	= { region: Source.region, typ: Type.t }
     type pat_info	= { region: Source.region, typ: Type.t }
     type 'a row_info	= { region: Source.region }
-    type 'a field_info	= { region: Source.region }
-    type match_info	= { region: Source.region }
+    type 'a fld_info	= { region: Source.region }
+    type mat_info	= { region: Source.region }
     type typ_info	= { region: Source.region, typ: Type.t }
     type mod_info	= { region: Source.region, inf: Inf.t }
     type inf_info	= { region: Source.region, inf: Inf.t }
