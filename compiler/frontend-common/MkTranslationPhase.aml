@@ -11,10 +11,12 @@
  *)
 
 (*DEBUG*)
+(*
 import "../../lib/system/TextIO"
 import "../../lib/utility/PrettyPrint"
 import "../../lib/rtt/PPInf"
 import "../../../../install/lib/tools/Inspector"
+*)
 
 import structure TypedInfo
        structure TypedGrammar		from "TypedGrammar"
