@@ -59,6 +59,7 @@ private:
   static const u_int initialQueueSize = 8; //--** to be checked
 public:
   using Block::ToWord;
+  using Queue::Blank;
 
   static Set *New() {
     return static_cast<Set *>(Queue::New(initialQueueSize));
@@ -143,6 +144,11 @@ void IOHandler::Block() {
     ReadableSet->Schedule(&readFDs);
     WritableSet->Schedule(&writeFDs);
   }
+}
+
+void IOHandler::Purge() {
+  Set::FromWordDirect(Readable)->Blank();
+  Set::FromWordDirect(Writable)->Blank();
 }
 
 Future *IOHandler::CheckReadable(int fd) {

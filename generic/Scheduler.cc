@@ -172,6 +172,7 @@ void Scheduler::Run() {
     }
     if (Store::NeedGC()) {
       threadQueue->Purge();
+      IOHandler::Purge();
       root = threadQueue->ToWord();
       RootSet::DoGarbageCollection();
       threadQueue = ThreadQueue::FromWordDirect(root);
