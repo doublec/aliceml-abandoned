@@ -11,5 +11,4 @@ struct
       | STRING of string
       | OBJECT of object
       | LIST of object list
-
 end
