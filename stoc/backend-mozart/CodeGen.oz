@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2000
+%%%   Leif Kornstaedt, 1999-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -554,10 +554,11 @@ define
       end
    end
 
-   fun {Translate Filename Import#(Body#Sign)}
+   fun {Translate Filename Import#Body#_#Sign IdValueList}
       NarratorObject Reporter CS ImportReg ExportReg
-      State VInstr VInter Code NLiveRegs
+      State VInstr VInter GRegs Code NLiveRegs
    in
+%--** assign regs for IdValueList
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
@@ -573,7 +574,7 @@ define
        end VInstr VInter}
       VInter = {TranslateBody Body State ExportReg [false]}
       {CS endDefinition(VInstr [ImportReg ExportReg] nil
-			nil ?Code ?NLiveRegs)}
+			?GRegs=nil/*--**/ ?Code ?NLiveRegs)}
       case Code of Code1#Code2 then StartLabel EndLabel Res P VS in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
@@ -583,9 +584,10 @@ define
 		      pid({VirtualString.toAtom 'Component '#Filename} 2
 			  pos({VirtualString.toAtom Filename} 1 0) nil
 			  NLiveRegs)
-		      unit nil Code1)|
+		      unit {List.mapInd GRegs fun {$ I _} g(I) end} Code1)|
 	   endDefinition(StartLabel)|
-	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]}) [Res]
+	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
+	  Res|nil%--**include other globals, deduced from GRegs
 	  switches/*--**(profile: true)*/ ?P ?VS}
 	 {P}
 	 {Functor.new
@@ -594,7 +596,7 @@ define
 	    fun {$ I _#Sign#URL In}
 	       I#info('from': URL 'type': sig(Sign))|In
 	    end nil}}
-	  sig(Sign) Res}#VS#Sign
+	  sig(Sign) Res}#VS
       end
    end
 end

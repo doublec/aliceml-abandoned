@@ -250,7 +250,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				       SEQ #[outputInfo (infoStm stm),
 					    outputStm (stm, shared)]) stms))
 
-	fun outputComponent (importVector, (body, _)) =
+	fun outputComponent (importVector, body, _, _) =
 	    format (SEQ #[SEQ (Vector.map
 			       (fn (idDef, _, url) =>
 				SEQ #[S "import ", IDDEF idDef,

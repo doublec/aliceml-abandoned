@@ -106,7 +106,8 @@ signature FLAT_GRAMMAR =
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign
-	type component = (idDef * sign * Url.t) vector * (body * sign)
+	type component =
+	     (idDef * sign * Url.t) vector * body * (label * id) vector * sign
 	type t = component
 
 	val freshId: id_info -> id

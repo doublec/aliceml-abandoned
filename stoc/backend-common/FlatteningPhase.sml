@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -937,12 +937,23 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translate () (desc, (imports, (exportExp, sign))) =
 	    let
+		val exports = ref NONE
 		fun export exp =
-		    O.ExportStm (stm_info (#region (infoExp exportExp)), exp)
+		    (case !exports of
+			 NONE => exports := SOME exp
+		       | SOME _ =>
+			     raise Crash.Crash "FlatteningPhase.translate 1";
+		     O.ExportStm (stm_info (#region (infoExp exportExp)), exp))
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
 				(O.IdDef (translateId id), sign, url)) imports
+		val body' = translateExp (exportExp, export, Goto nil)
+		val exports' =
+		    case !exports of
+			SOME (O.ProdExp (_, labelIdVec)) => labelIdVec
+		      | SOME (O.TupExp (_, #[])) => #[]
+		      | _ => raise Crash.Crash "FlatteningPhase.translate 2"
 	    in
-		(imports', (translateExp (exportExp, export, Goto nil), sign))
+		(imports', body', exports', sign)
 	    end
     end

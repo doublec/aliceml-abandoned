@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 2000
+%%%   Leif Kornstaedt, 2000-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -201,28 +201,29 @@ define
        end Hd Tl}
    end
 
-   fun {TrComponent Import#(Body#Sign)}
+   fun {TrComponent Import#Body#ExportDesc#Sign}
       {Record.map Import
        fun {$ IdDef#Sign#U}
 	  {TrIdDef IdDef}#Sign#{VirtualString.toAtom {Url.toString U}}
-       end}#
-      ({TrBody Body $ nil {NewDictionary}}#Sign)
-   end
-
-   fun {Translate Desc Component} InFilename in
-      InFilename = case Desc of 'SOME'(U) then {Url.toString U}
-		   [] 'NONE' then ''
-		   end
-      {CodeGen.translate InFilename {TrComponent Component}}
-   end
-
-   fun {Sign _#_#Sign}
+       end}#{TrBody Body $ nil {NewDictionary}}#
+      {Record.map ExportDesc fun {$ Label#Id} {TrLabel Label}#{TrId Id} end}#
       Sign
    end
 
-   fun {Apply F#_#_}
-      {{Property.get 'alice.modulemanager'} link(F)}
-      unit
+   fun {Translate Env Desc Component} InFilename in
+      InFilename = case Desc of 'SOME'(U) then {Url.toString U}
+		   [] 'NONE' then ''
+		   end
+      case {TrComponent Component} of ComponentTr=_#_#ExportDesc#_ then
+	 case {CodeGen.translate InFilename ComponentTr
+	       {Dictionary.entries Env}}
+	 of F#VS then F#VS#ExportDesc#Env
+	 end
+      end
+   end
+
+   fun {Sign F#_#_#_}
+      case F.'export' of sig(Sign) then Sign end
    end
 
    proc {WriteFile VS File} F in
@@ -231,7 +232,7 @@ define
       {F close()}
    end
 
-   fun {Save OutFilename OutputAssembly F#VS#_}
+   fun {Save F#VS#_#_ OutFilename OutputAssembly}
       {Pickle.saveWithCells F OutFilename '' 0}
       if OutputAssembly then
 	 {WriteFile VS OutFilename#'.ozm'}
@@ -239,9 +240,26 @@ define
       unit
    end
 
+   fun {Apply F#_#ExportDesc#Env} M in
+      {{Property.get 'alice.modulemanager'} apply(F ?M)}
+      {Record.forAll ExportDesc
+       proc {$ Label#'Id'(_ Stamp _)}
+	  {Dictionary.put Env Stamp M.Label}
+       end}
+      unit
+   end
+
+   C =
+   'CodeGenPhase.C'('$t': {Value.byNeedFail rttNotImplemented}
+		    new: fun {$ unit} {Dictionary.new} end
+		    clone: Dictionary.clone)
+
    CodeGenPhase =
-   'CodeGenPhase'(translate: Translate
+   'CodeGenPhase'('C$': C
+		  '$t': {Value.byNeedFail rttNotImplemented}
+		  '$value': {Value.byNeedFail rttNotImplemented}
+		  translate: Translate
 		  sign: Sign
-		  apply: Apply
-		  save: Save)
+		  save: Save
+		  apply: Apply)
 end

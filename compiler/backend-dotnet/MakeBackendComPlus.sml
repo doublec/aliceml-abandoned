@@ -17,6 +17,7 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	structure Sig = Sig
 
 	type t = IL.t
+	type value = unit
 
 	fun sign (_, exportSign) = exportSign
 
@@ -33,6 +34,9 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 		    raise Error.Error (Source.nowhere,
 				       "invocation of `" ^ ilasm ^ "' failed")
 	    end
+
+	fun apply () _ =
+	    raise Crash.Crash "MakeBackendComPlus.apply: not implemented"
     end
 
 functor MakeBackendComPlus

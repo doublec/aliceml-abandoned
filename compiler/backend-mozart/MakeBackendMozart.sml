@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -19,34 +19,26 @@ structure MozartEngine =
 		       | NONE => "stoc-mozart.exe"])
 	       structure Code = PickleFlatGrammar)
 
-structure MozartTargetContext: CONTEXT =
-    struct
-	type t = MozartEngine.t
-
-	val engine: MozartEngine.t option ref = ref NONE
-
-	fun new () =
-	    (if (isSome (!engine)) then ()
-	     else engine := SOME (MozartEngine.start ());
-	     valOf (!engine))
-
-	fun clone engine = engine
-    end
-
 functor MakeMozartTarget(structure Switches: SWITCHES
 			 structure Sig: SIGNATURE
 			     where type t = FlatGrammar.sign): TARGET =
     struct
-	structure C = MozartTargetContext
+	structure C = MozartEngine.C
 	structure Sig = Sig
 
 	type t = string * FlatGrammar.t
 
-	fun sign (_, (_, (_, exportSign))) = exportSign
+	fun sign (_, (_, _, _, exportSign)) = exportSign
 
-	fun save engine filename component =
-	    MozartEngine.saveValue engine filename
-	    (MozartEngine.buildFunctor engine component)
+	fun save context targetFilename (sourceFilename, component) =
+	    MozartEngine.save context
+	    (MozartEngine.link context (sourceFilename, component),
+	     targetFilename)
+
+	fun apply context (sourceFilename,
+			   component as (_, _, exportDesc, _)) =
+	    MozartEngine.apply context
+	    (MozartEngine.link context (sourceFilename, component), exportDesc)
     end
 
 fun parseDesc desc =

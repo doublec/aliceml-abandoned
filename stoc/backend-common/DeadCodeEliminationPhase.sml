@@ -198,6 +198,6 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	    end
 	  | liveExp (exp, _) = exp
 
-	fun translate () (_, component as (imports, (body, sign))) =
-	    (imports, (liveBody (body, StampMap.new ()), sign))
+	fun translate () (_, component as (imports, body, exports, sign)) =
+	    (imports, liveBody (body, StampMap.new ()), exports, sign)
     end

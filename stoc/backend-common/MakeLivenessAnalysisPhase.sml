@@ -231,7 +231,7 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (FunAppExp (_, id, _, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 
-	fun translate () (_, component as (_, (body, _))) =
+	fun translate () (_, component as (_, body, _, _)) =
 	    (scanBody body; component)
     end
 
@@ -345,7 +345,7 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	       | ref (Kill _) => ())
 	  | initBody (nil, _) = ()
 
-	fun translate () (_, component as (_, (body, _))) =
+	fun translate () (_, component as (_, body, _, _)) =
 	    (initBody (body, StampSet.new ()); component)
     end
 

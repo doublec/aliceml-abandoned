@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999-2000
+%%%   Leif Kornstaedt, 1999-2001
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -17,35 +17,22 @@ import
    Application(getArgs exit)
    Property(get put)
    Pickle(load saveWithCells)
+   Module(apply)
    CodeGen(translate)
 prepare
    OptSpecs = record(help(rightmost char: "h?" default: false))
 define
    class TextFile from Open.file Open.text end
 
-   fun {ReadMessage File}
+   fun {ReadCommand File}
       case {File getS($)} of false then nil
       [] "" then nil
       elseof S then Name in
 	 case {List.takeDropWhile S fun {$ C} C \= &: end ?Name}
 	 of &:|Rest then
-	    Name#{List.dropWhile Rest Char.isSpace}|{ReadMessage File}
-	 else raise format(readMessage S) end
+	    Name#{List.dropWhile Rest Char.isSpace}|{ReadCommand File}
+	 else raise format(readCommand S) end
 	 end
-      end
-   end
-
-   fun {ReadCommand File}
-      case {ReadMessage File} of "Command"#Command|Arguments then
-	 {String.toAtom Command}#
-	 {List.map Arguments
-	  fun {$ Name#Value}
-	     case Name of "Argument" then Value
-	     else raise format end
-	     end
-	  end}
-      [] nil then unit
-      else raise format(readCommand) end
       end
    end
 
@@ -87,22 +74,40 @@ define
       {F close()}
    end
 
+   fun {ParsePairList Args ParseX ParseY}
+      case Args of X|Y|Rest then
+	 {ParseX X}#{ParseY Y}|{ParsePairList Rest ParseX ParseY}
+      [] nil then nil
+      end
+   end
+
    proc {Loop File}
-      case {ReadCommand File} of 'buildFunctor'#[Code] then
+      case {ReadCommand File} of "Command"#"link"|"Code"#Code|Rest then
 	 case {Pickle.load Code} of unit then
-	    {System.printInfo 'Result: ~1\n\n'}
-	 [] Filename#AST then F VS in
-	    F#VS#_ = {CodeGen.translate Filename AST}
-	    {WriteFile VS Filename#'.ozm'}
-	    {System.printInfo 'Result: '#{Put F}#'\n\n'}
+	    {System.printInfo 'Error:could not load pickle\n\n'}
+	 [] Filename#AST then
+	    case {CodeGen.translate Filename AST
+		  {ParsePairList Rest
+		   fun {$ "Id"#S} {Get {String.toInt S}} end
+		   fun {$ "Valref"#S} {String.toInt S} end}}
+	    of F#VS then
+	       {WriteFile VS Filename#'.ozm'}
+	       {System.printInfo 'Valref:'#{Put F}#'\n\n'}
+	    end
 	 end
-      [] 'saveValue'#[OutFilename Id] then
-	 {Pickle.saveWithCells {Get {String.toInt Id}} OutFilename '' 0}
-	 {System.printInfo 'Result: 0\n\n'}
-      [] 'stop'#nil then
-	 {System.printInfo 'Result: 0\n\n'}
-	 {Application.exit 0}
-      [] unit then
+      [] ["Command"#"save" "Valref"#S "String"#OutFilename] then
+	 {Pickle.saveWithCells {Get {String.toInt S}} OutFilename '' 0}
+	 {System.printInfo '\n'}
+      [] "Command"#"apply"|"Valref"#S|Rest then
+	 case {Get {String.toInt S}} of F then M in
+	    [M] = {Module.apply [F]}
+	    {List.forAll Rest
+	     proc {$ "Label"#S}
+		{System.printInfo 'Valref:'#{Put M.{String.toAtom S}}#'\n'}
+	     end}
+	    {System.printInfo '\n'}
+	 end
+      [] nil then
 	 {Application.exit 0}
       elseof X then raise format(loop X) end
       end

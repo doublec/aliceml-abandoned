@@ -453,7 +453,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    (*--** translate to AppConst *)
 	    translateIgnore (VarAppExp (info, id, args), instr, env)
 
-	fun translate () (desc, (imports, (body, exportSign))) =
+	fun translate () (desc, (imports, body, _, sign)) =
 	    let
 		val imports' =
 		    Vector.map (fn (_, sign, url) =>
@@ -480,6 +480,6 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    in
 		O.Tuple #[O.Vector imports',
 			  O.Closure (function, #[]),
-			  O.Sign exportSign]
+			  O.Sign sign]
 	    end
     end

@@ -3,49 +3,124 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+(*
+ * Communication protocol between compiler and engine:
+ *
+ * link_command ::=
+ *     "Command:link\n"
+ *     "Code:" <string> "\n"
+ *     ( "Id:" <stamp> "\n"
+ *       "Valref:" <int> "\n" )*
+ *     "\n"
+ * link_result ::=
+ *     ( "Debug:" <string> "\n" )*
+ *     ( "Error:" <string> "\n"
+ *     | "Valref:" <int> "\n" )
+ *     "\n"
+ *
+ * save_command ::=
+ *     "Command:save\n"
+ *     "Valref:" <int> "\n"
+ *     "String:" <string> "\n"
+ *     "\n"
+ * save_result ::=
+ *     ( "Debug:" <string> "\n" )*
+ *     ( "Error:" <string> "\n" )?
+ *     "\n"
+ *
+ * apply_command ::=
+ *     "Command:apply\n"
+ *     "Valref:" <int> "\n"
+ *     ( "Label:" <string> "\n" )*
+ *     "\n"
+ * apply_result ::=
+ *     ( "Debug:" <string> "\n" )*
+ *     ( "Error:" <string> "\n"
+ *     | ( "Valref:" <int> "\n" )* )
+ *     "\n"
+ *)
+
+structure IdMap =
+    MakeHashImpMap(type t = FlatGrammar.id
+		   fun equals (FlatGrammar.Id (_, stamp1, _),
+			       FlatGrammar.Id (_, stamp2, _)) = stamp1 = stamp2
+		   fun hash (FlatGrammar.Id (_, stamp, _)) = Stamp.hash stamp)
+
 functor MakeEngine(val cmd: unit -> string * string list
 		   structure Code: CODE) :> ENGINE where type code = Code.t =
     struct
-	type t = Unix.proc option ref
+	type valref = int
+
+	structure C: CONTEXT =
+	    struct
+		type t = Unix.proc * valref IdMap.t
+
+		val engine: Unix.proc option ref = ref NONE
+
+		fun new () =
+		    (case !engine of
+			 NONE => engine := SOME (Unix.execute (cmd ()))
+		       | SOME _ => ();
+		     (valOf (!engine), IdMap.new ()))
+
+		fun clone (proc, map) = (proc, IdMap.clone map)
+	    end
+
 	type code = Code.t
-	type value = int
+	type component = valref
+
+	type exportDesc = (Label.t * FlatGrammar.id) vector
 
 	exception Format of string
 
-	val valueToString = Int.toString
-
-	fun start () = ref (SOME (Unix.execute (cmd ())))
-
-	fun instream proc = #1 (Unix.streamsOf (valOf (!proc)))
-	fun outstream proc = #2 (Unix.streamsOf (valOf (!proc)))
+	fun instream proc = #1 (Unix.streamsOf proc)
+	fun outstream proc = #2 (Unix.streamsOf proc)
 
 	datatype arg =
-	    CODE of Code.t
-	  | VALUE of value
+	    COMMAND of string
+	  | CODE of code
+	  | ID of FlatGrammar.id
+	  | VALREF of valref
 	  | STRING of string
+	  | LABEL of Label.t
 
-	fun sendCommand (proc, command, args) =
+	fun sendCommand (proc, args) =
 	    let
 		val q = outstream proc
 	    in
-		TextIO.output (q, "Command: " ^ command ^ "\n");
 		List.app (fn arg =>
-			  (TextIO.output (q, "Argument: ");
-			   case arg of
-			       CODE code =>
-				   Code.externalize (q, code)
-			     | VALUE value =>
-				   TextIO.output (q, valueToString value)
-			     | STRING string =>
+			  case arg of
+			      COMMAND command =>
+				  (TextIO.output (q, "Command:");
+				   TextIO.output (q, command);
+				   TextIO.output1 (q, #"\n"))
+			    | CODE code =>
+				  (TextIO.output (q, "Code:");
+				   TextIO.output (q, Code.toString code);
+				   TextIO.output1 (q, #"\n"))
+			    | ID (FlatGrammar.Id (_, stamp, _)) =>
+				  (TextIO.output (q, "Id:");
+				   TextIO.output (q, Stamp.toString stamp);
+				   TextIO.output1 (q, #"\n"))
+			    | VALREF valref =>
+				  (TextIO.output (q, "Valref:");
+				   TextIO.output (q, Int.toString valref);
+				   TextIO.output1 (q, #"\n"))
+			    | STRING string =>
+				  (TextIO.output (q, "String:");
 				   TextIO.output (q, string);
-			   TextIO.output1 (q, #"\n"))) args;
+				   TextIO.output1 (q, #"\n"))
+			    | LABEL label =>
+				  (TextIO.output (q, "Label:");
+				   TextIO.output (q, Label.toString label);
+				   TextIO.output1 (q, #"\n"))) args;
 		TextIO.output1 (q, #"\n");
 		TextIO.flushOut q
 	    end
@@ -76,23 +151,41 @@ functor MakeEngine(val cmd: unit -> string * string list
 				(TextIO.print s; parseResult proc)
 	end
 
-	fun stop proc =
-	    (sendCommand (proc, "stop", nil);
+	fun link (proc, map) code =
+	    (sendCommand (proc,
+			  COMMAND "link"::
+			  CODE code::
+			  IdMap.foldi (fn (id, valref, rest) =>
+				       ID id::VALREF valref::rest) nil map);
 	     case parseResult proc of
-		 [("Result", _)] => ()
-	       | _ => raise Format "stop: result expected";
-	     TextIO.closeOut (outstream proc);
-	     proc := NONE)
+		 [("Valref", s)] => valOf (Int.fromString s)
+	       | [("Error", s)] => raise Format ("link (engine): " ^ s)
+	       | _ => raise Format "link: could not parse result")
 
-	fun buildFunctor proc code =
-	    (sendCommand (proc, "buildFunctor", [CODE code]);
+	fun save (proc, _) (valref, filename) =
+	    (sendCommand (proc,
+			  [COMMAND "save", VALREF valref, STRING filename]);
 	     case parseResult proc of
-		 [("Result", s)] => valOf (Int.fromString s)
-	       | _ => raise Format "buildFunctor: result expected")
+		 nil => ()
+	       | [("Error", s)] => raise Format ("save (engine): " ^ s)
+	       | _ => raise Format "save: could not parse result")
 
-	fun saveValue proc filename value =
-	    (sendCommand (proc, "saveValue", [STRING filename, VALUE value]);
-	     case parseResult proc of
-		 [("Result", _)] => ()
-	       | _ => raise Format "saveValue: result expected")
+	fun extendEnv (("Valref", valref)::args, (_, id)::exportDesc, map) =
+	    (IdMap.insert (map, id, valOf (Int.fromString valref));
+	     extendEnv (args, exportDesc, map))
+	  | extendEnv (("Error", s)::_, _, _) =
+	    raise Format ("apply (engine): " ^ s)
+	  | extendEnv ((_, _)::_, _, _) =
+	    raise Format "apply: could not parse result"
+	  | extendEnv (nil, nil, _) = ()
+	  | extendEnv (_, _, _) =
+	    raise Format "apply: wrong number of results"
+
+	fun apply (proc, map) (valref, exportDesc) =
+	    (sendCommand (proc,
+			  COMMAND "apply"::
+			  VALREF valref::
+			  Vector.foldr (fn ((label, _), rest) =>
+					LABEL label::rest) nil exportDesc);
+	     extendEnv (parseResult proc, Vector.toList exportDesc, map))
     end

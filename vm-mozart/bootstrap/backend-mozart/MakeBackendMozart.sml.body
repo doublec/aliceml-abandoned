@@ -5,7 +5,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -53,12 +53,12 @@ functor MakeMozartTarget(structure Switches: SWITCHES
 
 	type t = CodeGenPhase.t
 
-	fun sign component = CodeGenPhase.sign component
-
-	fun apply () component = CodeGenPhase.apply component
+	val sign = CodeGenPhase.sign
 
 	fun save () filename component =
-	    CodeGenPhase.save (filename, !Switches.outputAssembly, component)
+	    CodeGenPhase.save (component, filename, !Switches.outputAssembly)
+
+	fun apply () component = CodeGenPhase.apply component
     end
 
 functor MakeBackendMozart(structure Switches: SWITCHES
@@ -66,12 +66,12 @@ functor MakeBackendMozart(structure Switches: SWITCHES
 			      where type t = CodeGenPhase.t): PHASE =
     MakeTracingPhase(structure Phase =
 			 struct
-			     structure C = EmptyContext
+			     structure C = CodeGenPhase.C
 			     structure I = FlatGrammar
 			     structure O = MozartTarget
 
-			     fun translate () (desc, component) =
-				 CodeGenPhase.translate (desc, component)
+			     fun translate env (desc, component) =
+				 CodeGenPhase.translate (env, desc, component)
 			 end
 		     structure Switches = Switches
 		     val name = "Assembling")

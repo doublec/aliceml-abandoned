@@ -972,7 +972,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | idToString (Id (_, stamp, Name.ExId s)) =
 	    s ^ "$" ^ Stamp.toString stamp
 
-	fun translate () (_, component as (imports, (body, sign))) =
+	fun translate () (_, component as (imports, body, exports, sign)) =
 	    let
 		val env = IdMap.new ()
 		val _ =
@@ -980,7 +980,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				declareUnknown (env, idDef, true)) imports
 		val topStamp = Stamp.new ()
 		val body' = vpBodyShared (body, topStamp, env, true)
-		val component' = (imports, (body', sign))
+		val component' = (imports, body', exports, sign)
 	    in
 		component'
 	    end

@@ -5,7 +5,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -15,6 +15,10 @@
 import
     structure Source
 from "../infrastructure/Source"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT"
 
 import
     structure Inf
@@ -28,11 +32,13 @@ signature CODE_GEN_PHASE_COMPONENT =
     sig
 	structure CodeGenPhase:
 	    sig
+		structure C: CONTEXT
+
 		type t
 
-		val translate: Source.desc * FlatGrammar.component -> t
+		val translate: C.t * Source.desc * FlatGrammar.component -> t
 		val sign: t -> Inf.sign
+		val save: t * string * bool -> unit
 		val apply: t -> unit
-		val save: string * bool * t -> unit
 	    end
     end

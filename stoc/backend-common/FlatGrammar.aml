@@ -105,7 +105,8 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	withtype body = stm list
 
 	type sign = IntermediateGrammar.sign
-	type component = (idDef * sign * Url.t) vector * (body * sign)
+	type component =
+	     (idDef * sign * Url.t) vector * body * (label * id) vector * sign
 	type t = component
 
 	fun freshId info = Id (info, Stamp.new (), Name.InId)

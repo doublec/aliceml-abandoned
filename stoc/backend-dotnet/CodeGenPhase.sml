@@ -609,7 +609,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genStm stm; genBody stms)
 	  | genBody nil = ()
 
-	fun translate () (desc, component as (imports, (body, exportSign))) =
+	fun translate () (desc, component as (imports, body, _, sign)) =
 	    (init nil;
 	     Vector.app (fn (idDef, _, url) =>
 			 (emit (Ldarg 0); emit (Castclass Alice.KomponistTy);
@@ -618,5 +618,5 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				      [System.StringTy], System.ObjectTy));
 			  declareLocal idDef)) imports;
 	     genBody body;
-	     (close(), exportSign))
+	     (close(), sign))
     end

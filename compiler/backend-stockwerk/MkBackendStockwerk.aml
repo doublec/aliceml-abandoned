@@ -17,6 +17,7 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 	structure Sig = Sig
 
 	type t = PickleGrammar.t
+	type value = unit
 
 	fun sign (PickleGrammar.Tuple #[PickleGrammar.Vector _,
 					PickleGrammar.Closure (_, #[]),
@@ -31,6 +32,9 @@ functor MakePickleTarget(structure Sig: SIGNATURE
 		OutputPickle.output (outstream, value);
 		PrimPickle.closeOut outstream
 	    end
+
+	fun apply () _ =
+	    raise Crash.Crash "MakeBackendStockwerk.apply: not implemented"
     end
 
 functor MakeBackendStockwerk(structure Switches: SWITCHES

@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,5 +14,5 @@ signature CODE =
     sig
 	type t
 
-	val externalize: TextIO.outstream * t -> unit
+	val toString: t -> string
     end

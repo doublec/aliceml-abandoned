@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *   Andreas Rossberg, 1999
  *
  * Last change:
@@ -24,7 +24,22 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 
 	fun outputStamp (q, stamp) = outputInt (q, Stamp.hash stamp)
 
-	fun outputUrl (q, url) = outputString (q, Url.toString url)
+	local
+	    fun pathCeil filename =
+		let
+		    val fro = ".ozf"
+		    val n = String.size filename
+		    val m = String.size fro
+		in
+		    if n > m
+		       andalso String.substring (filename, n - m, m) = fro
+		    then filename
+		    else filename ^ fro
+	    end
+	in
+	    fun outputUrl (q, url) =
+		outputString (q, pathCeil (Url.toString url))
+	end
 
 	(*--** remove global state *)
 	val visited: label StampMap.t = StampMap.new ()
@@ -257,22 +272,25 @@ structure PickleFlatGrammar :> CODE where type t = string * FlatGrammar.t =
 	     outputStamp (q, stamp); outputId (q, id); outputExpInfo (q, info))
 	and outputBody (q, stms) = outputList outputStm (q, stms)
 
-	fun externalize (q, (filename, (imports, (stms, _)))) =
+	fun toString (code as (filename, _)) =
 	    let
-		val q' = openOut ()
+		val q = openOut ()
 		val filename' = filename ^ ".ozp"
 		val outstream = BinIO.openOut filename'
 	    in
 		StampMap.deleteAll visited;
 		outputPair (outputString,
-			    outputPair (outputVector
-					(outputTriple (outputIdDef,
-						       outputUnit',
-						       outputUrl)),
-					outputPair (outputBody, outputUnit')))
-		(q', (filename, (imports, (stms, ()))));
-		BinIO.output (outstream, closeOut q');
+			    outputQuadruple (outputVector
+					     (outputTriple (outputIdDef,
+							    outputUnit',
+							    outputUrl)),
+					     outputBody,
+					     outputVector
+					     (outputPair (outputLabel,
+							  outputId)),
+					     outputUnit')) (q, code);
+		BinIO.output (outstream, closeOut q);
 		BinIO.closeOut outstream;
-		TextIO.output (q,  OS.FileSys.fullPath filename')
+		OS.FileSys.fullPath filename'
 	    end
     end
