@@ -23,6 +23,10 @@ import
 from "../../lib/system/OS"
 
 import
+    structure Home
+from "../../lib/system/Home"
+
+import
     structure UnsafePickle
 from "../../lib/system/UnsafePickle"
 
@@ -93,14 +97,15 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	local
 	    val homeref: string option ref = ref NONE
 	in
-	    fun stockhome () =
+	    fun home () =
 		case !homeref of
 		    NONE =>
 			let
 			    val home =
-				case OS.Process.getEnv "STOCKHOME" of
+				case OS.Process.getEnv (Home.homeEnv) of
 				    SOME s => s ^ "/"
-				  | NONE => (warn "STOCKHOME not set"; "")
+				  | NONE => (warn (Home.homeEnv ^ " not set");
+					     "")
 			in
 			    homeref := SOME home; home
 			end
@@ -123,7 +128,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	      | (SOME "file", NONE) =>
 		    Url.toStringRaw (Url.setScheme (url, NONE))
 	      | (SOME "x-alice", NONE) =>
-		    stockhome () ^
+		    home () ^
 		    Url.toStringRaw (Url.setScheme (Url.makeRelativePath url,
 						    NONE))
 	      | _ => raise Crash.Crash "MkBatchCompiler.parseUrl"
@@ -147,7 +152,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 	    case Source.url desc of
 		SOME url =>
 		    parseUrl url =
-		    parseUrl (resolveWrtCwd (Url.fromString (stockhome () ^
+		    parseUrl (resolveWrtCwd (Url.fromString (home () ^
 							     "Base.asig")))
 	      | NONE => false
 
@@ -160,7 +165,7 @@ functor MkRecursiveCompiler(structure Composer: COMPOSER
 		 let
 		     val name = Option.getOpt
 				(!Switches.Language.implicitImportFile,
-				 stockhome () ^ "Default.import")
+				 home () ^ "Default.import")
 		 in
 		     String.map (fn #"\n" => #" " | c => c) (readFile name)
 		     ^ "\n" ^ s

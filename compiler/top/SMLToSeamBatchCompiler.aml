@@ -22,4 +22,4 @@ structure SMLToStockwerkBatchCompiler =
     MkBatchCompiler(structure RecursiveCompiler =
 			SMLToStockwerkRecursiveCompiler
 		    val executableHeader =
-			"#!/bin/sh\nexec stow $0 \"$@\"\n")
+			"#!/bin/sh\nexec alicerun $0 \"$@\"\n")

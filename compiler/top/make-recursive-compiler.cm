@@ -1,5 +1,6 @@
 Group is
 
+    ../lib/system/home.cm
     ../infrastructure/crash.cm
     composer.cm
     compiler.cm

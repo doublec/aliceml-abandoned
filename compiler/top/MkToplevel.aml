@@ -25,7 +25,7 @@ functor MkToplevel(RecursiveCompiler: RECURSIVE_COMPILER) :
 struct
     structure OptionParser = MkOptionParser(RecursiveCompiler.Switches)
 
-    fun usage() = TextIO.output(TextIO.stdErr, "Usage: stot [options]\n" ^
+    fun usage() = TextIO.output(TextIO.stdErr, "Usage: alice [options]\n" ^
 						OptionParser.helpText)
 
     val header     = "Stockhausen Operette 2\n"
@@ -97,8 +97,8 @@ struct
 		     loop (compilerContext, targetContext))
 	end
 
-    fun stot'(_::_) = (usage(); OS.Process.failure)
-      | stot' nil =
+    fun main'(_::_) = (usage(); OS.Process.failure)
+      | main' nil =
 	let
 	    open RecursiveCompiler.Switches
 	    val dumpSig = !Debug.dumpElaborationSig
@@ -113,12 +113,12 @@ struct
 	    OS.Process.success
 	end
 
-    fun stot arguments =
+    fun main arguments =
 	let
 	    open RecursiveCompiler.Switches
 	in
 	    Debug.dumpPhases := false;
 	    Language.reexportImport := true;
-	    stot'(OptionParser.parse arguments)
+	    main'(OptionParser.parse arguments)
 	end
 end
