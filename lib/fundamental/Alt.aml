@@ -14,9 +14,9 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive           from "Pervasive"
-import datatype bool and order and alt from "ToplevelTypes"
-import signature ALT                   from "ALT-sig"
+import structure __pervasive                       from "Pervasive"
+import __primitive datatype bool and order and alt from "ToplevelTypes"
+import __primitive signature ALT                   from "ALT-sig"
 
 structure Alt :> ALT =							(**)
 struct
