@@ -53,6 +53,7 @@ signature SIMPLIFY_MATCH =
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
 	  | Leaf of O.body * O.body option ref
+	  | Fail
 	  | Default
 	  | Unreachable of testGraph
 	and nodeStatus =
@@ -65,8 +66,8 @@ signature SIMPLIFY_MATCH =
 	type consequent = Source.region * O.body option ref
 	type mapping' = (pos * O.idRef) list
 
-	val buildGraph: (Source.region * I.pat * O.body) vector * O.body ->
-	    testGraph * consequent list
+	val buildGraph: (Source.region * I.pat * O.body) vector *
+			O.body * bool -> testGraph * consequent list
 
 	val buildFunArgs: (Source.region * I.pat * O.body) vector * O.body ->
 	    O.idDef O.args * testGraph * mapping' * consequent list
