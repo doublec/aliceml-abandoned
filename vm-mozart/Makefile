@@ -379,6 +379,7 @@ alicec1-%: build1-install
 BUILD1DIRS = build1 $(SOURCEDIRS:%=build1/%)
 BUILD1SOURCES = \
 	build1/Build1.aml build1/lib/fundamental/RTT.aml \
+	build1/lib/system/ComponentManager.aml \
 	$(ALLSOURCES:%=build1/%)
 
 INSTALL1DIRS = build1/install build1/install/bin build1/install/lib \
@@ -594,6 +595,7 @@ BUILD2DIRS = \
 	build2/lib/utility build2/lib/rtt build2/lib/ml-yacc
 BUILD2SOURCES = \
 	build2/lib/fundamental/RTT.aml build2/lib/rtt/RTT.aml \
+	build2/lib/system/ComponentManager.aml \
 	$(LIBSOURCES:%=build2/%)
 
 INSTALL2DIRS = build2/install build2/install/bin \
