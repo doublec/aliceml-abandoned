@@ -25,6 +25,9 @@ namespace JITAlice {
     static void Put(u_int This, u_int Value) {
       JITStore::InitArg(This, VALUE_POS, Value);
     }
+    static u_int Sel() {
+      return VALUE_POS;
+    }
     static void Sel(u_int Dest, u_int This) {
       JITStore::GetArg(Dest, This, VALUE_POS);
     }
@@ -41,6 +44,9 @@ namespace JITAlice {
     static void GetConstructor(u_int Dest, u_int This) {
       JITStore::GetArg(Dest, This, CON_POS);
     }
+    static u_int Sel() {
+      return BASE_SIZE;
+    }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       JITStore::GetArg(Dest, This, BASE_SIZE + pos);
     }
@@ -53,6 +59,9 @@ namespace JITAlice {
   public:
     static void New(u_int This, u_int tag, u_int size) {
       JITStore::AllocBlock(This, Alice::TagToLabel(tag), size);
+    }
+    static u_int Sel() {
+      return 0;
     }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       JITStore::GetArg(Dest, This, pos);
@@ -75,6 +84,9 @@ namespace JITAlice {
     }
     static void GetLength(u_int Dest, u_int This) {
       JITStore::GetArg(Dest, This, LENGTH_POS);
+    }
+    static u_int Sel() {
+      return BASE_SIZE;
     }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       JITStore::GetArg(Dest, This, BASE_SIZE + pos);

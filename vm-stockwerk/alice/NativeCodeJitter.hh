@@ -72,6 +72,10 @@ protected:
   static u_int RefToIndex(word ref);
   static u_int LocalEnvSel(u_int Dest, u_int Ptr, u_int pos);
   static void LocalEnvPut(u_int Ptr, word pos, u_int Value);
+  static void MoveIndexValToLocalEnv(word pos, u_int This, u_int i);
+  static void MoveBlockValToLocalEnv(word pos, u_int This, u_int i);
+  static void MoveMemValToLocalEnv(word pos, void *addr);
+  static void BindIdDefs(word wIdDefs, u_int This, u_int baseOffset);
   static void KillIdRef(word idRef);
   static void GlobalEnvSel(u_int Dest, u_int Ptr, word pos);
   static void ImmediateSel(u_int Dest, u_int Ptr, u_int pos);

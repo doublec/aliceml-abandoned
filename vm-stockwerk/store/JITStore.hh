@@ -240,6 +240,12 @@ public:
     b->ReplaceArg(pos, value);
   }
 #endif
+  static u_int Sel() {
+    return 1;
+  }
+  static void Sel(u_int Dest, u_int Ptr, u_int index) {
+    jit_ldxi_p(Dest, Ptr, index * sizeof(word));
+  }
   static void GetArg(u_int Dest, u_int Ptr, u_int index) {
 #if defined(JIT_ASSERT_INDEX)
     SaveAllRegs();

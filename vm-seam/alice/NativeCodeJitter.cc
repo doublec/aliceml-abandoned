@@ -604,6 +604,42 @@ void NativeCodeJitter::LocalEnvPut(u_int Ptr, word pos, u_int Value) {
   }
 }
 
+void NativeCodeJitter::MoveIndexValToLocalEnv(word pos, u_int This, u_int i) {
+  u_int index = RefToIndex(pos);
+  livenessTable->SetAlive(index);
+  if (index >= ALICE_REGISTER_NB) {
+    JITStore::Sel(JIT_R0, This, i);
+    NativeCodeFrame::ReplaceEnv(JIT_V2, index, JIT_R0);
+  }
+  else
+    JITStore::Sel(RegisterBank::IndexToRegister(index), This, i);
+}
+
+void NativeCodeJitter::MoveBlockValToLocalEnv(word pos, u_int This, u_int i) {
+  MoveIndexValToLocalEnv(pos, This, JITStore::Sel() + i);
+}
+
+void NativeCodeJitter::MoveMemValToLocalEnv(word pos, void *addr) {
+  u_int index = RefToIndex(pos);
+  livenessTable->SetAlive(index);
+  if (index >= ALICE_REGISTER_NB) {
+    jit_ldi_p(JIT_R0, addr);
+    NativeCodeFrame::ReplaceEnv(JIT_V2, index, JIT_R0);
+  }
+  else
+    jit_ldi_p(RegisterBank::IndexToRegister(index), addr);
+}
+
+
+void NativeCodeJitter::BindIdDefs(word wIdDefs, u_int This, u_int baseOffset) {
+  Vector *idDefs = Vector::FromWordDirect(wIdDefs);
+  for (u_int i = idDefs->GetLength(); i--;) {
+    TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
+    if (idDef != INVALID_POINTER)
+      MoveBlockValToLocalEnv(idDef->Sel(0), This, baseOffset + i);
+  }
+}
+
 void NativeCodeJitter::KillIdRef(word idRef) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
   if (AbstractCode::GetIdRef(tagVal) == AbstractCode::LastUseLocal) {
@@ -851,10 +887,8 @@ void NativeCodeJitter::StoreResults(u_int calleeArity, TagVal *idDefArgs) {
     {
       if (idDefArgs != INVALID_POINTER) {
 	TagVal *idDef = TagVal::FromWord(idDefArgs->Sel(0));
-	if (idDef != INVALID_POINTER) {
-	  Generic::Scheduler::GetZeroArg(JIT_R0);
-	  LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-	}
+	if (idDef != INVALID_POINTER)
+	  MoveMemValToLocalEnv(idDef->Sel(0), Generic::Scheduler::GetZeroArg());
       }
     }
     break;
@@ -867,10 +901,8 @@ void NativeCodeJitter::StoreResults(u_int calleeArity, TagVal *idDefArgs) {
       Generic::Scheduler::GetCurrentArgs(JIT_V1);
       for (u_int i = calleeArity; i--;) {
 	TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	if (idDef != INVALID_POINTER) {
-	  Generic::Scheduler::SelArg(JIT_R0, JIT_V1, i);
-	  LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-	}
+	if (idDef != INVALID_POINTER)
+	  MoveIndexValToLocalEnv(idDef->Sel(0), JIT_V1, i);
       }
     }
     break;
@@ -1118,8 +1150,8 @@ void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
     {
       jit_movi_ui(JIT_R0, Scheduler::ONE_ARG);
       Generic::Scheduler::PutNArgs(JIT_R0);
-      u_int reg = LoadIdRefKill(JIT_R0, actualArgs->Sel(0));
-      Generic::Scheduler::PutZeroArg(reg);
+      u_int Reg = LoadIdRefKill(JIT_R0, actualArgs->Sel(0));
+      Generic::Scheduler::PutZeroArg(Reg);
     }
     break;
   case AbstractCode::TupArgs:
@@ -1130,8 +1162,8 @@ void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
       Generic::Scheduler::PutNArgs(JIT_R0);
       Generic::Scheduler::GetCurrentArgs(JIT_V1);
       for (u_int i = nArgs; i--;) {
-	u_int reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
-	Generic::Scheduler::PutArg(JIT_V1, i, reg);
+	u_int Reg = LoadIdRefKill(JIT_R0, actualIdRefs->Sub(i));
+	Generic::Scheduler::PutArg(JIT_V1, i, Reg);
       }
     }
     break;
@@ -1303,16 +1335,8 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, Closure *closure, bool direct) {
 void NativeCodeJitter::CompileConsequent(word conseq, u_int TagValue) {
   Tuple *tuple      = Tuple::FromWordDirect(conseq);
   TagVal *idDefsOpt = TagVal::FromWord(tuple->Sel(0));
-  if (idDefsOpt != INVALID_POINTER) {
-    Vector *idDefs = Vector::FromWordDirect(idDefsOpt->Sel(0));
-    for (u_int j = idDefs->GetLength(); j--;) {
-      TagVal *idDef = TagVal::FromWord(idDefs->Sub(j));
-      if (idDef != INVALID_POINTER) {
-	JITAlice::TagVal::Sel(JIT_R0, TagValue, j);
-	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-      }
-    }
-  }
+  if (idDefsOpt != INVALID_POINTER)
+    BindIdDefs(idDefsOpt->Sel(0), TagValue, JITAlice::TagVal::Sel());
   CompileBranch(TagVal::FromWordDirect(tuple->Sel(1)));
 }
 
@@ -1712,8 +1736,7 @@ TagVal *NativeCodeJitter::InstrGetRef(TagVal *pc) {
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Cell   = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
-  JITAlice::Cell::Sel(JIT_R0, Cell);
-  LocalEnvPut(JIT_V2, pc->Sel(0), JIT_R0);
+  MoveBlockValToLocalEnv(pc->Sel(0), Cell, JITAlice::Cell::Sel());
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
@@ -1723,16 +1746,8 @@ TagVal *NativeCodeJitter::InstrGetTup(TagVal *pc) {
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
-  Vector *idDefs = Vector::FromWordDirect(pc->Sel(0));
-  u_int nArgs    = idDefs->GetLength();
-  if (nArgs != 0)
-    for (u_int i = nArgs; i--;) {
-      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-      if (idDef != INVALID_POINTER) {
-	Generic::Tuple::Sel(JIT_R0, Tuple, i);
-	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-      }
-    }
+  // to be done: move Tuple to JIT_V1?
+  BindIdDefs(pc->Sel(0), Tuple, Generic::Tuple::Sel());
   return TagVal::FromWordDirect(pc->Sel(2));
 }
 
@@ -1742,8 +1757,8 @@ TagVal *NativeCodeJitter::InstrSel(TagVal *pc) {
   word instrPC = Store::IntToWord(GetRelativePC());
   u_int Tuple  = LoadIdRef(JIT_V1, pc->Sel(1), instrPC);
   KillIdRef(pc->Sel(1));
-  Generic::Tuple::Sel(JIT_R0, Tuple, Store::DirectWordToInt(pc->Sel(2)));
-  LocalEnvPut(JIT_V2, pc->Sel(0), JIT_R0);
+  u_int index = Generic::Tuple::Sel() + Store::DirectWordToInt(pc->Sel(2));
+  MoveBlockValToLocalEnv(pc->Sel(0), Tuple, index);
   return TagVal::FromWordDirect(pc->Sel(3));
 }
 
@@ -2047,15 +2062,8 @@ TagVal *NativeCodeJitter::InstrTagTest(TagVal *pc) {
       word key       = triple->Sel(0);
       u_int offset   = GetRelativePC();
       map2->Put(key, Store::IntToWord(offset));
-      Vector *idDefs = Vector::FromWordDirect(triple->Sel(1));
       jit_popr_ui(JIT_V1); // Restore TagVal Ptr
-      for (u_int i = idDefs->GetLength(); i--;) {
-	TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-	if (idDef != INVALID_POINTER) {
-	  JITAlice::TagVal::Sel(JIT_R0, JIT_V1, i);
-	  LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-	}
-      }
+      BindIdDefs(triple->Sel(1), JIT_V1, JITAlice::TagVal::Sel());
       CompileBranch(TagVal::FromWordDirect(triple->Sel(2)));
     }
     jit_patch(else_ref2);
@@ -2229,19 +2237,12 @@ TagVal *NativeCodeJitter::InstrConTest(TagVal *pc) {
     ConVal = ReloadIdRef(JIT_R0, pc->Sel(0));
     JITAlice::ConVal::GetConstructor(JIT_R0, ConVal);
     jit_insn *next_test_ref = jit_bner_ui(jit_forward(), constr, JIT_R0);
-    Vector *idDefs          = Vector::FromWordDirect(triple->Sel(1));
     ConVal                  = ReloadIdRef(JIT_V1, pc->Sel(0));
     // Invariant: Arbiter must reside in temporary register
     if (ConVal != JIT_V1) {
       jit_movr_p(JIT_V1, ConVal);
     }
-    for (u_int i = idDefs->GetLength(); i--;) {
-      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-      if (idDef != INVALID_POINTER) {
-	JITAlice::ConVal::Sel(JIT_R0, JIT_V1, i);
-	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-      }
-    }
+    BindIdDefs(triple->Sel(1), JIT_V1, JITAlice::ConVal::Sel());
     KillIdRef(pc->Sel(0)); // Some kills missing
     CompileBranch(TagVal::FromWordDirect(triple->Sel(2)));
     jit_patch(next_test_ref);
@@ -2285,13 +2286,7 @@ TagVal *NativeCodeJitter::InstrVecTest(TagVal *pc) {
     word key       = Store::IntToWord(idDefs->GetLength());
     u_int offset   = GetRelativePC();
     map->Put(key, Store::IntToWord(offset));
-    for (u_int i = idDefs->GetLength(); i--;) {
-      TagVal *idDef = TagVal::FromWord(idDefs->Sub(i));
-      if (idDef != INVALID_POINTER) {
-	JITAlice::Vector::Sel(JIT_R0, JIT_V1, i);
-	LocalEnvPut(JIT_V2, idDef->Sel(0), JIT_R0);
-      }
-    }
+    BindIdDefs(idDefs->ToWord(), JIT_V1, JITAlice::Vector::Sel());
     CompileBranch(TagVal::FromWordDirect(pair->Sel(1)));
   }
   jit_patch(else_ref);

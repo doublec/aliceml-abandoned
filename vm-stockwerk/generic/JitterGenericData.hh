@@ -49,6 +49,9 @@ namespace Generic {
 #endif
       jit_stxi_p(pos * sizeof(word), Ptr, Value);
     }
+    static void *GetZeroArg() {
+      return (void *) &::Scheduler::currentArgs[0];
+    }
     static void GetZeroArg(u_int Dest) {
       Sel(&::Scheduler::currentArgs[0], Dest);
     }
@@ -239,6 +242,9 @@ namespace Generic {
     // Side-Effect: Scratches JIT_R0, JIT_FP
     static void New(u_int This, u_int size) {
       JITStore::AllocBlock(This, TUPLE_LABEL, size);
+    }
+    static u_int Sel() {
+      return 0;
     }
     static void Sel(u_int Dest, u_int This, u_int pos) {
       JITStore::GetArg(Dest, This, pos);
