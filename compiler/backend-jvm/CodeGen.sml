@@ -441,7 +441,7 @@ and
 	    [Goto endlabel,
 	     Label faillabel,
 	     Pop,
-	     Aconst 0,
+	     Iconst 0,
 	     Label endlabel]
 	end
   | Patrec _ => raise Error "not yet understood"
