@@ -29,7 +29,7 @@
 import structure Crash            from "../infrastructure/Crash"
 import structure Source           from "../infrastructure/Source"
 import structure Stamp            from "../common/Stamp"
-import structure Label            from "../common/Label"
+import structure Label            from "../../lib/rtt/Label"
 import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
 import structure AbstractionError from "AbstractionError"
 import signature SHARING          from "SHARING-sig"

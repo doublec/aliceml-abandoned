@@ -11,7 +11,7 @@
  *)
 
 import structure Error         from "../infrastructure/Error"
-import structure PrettyPrint   from "../misc/PrettyPrint"
+import structure PrettyPrint   from "../../lib/utility/PrettyPrint"
 import structure PPMisc        from "../infrastructure/PPMisc"
 import structure Source        from "../infrastructure/Source"
 import structure VId           from "Ids"

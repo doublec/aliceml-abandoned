@@ -10,17 +10,17 @@
  *   $Revision$
  *)
 
-import structure Assert        from "../misc/Assert"
+import structure Assert        from "../../lib/utility/Assert"
 import structure Crash         from "../infrastructure/Crash"
 import structure Source        from "../infrastructure/Source"
 import structure Stamp         from "../common/Stamp"
-import structure Name          from "../common/Name"
-import structure Label         from "../common/Label"
-import structure Fixity        from "../common/Fixity"
-import structure Path          from "../common/Path"
-import structure Type          from "../common/Type"
-import structure Inf           from "../common/Inf"
-import structure PervasiveType from "../common/PervasiveType"
+import structure Name          from "../../lib/rtt/Name"
+import structure Label         from "../../lib/rtt/Label"
+import structure Fixity        from "../../lib/rtt/Fixity"
+import structure Path          from "../../lib/rtt/Path"
+import structure Type          from "../../lib/rtt/Type"
+import structure Inf           from "../../lib/rtt/Inf"
+import structure PervasiveType from "../../lib/rtt/PervasiveType"
 import structure VId
        structure TyCon
        structure SigId

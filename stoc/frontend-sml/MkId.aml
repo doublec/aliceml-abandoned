@@ -20,7 +20,7 @@
  *   for labels tyvars).
  *)
 
-import signature STAMP from "../misc/STAMP-sig"
+import signature STAMP from "../../lib/utility/STAMP-sig"
 import signature ID    from "ID-sig"
 
 

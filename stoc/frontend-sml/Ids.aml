@@ -20,7 +20,7 @@
  *   grammar.
  *)
 
-import structure MkStamp from "../misc/MkStamp"
+import structure MkStamp from "../../lib/utility/MkStamp"
 import structure MkId    from "MkId"
 
 local

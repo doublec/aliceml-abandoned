@@ -16,13 +16,13 @@ import structure VId
        structure TyCon
        structure SigId
        structure StrId from "Ids"
-import structure Label             from "../common/Label"
-import structure Name              from "../common/Name"
+import structure Label             from "../../lib/rtt/Label"
+import structure Name              from "../../lib/rtt/Name"
 import structure AbstractGrammar   from "../frontend-common/AbstractGrammar"
 import structure Source            from "../infrastructure/Source"
 import structure Error             from "../infrastructure/Error"
-import structure Url               from "../misc/Url"
-import structure PrettyPrint       from "../misc/PrettyPrint"
+import structure Url               from "../../lib/utility/Url"
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
 import structure PPMisc            from "../infrastructure/PPMisc"
 import signature ABSTRACTION_ERROR from "ABSTRACTION_ERROR-sig"
 
