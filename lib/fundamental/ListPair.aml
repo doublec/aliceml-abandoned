@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -136,16 +136,16 @@ struct
       | findi'(f, i,   _,     _  )	= NONE
     fun findi f (xs,ys)			= findi'(f,0,xs,ys)
 
-    fun filter'(f, x::xs, y::ys, g)	= let val zs = filter'(f,xs,ys,g)
-					  in if f(x,y) then (x,y)::zs else zs
-					  end
+    fun filter'(f, x::xs, y::ys, g)	= if f(x,y)
+					  then (x,y)::filter'(f,xs,ys,g)
+					  else filter'(f,xs,ys,g)
       | filter'(f,  xs,    ys,   g)	= (g(xs,ys); nil)
     fun filter f (xs,ys)		= filter'(f,xs,ys,ignore)
     fun filterEq f (xs,ys)		= filter'(f,xs,ys,checkEq)
 
-    fun filteri'(f, i, x::xs, y::ys, g)	= let val zs = filteri'(f,i+1,xs,ys,g)
-					  in if f(i,x,y) then(i,x,y)::zs else zs
-					  end
+    fun filteri'(f, i, x::xs, y::ys, g)	= if f(i,x,y)
+					  then (i,x,y)::filteri'(f,i+1,xs,ys,g)
+					  else filteri'(f,i+1,xs,ys,g)
       | filteri'(f, i,  xs,    ys,   g)	= (g(xs,ys); nil)
     fun filteri f (xs,ys)		= filteri'(f,0,xs,ys,ignore)
     fun filteriEq f (xs,ys)		= filteri'(f,0,xs,ys,checkEq)
