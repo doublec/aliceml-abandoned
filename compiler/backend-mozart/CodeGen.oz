@@ -44,14 +44,6 @@ define
       {Dictionary.get State.regDict Stamp}
    end
 
-   fun {GetPrintName id((L#C)#_ _ Name) State}
-      case Name of inId then
-	 {VirtualString.toAtom
-	  'File '#State.filename#', line '#L#', column '#C}
-      [] exId(PrintName) then PrintName
-      end
-   end
-
    fun {GetStaticCon Stamp State} Dict in
       Dict = State.shareDict
       if {Dictionary.member Dict Stamp} then

@@ -84,13 +84,6 @@ define
       end
    end
 
-   fun {TrArity Arity}
-      case Arity of 'Unary' then unary
-      [] 'TupArity'(I) then tupArity(I)
-      [] 'ProdArity'(Labels) then prodArity({Map Labels TrLabel})
-      end
-   end
-
    fun {TrArgs Args TrX}
       case Args of 'OneArg'(X) then oneArg({TrX X})
       [] 'TupArgs'(Xs) then tupArgs({Map Xs TrX})
