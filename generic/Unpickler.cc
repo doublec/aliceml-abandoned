@@ -146,6 +146,19 @@ public:
   bool IsEOB() {
     return Store::DirectWordToInt(Block::GetArg(EOB_POS));
   }
+  bool IsEOF() {
+    switch ((IN_STREAM_TYPE) GetLabel()) {
+    case FILE_INPUT_STREAM:
+      return (GetRd() >= GetTl() &&
+	      gzgetc(GetFile())<0);
+      break;
+    case STRING_INPUT_STREAM:
+      return (GetRd() >= GetTl());
+      break;
+    default:
+      Error("InputStream::IsEOF: illegal node type");
+    }
+  }
   u_char GetByte() {
     u_int rd = GetRd();
     if (rd >= GetTl()) {
@@ -200,6 +213,26 @@ public:
     default:
       Error("InputStream::Close: illegal node type");
     }
+  }
+  void Rewind() {
+    switch ((IN_STREAM_TYPE) GetLabel()) {
+    case FILE_INPUT_STREAM:
+      {
+	gzrewind(GetFile());
+	SetTl(0);
+      }
+      break;
+    case STRING_INPUT_STREAM:
+      {
+	SetTl(GetBuffer()->GetSize());
+      }
+      break;
+    default:
+      Error("InputStream::Close: illegal node type");
+    }
+    SetHd(0);
+    SetRd(0);
+    SetEOB(false);
   }
   Worker::Result FillBuffer() {
     switch ((IN_STREAM_TYPE) GetLabel()) {
@@ -769,6 +802,7 @@ void PickleUnpackWorker::DumpFrame(word) {
   std::fprintf(stderr, "Pickle Unpack\n");
 }
 
+
 // PickleLoadWorker Frame
 class PickleLoadFrame: private StackFrame {
 private:
@@ -815,6 +849,7 @@ public:
   virtual void DumpFrame(word frame);
 };
 
+
 //
 // PickleLoadWorker Functions
 //
@@ -843,19 +878,105 @@ void PickleLoadWorker::DumpFrame(word) {
   std::fprintf(stderr, "Pickle Load\n");
 }
 
+static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
+
+#if BOTTOM_UP_PICKLER
+#include "NewUnpickler.cc"
+
+// PickleCheckWorker
+// checks whether the pickle is old or new style
+
+class PickleCheckWorker: public Worker {
+private:
+  static PickleCheckWorker *self;
+  // PickleCheckWorker Constructor
+  PickleCheckWorker(): Worker() {}
+public:
+  // PickleCheckWorker Static Constructor
+  static void Init() {
+    self = new PickleCheckWorker();
+  }
+  // Frame Handling
+  static void PushFrame();
+  // Execution
+  virtual Result Run();
+  // Debugging
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+};
+
+PickleCheckWorker *PickleCheckWorker::self;
+
+void PickleCheckWorker::PushFrame() {
+  Scheduler::PushFrame(StackFrame::New(MIN_STACK_FRAME, self)->ToWord());
+}
+
+Worker::Result PickleCheckWorker::Run() {
+  StackFrame *frame = StackFrame::FromWordDirect(Scheduler::GetAndPopFrame());
+  InputStream *is = UnpickleArgs::GetInputStream();
+
+  u_char tag = is->GetByte(); CHECK_EOB();
+  bool flag = false;
+  u_int stackSize = 0;
+  u_int localsSize = 0;
+
+  if (static_cast<Pickle::Tag>(tag) == Pickle::POSINT) {
+    is->Commit();
+    stackSize = is->GetUInt(); CHECK_EOB();
+    is->Commit();
+    if (stackSize > MAX_VALID_INT) CORRUPT();
+    if (!is->IsEOF()) {
+      localsSize = is->GetUInt(); CHECK_EOB();
+      is->Commit();
+      if (localsSize > MAX_VALID_INT) CORRUPT();
+      flag = true;
+    }
+  }
+
+  if (flag) {
+    NewPickleLoadWorker::PushFrame();
+    NewUnpickleWorker::PushFrame(stackSize, localsSize);
+    NewUnpickleArgs::New(is);
+  } else {
+    is->Rewind();
+    Tuple *x = Tuple::New(1);
+    Stack *env = Stack::New(INITIAL_TABLE_SIZE);
+    PickleLoadWorker::PushFrame(x);
+    UnpickleWorker::PushFrame(x->ToWord(), 0, 1);
+    UnpickleArgs::New(is, env->ToWord());
+  }
+
+  return Worker::CONTINUE;
+}
+
+const char *PickleCheckWorker::Identify() {
+  return "PickleCheckWorker";
+}
+
+void PickleCheckWorker::DumpFrame(word) {
+  std::fprintf(stderr, "Pickle Check\n");
+}
+
+#endif
+
 //
 // Unpickler Functions
 //
-static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
+
 
 Worker::Result Unpickler::Unpack(String *s) {
-  Tuple *x = Tuple::New(1);
   InputStream *is = InputStream::NewFromString(s);
-  Stack *env = Stack::New(INITIAL_TABLE_SIZE);
   Scheduler::PopFrame();
+  Stack *env = Stack::New(INITIAL_TABLE_SIZE);
+#if BOTTOM_UP_PICKLER
+  PickleCheckWorker::PushFrame();
+  UnpickleArgs::New(is, env->ToWord());
+#else
+  Tuple *x = Tuple::New(1);
   PickleUnpackWorker::PushFrame(x);
   UnpickleWorker::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
+#endif
   return Worker::CONTINUE;
 }
 
@@ -868,19 +989,33 @@ Worker::Result Unpickler::Load(String *filename) {
     Scheduler::currentBacktrace = Backtrace::New(Scheduler::GetAndPopFrame());
     return Worker::RAISE;
   }
+
   Scheduler::PopFrame();
-  Tuple *x = Tuple::New(1);
   Stack *env = Stack::New(INITIAL_TABLE_SIZE);
+#if BOTTOM_UP_PICKLER
+  PickleCheckWorker::PushFrame();
+  UnpickleArgs::New(is, env->ToWord());
+  return Worker::CONTINUE;
+#else
+  Tuple *x = Tuple::New(1);
   PickleLoadWorker::PushFrame(x);
   UnpickleWorker::PushFrame(x->ToWord(), 0, 1);
   UnpickleArgs::New(is, env->ToWord());
   return Worker::CONTINUE;
+#endif
 }
 
 word Unpickler::Corrupt;
 
 void Unpickler::Init() {
   // Setup internal Workers
+#if BOTTOM_UP_PICKLER
+  PickleCheckWorker::Init();
+  NewInputWorker::Init();
+  NewUnpickleWorker::Init();
+  NewPickleUnpackWorker::Init();
+  NewPickleLoadWorker::Init();
+#endif
   InputStream::Init();
   InputWorker::Init();
   TransformWorker::Init();

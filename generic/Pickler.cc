@@ -35,6 +35,10 @@
 #include "generic/Pickler.hh"
 #include "generic/Pickle.hh"
 
+#if BOTTOM_UP_PICKLER
+#include "NewPickle.hh"
+#endif
+
 #include "alice/Data.hh" //--** should not be here
 
 #define COMPRESSIONLEVEL "9"
@@ -70,6 +74,7 @@ public:
   }
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
+  void PutBytes(u_char *buf, u_int size);
   void PutUInt(u_int i);
   word Close();
 };
@@ -110,6 +115,7 @@ public:
 
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
+  void PutBytes(u_char *buf, u_int size);
   word Close();
 };
 
@@ -150,6 +156,7 @@ public:
 
   void PutByte(u_char byte);
   void PutBytes(Chunk *c);
+  void PutBytes(u_char *c, u_int size);
   word Close();
 };
 
@@ -180,6 +187,15 @@ void OutputStream::PutBytes(Chunk *c) {
   }
 }
 
+void OutputStream::PutBytes(u_char *buf, u_int size) {
+  switch (GetType()) {
+  case FILE_OUTPUT_STREAM:
+    static_cast<FileOutputStream *>(this)->PutBytes(buf, size); break;
+  case STRING_OUTPUT_STREAM:
+    static_cast<StringOutputStream *>(this)->PutBytes(buf, size); break;
+  }
+}
+
 // FileOutputStream Methods
 void FileOutputStreamFinalizationSet::Finalize(word value) {
   gzclose(FileOutputStream::FromWordDirect(value)->GetFile());
@@ -193,6 +209,10 @@ void FileOutputStream::PutByte(u_char byte) {
 
 void FileOutputStream::PutBytes(Chunk *c) {
   gzwrite(GetFile(), c->GetBase(), c->GetSize());
+}
+
+void FileOutputStream::PutBytes(u_char *buf, u_int size) {
+  gzwrite(GetFile(), buf, size);
 }
 
 word FileOutputStream::Close() {
@@ -229,6 +249,15 @@ void StringOutputStream::PutBytes(Chunk *c) {
     Enlarge();
   std::memcpy(GetString()->GetValue() + pos, c->GetBase(), cSize);
   SetPos(pos + cSize);
+}
+
+void StringOutputStream::PutBytes(u_char *buf, u_int size) {
+  //  u_int cSize = c->GetSize();
+  u_int pos   = GetPos();
+  while (pos + size >= GetSize())
+    Enlarge();
+  std::memcpy(GetString()->GetValue() + pos, buf, size);
+  SetPos(pos + size);
 }
 
 word StringOutputStream::Close() {
@@ -623,6 +652,10 @@ void PickleSaveWorker::DumpFrame(word) {
   std::fprintf(stderr, "Pickle Save\n");
 }
 
+#if BOTTOM_UP_PICKLER
+#include "NewPickler.cc"
+#endif
+
 //
 // Pickler Functions
 //
@@ -631,9 +664,15 @@ word Pickler::Sited;
 Worker::Result Pickler::Pack(word x) {
   StringOutputStream *os = StringOutputStream::New();
   Scheduler::PopFrame();
+#if BOTTOM_UP_PICKLER
+  NewPicklePackWorker::PushFrame();
+  NewPickleWorker::PushFrame(x);
+  NewPickleArgs::New(os, OutputBuffer::New(), NewSeen::New());
+#else
   PicklePackWorker::PushFrame();
   PickleWorker::PushFrame(x);
   PickleArgs::New(os, Seen::New());
+#endif
   return Worker::CONTINUE;
 }
 
@@ -648,18 +687,30 @@ Worker::Result Pickler::Save(String *filename, word x) {
     return Worker::RAISE;
   } else {
     Scheduler::PopFrame();
+#if BOTTOM_UP_PICKLER
+    NewPickleSaveWorker::PushFrame();
+    NewPickleWorker::PushFrame(x);
+    NewPickleArgs::New(os, OutputBuffer::New(), NewSeen::New());
+#else
     PickleSaveWorker::PushFrame();
     PickleWorker::PushFrame(x);
     PickleArgs::New(os, Seen::New());
+#endif
     return Worker::CONTINUE;
   }
 }
 
 void Pickler::Init() {
   FileOutputStream::Init();
+#if BOTTOM_UP_PICKLER
+  NewPickleWorker::Init();
+  NewPickleSaveWorker::Init();
+  NewPicklePackWorker::Init();
+#else
   PickleWorker::Init();
-  PicklePackWorker::Init();
   PickleSaveWorker::Init();
+  PicklePackWorker::Init();
+#endif
 }
 
 void Pickler::InitExceptions() {
