@@ -10,15 +10,15 @@
 //   $Revision$
 //
 
-#ifndef __ALICE__STACK_FRAME_HH__
-#define __ALICE__STACK_FRAME_HH__
+#ifndef __JAVA__STACK_FRAME_HH__
+#define __JAVA__STACK_FRAME_HH__
 
 #if defined(INTERFACE)
-#pragma interface "alice/StackFrame.hh"
+#pragma interface "java/StackFrame.hh"
 #endif
 #include "generic/StackFrame.hh"
 
 static const FrameLabel JAVA_BYTE_CODE_FRAME =
-(FrameLabel) MIN_LANGUAGE_LAYER_FRAME + 1;
+  (FrameLabel) (MIN_LANGUAGE_LAYER_FRAME + 1);
 
 #endif
