@@ -28,10 +28,8 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	    val (t'',t1)  = Type.asApply t'
 	    val (t11,t12) = Type.asArrow t1
 	in
-(*ASSERT    assert Type.isCon t'' andalso
-	       Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow) =>*)
-	    if not(Type.isCon t'' andalso
-	       Path.equals(#3(Type.asCon t''), PervasiveType.path_conarrow))
+(*ASSERT    assert Type.equals(t'', PervasiveType.typ_conarrow) =>*)
+	    if not(Type.equals(t'', PervasiveType.typ_conarrow))
 	    then raise Assert.failure else
 	    idStatusFromTyp'(t12, t2)
 	end
@@ -42,8 +40,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 	if      Type.isApply' t1 then idStatusFromTyp'(#1(Type.asApply' t1), t2)
 	else if Type.isSum' t1 then
 	    T(arityFromNatTyp t2)
-	else if Type.isCon' t1
-	andalso Path.equals(#3(Type.asCon' t1), PervasiveType.path_ref) then
+	else if Type.equals(t1, PervasiveType.typ_ref) then
 	    R
 	else if Type.isCon' t1 andalso #2(Type.asCon' t1) = Type.OPEN then
 	    C(arityFromNatTyp t2)
@@ -57,11 +54,7 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 
 
     fun envFromTyp(I,s,t) =
-	if      Type.isSum t    then envFromRow(I, s, Type.asSum t)
-	else if Type.isLambda t then envFromTyp(I, s, #2(Type.asLambda t))
-	else if Type.isMu t     then envFromTyp(I, s, Type.asMu t)
-	else if Type.isCon t
-	andalso Path.equals(#3(Type.asCon t), PervasiveType.path_ref) then
+	if Type.equals(t, PervasiveType.typ_ref) then
 	    let
 		(*UNFINISHED: constructor currently gets the same name
 		 * as the tycon, because we have no way of knowing its
@@ -75,7 +68,13 @@ structure BindEnvFromSig :> BIND_ENV_FROM_SIG =
 		E
 	    end
 	else
-	    new()
+	    envFromTyp'(I,s,t)
+
+    and envFromTyp'(I,s,t) =
+	if      Type.isSum t    then envFromRow(I, s, Type.asSum t)
+	else if Type.isLambda t then envFromTyp(I, s, #2(Type.asLambda t))
+	else if Type.isMu t     then envFromTyp(I, s, Type.asMu t)
+	else new()
 
     and envFromRow(I,s,r) =
 	let
