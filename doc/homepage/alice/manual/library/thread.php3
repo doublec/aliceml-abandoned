@@ -19,7 +19,7 @@
     <TT>RUNNABLE</TT> again.  When the computation has been fully
     performed (or an exception is raised for which there is no handler),
     the thread becomes <TT>TERMINATED</TT>; we say that the thread has
-    <I>died</I>.
+    <EM>died</EM>.
   </P>
 
   <P>
@@ -179,7 +179,7 @@
       <P>suspends <I>thr</I>.  If <I>thr</I> is being executed, then
 	it yields.  <I>thr</I> is not rescheduled until resumed again.
 	Note that this does not change the status of <I>thr</I>,
-	that is, <I>thr</I> can be suspended <I>and</I> at the same
+	that is, <I>thr</I> can be suspended <EM>and</EM> at the same
 	time be runnable, blocked, or terminated.</P>
     </DD>
 

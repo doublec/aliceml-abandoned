@@ -12,16 +12,16 @@
   <P>
     This structure provides components as first-class entities and
     operations on them.  We speak of unevaluated and evaluated components.
-    An <I>unevaluated</I> component is a component which has not yet been
+    An <EM>unevaluated</EM> component is a component which has not yet been
     linked and applied, that is, its declarations have not been executed.
-    An <I>evaluated</I> component is similar to a package: it has empty
+    An <EM>evaluated</EM> component is similar to a package: it has empty
     import announcements, cannot be applied to produce side-effects, and
     as such is just a pair of a structure and its (export) signature.
   </P>
 
   <P>
-    The linking and evaluation of components takes place in <I>component
-    managers</I>.
+    The linking and evaluation of components takes place in <EM>component
+    managers</EM>.
   </P>
 
 <?php section("import", "import") ?>
