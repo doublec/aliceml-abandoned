@@ -56,7 +56,7 @@ void NativeTaskManager::PushCall(TaskStack *taskStack, Closure *closure) {
 
 TaskManager::Result NativeTaskManager::Handle(TaskStack *taskStack) {
   word exn = taskStack->GetWord(0);
-  taskStack->PopFrame(frameSize + 1);
+  taskStack->PopFrame(frameSize);
   taskStack->PutWord(0, exn);
   return Result(Result::RAISE);
 }
