@@ -476,9 +476,9 @@ prepare
 	 end
       'Hole.future':
 	 fun {$ X} Y in
-	    if {IsFuture X} orelse {Not {IsFree X}} then
-	       {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
-	    end
+	    %%if {IsFuture X} orelse {Not {IsFree X}} then
+	    %%   {Exception.raiseError alice(BuiltinTable.'Hole.Hole')}
+	    %%end
 	    Y = !!X
 \ifndef OLD_BYNEED
 	    {Value.makeNeeded Y}

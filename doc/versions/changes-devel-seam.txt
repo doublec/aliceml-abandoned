@@ -62,6 +62,7 @@ Library:
   Trace messages are more informative, particularly wrt signature mismatches.
   Also added exception Internal.
 * Hole: fixed semantics of synchronisation on holes.
+* Hole: future now simply returns argument if not a hole (no exception).
 * Promise: fulfilling with a cycle no longer fails the promise.
 * Alt: added mapBoth.
 * Pair: added mapBoth.

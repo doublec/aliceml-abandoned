@@ -46,6 +46,7 @@ Library:
   Trace messages are more informative, particularly wrt signature mismatches.
   Also added exception Internal.
 * Promise: fulfilling with a cycle no longer fails the promise.
+* Hole: future now simply returns argument if not a hole (no exception).
 * Alt: added mapBoth.
 * Pair: added mapBoth.
 * VectorSlice: fixed toVector.
