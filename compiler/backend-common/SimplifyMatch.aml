@@ -27,6 +27,8 @@ import structure FlatGrammar          from "FlatGrammar"
 import structure IntermediateAux      from "IntermediateAux"
 import signature SIMPLIFY_MATCH       from "SIMPLIFY_MATCH-sig"
 
+import "../../lib/system/TextIO"
+
 structure SimplifyMatch :> SIMPLIFY_MATCH =
     struct
 	structure I = IntermediateGrammar
@@ -156,11 +158,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | LESS => false
 	      | GREATER => testSetMember (test, tests)
 
-	fun testMapMember (pos, test, testMap) =
-	    case PosMap.lookup (testMap, pos) of
-		NONE => false
-	      | SOME tests => testSetMember (test, tests)
-
 	fun testSetMerge (tests, nil) = tests
 	  | testSetMerge (nil, tests) = tests
 	  | testSetMerge (tests1 as test1::tests1',
@@ -173,6 +170,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun testMapInsert (testMap, pos, test) =
 	    PosMap.insertWith testSetMerge (testMap, pos, [test])
 
+	fun testMapLookup (testMap, pos) =
+	    Option.getOpt (PosMap.lookup (testMap, pos), nil)
+
+	fun testMapMember (pos, test, testMap) =
+	    testSetMember (test, testMapLookup (testMap, pos))
+
 	fun testSetIntersect (test::tests1, tests2) =
 	    if testSetMember (test, tests2) then
 		test::testSetIntersect (tests1, tests2)
@@ -184,24 +187,31 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	val entailed = testMapMember
 	fun disentailed (pos, test, testMap) =
-	    case PosMap.lookup (testMap, pos) of
-		NONE => false
-	      | SOME tests =>
-		List.exists (fn test' => testDisjoint (test, test')) tests
+	    List.exists (fn test' => testDisjoint (test, test'))
+			(testMapLookup (testMap, pos))
 
-	fun allTests (0, (nil | DecTest _::_)) = true
-	  | allTests (n, (LitTest _ | TagTest _)::tests) =
-	    allTests (n - 1, tests)
-	  | allTests (_, _) = false
-
-	fun total (testMap, pos) =
-	    case PosMap.lookupExistent (testMap, pos) of
-		(RefTest _ | TupTest _ | ProdTest _ | DecTest _)::_ => true
-	      | LitTest (CharLit _)::tests =>
-		    allTests (255, tests)
-	      | TagTest (labels, _, _, _)::tests =>
-		    allTests (Vector.length labels - 1, tests)
-	      | _ => false
+	fun consistent (trueMap, falseMap, pos) =
+	    let
+		val trueTests = testMapLookup (trueMap, pos)
+		val falseTests = testMapLookup (falseMap, pos)
+	    in
+		not (List.exists (fn test => testSetMember (test, falseTests))
+				 trueTests)
+		andalso consistent' (falseTests, ~1)
+	    end
+	and consistent' (_, 0) = false
+	  | consistent' (nil, _) = true
+	  | consistent' ((RefTest _ | TupTest _ |
+			  ProdTest _ | DecTest _)::_, n) = false
+	  | consistent' (LitTest (CharLit _)::tests', n) =
+		(*--** other small types? *)
+		consistent' (tests', if n < 0 then 255 else n - 1)
+	  | consistent' (TagTest (labels, _, _, _)::tests', n) =
+		consistent' (tests', if n < 0 then Vector.length labels - 1
+					      else n - 1)
+	  | consistent' ((LitTest _ | ConTest _ |
+			  VecTest _ | GuardTest _)::tests', n) =
+		consistent' (tests', n)
 
 	(* Test Sequence Construction *)
 
@@ -351,6 +361,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	datatype testGraph =
 	    Node of pos * test * testGraph ref * testGraph ref * nodeStatus ref
 	  | Leaf of O.body * O.body option ref
+	  | Fail
 	  | Default
 	  | Unreachable of testGraph
 	and nodeStatus =
@@ -410,7 +421,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun testsToString tests =
 	    String.concatWith ", " (List.map testToString tests)
 
-	fun posTestMapToString map =
+	fun testMapToString map =
 	    String.concatWith "; "
 	    (PosMap.foldi (fn (pos, tests, strings) =>
 			   (posToString pos ^ ": " ^ testsToString tests)
@@ -419,28 +430,30 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun graphToString (Node (pos, test, ref thenGraph, ref elseGraph,
 				 ref status), level) =
+	    if level > 30 then "..." else
 	    indent level ^
 	    posToString pos ^ ": " ^
 	    testToString test ^ "\n" ^
 	    (case status of
 		 Cooked {thenTrue, thenFalse, ...} =>
 		     indent (level + 1) ^ "T[" ^
-		     posTestMapToString thenTrue ^ "]\n" ^
+		     testMapToString thenTrue ^ "]\n" ^
 		     indent (level + 1) ^ "F[" ^
-		     posTestMapToString thenFalse ^ "]\n"
+		     testMapToString thenFalse ^ "]\n"
 	       | _ => "") ^
 	    graphToString (thenGraph, level + 1) ^
 	    (case status of
 		 Cooked {elseTrue, elseFalse, ...} =>
 		     indent (level + 1) ^ "T[" ^
-		     posTestMapToString elseTrue ^ "]\n" ^
+		     testMapToString elseTrue ^ "]\n" ^
 		     indent (level + 1) ^ "F[" ^
-		     posTestMapToString elseFalse ^ "]\n"
+		     testMapToString elseFalse ^ "]\n"
 	       | _ => "") ^
 	    graphToString (elseGraph, level + 1)
 	  | graphToString (Leaf (body, _), level) =
 	    indent level ^ "leaf " ^
 	    (Source.regionToString (O.infoStm (List.hd body))) ^ "\n"
+	  | graphToString (Fail, level) = indent level ^ "fail\n"
 	  | graphToString (Default, level) = indent level ^ "default\n"
 	  | graphToString (Unreachable graph, level) =
 	    indent level ^ "unreachable\n" ^
@@ -494,19 +507,18 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		   | NONE =>
 			 let
 			     val newThenTree =
-				 mergeIntoTree (testSeqRest, thenTree, Default)
+				 mergeIntoTree (testSeqRest, thenTree, Fail)
 			 in
 			     Node (pos, test, ref newThenTree, ref elseTree,
 				   ref Initial)
 			 end)
 	      | mergeIntoTree (Neg testSeq::testSeqRest, thenTree, elseTree) =
+		(*--** this may create duplicate code in some cases. *)
 		mergeIntoTree (testSeq, elseTree,
 			       mergeIntoTree (testSeqRest, thenTree, elseTree))
 	      | mergeIntoTree (Alt (testSeq1, testSeq2)::testSeqRest, thenTree,
 			       elseTree) =
 		(*--** this may create duplicate code in some cases. *)
-		(*AR: I believe this is no longer the case since we stamp *)
-		(*    ref, guard and dec tests now. *)
 		mergeIntoTree (testSeq1 @ testSeqRest, thenTree,
 			       mergeIntoTree (testSeq2 @ testSeqRest, thenTree,
 					      elseTree))
@@ -515,16 +527,19 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	(* Elimination of Backtracking, Producing a Test Graph *)
 
-	fun propagateElses (Node (_, _, thenTreeRef, elseTreeRef, _),
-			    defaultTree) =
+	fun propagateFails (Node (_, _, thenTreeRef, elseTreeRef, _),
+			    contTree, defaultTree) =
 	    (case !elseTreeRef of
-		 Default => elseTreeRef := defaultTree
-	       | elseTree => propagateElses (elseTree, defaultTree);
+		 Fail => elseTreeRef := contTree
+	       | Default => elseTreeRef := defaultTree
+	       | elseTree => propagateFails (elseTree, contTree, defaultTree);
 	     case !thenTreeRef of
-		 Default => thenTreeRef := defaultTree
-	       | thenTree => propagateElses (thenTree, !elseTreeRef))
-	  | propagateElses (Leaf (_, _), _) = ()
-	  | propagateElses ((Default | Unreachable _), _) =
+		 Fail => thenTreeRef := contTree
+	       | Default => thenTreeRef := defaultTree
+	       | thenTree => propagateFails (thenTree, !elseTreeRef,
+					     defaultTree))
+	  | propagateFails (Leaf (_, _), _, _) = ()
+	  | propagateFails ((Fail | Default | Unreachable _), _, _) =
 	    raise Crash.Crash "SimplifyMatch.propagateElses"
 
 	(* Optimization of the Test Graph *)
@@ -589,9 +604,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 						  thenTrue, thenFalse);
 		    elseGraphRef := optimizeNode (!elseGraphRef,
 						  elseTrue, elseFalse);
-		    if total (elseFalse, pos) then
-			elseGraphRef := Unreachable (!elseGraphRef)
-		    else ();
+		    if consistent (thenTrue, thenFalse, pos) then () else
+			thenGraphRef := Unreachable (!thenGraphRef);
+		    if consistent (elseTrue, elseFalse, pos) then () else
+			elseGraphRef := Unreachable (!elseGraphRef);
 		    SOME sets
 		end
 	      | getSets (Node (_, _, _, _, ref (Cooked sets))) = SOME sets
@@ -755,24 +771,31 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    end
 
 	exception NonExhaustive of testMap * testMap
+	exception Inconsistent of testMap * testMap
 
 	fun check (trueMap, falseMap, conts,
-		   Node (pos, test, thenGraphRef, elseGraphRef, _)) =
+		   Node (pos, test, ref thenGraph, ref elseGraph, _)) =
 	    let
 		val trueMap' = testMapInsert (trueMap, pos, test)
 		val falseMap' = testMapInsert (falseMap, pos, test)
 	    in
-		check (trueMap', falseMap, !elseGraphRef::conts, !thenGraphRef);
-		if total (falseMap', pos) then () else
-		    check (trueMap, falseMap', conts, !elseGraphRef)
+print(posToString pos ^": "^testToString test^"\n");
+		if consistent (trueMap, falseMap', pos) then
+		    check (trueMap, falseMap', conts, elseGraph)
+		else if consistent (trueMap', falseMap, pos) then
+		    check (trueMap', falseMap, elseGraph::conts, thenGraph)
+		else
+		    raise Inconsistent (trueMap', falseMap)
 	    end
 	  | check (trueMap, falseMap, conts, Leaf (_, _)) = ()
-	  | check (trueMap, falseMap, conts, Default) =
+	  | check (trueMap, falseMap, conts, Fail) =
 	    (case conts of
-		 nil => raise NonExhaustive (trueMap, falseMap)
+		 nil => raise Crash.Crash "SimplifyMatch.checkExhaustiveness 1"
 	       | graph::conts' => check (trueMap, falseMap, conts', graph))
+	  | check (trueMap, falseMap, conts, Default) =
+		raise NonExhaustive (trueMap, falseMap)
 	  | check (trueMap, falseMap, conts, Unreachable _) =
-	    raise Crash.Crash "SimplifyMatch.checkExhaustiveness"
+	    raise Crash.Crash "SimplifyMatch.checkExhaustiveness 2"
 
 	fun checkExhaustiveness graph =
 	    check (PosMap.empty, PosMap.empty, nil, graph)
@@ -782,7 +805,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	type consequent = Source.region * O.body option ref
 	type mapping' = (pos * O.idRef) list
 
-	fun buildGraph (matches, elseBody) =
+	fun buildGraph (matches, defaultBody, check) =
 	    let
 		val (graph, consequents) =
 		    Vector.foldr (fn ((region, pat, thenBody),
@@ -798,25 +821,41 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 						      leaf, elseTree),
 				       (region, r)::consequents)
 				  end) (Default, nil) matches
-		val elseGraph = Leaf (elseBody, ref NONE)
+		val defaultGraph = Leaf (defaultBody, ref NONE)
 		val region = if Vector.length matches > 0 then
 				 #1 (Vector.sub (matches, 0))
-			     else O.infoStm (List.hd elseBody)
+			     else O.infoStm (List.hd defaultBody)
 	    in
 		case graph of
 		    Default =>
 			(Error.warn' (region, "match is void");
-			 (elseGraph, consequents))
+			 (defaultGraph, consequents))
 		  | _ =>
 			let
-			    val _ = checkExhaustiveness graph
-			    handle NonExhaustive (trueMap, falseMap) =>
-				Error.warn' (region,
-					     "match is not exhaustive, \
-					     \because e.g.\n    " ^
-					     sample (nil, trueMap, falseMap) ^
-					     "\nis not covered")
-			    val _ = propagateElses (graph, elseGraph)
+			    val _ = if not check then () else
+				    checkExhaustiveness graph
+			    handle Inconsistent (trueMap, falseMap) =>
+				   Error.warn' (region, "match is inconsistent")
+before
+(
+print("inconsistent:\n"^graphToString (graph, 0) ^ "\nT[" ^ testMapToString trueMap ^
+				"]\nF[" ^ testMapToString falseMap ^ "]\n")
+;ignore (TextIO.inputLine TextIO.stdIn))
+			         | NonExhaustive (trueMap, falseMap) =>
+				   Error.warn' (region,
+						"match is not exhaustive, \
+						\because e.g.\n    " ^
+						sample (nil, trueMap, falseMap)
+						^ "\nis not covered")
+(*
+before
+(
+print("nonexhaustive:\n"^graphToString (graph, 0) ^ "\nT[" ^ testMapToString trueMap ^
+				"]\nF[" ^ testMapToString falseMap ^ "]\n")
+;ignore (TextIO.inputLine TextIO.stdIn))
+*)
+			    val _ = propagateFails (graph, defaultGraph,
+						    defaultGraph)
 			    val graph' = optimizeGraph graph
 			in
 			    (graph', consequents)
@@ -916,7 +955,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    val arity =
 			if checkMatches matches then typToArity (#typ info)
 			else Arity.Unary
-		    val (graph, consequents) = buildGraph (matches, errStms)
+		    val (graph, consequents) =
+			buildGraph (matches, errStms, true)
 		in
 		    process (arity, graph, consequents, #region info)
 		end
