@@ -233,7 +233,8 @@ COMPONENTS = \
 all: stoc-mozart
 
 stoc-mozart: $(COMPONENTS:%=%.ozf)
-	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=. -x Test.ozf -o $@
+	$(OZL) $(OZLFLAGS) -v --exclude=.. --include=.,../../stoc \
+	-x Test.ozf -o $@
 
 Base.aus: $(BASE_FILES)
 	$(MERGE) $(BASE_FILES) > $@
