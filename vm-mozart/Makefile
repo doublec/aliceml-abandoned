@@ -202,6 +202,7 @@ LIBUTILITYSOURCES0 = \
 	MkScopedImpMap.aml \
 	CELL-sig.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
+	DYNARRAY-sig.aml DynArray.aml \
 	PRETTY_PRINT-sig.aml PrettyPrint.aml \
 	RANDOM-sig.aml Random.aml STAT-sig.aml Stat.aml CTRL-sig.aml Ctrl.aml \
 	$(LIBUTILITYNATIVES0:%=%.aml)
