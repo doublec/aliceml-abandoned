@@ -182,8 +182,12 @@ define
 
       %% Initialize root vertex
       V.RootI = root(daughters: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		     daughtersE: {FS.var.upperBound FirstElementI#LastElementI}
 		     down: {FS.value.make FirstNonRootI#LastNonRootI}
+		     downE: {FS.value.make FirstElementI#LastElementI}
 		     eqdown: {FS.value.make FirstVertexI#LastVertexI}
+		     eqdownE:
+			{FS.value.make FirstNonDataItemI#LastNonDataItemI}
 		     scope: {FS.value.make FirstDataItemI#LastDataItemI}
 		     attributes: RootAttributes)
 
@@ -226,7 +230,7 @@ define
 		   {Collect V.I.eqdown}
 		end
 
-      for I in FirstElementI..LastElementI do W in
+      for I in FirstNonDataItemI..LastNonDataItemI do W in
 	 W = V.I
 %	 W.down = {Select.union Eqdowns W.daughters}
 	 W.down = {FS.union W.downE W.scope}
@@ -283,8 +287,8 @@ define
       for I in FirstElementI..LastElementI do W in
 	 W = V.I
 	 {FS.int.convex W.scope}
-	 W.scope = {Select.union Scopes W.daughters}
-%--**	 W.scope = {SeqUnion Scopes W.daughters}
+%--**	 W.scope = {Select.union Scopes W.daughters}
+	 W.scope = {SeqUnion Scopes W.daughters}
       end
 
       %% Unused elements are immediate daughters of the root
@@ -300,7 +304,7 @@ define
 	 V.I.mother <: I
       end
 
-      E = {FS.value.make FirstElementI#LastElementI}
+      E = {FS.value.make [RootI FirstElementI#LastElementI]}
       EqdownEs = for I in FirstVertexI..LastVertexI collect: Collect do
 		    {Collect case {CondSelect V.I eqdownE unit} of unit then
 				FS.value.empty
@@ -308,20 +312,22 @@ define
 			     end}
 		 end
 
-      for I in FirstElementI..LastElementI do W in
+      for I in FirstNonDataItemI..LastNonDataItemI do W in
 	 W = V.I
 	 W.daughtersE = {FS.intersect E W.daughters}
 	 W.downE = {FS.intersect E W.down}
 	 W.eqdownE = {FS.intersect E W.eqdown}
 	 W.downE = {SeqUnion EqdownEs W.daughtersE}
 	 {FS.int.convex W.eqdownE}
-	 W.isDownEmpty = {FS.reified.equal W.down FS.value.empty}
+	 if I \= RootI then
+	    W.isDownEmpty = {FS.reified.equal W.down FS.value.empty}
+	 end
       end
 
 %--**
-%      for I in FirstElementI..LastElementI - 1 do
-%	 V.I.isDownEmpty =<: V.(I + 1).isDownEmpty
-%      end
+      for I in FirstElementI..LastElementI - 1 do
+	 V.I.isDownEmpty =<: V.(I + 1).isDownEmpty
+      end
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
@@ -341,54 +347,39 @@ define
    end
 
    fun {Script Meaning SourceCost}
-      proc {$ Res} V in
+      proc {$ Res} V
+	 NumberOfElements = SourceCost div Tag.minCost
+	 FirstElementI = RootI + 1
+	 NumberOfActiveElements = {FD.int 0#NumberOfElements}
+      in
 	 Res = {Constrain {Reverse Meaning} SourceCost}
 	 V = Res.1
+
+	 {FD.distribute naive [NumberOfActiveElements]}
+
+	 if NumberOfActiveElements > 0 then
+	    {FS.cardRange 1 FS.sup
+	     V.(FirstElementI+NumberOfActiveElements-1).down}
+	 end
+	 if NumberOfActiveElements < NumberOfElements then
+	    V.(FirstElementI+NumberOfActiveElements).down = FS.value.empty
+	 end
+
 	 {FD.distribute ff
 	  {Append
 	   for I in 1..{Width V} collect: Collect do
-	      case {CondSelect V.I mother unit} of unit then skip
-	      elseof Mother then {Collect Mother}
+	      case V.I of dataItem(...) then
+		 {Collect V.I.mother}
+	      else skip
 	      end
 	   end
 	   for I in 1..{Width V} collect: Collect do
-	      case {CondSelect V.I tag unit} of unit then skip
-	      elseof Tag then {Collect Tag}
+	      case V.I of element(...) then
+		 {Collect V.I.tag}
+		 {Collect V.I.mother}
+	      else skip
 	      end
 	   end}}
-/*
-	 %% interleaved distribution of mothers and tags is much better
-	 %% if there are opportunities of applying PL:
-	 {FD.distribute ff
-	  for I in 1..{Width V} collect: Collect do
-	     case {CondSelect V.I mother unit} of unit then skip
-	     elseof Mother then {Collect Mother}
-	     end
-	     case {CondSelect V.I tag unit} of unit then skip
-	     elseof Tag then {Collect Tag}
-	     end
-	  end}
-*/
-/*
-	 %% distributing mothers seems to be more efficient than
-	 %% distributing daughters
-%	 {FS.distribute naive
-%	  for I in 1..{Width V} collect: Collect do
-%	     {Collect V.I.daughters}
-%	  end}
-	 {FD.distribute ff
-	  for I in 1..{Width V} collect: Collect do
-	     case {CondSelect V.I mother unit} of unit then skip
-	     elseof Mother then {Collect Mother}
-	     end
-	  end}
-	 {FD.distribute ff
-	  for I in 1..{Width V} collect: Collect do
-	     case {CondSelect V.I tag unit} of unit then skip
-	     elseof Tag then {Collect Tag}
-	     end
-	  end}
-*/
       end
    end
 
