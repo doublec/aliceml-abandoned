@@ -1,3 +1,15 @@
+//
+// Author:
+//   Simon Pinkel <pinkel@ps.uni-sb.de>
+// 
+// Copyright:
+//   Simon Pinkel, 2004
+// 
+// Last change:
+//   $Date$ by $Author$
+//   $Revision$
+// 
+
 #include "Alice.hh"
 
 #include <mysql/mysql.h>

@@ -1,3 +1,15 @@
+(*
+ * Author:
+ *   Simon Pinkel <pinkel@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Simon Pinkel, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
 import structure UnsafeMySQL from "UnsafeMySQL"
 
 import signature MYSQL from "MYSQL-sig"
