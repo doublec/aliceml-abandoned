@@ -4,15 +4,29 @@
 
 import
 
-    datatype ref
-    val =
-    val <>
+    infix  7  * / div mod
+    infix  6  + - ^
+    infixr 5  :: @
+    infix  4  = <> > >= < <=
+    infix  3  := o
+    infix  0  before
 
-    signature GENERAL
-    structure General
     type unit
-    datatype exn
+    type int
+    type word
+    type real
+    type char
+    type string
+    type vector
+    type array
+
+    datatype bool
+    datatype option
     datatype order
+    datatype list
+    datatype ref
+    datatype exn
+
     exception Match
     exception Bind
     exception Chr
@@ -23,27 +37,26 @@ import
     exception Size
     exception Span
     exception Subscript
+
+    val =
+    val <>
+
     val !
     val :=
+
     val o
     val before
     val ignore
 
-    signature OPTION
-    structure Option
-    datatype option
+    val exnName
+    val exnMessage
+
+    val not
+
     val getOpt
     val isSome
     val valOf
 
-    signature BOOL
-    structure Bool
-    datatype bool
-    val not
-
-    signature LIST
-    structure List
-    datatype list
     val null
     val hd
     val tl
@@ -55,90 +68,107 @@ import
     val foldl
     val foldr
 
+    val ord
+    val chr
+
+    val size
+    val str
+    val substring
+    val explode
+    val implode
+    val ^
+    val concat
+
+    val ~
+    val +
+    val -
+    val *
+    val div
+    val mod
+    val abs
+    val <
+    val >
+    val <=
+    val >=
+
+    val /
+    val real
+    val ceil
+    val floor
+    val trunc
+    val round
+
+    val vector
+
+    (*MISSING: use*)
+
+    signature GENERAL
+    structure General
+    signature BOOL
+    structure Bool
+    signature OPTION
+    structure Option
+
+    signature LIST
+    structure List
     signature LIST_PAIR
     structure ListPair
 
     signature CHAR
     structure Char
-    type char
-    val ord
-    val chr
-
     signature STRING
     structure String
-    type string
-    val ^
-    val str
-    val size
-    val substring
-    val explode
-    val concat
-    val implode
-
+    signature SUBSTRING
     signature STRING_CVT
     structure StringCvt
 
     signature INTEGER
     structure Int
-    type int
-    val ~
-    val +
-    val -
-    val *
-    val <
-    val >
-    val <=
-    val >=
-    val div
-    val mod
-    val abs
     structure LargeInt
+    structure Position
 
     signature WORD
     structure Word
-    type word
     structure LargeWord
 
     signature REAL
     structure Real
-    type real
     structure LargeReal
-    val real
-    val /
-
-    signature ARRAY
-    structure Array
-    type array
+    signature IEEE_REAL
+    structure IEEEReal
+    signature MATH
+    structure Math
 
     signature VECTOR
     structure Vector
-    type 'a vector
-    val vector
+
+    signature ARRAY
+    structure Array
+
+    signature TIME
+    structure Time
 
     signature TRANSIENT
     structure Transient
-    exception Promise
-    exception Future
-    exception Fulfill
-    exception ByNeed
-    val promise
-    val fulfill
-    val future
-    val byNeed
-    val await
-    val isPromise
-    val isFuture
     structure Transient'
+
+    signature FUTURE
+    structure Future
+    signature PROMISE
+    structure Promise
+    signature CELL
+    structure Cell
+    signature HOLE
+    structure Hole
 
     signature THREAD
     structure Thread
-    val spawn
-
-    infix  7  * / div mod
-    infix  6  + - ^
-    infixr 5  :: @
-    infix  4  = <> > >= < <=
-    infix  3  := o
-    infix  0  before
 
 from "x-alice:/lib/Base.ozf"
+
+
+import
+
+    val print
+
+from "x-alice:/lib/TextIO.ozf"
