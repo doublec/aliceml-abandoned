@@ -8,6 +8,12 @@ structure Component :> COMPONENT =
 	exception Sited
 	exception Corrupt
 
+	exception Mismatch of {component : Url.t,
+			       request : Url.t option,
+			       cause : Inf.mismatch}
+	exception Eval of exn
+	exception Failure of Url.t * exn
+
 	fun inf _ = NONE
 	fun load url =
 	    raise IO.Io {name = Url.toStringRaw url,
@@ -22,8 +28,9 @@ structure Component :> COMPONENT =
 		type component = component
 
 		fun link url =
-		    raise IO.Io {name = Url.toStringRaw url,
-				 function = "link", cause = Corrupt}
+		    raise Failure (url, IO.Io {name = Url.toStringRaw url,
+					       function = "link",
+					       cause = Corrupt})
 		fun lookup _ = NONE
 		fun enter (_, _) = raise Conflict
 	    end
