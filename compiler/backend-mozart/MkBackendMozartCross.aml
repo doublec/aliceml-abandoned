@@ -10,57 +10,25 @@
  *   $Revision$
  *)
 
-import
-    structure OS
-from "../../lib/system/OS"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES-sig"
-
-import
-    signature SIGNATURE
-from "../infrastructure/SIGNATURE-sig"
-
-import
-    signature PHASE
-from "../infrastructure/PHASE-sig"
-
-import
-    signature TARGET
-from "../infrastructure/TARGET-sig"
-
-import
-    structure MkTracingPhase
-from "../infrastructure/MkTracingPhase"
-
-import
-    structure EmptyContext
-from "../infrastructure/EmptyContext"
-
-import
-    structure FlatGrammar
-from "../backend-common/FlatGrammar"
-
-import
-    structure MkEngine
-from "../backend-common/MkEngine"
-
-import
-    structure PickleFlatGrammar
-from "PickleFlatGrammar"
+import structure OS                from "../../lib/system/OS"
+import structure Source            from "../infrastructure/Source"
+import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
+import signature SIGNATURE         from "../infrastructure/SIGNATURE-sig"
+import signature PHASE             from "../infrastructure/PHASE-sig"
+import signature TARGET            from "../infrastructure/TARGET-sig"
+import structure MkTracingPhase    from "../infrastructure/MkTracingPhase"
+import structure EmptyContext      from "../infrastructure/EmptyContext"
+import structure FlatGrammar       from "../backend-common/FlatGrammar"
+import structure MkEngine          from "../backend-common/MkEngine"
+import structure PickleFlatGrammar from "PickleFlatGrammar"
 
 structure MozartEngine =
     MkEngine(fun cmd () =
 		 ("/bin/sh",
 		  [(*--**"/opt/mozart-1.1.1/bin/ozd", "-p",*)
-		   case OS.Process.getEnv "STOC_MOZART" of
+		   case OS.Process.getEnv "ALICEC_MOZART" of
 		       SOME s => s
-		     | NONE => "stoc-mozart.exe"])
+		     | NONE => "alicec-mozart.exe"])
 	     structure Code = PickleFlatGrammar)
 
 functor MkMozartTarget(structure Switches: SWITCHES

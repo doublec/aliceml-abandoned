@@ -17,4 +17,4 @@ is
 
     pickle-out-stream.cm
     PickleFlatGrammar.aml
-    BootstrapMkBackendMozart.aml
+    MkBackendMozartCross.aml
