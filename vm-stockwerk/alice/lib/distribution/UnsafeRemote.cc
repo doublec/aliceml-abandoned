@@ -85,17 +85,17 @@ word UnsafeRemote(void) {
   RootSet::Add(callback);
   callback = Store::IntToWord(0);
 
-  Tuple *t = Tuple::New(5);
   //--** enter UnsafeRemote_dynamicCall into the PrimitiveTable
-  t->Init(0, Primitive::MakeClosure("UnsafeRemote.dynamicCall",
-				    UnsafeRemote_dynamicCall, 2, false));
-  t->Init(1, Primitive::MakeClosure("UnsafeRemote.getLocalIP",
-				    UnsafeRemote_getLocalIP, 0, true));
-  t->Init(2, Primitive::MakeClosure("UnsafeRemote.packValue",
-				    UnsafeRemote_packValue, 1, true));
-  t->Init(3, Primitive::MakeClosure("UnsafeRemote.setCallback",
-				    UnsafeRemote_setCallback, 1, true));
-  t->Init(4, Primitive::MakeClosure("UnsafeRemote.unpackValue",
-				    UnsafeRemote_unpackValue, 1, true));
-  RETURN_STRUCTURE(t);
+  Record *record = Record::New(5);
+  INIT_STRUCTURE(record, "UnsafeRemote", "getLocalIP",
+		 UnsafeRemote_getLocalIP, 0, true);
+  INIT_STRUCTURE(record, "UnsafeRemote", "setCallback",
+		 UnsafeRemote_setCallback, 1, true);
+  INIT_STRUCTURE(record, "UnsafeRemote", "dynamicCall",
+		 UnsafeRemote_dynamicCall, 2, false);
+  INIT_STRUCTURE(record, "UnsafeRemote", "packValue",
+		 UnsafeRemote_packValue, 1, true);
+  INIT_STRUCTURE(record, "UnsafeRemote", "unpackValue",
+		 UnsafeRemote_unpackValue, 1, true);
+  RETURN_STRUCTURE("UnsafeRemote$", record);
 }

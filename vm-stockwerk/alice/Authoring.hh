@@ -26,11 +26,12 @@
 #define DECLARE_ARRAY(array, x) DECLARE_BLOCKTYPE(Array, array, x)
 #define DECLARE_CELL(cell, x) DECLARE_BLOCKTYPE(Cell, cell, x)
 #define DECLARE_REAL(real, x) DECLARE_BLOCKTYPE(Real, real, x)
-#define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
-#define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
+#define DECLARE_RECORD(record, x) DECLARE_BLOCKTYPE(Record, record, x)
 #define DECLARE_TAGVAL(tagVal, x) DECLARE_BLOCKTYPE(TagVal, tagVal, x)
+#define DECLARE_THREAD(thread, x) DECLARE_BLOCKTYPE(Thread, thread, x)
 #define DECLARE_UNIQUE_STRING(uniqueString, x) \
   DECLARE_BLOCKTYPE(UniqueString, uniqueString, x)
+#define DECLARE_VECTOR(vector, x) DECLARE_BLOCKTYPE(Vector, vector, x)
 
 //--** does not work for infinite lists
 #define DECLARE_LIST_ELEMS(tagVal, length, x, cmd)			\
@@ -51,11 +52,14 @@
 
 #define RETURN_UNIT RETURN0
 
-#define RETURN_STRUCTURE(t)           \
-  {                                   \
-    Tuple *structure = Tuple::New(1); \
-    structure->Init(0, t->ToWord());  \
-    return structure->ToWord();       \
+#define INIT_STRUCTURE(r, s1, s2, f, i, b)			\
+  r->Init(s2, Primitive::MakeClosure(s1 "." s2, f, i, b));
+
+#define RETURN_STRUCTURE(label, record)		\
+  {						\
+    Record *structure = Record::New(1);		\
+    structure->Init(label, record->ToWord());	\
+    return structure->ToWord();			\
   }
 
 #endif
