@@ -34,7 +34,8 @@ LIBSEAM_LT_AGE = 1
 
 EXTRA_LDFLAGS = @EXTRA_LDFLAGS@
 
-SUBDIRS = store
+SUBDIRS = libltdl store
+INCLUDES = $(LTDLINCL)
 
 bin_PROGRAMS = seam
 
@@ -97,13 +98,15 @@ nobase_dist_pkginclude_HEADERS = \
 	generic/Pickler.hh \
 	generic/Profiler.hh \
 	generic/Broker.hh \
+	generic/DllLoader.hh \
 	generic/Authoring.hh \
 	generic/JitterGenericData.hh \
 	generic/DebugWorker.hh \
 	generic/Debugger.hh \
 	generic/DebuggerEvent.hh \
 	generic/GenericDebuggerEvent.hh \
-	generic/Stream.hh
+	generic/Stream.hh \
+	libltdl/ltdl.h
 nobase_nodist_pkginclude_HEADERS = \
 	store/StoreConfig.hh
 
@@ -138,6 +141,7 @@ libseam_la_SOURCES = \
 	generic/Pickler.cc \
 	generic/Profiler.cc \
 	generic/Broker.cc \
+	generic/DllLoader.cc \
 	generic/DebugWorker.cc \
 	generic/Debugger.cc \
 	generic/GenericDebuggerEvent.cc \
@@ -145,6 +149,8 @@ libseam_la_SOURCES = \
 nodist_libseam_la_SOURCES = \
 	store/StoreConfig.hh
 libseam_la_LDFLAGS = $(EXTRA_LDFLAGS)
+libseam_la_LIBADD = $(LIBLTDL) "-dlopen" self
+libseam_la_DEPENDENCIES = $(LIBLTDL)
 
 aclocaldir = $(datadir)/aclocal
 dist_aclocal_DATA = seam.m4

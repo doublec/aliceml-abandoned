@@ -57,6 +57,7 @@
 #include "generic/Pickler.hh"
 #include "generic/Profiler.hh"
 #include "generic/Broker.hh"
+#include "generic/DllLoader.hh"
 #include "generic/Authoring.hh"
 #include "generic/JitterGenericData.hh"
 

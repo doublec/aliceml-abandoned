@@ -14,11 +14,7 @@
 #pragma implementation "generic/Broker.hh"
 #endif
 
-#if !HAVE_DLOPEN
-#include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
+#include "generic/DllLoader.hh"
 
 #include "generic/RootSet.hh"
 #include "generic/Backtrace.hh"
@@ -38,6 +34,7 @@ void Broker::Init() {
   RootSet::Add(wNameValueTable);
   BrokerError = UniqueString::New(String::New("Broker.Error"))->ToWord();
   RootSet::Add(BrokerError);
+  DllLoader::Init();
 }
 
 #define RAISE(w) {					\
@@ -48,49 +45,38 @@ void Broker::Init() {
   return Worker::RAISE;					\
 }
 
-static void *LoadLanguageLayer(String *languageId) {
+static DllLoader::libhandle LoadLanguageLayer(String *languageId) {
   ChunkMap *languageLayerTable = ChunkMap::FromWordDirect(wLanguageLayerTable);
   word wLanguageId = languageId->ToWord();
   if (languageLayerTable->IsMember(wLanguageId)) {
     word w = languageLayerTable->Get(wLanguageId);
-    return Store::DirectWordToUnmanagedPointer(w);
+    return (DllLoader::libhandle) Store::DirectWordToUnmanagedPointer(w);
   } else {
     u_int n = languageId->GetSize();
     String *filename = String::New(n + 4);
     std::memcpy(filename->GetValue(), languageId->GetValue(), n);
     std::memcpy(filename->GetValue() + n, ".dll", 4);
-    void *handle =
-#if !HAVE_DLOPEN
-      (void *) LoadLibrary(filename->ExportC());
-#else
-      dlopen(filename->ExportC(), RTLD_NOW | RTLD_GLOBAL);
-#endif
+    DllLoader::libhandle handle =
+      DllLoader::OpenLibrary(filename);
     if (handle != NULL)
       languageLayerTable->Put(wLanguageId,
 			      Store::UnmanagedPointerToWord(handle));
     else {
-#if HAVE_DLOPEN
-      std::fprintf(stderr, "dlopen(%s) failed: %s\n",
-		   filename->ExportC(), dlerror());
-#endif
+      std::fprintf(stderr, "OpenLibrary(%s) failed: %s\n",
+ 		   filename->ExportC(), DllLoader::GetLastError()->ExportC());
     }
     return handle;
   }
 }
 
 void Broker::Start(String *languageId, int argc, char *argv[]) {
-  void *handle = LoadLanguageLayer(languageId);
+  DllLoader::libhandle handle = LoadLanguageLayer(languageId);
   if (handle == NULL) {
     //--** improve error handling
     Error("could not link language layer library");
   }
   void (*Start)(int, char *[]) =
-#if !HAVE_DLOPEN
-    reinterpret_cast<void (*)(int, char *[])>
-    (GetProcAddress((HMODULE) handle, "Start"));
-#else
-    (void (*)(int, char *[])) dlsym(handle, "Start");
-#endif
+    (void (*)(int, char *[])) DllLoader::GetSymbol(handle, String::New("Start"));
   if (Start == NULL) {
     Error("could not start language layer");
   }
@@ -98,15 +84,11 @@ void Broker::Start(String *languageId, int argc, char *argv[]) {
 }
 
 Worker::Result Broker::Load(String *languageId, String *key) {
-  void *handle = LoadLanguageLayer(languageId);
+  DllLoader::libhandle handle = LoadLanguageLayer(languageId);
   if (handle == NULL) RAISE(BrokerError);
   Worker::Result (*Load)(String *) =
-#if !HAVE_DLOPEN
-    reinterpret_cast<Worker::Result (*)(String *)>
-    (GetProcAddress((HMODULE) handle, "Load"));
-#else
-    (Worker::Result (*)(String *)) dlsym(handle, "Load");
-#endif
+    (Worker::Result (*)(String *)) DllLoader::GetSymbol(handle, 
+							String::New("Load"));
   if (Load == NULL) RAISE(BrokerError);
   return Load(key);
 }
