@@ -81,18 +81,17 @@
 (*	  spec   ::= spec sharing signature longsigid_1 = ... = longsigid_n	*)
 (*	  sigexp ::= sigexp where signature longsigid_1 = sigexp		*)
 (*   - components:								*)
-(*	  component ::= import <program>					*)
-(*	  import    ::= import spec from string					*)
+(*	  component ::= ann <program>						*)
+(*	  ann       ::= import spec from string					*)
 (*			<>							*)
-(*			import <;> import					*)
+(*			ann <;> ann						*)
 (*										*)
 (* We did NOT introduce a sharing signature ... and signature ... derived form	*)
 (* similar to types, because we consider that completely broken.		*)
 (*										*)
 (* To avoid hardwiring certain library issues, we further added the following	*)
 (* low-level constructs:							*)
-(*	  dec     ::= __prebound strid						*)
-(*	          ::= __primitive val <op> vid : ty = string			*)
+(*	  dec     ::= __primitive val <op> vid : ty = string			*)
 (*	          ::= __primitive constructor <op> vid <of ty> : ty = string	*)
 (*	          ::= __primitive structure strid : sigexp = string		*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
@@ -100,10 +99,10 @@
 (*	          ::= __instance scon with longtycon				*)
 (*	          ::= __eqtype typbind						*)
 (*	  spec    ::= __eqtype typdesc						*)
-(*	          ::= __prebound strid						*)
 (*	          ::= __overload <op> vid with tyvar : ty			*)
 (*	          ::= __instance <op> vid with longtycon = longvid		*)
 (*	          ::= __instance scon with longtycon				*)
+(*	  ann     ::= __prebound strid						*)
 (*										*)
 (* Notes:									*)
 (*   - Two phrases named Fmatch and Fmrule have been added to factorize		*)
@@ -422,12 +421,12 @@
 					of SigExp * Rea option * FunDesc option
 
 	(* Top nonterminal *)
+	| ann0				of Ann
+	|    ann1			of Ann
 	| program			of Program
 	|    program_opt		of Program option
 	|    program_opt'		of Program option
 	| component			of Component
-	| import0			of Import
-	|    import1			of Import
 
 
 %%
@@ -694,8 +693,6 @@
 	| OPEN longstrid_list1
 			( OPENMULTIDec(I(OPENleft,longstrid_list1right),
 				       longstrid_list1) )
-	| PREBOUND strid
-			( PREBOUNDDec(I(PREBOUNDleft,stridright), strid) )
 	| PRIMITIVE VAL OP_opt vid COLON ty EQUALS STRING
 			( PRIMITIVEVALDec(I(PRIMITIVEleft,STRINGright),
 					  OP_opt, vid, ty, STRING) )
@@ -1638,8 +1635,6 @@
 			( FUNCTORSpec(I(FUNCTORleft,fundescright), fundesc))
 	| INCLUDE sigexp
 			( INCLUDESpec(I(INCLUDEleft,sigexpright), sigexp) )
-	| PREBOUND strid
-			( PREBOUNDSpec(I(PREBOUNDleft,stridright), strid) )
 	| OVERLOAD OP_opt vid WITH tyvar COLON ty
 			( OVERLOADSpec(I(OVERLOADleft,tyright),
 				       OP_opt, vid, tyvar, ty))
@@ -2119,6 +2114,25 @@
 *)
 
 
+  (* Announcements *)
+
+  ann0:
+	  ann1			( ann1 )
+	| (*empty*)		( EMPTYAnn(I(defaultPos,defaultPos)) )
+
+     ann1:
+	  IMPORT spec FROM STRING
+	  			( IMPORTAnn(I(IMPORTleft,STRINGright),
+					    spec, STRING) )
+	| PREBOUND strid
+				( PREBOUNDAnn(I(PREBOUNDleft,stridright),
+					      strid) )
+	| ann1 ann1 %prec SEMICOLON
+				( SEQAnn(I(ann11left,ann12right),
+					 ann11, ann12) )
+	| SEMICOLON		( EMPTYAnn(I(SEMICOLONleft,SEMICOLONleft)) )
+
+
   (* Programs *)
 
   program:
@@ -2145,18 +2159,5 @@
   (* Components *)
 
   component:
-	  import0 program_opt	( Component(I(import0left,program_optright),
-					    import0, program_opt) )
-
-  import0:
-	  import1		( import1 )
-	| (*empty*)		( EMPTYImport(I(defaultPos,defaultPos)) )
-
-     import1:
-	  IMPORT spec FROM STRING
-	  			( IMPORTImport(I(IMPORTleft,STRINGright),
-					       spec, STRING) )
-	| import1 import1 %prec SEMICOLON
-				( SEQImport(I(import11left,import12right),
-					    import11, import12) )
-	| SEMICOLON		( EMPTYImport(I(SEMICOLONleft,SEMICOLONleft)) )
+	  ann0 program_opt	( Component(I(ann0left,program_optright),
+					    ann0, program_opt) )

@@ -1005,15 +1005,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SEQDec(i, dec1, dec2) =>
 		trDec' (E, trDec' (E,acc) dec1) dec2
 
-	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
-	   let
-		val  _           = trStrId_bind E strid
-		val (_,stamp,E') = prebound E
-		val  _           = insertStr(E, strid', (i',stamp,E'))
-	   in
-		acc
-	   end
-
 	 | PRIMITIVEVALDec(i, _, vid as VId(i',vid'), ty, s) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
@@ -1960,15 +1951,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		rspecs' @ acc
 	   end
 
-	 | PREBOUNDSpec(i, strid as StrId(i',strid')) =>
-	   let
-		val  _           = trStrId_bind E strid
-		val (_,stamp,E') = prebound E
-		val  _           = insertStr(E, strid', (i',stamp,E'))
-	   in
-		acc
-	   end
-
 	 | OVERLOADSpec(i, _, vid, tyvar, ty) =>
 	   (*UNFINISHED*)
 		acc
@@ -2314,6 +2296,34 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 
 
+  (* Announcements *)
+
+    and trAnn  E ann  = List.rev(trAnn' (E,[]) ann)
+    and trAnn'(E,acc) =
+	fn IMPORTAnn(i, spec, s) =>
+	   let
+		val specs' = trSpec E spec
+		val url    = Url.fromString s
+	   in
+		O.ImpAnn(i, specs', url) :: acc
+	   end
+
+	 | PREBOUNDAnn(i, strid as StrId(i',strid')) =>
+	   let
+		val  _           = trStrId_bind E strid
+		val (_,stamp,E') = prebound E
+		val  _           = insertStr(E, strid', (i',stamp,E'))
+	   in
+		acc
+	   end
+
+	 | EMPTYAnn(i) =>
+		acc
+
+	 | SEQAnn(i, ann1, ann2) =>
+		trAnn' (E, trAnn' (E,acc) ann1) ann2
+
+
   (* Programs and components *)
 
     fun trProgramo  E programo = List.rev(trProgramo' (E,[]) programo)
@@ -2328,30 +2338,13 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 
-    fun trComponent E (Component(i, imp, programo)) =
+    fun trComponent E (Component(i, ann, programo)) =
 	let
-	    val imps' = trImport E imp
+	    val anns' = trAnn E ann
 	    val decs' = trProgramo E programo
 	in
-	    O.Comp(i, imps', decs')
+	    O.Comp(i, anns', decs')
 	end
-
-
-    and trImport  E imp  = List.rev(trImport' (E,[]) imp)
-    and trImport'(E,acc) =
-	fn IMPORTImport(i, spec, s) =>
-	   let
-		val specs' = trSpec E spec
-		val url    = Url.fromString s
-	   in
-		O.Imp(i, specs', url) :: acc
-	   end
-
-	 | EMPTYImport(i) =>
-		acc
-
-	 | SEQImport(i, imp1, imp2) =>
-		trImport' (E, trImport' (E,acc) imp1) imp2
 
 
     val translate = trComponent

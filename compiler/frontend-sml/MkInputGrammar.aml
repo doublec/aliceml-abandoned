@@ -146,7 +146,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
-	| PREBOUNDDec     of Info * StrId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
@@ -281,7 +280,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
-	| PREBOUNDSpec     of Info * StrId
 	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
 	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon
@@ -317,18 +315,18 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
           NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
 	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
 							* SigDesc option
-    (* Programs *)
+    (* Announcements *)
 
-    and Program = Program of Info * Dec * Program option
+    and Ann =
+	  IMPORTAnn   of Info * Spec * string
+	| PREBOUNDAnn of Info * StrId
+	| EMPTYAnn    of Info
+	| SEQAnn      of Info * Ann * Ann
 
-    (* Components *)
+    (* Programs and components *)
 
-    and Component = Component of Info * Import * Program option
-
-    and Import =
-	  IMPORTImport of Info * Spec * string
-	| EMPTYImport  of Info
-	| SEQImport    of Info * Import * Import
+    and Program   = Program   of Info * Dec * Program option
+    and Component = Component of Info * Ann * Program option
 
     (* Sequences *)
 
@@ -399,7 +397,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(OPENDec(I,_))				= I
       | infoDec(EMPTYDec(I))				= I
       | infoDec(SEQDec(I,_,_))				= I
-      | infoDec(PREBOUNDDec(I,_))			= I
       | infoDec(PRIMITIVEVALDec(I,_,_,_,_))		= I
       | infoDec(PRIMITIVECONSTRUCTORDec(I,_,_,_,_,_,_))	= I
       | infoDec(PRIMITIVESTRUCTUREDec(I,_,_,_))		= I
@@ -501,7 +498,6 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(SHARINGTYPESpec(I,_,_))		= I
       | infoSpec(SHARINGSIGNATURESpec(I,_,_))		= I
       | infoSpec(SHARINGSpec(I,_,_))			= I
-      | infoSpec(PREBOUNDSpec(I,_))			= I
       | infoSpec(OVERLOADSpec(I,_,_,_,_))		= I
       | infoSpec(INSTANCESpec(I,_,_,_,_))		= I
       | infoSpec(INSTANCESCONSpec(I,_,_))		= I
@@ -529,13 +525,13 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     fun infoSigDesc(NEWSigDesc(I,_,_,_))		= I
       | infoSigDesc(EQUALSigDesc(I,_,_,_,_))		= I
 
+    fun infoAnn(IMPORTAnn(I,_,_))			= I
+      | infoAnn(PREBOUNDAnn(I,_))			= I
+      | infoAnn(EMPTYAnn(I))				= I
+      | infoAnn(SEQAnn(I,_,_))				= I
+
     fun infoProgram(Program(I,_,_))			= I
-
     fun infoComponent(Component(I,_,_))			= I
-
-    fun infoImport(IMPORTImport(I,_,_))			= I
-      | infoImport(EMPTYImport(I))			= I
-      | infoImport(SEQImport(I,_,_))			= I
 
     fun infoSeq(Seq(I,_))				= I
 

@@ -146,7 +146,6 @@ signature INPUT_GRAMMAR =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
-	| PREBOUNDDec     of Info * StrId
 	| PRIMITIVEVALDec         of Info * Op * VId * Ty * string
 	| PRIMITIVECONSTRUCTORDec of Info * Op * VId * Ty option
 					       * TyVarSeq * LongTyCon * string
@@ -281,7 +280,6 @@ signature INPUT_GRAMMAR =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
-	| PREBOUNDSpec     of Info * StrId
 	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
 	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon
@@ -317,18 +315,18 @@ signature INPUT_GRAMMAR =
           NEWSigDesc      of Info * SigId * StrPat list * SigDesc option
 	| EQUALSigDesc    of Info * SigId * StrPat list * SigExp
 							* SigDesc option
-    (* Programs *)
+    (* Announcements *)
 
-    and Program = Program of Info * Dec * Program option
+    and Ann =
+	  IMPORTAnn   of Info * Spec * string
+	| PREBOUNDAnn of Info * StrId
+	| EMPTYAnn    of Info
+	| SEQAnn      of Info * Ann * Ann
 
-    (* Components *)
+    (* Programs and components *)
 
-    and Component = Component of Info * Import * Program option
-
-    and Import =
-	  IMPORTImport of Info * Spec * string
-	| EMPTYImport  of Info
-	| SEQImport    of Info * Import * Import
+    and Program   = Program   of Info * Dec * Program option
+    and Component = Component of Info * Ann * Program option
 
     (* Sequences *)
 
@@ -384,9 +382,9 @@ signature INPUT_GRAMMAR =
     val infoDconDesc :	DconDesc	-> Info
     val infoStrDesc :	StrDesc		-> Info
     val infoSigDesc :	SigDesc		-> Info
+    val infoAnn :	Ann		-> Info
     val infoProgram :	Program		-> Info
     val infoComponent :	Component	-> Info
-    val infoImport :	Import		-> Info
     val infoSeq :	'a Seq		-> Info
 
     val idLab :		Lab		-> Lab.t
