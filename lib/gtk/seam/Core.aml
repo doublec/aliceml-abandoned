@@ -182,7 +182,7 @@ struct
 	    in
 		if obj' = NULL 
 		    then newObject obj 
-		    else NativeCore.unrefObject obj'
+		    else (NativeCore.unrefObject obj; obj')
 	    end 
     end
 
