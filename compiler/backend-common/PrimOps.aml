@@ -182,6 +182,7 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Unsafe.makeFunction", SOME Unary);
 		ins ("Unsafe.makeTaggedValue", SOME (Tuple 2));
 		ins ("Unsafe.makeTuple", SOME Unary);
+		ins ("Unsafe.selTuple", SOME (Tuple 2));
 		ins ("Vector.fromList", SOME Unary);
 		ins ("Vector.maxLen", NONE);
 		ins ("Vector.length", SOME Unary);
