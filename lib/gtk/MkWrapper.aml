@@ -252,7 +252,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 		(case space of
 		     "gdk"        => ("GdkFieldNative.gdk", "gdk")
 		   | "gtk"        => ("GtkFieldNative.gtk", "gtk")
-		   | "gtk_canvas" => ("GtkCanvasFieldNative.", "gtkCanvas"))
+		   | "gtk_canvas" => ("GtkCanvasFieldNative.gtk", "gtkCanvas"))
 
 	    fun emitFieldDecl' p  {field, ptrs, alias} =
 		let
@@ -270,7 +270,7 @@ functor MkWrapper(structure TypeManager : TYPE_MANAGER
 		    (* Access translation due to bug in Mozart Binding *)
 		    val modName  = (case p of
 					"Canvas" => "gtk" ^ procName
-				      | _        => Util.firstLower procName)
+				      | _        => procName)
 		    val arg      = ARG(TYPE(field, ptrs), "")
 		in
 		    (psl [Util.indent 1, "proc {", procName, " A0 Ret}\n"];
