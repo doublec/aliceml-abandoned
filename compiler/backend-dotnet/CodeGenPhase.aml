@@ -63,6 +63,7 @@
 
 import structure Url            from "../../lib/utility/Url"
 import structure Name           from "../../lib/rtt/Name"
+import structure Label          from "../../lib/rtt/Label"
 import structure IntMap         from "../infrastructure/IntMap"
 import structure Crash          from "../infrastructure/Crash"
 import structure Source         from "../infrastructure/Source"
@@ -472,8 +473,23 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     Vector.appi (fn (i, idRef) =>
 			     (emit Dup; emit (LdcI4 i); emitIdRef idRef;
 			      emit StelemRef)) (idRefs, 0, NONE))
-	  | genExp (ProdExp (info, labelIdVec)) =
-	    genExp (TupExp (info, Vector.map #2 labelIdVec))
+	  | genExp (ProdExp (info, labelIdRefVec)) =
+	    genExp (TupExp (info, Vector.map #2 labelIdRefVec))
+	  | genExp (PolyProdExp (info, labelIdRefVec)) =
+	    (emit (LdcI4 (Vector.length labelIdRefVec));
+	     emit (Newarr ObjectTy);
+	     Vector.appi (fn (i, (label, _)) =>
+			     (emit Dup; emit (LdcI4 i);
+			      emit (Ldstr (Label.toString label));
+			      emit StelemRef)) (labelIdRefVec, 0, NONE);
+	     emit (Newobj (Alice.Record, #[ArrayTy StringTy]));
+	     Vector.app (fn (label, idRef) =>
+			    (emit Dup;
+			     emit (Ldstr (Label.toString label));
+			     emitIdRef idRef;
+			     emit (Call (true, Alice.Record, "Init",
+					 #[StringTy, ObjectTy], VoidTy))))
+			labelIdRefVec)
 	  | genExp (VecExp (info, ids)) = genExp (TupExp (info, ids))
 	  | genExp (FunExp (info, stamp, _, args, body)) =
 	    (emitRegion ("FunExp", info);
@@ -553,14 +569,15 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    end
 	  | genExp (VarAppExp (info, id, args)) =
 	    genVarAppExp (info, id, args, false)
-	  | genExp (SelAppExp (_, _, _, n, idRef)) =
+	  | genExp (SelExp (_, _, _, n, idRef)) =
 	    (emitIdRef idRef; emitAwait ();
 	     emit (Castclass (ArrayTy ObjectTy));
 	     emit (LdcI4 n); emit LdelemRef)
-	  | genExp (LazySelAppExp (_, _, _, n, idRef)) =
-	    (emitIdRef idRef; emit (LdcI4 n);
-	     emit (Newobj (Alice.Selector, #[ObjectTy, Int32Ty]));
-	     emit (Newobj (Alice.ByNeed, #[Alice.ProcedureTy])))
+	  | genExp (LazyPolySelExp (_, label, idRef)) =
+	    (emitIdRef idRef; emitAwait ();
+	     emit (Castclass Alice.RecordTy);
+	     emit (Ldstr (Label.toString label));
+	     emit (Call (true, Alice.Record, "Sel", #[StringTy], ObjectTy)))
 	  | genExp (FunAppExp (info, id, _, args)) =
 	    genVarAppExp (info, id, args, false)
 	  | genExp (FailExp _) =   (*--** implement *)
@@ -590,8 +607,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genExp (TupExp (info, idRefs));
 	     if isTail then emit Tail else ();
 	     emit (Callvirt (Alice.Procedure, "Apply", #[ObjectTy], ObjectTy)))
-	  | genVarAppExp (info, idRef, ProdArgs labelIdVec, isTail) =
-	    genVarAppExp (info, idRef, TupArgs (Vector.map #2 labelIdVec),
+	  | genVarAppExp (info, idRef, ProdArgs labelIdRefVec, isTail) =
+	    genVarAppExp (info, idRef, TupArgs (Vector.map #2 labelIdRefVec),
 			  isTail)
 	and genArgs (OneArg idRef) = emitIdRef idRef
 	  | genArgs (TupArgs idRefs) = genExp (TupExp (Source.nowhere, idRefs))
