@@ -272,7 +272,6 @@ structure CodeStore :> CODE_STORE =
 
 	fun close () =
 	    let
-		val _ = emit Ret
 		val mainMethod =
 		    case !env of
 			[(_, id, 0, (_, _, ref n, _), ref instrs)] =>

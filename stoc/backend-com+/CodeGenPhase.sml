@@ -308,7 +308,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (SharedStm (_, _, ref i)) = emit (Br i)
 	  | genStm (ReturnStm (_, exp)) = (genExp (exp, BOTH); emit Ret)
 	  | genStm (IndirectStm (_, ref bodyOpt)) = genBody (valOf bodyOpt)
-	  | genStm (ExportStm (_, _)) = ()
+	  | genStm (ExportStm (_, _)) = emit Ret
 	and gatherTests ([TestStm (_, id, test, thenBody, elseBody)], id') =
 	    if idEq (id, id') then
 		let
