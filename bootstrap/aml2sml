@@ -1,14 +1,44 @@
 #!/bin/sh
 
+if [ $# != 1 ]
+then
+    echo Usage: aml2sml \<infile\>.aml
+    exit 2
+fi
+
 infile=$1
 outdir=`dirname $1`/NJ
 outfile=$outdir/`basename $1 .aml`.sml
-
-#echo $infile --> $outfile
 
 if [ ! -d $outdir ]
 then mkdir $outdir
 fi
 
-#sed 's/^import[^"]*"[^"]*"//g' $infile >$outfile
-exec awk -f $0.awk $infile >$outfile
+awk '
+BEGIN {
+   import=0;
+   FS="\n";
+}
+
+{
+   if (!import) {
+      if (match($0, /^import[^"]*"[^"]*".*$/)) {
+         print "";
+      }
+      else if (match($0, /^import[^"]*$/)) {
+         import = 1;
+         print "";
+      }
+      else {
+         print $0;
+      }
+   }
+   else {
+      print "";
+      if (match($0, /^[^"]*"[^"]*".*$/)) {
+	 import = 0;
+      }
+   }
+}' < $infile > $outfile
+
+exit 0

@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "../stoc/top/make-depend.cm";
+CM.make' "make-depend.cm";
 
 local
     fun getArgs () =

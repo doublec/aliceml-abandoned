@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "../stoc/top/main-mozart.cm";
+CM.make' "main-mozart.cm";
 
 local
     fun getArgs () =

@@ -11,7 +11,7 @@
  *)
 
 SMLofNJ.Internals.GC.messages false;
-CM.make' "../stoc/top/main-com+.cm";
+CM.make' "main-com+.cm";
 
 local
     fun getArgs () =

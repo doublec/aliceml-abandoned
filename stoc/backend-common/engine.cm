@@ -14,7 +14,4 @@ is
 
     CODE-sig.aml
     ENGINE-sig.aml
-#if (!defined(structure Unix))
-    DummyUnix.sml
-#endif
     MkEngine.aml
