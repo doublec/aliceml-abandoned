@@ -1383,13 +1383,18 @@ fun labeliter ((l,_)::rest,i) = labelcode (l,i) @ labeliter(rest,i+1)
 		     (idCode id'') @
 		     [Invokeinterface (CVal, "apply",
 				       ([Classsig CVal], [Classsig CVal]))]
-	  | expCode (SelAppExp (_, lab', id')) =
+	  | expCode (SelAppExp (_, Lab (_,label'), id')) =
 		     idCode id' @
-		     [Checkcast CDMLTuple,
-		      Iconst 1, (* xxx Den wirklichen Label kenne ich erst, wenn ich
-				 Konstanten propagiert habe *)
-		      Invokeinterface (CDMLTuple, "getByLabel",
-				       ([Intsig], [Classsig CVal]))]
+		     ((Checkcast CDMLTuple) ::
+		      (case Int.fromString label' of
+			  NONE =>
+			      [Ldc (JVMString label'),
+			       Invokeinterface (CDMLTuple, "get",
+						([Classsig CString], [Classsig CVal]))]
+			| SOME i =>
+			      [Iconst i,
+			       Invokeinterface (CDMLTuple, "get",
+						([Intsig], [Classsig CVal]))]))
 
 	  | expCode e = raise Debug (Exp e)
 	and

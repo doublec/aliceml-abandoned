@@ -312,24 +312,22 @@ structure ToJasmin =
 	    in
 		(* apply hat derzeit immer ein doppeltes Areturn am Ende.
 		 Wird spaeter wegoptimiert. *)
-		(if !stackneed <> 0 andalso
-		     (methodname<>"apply") andalso
-		     (methodname<>"sapply")
+		(if !stackneed = 0
 		     orelse
-		     !stackneed <> ~1
+		     !stackneed = ~1
 		     andalso
 		     ((methodname="apply")
 		      orelse (methodname="sapply"))
-		     then
-			 print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
-				" in "^(!actclass)^"."^methodname^".\n")
-		 else ();
+		     then ()
+		 else
+		     print ("\n\nStack Verification Error. Stack="^Int.toString (!stackneed)^
+			    " in "^(!actclass)^"."^methodname^".\n"));
 		     ".method "^mcc^methodname^(descriptor2string methodsig)^"\n"^
 		     ".limit locals "^Int.toString(perslocs+1)^"\n"^
 		     ".limit stack "^Int.toString (!stackmax)^"\n"^
 		     insts^"\n"^
 		     catchinsts^"\n"^
-		     ".end method\n")
+		     ".end method\n"
 	    end
 	fun methodsToJasmin (m::ms) = (methodToJasmin m)^(methodsToJasmin ms)
 	  | methodsToJasmin nil = ""
