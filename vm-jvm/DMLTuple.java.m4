@@ -5,7 +5,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
  */
 public class DMLTuple implements DMLValue {
 
-    private DMLValue vals[]=null;
+    protected DMLValue vals[]=null;
 
     public DMLTuple(DMLValue[] vals) {
 	this.vals=vals;

@@ -5,19 +5,22 @@ public class DMLByNeedFuture extends DMLFuture {
     // ref kann hier nur DMLFunction : unit -> 'a  sein.
     // diese Bedingung wird nicht geprüft
 
-    private boolean applied = false;
+    private DMLValue closure = null;
+    private DMLLVar ref = null;
 
     public DMLByNeedFuture(DMLValue v) {
-	super(v); // einfach den Konstruktor von DMLFuture verwenden
+	closure=v;
+	ref = new DMLLVar();
     }
 
     synchronized public DMLValue request() {
-	if (applied)
-	    return ref;
+	if (closure==null)
+	    return ref.request();
 	else {
-	    ref=ref.apply(DMLConstants.dmlunit);
-	    applied=true;
-	    return ref;
+	    DMLValue temp = closure;
+	    closure = null;
+	    ref.bind(temp.apply(DMLConstants.dmlunit));
+	    return ref.request();
 	}
     }
 

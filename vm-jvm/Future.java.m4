@@ -8,8 +8,11 @@ public class DMLFuture extends DMLLVar {
     /** Dieser Konstruktor wird nur mit DMLLVar als Argument aufgerufen.
      *  @param v DMLLVar
      */
+    public DMLFuture() {
+	ref=null;
+    }
+
     public DMLFuture(DMLValue v) {
-	super();
 	ref=v;
     }
 
