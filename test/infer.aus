@@ -54,10 +54,10 @@ structure List =
 	  | find f (x::xs) = if f x then SOME x else find f xs
 
 	fun foldl f b   nil   = b
-	  | foldl f b (x::xs) = f(x, foldl f b xs)
+	  | foldl f b (x::xs) = foldl f (f(x,b)) xs
 
 	fun foldr f b   nil   = b
-	  | foldr f b (x::xs) = foldr f (f(x,b)) xs
+	  | foldr f b (x::xs) = f(x, foldr f b xs)
 
 	fun exists f   nil   = false
 	  | exists f (x::xs) = f x orelse exists f xs
