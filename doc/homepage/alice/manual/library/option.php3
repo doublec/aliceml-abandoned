@@ -18,7 +18,7 @@
     The type <TT>option</TT> and its constructors, the exception <TT>Option</TT>
     and the functions <TT>isSome</TT>, <TT>isNone</TT>, <TT>valOf</TT> and
     <TT>getOpt</TT> are available in the
-    <A href="toplevel.php3">toplevel environment</A>.
+    <A href="toplevel.php3">top-level environment</A>.
   </P>
 
 <?php section("import", "import") ?>

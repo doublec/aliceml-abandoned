@@ -4,6 +4,7 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/download \
 	$(PREFIX)/papers \
 	$(PREFIX)/manual \
+	$(PREFIX)/manual/library \
 	$(PREFIX)/manual/examples \
 	$(PREFIX)/manual/examples/interpreter
 
@@ -22,6 +23,9 @@ INSTALLFILES_MANUAL_0 = \
 	extensions.php3 incompatibilities.php3 usage.php3 libraries.php3 \
 	explorer.php3 interop.php3 examples.php3 \
 	mozart_cartoon.jpg
+INSTALLFILES_MANUAL_LIBRARY_0 = \
+	style.css macros.php3 menu.php3 \
+	alt.php3 bool.php3 general.php3 option.php3 pair.php3 ref.php3
 INSTALLFILES_MANUAL_EXAMPLES_0 = \
 	streams.aml smolka.aml interpreter.tar
 INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0 = \
@@ -35,6 +39,7 @@ INSTALLFILES = \
 	$(INSTALLFILES_DOWNLOAD_0:%=$(PREFIX)/download/%) \
 	$(INSTALLFILES_PAPERS_0:%=$(PREFIX)/papers/%) \
 	$(INSTALLFILES_MANUAL_0:%=$(PREFIX)/manual/%) \
+	$(INSTALLFILES_MANUAL_LIBRARY_0:%=$(PREFIX)/manual/library/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_0:%=$(PREFIX)/manual/examples/%) \
 	$(INSTALLFILES_MANUAL_EXAMPLES_INTERPRETER_0:%=$(PREFIX)/manual/examples/interpreter/%)
 

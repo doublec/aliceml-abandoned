@@ -12,6 +12,11 @@
     Common combinators on type <TT>'a * 'b</TT>.
   </P>
 
+  <P>
+    The type constructor <TT>pair</TT> is available in the
+    <A href="toplevel.php3">top-level environment</A>.
+  </P>
+
 <?php section("import", "import") ?>
 
   <P>

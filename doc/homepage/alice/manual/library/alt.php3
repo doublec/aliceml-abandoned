@@ -15,7 +15,7 @@
 
   <P>
     The type <TT>alt</TT> and its constructors are available in the
-    <A href="toplevel.php3">toplevel environment</A>.
+    <A href="toplevel.php3">top-level environment</A>.
   </P>
 
 <?php section("import", "import") ?>
