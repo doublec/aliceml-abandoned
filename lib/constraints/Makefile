@@ -28,10 +28,11 @@ OZC = ozc
 OZCOPTS = -z9
 STOC = alicec
 STOCOPTS = --no-dump-elaboration-sig
-STODEP = sml @SMLload=$(BOOTSTRAPDIR)/stodep
+STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
-OZSOURCES = FD.oz FS.oz Space.oz Explorer.oz
-ALICESOURCES = SEARCH-sig.aml Search.aml
+OZSOURCES = UnsafeFD.oz UnsafeFS.oz UnsafeSpace.oz UnsafeExplorer.oz
+ALICESOURCES = FD-sig.aml FD.aml FS-sig.aml FS.aml SPACE-sig.aml Space.aml \
+               SEARCH-sig.aml Search.aml
 
 COMPONENTS = \
 	$(OZSOURCES:%.oz=%.ozf) \

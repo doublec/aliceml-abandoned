@@ -1,0 +1,80 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure UnsafeFD from "UnsafeFD"
+import signature FD from "FD-sig"
+
+structure FD :> FD =
+    struct
+	type fd
+	type bin = fd
+	    
+	datatype domain_element =
+	    SINGLE of int
+	  | RANGE  of int * int
+	    
+	type domain = domain_element vector
+	    
+	datatype relation =
+	    LESS
+	  | LESSEQ
+	  | EQUAL
+	  | NOTEQUAL
+	  | GREATER
+	  | GREATEREQ
+
+	datatype dist_mode =
+	    NAIVE
+	  | FIRSTFAIL
+	  | SPLIT
+
+	(* Introduce flat bindings *)
+	open UnsafeFD
+
+	(* Reified Constraints *)
+	structure Reified =
+	    struct
+		val fd = reified_fd
+		val fdVec = reified_fdVec
+
+		val card  = reified_card
+		val distance = reified_distance
+		val sum = reified_sum
+		val sumC  = reified_sumC
+		val sumAC = reified_sumAC
+		val sumCN = reified_sumCN
+		val sumACN = reified_sumACN
+	    end
+
+	(* Reflection *)
+	structure Reflect =
+	    struct
+		val min = reflect_min
+		val max = reflect_max
+		val mid = reflect_mid
+		val nextLarger = reflect_nextLarger
+		val nextSmaller = reflect_nextSmaller
+		val size = reflect_size
+		val dom = reflect_dom
+		val domList = reflect_domList
+		val nbSusps = reflect_nbSusps
+	    end
+
+	(* Watching *)
+	structure Watch =
+	    struct
+		val min = watch_min
+		val max = watch_max
+		val size = watch_size
+	    end
+    end
