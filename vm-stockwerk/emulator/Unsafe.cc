@@ -15,6 +15,7 @@
 #include "emulator/Authoring.hh"
 #include "emulator/Transform.hh"
 #include "emulator/ConcreteCode.hh"
+#include "emulator/Closure.hh"
 #include "emulator/Tuple.hh"
 #include "emulator/AbstractCodeInterpreter.hh"
 

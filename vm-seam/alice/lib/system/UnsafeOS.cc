@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include "emulator/Authoring.hh"
 #include "emulator/RootSet.hh"
+#include "emulator/Closure.hh"
 #include "emulator/Properties.hh"
 
 // to be done: respect windows/unix differences

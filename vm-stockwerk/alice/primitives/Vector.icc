@@ -18,6 +18,7 @@
 
 #include <cstdio>
 #include "emulator/Authoring.hh"
+#include "emulator/Closure.hh"
 
 // Vector.tabulate Frame
 class VectorTabulateFrame : private StackFrame {
