@@ -1032,22 +1032,6 @@ void PickleWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Task\n");
 }
 
-// PickleSaveWorker Frame
-class PickleSaveFrame: private StackFrame {
-private:
-  enum { SIZE };
-public:
-  // PickleSaveFrame Constructor
-  static PickleSaveFrame *New(Worker *worker) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    return STATIC_CAST(PickleSaveFrame *, frame);
-  }
-  // PickleSaveFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
-
 // PickleSaveWorker
 class PickleSaveWorker: public Worker {
 private:
@@ -1079,7 +1063,7 @@ public:
 PickleSaveWorker *PickleSaveWorker::self;
 
 void PickleSaveWorker::PushFrame() {
-  PickleSaveFrame::New(self);
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 void PickleSaveWorker::WriteToStream(OutputBuffer *obf,
@@ -1128,13 +1112,11 @@ void PickleSaveWorker::WriteToStream(OutputBuffer *obf,
 }
 
 u_int PickleSaveWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleSaveFrame *frame = STATIC_CAST(PickleSaveFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  return sFrame->GetSize();
 }
 
 Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
-  PickleSaveFrame *frame = STATIC_CAST(PickleSaveFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
 
   if (PickleArgs::GetTransientFound()) {
@@ -1158,7 +1140,7 @@ Worker::Result PickleSaveWorker::Run(StackFrame *sFrame) {
     
     outputStream->Close();
     Scheduler::SetNArgs(0);
-    Scheduler::PopFrame(frame->GetSize());
+    Scheduler::PopFrame(sFrame->GetSize());
     return Worker::CONTINUE;
   }
 
@@ -1171,22 +1153,6 @@ const char *PickleSaveWorker::Identify() {
 void PickleSaveWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Save\n");
 }
-
-// PicklePackWorker Frame
-class PicklePackFrame: private StackFrame {
-private:
-  enum { SIZE };
-public:
-  // PicklePackFrame Constructor
-  static PicklePackFrame *New(Worker *worker) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    return STATIC_CAST(PicklePackFrame *, frame);
-  }
-  // PicklePackFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
 
 // PicklePackWorker
 class PicklePackWorker: public Worker {
@@ -1215,32 +1181,42 @@ public:
 PicklePackWorker *PicklePackWorker::self;
 
 void PicklePackWorker::PushFrame() {
-  PicklePackFrame::New(self);
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 u_int PicklePackWorker::GetFrameSize(StackFrame *sFrame) {
-  PicklePackFrame *frame = STATIC_CAST(PicklePackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  return sFrame->GetSize();
 }
 
 Worker::Result PicklePackWorker::Run(StackFrame *sFrame) {
-  PicklePackFrame *frame = STATIC_CAST(PicklePackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  Scheduler::PopFrame(frame->GetSize());
 
-  OutputBuffer *obf = PickleArgs::GetOutputBuffer();
+  if (PickleArgs::GetTransientFound()) {
+    // If a transient was found during pickling,
+    // we have to restart because binding the transient
+    // may have modified parts of the graph that had
+    // already been pickled, thus leaving the pickle in an
+    // inconsistent state
 
-  OutputStream *os = PickleArgs::GetOutputStream();
-  PickleSaveWorker::WriteToStream(obf, os);
+    PickleArgs::Reset();
+    PickleWorker::PushFrame();
+    return Worker::CONTINUE;
+  } else {
 
-  StringOutputStream *outputStream =
-    STATIC_CAST(StringOutputStream *, os);
+    OutputBuffer *obf = PickleArgs::GetOutputBuffer();
+    
+    OutputStream *os = PickleArgs::GetOutputStream();
+    PickleSaveWorker::WriteToStream(obf, os);
+
+    StringOutputStream *outputStream =
+      STATIC_CAST(StringOutputStream *, os);
   
-  Scheduler::SetNArgs(1);
-  Scheduler::SetCurrentArg(0, outputStream->Close());
-
-  return Worker::CONTINUE;
+    Scheduler::SetNArgs(1);
+    Scheduler::SetCurrentArg(0, outputStream->Close());
+    Scheduler::PopFrame(sFrame->GetSize());
+    return Worker::CONTINUE;
+  }
 }
 
 const char *PicklePackWorker::Identify() {

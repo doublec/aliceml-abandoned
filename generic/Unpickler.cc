@@ -509,22 +509,6 @@ bool ApplyTransform(String *name, word argument, word *newBlock,
   }
 }
 
-// PickleUnpackWorker Frame
-class PickleUnpackFrame: private StackFrame {
-private:
-  enum { SIZE };
-public:
-  // PickleUnpackFrame Constructor
-  static PickleUnpackFrame *New(Worker *worker) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    return STATIC_CAST(PickleUnpackFrame *, frame);
-  }
-  // PickleUnpackFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
-
 // PickleUnpackWorker
 class PickleUnpackWorker: public Worker {
 private:
@@ -552,19 +536,17 @@ public:
 PickleUnpackWorker *PickleUnpackWorker::self;
 
 void PickleUnpackWorker::PushFrame() {
-  PickleUnpackFrame::New(self);
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 u_int PickleUnpackWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleUnpackFrame *frame = STATIC_CAST(PickleUnpackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  return sFrame->GetSize();
 }
 
 Worker::Result PickleUnpackWorker::Run(StackFrame *sFrame) {
-  PickleUnpackFrame *frame = STATIC_CAST(PickleUnpackFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::PopFrame(sFrame->GetSize());
   word result = UnpickleArgs::GetResult();
 
   Scheduler::SetNArgs(1);
@@ -579,22 +561,6 @@ const char *PickleUnpackWorker::Identify() {
 void PickleUnpackWorker::DumpFrame(StackFrame *) {
   std::fprintf(stderr, "Pickle Unpack\n");
 }
-
-// PickleLoadWorker Frame
-class PickleLoadFrame: private StackFrame {
-private:
-  enum { SIZE };
-public:
-  // PickleLoadFrame Constructor
-  static PickleLoadFrame *New(Worker *worker) {
-    NEW_STACK_FRAME(frame, worker, SIZE);
-    return STATIC_CAST(PickleLoadFrame *, frame);
-  }
-  // PickleLoadFrame Accessors
-  u_int GetSize() {
-    return StackFrame::GetSize() + SIZE;
-  }
-};
 
 // PickleLoadWorker
 class PickleLoadWorker: public Worker {
@@ -623,19 +589,17 @@ public:
 PickleLoadWorker *PickleLoadWorker::self;
 
 void PickleLoadWorker::PushFrame() {
-  PickleLoadFrame::New(self);
+  NEW_STACK_FRAME(frame, self, 0);
 }
 
 u_int PickleLoadWorker::GetFrameSize(StackFrame *sFrame) {
-  PickleLoadFrame *frame = STATIC_CAST(PickleLoadFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  return frame->GetSize();
+  return sFrame->GetSize();
 }
 
 Worker::Result PickleLoadWorker::Run(StackFrame *sFrame) {
-  PickleLoadFrame *frame = STATIC_CAST(PickleLoadFrame *, sFrame);
   Assert(sFrame->GetWorker() == this);
-  Scheduler::PopFrame(frame->GetSize());
+  Scheduler::PopFrame(sFrame->GetSize());
   InputStream *is = UnpickleArgs::GetInputStream();
   is->Close();
   
