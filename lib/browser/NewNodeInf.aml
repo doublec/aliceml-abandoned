@@ -13,6 +13,7 @@
  *
  *)
 
+import structure Fixity from "x-alice:/lib/rtt/Fixity"
 import structure Inf from "x-alice:/lib/rtt/Inf"
 import structure Label from "x-alice:/lib/rtt/Label"
 import structure Path from "x-alice:/lib/rtt/Path"
@@ -112,14 +113,14 @@ struct
     (* createUsualGraphInf *)
     and createUsualGraphInf (va,t,p,i,d) = 
 	(case Inf.inspect t of 
-	 Inf.Sig(s) => let val ilist = Inf.items(s)
+	 Inf.Sig(s) => let val ilist = List.rev(Inf.items(s))
 		       in treatSig (va,t,p,i,d,ilist)
 		       end 
        | Inf.Arrow(path,i1,i2) 
 	 => if d > !(Settings.max_depth)
 		then createLimit (createIValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
 				  p,i,d,setGroup)
-	    else createSimple (createIValue(va,t,NO_ACTIONS),p,i,d,"fn",
+	    else createSimple (createIValue(va,t,NO_ACTIONS),p,i,d,"functor",
 			       DEFAULT,setGroup)
        | Inf.Exist(path,i1,i2) => createUsualGraphInf (va,i2,p,i,d)
        | Inf.Sing(m) => let val ti = #2(Inf.asMod(m))
@@ -157,46 +158,117 @@ struct
     and setItems (va,ilist,p,d) = 
 	let val l = ref 0
 	in while !l <= List.length(ilist) - 1 do
-	    (let val last = (!l = List.length(ilist) - 1)
-		 val conc = if last then Empty
-			    else createConcat(INTERPUNCT,p,!l,d+1,
-					      Array.array(2,Empty),~1,~1,
-					      setGroup)
-		 val sep = if last then Empty
-			   else createSimple (INTERPUNCT,conc,1,d,", ",
-					      SEP_COLOR,setGroup)
-		 val node = let val vv = UnsafeValue.cast va
-			        val label = itemToLabel(List.nth(ilist,!l))
+	    (let val node = let val vv = UnsafeValue.cast va
+				val item = (List.nth(ilist,!l))
+				val label = itemToLabel(item)
 				val in_vv = UnsafeValue.projPoly(vv,label)
-			    in 
-				if last 
-				    then Empty (* createItemNode !!!*)
-				else Empty (* createItemNode !!!*)
-			    end
-	     in if last 
-		    then Array.update(getKids(p),!l,node)
-		else ( Array.update(getKids(conc),0,node)
-		      ; Array.update(getKids(conc),1,sep)
-		      ; Array.update(getKids(p),!l,conc) )
+			    in createItemNode(in_vv,item,p,!l,d) 
+			    end 
+	     in Array.update(getKids(p),!l,node)
 	     end
            ; l := !l + 1)
 	end
-    
+
+    (* createItemNode *)
+    and createItemNode (vv,item,p,i,d) = 
+	case Inf.inspectItem item of
+	Inf.FixItem(_,_) 
+	=> let val fix = #2(Inf.asFixItem(item))
+	       val str = case fix of
+		         Fixity.NONFIX => "  nonfix" 
+	               | Fixity.PREFIX(i) => "  prefix "^Int.toString(i)
+		       | Fixity.POSTFIX(i) => "  postfix "^Int.toString(i)
+		       | Fixity.INFIX(i,Fixity.LEFT) 
+			 => "  infix "^Int.toString(i) 
+		       | Fixity.INFIX(i,Fixity.RIGHT) 
+			 => "  infixr "^Int.toString(i) 
+		       | Fixity.INFIX(i,Fixity.NEITHER) 
+			 => "  infixn "^Int.toString(i)
+	   in createSimple (INTERPUNCT,p,i,d,str,DEFAULT,setGroup) (* Tiefe! *)
+	   end 
+      | Inf.ValItem(l,t) 
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,Array.array(4,Empty),
+					~1,~1,setGroup)
+	       val s_val = createSimple (INTERPUNCT,conc,0,d,"  val ",DEFAULT,
+					 setGroup)
+	       val lab = createSimple (INTERPUNCT,conc,1,d,
+				       Label.toString(l),LABEL_COLOR,
+				       setGroup)
+	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
+				       setGroup)
+	       val value =  createGraph (vv,t,conc,3,d)  
+	   in ( Array.update(getKids(conc),0,s_val)
+	       ; Array.update(getKids(conc),1,lab)
+	       ; Array.update(getKids(conc),2,equ)
+	       ; Array.update(getKids(conc),3,value)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc )
+	   end
+      | Inf.TypItem(path,_)
+	=> let val label = Path.toLab(path)
+	       val str = "  type "^Label.toString(label)
+	   in createSimple (INTERPUNCT,p,i,d,str,DEFAULT,setGroup)
+	   end  (* Tiefe! *)
+      | Inf.ModItem(path,inf)
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(4,Empty),~1,~1,setGroup)
+	       val s_struct = createSimple (INTERPUNCT,conc,1,d,"  structure ",
+					    DEFAULT,setGroup)
+	       val name = createSimple (INTERPUNCT,conc,1,d,
+					Label.toString(Path.toLab(path)),
+					LABEL_COLOR,setGroup)
+	       val equ = createSimple (INTERPUNCT,conc,2,d," = ",SEP_COLOR,
+				       setGroup)
+	       val value =  createGraphInf (vv,inf,conc,3,d) 
+	   in ( Array.update(getKids(conc),0,s_struct)
+	       ; Array.update(getKids(conc),1,name)
+	       ; Array.update(getKids(conc),2,equ)
+	       ; Array.update(getKids(conc),3,value)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc )
+	   end
+      | Inf.InfItem(path,_)
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(2,Empty),~1,~1,
+					setGroup)
+	       val s_sig = createSimple (INTERPUNCT,conc,0,d,"  signature ",
+					 DEFAULT,setGroup)
+	       val name = createSimple (INTERPUNCT,conc,1,d,
+					Label.toString(Path.toLab(path)),
+					LABEL_COLOR,setGroup)
+	   in ( Array.update(getKids(conc),0,s_sig)
+	       ; Array.update(getKids(conc),1,name)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc)
+	   end
+      | Inf.HiddenItem(item') 
+	=> let val conc = createConcat (INTERPUNCT,p,i,d,
+					Array.array(2,Empty),~1,~1,
+					setGroup)
+	       val ask = createSimple (INTERPUNCT,conc,0,d,"  ? ",
+				       DEFAULT,setGroup) 
+	       val h_item = createItemNode (vv,item',conc,1,d)
+	   in ( Array.update(getKids(conc),0,ask)
+	       ; Array.update(getKids(conc),1,h_item)
+	       ; Array.update(getKids(p),i,conc)
+	       ; conc)
+	   end
+
    (* itemToLabel *)
-   and itemToLabel i = case Inf.inspectItem i of
-       Inf.FixItem(l,i) => l
-     | Inf.ValItem(l,t) => l
-     | Inf.TypItem(path,tk) => let val str = Label.toString(Path.toLab(path))
-			       in Label.fromString("$"^str)
+    and itemToLabel i = case Inf.inspectItem i of
+	Inf.FixItem(l,_) => l
+      | Inf.ValItem(l,_) => l
+      | Inf.TypItem(path,_) => let val str = Label.toString(Path.toLab(path))
+				in Label.fromString("$"^str)
+				end
+      | Inf.ModItem(path,_) => let val str = Label.toString(Path.toLab(path))
+			       in Label.fromString(str^"$")
 			       end
-     | Inf.ModItem(path,i) => let val str = Label.toString(Path.toLab(path))
-			      in Label.fromString(str^"$")
-			      end
-     | Inf.InfItem(path,k) => let val str = Label.toString(Path.toLab(path))
-			      in Label.fromString("$"^str^"$")
-			      end   
-     | Inf.HiddenItem(i) => itemToLabel i
-						    
+      | Inf.InfItem(path,_) => let val str = Label.toString(Path.toLab(path))
+			       in Label.fromString("$"^str^"$")
+			       end   
+      | Inf.HiddenItem(i) => itemToLabel i
+			       
 end (* struct *)
 
 end

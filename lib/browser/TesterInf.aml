@@ -2,27 +2,49 @@ import structure NewNodeInf from "NewNodeInf";
 import structure Layout from "Layout";
 import structure UnsafeInspector from "UnsafeInspector";
 import structure Reflect from "x-alice:/lib/system/Reflect";
+import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
+
+import structure Inf from "x-alice:/lib/rtt/Inf";
 
 signature SIMPLE = 
 sig
+    val x : string
+end;
+
+signature TEST =
+sig
     type t
-    val x : t
-    val foo : t -> bool
+    val test: string
+    signature S
+    structure X: SIMPLE
 end;
 
-structure Simple :> SIMPLE =
+structure Test = 
 struct
-    type t = int
-    val x = 0
-    fun foo y = (y = x)
+    type t = string
+    val test = "hi"
+    signature S = sig
+		      val x : string
+		  end
+    structure X = struct
+		      val x = "du"
+		  end
 end;
 
-structure V = Reflect.Reflect(signature S = SIMPLE structure X = Simple);
+structure V = Reflect.Reflect(signature S = TEST structure X = Test);
 val v = V.x;
 
-structure T = Reflect.ReflectSig(signature S = SIMPLE);
+structure T = Reflect.ReflectSig(signature S = TEST);
 val t = T.x;
 
 val n = NewNodeInf.newNodeInf (v,t);
 
 UnsafeInspector.inspectInf (v,t);
+
+(*****)
+
+val ilist = Inf.items(Inf.asSig(t));
+val label = itemToLabel(List.nth(ilist,0));
+ 
+val test = UnsafeValue.projPoly(v,label);
+

@@ -178,7 +178,11 @@ struct
                                   | _ => checkConcKids (a,i+1) )
 
    and setsVertical n = case n of
-       Container(r) => checkContKids (#kids(r),0)
+       Container(r) 
+       => checkContKids (#kids(r),0)
+          orelse ( case Array.sub(#kids(r),0) of
+		   Simple(rr) => String.equal("struct",#rep(rr))
+		 | _ => false )
      | _ => false
 
     fun inspectList(n,x) = inspectList'(n,x,[])

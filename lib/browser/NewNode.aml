@@ -64,7 +64,8 @@ struct
       | RelRefNode(r) => createGroupItem(#group(r),0.0,0.0) 
       | Empty        => let 
 			    val _ = WindowManager.new()
-			    val _ = TextIO.print(" Creating Group with EMpty Parent")
+			    val _ = 
+			      TextIO.print(" Creating Group with Empty Parent")
 			in
 			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
 			end
@@ -401,7 +402,7 @@ struct
     (* createProdConcat *)
     and createProdConcat (label,va,t,p,i,d,l) = 
 	let 
-	    val last = if i = l-1 then true else false
+	    val last = (i = l-1) 
 	    val c_length = if last then 3 else 4
 	    val concat = createConcat (INTERPUNCT,p,i,d,
 				       Array.array(c_length,Empty),
@@ -421,25 +422,24 @@ struct
 	    (Array.update(concat_kids,0,l_node)
 	     ; Array.update(concat_kids,1,eq_node)
 	     ; Array.update(concat_kids,2,node)
-	     ; if last then () else 
-	     Array.update(concat_kids,3,sep_node)
+	     ; if last then () 
+	       else Array.update(concat_kids,3,sep_node)
 	     ;concat)
 	end
     
     (* createProdConcatTuple *)
     and createProdConcatTuple (label,va,t,p,i,d,l) = 
 	let 
-	    val last = if i = l-1 then true else false
+	    val last = (i = l-1)
 	    val c_length = if last then 1 else 2
 	    val concat = if last then Empty
 			 else createConcat (INTERPUNCT,p,i,d,
-				       Array.array(c_length,Empty),
-				       ~1,~1,setGroup)
+					    Array.array(c_length,Empty),
+					    ~1,~1,setGroup)
 	    val sep_node = if last 
 			       then Empty 
-				   else createSimple (INTERPUNCT,
-						      concat,1,d,", ",
-						      SEP_COLOR,setGroup)
+			   else createSimple (INTERPUNCT,concat,1,d,", ",
+					      SEP_COLOR,setGroup)
 	    val node = createGraph (va,t,if last then p else concat,
 				    if last then i else 0,d+1)
 	    val concat_kids = getKids(concat)
