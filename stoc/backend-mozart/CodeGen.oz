@@ -376,7 +376,9 @@ define
       [] funExp(Coord _ _ tupArgs(Ids=_|_) Body) then
 	 PredId NLiveRegs ResReg FormalRegs BodyVInstr GRegs Code
       in
-	 PredId = pid({VirtualString.toAtom {Length Ids}#'-ary line '#Coord.1}
+	 PredId = pid({VirtualString.toAtom
+		       State.filename#':'#Coord.1#'.'#Coord.2#'/'#
+		       {Length Ids}#'-ary'}
 		      {Length Ids} + 1 {TranslateCoord Coord State}
 		      nil NLiveRegs)
 	 {State.cs startDefinition()}
