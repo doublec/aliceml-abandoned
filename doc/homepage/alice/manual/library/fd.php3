@@ -770,7 +770,7 @@
     </DD>
 
     <DT>
-      <TT>Reified.fd (<I>dom<I>, <I>c</I>)</TT>
+      <TT>Reified.fd (<I>dom</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>returns a freshly created finite domain variable
@@ -778,7 +778,7 @@
     </DD>
 
     <DT>
-      <TT>Reified.fdVec (<I>n</I>, <I>dom<I>, <I>c</I>)</TT>
+      <TT>Reified.fdVec (<I>n</I>, <I>dom</I>, <I>c</I>)</TT>
     </DT>
     <DD>
       <P>returns a vector of size <I>n</I> of finite domain variables.
