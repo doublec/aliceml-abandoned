@@ -1,7 +1,25 @@
 import structure Simulator from "Simulator"
 
-val ant1::ant2::world::_ = CommandLine.arguments()
+val showStatus = ref false
+val showWorlds = ref false
+val showAnts = ref false
+val rounds = ref 10000
+
+fun parseArgs ("-s"::r) = (showStatus:=true; parseArgs r)
+  | parseArgs ("-w"::r) = (showWorlds:=true; showAnts:=false;
+                                 parseArgs r)
+  | parseArgs ("-a"::r) = (showAnts:=true; showWorlds:=false;
+                               parseArgs r)
+  | parseArgs ("-r"::noOfRounds::r) = (rounds:=valOf(Int.fromString noOfRounds);
+                                       parseArgs r)
+  | parseArgs r = r
+
+val args = parseArgs (CommandLine.arguments())
+val (ant1,ant2,world) = case args of [a,b,c] => (a,b,c)
+                                   | _ => (print "Illegal number of arguments.\n";
+                                           OS.Process.exit OS.Process.failure)
 
 
-val _ = Simulator.simulate(ant1,ant2,world)
+val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts,
+                           !rounds,ant1,ant2,world)
 val _ = OS.Process.exit OS.Process.success
