@@ -204,7 +204,7 @@ define
       [] ReturnStm(Info#Exp) then returnStm({TrInfo Info} {TrExp Exp})
       [] IndirectStm(_#BodyOptRef) then
 	 case {Access BodyOptRef} of SOME(Body) then {TrBody Body} end
-      [] ExportStm(Info#Ids) then exportStm({TrInfo Info} {TrList Ids TrId})
+      [] ExportStm(Info#Exp) then exportStm({TrInfo Info} {TrExp Exp})
       end
    end
 
