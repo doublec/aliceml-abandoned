@@ -1,0 +1,160 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import structure __pervasive                         from "Pervasive"
+import datatype bool and option and list             from "ToplevelTypes"
+import infix 4 < = >= infixr 5 :: @ infix 6 + -
+       val op = and op < and op >= and op + and op - from "ToplevelValues"
+import structure General                             from "General"
+import signature LIST                                from "LIST-sig"
+
+
+structure List : LIST =
+struct
+    datatype list		= datatype list
+    type  'a t			= 'a list				(**)
+
+    __primitive exception Empty	= "List.Empty"
+
+    fun null nil		= true
+      | null _			= false
+
+    fun length   xs		= length'(xs, 0)
+    and length'( nil,  i)	= i
+      | length'(y::ys, i)	= length'(ys, i+1)
+
+    fun hd(x::xs)		= x
+      | hd  _			= raise Empty
+
+    fun tl(x::xs)		= xs
+      | tl  _			= raise Empty
+
+    fun last(x::nil)		= x
+      | last(x::xs)		= last xs
+      | last  nil		= raise Empty
+
+    fun getItem(x::xs)		= SOME(x,xs)
+      | getItem  nil 		= NONE
+
+    fun nth (xs,i) where (i>=0)	= nth'(xs,i)
+      | nth (xs,i)		= raise General.Subscript
+    and nth'(x::xs, 0)		= x
+      | nth'(x::xs, i)		= nth'(xs, i-1)
+      | nth'(nil,   i)		= raise General.Subscript
+
+    val sub			= nth					(**)
+
+    fun rev   xs		= rev'(xs, nil)
+    and rev'( nil,  ys)		= ys
+      | rev'(x::xs, ys)		= rev'(xs, x::ys)
+
+    fun   nil   @ ys		= ys
+      | (x::xs) @ ys		= x :: xs @ ys
+
+    val append			= op @					(**)
+
+    fun revAppend( nil,  ys)	= ys
+      | revAppend(x::xs, ys)	= revAppend(xs, x::ys)
+
+    fun concat   nil		= nil
+      | concat(xs::xss)		= xs @ concat xss
+
+    fun take (xs,i) where (i<0)	= raise General.Subscript
+      | take (xs,i)		= take'(xs,i,nil)
+    and take'(x::xs, 0, ys)	= rev ys
+      | take'(x::xs, i, ys)	= take'(xs, i-1, x::ys)
+      | take'( nil,  i, ys)	= raise General.Subscript
+
+    fun drop (xs,i) where (i<0)	= raise General.Subscript
+      | drop (xs,i)		= drop'(xs,i)
+    and drop'(xs,    0)		= xs
+      | drop'(x::xs, i)		= drop'(xs, i-1)
+      | drop'( nil,  i)		= raise General.Subscript
+
+
+    fun app  f   xs		= app'(f,xs)
+    and app'(f,  nil )		= ()
+      | app'(f, x::xs)		= (f x ; app'(f,xs))
+
+    fun appr  f   xs		= appr'(f,xs)				(**)
+    and appr'(f,  nil )		= ()
+      | appr'(f, x::xs)		= (appr'(f,xs) ; f x)
+
+    fun appi  f xs		= appi'(f,0,xs)				(**)
+    and appi'(f, i,  nil )	= ()
+      | appi'(f, i, x::xs)	= (f(i,x) ; appi'(f, i+1, xs))
+
+    fun appri  f xs		= appri'(f,0,xs)			(**)
+    and appri'(f, i,  nil )	= ()
+      | appri'(f, i, x::xs)	= (appri'(f, i+1, xs) ; f(i,x))
+
+    fun map  f   xs		= map'(f,xs)
+    and map'(f,  nil )		= nil
+      | map'(f, x::xs)		= f x :: map'(f,xs)
+
+    fun mapi  f xs		= mapi'(f,0,xs)				(**)
+    and mapi'(f, i,  nil )	= nil
+      | mapi'(f, i, x::xs)	= f(i,x) :: mapi'(f, i+1, xs)
+
+    fun mapPartial  f   xs	= mapPartial'(f,xs)
+    and mapPartial'(f,  nil )	= nil
+      | mapPartial'(f, x::xs)	= case f x of NONE   => mapPartial'(f,xs)
+					    | SOME y => y :: mapPartial'(f,xs)
+
+    fun find  f   xs			= find'(f,xs)
+    and find'(f,  nil )			= NONE
+      | find'(f, x::xs) where (f x)	= SOME x
+      | find'(f, x::xs)			= find'(f,xs)
+
+    fun filter  f   xs			= filter'(f,xs)
+    and filter'(f,  nil )		= nil
+      | filter'(f, x::xs) where (f x)	= x :: filter'(f,xs)
+      | filter'(f, x::xs)		= filter'(f,xs)
+
+    fun partition  f xs			= partition'(f,xs,nil,nil)
+    and partition'(f,  nil,  ys, zs)	= (rev ys, rev zs)
+      | partition'(f, x::xs, ys, zs)	= if f x then partition'(f,xs,x::ys,zs)
+						 else partition'(f,xs,ys,x::zs)
+
+    fun foldl  f  y   xs		= foldl'(f,y,xs)
+    and foldl'(f, y,  nil )		= y
+      | foldl'(f, y, x::xs)		= foldl'(f, f(x,y), xs)
+
+    fun foldr  f  y   xs		= foldr'(f,y,xs)
+    and foldr'(f, y,  nil )		= y
+      | foldr'(f, y, x::xs)		= f(x, foldr'(f,y,xs))
+
+    fun foldli f y xs			= foldli'(f,y,0,xs)		(**)
+    and foldli'(f, y, i,  nil )		= y
+      | foldli'(f, y, i, x::xs)		= foldli'(f, f(i,x,y), i+1, xs)
+
+    fun foldri  f  y xs			= foldri'(f,y,0,xs)		(**)
+    and foldri'(f, y, i,  nil )		= y
+      | foldri'(f, y, i, x::xs)		= f(i, x, foldri'(f, y, i+1, xs))
+
+    fun all  f   xs			= all'(f,xs)
+    and all'(f,  nil )			= true
+      | all'(f, x::xs)			= f x andalso all'(f,xs)
+
+    fun exists  f   xs			= exists'(f,xs)
+    and exists'(f,  nil )		= false
+      | exists'(f, x::xs)		= f x orelse exists'(f,xs)
+
+    fun tabulate (n,f)      where (n<0)	= raise General.Size
+      | tabulate (n,f)			= tabulate'(n,f,0,nil)
+    and tabulate'(n,f,i,xs) where (i=n)	= rev xs
+      | tabulate'(n,f,i,xs)		= tabulate'(n, f, i+1, f i :: xs)
+end
