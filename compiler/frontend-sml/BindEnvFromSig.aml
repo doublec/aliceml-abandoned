@@ -92,7 +92,7 @@ struct
 	else 0
 
 
-    fun envFromTyp(I,s,t) =
+    fun envFromTyp(I,E,s,t) =
 	if Type.equals(t, PervasiveType.typ_ref) then
 	    let
 		(*UNFINISHED: constructor currently gets the same name
@@ -111,43 +111,41 @@ struct
 		E
 	    end
 	else
-	    envFromTyp'(I,s,t)
+	    envFromTyp'(I,E,s,t)
 
-    and envFromTyp'(I,s,t) =
-	if      Type.isSum t    then envFromRow(I, s, Type.asSum t)
-	else if Type.isLambda t then envFromTyp(I, s, #2(Type.asLambda t))
-	else if Type.isMu t     then envFromTyp(I, s, Type.asMu t)
+    and envFromTyp'(I,E,s,t) =
+	if      Type.isSum t    then envFromRow(I, E,s, Type.asSum t)
+	else if Type.isLambda t then envFromTyp(I, E,s, #2(Type.asLambda t))
+	else if Type.isMu t     then envFromTyp(I, E,s, Type.asMu t)
 	else new()
 
-    and envFromRow(I,s,r) =
+    and envFromRow(I,E,s,r) =
 	let
-	    val E = new()
+	    val E' = new()
 
 	    fun loop r =
 		if Type.isEmptyRow r then () else
 		let
 		    val (a,ts) = Type.headRow r
-		    val  z     = Stamp.new()
-		    val  z'    = Stamp.new()
 		    val  name  = Label.toString a
 		    val  name' = "'" ^ name
 		    val  vid   = VId.fromString name
 		    val  vid'  = VId.fromString name'
-		    val  a'    = Label.fromString name'
-		    val  is    = idStatusFromTyp(Inf.lookupVal(s,a'))
+		    val value  = Option.valOf(lookupScopeVal(E, vid))
+		    val value' = Option.valOf(lookupScopeVal(E, vid'))
 		    (* UNFINISHED: check that the constructor actually
 		     * constructs the type in question.
 		     * What if the constructors are actually hidden
 		     * by following members???
 		     *)
 		in
-		    insertVal(E, vid', (I,z',V)) ;
-		    insertVal(E, vid, (I,z,is)) ;
+		    insertVal(E', vid', value');
+		    insertVal(E', vid, value);
 		    loop(Type.tailRow r)
 		end
 	in
-	    ( loop r ; E )
-	    handle Inf.Lookup => new()
+	    ( loop r ; E' )
+	    handle Option.Option => new()
 	end
 
 
@@ -215,22 +213,17 @@ struct
     and envFromSig (I,s)    = envFromSig'(I, PathMap.new(), Stamp.new(), s)
     and envFromSig'(I,pm,z,s) =
 	let
-	    val E = new()
+	    val E     = new()
+	    val items = Inf.items s
 	in
 	    insertSelf E;
-	    List.app (insertItem(E,I,pm,z,s)) (Inf.items s);
+	    List.app (insertValItem(E,I,s)) items;
+	    List.app (insertItem(E,I,pm,z,s)) items;
 	    E
 	end
 
-    and insertItem (E,I,pm,z,s) item =
-	if Inf.isFixItem item then
-	    let
-		val (l,f) = Inf.asFixItem item
-		val  is   = infFromFix f
-	    in
-		insertInf(E, vidFromLabel l, (I,is))
-	    end
-	else if Inf.isValItem item then
+    and insertValItem (E,I,s) item =
+	if Inf.isValItem item then
 	    let
 		val (l,t,d) = Inf.asValItem item
 		val  name   = Label.toString l
@@ -252,13 +245,24 @@ struct
 		    insertVal(E, vid, (I,x,is))
 		end
 	    end
+	else
+	    ()
+
+    and insertItem (E,I,pm,z,s) item =
+	if Inf.isFixItem item then
+	    let
+		val (l,f) = Inf.asFixItem item
+		val  is   = infFromFix f
+	    in
+		insertInf(E, vidFromLabel l, (I,is))
+	    end
 	else if Inf.isTypItem item then
 	    let
 		val (l,k,d) = Inf.asTypItem item
 		val  x      = Stamp.new()
 		val  E'     = case d
 				of NONE   => new()
-				 | SOME t => envFromTyp(I,s,t)
+				 | SOME t => envFromTyp(I,E,s,t)
 	    in
 		insertTy(E, tyconFromLabel l, (I,x,E'))
 	    end
@@ -282,6 +286,6 @@ struct
 		insertSig(E, sigidFromLabel l, (I,x,F))
 	    end
 	else
-	     raise Crash.Crash "BindEnvFromSig.insertItem: unknown item"
+	     ()
 
 end
