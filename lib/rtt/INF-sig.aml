@@ -88,8 +88,8 @@ sig
     val strengthen :	path * inf -> unit
     val strengthenSig :	path * sign -> unit
 
-    val strip :		inf  -> unit
-    val stripSig :	sign -> unit
+    val compress :	inf  -> unit
+    val compressSig :	sign -> unit
 
   (* Hashing *)
 

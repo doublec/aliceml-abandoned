@@ -289,28 +289,30 @@ structure InfPrivate =
 
   (* Strip signature maps *)
 
-    fun strip(ref j')		= strip' j'
-    and strip'(LINK j)		= strip j
-      | strip'(TOP)		= ()
-      | strip'(CON c)		= stripCon c
-      | strip'(SIG s)		= stripSig s
-      | strip'( FUN(_,j1,j2)
-	      | LAMBDA(_,j1,j2)
-	      | APPLY(j1,_,j2)
-	      | ABBREV(j1,j2) )	= (strip j1 ; strip j2)
+    fun compress(ref j')		= compress' j'
+    and compress'(LINK j)		= compress j
+      | compress'(TOP)			= ()
+      | compress'(CON c)		= compressCon c
+      | compress'(SIG s)		= compressSig s
+      | compress'( FUN(_,j1,j2)
+		 | LAMBDA(_,j1,j2)
+		 | APPLY(j1,_,j2)
+		 | ABBREV(j1,j2) )	= (compress j1 ; compress j2)
 
-    and stripCon (k,p)		= stripKind k
+    and compressCon (k,p)		= compressKind k
 
-    and stripKind (ref k')	= stripKind' k'
-    and stripKind'(GROUND)	= ()
-      | stripKind'(DEP(p,j,k))	= (strip j ; stripKind k)
+    and compressKind (ref k')		= compressKind' k'
+    and compressKind'(GROUND)		= ()
+      | compressKind'(DEP(p,j,k))	= (compress j ; compressKind k)
 
-    and stripSig (itemsr,mapor)	= (List.app stripItem (!itemsr) ; mapor := NONE)
+    and compressSig (itemsr,mapor)	= (List.app compressItem (!itemsr);
+					   mapor := NONE)
 
-    and stripItem(ref item')	= stripItem' item'
-    and stripItem'(MOD(x,j,d))	= strip j
-      | stripItem'(INF(x,k,d))	= (stripKind k ; Option.app strip d)
-      | stripItem' _		= ()
+    and compressItem(ref item')		= compressItem' item'
+    and compressItem'(MOD(x,j,d))	= compress j
+      | compressItem'(INF(x,k,d))	= (compressKind k;
+					   Option.app compress d)
+      | compressItem' _			= ()
 
 
   (* Hashing *)
@@ -519,6 +521,17 @@ structure InfPrivate =
 	    if Path.equals(p',p) then () else PathMap.insert(rea, p, p') ;
 	    p'
 	end
+(*
+    and instancePath'(rea, p) =
+	case PathMap.lookup(rea, p)
+	  of SOME p' => p'
+	   | NONE    =>
+	     if Path.isDot p then
+	         let val (p',l,n) = Path.asDot p
+		 in Path.path(instancePath'(rea,p'), l, n) end
+	     else
+		 Path.fromLab(Path.toLab p)
+*)
 
     and instanceSig(r,z, (ref items,_)) =
 	let
