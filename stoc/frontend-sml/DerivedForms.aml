@@ -114,6 +114,7 @@ structure DerivedForms :> DERIVED_FORMS =
     fun strid_PREBOUND(I)	= G.StrId(I, StrId.fromString "")
     fun longstrid_PREBOUND(I)	= G.SHORTLong(I, strid_PREBOUND(I))
     fun longvid(I, vid)		= G.DOTLong(I, longstrid_PREBOUND(I), vid)
+    fun longtycon(I, tycon)	= G.DOTLong(I, longstrid_PREBOUND(I), tycon)
 
     fun vid_NIL(I)		= G.VId(I, VId.fromString "nil")
     fun vid_CONS(I)		= G.VId(I, VId.fromString "::")
@@ -133,7 +134,7 @@ structure DerivedForms :> DERIVED_FORMS =
     fun CONSPat(I)		= LONGVIDPat(I, longvid_CONS(I))
 
     fun tycon_EXN(I)		= G.TyCon(I, TyCon.fromString "exn")
-    fun longtycon_EXN(I)	= G.SHORTLong(I, tycon_EXN(I))
+    fun longtycon_EXN(I)	= longtycon(I, tycon_EXN(I))
 
 
     (* Functions to handle rewriting of withtype declarations *)
