@@ -6,7 +6,7 @@
 ## 
 ## Copyright:
 ##   Thorsten Brunklaus, 2000
-##   Leif Kornstaedt, 2000
+##   Leif Kornstaedt, 2000-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -26,37 +26,22 @@ else
 LIGHTNING_SOURCES =
 endif
 
-SOURCES = \
-	Map.cc WeakMap.cc Heap.cc Store.cc \
-	$(LIGHTNING_SOURCES)
-
+SOURCES = Map.cc WeakMap.cc Heap.cc Store.cc $(LIGHTNING_SOURCES)
 OBJS = $(SOURCES:%.cc=%.o)
 
-.PHONY: all clean distclean adt
+all: StoreConfig.hh $(OBJS)
 
-all: libstore.a
-
-adt:
-	cd $(TOPDIR)/adt && $(MAKE) clean all
-
-libstore.a: StoreConfig.hh $(OBJS)
-	ar rc libstore.a $(OBJS) || exit 1
-	ranlib libstore.a
-
-StoreConfig.hh: StoreConfig$(EXE)
+StoreConfig.hh: StoreConfig.exe
 	./$<
 
-StoreConfig$(EXE): StoreConfig.o
+StoreConfig.exe: StoreConfig.o
 	$(CXX) $(CXXFLAGS) -o $@ $<
-
-$(OBJS): StoreConfig.hh
 
 clean:
 	rm -f StoreConfig.o StoreConfig StoreConfig.exe
-	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o) libstore.a
+	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o)
 
 veryclean: clean
-	rm -f test libstore.a
 
 distclean: veryclean
 	rm -f StoreConfig.hh Makefile.depend
