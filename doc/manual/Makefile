@@ -15,7 +15,9 @@ INSTALLFILES_0 = \
 	tools.html interactive.html compiler.html machine.html \
 	linker.html depend.html \
 	interop.html examples.html tour.html sitemap.html \
-	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg
+	mozart_cartoon.jpg inspector-1.jpg inspector-2.jpg inspector-3.jpg \
+	inspector-fd-1.jpg inspector-fd-2.jpg inspector-fd-3.jpg \
+	inspector-fd-4.jpg inspector-fd-5.jpg
 INSTALLFILES_LIBRARY_0 = \
 	macros.php3 menu.html bg.gif \
 	index.html \

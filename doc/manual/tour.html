@@ -123,14 +123,15 @@ fac 50
 <I>val it : int = 30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
 
 <P>For more complex values, the static output of the result is often
-insufficient. The Alice system includes the <EM>Inspector</EM> for browsing
-arbitrary data structures interactively:</P>
+insufficient. The Alice system includes the <A
+href="library/inspector.html"><EM>Inspector</EM></A> for browsing arbitrary data
+structures interactively:</P>
 
 <PRE class=code>
 inspect (List.tabulate (10, fn i => (i, i*i, i*i*i)))
 <I>val it : unit = ()</I></PRE>
 
-<P>An inspector window will pop up displaying the table of the first hundred
+<P>An Inspector window will pop up displaying the table of the first hundred
 square and cubic numbers:</P>
 
 <P align=center><IMG src="inspector-1.jpg" border=0 alt="Alice Inspector"></P>
@@ -140,7 +141,9 @@ Inspector window. The inspector can be used to browse arbitrary data
 structures:</P>
 
 <PRE class=code>
-inspect (3 + 8, SOME Math.pi, {hello = "hello, world"}, [true, 4 < 3])
+val r = ref 56
+<I>val r : int ref = ref 56</I>
+inspect (3 + 8, SOME Math.pi, {hello = "hello, world"}, r, [true, 4 < 3])
 <I>val it : unit = ()</I></PRE>
 
 <P align=center><IMG src="inspector-2.jpg" border=0 alt="Alice Inspector"></P>
@@ -150,31 +153,26 @@ exceeds certain configurable limits, parts of the output will be hidden. Those
 parts are represented by arrows, which can be interactively unfolded if
 desired.</P>
 
-<!--
 <P>The Inspector concurrently watches the data structures it shows. If they
-change, the it will notice it and update its display. For example, if you
-inspect a reference, and re-assign it later, the Inspector window will be
-updated automatically:</P>
+change, it will notice it and update its display. For example, if you re-assign
+a reference the Inspector window will be updated automatically:</P>
 
 <PRE class=code>
-- val r = ref 56;
-<I>val r : int ref = ref 56</I>
-- inspect r;
-<I>val it : unit = ()</I>
-- r := 33;
+r := 33033
 <I>val it : unit = ()</I></PRE>
--->
+
+<P align=center><IMG src="inspector-3.jpg" border=0 alt="Alice Inspector"></P>
 
 <!--
 <PRE class=code>
-- val rec infiniteList = 1::infiniteList;
+val rec infiniteList = 1::infiniteList
 <I>val infiniteList : int list =
    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]</I>
-- inspect infiniteList;
+inspect infiniteList
 <I>val it : unit = ()</I></PRE>
 
 <PRE class=code>
-- inspect (Future.alarm (Time.fromMilliseconds 2000));
+inspect (Future.alarm (Time.fromMilliseconds 2000))
 <I>val it : unit = ()</I></PRE>
 -->
 
@@ -239,16 +237,16 @@ Function declarations support syntactic sugar that allows expressing the same
 definition more elegantly:</P>
 
 <PRE class=code>
-fun lazy mapy f nil     = nil
-  |      mapy f (x::xs) = f x :: mapy f xs
-<I>val mapy : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
+fun lazy mapz f nil     = nil
+  |      mapz f (x::xs) = f x :: mapz f xs
+<I>val mapz : ('a -> 'b) -> 'a list -> 'b list = fn</I></PRE>
 
 <P>This derived form is defined such that both definitions of <TT>mapy</TT> are
 equivalent. Let us apply <TT>mapy</TT> to the stream of natural numbers
 to calculate their factorities lazily:</P>
 
 <PRE class=code>
-val facs = mapy fac (enum 0)
+val facs = mapz fac (enum 0)
 <I>val facs : int list = lazy</I>
 List.take (facs,7)
 <I>val it : int list = [1, 1, 2, 6, 24, 120, 720]</I>
@@ -272,23 +270,25 @@ lazy tail of <TT>facs</TT> by a (partial) list.</P>
 <P>Here is a lazy version of the <TT>zip</TT> function:</P>
 
 <PRE class=code>
-fun lazy zipy (x::xs, y::ys) = (x,y) :: zipy (xs,ys)
-  |      zipy       _        = nil
-<I>val zipy : 'a list * 'b list -> ('a * 'b) list = fn</I></PRE>
+fun lazy zipz (x::xs, y::ys) = (x,y) :: zipz (xs,ys)
+  |      zipz       _        = nil
+<I>val zipz : 'a list * 'b list -> ('a * 'b) list = fn</I></PRE>
 
 <P>It is possible to calculate the stream of Fibonacci numbers using
-<TT>mapy</TT> and <TT>zipy</TT>:</P>
+<TT>mapz</TT> and <TT>zipz</TT>:</P>
 
 <PRE class=code>
-val rec fibs = 1 :: 1 :: (lazy mapy op+ (zipy (fibs, tl fibs)))
+val rec fibs = 1 :: 1 :: (lazy mapz op+ (zipz (fibs, tl fibs)))
 <I>val it : int list = 1 :: 1 :: lazy</I>
 List.nth (fibs, 10)
+<I>val it : int = 89</I>
+fibs
 <I>val it : int list =
    1 :: 1 :: 2 :: 3 :: 5 :: 8 :: 13 :: 21 :: 34 :: 55 :: 89 :: lazy</I></PRE>
 
 <P>For more practical applications of laziness, see the standard literature
 on lazy functional programming. Last but not least, note that Alice ML allows
-laziness to be freely combined with side effects:</P>
+laziness to be combined freely with side effects:</P>
 
 <PRE class=code>
 val n = lazy (print "Huhu!\n"; 13)
@@ -300,21 +300,34 @@ val it : int = 14</I></PRE>
 
 <?php section("concurrency", "concurrency") ?>
 
+<PRE class=code>
 fun fib (0 | 1) = 1
-  | fib n       = fib (n-1) + fib (n-2);
+  | fib n       = fib (n-1) + fib (n-2)
+</PRE>
 
-spawn fib 30;
+<PRE class=code>
+spawn fib 30
+</PRE>
 
-inspect (List.tabulate (30, fn i => spawn fib i));
+<PRE class=code>
+inspect (List.tabulate (30, fn i => spawn fib i))
+</PRE>
 
 
+<PRE class=code>
 inspect f;
+</PRE>
 
+<PRE class=code>
 Future.await f handle e => (Inspector.inspect e; 1);
+</PRE>
+
+
 
 <?php section("promises", "promises") ?>
 
 
+<PRE class=code>
 (* Promises and Futures *)
 
 open Promise
@@ -327,7 +340,9 @@ sig
     val send: 'a port * 'a -> unit
     val close: 'a port -> unit
 end
+</PRE>
 
+<PRE class=code>
 structure Port :> PORT =
 struct
     type 'a port = 'a list promise ref
@@ -349,7 +364,9 @@ struct
 
     fun close r = fulfill(!r, nil)
 end
+</PRE>
 
+<PRE class=code>
 val (p: int Port.port, xs) = Port.new ()
 
 Inspector.inspect xs;
@@ -357,26 +374,36 @@ Inspector.inspect xs;
 Port.send (p, 17);
 
 Port.send (p, 7);
+</PRE>
 
 
+<PRE class=code>
 inspect (Future.concur (fn () => Future.alarm (Time.fromMilliseconds 6000)));
+</PRE>
 
 
 <?php section("components", "components") ?>
 
-(* alicec -c MY_COMPONENT-sig.aml *)
-(* alicec -c MyComponent.aml *)
+<PRE class=code>
+alicec MY_COMPONENT-sig.aml
+alicec MyComponent.aml</PRE>
 
+<PRE class=code>
 import "/home/kornstae/stockhausen/doc/samples/MyComponent"
+</PRE>
 
-import structure MyComponent
-from "/home/kornstae/stockhausen/doc/samples/MyComponent"
+<PRE class=code>
+import structure MyComponent from "/home/kornstae/stockhausen/doc/samples/MyComponent"
+</PRE>
 
+<PRE class=code>
 Inspector.inspect (MyComponent.fak 7);
+</PRE>
 
 
 <?php section("packages", "packages") ?>
 
+<PRE class=code>
 (*
  * Packing and unpacking of a simple value.
  *)
@@ -398,8 +425,10 @@ Inspector.inspect value';
 
 structure X = UnpackVal(val package = P.package type t = int)
 val value' = X.x
+</PRE>
 
 
+<PRE class=code>
 (*
  * Packing and unpacking of a polymorphic function (via modules).
  * Type can be more specific at unpacking.
@@ -423,7 +452,10 @@ val _ = print("length [1,2,1] = " ^ Int.toString(Length.f [1,2,1]) ^ "\n")
 val _ = print("length [3,0] = " ^ Int.toString(IntLength.f [3,0]) ^ "\n")
 
 val _ = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
+</PRE>
 
+
+<PRE class=code>
 (*
  * Packing a datatype.
  *)
@@ -449,10 +481,12 @@ structure Z = Package.Unpack(val package = P.package
 			     signature S = sig val x: t end)
 
 Inspector.inspect Z.x;
+</PRE>
 
 
 <?php section("pickling", "pickling") ?>
 
+<PRE class=code>
 (*
  * Pickling and unpickling of an abstract type.
  * The unpickled type is compatible with the original one.
@@ -487,7 +521,9 @@ structure Num'' = Pickle.Load(val file = file
 Num'.add(Num'.fromInt 1, Num.fromInt 2);
 
 Num''.add(Num''.fromInt 1, Num.fromInt 2); (* error *)
+</PRE>
 
+<PRE class=code>
 (*
  * Pickling of functors.
  *)
@@ -508,8 +544,10 @@ structure MkHello' = Pickle.Load(val file = file signature S = MK_HELLO)
 
 structure Hello    = MkHello'(val who = "World")
 val       _        = print(Hello.s)
+</PRE>
 
 
+<PRE class=code>
 (*
  * Pickling of signatures.
  * Signatures are first-class and can be pickled.
@@ -532,7 +570,9 @@ structure Sig = Pickle.Load(val file = sigfile
 			    signature S = (signature U))
 structure Mod = Pickle.Load(val file = modfile
 			    signature S = Sig.U)
+</PRE>
 
+<PRE class=code>
 (*
  * Components are pickles and vice versa!
  *
@@ -559,67 +599,195 @@ structure _ = Pickle.Save(val file = file
 			  signature S = (structure Url : URL))
 
 import "/home/kornstae/stockhausen/doc/samples/Url"
+</PRE>
 
 
 <?php section("distribution", "distribution") ?>
 
 
 <?php section("constraints", "constraints") ?>
-  <P>
-    Alice ML provides expressive
-    <A HREF="constraints.html">constraint functionality</A> in a typeful way.
-    To illustrate this, consider the <I>Send More Money</I> problem.
-  </P>
-    The <I>Send More Money</I> problem consists in finding distinct
-    digits for the letters <TT>S</TT>, <TT>E</TT>,
-    <TT>N</TT>, <TT>D</TT>, <TT>M</TT>, <TT>O</TT>,
-    <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT>
-    and <TT>M</TT> are different from zero (no leading zeros) and the equation
-  </P>
-    <PRE class=pre>
-       SEND + MORE = MONEY</PRE>
-  <P>
-    is satisfied. The unique solution of the problem is
-    <TT>9567 + 1085 = 10652</TT>.
-  </P>
-  <P>
-    Using Alice, the problem can be written as follows.
-  </P>
-  <PRE class=code>
-    import structure FD       from "x-alice:/lib/constraints/FD"
-    import structure FS       from "x-alice:/lib/constraints/FS"
-    import structure Search   from "x-alice:/lib/constraints/Search"
-    import structure Linear   from "x-alice:/lib/constraints/Linear"
-    import structure Explorer from "x-alice:/lib/tools/Explorer"
 
-    fun Money () =
-    let
-	val V as #[S, E, N, D, M, O, R, Y] =
-	    vec(8, [0`#9])
-    in
-	distinct V;
-	post (S `<> `0);
-	post (M `<> `0);
-	post (`1000`*S `+ `100`*E `+ `10`*N `+ D `+
-	      `1000`*M `+ `100`*O `+ `10`*R `+ E `=
-              `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y );
-	distribute(FD.FIRSTFAIL, V);
-	{S, E, N, D, M, O, R, Y}
-    end;</PRE>
-  <P>
-    To obtain possibly existing solutions of the problem given above, you can
-    either use
-  </P>
-  <PRE class=code>
-    Explorer.exploreAll Money;</PRE>
-  <P>
-    to interactively explore the search tree as displayed on the screen or
-  </P>
-  <PRE class=code>
-    inspect (Search.searchAll Money);</PRE>
-  <P>
-    to inspect the computed list of solutions.
-  </P>
+<P>Alice ML provides full support for state-of-the-art constraint programming
+technology. Constraint-based problem solving is a technique for solving hard
+combinatorial problems that can be stated as variables ranging over a finite
+domain of non-negative integers, or sets thereof. Problems in this class range
+from puzzles to real world applications as diverse as scheduling, ware house
+allocation, configuration and placement.</P>
+
+<P>Let us take a first look at programming with <I>finite domain</I>
+constraints. A finite domain (FD) is a set of natural (non-negative integer)
+numbers. An FD <I>constraint</I> is a formula in predicate logic, containing
+variables ranging over the natural numbers. In particular, a domain constraint
+is a constraint that restricts the domain of a particular variable. A
+<I>finite domain problem</I> is a finite set of quantifier-free constraints
+that contains a domain constraint for every variable occurring in it. A
+<I>solution</I> is a variable assignment that satisfies every constraint of the
+problem.</P>
+
+<P>Let us create some finite domain variables. We use the <A
+href="library/linear.html"><TT>Linear</TT></A> library for linear
+constraints:</P>
+
+<PRE class=code>
+open Linear
+<I>### loaded signature from x-alice:/lib/constraints/Linear
+...</I></PRE>
+
+<P>To create a vector of constraint variables <I>x</I>,<I>y</I>,<I>z</I>, the
+<TT>vec</TT> function can be used:</P>
+
+<PRE class=code>
+val #[x,y,z] = vec (3, [1`#10])
+<I>val x : term = fd (val)
+val y : term = fd (val)
+val z : term = fd (val)</I></PRE>
+
+<P>The arguments to <TT>vec</TT> specify the number of constraint variables
+(the size of the vector) and the initial domain {1,...,10} of each of these
+variable. Every constraint variable must be created specifying such a domain
+constraint. Constraint variables can be investigated using the Inspector:</P>
+
+<PRE class=code>
+inspect {x,y,z}
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-fd-1.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>For each variable, the Inspector shows the current set of values that still
+might form a solution. The set of values still considered for a variable is
+called its domain. Since we have not yet posted any constraints, the domains
+are given by the initial domain constraints on the variables. The set of all
+constraint variables and their domains is called the <I>constraint
+store</I>.</P>
+
+<P>The solution set can be restricted by posting constraints. For example, we
+can require that 2<I>x</I> = <I>y</I>:</P>
+
+<PRE class=code>
+post (`2 `* x `= y)
+<I>val it : unit = ()</I></PRE>
+
+<P class=note><EM>Note:</EM> Be aware of the backquotes prefixing numbers and
+operators in the constraint formula - <TT>`*</TT> and <TT>`=</TT> are infix
+functions, while the backquote preceeding the literal <TT>2</TT> is an ordinary
+nonfix function.</P>
+
+<P>The posted constraint will exclude certain values from the solution set.
+This is reflected by shrinking the domains of the respective constraint
+variables. After posting the above constraint, the Inspector recognizes that
+the domains of the displayed constraint variables have changed and updates its
+display accordingly:</P>
+
+<P align=center><IMG src="inspector-fd-2.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>Adding a constraint can affect the domain of variables that do not even
+occur in its formula, because information will be <I>propagated</I> in the
+constraint store so that additional information can be inferred in combination
+with other posted constraints:</P>
+
+<PRE class=code>
+post (z `< x)
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-fd-3.jpg" border=0 alt="Alice Inspector"></P>
+
+<PRE class=code>
+post (y `< `7)
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-fd-4.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>The information encapsulated in the constraint store grows monotonically. A
+variable is determined if its domain is reduced to a singleton set. A solution
+is found when all variables are determined.</P>
+
+<PRE class=code>
+post (z `<> `1)
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-fd-5.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>Constraint propagation is not a complete solution method. It may happen that
+a problem has a unique solution and that constraint propagation does not find
+it. In those cases it is necessary to combine constraint propagation with
+search. Alice hence also provides support for powerful, user-definable search
+techniques. For a more thorough introduction to constraint programming, we
+refer to the Oz <A href="http://www.mozart-oz.org/documentation/fdt/">Finite
+Domain Constraint Programming Tutorial</A>. All constraint programming
+functionality from Oz is available in Alice.</P>
+
+<P>As a simple example of a complete program solving a finite domain problem,
+consider the <I>Send More Money</I> problem. It consists in finding distinct
+digits for the letters <TT>S</TT>, <TT>E</TT>, <TT>N</TT>, <TT>D</TT>,
+<TT>M</TT>, <TT>O</TT>, <TT>R</TT>, <TT>Y</TT> such that <TT>S</TT> and
+<TT>M</TT> are different from zero (no leading zeros) and the equation
+
+<PRE class=code>
+SEND + MORE = MONEY</PRE>
+
+<P>is satisfied. The unique solution of the problem is <TT>9567 + 1085 =
+10652</TT>.</P>
+
+<P>Using Alice, the problem can be solved as follows. First, we have to define
+a so-called <I>script</I> that encodes the problem:</P>
+
+<PRE class=code>
+fun money () =
+let
+    val v as #[S,E,N,D,M,O,R,Y] = vec (8, [0`#9])
+in
+    distinct v; 
+    post (S `<> `0); 
+    post (M `<> `0); 
+    post (`1000`*S `+ `100`*E `+ `10`*N `+ D `+
+	  `1000`*M `+ `100`*O `+ `10`*R `+ E `=
+          `10000`*M `+ `1000`*O `+ `100`*N `+ `10`*E `+ Y ); 
+    distribute (FD.FIRSTFAIL, v); 
+    {S,E,N,D,M,O,R,Y}
+end
+<I>val money :
+   unit -> {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} = fn</I></PRE>
+
+<P>The Send More Money problem cannot be solved using constraint propagation
+alone. Search is required to reduce the problem space until constraint
+propagation is able to determine the solution. The <TT>distribute</TT> function
+in the script specifies the <I>distribution strategy</I> used when the problem
+space has to be split for search. See the Mozart <A
+href="http://www.mozart-oz.org/documentation/fdt/">Constraint Programming
+Tutorial</A> for more detail.</P>
+
+<P>To perform the actual search and obtain all solutions to the problem,
+predefined search engines can be used:</P>
+
+<PRE class=code>
+Search.searchAll money
+<I>val it :
+   {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} list =
+   [{Y = fd (val), S = fd (val), R = fd (val), O = fd (val), N = fd (val),
+     M = fd (val), E = fd (val), D = fd (val)}]</I></PRE>
+
+<P>Using the inspector, we can easily look at the solution:</P>
+
+<PRE class=code>
+inspect it
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="inspector-fd-6.jpg" border=0 alt="Alice Inspector"></P>
+
+<P>An alternative way to obtain the solutions is by interactively exploring the
+search tree induced by the script using the <A
+href="library/explorer.html"><EM>Explorer</EM></A>:</P>
+
+<PRE class=code>
+Explorer.exploreAll money
+<I>val it : unit = ()</I></PRE>
+
+<P align=center><IMG src="explorer.jpg" border=0 alt="Alice Explorer"></P>
+
+<P>Clicking on the only solution node in the tree (the green one) will open an
+Inspector window displaying the variable assignment of the solution.</P>
+
+
 <?php section("interop", "interoperability") ?>
 
 
