@@ -25,17 +25,15 @@ signature LINK =
 	exception Empty
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
-	exception Cyclic of Url.t list
 	exception Io of Url.t * exn
 
 	val collect: boundary vector -> Url.t ->
 		     {componentMap: MyComponent.t UrlMap.t,
 		      includeMap: Url.t vector UrlMap.t,
 		      excludeMap: MyComponent.inf UrlMap.t}
-		     (* Empty, Mismatch, Conflict *)
+		     (* Empty, Mismatch, Conflict, Io *)
 
-	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list
-		     (* Cyclic *)
+	val sort: Url.t vector UrlMap.t * 'a UrlMap.t -> Url.t list list
 
 	val rewrite: (string * string) vector -> string -> string
 
@@ -43,5 +41,5 @@ signature LINK =
 		   verbose: bool,
 		   boundary: boundary vector,
 		   rewrite: (string * string) vector} -> MyComponent.t
-		     (* Empty, Mismatch, Conflict, Cyclic *)
+		     (* Empty, Mismatch, Conflict, Io *)
     end

@@ -29,7 +29,6 @@ structure Link :> LINK =
 	exception Empty
 	exception Mismatch of Url.t * Url.t
 	exception Conflict of Url.t
-	exception Cyclic of Url.t list
 	exception Io of Url.t * exn
 
 	structure UrlHashKey = FromEqHashKey(Url)
@@ -117,17 +116,14 @@ structure Link :> LINK =
 	fun sort (includeMap, excludeMap) =
 	    let
 		val graph = UrlMap.new ()
+		val cyclic = ref false
 	    in
 		UrlMap.appi (fn (url, urls) =>
 				UrlMap.insert (graph, url, Vector.toList urls))
 			    includeMap;
 		UrlMap.appi (fn (url, _) => UrlMap.insert (graph, url, nil))
 			    excludeMap;
-		List.map (fn urls =>
-			     case urls of
-				 [url] => url
-			       | urls => raise Cyclic urls)
-			 (DepthFirstSearch.search graph)
+		DepthFirstSearch.search graph
 	    end
 
 	fun rewrite rewrites s =
@@ -216,21 +212,31 @@ structure Link :> LINK =
 		MyComponent.new {imports, body, inf}
 	    end
 
+	fun warnCycle urls =
+	    let
+		val ss =
+		    List.map (fn url => "   " ^ Url.toString url ^ "\n") urls
+	    in
+		TextIO.print ("WARNING: linked components \
+			      \have cyclic inter-dependencies:\n" ^
+			      String.concat ss)
+	    end
+
 	fun link {root, verbose, boundary, rewrite = rewrites} =
 	    let
 		val {componentMap, includeMap, excludeMap} =
 		    collect boundary root
 		val rewrite = rewrite rewrites
+		val order = sort (includeMap, excludeMap)
 	    in
 		if verbose then
 		    let
-			val order = sort (includeMap, excludeMap)
 			val includes =
 			    root::
 			    List.filter (fn url =>
 					    url <> root andalso
 					    UrlMap.member (includeMap, url))
-					order
+					(List.concat order)
 			val imports =
 			    List.sort String.compare
 				      (UrlMap.foldi
@@ -250,6 +256,9 @@ structure Link :> LINK =
 				      imports)
 		    end
 		else ();
+		List.app (fn urls =>
+			     if List.null (List.tl urls) then ()
+			     else warnCycle urls) order;
 		build (root, componentMap, includeMap, excludeMap, rewrite)
 	    end
     end

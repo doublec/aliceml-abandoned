@@ -123,12 +123,6 @@ structure Main :> MAIN =
 			      \   " ^ Url.toString url ^ "\n\
 			      \imported multiply \
 			      \with incompatible signatures\n")
-		 | Link.Cyclic urls =>
-		       error ("import cycle detected:\n" ^
-			      String.concat (List.map
-					     (fn url =>
-						 "   " ^ Url.toString url ^
-						 "\n") urls))
 		 | Link.Io (url, _) =>
 		       error ("could not load component\n\
 			      \   " ^ Url.toString url ^ "\n")
