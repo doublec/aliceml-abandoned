@@ -286,7 +286,9 @@ define
 	       IsMother = (W2.mother =: I1)
 	    in
 	       IsMother =: {FS.reified.isIn I2 W1.daughters}
-	       {FD.conj IsMother W2.isDataItemTag} =<: W1.familleNombreuse
+	       if I1 \= RootI then
+		  {FD.conj IsMother W2.isDataItemTag} =<: W1.familleNombreuse
+	       end
 	    end
 	 end
       end
