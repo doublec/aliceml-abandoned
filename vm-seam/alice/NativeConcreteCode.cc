@@ -79,7 +79,7 @@ u_int LazyCompileInterpreter::GetInArity(ConcreteCode *) {
 }
 
 u_int LazyCompileInterpreter::GetOutArity(ConcreteCode *) {
-  return INVALID_INT; // TODO: Correct arity needed here?
+  return 1;
 }
 
 const char *LazyCompileInterpreter::Identify() {

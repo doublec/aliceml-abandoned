@@ -86,7 +86,7 @@ u_int LazySelInterpreter::GetInArity(ConcreteCode *) {
 }
 
 u_int LazySelInterpreter::GetOutArity(ConcreteCode *) {
-  return INVALID_INT; // TODO: Correct arity needed?
+  return 1;
 }
 
 const char *LazySelInterpreter::Identify() {

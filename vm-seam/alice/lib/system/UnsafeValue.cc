@@ -92,11 +92,11 @@ Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
 }
 
 u_int RequestInterpreter::GetInArity(ConcreteCode *) {
-  return 0;
+  return 1;
 }
 
 u_int RequestInterpreter::GetOutArity(ConcreteCode *) {
-  return INVALID_INT; // TODO: Correct arity needed?
+  return 1;
 }
 
 const char *RequestInterpreter::Identify() {
