@@ -13,7 +13,7 @@
 #if defined(INTERFACE)
 #pragma implementation "alice/NativeCodeJitter.hh"
 #pragma implementation "alice/NativeConcreteCode.hh"
-#pragma implementation "alice/JitterGenericData.hh"
+#pragma implementation "generic/JitterGenericData.hh"
 #pragma implementation "alice/JitterAliceData.hh"
 #pragma implementation "alice/JitterImmediateEnv.hh"
 #pragma implementation "alice/LivenessInformation.hh"
@@ -35,7 +35,7 @@
 #include "alice/NativeCodeJitter.hh"
 #include "alice/LivenessInformation.hh"
 
-#include "alice/JitterGenericData.hh"
+#include "generic/JitterGenericData.hh"
 #include "alice/JitterAliceData.hh"
 #include "alice/JitterImmediateEnv.hh"
 #include "alice/AliceLanguageLayer.hh"

@@ -175,6 +175,12 @@ void NativeCodeInterpreter::PurgeFrame(word frame) {
 Interpreter::Result NativeCodeInterpreter::Run(TaskStack *taskStack) {
   NativeCodeFrame *frame =
     NativeCodeFrame::FromWordDirect(taskStack->GetFrame());
+#if 0
+  Block *p = (Block *) frame;
+  if (!HeaderOp::IsChildish(p)) {
+    Store::AddToIntgenSet(p);
+  }
+#endif
   Assert(frame->GetInterpreter() == this);
   Assert(taskStack == frame->GetTaskStack());
   Chunk *code        = frame->GetCode();
