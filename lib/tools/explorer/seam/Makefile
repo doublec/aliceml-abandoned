@@ -36,6 +36,7 @@ SOURCES= \
 	ExplorerInspect.aml \
 	SaveWindow.aml \
 	MenuManager.aml \
+	AboutDialog.aml \
 	$(GLADE_TARGETS)
 
 TARGETS= $(SOURCES:%.aml=%.alc)

@@ -12,32 +12,44 @@
 
 import structure Gtk            from "x-alice:/lib/gtk/Gtk"
 import structure ExplorerNode   from "ExplorerNode"
+import structure TreeNode       from "TreeNode"
 import structure ExplorerGUI    from "ExplorerGUI"
 
 structure MenuManager =
   struct
+
+  fun switchItems(onitems, offitems, activate) =
+      (app (fn i => Gtk.widgetSetSensitive(i, activate)) onitems;
+       app (fn i => Gtk.widgetSetSensitive(i, not activate)) offitems)
+
   fun updateMenus n =
-      ((if not (ExplorerNode.isHidden n) andalso
-           (ExplorerNode.hasOpenChildren n orelse
-            ExplorerNode.isUnknown n) then
-            (Gtk.widgetSetSensitive(ExplorerGUI.next_solution, true);
-             Gtk.widgetSetSensitive(ExplorerGUI.next_n_solutions, true);
-             Gtk.widgetSetSensitive(ExplorerGUI.all_solutions, true))
-        else
-            (Gtk.widgetSetSensitive(ExplorerGUI.next_solution, false);
-             Gtk.widgetSetSensitive(ExplorerGUI.next_n_solutions, false);
-             Gtk.widgetSetSensitive(ExplorerGUI.all_solutions, false)));
-       if ExplorerNode.isUnknown n then
-            (Gtk.widgetSetSensitive(ExplorerGUI.hidenodes, false);
-             Gtk.widgetSetSensitive(ExplorerGUI.unhide_all, false);
-             Gtk.widgetSetSensitive(ExplorerGUI.one_step, true);
-             Gtk.widgetSetSensitive(ExplorerGUI.hide_failed, false))
-       else
-            (Gtk.widgetSetSensitive(ExplorerGUI.hidenodes, true);
-             Gtk.widgetSetSensitive(ExplorerGUI.unhide_all, true);
-             Gtk.widgetSetSensitive(ExplorerGUI.one_step, false);
-             Gtk.widgetSetSensitive(ExplorerGUI.hide_failed, true))
-           )
+      (switchItems([ExplorerGUI.next_solution,
+		    ExplorerGUI.next_n_solutions,
+		    ExplorerGUI.all_solutions], nil,
+		   not (ExplorerNode.isHidden n) andalso
+		   (ExplorerNode.hasOpenChildren n orelse
+		    ExplorerNode.isUnknown n));
+       switchItems([ExplorerGUI.one_step],
+		   [ExplorerGUI.hidenodes,
+		    ExplorerGUI.unhide_all,
+		    ExplorerGUI.hide_failed],
+		   ExplorerNode.isUnknown n);
+       switchItems([ExplorerGUI.go_to_child],nil,
+		   TreeNode.noOfChildren n > 0);
+       switchItems([ExplorerGUI.go_to_child],nil,
+		   TreeNode.noOfChildren n > 0);
+       switchItems([ExplorerGUI.go_to_parent],nil,
+		   isSome(ExplorerNode.getParent n));
+       switchItems([ExplorerGUI.go_to_right_sibling],nil,
+		   case ExplorerNode.getParent n of
+		       NONE => false
+		     | SOME p => TreeNode.noOfChildren p>
+			   ExplorerNode.getAlternative n+1);
+       switchItems([ExplorerGUI.go_to_left_sibling],nil,
+		   case ExplorerNode.getParent n of
+		       NONE => false
+		     | SOME _ => ExplorerNode.getAlternative n>0)
+       )
 
   fun startSearch() =
       (Gtk.widgetSetSensitive(ExplorerGUI.cancel_search, true);

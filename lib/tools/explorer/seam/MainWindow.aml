@@ -21,6 +21,7 @@ import structure CanvasHelper from "CanvasHelper"
 import structure ExplorerNode from "ExplorerNode"
 
 import structure ExplorerGUI            from "ExplorerGUI"
+import structure AboutDialog            from "AboutDialog"
 import functor   ExplorerGUISignals
        signature EXPLORERGUISIGNALS_SIG from "ExplorerGUISignals"
 
@@ -134,7 +135,7 @@ structure MainWindow :> MAINWINDOW =
               val on_view_activate =
                   EventHandler.viewOptionsHandler (w, serve, state)
               val on_debug_activate = EventHandler.debugHandler (serve, state)
-              fun on_about_activate _ = ()
+              fun on_about_activate _ = AboutDialog.openDialog()
               val on_zoom_to_fit_clicked =
                   EventHandler.zoomToFitHandler (serve, state)
               val on_scale_value_changed =
