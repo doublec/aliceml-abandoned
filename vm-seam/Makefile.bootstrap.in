@@ -127,8 +127,8 @@ M4 = m4 -DSEAM
 ##
 
 LIBSYSTEMNATIVES0 = \
-	Config IODesc OS Unix CommandLine Component Debug Foreign Signal Socket \
-        Rand Reflect Time Date
+	Config IODesc OS Unix CommandLine Component Debug Foreign Signal \
+	Socket Rand Reflect Time Date Minimizer
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES =

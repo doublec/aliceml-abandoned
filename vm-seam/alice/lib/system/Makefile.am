@@ -11,6 +11,7 @@ libsystem_a_SOURCES = \
 	UnsafeComponent.cc \
 	UnsafeDebug.cc \
 	UnsafeDebugger.cc \
+	UnsafeMinimizer.cc \
 	UnsafeSignal.cc \
 	UnsafeSocket.cc \
 	UnsafeRand.cc \
