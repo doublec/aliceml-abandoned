@@ -53,7 +53,7 @@ structure CodeStore :> CODE_STORE =
 	(*--** remove global state *)
 	val namespace: dottedname ref = ref #[]
 	val classes: (classAttrState * scope * classDeclsState) Map.t ref =
-	    ref (Map.new ())
+	    ref (Map.map ())
 	val env: (class * IL.id * int * regState * instrsState) list ref =
 	    ref nil
 
@@ -64,9 +64,9 @@ structure CodeStore :> CODE_STORE =
 
 	fun init dottedname =
 	    (namespace := dottedname;
-	     classes := Map.new ();
-	     env := [(Stamp.new (), "Main", 0,
-		      (ScopedMap.new (), ref 0, ref 0,
+	     classes := Map.map ();
+	     env := [(Stamp.stamp (), "Main", 0,
+		      (ScopedMap.map (), ref 0, ref 0,
 		       ref nil, ref nil), ref nil)])
 
 	fun defineClass (stamp, extends, implements) =
@@ -89,7 +89,7 @@ structure CodeStore :> CODE_STORE =
 		  | NONE =>
 			Map.insertDisjoint (!classes, stamp,
 					    (ref classAttr,
-					     ScopedMap.new (),
+					     ScopedMap.map (),
 					     ref [ctor]))
 	    end
 
@@ -101,7 +101,7 @@ structure CodeStore :> CODE_STORE =
 			    (scope, classDeclsRef)
 		      | NONE =>
 			    let
-				val scope = ScopedMap.new ()
+				val scope = ScopedMap.map ()
 				val classDeclsRef = ref nil
 			    in
 				Map.insertDisjoint
