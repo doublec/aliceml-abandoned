@@ -12,34 +12,23 @@
 
 signature SIMPLIFIED =
     sig
-	type coord = int * int
+	type coord = Source.position
 
 	(* Literals *)
 
-	datatype lit =
-	    WordLit of word
-	  | IntLit of int
-	  | CharLit of char
-	  | StringLit of string
-	  | RealLit of string
+	datatype lit = datatype PostTranslationIntermediate.lit
 
 	(* Identifiers *)
 
-	type stamp = int
-	datatype name =
-	    ExId of string
-	  | InId
-	datatype id = Id of coord * stamp * name
-
-	datatype longid =
-	    ShortId of coord * id
-	  | LongId of coord * longid * id
-
-	datatype lab = Lab of coord * string
+	type stamp = PostTranslationIntermediate.stamp
+	datatype name = datatype PostTranslationIntermediate.name
+	datatype lab = datatype PostTranslationIntermediate.lab
+	datatype id = datatype PostTranslationIntermediate.id
+	datatype longid = datatype PostTranslationIntermediate.longid
 
 	(* Generic *)
 
-	type backendInfo
+	type backendInfo = int   (*--***)
 	val backendInfoDummy: backendInfo
 
 	type shared = backendInfo ref

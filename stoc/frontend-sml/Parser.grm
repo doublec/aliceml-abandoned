@@ -71,6 +71,9 @@
 (*   - ML-Yacc does not seem to like comments that stretch over several		*)
 (*     lines... Similarly, comments in semantic actions make it puke...		*)
 (*										*)
+(*   I would like to use WideChar and WideString for literals, but SML/NJ	*)
+(*   does not support it.								*)
+(*										*)
 
 
 
@@ -125,8 +128,9 @@
 	| SIGNATURE | STRUCT | STRUCTURE | WHERE | COLONGREATER
 
 	(* Special constants *)
-	| ZERO | DIGIT of int | NUMERIC of int | INT of int | WORD of word
-	| REAL of string | STRING of string | CHAR of char
+	| ZERO | DIGIT of int | NUMERIC of LargeInt.int
+	| INT of LargeInt.int | WORD of LargeWord.word
+	| REAL of string | STRING of String.string | CHAR of Char.char
 
 	(* Identifiers *)
 	| ALPHA of string | SYMBOL of string | STAR
@@ -348,7 +352,8 @@
 
   scon:
 	  ZERO		( SCon(I(ZEROleft,ZEROright),   SCon.INT 0) )
-	| DIGIT		( SCon(I(DIGITleft,DIGITright), SCon.INT DIGIT) )
+	| DIGIT		( SCon(I(DIGITleft,DIGITright),
+				SCon.INT(LargeInt.fromInt DIGIT)) )
 	| NUMERIC	( SCon(I(NUMERICleft,NUMERICright),
 							SCon.INT NUMERIC) )
 	| INT		( SCon(I(INTleft,INTright),     SCon.INT INT) )
@@ -371,7 +376,8 @@
 	| SYMBOL	( Lab(I(SYMBOLleft,SYMBOLright), Lab.fromString SYMBOL))
 	| STAR		( Lab(I(STARleft,STARright),     Lab.fromString "*") )
 	| DIGIT		( Lab(I(DIGITleft,DIGITright),   Lab.fromInt DIGIT) )
-	| NUMERIC	( Lab(I(NUMERICleft,NUMERICright), Lab.fromInt NUMERIC))
+	| NUMERIC	( Lab(I(NUMERICleft,NUMERICright),
+						Lab.fromLargeInt NUMERIC))
 
 
   vid:

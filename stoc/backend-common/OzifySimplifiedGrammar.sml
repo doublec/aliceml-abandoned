@@ -37,6 +37,8 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 
 	fun outputBool (q, b) = output (q, Bool.toString b)
 	fun outputInt (q, n) = output (q, Int.toString n)
+	fun outputLargeInt (q, n) = output (q, LargeInt.toString n)
+	fun outputLargeWord (q, w) = outputLargeInt (q, LargeWord.toLargeInt w)
 	fun outputString (q, s) =
 	    (output1 (q, #"\"");
 	     output (q, String.toCString s);
@@ -67,9 +69,9 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     output (q, Int.toString r))
 
 	fun outputLit (q, WordLit w) =
-	    (f (q, "wordLit"); outputInt (q, Word.toInt w); r q)
+	    (f (q, "wordLit"); outputLargeWord (q, w); r q)
 	  | outputLit (q, IntLit n) =
-	    (f (q, "intLit"); outputInt (q, n); r q)
+	    (f (q, "intLit"); outputLargeInt (q, n); r q)
 	  | outputLit (q, CharLit c) =
 	    (f (q, "charLit"); outputString (q, String.str c); r q)
 	  | outputLit (q, StringLit s) =

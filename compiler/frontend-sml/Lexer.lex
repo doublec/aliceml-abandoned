@@ -25,6 +25,9 @@
  *
  *   The parser uses a global variable to recognise nested comments, so it is
  *   not reentrant.
+ *
+ *   I would like to use WideChar and WideString, but SML/NJ does not
+ *   support it.
  *)
 
 
@@ -93,6 +96,8 @@
 
     fun toId(s,i) = s
 
+    fun toDigit(s,i) = Char.ord(String.sub(s,0))
+
     fun toInt(s,i) =
 	case String.sub(s,0)
 	  of #"~" => ~(toInt(String.extract(s,1,NONE), i))
@@ -104,7 +109,7 @@
 		     )
 	   |   _  => toInt'(s, DEC, i)
 
-    and toInt'(s,b,i) = valOf(scanString (Int.scan b) s)
+    and toInt'(s,b,i) = valOf(scanString (LargeInt.scan b) s)
 			handle Overflow =>
 			       Error.error(i, "integer constant too big")
 
@@ -114,7 +119,7 @@
 	   | ( (#"x",_) | (_,#"x") ) => toWord'(String.extract(s,3,NONE), HEX,i)
 	   |            _            => toWord'(String.extract(s,2,NONE), DEC,i)
 
-    and toWord'(s,b,i) = valOf(scanString (Word.scan b) s)
+    and toWord'(s,b,i) = valOf(scanString (LargeWord.scan b) s)
 			 handle Overflow =>
 				Error.error(i, "word constant too big")
 
@@ -316,7 +321,7 @@
   <INITIAL>"withtype"	=> ( token(WITHTYPE,  yypos, yytext) );
 
   <INITIAL>"0"		=> ( token  (ZERO,              yypos, yytext) );
-  <INITIAL>[1-9]	=> ( tokenOf(DIGIT,   toInt,    yypos, yytext) );
+  <INITIAL>[1-9]	=> ( tokenOf(DIGIT,   toDigit,  yypos, yytext) );
   <INITIAL>{numericlab}	=> ( tokenOf(NUMERIC, toInt,    yypos, yytext) );
   <INITIAL>{int}	=> ( tokenOf(INT,     toInt,    yypos, yytext) );
   <INITIAL>{word}	=> ( tokenOf(WORD,    toWord,   yypos, yytext) );

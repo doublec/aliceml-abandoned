@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-structure Simplified: SIMPLIFIED =
+structure Simplified :> SIMPLIFIED =
     struct
 	type coord = Source.position
 

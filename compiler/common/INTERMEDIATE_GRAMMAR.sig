@@ -1,3 +1,9 @@
+(*
+ * Note:
+ *   I would like to use WideChar and WideString for literals, but SML/NJ
+ *   does not support it.
+ *)
+
 signature INTERMEDIATE =
   sig
 
@@ -8,10 +14,10 @@ signature INTERMEDIATE =
     (* Literals *)
 
     datatype lit =
-	  WordLit   of word
-	| IntLit    of int
-	| CharLit   of char
-	| StringLit of string
+	  WordLit   of LargeWord.word
+	| IntLit    of LargeInt.int
+	| CharLit   of Char.char
+	| StringLit of String.string
 	| RealLit   of string
 
     (* Identifiers *)

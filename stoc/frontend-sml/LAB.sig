@@ -11,11 +11,12 @@ signature LAB =
     eqtype Lab
     type t = Lab
 
-    val fromString:	string -> Lab
-    val fromInt:	int    -> Lab
-    val toString:	Lab    -> string
+    val fromString:	string       -> Lab
+    val fromInt:	int          -> Lab
+    val fromLargeInt:	LargeInt.int -> Lab
+    val toString:	Lab          -> string
 
-    val equalsNum:	Lab * int -> bool
+    val equalsNum:	Lab * LargeInt.int -> bool
 
     val compare:	Lab * Lab -> order
 
