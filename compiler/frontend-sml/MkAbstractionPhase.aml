@@ -39,14 +39,14 @@ __reftype 'a r = ref of 'a	val 'ref = fail: conarrow('a->'a ref)(succ zero)
 				val  ref = fun x -> Ref(x)
 
 Expressions:
-A				A
-B				B
+A				'A(fail)
 B 0				'B(0)
-C				C
-D				D
+B				B
+C				'C(fail)
 D 0				'D(0)
-ref				ref
+D				D
 ref 0				Ref(0)
+ref				ref
 
 Patterns:
 A				'A(_)
@@ -571,8 +571,16 @@ functor MakeAbstractionPhase(
   (* Expressions *)
 
     and trAtExp E =
-	fn SCONAtExp(i, scon)		=> O.LitExp(i, trSCon E scon)
-	 | LONGVIDAtExp(i, _, longvid)	=> O.VarExp(i, #1(trLongVId E longvid))
+	fn SCONAtExp(i, scon)          => O.LitExp(i, trSCon E scon)
+	 | LONGVIDAtExp(i, _, longvid) =>
+	   (case trLongVId E longvid
+	      of (vallongid', T 0) => O.TagExp(i, longidToLab vallongid',
+						  SOME(trConLongVId E longvid),
+						  O.FailExp(i))
+	       | (vallongid', C 0) => O.ConExp(i, trConLongVId E longvid,
+						  O.FailExp(i))
+	       | (vallongid', _)   => O.VarExp(i, vallongid')
+	   )
 	 | RECORDAtExp(i, exprowo) =>
 	   let
 		val  _   = insertScope E
@@ -703,7 +711,6 @@ functor MakeAbstractionPhase(
 	       | (vallongid', T k) =>
 		 ( fn(i',exp') => O.TagExp(i', longidToLab vallongid',
 					   SOME(trConLongVId E longvid), exp') )
-
 	       | (vallongid', C k) =>
 		 ( fn(i',exp') => O.ConExp(i', trConLongVId E longvid, exp') )
 
@@ -929,7 +936,6 @@ functor MakeAbstractionPhase(
 	       | (vallongid', T k) =>
 		 ( fn(i',pat') => O.TagPat(i', longidToLab vallongid',
 					   SOME(trConLongVId E longvid), pat') )
-
 	       | (vallongid', C k) =>
 		 ( fn(i',pat') => O.ConPat(i', trConLongVId E longvid, pat') )
 
