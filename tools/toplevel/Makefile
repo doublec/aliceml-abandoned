@@ -14,7 +14,6 @@ SOURCES = \
 	GuiSignals.aml \
 	EVALUATOR-sig.aml \
 	Evaluator.aml \
-	Use.aml \
 	Highlight.aml HighlightString.aml \
 	Buffer.aml \
 	FileDialog.aml \

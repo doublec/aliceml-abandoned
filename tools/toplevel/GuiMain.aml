@@ -637,7 +637,28 @@ structure GuiMain =
 		Gtk.widgetGrabFocus Gui.progout
 	  | switchTo _ = ()
 
-	fun selectFont _ = ()
+	fun selectFont _ =
+            let
+                val dia = Gtk.fontSelectionDialogNew "Select font"
+                val _ = Gtk.fontSelectionDialogSetFontName(dia,
+                                                           !Config.stdFontName)
+                val response = Gtk.dialogRun dia
+            in
+                case Gtk.IntToGtkResponseType response of
+                    Gtk.RESPONSE_OK =>
+                    let
+                        val newFont = Gtk.fontSelectionDialogGetFontName dia
+                    in
+                        Config.stdFontName := newFont;
+                        Config.stdFont :=
+                          Gtk.pangoFontDescriptionFromString newFont;
+                        Buffer.changeFonts();
+                        Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
+                        Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont)
+                    end
+                  | _ => ();
+                Gtk.widgetDestroy dia                
+            end
 
         fun init notebookSwitchEventId =
             (Gtk.signalConnect(Gui.compilerout, "populate-popup", populatePopup);

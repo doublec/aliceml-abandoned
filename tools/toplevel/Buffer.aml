@@ -350,7 +350,7 @@ structure Buffer =
 	      val _ = Gtk.notebookAppendPage(notebook, scrolledwindow2, label1)
               val page = Gtk.notebookPageNum(notebook, scrolledwindow2)
               val _ = Gtk.notebookSetCurrentPage(notebook, page)
-              val _ = Gtk.widgetModifyFont(newSource, stdFont)
+              val _ = Gtk.widgetModifyFont(newSource, !stdFont)
 
 	      val file = Option.map
 		  (fn f => OS.Path.mkAbsolute {path=f,
@@ -509,4 +509,8 @@ structure Buffer =
 	      Gtk.textBufferEndUserAction buf
           end
 
+      fun changeFonts() =
+          BufferMap.app (fn {view,...} =>
+                            Gtk.widgetModifyFont(view, !Config.stdFont))
+                        bufferMap
    end

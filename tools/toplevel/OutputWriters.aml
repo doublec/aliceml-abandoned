@@ -315,8 +315,8 @@ structure OutputWriters =
           in
               compilerBufRef := SOME compilerBuf;
 	      noeditRef := SOME cNoEd;
-	      Gtk.widgetModifyFont(Gui.compilerout, Config.stdFont);
-	      Gtk.widgetModifyFont(Gui.progout, Config.stdFont);
+	      Gtk.widgetModifyFont(Gui.compilerout, !Config.stdFont);
+	      Gtk.widgetModifyFont(Gui.progout, !Config.stdFont);
               Gtk.textViewSetBuffer(Gui.progout, progBuf);
               Gtk.textViewSetBuffer(Gui.compilerout, compilerBuf);
 	      spawn foldl (forward (Gui.compilerout, compilerBuf, cSig, cNoEd,
