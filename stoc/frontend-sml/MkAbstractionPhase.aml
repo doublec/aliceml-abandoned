@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
 On Constructors:
 
 The abstract language only provides unary contructors. Nullary constructors
@@ -73,11 +85,45 @@ of type identifiers.
 *)
 
 
-functor MakeAbstractionPhase(
-		val loadSign: Source.desc * Url.t -> Inf.sign
+import structure Url              from "../misc/Url"
+import structure Crash            from "../infrastructure/Crash"
+import structure Source           from "../infrastructure/Source"
+import signature SWITCHES         from "../infrastructure/SWITCHES-sig"
+import signature CONTEXT          from "../infrastructure/CONTEXT-sig"
+
+import structure Stamp            from "../common/Stamp"
+import structure Name             from "../common/Name"
+import structure Label            from "../common/Label"
+import structure Fixity           from "../common/Fixity"
+import structure PervasiveType    from "../common/PervasiveType"
+import signature ABSTRACT_GRAMMAR from "../frontend-common/ABSTRACT_GRAMMAR-sig"
+import structure AbstractGrammar  from "../frontend-common/AbstractGrammar"
+
+import structure SCon             from "SCon"
+import structure Lab              from "Lab"
+import structure VId
+       structure TyCon
+       structure TyVar
+       structure SigId
+       structure StrId             from "Ids"
+import signature INPUT_GRAMMAR     from "INPUT_GRAMMAR-sig"
+import structure InputGrammar      from "InputGrammar"
+
+import structure BindEnv           from "BindEnv"
+import structure BindEnvFromSig    from "BindEnvFromSig"
+import structure Infix             from "Infix"
+import structure Sharing           from "Sharing"
+import structure AbstractionError  from "AbstractionError"
+import signature ABSTRACTION_PHASE from "ABSTRACTION_PHASE-sig"
+
+
+type sig_loader = Source.desc * Url.t -> BindEnvFromSig.sign
+
+functor MkAbstractionPhase(
+		val loadSign :       sig_loader
 		structure Switches : SWITCHES
 	) :> ABSTRACTION_PHASE =
-  struct
+struct
 
     structure C   = BindEnv
     structure I   = InputGrammar
@@ -3197,7 +3243,7 @@ functor MakeAbstractionPhase(
 	fn IMPORTAnn(i, imp, s) =>
 	   let
 		val url   = Url.fromString s
-		val s     = loadSign(desc,url)
+		val s     = loadSign(desc, url)
 		val E'    = BindEnvFromSig.envFromSig(i, s)
 		val _     = insertScope E
 		val imps' = trImp (E,E') imp
@@ -3245,4 +3291,4 @@ functor MakeAbstractionPhase(
 
     fun translate E (desc, component) = trComponent (E,desc) component
 
-  end
+end

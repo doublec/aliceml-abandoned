@@ -1,4 +1,24 @@
-functor CountPosLexer(
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Convert a lexer into a lexer which counts soure position. *)
+
+import structure Source      from "../infrastructure/Source"
+import signature LEXER       from "../lib/ml-yacc/base"
+import structure LrParser    from "../lib/ml-yacc/parser2"
+import signature LEXER_ERROR from "LEXER_ERROR-sig"
+
+
+functor MkCountPosLexer(
 	structure Lexer: LEXER
 	where type UserDeclarations.pos = int
 	where type ('a,'b) UserDeclarations.token = ('a,'b) LrParser.Token.token
@@ -8,13 +28,13 @@ functor CountPosLexer(
 	val error : Source.region * LexerError.error -> 'a
 	val startLine : int
 ) : LEXER =
-  struct
+struct
 
     structure UserDeclarations =
-      struct
+    struct
 	open Lexer.UserDeclarations
 	type pos = Source.pos
-      end
+    end
 
     fun makeLexer yyinput =
 	let
@@ -80,4 +100,4 @@ functor CountPosLexer(
 		    error(transform position, e)
 	end
 
-  end
+end

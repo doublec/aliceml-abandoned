@@ -1,4 +1,17 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
  * Stockhausen input grammar
  *
  * Extensions and modifications to core language:
@@ -57,9 +70,17 @@
  *   have been kept because they cannot be derived purely syntactically.
  *)
 
-signature INPUT_GRAMMAR =
-  sig
+import structure Lab   from "Lab"
+import structure VId
+       structure TyCon
+       structure TyVar
+       structure SigId
+       structure StrId from "Ids"
+import structure SCon  from "SCon"
 
+
+signature INPUT_GRAMMAR =
+sig
     (* Import *)
 
     type Info
@@ -440,5 +461,4 @@ signature INPUT_GRAMMAR =
     val idSigId :	SigId		-> SigId.t
 
     val explodeLong :	'a Long		-> StrId list * 'a
-
-  end
+end

@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML lexical analysis
  *
  * Definition, sections 2.1-2.5, 3.1
@@ -199,8 +211,8 @@
 %%
 
 
-%header	( functor Lexer(structure Tokens:     Parser_TOKENS
-			structure LexerError: LEXER_ERROR
+%header	( functor MkLexer(structure Tokens:     Parser_TOKENS
+			  structure LexerError: LEXER_ERROR
 			  where type token = (Tokens.svalue,int) Tokens.token
 			  where type error = ParsingError.error));
 

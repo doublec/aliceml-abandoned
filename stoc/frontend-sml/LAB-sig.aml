@@ -1,13 +1,23 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML label identifiers
  *
  * Definition, section 2.4
  *)
 
-
 signature LAB =
-  sig
-
+sig
     eqtype Lab
     type t = Lab
 
@@ -15,5 +25,4 @@ signature LAB =
     val fromInt:	int          -> Lab
     val fromLargeInt:	LargeInt.int -> Lab
     val toString:	Lab          -> string
-
-  end
+end
