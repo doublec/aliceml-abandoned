@@ -11,15 +11,6 @@
  *)
 
 (*
- * Benoetigt werden:
- *
- * Stack fuer Closures:
- *    oberstes Element enthaelt Namen der aktuellen Closure-Klasse
- * Hashtabelle fuer Primitive:
- *    ordnet jedem Primitiv ein statisches Feld in der Runtime zu
- *)
-
-(*
  * Optimierungsideen:
  *
  * Voraussetzung: Fuer Pickling/Marshaling muss erkannt werden, welche
@@ -108,6 +99,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		end
 	end
 
+	fun emitRecordArity labs =
+	    (emit (LdcI4 (List.length labs)); emit (Newarr System.StringTy);
+	     appi (fn (i, lab) =>
+		   (emit Dup; emit (LdcI4 i); emit (Ldstr lab);
+		    emit (StelemRef))) labs;
+	     emit (Call (false, StockWerk.RecordArity, "MakeRecordArity",
+			 [ArrayTy System.StringTy], StockWerk.RecordArityTy)))
+
 	datatype expMode =
 	    PREPARE
 	  | FILL
@@ -187,16 +186,31 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Castclass StockWerk.Tuple); emit Dup;
 		emit (Ldfld (StockWerk.Tuple, "Values",
 			     ArrayTy StockWerk.StockWertTy));
-		emit Dup; emit Ldlen; emit (LdcI4 (length ids));
+		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
 		emit (Label thenLabel);
 		appi (fn (i, id) =>
 		      (emit Dup; emit (LdcI4 i); emit LdelemRef;
-		       declareLocal id)) ids; emit Pop
+		       declareLocal id)) ids; emit Pop; emit Pop
 	    end
 	  | genTest (RecTest labIdList, elseLabel) =
-	    (*--** *)
-	    Crash.crash "CodeGenPhase.genTest: RecTest"
+	    let
+		val thenLabel = newLabel ()
+	    in
+		emit Dup; emit (Isinst StockWerk.Record);
+		emit (B (FALSE, elseLabel));
+		emit (Castclass StockWerk.Record); emit Dup;
+		emit (Ldfld (StockWerk.Record, "RecordArity",
+			     StockWerk.RecordArityTy));
+		emitRecordArity (List.map #1 labIdList);
+		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
+		emit (Label thenLabel);
+		emit (Ldfld (StockWerk.Record, "Values",
+			     ArrayTy StockWerk.StockWertTy));
+		appi (fn (i, (_, id)) =>
+		      (emit Dup; emit (LdcI4 i); emit LdelemRef;
+		       declareLocal id)) labIdList; emit Pop
+	    end
 	  | genTest (LabTest (lab, id), elseLabel) =
 	    (*--** *)
 	    Crash.crash "CodeGenPhase.genTest: LabTest"
@@ -209,7 +223,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		emit (Castclass StockWerk.Vector); emit Dup;
 		emit (Ldfld (StockWerk.Vector, "Values",
 			     ArrayTy StockWerk.StockWertTy));
-		emit Dup; emit Ldlen; emit (LdcI4 (length ids));
+		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
 		emit (B (EQ, thenLabel)); emit Pop; emit (Br elseLabel);
 		emit (Label thenLabel);
 		appi (fn (i, id) =>
@@ -300,7 +314,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTestBodyList nil = ()
 	and genExp (LitExp (_, lit), PREPARE) = genLit lit
 	  | genExp (PrimExp (_, name), PREPARE) =
-	    emit (Ldsfld (StockWerk.Prebound, name, StockWerk.StockWertTy))
+	    emit (Ldsfld (StockWerk.Prebound, Builtins.lookup name,
+			  StockWerk.StockWertTy))
 	  | genExp (VarExp (_, id), PREPARE) = emitId id
 	  | genExp (ConExp (_, id as Id (_, stamp, _), _), PREPARE) = emitId id
 	  | genExp (RefExp _, PREPARE) =
@@ -336,8 +351,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (RecExp (_, labIdList), _) =
-	    (*--** compute arity statically *)
-	    Crash.crash "CodeGenPhase.genExp: RecExp"
+	    (emitRecordArity (List.map #1 labIdList);
+	     emit (LdcI4 (List.length labIdList));
+	     emit (Newarr StockWerk.StockWertTy);
+	     appi (fn (i, (_, id)) =>
+		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef))
+	     labIdList;
+	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
+					      ArrayTy StockWerk.StockWertTy])))
 	  | genExp (SelExp (_, s), BOTH) =
 	    (emit (Ldstr s);
 	     emit (Newobj (StockWerk.Selector, [System.StringTy])))

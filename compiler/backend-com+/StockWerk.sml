@@ -14,6 +14,7 @@ structure StockWerk =
     struct
 	val Prebound         = ["StockWerk", "Prebound"]
 	val ExceptionWrapper = ["StockWerk", "ExceptionWrapper"]
+	val RecordArity      = ["StockWerk", "RecordArity"]
 	val StockWert        = ["StockWerk", "StockWert"]
 	val Word             = ["StockWerk", "Word"]
 	val Int              = ["StockWerk", "Int"]
@@ -42,6 +43,7 @@ structure StockWerk =
 
 	val PreboundTy         = IL.ClassTy Prebound
 	val ExceptionWrapperTy = IL.ClassTy ExceptionWrapper
+	val RecordArityTy      = IL.ClassTy RecordArity
 	val StockWertTy        = IL.ClassTy StockWert
 	val WordTy             = IL.ClassTy Word
 	val IntTy              = IL.ClassTy Int

@@ -7,6 +7,8 @@ Group is
     IL.sig
     IL.sml
     StockWerk.sml
+    BUILTINS.sig
+    Builtins.sml
     CODE_STORE.sig
     CodeStore.sml
     CODE_GEN_PHASE.sig
