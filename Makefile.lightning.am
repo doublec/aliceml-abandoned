@@ -1,0 +1,14 @@
+if HAVE_LIGHTNING
+lightningdir = $(pkgincludedir)/lightning
+
+dist_lightning_HEADERS = \
+	funcs-common.h \
+	core-common.h \
+	fp-common.h \
+	asm-common.h \
+	asm.h \
+	core.h \
+	funcs.h \
+	fp.h \
+	lightning.h
+endif

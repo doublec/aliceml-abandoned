@@ -9,9 +9,10 @@ cvs:
 	libtoolize --copy --force --automake --ltdl
 	rm -rf lightning
 	lightningize --copy --force --automake
-	aclocal-seam -I .
+	cp Makefile.lightning.am lightning/Makefile.am
+	aclocal -I .
 	autoconf
-	automake-seam --add-missing
+	automake --add-missing
 	cd libltdl; aclocal; autoconf; automake --add-missing
 
 .PHONY: cvs

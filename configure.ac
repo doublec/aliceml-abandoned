@@ -53,11 +53,7 @@ fi
 
 # checks for header files
 
-LIGHTNING_CONFIGURE_IF_NOT_FOUND([
-  AC_CHECK_SIZEOF(long)
-  AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=1)],
-  [AC_DEFINE(HAVE_LIGHTNING,0)
-   AC_SEAM_ADD_TO_CXXFLAGS_SEAMTOOL(-DHAVE_LIGHTNING=0)])
+AC_SEAM_ENABLE_LIGHTNING
 
 # checks for types
 
@@ -149,5 +145,6 @@ AC_CONFIG_FILES([
    adt/Makefile
    generic/Makefile
    store/Makefile
+   lightning/Makefile
    seamtool])
 AC_OUTPUT

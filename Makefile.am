@@ -1,4 +1,4 @@
-SUBDIRS = libltdl store adt generic
+SUBDIRS = libltdl store adt generic lightning
 INCLUDES = $(LTDLINCL)
 
 # SEAM library
@@ -41,16 +41,7 @@ bin_SCRIPTS = seamtool
 nobase_dist_pkginclude_HEADERS = \
 	Base.hh \
 	Seam.hh \
-	libltdl/ltdl.h \
-	lightning/funcs-common.h \
-	lightning/core-common.h \
-	lightning/fp-common.h \
-	lightning/asm-common.h \
-	lightning/asm.h \
-	lightning/core.h \
-	lightning/funcs.h \
-	lightning/fp.h \
-	lightning/lightning.h
+	libltdl/ltdl.h
 
 # Autoconf macros
 

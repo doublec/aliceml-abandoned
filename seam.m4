@@ -534,7 +534,7 @@ AC_DEFUN([AC_SEAM_CHECK_SOCKET_FLAVOR],
                ])])])])])dnl
 
 dnl Macro:
-dnl   AC_SEAM_WITH_LIGHTNING
+dnl   AC_SEAM_ENABLE_LIGHTNING
 dnl
 dnl Description:
 dnl   Introduce a build option for the use of GNU lightning.
@@ -542,28 +542,44 @@ dnl
 dnl Author:
 dnl   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 dnl   Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+dnl   Guido Tack <tack@ps.uni-sb.de>
 dnl
-AC_DEFUN([AC_SEAM_WITH_LIGHTNING],
-  [AC_ARG_WITH(lightning,
-      AC_HELP_STRING([--with-lightning],
+AC_DEFUN([AC_SEAM_ENABLE_LIGHTNING],
+  [AC_ARG_ENABLE(lightning,
+      AC_HELP_STRING([--enable-lightning],
         [use GNU lightning @<:@default=yes@:>@]))
-   if test "${with_lightning}" = "no"; then
-      AC_DEFINE(HAVE_LIGHTNING, 0)
-   else
-      # TODO: Do a version check on GNU lightning instead of this message
-      AC_MSG_NOTICE([You have chosen to build using GNU lightning.       ])
-      AC_MSG_NOTICE([Please note that this will only work, if your local ])
-      AC_MSG_NOTICE([version of GNU lightning is the same as the one that])
-      AC_MSG_NOTICE([was used when building SEAM.                        ])
+   AC_MSG_CHECKING(whether to use GNU lightning)
+   if test "${enable_lightning:-yes}" = "yes"; then
+      AC_REQUIRE([AC_CANONICAL_HOST])dnl
       AC_CHECK_SIZEOF(long)
-      if test "${with_lightning}" != "yes"; then
-         CPPFLAGS="${CPPFLAGS}${CPPFLAGS:+ }-I${with_lightning}"
-         CPPFLAGS="${CPPFLAGS} -I${with_lightning}/include"
+      if test -d "${srcdir}"/lightning; then
+        have_lightning=yes
+        AC_DEFINE(HAVE_LIGHTNING, 1)
+        case "$host_cpu" in
+             i?86)	 cpu_subdir=i386                                ;;
+             sparc*)	 cpu_subdir=sparc				;;
+             powerpc)    cpu_subdir=ppc					;;
+             *)          ;;
+        esac
+        if test -n "$cpu_subdir"; then
+        AC_CONFIG_LINKS(lightning/asm.h:lightning/$cpu_subdir/asm.h
+                        lightning/core.h:lightning/$cpu_subdir/core.h
+                        lightning/fp.h:lightning/$cpu_subdir/fp.h
+                        lightning/funcs.h:lightning/$cpu_subdir/funcs.h, , [
+                        ])
+        else
+          AC_MSG_ERROR(cannot find GNU lightning platform specific headers.)
+        fi
+      else
+        AC_MSG_ERROR(cannot find GNU lightning)
       fi
-      AC_CHECK_HEADER(lightning.h,
-        [AC_DEFINE(HAVE_LIGHTNING, 1)],
-        [AC_MSG_ERROR(cannot find GNU lightning)])
-   fi])dnl
+   else
+      have_lightning=no
+      AC_DEFINE(HAVE_LIGHTNING, 0)
+      AC_MSG_RESULT(no)
+   fi
+   AM_CONDITIONAL(HAVE_LIGHTNING, test x$debug = xyes)
+   ])dnl
 
 # ---------------------------------------------------------------
 # End of file
