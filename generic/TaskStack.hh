@@ -31,6 +31,7 @@ public:
   using Stack::ToWord;
   using Stack::IsEmpty;
   // TaskStack Functions
+  static u_int maxWidth, maxDepth;
   static void Dump(word x);
   void DumpTaskStack();
   void PushFrame(word frame) {
