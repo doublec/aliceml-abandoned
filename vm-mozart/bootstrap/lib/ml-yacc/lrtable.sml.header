@@ -1,0 +1,3 @@
+import
+    signature LR_TABLE
+from "lib/ml-yacc/base.ozf"

@@ -1,0 +1,3 @@
+import
+    signature STREAM
+from "lib/ml-yacc/base.ozf"
