@@ -68,7 +68,7 @@ struct
     val equal			= op =
     val abs			= abs
 
-    fun hash i			= abs i handle Overflow => 0
+    fun hash i			= abs i handle General.Overflow => 0
 
     fun min(i,j)		= if i < j then i else j
     fun max(i,j)		= if i > j then i else j

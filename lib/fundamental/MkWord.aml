@@ -73,7 +73,7 @@ struct
     val toLargeIntX  = toIntX
 
     val equal	= op =
-    fun hash w	= abs(toInt w) handle Overflow => 0
+    fun hash w	= abs(toInt w) handle General.Overflow => 0
 
     fun compare(w1,w2) =
 	if w1 < w2 then LESS
