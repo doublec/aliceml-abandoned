@@ -192,6 +192,12 @@ define
       end
    end
 
+   fun {PushUnpickleFrame X I N Rest}
+      if I == N then Rest
+      else unpickling(UnpickleInterpreter X I N)|Rest
+      end
+   end
+
    fun {UnpickleInterpreterRun Args=args(InputStream Env Count) TaskStack}
       case TaskStack of unpickling(_ X I N)|Rest then
 	 if I == N then continue(Args Rest)
@@ -203,7 +209,7 @@ define
 	    elseof Y then
 	       {Set X I Y}
 	       {InputStream commit()}
-	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	       continue(Args {PushUnpickleFrame X I + 1 N Rest})
 	    end
 	 [] !NEGINT then
 	    case {InputStream getUInt($)} of eob then
@@ -211,7 +217,7 @@ define
 	    elseof Y then
 	       {Set X I ~(Y + 1)}
 	       {InputStream commit()}
-	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	       continue(Args {PushUnpickleFrame X I + 1 N Rest})
 	    end
 	 [] !CHUNK then
 	    case {InputStream getUInt($)} of eob then
@@ -225,7 +231,7 @@ define
 		  Env.Count := Y
 		  {InputStream commit()}
 		  continue(args(InputStream Env Count + 1)
-			   unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			   {PushUnpickleFrame X I + 1 N Rest})
 	       end
 	    end
 	 [] !BLOCK then
@@ -249,8 +255,7 @@ define
 			   continue(args(InputStream Env Count + 1)
 				    unpickling(UnpickleInterpreter Y 0
 					       Size - 1)|
-				    unpickling(UnpickleInterpreter X I + 1 N)|
-				    Rest)
+				    {PushUnpickleFrame X I + 1 N Rest})
 			end
 		     end
 		  [] !CELL then Y in
@@ -260,7 +265,7 @@ define
 		     {InputStream commit()}
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 1)|
-			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			      {PushUnpickleFrame X I + 1 N Rest})
 		  [] !CONSTRUCTOR then Y in
 		     Y = {NewName}
 		     {Set X I Y}
@@ -268,7 +273,7 @@ define
 		     {InputStream commit()}
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 Size)|
-			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			      {PushUnpickleFrame X I + 1 N Rest})
 		  [] !CON_VAL then Y in
 		     Y = {MakeTuple con Size}
 		     {Set X I Y}
@@ -276,7 +281,7 @@ define
 		     {InputStream commit()}
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 Size)|
-			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			      {PushUnpickleFrame X I + 1 N Rest})
 		  [] !GLOBAL_STAMP then fail   %--**
 		  [] !VECTOR then
 		     case {InputStream getByte($)} of eob then
@@ -292,8 +297,7 @@ define
 			   continue(args(InputStream Env Count + 1)
 				    unpickling(UnpickleInterpreter
 					       Y 0 Size - 1)|
-				    unpickling(UnpickleInterpreter X I + 1 N)|
-				    Rest)
+				    {PushUnpickleFrame X I + 1 N Rest})
 			end
 		     end
 		  else Y in
@@ -304,7 +308,7 @@ define
 		     {InputStream commit()}
 		     continue(args(InputStream Env Count + 1)
 			      unpickling(UnpickleInterpreter Y 0 Size)|
-			      unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			      {PushUnpickleFrame X I + 1 N Rest})
 		  end
 	       end
 	    end
@@ -318,7 +322,7 @@ define
 	       {InputStream commit()}
 	       continue(args(InputStream Env Count + 1)
 			unpickling(UnpickleInterpreter Y 0 Size)|
-			unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			{PushUnpickleFrame X I + 1 N Rest})
 	    end
 	 [] !CLOSURE then
 	    case {InputStream getUInt($)} of eob then
@@ -330,7 +334,7 @@ define
 	       {InputStream commit()}
 	       continue(args(InputStream Env Count + 1)
 			unpickling(UnpickleInterpreter Y 0 Size)|
-			unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+			{PushUnpickleFrame X I + 1 N Rest})
 	    end
 	 [] !TRANSFORM then Y Y2 in
 	    Y = transient({NewCell hole(noFuture)})
@@ -341,14 +345,14 @@ define
 	    continue(args(InputStream Env Count + 1)
 		     unpickling(UnpickleInterpreter Y2 0 2)|
 		     transform(TransformInterpreter Y Y2)|
-		     unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+		     {PushUnpickleFrame X I + 1 N Rest})
 	 [] !REF then
 	    case {InputStream getUInt($)} of eob then
 	       continue(Args input(InputInterpreter)|TaskStack)
 	    elseof Index then
 	       {Set X I Env.Index}
 	       {InputStream commit()}
-	       continue(Args unpickling(UnpickleInterpreter X I + 1 N)|Rest)
+	       continue(Args {PushUnpickleFrame X I + 1 N Rest})
 	    end
 	 end
       end
