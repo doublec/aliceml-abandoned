@@ -1,0 +1,33 @@
+Standard ML of New Jersey, Version 110.0.6, October 31, 1999 [CM; autoload enabled]
+- CM.make "jacke.cm";
+stdIn:17.1-17.19 Error: operator and operand don't agree [tycon mismatch]
+  operator domain: unit
+  operand:         string
+  in expression:
+    CM.make "jacke.cm"
+- CM.make();
+[starting dependency analysis]
+
+!* CM error: sources.cm: description file not found
+- open FileSys;
+stdIn:1.1-2.8 Error: unbound structure: FileSys
+- open IO;
+opening IO
+  exception Io of {cause:exn, function:string, name:string}
+  exception BlockingNotSupported
+  exception NonblockingNotSupported
+  exception RandomAccessNotSupported
+  exception TerminatedStream
+  exception ClosedStream
+  datatype buffer_mode = BLOCK_BUF | LINE_BUF | NO_BUF
+- OS.FileSys.chDir "./FoPra";
+
+uncaught exception SysErr: No such file or directory [noent]
+  raised at: <chdir.c>
+- OS.FileSys.getDir();
+val it = "/home/jan/FoPra" : string
+- CM.make();
+[starting dependency analysis]
+
+!* CM error: sources.cm: description file not found
+- 

@@ -1,0 +1,107 @@
+(* grammar for jacke's own parser *)
+
+fun lookup "bogus" = 10000
+  | lookup s = 0
+
+%%
+
+%eop EOF
+
+(* %pos declares the type of positions for terminals.
+   Each symbol has an associated left and right position. *)
+
+%term     EOF 
+  | ID of string
+  | INT of int | STRING of string 
+  | COMMA | COLON | SEMICOLON | LPAREN | RPAREN | LBRACK | RBRACK
+  | LBRACE | RBRACE | UMINUS
+  | EQ | IF | THEN | ELSE | LET | IN | END | AND | OF | AS 
+  | MAPSTO | BAR | LOCAL | ABSTYPE | WITH
+(* jacke extensions *)
+  | TOKEN | ASSOCL | ASSOCR | NONASSOC | RULE | PARSER | PREC | SKIP
+(* others *)
+  | DECINTRO of string | MLOP of string | MLKEY of string 
+
+%nonterm  start | topleveldec | jackedec | tokbinds | tokbind | idlist
+	| rulebinds | rulebind | parsbinds | parsbind | bnfexp | exp | program
+
+
+%pos int
+%verbose
+%start start
+%eop EOF
+%noshift EOF
+
+%name jacke
+
+%keyword LET LOCAL IN END IF THEN ELSE AND TOKEN OF AS 
+         ASSOCL ASSOCR NONASSOC RULE PARSER PREC
+
+
+%prefer THEN ELSE LPAREN
+
+%value ID ("bogus")
+%value INT (1)
+%value STRING ("")
+
+
+%%
+
+(* the (somewhat incomplete and simplified) grammar *)
+
+start : program ()
+	| ()
+
+program : program jackedec ()
+	| program SEMICOLON jackedec ()
+
+jackedec : TOKEN tokbinds ()
+        | ASSOCL idlist ()
+	| ASSOCR idlist ()
+	| NONASSOC idlist ()
+	| RULE rulebinds ()
+	| PARSER parsbinds ()
+	| LOCAL jackedec IN jackedec END ()
+	| DECINTRO exp ()
+ 
+tokbinds : tokbind ()
+	| tokbind BAR tokbinds ()
+
+tokbind : ID ()
+	| ID OF ID ()
+
+idlist  : ID ()
+	| idlist ID ()
+
+rulebinds : rulebind ()
+	| rulebind AND rulebinds ()
+
+rulebind : ID EQ bnfexp ()
+	| ID COLON ID EQ bnfexp ()
+
+parsbinds : parsbind ()
+	| parsbind AND parsbinds ()
+
+parsbind : ID EQ ID ()
+	| ID COLON ID EQ ID ()
+
+bnfexp : SKIP ()
+	| ID ()
+	| LPAREN bnfexp RPAREN ()
+	| ID AS bnfexp ()
+	| bnfexp COMMA bnfexp ()
+	| bnfexp PREC ID ()
+	| bnfexp MAPSTO LPAREN exp RPAREN ()
+	| bnfexp BAR bnfexp () 
+
+exp : 	exp LET jackedec IN exp END ()
+	| exp LPAREN exp RPAREN ()
+	| exp LBRACE exp RBRACE ()
+	| exp STRING () 
+	| exp LBRACK exp RBRACK ()
+	| ID exp ()
+	| exp EQ ()
+	| exp COMMA ()
+	| exp MLKEY ()
+	| exp MLOP ()
+	| ()
