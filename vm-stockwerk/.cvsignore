@@ -1,4 +1,4 @@
-Makefile.depend seam.dll
+Makefile.depend stow.dll
 Rel1.import Rel2.import
 build1 build2 build3
 Makefile.bootstrap.depend
