@@ -20,8 +20,8 @@ signature MK_WINDOW =
 sig
     type tag = Gtk.object
     val window: tag
-    val handlers :  (Types.node -> unit) Array.array
-    val register: string * (Types.node -> unit) -> unit
+    val handlers :  (Types.node * int -> unit) Array.array
+    val register: string * (Types.node * int -> unit) -> unit
     val serve: (unit -> unit) -> unit
     val canvas: tag
     val canvasroot: tag

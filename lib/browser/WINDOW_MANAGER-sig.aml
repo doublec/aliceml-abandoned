@@ -29,6 +29,6 @@ sig
     val window: Gtk.object ref
     val show: (unit-> unit) ref
     val resize: (unit -> unit) ref
-    val register : (string * (Types.node -> unit) -> unit) ref
+    val register : (string * (Types.node * int -> unit) -> unit) ref
 
 end

@@ -61,6 +61,10 @@ struct
     and get_l_xdim n = case n of Container(r) => !(#l_width(r))
                                | _ => raise LayoutError
 
+    (* get_l_xdim_or_xdim *)
+    and get_l_xdim_or_xdim (Container(r)) = !(#l_width(r))
+      | get_l_xdim_or_xdim n = get_xdim n
+
     (* layout *)
     and layout n = 
 	let val f = fn n => #1(layout n)

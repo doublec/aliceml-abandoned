@@ -40,21 +40,21 @@ val serve' = Server.newServer ()
 
 (* "About..."-WindowHandler *)
 fun about _ = serve' (fn () =>  
-		     let
-			 val dialog = Gtk.dialogNew()
-			 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
-			 val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
-			 val l = 
-			     Gtk.labelNew("Alice Browser \n"
-					  ^ "Created by \n"
-					  ^ "Bernadette Blum & Marvin Schiller")
-		     in
-			 ( Gtk.windowSetTitle(dialog,"information")
-			  ; Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),
-					     ok)
-			  ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
-			  ;Gtk.widgetShowAll(dialog))
-		     end)
+     let
+	 val dialog = Gtk.dialogNew()
+	 val ddialog = (fn _ =>  Gtk.widgetDestroy(dialog)) 
+	 val ok = createButton(BObj("ok",[Handler("clicked",ddialog)]))
+	 val l = 
+		      Gtk.labelNew("Alice Browser \n"
+				   ^ "Created by \n"
+				   ^ "Bernadette Blum & Marvin Schiller")
+     in
+	( Gtk.windowSetTitle(dialog,"information")
+	 ; Gtk.containerAdd((Gtk.dialogGetFieldActionArea(dialog)),
+			    ok)
+	 ; Gtk.containerAdd((Gtk.dialogGetFieldVbox(dialog)),l)
+	 ;Gtk.widgetShowAll(dialog))
+     end)
 
 (* Handles ok Button in Preferences Window *)
 fun okHandler(w,
@@ -63,22 +63,23 @@ fun okHandler(w,
 	      treemode_button,
 	      relmode_button, 
 	      tokenmode_button) = (fn _ => 
-				   (Settings.max_width := 
-				    Gtk.spinButtonGetValueAsInt(width_s) 
-				    ;Settings.max_depth := 
-				    Gtk.spinButtonGetValueAsInt(depth_s)
-				    ;Settings.relmode := (
-			            Gtk.toggleButtonGetActive(relmode_button) = 1
-					  orelse 
-       			            Gtk.toggleButtonGetActive(tokenmode_button) = 1)
-				    ;Settings.tokenmode :=  
-				    Gtk.toggleButtonGetActive(tokenmode_button) = 1
-				    ;Gtk.widgetDestroy(w)
-				    ;if 
-				    Gtk.toggleButtonGetActive(treemode_button) = 1
-					 then (RelManDictionary.dumpAll(Dictionaries.reldict)
-					       ; Settings.relnumber := 0)
-				     else ()))
+	       		   (Settings.max_width := 
+			    Gtk.spinButtonGetValueAsInt(width_s) 
+			    ;Settings.max_depth := 
+			    Gtk.spinButtonGetValueAsInt(depth_s)
+			    ;Settings.relmode := (
+			    Gtk.toggleButtonGetActive(relmode_button) = 1
+						  orelse 
+			   Gtk.toggleButtonGetActive(tokenmode_button) = 1)
+			    ;Settings.tokenmode :=  
+			    Gtk.toggleButtonGetActive(tokenmode_button) = 1
+			    ;Gtk.widgetDestroy(w)
+			    ;if 
+			    Gtk.toggleButtonGetActive(treemode_button) = 1
+				 then (RelManDictionary.dumpAll
+				       (Dictionaries.reldict)
+				       ; Settings.relnumber := 0)
+			     else ()))
 
 (* Preferences Window Handler *)
 fun Preferences _ = serve' (fn () =>
@@ -202,25 +203,27 @@ fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  serve' (fn () => let
 			 end))
 
 (* Scrolling *)
-fun scrollX (x,scrolled,hadj) = let
-				    val valueh = Gtk.adjustmentGetFieldValue(hadj)
-				    val pages =  Gtk.adjustmentGetFieldPageSize(hadj)
-				in
-				    ( if Real.> (Real.+(Real.+(valueh,x),pages),!Settings.max_x)
-			      then  Gtk.adjustmentSetValue(hadj,Real.-(!Settings.max_x,pages))
-				      else Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
-			  ;())
-		     end
+fun scrollX (x,scrolled,hadj) = 
+    let
+	val valueh = Gtk.adjustmentGetFieldValue(hadj)
+	val pages =  Gtk.adjustmentGetFieldPageSize(hadj)
+    in
+	( if Real.> (Real.+(Real.+(valueh,x),pages),!Settings.max_x)
+	      then  Gtk.adjustmentSetValue(hadj,Real.-(!Settings.max_x,pages))
+	  else Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
+	      ;())
+    end
 
-fun scrollY (y,scrolled,vadj) = let
-			 val pages =  Gtk.adjustmentGetFieldPageSize(vadj)
-			 val valuev = Gtk.adjustmentGetFieldValue(vadj)
-		     in
-			 ( if Real.>(Real.+(Real.+(valuev,y),pages),!Settings.max_y) 
-			       then  Gtk.adjustmentSetValue(vadj,Real.-(!Settings.max_y,pages))
-			   else  Gtk.adjustmentSetValue(vadj,Real.+(valuev,y))
-			  ;())
-		     end 
+fun scrollY (y,scrolled,vadj) = 
+    let
+	val pages =  Gtk.adjustmentGetFieldPageSize(vadj)
+	val valuev = Gtk.adjustmentGetFieldValue(vadj)
+    in
+	( if Real.>(Real.+(Real.+(valuev,y),pages),!Settings.max_y) 
+	      then  Gtk.adjustmentSetValue(vadj,Real.-(!Settings.max_y,pages))
+	  else  Gtk.adjustmentSetValue(vadj,Real.+(valuev,y))
+	      ;())
+    end 
 
 (* Popup window for selection *)
  fun makePopup {node = n, widthhandler = w, depthhandler = d, 
@@ -239,7 +242,23 @@ fun scrollY (y,scrolled,vadj) = let
 			  items = [MenuObj
 				   {title = "width",
 				    items = 
-				    [EntryObj(LABEL("+1"),[],true)],
+				    [EntryObj(LABEL("-5"),
+					      [Handler("activate",w(~5))],
+						       true),
+				     EntryObj(LABEL("-3"),
+					      [Handler("activate",w(~3))],
+					         true)
+				   (*  EntryObj(LABEL("-2"),[w(~2)],true),
+				     EntryObj(LABEL("-1"),[w(~1)],true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+1"),[w(1)],true),
+				     EntryObj(LABEL("+2"),[w(2)],true),
+				     EntryObj(LABEL("+3"),[w(3)],true),
+				     EntryObj(LABEL("+4"),[w(4)],true),
+				     EntryObj(LABEL("+5"),[w(5)],true),
+				     EntryObj(SEP,[],true),
+				     EntryObj(LABEL("+10"),[w(10)],true) *)
+				     ],
 				    sensitive = true},
 				   MenuObj
 				   {title = "depth",
@@ -251,7 +270,8 @@ fun scrollY (y,scrolled,vadj) = let
 			  items = [],
 			  sensitive = true},
 		  MenuObj{title = "Actions",
-			  items = [EntryObj(LABEL("reinspect"),r,
+			  items = [EntryObj(LABEL("reinspect"),
+					    [Handler("activate",r)],
 					    reinspect_active)],
 			  sensitive = true}])
 		;()))
@@ -281,7 +301,7 @@ struct
   
     val alive = alive'
 
-    val handlers = Array.array(5,(fn n=> ()))
+    val handlers = Array.array(5,(fn (n,i) => ()))
 
     fun selectHandler "reinspect" = Array.sub(handlers,0)
       | selectHandler "width"     = Array.sub(handlers,1)
@@ -318,10 +338,13 @@ struct
      fun show() = if !alive then Gtk.widgetShowAll(window) else ()
     
      fun handleReinspect node = 
-	 fn _ => (selectHandler("reinspect")) node
+	 fn _ => (selectHandler("reinspect")) (node,0)
 
      fun handleReinspectSelection _ =
-	 (selectHandler("reinspect")) (getSelectionNode())
+	 (selectHandler("reinspect")) (getSelectionNode(),0)
+
+     fun handleWidth node = 
+	 fn i => fn _ => (selectHandler("width")) (node,i)
 
 	 (* Menu-Bar *)
      val bar = WindowHelper.createMenu
@@ -400,10 +423,9 @@ struct
 		    (case node of 
 		     SOME(n) 
 		     =>( makePopup({node = n,
-				    widthhandler = [], 
+				    widthhandler = handleWidth(n), 
 				    depthhandler = [], 
-				    reinspecthandler = [Handler("activate",
-							 handleReinspect(n))]})
+				    reinspecthandler = handleReinspect(n)})
 				   ; ())
 		   | NONE => ())
 		    end 

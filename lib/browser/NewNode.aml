@@ -812,7 +812,7 @@ struct
 (* Registrierung der Fkt. zum Reinspizieren von Werten beim WindowManager *)
    
     val _ = !WindowManager.register("reinspect",
-				    fn n => Update.reinspect(n,
+				    fn (n,_) => Update.reinspect(n,
 							     createGraph,
 							     createGraphInf)) 
 	
