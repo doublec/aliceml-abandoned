@@ -34,10 +34,7 @@ veryclean:
 
 distclean:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
-	rm -f $(OBJS) stow.exe
-
-depend: Makefile.deps
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) depend) || exit 1; done
+	rm -f $(OBJS) stow.exe Makefile.deps
 
 Makefile.deps: Makefile $(SRCS)
 	$(MAKEDEPEND) $(SRCS) > Makefile.deps
