@@ -87,6 +87,9 @@ structure PathPrivate =
 	in
 	    clone p
 	end
+
+    fun clone p = instance (fn _ => NONE) ((), p)
+
   end
 
 

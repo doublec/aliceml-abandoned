@@ -163,6 +163,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	     "does","not","match","manifest","specification"]
       | ppMismatch'(Inf.MismatchVal(a,t1,t2)) =
 	    ["value",ppLab a,"has","incompatible","type"]
+	(*UNFINISHED*)
+	@ [PrettyPrint.toString(PPType.ppTyp t1, 1000), "instead","of"]
+	@ [PrettyPrint.toString(PPType.ppTyp t2, 1000)]
       | ppMismatch'(Inf.MismatchTyp(a,k1,k2)) =
 	    ["type",ppLab a,"has","incompatible","arity"]
       | ppMismatch'(Inf.MismatchMod(a, Inf.Incompatible _)) =

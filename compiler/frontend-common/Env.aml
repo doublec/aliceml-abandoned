@@ -66,8 +66,9 @@ structure Env :> ENV =
     fun union(ENV E1, ENV E2)		= Map.unionDisjoint(E1,E2)
 
     fun insertVal(ENV E, x, y)		= Map.insertDisjoint(E, x, VAL y)
-    fun insertTyp(ENV E, x, y)		= Map.insertDisjoint(E, x, TYP y)
-    fun insertVar(ENV E, x, y)		= Map.insertDisjoint(E, x, VAR y)
+(*UNFINISHED: quick hack*)
+    fun insertTyp(ENV E, x, y)		= Map.insert(E, x, TYP y)
+    fun insertVar(ENV E, x, y)		= Map.insert(E, x, VAR y)
     fun insertMod(ENV E, x, y)		= Map.insertDisjoint(E, x, MOD y)
     fun insertInf(ENV E, x, y)		= Map.insertDisjoint(E, x, INF y)
 

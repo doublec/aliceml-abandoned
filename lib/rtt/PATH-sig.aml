@@ -29,6 +29,7 @@ signature PATH =
 
     val strengthen :	path * (path * lab * int) -> unit
 
+    val clone :		path -> path
     val instance :	('rea * path -> path option) -> 'rea * path -> path
 
   end

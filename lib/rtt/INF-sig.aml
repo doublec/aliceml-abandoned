@@ -19,7 +19,7 @@ signature INF =
     type sign						(* [sigma,s] *)
     type item
     type inf						(* [jota,j] *)
-    type t = inf    
+    type t = inf
 
   (* Realisations *)
 

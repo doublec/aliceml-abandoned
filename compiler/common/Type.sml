@@ -1,7 +1,67 @@
-(*UNFINISHED*)
-(* NOTE: Reduction is still a bit strange for recursive type functions -
-	 we get some non-wellformed lambdas in-between.
-	 Have to look into it later... *)
+(*******************************************************************************
+On Type Functions:
+
+We evaluate type application lazily. Reduction is triggered on demand, i.e. by
+unification or by inspection. Not all applications can be reduced (in
+particular applications to abstract type constructors) so we deal with some
+sort of head normal form.
+
+We don't normally do eta-reduction, since it is expensive. During unification
+eta reduction is not needed since lambdas may only show up there under very
+restrictive circumstances anyway (see below). Eta-reduction is still needed
+however for equals, to equate eta-convertible type functions. It's done on
+demand.
+
+On Sharing:
+
+For efficiency reasons, we try to maximise sharing of type structures. This
+reduces space cost and speeds up comparison and unification, as a simple
+reference comparison often suffices. Not only unification but even the equality
+test (used by module type checking) merges types silently whenever possible.
+
+There are several cases where we have to clone a type:
+
+* Type functions before reduction of type application.
+* Type schemes (types with toplevel quantifiers) on instantiation.
+* All sorts of types on signature instantiation.
+
+For the first two it would be sufficient to only clone subgraphs containing the
+variables bound by the lambdas/quantifiers; for the third we only would need to
+clone subgraphs containing signature-local constructors. But since minimizing
+cloning is difficult in the presence of cycles (we have recursive types) and
+the pay-off is unclear, we currently don't do it.
+
+It is very important to maintain sharing between subgraphs of different type
+terms on signature instantiation. Not doing this can lead to a quadratic blowup
+of type terms during module type checking, particularly desastrous in the
+presence of structural datatypes. Therefor we need a special-and-ugly interface
+for cloning a sequence of related types.
+
+On Recursive Types:
+
+Stockhausen makes datatypes structural sum types. This is a problem since
+SML has non-uniform recursive datatypes. So in fact we not only get recursive
+types but recursive type functions. It is not obvious whether type checking
+remains decidable in the general case (in our current scheme with lazy
+application unification might fail to terminate).
+
+To stay on the safe side we treat recursive type functions specially:
+applications to such functions are never reduced. That is, there is no implicit
+unrolling of recursive types, mu is completely structural. For two recursive
+types to be compatible they must therefor be constructed from equal type
+functions. As a consequence, List(Int) and IntList will not be compatible in
+the following example:
+
+	List a  = Nil | Cons(a, List a)
+	IntList = Nil | Cons(Int, IntList)
+
+Maybe this can be made a bit more permissive, but in general it seems
+impossible to have non-uniform datatypes as well as arbitrary recursive types.
+
+It is also unclear to me whether some sort of hash-consing can be applied to
+recursive types or even recursive type functions.
+
+*******************************************************************************)
 
 structure TypePrivate =
   struct
@@ -33,9 +93,8 @@ structure TypePrivate =
 
     and row =						(* [rho,r] *)
 	  NIL
-	| RHO of int ref
+	| RHO   of int ref * row
 	| FIELD of lab * typ list * row
-	(* NOTE: representation of rows is suboptimal - change it some day *)
 
     withtype typ = typ' ref				(* [tau,t] *)
     and      var = typ' ref				(* [alpha,a] *)
@@ -47,7 +106,7 @@ structure TypePrivate =
 
     (*
      * We establish the following invariants:
-     * - rows are sorted by label
+     * - rows are sorted by label, rho variables appear as head only
      * - types are always in head normal form
      * - sequential quantifiers are ordered such that the bound variables
      *   appear in depth-first leftmost traversal order inside the body
@@ -73,7 +132,8 @@ structure TypePrivate =
 
   (* Level management *)
 
-    val level = ref 1
+    val globalLevel = 0
+    val level       = ref(globalLevel+1)
 
     fun enterLevel() = level := !level+1
     fun exitLevel()  = level := !level-1
@@ -132,7 +192,8 @@ structure TypePrivate =
       | app1'(( MARK _ ), f)		= raise Crash.Crash "Type.app: MARK"
 
     and appRow(FIELD(_,ts,r), f)	= ( List.app f ts ; appRow(r,f) )
-      | appRow(_, f)			= ()
+      | appRow(RHO(_,r), f)		= appRow(r,f)
+      | appRow(NIL, f)			= ()
 
 
     fun foldl1'(( HOLE _
@@ -151,7 +212,8 @@ structure TypePrivate =
       | foldl1'(( MARK _ ), f, a)	= raise Crash.Crash "Type.foldl: MARK"
 
     and foldlRow(FIELD(_,ts,r), f, a)	= foldlRow(r, f, List.foldl f a ts)
-      | foldlRow(_, f, a)		= a
+      | foldlRow(RHO(_,r), f, a)	= foldlRow(r, f, a)
+      | foldlRow(NIL, f, a)		= a
 
 
     fun unmark(t as ref(MARK t')) 	=
@@ -239,21 +301,77 @@ structure TypePrivate =
 	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
 	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
 	      | clone'(MU t)		= MU(clone t)
-(*DEBUG*)
-| clone'(LINK _) = raise Crash.Crash "Type.clone: LINK"
-| clone'(MARK _) = raise Crash.Crash "Type.clone: MARK"
-| clone'(HOLE _) = raise Crash.Crash "Type.clone: HOLE"
-| clone'(VAR _)  = raise Crash.Crash "Type.clone: VAR"
-(*
 	      | clone' _		= raise Crash.Crash "Type.clone"
-*)
+
 	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
-	      | cloneRow r		= r
+	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
+	      | cloneRow(NIL)		= NIL
 
 	    val t2 = clone t
 	in
 	    List.app op:= (!trail) ;
 	    unmark t2 ;
+	    t2
+	end
+
+
+  (* Continuous cloning *)
+
+    type clone_state = { trail: (typ * typ') list ref, typs: typ list ref }
+
+    fun cloneStart() = {trail = ref [], typs = ref []}
+    fun cloneFinish{trail,typs} = 
+	( List.app op:= (!trail)
+	; List.app unmark (!typs)
+	)
+
+    fun cloneCont {trail,typs} t =
+	let
+	    fun dup'(t1 as ref t1') =
+		let
+		    val _   = trail := (t1,t1') :: !trail
+		    val t2  = ref(MARK t1')
+		    val _   = t1 := LINK t2
+		in
+		    t2
+		end
+
+	    fun dup(t1 as ref t1') =
+		let
+		    val _   = trail := (t1,t1') :: !trail
+		    val t2  = ref(MARK t1')
+		    val _   = t1 := LINK t2
+		    val t2' = MARK(clone' t1')
+		    val _   = t2 := t2'
+		in
+		    t2
+		end
+
+	    and clone t1 =
+		let val t11 = follow t1 in
+		    case !t11 of (MARK _ | VAR _ | HOLE _) => t11
+			       | t11'                      => dup t11
+		end
+
+	    and clone'(FUN(t1,t2))	= FUN(clone t1, clone t2)
+	      | clone'(TUPLE ts)	= TUPLE(List.map clone ts)
+	      | clone'(PROD r)		= PROD(cloneRow r)
+	      | clone'(SUM r)		= SUM(cloneRow r)
+	      | clone'(CON c)		= CON c
+	      | clone'(ALL(a,t))	= ALL(dup' a, clone t)
+	      | clone'(EXIST(a,t))	= EXIST(dup' a, clone t)
+	      | clone'(LAMBDA(a,t))	= LAMBDA(dup' a, clone t)
+	      | clone'(APPLY(t1,t2))	= APPLY(clone t1, clone t2)
+	      | clone'(MU t)		= MU(clone t)
+	      | clone' _		= raise Crash.Crash "Type.clone"
+
+	    and cloneRow(FIELD(l,ts,r))	= FIELD(l,List.map clone ts, cloneRow r)
+	      | cloneRow(RHO(n,r))	= RHO(ref(!n), cloneRow r)
+	      | cloneRow(NIL)		= NIL
+
+	    val t2 = clone t
+	in
+	    typs := t2 :: !typs ;
 	    t2
 	end
 
@@ -288,10 +406,10 @@ structure TypePrivate =
 		)
 	      | reduceApply(ref(LINK t11), r) =
 		    reduceApply(follow t11, r)
-
+	      (*
 	      | reduceApply(ref(MU t11), r) =
 		    reduceApply(follow t11, true)
-
+	      *)
 	      | reduceApply _ = ()
 	in
 	    reduceApply(t1, false)
@@ -306,32 +424,32 @@ structure TypePrivate =
      * Eta-reduction is still needed however for equals, to equate
      * eta-convertible type functions. It's done on demand.
      *)
- 
+
     fun reduceEta(t as ref(LAMBDA _)) =
 	let
-	    fun reduceLam(ref(LAMBDA(a,t1)), vs) =
-		reduceLam(t1, a::vs)
+	    fun reduceLambda(ref(LAMBDA(a,t1)), vs) =
+		reduceLambda(t1, a::vs)
 
-	      | reduceLam(ref(APPLY(t1,t2)), a::vs) =
+	      | reduceLambda(ref(APPLY(t1,t2)), a::vs) =
 		let
 		    val t2' = follow t2
 		    val a'  = follow a
 		in
 		    if t2' = a' andalso not(occurs(a',t1)) then
-			reduceLam(t1, vs)
+			reduceLambda(t1, vs)
 		    else
 			()
 		end
 
-	      | reduceLam(t1, []) =
+	      | reduceLambda(t1, []) =
 		    ( t := LINK t1 ; reduceEta t1 )
 
-	      | reduceLam(ref(LINK t1), vs) =
-		    reduceLam(t1, vs)
+	      | reduceLambda(ref(LINK t1), vs) =
+		    reduceLambda(t1, vs)
 
-	      | reduceLam _ = ()
+	      | reduceLambda _ = ()
 	in
-	    reduceLam(t, [])
+	    reduceLambda(t, [])
 	end
 
       | reduceEta(ref(LINK t)) = reduceEta t
@@ -408,16 +526,23 @@ structure TypePrivate =
 
     exception Unclosed
 
-    fun checkClosedRow NIL		= ()
-      | checkClosedRow(RHO _)		= raise Unclosed
-      | checkClosedRow(FIELD(l,t,r))	= checkClosedRow r
+    fun checkClosedRow(RHO _)		= raise Unclosed
+      | checkClosedRow _		= ()
 
     fun checkClosed'(HOLE _)		= raise Unclosed
       | checkClosed'(PROD r | SUM r)	= checkClosedRow r
       | checkClosed' _			= ()
 
     fun isClosed t =
-	( app (fn ref t' => checkClosed' t') t ; true )
+	( app (fn t as ref t' => checkClosed' t'
+	handle Unclosed =>
+(*DEBUG*)
+	( print(case !t of HOLE _ => "Hummm...\n" | _ => "Haehh?\n")
+	; t := CON(STAR,CLOSED,Path.fromLab(Label.fromString "'_ouch"))
+	; raise Unclosed
+	)
+	) t ; true )
+(*	( app (fn ref t' => checkClosed' t') t ; true )*)
 	handle Unclosed => false
 
 
@@ -452,10 +577,11 @@ structure TypePrivate =
 
     exception Row
 
-    fun unknownRow()	= RHO(ref(!level))
+    fun unknownRow()	= RHO(ref(!level), NIL)
     fun emptyRow()	= NIL
 
-    fun extendRow(l,ts, r as (RHO _ | NIL))	= FIELD(l,ts,r)
+    fun extendRow(l,ts, NIL)      = FIELD(l,ts,NIL)
+      | extendRow(l,ts, RHO(n,r)) = RHO(n, extendRow(l,ts,r))
       | extendRow(l1,ts1, r1 as FIELD(l2,ts2,r2)) =
 	case Label.compare(l1,l2)
 	  of EQUAL   => raise Row
@@ -470,9 +596,8 @@ structure TypePrivate =
 	    loop(1,ts)
 	end
 
-    fun openRow NIL			= RHO(ref(!level))
-      | openRow(r as RHO _)		= r
-      | openRow(FIELD(l,ts,r))		= FIELD(l, ts, openRow r)
+    fun openRow(r as RHO _)		= r
+      | openRow r			= RHO(ref(!level), r)
 
     fun openRowType(ref(LINK t))	= openRowType t
       | openRowType(t as ref(PROD r))	= t := PROD(openRow r)
@@ -483,15 +608,16 @@ structure TypePrivate =
     fun isEmptyRow(NIL | RHO _)		= true
       | isEmptyRow _			= false
 
-    fun isUnknownRow NIL		= false
-      | isUnknownRow(RHO _)		= true
-      | isUnknownRow(FIELD(l,ts,r))	= isUnknownRow r
+    fun isUnknownRow(RHO _)		= true
+      | isUnknownRow _			= false
 
     fun headRow(FIELD(l,ts,r))		= (l,ts)
-      | headRow _			= raise Row
+      | headRow(RHO(_,r))		= headRow r
+      | headRow(NIL)			= raise Row
 
     fun tailRow(FIELD(l,ts,r))		= r
-      | tailRow _			= raise Row
+      | tailRow(RHO(n,r))		= RHO(n, tailRow r)
+      | tailRow(NIL)			= raise Row
 
 
   (* Closure *)
@@ -504,6 +630,7 @@ structure TypePrivate =
 		else f
 
 	      | close(a as ref(VAR(k,n)), f) =
+		(* UNFINISHED: rethink this *)
 		(* We have to quantify over VARs as well.
 		 * The reason is that there may be several types being
 		 * closed that share parts of their graphs.
@@ -514,7 +641,7 @@ structure TypePrivate =
 		    fn t => f(inAll(a,t))
 		else f
 
-	      | close(ref(ALL(a,t) | EXIST(a,t)), f) =
+	      | close(ref(ALL(a,t) | EXIST(a,t) | LAMBDA(a,t)), f) =
 		( a := MARK(!a) ; f )	(* bit of a hack... *)
 
 	      | close(t as ref(PROD r), f) = ( t := PROD(closeRow r) ; f )
@@ -522,9 +649,8 @@ structure TypePrivate =
 
 	      | close(_, f) = f
 
-	    and closeRow NIL              = NIL
-	      | closeRow(r as RHO(ref n)) = if n > !level then NIL else r
-	      | closeRow(FIELD(l,t,r))    = FIELD(l, t, closeRow r)
+	    and closeRow(r as RHO(n,r')) = if !n > !level then r' else r
+	      | closeRow r               = r
 	in
 	    foldl close (fn t => t) t t
 	end
@@ -541,14 +667,17 @@ structure TypePrivate =
 	      | lift(t as ref(VAR(k,n))) =
 		    if n > !level then raise Lift t else ()
 	      | lift(ref(PROD r | SUM r)) = liftRow r
+	      | lift(ref(LAMBDA(a,_) | ALL(a,_) | EXIST(a,_))) =
+(*ASSERT	    assert isVar a =>*)
+if not(isVar a) then raise Assert.failure else
+		    a := VAR(kindVar a, globalLevel)
 	      | lift t = ()
 	in
 	    app lift t
 	end
 
-    and liftRow(NIL)          = ()
-      | liftRow(RHO n)        = if !n > !level then n := !level else ()
-      | liftRow(FIELD(l,t,r)) = liftRow r
+    and liftRow(RHO(n,r))	= if !n > !level then n := !level else ()
+      | liftRow _		= ()
 
 
   (* Unification *)
@@ -565,9 +694,8 @@ structure TypePrivate =
 		    ( liftRow r ; t := MARK t' ; app1'(t', lift) )
 	      | lift(t as ref t') = ( t := MARK t' ; app1'(t', lift) )
 
-	    and liftRow(NIL)          = ()
-	      | liftRow(RHO n')       = if !n' > n then n' := n else ()
-	      | liftRow(FIELD(l,t,r)) = liftRow r
+	    and liftRow(RHO(n',r)) = if !n' > n then n' := n else ()
+	      | liftRow _          = ()
 
 	    fun check(t as ref t') =
 		if t1 = t then
@@ -596,6 +724,12 @@ structure TypePrivate =
 			; trail := (t1,t1') :: !trail
 			; f x
 			)
+
+		    fun recurBinder(a1 as ref a1', a2, t1, t2) =
+			( a1 := LINK a2
+			; trail := (a1,a1') :: !trail
+			; recur unify (t1,t2)
+			)
 		in
 		    if t1 = t2 then () else
 		    case (t1',t2')
@@ -617,13 +751,13 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 		       | (MU(t11), MU(t21)) =>
 			 recur unify (t11,t21)
-
+		       (*
 		       | (MU(t11), _) =>
 			 ( t2 := MU(ref t2') ; unify(t1,t2) )
 
 		       | (_, MU(t21)) =>
 			 ( t1 := MU(ref t1') ; unify(t1,t2) )
-
+		       *)
 		       | (FUN(tt1), FUN(tt2)) =>
 			 recur unifyPair (tt1,tt2)
 
@@ -649,17 +783,20 @@ if kind' t1' <> k2 then raise Assert.failure else
 		       | (APPLY(tt1), APPLY(tt2)) =>
 			 (* Note that we do not allow general lambdas during
 			  * unification, so application is considered to be
-			  * in normal form *)
+			  * in normal form. *)
 			 recur unifyPair (tt1,tt2)
+
+		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
+			 (* The only place lambdas might occur during
+			  * unification is below mu. The type functions
+			  * must be equal in that case. *)
+			 recurBinder(a1, a2, t11, t21)
 
 		       | (ALL(a1,t11), ALL(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: universal quantifier"
 
 		       | (EXIST(a1,t11), EXIST(a2,t21)) =>
 			 raise Crash.Crash "Type.unify: existential quantifier"
-
-		       | (LAMBDA(a1,t11), LAMBDA(a2,t21)) =>
-			 raise Crash.Crash "Type.unify: abstraction"
 
 		       | _ => raise Unify(t1,t2)
 		end
@@ -669,26 +806,39 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
-		    fun loop(NIL, false, NIL, false) = NIL
-		      | loop(NIL, false, RHO _, _  ) = NIL
-		      | loop(RHO _, _,   NIL, false) = NIL
-		      | loop(RHO n1, _,  RHO n2, _ ) =
-			    RHO(ref(Int.min(!n1, !n2)))
-		      | loop(rho as RHO _, _, FIELD(l,ts,r), b2) =
-			    FIELD(l,ts, loop(rho, true, r, b2))
-		      | loop(FIELD(l,ts,r), b1, rho as RHO _, _) =
-			    FIELD(l,ts, loop(r, b1, rho, true))
+(*DEBUG
+val timer = Timer.startRealTimer()
+*)
+		    fun loop(RHO(n1,r1), _,  RHO(n2,r2), _ ) =
+			    RHO(ref(Int.min(!n1, !n2)), loop(r1,true, r2,true))
+		      | loop(RHO(_,r1), _, r2, _) =
+			    loop(r1, true, r2, false)
+		      | loop(r1, _, RHO(_,r2), _) =
+			    loop(r1, false, r2, true)
+		      | loop(NIL, _, NIL, _) =
+			    NIL
+		      | loop(NIL, true, FIELD(l,ts,r2'), b2) =
+			    FIELD(l,ts, loop(NIL, true, r2', b2))
+		      | loop(FIELD(l,ts,r1'), b1, NIL, true) =
+			    FIELD(l,ts, loop(r1', b1, NIL, true))
 		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
 			     r2 as FIELD(l2,ts2,r2'), b2) =
 			(case Label.compare(l1,l2)
 			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
 					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
-			    | LESS    => FIELD(l1,ts1, loop(r1',b1, r2,true))
-			    | GREATER => FIELD(l2,ts2, loop(r1,true, r2',b2))
+			    | LESS    => if not b2 then raise Unify(t1,t2) else
+					 FIELD(l1,ts1, loop(r1',b1, r2,b2))
+			    | GREATER => if not b1 then raise Unify(t1,t2) else
+					 FIELD(l2,ts2, loop(r1,b1, r2',b2))
 			)
 		      | loop _ = raise Unify(t1,t2)
 		in
-		    t2 := PRODorSUM(loop(r1,false, r2,false))
+		    t2 := PRODorSUM(loop(r1, false, r2, false))
+(*DEBUG*)
+(*before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
+print("Row unification took "^Int.toString ms^"ms\n")
+before ignore(TextIO.inputLine(TextIO.stdIn))
+end*)
 		end
 	in
 	    unify(t1,t2)
@@ -727,6 +877,11 @@ if kind' t1' <> k2 then raise Assert.failure else
 
   (* Comparison *)
 
+    (* To maximise sharing, links are kept after comparison iff the
+     * types are equal. If the types are not equal, all updates are
+     * undone. This could be optimized by keeping equal subtrees.
+     *)
+
     fun equals(t1,t2) =
 	let
 	    val trail = ref []
@@ -752,13 +907,13 @@ if kind' t1' <> k2 then raise Assert.failure else
 		    case (t1',t2')
 		      of (MU(t11), MU(t21)) =>
 			 recur equals (t11,t21)
-
+		       (*
 		       | (MU(t11), _) =>
 			 recur equals (t11,t2)
 
 		       | (_, MU(t21)) =>
 			 recur equals (t1,t21)
-
+		       *)
 		       | (FUN(tt1), FUN(tt2)) =>
 			 recur equalsPair (tt1,tt2)
 
@@ -798,14 +953,28 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and equalsPair((t11,t12), (t21,t22)) =
 		equals(t11,t21) andalso equals (t12,t22)
 
-	    and equalsRow(NIL,   NIL)   = true
-	      | equalsRow(RHO _, RHO _) = true
+(*DEBUG
+and equalsRow rr =
+let
+val timer = Timer.startRealTimer()
+fun f() = ()
+*)
+	    and equalsRow(NIL,              NIL)              = true
+	      | equalsRow(RHO(_,r1),        RHO(_,r2))        = equalsRow(r1,r2)
 	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
 		l1 = l2 andalso ListPair.all equals (ts1,ts2)
 			andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
+(*in
+equalsRow rr
+before let val ms = LargeInt.toInt(Time.toMilliseconds(Timer.checkRealTimer timer)) in
+print("Row equality took "^Int.toString ms^"ms\n")
+before ignore(TextIO.inputLine(TextIO.stdIn))
+end
+end
+*)
 	in
-	    equals(t1,t2) before List.app op:= (!trail)
+	    equals(t1,t2) orelse ( List.app op:= (!trail) ; false )
 	end
 
 
@@ -835,7 +1004,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 
 	    fun subst(t1 as ref(CON(k,s,p))) =
 		(case PathMap.lookup(rea, p)
-		   of SOME t2 => t1 := LINK(clone t2)	(* expand *)
+		   of SOME t2 => t1 := LINK t2		(* expand *)
+					(*UNFINISHED: do we have to clone t2? *)
 		    | NONE    => ()
 		)
 	      | subst(t1 as ref(APPLY _)) = apps := t1::(!apps)

@@ -96,6 +96,11 @@ signature TYPE =
     val skolem :	typ -> typ
     val clone :		typ -> typ
 
+    type clone_state
+    val cloneStart :	unit -> clone_state
+    val cloneCont :	clone_state -> typ -> typ
+    val cloneFinish :	clone_state -> unit
+
     val realise :	typ_rea  * typ -> unit
     val realisePath :	path_rea * typ -> unit
 

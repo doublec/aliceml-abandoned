@@ -16,13 +16,11 @@ signature PREBOUND_TYPE =
     val path_ref :		path (* = Prebound.typpath_ref *)
     val path_exn :		path (* = Prebound.typpath_exn *)
 
-    val con_bool :		con
     val con_int :		con
     val con_word :		con
     val con_real :		con
     val con_string :		con
     val con_char :		con
-    val con_list :		con
     val con_vec :		con
     val con_ref :		con
     val con_exn :		con

@@ -102,8 +102,8 @@ structure PPType :> PP_TYPE =
 	      | ppTypPrec p (t as ref(MU t1 | MARK(MU t1))) =
 (*DEBUG*)
 ((*print("[pp " ^ pr(!t) ^ "]");*)
-		if occurs(t,t1) then
-		    let
+(*		if occurs(t,t1) then
+*)		    let
 (*val _=print"recursive\n"
 *)			val t'  = makeVar(true, t)
 			val doc = (case t' of MARK _ => text "!MU"
@@ -121,10 +121,10 @@ structure PPType :> PP_TYPE =
 		    in
 			parenPrec p (1, fbox(below(nest(doc))))
 		    end
-		else
+(*		else
 (*(print"not recursive\n";*)
 		    ppTypPrec p t1
-)
+*))
 
 	      | ppTypPrec p (t as ref(APPLY _)) =
 	        ( reduce t ;

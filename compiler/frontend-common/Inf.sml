@@ -252,7 +252,7 @@ structure InfPrivate =
 
     exception Unclosed of lab * int * typ
 
-    fun close (ref items,_) = List.app closeItem items
+    fun close (ref items,_) = ()(*List.app closeItem items*)
 
     and closeItem(ref(VAL((p,l,n), t, w, d))) =
 	if Type.isClosed t then () else
@@ -345,8 +345,7 @@ structure InfPrivate =
 		       end
 	   | NONE   => ( realiseKind(rea, k) ; CON kp )
 
-    and realisePath(rea', p)		=
-	 case PathMap.lookup(rea', p)
+    and realisePath(rea', p)		= case PathMap.lookup(rea', p)
 					    of NONE    => p
 					     | SOME p' => realisePath(rea', p')
     and realisePathDef(rea', NONE  )	= NONE
@@ -366,31 +365,50 @@ structure InfPrivate =
 
   (* Instantiation *)
 
-    and instance j				= instanceInf(PathMap.new(), j)
+    (*
+     * This is really ugly! To maintain sharing of types in signatures
+     * at signature instantiation we have to clone types with those special
+     * functions from the Type module. This implies that we cannot apply
+     * the path realisation build up during instantiation on-the-fly to
+     * types (types cloned by Type.cloneCont may not be touched before
+     * executing Type.cloneFinish). Consequently, we have to do a second
+     * walk over the interface to perform those realisations. :-(
+     *)
 
-    and instanceInf (rea, ref j')		= ref(instanceInf'(rea, j'))
-    and instanceInf'(rea, LINK j)		= instanceInf'(rea, !j)
-      | instanceInf'(rea, TOP)			= TOP
-      | instanceInf'(rea, CON c)		= CON(instanceCon(rea, c))
-      | instanceInf'(rea, SIG s)		= SIG(instanceSig(rea, s))
-      | instanceInf'(rea, FUN(p,j1,j2))		= FUN(instancePath(rea, p),
-						      instanceInf(rea, j1),
-						      instanceInf(rea, j2))
-      | instanceInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(instancePath(rea, p),
-							 instanceInf(rea, j1),
-							 instanceInf(rea, j2))
-      | instanceInf'(rea, APPLY(j1,p,j2))	= APPLY(instanceInf(rea, j1),
-							realisePath(rea, p),
-							instanceInf(rea, j2))
+    and instance j =
+	let
+	    val rea'       = PathMap.new()
+	    val cloneState = Type.cloneStart()
+	    val j1         = instanceInf(rea', cloneState, j)
+	in
+	    Type.cloneFinish cloneState ;
+	    realiseT(rea', j1) ;
+	    j1
+	end
 
-    and instanceCon(rea, (k,p))			= ( instanceKind(rea, k),
-						    realisePath(rea, p) )
+    and instanceInf (r,z, ref j')		= ref(instanceInf'(r,z, j'))
+    and instanceInf'(r,z, LINK j)		= instanceInf'(r,z, !j)
+      | instanceInf'(r,z, TOP)			= TOP
+      | instanceInf'(r,z, CON c)		= CON(instanceCon(r,z, c))
+      | instanceInf'(r,z, SIG s)		= SIG(instanceSig(r,z, s))
+      | instanceInf'(r,z, FUN(p,j1,j2))		= FUN(instancePath(r, p),
+						      instanceInf(r,z, j1),
+						      instanceInf(r,z, j2))
+      | instanceInf'(r,z, LAMBDA(p,j1,j2))	= LAMBDA(instancePath(r, p),
+							 instanceInf(r,z, j1),
+							 instanceInf(r,z, j2))
+      | instanceInf'(r,z, APPLY(j1,p,j2))	= APPLY(instanceInf(r,z, j1),
+							realisePath(r, p),
+							instanceInf(r,z, j2))
 
-    and instanceKind (rea, ref k')		= ref(instanceKind'(rea, k'))
-    and instanceKind'(rea, GROUND)		= GROUND
-      | instanceKind'(rea, DEP(p,j,k))		= DEP(instancePath(rea, p),
-						      instanceInf(rea, j),
-						      instanceKind(rea, k))
+    and instanceCon(r,z, (k,p))			= ( instanceKind(r,z, k),
+						    realisePath(r, p) )
+
+    and instanceKind (r,z, ref k')		= ref(instanceKind'(r,z, k'))
+    and instanceKind'(r,z, GROUND)		= GROUND
+      | instanceKind'(r,z, DEP(p,j,k))		= DEP(instancePath(r, p),
+						      instanceInf(r,z, j),
+						      instanceKind(r,z, k))
     and instancePath(rea, p) =
 	let
 	    val p' = Path.instance PathMap.lookup (rea, p)
@@ -400,7 +418,7 @@ structure InfPrivate =
 	    p'
 	end
 
-    and instanceSig(rea, (ref items,_)) =
+    and instanceSig(r,z, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
 
@@ -413,9 +431,9 @@ structure InfPrivate =
 
 	    and instanceItem'(VAL((p,l,n), t, w, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val t'   = instanceTyp(rea, t)
-		    val d'   = instancePathDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val t'   = instanceTyp(r,z, t)
+		    val d'   = instancePathDef(r, d)
 		    val item = ref(VAL((p',l,n), t', w, d'))
 		in
 		    extendSig((VAL',l), item)
@@ -423,8 +441,8 @@ structure InfPrivate =
 
 	      | instanceItem'(TYP((p,l,n), k, w, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val d'   = instanceTypDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val d'   = instanceTypDef(r,z, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
@@ -432,9 +450,9 @@ structure InfPrivate =
 
 	      | instanceItem'(MOD((p,l,n), j, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val j'   = instanceInf(rea, j)
-		    val d'   = instancePathDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val j'   = instanceInf(r,z, j)
+		    val d'   = instancePathDef(r, d)
 		    val item = ref(MOD((p',l,n), j', d'))
 		in
 		    extendSig((MOD',l), item)
@@ -442,9 +460,9 @@ structure InfPrivate =
 
 	      | instanceItem'(INF((p,l,n), k, d)) =
 		let
-		    val p'   = instancePath(rea, p)
-		    val k'   = instanceKind(rea, k)
-		    val d'   = instanceInfDef(rea, d)
+		    val p'   = instancePath(r, p)
+		    val k'   = instanceKind(r,z, k)
+		    val d'   = instanceInfDef(r,z, d)
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
@@ -452,7 +470,7 @@ structure InfPrivate =
 
 	      | instanceItem'(FIX((p,l,n), q)) =
 		let
-		    val p'   = instancePath(rea, p)
+		    val p'   = instancePath(r, p)
 		    val item = ref(FIX((p',l,n), q))
 		in
 		    extendSig((FIX',l), item)
@@ -465,48 +483,99 @@ structure InfPrivate =
     and instancePathDef(rea, NONE  )	= NONE
       | instancePathDef(rea, SOME p)	= SOME(realisePath(rea, p))
 
-    and instanceTypDef(rea, NONE  )	= NONE
-      | instanceTypDef(rea, SOME t)	= SOME(instanceTyp(rea, t))
+    and instanceTypDef(r,z, NONE  )	= NONE
+      | instanceTypDef(r,z, SOME t)	= SOME(instanceTyp(r,z, t))
 
-    and instanceInfDef(rea, NONE  )	= NONE
-      | instanceInfDef(rea, SOME j)	= SOME(instanceInf(rea, j))
+    and instanceInfDef(r,z, NONE  )	= NONE
+      | instanceInfDef(r,z, SOME j)	= SOME(instanceInf(r,z, j))
 
-    and instanceTyp(rea, t)		= let val t' = Type.clone t in
-					     Type.realisePath(rea, t') ; t'
-					  end
+    and instanceTyp(r,z, t)		= Type.cloneCont z t
+					  (* Cannot do 
+						Type.realisePath(r,t')
+					     here! *)
+
+    and realiseT (rea', ref j')			= realiseT'(rea', j')
+
+    and realiseT'(rea', LINK j)			= realiseT(rea', j)
+      | realiseT'(rea', (TOP | CON _))		= ()
+      | realiseT'(rea', SIG s)			= realiseTSig(rea', s)
+      | realiseT'(rea', (FUN(_,j1,j2) | LAMBDA(_,j1,j2))) =
+						  ( realiseT(rea', j1)
+						  ; realiseT(rea', j2)
+						  )
+      | realiseT'(rea', APPLY(j1,p,j2))		= ( realiseT(rea', j1)
+						  ; realiseT(rea', j2)
+						  )
+
+    and realiseTKind (rea', ref k')		= realiseTKind'(rea', k')
+    and realiseTKind'(rea, GROUND)		= ()
+      | realiseTKind'(rea, DEP(_,j,k))		= ( realiseT(rea, j)
+						  ; realiseTKind(rea, k)
+						  )
+
+    and realiseTSig(rea', (ref items, _))	=
+	    List.app (fn item => realiseTItem(rea', item)) items
+
+    and realiseTItem(rea', ref item')		= realiseTItem'(rea', item')
+    and realiseTItem'(rea', VAL(x, t, w, d))	= realiseTTyp(rea', t)
+      | realiseTItem'(rea', TYP(x, k, w, d))	= realiseTTypDef(rea', d)
+      | realiseTItem'(rea', MOD(x, j, d))	= realiseT(rea', j)
+      | realiseTItem'(rea', INF(x, k, d))	= ( realiseTKind(rea', k)
+						  ; realiseTInfDef(rea', d)
+						  )
+      | realiseTItem'(rea', FIX _)		= ()
+
+    and realiseTCon(rea', (k,p))		= realiseTKind(rea', k)
+
+    and realiseTTypDef(rea', NONE  )		= ()
+      | realiseTTypDef(rea', SOME t)		= realiseTTyp(rea', t)
+
+    and realiseTInfDef(rea', NONE  )		= ()
+      | realiseTInfDef(rea', SOME j)		= realiseT(rea', j)
+
+    and realiseTTyp(rea', t)			= Type.realisePath(rea', t)
+
 
 
   (* Creation of singleton (shallow instantiation) *)
 
-    and singleton j				= singletonInf(PathMap.new(), j)
+    (* Creates an instance of an interface where every item is equal to
+     * to the original one.
+     *)
 
-    and singletonInf (rea, ref j')		= ref(singletonInf'(rea, j'))
-    and singletonInf'(rea, LINK j)		= singletonInf'(rea, !j)
-      | singletonInf'(rea, TOP)			= TOP
-      | singletonInf'(rea, CON c)		= CON(singletonCon(rea, c))
-      | singletonInf'(rea, SIG s)		= SIG(singletonSig(rea, s))
-      | singletonInf'(rea, FUN(p,j1,j2))	= FUN(singletonPath(rea, p),
-						      singletonInf(rea, j1),
-						      singletonInf(rea, j2))
-      | singletonInf'(rea, LAMBDA(p,j1,j2))	= LAMBDA(singletonPath(rea, p),
-							 singletonInf(rea, j1),
-							 singletonInf(rea, j2))
-      | singletonInf'(rea, APPLY(j1,p,j2))	= APPLY(singletonInf(rea, j1),
-							realisePath(rea, p),
-							singletonInf(rea, j2))
+    and singleton j =
+	let
+	    val cloneState = Type.cloneStart()
+	    val j1         = singletonInf(cloneState, j)
+	in
+	    Type.cloneFinish cloneState ;
+	    j1
+	end
 
-    and singletonCon(rea, (k,p))		= ( singletonKind(rea, k),
-						    realisePath(rea, p) )
+    and singletonInf (z, ref j')		= ref(singletonInf'(z, j'))
+    and singletonInf'(z, LINK j)		= singletonInf'(z, !j)
+      | singletonInf'(z, TOP)			= TOP
+      | singletonInf'(z, CON c)			= CON(singletonCon(z, c))
+      | singletonInf'(z, SIG s)			= SIG(singletonSig(z, s))
+      | singletonInf'(z, FUN(p,j1,j2))		= FUN(Path.clone p,
+						      singletonInf(z, j1),
+						      singletonInf(z, j2))
+      | singletonInf'(z, LAMBDA(p,j1,j2))	= LAMBDA(Path.clone p,
+							 singletonInf(z, j1),
+							 singletonInf(z, j2))
+      | singletonInf'(z, APPLY(j1,p,j2))	= APPLY(singletonInf(z, j1),
+							p,
+							singletonInf(z, j2))
 
-    and singletonKind (rea, ref k')		= ref(singletonKind'(rea, k'))
-    and singletonKind'(rea, GROUND)		= GROUND
-      | singletonKind'(rea, DEP(p,j,k))		= DEP(singletonPath(rea, p),
-						      singletonInf(rea, j),
-						      singletonKind(rea, k))
+    and singletonCon(z, (k,p))			= ( singletonKind(z, k), p )
 
-    and singletonPath(rea, p) = Path.instance PathMap.lookup (rea, p)
+    and singletonKind (z, ref k')		= ref(singletonKind'(z, k'))
+    and singletonKind'(z, GROUND)		= GROUND
+      | singletonKind'(z, DEP(p,j,k))		= DEP(Path.clone p,
+						      singletonInf(z, j),
+						      singletonKind(z, k))
 
-    and singletonSig(rea, (ref items,_)) =
+    and singletonSig(z, (ref items,_)) =
 	let
 	    val s as (itemsr,map) = empty()
 
@@ -519,18 +588,17 @@ structure InfPrivate =
 
 	    and singletonItem'(VAL((p,l,n), t, w, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val t'   = singletonTyp(rea, t)
-		    val d'   = singletonPathDef(rea, d)
-		    val item = ref(VAL((p',l,n), t', w, d'))
+		    val p'   = Path.clone p
+		    val t'   = singletonTyp(z, t)
+		    val item = ref(VAL((p',l,n), t', w, d))
 		in
 		    extendSig((VAL',l), item)
 		end
 
 	      | singletonItem'(TYP((p,l,n), k, w, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val d'   = singletonTypDef(rea, d)
+		    val p'   = Path.clone p
+		    val d'   = singletonTypDef(z, d)
 		    val item = ref(TYP((p',l,n), k, w, d'))
 		in
 		    extendSig((TYP',l), item)
@@ -538,19 +606,18 @@ structure InfPrivate =
 
 	      | singletonItem'(MOD((p,l,n), j, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val j'   = singletonInf(rea, j)
-		    val d'   = singletonPathDef(rea, d)
-		    val item = ref(MOD((p',l,n), j', d'))
+		    val p'   = Path.clone p
+		    val j'   = singletonInf(z, j)
+		    val item = ref(MOD((p',l,n), j', d))
 		in
 		    extendSig((MOD',l), item)
 		end
 
 	      | singletonItem'(INF((p,l,n), k, d)) =
 		let
-		    val p'   = singletonPath(rea, p)
-		    val k'   = singletonKind(rea, k)
-		    val d'   = singletonInfDef(rea, d)
+		    val p'   = Path.clone p
+		    val k'   = singletonKind(z, k)
+		    val d'   = singletonInfDef(z, d)
 		    val item = ref(INF((p',l,n), k', d'))
 		in
 		    extendSig((INF',l), item)
@@ -558,7 +625,7 @@ structure InfPrivate =
 
 	      | singletonItem'(FIX((p,l,n), q)) =
 		let
-		    val p'   = singletonPath(rea, p)
+		    val p'   = Path.clone p
 		    val item = ref(FIX((p',l,n), q))
 		in
 		    extendSig((FIX',l), item)
@@ -568,18 +635,13 @@ structure InfPrivate =
 	    s
 	end
 
-    and singletonPathDef(rea, NONE  )	= NONE
-      | singletonPathDef(rea, SOME p)	= SOME(realisePath(rea, p))
+    and singletonTypDef(z, NONE  )	= NONE
+      | singletonTypDef(z, SOME t)	= SOME(singletonTyp(z, t))
 
-    and singletonTypDef(rea, NONE  )	= NONE
-      | singletonTypDef(rea, SOME t)	= SOME(singletonTyp(rea, t))
+    and singletonInfDef(z, NONE  )	= NONE
+      | singletonInfDef(z, SOME j)	= SOME(singletonInf(z, j))
 
-    and singletonInfDef(rea, NONE  )	= NONE
-      | singletonInfDef(rea, SOME j)	= SOME(singletonInf(rea, j))
-
-    and singletonTyp(rea, t)		= let val t' = Type.clone t in
-					     Type.realisePath(rea, t') ; t'
-					  end
+    and singletonTyp(z, t)		= Type.cloneCont z t
 
 
   (* Cloning (does not instantiate paths!) *)
@@ -961,8 +1023,18 @@ structure InfPrivate =
       | intersectDef (equals, err) (l, SOME z1, SOME z2) =
 	    if equals(z1,z2) then SOME z1 else raise Mismatch(err l)
 
+(*DEBUG*)
+fun Type_equals(t1,t2) =
+Type.equals(t1,t2) orelse
+(
+print "Manifest mismatch:\n";
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t1, 80);
+print "\nand:\n";
+PrettyPrint.output(TextIO.stdOut, PPType.ppTyp t2, 80);
+print "\n";
+false)
     fun intersectValDef x = intersectDef(op=, ManifestVal) x
-    fun intersectTypDef x = intersectDef(Type.equals, ManifestTyp) x
+    fun intersectTypDef x = intersectDef(Type_equals, ManifestTyp) x
     fun intersectModDef x = intersectDef(op=, ManifestMod) x
     fun intersectInfDef x = intersectDef(equals, ManifestInf) x
 
