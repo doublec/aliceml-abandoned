@@ -66,10 +66,13 @@ struct
 	let
 	    val s = recomputeSpace mom
 	in
-	    Space.commit(s, i);
-            Space.status s;
-            space := SOME s;
-	    s
+          case Space.status s of
+            Space.BRANCH desc =>
+              (Space.commitDescription(s, i, desc);
+               Space.status s;
+               space := SOME s;
+               s)
+          | _ => assert false
 	end
       | recomputeSpace _ = raise Subscript
 
