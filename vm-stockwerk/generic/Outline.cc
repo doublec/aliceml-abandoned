@@ -11,6 +11,7 @@
 //
 
 #if defined(INTERFACE)
+#pragma implementation "generic/FinalizationSet.hh"
 #pragma implementation "generic/Backtrace.hh"
 #pragma implementation "generic/Transform.hh"
 #pragma implementation "generic/ConcreteRepresentation.hh"
@@ -25,6 +26,7 @@
 #pragma implementation "generic/Pickle.hh"
 #endif
 
+#include "generic/FinalizationSet.hh"
 #include "generic/Backtrace.hh"
 #include "generic/Transform.hh"
 #include "generic/ConcreteRepresentation.hh"
