@@ -6,7 +6,7 @@
   <P>The interface to the Alice system features:</P>
   <UL>
     <LI><A href="#interactive">the interactive toplevel</A>
-    <LI><A href="#emacs">the interactive toplevel used within emacs</A>
+    <LI><A href="#emacs">the interactive toplevel within Emacs</A>
     <LI><A href="#compiler">the batch compiler</A>
     <LI><A href="#vm">the virtual machine</A>
     <LI><A href="#linker">the static linker</A>
@@ -78,16 +78,16 @@
   <P>Using Emacs with Alice can be done in two steps:</P>
   <UL>
     <LI>Setting up the environment
-    <LI>Setting up the emacs ml mode
+    <LI>Setting up the Emacs SML mode
   </UL>
   <P>First make sure that the environment variables <TT>OZHOME</TT> and <TT>STOCKHOME</TT>
-    point to the installation directory of the mozart system and the alice system, respectively.</P>
+    point to the installation directory of the Mozart system and the Alice system, respectively.</P>
 
-  <P>Now you have to decide to either use ml mode version 3.3 or ml mode 3.9.3.
+  <P>Now you have to decide to either use SML mode version 3.3 or SML mode 3.9.3.
     Both of them have their advantages and disadvantages.
     (Note: Within PSL the 3.3 mode is installed in the <TT>site-lisp</TT> directory)</P>
 
-  <P>To use ml mode version 3.3, install this
+  <P>To use SML mode version 3.3, install this
     <A HREF="sml-mode-3.3.tgz">archive</A>
      either to your global <TT>site-lisp</TT> or to your local <TT>elisp</TT> directory.
      Depending on your selection, add the following
@@ -100,13 +100,13 @@
        ;; Enable fontification
        (require 'sml-font)
   </PRE>
-  <P>To use ml mode version 3.9.3, extract this
+  <P>To use SML mode version 3.9.3, extract this
      <A HREF="sml-mode-3.9.3.tgz">archive</A>
      and follow the installation instructions given in
     <TT>INSTALL</TT>. Then invoke <TT>load-library</TT> with argument <TT>sml-proc</TT>.
     Afterwards, invoke <TT>customize-group</TT> with argument <TT>sml</TT> and adjust the
-    settings <TT>sml-program-name</TT> to <TT>alice</TT> and <TT>sml-default-arg</TT> to
-    <TT>--rtt-level=full</TT>, respectively.</P>
+    settings <TT>sml-program-name</TT> to <TT>alice</TT>.</P>
+
 
 <?php section("compiler", "compiler") ?>
   <P>The stand-alone Alice compiler can be invoked in one of the following
