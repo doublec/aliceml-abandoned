@@ -498,12 +498,28 @@ struct
 					     Preferences)],true)],
 		  sensitive = true}]) 
 
+     val stopButtonActive = ref false
+
      val stopButton = let
 			  val button = Gtk.menuItemNewWithLabel("stop") 
 		      in
 			  (Gtk.menuBarAppend(bar,button)
-			   ; Gtk.menuItemRightJustify(button))
+			   ; Gtk.menuItemRightJustify(button)
+			   ;GtkSupport.setSensitive(button,false) 
+			   ;Gtk.signalConnect
+			   (button,
+			    "activate",
+			    fn _ => (stopButtonActive := false
+				     ;GtkSupport.setSensitive(button,false)))
+			   ;button)
 		      end
+
+     fun stopButtonIsActive() = !stopButtonActive
+		  
+     fun stopButtonSetActive b =  
+	 (stopButtonActive := b
+	  ;GtkSupport.setSensitive(stopButton,b ))
+		  
 	 
      fun postT n = 
 	 let  

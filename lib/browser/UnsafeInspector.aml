@@ -28,6 +28,7 @@ struct
     (* inspect *)
     fun inspect (v,t) = 
 	let 
+	    val _ = Window.stopButtonSetActive(true)
 	    val n = NewNode.newNode(v,t)
 	in
 	    ( Layout.layout(n)
@@ -38,12 +39,15 @@ struct
 	     (Layout.get_ydim(n) + 1)
 	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
 	     ; (!Window.resize())
-	     ; (Window.show) () )
+	     ; Window.show ()
+	     ; Window.stopButtonSetActive(false))
 	end
     
     (* inspectInf *)
     and inspectInf (v,t) = 
-	let val n = NewNode.newNodeInf(v,t)
+	let 
+	    val _ = Window.stopButtonSetActive(true)
+	    val n = NewNode.newNodeInf(v,t)
 	in  ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!Window.act_line
 			       , false)
@@ -51,7 +55,8 @@ struct
 	     (Layout.get_ydim(n) + 1)
 	     ; Layout.setVisible(Layout.get_xdim(n),Layout.get_ydim(n)+1)
 	     ; (!Window.resize())
-	     ; (Window.show) () )
+	     ; (Window.show) ()
+	     ; Window.stopButtonSetActive(false))
 	end 
 
     val _  = Init.init ()

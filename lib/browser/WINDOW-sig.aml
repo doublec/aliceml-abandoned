@@ -27,6 +27,8 @@ sig
     val canvasroot: tag ref
     val resize: (unit -> unit) ref 
     val show : unit -> unit
+    val stopButtonIsActive: unit -> bool
+    val stopButtonSetActive: bool -> unit
     val act_line : int ref
     val incr_act_line : int -> unit 
     val alive: bool ref
