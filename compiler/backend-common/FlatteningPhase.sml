@@ -622,6 +622,23 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateTest ((GuardTest (_, _) | DecTest (_, _, _)), _, _) =
 	    Crash.crash "MatchCompilationPhase.translateTest"
 
+	(*--** mapping exports to exports' can be removed when
+	 * the front-end does this *)
+
+	fun member (Id (_, _, ExId s')::idr, name as ExId s) =
+	    s = s' orelse member (idr, name)
+	  | member (Id (_, _, _)::_, _) =
+	    Crash.crash "MatchCompilationPhase.member"
+	  | member (nil, _) = false
+
 	fun translate (imports, exports, decs) =
-	    (imports, exports, translateCont (Decs (decs, Export exports)))
+	    let
+		val exports' =
+		    List.foldr (fn (id as Id (_, _, name), ids) =>
+				if member (ids, name) then ids
+				else id::ids) nil exports
+	    in
+		(imports, exports',
+		 translateCont (Decs (decs, Export exports')))
+	    end
     end
