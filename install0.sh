@@ -37,11 +37,11 @@ LIBS="
 	build1/lib/system/Socket.ozf
 "
 
-(cd vm-mozart/bootstrap &&
+(cd vm-mozart &&
  make depend $LIBS) || exit 1
 
-ozl vm-mozart/bootstrap/build1/lib/fundamental/Fundamental.ozf \
-    -o vm-mozart/bootstrap/build1/lib/fundamental/LinkedFundamental.ozf
+ozl vm-mozart/build1/lib/fundamental/Fundamental.ozf \
+    -o vm-mozart/build1/lib/fundamental/LinkedFundamental.ozf
 
 # Create Directories
 mkdir $PREFIX 2>/dev/null
@@ -53,15 +53,13 @@ mkdir $PREFIX/lib/system 2>/dev/null
 install -c -m444 bootstrap/stoc-mozart.exe $PREFIX/
 install -c -m444 bootstrap/stoc-mozart.x86-linux $PREFIX/
 # Copy Bin Files
-install -c -m555 vm-mozart/bootstrap/stoc.test $PREFIX/bin/stoc
-install -c -m555 vm-mozart/bootstrap/stow.test $PREFIX/bin/stow
+install -c -m555 vm-mozart/stoc.test $PREFIX/bin/stoc
+install -c -m555 vm-mozart/stow.test $PREFIX/bin/stow
 # Copy System Libraries
 install -c -m444 lib/fundamental/Fundamental.import $PREFIX/Default.import
 install -c -m444 \
-	vm-mozart/bootstrap/build1/lib/fundamental/LinkedFundamental.ozf \
+	vm-mozart/build1/lib/fundamental/LinkedFundamental.ozf \
 	$PREFIX/lib/fundamental/Fundamental.ozf
 install -c -m444 vm-com+/Base.asig $PREFIX/lib/fundamental/Fundamental.asig
-install -c -m444 vm-mozart/bootstrap/build1/lib/system/*.ozf \
-	$PREFIX/lib/system
-install -c -m444 vm-mozart/bootstrap/build1/lib/system/*.asig \
-	$PREFIX/lib/system
+install -c -m444 vm-mozart/build1/lib/system/*.ozf $PREFIX/lib/system
+install -c -m444 vm-mozart/build1/lib/system/*.asig $PREFIX/lib/system
