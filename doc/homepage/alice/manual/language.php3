@@ -224,7 +224,7 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> <I>dec</I> </TD>
     <TD align="center">::=</TD>
     <TD> ... </TD>
-    <TD> </TD>
+    <TD> <SUP>1</SUP> </TD>
   </TR>
   <TR>
     <TD></TD> <TD></TD>
@@ -261,6 +261,206 @@ relative to Standard ML. Derived forms are marked (*).
 	 &lt;<TT>and</TT> <I>econbind</I>&gt; </TD>
     <TD> synonym </TD>
   </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>strbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>_</TT> &lt;<TT>:</TT> <I>sigexp</I>&gt; <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>strbind</I>&gt; </TD>
+    <TD> anonymous structure (*) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>funbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>strexp</I>
+         &lt;<TT>and</TT> <I>funbind</I>&gt; </TD>
+    <TD> functor binding (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+
+<!--
+  <TR></TR>
+  <TR>
+    <TD> <I>sigbind</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>sigbind</I>&gt; </TD>
+    <TD> signature binding (<I>n</I>&ge;0) </TD>
+  </TR>
+-->
+</TABLE>
+
+<P><SUP>1</SUP>) The extended phrase class <I>dec</I> contains all of Standard
+ML's <I>dec</I>, <I>strdec</I> and <I>topdec</I>.</P>
+
+
+<?php subsection("syntax-structs", "Structures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>strexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>strexp</I> <TT>)</TT> </TD>
+    <TD> parentheses </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>dec</I> <TT>)</TT> </TD>
+    <TD> structure (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>strexp</I> <I>strexp</I> </TD>
+    <TD> functor application <SUP>1</SUP> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>=></TT> <I>strexp</I> </TD>
+    <TD> functor </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>strpat</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>(</TT> <I>strid</I> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> parameter </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <TT>_</TT> <TT>:</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> anonymous parameter (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> signature as parameter (*) </TD>
+  </TR>
+</TABLE>
+
+<P><SUP>1</SUP>) See the <A href="modules.php3#syntax-structs">module syntax
+summary</A> for a more precise grammar of structure expressions and functor
+application.</P>
+
+
+<?php subsection("syntax-sigs", "Signatures") ?>
+
+<TABLE class=bnf>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> ... </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>any</TT> </TD>
+    <TD> top </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>longsigid</I> </TD>
+    <TD> signature identifier </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>let</TT> <I>dec</I> <TT>in</TT> <I>sigexp</I> <TT>end</TT> </TD>
+    <TD> local declarations </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>sigexp</I> <TT>)</TT> </TD>
+    <TD> parentheses </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>(</TT> <I>spec</I> <TT>)</TT> </TD>
+    <TD> signature (*) </TD>
+  </TR>
+  <TR></TR>
+<!--
+  <TR>
+    <TD> <I>appsigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>appsigexp</I> <I>atstrexp</I> </TD>
+    <TD> signature application </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>appsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD> <I>sigexp</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>atsigexp</I> </TD>
+    <TD> </TD>
+  </TR>
+-->
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
+    <TD> functor </TD>
+  </TR>
+<!--
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <I>sigexp</I> <TT>where</TT> <I>rea</I> </TD>
+    <TD> specialization </TD>
+  </TR>
+  <TR></TR>
+  <TR>
+    <TD> <I>rea</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <TT>val</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>constructor</TT> <I>longvid</I> <TT>=</TT> <I>longvid</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>type</TT> <I>tyvarseq</I> <I>longtycon</I>
+         <TT>=</TT> <I>ty</I> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>structure</TT> <I>longstrid</I><SUB>1</SUB> <TT>=</TT> <I>longstrid</I><SUB>2</SUB> </TD>
+    <TD> </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>longsigid</I>
+         <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>=</TT> <I>sigexp</I> </TD>
+    <TD> signature (<I>n</I>&ge;0) </TD>
+  </TR>
+  <TR></TR>
+-->
 </TABLE>
 
 
@@ -282,6 +482,16 @@ relative to Standard ML. Derived forms are marked (*).
     <TD></TD> <TD></TD>
     <TD> <TT>constructor</TT> <I>econdesc</I> </TD>
     <TD> generative constructor </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>functor</TT> <I>fundesc</I> </TD>
+    <TD> functor specification (*) </TD>
+  </TR>
+  <TR>
+    <TD></TD> <TD></TD>
+    <TD> <TT>signature</TT> <I>sigdesc</I> </TD>
+    <TD> signature specification </TD>
   </TR>
 
   <TR></TR>
@@ -310,6 +520,35 @@ relative to Standard ML. Derived forms are marked (*).
     <TD> synonym </TD>
 -->
   </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>fundesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         <TT>:</TT> <I>sigexp</I>
+         &lt;<TT>and</TT> <I>fundesc</I>&gt; </TD>
+    <TD> functor description (<I>n</I>&ge;1) (*) </TD>
+  </TR>
+
+  <TR></TR>
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> signature description </TD>
+  </TR>
+<!--
+  <TR>
+    <TD> <I>sigdesc</I> </TD>
+    <TD align="center">::=</TD>
+    <TD> <I>sigid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
+         &lt;<TT>=</TT> <I>sigexp</I>&gt;
+         &lt;<TT>and</TT> <I>sigdesc</I>&gt; </TD>
+    <TD> signature description (<I>n</I>&ge;0) </TD>
+  </TR>
+-->
 </TABLE>
 
 <?php footing() ?>

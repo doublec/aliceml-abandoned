@@ -477,7 +477,7 @@ expressions. Derived forms have been marked with (*).</P>
 
 <TABLE class=bnf>
   <TR>
-    <TD> <I>atsigexp</I> </TD>
+    <TD> <I>sigexp</I> </TD>
     <TD align="center">::=</TD>
     <TD> <TT>any</TT> </TD>
     <TD> top </TD>
@@ -529,13 +529,13 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> <I>appsigexp</I> </TD>
     <TD> </TD>
   </TR>
--->
   <TR>
     <TD> <I>sigexp</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>atsigexp</I> </TD>
     <TD> </TD>
   </TR>
+-->
   <TR>
     <TD></TD> <TD></TD>
     <TD> <TT>fct</TT> <I>strpat</I> <TT>-></TT> <I>sigexp</I> </TD>
@@ -649,7 +649,7 @@ expressions. Derived forms have been marked with (*).</P>
     <TD> anonymous structure (*) </TD>
   </TR>
   <TR></TR>
-  <TR valign=baseline>
+  <TR>
     <TD> <I>funbind</I> </TD>
     <TD align="center">::=</TD>
     <TD> <I>strid</I> <I>strpat</I><SUB>1</SUB> ... <I>strpat</I><SUB><I>n</I></SUB>
