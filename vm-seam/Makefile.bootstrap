@@ -355,9 +355,9 @@ TOPINCLUDES0 = \
 	Base.hh Stockwerk.hh Alice.hh
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
-	StatusWord.hh Value.hh WeakDictionary.hh Store.hh
+	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh
 ADTINCLUDES0 = \
-	HashTable.hh Queue.hh Stack.hh
+	IntMap.hh ChunkMap.hh Queue.hh Stack.hh
 GENERICINCLUDES0 = \
 	FinalizationSet.hh Transform.hh ConcreteRepresentationHandler.hh \
 	ConcreteRepresentation.hh ConcreteCode.hh Closure.hh Thread.hh \
