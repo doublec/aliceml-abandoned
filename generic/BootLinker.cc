@@ -285,7 +285,7 @@ Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
   taskStack->PopFrame();
   BootLinker::Trace("[boot-linker] applying", key);
   u_int n         = imports->GetLength();
-  Vector *modules = Vector::New(n);
+  Vector *strs    = Vector::New(n);
   // Order significant here?
   for (u_int i = 0; i < n; i++) {
     // imports = (string * sign) vector
@@ -293,11 +293,11 @@ Interpreter::Result ApplyInterpreter::Run(word, TaskStack *taskStack) {
     Assert(t != INVALID_POINTER);
     t->AssertWidth(2);
     Chunk *key2 = ResolveUrl(key, Store::WordToChunk(t->Sel(0)));
-    ModuleEntry *entry = BootLinker::LookupComponent(key2);
+    Component *entry = BootLinker::LookupComponent(key2);
     Assert(entry != INVALID_POINTER);
-    modules->Init(i, entry->GetModule());
+    strs->Init(i, entry->GetStr());
   }
-  Scheduler::currentArgs = Interpreter::OneArg(modules->ToWord());
+  Scheduler::currentArgs = Interpreter::OneArg(strs->ToWord());
   return taskStack->PushCall(bodyclosure);
 }
 
@@ -433,23 +433,23 @@ const char *LoadInterpreter::ToString(word args, TaskStack *taskStack) {
 //
 static const u_int INITIAL_TABLE_SIZE = 16; // to be checked
 
-word BootLinker::moduleTable;
+word BootLinker::componentTable;
 u_int BootLinker::traceFlag;
 char *BootLinker::aliceHome;
 
 void BootLinker::Init(char *home, prim_table *builtins) {
-  moduleTable = HashTable::New(HashTable::BLOCK_KEY,
-			       INITIAL_TABLE_SIZE)->ToWord();
-  RootSet::Add(moduleTable);
+  componentTable = HashTable::New(HashTable::BLOCK_KEY,
+				  INITIAL_TABLE_SIZE)->ToWord();
+  RootSet::Add(componentTable);
   aliceHome = home;
   // Initialize Interpreters
   ApplyInterpreter::Init();
   EnterInterpreter::Init();
   LinkInterpreter::Init();
   LoadInterpreter::Init();
-  // Import builtin native Modules
+  // Import built-in native components
   while (builtins->name != NULL) {
-    word (*f)(void) = builtins->module;
+    word (*f)(void) = builtins->init;
     EnterComponent((Chunk *) String::New(builtins->name),
 		   Store::IntToWord(0), // NONE
 		   f());
@@ -489,11 +489,11 @@ word BootLinker::Link(Chunk *url) {
   RootSet::Add(urlWord);
   Scheduler::Run();
   RootSet::Remove(urlWord);
-  ModuleEntry *moduleEntry = LookupComponent(url);
-  if (moduleEntry == INVALID_POINTER) {
+  Component *component = LookupComponent(url);
+  if (component == INVALID_POINTER) {
     return Store::IntToWord(0);
   }
   else {
-    return moduleEntry->GetModule();
+    return component->GetStr();
   }
 }
