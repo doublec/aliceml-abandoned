@@ -305,7 +305,7 @@ struct
 		in
 		    proxySig ((l', v')::lvs, m, items)
 		end
-	  | Inf.TypItem (p, k) =>
+	  | Inf.InfItem (p, k) =>
 		let
 		    val l' = trInfLab (Path.toLab p)
 		    val v = UnsafeValue.projPoly (m, l')
