@@ -15,7 +15,7 @@
 
 import structure Print from "x-alice:/lib/system/Print"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
 import structure GtkSupport from "GtkSupport"
 
 import signature DRAWING_AREA from "DRAWING_AREA-sig"
@@ -32,7 +32,7 @@ struct
 
     (* new canvas *)
 
-    val canvas =  GnomeCanvas.new ()
+    val canvas =  Canvas.new ()
 	
     (* initial canvas settings *)
 
@@ -48,10 +48,10 @@ struct
 	    val newScrollX = Real.max (scrollX, xSize)
 	    val newScrollY = Real.max (scrollY, ySize)
 	in
-	    GnomeCanvas.setScrollRegion
+	    Canvas.setScrollRegion
 		(canvas, 0.0, 0.0, newScrollX, newScrollY);
 	    if needMove then
-		GnomeCanvas.scrollTo (canvas, 0, Real.trunc (newScrollY - ySize))
+		Canvas.scrollTo (canvas, 0, Real.trunc (newScrollY - ySize))
 	    else ()
 	end
 
@@ -59,7 +59,7 @@ struct
 	      Gtk.widgetModifyBg (canvas, Gtk.STATE_NORMAL, white);
 	      Gtk.containerAdd (parent, canvas))
 
-    val root = GnomeCanvas.root canvas
+    val root = Canvas.root canvas
 
     (* function to handle resize requests on this specific canvas *)
 

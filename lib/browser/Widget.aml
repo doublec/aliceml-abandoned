@@ -23,7 +23,7 @@ import structure Doc from "Doc"
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
 
 import structure Color from "Color"
 import structure MkDrawingArea from "MkDrawingArea"

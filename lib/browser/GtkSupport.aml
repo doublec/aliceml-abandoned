@@ -17,7 +17,7 @@ import structure Url         from "x-alice:/lib/system/Url"
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue"
 import structure Gtk         from "x-alice:/lib/gtk/Gtk"
 import structure Gdk         from "x-alice:/lib/gtk/Gdk"
-import structure GnomeCanvas from "x-alice:/lib/gtk/GnomeCanvas"
+import structure Canvas from "x-alice:/lib/gtk/Canvas"
 
 (* import structure Print from "x-alice:/lib/system/Print" *)
 
@@ -62,16 +62,16 @@ structure GtkSupport =
 	    Gtk.menuItemSetRightJustified (item, true)
 
 	    
-	(************ GnomeCanvas Primitives ********************)
-	(************ GnomeCanvas Instruktionen *****************)
+	(************ Canvas Primitives ********************)
+	(************ Canvas Instruktionen *****************)
 	    
-	fun canvasNew() = GnomeCanvas.new ()
-	val canvasRoot = GnomeCanvas.root 
-	val canvasItemNew = GnomeCanvas.itemCreate
-	val canvasItemSet = GnomeCanvas.itemSet
-	val canvasItemLowerToBottom = GnomeCanvas.itemLowerToBottom
-	val canvasSetScrollRegion = GnomeCanvas.setScrollRegion
-	val canvasItemMove = GnomeCanvas.itemMove
+	fun canvasNew() = Canvas.new ()
+	val canvasRoot = Canvas.root 
+	val canvasItemNew = Canvas.itemCreate
+	val canvasItemSet = Canvas.itemSet
+	val canvasItemLowerToBottom = Canvas.itemLowerToBottom
+	val canvasSetScrollRegion = Canvas.setScrollRegion
+	val canvasItemMove = Canvas.itemMove
 	    
 	(************ Gdk Primitives **************************)
 	(************ Gdk Befehle    **************************)
@@ -85,18 +85,18 @@ structure GtkSupport =
 	    let
 		val fontName = (fontBase ^ " " ^ (Int.toString size))
 		val anchor = Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_NORTH_WEST
-		val textType = GnomeCanvas.textGetType ()
+		val textType = Canvas.textGetType ()
 		val textArgs =
 		    [("text", Gtk.STRING " "),
 		     ("x", Gtk.REAL 0.0),
 		     ("y", Gtk.REAL 0.0),
 		     ("anchor", Gtk.INT anchor),
 		     ("font", Gtk.STRING fontName)]
-		val canvas = GnomeCanvas.new ()
-		val rootGroup = GnomeCanvas.root canvas
+		val canvas = Canvas.new ()
+		val rootGroup = Canvas.root canvas
 		val item =
-		    GnomeCanvas.itemCreate (rootGroup, textType, textArgs)
-		val (x1,y1, x2, y2) = GnomeCanvas.itemGetBounds item
+		    Canvas.itemCreate (rootGroup, textType, textArgs)
+		val (x1,y1, x2, y2) = Canvas.itemGetBounds item
 		val fontX = Real.trunc (x2 - x1)
 		val fontY = Real.trunc (y2 - y1)
 	    in
@@ -585,21 +585,21 @@ structure GtkSupport =
 
 	(* creates a Gtk group *)
 	local
-	    val groupType = GnomeCanvas.groupGetType ()
+	    val groupType = Canvas.groupGetType ()
 	in
 	    fun newTag(parent,x,y) = 
-		GnomeCanvas.itemCreate (parent,
+		Canvas.itemCreate (parent,
 					groupType,
 					[("x", Gtk.REAL y),
 					 ("y", Gtk.REAL y)])
 	end
 	(* prints text in the top left corner of a group *)
 	local
-	    val textType = GnomeCanvas.textGetType ()
+	    val textType = Canvas.textGetType ()
 	    val anchor = Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_NORTH_WEST)
 	in
 	    fun print00 (str,group,color,fontname) = 
-		GnomeCanvas.itemCreate (group,
+		Canvas.itemCreate (group,
 					textType,
 					[("text", Gtk.STRING str),
 					 ("font", Gtk.STRING fontname),
@@ -611,8 +611,8 @@ structure GtkSupport =
 	fun positionGroup (group,x,y) = 
 	    if x=0.0 andalso y=0.0 then ()
 	    else 
-		(GnomeCanvas.itemSet(group,"x", Gtk.REAL x) 
-		 ;GnomeCanvas.itemSet(group,"y", Gtk.REAL y))
+		(Canvas.itemSet(group,"x", Gtk.REAL x) 
+		 ;Canvas.itemSet(group,"y", Gtk.REAL y))
 			
         (* moves a Gtk group 
 		 (arguments represent distance in characters) *)
@@ -624,14 +624,14 @@ structure GtkSupport =
 		    val ry = Real.fromInt(y * font_height)
 		    val _ = () 
 		in
-		    GnomeCanvas.itemMove(group,rx,ry)
+		    Canvas.itemMove(group,rx,ry)
 		end
 	  
 	(* queries the boundaries (in character positions) of the object *) 
 	fun getCoordinates (group,font_height,font_width) = 
 	    let
 		val (rx1,ry1,rx2,ry2) = 
-		    GnomeCanvas.itemGetBounds group
+		    Canvas.itemGetBounds group
 		val x1 = (Real.trunc rx1) div font_width
 		val y1 = (Real.trunc ry1) div font_height
 		val x2 = (Real.trunc rx2) div font_width
@@ -645,7 +645,7 @@ structure GtkSupport =
 	fun getPosition (group,font_height, font_width) = 
 	    let
 		val (rx1,ry1,_,_) = 
-		    GnomeCanvas.itemGetBounds group
+		    Canvas.itemGetBounds group
  		val x1 = (Real.round rx1) div font_width
 		val y1 = (Real.round ry1) div font_height
 	    in
@@ -656,19 +656,19 @@ structure GtkSupport =
 	fun itemMoveTo (group,rx,ry) = 
 	    let
 		val (rx1,ry1,_,_) = 
-		    GnomeCanvas.itemGetBounds group
-		val (absx,absy) = GnomeCanvas.itemI2w' (group,rx1,ry1)
+		    Canvas.itemGetBounds group
+		val (absx,absy) = Canvas.itemI2w' (group,rx1,ry1)
 		val dx = Real.- (rx, absx)
 		val dy = Real.- (ry, absy)
 	    in
 		if absx = rx andalso absy = ry
 		    then ()
-		else (GnomeCanvas.itemMove(group,dx,dy))
+		else (Canvas.itemMove(group,dx,dy))
 	    end
 
 	(* creates horizontal Line on canvas *)
 	local
-	    val lineType = GnomeCanvas.lineGetType ()
+	    val lineType = Canvas.lineGetType ()
 	    val lineStyle = 
 		Gtk.INT (Gdk.GdkLineStyleToInt Gdk.LINE_ON_OFF_DASH)
 	    val lineWidth = Gtk.INT 1
@@ -680,11 +680,11 @@ structure GtkSupport =
 			val mx = Real.trunc(x)
 			val linepos = actline * font_height - (font_height div 2)
 		    in
-			GnomeCanvas.itemCreate
+			Canvas.itemCreate
 			(group,
 			 lineType,
 			 [("points",
-			   Gtk.OBJECT (GnomeCanvas.makePoints
+			   Gtk.OBJECT (Canvas.makePoints
 					   [0, linepos, mx, linepos])),
 			  ("fill_color_gdk", lineColor),
 			  ("line_style", lineStyle),
@@ -697,12 +697,12 @@ structure GtkSupport =
 	fun resizeSepLine(line,x) = 
 	    let 
 		val (rx1,ry1,rx2,ry2) = 
-		    GnomeCanvas.itemGetBounds line
+		    Canvas.itemGetBounds line
 		val y1 = Real.trunc(Real.+(ry1,1.0))
 	    in
-		(GnomeCanvas.itemSet(line,
+		(Canvas.itemSet(line,
 				   "points", 
-				   Gtk.OBJECT (GnomeCanvas.makePoints
+				   Gtk.OBJECT (Canvas.makePoints
 						   [0, y1, x, y1])))
 	    end
 	
@@ -710,14 +710,14 @@ structure GtkSupport =
 	fun yPosSepLine (item,group,font_height) = 
 	    let
 		val (_,ry1,_,_) = 
-		    GnomeCanvas.itemGetBounds group
+		    Canvas.itemGetBounds group
 		val y = Real.trunc(ry1) - (font_height div 2)
 		val (_,_,lx2,_) = 
-		    GnomeCanvas.itemGetBounds item
+		    Canvas.itemGetBounds item
 	    in
-		GnomeCanvas.itemSet(item,
+		Canvas.itemSet(item,
 				  "points", 
-				  Gtk.OBJECT (GnomeCanvas.makePoints
+				  Gtk.OBJECT (Canvas.makePoints
 						  [0, y, 
 						   Real.trunc(lx2), 
 						   y]))
@@ -732,10 +732,10 @@ structure GtkSupport =
      
 	(* creates arrow from pointset *)
 	fun createArrow(group,points,color) = 
-	    GnomeCanvas.itemCreate(group,
-			      GnomeCanvas.polygonGetType (),
+	    Canvas.itemCreate(group,
+			      Canvas.polygonGetType (),
 			      [("points", 
-				Gdk.OBJECT (GnomeCanvas.makePoints points)),
+				Gdk.OBJECT (Canvas.makePoints points)),
 			       ("fill_color_gdk",
 				Gtk.OBJECT(color)),
 			       ("outline_color_gdk",
@@ -768,9 +768,9 @@ structure GtkSupport =
 
 	(* creates simple orange coloured rectangle *)
 	fun createRectangle (group,x1,y1,x2,y2) = 
-	    GnomeCanvas.itemCreate
+	    Canvas.itemCreate
 	    ( group, 
-	     GnomeCanvas.rectGetType (),
+	     Canvas.rectGetType (),
 	     [("x1", Gtk.REAL x1),
 	      ("y1", Gtk.REAL y1),
 	      ("x2", Gtk.REAL x2),
@@ -788,7 +788,7 @@ structure GtkSupport =
 		val mesg = if oldGroup = group then "old"
 			   else (groupRef := group; "new")
 	    in
-		Print.printVal (loc, mesg, GnomeCanvas.itemGetBounds group)
+		Print.printVal (loc, mesg, Canvas.itemGetBounds group)
 	    end
 *)
 end
