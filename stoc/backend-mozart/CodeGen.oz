@@ -604,7 +604,8 @@ define
 	  (lbl(StartLabel)|
 	   definition(x(0) EndLabel
 		      pid({VirtualString.toAtom 'Component '#Filename} 2
-			  pos(Filename 1 0) nil NLiveRegs)
+			  pos({VirtualString.toAtom Filename} 1 0) nil
+			  NLiveRegs)
 		      unit nil Code1)|
 	   endDefinition(StartLabel)|
 	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]}) [Res]
