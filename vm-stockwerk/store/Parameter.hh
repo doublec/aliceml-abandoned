@@ -59,6 +59,7 @@
     "THREAD", \
     "CLOSURE", \
     "TUPLE", \
+    "TRANSFORM", \
     "EMPTYARG", "ONEARG", "TUPARGS" \
   }
 
