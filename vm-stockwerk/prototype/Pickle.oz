@@ -43,7 +43,7 @@ define
    REF       = 6
    TRANSFORM = 7
 
-   %% Block Labels:
+   %% Block Labels:   %--** Alice-specific
    ARRAY        = 0
    CELL         = 1
    CONSTRUCTOR  = 2
@@ -67,18 +67,18 @@ define
    end
 
    class PickleParser
-      attr Bs: unit Dict: unit Counter: unit
-      meth init(S $)
-	 Bs <- S
+      attr BS: unit Index: 0 Dict: unit Counter: unit
+      meth init(V $)
+	 BS <- {ByteString.make V}
+	 Index <- 0
 	 Dict <- {NewDictionary}
 	 Counter <- 0
 	 PickleParser, ParsePickle($)
       end
-      meth Next($)
-	 case @Bs of B|Br then
-	    Bs <- Br
-	    B
-	 end
+      meth Next($) I in
+	 I = @Index
+	 Index <- I + 1
+	 {ByteString.get @BS I}
       end
       meth Remember(X) N in
 	 N = @Counter
@@ -173,13 +173,13 @@ define
       end
    end
 
-   fun {Unpack S}
-      {New PickleParser init({VirtualString.toString S} $) _}
+   fun {Unpack V}
+      {New PickleParser init(V $) _}
    end
 
-   proc {ReadFile File ?VS} F in
+   proc {ReadFile File ?S} F in
       F = {New Open.file init(name: File flags: [read])}
-      {F read(list: ?VS size: all)}
+      {F read(list: ?S size: all)}
       {F close()}
    end
 
