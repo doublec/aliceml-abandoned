@@ -1,0 +1,26 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure PrimIO  from "PrimIO"
+import signature PRIM_IO from "PRIM_IO-sig"
+
+(*--** translation *)
+
+structure TextPrimIO :> PRIM_IO
+    where type array = CharArray.array
+      and type vector = CharVector.vector
+      and type elem = char =
+    PrimIO(structure A = CharArray
+	   structure V = CharVector
+	   val someElem = #"\000"
+	   type pos = Position.int
+	   val compare = Position.compare)

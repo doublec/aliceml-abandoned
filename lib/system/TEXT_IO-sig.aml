@@ -1,65 +1,67 @@
 (*
- * Authors:
+ * Author:
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
- *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2000-2002
+ *   Leif Kornstaedt, 2002
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
+import signature STREAM_IO from "STREAM_IO-sig"
+
 signature TEXT_IO =
-sig
-(*TODO
-    structure StreamIO:	STREAM_IO
-*)
-    type vector = string (* StreamIO.vector *)
-    type elem   = char (* StreamIO.elem *)
+    sig
+	structure StreamIO: STREAM_IO
+	    where type vector = string
+	      and type elem = char
 
-    type instream
-    type outstream
+	type vector = StreamIO.vector
+	type elem = StreamIO.elem
 
-    val stdIn :		instream
-    val stdOut :	outstream
-    val stdErr :	outstream
+	type instream
+	type outstream
 
-    val openIn :	string -> instream
-(*  val openString :	string -> instream *)
-    val closeIn :	instream -> unit
-(*  val input :		instream -> vector
-    val input1 :	instream -> elem option
-    val inputN :	instream * int -> vector *)
-    val inputAll :	instream -> vector
-    val inputLine :	instream -> vector
-(*  val lookahead :	instream -> elem option
-    val canInput :	instream * int -> int option
-    val endOfStream :	instream -> bool *)
+	val openIn: string -> instream
+	val input: instream -> vector
+	val input1: instream -> elem option
+	val inputN: instream * int -> vector
+(*	val inputLine: instream -> string*)
+	val inputAll: instream -> vector
+	val canInput: instream * int -> int option
+	val lookahead: instream -> elem option
+	val closeIn: instream -> unit
+	val endOfStream: instream -> bool
+	val mkInstream: StreamIO.instream -> instream
+	val getInstream: instream -> StreamIO.instream
+	val setInstream: instream * StreamIO.instream -> unit
 
-    val openOut :	string -> outstream
-    val openAppend :	string -> outstream
-    val closeOut :	outstream -> unit
-    val flushOut :	outstream -> unit
-    val output :	outstream * vector -> unit
-    val output1 :	outstream * elem -> unit
-(*  val outputSubstr :	outstream * substring -> unit *)
-    val print :		string -> unit
+	val openOut: string -> outstream
+	val openAppend: string -> outstream
+	val openString: string -> instream
+	val output: outstream * vector -> unit
+	val output1: outstream * elem -> unit
+(*	val outputSubstr: outstream * substring -> unit*)
+	val flushOut: outstream -> unit
+	val closeOut: outstream -> unit
+	val mkOutstream: StreamIO.outstream -> outstream
+	val getOutstream: outstream -> StreamIO.outstream
+	val setOutstream: outstream * StreamIO.outstream -> unit
+	val getPosOut: outstream -> StreamIO.out_pos
+	val setPosOut: outstream * StreamIO.out_pos -> unit
 
-(*TODO
-    val getPosIn :	instream -> StreamIO.in_pos
-    val setPosIn :	instream * StreamIO.in_pos -> unit
-    val mkInstream :	StreamIO.instream -> instream
-    val getInstream :	instream -> StreamIO.instream
-    val setInstream :	instream * StreamIO.instream -> unit
-    val getPosOut :	outstream -> StreamIO.out_pos
-    val setPosOut :	outstream * StreamIO.out_pos -> unit
-    val mkOutstream :	StreamIO.outstream -> outstream
-    val getOutstream :	outstream -> StreamIO.outstream
-    val setOutstream :	outstream * StreamIO.outstream -> unit
-    val scanStream :	((Char.char, StreamIO.instream) StringCvt.reader ->
-			 ('a, StreamIO.instream) StringCvt.reader)
-			-> instream -> 'a option 
+	val stdIn: instream
+	val stdOut: outstream
+	val stdErr: outstream
+
+	val print: string -> unit
+
+(*
+	val scanStream:
+	    ((elem, StreamIO.instream) StringCvt.reader ->
+	     ('a, StreamIO.instream) StringCvt.reader) ->
+	    instream -> 'a option
 *)
 end
