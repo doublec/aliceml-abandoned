@@ -192,6 +192,8 @@ define
    proc {TranslateExp Exp Reg VHd VTl State}
       case Exp of litExp(_ Lit) then
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
+      [] primExp(_ Builtinname) then
+	 VHd = vEquateConstant(_ Prebound.builtinTable.Builtinname Reg VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] conExp(_ Id false) then
