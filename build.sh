@@ -119,7 +119,7 @@ then
 	echo "### - reconfiguring the source" >&2 &&
 	mkdir -p "${SUPPORTDIR}/build/gmp" 2>/dev/null &&
 	cd "${SUPPORTDIR}/build/gmp" &&
-	"${SUPPORTDIR}/gmp/gmp-${gmpversion}/configure" CC="$CC" --prefix="$prefix" &&
+	"${SUPPORTDIR}/gmp/gmp-${gmpversion}/configure" --build i586 CC="$CC" --prefix="$prefix" &&
 	echo "### - building and installing" >&2 &&
 	make all install
     ) || exit 1
@@ -132,3 +132,5 @@ fi
 
 echo "### Clean up aclocal path mess" >&2
 cp "$prefix"/share/aclocal-1.7/* "$prefix"/share/aclocal/
+
+
