@@ -743,10 +743,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	fn VALDec(i, tyvarseq, valbind) =>
 	   let
 		val  E'   = Env.new()
-		val ids'  = trValTyVarSeq E' tyvarseq
-		val  _    = insertScope E'
+		val  _    = insertScope E
+		val ids'  = trValTyVarSeq E tyvarseq @
+			    unguardedTyVarsValBind E valbind
 		val decs' = trValBindo (E,E') (SOME valbind)
-		val  _    = delete2ndScope E'
+		val  _    = deleteScope E
 		val  _    = union(E,E')
 	   in
 		typvardecs(ids', decs')
@@ -758,9 +759,10 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (ids',fmatches) = trFvalBindo_lhs (E,E') (SOME fvalbind)
 		val  _    = union(E,E')
 		val  _    = insertScope E
-		val ids'' = trValTyVarSeq E tyvarseq
+		val ids'' = trValTyVarSeq E tyvarseq @
+			    unguardedTyVarsFvalBind E fvalbind
 		val exps' = trFmatches_rhs E fmatches
-		val  _    = delete2ndScope E
+		val  _    = deleteScope E
 		val decs' = ListPair.map
 				(fn(id',exp') =>
 				 O.ValDec(O.infoExp exp',
