@@ -24,8 +24,8 @@ import structure Char                              from "Char"
 import structure Bool                              from "Bool"
 import structure List                              from "List"
 import structure StringCvt                         from "StringCvt"
+import structure CharVector                        from "CharVector"
 import signature STRING                            from "STRING-sig"
-
 
 structure String : STRING =
 struct
@@ -34,11 +34,16 @@ struct
 
     structure Char = Char
 
-    __primitive val maxSize : int = "String.maxSize"
+    val maxSize		= CharVector.maxLen
+    val size		= CharVector.length
+    val sub		= CharVector.sub
+    val implode		= CharVector.fromList
+    val tabulate	= CharVector.tabulate
+    val concat		= CharVector.concat
+    val map		= CharVector.map
 
-    __primitive val size : string -> int        = "String.size"
-    __primitive val str :  char -> string       = "String.str"
-    __primitive val sub :  string * int -> char = "String.sub"
+    __primitive val str : char -> string = "String.str"
+
     __primitive val sub' : string * int -> char = "Unsafe.String.sub"
     __primitive val substring : string * int * int -> string
 						= "String.substring"
@@ -46,7 +51,7 @@ struct
       | extract(s, i, SOME j) = substring(s, i, j)
 
     __primitive val op ^ :    string * string -> string = "String.^"
-    __primitive val implode : char list -> string       = "String.implode"
+
     __primitive val explode : string -> char list       = "String.explode"
 
     val maxLen		= maxSize					(**)
@@ -54,11 +59,7 @@ struct
     val append		= op ^						(**)
     val fromList	= implode					(**)
     val toList		= explode					(**)
-    fun tabulate(n,f)	= implode(List.tabulate(n,f)) (*INEFFICIENT*)	(**)
 
-    fun concat ss	= List.foldr op^ "" ss			(*INEFFICIENT*)
-
-    fun map f s		= implode(List.map f (explode s))	(*INEFFICIENT*)
     fun translate f s	= concat(List.map f (explode s))	(*INEFFICIENT*)
 
     __primitive val op < :	string * string -> bool  = "String.<"
