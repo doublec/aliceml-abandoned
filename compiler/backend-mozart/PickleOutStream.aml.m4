@@ -10,6 +10,8 @@
  *   $Revision$
  *)
 
+changequote([[,]])
+
 (* MOZART PICKLE FORMAT (Extract)
  *
  * pickle ::= sysletheader sysletheader sysletheader crc version term eof
@@ -241,7 +243,11 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 		val q =
 		    {array = ref (array (initialSize, 0w0)),
 		     index = ref 0,
+ifelse([[PICKLE_VERSION]],3,[[
 		     label = ref 0w1,
+]],[[
+		     label = ref 0w0,
+]])
 		     crc = ref Crc.initial,
 		     count = ref 1,
 		     atoms = StringMap.map ()}
