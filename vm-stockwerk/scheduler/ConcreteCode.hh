@@ -31,6 +31,7 @@ public:
 
   static ConcreteCode *New(word abstractCode, Interpreter *interpreter,
 			   u_int size) {
+    //--** will be a block with handler
     Block *b = Store::AllocBlock(CONCRETECODE_LABEL, SIZE + size);
     b->InitArg(ABSTRACT_CODE_POS, abstractCode);
     b->InitArg(INTERPRETER_POS, Store::UnmanagedPointerToWord(interpreter));
