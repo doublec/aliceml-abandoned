@@ -121,7 +121,7 @@ expect.</P>
 
 <?php section("matching", "pattern matching") ?>
 
-<P>Since Alice is a concurrent language, matches containing impure patterns -
+<P>Since Alice is a <A href="futures.html#spawn">concurrent</A> language, matches containing impure patterns -
 particularly <TT>ref</TT> patterns - may behave slightly oddly. Patterns that
 are exhaustive in plain SML may not necessarily be so in Alice. Also, pattern
 matching may trigger side-effects, when a <A href="futures.html#lazy">lazy
@@ -159,8 +159,8 @@ likewise.</P>
   accessed via <TT>!</TT> in one operation.
   <P>Be aware that patterns with <TT>ref</TT> are only
   ever considered exhaustive by the compiler if the argument pattern is
-  exhaustive in itself - information from different matches for the same
-  reference cannot be accumulated. </LI>
+  exhaustive in itself - information from different patterns for the same
+  reference cannot be accumulated.</P> </LI>
 </UL>
 
 
