@@ -1,0 +1,7 @@
+#!/bin/sh
+
+(
+  cd src
+  sml <build.sml
+)
+mv src/renderer.x86-linux .
