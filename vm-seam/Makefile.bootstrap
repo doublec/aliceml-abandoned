@@ -129,7 +129,8 @@ STOCKWERKFILES = stow.exe
 endif
 
 LIBSYSTEMNATIVES0 = \
-	Config IODesc OS Unix CommandLine Component Debug Socket Rand Reflect
+	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \
+        Reflect
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES =
