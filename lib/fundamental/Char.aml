@@ -174,38 +174,60 @@ struct
 	   | SOME(#"^",  src')                   => scanControl getc src'
 	   | SOME(#"u",  src')                   => scanUnicode getc src'
 	   | SOME(  c,   src') where (isDigit c) => scanAscii getc src
-	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
+	   | SOME(  c,   src') where (isSpace c) => (case scanGap getc src'
+						       of NONE       => NONE
+						        | SOME src'' =>
+							  scan' getc src''
+						    )
 	   | _                                   => NONE
 
     and scanGap getc src =
 	case getc src
-	  of SOME(#"\\", src')                   => scan getc src'
+	  of SOME(#"\\", src')                   => SOME src'
 	   | SOME(  c,   src') where (isSpace c) => scanGap getc src'
 	   | NONE                                => NONE
 
-    and scan getc src =
+    and scan' getc src =
 	case getc src
 	  of SOME(#"\\", src')                   => scanEscape getc src'
 	   | SOME(  c,   src') where (isPrint c) => SOME(c, src')
 	   | NONE                                => NONE
+    and scan getc src =
+	case scan' getc src
+	  of NONE                                => NONE
+	   | SOME(c, src')                       => scanTrailGap getc src' c
+    and scanTrailGap getc src c =
+	case getc src
+	  of SOME(#"\\", src') =>
+	     (case getc src'
+		of SOME(c', src'') where (isSpace c') =>
+		   (case scanGap getc src''
+		      of NONE        => SOME(c, src)
+		       | SOME src''' => scanTrailGap getc src''' c
+		   )
+		 | _ => SOME(c, src)
+	     )
+	   | _ => SOME(c, src)
+
 
     fun scanCAscii getc src      = scanCAscii' getc src 0 0
+				   handle General.Chr => NONE
     and scanCAscii' getc src i 3 = SOME(chr i, src)
       | scanCAscii' getc src i k =
 	case getc src
 	  of SOME(c, src') where (isOctDigit c) =>
-		scanCAscii' getc src (8*i + value c) k
+		scanCAscii' getc src' (8*i + value c) (k+1)
 	   | _ => scanCAscii'' src i k
 
     and scanCAscii'' src i 0 = NONE
       | scanCAscii'' src i k = SOME(chr i, src)
 
     fun scanCUnicode getc src = scanCUnicode' getc src 0 0
-				handle General.Overflow => NONE
+				handle (General.Chr | General.Overflow) => NONE
     and scanCUnicode' getc src i k =
 	case getc src
 	  of SOME(c, src') where (isHexDigit c) =>
-		scanCUnicode' getc src (16*i + value c) k
+		scanCUnicode' getc src' (16*i + value c) (k+1)
 	   | _ => scanCUnicode'' src i k
 
     and scanCUnicode'' src i 0 = NONE
@@ -226,7 +248,7 @@ struct
 	   | SOME(#"'",  src')                   => SOME(#"'", src')
 	   | SOME(#"^",  src')                   => scanControl getc src'
 	   | SOME(#"x",  src')                   => scanCUnicode getc src'
-	   | SOME(  c,   src') where (isDigit c) => scanCAscii getc src'
+	   | SOME(  c,   src') where (isDigit c) => scanCAscii getc src
 	   | _                                   => NONE
 
     fun scanC getc src =
