@@ -484,8 +484,8 @@ OZ_BI_end
 
 OZ_BI_define(vector_scal_mul,2,1)
 {
-  OZ_declareVector(0,x);
-  OZ_declareFloat(1,y);
+  OZ_declareFloat(0,y);
+  OZ_declareVector(1,x);
   Vector * v = new Vector
     (x->v1*y,x->v2*y,x->v3*y);
   OZ_RETURN(OZ_extension(v));
