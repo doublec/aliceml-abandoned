@@ -22,7 +22,7 @@ structure PrimOps :> PRIM_OPS =
 
 	val map =
 	    let
-		val map = StringMap.new ()
+		val map = StringMap.map ()
 		fun ins (name, arityOpt) =
 		    StringMap.insertDisjoint (map, name, arityOpt)
 	    in
@@ -275,5 +275,5 @@ structure PrimOps :> PRIM_OPS =
 
 	fun getArity name =
 	    StringMap.lookupExistent (map, name)
-	    handle StringMap.Lookup _ => raise UnknownPrim
+	    handle StringMap.Unknown _ => raise UnknownPrim
     end
