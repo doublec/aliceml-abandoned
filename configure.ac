@@ -106,17 +106,27 @@ AC_CACHE_CHECK([for Unix select vs. WinSock], [seam_cv_socket_flavor],
 		     [[WSADATA wsa_data;
 		       WORD req_version = MAKEWORD(1, 1);
 		       return WSAStartup(req_version, &wsa_data);]]),
-		     [seam_cv_socket_flavor=winsock],
-		     [seam_cv_socket_flavor=none])
+		     [seam_cv_socket_flavor=winsock-l],
+		     [LIBS="wsock32.lib $seam_save_LIBS"
+		      AC_RUN_IFELSE(AC_LANG_PROGRAM([[#include <winsock.h>]],
+			[[WSADATA wsa_data;
+			  WORD req_version = MAKEWORD(1, 1);
+			  return WSAStartup(req_version, &wsa_data);]]),
+			[seam_cv_socket_flavor=winsock-lib],
+			[seam_cv_socket_flavor=none])])
 		   LIBS="$seam_save_LIBS"])])
 
 case "$seam_cv_socket_flavor" in
     unix)
 	AC_DEFINE(USE_WINSOCK, 0)
 	;;
-    winsock)
+    winsock-l)
 	AC_DEFINE(USE_WINSOCK, 1)
 	LIBS="-lwsock32 $LIBS"
+	;;
+    winsock-lib)
+	AC_DEFINE(USE_WINSOCK, 1)
+	LIBS="wsock32.lib $LIBS"
 	;;
     none)
 	AC_MSG_ERROR([cannot find a usable sockets library])
@@ -232,19 +242,27 @@ AC_ARG_WITH([zlib],
   [seam_save_LIBS="$LIBS"
    LIBS="-lz $LIBS"
    AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <zlib.h>]],
-				  [[gzFile f = gzopen("foo", "rb");]]),
-		  seam_with_zlib=yes,
-		  seam_with_zlib=no)
+     [[gzFile f = gzopen("foo", "rb");]]),
+     [seam_with_zlib=zlib-l],
+     [LIBS="zlib.lib $seam_save_LIBS"
+      AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <zlib.h>]],
+	[[gzFile f = gzopen("foo", "rb");]]),
+	[seam_with_zlib=zlib-lib],
+	[seam_with_zlib=none])])
    LIBS="$seam_save_LIBS"])
 AC_MSG_RESULT($seam_with_zlib)
 
 case "$seam_with_zlib" in
-    no)
+    none)
 	AC_DEFINE(HAVE_ZLIB, 0)
 	;;
-    yes)
+    zlib-l)
 	AC_DEFINE(HAVE_ZLIB, 1)
 	LIBS="-lz $LIBS"
+	;;
+    zlib-lib)
+	AC_DEFINE(HAVE_ZLIB, 1)
+	LIBS="zlib.lib $LIBS"
 	;;
     *)
 	AC_DEFINE(HAVE_ZLIB, 1)
@@ -328,12 +346,6 @@ case "$seam_enable_optimized" in
     no)
 	;;
     yes)
-	dnl--** machine-specific optimizations need more work
-	case $(uname -n) in
-	    i686)
-		SEAM_CHECK_CXXFLAGS([-mcpu=pentium -march=pentium3])
-		;;
-	esac
 	SEAM_CHECK_CXXFLAGS([-O3 -fomit-frame-pointer \
 			     -fforce-mem -fforce-addr \
 			     -finline-limit=2500 -fno-implement-inlines \
