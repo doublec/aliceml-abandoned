@@ -291,11 +291,11 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 					   Option.Option) =>
 				acquireFromSigFile (url', exn)
 			val _ = trace ("loaded signature from " ^
-				       Url.toString url')
+				       Url.toStringRaw url')
 			val sign = Inf.asSig inf
 			    handle Inf.Interface =>
 				error ("higher-order content found in " ^
-				       Url.toString url)
+				       Url.toStringRaw url)
 		    in
 			UrlMap.insert (sigTable, urlCeil url', sign);
 			sign
