@@ -144,6 +144,9 @@ structure SearchDialog =
 
 	fun searchAgain(id, arg) = 
             (reconnect id;
+             case Buffer.getSelection id of
+                 NONE => ()
+               | SOME s => Gtk.entrySetText(searchString, s);
 	     doSearch id arg)
 
         fun replace id =
