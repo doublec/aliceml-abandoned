@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Name       from "../../lib/rtt/Name"
 import structure Label      from "../../lib/rtt/Label"
 import structure Fixity     from "../../lib/rtt/Fixity"
 import signature FIXITY_LIB from "FIXITY_LIB-sig"

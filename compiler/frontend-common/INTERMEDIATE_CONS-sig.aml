@@ -10,19 +10,14 @@
  *   $Revision$
  *)
 
-import structure Stamp			from "../common/Stamp"
 import structure Fixity			from "../../lib/rtt/Fixity"
 import structure Name			from "../../lib/rtt/Name"
 import structure Label			from "../../lib/rtt/Label"
-import structure Path			from "../../lib/rtt/Path"
 import structure Type			from "../../lib/rtt/Type"
-import structure Inf			from "../../lib/rtt/Inf"
-import structure PervasiveType		from "../../lib/rtt/PervasiveType"
 
 import structure TranslationEnv		from "TranslationEnv"
 import structure Source			from "../infrastructure/Source"
-import structure IntermediateInfo
-       structure IntermediateGrammar	from "../common/IntermediateGrammar"
+import structure IntermediateGrammar	from "../common/IntermediateGrammar"
 
 local
     open IntermediateGrammar

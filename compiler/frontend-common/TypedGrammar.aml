@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -26,8 +26,6 @@ Invariants of the typed grammar:
 *)
 
 import functor MkAbstractGrammar   from "MkAbstractGrammar"
-import functor MkPPAbstractGrammar from "MkPPAbstractGrammar"
-
 import structure Source            from "../infrastructure/Source"
 import structure Fixity            from "../../lib/rtt/Fixity"
 import structure Type              from "../../lib/rtt/Type"

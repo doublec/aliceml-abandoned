@@ -10,7 +10,6 @@
  *   $Revision$
  *)
 
-import structure Name    from "../../lib/rtt/Name"
 import structure Label   from "../../lib/rtt/Label"
 import structure Path    from "../../lib/rtt/Path"
 import structure Type    from "../../lib/rtt/Type"
