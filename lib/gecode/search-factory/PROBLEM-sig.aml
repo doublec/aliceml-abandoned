@@ -20,7 +20,9 @@ sig
          (* compare (x,y) is true iff y is better than x.
           * This function is called only if you use
           * the function 'Search.init' or 'Search.betterThan'.
-	  * In particular, it is not used by local Branch and Bound search *)
+          * --> It is NOT used by local search
+	  * --> It is NOT used by local Branch and Bound search 
+	  * --> It IS used by distributed search with Branch and Bound. *)
 
   (* Debug level *)
   val mask : Debug.db_mask

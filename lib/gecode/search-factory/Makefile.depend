@@ -1,4 +1,5 @@
-Debug.alc:
+Debug.alc: \
+	DEBUG-sig.alc
 
 Path.alc:
 

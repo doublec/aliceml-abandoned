@@ -13,15 +13,15 @@ sig
   val init : solution Path.t -> unit
 
   (* Get next solved space *)
-  val nextSolved : unit -> space option
+  val nextSolved : unit -> (space * solution Path.t) option
 
   (* Indicates if the search is finished. *)
   val isFinished : unit -> bool
 
-  (* Get one solution.
+  (* Get one solution and the associated path.
    * Raises NotAssigned if the variables are not assigned in the solved space;
    * this means that the problem is under-specified. *)
-  val getOneSolution : unit -> solution option
+  val getOneSolution : unit -> (solution * solution Path.t) option
 
   (* Get all solutions.
    * In the case of Branch & Bound, the head of the list is the best solution.

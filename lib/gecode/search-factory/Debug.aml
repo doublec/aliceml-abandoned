@@ -1,4 +1,6 @@
-structure Debug =
+import signature DEBUG from "DEBUG-sig"
+
+structure Debug :> DEBUG =
 struct
 
     type db_mask = Word31.t
@@ -22,9 +24,11 @@ struct
     val dbNone = dbZero
     val dbAll  = Word31.notb dbZero (* Full mask *)
 
+    val localPrint = ref print
+
     (* Print the debug message according to the masks. *)
     fun dbPrint (mask1, mask2, message) =
 	if Word31.compare (dbZero, mask1 && mask2) = EQUAL
-	    then () else print message
+	    then () else (!localPrint) message
 
 end

@@ -58,6 +58,7 @@ struct
   fun status    (Node node) = #status node
   fun depth     (Node node) = #depth  node
   fun getBestId (Node node) = #bestId node
+  fun getCopy   (Node node) = #copy   node
 
   val bab = Problem.bab
   val bound = Problem.bound
@@ -72,7 +73,7 @@ struct
                         else ignore(Future.await currentBest)
       val currentId   = !globalBestId
     in
-      if condf (currentBest, currentId)
+      if currentId = 0 orelse condf (currentBest, currentId)
         then
           (globalBestId := currentId + 1 ;
            Promise.fulfill (p, sol) ;
@@ -270,6 +271,7 @@ struct
       val space = getSpace root
       val (node, pbest) = List.foldl (applyPath space) (root, NONE) path
     in
+      getCopy node := SOME (Space.clone space) ;
       if bab then 
         case pbest of
           NONE => node

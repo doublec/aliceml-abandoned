@@ -17,6 +17,8 @@ struct
   (* A path in the search tree. *)
   type 'a path = ('a item) list
   type t = path
+
+  val root = []
     
   fun toString [] = "[]"
     | toString ((n, NONE) :: xs) =

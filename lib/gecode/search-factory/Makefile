@@ -3,7 +3,7 @@ ALICEC = alicec
 ALICEDEP = alicedep
 ALICEC_OPTS =
 
-SOURCES = Debug.aml \
+SOURCES = DEBUG-sig.aml Debug.aml \
           Path.aml PROBLEM-sig.aml \
           SPACENODE-sig.aml MkSpaceNode.aml \
           TREENODE-sig.aml MkTreeNode.aml \
