@@ -10,9 +10,7 @@
  *   $Revision$
  *)
 
-import structure Lock  from "../fundamental/Lock"
 import signature STAMP from "STAMP-sig"
-
 
 functor MkStamp() :> STAMP =
 struct
