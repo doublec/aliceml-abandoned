@@ -234,6 +234,7 @@ STOCBACKENDCOMMONSOURCES = $(STOCBACKENDCOMMONSOURCES0:%=stoc/backend-common/%)
 STOCBACKENDMOZARTSOURCES0 = \
 	Builtins.oz Prebound.oz CodeEmitter.oz CodeStore.oz CodeGen.oz \
 	Assembler.oz CodeGenPhase.oz CodeGenPhase.asig MkBackendMozart.aml
+#--** CodeGenPhase.ozf should be built via replacesign
 STOCBACKENDMOZARTSOURCES = $(STOCBACKENDMOZARTSOURCES0:%=stoc/backend-mozart/%)
 
 STOCTOPSOURCES0 = Signature.aml Composer.aml COMPILER-sig.aml MkCompiler.aml \
