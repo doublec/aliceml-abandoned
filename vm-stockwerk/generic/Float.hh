@@ -34,6 +34,11 @@ public:
 #endif
     return static_cast<Float *>(chunk);
   }
+  static Float *NewFromNetworkRepresentation(u_char *from) {
+    Chunk *chunk = Store::AllocChunk(sizeof(float));
+    std::memcpy(chunk->GetBase(), from, sizeof(float));
+    return static_cast<Float *>(chunk);
+  }
   static Float *FromWord(word x) {
     Chunk *chunk = Store::WordToChunk(x);
     Assert(chunk == INVALID_POINTER || chunk->GetSize() == sizeof(float));
