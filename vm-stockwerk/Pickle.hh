@@ -20,18 +20,17 @@
 class Pickle {
 public:
   typedef enum {
-    Con = AliceLabel::MIN_LABEL, StaticCon
+    Con, StaticCon
   } con_label;
 
   typedef enum {
-    OneArg = AliceLabel::MIN_LABEL, TupArgs
+    OneArg, TupArgs
   } args_label;
 
   typedef enum {
-    AppPrim = AliceLabel::MIN_LABEL, AppVar, ConTest, GetTup, IntTest, Kill,
-    PutCon, PutConst, PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag,
-    PutTup, PutVec, Raise, RealTest, Reraise, Return, StringTest, TagTest,
-    VecTest
+    AppPrim, AppVar, ConTest, GetTup, IntTest, Kill, PutCon, PutConst,
+    PutFun, PutGlobal, PutNew, PutRef, PutSel, PutTag, PutTup, PutVec,
+    Raise, RealTest, Reraise, Return, StringTest, TagTest, VecTest
   } instr_label;
 };
 
