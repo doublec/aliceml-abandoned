@@ -24,10 +24,6 @@ DEFINE1(InternalTasks_await) {
   }
 } END
 
-DEFINE1(InternalTasks_raise) {
-  RAISE(x0);
-} END
-
 static inline void Set(word &member, NativeTaskManager::function f,
 		       int nargs, u_int nslots) {
   member = (new NativeTaskManager(f, nargs, nslots))->ToClosure()->ToWord();
@@ -36,5 +32,4 @@ static inline void Set(word &member, NativeTaskManager::function f,
 
 void InternalTasks::Init() {
   Set(await, InternalTasks_await, -1, 0);
-  Set(raise, InternalTasks_raise, -1, 0);
 }

@@ -22,7 +22,6 @@
 class InternalTasks {
 public:
   static word await; // calling-convention conversion
-  static word raise; //--** Thread.raiseIn; move to alice/primitives/Thread.cc
 
   static void Init();
 };
