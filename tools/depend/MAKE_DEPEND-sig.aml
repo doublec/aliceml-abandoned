@@ -14,5 +14,5 @@ import structure OS from "../../lib/system/OS"
 
 signature MAKE_DEPEND =
 sig
-    val stodep: string list -> OS.Process.status
+    val depend : string list -> OS.Process.status
 end
