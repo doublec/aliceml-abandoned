@@ -10,3 +10,5 @@ SET CORPATH=..\..\vm-com+;C:\Windows\System;
 
 SET PATH=C:\Progra~1\smlnj\bin;%PATH%
 SET CM_PATH=C:\Progra~1\smlnj\lib
+
+doskey
