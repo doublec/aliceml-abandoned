@@ -1,0 +1,165 @@
+import structure OS from "x-alice:/lib/system/OS"
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure GTK from "x-alice:/lib/gtk/GTK"
+import structure GDK from "x-alice:/lib/gtk/GDK"
+import structure GtkBuilder from "GtkBuilder"
+
+local
+    open GtkBuilder
+
+    fun newServer () =
+	let
+	    val tail   = Promise.promise ()
+	    val stream = ref tail
+
+	    fun process s = (case s of
+				 nil   => ()
+			       | p::pr => (p (); process pr))
+	    fun send p =
+		let
+		    val tail    = !stream
+		    val newtail = Promise.promise ()
+		in
+		    (stream := newtail;
+		     Promise.fulfill(tail, p::(Promise.future newtail)))
+		end
+	in
+	    (Thread.spawn (fn () => process(Promise.future tail));
+	     send)
+	end
+
+    val serve = newServer ()
+
+    fun fileToString (file, lines) =
+	(case TextIO.inputLine file of
+	     ""   => (TextIO.closeIn file; rev lines)
+	   | line => fileToString(file, line::lines))
+
+    val keys = ["abstype", "and", "andalso", "as", "case", "datatype",
+		"do", "else", "end", "exception", "fn", "fun", "handle",
+		"if", "in", "infix", "infixr", "let", "local", "nonfix",
+		"of", "op", "open", "orelse", "raise", "rec", "then",
+		"type", "val", "with", "withtype", "while", "(",
+		")", "[", "]", "{", "}", ",", ":", ";", "...", "|", "=",
+		"=>", "->", "#", "eqtype", "functor", "include", "sharing",
+		"sig", "signature", "strcuture", "where", ":>",
+                "any", "constructor", "fct", "from", "import", "non",
+                "pack", "unpack", "when", "withfun", "withval"
+	       ]
+
+    fun searchKey(key, nil)   = false
+      | searchKey(key, k::kr) = (key = k) orelse searchKey(key, kr)
+
+    fun isKeyWord key = searchKey(key, keys) 
+
+    fun sepTokens #" "  = true
+      | sepTokens #"\t" = true
+      | sepTokens #"\n" = true
+      | sepTokens _     = false
+
+    fun insertTokens(pars as (text, tc, nc, bg, ft), nil)       =
+	GTK.textInsert(text, ft, nc, bg, "\n", 1)
+      | insertTokens(pars as (text, tc, nc, bg, ft), token::tr) =
+	let
+	    val fg = if isKeyWord token then tc else nc
+	in
+	    (GTK.textInsert(text, ft, fg, bg, token, String.size token);
+	     GTK.textInsert(text, ft, fg, bg, " ", 1);
+	     insertTokens(pars, tr))
+	end
+
+    fun insertLines(pars, nil)      = ()
+      | insertLines(pars, line::lr) =
+	(insertTokens(pars, String.tokens sepTokens line); insertLines(pars, lr))
+
+    fun fileToWindow (file) =
+	let
+	    val xdim    = 400.0
+	    val ydim    = 400.0
+	    val lines   = fileToString(TextIO.openIn file, nil)
+	    val text    = MakeWidget (Text {xdim=xdim, ydim=ydim, text=nil})
+	    val xa      = GTK.adjustmentNew(0.0, 0.0, xdim, 1.0, xdim, xdim)
+	    val ya      = GTK.adjustmentNew(0.0, 0.0, ydim, 1.0, ydim, ydim)
+	    val vs      = GTK.vscrollbarNew(ya)
+	    val entries = [TableSimple {x=0, y=0, item=Window text},
+			   TableSimple {x=1, y=0, item=Window vs}]
+
+	    val font  = GDK.fontLoad("8x13")
+	    val map   = GDK.colormapGetSystem ()
+	    val black = GDK.allocateGDKColor(0, 0, 0)
+	    val white = GDK.allocateGDKColor(65535, 65535, 65535)
+	    val kcol  = GDK.allocateGDKColor(0xf0f0, 0x2020, 0xa0a0)
+	in
+	    (GTK.textSetAdjustments(text, xa, ya);
+	     GDK.colormapAllocColor(map, black, false, true);
+	     GDK.colormapAllocColor(map, white, false, true);
+	     GDK.colormapAllocColor(map, kcol, false, true);
+	     insertLines((text, kcol, black, white, font), lines);
+	     Table {rows=1, columns=2, homogeneous=false, entries=entries})
+	end
+    
+    val curwin = ref NONE : GTK.object option ref
+
+    fun readFileName () =
+	let
+	    val top = Promise.promise () 
+
+	    val entry      = MakeWidget (Entry {max=SOME 32})
+	    val entryentry = TableSimple {x=0, y=1, item=Window entry}
+	    val labelentry = TableSimple {x=0, y=0, item=Label "Enter Filename:"}
+	    val entries    = [entryentry, labelentry]
+	    val table      = Table {rows=2, columns=1, homogeneous=false, entries=entries}
+	    val tableentry = TableSimple {x=0, y=0, item=table}
+
+	    fun okHandler () =
+		serve (fn () =>
+		       let
+			   val note   = valOf(!curwin)
+			   val window = fileToWindow(GTK.entryGetText entry)
+			   val align  = MakeWidget(Alignment {xalign=0.0, yalign=0.0, xscale=1.0,
+							      yscale=1.0, inner=window})
+			   val label  = MakeWidget(Label "")
+		       in
+			   (GTK.signalEmit(Promise.future top, "destroy");
+			    GTK.notebookRemovePage(note, 0);
+			    GTK.widgetShowAll(align);
+			    GTK.notebookAppendPage(note, align, label))
+		       end)
+
+	    fun cancelHandler () =
+		serve (fn () => GTK.signalEmit(Promise.future top, "destroy"))
+		
+	    val buttons  = [Button("Ok", [Handler("clicked", okHandler)]),
+			    Button("Cancel", [Handler("clicked", cancelHandler)])]
+	    val boxentry = TableSimple {x=0, y=1, item=HButtonBox(DefaultStyle, buttons)}
+
+	    val innerentries = [tableentry, boxentry]
+	    val innertable   = Table {rows=2, columns=1, homogeneous=false, entries=innerentries}
+
+	    val dialog = Toplevel {title="Enter Dialog", border=5, handler=nil, inner=innertable}
+	in
+	    Promise.fulfill(top, MakeWidget dialog)
+	end
+
+    val viewer = Promise.promise ()
+
+    fun openHandler ()  = readFileName ()
+    fun closeHandler () = GTK.signalEmit(Promise.future viewer, "destroy")
+
+    val submenu = [MenuItem("Open...", [MenuHandler(openHandler)]),
+		   MenuItem("Close", [MenuHandler(closeHandler)])]
+    val menu    = MenuBar([{label="File", submenu=submenu}])
+    val malign  = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=0.0, inner=menu}
+
+    val twin     = fileToWindow "TextViewer.aml"
+    val twalign  = Alignment {xalign=0.0, yalign=0.0, xscale=1.0, yscale=1.0, inner=twin}
+    val notebook = MakeWidget (Notebook(false, [{label="", note=twalign}]))
+
+    val entries  = [TableSimple {x=0, y=0, item=malign},
+		    TableSimple {x=0, y=1, item=Window notebook}]
+    val table    = Table {rows=2, columns=1, homogeneous=false, entries=entries}
+    val toplevel = Toplevel {title="TextViewer", border=2, handler=nil, inner=table}
+in
+    val _ = curwin := SOME notebook
+    val _ = Promise.fulfill(viewer, MakeWidget toplevel)
+end
