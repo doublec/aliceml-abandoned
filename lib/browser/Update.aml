@@ -103,7 +103,9 @@ struct
 	       val (anc,ancline) = valOf(MainDictionary.lookup 
 			       (Dictionaries.dict,ind)) 
 	       val old_ydim = Layout.get_ydim(anc)
-	       val (p,index) = getNoRelAnc n	
+	       val (p,index) = if !(Settings.relmode) 
+				   then (getParent(n),getIndex(n)) 
+			       else getNoRelAnc n	
 	       val va_inf = UnsafeValue.cast va : Reflect.module
 	       val new =
 		   case getDesc(n) of
@@ -226,8 +228,8 @@ struct
 	      ; let val new_depth = findHighestDepth n + i 
 		    val va = getReflectValue n
 		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
-                    ; TextIO.print("FOLD_DEPTH: rufe jetzt Update auf\n")
-		    ; update (n,va,f,g) ) 
+		    ; update (n,va,f,g)
+		    ; !Window.resize()) 
 		end 
 	      ; Settings.set_depth(old_depth) )
 	 end)
@@ -257,46 +259,49 @@ struct
 				     then 1 else 0
 			      end 
 		    val new_width = findHighestWidth new_n + i - sub 
-		    val _ = TextIO.print("FOLD_WIDTH: highestWidth bestimmt\n")
 		    val va = getReflectValue new_n
+		    val _ = TextIO.print("FOLD_WIDTH: highestWidth bestimmt\n")
 		in ( Settings.set_width(if new_width < 0 then 0 else new_width)
-		    ; TextIO.print("FOLD_WIDTH: rufe jetzt Update auf\n")
-		    ; update (new_n,va,f,g) )
+		    ; update (new_n,va,f,g)
+		    ; !Window.resize())
 		end
 	      ; Settings.set_width(old_width) )
 	 end )
 
-(*	
+(*
     (* fold *)
-    and fold (n,f,g) = 
-	let val ind = getAncIndex n 
-	    val (anc,ancline) = valOf(MainDictionary.lookup 
-					(Dictionaries.dict,ind)) 
-	    val old_ydim = Layout.get_ydim(anc) 
-	    val va = getReflectValue n
-	    val va_inf = UnsafeValue.cast va : Reflect.module
-	    val (p,index) = getNoRelAnc n
-	    val new = 
-		case getDesc n of 
+    and fold (n,f,g) =  
+	let val ind = getAncIndex n  
+	    val (anc,ancline) = valOf(MainDictionary.lookup  
+					(Dictionaries.dict,ind))  
+	    val old_ydim = Layout.get_ydim(anc)  
+	    val va = getReflectValue n  
+	    val va_inf = UnsafeValue.cast va : Reflect.module 
+	    val (p,index) = getNoRelAnc n 
+	    val new =  
+		case getDesc n of  
 		    INTERPUNCT => raise Match
-		  | VALUE(r) => f (va,#typ(r),p,index,getDepth(n))
-		  | I_VALUE(r) => g (va_inf,#typ(r),p,index,getDepth(n))
-	    val _ = updateChild(p,index,new)  
+		  | VALUE(r) => f (va,#typ(r),p,index,getDepth(n)) 
+		  | I_VALUE(r) => g (va_inf,#typ(r),p,index,getDepth(n)) 
+	    val _ = updateChild(p,index,new)   
 	    val node = if getParent(new) = Empty then new else anc
-	    val (_,y_pos) = GtkSupport.getPosition(getGroup(anc))
-	in ( Gtk.objectDestroy(getGroup(n))
-	    ; Layout.layout(node)
-	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline)))
-	    ; DrawNodes.draw(node,0,y_pos,true) 
-	    ; let val dy =  Layout.get_ydim(node) - old_ydim
-	      in ( Window.incr_act_line dy
-		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1,
-			      MainDictionary.getHighestIndexAssigned
-			      (Dictionaries.dict))
-		  ; Layout.setVisible(Layout.get_xdim(node),dy))
-	      end 
-	    ; !Window.resize() )
-	end 
+	    val (_,y_pos) = GtkSupport.getPosition(getGroup(anc)) 
+	    val _ = TextIO.print("FOLD: Werte erfolgreich berechnet!\n")
+	in ( Gtk.objectDestroy(getGroup(n)) 
+	    ; Layout.layout(node) 
+	    ; MainDictionary.update(Dictionaries.dict, (ind,(node,ancline))) 
+	    ; TextIO.print("FOLD: rufe jetzt draw auf\n")
+	    ; DrawNodes.draw(node,0,y_pos,true)  
+            ; TextIO.print("FOLD: draw geschafft :-)!\n")
+	    ; let val dy =  Layout.get_ydim(node) - old_ydim 
+	      in ( Window.incr_act_line dy 
+		  ; iterMove (Dictionaries.dict,dy,getIndex(anc) + 1, 
+			      MainDictionary.getHighestIndexAssigned 
+			      (Dictionaries.dict)) 
+		  ; Layout.setVisible(Layout.get_xdim(node),dy)) 
+	      end  
+	    ; !Window.resize() ) 
+	end  
 *)
 
     (* findHighestDepth *)
