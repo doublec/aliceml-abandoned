@@ -23,22 +23,27 @@ define
 
    class TextFile from Open.file Open.text end
 
-   ConvertLine = case {Property.get 'platform.os'} of win32 then
-		    fun {RemoveReturn S}
-		       case S of [&\r] then nil
-		       [] C|Cr then C|{RemoveReturn Cr}
-		       [] nil then nil
-		       end
-		    end
-		 in
-		    RemoveReturn
-		 else fun {$ S} S end
-		 end
+   ConvertLine ConvertAll
+   case {Property.get 'platform.os'} of win32 then
+      fun {ConvertLine S}
+	 case S of [&\r] then nil
+	 [] C|Cr then C|{ConvertLine Cr}
+	 [] nil then nil
+	 end
+      end
+      fun {ConvertAll S}
+	 case S of &\r|&\n|Rest then &\n|{ConvertAll Rest}
+	 [] C|Cr then C|{ConvertAll Cr}
+	 [] nil then nil
+	 end
+      end
+   else
+      fun {ConvertLine S} S end
+      fun {ConvertAll S} S end
+   end
 
    fun {InputAll F}
-      case {F getS($)} of false then ""
-      [] S then {ConvertLine S}#'\n'#{InputAll F}
-      end
+      {ConvertAll {F read(list: $ size: all)}}
    end
 
    TextIO =
