@@ -52,4 +52,17 @@
   </PRE>
 
 
+<?php section("explorer", "explorer") ?>
+
+  <P>
+    Explorer Sample to be placed here.
+  </P>
+
+
+<?php section("gtk", "gtk") ?>
+
+  <P>
+    gtk samples to be placed here.
+  </P>
+
 <?php footing() ?>
