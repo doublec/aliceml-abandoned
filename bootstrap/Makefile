@@ -13,7 +13,7 @@
 SRCDIR=..
 
 SML := $(shell pwd)/smla
-PLATFORM = x86-linux
+PLATFORM := $(shell ./platform.sh smlnj)
 
 OZC = ozc
 OZCFLAGS =
