@@ -41,15 +41,15 @@ struct
 
     fun terminate t = raiseIn (t, Terminate)
 
-    fun spawn f =
+    fun spawnThread f =
 	let
 	    val t = Promise.promise()
-	    val x = Future.concur(fn() => (Promise.fulfill(t, current()); f()))
+	    val x = spawn (Promise.fulfill(t, current()) ; f())
 	in
 	    (Future.await(Promise.future t), x)
 	end
 
-    fun thread f = #1(spawn f)
+    fun thread f = #1(spawnThread f)
 
     __primitive val suspend :		thread -> unit	= "Thread.suspend"
     __primitive val resume :		thread -> unit	= "Thread.resume"
