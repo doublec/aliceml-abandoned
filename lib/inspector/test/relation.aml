@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2000
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+1import structure Inspector from "x-alice:/lib/tools/Inspector"
+
+datatype foo = A of int | B of foo * foo
+
+val b = B(A 1, A 2)
+val c = B(A 1, A 1)
+val r = {a = b, b = b}
+val ls = [1,2]
+val foos = [ls, ls, ls]
+val _ = Inspector.inspect r
+val _ = Inspector.inspect ls
+val _ = Inspector.inspect c
+val _ = Inspector.inspect foos
