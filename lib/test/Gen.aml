@@ -73,6 +73,10 @@ struct
     fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
     fun vector gen n	= Vector.tabulate (n, gen)
     fun array gen n	= Array.tabulate (n, gen)
+    fun array2 gen n    = Array2.tabulate Array2.ColMajor 
+			                  (int (Int.abs n), 
+					   int (Int.abs n), 
+					   fn (a, b) => gen (a + b))
     fun refOf gen n	= ref (gen n)
     
 end

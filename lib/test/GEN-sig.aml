@@ -41,6 +41,7 @@ sig
     val alt:	    'a gen * 'b gen -> ('a, 'b) alt gen
     val vector:	    'a gen -> 'a vector gen
     val array:	    'a gen -> 'a array gen
+    val array2:     'a gen -> 'a Array2.array gen
     val refOf:	    'a gen -> 'a ref gen
 
     (* Standard generators *)
