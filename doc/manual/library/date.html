@@ -65,6 +65,10 @@
 	val scan :          (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
 	val fromString :    string -> date option
 
+	val toISO :	    date -> string
+	val scanISO :	    (char, 'a) StringCvt.reader -> (date, 'a) StringCvt.reader
+	val fromISO :	    string -> date option
+
 	val compare :       date * date -> order
     end
   </PRE>
@@ -83,6 +87,31 @@
     <DD>
       <P>A local synonym for type <TT>date</TT>.</P>
     </DD>
+    
+    <DT>
+      <TT>toISO <I>date</I></TT>
+    </DT>
+    <DD>
+      <P>Return a string representation of the date <I>date</I> conforming to the
+      ISO 8601 format.
+    </DD>
+
+    <DT>
+      <TT>fromISO <I>repr</I></TT>
+    </DT>
+    <DD>
+      <P>Convert a string representation conforming to the ISO 8601 format into a date.
+      Returns NONE if the string could not be converted.
+    </DD>
+
+    <DT>
+      <TT>scanISO <I>getc</I> <I>s</I></TT>
+    </DT>
+    <DD>
+      <P>Scan a string representation conforming to the ISO 8601 format into a date.
+      Returns NONE if the scanned representation could not be converted.
+    </DD>
+
   </DL>
 
 <?php footing() ?>
