@@ -120,7 +120,7 @@ Worker::Result NativeCodeInterpreter::Run(StackFrame *sFrame) {
   Assert(sFrame->GetWorker() == this);
   Chunk *code        = frame->GetCode();
   native_fun execute = (native_fun) code->GetBase();
-  return execute(frame);
+  return execute();
 }
 
 Worker::Result NativeCodeInterpreter::Handle(word data) {

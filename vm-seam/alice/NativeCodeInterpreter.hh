@@ -21,7 +21,7 @@
 
 #if HAVE_LIGHTNING
 
-typedef Worker::Result (*native_fun)(class NativeCodeFrame *);
+typedef Worker::Result (*native_fun)();
 
 class AliceDll NativeCodeInterpreter : public Interpreter {
 public:

@@ -2553,8 +2553,8 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
 
 char *NativeCodeJitter::CompileProlog(const char *info) {
   char *start = jit_set_ip(codeBuffer).ptr;
-  JITStore::Prolog(1);
-  JITStore::GetSubroutineArg(JIT_V2);
+  JITStore::Prolog();
+  Scheduler_GetFrame(JIT_V2);
   JIT_LOG_MESG(info); info = info;
   JIT_LOG_REG(JIT_SP);
   RestoreRegister();
