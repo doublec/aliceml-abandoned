@@ -359,7 +359,7 @@ struct
 	    CONCAT{desc = descr,
 		   kids = 
 		   #[SIMPLE{desc = INTERPUNCT,
-			    rep = "Promise{|",
+			    rep = "promise{|",
 			    color = DEFAULT},
 		     EMBEDDED(inva,inty),
 		     SIMPLE{desc = INTERPUNCT,
