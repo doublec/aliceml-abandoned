@@ -72,7 +72,7 @@ functor MkOptionParser(Switches: SWITCHES) :> OPTION_PARSER =
 	    \\t--(no-)dump-liveness-analysis-intermediate\n\
 	    \\t\tDump flat representation with liveness annotations.\n\
 	    \\t--(no-)dump-liveness-analysis-context\n\
-	    \\t\t.Dump set of defined stamps after liveness analysis.\n\
+	    \\t\tDump set of defined stamps after liveness analysis.\n\
 	    \\t--(no-)dump-liveness-analysis-result\n\
 	    \\t\tDump flat representation after liveness analysis.\n\
 	    \\t--(no-)dump-dead-code-elimination-result\n\
