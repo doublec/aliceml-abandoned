@@ -10,15 +10,15 @@
 //   $Revision$
 //
 
-#ifndef __GENERIC__THREADQUEUE_HH__
-#define __GENERIC__THREADQUEUE_HH__
+#ifndef __GENERIC__THREAD_QUEUE_HH__
+#define __GENERIC__THREAD_QUEUE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/ThreadQueue.hh"
+#pragma interface "generic/ThreadQueue.hh"
 #endif
 
 #include "adt/Queue.hh"
-#include "emulator/Thread.hh"
+#include "generic/Thread.hh"
 
 class ThreadQueue: private Queue {
 private:
