@@ -20,8 +20,8 @@
 #define CONCAT(x,y) x##y
 #define XCONCAT(x,y) CONCAT(x,y)
 
-#define VectorTabulateFrame XCONCAT(XVector,TabulateFrame)
-#define VectorTabulateWorker XCONCAT(XVector,TabulateWorker)
+#define ArrayTabulateFrame XCONCAT(XArray,TabulateFrame)
+#define ArrayTabulateWorker XCONCAT(XArray,TabulateWorker)
 
 #define DECLARE_XARRAY(array, x) DECLARE_BLOCKTYPE(XArray, array, x)
 #define DECLARE_XVECTOR(vector, x) DECLARE_BLOCKTYPE(XVector, vector, x)
