@@ -1043,8 +1043,11 @@ structure InfPrivate =
     and matchTypDef(l, _,    NONE)	= ()
       | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
       | matchTypDef(l, SOME t1, SOME t2) =
+(*DEBUG*)
+()(*
 	    if Type.equals(t1,t2) then () else
 		raise Mismatch(ManifestTyp(l, SOME t1, t2))
+*)
 
     and matchModDef(l, _,    NONE)	= ()
       | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
@@ -1279,8 +1282,11 @@ structure InfPrivate =
       | intersectTypDef(l, SOME t1, NONE)	= SOME t1
       | intersectTypDef(l, NONE,    SOME t2)	= SOME t2
       | intersectTypDef(l, SOME t1, SOME t2)	=
+(*DEBUG*)
+SOME t1(*
 	    if Type.equals(t1,t2) then SOME t1 else
 		raise Mismatch(ManifestTyp(l, SOME t1, t2))
+*)
 
     and intersectModDef(l, NONE,    NONE)	= NONE
       | intersectModDef(l, SOME p1, NONE)	= SOME p1
