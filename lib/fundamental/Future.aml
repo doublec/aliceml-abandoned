@@ -38,4 +38,7 @@ struct
 
     __primitive val isFuture :	'a -> bool		= "Future.isFuture"
     __primitive val isFailed :	'a -> bool		= "Future.isFailed"
+
+    fun innerExn(Future e) = innerExn e
+      | innerExn e         = e
 end
