@@ -81,7 +81,8 @@ BACKENDCOMMONSOURCES = \
 	SIMPLIFY_MATCH.sig SimplifyMatch.sml SIMPLIFY_REC.sig SimplifyRec.sml \
 	FLATTENING_PHASE.sig FlatteningPhase.sml PRIM_OPS.sig \
 	PrimOps.sml VALUE_PROPAGATION_PHASE.sig ValuePropagationPhase.sml \
-	LIVENESS_ANALYSIS_PHASE.sig MakeLivenessAnalysisPhase.sml CODE.sig \
+	LIVENESS_ANALYSIS_PHASE.sig MakeLivenessAnalysisPhase.sml \
+	DEAD_CODE_ELIMINATION_PHASE.sig DeadCodeEliminationPhase.sml CODE.sig \
 	ENGINE.sig MakeEngine.sml MakeBackendCommon.sml
 BACKENDCOMMONFILES = $(BACKENDCOMMONSOURCES:%=backend-common/%)
 
