@@ -157,7 +157,7 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 				  then s' else s' ^ "\n") ^ s
 			 end
 	    in
-		processBasic process (Source.urlDesc url, s)
+		processBasic process (Source.urlDesc url, s')
 	    end handle (Url.NotLocal | Option) =>
 		    error ("could not locate source file " ^ filename)
 
