@@ -1,7 +1,12 @@
 (* ML-Yacc Parser Generator (c) 1989 Andrew W. Appel, David R. Tarditi 
  *
  * $Log$
- * Revision 1.1  1999-10-04 09:44:08  kornstae
+ * Revision 1.2  2000-04-19 11:34:06  kornstae
+ * Removed `open List' because the front-end seems to goof on it (Andreas?) -
+ *    it produces a SelExp with an empty label.
+ * Was not required anyway.
+ *
+ * Revision 1.1  1999/10/04 09:44:08  kornstae
  * Moved ML-YACC files here from distribution
  *    to give them a unique location for bootstrapping.
  *
@@ -15,7 +20,7 @@
 
 structure LrTable : LR_TABLE = 
     struct
-	open Array List
+	open Array
 	infix 9 sub
 	datatype ('a,'b) pairlist = EMPTY
 				  | PAIR of 'a * 'b * ('a,'b) pairlist
