@@ -79,10 +79,11 @@ alicelink -v --include ./ ./Foo -o LinkedFoo.ozf</PRE>
     A &lt;<I>rule</I>&gt; is of the form &lt;<I>from</I>&gt;<TT>=</TT>&lt;<I
     >to</I>&gt;, where &lt;<I>from</I>&gt; and </TT>&lt;<I>to</I>&gt; are
     <A href="library/resolver-handler.html#pattern">patterns</A> in which
-    <TT>?{x}</TT> denotes a variable.  If the environment variable
-    <TT>ALICE_TRACE_REWRITE</TT> is set (its value does not matter),
-    trace messages about rewriting attempts are output to standard
-    error.</P></DD>
+    <TT>?{x}</TT> denotes a variable.  It is an error if multiple import
+    URLs from the resulting component are rewritten to the same URL.
+    If the environment variable <TT>ALICE_TRACE_REWRITE</TT> is set
+    (its value does not matter), trace messages about rewriting attempts
+    are output to standard error.</P></DD>
 </DL>
 
 
