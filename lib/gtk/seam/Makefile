@@ -57,8 +57,7 @@ SML = sml
 ALICEC = alicec 
 ALICEC_OPTS = --dump-phases # --no-warn-conventions
 ALICETOOL = alicetool
-ALICEDEP = gawk -f alicedepend.awk
-#ALICEDEP = alicedep
+ALICEDEP = alicedep
 INSTALL = ./myinstall -v -m 644
 
 #################################################

@@ -37,7 +37,7 @@ word push_front(word list, word value) {
 inline word PointerToObjectRegister(void *p, int type) {
   if (!p)
     return OBJECT_TO_WORD(p);
-  WeakMap *wd = WeakMap::FromWord(weakDict);
+  WeakMap *wd = WeakMap::FromWordDirect(weakDict);
   word w = Store::UnmanagedPointerToWord(p);
   if (wd->IsMember(w))
     return wd->Get(w);
@@ -460,11 +460,11 @@ DEFINE0(NativeCore_getEventStream) {
 DEFINE3(NativeCore_signalMapAdd) {
   // x0 = connid to add, x1 = callback-fn, x2 = object
   //g_message("adding signal #%d", Store::WordToInt(x0));
-  Map::FromWord(signalMap)->Put(x0,x1);
+  Map::FromWordDirect(signalMap)->Put(x0,x1);
 
   DECLARE_OBJECT(p,x2);
   word key = Store::UnmanagedPointerToWord(p);
-  Map* sm2 = Map::FromWord(signalMap2);
+  Map* sm2 = Map::FromWordDirect(signalMap2);
   word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
   sm2->Put(key, push_front(ids,x0));
   RETURN_UNIT;
@@ -473,20 +473,20 @@ DEFINE3(NativeCore_signalMapAdd) {
 DEFINE1(NativeCore_signalMapRemove) {
   // x0 = connid to remove 
   //g_message("removing signal #%d", Store::WordToInt(x0));
-  Map::FromWord(signalMap)->Remove(x0);
+  Map::FromWordDirect(signalMap)->Remove(x0);
   RETURN_UNIT;
 } END
 
 DEFINE2(NativeCore_signalMapCondGet) {
   // x0 = connid to get, x1 = alternative
-  RETURN(Map::FromWord(signalMap)->CondGet(x0,x1));
+  RETURN(Map::FromWordDirect(signalMap)->CondGet(x0,x1));
 } END
 
 DEFINE1(NativeCore_signalMapGetConnIds) {
   // x0 = object
   DECLARE_OBJECT(p,x0);
   word key = Store::UnmanagedPointerToWord(p);
-  Map* sm2 = Map::FromWord(signalMap2);
+  Map* sm2 = Map::FromWordDirect(signalMap2);
   word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
   sm2->Remove(key);
   RETURN(ids);
@@ -500,8 +500,8 @@ public:
   void Finalize(word value) {
     //g_message("finalizing %p (%d)", p, value);
     Tuple *t = Tuple::FromWord(value);
-    void *p = Store::WordToUnmanagedPointer(t->Sel(0));
-    int type = Store::WordToInt(t->Sel(1));
+    //    void *p = Store::WordToUnmanagedPointer(t->Sel(0));
+    //    int type = Store::WordToInt(t->Sel(1));
     __unrefObject(Store::WordToUnmanagedPointer(t->Sel(0)),
                   Store::WordToInt(t->Sel(1)));
     //g_message("finalized %p (type %d)", p, type);
@@ -510,7 +510,7 @@ public:
 
 DEFINE1(NativeCore_weakMapAdd) {
   // x0 = (pointer, type)
-  WeakMap::FromWord(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
+  WeakMap::FromWordDirect(weakDict)->Put(Tuple::FromWord(x0)->Sel(0),x0);  
   //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("added Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN_UNIT;
@@ -521,12 +521,14 @@ DEFINE1(NativeCore_weakMapIsMember) {
   //DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
   //g_message("is member? Tuple %d = (Pointer: %p, Type: %d)", x0, obj, type);
   RETURN(BOOL_TO_WORD
-	 (WeakMap::FromWord(weakDict)->IsMember(Tuple::FromWord(x0)->Sel(0))));
+	 (WeakMap::FromWordDirect(weakDict)->IsMember(
+					   Tuple::FromWord(x0)->Sel(0))));
 } END
 
 DEFINE2(NativeCore_weakMapCondGet) {
   // x0 = (pointer, type), x1 = alternative  
-  RETURN(WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1));
+  RETURN(WeakMap::FromWordDirect(weakDict)->CondGet(
+					   Tuple::FromWord(x0)->Sel(0),x1));
 } END
 
 ///////////////////////////////////////////////////////////////////////
@@ -544,11 +546,17 @@ DEFINE1(NativeCore_hasSignals) {
 } END
 
 //////////////////////////////////////////////////////////////////////
-// MAIN LOOP FUNCTIONS
+// INIT AND MAIN LOOP FUNCTIONS
 
 DEFINE0(NativeCore_isLoaded) {
   RETURN(BOOL_TO_WORD(signalMap != 0));
 } END
+
+
+void __die(char *s) {
+  g_warning(s);
+  exit(0);
+}
 
 DEFINE0(NativeCore_init) {
   if (!signalMap) {
@@ -563,7 +571,30 @@ DEFINE0(NativeCore_init) {
     weakDict = WeakMap::New(256, new MyFinalization())->ToWord();
     RootSet::Add(weakDict);
   }
+
+  /*
+   * On Windows, Gdk blocks on stdin during init if input redirection is used,
+   * as for example within emacs.
+   * The solution is to reconnect stdin to a pipe and undo this change after
+   * gtk init. gdk still obtains its input.
+   */
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+  HANDLE stdInHandle, pipeInHandle, pipeOutHandle;
+  SECURITY_ATTRIBUTES saAttr;
+  saAttr.nLength              = sizeof(SECURITY_ATTRIBUTES);
+  saAttr.lpSecurityDescriptor = NULL;
+  saAttr.bInheritHandle       = TRUE;
+  stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
+  if (!CreatePipe(&pipeInHandle, &pipeOutHandle, &saAttr, 0))
+    __die("error during init: cannot create pipe");
+  if (!SetStdHandle(STD_INPUT_HANDLE, pipeInHandle)) {
+    __die("error during init: cannot redirect stdin");
+#endif
   gtk_init(NULL,NULL);
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+  if (!SetStdHandle(STD_INPUT_HANDLE, stdInHandle))
+    __die("error during init: cannot reverse stdin redirecting");
+#endif
   RETURN_UNIT;
 } END
 
