@@ -1,4 +1,11 @@
 (setgc 1);
+(define iter
+  (lambda (n p)
+    (if (= n 0)
+	()
+	(begin
+	  (p)
+	  (tail iter (- n 1) p)))));
 (define fib
   (lambda (n)
     (if (= n 0)
