@@ -508,7 +508,6 @@ structure WideString : STRING = WideString
 end (* local *)
 
 
-
 (*****************************************************************************
  * Substring
  *****************************************************************************)
@@ -530,6 +529,41 @@ structure Substring =
     fun hash ss		= String.hash(string ss)
     fun equal(ss, st)	= string ss = string st
   end
+
+
+(*****************************************************************************
+ * UniqueString
+ *****************************************************************************)
+
+signature UNIQUE_STRING =
+sig
+    structure String : STRING
+
+    eqtype unique_string
+    type t = unique_string
+
+    val unique :	String.string -> unique_string
+    val string :	unique_string -> String.string
+
+    val equal :		unique_string * unique_string -> bool
+    val compare :	unique_string * unique_string -> order
+    val hash :		unique_string -> int
+end
+
+structure UniqueString :> UNIQUE_STRING where String = String =
+struct
+    structure String	= String
+
+    type unique_string	= string
+    type t		= unique_string
+
+    fun unique s	= s
+    fun string s	= s
+
+    val equal		= String.equal
+    val compare		= String.compare
+    val hash		= String.hash
+end
 
 
 (*****************************************************************************
