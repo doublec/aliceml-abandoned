@@ -12,7 +12,7 @@
 
 structure Builtins :> BUILTINS =
     struct
-	structure Map = MakeHashImpMap(StringHashKey)
+	structure Map = MkHashImpMap(StringHashKey)
 
 	val builtinTable =
 	    let

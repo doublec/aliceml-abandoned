@@ -1,7 +1,7 @@
 Group
 
-    functor MakeComPlusTarget
-    functor MakeBackendComPlus
+    functor MkComPlusTarget
+    functor MkBackendComPlus
 
 is
 
@@ -11,16 +11,16 @@ is
     ../common/id-stamp.cm
     ../backend-common/flat-grammar.cm
 
-    SKELETON.sig
-    Skeleton.sml
-    IL.sig
-    IL.sml
-    System.sml
-    Alice.sml
-    BUILTINS.sig
-    Builtins.sml
-    CODE_STORE.sig
-    CodeStore.sml
-    CODE_GEN_PHASE.sig
-    CodeGenPhase.sml
-    MakeBackendComPlus.sml
+    SKELETON-sig.aml
+    Skeleton.aml
+    IL-sig.aml
+    IL.aml
+    System.aml
+    Alice.aml
+    BUILTINS-sig.aml
+    Builtins.aml
+    CODE_STORE-sig.aml
+    CodeStore.aml
+    CODE_GEN_PHASE-sig.aml
+    CodeGenPhase.aml
+    MkBackendComPlus.aml

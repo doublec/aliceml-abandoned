@@ -98,9 +98,9 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    end
 
 	structure IntMap =
-	     MakeHashImpMap(type t = int
-			    val equals = op=
-			    fun hash i = i)
+	     MkHashImpMap(type t = int
+			  val equals = op=
+			  fun hash i = i)
 
 	fun parseTests (_, _, ~1, min, max) = (min, max)
 	  | parseTests (tests, map, i, min, max) =

@@ -185,9 +185,9 @@ structure IL :> IL =
 	(* Compute Stack Size, Peephole Optimizer, Dead Code Elimination *)
 
 	structure Map =
-	    MakeHashImpMap(type t = label
-			   val equals = op=
-			   fun hash label = label)
+	    MkHashImpMap(type t = label
+			 val equals = op=
+			 fun hash label = label)
 
 	val size = ref 0
 	val maxSize = ref 0

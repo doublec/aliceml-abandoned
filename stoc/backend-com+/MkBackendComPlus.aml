@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
+functor MkComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
     TARGET =
     struct
 	structure C = EmptyContext
@@ -36,10 +36,10 @@ functor MakeComPlusTarget(Sig: SIGNATURE where type t = FlatGrammar.sign):
 	    end
 
 	fun apply () _ =
-	    raise Crash.Crash "MakeBackendComPlus.apply: not implemented"
+	    raise Crash.Crash "MkBackendComPlus.apply: not implemented"
     end
 
-functor MakeBackendComPlus
+functor MkBackendComPlus
     (ComPlusTarget: TARGET where type t = IL.t): PHASE =
     struct
 	structure C = EmptyContext
