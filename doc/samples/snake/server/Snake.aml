@@ -1,0 +1,82 @@
+(* Alice Snake 2.0 - Snake abstract data type (impl)
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+import signature SNAKE      from "SNAKE-sig"
+import structure Protocol   from "../common/Protocol"
+import structure Pos        from "../common/Pos"
+
+
+structure Snake :> SNAKE =
+struct
+    structure P = Protocol
+
+    
+    datatype snake = SN of {
+        direction : Protocol.direction ref,
+        belly :     int ref,
+        body :      Pos.pos list ref
+    }
+
+    type t = snake
+    
+    
+    fun snake (pos, d) = SN { 
+            direction   = ref d, 
+            belly       = ref 0, 
+            body        = ref [pos]
+        }
+
+    fun belly (SN { belly = ref b, ... })   = b
+
+    fun eat (SN { belly, ... }, food)       = belly := !belly + food
+
+    fun direction (SN { direction, ... })   = !direction
+
+    fun move (SN {  direction = direction as ref old_dir, 
+                    belly,
+                    body = body_ref as ref body
+                 }, new_dir) =
+        let 
+            (* determine new head position:
+               if requested turn is impossible (ie.e new-dir 180° old-dir)
+               then do not turn at all. 
+             *)
+            val head    = List.hd body
+
+            val (new_head, dir) = 
+               case (old_dir, new_dir) of
+                    ((P.UP, P.DOWN) |    
+                     (non P.DOWN, P.UP)) =>
+                    (Pos.above head, P.UP)
+                |   ((P.DOWN, P.UP) |
+                     (non P.UP, P.DOWN)) =>
+                    (Pos.below head, P.DOWN)
+                |   ((P.LEFT, P.RIGHT) |
+                     (non P.RIGHT, P.LEFT)) =>
+                    (Pos.left head, P.LEFT)
+                |   ((P.RIGHT, P.LEFT) |
+                     (non P.LEFT, P.RIGHT)) =>
+                    (Pos.right head, P.RIGHT)
+        in
+            body_ref := (if !belly > 0 then 
+                            (belly := !belly - 1; new_head :: body)
+                        else new_head :: (List.rev (List.tl (List.rev body))));
+            direction := dir
+        end
+
+    fun head (SN { body = ref b, ... }) = List.hd b
+
+    fun body (SN { body = ref b, ... }) = List.tl b 
+
+    fun appBody f (SN { body = ref b, ... }) = List.app f (List.tl b)
+
+    fun length (SN { body = ref b, ... }) = List.length b
+
+end

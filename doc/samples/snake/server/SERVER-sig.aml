@@ -9,12 +9,13 @@
 *
 *)
 import structure Remote   from "x-alice:/lib/distribution/Remote"
-
+import structure Protocol from "../common/Protocol"
 
 signature SERVER =
 sig
 
-    val startServer: client_interface -> Remote.ticket * server_interface
+    val startServer: Protocol.client_interface -> 
+                        Remote.ticket * Protocol.server_interface
     (** POST: isSome (#startGame server_interface) *)
 
 end

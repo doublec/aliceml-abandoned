@@ -13,17 +13,24 @@
 
 signature CONFIG =
 sig
-
     type config = {
-	 timeout : time,   (* after how many seconds a game has to end *)
-	 dimensions : int * int, 
-		   (* the dimensions of the arenas created in the tounament *)
-	 goodie : int, (* the average amount of appearing goodies *)
-	 lives : int, (* the amount of lives a client has  in the tournament *)
-	 maxPlayer : int, 
-	      (* how many clients can actively participate in the tournament *)
-	 goodieFrequency : int (* how often goodies appear *)
-}
+        timeout :      Time.time,   
+        (* after how many seconds a game has to end *)
+	 
+        dimensions :   int * int, 
+	(* the dimensions of the arenas created in the tounament *)
+	 
+        goodie :       int, 
+        (* the average amount of appearing goodies *)
+	 
+        lives :        int, 
+        (* the amount of lives a client has  in the tournament *)
+	 
+        maxPlayer :    int, 
+	(* how many clients can actively participate in the tournament *)
+	 
+        goodieFrequency : int (* how often goodies appear *)
+    }
 
     val defaultSingle : config
     (* the default configuration with
@@ -35,11 +42,10 @@ sig
        goodieFrequency = F
     *)
 
-    val defaultMulti : config
+    val defaultMulti :  config
 
-    val save : config -> unit
+    val save :          config -> unit
 
     val load : unit -> config
     (** loads config. if no one exists defaultMulit will be loaded *)
-
 end

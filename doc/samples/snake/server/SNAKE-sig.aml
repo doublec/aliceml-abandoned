@@ -8,6 +8,8 @@
  * 
  *
  *)
+import structure Pos        from "../common/Pos"
+import structure Protocol   from "../common/Protocol"
 
 signature SNAKE =
 sig
