@@ -23,6 +23,7 @@
 #include "store/HeaderOp.hh"
 #include "store/PointerOp.hh"
 #include "store/Memory.hh"
+#include "store/StatusWord.hh"
 
 class Set;
 
@@ -33,7 +34,9 @@ struct timeval;
 class JITStore;
 class Profiler;
 
-class Store {
+#define STORE_NEED_GC_STATUS 0
+
+class Store : public StatusWord {
 protected:
   friend class JITStore;
   friend class Profiler;
@@ -48,7 +51,6 @@ protected:
   static u_int dstGen;
   static Set *intgenSet;
   static Set *wkDictSet;
-  static u_int needGC;
   static u_int nbBlkTables;
 #if defined(STORE_PROFILE)
   static struct timeval *sum_t;
@@ -123,10 +125,12 @@ public:
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);
   static void RegisterWeakDict(WeakDictionary *v);
-  static int NeedGC() {
-    return ((forceGC || needGC) && allowGC);
+  static u_int GCStatus() {
+    return (1 << STORE_NEED_GC_STATUS);
   }
-
+  static u_int NeedGC() {
+    return StatusWord::GetStatus(GCStatus());
+  }
   // DataLabel Function
   static BlockLabel MakeLabel(u_int l) {
     AssertStore(l <= MAX_HELPER_LABEL);
