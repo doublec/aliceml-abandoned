@@ -41,8 +41,8 @@ private:
   static const u_int SIZE             = 7;
 
   void SetState(state s) {
-    InitArg(STATE_POS, s);
-    InitArg(FUTURE_POS, 0);
+    ReplaceArg(STATE_POS, s);
+    ReplaceArg(FUTURE_POS, 0);
   }
   void Suspend() {
     ReplaceArg(IS_SUSPENDED_POS, true);
