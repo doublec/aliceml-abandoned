@@ -96,6 +96,12 @@ define
       {TrOption ConArgs fun {$ Args} {TrArgs Args TrX} end}
    end
 
+   fun {TrProd Prod}
+      case Prod of 'Tuple'(N) then tuple(N)
+      [] 'Product'(Labels) then product({Map Labels TrLabel})
+      end
+   end
+
    proc {TrStm Stm Hd Tl ShareDict}
       case Stm of 'ValDec'(Info IdDef Exp) then
 	 Hd = valDec({TrInfo Info} {TrIdDef IdDef} {TrExp Exp ShareDict})|Tl
@@ -198,8 +204,8 @@ define
       [] 'ConAppExp'(Info Con Args) then
 	 conAppExp({TrInfo Info} {TrCon Con} {TrArgs Args TrId})
       [] 'RefAppExp'(Info Id) then refAppExp({TrInfo Info} {TrId Id})
-      [] 'SelAppExp'(Info Label N Id) then
-	 selAppExp({TrInfo Info} {TrLabel Label} N {TrId Id})
+      [] 'SelAppExp'(Info Prod Label N Id) then
+	 selAppExp({TrInfo Info} {TrProd Prod} {TrLabel Label} N {TrId Id})
       [] 'FunAppExp'(Info Id Stamp Args) then
 	 funAppExp({TrInfo Info} {TrId Id} Stamp {TrArgs Args TrId})
       end
