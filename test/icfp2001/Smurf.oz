@@ -44,14 +44,15 @@ define
       %% Root is vertex with number 0
       Root = root(daughters: {FS.var.upperBound 1#NumberOfVertices}
 		  scope: {FS.var.upperBound 1#NumberOfDataItems})
-      DataItems = for I in 1..NumberOfDataItems collect: Collect do
-		     {Collect
+      DataItems = {List.mapInd Meaning
+		   fun {$ I Text#_#_}
 		      dataItem(mother: {FD.int 0#NumberOfVertices}
 			       daughters: FS.value.empty
 			       down: FS.value.empty
 			       eqdown: {FS.value.singl I}
-			       scope: {FS.value.singl I})}
-		  end
+			       scope: {FS.value.singl I}
+			       text: Text)
+		   end}
       Elements = for I in 1..NumberOfElements collect: Collect do
 		    {Collect
 		     element(mother: {FD.int 0#NumberOfVertices}
@@ -131,12 +132,12 @@ define
 
    SampleProperty = '#'(b: false em: false i: false s: false tt: false
 			u: 0 size: ~1 color: 'UNKNOWN')
-   SampleMeaning = [[{ByteString.make 'a'}]#false#SampleProperty
+   SampleMeaning = [[{ByteString.make 'c'}]#false#SampleProperty
 		    [{ByteString.make 'b'}]#false#SampleProperty
-		    [{ByteString.make 'c'}]#false#SampleProperty]
+		    [{ByteString.make 'a'}]#false#SampleProperty]
 
    {Explorer.one proc {$ V}
-		    V = {Constrain SampleMeaning 5}
+		    V = {Constrain {Reverse SampleMeaning} 5}
 		    {FS.distribute naive
 		     for I in 0..{Width V} - 1 collect: Collect do
 			{Collect V.I.daughters}
