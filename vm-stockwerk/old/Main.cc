@@ -20,9 +20,9 @@ int main(int argc, char *argv[]) {
   u_int memLimits[STORE_GENERATION_NUM];
 
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
-    memLimits[i] = (i + 1);
+    memLimits[i] = i + 1;
   }
-  Store::InitStore(memLimits);
+  Store::InitStore(memLimits, 75, 20);
 
   RootSet::Init();
   Hole::Init();
