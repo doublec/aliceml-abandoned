@@ -380,7 +380,7 @@ structure ToJasmin =
 		    (if LabelMerge.isReachable lab''
 			 then Lab (lab'', true)
 		     else i,
-			 rest)
+		    rest)
 		  | deadCode (i as Jump _, _::rest) =
 			 deadCode (i, rest)
 		  | deadCode (Non, Label lab'::rest) =
@@ -542,8 +542,7 @@ structure ToJasmin =
 			if !VERBOSE >= 3 then print "done.\n" else ();
 			JVMreg.assignAll parms;
 			if !OPTIMIZE >= 2 then
-			    (LabelMerge.new();
-			     deadCode (Non, d'))
+			    deadCode (Non, d')
 			else d'
 		    end
 		else flattened
@@ -633,8 +632,6 @@ structure ToJasmin =
 	  | stackNeedInstruction (Invokespecial (_,_,(arglist,_)))          = ~1-(siglength arglist)
 	  | stackNeedInstruction (Invokestatic  (_,_,(arglist,[Voidsig])))    = ~(siglength arglist)
 	  | stackNeedInstruction (Invokestatic  (_,_,(arglist,_)))          = 1-(siglength arglist)
-	    (* Special treatment for Exceptionhandling: *)
-	  | stackNeedInstruction (Invokevirtual (CExWrap,"getValue",([],[Classsig CVal]))) = 1
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,[Voidsig])))    = ~1-(siglength arglist)
 	  | stackNeedInstruction (Invokevirtual (_,_,(arglist,_)))          = ~(siglength arglist)
 	  | stackNeedInstruction Ireturn = ~1
@@ -660,6 +657,9 @@ structure ToJasmin =
 	    let
 		fun catchToJasmin (Catch(cn,from,to,use)) =
 		    (LabelMerge.checkSizeAt (use, 1);
+		     LabelMerge.setReachable from;
+		     LabelMerge.setReachable to;
+		     LabelMerge.setReachable use;
 		     TextIO.output(out,".catch "^cn^" from "^(LabelMerge.condJump from)^
 				   " to "^(LabelMerge.condJump to)^" using "^
 				   (LabelMerge.condJump use)^"\n"))
@@ -673,9 +673,11 @@ structure ToJasmin =
 		let
 		    val i = if s then JVMreg.get j-1 else JVMreg.get j
 		in
-		    if i<4 then
-			JVMreg.store(i,"astore_")
-		    else JVMreg.store(i,"astore ")
+		    if i<0 then "pop"
+		    else
+			if i<4 then
+			    JVMreg.store(i,"astore_")
+			else JVMreg.store(i,"astore ")
 		end
 	      | instructionToJasmin (Aastore,_)  = "aastore"
 	      | instructionToJasmin (Aaload,_) = "aaload"
@@ -895,6 +897,7 @@ structure ToJasmin =
 
 			val parmscount = siglength parms
 		    in
+			LabelMerge.new();
 			JVMreg.new perslocs;
 			TextIO.output(io,".method "^
 				      (mAccessToString access)^
