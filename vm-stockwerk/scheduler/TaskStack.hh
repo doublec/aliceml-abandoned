@@ -35,6 +35,9 @@ public:
   static TaskStack *FromWord(word x) {
     return static_cast<TaskStack *>(Stack::FromWord(x));
   }
+  static TaskStack *FromWordDirect(word x) {
+    return static_cast<TaskStack *>(Stack::FromWordDirect(x));
+  }
 
   // Handling stack frames:
   void PushFrame(u_int size) {

@@ -37,6 +37,11 @@ public:
     Assert(b == INVALID_POINTER || b->GetLabel() == CLOSURE_LABEL);
     return static_cast<Closure *>(b);
   }
+  static Closure *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == CLOSURE_LABEL);
+    return static_cast<Closure *>(b);
+  }
 
   ConcreteCode *GetConcreteCode() {
     return ConcreteCode::FromWordDirect(GetArg(CONCRETE_CODE_POS));

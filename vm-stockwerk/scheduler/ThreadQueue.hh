@@ -34,12 +34,15 @@ public:
   static ThreadQueue *FromWord(word x) {
     return static_cast<ThreadQueue *>(Queue::FromWord(x));
   }
+  static ThreadQueue *FromWordDirect(word x) {
+    return static_cast<ThreadQueue *>(Queue::FromWordDirect(x));
+  }
 
   Thread *Dequeue() {
     if (IsEmpty())
       return INVALID_POINTER;
     else
-      return Thread::FromWord(Queue::Dequeue());
+      return Thread::FromWordDirect(Queue::Dequeue());
   }
   void Enqueue(Thread *thread) {
     Queue::Enqueue(thread->ToWord());

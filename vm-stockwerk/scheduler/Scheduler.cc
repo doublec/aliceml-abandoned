@@ -110,18 +110,18 @@ void Scheduler::Run() {
 		word primitive = GlobalPrimitives::Internal_bind;
 		taskStack->PushFrame(1);
 		taskStack->PutWord(0, transient->ToWord());
-		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushCall(Closure::FromWordDirect(primitive));
 		// Push the exception handler and the mark:
 		primitive = GlobalPrimitives::Internal_byneedHandler;
-		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushCall(Closure::FromWordDirect(primitive));
 		taskStack->PushFrame(1);
 		taskStack->PutUnmanagedPointer(0, NULL);
 		// Push a task that pops the handler after the application:
 		primitive = GlobalPrimitives::Internal_popHandler;
-		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushCall(Closure::FromWordDirect(primitive));
 		// Push a task that applies the closure then run it:
 		primitive = GlobalPrimitives::Internal_applyUnit;
-		taskStack->PushCall(Closure::FromWord(primitive));
+		taskStack->PushCall(Closure::FromWordDirect(primitive));
 		taskStack->PushFrame(1);
 		taskStack->PutWord(0, closure);
 		nargs = 1;
@@ -144,7 +144,8 @@ void Scheduler::Run() {
       //--** add Primitive::table
       //--** add threads waiting for I/O as well as properties
       threadQueue->PurgeAll();
-      threadQueue = ThreadQueue::FromWord(Store::DoGC(threadQueue->ToWord()));
+      threadQueue =
+	ThreadQueue::FromWordDirect(Store::DoGC(threadQueue->ToWord()));
     }
   }
   //--* select(...)

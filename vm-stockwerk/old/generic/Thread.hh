@@ -50,12 +50,17 @@ public:
     Assert(b == INVALID_POINTER || b->GetLabel() == THREAD_LABEL);
     return static_cast<Thread *>(b);
   }
+  static Thread *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == THREAD_LABEL);
+    return static_cast<Thread *>(b);
+  }
 
   priority GetPriority() {
     return static_cast<priority>(Store::DirectWordToInt(GetArg(PRIORITY_POS)));
   }
   TaskStack *GetTaskStack() {
-    return TaskStack::FromWord(GetArg(TASK_STACK_POS));
+    return TaskStack::FromWordDirect(GetArg(TASK_STACK_POS));
   }
   void SetState(state s) {
     ReplaceArg(STATE_POS, s);
