@@ -27,10 +27,12 @@ fun deliver_food seek_food =
     seek_food
 
 val ant =
-    label "seek" ++
-    seek_food (goto "deliver") ++
-    label "deliver" ++
-    deliver_food (goto "seek")
+    proc "seek" (
+	seek_food (goto "deliver")
+    ) ++
+    proc "deliver" (
+	deliver_food (goto "seek")
+    )
 
 val _ = Instructions.output ignore (TextIO.stdOut, compile ant)
 val _ = OS.Process.exit OS.Process.success
