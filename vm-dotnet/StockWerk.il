@@ -77,36 +77,35 @@
     .field static public initonly class StockWerk.StockWert Array$sub
     .field static public initonly class StockWerk.StockWert Array$update
     .field static public initonly class StockWerk.StockWert Char$chr
-    .field static public initonly class StockWerk.StockWert Char$isDigit //--**
-    .field static public initonly class StockWerk.StockWert Char$isHexDigit //--**
-    .field static public initonly class StockWerk.StockWert Char$isSpace //--**
+    .field static public initonly class StockWerk.StockWert Char$isDigit
+    .field static public initonly class StockWerk.StockWert Char$isHexDigit
+    .field static public initonly class StockWerk.StockWert Char$isSpace
     .field static public initonly class StockWerk.StockWert Char$ord
     .field static public initonly class StockWerk.StockWert Char$toCString //--**
     .field static public initonly class StockWerk.StockWert General$assign
     .field static public initonly class StockWerk.StockWert General$exchange
     .field static public initonly class StockWerk.StockWert Int$compare //--**
-    .field static public initonly class StockWerk.StockWert Int$div //--**
-    .field static public initonly class StockWerk.StockWert Int$ge //--**
-    .field static public initonly class StockWerk.StockWert Int$gt //--**
-    .field static public initonly class StockWerk.StockWert Int$le //--**
+    .field static public initonly class StockWerk.StockWert Int$div
+    .field static public initonly class StockWerk.StockWert Int$ge
+    .field static public initonly class StockWerk.StockWert Int$gt
+    .field static public initonly class StockWerk.StockWert Int$le
     .field static public initonly class StockWerk.StockWert Int$less
     .field static public initonly class StockWerk.StockWert Int$minus
-    .field static public initonly class StockWerk.StockWert Int$mod //--**
+    .field static public initonly class StockWerk.StockWert Int$mod
     .field static public initonly class StockWerk.StockWert Int$plus
     .field static public initonly class StockWerk.StockWert Int$times
     .field static public initonly class StockWerk.StockWert Int$toString
-    .field static public initonly class StockWerk.StockWert Int$uminus //--**
+    .field static public initonly class StockWerk.StockWert Int$uminus
     .field static public initonly class StockWerk.StockWert Pickle$load
     .field static public initonly class StockWerk.StockWert Pickle$save
     .field static public initonly class StockWerk.StockWert String$compare //--**
     .field static public initonly class StockWerk.StockWert String$conc
     .field static public initonly class StockWerk.StockWert String$explode //--**
-    .field static public initonly class StockWerk.StockWert String$size //--**
+    .field static public initonly class StockWerk.StockWert String$size
     .field static public initonly class StockWerk.StockWert String$str
-    .field static public initonly class StockWerk.StockWert String$sub //--**
-    .field static public initonly class StockWerk.StockWert String$substring //--**
+    .field static public initonly class StockWerk.StockWert String$sub
+    .field static public initonly class StockWerk.StockWert String$substring
     .field static public initonly class StockWerk.StockWert String$toCString //--**
-    //--** these should come from a custom component:
     .field static public initonly class StockWerk.StockWert TextIO$closeIn
     .field static public initonly class StockWerk.StockWert TextIO$closeOut
     .field static public initonly class StockWerk.StockWert TextIO$inputAll
@@ -239,6 +238,12 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::Array$sub
       newobj instance void StockWerk.Builtins.Array$update::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Array$update
+      newobj instance void StockWerk.Builtins.Char$isDigit::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isDigit
+      newobj instance void StockWerk.Builtins.Char$isHexDigit::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isHexDigit
+      newobj instance void StockWerk.Builtins.Char$isSpace::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Char$isSpace
       newobj instance void StockWerk.Builtins.Char$chr::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Char$chr
       newobj instance void StockWerk.Builtins.Char$ord::.ctor()
@@ -247,24 +252,42 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$assign
       newobj instance void StockWerk.Builtins.General$exchange::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::General$exchange
+      newobj instance void StockWerk.Builtins.Int$div::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$div
+      newobj instance void StockWerk.Builtins.Int$ge::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$ge
+      newobj instance void StockWerk.Builtins.Int$gt::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$gt
+      newobj instance void StockWerk.Builtins.Int$le::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$le
       newobj instance void StockWerk.Builtins.Int$less::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$less
       newobj instance void StockWerk.Builtins.Int$minus::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$minus
+      newobj instance void StockWerk.Builtins.Int$mod::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$mod
       newobj instance void StockWerk.Builtins.Int$plus::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$plus
       newobj instance void StockWerk.Builtins.Int$times::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$times
       newobj instance void StockWerk.Builtins.Int$toString::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Int$toString
+      newobj instance void StockWerk.Builtins.Int$uminus::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::Int$uminus
       newobj instance void StockWerk.Builtins.Pickle$load::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$load
       newobj instance void StockWerk.Builtins.Pickle$save::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Pickle$save
       newobj instance void StockWerk.Builtins.String$conc::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$conc
+      newobj instance void StockWerk.Builtins.String$size::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::String$size
       newobj instance void StockWerk.Builtins.String$str::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$str
+      newobj instance void StockWerk.Builtins.String$sub::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::String$sub
+      newobj instance void StockWerk.Builtins.String$substring::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::String$substring
       newobj instance void StockWerk.Builtins.TextIO$closeIn::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$closeIn
       newobj instance void StockWerk.Builtins.TextIO$closeOut::.ctor()
@@ -614,7 +637,7 @@
     .method virtual public class System.Reflection.MemberInfo[] GetMembers(value class System.Serialization.StreamingContext) {
       ldarg.0
       call instance class System.Type System.Object::GetType()
-      ldc.i4.1   // also return private members //--** get from arg.1
+      ldc.i4.1   // also return private members
       tail. callvirt instance class System.Reflection.MemberInfo[] System.Type::GetMembers(bool)
       ret
     }
@@ -846,13 +869,13 @@
   }
 
   .class sealed public Char extends StockWerk.StockWert {
-    .field public int32 Value
-    .method public void .ctor(int32) {
+    .field public wchar Value
+    .method public void .ctor(wchar) {
       ldarg.0
       call instance void StockWerk.StockWert::.ctor()
       ldarg.0
       ldarg.1
-      stfld int32 StockWerk.Char::Value
+      stfld wchar StockWerk.Char::Value
       //--** throw exception Chr if out of range
       ret
     }
@@ -863,9 +886,9 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Char
-      ldfld int32 StockWerk.Char::Value
+      ldfld wchar StockWerk.Char::Value
       ldarg.0
-      ldfld int32 StockWerk.Char::Value
+      ldfld wchar StockWerk.Char::Value
       ceq
       ret
     testTransient:
@@ -2615,7 +2638,115 @@
       ldarg.1
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
-      newobj instance void StockWerk.Char::.ctor(int32)
+      newobj instance void StockWerk.Char::.ctor(wchar)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Char$isDigit extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Char
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Char
+      ldfld wchar StockWerk.Char::Value
+      call bool System.Globalization.CharacterInfo::IsDecimalDigit(wchar)
+      brfalse.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Char$isHexDigit extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Char
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Char
+      ldfld wchar StockWerk.Char::Value
+      call bool System.Globalization.CharacterInfo::IsHexDigit(wchar)
+      brfalse.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Char$isSpace extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Char
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.Char
+      ldfld wchar StockWerk.Char::Value
+      call bool System.Globalization.CharacterInfo::IsWhiteSpace(wchar)
+      brfalse.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
       ret
     testTransient:
       ldarg.1
@@ -2645,7 +2776,7 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Char
-      ldfld int32 StockWerk.Char::Value
+      ldfld wchar StockWerk.Char::Value
       newobj instance void StockWerk.Int::.ctor(int32)
       ret
     testTransient:
@@ -2726,6 +2857,202 @@
     }
   }
 
+  .class sealed Int$div extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      div
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$ge extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      blt.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$gt extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ble.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$le extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      bgt.s retFalse
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::true
+      ret
+    retFalse:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::false
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
   .class sealed Int$less extends StockWerk.Procedure2 {
     .method public void .ctor() {
       ldarg.0
@@ -2791,14 +3118,68 @@
       ldarg.2
       isinst StockWerk.Int
       brfalse.s testTransient2
+      .try {
+	ldarg.1
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	ldarg.2
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	sub.ovf
+	newobj instance void StockWerk.Int::.ctor(int32)
+	leave.s return
+      } catch System.OverflowException {
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
+      }
+    return:
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$mod extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
       ldarg.1
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
       ldarg.2
       castclass StockWerk.Int
       ldfld int32 StockWerk.Int::Value
-      sub   //--** test for overflow
-      newobj instance void StockWerk.Int::.ctor(int32)
+      rem   //--** rem.un?
       ret
     testTransient2:
       ldarg.2
@@ -2838,14 +3219,22 @@
       ldarg.2
       isinst StockWerk.Int
       brfalse.s testTransient2
-      ldarg.1
-      castclass StockWerk.Int
-      ldfld int32 StockWerk.Int::Value
-      ldarg.2
-      castclass StockWerk.Int
-      ldfld int32 StockWerk.Int::Value
-      add   //--** test for overflow
-      newobj instance void StockWerk.Int::.ctor(int32)
+      .try {
+	ldarg.1
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	ldarg.2
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	add.ovf
+	newobj instance void StockWerk.Int::.ctor(int32)
+	leave.s return
+      } catch System.OverflowException {
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
+      }
+    return:
       ret
     testTransient2:
       ldarg.2
@@ -2885,14 +3274,22 @@
       ldarg.2
       isinst StockWerk.Int
       brfalse.s testTransient2
-      ldarg.1
-      castclass StockWerk.Int
-      ldfld int32 StockWerk.Int::Value
-      ldarg.2
-      castclass StockWerk.Int
-      ldfld int32 StockWerk.Int::Value
-      mul   //--** test for overflow
-      newobj instance void StockWerk.Int::.ctor(int32)
+      .try {
+	ldarg.1
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	ldarg.2
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	mul.ovf
+	newobj instance void StockWerk.Int::.ctor(int32)
+	leave.s return
+      } catch System.OverflowException {
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
+      }
+    return:
       ret
     testTransient2:
       ldarg.2
@@ -2931,6 +3328,47 @@
       ldarg.1
       callvirt instance class System.String System.Object::ToString()
       newobj instance void StockWerk.String::.ctor(class System.String)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed Int$uminus extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.Int
+      brfalse.s testTransient
+      .try {
+	ldc.i4.0
+	ldarg.1
+	castclass StockWerk.Int
+	ldfld int32 StockWerk.Int::Value
+	sub.ovf
+	newobj instance void StockWerk.Int::.ctor(int32)
+	leave.s return
+      } catch System.OverflowException {
+	ldsfld class StockWerk.StockWert StockWerk.Prebound::General$Overflow
+	newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+	throw
+      }
+    return:
       ret
     testTransient:
       ldarg.1
@@ -3080,6 +3518,38 @@
     }
   }
 
+  .class sealed String$size extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      call instance int32 System.String::GetLength()
+      newobj instance void StockWerk.Int::.ctor(int32)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
   .class sealed String$str extends StockWerk.Procedure {
     .method public void .ctor() {
       ldarg.0
@@ -3093,7 +3563,7 @@
       brfalse.s testTransient
       ldarg.1
       castclass StockWerk.Char
-      ldfld int32 StockWerk.Char::Value
+      ldfld wchar StockWerk.Char::Value
       call class System.String System.Char::ToString(wchar)
       newobj instance void StockWerk.String::.ctor(class System.String)
       ret
@@ -3105,6 +3575,115 @@
       callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
       starg.s 1
       br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed String$sub extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      call instance wchar System.String::GetChars(int32)
+      newobj instance void StockWerk.Char::.ctor(wchar)
+      ret
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed String$substring extends StockWerk.Procedure3 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure3::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply3(class StockWerk.StockWert, class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Int
+      brfalse.s testTransient2
+    retry3:
+      ldarg.3
+      isinst StockWerk.Int
+      brfalse.s testTransient3
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldarg.2
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      ldarg.3
+      castclass StockWerk.Int
+      ldfld int32 StockWerk.Int::Value
+      call instance class System.String System.String::Substring(int32, int32)
+      newobj instance void StockWerk.String::.ctor(class System.String)
+      ret
+    testTransient3:
+      ldarg.3
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.3
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 3
+      br.s retry3
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
     raise:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
@@ -3369,7 +3948,7 @@
       castclass System.IO.Stream
       ldarg.2
       castclass StockWerk.Char
-      ldfld int32 StockWerk.Char::Value
+      ldfld wchar StockWerk.Char::Value
       callvirt instance void System.IO.Stream::WriteChar(wchar)
       ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
       ret
