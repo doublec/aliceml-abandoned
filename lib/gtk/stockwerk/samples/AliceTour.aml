@@ -164,7 +164,6 @@ local
 
     fun displayFile () =
 	let
-	    val _ = print "start\n"
 	    val _ = TextIO.flushOut TextIO.stdOut
 	    val note   = valOf(!curwin)
 	    val window = fileToWindow (!curfile)
@@ -175,9 +174,7 @@ local
 	in
 	    (Gtk.notebookRemovePage(note, 0);
 	     Gtk.widgetShowAll(align);
-	     Gtk.notebookAppendPage(note, align, label);
-	     print "end\n";
-	     TextIO.flushOut TextIO.stdOut
+	     Gtk.notebookAppendPage(note, align, label)
 	    )
 	end
 
