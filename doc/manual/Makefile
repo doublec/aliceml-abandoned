@@ -80,6 +80,7 @@ INSTALLFILES_LIBRARY_0 = \
 	thread.html url.html config.html socket.html http.html \
 	http-client.html http-server.html resolver-handler.html \
 	resolver.html component.html component-manager.html remote.html \
+	compiler.html \
 	HttpClientExample.aml HttpServerExample.aml \
         $(PLATFORM_LIB) \
 	gtk-overview.html gdk.html gtk.html gtk-canvas.html \

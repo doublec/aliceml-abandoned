@@ -17,20 +17,25 @@ Linker:
 
 Interactive Toplevel:
 
+* [NEW] Graphical user interface, including simple editor facility, activated
+        with option -g (--gui) (default when Alice is started from GUI).
 * [FIX] Fixed off-by-one line numbers, including use function.
-* [FIX] Eliminated race condition when bg'ing computation (pressing Ctrl-Z).
+* [FIX] Eliminated race condition when bg'ing computation (eg. pressing Ctrl-Z).
 
 Library:
 
-* [NEW] Promise: added isFulfilled predicate.
-* [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
-* [NEW] PrimIO: functions openVectorList{Rd,Wr}, useful for redirection.
+* [NEW] Compiler: new component that gives runtime access to the compiler,
+        including a Lisp-style eval function on strings containg Alice programs.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
+* [NEW] Promise: added isFulfilled predicate.
+* [NEW] ListPair: added exists[i]Eq and filter[i]Eq.
+* [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
+* [NEW] PrimIO: added functions openVectorList{Rd,Wr}, useful for redirection.
 * [NEW] Config: added version record and codename string.
 * [CHG] Lock: sync is now re-entrant.
 * [CHG] Minimizer: removed, superseded by Store component.
 * [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
-* [CHG] Remote: more error conditions distinguished by execute. Uncaught
+* [CHG] Remote: more error conditions distinguished by execute; uncaught
         exceptions on the remote site are now propagated back to the caller.
 * [FIX] Promise: equality now works properly.
 * [FIX] IntInf: fixed handling of division by 0.

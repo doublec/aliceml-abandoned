@@ -137,6 +137,10 @@
 			<param name="Local" value="library/command-line.html">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Compiler">
+			<param name="Local" value="library/compiler.html">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Component">
 			<param name="Local" value="library/component.html">
 			</OBJECT>

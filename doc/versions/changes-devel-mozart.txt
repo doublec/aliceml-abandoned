@@ -67,7 +67,9 @@ Library:
 * Hole: future now simply returns argument if not a hole (no exception).
 * Alt: added mapBoth.
 * Pair: added mapBoth.
-* List[Pair]: fixed evaluation order of filter[i] and partition[i].
+* List[Pair]:
+  - Added exists[i]Eq and filter[i]Eq.
+  - Fixed evaluation order of filter[i] and partition[i].
 * Vector, {Char,Word8}Vector: fixed update to raise Subscript for bad indices.
 * VectorPair: fixed foldri.
 * VectorSlice: fixed toVector.
