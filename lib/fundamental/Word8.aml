@@ -1,0 +1,16 @@
+(*
+ * Author:
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Leif Kornstaedt, 2002
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure __pervasive from "Pervasive"
+import structure MkWord      from "MkWord"
+
+structure Word8 = MkWord(val wordSize = 8)
