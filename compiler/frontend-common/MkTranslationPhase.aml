@@ -131,8 +131,8 @@ struct
 	let
 	    val x  = TranslationEnv.lookupPervasive E
 	    val j0 = #inf(I.infoId x)
-	    val j1 = Inf.lookupMod(Inf.asSig' j0, modlab)
-	    val t  = Inf.lookupTyp'(Inf.asSig' j1, lab)
+	    val j1 = Inf.lookupMod(Inf.asSig j0, modlab)
+	    val t  = Inf.lookupTyp'(Inf.asSig j1, lab)
 	in
 	    t
 	end
@@ -183,21 +183,16 @@ struct
 	    end
 
     and infToTyp'(E,j) =
-	if Inf.isTop' j then
-	    (* [any] = top *)
-	    typ_unit
-	else if Inf.isCon' j then
-	    (* [p] = p *)
+	case Inf.inspect j
+	 of Inf.Top =>
+		(* [any] = top *)
+		typ_unit
+	  | Inf.Con p =>
+		(* [p] = p *)
+		Type.con(p, ikindToKind(Inf.kind j))
+	  | Inf.Sig s =>
 	    let
-		val p = Inf.asCon' j
-		val k = Inf.kind j
-	    in
-		Type.con(p, ikindToKind k)
-	    end
-	else if Inf.isSig' j then
-	    (* [sig items end] = {[items]} *)
-	    let
-		val s     = Inf.asSig' j
+		(* [sig items end] = {[items]} *)
 		val items = Inf.items s
 		val fs    = List.mapPartial (itemToField E) items
 		val r     = List.foldr
@@ -208,65 +203,48 @@ struct
 	    in
 		Type.prod r
 	    end
-	else if Inf.isArrow' j then
-	    (* [fct(x:j1) -> j2] = [j1] -> [j2] *)
-	    let
-		val (p,j1,j2) = Inf.asArrow' j
-	    in
+	  | Inf.Arrow(p,j1,j2) =>
+		(* [fct(x:j1) -> j2] = [j1] -> [j2] *)
 		Type.arrow(infToTyp(E,j1), infToTyp(E,j2))
-	    end
-	else if Inf.isLambda j then
-	    (* [\x:j1 . j2] = [j2] *)
-	    let
-		val (p,j1,j2) = Inf.asLambda j
-	    in
+	  | Inf.Exist(p,j1,j2) =>
+		(* [?x:j1 . j2] = [j2] *)
 		infToTyp(E,j2)
-	    end
-	else if Inf.isApply j then
-	    (* [j1(x:j2)] = [j1] *)
-	    let
-		val (j1,m) = Inf.asApply j
-	    in
+	  | Inf.Sing m =>
+		(* [<p:j'>] = [j'] *)
+		infToTyp(E, #2(Inf.asMod m))
+	  | Inf.Lambda(p,j1,j2) =>
+		(* [\x:j1 . j2] = [j2] *)
+		infToTyp(E,j2)
+	  | Inf.Apply(j1,m) =>
+		(* [j1(x:j2)] = [j1] *)
 		infToTyp(E,j1)
-	    end
-	else
-	    raise Crash.Crash "TranslationPhase.infToTyp: unknown inf"
 
     and itemToField E item =
-	if Inf.isValItem item then
-	    let
-		val (l,t) = Inf.asValItem item
-	    in
+	case Inf.inspectItem item
+	 of (Inf.FixItem _ | Inf.HiddenItem _) =>
+		NONE
+	  | Inf.ValItem(l,t) =>
 		SOME(trValLabel l, t)
-	    end
-	else if Inf.isTypItem item then
+	  | Inf.TypItem(p,k) =>
 	    let
-		val (p,k) = Inf.asTypItem item
-		val  t    = typ_typ E handle TranslationEnv.Pervasive =>
-			    (Error.warn(Source.nowhere,
-					"RTT types not available everywhere");
-			     typ_poly) (* for bootstrapping *)
+		val t = typ_typ E handle TranslationEnv.Pervasive =>
+			(Error.warn(Source.nowhere,
+				    "RTT types not available everywhere");
+			 typ_poly) (* for bootstrapping *)
 	    in
 		SOME(trTypLabel(Path.toLab p), t)
 	    end
-	else if Inf.isModItem item then
-	    let
-		val (p,j) = Inf.asModItem item
-	    in
+	  | Inf.ModItem(p,j) =>
 		SOME(trModLabel(Path.toLab p), infToTyp(E,j))
-	    end
-	else if Inf.isInfItem item then
+	  | Inf.InfItem(p,k) =>
 	    let
-		val (p,k) = Inf.asInfItem item
-		val  t    = typ_inf E handle TranslationEnv.Pervasive =>
-			    (Error.warn(Source.nowhere,
-					"RTT types not available everywhere");
-			     typ_poly) (* for bootstrapping *)
+		val t = typ_inf E handle TranslationEnv.Pervasive =>
+			(Error.warn(Source.nowhere,
+				    "RTT types not available everywhere");
+			 typ_poly) (* for bootstrapping *)
 	    in
 		SOME(trInfLabel(Path.toLab p), t)
 	    end
-	else (* fixity or hidden *)
-	    NONE
 
 
   (* Identifiers and operations for RTT code *)
@@ -454,10 +432,10 @@ struct
 
     fun trVirtModlongid(E, I.ShortId(i,x)) = idToExp(trVirtModid(E, x))
       | trVirtModlongid(E, I.LongId(i,y, I.Lab(_,l)) : I.modlongid) =
-	(* [y.l] = Inf.lookupMod(Inf.asSig'[y], Label.fromString "l") *)
+	(* [y.l] = Inf.lookupMod(Inf.asSig[y], Label.fromString "l") *)
 	let
 	    val r  = #region i
-	    val e1 = callInf(E, lab_asSig', trVirtModlongid(E, y))
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
 	    val e2 = trLab(E, r, l)
 	in
 	    callInf(E, lab_lookupMod, trTuple(r, #[e1,e2]))
@@ -465,10 +443,10 @@ struct
 
     fun trVirtTyplongid(E, I.ShortId(i,x)) = raise Assert.failure
       | trVirtTyplongid(E, I.LongId(i,y, I.Lab(_,l)) : I.typlongid) =
-	(* [y.l] = Inf.lookupTyp'(Inf.asSig'[y], Label.fromString "l") *)
+	(* [y.l] = Inf.lookupTyp'(Inf.asSig[y], Label.fromString "l") *)
 	let
 	    val r  = #region i
-	    val e1 = callInf(E, lab_asSig', trVirtModlongid(E, y))
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
 	    val e2 = trLab(E, r, l)
 	in
 	    callInf(E, lab_lookupTyp', trTuple(r, #[e1,e2]))
@@ -476,10 +454,10 @@ struct
 
     fun trVirtInflongid(E, I.ShortId(i,x)) = raise Assert.failure
       | trVirtInflongid(E, I.LongId(i,y, I.Lab(_,l)) : I.inflongid) =
-	(* [y.l] = Inf.lookupInf'(Inf.asSig'[y], Label.fromString "l") *)
+	(* [y.l] = Inf.lookupInf'(Inf.asSig[y], Label.fromString "l") *)
 	let
 	    val r  = #region i
-	    val e1 = callInf(E, lab_asSig', trVirtModlongid(E, y))
+	    val e1 = callInf(E, lab_asSig, trVirtModlongid(E, y))
 	    val e2 = trLab(E, r, l)
 	in
 	    callInf(E, lab_lookupInf', trTuple(r, #[e1,e2]))
@@ -698,7 +676,7 @@ struct
 	    val e1'       = trMod(E,m1)
 
 	    val (t11,t12) = Type.asArrow t1
-	    val j2'       = Inf.narrow(j2, #2(Inf.asArrow' j1))
+	    val j2'       = Inf.narrow(j2, #2(Inf.asArrow j1))
 (*DEBUG*)handle e => (Error.warn(#region i, "4\n"); raise e)
 	    val e2'       = trTransCoerceMod(E, r2, m2, j2')
 
@@ -1066,13 +1044,14 @@ struct
 	 * Inf.match(j1,j2). x2 may be absent (indicated by _ in the rules
 	 * below) if we are doing a transparent coercion.
 	 *)
-	if Inf.isTop' j2 then
+	case (Inf.inspect j1, Inf.inspect j2)
+	 of (Inf.Top, Inf.Top) =>
 	    (* [x1 : j1 :> x2 = any] = () *)
-	    if Inf.isTop' j1 then
 		NONE
-	    else
+	  | (_, Inf.Top) =>
+	    (* [x1 : j1 :> x2 = any] = () *)
 		SOME(trUnit r)
-	else if Inf.isCon' j2 then
+	  | (_, Inf.Con p2) =>
 	    if Option.isNone x2o then
 	    (* [x1 : p1 :> _ = p2] = () *)
 		(*UNFINISHED: this should not be...*)
@@ -1084,8 +1063,8 @@ struct
 		 * been performed to equalize them. Example:
 		 *   fct(signature S) -> ()  :>  fct(signature S) -> ()
 		 * So we cannot put in an assertion here!
-		(*ASSERT assert Path.equal(#2 j1, #2 j2) => *)
-		if not(Path.equal(#2(Inf.asCon' j1), #2(Inf.asCon' j2')))
+		(*ASSERT assert Path.equal(p1,p2) => *)
+		if not(Path.equal(Inf.asCon j1, Inf.asCon j2')))
 		then raise Assert.failure else
 		 *)
 		NONE
@@ -1093,7 +1072,7 @@ struct
 	    (* [x1 : j1 :> x2 = p] = ???? *)
 	    (*UNFINISHED: do runtime sealing (__perv.Coerce.Opaque?) *)
 		NONE
-	else if Inf.isSig' j2 andalso Inf.isSig' j1 then
+	  | (Inf.Sig s1, Inf.Sig s2) =>
 	    (* [x1 : sig item1* end :> x2 = sig item2* end] =
 	     *     let x3 = lazy Inf.asSig x2 in
 	     *     struct [x1 . item1 :> x3 . item2]* end
@@ -1101,9 +1080,7 @@ struct
 	     *     struct [x1 . item1 :> _ . item2]* end
 	     *)
 	    let
-		val s1  = Inf.asSig' j1
-		val s2  = Inf.asSig' j2
-		val s2' = Inf.asSig' j2'
+		val s2' = Inf.asSig j2'
 		val i3  = typInfo(r, typ_sig E)
 		val x3' = O.Id(i3, Stamp.new(), Name.InId)
 		val x3o = Option.map (fn _ => O.ShortId(i3, x3')) x2o
@@ -1130,7 +1107,7 @@ struct
 		else
 		    NONE
 	    end
-	else if Inf.isArrow' j2 andalso Inf.isArrow' j1 then
+	  | (Inf.Arrow(p1,j11,j12), Inf.Arrow(p2,j21,j22)) =>
 	    (* [x1 : fct(x11:j11)->j12 :> x2 = fct(x21:j21)->j22] =
 	     *     fct(x3:j21) =>
 	     *        let x4 = (unseal x1)(seal [x3 : j21 :> _ = j11])
@@ -1142,10 +1119,7 @@ struct
 	     *        in unseal [x4 : j12 :> _ = j22]
 	     *)
 	    let
-		val (p1,j11,j12)  = Inf.asArrow' j1
-		val (p2,j21,j22)  = Inf.asArrow' j2
-		val (_,j21',j22') = Inf.asArrow' j2'
-
+		val (_,j21',j22') = Inf.asArrow j2'
 		val  rea          = Inf.match(j21',j11)
 (*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match2\n");raise e)
 		val  j11'         = Inf.narrow(j21',j11)
@@ -1214,8 +1188,17 @@ struct
 			SOME(O.FunExp(i2, #[O.Mat(i', idToPat x3', e)]))
 		    end
 	    end
-	else
-	    raise Assert.failure
+	  | (Inf.Exist(_,_,j12), _) =>
+		coerceMod(E, r, x1,j12,x2o,j2,j2', isntIdentity)
+	  | (_, Inf.Exist(_,_,j22)) =>
+		coerceMod(E, r, x1,j1,x2o,j22,j2', isntIdentity)
+	  | (Inf.Sing m1, _) =>
+		coerceMod(E, r, x1,#2(Inf.asMod m1),x2o,j2,j2', isntIdentity)
+	  | (_, Inf.Sing m2) =>
+		coerceMod(E, r, x1,j1,x2o,#2(Inf.asMod m2),j2', isntIdentity)
+	  | ( ((Inf.Con _ | Inf.Lambda _ | Inf.Apply _), _)
+	    | (_, (Inf.Lambda _ | Inf.Apply _)) ) =>
+		raise Assert.failure
 
     and coerceStr(E, r, x1,s1, x2o,[],s2', isntIdentity, flds, row) =
 	    (isntIdentity, Vector.fromList flds, row)
@@ -1228,37 +1211,36 @@ struct
 	 * Inf.match(s1,s2). x2 may be absent (indicated by _ in the rules
 	 * below) if we are doing a transparent coercion.
 	 *)
-	if Inf.isValItem item then
+	case Inf.inspectItem item
+	 of Inf.ValItem(l,_) =>
 	    (* [x1 . val y:t1 :> x2 . val y:t2] = val y = x1.y
 	     *)
 	    let
-		val (l,_)  = Inf.asValItem item
-		val  t1    = Inf.lookupVal(s1,l)
-		val  t2    = Inf.lookupVal(s2',l)
-		val  i'    = nonInfo r
-		val  l'    = trValLabel l
-		val  ll'   = O.Lab(i',l')
-		val  y1    = O.LongId(typInfo(r,t1), x1, ll')
-		val  exp   = O.VarExp(typInfo(r,t2), y1)
+		val t1  = Inf.lookupVal(s1,l)
+		val t2  = Inf.lookupVal(s2',l)
+		val i'  = nonInfo r
+		val l'  = trValLabel l
+		val ll' = O.Lab(i',l')
+		val y1  = O.LongId(typInfo(r,t1), x1, ll')
+		val exp = O.VarExp(typInfo(r,t2), y1)
 		val isntIdentity' = isntIdentity orelse not(Type.equal(t1,t2))
 	    in
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
 			  O.Fld(i',ll',exp)::flds, Type.extendRow(l',t2,row))
 	    end
-	else if Inf.isTypItem item then
+	  | Inf.TypItem(p,k) =>
 	    (* [x1 . type y:k1 :> x2 . type y:k2 = t2] =
 	     *     type y = lazy Inf.lookupTyp'(x2, Label.fromString "y")
 	     * [x1 . type y:k1 :> _ . type y:k2 = t2] =
 	     *     type y = x1.y
 	     *)
 	    let
-		val (p,k) = Inf.asTypItem item
-		val  l    = Path.toLab p
-		val  i'   = nonInfo r
-		val  t'   = typ_typ E
-		val  i    = typInfo(r,t')
-		val  l'   = trTypLabel l
-		val  ll'  = O.Lab(i',l')
+		val l   = Path.toLab p
+		val i'  = nonInfo r
+		val t'  = typ_typ E
+		val i   = typInfo(r,t')
+		val l'  = trTypLabel l
+		val ll' = O.Lab(i',l')
 		val (isntIdentity',exp) =
 		    case x2o of NONE =>
 			let
@@ -1280,7 +1262,7 @@ struct
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
 			  O.Fld(i',ll',exp)::flds, Type.extendRow(l',t',row))
 	    end
-	else if Inf.isModItem item then
+	  | Inf.ModItem(p,j2) =>
 	    (*	[x1 . structure y:j1 :> x2 . structure y:j2] =
 	     *	   structure y =
 	     *         let x3 = lazy Inf.lookupMod(x2, Label.fromString "y")
@@ -1289,7 +1271,6 @@ struct
 	     *	   structure y = [x1.y : j1 :> _ = j2]
 	     *)
 	    let
-		val (p,j2)    = Inf.asModItem item
 		val    l      = Path.toLab p
 		val    j1     = Inf.lookupMod(s1,l)
 		val    j2'    = Inf.lookupMod(s2',l)
@@ -1326,20 +1307,19 @@ struct
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
 			  O.Fld(i',ll',exp)::flds, Type.extendRow(l',t',row))
 	    end
-	else if Inf.isInfItem item then
+	  | Inf.InfItem(p,k) =>
 	    (*  [x1 . interface y:k1 :> x2 . interface y:k2 = j2] =
 	     *     interface y = lazy Inf.lookupInf'(x2, Label.fromString "y")
 	     *  [x1 . interface y:k1 :> _ . interface y:k2 = j2] =
 	     *     interface y = x1.y
 	     *)
 	    let
-		val (p,k) = Inf.asInfItem item
-		val  l    = Path.toLab p
-		val  i'   = nonInfo r
-		val  t'   = typ_inf E
-		val  i    = typInfo(r,t')
-		val  l'   = trInfLabel l
-		val  ll'  = O.Lab(i',l')
+		val l   = Path.toLab p
+		val i'  = nonInfo r
+		val t'  = typ_inf E
+		val i   = typInfo(r,t')
+		val l'  = trInfLabel l
+		val ll' = O.Lab(i',l')
 		val (isntIdentity',exp) =
 		    case x2o of NONE =>
 			let
@@ -1361,8 +1341,8 @@ struct
 		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity',
 			  O.Fld(i',ll',exp)::flds, Type.extendRow(l',t',row))
 	    end
-	else (* fixity *)
-	    coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity, flds, row)
+	  | (Inf.FixItem _ | Inf.HiddenItem _) =>
+		coerceStr(E, r, x1,s1, x2o,items,s2', isntIdentity, flds, row)
 
 
 
