@@ -420,7 +420,12 @@ prepare
 	    unit
 	 end
       'Thread.resume':
-	 fun {$ T} {Thread.resume T} unit end
+	 fun {$ T}
+	    try {Thread.resume T}
+	    catch kernel(deadThread _) then skip
+	    end
+	    unit
+	 end
       'Thread.state':
 	 fun {$ T}
 	    case {Thread.state T} of runnable then 'RUNNABLE'
@@ -429,7 +434,12 @@ prepare
 	    end
 	 end
       'Thread.suspend':
-	 fun {$ T} {Thread.suspend T} unit end
+	 fun {$ T}
+	    try {Thread.suspend T}
+	    catch kernel(deadThread _) then skip
+	    end
+	    unit
+	 end
       'Thread.yield':
 	 fun {$ T} {Thread.preempt T} unit end
       'Unsafe.Array.sub': Array.get
