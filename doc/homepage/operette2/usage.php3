@@ -2,6 +2,13 @@
 
 <?php heading("Stockhausen Operette 1 - Usage", "usage") ?>
 
+<?php section("overview", "overview") ?>
+  <P>The interface to the Stockhausen system features:</P>
+  <UL>
+    <LI><A href="#compiler">the compiler</A>
+    <LI><A href="#vm">the virtual machine</A>
+  </UL>
+
 <?php section("compiler", "compiler") ?>
   <P>The Stockhausen compiler can be invoked in one of the following ways:</P>
   <DL>
@@ -36,12 +43,15 @@
   <P>The following extra options may be given:</P>
   <DL>
     <DT><TT>--nodefaultimport</TT></DT>
-    <DD>Do not make the SML Standard Basis top-level environment available
+    <DD><P>Do not make the SML Standard Basis top-level environment available
       to source files.  This option is necessary for bootstrapping the
-      top-level environment itself.</DD>
+      top-level environment itself.</P></DD>
+    <DT><TT>--outputassembly</TT></DT>
+    <DD><P>Write a file <I>&lt;output file&gt;</I><TT>.ozm</TT> containing
+      the assembly code for the compiled component.</P></DD>
   </DL>
 
-<?php section("virtualmachine", "virtual machine") ?>
+<?php section("vm", "vm") ?>
   <P>Any compiled component can be invoked as an Alice application.  When
     loading a component, its body is executed; the work of an application is
     performed by its body's side-effects.</P>
