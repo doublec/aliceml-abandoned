@@ -11,7 +11,7 @@
 //
 
 #include <cstdlib>
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 DEFINE0(UnsafeRand_rand) {
   RETURN_INT(rand());

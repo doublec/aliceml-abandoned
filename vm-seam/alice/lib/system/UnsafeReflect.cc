@@ -12,7 +12,7 @@
 //   $Revision$
 //
 
-#include "emulator/Authoring.hh"
+#include "alice/primitives/Authoring.hh"
 
 static bool littleEndian;
 
