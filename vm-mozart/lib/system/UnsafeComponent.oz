@@ -177,6 +177,7 @@ define
 	    [] det(array) then skip
 	    [] det(bitArray) then skip
 	    [] det('class') then skip
+	    [] det(word) then skip
 	    else {Exception.raiseError alice(SitedException)}
 	    end
 	 end
