@@ -1,0 +1,696 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+
+structure TestList :> TESTSUITE = (* the list test suite *)
+struct
+
+    val randomize = Gen.randomize
+    
+    fun testNull () =
+	let
+	    fun t [] = true
+	      | t _  = false
+	in
+	    Gen.try 1000 (Gen.list Gen.int) 
+	      (Test.test (fn xs => List.null xs = t xs))
+	end
+
+    fun testLength () = 
+	let
+	    fun t (nil, i) = i
+	      | t (x::xs, i) = t (xs, i + 1)
+	in
+	    Gen.try 1000 (Gen.list Gen.int)
+	       (Test.test (fn xs => List.length xs = t (xs, 0)))
+	end
+
+    fun testCons () =
+	let
+	    fun t xs = xs = (List.hd xs) :: (List.tl xs)
+	in
+	    Gen.try 1000 (Gen.list Gen.int)
+	      (Test.test (fn xs => if Bool.not (null xs)
+				       then t xs
+				   else true))
+	end
+
+    fun testHd () = 
+	let
+	    fun t nil    = NONE
+	      | t (x::_) = SOME x
+	    
+	in
+	    Gen.try 1000 (Gen.list Gen.int) 
+	      (Test.test (fn xs => let
+				       val r = t xs
+				   in
+				       List.hd xs = valOf r
+				            handle Empty => Option.isNone r
+				   end))
+	end
+
+    fun testTl () = 
+	let
+	    fun t nil    = NONE
+	      | t (_::xs) = SOME xs
+	    
+	in
+	    Gen.try 1000 (Gen.list Gen.int) 
+	      (Test.test (fn xs => let
+				       val r = t xs
+				   in
+				       List.tl xs = valOf r
+				            handle Empty => Option.isNone r
+				   end))
+	end
+
+    fun testLast () = 
+	let
+	    fun t nil = NONE
+	      | t [x] = SOME x
+	      | t xs  = t (List.tl xs)
+	in
+	    Gen.try 1000 (Gen.list Gen.int)
+	      (Test.test (fn xs => let
+				       val r = t xs
+				   in
+				       List.last xs = valOf r
+				            handle Empty => Option.isNone r
+				   end))
+	end
+
+    fun testGetItem () = 
+	let
+	    fun t nil     = NONE
+	      | t (x::xs) = SOME (x, xs)
+	in
+	    Gen.try 1000 (Gen.list Gen.int)
+	      (Test.test (fn xs => t xs = List.getItem xs))
+	end
+    
+    fun testNth () =
+	let
+	    fun t ([], 0) = NONE
+	      | t (xs, 0) = SOME (List.hd xs)
+	      | t (xs, i) = if i < 0 orelse i >= List.length xs
+				then NONE
+			    else t (List.tl xs, i - 1)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.int))
+	       (Test.test (fn x => let
+				       val r = t x
+				   in
+				       List.nth x = valOf r
+				            handle _ => Option.isNone r
+				   end))
+	end
+
+    fun testTake () = 
+	let
+	    fun t (xs, 0) ys = SOME (List.rev ys)
+	      | t (xs, i) ys = if i < 0 orelse i > List.length xs
+				   then NONE
+			       else t (tl xs, i - 1) ((List.hd xs)::ys)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.int))
+	       (Test.test (fn x => let
+				       val r = t x []
+				   in
+				       List.take x = valOf r
+				            handle _ => Option.isNone r
+				   end))
+	end
+
+    fun testDrop () = 
+	let
+	    fun t (xs, 0) = SOME xs
+	      | t (xs, i) = if i < 0 orelse i > List.length xs
+				   then NONE
+			       else t (tl xs, i - 1)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.int))
+	       (Test.test (fn x => let
+				       val r = t x
+				   in
+				       List.drop x = valOf r
+				            handle _ => Option.isNone r
+				   end))
+	end
+
+    fun testRev () =
+	let
+	    fun t (nil, ys)   = ys
+	      | t (x::xs, ys) = t (xs, x::ys)
+	in
+	    Gen.try 1000 (Gen.list Gen.int)
+	       (Test.test (fn xs => List.rev xs = t (xs, nil)))
+	end
+
+    fun testConcat () = 
+	let
+	    fun conc (xs, nil)   = List.rev xs
+	      | conc (xs, y::ys) = conc (y::xs, ys)
+
+	    fun t (xs, ys) = xs @ ys = conc (List.rev xs, ys)
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test t)
+	end
+
+    fun testRevAppend () = 
+	let
+	    fun t (xs, ys) = (List.rev xs) @ ys
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	        (Test.test (fn x => t x = List.revAppend x))
+	end
+
+    fun testConcat2 () =
+	let
+	    fun t xs = List.foldl (fn (a, b) => b @ a) [] xs
+	in
+	    Gen.try 100 (Gen.list (Gen.list Gen.int))
+	      (Test.test (fn xs => t xs = List.concat xs))
+	end
+
+    fun testSub () =
+	let
+	    fun t ([], 0) = NONE
+	      | t (xs, 0) = SOME (List.hd xs)
+	      | t (xs, i) = if i < 0 orelse i >= List.length xs
+				then NONE
+			    else t (List.tl xs, i - 1)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.int))
+	       (Test.test (fn x => let
+				       val r = t x
+				   in
+				       List.sub x = valOf r
+				            handle _ => Option.isNone r
+				   end))
+	end
+
+    fun testSplit () =
+	let
+	    fun t (xs, i) = SOME (List.take (xs, i), List.drop (xs, i))
+		               handle _ => NONE
+	in
+	    Gen.try 1000 (Gen.pair (Gen.list Gen.int, Gen.int))
+	       (Test.test (fn x => let
+				       val r = t x
+				   in List.split x = valOf r
+				            handle _ => Option.isNone r
+				   end))
+	end
+
+    fun testAppi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t f l = List.app f (List.index l)
+
+	    fun f1 (i, x) = x1 := ((i + x) :: !x1)
+	    fun f2 (i, x) = x2 := ((i + x) :: !x2)
+	in
+	    Gen.try 10 (Gen.list Gen.int)
+	      (Test.test (fn xs => (t f1 xs;
+				    List.appi f2 xs;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppri () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t f l = List.appr f (List.index l)
+
+	    fun f1 (i, x) = x1 := ((i + x) :: !x1)
+	    fun f2 (i, x) = x2 := ((i + x) :: !x2)
+	in
+	    Gen.try 10 (Gen.list Gen.int)
+	      (Test.test (fn xs => (t f1 xs;
+				    List.appri f2 xs;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testMapi () =
+	let
+	    fun t f l = List.map f (List.index l)
+
+	    fun f (i, x) = i + x
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.mapi f xs))
+	end
+
+    fun testMapiPartial () =
+	let
+	    fun t f l = List.mapPartial f (List.index l)
+
+	    fun f (i, x) = if x < 0 then NONE else SOME (i + x)
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.mapiPartial f xs))
+	end
+
+    fun testFoldli () =
+	let
+	    fun t f b l = 
+		  List.foldr (fn ((i, a), b) => f (i, a, b)) b (List.index l)
+
+	    fun f (i, a, b) = i + a + b
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f 0 xs = List.foldli f 0 xs))
+	end
+
+    fun testFoldri () = 
+	let
+	    fun t f b l = 
+		  List.foldr (fn ((i, a), b) => f (i, a, b)) b (List.index l)
+
+	    fun f (i, a, b) = i + a + b
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f 0 xs = List.foldri f 0 xs))
+	end
+
+    fun testAlli () = 
+	let
+	    fun t f l = List.all f (List.index l)
+
+	    fun f (i, a) = i + a >= 0
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.alli f xs))
+	end
+
+    fun testExistsi () = 
+	let
+	    fun t f l = List.exists f (List.index l)
+
+	    fun f (i, a) = i + a >= 0
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.existsi f xs))
+	end
+
+    fun testFindi () = 
+	let
+	    fun t f l = List.find f (List.index l)
+
+	    fun f (i, a) = a > 0
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.findi f xs))
+	end
+
+    fun testFilteri () = 
+	let
+	    fun t f l = List.filter f (List.index l)
+
+	    fun f (i, a) = a > 0
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.filteri f xs))
+	end
+
+    fun testPartitioni () = 
+	let
+	    fun t f l = List.partition f (List.index l)
+
+	    fun f (i, a) = a > 0
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs = List.partitioni f xs))
+	end
+
+    fun testContains () =
+	let
+	    fun t (nil  , y) = false
+	      | t (x::xs, y) = if x = y then true else t (xs, y)
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.int))
+	      (Test.test (fn (xs, x) => t (xs, x) = List.contains xs x))
+	end
+
+    fun testNotContains () =
+	let
+	    fun t (xs, x) = Bool.not (List.contains xs x)
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.int))
+	      (Test.test (fn (xs, x) => t (xs, x) = List.notContains xs x))
+	end
+
+    fun testEqual () =
+	let
+	    fun t l (nil, nil)     = true
+	      | t l (nil,  _ )     = false
+	      | t l ( _ , nil)     = false
+	      | t l (x::xs, y::ys) = l(x, y) andalso t l (xs, ys)
+
+	    val e = Int.equal
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => t e x = List.equal e x))
+	end
+
+    fun testIsSorted () =
+	let
+	    fun t l nil          = true
+	      | t l [n]          = true
+	      | t l (x::y::xs) = (l (x, y) = LESS orelse 
+				  l (x, y) = EQUAL)andalso t l (y::xs)
+
+	    val e = Int.compare
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn x => t e x = List.isSorted e x))
+	end
+
+    fun testSort () =
+	let
+	    val comp = Int.compare
+
+	    fun e (x, y) = case comp (x, y) of
+		                 LESS  => true
+			       | EQUAL => true
+			       | _     => false
+
+	    fun split xs = foldl (fn (x, (ys,zs)) => (zs, x::ys))
+		                 (nil, nil) xs
+
+	    fun merge (nil , ys )    = ys
+	      | merge (xs , nil )    = xs
+	      | merge (x::xr, y::yr) = if e(x, y) then x::merge(xr,y::yr)
+				       else y::merge(x::xr,yr)
+
+	    fun msort []  = []
+	      | msort [x] = [x]
+	      | msort xs  = let val (ys, zs) = split xs
+			    in merge(msort ys, msort zs) end
+
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn x => msort x = List.sort comp x))
+	end
+
+    fun testIndex () =
+	let
+	    fun t xs = 
+		List.foldl (fn (a, b) => (List.length b, a) :: b) nil xs
+	in
+	    Gen.try 100 (Gen.list Gen.int) 
+	       (Test.test (fn xs => (List.rev (t xs)) = List.index xs))
+	end
+
+    fun testApp () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t f nil     = ()
+	      | t f (x::xs) = (f x; t f xs)
+
+	    fun f1 x = x1 := (x :: !x1)
+	    fun f2 x = x2 := (x :: !x2)
+	in
+	    Gen.try 10 (Gen.list Gen.int)
+	      (Test.test (fn xs => (t f1 xs;
+				    List.app f2 xs;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppr () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t f nil     = ()
+	      | t f (x::xs) = (f x; t f xs)
+
+	    fun f1 x = x1 := (x :: !x1)
+	    fun f2 x = x2 := (x :: !x2)
+	in
+	    Gen.try 10 (Gen.list Gen.int)
+	      (Test.test (fn xs => (t f1 (List.rev xs);
+				    List.appr f2 xs;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testMap () =
+	let
+	    fun t f   nil   ys = List.rev ys
+	      | t f (x::xs) ys = t f xs ((f x)::ys)
+
+	    fun f x = x + 3
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs nil = List.map f xs))
+	end
+
+    fun testMapPartial () =
+	let
+	    fun t f   nil   ys = List.rev ys
+	      | t f (x::xs) ys = case f x of 
+		                     NONE   => t f xs ys
+				   | SOME a => t f xs (a::ys)
+
+	    fun f x = if x < 0 then NONE else SOME (3 + x)
+	in
+	    Gen.try 100 (Gen.list Gen.int)
+	      (Test.test (fn xs => t f xs nil = List.mapPartial f xs))
+	end
+
+    fun testAll () = 
+	let
+	    val ys1 = ref []
+	    val test1 = [ys1 := (1 :: !ys1), ys1 := (2 :: !ys1)] 
+
+	    fun t f l = Bool.not (List.exists (Bool.not o f) l)
+		
+	    fun f x = x > 0
+	in
+	    Test.test (fn xs => (List.all (fn y => y = ()) xs;
+				 !ys1 = [2, 1])) test1;
+	    Gen.try 100 (Gen.list Gen.int)
+	       (Test.test (fn xs => t f xs = List.all f xs))
+	end
+
+    fun testExists () =
+	let
+	    val ys1 = ref []
+	    val test1 = [ys1 := (1 :: !ys1), ys1 := (2 :: !ys1)] 
+	    
+	    fun t f nil     = false
+	      | t f (x::xs) = if f x then true else t f xs
+
+	    fun f x = x > 0
+	in
+	    Test.test (fn xs => (List.exists (fn y => y <> ()) xs;
+				 !ys1 = [2, 1])) test1;
+	    Gen.try 100 (Gen.list Gen.int)
+	       (Test.test (fn xs => t f xs = List.exists f xs))
+	end
+
+    fun testFind () =
+	let
+	    val ys1 = ref []
+	    val test1 = [ys1 := (1 :: !ys1), ys1 := (2 :: !ys1)] 
+	    
+	    fun t f nil     = NONE
+	      | t f (x::xs) = if f x then SOME x else t f xs
+
+	    fun f x = x > 0
+	in
+	    Test.test (fn xs => (List.find (fn y => y <> ()) xs;
+				 !ys1 = [2, 1])) test1;
+	    Gen.try 100 (Gen.list Gen.int)
+	       (Test.test (fn xs => t f xs = List.find f xs))
+	end
+
+    fun testFilter () =
+	let
+	    val ys1 = ref []
+	    val test1 = [ys1 := (1 :: !ys1), ys1 := (2 :: !ys1)] 
+	    
+	    fun t f nil     ys = List.rev ys
+	      | t f (x::xs) ys = if f x then t f xs (x::ys) else t f xs ys
+
+	    fun f x = x > 0
+	in
+	    Test.test (fn xs => (List.filter (fn y => y = ()) xs;
+				 !ys1 = [2, 1])) test1;
+	    Gen.try 100 (Gen.list Gen.int)
+	       (Test.test (fn xs => t f xs nil = List.filter f xs))
+	end
+
+    fun testPartition () =
+	let
+	    val ys1 = ref []
+	    val test1 = [ys1 := (1 :: !ys1), ys1 := (2 :: !ys1)] 
+	    
+	    fun t f l = (List.filter f l, 
+			 List.filter (fn x => Bool.not (f x)) l)
+
+	    fun f x = x > 0
+	in
+	    Test.test (fn xs => (List.partition (fn y => y = ()) xs;
+				 !ys1 = [2, 1])) test1;
+	    Gen.try 100 (Gen.list Gen.int)
+	       (Test.test (fn xs => t f xs = List.partition f xs))
+	end
+
+    fun testFoldl () = 
+	let
+	    val test1 = [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	in
+	    Test.test (fn xs => (List.foldl (fn (a, b) => a :: b) nil xs =
+				 List.rev xs)) test1;
+	    Gen.try 100 (Gen.list Gen.int) 
+	        (Test.test (fn xs =>      t     List.:: nil xs = 
+			             List.foldl List.:: nil xs))
+	end
+
+    fun testFoldr () = 
+	let
+	    val test1 = [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	in
+	    Test.test (fn xs => (List.foldr (fn (a, b) => a :: b) nil xs =
+				 xs)) test1;
+	    Gen.try 100 (Gen.list Gen.int) 
+	        (Test.test (fn xs =>      t     List.:: nil (List.rev xs) = 
+			             List.foldr List.:: nil xs))
+	end
+
+    fun testTabulate () =
+	let
+	    val ys = ref nil
+	    val test = [3, 2, 1, 0]
+	    fun t'' x = ys := x :: !ys
+
+	    fun t' (n, f, xs, i) = if i = n then List.rev xs
+				   else t' (n, f, (f i)::xs, i + 1)
+
+	    fun t (n, f) = if n < 0 then NONE
+			   else SOME (t' (n, f, nil, 0))
+	in
+	    Test.test (fn x => (List.tabulate x;
+				!ys = test)) (4, t'');
+	    Gen.try 100 Gen.int
+	      (Test.test (fn x => let
+				      val r = t (x, fn x => x + 4) 
+				  in
+				      List.tabulate (x, fn x => x + 4) = 
+				      valOf r
+				          handle Size => Option.isNone r
+				  end))
+	end
+
+    fun testCollate () = 
+	let
+	    fun t f (nil, nil) = EQUAL
+	      | t f ( _ , nil) = GREATER
+	      | t f (nil,  _ ) = LESS
+	      | t f (x::xs, y::ys) = case f (x, y) of
+		                        EQUAL => t f (xs, ys)
+				      |   x   => x
+	in
+	    Gen.try 100 (Gen.pair (Gen.list Gen.int, Gen.list Gen.int))
+	      (Test.test (fn x => t Int.compare x =
+			          List.collate Int.compare x))
+	end
+
+    val suite = ("List", [("::", testCons),
+			  ("null", testNull),
+			  ("length", testLength),
+			  ("hd", testHd),
+			  ("tl", testTl),
+			  ("last", testLast),
+			  ("getItem", testGetItem),
+			  ("nth", testNth),
+			  ("sub", testSub),
+			  ("take", testTake),
+			  ("drop", testDrop),
+			  ("split", testSplit),
+			  ("rev", testRev),
+			  ("@", testConcat),
+			  ("revAppend", testRevAppend),
+			  ("concat", testConcat2),
+			  ("tabulate", testTabulate),
+			  ("index", testIndex),
+			  ("app", testApp),
+			  ("appr", testAppr),
+			  ("map", testMap),
+			  ("mapPartial", testMapPartial),
+			  ("foldl", testFoldl),
+			  ("foldr", testFoldr),
+			  ("all", testAll),
+			  ("exists", testExists),
+			  ("find", testFind),
+			  ("filter", testFilter),
+			  ("partition", testPartition),
+			  ("appi", testAppi),
+			  ("appri", testAppri),
+			  ("mapi", testMapi),
+			  ("mapiPartial", testMapiPartial),
+			  ("foldli", testFoldli),
+			  ("foldri", testFoldri),
+			  ("alli", testAlli),
+			  ("existsi", testExistsi),
+			  ("findi", testFindi),
+			  ("filteri", testFilteri),
+			  ("partitioni", testPartitioni),
+			  ("contains", testContains),
+			  ("notContains", testNotContains),
+			  ("equal", testEqual),
+			  ("collate", testCollate),
+			  ("isSorted", testIsSorted),
+			  ("sort", testSort)])
+end
+

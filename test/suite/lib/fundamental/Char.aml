@@ -309,7 +309,7 @@ struct
 
     fun testFromCString () =
 	let
-	    fun t s = Char.fromString s = 
+	    fun t s = Char.fromCString s = 
 		        StringCvt.scanString Char.scanC s
 			 handle Match => true
 	in

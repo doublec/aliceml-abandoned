@@ -19,7 +19,6 @@ import structure Url               from "x-alice:/lib/system/Url"
 import structure Component         from "x-alice:/lib/system/Component"
 import structure ComponentManager  from "x-alice:/lib/system/ComponentManager"
 
-
 structure TestCompiler :> TESTSUITE = (* the compiler test suite *)
 struct
 
@@ -34,7 +33,7 @@ struct
 	    structure X = ComponentManager.Eval (
 		                       val component = comp 
 				       val url = url
-				       signature S = GEN)
+				       signature S = TESTSUITE)
 	in
 	    true
 	end

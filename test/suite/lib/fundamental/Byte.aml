@@ -1,0 +1,75 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+
+structure TestByte :> TESTSUITE = (* the integer test suite *)
+struct
+
+    val randomize = Gen.randomize
+    
+    fun testByteToChar () = 
+	let
+	    fun t w = Char.chr (Word8.toInt w) = Byte.byteToChar w
+	in
+	    Gen.try 10000 Gen.word8 (Test.test t)
+	end
+
+    fun testCharToByte () = 
+	let
+	    fun t c = Word8.fromInt (Char.ord c) = Byte.charToByte c
+	in
+	    Gen.try 10000 Gen.char (Test.test t)
+	end
+
+    fun testBytesToString () =
+	(* TODO: implement Gen.word8Vector
+	 let
+	    fun t bv = CharVector.tabulate(Word8Vector.length bv,
+			       fn i => Byte.byteToChar(Word8Vector.sub(bv, i)))
+	in
+	    Gen.try 10000 Gen.word8Vector 
+	          (Test.test (fn bv = t bv = Byte.bytesToString bv))
+	end*)Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    fun testStringToBytes () = 
+	let
+	    fun t s = Word8Vector.tabulate(String.size s,
+				     fn i => Byte.charToByte(String.sub(s, i)))
+	in
+	    Gen.try 10000 Gen.string 
+	        (Test.test (fn s => t s = Byte.stringToBytes s))
+	end
+
+    fun testUnpackStringVec () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testUnpackString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testPackString () =
+	Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("Byte", [("byteToChar", testByteToChar),
+			  ("charToByte", testCharToByte),
+			  ("bytesToString", testBytesToString),
+			  ("stringToBytes", testStringToBytes),
+			  ("unpackStringVec", testUnpackStringVec),
+			  ("unpackString", testUnpackString),
+			  ("packString", testPackString)])
+end
+
