@@ -293,7 +293,7 @@ struct
 	    textpar["arity","is","incompatible"]
       | ppKindMismatch(Inf.IncompatibleInf im) =
 	    break ^^
-	    textpar["signature","is","icompatible,","because"] ^^
+	    textpar["signature","is","incompatible,","because"] ^^
 	    ppInfMismatch' im
 
     and ppTypeMismatch(t1,t2) =
