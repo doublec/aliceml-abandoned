@@ -2,9 +2,12 @@ Group
 	structure Name
 	signature LABEL
 	structure Label
+	structure LabelSet
 is
 	../utility/sources.cm
 	name.cm
 
 	LABEL-sig.aml
 	Label.aml
+
+	LabelSet.aml

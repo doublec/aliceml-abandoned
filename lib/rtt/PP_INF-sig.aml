@@ -18,7 +18,9 @@ sig
     type doc  = PrettyPrint.doc
     type inf  = Inf.inf
     type sign = Inf.sign
+    type kind = Inf.kind
 
-    val ppInf :	inf -> doc
-    val ppSig : sign -> doc
+    val ppInf :	 inf -> doc
+    val ppSig :  sign -> doc
+    val ppKind : kind -> doc
 end

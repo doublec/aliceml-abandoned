@@ -18,10 +18,12 @@ signature PP_TYPE =
 sig
     type doc  = PrettyPrint.doc
     type path = Path.t
+    type var  = Type.var
     type typ  = Type.typ
     type kind = Type.kind
 
     val ppKind :	kind -> doc
     val ppTyp :		typ -> doc
-    val ppTyp' :	path list -> typ -> doc
+    val ppTyp' :	path list * int * doc Type.Map.t -> typ -> doc
+    val ppVar :		int * var -> doc
 end
