@@ -336,6 +336,8 @@ structure Char =
 	__primitive isHexDigit : char -> bool = "Char.isHexDigit"
 	__primitive isSpace :    char -> bool = "Char.isSpace"
 	__primitive isCString :  char -> bool = "Char.isCString"
+
+	val toCString = 0   (*--** *)
     end
 
 type char = Char.char
@@ -633,6 +635,19 @@ structure Word =
 type word = Word.word
 
 structure LargeWord = Word
+
+(* Real *)
+
+structure Real =
+    struct
+	type real = real
+
+	val scan = 0   (*--** *)
+	val toString = 0   (*--** *)
+	val toString = 0   (*--** *)
+    end
+
+structure LargeReal = Real
 
 (* Array *)
 
