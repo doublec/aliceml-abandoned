@@ -7,7 +7,8 @@ SIMULATOR_COMPONENTS = \
 	Instructions \
 	World \
 	Simulator \
-	InstructionsParser
+	InstructionsParser \
+	WorldParser
 
 SIMULATOR_SOURCES = $(SIMULATOR_COMPONENTS:%=%.aml)
 SIMULATOR_TARGETS = $(SIMULATOR_COMPONENTS:%=%.stc)
