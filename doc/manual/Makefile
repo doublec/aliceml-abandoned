@@ -46,7 +46,8 @@ INSTALLFILES_LIBRARY_0 = \
 	mono-vector.html mono-vector-slice.html \
 	option.html ordered.html os.html os-file-sys.html os-io.html \
 	os-path.html os-process.html \
-	package.html pair.html pickle.html prim-io.html promise.html \
+	package.html pair.html pickle.html prim-io.html print.html \
+	promise.html \
 	real.html ref.html \
 	set.html stack.html stamp.html stream-io.html string.html \
 	string-cvt.html substring.html \
