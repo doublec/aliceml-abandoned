@@ -17,6 +17,7 @@
 
 #include "store/store.hh"
 #include "scheduler/Scheduler.hh"
+#include "adt/Queue.hh"
 
 //
 // Transient Representation:
@@ -29,19 +30,6 @@
 //    BYNEED      closure
 //    REF         value
 //
-
-class Queue: private Block {
-  //--** Queue implementation missing and should go elsewhere
-public:
-  using Block::ToWord;
-
-  static Queue *New();
-  static Queue *FromWord(word w);
-
-  void Enqueue(word w);
-  bool IsEmpty();
-  word Dequeue();
-};
 
 class Future: private Transient {
 public:
