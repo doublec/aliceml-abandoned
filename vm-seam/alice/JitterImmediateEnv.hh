@@ -19,18 +19,18 @@
 
 class ImmediateEnv {
 protected:
-  static u_int index;
-  static u_int size;
-  static Tuple *values;
+  u_int index;
+  u_int size;
+  Tuple *values;
 public:
-  // ImmediateEnv Static Constructor
-  static void Init() {
+  ImmediateEnv() {}
+
+  void Init() {
     index  = 0;
     size   = 5;
     values = Tuple::New(size);
   }
-  // ImmediateEnv Methods
-  static u_int Register(word item) {
+  u_int Register(word item) {
     Assert(item != (word) 0);
     if (index >= size) {
       u_int oldsize = size;
@@ -43,13 +43,13 @@ public:
     values->Init(index, item);
     return index++;
   }
-  static word Sel(u_int index) {
+  word Sel(u_int index) {
     return values->Sel(index);
   }
-  static void Replace(u_int index, word item) {
+  void Replace(u_int index, word item) {
     values->Init(index, item);
   }
-  static word ExportEnv() {
+  word ExportEnv() {
     return values->ToWord();
   }
 };
