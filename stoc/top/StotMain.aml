@@ -12,11 +12,11 @@
 
 import
     structure OS
-from "../../lib/OS"
+from "../../lib/system/OS"
 
 import
     structure CommandLine
-from "../../lib/CommandLine"
+from "../../lib/system/CommandLine"
 
 import
     structure SMLToMozartEmacsToplevel

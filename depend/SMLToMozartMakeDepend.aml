@@ -12,7 +12,7 @@
  *)
 
 import structure Assert      from "../../lib/utility/Assert"
-import structure TextIO      from "../../lib/TextIO"
+import structure TextIO      from "../../lib/system/TextIO"
 import structure Parser      from "SMLParser"
 import functor   MkAnalyzer  from "MkAnalyzer"
 import signature MAKE_DEPEND from "MAKE_DEPEND-sig"

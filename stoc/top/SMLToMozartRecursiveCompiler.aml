@@ -14,7 +14,7 @@
 
 import
     structure TextIO
-from "../../lib/TextIO"
+from "../../lib/system/TextIO"
 
 import
     structure Url
