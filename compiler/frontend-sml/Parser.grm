@@ -430,7 +430,8 @@
   (* Constants *)
 
   scon:
-	  ZERO		( SCon(I(ZEROleft,ZEROright),   SCon.INT 0) )
+	  ZERO		( SCon(I(ZEROleft,ZEROright),
+				SCon.INT(LargeInt.fromInt 0)) )
 	| DIGIT		( SCon(I(DIGITleft,DIGITright),
 				SCon.INT(LargeInt.fromInt DIGIT)) )
 	| NUMERIC	( SCon(I(NUMERICleft,NUMERICright),
