@@ -8,6 +8,7 @@ Library:
 * Added WideText and WideChar{Vector,Array}[Slice].
 * Added List.split.
 * FD and FS set constructors now perform domain checking.
+* FD and FS now raise Tell exception on toplevel constraints.
 * Fixed broken GTK signal handling (disconnect/block/unblock/emit).
 * Fixed broken string type in GTK.
 
