@@ -24,6 +24,7 @@ pkglibdir=@libdir@/@PACKAGE@
 seamlibdir=@seamlibdir@
 gmpincludes=@gmpincludes@
 gmplib=@gmplib@
+alicedll=@alicedll@
 
 usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
@@ -82,7 +83,7 @@ case "$mode" in
 	exec seamtool ${verbose} compile "${gmpincludes}" -I"${includedir}" "$@"
 	;;
     link)
-	exec seamtool ${verbose} link "$@" "${gmplib}"
+	exec seamtool ${verbose} link "$@" "${alicedll}" "${gmplib}"
 	;;
     *)
 	echo "$0: unknown mode \`$1\'" >&2

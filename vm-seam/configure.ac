@@ -60,8 +60,13 @@ AC_PATH_SEAM
 case $host_os in
     darwin*)
        DEFS="${DEFS}${DEFS:+ }-D_BSD_SOCKLEN_T_"
+       alicedll=""
+       ;;
+    *cygwin*)
+       alicedll='${libdir}/seam/alice.dll'
        ;;
     *)
+       alicedll=""
        ;;
 esac
 
