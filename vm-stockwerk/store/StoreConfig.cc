@@ -134,7 +134,7 @@ static void CreateLabel(FILE *f, unsigned long size) {
   std::fprintf(f, "  BYNEED_LABEL        = 0x%lx,\n", (size - 2));
   std::fprintf(f, "  MAX_TRANSIENT_LABEL = 0x%lx,\n", (size - 2));
   std::fprintf(f, "  CHUNK_LABEL         = 0x%lx,\n", (size - 1));
-  std::fprintf(f, "  WEAK_DICT_LABEL     = 0x%lx,\n", size);
+  std::fprintf(f, "  WEAK_MAP_LABEL      = 0x%lx,\n", size);
   std::fprintf(f, "  MAX_STORE_LABEL     = 0x%lx\n", size);
 
   std::fprintf(f, "} BlockLabel;\n\n");

@@ -28,6 +28,7 @@
 struct timeval;
 #endif
 
+class WeakMap;
 class JITStore;
 class Profiler;
 class MemChunk;
@@ -36,6 +37,7 @@ class MemChunk;
 
 class DllExport Store : public StatusWord {
 protected:
+  friend class Map;
   friend class JITStore;
   friend class Profiler;
   static MemChunk *roots[STORE_GENERATION_NUM];
@@ -63,7 +65,6 @@ protected:
   static void FinalizeCheneyScan(MemChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(u_int gen);
   static Block *HandleWeakDictionaries();
-  static void HandleBlockHashTables();
   static u_int GetMemUsage(MemChunk *chunk);
   static char *GCAlloc(u_int size, u_int header);
   static char *GCAlloc(u_int size);
@@ -121,7 +122,7 @@ public:
   static void DoGC(word &root);
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);
-  static void RegisterWeakDict(WeakDictionary *v);
+  static void RegisterWeakDict(WeakMap *v);
   static u_int GCStatus() {
     return (1 << STORE_NEED_GC_STATUS);
   }
@@ -216,6 +217,5 @@ public:
 
 // Defined Store Value Classes
 #include "store/Value.hh"
-#include "store/WeakDictionary.hh"
 
 #endif
