@@ -52,6 +52,7 @@ public:
     Queue::Remove(thread->ToWord());
   }
   void Purge() {
+    Blank();
     for (u_int i = GetNumberOfElements(); i--; )
       Thread::FromWordDirect(GetNthElement(i))->Purge();
   }
