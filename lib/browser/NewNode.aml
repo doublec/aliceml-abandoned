@@ -32,6 +32,8 @@ struct
     val max_width = ref 15
     val max_depth = ref 5
     val dict = Dictionary.empty
+    
+    exception createGraph_unknownNode
 
     (* newNode *)
     fun newNode (v,t) = let val va = UnsafeValue.cast v: Reflect.value
@@ -45,7 +47,26 @@ struct
 	(case Type.inspect t of
 	   Type.Con path 
 	   => newPath (va,t,p,i,d,path)
-         | _ => Empty ) (* !!! *)
+         | Type.Arrow _ 
+	   =>  createSimple (createValue(va,t,NO_ACTIONS)
+			     ,p,i,"fn",COLOR,setGroup)
+         | Type.All(var,typ) 
+	   => raise createGraph_unknownNode
+	 | Type.Exist(var,typ) 
+	   => raise createGraph_unknownNode
+         | Type.Lambda(var,typ) 
+	   => raise createGraph_unknownNode
+         | Type.Apply(t1,t2)
+           => (case unApply (Type.inspect(t)) of 
+               (Type.Con path, ts) => newPath (va,t,p,i,d,path)
+             | _ => raise createGraph_unknownNode) (* Erweiterung spaeter *)   
+         | Type.Prod(row) =>  raise createGraph_unknownNode  
+	 | Type.Mu(sum) => createGraph(va,sum,p,i,d)
+         | Type.Sum(row) =>  raise createGraph_unknownNode  
+         | _ => raise  createGraph_unknownNode) (* hier fehlen noch Faelle *)
+
+    (* treatProd *)
+	 and treatProd (va,t,p,i,d,row) = Empty
 
     (* newPath *)
     and newPath (v,t,p,i,d,path) =
@@ -105,6 +126,7 @@ struct
 						   depth = d,
 						   status = ref DAZZLED,
 						   group = f(p)}
+
 	
 
 end

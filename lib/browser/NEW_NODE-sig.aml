@@ -35,6 +35,8 @@ sig
     val newNode: 'a * Type.t -> node
     
     val createGraph: Reflect.value * Type.t  * node * int * int -> node
+
+    val treatProd:  Reflect.value * Type.t  * node * int * int * Type.row -> node
     
     val newPath: 
 	Reflect.value * Type.t * node * int * int *  Path.path -> node
