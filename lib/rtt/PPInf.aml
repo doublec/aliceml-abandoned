@@ -17,8 +17,8 @@ import structure Fixity      from "Fixity"
 import structure Inf
        structure InfPrivate  from "Inf"
 
-import structure PrettyPrint from "../misc/PrettyPrint"
-import structure PPMisc      from "../misc/PPMisc"
+import structure PrettyPrint from "../utility/PrettyPrint"
+import structure PPMisc      from "PPMisc"
 import structure PPPath      from "PPPath"
 import structure PPType      from "PPType"
 import signature PP_INF      from "PP_INF-sig"

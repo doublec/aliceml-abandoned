@@ -212,17 +212,22 @@ steps 3 and 4):
    Bootstrap.aus has to be moved to vm-com+/Base.aml, since that runtime
    still needs it.
 
+7. Alice source tree uses lib/utility and lib/rtt. (LK)
+
+   Formerly the corresponding sources resided in stoc/misc and
+   stoc/common.  The import URLs reflect this change.
+
 ======
  TODO
 ======
 
-7. Compiler uses lib (utility/rtt). (LK)
+7a. Clean up SML/NJ source tree. (AR)
 
    Currently we have two copies of some modules - one for the
    Alice codebase, one as the SML/NJ source.  This is the
    case for some sources formerly residing in stoc/misc and
-   stoc/common.  These sources should now be handled using
-   aml2sml. Need to update import URI accordingly.
+   stoc/common.  These sources now live in lib/utility and
+   utility/rtt and should now be handled using aml2sml.
 
    Move stoc/misc/BootstrapGlobalStamp to bootstrap/GlobalStamp.
 
