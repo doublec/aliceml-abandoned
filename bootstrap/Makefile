@@ -54,11 +54,19 @@ alicec-dotnet.$(PLATFORM):
 	echo 'use "make-alicec-dotnet.sml";' | $(SML)
 	if [ ! -f $@ ]; then exit 1; fi
 
+alicec-stockwerk.$(PLATFORM):
+	-rm -f $@
+	echo 'use "make-alicec-stockwerk.sml";' | $(SML)
+	if [ ! -f $@ ]; then exit 1; fi
+
 clean:
 	-rm -f *.ozf
 
 veryclean: clean
 	-rm -f alicec-mozart.exe
-	-rm -f alicedep.* alicec-mozart.* alice-mozart.* alicec-dotnet.*
+	-rm -f alicedep.*
+	-rm -f alicec-mozart.* alice-mozart.*
+	-rm -f alicec-dotnet.*
+	-rm -f alicec-stockwerk.*
 
 distclean: veryclean
