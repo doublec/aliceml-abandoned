@@ -53,8 +53,8 @@
   components from arbitrary URIs:</P>
 
   <PRE>
-	> import structure Url from "x-alice:/lib/utility/Url";
-	### loaded signature from x-alice:/lib/utility/Url
+	> import structure Url from "x-alice:/lib/system/Url";
+	### loaded signature from x-alice:/lib/system/Url
 	structure Url : URL = Url
 	> 
   </PRE>
@@ -65,8 +65,8 @@
   <P>For convenience, import announcements can be abbreviated as follows:</P>
 
   <PRE>
-	> import "x-alice:/lib/utility/Url";
-	### loaded signature from x-alice:/lib/utility/Url
+	> import "x-alice:/lib/system/Url";
+	### loaded signature from x-alice:/lib/system/Url
 	structure Url : URL = Url
 	> 
   </PRE>

@@ -20,8 +20,8 @@
 <?php section("import", "import") ?>
 
   <PRE>
-    import signature Url from "x-alice:/lib/utility/Url"
-    import signature URL from "x-alice:/lib/utility/URL-sig"</PRE>
+    import signature Url from "x-alice:/lib/system/Url"
+    import signature URL from "x-alice:/lib/system/URL-sig"</PRE>
 
 <?php section("interface", "interface") ?>
 

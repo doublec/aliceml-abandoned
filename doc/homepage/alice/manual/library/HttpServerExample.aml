@@ -9,7 +9,7 @@
  *)
 
 import structure TextIO      from "x-alice:/lib/system/TextIO"
-import structure Url         from "x-alice:/lib/utility/Url"
+import structure Url         from "x-alice:/lib/system/Url"
 import structure Http        from "x-alice:/lib/system/Http"
 import structure HttpServer  from "x-alice:/lib/system/HttpServer"
 

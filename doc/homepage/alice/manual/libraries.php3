@@ -21,8 +21,6 @@
     <LI><A href="#toplevel">top-level environment</A>
     <LI><A href="#fundamental">fundamental library</A>
     <LI><A href="#system">system library</A>
-    <LI><A href="#utility">utilities library</A>
-        (<TT>"x-alice:/lib/utility/..."</TT>)
     <LI><A href="gtk.php3">Gtk library</A>
         (<TT>"x-alice:/lib/gtk/..."</TT>)
     <LI><A href="constraints.php3">constraint library</A>
@@ -41,7 +39,7 @@
   </P>
 
   <PRE>
-	import structure Url from "x-alice:/lib/utility/Url"
+	import structure Url from "x-alice:/lib/system/Url"
   </PRE>
 
 
@@ -252,24 +250,16 @@
       <A href="http://www.dina.kvl.dk/~sestoft/sml/unix.html">Unix</A>
       <BR>from "x-alice:/lib/system/Unix"</TT>
     </LI>
+    <LI>
+      <TT>structure Url
+      <BR>from "x-alice:/lib/system/Url"</TT>
+    </LI>
   </UL>
 
   <P>
     Structures from the Standard ML Basis Library not listed above are not
     available in Alice yet.
   </P>
-
-
-<?php section("utility", "utility") ?>
-
-  <UL>
-    <LI>
-      <TT>structure Url
-      <BR>from "x-alice:/lib/utility/Url"</TT>
-    </LI>
-  </UL>
-
-  and others...
 
 
 <?php section("tools", "tools") ?>
