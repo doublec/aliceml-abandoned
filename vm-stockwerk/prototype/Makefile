@@ -14,9 +14,10 @@ PLATFORM = $(shell oztool platform)
 
 SRCS = \
 	PrimitiveTable.oz \
-	Pickle.oz \
-	AbstractCodeInterpreter.oz \
+	ByneedInterpreter.oz \
 	Scheduler.oz \
+	AbstractCodeInterpreter.oz \
+	Pickle.oz \
 	Linker.oz \
 	Main.oz
 
