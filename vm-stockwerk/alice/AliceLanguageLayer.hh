@@ -17,6 +17,10 @@
 #pragma interface "alice/AliceLanguageLayer.hh"
 #endif
 
+class TagVal;
+
+typedef  word (*concrete_constructor)(TagVal *);
+
 class AliceLanguageLayer {
 public:
   class TransformNames {
@@ -27,6 +31,8 @@ public:
     static word constructor;
     static word uniqueString;
   };
+
+  static concrete_constructor concreteCodeConstructor;
 
   static void Init();
 };
