@@ -60,133 +60,8 @@ fun about _ = serve' (fn () =>  () (*
 	 ;Gtk.widgetShowAll(dialog))
      end) *) )
 
-(* Handles ok Button in Preferences Window *)
-fun okHandler(w,
-	      width_s,
-	      depth_s,
-	      font_s,
-	      treemode_button,
-	      relmode_button, 
-	      tokenmode_button) = (fn _ => 
-	       		   ( (* let
-				val fontname = Gtk.fontSelectionGetFontName
-				    (fontpicker)
-			    in
-				(Settings.fontname := fontname
-				;Settings.font:= Gdk.fontLoad(fontname)
-				;Settings.fontHeight :=
-				 (Gdk.fontGetFieldAscent(!Settings.font)+
-			   Gdk.fontGetFieldDescent(!Settings.font) )
-				;Settings.fontWidth:=
-				 (Gdk.stringWidth(!Settings.font,"W")))
-			    end
-			    ;  *) Settings.max_width := 
-			    Gtk.spinButtonGetValueAsInt(width_s) 
-			    ;Settings.max_depth := 
-			    Gtk.spinButtonGetValueAsInt(depth_s)
-			    ; changeFontSize(
-			      Gtk.spinButtonGetValueAsInt(font_s))
-			    ;Settings.relmode := (
-			    Gtk.toggleButtonGetActive(relmode_button) = 1
-						  orelse 
-			   Gtk.toggleButtonGetActive(tokenmode_button) = 1)
-			    ;Settings.tokenmode :=  
-			    Gtk.toggleButtonGetActive(tokenmode_button) = 1
-			    ;Gtk.widgetDestroy(w)
-			    ;if 
-			    Gtk.toggleButtonGetActive(treemode_button) = 1
-				 then (RelManDictionary.dumpAll
-				       (Dictionaries.reldict)
-				       ; Settings.relnumber := 0)
-			     else ()))
 
-(* Preferences Window Handler *)
-fun Preferences _ = serve' (fn () =>
-       	   let	
-           (* Width & Depth Settings *)
-	   val width_lab = Gtk.labelNew("Set Width Limit to...")	       
-	   val width_s = createSpinButton{init =(!Settings.max_width) , 
-					   lower = 0, 
-					   upper = 100, 
-					   inc = 1, 
-					   dec = 0}
-	    val depth_s = createSpinButton{init =(!Settings.max_depth) , 
-					   lower = 0, 
-					   upper = 100, 
-					   inc = 1, 
-					   dec = 0}
-	    val depth_lab = Gtk.labelNew("Set Depth Limit to...")
-	    val table = createTable{rows = 2, cols = 4, 
-				    entries = [(width_lab,0,2,0,1),
-				     (width_s,2,3,0,1),
-				     (depth_lab,0,2,1,2),
-				     (depth_s,2,3,1,2)]}
-	    val frame = createFrame("",table)
-	    (* Mode Settings *)
-	    val treemode_button = Gtk.radioButtonNewWithLabel(uglyNULL, 
-       			      "Tree Mode")
-	    val group = Gtk.radioButtonGroup(treemode_button)
-	    val tokenmode_button = Gtk.radioButtonNewWithLabel(group, 
-				"Relational Mode - Token Equality")
-	    val group = Gtk.radioButtonGroup(tokenmode_button)
-	    val relmode_button = Gtk.radioButtonNewWithLabel(group, 
-				"Relational Mode - Structural Equality")
-	    val _ = if !Settings.tokenmode 
-			then Gtk.toggleButtonSetActive(tokenmode_button,1)
-		    else if !Settings.relmode then 
-			Gtk.toggleButtonSetActive(relmode_button,1)
-			else
-			Gtk.toggleButtonSetActive(treemode_button,1)
 
-	    val radiobox = createVBoxDefaults[treemode_button,
-					      relmode_button,
-					      tokenmode_button]
-
-	    val font_lab = Gtk.labelNew("Set Font Size to...")	
-	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
-					  lower = 8, 
-					   upper = 50, 
-					   inc = 1, 
-					   dec = 0}
-	    val app_table = createTable{rows = 2, cols = 4, 
-				    entries = [(font_lab,0,2,0,1),
-					       (font_s,2,3,0,1)]}
-
-	   (* val fontpicker = Gtk.fontSelectionNew() *)
-
-	   (*  val colorsel = Gtk.colorSelectionNew() *)
-
-	    (* Buttonbox *)
-
-	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
-	    val bbox = createButtonBox{buttons = 
-		      [BObj("ok",[Handler("clicked",
-					  (okHandler(w,
-						     width_s,
-						     depth_s,
-						     font_s,
-						     treemode_button,
-						     relmode_button,
-						     tokenmode_button)   ))]),
-		       BObj("apply",[]),
-		       BObj("cancel",
-			    [Handler("clicked",fn _ => 
-				     Gtk.widgetDestroy(w))])],
-				       borderwidth = 20}
-
-	    val n = createNotebook[("Width & Depth Limit Settings",frame),
-				   ("Mode Settings",radiobox),
-				   ("Appearance",app_table)  ] 
-
-	    val vbox = createVBoxDefaults[n,bbox]
-		in
-		    (Gtk.windowSetTitle (w, "Preferences")
-		    ;Gtk.windowSetPolicy(w,0,0,1)
-	            ;Gtk.containerAdd(w,vbox)
-	            ;Gtk.signalConnect (w, "delete-event", 
-					fn _ => Gtk.widgetDestroy(w) )
-		     ;Gtk.widgetShowAll(w))
-	end)
 
 fun getSelectionMenu bar = 
     let
@@ -421,7 +296,7 @@ struct
 		    ;act_line := 0
 		    ;alive:= false)
 
-    val handlers = Array.array(6,(fn (n,i) => ()))
+    val handlers = Array.array(7,(fn (n,i) => ()))
 
     fun selectHandler "reinspect" = Array.sub(handlers,0)
       | selectHandler "width"     = Array.sub(handlers,1)
@@ -429,6 +304,7 @@ struct
       | selectHandler "shrink"    = Array.sub(handlers,3)
       | selectHandler "expand"    = Array.sub(handlers,4)
       | selectHandler "force evaluation" = Array.sub(handlers,5)
+      | selectHandler "new node" = Array.sub(handlers,6)	
 
     fun register (str,handler) = 
 	let
@@ -438,6 +314,7 @@ struct
 	  | "shrink" => 3
 	  | "expand" => 4
           | "force evaluation" => 5
+	  | "new node" => 6
 	in
 	    Array.update(handlers,i,handler)
 	end
@@ -510,6 +387,159 @@ struct
 
      fun handleForce node _ = setStopButtonOnOff
 	 (selectHandler("force evaluation"), (getSelectionNode(),0))
+
+     fun updateIterate(i,no,diffh) = 
+	 if (* i > MainDictionary.getHighestIndexAssigned(Dictionaries.dict) *)
+	     i < 0 
+	     then ()
+	 else
+	     case MainDictionary.lookup(Dictionaries.dict,i) of
+		 NONE => updateIterate(i-1,no,diffh)
+	       | SOME (node,line) =>	 
+			    ((selectHandler "reinspect") (node,0)
+			     ; GtkSupport.move(Helper.getGroup(node),0.0,
+					       Real.fromInt(diffh * no))
+
+				      ; updateIterate(i-1,no+1,diffh))
+	       |_ => ()
+
+     (* Handles ok Button in Preferences Window *)
+     fun okHandler(w,
+	      width_s,
+	      depth_s,
+	      font_s,
+	      treemode_button,
+	      relmode_button, 
+	      tokenmode_button) = (fn _ => 
+	       		   ( (* let
+				val fontname = Gtk.fontSelectionGetFontName
+				    (fontpicker)
+			    in
+				(Settings.fontname := fontname
+				;Settings.font:= Gdk.fontLoad(fontname)
+				;Settings.fontHeight :=
+				 (Gdk.fontGetFieldAscent(!Settings.font)+
+			   Gdk.fontGetFieldDescent(!Settings.font) )
+				;Settings.fontWidth:=
+				 (Gdk.stringWidth(!Settings.font,"W")))
+			    end
+			    ;  *) Settings.max_width := 
+			    Gtk.spinButtonGetValueAsInt(width_s) 
+			    ;Settings.max_depth := 
+			    Gtk.spinButtonGetValueAsInt(depth_s)
+			    ; let
+				  val new_size = 
+				      Gtk.spinButtonGetValueAsInt(font_s)
+			      val old_h =  !Settings.fontHeight
+			      in
+				  if !Settings.fontSize = new_size then ()
+				  else ( changeFontSize(new_size)
+				       ; updateIterate
+( MainDictionary.getHighestIndexAssigned(Dictionaries.dict),
+ !Settings.fontHeight - old_h,0))
+			      end
+			    ;Settings.relmode := (
+			    Gtk.toggleButtonGetActive(relmode_button) = 1
+						  orelse 
+			   Gtk.toggleButtonGetActive(tokenmode_button) = 1)
+			    ;Settings.tokenmode :=  
+			    Gtk.toggleButtonGetActive(tokenmode_button) = 1
+			    ;Gtk.widgetDestroy(w)
+			    ;if 
+			    Gtk.toggleButtonGetActive(treemode_button) = 1
+				 then (RelManDictionary.dumpAll
+				       (Dictionaries.reldict)
+				       ; Settings.relnumber := 0)
+			     else ()))
+
+     (* Preferences Window Handler *)
+     fun Preferences _ = serve' (fn () =>
+       	   let	
+           (* Width & Depth Settings *)
+	   val width_lab = Gtk.labelNew("Set Width Limit to...")	       
+	   val width_s = createSpinButton{init =(!Settings.max_width) , 
+					   lower = 0, 
+					   upper = 100, 
+					   inc = 1, 
+					   dec = 0}
+	    val depth_s = createSpinButton{init =(!Settings.max_depth) , 
+					   lower = 0, 
+					   upper = 100, 
+					   inc = 1, 
+					   dec = 0}
+	    val depth_lab = Gtk.labelNew("Set Depth Limit to...")
+	    val table = createTable{rows = 2, cols = 4, 
+				    entries = [(width_lab,0,2,0,1),
+				     (width_s,2,3,0,1),
+				     (depth_lab,0,2,1,2),
+				     (depth_s,2,3,1,2)]}
+	    val frame = createFrame("",table)
+	    (* Mode Settings *)
+	    val treemode_button = Gtk.radioButtonNewWithLabel(uglyNULL, 
+       			      "Tree Mode")
+	    val group = Gtk.radioButtonGroup(treemode_button)
+	    val tokenmode_button = Gtk.radioButtonNewWithLabel(group, 
+				"Relational Mode - Token Equality")
+	    val group = Gtk.radioButtonGroup(tokenmode_button)
+	    val relmode_button = Gtk.radioButtonNewWithLabel(group, 
+				"Relational Mode - Structural Equality")
+	    val _ = if !Settings.tokenmode 
+			then Gtk.toggleButtonSetActive(tokenmode_button,1)
+		    else if !Settings.relmode then 
+			Gtk.toggleButtonSetActive(relmode_button,1)
+			else
+			Gtk.toggleButtonSetActive(treemode_button,1)
+
+	    val radiobox = createVBoxDefaults[treemode_button,
+					      relmode_button,
+					      tokenmode_button]
+
+	    val font_lab = Gtk.labelNew("Set Font Size to...")	
+	    val font_s = createSpinButton{init =(!Settings.fontSize) , 
+					  lower = 8, 
+					   upper = 50, 
+					   inc = 1, 
+					   dec = 0}
+	    val app_table = createTable{rows = 2, cols = 4, 
+				    entries = [(font_lab,0,2,0,1),
+					       (font_s,2,3,0,1)]}
+
+	   (* val fontpicker = Gtk.fontSelectionNew() *)
+
+	   (*  val colorsel = Gtk.colorSelectionNew() *)
+
+	    (* Buttonbox *)
+
+	    val w = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val bbox = createButtonBox{buttons = 
+		      [BObj("ok",[Handler("clicked",
+					  (okHandler(w,
+						     width_s,
+						     depth_s,
+						     font_s,
+						     treemode_button,
+						     relmode_button,
+						     tokenmode_button)   ))]),
+		       BObj("apply",[]),
+		       BObj("cancel",
+			    [Handler("clicked",fn _ => 
+				     Gtk.widgetDestroy(w))])],
+				       borderwidth = 20}
+
+	    val n = createNotebook[("Width & Depth Limit Settings",frame),
+				   ("Mode Settings",radiobox),
+				   ("Appearance",app_table)  ] 
+
+	    val vbox = createVBoxDefaults[n,bbox]
+		in
+		    (Gtk.windowSetTitle (w, "Preferences")
+		    ;Gtk.windowSetPolicy(w,0,0,1)
+	            ;Gtk.containerAdd(w,vbox)
+	            ;Gtk.signalConnect (w, "delete-event", 
+					fn _ => Gtk.widgetDestroy(w) )
+		     ;Gtk.widgetShowAll(w))
+	end)
+
 
 	 (* Menu-Bar *)
      val bar = GtkSupport.createMenu
