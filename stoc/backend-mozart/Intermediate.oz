@@ -28,7 +28,7 @@
 %%        |  ifExp(<info> <exp> <exp> <exp>)
 %%        |  whileExp(<info> <exp> <exp>)
 %%        |  seqExp(<info> [<exp>])
-%%        |  caseExp(<info> <exp> [<match>])   % always total
+%%        |  caseExp(<info> <exp> [<match>] <long id>)   % exception to raise
 %%        |  raiseExp(<info> <exp>)
 %%        |  handleExp(<info> <exp> <id> <exp>)
 %%        |  letExp(<info> [<dec>] <exp>)
@@ -101,7 +101,7 @@ define
       [] ifExp(I _ _ _) then I
       [] whileExp(I _ _) then I
       [] seqExp(I _) then I
-      [] caseExp(I _ _) then I
+      [] caseExp(I _ _ _) then I
       [] raiseExp(I _) then I
       [] handleExp(I _ _ _) then I
       [] letExp(I _ _) then I

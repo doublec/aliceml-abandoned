@@ -271,7 +271,7 @@ define
 	 ValRep = {NewReg State}#record()
       [] seqExp(_ Exps) then
 	 ValRep = {FoldL Exps fun {$ _ Exp} {AnnotateExp Exp State} end unit}
-      [] caseExp(_ Exp Matches) then ValRep1 in
+      [] caseExp(_ Exp Matches LongId) then ValRep1 in
 	 ValRep1 = {AnnotateExp Exp State}
 	 {ForAll Matches
 	  proc {$ match(_ Pat Exp)}
@@ -280,6 +280,7 @@ define
 	     _ = {AnnotateExp Exp State}
 	     {Restore State}
 	  end}
+	 _ = {LongIdValRep LongId State}
 	 ValRep = {NewReg State}#top
       [] raiseExp(_ Exp) then
 	 _ = {AnnotateExp Exp State}
