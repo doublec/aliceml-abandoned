@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2001
+ *   Leif Kornstaedt, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -12,11 +12,8 @@
 
 import signature COMPONENT_MANAGER
 			     from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
-(*--**
 import structure ComponentManager
 			     from "x-alice:/lib/system/ComponentManager"
-*)
-import structure Component   from "x-alice:/lib/system/Component"   (*--** *)
 import structure OS          from "x-alice:/lib/system/OS"
 import structure CommandLine from "x-alice:/lib/system/CommandLine"
 import structure Remote      from "Remote"
@@ -30,7 +27,6 @@ fun main [ticket] =
 			     functor Start(ComponentManager:
 					   COMPONENT_MANAGER): RESULT
 			     val return: Package.t -> unit))
-	structure ComponentManager = Component.MkManager()   (*--** *)
 	structure P =
 	    Package.Pack(signature S = Query.RESULT
 			 structure X = Query.Start(ComponentManager))
