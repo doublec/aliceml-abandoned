@@ -2,7 +2,7 @@ package de.uni_sb.ps.DML.DMLRuntime;
 
 final public class DMLRecord implements DMLValue {
 
-  public DMLRecord (Label[] ls, DMLValue[] vals) {
+  public DMLRecord (DMLLabel[] ls, DMLValue[] vals) {
     this.vals=vals;
     arity=new RecordArity(ls);
   }
@@ -40,7 +40,7 @@ final public class DMLRecord implements DMLValue {
     return s+"): Record";
   }
 
-  final public DMLValue getByLabel(Label label) {
+  final public DMLValue getByLabel(DMLLabel label) {
     return vals[arity.getByLabel(label)];
   }
 
