@@ -101,8 +101,7 @@
   <HR>
   <DIV ALIGN=RIGHT>
     <ADDRESS>
-       <A href="/~rossberg/">Andreas Rossberg</A>,
-       <A href="/~smolka/">Gert Smolka</A> -
+       <A href="/~rossberg/">Andreas Rossberg</A> -
        last modified <?php echo date("Y/m/d") ?>
     </ADDRESS>
   </DIV>

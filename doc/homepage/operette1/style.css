@@ -34,7 +34,7 @@ H2 {
 	font-weight:	bold;
 	font-family:	"Courier New", Courier, Monospace;
 	text-align:	left;
-	color:		#ffb0a0;
+	color:		#cccccc/*#ffb0a0*/;
 }
 
 P.quote {
