@@ -15,6 +15,7 @@ import structure Label from "../../lib/rtt/Label"
 signature INF_TRANSLATION =
 sig
     val modlab_inf :		Label.t
+    val typlab_mod :		Label.t
     val typlab_sig :		Label.t
     val typlab_inf :		Label.t
     val typlab_kind :		Label.t
@@ -36,21 +37,24 @@ sig
     val lab_lookupMod' :	Label.t
     val lab_lookupInf' :	Label.t
 
+    val lab_mod :		Label.t
+    val lab_asMod :		Label.t
+
     val lab_top :		Label.t
-    val lab_abs :		Label.t
+    val lab_con :		Label.t
     val lab_sig :		Label.t
     val lab_sing :		Label.t
     val lab_arrow :		Label.t
     val lab_lambda :		Label.t
     val lab_apply :		Label.t
 
-    val lab_asAbs :		Label.t
+    val lab_asCon :		Label.t
     val lab_asSig :		Label.t
     val lab_asArrow :		Label.t
     val lab_asSing :		Label.t
     val lab_asLambda :		Label.t
     val lab_asApply :		Label.t
-    val lab_asAbs' :		Label.t
+    val lab_asCon' :		Label.t
     val lab_asSig' :		Label.t
     val lab_asArrow' :		Label.t
 
@@ -61,6 +65,6 @@ sig
     val lab_kind :		Label.t
     val lab_instance :		Label.t
     val lab_match :		Label.t
-    val lab_intersect :		Label.t
+    val lab_infimum :		Label.t
     val lab_mismatch :		Label.t
 end
