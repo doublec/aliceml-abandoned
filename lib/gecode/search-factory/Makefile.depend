@@ -1,44 +1,44 @@
-Debug.stc:
+Debug.alc:
 
-Path.stc:
+Path.alc:
 
-Policy.stc: \
-	Debug.stc
+Policy.alc: \
+	Debug.alc
 
-SPACENODE-sig.stc: \
-	Path.stc
+SPACENODE-sig.alc: \
+	Path.alc
 
-MkSpaceNode.stc: \
-	Debug.stc \
-	Policy.stc \
-	SPACENODE-sig.stc \
-	Path.stc
+MkSpaceNode.alc: \
+	Debug.alc \
+	Policy.alc \
+	SPACENODE-sig.alc \
+	Path.alc
 
-TREENODE-sig.stc: \
-	Path.stc \
-	Debug.stc
+TREENODE-sig.alc: \
+	Path.alc \
+	Debug.alc
 
-MkTreeNode.stc: \
-	Policy.stc \
-	TREENODE-sig.stc \
-	MkSpaceNode.stc
+MkTreeNode.alc: \
+	Policy.alc \
+	TREENODE-sig.alc \
+	MkSpaceNode.alc
 
-TreeNode.stc: \
-	TREENODE-sig.stc \
-	Policy.stc \
-	MkTreeNode.stc
+TreeNode.alc: \
+	TREENODE-sig.alc \
+	Policy.alc \
+	MkTreeNode.alc
 
-SEARCH-sig.stc: \
+SEARCH-sig.alc: \
 
-MkSearch.stc: \
-	Path.stc \
-	SEARCH-sig.stc \
-	TREENODE-sig.stc \
-	Debug.stc
+MkSearch.alc: \
+	Path.alc \
+	SEARCH-sig.alc \
+	TREENODE-sig.alc \
+	Debug.alc
 
-Test.stc: \
-	Debug.stc \
-	TreeNode.stc \
-	MkTreeNode.stc \
-	MkSearch.stc
+Test.alc: \
+	Debug.alc \
+	TreeNode.alc \
+	MkTreeNode.alc \
+	MkSearch.alc
 
