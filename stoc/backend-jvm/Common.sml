@@ -23,15 +23,13 @@ structure Common=
 
 	exception Mitch
 
-	(* Name der aktuellen Klasse. Der Stack wird für verschachtelte Funktionen benötigt.
-	 (für jede Funktion wird eine eigene Klasse erzeugt.) *)
+	(* Name of the initial class *) (* xxx remove literal *)
 	structure Class =
 	    struct
-		val stack = ref [""]
 		val initial = ref ""
 
-		fun setInitial name = ((stack := [name]); initial := name)
-		fun getInitial () = (!initial)
+		fun setInitial name = initial := name
+		fun getInitial () = !initial
 		fun getLiteralName() = getInitial()^"classLiberal"
 	    end
 
@@ -73,6 +71,7 @@ structure Common=
 	 val DEBUG = ref 0
 	 val VERBOSE = ref 0
 	 val OPTIMIZE = ref 0
+	 val LINES = ref false
 
 	 (* Stamps and Ids for formal Method Parameters. *)
 	 val thisstamp = Stamp.new ()

@@ -103,6 +103,7 @@ structure ToJasmin =
 	     Return the stack size after this instruction (i.e.
 	     the size before the next instruction can be performed *)
 	    fun leave (Comment _ :: rest, sizeAfter) = leave (rest, sizeAfter)
+	      | leave (Line _ :: rest, sizeAfter) = leave (rest, sizeAfter)
 	      | leave (Label l :: _, sizeAfter) =
 		(case IntHash.lookup(!stackSizeHash, l) of
 		     SOME sz => sz
@@ -166,10 +167,10 @@ structure ToJasmin =
 	structure JVMreg =
 	    struct
 		(* maps stamps to their first defining position *)
-		val from: int StampHash.t ref = ref (StampHash.new ())
+		val fromPos: int StampHash.t ref = ref (StampHash.new ())
 
 		(* maps stamps to their last read access position *)
-		val to: int StampHash.t ref = ref (StampHash.new ())
+		val toPos: int StampHash.t ref = ref (StampHash.new ())
 
 		(* maps stamps to JVM registers *)
 		val regmap =
@@ -203,8 +204,8 @@ structure ToJasmin =
 
 		(* new has to be called before each code optimization *)
 		fun new regs =
-		    (from := StampHash.new();
-		     to := StampHash.new();
+		    (fromPos := StampHash.new();
+		     toPos := StampHash.new();
 		     jvmto := IntHash.new();
 		     labHash := IntHash.new();
 		     fusedwith := StampHash.new();
@@ -249,28 +250,28 @@ structure ToJasmin =
 			"pop"
 		    else job^Int.toString reg
 
-		(* called when a stamp is defined. Needed for lifeness analysis *)
+		(* called when a stamp is defined. Needed for liveness analysis *)
 		fun define (stamp', pos) =
 		    let
-			val old = lookup (!from, stamp')
+			val old = lookup (!fromPos, stamp')
 		    in
 			if old = ~1 orelse old > pos
-			    then StampHash.insert (!from, stamp', pos)
+			    then StampHash.insert (!fromPos, stamp', pos)
 			else ()
 		    end
 
-		(* we need to remember the last usage of a variable for lifeness analysis *)
+		(* we need to remember the last usage of a variable for liveness analysis *)
 		fun use (stamp', pos) =
 		    let
 			val ori = getOrigin stamp'
-			val old = lookup (!to, ori)
+			val old = lookup (!toPos, ori)
 		    in
 			if old < pos
-			    then StampHash.insert(!to, ori, pos)
+			    then StampHash.insert(!toPos, ori, pos)
 			else ()
 		    end
 
-		(* The real lifeness analysis. This function is called when we know the
+		(* The real liveness analysis. This function is called when we know the
 		 life range of each stamp *)
 		fun assignAll () =
 		    let
@@ -281,8 +282,8 @@ structure ToJasmin =
 							     (!fusedwith, stamp')))
 				    andalso
 				    (not (isSome (StampHash.lookup (!regmap, genuineReg))))
-				val f' = lookup (!from, genuineReg)
-				val t' = lookup (!to, genuineReg)
+				val f' = lookup (!fromPos, genuineReg)
+				val t' = lookup (!toPos, genuineReg)
 				fun assignNextFree act =
 				    if f' >= lookupInt (!jvmto, act)
 					then (if !VERBOSE >=2 then
@@ -314,18 +315,18 @@ structure ToJasmin =
 					print ("assign ok.\n") else ()
 			    end
 		    in
-			IntHash.insert (!jvmto, 0, lookup(!to, thisStamp));
-			IntHash.insert (!jvmto, 1, lookup(!to, parm1Stamp));
-			IntHash.insert (!jvmto, 2, lookup(!to, parm2Stamp));
-			IntHash.insert (!jvmto, 3, lookup(!to, parm3Stamp));
-			IntHash.insert (!jvmto, 4, lookup(!to, parm4Stamp));
-			IntHash.insert (!jvmto, 5, lookup(!to, parm5Stamp));
+			IntHash.insert (!jvmto, 0, lookup(!toPos, thisStamp));
+			IntHash.insert (!jvmto, 1, lookup(!toPos, parm1Stamp));
+			IntHash.insert (!jvmto, 2, lookup(!toPos, parm2Stamp));
+			IntHash.insert (!jvmto, 3, lookup(!toPos, parm3Stamp));
+			IntHash.insert (!jvmto, 4, lookup(!toPos, parm4Stamp));
+			IntHash.insert (!jvmto, 5, lookup(!toPos, parm5Stamp));
 
-			StampHash.appi assign (!to)
+			StampHash.appi assign (!toPos)
 		    end
 
 		(* We remember the code position of labels. Needed for
-		 lifeness analysis again. *)
+		 liveness analysis again. *)
 		fun defineLabel (label', pos) =
 		     IntHash.insert (!labHash, label', pos)
 
@@ -340,22 +341,22 @@ structure ToJasmin =
 			fun checkReg (stamp', _) =
 			    let
 				val genuineReg = getOrigin stamp'
-				val regfrom = lookup (!from, genuineReg)
-				val regto = lookup (!to, genuineReg)
+				val regfrom = lookup (!fromPos, genuineReg)
+				val regto = lookup (!toPos, genuineReg)
 				val t' = case t of
 				    NONE => raise Mitch
 				  | SOME v => v
 			    in
 				if f' > regto andalso t' > regfrom andalso t' > regto
 				    then
-					StampHash.insert (!to, stamp', t')
+					StampHash.insert (!toPos, stamp', t')
 				else if f' > regfrom andalso f' <regto
 				    andalso t' < regfrom
-					 then StampHash.insert (!from, genuineReg, f')
+					 then StampHash.insert (!fromPos, genuineReg, f')
 				     else ()
 			    end
 		    in
-			if isSome t then StampHash.appi checkReg (!to) else ()
+			if isSome t then StampHash.appi checkReg (!toPos) else ()
 		    end
 
 		(* fuses two stamps. Called on aload/astore pairs *)
@@ -376,11 +377,10 @@ structure ToJasmin =
 		 once. However, there are a few ones which are written twice. Those must
 		 not be fused on aload/atore sequences. *)
 		fun countDefine reg =
-		    (print ("Accessing reg "^Stamp.toString reg^"\n");
 		    StampHash.insert (!defines, reg,
 				      case StampHash.lookup(!defines, reg) of
 					  NONE => 1
-					| SOME i => i+1))
+					| SOME i => i+1)
 	    end
 
 	fun optimize insts =
@@ -388,13 +388,16 @@ structure ToJasmin =
 		fun deadCode (last, (c as Comment _)::rest) =
 		    c :: deadCode (last, rest)
 
-		  | deadCode (last, (c as Catch (ex, from, to, using))::rest) =
-		    (* note that to is not necessarily reachable.
+		  | deadCode (last, (l as Line _):: rest) =
+		    l :: deadCode (last, rest)
+
+		  | deadCode (last, (c as Catch (ex, fromC, toC, using))::rest) =
+		    (* note that toC is not necessarily reachable.
 		     Anyhow, we have to generate the label for it. *)
-		    (LabelMerge.setReachable from;
+		    (LabelMerge.setReachable fromC;
 		     LabelMerge.setReachable using;
-		     LabelMerge.setUsed from;
-		     LabelMerge.setUsed to;
+		     LabelMerge.setUsed fromC;
+		     LabelMerge.setUsed toC;
 		     LabelMerge.setUsed using;
 		     c :: deadCode (last, rest))
 
@@ -548,60 +551,62 @@ structure ToJasmin =
 
 		  | deadCode (last, nil) = nil
 
-		fun prepareLifeness (Astore r::insts, pos) =
+		fun prepareLiveness (Astore r::insts, pos) =
 		    (JVMreg.define(r, pos);
-		     prepareLifeness (insts,pos+1))
-		  | prepareLifeness (Istore r::insts, pos) =
+		     prepareLiveness (insts,pos+1))
+		  | prepareLiveness (Istore r::insts, pos) =
 		    (JVMreg.define(r, pos);
-		     prepareLifeness (insts,pos+1))
-		  | prepareLifeness (Aload r::insts, pos) =
+		     prepareLiveness (insts,pos+1))
+		  | prepareLiveness (Aload r::insts, pos) =
 		    (JVMreg.use(r, pos);
-		     prepareLifeness (insts,pos+1))
-		  | prepareLifeness (Iload r::insts, pos) =
+		     prepareLiveness (insts,pos+1))
+		  | prepareLiveness (Iload r::insts, pos) =
 		    (JVMreg.use(r, pos);
-		     prepareLifeness (insts,pos+1))
-		  | prepareLifeness (Label l'::insts, pos) =
+		     prepareLiveness (insts,pos+1))
+		  | prepareLiveness (Label l'::insts, pos) =
 		    (JVMreg.defineLabel (l', pos);
-		     prepareLifeness (insts,pos+1))
-		  | prepareLifeness (_::insts, pos) =
-		    prepareLifeness (insts,pos+1)
-		  | prepareLifeness (nil, pos) =
+		     prepareLiveness (insts,pos+1))
+		  | prepareLiveness (_::insts, pos) =
+		    prepareLiveness (insts,pos+1)
+		  | prepareLiveness (nil, pos) =
 		(* Register 0 must not be overwritten. *)
 		    JVMreg.use (thisStamp,pos)
 
-		fun lifeness (Goto label'::insts, pos) =
+		fun liveness (Goto label'::insts, pos) =
 		    (JVMreg.addJump(pos, label');
-		     lifeness (insts, pos+1))
-		  | lifeness (Ifacmpeq label'::insts, pos) =
+		     liveness (insts, pos+1))
+		  | liveness (Ifacmpeq label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ifacmpne label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ifacmpne label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ifeq label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ifeq label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ificmpeq label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ificmpeq label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		   | lifeness (Ificmplt label'::insts, pos) =
+		      liveness (insts, pos+1))
+		   | liveness (Ificmplt label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ificmpne label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ificmpne label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ifne label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ifne label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (Ifnull label'::insts, pos) =
+		      liveness (insts, pos+1))
+		  | liveness (Ifnull label'::insts, pos) =
 		     (JVMreg.addJump(pos, label');
-		      lifeness (insts, pos+1))
-		  | lifeness (_::insts, pos) =
-		     lifeness (insts, pos+1)
-		  | lifeness (nil, _) = ()
+		      liveness (insts, pos+1))
+		  | liveness (_::insts, pos) =
+		     liveness (insts, pos+1)
+		  | liveness (nil, _) = ()
 
 		fun fuse (old, (c as Comment _)::rest) =
 		    c::fuse (old, rest)
+		  | fuse (old, (l as Line _) :: rest) =
+		    l :: fuse (old, rest)
 		  | fuse (l as Load (a,ori), (stor as Astore b)::rest) =
 		    (if JVMreg.fuse (a,b)
 			 then fuse (Store, rest)
@@ -694,10 +699,10 @@ structure ToJasmin =
 			 defined when entering a method *)
 			(* JVMreg.define(0, 0);
 			JVMreg.define(1, 0);*)
-			if !VERBOSE >= 3 then print "preparing lifeness... " else ();
-			prepareLifeness (d', 0);
-			if !VERBOSE >= 3 then print "doing lifeness... " else ();
-			lifeness (d', 0);
+			if !VERBOSE >= 3 then print "preparing liveness... " else ();
+			prepareLiveness (d', 0);
+			if !VERBOSE >= 3 then print "doing liveness... " else ();
+			liveness (d', 0);
 			if !VERBOSE >= 3 then print "done.\n" else ();
 			JVMreg.assignAll ();
 			if !OPTIMIZE >= 2 then
@@ -769,6 +774,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Catch _) = 0
 	  | stackNeedInstruction (Checkcast _) = 0
 	  | stackNeedInstruction (Comment _) = 0
+	  | stackNeedInstruction (Line _) = 0
 	  | stackNeedInstruction Dup = 1
 	  | stackNeedInstruction (Fconst _) = 1
 	  | stackNeedInstruction (Get _) = 0
@@ -851,6 +857,8 @@ structure ToJasmin =
 		    if !DEBUG>=1
 			then "\t; "^c
 		    else ""
+	      | instructionToJasmin (Line l,_) =
+			if !LINES andalso l <> 0 then "\t.line "^Int.toString l else ""
 	      | instructionToJasmin (Dup,_) = "dup"
 	      | instructionToJasmin (Fconst i,_) =
 			if i=0 then
@@ -957,6 +965,7 @@ structure ToJasmin =
 	    fun instructionsToJasmin (insts, enterstack, staticapply, ziel) =
 		let
 		    fun noStack (Comment _) = true
+		      | noStack (Line _) = true
 		      | noStack (Goto _) = true
 		      | noStack Athrow = true
 		      | noStack Return = true
@@ -1014,7 +1023,8 @@ structure ToJasmin =
 				then ()
 			    else
 				(if !DEBUG>=1
-				     then (TextIO.output (ziel,"\t\t.line "^line());
+				     then (if !LINES then ()
+					       else TextIO.output (ziel,"\t\t.line "^line());
 					   TextIO.output (ziel,"\t; Stack: "^Int.toString nextSize^
 							  " Max: "^Int.toString max^"\n"))
 				 else ());
@@ -1078,7 +1088,7 @@ structure ToJasmin =
 	    in
 		actclass:= name;
 		TextIO.output(io,
-			      ".source "^name^".j\n");
+			      ".source "^Class.getInitial ()^".dml\n");
 		TextIO.output(io,
 			      ".class "^(cAccessToString access)^name^"\n"^
 			      ".super "^super^"\n");
@@ -1087,14 +1097,5 @@ structure ToJasmin =
 		app methodToJasmin methods;
 		TextIO.closeOut io
 	    end
-
-(*      val compileJasmin = *)
-(*          fn (woher, verify:bool) = *)
-(*          let *)
-(*              val cmd = "/bin/bash" *)
-(*              val proc = Unix.execute(cmd,["jasmin",woher]); *)
-(*          in *)
-(*              Unix.reap proc *)
-(*          end *)
     end
 

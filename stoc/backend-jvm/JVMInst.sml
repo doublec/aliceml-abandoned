@@ -74,6 +74,7 @@ structure JVMInst =
 	  | Ireturn
 	  | Istore of stamp
 	  | Label of label
+	  | Line of int
 	  | Lcmp
 	  | Ldc of JVMBASETYPE
 	  | Lookupswitch of (LargeInt.int list * label list) * label

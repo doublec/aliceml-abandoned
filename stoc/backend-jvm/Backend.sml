@@ -87,7 +87,7 @@ structure Backend=
 				    f
 				end
 		      | SOME v => (print ("FreeVars for "^Stamp.toString stamp'^": ");
-				   StampSet.app (fn stamp'' => print (Stamp.toString stamp'')) v;
+				   StampSet.app (fn stamp'' => print (Stamp.toString stamp''^" ")) v;
 				   print "\n";
 				   v)
 
@@ -134,60 +134,12 @@ structure Backend=
 		     This is used for generating debug information in compiled
 		     (Jasmin) code *)
 		    val fields  : string StampHash.t = StampHash.new ()
-
-		    (* map function stamps to register *)
-(*			local
-			    val p: int StampHash.t = StampHash.new ()
-			    val _ = (StampHash.insert (p, thisStamp, 0);
-				     StampHash.insert (p, parm1Stamp, 1);
-				     StampHash.insert (p, parm2Stamp, 2);
-				     StampHash.insert (p, parm3Stamp, 3);
-				     StampHash.insert (p, parm4Stamp, 4);
-				     StampHash.insert (p, parm5Stamp, 5))
-
-			in
-			    val parms = p
-			end *)
 		in
-		    (* return next free register of this method *)
-(*		    fun new () = (registercount := !registercount + 1;
-				  !registercount)*)
-
-		    (* return the number of the highest register in use *)
-(*		    fun max () = !registercount*)
-
-		    (* assign ids to JVM registers *)
-(*		    fun assign (Id(_,stamp',InId), wohin, curFun) =
-			(StampHash.insert (register, stamp', wohin);
-			 FreeVars.setFun(stamp', curFun);
-			 wohin)
-		      | assign (Id(_,stamp',ExId name), wohin, curFun) =
-			(StampHash.insert (register, stamp', wohin);
-			 StampHash.insert (fields, stamp', name);
-			 if !VERBOSE >= 2 then print ("eingetragen: "^Stamp.toString stamp'^" ("^name^")\n")
-			     else ();
-			 FreeVars.setFun(stamp', curFun);
-			 wohin)*)
-
-		    (* return the JVM register of a stamp. *)
-(*		    fun get stamp' =
-			case StampHash.lookup (register, stamp') of
-			    NONE => 1 (* unassigned stamps are formal parameters *)
-			  | SOME reg => reg*)
-
-		    (* assign parameters of special apply methods apply2/3/4
-		     to registers *)
-		    (*fun assignParms (Id (_,stamp',_)::rest, reg) =
-			(StampHash.insert (parms, stamp', reg);
-			 assignParms (rest, reg+1))
-		      | assignParms (nil, reg) = () *)
-
-		    (* Assign ids to JVM registers where their 
-		     function closure can be found. xxx gescheiter kommentar *)
+		    (* Remember that an instance of this class has been created. *)
 		    fun instantiate stamp' =
 			StampSet.insert(lambda,stamp')
 
-		    (* xxx gescheiter kommentar*)
+		    (* return whether an instance of this class has been created *)
 		    fun isInstantiated stamp' =
 			StampSet.member(lambda,stamp')
 
