@@ -17,6 +17,10 @@ import structure Node from "Node"
 
 signature LAYOUT =
 sig
+
+
+(* Identifies the shape of the text representented by a Node tree 
+and sets xdim, ydim and l_xdim via depth-first left-to-right traversal *)
     
     val layout : Node.node -> int * int * int
 
