@@ -28,7 +28,7 @@
 \begin{document}
 \maketitle
 
-The basic idea, due to Andreas, is that the input document gives us an
+The basic idea is that the input document gives us an
 upper bound on the number of elements $n_E$ that may occur in the
 output document.
 
@@ -156,10 +156,11 @@ the set $V=\SET{w_1,\ldots,w_n}$ should be ordered using depth in the
 tree as primary sort key, minimal element as secondary sort key, and
 tag as tertiary sort key.  It is easy to combine these keys together
 using an appropriate base, so that elements in $V$ must have strictly
-increasing sort keys\ldots\ I think!
+increasing sort keys.
 
 \section*{Breaking Symmetries.}
-Let's now consider some methods for breaking symmetries.
+Let's now consider some methods for breaking symmetries. Of these, we just
+implemented the first one.
 
 \paragraph*{Depth Method.}
 Posing $E^*=E\uplus\SET{\ROOT}$, we introduce a function
