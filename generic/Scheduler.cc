@@ -18,10 +18,12 @@
 
 #include <cstdio>
 #include "generic/RootSet.hh"
-#include "generic/Interpreter.hh"
-#include "generic/TaskStack.hh"
+#include "generic/ConcreteCode.hh"
+#include "generic/Closure.hh"
 #include "generic/Transients.hh"
+#include "generic/StackFrame.hh"
 #include "generic/ByneedInterpreter.hh"
+#include "generic/PushCallInterpreter.hh"
 #include "generic/IOHandler.hh"
 
 #if PROFILE
@@ -31,6 +33,8 @@
 word Scheduler::root;
 ThreadQueue *Scheduler::threadQueue;
 Thread *Scheduler::currentThread;
+TaskStack *Scheduler::currentTaskStack;
+u_int Scheduler::nFrames;
 
 u_int Scheduler::nArgs;
 word Scheduler::currentArgs[Scheduler::maxArgs];
@@ -47,43 +51,43 @@ void Scheduler::Init() {
   RootSet::Add(root);
 }
 
-static inline void SetThreadArgs(Thread *thread) {
-  u_int nArgs = Scheduler::nArgs;
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG ||
-	 Scheduler::nArgs < Scheduler::maxArgs);
-  switch (nArgs) {
-  case 0:
-    thread->SetArgs(0, Store::IntToWord(0));
-    break;
-  case Scheduler::ONE_ARG:
-    thread->SetArgs(Scheduler::ONE_ARG, Scheduler::currentArgs[0]);
-    break;
-  default:
-    Block *b = Store::AllocBlock(ARGS_LABEL, nArgs);
-    for (u_int i = nArgs; i--; )
-      b->InitArg(i, Scheduler::currentArgs[i]);
-    thread->SetArgs(nArgs, b->ToWord());
-    break;
-  }
-}
-
-static inline void GetThreadArgs(Thread *thread) {
-  u_int nArgs;
-  word args = thread->GetArgs(nArgs);
-  Assert(Scheduler::nArgs == Scheduler::ONE_ARG ||
-	 Scheduler::nArgs < Scheduler::maxArgs);
-  Scheduler::nArgs = nArgs;
+inline void Scheduler::SwitchToThread() {
+  // Precondition: currentThread initialized
+  Assert(currentThread->GetState() == Thread::RUNNABLE);
+  Assert(!currentThread->IsSuspended());
+  currentTaskStack = currentThread->GetTaskStack(nFrames);
+  word args = currentThread->GetArgs(nArgs);
+  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
   switch (nArgs) {
   case 0:
     break;
   case Scheduler::ONE_ARG:
-    Scheduler::currentArgs[0] = args;
+    currentArgs[0] = args;
     break;
   default:
     Block *b = Store::DirectWordToBlock(args);
     Assert(b->GetLabel() == ARGS_LABEL);
     for (u_int i = nArgs; i--; )
-      Scheduler::currentArgs[i] = b->GetArg(i);
+      currentArgs[i] = b->GetArg(i);
+    break;
+  }
+}
+
+inline void Scheduler::FlushThread() {
+  currentThread->SetTaskStack(currentTaskStack, nFrames);
+  Assert(nArgs == ONE_ARG || nArgs < maxArgs);
+  switch (nArgs) {
+  case 0:
+    currentThread->SetArgs(0, Store::IntToWord(0));
+    break;
+  case Scheduler::ONE_ARG:
+    currentThread->SetArgs(ONE_ARG, currentArgs[0]);
+    break;
+  default:
+    Block *b = Store::AllocBlock(ARGS_LABEL, nArgs);
+    for (u_int i = nArgs; i--; )
+      b->InitArg(i, currentArgs[i]);
+    currentThread->SetArgs(nArgs, b->ToWord());
     break;
   }
 }
@@ -92,34 +96,32 @@ void Scheduler::Run() {
   //--** start timer thread
   while ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER) {
   retry:
-    // Make sure we can execute the selected thread
-    Assert(currentThread->GetState() == Thread::RUNNABLE);
-    Assert(!currentThread->IsSuspended());
-    // Obtain thread data
-    TaskStack *taskStack = currentThread->GetTaskStack();
-    GetThreadArgs(currentThread);
-    bool nextThread = false;
-    while (!nextThread) {
+    SwitchToThread();
+    for (bool nextThread = false; !nextThread; ) {
       StatusWord::ClearStatus(PreemptStatus());
 #if PROFILE
       Profiler::SampleHeap();
-      StackFrame *frame = StackFrame::FromWordDirect(taskStack->GetFrame());
+#endif
+      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
       Interpreter *interpreter = frame->GetInterpreter();
-      Interpreter::Result result = interpreter->Run(taskStack);
+      Interpreter::Result result = interpreter->Run();
+#if PROFILE
       Profiler::AddHeap(frame);
-#else
-      Interpreter *interpreter = taskStack->GetInterpreter();
-      Interpreter::Result result = interpreter->Run(taskStack);
 #endif
     interpretResult:
       switch (result) {
       case Interpreter::CONTINUE:
-	Assert(Scheduler::nArgs == Scheduler::ONE_ARG ||
-	       Scheduler::nArgs < Scheduler::maxArgs);
+	Assert(nArgs == ONE_ARG || nArgs < maxArgs);
 	break;
       case Interpreter::PREEMPT:
-	SetThreadArgs(currentThread);
+	FlushThread();
 	threadQueue->Enqueue(currentThread);
+	nextThread = true;
+	break;
+      case Interpreter::SUSPEND:
+	FlushThread();
+	currentThread->Purge();
+	currentThread->Suspend();
 	nextThread = true;
 	break;
       case Interpreter::RAISE:
@@ -127,13 +129,12 @@ void Scheduler::Run() {
 	raise:
 #if PROFILE
 	  Profiler::SampleHeap();
-	  frame = StackFrame::FromWordDirect(taskStack->GetFrame());
+#endif
+	  frame = StackFrame::FromWordDirect(GetFrame());
 	  interpreter = frame->GetInterpreter();
-	  result = interpreter->Handle(taskStack);
+	  result = interpreter->Handle();
+#if PROFILE
 	  Profiler::AddHeap(frame);
-#else
-	  interpreter = taskStack->GetInterpreter();
-	  result = interpreter->Handle(taskStack);
 #endif
 	  goto interpretResult;
 	}
@@ -143,12 +144,12 @@ void Scheduler::Run() {
 	  Assert(transient != INVALID_POINTER);
 	  switch (transient->GetLabel()) {
 	  case HOLE_LABEL:
-	    Scheduler::currentData = Hole::holeExn;
+	    currentData = Hole::holeExn;
 	    goto raise;
 	  case FUTURE_LABEL:
 	    {
-	      taskStack->Purge();
-	      SetThreadArgs(currentThread);
+	      FlushThread();
+	      currentThread->Purge();
 	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
 	      currentThread->BlockOn(transient->ToWord());
@@ -156,18 +157,17 @@ void Scheduler::Run() {
 	    }
 	    break;
 	  case CANCELLED_LABEL:
-	    Scheduler::currentData = transient->GetArg();
+	    currentData = transient->GetArg();
 	    goto raise;
 	  case BYNEED_LABEL:
 	    {
-	      TaskStack *newTaskStack = TaskStack::New();
-	      ByneedInterpreter::PushFrame(newTaskStack, transient);
-	      NewThread(transient->GetArg(), 0, Store::IntToWord(0),
-			newTaskStack);
+	      Thread *newThread = NewThread(0, Store::IntToWord(0));
+	      ByneedInterpreter::PushFrame(newThread, transient);
+	      PushCallInterpreter::PushFrame(newThread, transient->GetArg());
 	      // The future's argument is an empty wait queue:
 	      transient->Become(FUTURE_LABEL, Store::IntToWord(0));
-	      taskStack->Purge();
-	      SetThreadArgs(currentThread);
+	      FlushThread();
+	      currentThread->Purge();
 	      Future *future = static_cast<Future *>(transient);
 	      future->AddToWaitQueue(currentThread);
 	      currentThread->BlockOn(transient->ToWord());
@@ -181,7 +181,7 @@ void Scheduler::Run() {
 	}
 	break;
       case Interpreter::TERMINATE:
-	SetThreadArgs(currentThread);
+	FlushThread();
 	currentThread->SetTerminated();
 	nextThread = true;
 	break;
@@ -199,4 +199,33 @@ void Scheduler::Run() {
   IOHandler::Block();
   if ((currentThread = threadQueue->Dequeue()) != INVALID_POINTER)
     goto retry;
+}
+
+Interpreter::Result Scheduler::PushCall(word wClosure) {
+  Assert(Store::WordToInt(wClosure) == INVALID_INT);
+  Transient *transient = Store::WordToTransient(wClosure);
+  if (transient == INVALID_POINTER) { // Closure is determined
+    Closure *closure = Closure::FromWord(wClosure);
+    Assert(closure != INVALID_POINTER);
+    word concreteCodeWord = closure->GetConcreteCode();
+    transient = Store::WordToTransient(concreteCodeWord);
+    if (transient == INVALID_POINTER) { // ConcreteCode is determined
+      ConcreteCode *concreteCode = ConcreteCode::FromWord(concreteCodeWord);
+      Assert(concreteCode != INVALID_POINTER);
+      concreteCode->GetInterpreter()->PushCall(closure);
+#if PROFILE
+      StackFrame *frame = StackFrame::FromWordDirect(GetFrame());
+      Profiler::IncCalls(frame);
+#endif
+      return Interpreter::CONTINUE;
+    } else { // Request ConcreteCode
+      PushCallInterpreter::PushFrame(wClosure);
+      currentData = transient->ToWord();
+      return Interpreter::REQUEST;
+    }
+  } else { // Request Closure
+    PushCallInterpreter::PushFrame(wClosure);
+    currentData = transient->ToWord();
+    return Interpreter::REQUEST;
+  }
 }
