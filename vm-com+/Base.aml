@@ -1,0 +1,651 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999
+ *   Leif Kornstaedt, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(* Toplevel *)
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+(*--** val use = builtin "use" *)
+
+(* Overloaded Identifiers *)
+
+val op~ = builtin "~"
+val op+ = builtin "+"
+val op- = builtin "-"
+val op* = builtin "*"
+val op div = builtin "div"
+val op mod = builtin "mod"
+val op< = builtin "<"
+val op> = builtin ">"
+val op<= = builtin "<="
+val op>= = builtin ">="
+val op<> = builtin "<>"
+
+(* General *)
+
+structure General =
+  struct
+
+    type unit = {}
+    type exn  = exn
+
+    exception Bind = Bind
+    exception Chr
+    exception Div
+    exception Domain
+    exception Fail of string
+    exception Match = Match
+    exception Overflow
+    exception Size
+    exception Span
+    exception Subscript
+
+    datatype order = LESS | EQUAL | GREATER
+
+    fun !(ref v) = v
+    val op:=     = op:=
+
+    fun (f o g) a  = f(g a)
+    fun a before b = a
+    fun ignore a   = ()
+
+  end
+
+open General
+
+(* Option *)
+
+structure Option =
+  struct
+
+    datatype 'a option = NONE | SOME of 'a
+
+    exception Option
+
+    fun getOpt(SOME v, _) = v
+      | getOpt(NONE,   a) = a
+
+    fun isSome(SOME v) = true
+      | isSome NONE    = false
+
+    fun valOf(SOME v) = v
+      | valOf NONE    = raise Option
+
+    fun filter f a = if f a then SOME a else NONE
+
+    fun join NONE    = NONE
+      | join(SOME v) = v
+
+    fun map f  NONE    = NONE
+      | map f (SOME v) = SOME(f v)
+
+    fun mapPartial f  NONE    = NONE
+      | mapPartial f (SOME v) = f v
+
+    fun compose (f,g) a =
+	case g a
+	  of NONE   => NONE
+	   | SOME v => SOME(f v)
+
+    fun composePartial (f,g) a =
+	case g a
+	  of NONE   => NONE
+	   | SOME v => f v
+
+  end
+
+datatype option = datatype Option.option
+
+val getOpt = Option.getOpt
+val isSome = Option.isSome
+val valOf = Option.valOf
+
+(* Bool *)
+
+structure Bool =
+  struct
+
+    datatype bool = datatype bool
+
+    fun not true  = false
+      | not false = true
+
+    fun toString true  = "true"  : string
+      | toString false = "false" : string
+
+  end
+
+val not = Bool.not
+
+(* List *)
+
+structure List =
+  struct
+
+    datatype list = datatype list
+
+    exception Empty
+
+    fun null [] = true
+      | null _  = false
+
+    fun length xs =
+	let fun length(nil,   n) = n
+	      | length(x::xs, n) = length(xs,n+1)
+	in length(xs,0) end
+
+    infixr 5 @
+    fun   nil   @ ys = ys
+      | (x::xs) @ ys = x :: xs @ ys
+
+    fun hd(x::xs) = x
+      | hd  _     = raise Empty
+
+    fun tl(x::xs) = xs
+      | tl  _     = raise Empty
+
+    fun last(x::nil) = x
+      | last(x::xs)  = last xs
+      | last  nil    = raise Empty
+
+    fun getItem(x::xs) = SOME(x,xs)
+      | getItem  nil   = NONE
+
+    fun nth(l,i) =
+	let fun nth(x::xs, 0) = x
+	      | nth(x::xs, i) = nth(xs, i-1)
+	      | nth(nil,   i) = raise Subscript
+	in if i >= 0 then nth(l,i) else raise Subscript end
+
+    fun rev l =
+	let fun rev( nil,  ys) = ys
+	      | rev(x::xs, ys) = rev(xs, x::ys)
+	in rev(l,nil) end
+
+    fun take(l,i) =
+	let fun take(x::xs, 0, ys) = rev ys
+	      | take(x::xs, i, ys) = take(xs, i-1, x::ys)
+	      | take(nil,   i, ys) = raise Subscript
+	in if i >= 0 then take(l,i,nil) else raise Subscript end
+
+    fun drop(l,i) =
+	let fun drop(l,     0) = l
+	      | drop(x::xs, i) = drop(xs, i-1)
+	      | drop(nil,   i) = raise Subscript
+	in if i >= 0 then drop(l,i) else raise Subscript end
+
+    fun concat  nil   = nil
+      | concat(l::ls) = l @ concat ls
+
+    fun revAppend( nil,  ys) = ys
+      | revAppend(x::xs, ys) = revAppend(xs, x::ys)
+
+    fun app f   nil   = ()
+      | app f (x::xs) = (f x ; app f xs)
+
+    fun map f   nil   = nil
+      | map f (x::xs) = f x :: map f xs
+
+    fun mapPartial f   nil   = nil
+      | mapPartial f (x::xs) =
+	let val yo = f x
+	    val ys = mapPartial f xs
+	in case yo of NONE => ys | SOME y => y::ys end
+
+    fun find f   nil   = NONE
+      | find f (x::xs) = if f x then SOME x else find f xs
+
+    fun filter f   nil   = nil
+      | filter f (x::xs) =
+	let val b  = f x
+	    val ys = map f xs
+	in if b then x::ys else ys end
+
+    fun partition f l =
+	let fun partition( nil,  pos, neg) = (rev pos, rev neg)
+	      | partition(x::xs, pos, neg) =
+		if f x then partition(xs, x::pos, neg)
+		       else partition(xs, pos, x::neg)
+	in partition(l,nil,nil) end
+
+    fun foldl f b   nil   = b
+      | foldl f b (x::xs) = f(x, foldl f b xs)
+
+    fun foldr f b   nil   = b
+      | foldr f b (x::xs) = foldr f (f(x,b)) xs
+
+    fun exists f   nil   = false
+      | exists f (x::xs) = f x orelse exists f xs
+
+    fun all f   nil   = true
+      | all f (x::xs) = f x andalso all f xs
+
+    fun tabulate(n, f) =
+	let fun tabulate(i,l) = if i = n then rev l
+					 else tabulate(i+1, f i :: l)
+	in if n >= 0 then tabulate(n, nil) else raise Size end
+
+  end
+
+val null = List.null
+val hd = List.hd
+val tl = List.tl
+val length = List.length
+val rev = List.rev
+val op@ = List.@
+val app = List.app
+val map = List.map
+val foldr = List.foldr
+val foldl = List.foldl
+
+(* ListPair *)
+
+structure ListPair =
+  struct
+
+    fun zip(l1, l2) =
+	let fun zip( nil,    _,   l) = List.rev l
+	      | zip(  _,    nil,  l) = List.rev l
+	      | zip(x::xs, y::ys, l) = zip(xs, ys, (x,y)::l)
+	in zip(l1, l2, nil) end
+
+    fun unzip l =
+	let fun unzip(    nil,  l1, l2) = (List.rev l1, List.rev l2)
+	      | unzip((x,y)::l, l1, l2) = unzip(l, x::l1, y::l2)
+	in unzip(l, nil, nil) end
+
+    fun map f ( nil,    _  ) = nil
+      | map f (  _,    nil ) = nil
+      | map f (x::xs, y::ys) = f(x,y) :: map f (xs,ys)
+
+    fun app f ( nil,    _  ) = ()
+      | app f (  _,    nil ) = ()
+      | app f (x::xs, y::ys) = (f(x,y) ; app f (xs,ys))
+
+    fun foldl f c ( nil,    _  ) = c
+      | foldl f c (  _,    nil ) = c
+      | foldl f c (x::xs, y::ys) = f(x, y, foldl f c (xs,ys))
+
+    fun foldr f c ( nil,    _  ) = c
+      | foldr f c (  _,    nil ) = c
+      | foldr f c (x::xs, y::ys) = foldr f (f(x,y,c)) (xs,ys)
+
+    fun exists f ( nil,    _  ) = false
+      | exists f (  _,    nil ) = false
+      | exists f (x::xs, y::ys) = f(x,y) orelse exists f (xs,ys)
+
+    fun all f ( nil,    _  ) = true
+      | all f (  _,    nil ) = true
+      | all f (x::xs, y::ys) = f(x,y) andalso all f (xs,ys)
+
+  end
+
+(* Char *)
+
+structure Char =
+    struct
+	val ord = builtin "Char.ord"
+	val chr = builtin "Char.chr"
+	val isDigit = builtin "Char.isDigit"
+	val isHexDigit = builtin "Char.isHexDigit"
+	val isSpace = builtin "Char.isSpace"
+	val toCString = builtin "Char.toCString"
+    end
+
+val ord = Char.ord
+val chr = Char.chr
+
+(* String *)
+
+structure String =
+    struct
+	(*--** Subscript exceptions are not raised *)
+
+	val op^ = builtin "String.^"
+	val toCString = builtin "String.toCString"
+	val str = builtin "String.str"
+	val size = builtin "String.size"
+	val substring = builtin "String.substring"
+	val sub = builtin "String.sub"
+
+	fun extract (s, i, NONE) = substring (s, i, size s - i)
+	  | extract (s, i, SOME j) = substring (s, i, j)
+
+	fun concat l = List.foldr (fn (s, rest) => s ^ rest) "" l
+
+	fun implode l = concat (List.map str l)
+
+	fun compare (s, t) =
+	    let
+		val i = builtin "String.compare'" (s, t)
+	    in
+		if i = 0 then EQUAL else if i < 0 then LESS else GREATER
+	    end
+
+	fun s < t =
+	    case compare (s, t) of
+		LESS => true
+	      | _ => false
+    end
+
+val str = String.str
+val implode = String.implode
+val substring = String.substring
+val op^ = String.^
+
+signature STRING_CVT =
+    sig
+	datatype radix = BIN | OCT | DEC | HEX
+
+	type ('a, 'b) reader = 'b -> ('a * 'b) option
+
+	type cs
+
+	val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a
+
+	val skipWS: (char, 'a) reader -> 'a -> 'a
+
+	val scanString:
+	    ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
+    end
+
+structure StringCvt :> STRING_CVT =
+    struct
+	datatype radix = BIN | OCT | DEC | HEX
+
+	type ('a, 'b) reader = 'b -> ('a * 'b) option
+
+	type cs = int
+
+	fun dropl p getc =
+	    let
+		fun h src =
+		    case getc src of
+			NONE => src
+		      | SOME (c, rest) => if p c then h rest else src
+	    in
+		h
+	    end
+
+	fun skipWS getc = dropl Char.isSpace getc
+
+	fun scanString scan s =
+	    let
+		val len = String.size s
+		fun getc i =
+		    if i < len then SOME (String.sub (s, i), i + 1)
+		    else NONE
+	    in
+		case scan getc 0 of
+		    NONE => NONE
+		  | SOME (res, _) => SOME res
+	    end
+    end
+
+(* Int *)
+
+signature INT =
+    sig
+	val scan:
+	    StringCvt.radix -> (char, 'a) StringCvt.reader -> 'a ->
+	    (int * 'a) option
+
+	val compare: int * int -> order
+
+	val toString: int -> string
+
+	val fromString: string -> int option
+    end
+
+structure Int :> INT =
+    struct
+	open StringCvt
+
+	fun decval c = Char.ord c - Char.ord #"0"
+	fun hexval c =
+	    if #"0" <= c andalso c <= #"9" then Char.ord c - Char.ord #"0"
+	    else (Char.ord c - Char.ord #"A" + 10) mod 32
+	fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+
+	fun isBinDigit #"0" = true
+	  | isBinDigit #"1" = true
+	  | isBinDigit _ = false
+
+	fun isOctDigit c = c >= #"0" andalso c <= #"7"
+
+	fun scan radix getc source =
+	    let
+		val (isDigit, factor) =
+		    case radix of
+			BIN => (isBinDigit,       2)
+		      | OCT => (isOctDigit,       8)
+		      | DEC => (Char.isDigit,    10)
+		      | HEX => (Char.isHexDigit, 16)
+		fun dig1 sgn NONE = NONE
+		  | dig1 sgn (SOME (c, rest)) =
+		    let
+			fun digr res src =
+			    case getc src of
+				NONE => SOME (sgn * res, src)
+			      | SOME (c, rest) =>
+				    if isDigit c then
+					digr (factor * res + hexval c) rest
+				    else
+					SOME (sgn * res, src)
+		    in
+			if isDigit c then digr (hexval c) rest else NONE
+		    end
+		fun getdigs sgn after0 inp =
+		    case dig1 sgn inp of
+			NONE => SOME (0, after0)
+		      | res => res
+		fun hexopt sgn NONE = NONE
+		  | hexopt sgn (SOME (#"0", after0)) =
+		    if radix <> HEX then getdigs sgn after0 (getc after0)
+		    else
+			(case getc after0 of
+			     NONE => SOME(0, after0)
+			   | SOME ((#"x" | #"X"), rest) =>
+				 getdigs sgn after0 (getc rest)
+			   | inp => getdigs sgn after0 inp)
+		  | hexopt sgn inp = dig1 sgn inp
+		fun sign NONE = NONE
+		  | sign (SOME (#"~", rest)) = hexopt ~1 (getc rest)
+		  | sign (SOME (#"-", rest)) = hexopt ~1 (getc rest)
+		  | sign (SOME (#"+", rest)) = hexopt 1 (getc rest)
+		  | sign inp = hexopt  1 inp
+	    in
+		sign (skipWSget getc source)
+	    end
+	fun compare (i, j) =
+	    let
+		val n = builtin "Int.compare'" (i, j)
+	    in
+		if n = 0 then EQUAL else if n < 0 then LESS else GREATER
+	    end
+
+	val toString = builtin "Int.toString"
+
+	val fromString = scanString (scan DEC)   (*--** crashes *)
+    end
+
+structure LargeInt = Int
+
+(* Word *)
+
+structure Word =
+    struct
+	local
+	    val fromInt' = builtin "Word.fromInt'"
+	in
+	    fun fromInt x = fromInt' (31, x)
+	end
+
+	val toInt = builtin "Word.toInt"
+	val toLargeInt = toInt
+	val toIntX = builtin "Word.toIntX"
+	val orb = builtin "Word.orb"
+	val xorb = builtin "Word.xorb"
+	val andb = builtin "Word.andb"
+	val notb = builtin "Word.notb"
+	val op<< = builtin "Word.<<"
+	val op>> = builtin "Word.>>"
+	val op~>> = builtin "Word.~>>"
+	val toString = builtin "Word.toString"
+
+	local
+	    open StringCvt
+	    fun skipWSget getc source = getc (dropl Char.isSpace getc source)
+
+	    (* Below, 48 = Char.ord #"0" and 55 = Char.ord #"A" - 10. *)
+	    fun decval c = fromInt (Char.ord c) - fromInt 48;
+	    fun hexval c =
+		if #"0" <= c andalso c <= #"9" then
+		    fromInt (Char.ord c) - fromInt 48
+		else
+		    (fromInt (Char.ord c) - fromInt 55) mod (fromInt 32);
+	in
+	    fun scan radix getc source =
+		let open StringCvt
+		    val source = skipWS getc source
+		    val (isDigit, factor) =
+			case radix of
+			    BIN => (fn c => (#"0" <= c andalso c <= #"1"),  2)
+			  | OCT => (fn c => (#"0" <= c andalso c <= #"7"),  8)
+			  | DEC => (Char.isDigit,                          10)
+			  | HEX => (Char.isHexDigit,                       16)
+		    fun dig1 NONE              = NONE
+		      | dig1 (SOME (c1, src1)) =
+			let fun digr res src =
+			    case getc src of
+				NONE           => SOME (res, src)
+			      | SOME (c, rest) =>
+				    if isDigit c then
+					digr (fromInt factor * res + hexval c)
+					rest
+				    else SOME (res, src)
+			in
+			    if isDigit c1 then digr (hexval c1) src1
+			    else NONE
+			end
+		    fun getdigs after0 src =
+			case dig1 (getc src) of
+			    NONE => SOME(fromInt 0, after0)
+			  | res  => res
+		    fun hexprefix after0 src =
+			if radix <> HEX then getdigs after0 src
+			else
+			    case getc src of
+				SOME(#"x", rest) => getdigs after0 rest
+			      | SOME(#"X", rest) => getdigs after0 rest
+			      | SOME _           => getdigs after0 src
+			      | NONE => SOME(fromInt 0, after0)
+		in
+		    case getc source of
+			SOME(#"0", after0) =>
+			    (case getc after0 of
+				 SOME(#"w", src2) => hexprefix after0 src2
+			       | SOME _           => hexprefix after0 after0
+			       | NONE             => SOME(fromInt 0, after0))
+		      | SOME _ => dig1 (getc source)
+		      | NONE   => NONE
+		end
+	end
+    end
+
+structure LargeWord = Word
+
+(* Array *)
+
+structure Array =
+    struct
+	val array = builtin "Array.array"
+	val fromList = builtin "Array.fromList"
+	val length = builtin "Array.length"
+	val sub = builtin "Array.sub"
+	val update = builtin "Array.update"
+
+	fun copy {src, si, len, dst, di} =
+	    let
+		val bound =
+		    case len of
+			NONE => length src
+		      | SOME n => si + n
+		val offset = di - si
+		fun copy' i =
+		    if i < bound then
+			(update (dst, i + offset, sub (src, i));
+			 copy' (i + 1))
+		    else ()
+	    in
+		copy' si
+	    end
+
+	fun foldl f z a =
+	    let
+		val n = length a
+		fun foldl' (i, z) =
+		    if i < n then foldl' (i + 1, f (sub (a, i), z))
+		    else z
+	    in
+		foldl' (0, z)
+	    end
+
+	fun app f a =
+	    let
+		val n = length a
+		fun app' i =
+		    if i < n then (f (sub (a, i)); app' (i + 1))
+		    else ()
+	    in
+		app' 0
+	    end
+    end
+
+(* Vector *)
+
+structure Vector =
+    struct
+	val fromList = builtin "Vector.fromList"
+	val sub = builtin "Vector.sub"
+
+	fun tabulate (n, f) = fromList (List.tabulate (n, f))
+    end
+
+val vector = Vector.fromList
+
+(* TextIO *)
+
+structure TextIO =
+    struct
+	val stdIn = builtin "TextIO.stdIn"
+	val openIn = builtin "TextIO.openIn"
+	val inputAll = builtin "TextIO.inputAll"
+	val closeIn = builtin "TextIO.closeIn"
+
+	val stdOut = builtin "TextIO.stdOut"
+	val openOut = builtin "TextIO.openOut"
+	val output = builtin "TextIO.output"
+	val output1 = builtin "TextIO.output1"
+	val closeOut = builtin "TextIO.closeOut"
+
+	val print = builtin "TextIO.print"
+    end
+
+val print = TextIO.print
