@@ -1,0 +1,20 @@
+URL = http://www.ps.uni-sb.de/~tack/download
+
+REVISION = 1
+PACKAGES = gecode-0.9 seam-1.0.0 alice-1.0.1 \
+	alice-gecode-1.0.1 alice-gtk-1.0.1 \
+	alice-runtime-1.0.1
+
+all: $(PACKAGES:%=%.tar.gz)
+
+$(PACKAGES:%=%.tar.gz): %:
+	curl $(URL)/$@ -o $@
+	md5sum $@ | cut -f 1 -d ' ' > $@.md5
+	tar -f $@ -z -x '*/debian/*.info' -O > $(@:%.tar.gz=%)-$(REVISION).info
+	sed -i -e "s/INSERTMD5HERE/`cat $@.md5`/" \
+	  $(@:%.tar.gz=%)-$(REVISION).info
+	sudo cp $(@:%.tar.gz=%)-$(REVISION).info \
+	  /sw/fink/dists/local/main/finkinfo/
+	fink validate $(@:%.tar.gz=%)-$(REVISION).info
+	fink build $(@:%.tar.gz=%)-$(REVISION)
+	fink install $(@:%.tar.gz=%)-$(REVISION)
