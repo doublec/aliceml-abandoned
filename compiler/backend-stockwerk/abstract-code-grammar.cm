@@ -7,5 +7,5 @@ Group is
     ABSTRACT_CODE_GRAMMAR-sig.aml
     MkAbstractCodeGrammar.aml
     VALUE-sig.aml
-    Value.aml
+    ValueCross.aml
     AbstractCodeGrammar.aml
