@@ -21,6 +21,7 @@ includedir=@includedir@
 pkgincludedir=@includedir@/@PACKAGE@
 libdir=@libdir@
 pkglibdir=@libdir@/@PACKAGE@
+seamlibdir=@seamlibdir@
 
 usage () {
     echo "Usage: $0 [OPTION]... MODE [MODE-ARG]...                   " >&2
@@ -73,13 +74,13 @@ shift
 
 case "$mode" in
     makedepend)
-	exec seamtool${verbose} makedepend -I"${pkgincludedir}" "$@"
+	exec seamtool ${verbose} makedepend -I"${includedir}" "$@"
 	;;
     compile)
-	exec seamtool${verbose} compile -I"${pkgincludedir}" "$@"
+	exec seamtool ${verbose} compile -I"${includedir}" "$@"
 	;;
     link)
-	exec seamtool${verbose} link "$@" -L"${pkglibdir}" -lalice
+	exec seamtool ${verbose} link "$@" -L"${seamlibdir}" alice.dll
 	;;
     *)
 	echo "$0: unknown mode \`$1\'" >&2

@@ -17,29 +17,12 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 datadir=@datadir@
 libdir=@libdir@
-
+pkgdatadir=@datadir@/@PACKAGE@
 seamlibdir=@seamlibdir@
 
 set -e
 
 cmd="$0"
-
-find_in () {
-    search_for=$1
-    found_in=""
-    shift
-    for d in "$@"; do
-	if test -f "$d/${search_for}" -o -h "$d/${search_for}"; then
-	    found_in=$d && break
-	fi
-    done
-    if test -z "${found_in}"; then
-	echo "$cmd: error: could not find ${search_for} in either of" >&2
-	for d in "$@"; do echo "  $d" >&2; done
-	exit 1
-    fi
-    echo "${found_in}"
-}
 
 abs_path () {
     case "$1" in
@@ -52,21 +35,17 @@ abs_path () {
     esac
 }
 
-if test -z "${ALICE_HOME}"; then
-    dir=$(dirname "$0")
-    dir=$(dirname "$dir")
-    ALICE_HOME=$(find_in alice.dll "${datadir}/@PACKAGE@" "$PROGRAMFILES/Alice" "$dir")
-fi
+: ${ALICE_HOME:="$pkgdatadir"}
 
 ALICE_HOME=$(abs_path "$ALICE_HOME")
 
 case $(uname) in
     CYGWIN*)
-	PATH="$ALICE_HOME:$PATH"
+	PATH="${seamlibdir}:$PATH"
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
 	;;
     *)
-	LD_LIBRARY_PATH="${ALICE_HOME}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
+	LD_LIBRARY_PATH="${seamlibdir}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
 	export LD_LIBRARY_PATH
 	;;
 esac
