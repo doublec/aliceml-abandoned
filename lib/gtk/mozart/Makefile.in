@@ -182,7 +182,8 @@ $(PREFIX)/lib/gtk/%: Linked%
 #---------------------------------------------------------------------
 
 clean veryclean:
-	-$(RM) $(ALICEOBJS) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
+	-$(RM) $(OZOBJS) $(ALICEOBJS)
+	-$(RM) $(OZWRPSRCS) $(OZWRPSIGS) $(OZWRPOBJS) $(WRPOBJS)
 	-$(RM) $(COMPONENTS) $(TMPOBJS) $(TMPSIGOBJS) $(INTWRPSRCS)
 
 wrapper_clean:
