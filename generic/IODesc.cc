@@ -17,7 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 #include <windows.h>
 #include <winsock.h>
 #define GetLastSocketError() WSAGetLastError()
@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #define GetLastSocketError() errno
 #define GetLastError() errno
 #define Interruptible(res, call)			\
@@ -44,10 +45,10 @@
 #include "generic/IODesc.hh"
 #include "generic/Scheduler.hh"
 
+#if USE_WINSOCK
 //
 // Windows: Forwarding between file handles and sockets
 //
-#if defined(__MINGW32__) || defined(_MSC_VER)
 class IOForwarder {
 private:
   class InOut {
@@ -201,7 +202,7 @@ void IODescFinalizationSet::Finalize(word value) {
 IODescFinalizationSet *IODesc::finalizationSet;
 
 void IODesc::Init() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   WSADATA wsa_data;
   WORD req_version = MAKEWORD(1, 1);
   if (WSAStartup(req_version, &wsa_data) != 0)
@@ -227,7 +228,7 @@ IODesc *IODesc::NewFromFD(u_int dir, String *name, int fd) {
   return static_cast<IODesc *>(p);
 }
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 IODesc *IODesc::NewFromHandle(u_int dir, String *name, HANDLE handle) {
   Block *p = Store::AllocBlock(IODESC_LABEL, SIZE);
   p->InitArg(FLAGS_POS, TYPE_HANDLE|dir);
@@ -274,7 +275,7 @@ IODesc *IODesc::NewForwarded(u_int dir, String *name, HANDLE handle) {
 IODesc::kind IODesc::GetKind() {
   switch (GetType()) {
   case TYPE_CLOSED: return CLOSED;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_FD: return SOCKET;
   case TYPE_HANDLE:
     switch (GetFileType(GetHandle())) {
@@ -341,7 +342,7 @@ IODesc::result IODesc::Close() {
       if (res0) res = result_socket_error;
       break;
     }
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     if (CloseHandle(GetHandle()) == FALSE) res = result_system_error;
     break;
@@ -367,7 +368,7 @@ bool IODesc::SupportsDoBlock() {
     return false;
   case TYPE_FD:
     return true;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     return false;
   case TYPE_FORWARDED:
@@ -382,7 +383,7 @@ IODesc::result IODesc::DoBlock() {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     Error("DoBlock not supported for files");
   case TYPE_FORWARDED:
@@ -409,7 +410,7 @@ bool IODesc::IsFile() {
   switch (GetType()) {
   case TYPE_CLOSED:
     return false;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     return true;
   case TYPE_FORWARDED:
@@ -437,7 +438,7 @@ IODesc::result IODesc::GetPos(u_int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     out = SetFilePointer(GetHandle(), 0, NULL, FILE_CURRENT);
     return out == INVALID_SET_FILE_POINTER? result_system_error: result_ok;
@@ -464,7 +465,7 @@ IODesc::result IODesc::SetPos(u_int pos) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     pos = SetFilePointer(GetHandle(), pos, NULL, FILE_BEGIN);
     return pos == INVALID_SET_FILE_POINTER? result_system_error: result_ok;
@@ -491,7 +492,7 @@ IODesc::result IODesc::EndPos(u_int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     out = GetFileSize(GetHandle(), NULL);
     return out == INVALID_FILE_SIZE? result_system_error: result_ok;
@@ -517,7 +518,7 @@ IODesc::result IODesc::GetNumberOfAvailableBytes(int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     out = -1;
     return result_ok;
@@ -547,7 +548,7 @@ IODesc::result IODesc::Read(u_char *buf, int n, int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_FD:
   case TYPE_FORWARDED:
     {
@@ -603,7 +604,7 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_FD:
   case TYPE_FORWARDED:
     {
@@ -657,7 +658,7 @@ bool IODesc::SupportsNonblocking() {
   switch (GetType()) {
   case TYPE_CLOSED:
     return false;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     return false;
   case TYPE_FD:
@@ -682,7 +683,7 @@ IODesc::result IODesc::CanInput(bool &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     out = true;
     return result_ok;
@@ -700,7 +701,7 @@ IODesc::result IODesc::CanOutput(bool &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_HANDLE:
     out = true;
     return result_ok;
@@ -720,7 +721,7 @@ IODesc::result IODesc::ReadNonblocking(u_char *buf, int n, int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_FD:
   case TYPE_FORWARDED:
     out = recv(GetFD(), sys_buf, n, 0);
@@ -748,7 +749,7 @@ IODesc::result IODesc::WriteNonblocking(const u_char *buf, int n, int &out) {
   switch (GetType()) {
   case TYPE_CLOSED:
     return result_closed;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   case TYPE_FD:
   case TYPE_FORWARDED:
     out = send(GetFD(), sys_buf, n, 0);
@@ -773,7 +774,7 @@ IODesc::result IODesc::WriteNonblocking(const u_char *buf, int n, int &out) {
 //
 // Initialization of IODescs for Standard Handles
 //
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 static IODesc *MakeStdIODesc(const char *name, DWORD nStdHandle, u_int dir) {
   HANDLE hStd = GetStdHandle(nStdHandle);
   if (hStd == INVALID_HANDLE_VALUE) // assume that it has been closed

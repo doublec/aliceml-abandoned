@@ -17,7 +17,7 @@
 #pragma interface "generic/IODesc.hh"
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
 #include <windows.h>
 #endif
 
@@ -34,7 +34,7 @@ public:
   enum {
     TYPE_CLOSED		= 0x00,
     TYPE_FD		= 0x01,
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
     TYPE_HANDLE		= 0x02,
     TYPE_FORWARDED	= 0x03,
 #endif
@@ -48,7 +48,7 @@ private:
 
   enum {
     FLAGS_POS, NAME_POS, FD_POS,
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
     HANDLE_POS,
 #endif
     FINALIZATION_KEY_POS, SIZE
@@ -73,7 +73,7 @@ public:
 
   static IODesc *NewClosed(String *name);
   static IODesc *NewFromFD(u_int dir, String *name, int fd);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   static IODesc *NewFromHandle(u_int dir, String *name, HANDLE handle);
   static IODesc *NewForwarded(u_int dir, String *name, HANDLE handle);
 #endif
@@ -99,14 +99,14 @@ public:
     return GetFlags() & DIR_MASK;
   }
   int GetFD() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
     Assert(GetType() == TYPE_FD || GetType() == TYPE_FORWARDED);
 #else
     Assert(GetType() == TYPE_FD);
 #endif
     return Store::DirectWordToInt(GetArg(FD_POS));
   }
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   HANDLE GetHandle() {
     Assert(GetType() == TYPE_HANDLE || GetType() == TYPE_FORWARDED);
     HANDLE *p = (HANDLE *)

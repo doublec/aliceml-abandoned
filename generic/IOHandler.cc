@@ -17,13 +17,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <errno.h>
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <winsock.h>
 
+#if USE_WINSOCK
+#include <winsock.h>
 #define GetLastError() WSAGetLastError()
 #else
 #include <sys/select.h>
-
 #define GetLastError() errno
 #endif
 
@@ -179,7 +178,7 @@ void IOHandler::Block() {
       maxRead = maxRead > defaultFD? maxRead: defaultFD;
     }
   int max = maxRead > maxWrite? maxRead: maxWrite;
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if USE_WINSOCK
   // signals (such as timer events) do not interrupt the select call,
   // therefore we must not block infinitely (so that signals are polled)
   //--** better solution - notify via a socket?
