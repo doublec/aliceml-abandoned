@@ -9,7 +9,6 @@
 //   $Date$ by $Author$
 //   $Revision$
 //
-#include <iostream.h>
 #include <cstdlib>
 #include <cstring>
 
