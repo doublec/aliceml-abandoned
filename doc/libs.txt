@@ -6,6 +6,13 @@ Option.app: ('a -> unit) -> 'a option -> unit
 
 OptionPair
 
+String.isSuffix: string -> string -> bool
+
+Real.realRound
+Math.asinh
+Math.acosh
+Math.atanh
+
 structure Ref:
 sig
   type 'a ref = 'a ref
@@ -14,6 +21,12 @@ end
 
 ListPair.find: ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option 
 
+Vector.replace: 'a vector * int * 'a -> 'a vector
+
+Vector.toList
+Array.toList
+Array.fromVec
+Array.toVec
 Array.all: ('a -> bool) -> 'a array -> bool
 Array.exists: ('a -> bool) -> 'a array -> bool
 
