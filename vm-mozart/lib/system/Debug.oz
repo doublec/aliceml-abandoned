@@ -14,10 +14,10 @@ functor
 import
    System(show)
 export
-   Debug
+   'show': Show
+   '$Show': Show
 define
-   Debug =
-   'Debug'(
-      'show':
-	 fun {$ X} {System.show X} '#' end)
+   fun {Show X}
+      {System.show X} '#'
+   end
 end
