@@ -22,8 +22,15 @@
 #include <windows.h>
 #include <winsock.h>
 #define GetLastError() WSAGetLastError()
+#define Interruptible(t, res, call) t res = call; res = res;
 #else
+#include <sys/socket.h>
 #define GetLastError() errno
+#define Interruptible(res, call)		\
+  int res;					\
+  do {						\
+    res = call;					\
+  } while (res < 0 && GetLastError() == EINTR);
 #endif
 
 #include "store/Store.hh"
@@ -233,7 +240,7 @@ DWORD __stdcall IOSupport::ReaderThread(void *p) {
       break;
     u_int totalSent = 0;
   loop:
-    int sent = send(out, &buf[totalSent], count, 0);
+    Interruptible(sent, send(out, &buf[totalSent], count, 0));
     if (sent == SOCKET_ERROR) {
       std::fprintf(stderr, "send(%d) failed: %d\n", out, GetLastError());
       break;
@@ -256,7 +263,7 @@ DWORD __stdcall IOSupport::WriterThread(void *p) {
 
   char buf[BUFFER_SIZE];
   while (true) {
-    int got = recv(in, buf, BUFFER_SIZE, 0);
+    Interruptible(got, recv(in, buf, BUFFER_SIZE, 0));
     if (got == SOCKET_ERROR) {
       std::fprintf(stderr, "recv(%d) failed: %d\n", in, GetLastError());
       break;
@@ -313,32 +320,17 @@ public:
     if (future != INVALID_POINTER)
       return future;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    int rdBytes = recv(fd, buf + nBytes, BUF_SIZE - nBytes, 0);
-    if (rdBytes == SOCKET_ERROR) {
+    Interruptible(rdBytes, recv(fd, buf + nBytes, BUF_SIZE - nBytes, 0));
+#else
+    Interruptible(rdBytes, read(fd, buf + nBytes, BUF_SIZE - nBytes));
+#endif
+    if (rdBytes < 0) {
       // to be done: raise io something here
       Error("FdIO::Fill: critical io error\n");
     } else if (rdBytes == 0) { // eof
       eof = true;
     } else
       nBytes += rdBytes;
-#else
-  retry:
-    int rdBytes = read(fd, buf + nBytes, BUF_SIZE - nBytes);
-    if (rdBytes == -1) {
-      Assert(GetLastError() != EAGAIN);
-      switch (GetLastError()) {
-      case EINTR:
-	goto retry;
-      default:
-	// to be done: raise io something here
-	Error("FdIO::Fill: critical io error\n");
-	break;
-      }
-    } else if (rdBytes == 0) { // eof
-      eof = true;
-    } else
-      nBytes += rdBytes;
-#endif
     return INVALID_POINTER;
   }
   void Commit(u_int count) {
