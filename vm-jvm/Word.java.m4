@@ -18,7 +18,7 @@ final public class DMLWord extends DMLSCon {
     return value+": word";
   }
 
-  final public long getInt() {
+  final public long getLong() {
     return value;
   }
 }
