@@ -1,0 +1,353 @@
+(* Alice Snake 2.0 - TextWindow
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk            from "x-alice:/lib/gtk/Gtk"
+import structure Gdk            from "x-alice:/lib/gtk/Gdk"
+import structure GtkCanvas      from "x-alice:/lib/gtk/GtkCanvas"
+import structure Ctrl           from "x-alice:/lib/utility/Ctrl"
+
+import structure Color          from "../../common/Color"
+import structure Config         from "../../server/Config"
+import structure Protocol       from "../../common/Protocol"
+import structure HighscoreIO    from "../../server/HighscoreIO"
+import structure Highscore      from "../../common/Highscore"
+
+import structure ArenaWidget    from "ArenaWidget"
+import structure Connection     from "Connection"
+import structure ServerSettings from "ServerSettings"
+import structure TextWindow     from "TextWindow"
+import structure QuestionWindow from "QuestionWindow"
+
+
+import val log                  from "../../common/Log"
+
+
+
+open Ctrl
+
+
+(* converts a Highscore.highscore into a string 
+   differentated by newlines *)
+fun highscoreToString score =
+    let
+	fun toString' ({name, color, points,
+			player, level}, str) =
+	    ("Player: "    ^ name     ^ "  Color: "
+	     ^ (Color.toString color) ^ "  Points: "
+	     ^ (Int.toString points)  ^ "  Player: "
+	     ^ (Int.toString player)  ^ "  Level: "
+	     ^ (Int.toString level)   ^ "\n\n" ^ str)
+
+	fun toString () = 
+	    Highscore.foldl toString' "" score
+    in
+	toString ()
+    end
+
+  fun timeToString t =
+    let
+	val time    = Time.toSeconds t
+	val hours   = time div 3600
+	val minutes = (time mod 3600) div 60
+	val seconds = (time mod 3600) mod 60
+    in
+	Int.toString hours   ^ " : " ^
+	Int.toString minutes ^ " : " ^
+	Int.toString seconds ^ " time left"
+    end
+
+
+
+structure MainWindow =
+struct
+
+    (* the modes in which the window can exists *)
+    datatype mode = START | GAME
+
+    val mode = ref START
+
+    (* initialising the canvas widget *)
+    val arena = ArenaWidget.initialize ()
+    val canvas = ArenaWidget.toObject arena
+
+    (* the menu bar items whose sensitivity get 
+     changed some times *)
+    val menuScoreItem  = Gtk.menuItemNewWithLabel "Highscore"
+    val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
+    val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
+
+    (* the points box items *)
+    val separator1  = Gtk.vseparatorNew ()
+    val pointsLabel = ref (Gtk.labelNew "")
+
+    (* the remaining level time and it's box *)
+    val timeLabel = ref (Gtk.labelNew "")
+
+    (* the box where time and points are in *)
+    val labelVBox      = Gtk.vboxNew (false, 10)
+    val rightHBox      = Gtk.hboxNew (false, 10)
+
+
+	(* one of the main prcedures. resets the window
+	 in START mode and also the sensitivity of menu bar *)
+    fun reset' () =
+	(Gtk.widgetSetSensitive (menuGiveUpItem, false);
+	 Gtk.widgetSetSensitive (menuMenuItem, true);
+	 Gtk.widgetSetSensitive (menuScoreItem, true);
+	 Gtk.widgetHide canvas;
+	 Gtk.widgetHide rightHBox;
+	 pointsLabel := (Gtk.labelNew "");
+	 mode := START)
+
+
+    (* resets window and also shows Text when needed *)
+    fun reset NONE = reset' ()
+      | reset (SOME (title, msg)) =
+	(TextWindow.mkTextWindow (title, msg); reset' ())
+
+
+    (* initializing the procedures from model_game *)
+    val turn'       = ref (fn d => ())
+    val changeView' = ref (fn h => ())
+    val giveUp'     = ref (fn () => ())
+    val disconnect' = ref (fn () => ())
+
+    (* calling the procedure gameMode turns main window in GAME mode,
+     by setting and fullfilling guiGame and updating 
+     functionality *)
+    fun gameMode ({disconnect}, {turn, changeView, giveUp},
+		   guiGame) =
+	let
+	    fun gameFinished h = 
+		    (reset (SOME ("Highscore", highscoreToString h));
+		     HighscoreIO.save h)
+
+	    fun update difflist = ArenaWidget.update (arena, difflist)
+
+	    fun tick remainingTime =
+		let
+		    val timeStr = timeToString remainingTime
+		in
+		    Gtk.labelSetText (!timeLabel, timeStr)
+		end
+
+	    fun updatePoints plist = 
+		let
+		    fun toString' (({name, 
+				    color, 
+				    points, 
+				    gamePoints},
+				    NONE), str) =
+			(str ^ name ^ ":  " 
+			 ^ (Int.toString points) ^ "  /  " 
+			 ^ (Int.toString gamePoints) ^ "\n\n")
+		      | toString' (({name, 
+				    color, 
+				    points, 
+				    gamePoints},
+				    SOME lives), str) =
+			(str ^ name ^ ":  " 
+			 ^ (Int.toString points) ^ "  /  " 
+			 ^ (Int.toString gamePoints)
+			 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
+		    fun toString () = List.foldl toString' "" plist
+		in
+		    Gtk.labelSetText (!pointsLabel, toString ())
+		end
+
+	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
+
+	    fun headPosition p = ArenaWidget.changeView (arena, p)
+
+	in
+	    mode := GAME;
+	    Gtk.widgetSetSensitive (menuGiveUpItem, true);
+	    Gtk.widgetSetSensitive (menuMenuItem, false);
+	    Gtk.widgetSetSensitive (menuScoreItem, false);
+	    Gtk.widgetShow canvas;
+	    Gtk.widgetShow rightHBox;
+	    assert (Future.isFuture $ Promise.future guiGame) 
+	    do Promise.fulfill (guiGame, {startLevel, update, 
+					  updatePoints, headPosition,
+					  tick,
+					  gameFinished});
+	    (* update procedures *)
+	    turn' := turn;
+	    changeView' := changeView;
+	    giveUp' := giveUp;
+	    disconnect' := disconnect
+	end
+	 
+
+    (* builds the mainWindow, starting in START mode *)
+    fun mkMainWindow ({connect, startServer}, gui) = 
+	let
+
+	    val _ = assert (Future.isFuture $ Promise.future gui) 
+		        do Promise.fulfill (gui, {reset})
+
+	    (* the different behaviour by pressing the quit button *)
+	    fun mainQuit () = 
+		case !mode of
+		    START => OS.Process.exit OS.Process.success 
+		  | GAME  => 
+			let
+			    fun cancel () = ()
+			    fun no () = ()
+			    fun yes () = (!disconnect' ();
+					  reset NONE)
+			    val answer = {cancel, no, yes}
+			in
+			    QuestionWindow.mkQuestionBox 
+			    ("Sure?", "Do you want to quit?", answer)
+			end
+		     
+			
+	    val mainWindow     = Gtk.windowNew Gtk.WINDOW_TOPLEVEL
+	    val dialogVBox     = Gtk.vboxNew (false, 10)
+	    val dialogHBox     = Gtk.hboxNew (false, 10)
+	    val menuBar        = Gtk.menuBarNew ()
+	    val menuMenu       = Gtk.menuNew ()
+	    val menuHighscore  = Gtk.menuNew ()
+	    val menuLeave      = Gtk.menuNew ()
+	    val menuMenuSingle = Gtk.menuItemNewWithLabel "Single-Player"
+	    val menuMenuClient = Gtk.menuItemNewWithLabel "Multi-Player Client"
+	    val menuMenuServer = Gtk.menuItemNewWithLabel "Multi-Player Server"
+	    val menuOpenScore  = Gtk.menuItemNewWithLabel "open Highscore"
+	    val menuResetScore = Gtk.menuItemNewWithLabel "reset Highscore"
+	    val menuQuit       = Gtk.menuItemNewWithLabel "Quit"
+	    val menuQuitItem   = Gtk.menuItemNewWithLabel "Quit"
+
+
+	    (* procedure called by pressing Client - button *)
+	    fun startClient () = 
+		Connection.mkConnectToServer ({connect},
+						    {reset, gameMode})
+
+	    (* procedure called by pressing Server - button *)
+	    fun startMultiPlayer () = 
+                (log ("MainWindow", "startMultiPlayer");
+		ServerSettings.mkServerSettings ({startServer},
+						       {reset, gameMode}))
+
+	    (* opens the highscore window *)
+	    fun openHighscore () = 
+		let
+		    val h = HighscoreIO.load ()
+		in
+		    TextWindow.mkTextWindow ("Highscore", highscoreToString h) 
+		end
+
+	    fun resetHighscore () = HighscoreIO.save Highscore.empty
+
+	    fun startSinglePlayer () = 
+		case startServer (SOME ("Player", Color.fromString "yellow"), 
+				  Config.defaultSingle) of
+		    FST ({start, disconnect}, guiJoinP, _) => 
+			let
+			    val guiJoin = {playersJoined = fn _ => (),
+					   playerDisconnected = fn _ => (),
+					   gameStarted = fn _ => ()}
+			in
+			    Promise.fulfill (guiJoinP, guiJoin);
+			    (case start () of
+				 FST (mGame, guiGame) => 
+				     gameMode ({disconnect}, mGame, guiGame)
+			       | SND   errorMsg       => 
+				     reset (SOME ("ERROR!!", errorMsg)))
+			end
+		  | SND    errorMsg       => reset (SOME ("ERROR!!", errorMsg))
+
+	    fun key keyval =
+		  if !mode = GAME
+		      then
+			  case Gdk.keyvalName keyval of
+			        "Up"      => (!turn') Protocol.UP
+			    |   "Down"    => (!turn') Protocol.DOWN
+			    |   "Right"   => (!turn') Protocol.RIGHT
+			    |   "Left"    => (!turn') Protocol.LEFT
+			    | ("q" | "Q") => (!changeView') Protocol.PREV
+			    | ("w" | "W") => (!changeView') Protocol.NEXT
+			    |   _         => ()
+		  else ()
+
+
+	    fun canvasEvent [Gtk.EVENT event] = 
+		(case event of
+		     Gtk.GDK_KEY_PRESS {keyval, ...}	=> key keyval
+		   |            _                  	=> ())
+	      |  canvasEvent       x            = ()
+
+	in
+
+	    mode := START;
+	    Gtk.windowSetTitle (mainWindow, "Alice Snake");
+	    Gtk.windowSetDefaultSize (mainWindow, 800, 500);
+	    Gtk.windowSetPosition (mainWindow, Gtk.WIN_POS_CENTER);
+	    
+	    Gtk.menuAppend (menuMenu, menuMenuSingle);
+	    Gtk.menuAppend (menuMenu, menuMenuClient);
+	    Gtk.menuAppend (menuMenu, menuMenuServer);
+	    Gtk.menuAppend (menuHighscore, menuOpenScore);
+	    Gtk.menuAppend (menuHighscore, menuResetScore);
+	    Gtk.menuAppend (menuLeave, menuGiveUpItem);
+	    Gtk.menuAppend (menuLeave, menuQuit);
+
+	    Gtk.signalConnect (mainWindow, "event",
+			       canvasEvent);
+	    Gtk.signalConnect (mainWindow, "delete-event", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (menuOpenScore, "activate", 
+			       fn _ => openHighscore ());
+	    Gtk.signalConnect (menuResetScore, "activate",
+			       fn _ => resetHighscore ());
+	    Gtk.signalConnect (menuMenuSingle, "activate", 
+			       fn _ => startSinglePlayer ());
+	    Gtk.signalConnect (menuMenuClient, "activate", 
+			       fn _ => startClient ());
+	    Gtk.signalConnect (menuMenuServer, "activate", 
+			       fn _ => startMultiPlayer ());
+	    Gtk.signalConnect (menuQuit, "activate", 
+			       fn _ => mainQuit ());
+	    Gtk.signalConnect (menuGiveUpItem, "activate",
+			       fn _ => (!giveUp') ());
+
+	    Gtk.menuItemSetSubmenu (menuMenuItem, menuMenu);
+	    Gtk.menuItemSetSubmenu (menuScoreItem, menuHighscore);
+	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
+
+	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
+
+	    Gtk.menuBarAppend (menuBar, menuMenuItem);
+	    Gtk.menuBarAppend (menuBar, menuScoreItem);
+	    Gtk.menuBarAppend (menuBar, menuQuitItem);
+	    
+	    Gtk.boxPackStart (labelVBox, !timeLabel, false, false, 5);
+	    Gtk.boxPackStart (labelVBox, !pointsLabel, false, false, 5);
+	    
+	    Gtk.boxPackStart (rightHBox, separator1, true, true, 5);
+	    Gtk.boxPackStart (rightHBox, labelVBox, false, false, 5);
+
+	    Gtk.boxPackStart (dialogHBox, canvas, true, true, 0);
+	    Gtk.boxPackStart (dialogHBox, rightHBox, false, false, 0);
+
+	    Gtk.boxPackStart (dialogVBox, menuBar, false, false, 0);
+	    Gtk.boxPackStart (dialogVBox, dialogHBox, true, true, 0);
+
+	    Gtk.containerAdd (mainWindow, dialogVBox);
+
+	    Gtk.widgetShowAll mainWindow;
+
+	    Gtk.widgetHide canvas;
+	    Gtk.widgetHide rightHBox
+		
+	end
+end

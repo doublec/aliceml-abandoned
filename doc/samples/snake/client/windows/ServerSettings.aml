@@ -17,7 +17,7 @@ import structure Color     from "../../common/Color"
 import structure Config    from "../../server/Config"
 
 import structure Wait      from "Wait"
-import structure Text      from "Text"
+import structure TextWindow      from "TextWindow"
 
 
 import val log              from "../../common/Log"
@@ -271,7 +271,7 @@ struct
 
 		in
 		    if Gtk.entryGetText nameText = ""
-			then Text.mkTextWindow
+			then TextWindow.mkTextWindow
 			    ("ERROR!!", "Please enter a name!")
 		    else
 			(Gtk.widgetDestroy serverSettings;
