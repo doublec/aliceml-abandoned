@@ -201,6 +201,14 @@ void AbstractCodeInterpreter::PushCall(TaskStack *taskStack,
 Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
   AbstractCodeFrame *frame =
     AbstractCodeFrame::FromWordDirect(taskStack->GetFrame());
+#if 0 //--** hack
+  if (frame->IsHandlerFrame()) {
+    std::fprintf(stderr, "executing unexpected handler:\n");
+    taskStack->Dump();
+    taskStack->PopFrame();
+    return Interpreter::CONTINUE;
+  }
+#endif
   Assert(frame->GetInterpreter() == this);
   TagVal *pc            = frame->GetPC();
   Closure *globalEnv    = frame->GetClosure();
@@ -263,10 +271,11 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
-    case Pickle::PutNew: // of id * instr
+    case Pickle::PutNew: // of id * string * instr
       {
-	localEnv->Add(pc->Sel(0), Constructor::New()->ToWord());
-	pc = TagVal::FromWord(pc->Sel(1));
+	Constructor *constructor = Constructor::New(pc->Sel(1));
+	localEnv->Add(pc->Sel(0), constructor->ToWord());
+	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
     case Pickle::PutTag: // of id * int * idRef vector * instr
@@ -467,10 +476,10 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
     case Pickle::Try: // of instr * idDef * idDef * instr
       {
 	// Push a handler stack frame:
-	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
 	Vector *formalIdDefs = Vector::New(2);
 	formalIdDefs->Init(0, pc->Sel(1));
 	formalIdDefs->Init(1, pc->Sel(2));
+	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
 	formalArgs->Init(0, formalIdDefs->ToWord());
 	AbstractCodeHandlerFrame *frame =
 	  AbstractCodeHandlerFrame::New(this,
@@ -484,7 +493,6 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case Pickle::EndTry: // of instr
       {
-	Assert(Store::WordToBlock(taskStack->GetFrame()) != INVALID_POINTER);
 	Assert(StackFrame::FromWordDirect(taskStack->GetFrame())->GetLabel() ==
 	       ABSTRACT_CODE_HANDLER_FRAME);
 	taskStack->PopFrame();
@@ -724,7 +732,13 @@ AbstractCodeInterpreter::Handle(word exn, Backtrace *trace,
     Scheduler::nArgs = 2;
     Scheduler::currentArgs[0] = package->ToWord();
     Scheduler::currentArgs[1] = exn;
-    return Run(taskStack);
+    taskStack->PopFrame();
+    AbstractCodeFrame *newFrame =
+      AbstractCodeFrame::New(self, frame->GetPC()->ToWord(),
+			     frame->GetClosure(), frame->GetLocalEnv(),
+			     frame->GetFormalArgs()->ToWord());
+    taskStack->PushFrame(newFrame->ToWord());
+    return Interpreter::CONTINUE;
   } else {
     taskStack->PopFrame();
     trace->Enqueue(frame->ToWord());
