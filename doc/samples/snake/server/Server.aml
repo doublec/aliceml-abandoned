@@ -336,7 +336,9 @@ struct
                             in
                                 (#nextDir info) := dir;
                                 (#gatePos info) := pos;
-                                state := Part.PLAYING (info, snake)
+                                state := Part.PLAYING (info, snake);
+                                Array2.update (oldArena, #1 pos, #2 pos,
+                                        P.GATE (color, P.CLOSED))
                             end
                         ) (p, startPos);
 
@@ -479,7 +481,7 @@ struct
 			      ispawn (_file_, _line_)
 			         invoke (part, #headPosition, p)) newHeadPos;
  
-                    (* change state of participants whose snake 
+                    (* change state of participants whose snakes are 
                        finished to FINISHED *)
                     log ("Server", "check for finished snakes");
                     List.app (fn sn =>

@@ -28,10 +28,11 @@ struct
 
     type t = snake
     
-    
+    val startSize = 0
+
     fun snake (id, c, pos, d) = SN { 
             direction   = ref d, 
-            belly       = ref 0, 
+            belly       = ref (startSize - 1), 
             color       = c,
             id          = id,
             body        = ref [pos]
