@@ -496,7 +496,7 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 
 inline void Store::DoGC(word &root, const u_int gcGen) {
   u_int dst_gen = (gcGen + 1);
-  u_int cpy_gen = ((dst_gen == STORE_GENERATION_NUM) ? gcGen : dst_gen);
+  u_int cpy_gen = ((dst_gen == (STORE_GENERATION_NUM - 1)) ? gcGen : dst_gen);
 
 #if defined(STORE_DEBUG)
   std::printf("GCing all gens <= %d; dst_gen %d; cpy_gen %d\n", gcGen, dst_gen, cpy_gen);
@@ -543,7 +543,7 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
   
   // Clean up Collected regions
   for (u_int i = dst_gen; i--;) {
-    Store::Shrink(roots[i], ((i == 0) ? 1 : 2));
+    Store::Shrink(roots[i], memLimits[i]);
     memUsage[i] = ComputeUsage(roots[i]);
   }
   // Compute GC Flag (to be determined)
@@ -574,7 +574,7 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
     }
   }
 #if defined(STORE_DEBUG)
-  std::printf("Done GC\n");
+  std::printf("Done GC; maxGcGen is %d\n", maxGcGen);
 #endif
 }
 
@@ -591,10 +591,6 @@ void Store::DoGC(word &root) {
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
-  static const char *val[] = { "no", "yes" };
-
-  std::printf("---\n");
-  std::printf("GC necessary: %s \n", val[NeedGC()]);
   std::printf("---\n");
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
     MemChunk *anchor = roots[i];
@@ -603,7 +599,6 @@ void Store::MemStat() {
     
     anchor = anchor->GetNext();
     while (!anchor->IsAnchor()) {
-      std::printf("Scanning Id: %d\n", anchor->id);
       u_int size = (anchor->GetMax() - anchor->GetBottom());
 
       used  += (size + ((anchor == storeCurChunk) ? storeChunkTop : anchor->GetTop()));
@@ -611,7 +606,8 @@ void Store::MemStat() {
       anchor = anchor->GetNext();
     }
 
-    std::printf("G%d --> Used: %d; Total: %d\n", i, used, total);
+    std::printf("G%d --> Used: %10d; Total: %10d; GC-Limit: %10d\n", i, used, total,
+		memLimits[i] * STORE_MEMCHUNK_SIZE);
   }
   std::printf("---\n");
   std::fflush(stdout);
