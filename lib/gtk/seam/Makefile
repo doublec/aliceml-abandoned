@@ -67,7 +67,7 @@ INSTALLDIR = `alice-config --alicelibdir`/gtk
 
 #################################################
 
-.PHONY: all generate compile depend docs clean veryclean distclean
+.PHONY: all generate compile depend docs clean veryclean distclean install
 
 all: compile
 
