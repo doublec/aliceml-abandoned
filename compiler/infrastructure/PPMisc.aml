@@ -14,7 +14,7 @@
  * Miscellaneous pretty printing helpers
  *)
 
-import structure PrettyPrint from "PrettyPrint"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
 import signature PP_MISC     from "PP_MISC-sig"
 
 
