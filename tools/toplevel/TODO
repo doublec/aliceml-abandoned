@@ -9,12 +9,15 @@ Bugs:
 * propagate output width on init and after resize
 * cannot make window smaller
 * modified files dialogue is too ugly
+* Ctrl-L for goto line (Ctrl-G is std Search again)
+* Simplify feed menu (don't need line; selection and paragraph are one)
+* Move history items to eval menu?
 
 Missing Features:
 
-* cumulative undo
-* redo
+* automatic highlighting!
 * replace
-* incremental search
-* general interactive highlighting
-
+* cumulative undo?
+* redo?
+* replace
+* incremental search?

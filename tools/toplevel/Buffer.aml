@@ -59,8 +59,8 @@ structure Buffer =
           end
 
       fun selectRange(buf, startiter, enditer) =
-	  (Gtk.textBufferMoveMarkByName(buf, "insert", startiter);
-	   Gtk.textBufferMoveMarkByName(buf, "selection_bound", enditer))
+	  (Gtk.textBufferPlaceCursor(buf, enditer);
+	   Gtk.textBufferMoveMarkByName(buf, "selection_bound", startiter))
 
       fun modifiedChanged id _ =
           let

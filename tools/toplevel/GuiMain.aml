@@ -199,7 +199,15 @@ structure GuiMain =
             case (!curtextview) of BUFFER view =>
             let
                 val buf = Gtk.textViewGetBuffer view
-                val (startiter, enditer) = paragraphIters(buf)
+		val startiter = Gtk.textIterNew()
+		val enditer = Gtk.textIterNew()
+                val (startiter, enditer) = 
+		    if Gtk.textBufferGetSelectionBounds(buf, startiter, enditer)
+		    then (startiter, enditer)
+		    else let val (start,endd) = paragraphIters(buf)
+		         in Buffer.selectRange(buf, start, endd);
+			    (start,endd)
+			 end
                 val startline = Gtk.textIterGetLine startiter
                 val str = addNewlines(startline,
                                       Core.utf8ToLatin1
@@ -207,7 +215,7 @@ structure GuiMain =
             in
                 eval true (str^"\n")
             end
-                                 | _ => ()
+            | _ => ()
 
         fun compile () =
             case getCurrentPage() of NONE => ()
