@@ -283,35 +283,6 @@ define
       'Math.tan': Tan
       'Math.tanh': Float.tanh
       'Option.Option': {NewUniqueName 'Option.Option'}
-      'Promise.Promise': {NewUniqueName 'Promise.Promise'}
-      'Promise.fail':
-	 fun {$ Cell#Hole X} New in
-	    if {Exchange Cell $ New} then
-	       New = true
-	       {Exception.raiseError BuiltinTable.'Promise.Promise'}
-	    else
-	       Hole = {ByNeedFail error(FutureException(X))}
-	       New = true
-	    end
-	    unit
-	 end
-      'Promise.fulfill':
-	 fun {$ Cell#Hole X} New in
-	    if {Exchange Cell $ New} then
-	       New = true
-	       {Exception.raiseError BuiltinTable.'Promise.Promise'}
-	    else
-	       Hole = X
-	       New = true
-	    end
-	    unit
-	 end
-      'Promise.future':
-	 fun {$ _#Hole}
-	    !!Hole
-	 end
-      'Promise.promise':
-	 fun {$ unit} {NewCell false}#_ end
       'Real.~': Number.'~'
       'Real.+': Number.'+'
       'Real.-': Number.'-'
