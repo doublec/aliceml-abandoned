@@ -132,5 +132,7 @@ signature INTERMEDIATE =
     val output_match :	TextIO.outstream * match	-> unit
     val output_pat :	TextIO.outstream * pat		-> unit
     val output_dec :	TextIO.outstream * dec		-> unit
+    val output_list :  (TextIO.outstream * 'a -> unit)	->
+			TextIO.outstream * 'a list	-> unit
 
   end
