@@ -1,0 +1,31 @@
+(* Alice Snake 2.0 - RadarWidget Signature
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+import structure Gtk         from "GtkSupport"
+
+import structure Protocol    from "../../common/Protocol"
+import structure Pos         from "../../common/Pos"
+
+
+signature RADARWIDGET =
+sig
+
+    type radar_widget
+	
+    val initialize : unit -> radar_widget
+	
+    val toObject : radar_widget -> Gtk.object
+	
+    val initLevel : radar_widget * Protocol.level_info -> unit
+	
+    val update : radar_widget * Protocol.diff list * Pos.pos option -> unit
+	
+end

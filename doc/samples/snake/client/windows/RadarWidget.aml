@@ -1,0 +1,312 @@
+(* Alice Snake 2.0 - RadarWidget
+*
+*  Authors: Benedikt Grundmann / Sebastian Germesin
+*
+*  $Revision$
+*
+*  Last updated: $Date$ by $Author$
+* 
+*
+*)
+
+
+import structure Gtk           from "GtkSupport"
+import structure Gdk           from "GtkSupport"
+import structure Canvas        from "GtkSupport"
+import functor   MkRedBlackMap from "x-alice:/lib/data/MkRedBlackMap"
+
+import signature RADARWIDGET   from "RADARWIDGET-sig"
+import structure Protocol      from "../../common/Protocol"
+import structure Color         from "../../common/Color"
+
+
+structure RadarWidget :> RADARWIDGET =
+struct
+
+    structure P = Protocol
+
+    (* some values *)
+    val cellSize      = 2.0
+    val windowWidth   = 100
+    val windowHeight  = 100
+    val windowHeight2 = windowHeight div 2
+    val windowWidth2  = windowWidth  div 2
+	
+
+    type radar_field = Gtk.object * P.field
+	
+    type item_cache  = (int * int * Gtk.object * P.field) list ref
+
+    type radar_widget = 
+	{
+	 canvas    : Gtk.object,
+	 state     : radar_field Array2.array ref,
+	 itemCache : item_cache
+	 }
+
+    fun colorConv n = Real.round (65535.0 * n)
+	
+    local
+	
+	val colormap = Gdk.colormapGetSystem ()
+	    
+	structure CMap = MkRedBlackMap (Color)
+	    
+	fun conv c = 
+	    let
+		val (r, g, b) = Color.rgb c
+		val color = Gdk.colorNew (colorConv r, 
+					  colorConv g, 
+					  colorConv b)
+	    in
+		Gdk.colormapAllocColor (colormap, color, false, true);
+		color
+	    end
+
+	fun convRadar (r, g, b) = 
+	    let
+		val color = Gdk.colorNew (colorConv r, 
+					  colorConv g, 
+					  colorConv b)
+	    in
+		Gdk.colormapAllocColor (colormap, color, false, true);
+		color
+	    end
+	
+	val map  = List.foldl (fn (c, map) =>
+			       CMap.insertDisjoint (map, c, conv c)) CMap.empty
+	    Color.all
+	    
+    in
+	fun color c  = CMap.lookupExistent (map, c);
+	val black    = convRadar (0.0, 0.0, 0.0);
+	val green    = convRadar (0.32, 0.66, 0.17);
+	val red      = convRadar (1.0, 0.0, 0.0);
+	val white    = convRadar (1.0, 1.0, 1.0)
+	    
+    end
+
+    val backgroundColor = green
+
+    (* some procedures to work on item_cache *)
+    fun addToItemCache (r, c, object, field, ca) =
+	ca := (r, c, object, field) :: !ca
+
+    fun removeFromItemCache (r, c, object, field, ca) = 
+	let
+	    val newList = 
+		List.filter (fn (v, w, x, y) => 
+			     not(r = v andalso
+				 c = w andalso
+				 field = y)) (!ca)
+	in
+	    ca := newList
+	end
+
+
+    fun initialize () = 
+        let
+	    val canvas = Canvas.new 0
+
+        in
+	    {
+	        canvas,
+	        state     = ref (Array2.array(0, 0, (Gtk.null, P.EMPTY))),
+		itemCache = ref nil
+	    }
+        end
+	
+    fun toObject ({canvas, ... } : radar_widget) : Gtk.object  = canvas
+	
+    fun initLevel ({canvas, state, itemCache}, 
+		   {dimensions = dim} : P.level_info) =
+	let
+	    val (rows, cols) = dim
+	    val (rows, cols) = (real rows, real cols)
+	    val _ = Gtk.widgetSetSizeRequest (canvas, windowWidth, 
+					      windowHeight)
+	    val _ = Canvas.setScrollRegion (canvas, 0.0, 0.0,
+					    cols * cellSize,
+					    rows * cellSize)
+	    val root = Canvas.root canvas
+	    val (x1, y1, x2, y2) = (0.0, 0.0,
+				    cols * cellSize,
+				    rows * cellSize)
+	    val _ = Canvas.createRect (root, x1, y1, x2, y2, green, green)
+	    val radar = Array2.array (Real.floor rows, Real.floor cols, 
+				      (Gtk.null, P.EMPTY))
+	in
+	    state     := radar;
+	    itemCache := nil
+	end
+	
+
+    fun insertHead (canvas, x, y, d, snakecol) =
+	let
+	    val head = Canvas.createGroup (canvas, real x, real y)
+
+	    val ground = Canvas.createEllipse (head, 0.0, 0.0,
+					       cellSize, cellSize, 
+					       snakecol, snakecol)
+	in
+	    head
+	end
+	    
+    fun insertBody (canvas, x, y, snakecol) =
+	let
+	    val body = Canvas.createGroup (canvas, real x, real y)
+
+	    val ground = Canvas.createEllipse (body, 0.0, 0.0, 
+					       cellSize, cellSize, 
+					       snakecol, snakecol)
+	in
+	    body
+	end
+
+    fun insertGate (canvas, x, y, gatecol) = 
+	let
+	    val gate = Canvas.createGroup (canvas, real x, real y)
+		
+	    val ground = Canvas.createRect (gate, 0.0, 0.0, 
+					    cellSize, cellSize, 
+					    gatecol, gatecol)
+	in
+	    gate
+	end
+
+    fun insertWall (canvas, x, y) = 
+	let
+	    val wall = Canvas.createGroup (canvas, real x, real y)
+		
+	    val ground = Canvas.createRect (wall, 0.0, 0.0, cellSize, cellSize,
+					    red, black)
+	in
+	    wall
+	end
+
+    fun insertGoodie (canvas, x, y, n) =
+	(* where n is the amount of a goodie *)
+	let
+	    val goodie = Canvas.createGroup (canvas, real x, real y)
+		
+	    val ground = Canvas.createEllipse (goodie, 0.0, 0.0, cellSize, 
+					       cellSize, red, red)
+	in
+	    goodie
+	end
+
+    fun createNewFieldObj (r, c, field, radar, canvas) = 
+	let
+	    val x = cellSize * (real c)
+	    val y = cellSize * (real r)
+	    val (x, y) = (Real.floor x, Real.floor y)
+	in
+	    (* place the new one *)
+	    case field of
+		P.EMPTY                => 
+		    Array2.update (radar, r, c, (Gtk.null, field))
+	      | P.WALL                 => 
+		    Array2.update (radar, r, c, 
+				   (insertWall (canvas, x, y), field))
+	      | P.GOODY n              => 
+		    Array2.update (radar, r, c, 
+				   (insertGoodie (canvas, x, y, n), field))
+	      | P.GATE (col, _) => 
+		    Array2.update (radar, r, c, 
+				   (insertGate (canvas, x, y, color col),
+				    field))
+	      | P.SNAKE_HEAD (d, col) => 
+		    Array2.update (radar, r, c, 
+				   (insertHead (canvas, x, y, d, color col), 
+				    field))
+	      | P.SNAKE_BODY col      => 
+		    Array2.update (radar, r, c, 
+				   (insertBody (canvas, x, y, color col), 
+				    field))
+	end
+
+    fun moveFieldObjTo (obj, oldR, oldC, newR, newC, field, radar) =
+	let
+	    val deltaY = (cellSize * real (newR - oldR))
+	    val deltaX = (cellSize * real (newC - oldC))
+	in
+	    Canvas.itemMove (obj, deltaX, deltaY);
+	    Canvas.itemShow obj;
+	    Array2.update (radar, newR, newC, (obj, field))
+	end
+
+
+    fun changeField (object, oldField, r, c, field, cache, radar, canvas) = 
+	(if object <> Gtk.null orelse oldField <> P.EMPTY
+	     then (addToItemCache (r, c, object, oldField, cache);
+		   Canvas.itemHide object)
+	 else ();
+	 case List.find (fn (_, _, _, f) => f = field) (!cache) of
+	     NONE                      => 
+		 createNewFieldObj (r, c, field, radar, canvas)
+	   | SOME (row, col, obj, fld) => 
+		 (removeFromItemCache (row, col, obj, fld, cache);
+		  moveFieldObjTo (obj, row, col, r, c, fld, radar)))
+
+    fun insert (a as (cache, radar, canvas)) ((r, c), field) = 
+	let
+	    val (rows, cols) = Array2.dimensions radar
+	    val (obj, f) = Array2.sub (radar, r, c)
+	in
+	    if f <> field 
+		then changeField (obj, f, r, c, field, cache, radar, canvas)
+	    else ()
+	end
+
+	
+    fun radarWidth (a:radar_widget) =
+	let
+	    val (_, cols) = Array2.dimensions (! ( #state a))
+	in
+	    Real.floor ((real cols) * cellSize)
+	end
+
+
+    fun radarHeight (a:radar_widget) =
+	let
+	    val (rows, _) = Array2.dimensions (! ( #state a))
+	in
+	    Real.floor ((real rows) * cellSize)
+	end
+
+
+    fun changeView (a:radar_widget, (y, x)) =
+	let
+	    val obj = toObject a
+	    val minX = 0
+	    val maxX = radarWidth a
+	    val minY = 0
+	    val maxY = radarHeight a
+	    val x    = (real x) * cellSize - (real windowWidth2)
+	    val y    = (real y) * cellSize - (real windowHeight2)
+	    val (x, y) = (Real.floor x, Real.floor y)
+
+	in
+	    Canvas.scrollTo (obj, x, y)
+	end
+
+    fun update (a as {canvas, state = ref radar, itemCache}, difflist, pos) =
+	let
+            val root = Canvas.root canvas
+	(*    val (x1, y1, x2, y2) = Canvas.getScrollRegion (0, 0, 0, 0)
+
+	    val _ = if Config.platform = WIN32
+			then Canvas.setScrollRegion (x1, y1, x2, y2)
+		    else ()*)
+	(* TODO: wie war das vorher? *)
+	in
+	    Canvas.freeze canvas;
+	    List.app (insert (itemCache, radar, root)) difflist;
+            (case pos of
+                NONE    => ()
+            |   SOME p  => changeView (a, p));
+	    Canvas.thaw canvas;
+	    Canvas.updateNow canvas
+	end 
+
+end

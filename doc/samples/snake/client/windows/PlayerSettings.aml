@@ -188,18 +188,16 @@ struct
 	     SND errorMsg -> return to main window by showing error message *)
 	    fun okClickedCB spectator = 
 		let
+		    val name  = Gtk.entryGetText nameText
+		    val color = 
+			Color.fromString (Gtk.entryGetText 
+					  (Gtk.comboGetFieldEntry colorCombo))
+
 		    fun return () = 
-			(if Gtk.toggleButtonGetActive spectator
+			if Gtk.toggleButtonGetActive spectator
 			    then watch ()
-			else
-			    let
-				val name  = Gtk.entryGetText nameText
-				val color = Color.fromString (
-				    Gtk.entryGetText 
-				    (Gtk.comboGetFieldEntry colorCombo))
-			    in 
-				play (name, color)
-			    end) handle Error.Error msg => SND msg
+			else 
+			 (play (name, color) handle Error.Error msg => SND msg)
                     
 		in
 		    case return () of 
@@ -210,6 +208,7 @@ struct
 			     Gtk.widgetSetSensitive (colorHBox, false);
 			     Gtk.widgetSetSensitive (spectatorCheckButton, 
 						     false);
+			     playersJoined [(name, color)];
 			     Promise.fulfill (state, game))
 		      | SND errorMsg => 
 			    (reset (SOME ("ERROR!!", errorMsg));
