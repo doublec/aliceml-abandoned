@@ -10,7 +10,7 @@ SOURCES = Debug.aml \
           SEARCH-sig.aml MkSearch.aml \
           Test.aml
 
-COMPONENTS = $(SOURCES:%.aml=%.stc)
+COMPONENTS = $(SOURCES:%.aml=%.alc)
 
 #INSTALLDIRS = $(PREFIX)/lib/distribution/search
 #INSTALLFILES = $(COMPONENTS:%=$(PREFIX)/lib/distribution/search/%)
@@ -24,7 +24,7 @@ depend:
 	$(ALICEDEP) $(SOURCES) > Makefile.predepend
 	sed "/\/alice\//d" Makefile.predepend > Makefile.depend
 
-$(COMPONENTS): %.stc: %.aml
+$(COMPONENTS): %.alc: %.aml
 	$(ALICEC) $(ALICEC_OPTS) -c $< -o $@
 
 ##

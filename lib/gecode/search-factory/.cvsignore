@@ -1,4 +1,4 @@
 Makefile.depend
 Makefile.predepend
-*.stc
+*.alc
 *.dll
