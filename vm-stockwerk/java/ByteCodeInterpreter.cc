@@ -599,8 +599,11 @@ Worker::Result ByteCodeInterpreter::Run() {
   if (pc == -1) {
     // Copy arguments to local variables
     // to be done: support large arguments
-    for (u_int i = Scheduler::nArgs; i--;)
-      frame->SetEnv(i, Scheduler::currentArgs[i]);
+    if (Scheduler::nArgs == Scheduler::ONE_ARG)
+      frame->SetEnv(0, Scheduler::currentArgs[0]);
+    else
+      for (u_int i = Scheduler::nArgs; i--;)
+	frame->SetEnv(i, Scheduler::currentArgs[i]);
     pc = frame->GetContPC();
   }
   else if (pc == -2) {
@@ -665,11 +668,11 @@ Worker::Result ByteCodeInterpreter::Run() {
 	if (array != INVALID_POINTER) {
 	  if (index < array->GetLength()) {
 	    Object *object = Object::FromWord(value);
-	    Assert(object != INVALID_POINTER);
 	    // to be done: array->GetType();
 	    Type *type     = INVALID_POINTER;
 	    if ((type->GetLabel() == JavaLabel::Class) &&
-		object->IsInstanceOf(static_cast<Class *>(type)))
+		((object == INVALID_POINTER) ||
+		 object->IsInstanceOf(static_cast<Class *>(type))))
 	      array->Assign(index, value);
 	    else {
 	      // to be done: raise ArrayStoreException
@@ -1652,14 +1655,16 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->SetContPC(pc + 3);
 	// to be done: support more arguments
 	u_int nArgs = methodRef->GetNumberOfArguments();
-	Assert(nArgs < Scheduler::maxArgs);
+	Assert(nArgs + 1 < Scheduler::maxArgs);
 	// self becomes local0
-	Scheduler::nArgs = nArgs + 1;
+	if (nArgs == 0)
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	else
+	  Scheduler::nArgs = nArgs + 1;
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	// to be done: where is the closure to be found; assuming static ref
 	Class *classObj  = methodRef->GetClass();
-	Assert(classObj != INVALID_POINTER);
 	Closure *closure = classObj->GetVirtualMethod(methodRef->GetIndex());
 	return Scheduler::PushCall(closure->ToWord());
       }
@@ -1687,7 +1692,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	// to be done: support more arguments
 	u_int nArgs = methodRef->GetNumberOfArguments();
 	Assert(nArgs < Scheduler::maxArgs);
-	Scheduler::nArgs = nArgs;
+	if (nArgs == 1)
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	else
+	  Scheduler::nArgs = nArgs;
 	for (u_int i = nArgs; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	Closure *closure = classObj->GetStaticMethod(methodRef->GetIndex());
@@ -1707,9 +1715,12 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->SetContPC(pc + 3);
 	// to be done: support more arguments
 	u_int nArgs = methodRef->GetNumberOfArguments();
-	Assert(nArgs < Scheduler::maxArgs - 1);
+	Assert(nArgs + 1 < Scheduler::maxArgs);
 	// self becomes local0
-	Scheduler::nArgs = nArgs + 1;
+	if (nArgs == 0)
+	  Scheduler::nArgs = Scheduler::ONE_ARG;
+	else
+	  Scheduler::nArgs = nArgs + 1;
 	for (u_int i = nArgs + 1; i--;)
 	  Scheduler::currentArgs[i] = frame->Pop();
 	Object *object = Object::FromWord(Scheduler::currentArgs[0]);
@@ -2111,6 +2122,7 @@ Worker::Result ByteCodeInterpreter::Run() {
 	frame->Push(JavaInt::ToWord(value));
 	pc += 3;
       }
+      break;
     case Instr::SWAP:
       {
 	JavaDebug::Print("SWAP");
