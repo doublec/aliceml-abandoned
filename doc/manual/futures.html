@@ -15,19 +15,17 @@ That value may be a future on its own.</P>
 tries to access its value, that computation automatically synchronizes on the
 future by blocking until it becomes determined or failed.</P>
 
-<P>If the computation associated with a future terminates with an exception,
-the future is <EM>failed</EM>. A failed future carries the corresponding
-exception and reraises it on every request.</P>
-
-<P>There are three basic kinds of futures:</P>
+<P>There are four kinds of futures:</P>
 
 <UL>
   <LI> <A href="#spawn"><EM>concurrent futures</EM></A> stand for the
-	result of an concurrent computation </LI>
+	result of a concurrent computation </LI>
   <LI> <A href="#lazy"><EM>lazy futures</EM></A> stand for the
 	result of a computation that is only performed on request </LI>
   <LI> <A href="#promise"><EM>promised futures</EM></A> stand for the
 	a value that is delivered through an explicit operation </LI>
+  <LI> <A href="#failed"><EM>failed futures</EM></A> represent
+	the result of a computation that terminated with an exception </LI>
 </UL>
 
 
@@ -38,12 +36,11 @@ exception and reraises it on every request.</P>
 <PRE class=code>
 spawn <I>exp</I></PRE>
 
-<P>which evaluates the expression <TT><I>exp</I></TT> in new thread and returns
-immediately with a future of its result. When the expression has been
+<P>which evaluates the expression <TT><I>exp</I></TT> in a new thread and
+returns immediately with a future of its result. When the expression has been
 evaluated, the future is globally replaced by the result. We speak of
-<EM>functional threads</EM>. See the below discussion on <A
-href="#failed">failed futures</A> for the treatment of possible error
-conditions.</P>
+<EM>functional threads</EM>. See the discussion on <A href="#failed">failed
+futures</A> below for the treatment of possible error conditions.</P>
 
 <P class=note><EM>Note:</EM> The presence of concurrency has subtle <A
 href="incompatibilities.html#matching">implications</A>
@@ -161,19 +158,39 @@ the documentation of the <A href="library/promise.html#examples"><TT>Promise</TT
 structure.</P>
 
 
+<?php section("failed", "failed futures") ?>
+
+<P>If the computation associated with a concurrent or lazy future terminates
+with an exception, that future cannot be eliminated. Instead, it turns into a
+<EM>failed future</EM>. Promised futures can be failed explicitly by means of
+the <A href="library/promise.html"><TT>Promise.fail</TT></A> function.
+Requestin a failed future never blocks. Instead, any
+attempt to request a failed future will re-raise the
+exception that was the cause of the failure.</P>
+
+<P>Another error condition is the attempt to replace a future with itself. This
+may happen if a recursive <TT>spawn</TT> or <TT>lazy</TT> expression is
+unfounded, or if a promise is fulfilled with its own future. In all of
+these cases, the future will be failed with the special exception
+<TT>Future.Cyclic</TT>.</P>
+
+
 <?php section("request", "requesting a future") ?>
 
+<P>The future semantics implies implicit data-flow synchronisation, which
+enables concurrent programming on a high level of abstraction.</P>
+
 <P>A future is <EM>requested</EM> if it is used as an argument to a
-<EM>strict</EM> operation. The following operations are strict:</P>
+<EM>strict</EM> operation. The following operations are strict (note that futures can appear on the module level):</P>
 
 <UL>
   <LI> Pattern matching is strict in the examined value. </LI>
-  <LI> Function (functor) application is strict in the function
-       (functor) value. </LI>
+  <LI> Function application is strict in the function value. </LI>
   <LI> Exception raising is strict in the exception value. </LI>
   <LI> Primitive operations that need to access a value (e.g. <TT>op+</TT>,
        <TT>op=</TT>, <A href="pickling.html">pickling</A>) are strict
        in their corresponding arguments. </LI>
+  <LI> Functor application is strict in the functor value. </LI>
   <LI> <A href="packages.html#dynamic">Unpacking</A> is strict in the
        package's signature and the annotated signature. </LI>
 </UL>
@@ -182,9 +199,9 @@ structure.</P>
 longids is non-strict.</P>
 
 <P>If a future is requested by a thread, that thread blocks until the future
-has been replaced by a non-future value (or a failed future, see <A
-href="#failed">below</A>). After the value has been determined, the thread
-proceeds.</P>
+has been replaced by a non-future value (or a failed future). After the value
+has been determined, the thread proceeds. The only exception are <A
+href="#failed">failed futures</A>, which do not block.</P>
 
 <P>Requesting a lazy future triggers initiation of the corresponding
 computation. The future is replaced by a concurrent future of the computation's
@@ -194,6 +211,9 @@ result. The requesting thread blocks until the result is determined.</P>
 operation has been applied to the corresponding promise. Blocking continues if
 the promise is fulfilled with another future.</P>
 
+<P>Requesting a failed future never blocks. Instead, the
+exception that was the cause of the failure will be re-raised.</P>
+
 <P><EM>Structural</EM> operations that are strict (i.e., pattern matching,
 <TT>op=</TT> and <A href="pickling.html">pickling</A>) traverse all values
 in a depth-first left-to-right order. Futures are requested in that order.
@@ -202,25 +222,6 @@ Early termination occurs if a future is failed, upon a mismatch (pattern
 matching), if two partial values are not equal (<TT>op=</TT>), or if part
 of a value is sited (pickling). For unpacking it is unspecified, how much of the
 respective signatures is requested.</P>
-
-<P>The implicit data-flow synchronisation implied by the future semantics
-enables concurrent programming on a high level of abstraction.</P>
-
-
-<?php section("failed", "failed futures") ?>
-
-<P>If the computation associated with a concurrent or lazy future terminates
-with an exception, that future cannot be eliminated. Instead, it turns into a
-<EM>failed future</EM>. Promised futures can be failed explicitly by means of
-the <A href="library/promise.html"><TT>Promise.fail</TT></A> function. Any
-attempt to request a failed future will re-raise the exception that was the
-cause of the failure.</P>
-
-<P>A second error condition is the attempt to replace a future with itself. This
-may happen if a recursive <TT>spawn</TT> or <TT>lazy</TT> expression is
-unfounded, or if a promise is fulfilled with its own future. In all of
-these cases, the future will be failed with the special exception
-<TT>Future.Cyclic</TT>.</P>
 
 
 <?php section("state", "threads and state") ?>
