@@ -24,6 +24,9 @@
 
 class MemChunk;
 class Set;
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+struct timeval;
+#endif
 
 extern char *storeChunkMax;
 extern s_int storeChunkTop;
@@ -38,6 +41,9 @@ private:
   static Set *wkDictSet;
   static u_int needGC;
   static u_int maxGcGen;
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  static struct timeval *sum_t;
+#endif
 
   static void Shrink(MemChunk *list, int threshold);
   static Block *CopyBlockToDst(Block *p, u_int dst_gen, u_int cpy_gen);
@@ -156,6 +162,8 @@ public:
   }
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
   static void MemStat();
+  static void ResetTime();
+  static struct timeval *ReadTime();
   static void ForceGCGen(u_int gen);
 #endif
 };

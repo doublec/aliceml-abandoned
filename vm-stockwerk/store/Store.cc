@@ -13,6 +13,11 @@
 #include <cstring>
 #include <cstdio>
 
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
 #if defined(INTERFACE)
 #pragma implementation "store/HeaderOp.hh"
 #pragma implementation "store/PointerOp.hh"
@@ -30,6 +35,7 @@
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 u_int MemChunk::counter =  0;
+struct timeval *Store::sum_t;
 #endif
 
 //
@@ -220,7 +226,7 @@ inline Block *Store::ForwardSet(Block *p, u_int cpy_gen, u_int dst_gen) {
   return ((HeaderOp::DecodeGeneration(p) < dst_gen) ? CopyBlockToDst(p, dst_gen, cpy_gen) : p);
 }
 
-void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *scan) {
+inline void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *scan) {
   while (!anchor->IsAnchor()) {
     // Scan current MemChunk
     while (HeaderOp::GetHeader(scan) != HeaderOp::EncodeHeader(REF_LABEL, 0, 0)) {
@@ -247,7 +253,7 @@ void Store::ScanChunks(u_int dst_gen, u_int cpy_gen, MemChunk *anchor, Block *sc
 }
 
 void Store::InitStore(u_int memLimits[STORE_GENERATION_NUM]) {
-  for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
+  for (u_int i = STORE_GENERATION_NUM; i--;) {
     MemChunk *lanchor  = new MemChunk();
     MemChunk *ranchor  = new MemChunk();
     MemChunk *memChunk = new MemChunk(lanchor, ranchor, STORE_MEMCHUNK_SIZE);
@@ -255,27 +261,28 @@ void Store::InitStore(u_int memLimits[STORE_GENERATION_NUM]) {
     lanchor->SetNext(memChunk);
     ranchor->SetPrev(memChunk);
     Store::roots[i]     = lanchor;
+    Store::memUsage[i]  = 1;
     Store::memLimits[i] = memLimits[i];
   }
-
   // Prepare Fast Memory Allocation
   MemChunk *anchor = roots[0]->GetNext();
   storeChunkTop = anchor->GetTop();
   storeChunkMax = anchor->GetMax();
   storeCurChunk = anchor;
-
   // Alloc Intgen- and WKDict-Set
   intgenSet = Set::New(STORE_INTGENSET_SIZE);
   wkDictSet = Set::New(STORE_WKDICTSET_SIZE);
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  sum_t = (struct timeval *) malloc(sizeof(struct timeval));
+#endif
 }
 
 void Store::CloseStore() {
   for (int i = (STORE_GENERATION_NUM - 1); i--;) {
     MemChunk *chain = roots[i];
 
-    while (chain != NULL) {
+    while (chain != INVALID_POINTER) {
       MemChunk *tmp = chain->GetNext();
-
       delete chain;
       chain = tmp;
     }
@@ -300,13 +307,8 @@ word Store::ResolveForwardPtr(word v) {
     if (HeaderOp::DecodeGeneration(p) == 0) {
       return PointerOp::EncodeTag(GCHelper::GetForwardPtr(p), PointerOp::DecodeTag(dv));
     }
-    else {
-      return dv;
-    }
   }
-  else {
-    return dv;
-  }
+  return dv;
 }
 
 inline void Store::HandleInterGenerationalPointers(u_int gcGen, u_int dst_gen, u_int cpy_gen) {
@@ -494,7 +496,6 @@ inline Block *Store::HandleWeakDictionaries(u_int dst_gen, u_int cpy_gen) {
 #if defined(STORE_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
 #endif
-
   return finset;
 }
 
@@ -553,9 +554,14 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
   // Compute GC Flag (to be determined)
   needGC   = 0;
   maxGcGen = ((memUsage[cpy_gen] > memLimits[cpy_gen]) ? cpy_gen : 0);
+  //  maxGcGen = (STORE_GENERATION_NUM - 2);
 
   // Switch Semispaces
   if (dst_gen == (STORE_GENERATION_NUM - 1)) {
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+    std::printf("switching semispaces\n");
+    std::fflush(stdout);
+#endif
     MemChunk *tmp = roots[STORE_GENERATION_NUM - 2];
     roots[STORE_GENERATION_NUM - 2] = roots[STORE_GENERATION_NUM - 1];
     roots[STORE_GENERATION_NUM - 1] = tmp;
@@ -583,19 +589,29 @@ inline void Store::DoGC(word &root, const u_int gcGen) {
 }
 
 void Store::DoGC(word &root) {
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  struct timeval start_t, end_t;
+  gettimeofday(&start_t, INVALID_POINTER);
+#endif
   switch (maxGcGen) {
   case STORE_GEN_YOUNGEST:
     DoGC(root, STORE_GEN_YOUNGEST); break;
   case STORE_GEN_OLDEST:
     DoGC(root, STORE_GEN_OLDEST); break;
   default:
-    DoGC(root, maxGcGen);
+    DoGC(root, maxGcGen); break;
   }
+#if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
+  gettimeofday(&end_t, INVALID_POINTER);
+  sum_t->tv_sec  += (end_t.tv_sec - start_t.tv_sec);
+  sum_t->tv_usec += (end_t.tv_usec - start_t.tv_usec);
+#endif
 }
 
 #if (defined(STORE_DEBUG) || defined(STORE_PROFILE))
 void Store::MemStat() {
   std::printf("---\n");
+  std::printf("maxGcGen is %d\n", maxGcGen);
   for (u_int i = 0; i < STORE_GENERATION_NUM; i++) {
     MemChunk *anchor = roots[i];
     u_int used       = 0;
@@ -610,8 +626,9 @@ void Store::MemStat() {
       anchor = anchor->GetNext();
     }
 
-    std::printf("G%d --> Used: %10d; Total: %10d; GC-Limit: %10d\n", i, used, total,
-		memLimits[i] * STORE_MEMCHUNK_SIZE);
+    std::printf("G%d --> Used: %8d; Total: %8d; GC-Limit: %8d; Mem-Usage: %8d\n", i, used, total,
+		memLimits[i] * STORE_MEMCHUNK_SIZE,
+		memUsage[i] * STORE_MEMCHUNK_SIZE);
   }
   std::printf("---\n");
   std::fflush(stdout);
@@ -619,5 +636,13 @@ void Store::MemStat() {
 
 void Store::ForceGCGen(u_int gen) {
   maxGcGen = gen;
+}
+
+void Store::ResetTime() {
+  sum_t->tv_sec = sum_t->tv_usec = 0;
+}
+
+struct timeval *Store::ReadTime() {
+  return sum_t;
 }
 #endif
