@@ -1,2 +1,2 @@
-build1 build2 build3 Rel1.import Rel2.import Makefile.depend
+build1 build2 build3 Rel1.import Rel2.import Makefile.bootstrap.depend
 *.ozf *.so-*
