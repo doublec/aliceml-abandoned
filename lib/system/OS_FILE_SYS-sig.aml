@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -18,7 +18,7 @@ sig
 
 (*TODO
     val openDir :	string -> dirstream
-    val readDir :	dirstream -> string
+    val readDir :	dirstream -> string option
     val rewindDir :	dirstream -> unit
     val closeDir :	dirstream -> unit
 *)
