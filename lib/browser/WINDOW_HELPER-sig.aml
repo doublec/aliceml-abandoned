@@ -29,8 +29,9 @@ datatype RadioButtonObj = RBObj of string * Handler list
 
 val createMenu:  MenuConstructObj list -> Gtk.object
 val createMenuObj:  Gtk.object * MenuConstructObj -> unit
-val createMenuEntry:  Gtk.object * (MenuLabel * Handler list) -> unit 
-val createPopupMenu : (MenuLabel * Handler list) list -> Gtk.object
+val createMenuEntry:  Gtk.object * (MenuLabel * Handler list) -> unit
+val createMenuObjPopup: Gtk.object * MenuConstructObj -> unit 
+val createPopupMenu : MenuConstructObj list-> Gtk.object
 val createCombo : string list -> Gtk.object 
 
 val createNotebookPages :  Gtk.object -> string * Gtk.object -> unit
