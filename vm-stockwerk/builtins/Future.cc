@@ -1,0 +1,30 @@
+#include "store.hh"
+#include "alicedata.hh"
+#include "CommonOp.hh"
+#include "Future.hh"
+
+namespace Builtins {
+  namespace Future {
+    word alarmQuote(word a) {
+      return a; // to be determined
+    }
+    word await(word a) {
+      return a; // to be determined
+    }
+    word awaitOne(word a) {
+      return a; // to be determined
+    }
+    word byneed(word a) {
+      return a; // to be determined
+    }
+    word concur(word a) {
+      return a; // to be determined
+    }
+    word isFailed(word a) {
+      return a; // to be determined
+    }
+    word isFuture(word a) {
+      return a; // to be determined
+    }
+  }
+}
