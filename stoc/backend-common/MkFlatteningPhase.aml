@@ -67,14 +67,16 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	  | simplifyDecs (RecDec (coord, decs)::decr) =
 	    let
-		fun simplifyCon decs =
-		    simplifyDecs
-		    (List.filter (fn dec =>
-				  case dec of
-				      ConDec (_, _, _) => true
-				    | _ => false) decs)
+		fun getConDecs (decs, rest) =
+		    List.foldr (fn (dec, rest) =>
+				case dec of
+				    ValDec (_, _, _) => rest
+				  | RecDec (_, decs) => getConDecs (decs, rest)
+				  | ConDec (_, _, _) => dec::rest)
+		    rest decs
 		fun simplifyRec (ValDec (_, pat, exp), rest) =
-		    SimplifyRec.derec (pat, exp) @ rest
+		    (*--** don't ignore constraints *)
+		    (#2 (SimplifyRec.derec (pat, exp))) @ rest
 		  | simplifyRec (RecDec (_, decs), rest) =
 		    List.foldr simplifyRec rest decs
 		  | simplifyRec (ConDec (_, _, _), rest) = rest
@@ -92,11 +94,11 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				end) nil recIdsExpList
 		val idExpList =
 		    List.map (fn (ids, exp) =>
-			      (List.hd ids,
+			      (List.hd ids,   (*--** simplifyExp is wrong! *)
 			       simplifyExp (substExp (exp, subst))))
 		    recIdsExpList
 	    in
-		simplifyCon decs @
+		simplifyDecs (getConDecs (decs, nil)) @
 		O.RecDec (coord, idExpList)::simplifyDecs decr
 	    end
 	  | simplifyDecs (ConDec (coord, id, hasArgs)::decr) =

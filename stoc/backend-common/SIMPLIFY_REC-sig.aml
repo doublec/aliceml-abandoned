@@ -14,5 +14,6 @@ signature SIMPLIFY_REC =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
 
-	val derec: I.pat * I.exp -> (I.id list * I.exp) list
+	val derec: I.pat * I.exp ->
+	    (I.longid * I.longid) list * (I.id list * I.exp) list
     end
