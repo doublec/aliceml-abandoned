@@ -477,8 +477,8 @@ end</PRE>
     </DT>
     <DD>
       <P> Creates a propagator in <I>s</I> for the following:
-      The ordering of the elements in <I>v1</I> by <I>rel</I> is <I>v2</I>
-      Or something. Maybe <I>v2</I> has indexes into <I>v1</I>. TODO.
+	<I>v1</I> and <I>v2</I> taken as strings of integers are 
+	lexographically oredered according to <I>rel</I>.
     </P></DD>
 
     <DT>
@@ -595,7 +595,6 @@ end</PRE>
       <P> Returns an FD variable freshly created in <I>s</I>.
       Also, a propagator is created to ensure <I>b</I> is true 
       if and only if the intvar returned is in <I>dom</I>.
-      Or does it? (TODO)
     </P></DD>
 
     <DT>
@@ -605,7 +604,6 @@ end</PRE>
       <P> Returns a vector of FD variables freshly created in <I>s</I>.
       Also, a propagator is created to ensure <I>b</I> is true 
       if and only if all the intvars returned are in <I>dom</I>.
-      Or does it? (TODO)
     </P></DD>
 
     <DT>
@@ -709,8 +707,8 @@ end</PRE>
     </DT>
     <DD>
       <P>Identifies the variable selection strategy in branching.<BR>
-      <TT>B_DEGREE_MAX</TT> : Pick the variable involved in the most propagators. Or what. TODO.<BR>
-      <TT>B_DEGREE_MIN</TT> : Pick the variable involved in the fewest propagators. Or what. TODO.<BR>      
+      <TT>B_DEGREE_MAX</TT> : Pick the variable involved in the most propagators.<BR>
+      <TT>B_DEGREE_MIN</TT> : Pick the variable involved in the fewest propagators.<BR>      
       <TT>B_MAX_MAX</TT> : Pick the variable with the largest upper bound.<BR>
       <TT>B_MAX_MIN</TT> : Pick the variable with the smallest upper bound.<BR>
       <TT>B_MIN_MAX</TT> : Pick the variable with the largest lower bound.<BR>
@@ -730,7 +728,7 @@ end</PRE>
       <TT>B_MED</TT> : Pick the median of all possible values of the variable.<BR>      
       <TT>B_SPLIT_MIN</TT> : Pick the lower half of the domain.<BR>              
       <TT>B_SPLIT_MAX</TT> : Pick the upper half of the domain.<BR>
-      <TT>B_VAL</TT> : I haven't got the slightest idea. TODO.                    
+      <TT>B_VAL</TT> : There's no such thing. TODO.                    
     </P></DD>
 
     <DT>
