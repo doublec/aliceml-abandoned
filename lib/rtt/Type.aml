@@ -731,11 +731,13 @@ if not(isVar a) then raise Assert.failure else
 
     exception Fill
 
-    fun fill(t1 as ref(HOLE(k,n)), t2)	= 
-(*ASSERT		 		= assert k1 = kind' t2' =>*)
+    fun fill(t1 as ref(HOLE(k,n)), t2)	=
+(*ASSERT		 		= assert k1 = kind t2 =>*)
 if k <> kind t2 then raise Assert.failure else
+(*ASSERT		 		= assert not(isLambda t2) =>*)
+if isLambda t2 then raise Assert.failure else
 					  t1 := LINK t2
-      | fill    _			= raise Assert.failure
+      | fill    _			= raise Fill
 
 
   (* Unification *)
@@ -800,11 +802,15 @@ if k1 <> k2 then raise Assert.failure else
 		       | (HOLE(k1,n), _) =>
 (*ASSERT		 assert k1 = kind' t2' =>*)
 if k1 <> kind' t2' then raise Assert.failure else
+(*ASSERT		 assert not(isLambda t2) =>*)
+if isLambda t2 then raise Assert.failure else
 			 ( liftAndCheck(n,t1,t2) ; t1 := LINK t2 )
 
 		       | (_, HOLE(k2,n)) =>
 (*ASSERT		 assert kind' t1' = k2 =>*)
 if kind' t1' <> k2 then raise Assert.failure else
+(*ASSERT		 assert not(isLambda t1) =>*)
+if isLambda t1 then raise Assert.failure else
 			 ( liftAndCheck(n,t2,t1) ; t2 := LINK t1 )
 
 		       | (MU(t11), MU(t21)) =>
