@@ -18,25 +18,53 @@ import structure OS               from "x-alice:/lib/system/OS"
 import structure CommandLine      from "x-alice:/lib/system/CommandLine"
 import structure Remote           from "Remote"
 
+val logfile =
+    case OS.Process.getEnv "ALICE_REMOTE_LOG" of NONE => NONE | SOME name =>
+    SOME (TextIO.openAppend name)
+    handle IO.Io _ =>
+	(TextIO.output (TextIO.stdErr,
+			"aliceremote: error opening log file " ^ name ^ "\n");
+	 OS.Process.exit OS.Process.failure)
+
+fun log s =
+    case logfile of NONE => () | SOME file =>
+    (TextIO.output (file, "-- " ^ s ^ "\n"); TextIO.flushOut file)
+
 fun main [ticket] =
-    let
+    (let
 	datatype reply = OK of package | EXN of exn
 
+	val _ = log ("Taking component from " ^ ticket)
 	structure Query =
 	    unpack Remote.take ticket : (val component : Component.t
 					 val return : reply -> unit)
+
+	val _ = log ("Evaluating component")
 	val reply =
 	    OK (ComponentManager.eval (Url.fromString "", Query.component))
 	    handle exn => EXN exn
     in
+	log (case reply of OK _ => "Returning result"
+			 | EXN e => "Returning exception " ^ Exn.name e);
 	Query.return reply
 	handle Remote.Proxy Remote.SitedArgument =>
-	       Query.return (EXN Remote.SitedResult)
-	     | Remote.Proxy exn =>
-	       Query.return (EXN exn)
-	     | exn => Query.return (EXN exn);
-	OS.Process.exit OS.Process.success
+	       (log ("Sited result");
+	        Query.return (EXN Remote.SitedResult))
+	     | Remote.Proxy e =>
+	       (log ("Exception Proxy(" ^ Exn.name e ^ ") raised while returning!");
+	        Query.return (EXN e))
+	     | e =>
+	       (log ("Exception " ^ Exn.name e ^ " raised while returning!");
+	        Query.return (EXN e));
+	OS.Process.success
     end
-  | main _ = OS.Process.exit OS.Process.failure
+    handle Remote.Ticket =>
+	(TextIO.output (TextIO.stdErr, "aliceremote: \
+					\invalid ticket " ^ ticket ^ "\n");
+	 log ("Ticket invalid!");
+	 OS.Process.failure))
+  | main args =
+	(log ("Invalid arguments (" ^ Int.toString (List.length args) ^ ")");
+	 OS.Process.failure)
 
-val _ = main (CommandLine.arguments ())
+val _ = OS.Process.exit (main (CommandLine.arguments ()))
