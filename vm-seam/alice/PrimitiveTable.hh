@@ -56,6 +56,7 @@ private:
   static void RegisterWord8Array();
   static void RegisterWord8Vector();
   static void RegisterWord31();
+  static void RegisterWord32();
   static word Lookup(word table, Chunk *name);
 public:
   static word Future_Cyclic;

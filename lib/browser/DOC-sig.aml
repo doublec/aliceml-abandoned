@@ -109,6 +109,8 @@ sig
 
      val createWord       : doc_creator 
 
+     val createWord32     : doc_creator 
+
      val createReal       : doc_creator 
 
      val createExn        : doc_creator 

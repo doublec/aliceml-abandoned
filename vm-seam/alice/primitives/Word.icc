@@ -14,12 +14,13 @@
 
 #include "alice/Authoring.hh"
 
-#define LARGE_WORD_PRECISION 31
+#define LARGE_WORD_PRECISION 32
+#define STANDARD_WORD_PRECISION 31
 
-#if LARGE_WORD_PRECISION > INT_PRECISION
+#if STANDARD_WORD_PRECISION > INT_PRECISION
 #error Standard word width too large
 #endif
-#if WORD_PRECISION > LARGE_WORD_PRECISION
+#if WORD_PRECISION > STANDARD_WORD_PRECISION
 #error Word width too large
 #endif
 
@@ -33,8 +34,8 @@
 #define NONBITS (STORE_WORD_WIDTH - WORD_PRECISION)
 #define NONBITS_EXP (1 << NONBITS)
 
-#define LARGE_WORD_NONBITS (STORE_WORD_WIDTH - LARGE_WORD_PRECISION)
-#define LARGE_WORD_NONBITS_EXP (1 << LARGE_WORD_NONBITS)
+#define STANDARD_WORD_NONBITS (STORE_WORD_WIDTH - STANDARD_WORD_PRECISION)
+#define STANDARD_WORD_NONBITS_EXP (1 << STANDARD_WORD_NONBITS)
 
 inline int mydiv(signed int a, signed int b) {
   // This function is only here to bypass a constant folding bug in g++.
@@ -50,12 +51,14 @@ inline int mydiv(signed int a, signed int b) {
   if (STATIC_CAST(s_int, w) == INVALID_INT) { REQUEST(x); } else {}	\
   w &= STATIC_CAST(u_int, -1) >> (STORE_WORD_WIDTH - n);
 #define DECLARE_WORD(w, x) DECLARE_WORDN(w, x, WORD_PRECISION)
-#define DECLARE_LARGE_WORD(w, x) DECLARE_WORDN(w, x, LARGE_WORD_PRECISION)
+#define DECLARE_STANDARD_WORD(w, x) \
+  DECLARE_WORDN(w, x, STANDARD_WORD_PRECISION)
 #define RETURN_WORD(w)							\
   RETURN_INT(mydiv(STATIC_CAST(s_int, (w) * NONBITS_EXP), NONBITS_EXP))
-#define RETURN_LARGE_WORD(w)						\
-  RETURN_INT(mydiv(STATIC_CAST(s_int, (w) * LARGE_WORD_NONBITS_EXP),	\
-		   LARGE_WORD_NONBITS_EXP))
+#define RETURN_LARGE_WORD(w) RETURN_WORD32(w)
+// #define RETURN_LARGE_WORD(w)						\
+//   RETURN_INT(mydiv(STATIC_CAST(s_int, (w) * LARGE_WORD_NONBITS_EXP),	\
+// 		   LARGE_WORD_NONBITS_EXP))
 
 #define WORD_WORD_TO_WORD_OP(name, op)		\
   DEFINE2(name) {				\
@@ -92,21 +95,21 @@ WORD_WORD_TO_BOOL_OP(Word_opgreaterEq, >=)
 
 DEFINE2(Word_opshl) {
   DECLARE_WORD(i, x0);
-  DECLARE_LARGE_WORD(j, x1);
+  DECLARE_STANDARD_WORD(j, x1);
   if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
   RETURN_WORD(i << j);
 } END
 
 DEFINE2(Word_opshr) {
   DECLARE_WORD(i, x0);
-  DECLARE_LARGE_WORD(j, x1);
+  DECLARE_STANDARD_WORD(j, x1);
   if (j > WORD_PRECISION) j = WORD_PRECISION; // see above
   RETURN_WORD(i >> j);
 } END
 
 DEFINE2(Word_oparithshr) {
   DECLARE_WORD(i, x0);
-  DECLARE_LARGE_WORD(j, x1);
+  DECLARE_STANDARD_WORD(j, x1);
   if (j > WORD_PRECISION - 1) j = WORD_PRECISION - 1; // see above
   //--** this implementation can be improved on many architectures
   if (i & (1 << (WORD_PRECISION - 1))) {
@@ -140,7 +143,9 @@ DEFINE1(Word_fromLargeInt) {
 } END
 
 DEFINE1(Word_fromLarge) {
-  DECLARE_LARGE_WORD(w, x0);
+  DECLARE_WORD32(w, x0);
+  if (w & 1<<31)
+    RETURN_WORD(w & ((1<<31)-1));
   RETURN_WORD(w);
 } END
 

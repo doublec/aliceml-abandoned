@@ -12,7 +12,7 @@
  *)
 
 import structure __pervasive        from "Pervasive"
-import __primitive structure Word31 from "Word31"
+import __primitive structure Word32 from "Word32"
 import __primitive signature WORD   from "WORD-sig"
 
-structure LargeWord : WORD = Word31
+structure LargeWord : WORD = Word32

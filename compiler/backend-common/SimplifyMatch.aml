@@ -633,7 +633,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    if n < n' then n else findSmallestInt (n' + Int.toLarge 1, tests)
 	  | findSmallestInt (n, _) = n
 	fun findSmallestWord (w, LitTest (WordLit w')::tests) =
-	    if w < w' then w else findSmallestWord (w' + 0w1, tests)
+	    if w < w' then w else findSmallestWord (w' + (Word.toLarge 0w1),
+                                                    tests)
 	  | findSmallestWord (w, _) = w
 	fun findSmallestReal (x, LitTest (RealLit x')::tests) =
 	    if x < x' then x else findSmallestReal (x' + 1.0, tests)
@@ -655,7 +656,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		LitTest (IntLit _) =>
 		LargeInt.toString (findSmallestInt (Int.toLarge 0, tests))
 	      | LitTest (WordLit _) =>
-		"0w" ^ LargeWord.toString (findSmallestWord (0w0, tests))
+		"0w" ^ LargeWord.toString (findSmallestWord (Word.toLarge 0w0,
+                                                             tests))
 	      | LitTest (RealLit _) =>
 		LargeReal.toString (findSmallestReal (0.0, tests))
 	      | LitTest (CharLit _) =>

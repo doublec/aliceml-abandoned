@@ -329,6 +329,7 @@ struct
     fun ppIntInf t fm x	= SOME(text(IntInf.toString x))
     fun ppWord t fm x	= SOME(text("0wx" ^ Word.toString x))
     fun ppWord8 t fm x	= SOME(text("0wx" ^ Word8.toString x))
+    fun ppWord32 t fm x	= SOME(text("0wx" ^ Word32.toString x))
     fun ppReal t fm x	= SOME(text(Real.toString x))
     fun ppChar t fm x	= SOME(text("#\"" ^ Char.toString x ^ "\""))
     fun ppString t (fm : format) x =
@@ -542,6 +543,7 @@ struct
 	Type.asCon(lookupTyp(sign, modLab, typLab))
 
     val path_word8	   = lookupPath(coreSig,"Word8","word")
+    val path_word32	   = lookupPath(coreSig,"Word32","word")
     val path_intInf	   = lookupPath(coreSig,"IntInf","int")
     val path_promise	   = lookupPath(coreSig,"Promise","promise")
     val path_atom          = lookupPath(atomSig,"Atom","atom")
@@ -569,6 +571,7 @@ struct
     val _ = registerTyp(path_intInf,        ppIntInf)
     val _ = registerTyp(path_word,          ppWord)
     val _ = registerTyp(path_word8,         ppWord8)
+    val _ = registerTyp(path_word32,        ppWord32)
     val _ = registerTyp(path_real,          ppReal)
     val _ = registerTyp(path_char,          ppChar)
     val _ = registerTyp(path_string,        ppString)

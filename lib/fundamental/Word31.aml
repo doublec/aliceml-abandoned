@@ -12,13 +12,13 @@
  *)
 
 import structure __pervasive
-       structure Int and LargeInt and LargeWord and Word
+       structure Int and LargeInt and LargeWord and Word and Word31
                                             from "Pervasive"
 import __primitive type bool                from "ToplevelTypes"
 import functor MkWord                       from "MkWord"
 
 structure Word31 = MkWord(
-    type word = LargeWord.word
+    type word = Word31.word
 
     val wordSize = 31
 

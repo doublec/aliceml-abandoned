@@ -211,6 +211,14 @@ struct
 		 color = WORD_COLOR}
       end	  
 
+    fun createWord32 (m_width,d,va,t) = 
+	let val descr = createValue(va,t)
+	in 
+	    SIMPLE{desc = descr,
+		  rep = "0w"^
+                        Word32.toString(UnsafeValue.cast va : Word32.word), 
+		  color = WORD_COLOR}
+	end
 					    
     (* creates doc from real *)
 

@@ -321,6 +321,33 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Word31.toLargeX", SOME Unary);
 		ins ("Word31.wordSize", NONE);
 		ins ("Word31.xorb", SOME (Tuple 2));
+		ins ("Word32.+", SOME (Tuple 2));
+		ins ("Word32.-", SOME (Tuple 2));
+		ins ("Word32.*", SOME (Tuple 2));
+		ins ("Word32.<<", SOME (Tuple 2));
+		ins ("Word32.>>", SOME (Tuple 2));
+		ins ("Word32.~>>", SOME (Tuple 2));
+		ins ("Word32.<", SOME (Tuple 2));
+		ins ("Word32.>", SOME (Tuple 2));
+		ins ("Word32.<=", SOME (Tuple 2));
+		ins ("Word32.>=", SOME (Tuple 2));
+		ins ("Word32.andb", SOME (Tuple 2));
+		ins ("Word32.div", SOME (Tuple 2));
+		ins ("Word32.fromInt", SOME Unary);
+		ins ("Word32.fromLargeInt", SOME Unary);
+		ins ("Word32.fromLarge", SOME Unary);
+		ins ("Word32.fromLargeX", SOME Unary);
+		ins ("Word32.mod", SOME (Tuple 2));
+		ins ("Word32.notb", SOME Unary);
+		ins ("Word32.orb", SOME (Tuple 2));
+		ins ("Word32.toInt", SOME Unary);
+		ins ("Word32.toIntX", SOME Unary);
+		ins ("Word32.toLargeInt", SOME Unary);
+		ins ("Word32.toLargeIntX", SOME Unary);
+		ins ("Word32.toLarge", SOME Unary);
+		ins ("Word32.toLargeX", SOME Unary);
+		ins ("Word32.wordSize", NONE);
+		ins ("Word32.xorb", SOME (Tuple 2));
 		map
 	    end
 

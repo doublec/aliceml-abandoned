@@ -79,6 +79,7 @@ void PrimitiveTable::Init() {
   RegisterWord8Array();
   RegisterWord8Vector();
   RegisterWord31();
+  RegisterWord32();
 //   std::fprintf(stderr, "%d functions, %d values\n",
 //    	       ChunkMap::FromWordDirect(functionTable)->GetSize(),
 //                ChunkMap::FromWordDirect(valueTable)->GetSize());

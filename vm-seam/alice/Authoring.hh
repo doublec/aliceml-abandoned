@@ -126,4 +126,23 @@
   RETURN(w);                                    \
 }
 
+#define DECLARE_WORD32(w,x)                              \
+  u_int w;                                               \
+  { \
+  Chunk *c = Store::WordToChunk(x);                    \
+    if (c == INVALID_POINTER)                            \
+     {  REQUEST(x); } else {}                            \
+    char *to = reinterpret_cast<char *>(&w);             \
+    char *from = c->GetBase();                            \
+    std::memcpy(to,from,sizeof(word));         }  
+
+#define RETURN_WORD32(w)                                 \
+    {                                                     \
+    u_int ww = w;\
+    Chunk *c = Store::AllocChunk(sizeof(word));          \
+    char *to = c->GetBase();                         \
+    char *from = reinterpret_cast<char *>(&ww);           \
+    std::memcpy(to, from, sizeof(word));                 \
+    RETURN(c->ToWord());     }
+
 #endif

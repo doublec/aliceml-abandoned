@@ -28,7 +28,8 @@ libprimitives_a_SOURCES = \
 	Word8.cc \
 	Word8Array.cc \
 	Word8Vector.cc \
-	Word31.cc
+	Word31.cc \
+	Word32.cc
 
 EXTRA_DISTS = \
 	Array.icc \
