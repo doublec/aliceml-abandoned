@@ -17,11 +17,6 @@ DEFINE0(registerNatives) {
   RETURN_VOID;
 } END
 
-DEFINE1(getPrimitiveClass) {
-  DECLARE_JAVA_STRING(name, x0);
-  RETURN(null); //--**
-} END
-
 DEFINE3(forName0) {
   DECLARE_JAVA_STRING(name, x0);
   DECLARE_BOOL(initialize, x1);
@@ -43,15 +38,43 @@ DEFINE3(forName0) {
     Scheduler::PushFrameNoCheck(prim_self);
     return theClass->RunInitializer();
   }
+  //--** return class object
   RETURN(theClass->ToWord());
+} END
+
+DEFINE1(getPrimitiveClass) {
+  DECLARE_JAVA_STRING(name, x0);
+  //--** return class object
+  RETURN(null); //--**
 } END
 
 void NativeMethodTable::java_lang_Class(JavaString *className) {
   Register(className, "registerNatives", "()V", registerNatives, 0, false);
-  Register(className, "getPrimitiveClass",
-	   "(Ljava/lang/String;)Ljava/lang/Class;",
-	   getPrimitiveClass, 1, false);
   Register(className, "forName0",
 	   "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;",
 	   forName0, 3, false);
+  //--** isInstance
+  //--** isAssignableFrom
+  //--** isInterface
+  //--** isArray
+  //--** isPrimitive
+  //--** getName
+  //--** getClassLoader0
+  //--** getSuperclass
+  //--** getInterfaces
+  //--** getComponentType
+  //--** getModifiers
+  //--** getSigners
+  //--** setSigners
+  //--** getDeclaringClass
+  //--** getProtectionDomain0
+  //--** setProtectionDomain0
+  Register(className, "getPrimitiveClass",
+	   "(Ljava/lang/String;)Ljava/lang/Class;",
+	   getPrimitiveClass, 1, false);
+  //--** getDeclaredFields0
+  //--** getDeclaredMethods0
+  //--** getDeclaredConstructors0
+  //--** getDeclaredClasses0
+  //--** desiredAssertionStatus0
 }
