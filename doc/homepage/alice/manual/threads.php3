@@ -1,17 +1,16 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Threads", "threads") ?>
+<?php heading("Concurrency", "concurrency") ?>
 
 
 
 <?php section("overview", "overview") ?>
 
   <P>
-    Alice provides concurrency as a fundamental language feature. The
-    concurrency model is tightly coupled with
+    Alice provides concurrency as a fundamental language feature.
+    The concurrency model is tightly coupled with
     <A href="futures.php3">futures</A>.
-    The library design regarding threads is not finalized yet.
-    Currently, the basic primitive is available from the structure
+    The basic primitive to create threads is available from the structure
     <A href="futures.php3#future"><TT>Future</TT></A>:
   </P>
 
@@ -26,8 +25,8 @@
   </P>
 
   <P>
-    Other operations on threads are provided through the structure
-    <A href="#sig"><TT>Thread</TT></A>.
+    Other operations on threads are provided through structure
+    <A href="library/thread.php3"><TT>Thread</TT></A>.
   </P>
 
 
@@ -67,12 +66,6 @@
 		end
 	    end
   </PRE>
-
-
-<?php section("sig", "signature") ?>
-
-  <P>The operations on threads are available in <A href="library/thread.php3"
-    >structure <TT>Thread</TT></A>.</P>
 
 
 <?php footing() ?>
