@@ -1,3 +1,4 @@
+<!--mozart-->
 <?php include("macros.php3"); ?>
 
 <?php heading("Interoperability with Mozart",
@@ -20,7 +21,7 @@
 
 <?php section("datarepresentation", "data representation") ?>
 
-  <H3>Basic Types</H3>
+  <?php subsection("basictypes", "Basic types") ?>
   <P>Values of basic types are mapped to corresponding Oz basic types.
     To support <TT>word</TT> operations, Mozart has been extended by a
     corresponding basic type.</P>
@@ -35,7 +36,7 @@
     </TABLE>
   </CENTER>
 
-  <H3>Tuples and Records</H3>
+  <?php subsection("records", "Tuples and records") ?>
   <P>Alice records are translated to Oz records by mapping all labels
     consisting only of digits to the corresponding integer feature, and
     all labels containing a letter to the corresponding atom feature.</P>
@@ -50,7 +51,7 @@
     </TABLE>
   </CENTER>
 
-  <H3>Procedures</H3>
+  <?php subsection("procedures", "Procedures") ?>
   <P>Conceptually, all Alice functions are unary.  The typical idiom is
     to pass multiple arguments as a tuple of arguments.  This case is
     treated specially by the Alice compiler.</P>
@@ -73,7 +74,7 @@
     single argument, it is deconstructed as a tuple.  See <A href="#hofs"
     >below</A> for more information.</P>
 
-  <H3>Constructors</H3>
+  <?php subsection("constructors", "Constructors") ?>
   <P>With a few exceptions simplifying interoperability, constructors of
     closed datatypes are mapped to atoms and constructors of extensible
     datatypes are mapped to names.</P>
@@ -93,7 +94,7 @@
     </TABLE>
   </CENTER>
 
-  <H3>Constructed Values</H3>
+  <?php subsection("convals", "Constructed values") ?>
   <P>Conceptually, all Alice constructors are unary.  For interoperability,
     constructors syntactically declared taking a record as argument are
     treated as <A href="incompatibilities.html#conarity"><I>n</I>-ary
@@ -117,7 +118,7 @@
   <P>the Alice expression <TT>C2 (1, 2)</TT> evaluates to the Oz value
     <TT>'C2'(1#2)</TT> because the constructor <TT>C2</TT> is unary.</P>
 
-  <H3>Futures</H3>
+  <?php subsection("futures", "Futures") ?>
   <P>Alice futures map directly to Oz transients.  Promises are transparent
     on the Oz side.</P>
   <CENTER>
@@ -133,7 +134,7 @@
     </TABLE>
   </CENTER>
 
-  <H3>Other Library Types</H3>
+  <?php subsection("library", "Other library types") ?>
   <P>Some abstract library types are implemented natively:</P>
   <CENTER>
     <TABLE class=dyptic>
@@ -145,7 +146,7 @@
     </TABLE>
   </CENTER>
 
-  <H3>Modules</H3>
+  <?php subsection("modules", "Modules") ?>
   <P>Alice modules are translated to Oz data structures such:</P>
   <CENTER>
     <TABLE class=dyptic>
@@ -178,7 +179,7 @@
   <P>When working without RTT, signature and type members are represented
   by failed futures only.</P>
 
-  <H3>Components</H3>
+  <?php subsection("components", "Components") ?>
   <P>Alice components are translated into Oz functors:</P>
   <CENTER>
     <TABLE class=dyptic>
@@ -189,7 +190,7 @@
   <P>The export of the generated functor is the record corresponding
     to the component considered as a single structure.</P>
 
-  <H3>Exceptions</H3>
+  <?php subsection("exceptions", "Exceptions") ?>
   <P>Alice exceptions are wrapped into <TT>alice(...)</TT> and raised
     as Oz error exceptions.</P>
 
