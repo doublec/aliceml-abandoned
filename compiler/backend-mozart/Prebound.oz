@@ -21,6 +21,7 @@ export
    UnwrapAliceException
 prepare
    proc {RaiseAliceException E Coord}
+      {Wait E}
       {Exception.raiseError alice(E Coord)}
    end
 

@@ -13,7 +13,7 @@
 import structure Assert                from "../../lib/utility/Assert"
 import structure MkHashImpSet          from "../../lib/utility/MkHashImpSet"
 import structure MkHashImpMap          from "../../lib/utility/MkHashImpMap"
-import structure Url                   from "../../lib/utility/Url"
+import structure Url                   from "../../lib/system/Url"
 import structure Name                  from "../../lib/rtt/Name"
 import structure Label                 from "../../lib/rtt/Label"
 import structure Crash                 from "../infrastructure/Crash"

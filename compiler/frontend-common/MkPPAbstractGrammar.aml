@@ -20,7 +20,7 @@ import structure Fixity              from "../../lib/rtt/Fixity"
 
 import structure PrettyPrint         from "../../lib/utility/PrettyPrint"
 import structure PPMisc              from "../infrastructure/PPMisc"
-import structure Url                 from "../../lib/utility/Url"
+import structure Url                 from "../../lib/system/Url"
 
 
 functor MkPPAbstractGrammar(

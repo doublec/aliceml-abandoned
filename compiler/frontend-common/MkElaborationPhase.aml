@@ -28,7 +28,7 @@ TODO: Eliminate SingTyp in abstract grammar by proper encoding of datatypes.
 
 
 
-import structure Url               from "../../lib/utility/Url"
+import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
 
 import structure Name              from "../../lib/rtt/Name"

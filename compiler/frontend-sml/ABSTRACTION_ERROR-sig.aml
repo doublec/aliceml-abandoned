@@ -18,7 +18,7 @@ import structure VId
        structure StrId from "Ids"
 import structure AbstractGrammar from "../frontend-common/AbstractGrammar"
 import structure Source          from "../infrastructure/Source"
-import structure Url             from "../../lib/utility/Url"
+import structure Url             from "../../lib/system/Url"
 
 
 signature ABSTRACTION_ERROR =

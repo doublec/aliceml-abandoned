@@ -13,7 +13,7 @@
 import structure TextIO            from "../../lib/system/TextIO"
 import signature COMPONENT_MANAGER from "../../lib/system/COMPONENT_MANAGER-sig"
 import structure Component         from "../../lib/system/Component"
-import structure Url               from "../../lib/utility/Url"
+import structure Url               from "../../lib/system/Url"
 import structure Source            from "../infrastructure/Source"
 import signature SWITCHES          from "../infrastructure/SWITCHES-sig"
 import signature PHASE             from "../infrastructure/PHASE-sig"

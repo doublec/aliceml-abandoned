@@ -83,7 +83,7 @@ backend support for general strictness.
 *)
 
 
-import structure Url              from "../../lib/utility/Url"
+import structure Url              from "../../lib/system/Url"
 import structure Crash            from "../infrastructure/Crash"
 import structure Source           from "../infrastructure/Source"
 import signature SWITCHES         from "../infrastructure/SWITCHES-sig"

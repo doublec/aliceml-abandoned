@@ -17,7 +17,7 @@ import
    Pickle(saveWithCells)
    Open(file)
    CodeGen(translate) at 'CodeGen'
-   UrlComponent('Url$': Url) at '../../lib/utility/Url'
+   UrlComponent('Url$': Url) at '../../lib/system/Url'
    UnsafeComponent(functorToComponent) at '../../lib/system/UnsafeComponent'
 export
    'CodeGenPhase$': CodeGenPhase

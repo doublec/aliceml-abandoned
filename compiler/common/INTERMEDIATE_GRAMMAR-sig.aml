@@ -13,7 +13,7 @@
 import structure Stamp from "Stamp"
 import structure Name  from "../../lib/rtt/Name"
 import structure Label from "../../lib/rtt/Label"
-import structure Url   from "../../lib/utility/Url"
+import structure Url   from "../../lib/system/Url"
 
 
 signature INTERMEDIATE_GRAMMAR =
