@@ -1,0 +1,46 @@
+Core language:
+
++ binary literals
++ longids as context-free syntax
+
+- var annotations in types?
+- curried fn? (grammar overhead)
+* more liberal infix syntax in fun
+- more liberal datatype declaration syntax
++ punning in record expressions
+- record update
++ vector constants and patterns
+- list and vector comprehensions
+* generalized rec
++ pattern guards
++ alternative patterns
+- negated patterns?
++ generalized layered patterns
+* nonlinear patterns? (better not, requires structural equality)
+
+* overloaded literals?
+* allow free type variables in strdecs
+* polymorphic records
+* open datatypes, turning exceptions into derived forms
+* existiential types in datatypes
+* specs as decs (semantics?)
+
+Module language:
+
+- parenthesized structure and signature expressions
+- more liberal type specification syntax
+- more liberal datatype specification syntax
++ withtype derived form in signatures
+- open with structure expressions?
++ fixity specs (activated via open)
+
++ where for structures
+* structure synonyms / singleton signatures / open in signatures (DF)
+* signature composition
+* signature subtraction
+* parameterized signatures
+
+* higher-order functors (functors in structures and signatures)
+* longids as path expressions
+* functor and top signatures
+* first-class structures/functors (how??)

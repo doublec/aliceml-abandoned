@@ -1,0 +1,38 @@
+type *.t
+*.new
+
+Option.isNone: 'a option -> bool
+Option.app: 'a option -> unit
+
+ListPair.find: ('a * 'b -> bool) -> 'a list * 'b list -> ('a * 'b) option 
+
+Assert structure?
+
+structure Alternative:
+sig
+  datatype ('a,'b) alternative = FIRST of 'a | SECOND of 'b
+  exception Alternative
+  val isFirst: ('a,'b) alternative -> bool
+  val isSecond: ('a,'b) alternative -> bool
+  val first: ('a,'b) alternative -> 'a (* Alternative *)
+  val second: ('a,'b) alternative -> 'b (* Alternative *)
+  val getFirst: ('a,'b) alternative * 'a -> 'a
+  val getSecond: ('a,'b) alternative * 'b -> 'b
+  val map: ('a -> 'c) * ('b -> 'd) -> ('a,'b) alternative -> ('c,'d) alternative
+  val app: ('a -> unit) * ('b -> unit) -> ('a,'b) alternative -> unit
+  val mapFirst: ('a -> 'c) -> ('a,'b) alternative -> ('c,'b) alternative
+  val mapSecond: ('b -> 'c) -> ('a,'b) alternative -> ('a,'c) alternative
+  val appFirst: ('a -> unit) -> ('a,'b) alternative -> unit
+  val appSecond: ('b -> unit) -> ('a,'b) alternative -> unit
+  val compose: ?
+  val composeFirst:
+  val composeSecond:
+end
+
+structure Dyn:
+sig
+  eqtype dyn
+  exception Type
+  val toDyn:   'a -> dyn
+  val fromDyn: dyn -> '_a	(* Type  ??? *)
+end
