@@ -108,7 +108,10 @@ structure GtkBinding =
         ( main outdir source;
  	  OS.Process.exit OS.Process.success )
     end
-      handle _ => OS.Process.exit OS.Process.failure
+      handle e => 
+        (print (General.exnMessage e ^ "\n");
+         List.app (fn x => print (x ^ "\n")) (SMLofNJ.exnHistory e);
+        OS.Process.exit OS.Process.failure )
 
     fun compile() = SMLofNJ.exportFn("GtkBinding", run)
   end

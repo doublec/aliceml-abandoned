@@ -1,0 +1,27 @@
+Now using a positive type list.  Generated from the html
+documentation index by saving the list as txt in mozilla
+and applying the following script on the generated file:
+sed -n "s/^\(Gtk[^,]*\),.*$/\"\1\",/gp" < index.txt > GtkPositiveTypeList.sml
+
+After that I just inserted val gtk_positive_type_list = [ ...original-content... ]
+
+Added to GdkPositiveTypeList:
+    GdkColorspace
+    GdkInterpType
+
+On my machine I also had to add the alice.dll to the link process:
+
+Aka change:
+
+%.dll: %.o
+	$(ALICETOOL) -v link $< -o $@ \
+	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
+
+to:
+
+%.dll: %.o
+	$(ALICETOOL) -v link $< /home/dreamer/programming/ps/seam-install/lib/seam/alice.dll -o $@ \
+	 $(CC_OPTS) `pkg-config --libs $(PC_OPTS)`
+
+Otherwise loading the Gtk component would fail.
+

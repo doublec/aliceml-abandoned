@@ -42,7 +42,21 @@ structure TypeTree =
        | UNIONREF of string
        | ENUMREF of string
        | TYPEREF of string * ty             (* c_type_name / type *)
-		    
+
+      fun tyToString VOID                       = "void"
+        | tyToString (ELLIPSES _)               = "..."
+        | tyToString BOOL                       = "bool"
+        | tyToString (NUMERIC (_, _, k))        = "numeric"
+        | tyToString (POINTER (c, t))           = "pointer to (" ^ (if c then "const " else "")
+                                                ^ tyToString t ^ ")"
+        | tyToString (STRING (_, c))            = (if c then "const " else "") ^ "string"
+        | tyToString (ARRAY (_, t))             = "array of (" ^ tyToString t ^ ")"
+        | tyToString (STRUCTREF s)              = "struct (" ^ s ^ ")"
+        | tyToString (UNIONREF s)               = "union (" ^ s ^ ")"
+        | tyToString (ENUMREF s)                = "enum (" ^ s ^ ")"
+        | tyToString (TYPEREF (s, t))           = "typeref " ^ s ^ "(" ^ tyToString t ^ ")"
+        | tyToString _                          = "other-type"
+
       type struct_item = string * ty           (* field_name/type *)
       type enum_item   = string * LargeInt.int (* field_name/index *)
     
@@ -55,6 +69,7 @@ structure TypeTree =
 
       type tree = decl list
 
+    
     fun declName (FUNC (n, _, _)) = n
       | declName (STRUCT (n, _))  = n
       | declName (UNION (n, _))   = n
