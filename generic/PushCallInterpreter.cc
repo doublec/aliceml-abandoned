@@ -14,6 +14,7 @@
 #pragma implementation "emulator/PushCallInterpreter.hh"
 #endif
 
+#include <cstdio>
 #include "emulator/PushCallInterpreter.hh"
 #include "emulator/TaskStack.hh"
 #include "emulator/Scheduler.hh"
@@ -73,6 +74,6 @@ const char *PushCallInterpreter::Identify() {
   return "PushCallInterpreter";
 }
 
-const char *PushCallInterpreter::ToString(word args, TaskStack *taskStack) {
-  return "PushCallInterpreter::ToString";
+void PushCallInterpreter::DumpFrame(word) {
+  fprintf(stderr, "Push Call\n");
 }
