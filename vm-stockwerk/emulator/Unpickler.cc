@@ -169,7 +169,6 @@ public:
     std::free(rdBuf);
   }
   virtual Interpreter::Result FillBuffer(TaskStack *taskStack) {
-    //--** This is blocking: to be done
     u_int nread = (u_int) std::fread(rdBuf, sizeof(u_char), rdSize, file);
     if (ferror(file)) {
       Error("FileInputStream::FillBuffer"); //--** raise Io exception
