@@ -4,7 +4,7 @@ import de.uni_sb.ps.dml.runtime.*;
 import java.rmi.RemoteException;
 
 final public class Port {
-    final public static class NewPort extends DMLBuiltin {
+    final public static class NewPort extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Port.newPort");
 	    try {
@@ -17,7 +17,7 @@ final public class Port {
     }
     final public static NewPort newPort = new NewPort();
 
-    final public static class Send extends DMLBuiltin {
+    final public static class Send extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Port.send");
 	    DMLValue p = args[0].request();
@@ -34,7 +34,7 @@ final public class Port {
     }
     final public static Send send = new Send();
 
-    final public static class Recieve extends DMLBuiltin {
+    final public static class Recieve extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Port.recieve");
 	    DMLValue p = args[0].request();
@@ -77,9 +77,9 @@ final public class Port {
 	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
-	    new DMLString(msg),
+	    new de.uni_sb.ps.dml.runtime.String(msg),
 	    v};
-	return DMLConstants.
+	return Constants.
 	    runtimeError.apply(new Tuple(err)).raise();
     }
 }

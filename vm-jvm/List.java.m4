@@ -4,22 +4,22 @@ import de.uni_sb.ps.dml.runtime.*;
 /** TODO: foldr
  */
 final public class List {
-    final private static class Nil extends DMLName implements DMLList{
+    final private static class Nil extends Name implements DMLList{
 	Nil(java.lang.String n) { super(n); }
     }
-    final public static DMLName nil = new Nil("List.nil");
-    final public static DMLConstructor cons = new DMLConstructor("List.cons");
+    final public static Name nil = new Nil("List.nil");
+    final public static Constructor cons = new Constructor("List.cons");
     /** <code>exception Empty</code>*/
-    final public static DMLName Empty = new DMLName("List.Empty");
+    final public static Name Empty = new Name("List.Empty");
 
-    final public static class IsNull extends DMLBuiltin {
+    final public static class IsNull extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.null");
 	    DMLValue l = args[0].request();
 	    if (l instanceof Cons)
-		return DMLConstants.dmlfalse;
+		return Constants.dmlfalse;
 	    else if (l==nil)
-		return DMLConstants.dmltrue;
+		return Constants.dmltrue;
 	    else
 		return error("argument not DMLList",val);
 	}
@@ -27,7 +27,7 @@ final public class List {
     /** <code>val null : 'a list -> bool</code>*/
     final public static IsNull isNull = new IsNull();
 
-    final public static class Length extends DMLBuiltin {
+    final public static class Length extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.length");
 	    DMLValue l = args[0].request();
@@ -37,7 +37,7 @@ final public class List {
 		l = ((Cons) l).cdr.request();
 	    }
 	    if (l instanceof Nil)
-		return new DMLInt(length);
+		return new Int(length);
 	    else
 		return error("argument not DMLList",val);
 	}
@@ -45,7 +45,7 @@ final public class List {
     /** <code>val length : 'a list -> int </code>*/
     final public static Length length = new Length();
 
-    final public static class Append extends DMLBuiltin {
+    final public static class Append extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.append");
 	    DMLValue first = args[0].request();
@@ -73,7 +73,7 @@ final public class List {
     /** <code>val @ : ('a list * 'a list) -> 'a list </code>*/
     final public static Append append = new Append();
 
-    final public static class Hd extends DMLBuiltin {
+    final public static class Hd extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.hd");
 	    DMLValue first = args[0].request();
@@ -88,7 +88,7 @@ final public class List {
     /** <code>val hd : 'a list -> 'a </code>*/
     final public static Hd hd = new Hd();
 
-    final public static class Tl extends DMLBuiltin {
+    final public static class Tl extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.tl");
 	    DMLValue first = args[0].request();
@@ -103,7 +103,7 @@ final public class List {
     /** <code>val tl : 'a list -> 'a list</code>*/
     final public static Tl tl = new Tl();
 
-    final public static class Last extends DMLBuiltin {
+    final public static class Last extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.last");
 	    DMLValue first = args[0].request();
@@ -127,7 +127,7 @@ final public class List {
     /** <code>val last : 'a list -> 'a </code>*/
     final public static Last last = new Last();
 
-    final public static class GetItem extends DMLBuiltin {
+    final public static class GetItem extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.getItem");
 	    DMLValue first = args[0].request();
@@ -144,13 +144,13 @@ final public class List {
     /** <code>val getItem : 'a list -> ('a * 'a list) option </code>*/
     final public static GetItem getItem = new GetItem();
 
-    final public static class Nth extends DMLBuiltin {
+    final public static class Nth extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.nth");
 	    DMLValue n = args[1].request();
-	    if (!(n instanceof DMLInt))
-		return error("argument #2 not DMLInt",val);
-	    int le = ((DMLInt) n).getInt();
+	    if (!(n instanceof Int))
+		return error("argument #2 not Int",val);
+	    int le = ((Int) n).getInt();
 	    if (le<0)
 		return General.Subscript.raise();
 	    DMLValue first = args[0].request();
@@ -179,13 +179,13 @@ final public class List {
     /** <code>val nth : ('a list * int) -> 'a</code>*/
     final public static Nth nth = new Nth();
 
-    final public static class Take extends DMLBuiltin {
+    final public static class Take extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.take");
 	    DMLValue n = args[1].request();
-	    if (!(n instanceof DMLInt))
-		return error("argument #2 not DMLInt",val);
-	    int le = ((DMLInt) n).getInt();
+	    if (!(n instanceof Int))
+		return error("argument #2 not Int",val);
+	    int le = ((Int) n).getInt();
 	    if (le<0)
 		return General.Subscript.raise();
 	    DMLValue first = args[0].request();
@@ -219,13 +219,13 @@ final public class List {
     /** <code>val take : ('a list * int) -> 'a list </code>*/
     final public static Take take = new Take();
 
-    final public static class Drop extends DMLBuiltin {
+    final public static class Drop extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.drop");
 	    DMLValue n = args[1].request();
-	    if (!(n instanceof DMLInt))
-		return error("argument #2 not DMLInt",val);
-	    int le = ((DMLInt) n).getInt();
+	    if (!(n instanceof Int))
+		return error("argument #2 not Int",val);
+	    int le = ((Int) n).getInt();
 	    if (le<0)
 		return General.Subscript.raise();
 	    DMLValue first = args[0].request();
@@ -254,7 +254,7 @@ final public class List {
     /** <code>val drop : ('a list * int) -> 'a list</code>*/
     final public static Drop drop = new Drop();
 
-    final public static class Rev extends DMLBuiltin {
+    final public static class Rev extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.rev");
 	    DMLValue first = args[0].request();
@@ -280,7 +280,7 @@ final public class List {
     /** <code>val rev : 'a list -> 'a list </code>*/
     final public static Rev rev = new Rev();
 
-    final public static class Concat extends DMLBuiltin {
+    final public static class Concat extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.concat");
 	    DMLValue first = args[0].request();
@@ -318,7 +318,7 @@ final public class List {
     /** <code>val concat : 'a list list -> 'a list </code>*/
     final public static Concat concat = new Concat();
 
-    final public static class RevAppend extends DMLBuiltin {
+    final public static class RevAppend extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.revAppend");
 	    DMLValue first = args[0].request();
@@ -344,12 +344,12 @@ final public class List {
     /** <code>val revAppend : ('a list * 'a list) -> 'a list </code>*/
     final public static RevAppend revAppend = new RevAppend();
 
-    final public static class App extends DMLBuiltin {
+    final public static class App extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.app");
 	    return new App1(args[0]);
 	}
-	final public static class App1 extends DMLBuiltin {
+	final public static class App1 extends Builtin {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -361,7 +361,7 @@ final public class List {
 		    l = lc.cdr.request();
 		}
 		if (l instanceof Nil)
-		    return DMLConstants.dmlunit;
+		    return Constants.dmlunit;
 		else
 		    return error("argument not DMLList",val);
 	    }
@@ -370,12 +370,12 @@ final public class List {
     /** <code>val app : ('a -> unit) -> 'a list -> unit </code>*/
     final public static App app = new App();
 
-    final public static class Map extends DMLBuiltin {
+    final public static class Map extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.map");
 	    return new Map1(args[0]);
 	}
-	final public static class Map1 extends DMLBuiltin {
+	final public static class Map1 extends Builtin {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -404,12 +404,12 @@ final public class List {
     /** <code>val map : ('a -> 'b) -> 'a list -> 'b list </code>*/
     final public static Map map = new Map();
 
-    final public static class MapPartial extends DMLBuiltin {
+    final public static class MapPartial extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.mapPartial");
 	    return new MapPartial1(args[0]);
 	}
-	final public static class MapPartial1 extends DMLBuiltin {
+	final public static class MapPartial1 extends Builtin {
 	    DMLValue fun = null;
 	    MapPartial1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -440,23 +440,23 @@ final public class List {
     /** <code>val mapPartial : ('a -> 'b option) -> 'a list -> 'b list </code>*/
     final public static MapPartial mapPartial = new MapPartial();
 
-    final public static class Find extends DMLBuiltin {
+    final public static class Find extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.find");
 	    return new Find1(args[0]);
 	}
-	final public static class Find1 extends DMLBuiltin {
+	final public static class Find1 extends Builtin {
 	    DMLValue fun = null;
 	    Find1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.find1");
 		DMLValue l = args[0].request();
 		if (l==nil)
-		    return DMLConstants.dmlfalse;
+		    return Constants.dmlfalse;
 		while (l instanceof Cons) {
 		    Cons lc = (Cons) l;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
-		    if (res==DMLConstants.dmltrue)
+		    if (res==Constants.dmltrue)
 			return Option.SOME.apply(lc.car);
 		    l = lc.cdr.request();
 		}
@@ -471,12 +471,12 @@ final public class List {
     /** <code>val find : ('a -> bool) -> 'a list -> 'a option </code>*/
     final public static Find find = new Find();
 
-    final public static class Filter extends DMLBuiltin {
+    final public static class Filter extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.filter");
 	    return new Filter1(args[0]);
 	}
-	final public static class Filter1 extends DMLBuiltin {
+	final public static class Filter1 extends Builtin {
 	    DMLValue fun = null;
 	    Filter1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -489,7 +489,7 @@ final public class List {
 		while (l instanceof Cons) {
 		    Cons lc = (Cons) l;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
-		    if (res==DMLConstants.dmltrue) {
+		    if (res==Constants.dmltrue) {
 			list.cdr = new Cons(lc.car,null);
 			list=(Cons)list.cdr;
 		    }
@@ -507,12 +507,12 @@ final public class List {
     /** <code>val filter : ('a -> bool) -> 'a list -> 'a list </code>*/
     final public static Filter filter = new Filter();
 
-    final public static class Partition extends DMLBuiltin {
+    final public static class Partition extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.partition");
 	    return new Partition1(args[0]);
 	}
-	final public static class Partition1 extends DMLBuiltin {
+	final public static class Partition1 extends Builtin {
 	    DMLValue fun = null;
 	    Partition1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -527,7 +527,7 @@ final public class List {
 		while (l instanceof Cons) {
 		    Cons lc = (Cons) l;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
-		    if (res==DMLConstants.dmltrue) {
+		    if (res==Constants.dmltrue) {
 			plist.cdr = new Cons(lc.car,null);
 			plist=(Cons) plist.cdr;
 		    }
@@ -550,19 +550,19 @@ final public class List {
     /** <code>val partition : ('a -> bool) -> 'a list -> ('a list * 'a list) </code>*/
     final public static Partition partition = new Partition();
 
-    final public static class Foldl extends DMLBuiltin {
+    final public static class Foldl extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.foldl");
 	    return new Foldl1(args[0]);
 	}
-	final public static class Foldl1 extends DMLBuiltin {
+	final public static class Foldl1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.foldl1");
 		return new Foldl2(fun,args[0]);
 	    }
-	    final public static class Foldl2 extends DMLBuiltin {
+	    final public static class Foldl2 extends Builtin {
 		DMLValue fun = null; DMLValue init = null;
 		Foldl2(DMLValue f, DMLValue i) {
 		    fun=f;
@@ -593,19 +593,19 @@ final public class List {
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
     final public static Foldl foldl = new Foldl();
 
-    final public static class Foldr extends DMLBuiltin {
+    final public static class Foldr extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.foldr");
 	    return new Foldr1(args[0]);
 	}
-	final public static class Foldr1 extends DMLBuiltin {
+	final public static class Foldr1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.foldr1");
 		return new Foldr2(fun,args[0]);
 	    }
-	    final public static class Foldr2 extends DMLBuiltin {
+	    final public static class Foldr2 extends Builtin {
 		DMLValue fun = null; DMLValue init = null;
 		Foldr2(DMLValue f, DMLValue i) {
 		    fun=f;
@@ -648,28 +648,28 @@ final public class List {
     /** <code>val foldr : (('a * 'b) -> 'b) -> 'b -> 'a list -> 'b </code>*/
     final public static Foldr foldr = new Foldr();
 
-    final public static class Exists extends DMLBuiltin {
+    final public static class Exists extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.exists");
 	    return new Exists1(args[0]);
 	}
-	final public static class Exists1 extends DMLBuiltin {
+	final public static class Exists1 extends Builtin {
 	    DMLValue fun = null;
 	    Exists1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.exists1");
 		DMLValue l = args[0].request();
 		if (l==nil)
-		    return DMLConstants.dmlfalse;
+		    return Constants.dmlfalse;
 		while (l instanceof Cons) {
 		    Cons lc = (Cons) l;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
-		    if (res==DMLConstants.dmltrue)
-			return DMLConstants.dmltrue;
+		    if (res==Constants.dmltrue)
+			return Constants.dmltrue;
 		    l = lc.cdr.request();
 		}
 		if (l==nil) {
-		    return DMLConstants.dmlfalse;
+		    return Constants.dmlfalse;
 		}
 		else
 		    return error("argument not DMLList",val);
@@ -679,28 +679,28 @@ final public class List {
     /** <code>val exists : ('a -> bool) -> 'a list -> bool </code>*/
     final public static Exists exists = new Exists();
 
-    final public static class All extends DMLBuiltin {
+    final public static class All extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"List.all");
 	    return new All1(args[0]);
 	}
-	final public static class All1 extends DMLBuiltin {
+	final public static class All1 extends Builtin {
 	    DMLValue fun = null;
 	    All1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"List.all1");
 		DMLValue l = args[0].request();
 		if (l==nil)
-		    return DMLConstants.dmltrue;
+		    return Constants.dmltrue;
 		while (l instanceof Cons) {
 		    Cons lc = (Cons) l;
 		    DMLValue res=fun.apply(new Tuple1(lc.car));
-		    if (res!=DMLConstants.dmltrue)
-			return DMLConstants.dmlfalse;
+		    if (res!=Constants.dmltrue)
+			return Constants.dmlfalse;
 		    l = lc.cdr.request();
 		}
 		if (l==nil) {
-		    return DMLConstants.dmltrue;
+		    return Constants.dmltrue;
 		}
 		else
 		    return error("argument not DMLList",val);
@@ -710,20 +710,20 @@ final public class List {
     /** <code>val all : ('a -> bool) -> 'a list -> bool </code>*/
     final public static All all = new All();
 
-    final public static class Tabulate extends DMLBuiltin {
+    final public static class Tabulate extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"List.tabulate");
 	    DMLValue n = args[0].request();
-	    if (!(n instanceof DMLInt))
-		return error("argument #1 not DMLInt",val);
-	    int k = ((DMLInt) n).getInt();
+	    if (!(n instanceof Int))
+		return error("argument #1 not Int",val);
+	    int k = ((Int) n).getInt();
 	    if (k<0)
 		return General.Size.raise();
 	    DMLValue fun = args[1];
 	    Cons first = new Cons(null,null);
 	    Cons cons = first;
 	    for(int i=0; i<k; i++) {
-		cons.cdr=new Cons(fun.apply(new Tuple1(new DMLInt(i))),null);
+		cons.cdr=new Cons(fun.apply(new Tuple1(new Int(i))),null);
 		cons=(Cons)cons.cdr;
 	    }
 	    cons.cdr=nil;
@@ -759,9 +759,9 @@ final public class List {
 	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
-	    new DMLString(msg),
+	    new de.uni_sb.ps.dml.runtime.String(msg),
 	    v};
-	return DMLConstants.
+	return Constants.
 	    runtimeError.apply(new Tuple(err)).raise();
     }
 }

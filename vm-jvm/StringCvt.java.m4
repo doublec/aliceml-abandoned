@@ -2,7 +2,7 @@ package de.uni_sb.ps.dml.builtin;
 
 import de.uni_sb.ps.dml.runtime.*;
 
-final public class StringCvt {
+final public class java.lang.StringCvt {
     /** datatype radix = BIN | OCT | DEC | HEX */
     /** datatype realfmt
 	= SCI of int option 

@@ -4,11 +4,11 @@ import de.uni_sb.ps.dml.runtime.*;
 
 final public class Option {
     // datatype 'a option = NONE | SOME of 'a 
-    final public static DMLName NONE = new DMLName("Option.NONE");
-    final public static DMLConstructor SOME = new DMLConstructor("Option.SOME");
+    final public static Name NONE = new Name("Option.NONE");
+    final public static Constructor SOME = new Constructor("Option.SOME");
 
     // exception Option
-    final public static DMLName Option = new DMLName("Option.Option");
+    final public static Name Option = new Name("Option.Option");
 
     // val getOpt : ('a option * 'a) -> 'a 
     // val isSome : 'a option -> bool 

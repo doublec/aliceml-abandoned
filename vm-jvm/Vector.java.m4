@@ -4,9 +4,9 @@ import de.uni_sb.ps.dml.runtime.*;
 
 final public class Vector {
     /** <code>val maxLen : int </code>*/
-    final public static DMLInt maxLen = new DMLInt(DMLVector.maxLen);
+    final public static Int maxLen = new Int(DMLVector.maxLen);
 
-    final public static class FromList extends DMLBuiltin {
+    final public static class FromList extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.fromList");
 	    DMLValue arg=args[0].request();
@@ -16,13 +16,13 @@ final public class Vector {
     /** <code>val fromList : 'a list -> 'a vector </code>*/
     final public static FromList fromList = new FromList();
 
-    final public static class Tabulate extends DMLBuiltin {
+    final public static class Tabulate extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Vector.tabulate");
 	    int ar=0;
 	    DMLValue arg=args[0].request();
-	    if (arg instanceof DMLInt)
-		ar = ((DMLInt) arg).getInt();
+	    if (arg instanceof Int)
+		ar = ((Int) arg).getInt();
 	    else
 		error("argument #1 not DMLArray",val);
 	    return new DMLVector(args[1],ar);
@@ -31,29 +31,29 @@ final public class Vector {
     /** <code>val tabulate : (int * (int -> 'a)) -> 'a vector </code>*/
     final public static Tabulate tabulate = new Tabulate();
 
-    final public static class Length extends DMLBuiltin {
+    final public static class Length extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.length");
 	    DMLValue arg=args[0].request();
 	    if (arg instanceof DMLVector)
-		return new DMLInt(((DMLVector) arg).vector.length);
+		return new Int(((DMLVector) arg).vector.length);
 	    else
-		return error("argument #1 not DMLInt",val);
+		return error("argument #1 not Int",val);
 	}
     }
     /** <code>val length : 'a vector -> int </code>*/
     final public static Length length = new Length();
 
-    final public static class Sub extends DMLBuiltin {
+    final public static class Sub extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,2,"Vector.sub");
 	    DMLValue vector = args[0].request();
 	    if (vector instanceof DMLVector) {
 		DMLValue idx = args[1].request();
-		if (idx instanceof DMLInt)
-		    return ((DMLVector) vector).sub(((DMLInt) idx).getInt());
+		if (idx instanceof Int)
+		    return ((DMLVector) vector).sub(((Int) idx).getInt());
 		else
-		    return error("argument #2 not DMLInt",val);
+		    return error("argument #2 not Int",val);
 	    }
 	    else
 		return error("argument #1 not DMLVector",val);
@@ -62,33 +62,33 @@ final public class Vector {
     /** <code>val sub : ('a vector * int) -> 'a </code>*/
     final public static Sub sub = new Sub();
 
-    final public static class Extract extends DMLBuiltin {
+    final public static class Extract extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,3,"Vector.extract");
 	    DMLValue vector = args[0].request();
 	    if (vector instanceof DMLVector) {
 		DMLValue fr = args[1].request();
-		if (fr instanceof DMLInt) {
+		if (fr instanceof Int) {
 		    DMLValue to = args[2].request();
 		    if (to==Option.NONE) {
 			DMLVector a=(DMLVector) vector;
-			return a.extract(((DMLInt) fr).getInt(),
+			return a.extract(((Int) fr).getInt(),
 					 a.vector.length);
 		    }
 		    if (to instanceof DMLConVal) {
 			DMLConVal cv = (DMLConVal) to;
 			if (cv.getConstructor()==Option.SOME) {
 			    to=cv.getContent();
-			    if (to instanceof DMLInt)
+			    if (to instanceof Int)
 				return ((DMLVector) vector).
-				    extract(((DMLInt) fr).getInt(),
-					    ((DMLInt) to).getInt());
+				    extract(((Int) fr).getInt(),
+					    ((Int) to).getInt());
 			}
 		    }
-		    return error("argument #3 not DMLInt option",val);
+		    return error("argument #3 not Int option",val);
 		}
 		else
-		    return error("argument #2 not DMLInt",val);
+		    return error("argument #2 not Int",val);
 	    }
 	    else
 		return error("argument #1 not DMLVector",val);
@@ -97,7 +97,7 @@ final public class Vector {
     /** <code>val extract : ('a vector * int * int option) -> 'a vector </code>*/
     final public static Extract extract = new Extract();
 
-    final public static class Concat extends DMLBuiltin {
+    final public static class Concat extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.fromList");
 	    DMLValue arg=args[0].request();
@@ -107,12 +107,12 @@ final public class Vector {
     /** <code>val concat : 'a vector list -> 'a vector </code>*/
     final public static Concat concat = new Concat();
 
-    final public static class Mapi extends DMLBuiltin {
+    final public static class Mapi extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.mapi");
 	    return new Mapi1(args[0].request());
 	}
-	final public static class Mapi1 extends DMLBuiltin {
+	final public static class Mapi1 extends Builtin {
 	    public DMLValue fun = null;
 	    public Mapi1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -121,8 +121,8 @@ final public class Vector {
 		if (!(vector instanceof DMLVector))
 		    return error("argument #1 not DMLVector",val);
 		DMLValue from = args[1].request();
-		if (!(from instanceof DMLInt))
-		    return error("argument #2 not DMLInt",val);
+		if (!(from instanceof Int))
+		    return error("argument #2 not Int",val);
 		DMLValue to = args[2].request();
 		int toint = 0;
 		if (to==Option.NONE)
@@ -131,15 +131,15 @@ final public class Vector {
 		    DMLConVal cv = (DMLConVal) to;
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
-			if (!(iv instanceof DMLInt))
-			    return error("argument #3 not DMLInt option",val);
-			toint=((DMLInt) iv).getInt();
+			if (!(iv instanceof Int))
+			    return error("argument #3 not Int option",val);
+			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return error("argument #3 not DMLInt option",val);
+		    return error("argument #3 not Int option",val);
 		return ((DMLVector) vector).
 		    mapi(fun,
-			 ((DMLInt) from).getInt(),
+			 ((Int) from).getInt(),
 			 toint);
 	    }
 	}
@@ -147,12 +147,12 @@ final public class Vector {
     /** <code>val mapi : ((int * 'a) -> 'b) -> ('a vector * int * int option) -> 'b vector </code>*/
     final public static Mapi mapi = new Mapi();
 
-    final public static class Map extends DMLBuiltin {
+    final public static class Map extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.map");
 	    return new Map1(args[0].request());
 	}
-	final public static class Map1 extends DMLBuiltin {
+	final public static class Map1 extends Builtin {
 	    DMLValue fun = null;
 	    Map1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -167,12 +167,12 @@ final public class Vector {
     /** <code>val map : ('a -> 'b) -> 'a vector -> 'b vector </code>*/
     final public static Map map = new Map();
 
-    final public static class Appi extends DMLBuiltin {
+    final public static class Appi extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.appi");
 	    return new Appi1(args[0].request());
 	}
-	final public static class Appi1 extends DMLBuiltin {
+	final public static class Appi1 extends Builtin {
 	    public DMLValue fun = null;
 	    public Appi1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -181,8 +181,8 @@ final public class Vector {
 		if (!(vector instanceof DMLVector))
 		    return error("argument #1 not DMLVector",val);
 		DMLValue from = args[1].request();
-		if (!(from instanceof DMLInt))
-		    return error("argument #2 not DMLInt",val);
+		if (!(from instanceof Int))
+		    return error("argument #2 not Int",val);
 		DMLValue to = args[2].request();
 		int toint = 0;
 		if (to==Option.NONE)
@@ -191,14 +191,14 @@ final public class Vector {
 		    DMLConVal cv = (DMLConVal) to;
 		    if (!(cv.getConstructor()==Option.SOME)) {
 			DMLValue iv= cv.getContent();
-			if (!(iv instanceof DMLInt))
-			    return error("argument #3 not DMLInt option",val);
-			toint=((DMLInt) iv).getInt();
+			if (!(iv instanceof Int))
+			    return error("argument #3 not Int option",val);
+			toint=((Int) iv).getInt();
 		    }
 		} else
-		    return error("argument #3 not DMLInt option",val);
+		    return error("argument #3 not Int option",val);
 		return ((DMLVector) vector).
-		    appi(((DMLInt) from).getInt(),
+		    appi(((Int) from).getInt(),
 			 toint,
 			 fun);
 	    }
@@ -207,12 +207,12 @@ final public class Vector {
     /** <code>val appi : ((int * 'a) -> unit) -> ('a vector * int * int option) -> unit </code>*/
     final public static Appi appi = new Appi();
 
-    final public static class App extends DMLBuiltin {
+    final public static class App extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.app");
 	    return new App1(args[0].request());
 	}
-	final public static class App1 extends DMLBuiltin {
+	final public static class App1 extends Builtin {
 	    DMLValue fun = null;
 	    App1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -227,19 +227,19 @@ final public class Vector {
     /** <code>val app : ('a -> unit) -> 'a vector -> unit </code>*/
     final public static App app = new App();
 
-    final public static class Foldli extends DMLBuiltin {
+    final public static class Foldli extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.foldli");
 	    return new Foldli1(args[0].request());
 	}
-	final public static class Foldli1 extends DMLBuiltin {
+	final public static class Foldli1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldli1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Vector.foldli1");
 		return new Foldli2(fun, args[0].request());
 	    }
-	    final public static class Foldli2 extends DMLBuiltin {
+	    final public static class Foldli2 extends Builtin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldli2(DMLValue f, DMLValue i) { init=i; fun=f;}
 		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -248,9 +248,9 @@ final public class Vector {
 		    if (!(vector instanceof DMLVector))
 			return error("argument #1 not DMLVector",val);
 		    DMLValue fr = args[1].request();
-		    if (!(fr instanceof DMLInt))
-			return error("argument #2 not DMLInt",val);
-		    int from = ((DMLInt) fr).getInt();
+		    if (!(fr instanceof Int))
+			return error("argument #2 not Int",val);
+		    int from = ((Int) fr).getInt();
 		    DMLValue to = args[2].request();
 		    int toint = 0;
 		    if (to==Option.NONE)
@@ -259,12 +259,12 @@ final public class Vector {
 			DMLConVal cv = (DMLConVal) to;
 			if (!(cv.getConstructor()==Option.SOME)) {
 			    DMLValue iv= cv.getContent();
-			    if (!(iv instanceof DMLInt))
-				return error("argument #3 not DMLInt option",val);
-			    toint=((DMLInt) iv).getInt();
+			    if (!(iv instanceof Int))
+				return error("argument #3 not Int option",val);
+			    toint=((Int) iv).getInt();
 			}
 		    } else
-			return error("argument #3 not DMLInt option",val);
+			return error("argument #3 not Int option",val);
 		    return ((DMLVector) vector).
 			foldli(fun,
 			       init,
@@ -277,19 +277,19 @@ final public class Vector {
     /** <code>val foldli : ((int * 'a * 'b) -> 'b) -> 'b -> ('a vector * int * int option) -> 'b </code>*/
     final public static Foldli foldli = new Foldli();
 
-    final public static class Foldri extends DMLBuiltin {
+    final public static class Foldri extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.foldri");
 	    return new Foldri1(args[0].request());
 	}
-	final public static class Foldri1 extends DMLBuiltin {
+	final public static class Foldri1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldri1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Vector.foldri1");
 		return new Foldri2(fun, args[0].request());
 	    }
-	    final public static class Foldri2 extends DMLBuiltin {
+	    final public static class Foldri2 extends Builtin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldri2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -298,9 +298,9 @@ final public class Vector {
 		    if (!(vector instanceof DMLVector))
 			return error("argument #1 not DMLVector",val);
 		    DMLValue fr = args[1].request();
-		    if (!(fr instanceof DMLInt))
-			return error("argument #2 not DMLInt",val);
-		    int from = ((DMLInt) fr).getInt();
+		    if (!(fr instanceof Int))
+			return error("argument #2 not Int",val);
+		    int from = ((Int) fr).getInt();
 		    DMLValue to = args[2].request();
 		    int toint = 0;
 		    if (to==Option.NONE)
@@ -309,12 +309,12 @@ final public class Vector {
 			DMLConVal cv = (DMLConVal) to;
 			if (!(cv.getConstructor()==Option.SOME)) {
 			    DMLValue iv= cv.getContent();
-			    if (!(iv instanceof DMLInt))
-				return error("argument #3 not DMLInt option",val);
-			    toint=((DMLInt) iv).getInt();
+			    if (!(iv instanceof Int))
+				return error("argument #3 not Int option",val);
+			    toint=((Int) iv).getInt();
 			}
 		    } else
-			return error("argument #3 not DMLInt option",val);
+			return error("argument #3 not Int option",val);
 		    return ((DMLVector) vector).
 			foldri(fun,
 			       init,
@@ -327,19 +327,19 @@ final public class Vector {
     /** <code>val foldri : ((int * 'a * 'b) -> 'b) -> 'b -> ('a vector * int * int option) -> 'b </code>*/
     final public static Foldri foldri = new Foldri();
 
-    final public static class Foldl extends DMLBuiltin {
+    final public static class Foldl extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.foldl");
 	    return new Foldl1(args[0].request());
 	}
-	final public static class Foldl1 extends DMLBuiltin {
+	final public static class Foldl1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldl1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Vector.foldl1");
 		return new Foldl2(fun, args[0]);
 	    }
-	    final public static class Foldl2 extends DMLBuiltin {
+	    final public static class Foldl2 extends Builtin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldl2(DMLValue f,DMLValue i) { init=i; fun=f; }
 		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -355,19 +355,19 @@ final public class Vector {
     /** <code>val foldl : (('a * 'b) -> 'b) -> 'b -> 'a vector -> 'b </code>*/
     final public static Foldl foldl = new Foldl();
 
-    final public static class Foldr extends DMLBuiltin {
+    final public static class Foldr extends Builtin {
 	final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 	    DMLValue[] args=fromTuple(val,1,"Vector.foldr");
 	    return new Foldr1(args[0].request());
 	}
-	final public static class Foldr1 extends DMLBuiltin {
+	final public static class Foldr1 extends Builtin {
 	    DMLValue fun = null;
 	    Foldr1(DMLValue f) { fun=f; }
 	    final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
 		DMLValue[] args=fromTuple(val,1,"Vector.foldr1");
 		return new Foldr2(fun, args[0]);
 	    }
-	    final public static class Foldr2 extends DMLBuiltin {
+	    final public static class Foldr2 extends Builtin {
 		DMLValue init = null; DMLValue fun = null;
 		Foldr2(DMLValue f, DMLValue i) { init=i; fun=f; }
 		final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException{
@@ -409,9 +409,9 @@ final public class Vector {
 	(java.lang.String msg, DMLValue v) throws java.rmi.RemoteException {
 	// sonst: Fehler
 	DMLValue[] err = {
-	    new DMLString(msg),
+	    new de.uni_sb.ps.dml.runtime.String(msg),
 	    v};
-	return DMLConstants.
+	return Constants.
 	    runtimeError.apply(new Tuple(err)).raise();
     }
 }

@@ -32,9 +32,9 @@ final public class Char {
     /** <code>val isSpace : char -> bool </code>*/
     /** <code>val isPunct : char -> bool </code>*/
     /** <code>val isUpper : char -> bool </code>*/
-    /** <code>val fromString : String.string -> char option </code>*/
-    /** <code>val scan : (Char.char, 'a) StringCvt.reader -> 'a -> (char * 'a) option </code>*/
-    /** <code>val toString : char -> String.string </code>*/
-    /** <code>val fromCString : String.string -> char option </code>*/
-    /** <code>val toCString : char -> String.string </code>*/
+    /** <code>val fromString : java.lang.String.string -> char option </code>*/
+    /** <code>val scan : (Char.char, 'a) java.lang.StringCvt.reader -> 'a -> (char * 'a) option </code>*/
+    /** <code>val toString : char -> java.lang.String.string </code>*/
+    /** <code>val fromCString : java.lang.String.string -> char option </code>*/
+    /** <code>val toCString : char -> java.lang.String.string </code>*/
 }

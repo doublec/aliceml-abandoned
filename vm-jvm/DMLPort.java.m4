@@ -8,20 +8,20 @@ final public class DMLPort extends UnicastRemoteObject
     implements DMLRemoteValue, RemotePort {
 
     DMLValue first = null;
-    DMLLVar last = null;
+    LVar last = null;
 
     public DMLPort() throws RemoteException {
-	last = new DMLLVar();
+	last = new LVar();
 	first = last;
     }
 
     final public DMLValue send(DMLValue msg) throws RemoteException {
-	DMLLVar newLast = new DMLLVar();
+	LVar newLast = new LVar();
 	synchronized (last) {
 	    last.bind(new Cons(msg,newLast));
 	    last=newLast;
 	}
-	return DMLConstants.dmlunit;
+	return Constants.dmlunit;
     }
 
     final public DMLValue recieve() throws RemoteException {
@@ -44,11 +44,11 @@ final public class DMLPort extends UnicastRemoteObject
     }
 
     final public DMLValue apply(DMLValue val) throws java.rmi.RemoteException {
-	return DMLConstants.runtimeError.apply( new DMLString("cannot apply "+this+" to "+val)).raise();
+	return Constants.runtimeError.apply( new de.uni_sb.ps.dml.runtime.String("cannot apply "+this+" to "+val)).raise();
     }
 
     final public DMLValue raise() {
-	throw new DMLExceptionWrapper(this);
+	throw new ExceptionWrapper(this);
     }
 
     final public java.lang.String toString() {
