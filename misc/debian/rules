@@ -22,13 +22,13 @@ endif
 # generic Debian directories
 
 package_name = alice
-package_version = 0.9
+package_version = 0.9.1
 
 DEB_BASE_DIR = $(PWD)
 DEB_DEBIAN_DIR = $(DEB_BASE_DIR)/debian
-DEB_SOURCE_DIR = $(DEB_BASE_DIR)/alice-0.9
+DEB_SOURCE_DIR = $(DEB_BASE_DIR)/$(package_name)-$(package_version)
 DEB_BUILD_DIR = $(DEB_DEBIAN_DIR)/build
-DEB_INSTALL_DIR = $(DEB_DEBIAN_DIR)/tmp
+DEB_INSTALL_DIR = $(DEB_DEBIAN_DIR)/$(package_name)
 
 # generic targets
 
@@ -67,10 +67,15 @@ install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
 	dh_clean
+	dh_installdirs
 	mkdir $(DEB_INSTALL_DIR) || true
 	$(MAKE) -C $(DEB_BUILD_DIR) $(install_options) \
 		install DESTDIR=$(DEB_INSTALL_DIR)
 	echo > $@
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/examples
+	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
+	   $(DEB_INSTALL_DIR)/usr/share/doc/alice/html
 
 clean:
 	dh_testdir
@@ -84,12 +89,10 @@ clean:
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_movefiles usr
-	dh_installdocs $(DEB_SOURCE_DIR)/COPYING
+	dh_install --sourcedir=$(DEB_SOURCE_DIR)
 	dh_installdocs $(DEB_SOURCE_DIR)/README
-#	dh_installdocs $(DEB_SOURCE_DIR)/doc/*.pdf
-#	dh_installexamples $(DEB_SOURCE_DIR)/examples/*
-	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 aliceserv.1
+	cat $(DEB_SOURCE_DIR)/COPYING >> $(DEB_INSTALL_DIR)/usr/share/doc/alice/copyright
+	dh_undocumented alice.1 alicec.1 alicedep.1 alicelink.1 alicerun.1 aliceserv.1
 	dh_installchangelogs
 	dh_strip
 	dh_compress
