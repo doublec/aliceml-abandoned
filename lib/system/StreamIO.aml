@@ -98,16 +98,20 @@ functor StreamIO(structure PrimIO: PRIM_IO
 					 0)
 			    val k = Vector.length v
 			in
-			    if k <= offset + nMarkRead then
+			    if k = 0 then
+				(Promise.fulfill (p, state);
+				 (v, 0, (history, offset)))
+			    else if k <= offset then
 				let
 				    val history' = ref (READER (reader, NONE))
 				in
 				    Promise.fulfill (p, BUFFER (v, history'));
-				    (v, offset, (history', 0))
+				    input' ((history', offset - k), nMarkRead,
+					    function)
 				end
 			    else
 				let
-				    val nRead = Int.min (k, nMarkRead)
+				    val nRead = Int.min (k - offset, nMarkRead)
 				    val offset' = offset + nRead
 				    val i' = Int.max (i, offset')
 				in
@@ -117,8 +121,21 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				end
 			end
 		  | BUFFER (v, history') =>
-			(Promise.fulfill (p, state);
-			 (v, offset, (history', 0)))
+			let
+			    val k = Vector.length v
+			in
+			    Promise.fulfill (p, state);
+			    if k <= offset then
+				input' ((history', offset - k), nMarkRead,
+					function)
+			    else
+				let
+				    val nRead = Int.min (k - offset, nMarkRead)
+				    val offset' = offset + nRead
+				in
+				    (v, offset, (history, offset'))
+				end
+			end
 		  | (TRUNCATED _ | CLOSED_IN _) =>
 			(Promise.fulfill (p, state);
 			 (Vector.fromList nil, 0, f))
@@ -159,7 +176,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		      (VectorSlice.slice (v, offset, SOME n))], f')
 		else
 		    let
-			val (vs, f'') = inputN' (f, n - k)
+			val (vs, f'') = inputN' (f', n - k)
 		    in
 			(VectorSlice.vector
 			 (VectorSlice.slice (v, offset, NONE))::vs, f'')
@@ -205,9 +222,26 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			    | NONE => (Promise.fulfill (p, state); NONE))
 			 handle cause =>
 			     raise IO.Io {name, function = "canInput", cause})
-		  | (READER (_, SOME (v, _)) | BUFFER (v, _)) =>
+		  | READER (reader, SOME (v, _)) =>
+			if Vector.length v = 0 then
+			    SOME 0
+			else if Vector.length v <= offset then
+			    let
+				val history' = ref (READER (reader, NONE))
+			    in
+				Promise.fulfill (p, BUFFER (v, history'));
+				canInput
+				    ((history', offset - Vector.length v), n)
+			    end
+			else
+			    (Promise.fulfill (p, state);
+			     return (Vector.length v - offset))
+		  | BUFFER (v, history') =>
 			(Promise.fulfill (p, state);
-			 return (Vector.length v - offset))
+			 if Vector.length v <= offset then
+			     canInput ((history', offset - Vector.length v), n)
+			 else
+			     return (Vector.length v - offset))
 		  | (TRUNCATED _ | CLOSED_IN _) =>
 			(Promise.fulfill (p, state); return 0)
 	    end
