@@ -1,0 +1,7 @@
+import
+    signature FLAT_GRAMMAR
+from "backend-common/FLAT_GRAMMAR.ozf"
+
+import
+    structure FlatGrammar
+from "backend-common/FlatGrammar.ozf"
