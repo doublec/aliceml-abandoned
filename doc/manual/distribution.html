@@ -121,9 +121,9 @@ with the signature of the server:</P>
 
 <PRE class=code>
 signature COMPUTE_SERVER =
-    sig
-	val apply : ('a -> 'b) * 'a -> 'b
-    end</PRE>
+sig
+    val apply : ('a -> 'b) * 'a -> 'b
+end</PRE>
 
 <P>The compute server makes the ticket under which it offers its service
 available through the local web server.  We assume the local server's
@@ -131,13 +131,12 @@ document root is <TT>/docroot/</TT>.</P>
 
 <PRE class=code>
 structure ComputeServer : COMPUTE_SERVER =
-    struct
-	val apply = proxy (fn (f, x) => f x)
-    end
+struct
+    val apply = proxy (fn (f, x) => f x)
+end
 val ticket = offer (pack ComputeServer : COMPUTE_SERVER)
 val _ = Pickle.save ("/docroot/computeServer",
-		     pack (val x = ticket) :
-			  (val x : string))</PRE>
+		     pack (val x = ticket) :> (val x : string))</PRE>
 
 <P>Clients can use this service by acquiring the ticket from the well-known
 URL <TT>http://www/computeServer</TT>:</P>
@@ -146,13 +145,13 @@ URL <TT>http://www/computeServer</TT>:</P>
 structure Ticket =
     unpack Pickle.load "http://www/computeServer" : (val x : string)
 structure ComputeServer = unpack (take Ticket.x) : COMPUTE_SERVER
-fun fak (0|1) = 1
-  | fak n = n * fak (n - 1)
-val result = ComputeServer.apply (fak, 5)</PRE>
+fun fib (0 | 1) = 1
+  | fib n       = fib (n-1) + fib (n-2)
+val result = ComputeServer.apply (fib, 30)</PRE>
 
-<P>In the example, the function <TT>fak</TT> and the argument <TT>5</TT> are
-cloned to the compute server, where the application is evaluated.  The result
-<TT>120</TT> is cloned back to the client.</P>
+<P>In the example, the (expensive) function <TT>fib</TT> and the argument
+<TT>30</TT> are cloned to the compute server, where the application is
+evaluated.  The result <TT>1346269</TT> is cloned back to the client.</P>
 
 
 <?php section("remote", "remote execution") ?>

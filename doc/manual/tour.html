@@ -576,9 +576,9 @@ programming.</P>
 <?php subsection("promises-concurrent", "Concurrent data structures") ?>
 
 <P>Still, the primary purpose of promises is to provide a simple primitive that
-enables high-level programming of concurrency. We only give an idea of that
-here, by showing how they can encode another well-known concurrency idiom
-easily: <EM>channels</EM>.</P>
+enables high-level concurrent programming. We only give an idea of that here,
+by showing how they can encode another well-known concurrency idiom easily:
+<EM>channels</EM>.</P>
 
 <P>A channel (sometimes also called a <EM>port</EM>) is a simple imperative
 message queue that allows asynchronous communication between processes. As an
@@ -595,10 +595,13 @@ sig
 end
 </PRE>
 
-<P>Arbitrarily many messages may be send to a channel using <TT>put</TT>. The
-<TT>get</TT> operation takes the oldest message out of the queue. It suspends if
-none is available. A straight-forward implementation uses promises and
-references:</P>
+<P>Arbitrarily many messages may be sent to a channel using <TT>put</TT>. The
+<TT>get</TT> operation takes the oldest message out of the channel. It suspends
+if none is available. A more advanced design might distinguish between read and
+write view of a channel, but we chose to ignore that here for the sake of
+simplicity.</P>
+
+<P>A straight-forward implementation uses promises and references:</P>
 
 <PRE class=code>
 structure Chan :> CHAN =
@@ -681,8 +684,10 @@ Chan.put (ch, 17); Chan.put (ch, 6)
 <P align=center><IMG src="inspector-conc-4.jpg" border=0 alt="Alice Inspector"></P>
 
 <P>Tuples are always evaluated from left to right, so we will deterministically
-get the pair <TT>(17,6)</TT>. To witness non-determinism due to concurrency, let
-us set up several clients:</P>
+get the pair <TT>(17,6)</TT> in the last example. To witness non-determinism
+due to concurrency, let us set up several clients. They perform an expensive
+calculation before reading from the channel, in order to properly randomize
+thread scheduling:</P>
 
 <PRE class=code>
 fun client _ = spawn (fib 20; Chan.get ch)
@@ -694,8 +699,8 @@ Chan.put (ch, 1); Chan.put (ch, 2); Chan.put (ch, 3)
 
 <P align=center><IMG src="inspector-conc-6.jpg" border=0 alt="Alice Inspector"></P>
 
-<P>The order in which the treads will read from the channel is
-non-deterministic, but no value will get lost or read twice.</P>
+<P>The order in which the threads will read from the channel is
+non-deterministic, but no value will ever get lost or read twice.</P>
 
 
 <?php section("packages", "packages") ?>
@@ -1341,8 +1346,8 @@ predefined search engines can be used:</P>
 Search.searchAll money
 <I>val it :
    {D : term, E : term, M : term, N : term, O : term, R : term, S : term, Y : term} list =
-   [{Y = fd (val), S = fd (val), R = fd (val), O = fd (val), N = fd (val),
-     M = fd (val), E = fd (val), D = fd (val)}]</I></PRE>
+   [{D = fd (val), E = fd (val), M = fd (val), N = fd (val), O = fd (val),
+     R = fd (val), S = fd (val), Y = fd (val)}]</I></PRE>
 
 <P>Using the inspector, we can easily look at the solution:</P>
 
