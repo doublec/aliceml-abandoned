@@ -49,7 +49,7 @@ sig
     val cloneScope :	env -> env
     val splitScope :	env -> env
     val insertScope :	env -> unit
-    val deleteScope :	env -> unit
+    val removeScope :	env -> unit
     val mergeScope :	env -> unit
 
     val union :		env * env -> unit		(* Collision *)
