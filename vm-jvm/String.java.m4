@@ -293,8 +293,9 @@ final public class String implements DMLValue {
 
     _BUILTIN(ToCString) {
 	_APPLY(val) {
+	    java.lang.String result = null;
 	    try {
-		java.lang.String result = ((java.lang.String) val).value;
+		 result = ((java.lang.String) val).value;
 		int idx=0;
 		while ((idx=result.indexOf('\\',idx)) > 0) {
 		    result = result.substring(0,idx-1)+"\\\\"+
