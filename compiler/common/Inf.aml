@@ -1035,7 +1035,10 @@ structure InfPrivate =
       | matchValDef(l, NONE, SOME p2)	= raise Mismatch(ManifestVal(l,NONE,p2))
       | matchValDef(l, SOME p1, SOME p2) =
 	    if Path.equals(p1,p2) then () else
+(*DEBUG*)
+()(*
 		raise Mismatch(ManifestVal(l, SOME p1, p2))
+*)
 
     and matchTypDef(l, _,    NONE)	= ()
       | matchTypDef(l, NONE, SOME t2)	= raise Mismatch(ManifestTyp(l,NONE,t2))
@@ -1047,7 +1050,10 @@ structure InfPrivate =
       | matchModDef(l, NONE, SOME p2)	= raise Mismatch(ManifestMod(l,NONE,p2))
       | matchModDef(l, SOME p1, SOME p2) =
 	    if Path.equals(p1,p2) then () else
+(*DEBUG*)
+()(*
 		raise Mismatch(ManifestMod(l, SOME p1, p2))
+*)
 
     and matchInfDef(l, _,    NONE)	= ()
       | matchInfDef(l, NONE, SOME j2)	= raise Mismatch(ManifestInf(l,NONE))
