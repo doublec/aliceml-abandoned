@@ -111,7 +111,7 @@ structure CodeGen =
 			 (fn (_,id') => fV.insert id') stringids
 			 )
 	      | freeVarsExp (ConExp(_, id', _)) = fV.insert id'
-	      | freeVarsExp (SelAppExp(_,lab',id')) = fV.insert id'
+	      | freeVarsExp (SelAppExp(_,_,id')) = fV.insert id'
 	      | freeVarsExp (PrimExp (_, name)) = ()
 	      | freeVarsExp e = raise Debug (Exp e)
 
@@ -159,9 +159,9 @@ structure CodeGen =
 		freeVarsTest (LitTest _) = ()
 	      | freeVarsTest (ConTest(id',NONE)) = fV.insert id'
 	      | freeVarsTest (ConTest(id',SOME id'')) = (fV.insert id'; fV.delete id'')
-	      | freeVarsTest (RecTest stringlablist) =
-		app (fn (_,id') => fV.delete id') stringlablist
-	      | freeVarsTest (TupTest lablist) = app fV.delete lablist
+	      | freeVarsTest (RecTest labids) =
+		app (fn (_,id') => fV.delete id') labids
+	      | freeVarsTest (TupTest labs) = app fV.delete labs
 	      | freeVarsTest (LabTest(_,id')) = fV.delete id'
 
 	    and freeVarsDecs (decs) =
@@ -401,13 +401,32 @@ structure CodeGen =
 				    nil
 
 			      (* tuple *)
-			      | TupExp _ =>
-				    New CTuple ::
-				    Dup ::
-				    Invokespecial (CTuple,"<init>",
-						   ([],[Voidsig])) ::
-				    Astore loc ::
-				    nil
+			      | TupExp (_, ids) =>
+				    case length ids of
+					2 => New CTuple2 ::
+					    Dup ::
+					    Invokespecial (CTuple2,"<init>",
+							   ([],[Voidsig])) ::
+					    Astore loc ::
+					    nil
+				      | 3 => New CTuple3 ::
+					    Dup ::
+					    Invokespecial (CTuple3,"<init>",
+							   ([],[Voidsig])) ::
+					    Astore loc ::
+					    nil
+				      | 4 => New CTuple4 ::
+					    Dup ::
+					    Invokespecial (CTuple4,"<init>",
+							   ([],[Voidsig])) ::
+					    Astore loc ::
+					    nil
+				      | _ => New CTuple ::
+					    Dup ::
+					    Invokespecial (CTuple,"<init>",
+							   ([],[Voidsig])) ::
+					    Astore loc ::
+					    nil
 			in
 			    Multi one ::
 			    akku
@@ -712,13 +731,11 @@ structure CodeGen =
 					[Voidsig])) ::
 			stampcode' ::
 			Checkcast CRecord::
-			Invokevirtual (CRecord,"getArity",
-				       ([],[Classsig CRecordArity])) ::
+			Getfield (CRecord^"/arity",[Classsig CRecordArity]) ::
 			Ifacmpne elselabel ::
 			stampcode' ::
-			Checkcast CRecord ::
-			Invokevirtual (CRecord,"getValues",
-				       ([],[Arraysig, Classsig CVal])) ::
+			Checkcast CTuple ::
+			Getfield (CTuple^"/vals",[Arraysig, Classsig CVal]) ::
 			bindit (stringid,0)
 		    end
 
@@ -740,6 +757,11 @@ structure CodeGen =
 			    end
 			  | bindit (nil,_) = nil
 
+			fun tupOpt (id''::rest) =
+			    idCode id'' ::
+			    tupOpt rest
+			  | tupOpt nil = nil
+
 			val lgt = length ids
 		    in
 			if lgt = 0
@@ -750,22 +772,61 @@ structure CodeGen =
 				nil
 			else
 			    stampcode' ::
-			    Instanceof CDMLTuple ::
-			    Ifeq elselabel ::
-			    stampcode' ::
-			    Checkcast CDMLTuple ::
-			    Invokeinterface
-			    (CDMLTuple, "getArity",
-			     ([], [Intsig])) ::
-			    atCodeInt (Int.toLarge lgt) ::
-			    Ificmpne elselabel ::
-			    stampcode' ::
-			    Checkcast CDMLTuple ::
-			    Invokeinterface
-			    (CDMLTuple,"getVals",
-			     ([],[Arraysig,
-				  Classsig CVal])) ::
-			    bindit(ids,0)
+			    (if lgt >=2 andalso lgt <=4 then
+				 (case lgt of
+				      2 => Instanceof CTuple2 ::
+					  Ifeq elselabel ::
+					  stampcode' ::
+					  Checkcast CTuple2 ::
+					  Multi (tupOpt ids) ::
+					  Invokevirtual
+					  (CTuple2, "setContent",
+					   ([Classsig CVal,
+					     Classsig CVal],
+					    [Voidsig])) ::
+					  nil
+				    | 3 => Instanceof CTuple3 ::
+					  Ifeq elselabel ::
+					  stampcode' ::
+					  Checkcast CTuple3 ::
+					  Multi (tupOpt ids) ::
+					  Invokevirtual
+					  (CTuple3, "setContent",
+					   ([Classsig CVal,
+					     Classsig CVal,
+					     Classsig CVal],
+					    [Voidsig])) ::
+					  nil
+				    | 4 => Instanceof CTuple4 ::
+					  Ifeq elselabel ::
+					  stampcode' ::
+					  Checkcast CTuple4 ::
+					  Multi (tupOpt ids) ::
+					  Invokevirtual
+					  (CTuple4, "setContent",
+					   ([Classsig CVal,
+					     Classsig CVal,
+					     Classsig CVal,
+					     Classsig CVal],
+					    [Voidsig])) ::
+					  nil)
+			     else
+				 Instanceof CDMLTuple ::
+				 Ifeq elselabel ::
+				 stampcode' ::
+				 Checkcast CDMLTuple ::
+				 Invokeinterface
+				 (CDMLTuple, "getArity",
+				  ([], [Intsig])) ::
+				 atCodeInt (Int.toLarge lgt) ::
+				 Ificmpne elselabel ::
+				 stampcode' ::
+				 Checkcast CDMLTuple ::
+				 Invokeinterface
+				 (CDMLTuple,"getVals",
+				  ([],[Arraysig,
+				       Classsig CVal])) ::
+				 bindit(ids,0))
 		    end
 
 		  | testCode (LabTest (s', id' as Id (_,stamp'',_))) =
@@ -961,57 +1022,117 @@ structure CodeGen =
 					     [Classsig CVal])])
 	    end
 	and
-	    idArgCode (OneArg id', init) = idCode id' :: init
-
-	  | idArgCode (TupArgs ids, init) =
+	    createTuple (ids, init) =
 	    let
-		fun iac (id'::ids, accu) =
-		    iac (ids, Dup::idCode id'::Aastore::accu)
-		  | iac (nil, accu) = accu
+		val arity = length ids
+
+		fun f ((id' as Id(_,stamp',_))::rest, i, akku) =
+		    f (rest,
+			 i+1,
+			 Dup ::
+			 atCodeInt i ::
+			 stampCode stamp' ::
+			 Aastore ::
+			 akku)
+		  | f (nil, _, akku) = akku
+
+		fun specTups (id' :: rest) =
+		    idCode id' ::
+		    specTups rest
+		  | specTups nil = nil
 	    in
-		New CTuple ::
-		Dup ::
-		atCodeInt (Int.toLarge (List.length ids)) ::
-		Anewarray CVal ::
-		iac
-		(ids,
-		 Invokespecial
-		 (CTuple, "<init>",
-		  ([Arraysig, Classsig CVal], [Voidsig])) ::
-		 init)
-	    end
-
-	  | idArgCode (RecArgs stringids, init) =
-	    let
-		val arity = List.length stringids
-		fun iac ((name',id')::ids, accu1,accu2) =
-		    iac (ids,
-			 Dup ::
-			 Ldc (JVMString name') ::
-			 Aastore ::
-			 accu1,
-			 Dup ::
-			 idCode id' ::
-			 Aastore ::
-			 accu2)
-		  | iac (nil, accu1, accu2) =
-		    atCodeInt (Int.toLarge arity) ::
-		    Anewarray CString ::
-		    Multi accu1 ::
+		if arity <= 4 andalso arity >= 2 then
+		    (case arity of
+			 2 => New CTuple2 ::
+			     Dup ::
+			     Multi (specTups ids) ::
+			     Invokespecial
+			     (CTuple2, "<init>",
+			      ([Classsig CVal, Classsig CVal],
+			       [Voidsig])) ::
+			     init
+		       | 3 => New CTuple3 ::
+			     Dup ::
+			     Multi (specTups ids) ::
+			     Invokespecial
+			     (CTuple3, "<init>",
+			      ([Classsig CVal,
+				Classsig CVal,
+				Classsig CVal],
+			       [Voidsig])) ::
+			     init
+		       | 4 => New CTuple4 ::
+			     Dup ::
+			     Multi (specTups ids) ::
+			     Invokespecial
+			     (CTuple4, "<init>",
+			      ([Classsig CVal,
+				Classsig CVal,
+				Classsig CVal,
+				Classsig CVal],
+			       [Voidsig])) ::
+			     init
+		       | _ => raise Mitch)
+		else
+		    New CTuple ::
+		    Dup ::
 		    atCodeInt (Int.toLarge arity) ::
 		    Anewarray CVal ::
-		    accu2
-	    in
-		New CTuple ::
-		Dup ::
-		iac
-		(stringids,
-		 nil,
-		 Invokespecial (CTuple, "<init>",
-				([Arraysig, Classsig CVal],
-				 [Voidsig])) ::
-		 init)
+		    f (ids,
+		       0,
+		       Invokespecial (CTuple, "<init>",
+				      ([Arraysig, Classsig CVal],
+				       [Voidsig])) ::
+		       init)
 	    end
+	and
+	    createRecord (labid,init) =
+	    (* labids: (lab * id) list *)
+	    (* 1st load Label[] *)
+	    (* 2nd build Value[] *)
+	    (* 3rd create Record *)
+	    (* the Label[] is built statically! *)
+	    let
+		val arity = length labid
+		(* 1st *)
+		(* reverse list and remove ids *)
+		fun labids2strings ((l, _)::labids',s')=
+		    labids2strings (labids', l::s')
+		  | labids2strings (nil, s') = s'
+
+		(* 2nd *)
+		fun load ((_,Id (_,stamp',_))::rs,j) =
+		    Dup ::
+		    atCodeInt j ::
+		    Aload (Register.get stamp') ::
+		    Aastore ::
+		    (load (rs,j+1))
+		  | load (nil,_) = nil
+	    (* 3. *)
+	    in
+		Comment "[Record " ::
+		New CRecord ::
+		Dup ::
+		Getstatic (RecordLabel.insert
+			   (labids2strings (labid, nil))) ::
+		atCodeInt (Int.toLarge arity) ::
+		Anewarray CVal ::
+		Multi (load (labid,0)) ::
+		Invokespecial (CRecord,"<init>",
+			       ([Arraysig, Classsig CLabel,
+				 Arraysig, Classsig CVal],
+				[Voidsig])) ::
+		Comment "Record ]" ::
+		init
+	    end
+
+	and
+	    idArgCode (OneArg id', init) = idCode id' :: init
+
+	  | idArgCode (TupArgs ids, init) = createTuple (ids, init)
+
+	  | idArgCode (RecArgs stringids, init) =
+	    createRecord (stringids, init)
 
 	and
 	    expCode (AppExp(_,id' as Id(_,stamp',_),ida'')) =
@@ -1109,44 +1230,7 @@ structure CodeGen =
 	  | expCode (RecExp(_, nil)) =
 		     [Getstatic (CConstants^"/dmlunit", [Classsig CName])]
 
-	  | expCode (RecExp(_,labid)) =
-		     (* RecExp of coord * (lab * id) list *)
-		     (* 1st load Label[] *)
-		     (* 2nd build Value[] *)
-		     (* 3rd create Record *)
-		     (* the Label[] is built statically! *)
-		     let
-			 val arity = length labid
-			 (* 1st *)
-			 (* reverse list and remove ids *)
-			 fun labids2strings ((Lab (_,l), _)::labids',s')=
-			     labids2strings (labids', l::s')
-			   | labids2strings (nil, s') = s'
-
-			 (* 2nd *)
-			 fun load ((_,Id (_,stamp',_))::rs,j) =
-			     Dup ::
-			     atCodeInt j ::
-			     Aload (Register.get stamp') ::
-			     Aastore ::
-			     (load (rs,j+1))
-			   | load (nil,_) = nil
-			 (* 3. *)
-		     in
-			 [Comment "[Record ",
-			  New CRecord,
-			  Dup,
-			  Getstatic (RecordLabel.insert
-				     (labids2strings (labid, nil))),
-			  atCodeInt (Int.toLarge arity),
-			  Anewarray CVal,
-			  Multi (load (labid,0)),
-			  Invokespecial (CRecord,"<init>",
-					 ([Arraysig, Classsig CLabel,
-					   Arraysig, Classsig CVal],
-					  [Voidsig])),
-			  Comment "Record ]"]
-		     end
+	  | expCode (RecExp(_,labid)) = createRecord (labid, nil)
 
 	  | expCode (LitExp(_,lit')) =
 		     let
@@ -1160,85 +1244,66 @@ structure CodeGen =
 			 [Getstatic (Literals.insert lit', [Classsig scon])]
 		     end
 
-	  | expCode (TupExp(_,longids)) =
-		     let
-			 val arity = length longids
-			 fun ids ((id' as Id(_,stamp',_))::rest,i) =
-			     Dup ::
-			     atCodeInt i ::
-			     stampCode stamp' ::
-			     Aastore ::
-			     ids(rest,i+1)
-			   | ids (nil,_) = nil
-		     in
-			 [New CTuple,
-			  Dup,
-			  atCodeInt (Int.toLarge arity),
-			  Anewarray CVal,
-			  Multi (ids (longids, 0)),
-			  Invokespecial (CTuple, "<init>",
-					 ([Arraysig, Classsig CVal],
-					  [Voidsig]))]
-		     end
+	  | expCode (TupExp(_,longids)) = createTuple (longids, nil)
 
-	       | expCode (VarExp(_,id')) =
+	  | expCode (VarExp(_,id')) =
 		     [idCode id']
 
 	  | expCode (AdjExp _) = raise Error "seltsame operation adjexp"
 
-	  | expCode (SelExp(_,Lab(_,lab'))) =
+	  | expCode (SelExp(_,lab')) =
 		     (case LargeInt.fromString lab' of
-			 NONE =>
-			     [New CSelString,
-			      Dup,
-			      Ldc (JVMString lab'),
-			      Invokespecial (CSelString, "<init>",
-					     ([Classsig CString],[Voidsig]))]
-		       | SOME i =>
-			     [New CSelInt,
-			      Dup,
-			      atCodeInt i,
-			      Invokespecial (CSelInt, "<init>",
-					     ([Intsig],[Voidsig]))])
+			  NONE =>
+			      [New CSelString,
+			       Dup,
+			       Ldc (JVMString lab'),
+			       Invokespecial (CSelString, "<init>",
+					      ([Classsig CString],[Voidsig]))]
+			| SOME i =>
+			      [New CSelInt,
+			       Dup,
+			       atCodeInt i,
+			       Invokespecial (CSelInt, "<init>",
+					      ([Intsig],[Voidsig]))])
 
-			| expCode (ConExp (_, id', _)) =
-		     [idCode id']
+	  | expCode (ConExp (_, id', _)) =
+			  [idCode id']
 
-		   | expCode (ConAppExp (_, id', id'')) =
-		     [idCode id',
-		      idCode id'',
-		      Invokeinterface (CVal, "apply",
-				       ([Classsig CVal], [Classsig CVal]))]
+	  | expCode (ConAppExp (_, id', id'')) =
+			  [idCode id',
+			   idCode id'',
+			   Invokeinterface (CVal, "apply",
+					    ([Classsig CVal], [Classsig CVal]))]
 
-		   | expCode (SelAppExp (_, Lab (_,label'), id')) =
-		     let
-			 val afterthrow = Label.new ()
-		     in
-			 idCode id' ::
-			 Dup ::
-			 Instanceof CDMLTuple ::
-			 Ifne afterthrow ::
-			 Pop ::
-			 New CExWrap ::
-			 Dup ::
-			 Getstatic (Literals.insert
-				    (StringLit "Typfehler"),
-				    [Classsig CStr]) ::
-			 Invokespecial(CExWrap,"<init>",
-				       ([Classsig CVal],[Voidsig])) ::
-			 Athrow ::
-			 Label afterthrow ::
-			 Checkcast CDMLTuple ::
-			 (case LargeInt.fromString label' of
-			     NONE =>
-				 [Ldc (JVMString label'),
-				  Invokeinterface (CDMLTuple, "get",
-						   ([Classsig CString], [Classsig CVal]))]
-			   | SOME i =>
-				 [atCodeInt i,
-				  Invokeinterface (CDMLTuple, "get",
-						   ([Intsig], [Classsig CVal]))])
-		     end
+	  | expCode (SelAppExp (_, label', id')) =
+			  let
+			      val afterthrow = Label.new ()
+			  in
+			      idCode id' ::
+			      Dup ::
+			      Instanceof CDMLTuple ::
+			      Ifne afterthrow ::
+			      Pop ::
+			      New CExWrap ::
+			      Dup ::
+			      Getstatic (Literals.insert
+					 (StringLit "Typfehler"),
+					 [Classsig CStr]) ::
+			      Invokespecial(CExWrap,"<init>",
+					    ([Classsig CVal],[Voidsig])) ::
+			      Athrow ::
+			      Label afterthrow ::
+			      Checkcast CDMLTuple ::
+			      (case LargeInt.fromString label' of
+				   NONE =>
+				       [Ldc (JVMString label'),
+					Invokeinterface (CDMLTuple, "get",
+							 ([Classsig CString], [Classsig CVal]))]
+				 | SOME i =>
+				       [atCodeInt i,
+					Invokeinterface (CDMLTuple, "get",
+							 ([Intsig], [Classsig CVal]))])
+			  end
 	  | expCode e = raise Debug (Exp e)
 	and
     expCodeClass (OneArg id',body') =
