@@ -36,7 +36,7 @@ structure CodeStore :> CODE_STORE =
 	type classDeclsState = classDecl list ref
 	type regState =
 	    scope * index ref * index ref * IL.ty list ref * index list ref
-	type savedRegState = index list
+	type savedRegState = scope * index list
 	type instrsState = IL.instr list ref
 
 	val namespace: dottedname ref = ref nil
@@ -221,23 +221,26 @@ structure CodeStore :> CODE_STORE =
 		 case ScopedMap.lookup (scope, stamp) of
 		     SOME (Loc i) =>
 			 (emit (Comment ("kill " ^ Stamp.toString stamp));
-			  indicesRef := i::(!indicesRef))
+			  indicesRef := i::(!indicesRef);
+			  ScopedMap.deleteExistent (scope, stamp))
 		    | _ => emit (Comment ("nonlocal " ^ Stamp.toString stamp)))
 		set
 	    end
 
 	fun saveRegState () =
 	    let
-		val (_, _, _, (_, _, _, _, ref indices), _) = hd (!env)
+		val (_, _, _, (scope, _, _, _, ref indices), _) = hd (!env)
 	    in
-		indices
+		(ScopedMap.cloneScope scope, indices)
 	    end
 
-	fun restoreRegState indices =
+	fun restoreRegState (scope', indices') =
 	    let
-		val (_, _, _, (_, _, _, _, indicesRef), _) = hd (!env)
+		val (_, _, _, (scope, _, _, _, indicesRef), _) = hd (!env)
 	    in
-		indicesRef := indices
+		ScopedMap.appi (fn (stamp, reg) =>
+				ScopedMap.insert (scope, stamp, reg)) scope';
+		indicesRef := indices'
 	    end
 
 	fun args n = List.tabulate (n, fn _ => System.ObjectTy)
