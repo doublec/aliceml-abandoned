@@ -374,12 +374,16 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	taskStack->PushCall(pc->Sel(0));
 	Vector *actualIdRefs = Vector::FromWord(pc->Sel(1));
 	u_int nargs  = actualIdRefs->GetLength();
-	Block *pargs = Interpreter::TupArgs(nargs);
-	for (u_int i = nargs; i--; ) {
-	  word arg = GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
-	  pargs->InitArg(i, arg);
+	if (nargs == 0) {
+	  Scheduler::currentArgs = Interpreter::EmptyArg();
+	} else {
+	  Block *pargs = Interpreter::TupArgs(nargs);
+	  for (u_int i = nargs; i--; ) {
+	    word arg = GetIdRef(actualIdRefs->Sub(i), globalEnv, localEnv);
+	    pargs->InitArg(i, arg);
+	  }
+	  Scheduler::currentArgs = pargs->ToWord();
 	}
-	Scheduler::currentArgs = pargs->ToWord();
 	return Interpreter::CONTINUE;
       }
       break;
@@ -406,12 +410,16 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  {
 	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
 	    u_int nargs  = actualIdRefs->GetLength();
-	    Block *pargs = Interpreter::TupArgs(nargs);
-	    for (u_int i = nargs; i--; ) {
-	      pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
-					 globalEnv, localEnv));
+	    if (nargs == 0) {
+	      Scheduler::currentArgs = Interpreter::EmptyArg();
+	    } else {
+	      Block *pargs = Interpreter::TupArgs(nargs);
+	      for (u_int i = nargs; i--; ) {
+		pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
+					   globalEnv, localEnv));
+	      }
+	      Scheduler::currentArgs = pargs->ToWord();
 	    }
-	    Scheduler::currentArgs = pargs->ToWord();
 	    return Interpreter::CONTINUE;
 	  }
 	}
@@ -442,12 +450,16 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  {
 	    Vector *actualIdRefs = Vector::FromWord(actualArgs->Sel(0));
 	    u_int nargs  = actualIdRefs->GetLength();
-	    Block *pargs = Interpreter::TupArgs(nargs);
-	    for (u_int i = nargs; i--; ) {
-	      pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
-					 globalEnv, localEnv));
+	    if (nargs == 0) {
+	      Scheduler::currentArgs = Interpreter::EmptyArg();
+	    } else {
+	      Block *pargs = Interpreter::TupArgs(nargs);
+	      for (u_int i = nargs; i--; ) {
+		pargs->InitArg(i, GetIdRef(actualIdRefs->Sub(i),
+					   globalEnv, localEnv));
+	      }
+	      Scheduler::currentArgs = pargs->ToWord();
 	    }
-	    Scheduler::currentArgs = pargs->ToWord();
 	    return Interpreter::CONTINUE;
 	  }
 	}
@@ -732,12 +744,16 @@ AbstractCodeInterpreter::Run(word args, TaskStack *taskStack) {
 	  {
 	    Vector *returnIdRefs = Vector::FromWord(returnArgs->Sel(0));
 	    u_int nargs  = returnIdRefs->GetLength();
-	    Block *pargs = Interpreter::TupArgs(nargs);
-	    for (u_int i = nargs; i--; ) {
-	      pargs->InitArg(i, GetIdRef(returnIdRefs->Sub(i),
-					 globalEnv, localEnv));
+	    if (nargs == 0) {
+	      Scheduler::currentArgs = Interpreter::EmptyArg();
+	    } else {
+	      Block *pargs = Interpreter::TupArgs(nargs);
+	      for (u_int i = nargs; i--; ) {
+		pargs->InitArg(i, GetIdRef(returnIdRefs->Sub(i),
+					   globalEnv, localEnv));
+	      }
+	      Scheduler::currentArgs = pargs->ToWord();
 	    }
-	    Scheduler::currentArgs = pargs->ToWord();
 	    return Interpreter::CONTINUE;
 	  }
 	}
