@@ -72,7 +72,90 @@
   <P>
     Denys did not want to participate at first ("Uh, I have these important
     deadlines..."), but then somehow got hooked by the problem - which was
-    very good because of his expertise in constraints! :-)
+    very good because of his expertise in constraints! :-) For Andreas and Leif
+    the contest days were kind of a crash course into the deeper secrets of
+    using advanced constraint techniques...
+  </P>
+
+
+<?php section("description", "description") ?>
+
+  <P>
+    Our entry is hybrid <A href="/alice/">Alice</A>/<A
+    href="http://www.mozart-oz.org">Oz</A> program that uses a constraint
+    programming approach to tackle the problem.
+  </P>
+
+  <P>
+    First we parse the input, of course. The parser removes redundant spaces
+    and constructs a compact representation of the document's meaning, where
+    input characters have been grouped into strings with equal or compatible
+    properties. It also calculates the <I>cost</I> of the input document (see
+    below). Moreover, it constructs a simple version of the document that can
+    be output in case we do not find a better solution in time (essentially the
+    input with whitespace compression). Then we try to construct a cheaper
+    document out of the meaning.
+  </P>
+
+  <P>
+    The main idea of our approach is as follows: An SML/NG document essentially
+    represents a tree with the tags being inner nodes and the actual text (or
+    the meaning) being its leaves. The root is a special node without a tag.
+    All nodes can be annotated by a property record: the root's property is the
+    initial context, an inner node's property is the context implied by its
+    parents, and a leaf's property is determined by the document meaning. We
+    can also assign a cost value to each inner node, corresponding to the
+    textual length of its tag. The problem now is to find a tree with minimal
+    total cost that has consistent property annotations. An upper bound for the
+    cost (and thus the number of inner nodes) is the one calculated for the
+    input document.
+  </P>
+
+  <P>
+    To find such a tree we create a set of constraint variables representing
+    the nodes of the tree, their relations, and their annotations and impose
+    appropriate constraints ensuring properties like treeness, consistency of
+    annotations, and correct meaning. In order to reduce the search space to a
+    tractable size additional redundant constraints are necessary. They are needed
+    to maximize propagation and thus minimize search. The main difficulty is to
+    find suitable constraints for this purpose that interact in useful ways and
+    are well-suited to a bottom-up search strategy (which is best
+    for this particular problem since we only know about the leaves). We relied
+    on the following kinds of constraints (the latter two are unique to the
+    Mozart system):
+  </P>
+
+  <UL>
+    <LI> Finite Domain Constraints </LI>
+    <LI> Finite Set Constraints </LI>
+    <LI> Selection Constraints </LI>
+    <LI> Sequenced Union Constraints (that part did not make it into the
+         submission, though) </LI>
+  </UL>
+
+  <P>
+    A detailed formal description of our problem formulation with constraints
+    is available as a <A href="readme.ps">Postscript document</A>.
+  </P>
+
+  <P>
+    Unfortunately, the constraint set used in the submission is much too weak to
+    really reduce the search space to a tractable size for realistic input.
+    Though we had a lot of ideas for additional constraints we could not
+    implement them in time (a few are mentioned in the Postscipt doc). As a
+    consequence, the submitted entry is likely to behave rather badly on large
+    inputs :-(
+  </P>
+
+  <P>
+    Since the size of the search space can still be exponential in the cost of
+    the input even with good propagation, large documents are split into
+    several parts. For each part we concurrently search for a good solution
+    until the timeout is reached (with bad impact on memory consumption - some
+    scheduling in a round robin fashion would have been much much better...).
+    When we do not find any solution for some part we use the simple one with
+    white space compression only which is constructed by the parser. Otherwise
+    we use the best solution we found so far.
   </P>
 
 
@@ -95,67 +178,6 @@
     href="http://www.ps.uni-sb.de/~duchier/mogul/info/duchier/select.html">
     selection constraint module</A> which can be found in the <A
     href="http://www.mozart-oz.org/mogul/">MOGUL archive</A> for Mozart.
-  </P>
-
-
-<?php section("description", "description") ?>
-
-  <P>
-    Our entry is hybrid <A href="/alice/">Alice</A>/<A
-    href="http://www.mozart-oz.org">Oz</A> program that uses a constraint
-    programming approach to tackle the problem.
-  </P>
-
-  <P>
-    The main idea of our approach is as follows: An SML/NG document essentially
-    represents a tree with the tags being inner nodes and the actual text (or
-    the meaning) being its leaves. The root is a special node without a tag. All
-    nodes can be annotated by a property record: the root's property is the
-    initial context, an inner node's property is the context implied by its
-    parents, and a leaf's property is determined by the document meaning. We
-    can also assign a cost value to each inner node, corresponding to the
-    textual length of its tag. The problem now is to find a tree with minimal
-    total cost that has consistent property annotations. An upper bound for the
-    cost (and thus the number of inner nodes) can be calculated from the input
-    document.
-  </P>
-
-  <P>
-    To find such a tree we create a set of constraint variables representing
-    the nodes of the tree, their relations, and their annotations and impose
-    appropriate constraints ensuring properties like treeness, consistency of
-    annotations, and correct meaning. In order to reduce the search space to a
-    tractable size additional redundant constraints are necessary. They are needed
-    to maximize propagation and thus minimize search. The main difficulty is to
-    find suitable constraints for this purpose that interact in useful ways and
-    well-suited to a bottom-up search strategy (which is best-suited
-    for this particular problem since we only know about the leaves).
-    Unfortunately, we had a lot of ideas for additional constraints that we
-    could not implement due to the lack of time. As a consequence, the
-    submitted entry is by no means optimal.
-  </P>
-
-  <P>
-    A detailed formal description of our problem formulation with constraints
-    is available as a <A href="readme.ps">Postscript document</A>. It also
-    contains some, but not all of the ideas we had no time to implement.
-  </P>
-
-  <P>
-    In the constraint formulation we assume that redundant spaces have already
-    been removed and input characters have been grouped into strings with equal
-    or compatible properties. This is all done by the parser which thereby
-    constructs a compact representation of the input document's meaning.
-  </P>
-
-  <P>
-    Since the size of the search space is at least polynomial in the cost of
-    the input even with good propagation, large documents are split into
-    several parts. For each part we concurrently search for a good solution
-    until the timeout is reached. When we do not find any solution for some
-    part we use the simple one with white space compression only which is
-    constructed by the parser. Otherwise we use the best solution we found so
-    far.
   </P>
 
 
