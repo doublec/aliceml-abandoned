@@ -16,6 +16,10 @@
 (*   - alternative and guarded patterns:					*)
 (*	  atpat ::= ( pat_1 | ... | pat_n )	(n>=2)				*)
 (*	  pat   ::= pat when atexp		(L)				*)
+(*   - negated patterns:							*)
+(*	  pat ::= non pat							*)
+(*   - with patterns:								*)
+(*	  pat ::= pat with dec end						*)
 (*   - open datatypes (exception declarations become a derived form),		*)
 (*     constructor synonym specifications:					*)
 (*        dec      ::= con dconbind						*)
@@ -125,7 +129,7 @@
 	| RAISE | REC | THEN | TYPE | VAL | WITH | WITHTYPE | WHILE
 	| LPAR | RPAR | LBRACK | RBRACK | LBRACE | RBRACE | COMMA | COLON
 	| SEMICOLON | DOTS | UNDERBAR | BAR | EQUALS | DARROW | ARROW | HASH
-	| CON | WHEN | DOT | HASHBRACK
+	| CON | NON | WHEN | DOT | HASHBRACK
 
 	(* Additional reserved words for the modules language *)
 	| EQTYPE | FUNCTOR | INCLUDE | SHARING | SIG
@@ -145,7 +149,7 @@
 	 RAISE REC THEN TYPE VAL WITH WITHTYPE WHILE
 	 EQTYPE FUNCTOR INCLUDE SHARING SIG
 	 SIGNATURE STRUCT STRUCTURE WHERE
-	 CON WHEN
+	 CON NON WHEN
 
 %eop     EOF
 %noshift EOF
@@ -166,7 +170,9 @@
 %right ORELSE
 %right ANDALSO
 %left  WHEN
+%left  WITH
 %right AS
+%right NON		(* L/R is arbitrary *)
 %left  COLON
 %right ARROW
 
@@ -783,9 +789,12 @@
   pat:
 	  infpat	( infpat )
 	| pat COLON ty	( TYPEDPat(I(patleft,tyright), pat, ty) )
+	| NON pat	( NONPat(I(NONleft,patright), pat) )
 	| pat AS pat	( ASPat(I(pat1left,pat2right), pat1, pat2) )
 	| pat WHEN atexp
 			( WHENPat(I(patleft,atexpright), pat, atexp) )
+	| pat WITH dec END
+			( WITHPat(I(patleft,ENDright), pat, dec) )
 
 
 

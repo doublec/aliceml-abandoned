@@ -11,6 +11,7 @@
  *   - #[ keyword for vector expressions
  *   - CON keyword for constructor declarations
  *   - WHEN keyword for guarded patterns
+ *   - NON keyword added for negated patterns
  *
  * Notes:
  *   Since all lexical classes must be disjoint:
@@ -292,6 +293,7 @@
   <INITIAL>"infixr"	=> ( token(INFIXR,    yypos, yytext) );
   <INITIAL>"let"	=> ( token(LET,       yypos, yytext) );
   <INITIAL>"local"	=> ( token(LOCAL,     yypos, yytext) );
+  <INITIAL>"non"	=> ( token(NON,       yypos, yytext) );
   <INITIAL>"nonfix"	=> ( token(NONFIX,    yypos, yytext) );
   <INITIAL>"of"		=> ( token(OF,        yypos, yytext) );
   <INITIAL>"op"		=> ( token(OP,        yypos, yytext) );
