@@ -98,7 +98,7 @@ so that you can refer to them in consecutive inputs:</P>
 val it : unit = ()</I></PRE>
 
 <P>In the rest of this tour we will present program fragments in their pure
-form, without showing the interpreter prompt or the semicolon terminating the
+form, without showing the interactive prompt or the semicolon terminating the
 interactive input. For example, the last interaction will be displayed simply
 as</P>
 
@@ -121,6 +121,9 @@ integers to integers. We can apply that function:</P>
 <PRE class=code>
 fac 50
 <I>val it : int = 30414093201713378043612608166064768844377641568960512000000000000</I></PRE>
+
+
+<?php subsection("interactive-inspector", "The Inspector") ?>
 
 <P>For more complex values, the static output of the result is often
 insufficient. The Alice system includes the <A
@@ -188,8 +191,8 @@ val x = lazy 4+5
 <I>val x : int = lazy</I></PRE>
 
 <P>Lazy suspensions are represented by the <TT>lazy</TT> keyword in the
-interpreter's output, as shown above. The value of <TT>x</TT> will not be
-computed before it is actually required. For example,</P>
+interactive toplevel's output, as shown above. The value of <TT>x</TT> will not
+be computed before it is actually required. For example,</P>
 
 <PRE class=code>
 (x,x)
@@ -361,6 +364,9 @@ Inspector window might display the following:</P>
 
 <P align=center><IMG src="inspector-conc-3.jpg" border=0 alt="Alice Inspector"></P>
 
+
+<?php subsection("concurrency-sync", "Data-flow synchronization") ?>
+
 <P>Futures can be passed around like ordinary values. Once an operation
 actually <EM>requests</EM> the value the future stands for, the corresponding
 thread will block until the future vanishes. This is known as <EM>data-flow
@@ -385,6 +391,9 @@ spawn consume (produce 5)
 
 <!-- TODO: Reference? -->
 
+
+<?php subsection("concurrency-failure", "Failed futures") ?>
+
 <P>What happens if a concurrent computation fails, e.g. by raising an exception?
 In that case the future will be <EM>failed</EM>. A failed future carries an
 exception indicating the cause of the failure. A failed future does not cause
@@ -399,8 +408,8 @@ spawn (raise Domain)
 hd it + 1
 <I>uncaught exception Domain</I></PRE>
 
-<P>In the second output, the interpreter uses the keyword <TT>raise</TT> to
-indicate a failed future.</P>
+<P>In the second output, the interactive toplevel uses the keyword
+<TT>raise</TT> to indicate a failed future.</P>
 
 <P>See the <A href="futures.html">manual page</A> on futures for a detailed
 discussion of concurrency, futures, and failure.</P>
@@ -539,110 +548,357 @@ href="#distribution">distribution</A>.</P>
 
 <?php section("pickling", "pickling") ?>
 
-<PRE class=code>
-(*
- * Pickling and unpickling of an abstract type.
- * The unpickled type is compatible with the original one.
- *)
+<P>Applications rarely run in isolation. Many applications need to exchange
+data with other applications, or make data persistent between runs.
+Consequently, it should be possible to export and import data from processes.
+Export of language data structures is often known as <EM>serialization</EM>, or
+<EM>pickling</EM>.<P>
 
+<P>Alice provides high-level support for pickling. Arbitrary data structures may
+be pickled. Pickles are platform-independent and are hence suitable for exchange
+across heterogenous networks, especially the Internet.</P>
+
+<P>Since Alice ML is a functional language with first-class functions, pickling
+is not restricted to conventional data but naturally includes the ability to
+pickle functions. Like with other data, pickles containing functions are
+platform-independent. This enables processes to exchange arbitrary procedures,
+i.e. code.</P>
+
+<P>The pickling library is based on <A href="#packages">packages</A>.
+Consequently, the entities of import/export are modules. This implies that even
+types and signatures can be exchanged between processes. Consider a very simple
+abstract type as an example:</P>
+
+<PRE class=code>
 signature NUM =
-    sig
-	type t
-	fun fromInt : int -> t
-	fun toInt : t -> int
-	fun add : t * t -> t
-    end
-
+sig
+    type t
+    fun fromInt : int -> t
+    fun toInt   : t -> int
+    fun add     : t * t -> t
+end
+<I>signature NUM =
+   sig
+      type t
+      val fromInt : int -> t
+      val toInt : t -> int
+      val add : t * t -> t
+   end</I>
 structure Num :> NUM =
-    struct
-	type t = int
-	fun toInt n   = n
-	fun fromInt n = n
-	val add       = op+
-    end
+struct
+    type t = int
+    fun toInt n   = n
+    fun fromInt n = n
+    val add       = op+
+end
+<I>structure Num : NUM</I></PRE>
 
-val file = "Num." ^ Pickle.extension
-structure  _ = Pickle.Save(val file = file
-			   structure X = Num
-			   signature S = NUM where type t = Num.t)
-
-structure Num' = Pickle.Load(val file = file
-			     signature S = NUM where type t = Num.t)
-structure Num'' = Pickle.Load(val file = file
-			      signature S = NUM)
-
-Num'.add(Num'.fromInt 1, Num.fromInt 2);
-
-Num''.add(Num''.fromInt 1, Num.fromInt 2); (* error *)
-</PRE>
+<P>A package can be formed from this structure and be written to a file:</P>
 
 <PRE class=code>
-(*
- * Pickling of functors.
- *)
+Pickle.save ("Num." ^ Pickle.extension, pack Num :> NUM)
+<I>val it : unit = ()</I></PRE>
 
-val file = "Hello." ^ Pickle.extension
+<P>To recover the structure in another (or the same) process, one simply
+executes the inverse operation:</P>
 
+<PRE class=code>
+structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM
+<I>structure Num' : NUM</I>
+Num'.toInt (Num'.add (Num'.fromInt 4, Num'.fromInt 5))
+<I>val it : int = 9</I></PRE>
+
+<P>Note that the type <TT>Num'.t</TT> is incompatible with the original type
+<TT>Num.t</TT>:</P>
+
+<PRE class=code>
+Num'.add (Num.fromInt 4, Num.fromInt 5)
+<I>1.0-1.39: argument type mismatch:
+   t * t
+does not match argument type
+   Num'.t * Num'.t
+because type
+   Num.t
+does not unify with
+   Num'.t</I></PRE>
+
+<P>The reason is that the <TT>pack</TT> operation performs an additional type
+abstraction - as indicated by the <TT>:></TT> operator. Consequently, the
+package will contain a fresh type <TT>t</TT>. The usual means of expressing
+type sharing can be used if that is not desired:</P>
+
+<PRE class=code>
+Pickle.save ("Num." ^ Pickle.extension, pack Num :> (NUM where type t = Num.t))
+<I>val it : unit = ()</I></PRE>
+
+<P>The package written here has a type <TT>t</TT> compatible to the original
+type <TT>Num.t</TT> and can hence be unpacked as</P>
+
+<PRE class=code>
+structure Num' = unpack Pickle.load ("Num." ^ Pickle.extension) : NUM where type t = Num.t
+<I>structure Num' : 
+   sig
+      type t = Num.t
+      val fromInt : int -> Num.t
+      val toInt : Num.t -> int
+      val add : Num.t * Num.t -> Num.t
+   end</I></PRE>
+
+<P>The result signature already indicates the type sharing, making legal</P>
+
+<PRE class=code>
+Num'.add (Num.fromInt 4, Num.fromInt 5)
+<I>val it : Num'.t = val</I></PRE>
+
+<P>Note however, that the type <TT>Num'.t</TT> is still abstract and
+incompatible to <TT>int</TT>:</P>
+
+<PRE class=code>
+Num'.add (4, 5)
+<I>v1.0-1.15: argument type mismatch:
+   int * int
+does not match argument type
+   Num'.t * Num'.t
+because type
+   int
+does not unify with
+   Num'.t</I></PRE>
+
+<!--
+<?php subsection("pickling-functors", "Pickling functors") ?>
+
+<P>Since Alice supports <A href="modules.html#higher">higher-order modules</A>,
+functors can be pickled as well:</P>
+
+<PRE class=code>
 functor MkHello(val who : string) =
-    struct
-	val s = "Hello " ^ who ^ "!\n"
-    end
-
+struct
+    val _ = print ("Hello " ^ who ^ "!\n")
+end
+<I>functor MkHello : fct(_id2 : sig val who : string end) -> sig end</I>
 signature MK_HELLO = fct(val who : string) -> sig val s : string end
+<I>signature MK_HELLO =
+   fct(_id3 : sig val who : string end) -> sig val s : string end</I>
+Pickle.save ("MkHello." ^ Pickle.extension, pack MkHello :> MK_HELLO)
+<I>val it : unit = ()</I></PRE>
+-->
 
-structure _        = Pickle.Save(val file = file
-				 structure X = MkHello
-				 signature S = MK_HELLO)
-structure MkHello' = Pickle.Load(val file = file signature S = MK_HELLO)
+<!--
+<?php subsection("pickling-sigs", "Unpickling modules with dynamic signatures") ?>
 
-structure Hello    = MkHello'(val who = "World")
-val       _        = print(Hello.s)
-</PRE>
-
+<P>Due to Alice' <A href="modules.html#sigmembers">nested signatures</A> it is
+even possible to load pickles whose signature is statically unknown, as long as
+that signature is dynamically available:</P>
 
 <PRE class=code>
-(*
- * Pickling of signatures.
- * Signatures are first-class and can be pickled.
- * We can load pickles with statically unknown signatures.
- *)
-
 val sigfile = "Sig." ^ Pickle.extension
 val modfile = "Mod." ^ Pickle.extension
 
-signature T      = fct(_ : any) -> sig    type t       end
-structure X :> T = fct(_ : any) => struct type t = int end
+signature X      = sig    type t       end
+structure X :> X = struct type t = int end
 
-structure  _  = Pickle.Save(val file = modfile
-structure X = X signature S = T)
+Pickle.save (modfile, pack X :> X)
+Pickle.save (sigfile, pack (signature S = X) :> (signature S))
 
-structure  _  = Pickle.Save(val file = sigfile
-			    structure X = (signature U = T)
-			    signature S = (signature U))
-structure Sig = Pickle.Load(val file = sigfile
-			    signature S = (signature U))
-structure Mod = Pickle.Load(val file = modfile
-			    signature S = Sig.U)
+structure Sig = unpack Pickle.load sigfile : (signature S)
+structure Mod = unpack Pickle.load modfile : Sig.S
 </PRE>
+-->
+
+<P>See the <A href="pickling.html">manual page</A> on pickling for more detail
+on the semantics of pickling.</P>
 
 
 <?php section("components", "components") ?>
 
-<PRE class=code>
-alicec MY_COMPONENT-sig.aml
-alicec MyComponent.aml</PRE>
+<P>Alice introduces the notion of <EM>component</EM> as the unit of
+compilation, as well as deployment. Superficially, a component contains a
+module that imports modules from other components to perform its job. An
+application will consist of a set of components with one designated "main"
+component.</P>
+
+<P>Consider the following trivial component:</P>
 
 <PRE class=code>
-import "/home/kornstae/stockhausen/doc/samples/MyComponent"
-</PRE>
+(* Fac.aml *)
+
+structure Fac =
+struct
+    val _ = print "Evaluating component Fac...\n"
+
+    fun fac 0 = 1
+      | fac n = n * fac (n-1)
+end</PRE>
+
+<P>We can compile it invoking the Alice <A href="compiler.html">batch
+compiler</A> from a shell:</P>
 
 <PRE class=code>
-import structure MyComponent from "/home/kornstae/stockhausen/doc/samples/MyComponent"
-</PRE>
+alicec Fac.aml</PRE>
+
+<P>If the interactive toplevel has been started in the same directory, the
+compiled component can be imported interactively:</P>
 
 <PRE class=code>
-Inspector.inspect (MyComponent.fak 7);
-</PRE>
+import "Fac"
+<I>### loaded signature from file:/home/user/Fac
+structure Fac : sig val fac : int -> int end = Fac</I></PRE>
+
+<P>Loading is performed lazily: the interactive toplevel will load the
+signature from the component file, but it will not yet evaluate (execute) the
+component. This is appearent from the fact that the message contained in the
+structure has not been printed in the above example. The component will be
+evaluated when its content is first requested:</P>
+
+<PRE class=code>
+Fac.fac 23
+<I>Evaluating component Fac...
+val it : int = 25852016738884976640000</I>
+Fac.fac 46
+<I>val it : int = 5502622159812088949850305428800254892961651752960000000000</I></PRE>
+
+<P>Let us write a little application using the <TT>Fac</TT> component. We simply
+implement an appropriate main component:</P>
+
+<PRE class=code>
+(* Main.aml *)
+
+import structure Fac from "Fac"
+
+structure Main =
+struct
+    fun main () =
+	let
+	    val _ = TextIO.print "Input number: "
+	    val n = valOf (Int.fromString (TextIO.inputLine TextIO.stdIn))
+	in
+	    TextIO.print (Int.toString (Fac.fac n) ^ "\n"); 
+	    OS.Process.exit OS.Process.success
+	end
+	handle _ => (TextIO.print "error\n"; OS.Process.exit OS.Process.failure)
+
+    val _ = main ()
+end</PRE>
+
+<P>This component imports the structure from the previous component by using an
+<EM>import announcement</EM>. Every component can be headed by an arbitrary
+number of such import announcements. The <TT>Main</TT> component is compiled as
+before:</P>
+
+<PRE class=code>
+alicec Main.aml</PRE>
+
+<P>Note that the compiler needs to access all compiled components that are
+imported, in order to perform its type checking (that also is the reason why the
+interactive toplevel had to load the signature of component <TT>Fac</TT>). We
+can run our little application using the Alice <A href="machine.html">virtual
+machine</A>:</P>
+
+<PRE class=code>
+alicerun Main
+<I>Input number: </I>34
+<I>Evaluating component Fac...
+295232799039604140847618609643520000000</I></PRE>
+
+<P>You can again observe that imports are performed lazily. If the <TT>Fac</TT>
+component is never accessed, it will not be loaded at all:</P>
+
+<PRE class=code>
+alicerun Main
+<I>Input number: </I>gnalp
+<I>error</I></PRE>
+
+
+<?php subsection("components-typechecking", "Link-time type checking") ?>
+
+<P>A component carries its signature and the signatures of all its imports. You
+can inspect them using the Alice <A href="linker.html">linker</A>:</P>
+
+<PRE class=code>
+alicelink -d Main
+<I>import
+   structure TextIO :
+      sig
+         type instream
+         val inputLine : instream -> string
+         val stdIn : instream
+	 val print : string -> unit
+      end
+from "x-alice:/lib/system/TextIO"
+import
+   structure OS :
+      sig
+         structure Process :
+            sig
+               type status
+               val success : status
+               val failure : status
+               val exit : status -> 'a
+            end
+      end
+from "x-alice:/lib/system/OS"
+import structure Fac : sig val fac : int -> int end from "Fac"
+structure Main : sig val main : unit -> 'a end</I></PRE>
+
+<P>The output first lists all imports required by the component (which includes
+necessary parts of the <A href="library/index.html">library</A>) and then the
+signature of its own export - in this case the last line. Note that import
+locations are actually denoted by URLs. In this tutorial we will only make use
+of file URLs, but components can actually be imported from arbitrary
+locations via HTTP or FTP protocol.</P>
+
+<P>Before a component is evaluated at runtime, its export signature is matched
+against the import signature of the component that imports and requests it. If
+that match fails, all references to items from the component are replaced by
+failed futures. We can observe this if we modify and recompile our <TT>Fac</TT>
+component in an incompatible way without adapting <TT>Main</TT>:
+
+<PRE class=code>
+(* Fac.aml modified *)
+
+structure Fac =
+struct
+    val _ = print "Evaluating component Fac...\n"
+
+    fun fac (0,n) = n
+      | fac (i,n) = fac (i-1, i*n)   (* tail-recursive *)
+end</PRE>
+
+<P>An attempt to run the application without adapting <TT>Main</TT> properly
+will cause a runtime failure:</P>
+
+<PRE class=code>
+alicec Fac.aml
+alicerun Main
+<I>Input number: </I>20
+<I>error</I></PRE>
+
+<P>An application that strives to be robust against such failures should handle
+the corresponding exceptions. See the <A href="components.html">manual
+pages</A> on components for more details.</P>
+
+<P>A way to avoid such errors is to statically <EM>link</EM> all components of
+the application using the <A href="linker.html">static linker</A>:</P>
+
+<PRE class=code>
+alicelink --include ./ ./Main -o LinkedMain.ozf</PRE>
+
+<P>The linker verifies that all import/export signatures are compatible and
+builds a new component that bundles all components that are directly or
+indirectly imported by the <EM>root component</EM> given on the command line
+(in this case, <TT>Main</TT>) <EM>and</EM> that match the include pattern
+specified. See the <A href="linker.html">manual page</A> for detail.</P>
+
+
+<?php subsection("components-pickles", "Relation to pickling") ?>
+
+<P>There is a close connection between components and pickles. Actually, they
+are interchangable: a pickle containing a structure can be imported as a
+component; a component can be loaded as a pickle. The latter will automatically
+evaluate the component.</P>
+
+<P>That close connection allows us to precompute data by writing a component
+that computes it and writes it into an appropriate pickle.</P>
 
 <PRE class=code>
 (*
@@ -788,6 +1044,9 @@ techniques. For a more thorough introduction to constraint programming, we
 refer to the Oz <A href="http://www.mozart-oz.org/documentation/fdt/">Finite
 Domain Constraint Programming Tutorial</A>. All constraint programming
 functionality from Oz is available in Alice.</P>
+
+
+<?php subsection("constraints-example", "Example") ?>
 
 <P>As a simple example of a complete program solving a finite domain problem,
 consider the <I>Send More Money</I> problem. It consists in finding distinct
