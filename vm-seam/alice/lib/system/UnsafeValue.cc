@@ -178,10 +178,11 @@ DEFINE3(UnsafeValue_projTagged) {
 
 DEFINE1(UnsafeValue_con) {
   DECLARE_CONVAL(conVal, x0);
-  Constructor *constructor =
-    conVal->IsConVal()? conVal->GetConstructor():
-    static_cast<Constructor *>(static_cast<Block *>(conVal));
-  RETURN(constructor->ToWord());
+  if (conVal->IsConVal()) {
+    RETURN(conVal->GetConstructor()->ToWord());
+  } else {
+    RETURN(conVal->ToWord());
+  }
 } END
 
 DEFINE3(UnsafeValue_projConstructed) {
@@ -277,8 +278,12 @@ DEFINE1(UnsafeValue_prim) {
 } END
 
 DEFINE1(UnsafeValue_conName) {
-  DECLARE_CONSTRUCTOR(constructor, x0);
-  String *name = constructor->GetName();
+  DECLARE_BLOCK(constructor, x0);
+  String *name;
+  if (constructor->GetLabel() == UNIQUESTRING_LABEL)
+    name = UniqueString::FromWordDirect(constructor->ToWord())->ToString();
+  else
+    name = Constructor::FromWordDirect(constructor->ToWord())->GetName();
   TagVal *exId = TagVal::New(Types::ExId, 1);
   exId->Init(0, name->ToWord());
   RETURN(exId->ToWord());

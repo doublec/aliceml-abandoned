@@ -367,10 +367,10 @@ DEFINE1(UnsafeIODesc_openAppend) {
 
 word UnsafeIODesc() {
   SysErrConstructor =
-    UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
+    UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
   ClosedStreamConstructor =
-    UniqueConstructor::New(String::New("IO.ClosedStream"))->ToWord();
+    UniqueConstructor::New("ClosedStream", "IO.ClosedStream")->ToWord();
   RootSet::Add(ClosedStreamConstructor);
 
   Record *record = Record::New(32);

@@ -289,7 +289,7 @@ DEFINE1(UnsafeSocket_close) {
 word UnsafeSocket() {
   //--** to be done: Windows Socket startup moved to UnsafeIO.cc
   SysErrConstructor =
-    UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
+    UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
   Record *record = Record::New(8);
   INIT_STRUCTURE(record, "UnsafeSocket", "server",

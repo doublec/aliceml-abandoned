@@ -59,7 +59,7 @@ static word MakeNativeError() {
   String *s = String::New(msg? msg: "no error");
 #endif
   ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(NativeConstructor), 1);
+    ConVal::New(Store::DirectWordToBlock(NativeConstructor), 1);
   conVal->Init(0, s->ToWord());
   return conVal->ToWord();
 }
@@ -69,7 +69,7 @@ static word MakeNativeError() {
 //
 DEFINE3(UnsafeComponent_Mismatch) {
   ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(MismatchConstructor), 3);
+    ConVal::New(Store::DirectWordToBlock(MismatchConstructor), 3);
   conVal->Init(0, x0);
   conVal->Init(1, x1);
   conVal->Init(2, x2);
@@ -78,14 +78,14 @@ DEFINE3(UnsafeComponent_Mismatch) {
 
 DEFINE1(UnsafeComponent_Eval) {
   ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(EvalConstructor), 1);
+    ConVal::New(Store::DirectWordToBlock(EvalConstructor), 1);
   conVal->Init(0, x0);
   RETURN(conVal->ToWord());
 } END
 
 DEFINE2(UnsafeComponent_Failure) {
   ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(FailureConstructor), 2);
+    ConVal::New(Store::DirectWordToBlock(FailureConstructor), 2);
   conVal->Init(0, x0);
   conVal->Init(1, x1);
   RETURN(conVal->ToWord());
@@ -93,7 +93,7 @@ DEFINE2(UnsafeComponent_Failure) {
 
 DEFINE1(UnsafeComponent_Native) {
   ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(NativeConstructor), 1);
+    ConVal::New(Store::DirectWordToBlock(NativeConstructor), 1);
   conVal->Init(0, x0);
   RETURN(conVal->ToWord());
 } END
@@ -172,19 +172,19 @@ DEFINE1(UnsafeComponent_unpack_) {
 
 word UnsafeComponent() {
   NotFoundConstructor =
-    UniqueConstructor::New(String::New("UnsafeComponent.NotFound"))->ToWord();
+    UniqueConstructor::New("NotFound", "UnsafeComponent.NotFound")->ToWord();
   RootSet::Add(NotFoundConstructor);
   MismatchConstructor =
-    UniqueConstructor::New(String::New("UnsafeComponent.Mismatch"))->ToWord();
+    UniqueConstructor::New("Mismatch", "UnsafeComponent.Mismatch")->ToWord();
   RootSet::Add(MismatchConstructor);
   EvalConstructor =
-    UniqueConstructor::New(String::New("UnsafeComponent.Eval"))->ToWord();
+    UniqueConstructor::New("Eval", "UnsafeComponent.Eval")->ToWord();
   RootSet::Add(EvalConstructor);
   FailureConstructor =
-    UniqueConstructor::New(String::New("UnsafeComponent.Failure"))->ToWord();
+    UniqueConstructor::New("Failure", "UnsafeComponent.Failure")->ToWord();
   RootSet::Add(FailureConstructor);
   NativeConstructor =
-    UniqueConstructor::New(String::New("UnsafeComponent.Native"))->ToWord();
+    UniqueConstructor::New("Native", "UnsafeComponent.Native")->ToWord();
   RootSet::Add(NativeConstructor);
 
   Record *record = Record::New(21);

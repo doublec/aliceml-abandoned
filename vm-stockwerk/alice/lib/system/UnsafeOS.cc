@@ -140,7 +140,7 @@ DEFINE1(UnsafeOS_FileSys_readLink) {
   // raise SysErr unconditionally
   name = name;
   ConVal *sysErr =
-    ConVal::New(Constructor::FromWordDirect(SysErrConstructor), 2);
+    ConVal::New(Store::DirectWordToBlock(SysErrConstructor), 2);
   sysErr->Init(0, String::New("symbolic links not supported")->ToWord());
   sysErr->Init(1, Store::IntToWord(Types::NONE));
   RAISE(sysErr->ToWord());
@@ -332,7 +332,7 @@ static word UnsafeOS_Process() {
 //
 
 DEFINE2(UnsafeOS_SysErr) {
-  Constructor *ccVal = Constructor::FromWord(SysErrConstructor);
+  Block *ccVal = Store::DirectWordToBlock(SysErrConstructor);
   ConVal *conVal = ConVal::New(ccVal, 2);
   conVal->Init(0, x0);
   conVal->Init(1, x1);
@@ -346,7 +346,7 @@ DEFINE1(UnsafeOS_errorMsg) {
 
 word UnsafeOS() {
   SysErrConstructor =
-    UniqueConstructor::New(String::New("OS.SysErr"))->ToWord();
+    UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);
   wBufferString = String::New(1024)->ToWord();
   RootSet::Add(wBufferString);
