@@ -6,7 +6,7 @@ OZHOME = /opt/mozart-1.1.1
 OZC = ozc
 OZL = ozl
 
-NATIVESOURCES = IO TextIO OS Unix CommandLine Debug
+NATIVESOURCES = IO TextIO OS Unix CommandLine Pickle Debug
 NATIVEFILES = $(NATIVESOURCES:%=lib/%.ozf)
 
 LIBSOURCES = Base.sml $(NATIVESOURCES:%=%.ozf.sig)
@@ -79,12 +79,12 @@ ALLFILES = \
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib
 INSTALLFILES0 = stoc.ozf Base.import
 INSTALLBINFILES0 = stoc stow
-INSTALLLIBFILES0 = \
-	Base.ozf $(NATIVESOURCES:%=%.ozf) $(NATIVESOURCES:%=%.ozf.sig)
+INSTALLLIBFILES0 = Base.ozf IO.ozf TextIO.ozf OS.ozf Unix.ozf CommandLine.ozf
 INSTALLFILES = \
 	$(INSTALLFILES0:%=$(PREFIX)/%) \
 	$(INSTALLBINFILES0:%=$(PREFIX)/bin/%) \
-	$(INSTALLLIBFILES0:%=$(PREFIX)/lib/%) \
+	$(INSTALLLIBFILES0:%=$(PREFIX)/lib/%)
+MINIMALINSTALL = $(PREFIX)/bin/stoc $(PREFIX)/bin/stow $(PREFIX)/stoc.ozf
 
 .PHONY: all install clean
 
@@ -157,15 +157,18 @@ install: all $(INSTALLDIRS) $(INSTALLFILES)
 $(INSTALLDIRS):
 	mkdir -p $@
 
-$(PREFIX)/%: %
+$(INSTALLFILES0:%=$(PREFIX)/%): $(PREFIX)/%: %
 	install -c -m 444 $< $@
 
 $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@
 
-$(PREFIX)/lib/%: lib/%
-	install -c -m 444 $< $@
+$(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
+	$(PREFIX)/bin/stoc --nobaseimport $< $@
+
+$(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
+	$(PREFIX)/bin/stoc --replacesign $< $<.sig $@
 
 clean:
 	-rm -f $(ALLFILES)
-	-rm -f */*.ozf */*/*.ozf stoc-mozart
+	-rm -f *.ozf */*.ozf */*/*.ozf
