@@ -382,7 +382,7 @@ struct
 		       =>  Update.reinspect(n,
 					    CreateTree.createTree,
 					    CreateTree.createTreeInf,
-					    !canvasroot))
+					    !canvas))
 	
 	 
      (* handles reinspect request *)
@@ -407,7 +407,7 @@ struct
 			     else Update.foldDepth(n,diff-1,
 						   CreateTree.createTree,
 						   CreateTree.createTreeInf,
-						   !canvasroot)
+						   !canvas)
 			 end
 		  val selection_node = getSelectionNode()
 	      in
@@ -426,7 +426,7 @@ struct
 				 => Update.foldDepth(n,!Settings.max_depth,
 						     CreateTree.createTree,
 						     CreateTree.createTreeInf,
-						     !canvasroot)
+						     !canvas)
 			     val selection_node = getSelectionNode()
 			 in
 			     (if selection_node = Node.Empty 
@@ -443,7 +443,7 @@ struct
 		 fn (n,i) => Update.foldWidth(n,i,
 					       CreateTree.createTree,
 					       CreateTree.createTreeInf,
-					       !canvasroot)
+					       !canvas)
 	 in
 	     fn i => fn _ => update_width(node,i)
 	 end
@@ -455,7 +455,7 @@ struct
 		 fn (n,i) => Update.foldDepth(n,i,
 					       CreateTree.createTree,
 					       CreateTree.createTreeInf,
-					       !canvasroot)
+					       !canvas)
 	 in
 	     fn i => fn _ => update_depth(node,i)
 	 end
@@ -921,7 +921,8 @@ struct
 		 case position of 
 		     SOME ((x,y),b)=> 
 			 let 
-			     val node = search(x,y)      
+			     val node = (busyButtonSetActive(true)
+					 ;search(x,y))      
 			 in 
 			     (case node of 
 				  SOME(n) => 
@@ -953,6 +954,7 @@ struct
 				    ; destroySelectionMarkings()
 				    ; selection := SOME (n,re,re') 
 				    ; setSelectionMenuSensitive(bar,true)
+				    ; busyButtonSetActive(false)
 				    ; case n of
 				     Limit(_)  => 
 					 setExpandSensitive(bar,true)
@@ -1029,8 +1031,9 @@ struct
 		 ; windowSetDefaultSize(window, 600,500)
 		 ;signalConnect (window, "delete-event", DeleteWindow)
 		 ;setSelectionMenuSensitive (bar,false)  
+		 ;menuBarAppend(bar,busyButton)
 		 ;menuBarAppend(bar,stopButton)
-		 ;menuItemRightJustify(stopButton)
+		 ;menuItemRightJustify(stopButton) 
 		 ;containerAdd(window,createVBox[(bar,
 						  false 
 						  ,false,
@@ -1071,15 +1074,16 @@ struct
 	    Server.serve 
 	    (fn _ => 
 	     let
-		 val va = UnsafeValue.cast v: Reflect.value
+		 val va = (busyButtonSetActive(true)
+			   ;UnsafeValue.cast v: Reflect.value)
 		 val i = Dictionaries.Main.
 		     getHighestIndexAssigned(Dictionaries.maindict) +1
-		 val root = (new()
+		 val canvas = (new()
 			     ; relnumber := 0
-			     ;!canvasroot)
+			     ;!canvas)
 		 val save_settings = (!Settings.max_width,!Settings.max_depth)
 		 val n = (stopButtonSetActive(true)
-			  ;CreateTree.createTree(NONE,va,t,Empty,i,0,root))
+			  ;CreateTree.createTree(NONE,va,t,Empty,i,0,canvas))
 		 val line = (stopButtonSetActive(false)
 			     ; if !stopflag 
 				   then ( Settings.set_width(#1(save_settings))
@@ -1088,32 +1092,35 @@ struct
 			       else ()
 				   ;Layout.layout(n)
 				   ;setScreenX(get_xdim(n))
-				   ;createSepLine(root,
+				   ;createSepLine(!canvasroot,
 						  !act_line,canvaswidth(hadj),
 						  Settings.getFontHeight()))
 	     in
-		 ( Draw.draw(n,0,!act_line,false)
+		 (GtkSupport.layoutFreeze(canvas) 
+		  ; Draw.draw(n,0,!act_line,false)
+		  ; GtkSupport.layoutThaw(canvas) 
 		  ; incr_act_line(get_ydim(n) + 1)
 		  ; (!resize)()
 		  ; show()
 		  ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)) 
-		  ;())
+		  ;busyButtonSetActive(false))
 	     end)
 	
     fun inspectMod(v,t) = 
 	Server.serve 
 	(fn _ => 
 	 let
-	     val va = UnsafeValue.cast v: Reflect.module
+	     val va = (busyButtonSetActive(true)
+		       ;UnsafeValue.cast v: Reflect.module)
 	     val i = Dictionaries.Main.
 		 getHighestIndexAssigned(Dictionaries.maindict) +1
-	     val root = (new()
+	     val canvas = (new()
 			 ;stopButtonSetActive(true)
 			 ; relnumber := 0
-			 ;!canvasroot)
+			 ;!canvas)
 	     val save_settings = (!Settings.max_width,!Settings.max_depth)
 	     val n = (stopButtonSetActive(true)
-		      ;CreateTree.createTreeInf(va,t,Empty,i,0,root))
+		      ;CreateTree.createTreeInf(va,t,Empty,i,0,canvas))
 	     val line =(stopButtonSetActive(false) 
 			; if !stopflag 
 			      then ( Settings.set_width(#1(save_settings))
@@ -1122,15 +1129,20 @@ struct
 			  else ()
 			      ;Layout.layout(n)
 			      ;setScreenX(get_xdim(n))
-			      ;createSepLine(root,!act_line,canvaswidth(hadj),
+			      ;createSepLine(!canvasroot,
+					     !act_line,canvaswidth(hadj),
 					     Settings.getFontHeight() ))
 	 in
-	     ( Draw.draw(n,0,!act_line,false)
+	     (GtkSupport.layoutFreeze(canvas) 
+	      ; Draw.draw(n,0,!act_line,false)
+	      ; GtkSupport.layoutThaw(canvas) 
 	      ; incr_act_line(get_ydim(n) + 1)
 	      ; (!resize)()
 	      ; show()
 	      ; stopButtonSetActive(false)
-	      ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line)); ())
+	      ; Dictionaries.Main.insertI(Dictionaries.maindict,(n,line))
+	      ; busyButtonSetActive(false) 
+	      )
 	 end)
      
     val _ = ( inspectFct := inspect

@@ -185,8 +185,9 @@ struct
     (* core function - 
        is essential for reinspect, foldDepth, foldWith and watcher *)
 
-    fun update (no,va,f,g,root) = 
-	let val  n = if !(Settings.relmode) 
+    fun update (no,va,f,g,canvas) = 
+	let val _ = (GtkSupport.busyButtonSetActive(true))
+	    val  n = if !(Settings.relmode) 
 	             andalso isRelNode(getParent(no))
 			 then getParent(no) 
 		     else no
@@ -206,11 +207,11 @@ struct
 		       ; GtkSupport.stopButtonSetActive(true) 
 		       ; case getDesc(n) of
 			 VALUE(r) => f(NONE,va,#typ(r),p,index,
-				       getDepth(n),root)
+				       getDepth(n),canvas)
 		       | I_VALUE(r) => let val va_inf =   
 			                   UnsafeValue.cast va : Reflect.module
 				       in g(va_inf,#typ(r),p,index,
-					    getDepth(n),root)
+					    getDepth(n),canvas)
 				       end 
 		       | INTERPUNCT => raise UpdateError )
 	       val _ = ( GtkSupport.stopButtonSetActive(false)
@@ -228,53 +229,58 @@ struct
 						     Settings.getFontHeight(),
 						     Settings.getFontWidth()))
 	in ( setDazzled n
+	    ; GtkSupport.layoutFreeze(canvas)
 	    ; GtkSupport.objectDestroy(getGroup(n))
 	    ; Layout.layout(node) (* layouting *)
 	    ; Dictionaries.Main.update(Dictionaries.maindict,
 				       (ind,(node,ancline)))
-	    ; Draw.draw(node,0,y_pos,true) (* drawing *)  
+	    ; Draw.draw(node,0,y_pos,true) (* drawing *)
+	    ; GtkSupport.layoutThaw(canvas)
 	    ; let val dy = get_ydim(node) - old_ydim
 	      in ( (!incrActLine) dy
 		  ; iterMove (dy,getIndex(anc) + 1) 
-		  ; setVisible(get_xdim(node)) )
+		  ; setVisible(get_xdim(node))
+		  ;GtkSupport.busyButtonSetActive(false))
 	      end )
 	end  
     
     (*  mechanism of update watching for FUTURES *)    
   
-    fun tell (va,i,li,f,g,root) =  
+    fun tell (va,i,li,f,g,canvas) =  
 	let val new_li = List.sort (fn (n,m) => Int.compare(getAncIndex n, 
 							    getAncIndex m)) 
 	    li
-	in (  List.map (fn n => update(n,va,f,g,root)) new_li 
+	in (  List.map (fn n => update(n,va,f,g,canvas)) new_li 
 	    ; (!resize)() 
 	    ; Dictionaries.Transient.delete(Dictionaries.transdict,i) )
 	end   
 
-    fun watcher (future,va,i,f,g,root) = 
+    fun watcher (future,va,i,f,g,canvas) = 
 	Thread.thread 
 	(fn () 
 	 =>  ( if Future.isLazy  future
 		   then UnsafeValue.awaitRequest(future)
 	       else Future.await(future)
+	     ; GtkSupport.layoutFreeze(canvas) 
 	     ; let val new_l = #3(valOf(Dictionaries.Transient.lookup
 					(Dictionaries.transdict,i)))
-	       in Server.serve(fn () => tell(va,i,new_l,f,g,root))
-	       end ) )
+	       in Server.serve(fn () => tell(va,i,new_l,f,g,canvas))
+	       end
+	      ; GtkSupport.layoutThaw(canvas) ) )
 
     (* REINSPECT *)
 
-    fun  reinspect (n,f,g,root) = 
+    fun  reinspect (n,f,g,canvas) = 
         let val va = getReflectValue n
 	in  Server.serve(fn () => 
-			 ( update(n,va,f,g,root) 
+			 ( update(n,va,f,g,canvas) 
 			  ; (!resize)() ))
 	end
         handle General.Match  => raise UpdateError 
 	
     (* folding of DEPTH *) 
 
-    fun foldDepth (n,i,f,g,root) = 
+    fun foldDepth (n,i,f,g,canvas) = 
 	Server.serve
 	(fn () => 
 	 let val _ = TextIO.print("FOLD_DEPTH\n")
@@ -284,7 +290,7 @@ struct
 	      ; let val new_depth = findHighestDepth n + i 
 		    val va = getReflectValue n
 		in ( Settings.set_depth(if new_depth < 0 then 0 else new_depth)
-		    ; update (n,va,f,g,root)
+		    ; update (n,va,f,g,canvas)
 		    ; (!resize)()  )
 		end 
 	      ; Settings.set_depth(old_depth) )
@@ -292,7 +298,7 @@ struct
 
     (* folding of WIDTH *) 
 
-    fun foldWidth (n,i,f,g,root) =
+    fun foldWidth (n,i,f,g,canvas) =
         Server.serve
 	(fn () =>
          ( let val new_n = if not(getDesc(n) = INTERPUNCT) 
@@ -309,7 +315,7 @@ struct
 		      val va = getReflectValue new_n
 		  in ( Settings.set_width(if new_width < 0 then 0 
 					  else new_width)
-		      ; update (new_n,va,f,g,root)
+		      ; update (new_n,va,f,g,canvas)
 		      ; (!resize)() )
 		  end
 		; Settings.set_width(old_width) )
