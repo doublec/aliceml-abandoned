@@ -541,10 +541,11 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/system build2/install/lib/utility \
 	build2/install/lib/rtt build2/install/lib/ml-yacc \
 	build2/install/compiler
-INSTALL2TOPFILES = VMMain.ozf alicec.import
+INSTALL2TOPFILES = \
+	$(VMSOURCES:%.oz=%.ozf) FloatChunk.so-$(PLATFORM) alicec.import
 INSTALL2BINFILES = alicerun alicec aliceserv alicelink
-INSTALL2LIBFILES = rtt/RTT.ozf
-INSTALL2COMPILERFILES = CompilerMain.ozf CompileServerMain.ozf
+INSTALL2LIBFILES = rtt/RTT.stc
+INSTALL2COMPILERFILES = CompilerMain.stc CompileServerMain.stc
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -569,9 +570,9 @@ build2/%.aml: build1/%.aml
 build2/%.asig: build1/%.asig
 	cp $< $@
 
-build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
-	build2/compiler/LinkedCompileServerMain.ozf: build2/%: build1/%
-	cp $< $@
+#build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf \
+#	build2/compiler/LinkedCompileServerMain.ozf: build2/%: build1/%
+#	cp $< $@
 
 build2/alicec.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
@@ -586,12 +587,12 @@ $(LIBNATIVES:%.ozf=build2/%.asig): build2/%: build1/%
 ## Performing Build 2
 ##
 
-build2-all: build2-src build2/lib/rtt/LinkedRTT.ozf
+build2-all: build2-src build2/lib/rtt/LinkedRTT.stc
 
-build2/%.ozf: build2/%.aml
+build2/%.stc: build2/%.aml
 	$(ALICEC1) $(ALICEC_OPTS) --no-rtt -c $< -o $@
 
-build2/lib/rtt/LinkedRTT.ozf: build2/lib/rtt/RTT.ozf
+build2/lib/rtt/LinkedRTT.stc: build2/lib/rtt/RTT.stc
 	$(ALICELINK1) $(ALICELINK_OPTS) --include=.. $< -o $@
 
 $(LIBNATIVES:%.ozf=build2/%.asig): %.asig: %.ozf
