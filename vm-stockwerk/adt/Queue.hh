@@ -121,6 +121,35 @@ public:
     SetReadIndex(readIndex == array->GetSize()? 0: readIndex);
     return result;
   }
+  void Remove(word w) {
+    u_int readIndex = GetReadIndex();
+    u_int writeIndex = GetWriteIndex();
+    if (readIndex == writeIndex) // queue is empty
+      return;
+    Block *array = GetArray();
+    u_int scanIndex = readIndex;
+    if (readIndex > writeIndex) { // queue has a wrap-around layout
+      u_int length = array->GetSize();
+      while (++scanIndex <= length)
+	if (array->GetArg(scanIndex) == w) { // shorten queue at beginning
+	  u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
+	  u_int offset = scanIndex - 1;
+	  std::memmove(base + offset + 1, base + offset, offset - readIndex);
+	  SetReadIndex(readIndex + 1);
+	  return;
+	}
+      // not found: scan first half of queue
+      scanIndex = 0;
+    }
+    while (++scanIndex < writeIndex)
+      if (array->GetArg(scanIndex) == w) { // shorten queue at end
+	u_int *base = reinterpret_cast<u_int *>(array->GetBase()); //--**
+	u_int offset = scanIndex - 1;
+	std::memmove(base + offset, base + offset + 1, writeIndex - offset);
+	SetWriteIndex(writeIndex - 1);
+	return;
+      }
+  }
 
   void Blank() {
     Block *array = GetArray();
