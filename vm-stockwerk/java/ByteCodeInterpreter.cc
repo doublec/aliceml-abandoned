@@ -2498,8 +2498,10 @@ Worker::Result ByteCodeInterpreter::Run() {
 	  break;
 	case Instr::RET:
 	  {
-	    Error("not implemented"); //--**
+	    u_int index = GET_POOL_INDEX();
+	    pc = Store::DirectWordToInt(frame->GetEnv(index));
 	  }
+	  break;
 	default:
 	  Error("invalid `wide' opcode");
 	}
