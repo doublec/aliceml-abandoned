@@ -29,6 +29,7 @@ signature URL =
 	val empty: url
 	val fromString: string -> url              (* Malformed *)
 	val toString: url -> string
+	val toStringRaw: url -> string
 	val isAbsolute: url -> bool
 	val resolve: url -> url -> url
 	val compare: url * url -> order

@@ -366,14 +366,14 @@ structure Url :> URL =
 	  | slashit (ss as "/"::_) = ss
 	  | slashit ss = "/"::ss
 
-	fun toString {scheme, authority, device, absolute, path,
-		      query, fragment} =
+	fun toStringEncode encode
+	    {scheme, authority, device, absolute, path, query, fragment} =
 	    let
 		val l = if isSome fragment then ["#", valOf fragment] else nil
 		val l = if isSome query then "?"::valOf query::l else l
 		val l =
 		    List.foldr (fn (s, rest) =>
-				encode isPathChar s::slashit rest) nil path @ l
+				encode s::slashit rest) nil path @ l
 		val l = if absolute then slashit l else l
 		val l =
 		    if isSome device then String.str (valOf device)::":"::l
@@ -386,6 +386,9 @@ structure Url :> URL =
 	    in
 		String.concat l
 	    end
+
+	val toString = toStringEncode (encode isPathChar)
+	val toStringRaw = toStringEncode (fn s => s)
 
 	fun isAbsolute ({scheme, device, absolute, path, ...}: url) =
 	    isSome scheme orelse isSome device orelse absolute orelse
