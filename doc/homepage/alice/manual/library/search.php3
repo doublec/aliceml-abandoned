@@ -117,39 +117,39 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOne <I>s</I></TT>
+      <TT>searchOne <I>script</I></TT>
     </DT>
     <DD>
-      <P>returns the first solution of script <I>s</I> obtained by depth-first
+      <P>returns the first solution of <I>script</I> obtained by depth-first
          search. If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchOneDepth (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchOneDepth (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first solution of script <I>s</I> obtained by depth-first
+      <P>returns the first solution of <I>script</I> obtained by depth-first
          search with recomputation distance <I>rcd</I>.
          If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchOneDepthS (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchOneDepthS (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first succeeded space of script <I>s</I>
+      <P>returns the first succeeded space of <I>script</I>
          obtained by depth-first search with recomputation distance <I>rcd</I>.
          If no solution exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchOneBound (<I>s</I>,<I>bound</I>,<I>rcd</I>)</TT>
+      <TT>searchOneBound (<I>script</I>,<I>bound</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first solution of script <I>s</I> obtained by depth-first
+      <P>returns the first solution of <I>script</I> obtained by depth-first
          search with recomputation distance <I>rcd</I>, where the depth of
          the search tree explored is less than or equal to <I>bound</I>.
       </P>
@@ -162,10 +162,10 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneBoundS (<I>s</I>,<I>bound</I>,<I>rcd</I>)</TT>
+      <TT>searchOneBoundS (<I>script</I>,<I>bound</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first succeeded space of script <I>s</I>
+      <P>returns the first succeeded space of <I>script</I>
          obtained by depth-first
          search with recomputation distance <I>rcd</I>, where the depth of
          the search tree explored is less than or equal to <I>bound</I>.
@@ -179,10 +179,10 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneIter (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchOneIter (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first solution of script <I>s</I> obtained by iterative
+      <P>returns the first solution of <I>script</I> obtained by iterative
          deepening depth-first
          search with recomputation distance <I>rcd</I>.
          If no solution exists, <TT>NONE</TT> is returned.
@@ -190,10 +190,10 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneIterS (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchOneIterS (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first succeeded space of script <I>s</I>
+      <P>returns the first succeeded space of <I>script</I>
          obtained by iterative deepening depth-first
          search with recomputation distance <I>rcd</I>.
          If no solution exists, <TT>NONE</TT> is returned.
@@ -201,10 +201,10 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneLDS (<I>s</I>,<I>m</I>)</TT>
+      <TT>searchOneLDS (<I>script</I>,<I>m</I>)</TT>
     </DT>
     <DD>
-      <P>returns the first solution of script <I>s</I> obtained by limited
+      <P>returns the first solution of <I>script</I> obtained by limited
          discrepancy search allowing <I>m</I> discrepancies.
          If no solution exists, <TT>NONE</TT> is returned.
       </P>
@@ -229,11 +229,11 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchOneLDSS (<I>s</I>,<I>m</I>)</TT>
+      <TT>searchOneLDSS (<I>script</I>,<I>m</I>)</TT>
     </DT>
     <DD>
       <P>returns the first succeeded space containing the
-         solution of script <I>s</I> obtained by limited
+         solution of <I>script</I> obtained by limited
          discrepancy search allowing <I>m</I> discrepancies.
          If no solution exists, <TT>NONE</TT> is returned.
       </P>
@@ -258,60 +258,60 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchAll <I>s</I></TT>
+      <TT>searchAll <I>script</I></TT>
     </DT>
     <DD>
       <P>returns a list of all solutions of the
-         script <I>s</I> obtained by depth-first search.
+         <I>script</I> obtained by depth-first search.
          If no solution exists, the empty list is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchAllDepth (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchAllDepth (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns a list of all solutions of the
-         script <I>s</I> obtained by depth-first search with
+         <I>script</I> obtained by depth-first search with
          recomputation distance <I>rcd</I>.
          If no solution exists, the empty list is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchAllDepthS (<I>s</I>,<I>rcd</I>)</TT>
+      <TT>searchAllDepthS (<I>script</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns a list of all succeeded spaces of the
-         script <I>s</I> obtained by depth-first search with
+         <I>script</I> obtained by depth-first search with
          recomputation distance <I>rcd</I>.
          If no solution exists, the empty list is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchBest (<I>s</I>, <I>o</I>)</TT>
+      <TT>searchBest (<I>script</I>,<I>order</I>)</TT>
     </DT>
     <DD>
       <P>returns the best solution with respect to
-         a order <I>o</I> of script <I>s</I>.
+         a <I>order</I> of <I>script</I>.
          If no solutions exists, <TT>NONE</TT> is returned.
       </P>
     </DD>
 
     <DT>
-      <TT>searchBestBAB (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
+      <TT>searchBestBAB (<I>script</I>,<I>order</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the best solution with respect to
-         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         a <I>order</I> of <I>script</I> obtained by branch and bound
          search with recomputation distance <I>rcd</I>.
          If no solutions exists, <TT>NONE</TT> is returned.
       </P>
       <P>The branch and bound strategy works as follows.
          When a solution is found, all the remaining alternatives
-         are constrained to be better with respect to the order <I>o</I>.
-         The binary function <I>o</I> is applied with
+         are constrained to be better with respect to the <I>order</I>.
+         The binary function <I>order</I> is applied with
          its first argument being the previous solution,
          and its second argument the root variable of a space
          for one of the remaining alternatives. 
@@ -319,19 +319,19 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestBABS (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
+      <TT>searchBestBABS (<I>script</I>,<I>order</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the succeed space containing the best solution
          with respect to
-         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         a <I>order</I> of <I>script</I> obtained by branch and bound
          search with recomputation distance <I>rcd</I>.
          If no solutions exists, <TT>NONE</TT> is returned.
       </P>
       <P>The branch and bound strategy works as follows.
          When a solution is found, all the remaining alternatives
-         are constrained to be better with respect to the order <I>o</I>.
-         The binary function <I>o</I> is applied with
+         are constrained to be better with respect to the <I>order</I>.
+         The binary function <I>order</I> is applied with
          its first argument being the previous solution,
          and its second argument the root variable of a space
          for one of the remaining alternatives. 
@@ -339,39 +339,39 @@ signature SEARCH =
     </DD>
 
     <DT>
-      <TT>searchBestRestart (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
+      <TT>searchBestRestart (<I>script</I>,<I>order</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the best solution with respect to
-         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         a <I>order</I> of <I>script</I> obtained by branch and bound
          search with recomputation distance <I>rcd</I>.
          If no solutions exists, <TT>NONE</TT> is returned.
       </P>
       <P>The restart strategy works as follows.
-         When a solution is found, search is restarted for <I>s</I>
+         When a solution is found, search is restarted for <I>script</I>
          with the additional constraint stating that the solution
-         must be better with respect to the order <I>o</I>.
-         The binary procedure <I>o</I> is applied with the previous solution
-         as first argument, and the root variable of the script <I>s</I>
+         must be better with respect to the <I>order</I>.
+         The binary procedure <I>order</I> is applied with the previous solution
+         as first argument, and the root variable of the <I>script</I>
          as its second argument.
       </P>
     </DD>
 
     <DT>
-      <TT>searchBestRestartS (<I>s</I>, <I>o</I>, <I>rcd</I>)</TT>
+      <TT>searchBestRestartS (<I>script</I>,<I>order</I>,<I>rcd</I>)</TT>
     </DT>
     <DD>
       <P>returns the succeed space containing the best solution with respect to
-         a order <I>o</I> of script <I>s</I> obtained by branch and bound
+         a <I>order</I> of <I>script</I> obtained by branch and bound
          search with recomputation distance <I>rcd</I>.
          If no solutions exists, <TT>NONE</TT> is returned.
       </P>
       <P>The restart strategy works as follows.
-         When a solution is found, search is restarted for <I>s</I>
+         When a solution is found, search is restarted for <I>script</I>
          with the additional constraint stating that the solution
-         must be better with respect to the order <I>o</I>.
-         The binary procedure <I>o</I> is applied with the previous solution
-         as first argument, and the root variable of the script <I>s</I>
+         must be better with respect to the <I>order</I>.
+         The binary procedure <I>order</I> is applied with the previous solution
+         as first argument, and the root variable of the <I>script</I>
          as its second argument.
       </P>
     </DD>
