@@ -256,8 +256,9 @@ struct
 	in if d > !(Settings.max_depth)
 	       then LIMIT{desc = descr, 
 			  sort = DEPTH_LIMIT}
-	   else let val (inva,inty) = 
-	                 Reflect.reflectPackage (UnsafeValue.cast va)
+	   else let val (inv,inty) = 
+	                Reflect.reflectPackage (UnsafeValue.cast va)
+		    val inva = UnsafeValue.cast inv : Reflect.value
 		in
 		    CONCAT{desc = INTERPUNCT, 
 			   kids = 

@@ -148,7 +148,13 @@ struct
 	   else
 	   (case Type.inspect t of
 	    Type.Con path 
-	    => newPath (va,t,p,i,d,path)
+	    => let val p_path = 
+		   if String.equal(Label.toString(Path.toLab(path)),
+				   "package")
+		       then lookupPath("Package","package")
+		   else path 
+	       in newPath (va,t,p,i,d,p_path)
+	       end
 	   | Type.Arrow _ 
 	     => if d > !max_depth
 		    then createLimit (createValue(va,t,NO_ACTIONS),DEPTH_LIMIT,
@@ -168,10 +174,7 @@ struct
 		         if String.equal(Label.toString(Path.toLab(path)),
 					 "promise")
 			     then lookupPath("Promise","promise") 
-			 else if String.equal(Label.toString(Path.toLab(path)),
-					      "package")
-				  then lookupPath("Package","packagee")
-			      else path 
+			 else path 
 		     in 
 			 newPath (va,t,p,i,d,p_path)
 		     end 
@@ -511,23 +514,24 @@ struct
 			     ; rl := !rl + 1)
 			    ; concat)
 			end
-         | CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
-						    Empty)
-                               val container = createContainer(#desc(r),p,i,d,
-                                                               na,setGroup)
-			       val rl = ref 0
-			   in (while !rl <= (Vector.length(#kids(r)) - 1) do
-			       (Array.update(na,
-					     !rl,
-					     docToNode(Vector.sub(#kids(r),
-								  !rl),
-						       container,!rl,d+1))
-				; rl := !rl + 1)
-			       ; container)
-			   end
-         | LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
-         | EMBEDDED(v,t) => (createGraph(v,t,p,i,d)) )
-
+	| CONTAINER(r) => let val na = Array.array(Vector.length(#kids(r)),
+						   Empty)
+			      val container = createContainer(#desc(r),p,i,d,
+							      na,setGroup)
+			      val rl = ref 0
+			  in (while !rl <= (Vector.length(#kids(r)) - 1) do
+				  (Array.update(na,
+						!rl,
+						docToNode(Vector.sub(#kids(r),
+								     !rl),
+							  container,!rl,d+1))
+				   ; rl := !rl + 1)
+				  ; container)
+			  end
+	| LIMIT(r) => createLimit(#desc(r),#sort(r),p,i,d,setGroup) 
+	| EMBEDDED(v,t) => createGraph (v,t,p,i,d)
+	| EMBEDDED_INF(v,t) => createGraphInf (v,t,p,i,d) )
+	     
 (* spezielle Behandlung von Futures *)
    
     (* createFutureNode *)

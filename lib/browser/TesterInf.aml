@@ -5,6 +5,7 @@ import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
 import structure Inf from "x-alice:/lib/rtt/Inf";
 
+(*
 import signature FD from "x-alice:/lib/constraints/FD-sig";
 import structure FD from "x-alice:/lib/constraints/FD";
 
@@ -12,6 +13,7 @@ structure V = Reflect.Reflect(signature S = FD structure X = FD);
 structure T = Reflect.ReflectSig(signature S = FD);
 
 UnsafeInspector.inspectInf(V.x,T.x);
+*)
 
 signature SIMPLE = 
 sig
@@ -50,8 +52,9 @@ UnsafeInspector.inspectInf (v,t);
 
 (*****)
 
-val ilist = Inf.items(Inf.asSig(t));
-val label = itemToLabel(List.nth(ilist,0));
- 
-val test = UnsafeValue.projPoly(v,label);
+structure P = Package.Pack (signature S = TEST structure X = Test);
+structure Pack = Reflect.ReflectType (type t = Package.package);
+
+UnsafeInspector.inspect(P.package,Pack.x);
+
 
