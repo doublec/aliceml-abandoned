@@ -199,10 +199,10 @@ $(PREFIX)/bin/%: %
 	install -c -m 555 $< $@
 
 $(PREFIX)/lib/Base.ozf: lib/Base.sml $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --no-implicit-import -c $< -o $@
+	$(PREFIX)/bin/stoc $(STOC_OPTS) -c $< -o $@
 
 $(PREFIX)/lib/%: lib/% lib/%.sig $(MINIMALINSTALL)
-	$(PREFIX)/bin/stoc --no-implicit-import --replacesign $< $<.sig $@
+	$(PREFIX)/bin/stoc $(STOC_OPTS) --replacesign $< $<.sig $@
 
 clean:
 	-rm -f $(ALLFILES)
