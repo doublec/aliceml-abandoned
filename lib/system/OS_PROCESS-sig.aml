@@ -22,5 +22,6 @@ sig
 (*  val terminate :	status -> 'a TODO*)
     val exit :		status -> 'a
 (*  val atExit :	(unit -> unit) -> unit TODO*)
+    val atExn :		(exn -> unit) -> unit			(**)
     val getEnv :	string -> string option
 end
