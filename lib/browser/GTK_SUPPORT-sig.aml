@@ -56,6 +56,7 @@ signature GTK_SUPPORT =
 
 	    val fontLoad: string -> tag
 	    val fontGetFieldAscent: tag -> int
+	    val fontGetFieldDescent: tag -> int	
 	    val stringWidth: tag * string -> int
 
 	    type event = Gdk.event

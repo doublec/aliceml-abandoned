@@ -20,8 +20,6 @@ import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 
-import structure Settings from "Settings" 
-
 import signature GTK_SUPPORT from "GTK_SUPPORT-sig"
  
 structure GtkSupport :> GTK_SUPPORT  =
@@ -65,6 +63,7 @@ val itemLowerToBottom = GtkCanvas.itemLowerToBottom
 
 val fontLoad = Gdk.fontLoad
 val fontGetFieldAscent = Gdk.fontGetFieldAscent
+val fontGetFieldDescent = Gdk.fontGetFieldDescent
 val stringWidth = Gdk.stringWidth
 
 type event = Gdk.event

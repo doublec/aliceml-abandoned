@@ -15,8 +15,7 @@
 
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure TextIO from "x-alice:/lib/system/TextIO"
-import structure Gtk from "x-alice:/lib/gtk/Gtk"
-import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+
 
 import structure Node from "Node"
 import structure GtkSupport from "GtkSupport"

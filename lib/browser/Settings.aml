@@ -13,7 +13,7 @@
  *
  *)
 
-import structure Gdk from "x-alice:/lib/gtk/Gdk"
+import structure GtkSupport from "GtkSupport"
 import signature SETTINGS from "SETTINGS-sig"
 
 structure Settings :> SETTINGS = 
@@ -26,30 +26,31 @@ struct
     val max_y = ref 0.0 
 
     val relmode = ref false
-(* 
-    val relnumber = ref 0   
-*)   
     val tokenmode = ref false
 
-    val fontname = ref "-*-*-medium-r-normal--14-*-*-*-m-*-iso8859-1"
-    val font = ref (Gdk.fontLoad(!fontname))
-    val fontHeight = ref (Gdk.fontGetFieldAscent(!font)+
-			   Gdk.fontGetFieldDescent(!font) )
-    val fontWidth = ref (Gdk.stringWidth(!font,"W"))
-    val fontSize = ref 14
+    val fontname = ref ""
+    val font = ref GtkSupport.uglyNULL
+    val fontHeight = ref 0
+    val fontWidth = ref 0
+    val fontSize = ref 0
 
     fun getFontHeight() = !fontHeight 
      
     fun getFontWidth() = !fontWidth
 
     fun setFontSize i = (fontSize:= i
-			 ;fontname:=  ("-*-*-medium-r-normal--"
+			 ;fontname:=  
+			 ("-*-*-medium-r-normal--"
 			 ^ Int.toString(i) 
 			 ^ "-*-*-*-m-*-iso8859-1")
-			 ;font:=(Gdk.fontLoad(!fontname))
-			 ;fontHeight := (Gdk.fontGetFieldAscent(!font)+
-			   Gdk.fontGetFieldDescent(!font) )
-			 ;fontWidth := (Gdk.stringWidth(!font,"W")))
+			 ;font:= GtkSupport.fontLoad(!fontname)
+			 ;fontHeight := 
+			 (GtkSupport.fontGetFieldAscent(!font)+
+			  GtkSupport.fontGetFieldDescent(!font) )
+			 ;fontWidth := 
+			 (GtkSupport.stringWidth(!font,"W")))
+
+     val _ = setFontSize 14
 
     fun set_width w = max_width := w
 
