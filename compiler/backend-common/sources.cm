@@ -1,6 +1,7 @@
 Group is
 
-    ../common/intermediate-grammar.cm
+    ../common/sources.cm
+    ../error/sources.cm
     ../misc/sources.cm
     simplified-grammar.cm
 
