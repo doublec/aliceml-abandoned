@@ -1,0 +1,62 @@
+(* Alice Snake 2.0 - Operations on Positions
+ *
+ *  Authors: Benedikt Grundmann / Sebastian Germesin
+ *
+ *  $Revision$
+ *
+ *  Last updated: $Date$ by $Author$
+ * 
+ *
+ *)
+
+import signature HIGHSCORE from "HIGHSCORE-sig"
+import structure Color     from "Color"
+
+structure Highscore :> HIGHSCORE =
+struct
+
+    type highscore
+    type t = highscore
+
+    type entry = 
+	{
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,
+	 player:     int,
+	 level:      int
+	 }
+
+
+    type points = 
+	{ 
+	 name:       string,
+	 color:      Color.color,
+	 points:     int,        (* total points (excluding gamePoints) *)
+	 gamePoints: int         (* points made this game 
+				  but not yet taken home *)
+	 }
+
+    val empty = nil
+
+    val path = OS.Path.currentArc^"/highscore/highscore.hs"
+
+    fun load () = 
+	let
+	    structure H = 
+		unpack (Pickle.load path handle _ =>
+			(pack (val h = empty) :> (val h : highscore))) 
+		     : (val h : highscore)
+	in
+	    H.h
+	end
+    (* load the highscore, create a new one if no highscore exists *)
+
+    fun  save hs = Pickle.save (path,pack (val h = hs) :> (val h : highscore))
+
+    fun merge (h,p) = h (* trivial and false *)
+
+    fun foldl f init h
+
+end
+
