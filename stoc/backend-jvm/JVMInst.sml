@@ -1,8 +1,15 @@
 type label = string
 and classname = string
 and fieldname = string
-and methodsig = string
 and methodname = string;
+datatype ARG =
+    Arraysig
+  | Classsig of classname
+  | Floatsig
+  | Intsig
+  | Voidsig
+
+
 datatype LABEL =
     StringLabel of string
   | IntLabel of int
@@ -34,8 +41,8 @@ datatype
   | Ifnull of label
   | Ireturn
   | Instanceof of classname
-  | Invokespecial of classname * methodname * methodsig
-  | Invokevirtual of classname * methodname * methodsig
+  | Invokespecial of classname * methodname * (ARG list * ARG)
+  | Invokevirtual of classname * methodname * (ARG list * ARG)
   | Label of label
   | Ldc of JVMBASETYPE
   | New of classname
@@ -54,7 +61,7 @@ and
     Field of FIELDACCESS list * fieldname * FIELDTYPE
 and
     METHOD =
-    Method of METHODACCESS list * methodname * methodsig * LIMITS * INSTRUCTION list
+    Method of METHODACCESS list * methodname * (ARG list * ARG) * LIMITS * INSTRUCTION list
 and
     FIELDTYPE =
     Classtype of classname

@@ -39,21 +39,23 @@ end
 
 (* Wie lautet die aktuelle Klasse, in der wir sind? Stack weil verschachtelte Lambdas. *)
 local
-    val stack = ref ["Drinstehnmuesst"]
+    val stack = ref [""]
 in
     val rec
 	getCurrentClass = fn () => case !stack of (x::xs) => x | _ => raise Error("getCurrentClass kapuutt")
     and
-	pushClass = fn (name) => stack := name::(!stack)
+	pushClass = fn name => stack := name::(!stack)
     and
 	popClass  = fn () =>  case !stack of (x::xs) => stack := xs | _ => raise Error("popClass kapuutt")
+    and
+	initialClass = fn name => stack := [name]
 end
 
 (* Just another mad function *)
 val rec flatten = fn x::xs => x@flatten(xs) | nil => nil
 
 (* Einstiegspunkt *)
-val rec genProgramCode = fn (Dec dec) => decCode (dec)
+val rec genProgramCode = fn (name,Dec dec) => (initialClass name; decCode (dec))
 
 and
     decListCode = fn decs : DEC list => flatten (map decCode decs)
@@ -81,7 +83,7 @@ and
 		     New CException0,
 		     Dup,
 		     Getstatic CBind,
-		     Invokespecial (CException0, "<init>","("^CExName^")V"),
+		     Invokespecial (CException0, "<init>",([Classsig "ExName"], Voidsig)),
 		     Athrow,
 		     Label endlabel]
     in
@@ -98,7 +100,7 @@ and
 	val e2 = expCode(exp2)
     in
 	e1 @ [
-	      Invokevirtual (CVal, "request","()"^CVal),
+	      Invokevirtual (CVal, "request",([],Classsig CVal)),
 	      Dup,
 	      Getstatic (CConstants^"/dmlfalse",CConstructor0),
 	      Ifacmp falselabel,
@@ -107,7 +109,7 @@ and
 	      New CException0,
 	      Dup,
 	      Getstatic CMatch,
-	      Invokespecial (CException0,"<init>","("^CExName^")V"),
+	      Invokespecial (CException0,"<init>",([Classsig CExName], Voidsig)),
 	      Athrow,
 	      Label truelabel]
 	@ e2 @ [Label falselabel]
@@ -127,9 +129,9 @@ and
 	    val insts = exp @ atexp @
 		[
 		 Astore h,
-		 Invokevirtual (CVal, "request", "()"^CVal),
+		 Invokevirtual (CVal, "request", ([],Classsig CVal)),
 		 Dup,
-		 Invokevirtual (CVal, "whatAreYou", "()I"),
+		 Invokevirtual (CVal, "whatAreYou", (nil, Intsig)),
 		 Tableswitch (0,
 			      [
 			       coname,
@@ -141,7 +143,7 @@ and
 		 New CInternalError,
 		 Dup,
 		 Ldc (JVMString "PANIC"),
-		 Invokespecial (CInternalError, "<init>", "("^CString^")V"),
+		 Invokespecial (CInternalError, "<init>", ([Classsig CString],Voidsig)),
 		 Athrow,
 		 Label coname,
 		 Checkcast CCoName,
@@ -150,7 +152,7 @@ and
 		 Dup,
 		 Aload i,
 		 Aload h,
-		 Invokespecial (CConstructor1, "<init>", "("^CCoName^CVal^")V"),
+		 Invokespecial (CConstructor1, "<init>", ([Classsig CCoName, Classsig CVal], Voidsig)),
 		 Goto endlabel,
 		 Label exname,
 		 Checkcast CExName,
@@ -159,11 +161,11 @@ and
 		 Dup,
 		 Aload i,
 		 Aload h,
-		 Invokespecial (CException1, "<init>", "("^CExName^CVal^")V"),
+		 Invokespecial (CException1, "<init>", ([Classsig CExName, Classsig CVal], Voidsig)),
 		 Goto endlabel,
 		 Label builtin,
 		 Aload h,
-		 Invokevirtual (CVal, "apply", "("^CVal^")"^CVal),
+		 Invokevirtual (CVal, "apply", ([Classsig CVal],Classsig CVal)),
 		 Label endlabel
 		 ]
 	in
@@ -186,9 +188,9 @@ and
      | (lambda as Fn (JVMString name,freevars,match)) =>
 	let
 	    val names = flatten (map Load freevars)
-	    val rec vals = fn (fx :: fxs) => CVal^(vals(fxs)) | nil => ""
-	    val istring = "("^vals(freevars)^")V"
-	    val result = [New name, Dup] @ names @ [Invokespecial (name, "<init>", istring)]
+	    val rec vals = fn (fx :: fxs) => (Classsig CVal)::(vals fxs) | nil => nil
+	    val i = vals(freevars)
+	    val result = [New name, Dup] @ names @ [Invokespecial (name, "<init>", (i, Voidsig))]
 	in
 	    (
 	     pushLocals();
@@ -224,7 +226,7 @@ and
 	    val endiflabel = aNewLabel()
 	in
 	    e1@
-	    [Invokevirtual (CVal, "request", "()"^CVal),
+	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Getstatic (CConstants^"/dmltrue",CConstructor0),
 	     Ifacmp truelabel,
@@ -233,7 +235,7 @@ and
 	     New CException0,
 	     Dup,
 	     Getstatic CMatch,
-	     Invokespecial (CException0,"<init>","("^CExName^")V"),
+	     Invokespecial (CException0,"<init>", ([Classsig CExName], Voidsig)),
 	     Athrow,
 	     Label truelabel,
 	     Pop]@
@@ -255,7 +257,7 @@ and
 	    val e2 = expCode(exp2)
 	in
 	    e1 @ [
-		  Invokevirtual (CVal, "request","()"^CVal),
+		  Invokevirtual (CVal, "request", (nil, Classsig CVal)),
 		  Dup,
 		  Getstatic (CConstants^"/dmltrue",CConstructor0),
 		  Ifacmp truelabel,
@@ -264,7 +266,7 @@ and
 		  New CException0,
 		  Dup,
 		  Getstatic CMatch,
-		  Invokespecial (CException0,"<init>","("^CExName^")V"),
+		  Invokespecial (CException0,"<init>", ([Classsig CExName], Voidsig)),
 		  Athrow,
 		  Label falselabel]
 	    @ e2 @ [Label truelabel]
@@ -285,7 +287,7 @@ and
 	     New CRuntimeError,
 	     Dup,
 	     Ldc (JVMString "cannot raise expression"),
-	     Invokespecial (CRuntimeError,"<init>","("^CString^")V"),
+	     Invokespecial (CRuntimeError,"<init>",([Classsig CString],Voidsig)),
 	     Athrow]
 	end
 
@@ -302,7 +304,7 @@ and
 		 New CLabel,
 		 Dup,
 		 Ldc (JVMString label),
-		 Invokespecial (CLabel,"<init>","("^CString^")V"),
+		 Invokespecial (CLabel,"<init>",([Classsig CString], Voidsig)),
 		 Aastore]
 		 | (RecIntlabel label,index) =>
 		[Dup,
@@ -310,12 +312,12 @@ and
 		 New CLabel,
 		 Dup,
 		 atCodeInt(label),
-		 Invokespecial (CLabel,"<init>","(I)V"),
+		 Invokespecial (CLabel,"<init>",([Intsig], Voidsig)),
 		 Aastore]
-	    val
+	    val rec
 		labeliter = fn ((l,_)::rest,i) => labelcode (l,i) @ labeliter(rest,i+1)
 	      | (nil,_) => nil
-	    val
+	    val rec
 		labexpiter = fn ((_,e)::rest,i) => [Dup, atCodeInt(i)] @ expCode(e) @ [Aastore] @ labexpiter(rest, i+1)
 	      | (nil,_) => nil
 	in
@@ -327,7 +329,7 @@ and
 	    [atCodeInt(arity-1),
 	     Anewarray CVal] @
 	    labexpiter(reclablist,0) @
-	    [Invokespecial (CRecord,"<init>","(["^CLabel^"["^CVal^")V")]
+	    [Invokespecial (CRecord,"<init>",([Arraysig, Classsig CLabel, Arraysig, Classsig CVal],Voidsig))]
 	end
 
      | SCon(scon) =>
@@ -341,11 +343,11 @@ and
 	      | STRINGscon s => Ldc (JVMString s)
 	      | WORDscon w   => Ldc (JVMString "XXX")
 	    val jtype = case scon of
-		CHARscon c   => "(I)V"
-	      | INTscon i    =>  "(I)V"
-	      | REALscon r   => "(F)V"
-	      | STRINGscon s => "("^CString^")V"
-	      | WORDscon w   => "(I)V"
+		CHARscon c   => ([Intsig],Voidsig)
+	      | INTscon i    => ([Intsig],Voidsig)
+	      | REALscon r   => ([Floatsig],Voidsig)
+	      | STRINGscon s => ([Classsig CString], Voidsig)
+	      | WORDscon w   => ([Intsig],Voidsig)
 	    and skon = case scon of
 		CHARscon c   => CInt
 	      | INTscon i    => CInt
@@ -370,7 +372,10 @@ and
      | VId(Shortvid(vidname,Free)) =>
 	[Aload 0,
 	 Getfield (getCurrentClass()^vidname, CVal)]
-
+     | VId(Primitive(which)) =>
+	(case which of
+	     "+" => [Getstatic CPlus]
+	   | _ => raise Error "unimplemented primitive")
      | While(exp1,exp2) =>
 	let
 	    val beforelabel = aNewLabel()
@@ -381,7 +386,7 @@ and
 	in
 	    [Label beforelabel] @
 	    e1 @
-	    [Invokevirtual (CVal,"request","()"^CVal),
+	    [Invokevirtual (CVal,"request",(nil,Classsig CVal)),
 	     Dup,
 	     Getstatic (CConstants^"/dmltrue",CConstructor0),
 	     Ifacmp truelabel,
@@ -390,7 +395,7 @@ and
 	     New CException0,
 	     Dup,
 	     Getstatic CMatch,
-	     Invokespecial (CException0,"<init>","("^CExName^")V"),
+	     Invokespecial (CException0,"<init>",([Classsig CExName],Voidsig)),
 	     Athrow,
 	     Label truelabel,
 	     Pop] @
@@ -415,7 +420,7 @@ and
 	    val endlabel = aNewLabel()
 	    val p = patCode(pat)
 	in
-	    [Invokevirtual (CVal, "request", "()"^CVal),
+	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Instanceof CConstructor1,
 	     Ifeq faillabel,
@@ -423,9 +428,9 @@ and
 	     Dup,
 	     Getfield (CConstructor0^"/name",CString),
 	     Ldc (JVMString vidname),
-	     Invokevirtual (CString, "equals", "("^CString^")I"),
+	     Invokevirtual (CString, "equals", ([Classsig CString],Intsig)),
 	     Ifeq faillabel,
-	     Invokevirtual (CVal, "getContent", "()"^CVal)] @
+	     Invokevirtual (CVal, "getContent", (nil, Classsig CVal))] @
 	    p @
 	    [Goto endlabel,
 	     Label faillabel,
@@ -439,7 +444,7 @@ and
 	    val endlabel = aNewLabel()
 	    val p = patCode(pat)
 	in
-	    [Invokevirtual (CVal, "request", "()"^CVal),
+	    [Invokevirtual (CVal, "request", (nil, Classsig CVal)),
 	     Dup,
 	     Instanceof CException1,
 	     Ifeq faillabel,
@@ -447,9 +452,9 @@ and
 	     Dup,
 	     Getfield (CException0^"/name",CString),
 	     Ldc (JVMString vidname),
-	     Invokevirtual (CString, "equals", "("^CString^")I"),
+	     Invokevirtual (CString, "equals", ([Classsig CString], Intsig)),
 	     Ifeq faillabel,
-	     Invokevirtual (CVal, "getContent", "()"^CVal)] @
+	     Invokevirtual (CVal, "getContent", ([], Classsig CVal))] @
 	    p @
 	    [Goto endlabel,
 	     Label faillabel,
@@ -480,9 +485,9 @@ and
   | Patrec _ => raise Error "not yet understood"
 
   | Patscon (scon) =>
-	[Invokevirtual (CVal, "request", "()"^CVal)] @
+	[Invokevirtual (CVal, "request", ([], Classsig CVal))] @
 	expCode(SCon scon) @
-	[Invokevirtual (CVal, "equals", "("^CVal^")I")]
+	[Invokevirtual (CVal, "equals", ([Classsig CVal], Intsig))]
 
   | Patvid (Shortvid vid) =>
 	(case vid of
@@ -491,7 +496,7 @@ and
 	   | (_, Bound def) => (case !def of
 				    Shortvid (_,Defining loc) =>
 					[Aload (!loc),
-					 Invokevirtual (CVal, "equals", "("^CVal^")I")]
+					 Invokevirtual (CVal, "equals", ([Classsig CVal], Intsig))]
 				  | _ => raise Error "patvid bound def")
 	   | (_, Free) => raise Error "patvid free"
 		 )
@@ -512,7 +517,7 @@ and
 		    in
 			[Aload i,
 			 Ldc (JVMString l),
-			 Invokevirtual (CRecord, "getByLabel", "("^CString^")"^CVal),
+			 Invokevirtual (CRecord, "getByLabel", ([Classsig CString], Classsig CVal)),
 			 Dup,
 			 Ifnull undef] @
 			p @
@@ -562,7 +567,7 @@ and
 	[New CException0,
 	 Dup,
 	 Getstatic CMatch,
-	 Invokespecial (CException0,"<init>","("^CExName^")V"),
+	 Invokespecial (CException0,"<init>", ([Classsig CExName], Voidsig)),
 	 Athrow,
 	 Label endlabel]
     end
@@ -583,9 +588,10 @@ and
 	  | nil => nil
 	  | _ => raise Error "fields in expcodeclass"
 	val fieldlist = fields freevars
-	val rec args = fn _::vars => CVal^args(vars) | nil => ""
+	val rec args = fn _::vars => (Classsig CVal)::args(vars) | nil => nil
 	val rec initbody = fn
-	    ((JVMString var)::nil,i) =>
+	    (nil,_) => nil
+	  | ((JVMString var)::nil,i) =>
 		[Aload i,
 		 Putfield (name^"/"^var, CVal),
 		 Return]
@@ -595,12 +601,12 @@ and
 		 Putfield (name^"/"^var, CVal)]@
 		initbody(vars,i+1)
 	  | _ => raise Error "initbody"
-	val init = Method([MPublic],"<init>","("^args(freevars)^")V",Limits (length freevars, 3),(Aload 0)::initbody(freevars,1))
+	val init = Method([MPublic],"<init>",(args(freevars), Voidsig),Limits (length freevars, 3),(Aload 0)::initbody(freevars,1))
 	val mcm = matchCode match
-	val stack = raise Error "Hallo"
-	val applY = Method ([MPublic],"apply","("^CVal^")"^CVal,Limits (maxLocals(),stack),(Aload 1) :: (mcm @ [Areturn]))
+	val stack = stackneed match
+	val applY = Method ([MPublic],"apply",([Classsig CVal], Classsig CVal),Limits (maxLocals(),stack),(Aload 1) :: (mcm @ [Areturn]))
     in
-	Class(access,name,CFcnClosure,fieldlist,[init,applY])
+	schreibs(name,classToJasmin(Class(access,name,CFcnClosure,fieldlist,[init,applY])))
     end
 
      | _ => raise Error "expCodeClass"

@@ -28,6 +28,18 @@ and
      | MAbstract::rest      =>  "abstract "^mAccessToString rest
      | nil => ""
 
+val descriptor2string = let
+			    val rec desclist2string =
+				fn (Classsig dl)::dls => "L"^dl^";"^(desclist2string dls)
+				 | Intsig::dls => "I"^(desclist2string dls)
+				 | Voidsig::dls => "V"^(desclist2string dls)
+				 | Floatsig::dls => "F"^(desclist2string dls)
+				 | Arraysig::dls => "["^(desclist2string dls)
+				 | nil => ""
+			in
+			    fn (arglist, arg) => "("^(desclist2string arglist)^")"^(desclist2string [arg])
+			end
+
 local
     val instructionToJasmin =
 	fn Astore i => if i<4 then "astore_"^Int.toString i
@@ -43,18 +55,18 @@ local
 	 | Checkcast cn => "checkcast "^cn
 	 | Dup => "dup"
 	 | Fconst i => if i=0 then "fconst_0" else if i=1 then "fconst_1" else "fconst_2"
-	 | Getfield(cn,f) => "getfield "^cn^" "^f
-	 | Getstatic(cn,f) => "getstatic "^cn^" "^f
+	 | Getfield(cn,f) => "getfield "^cn^" L"^f^";"
+	 | Getstatic(cn,f) => "getstatic "^cn^" L"^f^";"
 	 | Goto l => "goto "^l
 	 | Iconst i => if i = ~1 then "iconst_m1" else "iconst_"^Int.toString i
 	 | Ifacmp l => "ifacmp "^l
 	 | Ifeq l => "ifeq "^l
-	 | Ifneq l => "ifneq"^l
+	 | Ifneq l => "ifne "^l
 	 | Ifnull l => "ifnull "^l
 	 | Ireturn => "ireturn"
 	 | Instanceof cn => "instanceof "^cn
-	 | Invokespecial(cn,mn,ms) => "invokespecial "^cn^"/"^mn^ms
-	 | Invokevirtual(cn,mn,ms) => "invokevirtual "^cn^"/"^mn^ms
+	 | Invokespecial(cn,mn,ms) => "invokespecial "^cn^"/"^mn^(descriptor2string ms)
+	 | Invokevirtual(cn,mn,ms) => "invokevirtual "^cn^"/"^mn^(descriptor2string ms)
 	 | Label l => l^": "
 	 | Ldc(JVMString s) => "ldc \""^s^"\""
 	 | Ldc(JVMFloat r) => "ldc "^Real.toString r
@@ -69,16 +81,16 @@ local
 	 | Tableswitch(low,labellist, label) =>
 			   let
 			       val rec
-				   flatten = fn lab::labl => ("\t"^lab)^(flatten labl) | nil => ""
+				   flatten = fn lab::labl => ("\t"^lab^"\n")^(flatten labl) | nil => ""
 			   in
 			       "tableswitch "^(Int.toString low)^"\n"^
 			       (flatten labellist)^
-			       "default: "
+			       "default: "^label
 			   end
 in
     val rec
 	instructionsToJasmin =
-	fn i::is => (instructionToJasmin i)^instructionsToJasmin is
+	fn i::is => (instructionToJasmin i)^"\n"^instructionsToJasmin is
 	 | nil => ""
 end
 
@@ -109,7 +121,7 @@ local
 	let
 	    val mcc = mAccessToString access
 	in
-	    ".method "^methodname^" "^methodsig^"\n"^
+	    ".method "^methodname^(descriptor2string methodsig)^"\n"^
 	    ".limit locals "^Int.toString(locals)^"\n"^
 	    ".limit stack "^Int.toString(stack)^"\n"^
 	    instructionsToJasmin(instructions)^"\n"^
@@ -131,4 +143,13 @@ val classToJasmin =
 	".super "^super^"\n"^
 	fieldsToJasmin(fields)^
 	methodsToJasmin(methods)
+    end
+
+val schreibs =
+    fn (wohin,was) =>
+    let
+	val bla=TextIO.openOut wohin
+    in
+	TextIO.output(bla,was);
+	TextIO.closeOut bla
     end
