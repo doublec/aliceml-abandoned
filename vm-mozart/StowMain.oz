@@ -17,6 +17,7 @@ import
    Module(manager)
    System(printError)
    Resolve(trace)
+   Error(registerFormatter)
    ComposerComponent('Composer$': Composer) at 'stoc/top/Composer'
 define
    Spec = record(mode: start
@@ -74,6 +75,24 @@ define
       end
    end
 
+   {Error.registerFormatter alice
+    fun {$ E} T in
+       T = 'Alice exception'
+       case E of alice(E Coord) then
+	  error(kind: T
+		items: [hint(l: 'Exception' m: oz(E))
+			hint(l: 'Raised at' m: Coord)])
+       [] alice(E ...) then
+	  error(kind: T
+		items: (hint(l: 'Exception' m: E)|
+			{List.mapInd {Record.toList E}.2
+			 fun {$ I X} hint(l: 'Debug '#I m: oz(X)) end}))
+       else
+	  error(kind: T
+		items: [line(oz(E))])
+       end
+    end}
+
    try
       Args = {Application.getArgs Spec}
    in
@@ -89,6 +108,8 @@ define
       in
 	 {Property.put 'alice.modulemanager' ModuleManager}
 	 {Property.put 'ozd.args' Rest}
+	 {Property.put 'errors.depth' 20}
+	 {Property.put 'errors.width' 10}
 	 {Wait {ModuleManager link(url: Name $)}}
       [] nil then
 	 {Usage 2}
