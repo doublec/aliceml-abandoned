@@ -69,7 +69,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 		 case OS.Process.getEnv "STOCKHOME" of
 		     SOME homedir =>
 			 if Source.url desc =
-			     SOME (Url.fromString (homedir ^ "/lib/Base." ^
+			     SOME (Url.fromString ("file:" ^
+						   homedir ^ "/lib/Base." ^
 						   extension ^ ".sig"))
 			 then s
 			 else
@@ -424,7 +425,8 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 	    structure AbstractionPhase =
 		  MakeTracingPhase(
 			structure Phase    =
-			    MakeAbstractionPhase(val loadSign = acquireSign)
+			    MakeAbstractionPhase(val loadSign = acquireSign
+						 structure Switches = Switches)
 			structure Switches = Switches
 			val name = "Abstraction"
 		  )
