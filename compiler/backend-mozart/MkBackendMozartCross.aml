@@ -25,7 +25,7 @@ import structure PickleFlatGrammar from "PickleFlatGrammar"
 structure MozartEngine =
     MkEngine(fun cmd () =
 		 ("/bin/sh",
-		  [(*--**"/opt/mozart-1.1.1/bin/ozd", "-p",*)
+		  [(*--**"/opt/mozart-1.2.0/bin/ozd", "-p",*)
 		   case OS.Process.getEnv "ALICEC_MOZART" of
 		       SOME s => s
 		     | NONE => "alicec-mozart.exe"])
