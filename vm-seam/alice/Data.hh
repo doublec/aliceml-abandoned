@@ -329,6 +329,37 @@ public:
   }
 };
 
+class DllExport Word8Vector: private String {
+public:
+  static const u_int maxLen = String::maxSize;
+
+  using Chunk::ToWord;
+
+  static Word8Vector *New(u_int length) {
+    return static_cast<Word8Vector *>(String::New(length));
+  }
+  static Word8Vector *FromWord(word x) {
+    return static_cast<Word8Vector *>(String::FromWord(x));
+  }
+  static Word8Vector *FromWordDirect(word x) {
+    return static_cast<Word8Vector *>(String::FromWordDirect(x));
+  }
+  u_int GetLength() {
+    return GetSize();
+  }
+  void Init(u_int index, word value) {
+    Assert(index < GetSize());
+    GetValue()[index] = Store::WordToInt(value);
+  }
+  void LateInit(u_int index, word value) {
+    // This is only meant to be called by Vector.tabulate
+    Init(index, value);
+  }
+  word Sub(u_int index) {
+    return Store::IntToWord(GetValue()[index]);
+  }
+};
+
 class DllExport Record: private Block {
 protected:
   enum { WIDTH_POS, BASE_SIZE };
