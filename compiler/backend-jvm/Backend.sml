@@ -232,9 +232,9 @@ structure Backend=
 	    let
 		val r = valOf(Real.fromString r)
 	    in
-		if (Real.sign (r-0.0)=0)
-		    orelse (Real.sign(r-1.0)=0)
-		    orelse (Real.sign (r-2.0)=0) then Fconst (trunc r)
+		if (Real.compare (r,0.0)=EQUAL)
+		    orelse (Real.compare(r,1.0)=EQUAL)
+		    orelse (Real.compare(r,2.0)=EQUAL) then Fconst (trunc r)
 		else Ldc (JVMFloat r)
 	    end
 	  | atCode (StringLit s)= Ldc (JVMString s)
