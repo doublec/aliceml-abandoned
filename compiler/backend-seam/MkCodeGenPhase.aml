@@ -374,10 +374,8 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	    O.PutVar (id, O.Immediate (translateLit lit), instr)
 	  | translateExp (PrimExp (_, name), id, instr, _) =
 	    O.PutVar (id, O.Immediate (V.prim name), instr)
-	  | translateExp (NewExp (_, Name.ExId s), id, instr, _) =
-	    O.PutNew (id, s, instr)
-	  | translateExp (NewExp (_, Name.InId), id, instr, _) =
-	    O.PutNew (id, "", instr)
+	  | translateExp (NewExp (_, name), id, instr, _) =
+	    O.PutNew (id, Name.toString name, instr)
 	  | translateExp (VarExp (_, idRef), id, instr, env) =
 	    O.PutVar (id, lookup (env, idRef), instr)
 	  | translateExp (TagExp (_, _, tag, TupArgs #[]), id, instr, _) =
