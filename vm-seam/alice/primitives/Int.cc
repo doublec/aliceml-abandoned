@@ -148,6 +148,12 @@ DEFINE2(Int_mod) {
 INT_INT_TO_INT_OP_DIV(Int_quot, /)
 INT_INT_TO_INT_OP_DIV(Int_rem, %)
 
+static word Some(s_int i) {
+  TagVal *some = TagVal::New(Types::SOME, 1);
+  some->Init(0, Store::IntToWord(i));
+  return some->ToWord();
+}
+
 void PrimitiveTable::RegisterInt() {
   Register("Int.~", Int_opnegate, 1);
   Register("Int.+", Int_opadd, 2);
@@ -160,10 +166,10 @@ void PrimitiveTable::RegisterInt() {
   Register("Int.abs", Int_abs, 1);
   Register("Int.compare", Int_compare, 2);
   Register("Int.div", Int_div, 2);
-  Register("Int.maxInt", Store::IntToWord(MAX_VALID_INT));
-  Register("Int.minInt", Store::IntToWord(MIN_VALID_INT));
+  Register("Int.maxInt", Some(MAX_VALID_INT));
+  Register("Int.minInt", Some(MIN_VALID_INT));
   Register("Int.mod", Int_mod, 2);
-  Register("Int.precision", Store::IntToWord(INT_PRECISION));
+  Register("Int.precision", Some(INT_PRECISION));
   Register("Int.quot", Int_quot, 2);
   Register("Int.rem", Int_rem, 2);
 }
