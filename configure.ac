@@ -17,6 +17,7 @@ dnl  Programs
 dnl
 AC_PROG_MAKE_SET
 AC_PROG_CXX
+AC_PROG_INSTALL
 
 dnl
 dnl  zlib

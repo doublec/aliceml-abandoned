@@ -46,9 +46,47 @@ GENERIC_SOURCES = \
 	Unpickler.cc Pickler.cc Profiler.cc Broker.cc
 GENERIC_OBJS = $(GENERIC_SOURCES:%.cc=generic/%.o)
 SEAM_OBJS = $(STORE_OBJS) $(ADT_OBJS) $(GENERIC_OBJS)
+
+##
+## Include Files for the Foreign Function Interface
+##
+TOPINCLUDEFILES0 = \
+	Base.hh Seam.hh
+STOREINCLUDEFILES0 = \
+	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
+	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh BaseMap.hh \
+	BaseMap.cc MapNode.hh Heap.hh JITStore.hh
+ADTINCLUDEFILES0 = \
+	IntMap.hh ChunkMap.hh Queue.hh Stack.hh
+GENERICINCLUDEFILES0 = \
+	FinalizationSet.hh Transform.hh ConcreteRepresentationHandler.hh \
+	ConcreteRepresentation.hh ConcreteCode.hh Closure.hh Thread.hh \
+	ThreadQueue.hh Tuple.hh String.hh StackFrame.hh Backtrace.hh \
+	Pickle.hh Float.hh Double.hh Debug.hh RootSet.hh UniqueString.hh \
+	TaskStack.hh IOHandler.hh IODesc.hh SignalHandler.hh \
+	Scheduler.hh Transients.hh Worker.hh Interpreter.hh Primitive.hh \
+	PushCallWorker.hh BindFutureWorker.hh Unpickler.hh Pickler.hh \
+	Profiler.hh Broker.hh Authoring.hh JitterGenericData.hh
+INCLUDEFILES = \
+	$(TOPINCLUDEFILES0) \
+	$(STOREINCLUDEFILES0:%=store/%) \
+	$(ADTINCLUDEFILES0:%=adt/%) \
+	$(GENERICINCLUDEFILES0:%=generic/%)
 ##
 ## Done
 ##
+
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+prefix = @prefix@
+includedir = @includedir@
+INSTALLDIRS = \
+	$(bindir) \
+	$(includedir)/seam/store $(includedir)/seam/adt \
+	$(includedir)/seam/generic
+BINS = seam.exe seam.dll
+INSTALLFILES = $(BINS:%=$(bindir)/%) $(INCLUDEFILES:%=$(includedir)/seam/%)
+INSTALL = @INSTALL@
 
 .PHONY: $(SUBDIRS) clean-local veryclean-local distclean-local install
 
@@ -76,6 +114,17 @@ veryclean-local: clean-local
 	rm -f seam.dll
 distclean-local: veryclean-local
 	rm -f Makefile.depend
+
+install: $(INSTALLDIRS) $(INSTALLFILES)
+
+$(INSTALLDIRS): %:
+	mkdir -p $@
+
+$(bindir)/%: %
+	$(INSTALL) -c -m 555 $< $@
+
+$(includedir)/seam/%: %
+	$(INSTALL) -c -m 444 $< $@
 
 Makefile: Makefile.in config.status
 	./config.status

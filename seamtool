@@ -1,0 +1,102 @@
+#!/bin/sh
+
+##
+## Configuration Section
+##
+
+LIGHTNING=0
+
+##
+## End of Configuration Section
+##
+
+if [ $# -lt 1 ]; then
+    echo "usage: $0 [--verbose|-v] (cc|c++|ld) <option> ..." >&2
+    exit 2
+fi
+
+if test -z "${ALICE_HOME}"; then
+  ALICE_HOME=$(dirname $(dirname $0))
+fi
+
+case `uname -s` in
+    CYGWIN*)
+	platform=windows
+	;;
+    *)
+	platform=unix
+	;;
+esac
+
+mode=$1; shift
+case "$mode" in
+    --verbose|-v)
+	verbose=1
+	mode=$1; shift
+	;;
+    *)
+	verbose=0
+	;;
+esac
+
+cmd() {
+    if [ "$verbose" -ne 0 ]; then echo "$@"; fi
+    "$@" || exit $?
+}
+
+case "$mode" in
+    cc)
+	if [ "$platform" = windows ]; then
+	    cflags=-mno-cygwin
+	else
+	    cflags=-fPIC
+	fi
+	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
+	;;
+    c++)
+	if [ "$platform" = windows ]; then
+	    cflags=-mno-cygwin
+	else
+	    cflags=-fPIC
+	fi
+	cmd g++ $cflags -DLIGHTNING=$LIGHTNING -I$ALICE_HOME/include "$@"
+	;;
+    ld)
+	outputfile=""
+	ldflags=""
+	libs=""
+	fileargs=""
+	while [ $# -gt 0 ]; do
+	    case $1 in
+		-o)
+		    if [ -z "$outputfile" ]; then
+			outputfile="$2"; shift; shift
+		    else
+			echo $0: option -o given more than once >&2
+			exit 2
+		    fi
+		    ;;
+		-s)
+		    ldflags="$ldflags $1"; shift
+		    ;;
+		-l*|-L*)
+		    libs="$libs $1"; shift
+		    ;;
+		*)
+		    fileargs="$fileargs $1"; shift
+		    ;;
+	    esac
+	done
+	libs="$libs $ALICE_HOME/seam.dll $ALICE_HOME/alice.dll"
+	if [ "$platform" = windows ]; then
+	    ldflags="-mno-cygwin $ldflags"
+	fi
+	cmd g++ -shared $ldflags -o $outputfile $fileargs $libs
+	;;
+    *)
+	echo $0: unknown mode \`$1\' >&2
+	exit 2
+	;;
+esac
+
+exit 0
