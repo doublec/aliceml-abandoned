@@ -441,6 +441,11 @@ define
 			      {Inspector.inspectN N V}
 			      unit
 			   end
+			'Inspect$':
+			   fun {$ X}
+			      {Inspector.inspect X.'X$'}
+			      unit
+			   end
 			'InspectType$':
 			   fun {$ X}
 			      {Inspector.inspect X.'$t'}
@@ -448,19 +453,7 @@ define
 			   end
 			'InspectSig$':
 			   fun {$ X}
-			      {Inspector.inspect
-			       {X.'$S$' unit}}
-			      unit
-			   end
-			'InspectValSig$':
-			   fun {$ X}
-			      {Inspector.inspect
-			       '#'('val':X.x 'sig':{X.'$S$' unit})}
-			      unit
-			   end
-			'Inspect$':
-			   fun {$ X}
-			      {Inspector.inspect X.'X$'}
+			      {Inspector.inspect X.'$S$'}
 			      unit
 			   end
 			'configure': Configure)
