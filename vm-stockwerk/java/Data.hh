@@ -84,6 +84,19 @@ public:
     Assert(b->GetLabel() == JavaLabel::Array);
     return static_cast<Array *>(b);
   }
+
+  void Init(u_int index, word value) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    InitArg(BASE_SIZE + index, value);
+  }
+  void Assign(u_int index, word value) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    ReplaceArg(BASE_SIZE + index, value);
+  }
+  word Get(u_int index) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    return GetArg(BASE_SIZE + index);
+  }
 };
 
 class DllExport JavaArray: private Block {
@@ -95,24 +108,38 @@ protected:
     // ... elements
   };
 public:
-  static Array *New(word type, u_int length) {
+  static JavaArray *New(word type, u_int length) {
     //--** array representation depends on type
     Block *b = Store::AllocBlock(JavaLabel::JavaArray, BASE_SIZE + length);
     b->InitArg(CLASS_POS, type);
     b->InitArg(SIZE_POS, Store::IntToWord(length));
     for (u_int i = length; i--; ) b->InitArg(BASE_SIZE + i, null);
-    return static_cast<Array *>(b);
+    return static_cast<JavaArray *>(b);
   }
-  static Array *FromWord(word x) {
+  static JavaArray *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
     Assert(b == INVALID_POINTER || b->GetLabel() == JavaLabel::JavaArray);
-    return static_cast<Array *>(b);
+    return static_cast<JavaArray *>(b);
   }
-  static Array *FromWordDirect(word x) {
+  static JavaArray *FromWordDirect(word x) {
     Block *b = Store::DirectWordToBlock(x);
     Assert(b->GetLabel() == JavaLabel::JavaArray);
-    return static_cast<Array *>(b);
+    return static_cast<JavaArray *>(b);
   }
+
+  void Init(u_int index, word value) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    InitArg(BASE_SIZE + index, value);
+  }
+  void Assign(u_int index, word value) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    ReplaceArg(BASE_SIZE + index, value);
+  }
+  word Get(u_int index) {
+    Assert(index < Store::DirectWordToInt(GetArg(SIZE_POS)));
+    return GetArg(BASE_SIZE + index);
+  }
+
 };
 
 class DllExport Lock: private Block {
