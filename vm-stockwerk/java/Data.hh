@@ -500,16 +500,22 @@ public:
     return (p[0] << 8) | p[1];
   }
   u_int LoadInt(u_int index) {
-    Assert(GetBaseType() == BaseType::Short);
+    Assert(GetBaseType() == BaseType::Int);
     u_char *p = GetElementPointer(index, 4);
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
   }
   JavaLong *LoadLong(u_int index) {
-    Assert(GetBaseType() == BaseType::Short);
+    Assert(GetBaseType() == BaseType::Long);
     return JavaLong::New(GetElementPointer(index, 8));
   }
-  //--** LoadFloat
-  //--** LoadDouble
+  Float *LoadFloat(u_int index) {
+    Assert(GetBaseType() == BaseType::Float);
+    return Float::NewFromNetworkRepresentation(GetElementPointer(index, 4));
+  }
+  Double *LoadDouble(u_int index) {
+    Assert(GetBaseType() == BaseType::Double);
+    return Double::NewFromNetworkRepresentation(GetElementPointer(index, 8));
+  }
   word Load(u_int index) {
     //--** remove
     switch (GetBaseType()) {
@@ -526,8 +532,9 @@ public:
     case BaseType::Long:
       return LoadLong(index)->ToWord();
     case BaseType::Float:
+      return LoadFloat(index)->ToWord();
     case BaseType::Double:
-      Error("unimplemented"); //--**
+      return LoadDouble(index)->ToWord();
     default:
       Error("invalid base type");
     }
@@ -554,7 +561,7 @@ public:
     p[1] = value;
   }
   void StoreInt(u_int index, u_int value) {
-    Assert(GetBaseType() == BaseType::Short);
+    Assert(GetBaseType() == BaseType::Int);
     u_char *p = GetElementPointer(index, 4);
     p[0] = value >> 24;
     p[1] = value >> 16;
@@ -562,11 +569,20 @@ public:
     p[3] = value;
   }
   void StoreLong(u_int index, JavaLong *value) {
-    Assert(GetBaseType() == BaseType::Short);
-    std::memcpy(GetElementPointer(index, 8), value->GetBase(), 8);
+    Assert(GetBaseType() == BaseType::Long);
+    std::memcpy(GetElementPointer(index, 8),
+		value->GetNetworkRepresentation(), 8);
   }
-  //--** StoreFloat
-  //--** StoreDouble
+  void StoreFloat(u_int index, Float *value) {
+    Assert(GetBaseType() == BaseType::Float);
+    std::memcpy(GetElementPointer(index, 4),
+		value->GetNetworkRepresentation(), 4);
+  }
+  void StoreDouble(u_int index, Double *value) {
+    Assert(GetBaseType() == BaseType::Double);
+    std::memcpy(GetElementPointer(index, 8),
+		value->GetNetworkRepresentation(), 8);
+  }
   void Store(u_int index, word value) {
     //--** remove
     switch (GetBaseType()) {
@@ -589,8 +605,11 @@ public:
       StoreLong(index, JavaLong::FromWordDirect(value));
       break;
     case BaseType::Float:
+      StoreFloat(index, Float::FromWordDirect(value));
+      break;
     case BaseType::Double:
-      Error("unimplemented"); //--**
+      StoreDouble(index, Double::FromWordDirect(value));
+      break;
     default:
       Error("invalid base type");
     }
