@@ -30,11 +30,23 @@ enum CONSTANT_tag {
   CONSTANT_Utf8               = 1
 };
 
-class ConstantPoolEntry: public Block {
+class ConstantPoolEntry: private Block {
 public:
+  using Block::ToWord;
+  using Block::InitArg;
+
   static ConstantPoolEntry *New(CONSTANT_tag tag, u_int size) {
     return static_cast<ConstantPoolEntry *>
       (Store::AllocBlock(static_cast<BlockLabel>(MIN_DATA_LABEL + tag), size));
+  }
+  static ConstantPoolEntry *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    //--** Assert label
+    return static_cast<ConstantPoolEntry *>(b);
+  }
+
+  word Fixup(ConstantPool *) {
+    return ToWord(); //--**
   }
 };
 
@@ -63,6 +75,11 @@ ConstantPool *ClassFile::ParseConstantPool(u_int &offset) {
   ConstantPool *constantPool = ConstantPool::New(constantPoolCount - 1);
   for (u_int i = 1; i < constantPoolCount; i++)
     constantPool->Init(i, ParseConstantPoolEntry(offset)->ToWord());
+  for (u_int j = 1; j < constantPoolCount; j++) {
+    ConstantPoolEntry *entry =
+      ConstantPoolEntry::FromWordDirect(constantPool->Get(j));
+    constantPool->Init(j, entry->Fixup(constantPool));
+  }
   return constantPool;
 }
 
@@ -167,7 +184,7 @@ FieldInfo *ClassFile::ParseFieldInfo(u_int &offset,
   u_int accessFlags = GetU2(offset);
   JavaString *name = constantPool->GetString(GetU2(offset));
   JavaString *descriptor = constantPool->GetString(GetU2(offset));
-  //--** skip attributes
+  SkipAttributes(offset); //--** need to parse some of them
   return FieldInfo::New(accessFlags, name, descriptor);
 }
 
@@ -184,8 +201,14 @@ MethodInfo *ClassFile::ParseMethodInfo(u_int &offset,
   u_int accessFlags = GetU2(offset);
   JavaString *name = constantPool->GetString(GetU2(offset));
   JavaString *descriptor = constantPool->GetString(GetU2(offset));
-  //--** skip attributes
+  SkipAttributes(offset); //--** need to parse some of them
   return MethodInfo::New(accessFlags, name, descriptor);
+}
+
+void ClassFile::SkipAttributes(u_int &offset) {
+  GetU2(offset); // attributeNameIndex
+  u_int attributeLength = GetU4(offset);
+  offset += attributeLength; // skip info
 }
 
 ClassFile *ClassFile::NewFromFile(char *filename) {
@@ -199,9 +222,11 @@ ClassInfo *ClassFile::Parse() {
   ConstantPool *constantPool = ParseConstantPool(offset);
   u_int accessFlags = GetU2(offset);
   u_int thisClassIndex = GetU2(offset);
-  u_int superClassIndex = GetU2(offset);
+  ClassInfo *super = constantPool->GetClassInfo(GetU2(offset));
   Array *interfaces = ParseInterfaces(offset, constantPool);
   Array *fields = ParseFields(offset, constantPool);
   Array *methods = ParseMethods(offset, constantPool);
-  //--** skip attributes
+  SkipAttributes(offset); //--** need to parse some of them
+  return ClassInfo::New(accessFlags, 0, //--** name
+			super, interfaces, fields, methods, constantPool);
 }

@@ -58,6 +58,7 @@ private:
   FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool);
   Array *ParseMethods(u_int &offset, ConstantPool *constantPool);
   MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool);
+  void SkipAttributes(u_int &offset);
 public:
   using Chunk::ToWord;
 

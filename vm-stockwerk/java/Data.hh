@@ -40,6 +40,7 @@ public:
 static const word null = Store::IntToWord(0);
 
 class Class;
+class ConstantPool;
 
 class DllExport JavaString: private Chunk {
 public:
@@ -74,6 +75,8 @@ protected:
     // ... elements
   };
 public:
+  using Block::ToWord;
+
   static Array *New(u_int length) {
     Block *b = Store::AllocBlock(JavaLabel::Array, BASE_SIZE + length);
     b->InitArg(SIZE_POS, Store::IntToWord(length));
@@ -166,8 +169,8 @@ public:
 protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
-    NAME_POS, // String
-    DESCRIPTOR_POS, // String
+    NAME_POS, // JavaString
+    DESCRIPTOR_POS, // JavaString
     SIZE
   };
 public:
@@ -221,8 +224,8 @@ public:
 protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
-    NAME_POS, // String
-    DESCRIPTOR_POS, // String
+    NAME_POS, // JavaString
+    DESCRIPTOR_POS, // JavaString
     BYTE_CODE_POS, // JavaByteCode | int(0)
     SIZE
   };
@@ -252,23 +255,35 @@ public:
 protected:
   enum {
     ACCESS_FLAGS_POS, // access_flags
-    NAME_POS, // String
+    NAME_POS, // JavaString
     SUPER_POS, // Class
     INTERFACES_POS, // Array(Class)
     FIELDS_POS, // Array(FieldInfo)
     METHODS_POS, // Array(MethodInfo)
-    CONSTANT_POOL_POS, // Array(word)
+    CONSTANT_POOL_POS, // ConstantPool
     SIZE
   };
 public:
+  using Block::ToWord;
+
+  static ClassInfo *New(u_int accessFlags, JavaString *name,
+			ClassInfo *super, Array *interfaces, Array *fields,
+			Array *methods, ConstantPool *constantPool);
+  static ClassInfo *FromWordDirect(word x) {
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == JavaLabel::ClassInfo);
+    return static_cast<ClassInfo *>(b);
+  }
+
   bool Verify();
   Class *Prepare();
 };
 
-class DllExport Class: public ClassInfo {
+class DllExport Class: private Block {
 protected:
   enum {
-    VIRTUAL_TABLE_POS, // Block(Closure)
+    CLASS_INFO_POS, // ClassInfo
+    VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
     LOCK_POS,
     INITIALIZATION_THREAD_POS, // Thread | int(0)
     BASE_SIZE
@@ -329,6 +344,8 @@ class DllExport ConstantPool: private Block {
 private:
   enum { SIZE_POS, BASE_SIZE };
 public:
+  using Block::ToWord;
+
   static ConstantPool *New(u_int size) {
     Block *b = Store::AllocBlock(JavaLabel::ConstantPool, BASE_SIZE + size);
     b->InitArg(SIZE_POS, size);
@@ -345,6 +362,9 @@ public:
 
   JavaString *GetString(u_int offset) {
     return JavaString::FromWordDirect(Get(offset));
+  }
+  ClassInfo *GetClassInfo(u_int offset) {
+    return ClassInfo::FromWordDirect(Get(offset));
   }
 };
 

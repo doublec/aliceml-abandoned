@@ -15,7 +15,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SOURCES = ClassFile.cc
+SOURCES = Data.cc ClassFile.cc
 
 OBJS = $(SOURCES:%.cc=%.o)
 
