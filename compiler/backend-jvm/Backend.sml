@@ -75,20 +75,31 @@ structure Backend=
 			 freeVarSet)
 
 		(* get free variable set of an id. *)
-		fun getVars stamp' =
-		    case StampHash.lookup (free, stamp') of
-			NONE => let
-				    val f = StampSet.new ()
-				in
-				    vprint (1, "unset freevars");
-				    StampSet.insert (f, Lambda.getClassStamp (stamp', 1));
-				    StampHash.insert(free, stamp', f);
-				    f
-				end
-		      | SOME v => (vprint (1, "FreeVars for "^Stamp.toString stamp'^": ");
-				   StampSet.app (fn stamp'' => vprint (1, Stamp.toString stamp''^" ")) v;
-				   vprint (1, "\n");
-				   v)
+		fun getVars (stamp', curCls) =
+		    StampSet.fold
+		    (fn (stamp'',akku) => let
+					      val l' = Lambda.getLambda stamp''
+					      val cs' = Lambda.getClassStamp (l', 1)
+					      val gi' = Lambda.getId cs'
+					  in
+					      if Lambda.getParmStamp (stamp',l')<>l' orelse stampFromId gi'=curCls
+						  then akku
+					      else l'::akku
+					  end)
+		    nil
+		    (case StampHash.lookup (free, stamp') of
+			 NONE => let
+				     val f = StampSet.new ()
+				 in
+				     vprint (1, "unset freevars");
+				     StampSet.insert (f, Lambda.getClassStamp (stamp', 1));
+				     StampHash.insert(free, stamp', f);
+				     f
+				 end
+		       | SOME v => (vprint (1, "FreeVars for "^Stamp.toString stamp'^": ");
+				    StampSet.app (fn stamp'' => vprint (1, Stamp.toString stamp''^" ")) v;
+				    vprint (1, "\n");
+				    v))
 
 		(* assign ids to their defining function closure. *)
 		fun setFun (Id (_,stamp',_), stamp'') =

@@ -101,12 +101,12 @@ structure CodeGen =
 	(* mark a variable as free *)
 	fun markfree (free, id' as Id (_,stamp', _), curFun, dbg) =
 	    (StampSet.insert (free, stamp');
-	     vprint (2, "markfree ("^dbg^"): "^Stamp.toString stamp'^"\n"))
+	     vprint (2, "markfree in "^Stamp.toString curFun^" ("^dbg^"): "^Stamp.toString stamp'^"\n"))
 
 	(* mark a variable as bound *)
 	fun markbound (free, id' as Id (_,stamp', _), curFun, dbg) =
 	    (StampSet.delete (free, stamp');
-	     vprint (2, "markbound: "^dbg);
+	     vprint (2, "markbound in "^Stamp.toString curFun^" ("^dbg^"): "^Stamp.toString stamp'^"\n");
 	     FreeVars.setFun (id', curFun))
 
 	(* compute free variables of expressions *)
@@ -132,12 +132,18 @@ structure CodeGen =
 	    (markfree (free, id', curFun, "AdjExp");
 	     markfree (free, id'', curFun, "AdjExp2"))
 	  | freeVarsExp (AppExp(_,Id (_, stamp',_), idargs'), free, curFun) =
-	    (markfree (free, Lambda.getId
-		       (Lambda.getClassStamp
-			(Lambda.getLambda stamp',
-			 Lambda.argSize idargs')),
-		       curFun, "AppExp");
-	     argApp (markfree, idargs', free, curFun, "AppExp2"))
+	    let
+		val l' = Lambda.getLambda stamp'
+		val as' = Lambda.argSize idargs'
+		val cs' = Lambda.getClassStamp (l', as')
+		val gi' = Lambda.getId cs'
+	    in
+		vprint (1, "AppExp: Appliziere "^Stamp.toString stamp'^" = Lambda "^
+			Stamp.toString l'^" mit "^Int.toString as'^" Argumenten aus Klasse "^
+			Stamp.toString cs'^", id = "^Stamp.toString(stampFromId gi')^".\n");
+		markfree (free, gi', curFun, "AppExp");
+		argApp (markfree, idargs', free, curFun, "AppExp2")
+	    end
 	  | freeVarsExp (ConExp(_, id', _), free, curFun) =
 	    markfree (free, id', curFun, "ConExp")
 	  | freeVarsExp (RefExp _, _, _) = ()
@@ -200,10 +206,20 @@ structure CodeGen =
 	    (freeVarsExp (exp', free, curFun);
 	     markbound (free, id', curFun, "ValDec"))
 	  | freeVarsDec (RecDec(_,idsexps, _), free, curFun) =
-	    (app
-	     (fn (id', exp') => (freeVarsExp (exp', free, curFun);
-				 markbound (free, id', curFun, "RecDec")))
-	     idsexps)
+	    (app (fn (_, exp') => freeVarsExp (exp', free, curFun)) idsexps;
+	     app
+	     (fn (Id (_, stamp', _), _) =>
+	      let
+		  val l' = Lambda.getLambda stamp'
+		  val cs' = Lambda.getClassStamp (l', 1)
+		  val gi' = Lambda.getId cs'
+	      in
+		  vprint (1, "RecDec: definiere "^Stamp.toString stamp'^" = Lambda "^
+			  Stamp.toString l'^" mit 1 Argument aus Klasse "^
+			  Stamp.toString cs'^", id = "^Stamp.toString(stampFromId gi')^".\n");
+		  markbound (free, gi', curFun, "RecDec")
+	      end)
+	    idsexps)
 	  | freeVarsDec (EvalStm(_, exp'), free, curFun) =
 	    freeVarsExp (exp', free, curFun)
 	  | freeVarsDec (ReturnStm(_,exp'), free, curFun) =
@@ -297,6 +313,8 @@ structure CodeGen =
 		vprint (2, "parm3Stamp: "^Stamp.toString parm3Stamp^"\n");
 		vprint (2, "parm4Stamp: "^Stamp.toString parm4Stamp^"\n");
 		vprint (2, "parm5Stamp: "^Stamp.toString parm5Stamp^"\n");
+		vprint (2, "toplevel: "^Stamp.toString toplevel^"\n");
+		vprint (2, "illegalStamp: "^Stamp.toString illegalStamp^"\n");
 		let
 		    (* do constant propagation *)
 		    val _ = (vprint (3, "constant propagation ... ");
@@ -1217,7 +1235,7 @@ structure CodeGen =
 	    let
 		val curCls = Lambda.getClassStamp (thisFun, 1)
 		val className = classNameFromStamp curCls
-		val freeVarList = FreeVars.getVars thisFun
+		val freeVarList = FreeVars.getVars (thisFun, curCls)
 		(* 1st *)
 		val object =
 		    if newClosure
@@ -1248,19 +1266,8 @@ structure CodeGen =
 			     akku)
 		      | loadFreeVars (nil, true, akku) = Pop::akku
 		      | loadFreeVars (_,_,akku) = akku
-
-		    val realFreeVars = StampSet.fold
-			(fn (stamp'',akku) => let
-						  val s'' = Lambda.getLambda stamp''
-					      in
-						  if Lambda.getParmStamp (thisFun,s'')<>s'' orelse s''=thisFun
-						      then akku
-						  else s''::akku
-					      end)
-			nil
-			freeVarList
 		in
-		    val loadVars = loadFreeVars (realFreeVars, not newClosure, nil)
+		    val loadVars = loadFreeVars (freeVarList, not newClosure, nil)
 		end
 	    in
 		Lambda.markForPickling (thisFun, upperCls);
@@ -1463,23 +1470,16 @@ structure CodeGen =
 	    expCodeClass ((OneArg id', body')::specialApplies, curFun, curCls) =
 	    let
 		val _ = vprint (1, "create Class "^classNameFromStamp curFun^"\n")
-		val freeVarList = FreeVars.getVars curFun
+		val freeVarList = FreeVars.getVars (curFun, curCls)
 		val _ = Lambda.setParmStamp (curFun, stampFromId id', parm1Stamp)
 		val _ = FreeVars.setFun (id', curCls)
 
 		(* generate fields for the free variables of the function *)
 		fun fields (stamp'', akku) =
-		    let
-			val s'' = Lambda.getLambda stamp''
-		    in
-			if s'' = curFun orelse Lambda.getParmStamp (curFun, s'') <> s''
-			    then akku
-			else
-			    Field ([FPublic],fieldNameFromStamp s'', [Classsig IVal]) ::
-			    akku
-		    end
+		    Field ([FPublic],fieldNameFromStamp stamp'', [Classsig IVal]) ::
+		    akku
 
-		val fieldscode = StampSet.fold fields nil freeVarList
+		val fieldscode = List.foldr fields nil freeVarList
 
 		fun createApplies ((t as TupArgs ids, body'')::rest,
 				   a0, a2, a3, a4, ra) =
