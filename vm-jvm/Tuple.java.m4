@@ -40,7 +40,7 @@ public class Tuple implements DMLTuple {
 	    if (i>0) s+=", ";
 	    s+=vals[i];
 	}
-	return s+")";
+	return s+")/"+getArity();
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/

@@ -28,7 +28,7 @@ public class Tuple3 implements DMLTuple {
     }
 
     public String toString() {
-	return "("+fst+", "+snd+", "+thr+")";
+	return "("+fst+", "+snd+", "+thr+")/3";
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/
