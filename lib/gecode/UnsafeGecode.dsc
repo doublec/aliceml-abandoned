@@ -46,6 +46,16 @@ void eq(IntVar, IntVar, BoolVar, ConLevel); int_eqR;
 void distinct(const IntVarArgs&, ConLevel); int_distinct;
 void distinct(const IntArgs&, const IntVarArgs&, ConLevel); int_distinctI;
 
+// Area constraint
+void area(const IntVarArgs&, const IntArgs&, const IntVarArgs&, const IntArgs&, ConLevel); int_area;
+
+// Sortedness
+void sortedness(const IntVarArgs&, const IntVarArgs&, ConLevel); int_sortedness;
+void permsort(const IntVarArgs&, const IntVarArgs&, const IntVarArgs&, ConLevel); int_permsort;
+
+// Global cardinality
+void gcc(const IntVarArgs&, const IntArgs&, const IntArgs&, int, ConLevel); int_gcc;
+
 // Linear equations
 void linear(const IntArgs&, const IntVarArgs&, RelType, int, ConLevel); int_linear;
 void linear(const IntArgs&, const IntVarArgs&, RelType, int, BoolVar, ConLevel); int_linearR;
@@ -79,8 +89,8 @@ void bool_or(const BoolVarArgs&, BoolVar); int_bool_orV;
 void min(const IntVarArgs&, IntVar); int_min;
 void max(const IntVarArgs&, IntVar); int_max;
 void abs(IntVar, IntVar, ConLevel); int_abs;
-void mult(IntVar, IntVar, IntVar); int_mult;
-//void power(IntVar, IntVar, IntVar); int_power;
+void mult(IntVar, IntVar, IntVar, ConLevel); int_mult;
+void pow(IntVar, IntVar, IntVar, ConLevel); int_power;
 
 // Value assignment
 

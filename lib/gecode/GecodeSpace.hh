@@ -60,7 +60,7 @@ public:
   {}
 
   explicit
-  GecodeSpace(GecodeSpace& s) : Space(s), 
+  GecodeSpace(GecodeSpace& s, bool share=true) : Space(s, share), 
 				is(s.is.copy(this)),
                                 noOfIntVars(s.noOfIntVars),
                                 intArraySize(s.intArraySize),
@@ -69,8 +69,8 @@ public:
  				fsArraySize(s.fsArraySize)
   {}
 
-  virtual Space* copy(void) {
-    return new GecodeSpace(*this);
+  virtual Space* copy(bool share) { 
+    return new GecodeSpace(*this,share); 
   }
 
   intvar new_intvar(DomSpec&);
