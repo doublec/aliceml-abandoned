@@ -180,10 +180,9 @@ public:
     self = new RefMapIteratorInterpreter();
   }
   // Frame Handling
-  static void PushFrame(TaskStack *taskStack,
-			Entry *entry, word closure, operation op);
+  static void PushFrame(Entry *entry, word closure, operation op);
   // Execution
-  virtual Result Run(TaskStack *taskStack);
+  virtual Result Run();
   // Debugging
   virtual const char *Identify();
   virtual void DumpFrame(word frame);
@@ -227,16 +226,16 @@ public:
 
 RefMapIteratorInterpreter *RefMapIteratorInterpreter::self;
 
-void RefMapIteratorInterpreter::PushFrame(TaskStack *taskStack, Entry *entry,
+void RefMapIteratorInterpreter::PushFrame(Entry *entry,
 					  word closure, operation op) {
   RefMapIteratorFrame *frame =
     RefMapIteratorFrame::New(self, entry, closure, op);
-  taskStack->PushFrame(frame->ToWord());
+  Scheduler::PushFrame(frame->ToWord());
 }
 
-Interpreter::Result RefMapIteratorInterpreter::Run(TaskStack *taskStack) {
+Interpreter::Result RefMapIteratorInterpreter::Run() {
   RefMapIteratorFrame *frame =
-    RefMapIteratorFrame::FromWordDirect(taskStack->GetFrame());
+    RefMapIteratorFrame::FromWordDirect(Scheduler::GetFrame());
   Entry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
@@ -244,7 +243,7 @@ Interpreter::Result RefMapIteratorInterpreter::Run(TaskStack *taskStack) {
   if (nextEntry != INVALID_POINTER)
     frame->SetEntry(nextEntry);
   else
-    taskStack->PopFrame();
+    Scheduler::PopFrame();
   switch (op) {
   case app:
     Scheduler::nArgs = Scheduler::ONE_ARG;
@@ -269,7 +268,7 @@ Interpreter::Result RefMapIteratorInterpreter::Run(TaskStack *taskStack) {
     Scheduler::currentArgs[1] = entry->GetValue();
     break;
   }
-  return taskStack->PushCall(closure);
+  return Scheduler::PushCall(closure);
 }
 
 const char *RefMapIteratorInterpreter::Identify() {
@@ -346,7 +345,7 @@ DEFINE2(UnsafeMkRefMap_app) {
   DECLARE_REF_MAP(refMap, x1);
   Entry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
-    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, app);
+    RefMapIteratorInterpreter::PushFrame(entry, closure, app);
   RETURN_UNIT;
 } END
 
@@ -355,7 +354,7 @@ DEFINE2(UnsafeMkRefMap_appi) {
   DECLARE_REF_MAP(refMap, x1);
   Entry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
-    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, appi);
+    RefMapIteratorInterpreter::PushFrame(entry, closure, appi);
   RETURN_UNIT;
 } END
 
@@ -365,7 +364,7 @@ DEFINE3(UnsafeMkRefMap_fold) {
   DECLARE_REF_MAP(refMap, x2);
   Entry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
-    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, fold);
+    RefMapIteratorInterpreter::PushFrame(entry, closure, fold);
   RETURN(zero);
 } END
 
@@ -375,7 +374,7 @@ DEFINE3(UnsafeMkRefMap_foldi) {
   DECLARE_REF_MAP(refMap, x2);
   Entry *entry = refMap->GetHead();
   if (entry != INVALID_POINTER)
-    RefMapIteratorInterpreter::PushFrame(taskStack, entry, closure, foldi);
+    RefMapIteratorInterpreter::PushFrame(entry, closure, foldi);
   RETURN(zero);
 } END
 

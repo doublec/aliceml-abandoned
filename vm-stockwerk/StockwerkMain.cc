@@ -124,8 +124,7 @@ int main(int argc, char *argv[]) {
     if (module != Store::IntToWord(0)) {
       Record *record = Record::FromWord(module);
       word boot = record->PolySel(UniqueString::New(String::New("boot")));
-      Scheduler::NewThread(boot, Scheduler::ONE_ARG, Properties::rootUrl,
-			   TaskStack::New());
+      Scheduler::NewThread(boot, Scheduler::ONE_ARG, Properties::rootUrl);
       // Restart Scheduler to execute module
       Scheduler::Run();
 #if PROFILE
