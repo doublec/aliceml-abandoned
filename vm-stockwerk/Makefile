@@ -5,11 +5,12 @@ include $(TOPDIR)/Makefile.rules
 
 SUBDIRS = store adt scheduler datalayer builtins interpreter
 
-OBJS = Main.o
+OBJS = Base.o Main.o
 LIBS = \
 	interpreter/bootstrap/libbootstrapinterpreter.a \
 	builtins/libbuiltins.a datalayer/libdatalayer.a \
-	scheduler/libscheduler.a adt/libadt.a store/libstore.a
+	scheduler/libscheduler.a adt/libadt.a store/libstore.a \
+	-lmsvcrt
 
 .PHONY: all-subdirs
 
