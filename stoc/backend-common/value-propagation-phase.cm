@@ -14,7 +14,7 @@ is
     arity.cm
     output-flat-grammar.cm
 
-    PRIM_OPS.sig
-    PrimOps.sml
-    VALUE_PROPAGATION_PHASE.sig
-    ValuePropagationPhase.sml
+    PRIM_OPS-sig.aml
+    PrimOps.aml
+    VALUE_PROPAGATION_PHASE-sig.aml
+    ValuePropagationPhase.aml

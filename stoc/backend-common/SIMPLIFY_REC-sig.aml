@@ -10,6 +10,14 @@
  *   $Revision$
  *)
 
+import
+    signature INTERMEDIATE_GRAMMAR
+from "../common/INTERMEDIATE_GRAMMAR-sig"
+
+import
+    structure IntermediateGrammar
+from "../common/IntermediateGrammar"
+
 signature SIMPLIFY_REC =
     sig
 	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar

@@ -6,5 +6,5 @@ is
 
     ../common/name.cm
 
-    ARITY.sig
-    Arity.sml
+    ARITY-sig.aml
+    Arity.aml

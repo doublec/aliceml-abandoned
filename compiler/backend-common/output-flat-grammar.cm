@@ -10,5 +10,5 @@ is
 
     flat-grammar.cm
 
-    OUTPUT_FLAT_GRAMMAR.sig
-    OutputFlatGrammar.sml
+    OUTPUT_FLAT_GRAMMAR-sig.aml
+    OutputFlatGrammar.aml

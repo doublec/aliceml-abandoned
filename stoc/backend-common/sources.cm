@@ -1,7 +1,7 @@
 Group
 
     structure FlatGrammar
-    functor MakeBackendCommon
+    functor MkBackendCommon
 
 is
 
@@ -14,4 +14,4 @@ is
     dead-code-elimination-phase.cm
     engine.cm
 
-    MakeBackendCommon.sml
+    MkBackendCommon.aml

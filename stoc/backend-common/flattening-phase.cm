@@ -13,16 +13,16 @@ is
     flat-grammar.cm
     arity.cm
 
-    LABEL_SORT.sig
-    MakeLabelSort.sml
-    LabelSort.sml
-    INTERMEDIATE_AUX.sig
-    IntermediateAux.sml
+    LABEL_SORT-sig.aml
+    MkLabelSort.aml
+    LabelSort.aml
+    INTERMEDIATE_AUX-sig.aml
+    IntermediateAux.aml
 
-    SIMPLIFY_MATCH.sig
-    SimplifyMatch.sml
-    SIMPLIFY_REC.sig
-    SimplifyRec.sml
+    SIMPLIFY_MATCH-sig.aml
+    SimplifyMatch.aml
+    SIMPLIFY_REC-sig.aml
+    SimplifyRec.aml
 
-    FLATTENING_PHASE.sig
-    FlatteningPhase.sml
+    FLATTENING_PHASE-sig.aml
+    FlatteningPhase.aml

@@ -1,6 +1,0 @@
-CM
-Lexer.lex.*
-Parser.grm.*
-~*
-[a-z]*.sml
-*.x86-linux *.x86-win32
