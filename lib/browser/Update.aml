@@ -49,6 +49,8 @@ struct
     val resize = ref (fn () => ()) 
 
     val stopflag = ref false;
+
+    val screen_max_x = ref 0
         
     (* max *)
     fun max (xs,f) = foldl(fn (x,e) => Int.max(f(x),e)) 0 xs
@@ -77,20 +79,10 @@ struct
 		
 		
     (* setVisible *) 
-    fun setVisible (x,y) = let
-			       val w = !Settings.fontWidth
-			       val h = !Settings.fontHeight
-			       val rx =  Real.fromInt(w * x)
-			       val ry =  Real.fromInt(h * y)
-			   in
-			       (if Real.> (rx,!(Settings.max_x)) 
-				    then Settings.max_x := rx 
-				else Settings.max_x := 
-				    Real.fromInt(w * 
-				    calcMaxXDim (Dictionaries.maindict,0))
-				    ; Settings.max_y 
-				    := Real.+(!Settings.max_y,ry))
-			   end 
+    fun setVisible x = 
+	if x > !screen_max_x 
+	    then screen_max_x := x
+	else screen_max_x := calcMaxXDim (Dictionaries.maindict,0)
 
    (* update *)
     and update (no,va,f,g,root) = 
@@ -153,7 +145,7 @@ struct
 		 in ( TextIO.print("\nUPDATE: act_line incremented by "^Int.toString(dy)^"\n")
 		     ; (!incrActLine) dy
 		     ; iterMove (dy,getIndex(anc) + 1) 
-		     ; setVisible(get_xdim(node), dy) )
+		     ; setVisible(get_xdim(node)) )
 		 end
 	      ; TextIO.print(" Iter move done \n") )
 	   end  

@@ -21,9 +21,6 @@ sig
     val max_width: int ref
     val max_depth: int ref
 
-    val max_x : real ref
-    val max_y : real ref
-
     val relmode: bool ref
 
     val tokenmode: bool ref

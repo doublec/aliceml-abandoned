@@ -34,6 +34,8 @@ signature UPDATE =
 
 	val stopflag: bool ref
 
+	val screen_max_x: int ref
+
 	val iterMove: int * int -> unit
 
         (* constraint watcher *) 
@@ -64,7 +66,7 @@ signature UPDATE =
        (* wird in Init bei "shrink" benoetigt *)
 	val findHighestDepth: node -> int
 
-	val setVisible: int * int -> unit
+	val setVisible: int  -> unit
 
 end
 

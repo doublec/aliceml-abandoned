@@ -247,7 +247,12 @@ struct
     val act_line = ref 0
 
     fun incr_act_line dy = act_line := !act_line + dy
-			
+	
+    fun getScreenMaxY() = Real.fromInt(Settings.getFontHeight() * 
+			     !act_line)	
+
+    fun getScreenMaxX() =  Real.fromInt(Settings.getFontWidth() * 
+			     !Update.screen_max_x) 
 	
     (* soll den Knoten und die Markierungen enthalten, die momentan 
      ausgewaehlt sind *)
@@ -263,17 +268,18 @@ struct
       | SOME(n,_,_) => n  
 
     fun DeleteWindow _ = (widgetHideAll(window)
-		    ;Settings.max_x :=0.0
-		    ;Settings.max_y :=0.0
+		    ;Update.screen_max_x := 0
 		    ;Dictionaries.Main.dumpAll(Dictionaries.maindict)
 		    ;Dictionaries.RelMan.dumpAll(Dictionaries.reldict)
 		    ;act_line := 0
 		    ;alive:= false)
 
     val (status,postType,postMode) = createStatusbar() 
+
+   
 	 
     val (scrolled,hadj,vadj) =  
-	createScrollWindowDefaults(20.0,50.0,!Settings.max_x, !Settings.max_y)
+	createScrollWindowDefaults(20.0,50.0,getScreenMaxX(), getScreenMaxY())
 
     fun freezeThaw(x) = (layoutFreeze(x)
 		       ; layoutThaw(x))
@@ -287,8 +293,8 @@ struct
      fun canvaswidth (hadj) = 
 	 let
 	     val page_sh = adjustmentGetFieldPageSize(hadj)
-	     val h = if (Real.< (page_sh,(!(Settings.max_x)))) 
-			 then !(Settings.max_x) else page_sh
+	     val h = if (Real.< (page_sh,(getScreenMaxX()))) 
+			 then getScreenMaxX() else page_sh
 	 in
 	     h
 	 end
@@ -304,12 +310,12 @@ struct
 			    val valuev = adjustmentGetFieldValue(vadj) 
 			    val page_sv = adjustmentGetFieldPageSize(vadj)
 			    val h = canvaswidth(hadj)
-			    val v = if (Real.< (page_sv,(!(Settings.max_y)))) 
-					then !(Settings.max_y) else page_sv
+			    val v = if (Real.< (page_sv,(getScreenMaxY()))) 
+					then getScreenMaxY() else page_sv
 			in
 			    (resize(h,v,scrolled,valueh,valuev,
-						     !Settings.max_x,
-						     !Settings.max_y)
+						     getScreenMaxX(),
+						     getScreenMaxY())
 			     ; resizeSepLines(Dictionaries.maindict,
 					      h)
 			     ; ())
@@ -478,8 +484,8 @@ struct
 	  else ()
 	 ;incr_act_line(dy)
 	 ;Update.iterMove(dy,getIndex(root_node)+1)
-	 ;Update.setVisible(0,dy)) (* Update.setVisible ist wichtig - 
-				    <> zu Widget.setVisible ! *)
+	 ;Update.setVisible 0
+	 ;(!(resize)) ()) 
 	end
 
     (* Mechanismus zum "Neu-Inspizieren" (wird fuer font-Groesse-
@@ -886,8 +892,8 @@ fun makePopup n =
 					 scrolled,
 					 hadj,
 					 vadj,
-					 !Settings.max_x,
-					 !Settings.max_y))
+					 getScreenMaxX(),
+					 getScreenMaxY()))
 
 (**************************************************************************)
 
@@ -899,8 +905,8 @@ fun makePopup n =
 				     then ()
 				 else objectDestroy(!canvas)
 			 structure DA  =  
-			     MkDrawingArea(val xsize = !Settings.max_x 
-					   val ysize = !Settings.max_y) 
+			     MkDrawingArea(val xsize = getScreenMaxX() 
+					   val ysize = getScreenMaxY()) 
 			     : DRAWING_AREA
 		     in
 			 (canvas := DA.canvas
@@ -984,20 +990,9 @@ fun makePopup n =
 
 (**** Ende Initialisierung ****)
 
-fun setVisible (x,y) = let
-			   val w = !Settings.fontWidth
-			   val h = !Settings.fontHeight
-			   val rx =  Real.fromInt(w * x)
-			   val ry =  Real.fromInt(h * y)
-		       in
-			   (if Real.> (rx,!(Settings.max_x)) 
-				then Settings.max_x := rx 
-			    else ()
-			    ;Settings.max_y := 
-				Real.+(!Settings.max_y,ry))
-		       end
-
-
+fun setScreenX x = if x > (!(Update.screen_max_x))
+			   then  Update.screen_max_x := x
+			       else ()
 
 (********** Inspizieren **********)
 
@@ -1019,7 +1014,7 @@ fun setVisible (x,y) = let
 				    ; stopflag := false )
 				  else ()
 			;Layout.layout(n)
-			;setVisible(get_xdim(n),get_ydim(n)+1)
+			;setScreenX(get_xdim(n))
 			;createSepLine(root,!act_line,canvaswidth(hadj),
 				       Settings.getFontHeight()))
 	in
@@ -1052,13 +1047,12 @@ fun setVisible (x,y) = let
 				    ; stopflag := false )
 				  else ()
 		       ;Layout.layout(n)
-		       ;setVisible(get_xdim(n),get_ydim(n)+1)
+		       ;setScreenX(get_xdim(n))
 		       ;createSepLine(root,!act_line,canvaswidth(hadj),
 				      Settings.getFontHeight() ))
 	in
 	    ( Draw.draw(n,0,!act_line,false)
 	    ; incr_act_line(get_ydim(n) + 1)
-	    ; setVisible(get_xdim(n),get_ydim(n)+1)
 	    ; (!resize)()
             ; show()
 	    ; stopButtonSetActive(false)
