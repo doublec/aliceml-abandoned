@@ -1,0 +1,64 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import structure Package      from "Package"
+import structure UnsafePickle from "UnsafePickle"
+import signature PICKLE       from "PICKLE-sig"
+
+structure Pickle : PICKLE =
+struct
+    nonfix mod
+
+    val extension = UnsafePickle.extension
+
+    (* CAUTION, this has to be consistent with the translation phase of
+     * the compiler.
+     * ASSUME that packages have internal type mod * inf.
+     * Related lines have been marked with (*!!*)
+     *)
+
+    type mod
+    type inf
+
+    __primitive functor Pack :
+	fct(signature S structure X : S) -> (val x: mod * inf) = "Pack" (*!!*)
+    __primitive functor Unpack :
+	fct(val x: mod * inf signature S) -> S = "Unpack" (*!!*)
+
+    functor Save(val file : string signature S structure X : S) =
+	let
+	    structure P   = Pack(signature S = S structure X = X)
+	    val (mod,inf) = P.x  (*!!*)
+	    val _         = UnsafePickle.save(file, inf, mod)
+	in
+	    ()
+	end
+
+    functor Load(val file : string signature S) =
+	let
+	    val (inf,mod) = UnsafePickle.load file
+	    val  package  = (mod,inf) (*!!*)
+	in
+	    Unpack(val x = package signature S = S)
+	end
+
+    signature S = sig type t val x : t end
+
+    functor SaveVal(Arg : sig val file : string type t val x : t end) =
+	Save(val file = Arg.file
+	     signature S = S where type t = Arg.t
+	     structure X = Arg)
+
+    functor LoadVal(val file : string type t) =
+	Load(val file = file
+	     signature S = S where type t = t)
+end

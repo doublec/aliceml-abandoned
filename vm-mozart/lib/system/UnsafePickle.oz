@@ -14,12 +14,19 @@ functor
 import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Pickle(load saveWithCells)
+   DefaultURL(functorExt)
    Property(get)
 export
    'UnsafePickle$': UnsafePickle_Module
 define
    IoException = {NewUniqueName 'IO.Io'}
    CorruptException = {NewUniqueName 'UnsafePickle.Corrupt'}
+
+   Extension = {ByteString.make
+		case {VirtualString.toString DefaultURL.functorExt}
+		of &.|Rest then Rest
+		[] S then S
+		end}
 
    fun {LoadSign U}
       try
@@ -47,6 +54,7 @@ define
    UnsafePickle_Module =
    'UnsafePickle'('Corrupt': CorruptException
 		  '\'Corrupt': CorruptException
+		  'extension': Extension
 		  'load':
 		     fun {$ URL}
 			case {LoadSign URL} of 'SOME'(_#Type) then

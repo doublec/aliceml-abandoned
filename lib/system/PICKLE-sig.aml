@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+signature PICKLE =
+sig
+    val extension : string
+
+    functor Save(val file: string signature S structure X: S) : any
+    functor Load(val file: string signature S) : S            (* Mismatch *)
+    functor SaveVal(val file: string type t val x: t) : any
+    functor LoadVal(val file: string type t) : (val x: t)     (* Mismatch *)
+end

@@ -28,6 +28,8 @@ signature UNSAFE_PICKLE_COMPONENT =
 	    sig
 		exception Corrupt
 
+		val extension : string
+
 		val load: string -> 'inf * 'module  (* IO.Io, Corrupt *)
 		val save: string * 'inf * 'module -> unit
 
