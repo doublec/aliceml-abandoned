@@ -249,6 +249,21 @@ public:
   }
 };
 
+class UniqueConstructor: public Constructor {
+public:
+  static UniqueConstructor *New(String *id) {
+    Block *b = Store::AllocBlock(Alice::ToBlockLabel(Alice::Constructor), 1);
+    b->InitArg(1, id->ToWord());
+    return static_cast<UniqueConstructor *>(b);
+  }
+  static UniqueConstructor *FromWord(word x) {
+    Block *b = Store::WordToBlock(x);
+    Assert(b == INVALID_POINTER ||
+	   b->GetLabel() == Alice::ToBlockLabel(Alice::Constructor));
+    return static_cast<UniqueConstructor *>(b);
+  }
+};
+
 class TagVal: private Block {
 public:
   using Block::ToWord;
