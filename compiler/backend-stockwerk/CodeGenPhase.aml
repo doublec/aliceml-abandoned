@@ -29,8 +29,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	open I
 	open Environment
 
-	fun isNAry (TupArgs #[]) = true
-	  | isNAry _ = false
+	fun isNAry (TupArgs #[]) = false
+	  | isNAry _ = true
 
 	fun translateLit (IntLit i) = O.Int i
 	  | translateLit (WordLit w) = O.Int (LargeWord.toLargeInt w)
@@ -293,34 +293,34 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 	    let
 		val (naryTests, nullaryTests) =
 		    List.partition (fn (_, _, args, _) => isNAry args)
-		    (Vector.toList tagTests)
+				   (Vector.toList tagTests)
 	    in
 		O.TagTest (lookup (env, id),
 			   Vector.map (fn (_, tag, _, body) =>
 				       (tag, translateBody (body, env)))
-			   (Vector.fromList nullaryTests),
+				      (Vector.fromList nullaryTests),
 			   Vector.map (fn (_, tag, args, body) =>
 				       (tag, translateConArgs (args, env),
 					translateBody (body, env)))
-			   (Vector.fromList naryTests),
+				      (Vector.fromList naryTests),
 			   translateBody (elseBody, env))
 	    end
 	  | translateStm (TestStm (_, id, ConTests conTests, elseBody), env) =
 	    let
 		val (naryTests, nullaryTests) =
 		    List.partition (fn (_, args, _) => isNAry args)
-		    (Vector.toList conTests)
+				   (Vector.toList conTests)
 	    in
 		O.ConTest (lookup (env, id),
 			   Vector.map (fn (con, _, body) =>
 				       (translateCon (con, env),
 					translateBody (body, env)))
-			   (Vector.fromList nullaryTests),
+				      (Vector.fromList nullaryTests),
 			   Vector.map (fn (con, args, body) =>
 				       (translateCon (con, env),
 					translateConArgs (args, env),
 					translateBody (body, env)))
-			   (Vector.fromList naryTests),
+				      (Vector.fromList naryTests),
 			   translateBody (elseBody, env))
 	    end
 	  | translateStm (TestStm (_, id, VecTests vecTests, elseBody), env) =
@@ -330,7 +330,7 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 						translateIdDef (idDef, env))
 				    idDefs,
 				    translateBody (body, env)))
-		       vecTests,
+			          vecTests,
 		       translateBody (elseBody, env))
 	  | translateStm (SharedStm (_, body, stamp), env) =
 	    (case lookupShared (env, stamp) of
