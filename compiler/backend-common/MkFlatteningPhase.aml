@@ -183,18 +183,17 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	fun translateId (Id (info, stamp, name)) =
 	    O.Id (#region info, stamp, name)
 
-	fun translateLongid (ShortId (info, id)) =
-	    (nil, O.IdRef (translateId id), #typ info)
+	fun translateLongid (ShortId (_, id)) =
+	    (nil, O.IdRef (translateId id))
 	  | translateLongid (LongId ({region, typ}, longid, Lab (_, label))) =
 	    let
-		val (stms, idRef, innerTyp) = translateLongid longid
+		val (stms, idRef) = translateLongid longid
 		val id' = O.Id (region, Stamp.new (), Name.InId)
-		val (prod, n) = labelToIndex (innerTyp, label)
 		val stm =
 		    O.ValDec (region, O.IdDef id',
-			      O.LazySelAppExp (region, prod, label, n, idRef))
+			      O.LazyPolySelExp (region, label, idRef))
 	    in
-		(stms @ [stm], O.IdRef id', typ)
+		(stms @ [stm], O.IdRef id')
 	    end
 
 	fun decsToIdDefExpList (O.ValDec (_, idDef, exp')::rest, region) =
@@ -331,8 +330,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		List.foldr
 		(fn ((longid1, longid2), rest) =>
 		 let
-		     val (stms1, idRef1, _) = translateLongid longid1
-		     val (stms2, idRef2, _) = translateLongid longid2
+		     val (stms1, idRef1) = translateLongid longid1
+		     val (stms2, idRef2) = translateLongid longid2
 		     val id1' = O.freshId region
 		 in
 		     stms1 @ stms2 @
@@ -345,7 +344,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
 	    let
-		val (stms, idRef, _) = translateLongid longid
+		val (stms, idRef) = translateLongid longid
 	    in
 		(stms @ translateCont cont, idRef)
 	    end
@@ -371,24 +370,32 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    in
 		(stms, O.TupArgs (Vector.fromList idRefs))
 	    end
-	  | unfoldArgs (ProdExp (_, expFlds), rest) =
-	    let
-		val (stms, labelIdRefList) =
-		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
-				      (stms, labelIdRefList)) =>
-				  let
-				      val (stms', idRef) =
-					  unfoldTerm (exp, Goto stms)
-				  in
-				      (stms', (label, idRef)::labelIdRefList)
-				  end) (rest, nil) expFlds
-	    in
-		case LabelSort.sort labelIdRefList of
-		    (labelIdRefVec, LabelSort.Tup _) =>
-			(stms, O.TupArgs (Vector.map #2 labelIdRefVec))
-		  | (labelIdRefVec, LabelSort.Prod) =>
-			(stms, O.ProdArgs labelIdRefVec)
-	    end
+	  | unfoldArgs (exp as ProdExp ({typ, ...}, expFlds), rest) =
+	    if Type.isUnknownRow (Type.asProd typ) then
+		let
+		    val (stms, idRef) = unfoldTerm (exp, Goto rest)
+		in
+		    (stms, O.OneArg idRef)
+		end
+	    else
+		let
+		    val (stms, labelIdRefList) =
+			Vector.foldr (fn (Fld (_, Lab (_, label), exp),
+					  (stms, labelIdRefList)) =>
+					 let
+					     val (stms', idRef) =
+						 unfoldTerm (exp, Goto stms)
+					 in
+					     (stms', (label, idRef)::
+						     labelIdRefList)
+					 end) (rest, nil) expFlds
+		in
+		    case LabelSort.sort labelIdRefList of
+			(labelIdRefVec, LabelSort.Tup _) =>
+			    (stms, O.TupArgs (Vector.map #2 labelIdRefVec))
+		      | (labelIdRefVec, LabelSort.Prod) =>
+			    (stms, O.ProdArgs labelIdRefVec)
+		end
 	  | unfoldArgs (exp, rest) =
 	    let
 		val (stms, idRef) = unfoldTerm (exp, Goto rest)
@@ -410,7 +417,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    f (O.NewExp (#region info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
-		val (stms, idRef, _) = translateLongid longid
+		val (stms, idRef) = translateLongid longid
 	    in
 		stms @ f (O.VarExp (#region info, idRef))::translateCont cont
 	    end
@@ -468,7 +475,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			     unfoldStrict (info', exp, Goto rest)
 			 val argId = O.freshId (#region info)
 			 val stm = O.ValDec (#region info, O.IdDef argId, exp')
-			 val (stms1, conIdRef, _) = translateLongid longid
+			 val (stms1, conIdRef) = translateLongid longid
 			 val exp'' =
 			     O.ConExp (#region info, conIdRef,
 				       O.OneArg (O.IdRef argId))
@@ -481,7 +488,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			 val r = ref NONE
 			 val rest = [O.IndirectStm (#region info, r)]
 			 val (stms2, args) = unfoldArgs (exp, rest)
-			 val (stms1, idRef1, _) = translateLongid longid
+			 val (stms1, idRef1) = translateLongid longid
 			 val (stms', exp') = conExp (info, idRef1, args, arity)
 		     in
 			 r := SOME (stms' @ f exp'::translateCont cont);
@@ -492,7 +499,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (#region info, r)]
 		val (stms2, argIdRef) = unfoldTerm (exp, Goto rest)
-		val (stms1, conIdRef, _) = translateLongid longid
+		val (stms1, conIdRef) = translateLongid longid
 		val exp' = O.ConExp (#region info, conIdRef, O.OneArg argIdRef)
 	    in
 		r := SOME (f exp'::translateCont cont);
@@ -536,10 +543,10 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			   translateCont cont);
 		stms
 	    end
-	  | translateExp (ProdExp (info, expFlds), f, cont) =
+	  | translateExp (ProdExp ({typ, region}, expFlds), f, cont) =
 	    let
 		val r = ref NONE
-		val rest = [O.IndirectStm (#region info, r)]
+		val rest = [O.IndirectStm (region, r)]
 		val (stms, fields) =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), exp),
 				      (stms, fields)) =>
@@ -549,12 +556,16 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 				  in
 				      (stms', (label, idRef)::fields)
 				  end) (rest, nil) expFlds
+		val (fields', arity) = LabelSort.sort fields
 		val exp' =
-		    case LabelSort.sort fields of
-			(fields', LabelSort.Tup _) =>
-			    O.TupExp (#region info, Vector.map #2 fields')
-		      | (fields', LabelSort.Prod) =>
-			    O.ProdExp (#region info, fields')
+		    if Type.isUnknownRow (Type.asProd typ) then
+			O.PolyProdExp (region, fields')
+		    else
+			case arity of
+			    LabelSort.Tup _ =>
+				O.TupExp (region, Vector.map #2 fields')
+			  | LabelSort.Prod =>
+				O.ProdExp (region, fields')
 	    in
 		r := SOME (f exp'::translateCont cont); stms
 	    end
@@ -565,8 +576,8 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 		val (stms2, idRef2) = unfoldTerm (exp, Goto rest)
 		val (prod, n) = labelToIndex (#typ (infoExp exp), label)
 	    in
-		(r := SOME (f (O.SelAppExp (#region info, prod, label, n,
-					    idRef2))::translateCont cont);
+		(r := SOME (f (O.SelExp (#region info, prod, label, n,
+					 idRef2))::translateCont cont);
 		 stms2)
 	    end
 	  | translateExp (VecExp (info, exps), f, cont) =
@@ -930,7 +941,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 			   thenGraph, elseGraph, mapping, region) =
 	    let
 		val idRef = lookup (pos, mapping)
-		val (stms, idRef', _) = translateLongid longid
+		val (stms, idRef') = translateLongid longid
 		val (idDefArgs, mapping') =
 		    translateArgs (args, longidToSelector longid::pos, mapping)
 		val (thenBody, mapping'') =
@@ -1012,21 +1023,15 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    let
 		val imports' =
 		    Vector.map (fn (id, sign, url) =>
-				(translateId id, sign, url)) imports
+				   (translateId id, sign, url)) imports
 		val labelIdList =
 		    Vector.foldr (fn (Fld (_, Lab (_, label), id), rest) =>
 				     (label, translateId id)::rest)
 				 nil idFlds
-		val (exports', arity) = LabelSort.sort labelIdList
+		val (exports', _) = LabelSort.sort labelIdList
 		val labelIdRefVec =
 		    Vector.map (fn (label, id) => (label, O.IdRef id)) exports'
-		val exportExp =
-		    case arity of
-			LabelSort.Tup _ =>
-			    O.TupExp (Source.nowhere,
-				      Vector.map #2 labelIdRefVec)
-		      | LabelSort.Prod =>
-			    O.ProdExp (Source.nowhere, labelIdRefVec)
+		val exportExp = O.PolyProdExp (Source.nowhere, labelIdRefVec)
 		val cont = Goto [O.ExportStm (Source.nowhere, exportExp)]
 		val body' = translateCont (Decs (Vector.toList decs, cont))
 	    in
