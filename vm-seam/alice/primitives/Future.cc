@@ -57,9 +57,6 @@ DEFINE1(Future_isFuture) {
 } END
 
 void PrimitiveTable::RegisterFuture() {
-  PrimitiveTable::Future_Future =
-    UniqueConstructor::New(String::New("Future.Future"))->ToWord();
-  Register("Future.Future", PrimitiveTable::Future_Future);
   Register("Future.alarm'", Future_alarmQuote, 1);
   Register("Future.await", Future_await, 1);
   Register("Future.byneed", Future_byneed, 1);
