@@ -31,6 +31,10 @@ infix  3  :=:								(**)
 infix  0  before
 
 
+(* Futures *)
+
+__primitive val await : 'a -> 'a		= "Future.await"
+
 (* References *)
 
 __primitive val op := : 'a ref * 'a -> unit	= "Ref.:="
