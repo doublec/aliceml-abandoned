@@ -14,13 +14,12 @@
 #define __GENERIC__TRANSIENTS_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/Transients.hh"
+#pragma interface "generic/Transients.hh"
 #endif
 
-#include "store/Store.hh"
 #include "adt/Queue.hh"
-#include "emulator/Scheduler.hh"
-#include "emulator/Closure.hh"
+#include "generic/Scheduler.hh"
+#include "generic/Closure.hh"
 
 //
 // Transient Representation:

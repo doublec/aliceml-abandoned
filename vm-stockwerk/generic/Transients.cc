@@ -11,12 +11,12 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Transients.hh"
+#pragma implementation "generic/Transients.hh"
 #endif
 
 #include <cstring>
-#include "emulator/RootSet.hh"
-#include "emulator/Transients.hh"
+#include "generic/RootSet.hh"
+#include "generic/Transients.hh"
 
 word Hole::cyclicExn;
 word Hole::holeExn;
