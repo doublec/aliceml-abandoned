@@ -21,8 +21,10 @@ signature UNSAFE_SOCKET_COMPONENT =
 
 		val input1: 'socket -> char option
 		val inputN: 'socket * int -> 'vector
+		val inputLine: 'socket -> 'vector
 		val output: 'socket * 'vector -> unit
 		val output1: 'socket * 'char -> unit
+		val flushOut: 'socket -> unit
 
 		val close: 'socket -> unit
 	    end
