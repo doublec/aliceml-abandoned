@@ -182,7 +182,7 @@ structure IL :> IL =
 
 	val outputId = output
 
-	(* Compute Stack Size *)
+	(* Compute Stack Size, Peephole Optimizer, Dead Code Elimination *)
 
 	structure Map =
 	    MakeHashImpMap(type t = label
@@ -191,125 +191,135 @@ structure IL :> IL =
 
 	val size = ref 0
 	val maxSize = ref 0
-	val map: int Map.t ref = ref (Map.new ())
+	val map: int Map.t = Map.new ()
 	val returnSize = ref 0
 
+	fun comment s =
+	    (TextIO.print ("Warning: " ^ s ^ "\n"); [Comment ("--** " ^ s)])
+
 	fun pop n =
-	    if !size = ~1 then ()
-	    else
-		let
-		    val i = !size - n
-		in
-		    if i < 0 then
-			raise Crash.Crash ("stack underflow by " ^
-					   Int.toString (~i))
-		    else size := i
-		end
+	    let
+		val i = !size - n
+	    in
+		if i < 0 then
+		    comment ("stack underflow by " ^ Int.toString (~i))
+		else (size := i; nil)
+	    end
 
 	fun push n =
-	    if !size = ~1 then ()
-	    else
-		let
-		    val i = !size + n
-		in
-		    size := i;
-		    if i > !maxSize then maxSize := i else ()
-		end
+	    let
+		val i = !size + n
+	    in
+		size := i;
+		if i > !maxSize then maxSize := i else ()
+	    end
 
 	fun branch label =
-	    if !size = ~1 then
-		case Map.lookup (!map, label) of
-		    SOME n => size := n
-		  | NONE => ()
-	    else
-		case Map.lookup (!map, label) of
-		    SOME n =>
-			if !size = n then ()
-			else
-			    raise Crash.Crash ("inconsistent stack size " ^
-					       "for label " ^
-					       Int.toString label ^ ": " ^
-					       Int.toString (!size) ^ " <> " ^
-					       Int.toString n)
-		  | NONE => Map.insertDisjoint (!map, label, !size)
-
-	fun catch label = Map.insertDisjoint (!map, label, 1)
-
-	fun invalidate () = size := ~1
+	    case Map.lookup (map, label) of
+		SOME n =>
+		    if !size = n then nil
+		    else
+			comment ("inconsistent stack size at L" ^
+				 Int.toString label ^ ": " ^
+				 Int.toString (!size) ^ " <> " ^
+				 Int.toString n)
+	      | NONE => (Map.insertDisjoint (map, label, !size); nil)
 
 	fun return () =
-	    if !size = ~1 orelse !size = !returnSize then ()
+	    if !size = !returnSize then nil
 	    else
-		raise Crash.Crash ("non-empty stack on return: " ^
-				   Int.toString (!size) ^ " <> " ^
-				   Int.toString (!returnSize))
+		comment ("non-empty stack on return: " ^
+			 Int.toString (!size) ^ " <> " ^
+			 Int.toString (!returnSize))
 
-	fun eval (Add | AddOvf) = (pop 2; push 1)
-	  | eval And = (pop 2; push 1)
-	  | eval (B ((TRUE | FALSE), label)) = (pop 1; branch label)
-	  | eval (Box _) = (pop 1; push 1)
-	  | eval (B (_, label)) = (pop 2; branch label)
-	  | eval (Br label) = (branch label; invalidate ())
-	  | eval (Call (isInstance, _, _, tys, ty)) =
-	    (pop ((if isInstance then 1 else 0) + List.length tys);
-	     case ty of VoidTy => () | _ => push 1)
-	  | eval (Callvirt (_, _, tys, ty)) =
-	    (pop (List.length tys + 1);
-	     case ty of VoidTy => () | _ => push 1)
-	  | eval (Castclass _) = (pop 1; push 1)
-	  | eval (Ceq | Cgt | CgtUn | Clt | CltUn) = (pop 2; push 1)
-	  | eval (Comment _) = ()
-	  | eval (Div | DivUn) = (pop 2; push 1)
-	  | eval Dup = (pop 1; push 2)
-	  | eval (Isinst _) = (pop 1; push 1)
-	  | eval (Label label) = branch label
-	  | eval (Ldarg _) = push 1
-	  | eval (LdcI4 _) = push 1
-	  | eval (LdcR8 _) = push 1
-	  | eval LdelemRef = (pop 2; push 1)
-	  | eval (Ldfld (_, _, _)) = (pop 1; push 1)
-	  | eval LdindI4 = (pop 1; push 1)
-	  | eval LdindU2 = (pop 1; push 1)
-	  | eval LdindR8 = (pop 1; push 1)
-	  | eval Ldlen = (pop 1; push 1)
-	  | eval (Ldloc _) = push 1
-	  | eval (Ldloca _) = push 1
-	  | eval Ldnull = push 1
-	  | eval (Ldsfld (_, _, _)) = push 1
-	  | eval (Ldstr _) = push 1
-	  | eval (Leave label) = (branch label; invalidate ())
-	  | eval (Newarr _) = (pop 1; push 1)
-	  | eval (Newobj (_, tys)) = (pop (List.length tys); push 1)
-	  | eval Mul = (pop 2; push 1)
-	  | eval Neg = (pop 2; push 1)
-	  | eval Not = (pop 2; push 1)
-	  | eval Or = (pop 2; push 1)
-	  | eval Pop = pop 1
-	  | eval (Rem | RemUn) = (pop 2; push 1)
-	  | eval Ret = (return (); invalidate ())
-	  | eval Rethrow = invalidate ()
-	  | eval (Shl | Shr | ShrUn) = (pop 2; push 1)
-	  | eval (Starg _) = pop 2
-	  | eval StelemRef = pop 3
-	  | eval (Stfld (_, _, _)) = pop 2
-	  | eval (Stloc _) = pop 1
-	  | eval (Stsfld (_, _, _)) = pop 1
-	  | eval (Sub | SubOvf) = (pop 2; push 1)
-	  | eval (Switch labels) = (pop 1; List.app branch labels)
-	  | eval Tail = ()
-	  | eval Throw = (pop 1; invalidate ())
-	  | eval (Try (tryLabel, _, _, catchLabel, _)) =
-	    (branch tryLabel; catch catchLabel)
-	  | eval (Unbox _) = (pop 1; push 1)
-	  | eval Xor = (pop 2; push 1)
+	fun eliminateDeadCode (Label label::rest) =
+	    (case Map.lookup (map, label) of
+		 SOME n => (size := n; Label label::peephole rest)
+	       | NONE => eliminateDeadCode rest)
+	  | eliminateDeadCode (_::rest) = eliminateDeadCode rest
+	  | eliminateDeadCode nil = nil
+	and peephole (Dup::Pop::rest) = (push 1; pop 1; peephole rest)
+	  | peephole (instr::rest) =
+	    (case instr of
+		 (Add | AddOvf) => (pop 2 before push 1) @ instr::peephole rest
+	       | And => (pop 2 before push 1) @ And::peephole rest
+	       | (B ((TRUE | FALSE), label)) =>
+		     pop 1 @ branch label @ instr::peephole rest
+	       | B (_, label) => pop 2 @ branch label @ instr::peephole rest
+	       | Box _ => (pop 1 before push 1) @ instr::peephole rest
+	       | Br label => branch label @ instr::eliminateDeadCode rest
+	       | Call (isInstance, _, _, tys, ty) =>
+		     (pop ((if isInstance then 1 else 0) + List.length tys)
+		      before (case ty of VoidTy => () | _ => push 1)) @
+		     instr::peephole rest
+	       | Callvirt (_, _, tys, ty) =>
+		     (pop (List.length tys + 1)
+		      before (case ty of VoidTy => () | _ => push 1)) @
+		     instr::peephole rest
+	       | Castclass _ => (pop 1 before push 1) @ instr::peephole rest
+	       | (Ceq | Cgt | CgtUn | Clt | CltUn) =>
+		     (pop 2 before push 1) @ instr::peephole rest
+	       | Comment _ => instr::peephole rest
+	       | (Div | DivUn) => (pop 2 before push 1) @ instr::peephole rest
+	       | Dup => (pop 1 before push 2) @ instr::peephole rest
+	       | Isinst _ => (pop 1 before push 1) @ instr::peephole rest
+	       | Label label => branch label @ instr::peephole rest
+	       | Ldarg _ => (push 1; instr::peephole rest)
+	       | LdcI4 _ => (push 1; instr::peephole rest)
+	       | LdcR8 _ => (push 1; instr::peephole rest)
+	       | LdelemRef => (pop 2 before push 1) @ instr::peephole rest
+	       | Ldfld (_, _, _) =>
+		     (pop 1 before push 1) @ instr::peephole rest
+	       | LdindI4 => (pop 1 before push 1) @ instr::peephole rest
+	       | LdindU2 => (pop 1 before push 1) @ instr::peephole rest
+	       | LdindR8 => (pop 1 before push 1) @ instr::peephole rest
+	       | Ldlen => (pop 1 before push 1) @ instr::peephole rest
+	       | Ldloc _ => (push 1; instr::peephole rest)
+	       | Ldloca _ => (push 1; instr::peephole rest)
+	       | Ldnull => (push 1; instr::peephole rest)
+	       | Ldsfld (_, _, _) => (push 1; instr::peephole rest)
+	       | Ldstr _ => (push 1; instr::peephole rest)
+	       | Leave label => branch label @ instr::eliminateDeadCode rest
+	       | Newarr _ => (pop 1 before push 1) @ instr::peephole rest
+	       | Newobj (_, tys) =>
+		     (pop (List.length tys) before push 1) @
+		     instr::peephole rest
+	       | Mul => (pop 2 before push 1) @ instr::peephole rest
+	       | Neg => (pop 2 before push 1) @ instr::peephole rest
+	       | Not => (pop 2 before push 1) @ instr::peephole rest
+	       | Or => (pop 2 before push 1) @ instr::peephole rest
+	       | Pop => pop 1 @ instr::peephole rest
+	       | (Rem | RemUn) => (pop 2 before push 1) @ instr::peephole rest
+	       | Ret => return () @ instr::eliminateDeadCode rest
+	       | Rethrow => instr::eliminateDeadCode rest
+	       | (Shl | Shr | ShrUn) =>
+		     (pop 2 before push 1) @ instr::peephole rest
+	       | Starg _ => pop 2 @ instr::peephole rest
+	       | StelemRef => pop 3 @ instr::peephole rest
+	       | Stfld (_, _, _) => pop 2 @ instr::peephole rest
+	       | Stloc _ => pop 1 @ instr::peephole rest
+	       | Stsfld (_, _, _) => pop 1 @ instr::peephole rest
+	       | (Sub | SubOvf) => (pop 2 before push 1) @ instr::peephole rest
+	       | Switch labels =>
+		     pop 1 @ List.concat (List.map branch labels) @
+		     instr::peephole rest
+	       | Tail => instr::peephole rest
+	       | Throw => pop 1 @ instr::eliminateDeadCode rest
+	       | Try (tryLabel, tryEndLabel, _, catchLabel, catchEndLabel) =>
+		     (branch tryLabel before
+		      (Map.insertDisjoint (map, catchLabel, 1);
+		       if tryEndLabel <> catchLabel then
+			   Map.insertDisjoint (map, tryEndLabel, ~1)
+		       else ();
+		       Map.insertDisjoint (map, catchEndLabel, ~1))) @
+		     instr::peephole rest
+	       | Unbox _ => (pop 1 before push 1) @ instr::peephole rest
+	       | Xor => (pop 2 before push 1) @ instr::peephole rest)
+	  | peephole nil = nil
 
-	fun outputMaxStack (q, instrs, ty) =
-	    (size := 0; maxSize := 0; map := Map.new ();
-	     returnSize := (case ty of VoidTy => 0 | _ => 1);
-	     List.app eval instrs;
-	     output (q, ".maxstack "); output (q, Int.toString (!maxSize));
-	     output (q, "\n"))
-	    handle Crash.Crash s => output (q, "//--** " ^ s ^ "\n.maxstack 1024\n")
+	fun initPeephole ty =
+	    (size := 0; maxSize := 0; Map.deleteAll map;
+	     returnSize := (case ty of VoidTy => 0 | _ => 1))
 
 	(* Output IL Syntax *)
 
@@ -584,6 +594,16 @@ structure IL :> IL =
 	     outputInstrs (q, nil, instrr))
 	  | outputInstrs (_, nil, nil) = ()
 
+	fun outputBody (q, instrs, ty) =
+	    let
+		val _ = initPeephole ty
+		val instrs = peephole instrs
+	    in
+		Map.deleteAll map; outputInstrs (q, instrs, nil);
+		output (q, ".maxstack "); output (q, Int.toString (!maxSize));
+		output (q, "\n")
+	    end
+
 	local
 	    fun outputLocals' (q, ty::tyr) =
 		(output (q, ", "); outputTy (q, ty); outputLocals' (q, tyr))
@@ -604,8 +624,8 @@ structure IL :> IL =
 	    (output (q, ".method "); outputMethAttr (q, attr);
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
-	     outputMaxStack (q, instrs, ty);
-	     outputLocals (q, locals); outputInstrs (q, instrs, nil);
+	     outputLocals (q, locals);
+	     outputBody (q, instrs, ty);
 	     output (q, "}\n"))
 
 	fun outputClassDecls (q, decl::declr) =
@@ -661,8 +681,8 @@ structure IL :> IL =
 	     outputTy (q, ty); output1 (q, #" "); outputId (q, id);
 	     output1 (q, #"("); outputTys (q, tys); output (q, ") {\n");
 	     if isEntrypoint then output (q, ".entrypoint\n") else ();
-	     outputMaxStack (q, instrs, ty);
-	     outputLocals (q, locals); outputInstrs (q, instrs, nil);
+	     outputLocals (q, locals);
+	     outputBody (q, instrs, ty);
 	     output (q, "}\n"))
 
 	fun outputDecls (q, [decl]) = outputDecl (q, decl)
