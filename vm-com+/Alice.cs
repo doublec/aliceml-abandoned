@@ -2419,23 +2419,18 @@ namespace Alice {
 	}
     }
     public class Prebound {
-	public static Object unit = (Int32) 0;
-
-	public static Object Bool_false = (Int32) 0;
-	public static Object Bool_true  = (Int32) 1;
-
-	public static Object List_Empty = "List.Empty";
-	public static Object List_nil   = (Int32) 1;
-	public static Object List_cons  = (Int32) 0;
-
 	public static Object opeq    = new Builtins.opeq();
 	public static Object opnoteq = new Builtins.opnoteq();
+	public static Object unit    = (Int32) 0;
 
 	public static Object Array_array    = new Array_array();
 	public static Object Array_fromList = new Array_fromList();
 	public static Object Array_length   = new Array_length();
 	public static Object Array_sub      = new Array_sub();
 	public static Object Array_update   = new Array_update();
+
+	public static Object Bool_false = (Int32) 0;
+	public static Object Bool_true  = (Int32) 1;
 
 	public static Object Char_opless      = new Char_opless();
 	public static Object Char_opgreater   = new Char_opgreater();
@@ -2484,10 +2479,6 @@ namespace Alice {
 	public static Object General_exnName   = new General_exnName();
 	public static Object General_ref      = new RefConstructor();
 
-	public static Object Option_Option  = "Option.Option";
-	public static Object Option_NONE    = (Int32) 0;
-	public static Object Option_SOME    = (Int32) 1;
-
 	public static Object GlobalStamp_new        = new GlobalStamp_new();
 	public static Object GlobalStamp_fromString = new GlobalStamp_fromString();
 	public static Object GlobalStamp_toString   = new GlobalStamp_toString();
@@ -2522,6 +2513,10 @@ namespace Alice {
 	public static Object Int_rem         = new Int_rem();
 	public static Object Int_toString    = new Int_toString();
 
+	public static Object List_Empty = "List.Empty";
+	public static Object List_nil   = (Int32) 1;
+	public static Object List_cons  = (Int32) 0;
+
 	public static Object Math_e     = System.Math.E;
 	public static Object Math_pi    = System.Math.PI;
 	public static Object Math_acos  = new Math_acos();
@@ -2541,6 +2536,10 @@ namespace Alice {
 	public static Object Math_sqrt  = new Math_sqrt();
 	public static Object Math_tan   = new Math_tan();
 	public static Object Math_tanh  = new Math_tanh();
+
+	public static Object Option_Option  = "Option.Option";
+	public static Object Option_NONE    = (Int32) 0;
+	public static Object Option_SOME    = (Int32) 1;
 
 	public static Object Real_negInf      = System.Double.NegativeInfinity;
 	public static Object Real_posInf      = System.Double.PositiveInfinity;
@@ -2597,6 +2596,11 @@ namespace Alice {
 	public static Object Unsafe_Vector_sub   = new Unsafe_Vector_sub();
 	public static Object Unsafe_cast         = new Unsafe_cast();
 
+	public static Object Vector_fromList = new Vector_fromList();
+	public static Object Vector_maxLen   = Int32.MaxValue;
+	public static Object Vector_length   = new Vector_length();
+	public static Object Vector_sub      = new Vector_sub();
+
 	public static Object Word_fromIntQuote = new Word_fromIntQuote();
 	public static Object Word_fromInt      = new Word_fromInt();
 	public static Object Word_toInt        = new Word_toInt();
@@ -2640,18 +2644,6 @@ namespace Alice {
 	public static Object TextIO_closeOut  = new TextIO_closeOut();
 	public static Object TextIO_print     = new TextIO_print();
 
-	public Object Unsafe_Array_sub    = new Unsafe_Array_sub();
-	public Object Unsafe_Array_update = new Unsafe_Array_update();
-
-	public static Object Unsafe_Vector_sub = new Unsafe_Vector_sub();
-
-	public static Object Unsafe_cast = new Unsafe_cast();
-
-	public static Object Vector_fromList = new Vector_fromList();
-	public static Object Vector_maxLen   = Int32.MaxValue;
-	public static Object Vector_length   = new Vector_length();
-	public static Object Vector_sub      = new Vector_sub();
-	
 	public static Object CommandLine_name      = new CommandLine_name();
 	public static Object CommandLine_arguments = new CommandLine_arguments();
 	
