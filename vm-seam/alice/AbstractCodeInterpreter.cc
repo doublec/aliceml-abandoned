@@ -79,30 +79,6 @@ static word IdRefVecToValueVec(word wIdRef,
   return values->ToWord();
 }
 
-// static void write(char *s) {
-//   fprintf(stderr, "%s\n", s);
-//   fflush(stderr);
-// }
-
-// static  bool mooFlag = false;
-
-// static void DumpEntryType(AbstractCode::entryPoint point) {
-//   if (mooFlag) {
-//     switch(point) {
-//     case AbstractCode::AppEntry: write("AppEntry"); break;
-//     case AbstractCode::ConEntry: write("ConEntry"); break;
-//     case AbstractCode::CondEntry: write("CondEntry"); break;
-//     case AbstractCode::HandleEntry: write("HandleEntry"); break;
-//     case AbstractCode::RaiseEntry: write("RaiseEntry"); break;
-//     case AbstractCode::SelEntry: write("SelEntry"); break;
-//     case AbstractCode::SpawnEntry: write("SpwawnEntry"); break;
-//     case AbstractCode::StrictEntry: write("StrictEntry"); break;
-//     default:
-//       write("stupid Entry");
-//     }
-//   }
-// }
-
 static word GenerateEntryEvent(word coord, word stepPoint, 
 			       AbstractCodeFrame::Environment *localEnv, 
 			       Closure *globalEnv) {
