@@ -37,8 +37,8 @@ structure TypePrivate =
 
     type t = typ
 
-    type rea     = path PathMap.t
-    type typ_rea = typ PathMap.t
+    type path_rea = path PathMap.t
+    type typ_rea  = typ PathMap.t
 
     (*
      * We establish the following invariants:
@@ -149,7 +149,7 @@ structure TypePrivate =
 
 
     fun unmark(t as ref(MARK t')) 	=
-(*ASSERT				  assert t' of MARK _ => *)
+(*ASSERT				  assert t' of non MARK _ => *)
 ( case t' of MARK _ => raise Assert.failure | _ =>
 					  ( t := t' ; app1'(t', unmark) )
 )
@@ -537,13 +537,13 @@ if kind' t1' <> k2 then raise Assert.failure else
 			  * in normal form *)
 			 recurse unifyPair (tt1,tt2)
 
-		       | (ALL(a1,t1), ALL(a2,t2)) =>
+		       | (ALL(a1,t11), ALL(a2,t21)) =>
 			 Crash.crash "Type.unify: universal quantification"
 
-		       | (EX(a1,t1), EX(a2,t2)) =>
+		       | (EX(a1,t11), EX(a2,t21)) =>
 			 Crash.crash "Type.unify: existential quantification"
 
-		       | (LAM(a1,t1), LAM(a2,t2)) =>
+		       | (LAM(a1,t11), LAM(a2,t21)) =>
 			 Crash.crash "Type.unify: abstraction"
 
 		       | _ => raise Unify(t1,t2)
@@ -598,6 +598,96 @@ if kind' t1' <> k2 then raise Assert.failure else
 	end
 
 
+  (* Matching *)
+
+    fun matches(t1,t2) =
+	let
+	    val t1' = instance t1
+	    val t2' = skolem t2
+	in
+	    ( unify(t1',t2') ; true ) handle Unify _ => false
+	end
+
+
+  (* Comparison *)
+
+    fun equals(t1,t2) =
+	let
+	    val trail = ref []
+
+	    fun equals(t1,t2) =
+		let
+		    val t1 as ref t1' = follow t1
+		    val t2 as ref t2' = follow t2
+
+		    fun recurse p x =
+			( t1 := LINK t2
+			; trail := (t1,t1') :: !trail
+			; p x
+			)
+
+		    fun recurseBinder(a1 as ref a1', a2, t1, t2) =
+			( a1 := LINK a2
+			; trail := (a1,a1') :: !trail
+			; recurse equals (t1,t2)
+			)
+		in
+		    t1 = t2 orelse
+		    case (t1',t2')
+		      of (REC(t11), REC(t21)) =>
+			 recurse equals (t11,t21)
+
+		       | (REC(t11), _) =>
+			 recurse equals (t11,t2)
+
+		       | (_, REC(t21)) =>
+			 recurse equals (t1,t21)
+
+		       | (ARR(tt1), ARR(tt2)) =>
+			 recurse equalsPair (tt1,tt2)
+
+		       | (TUP(ts1), TUP(ts2)) =>
+			 recurse (ListPair.all equals) (ts1,ts2)
+
+		       | ( (TUP(ts), ROW(r))
+			 | (ROW(r), TUP(ts)) ) =>
+			 recurse equalsRow (r, tupToRow ts)
+
+		       | ( (ROW(r1), ROW(r2))
+			 | (SUM(r1), SUM(r2)) ) =>
+			 recurse equalsRow (r1,r2)
+
+		       | (CON(_,_,p1), CON(_,_,p2)) =>
+			 p1 = p2
+
+		       | (APP(tt1), APP(tt2)) =>
+			 (* Note that we do not allow general lambdas during
+			  * unification, so application is considered to be
+			  * in normal form *)
+			 recurse equalsPair (tt1,tt2)
+
+		       | ( (ALL(a1,t11), ALL(a2,t21))
+			 | (EX(a1,t11), EX(a2,t21))
+			 | (LAM(a1,t11), LAM(a2,t21)) ) =>
+			 recurseBinder(a1, a2, t11, t21)
+
+		       | _ => raise Unify(t1,t2)
+		end
+
+	    and equalsPair((t11,t12), (t21,t22)) =
+		equals(t11,t21) andalso equals (t12,t22)
+
+	    and equalsRow(NIL, NIL) = true
+	      | equalsRow(RHO, RHO) = true
+	      | equalsRow(FLD(l1,ts1,r1), FLD(l2,ts2,r2)) =
+		l1 = l2 andalso ListPair.all equals (ts1,ts2)
+			andalso equalsRow(r1,r2)
+	      | equalsRow _ = false
+	in
+	    equals(t1,t2) before List.app op:= (!trail)
+	end
+
+
   (* Extraction of holes and paths *)
 (*
     fun holes t = foldl (fn(t as ref(HOLE _), a) => t::a | (t,a) => a) t
@@ -615,22 +705,29 @@ if kind' t1' <> k2 then raise Assert.failure else
 
   (* Realisation *)
 
-    fun realise(rea, t) =
+    fun realisePath(rea, t) =
 	let
-	    fun subst(ref(CON(k,s,p))) = Path.realise PathMap.lookup (rea, p)
-	      | subst t1               = ()
+	    fun subst(t1 as ref(CON(k,s,p))) =
+		( case PathMap.lookup(rea, p)
+		    of SOME p' => t1 := CON(k,s,p')
+		     | NONE    => ()
+		)
+	      | subst t1 = ()
 	in
 	    app subst t
 	end
 
-    fun realise'(typ_rea, rea, t) =
+    (* ASSUME that realisations are fully expanded (i.e. we do not need to
+     * realise any type looked up). *)
+
+    fun realise(rea, t) =
 	let
 	    val apps = ref[]
 
 	    fun subst(t1 as ref(CON(k,s,p))) =
-		(case PathMap.lookup(typ_rea, p)
-		   of SOME t2 => t1 := LINK t2
-		    | NONE    => Path.realise PathMap.lookup (rea, p)
+		(case PathMap.lookup(rea, p)
+		   of SOME t2 => t1 := LINK(clone t2)
+		    | NONE    => ()
 		)
 	      | subst(t1 as ref(APP _)) = apps := t1::(!apps)
 	      | subst t1 = ()

@@ -15,8 +15,8 @@ signature TYPE =
     type typ						(* [tau,t] *)
     type t = typ
 
-    type rea     = path PathMap.t
-    type typ_rea = typ PathMap.t
+    type path_rea = path PathMap.t
+    type typ_rea  = typ PathMap.t
 
 
   (* Injections *)
@@ -89,8 +89,8 @@ signature TYPE =
     val skolem :	typ -> typ
     val clone :		typ -> typ
 
-    val realise :	rea * typ -> unit
-    val realise' :	typ_rea * rea * typ -> unit
+    val realise :	typ_rea  * typ -> unit
+    val realisePath :	path_rea * typ -> unit
 
   (* Unification and closure *)
 
@@ -100,6 +100,11 @@ signature TYPE =
     val unify :		typ * typ -> unit		(* Unify *)
     val unifyList :	typ list -> unit		(* UnifyList *)
     val close :		typ -> typ
+
+  (* Comparison *)
+
+    val equals :	typ * typ -> bool
+    val matches :	typ * typ -> bool
 
   (* Level management *)
 

@@ -18,7 +18,6 @@ structure PathPrivate =
 	(*UNFINISHED
 	| IMPORT of string * lab * int
 	*)
-	| LINK   of path
 
     withtype path = path' ref
     type t = path
@@ -26,25 +25,23 @@ structure PathPrivate =
 
   (* Creation and projection *)
 
-    fun invent()	= ref(PLAIN(Name.InId))
-    fun fromLab l	= ref(PLAIN(Lab.toName l))
-    fun path pln	= ref(DOT pln)
+    fun invent()		= ref(PLAIN(Name.InId))
+    fun fromLab l		= ref(PLAIN(Lab.toName l))
+    fun path pln		= ref(DOT pln)
 
-    fun toLab(ref p')	= toLab' p'
-    and toLab'(PLAIN n)	= Lab.fromName n
-      | toLab'(LINK p)	= toLab p
-      | toLab' _	= raise Crash.crash "Path.toLab"
+    fun toLab(ref(PLAIN n))	= Lab.fromName n
+      | toLab _			= raise Crash.crash "Path.toLab"
+
+    fun isDot(ref(DOT _))	= true
+      | isDot _			= false
+
+    fun asDot(ref(DOT pln))	= pln
+      | asDot _			= raise Crash.crash "Path.asDot"
 
 
   (* Ordering and hashing *)
 
-    fun equals(ref(LINK p1), p2)		= equals(p1, p2)
-      | equals(p1, ref(LINK p2))		= equals(p1, p2)
-      | equals(p1, p2)				= p1 = p2
-
-    fun compare(ref(LINK p1), p2)		= compare(p1, p2)
-      | compare(p1, ref(LINK p2))		= compare(p1, p2)
-      | compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
+    fun compare(p1 as ref p1', p2 as ref p2')	= if p1 = p2 then EQUAL
 						  else compare'(p1', p2')
     and compare'(PLAIN _,       DOT _)		= LESS
       | compare'(DOT _,         PLAIN _)	= GREATER
@@ -56,27 +53,17 @@ structure PathPrivate =
 						     of r as (LESS|GREATER) => r
 						      | EQUAL =>
 						   Int.compare(n1,n2))
-      | compare' _ = Crash.crash "Path.compare"
 
-    fun hash(ref p')		= hash' p'
-    and hash'(PLAIN x)		= Name.hash x
-      | hash'(DOT(p,l,n))	= Lab.hash l
-      | hash'(LINK p)		= hash p
+    fun hash(ref(PLAIN x))	= Name.hash x
+      | hash(ref(DOT(p,l,n)))	= Lab.hash l
 
 
-  (* Substitution and Realisation *)
+  (* Strengthening *)
 
-    fun substitute(p1, p)	= p1 := LINK p
-    fun substituteDot(p1, pln)	= p1 := DOT pln
+    (* Strengthening has to be used carefully, as it results in a new
+     * hash value, thereby invalidating eventual hash maps and sets! *)
 
-    fun realise lookup (rea, p) =
-	case lookup(rea, p)
-	  of NONE    => realise' lookup (rea, !p)
-	   | SOME p2 => p := LINK p2
-
-    and realise' lookup (rea, PLAIN _)    = ()
-      | realise' lookup (rea, DOT(p,l,n)) = realise lookup (rea, p)
-      | realise' lookup (rea, LINK p)     = realise lookup (rea, p)
+    fun strengthen(p1, pln) = p1 := DOT pln
 
 
   (* Cloning *)
@@ -90,8 +77,7 @@ structure PathPrivate =
 		 of SOME p2 => p2
 		  | NONE    =>
 		case !p1
-		 of LINK p2       => clone' p2
-		  | p' as PLAIN _ => if isBinder then ref p' else raise External
+		 of p' as PLAIN _ => if isBinder then ref p' else raise External
 		  | DOT(p2,l,n)   => ref(DOT(clone' p2, l, n))
 	in
 	    clone' p handle External => p

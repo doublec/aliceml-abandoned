@@ -16,7 +16,8 @@ structure ElaborationError :> ELABORATION_ERROR =
     type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
-    type unify_error = typ * typ * typ * typ
+    type unify_error  = typ * typ * typ * typ
+    type inf_mismatch = Inf.mismatch
 
     datatype error =
 	(* Expressions *)
@@ -54,6 +55,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 
@@ -73,6 +75,9 @@ structure ElaborationError :> ELABORATION_ERROR =
     fun ppLongid y = "`" ^ ppLongid' y ^ "'"
 
 
+    fun ppLab l = "`" ^ Lab.toString l ^ "'"
+
+
     fun ppUnify2(d1, d2, (t1,t2,t3,t4)) =
 	vbox(
 	    d1 ^^
@@ -82,16 +87,72 @@ structure ElaborationError :> ELABORATION_ERROR =
 	)
 
     fun ppUnify4(d1, d2, (t1,t2,t3,t4)) =
+	if t3 = t1 andalso t4 = t2 then
+	vbox(
+	    d1 ^^
+	    nest(break ^^ below(PPType.ppType t1)) ^/^
+	    d2 ^^
+	    nest(break ^^ below(PPType.ppType t2))
+	)
+	else
 	vbox(
 	    d1 ^^
 	    nest(break ^^ below(PPType.ppType t1)) ^/^
 	    d2 ^^
 	    nest(break ^^ below(PPType.ppType t2)) ^/^
-	    par["Reason: could","not","unify"] ^^
+	    par["because","type"] ^^
 	    nest(break ^^ below(PPType.ppType t3)) ^/^
-	    par["and"] ^^
+	    par["does","not","unify","with"] ^^
 	    nest(break ^^ below(PPType.ppType t4))
 	)
+
+    fun ppMismatch(d, im) =
+        vbox(
+	    d ^/^
+	    par(ppMismatch' im)
+	)
+
+    and ppMismatch'(Inf.MissingVal l) =
+	    ["value",ppLab l,"is","missing"]
+      | ppMismatch'(Inf.MissingTyp  l) =
+	    ["type",ppLab l,"is","missing"]
+      | ppMismatch'(Inf.MissingMod  l) =
+	    ["module",ppLab l,"is","missing"]
+      | ppMismatch'(Inf.MissingInf  l) =
+	    ["signature",ppLab l,"is","missing"]
+      | ppMismatch'(Inf.ManifestVal l) =
+	    ["value",ppLab l,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestTyp l) =
+	    ["type",ppLab l,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestMod l) =
+	    ["module",ppLab l,"does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.ManifestInf l) =
+	    ["signature",ppLab l,
+	     "does","not","match","manifest","specification"]
+      | ppMismatch'(Inf.MismatchVal(l,t1,t2)) =
+	    ["value",ppLab l,"has","incompatible","type"]
+      | ppMismatch'(Inf.MismatchTyp(l,k1,k2)) =
+	    ["type",ppLab l,"has","incompatible","arity"]
+      | ppMismatch'(Inf.MismatchMod(l, Inf.Incompatible _)) =
+	    ["module",ppLab l,"has","incompatible","signature"]
+      | ppMismatch'(Inf.MismatchMod(l, im as Inf.IncompatibleArg _)) =
+	    ["module",ppLab l,"has","incompatible","signature,","because"]
+	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchMod(l,im)) =
+	    ["module",ppLab l,"has","incompatible","signature,",
+	     "because","nested"] @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchInf(l, Inf.Incompatible _)) =
+	    ["signature",ppLab l,"is","incompatible"]
+      | ppMismatch'(Inf.MismatchInf(l, im as Inf.IncompatibleArg _)) =
+	    ["signature",ppLab l,"is","incompatible","because"]
+	    @ ppMismatch' im
+      | ppMismatch'(Inf.MismatchInf(l,im)) =
+	    ["signature",ppLab l,"is","incompatible,","because","nested"]
+	    @ ppMismatch' im
+      | ppMismatch'(Inf.Incompatible(j1,j2)) =
+	    ["signatures","are","incompatible"]
+      | ppMismatch'(Inf.IncompatibleArg(p1,p2)) =
+	    ["applied","signature","arguments","are","incompatible"]
 
     fun ppError(VecExpUnify ue) =
 	ppUnify2(
@@ -193,6 +254,9 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["module",ppLongid y,"is","not","a","structure"]
       | ppError(SelModInf j) =
 	  par["module","expression","is","not","a","structure"]
+      | ppError(AnnModMismatch im) =
+	ppMismatch(
+	  par["module","expression","does","not","match","signature:"], im)
       | ppError(GroundInfKind k) =
 	  par["missing","arguments","in","signature","expression"]
 

@@ -8,7 +8,8 @@ signature ELABORATION_ERROR =
     type id     = AbstractGrammar.id
     type longid = AbstractGrammar.longid
 
-    type unify_error = typ * typ * typ * typ
+    type unify_error  = typ * typ * typ * typ
+    type inf_mismatch = Inf.mismatch
 
     datatype error =
 	(* Expressions *)
@@ -46,6 +47,7 @@ signature ELABORATION_ERROR =
 	| ModLongidInf		of longid * inf
 	(* Modules *)
 	| SelModInf		of inf
+	| AnnModMismatch	of inf_mismatch
 	(* Interfaces *)
 	| GroundInfKind		of Inf.kind
 

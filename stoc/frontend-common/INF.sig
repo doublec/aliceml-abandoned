@@ -21,13 +21,16 @@ signature INF =
 
   (* Realisations *)
 
-    type rea	 = path PathMap.t
-
     type val_rea = path PathMap.t
     type typ_rea = typ  PathMap.t
-    type mod_rea = sign PathMap.t
+    type mod_rea = path PathMap.t
     type inf_rea = inf  PathMap.t
-    type rea'	 = val_rea * typ_rea * mod_rea * inf_rea
+
+    type rea	 = { val_rea : val_rea
+		   , typ_rea : typ_rea
+		   , mod_rea : mod_rea
+		   , inf_rea : inf_rea
+		   }
 
 
   (* Injections *)
@@ -103,5 +106,28 @@ signature INF =
     val lookupTyp' :	sign * lab * int -> typ
     val lookupMod' :	sign * lab * int -> inf
     val lookupInf' :	sign * lab * int -> inf
+
+  (* Matching *)
+
+    datatype mismatch =
+	  MissingVal  of lab
+	| MissingTyp  of lab
+	| MissingMod  of lab
+	| MissingInf  of lab
+	| ManifestVal of lab
+	| ManifestTyp of lab
+	| ManifestMod of lab
+	| ManifestInf of lab
+	| MismatchVal of lab * typ * typ
+	| MismatchTyp of lab * tkind * tkind
+	| MismatchMod of lab * mismatch
+	| MismatchInf of lab * mismatch
+	| Incompatible    of inf * inf
+	| IncompatibleArg of path * path
+
+    exception Mismatch of mismatch
+
+    val match :		inf  *  inf -> unit		(* Mismatch *)
+    val matchSig :	sign * sign -> unit		(* Mismatch *)
 
   end

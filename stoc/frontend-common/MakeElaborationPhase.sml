@@ -187,7 +187,7 @@ val _=print(" (* current level = " ^ Int.toString(!TypePrivate.level) ^ " *)\n")
 
       | elabExp(E, I.PrimExp(i, s, typ)) =
 	let
-	    val (t,typ') = elabTyp(E, typ)
+	    val (t,typ') = elabStarTyp(E, typ)
 	in
 	    ( t, O.PrimExp(typInfo(i,t), s, typ') )
 	end
@@ -883,11 +883,11 @@ val _=print "\n"
 	let
 	    val  k             = Type.STAR
 	    val (a,id')        = elabVarId_bind(E, k, id)
-	    val (t,abs,w,typ') = elabTypRep(E, p, Type.inApp(t0, Type.inVar a),
+	    val (t,gen,w,typ') = elabTypRep(E, p, Type.inApp(t0, Type.inVar a),
 				      fn t' => Type.inLambda(a,t'),
 				      fn k' => Type.ARROW(k, buildKind k'), typ)
 	in
-	    ( t, abs, w, O.FunTyp(typInfo(i,t), id', typ') )
+	    ( t, gen, w, O.FunTyp(typInfo(i,t), id', typ') )
 	end
 
       | elabTypRep(E, p, t0, buildTyp, buildKind, I.SumTyp(i, cons)) =
@@ -1046,10 +1046,11 @@ val _=print "\n"
 	let
 	    val (j1,mod') = elabMod(E, mod)
 	    val (j2,inf') = elabGroundInf(E, inf)
-	(*UNFINISHED*)
-	    val  j        = j1
+	    val  _        = Inf.match(j1, Inf.clone j2)
+			    handle Inf.Mismatch mismatch =>
+				error(i, E.AnnModMismatch mismatch)
+	    val  j        = Inf.clone j2	(* opaque *)
 	in
-	    unfinished i "elabMod" "annotated modules";
 	    ( j, O.AnnMod(infInfo(i,j), mod', inf') )
 	end
 
@@ -1214,13 +1215,13 @@ val _=print "\n"
 	    val  p             = Path.fromLab(Lab.fromName(I.name id))
 	    val  _             = Inf.strengthen(p, j1')
 	    val  id'           = elabModId_bind(E, j1', id)
-	    val (j2,abs,inf2') = elabInfRep(E, p',
+	    val (j2,gen,inf2') = elabInfRep(E, p',
 				     fn k => Inf.inDependent(p,j1,buildKind k),
 				     inf2)
 	    val  _             = deleteScope E
 	    val  j             = Inf.inLambda(p, j1, j2)
 	in
-	    ( j, abs, O.FunInf(infInfo(i,j), id', inf1', inf2') )
+	    ( j, gen, O.FunInf(infInfo(i,j), id', inf1', inf2') )
 	end
 
       | elabInfRep(E, p, buildKind, inf) =
@@ -1258,7 +1259,7 @@ val _=print "\n"
 	    val  _          = insertScope E
 	    val  _          = Type.enterLevel()
 	    val  _          = enterVars(E, vars)
-	    val (t,typ')    = elabTyp(E, typ)
+	    val (t,typ')    = elabStarTyp(E, typ)
 	    val (l,ts,con') = elabConRep(E, t, con)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
@@ -1310,11 +1311,10 @@ val _=print "\n"
 	let
 	    val  p       = Inf.newMod(s, Lab.fromName(I.name id))
 	    val (j,mod') = elabMod(E, mod)
-	    val  j'      = Inf.clone j
-	    val  _       = Inf.strengthen(p, j')
-	    val  id'     = elabModId_bind(E, j', id)
+	    val  id'     = elabModId_bind(E, j, id)
 	    (*UNFINISHED: if mod = y then equate p to y *)
-	    val  _       = Inf.extendMod(s, p, j', SOME p)
+	    val  _       = Inf.extendMod(s, p, j, SOME p)
+	    val  _       = Inf.strengthen(p, j)
 	in
 	    O.ModDec(nonInfo(i), id', mod')
 	end
@@ -1339,7 +1339,6 @@ val _=print "\n"
 	end
 
       | elabDec(E, s, vars, I.RecDec(i, decs)) =
-	(*UNFINISHED: how do we represent recursive types in signatures? *)
 	let
 	    val _      = insertScope E
 	    val _      = Type.enterLevel()
@@ -1467,7 +1466,7 @@ val _=print "\n"
 	let
 	    val  p       = Inf.newVal(s, Lab.fromName(I.name id))
 	    val (t0,id') = elabValId_bind(E, Inf.VALUE, id)
-	    val (t,typ') = elabTyp(E, typ)
+	    val (t,typ') = elabStarTyp(E, typ)
 	    val  _       = Type.unify(t,t0)
 	    val  p       = Inf.extendVal(s, p, t, Inf.VALUE, NONE)
 	in
@@ -1479,7 +1478,7 @@ val _=print "\n"
 	    val  _          = insertScope E
 	    val  _          = Type.enterLevel()
 	    val  _          = enterVars(E, vars)
-	    val (t,typ')    = elabTyp(E, typ)
+	    val (t,typ')    = elabStarTyp(E, typ)
 	    val (l,ts,con') = elabConRep(E, t, con)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
@@ -1505,13 +1504,13 @@ val _=print "\n"
 	    val  _             = Type.enterLevel()
 	    val  k             = elabTypKind(E, typ)
 	    val  t0            = Type.unknown k
-	    val (t,abs,w,typ') = elabTypRep(E, p, t0, fn t'=>t', fn k'=>k', typ)
+	    val (t,gen,w,typ') = elabTypRep(E, p, t0, fn t'=>t', fn k'=>k', typ)
 	    val  _             = Type.unify(t, t0)
 	    val  _             = Type.exitLevel()
 	    val  E'            = splitScope E
 	    val  id'           = elabTypId_bind(E, t, w, id)
 	    val  _             = Inf.extendTyp(s, p, k, w,
-					       if abs then NONE else SOME t)
+					       if gen then NONE else SOME t)
 	    val  _             = appVals (generaliseVal (E, s, NONE, true)) E'
 	in
 	    O.DatSpec(nonInfo(i), id', typ')
@@ -1531,11 +1530,11 @@ val _=print "\n"
       | elabSpec(E, s, vars, I.InfSpec(i, id, inf)) =
 	let
 	    val  p           = Inf.newInf(s, Lab.fromName(I.name id))
-	    val (j,abs,inf') = elabInfRep(E, p, fn k'=>k', inf)
+	    val (j,gen,inf') = elabInfRep(E, p, fn k'=>k', inf)
 	    val  k           = Inf.kind j
 	    val  id'         = elabInfId_bind(E, j, id)
 	    val  _           = Inf.extendInf(s, p, k,
-					     if abs then NONE else SOME j)
+					     if gen then NONE else SOME j)
 	in
 	    O.InfSpec(nonInfo(i), id', inf')
 	end
@@ -1549,7 +1548,6 @@ val _=print "\n"
 	end
 
       | elabSpec(E, s, vars, I.RecSpec(i, specs)) =
-	(*UNFINISHED: how do we represent recursive types in signatures? *)
 	let
 	    val _      = insertScope E
 	    val _      = Type.enterLevel()
@@ -1623,10 +1621,10 @@ val _=print "\n"
 	let
 	    val  p             = Inf.newTyp(s, Lab.fromName(I.name id))
 	    val (t0,id')       = elabTypId(E, id)
-	    val (t,abs,w,typ') = elabTypRep(E, p, t0, fn t'=>t', fn k'=>k', typ)
+	    val (t,gen,w,typ') = elabTypRep(E, p, t0, fn t'=>t', fn k'=>k', typ)
 	    val  _             = Type.unify(t, t0)
 	    val  _             = Inf.extendTyp(s, p, Type.kind t, w,
-					       if abs then NONE else SOME t)
+					       if gen then NONE else SOME t)
 	in
 	    O.DatSpec(nonInfo(i), id', typ')
 	end

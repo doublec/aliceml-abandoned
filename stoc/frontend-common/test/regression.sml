@@ -116,6 +116,53 @@ fun x<>y = true
 
 ;
 
+(* Test signature matching *)
+
+signature S =
+  sig
+    type t
+    val x : t
+  end
+
+structure S :> S =
+  struct
+    type t = int
+    val x : int = 0
+  end
+
+
+signature SIG =
+  sig
+    type t
+    type u = int
+    datatype b = T | F
+    type v
+    type w = v
+    val x : t
+    datatype a = A of c
+    and      c = C of a
+    structure S : sig type t end
+    type st = S.t
+    structure M : sig structure N : sig type t end end
+  end
+
+structure Str :> SIG =
+  struct
+    type t = bool
+    type u = int
+    datatype b = T | F
+    datatype w = W
+    type v = w
+    val x = true
+    structure S = struct type t end
+    datatype c = C of a
+    and      a = A of c
+    type st = S.t
+    structure M = struct structure N = struct type u type t = u end end
+  end
+
+;
+
 (* General *)
 
 structure General =
