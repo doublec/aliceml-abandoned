@@ -19,55 +19,39 @@
 #pragma interface "generic/TaskStack.hh"
 #endif
 
-#include "adt/Stack.hh"
-#include "generic/Interpreter.hh"
-#include "generic/StackFrame.hh"
-
-class TaskStack: private Stack {
+class TaskStack: private Block {
 private:
   static const u_int INITIAL_SIZE = 16; // to be checked
-public:
-  using Stack::ToWord;
-  using Stack::IsEmpty;
 
-  // TaskStack public static data
   static word emptyTask;
-  // TaskStack Static Constructor
+public:
+  static const u_int initialNumberOfFrames = 1;
+
+  using Block::ToWord;
+  using Block::GetSize;
+  using Block::GetArg;
+  using Block::ReplaceArg;
+
   static void Init();
 
-  // TaskStack Constructor
-  static TaskStack *New() {
-    TaskStack *taskStack = static_cast<TaskStack *>(Stack::New(INITIAL_SIZE));
-    taskStack->SlowPush(emptyTask);
-    return taskStack;
+  static TaskStack *New(u_int size) {
+    Assert(size >= 2); // required for Enlarge to work correctly
+    Block *b = Store::AllocBlock(TASKSTACK_LABEL, size);
+    b->InitArg(0, emptyTask);
+    return static_cast<TaskStack *>(b);
   }
-  // TaskStack Untagging
-  static TaskStack *FromWord(word x) {
-    return static_cast<TaskStack *>(Stack::FromWord(x));
+  static TaskStack *New() {
+    return New(INITIAL_SIZE);
   }
   static TaskStack *FromWordDirect(word x) {
-    return static_cast<TaskStack *>(Stack::FromWordDirect(x));
+    Block *b = Store::DirectWordToBlock(x);
+    Assert(b->GetLabel() == TASKSTACK_LABEL);
+    return static_cast<TaskStack *>(b);
   }
 
-  // TaskStack Functions
-  void PushFrame(word frame) {
-    Stack::SlowPush(frame);
-  }
-  void PopFrame() {
-    Stack::Pop();
-  }
-  word GetFrame() {
-    return Stack::Top();
-  }
-  Interpreter *GetInterpreter() {
-    return StackFrame::FromWordDirect(GetFrame())->GetInterpreter();
-  }
-  //   PushCall requires that Scheduler::nArgs and Scheduler::currentArgs
-  //   have already been set:
-  Interpreter::Result PushCall(word closure);
-  static Interpreter::Result PushCall(TaskStack *taskStack, word closure);
-  void Purge();
-  void Dump();
+  TaskStack *Enlarge();
+  void Purge(u_int nFrames);
+  void Dump(u_int nFrames);
 };
 
 #endif
