@@ -32,19 +32,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 	structure O = AbstractCodeGrammar
 
 	structure Environment = MkEnvironment(AbstractCodeGrammar)
-	structure IdSet =
-	    MkHashImpSet(type t = int
-			 val equals = op=
-			 fun hash i = i)
-	structure IntMap =
-	    MkHashImpMap(type t = int
-			 val equals = op=
-			 fun hash i = i)
-	structure LargeIntMap =
-	    MkHashImpMap(type t = LargeInt.int
-			 val equals = op=
-			 fun hash i =
-			     LargeWord.toIntX (LargeWord.fromLargeInt i))
+	structure IdSet = MkHashImpSet(Int)
+	structure IntMap = MkHashImpMap(Int)
+	structure LargeIntMap = MkHashImpMap(LargeInt)
 
 	open I
 	open Environment
