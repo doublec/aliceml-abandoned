@@ -482,10 +482,13 @@ struct
 
     and newPath (v,t,p,i,d,path,canvas) =
         (case PathMap.lookup(pathTable, path) of
-	   NONE (* nothing knwon about this type - not registrated *)
+	   NONE (* nothing knwon about this type - not registered *)
 	   => createSimple(INTERPUNCT,p,i,d,"_",DEFAULT,canvas)
 	 | SOME create 
-	   => let val doc = create (!max_width,d,v,t)
+	   => let val doc = if d > !(Settings.max_depth) 
+				then LIMIT{desc = createValue(v,t),
+					   sort = DEPTH_LIMIT}
+				    else create (!max_width,d,v,t)
 	      in  docToNode (doc,p,i,d,canvas) 
 	      end )
 
