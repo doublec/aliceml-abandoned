@@ -36,15 +36,15 @@ and map' f (x::xs, p)		= map' f (xs, continue (f x) p)
 
 fun main() =
     let
-	val p1 = promise()
-	val p2 = promise()
+	val p1		= promise()
+	val p2		= promise()
 
-	val A = future p1
-	val B = future p2
-	val AplusB  = plus(A, B)
-	val AzipB   = zip(A, B)
-	val AtoChar = map (str o chr) A
-	val Bdiv10  = map (fn n => real n / 10.0) B
+	val A		= future p1
+	val B		= future p2
+	val AplusB	= plus(A, B)
+	val AzipB	= zip(A, B)
+	val AtoChar	= map (str o chr) A
+	val Bdiv10	= map (fn n => real n / 10.0) B
     in
 	Tools.inspect {A, B, AplusB, AzipB, AtoChar, Bdiv10} ;
 	loop(p1,p2) ;
