@@ -107,8 +107,7 @@ val _ =
     let
 	(* Hosts used as remote workers. *)
 	val hosts = [("localhost", "Alice"),
-		     ("localhost", "Bob"),
-		     ("localhost", "Charlie")]
+		     ("localhost", "Bob")]
 	    
 	(* We build the search engine. *)
 	structure Engine = MkEngine

@@ -1,3 +1,9 @@
+*******************
+This file is deprecated, but could possibly be updated.
+*******************
+
+
+
 import structure Remote  from "x-alice:/lib/distribution/Remote"
 import structure Space   from "x-alice:/lib/gecode/Space"
 import structure FD      from "x-alice:/lib/gecode/FD"

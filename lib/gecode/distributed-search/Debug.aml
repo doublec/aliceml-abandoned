@@ -5,9 +5,9 @@ struct
 
     open Debug
 
-    val dbCom    = newDB 10 (* Communication. *)
-    val dbSearch = newDB 11 (* Search. *)
-    val dbManag  = newDB 12 (* Management. *)
-    val dbSlow   = newDB 13 (* Slow search. *)
+    val dbCom    = newDB () (* Communication. *)
+    val dbSearch = newDB () (* Search. *)
+    val dbManag  = newDB () (* Management. *)
+    val dbSlow   = newDB () (* Slow search. *)
 
 end
