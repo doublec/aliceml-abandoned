@@ -18,7 +18,13 @@ struct
     (* comment nesting level *)
     val nesting = ref 0
 
-    fun ret (t, yyline, yycol) = let val p = (yyline, yycol) in (SOME t, p, p) end
+    fun ret (t, yytext, yyline, yycol) = 
+        let 
+            val leftPos  = (yyline, yycol) 
+            val rightPos = (yyline, yycol + String.size yytext)
+        in 
+            (SOME t, leftPos, rightPos) 
+        end
 
     regexp 
         digit   = ["0-9"]
@@ -26,13 +32,14 @@ struct
     and number  = digit+
 
     lexer lex =
-        number      => ( ret (P.NUMBER (valOf (LargeInt.fromString yytext)), yyline, yycol) )
-      | "+"         => ( ret (P.PLUS, yyline, yycol) )
-      | "-"         => ( ret (P.MINUS, yyline, yycol) )
-      | "*"         => ( ret (P.TIMES, yyline, yycol) )
-      | "/"         => ( ret (P.DIVIDE, yyline, yycol) )
-      | "("         => ( ret (P.LPAR, yyline, yycol) )
-      | ")"         => ( ret (P.RPAR, yyline, yycol) )
+        number      => ( ret (P.NUMBER (valOf (LargeInt.fromString yytext)), 
+                                yytext, yyline, yycol) )
+      | "+"         => ( ret (P.PLUS, yytext, yyline, yycol) )
+      | "-"         => ( ret (P.MINUS, yytext, yyline, yycol) )
+      | "*"         => ( ret (P.TIMES, yytext, yyline, yycol) )
+      | "/"         => ( ret (P.DIVIDE, yytext, yyline, yycol) )
+      | "("         => ( ret (P.LPAR, yytext, yyline, yycol) )
+      | ")"         => ( ret (P.RPAR, yytext, yyline, yycol) )
       | "(*"        => ( comment () )
       | space       => ( lex () )
       | eof         => ( (NONE, (yyline, yycol), (yyline, yycol)) )

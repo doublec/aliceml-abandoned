@@ -16,9 +16,11 @@ struct
     assocl TIMES DIVIDE
     assocl PLUS MINUS
     
-    exception ParseError of int * int
+    type pos = int * int
+    
+    exception ParseError of pos * pos
 
-    fun parseError (line, col) =  raise ParseError (line, col)
+    fun parseError (lPos, rPos) =  raise ParseError (lPos, rPos)
 
     rule exp  =
         NUMBER

@@ -16,11 +16,12 @@ import structure OS             from "x-alice:/lib/system/OS"
 
 
 (* Print the line containing the error and and a marker below *)
-fun markError (l, p) =
+fun markError (l, (_, col1), (_, col2) ) =
     let val prefix = "Syntax error near: "
     in
         print (prefix ^ l ^ "\n");
-        print (String.tabulate (String.size prefix + p - 1, const #" ") ^ "^\n")
+        print (String.tabulate (String.size prefix + col1 - 1, const #" ") ^ 
+               String.tabulate (Int.max (col2 - col1, 1), const #"^") ^ "\n")
     end
     
     
@@ -35,8 +36,8 @@ fun evalAndPrint l =
            (* lexer errors are already reported in a fashion 
               suitable for display *)
            print s
-         | CalcParser.ParseError (line, col)  => 
-           markError (l, col)
+         | CalcParser.ParseError (lPos, rPos)  => 
+           markError (l, lPos, rPos)
          | Div =>
            (* every interactive calculator should handle that *)
            print "Error: division by zero.\n"
