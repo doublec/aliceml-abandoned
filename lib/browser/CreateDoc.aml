@@ -228,7 +228,42 @@ struct
 		end
 	end 
 
+    (* createPromise *)
+    and createPromise (m_width,d,va,t) = 
+	let val descr = createValue(va,t,NO_ACTIONS)
+	in if d > !(Settings.max_depth)
+	       then LIMIT{desc = descr, 
+			  sort = DEPTH_LIMIT}
+	   else let val prom = UnsafeValue.cast va
+		    val fut = Promise.future prom
+		    val inva = UnsafeValue.cast fut : Reflect.value
+		    val inty = #2(Type.asApply(t))
+		in CONCAT{desc = INTERPUNCT, 
+			  kids = 
+			  #[SIMPLE{desc = INTERPUNCT,
+				   rep = "Promise{|",
+				   color = DEFAULT},
+			    EMBEDDED(inva,inty),
+			    SIMPLE{desc = INTERPUNCT,
+				   rep = "|}",
+				   color = DEFAULT}]}
+		end
+	end 
 
+    (* createPackage *)
+    and createPackage (m_width,d,va,t) = 
+	CONCAT{desc = INTERPUNCT, 
+	       kids = 
+	       #[SIMPLE{desc = INTERPUNCT,
+			rep = "Package{|",
+			color = DEFAULT},
+		 SIMPLE{desc = INTERPUNCT,
+			rep = "...",
+			color = DEFAULT},
+		 SIMPLE{desc = INTERPUNCT,
+			rep = "|}",
+			color = DEFAULT}]}
+		
 end
 
     
