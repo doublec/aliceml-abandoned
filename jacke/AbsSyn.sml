@@ -1,4 +1,5 @@
 (* abstract syntax for parse tree of jacke input *)
+(* and semantical analysis                       *)
 
 structure AbsSyn =
 struct
@@ -26,7 +27,7 @@ struct
       | PMLCode of string list * pos * pos
 	
     withtype 
-	Prule = string * string option * bnfexpWithPos
+	Prule = (string * string option * bnfexpWithPos)
     and idlist = string list
 
     datatype bnfexp =
@@ -59,8 +60,8 @@ struct
 	      | rfbnfexp (PSeq (bnfs,_,_)) = Seq (List.map rfbnfexp bnfs)
 	      | rfbnfexp (PPrec (bnf,s,_,_)) = Prec (rfbnfexp bnf,s)
 	      | rfbnfexp (PTransform (bnf,sl,p1,p2)) = 
-	        let val lPos = Int.toString p1
-		    val rPos = Int.toString p2
+	        let val lPos = E.posToString p1 (*Int.toString p1*)
+		    val rPos = E.posToString p2 (*Int.toString p2*)
 		in Transform (rfbnfexp bnf,
 			      (SOME ("(* Position in source: "^lPos^"-"^rPos^" *)"), sl))
 		end
@@ -78,57 +79,102 @@ struct
 	    List.map rfptree
 	end
 
-    fun checkOnlyOneTokenDec t = 
-	let val l = List.filter (fn (TokenDec _) => true | _ => false) t
-	    val l' = if List.length l <= 0 then []
-		     else case (hd l) of 
-			 TokenDec  d => List.map (fn x => #1 x) d
-	    val b = List.length l<=1
- 	in 
-	    if b then (b, l') 
-	    else (E.error 0 "Multiple Token Definitions"; (b,l'))
+    (* issues warning if several *differing* token decs are found *)
+    fun tokens p =
+	let val tds = List.filter (fn (PTokenDec _) => true | _ => false) p
+	    val msg = "Differing token declarations "
+		      ^"(only last one is relevant)"
+	in
+	    case tds of
+		((PTokenDec(t,p1,_))::ts) => 
+		    ((if List.all (fn (PTokenDec(t',_,_)) => t=t') ts 
+			  then ()
+		      else E.warning p1 msg);
+		     let val PTokenDec(toks,_,_) = List.last tds
+			 val toks = List.map (fn (x,_) => x) toks
+		     in toks end)
+			 
+	      | _ => []
 	end
 
-    fun checkRulenames b rs [] = (b, rs)
-      | checkRulenames b rs (t::ts) =
-	let fun chk b [] rs = (b,rs) 
-	      | chk b ((r,_,_)::s) rs = 
-	    if List.all (fn y => y<>r) rs then chk b s (r::rs)
-	    else (E.error 0 ("Multiple definition of rule "^r); chk false s rs)
-	in case t of
-	    RuleDec r => 
-		let val (b',r') = (chk b r rs)
-		in checkRulenames b' r' ts end
-   	  | _ => checkRulenames b rs ts
+    (* nonterminal symbol names, implicitly defined by rule decs *) 
+    fun nonterms p =
+	let val rs = List.filter (fn PRuleDec _ => true | _ => false) p
+	    val lhs = List.map (fn (lhs,_,_) => lhs)
+	    val lhsides = List.map (fn (PRuleDec (r,p1,p2)) => lhs r) rs
+	in List.concat lhsides end
+
+    (* symbols occurring in right hand sides *)
+    fun symbols p =
+	let fun get (PSymbol pat) = [pat]
+	      | get (PAs (_,bnf,_,_)) = get bnf
+	      | get (PSeq (bnfl,_,_)) = List.concat (List.map get bnfl)
+	      | get (PPrec (bnf,sym,p1,p2)) = (sym,p1,p2)::(get bnf)
+	      | get (PTransform (bnf,_,_,_)) = get bnf
+	      | get (PAlt (bnfl,_,_)) = List.concat (List.map get bnfl)
+	    val rs = List.filter (fn PRuleDec _ => true | _ => false) p
+	    val rs = List.concat (List.map (fn PRuleDec (r,_,_) => r) rs)
+	    val rhs = List.concat 
+		(List.map (fn (_,_,bnf) => get bnf) rs)
+	in 
+	    rhs
 	end
 
-    fun checkDisjointness toks rules =
-	if List.all (fn t => List.all (fn r => r<>t) rules) toks
-	    then true 
-	else (E.error 0 "Token and rule names not disjoint";false)
-
-    fun checkAssocDecs rs [] = (true, rs)
-      | checkAssocDecs rs (t::ts) =
-	let fun chk [] rs = rs 
-	      | chk (r::s) rs = 
-	    if List.all (fn y => y<>r) rs then chk s (r::rs)
-	    else (E.error 0 ("Multiple occurrence in assoc declaration of token "^r); chk s rs)
-	in case t of
-	    AssoclDec r => checkAssocDecs (chk r rs) ts
-	  | AssocrDec r => checkAssocDecs (chk r rs) ts
-	  | NonassocDec r => checkAssocDecs (chk r rs) ts
-   	  | _ => checkAssocDecs rs ts
+    
+    val semanticalAnalysis = fn p =>
+	let
+	    val tokens = tokens p (* may issue warning *)
+		
+	    (* tokens and nonterms disjoint? all symbols defined as either 
+	     terminal or nonterminal ? *)
+	    fun checkRules p = 
+		let val nonterms = nonterms p
+		    val symbols = symbols p
+		    fun disjoint l1 l2 = 
+			not (List.exists 
+			     (fn x => List.exists (fn y => x=y) l2) l1)
+		    val _ = if not (disjoint tokens nonterms)
+				then E.error 0 
+				 "Tokens and nonterminal symbols not disjoint"
+			    else ()
+		    fun contained [] _ = ()
+		      | contained ((s,p1,_)::syms) l =
+			if List.exists (fn y => y=s) l then contained syms l
+			else (E.error p1 ("undefined symbol "^s);
+			      contained syms l)
+		    val _ = contained symbols (tokens@nonterms)
+		in ()
+		end
+	    
+    (* all symbols are defined as tokens? multiple decs for single token? *)
+	    fun checkAssocs p =
+		let 
+		    val distribPos = fn p1 => fn p2 => 
+			List.map (fn x => (x,p1,p2))
+		    val assocs = List.map 
+			(fn (PAssoclDec (l,p1,p2)) => distribPos p1 p2 l
+		      | (PAssocrDec (l,p1,p2)) => distribPos p1 p2 l
+		      | (PNonassocDec (l,p1,p2)) => distribPos p1 p2 l
+		      | _ => []) p
+		    val assocs = List.concat assocs
+		    fun def (s,p1,p2) = if List.exists (fn x => x=s) tokens
+					    then ()
+					else E.error p1
+					    ("undefined token "^s
+					     ^" in associativity declaration")
+		    val _ = List.app def assocs
+		    fun mult [] = ()
+		      | mult ((s,p1,p2)::ts) = 
+			if List.exists (fn (x,_,_) => x=s) ts
+			    then E.error p1
+				("multiple associativities given for token "^s)
+			else mult ts
+		    val _ = mult assocs
+		in () 
+		end  
+	in
+	    (checkRules p;
+	     checkAssocs p;
+	     if !E.anyErrors then raise E.Error else ())
 	end
-
-    fun subset s1 s2 = 
-	List.all (fn x => if List.exists 
-		  (fn y => x=y) s2 then true else (E.error 0 ("undefined identifier "^x); false)) s1
-
-    fun semanticalAnalysis t =
-	let val (b1,tok) = checkOnlyOneTokenDec t
-	    val (b2,rules) = checkRulenames true [] t
-	    val b3 = checkDisjointness tok rules 
-	    val (b4,tok') = checkAssocDecs [] t
-	    val b5 = subset tok' tok 
-	in List.all (fn x => x) [b1,b2,b3,b4,b5] end
 end
