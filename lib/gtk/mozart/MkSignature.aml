@@ -216,11 +216,11 @@ functor MkSignature(structure TypeManager : TYPE_MANAGER
 	val gtkInits =
 	    [indent, "val null : object\n",
 	     indent, "val signalConnect : ",
-	     indent, "object * string * (arg list -> unit) -> int\n",
-	     indent, "val signalDisconnect : object * int -> unit\n",
-	     indent, "val signalBlock : object * int -> unit\n",
-	     indent, "val signalUnblock : object * int -> unit\n",
-	     indent, "val signalEmit : object * int -> unit\n",
+	     indent, "object * string * (arg list -> unit) -> sigid\n",
+	     indent, "val signalDisconnect : object * sigid -> unit\n",
+	     indent, "val signalBlock : object * sigid -> unit\n",
+	     indent, "val signalUnblock : object * sigid -> unit\n",
+	     indent, "val signalEmit : object * string -> unit\n",
 	     indent,
 	     "val comboSetPopdownStrings : object * string list -> unit\n"
 	     ]
