@@ -47,16 +47,32 @@
  *)
 
 import
-    signature PICKLE_OUT_STREAM
-from "PICKLE_OUT_STREAM-sig"
+    structure Unsafe
+from "../../lib/system/Unsafe"   (*--** does not exist *)
 
 import
     functor MkHashImpMap
-from "../misc/MkHashImpMap"
+from "../../lib/utility/MkHashImpMap"
 
 import
     structure StringHashKey
-from "../misc/HASH_KEY-sig"
+from "../../lib/utility/StringHashKey"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure StringMap
+from "../infrastructure/StringMap"
+
+import
+    structure Crc
+from "Crc"
+
+import
+    signature PICKLE_OUT_STREAM
+from "PICKLE_OUT_STREAM-sig"
 
 structure PickleOutStream :> PICKLE_OUT_STREAM =
     struct
@@ -87,8 +103,6 @@ structure PickleOutStream :> PICKLE_OUT_STREAM =
 	val EX_WORD       = 0wx08: Word8.word
 
 	val initialSize = 256
-
-	structure StringMap = MkHashImpMap(StringHashKey)
 
 	type label = word
 
