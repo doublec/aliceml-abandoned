@@ -22,7 +22,7 @@
 word Hole::cyclicExn;
 word Hole::holeExn;
 
-void Hole::Init() {
+void Hole::InitExceptions() {
   cyclicExn = UniqueConstructor::New(String::New("Hole.Cyclic"))->ToWord();
   RootSet::Add(cyclicExn);
   holeExn = UniqueConstructor::New(String::New("Hole.Hole"))->ToWord();
