@@ -114,7 +114,7 @@ public:
   using Block::ToWord;
 
   char *GetBase() {
-    return (char *) ((char *) this + sizeof(u_int));
+    return (char *) this + sizeof(u_int);
   }
   u_int GetSize() {
     return Store::DirectWordToInt(GetArg(BYTESIZE_POS));
