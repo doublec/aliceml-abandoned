@@ -251,7 +251,7 @@ protected:
   };
   
   void SetTop(u_int top) {
-    StackFrame::InitArg(TOP_POS, Store::IntToWord(top));
+    StackFrame::ReplaceArg(TOP_POS, Store::IntToWord(top));
   }
   u_int GetTop() {
     return Store::DirectWordToInt(StackFrame::GetArg(TOP_POS));
