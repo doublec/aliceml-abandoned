@@ -250,7 +250,7 @@ fun lazy mapz f nil     = nil
 
 <P>This derived form is defined such that both definitions of <TT>mapz</TT> are
 equivalent. Let us apply <TT>mapz</TT> to the stream of natural numbers
-to calculate their factorities lazily:</P>
+to calculate their factorials lazily:</P>
 
 <PRE class=code>
 val facs = mapz fac (enum 0)
@@ -1169,7 +1169,7 @@ Pickle.save ("Fac50." ^ Component.extension,
 	       :> (structure Fac50 : sig val x : int end))
 <I>val it : unit = ()</I></PRE>
 
-<P>Assume that calculating the factority of 50 is an expensive computation. We
+<P>Assume that calculating the factorial of 50 is an expensive computation. We
 have now performed it statically and generated a component that exports the
 result as a value. We may import it as usual:</P>
 
