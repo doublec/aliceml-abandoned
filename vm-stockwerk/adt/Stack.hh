@@ -45,7 +45,7 @@ public:
   using Block::ToWord;
 
   u_int GetStackSize() {
-    return (GetTop() - 1);
+    return GetTop();
   }
   void AllocArgFrame(u_int fsize) {
     u_int top  = GetTop();
