@@ -10,18 +10,25 @@
  *   $Revision$
  *)
 
-import structure Report      from "src/Report"
-import structure Test        from "src/Test"
+import structure Report       from "src/Report"
+import structure Test         from "src/Test"
 
-import structure TestBool    from "lib/fundamental/Bool"
-import structure TestString  from "lib/fundamental/String"
-import structure TestGeneral from "lib/fundamental/General"
-import structure TestOption  from "lib/fundamental/Option"
-
+import structure TestBool     from "lib/fundamental/Bool"
+import structure TestString   from "lib/fundamental/String"
+import structure TestGeneral  from "lib/fundamental/General"
+import structure TestOption   from "lib/fundamental/Option"
+import structure TestAlt      from "lib/fundamental/Alt"
+import structure TestIEEEReal from "lib/fundamental/IEEEReal"
+import structure TestCompiler from "lib/compiler/Compiler"
+import structure TestInteger  from "lib/fundamental/Integer"
 
 val allTests = [TestBool.suite, TestOption.suite, 
-		(*TestGeneral.suite,*) 
-		TestString.suite]
+		TestGeneral.suite,
+		TestString.suite,
+		TestAlt.suite,
+		TestIEEEReal.suite,
+		TestInteger.suite
+		(*TestCompiler.suite*)]
 
 
 fun runTests conf = 
@@ -34,8 +41,8 @@ fun start cfg =
 
 fun main () = 
     case CommandLine.arguments () of
-	 []                    => start Test.defaultConfig
-       | [timeout, sep, more]  => start Test.defaultConfig
+	 []                           => start Test.defaultConfig
+       | [timeout, sep, showMissing]  => start Test.defaultConfig
        | _ => ()
 
 

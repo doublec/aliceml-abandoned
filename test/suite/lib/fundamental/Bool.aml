@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../TESTSUITE-sig"
+import signature TESTSUITE from "../test/TESTSUITE-sig"
 
 import structure Gen       from "../../src/Gen"
-import structure Test      from "../../src/Test"
+import structure Test      from "../test/Test"
 
 structure TestBool :> TESTSUITE = (* the bool test suite *)
 struct

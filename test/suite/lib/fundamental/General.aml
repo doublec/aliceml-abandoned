@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../TESTSUITE-sig"
+import signature TESTSUITE from "../test/TESTSUITE-sig"
 
 import structure Gen       from "../../src/Gen"
-import structure Test      from "../../src/Test"
+import structure Test      from "../test/Test"
 
 structure TestGeneral :> TESTSUITE =
 struct
@@ -23,5 +23,5 @@ struct
 	 assert General.inverse GREATER = LESS;
 	 assert General.inverse EQUAL = EQUAL)
 
-    val suite = ("General", [])
+    val suite = ("General", [("testInverse",testInverse)])
 end

@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../TESTSUITE-sig"
+import signature TESTSUITE from "../test/TESTSUITE-sig"
 
 import structure Gen       from "../../src/Gen"
-import structure Test      from "../../src/Test"
+import structure Test      from "../test/Test"
 
 import structure Random    from "x-alice:/lib/utility/Random"
 
@@ -27,7 +27,7 @@ struct
     val allGenStrFreq = [(12,strGen0), (18,strGen1), (4,strGen2)]
 
     fun testSize () =
-	Gen.try 10 (*Gen.oneOfFreq allGenStrFreq*) strGen2 
+	Gen.try 10 (Gen.oneOfFreq allGenStrFreq)
 	   (fn s => assert true)
 
     val suite = ("String", [("testSize", testSize)])

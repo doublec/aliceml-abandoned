@@ -10,10 +10,10 @@
  *   $Revision$
  *)
 
-import signature TESTSUITE from "../TESTSUITE-sig"
+import signature TESTSUITE from "../test/TESTSUITE-sig"
 
 import structure Gen       from "../../src/Gen"
-import structure Test      from "../../src/Test"
+import structure Test      from "../test/Test"
 
 structure TestOption :> TESTSUITE =
 struct
@@ -36,7 +36,7 @@ struct
 	(assert Option.join (SOME (SOME 0)) = (SOME 0);
 	 assert Option.join (SOME NONE) = NONE)
 
-    fun testApp () = (Thread.sleep (Time.fromSeconds (Int.toLarge 20)))
+    fun testApp () = assert raise Test.NotYetImplemented
 
     fun testMap () = assert raise Test.NotYetImplemented
 

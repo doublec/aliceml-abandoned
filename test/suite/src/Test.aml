@@ -16,15 +16,11 @@ import structure MkSeparate  from "MkSeparate"
 import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
 import structure PPValue     from "x-alice:/lib/system/PPValue"
 
-structure Test (* :> TEST *) = (* TODO: ask how to realise *)
+structure Test :> TEST =
 struct
 
     exception Error of (exn * string)
 
-    exception NotYetImplemented
-	      
-    val printWidth   = ref 80
-		     
     type test_case   = string * (unit -> unit)
 
     type test_suite  = string * test_case list
@@ -43,20 +39,15 @@ struct
 
     type config = {
 	    timeout: Time.time,
-	    separate: bool
+	    separate: bool,
+	    showMissing: bool
     }
     
     val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 10),
-	    separate = false
+	    separate = false,
+	    showMissing = true
     }
-
-    fun argToStr t x = PrettyPrint.toString(PPValue.ppVal t x, !printWidth)
-		       
-    fun test' t f arg = (assert f arg) 
-        handle e => raise Error (e, argToStr t arg)
-				     
-    __overload 'a test: ('a -> bool) -> 'a -> unit = test'
 
     fun executeTC (cfg:config) (_, f) = 
       (case Future.awaitEither (spawn (f ();()), 

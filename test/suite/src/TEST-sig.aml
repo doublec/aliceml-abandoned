@@ -15,8 +15,6 @@ sig
 
     exception Error of (exn * string)
 
-    exception NotYetImplemented
-
     type test_case = string * (unit -> unit)
 
     type test_suite = string * test_case list
@@ -38,15 +36,16 @@ sig
     type config = {
 	timeout: Time.time,		    (* if a testcase uses more 
 						    time it fails *)
-	separate: bool			    (* execute each testcase 
+	separate: bool,			    (* execute each testcase 
                                                     in a separate process ? *)
+	showMissing: bool                   (* show missing function alerts *)
     }
 
     val defaultConfig: config	      (* [= { timeout = Time.fromSeconds 10, 
 					      separate = false }] *)
-
+(*
     val test: ('a -> bool) -> 'a -> unit
-
+*)
     val run: config -> test_suite -> result
     (* [execute cfg suite] executes all testcases of [suite] using
        configuration [cfg].

@@ -13,7 +13,7 @@ import structure Test from "Test"
 
 signature REPORT =
 sig
-	val report: TextIO.outstream -> Test.result -> unit
+	val report: (TextIO.outstream * Test.config) -> Test.result -> unit
 
 	val run: TextIO.outstream -> Test.config -> Test.test_suite -> unit
 	val runAll: TextIO.outstream -> Test.config -> Test.test_suite list -> unit
