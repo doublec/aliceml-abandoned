@@ -688,6 +688,7 @@ define
 		    T
 		 end#rr_v
 	      'Unsafe.makeTuple': fun {$ Vs} {Adjoin Vs tuple} end#r_v
+	      'Unsafe.selTuple': fun {$ T I} T.(I + 1) end#rr_v
 	      'Stockwerk.realToVector':
 		 fun {$ S}
 		    {List.toTuple vector {ByteString.toString S}}
