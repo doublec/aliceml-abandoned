@@ -36,8 +36,8 @@ functor MkBackendDotNet(structure Switches: SWITCHES): BACKEND_SPECIFIC =
 		IL.outputProgram (ilFilename, program);
 		if OS.Process.system ilasm = OS.Process.success then ()
 		else
-		    raise Error.Error (Source.nowhere,
-				       "invocation of `" ^ ilasm ^ "' failed")
+		    Error.error' (Source.nowhere,
+				  "invocation of `" ^ ilasm ^ "' failed")
 	    end
 	structure TracingPhase =
 	    MkTracingPhase(structure Phase =

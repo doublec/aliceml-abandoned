@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -521,10 +521,11 @@ struct
 
   (* Export *)
 
-    fun errorToString e   = PrettyPrint.toString(ppError e, 75)
-    fun warningToString w = PrettyPrint.toString(ppWarning w, 75)
+    fun error(region, e)  = Error.error(region, ppError e)
+    fun warn(region, w)   = Error.warn(region, ppWarning w)
 
-    fun error(region, e)  = Error.error(region, errorToString e)
-    fun warn(region, w)   = Error.warn(region, warningToString w)
-
+    (*UNFINISHED*)
+    fun unfinished(region, funname, casename) =
+	Error.warn(region, text("Elab." ^ funname ^ ": " ^ casename ^
+				" not checked yet"))
 end

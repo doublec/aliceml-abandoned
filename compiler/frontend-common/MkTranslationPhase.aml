@@ -62,8 +62,7 @@ struct
   (* UNFINISHED... *)
 
     fun unfinished r funname casename =
-	Error.error(r, "TranslationPhase." ^ funname ^ ": " ^ casename ^
-		       " not implemented yet")
+	Error.unfinished(r, "Translation." ^ funname, casename)
 
   (* Helpers *)
 
@@ -238,7 +237,7 @@ struct
 	  | Inf.TypItem(p,k) =>
 	    let
 		val t = typ_typ E handle TranslationEnv.Pervasive =>
-			(Error.warn(Source.nowhere,
+			(Error.warn'(Source.nowhere,
 				    "RTT types not available everywhere");
 			 typ_poly) (* for bootstrapping *)
 	    in
@@ -249,7 +248,7 @@ struct
 	  | Inf.InfItem(p,k) =>
 	    let
 		val t = typ_inf E handle TranslationEnv.Pervasive =>
-			(Error.warn(Source.nowhere,
+			(Error.warn'(Source.nowhere,
 				    "RTT types not available everywhere");
 			 typ_poly) (* for bootstrapping *)
 	    in
@@ -280,7 +279,7 @@ struct
 	    val modlab' = trModLabel modlab
 	    val lab'    = trValLabel lab
 	    val longid0 = TranslationEnv.lookupPervasive' E
-(*DEBUG*)handle e => (Error.warn(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
+(*DEBUG*)handle e => (Error.warn'(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
 	    val t0      = #typ(O.infoLongid longid0)
 	    val t1      = Type.lookupRow(Type.asProd t0, modlab')
 	    val longid1 = O.LongId(typInfo(r,t1), longid0,
@@ -298,7 +297,7 @@ struct
 	    val modlab' = trModLabel modlab
 	    val lab'    = trValLabel lab
 	    val longid0 = TranslationEnv.lookupPervasive' E
-(*DEBUG*)handle e => (Error.warn(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
+(*DEBUG*)handle e => (Error.warn'(Source.nowhere, Label.toString modlab ^ "." ^ Label.toString lab);raise e)
 	    val t0      = #typ(O.infoLongid longid0)
 	    val t1      = Type.lookupRow(Type.asProd t0, modlab')
 	    val longid1 = O.LongId(typInfo(r,t1), longid0,
@@ -504,7 +503,7 @@ struct
     and idsDec(E, I.ValDec(_,p,_), xs')	= idsPat(E,p,xs')
       | idsDec(E, I.TypDec(_,x,_), xs')	= idsId'(trTypid(E,x), xs')
       | idsDec(E, I.ModDec(_,x,_), xs')	= (idsId'(trModid(E,x), xs')
-(*DEBUG*)handle VirtualModule => (Error.warn(#region(I.infoId x), Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 10\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region(I.infoId x), Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 10\n"); raise VirtualModule))
       | idsDec(E, I.InfDec(_,x,_), xs')	= idsId'(trInfid(E,x), xs')
       | idsDec(E, I.VarDec(_,_,d), xs')	= idsDec(E,d,xs')
       | idsDec(E, I.RecDec(_,ds), xs')	= idsDecs(E,ds,xs')
@@ -549,14 +548,14 @@ struct
     and trExp(E, I.LitExp(i,l))		= O.LitExp(i, trLit l)
       | trExp(E, I.VarExp(i,y))		= (O.VarExp(i, trVallongid(E, y))
 (* may happen with functor derived form...
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, "15\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "15\n"); raise VirtualModule))
 *))
       | trExp(E, I.PrimExp(i,s,t))	= O.PrimExp(i, s)
       | trExp(E, I.NewExp(i,t))		= O.NewExp(i)
       | trExp(E, I.TagExp(i,l,_,e))	= O.TagExp(i, trVallab l, trExp(E,e))
       | trExp(E, I.ConExp(i,y,e))	= (O.ConExp(i, trVallongid(E,y),
 						   trExp(E,e))
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, "16\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "16\n"); raise VirtualModule))
       | trExp(E, I.RefExp(i,e))		= O.RefExp(i, trExp(E,e))
       | trExp(E, I.StrictExp(i,e))	= O.StrictExp(i, trExp(E,e))
       | trExp(E, I.TupExp(i,es))	= O.TupExp(i, trExps(E,es))
@@ -655,7 +654,7 @@ struct
       | trPat(E, I.TagPat(i,l,_,p))	= O.TagPat(i, trVallab l, trPat(E,p))
       | trPat(E, I.ConPat(i,y,p))	= (O.ConPat(i, trVallongid(E,y),
 						      trPat(E,p))
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, "17\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "17\n"); raise VirtualModule))
       | trPat(E, I.RefPat(i,p))		= O.RefPat(i, trPat(E,p))
       | trPat(E, I.StrictPat(i,p))	= O.StrictPat(i, trPat(E,p))
       | trPat(E, I.TupPat(i,ps))	= O.TupPat(i, trPats(E,ps))
@@ -679,7 +678,7 @@ struct
 	(* [y] = [y] *)
 (	O.VarExp(trModInfo(E,i), trModlongid(E,y))
 (* may happen with functor derived form...
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, "11\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, "11\n"); raise VirtualModule))
 *))
       | trMod(E, I.StrMod(i,ds)) =
 	(* [struct decs end] = let [decs] in {<flds>} *)
@@ -702,7 +701,7 @@ struct
 	    val r  = #region(I.infoId x)
 	    val e' = trMod(E,m)
 	    val p' = idToPat(trModid(E,x))
-(*DEBUG*)handle VirtualModule => (Error.warn(r, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 2\n"); raise VirtualModule)
+(*DEBUG*)handle VirtualModule => (Error.warn'(r, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 2\n"); raise VirtualModule)
 	    val m' = O.Mat(nonInfo r,p',e')
 	in
 	    O.FunExp(trModInfo(E,i), #[m'])
@@ -737,7 +736,7 @@ struct
 
 	    val (t11,t12) = Type.asArrow t1
 	    val j2'       = Inf.narrow(j2, #2(Inf.asArrow j1))
-(*DEBUG*)handle e => (Error.warn(#region i, "4\n"); raise e)
+(*DEBUG*)handle e => (Error.warn'(#region i, "4\n"); raise e)
 	    val e2'       = trTransCoerceMod(E, r2, m2, j2')
 
 	    val e3'       = O.SealExp(typInfo(r2,t11), e2')
@@ -978,7 +977,7 @@ struct
 	    let
 		val j1  = #inf(I.infoMod m)
 		val j2' = Inf.narrow(j1,j2)
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match5\n");raise e)
+(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn'(r,"match5\n");raise e)
 	    in
 		O.SealExp(typInfo(r,infToTyp(E,j2)),
 			  trTransCoerceMod(E,r,m,j2'))
@@ -997,7 +996,7 @@ struct
 	    val x2' = O.Id(i2, Stamp.new(), Name.InId)
 	    val x2  = O.ShortId(i2, x2')
 	    val j2' = Inf.narrow(j1,j2)
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match1\n");raise e)
+(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn'(r,"match1\n");raise e)
 	in
 	    case coerceMod(E, r, x1,j1,SOME x2,j2,j2', false)
 	      of NONE    => O.SealExp(i', e1')
@@ -1096,13 +1095,13 @@ struct
 	    let
 		val (_,j21',j22') = Inf.asArrow j2'
 		val  rea          = Inf.match(j21',j11)
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match2\n");raise e)
+(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn'(r,"match2\n");raise e)
 		val  j11'         = Inf.narrow(j21',j11)
 		val  _            = PathMap.insert(#mod_rea rea, p1,
 						   Inf.mod(p2,j11'))
 		val  j12'         = Inf.realise(rea, j12)
 		val  j22'         = Inf.narrow(j12',j22')
-(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn(r,"match3\n");raise e)
+(*DEBUG*)handle e as Inf.Mismatch _ => (Error.warn'(r,"match3\n");raise e)
 
 		val i11 = typInfo(r, infToTyp(E,j11'))
 		val i12 = typInfo(r, infToTyp(E,j12'))
@@ -1633,7 +1632,7 @@ struct
 		    val d1' = O.ValDec(i', O.VarPat(i1',p'), e1')
 
 		    val x'  = trModid(E,x)
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 3\n"); raise VirtualModule)
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 3\n"); raise VirtualModule)
 		    val i2' = typInfo(r, typ_inf E)
 		    val d2' = O.ValDec(i', O.VarPat(i2',x'), trInf(E, j1))
 
@@ -1760,7 +1759,7 @@ struct
 	    updatePervasive'(E,x);
 	    d' :: ds'
 	end
-(*DEBUG*)handle VirtualModule => (Error.warn(#region(I.infoId x), Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 4\n"); raise VirtualModule))
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region(I.infoId x), Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 4\n"); raise VirtualModule))
 
       | trDec E (I.InfDec(i,x,j), ds') =
 	(* [interface x = j] =
@@ -2162,7 +2161,7 @@ struct
       | trImp (E,y) (I.ModImp(i,x,d),ds') = ((updatePervasive(E,x);
 					     idToDec(trModid(E,x), y) :: ds'
 					     before updatePervasive'(E,x))
-(*DEBUG*)handle VirtualModule => (Error.warn(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 5\n"); raise VirtualModule)
+(*DEBUG*)handle VirtualModule => (Error.warn'(#region i, Name.toString(I.name x) ^"[" ^ Stamp.toString(I.stamp x) ^ "] 5\n"); raise VirtualModule)
 )
       | trImp (E,y) (I.InfImp(i,x,d),ds') = idToDec(trInfid(E,x), y) :: ds'
       | trImp (E,y) (I.RecImp(i,is), ds') = trImps(E, is, y, ds')
@@ -2195,7 +2194,7 @@ struct
 	end
 (*DEBUG
 handle Inf.Mismatch m =>
-(Error.warn(Source.nowhere, "UNHANDLED in TRANSLATION:\n");
+(Error.warn'(Source.nowhere, "UNHANDLED in TRANSLATION:\n");
 ElaborationError.error(#region(I.infoComp comp), ElaborationError.AnnModMismatch m))
 *)
 end

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -112,4 +112,5 @@ sig
 
     val error :	Source.region * error -> 'a
     val warn :	Source.region * warning -> unit
+    val unfinished : Source.region * string * string -> unit
 end

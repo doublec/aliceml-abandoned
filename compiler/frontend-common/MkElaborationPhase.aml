@@ -78,9 +78,6 @@ struct
 
   (* UNFINISHED... *)
 
-    fun unfinished r funname casename =
-	Error.warn(r, "Elab." ^ funname ^ ": " ^ casename ^ " not checked yet")
-
     (*DEBUG helpers
 
     fun prStamp name z =
@@ -1901,7 +1898,7 @@ TextIO.print "\n";
 	    val (j,inf') = elabGroundInf(E, po, inf)
 	(*UNFINISHED: insert stuff*)
 	in
-	    unfinished i "elabSpec" "signature extension";
+	    E.unfinished(i, "elabSpec", "signature extension");
 	    O.ExtSpec(nonInfo(i), inf')
 	end
 
