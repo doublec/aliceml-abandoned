@@ -5,6 +5,11 @@ structure Hose :> HOSE =
 	val outFile = ref ""
 
 
+	fun printEx s = (TextIO.output (TextIO.stdErr, s);
+			  TextIO.flushOut TextIO.stdErr;
+			  OS.Process.exit OS.Process.failure)
+
+
 	fun hose () =
 	    let 
 		    
@@ -29,33 +34,43 @@ structure Hose :> HOSE =
 	    end
 
 
-
-	(* from HaMLet *)
-
-	fun usage() = (TextIO.output (TextIO.stdErr,"Usage: hose infile [-o outfile]\n");
-		       TextIO.flushOut TextIO.stdErr;
-		       OS.Process.failure)
+	fun usage() = printEx "Usage: hose infile [-o outfile]\n"
 
 	    
 	fun start process = (process(); OS.Process.success)
 
 
-	fun main' [infile, "-o", outfile] = (inFile := infile; outFile := outfile; start hose) 
-	  | main' ["-o", outfile, infile] = (inFile := infile; outFile := outfile; start hose)
-	  | main' [infile]                = (inFile := infile; outFile := infile ^ ".sml"; start hose)
+	fun setFiles infile outfile = (inFile := infile; outFile := outfile)
+
+
+	fun main' [infile, "-o", outfile] = (setFiles infile outfile;
+					     start hose) 
+	  | main' ["-o", outfile, infile] = (setFiles infile outfile;
+					     start hose) 
+	  | main' [infile]                = (setFiles infile (infile ^ ".sml");
+					     start hose)
 	  | main' _                       = usage () 
-	    
-	fun main() = OS.Process.exit(main'(CommandLine.arguments()))
-	    handle (IO.Io {name,function="openIn",cause}) => (TextIO.output (TextIO.stdErr, "input file does not exist\n");
-			   TextIO.flushOut TextIO.stdErr;
-			   OS.Process.exit OS.Process.failure)
-		 | (IO.Io {name,function="openOut",cause}) => (TextIO.output (TextIO.stdErr, "invalid output file\n");
-			   TextIO.flushOut TextIO.stdErr;
-			   OS.Process.exit OS.Process.failure)
-		 | (IO.Io {name,function="inputAll",cause}) => (TextIO.output (TextIO.stdErr, "input file seems to be a directory\n");
-			   TextIO.flushOut TextIO.stdErr;
-			   OS.Process.exit OS.Process.failure)
-		 | exn => (TextIO.output(TextIO.stdErr, "Hose: unhandled internal exception: " ^ General.exnName exn ^ "\n");
-			   OS.Process.exit OS.Process.failure)
+
+
+	fun main() =
+	    let
+		(* ugly hack to circumvent the problem that "hose-image"
+		 * is sometimes an element of the CommandLine.arguments()
+		 * (Windows)
+		 *)
+		val args = case CommandLine.arguments() of
+		    ("hose-image"::xs) => xs
+		  | xs                 => xs
+	    in
+		OS.Process.exit(main' args)
+	    end
+	    handle (IO.Io {name,function="openIn",cause}) =>
+		printEx "input file does not exist\n"
+		 | (IO.Io {name,function="openOut",cause}) =>
+		printEx "invalid output file\n"
+		 | (IO.Io {name,function="inputAll",cause}) =>
+		printEx "input file seems to be a directory\n"
+		 | exn => printEx ("Hose: unhandled internal exception: "
+				    ^ General.exnName exn ^ "\n")
        
     end
