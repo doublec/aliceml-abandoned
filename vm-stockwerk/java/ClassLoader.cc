@@ -273,6 +273,9 @@ Worker::Result ResolveInterpreter::Run() {
       }
       JavaString *name = frame->GetName();
       JavaString *descriptor = frame->GetDescriptor();
+      std::fprintf(stderr, "resolving field %s#%s:%s\n",
+		   theClass->GetClassInfo()->GetName()->ExportC(),
+		   name->ExportC(), descriptor->ExportC());
       //--** look for field definitions in implemented interfaces
       ClassInfo *classInfo = theClass->GetClassInfo();
       Table *fields = classInfo->GetFields();
