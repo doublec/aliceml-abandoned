@@ -43,7 +43,8 @@
 	val exchange : 'a ref * 'a -> 'a
 
 	val app :      ('a -> unit) -> 'a ref -> unit
-	val map :      ('a -> 'a) -> 'a ref -> 'a ref
+	val map :      ('a -> 'b) -> 'a ref -> 'b ref
+	val modify :   ('a -> 'a) -> 'a ref -> unit
 
 	val equal :    'a ref * 'a ref -> bool
     end
@@ -115,10 +116,26 @@
       <TT>map <I>f</I> <I>re</I></TT>
     </DT>
     <DD>
+      <P>Creates a new reference that refers to the value
+      <TT><I>f a</I></TT>, where <TT><I>a</I></TT> is the value referred to
+      to by <TT><I>re</I></TT>. Equivalent to
+      <TT>ref (<I>f</I> (!<I>re</I>))</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>modify <I>f</I> <I>re</I></TT>
+    </DT>
+    <DD>
       <P>Makes the reference <TT><I>re</I></TT> refer to the value
       <TT><I>f a</I></TT>, where <TT><I>a</I></TT> is the value previously
-      referred to. Note that this is <I>not</I> an atomic operation, since
-      <TT><I>f</I></TT> might perform arbitrary computations.</P>
+      referred to. Note that this is <EM>not</EM> an atomic operation, since
+      <TT><I>f</I></TT> might perform arbitrary computations.
+      As long as no unconditional assignments are performed in between,
+      it is guaranteed that no thread can access the value referred to before
+      the operation completes, however. The reference refers to a future of
+      <TT><I>f a</I></TT> until that point. Ignoring concurrency issues, the
+      above expression is equivalent to <TT><I>re</I> := <I>f</I>
+      (!<I>re</I>)</TT>.</P>
     </DD>
 
     <DT>

@@ -26,6 +26,7 @@
     <TR> <TD><A href="char.php3">CHAR</A></TD> </TR>
     <TR> <TD><A href="future.php3">FUTURE</A></TD> </TR>
     <TR> <TD><A href="general.php3">GENERAL</A></TD> </TR>
+    <TR> <TD><A href="hole.php3">HOLE</A></TD> </TR>
     <TR> <TD><A href="ieee-real.php3">IEEE_REAL</A></TD> </TR>
     <TR> <TD><A href="integer.php3">INTEGER</A></TD> </TR>
     <TR> <TD><A href="list.php3">LIST</A></TD> </TR>
@@ -104,6 +105,7 @@
     <TR> <TD><A href="mono-vector.php3">CharVector</A></TD> </TR>
     <TR> <TD><A href="future.php3">Future</A></TD> </TR>
     <TR> <TD><A href="general.php3">General</A></TD> </TR>
+    <TR> <TD><A href="hole.php3">Hole</A></TD> </TR>
     <TR> <TD><A href="ieee-real.php3">IEEEReal</A></TD> </TR>
     <TR> <TD><A href="integer.php3">Int</A></TD> </TR>
     <TR> <TD><A href="integer.php3">LargeInt</A></TD> </TR>

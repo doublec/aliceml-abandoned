@@ -104,10 +104,10 @@
       <TT>fulfill (<I>p</I>, <I>v</I>)</TT>
     </DT>
     <DD>
-      <P>If <TT><I>v</I></TT> is a value different from the future associated
-      with <TT><I>p</I></TT>, the future is replaced by the
-      result. If <TT><I>v</I></TT> is the future itself,
-      the future is failed with exception <TT>Future.Cyclic</TT>.
+      <P>Replaces the future associated with <TT><I>p</I></TT> with the value
+      <TT><I>v</I></TT>. If <TT><I>v</I></TT> is the future itself,
+      the future is failed with exception <TT>Future.Cyclic</TT> and the
+      same exception is raised.
       If <TT><I>p</I></TT> has already been fulfilled or failed, the exception
       <TT>Promise</TT> is raised.</P>
     </DD>

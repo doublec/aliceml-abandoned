@@ -121,8 +121,8 @@
     </DT>
     <DD>
       <P>Creates a new thread that evaluates <TT><I>f</I> ()</TT> and
-      immediately returns a future of the result. If the application evaluates
-      to a result different from the future, the future is replaced by the
+      immediately returns a future of the result. When the application has
+      been evaluated, the future is replaced by the
       result. If the application terminates with an exception <TT><I>ex</I></TT>,
       the future is failed with exception <TT><I>ex</I></TT>. If the application
       terminates returning the future itself, the future is failed with
@@ -155,17 +155,17 @@
     </DD>
 
     <DT>
-      <TT>await <I>x</I></TT>
+      <TT>await <I>v</I></TT>
     </DT>
     <DD>
       <P>Explicitly synchronizes on the determination of the value
-      <TT><I>x</I></TT>, returning the value. If <TT><I>x</I></TT> is
+      <TT><I>v</I></TT>, returning the value. If <TT><I>v</I></TT> is
       failed with exception <TT><I>ex</I></TT>, <TT>await</TT> will reraise
       <TT><I>ex</I></TT>.</P>
     </DD>
 
     <DT>
-      <TT>awaitOne (<I>x1</I>, <I>x2</I>)</TT>
+      <TT>awaitOne (<I>v1</I>, <I>v2</I>)</TT>
     </DT>
     <DD>
       <P>Blocks until at least one of the two arguments is determined or
@@ -177,34 +177,34 @@
     </DD>
 
     <DT>
-      <TT>status <I>x</I></TT>
+      <TT>status <I>v</I></TT>
     </DT>
     <DD>
-      <P>Returns the current status of the value <TT><I>x</I></TT>, without
+      <P>Returns the current status of the value <TT><I>v</I></TT>, without
       accessing the value.</P>
     </DD>
 
     <DT>
-      <TT>isFuture <I>x</I></TT> <BR>
-      <TT>isFailed <I>x</I></TT> <BR>
-      <TT>isDetermined <I>x</I></TT>
+      <TT>isFuture <I>v</I></TT> <BR>
+      <TT>isFailed <I>v</I></TT> <BR>
+      <TT>isDetermined <I>v</I></TT>
     </DT>
     <DD>
-      <P>Inquire the current status of the value <TT><I>x</I></TT>.
+      <P>Verify the status of the value <TT><I>v</I></TT>.
       Equivalent to:</P>
       <PRE>
-        isFuture <I>x</I> = (status <I>x</I> = FUTURE)
-        isFailed <I>x</I> = (status <I>x</I> = FAILED)
-        isDetermined <I>x</I> = (status <I>x</I> = DETERMINED)</PRE>
+        isFuture <I>x</I> = (status <I>v</I> = FUTURE)
+        isFailed <I>x</I> = (status <I>v</I> = FAILED)
+        isDetermined <I>x</I> = (status <I>v</I> = DETERMINED)</PRE>
     </DD>
 
     <DT>
-      <TT>isLazy <I>x</I></TT>
+      <TT>isLazy <I>v</I></TT>
     </DT>
     <DD>
-      <P>Returns <TT>true</TT> if <TT><I>x</I></TT> is a lazy future that
+      <P>Returns <TT>true</TT> if <TT><I>v</I></TT> is a lazy future that
       has not yet been synchronized on, <TT>false</TT> otherwise. Does not
-      synchronize on <TT><I>x</I></TT>.</P>
+      synchronize on <TT><I>v</I></TT>.</P>
     </DD>
   </DL>
 
