@@ -16,8 +16,17 @@ import structure GtkSupport from "GtkSupport"
 
 signature DRAWING_AREA =
 sig
+    
     type tag = GtkSupport.tag
+    
+    (* Gtk canvas instance *)
+
     val canvas: tag
     val root: tag
+    
+
+    (* function to handle resize requests for this specific canvas *)
+
     val resize: real * real * tag * real * real * real * real -> unit
+
 end

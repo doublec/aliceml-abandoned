@@ -23,7 +23,10 @@ struct
     type dictionary = ((int * elemtype) list Array.array ref) 
 	* int ref     (* counts no of elements *)
 	* int ref     (* next index to be assigned *)
-	    
+	
+
+    (* empty dictionary instance *)
+
     val empty = let
 		    val a = ref(Array.array(5,[]))
 		    val fill_count = ref 0
@@ -32,30 +35,34 @@ struct
 		    (a, fill_count,next_i) 
 		end
 	
-    (* inserts with given key, adjusts size if necessary *)    
+
+    (* inserts with given key, adjusts size if necessary *)
+    
     fun insert ((a,fill_count,_) as dict,(key,value)) = 
 	let
-	    val _ = fill_count := !fill_count + 1
-	    val _ = if !fill_count > (Array.length(!a) div 2)
-			then let
-				 val newsize = Array.length(!a) * 2 + 1
-				 val b = !a
-				 val _ = a:= Array.array(newsize,[])
-				 val _ = fill_count := 1
-				 val ins = fn (k,v) => insert(dict,(k,v))
-				 val _ = Array.app(fn slot  
-						   => (List.app ins  slot)) b 
-			     in
-				 ()
-			     end
-		    else ()
-	    val slot = key mod Array.length(!a)
+	    val slot = 
+		(fill_count := !fill_count + 1
+	         ;if !fill_count > (Array.length(!a) div 2)
+		      then let
+			       val newsize = Array.length(!a) * 2 + 1
+			       val b = !a
+			       val ins = fn (k,v) => insert(dict,(k,v))
+			   in
+			       (a:= Array.array(newsize,[])
+			        ;fill_count := 1
+			        ;Array.app(fn slot  
+					   => (List.app ins  slot)) b )
+			   end
+		  else ()
+		  ; key mod Array.length(!a))
 	    val liste = (key,value)::Array.sub(!a,slot)
 	in 
 	    Array.update(!a,slot,liste)
 	end
+
     
     (* searches for key *)
+
     fun lookup ((a,fill_count,_),key) = 
 	let
 	    val slot = key mod Array.length(!a)
@@ -65,6 +72,10 @@ struct
 		    SOME (k,v) => SOME v
 		  | NONE => NONE
 	end
+
+
+    (* searches for an element with a specific property 
+       (uses indicator function) *)
 
     fun iterLookup' ((a,fill_count,next_i) as dict,i,f) = 
 	if i >=  !next_i
@@ -80,6 +91,9 @@ struct
 
     fun iterLookup(dict,f) = iterLookup'(dict,0,f) 
 
+
+    (* returns all elements sorted by their keys *)
+
     fun dict2list' ((a,fill_count,next_i) as dict,i,li) = 
 	if i < 0 orelse i > (!next_i)
 	    then rev(li)
@@ -93,14 +107,18 @@ struct
 
     fun dict2list dict = dict2list'(dict,0,nil)
 
-    (* deletes all objects with specified key *)
+
+    (* deletes all objects with specified key, 
+       and adjusts size if necessary *)
+
     fun delete  ((a,fill_count,_) as dict,key) = 
 	let
 	    val slot = key mod Array.length(!a)
 	    val (drop,take) = List.partition 
 		(fn (i,v) => i = key) 
 		(Array.sub(!a,slot))
-	    val fill = (fill_count := !fill_count - List.length(drop);!fill_count)
+	    val fill = (fill_count := !fill_count - List.length(drop)
+			;!fill_count)
 	in
 	    (Array.update(!a,slot,take)
 	     ; if fill < (Array.length(!a) div 4)
@@ -119,7 +137,9 @@ struct
 			       
 	end
 
+
     (* inserts and assigns new key *)
+
     fun insertI  ((a,fill_count,next_i) as d,value) =
 	let val key = !next_i
 	    val _ = next_i := !next_i + 1
@@ -128,7 +148,12 @@ struct
 	    key
 	end
 
+
+    fun getHighestIndexAssigned (_,_,next_index) = (!next_index) -1
+
+
     (* replaces value *)
+
     fun update ((a,(k,v))) = let
 				 val _ = delete (a,k)
 				 val _ = insert (a,(k,v))
@@ -136,7 +161,8 @@ struct
 				 ()
 			     end
 
-    fun getHighestIndexAssigned (_,_,next_index) = (!next_index) -1
+
+    (* removes everything from the dictionary *)
 
     fun dumpAll (a,fill_count,next_i) = let 
 					    val _ = a:= Array.array(5,[])

@@ -23,17 +23,38 @@ functor MkDrawingArea (val xsize : real val ysize: real) : DRAWING_AREA
 struct
 
     type tag = GtkSupport.tag
+
+    (* new canvas *)
+
     val canvas =  GtkSupport.canvasNew()
+
 	
-    val _ =  (GtkSupport.widgetSetUsize(canvas, Real.trunc xsize, Real.trunc ysize ) 
+    (* initial canvas settings *)
+
+    val _ =  (GtkSupport.widgetSetUsize(canvas, 
+					Real.trunc xsize, 
+					Real.trunc ysize ) 
 	      ;GtkSupport.canvasSetScrollRegion (canvas,0.0,0.0,xsize,ysize))
+
+
+    (* background gets adjusted to the canvas *)
 
     val background =  GtkSupport.createCanvasBackground(canvas,xsize,ysize)
 
+
     val root = GtkSupport.canvasRoot(canvas)
 
+
+    (* function to handle resize requests on this specific canvas *)
+
     fun resize (h,v,scrolled,valueh,valuev,max_x,max_y)  = 
-	GtkSupport.resizeCanvas(h,v,scrolled,canvas,background,valueh,valuev, max_x, max_y)
+	GtkSupport.resizeCanvas(h,v,scrolled,
+				canvas,
+				background,
+				valueh,
+				valuev, 
+				max_x, 
+				max_y)
   
 end
 

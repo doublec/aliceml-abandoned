@@ -18,19 +18,34 @@ sig
     type elemtype
     type dictionary
 
-    val empty    : dictionary
+    (* empty instance *)
+    val empty      : dictionary
 
+    (* inserts with a specific key *)
     val insert     : dictionary * (int * elemtype) -> unit
+
+    (* search *)
     val lookup     : dictionary * int -> elemtype option
-    val iterLookup': 
-	dictionary * int * (elemtype -> bool) -> (elemtype * int) option 
-    val iterLookup : 
-	dictionary * (elemtype -> bool) -> (elemtype * int) option 
+
+    (* searches for an element for which the function yields true *)
+    val iterLookup : dictionary * (elemtype -> bool) -> (elemtype * int) option
+ 
+    (* converts the dictionary to a list *)
     val dict2list  : dictionary -> elemtype list
+
+    (* delete *)
     val delete     : dictionary * int -> unit
+
+    (* inserts elements one after the other and returns their keys *)
     val insertI    : dictionary * elemtype -> int
+
+    (* replaces one element *)
     val update     : dictionary * (int * elemtype) -> unit
+
+    (* retrieves highest key when strictly inserting with insertI *)
     val getHighestIndexAssigned: dictionary -> int
+
+    (* removes everything from dictionary *)
     val dumpAll    : dictionary -> unit
 
     
