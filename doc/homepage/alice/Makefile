@@ -9,7 +9,7 @@ DIRS = $(PREFIX) \
 	$(PREFIX)/manual/examples/interpreter
 
 INSTALLFILES_0 = \
-	style.css bg.gif alice.gif musicemb.jpg macros.php3 project.html \
+	style.css bg.gif alice.gif macros.php3 project.html \
 	index.html people.html papers.html download.html contact.html download-old.html
 INSTALLFILES_DOWNLOAD_0 = \
 	stockhausen-devel.tgz mozart-devel.tgz sml-mode.tgz
@@ -87,6 +87,11 @@ manual/examples/interpreter.tar: \
 
 $(DIRS):
 	mkdir -p $@
+
+$(PREFIX)/%.html: %.html
+	php -q $< >$<.static
+	install -c -m 444 $<.static $@
+	rm -f $<.static
 
 $(PREFIX)/%: %
 	install -c -m 444 $< $@
