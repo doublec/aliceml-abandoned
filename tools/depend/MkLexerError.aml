@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import signature Parser_TOKENS from "PARSER-sig"
+import signature Parser_TOKENS from "SML_PARSER-sig"
 import signature LEXER_ERROR   from "LEXER_ERROR-sig"
 
 
