@@ -87,16 +87,12 @@ clean:
 	rm -f *~
 	rm -f $(LASTGENERATE)
 
-cmclean:
-	for i in `find -type d | xargs echo`; do     \
-            ( cd $$i >& /dev/null && rm -fr CM ) ;   \
-        done
-
-veryclean: clean cmclean
+veryclean: clean
 	rm -f gtkclean.c
 	rm -f $(NATIVES:%=%.dll)
 	rm -f $(NATIVES:%=%.dll.def)
 	rm -f Makefile.depend
+	find -type d | grep '/CM$' | xargs rm -fr
 	(cd prepare ; $(MAKE) clean )
 	(cd doc ; $(MAKE) clean )
 

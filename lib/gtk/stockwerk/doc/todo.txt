@@ -6,11 +6,13 @@
 
 * Enums
 - GC (Weak Dictionary)
-- datatypes/Signals bauen
+* datatypes/Signals bauen
 * Dateien komplett umbenennen, 
+- GtkCanvas
+- Windows
 
 * Test-Programm besser
-- Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
+* Makefile besser: Gtk.aml haengt von GtkCore.aml ab usw.
 
 * Problem: beim Benutzen der UnsafeGtk-Komponente gibt es einen segfault
 * casting-Mist in UnsafeGtk.cc ueberpruefen
@@ -75,11 +77,11 @@ X ckit fuer alice
 
 * GList/GSList immer als object list, ausser wenn in MkSpecial anders definiert
 * Event-Dispatcher: Stream bauen, registrierte callback-Funktion aufrufen
-- Stream: Marshaller wandelt GValues in eigenen Alice-Datentyp um und
+* Stream: Marshaller wandelt GValues in eigenen Alice-Datentyp um und
     schreibt dies auf den Stream
     (stream = Liste mit Future als letztes Element)
     Callback-Funktion muss selbst die Argumentwerte wieder rausmoebeln
-- Marshaller-Rueckgabewert?
+X Marshaller-Rueckgabewert?
 
 * UnsafeGtk als DLL
 
@@ -119,9 +121,9 @@ X ...und veraenderte Parameterliste als neue gueltige hinbekommen? -> nein.
 - finalizer thread ruft fuer ankommende objects auf eigenem Strom gtk-unref auf
 
 
-- warum wird callback function erst beim zweiten Event aufgerufen?
+* warum wird callback function erst beim zweiten Event aufgerufen?
 - callback-Funktionen in Hashtable abspeichern
-- sleep-Funktion ist zu provisorisch?
+* sleep-Funktion ist zu provisorisch?
 
 
 
@@ -133,5 +135,6 @@ X ...und veraenderte Parameterliste als neue gueltige hinbekommen? -> nein.
 
 Fehler:
 - ckit2.sml in stockwerk-vm testen; ggf. in alice bugzilla eintragen
-- Int.toString(2^32) haengt sich auf
+* Int.toString(2^32) haengt sich auf
 - mehrfaches spawn (fib 40) stuerzt ab
+- val ~1 = 1; stuerzt ab

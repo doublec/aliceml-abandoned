@@ -13,12 +13,13 @@ typedef int (*FuncType) (float x);
 
 int main(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
+
   GtkWidget *w = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   if (g_type_is_a(G_OBJECT_TYPE(w), 0) == FALSE)
     printf("!!\n");
 
-  const char *arr[] = { "Test", "Test" };
-  gdk_pixbuf_new_from_xpm_data (arr);
+  //  const char *arr[] = { "Test", "Test" };
+  //  gdk_pixbuf_new_from_xpm_data (arr);
 
   guint x = 0;
   int* y = reinterpret_cast<int*>(&x);
