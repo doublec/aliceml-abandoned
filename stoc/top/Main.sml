@@ -1,7 +1,7 @@
 structure Main :> MAIN =
   struct
 
-    fun processString process source = process (source ^ ";")
+    fun processString process source = process source
 
     fun processFile process name =
 	let
