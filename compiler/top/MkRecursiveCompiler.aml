@@ -333,8 +333,8 @@ functor MkRecursiveCompiler(structure ComponentManager: COMPONENT_MANAGER
 			     before
 			     trace ("loaded signature from " ^
 				    Url.toStringRaw url'))
-			    handle exn as ( Component.Failure (_, IO.Io _)
-					  | Option.Option) =>
+			    handle ( Component.Failure (_, exn as IO.Io _)
+				   | exn as Option.Option ) =>
 				acquireFromSigFile (url', exn)
 		    in
 			UrlMap.insert (importTable, urlCeil url', infs);
