@@ -15,6 +15,8 @@
 #endif
 
 #include "adt/HashTable.hh"
+#include "generic/Transients.hh"
+#include "generic/Interpreter.hh"
 #include "java/ClassLoader.hh"
 
 class ClassTable: private HashTable {
@@ -38,16 +40,65 @@ public:
     else
       return word(0);
   }
+  void Insert(JavaString *name, word wClass) {
+    word wName = name->ToWord();
+    Assert(!IsMember(wName));
+    InsertItem(wName, wClass);
+  }
 };
 
-ClassTable *ClassLoader::GetClassTable() {
-  return ClassTable::FromWordDirect(GetArg(CLASS_TABLE_POS));
+//
+// ResolveClassInterpreter
+//
+
+class ResolveClassInterpreter: public Interpreter {
+public:
+  static ResolveClassInterpreter *self;
+private:
+  ResolveClassInterpreter() {}
+public:
+  static void Init() {
+    self = new ResolveClassInterpreter();
+  }
+
+  virtual Result Run();
+  virtual const char *Identify();
+  virtual void DumpFrame(word frame);
+  virtual void PushCall(Closure *closure);
+};
+
+//
+// ResolveClassClosure
+//
+
+class ResolveClassClosure: private Closure {
+public:
+  using Block::ToWord;
+
+  static ResolveClassClosure *New(JavaString *name);
+};
+
+//
+// ClassLoader Method Implementations
+//
+
+void ClassLoader::Init() {
+  ResolveClassInterpreter::Init();
 }
 
 ClassLoader *ClassLoader::New() {
   Block *b = Store::AllocBlock(JavaLabel::ClassLoader, SIZE);
   b->InitArg(CLASS_TABLE_POS, ClassTable::New()->ToWord());
   return static_cast<ClassLoader *>(b);
+}
+
+ClassTable *ClassLoader::GetClassTable() {
+  return ClassTable::FromWordDirect(GetArg(CLASS_TABLE_POS));
+}
+
+word ClassLoader::ResolveClass(JavaString *name) {
+  Byneed *byneed = Byneed::New(ResolveClassClosure::New(name)->ToWord());
+  return byneed->ToWord();
 }
 
 word ClassLoader::ResolveType(JavaString *name) {
@@ -106,6 +157,7 @@ word ClassLoader::ResolveType(JavaString *name) {
       wClass = ResolveClass(JavaString::New(p, i));
     }
     Assert(n == 0);
+    classTable->Insert(name, wClass);
   }
   return wClass;
 }

@@ -30,6 +30,8 @@ private:
 public:
   using Block::ToWord;
 
+  static void Init();
+
   static ClassLoader *New();
 
   word ResolveType(JavaString *name); // Type or Future
