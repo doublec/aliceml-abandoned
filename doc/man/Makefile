@@ -10,7 +10,7 @@ INSTALLFILES = $(MANPAGES:%=$(PREFIX)/man/%) \
 
 all: $(MANPAGES)
 
-install: $(PREFIX) $(INSTALLFILES)
+install: $(PREFIX)/man $(INSTALLFILES)
 
 alicerun.1: alicerun
 	help2man -I see_also -N ./$< -o $@
