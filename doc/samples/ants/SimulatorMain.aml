@@ -2,11 +2,14 @@ import structure Simulator from "Simulator"
 
 val showStatus = ref false
 val showWorlds = ref false
+val drawWorlds = ref false
 val showAnts = ref false
 val rounds = ref 10000
 
 fun parseArgs ("-s"::r) = (showStatus:=true; parseArgs r)
   | parseArgs ("-w"::r) = (showWorlds:=true; showAnts:=false;
+                                 parseArgs r)
+  | parseArgs ("-d"::r) = (drawWorlds:=true; showAnts:=false;
                                  parseArgs r)
   | parseArgs ("-a"::r) = (showAnts:=true; showWorlds:=false;
                                parseArgs r)
@@ -20,6 +23,6 @@ val (ant1,ant2,world) = case args of [a,b,c] => (a,b,c)
                                            OS.Process.exit OS.Process.failure)
 
 
-val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts,
+val _ = Simulator.simulate(!showStatus, !showWorlds, !showAnts, !drawWorlds,
                            !rounds,ant1,ant2,world)
 val _ = OS.Process.exit OS.Process.success
