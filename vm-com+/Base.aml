@@ -1934,7 +1934,8 @@ signature FUTURE =
     val await :		'a -> 'a
     val awaitOne :	'a * 'b -> 'a
 
-    val isFuture :	'a -> unit
+    val isFuture :	'a -> bool
+    val isFailed :	'a -> bool
   end
 
 
@@ -1950,6 +1951,8 @@ structure Future : FUTURE =
     __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
 
     __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
+
+    fun isFailed x = false	(*UNFINISHED*)
   end
 
 
