@@ -73,22 +73,22 @@ struct
 
     fun load url =
 	let
-	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
+	    val name = Url.toStringRaw url   (*--** use getLocalPath instead *)
 	in
-	    case localize s of
-		SOME (Resolver.FILE s') =>
-		    (UnsafeComponent.load s'
-		     handle Corrupt => UnsafeComponent.linkNative s'
-		     handle UnsafeComponent.Native msg =>
-			    (trace ("linkNative: " ^ msg); raise Corrupt))
-	      | SOME (Resolver.STRING s') => UnsafeComponent.unpack_ s'
-	      | NONE =>
-		    raise IO.Io {name = s,
-				 function = "load",
-				 cause = Option.Option}
+	    (case valOf (localize name) of
+		 Resolver.FILE name' =>
+		     (UnsafeComponent.load name'
+		      handle Corrupt =>
+			  UnsafeComponent.linkNative name'
+			  handle UnsafeComponent.Native msg =>
+			      (trace ("linkNative: " ^ msg); raise Corrupt))
+	       | Resolver.STRING string => UnsafeComponent.unpack_ string)
+	    handle cause => raise IO.Io {name, function = "load", cause}
 	end
 
-    val save = UnsafeComponent.save
+    fun save (name, component) =
+	UnsafeComponent.save (name, component)
+	handle cause => raise IO.Io {name, function = "save", cause}
 
     fun inf (UNEVALUATED {inf, ...}) = inf
       | inf (EVALUATED {inf, ...}) = inf

@@ -29,8 +29,8 @@ signature COMPONENT =
 		       structure X: S): (val component: component)
 
 	val create: Inf.t option * Reflect.value -> component (*--** unsafe! *)
-	val load: Url.t -> component                      (* Io, Corrupt *)
-	val save: string * component -> unit              (* Io, Sited *)
+	val load: Url.t -> component                      (* Io *)
+	val save: string * component -> unit              (* Io *)
 	val inf: component -> Inf.t option
 
 	functor MkManager(): COMPONENT_MANAGER where type component = component
