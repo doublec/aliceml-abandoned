@@ -30,17 +30,6 @@
 (*	  datdesc  ::= tyvarseq tycon						*)
 (*	  dcondesc ::= vid <of ty> : tyvarseq longtycon <and dcondesc>		*)
 (*		   ::= vid = longvid <and dcondesc>				*)
-(*   - straightified datatype declarations and specifications:			*)
-(*     (remove: dec ::= datatype tycon = datatype longtycon)			*)
-(*	  datbind  ::= tyvarseq tycon						*)
-(*		       tyvarseq tycon = conbind					*)
-(*		       tyvarseq tycon = datatype tyvarseq longtycon		*)
-(*     (remove: spec ::= datatype tycon = datatype longtycon)			*)
-(*	  datdesc  ::= tyvarseq tycon						*)
-(*		       tyvarseq tycon = condesc					*)
-(*		       tyvarseq tycon = datatype tyvarseq longtycon		*)
-(*     (This requires the syntactic restriction that longtycons on the RHS of	*)
-(*     the third form of datdescs must be distinct from all LHSs of a datbind.)	*)
 (*   - straightified type specifications:					*)
 (*	  typdesc ::= tyvarseq tycon						*)
 (*		      tyvarseq tycon = ty					*)
@@ -237,6 +226,8 @@
 	| typbind			of TypBind
 	|    AND_typbind_opt		of TypBind option
 	| datbind			of DatBind
+	|    datbind0			of DatBind
+	|    datbind1			of DatBind
 	|    AND_datbind_opt		of DatBind option
 	| conbind			of ConBind
 	|    BAR_conbind_opt		of ConBind option
@@ -316,6 +307,8 @@
 	| typdesc			of TypDesc
 	|    AND_typdesc_opt		of TypDesc option
 	| datdesc			of DatDesc
+	|    datdesc0			of DatDesc
+	|    datdesc1			of DatDesc
 	|    AND_datdesc_opt		of DatDesc option
 	| condesc			of ConDesc
 	|    BAR_condesc_opt		of ConDesc option
@@ -563,9 +556,15 @@
 	| FUN tyvarseq1 fvalbind
 			( FUNDec(I(FUNleft,fvalbindright), tyvarseq1, fvalbind))
 	| TYPE typbind	( TYPEDec(I(TYPEleft,typbindright), typbind) )
-	| DATATYPE datbind WITHTYPE_typbind_opt
+	| DATATYPE datbind0 WITHTYPE_typbind_opt
 			( DATATYPEDec(I(DATATYPEleft,WITHTYPE_typbind_optright),
-				      datbind, WITHTYPE_typbind_opt) )
+				      datbind0, WITHTYPE_typbind_opt) )
+	| DATATYPE datbind1 WITHTYPE_typbind_opt
+			( DATATYPEDec(I(DATATYPEleft,WITHTYPE_typbind_optright),
+				      datbind1, WITHTYPE_typbind_opt) )
+	| DATATYPE tycon EQUALS DATATYPE longtycon
+			( REPLICATIONDec(I(DATATYPEleft,longtyconright),
+					 tycon, longtycon) )
 	| ABSTYPE datbind WITHTYPE_typbind_opt WITH dec END
 			( ABSTYPEDec(I(ABSTYPEleft,ENDright), datbind,
 				     WITHTYPE_typbind_opt, dec) )
@@ -656,12 +655,26 @@
 			( OPENDatBind(I(tyvarseqleft,AND_datbind_optright),
 				      tyvarseq, tycon, AND_datbind_opt) )
 	| tyvarseq tycon EQUALS conbind AND_datbind_opt
-			( NEWDatBind(I(tyvarseqleft,AND_datbind_optright),
-				     tyvarseq, tycon, conbind, AND_datbind_opt))
-	| tyvarseq tycon EQUALS DATATYPE tyvarseq longtycon AND_datbind_opt
-			( EQUALDatBind(I(tyvarseqleft,AND_datbind_optright),
-				       tyvarseq1, tycon, tyvarseq2, longtycon,
-				       AND_datbind_opt) )
+			( CLOSEDDatBind(I(tyvarseqleft,AND_datbind_optright),
+					tyvarseq, tycon, conbind,
+					AND_datbind_opt))
+     datbind0:
+	  tycon AND_datbind_opt
+			( OPENDatBind(I(tyconleft,AND_datbind_optright),
+				      Seq(I(defaultPos,defaultPos), []),
+				      tycon, AND_datbind_opt) )
+	| tycon EQUALS conbind AND_datbind_opt
+			( CLOSEDDatBind(I(tyconleft,AND_datbind_optright),
+					Seq(I(defaultPos,defaultPos), []),
+					tycon, conbind, AND_datbind_opt) )
+     datbind1:
+	  tyvarseq1 tycon AND_datbind_opt
+			( OPENDatBind(I(tyvarseq1left,AND_datbind_optright),
+				      tyvarseq1, tycon, AND_datbind_opt) )
+	| tyvarseq1 tycon EQUALS conbind AND_datbind_opt
+			( CLOSEDDatBind(I(tyvarseq1left,AND_datbind_optright),
+					tyvarseq1, tycon, conbind,
+					AND_datbind_opt) )
      AND_datbind_opt:
 	  AND datbind	( SOME datbind )
 	| (*empty*)	( NONE )
@@ -1070,9 +1083,17 @@
 	| TYPE typdesc	( TYPESpec(I(TYPEleft,typdescright), typdesc) )
 	| EQTYPE typdesc
 	  		( EQTYPESpec(I(EQTYPEleft,typdescright), typdesc) )
-	| DATATYPE datdesc WITHTYPE_typdesc_opt
-			( DATATYPESpec(I(DATATYPEleft,WITHTYPE_typdesc_optright),
-				       datdesc, WITHTYPE_typdesc_opt) )
+	| DATATYPE datdesc0 WITHTYPE_typdesc_opt
+			( DATATYPESpec(I(DATATYPEleft,
+					 WITHTYPE_typdesc_optright),
+				       datdesc0, WITHTYPE_typdesc_opt) )
+	| DATATYPE datdesc1 WITHTYPE_typdesc_opt
+			( DATATYPESpec(I(DATATYPEleft,
+					 WITHTYPE_typdesc_optright),
+				       datdesc1, WITHTYPE_typdesc_opt) )
+	| DATATYPE tycon EQUALS DATATYPE longtycon
+			( REPLICATIONSpec(I(DATATYPEleft,longtyconright),
+					  tycon, longtycon) )
 	| CON dcondesc	( CONSpec(I(CONleft,dcondescright), dcondesc) )
 	| EXCEPTION exdesc
 			( EXCEPTIONSpec(I(EXCEPTIONleft,exdescright), exdesc) )
@@ -1145,12 +1166,25 @@
 			( OPENDatDesc(I(tyvarseqleft,AND_datdesc_optright),
 				      tyvarseq, tycon, AND_datdesc_opt) )
 	| tyvarseq tycon EQUALS condesc AND_datdesc_opt
-			( NEWDatDesc(I(tyvarseqleft,AND_datdesc_optright),
+			( CLOSEDDatDesc(I(tyvarseqleft,AND_datdesc_optright),
 				     tyvarseq, tycon, condesc, AND_datdesc_opt))
-	| tyvarseq tycon EQUALS DATATYPE tyvarseq longtycon AND_datdesc_opt
-			( EQUALDatDesc(I(tyvarseqleft,AND_datdesc_optright),
-				       tyvarseq1, tycon, tyvarseq2, longtycon,
-				       AND_datdesc_opt) )
+     datdesc0:
+	  tycon AND_datdesc_opt
+			( OPENDatDesc(I(tyconleft,AND_datdesc_optright),
+				      Seq(I(defaultPos,defaultPos), []),
+				      tycon, AND_datdesc_opt) )
+	| tycon EQUALS condesc AND_datdesc_opt
+	  		( CLOSEDDatDesc(I(tyconleft,AND_datdesc_optright),
+	  				Seq(I(defaultPos,defaultPos), []),
+					tycon, condesc, AND_datdesc_opt) )
+     datdesc1:
+	  tyvarseq1 tycon AND_datdesc_opt
+			( OPENDatDesc(I(tyvarseq1left,AND_datdesc_optright),
+				      tyvarseq1, tycon, AND_datdesc_opt) )
+	| tyvarseq1 tycon EQUALS condesc AND_datdesc_opt
+	  		( CLOSEDDatDesc(I(tyvarseq1left,AND_datdesc_optright),
+	  				tyvarseq1, tycon, condesc,
+					AND_datdesc_opt) )
      AND_datdesc_opt:
 	  AND datdesc	( SOME datdesc )
 	| (*empty*)	( NONE )

@@ -3,12 +3,15 @@ minor syntactic incompatibilies to SML'97 however. All of them are quite
 pathological, caught on compile time, and can easily be fixed in an SML
 compatible way.
 
-* Open pulls in infix status. Opening a structure that
-  (1) contains infix declarations, and
-  (2) has not been constrained by a signature
-  will change the infix environment, while in SML it wouldn't.
 
-  Example:
+OPEN AND INFIX
+
+Open pulls in infix status. Opening a structure that
+(1) contains infix declarations, and
+(2) has not been constrained by a signature
+will change the infix environment, while in SML it wouldn't.
+
+Example:
 
 	structure S =
 	  struct
@@ -20,8 +23,8 @@ compatible way.
 
 	val l = ++([1],[2])		(* Error in Stockhausen *)
 
-  Fixes:
-  (1) Use appropriate signature constraints (always a good idea anyway):
+Fixes:
+(1) Use appropriate signature constraints (always a good idea anyway):
 
 	signature SIG =
 	  sig
@@ -38,46 +41,26 @@ compatible way.
 
 	val l = ++([1],[2])
 
-  (2) Or insert op on every use of such identifiers:
+(2) Or insert op on every use of such identifiers:
 
 	val l = op++([1],[2])
 
 
-* Datatype replication is recursive. Replicating a datatype with the same
-  (non-long) type constructor on the left and right hand side will not work,
-  while in SML'97 this is no problem.
 
-  Example:
+LEFT-HAND-SIDES OF RECURSIVE VALUE BINDINGS
 
-	datatype bool = datatype bool	(* Error in Stockhausen *)
+Recursive value bindings do not remove constructor status on the identifiers
+bound. You cannot bind functions to an identifier that was a constructor
+previously.
 
-  Fixes:
-  (1) Use a long type constructor on the right hand side:
-
-	datatype bool = datatype Bool.bool
-
-  (2) Or rename the type constructor.
-
-	datatype bool' = datatype bool
-
-      Add
-
-	datatype bool  = datatype bool'
-
-      if you really want to keep the name.
-
-
-* Recursive value bindings does not remove constructor status on the identifiers
-  bound. You cannot bind functions to an identifier that was a constructor
-  previously.
-
-  Examples:
+Examples:
 
 	val rec NONE = fn x => x
 	fun NONE x = x
 
-  This is legal in SML (though SML/NJ for example does not allow it either).
-  In Stockhausen it produces a type clash (due to the extended val rec).
+This is legal in SML'97 (though it was not in SML'90 and SML/NJ for example
+does not allow it either). In Stockhausen it produces a type clash
+(due to the extended val rec).
 
-  Fix:
-      Rename your function, this is perverse anyway.
+Fix:
+    Rename your function, this is perverse anyway.
