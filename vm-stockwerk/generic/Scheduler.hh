@@ -32,16 +32,20 @@ private:
   static word root;
   static ThreadQueue *threadQueue;
   static Thread *currentThread;
-
   static void Timer();
+
+  static void SwitchToThread();
+  static void FlushThread();
 public:
   static const u_int maxArgs = 16;
   static const u_int ONE_ARG = maxArgs + 1;
 
   // Scheduler public data
+  static u_int nFrames;               // Numer of frames on task stack
+  static TaskStack *currentTaskStack; // Task stack
   static u_int nArgs;                 // Number of arguments
   static word currentArgs[maxArgs];   // Arguments
-  static word currentData;            // Transient or Exception
+  static word currentData;            // Transient or exception
   static Backtrace *currentBacktrace; // Backtrace
   // Scheduler Static Constructor
   static void Init();
@@ -53,15 +57,17 @@ public:
   static Thread *GetCurrentThread() {
     return currentThread;
   }
-  // Scheduler Functions
-  static void NewThread(u_int nArgs, word args, TaskStack *taskStack) {
-    Thread *thread = Thread::New(nArgs, args, taskStack);
+
+  // Scheduler Thread Functions
+  static Thread *NewThread(u_int nArgs, word args) {
+    Thread *thread = Thread::New(nArgs, args);
     threadQueue->Enqueue(thread);
+    return thread;
   }
-  static void NewThread(word closure, u_int nArgs, word args,
-			TaskStack *taskStack) {
-    PushCallInterpreter::PushFrame(taskStack, closure);
-    NewThread(nArgs, args, taskStack);
+  static Thread *NewThread(word closure, u_int nArgs, word args) {
+    Thread *thread = NewThread(nArgs, args);
+    PushCallInterpreter::PushFrame(thread, closure);
+    return thread;
   }
   static void ScheduleThread(Thread *thread) {
     //--** precondition: must not be scheduled
@@ -76,7 +82,7 @@ public:
   }
   static void SuspendThread(Thread *thread) {
     thread->Suspend();
-    thread->GetTaskStack()->Purge();
+    thread->Purge();
     if (thread->GetState() == Thread::RUNNABLE)
       threadQueue->Remove(thread);
   }
@@ -87,6 +93,27 @@ public:
 	ScheduleThread(thread);
     }
   }
+  // Scheduler Task Stack Functions
+  static void PushFrameNoCheck(word frame) {
+    Assert(nFrames < currentTaskStack->GetSize());
+    currentTaskStack->ReplaceArg(nFrames++, frame);
+  }
+  static void PushFrame(word frame) {
+    if (nFrames == currentTaskStack->GetSize())
+      currentTaskStack = currentTaskStack->Enlarge();
+    PushFrameNoCheck(frame);
+  }
+  static word GetFrame() {
+    return currentTaskStack->GetArg(nFrames - 1);
+  }
+  static word GetAndPopFrame() {
+    return currentTaskStack->GetArg(--nFrames);
+  }
+  static void PopFrame() {
+    nFrames--;
+  }
+  static Interpreter::Result PushCall(word closure);
+  // Other Scheduler Functions
   static u_int PreemptStatus() {
     return (1 << SCHEDULER_THREAD_PREEMPT_STATUS);
   }
