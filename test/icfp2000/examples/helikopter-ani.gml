@@ -9,6 +9,16 @@
 %     convert -loop 0 heli[1-8].ppm heli-ani.gif
 
 
+%%%% Modify these to get different picture sizes or animation stepping %%%%
+
+320 /width
+200 /height
+
+[ "heli1.ppm" "heli2.ppm" "heli3.ppm" "heli4.ppm"
+  "heli5.ppm" "heli6.ppm" "heli7.ppm" "heli8.ppm"
+] /files
+
+
 %%%% Some basic colors %%%%
 
 0.0  0.0  0.0  point /black
@@ -171,17 +181,13 @@ union
   scene				% scene
   1				% depth
   90.0				% field of vision
-  320 200			% width and height
+  width height			% width and height
   file				% file name
   render
 } /mk-scene
 
 
 %%%% Do the Animation %%%%
-
-[ "heli1.ppm" "heli2.ppm" "heli3.ppm" "heli4.ppm"
-  "heli5.ppm" "heli6.ppm" "heli7.ppm" "heli8.ppm"
-] /files
 
 { /cont /i
   files length /steps
