@@ -14,6 +14,7 @@
 import structure TextIO              from "../../lib/system/TextIO"
 import structure Url                 from "../../lib/system/Url"
 import structure Component           from "../../lib/system/Component"
+import structure ComponentManager    from "../../lib/system/ComponentManager"
 import structure Assert              from "../../lib/utility/Assert"
 import structure Source              from "../infrastructure/Source"
 import structure MkSwitches          from "../infrastructure/MkSwitches"
@@ -39,7 +40,7 @@ structure SMLToMozartRecursiveCompiler =
 	fun loadSig (desc, url) = !acquireSigRef (desc, url)
 	fun loadMod (desc, url) = !acquireModRef (desc, url)
 
-	structure ComponentManager =
+	structure ComponentManager' =
 	    Component.MkManager(val resolver = Component.defaultResolver)
 
 	structure FrontendSML =
@@ -67,7 +68,7 @@ structure SMLToMozartRecursiveCompiler =
 		       structure BackendSpecific  = BackendMozart)
 
 	structure RecursiveCompiler =
-	    MkRecursiveCompiler(structure ComponentManager = ComponentManager
+	    MkRecursiveCompiler(structure ComponentManager = ComponentManager'
 				structure Compiler = Compiler
 				val extension = "ozf")
 
