@@ -88,11 +88,11 @@ void Interpreter::PrepareForGC(Block *) {
 }
 
 Block *Interpreter::GetAbstractRepresentation() {
-  Error("Interpreter::GetAbstractRepresentation must never be called\n");
+  Error("Interpreter::GetAbstractRepresentation must never be called");
 }
 
 void Interpreter::PushCall(TaskStack *, Closure *) {
-  Error("Interpreter::PushCall must never be called\n");
+  Error("Interpreter::PushCall must never be called");
 }
 
 void Interpreter::PurgeFrame(TaskStack *) {
