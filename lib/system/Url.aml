@@ -84,7 +84,7 @@ structure Url :> URL =
 	  | isPathChar (#"~" | #"*" | #"'" | #"(") = true
 	  | isPathChar (#")" | #":" | #"@" | #"&") = true
 	  | isPathChar (#"=" | #"+" | #"$" | #",") = true
-	  | isPathChar c = Char.isAlphaNum c
+	  | isPathChar c = Char.isAlphaNum c andalso Char.ord c < 0x80
 
 	local
 	    val hex = #[#"0", #"1", #"2", #"3", #"4", #"5", #"6", #"7",
@@ -409,6 +409,7 @@ structure Url :> URL =
 		    if isSome authority then setAuthority (rel, authority)
 		    else rel
 		val _ = if isSome (#device rel) then raise Done rel else ()
+		    (*--** not correct *)
 		val rel =
 		    if isSome device then setDevice (rel, device)
 		    else rel
