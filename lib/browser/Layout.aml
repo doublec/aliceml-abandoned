@@ -64,11 +64,31 @@ struct
     (* get_l_xdim_or_xdim *)
     and get_l_xdim_or_xdim (Container(r)) = !(#l_width(r))
       | get_l_xdim_or_xdim n = get_xdim n
+	
+    and iterFindLX n = case n of
+        Container _ => #3(layout n)
+      | Concat(r) 
+	=> let val li = Array.toList(#kids(r))
+	       val li' = List.take(li,List.length(li)-1)
+	       val seclast = List.last(li')
+	   in if setsVertical seclast
+		  then let val kids = getKids(seclast)
+			   val klist = Array.toList(kids)
+		       in (if setsVertical (List.last(klist))
+			       then #3(layout(List.last(klist)))
+			   else #1(layout(List.last(klist))) )
+			   + #1(layout(List.last(li)))
+                           + #1(layout(List.nth(li,0)))
+		       end 
+	      else #1(layout n)
+	   end 
+      | _ => #1(layout n)
 
     (* layout *)
     and layout n = 
 	let val f = fn n => #1(layout n)
 	    val g = fn n => #2(layout n)
+	    val h = fn n => #3(layout n)
 	in (case n of
 	    Concat(r) 
 	    => if !(#status(r)) = DAZZLED
@@ -107,7 +127,7 @@ struct
 				       else max (li,g)
 			    val l_xdim = if List.null(li)
 					     then 0
-					 else f (List.last(li))
+					 else iterFindLX (List.last(li))
 			in (#width(r) := xdim  
 			    ; #height(r) := ydim
 			    ; #l_width(r) := l_xdim
