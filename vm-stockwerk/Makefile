@@ -16,12 +16,13 @@ include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
 SUBDIRS = store adt generic alice
+SUBDIRSR = alice generic adt store
 
 SRCS = Base.cc Main.cc
 OBJS = $(SRCS:%.cc=%.o)
 LIBS = $(shell for i in $(SUBDIRS); do echo $$i/lib$$i.a; done)
 
-LDLIBS = $(SUBDIRS:%=-L%) -lalice -lgeneric -ladt -lstore $(EXTRA_LIBS)
+LDLIBS = $(SUBDIRS:%=-L%) $(SUBDIRSR:%=-l%) $(EXTRA_LIBS)
 
 .PHONY: all-subdirs depend-local
 
@@ -40,15 +41,15 @@ all-subdirs:
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) all) || exit 1; done
 
 clean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) || exit 1; done
+	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) clean) || exit 1; done
 	rm -f $(OBJS) stow.def
 
 veryclean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) veryclean) || exit 1; done
+	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) veryclean) || exit 1; done
 	rm -f $(OBJS) stow stow.exe stow.dll
 
 distclean:
-	for i in $(SUBDIRS); do (cd $$i && $(MAKE) distclean) || exit 1; done
+	for i in $(SUBDIRSR); do (cd $$i && $(MAKE) distclean) || exit 1; done
 	rm -f $(OBJS) stow stow.exe stow.dll Makefile.depend
 
 Makefile.depend: Makefile $(SRCS)
