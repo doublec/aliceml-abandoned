@@ -15,7 +15,7 @@ import structure Highscore    from "../common/Highscore"
 structure HighscoreIO :> HIGHSCORE_IO =
 struct
 
-    val path = OS.Path.currentArc ^ "/highscore/highscore.hs"
+    val path = OS.Path.currentArc ^ "highscore/highscore.hs"
 
     fun load () = 
 	let
@@ -29,8 +29,14 @@ struct
 	end
     (* load the highscore, create a new one if no highscore exists *)
 
-    fun save hs = Pickle.save (path,pack (val h = hs) 
-			              :> (val h : Highscore.highscore))
+    fun save hs = 
+	let
+	    fun save () = Pickle.save (path, pack (val h = hs) 
+				       :> (val h : Highscore.highscore))
+	in
+	    save () handle _ => (OS.FileSys.mkDir "highscore";
+				 save ())
+	end
 
 end
 

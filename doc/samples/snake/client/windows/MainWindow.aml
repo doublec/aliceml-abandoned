@@ -216,8 +216,7 @@ struct
 		    TextWindow.mkTextWindow ("Highscore", highscoreToString h) 
 		end
 
-	    fun resetHighscore () =() (*
-		HighscoreIO.save Highscore.empty crashes when executing *)
+	    fun resetHighscore () = HighscoreIO.save Highscore.empty
 
 	    fun startSinglePlayer () = 
 		case startServer (SOME ("Player", Color.fromString "yellow"), 

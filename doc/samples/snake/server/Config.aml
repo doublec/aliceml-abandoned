@@ -56,7 +56,14 @@ struct
 	    C.c
 	end
 
-    fun  save cfg = Pickle.save (path,pack (val c = cfg) :> (val c : config)) 
+    fun save cfg = 
+	let
+	    fun save () = Pickle.save (path, pack (val c = cfg) 
+				             :> (val c : config))
+	in
+	    save () handle _ => (OS.FileSys.mkDir "config";
+				 save ())
+	end
 
 
 end
