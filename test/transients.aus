@@ -20,10 +20,10 @@ type     exn    = Prebound.exn
 
 type unit = {}
 
-exception Promise
-exception Future
-exception Fulfill
-exception ByNeed of exn
+__primitive constructor Promise: exn = "Transient.Promise"
+__primitive constructor Future: exn = "Transient.Future"
+__primitive constructor Fulfill: exn = "Transient.Fulfill"
+__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
 
 __primitive val op+ : int * int -> int = "+"
 __primitive val op- : int * int -> int = "-"

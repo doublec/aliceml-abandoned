@@ -8,17 +8,19 @@ infix  0  before
 __prebound Prebound
 
 type     int    = Prebound.int
+type     real   = Prebound.real
 type     string = Prebound.string
 datatype list   = datatype Prebound.list
+datatype bool   = datatype Prebound.bool
 datatype ref    = datatype Prebound.ref
 type     exn    = Prebound.exn
 
 type unit = {}
 
-exception Promise
-exception Future
-exception Fulfill
-exception ByNeed of exn
+__primitive constructor Promise: exn = "Transient.Promise"
+__primitive constructor Future: exn = "Transient.Future"
+__primitive constructor Fulfill: exn = "Transient.Fulfill"
+__primitive constructor ByNeed of exn: exn = "Transient.ByNeed"
 
 __primitive val op+ : int * int -> int = "+"
 __primitive val op- : int * int -> int = "-"
@@ -41,8 +43,15 @@ __primitive val show: 'a -> unit = "show"
 __primitive val save: ('a * string) -> unit = "Pickle.save"
 __primitive val load: string -> 'a = "Pickle.load"
 
+datatype t = C of {int: int, real: real}
+
+(* ([1, 2, 3], C {int = 17, real = 0.17}, (), false) *)
+
+(* {a = 17} *)
+(* C *)
+
 val _ = show "pickling"
-val _ = save (nil, "pickle")
+val _ = save ({a = 17}, "pickle")
 val _ = show "done"
 
 val _ = show (load "pickle")
