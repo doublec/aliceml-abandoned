@@ -67,6 +67,10 @@ structure Types =
                           explorer_state))) = !tree
     | getTree _ = raise Empty
 
+  fun getCurrentNode (ref (SOME ({tree={currentNode,...},...}:
+                                 explorer_state))) = !currentNode
+    | getCurrentNode _ = raise Empty
+
   fun debug (ref (SOME ({debug=debug,...}: explorer_state))) = !debug
     | debug _ = false
 

@@ -48,9 +48,11 @@ struct
 			     [("x", Gtk.REAL 0.0),
 			      ("y", Gtk.REAL 0.0)])
 
-  fun drawHidden (group, shadow, scale, myX, myY) =
+  fun drawHidden (openChildren, hasSolBelow)
+                 (group, shadow, scale, myX, myY) =
       let
-	  val color = if shadow then shadowColor else failedColor
+	  val color = if shadow then shadowColor else
+                      if hasSolBelow then succColor else failedColor
 	  val outline = if shadow then shadowColor else black
 	  val width = Real.round(10.0*256.0*scale)
 	  val sHorSpace = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
@@ -63,15 +65,52 @@ struct
 	  val y2 = myY + sVerSpace
 	  val points = [x0,y0,x1,y1,x2,y2,x0,y0]
       in
-	  (GnomeCanvas.itemCreate(group,
-				  GnomeCanvas.polygonGetType(),
-				  [("points",
-                                    Gtk.OBJECT
-		                        (GnomeCanvas.makePoints points)),
-				   ("fill_color_gdk", Gtk.OBJECT color),
-				   ("outline_color_gdk", Gtk.OBJECT outline)
-				   ]
-				  ))	  
+          if not shadow andalso openChildren > 0 then
+              let
+                  val item = makeGroup group
+	          val width2 = Real.round(5.0*256.0*scale)
+	          val sHorSpace2 = Real.round((itr TreeNode.horSpaceI)*scale/2.0)
+	          val sVerSpace = Real.round((itr TreeNode.verSpaceI)*scale)
+	          val x02 = myX
+	          val y02 = myY + 10
+	          val x12 = myX - (sHorSpace - 5)
+	          val y12 = myY + (sVerSpace - 5)
+	          val x22 = myX + (sHorSpace - 5)
+	          val y22 = myY + (sVerSpace - 5)
+	          val points2 = [x02,y02,x12,y12,x22,y22,x02,y02]
+              in
+	          (GnomeCanvas.itemCreate(item,
+		     GnomeCanvas.polygonGetType(),
+		     [("points",
+                       Gtk.OBJECT
+		           (GnomeCanvas.makePoints points)),
+		      ("fill_color_gdk",Gtk.OBJECT color),
+		      ("outline_color_gdk",
+                       Gtk.OBJECT outline)
+		      ]
+		     ));
+	          (GnomeCanvas.itemCreate(item,
+		     GnomeCanvas.polygonGetType(),
+		     [("points",
+                       Gtk.OBJECT
+			   (GnomeCanvas.makePoints points2)),
+		      ("fill_color_gdk", Gtk.OBJECT lightgray),
+		      ("outline_color_gdk", Gtk.OBJECT black)
+		      ]
+		     ));
+                  item
+              end
+          else
+	      (GnomeCanvas.itemCreate(group,
+				      GnomeCanvas.polygonGetType(),
+				      [("points",
+                                        Gtk.OBJECT
+		                            (GnomeCanvas.makePoints points)),
+				       ("fill_color_gdk", Gtk.OBJECT color),
+				       ("outline_color_gdk",
+                                        Gtk.OBJECT outline)
+				       ]
+				      ))  
       end
 
   fun drawSuccNode (group, shadow, scale, myX, myY) =
@@ -118,6 +157,41 @@ struct
 				  ("outline_color_gdk", Gtk.OBJECT outline)
 				  ])
       end
+(* Alternative shape: red cross *)
+(*       let *)
+(* 	  val color = if shadow then shadowColor else failedColor *)
+(* 	  val outline = if shadow then shadowColor else black *)
+(* 	  val width = Real.round (5.0*256.0*scale) *)
+(* 	  val x1 = myX - width *)
+(* 	  val y1 = myY - width *)
+(* 	  val x2 = myX + width *)
+(* 	  val y2 = myY + width *)
+
+(*           val item = makeGroup group *)
+(*           val points1 = [x1,y1,x2,y2] *)
+(*           val points2 = [x2,y1,x1,y2] *)
+(*           val capStyle = Gdk.GdkCapStyleToInt Gdk.CAP_ROUND *)
+(*       in *)
+(*           GnomeCanvas.itemCreate(item, *)
+(*                                  GnomeCanvas.lineGetType(), *)
+(*                                  [("points", *)
+(*                                    Gtk.OBJECT *)
+(*                                        (GnomeCanvas.makePoints points1)), *)
+(*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
+(*                                   ("width_units", Gtk.REAL 3.0), *)
+(*                                   ("cap_style", Gtk.INT capStyle) *)
+(*                                   ]); *)
+(*           GnomeCanvas.itemCreate(item, *)
+(*                                  GnomeCanvas.lineGetType(), *)
+(*                                  [("points", *)
+(*                                    Gtk.OBJECT *)
+(*                                        (GnomeCanvas.makePoints points2)), *)
+(*                                   ("fill_color_gdk", Gtk.OBJECT color), *)
+(*                                   ("width_units", Gtk.REAL 3.0), *)
+(*                                   ("cap_style", Gtk.INT capStyle) *)
+(*                                   ]); *)
+(*           item *)
+(*       end *)
 
   fun drawChoiceNode (group, shadow, scale, myX, myY) =
       let
@@ -207,11 +281,12 @@ struct
 
   fun unconnect connection = Gtk.objectDestroy connection
 
-  fun doDraw (group, shadow, scale, hidden, status, x, y) =
+  fun doDraw (group, shadow, scale, hidden, 
+              openChildren, hasSolBelow, status, x, y) =
       let
 	  val realX = (itr x)*scale
 	  val realY = (itr y)*scale
-	  val draw = if hidden then drawHidden
+	  val draw = if hidden then drawHidden (openChildren, hasSolBelow)
 		     else case status of
 			      TreeNode.FAILED => drawFailedNode
 			    | TreeNode.SOLVED => drawSuccNode
@@ -229,7 +304,8 @@ struct
 	   momX, momY,
 	   TreeNode.N({offset=offset,status=ref status,
                        hidden=ref hidden,dirty=dirty,
-		       vNode=vNode,connection=connection,...},
+		       vNode=vNode,connection=connection,
+                       openChildren,hasSolBelow,...},
 		      ref parent, ref children)) =
 	  let
 	      val myX = momX+(!offset)
@@ -244,6 +320,7 @@ struct
 			 parent);
 	      vNode := SOME (doDraw (!actionGroup, false,
 				     TreeNode.defScale, hidden,
+                                     !openChildren, !hasSolBelow,
                                      status, myX, myY));
 	      if hidden then ()
 	      else Vector.app (fn c => drawNode (state, myX, myY, c)) children
@@ -294,7 +371,7 @@ struct
 	      Gtk.objectDestroy (!shadowGroup);
 	      shadowGroup := makeGroup (!rootGroup);
 	      doDraw (!shadowGroup, true, TreeNode.defScale, hidden,
-                      status, myX, myY);
+                      0, false, status, myX, myY);
 	      GnomeCanvas.itemLowerToBottom (!shadowGroup)
 	  end
 

@@ -42,19 +42,37 @@ structure SaveWindow =
                                      outline=black,
                                      fill=green}
   fun psLine(c1,c2) = PS.Line {a=negP c1,b=negP c2,
-                                    outline=black}
-  fun psHidden(x,y) = PS.Triangle {c1=(x,~y+10),
-                                        c2=(x-16,~y-38),
-                                        c3=(x+16,~y-38),
-                                        outline=black,
-                                        fill=red}
+                               outline=black}
+  fun psHidden(x,y,hasSolBelow,openChildren) = 
+      let
+          val fill = if hasSolBelow then green else red
+      in
+          if openChildren>0 then
+              PS.Group [PS.Triangle {c1=(x,~y+10),
+                                     c2=(x-16,~y-38),
+                                     c3=(x+16,~y-38),
+                                     outline=black,
+                                     fill=fill},
+                        PS.Triangle {c1=(x,~y-10),
+                                     c2=(x-11,~y-33),
+                                     c3=(x+11,~y-33),
+                                     outline=black,
+                                     fill=lightgray}]
+          else
+              PS.Triangle {c1=(x,~y+10),
+                           c2=(x-16,~y-38),
+                           c3=(x+16,~y-38),
+                           outline=black,
+                           fill=fill}
+      end
 
-  fun buildPsTree depth momX (Types.N ({offset,status,hidden,...},_,children)) =
+  fun buildPsTree depth momX (Types.N ({offset,status,hidden,hasSolBelow,
+                                        openChildren,...},_,children)) =
       let
           val myX = momX+(!offset) div 256
           val myY = depth*38
           val node =  if !hidden then
-                          psHidden(myX,myY)
+                          psHidden(myX,myY,!hasSolBelow,!openChildren)
                       else case !status of
                           Types.FAILED => psFailed((myX-7,myY-7),(myX+7,myY+7))
                         | Types.SOLVED => psSolved(myX,myY+10)

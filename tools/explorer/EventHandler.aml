@@ -25,11 +25,13 @@ import structure OptionsWindow  from "OptionsWindow"
 import structure ExplorerGUI    from "ExplorerGUI"
 import structure SaveWindow     from "SaveWindow"
 
+import structure MenuManager    from "MenuManager"
+
 structure EventHandler =
   struct
 
-  open Types
-
+  open Types           
+          
   fun nodeEvent (state, serve) event =
       case (!state) of
 	  SOME(state as ({gtk={canvas,scale,...},
@@ -57,7 +59,8 @@ structure EventHandler =
                              Types.FAILED => ()
                            | _ => 
 			     (currentNode := SOME n;
-			      GtkNode.drawShadow (state, x, y, n))
+			      GtkNode.drawShadow (state, x, y, n);
+                              MenuManager.updateMenus n)
 		     end
                    | Gdk.EVENT_2BUTTON_PRESS {x=x,y=y,...} =>
 		     let
@@ -204,6 +207,7 @@ structure EventHandler =
   fun nodeHideHandler (cmw, serve, state) _ = 
       serve (fn () =>
 		(VisualNode.toggleHide state;
+                 Option.app MenuManager.updateMenus (Types.getCurrentNode state);
 		 refresh (cmw, serve, state)))
   fun nodeUnhideHandler (cmw, serve, state) _ =
       serve (fn () =>
@@ -211,6 +215,7 @@ structure EventHandler =
                     SOME {tree={tree=ref tree,
                                 currentNode=ref cn,...},...} =>
 		    (VisualNode.unhideAll (Option.getOpt(cn,tree));
+                     Option.app MenuManager.updateMenus (Types.getCurrentNode state);
 		     refresh (cmw, serve, state))
                   | _ => ())
   fun hideFailedHandler (cmw, serve, state) _ =
@@ -219,6 +224,7 @@ structure EventHandler =
                     SOME {tree={tree=ref tree,
                                 currentNode=ref cn,...},...} =>
 		    (VisualNode.hideFailed (Option.getOpt(cn,tree));
+                     Option.app MenuManager.updateMenus (Types.getCurrentNode state);
 		     refresh (cmw, serve, state))
                   | _ => ())
 

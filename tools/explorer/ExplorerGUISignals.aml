@@ -11,7 +11,6 @@ import structure ExplorerGUI from "ExplorerGUI"
 signature EXPLORERGUISIGNALS_SIG =
   sig
     val on_save_activate : Gtk.callback_function
-    val on_save_as_activate : Gtk.callback_function
     val on_cancel_search_activate : Gtk.callback_function
     val on_reset_activate : Gtk.callback_function
     val on_quit_activate : Gtk.callback_function
@@ -30,7 +29,6 @@ signature EXPLORERGUISIGNALS_SIG =
 functor ExplorerGUISignals(structure S : EXPLORERGUISIGNALS_SIG) =
   struct
     val save_on_save_activate = Gtk.signalConnect(ExplorerGUI.save, "activate",S.on_save_activate)
-    val save_as_on_save_as_activate = Gtk.signalConnect(ExplorerGUI.save_as, "activate",S.on_save_as_activate)
     val cancel_search_on_cancel_search_activate = Gtk.signalConnect(ExplorerGUI.cancel_search, "activate",S.on_cancel_search_activate)
     val reset_on_reset_activate = Gtk.signalConnect(ExplorerGUI.reset, "activate",S.on_reset_activate)
     val quit_on_quit_activate = Gtk.signalConnect(ExplorerGUI.quit, "activate",S.on_quit_activate)

@@ -60,4 +60,4 @@ fun money cl space =
         root
     end
 
-val _ = Explorer.initScript (money FD.BND)
+val _ = Explorer.initScript (queens 8 FD.BND)

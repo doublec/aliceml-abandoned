@@ -42,16 +42,6 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="save_as">
-		      <property name="visible">True</property>
-		      <property name="sensitive">False</property>
-		      <property name="label">gtk-save-as</property>
-		      <property name="use_stock">True</property>
-		      <signal name="activate" handler="on_save_as_activate" last_modification_time="Tue, 11 May 2004 15:52:05 GMT"/>
-		    </widget>
-		  </child>
-
-		  <child>
 		    <widget class="GtkImageMenuItem" id="cancel_search">
 		      <property name="visible">True</property>
 		      <property name="label">gtk-cancel</property>
