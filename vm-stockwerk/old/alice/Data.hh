@@ -21,8 +21,6 @@
 
 #include "store/Store.hh"
 
-#define WORDS_NEEDED(n, t) \
-  ((sizeof(t) * n + sizeof(u_int) - 1) / sizeof(u_int))
 #define MAX_SIZE(t) \
   (MAX_BLOCKSIZE * sizeof(u_int) / sizeof(t))
 
@@ -463,7 +461,5 @@ public:
     return reinterpret_cast<wchar_t *>(GetBase());
   }
 };
-
-#undef WORDS_NEEDED
 
 #endif __DATALAYER__ALICE_HH__
