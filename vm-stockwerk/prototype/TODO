@@ -24,7 +24,22 @@ Alice Library:
    The Mozart backend can implement the first one by only calling the
    function once.
 
+Inspector:
+-- wenn Fontgroesse veraendert wird, wird die Selection nicht angepasst;
+   ausserdem wird alles unmappt, was schon gemappt war
+-- wenn "explore tree->depth->depth + 10" gewaehlt wird, muss die
+   Selection erhalten bleiben
+
 Alice Compiler:
+-- wir finden innerhalb eines Try ein Kill einer Variablen, die im
+   korrespondierenden Handler noch benutzt wird
+   (DerivedForms:rewriteTy, longtycon as G.SHORTLong)
+-- es wird Code generiert der Form: `L.30 := L.29; Return L.30'
+-- und Code der Form: `L.1 := (G.2, L.0); (_, _) := L.1; Kill L.1'
+-- es sheint Shareds zu geben, die nur einmal benutzt werden
+   (DerivedForms:rewriteTy, siehe handle, EndTry/Shared720398)
+-- omit kills before return instructions
+-- join adjacent kills
 -- bug in type inference for open records: see linker/Link.aml
 -- ValuePropagationPhase: unless we make isToplevel more powerful,
    we can remove it entirely (is taken over by JITter)
