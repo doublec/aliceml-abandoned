@@ -124,6 +124,12 @@ signature INF =
 
     exception Lookup
 
+    val pathVal :	sign * lab -> path		(* Lookup *)
+    val pathTyp :	sign * lab -> path		(* Lookup *)
+    val pathMod :	sign * lab -> path		(* Lookup *)
+    val pathInf :	sign * lab -> path		(* Lookup *)
+    val pathFix :	sign * lab -> path		(* Lookup *)
+
     val lookupVal :	sign * lab -> typ		(* Lookup *)
     val lookupTyp :	sign * lab -> typ		(* Lookup *)
     val lookupMod :	sign * lab -> inf		(* Lookup *)

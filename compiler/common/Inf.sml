@@ -93,6 +93,7 @@ structure InfPrivate =
       | itemId'(FIX(x,_))	= x
 
     fun itemPath  item		= idPath(itemId item)
+    fun itemPath' item'		= idPath(itemId' item')
     fun itemLab   item		= idLab(itemId item)
     fun itemIndex item		= idIndex(itemId item)
 
@@ -229,6 +230,12 @@ structure InfPrivate =
 	  of SOME(item::items) =>
 		!(Option.valOf(List.find (fn item => itemIndex item = n) items))
 	   | _ => raise Lookup
+
+    fun pathVal args	= (itemPath' o lookup VAL') args
+    fun pathTyp args	= (itemPath' o lookup TYP') args
+    fun pathMod args	= (itemPath' o lookup MOD') args
+    fun pathInf args	= (itemPath' o lookup INF') args
+    fun pathFix args	= (itemPath' o lookup FIX') args
 
     fun lookupVal args	= (selectVal' o lookup VAL') args
     fun lookupTyp args	= (selectTyp  o lookup TYP') args
@@ -553,7 +560,7 @@ structure InfPrivate =
 
   (* Creation of singleton (shallow instantiation) *)
 
-    (* Creates an instance of an interface where every item is equal to
+    (* Creates an instance of an interface where every item is equal
      * to the original one.
      *)
 
