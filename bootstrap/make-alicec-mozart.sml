@@ -30,6 +30,10 @@ local
 	    val history = List.rev(SMLofNJ.exnHistory e)
 	    val trace   = String.concat(List.map (fn s => s ^ "\n") history)
 	in
+	    case e of
+		Crash.Crash message =>
+		    TextIO.output (TextIO.stdErr, "CRASH: " ^ message ^ "\n")
+	      | _ => ();
 	    TextIO.output (TextIO.stdErr, "uncaught exception " ^
 					  exnName e ^ ":\n" ^ trace);
 	    OS.Process.failure
