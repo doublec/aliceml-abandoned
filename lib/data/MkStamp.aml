@@ -25,6 +25,7 @@ struct
 
     val toString = Int.toString
     val compare  = Int.compare
+    val equal    = op =
 
     fun hash n   = n
 end

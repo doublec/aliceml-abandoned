@@ -19,6 +19,7 @@ sig
     val new :		unit -> stamp
     val toString :	stamp -> string
 
+    val equal :		stamp * stamp -> bool
     val compare :	stamp * stamp -> order
     val hash :		stamp -> int
 end
