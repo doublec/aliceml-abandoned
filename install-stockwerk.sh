@@ -33,9 +33,7 @@ rm -f bootstrap/alicec-stockwerk.$PLATFORM #bootstrap/alicedep.$PLATFORM
 (cd bootstrap && make) || exit 1
 (cd support/lightning && ./configure --prefix=`pwd`/build) || exit 1
 (cd support/lightning && make all install) || exit 1
-#(cd vm-stockwerk && make clean LIGHTNING=${LIGHTNING}) || exit 1
 (cd vm-stockwerk && make LIGHTNING=${LIGHTNING}) || exit 1
-#(cd vm-stockwerk && make -f Makefile.bootstrap clean) || exit 1
 (cd vm-stockwerk && make -f Makefile.bootstrap depend) || exit 1
 (cd vm-stockwerk && /usr/bin/time -po ${TIMEDIR}1 make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
 (cd vm-stockwerk && make -f Makefile.bootstrap ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
