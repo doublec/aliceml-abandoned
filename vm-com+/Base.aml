@@ -83,10 +83,8 @@ signature GENERAL =
     exception Span
     exception Subscript
 
-(*MISSING
-    val exnName : exn -> string
-    val exnMessage : exn -> string
-*)
+    val exnName: exn -> string
+    val exnMessage: exn -> string
 
     datatype order = LESS | EQUAL | GREATER
     val ! : 'a ref -> 'a
@@ -113,6 +111,9 @@ structure General: GENERAL =
     __primitive constructor Size: exn = "General.Size"
     __primitive constructor Span: exn = "General.Span"
     __primitive constructor Subscript: exn = "General.Subscript"
+
+    __primitive val exnName: exn -> string = "General.exnName"
+    __primitive val exnMessage: exn -> string = "General.exnMessage"
 
     datatype order = LESS | EQUAL | GREATER
 
@@ -1451,5 +1452,6 @@ val substring = String.substring
 val op^ = String.^
 
 val real = Real.fromInt
+val trunc = Real.trunc
 
 val spawn = Thread.spawn
