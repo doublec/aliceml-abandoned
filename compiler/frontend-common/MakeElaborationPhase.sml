@@ -36,7 +36,7 @@ structure ElaborationPhase :> ELABORATION_PHASE =
     fun exnTyp E	= #2(lookupTyp(E, Prebound.stamp_exn))
 
     (* UNFINISHED: overloading *)
-    fun wordTyp E	= #2(lookupTyp(E, Prebound.stamp_exn))
+    fun wordTyp E	= #2(lookupTyp(E, Prebound.stamp_word))
     fun intTyp E	= #2(lookupTyp(E, Prebound.stamp_int))
     fun charTyp E	= #2(lookupTyp(E, Prebound.stamp_char))
     fun stringTyp E	= #2(lookupTyp(E, Prebound.stamp_string))
@@ -1235,7 +1235,11 @@ val _=print "\n"
 	end
 
       | elabInf(E, I.SingInf(i, mod)) =
-	    Crash.crash "Elab.elabInf: SingInf"
+	let
+	    val (j,mod') = elabMod(E, mod)
+	in
+	    ( j, O.SingInf(infInfo(i,j), mod') )
+	end
 
       | elabInf(E, I.AbsInf(i)) =
 	    Crash.crash "Elab.elabInf: AbsInf"
@@ -1522,6 +1526,7 @@ val _=print "\n"
 	    val  _          = enterVars(E, vars)
 	    val (t,typ')    = elabStarTyp(E, typ)
 	    val (l,ts,con') = elabConRep(E, t, con)
+	    (* UNFINISHED: if typ is singleton then equate x to it *)
 	    val  _          = Type.exitLevel()
 	    val  E'         = splitScope E
 	    val  _          = appVals (generaliseVal (E, s, NONE, true)) E'
