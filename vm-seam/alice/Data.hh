@@ -339,9 +339,7 @@ public:
   }
   void LateInit(u_int index, word value) {
     // This is only meant to be called by Vector.tabulate
-    SetMutable(1);
-    ReplaceArg(BASE_SIZE + index, value);
-    SetMutable(0);
+    ReplaceArgUnchecked(BASE_SIZE + index, value);
   }
   word Sub(u_int index) {
     return GetArg(BASE_SIZE + index);
