@@ -135,8 +135,36 @@ Typinformation der inspizierten Werte gesteuert.
 
 %%% Bild: Wert, interne Darstellung, graphische Darstellung
 
+ % 
+                                 % \big{\+} \\
+                                 % Typreflektion 
+                                 % \( \{eins: char, zwei: char\},
+                                 % \{drei: int, vier: int\} \)
+                                % \end{math}
+                                %
+
 \begin{center}
-\epsfig{file = 3stepsgui.ps}
+\begin{picture}(360,470)
+\put(0,370){\framebox(360,100){\begin{math}
+                                \begin{array}{clcr}
+                                  (
+                                  \{
+                                   eins $=$ \sharp ''1'' ,
+                                  zwei $=$ \sharp ''2'' \} , 
+                                  \{ drei $=$  3 , 
+                                  vier $=$  4 \} ) \\ 
+                                  \bf{+}   \\
+                                   Typreflektion 
+                                  ( \{eins: char, zwei: char\},
+                                  \{drei: int, vier: int\} )
+                                \end{array}  
+                                \end{math}}}
+\put(180,360){\vector(0,-4){30}}
+\put(80,220){\framebox(200,100){Browser-interne Wertbeschreibung}}
+\put(180,210){\vector(0,-4){30}}
+\put(40,0){
+\epsfig{file = 3stepsgui.ps, width=10cm}}
+\end{picture}
 \newline
 \nopagebreak
 Abbildung 2.1: Zusammenhang zwischen Wert- und Typinformation, interner 
