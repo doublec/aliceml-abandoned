@@ -109,7 +109,7 @@ define
 		   end nil}}
 	      end
 	   'taggedTuple':
-	      fun {$ Labels I Values} Tag in
+	      fun {$ Labels I Values}
 		 {Adjoin Values {LabelToOz Labels.(I + 1)}}
 	      end
 	   'closure':
@@ -123,5 +123,16 @@ define
 	   'conName':
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
-	      end)
+	      end
+	   'inArity':
+	      fun {$ F Eager}
+		 if {IsDet F} orelse Eager then
+		    case {Procedure.arity F} of 2 then ~1
+		    [] 1 then ~2
+		    elseof Arity then Arity - 1
+		    end
+		 else ~2
+		 end
+	      end
+	   'outArity': fun {$ _ _} ~2 end)
 end
