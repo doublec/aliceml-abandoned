@@ -80,6 +80,7 @@ Library:
 * Channel: new module for concurrent message channels.
 * Print: added function register for hooking user-defined printing functions.
 * Config: added buildDate.
+* Http: ignore multiple headers; replace empty reguest URIs with "/".
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
   - Added function execute, made the Execute functor a trivial wrapper.
