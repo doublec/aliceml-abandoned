@@ -1,0 +1,37 @@
+structure Instructions =
+  struct
+
+  type state = int
+
+  type marker = int
+
+  datatype dir =
+           E | SE | SW | W | NW | NE
+
+  datatype condition =
+           Friend
+         | Foe 
+         | FriendWithFood
+         | FoeWithFood
+         | Food
+         | Rock
+         | Marker of marker
+         | FoeMarker
+         | Home
+         | FoeHome
+
+  datatype leftorright = LEFT | RIGHT
+
+  datatype 'a instruction =
+           Sense of dir * state * state * condition * 'a
+         | Mark of marker * state * 'a
+         | Unmark of marker * state * 'a
+         | PickUp of state * state * 'a
+         | Drop of state * 'a
+         | Turn of leftorright * state * 'a
+         | Move of state * state * 'a
+         | Flip of int * state * state * 'a
+
+  type 'a ant = 'a instruction vector
+
+  end
