@@ -20,12 +20,29 @@
 
 union Endianness {
   unsigned char c[sizeof(double)];
+  float f;
   double d;
 };
 
-enum doubleEndianness { littleEndian, bigEndian, badSize, nonIEC };
+enum floatEndianness { littleEndian, bigEndian, badSize, nonIEC };
 
-static int CheckDoubleEndianness() {
+static floatEndianness CheckFloatEndianness() {
+  static char littleOne[4] =
+    { 0x00, 0x00, 0x80, 0x3F };
+  static char bigOne[4] =
+    { 0x3F, 0x80, 0x00, 0x00 };
+  Endianness x;
+  x.f = 1.0;
+  if (sizeof(float) != 4)
+    return badSize;
+  if (!std::memcmp(littleOne, x.c, 4))
+    return littleEndian;
+  if (!std::memcmp(bigOne, x.c, 4))
+    return bigEndian;
+  return nonIEC;
+}
+
+static floatEndianness CheckDoubleEndianness() {
   static char littleOne[8] =
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F };
   static char bigOne[8] =
@@ -218,6 +235,24 @@ int main(int argc, char **argv) {
   std::fprintf(f, "typedef %s s_int;\n", int_val);
   std::fprintf(f, "typedef unsigned %s u_int;\n", int_val);
   std::fprintf(f, "typedef unsigned char u_char;\n\n");
+
+  switch (CheckFloatEndianness()) {
+  case bigEndian:
+    std::fprintf(f, "#define FLOAT_BIG_ENDIAN 1\n");
+    std::fprintf(f, "#define FLOAT_LITTLE_ENDIAN 0\n\n");
+    break;
+  case littleEndian:
+    std::fprintf(f, "#define FLOAT_BIG_ENDIAN 0\n");
+    std::fprintf(f, "#define FLOAT_LITTLE_ENDIAN 1\n\n");
+    break;
+  case badSize:
+    std::fprintf(stderr, "%s: `float' type is not 4 bytes\n", argv[0]);
+    exit(1);
+  case nonIEC:
+    std::fprintf(stderr, "%s: `float' type is not IEC 60559 conformant\n",
+		 argv[0]);
+    exit(1);
+  }
 
   switch (CheckDoubleEndianness()) {
   case bigEndian:
