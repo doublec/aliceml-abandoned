@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure TextIO from "../../lib/TextIO"
+import structure TextIO from "../../lib/system/TextIO"
 
 signature SWITCHES =
 sig

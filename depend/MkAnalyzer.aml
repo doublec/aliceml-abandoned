@@ -13,7 +13,7 @@
  *   $Revision$
  *)
 
-import structure TextIO   from "../lib/TextIO"
+import structure TextIO   from "../lib/system/TextIO"
 import structure Assert   from "../lib/utility/Assert"
 import structure Url      from "../lib/utility/Url"
 import signature ANALYZER from "ANALYZER-sig"

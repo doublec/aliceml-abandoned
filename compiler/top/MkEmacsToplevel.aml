@@ -12,11 +12,11 @@
 
 import
     structure TextIO
-from "../../lib/TextIO"
+from "../../lib/system/TextIO"
 
 import
     structure OS
-from "../../lib/OS"
+from "../../lib/system/OS"
 
 import
     structure Error

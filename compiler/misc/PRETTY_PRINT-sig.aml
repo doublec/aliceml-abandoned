@@ -24,7 +24,7 @@
  * combinator looses optimality.
  *)
 
-import structure TextIO from "../../lib/TextIO"
+import structure TextIO from "../../lib/system/TextIO"
 
 
 signature PRETTY_PRINT =

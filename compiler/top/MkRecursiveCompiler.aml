@@ -12,19 +12,19 @@
 
 import
     structure TextIO
-from "../../lib/TextIO"
+from "../../lib/system/TextIO"
 
 import
     structure IO
-from "../../lib/IO"
+from "../../lib/system/IO"
 
 import
     structure OS
-from "../../lib/OS"
+from "../../lib/system/OS"
 
 import
     structure UnsafePickle
-from "../../lib/UnsafePickle"
+from "../../lib/system/UnsafePickle"
 
 import
     structure Url

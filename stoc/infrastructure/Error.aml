@@ -12,7 +12,7 @@
 
 (* Error handling. *)
 
-import structure TextIO val print from "../../lib/TextIO"
+import structure TextIO val print from "../../lib/system/TextIO"
 import signature ERROR            from "ERROR-sig"
 import structure Source           from "Source"
 

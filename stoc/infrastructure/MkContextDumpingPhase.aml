@@ -12,7 +12,7 @@
  *   $Revision$
  *)
 
-import structure TextIO      from "../../lib/TextIO"
+import structure TextIO      from "../../lib/system/TextIO"
 import signature PHASE       from "PHASE-sig"
 import signature SWITCHES    from "SWITCHES-sig"
 import structure PrettyPrint from "../misc/PrettyPrint"
