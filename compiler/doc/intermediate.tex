@@ -53,7 +53,7 @@ The syntax given here should be read as an abstract syntax. The meaning of most 
 
 A long identifier expression $\longid.\lab$ is equivalent to the expression $(\f{lazy}\; \#\lab(\longid))$, ie. it represents lazy selection. The reason for having long identifiers separate is that they can appear in patterns.
 
-The expression $(\f{new})$ generates a new constructor name for an open datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes. Strict expressions force evaluation of the argument. The dual strict pattern establishes the invariant that the value matched has been evaluated strictly and can thus not be a future. These constructs are particularly used to encode strictness of tags and constructor such that the backend can unbox them.
+The expression $(\f{new})$ generates a new constructor name for an extensible datatype. The long identifier in expressions of the form $@\longid(\exp)$ or patterns $@\longid(\pat)$ must denote such a generative constructor. On the other hand, $`\lab(\exp)$ and $`\lab(\pat)$ denote constructed values of closed (structural) datatypes. Strict expressions force evaluation of the argument. The dual strict pattern establishes the invariant that the value matched has been evaluated strictly and can thus not be a future. These constructs are particularly used to encode strictness of tags and constructor such that the backend can unbox them.
 
 The expression $(\f{prim}\;s)$ is needed for binding primitive (builtin) values, which are named by a string. The $(\f{fail})$ expression marks an unused value. Forcing it always is an error. It is used during bootstrapping as a placeholder for runtime types.
 
@@ -174,7 +174,7 @@ The following grammar defines the set $\f{T}$ of {\em types}. We currently ignor
 \begin{center}
 \begin{tabular}{lcll}
 $\alpha$&$\in$&	\f{V}				& variables \\
-$a$	&$\in$&	\f{A}				& labels \\
+$l$	&$\in$&	\f{A}				& labels \\
 $c$	&$\in$&	\f{C}				& type names \\
 \ \\
 
@@ -191,10 +191,11 @@ $t$	&$:=$&	$\alpha$			& type variable \\
 \ \\
 
 $r$	&$:=$&	$\epsilon$			& empty row \\
-	&&	$a:t,r$				& field \\
+	&&	$l:t,r$				& field \\
 %\ \\
 %
 %$k$	&$:=$&	$*$				& ground type \\
+%	&&	$+$				& extensible type \\
 %	&&	$k_1 \to k_2$			& constructor \\
 \end{tabular}
 \end{center}
@@ -203,12 +204,12 @@ We assume the following additional equivalence rules:
 \begin{eqnarray*}
 \forall \alpha_1.t &=& \forall \alpha_2.t[\alpha_2/\alpha_1] \\
 \forall \alpha_1.\forall \alpha_2.t &=& \forall \alpha_2.\forall \alpha_1.t \\
-a_1:t_1,a_2:t_2,r &=& a_2:t_2,a_1:t_1,r
+l_1:t_1,l_2:t_2,r &=& l_2:t_2,l_1:t_1,r
 \end{eqnarray*}
 
 We write $t_1 \succ t_2$ if $t_1$ matches $t_2$, i.e.\ if $t_2$ is an instantiation of the possibly quantified type $t_1$. Matching does not imply that $t_1$ is quantifier-free.
 
-Type names $c$ carry an openness flag which is true only for open sum types. First-class constructors for an open sum type $t$ are assigned constructor arrow types $t' \conarrow t$ where $t'$ is the argument type and $t = c(t_1)\cdots(t_n)$ for some $n\geq0$.
+Type names $c$ carry an extensibility flag which is true only for extensible sum types.\footnote{In the implementation this is part of the kind system.} First-class constructors for an extensible sum type $t$ are assigned constructor arrow types $t' \conarrow t$ where $t'$ is the argument type and $t = c(t_1)\cdots(t_n)$ for some $n\geq0$.
 
 An {\em environment} is a finite mapping $E \in \f{Id}\to\f{T}$.
 
@@ -266,14 +267,14 @@ The reason we use casts is that the presence of first-class signatures in Stockh
 
 
 \subsubsection*{Labels \hfill
-\fbox{$\vdash \lab \Rightarrow a$}
+\fbox{$\vdash \lab \Rightarrow l$}
 }
 
 \begin{equation}
 \frac{
-[\![\lab]\!] = a
+[\![\lab]\!] = l
 }{
-\vdash \lab \Rightarrow a
+\vdash \lab \Rightarrow l
 }
 \end{equation}
 
@@ -319,9 +320,9 @@ E \vdash \id : t \Rightarrow t
 
 \begin{equation}
 \frac{
-E \vdash \lab \Rightarrow a
+E \vdash \lab \Rightarrow l
 \qquad
-E \vdash \longid \Rightarrow \{a:t,r\}
+E \vdash \longid \Rightarrow \{l:t,r\}
 }{
 E \vdash \longid.\lab : t \Rightarrow t
 }
@@ -367,7 +368,7 @@ E \vdash \f{prim}\;s : t \Rightarrow t
 \frac{
 t = t_0 \conarrow c(t_1)\cdots(t_n)
 \qquad
-\mbox{$c$ open}
+\mbox{$c$ extensible}
 }{
 E \vdash \f{new} : t \Rightarrow t
 }
@@ -385,9 +386,9 @@ E \vdash \longid : t \Rightarrow t
 
 \begin{equation}
 \frac{
-\vdash \lab \Rightarrow a
+\vdash \lab \Rightarrow l
 \qquad
-E \vdash \exp \Rightarrow \{a:t,r\}
+E \vdash \exp \Rightarrow \{l:t,r\}
 }{
 E \vdash \#\lab(\exp) : t \Rightarrow t
 }
@@ -395,11 +396,11 @@ E \vdash \#\lab(\exp) : t \Rightarrow t
 
 \begin{equation}
 \frac{
-\vdash \lab \Rightarrow a
+\vdash \lab \Rightarrow l
 \qquad
 E \vdash \exp \Rightarrow t'
 \qquad
-t = [a:t',r]
+t = [l:t',r]
 }{
 E \vdash `\lab(\exp) : t \Rightarrow t
 }
@@ -416,7 +417,7 @@ t_1 \succ t_2 \conarrow t
 \qquad
 t = c(t_1')\cdots(t_n')
 \qquad
-\mbox{$c$ open}
+\mbox{$c$ extensible}
 \end{array}
 }{
 E \vdash @\longid(\exp) : t \Rightarrow t
@@ -634,11 +635,11 @@ E \vdash \f{unabs}\;\exp : t \Rightarrow t
 \begin{equation}
 \frac{
 \begin{array}{@{}c@{}}
-E \vdash \fld^x_i \Rightarrow a_i,t_i\langle,E_i\rangle
+E \vdash \fld^x_i \Rightarrow l_i,t_i\langle,E_i\rangle
 \qquad
-\mbox{$a_i$ disjoint}
+\mbox{$l_i$ disjoint}
 \\
-r = a_1:t_1,\cdots,a_n:t_n,\epsilon
+r = l_1:t_1,\cdots,l_n:t_n,\epsilon
 \qquad
 \langle E' = \biguplus E_i \rangle
 \end{array}
@@ -649,16 +650,16 @@ E \vdash \fld^x_1,\cdots,\fld^x_n \Rightarrow r\langle,E'\rangle
 
 
 \subsubsection*{Fields \hfill
-\fbox{$E \vdash \fld^x \Rightarrow a,t\langle,E'\rangle$}
+\fbox{$E \vdash \fld^x \Rightarrow l,t\langle,E'\rangle$}
 }
 
 \begin{equation}
 \frac{
-\vdash \lab \Rightarrow a
+\vdash \lab \Rightarrow l
 \qquad
 E \vdash x \Rightarrow t\langle,E'\rangle
 }{
-E \vdash \lab = x \Rightarrow a,t\langle,E'\rangle
+E \vdash \lab = x \Rightarrow l,t\langle,E'\rangle
 }
 \end{equation}
 
@@ -742,11 +743,11 @@ E \vdash \id : t \Rightarrow t,E'
 
 \begin{equation}
 \frac{
-\vdash \lab \Rightarrow a
+\vdash \lab \Rightarrow l
 \qquad
 E \vdash \pat \Rightarrow t',E'
 \qquad
-t = \{a:t',r\}
+t = \{l:t',r\}
 }{
 E \vdash `\lab(\pat) : t \Rightarrow t,E'
 }
@@ -763,7 +764,7 @@ t_1 \succ t_2 \conarrow t
 \qquad
 t = c(t_1')\cdots(t_n')
 \qquad
-\mbox{$c$ open}
+\mbox{$c$ extensible}
 \end{array}
 }{
 E \vdash @\longid(\pat) : t \Rightarrow t,E'
