@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2003
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,6 +31,11 @@ sig
     type t = typ
 
     type rea = typ PathMap.t
+
+    datatype constraint =
+	  Unconstrained
+	| Intensional
+	| Extensional of path * path list
 
 
   (* Maps of types *)
@@ -72,13 +77,14 @@ sig
     val kind :		typ -> kind			(* Kind *)
     val kindVar :	var -> kind
 
+    val constraintVar :	var -> constraint
 
   (* Injections *)
 
     exception Type
     exception Fix
 
-    val newVar :	kind -> var
+    val newVar :	kind * constraint -> var
 
     val unknown :	kind      -> typ
     val var :		var       -> typ
@@ -99,17 +105,17 @@ sig
   (* Inspection *)
 
     datatype desc =
-	  Unknown
-	| Var	of var
-	| Con	of path
-	| Arrow	of typ * typ
-	| Prod	of row
-	| Sum	of row
-	| Mu	of typ
-	| All	of var * typ
-	| Exist	of var * typ
-	| Lambda of var * typ
-	| Apply	of typ * typ
+	  Unknown of constraint
+	| Var	  of var
+	| Con	  of path
+	| Arrow	  of typ * typ
+	| Prod	  of row
+	| Sum	  of row
+	| Mu	  of typ
+	| All	  of var * typ
+	| Exist	  of var * typ
+	| Lambda  of var * typ
+	| Apply	  of typ * typ
 
     val inspect :	typ -> desc
 
@@ -170,6 +176,8 @@ sig
     val instance :	typ -> typ
     val skolem :	typ -> typ
 
+    val instanceWith :	typ * typ -> typ			(* Type, Kind *)
+
     val realise :	rea * typ -> typ			(* Kind *)
     val realiseKind :	rea * kind -> kind			(* Kind *)
 
@@ -199,6 +207,7 @@ sig
 
   (* Unification and closure *)
 
+    exception Close of typ
     exception Lift of var
 
     val lift :		typ  -> unit			(* Lift *)

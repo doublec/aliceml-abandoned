@@ -126,6 +126,11 @@ local
 	type typ = Type.typ
 	type row = Type.row
 	type kind = Type.kind
+	type constraint = Type.constraint
+
+	val Unconstrained :	constraint
+	val Intensional :	constraint
+	val Extensional :	Path.t * Path.t list -> constraint
 
 	val starKind :		unit -> kind
 	val extKind :		unit -> kind
@@ -144,7 +149,7 @@ local
 	val lambda :		var * typ -> typ
 	val apply :		typ * typ -> typ
 
-	val newVar :		kind -> var
+	val newVar :		kind * constraint -> var
 	val kind :		typ -> kind
 
 	val unknownRow :	unit -> row
