@@ -663,19 +663,7 @@
     </DD>
 
     <DT>
-      <tt>distinct <I>v</I></TT>
-    </DT>
-    <DD>
-      <P>All elements in <I>v</I> are pairwise distinct.
-         If one element becomes determined,
-         the remaining elements are constrained to be different from it.
-         If two variables become equal, the propagator fails, e. g.
-         <TT>FD.distinct #[a,a, b]} will fail even if <I>a</I> 
-         is not determined. 
-    </DD>
-
-    <DT>
-      <tt>distinctOffset<I>v</I></TT>
+      <tt>distinctOffset <I>v</I></TT>
     </DT>
     <DD>
       <P>All sums <TT>di + ii</TT> are pairwise distinct.
@@ -692,7 +680,7 @@
     </DD>
 
     <DT>
-      <TT>atMost (<I>x<I>, <I>v</I>, <I>i</I>)</TT>
+      <TT>atMost (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that at most <I>x</I> elements of <I>v</I>
@@ -702,7 +690,7 @@
     </DD>
 
     <DT>
-      <TT>atLeast (<I>x<I>, <I>v</I>, <I>i</I>)</TT>
+      <TT>atLeast (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that at least <I>x</I> elements of <I>v</I>
@@ -712,7 +700,7 @@
     </DD>
 
     <DT>
-      <TT>exactly (<I>x<I>, <I>v</I>, <I>i</I>)</TT>
+      <TT>exactly (<I>x</I>, <I>v</I>, <I>i</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that exactly <I>x</I> elements of <I>v</I>
@@ -722,7 +710,7 @@
     </DD>
 
     <DT>
-      <TT>element (<I>x<I>, <I>v</I>, <I>z</I>)</TT>
+      <TT>element (<I>x</I>, <I>v</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P>Post the constraint that the <I>x</I>th element of <I>v</I>
@@ -737,7 +725,7 @@
     </DD>
 
     <DT>
-      <TT>conj (<I>x<I>, <I>y</I>, <I>z</I>)</TT>
+      <TT>conj (<I>x</I>, <I>y</I>, <I>z</I>)</TT>
     </DT>
     <DD>
       <P><I>z</I> is the conjunction of <I>x</I> and <I>y</I>.
