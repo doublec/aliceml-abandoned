@@ -339,6 +339,91 @@ functor GetMonoVector(type t) =
     end</PRE>
 -->
 
+<?php subsection("dynamic-limitation", "Implementation limitations") ?>
+
+<P> The dynamic semantics of sealing is currently not implemented faithfully
+for polymorphic signatures: if the signature is not statically known, because
+it is a functor parameter, no runtime sealing will be performed. A simple
+example is: </P>
+
+<PRE class=code>
+functor Abs(signature S structure X : S) = X :> S
+
+structure M  = struct type t = int val x = 13 end
+structure M' = Abs(signature S = sig type t val x : t end
+                   structure X = M)</PRE>
+
+<P>In this example, the runtime representation of <TT>M'.t</TT> will still be
+<TT>int</TT> and not an abstract type. However, since the static semantics work
+correctly, this can only be observed by going through a package:</P>
+
+<PRE class=code>
+structure P = Package.PackVal(type t = M'.t val x = M'.x)
+structure X = Package.UnpackVal(val package = P.package type t = int)
+
+val y = X.x + 1    (* Ah! *)</PRE>
+
+<P>Unpacking should fail in this example, but currently does not.</P>
+
+<!--
+  <P>
+    Since abstraction during packing uses the same mechanism,
+    packing does not properly treat abstract types either.
+    Unfortunately, this property does not only lead to a too permissive
+    treatment of abstract types, but can also cause failure for
+    examples that should work. Consider:
+  </P>
+
+  <PRE>
+	structure A0 = struct type t = int val x = 9 end
+	signature S  = sig type t val x : t end
+	structure P  = Package.Pack(structure X = A0 signature S = S)
+
+	structure A1 = Package.Unpack(val package = P.package
+				      signature S = S)
+	structure A2 = Package.Unpack(val package = P.package
+				      signature S = S where type t = A1.t)
+  </PRE>
+
+  <P>
+    The second unpack uses the type found when unpacking the first time.
+    This way, A1.t and A2.t should be the same, so that A1.x and A2.x are
+    compatible. One would expect that the second unpacking always succeeds
+    since we are unpacking the same package and already know its type
+    <TT>t</TT>. However, since no abstraction is performed on <TT>t</TT>
+    during packing, <TT>A1.t</TT> actually is <TT>int</TT>. So we are
+    trying to unpack with <TT>t = int</TT>. But the signature stored in the
+    package does not specify this equivalence, so signature matching will
+    fail during unpacking.
+  </P>
+
+  <P>
+    The problem is that the package signature and the runtime types
+    contained in the package module are inconsistent, if the signature
+    passed to <TT>Pack</TT> does not declare the most specific types. So
+    a simple workaround is to avoid this situation. For our example, this
+    can be done as follows:
+  </P>
+
+  <PRE>
+	structure P = Package.Pack(structure X = A0
+				   signature S = S where type t = X.t)
+  </PRE>
+
+  <P>
+    Or if you actually want the abstraction:
+  </P>
+
+  <PRE>
+	structure P = Package.Pack(structure X = A0 :> S
+				   signature S = S where type t = X.t)
+  </PRE>
+
+  <P>
+    This bug will be corrected very shortly.
+    Note that it does not compromise soundness, though.
+  </P>
+-->
 
 <?php section("valpackage", "value packages") ?>
 

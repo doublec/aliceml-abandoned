@@ -99,8 +99,14 @@ programming language (SML), as defined in</P>
   </LI>
 </UL>
 
-<P>Note that Alice ML also has some minor
-<A href="incompatibilities.php3">incompatibilities</A> with SML.</P>
+<P>You should also be aware of the</P>
+
+<UL>
+  <LI><A href="incompatibilities.php3">incompatibilities with SML</A></LI>
+  <LI><A href="limitations.php3">limitations</A></LI>
+</UL>
+
+<P>observable in the current system.</P>
 
 
 <?php section("syntax", "syntax summary") ?>
