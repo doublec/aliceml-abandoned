@@ -3,7 +3,6 @@
 General:
 
 - Check for multiple imports from single (normalised) URL
-- Improve pretty-printing
 - Consistent state cleanup (especially on errors)
 
 Documentation:
@@ -16,10 +15,6 @@ Missing from Standard Core Language:
 
 - Equality types (equality is allowed on any type)
   [deferred until design on type classes is finished]
-- Overloading (only defaults available)
-  [deferred until design on type classes is finished]
-- Checks for non-redundancy and exhaustiveness of matches
-  [Leif]
 
 Missing from Standard Module Language:
 
@@ -42,6 +37,8 @@ Missing from Extended Core Language:
   [design not finished]
 - Polymorphic records, record composition
   [deferred until we have type classes]
+- More general support for intensional polymorphism
+  [sensitive to type equivalences/generalisation, what about hidden types?]
 
 Missing from Extended Module Language:
 
@@ -52,8 +49,8 @@ Missing from Extended Module Language:
   [syntax? how do they colaborate with manifest structures?]
 - Functor paths
   [how can they coexist with generative functors?]
-- Full signature intersection
-  [how treat conflicting dependencies?]
+- General signature intersection
+  [algorithm?]
 - Hiding / signature subtraction
   [worthwhile?]
 - First-class modules
