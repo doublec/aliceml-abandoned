@@ -13,70 +13,56 @@
 
 signature FILTER =
     sig
-	val filterFile : string -> string -> OS.Process.status
+	val filterFile : string list -> OS.Process.status
     end
 
-structure Filter : FILTER =
+structure Filter :> FILTER =
     struct
 	fun doPurify tokens =
-	    (case tokens of
-		 "__extension__"::sr         => doPurify sr
-	       | "__ssize_t"::sr             => "unsigned int " ^ (doPurify sr)
-	       | "__const"::sr               => "const " ^ (doPurify sr)
-	       | "(__const"::sr              => "(const " ^ (doPurify sr)
-	       | "*__const"::sr              => "* " ^ (doPurify sr)
-	       | "__restrict"::sr            => doPurify sr
-	       | "*__restrict"::sr           => "* " ^ (doPurify sr)
-	       | "**__restrict"::sr          => "** " ^ (doPurify sr)
-	       | "__attribute__"::sr         => ";"
-	       | "__attribute__((format"::sr => ";"
-	       | s::sr                       => s ^ " " ^ (doPurify sr)
-	       | nil                         => "")
+	    case tokens of
+		"__extension__"::sr         => doPurify sr
+	      | "__ssize_t"::sr             => "unsigned int " ^ doPurify sr
+	      | "__const"::sr               => "const " ^ doPurify sr
+	      | "(__const"::sr              => "(const " ^ doPurify sr
+	      | "*__const"::sr              => "* " ^ doPurify sr
+	      | "__restrict"::sr            => doPurify sr
+	      | "*__restrict"::sr           => "* " ^ doPurify sr
+	      | "**__restrict"::sr          => "** " ^ doPurify sr
+	      | "__attribute__"::sr         => ";"
+	      | "__attribute__((format"::sr => ";"
+	      | s::sr                       => s ^ " " ^ doPurify sr
+	      | nil                         => ""
 
-	fun sepToken #" "  = true
-	  | sepToken #"\t" = true
-	  | sepToken #"\n" = true
-	  | sepToken _     = false
-
-	fun purify s = doPurify (String.tokens sepToken s)
+	fun purify s = doPurify (String.tokens Char.isSpace s)
 
 	fun isNoCodeLine s =
-	    (case String.explode s of
-		 #"#"::_ => true
-	       | _       => false)
+	    case String.explode s of
+		#"#"::_ => true
+	      | _       => false
 
 	fun doFiltering(rs, ws) =
-	    (case TextIO.endOfStream rs of
-		 true  => ()
-	       | false =>
-		     let
-			 val s = TextIO.inputLine rs
-		     in
-			 case isNoCodeLine s of
-			     true  => doFiltering(rs, ws)
-			   | false =>
-				 (case purify s of
-				      "" => doFiltering(rs, ws)
-				    | l  =>(TextIO.output (ws, (l ^ "\n")); doFiltering(rs, ws)))
-		     end)
-		 
-	fun filterFile inFile outFile =
+	    case TextIO.inputLine rs of
+		"" => ()
+	      | s =>
+		    (if isNoCodeLine s then ()
+		     else
+			 case purify s of
+			     "" => ()
+			   | l  => TextIO.output (ws, l ^ "\n");
+		     doFiltering(rs, ws))
+
+	fun filterFile [inFile, outFile] =
 	    let
 		val rs = TextIO.openIn inFile
 		val ws = TextIO.openOut outFile
 	    in
-		(doFiltering(rs, ws);
-		 TextIO.closeIn rs;
-		 TextIO.closeOut ws;
-		 OS.Process.success)
+		doFiltering(rs, ws);
+		TextIO.closeIn rs;
+		TextIO.closeOut ws;
+		OS.Process.success
 	    end
+	  | filterFile _ =
+	    (TextIO.output (TextIO.stdErr,
+			    "Usage: filter <infile> <outfile>\n");
+	     OS.Process.failure)
     end
-
-local
-    fun main _ =
-	(OS.Process.system "gcc -E `gtk-config --cflags gtk` -o gtkraw.c gtk.c";
-	 Filter.filterFile "gtkraw.c" "gtkheader.c";
-	 OS.Process.system "rm -f gtkraw.c")
-in
-    val _ = SMLofNJ.exportFn("filter", main)
-end
