@@ -1,0 +1,35 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 1999
+ *   Leif Kornstaedt, 1999
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+structure TextIO =
+    struct
+	type instream
+	type outstream
+
+	__primitive stdIn : instream = "TextIO.stdIn"
+	__primitive openIn : string -> instream = "TextIO.openIn"
+	__primitive inputAll : instream -> string = "TextIO.inputAll"
+	__primitive closeIn : instream -> unit = "TextIO.closeIn"
+
+	__primitive stdOut : outstream = "TextIO.stdOut"
+	__primitive stdErr : outstream = "TextIO.stdErr"
+	__primitive openOut : string -> outstream = "TextIO.openOut"
+	__primitive output : outstream * string -> unit = "TextIO.output"
+	__primitive output1 : outstream * char -> unit = "TextIO.output1"
+	__primitive closeOut : outstream -> unit = "TextIO.closeOut"
+
+	__primitive print : string -> unit = "TextIO.print"
+    end
+
+val print = TextIO.print
