@@ -176,13 +176,7 @@ define
 	      'Future.Future': {NewUniqueName 'Future.Future'}
 	      'Future.alarm\'': missing('Future.alarm\'')   %--**
 %		 fun {$ X} !!{Alarm (X + 500) div 1000} end
-	      'Future.await':
-		 fun {$ X0 TaskStack}
-		    case {Deref X0} of Transient=transient(_) then
-		       request(Transient arg(Transient) TaskStack)
-		    elseof X then continue(arg(X) TaskStack)
-		    end
-		 end#i_t
+	      'Future.await': fun {$ X} X end#r_v
 	      'Future.awaitOne': missing('Future.awaitOne')   %--**
 %		 fun {$ X Y} {WaitOr X Y} X end
 	      'Future.byneed':
@@ -462,10 +456,8 @@ define
 		 fun {$ R0} R = {C2F R0} in
 		    {FloatToInt if R >= 0.0 then {Floor R} else {Ceil R} end}
 		 end#r_v
-	      'Ref.:=':
-		 fun {$ R X} {Assign R X} tuple() end#rr_v
-	      'Ref.exchange':
-		 fun {$ R X} {Exchange R $ X} end#rr_v
+	      'Ref.:=': fun {$ R X} {Assign R X} tuple() end#ri_v
+	      'Ref.exchange': fun {$ R X} {Exchange R $ X} end#ri_v
 	      'String.^': ByteString.append#rr_v
 	      'String.<':
 		 fun {$ S1 S2}
@@ -655,6 +647,11 @@ define
 	    case {Deref T.2} of Transient=transient(_) then
 	       request(Transient args(T.1 Transient) TaskStack)
 	    elseof T2 then {F T.1 T2 TaskStack}
+	    end
+	 [] ri_v then T = {Deconstruct Args} in
+	    case {Deref T.1} of Transient=transient(_) then
+	       request(Transient args(Transient T.2) TaskStack)
+	    elseof T1 then continue(arg({F T1 T.2}) Rest)
 	    end
 	 [] rr_t then T = {Deconstruct Args} in
 	    case {Deref T.1} of Transient=transient(_) then
