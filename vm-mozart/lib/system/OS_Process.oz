@@ -13,6 +13,9 @@
 functor
 import
    OS(system getEnv)
+   Property(put)
+   Error(printException)
+   System(onToplevel)
    Application(exit)
 export
    'Process$': Process
@@ -22,6 +25,22 @@ define
 	     'success': 0
 	     'failure': 1
 	     'system': OS.system
+	     'atExn':
+		fun {$ P}
+		   {Property.put 'errors.handler'
+		    proc {$ E}
+		       case E of system(kernel(terminate) ...) then skip
+		       [] error(alice(Exn ...) ...) then
+			  _ = {P Exn}
+		       else
+			  {Error.printException E}
+			  if {System.onToplevel} then
+			     {Application.exit 1}
+			  end
+		       end
+		    end}
+		   unit
+		end
 	     'exit':
 		proc {$ N _}
 		   {Application.exit N}
