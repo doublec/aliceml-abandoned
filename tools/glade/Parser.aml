@@ -70,7 +70,9 @@ structure Parser :> PARSER =
 	      parseSignals(doc,ps,parseSignal(doc,p)::acc)
 	  else (p::ps,acc)
 
-      fun parseAccelerator(doc, p) = (valOf (getProp p "key"))
+      fun parseAccelerator(doc, p) = (valOf (getProp p "key"),
+				      valOf (getProp p "modifiers"),
+				      valOf (getProp p "signal"))
       fun parseAccelerators(doc, nil, acc) = (nil, acc)
 	| parseAccelerators(doc, p::ps, acc) =
 	  if (p/>getType) = TEXT_NODE orelse

@@ -36,7 +36,7 @@ signature CODE_EMITTER =
       val newObject : document * 
 		      string * string * property list
 		      * string list * signal list
-		      * string list -> unit
+		      * (string * string * string) list -> unit
       val attachChildren : document *
 			   string * string *
 			   (string * property list) list 
@@ -420,6 +420,28 @@ structure CodeEmitter :> CODE_EMITTER =
 		 processProperties(doc, class, id, ps))
 	end
 
+    (* attaches accelerator keys to widgets *)
+    fun processAccelerator(doc, class, id, (key, modifiers, signal)) =
+	let
+	    val key = "Key.K_"^key
+	    val mods = String.tokens (fn #"|" => true | c => Char.isSpace c) modifiers
+	    fun gdk s =
+		if String.isPrefix "GDK_" s then
+		    "(Gdk.GdkModifierTypeToInt Gdk."^String.extract(s, 4, NONE)^")"
+		else s
+	    val mods = map gdk mods
+	    val mods =
+		case mods of
+		    nil => ""
+		  | [m]=> m
+		  | (m::mr) => String.concat ((map (fn m => m^"+") mr)@[m])
+	in
+	    output(doc, "val _ = Gtk.widgetAddAccelerator("^id^",\""^
+		   signal^"\",Helpers.accelGroup,Key.keyvalToInt "^key^
+		   ",Gdk.IntToGdkModifierType ("^mods^"),Gtk.ACCEL_VISIBLE)\n")
+	end
+    fun processAccelerators(doc, class, id, accels) =
+	app (fn a => processAccelerator(doc, class, id, a)) accels
 
     (* computes name of constructor and label *)
     fun getConstructor(class, prop) =
@@ -456,7 +478,9 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    output(doc, "val "^id^" = Gtk.windowNew(Gtk."^
 			cvtGtkName(typ)^")\n");
-	    processProperties(doc, "GtkWindow", id, psr)
+	    processProperties(doc, "GtkWindow", id, psr);
+	    output(doc, "val _ = Gtk.windowAddAccelGroup("^id^",Helpers.accelGroup)\n");
+	    processAccelerators(doc, "GtkWindow", id, accel)
 	end
       | newObject'(doc, "GtkLabel", id, prop, access, sign, accel) =
 	let
@@ -464,7 +488,8 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    output(doc, "val "^id^" = Gtk.labelNew(\""^
 			label^"\")\n");
-	    processProperties(doc, "GtkLabel", id, psr)
+	    processProperties(doc, "GtkLabel", id, psr);
+	    processAccelerators(doc, "GtkLabel", id, accel)
 	end
       | newObject'(doc, "GtkFrame", id, prop, access, sign, accel) =
 	let
@@ -476,7 +501,8 @@ structure CodeEmitter :> CODE_EMITTER =
 		output(doc, "val _ = Gtk.frameSetLabelAlign("^id^","^
 			    lxalign^","^lyalign^")\n")
 	    else ();
-	    processProperties(doc, "GtkFrame", id, psr)
+	    processProperties(doc, "GtkFrame", id, psr);
+	    processAccelerators(doc, "GtkFrame", id, accel)
 	end
       | newObject'(doc, class as ("GtkVBox" | "GtkHBox"),
 		   id, prop, access, sign, accel) =
@@ -486,7 +512,8 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    output(doc, "val "^id^" = Gtk."^cvtGtkName(class)^
 			"New("^homogeneous^","^spacing^")\n");
-	    processProperties(doc, class, id, psr)
+	    processProperties(doc, class, id, psr);
+	    processAccelerators(doc, class, id, accel)
 	end
       | newObject'(doc, "GtkTable", id, prop, access, sign, accel) =
 	let
@@ -496,7 +523,8 @@ structure CodeEmitter :> CODE_EMITTER =
 	in
 	    output(doc, "val "^id^" = Gtk.tableNew("^
 			rows^","^cols^","^homogeneous^")\n");
-	    processProperties(doc, "GtkTable", id, psr)
+	    processProperties(doc, "GtkTable", id, psr);
+	    processAccelerators(doc, "GtkTable", id, accel)
 	end
       | newObject'(doc, class as "GtkRadioButton",
 		   id, prop, access, sign, accel) =
@@ -511,7 +539,8 @@ structure CodeEmitter :> CODE_EMITTER =
 		output(doc, "val "^id^" = "^constr^"FromWidget("^g^label^")\n")
 	      | NONE => 
 		output(doc, "val "^id^" = "^constr^"(Gtk.NULL"^label^")\n");
-	    processProperties(doc, class, id, psr)
+	    processProperties(doc, class, id, psr);
+	    processAccelerators(doc, class, id, accel)
 	end
       | newObject'(doc, class as "GtkRadioMenuItem",
 		   id, prop, access, sign, accel) =
@@ -521,7 +550,8 @@ structure CodeEmitter :> CODE_EMITTER =
 				    | _ => ""
 	in
 	    output(doc, "val "^id^" = "^constr^"(Gtk.NULL"^label^")\n");
-	    processProperties(doc, class, id, psr)
+	    processProperties(doc, class, id, psr);
+	    processAccelerators(doc, class, id, accel)
 	end
       | newObject'(doc, "GtkSpinButton", id, prop, access, sign, accel) =
 	let
@@ -542,7 +572,8 @@ structure CodeEmitter :> CODE_EMITTER =
 		(output(doc, "val "^id^" = Gtk.imageNewFromStock("
 			     ^"\""^s^"\","^
 			     "Gtk.IntToGtkIconSize("^icon_size^"))\n");
-		 processProperties(doc, "GtkImage", id, psr))
+		 processProperties(doc, "GtkImage", id, psr);
+		 processAccelerators(doc, "GtkImage", id, accel))
 	      | NONE => ()
 	end
       | newObject'(doc, "GtkList", id, prop, access, sign, accel) = ()
@@ -560,7 +591,8 @@ structure CodeEmitter :> CODE_EMITTER =
                         id^"_xa,"^id^"_ya)\n");
 
             (* process full properties, we just abused width&height! *)
-            processProperties(doc, "GtkScrolledWindow", id, prop)
+            processProperties(doc, "GtkScrolledWindow", id, prop);
+	    processAccelerators(doc, "GtkScrolledWindow", id, accel)
         end
       | newObject'(doc, class as ("GtkVScale" | "GtkHScale"), id,
                    prop, access, sign, accel) =
@@ -571,7 +603,8 @@ structure CodeEmitter :> CODE_EMITTER =
                         a1^","^a2^","^a3^","^a4^","^a5^","^a6^")\n");
             output(doc, "val "^id^" = Gtk."^cvtGtkName class^"New("^
                         id^"_adj)\n");
-            processProperties(doc, class, id, psr)
+            processProperties(doc, class, id, psr);
+	    processAccelerators(doc, class, id, accel)
         end
       | newObject'(doc, class, id, prop, access, sign, accel) =
 	let
@@ -579,7 +612,8 @@ structure CodeEmitter :> CODE_EMITTER =
 	    val label = getOpt(label, "")
 	in
 	    output(doc, "val "^id^" = "^constr^"("^label^")\n");
-	    processProperties(doc, class, id, psr)
+	    processProperties(doc, class, id, psr);
+	    processAccelerators(doc, class, id, accel)
 	end
 	
     fun newObject(doc, class, id, prop, access, sign, accel) =
@@ -699,6 +733,11 @@ structure CodeEmitter :> CODE_EMITTER =
       | attachChildren'(doc, class as ("GtkHPaned"|"GtkVPaned"),
 			id, children) =
 	attachPaneChildren(doc, class, id, children)
+      | attachChildren'(doc, "GtkImageMenuItem", id, nil) = ()
+      | attachChildren'(doc, "GtkImageMenuItem", id, [(child,_)]) =
+	output(doc, "val _ = Gtk.imageMenuItemSetImage("^id^","^child^")\n")
+      | attachChildren'(_, "GtkImageMenuItem", _, _) =
+	raise CodeEmitterError "GtkImageMenuItem can have none or one child"
       | attachChildren'(doc, "GtkOptionMenu", id, [(child,_)]) =
 	output(doc,
 	       "val _ = Gtk.optionMenuSetMenu("^id^","^
@@ -771,7 +810,11 @@ structure CodeEmitter :> CODE_EMITTER =
 		  "Modifications may get lost."]);
 	 outputPre(doc, "\n\n");
 	 outputPre(doc,
-		   "import structure Gtk from \"x-alice:/lib/gtk/Gtk\"\n\n"))
+		   "import structure Gtk from \"x-alice:/lib/gtk/Gtk\"\n");
+	 outputPre(doc,
+		   "import structure Gdk from \"x-alice:/lib/gtk/Gdk\"\n\n");
+	 outputPre(doc,
+		   "import structure Key from \"x-alice:/lib/gtk/Key\"\n\n"))
 
     fun preambleStruct doc =
 	(output(doc, "structure "^getStructureName doc^" =\n");
