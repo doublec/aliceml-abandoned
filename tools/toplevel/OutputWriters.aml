@@ -63,21 +63,20 @@ structure OutputWriters =
 
       (* History *)
 
-      val history = ref {prev = [], next = []}
+      val history = ref {prev = [], current = "", next = []}
 
       fun extendHistory s =
 	  let
 	      val p = Promise.promise ()
 	      val prev =
 		  case Ref.exchange (history, Promise.future p)
-		   of {prev = [], next = []} => [s]
-		    | {prev = s'::prev', next = []} =>
+		   of {prev = [], current, next = []} => [s]
+		    | {prev = s'::prev', current, next = []} =>
 		      if s = s' then s::prev' else s::s'::prev'
-		    | {prev, next = [s']} => s::prev
-		    | {prev, next = s'::next'} =>
-		      s :: List.tl (List.rev (if s = s' then next' else s'::next')) @ prev
+		    | {prev, current = s', next} => (* throw away initial input *)
+		      s :: List.tl (List.rev (if s = s' then next else s'::next)) @ prev
 	  in
-	      Promise.fulfill (p, {prev, next = []})
+	      Promise.fulfill (p, {prev, current = "", next = []})
 	  end
 
       fun backwards s =
@@ -85,11 +84,9 @@ structure OutputWriters =
 	      val p = Promise.promise ()
 	      val (history',s') =
 		  case Ref.exchange (history, Promise.future p)
-		   of h' as {prev = [], next} => (h', s)
-		    | {prev = s'::prev', next = []} =>
-		      ({prev = prev', next = [s',s]}, s')
-		    | {prev = s'::prev', next = _::next'} =>
-		      ({prev = prev', next = s'::s::next'}, s')
+		   of h' as {prev = [], current, next} => (h', s)
+		    | {prev = s'::prev', current, next} =>
+		      ({prev = prev', current = s', next = s::next}, s')
 	  in
 	      Promise.fulfill (p, history');
 	      s'
@@ -100,9 +97,9 @@ structure OutputWriters =
 	      val p = Promise.promise ()
 	      val (history',s') =
 		  case Ref.exchange (history, Promise.future p)
-		   of h' as {prev, next = ([] | [_])} => (h', s)
-		    | {prev, next = s1::s2::next'} =>
-		      ({prev = s::prev, next = s2::next'}, s2)
+		   of h' as {prev, current, next = []} => (h', s)
+		    | {prev, current, next = s'::next'} =>
+		      ({prev = s::prev, current = s', next = next'}, s')
 	  in
 	      Promise.fulfill (p, history');
 	      s'
