@@ -20,6 +20,8 @@ import structure MkColorTable from "MkColorTable"
 import structure CreateDoc from "CreateDoc"
 import structure NewNode from "NewNode"
 import structure Layout from "Layout"
+import structure WindowManager from "WindowManager"
+import structure DrawNodes from "DrawNodes"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
 open Types MkColorTable CreateDoc Gdk
@@ -32,8 +34,9 @@ struct
 			    val n = NewNode.newNode(v,t)
 			in
 			    ( Layout.layout(n)
-                            ; (* the draw function is still missing here *) ()
-                            ; Layout.incr_act_line(Layout.get_ydim(n) + 1) )
+                            ;  DrawNodes.draw(n,0,!Layout.act_line)
+                            ; Layout.incr_act_line(Layout.get_ydim(n) + 1)
+			    ; (!WindowManager.show) () )
 			end
 			    
     fun set_width w = NewNode.max_width := w

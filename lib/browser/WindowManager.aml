@@ -17,9 +17,32 @@ import signature MK_WINDOW from "MK_WINDOW-sig"
 import functor MkWindow from "MkWindow"
 import signature WINDOW_MANAGER from "WINDOW_MANAGER-sig"
 
+
 structure WindowManager :> WINDOW_MANAGER =
     struct
 	 structure W = MkWindow() :MK_WINDOW
+
+
+	val alive      = ref W.alive 
 	val canvasroot = ref W.canvasroot
 	val window     = ref W.window
+	val show       = ref W.show
+
+	fun new () = let
+			 val a =  !(!alive)
+		     in
+			 if  a then () else let
+					        structure W =  MkWindow() :MK_WINDOW
+					       	val _    = alive:= W.alive 
+						val _ = canvasroot := W.canvasroot
+						val _ = window := W.window
+						val _ = show:=  W.show
+					    in
+						()
+					    end
+		     end
+	
+	
+      
+
 end
