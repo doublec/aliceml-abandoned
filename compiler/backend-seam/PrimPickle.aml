@@ -18,7 +18,7 @@ import structure BinIO        from "../../lib/system/BinIO"
 import structure MkHashImpMap from "../../lib/data/MkHashImpMap"
 import structure Crash        from "../infrastructure/Crash"
 import structure StringMap    from "../infrastructure/StringMap"
-import structure CharBuffer   from "../infrastructure/CharBuffer"
+import structure Word8Buffer  from "Word8Buffer"
 import signature PRIM_PICKLE  from "PRIM_PICKLE-sig"
 import structure Word8Vector from "x-alice:/lib/fundamental/Word8Vector"
 
@@ -30,7 +30,7 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	type outstream =
 	     {stream: BinIO.outstream,
-	      buffer: CharBuffer.t,
+	      buffer: Word8Buffer.t,
 	      nextRegister: int ref,
 	      stringMap: int StringMap.t,
 	      atomMap: int AtomMap.t,
@@ -74,7 +74,7 @@ structure PrimPickle :> PRIM_PICKLE =
 	    else raise Crash.Crash "PrimPickle.outputUInt"
 
 	fun outputByte ({buffer, ...}: outstream, w) =
-	    CharBuffer.output1 (buffer, w)
+	    Word8Buffer.output1 (buffer, w)
 
 	fun outputUInt (q, i) =
 	    if i >= 0x80 then
@@ -85,7 +85,7 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	fun openOut name: outstream =
 	    {stream = BinIO.openOut name,
-	     buffer = CharBuffer.buffer (),
+	     buffer = Word8Buffer.buffer (),
 	     nextRegister = ref 1,
 	     stringMap = StringMap.map (),
 	     atomMap = AtomMap.map (),
@@ -180,7 +180,7 @@ structure PrimPickle :> PRIM_PICKLE =
 
 	fun closeOut (q as {stream, buffer, maxStack, ...}: outstream) =
 	    let
-		val charVector = CharBuffer.getVector buffer
+		val charVector = Word8Buffer.getVector buffer
 	    in
 		(streamOutputByte (q, tINIT);
 		 streamOutputUInt (q, !maxStack);
