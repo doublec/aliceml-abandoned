@@ -211,10 +211,10 @@
 
   <P>
     to the promise. It globally replaces the future with the right argument,
-    provided the left and right argument are not variants of the same future.
-    If the promise has already been fulfilled (or failed, see below),
-    the exception <TT>Promise</TT> is raised. If the left and right arguments
-    are variants of the same future the exception <TT>Cyclic</TT> is raised.
+    provided it is not the future itself.  If the promise has already been
+    fulfilled (or failed, see below), the exception <TT>Promise</TT> is
+    raised. If the right arguments is the future associated with the promise,
+    the exception <TT>Cyclic</TT> is raised.
   </P>
 
   <P>
