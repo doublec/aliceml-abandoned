@@ -14,7 +14,39 @@
 %\define DEBUG_OPTIMIZER
 %\define DEBUG_SHARED
 
-local
+functor
+import
+   FD(decl int distinct assign)
+   Space(new waitStable ask merge)
+   Debug(getRaiseOnBlock setRaiseOnBlock) at 'x-oz://boot/Debug'
+   Property(get)
+   Builtins(getInfo)
+export
+   'class': Emitter
+   Continuations
+prepare
+   Continuations = c(vUnify: 4
+		     vEquateConstant: 4
+		     vEquateRecord: 6
+		     vGetVariable: 3
+		     vCallBuiltin: 5
+		     vCallGlobal: 5
+		     vCall: 5
+		     vConsCall: 5
+		     vDeconsCall: 6
+		     vCallProcedureRef: 5
+		     vCallConstant: 5
+		     vInlineDot: 7
+		     vDefinition: 7
+		     vDefinitionCopy: 8
+		     vShared: ~1
+		     vExHandler: 6
+		     vPopEx: 3
+		     vTestBool: 7
+		     vTestBuiltin: 6
+		     vTestConstant: 7
+		     vMatch: 6)
+define
 \ifdef DEBUG_EMIT
    proc {ShowVInstr VInstr}   % for debugging
       L = {Label VInstr}
@@ -212,7 +244,7 @@ local
 	 end
       end
    end
-in
+
    fun {IsStep Coord}
       case {Label Coord} of pos then false
       [] unit then false
@@ -256,7 +288,7 @@ in
 		  ?Code ?GRegs ?NLiveRegs) RS NewCodeTl NumberOfYs in
 	 Temporaries <- {NewDictionary}
 	 Permanents <- {NewDictionary}
-	 CodeStore, makeRegSet(?RS)
+	 {self makeRegSet(?RS)}
 	 LastAliveRS <- RS
 	 {ForAll FormalRegs proc {$ Reg} {BitArray.set RS Reg} end}
 	 ShortLivedTemps <- nil
@@ -990,9 +1022,9 @@ in
 	 if {IsStep Coord} then
 	    case Cont of nil then RS Label NewCont Inter in
 	       RS = case @continuations of Cont|_ then {BitArray.clone Cont.1}
-		    [] nil then CodeStore, makeRegSet($)
+		    [] nil then {self makeRegSet($)}
 		    end
-	       CodeStore, newLabel(?Label)
+	       {self newLabel(?Label)}
 	       NewCont = vShared({BitArray.clone RS} _ Label Inter)
 	       Inter = vDebugExit(RS Coord Kind nil)
 	       continuations <- NewCont|@continuations
@@ -1000,7 +1032,7 @@ in
 	       RS Label NewCont Inter
 	    in
 	       RS = {BitArray.clone Cont.1}
-	       CodeStore, newLabel(?Label)
+	       {self newLabel(?Label)}
 	       NewCont = vShared({BitArray.clone RS} _ Label Inter)
 	       Inter = vDebugExit({BitArray.clone RS} Coord Kind Cont)
 	       continuations <- NewCont|Rest

@@ -12,38 +12,10 @@
 
 functor
 import
-   FD(decl int distinct assign)
-   Space(new waitStable ask merge)
-   Debug(getRaiseOnBlock setRaiseOnBlock) at 'x-oz://boot/Debug'
-   Property(get)
-   Builtins(getInfo)
+   CodeEmitter('class': Emitter continuations: Continuations)
 export
    'class': CodeStore
-prepare
-   Continuations = c(vUnify: 4
-		     vEquateConstant: 4
-		     vEquateRecord: 6
-		     vGetVariable: 3
-		     vCallBuiltin: 5
-		     vCallGlobal: 5
-		     vCall: 5
-		     vConsCall: 5
-		     vDeconsCall: 6
-		     vCallProcedureRef: 5
-		     vCallConstant: 5
-		     vInlineDot: 7
-		     vDefinition: 7
-		     vDefinitionCopy: 8
-		     vShared: ~1
-		     vExHandler: 6
-		     vPopEx: 3
-		     vTestBool: 7
-		     vTestBuiltin: 6
-		     vTestConstant: 7
-		     vMatch: 6)
 define
-   \insert CodeEmitter
-
    class CodeStore from Emitter
       prop final
       attr
@@ -129,7 +101,8 @@ define
 	 CodeStore, AddRegOccs(StartAddr @EmptyRS)
 	 {Dictionary.removeAll @sharedDone}
 	 N = if self.staticVarnamesSwitch then @NextYIndex else 0 end
-	 Emitter, doEmit(FormalRegs AllRegs StartAddr N ?Code ?GRegs ?NLiveRegs)
+	 Emitter, doEmit(FormalRegs AllRegs StartAddr N
+			 ?Code ?GRegs ?NLiveRegs)
 	 {Dictionary.removeAll @sharedDone}
 	 %% restore enclosing definition's state:
 	 NextReg <- @minReg
