@@ -316,9 +316,27 @@ Worker::Result Class::RunInitializer() {
 //
 word JavaString::wClass = Store::IntToWord(0);
 
+static word wInternTable;
+
+static const u_int initialInternTableSize = 19; //--** to be determined
+
 void JavaString::Init() {
   //--** not nice: this creates a JavaString before wClass is initialized
   ClassLoader *classLoader = ClassLoader::GetBootstrapClassLoader();
   wClass = classLoader->ResolveClass(JavaString::New("java/lang/String"));
   RootSet::Add(wClass);
+  wInternTable =
+    HashTable::New(HashTable::BLOCK_KEY, initialInternTableSize)->ToWord();
+  RootSet::Add(wInternTable);
+}
+
+JavaString *JavaString::Intern() {
+  HashTable *internTable = HashTable::FromWordDirect(wInternTable);
+  BaseArray *array = ToArray();
+  word key = array->ToWord();
+  if (internTable->IsMember(key))
+    return JavaString::FromWordDirect(internTable->GetItem(key));
+  JavaString *result = JavaString::New(array, 0, array->GetLength());
+  internTable->InsertItem(key, result->ToWord());
+  return result;
 }

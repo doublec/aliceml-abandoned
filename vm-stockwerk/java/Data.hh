@@ -679,9 +679,7 @@ public:
     return JavaString::New(GetValue(), offset + beginIndex,
 			   endIndex - beginIndex);
   }
-  JavaString *Intern() {
-    return this; //--**
-  }
+  JavaString *Intern();
   BaseArray *ToArray() {
     BaseArray *array = GetValue();
     u_int offset = GetOffset();
