@@ -75,7 +75,7 @@ define
 	 case S of &%|&7|&b|Rest then &{|{HackInfo Rest}
 	 [] &%|&7|&d|Rest then &}|{HackInfo Rest}
 	 [] &%|&7|&B|Rest then &{|{HackInfo Rest}
-         [] &%|&7|&D|Rest then &}|{HackInfo Rest} 
+	 [] &%|&7|&D|Rest then &}|{HackInfo Rest}
 	 [] C|Rest then C|{HackInfo Rest}
 	 [] nil then nil
 	 end
@@ -83,7 +83,7 @@ define
    in
       fun {Load U TaskStack}
 	 %--** try to load a Stockhausen pickle
-	 HU  = {HackInfo {ByteString.toString U}} 
+	 HU  = {HackInfo {ByteString.toString U}}
 	 URL = {OzURL.make HU}
       in
 	 if {IsOzScheme URL} then
@@ -93,7 +93,7 @@ define
 	    tag(EVALUATED NONE {Module.link [HU]}.1)
 	 else
 	    try continue(arg({Pickle.load HU}) TaskStack.2)
-	    catch E=error(url(load _) ...) then   %--**
+	    catch E=system(os(os ...) ...) then
 	       exception(nil con(IoException
 				 I_name: U
 				 I_function: {ByteString.make 'load'}
