@@ -60,13 +60,16 @@ functor MkBackendMozart(structure ComponentManager: COMPONENT_MANAGER
 		    in
 			case parseUrl (Source.url desc) of
 			    SOME filename =>
-				let
-				    val q = TextIO.openOut (filename ^ ".ozm")
-				in
-				    TextIO.output
-					(q, CodeGenPhase.dumpTarget x);
-				    TextIO.closeOut q
-				end
+				if !Switches.Debug.dumpTarget then
+				    let
+					val q =
+					    TextIO.openOut (filename ^ ".ozm")
+				    in
+					TextIO.output
+					    (q, CodeGenPhase.dumpTarget x);
+					    TextIO.closeOut q
+				    end
+				else ()
 			  | NONE => ();   (*--** dump to stdout *)
 			Target.COMPONENT
 			    {component = fn () => CodeGenPhase.component x,
