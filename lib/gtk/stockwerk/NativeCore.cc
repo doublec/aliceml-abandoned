@@ -502,13 +502,11 @@ DEFINE1(NativeCore_signalMapGetConnIds) {
 class MyFinalization: public Finalization {
 public:
   void Finalize(word value) {
-    //g_message("finalizing %p (%d)", p, value);
     Tuple *t = Tuple::FromWord(value);
-    //    void *p = Store::WordToUnmanagedPointer(t->Sel(0));
-    //    int type = Store::WordToInt(t->Sel(1));
-    __unrefObject(Store::WordToUnmanagedPointer(t->Sel(0)),
-                  Store::WordToInt(t->Sel(1)));
-    //g_message("finalized %p (type %d)", p, type);
+    void *p  = Store::WordToUnmanagedPointer(t->Sel(0));
+    int type = Store::WordToInt(t->Sel(1));
+//      g_print("Finalize: (Pointer: %p, Type: %s)\n", p, getObjectType(type));
+    __unrefObject(p, type);
   }
 };
 
@@ -541,7 +539,7 @@ DEFINE2(NativeCore_weakMapCondGet) {
 DEFINE1(NativeCore_unrefObject) {
   DECLARE_OBJECT_WITH_TYPE(p,type,x0);
   __unrefObject(p,type);  
-  RETURN(x0);
+  RETURN_UNIT;
 } END
 
 DEFINE1(NativeCore_hasSignals) {
