@@ -1,6 +1,7 @@
 ../../lib/bootstrap/Bootstrap.aus
 ../../lib/bootstrap/Word.aus
 ../../lib/bootstrap/TextIO.aus
+../../lib/bootstrap/OS.aus
 ../../lib/bootstrap/Unix.aus
 ../../lib/bootstrap/ml-yacc/base.sig
 ../../lib/bootstrap/ml-yacc/join.sml
