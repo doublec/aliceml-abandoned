@@ -158,6 +158,7 @@ define
 	       'Corrupt': CorruptException
 	       '\'Corrupt': CorruptException
 	       'extension': Extension
+	       'getInitialTable': fun {$ unit} nil end   %--**
 	       'save':
 		  fun {$ Filename Component}
 		     {Trace 'component' 'save '#Filename}

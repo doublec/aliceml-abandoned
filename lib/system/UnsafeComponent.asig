@@ -23,6 +23,8 @@ signature UNSAFE_COMPONENT_COMPONENT =
 
 		val extension: string
 
+		val getInitialTable: unit -> (string * 'sign * 'str) list
+
 		val save: string * 'component -> unit   (* IO.Io, Sited *)
 		val load: string -> 'component          (* IO.Io, Corrupt *)
 		val apply: 'body * (Label.t * 'str) vector -> 'str
