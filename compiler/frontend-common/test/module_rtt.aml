@@ -20,7 +20,13 @@ struct
     structure X5 = X2 :  S0
     structure X6 = X2 :> S0
 
-    structure _ = Inspector.Inspect(signature S = S1 structure X = X0)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X0)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X1)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X2)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X3)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X4)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X5)
+    structure _ = Inspector.Inspect(signature S = S0 structure X = X6)
 
     signature T0 =
     sig
@@ -60,6 +66,16 @@ struct
 	open Y
 	open X
     end
+
+    structure _ = Inspector.InspectSig(signature S = S0)
+    structure _ = Inspector.InspectSig(signature S = S1)
+    structure _ = Inspector.InspectSig(signature S = S2)
+    structure _ = Inspector.InspectSig(signature S = T0)
+    structure _ = Inspector.InspectSig(signature S = T1)
+    structure _ = Inspector.InspectSig(signature S = T2)
+    structure _ = Inspector.InspectSig(signature S = U0)
+    structure _ = Inspector.InspectSig(signature S = U1)
+    structure _ = Inspector.InspectSig(signature S = U2)
 
     val _ = TextIO.inputLine(TextIO.stdIn)
     val _ = OS.Process.exit(OS.Process.success)
