@@ -7,10 +7,8 @@ Bugs:
 
 Missing Features:
 
-* propagate output width on init and after resize
+* propagate output width on init and after resize (requires Pango binding)
 * comment/uncomment region?
 * cumulative undo?
 * redo?
 * incremental search?
-* restricted search&replace in selected area (like Vi's :%s/foo/bar/g)?
-* search & replace with regex (including \N in replacements)?

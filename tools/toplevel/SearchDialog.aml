@@ -165,7 +165,7 @@ structure SearchDialog =
 
 		val _ = Gtk.dialogSetHasSeparator(dia,false)
 		val hbox1 = Gtk.hboxNew(false,0)
-		val label1 = Gtk.labelNew("Go to Line: ")
+		val label1 = Gtk.labelNew("Go to line: ")
 		val entry1 = Gtk.entryNew()
 		val _ = Gtk.entrySetActivatesDefault(entry1, true)
 		val _ = Gtk.boxPackStart(hbox1,label1,false,false,0)
