@@ -9,7 +9,7 @@
     structure HttpServer : HTTP_SERVER</PRE>
 
   <P>
-    This structure provides a simple, extensible server for the HTTP
+    This structure provides a simple, extensible server for the HTTP/1.1
     protocol as specified in RFC&nbsp;2616.
   </P>
 
@@ -34,6 +34,8 @@
     sig
 	type <A href="#handler">handler</A> = <A href="http.html#request">Http.request</A> -> <A href="http.html#response">Http.response</A>
 
+	val <A href="#idleTime">idleTime</A> : <A href="time.html#t">Time.t</A> ref
+
 	val <A href="#start">start</A> : int option -> int
 	val <A href="#register">register</A> : <A href="url.html#t">Url.t</A> * handler -> unit
     end</PRE>
@@ -48,6 +50,14 @@
     </DT>
     <DD>
       <P>The type of handlers for HTTP requests.</P>
+    </DD>
+
+    <DT>
+      <TT><A name="#idleTime">idleTime</A></TT>
+    </DT>
+    <DD>
+      <P>specifies the length of time to allow persistent connections to
+	be idle before they are closed.</P>
     </DD>
 
     <DT>
