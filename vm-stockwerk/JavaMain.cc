@@ -12,34 +12,11 @@
 //   $Revision$
 //
 
-#include "generic/SignalHandler.hh"
-#include "generic/RootSet.hh"
-#include "generic/UniqueString.hh"
-#include "generic/Transients.hh"
-#include "generic/TaskStack.hh"
-#include "generic/IOHandler.hh"
-#include "generic/IODesc.hh"
+#include <cstdio>
 #include "generic/Scheduler.hh"
-#include "generic/Primitive.hh"
-#include "generic/Unpickler.hh"
-#include "generic/Pickler.hh"
-#include "generic/PushCallWorker.hh"
-#include "generic/BindFutureWorker.hh"
-#if PROFILE
-#include "generic/Profiler.hh"
-#endif
 #include "java/JavaLanguageLayer.hh"
 #include "java/Startup.hh"
-
-#if !(defined(__MINGW32__) || defined(_MSC_VER))
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#endif
-
-static u_int mb(u_int n) {
-  return n << 20;
-}
+#include "InitSeam.hh"
 
 static int JavaMain(u_int argc, char *argv[]) {
   if (argc < 2) {
@@ -47,28 +24,7 @@ static int JavaMain(u_int argc, char *argv[]) {
     return 2;
   }
 
-  // Set up the store:
-  u_int memLimits[STORE_GENERATION_NUM];
-  memLimits[0] = mb(16);
-  memLimits[1] = mb(15);
-  memLimits[2] = mb(35);
-  Store::InitStore(memLimits, 67, 20);
-  // Set up datastructures:
-  RootSet::Init();
-  UniqueString::Init();
-  TaskStack::Init();
-  IOHandler::Init();
-  IODesc::Init();
-  SignalHandler::Init();
-  Scheduler::Init();
-#if PROFILE
-  Profiler::Init();
-#endif
-  // Set up interpreters and services:
-  PushCallWorker::Init();
-  BindFutureWorker::Init();
-  Unpickler::Init();
-  Pickler::Init();
+  InitSeam();
   // Set up Java Language Layer:
   JavaLanguageLayer::Init();
   // Link and execute boot component:
