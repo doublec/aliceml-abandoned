@@ -35,10 +35,6 @@ The same idea can be used for providing tickets:
 	functor Connection(type t) :
 		sig
 		    type ticket
-
-		    val toString : ticket -> string
-		    val fromString : string -> ticket
-
 		    val offer : t -> ticket
 		    val take : ticket -> t
 		end
@@ -146,8 +142,11 @@ already implemented in OCaml, so there should be no
 fundamental problems.
 
 
-Note also that OCaml already provides Marshalling, but
-in an unsafe way, via the structure
+NOTE
+====
+
+OCaml also provides Marshalling, but in an unsafe way,
+via the structure
 
 	Marshal :
 	    sig
