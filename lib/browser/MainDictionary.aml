@@ -13,9 +13,9 @@
  *
  *)
 
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure MkDictionary from "MkDictionary" 
 import structure Types from "Types"
-import structure Services from "Services"
 
 local 
     
@@ -23,7 +23,7 @@ local
 
 in
 
-    structure MainDictionary = MkDictionary(type t = node * Services.tag )
+    structure MainDictionary = MkDictionary(type t = node * Gtk.object )
 
 end
 

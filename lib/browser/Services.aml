@@ -29,23 +29,10 @@ import signature SERVICES from "SERVICES-sig"
 	       type tag = Gtk.object
 	       type color = Gtk.object
 		  
-	       fun fontHeight() = 
-		   let 
-		       val font = !Settings.font
-		       val height = Gdk.fontGetFieldAscent(font)+
-			   Gdk.fontGetFieldDescent(font)
-		   in
-		       height
-		   end
+	       fun fontHeight() = !Settings.fontHeight 
 	       
-	       fun fontWidth() = 
-		   let
-		       val font = !Settings.font
-		   in
-		       Gdk.stringWidth(font,"W")
-		   end   
+	       fun fontWidth() = !Settings.fontWidth
 
- 
 	       fun newTag(parent,x,y) = 
 		   GtkCanvas.itemNew(parent, 
 				     GtkCanvas.GROUP,

@@ -30,6 +30,8 @@ sig
 
     val fontname: string ref
     val font: Gtk.object ref
+    val fontHeight: int ref
+    val fontWidth: int ref
 
     val set_width: int -> unit
     val set_depth: int -> unit
