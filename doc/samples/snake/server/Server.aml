@@ -132,27 +132,23 @@ struct
               processes outstanding RPCs on channel [chan].
              *)
             fun actualInvoke (event : event, chan) =
-                let
-                    val rpc     = Channel.receive chan
+                if not (! $ #disconnected event) then
+                    let
+                        val rpc     = Channel.receive chan
 
-                    val _       = rpc () handle e =>
-                        ((* client has raised an exception,
-                            this shouldn't happen therefore
-                            remove it! *)
-                         (* by notifying tick that this client
-                            is disconnected. *)
-                        #disconnected event := true;
-                        (* and destroying this channel. *)
-                        Channel.destroy chan)
-                 in
-                    (* only continue if client has NOT raised
-                       an exception
-                     *)
-                    if not ( ! $ #disconnected event) then
-                        (* process next rpc *)
+                        val _       = rpc () handle e =>
+                            ((* client has raised an exception,
+                                this shouldn't happen therefore
+                                remove it! *)
+                             (* by notifying tick that this client
+                                is disconnected. *)
+                            #disconnected event := true;
+                            (* and destroying this channel. *)
+                            Channel.destroy chan)
+                    in
                         actualInvoke (event, chan)
-                    else ()
-                end 
+                    end handle Channel.Closed => ()
+                else ()
                     
                  
 	    (* schedule an RPC call.  

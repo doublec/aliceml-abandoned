@@ -2,11 +2,13 @@ signature CHANNEL =
 sig
     type 'a channel
 
+    exception Closed
+
     val channel : unit -> 'a channel
 
     val send : 'a channel * 'a -> unit
 
-    val receive : 'a channel -> 'a 
+    val receive : 'a channel -> 'a (* Closed *)
 
     val length : 'a channel -> int
 
