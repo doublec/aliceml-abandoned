@@ -82,18 +82,16 @@ struct
     fun xml_load name =  
 	let 
 	    val file = TextIO.openIn name
-	    val _ = print ("loading "^name^"...\n")
+	    (*val _ = print ("loading "^name^"...\n")*)
 	    val lst = String.explode(TextIO.inputAll file)
 	    val _ = TextIO.closeIn file
 
-	    val _ = print "lexing...\n"
+	    (*val _ = print "lexing...\n"*)
 	    val tokens = lexerXML lst
 	    (*val _ = print_tokens tokens*)
 
-	    val _ = print "parsing...\n"
+	    (*val _ = print "parsing...\n"*)
 	    val (tag,xr) = parseXML tokens
-
-	    val _ = print "(done)\n"
 
 	in case xr of 
 	    nil => tag

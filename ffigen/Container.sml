@@ -56,7 +56,6 @@ struct
     fun setName name = my_name := name
     fun getName() = !my_name
 
-
     (* Helper Functions *)
 
     fun CreateProduct 0 = ""
@@ -90,7 +89,7 @@ struct
 	  | getCType' obj LONGDOUBLE = "long double" ^ (space obj)
 	  | getCType' obj VOID = "void" ^ (space obj)
 	  | getCType' obj (CONST t) = "const " ^ (getCType'' obj t)
-	  | getCType' obj (ELLIPSES _) = raise Warning "Ellipses not supported."
+	  | getCType' obj (ELLIPSES _) = "..."
 	  | getCType' obj BOOL = "bool" ^ (space obj)
 	  | getCType' obj STRING = "char*" ^ (space obj)
 	  | getCType' obj (POINTER(ARRAY c)) = "("^(getCType'' obj (ARRAY c))^")*"
@@ -135,19 +134,35 @@ struct
 				       else (); 
 				       s'))
 		
-	    fun getAliceType' (CHAR _) = "int"
+	    fun getAliceType' (POINTER(CONST(CHAR _))) = "c_char pointer"
+	      | getAliceType' (POINTER(CHAR _)) = "c_char pointer"
+	      | getAliceType' (CHAR _) = "char"
+	      | getAliceType' (POINTER(CONST(SHORT _))) = "c_short pointer"
+	      | getAliceType' (POINTER(SHORT _)) = "c_short pointer"
 	      | getAliceType' (SHORT _) = "int"
+	      | getAliceType' (POINTER(CONST(INT _))) = "c_int pointer"
+	      | getAliceType' (POINTER(INT _)) = "c_int pointer"
 	      | getAliceType' (INT _) = "int"
+	      | getAliceType' (POINTER(CONST(LONG _))) = "c_long pointer"
+	      | getAliceType' (POINTER(LONG _)) = "c_long pointer"
 	      | getAliceType' (LONG _) = "int"
+	      | getAliceType' (POINTER(CONST(LONGLONG _))) = "c_lonlong pointer"
+	      | getAliceType' (POINTER(LONGLONG _)) = "c_lonlong pointer"
 	      | getAliceType' (LONGLONG _) = "int"
+	      | getAliceType' (POINTER(CONST FLOAT)) = "c_float pointer"
+	      | getAliceType' (POINTER FLOAT) = "c_float pointer"
 	      | getAliceType' FLOAT = "real"
+	      | getAliceType' (POINTER(CONST DOUBLE)) = "c_double pointer"
+	      | getAliceType' (POINTER DOUBLE) = "c_double pointer"
 	      | getAliceType' DOUBLE = "real"
+	      | getAliceType' (POINTER(CONST LONGDOUBLE)) = "c_longdouble pointer"
+	      | getAliceType' (POINTER LONGDOUBLE) = "c_longdouble pointer"
 	      | getAliceType' LONGDOUBLE = "real"
 	      | getAliceType' VOID = "unit"
 	      | getAliceType' (CONST t) = getAliceType' t
-	      | getAliceType' (ELLIPSES _) = raise Warning "Ellipses not supported."
+	      | getAliceType' (ELLIPSES _) = ""
 	      | getAliceType' BOOL = "boolean"
-	      | getAliceType' (POINTER(FUNCTION(t,tr))) = "cfun"
+	      | getAliceType' (POINTER(FUNCTION(t,tr))) = "c_fun"
 	      | getAliceType' (POINTER VOID) = getAliceType'' (POINTER(TYPE_VAR NONE))
 	      | getAliceType' (POINTER(CONST(VOID))) = getAliceType'' (POINTER(TYPE_VAR NONE))
 	      | getAliceType' (POINTER t) = getAliceType'' t^" pointer"
@@ -185,7 +200,7 @@ struct
       | fromWord' (LONGDOUBLE) = "DECLARE_CLONGDOUBLE"
       | fromWord' (VOID) = raise Warning "fromWord: VOID"
       | fromWord' (CONST t) = fromWord' t
-      | fromWord' (ELLIPSES _) = raise Warning "Ellipses not supported."
+      | fromWord' (ELLIPSES _) = raise Warning "fromWord' Ellipses"
       | fromWord' (BOOL) = "DECLARE_BOOL"
       | fromWord' (POINTER ty) = "DECLARE_UNMANAGED_POINTER"
       | fromWord' (STRING) = "DECLARE_CSTRING"
@@ -200,10 +215,9 @@ struct
       | fromWord' (TYPE_VAR _) = raise Warning "fromWord: TYPE_VAR"
 
     and fromWord ty =
-	case  Config.isSpecialType(getCType ty) of
+	case Config.isSpecialType(getCType ty) of
 	    NONE => fromWord' ty
 	  | (SOME{fromword=fromword',...}) => fromword'
-
 
     (* Wandelt einen C-Wert in ein Word um *)
 
@@ -217,7 +231,7 @@ struct
       | toWord' LONGDOUBLE = "LONGDOUBLE_TO_WORD"
       | toWord' VOID = raise Warning "toWord: VOID"
       | toWord' (CONST t) = toWord' t
-      | toWord' (ELLIPSES _) = raise Warning "Ellipses not supported."
+      | toWord' (ELLIPSES _) = raise Warning "toWord' Ellipses"
       | toWord' BOOL = "BOOL_TO_WORD"
       | toWord'(POINTER t) = "UNMANAGED_POINTER_TO_WORD"
       | toWord' STRING = "STRING_TO_WORD"
@@ -251,7 +265,10 @@ struct
       | MyFromWord (t,s,FUNCTION _) = raise Warning "MyFromWord: FUNCTION"
       | MyFromWord (t,s,STRUCTREF s0) = raise Warning "MyFromWord: STRUCTREF"
       | MyFromWord (t,s,UNIONREF s0) = raise Warning "MyFromWord UNIONREF"
-      | MyFromWord (t,s,TYPEREF(s0,ty)) = MyFromWord(t,s,ty)
+      | MyFromWord (t,s,TYPEREF(s0,ty)) = 
+	  (case Config.isSpecialType s0 of
+	       NONE => MyFromWord(t,s,ty)
+	    | (SOME{fromword=fromword',...}) => fromword'^"("^t^","^s^")")
       | MyFromWord (t,s,ty) = (fromWord ty) ^"("^t^","^s^")"
 
     (* Erstellt falls nötig einen const_cast *)
@@ -274,10 +291,10 @@ struct
     (* Wandelt alle Parameter von Words in C-Werte um *)
 
     fun DeclareParameters n nil = ""
-      | DeclareParameters n (VOID::xr) = DeclareParameters (n+1) xr
+      | DeclareParameters n (VOID::xr) = DeclareParameters (n+1) xr 
+      | DeclareParameters n ((ELLIPSES _)::xr) = DeclareParameters (n+1) xr
       | DeclareParameters n (x::xr) = "\t"^MyFromWord("y"^(Int.toString n),"x"^(Int.toString n),x)^";\n" ^
 	DeclareParameters (n+1) xr  
-
 	
     (* Erstellt einen Funktionsaufruf *)
 
@@ -317,12 +334,16 @@ struct
 	 add_component_string ("\t"^export');
 	 update())
 
+    fun find_ellipses nil = false
+      | find_ellipses ((ELLIPSES _)::xr) = true
+      | find_ellipses (x::xr) = find_ellipses xr
+
     fun addFun_intern(name,param,result,body) b =
 	if length param > 16 then raise Warning "Functions with more than 16 Arguments are not supported."
 	else
 	    (add_sign(name,FUNCTION(result,param));
 	     add_binding_fun(name,result,param,body,b);
-	     add_component_fun(name,length param);
+	     add_component_fun(name,(length param) - (if find_ellipses param then 1 else 0));
 	     update(); true)
 
     fun addFun'(x as (name,param,result,body)) b =

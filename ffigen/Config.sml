@@ -36,6 +36,7 @@ struct
 
     (* Hier wird die Konfiguation gespeichert *)
     val filters = ref nil : filter list list ref
+    val defined_types = ref nil : string list ref
     val types = ref nil : descr_map list ref
     val user_funs = ref nil : user_fun list ref
     val enum_as_int = ref nil : string list ref
@@ -51,8 +52,8 @@ struct
      
       | handle_filter_entry _ = raise Error "Wrong filter definition."
 
-    fun handle_filter (T(_,STR _)) = nil
-      |	handle_filter (T(_,CHILDS fr)) = map handle_filter_entry fr
+    fun handle_filter (T("filter",STR _)) = nil
+      |	handle_filter (T("filter",CHILDS fr)) = map handle_filter_entry fr
 
     (* Wendet den Filter an *)
 
@@ -77,6 +78,12 @@ struct
 	     NONE => CMD_REJECT
 	   |(SOME CMD_REJECT) => CMD_REJECT
 	   |(SOME(CMD_ACCEPT name')) => apply_filter name' xr)
+
+    (* Bearbeitet einen define_type Abschnitt in der Config Datei *)
+
+    fun handle_define_type (T("define_type",
+		       CHILDS[T("name",STR name)])) = name
+      | handle_define_type _ = raise Error "Error in define_type section."
 
     (* Bearbeitet einen type Abschnitt in der Config Datei *)
 
@@ -139,7 +146,11 @@ struct
 	    (* Liest die Filter *)
 	    val filter_tags = xml_get_child("filter",xml)
 	    val _ = filters := map handle_filter filter_tags
-	   
+
+	   (* Liest die zu deklarierenden Typen *)
+	    val define_type_tags = xml_get_child("define_type",xml)
+	    val _ = defined_types := map handle_define_type define_type_tags
+
 	    (* Liest die special types *)
 	    val type_tags = xml_get_child("type",xml)
 	    val _ = types := map handle_type type_tags
@@ -167,6 +178,7 @@ struct
 
     fun applyFilter name = apply_filter name (!filters)
 
+    fun getDefinedTypes() = !defined_types
 
     (* Liefert die Sonderbehandlung fuer einen bestimmten Typ zurueck. *)
 	

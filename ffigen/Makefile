@@ -21,7 +21,6 @@ $(GENERATOR):
 	rm -f $(GENERATOR)
 	echo 'CM.make(); compile();' | $(SML)
 	test -e $(GENERATOR) || exit 1
-	cp $(GENERATOR) ffigen
 
 ########################## CLEANING ###########################
 

@@ -132,7 +132,7 @@ struct
 			    {ntype=SOME(Bindings.Typedef(_,t')),...} => 
 				convType t'
 			  | _ => raise EUnknown
-		in
+		in 
 		    TYPEREF (getTypeNameFromID id, t)
 		end
 

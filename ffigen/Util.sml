@@ -25,6 +25,8 @@ struct
     local
 	fun Product' nil = ""
 	  | Product' [s] = s
+	  | Product' (""::sr) = Product' sr
+	  | Product' (s::""::sr) = Product' (s::sr)
 	  | Product' (s::sr) = s ^ " * " ^ Product' sr
     in
 	fun Product nil = "unit"
