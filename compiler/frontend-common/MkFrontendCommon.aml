@@ -41,7 +41,7 @@ functor MkFrontendCommon(
 	structure Phase1 =
 		  MkTracingPhase(
 			structure Phase =
-			    MkElaborationPhase(val       loadSign = loadSign
+			    MkElaborationPhase(val       loadSig  = loadSign
 					       structure Switches = Switches)
 			structure Switches = Switches
 			val name = "Elaboration"
