@@ -645,8 +645,9 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
       jit_pushr_ui(Closure); // Closure
       jit_pushr_ui(JIT_V2);  // Continuation
       JITStore::Call(2, (void *) NativeCodeInterpreter::FastPushCall);
-      ResetRegister();
       jit_movr_p(JIT_V2, JIT_R0); // Move to new frame
+      CheckPreempt(info->pc);
+      ResetRegister();
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
@@ -668,6 +669,8 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       NativeCodeFrame::PutCode(JIT_V1, JIT_R0);
       jit_movr_p(JIT_V2, JIT_V1); // Move to new frame
+      CheckPreempt(info->pc);
+      NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
     }
@@ -676,6 +679,13 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
     {
       jit_pushr_ui(Closure);
       JITStore::Call(1, (void *) Scheduler::PushCall);
+      jit_insn *no_cont =
+	jit_bnei_ui(jit_forward(), JIT_R0, Interpreter::CONTINUE);
+      LoadStatus(JIT_FP);
+      jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
+      jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
+      jit_patch(no_preempt);
+      jit_patch(no_cont);
       RETURN();
     }
     break;
@@ -685,10 +695,10 @@ void NativeCodeJitter::PushCall(u_int Closure, CallInfo *info) {
 #endif
 }
 
-void NativeCodeJitter::DirectCall(Interpreter *interpreter, void *ptr) {
+void NativeCodeJitter::DirectCall(Interpreter *interpreter) {
   jit_movi_p(JIT_R0, interpreter);
   jit_pushr_ui(JIT_R0);
-  JITStore::Call(1, ptr);
+  JITStore::Call(1, (void *) Primitive::Execute);
   RETURN();
 }
 
@@ -704,8 +714,9 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
     {
       jit_pushr_ui(Closure);
       JITStore::Call(1, (void *) NativeCodeInterpreter::TailPushCall);
-      ResetRegister();
       jit_movr_p(JIT_V2, JIT_R0); // Move to new Frame
+      CheckPreempt(info->pc);
+      ResetRegister();
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
@@ -714,6 +725,7 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
   case SELF_CALL:
     {
       NativeCodeFrame::ReplaceClosure(JIT_V2, Closure);
+      CheckPreempt(info->pc);
       NativeCodeFrame::GetCode(JIT_R0, JIT_V2);
       jit_addi_p(JIT_R0, JIT_R0, info->pc);
       jit_jmpr(JIT_R0);
@@ -724,6 +736,13 @@ void NativeCodeJitter::TailCall(u_int Closure, CallInfo *info) {
       jit_pushr_ui(Closure);
       Generic::Scheduler::PopFrames(1);
       JITStore::Call(1, (void *) Scheduler::PushCall);
+      jit_insn *no_cont =
+	jit_bnei_ui(jit_forward(), JIT_R0, Interpreter::CONTINUE);
+      LoadStatus(JIT_FP);
+      jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
+      jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
+      jit_patch(no_preempt);
+      jit_patch(no_cont);
       RETURN();
     }
     break;
@@ -953,6 +972,21 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   RETURN();
 }
 
+void NativeCodeJitter::LoadStatus(u_int Dest) {
+  JITStore::LoadStatus(Dest);
+  u_int mask = Store::GCStatus() | Scheduler::PreemptStatus();
+  jit_andi_ui(Dest, Dest, mask);
+}
+
+void NativeCodeJitter::CheckPreempt(u_int pc) {
+  LoadStatus(JIT_R0);
+  jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+  SetRelativePC(Store::IntToWord(pc));
+  jit_movi_ui(JIT_R0, Interpreter::PREEMPT);
+  RETURN();
+  jit_patch(no_preempt);
+}
+
 u_int NativeCodeJitter::CompilePrimitive(INLINED_PRIMITIVE primitive,
 					 Vector *actualIdRefs) {
   u_int Result;
@@ -1092,10 +1126,31 @@ void NativeCodeJitter::NormalAppPrim(Closure *closure, TagVal *pc) {
   ConcreteCode *concreteCode =
     ConcreteCode::FromWord(closure->GetConcreteCode());
   Interpreter *interpreter = concreteCode->GetInterpreter();
-  if (nArgs == interpreter->GetArity())
-    DirectCall(interpreter, (void *) Primitive::ExecuteNoCCC);
-  else
-    DirectCall(interpreter, (void *) Primitive::Execute);
+  u_int arity              = interpreter->GetArity();
+  word instrPC             = Store::IntToWord(GetRelativePC());
+  if (arity != nArgs) {
+    switch (arity) {
+    case 0:
+      Assert(nArgs == 1);
+      // Request unit to be done
+      break;
+    case 1:
+      Prepare();
+      JITStore::Call(0, (void *) Interpreter::Construct);
+      Finish();
+      break;
+    default:
+      Prepare();
+      JITStore::Call(0, (void *) Interpreter::Deconstruct);
+      Finish();
+      jit_insn *no_request = jit_beqi_ui(jit_forward(), JIT_R0, 0);
+      SetRelativePC(instrPC);
+      jit_movi_ui(JIT_RET, Interpreter::REQUEST);
+      RETURN();
+      jit_patch(no_request);
+    }
+  }
+  DirectCall(interpreter);
 #endif
 }
 
@@ -1137,9 +1192,7 @@ void NativeCodeJitter::LoadArguments(TagVal *actualArgs) {
 }
 
 // App(Var|Const) of idRef * idRef args * (idDef args * instr) option
-void NativeCodeJitter::AppVarPrim(TagVal *pc,
-				  Interpreter *interpreter,
-				  void *ptr) {
+void NativeCodeJitter::AppVarPrim(TagVal *pc, Interpreter *interpreter) {
   TagVal *idDefArgsInstrOpt = TagVal::FromWord(pc->Sel(2));
   if (idDefArgsInstrOpt != INVALID_POINTER)
     CompileContinuation(idDefArgsInstrOpt);
@@ -1148,7 +1201,7 @@ void NativeCodeJitter::AppVarPrim(TagVal *pc,
   LoadArguments(TagVal::FromWordDirect(pc->Sel(1)));
   if (idDefArgsInstrOpt != INVALID_POINTER)
     KillVariables();
-  DirectCall(interpreter, ptr);
+  DirectCall(interpreter);
 }
 
 static inline bool SkipCCC(TagVal *actualArgs, TagVal *calleeArgs) {
@@ -1187,33 +1240,23 @@ void NativeCodeJitter::AppVar(TagVal *pc, word wClosure) {
 	    info.pc = nativeCode->GetSkipCCCPC();
 	  }
 	}
-	else {
-	  Interpreter::function func = interpreter->GetCFunction();
-	  if (func != NULL) {
-	    u_int arity = interpreter->GetArity();
-	    void *ptr;
-	    switch (AbstractCode::GetArgs(actualArgs)) {
-	    case AbstractCode::OneArg:
-	      if (arity == 1)
-		ptr = (void *) Primitive::ExecuteNoCCC;
-	      else
-		ptr = (void *) Primitive::Execute;
-	      break;
-	    case AbstractCode::TupArgs:
-	      if (arity > 1)
-		ptr = (void *) Primitive::ExecuteNoCCC;
-	      else
-		ptr = (void *) Primitive::Execute;
-	      break;
-	    default:
-	      ptr = (void *) Primitive::Execute;
-	    }
-	    AppVarPrim(pc, interpreter, ptr);
-	    return;
+	else if (interpreter->GetCFunction() != NULL) {
+	  u_int arity = interpreter->GetArity();
+	  switch (AbstractCode::GetArgs(actualArgs)) {
+	  case AbstractCode::OneArg:
+	    if (arity != 1)
+	      CompileCCC(actualArgs);
+	    break;
+	  case AbstractCode::TupArgs:
+	    if (arity <= 1)
+	      CompileCCC(actualArgs);
+	    break;
 	  }
-	  else
-	    info.mode = NORMAL_CALL;
+	  AppVarPrim(pc, interpreter);
+	  return;
 	}
+	else
+	  info.mode = NORMAL_CALL;
       }
       else
 	info.mode = NORMAL_CALL;
@@ -1514,7 +1557,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
 #if defined(JIT_STORE_DEBUG)
   JITStore::LogMesg(GetPrimitveName(pc->Sel(0)));
 #endif
-  Closure *closure = Closure::FromWord(pc->Sel(0));
+  Closure *closure      = Closure::FromWord(pc->Sel(0));
   BlockHashTable *table = BlockHashTable::FromWordDirect(inlineTable);
   if (table->IsMember(closure->ToWord())) {
     word tag = table->GetItem(closure->ToWord());
@@ -1530,7 +1573,7 @@ TagVal *NativeCodeJitter::InstrAppPrim(TagVal *pc) {
       if (idDef != INVALID_POINTER) {
 	LocalEnvPut(JIT_V2, idDef->Sel(0), Result);
       }
-      CompileInstr(TagVal::FromWordDirect(idDefInstr->Sel(1)));
+      return TagVal::FromWordDirect(idDefInstr->Sel(1));
     }
     else {
       Generic::Scheduler::PopFrames(1);
@@ -2349,7 +2392,7 @@ NativeConcreteCode *NativeCodeJitter::Compile(TagVal *abstractCode) {
   Vector *liveness = Vector::FromWordDirect(abstractCode->Sel(5));
   assignment = RegisterAllocator::Run(nLocals, liveness);
 #if defined(JIT_STORE_DEBUG)
-  RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
+  //RegisterAllocator::Dump(abstractCode->Sel(0), nLocals, assignment);
 #endif
   u_int nSlots = MemoryNode::GetNbSlots();
 #else
