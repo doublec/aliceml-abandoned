@@ -32,7 +32,7 @@ STODEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 STOL = alicelink
 STOLOPTS = -v
 
-ALICESOURCES = REMOTE-sig.aml Remote.aml
+ALICESOURCES = REMOTE-sig.aml Remote.aml RemoteServer.aml
 
 NATIVES = Remote
 

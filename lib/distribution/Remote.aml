@@ -11,6 +11,10 @@
  *   $Revision$
  *)
 
+import signature COMPONENT_MANAGER
+			      from "x-alice:/lib/system/COMPONENT_MANAGER-sig"
+import structure Unix         from "x-alice:/lib/system/Unix"
+
 import signature REMOTE       from "REMOTE-sig"
 import structure UnsafeRemote from "UnsafeRemote"
 
@@ -36,4 +40,36 @@ structure Remote :> REMOTE =
 	functor Take(val ticket: string signature S) =
 	    Package.Unpack(val package = take ticket
 			   signature S = S)
+
+	functor Execute(val host: string
+			signature RESULT
+			functor Start(ComponentManager:
+				      COMPONENT_MANAGER): RESULT) =
+	    let
+		val p = Promise.promise ()
+		structure T =
+		    Offer(signature S =
+			      (signature RESULT
+			       functor Start(ComponentManager:
+					     COMPONENT_MANAGER): RESULT
+			       val return: Package.t -> unit)
+			  structure X =
+			      (signature RESULT = RESULT
+			       structure Start = Start
+			       val return =
+				   proxy (fn package =>
+					     Promise.fulfill (p, package))))
+		val _ =   (*--**DEBUG*)
+		    TextIO.print ("ssh " ^ host ^ " alicerun " ^
+				  "x-alice:/lib/distribution/RemoteServer " ^
+				  T.ticket ^ "\n")
+		val proc =
+		    Unix.execute ("ssh",
+				  [host, "alicerun",
+				   "x-alice:/lib/distribution/RemoteServer",
+				   T.ticket])
+	    in
+		Package.Unpack(val package = Promise.future p
+			       signature S = RESULT)
+	    end
     end
