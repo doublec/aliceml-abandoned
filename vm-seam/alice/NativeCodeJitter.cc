@@ -2640,8 +2640,8 @@ NativeCodeJitter::~NativeCodeJitter() {
 //             idDef args * instr * liveness
 NativeConcreteCode *
 NativeCodeJitter::Compile(LazyCompileClosure *lazyCompileClosure) {
-  TagVal *abstractCode = TagVal::FromWordDirect(lazyCompileClosure->Sub(0));
-  word concreteCode    = lazyCompileClosure->Sub(1);
+  TagVal *abstractCode = lazyCompileClosure->GetAbstractCode();
+  word concreteCode    = lazyCompileClosure->GetByneed();
 #if 0
   // Diassemble AbstractCode
   Tuple *coord1 = Tuple::FromWordDirect(abstractCode->Sel(0));
