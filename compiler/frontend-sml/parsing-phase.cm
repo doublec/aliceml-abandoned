@@ -6,17 +6,17 @@ Group is
 
 	input-grammar.cm
 
-	LEXER_ERROR.sig
-	LexerError.sml
-	PARSING_ERROR.sig
-	ParsingError.sml
+	LEXER_ERROR-sig.aml
+	MkLexerError.aml
+	PARSING_ERROR-sig.aml
+	ParsingError.aml
 
 	Lexer.lex
-	CountPosLexer.sml
+	MkCountPosLexer.aml
 	Parser.grm
 
-	DERIVED_FORMS.sig
-	DerivedForms.sml
+	DERIVED_FORMS-sig.aml
+	DerivedForms.aml
 
-	PARSING_PHASE.sig
-	ParsingPhase.sml
+	PARSING_PHASE-sig.aml
+	MkParsingPhase.aml
