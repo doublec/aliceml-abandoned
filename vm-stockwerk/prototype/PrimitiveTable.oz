@@ -25,6 +25,9 @@ define
    NONE = 0
    %SOME = 1
 
+   CONS = 0
+   NIL  = 1
+
    EQUAL   = 0
    GREATER = 1
    LESS    = 2
@@ -66,6 +69,37 @@ define
       end
    end
 
+   fun {RequestList Xs N}
+      case {Deref Xs} of Transient=transient(_) then request(Transient)
+      [] tuple(!CONS _ Xr) then {RequestList Xr N + 1}
+      [] !NIL then N
+      end
+   end
+
+   fun {RequestListAndElements Xs}
+      case {Deref Xs} of Transient=transient(_) then request(Transient)
+      [] tuple(!CONS X Xr) then
+	 case {Deref X} of Transient=transient(_) then request(Transient)
+	 else {RequestListAndElements Xr}
+	 end
+      [] !NIL then continue
+      end
+   end
+
+   proc {MyForAllInd Xs I F}
+      case {Deref Xs} of tuple(!CONS X Xr) then
+	 {F I X}
+	 {MyForAllInd Xr I + 1 F}
+      [] !NIL then skip
+      end
+   end
+
+   fun {ListToOz Xs}
+      case {Deref Xs} of tuple(!CONS X Xr) then {Deref X}|{ListToOz Xr}
+      [] !NIL then nil
+      end
+   end
+
    fun {IsFailed X}
       case {Deref X} of transient(TransientState) then
 	 case {Access TransientState} of cancelled(_) then 1
@@ -101,9 +135,6 @@ define
       end
    end
 
-   CONS = 0
-   NIL = 1
-
    fun {StringExplode S I N}
       if I == N then NIL
       else tuple(CONS {ByteString.get S I} {StringExplode S I + 1 N})
@@ -111,8 +142,8 @@ define
    end
 
    Primitives =
-   primitives('=': Value.'=='#rr_b
-	      '<>': Value.'\\='#rr_b
+   primitives('=': Value.'=='#rr_b   %--**
+	      '<>': Value.'\\='#rr_b   %--**
 	      'Array.array':
 		 fun {$ N X TaskStack}
 		    if 0 =< N andthen N < Table.'Array.maxLen' then
@@ -120,17 +151,16 @@ define
 		    else exception(nil Table.'General.Size' TaskStack.2)
 		    end
 		 end#rr_t
-	      'Array.fromList': missing('Array.fromList')   %--**
-/*
-		 fun {$ Xs} N A in
-		    N = {Length Xs}   %--**
-		    A = {Array.new 0 N - 1 unit}
-		    for X in Xs I in 0..N - 1 do
-		       A.I := X
+	      'Array.fromList':
+		 fun {$ Xs TaskStack}
+		    case {RequestList Xs 0} of request(Transient) then
+		       request(Transient arg(Xs) TaskStack)
+		    elseof N then A in
+		       A = {Array.new 0 N - 1 unit}
+		       {MyForAllInd Xs 1 proc {$ I X} A.I := X end}
+		       continue(arg(A) TaskStack.2)
 		    end
-		    A
-		 end#li_v
-*/
+		 end#i_t
 	      'Array.length': fun {$ A} {Array.high A} + 1 end#r_v
 	      'Array.maxLen': value(0x7FFFFFF)
 	      'Array.sub':
@@ -192,21 +222,6 @@ define
 						taskStack: TaskStack)}
 		    continue(arg(Transient) TaskStack)
 		 end#r_t   %--** or i_t?
-
-/*
-	      fun {$ P}
-		 !!thread
-		      try
-			 {P unit}
-		      catch error(AliceE=alice(InnerE ...) ...) then
-			 {Value.byNeedFail
-			  error({AdjoinAt AliceE 1 FutureException(InnerE)})}
-		      [] error(InnerE ...) then
-			 {Value.byNeedFail error(FutureException(InnerE))}
-		      end
-		   end
-	      end
-*/
 	      'Future.isFailed': IsFailed#i_v
 	      'Future.isFuture':
 		 fun {$ X}
@@ -264,7 +279,7 @@ define
 		 fun {$ X Exn TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
 		       case {Access TransientState} of hole(MyFuture) then
-			  %--** exception wrapping
+			  %--** exception wrapping?
 			  NewTransientState = cancelled(Exn)
 		       in
 			  {Assign TransientState NewTransientState}
@@ -478,7 +493,16 @@ define
 	      'String.compare': StringCompare#rr_v
 	      'String.explode':
 		 fun {$ S} {StringExplode S 0 {ByteString.length S}} end#r_v
-	      'String.implode': missing('String.implode')   %--** ByteString.make
+	      'String.implode':
+		 fun {$ Cs TaskStack}
+		    case {RequestListAndElements Cs}
+		    of request(Transient) then
+		       request(Transient arg(Cs) TaskStack)
+		    [] continue then
+		       continue(arg({ByteString.make {ListToOz Cs}})
+				TaskStack.2)
+		    end
+		 end#i_t
 	      'String.maxSize': value(0x7FFFFFFF)
 	      'String.size': ByteString.length#r_v
 	      'String.sub':
@@ -498,23 +522,14 @@ define
 		    end
 		 end#rrr_t
 	      'String.str': fun {$ C} {ByteString.make [C]} end#r_v
-	      'Thread.Terminate': missing('Thread.Terminate')   %--**
-	      'Thread.current': missing('Thread.current')   %--**
+	      'Thread.Terminate': value({NewUniqueName 'Thread.Terminate'})
+	      'Thread.current':
+		 fun {$} {Scheduler.object getCurrentThread($)} end#n_v
 	      'Thread.isSuspended': missing('Thread.isSuspended')   %--**
 	      'Thread.raiseIn': missing('Thread.raiseIn')   %--**
 	      'Thread.resume': missing('Thread.resume')   %--**
 	      'Thread.state': missing('Thread.state')   %--**
-	      'Thread.suspend': missing('Thread.suspend')   %--**
-	      'Thread.yield': missing('Thread.yield')   %--**
 /*
-	      'Thread.Terminate': kernel(terminate)
-	      'Thread.current':
-		 fun {$ unit} {Thread.this} end
-	      'Thread.isSuspended': Thread.isSuspended
-	      'Thread.raiseIn':
-		 fun {$ T E} {Thread.injectException T E} unit end
-	      'Thread.resume':
-		 fun {$ T} {Thread.resume T} unit end
 	      'Thread.state':
 		 fun {$ T}
 		    case {Thread.state T} of runnable then 'RUNNABLE'
@@ -522,18 +537,26 @@ define
 		    [] terminated then 'TERMINATED'
 		    end
 		 end
-	      'Thread.suspend':
-		 fun {$ T} {Thread.suspend T} unit end
-	      'Thread.yield':
-		 fun {$ T} {Thread.preempt T} unit end
 */
+	      'Thread.suspend': missing('Thread.suspend')   %--**
+	      'Thread.yield':
+		 fun {$ TaskStack} preempt(args() TaskStack.2) end#n_t
 	      'Unsafe.Array.sub': Array.get#rr_v
 	      'Unsafe.Array.update':
 		 fun {$ A I X} {Array.put A I X} tuple() end#rrr_v
 	      'Unsafe.String.sub': ByteString.get#rr_v
 	      'Unsafe.Vector.sub': fun {$ V I} V.(I + 1) end#rr_v
 	      'Unsafe.cast': fun {$ X} X end#i_v
-	      'Vector.fromList': missing('Vector.fromList')   %--** fun {$ Xs _} {List.toTuple vector Xs} end
+	      'Vector.fromList':
+		 fun {$ Xs TaskStack}
+		    case {RequestList Xs 0} of request(Transient) then
+		       request(Transient arg(Xs) TaskStack)
+		    elseof N then V in
+		       V = {MakeTuple vector N}
+		       {MyForAllInd Xs 1 proc {$ I X} V.I = X end}
+		       continue(arg(V) TaskStack.2)
+		    end
+		 end#i_t
 	      'Vector.maxLen': value(0x7FFFFFF)
 	      'Vector.length': Width#r_v
 	      'Vector.sub':
@@ -543,14 +566,13 @@ define
 		       exception(nil Table.'General.Subscript' TaskStack.2)
 		    end
 		 end#rr_t
-	      'Vector.tabulate': missing('Vector.tabulate')   %--**
-/*
-		 fun {$ Args} N = Args.1 F = Args.2 V in
+	      'Vector.tabulate':
+		 fun {$ N F TaskStack} V NewFrame in
 		    V = {Tuple.make vector N}
-		    {For 1 N 1 proc {$ I} V.I = {F I - 1} end}
-		    V
-		 end
-*/
+		    NewFrame = vectorTabulate(VectorTabulateInterpreter
+					      V F 1 N)
+		    continue(arg(0) {F.1.1.pushCall F NewFrame|TaskStack.2})
+		 end#rr_t
 	      'Word.+':
 		 fun {$ X Y} {W2I {BootWord.'+' {I2W X} {I2W Y}}} end#rr_v
 	      'Word.-':
@@ -616,14 +638,40 @@ define
    end
 
    fun {Deconstruct Args}
-      case Args of arg(X) then X   %--** request
+      case Args of arg(X) then {Deref X}
       [] args(...) then Args
       end
    end
 
+   fun {VectorTabulateInterpreterRun Args TaskStack}
+      case TaskStack of vectorTabulate(_ V F I N)|Rest then
+	 V.I = {Construct Args}
+	 if I == N then continue(arg(V) Rest)
+	 else NewFrame in
+	    NewFrame = vectorTabulate(VectorTabulateInterpreter V F I + 1 N)
+	    continue(arg(I) {F.1.1.pushCall F NewFrame|Rest})
+	 end
+      end
+   end
+
+   fun {VectorTabulateInterpreterPushCall _ _}
+      {Exception.raiseError vectorTabulateInterpreterPushCall} unit
+   end
+
+   VectorTabulateInterpreter =
+   vectorTabulateInterpreter(run: VectorTabulateInterpreterRun
+			     handle:
+				fun {$ Debug Exn TaskStack}
+				   case TaskStack of Frame|Rest then
+				      exception(Frame|Debug Exn Rest)
+				   end
+				end
+			     pushCall: VectorTabulateInterpreterPushCall)
+
    fun {PrimitiveInterpreterRun Args TaskStack}
       case TaskStack of primitive(_ F Spec)|Rest then
-	 case Spec of n_v then continue(arg({F}) Rest)
+	 case Spec of n_t then {F TaskStack}
+	 [] n_v then continue(arg({F}) Rest)
 	 [] i_t then {F {Construct Args} TaskStack}
 	 [] i_v then continue(arg({F {Construct Args}}) Rest)
 	 [] r_t then X = {Construct Args} in
@@ -641,74 +689,114 @@ define
 	       request(Transient arg(Transient) TaskStack)
 	    elseof Y then continue(arg(if {F Y} then 1 else 0 end) Rest)
 	    end
-	 [] ii_t then T = {Deconstruct Args} in {F T.1 T.2 TaskStack}
-	 [] ii_v then T = {Deconstruct Args} in continue(arg({F T.1 T.2}) Rest)
-	 [] ir_t then T = {Deconstruct Args} in
-	    case {Deref T.2} of Transient=transient(_) then
-	       request(Transient args(T.1 Transient) TaskStack)
-	    elseof T2 then {F T.1 T2 TaskStack}
+	 [] ii_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then {F T.1 T.2 TaskStack}
 	    end
-	 [] ri_v then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2) TaskStack)
-	    elseof T1 then continue(arg({F T1 T.2}) Rest)
+	 [] ii_v then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then continue(arg({F T.1 T.2}) Rest)
 	    end
-	 [] rr_t then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2) TaskStack)
-	    elseof T1 then
+	 [] ir_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
 	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient) TaskStack)
-	       elseof T2 then {F T1 T2 TaskStack}
+		  request(Transient args(T.1 Transient) TaskStack)
+	       elseof T2 then {F T.1 T2 TaskStack}
 	       end
 	    end
-	 [] rr_v then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2) TaskStack)
-	    elseof T1 then
-	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient) TaskStack)
-	       elseof T2 then continue(arg({F T1 T2}) Rest)
+	 [] ri_v then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2) TaskStack)
+	       elseof T1 then continue(arg({F T1 T.2}) Rest)
 	       end
 	    end
-	 [] rr_b then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2) TaskStack)
-	    elseof T1 then
-	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient) TaskStack)
-	       elseof T2 then
-		  continue(arg(if {F T1 T2} then 1 else 0 end) Rest)
+	 [] rr_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient) TaskStack)
+		  elseof T2 then {F T1 T2 TaskStack}
+		  end
 	       end
 	    end
-	 [] rri_t then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2 T.3) TaskStack)
-	    elseof T1 then
-	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient T.3) TaskStack)
-	       elseof T2 then {F T1 T2 T.3 TaskStack}
+	 [] rr_v then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient) TaskStack)
+		  elseof T2 then continue(arg({F T1 T2}) Rest)
+		  end
 	       end
 	    end
-	 [] rri_v then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2 T.3) TaskStack)
-	    elseof T1 then
-	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient T.3) TaskStack)
-	       elseof T2 then continue(arg({F T1 T2 T.3}) Rest)
+	 [] rr_b then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient) TaskStack)
+		  elseof T2 then
+		     continue(arg(if {F T1 T2} then 1 else 0 end) Rest)
+		  end
 	       end
 	    end
-	 [] rrr_t then T = {Deconstruct Args} in
-	    case {Deref T.1} of Transient=transient(_) then
-	       request(Transient args(Transient T.2 T.3) TaskStack)
-	    elseof T1 then
-	       case {Deref T.2} of Transient=transient(_) then
-		  request(Transient args(T1 Transient T.3) TaskStack)
-	       elseof T2 then
-		  case {Deref T.3} of Transient=transient(_) then
-		     request(Transient args(T1 T2 Transient) TaskStack)
-		  elseof T3 then {F T1 T2 T3 TaskStack}
+	 [] rri_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2 T.3) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient T.3) TaskStack)
+		  elseof T2 then {F T1 T2 T.3 TaskStack}
+		  end
+	       end
+	    end
+	 [] rri_v then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2 T.3) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient T.3) TaskStack)
+		  elseof T2 then continue(arg({F T1 T2 T.3}) Rest)
+		  end
+	       end
+	    end
+	 [] rrr_t then
+	    case {Deconstruct Args} of Transient=transient(_) then
+	       request(Transient Args TaskStack)
+	    elseof T then
+	       case {Deref T.1} of Transient=transient(_) then
+		  request(Transient args(Transient T.2 T.3) TaskStack)
+	       elseof T1 then
+		  case {Deref T.2} of Transient=transient(_) then
+		     request(Transient args(T1 Transient T.3) TaskStack)
+		  elseof T2 then
+		     case {Deref T.3} of Transient=transient(_) then
+			request(Transient args(T1 T2 Transient) TaskStack)
+		     elseof T3 then {F T1 T2 T3 TaskStack}
+		     end
 		  end
 	       end
 	    end
