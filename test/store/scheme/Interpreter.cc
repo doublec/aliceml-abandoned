@@ -376,10 +376,32 @@ inline void Interpreter::InterpretTime() {
   long gc_time     = ((sum_t->tv_sec * 1000) + (sum_t->tv_usec / 1000));
   long total_time  = ((total_sec * 1000) + (total_usec / 1000));
   double  weight   = (0.0 + gc_time) / (0.0 + total_time) * 100;
-  double all_ratio = ((total_time != 0) ? (((Store::totalMem - Store::oldTotalMem) / total_time) * 1000) : (Store::totalMem - Store::oldTotalMem));
-
-  std::printf("CC: %ld ms; GC: %ld ms; ALL: %ld ms; GW: %g p; AR: %g b/s\n",
-	      calc_time, gc_time, total_time, weight, all_ratio);
+  double all_ratio = ((total_time != 0) ?
+		      (((Store::totalMem / total_time) * 1000) /
+			(1024 * 1024)) : 
+		      (Store::totalMem / (1024 * 1024)));
+  double gc_ratio = ((gc_time != 0) ?
+		     ((((0.0 + Store::gcLiveMem) / gc_time) * 1000) / (1024 * 1024)) :
+		     ((0.0 + Store::gcLiveMem) / (1024 * 1024)));
+  std::printf("CC: %ld ms; GC: %ld ms; ALL: %ld ms; GW: %g percent\n",
+	      calc_time, gc_time, total_time, weight);
+  if (total_time == 0) {
+    std::printf("AR: %g MB; ", all_ratio);
+  }
+  else {
+    std::printf("AR: %g MB/s; ", all_ratio);
+  }
+  if (gc_time == 0) {
+    std::printf("GCC : %g MB\n", gc_ratio);
+  }
+  else {
+    std::printf("GCC : %g MB/s\n", gc_ratio);
+  }
+  std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+  std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+  std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+  std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
+  Store::MemStat();
 #endif
   std::fflush(stdout);
 }
@@ -564,6 +586,10 @@ char *Interpreter::InterpretOp(Block *p) {
   }
   case OP_MEMSTAT: {
 #if defined(STORE_DEBUG) || defined(STORE_PROFILE)
+    std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
+    std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
+    std::printf("FRAME_STACK size %d\n", StackSize(GetRoot(FRAME_STACK)));
+    std::printf("CLOSURE_STACK size %d\n", StackSize(GetRoot(CLOSURE_STACK)));
     Store::MemStat();
 #endif
     break;
