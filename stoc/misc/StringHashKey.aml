@@ -17,10 +17,10 @@ structure StringHashKey : HASH_KEY =
 		    val h' = (h << 0w4) + c
 		    val g  = h' andb 0wxf00000
 		in
-		    iter(Int.+(i,1), h' xorb (g >> 0w16))
+		    iter(Int.+(i,1), h' xorb g xorb (g >> 0w16))
 		end
 	in
-	    toInt(iter(0,0w0) andb 0wx3fffffff)
+	    toInt(iter(0,0w0))
 	end
     
   end
