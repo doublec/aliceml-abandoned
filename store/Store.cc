@@ -113,7 +113,7 @@ inline char *Store::GCAlloc(u_int size, u_int gen) {
 inline Block *Store::AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen) {
   Block *p = (Block *) Store::GCAlloc((size + 1) * sizeof(u_int), dst_gen);
 
-  Assert(t != INVALID_POINTER);
+  Assert(p != INVALID_POINTER);
   HeaderOp::EncodeHeader(p, MIN_DATA_LABEL, size);
   GCHelper::EncodeGen(p, cpy_gen);
   p->InitArg(1, 2);
