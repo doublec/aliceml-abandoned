@@ -31,12 +31,10 @@ struct NativeComponent {
 };
 
 // Component
-class Component : private Block {
+class Component: private Block {
 private:
   static const u_int ENTRY_LABEL = MIN_DATA_LABEL;
-  static const u_int SIGN_POS    = 0;
-  static const u_int STR_POS     = 1;
-  static const u_int SIZE        = 2;
+  enum { SIGN_POS, STR_POS, SIZE };
 public:
   using Block::ToWord;
   // Component Accessors
