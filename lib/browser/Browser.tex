@@ -1,0 +1,243 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[12pt,a4paper]{article}
+\usepackage{german,a4}
+\usepackage{epsfig}
+\begin{document}
+
+%%% TITLE =============================================================
+
+\begin{titlepage}
+
+\vspace*{\fill}
+\begin{center}
+\Huge{\bf{Ein Browser f\"{u}r Alice}}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+  \begin{minipage}[center]{10cm}
+    \begin{tabbing} 
+      \large{Bernadette Blum} \hspace{1cm}\= \large{Marvin Schiller}\\
+      blum@ps.uni-sb.de \> schiller@ps.uni-sb.de\\[1cm]
+
+      Betreuer: \\[2mm]
+      \large{Thorsten Brunklaus} \> \large{Andreas Rossberg}\\
+      brunklaus@ps.uni-sb.de \> rossberg@ps.uni-sb.de
+
+    \end{tabbing}
+  \end{minipage}
+\end{center}
+
+\vspace{5mm}
+\begin{center}
+\Large{6. Mai 2003}
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+  \begin{minipage}[center]{5cm}
+    Leitung:\\
+    \large{Prof. Dr. Gert Smolka}\\
+    smolka@ps.uni-sb.de
+  \end{minipage}
+\end{center}
+
+\vspace{5mm}
+
+\begin{center}
+  \begin{minipage}[center]{5cm}
+    Fachbereich Informatik\\
+    Universit\"{a}t des Saarlandes\\
+    Im Stadtwald \\
+    66123 Saarbr\"{u}cken
+  \end{minipage}
+\end{center}
+
+\vspace*{\fill}
+
+\end{titlepage}
+
+\begin{abstract}
+Dieser Bericht zeigt Design und Implementierung eines 
+interaktven Browser-Tools f\"{u}r die funktionale Programmiersprache 
+Alice. Da Alice-Werte nicht selbstbeschreibend sind, 
+mu\ss \, der Browser jeweils explizite Typinformationen zu denjenigen  
+Werten erhalten, die dargestellt werden sollen. 
+Um Werte abstrakter Typen in eine entsprechende Darstellung 
+transformieren zu k\"{o}nnen, wird weiterhin 
+deren Registrierung beim Browser erforderlich. 
+Der Browser ist in Alice selbst implementiert und verwendet die Gtk-Bibliothek
+zur Erzeugung der graphischen Benutzerschnittstele.
+Unser Design kn\"{u}pft weitgehend an Thorsten Brunklaus' ''Oz Inspektor'' 
+\cite{br:oz} an.
+\end{abstract}
+
+
+%%% EINFUEHRUNG ==========================================================
+
+\section{Einf\"{u}hrung}  
+
+\paragraph{}
+
+Die graphische Aufbereitung von Programmen und Datenstrukturen erm\"{o}glicht 
+Programmierern das Debuggen komplexer Programme. 
+Dazu werden Algorithmen entwickelt, die man als ``Pretty Printer'' bezeichnet. 
+Ziel bei der Entwicklung von Pretty Printern ist es, die Lesbarkeit eines 
+Dokuments (meist Programme und mathematische Ausdr\"{u}cke) durch 
+Einr\"{u}ckungen, gezielte Zeilenumbr\"{u}che und 
+visuelle Atribute zu verbessern.
+Dieser Bericht stellt Design und Implementierung 
+eines solchen ``Pretty Printers'' f\"{u}r die Programmiersprache Alice vor. 
+
+\paragraph{}
+
+Die funktionale Programmiersprache Alice erm\"{o}glicht nebenl\"{a}ufige 
+Programmierung und die Erzeugung zyklischer Datenstrukturen. 
+Dies erlaubt es dem Programmierer, Berechnungsstr\"{a}nge (sog. Threads) 
+willk\"{u}rlich zu starten oder zu beenden, Werte erst bei 
+Bedarf auswerten zu lassen (sog. Laziness), oder Platzhalter 
+f\"{u}r noch nicht bekannte Berechnungsergebnisse einzusetzen (sog. Futures).
+\\
+Die daraus resultierende Komplexit\"{a}t erfordert eine Darstellung, 
+die diesen Konzepten in \"{U}bersichtlichkeit und Flexibilit\"{a}t gerecht 
+wird.
+
+\paragraph{}
+
+Anders als beispielsweise in der Programmiersprache Oz sind 
+Typen in Alice nicht selbstbeschreibend. Dadurch mu\ss \, 
+zur graphischen Darstellung eines Alice-Wertes durch den 
+Browser nicht nur 
+der Wert selbst, sondern auch strukturelle 
+Information zu diesem Wert \"{u}bergeben werden. Diese l\"{a}sst sich durch 
+sogenannte Typreflektion gewinnen. Dieser Bericht zeigt auf, 
+wie der Browser die strukturelle Information 
+bei der Darstellung der dazugeh\"{o}rigen Werte gesteuert wird und 
+welche Mechanismen n\"{o}tig sind, um Werte beliebiger abstrakter Typen 
+darstellen zu k\"{o}nnen.
+
+
+%%% ZENTRALE IDEEN =====================================================
+
+\section{Zentrale Ideen}
+
+%% Satz
+
+\subsection{Typregistrierung}
+
+\subsection{Darstellungskriterien}
+
+
+%%% ENTWURF ============================================================
+
+\section{Entwurf}
+
+\subsection{Interne Darstellung}
+
+\subsection{Typregistrierung}
+
+\subsection{Transientenverwaltung}
+
+\subsection{Graphmodus}
+
+\subsection{Filter} 
+
+
+%%% IMPLEMENTIERUNG ====================================================
+
+\section{Implementeirung}
+
+\subsection{Knotentypen}
+
+\subsection{Typregistrierung und -zerlegung}
+
+\subsection{Layout}
+
+\subsection{Zeichnen}
+
+\subsection{Inkrementalit\"at 
+
+\subsection{Transientenverwaltung}
+
+\subsection{Module}
+
+\begin{center}
+\epsfig{file = module_bw.ps, width = 13cm}
+\linebreak Abbildung 4.6: Module des Browsers
+\end center
+
+Abbildung 4.6 zeigt die Module des Browsers.
+Dieser verf\"{u}gt \"{u}ber zwei Module, die 
+die Datentypen der internen Beschreibung  - doc und node - enthalten. 
+Neben den Datentypen beinhalten die Module \"{u}ber 
+entsprechende Accessoren.
+Da diese w\"{a}hrend der 
+Erzeugnung, der Anordnungsberechnung, dem Zeichnen 
+und der Darstellungsab\"{a}nderung verwendet werden, 
+werden diese Module in vielen anderen Modulen benutzt.\\
+Das Modul GtkSupport kapselt die Gtk-Funktionalit\"{a}t 
+gegen\"{u}ber allen anderen Modulen des Browsers ab. 
+Als einziges Modul hat es direkten Zugriff auf die 
+Gtk-Prozeduren. Die anderen Module des Browsers 
+greifen dabei auf GtkSupport zur\"{u}ck.
+Die Module CreateTree, Layout, und Draw repr\"{a}sentieren 
+die drei Phasen des Inspektionsvorgangs, w\"ahrend das Modul 
+Update die notwendigen Mechanismen repr\"asentiert, 
+um die Darstellung an Ver\"{a}nderungen anzupassen. 
+Das Modul Widget verf\"{u}gt \"{u}ber die 
+graphische Benutzeroberfl\"{a}che und steuert 
+die Darstellungserzeugung bzw. Ver\"{a}nderung. 
+Letztendlich macht das Modul UnsafeInspector die f\"{u}r den 
+Benutzer relevanten Prozeduren und Datentypen nach au\ss en sichtbar.
+
+
+
+%%% AUSBLICK ===========================================================
+
+\section{Ausblick}
+
+Zur Zeit verwenden wir ein Gtk-Binding f\"ur Mozart \cite{mo:mo}
+zur Erzeugung der graphischen Benutzeroberfl\"ache. Allerdings ist 
+es auch m\"oglich, den Browser an eine von Robert Grabowski im Rahmen 
+seines Fortgeschrittenenpraktikums neu implementierte Gtk-Schnittstelle
+f\"ur Alice \cite{gr:gt} anzuschlie\ss en.
+
+\paragraph{}
+
+Desweiteren ist der Alice-Browser nicht typsicher, 
+da der Benutzer zur Zeit ein Tupel aus 
+Wert und mithilfe des Typreflektors reflektierten Typs 
+an die inspect-Funktion \"ubergibt.  
+Eine automatische Typreflektion w\"urde die Benutzung des Tools 
+erleichtern und eine Fehlbenutzung ausschlie\ss en. 
+In diesem Fall m\"usste der Benutzer nur noch den zu 
+inspizierenden Wert \"ubergeben. 
+
+Mithilfe eines \"ubergeordneten Funktors lie\ss e 
+sich der Browser einkapseln.
+
+%%% BIBLIOGRAPHIE =======================================================
+
+\begin{thebibliography}{99}
+
+\bibitem{br:oz} Thorsten Brunklaus 2000. {\em Der Oz Inspector - Browsen: 
+    Interaktiver, einfacher, effizienter} Diplomarbeit, Universit\"{a}t 
+    des Saarlandes, Fachbereich Informatik.
+\bibitem{op:pr} Derek Oppen 1980.{\em Prettyprinting} ACM Transactions 
+  on Programming Languages and Systems, Bd. 2, Nr.4, 1980, pp 465-483.
+\bibitem{ke:dr} Andrew Kennedy 1996. {\em Drawing Trees} 
+                Journal of Functional Programming, Bd. 6(3), pp. 527-534.
+\bibitem{al:al} Alice-Homepage: www.ps.uni-sb.de/alice/
+\bibitem{gt:gt} GTK+: The Gimp Toolkit: www.gtk.org 
+\bibitem{mo:mo} The Mozart Programming System: www.mozart-oz.org/
+\bibitem{gr:gt} Robert Grabowski 2003. {\em Eine Gtk-Schnittstelle f\"ur 
+                Alice} 
+                FoPra-Ausarbeitung, Lehrstuhl Prof. G. Smolka, 
+                Universtit\"at des Saarlandes.
+
+\end{thebibliography}
+
+\end{document}
+
