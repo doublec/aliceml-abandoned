@@ -40,7 +40,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun processArgs (OneArg id, lset, x) = x (lset, id)
 	  | processArgs (TupArgs ids, lset, x) =
 	    List.foldl (fn (id, lset) => x (lset, id)) lset ids
-	  | processArgs (RecArgs labIdList, lset, x) =
+	  | processArgs (RowArgs labIdList, lset, x) =
 	    List.foldl (fn ((_, id), lset) => x (lset, id)) lset labIdList
 
 	(* Compute `Use' Sets *)
@@ -95,11 +95,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanTest (StaticConTest _, lset) = lset
 	  | scanTest (StaticConAppTest (_, args), lset) =
 	    processArgs (args, lset, del)
-	  | scanTest (RefAppTest id, lset) = del (lset, id)
-	  | scanTest (TupTest ids, lset) = delList (lset, ids)
-	  | scanTest (RecTest labIdList, lset) =
-	    List.foldl (fn ((_, id), lset) => del (lset, id)) lset labIdList
-	  | scanTest (LabTest (_, _, id), lset) = del (lset, id)
 	  | scanTest (VecTest ids, lset) = delList (lset, ids)
 
 	fun setInfo ({liveness = r as ref (Unknown | LoopStart | LoopEnd),
@@ -132,6 +127,35 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		List.app (fn (Id (_, stamp, _), _) =>
 			  StampSet.delete (set', stamp)) idExpList;
 		Copy set'
+	    end
+	  | scanBody (RefAppDec (i, id, id')::stms, initial) =
+	    let
+		val lset = scanBody (stms, initial)
+		val set = lazyValOf (ins (del (lset, id), id'))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody (TupDec (i, ids, id)::stms, initial) =
+	    let
+		val lset = scanBody (stms, initial)
+		val set =
+		    lazyValOf (ins (List.foldr (fn (id, lset) =>
+						del (lset, id)) lset ids, id))
+	    in
+		setInfo (i, set);
+		Orig set
+	    end
+	  | scanBody (RowDec (i, labelIdList, id)::stms, initial) =
+	    let
+		val lset = scanBody (stms, initial)
+		val set =
+		    lazyValOf (ins (List.foldr (fn ((_, id), lset) =>
+						del (lset, id))
+				    lset labelIdList, id))
+	    in
+		setInfo (i, set);
+		Orig set
 	    end
 	  | scanBody (EvalStm (i, exp)::stms, initial) =
 	    let
@@ -240,7 +264,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (StaticConExp (_, _, _), lset) = lset
 	  | scanExp (RefExp _, lset) = lset
 	  | scanExp (TupExp (_, ids), lset) = insList (lset, ids)
-	  | scanExp (RecExp (_, labIdList), lset) =
+	  | scanExp (RowExp (_, labIdList), lset) =
 	    List.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdList
 	  | scanExp (SelExp (_, _, _), lset) = lset
 	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
@@ -270,7 +294,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun processArgs (OneArg id, set, x) = x (set, id)
 	  | processArgs (TupArgs ids, set, x) =
 	    List.app (fn id => x (set, id)) ids
-	  | processArgs (RecArgs labIdList, set, x) =
+	  | processArgs (RowArgs labIdList, set, x) =
 	    List.app (fn (_, id) => x (set, id)) labIdList
 
 	fun ins (set, Id (_, stamp, _)) = StampSet.insert (set, stamp)
@@ -286,16 +310,16 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initTest (StaticConTest _, _) = ()
 	  | initTest (StaticConAppTest (_, args), set) =
 	    processArgs (args, set, ins)
-	  | initTest (RefAppTest id, set) = ins (set, id)
-	  | initTest (TupTest ids, set) = insList (set, ids)
-	  | initTest (RecTest labIdList, set) =
-	    List.app (fn (_, id) => ins (set, id)) labIdList
-	  | initTest (LabTest (_, _, id), set) = ins (set, id)
 	  | initTest (VecTest ids, set) = insList (set, ids)
 
 	fun initStm (ValDec (_, id, exp), set) = (ins (set, id); initExp exp)
 	  | initStm (RecDec (_, idExpList), set) =
 	    List.app (fn (id, exp) => (ins (set, id); initExp exp)) idExpList
+	  | initStm (RefAppDec (_, id, _), set) = ins (set, id)
+	  | initStm (TupDec (_, ids, _), set) =
+	    List.app (fn id => ins (set, id)) ids
+	  | initStm (RowDec (_, labelIdList, _), set) =
+	    List.app (fn (_, id) => ins (set, id)) labelIdList
 	  | initStm (EvalStm (_, exp), _) = initExp exp
 	  | initStm (RaiseStm (_, _), _) = ()
 	  | initStm (ReraiseStm (_, _), _) = ()

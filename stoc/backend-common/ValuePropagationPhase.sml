@@ -88,9 +88,15 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 fun hash (Id (_, stamp, _)) =
 				     Stamp.hash stamp)
 
+	datatype test' =
+	    RefAppTest of id
+	  | TupTest of id list
+	  | RowTest of (label * id) list
+
 	datatype value =
 	    EXP of exp * stamp
 	  | TEST of test * stamp
+	  | TEST' of test' * stamp
 	  | HANDLE
 	  | UNKNOWN
 	type isToplevel = bool
@@ -114,6 +120,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 
 	    fun sortStm (ValDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (RecDec (_, _), _, _, _, _) = ()
+	      | sortStm (RefAppDec (_, _, _), _, _, _, _) = ()
+	      | sortStm (TupDec (_, _, _), _, _, _, _) = ()
+	      | sortStm (RowDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (EvalStm (_, _), _, _, _, _) = ()
 	      | sortStm (RaiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (ReraiseStm (_, _), _, _, _, _) = ()
@@ -210,13 +219,13 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun derefArgs (OneArg id, env) = OneArg (deref (id, env))
 	  | derefArgs (TupArgs ids, env) =
 	    TupArgs (List.map (fn id => deref (id, env)) ids)
-	  | derefArgs (RecArgs labelIdList, env) =
-	    RecArgs (List.map (fn (label, id) => (label, deref (id, env)))
+	  | derefArgs (RowArgs labelIdList, env) =
+	    RowArgs (List.map (fn (label, id) => (label, deref (id, env)))
 		     labelIdList)
 
 	fun doSelTup (info, ids, n) = VarExp (info, List.nth (ids, n))
 
-	fun doSelRec (info, labelIdList, n) =
+	fun doSelRow (info, labelIdList, n) =
 	    let
 		val (_, id) = List.nth (labelIdList, n)
 	    in
@@ -226,16 +235,16 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	fun doSel (info, label, n, id, env) =
 	    case IdMap.lookupExistent (env, id) of
 		((EXP (TupExp (_, ids), _) |
-		  TEST (TupTest ids, _)), _) =>
+		  TEST' (TupTest ids, _)), _) =>
 		    doSelTup (info, ids, n)
-	      | ((EXP (RecExp (_, labelIdList), _) |
-		  TEST (RecTest labelIdList, _)), _) =>
-		    doSelRec (info, labelIdList, n)
+	      | ((EXP (RowExp (_, labelIdList), _) |
+		  TEST' (RowTest labelIdList, _)), _) =>
+		    doSelRow (info, labelIdList, n)
 	      | (_, _) => SelAppExp (info, label, n, id)
 
 	fun arityMatches (OneArg _, SOME Unary) = true
 	  | arityMatches (TupArgs _, SOME (TupArity _)) = true
-	  | arityMatches (RecArgs _, SOME (RecArity _)) = true
+	  | arityMatches (RowArgs _, SOME (RowArity _)) = true
 	  | arityMatches (_, _) = false
 
 	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
@@ -246,18 +255,18 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | primAppExp (info, id, name, TupArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
 		 ((EXP (TupExp (_, ids), _) |
-		   TEST (TupTest ids, _)), _) =>
+		   TEST' (TupTest ids, _)), _) =>
 		     vpPrimApp (info, name, ids)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
-	  | primAppExp (info, id, name, RecArity _, args as OneArg id', env) =
+	  | primAppExp (info, id, name, RowArity _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
-		 ((EXP (RecExp (_, labelIdList), _) |
-		   TEST (RecTest labelIdList, _)), _) =>
+		 ((EXP (RowExp (_, labelIdList), _) |
+		   TEST' (RowTest labelIdList, _)), _) =>
 		     vpPrimApp (info, name, List.map #2 labelIdList)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
 	  | primAppExp (info, id, name, TupArity _, TupArgs ids, _) =
 	    vpPrimApp (info, name, ids)
-	  | primAppExp (info, id, name, RecArity _, RecArgs labelIdList, _) =
+	  | primAppExp (info, id, name, RowArity _, RowArgs labelIdList, _) =
 	    vpPrimApp (info, name, List.map #2 labelIdList)
 	  | primAppExp (info, id, _, _, args, _) =
 	    VarAppExp (info, id, args)   (*--** *)
@@ -271,7 +280,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | aliasArgs (TupArgs ids, TupArgs ids', env, isToplevel) =
 	    ListPair.app (fn (id, id') => alias (id, id', env, isToplevel))
 	    (ids, ids')
-	  | aliasArgs (RecArgs labelIdList, RecArgs labelIdList',
+	  | aliasArgs (RowArgs labelIdList, RowArgs labelIdList',
 		       env, isToplevel) =
 	    ListPair.app (fn ((_, id), (_, id')) =>
 			  alias (id, id', env, isToplevel))
@@ -291,7 +300,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    declareId (id, env, isToplevel)
 	  | declareArgs (TupArgs ids, env, isToplevel) =
 	    List.app (fn id => declareId (id, env, isToplevel)) ids
-	  | declareArgs (RecArgs labelIdList, env, isToplevel) =
+	  | declareArgs (RowArgs labelIdList, env, isToplevel) =
 	    List.app (fn (_, id) => declareId (id, env, isToplevel))
 	    labelIdList
 
@@ -305,14 +314,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | declareTest' (StaticConTest _, _, _) = ()
 	  | declareTest' (StaticConAppTest (_, args), env, isToplevel) =
 	    declareArgs (args, env, isToplevel)
-	  | declareTest' (RefAppTest id, env, isToplevel) =
-	    declareId (id, env, isToplevel)
-	  | declareTest' (TupTest ids, env, isToplevel) =
-	    declareArgs (TupArgs ids, env, isToplevel)
-	  | declareTest' (RecTest labelIdList, env, isToplevel) =
-	    declareArgs (RecArgs labelIdList, env, isToplevel)
-	  | declareTest' (LabTest (_, _, id), env, isToplevel) =
-	    declareId (id, env, isToplevel)
 	  | declareTest' (VecTest ids, env, isToplevel) =
 	    declareArgs (TupArgs ids, env, isToplevel)
 
@@ -369,18 +370,6 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    if stamp = stamp' then
 		(aliasArgs (args, args', env, isToplevel); ALWAYS_TRUE)
 	    else dynamicTest (test, env)
-	  | vpTest' (TupTest ids,
-		     (EXP (TupExp (_, ids'), _) |
-		      TEST (TupTest ids', _)), env, isToplevel) =
-	    (ListPair.app (fn (id, id') => alias (id, id', env, isToplevel))
-	     (ids, ids'); ALWAYS_TRUE)
-	  | vpTest' (RecTest labelIdList,
-		     (EXP (RecExp (_, labelIdList'), _) |
-		      TEST (RecTest labelIdList', _)), env, isToplevel) =
-	    (ListPair.app (fn ((_, id), (_, id')) =>
-			   alias (id, id', env, isToplevel))
-	     (labelIdList, labelIdList'); ALWAYS_TRUE)
-	  | vpTest' (test as LabTest (_, _, _), _, _, _) = DYNAMIC_TEST test
 	  | vpTest' (VecTest ids,
 		     (EXP (VecExp (_, ids'), _) |
 		      TEST (VecTest ids', _)), env, isToplevel) =
@@ -401,7 +390,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		      | (value as EXP (ConExp (_, _, _), _), _) => value
 		      | (value as EXP (StaticConExp (_, _, _), _), _) => value
 		      | (value as EXP (TupExp (_, _), _), _) => value
-		      | (value as EXP (RecExp (_, _), _), _) => value
+		      | (value as EXP (RowExp (_, _), _), _) => value
 		      | (value as EXP (VecExp (_, _), _), _) => value
 		      | (value as TEST (_, _), _) => value
 		      | (_, _) => UNKNOWN
@@ -443,6 +432,39 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			      end) idExpStampList
 	    in
 		RecDec (info, idExpList)
+	    end
+	  | vpStm (RefAppDec (info, id, id'), env, isToplevel, _) =
+	    let
+		val id' = deref (id', env)
+		val entry' = (TEST' (RefAppTest id, Stamp.new ()), isToplevel)
+	    in
+		IdMap.insertDisjoint (env, id, (UNKNOWN, isToplevel));
+		IdMap.insert (env, id', entry');
+		RefAppDec (info, id, id')
+	    end
+	  | vpStm (TupDec (info, ids, id), env, isToplevel, _) =
+	    let
+		val id = deref (id, env)
+		val entry = (TEST' (TupTest ids, Stamp.new ()), isToplevel)
+	    in
+		List.app (fn id =>
+			  IdMap.insertDisjoint (env, id,
+						(UNKNOWN, isToplevel))) ids;
+		IdMap.insert (env, id, entry);
+		TupDec (info, ids, id)
+	    end
+	  | vpStm (RowDec (info, labelIdList, id), env, isToplevel, _) =
+	    let
+		val id = deref (id, env)
+		val entry =
+		    (TEST' (RowTest labelIdList, Stamp.new ()), isToplevel)
+	    in
+		List.app (fn (_, id) =>
+			  IdMap.insertDisjoint (env, id,
+						(UNKNOWN, isToplevel)))
+		labelIdList;
+		IdMap.insert (env, id, entry);
+		RowDec (info, labelIdList, id)
 	    end
 	  | vpStm (EvalStm (info, exp), env, isToplevel, shared) =
 	    EvalStm (info, vpExp (exp, env, isToplevel, shared))
@@ -570,9 +592,9 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | vpExp (TupExp (info, ids), env, _, _) =
 	    (*--** if TupExp took terms instead of ids -> getTerm *)
 	    TupExp (info, List.map (fn id => deref (id, env)) ids)
-	  | vpExp (RecExp (info, labelIdList), env, _, _) =
-	    (*--** if RecExp took terms instead of ids -> getTerm *)
-	    RecExp (info, List.map (fn (label, id) => (label, deref (id, env)))
+	  | vpExp (RowExp (info, labelIdList), env, _, _) =
+	    (*--** if RowExp took terms instead of ids -> getTerm *)
+	    RowExp (info, List.map (fn (label, id) => (label, deref (id, env)))
 		    labelIdList)
 	  | vpExp (exp as SelExp (_, _, _), _, _, _) = exp
 	  | vpExp (VecExp (info, ids), env, _, _) =
@@ -620,8 +642,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 				 doSel (info, label, n, id, env)
 			   | TupArgs ids =>
 				 doSelTup (info, ids, n)
-			   | RecArgs labelIdList =>
-				 doSelRec (info, labelIdList, n))
+			   | RowArgs labelIdList =>
+				 doSelRow (info, labelIdList, n))
 		  | (EXP (FunExp (_, stamp, _, _, _), _), true) =>
 			(*--** optimize args conversion *)
 			FunAppExp (info, id, stamp, args)

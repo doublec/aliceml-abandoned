@@ -44,7 +44,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	datatype arity =
 	    Unary
 	  | TupArity of int
-	  | RecArity of label list
+	  | RowArity of label list
 	    (* sorted, all labels distinct, no tuple *)
 
 	type conArity = arity option
@@ -52,7 +52,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a list
-	  | RecArgs of (label * 'a) list
+	  | RowArgs of (label * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
 	datatype test =
@@ -63,17 +63,15 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | ConAppTest of id * id args
 	  | StaticConTest of stamp
 	  | StaticConAppTest of stamp * id args
-	  | RefAppTest of id
-	  | TupTest of id list
-	  | RecTest of (label * id) list
-	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of label * int * id
 	  | VecTest of id list
 
 	datatype stm =
 	    ValDec of stm_info * id * exp
 	  | RecDec of stm_info * (id * exp) list
 	    (* all ids distinct *)
+	  | RefAppDec of stm_info * id * id
+	  | TupDec of stm_info * id list * id
+	  | RowDec of stm_info * (label * id) list * id
 	  | EvalStm of stm_info * exp
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
@@ -95,7 +93,7 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | StaticConExp of exp_info * stamp * conArity
 	  | RefExp of exp_info
 	  | TupExp of exp_info * id list
-	  | RecExp of exp_info * (label * id) list
+	  | RowExp of exp_info * (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of exp_info * label * int
 	  | VecExp of exp_info * id list
@@ -116,6 +114,9 @@ structure FlatGrammar: FLAT_GRAMMAR =
 
 	fun infoStm (ValDec (info, _, _)) = info
 	  | infoStm (RecDec (info, _)) = info
+	  | infoStm (RefAppDec (info, _, _)) = info
+	  | infoStm (TupDec (info, _, _)) = info
+	  | infoStm (RowDec (info, _, _)) = info
 	  | infoStm (EvalStm (info, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
 	  | infoStm (ReraiseStm (info, _)) = info

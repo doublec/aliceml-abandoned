@@ -99,16 +99,16 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputTag NONE = S "tag0"
 	  | outputTag (SOME Unary) = S "tag1"
-	  | outputTag (SOME (TupArity _) | SOME (RecArity _)) = S "tag+"
+	  | outputTag (SOME (TupArity _) | SOME (RowArity _)) = S "tag+"
 
 	fun outputCon NONE = S "con0"
 	  | outputCon (SOME Unary) = S "con1"
-	  | outputCon (SOME (TupArity _) | SOME (RecArity _)) = S "con+"
+	  | outputCon (SOME (TupArity _) | SOME (RowArity _)) = S "con+"
 
 	fun outputArgs (OneArg id) = ID id
 	  | outputArgs (TupArgs ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputArgs (RecArgs labelIdList) =
+	  | outputArgs (RowArgs labelIdList) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
 				       SEQ [S (Label.toString label), S "=",
@@ -129,18 +129,6 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "con ", S (Stamp.toString stamp)]
 	  | outputTest (StaticConAppTest (stamp, args)) =
 	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
-	  | outputTest (RefAppTest id) = SEQ [S "ref ", ID id]
-	  | outputTest (TupTest ids) =
-	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputTest (RecTest labelIdList) =
-	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (label, id) =>
-				       SEQ [S (Label.toString label), S "=",
-					    ID id]) labelIdList),
-		 S "}"]
-	  | outputTest (LabTest (label, n, id)) =
-	    SEQ [S "{", S (Label.toString label), S "/", I n, S "=",
-		 ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -151,6 +139,16 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 SEQ (List.map (fn (id, exp) =>
 				SEQ [NL, S "val ", ID id, S " = ",
 				     IN, outputExp exp, EX]) idExpList), EX]
+	  | outputStm (RefAppDec (_, id, id'), _) =
+	    SEQ [S "val ref ", ID id, S " = ", ID id']
+	  | outputStm (TupDec (_, ids, id), _) =
+	    SEQ [S "val (", SEP (S ", ", List.map ID ids), S ") = ", ID id]
+	  | outputStm (RowDec (_, labelIdList, id), _) =
+	    SEQ [S "val {",
+		 SEP (S ", ", List.map (fn (label, id) =>
+					SEQ [S (Label.toString label), S "=",
+					     ID id]) labelIdList),
+		 S "} = ", ID id]
 	  | outputStm (EvalStm (_, exp), _) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
 	  | outputStm (HandleStm (_, body1, id, body2, body3, stamp), shared) =
@@ -195,7 +193,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputExp (RefExp _) = SEQ [S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputExp (RecExp (_, labelIdList)) =
+	  | outputExp (RowExp (_, labelIdList)) =
 	    SEQ [S "{", SEP (S ", ",
 			     List.map (fn (label, id) =>
 				       SEQ [S (Label.toString label), S "=",

@@ -30,7 +30,7 @@ signature SIMPLIFY_MATCH =
 	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
-	  | RecTest of (Label.t * typ) list
+	  | RowTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of Label.t * int * typ
 	  | VecTest of typ list

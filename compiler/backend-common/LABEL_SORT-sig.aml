@@ -15,7 +15,7 @@ signature LABEL_SORT =
 	type 'a t
 
 	datatype arity =
-	    Rec
+	    Row
 	  | Tup of int
 
 	val sort: 'a t list -> 'a t list * arity

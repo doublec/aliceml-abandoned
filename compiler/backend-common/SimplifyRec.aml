@@ -183,7 +183,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		      in
 			  (cs @ cr, idsExps @ idsExpr)
 		      end) (nil, nil) (pats, expFields')
-	       | (_, FieldSort.Rec) =>
+	       | (_, FieldSort.Row) =>
 		     raise Crash.Crash
 			 "SimplifyRec.derec' 1 type inconsistency")
 	  | derec' (ProdPat (_, _), TupExp (_, _)) =
@@ -395,7 +395,7 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		    case arity of
 			FieldSort.Tup i =>
 			    TupPat (info, List.map getField patFields''')
-		      | FieldSort.Rec =>
+		      | FieldSort.Row =>
 			    ProdPat (info, patFields''')
 	    in
 		(constraints, pat')

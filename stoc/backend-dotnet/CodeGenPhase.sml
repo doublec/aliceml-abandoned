@@ -131,7 +131,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			    emit (LdcI4 i); emit LdelemRef;
 			    declareLocal id)) ids
 	    end
-	  | declareArgs (RecArgs labelIdList, await) =
+	  | declareArgs (RowArgs labelIdList, await) =
 	    declareArgs (TupArgs (List.map #2 labelIdList), await)
 
 	fun genTest (LitTest (WordLit w), elseLabel) =
@@ -186,18 +186,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    raise Crash.Crash "CodeGenPhase.genTest: StaticConTest"
 	  | genTest (StaticConAppTest _, _) =   (*--** implement *)
 	    raise Crash.Crash "CodeGenPhase.genTest: StaticConAppTest"
-	  | genTest (RefAppTest id, elseLabel) =
-	    (emit (Castclass Alice.CellTy);
-	     emit (Ldfld (Alice.Cell, "Value", System.ObjectTy));
-	     declareLocal id)
-	  | genTest (TupTest nil, elseLabel) = emit Pop
-	  | genTest (TupTest ids, elseLabel) =
-	    declareArgs (TupArgs ids, false)
-	  | genTest (RecTest labelIdList, elseLabel) =
-	    genTest (TupTest (List.map #2 labelIdList), elseLabel)
-	  | genTest (LabTest (_, n, id), elseLabel) =
-	    (emit (Castclass (ArrayTy System.ObjectTy));
-	     emit (LdcI4 n); emit LdelemRef; declareLocal id)
 	  | genTest (VecTest ids, elseLabel) =
 	    (emit (Castclass (ArrayTy System.ObjectTy)); emit Dup;
 	     emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
@@ -231,6 +219,14 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		       (genExp (exp, PREPARE); declareLocal id)) idExpList;
 	     List.app (fn (id, exp) =>
 		       (emitId id; genExp (exp, FILL))) idExpList)
+	  | genStm (RefAppDec (_, id, id')) =
+	    (emitId id'; emitAwait (); emit (Castclass Alice.CellTy);
+	     emit (Ldfld (Alice.Cell, "Value", System.ObjectTy));
+	     declareLocal id)
+	  | genStm (TupDec (_, ids, id)) =
+	    (emitId id; declareArgs (TupArgs ids, true))
+	  | genStm (RowDec (_, labelIdList, id)) =
+	    (emitId id; declareArgs (RowArgs labelIdList, true))
 	  | genStm (EvalStm (_, exp)) = (genExp (exp, BOTH); emit Pop)
 	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, stamp)) =
 	    let
@@ -347,7 +343,6 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 				  testBodyList, elseBodyFun)
 	    end
 	and genSwitchTestStm (toInt, getInt, gen, testBodyList, elseBodyFun) =
-(*
 	    let
 		val map = IntMap.new ()
 		val i = toInt (#1 (List.hd testBodyList))
@@ -380,8 +375,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 					restoreRegState regState
 				    end) map
 		    end
-		else*) genSequentialTestStm (testBodyList, elseBodyFun)
-(*	    end*)
+		else genSequentialTestStm (testBodyList, elseBodyFun)
+	    end
 	and genSequentialTestStm (testBodyList, elseBodyFun) =
 	    (List.app (fn (test, body) =>
 		       let
@@ -442,7 +437,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     List.appi (fn (i, id) =>
 			(emit Dup; emit (LdcI4 i); emitId id;
 			 emit StelemRef)) ids)
-	  | genExp (RecExp (info, labelIdList), mode) =
+	  | genExp (RowExp (info, labelIdList), mode) =
 	    genExp (TupExp (info, List.map #2 labelIdList), mode)
 	  | genExp (SelExp (_, _, n), BOTH) =
 	    (emit (LdcI4 n); emit (Newobj (Alice.Selector, [Int32Ty])))
@@ -455,28 +450,28 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		 TupArgs nil =>
 		     defineClass (stamp, Alice.Procedure0, nil)
 	       | (TupArgs [_, _] |
-		  RecArgs [_, _]) =>
+		  RowArgs [_, _]) =>
 		     defineClass (stamp, Alice.Procedure2, nil)
 	       | (TupArgs [_, _, _] |
-		  RecArgs [_, _, _]) =>
+		  RowArgs [_, _, _]) =>
 		     defineClass (stamp, Alice.Procedure3, nil)
 	       | (TupArgs [_, _, _, _] |
-		  RecArgs [_, _, _, _]) =>
+		  RowArgs [_, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure4, nil)
 	       | (TupArgs [_, _, _, _, _] |
-		  RecArgs [_, _, _, _, _]) =>
+		  RowArgs [_, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure5, nil)
 	       | (TupArgs [_, _, _, _, _, _] |
-		  RecArgs [_, _, _, _, _, _]) =>
+		  RowArgs [_, _, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure6, nil)
 	       | (TupArgs [_, _, _, _, _, _, _] |
-		  RecArgs [_, _, _, _, _, _, _]) =>
+		  RowArgs [_, _, _, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure7, nil)
 	       | (TupArgs [_, _, _, _, _, _, _, _] |
-		  RecArgs [_, _, _, _, _, _, _, _]) =>
+		  RowArgs [_, _, _, _, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure8, nil)
 	       | (TupArgs [_, _, _, _, _, _, _, _, _] |
-		  RecArgs [_, _, _, _, _, _, _, _, _]) =>
+		  RowArgs [_, _, _, _, _, _, _, _, _]) =>
 		     defineClass (stamp, Alice.Procedure9, nil)
 	       | _ =>
 		     defineClass (stamp, Alice.Procedure, nil))
@@ -496,31 +491,23 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		  TupArgs (ids as [_, _, _, _, _, _, _, _, _])) =>
 		     (defineMethod (stamp, "Apply", ids);
 		      genBody body; closeMethod ())
-	       | (RecArgs (labelIdList as [_, _]) |
-		  RecArgs (labelIdList as [_, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _, _, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _, _, _, _, _]) |
-		  RecArgs (labelIdList as [_, _, _, _, _, _, _, _, _])) =>
+	       | (RowArgs (labelIdList as [_, _]) |
+		  RowArgs (labelIdList as [_, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _, _, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _, _, _, _, _]) |
+		  RowArgs (labelIdList as [_, _, _, _, _, _, _, _, _])) =>
 		     (defineMethod (stamp, "Apply", List.map #2 labelIdList);
 		      genBody body; closeMethod ())
 	       | _ =>
 		     let
 			 val info = {region = Source.nowhere}
 			 val id = Id (info, Stamp.new (), Name.InId)
-			 val test =
-			     case args of
-				 OneArg _ =>
-				     raise Crash.Crash
-					 "CodeGenPhase.genExp: FunExp"
-			       | TupArgs ids => TupTest ids
-			       | RecArgs labelIdList => RecTest labelIdList
 		     in
 			 defineMethod (stamp, "Apply", [id]);
-			 genTestStm (id, [(test, body)], fn () => ());
-			 closeMethod ()
+			 declareArgs (args, true); genBody body; closeMethod ()
 		     end;
 	     emit Pop)
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
@@ -558,7 +545,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     genExp (TupExp (info, ids), BOTH);
 	     emit (Callvirt (Alice.Procedure, "Apply",
 			     [System.ObjectTy], System.ObjectTy)))
-	  | genExp (VarAppExp (info, id, RecArgs labelIdList), mode) =
+	  | genExp (VarAppExp (info, id, RowArgs labelIdList), mode) =
 	    genExp (VarAppExp (info, id,
 			       TupArgs (List.map #2 labelIdList)), mode)
 	  | genExp (TagAppExp (_, _, n, _), PREPARE) =
@@ -599,8 +586,8 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	and genArgs (OneArg id) = emitId id
 	  | genArgs (TupArgs ids) =
 	    genExp (TupExp ({region = Source.nowhere}, ids), BOTH)
-	  | genArgs (RecArgs labelIdList) =
-	    genExp (RecExp ({region = Source.nowhere}, labelIdList), BOTH)
+	  | genArgs (RowArgs labelIdList) =
+	    genExp (RowExp ({region = Source.nowhere}, labelIdList), BOTH)
 	and genBody (stm::stms) =
 	    (case #liveness (infoStm stm) of
 		 ref (Kill set) => kill set

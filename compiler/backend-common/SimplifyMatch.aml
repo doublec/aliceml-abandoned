@@ -34,7 +34,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
-	  | RecTest of (Label.t * typ) list
+	  | RowTest of (Label.t * typ) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of Label.t * int * typ
 	  | VecTest of typ list
@@ -110,10 +110,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		     (List.map (fn Field (_, Lab (_, label), pat) =>
 				(LABEL label::pos, pat)) patFields,
 		      O.TupArgs (List.map #2 labelTypList))
-	       | (labelTypList, LabelSort.Rec, false) =>
+	       | (labelTypList, LabelSort.Row, false) =>
 		     (List.map (fn Field (_, Lab (_, label), pat) =>
 				(LABEL label::pos, pat)) patFields,
-		      O.RecArgs labelTypList))
+		      O.RowArgs labelTypList))
 	  | makeAppArgs (pat, _, pos) = ([(pos, pat)], O.OneArg (typPat pat))
 
 	fun makeTestSeq (JokPat _, _, rest, mapping) = (rest, mapping)
@@ -180,8 +180,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		     rest labelTypList
 	       | (labelTypList, LabelSort.Tup _, false) =>
 		     Test (pos, TupTest (List.map #2 labelTypList))::rest
-	       | (labelTypList, LabelSort.Rec, false) =>
-		     Test (pos, RecTest labelTypList)::rest, mapping) patFields
+	       | (labelTypList, LabelSort.Row, false) =>
+		     Test (pos, RowTest labelTypList)::rest, mapping) patFields
 	  | makeTestSeq (VecPat (_, pats), pos, rest, mapping) =
 	    List.foldli
 	    (fn (i, pat, (rest, mapping)) =>
@@ -263,17 +263,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | testToString (TagAppTest (label, n, O.TupArgs typs, _)) =
 	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^
 	    " tup " ^ Int.toString (List.length typs)
-	  | testToString (TagAppTest (label, n, O.RecArgs labelTypList, _)) =
-	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " rec"
+	  | testToString (TagAppTest (label, n, O.RowArgs labelTypList, _)) =
+	    "tag " ^ Label.toString label ^ "/" ^ Int.toString n ^ " row"
 	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
 	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
 	    "con tup " ^ Int.toString (List.length typs)
-	  | testToString (ConAppTest (_, O.RecArgs labelTypList, _)) =
-	    "con rec"
+	  | testToString (ConAppTest (_, O.RowArgs labelTypList, _)) =
+	    "con row"
 	  | testToString (RefAppTest _) = "ref"
 	  | testToString (TupTest typs) =
 	    "tup " ^ Int.toString (List.length typs)
-	  | testToString (RecTest labelTyplist) = "rec"
+	  | testToString (RowTest labelTyplist) = "row"
 	  | testToString (LabTest (label, n, _)) =
 	    "lab " ^ Label.toString label ^ "/" ^ Int.toString n
 	  | testToString (VecTest typs) =
@@ -321,14 +321,14 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun argsEq (O.OneArg _, O.OneArg _) = true
 	  | argsEq (O.TupArgs _, O.TupArgs _) = true
-	  | argsEq (O.RecArgs _, O.RecArgs _) = true
+	  | argsEq (O.RowArgs _, O.RowArgs _) = true
 	  | argsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (TagTest (label1, _), TagTest (label2, _)) = label1 = label2
-	  | testEq (TagAppTest (label1, _, args1, _),
-		    TagAppTest (label2, _, args2, _)) =
-	    label1 = label2 andalso argsEq (args1, args2)
+	  | testEq (TagTest (_, n1), TagTest (_, n2)) = n1 = n2
+	  | testEq (TagAppTest (_, n1, args1, _),
+		    TagAppTest (_, n2, args2, _)) =
+	    n1 = n2 andalso argsEq (args1, args2)
 	  | testEq (ConTest longid1, ConTest longid2) =
 	    longidToSelector longid1 = longidToSelector longid2
 	  | testEq (ConAppTest (longid1, args1, _),
@@ -336,7 +336,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    longidToSelector longid1 = longidToSelector longid2 andalso
 	    argsEq (args1, args2)
 	  | testEq (TupTest _, TupTest _) = true
-	  | testEq (RecTest _, RecTest _) = true
+	  | testEq (RowTest _, RowTest _) = true
 	  | testEq (VecTest typs1, VecTest typs2) =
 	    List.length typs1 = List.length typs2
 	  | testEq (_, _) = false
@@ -541,7 +541,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    datatype arity =
 		ONE
 	      | TUP of typ list
-	      | REC of (Label.t * typ) list
+	      | ROW of (Label.t * typ) list
 
 	    exception MustBeUnary
 
@@ -562,7 +562,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			(case LabelSort.sort (convert (Type.asProd typ)) of
 			     (labelTypList, LabelSort.Tup _) =>
 				 TUP (List.map #2 labelTypList)
-			   | (labelTypList, LabelSort.Rec) => REC labelTypList)
+			   | (labelTypList, LabelSort.Row) => ROW labelTypList)
 			handle MustBeUnary => ONE
 		else ONE
 	    end
@@ -617,8 +617,8 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		in
 		    (O.TupArgs ids, graph, mapping, consequents)
 		end
-	      | process (REC labelTypList,
-			 Node (nil, RecTest _, ref graph, _, _),
+	      | process (ROW labelTypList,
+			 Node (nil, RowTest _, ref graph, _, _),
 			 consequents, _) =
 		let
 		    val labelIdList =
@@ -630,7 +630,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				    ([LABEL label], id)::mapping)
 			nil labelIdList
 		in
-		    (O.RecArgs labelIdList, graph, mapping, consequents)
+		    (O.RowArgs labelIdList, graph, mapping, consequents)
 		end
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process"

@@ -65,21 +65,21 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		 [O.ValDec (stm_info Source.nowhere, id,
 			    O.TupExp ({region = Source.nowhere}, ids))])
 	    end
-	  | testArity (O.OneArg id, O.RecArity labels, app) =
+	  | testArity (O.OneArg id, O.RowArity labels, app) =
 	    let
 		val labelIdList =
 		    List.map (fn label =>
 			      (label, freshId {region = Source.nowhere}))
 		    labels
 	    in
-		(app (O.RecArgs labelIdList),
+		(app (O.RowArgs labelIdList),
 		 [O.ValDec (stm_info Source.nowhere, id,
-			    O.RecExp ({region = Source.nowhere},
+			    O.RowExp ({region = Source.nowhere},
 				      labelIdList))])
 	    end
 	  | testArity (args as O.TupArgs _, O.TupArity _, app) =
 	    (app args, nil)
-	  | testArity (args as O.RecArgs _, O.RecArity _, app) =
+	  | testArity (args as O.RowArgs _, O.RowArity _, app) =
 	    (app args, nil)
 	  | testArity (_, _, _) =
 	    raise Crash.Crash "FlatteningPhase.testArity"
@@ -92,37 +92,39 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    testArity (args, valOf conArity,
 		       fn args => O.ConAppTest (id, args))
 
-	fun expArity (args as O.OneArg _, O.Unary, app) = (NONE, app args)
-	  | expArity (O.OneArg id, O.TupArity n, app) =
+	fun expArity (args as O.OneArg _, O.Unary, info, app) = (nil, app args)
+	  | expArity (O.OneArg id, O.TupArity n, info: id_info, app) =
 	    let
 		val ids =
 		    List.tabulate
 		    (n, fn _ => freshId {region = Source.nowhere})
 	    in
-		(SOME (id, O.TupTest ids), app (O.TupArgs ids))
+		([O.TupDec (stm_info (#region info), ids, id)],
+		 app (O.TupArgs ids))
 	    end
-	  | expArity (O.OneArg id, O.RecArity labels, app) =
+	  | expArity (O.OneArg id, O.RowArity labels, info, app) =
 	    let
 		val labelIdList =
 		    List.map (fn label =>
 			      (label, freshId {region = Source.nowhere}))
 		    labels
 	    in
-		(SOME (id, O.RecTest labelIdList), app (O.RecArgs labelIdList))
+		([O.RowDec (stm_info (#region info), labelIdList, id)],
+		 app (O.RowArgs labelIdList))
 	    end
-	  | expArity (args as O.TupArgs _, O.TupArity _, app) =
-	    (NONE, app args)
-	  | expArity (args as O.RecArgs _, O.RecArity _, app) =
-	    (NONE, app args)
-	  | expArity (_, _, _) =
+	  | expArity (args as O.TupArgs _, O.TupArity _, _, app) =
+	    (nil, app args)
+	  | expArity (args as O.RowArgs _, O.RowArity _, _, app) =
+	    (nil, app args)
+	  | expArity (_, _, _, _) =
 	    raise Crash.Crash "FlatteningPhase.expArity"
 
 	fun tagAppExp (info, label, n, args, conArity) =
-	    expArity (args, valOf conArity,
+	    expArity (args, valOf conArity, info,
 		      fn args => O.TagAppExp (info, label, n, args))
 
 	fun conAppExp (info, id, args, conArity) =
-	    expArity (args, valOf conArity,
+	    expArity (args, valOf conArity, info,
 		      fn args => O.ConAppExp (info, id, args))
 
 	(* Translation *)
@@ -264,8 +266,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		case LabelSort.sort labelIdList of
 		    (labelIdList', LabelSort.Tup _) =>
 			(stms, O.TupArgs (List.map #2 labelIdList'))
-		  | (labelIdList', LabelSort.Rec) =>
-			(stms, O.RecArgs labelIdList')
+		  | (labelIdList', LabelSort.Row) =>
+			(stms, O.RowArgs labelIdList')
 	    end
 	  | unfoldArgs (exp, rest, _) =
 	    let
@@ -334,8 +336,8 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    case LabelSort.sort fields of
 			(fields', LabelSort.Tup _) =>
 			    O.TupExp (id_info info, List.map #2 fields')
-		      | (fields', LabelSort.Rec) =>
-			    O.RecExp (id_info info, fields')
+		      | (fields', LabelSort.Row) =>
+			    O.RowExp (id_info info, fields')
 	    in
 		r := SOME (f exp'::translateCont cont);
 		stms
@@ -418,17 +420,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, args) = unfoldArgs (exp2, rest, isNAry)
 		val n = tagIndex (#typ info', label)
 		val conArity = makeConArity (#typ info', isNAry)
-		val (idTestOpt, exp') =
+		val (stms', exp') =
 		    tagAppExp (id_info info, label, n, args, conArity)
 	    in
-		case idTestOpt of
-		    NONE =>
-			r := SOME (f exp'::translateCont cont)
-		  | SOME (id, test) =>
-			r := SOME ([O.TestStm (stm_info (#region info), id,
-					       [(test,
-						 f exp'::translateCont cont)],
-					       nil)]);
+		r := SOME (stms' @ f exp'::translateCont cont);
 		stms
 	    end
 	  | translateExp (AppExp (info, ConExp (info', longid, isNAry), exp2),
@@ -439,17 +434,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms2, args) = unfoldArgs (exp2, rest, isNAry)
 		val (stms1, id1, _) = translateLongid longid
 		val conArity = makeConArity (#typ info', isNAry)
-		val (idTestOpt, exp') =
+		val (stms', exp') =
 		    conAppExp (id_info info, id1, args, conArity)
 	    in
-		case idTestOpt of
-		    NONE =>
-			r := SOME (f exp'::translateCont cont)
-		  | SOME (id, test) =>
-			r := SOME ([O.TestStm (stm_info (#region info), id,
-					       [(test,
-						 f exp'::translateCont cont)],
-					       nil)]);
+		r := SOME (stms' @ f exp'::translateCont cont);
 		stms1 @ stms2
 	    end
 	  | translateExp (AppExp (info, RefExp _, exp2), f, cont) =
@@ -522,7 +510,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 			    in
 				(stms, O.TupExp (info', ids))
 			    end
-		      | O.RecArity labels =>
+		      | O.RowArity labels =>
 			    let
 				val (stms, labelIdList) =
 				    ListPair.unzip
@@ -533,7 +521,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 						   (stm, (label, id))
 					       end) labels)
 			    in
-				(stms, O.RecExp (info', labelIdList))
+				(stms, O.RowExp (info', labelIdList))
 			    end
 	    in
 		r := SOME (stms3 @ f exp'::translateCont cont); stms1
@@ -756,7 +744,56 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateGraph (Leaf (_, ref (SOME stms)), _) = stms
 	  | translateGraph (_, _) =
 	    raise Crash.Crash "FlatteningPhase.translateGraph"
-	and translateNode (pos, GuardTest (mapping0, exp),
+	and translateNode (pos, RefAppTest _, thenGraph, _, mapping) =
+	    let
+		val id = freshId {region = Source.nowhere}
+		val mapping' =
+		    (LABEL (Label.fromString "ref")::pos, id)::mapping
+		val id' = lookup (pos, mapping)
+	    in
+		O.RefAppDec (stm_info Source.nowhere, id, id')::
+		translateGraph (thenGraph, mapping')
+	    end
+	  | translateNode (pos, TupTest typs, thenGraph, _, mapping) =
+	    let
+		val ids =
+		    List.map (fn _ => freshId {region = Source.nowhere}) typs
+		val mapping' =
+		    List.foldli
+		    (fn (i, id, mapping) =>
+		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
+		    mapping ids
+		val id = lookup (pos, mapping)
+	    in
+		O.TupDec (stm_info Source.nowhere, ids, id)::
+		translateGraph (thenGraph, mapping')
+	    end
+	  | translateNode (pos, RowTest labelTypList, thenGraph, _, mapping) =
+	    let
+		val labelIdList =
+		    List.map (fn (label, _) =>
+			      (label, freshId {region = Source.nowhere}))
+		    labelTypList
+		val mapping' =
+		    ListPair.foldr (fn ((label, _), (_, i), mapping) =>
+				    (LABEL label::pos, i)::mapping)
+		    mapping (labelTypList, labelIdList)
+		val id = lookup (pos, mapping)
+	    in
+		O.RowDec (stm_info Source.nowhere, labelIdList, id)::
+		translateGraph (thenGraph, mapping')
+	    end
+	  | translateNode (pos, LabTest (label, n, _), thenGraph, _, mapping) =
+	    let
+		val id = freshId {region = Source.nowhere}
+		val mapping' = ((LABEL label::pos), id)::mapping
+	    in
+		O.ValDec (stm_info Source.nowhere, id,
+			  O.SelAppExp ({region = Source.nowhere}, label, n,
+				       lookup (pos, mapping)))::
+		translateGraph (thenGraph, mapping')
+	    end
+	  | translateNode (_, GuardTest (mapping0, exp),
 			   thenGraph, elseGraph, mapping) =
 	    let
 		val info = infoExp exp
@@ -772,7 +809,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		r := SOME stms1;
 		stms
 	    end
-	  | translateNode (pos, DecTest (mapping0, decs),
+	  | translateNode (_, DecTest (mapping0, decs),
 			   thenGraph, _, mapping) =
 	    let
 		val thenStms = translateGraph (thenGraph, mapping)
@@ -810,14 +847,14 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		  (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
 		 mapping ids)
 	    end
-	  | translateTypArgs (O.RecArgs labelTypList, pos, mapping) =
+	  | translateTypArgs (O.RowArgs labelTypList, pos, mapping) =
 	    let
 		val labelIdList =
 		    List.map (fn (label, _) =>
 			      (label, freshId {region = Source.nowhere}))
 		    labelTypList
 	    in
-		(O.RecArgs labelIdList,
+		(O.RowArgs labelIdList,
 		 List.foldr (fn ((label, id), mapping) =>
 			     (LABEL label::pos, id)::mapping)
 		 mapping labelIdList)
@@ -851,46 +888,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, test, thenStms, mapping')
 	    end
-	  | translateTest (RefAppTest typ, pos, mapping) =
-	    let
-		val id = freshId {region = Source.nowhere}
-		val mapping' =
-		    (LABEL (Label.fromString "ref")::pos, id)::mapping
-	    in
-		(nil, O.RefAppTest id, nil, mapping')
-	    end
-	  | translateTest (TupTest typs, pos, mapping) =
-	    let
-		val ids =
-		    List.map (fn _ => freshId {region = Source.nowhere}) typs
-		val mapping' =
-		    List.foldli
-		    (fn (i, id, mapping) =>
-		     (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
-		    mapping ids
-	    in
-		(nil, O.TupTest ids, nil, mapping')
-	    end
-	  | translateTest (RecTest labelTypList, pos, mapping) =
-	    let
-		val labelIdList =
-		    List.map (fn (label, _) =>
-			      (label, freshId {region = Source.nowhere}))
-		    labelTypList
-		val mapping' =
-		    ListPair.foldr (fn ((label, _), (_, i), mapping) =>
-				    (LABEL label::pos, i)::mapping)
-		    mapping (labelTypList, labelIdList)
-	    in
-		(nil, O.RecTest labelIdList, nil, mapping')
-	    end
-	  | translateTest (LabTest (label, n, typ), pos, mapping) =
-	    let
-		val id = freshId {region = Source.nowhere}
-		val mapping' = ((LABEL label::pos), id)::mapping
-	    in
-		(nil, O.LabTest (label, n, id), nil, mapping')
-	    end
 	  | translateTest (VecTest typs, pos, mapping) =
 	    let
 		val ids =
@@ -903,7 +900,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(nil, O.VecTest ids, nil, mapping')
 	    end
-	  | translateTest ((GuardTest (_, _) | DecTest (_, _)), _, _) =
+	  | translateTest (_, _, _) =
 	    raise Crash.Crash "FlatteningPhase.translateTest"
 
 	fun translate () (desc, (imports, (exportExp, sign))) =

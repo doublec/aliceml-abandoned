@@ -20,7 +20,7 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 		      fun compare (x1, x2) = Label.compare (get x1, get x2))
 
 	datatype arity =
-	    Rec
+	    Row
 	  | Tup of int
 
 	fun isTuple (x::xr, i) =
@@ -34,6 +34,6 @@ functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
 	    in
 		case isTuple (xs', 1) of
 		    SOME i => (xs', Tup i)
-		  | NONE => (xs', Rec)
+		  | NONE => (xs', Row)
 	    end
     end
