@@ -93,8 +93,12 @@ struct
     fun inf (UNEVALUATED {inf, ...}) = inf
       | inf (EVALUATED {inf, ...}) = inf
 
+    val initialTable = UnsafeComponent.getInitialTable ()
+
     functor MkManager() :> COMPONENT_MANAGER where type component = component =
     struct
+	(*--** urls are required to be absolute, but this is not checked *)
+
 	exception Conflict
 	exception Mismatch of {component : Url.t,
 			       request : Url.t option,
@@ -106,7 +110,7 @@ struct
 	    UrlMap.new (Vector.map (fn (s, inf, mod) =>
 				       (Url.fromString ("x-alice:/" ^ s),
 					(inf, mod)))
-				   (UnsafeComponent.getInitialTable ()))
+				   initialTable)
 
 	fun strictTypeCheck (SOME inf, SOME importInf, mod) =
 	    (Inf.match (inf, importInf); mod) (*--** coercion *)
