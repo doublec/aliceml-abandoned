@@ -194,9 +194,10 @@ structure TypePrivate =
 
   (* Type graph traversal *)
 
-    (*UNFINISHED: Traversal ignores abbreviations. Most times this is
-	the right thing to do (eg. closure check), sometimes it's not that
-	obvious, however (eg. realisation). What's right? *)
+    (* We have two ways to traverse types:
+     * - ignoring abbreviations (eg. for closure check)
+     * - not ignoring abbreviations (eg. realisations, lifting)
+     *)
 
     fun app1'(( HOLE _
 	      | VAR _
@@ -700,6 +701,8 @@ structure TypePrivate =
 	    and closeRow(r as RHO(n,r')) = if !n > !level then r' else r
 	      | closeRow r               = r
 	in
+	    (* UNFINISHED: This should better use foldlNoAbbrev, but then
+	     * we had to lift free vars in abbreviations somehow. *)
 	    foldl close (fn t => t) t t
 	end
 
