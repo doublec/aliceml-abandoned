@@ -269,19 +269,6 @@ fun getSelectionNode() = case !selection of
   | SOME(n,_,_) => n  
 
 
-fun resizeSepLine(line,x) = let 
-			      val (rx1,ry1,rx2,ry2) = 
-				  GtkCanvas.itemGetBounds(line, 0.0,
-							  0.0,
-							  0.0,
-							  0.0)
-			      val y1 = Real.trunc(Real.+(ry1,1.0))
-			  in
-			      (GtkCanvas.itemSet(line,
-						 "points", 
-						 Gdk.POINTS ([0, y1, x, y1])))
-			  end
-
 fun  resizeSepLinesIterate(dict,x,i,highest_i) =
      if i > highest_i 
 	 then ()
@@ -328,29 +315,6 @@ fun handleResize (scrolled,hadj,vadj,resize) = (fn _ =>  Server.serve (fn () => 
 							  h)
 				; ())
 			 end))
-
-(* Scrolling *)
-fun scrollX (x,scrolled,hadj) = 
-    let
-	val valueh = Gtk.adjustmentGetFieldValue(hadj)
-	val pages =  Gtk.adjustmentGetFieldPageSize(hadj)
-    in
-	( if Real.> (Real.+(Real.+(valueh,x),pages),!Settings.max_x)
-	      then  Gtk.adjustmentSetValue(hadj,Real.-(!Settings.max_x,pages))
-	  else Gtk.adjustmentSetValue(hadj,Real.+(valueh,x))
-	      ;())
-    end
-
-fun scrollY (y,scrolled,vadj) = 
-    let
-	val pages =  Gtk.adjustmentGetFieldPageSize(vadj)
-	val valuev = Gtk.adjustmentGetFieldValue(vadj)
-    in
-	( if Real.>(Real.+(Real.+(valuev,y),pages),!Settings.max_y) 
-	      then  Gtk.adjustmentSetValue(vadj,Real.-(!Settings.max_y,pages))
-	  else  Gtk.adjustmentSetValue(vadj,Real.+(valuev,y))
-	      ;())
-    end 
 
 (* Popup window for selection *)
  fun makePopup {node = n, widthhandler = w, depthhandler = d, 
@@ -1003,13 +967,13 @@ fun updateIterate = re_inspect
 	 Server.serve (fn () => 
 		case event of  
 		    Gdk.GDK_KEY_PRESS({keyval = 65361,...}) => 
-			scrollX(~10.0,scrolled,hadj) 
+			scroll(~10.0,scrolled,hadj,!Settings.max_x) 
 		  | Gdk.GDK_KEY_PRESS({keyval = 65363,...}) => 
-			scrollX(10.0,scrolled,hadj) 
+			scroll(10.0,scrolled,hadj,!Settings.max_x) 
 		  | Gdk.GDK_KEY_PRESS({keyval = 65362,...}) => 
-			scrollY(~10.0,scrolled,vadj)    
+			scroll(~10.0,scrolled,vadj,!Settings.max_y)    
 		  | Gdk.GDK_KEY_PRESS({keyval = 65364,...}) => 
-			scrollY(10.0,scrolled,vadj)
+			scroll(10.0,scrolled,vadj,!Settings.max_y)
 		  | _ => () )
 
      

@@ -328,6 +328,18 @@ val aboutWindow =  (fn () =>
 	 ;Gtk.widgetShowAll(dialog))
      end)  
 
+(* Scrolling *)
+
+fun scroll (d,scrolled,adj,max) = 
+    let
+	val pages =  Gtk.adjustmentGetFieldPageSize(adj)
+	val value = Gtk.adjustmentGetFieldValue(adj)
+    in
+	( if Real.>(Real.+(Real.+(value,d),pages),max) 
+	      then  Gtk.adjustmentSetValue(adj,Real.-(max,pages))
+	  else  Gtk.adjustmentSetValue(adj,Real.+(value,d))
+	      ;())
+    end  
      
 (******************** Canvas Items ***************************)
 

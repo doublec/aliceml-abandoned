@@ -85,6 +85,7 @@ signature GTK_SUPPORT =
 (* More complex stuff *)
 
 	val aboutWindow: unit -> unit
+	val scroll: real * tag * tag * real-> unit
 
 (* Canvas Items & Handling *)
 
