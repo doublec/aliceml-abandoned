@@ -15,15 +15,15 @@ val move_food_inside =
 
 fun scan360for cond fail =
     try (fn exit =>
-        sense leftahead cond ifyes exit ++
+        sense leftahead cond ifyes (turn left ++ exit) ++
         sense ahead cond ifyes exit ++
-        sense rightahead cond ifyes exit ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
         turn right ++
-        sense rightahead cond ifyes exit ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
         turn right ++
-        sense rightahead cond ifyes exit ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
         turn right ++
-        sense rightahead cond ifyes exit ++
+        sense rightahead cond ifyes (turn right ++ exit) ++
         fail) 
     otherwise
         nop
