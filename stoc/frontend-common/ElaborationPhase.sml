@@ -863,7 +863,7 @@ print"'_? (* not found *)\n";
 	let
 	    val (t,cons') = elabConReps(E, t0, cons)
 	in
-	    ( t, O.SumTyp(typInfo(i,t), cons') )
+	    ( buildTyp t, O.SumTyp(typInfo(i,t), cons') )
 	end
 
       | elabTypRep(E, id', t0, buildTyp, buildKind, typ) =
