@@ -63,7 +63,6 @@ protected:
     NUMBER_OF_INSTANCE_FIELDS_POS, // int
     VIRTUAL_TABLE_POS, // Block(Closure ... Closure)
     LOCK_POS,
-    INITIALIZATION_THREAD_POS, // Thread | int(0)
     BASE_SIZE
     // ... static fields
     // ... static methods
@@ -99,6 +98,9 @@ public:
   }
   word GetStaticField(u_int index) {
     return GetArg(BASE_SIZE + index);
+  }
+  void PutStaticField(u_int index, word value) {
+    ReplaceArg(BASE_SIZE + index, value);
   }
   Closure *GetStaticMethod(u_int index) {
     return Closure::FromWordDirect(GetArg(BASE_SIZE + index));
@@ -154,7 +156,14 @@ public:
 static const word null = Store::IntToWord(0);
 
 class DllExport Lock: private Block {
-  //--** to be determined
+protected:
+  enum { SIZE };
+public:
+  using Block::ToWord;
+
+  static Lock *New() {
+    return static_cast<Lock *>(Store::AllocBlock(JavaLabel::Lock, SIZE));
+  }
 };
 
 class DllExport Object: private Block {
@@ -169,7 +178,8 @@ public:
     u_int size = theClass->GetNumberOfInstanceFields();
     Block *b = Store::AllocBlock(JavaLabel::Object, BASE_SIZE + size);
     b->InitArg(0, theClass->ToWord());
-    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, null);
+    //--** initialization incorrect for long/float/double
+    for (u_int i = size; i--; ) b->InitArg(BASE_SIZE + i, Store::IntToWord(0));
     return static_cast<Object *>(b);
   }
 
@@ -187,6 +197,9 @@ public:
   }
   word GetInstanceField(u_int index) {
     return GetArg(BASE_SIZE + index);
+  }
+  void PutInstanceField(u_int index, word value) {
+    ReplaceArg(BASE_SIZE + index, value);
   }
   Closure *GetVirtualMethod(u_int index) {
     return GetClass()->GetVirtualMethod(index);
