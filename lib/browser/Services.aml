@@ -149,8 +149,9 @@ import signature SERVICES from "SERVICES-sig"
 						  [("points", 
 				     Gdk.POINTS ([0, linepos, mx, linepos])),
 						   ("fill_color_gdk", 
-		  Gdk.OBJECT(MkColorTable.allocColor(60000,60000,60000)) ),
-		 ("width_pixels", Gdk.INT 2)])  
+		  Gdk.OBJECT(MkColorTable.allocColor(40000,40000,50000)) ),
+		 ("line_style",Gdk.INT(Gdk.LINE_ON_OFF_DASH)),
+		 ("width_pixels", Gdk.INT 1)])  
 		       end
 	       else WindowHelper.uglyNULL 
 
@@ -179,7 +180,7 @@ import signature SERVICES from "SERVICES-sig"
 					       0.0,
 					       0.0,
 					       0.0)
-				 val y1 = Real.trunc(Real.+(ry1,2.0))
+				 val y1 = Real.trunc(Real.+(ry1,1.0))
 			 in
 			     (GtkCanvas.itemSet(line,
 					  "points", 
@@ -187,7 +188,7 @@ import signature SERVICES from "SERVICES-sig"
 			      ;  resizeSepLinesIterate(dict,x,i+1,highest_i))
 			 end)
 
-		  (* UNNEEDED! *)
+		
 	   fun yPosSepLine (item,group) = 
 	       let
 		   val (_,ry1,_,_) = 
