@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -52,6 +52,8 @@ struct
 	    else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
 		  Hole.fill(b,true))
 	end
+
+    fun isFulfilled(r,h) = !r
 end
 *)
 
@@ -87,6 +89,8 @@ local
 		else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
 		      Hole.fill(b,true))
 	    end
+
+	fun isFulfilled(Promise__(r,h)) = !r
     end
 
     __primitive __eqeqtype promise = "'a promise"

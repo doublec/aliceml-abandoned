@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2004
+ *   Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -14,8 +14,8 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive         from "Pervasive"
-import __primitive type unit and exn from "ToplevelTypes"
+import structure __pervasive                  from "Pervasive"
+import __primitive type unit and exn and bool from "ToplevelTypes"
 
 signature PROMISE =					(**)
 sig
@@ -29,4 +29,6 @@ sig
 
     val fulfill :	'a promise * 'a  -> unit	(* Promise, Cyclic *)
     val fail :		'a promise * exn -> unit	(* Promise *)
+
+    val isFulfilled :	'a promise -> bool
 end

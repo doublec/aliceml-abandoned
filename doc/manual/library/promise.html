@@ -57,11 +57,13 @@
 
 	exception Promise
 
-	val promise : unit -> 'a promise
-	val future :  'a promise -> 'a
+	val promise :     unit -> 'a promise
+	val future :      'a promise -> 'a
 
-	val fulfill : 'a promise * 'a -> unit
-	val fail :    'a promise * exn -> unit
+	val fulfill :     'a promise * 'a -> unit
+	val fail :        'a promise * exn -> unit
+
+	val isFulfilled : 'a promise * 'a -> unit
     end
   </PRE>
 
@@ -121,6 +123,16 @@
       <TT>Promise</TT> is raised. Equivalent to</P>
       <PRE>
         (Future.await <I>ex</I>; fulfill (<I>p</I>, spawn raise <I>ex</I>))</PRE>
+    </DD>
+
+    <DT>
+      <TT>isFulfilled <I>p</I></TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>p</I></TT> has already been fulfilled
+      or failed, <TT>false</TT> otherwise. Note that a result of <TT>true</TT>
+      does not necessarily imply that <TT>future <I>p</I></TT> is determined,
+      since <TT><I>p</I></TT> may have been fulfilled with another future.</P>
     </DD>
   </DL>
 

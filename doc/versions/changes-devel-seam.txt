@@ -22,6 +22,7 @@ Interactive Toplevel:
 
 Library:
 
+* [NEW] Promise: added isFulfilled predicate.
 * [NEW] Date: added fromISO, toISO, scanISO for locale-independent date formats.
 * [NEW] PrimIO: functions openVectorList{Rd,Wr}, useful for redirection.
 * [NEW] Store: new low-level interface to runtime heap and garbage collector.
