@@ -1,3 +1,5 @@
+(* TODO: does this test fail under linux? *)
+
 import signature REGRESSION from "REGRESSION-sig"
 
 structure Time3 : REGRESSION =

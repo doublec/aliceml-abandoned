@@ -27,15 +27,19 @@ struct
 
     fun testMinInt () = 
 	let
-	    (* TODO: FIXME *)
 	    val n = valOf Int.precision
-	    val min = Real.round (Math.pow (2.0, Real.fromInt (n - 1)))
+	    val min = Real.round (Math.pow (2.0, Real.fromInt (n - 1)) * ~1.0)
 	in
-	    Test.test (fn _ => valOf Int.minInt = min) ()
+	    Test.test (fn x => valOf x = min) Int.minInt
 	end
 
     fun testMaxInt () = 
-	Test.test (fn _ => valOf Int.maxInt = 1073741823) ()
+	let
+	    val n = valOf Int.precision
+	    val max = Real.round (Math.pow (2.0, Real.fromInt (n - 1)) + ~1.0)
+	in
+	    Test.test (fn x => valOf x = max) Int.maxInt
+	end
 
     fun testPrecision () = 
 	Test.test (fn _ => valOf Int.precision = 31) ()
@@ -363,7 +367,8 @@ struct
 
     fun testNeg () =
 	let
-	    fun t x = ~x = x - (2 * x) handle Overflow => x = valOf Int.minInt
+	    fun t x = ~x = Real.round (Real.fromInt x - (2.0 * Real.fromInt x))
+				       handle Overflow => x = valOf Int.minInt
 	in
 	    Gen.try 1000 Gen.int (Test.test t);
 	    Test.test t (valOf Int.maxInt);

@@ -70,7 +70,7 @@ import structure StringCvt from "stringcvt"
 import structure Tak from "tak"
 import structure Taut from "taut"
 import structure TestDyn1 from "testdyn1"
-import structure TestMatrix from "testmatrix"
+import structure TestMatrix from "testMatrix"
 import structure StringT from "string"
 import structure StringFromString from "string.fromString"
 import structure Time2 from "time2"
@@ -80,6 +80,7 @@ import structure TypeCheck from "type-check"
 import structure Typespec from "typespec"
 import structure Unary2 from "unary.2"
 import structure Unary from "unary"
+import structure UnixPath from "unixpath"
 import structure Undetermined2 from "undetermined2"
 import structure Undetermined from "undetermined"
 import structure UselessString from "useless-string"
@@ -280,6 +281,8 @@ struct
    fun testUnary2 () = test' Unary2.ok Unary2.result
        
    fun testUnary () = test' Unary.ok Unary.result
+
+   fun testUnixPath () = test' UnixPath.ok UnixPath.result
        
    fun testUndetermined2 () = test' Undetermined2.ok Undetermined2.result
        
@@ -385,6 +388,7 @@ fun ts xs = List.app (fn (x, _) => print ("\n(" ^ x ^ ".name, test" ^ x ^ "),"))
 				(Typespec.name, testTypespec),
 				(Unary2.name, testUnary2),
 				(Unary.name, testUnary),
+				(UnixPath.name, testUnixPath),
 				(Undetermined2.name, testUndetermined2),
 				(Undetermined.name, testUndetermined),
 				(UselessString.name, testUselessString),
