@@ -83,11 +83,13 @@ define
 		       fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end}
 		IsToplevel)
       [] evalStm(Coord Exp) then evalStm(Coord {ShareExp Exp ShareDict})
-      [] handleStm(Coord Body1 Id Body2 Body3 Shared) then
+      [] handleStm(Coord Body1 Id Body2 Body3 I) then X in
+	 X = {NewCell true}
+	 {Share I ShareDict X}
 	 handleStm(Coord {ShareBody Body1 ShareDict} Id
-		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict}
-		   Shared)
-      [] endHandleStm(_ _) then Stm
+		   {ShareBody Body2 ShareDict} {ShareBody Body3 ShareDict} X)
+      [] endHandleStm(Coord I) then
+	 endHandleStm(Coord {Share I ShareDict})
       [] testStm(Coord Id Test Body1 Body2) then
 	 testStm(Coord Id Test
 		 {ShareBody Body1 ShareDict} {ShareBody Body2 ShareDict})

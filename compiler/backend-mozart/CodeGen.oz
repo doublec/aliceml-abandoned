@@ -85,17 +85,23 @@ define
 	  end VHd VTl}
       [] evalStm(_ Exp) then
 	 {TranslateExp Exp {State.cs newReg($)} VHd VTl State}
-      [] handleStm(Coord Body1 Id Body2 Body3 _) then
+      [] handleStm(Coord Body1 Id Body2 Body3 Shared) then
 	 Reg TryVInstr CatchVInstr VInter
       in
 	 Reg = {MakeReg Id State}
 	 VHd = vExHandler(_ TryVInstr Reg CatchVInstr
 			  {TranslateCoord Coord State} VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
+	 {Assign Shared false}
 	 {TranslateBody Body2 ?CatchVInstr nil State ReturnReg}
 	 {TranslateBody Body3 ?VInter nil State ReturnReg}
-      [] endHandleStm(Coord _) then
-	 VHd = vPopEx(_ {TranslateCoord Coord State} nil)
+      [] endHandleStm(Coord Shared) then
+	 if {Access Shared} then
+	    VHd = vPopEx(_ {TranslateCoord Coord State} VTl)
+	 else
+	    VHd = VTl
+	 end
+	 VTl = nil
       [] testStm(Coord Id Test Body1 Body2) then Reg0 ThenVInstr ElseVInstr in
 	 %--** assemble several testStm into a single vMatch
 	 Reg0 = {GetReg Id State}
