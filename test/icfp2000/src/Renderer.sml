@@ -239,7 +239,7 @@ structure Renderer :> RENDERER =
 			val attenuation2 = 100.0 / (99.0 + dist * dist)
 		    in
 			SOME (Color.scale (attenuation1 * attenuation2, color),
-			      unitSpotPointDir)
+			      negVec unitSpotPointDir)
 		    end
 	    end
 
