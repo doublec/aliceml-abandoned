@@ -31,4 +31,6 @@
 #define DECLARE_JAVA_STRING(string, x) DECLARE_BLOCKTYPE(JavaString, string, x)
 #define DECLARE_AARRAY(array, x) DECLARE_BLOCKTYPE(ObjectArray, array, x)
 
+#define RETURN_VOID RETURN0
+
 #endif
