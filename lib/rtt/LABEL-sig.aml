@@ -15,19 +15,18 @@ import structure Name from "Name"
 
 signature LABEL =
 sig
-    eqtype lab					(* [lab,l] *)
+    eqtype lab						(* [lab,l] *)
     type t = lab
 
 
     (* Operations *)
 
-    val fromString :	string -> lab
-    val fromInt :	int    -> lab
-    val fromLargeInt :	LargeInt.int -> lab
-    val fromName :	Name.t -> lab		(* Domain *)
+    val fromString :	string -> lab			(* Domain, Overflow *)
+    val fromInt :	int    -> lab			(* Domain *)
+    val fromName :	Name.t -> lab			(* Domain *)
     val toName :	lab    -> Name.t
     val toString :	lab    -> string
-    val toLargeInt :	lab    -> LargeInt.int option
+    val toInt :		lab    -> int option
 
     val compare :	lab * lab -> order
     val hash :		lab -> int
