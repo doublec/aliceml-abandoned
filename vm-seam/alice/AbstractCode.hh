@@ -62,19 +62,19 @@ public:
   };
 
   static con GetCon(TagVal *tagVal) {
-    return static_cast<con>(tagVal->GetTag());
+    return STATIC_CAST(con, tagVal->GetTag());
   }
   static args GetArgs(TagVal *tagVal) {
-    return static_cast<args>(tagVal->GetTag());
+    return STATIC_CAST(args, tagVal->GetTag());
   }
   static instr GetInstr(TagVal *tagVal) {
-    return static_cast<instr>(tagVal->GetTag());
+    return STATIC_CAST(instr, tagVal->GetTag());
   }
   static idRef GetIdRef(TagVal *tagVal) {
-    return static_cast<idRef>(tagVal->GetTag());
+    return STATIC_CAST(idRef, tagVal->GetTag());
   }
   static abstractCode GetAbstractCode(TagVal *tagVal) {
-    return static_cast<abstractCode>(tagVal->GetTag());
+    return STATIC_CAST(abstractCode, tagVal->GetTag());
   }
 
   static void Disassemble(std::FILE *f, TagVal *pc);
