@@ -68,6 +68,9 @@ PerformDump(FILE *file, word x, u_int index, u_int level, u_int depth) {
   if (depth > Debug::maxDepth) {
     std::fprintf(file, "%*c...\n", level, ' ');
   }
+  else if (x == static_cast<word>(NULL)) {
+    std::fprintf(file, "%*cNULL POINTER[%d]\n", level, ' ', index);
+  }
   else if ((w.pt = Store::WordToTransient(x)) != INVALID_POINTER) {
     std::fprintf(file, "%*cTRANSIENT(%s)[%d]\n", level, ' ',
 		 TransLabel(w.pb->GetLabel()), index);
