@@ -590,7 +590,7 @@ DEFINE0(NativeCore_init) {
   stdInHandle = GetStdHandle(STD_INPUT_HANDLE);
   if (!CreatePipe(&pipeInHandle, &pipeOutHandle, &saAttr, 0))
     __die("error during init: cannot create pipe");
-  if (!SetStdHandle(STD_INPUT_HANDLE, pipeInHandle)) {
+  if (!SetStdHandle(STD_INPUT_HANDLE, pipeInHandle))
     __die("error during init: cannot redirect stdin");
 #endif
   gtk_init(NULL,NULL);
