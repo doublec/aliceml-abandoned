@@ -41,26 +41,16 @@ structure CodeGen =
 		     List.app constPropDec body')
 	  | constPropDec _ = ()
 	and
-	    constPropExp (f as FunExp (_, _, _, idargsbody)) =
-	    (List.app (fn (_, body') => List.app constPropDec body') idargsbody;
-	     f)
+	    constPropExp (f as FunExp (_, _, _, _, body)) =
+	    (List.app constPropDec body; f)
 	  | constPropExp x = x
 
 	(* compute destination classes *)
-	fun destClassExp (FunExp (_, thisFun, _, idbodies)) =
-	    let
-		fun destClassFun (args,body') =
-		    let
-			val destClass = Lambda.getClassStamp
-			    (thisFun, Lambda.argSize args)
-		    in
-			destClassDecs body'
-		    end
-	    in
-		vprint (3, "computing destclasses for "^Stamp.toString thisFun^" ...\n");
-		app destClassFun idbodies;
-		vprint (3, "destclasses for "^Stamp.toString thisFun^" done.\n")
-	    end
+	fun destClassExp (FunExp (_, thisFun, _, args, body)) =
+	    (vprint (3, "computing destclasses for "^Stamp.toString thisFun^" ...\n");
+	     Lambda.getClassStamp (thisFun, Lambda.argSize args);
+	     destClassDecs body;
+	     vprint (3, "destclasses for "^Stamp.toString thisFun^" done.\n"))
 	  | destClassExp _ = ()
 	and
 	    destClassDec (HandleStm(_,body',id',body'', body''', shared)) =
@@ -116,7 +106,7 @@ structure CodeGen =
 		 NONE => markfree(free, id', curFun, "VarExp")
 	       | SOME exp' => freeVarsExp (exp', free, curFun))
 	  | freeVarsExp (NewExp _, _, _) = ()
-	  | freeVarsExp (ConAppExp (_, id', idargs), free, curFun) =
+	  | freeVarsExp (ConAppExp (_, id', idargs, _), free, curFun) =
 	    (markfree (free, id', curFun, "ConAppExp");
 	     argApp (markfree, idargs, free, curFun, "ConAppExp2"))
 	  | freeVarsExp (RefAppExp (_, idargs), free, curFun) =
@@ -150,27 +140,19 @@ structure CodeGen =
 	  | freeVarsExp (SelAppExp(_,_,id'), free, curFun) =
 	    markfree (free, id', curFun, "SelAppExp")
 	  | freeVarsExp (PrimExp (_, name), _, _) = ()
-	  | freeVarsExp (FunExp (_, thisFun, _, idbodies), free, curFun) =
+	  | freeVarsExp (FunExp (_, thisFun, _, args, body), free, curFun) =
 	    let
-		fun freeVarsFun (args,body') =
-		    let
-			val newfree = StampSet.new ()
-			val destClass = Lambda.getClassStamp
-			    (thisFun, Lambda.argSize args)
-		    in
-			freeVarsDecs (body', newfree, destClass);
-			argApp (markbound, args, newfree, destClass, "freeVarsFun");
-			vprint (2, "Fun "^Stamp.toString thisFun^", Class "^Stamp.toString
-				destClass^". Adding FreeVars ");
-			StampSet.app (fn x => vprint (2, Stamp.toString x^" ")) newfree;
-			vprint (2, ".\n");
-			FreeVars.addVars (destClass, newfree);
-			StampSet.app
-			(fn x => StampSet.insert (free,x))
-			newfree
-		    end
+		val newfree = StampSet.new ()
+		val destClass =
+		    Lambda.getClassStamp (thisFun, Lambda.argSize args)
 	    in
-		app freeVarsFun idbodies;
+		freeVarsDecs (body, newfree, destClass);
+		argApp (markbound, args, newfree, destClass, "freeVarsFun");
+		vprint (2, "Fun "^Stamp.toString thisFun^", Class "^Stamp.toString destClass^". Adding FreeVars ");
+		StampSet.app (fn x => vprint (2, Stamp.toString x^" ")) newfree;
+		vprint (2, ".\n");
+		FreeVars.addVars (destClass, newfree);
+		StampSet.app (fn x => StampSet.insert (free,x)) newfree;
 		vprint (2,"FunExp: ");
 		FreeVars.setFun (Id (dummyExpInfo, thisFun, Name.InId), curFun)
 	    end
@@ -232,9 +214,9 @@ structure CodeGen =
 	  | freeVarsDec (IndirectStm (_, ref NONE), _, _) = ()
 	and
 	    freeVarsTest (LitTest _, _, _) = ()
-	  | freeVarsTest (ConTest(id',NONE), free, curFun) =
+	  | freeVarsTest (ConTest(id',NONE,_), free, curFun) =
 	    markfree (free, id', curFun, "ConTest none")
-	  | freeVarsTest (ConTest(id',SOME id''), free, curFun) =
+	  | freeVarsTest (ConTest(id',SOME id'',_), free, curFun) =
 	    (markfree (free, id', curFun, "ConTest some");
 	     markbound (free, id'', curFun, "ConTest some2"))
 	  | freeVarsTest (RefTest id'', free, curFun) =
@@ -393,13 +375,13 @@ structure CodeGen =
 
 	(* Code generation for declarations *)
 	and decCode (ValDec(info', id',
-			    exp' as FunExp (_, thisFun, _, _),_), curFun, curCls) =
+			    exp' as FunExp (_, thisFun, _, _, _),_), curFun, curCls) =
 	    (Lambda.setId (thisFun, id');
 	     [Line (lineStmInfo info'),
 	      Multi (expCode (exp', curFun, curCls)),
 	      Astore thisFun])
 	  | decCode (ValDec(info', Id (_,stamp',_),
-			    ConAppExp (_,id'', idargs),_), curFun, curCls) =
+			    ConAppExp (_,id'',idargs,_),_), curFun, curCls) =
 	    Line (lineStmInfo info') ::
 	    createConVal (SOME stamp', id'', idargs, curFun, curCls)
 	  | decCode (ValDec(info', Id (_,stamp',_), exp',_), curFun, curCls) =
@@ -416,11 +398,11 @@ structure CodeGen =
 		fun emptyClosure ((Id (_,stamp',_),exp'),akku) =
 		    case exp' of
 			(* user defined function *)
-			FunExp (_,thisFun,_,_) =>
+			FunExp (_,thisFun,_,_,_) =>
 			    create (classNameFromStamp thisFun,
 				    Astore thisFun :: akku)
 		      (* constructed value *)
-		      | ConAppExp (_,id'',idargs) =>
+		      | ConAppExp (_,id'',idargs,_) =>
 			    Multi (createConVal (SOME stamp', id'', idargs, curFun, curCls)) ::
 			    akku
 		      (* record *)
@@ -448,8 +430,10 @@ structure CodeGen =
 			    Astore stamp' ::
 			    akku
 
-		fun fillClosure ((_,exp' as FunExp(_,thisFun, _, lambda)), akku) =
-		    Multi (createFun (thisFun, lambda, curFun, curCls, false)) ::
+		fun fillClosure ((_,FunExp(_, thisFun, _, args, body)), akku) =
+		    (*--** there may be no OneArg *)
+		    Multi (createFun (thisFun, [(args, body)],
+				      curFun, curCls, false)) ::
 		    akku
 		  | fillClosure ((id'', RecExp (_, labid)), akku) =
 		    createRecord (SOME id'', labid, akku, curFun, curCls)
@@ -471,8 +455,8 @@ structure CodeGen =
 		 idexps)
 	    end
 
-	  | decCode (RaiseStm((((line,_),_),_),id'), curFun, curCls) =
-	    [Line line,
+	  | decCode (RaiseStm(info',id'), curFun, curCls) =
+	    [Line (lineStmInfo info'),
 	     New CExWrap,
 	     Dup,
 	     idCode (id', curFun, curCls),
@@ -480,8 +464,8 @@ structure CodeGen =
 			   ([Classsig IVal],[Voidsig])),
 	     Athrow]
 
-	  | decCode (ReraiseStm((((line,_),_),_),id'), curFun, curCls) =
-	    [Line line,
+	  | decCode (ReraiseStm(info',id'), curFun, curCls) =
+	    [Line (lineStmInfo info'),
 	     New CExWrap,
 	     Dup,
 	     idCode (id', curFun, curCls),
@@ -489,7 +473,7 @@ structure CodeGen =
 			   ([Classsig IVal],[Voidsig])),
 	     Athrow]
 
-	  | decCode (TestStm((((line,_),_),_),id' as Id (_,stamp',_),test',body',body''), curFun, curCls) =
+	  | decCode (TestStm(info',id' as Id (_,stamp',_),test',body',body''), curFun, curCls) =
 		 (* test whether id' matches with test'.
 		  If so, eval body', if not, eval body'' *)
 	    let
@@ -567,9 +551,9 @@ structure CodeGen =
 				if switch
 				    then
 					case inst of
-					    TestStm ((((line,_),_),_), _, t'',b',b'')
+					    TestStm (info', _, t'',b',b'')
 					    => generateBody
-					    (Line line ::
+					    (Line (lineStmInfo info') ::
 					     Label lab ::
 					     Multi (decListCode (body', curFun, curCls)) ::
 					     akku,
@@ -684,11 +668,11 @@ structure CodeGen =
 				     Fcmpl,
 				     Ifne elselabel]))
 
-		  | testCode (ConTest (id'',NONE)) =
+		  | testCode (ConTest (id'',NONE,_)) =
 			 [idCode (id'', curFun, curCls),
 			  Ifacmpne elselabel]
 
-		  | testCode (ConTest (id'' as Id (_, stamp'', _),SOME (Id (_,stamp''',_)))) =
+		  | testCode (ConTest (id'' as Id (_, stamp'', _),SOME (Id (_,stamp''',_)),_)) =
 			 [Dup,
 			  Multi (if stamp'' = stamp_cons then
 				     [Instanceof CCons,
@@ -833,7 +817,7 @@ structure CodeGen =
 		    Multi (testCode test') ::
 		    decListCode (body', curFun, curCls)
 	    in
-		fun checkForConsTest (ConTest (Id (_, cstamp, _), SOME (Id (_, contentStamp',_)))) =
+		fun checkForConsTest (ConTest (Id (_, cstamp, _), SOME (Id (_, contentStamp',_)) ,_)) =
 		    let
 			fun findTup (SharedStm (_, b', _)::_) = findTup b'
 			  | findTup (IndirectStm (_, ref (SOME b'))::_) = findTup b'
@@ -884,7 +868,7 @@ structure CodeGen =
 		    (decListCode (body'', curFun, curCls)) ::
 		    [Label danach]
 	    in
-		Line line ::
+		Line (lineStmInfo info') ::
 		(case checkForSwitch (test', body'', 0) of
 		     (true, _, _) => generateSwitch (JLabel.new ())
 		   | _ => normalTest ())
@@ -904,26 +888,26 @@ structure CodeGen =
 		[Comment "Goto Shared",
 		 Goto schonda]
 
-	  | decCode (ReturnStm ((((line,_),_),_),AppExp(_,Id (_,stamp',_),arg')), curFun, curCls) =
+	  | decCode (ReturnStm (info,AppExp(_,Id (_,stamp,_),arg)), curFun, curCls) =
 		(* tailcall application *)
-		[Line line,
-		 Multi (invokeRecApply (stamp', arg', curFun, true, curCls, false)),
+		[Line (lineStmInfo info),
+		 Multi (invokeRecApply (stamp, arg, curFun, true, curCls, false)),
 		 Areturn]
 
-	  | decCode (ReturnStm ((((line,_),_),_), exp'), curFun, curCls) =
+	  | decCode (ReturnStm (info, exp), curFun, curCls) =
 		(* ordinary Return *)
-		[Line line,
-		 Multi (expCode (exp', curFun, curCls)),
+		[Line (lineStmInfo info),
+		 Multi (expCode (exp, curFun, curCls)),
 		 Areturn]
 
-	  | decCode (HandleStm((((line,_),_),_),trybody, Id (_,stamp',_), catchbody, contbody, shared'), curFun, curCls) =
+	  | decCode (HandleStm (info, trybody, Id (_,stamp',_), catchbody, contbody, shared'), curFun, curCls) =
 		    let
 			val try   = JLabel.new()
 			val to = JLabel.new ()
 			val cont = JLabel.new()
 		    in
 			shared' := cont;
-			Line line ::
+			Line (lineStmInfo info) ::
 			(* Catch should be the last instruction here to
 			 generate the correct order. However, we reverse
 			 the order here and in ToJasmin which makes dead
@@ -940,23 +924,23 @@ structure CodeGen =
 			decListCode (contbody, curFun, curCls)
 		    end
 
-	  | decCode (EndHandleStm ((((line,_),_),_), ref cont), _, _) =
+	  | decCode (EndHandleStm (info, ref cont), _, _) =
 		    [Comment "EndHandleStm",
-		     Line line,
+		     Line (lineStmInfo info),
 		     Goto cont]
 
-	  | decCode (EvalStm ((((line,_),_),_), exp'), curFun, curCls) =
+	  | decCode (EvalStm (info, exp), curFun, curCls) =
 		    Comment ("EvalStm. curFun = "^Stamp.toString curFun^" curCls = "^Stamp.toString curCls) ::
-		    Line line ::
-		    Multi (expCode (exp', curFun, curCls)) ::
+		    Line (lineStmInfo info) ::
+		    Multi (expCode (exp, curFun, curCls)) ::
 		    [Pop]
 
-	  | decCode (ExportStm ((((line,_),_),_),exp'), curFun, curCls) =
+	  | decCode (ExportStm (info, exp), curFun, curCls) =
 		    let
 			val stamp' = Stamp.new()
 		    in
-			Line line ::
-			Multi (expCode (exp', curFun, curCls)) ::
+			Line (lineStmInfo info) ::
+			Multi (expCode (exp, curFun, curCls)) ::
 			Astore stamp' ::
 			(if !VERBOSE >= 1 then
 			     Multi [Getstatic FOut,
@@ -980,9 +964,9 @@ structure CodeGen =
 	  | decCode (IndirectStm (_, ref NONE), _, _) = nil
 
 	and
-	    idCode (Id((((line,_), _),_),stamp',_), curFun, curCls) =
-	    Multi [Line line,
-		   stampCode (stamp', curFun, curCls)]
+	    idCode (Id (info,stamp,_), curFun, curCls) =
+	    Multi [Line (lineExpInfo info),
+		   stampCode (stamp, curFun, curCls)]
 
 	and
 	    stampCode (stamp', curFun, curCls) =
@@ -1342,24 +1326,25 @@ structure CodeGen =
 	    end
 
 
-	and expCode (AppExp((((line,_),_),_),Id(_,stamp',_), args), curFun, curCls) =
+	and expCode (AppExp(info, Id(_,stamp',_), args), curFun, curCls) =
 	    Comment "AppExp:" ::
-	    Line line ::
+	    Line (lineExpInfo info) ::
 	    invokeRecApply (stamp', args, curFun, false, curCls, false)
 
-	  | expCode (NewExp ((((line,_),_),_), _, hasArgs), _, _) =
-	    if hasArgs then
-		[Line line,
+	  | expCode (NewExp (info, _, _), _, _) =
+	    (*--** genericity? *)
+	    if Type.isArrow (valOf (IntermediateInfo.typ info)) then
+		[Line (lineExpInfo info),
 		 New CConstructor,
 		 Dup,
 		 Invokespecial (CConstructor, "<init>", ([],[Voidsig]))]
 	    else
-		[Line line,
+		[Line (lineExpInfo info),
 		 New CName,
 		 Dup,
 		 Invokespecial (CName, "<init>", ([],[Voidsig]))]
 
-	  | expCode (PrimAppExp (info' as (((line,_),_),_), name, ids), curFun, curCls) =
+	  | expCode (PrimAppExp (info', name, ids), curFun, curCls) =
 	    let
 		val n = List.length ids
 
@@ -1381,19 +1366,19 @@ structure CodeGen =
 		  | primcode => primcode
 	    end
 
-	  | expCode (PrimExp(info, name), _, curCls) =
+	  | expCode (PrimExp (info, name), _, curCls) =
 	    [Line (lineExpInfo info),
 	     Getstatic (Literals.insert (curCls, StringLit name)),
 	     Invokestatic MGetBuiltin]
 
-	  | expCode (FunExp(info,thisFun, _, lambda), upperFun, upperCls) =
-	    (* FunExp of coord * function stamp * printname * (id args * dec) list *)
-	    (* id is formal parameter *)
+	  | expCode (FunExp(info,thisFun, _, args, body), upperFun, upperCls) =
+	    (*--** may not have a OneArg *)
+	    (* FunExp of coord * function stamp * printname * id args * body *)
 	    (* 1st build closure: - instantiate class *)
 	    (*                    - set free variables via putfields *)
 	    (* 2nd generate corresponding class file *)
 	    Line (lineExpInfo info) ::
-	    createFun(thisFun, lambda, upperFun, upperCls, true)
+	    createFun(thisFun, [(args, body)], upperFun, upperCls, true)
 
 	  | expCode (RecExp(_, nil),_,_) =
 	    raise (Crash.Crash "CodeGen.expCode: empty RecExp")
@@ -1449,7 +1434,7 @@ structure CodeGen =
 	    [Line (lineExpInfo info),
 	     Getstatic BRef]
 
-	  | expCode (ConAppExp (info', id', idargs), curFun, curCls) =
+	  | expCode (ConAppExp (info', id', idargs, _), curFun, curCls) =
 	    Line (lineExpInfo info') ::
 	    createConVal (NONE, id', idargs, curFun, curCls)
 

@@ -10,18 +10,16 @@
  *   $Revision$
  *)
 
-structure LitHashKey =
-  struct
-      datatype lit = datatype IntermediateGrammar.lit
+structure LitHashKey :> HASH_KEY where type t = ImperativeGrammar.lit =
+    struct
+	datatype lit = datatype ImperativeGrammar.lit
+	type t = lit
 
-		     type t = lit
+	open LargeWord
 
-    open Word
-
-    fun hash (WordLit lw) = LargeWord.toInt(LargeWord.andb (lw,0wxf00000))
-      | hash (IntLit i) = LargeWord.toInt(LargeWord.andb
-					  (LargeWord.fromLargeInt i,0wxf00000))
-      | hash (CharLit c) = ord c
-      | hash (StringLit s) = StringHashKey.hash s
-      | hash (RealLit s) = StringHashKey.hash s
-  end
+	fun hash (WordLit w) = toInt (andb (w, 0wxf00000))
+	  | hash (IntLit i) = toInt (andb (fromLargeInt i, 0wxf00000))
+	  | hash (CharLit c) = Char.ord c
+	  | hash (StringLit s) = StringHashKey.hash s
+	  | hash (RealLit s) = StringHashKey.hash s
+    end

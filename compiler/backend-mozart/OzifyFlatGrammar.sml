@@ -98,10 +98,10 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, RealLit x) =
 	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
-	fun outputLab (q, lab) =
-	    case Label.toInt lab of
-		NONE => outputAtom (q, Label.toString lab)
-	      | SOME n => outputInt (q, n)
+	fun outputLab (q, label) =
+	    case Label.toInt label of
+		SOME i => outputInt (q, i)
+	      | NONE => outputAtom (q, Label.toString label)
 
 	fun outputId (q, Id (info, stamp, name)) =
 	    (f (q, "id"); outputInfo (q, info); m q;
@@ -111,11 +111,19 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	       | Name.InId => output (q, "inId");
 	     r q)
 
+	fun outputConArity (q, Nullary) = output (q, "nullary")
+	  | outputConArity (q, Unary) = output (q, "unary")
+	  | outputConArity (q, Tuple i) =
+	    (f (q, "tuple"); output (q, Int.toString i); r q)
+	  | outputConArity (q, Record labels) =
+	    (f (q, "record"); outputList outputLab (q, labels); r q)
+
 	fun outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
-	  | outputTest (q, ConTest (id, idOpt)) =
+	  | outputTest (q, ConTest (id, idOpt, conArity)) =
 	    (f (q, "conTest"); outputId (q, id); m q;
-	     outputOption outputId (q, idOpt); r q)
+	     outputOption outputId (q, idOpt); m q;
+	     outputConArity (q, conArity); r q)
 	  | outputTest (q, RefTest id) =
 	    (f (q, "refTest"); outputId (q, id); r q)
 	  | outputTest (q, TupTest ids) =
@@ -194,16 +202,16 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, PrimExp (info, string)) =
 	    (f (q, "primExp"); outputInfo (q, info); m q;
 	     outputAtom (q, string); r q)
-	  | outputExp (q, NewExp (info, stringOpt, hasArgs)) =
+	  | outputExp (q, NewExp (info, stringOpt, conArity)) =
 	    (f (q, "newExp"); outputInfo (q, info); m q;
 	     outputOption outputAtom (q, stringOpt); m q;
-	     outputBool (q, hasArgs); r q)
+	     outputConArity (q, conArity); r q)
 	  | outputExp (q, VarExp (info, id)) =
 	    (f (q, "varExp"); outputInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputExp (q, ConExp (info, id, hasArgs)) =
+	  | outputExp (q, ConExp (info, id, conArity)) =
 	    (f (q, "conExp"); outputInfo (q, info); m q;
-	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
+	     outputId (q, id); m q; outputConArity (q, conArity); r q)
 	  | outputExp (q, RefExp info) =
 	    (f (q, "refExp"); outputInfo (q, info); r q)
 	  | outputExp (q, TupExp (info, ids)) =
@@ -218,21 +226,21 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, SelExp (info, lab)) =
 	    (f (q, "selExp"); outputInfo (q, info); m q;
 	     outputLab (q, lab); r q)
-	  | outputExp (q, FunExp (info, stamp, flags, argsBodyList)) =
+	  | outputExp (q, FunExp (info, stamp, flags, args, body)) =
 	    (f (q, "funExp"); outputInfo (q, info); m q;
 	     outputStamp (q, stamp); m q;
 	     outputList outputFunFlag (q, flags); m q;
-	     outputList (outputPair (outputArgs outputId, outputBody))
-	     (q, argsBodyList); r q)
+	     outputArgs outputId (q, args); m q; outputBody (q, body); r q)
 	  | outputExp (q, AppExp (info, id, args)) =
 	    (f (q, "appExp"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, SelAppExp (info, lab, id)) =
 	    (f (q, "selAppExp"); outputInfo (q, info); m q;
 	     outputLab (q, lab); m q; outputId (q, id); r q)
-	  | outputExp (q, ConAppExp (info, id, args)) =
+	  | outputExp (q, ConAppExp (info, id, args, conArity)) =
 	    (f (q, "conAppExp"); outputInfo (q, info); m q;
-	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
+	     outputId (q, id); m q; outputArgs outputId (q, args); m q;
+	     outputConArity (q, conArity); r q)
 	  | outputExp (q, RefAppExp (info, args)) =
 	    (f (q, "refAppExp"); outputInfo (q, info); m q;
 	     outputArgs outputId (q, args); r q)

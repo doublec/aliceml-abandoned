@@ -15,7 +15,7 @@ structure ToJasmin =
 	open Backend
 	open JVMInst
 
-	datatype deb = SIs of string*INSTRUCTION list
+	datatype deb = SIs of string*instr list
 	exception Debug of deb
 
 	val actclass = ref ""
@@ -34,7 +34,7 @@ structure ToJasmin =
 
 	datatype jump = Got | Ret | IRet | ARet
 	datatype branchinst = Lab of label * bool | Jump of jump | Non
-	datatype registerOps = Load of (stamp * INSTRUCTION) | Store
+	datatype registerOps = Load of (stamp * instr) | Store
 
 	fun jumpToOp Ret = Return
 	  | jumpToOp IRet = Ireturn
@@ -415,7 +415,7 @@ structure ToJasmin =
 	 a method. *)
 	structure Catches =
 	    struct
-		val list = ref ([]: INSTRUCTION list)
+		val list = ref ([]: instr list)
 
 		fun new () = list := []
 

@@ -13,21 +13,28 @@
 signature LAMBDA =
     sig
 	type stamp = Stamp.t
-	type id = IntermediateGrammar.id
+	type id = ImperativeGrammar.id
 
-	val push           : id -> unit
-	val pop            : unit -> unit
-	val noSapply       : unit -> unit
-	val sapplyPossible : unit -> bool
-	val isStatic       : stamp -> bool
-	val top            : unit -> stamp
-	val pushFun    : id list -> unit
-	val popFun     : unit -> unit
-	val setId      : unit -> unit
-	val getId      : stamp -> id
-	val isSelfCall : stamp -> bool
-	val getLambda  : stamp -> stamp
-	val createIdsLambdaTabel : unit -> unit
-	val assignName : (stamp * string) -> unit
-	val getName    : stamp -> string
+	val markForPickling: stamp * stamp -> unit
+
+	val setId: stamp * id -> unit
+	val getId: stamp -> id
+	val getLambda: stamp -> stamp
+
+	val generatePickleFn: (stamp * JVMInst.instr list -> JVMInst.instr list) * stamp * JVMInst.instr list -> JVMInst.instr list
+	val makePickleFields: stamp * JVMInst.field list -> JVMInst.field list
+
+	val getClassStamp: stamp * int -> stamp
+
+	val isInRecApply: stamp * int -> bool
+	val argSize: 'a ImperativeGrammar.args -> int
+	val insertRec: (id * ImperativeGrammar.exp) list -> unit
+
+	val addToRecApply: JVMInst.instr list * stamp * int -> unit
+	val invokeRecApply: stamp * int -> Common.APPLY
+	val buildRecApply: stamp * JVMInst.instr list -> JVMInst.method
+	val showRecApplies: unit -> unit
+
+	val setParmStamp: stamp * stamp * stamp -> unit
+	val getParmStamp: stamp * stamp -> stamp
     end

@@ -10,29 +10,13 @@
  *   $Revision$
  *)
 
-structure StringListHashKey =
-  struct
-      datatype lab = datatype IntermediateGrammar.lab
+structure StringListHashKey :> HASH_KEY where type t = string list =
+    struct
+	type t = string list
 
-    type t = string list
-
-    open Word
-    infix << >> andb xorb
-
-    fun hash strings =  (* hashpjw [Aho/Sethi/Ullman "Compilers"] *)
-	let
-	    val n = List.length strings
-
-	    fun iter(string'::strings,h) =
-		let
-		    val c  = fromInt(StringHashKey.hash string')
-		    val h' = (h << 0w4) + c
-		    val g  = h' andb 0wxf00000
-		in
-		    iter(strings, h' xorb g xorb (g >> 0w16))
-		end
-	  | iter (nil, h) = h
-	in
-	    toInt(iter(strings,0w0))
-	end
-  end
+	fun hash strings =
+	    Word.toInt
+	    (List.foldr (fn (s, w) =>
+			 Word.xorb (Word.fromInt (StringHashKey.hash s), w))
+	     0w0 strings)
+    end

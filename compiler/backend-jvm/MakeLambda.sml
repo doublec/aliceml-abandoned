@@ -19,7 +19,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		       where type item=Stamp.t * int
 		   structure StampIntHash:IMP_MAP
 		       where type key=Stamp.t * int
-		   val toplevel:Stamp.t) =
+		   val toplevel:Stamp.t) :> LAMBDA =
     struct
 	open ImperativeGrammar
 	open Common
@@ -42,7 +42,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	val recApplies: (stamp * int * label) StampIntHash.t = StampIntHash.new ()
 
 	(* map stamps to recApply function code *)
-	val recApply: INSTRUCTION list StampHash.t = StampHash.new ()
+	val recApply: instr list StampHash.t = StampHash.new ()
 
 	(* remember which (non-dummy) apply functions are created. *)
 	val normalApplies = StampIntSet.new () (* xxx not in use yet. *)
@@ -152,7 +152,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 	fun isInRecApply (stamp', params) =
 	    isSome (StampIntHash.lookup (recApplies, (stamp', methParms params)))
 
-	fun getDestClass ((_,FunExp (_,thisFun,_,_))::_) = thisFun
+	fun getDestClass ((_,FunExp (_,thisFun,_,_,_))::_) = thisFun
 	  | getDestClass (_::rest) = getDestClass rest
 	  | getDestClass nil = illegalStamp
 
@@ -171,7 +171,7 @@ functor MakeLambda(structure StampSet:IMP_SET
 		val actual = ref illegalStamp
 		val counter = ref 0
 
-		fun insertInner (args, _) =
+		fun insertInner args =
 		    let
 			val i = argSize args
 		    in
@@ -187,11 +187,11 @@ functor MakeLambda(structure StampSet:IMP_SET
 
 		fun insertRec' (id' as Id (_,stamp',_), exp') =
 		    (case exp' of
-			 FunExp (_,thisFun,_,idabodies) =>
+			 FunExp (_,thisFun,_,args,_) =>
 			     (actual := thisFun;
 			      vprint (2, "rec': ");
 			      setId (thisFun, id');
-			      if fncount>1 then app insertInner idabodies
+			      if fncount>1 then insertInner args
 				  else ())
 		       | _ => ())
 

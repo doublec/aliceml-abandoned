@@ -17,7 +17,7 @@ structure JVMInst =
 	type fieldname = string
 	type methodname = string
 	type stamp = Stamp.t
-	datatype ARG =
+	datatype arg =
 	    Arraysig
 	  | Boolsig
 	  | Charsig
@@ -26,15 +26,25 @@ structure JVMInst =
 	  | Intsig
 	  | Voidsig
 
-	datatype JVMBASETYPE =
+	datatype jvmBaseType =
 	    JVMInt of LargeInt.int
 	  | JVMFloat of real
 	  | JVMString of string
 	  | JVMWord of LargeWord.word
 	  | JVMChar of char;
 
-	datatype
-	    INSTRUCTION =
+	datatype classAccess =
+	    CPublic | CFinal | CSuper | CAbstract | CInterface
+
+	datatype fieldAccess =
+	    FPublic | FPrivate | FProtected | FStatic | FFinal
+	  | FVolatile | FTransient
+
+	datatype methodAccess =
+	    MPublic | MPrivate | MProtected | MStatic | MFinal
+	  | MSynchronized | MNative | MAbstract
+
+	datatype instr =
 	    Astore of stamp
 	  | Aastore
 	  | Aaload
@@ -46,15 +56,17 @@ structure JVMInst =
 	  | Athrow
 	  | Bipush of int
 	  | Catch of classname * label * label * label
-	  | Call of classname * methodname * INSTRUCTION list * INSTRUCTION list
+	  | Call of classname * methodname * instr list * instr list
 	  | Checkcast of classname
 	  | Comment of string
 	  | Dup
 	  | Fcmpl
 	  | Fconst of int
-	  | Get of INSTRUCTION list
-	  | Getfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
-	  | Getstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
+	  | Get of instr list
+	  | Getfield of fieldname * arg list
+	    (* arg list specifies the type. May be an Array *)
+	  | Getstatic of fieldname * arg list
+	    (* arg list specifies the type. May be an Array *)
 	  | Goto of label
 	  | Iadd
 	  | Iconst of int
@@ -71,46 +83,40 @@ structure JVMInst =
 	  | Ifnull of label
 	  | Iload of stamp
 	  | Instanceof of classname
-	  | Invokeinterface of classname * methodname * (ARG list * ARG list)
-	  | Invokespecial of classname * methodname * (ARG list * ARG list)
-	  | Invokestatic of classname * methodname * (ARG list * ARG list)
-	  | Invokevirtual of classname * methodname * (ARG list * ARG list)
+	  | Invokeinterface of classname * methodname * (arg list * arg list)
+	  | Invokespecial of classname * methodname * (arg list * arg list)
+	  | Invokestatic of classname * methodname * (arg list * arg list)
+	  | Invokevirtual of classname * methodname * (arg list * arg list)
 	  | Ireturn
 	  | Istore of stamp
 	  | Isub
 	  | Label of label
 	  | Line of int
 	  | Lcmp
-	  | Ldc of JVMBASETYPE
+	  | Ldc of jvmBaseType
 	  | Lookupswitch of (LargeInt.int list * label list) * label
-	  | Multi of INSTRUCTION list
+	  | Multi of instr list
 	  | New of classname
 	  | Nop
 	  | Pop
-	  | Putfield of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
-	  | Putstatic of fieldname * ARG list (* ARG list specifies the type. May be an Array *)
+	  | Putfield of fieldname * arg list
+	    (* ARG list specifies the type. May be an Array *)
+	  | Putstatic of fieldname * arg list
+	    (* ARG list specifies the type. May be an Array *)
 	  | Return
 	  | Sipush of int
 	  | Swap
 	  | Tableswitch of LargeInt.int * (label list) * label
-	  | Var of int * string * ARG list * label * label
-	and CLASS =
-	    Class of CLASSACCESS list * classname * classname * classname list * FIELD list * METHOD list
-	(* class, superclass, implemented interfaces *)
-	and
-	    FIELD =
-	    (* ARG list specifies the type. May be an Array *)
-	    Field of FIELDACCESS list * fieldname * ARG list
-	and
-	    METHOD =
-	    Method of METHODACCESS list * methodname * (ARG list * ARG list) * INSTRUCTION list
-	and
-	    CLASSACCESS =
-	    CPublic | CFinal | CSuper | CAbstract | CInterface
-	and
-	    FIELDACCESS =
-	    FPublic | FPrivate | FProtected | FStatic | FFinal | FVolatile | FTransient
-	and
-	    METHODACCESS =
-	    MPublic | MPrivate | MProtected | MStatic | MFinal | MSynchronized | MNative | MAbstract
+	  | Var of int * string * arg list * label * label
+
+	and class =
+	    Class of classAccess list * classname * classname * classname list * field list * method list
+	    (* class, superclass, implemented interfaces *)
+
+	and field =
+	    (* arg list specifies the type. May be an Array *)
+	    Field of fieldAccess list * fieldname * arg list
+
+	and method =
+	    Method of methodAccess list * methodname * (arg list * arg list) * instr list
     end
