@@ -4,9 +4,8 @@
  * 2000/02/12 Andreas Rossberg
  *)
 
-
 structure Syntax =
-  struct
+struct
     type con = int
     type id  = string
 
@@ -20,4 +19,4 @@ structure Syntax =
 		 | App of exp * exp
 		 | Abs of id * typ * exp
 		 | Rec of id * id * typ * typ * exp
-  end
+end

@@ -4,7 +4,6 @@
  * 2000/02/12 Andreas Rossberg
  *)
 
-
 (*
  * Concrete Syntax is as follows:
  *
@@ -25,14 +24,12 @@
  *         |  attyp -> typ
  *)
 
-
 import structure Token  from "Token"
 import structure Syntax from "Syntax"
 import signature PARSER from "PARSER-sig"
 
-
 structure Parser :> PARSER =
-  struct
+struct
     open Token
     open Syntax
 
@@ -134,4 +131,4 @@ structure Parser :> PARSER =
     fun parse ts			= case exp ts
 					    of (e,[]) => e
 					     | (e,_)  => raise Error
-  end
+end
