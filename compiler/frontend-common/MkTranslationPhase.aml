@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -59,8 +59,8 @@ struct
 
   (* UNFINISHED... *)
 
-    fun unfinished i funname casename =
-	Error.error(i, "Translation." ^ funname ^ ": " ^ casename ^
+    fun unfinished r funname casename =
+	Error.error(r, "TranslationPhase." ^ funname ^ ": " ^ casename ^
 		       " not implemented yet")
 
   (* Helpers *)
@@ -375,20 +375,17 @@ struct
 	callPath(E, lab_invent, trUnit r)
 
     fun trKind(E, r, k) =
-	if Type.isExtKind k then
-	    callTyp(E, lab_extKind, trUnit r)
-	else if Type.isStarKind k then
-	    callTyp(E, lab_starKind, trUnit r)
-	else if Type.isArrowKind k then
+	case Type.inspectKind k
+	 of Type.StarKind => callTyp(E, lab_starKind, trUnit r)
+	  | Type.ExtKind  => callTyp(E, lab_extKind, trUnit r)
+	  | Type.ArrowKind(k1,k2) =>
 	    let
-		val (k1,k2) = Type.asArrowKind k
 		val  k1'    = trKind(E, r, k1)
 		val  k2'    = trKind(E, r, k2)
 	    in
 		callTyp(E, lab_arrowKind, trTuple(r, #[k1',k2']))
 	    end
-	else
-	    raise Crash.Crash "TranslationPhase.trKind"
+	  | Type.SingKind t => unfinished r "trKind" "SingKind"
 
 
   (* Literals *)
@@ -586,23 +583,23 @@ struct
 	    val i'' = nonInfo(#region i')
 	    val x'  = O.Id(i', Stamp.new(), Name.InId)
 	    val d'  = O.ValDec(i'', O.VarPat(i',x'), e')
-	    val r'' = trUpdExp'(Type.asProd'(#typ i'), i'', idToExp x', r',
-				Vector.toList r')
+	    val row = Type.asProd(Type.unroll(#typ i'))
+	    val r'' = trUpdExp'(row, i'', idToExp x', r', Vector.toList r')
 	in
 	    O.LetExp(i, #[d'], O.ProdExp(i, r''))
 	end
 
     and trUpdExp'(tr,i,e',r',fs) =
-	if Type.isEmptyRow tr then	(* check for unknown necessary? *)
-	    Vector.fromList fs
-	else let
-	    val (l,t) = Type.hdRow tr
-	    val  tr'  = Type.tlRow tr
-	    val  fs'  = if Vector.exists (fn O.Fld(_, O.Lab(_,l'),_) => l=l') r'
-			then fs else
-			let val l' = O.Lab(i,l)
-			    val i' = typInfo(#region i, t)
-			in O.Fld(i, l', O.SelExp(i',l',e')) :: fs end
+	case Type.inspectRow tr
+	 of Type.UnknownRow => raise Crash.Crash "TranslationPhase.trUpdExp"
+	  | Type.EmptyRow   => Vector.fromList fs
+	  | Type.FieldRow(l,t,tr') =>
+	let
+	    val fs' = if Vector.exists (fn O.Fld(_, O.Lab(_,l'),_) => l=l') r'
+		      then fs
+		      else let val l' = O.Lab(i,l)
+			       val i' = typInfo(#region i, t)
+			   in O.Fld(i, l', O.SelExp(i',l',e')) :: fs end
 	in
 	    trUpdExp'(tr',i,e',r',fs')
 	end
@@ -737,8 +734,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isModName, Type.asProd t1)
-	    val (l2,t12) = findFld(isInfName, Type.asProd t1)
+	    val (l1,t11) = findFld(isModName, t1)
+	    val (l2,t12) = findFld(isInfName, t1)
 	    val  x'      = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				#[O.Fld(i0', O.Lab(i0',l2),
@@ -760,8 +757,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isModName, Type.asProd t1)
-	    val (l2,t21) = findFld(isValName, Type.asProd t2)
+	    val (l1,t11) = findFld(isModName, t1)
+	    val (l2,t21) = findFld(isValName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
@@ -782,8 +779,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isValName, Type.asProd t1)
-	    val (l2,t21) = findFld(isInfName, Type.asProd t2)
+	    val (l1,t11) = findFld(isValName, t1)
+	    val (l2,t21) = findFld(isInfName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t21), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
@@ -805,8 +802,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isInfName, Type.asProd t1)
-	    val (l2,t21) = findFld(isValName, Type.asProd t2)
+	    val (l1,t11) = findFld(isInfName, t1)
+	    val (l2,t21) = findFld(isValName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
@@ -827,8 +824,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isInfName, Type.asProd t1)
-	    val (l2,t21) = findFld(isValName, Type.asProd t2)
+	    val (l1,t11) = findFld(isInfName, t1)
+	    val (l2,t21) = findFld(isValName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
 				     #[O.Fld(i0',O.Lab(i0',l1), idToPat x1')])
@@ -852,9 +849,9 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isModName, Type.asProd t1)
-	    val (l2,t12) = findFld(isInfName, Type.asProd t1)
-	    val (l3,t21) = findFld(isValName, Type.asProd t2)
+	    val (l1,t11) = findFld(isModName, t1)
+	    val (l2,t12) = findFld(isInfName, t1)
+	    val (l3,t21) = findFld(isValName, t2)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
@@ -906,8 +903,8 @@ struct
 	    val  i0'     = nonInfo r
 	    val  t       = #typ i'
 	    val (t1,t2)  = Type.asArrow t
-	    val (l1,t11) = findFld(isValName, Type.asProd t1)
-	    val (l2,t12) = findFld(isInfName, Type.asProd t1)
+	    val (l1,t11) = findFld(isValName, t1)
+	    val (l2,t12) = findFld(isInfName, t1)
 	    val  x1'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
 	    val  x2'     = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
 	    val  p'      = O.ProdPat(typInfo(r,t1),
@@ -947,15 +944,14 @@ struct
 	O.PrimExp(trModInfo(E,i), s)
 
 
-    and findFld(isXName, r) =
+    and findFld (isXName, t) = findFld'(isXName, Type.asProd t)
+    and findFld'(isXName, r) =
 	let
-	    val (l,t) = Type.hdRow r handle Type.Row =>
-			raise Crash.Crash "TranslationPhase.findFld"
+	    val (l,t,r') = Type.asFieldRow r
 	in
-	    if isXName(Label.toName l) then
-		(l,t)
-	    else
-		findFld(isXName, Type.tlRow r)
+	    if isXName(Label.toName l)
+	    then (l,t)
+	    else findFld'(isXName, r')
 	end
 
 
@@ -1410,8 +1406,11 @@ struct
 	(* [fn x => t] = let val $x = Type.newVar <<kind x>>
 	 *               in Type.lambda($x,[t]) end
 	 *)
-	trBindTyp(E, lab_lambda, i, x, t,
-		  #1(Type.asArrowKind(Type.kind(#typ i))))
+	let
+	    val (k1,k2) = Type.asArrowKind(Type.kind(#typ i))
+	in
+	    trBindTyp(E, lab_lambda, i, x, t, k1)
+	end
 
       | trTyp'(E, I.AppTyp(i,t1,t2)) =
 	(* [t1 t2] = Type.apply([t1],[t2]) *)
@@ -1451,13 +1450,21 @@ struct
 	(* [forall x => t] = let val $x = Type.newVar <<kind x>>
 	 *                   in Type.all($x,[t]) end
 	 *)
-	trBindTyp(E, lab_all, i,x,t, Type.kindVar(#1(Type.asAll(#typ i))))
+	let
+	    val (a,_) = Type.asAll(#typ i)
+	in
+	    trBindTyp(E, lab_all, i,x,t, Type.kindVar a)
+	end
 
       | trTyp'(E, I.ExTyp(i,x,t)) =
 	(* [exists x => t] = let val $x = Type.newVar <<kind x>>
 	 *                   in Type.exists($x,[t]) end
 	 *)
-	trBindTyp(E,lab_exist, i,x,t, Type.kindVar(#1(Type.asExist(#typ i))))
+	let
+	    val (a,_) = Type.asExist(#typ i)
+	in
+	    trBindTyp(E, lab_exist, i,x,t, Type.kindVar a)
+	end
 
       | trTyp'(E, I.PackTyp(i,j)) =
 	(* [pack j] = Type.pack[j] *)

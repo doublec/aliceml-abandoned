@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -100,88 +100,86 @@ struct
 
 
     fun unstrict t =
-	if not(Type.isApply t) then t else
-	let
-	    val (t1,t2) = Type.asApply t
-	in
-	    if not(Type.equal(t1, PervasiveType.typ_strict))
-	    then t
-	    else t2
-	end
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if Type.equal(t1, PervasiveType.typ_strict)
+	    then t2
+	    else t
+	  | _ => t
 
-    fun unapp t = unapp'(t, [])
-    and unapp'(t, ts) =
-	if not(Type.isApply t) then (t,ts) else
-	let
-	    val (t1,t2) = Type.asApply t
-	in
-	    unapp'(t1, t2::ts)
-	end
+    fun unapp  t     = unapp'(t,[])
+    and unapp'(t,ts) =
+	case Type.inspect t
+	 of Type.Apply(t1,t2) => unapp'(t1, t2::ts)
+	  | _                 => (t,ts)
 
 
     fun arityFromTyp t =
-	if not(Type.isApply t) then UNARY else
-	let
-	    val (t1,t2) = Type.asApply t
-	in
-	    if Type.equal(t1, PervasiveType.typ_strict) then
-		if Type.isTuple t2 andalso Vector.length(Type.asTuple t2) = 0
+	case Type.inspect t
+	 of Type.Apply(t1,t2) =>
+	    if not(Type.equal(t1, PervasiveType.typ_strict)) then UNARY else
+	    (case Type.inspect t2
+	     of Type.Prod r =>
+		if Type.isEmptyRow r
 		then NULLARY
 		else NARY
-	    else UNARY
-	end
+	      | _ => NARY
+	    )
+	  | _ => UNARY
 
 
     fun envFromTyp(I,E,s,t,tycon) =
 	if Type.equal(t, PervasiveType.typ_ref) then
-	    let
-		(* Constructor needs to have the same name as the tycon,
-		 * because we have no way of knowing its real name. *)
-		val E'      = new()
-		val name    = TyCon.toString tycon
-		val l       = Label.fromString name
-		val t'      = Type.instance(Inf.lookupVal(s,l))
-		val (t1,t2) = Type.asArrow t'
-		val (t3,t4) = Type.asApply t2
-		val vid     = VId.fromString name
-	    in
-		if Type.isUnknown t1 andalso Type.equal(t1,t4)
-				     andalso Type.equal(t3, t)
-		then insertVal(E', vid, (I, Stamp.new(), R))
-		else ();
-		E'
-	    end handle (Inf.Lookup | Type.Type) => new()
+	    let val E' = new() in
+		let
+		   (* Constructor needs to have the same name as the tycon,
+		    * because we have no way of knowing its real name. *)
+		   val name = TyCon.toString tycon
+		   val l    = Label.fromString name
+		   (* t_l < ('_a -> ref '_a) ? *)
+		   val (t1,t2) = Type.asArrow(Type.instance(Inf.lookupVal(s,l)))
+		   val (t3,t4) = Type.asApply t2
+		in
+		    if Type.isUnknown t1 andalso Type.equal(t3,t)
+					 andalso Type.equal(t4,t1)
+		    then insertVal(E', VId.fromString name, (I, Stamp.new(), R))
+		    else ()
+		end handle (Inf.Lookup | Type.Type) => ();
+	        E'
+	    end
 	else
 	    envFromTyp'(I,E,s,t,t,tycon,0)
 
-    and envFromTyp'(I,E,s,t,t0,tycon,k) =
-	if      Type.isSum t then envFromRow(I, E,s, Type.asSum t, t0, tycon, k)
-	else if Type.isLambda t then envFromTyp'(I, E,s, #2(Type.asLambda t),
-							t0, tycon, k+1)
-	else if Type.isMu t  then envFromTyp'(I, E,s, Type.asMu t, t0, tycon, k)
-	else new()
+    and envFromTyp'(I, E,s, t,t0,tycon,k) =
+	case Type.inspect t
+	 of Type.Sum r		=> envFromRow(I, E,s, r,t0, tycon, k)
+	  | Type.Lambda(_,t')	=> envFromTyp'(I, E,s, t',t0, tycon, k+1)
+	  | Type.Mu t'		=> envFromTyp'(I, E,s, t',t0, tycon, k)
+	  | _			=> new()
 
     and envFromRow(I,E,s,r,t0,tycon,k) =
 	let
 	    val E' = new()
 
 	    fun loop r =
-		if Type.isEmptyRow r then () else
+		case Type.inspectRow r
+		 of (Type.EmptyRow | Type.UnknownRow) => ()
+		  | Type.FieldRow(l,t',r') =>
 		let
-		    val (l,t')  = Type.hdRow r
 		    val  is     = T(arityFromTyp t', tycon, k)
 		    val  t''    = Type.instance(Inf.lookupVal(s,l))
-		    val (t1,t2) = if Type.isArrow t''
-				  then Type.asArrow t''
-				  else (Type.tuple #[], t'')
+		    val (t1,t2) = case Type.inspect t''
+				   of Type.Arrow tt => tt
+				    | _             => (Type.tuple #[], t'')
 		    val (t3,ts) = unapp t2
-		    val  vid    = VId.fromString(Label.toString l)
 		in
+		    (* t_l = !'a1..'an.[t' ->] t0('a1)..('an) ? *)
 		    if not(List.all Type.isUnknown ts) then raise Type.Type else
 		    Type.unify(t0, t3);
 		    Type.unify(t1, unstrict t');
-		    insertVal(E', vid, (I, Stamp.new(), is));
-		    loop(Type.tlRow r)
+		    insertVal(E', VId.fromString(Label.toString l),
+				  (I, Stamp.new(), is));
+		    loop r'
 		end
 	in
 	    ( loop r ; E' )
@@ -282,20 +280,21 @@ struct
 		val  x    = Stamp.new()
 		val  is   = if String.sub(name,0) = #"'" then V else
 			    let
-				val l' = Label.fromString("'" ^ name)
-				val t' = Type.instance(Inf.lookupVal(s,l'))
-				val (t1,t2) = Type.asApply t'
-				val (t11',t12') = Type.asArrow t2
-				val (t11, t12)  = if Type.isArrow t
-						  then Type.asArrow t
-						  else (Type.tuple #[], t)
+				val l'        = Label.fromString("'" ^ name)
+				val t'        = Inf.lookupVal(s,l')
+				val (t1,t2)   = case Type.inspect t
+					        of Type.Arrow tt => tt
+					         | _ => (Type.tuple #[], t)
+				(* t' < conarrow (t1 -> t2) ? *)
+				val (tc,ta)   = Type.asApply(Type.instance t')
+				val (t1',t2') = Type.asArrow ta
 			    in
-				(* t1 = conarrow *)
-				Type.unify(t11, unstrict t11');
-				Type.unify(t12, t12);
-				C(arityFromTyp t11')
+				(* tc = conarrow *)
+				Type.unify(t1, unstrict t1');
+				Type.unify(t2, t2');
+				C(arityFromTyp t1')
 			    end
-			    handle (Inf.Lookup | Type.Mismatch _) => V
+			    handle (Inf.Lookup|Type.Type|Type.Mismatch _) => V
 	    in
 		insertDisjointVal(E, vid, (I,x,is))
 	    end
@@ -315,10 +314,11 @@ struct
 		val (p,k) = Inf.asTypItem item
 		val  l    = Path.toLab p
 		val  x    = Stamp.new()
-		val  E'   = if not(Type.isSingKind k)
-			    then new()
-			    else envFromTyp(I,E,s, Type.asSingKind k,
-					    TyCon.fromString(Label.toString l))
+		val  E'   = case Type.inspectKind k
+			     of Type.SingKind t =>
+				envFromTyp(I, E,s, t,
+					   TyCon.fromString(Label.toString l))
+			      | _ => new()
 	    in
 		insertDisjointTy(E, tyconFromLabel l, (I,x,E'));
 		appiVals (fn(vid,x) => insertVal(E, vid, x)) E'

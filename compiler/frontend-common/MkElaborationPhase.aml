@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -156,8 +156,9 @@ struct
     fun conarrowTyp(E,t1,t2) =
 	Type.apply(PervasiveType.typ_conarrow, Type.arrow(t1,t2))
 
-    fun selLab(t, l) =
-	Type.lookupRow(Type.asSum' t, l) handle Type.Row => raise Type.Type
+    fun selLab(t,l) =
+	Type.lookupRow(Type.asSum(Type.unroll t), l)
+	handle Type.Row => raise Type.Type
 
   (* Unification of vectors *)
 
@@ -294,8 +295,8 @@ struct
 				error(i, E.NewExpTyp t)
 	    val (t1,t2)  = Type.asArrow t3 handle Type.Type =>
 				error(i, E.NewExpTyp t3)
-	    val _        = if Type.equal(t',PervasiveType.typ_conarrow) then ()
-			   else
+	    val _        = if Type.equal(t', PervasiveType.typ_conarrow)
+			   then () else
 				error(i, E.NewExpTyp t')
 	    val _        = if Type.isExtKind(Type.kind t2) then () else
 				error(i, E.NewExpResTyp t2)
@@ -878,7 +879,7 @@ struct
 	let
 	    val  k      = elabTypKind(E, typ1)
 	    val (k1,k2) = Type.asArrowKind k handle Type.Kind =>
-			    error(i, E.AppTypFunKind(k))
+				error(i, E.AppTypFunKind(k))
 	in
 	    k2
 	end
@@ -1682,8 +1683,9 @@ TextIO.print "\n";
 	in
 	    List.appr (fn item =>
 			  let val (p,k) = Inf.asTypItem item in
-			      if Type.isSingKind k then () else
-			      Inf.extendTyp(s'',p,k)
+			      case Type.inspectKind k
+			       of Type.SingKind _ => ()
+			        | _               => Inf.extendTyp(s'',p,k)
 			  end handle Inf.Item =>
 			  let val (p,j) = Inf.asModItem item in
 			      if Inf.isSing j then () else
