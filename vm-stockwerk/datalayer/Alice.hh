@@ -435,6 +435,10 @@ public:
   void Init(u_int index, word value) {
     InitArg(index + 1, value);
   }
+  void Replace(u_int index, word value) {
+    // This is only meant to be called by Vector.tabulate.
+    ReplaceArg(index + 1, value);
+  }
   word Sub(u_int index) {
     return GetArg(index + 1);
   }
