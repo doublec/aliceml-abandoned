@@ -24,19 +24,10 @@ export
    Translate
 define
    proc {MakeReg IdDef State ?Reg}
-      {State.cs newReg(?Reg)}
       case IdDef of idDef(id(_ Stamp _)) then
-	 {Dictionary.put State.regDict Stamp Reg}
-      [] wildcard then skip
-      end
-   end
-
-   proc {CondMakeReg IdDef State ?Reg}
-      case IdDef of idDef(id(_ Stamp _)) then RegDict in
-	 RegDict = State.regDict
-	 case {Dictionary.condGet RegDict Stamp unit} of unit then
+	 case {Dictionary.condGet State.regDict Stamp unit} of unit then
 	    {State.cs newReg(?Reg)}
-	    {Dictionary.put RegDict Stamp Reg}
+	    {Dictionary.put State.regDict Stamp Reg}
 	 elseof Reg0 then
 	    %% This test is needed because of shared statements:
 	    %% The same variable may be declared on two different paths.
@@ -76,7 +67,7 @@ define
    proc {NoElse Region ElseVInstr nil State} Coord in
       Coord = {TranslateRegion Region State}
       case Coord of pos(Filename I J) then ExnReg VInter in
-	 {State.cs newReg(ExnReg)}
+	 {State.cs newReg(?ExnReg)}
 	 ElseVInstr = vEquateRecord(_ kernel 4 ExnReg
 				    [constant(noElse) constant(Filename)
 				     constant(I) constant(J)] VInter)
@@ -86,7 +77,7 @@ define
 
    proc {TranslateStm Stm VHd VTl State ReturnReg}
       case Stm of valDec(_ IdDef Exp) then
-	 {TranslateExp Exp {CondMakeReg IdDef State} VHd VTl State}
+	 {TranslateExp Exp {MakeReg IdDef State} VHd VTl State}
       [] recDec(_ IdDefExpList) then RegExpList in
 	 RegExpList = {Map IdDefExpList
 		       fun {$ IdDef#Exp} {MakeReg IdDef State}#Exp end}
@@ -120,6 +111,7 @@ define
 		      [onRecord('#' Arity ThenVInstr)]
 		      {TranslateRegion Region State} nil)
       [] handleStm(Region Body1 IdDef Body2 Body3 Stamp) then
+	 %--** change exception representation
 	 Reg1 Reg2 TryVInstr CatchVInstr CatchVInter VInter
       in
 	 {State.cs newReg(?Reg1)}
@@ -130,7 +122,7 @@ define
 	 {Dictionary.put State.shareDict Stamp unit}
 	 CatchVInstr = vInlineDot(_ Reg1 1 Reg2 true unit CatchVInter)
 	 {TranslateBody Body2 ?CatchVInter nil State ReturnReg}
-	 {TranslateBody Body3 ?VInter nil State ReturnReg}
+	 {TranslateBody Body3 ?VInter VTl=nil State ReturnReg}
       [] endHandleStm(Region Stamp) then
 	 if {Dictionary.member State.shareDict Stamp} then
 	    %% This statement ends the `handle' part
@@ -152,7 +144,7 @@ define
 		       {TranslateBody Body ?ThenVInstr nil State ReturnReg}
 		       onScalar({Word.toInt {Word.make 31 W}} ThenVInstr)
 		    end}
-	 VInter = vMatch(_ IntReg ElseVInstr Matches Coord VTl)
+	 VInter = vMatch(_ IntReg ElseVInstr Matches Coord VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] testStm(Region Id litTests(LitBodyList=intLit(_)#_|_) ElseBody) then
 	 Matches ElseVInstr
@@ -163,7 +155,7 @@ define
 		       onScalar(I ThenVInstr)
 		    end}
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
-		      {TranslateRegion Region State} VTl)
+		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] testStm(Region Id litTests(LitBodyList=charLit(_)#_|_) ElseBody) then
 	 Matches ElseVInstr
@@ -174,7 +166,7 @@ define
 		       onScalar(C ThenVInstr)
 		    end}
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
-		      {TranslateRegion Region State} VTl)
+		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] testStm(Region Id litTests(stringLit(S)#Body|Rest) ElseBody) then
 	 TmpReg VInter ThenVInstr ElseVInstr
@@ -183,12 +175,12 @@ define
 	 VHd = vEquateConstant(_ {ByteString.make S} TmpReg VInter)
 	 VInter = vTestBuiltin(_ 'Value.\'==\''
 			       [{GetReg Id State} TmpReg {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl)
+			       ThenVInstr ElseVInstr VTl=nil)
 	 {TranslateBody Body ?ThenVInstr nil State ReturnReg}
 	 {TranslateStm testStm(Region Id litTests(Rest) ElseBody)
 	  ElseVInstr nil State ReturnReg}
       [] testStm(_ _ litTests(nil) ElseBody) then
-	 {TranslateBody ElseBody VHd VTl State ReturnReg}
+	 {TranslateBody ElseBody VHd VTl=nil State ReturnReg}
       [] testStm(Region Id litTests(LitBodyList=realLit(_)#_|_) ElseBody) then
 	 Matches ElseVInstr
       in
@@ -198,7 +190,7 @@ define
 		       onScalar(F ThenVInstr)
 		    end}
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
-		      {TranslateRegion Region State} VTl)
+		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] testStm(Region Id tagTests(TagBodyList) ElseBody) then
 	 Matches ElseVInstr
@@ -232,7 +224,7 @@ define
 		       {TranslateBody Body ?ThenVInstr nil State ReturnReg}
 		    end}
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
-		      {TranslateRegion Region State} VTl)
+		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] testStm(Region Id conTests(Con#ConArgs#Body|Rest) ElseBody) then
 	 Reg ThenVInstr ElseVInstr
@@ -241,15 +233,15 @@ define
 	 case Con#ConArgs of con(Id)#none then
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl)
+			       ThenVInstr ElseVInstr VTl=nil)
 	 [] con(Id)#some(tupArgs(nil)) then
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr ElseVInstr VTl)
+			       ThenVInstr ElseVInstr VTl=nil)
 	 [] con(Id)#some(Args) then ThenVInstr0 Coord in
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
 			       [Reg {GetReg Id State} {State.cs newReg($)}]
-			       ThenVInstr0 ElseVInstr VTl)
+			       ThenVInstr0 ElseVInstr VTl=nil)
 	    Coord = {TranslateRegion Region State}
 	    case Args of oneArg(IdDef) then
 	       ThenVInstr0 = vInlineDot(_ Reg 1 {MakeReg IdDef State} true
@@ -283,7 +275,7 @@ define
 	 {TranslateStm testStm(Region Id conTests(Rest) ElseBody)
 	  ElseVInstr nil State ReturnReg}
       [] testStm(_ _ conTests(nil) ElseBody) then
-	 {TranslateBody ElseBody VHd VTl State ReturnReg}
+	 {TranslateBody ElseBody VHd VTl=nil State ReturnReg}
       [] testStm(Region Id vecTests(VecBodyList) ElseBody) then
 	 Matches ElseVInstr
       in
@@ -294,17 +286,17 @@ define
 			   VHd = vGetVariable(_ {MakeReg IdDef State} VTl)
 			end ThenVInstr0 ThenVInstr}
 		       {TranslateBody Body ?ThenVInstr nil State ReturnReg}
-		       onRecord('#' {Length IdDefs} ThenVInstr0)
+		       onRecord('#[]' {Length IdDefs} ThenVInstr0)
 		    end}
 	 VHd = vMatch(_ {GetReg Id State} ElseVInstr Matches
-		      {TranslateRegion Region State} VTl)
+		      {TranslateRegion Region State} VTl=nil)
 	 {TranslateBody ElseBody ?ElseVInstr nil State ReturnReg}
       [] raiseStm(Region Id) then
 	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
-			    {TranslateRegion Region State} VTl)
+			    {TranslateRegion Region State} VTl=nil)
       [] reraiseStm(Region Id) then
 	 VHd = vCallBuiltin(_ 'Exception.raiseError' [{GetReg Id State}]
-			    {TranslateRegion Region State} VTl)
+			    {TranslateRegion Region State} VTl=nil)
       [] sharedStm(_ Body Stamp) then
 	 if {Dictionary.member State.shareDict Stamp} then
 	    VHd = {Dictionary.get State.shareDict Stamp}
@@ -317,8 +309,8 @@ define
 	    end
 	 end
 	 VTl = nil
-      [] returnStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl State}
-      [] exportStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl State}
+      [] returnStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl=nil State}
+      [] exportStm(_ Exp) then {TranslateExp Exp ReturnReg VHd VTl=nil State}
       end
    end
 
@@ -352,8 +344,6 @@ define
 	 {State.cs
 	  endDefinition(VInstr [ArgReg ResReg] nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
-      [] tagExp(_ Label _ some(tupArity(0))) then
-	 VHd = vEquateConstant(_ fun {$ unit} Label end Reg VTl)
       [] tagExp(_ Label _ some(_)) then
 	 VHd = vEquateConstant(_ fun {$ X} {Adjoin X Label} end Reg VTl)
       [] conExp(_ con(Id) none) then
@@ -406,18 +396,16 @@ define
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
       [] prodExp(_ LabelIdList) then Rec in
-	 %--** this is a workaround for duplicate features (due to structs)
-	 Rec = {FoldL LabelIdList
-		fun {$ Rec Label#Id}
-		   {AdjoinAt Rec Label value({GetReg Id State})}
-		end '#'}
+	 Rec = {List.toRecord '#'
+		{Map LabelIdList
+		 fun {$ Label#Id} Label#value({GetReg Id State}) end}}
 	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
       [] selExp(_ _ Label) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Label end Reg VTl)
       [] vecExp(_ nil) then
-	 VHd = vEquateConstant(_ '#' Reg VTl)
+	 VHd = vEquateConstant(_ '#[]' Reg VTl)
       [] vecExp(_ Ids) then
-	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
+	 VHd = vEquateRecord(_ '#[]' {Length Ids} Reg
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
       [] funExp(Region _ _ tupArgs(IdDefs=_|_) Body) then
