@@ -116,8 +116,6 @@ let
       (llog (dbSearch || dbCom, "Search finished. Stopping workers.\n") ;
        Array.app (fn w => #stop w ()) workers ;
        Seq.stop () ;
-       if LProblem.bab then Channel.put (solutions, valOf (!best))
-       else () ;
        Channel.close solutions ;
        ())
 
