@@ -653,11 +653,6 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
   case TYPE_FORWARDED:
     {
       int sock = GetFD();
-//        std::fprintf(stderr, "IODesc::Write start sending %d at '", n);
-//        for (int i = 0; i < n; i++)
-//  	std::fprintf(stderr, "%c", sys_buf[i]);
-//        std::fprintf(stderr, "'\n");
-//        std::fflush(stderr);
     retry:
       out = send(sock, sys_buf, n, 0);
       if (out == SOCKET_ERROR)
@@ -669,8 +664,6 @@ IODesc::result IODesc::Write(const u_char *buf, int n, int &out) {
 	  } else
 	    goto retry;
 	} else return result_socket_error;
-//        std::fprintf(stderr, "IODesc::Write written %d\n", out);
-//        std::fflush(stderr);
       return result_ok;
     }
   case TYPE_HANDLE:
