@@ -14,7 +14,7 @@ datatype
     INSTRUCTION =
     Astore of int
   | Aastore
-  | Aconst of int
+(*  | Aconst of int *)
   | Aload of int
   | Anewarray of classname
   | Areturn
