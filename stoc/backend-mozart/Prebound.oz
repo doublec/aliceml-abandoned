@@ -56,7 +56,7 @@ define
       if X > 15 then {ToHex X div 16} else '' end#Hex.(X mod 16 + 1)
    end
 
-   ByNeedException = {NewUniqueName 'Transient.ByNeed'}
+   FutureException = {NewUniqueName 'Future.Future'}
 
    BuiltinTable =
    builtinTable(
@@ -138,6 +138,30 @@ define
 	 end
       'Char.toLower': Char.toLower
       'Char.toUpper': Char.toUpper
+      'Future.Future': FutureException
+      'Future.alarm\'':
+	 fun {$ X} !!{Alarm (X + 500) div 1000} end
+      'Future.await':
+	 fun {$ X} {Wait X} X end
+      'Future.awaitOne':
+	 fun {$ X Y} {WaitOr X Y} X end
+      'Future.byneed':
+	 fun {$ P}
+	    {ByNeed fun {$}
+		       try
+			  {P unit}
+		       catch E=error(E2 ...) then
+			  {ByNeedFail {AdjoinAt E 1 FutureException(E2)}}
+		       end
+		    end}
+	 end
+      'Future.concur':
+	 fun {$ P} !!thread {P unit} end end
+      'Future.isFailed':
+	 fun {$ X}
+	    false   %--** unimplemented
+	 end
+      'Future.isFuture': IsFuture   %--** wrong for failed futures
       'General.:=': fun {$ X Y} {Assign X Y} unit end
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
@@ -173,6 +197,40 @@ define
 	    end
 	 end
       'GlobalStamp.hash': BootName.hash
+      'Hole.Hole': {NewUniqueName 'Hole.Hole'}
+      'Hole.fail':
+	 fun {$ X E}
+	    try
+	       X = {ByNeedFail error(FutureException(E))}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'Hole.Hole'} unit
+	    end
+	 end
+      'Hole.fill':
+	 fun {$ X Y}
+	    if {IsDet X} then   %--** test and bind must be atomic
+	       {Exception.raiseError BuiltinTable.'Hole.Hole'}
+	    end
+	    try
+	       X = Y
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'Hole.Hole'} unit
+	    end
+	 end
+      'Hole.future':
+	 fun {$ X}
+	    if {IsFuture X} then
+	       skip   %--** wait until it is bound to a hole
+	    end
+	    !!X
+	 end
+      'Hole.hole':
+	 fun {$ unit} _ end
+      'Hole.isFailed':
+	 fun {$ X}
+	    false   %--** unimplemented
+	 end
+      'Hole.isHole': IsFree
       'Int.~': Number.'~'
       'Int.+': Number.'+'
       'Int.-': Number.'-'
@@ -225,6 +283,35 @@ define
       'Math.tan': Tan
       'Math.tanh': Float.tanh
       'Option.Option': {NewUniqueName 'Option.Option'}
+      'Promise.Promise': {NewUniqueName 'Promise.Promise'}
+      'Promise.fail':
+	 fun {$ Cell#Hole X} New in
+	    if {Exchange Cell $ New} then
+	       New = true
+	       {Exception.raiseError BuiltinTable.'Promise.Promise'}
+	    else
+	       Hole = {ByNeedFail error(FutureException(X))}
+	       New = true
+	    end
+	    unit
+	 end
+      'Promise.fulfill':
+	 fun {$ Cell#Hole X} New in
+	    if {Exchange Cell $ New} then
+	       New = true
+	       {Exception.raiseError BuiltinTable.'Promise.Promise'}
+	    else
+	       Hole = X
+	       New = true
+	    end
+	    unit
+	 end
+      'Promise.future':
+	 fun {$ _#Hole}
+	    !!Hole
+	 end
+      'Promise.promise':
+	 fun {$ unit} {NewCell false}#_ end
       'Real.~': Number.'~'
       'Real.+': Number.'+'
       'Real.-': Number.'-'
@@ -304,8 +391,6 @@ define
 	 fun {$ T E} {Thread.injectException T E} unit end
       'Thread.resume':
 	 fun {$ T} {Thread.resume T} unit end
-      'Thread.spawn':
-	 fun {$ P} thread {P unit} end end
       'Thread.state':
 	 fun {$ T}
 	    case {Thread.state T} of runnable then 'RUNNABLE'
@@ -317,55 +402,6 @@ define
 	 fun {$ T} {Thread.suspend T} unit end
       'Thread.yield':
 	 fun {$ T} {Thread.preempt T} unit end
-      'Transient.ByNeed': ByNeedException
-      'Transient.Fulfill': {NewUniqueName 'Transient.Fulfill'}
-      'Transient.Future': {NewUniqueName 'Transient.Future'}
-      'Transient.Promise': {NewUniqueName 'Transient.Promise'}
-      'Transient.alarm\'':
-	 fun {$ X} !!{Alarm (X + 500) div 1000} end
-      'Transient.await':
-	 fun {$ X} {Wait X} X end
-      'Transient.awaitOne':
-	 fun {$ X Y} {WaitOr X Y} X end
-      'Transient.byNeed':
-	 fun {$ P}
-	    {ByNeed fun {$}
-		       try
-			  {P unit}
-		       catch E=error(E2 ...) then
-			  {ByNeedFail {AdjoinAt E 1 ByNeedException(E2)}}
-		       end
-		    end}
-	 end
-      'Transient.fail':
-	 fun {$ P X}
-	    try
-	       P = {ByNeedFail error(X)}
-	    catch _ then
-	       {Exception.raiseError BuiltinTable.'Transient.Promise'}
-	    end
-	    unit
-	 end
-      'Transient.fulfill':
-	 fun {$ P X}
-	    if {IsFree P} then
-	       P = X
-	    else
-	       {Exception.raiseError BuiltinTable.'Transient.Fulfill'}
-	    end
-	    unit
-	 end
-      'Transient.future':
-	 fun {$ P}
-	    if {IsFree P} andthen {Not {IsFuture P}} then !!P
-	    else
-	       {Exception.raiseError BuiltinTable.'Transient.Future'} unit
-	    end
-	 end
-      'Transient.isFuture': IsFuture
-      'Transient.isPromise': IsFree
-      'Transient.promise':
-	 fun {$ unit} _ end
       'Unsafe.Array.sub': Array.get
       'Unsafe.Array.update':
 	 fun {$ A I X} {Array.put A I X} unit end
