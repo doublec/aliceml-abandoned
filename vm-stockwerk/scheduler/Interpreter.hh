@@ -43,6 +43,7 @@ public:
   // Handling stack frames:
   virtual void PushCall(TaskStack *taskStack, Closure *closure) = 0;
   virtual void PopFrame(TaskStack *taskStack) = 0;
+  //--** virtual u_int PurgeFrame(TaskStack *taskStack, u_int offset) = 0;
 
   // Execution:
   virtual Result Run(TaskStack *taskStack, int nargs) = 0;
