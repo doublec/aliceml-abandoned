@@ -44,6 +44,7 @@ private:
   static void RegisterOption();
   static void RegisterReal();
   static void RegisterRef();
+  static void RegisterRemote();
   static void RegisterString();
   static void RegisterThread();
   static void RegisterUniqueString();

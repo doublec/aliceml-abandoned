@@ -32,6 +32,8 @@ public:
     static word uniqueString;
   };
 
+  static word remoteCallback;
+
   static concrete_constructor concreteCodeConstructor;
 
   static void Init();

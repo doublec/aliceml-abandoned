@@ -33,6 +33,7 @@ word AliceLanguageLayer::TransformNames::primitiveValue;
 word AliceLanguageLayer::TransformNames::primitiveFunction;
 word AliceLanguageLayer::TransformNames::function;
 word AliceLanguageLayer::TransformNames::constructor;
+word AliceLanguageLayer::remoteCallback;
 
 concrete_constructor AliceLanguageLayer::concreteCodeConstructor;
 
@@ -79,6 +80,9 @@ void AliceLanguageLayer::Init() {
   TransformNames::constructor = aliceConstructor->ToWord();
   RootSet::Add(TransformNames::constructor);
   Unpickler::RegisterHandler(aliceConstructor, AliceConstructorHandler);
+
+  remoteCallback = Store::IntToWord(0); //--** needs to be preregistered
+  RootSet::Add(remoteCallback);
 
   Constructor::Init();
   Hole::InitExceptions(); //--** should not be here
