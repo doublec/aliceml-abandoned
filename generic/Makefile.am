@@ -16,6 +16,8 @@ libgeneric_la_SOURCES = \
 	Interpreter.cc \
 	IODesc.cc \
 	IOHandler.cc \
+	Minimizer.cc \
+	MinimizerLoader.cc \
 	Pickler.cc \
 	Primitive.cc \
 	Profiler.cc \
@@ -55,6 +57,7 @@ dist_genericinclude_HEADERS = \
 	IODesc.hh \
 	IOHandler.hh \
 	JitterGenericData.hh \
+	Minimizer.hh \
 	Pickle.hh \
 	Pickler.hh \
 	Primitive.hh \

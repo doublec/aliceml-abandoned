@@ -823,7 +823,7 @@ public:
       Block *b = Store::DirectWordToBlock(future);
       u_int size = b->GetSize();
       for (u_int i=0; i<size; i++) {
-	b->ReplaceArg(i, frame->Pop());
+	b->ReplaceArgUnchecked(i, frame->Pop());
       }
       *newBlock = b->ToWord();
       return false;

@@ -26,6 +26,7 @@
 #include "generic/PushCallWorker.hh"
 #include "generic/BindFutureWorker.hh"
 #include "generic/Time.hh"
+#include "adt/DynamicArray.hh"
 #if PROFILE
 #include "generic/Profiler.hh"
 #endif
@@ -56,6 +57,7 @@ extern "C" SeamDll void InitSeam() {
   SignalHandler::Init();
   Scheduler::Init();
   Time::Init();
+  DynamicArray::Init();
 #if PROFILE
   Profiler::Init();
 #endif

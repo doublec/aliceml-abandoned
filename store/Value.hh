@@ -46,10 +46,9 @@ public:
   void InitArg(u_int f, s_int v) {
     InitArg(f, Store::IntToWord(v));
   }
-  void ReplaceArg(u_int f, word v) {
+  void ReplaceArgUnchecked(u_int f, word v) {
     AssertStore(f < GetSize());
     AssertStore(v != NULL);
-    AssertStore(this->IsMutable());
     ((word *) this)[f + 1] = v;
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
@@ -59,6 +58,13 @@ public:
 	Store::AddToIntgenSet(this);
       }
     }
+  }
+  void ReplaceArg(u_int f, word v) {
+    AssertStore(this->IsMutable() == 1);
+    ReplaceArgUnchecked(f, v);
+  }
+  void ReplaceArgUnchecked(u_int f, s_int v) {
+    InitArg(f, Store::IntToWord(v));
   }
   void ReplaceArg(u_int f, s_int v) {
     AssertStore(this->IsMutable());

@@ -6,10 +6,12 @@ noinst_LTLIBRARIES = \
 	libadt.la
 
 libadt_la_SOURCES = \
-	ChunkMap.cc
+	ChunkMap.cc \
+	DynamicArray.cc
 
 dist_adtinclude_HEADERS = \
 	ChunkMap.hh \
+	DynamicArray.hh \
 	IntMap.hh \
 	Queue.hh \
 	Stack.hh
