@@ -1,3 +1,14 @@
+diff -rNu lightning-1.1.2/lightning/core-common.h lightning-1.1.2-seam-patches/lightning/core-common.h
+--- lightning-1.1.2/lightning/core-common.h	2003-11-14 23:15:09.000000000 +0100
++++ lightning-1.1.2-seam-patches/lightning/core-common.h	2004-03-16 10:46:17.000000000 +0100
+@@ -46,6 +46,7 @@
+ } jit_state;
+ 
+ static jit_state 			_jit;
++inline void dummy(void) { _jit = _jit; }
+ 
+ #define JIT_NOREG			(-1)
+ 
 diff -rNu lightning-1.1.2/lightning/funcs-common.h lightning-1.1.2-seam-patches/lightning/funcs-common.h
 --- lightning-1.1.2/lightning/funcs-common.h	2003-05-15 09:15:15.000000000 +0200
 +++ lightning-1.1.2-seam-patches/lightning/funcs-common.h	2004-03-16 09:47:12.000000000 +0100
