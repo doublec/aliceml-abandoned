@@ -28,6 +28,7 @@ import structure PrettyPrint             from "../../lib/utility/PrettyPrint"
 import signature IMP_MAP                 from "../../lib/data/IMP_MAP-sig"
 import structure MkHashImpMap            from "../../lib/data/MkHashImpMap"
 import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
+import structure Name                    from "../../lib/rtt/Name"
 import structure Label                   from "../../lib/rtt/Label"
 import structure Crash                   from "../infrastructure/Crash"
 import structure Source                  from "../infrastructure/Source"
@@ -1208,7 +1209,13 @@ functor MkValuePropagationPhase(val isCross: bool
  	    if arity <> arity' then r := AMBIGUOUS else ()
  	  | vpOutArity' ((SOME (ref AMBIGUOUS), _, _), _) = ()
  	  | vpOutArity' ((NONE, _, _), _) = ()
- 
+
+	fun declareExport (SOME (env, exportset), 
+			   idDef as IdDef (Id (_, stamp, _))) =
+	    if StampSet.member (exportset, stamp) then
+		declareUnknown (env, idDef, true)
+	    else ()
+	  | declareExport (_, _) = ()
 
 	fun vpBody (Entry (info, entryPoint)::stms, state as {env, ...}) =
 	    Entry (info, vpEntryPoint (entryPoint, env))::vpBody (stms, state)
@@ -1217,23 +1224,25 @@ functor MkValuePropagationPhase(val isCross: bool
 	  | vpBody ((stm as LastUse (_, _))::stms, state) =
 	    stm::vpBody (stms, state)
 	  | vpBody (ValDec (info, idDef, exp)::stms,
-		    state as {env, isToplevel, lazySels,
+		    state as {env, isToplevel, lazySels, export,
 			      outArityInfo = (_, _, funMap), ...}) =
 	    let
 		val (stms', exp) =
 		    vpExp (exp, env, isToplevel, lazySels, funMap)
 	    in
 		declare (env, idDef, (expToValue exp, isToplevel));
+		declareExport (export, idDef);
 		stms' @ ValDec (info, idDef, exp)::vpBody (stms, state)
 	    end
 	  | vpBody (RecDec (info, idDefExpVec)::stms,
- 		    state as {env, isToplevel, lazySels,
+ 		    state as {env, isToplevel, lazySels, export,
  			      outArityInfo = (_, _, funMap), ...}) =
 	    let
 		val _ =
 		    Vector.app
 			(fn (idDef, exp) =>
-			    declare (env, idDef, (expToValue exp, isToplevel)))
+			    (declare (env, idDef, (expToValue exp, isToplevel));
+			     declareExport (export, idDef)))
 			idDefExpVec
 		val (stms', idDefExpList) =
 		    Vector.foldr
@@ -1257,7 +1266,7 @@ functor MkValuePropagationPhase(val isCross: bool
 	    (declareUnknown (env, idDef, isToplevel);
 	     RefDec (info, idDef, deref (idRef, env))::vpBody (stms, state))
 	  | vpBody (TupDec (info, idDefs, idRef)::stms,
-		    state as {env, isToplevel, ...}) =
+		    state as {env, isToplevel, export, ...}) =
 	    let
 		val idRef = deref (idRef, env)
 		val (idDefs, isDet) =
@@ -1275,6 +1284,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		val values =
 		    Vector.map (fn idDef =>
 				   (declareUnknown (env, idDef, isToplevel);
+				    declareExport (export, idDef);
 				    case idDef of
 					IdDef id => (isSome := true; VarVal id)
 				      | Wildcard => UnknownVal)) idDefs
@@ -1288,7 +1298,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		else vpBody (stms, state)
 	    end
 	  | vpBody (ProdDec (info, labelIdDefVec, idRef)::stms,
-		    state as {env, isToplevel, ...}) =
+		    state as {env, isToplevel, export, ...}) =
 	    let
 		val idRef = deref (idRef, env)
 		val (labelIdDefVec, isDet) =
@@ -1310,6 +1320,7 @@ functor MkValuePropagationPhase(val isCross: bool
 		val values =
 		    Vector.map (fn (_, idDef) =>
 				   (declareUnknown (env, idDef, isToplevel);
+				    declareExport (export, idDef);
 				    case idDef of
 					IdDef id => (isSome := true; VarVal id)
 				      | Wildcard => UnknownVal)) labelIdDefVec
@@ -1396,10 +1407,13 @@ functor MkValuePropagationPhase(val isCross: bool
 		     outArityInfo = (_, _, funMap), ...}) =
 	    (*--** do multiple occurrences of ExportStm work by accident? *)
 	    let
+	    (*--** now done at declaration points, to avoid problems with
+		   flattening phase dropping unreachable export statements
 		val _ =
 		    Vector.app (fn (_, id) =>
 				declareUnknown (env', IdDef id, true))
 		    exportDesc
+	    *)
 		val (stms, exp) = vpExp (exp, env, true, lazySels, funMap)
 	    in
 		stms @ [ExportStm (info, exp)]
@@ -1939,10 +1953,14 @@ functor MkValuePropagationPhase(val isCross: bool
 		val lazySels = IdMap.map ()
 		val stamp = Stamp.stamp ()
 		val outArityInfo = (NONE, stamp, StampMap.map ())
+		val exportset = StampSet.set ()
+		val _ = Vector.app (fn (_, Id (_, stamp, _)) =>
+				       StampSet.insertDisjoint
+				       (exportset, stamp)) exports
 		val body =
 		    vpBodyShared (body, stamp,
 				  {env = env', isToplevel = true,
-				   export = SOME (env, exports),
+				   export = SOME (env, exportset),
 				   lazySels = lazySels,
 				   outArityInfo = outArityInfo})
 		val body =
