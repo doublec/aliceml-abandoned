@@ -61,7 +61,7 @@
   Scheduler::currentArgs = Interpreter::OneArg(Store::IntToWord(i));    \
   return Interpreter::CONTINUE;	                                        \
 }
-#define RETURN_BOOL(b) RETURN_INT(!!b);
+#define RETURN_BOOL(b) RETURN_INT(!!(b));
 
 #define PREEMPT {							\
   return Interpreter::PREEMPT;		                                \
