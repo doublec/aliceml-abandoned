@@ -25,7 +25,7 @@ public:
   };
 
   enum idRef {
-    Global, Local // to be done
+    Global, Local
   };
 
   enum con {
