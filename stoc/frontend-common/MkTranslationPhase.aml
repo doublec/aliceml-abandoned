@@ -10,6 +10,12 @@
  *   $Revision$
  *)
 
+(*DEBUG*)
+import "../../lib/system/TextIO"
+import "../../lib/utility/PrettyPrint"
+import "../../lib/rtt/PPInf"
+import "../../../../install/lib/tools/Inspector"
+
 import structure TypedInfo
        structure TypedGrammar		from "TypedGrammar"
 import structure IntermediateGrammar	from "../common/IntermediateGrammar"
@@ -98,7 +104,10 @@ struct
     val trModName		= trName'(fn s => s ^ "$")
     val trInfName		= trName'(fn s => "$" ^ s ^ "$")
 
-    fun isTypName' s		= String.sub(s,0) = #"$"
+    fun isTypName' s		= String.sub(s,0) = #"$" andalso
+				  String.sub(s, String.size s - 1) <> #"$"
+    fun isInfName' s		= String.sub(s,0) = #"$" andalso
+				  String.sub(s, String.size s - 1) = #"$"
 
     fun trValLabel a		= Label.fromName(trValName(Label.toName a))
     fun trTypLabel a		= Label.fromName(trTypName(Label.toName a))
@@ -235,7 +244,9 @@ struct
     val ikindOp			= yOp(longid_inf,       typ_ikind)
     val unitInfOp		= yOp(longid_inf,       typ_unit)
     val pathInfOp		= yOp(longid_inf,       typ_path)
+    val pathinfinfInfOp		= yOp(longid_inf,       typ_pathinfinf)
     val typInfOp		= yOp(longid_inf,       typ_typ)
+    val reaInfOp		= yOp(longid_inf,       typ_rea)
     val pervInfOp		= yOp(longid_pervInf,   typ_icon)
 
 
@@ -680,9 +691,11 @@ struct
       | trMod(I.AppMod(i,m1,m2))	= let val i1  = I.infoMod m1
 					      val i2  = I.infoMod m2
 					      val j11 = #2(Inf.asArrow(#inf i1))
-					  in O.AppExp(trModInfo i, trMod m1,
+					      val j11'= Inf.instance j11
+					  in Inf.match(#inf(I.infoMod m2),j11');
+					     O.AppExp(trModInfo i, trMod m1,
 						      trTransCoerceMod
-							(#region i2, m2, j11))
+							(#region i2, m2, j11'))
 					  end
       | trMod(I.AnnMod(i,m,j))		= trTransCoerceMod(#region i, m, #inf i)
       | trMod(I.UpMod(i,m,j))		= trOpaqCoerceMod(i,m,j)
@@ -695,6 +708,17 @@ struct
 	 *           in [x1 : j1 :> x2 = j2]
 	 *)
 	let
+(*DEBUG*)
+(*
+val _ = print "===== trTransCoerceMod =====\n"
+val _ = print "j1 =\n"
+val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppInf(#inf(I.infoMod m)), 80)
+val _ = print "\nj2 =\n"
+val _ = PrettyPrint.output(TextIO.stdOut, PPInf.ppInf j2, 80)
+val _ = print "\n"
+val _ = Inspector.inspect{j1= #inf(I.infoMod m),j2}
+val _ = TextIO.inputLine(TextIO.stdIn)
+*)
 	    val i   = nonInfo r
 	    val e1' = trMod m
 
@@ -765,10 +789,93 @@ struct
 
   (* Primitive modules *)
 
-    (*UNFINISHED: quick hack *)
+    and trPrimMod(i,"ByNeed",j) =
+	(* ByNeed : (interface I; module F : any -> I) -> I *)
+	(* = fn {[I]=_, [F]=x} -> lazy x() *)
+	(let
+	    val  i'     = trModInfo i
+	    val  r      = #region i'
+	    val  i0'    = nonInfo r
+	    val  t      = #typ i'
+	    val (t1,t2) = Type.asArrow' t
+	    val (l1,t11,l2,t12) = findModInf(Type.asProd t1)
+	    val  x'     = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  p'     = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l2),
+					  O.JokPat(typInfo(r,t12))),
+				  O.Field(i0', O.Lab(i0',l1), idToPat x')])
+	    val  i2'    = typInfo(r,t2)
+	    val  e'     = O.LazyExp(i2', O.AppExp(i2', idToExp x', trUnit r))
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: ByNeed")
 
-    and trPrimMod(i,"Pack",j) =
-	(* fn {[x]=x1,[t]=x2} -> {[x']=cast (x1,x2)} *)
+      | trPrimMod(i,"Pack",j) =
+	(* Pack : (interface I; module X : I) -> (x : package) *)
+	(* = fn {[X]=x1,[I]=x2} -> {[x']=cast (x1,x2)} *)
+	(let
+	    val  i'     = trModInfo i
+	    val  r      = #region i'
+	    val  i0'    = nonInfo r
+	    val  t      = #typ i'
+	    val (t1,t2) = Type.asArrow' t
+	    val (l1,t11,l2,t12) = findModInf(Type.asProd t1)
+	    val (l3,t21)        = Type.headRow(Type.asProd' t2)
+	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'     = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
+				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+	    val  e1'    = O.CastExp(typInfo(r,t21), 
+				O.TupExp(typInfo(r,Type.inTuple #[t11,t12]),
+					 #[idToExp x1', idToExp x2']))
+	    val  e'     = O.ProdExp(typInfo(r,t2),
+				    #[O.Field(i0', O.Lab(i0',l3), e1')])
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
+
+      | trPrimMod(i,"Unpack",j) =
+	(* Unpack : (x : package; interface I) -> I *)
+	(* = fn {[x]=x1,[S]=x2} -> let (x11,x12) = cast x1 in
+	 *                             Inf.match(x12,x2);
+	 *                             Coerce (x12,x2) x11
+	 *                         end *)
+	(let
+	    val  i'     = trModInfo i
+	    val  r      = #region i'
+	    val  i0'    = nonInfo r
+	    val  t      = #typ i'
+	    val (t1,t2) = Type.asArrow' t
+	    val (l1,t11,l2,t12) = findModInf(Type.asProd' t1)
+	    val  x1'    = O.Id(typInfo(r,t11), Stamp.new(), Name.InId)
+	    val  x2'    = O.Id(typInfo(r,t12), Stamp.new(), Name.InId)
+	    val  p'     = O.ProdPat(typInfo(r,t1),
+				#[O.Field(i0', O.Lab(i0',l1), idToPat x1'),
+				  O.Field(i0', O.Lab(i0',l2), idToPat x2')])
+
+	    val  i1'    = typInfo(r, Type.inTuple #[t2,typ_inf])
+	    val  i2'    = typInfo(r, t2)
+	    val  x11'   = O.Id(i2', Stamp.new(), Name.InId)
+	    val  x12'   = O.Id(typInfo(r,typ_typ), Stamp.new(), Name.InId)
+	    val  p1'    = O.TupPat(i1', #[idToPat x11', idToPat x12'])
+	    val  e1'    = O.CastExp(i1', idToExp x1')
+	    val  d'     = O.ValDec(nonInfo r, p1', e1')
+
+	    val  e1'    = reaInfOp(lab_match, O.TupExp(typInfo(r,typ_infinf),
+					      #[idToExp x12', idToExp x2']))
+	    val  e2'    = idToExp x11' (*UNFINISHED*)
+	    val  e'     = O.LetExp(i2', #[d'], O.SeqExp(i2', #[e1', e2']))
+	in
+	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
+	end
+	handle Type.Type => raise Crash.Crash "trPrimMod: Unpack")
+
+      | trPrimMod(i,"PackVal",j) =
+	(* PackVal : (type t; x : t) -> (x : package) *)
+	(* = fn {[x]=x1,[t]=x2} -> {[x']=cast (x1,x2)} *)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -790,15 +897,16 @@ struct
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
-	handle Type.Type => raise Crash.Crash "trPrimMod: Pack")
+	handle Type.Type => raise Crash.Crash "trPrimMod: PackVal")
 
-      | trPrimMod(i,"Unpack",j) =
-	(* fn {[x]=x1,[t]=x2} -> let (x11,x12) = cast x1 in
-	 *                           if Type.equals(x12,x2) then
-	 *                               {[x']=x11}
-	 *                           else
-	 *                               raise prim "General.Bind"
-	 *                       end *)
+      | trPrimMod(i,"UnpackVal",j) =
+	(* UnpackVal : (val x : package; type t) -> (x : t) *)
+	(* = fn {[x]=x1,[t]=x2} -> let (x11,x12) = cast x1 in
+	 *                             if Type.equals(x12,x2) then
+	 *                                 {[x']=x11}
+	 *                             else
+	 *                                 raise prim "???"
+	 *                         end *)
 	(let
 	    val  i'     = trModInfo i
 	    val  r      = #region i'
@@ -831,10 +939,22 @@ struct
 	in
 	    O.FunExp(i', #[O.Match(nonInfo r, p', e')])
 	end
-	handle (Type.Type | Type.Row) => raise Crash.Crash "trPrimMod: Unpack")
+	handle (Type.Type | Type.Row) =>
+		raise Crash.Crash "trPrimMod: UnpackVal")
 
       | trPrimMod(i,s,j) =
 	O.PrimExp(trModInfo i, s)
+
+    and findModInf r =
+	let
+	    val (l1,t1) = Type.headRow r
+	    val (l2,t2) = Type.headRow(Type.tailRow r)
+	in
+	    case (isInfName'(Label.toString l1), isInfName'(Label.toString l2))
+	      of (false,true) => (l1,t1,l2,t2)
+	       | (true,false) => (l2,t2,l1,t1)
+	       |  _           => raise Crash.Crash "TranslationPhase.findModInf"
+	end
 
     and findValTyp r =
 	let
@@ -948,6 +1068,12 @@ struct
 	    end
 	else (* j1 is sig or arrow, j2 is top *)
 	    SOME(trUnit r)
+(*DEBUG*)
+(*
+before (print "###DEBUG### upInf: module cast to unit (press Return to continue)";
+Inspector.inspect{j1,j2};
+TextIO.inputLine(TextIO.stdIn))
+*)
 
     and upItems(isOpaque, isntIdentity, x1, s1, x2, [], r, fields) =
 	    (Vector.fromList fields, isntIdentity)
@@ -1525,7 +1651,7 @@ struct
 		val x2' = O.Id(typInfo(r,typ_sign), Stamp.new(), Name.InId)
 		val e'  = O.SelExp(typInfo(r,typ_inf),
 				   O.Lab(nonInfo r, Label.fromInt 3),
-				   sigOp(lab_asArrow, x'))
+				   pathinfinfInfOp(lab_asArrow, x'))
 		val d'  = O.ValDec(nonInfo r, idToPat x2', e')
 
 		val e'  = rebuildInfInst(r, idToExp x2', j2)
@@ -1593,8 +1719,8 @@ struct
 		val  xx' = idToExp x1'
 
 		val  e1' = labOp(lab_fromString, trString(r, Label.toString a))
-		val  e2' = typInfOp(lab_lookupInf,
-				    O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
+		val  e2' = infOp(lab_lookupInf,
+				 O.TupExp(typInfo(r,typ_signlab), #[x',e1']))
 		val  e3' = infOp(lab_instance, e2')
 		val  d'  = O.ValDec(nonInfo r, idToPat x1', e3')
 
@@ -1605,9 +1731,11 @@ struct
 			      | NONE =>
 				O.TupExp(typInfo(r,typ_infunit),
 					 #[xx', trUnit r])
-		val  t   = #typ(O.infoExp e4')
+		val  i   = O.infoExp e4'
+		val  t   = #typ i
+		val  e5' = O.LetExp(i, #[d'], e4')
 
-		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e3')
+		val  m'  = O.Match(nonInfo r,O.JokPat(typInfo(r,typ_unit)), e5')
 		val  e'  = O.FunExp(typInfo(r, Type.inArrow(typ_unit,t)), #[m'])
 	    in
 		O.Field(nonInfo r, l', e') :: fs'

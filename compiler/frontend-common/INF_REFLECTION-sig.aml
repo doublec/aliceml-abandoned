@@ -20,6 +20,7 @@ sig
     val typ_sign :		Type.t
     val typ_inf :		Type.t
     val typ_kind :		Type.t
+    val typ_rea :		Type.t
 
     val modname_inf :		Name.t
 
@@ -65,5 +66,7 @@ sig
 
     val lab_kind :		Label.t
     val lab_instance :		Label.t
+    val lab_match :		Label.t
     val lab_intersect :		Label.t
+    val lab_mismatch :		Label.t
 end

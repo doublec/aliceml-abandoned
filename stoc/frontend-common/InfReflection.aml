@@ -34,6 +34,8 @@ struct
     val typ_inf		= Type.inCon(Type.STAR, Type.CLOSED, path_inf)
     val path_kind	= Path.pervasive "kind"		(*UNFINISHED*)
     val typ_kind	= Type.inCon(Type.STAR, Type.CLOSED, path_kind)
+    val path_rea	= Path.pervasive "rea"		(*UNFINISHED*)
+    val typ_rea		= Type.inCon(Type.STAR, Type.CLOSED, path_rea)
 
     val typ_con		= Type.inTuple #[typ_kind, typ_path]
     type con		= Inf.con				(* verify *)
@@ -54,6 +56,8 @@ struct
     type inf		= Inf.t					(* verify *)
     val typname_sign	= Name.ExId "sign"
     type sign		= Inf.sign				(* verify *)
+    val typname_rea	= Name.ExId "rea"
+    type rea		= Inf.rea				(* verify *)
 
 
   (* Operations *)
@@ -133,7 +137,11 @@ struct
     val _		= Inf.kind : inf -> kind		(* verify *)
     val lab_instance	= Label.fromString "instance"
     val _		= Inf.instance : inf -> inf		(* verify *)
+    val lab_match	= Label.fromString "match"
+    val _		= Inf.match : inf * inf -> rea		(* verify *)
     val lab_intersect	= Label.fromString "intersect"
     val _		= Inf.intersect : inf * inf -> inf	(* verify *)
+    val lab_mismatch	= Label.fromString "Mismatch"
+    val _		= Inf.Mismatch : Inf.mismatch -> exn	(* verify *)
 
 end
