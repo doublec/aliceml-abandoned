@@ -59,6 +59,7 @@ define
 						 function:
 						    {ByteString.make 'input1'}
 						 cause: E))} %--** not type exn
+			      unit
 			   end
 			end
 		     inputN:
@@ -73,6 +74,7 @@ define
 						 function:
 						    {ByteString.make 'inputN'}
 						 cause: E))} %--** not type exn
+			      unit
 			   end
 			end
 		     output1:
