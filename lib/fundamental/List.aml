@@ -84,7 +84,7 @@ struct
 
     fun take (xs,i) where (i<0)	= raise General.Subscript
       | take (xs,i)		= take'(i,xs)
-    and take'(0, x::xs)		= nil
+    and take'(0, xs)		= nil
       | take'(i, x::xs)		= x::take'(i-1,xs)
       | take'(i, nil)		= raise General.Subscript
 
