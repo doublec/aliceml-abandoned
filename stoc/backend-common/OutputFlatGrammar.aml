@@ -103,15 +103,13 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
 	  | outputTest (TagTest label) =
-	    SEQ [outputTag Nullary, S " ", S (Label.toString label)]
-	  | outputTest (TagAppTest (label, args, conArity)) =
-	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
-		 S ") ", outputArgs args]
+	    SEQ [S "tag ", S (Label.toString label)]
+	  | outputTest (TagAppTest (label, args)) =
+	    SEQ [S "(tag ", S (Label.toString label), S ") ", outputArgs args]
 	  | outputTest (ConTest id) =
-	    SEQ [outputCon Nullary, S " ", ID id]
-	  | outputTest (ConAppTest (id, args, conArity)) =
-	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
-		 outputArgs args]
+	    SEQ [S "con ", ID id]
+	  | outputTest (ConAppTest (id, args)) =
+	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
 	  | outputTest (RefAppTest id) = SEQ [S "ref ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
@@ -193,15 +191,12 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (TagAppExp (_, label, args, conArity)) =
-	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
-		 S ") ", outputArgs args]
-	  | outputExp (ConAppExp (_, id, args, conArity)) =
-	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
-		 outputArgs args]
-	  | outputExp (StaticConAppExp (_, stamp, args, conArity)) =
-	    SEQ [S "(", outputCon conArity, S " ", S (Stamp.toString stamp),
-		 S ") ", outputArgs args]
+	  | outputExp (TagAppExp (_, label, args)) =
+	    SEQ [S "(tag ", S (Label.toString label), S ") ", outputArgs args]
+	  | outputExp (ConAppExp (_, id, args)) =
+	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
+	  | outputExp (StaticConAppExp (_, stamp, args)) =
+	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
 	  | outputExp (SelAppExp (_, label, id)) =

@@ -84,10 +84,10 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	fun scanTest (LitTest _, lset) = lset
 	  | scanTest (TagTest _, lset) = lset
-	  | scanTest (TagAppTest (_, args, _), lset) =
+	  | scanTest (TagAppTest (_, args), lset) =
 	    processArgs (args, lset, del)
 	  | scanTest (ConTest id, lset) = ins (lset, id)
-	  | scanTest (ConAppTest (id, args, _), lset) =
+	  | scanTest (ConAppTest (id, args), lset) =
 	    processArgs (args, ins (lset, id), del)
 	  | scanTest (RefAppTest id, lset) = del (lset, id)
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
@@ -169,7 +169,6 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		Orig set
 	    end
 	  | scanBody ([TestStm (i, id, testBodyList, body)], initial) =
-	    (*--** was there any reason for the test to be scanned twice? *)
 	    let
 		val initial' = Orig (lazyValOf initial)
 		val lset1 =
@@ -249,11 +248,11 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
 	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (TagAppExp (_, _, args, _), lset) =
+	  | scanExp (TagAppExp (_, _, args), lset) =
 	    processArgs (args, lset, ins)
-	  | scanExp (ConAppExp (_, id, args, _), lset) =
+	  | scanExp (ConAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (StaticConAppExp (_, _, args, _), lset) =
+	  | scanExp (StaticConAppExp (_, _, args), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
 	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
@@ -275,11 +274,9 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	fun initTest (LitTest _, _) = ()
 	  | initTest (TagTest _, _) = ()
-	  | initTest (TagAppTest (_, args, _), set) =
-	    processArgs (args, set, ins)
+	  | initTest (TagAppTest (_, args), set) = processArgs (args, set, ins)
 	  | initTest (ConTest _, _) = ()
-	  | initTest (ConAppTest (_, args, _), set) =
-	    processArgs (args, set, ins)
+	  | initTest (ConAppTest (_, args), set) = processArgs (args, set, ins)
 	  | initTest (RefAppTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =
@@ -294,13 +291,13 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initStm (RaiseStm (_, _), _) = ()
 	  | initStm (ReraiseStm (_, _), _) = ()
 	  | initStm (HandleStm (_, body1, id, body2, body3, _), set) =
+	    (*--** body3 must be treated the same as a SharedStm *)
 	    let
 		val set' = StampSet.clone set
 	    in
 		ins (set', id);
 		initBody (body1, StampSet.clone set);
 		initBody (body2, set');
-		(*--** is this correct? *)
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
