@@ -99,7 +99,7 @@ import   (*DEBUG*)
 from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
 
 import
-    structure BackendCommon
+    structure MakeBackendCommon
 from "x-alice:/backend-common/BackendCommon.ozf"
 
 import
