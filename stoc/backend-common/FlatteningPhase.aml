@@ -17,6 +17,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 
 	open I
 	open IntermediateAux
+	open Prebound
 
 	(* Pattern Matching Compilation: Tests *)
 

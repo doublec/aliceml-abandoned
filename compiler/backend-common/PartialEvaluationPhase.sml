@@ -79,20 +79,18 @@ structure PartialEvaluationPhase :> PARTIAL_EVALUATION_PHASE =
 	fun evalLongId (longid as ShortId (_, id), state) =
 	    (longid, SOME (id, lookup (state, id)))
 	  | evalLongId (longid as LongId (coord, longid',
-					  id as Id (_, _, ExId s)), state) =
+					  lab as Lab (_, s)), state) =
 	    (case evalLongId (longid', state) of
 		 (longid'', SOME (_, Rec fields)) =>
 		     (case List.find (fn (s', _) => s = s') fields of
-			  SOME (_, valRepOpt as SOME (id', _)) =>
-			      (ShortId (coord, id'), valRepOpt)
+			  SOME (_, valRepOpt as SOME (id, _)) =>
+			      (ShortId (coord, id), valRepOpt)
 			| SOME (_, NONE) =>
-			      (LongId (coord, longid'', id), NONE)
+			      (LongId (coord, longid'', lab), NONE)
 			| NONE =>   (*--** emit warning; non-existent member *)
-			      (LongId (coord, longid'', id), NONE))
+			      (LongId (coord, longid'', lab), NONE))
 	       | (longid'', _) =>   (*--** emit warning if it's not Top *)
-		     (LongId (coord, longid'', id), NONE))
-	  | evalLongId (LongId (_, _, Id (_, _, InId)), _) =
-	    Crash.crash "ValuePropagation.evalLongId"
+		     (LongId (coord, longid'', lab), NONE))
 
 	fun evalDec (OneDec (coord, id, exp), state) =
 	    let

@@ -26,10 +26,12 @@ structure Debug :> DEBUG =
 	fun posToString pos =
 	    seqToString "." (fn x => x) (List.rev ("e"::pos))
 
-	fun idToString (Id (_, stamp, _)) = "id" ^ Int.toString stamp
+	fun labToString (Lab (_, s)) = s
 
-	fun longidToString (LongId (_, longid, id)) =
-	    longidToString longid ^ "." ^ idToString id
+	fun idToString (Id (_, stamp, _)) = "id" ^ Stamp.toString stamp
+
+	fun longidToString (LongId (_, longid, lab)) =
+	    longidToString longid ^ "." ^ labToString lab
 	  | longidToString (ShortId (_, id)) = idToString id
 
 	fun mappingToString mapping =
@@ -45,8 +47,6 @@ structure Debug :> DEBUG =
 
 	fun litToString (IntLit i) = LargeInt.toString i
 	  | litToString _ = "<lit>"
-
-	fun labToString (Lab (_, s)) = s
 
 	fun patToString (WildPat _) = "_"
 	  | patToString (LitPat (_, lit)) = litToString lit
