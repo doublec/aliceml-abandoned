@@ -68,6 +68,7 @@
 
 	val equal :          set * set -> bool
 	val subset :         set * set -> bool
+	val disjoint :       set * set -> bool
 	val compare :        set * set -> order
 
 	val app :            (item -> unit) -> set -> unit
@@ -287,6 +288,14 @@
     <DD>
       <P>Returns <TT>true</TT> if <TT><I>s1</I></TT> is a subset of
       <TT><I>s2</I></TT>, <TT>false</TT> otherwise.</P>
+    </DD>
+
+    <DT>
+      <TT>disjoint (<I>s1</I>, <I>s2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>s1</I></TT> and <TT><I>s2</I></TT>
+      are disjoint sets, <TT>false</TT> otherwise.</P>
     </DD>
 
     <DT>

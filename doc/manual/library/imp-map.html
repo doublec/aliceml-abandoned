@@ -71,6 +71,12 @@
 	val unionWith :      ('a * 'a -> 'a) -> 'a map * 'a map -> unit
 	val unionWithi :     (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
 
+	val intersect :      'a map * 'a map -> unit
+	val intersectWith :  ('a * 'a -> 'a) -> 'a map * 'a map -> unit
+	val intersectWithi : (key * 'a * 'a -> 'a) -> 'a map * 'a map -> unit
+
+	val difference :     'a map * 'a map -> unit
+
 	val size :           'a map -> int
 	val isEmpty :        'a map -> bool
 
@@ -82,6 +88,7 @@
 
 	val equal :          ('a * 'a -> bool) -> 'a map * 'a map -> bool
 	val submap :         ('a * 'a -> bool) -> 'a map * 'a map -> bool
+	val disjoint :       'a map * 'a map -> bool
 
 	val app :            ('a -> unit) -> 'a map -> unit
 	val modify :         ('a -> 'a) -> 'a map -> unit
@@ -265,6 +272,37 @@
     </DD>
 
     <DT>
+      <TT>intersect (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>intersectWith <I>f</I> (<I>m1</I>, <I>m2</I>)</TT> <BR>
+      <TT>intersectWithi <I>f</I> (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all entries <TT><I>k1</I></TT>-><TT><I>x1</I></TT> from map
+      <TT><I>m1</I></TT> for which no key <TT><I>k2</I></TT> equal to
+      <TT><I>k1</I></TT> is not in the domain of <TT><I>m2</I></TT>.
+      In the first form, if <TT><I>m2</I></TT> contains
+      a corresponding entry <TT><I>k2</I></TT>-><TT><I>x2</I></TT>, respectively,
+      then the entry in <TT><I>m1</I></TT>
+      will get replaced by <TT><I>k2</I></TT>-><TT><I>x2</I></TT>. In the second form,
+      the entry will get replaced by
+      <TT><I>k2</I></TT>-><TT><I>f</I>(<I>x1</I>,<I>x2</I>)</TT>. In the third
+      form, <TT><I>k2</I></TT> is additionally passed to <TT><I>f</I></TT>.
+      The following equivalences hold:</P>
+      <PRE>
+      intersect         = intersectWith #2
+      intersectWith <I>f</I>   = intersectWithi (fn (_,x,y) => <I>f</I>(x, y))</PRE>
+    </DD>
+
+    <DT>
+      <TT>difference (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Removes all entries <TT><I>k1</I></TT>-><TT><I>x1</I></TT> from map
+      <TT><I>m1</I></TT> for which a key <TT><I>k2</I></TT> equal to
+      <TT><I>k1</I></TT> is in the domain of <TT><I>m2</I></TT>.</P>
+    </DD>
+
+    <DT>
       <TT>size <I>m</I></TT>
     </DT>
     <DD>
@@ -336,6 +374,14 @@
       <TT><I>k2</I></TT>-><TT><I>x2</I></TT> in <TT><I>m2</I></TT>, such that
       <TT>Key.equal(<I>k1</I>, <I>k2</I>) andalso <I>f</I>(<I>x1</I>, <I>x2</I>)</TT>
       evaluates to <TT>true</TT>.</P>
+    </DD>
+
+    <DT>
+      <TT>disjoint (<I>m1</I>, <I>m2</I>)</TT>
+    </DT>
+    <DD>
+      <P>Returns <TT>true</TT> if <TT><I>m1</I></TT> and <TT><I>m2</I></TT>
+      are maps with disjoint domains, <TT>false</TT> otherwise.</P>
     </DD>
 
     <DT>
