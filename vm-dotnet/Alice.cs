@@ -392,11 +392,6 @@ namespace Alice {
 		}
 	    }
 	}
-	class RefConstructor: Procedure {
-	    public override object Apply(object contents) {
-		return new Cell(contents);
-	    }
-	}
 	public class Exception: SystemException {
 	    public object Value;
 	    public Exception(object exn): base(exn.ToString()) {
@@ -405,15 +400,6 @@ namespace Alice {
 	    public Exception(object exn, int line):
 		base(exn.ToString() + " at line " + Int32.ToString(line)) {
 		Value = exn;
-	    }
-	}
-	public class Selector: Procedure {
-	    int Index;
-	    public Selector(int index) {
-		Index = index;
-	    }
-	    public override object Apply(object x) {
-		return ((object[]) CommonOp.Sync(x))[Index];
 	    }
 	}
     }
@@ -2080,7 +2066,6 @@ namespace Alice {
 	public static object General_op_Assignment = new General_op_Assignment();
 	public static object General_exchange      = new General_exchange();
 	public static object General_exnName       = new General_exnName();
-	public static object General_ref           = new RefConstructor();
 
 	public static object GlobalStamp_new        = new GlobalStamp_new();
 	public static object GlobalStamp_fromString = new GlobalStamp_fromString();
