@@ -83,10 +83,16 @@
 ../frontend-sml/INPUT_GRAMMAR.sig
 ../frontend-sml/MakeInputGrammar.sml
 ../frontend-sml/InputGrammar.sml
+../frontend-sml/PARSING_ERROR.sig
+../frontend-sml/ParsingError.sml
+../frontend-sml/ABSTRACTION_ERROR.sig
+../frontend-sml/AbstractionError.sml
 ../frontend-sml/INFIX.sig
 ../frontend-sml/Infix.sml
 ../frontend-sml/BIND_ENV.sig
 ../frontend-sml/BindEnv.sml
+../frontend-sml/SHARING.sig
+../frontend-sml/Sharing.sml
 ../frontend-sml/ABSTRACTION_PHASE.sig
 ../frontend-sml/AbstractionPhase.sml
 ../frontend-sml/DERIVED_FORMS.sig
