@@ -89,9 +89,10 @@ DEFINE1(UnsafeDate_toTime) {
     to_tm (t, &tm);
     time_t time = mktime (&tm);
     if (time == (time_t) -1) {
-        RAISE_DATE;
+      RAISE_DATE;
     } else {
-        RETURN_INTINF(BigInt::New (static_cast<double> (time)));
+      BigInt *ret = BigInt::New (static_cast<double> (time));
+      RETURN_INTINF(ret);
     }
 } END
 
