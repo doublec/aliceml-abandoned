@@ -378,65 +378,69 @@ ClassTable *ClassLoader::GetClassTable() {
 }
 
 word ClassLoader::ResolveClass(JavaString *name) {
-  ConcreteCode *concreteCode = ConcreteCode::New(ResolveInterpreter::self, 0);
-  Closure *closure = Closure::New(concreteCode->ToWord(), 3);
-  closure->Init(0, ToWord());
-  closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_CLASS));
-  closure->Init(2, name->ToWord());
-  return Byneed::New(closure->ToWord())->ToWord();
-}
-
-word ClassLoader::ResolveType(JavaString *name) {
   ClassTable *classTable = GetClassTable();
   word wClass = classTable->Lookup(name);
   if (wClass == (word) 0) {
-    u_int n = name->GetLength();
-    u_wchar *p = name->GetBase();
-    u_int dimensions = 0;
-    while (dimensions < n && p[dimensions] == '[') dimensions++;
-    p += dimensions;
-    n -= dimensions;
-    Assert(n > 0);
-    switch (n--, *p++) {
-    case 'B':
-      wClass = BaseType::New(BaseType::Byte)->ToWord();
-      break;
-    case 'C':
-      wClass = BaseType::New(BaseType::Char)->ToWord();
-      break;
-    case 'D':
-      wClass = BaseType::New(BaseType::Double)->ToWord();
-      break;
-    case 'F':
-      wClass = BaseType::New(BaseType::Float)->ToWord();
-      break;
-    case 'I':
-      wClass = BaseType::New(BaseType::Int)->ToWord();
-      break;
-    case 'J':
-      wClass = BaseType::New(BaseType::Long)->ToWord();
-      break;
-    case 'S':
-      wClass = BaseType::New(BaseType::Short)->ToWord();
-      break;
-    case 'Z':
-      wClass = BaseType::New(BaseType::Boolean)->ToWord();
-      break;
-    case 'L':
-      {
-	u_int i = 0;
-	while (p[i++] != ';') n--;
-	i--, n--;
-	wClass = ResolveClass(JavaString::New(p, i));
-	break;
-      }
-    default:
-      Error("invalid descriptor"); //--** return failed future?
-    }
-    while (dimensions--) wClass = ArrayType::New(wClass)->ToWord();
-    Assert(n == 0);
+    ConcreteCode *concreteCode =
+      ConcreteCode::New(ResolveInterpreter::self, 0);
+    Closure *closure = Closure::New(concreteCode->ToWord(), 3);
+    closure->Init(0, ToWord());
+    closure->Init(1, Store::IntToWord(ResolveInterpreter::RESOLVE_CLASS));
+    closure->Init(2, name->ToWord());
+    wClass = Byneed::New(closure->ToWord())->ToWord();
     classTable->Insert(name, wClass);
   }
+  return wClass;
+}
+
+word ClassLoader::ResolveType(JavaString *name) {
+  //--** cache results
+  u_int n = name->GetLength();
+  u_wchar *p = name->GetBase();
+  u_int dimensions = 0;
+  while (dimensions < n && p[dimensions] == '[') dimensions++;
+  p += dimensions;
+  n -= dimensions;
+  Assert(n > 0);
+  word wClass;
+  switch (n--, *p++) {
+  case 'B':
+    wClass = BaseType::New(BaseType::Byte)->ToWord();
+    break;
+  case 'C':
+    wClass = BaseType::New(BaseType::Char)->ToWord();
+    break;
+  case 'D':
+    wClass = BaseType::New(BaseType::Double)->ToWord();
+    break;
+  case 'F':
+    wClass = BaseType::New(BaseType::Float)->ToWord();
+    break;
+  case 'I':
+    wClass = BaseType::New(BaseType::Int)->ToWord();
+    break;
+  case 'J':
+    wClass = BaseType::New(BaseType::Long)->ToWord();
+    break;
+  case 'S':
+    wClass = BaseType::New(BaseType::Short)->ToWord();
+    break;
+  case 'Z':
+    wClass = BaseType::New(BaseType::Boolean)->ToWord();
+    break;
+  case 'L':
+    {
+      u_int i = 0;
+      while (p[i++] != ';') n--;
+      i--, n--;
+      wClass = ResolveClass(JavaString::New(p, i));
+      break;
+    }
+  default:
+    Error("invalid descriptor"); //--** return failed future?
+  }
+  while (dimensions--) wClass = ArrayType::New(wClass)->ToWord();
+  Assert(n == 0);
   return wClass;
 }
 

@@ -18,7 +18,9 @@
 
 Class *Class::New(ClassInfo *classInfo) {
   // Precondition: parent class has already been created
-  Class *super = Class::FromWord(classInfo->GetSuper());
+  word wSuper = classInfo->GetSuper();
+  Class *super = wSuper == Store::IntToWord(0)?
+    INVALID_POINTER: Class::FromWord(wSuper);
   // Count number of static and instance fields:
   Table *fields = classInfo->GetFields();
   u_int i, nStaticFields = 0, nInstanceFields = 0;
@@ -31,7 +33,8 @@ Class *Class::New(ClassInfo *classInfo) {
   }
   // Count number of static and virtual methods:
   Table *methods = classInfo->GetMethods();
-  u_int nSuperVirtualMethods = super->GetNumberOfVirtualMethods();
+  u_int nSuperVirtualMethods = super == INVALID_POINTER? 0:
+    super->GetNumberOfVirtualMethods();
   u_int nStaticMethods = 0, nVirtualMethods = nSuperVirtualMethods;
   u_int nMethods = methods->GetCount();
   for (i = nMethods; i--; ) {
@@ -44,7 +47,8 @@ Class *Class::New(ClassInfo *classInfo) {
   // Construct virtual table:
   Block *virtualTable =
     Store::AllocBlock(JavaLabel::VirtualTable, nVirtualMethods);
-  Block *superVirtualTable = super->GetVirtualTable();
+  Block *superVirtualTable = super == INVALID_POINTER? INVALID_POINTER:
+    super->GetVirtualTable();
   for (i = nSuperVirtualMethods; i--; )
     virtualTable->InitArg(i, superVirtualTable->GetArg(i));
   Block *b = Store::AllocBlock(JavaLabel::Class,
