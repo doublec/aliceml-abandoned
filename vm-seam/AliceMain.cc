@@ -36,6 +36,7 @@ extern word UnsafeCell();
 extern word UnsafeAddr();
 extern word UnsafeRemote();
 extern word UnsafeTime();
+extern word UnsafeDate();
 
 static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeConfig",       UnsafeConfig},
@@ -44,6 +45,7 @@ static NativeComponent nativeComponents[] = {
   {"lib/system/UnsafeUnix",         UnsafeUnix},
   {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
   {"lib/system/UnsafeComponent",    UnsafeComponent},
+  {"lib/system/UnsafeDate",         UnsafeDate},
   {"lib/system/UnsafeDebug",        UnsafeDebug},
 #if DEBUGGER
   {"lib/system/UnsafeDebugger",     UnsafeDebugger},

@@ -1,0 +1,70 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *   Code mostly taken from the SML/NJ module, which
+ *   is copyrighted by AT&T Bell Laboratories.
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import signature DATE           from "DATE-sig"
+import structure UnsafeDate     from "UnsafeDate"
+
+structure Date : DATE =
+struct
+    structure LInt  = LargeInt 
+    
+    exception Date
+
+    datatype weekday = 
+        Fri | Mon | Sat | Sun | Thu | Tue | Wed
+
+    datatype month = 
+        Apr | Aug | Dec| Feb |Jan | Jul | Jun | Mar | May | Nov | Oct | Sep 
+
+    datatype date = DATE of {
+                 day : int,
+                 hour : int,
+                 isDst : bool option,
+                 minute : int,
+                 month : month,
+                 offset : Time.time option,
+                 second : int,
+                 wday : weekday,
+                 yday : int,
+                 year : int
+                 }
+    type t = date
+
+    fun year (DATE{year, ...}) = year
+	fun month (DATE{month, ...}) = month
+	fun day (DATE{day, ...}) = day
+	fun hour (DATE{hour, ...}) = hour
+	fun minute (DATE{minute, ...}) = minute
+	fun second (DATE{second, ...}) = second
+	fun weekDay (DATE{wday, ...}) = wday
+	fun yearDay (DATE{yday, ...}) = yday
+	fun isDst (DATE{isDst, ...}) = isDst
+	fun offset (DATE{offset,...}) = offset
+
+    fun localOffset () = raise Fail "not yet implemented"
+
+    val fromTimeLocal   = UnsafeDate.fromTimeLocal o Time.toSeconds
+    val fromTimeUniv    = UnsafeDate.fromTimeUniv o Time.toSeconds
+    
+    val toTime = Time.fromSeconds o UnsafeDate.toTime 
+
+    fun fmt fs d = UnsafeDate.fmt (fs, d)
+
+    val toString = UnsafeDate.toString
+end

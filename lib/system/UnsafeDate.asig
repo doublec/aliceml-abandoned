@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature UNSAFE_DATE_COMPONENT =
+    sig
+	structure UnsafeDate :
+	    sig
+            val fromTimeLocal : IntInf.t -> 'date
+            val fromTimeUniv :  IntInf.t -> 'date 
+            val toTime :        'date -> IntInf.t
+            val fmt :           string * 'date -> string
+            val toString :      'date -> string
+	    end
+    end

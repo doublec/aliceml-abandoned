@@ -128,7 +128,7 @@ M4 = m4 -DSEAM
 
 LIBSYSTEMNATIVES0 = \
 	Config IODesc OS Unix CommandLine Component Debug Foreign Signal Socket \
-        Rand Reflect Time
+        Rand Reflect Time Date
 LIBUTILITYNATIVES0 = \
 	Cell Addr
 LIBNATIVES =
@@ -187,7 +187,7 @@ LIBSYSTEMSOURCES0 = \
 	OS_IO-sig.aml OS_PATH-sig.aml OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml \
 	COMMAND_LINE-sig.aml COMPONENT-sig.aml DEBUG-sig.aml FOREIGN-sig.aml \
 	SOCKET-sig.aml RAND-sig.aml REFLECT-sig.aml DYN_MATCH-sig.aml \
-	DynMatch.aml SIGNAL-sig.aml TIME-sig.aml TIMER-sig.aml Timer.aml \
+	DynMatch.aml SIGNAL-sig.aml DATE-sig.aml TIME-sig.aml TIMER-sig.aml Timer.aml \
 	$(LIBSYSTEMNATIVES0:%=%.aml) \
 	PRINT-sig.aml Print.aml PICKLE-sig.aml Pickle.aml URL-sig.aml Url.aml \
 	HTTP-sig.aml Http.aml HTTP_SERVER-sig.aml HttpServer.aml \

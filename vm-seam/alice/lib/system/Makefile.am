@@ -17,6 +17,7 @@ libsystem_a_SOURCES = \
 	UnsafeValue.cc \
 	UnsafeReflect.cc \
 	UnsafeForeign.cc \
+	UnsafeDate.cc \
 	UnsafeTime.cc
 
 EXTRA_DIST = SysErr.icc
