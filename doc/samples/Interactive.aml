@@ -21,8 +21,6 @@ inspect ({hello = "hello, world"}, 3 + 8);
 val rec infiniteList = 1::infiniteList;
 inspect infiniteList;
 
-open Time;
-
 inspect (alarm (Time.fromMilliseconds 2000));
 
 
@@ -54,11 +52,55 @@ val hole: int = Hole.hole ()
 
 Inspector.inspect hole;
 
-val future = Hole.future (hole)
+val future = Hole.future hole
 
 Inspector.inspect future;
 
 Hole.fill (hole, 17);
+
+
+(* Promises and Futures *)
+
+open Promise
+
+signature PORT =
+sig
+    type 'a port
+
+    val new: unit -> 'a port * 'a list
+    val send: 'a port * 'a -> unit
+    val close: 'a port -> unit
+end
+
+structure Port :> PORT =
+struct
+    type 'a port = 'a list promise ref
+
+    fun new () =
+	let
+	    val p = promise()
+	in
+	    (ref p, future p)
+	end
+
+    fun send (r, x) =
+	let
+	    val p' = promise()
+	    val p = Ref.exchange (r, p')
+	in
+	    fulfill(p, x::future p')
+	end
+
+    fun close r = fulfill(!r, nil)
+end
+
+val (p: int Port.port, xs) = Port.new ()
+
+Inspector.inspect xs;
+
+Port.send (p, 17);
+
+Port.send (p, 7);
 
 
 (***********************************************************************
