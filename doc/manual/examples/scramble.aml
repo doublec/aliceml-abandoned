@@ -66,7 +66,6 @@ local
 	end
 
     val pieceSize = 50
-    val font  = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso8859-1"
     val map   = Gdk.colormapGetSystem ()
     val black = makeColor map (0.0, 0.0, 0.0)
     val white = makeColor map (1.0, 1.0, 1.0)
@@ -101,7 +100,6 @@ local
 			   [("text", Gtk.STRING text),
 			    ("x", Gtk.REAL 25.0),
 			    ("y", Gtk.REAL 25.0),
-			    ("font", Gtk.STRING font),
 			    ("anchor", Gtk.INT (Gtk.GtkAnchorTypeToInt Gtk.ANCHOR_CENTER)),
 			    ("fill_color_gdk", Gtk.OBJECT black)])
 	in
