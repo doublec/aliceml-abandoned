@@ -1,0 +1,15 @@
+Group
+
+	signature STAMP
+	structure Stamp
+	signature PREBOUND
+	structure Prebound
+
+is
+
+	../misc/sources.cm
+	../error/sources.cm
+	id-stamp.cm
+
+	PREBOUND.sig
+	Prebound.sml
