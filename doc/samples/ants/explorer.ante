@@ -1,0 +1,74 @@
+(*
+
+Explorer ant
+------------
+
+Swarm out and find food, marking your way.
+Once you found something, bring it back to the hill
+and mark the path as successfull.
+
+states:
+  * look for direction to start walking
+  * keep walking until you find food, laying a trail
+  * go back, marking the trail as success
+
+*)
+
+(* Trail going away from home: tm1, tm2, tm1+tm2, tm1, tm2, tm1+tm2, ... *)
+val trailmarker1 = 1
+val trailmarker2 = 2
+
+val foodmarker = 3
+
+
+fun myMark 1 = mark trailmarker1
+  | myMark 2 = mark trailmarker2
+  | myMark 3 = mark trailmarker1 ++ mark trailmarker2
+
+val fail_this_trail =
+    turn right ++
+    loop (fn break =>
+      (*mark boringmarker ++
+      move ifyes break*) nop
+    ) (*++
+    times 3 (turn left)*)
+
+fun break f =
+    let
+        val l = freshlabel()
+    in
+        f (goto l) ++ label l
+    end
+
+
+fun walk_around () =
+    loop (fn break =>
+      times 2 (
+        turn left ++
+        move ifyes break
+      ) ++
+      times 3 (turn right) ++
+      move ifyes break ++
+      turn right ++
+      move ifyes break ++
+      fail_this_trail
+    )
+
+fun run_and_mark collect_food =
+    loop (fn _ =>
+      timesi 3 (fn i =>
+        myMark (i+1) ++
+        turnto food ifyes collect_food ++
+        move ifnot (walk_around ())
+      )
+    )
+
+fun collect_food () = fail
+
+val ant =
+    proc "run_and_mark" (
+	run_and_mark (goto "collect_food")
+    ) ++
+    proc "collect_food" (
+        collect_food ()
+    )

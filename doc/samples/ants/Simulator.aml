@@ -129,7 +129,10 @@ structure Simulator :
                     else ();
                     loop noOfAnts
                          (fn i => step(world, redBrain, blackBrain, i))));
-          if showStatus then printStats world else ();
+          if showStatus then
+              (printOnlyAnts world;
+               printStats world)
+          else ();
           ()
       end
 

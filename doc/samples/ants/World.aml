@@ -47,10 +47,6 @@ structure World =
 
   fun getCellAt((xs, cells,_):world, (x,y)) =
       Array.sub(cells, xs*y+x)
-  fun setCellAt((xs, cells,antMap):world, (x,y), cell) =
-      (Array.update(cells, xs*y+x, cell);
-       (*Option.app (fn a => AntMap.insert(antMap,#id a, (x,y))) (#ant cell);*)
-       ())
   fun initCellAt((xs, cells,antMap):world, (x,y), cell) =
       (Array.update(cells, xs*y+x, cell);
        Option.app (fn a => AntMap.insert(antMap,#id a, a)) (!(#ant cell));
