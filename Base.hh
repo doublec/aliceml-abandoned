@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <unistd.h>
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_DLLS
 # if defined(SEAM_FOREIGN)
 #  define SeamDll __declspec(dllimport)
 # else
