@@ -10,7 +10,7 @@
 //   $Revision$
 //
 
-#include "alice/primitives/Authoring.hh"
+#include "alice/Authoring.hh"
 
 DEFINE1(UnsafeAddr_addr) {
   Block *b = Store::WordToBlock(x0);
