@@ -50,8 +50,9 @@ DEFINE1(Future_concur) {
   //--** push toplevel exception handler on taskStack
   newTaskStack->
     PushCall(Closure::FromWordDirect(GlobalPrimitives::Future_await));
-  newTaskStack->PushFrame(1);
-  newTaskStack->PutWord(0, byneed);
+  newTaskStack->PushFrame(2);
+  newTaskStack->PutWord(1, byneed);
+  newTaskStack->PutInt(0, 1);
   Scheduler::AddThread(thread);
   RETURN(byneed);
 } END

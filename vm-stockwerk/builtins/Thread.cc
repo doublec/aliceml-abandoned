@@ -31,7 +31,7 @@ DEFINE2(Thread_raiseIn) {
   } else {
     switch (thread->GetState()) {
     case Thread::BLOCKED:
-      Scheduler::AddThread(thread);
+      Scheduler::WakeupThread(thread);
       // fall through
     case Thread::RUNNABLE:
       {
@@ -41,8 +41,9 @@ DEFINE2(Thread_raiseIn) {
 	otherTaskStack->PopFrame(frameSize);
 	otherTaskStack->
 	  PushCall(Closure::FromWordDirect(GlobalPrimitives::Internal_raise));
-	otherTaskStack->PushFrame(1);
-	otherTaskStack->PutWord(0, x1);
+	otherTaskStack->PushFrame(2);
+	otherTaskStack->PutWord(1, x1);
+	otherTaskStack->PutInt(0, 1);
 	break;
       }
     case Thread::TERMINATED:
@@ -53,9 +54,8 @@ DEFINE2(Thread_raiseIn) {
 } END
 
 DEFINE1(Thread_resume) {
-  //--** add to runnable queue if applicable
   DECLARE_THREAD(thread, x0);
-  thread->Resume();
+  Scheduler::ResumeThread(thread);
   RETURN_UNIT;
 } END
 
@@ -73,11 +73,8 @@ DEFINE1(Thread_state) {
 } END
 
 DEFINE1(Thread_suspend) {
-  //--** remove from runnable queue if it's in there
-  //--** check if argument is current thread
   DECLARE_THREAD(thread, x0);
-  thread->Suspend();
-  thread->GetTaskStack()->Purge();
+  Scheduler::SuspendThread(thread);
   RETURN_UNIT;
 } END
 
