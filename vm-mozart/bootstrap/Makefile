@@ -421,10 +421,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/rtt build2/install/lib/ml-yacc
 INSTALL2TOPFILES = stow.ozf stoc.ozf Default.import
 INSTALL2BINFILES = stow stoc
-#--** be more economic about this:
-INSTALL2LIBFILES = \
-	$(LIBSOURCES0:%.aml=%.ozf) \
-	$(LIBSOURCES0:%.asig=%.ozf)
+INSTALL2LIBFILES = rtt/RTT.ozf
 INSTALL2FILES = \
 	$(INSTALL2TOPFILES:%=build2/install/%) \
 	$(INSTALL2BINFILES:%=build2/install/bin/%) \
@@ -510,7 +507,9 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/rtt build3/install/lib/ml-yacc
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) stot.ozf
 INSTALL3BINFILES = $(INSTALL2BINFILES) stol stot
-INSTALL3LIBFILES = $(INSTALL2LIBFILES)
+INSTALL3LIBFILES = \
+	$(LIBSOURCES0:%.aml=%.ozf) \
+	$(LIBSOURCES0:%.asig=%.ozf)
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
 	$(INSTALL3BINFILES:%=build3/install/bin/%) \
