@@ -15,9 +15,7 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    OzOS(chDir getCWD mkDir stat unlink tmpnam system getEnv)
    at 'x-oz://system/OS.ozf'
-   Property(put)
-   Error(printException)
-   System(onToplevel)
+   Property(get)
    Application(exit)
 export
    'UnsafeOS$': OS
@@ -123,19 +121,11 @@ define
 		     'system': OzOS.system
 		     'atExn':
 			fun {$ P}
-			   {Property.put 'errors.handler'
-			    proc {$ E}
-			       case E of system(kernel(terminate) ...) then
-				  skip
-			       [] error(alice(Exn ...) ...) then
-				  _ = {P Exn}
-			       else
-				  {Error.printException E}
-				  if {System.onToplevel} then
-				     {Application.exit 1}
-				  end
-			       end
-			    end}
+			   PS2
+			   PS = {Exchange
+				 {Property.get 'alice.atExnActions'} $ PS2}
+			in
+			   PS2 = P|PS
 			   unit
 			end
 		     'terminate':
