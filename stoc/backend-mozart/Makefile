@@ -1,14 +1,16 @@
-SOURCES = Frontend.oz Builtins.oz Prebound.oz \
-	CodeStore.oz CodeGen.oz Assembler.oz
+.SUFFIXES: .oz .ozf
 
-.PHONY: all clean
+FUNCTORS = Frontend.ozf Builtins.ozf Prebound.ozf \
+	CodeStore.ozf CodeGen.ozf Assembler.ozf
 
-%.ozf: %.oz
+.oz.ozf:
 	ozc $(OZCFLAGS) -c $< -o $@
 
-all: $(SOURCES:%.oz=%.ozf)
+all: $(FUNCTORS)
 
 CodeStore.ozf: CodeEmitter.oz
 
 clean:
 	-rm -f *.ozf
+
+.PHONY: all clean
