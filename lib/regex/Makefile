@@ -1,49 +1,19 @@
 # Makefile for alice xml binding
 
-# Change this to reflect your installation directory
-# INSTALLDIR = ../../install
-INSTALLDIR = ../../vm-seam/build3/install
+INSTALLTO = `alice-config --alicelibdir`/regex
 
-ALICETOOL = $(INSTALLDIR)/bin/alicetool
+ALICETOOL = alicetool
 
-## No changes needed below this
-
-INSTALLTO = $(INSTALLDIR)/lib/regex
 
 NATIVES = NativeRegex
 
 SOURCES = \
 	NativeRegex.cc
 
-TARGETS = 
+TARGETS = Regex.stc
 
 EXTRA_LIBS = 
-
 EXTRA_INCLUDES = 
-
-CXX_WARNING_FLAGS = \
-	-Wall -W -Wundef -Wpointer-arith -Wcast-qual -Wcast-align \
-	-Wwrite-strings -Wconversion -Wstrict-prototypes \
-	-Wmissing-prototypes -Winline -Wsynth -Woverloaded-virtual \
-	-Wsign-promo
-
-CXX_DEBUG_FLAGS = \
-	-DINTERFACE -DDEBUG_CHECK -DSTORE_DEBUG -DJAVA_INTERPRETER_DEBUG \
-	-fno-inline-functions -fimplement-inlines -ggdb
-
-CXX_OPTIMIZE_FLAGS = \
-	-pipe -march=i686 -O3 -fomit-frame-pointer \
-	-fno-keep-static-consts
-
-CXX_MACHINE_FLAGS = -mcpu=pentium
-
-LD_OPTIMIZE_FLAGS = -Wl,-S
-
-ALLFLAGS =  $(CXX_MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_OPTIMIZE_FLAGS)
-#ALLFLAGS =  $(CXX_MACHINE_FLAGS) $(CXX_WARNING_FLAGS) $(CXX_DEBUG_FLAGS)
-
-LDFLAGS = $(LD_OPTIMIZE_FLAGS)
-#LDFLAGS =
 
 MAKEDEPEND = $(ALICETOOL) -v cc -M $(DEFINES) $(INCLUDES)
 
@@ -51,11 +21,11 @@ MAKEDEPEND = $(ALICETOOL) -v cc -M $(DEFINES) $(INCLUDES)
 all: $(NATIVES:%=%.dll) $(TARGETS)
 
 %.o: %.cc
-	$(ALICETOOL) -v c++ -DPROFILE=0 $(ALLFLAGS) $(EXTRA_INCLUDES) \
+	$(ALICETOOL) compile -DPROFILE=0 $(EXTRA_INCLUDES) \
 	-c  $< -o $@
 
 %.dll: %.o
-	$(ALICETOOL) -v ld $(LDFLAGS) $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
+	$(ALICETOOL) link $(EXTRA_LIBS) $(SOURCES:%.cc=%.o) -o $@
 
 %.stc: %.aml
 	alicec -c $< -o $@

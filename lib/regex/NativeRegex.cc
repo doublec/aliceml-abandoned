@@ -41,8 +41,7 @@ class RegexRepHandler : public ConcreteRepresentationHandler {
   Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c);
 };
 
-Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c) {
-  c = c; // to omit compiler warnings
+Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *) {
   return INVALID_POINTER;
 }
 
