@@ -337,19 +337,19 @@ structure Buffer =
 		  (Promise.fulfill (!highlight, SOME 0)
 		   handle Promise.Promise => ())
 	      else
-		  let
-		      val startiter = Gtk.textIterNew()
-		      val enditer = Gtk.textIterNew()
-		  in
-		      Gtk.textBufferGetStartIter(buf, startiter);
-		      Gtk.textBufferGetEndIter(buf, enditer);
-		      Gtk.textBufferRemoveAllTags(buf, startiter, enditer);
-		      Promise.fulfill(!highlight, SOME 0)
-		  end
-		  
+		  Lock.sync Core.lock
+		  (fn () =>
+		   let
+		       val startiter = Gtk.textIterNew()
+		       val enditer = Gtk.textIterNew()
+		   in
+		       Gtk.textBufferGetStartIter(buf, startiter);
+		       Gtk.textBufferGetEndIter(buf, enditer);
+		       Gtk.textBufferRemoveAllTags(buf, startiter, enditer)
+		   end) ();
+		  Promise.fulfill(!highlight, SOME 0)
+		  handle Promise.Promise => ()
 	  end
-
-      fun setSyntaxHighlighting arg = Lock.sync Core.lock setSyntaxHighlighting arg
 
       fun getBufferByName f =
 	  case BufferMap.find
@@ -415,17 +415,23 @@ structure Buffer =
               if loadFile then
               case file of NONE => ()
                          | SOME f =>
-                           let
-                               val fileD = TextIO.openIn f
-                               val text = TextIO.inputAll fileD
-                               val text = Core.latin1ToUtf8 text
-                               val iter = Gtk.textIterNew()
-                           in
-                               Gtk.textBufferSetText(buf, text, ~1);
-                               Gtk.textBufferSetModified(buf, false);
-                               Gtk.textBufferGetStartIter(buf, iter);
-                               Gtk.textBufferPlaceCursor(buf, iter)
-                           end handle IO.Io _ => FileDialog.message "IO error. Could not open file."
+		  let
+		      val fileD = TextIO.openIn f
+		      val text = TextIO.inputAll fileD
+		      val text = Core.latin1ToUtf8 text
+		  in
+		      Lock.sync Core.lock
+		      (fn () =>
+		       let
+			   val iter = Gtk.textIterNew()
+		       in
+			   Gtk.textBufferSetText(buf, text, ~1);
+			   Gtk.textBufferSetModified(buf, false);
+			   Gtk.textBufferGetStartIter(buf, iter);
+			   Gtk.textBufferPlaceCursor(buf, iter)
+		       end) ()
+		    end
+		handle IO.Io _ => FileDialog.message "IO error. Could not open file."
               else ();
               Gtk.signalConnect(buf, "modified-changed", modifiedChanged id);
               Gtk.textBufferConnectSpecialSignals buf;
@@ -438,8 +444,6 @@ structure Buffer =
 				    #highlight ret, #highlightActive ret);
               ret
           end
-
-      fun buffer arg = Lock.sync Core.lock buffer arg
 
       fun close id =
           let
