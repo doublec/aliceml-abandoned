@@ -280,13 +280,12 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	    end
 
 	fun lineEnd (buf, i, first) =
-	    if Array.sub (buf, i) = someElem then SOME i
-	    else
-		let
-		    val i' = i - 1
-		in
-		    if i' = first then NONE else lineEnd (buf, i', first)
-		end
+	    let
+		val i' = i -1
+	    in
+		if Array.sub (buf, i') = someElem then SOME i'
+		else if i' = first then NONE else lineEnd (buf, i', first)
+	    end
 
 	fun output (f, v) =
 	    let
@@ -324,7 +323,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 		     else output' (writer, buf, bufLen, stillFree,
 				   v, vLen, written', bufferMode))
 		else if bufferMode = IO.LINE_BUF then
-		    case lineEnd (buf, bufLen - free, bufLen - free') of
+		    case lineEnd (buf, bufLen - free', bufLen - free) of
 			SOME i =>
 (*--** only write up to i, then move *)
 			    (stillFree := bufLen;
