@@ -64,6 +64,21 @@ private:
     SetReadIndex(0);
     SetArray(newArray);
   }
+protected:
+  u_int GetNumberOfElements() {
+    u_int size = GetArray()->GetSize();
+    u_int nentries = GetWriteIndex() + size - GetReadIndex();
+    return nentries > size? nentries - size: nentries;
+  }
+  word GetNthElement(u_int n) {
+    Assert(n < GetNumberOfElements());
+    Block *array = GetArray();
+    u_int size = array->GetSize();
+    u_int index = GetReadIndex() + n;
+    if (index >= size)
+      index -= size;
+    return array->GetArg(index + 1);
+  }
 public:
   using Block::ToWord;
 
@@ -114,7 +129,7 @@ public:
     if (nentries > oldSize)
       nentries -= oldSize;
     u_int newSize = (nentries * 3 / 2 + 1 + oldSize) / 2;
-    Assert(newSize != 0);
+    Assert(newSize != 0 && newSize > nentries);
     if (newSize >= oldSize) {
       newSize = oldSize;
     } else {
