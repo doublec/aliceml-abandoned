@@ -35,6 +35,12 @@ val my_array = let val a = Array.array(2,1.0)
 UnsafeInspector.inspect ({ref = ref "hallo",vec1 = #[(4,5),(6,7)],
                           vec2 = #[(6,7),(4,5)], arr = my_array},rva_rec); 
 
+structure EasyRec = Reflect.ReflectType
+    (type t = { liste: int list, vector: int vector});
+val e_rec = EasyRec.x;
+
+UnsafeInspector.inspect({liste = [1,2], vector = #[3,4]},e_rec);
+
 (* Datentyp *)
 datatype foo = A 
              | B of int ref list
