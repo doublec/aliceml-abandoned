@@ -22,5 +22,5 @@ define
 
    Debug =
    'Debug'('show': Show
-	   '$$Show': Show)
+	   '$Show': Show)
 end
