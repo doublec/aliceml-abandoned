@@ -97,7 +97,7 @@
 
     fun toId(s,i) = s
 
-    fun toDigit(s,i) = Char.ord(String.sub(s,0))
+    fun toDigit(s,i) = Char.ord(String.sub(s,0)) - Char.ord #"0"
 
     fun toInt(s,i) =
 	case String.sub(s,0)
@@ -155,7 +155,8 @@
 		   | #"\"" => convert(k+1, #"\""::cs)
 		   | #"\\" => convert(k+1, #"\\"::cs)
 		   | #"^"  => let val c = String.sub(s,k+1) in
-				  convert(k+2, Char.chr(Char.ord c - 64)::cs)
+				  convert(k+2, Char.chr(Char.ord c -
+							Char.ord #"0")::cs)
 			      end
 
 		   | #"u"  => let val s' = String.extract(s, k+1, SOME 4) in
