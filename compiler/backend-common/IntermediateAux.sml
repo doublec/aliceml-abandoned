@@ -98,7 +98,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    TagPat (info, lab, substPat' (pat, subst), isNAry)
 	  | substPat' (ConPat (info, longid, pat, isNAry), subst) =
 	    ConPat (info, longid, substPat' (pat, subst), isNAry)
-	  | substPat' (pat as RefPat _, subst) = pat
+	  | substPat' (RefPat (info, pat), subst) =
+	    RefPat (info, substPat' (pat, subst))
 	  | substPat' (TupPat (info, pats), subst) =
 	    TupPat (info, Vector.map (fn pat => substPat' (pat, subst)) pats)
 	  | substPat' (ProdPat (info, patFields), subst) =
@@ -178,7 +179,12 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    in
 		(ConPat (info, longid, pat', isNAry), subst')
 	    end
-	  | relax (pat as RefPat _, subst) = (pat, subst)
+	  | relax (RefPat (info, pat), subst) =
+	    let
+		val (pat', subst') = relax (pat, subst)
+	    in
+		(RefPat (info, pat), subst')
+	    end
 	  | relax (TupPat (info, pats), subst) =
 	    let
 		val (pats', subst') =
