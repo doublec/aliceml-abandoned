@@ -45,7 +45,7 @@ functor StreamIO(structure PrimIO: PRIM_IO
 	withtype instream = instream' ref
 
 	datatype outstream' =
-	    WRITER of writer * PrimIO.array * int ref
+	    WRITER of writer * PrimIO.array * int ref * IO.buffer_mode
 	  | CLOSEDOUT of string
 	withtype outstream = outstream' ref
 
@@ -255,139 +255,6 @@ functor StreamIO(structure PrimIO: PRIM_IO
 				      cause = IO.ClosedStream})
 	    end
 
-	fun writeBuffer (buf, i, len, writeArr) =
-	    let
-		val k = writeArr {buf, i, sz = SOME len}
-	    in
-		if k = len then ()
-		else writeBuffer (buf, i + k, len - k, writeArr)
-	    end
-
-	fun output (r, v) =
-	    let
-		val p = Promise.promise ()
-		val state = Ref.exchange (r, Promise.future p)
-	    in
-		case state of
-		    WRITER (writer as PrimIO.WR {name, ...}, buf, stillFree) =>
-			((output' (writer, buf, Array.length buf, stillFree,
-				   v, Vector.length v, 0);
-			  Promise.fulfill (p, state))
-			 handle cause =>
-			     (Promise.fulfill (p, state);
-			      raise IO.Io {name, function = "output", cause}))
-		  | CLOSEDOUT name =>
-			(Promise.fulfill (p, state);
-			 raise IO.Io {name, function = "output",
-				      cause = IO.ClosedStream})
-	    end
-	and output' (writer as PrimIO.WR {writeArr, ...}, buf, bufLen,
-		     stillFree, v, vLen, written) =
-	    let
-		val free = !stillFree
-		val k = Int.min (vLen - written, free)
-		val free' = free - k
-		val written' = written + k
-	    in
-		Array.copyVec {src = v, si = written, len = SOME k,
-			       dst = buf, di = bufLen - free};
-		stillFree := free';
-		if free' = 0 then
-		    (writeBuffer (buf, 0, bufLen, valOf writeArr);
-		     if written' = vLen then ()
-		     else output' (writer, buf, bufLen, stillFree,
-				   v, vLen, written'))
-		else ()
-	    end
-
-	fun output1 (r, x) =
-	    let
-		val p = Promise.promise ()
-		val state = Ref.exchange (r, Promise.future p)
-	    in
-		case state of
-		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
-			    buf, stillFree) =>
-			let
-			    val free = !stillFree
-			    val bufLen = Array.length buf
-			    val free' = free - 1
-			in
-			    stillFree := (if free' = 0 then bufLen else free');
-			    Array.update (buf, bufLen - free, x);
-			    if free' = 0 then
-				writeBuffer (buf, 0, bufLen, valOf writeArr)
-				handle cause =>
-				    (Promise.fulfill (p, state);
-				     raise IO.Io {name, function = "output1",
-						  cause})
-			    else ();
-			    Promise.fulfill (p, state)
-			end
-		  | CLOSEDOUT name =>
-			(Promise.fulfill (p, state);
-			 raise IO.Io {name, function = "output1",
-				      cause = IO.ClosedStream})
-	    end
-
-	fun flushOut r =
-	    let
-		val p = Promise.promise ()
-		val state = Ref.exchange (r, Promise.future p)
-	    in
-		case state of
-		    WRITER (PrimIO.WR {name, writeArr, ...}, buf, stillFree) =>
-			let
-			    val free = !stillFree
-			    val bufLen = Array.length buf
-			in
-			    stillFree := bufLen;
-			    if free < bufLen then
-				writeBuffer (buf, 0, bufLen - free,
-					     valOf writeArr)
-				handle cause =>
-				    (Promise.fulfill (p, state);
-				     raise IO.Io {name, function = "flushOut",
-						  cause})
-			    else ();
-			    Promise.fulfill (p, state)
-			end
-		  | CLOSEDOUT _ => Promise.fulfill (p, state)
-	    end
-
-	fun closeOut r =
-	    let
-		val p = Promise.promise ()
-		val state = Ref.exchange (r, Promise.future p)
-	    in
-		case state of
-		    WRITER (PrimIO.WR {name, writeArr, close, ...},
-			    buf, stillFree) =>
-			let
-			    val free = !stillFree
-			    val bufLen = Array.length buf
-			in
-			    Promise.fulfill (p, CLOSEDOUT name);
-			    if free < bufLen then
-				writeBuffer (buf, 0, bufLen - free,
-					     valOf writeArr)
-				handle cause =>
-				    (close ()
-				     handle cause =>
-					 raise IO.Io
-					     {name, function = "closeOut",
-					      cause};
-				     raise IO.Io {name, function = "closeOut",
-						  cause})
-			    else ();
-			    close ()
-			    handle cause =>
-				raise IO.Io {name, function = "closeOut",
-					     cause}
-			end
-		  | CLOSEDOUT _ => Promise.fulfill (p, state)
-	    end
-
 	fun mkInstream (reader, v) =
 	    ref (INPUT (v, 0, ref (READER (PrimIO.augmentReader reader))))
 
@@ -426,4 +293,201 @@ functor StreamIO(structure PrimIO: PRIM_IO
 			 raise IO.Io {name, function = "getReader",
 				      cause = IO.ClosedStream})
 	    end
+
+	fun writeBuffer (buf, i, len, writeArr) =
+	    let
+		val k = writeArr {buf, i, sz = SOME len}
+	    in
+		if k = len then ()
+		else writeBuffer (buf, i + k, len - k, writeArr)
+	    end
+
+(*--** implement LINE_BUF *)
+
+	fun output (f, v) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, ...},
+			    buf, stillFree, bufferMode) =>
+			((output' (writer, buf, Array.length buf, stillFree,
+				   v, Vector.length v, 0, bufferMode);
+			  Promise.fulfill (p, state))
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function = "output", cause}))
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output",
+				      cause = IO.ClosedStream})
+	    end
+	and output' (writer as PrimIO.WR {writeArr, ...}, buf, bufLen,
+		     stillFree, v, vLen, written, bufferMode) =
+	    let
+		val free = !stillFree
+		val k = Int.min (vLen - written, free)
+		val free' = free - k
+		val written' = written + k
+	    in
+		Array.copyVec {src = v, si = written, len = SOME k,
+			       dst = buf, di = bufLen - free};
+		stillFree := free';
+		if free' = 0 orelse bufferMode = IO.NO_BUF then
+		    (writeBuffer (buf, 0, bufLen, valOf writeArr);
+		     if written' = vLen then ()
+		     else output' (writer, buf, bufLen, stillFree,
+				   v, vLen, written', bufferMode))
+		else ()
+	    end
+
+	fun output1 (f, x) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, bufferMode) =>
+			let
+			    val free = !stillFree
+			    val bufLen = Array.length buf
+			    val free' = free - 1
+			in
+			    stillFree := (if free' = 0 then bufLen else free');
+			    Array.update (buf, bufLen - free, x);
+			    if free' = 0 orelse bufferMode = IO.NO_BUF then
+				writeBuffer (buf, 0, bufLen, valOf writeArr)
+				handle cause =>
+				    (Promise.fulfill (p, state);
+				     raise IO.Io {name, function = "output1",
+						  cause})
+			    else ();
+			    Promise.fulfill (p, state)
+			end
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "output1",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun flush (buf, stillFree, writeArr) =
+	    let
+		val free = !stillFree
+		val bufLen = Array.length buf
+	    in
+		stillFree := bufLen;
+		if free < bufLen then
+		    writeBuffer (buf, 0, bufLen - free, writeArr)
+		else ()
+	    end
+
+	fun flushOut f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, _) =>
+			(flush (buf, stillFree, valOf writeArr)
+			 handle cause =>
+			     (Promise.fulfill (p, state);
+			      raise IO.Io {name, function="flushOut", cause});
+			 Promise.fulfill (p, state))
+		  | CLOSEDOUT _ => Promise.fulfill (p, state)
+	    end
+
+	fun closeOut f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (PrimIO.WR {name, writeArr, close, ...},
+			    buf, stillFree, _) =>
+			(Promise.fulfill (p, CLOSEDOUT name);
+			 flush (buf, stillFree, valOf writeArr)
+			 handle cause =>
+			     (close ()
+			      handle cause =>
+				  raise IO.Io {name, function="closeOut",
+					       cause};
+			      raise IO.Io {name, function="closeOut", cause});
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function="closeOut", cause})
+		  | CLOSEDOUT _ => Promise.fulfill (p, state)
+	    end
+
+	fun setBufferMode (f, bufferMode) =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, ...},
+			    buf, stillFree, _) =>
+			(if bufferMode = IO.NO_BUF then
+			     flush (buf, stillFree, valOf writeArr)
+			     handle cause =>
+				 (Promise.fulfill (p, state);
+				  raise IO.Io {name, function="setBufferMode",
+					       cause})
+			 else ();
+			 Promise.fulfill
+			     (p, WRITER (writer, buf, stillFree, bufferMode)))
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "setBufferMode",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun getBufferMode f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (_, _, _, bufferMode) =>
+			(Promise.fulfill (p, state); bufferMode)
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getBufferMode",
+				      cause = IO.ClosedStream})
+	    end
+
+	fun mkOutstream (writer as PrimIO.WR {chunkSize, ...}, bufferMode) =
+	    ref (WRITER (PrimIO.augmentWriter writer,
+			 Array.array (chunkSize, someElem),
+			 ref chunkSize, bufferMode))
+
+	fun getWriter f =
+	    let
+		val p = Promise.promise ()
+		val state = Ref.exchange (f, Promise.future p)
+	    in
+		case state of
+		    WRITER (writer as PrimIO.WR {name, writeArr, close, ...},
+			    buf, stillFree, bufferMode) =>
+			(Promise.fulfill (p, CLOSEDOUT name);
+			 flush (buf, stillFree, valOf writeArr)
+			 handle cause =>
+			     (close ()
+			      handle cause =>
+				  raise IO.Io
+				      {name, function="getWriter", cause};
+			      raise IO.Io
+				  {name, function="getWriter", cause});
+			 close ()
+			 handle cause =>
+			     raise IO.Io {name, function="getWriter", cause};
+			 (writer, bufferMode))
+		  | CLOSEDOUT name =>
+			(Promise.fulfill (p, state);
+			 raise IO.Io {name, function = "getWriter",
+				      cause = IO.ClosedStream})
+	    end
+
     end

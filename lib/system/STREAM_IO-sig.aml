@@ -32,21 +32,19 @@ signature STREAM_IO =
 	val canInput: instream * int -> int option
 	val closeIn: instream -> unit
 	val endOfStream: instream -> bool
+	val mkInstream: reader * vector -> instream
+	val getReader: instream -> reader * vector
+(*	val filePosIn: instream -> pos *)
 
 	val output: outstream * vector -> unit
 	val output1: outstream * elem -> unit
 	val flushOut: outstream -> unit
 	val closeOut: outstream -> unit
-
-	val mkInstream: reader * vector -> instream
-	val getReader: instream -> reader * vector
-(*	val filePosIn: instream -> pos *)
-
-(*	val setBufferMode: outstream * IO.buffer_mode -> unit
+	val setBufferMode: outstream * IO.buffer_mode -> unit
 	val getBufferMode: outstream -> IO.buffer_mode
 	val mkOutstream: writer * IO.buffer_mode -> outstream
 	val getWriter: outstream -> writer * IO.buffer_mode
-	val getPosOut: outstream -> out_pos
+(*	val getPosOut: outstream -> out_pos
 	val setPosOut: out_pos -> outstream
 	val filePosOut: out_pos -> pos *)
     end
