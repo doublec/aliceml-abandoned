@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -59,7 +59,7 @@ final public class Tuple4 implements DMLTuple {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
+    final public boolean equals(Object val) {
 	if (val instanceof DMLTuple) {
 	    if (val instanceof Record) {
 		return false;
@@ -82,6 +82,8 @@ final public class Tuple4 implements DMLTuple {
 			t.get3().equals(fur);
 		}
 	    }
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
 	} else {
 	    return false;
 	}

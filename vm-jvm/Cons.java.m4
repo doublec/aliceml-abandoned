@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -20,18 +20,6 @@ final public class Cons implements DMLConVal {
     public Cons(DMLValue fst, DMLValue snd) {
 	car=fst;
 	cdr=snd;
-    }
-
-    final public DMLValue getCar() {
-	return car;
-    }
-
-    final public DMLValue getCdr() {
-	return cdr;
-    }
-
-    final public void setCdr(DMLValue val) {
-	cdr = val;
     }
 
     public DMLValue get0() { return car; }
@@ -53,10 +41,15 @@ final public class Cons implements DMLConVal {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Cons) &&
-	    car.equals(((Cons) val).car) &&
-	    cdr.equals(((Cons) val).cdr);
+    final public boolean equals(Object val) {
+	if (val instanceof Cons) {
+	    return car.equals(((Cons) val).car) &&
+		cdr.equals(((Cons) val).cdr);
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     _apply_fails ;

@@ -61,9 +61,14 @@ final public class ConVal implements DMLConVal {
     /** Gleichheit der  und Inhalte */
     final public boolean equals(Object val) {
 	try {
-	return (val instanceof DMLConVal) &&
-	    (constructor == ((DMLConVal)val).getConstructor()) &&
-	    content.equals(((DMLConVal)val).getContent());
+	    if (val instanceof DMLConVal) {
+		return (constructor == ((DMLConVal) val).getConstructor()) &&
+		    content.equals(((DMLConVal) val).getContent());
+	    } else if (val instanceof DMLTransient) {
+		return val.equals(this);
+	    } else {
+		return false;
+	    }
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);
 	    r.printStackTrace();

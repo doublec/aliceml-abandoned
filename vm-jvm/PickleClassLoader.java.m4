@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -51,7 +51,7 @@ final public class PickleClassLoader extends ClassLoader {
 	write=true;
 	Enumeration e = loader.hash.keys();
 	while (e.hasMoreElements()) {
-	    java.lang.Object name = e.nextElement();
+	    Object name = e.nextElement();
 	    byte[] b = (byte[]) loader.hash.get(name);
 	    writeClass((java.lang.String) name,b);
 	}

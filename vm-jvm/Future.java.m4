@@ -38,7 +38,7 @@ final public class Future extends UnicastRemoteObject
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
     final public boolean equals(Object val) {
 	try {
-	    return (val instanceof Future) &&
+	    return (val instanceof DMLTransient) &&
 		val.equals(request());
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);

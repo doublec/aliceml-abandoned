@@ -32,9 +32,14 @@ final public class String implements DMLValue {
     }
 
     /** Testet Gleichheit der Java-Strings */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof STRING) &&
-	    (((STRING) val).value.equals(this.value));
+    final public boolean equals(Object val) {
+	if (val instanceof STRING) {
+	    return (((STRING) val).value.equals(this.value));
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.
@@ -124,7 +129,7 @@ final public class String implements DMLValue {
     _BUILTIN(Concat) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    //	    _FROMTUPLE(args,val,2,"String.concat");
+	    //      _FROMTUPLE(args,val,2,"String.concat");
 	    try {
 		_REQUESTDEC(DMLValue list,val);
 		if (list==List.nil) {

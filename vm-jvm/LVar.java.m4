@@ -78,7 +78,7 @@ final public class LVar extends UnicastRemoteObject
     /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
     final public boolean equals(Object val) {
 	try {
-	    return (val instanceof LVar) &&
+	    return (val instanceof DMLTransient) &&
 		val.equals(request());
 	} catch (java.rmi.RemoteException r) {
 	    System.err.println(r);

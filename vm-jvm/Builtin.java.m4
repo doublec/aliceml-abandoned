@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -18,11 +18,6 @@ abstract public class Builtin implements DMLValue {
 
     public Builtin() {
 	super();
-    }
-
-    /** Gleicheit der FQ-Klassennamen */
-    final public boolean equals(java.lang.Object val) {
-	return this.getClass().equals(val.getClass());
     }
 
     final public java.lang.String toString() {

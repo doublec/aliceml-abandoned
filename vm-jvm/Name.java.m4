@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -43,9 +43,9 @@ public class Name implements DMLValue {
      *  eingetragen. Sonst wird das Objekt aus der Hashtabelle
      *  zurückgeliefert.
      */
-    private java.lang.Object readResolve()
+    private Object readResolve()
 	throws java.io.ObjectStreamException {
-	java.lang.Object o = GName.gNames.get(gName);
+	Object o = GName.gNames.get(gName);
 	if (o == null) {
 	    GName.gNames.put(gName,this);
 	    return this;

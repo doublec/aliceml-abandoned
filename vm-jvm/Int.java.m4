@@ -1,21 +1,21 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
 /** Diese Klasse repräsentiert Int.
  *  @see Real
  *  @see SCon
- *  @see STRING 
+ *  @see STRING
  *  @see DMLValue
  *  @see Word
  */
@@ -35,13 +35,15 @@ final public class Int implements DMLValue {
 	this.value=value;
     }
 
-    final public static boolean equals(Int i, Int j) {
-	return i.value == j.value;
-    }
-
     /** Gleichheit auf Integer-Werten */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Int) && (((Int) val).value==this.value);
+    final public boolean equals(Object val) {
+	if (val instanceof Int) {
+	    return (((Int) val).value==this.value);
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.

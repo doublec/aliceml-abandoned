@@ -35,7 +35,7 @@ final public class Record implements DMLTuple {
     }
 
     /** funktioniert nur, wenn records unique sind. */
-    final public boolean equals(java.lang.Object val) {
+    final public boolean equals(Object val) {
 	if (val instanceof Record) {
 	    Record r = (Record) val;
 	    if (arity == r.arity) {
@@ -48,6 +48,8 @@ final public class Record implements DMLTuple {
 	    } else {
 		return true;
 	    }
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
 	} else {
 	    return false;
 	}

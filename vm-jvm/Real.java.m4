@@ -31,14 +31,15 @@ final public class Real implements DMLValue {
 	this.value=value;
     }
 
-
-    final public static boolean equals(Real r, Real s) {
-	return r.value == s.value;
-    }
-
     /** Gleichheit der Real-Werte (Java-Floats) */
-    final public boolean equals(java.lang.Object val) {
-	return (val instanceof Real) && (((Real) val).value==this.value);
+    final public boolean equals(Object val) {
+	if (val instanceof Real) {
+	    return (((Real) val).value==this.value);
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     /** java.lang.Stringdarstellung des Wertes erzeugen.

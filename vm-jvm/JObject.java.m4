@@ -18,13 +18,13 @@ import java.lang.reflect.Method;
 
 final public class JObject implements DMLValue {
 
-    final public java.lang.Object javaObject;
+    final public Object javaObject;
 
-    public JObject(java.lang.Object o) {
+    public JObject(Object o) {
 	javaObject=o;
     }
 
-    final public java.lang.Object getObject() {
+    final public Object getObject() {
 	return javaObject;
     }
 
@@ -42,14 +42,14 @@ final public class JObject implements DMLValue {
 	 *  invoke: string/JObject * string * arg0 * ... * argN -> JObject
 	 *  @param v v sollte ein Tupel sein mit
 	 *  @param 1 STRING  als Klassenname oder
-	 *  @param 1 JObject mit einem java.lang.Object der Klasse
+	 *  @param 1 JObject mit einem Object der Klasse
 	 *  @param args Argumente für die Methode, kann leer sein
 	 */
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
 	    if (val instanceof DMLTuple) {
 		DMLTuple v = (DMLTuple) val;
-		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist Object oder Klasse
 
 		Class cl = null;
 		Object object = null;
@@ -93,7 +93,7 @@ final public class JObject implements DMLValue {
 		}
 		else { // Methode hat >= 1 Argumente
 		    classes = new Class[length];
-		    args = new java.lang.Object[length];
+		    args = new Object[length];
 		    for(int i=0; i<length; i++) {
 			_REQUESTDEC(DMLValue helper,v.get(i+2));
 			if (helper instanceof Int) {
@@ -126,7 +126,7 @@ final public class JObject implements DMLValue {
 				_RAISE(javaAPIError,new Tuple2(new STRING ("illegal Name-argument "+(i+2)),                                                            val));
 			    }
 			} else if (helper instanceof JObject) { // Argument ist Instanz einer Java-Klasse
-			    java.lang.Object o = ((JObject) helper).getObject();
+			    Object o = ((JObject) helper).getObject();
 			    classes[i] = o.getClass();
 			    args[i] = o;
 			} else {
@@ -341,7 +341,7 @@ final public class JObject implements DMLValue {
 		    }
 		    else { // Konstruktor hat >= 1 Argumente
 			classes = new Class[length];
-			args = new java.lang.Object[length];
+			args = new Object[length];
 			for(int i=0; i<length; i++) {
 			    _REQUESTDEC(DMLValue helper,v.get(i+1));
 			    if (helper instanceof Int) {
@@ -376,7 +376,7 @@ final public class JObject implements DMLValue {
 				}
 			    } else if (helper instanceof JObject) {
 				// Argument ist Instanz einer Java-Klasse
-				java.lang.Object o = ((JObject) helper).getObject();
+				Object o = ((JObject) helper).getObject();
 				classes[i] = o.getClass();
 				args[i] = o;
 			    } else {
@@ -568,10 +568,10 @@ final public class JObject implements DMLValue {
 						   val));
 		}
 		// else:
-		_REQUESTDEC(DMLValue c,v.get0()); // java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.get0()); // Object oder Klasse
 
 		Class cl = null;
-		java.lang.Object object = null;
+		Object object = null;
 		java.lang.String classname = null;
 		if (c instanceof STRING) { // nur noch Klassenfelder
 		    classname = ((STRING) c).value;
@@ -604,7 +604,7 @@ final public class JObject implements DMLValue {
 		}
 
 		_REQUEST(c,v.get2()); // hier: Wert
-		java.lang.Object arg = null;
+		Object arg = null;
 		if (c instanceof Int) {
 		    arg = new Integer(((Int) c).value);
 		} else if (c instanceof Real) {
@@ -676,10 +676,10 @@ final public class JObject implements DMLValue {
 						   val));
 		}
 		// else:
-		_REQUESTDEC(DMLValue c,v.get0()); // java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.get0()); // Object oder Klasse
 
 		Class cl = null;
-		java.lang.Object object = null;
+		Object object = null;
 		java.lang.String classname = null;
 		if (c instanceof STRING) { // nur noch Klassenfelder
 		    classname = ((STRING) c).value;
@@ -720,7 +720,7 @@ final public class JObject implements DMLValue {
 						   new JObject(e)));
 		}
 
-		java.lang.Object oo = null;
+		Object oo = null;
 		try {
 		    oo = field.get(object);
 		} catch (Exception e) {
@@ -761,7 +761,7 @@ final public class JObject implements DMLValue {
 	 *  invoke: string/JObject * string * arg0 * ... * argN -> JObject
 	 *  @param v v sollte ein Tupel sein mit
 	 *  @param 1 STRING  als Klassenname oder
-	 *  @param 1 JObject mit einem java.lang.Object der Klasse
+	 *  @param 1 JObject mit einem Object der Klasse
 	 *  @param 2 wie 1
 	 */
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
@@ -773,7 +773,7 @@ final public class JObject implements DMLValue {
 		    _RAISE(javaAPIError,new Tuple2(new STRING ("invalid number of arguments for instanceOf"),
 						   val));
 		}
-		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist java.lang.Object oder Klasse
+		_REQUESTDEC(DMLValue c,v.get0()); // erstes Argument ist Object oder Klasse
 
 		// 1. Argument
 		Class cl = null;

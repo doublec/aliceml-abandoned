@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -34,7 +34,7 @@ public class UniqueConstructor extends Constructor {
      *  Still there could be no entry in the hashtable if the
      *  library has not yet been loaded.
      */
-    final private java.lang.Object readResolve()
+    final private Object readResolve()
 	throws java.io.ObjectStreamException {
 	Object o = GName.gNames.get(name);
 	if (o == null) {

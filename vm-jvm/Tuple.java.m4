@@ -29,7 +29,7 @@ public class Tuple implements DMLTuple {
     final public DMLValue get3() { return vals[3]; }
     final public DMLValue get4() { return vals[4]; }
 
-    final public boolean equals(java.lang.Object val) {
+    final public boolean equals(Object val) {
 	if (val instanceof DMLTuple) {
 	    if (val instanceof Record) {
 		return false;
@@ -47,6 +47,8 @@ public class Tuple implements DMLTuple {
 	    } else { // kann nur noch Tuple<i> sein
 		return false;
 	    }
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
 	} else {
 	    return false;
 	}

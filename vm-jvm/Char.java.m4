@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -20,12 +20,14 @@ final public class Char implements DMLValue {
 	value=c;
     }
 
-    final public static boolean equals(Char b, Char c) {
-	return b.value == c.value;
-    }
-
-    final public boolean equals(java.lang.Object o) {
-	return (o instanceof Char) && (((Char) o).value==value);
+    final public boolean equals(Object o) {
+	if (o instanceof Char) {
+	    return (((Char) o).value==value);
+	} else if (o instanceof DMLTransient) {
+	    return o.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     final public java.lang.String toString() {

@@ -36,7 +36,7 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    cl=Class.forName("de.uni_sb.ps.dml.runtime.Function");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
-	    System.err.println("Function must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    System.err.println("Function must be accessable by the same ClassLoader as ObjectOutputStream.");
 	    e.printStackTrace();
 	}
 	fcn = cl;
@@ -54,7 +54,7 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Constructor");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
-	    System.err.println("Constructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    System.err.println("Constructor must be accessable by the same ClassLoader as ObjectOutputStream.");
 	    e.printStackTrace();
 	}
 	ccn = cl;
@@ -64,7 +64,7 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueConstructor");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
-	    System.err.println("UniqueConstructor must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    System.err.println("UniqueConstructor must be accessable by the same ClassLoader as ObjectOutputStream.");
 	    e.printStackTrace();
 	}
 	ucn = cl;
@@ -74,7 +74,7 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    cl = Class.forName("de.uni_sb.ps.dml.runtime.Name");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
-	    System.err.println("Name must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    System.err.println("Name must be accessable by the same ClassLoader as ObjectOutputStream.");
 	    e.printStackTrace();
 	}
 	ncn = cl;
@@ -84,7 +84,7 @@ public class MarshalOutputStream extends ObjectOutputStream
 	    cl = Class.forName("de.uni_sb.ps.dml.runtime.UniqueName");
 	    // System.err.println("Class zum Vergleichen: "+fcn);
 	} catch (ClassNotFoundException e) {
-	    System.err.println("UniqueName must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    System.err.println("UniqueName must be accessable by the same ClassLoader as ObjectOutputStream.");
 	    e.printStackTrace();
 	}
 	uncn = cl;

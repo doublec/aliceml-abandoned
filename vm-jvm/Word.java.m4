@@ -33,8 +33,13 @@ final public class Word implements DMLValue {
 
     /** Equality for primitive longs. */
     final public boolean equals(Object val) {
-	return (val instanceof Word) &&
-	    (((Word) val).value == this.value);
+	if (val instanceof Word) {
+	    return (((Word) val).value == value);
+	} else if (val instanceof DMLTransient) {
+	    return val.equals(this);
+	} else {
+	    return false;
+	}
     }
 
     /** String representation of the Word.

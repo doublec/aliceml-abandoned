@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -28,7 +28,7 @@ final public class RecordArity implements java.io.Serializable {
     }
 
     final public int getIndexOfLabel(java.lang.String l) {
-	java.lang.Object idx=hashtable.get(l);
+	Object idx=hashtable.get(l);
 	if (idx==null)
 	    return -1;
 	else
@@ -40,7 +40,7 @@ final public class RecordArity implements java.io.Serializable {
 	return labels[i];
     }
 
-    final public boolean equals(java.lang.Object o) {
+    final public boolean equals(Object o) {
 	if (!(o instanceof RecordArity)) {
 	    return false;
 	}

@@ -42,7 +42,7 @@ final public class ConVal2 implements DMLConVal {
     }
 
     /** Gleichheit der  und Inhalte */
-    final public boolean equals(java.lang.Object val) {
+    final public boolean equals(Object val) {
 	try {
 	    if (val instanceof ConVal2) {
 		ConVal2 v = (ConVal2) val;
@@ -64,6 +64,8 @@ final public class ConVal2 implements DMLConVal {
 		} else {
 		    return false;
 		}
+	    } else if (val instanceof DMLTransient) {
+		return val.equals(this);
 	    } else {
 		return false;
 	    }
