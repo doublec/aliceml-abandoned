@@ -10,61 +10,24 @@
  *   $Revision$
  *)
 
-import
-    structure Url
-from "../../lib/utility/Url"
-
-import
-    structure PrettyPrint
-from "../../lib/utility/PrettyPrint"
-
-import
-    signature SWITCHES
-from "../infrastructure/SWITCHES-sig"
-
-import
-    structure Source
-from "../infrastructure/Source"
-
-import
-    structure ComposePhases
-from "../infrastructure/ComposePhases"
-
-import
-    structure MkTracingPhase
-from "../infrastructure/MkTracingPhase"
-
-import
-    structure MkResultDumpingPhase
-from "../infrastructure/MkResultDumpingPhase"
-
-import
-    structure MkContextDumpingPhase
-from "../infrastructure/MkContextDumpingPhase"
-
-import
-    structure FlatGrammar
-from "FlatGrammar"
-
-import
-    structure OutputFlatGrammar
-from "OutputFlatGrammar"
-
-import
-    structure MkFlatteningPhase
-from "MkFlatteningPhase"
-
-import
-    structure ValuePropagationPhase
-from "ValuePropagationPhase"
-
-import
-    structure MkLivenessAnalysisPhase
-from "MkLivenessAnalysisPhase"
-
-import
-    structure DeadCodeEliminationPhase
-from "DeadCodeEliminationPhase"
+import structure Url                      from "../../lib/utility/Url"
+import structure PrettyPrint              from "../../lib/utility/PrettyPrint"
+import signature SWITCHES                 from "../infrastructure/SWITCHES-sig"
+import structure Source                   from "../infrastructure/Source"
+import structure ComposePhases
+    from "../infrastructure/ComposePhases"
+import structure MkTracingPhase
+    from "../infrastructure/MkTracingPhase"
+import structure MkResultDumpingPhase
+    from "../infrastructure/MkResultDumpingPhase"
+import structure MkContextDumpingPhase
+    from "../infrastructure/MkContextDumpingPhase"
+import structure FlatGrammar     from "FlatGrammar"
+import structure OutputFlatGrammar        from "OutputFlatGrammar"
+import structure MkFlatteningPhase        from "MkFlatteningPhase"
+import structure ValuePropagationPhase    from "ValuePropagationPhase"
+import structure MkLivenessAnalysisPhase  from "MkLivenessAnalysisPhase"
+import structure DeadCodeEliminationPhase from "DeadCodeEliminationPhase"
 
 functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 			structure Switches: SWITCHES) =
@@ -108,9 +71,6 @@ functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 			  structure Phase2 = Phase2)
 
 	structure Phase3 = MkLivenessAnalysisPhase(Switches)
-	structure BackendCommon =
-	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2 = Phase3)
 
 	structure Phase4 =
 	    MkTracingPhase(structure Phase = DeadCodeEliminationPhase
@@ -123,9 +83,19 @@ functor MkBackendCommon(val loadSign: Source.desc * Url.t -> FlatGrammar.sign
 		val header = "Undead Syntax"
 		val pp = PrettyPrint.text o OutputFlatGrammar.componentToString
 		val switch = Switches.Debug.dumpDeadCodeEliminationResult)
+
+	structure LiveAndDeadPhase =
+	    ComposePhases(structure Phase1 = Phase3
+			  structure Phase2 = Phase4)
+
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon
-			  structure Phase2 = Phase4)
+			  structure Phase2 = LiveAndDeadPhase)
+(* to iterate dead code elimination another time:
+	structure BackendCommon =
+	    ComposePhases(structure Phase1 = BackendCommon
+			  structure Phase2 = LiveAndDeadPhase)
+*)
     in
 	BackendCommon
     end
