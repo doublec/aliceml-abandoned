@@ -56,6 +56,15 @@ fun lookup "bogus" = 10000
 %value INT (1)
 %value STRING ("")
 
+(* precedence annotations *)
+%left ID
+%nonassoc EQ
+%left BAR
+%left MAPSTO
+%left PREC
+%left COMMA
+%left AS
+
 
 %%
 
@@ -63,6 +72,7 @@ fun lookup "bogus" = 10000
 
 start : program (rev program)
 	| ([])
+
 program : jackedec ([In1(jackedec)])
 	| exp ([In2 exp])
 	| program jackedec ((In1 jackedec)::program)
@@ -74,8 +84,6 @@ jackedec : TOKEN tokbinds (A.TokenDec(rev tokbinds))
 	| NONASSOC idlist (A.NonassocDec(rev idlist))
 	| RULE rulebinds (A.RuleDec(rev rulebinds))
 	| PARSER parsbinds (A.ParserDec(rev parsbinds))
-(*	| LOCAL jackedec IN jackedec END (A.AssoclDec[])
-	| DECINTRO exp (A.AssoclDec[])   (* todo *) *)
  
 tokbinds : tokbind ([tokbind])
 	| tokbind BAR tokbinds (tokbind::tokbinds)
@@ -84,7 +92,7 @@ tokbind : ID ((ID,NONE))
 	| ID OF ID ((ID1,SOME ID2))
 
 idlist  : ID ([ID])
-	| idlist ID (ID::idlist)
+	| ID idlist (ID::idlist)
 
 rulebinds : rulebind ([rulebind])
 	| rulebinds AND rulebind (rulebind::rulebinds)
@@ -112,11 +120,15 @@ explist : ([])
 
 exp  :  LPAREN exp RPAREN (")"::(exp@["("]))
 	| LBRACE exp RBRACE ("}"::(exp@["{"]))
-	| STRING (["\"",STRING,"\""]) 
+	| STRING (["\""^STRING^"\""]) 
+        | INT ([Int.toString INT])
 	| LBRACK exp RBRACK ("]"::(exp@["["]))
 	| ID ([ID])
 	| EQ (["="])
 	| COMMA ([","])
+        | COLON ([":"])
+        | SEMICOLON ([";"])
 	| MLKEY ([MLKEY])
 	| MLOP  ([MLOP])
-
+        | UMINUS (["~"])
+        | DECINTRO ([DECINTRO])
