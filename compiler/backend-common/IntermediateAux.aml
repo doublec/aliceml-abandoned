@@ -295,9 +295,6 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	fun usedVarsId (id, set, used) =
 	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
 
-	fun usedVarsCon (O.Con id, set, used) = usedVarsId (id, set, used)
-	  | usedVarsCon (O.StaticCon _, _, _) = ()
-
 	fun usedVarsArgs (O.OneArg id, set, used) =
 	    usedVarsId (id, set, used)
 	  | usedVarsArgs (O.TupArgs ids, set, used) =
@@ -360,8 +357,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.TagExp (_, _, _, args), set, used, _) =
 	    usedVarsArgs (args, set, used)
-	  | usedVarsExp (O.ConExp (_, con, args), set, used, _) =
-	    (usedVarsCon (con, set, used); usedVarsArgs (args, set, used))
+	  | usedVarsExp (O.ConExp (_, id, args), set, used, _) =
+	    (usedVarsId (id, set, used); usedVarsArgs (args, set, used))
 	  | usedVarsExp (O.RefExp (_, id), set, used, _) =
 	    usedVarsId (id, set, used)
 	  | usedVarsExp (O.TupExp (_, ids), set, used, _) =

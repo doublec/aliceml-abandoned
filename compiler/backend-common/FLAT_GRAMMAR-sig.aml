@@ -57,10 +57,6 @@ signature FLAT_GRAMMAR =
 	  | AuxiliaryOf of stamp
 	  | IsToplevel
 
-	datatype con =
-	    Con of id
-	  | StaticCon of stamp
-
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a vector
@@ -95,7 +91,7 @@ signature FLAT_GRAMMAR =
 	and tests =
 	    LitTests of (lit * body) vector
 	  | TagTests of (label * int * idDef args * body) vector
-	  | ConTests of (con * idDef args * body) vector
+	  | ConTests of (id * idDef args * body) vector
 	  | VecTests of (idDef vector * body) vector
 	and exp =
 	    LitExp of exp_info * lit
@@ -103,7 +99,7 @@ signature FLAT_GRAMMAR =
 	  | NewExp of exp_info * Name.t
 	  | VarExp of exp_info * id
 	  | TagExp of exp_info * label * int * id args
-	  | ConExp of exp_info * con * id args
+	  | ConExp of exp_info * id * id args
 	  | RefExp of exp_info * id
 	  | TupExp of exp_info * id vector
 	  | ProdExp of exp_info * (label * id) vector
