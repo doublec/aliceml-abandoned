@@ -1133,8 +1133,8 @@ structure CodeGen =
 			      [Classsig CVal], alpha, omega)::akku)
 		in
 		    val fieldscode = fields freeVarList
-		    val bd = vars
-			(Register.max(),
+		    val bd = (*vars
+			(Register.max(), *)
 			 let
 			     val decs = decListCode body'
 			 in
@@ -1169,7 +1169,7 @@ structure CodeGen =
 				     decs
 				 end
 			     else decs
-			 end)
+			 end (*)*)
 		end
 		(* Wir bauen jetzt den Rumpf der Abstraktion *)
 		val ap =

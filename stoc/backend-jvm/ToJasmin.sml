@@ -19,6 +19,10 @@ structure ToJasmin =
 	datatype deb = SIs of string*INSTRUCTION list
 	exception Debug of deb
 
+	val actclass = ref ""
+	val actmeth = ref ""
+	val lastLabel = ref ""
+
 	fun makeArityString (0,x) = x
 	  | makeArityString (n,x) = makeArityString (n-1, x^"[")
 
@@ -40,16 +44,79 @@ structure ToJasmin =
 		(* set of reachable labels *)
 		val reachable = ref (StringSet.new())
 
+		(* maps labels to the stack size on enter *)
+		val stackSizeHash: int StringHash.t ref = ref (StringHash.new ())
+
 		fun new () =
 		    (labelMerge := StringHash.new();
-		     reachable := StringSet.new())
+		     reachable := StringSet.new();
+		     stackSizeHash := StringHash.new())
 
+	    (* Perform a unconditional jump to a label. If the first
+	     operation there would be some kind of return, do so. *)
+	    fun directJump lab' =
+		case StringHash.lookup(!labelMerge, lab') of
+		    NONE => "goto "^lab'
+		  | SOME (Lab lab'') => directJump lab''
+		  | SOME (Jump Ret) => "return"
+		  | SOME (Jump ARet) => "areturn"
+		  | SOME (Jump IRet) => "ireturn"
+		  | SOME _ => raise Match
+
+	    (* return the real label for this jump *)
+	    fun condJump lab' =
+		case StringHash.lookup(!labelMerge, lab') of
+		    SOME (Lab lab'') => condJump lab''
+		  | _ => lab'
+
+		(* For several branches to the same address, stack size has
+		 to be equal in order to make the Java verifier happy *)
+		fun checkSizeAt (l, size) =
+		    case StringHash.lookup(!stackSizeHash, l) of
+			SOME s => if s <> size then
+			    (print ("Stack verification error: Size = "^
+				    Int.toString s^" or "^
+				    Int.toString size^
+				    " at "^l^" of "^(!actclass)^
+				    "."^(!actmeth)^".\n");
+			     size)
+				  else size
+		      | NONE =>
+			     (StringHash.insert (!stackSizeHash, l, size);
+			      size)
+
+		(* Leave a method (via return or athrow).
+		 Return the stack size after this instruction (i.e.
+		 the size before the next instruction can be performed *)
+		fun leave (Comment _ :: rest, sizeAfter) = leave (rest, sizeAfter)
+		  | leave (Label l :: _, sizeAfter) =
+		    (case StringHash.lookup(!stackSizeHash, l) of
+			 SOME sz => sz
+		       | NONE => sizeAfter)
+		  | leave (_, sizeAfter) = sizeAfter
+
+		(* Leave a method (via return or athrow).
+		 Check whether stack size is correct and
+		 call leave to compute the stack size for the next
+		 instruction. *)
+		fun leaveMethod (sizeAfter, rest) =
+		    (if sizeAfter <> 0
+			 then
+			     print ("Stack verification error: Size = "^
+				    Int.toString sizeAfter^" leaving "^(!actclass)^
+				    "."^(!actmeth)^" after "^(!lastLabel)^".\n")
+		     else ();
+			 leave (rest, sizeAfter))
+
+		(* merge two labels *)
 		fun merge (l', l'') =
 		    StringHash.insert (!labelMerge, l', l'')
 
+		(* mark a lable as reachable *)
 		fun setReachable l' =
 		    StringSet.insert (!reachable, l')
 
+		(* check whether a lable is reachable or not *)
 		fun isReachable l' =
 		    let val result =
 			isSome (StringHash.lookup (!labelMerge, l'))
@@ -62,21 +129,6 @@ structure ToJasmin =
 			else ();
 			result
 		    end
-
-		fun directJump lab' =
-		    case StringHash.lookup (!labelMerge, lab') of
-			NONE => "goto "^lab'
-		      | SOME (Lab lab'') => directJump lab''
-		      | SOME (Jump Ret) => "return"
-		      | SOME (Jump ARet) => "areturn"
-		      | SOME (Jump IRet) => "ireturn"
-		      | SOME _ => raise Match
-
-		fun condJump lab' =
-		    case StringHash.lookup (!labelMerge, lab') of
-			SOME (Lab lab'') => condJump lab''
-		      | _ => lab'
-
 	    end
 
 	structure JVMreg =
@@ -104,6 +156,7 @@ structure ToJasmin =
 		 Therefore, they cannot be fused on Aload/Astore sequences *)
 		val defines = ref (Array.array (0,0))
 
+		(* new has to be called before each code optimization *)
 		fun new regs =
 		    let
 			val registers = if regs>=2 then regs + 1 else 3
@@ -117,6 +170,8 @@ structure ToJasmin =
 			defines := Array.array(registers,0)
 		    end
 
+		(* returns the VIRTUAL register associated with the one in
+		 question *)
 		fun getOrigin register =
 		    let
 			val lookup = Array.sub (!fusedwith, register)
@@ -126,6 +181,12 @@ structure ToJasmin =
 			else getOrigin lookup
 		    end
 
+		(* returns the JVM register on which a virtual register is
+		 mapped *)
+		fun get reg =
+		    if !OPTIMIZE >= 1 then Array.sub (!regmap, getOrigin reg) else reg
+
+		(* called when a register is defined. Needed for lifeness analysis *)
 		fun define (register, pos) =
 		    let
 			val old = Array.sub(!from, register)
@@ -135,6 +196,7 @@ structure ToJasmin =
 			else ()
 		    end
 
+		(* we need to remember the last usage of a variable for lifeness analysis *)
 		fun use (register, pos) =
 		    let
 			val lookup = getOrigin register
@@ -145,6 +207,8 @@ structure ToJasmin =
 			else ()
 		    end
 
+		(* The real lifeness analysis. This function is called when we know the
+		 life range of each virtual register *)
 		fun assignAll () =
 		    let
 			fun assign (register) =
@@ -176,9 +240,13 @@ structure ToJasmin =
 			assign 2
 		    end
 
+		(* We remember the code position of labels. Needed for
+		 lifeness analysis again. *)
 		fun defineLabel (label', pos) =
 		     StringHash.insert (!labHash, label', pos)
 
+		(* Every jump could effect the life range of each (virtual)
+		 register. We have to check this. *)
 		fun addJump (f', tolabel) =
 		    let
 			val t = StringHash.lookup(!labHash, tolabel)
@@ -207,14 +275,7 @@ structure ToJasmin =
 			if isSome t then checkReg 1 else ()
 		    end
 
-		fun get reg =
-		    let
-			val lookup = Array.sub (!fusedwith, reg)
-			val genuineReg = if lookup = ~1 then reg else lookup
-		    in
-			if !OPTIMIZE >= 1 then Array.sub (!regmap, genuineReg) else reg
-		    end
-
+		(* returns the maximum JVM register we use *)
 		fun max default =
 		    let
 			fun findMax r =
@@ -228,6 +289,7 @@ structure ToJasmin =
 			else default
 		    end
 
+		(* fuses two virtual registers. Called on aload/astore pairs *)
 		fun fuse (x,u) =
 		    let
 			val (a,b) = if u = 1 then (u,x) else (x,u)
@@ -242,6 +304,9 @@ structure ToJasmin =
 			 else false)
 		    end
 
+		(* How often is a register defined? Most registers are defined only once.
+		 However, there are a few ones which are defined twice. Those must
+		 not be fused on aload/atore. *)
 		fun countDefine reg =
 		    Array.update (!defines, reg,
 				  Array.sub(!defines, reg)+1)
@@ -556,6 +621,7 @@ structure ToJasmin =
 	  | stackNeedInstruction (Var _) = 0
 
 	local
+	    (* generate Jasmin code for an instruction *)
 	    fun instructionToJasmin (Astore j, s) =
 		let
 		    val i = if s then JVMreg.get j-1 else JVMreg.get j
@@ -581,7 +647,8 @@ structure ToJasmin =
 	      | instructionToJasmin (Athrow,_) = "athrow"
 	      | instructionToJasmin (Bipush i,_) = "bipush "^intToString i
 	      | instructionToJasmin (Catch(cn,from,to,use),_) =
-		    ".catch "^cn^" from "^(LabelMerge.condJump from)^" to "^(LabelMerge.condJump to)^" using "^(LabelMerge.condJump use)
+		".catch "^cn^" from "^(LabelMerge.condJump from)^" to "^
+		(LabelMerge.condJump to)^" using "^(LabelMerge.condJump use)
 	      | instructionToJasmin (Checkcast cn,_) = "checkcast "^cn
 	      | instructionToJasmin (Comment c,_) =
 		    if !DEBUG>=1
@@ -662,11 +729,11 @@ structure ToJasmin =
 				 fun flatten (lab::labl) = ("\t"^(LabelMerge.condJump lab)^"\n")^(flatten labl)
 				   | flatten nil = ""
 			     in
-				   "tableswitch "^(Int.toString low)^"\n"^
-				   (flatten labellist)^
-				   "default: "^(LabelMerge.condJump label)
+				 "tableswitch "^(Int.toString low)^"\n"^
+				 (flatten labellist)^
+				 "default: "^(LabelMerge.condJump label)
 			     end
-	      | instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
+	      |  instructionToJasmin (Var (number', name', descriptor', from', to'), isStatic) =
 			     if (!DEBUG >= 1) then
 				 ".var "^
 				 (Int.toString
@@ -674,9 +741,8 @@ structure ToJasmin =
 				 ^" is "^name'^" "^(desclist2string descriptor')^
 				 " from "^(LabelMerge.condJump from')^" to "^(LabelMerge.condJump to')
 			     else ""
-
 	in
-	    fun instructionsToJasmin (insts, enterstack, classname, methname, staticapply, ziel) =
+	    fun instructionsToJasmin (insts, enterstack, staticapply, ziel) =
 		let
 		    fun noStack (Comment _) = true
 		      | noStack (Goto _) = true
@@ -686,73 +752,40 @@ structure ToJasmin =
 		      | noStack Ireturn = true
 		      | noStack _ = false
 
-		    val stackSizeHash: int StringHash.t = StringHash.new ()
-
-		    val lastLabel = ref ""
-
-		    fun checkSizeAt (l, size) =
-			case StringHash.lookup (stackSizeHash, l) of
-			    SOME s => if s <> size then
-				(print ("Stack verification error: Size = "^
-					Int.toString s^" or "^
-					Int.toString size^
-					" at "^l^" of "^classname^
-					"."^methname^".\n");
-				 size)
-				      else size
-			  | NONE =>
-				(StringHash.insert (stackSizeHash, l, size);
-				 size)
-
 		    fun recurse (i::is, need, max) =
 			let
 			    val ins = instructionToJasmin (i, staticapply)
 
 			    val sizeAfter = need+stackNeedInstruction i
 
-			    fun leave (Comment _ :: rest) = leave rest
-			      | leave (Label l :: _) =
-				(case StringHash.lookup(stackSizeHash, l) of
-					     SOME sz => sz
-					   | NONE => sizeAfter)
-			      | leave _ = sizeAfter
-
-			    fun leaveMethod () =
-				(if sizeAfter <> 0
-				     then
-					 print ("Stack verification error: Size = "^
-						Int.toString need^" leaving "^classname^
-						"."^methname^" after "^(!lastLabel)^".\n")
-				 else ();
-				 leave is)
-
 			    val nextSize = case i of
-				Areturn => leaveMethod ()
-			      (* In JVM, stack doesn't need to be empty on athrow.
+				Areturn => LabelMerge.leaveMethod (sizeAfter, is)
+			      (* The Java verifier doesn't expect the stack to be
+			       empty on athrow.
 			       Nevertheless, JVM cleans the stack when exceptions
 			       are handled, so we have to ensure an empty stack
 			       when throwing exceptions. *)
-			      | Athrow => leaveMethod ()
-			      | Catch (_, _, _, handler) => checkSizeAt (handler, 0)
+			      | Athrow => LabelMerge.leaveMethod (sizeAfter, is)
+			      | Catch (_, _, _, handler) => LabelMerge.checkSizeAt (handler, 1)
 			      | Goto label =>
-				    (checkSizeAt (label, sizeAfter);
-				     leave is)
-			      | Ifacmpeq label => checkSizeAt (label, sizeAfter)
-			      | Ifacmpne label => checkSizeAt (label, sizeAfter)
-			      | Ifeq label => checkSizeAt (label, sizeAfter)
-			      | Ificmpeq label => checkSizeAt (label, sizeAfter)
-			      | Ificmplt label => checkSizeAt (label, sizeAfter)
-			      | Ificmpne label => checkSizeAt (label, sizeAfter)
-			      | Ifne label => checkSizeAt (label, sizeAfter)
-			      | Ifnull label => checkSizeAt (label, sizeAfter)
-			      | Ireturn => leaveMethod ()
+				    (LabelMerge.checkSizeAt (label, sizeAfter);
+				     LabelMerge.leave (is, sizeAfter))
+			      | Ifacmpeq label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ifacmpne label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ifeq label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ificmpeq label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ificmplt label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ificmpne label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ifne label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ifnull label => LabelMerge.checkSizeAt (label, sizeAfter)
+			      | Ireturn => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Label label =>
 				    (lastLabel := label;
-				     checkSizeAt (label, sizeAfter))
-			      | Return => leaveMethod ()
+				     LabelMerge.checkSizeAt (label, sizeAfter))
+			      | Return => LabelMerge.leaveMethod (sizeAfter, is)
 			      | Tableswitch (_, labs, label) =>
 				    foldr
-				    checkSizeAt
+				    LabelMerge.checkSizeAt
 				    sizeAfter
 				    (label::labs)
 			      | _ => sizeAfter
@@ -794,23 +827,21 @@ structure ToJasmin =
 				   (mAccessToString access)^
 				   methodname^
 				   (descriptor2string methodsig)^"\n");
+		     actmeth := methodname;
+		     instructionsToJasmin
+		      (catches,
+		       false,
+		       staticapply,
+		       io);
 		     instructionsToJasmin
 		     (optimize (instructions, perslocs),
 		      true,
-		      name,
-		      methodname,
 		      staticapply,
 		      io);
 		      TextIO.output(io,".limit locals "^Int.toString(JVMreg.max perslocs+1)^"\n");
-		      instructionsToJasmin
-		      (catches,
-		       false,
-		       name,
-		       methodname,
-		       staticapply,
-		       io);
 		      TextIO.output(io,".end method\n"))
 	    in
+		actclass:= name;
 		TextIO.output(io,
 			      ".source "^name^".j\n");
 		TextIO.output(io,
