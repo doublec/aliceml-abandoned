@@ -31,7 +31,11 @@ final public class Connection {
 	    System.err.println(u);
 	    u.printStackTrace();
 	}
-	thisHost = i;
+	if (i == null) {
+	    thisHost = null;
+	} else {
+	    thisHost = i;
+	}
     }
 
     final private static void startServer() throws java.rmi.RemoteException {
