@@ -34,7 +34,6 @@ import structure FixityTranslation	from "FixityTranslation"
 import structure PervasiveTypeTranslation from "PervasiveTypeTranslation"
 
 import structure TranslationEnv		from "TranslationEnv"
-import functor   MkListSort             from "../../lib/utility/MkListSort"
 import structure Assert                 from "../../lib/utility/Assert"
 import structure Crash			from "../infrastructure/Crash"
 import structure Error			from "../infrastructure/Error"
@@ -154,9 +153,7 @@ struct
 
   (* Transformation of type info *)
 
-    structure FieldList = MkListSort(type 'a t = Label.t * Type.t
-				     fun compare((l1,_), (l2,_)) =
-					 Label.compare(l1, l2))
+    fun compareField((l1,_), (l2,_)) = Label.compare(l1,l2)
 
     val infHash  = Inf.Map.new() : Type.t Inf.Map.t
 		(*UNFINISHED: remove this global variable! *)
@@ -206,7 +203,7 @@ struct
 		val r     = List.foldr
 				(fn((l,t),r) => Type.extendRow(l,t,r))
 				(Type.unknownRow())
-				(FieldList.sort fs)
+				(List.sort compareField fs)
 				(* sort to avoid quadratic behaviour *)
 	    in
 		Type.prod r

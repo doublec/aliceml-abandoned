@@ -172,7 +172,7 @@ LIBUTILITYSOURCES0 = \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
 	SIMPLE_IMP_MAP-sig.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
-	MkScopedImpMap.aml LIST_SORT-sig.aml MkListSort.aml \
+	MkScopedImpMap.aml \
 	CELL-sig.aml Cell.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
 	PRETTY_PRINT-sig.aml PrettyPrint.aml \
@@ -248,7 +248,7 @@ COMPILERFRONTENDSMLSOURCES = \
 	$(COMPILERFRONTENDSMLSOURCES0:%=compiler/frontend-sml/%)
 
 COMPILERBACKENDCOMMONSOURCES0 = \
-	LABEL_SORT-sig.aml MkLabelSort.aml LabelSort.aml FLAT_GRAMMAR-sig.aml \
+	LABEL_SORT-sig.aml LabelSort.aml FLAT_GRAMMAR-sig.aml \
 	FlatGrammar.aml OUTPUT_FLAT_GRAMMAR-sig.aml OutputFlatGrammar.aml \
 	ARITY-sig.aml Arity.aml INTERMEDIATE_AUX-sig.aml IntermediateAux.aml \
 	SIMPLIFY_MATCH-sig.aml SimplifyMatch.aml SIMPLIFY_REC-sig.aml \
