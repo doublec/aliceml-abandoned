@@ -22,6 +22,9 @@ import java.net.*;
 import java.rmi.Naming;
 import java.rmi.server.RMIClassLoader;
 import java.util.*;
+import java.rmi.server.RMIClassLoader;
+import java.security.AccessControlException;
+import java.security.Permission;
 import sun.security.action.GetBooleanAction;
 
 /**
@@ -48,7 +51,44 @@ public class MarshalInputStream extends ObjectInputStream {
      */
     private final static boolean useCodebaseOnly =
 	((Boolean) java.security.AccessController.doPrivileged(
-	    new GetBooleanAction("java.rmi.server.codebase"))).booleanValue();
+	    new GetBooleanAction(
+		"java.rmi.server.useCodebaseOnly"))).booleanValue();
+
+    /** table to hold sun classes to which access is explicitly permitted */
+    protected static Map permittedSunClasses = new HashMap(3);
+
+    /*
+     * Fix for 4179055: The remote object services inside the
+     * activation daemon use stubs that are in the package
+     * sun.rmi.server.  Classes for these stubs should be loaded from
+     * the classpath by RMI system code and not by the normal
+     * unmarshalling process as applications should not need to have
+     * permission to access the sun implementation classes.
+     *
+     * Note: this fix should be redone when API changes may be
+     * integrated
+     *
+     * During parameter unmarshalling RMI needs to explicitly permit
+     * access to three sun.* stub classes
+     */
+    static {
+	try {
+	    String monitor = sun.rmi.server.Activation.
+		ActivationMonitorImpl.class.getName() + "_Stub";
+	    String system = sun.rmi.server.Activation.
+		ActivationSystemImpl.class.getName() + "_Stub";
+	    String registry = sun.rmi.registry.
+		RegistryImpl.class.getName() + "_Stub";
+
+	    permittedSunClasses.put(monitor, Class.forName(monitor));
+	    permittedSunClasses.put(system, Class.forName(system));
+	    permittedSunClasses.put(registry, Class.forName(registry));
+
+	} catch (ClassNotFoundException e) {
+	    throw new NoClassDefFoundError("Missing system class: " +
+					   e.getMessage());
+	}
+    }
 
     /**
      * Create a new MarshalInputStream object.
@@ -73,6 +113,7 @@ public class MarshalInputStream extends ObjectInputStream {
 	 */
 	Object annotation = readLocation();
 
+	String className = classDesc.getName();
 	//System.out.println("Annotation: "+annotation);
 	/*
 	 * Unless we were told to skip this step, first try resolving the
@@ -86,11 +127,14 @@ public class MarshalInputStream extends ObjectInputStream {
 	if (!skipDefaultResolveClass) {
 	    try {
 		return super.resolveClass(classDesc);
+
+	    } catch (AccessControlException e) {
+		return checkSunClass(className, e);
+
 	    } catch (ClassNotFoundException e) {
 	    }
 	}
 
-	String className = classDesc.getName();
 
 	/*
 	 * Finally, try loading class from an RMIClassLoader instance.
@@ -100,7 +144,8 @@ public class MarshalInputStream extends ObjectInputStream {
 	 * load from a loader using the codebase URL in the annotation.
 	 */
 	try {
-	    if (annotation != null && (annotation instanceof String))
+	    if (!useCodebaseOnly &&
+		annotation != null && (annotation instanceof String))
 	    {
 		String location = (String) annotation;
 		// System.out.println("Location: "+location+" ClassName: "+className);
@@ -165,14 +210,46 @@ public class MarshalInputStream extends ObjectInputStream {
 	    } else {
 		return LoaderHandler.loadClass(className);
 	    }
+	} catch (AccessControlException e) {
+	    return checkSunClass(className, e);
+
 	} catch (MalformedURLException ex) {
 	    /*
-	     * REMIND: Do we really want to propagate MalformURLException
+	     * REMIND: Do we really want to propagate MalformedURLException
 	     * like this?  (And it doesn't need to be wrapped; it is a
 	     * subclass of IOException anyway.)
 	     */
 	    throw new IOException("Malformed URL: " + annotation);
 	}
+    }
+
+    /**
+     * Fix for 4179055: Need to assist resolving sun stubs; resolve
+     * class locally if it is a "permitted" sun class
+     */
+    private Class checkSunClass(String className, AccessControlException e)
+	throws AccessControlException
+    {
+	// ensure that we are giving out a stub for the correct reason
+	Permission perm = e.getPermission();
+	String name = null;
+	if (perm != null) {
+	    name = perm.getName();
+	}
+
+	Class resolvedClass =
+	    (Class) permittedSunClasses.get(className);
+
+	// if class not permitted, throw the SecurityException
+	if ((name == null) ||
+	    (resolvedClass == null) ||
+	    ((!name.equals("accessClassInPackage.sun.rmi.server")) &&
+	    (!name.equals("accessClassInPackage.sun.rmi.registry"))))
+	{
+	    throw e;
+	}
+
+	return resolvedClass;
     }
 
     /**
