@@ -5,9 +5,9 @@ Group
 is
 
     ../../lib/utility/sources.cm
+    ../../lib/rtt/type.cm
     ../infrastructure/sources.cm
     ../common/id-stamp.cm
-    ../common/type.cm
     ../common/intermediate-grammar.cm
 
     flat-grammar.cm
