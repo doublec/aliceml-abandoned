@@ -12,7 +12,7 @@
 
 functor
 import
-   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
+   BootName(newUnique: NewUniqueName '<' hash) at 'x-oz://boot/Name'
    BootWord at 'x-oz://boot/Word'
    System(show printInfo)
    Browser(browse)
@@ -141,6 +141,19 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
+      'GlobalStamp.new': {NewName}
+      'GlobalStamp.fromString':
+	 fun {$ S} {NewUniqueName {VirtualString.toAtom S}} end
+      'GlobalStamp.toString':
+	 fun {$ N} {ByteString.make '<N>'} end
+      'GlobalStamp.compare':
+	 fun {$ N1 N2}
+	    if N1 == N2 then 'EQUAL'
+	    elseif {BootName.'<' N1 N2} then 'LESS'
+	    else 'GREATER'
+	    end
+	 end
+      'GlobalStamp.hash': BootName.hash
       'Int.abs':
 	 fun {$ I} {Abs I} end
       'Int.compare':
