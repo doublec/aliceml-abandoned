@@ -27,10 +27,20 @@
     if (i == INVALID_INT) { REQUEST(x); } else b = i != 0;	\
   }
 
+#define DECLARE_BLOCKTYPE_OR_NULL(t, a, x)		\
+  t *a = t::FromWord(x);				\
+  if (a == INVALID_POINTER) {				\
+    if (Store::WordToInt(x) != 0) { REQUEST(x); }	\
+  } else {}
+
 #define DECLARE_LONG(javaLong, x) DECLARE_BLOCKTYPE(JavaLong, javaLong, x)
-#define DECLARE_OBJECT(object, x) DECLARE_BLOCKTYPE(Object, object, x)
-#define DECLARE_JAVA_STRING(string, x) DECLARE_BLOCKTYPE(JavaString, string, x)
-#define DECLARE_AARRAY(array, x) DECLARE_BLOCKTYPE(ObjectArray, array, x)
+#define DECLARE_OBJECT(object, x) DECLARE_BLOCKTYPE_OR_NULL(Object, object, x)
+#define DECLARE_JAVA_STRING(string, x) \
+  DECLARE_BLOCKTYPE_OR_NULL(JavaString, string, x)
+#define DECLARE_AARRAY(array, x) \
+  DECLARE_BLOCKTYPE_OR_NULL(ObjectArray, array, x)
+#define DECLARE_CLASS_LOADER(classLoader, x) \
+  DECLARE_BLOCKTYPE_OR_NULL(ClassLoader, classLoader, x)
 
 #define RETURN_VOID RETURN0
 
