@@ -12,8 +12,8 @@
 //   $Revision$
 //
 
-#ifndef __EMULATOR_TRANSFORM_HH__
-#define __EMULATOR_TRANSFORM_HH__
+#ifndef __GENERIC__TRANSFORM_HH__
+#define __GENERIC__TRANSFORM_HH__
 
 #include "store/Store.hh"
 
