@@ -1,3 +1,13 @@
+(* Author:							*)
+(*   Andreas Rossberg <rossberg@ps.uni-sb.de>			*)
+(*								*)
+(* Copyright:							*)
+(*   Andreas Rossberg, 2001					*)
+(*								*)
+(* Last change:							*)
+(*   $Date$ by $Author$	*)
+(*   $Revision$						*)
+
 (*										*)
 (* Standard ML syntactic analysis						*)
 (*										*)
@@ -196,9 +206,9 @@
 %%
 
 
-%header	(functor LrVals(structure Token:        TOKEN
-			structure DerivedForms: DERIVED_FORMS
-		       )
+%header	(functor MkLrVals(structure Token:        TOKEN
+			  structure DerivedForms: DERIVED_FORMS
+			 )
 	)
 
 %name Parser
