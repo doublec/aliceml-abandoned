@@ -1,5 +1,5 @@
 CC     = g++
-CFLAGS = -I ../store -DDEBUG_CHECK -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
+CFLAGS = -Wall -I ../store -DDEBUG_CHECK -ggdb #-DINTERFACE -finline-functions -fno-implement-inlines -O6
 
 SRCS = alicedata.cc
 

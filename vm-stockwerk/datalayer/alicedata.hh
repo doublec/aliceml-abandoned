@@ -234,9 +234,10 @@ protected:
   using Block::ReplaceArg;
 
   void CheckIndex(int i) {
-    if ((i < 1) || (i > GetSize())) {} //to be determined
+    if ((i < 1) || (i > (int) GetSize())) {} //to be determined
   }
 public:
+  using Block::InitArg;
   using Block::GetSize;
   using Block::ToWord;
 
