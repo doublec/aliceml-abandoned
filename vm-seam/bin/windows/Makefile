@@ -8,31 +8,45 @@ LD = g++ -mno-cygwin
 LDFLAGS = -L$(PREFIX)/lib -lseam
 
 EXES = \
-	alicerun.exe alice.exe alicec.exe \
+	alicerun.exe alicerunwin.exe alice.exe alicec.exe \
 	alicelink.exe alicedep.exe
 SCRIPTS = $(EXES:%.exe=$(BINDIR)/%)
 
 all: $(EXES)
 
-alicerun.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='--argc>0?(--brokerArgc,*++argv):usage()' \
-        -c alicex.cc -o alicerun.o
+alicerun.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='--argc>0?(--brokerArgc,*++argv):usage()' \
+		-DPRELOAD_GTK=0 \
+		-c alicex.cc -o alicerun.o
 
-alice.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Toplevel"' \
-        -c alicex.cc -o alice.o
+alice.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='"x-alice:/tools/Toplevel"' \
+		-DPRELOAD_GTK=0 \
+		-c alicex.cc -o alice.o
 
-alicec.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/compiler/CompilerMain"' \
-        -c alicex.cc -o alicec.o
+alicec.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='"x-alice:/compiler/CompilerMain"' \
+		-DPRELOAD_GTK=0 \
+		-c alicex.cc -o alicec.o
 
-alicelink.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Linker"' \
-        -c alicex.cc -o alicelink.o
+alicelink.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='"x-alice:/tools/Linker"' \
+		-DPRELOAD_GTK=0 \
+		-c alicex.cc -o alicelink.o
 
-alicedep.o: alicex.cc
-	$(CXX) $(CXXFLAGS) -DROOT='"x-alice:/tools/Depend"' \
-        -c alicex.cc -o alicedep.o
+alicedep.o: alicex.cc Makefile
+	$(CXX) $(CXXFLAGS) \
+		-DROOT='"x-alice:/tools/Depend"' \
+		-DPRELOAD_GTK=0 \
+		-c alicex.cc -o alicedep.o
+
+alicerunwin.exe: alicerun.exe
+	cp $< $@
+	editbin /subsystem:windows $@
 
 %.exe: %.o
 	$(LD) $< -o $@ $(LDFLAGS)
