@@ -284,7 +284,7 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    usedVarsId (id, set, used)
 	  | usedVarsStm (O.ReraiseStm (_, id), set, used, _) =
 	    usedVarsId (id, set, used)
-	  | usedVarsStm (O.TryStm (_, tryBody, _, handleBody),
+	  | usedVarsStm (O.TryStm (_, tryBody, _, _, handleBody),
 			 set, used, shared) =
 	    (usedVarsBody (tryBody, set, used, shared);
 	     usedVarsBody (handleBody, set, used, shared))

@@ -122,12 +122,14 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				   SEQ #[S (Label.toString label), S "=",
 					 IDDEF idDef]) labelIdDefVector),
 		  S "} = ", ID id]
-	  | outputStm (TryStm (_, tryBody, idDef, handleBody), shared) =
+	  | outputStm (TryStm (_, tryBody, idDef1, idDef2, handleBody),
+		       shared) =
 	    let
 		val handleOutput = outputBody (handleBody, shared)
 	    in
 		SEQ #[S "try", IN, NL, outputBody (tryBody, shared), EX, NL,
-		      S "handle ", IDDEF idDef, IN, NL, handleOutput]
+		      S "handle ", IDDEF idDef1, S ", ", IDDEF idDef2, IN, NL,
+		      handleOutput]
 	    end
 	  | outputStm (EndTryStm (_, body), shared) =
 	    SEQ #[S "(* end try *)", outputBody (body, shared)]

@@ -129,17 +129,22 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | ProdVal of (label * idDef) vector
 	  | SelVal of prod * label * int
 	  | VecVal of idDef vector
-	  | FunVal of stamp * funFlag list
+	  | FunVal of stamp * idDef args * body
 	  | TagAppVal of label * int * idDef args
 	  | ConAppVal of con * idDef args
 	  | RefAppVal of idDef
-	  | CaughtExnVal
+	  | CaughtExnVal of id
 	  | UnknownVal
 
 	fun mapArgs f (OneArg x) = OneArg (f x)
 	  | mapArgs f (TupArgs xs) = TupArgs (Vector.map f xs)
 	  | mapArgs f (ProdArgs labelXVec) =
 	    ProdArgs (Vector.map (fn (label, x) => (label, f x)) labelXVec)
+
+	fun allArgs f (OneArg x) = f x
+	  | allArgs f (TupArgs xs) = Vector.all f xs
+	  | allArgs f (ProdArgs labelXVec) =
+	    Vector.all (fn (_, x) => f x) labelXVec
 
 	fun expToValue (LitExp (_, lit)) = LitVal lit
 	  | expToValue (PrimExp (_, name)) = PrimVal name
@@ -152,8 +157,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    ProdVal (Vector.map (fn (label, id) =>
 				 (label, IdDef id)) labelIdVec)
 	  | expToValue (VecExp (_, ids)) = VecVal (Vector.map IdDef ids)
-	  | expToValue (FunExp (_, stamp, funFlags, _, _)) =
-	    FunVal (stamp, funFlags)
+	  | expToValue (FunExp (_, stamp, _, args, body)) =
+	    FunVal (stamp, args, body)
 	  | expToValue (PrimAppExp (_, _, _)) = UnknownVal
 	  | expToValue (VarAppExp (_, _, _)) = UnknownVal
 	  | expToValue (TagAppExp (_, label, n, args)) =
@@ -217,7 +222,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	      | sortStm (ProdDec (_, _, _), _, _, _, _) = ()
 	      | sortStm (RaiseStm (_, _), _, _, _, _) = ()
 	      | sortStm (ReraiseStm (_, _), _, _, _, _) = ()
-	      | sortStm (TryStm (_, tryBody, _, handleBody),
+	      | sortStm (TryStm (_, tryBody, _, _, handleBody),
 			 pred, edgeMap, shared, path) =
 		(sortBody (tryBody, pred, edgeMap, shared, path);
 		 sortBody (handleBody, pred, edgeMap, shared, path))
@@ -343,7 +348,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 					if idDefEq (idDef, idDef') then idDef
 					else Wildcard) (idDefs, idDefs'))
 	    else UnknownVal
-	  | valueMin (value as FunVal (stamp, _), FunVal (stamp', _)) =
+	  | valueMin (value as FunVal (stamp, _, _), FunVal (stamp', _, _)) =
 	    if stamp = stamp' then value else UnknownVal
 	  | valueMin (TagAppVal (label, n, args),
 		      TagAppVal (label', _, args')) =
@@ -351,7 +356,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	    else UnknownVal
 	  | valueMin (value as RefAppVal idDef, RefAppVal idDef') =
 	    if idDefEq (idDef, idDef') then value else UnknownVal
-	  | valueMin (CaughtExnVal, CaughtExnVal) = CaughtExnVal
+	  | valueMin (value as CaughtExnVal id, CaughtExnVal id') =
+	    if idEq (id, id') then value else UnknownVal
 	  | valueMin (_, _) = UnknownVal
 
 	fun unionEnv (env', env) =
@@ -405,18 +411,42 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 	  | arityMatches (ProdArgs _, SOME (Arity.Product _)) = true
 	  | arityMatches (_, _) = false
 
-	fun vpPrimApp (info, name, ids) =   (*--** evaluate partially *)
+	fun isSimple (LitExp (_, _), _) = true
+	  | isSimple (PrimExp (_, _), _) = true
+	  | isSimple (NewExp _, _) = true
+	  | isSimple (VarExp (_, id), env) = isSome (IdMap.lookup (env, id))
+	  | isSimple (TagExp (_, _, _), _) = true
+	  | isSimple (ConExp (_, _), _) = true
+	  | isSimple (TupExp (_, ids), env) =
+	    Vector.all (fn id => isSome (IdMap.lookup (env, id))) ids
+	  | isSimple (ProdExp (_, labelIdVec), env) =
+	    Vector.all (fn (_, id) => isSome (IdMap.lookup (env, id)))
+	    labelIdVec
+	  | isSimple (VecExp (_, ids), env) =
+	    Vector.all (fn id => isSome (IdMap.lookup (env, id))) ids
+	  | isSimple (TagAppExp (_, _, _, args), env) =
+	    allArgs (fn id => isSome (IdMap.lookup (env, id))) args
+	  | isSimple (RefAppExp (_, id), env) = isSome (IdMap.lookup (env, id))
+	  | isSimple (_, _) = false
+
+	fun vpPrimApp (info, "Future.byneed", ids as #[id], env) =
+	    (case IdMap.lookupExistent (env, id) of
+		 (FunVal (_, _, [ReturnStm (_, exp)]), _) =>
+		     if isSimple (exp, env) then exp
+		     else PrimAppExp (info, "Future.byneed", ids)
+	       | (_, _) => PrimAppExp (info, "Future.byneed", ids))
+	  | vpPrimApp (info, name, ids, _) =   (*--** evaluate partially *)
 	    (*--** assertion about arity *)
 	    PrimAppExp (info, name, ids)
 
-	fun primAppExp (info, _, name, Arity.Unary, args as OneArg id, _) =
-	    vpPrimApp (info, name, #[id])
+	fun primAppExp (info, _, name, Arity.Unary, args as OneArg id, env) =
+	    vpPrimApp (info, name, #[id], env)
 	  | primAppExp (info, id, name,
 			Arity.Tuple _, args as OneArg id', env) =
 	    (case IdMap.lookupExistent (env, id') of
 		 (TupVal idDefs, _) =>
 		     if Vector.all isId idDefs then
-			 vpPrimApp (info, name, Vector.map idOf idDefs)
+			 vpPrimApp (info, name, Vector.map idOf idDefs, env)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
 	  | primAppExp (info, id, name,
@@ -427,14 +457,14 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		     then
 			 vpPrimApp (info, name,
 				    Vector.map (fn (_, idDef) => idOf idDef)
-				    labelIdDefVec)
+				    labelIdDefVec, env)
 		     else VarAppExp (info, id, args)
 	       | (_, _) => VarAppExp (info, id, args))   (*--** *)
-	  | primAppExp (info, id, name, Arity.Tuple _, TupArgs ids, _) =
-	    vpPrimApp (info, name, ids)
+	  | primAppExp (info, id, name, Arity.Tuple _, TupArgs ids, env) =
+	    vpPrimApp (info, name, ids, env)
 	  | primAppExp (info, id, name,
-			Arity.Product _, ProdArgs labelIdVec, _) =
-	    vpPrimApp (info, name, Vector.map #2 labelIdVec)
+			Arity.Product _, ProdArgs labelIdVec, env) =
+	    vpPrimApp (info, name, Vector.map #2 labelIdVec, env)
 	  | primAppExp (info, id, _, _, args, _) =
 	    VarAppExp (info, id, args)   (*--** crash? *)
 
@@ -561,20 +591,24 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		val id = deref (id, env)
 	    in
 		case IdMap.lookupExistent (env, id) of
-		   (CaughtExnVal, _) => ReraiseStm (info, id)
+		   (CaughtExnVal id', _) => ReraiseStm (info, id')
 		 | _ => RaiseStm (info, id)
 	    end
 	  | vpStm (stm as ReraiseStm (info, id), env, _, _) =
 	    ReraiseStm (info, deref (id, env))
-	  | vpStm (TryStm (info, tryBody, idDef, handleBody),
+	  | vpStm (TryStm (info, tryBody, idDef1, idDef2, handleBody),
 		   env, isToplevel, shared) =
 	    let
 		val tryBody = vpBodyScope (tryBody, env, isToplevel, shared)
-		val _ = declare (env, idDef, (CaughtExnVal, isToplevel))
+		val _ =
+		    declare (env, idDef2,
+			     (case idDef1 of
+				  IdDef id => CaughtExnVal id
+				| _ => UnknownVal, isToplevel))
 		val handleBody =
 		    vpBodyScope (handleBody, env, isToplevel, shared)
 	    in
-		TryStm (info, tryBody, idDef, handleBody)
+		TryStm (info, tryBody, idDef1, idDef2, handleBody)
 	    end
 	  | vpStm (EndTryStm (info, body), env, isToplevel, shared) =
 	    EndTryStm (info, vpBodyScope (body, env, isToplevel, shared))
@@ -832,7 +866,8 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 		FunExp (info, stamp, flags, args, body)
 	    end
 	  | vpExp (PrimAppExp (info, name, ids), env, _, _) =
-	    vpPrimApp (info, name, Vector.map (fn id => deref (id, env)) ids)
+	    vpPrimApp (info, name,
+		       Vector.map (fn id => deref (id, env)) ids, env)
 	  | vpExp (VarAppExp (info, id, args), env, _, _) =
 	    let
 		val id = deref (id, env)
@@ -863,7 +898,7 @@ structure ValuePropagationPhase :> VALUE_PROPAGATION_PHASE =
 			   | ProdArgs labelIdVec =>
 				 VarExp (info,
 					 #2 (Vector.sub (labelIdVec, n))))
-		  | (FunVal (stamp, _), true) =>
+		  | (FunVal (stamp, _, _), true) =>
 			(*--** optimize args conversion *)
 			FunAppExp (info, id, stamp, args)
 		  | (_, _) => VarAppExp (info, id, args)

@@ -67,7 +67,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  (* the following must always be last *)
 	  | RaiseStm of stm_info * id
 	  | ReraiseStm of stm_info * id
-	  | TryStm of stm_info * body * idDef * body
+	  | TryStm of stm_info * body * idDef * idDef * body
 	  | EndTryStm of stm_info * body
 	  | EndHandleStm of stm_info * body
 	    (* all bodies of EndTryStm/EndHandleStm corresponding to an
@@ -116,7 +116,7 @@ structure FlatGrammar :> FLAT_GRAMMAR =
 	  | infoStm (ProdDec (info, _, _)) = info
 	  | infoStm (RaiseStm (info, _)) = info
 	  | infoStm (ReraiseStm (info, _)) = info
-	  | infoStm (TryStm (info, _, _, _)) = info
+	  | infoStm (TryStm (info, _, _, _, _)) = info
 	  | infoStm (EndTryStm (info, _)) = info
 	  | infoStm (EndHandleStm (info, _)) = info
 	  | infoStm (TestStm (info, _, _, _)) = info

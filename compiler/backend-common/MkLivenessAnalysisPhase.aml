@@ -138,10 +138,11 @@ structure LivenessAnalysisPhase1 :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		setInfo (info, Copy set)
 	    end
-	  | scanBody [TryStm (info, tryBody, idDef, handleBody)] =
+	  | scanBody [TryStm (info, tryBody, idDef1, idDef2, handleBody)] =
 	    let
 		val lset1 = scanBody tryBody
-		val lset2 = delDef (scanBody handleBody, idDef)
+		val lset2 =
+		    delDef (delDef (scanBody handleBody, idDef1), idDef2)
 	    in
 		setInfo (info, union (lset1, lset2))
 	    end
@@ -266,12 +267,12 @@ structure LivenessAnalysisPhase2 :> LIVENESS_ANALYSIS_PHASE =
 	    Vector.app (fn (_, idDef) => insDef (set, idDef)) labelIdDefVec
 	  | initStm (RaiseStm (_, _), _) = ()
 	  | initStm (ReraiseStm (_, _), _) = ()
-	  | initStm (TryStm (_, tryBody, idDef, handleBody), set) =
+	  | initStm (TryStm (_, tryBody, idDef1, idDef2, handleBody), set) =
 	    let
 		val set' = StampSet.clone set
 	    in
 		initBody (tryBody, StampSet.clone set);
-		insDef (set', idDef);
+		insDef (set', idDef1); insDef (set', idDef2);
 		initBody (handleBody, set')
 	    end
 	  | initStm (EndTryStm (_, body), set) = initBody (body, set)

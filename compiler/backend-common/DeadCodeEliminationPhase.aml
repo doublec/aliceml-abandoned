@@ -105,15 +105,17 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	    end
 	  | liveBody (body as [RaiseStm (_, _)], _) = body
 	  | liveBody (body as [ReraiseStm (_, _)], _) = body
-	  | liveBody ([TryStm (info, tryBody, idDef, handleBody)], shared) =
+	  | liveBody ([TryStm (info, tryBody, idDef1, idDef2, handleBody)],
+		      shared) =
 	    (case liveBody (tryBody, shared) of
 		 [EndTryStm (_, body)] => body
 	       | tryBody =>
 		     let
 			 val handleBody = liveBody (handleBody, shared)
-			 val idDef = killIdDef (idDef, killSet handleBody)
+			 val idDef1 = killIdDef (idDef1, killSet handleBody)
+			 val idDef2 = killIdDef (idDef2, killSet handleBody)
 		     in
-			 [TryStm (info, tryBody, idDef, handleBody)]
+			 [TryStm (info, tryBody, idDef1, idDef2, handleBody)]
 		     end)
 	  | liveBody ([EndTryStm (info, body)], shared) =
 	    [EndTryStm (info, liveBody (body, shared))]
@@ -181,7 +183,7 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	  | liveBody ([ExportStm (info, exp)], shared) =
 	    [ExportStm (info, liveExp (exp, shared))]
 	  | liveBody (((RaiseStm (_, _) | ReraiseStm (_, _) |
-			TryStm (_, _, _, _) | EndTryStm (_, _) |
+			TryStm (_, _, _, _, _) | EndTryStm (_, _) |
 			EndHandleStm (_, _) | TestStm (_, _, _, _) |
 			SharedStm (_, _, _) | ReturnStm (_, _) |
 			IndirectStm (_, _) | ExportStm (_, _))::_::_ | nil),

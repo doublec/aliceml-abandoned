@@ -268,7 +268,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (#region info, exp, matches,
-			      PrimExp (info, "General.Bind"), false)
+			      PrimExp (info, "General.Bind"))
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
@@ -594,7 +594,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
 		simplifyCase (#region info, exp, matches',
-			      PrimExp (info, "General.Match"), false)
+			      PrimExp (info, "General.Match"))
 	    end
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
@@ -618,6 +618,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val tryBody = translateExp (exp, f', tryCont)
 		val exnInfo = {region = #region info,
 			       typ = PervasiveType.typ_exn}
+		val packageId = freshIntermediateId exnInfo
 		val exnId = freshIntermediateId exnInfo
 		val exnVarExp = VarExp (exnInfo, ShortId (exnInfo, exnId))
 		val handleCont = EndHandle (#region info, Goto contBody)
@@ -626,10 +627,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				(#region (infoExp exp), pat,
 				 translateExp (exp, f', handleCont))) matches
 		val handleBody =
-		    simplifyCase (#region info, exnVarExp, matches',
-				  exnVarExp, true)
+		    simplifyCase (#region info, exnVarExp, matches', exnVarExp)
 	    in
 		[O.TryStm (stm_info (#region info), tryBody,
+			   O.IdDef (translateId packageId),
 			   O.IdDef (translateId exnId), handleBody)]
 	    end
 	  | translateExp (FailExp info, f, cont) =
@@ -701,7 +702,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		      if isSome bodyOpt then ()
 		      else Error.warn (region, "unreachable expression"))
 	    consequents
-	and simplifyCase (region, exp, matches, raiseExp, isReraise) =
+	and simplifyCase (region, exp, matches, raiseExp) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
@@ -713,9 +714,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (body, _) = translateGraph (graph, [(nil, id)])
 	    in
 		r := SOME body;
-		r' := SOME (if isReraise then
-				[O.ReraiseStm (stm_info region, raiseId)]
-			    else [O.RaiseStm (stm_info region, raiseId)]);
+		r' := SOME [O.RaiseStm (stm_info region, raiseId)];
 		checkReachability consequents;
 		stms
 	    end
