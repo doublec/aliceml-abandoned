@@ -376,26 +376,25 @@ inline void Interpreter::InterpretTime() {
   long gc_time     = ((sum_t->tv_sec * 1000) + (sum_t->tv_usec / 1000));
   long total_time  = ((total_sec * 1000) + (total_usec / 1000));
   double  weight   = (0.0 + gc_time) / (0.0 + total_time) * 100;
-  double all_ratio = ((total_time != 0) ?
-		      (((Store::totalMem / total_time) * 1000) /
-			(1024 * 1024)) : 
-		      (Store::totalMem / (1024 * 1024)));
-  double gc_ratio = ((gc_time != 0) ?
-		     ((((0.0 + Store::gcLiveMem) / gc_time) * 1000) / (1024 * 1024)) :
-		     ((0.0 + Store::gcLiveMem) / (1024 * 1024)));
   std::printf("CC: %ld ms; GC: %ld ms; ALL: %ld ms; GW: %g percent\n",
 	      calc_time, gc_time, total_time, weight);
   if (total_time == 0) {
-    std::printf("AR: %g MB; ", all_ratio);
+    double all_mem = ((0.0 + Store::totalMem) / (1024 * 1024));
+    std::printf("AT %g MB; ", all_mem);
   }
   else {
-    std::printf("AR: %g MB/s; ", all_ratio);
+    double all_mem   = ((0.0 + Store::totalMem) / (1024 * 1024));
+    double all_ratio = (all_mem / total_time * 1000);
+    std::printf("AT %g MB at %g MB/s; ", all_mem, all_ratio);
   }
   if (gc_time == 0) {
-    std::printf("GCC : %g MB\n", gc_ratio);
+    double gc_mem =  (0.0 + Store::gcLiveMem) / (1024 * 1024);
+    std::printf("GCT: %g MB\n", gc_mem);
   }
   else {
-    std::printf("GCC : %g MB/s\n", gc_ratio);
+    double gc_mem   =  (0.0 + Store::gcLiveMem) / (1024 * 1024);
+    double gc_ratio = (gc_mem / gc_time * 1000); 
+    std::printf("GCT %g MB at %g MB/s\n", gc_mem, gc_ratio);
   }
   std::printf("TASK_STACK size %d\n", StackSize(GetRoot(TASK_STACK)));
   std::printf("EVAL_STACK size %d\n", StackSize(GetRoot(EVAL_STACK)));
