@@ -26,24 +26,19 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	datatype id = datatype IntermediateGrammar.id
 
-	type lab = Label.t
+	type label = Label.t
 
 	(* Expressions and Declarations *)
 
 	type shared = int ref
 
 	type isToplevel = bool
-	type hasArgs = bool
 
-	datatype test =
-	    LitTest of lit
-	  | ConTest of id * id option
-	  | RefTest of id
-	  | TupTest of id list
-	  | RecTest of (lab * id) list
-	    (* sorted, all labels distinct, no tuple *)
-	  | LabTest of lab * id
-	  | VecTest of id list
+	datatype conArity =
+	    Nullary
+	  | Unary
+	  | Tuple of int
+	  | Record of label list
 
 	datatype funFlag =
 	    PrintName of string
@@ -52,7 +47,7 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	datatype 'a args =
 	    OneArg of 'a
 	  | TupArgs of 'a list
-	  | RecArgs of (lab * 'a) list
+	  | RecArgs of (label * 'a) list
 	    (* sorted, all labels distinct, no tuple *)
 
 	datatype livenessInfo =
@@ -64,6 +59,16 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 
 	type stmInfo = coord * livenessInfo ref
 	type expInfo = IntermediateInfo.t
+
+	datatype test =
+	    LitTest of lit
+	  | ConTest of id * id option * conArity
+	  | RefTest of id
+	  | TupTest of id list
+	  | RecTest of (label * id) list
+	    (* sorted, all labels distinct, no tuple *)
+	  | LabTest of label * id
+	  | VecTest of id list
 
 	datatype stm =
 	    ValDec of stmInfo * id * exp * isToplevel
@@ -83,20 +88,19 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	and exp =
 	    LitExp of expInfo * lit
 	  | PrimExp of expInfo * string
-	  | NewExp of expInfo * string option * hasArgs
+	  | NewExp of expInfo * string option * conArity
 	  | VarExp of expInfo * id
-	  | ConExp of expInfo * id * hasArgs
+	  | ConExp of expInfo * id * conArity
 	  | RefExp of expInfo
 	  | TupExp of expInfo * id list
-	  | RecExp of expInfo * (lab * id) list
+	  | RecExp of expInfo * (label * id) list
 	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of expInfo * lab
+	  | SelExp of expInfo * label
 	  | VecExp of expInfo * id list
-	  | FunExp of expInfo * stamp * funFlag list * (id args * body) list
-	    (* all arities distinct; always contains a single OneArg *)
+	  | FunExp of expInfo * stamp * funFlag list * id args * body
 	  | AppExp of expInfo * id * id args
-	  | SelAppExp of expInfo * lab * id
-	  | ConAppExp of expInfo * id * id args
+	  | SelAppExp of expInfo * label * id
+	  | ConAppExp of expInfo * id * id args * conArity
 	  | RefAppExp of expInfo * id args
 	  | PrimAppExp of expInfo * string * id list
 	  | AdjExp of expInfo * id * id

@@ -20,7 +20,7 @@ signature SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | ConTest of I.longid * typ option   (* has args *)
+	  | ConTest of I.longid * typ option * O.conArity
 	  | RefTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
@@ -49,8 +49,6 @@ signature SIMPLIFY_MATCH =
 	val buildGraph: (O.coord * I.pat * O.body) list * O.body ->
 	    testGraph * consequent list
 
-	type bodyFun = unit -> O.body
-
-	val buildFunArgs: I.id * (O.coord * I.pat * O.body) list * bodyFun ->
-	    (O.id O.args * testGraph * mapping * consequent list) list
+	val buildFunArgs: I.id * (O.coord * I.pat * O.body) list * O.body ->
+	    O.id O.args * testGraph * mapping * consequent list
     end

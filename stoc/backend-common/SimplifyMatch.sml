@@ -25,7 +25,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | ConTest of I.longid * typ option   (* has args *)
+	  | ConTest of I.longid * typ option * O.conArity
 	  | RefTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
@@ -52,6 +52,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	fun typPat pat = valOf (IntermediateInfo.typ (infoPat pat))
 
+	(*--** the following is wrong for generative datatypes: *)
 	fun longidToLabel (ShortId (_, Id (_, _, Name.ExId s))) =
 	    Label.fromString s
 	  | longidToLabel (ShortId (_, Id (_, _, Name.InId))) =
@@ -63,14 +64,21 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (ConPat (_, longid, patOpt, _), pos, rest, mapping) =
-	    (case patOpt of
-		 SOME pat =>
-		     makeTestSeq (pat, longidToLabel longid::pos,
-				  Test (pos,
-					ConTest (longid, SOME (typPat pat)))::
-				  rest, mapping)
-	       | NONE => (Test (pos, ConTest (longid, NONE))::rest, mapping))
+	  | makeTestSeq (ConPat (_, longid, patOpt, isNAry),
+			 pos, rest, mapping) =
+	    let   (*--** infoLongid crashes below *)
+		val conArity = makeConArity (infoLongid longid, isNAry)
+	    in
+		case patOpt of
+		    SOME pat =>
+			makeTestSeq (pat, longidToLabel longid::pos,
+				     Test (pos,
+					   ConTest (longid, SOME (typPat pat),
+						    conArity))::rest, mapping)
+		  | NONE =>
+			(Test (pos, ConTest (longid, NONE, conArity))::rest,
+			 mapping)
+	    end
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, Label.fromString "ref"::pos,
 			 Test (pos, RefTest (typPat pat))::rest, mapping)
@@ -98,11 +106,11 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		val (labelTypList, hasDots) = convert row
 	    in
 		if hasDots then
-		    List.foldl (fn (Field (_, Lab (_, s), pat),
+		    List.foldl (fn (Field (_, Lab (_, label), pat),
 				    (rest, mapping)) =>
-				makeTestSeq (pat, s::pos, rest, mapping))
-		    (List.foldl (fn (Field (_, Lab (_, l), pat), rest) =>
-				 Test (pos, LabTest (l, typPat pat))::rest)
+				makeTestSeq (pat, label::pos, rest, mapping))
+		    (List.foldl (fn (Field (_, Lab (_, label), pat), rest) =>
+				 Test (pos, LabTest (label, typPat pat))::rest)
 		     rest patFields, mapping) patFields
 		else
 		    let
@@ -113,9 +121,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 			      | (labelTypList', LabelSort.Rec) =>
 				    RecTest labelTypList'
 		    in
-			List.foldl (fn (Field (_, Lab (_, s), pat),
+			List.foldl (fn (Field (_, Lab (_, label), pat),
 					(rest, mapping)) =>
-				    makeTestSeq (pat, s::pos, rest, mapping))
+				    makeTestSeq (pat, label::pos, rest,
+						 mapping))
 			(Test (pos, test)::rest, mapping) patFields
 		    end
 	    end
@@ -174,7 +183,7 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	(* Construction of Test Trees Needing Backtracking *)
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (ConTest (longid1, _), ConTest (longid2, _)) =
+	  | testEq (ConTest (longid1, _, _), ConTest (longid2, _, _)) =
 	    longidToLabel longid1 = longidToLabel longid2
 	  | testEq (TupTest _, _) = true
 	  | testEq (RecTest _, _) = true
@@ -372,18 +381,12 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	 * the cartesian arity explicitly.
 	 *
 	 * Preconditions:
-	 * -- No pattern binds the whole argument value
-	 *    to a variable.
-	 * -- The first pattern is not a wildcard.
-	 *    If it was, the function might perform some arbitrary
-	 *    action before deconstructing the tuple or record.
-	 *    This order would be reversed if the function was
-	 *    translated to an n-ary function; however, in the
-	 *    presence of transients, the deconstruction may have
-	 *    a side effect.
+	 * 1) No pattern binds the whole argument value to a variable.
+	 * 2) No side effect can be performed by a GuardPat or WithPat
+	 *    before the tuple or record is deconstructed (since in the
+	 *    presence of by-need futures, the latter may also have
+	 *    side effects).
 	 *)
-
-	type bodyFun = unit -> O.body
 
 	local
 	    datatype arity =
@@ -392,10 +395,6 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	      | REC of (Label.t * typ) list
 
 	    exception MustBeUnary
-
-	    structure LabelSort =
-		MakeLabelSort(type 'a t = Label.t * 'a
-			      fun get (label, _) = label)
 
 	    fun typToArity typ =
 		if Type.isTuple typ then TUP (Type.asTuple typ)
@@ -418,24 +417,29 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		    end handle MustBeUnary => ONE
 		else ONE
 
-	    fun isManifest (WildPat _, wild) = wild
-	      | isManifest (VarPat (_, _), _) = false
-	      | isManifest (TupPat (_, _), _) = true
-	      | isManifest (RowPat (_, _), _) = true
-	      | isManifest (AsPat (_, pat1, pat2), wild) =
-		isManifest (pat1, wild) andalso isManifest (pat2, wild)
-	      | isManifest (AltPat (_, pats), wild) =
-		List.all (fn pat => isManifest (pat, wild)) pats
-	      | isManifest (NegPat (_, pat), wild) = isManifest (pat, wild)
-	      | isManifest (GuardPat (_, pat, _), wild) =
-		isManifest (pat, wild)
-	      | isManifest (WithPat (_, pat, _), wild) = isManifest (pat, wild)
-	      | isManifest (_, _) =
-		raise Crash.Crash "SimplifyMatch.normalize type inconsistency"
+	    exception BindsAll     (* precondition 1 not satisfied *)
+	    exception SideEffect   (* precondition 2 not satisfied *)
 
-	    fun checkMatches ((_, pat, _)::matches, wild) =
-		isManifest (pat, wild) andalso checkMatches (matches, true)
-	      | checkMatches (nil, _) = true
+	    fun deconstructs (WildPat _) = false
+	      | deconstructs (LitPat _) = true
+	      | deconstructs (VarPat (_, _)) = raise BindsAll
+	      | deconstructs (ConPat (_, _, _, _)) = true
+	      | deconstructs (RefPat (_, _)) = true
+	      | deconstructs (TupPat (_, _)) = true
+	      | deconstructs (RowPat (_, _)) = true
+	      | deconstructs (VecPat (_, _)) = true
+	      | deconstructs (AsPat (_, pat1, pat2)) =
+		deconstructs pat1 orelse deconstructs pat2
+	      | deconstructs (AltPat (_, pats)) = List.exists deconstructs pats
+	      | deconstructs (NegPat (_, pat)) = deconstructs pat
+	      | deconstructs (GuardPat (_, pat, _)) =
+		deconstructs pat orelse raise SideEffect
+	      | deconstructs (WithPat (_, pat, _)) =
+		deconstructs pat orelse raise SideEffect
+
+	    fun checkMatches matches =
+		(List.exists (fn (_, pat, _) => deconstructs pat) matches)
+		handle (BindsAll | SideEffect) => false
 
 	    fun freshId info = Id (info, Stamp.new (), Name.InId)
 
@@ -465,28 +469,22 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 				  (label, freshId (Source.nowhere, SOME typ)))
 			labelTypList
 		    val mapping =
-			List.foldr (fn ((lab, id), mapping) =>
-				    ([lab], id)::mapping) nil labelIdList
+			List.foldr (fn ((label, id), mapping) =>
+				    ([label], id)::mapping) nil labelIdList
 		in
 		    (O.RecArgs labelIdList, graph, mapping, consequents)
 		end
 	      | process (_, _, _, _) =
 		raise Crash.Crash "SimplifyMatch.process 3"
 	in
-	    fun buildFunArgs (id, matches as (_, pat, _)::_, errStmsFun) =
+	    fun buildFunArgs (id, matches as (_, pat, _)::_, errStms) =
 		let
-		    val argsMatchesList =
-			if checkMatches (matches, false) then
-			    [(typToArity (typPat pat), matches)]
-			else [(ONE, matches)]
+		    val (graph, consequents) = buildGraph (matches, errStms)
+		    val args =
+			if checkMatches matches then typToArity (typPat pat)
+			else ONE
 		in
-		    List.map (fn (args, matches) =>
-			      let
-				  val (graph, consequents) =
-				      buildGraph (matches, errStmsFun ())
-			      in
-				  process (args, graph, consequents, id)
-			      end) argsMatchesList
+		    process (args, graph, consequents, id)
 		end
 	      | buildFunArgs (_, nil, _) =
 		raise Crash.Crash "SimplifyMatch.buildFunArgs"

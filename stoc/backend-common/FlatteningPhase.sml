@@ -33,7 +33,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	val longid_true = ShortId ((Source.nowhere, NONE), id_true)
 	val longid_false = ShortId ((Source.nowhere, NONE), id_false)
 
-	structure FieldLabelSort =
+	structure LabelSort =
 	    MakeLabelSort(type 'a t = Label.t * 'a
 			  fun get (label, _) = label)
 
@@ -63,13 +63,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | Share of O.body option ref * continuation
 
 	fun translateLongid (ShortId (_, id)) = (nil, id)
-	  | translateLongid (LongId (info, longid, Lab (_, s))) =
+	  | translateLongid (LongId (info, longid, Lab (_, label))) =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId info
 		val stm =
 		    O.ValDec (stmInfo info, id',
-			      O.SelAppExp (info, s, id), false)
+			      O.SelAppExp (info, label, id), false)
 	    in
 		(stms @ [stm], id')
 	    end
@@ -81,6 +81,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | decsToIdExpList (_::_, coord) =
 	    Error.error (coord, "not admissible")
 	  | decsToIdExpList (nil, _) = nil
+
+	fun translateIf (info, id, thenStms, elseStms, errStms) =
+	    [O.TestStm (stmInfo info, id,
+			O.ConTest (id_true, NONE, O.Nullary), thenStms,
+			[O.TestStm (stmInfo info, id,
+				    O.ConTest (id_false, NONE, O.Nullary),
+				    elseStms, errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -131,14 +138,15 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val errStms = share [O.RaiseStm (stmInfo info, id_Bind)]
 	    in
 		List.foldr
-		(fn ((longid1, longid2, hasArgs), rest) =>
+		(fn ((longid1, longid2), rest) =>
 		 let
 		     val (stms1, id1) = translateLongid longid1
 		     val (stms2, id2) = translateLongid longid2
 		 in
 		     stms1 @ stms2 @
 		     [O.TestStm (stmInfo info, id1,
-				 O.ConTest (id2, NONE), rest, errStms)]
+				 O.ConTest (id2, NONE, O.Nullary),
+				 rest, errStms)]
 		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
@@ -169,7 +177,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    in
 		(stms, O.TupArgs ids)
 	    end
-	  (*--** RecArgs *)
+	  | unfoldArgs (RowExp (_, expFields), rest) =
+	    let
+		val (stms, labelIdList) =
+		    List.foldr (fn (Field (_, Lab (_, label), exp),
+				    (stms, labelIdList)) =>
+				    let
+					val (stms', id) =
+					    unfoldTerm (exp, Goto stms)
+				    in
+					(stms', (label, id)::labelIdList)
+				    end) (rest, nil) expFields
+	    in
+		case LabelSort.sort labelIdList of
+		    (labelIdList', LabelSort.Tup _) =>
+			(stms, O.TupArgs (List.map #2 labelIdList'))
+		  | (labelIdList', LabelSort.Rec) =>
+			(stms, O.RecArgs labelIdList')
+	    end
 	  | unfoldArgs (exp, rest) =
 	    let
 		val (stms, id) = unfoldTerm (exp, Goto rest)
@@ -180,19 +205,21 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    f (O.LitExp (info, lit))::translateCont cont
 	  | translateExp (PrimExp (info, s), f, cont) =
 	    f (O.PrimExp (info, s))::translateCont cont
-	  | translateExp (NewExp (info, stringOpt, hasArgs), f, cont) =
-	    f (O.NewExp (info, stringOpt, hasArgs))::translateCont cont
+	  | translateExp (NewExp (info, stringOpt, isNAry), f, cont) =
+	    f (O.NewExp (info, stringOpt, makeConArity (info, isNAry)))::
+	    translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
 		stms @ f (O.VarExp (info, id))::translateCont cont
 	    end
-	  | translateExp (ConExp (info, longid, hasArgs), f, cont) =
+	  | translateExp (ConExp (info, longid, isNAry), f, cont) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		stms @ f (O.ConExp (info, id, hasArgs))::translateCont cont
+		stms @ f (O.ConExp (info, id, makeConArity (info, isNAry)))::
+		translateCont cont
 	    end
 	  | translateExp (RefExp info, f, cont) =
 	    f (O.RefExp info)::translateCont cont
@@ -226,10 +253,10 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 				    (stms', (label, id)::fields)
 				end) (rest, nil) expFields
 		val exp' =
-		    case FieldLabelSort.sort fields of
-			(fields', FieldLabelSort.Tup _) =>
+		    case LabelSort.sort fields of
+			(fields', LabelSort.Tup _) =>
 			    O.TupExp (info, List.map #2 fields')
-		      | (fields', FieldLabelSort.Rec) =>
+		      | (fields', LabelSort.Rec) =>
 			    O.RecExp (info, fields')
 	    in
 		r := SOME (f exp'::translateCont cont);
@@ -256,31 +283,32 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	  | translateExp (FunExp (info, id, exp), f, cont) =
 	    let
 		fun return exp' = O.ReturnStm (stmInfo (infoExp exp), exp')
-		val argsBodyList =
+		val (args, body) =
 		    case exp of
 			CaseExp (_, VarExp (_, ShortId (_, id')), matches) =>
 			    if idEq (id, id')
 				andalso not (occursInMatches (matches, id))
 			    then translateFunBody (info, id, matches, return)
 			    else
-				[(O.OneArg id,
-				  translateExp (exp, return, Goto nil))]
+				(O.OneArg id,
+				 translateExp (exp, return, Goto nil))
 		      | _ =>
-			    [(O.OneArg id,
-			      translateExp (exp, return, Goto nil))]
+			    (O.OneArg id,
+			     translateExp (exp, return, Goto nil))
 	    in
-		f (O.FunExp (info, Stamp.new (), nil, argsBodyList))::
+		f (O.FunExp (info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
-	  | translateExp (AppExp (info, ConExp (_, longid, true), exp2),
+	  | translateExp (AppExp (info, ConExp (info', longid, isNAry), exp2),
 			  f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo info, r)]
 		val (stms2, args) = unfoldArgs (exp2, rest)
 		val (stms1, id1) = translateLongid longid
+		val conArity = makeConArity (info', isNAry)
 	    in
-		r := SOME (f (O.ConAppExp (info, id1, args))::
+		r := SOME (f (O.ConAppExp (info, id1, args, conArity))::
 			   translateCont cont);
 		stms1 @ stms2
 	    end
@@ -293,14 +321,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		(r := SOME (f (O.RefAppExp (info, args))::translateCont cont);
 		 stms2)
 	    end
-	  | translateExp (AppExp (info, SelExp (_, Lab (_, s)), exp2),
+	  | translateExp (AppExp (info, SelExp (_, Lab (_, label)), exp2),
 			  f, cont) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo info, r)]
 		val (stms2, id2) = unfoldTerm (exp2, Goto rest)
 	    in
-		(r := SOME (f (O.SelAppExp (info, s, id2))::
+		(r := SOME (f (O.SelAppExp (info, label, id2))::
 			    translateCont cont);
 		 stms2)
 	    end
@@ -352,11 +380,7 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val falseBody = translateExp (TupExp (info, nil), f, cont)
 		val errorBody = [O.RaiseStm (stmInfo info', id_Match)]
 		val stms1 =
-		    [O.TestStm (stmInfo info', id,
-				O.ConTest (id_true, NONE), trueBody,
-				[O.TestStm (stmInfo info', id,
-					    O.ConTest (id_false, NONE),
-					    falseBody, errorBody)])]
+		    translateIf (info', id, trueBody, falseBody, errorBody)
 		val stms2 =
 		    translateDec (ValDec (info', VarPat (info', id), exp1),
 				  Goto stms1)
@@ -455,12 +479,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val rest = [O.IndirectStm (stmInfo info, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 		val errStms = [O.RaiseStm (stmInfo info, id_Match)]
+		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
-		r := SOME [O.TestStm (stmInfo info, id,
-				      O.ConTest (id_true, NONE), thenStms,
-				      [O.TestStm (stmInfo info, id,
-						  O.ConTest (id_false, NONE),
-						  elseStms, errStms)])];
+		r := SOME stms1;
 		stms
 	    end
 	and checkReachability consequents =
@@ -488,19 +509,13 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		    List.map (fn Match (_, pat, exp) =>
 			      (region (infoExp exp), pat,
 			       translateExp (exp, return, Goto nil))) matches
-		fun errStmsFun () = [O.RaiseStm (stmInfo info, id_Match)]
-		val argsBodyList =
-		    List.map (fn (args, graph, mapping, consequents) =>
-			      let
-				  val stms = translateGraph (graph, mapping)
-			      in
-				  checkReachability consequents;
-				  (args, stms)
-			      end) (buildFunArgs (id, matches', errStmsFun))
+		val errStms = [O.RaiseStm (stmInfo info, id_Match)]
+		val (args, graph, mapping, consequents) =
+		    buildFunArgs (id, matches', errStms)
+		val stms = translateGraph (graph, mapping)
 	    in
-		case argsBodyList of
-		    (O.OneArg _, _)::_ => argsBodyList
-		  | _ => (O.OneArg id, errStmsFun ())::argsBodyList
+		checkReachability consequents;
+		(args, stms)
 	    end
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =
@@ -532,12 +547,9 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 		val thenStms = translateGraph (thenGraph, mapping)
 		val elseStms = translateGraph (elseGraph, mapping)
 		val errStms = [O.RaiseStm (stmInfo info, id_Match)]
+		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
-		r := SOME [O.TestStm (stmInfo info, id,
-				      O.ConTest (id_true, NONE), thenStms,
-				      [O.TestStm (stmInfo info, id,
-						  O.ConTest (id_false, NONE),
-						  elseStms, errStms)])];
+		r := SOME stms1;
 		stms
 	    end
 	  | translateNode (pos, DecTest (mapping0, decs),
@@ -562,19 +574,20 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    end
 	and translateTest (LitTest lit, _, mapping) =
 	    (nil, O.LitTest lit, mapping)
-	  | translateTest (ConTest (longid, NONE), _, mapping) =
+	  | translateTest (ConTest (longid, NONE, conArity), _, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		(stms, O.ConTest (id, NONE), mapping)
+		(stms, O.ConTest (id, NONE, conArity), mapping)
 	    end
-	  | translateTest (ConTest (longid, SOME typ), pos, mapping) =
+	  | translateTest (ConTest (longid, SOME typ, conArity),
+			   pos, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
 		val id' = freshId (Source.nowhere, SOME typ)
 		val mapping' = (longidToLabel longid::pos, id')::mapping
 	    in
-		(stms, O.ConTest (id, SOME id'), mapping')
+		(stms, O.ConTest (id, SOME id', conArity), mapping')
 	    end
 	  | translateTest (RefTest typ, pos, mapping) =
 	    let

@@ -12,8 +12,8 @@
 
 structure IntermediateAux :> INTERMEDIATE_AUX =
     struct
-	structure Intermediate = IntermediateGrammar
-	open Intermediate
+	structure I = IntermediateGrammar
+	open I
 
 	fun freshId info = Id (info, Stamp.new (), Name.InId)
 
@@ -155,8 +155,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    TupExp (coord, List.map (fn exp => substExp (exp, subst)) exps)
 	  | substExp (RowExp (coord, expFields), subst) =
 	    RowExp (coord,
-		    List.map (fn Field (coord, lab, exp) =>
-			      Field (coord, lab, substExp (exp, subst)))
+		    List.map (fn Field (coord, label, exp) =>
+			      Field (coord, label, substExp (exp, subst)))
 		    expFields)
 	  | substExp (exp as SelExp (_, _), _) = exp
 	  | substExp (VecExp (coord, exps), subst) =
@@ -208,8 +208,8 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    TupPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
 	  | substPat (RowPat (coord, patFields), subst) =
 	    RowPat (coord,
-		    List.map (fn Field (coord, lab, pat) =>
-			      Field (coord, lab, substPat (pat, subst)))
+		    List.map (fn Field (coord, label, pat) =>
+			      Field (coord, label, substPat (pat, subst)))
 		    patFields)
 	  | substPat (VecPat (coord, pats), subst) =
 	    VecPat (coord, List.map (fn pat => substPat (pat, subst)) pats)
@@ -297,11 +297,11 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    let
 		val (patFields', subst') =
 		    List.foldr
-		    (fn (Field (coord, lab, pat), (patFields, subst)) =>
+		    (fn (Field (coord, label, pat), (patFields, subst)) =>
 		     let
 			 val (pat', subst') = relax (pat, subst)
 		     in
-			 (Field (coord, lab, pat')::patFields, subst')
+			 (Field (coord, label, pat')::patFields, subst')
 		     end) (nil, subst) patFields
 	    in
 		(RowPat (coord, patFields'), subst')
@@ -340,5 +340,24 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 		val (pat', subst') = relax (pat, subst)
 	    in
 		(WithPat (coord, pat', substDecs (decs, subst')), subst')
+	    end
+
+	structure O = ImperativeGrammar
+	open O
+
+	fun makeConArity (info, isNAry) =
+	    let
+		val typ = valOf (IntermediateInfo.typ info)
+	    in
+		if Type.isArrow typ then
+		    if isNAry then
+			let
+			    val (argTyp, _) = Type.asArrow typ
+			in
+			(*--** makeConArity not implemented for Tuple/Record *)
+			    raise Crash.Crash "IntermediateAux.makeConArity"
+			end
+		    else Unary
+		else Nullary
 	    end
     end

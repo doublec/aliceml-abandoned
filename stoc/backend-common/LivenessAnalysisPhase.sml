@@ -83,8 +83,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    (StampSet.union (set, set'); lset)
 
 	fun scanTest (LitTest _, lset) = lset
-	  | scanTest (ConTest (id, NONE), lset) = ins (lset, id)
-	  | scanTest (ConTest (id1, SOME id2), lset) =
+	  | scanTest (ConTest (id, NONE, _), lset) = ins (lset, id)
+	  | scanTest (ConTest (id1, SOME id2, _), lset) =
 	    del (ins (lset, id1), id2)
 	  | scanTest (RefTest id, lset) = del (lset, id)
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
@@ -227,20 +227,17 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    List.foldl (fn ((_, id), lset) => ins (lset, id)) lset labIdList
 	  | scanExp (SelExp (_, _), lset) = lset
 	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
-	  | scanExp (FunExp (_, _, _, argsBodyList), lset) =
-	    List.foldl (fn ((args, body), lset) =>
-			let
-			    val set =
-				lazyValOf (scanBody (body,
-						     Copy (StampSet.new ())))
-			    val lset' = union (lset, set)
-			in
-			    processArgs (args, lset', del)
-			end) lset argsBodyList
+	  | scanExp (FunExp (_, _, _, args, body), lset) =
+	    let
+		val set =
+		    lazyValOf (scanBody (body, Copy (StampSet.new ())))
+	    in
+		processArgs (args, union (lset, set), del)
+	    end
 	  | scanExp (AppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
-	  | scanExp (ConAppExp (_, id, args), lset) =
+	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (RefAppExp (_, args), lset) = processArgs (args, lset, ins)
 	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
@@ -259,8 +256,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
 
 	fun initTest (LitTest _, _) = ()
-	  | initTest (ConTest (_, NONE), _) = ()
-	  | initTest (ConTest (_, SOME id), set) = ins (set, id)
+	  | initTest (ConTest (_, NONE, _), _) = ()
+	  | initTest (ConTest (_, SOME id, _), set) = ins (set, id)
 	  | initTest (RefTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =
@@ -298,13 +295,12 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initStm (IndirectStm (_, ref bodyOpt), set) =
 	    initBody (valOf bodyOpt, set)
 	  | initStm (ExportStm (_, _), _) = ()
-	and initExp (FunExp (_, _, _, argsBodyList)) =
-	    List.app (fn (args, body) =>
-		      let
-			  val set = StampSet.new ()
-		      in
-			  processArgs (args, set, ins); initBody (body, set)
-		      end) argsBodyList
+	and initExp (FunExp (_, _, _, args, body)) =
+	    let
+		val set = StampSet.new ()
+	    in
+		processArgs (args, set, ins); initBody (body, set)
+	    end
 	  | initExp _ = ()
 	and initBody (stm::stms, defSet) =
 	    (case infoStm stm of

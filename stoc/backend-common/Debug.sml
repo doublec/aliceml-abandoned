@@ -26,15 +26,13 @@ structure Debug :> DEBUG =
 	fun posToString pos =
 	    seqToString "." (fn x => x) (List.rev ("e"::pos))
 
-	fun labToString (Lab (_, label)) = Label.toString label
-
 	fun idToString (Id (_, stamp, Name.InId)) =
 	    "$" ^ Stamp.toString stamp
 	  | idToString (Id (_, stamp, Name.ExId s)) =
 	    s ^ "$" ^ Stamp.toString stamp
 
-	fun longidToString (LongId (_, longid, lab)) =
-	    longidToString longid ^ "." ^ labToString lab
+	fun longidToString (LongId (_, longid, Lab (_, label))) =
+	    longidToString longid ^ "." ^ Label.toString label
 	  | longidToString (ShortId (_, id)) = idToString id
 
 	fun mappingToString mapping =
@@ -75,8 +73,8 @@ structure Debug :> DEBUG =
 		    n > List.length patFields orelse Type.isUnknownRow row
 	    in
 		"{" ^
-		listToString (fn Field (_, lab, pat) =>
-			      labToString lab ^ ": " ^ patToString pat)
+		listToString (fn Field (_, Lab (_, label), pat) =>
+			      Label.toString label ^ ": " ^ patToString pat)
 		patFields ^
 		(if hasDots then ", ..." else "") ^ "}"
 	    end

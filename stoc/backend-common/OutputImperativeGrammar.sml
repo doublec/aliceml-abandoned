@@ -88,31 +88,36 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	  | outputLit (StringLit s) = "string \"" ^ String.toCString s ^ "\""
 	  | outputLit (RealLit r) = "real " ^ (*LargeReal.toString*) r
 
+	fun outputCon Nullary = S "con0"
+	  | outputCon Unary = S "con1"
+	  | outputCon (Tuple _ | Record _) = S "con+"
+
 	fun outputArgs (OneArg id) = ID id
 	  | outputArgs (TupArgs ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputArgs (RecArgs labIdList) =
+	  | outputArgs (RecArgs labelIdList) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (lab, id) =>
-				       SEQ [S (Label.toString lab ^ "="),
-					    ID id]) labIdList),
+			     List.map (fn (label, id) =>
+				       SEQ [S (Label.toString label ^ "="),
+					    ID id]) labelIdList),
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
-	  | outputTest (ConTest (id, NONE)) = SEQ [S "nam ", ID id]
-	  | outputTest (ConTest (id1, SOME id2)) =
-	    SEQ [S "(con ", ID id1, S ") ", ID id2]
-	  | outputTest (RefTest id) = SEQ [S "(con ref) ", ID id]
+	  | outputTest (ConTest (id, NONE, conArity)) =
+	    SEQ [outputCon conArity, S " ", ID id]
+	  | outputTest (ConTest (id1, SOME id2, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " ", ID id1, S ") ", ID id2]
+	  | outputTest (RefTest id) = SEQ [S "ref ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputTest (RecTest labIdList) =
+	  | outputTest (RecTest labelIdList) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (lab, id) =>
-				       SEQ [S (Label.toString lab ^ "="),
-					    ID id]) labIdList),
+			     List.map (fn (label, id) =>
+				       SEQ [S (Label.toString label ^ "="),
+					    ID id]) labelIdList),
 		 S "}"]
-	  | outputTest (LabTest (lab, id)) =
-	    SEQ [S ("{" ^ Label.toString lab ^ "="), ID id, S "...}"]
+	  | outputTest (LabTest (label, id)) =
+	    SEQ [S ("{" ^ Label.toString label ^ "="), ID id, S "...}"]
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
@@ -154,41 +159,37 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
-	  | outputExp (NewExp (_, NONE, true)) = S "nam"
-	  | outputExp (NewExp (_, SOME string, true)) =
-	    S ("nam \"" ^ string ^ "\"")
-	  | outputExp (NewExp (_, NONE, false)) = S "con"
-	  | outputExp (NewExp (_, SOME string, false)) =
-	    S ("con \"" ^ string ^ "\"")
+	  | outputExp (NewExp (_, NONE, conArity)) = outputCon conArity
+	  | outputExp (NewExp (_, SOME string, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " \"", S string, S "\""]
 	  | outputExp (VarExp (_, id)) = ID id
-	  | outputExp (ConExp (_, id, false)) = SEQ [S "nam ", ID id]
-	  | outputExp (ConExp (_, id, true)) = SEQ [S "con ", ID id]
-	  | outputExp (RefExp _) = SEQ [S "con ref"]
+	  | outputExp (ConExp (_, id, conArity)) =
+	    SEQ [outputCon conArity, S " ", ID id]
+	  | outputExp (RefExp _) = SEQ [S "ref"]
 	  | outputExp (TupExp (_, ids)) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
-	  | outputExp (RecExp (_, labIdList)) =
+	  | outputExp (RecExp (_, labelIdList)) =
 	    SEQ [S "{", SEP (S ", ",
-			     List.map (fn (lab, id) =>
-				       SEQ [S (Label.toString lab ^ "="),
-					    ID id]) labIdList),
+			     List.map (fn (label, id) =>
+				       SEQ [S (Label.toString label ^ "="),
+					    ID id]) labelIdList),
 		 S "}"]
-	  | outputExp (SelExp (_, lab)) = SEQ [S ("#" ^ Label.toString lab)]
+	  | outputExp (SelExp (_, label)) =
+	    SEQ [S ("#" ^ Label.toString label)]
 	  | outputExp (VecExp (_, ids)) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
-	  | outputExp (FunExp (_, _, s, argsBodyList)) =
-	    SEQ [NL, S "fn ",
-		 SEP (SEQ [NL, S "| "],
-		      List.map (fn (args, body) =>
-				SEQ [outputArgs args, S " =>", IN, NL,
-				     outputBody body, EX]) argsBodyList)]
+	  | outputExp (FunExp (_, _, _, args, body)) =
+	    SEQ [NL, S "fn ", outputArgs args, S " =>",
+		 IN, NL, outputBody body, EX]
 	  | outputExp (AppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (SelAppExp (_, lab, id)) =
-	    SEQ [S ("#" ^ Label.toString lab ^ " "), ID id]
-	  | outputExp (ConAppExp (_, id, args)) =
-	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
+	  | outputExp (SelAppExp (_, label, id)) =
+	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
+	  | outputExp (ConAppExp (_, id, args, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
+		 outputArgs args]
 	  | outputExp (RefAppExp (_, args)) =
-	    SEQ [S "(con ref) ", outputArgs args]
+	    SEQ [S "ref ", outputArgs args]
 	  | outputExp (PrimAppExp (_, s, ids)) =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =

@@ -12,21 +12,24 @@
 
 signature INTERMEDIATE_AUX =
     sig
-	structure Intermediate: INTERMEDIATE_GRAMMAR = IntermediateGrammar
+	structure I: INTERMEDIATE_GRAMMAR = IntermediateGrammar
+	structure O: IMPERATIVE_GRAMMAR = ImperativeGrammar
 
-	val freshId: Intermediate.info -> Intermediate.id
+	val freshId: I.info -> I.id
 
-	val idEq: Intermediate.id * Intermediate.id -> bool
+	val idEq: I.id * I.id -> bool
 
-	val occursInMatches: Intermediate.match list * Intermediate.id -> bool
+	val occursInMatches: I.match list * I.id -> bool
 
-	val patternVariablesOf: Intermediate.pat -> Intermediate.id list
+	val patternVariablesOf: I.pat -> I.id list
 
-	type subst = (Intermediate.id * Intermediate.id) list
+	type subst = (I.id * I.id) list
 
-	val substDec: Intermediate.dec * subst -> Intermediate.dec
-	val substExp: Intermediate.exp * subst -> Intermediate.exp
-	val substPat: Intermediate.pat * subst -> Intermediate.pat
+	val substDec: I.dec * subst -> I.dec
+	val substExp: I.exp * subst -> I.exp
+	val substPat: I.pat * subst -> I.pat
 
-	val separateAlt: Intermediate.pat -> Intermediate.pat
+	val separateAlt: I.pat -> I.pat
+
+	val makeConArity: I.info * bool -> O.conArity
     end

@@ -23,6 +23,5 @@ signature DEBUG =
 	val mappingToString: (string list * Intermediate.id) list -> string
 	val substToString: (Intermediate.id * Intermediate.id) list -> string
 	val litToString: Intermediate.lit -> string
-	val labToString: Intermediate.lab -> string
 	val patToString: Intermediate.pat -> string
     end
