@@ -3,17 +3,6 @@ signature PREBOUND =
 
     type stamp = Stamp.t
 
-    val name_false :	string
-    val name_true :	string
-    val name_nil :	string
-    val name_cons :	string
-    val name_ref :	string
-    val name_Match :	string
-    val name_Bind :	string
-    val name_eq :	string
-    val name_assign :	string
-
-    val stamp_Prebound:	stamp
     val stamp_false :	stamp
     val stamp_true :	stamp
     val stamp_nil :	stamp
@@ -21,9 +10,14 @@ signature PREBOUND =
     val stamp_ref :	stamp
     val stamp_Match :	stamp
     val stamp_Bind :	stamp
-    val stamp_eq :	stamp
-    val stamp_assign :	stamp
 
-    val nameToStamp :	string -> stamp
+    val stamp_bool :	stamp
+    val stamp_int :	stamp
+    val stamp_word :	stamp
+    val stamp_real :	stamp
+    val stamp_string :	stamp
+    val stamp_char :	stamp
+    val stamp_list :	stamp
+    val stamp_exn :	stamp
 
   end

@@ -12,8 +12,5 @@ is
     ../backend-common/sources.cm
     ../backend-mozart/sources.cm
 
-    BIND_ENV0.sig
-    BindEnv0.sml
-
     MAIN.sig
     Main.sml

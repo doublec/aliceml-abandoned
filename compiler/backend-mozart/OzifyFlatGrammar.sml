@@ -103,9 +103,6 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     else if stamp = Prebound.stamp_ref then outputAtom (q, "ref")
 	     else if stamp = Prebound.stamp_Match then outputAtom (q, "Match")
 	     else if stamp = Prebound.stamp_Bind then outputAtom (q, "Bind")
-	     else if stamp = Prebound.stamp_eq then outputAtom (q, "eq")
-	     else if stamp = Prebound.stamp_assign then outputAtom (q, "assign")
-	     else if stamp = Prebound'.stamp_builtin then outputAtom (q, "builtin")
 	     else outputStamp (q, stamp); m q;
 	     case name of
 		 ExId s => (f (q, "exId"); outputAtom (q, s); r q)

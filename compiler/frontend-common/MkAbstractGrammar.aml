@@ -19,8 +19,6 @@ functor MakeAbstractGrammar(type info) :>
 
     type stamp      = Stamp.t
 
-    val stamp_prebound = Prebound.stamp_Prebound
-
     datatype name   = ExId of string | InId
 
     datatype lab    = Lab     of info * string

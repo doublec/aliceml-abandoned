@@ -18,8 +18,6 @@ signature ABSTRACT_GRAMMAR =
 
     type stamp      = Stamp.t
 
-    val stamp_prebound : stamp
-
     datatype name   = ExId of string | InId
 
     datatype lab    = Lab     of info * string

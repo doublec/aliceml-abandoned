@@ -44,6 +44,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     (* Miscellanous helpers *)
 
+    fun stamp_prebound E =
+	case lookupStr(E, StrId.fromString "")
+	  of SOME(_,stamp,_) => stamp
+	   | NONE => Crash.crash "AbstractionPhase: stamp of prebound not found"
+
     fun inventId i = O.Id(i, Stamp.new(), O.InId)
 
     fun idToLab(O.Id(i, stamp, O.ExId s)) = O.Lab(i, s)
@@ -144,7 +149,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     val trTyVar_bind = trId_bind(lookupVar, infoTyVar, idTyVar, TyVar.toString,
 				 warnTyVar, "type variable")
-    val trVId_bind'  = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
+    val trVId_bind   = trId_bind(lookupVal, infoVId,   idVId,   VId.toString,
 				 warnVId, "value")
     val trTyCon_bind = trId_bind(lookupTy,  infoTyCon, idTyCon, TyCon.toString,
 				 warnTyCon, "type")
@@ -155,32 +160,32 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     val trFunId_bind = trId_bind(lookupFun, infoFunId, idFunId,
 				toFunName o FunId.toString, warnFunId,"functor")
 
-    fun trVId_bind E (vid as VId(i,vid')) =
-	case VId.toString vid'
-	  of ("true" | "false" | "nil" | "::" | "ref") =>
-		errorVId("invalid rebinding of predefined identifier ", vid, "")
-	   | _ =>
-		trVId_bind' E vid
-
 
     (* With polymorphic recursion we could avoid the following code
        duplication... *)
 
-    fun trLongStrId E =
+    fun trLongStrId' E =
 	fn SHORTLong(i, strid) =>
 	   let
-		val (id',E') = trStrId E strid
+		val (id',E')       = trStrId E strid
 	   in
-		( O.ShortId(i,id'), E' )
+		if O.stamp id' = stamp_prebound E then
+		    ( NONE, E' )
+		else
+		    ( SOME(O.ShortId(i,id')), E' )
 	   end
 
 	 | DOTLong(i, longstrid, strid) =>
 	   let
-		val (longid',E') = trLongStrId E longstrid
-		val (id',E'')    = trStrId E' strid
-		val  lab'        = idToLab id'
+		val (longido',E') = trLongStrId' E longstrid
+		val (id',x)       = trStrId E strid
+		val  longid'      =
+		     case longido'
+		       of SOME longid' => O.LongId(i, longid', idToLab id')
+			| NONE         => O.ShortId(i, id')
+
 	   in
-		( O.LongId(i,longid',lab'), E'' )
+		( SOME longid', x )
 	   end
 
     fun trLongId trId E =
@@ -193,11 +198,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
 	 | DOTLong(i, longstrid, id) =>
 	   let
-		val (longid',E') = trLongStrId E longstrid
-		val (id',x)      = trId E' id
-		val  lab'        = idToLab id'
+		val (longido',E') = trLongStrId' E longstrid
+		val (id',x)       = trId E' id
 	   in
-		( O.LongId(i,longid',lab'), x )
+		case longido'
+		  of SOME longid' => ( O.LongId(i,longid', idToLab id'), x )
+		   | NONE         => ( O.ShortId(i,id'), x )
 	   end
 
     val trLongVId   = trLongId trVId
@@ -866,7 +872,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		typvardecs(ids'', [O.RecDec(i, decs')]) @ acc
 	   end
 
-	 | PRIMITIVEDec(i, vid as VId(_,vid'), ty, scon) =>
+	 | PRIMITIVEDec(i, _, vid as VId(_,vid'), ty, scon) =>
 	   let
 		val (id',stamp) = trVId_bind E vid
 		val  typ'       = trTy E ty
@@ -955,8 +961,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | PREBOUNDDec(i, strid as StrId(i',strid')) =>
 	   let
 		val _     = trStrId_bind E strid
-		val stamp = O.stamp_prebound
 		val E'    = Env.new() (*UNFINISHED*)
+		val stamp = stamp_prebound E
 		val _     = insertStr(E, strid', (i',stamp,E'))
 	   in
 		[]
@@ -994,6 +1000,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   end
 
 	 | OPENDec(i, longstrid) =>
+	   (* When we allow arbitrary structure expressions in open then
+	    * we have to make sure to still allow open Prebound! *)
 	   let
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
@@ -1011,7 +1019,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | SEQDec(i, dec1, dec2) =>
 		trDec' (E, trDec' (E,acc) dec1) dec2
 
-	 | OVERLOADDec(i, vid, tyvar, ty) =>
+	 | OVERLOADDec(i, _, vid, tyvar, ty) =>
 	   (*UNFINISHED*)
 	   let
 		val (id',stamp) = trVId_bind E vid
@@ -1026,7 +1034,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		acc
 	   end
 
-	 | INSTANCEDec(i, vid, longtycon, longvid) =>
+	 | INSTANCEDec(i, _, vid, longtycon, longvid) =>
 	   (*UNFINISHED*)
 		acc
 
@@ -1687,7 +1695,12 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	   let
 		val (longid',E') = trLongStrId E longstrid
 	   in
-		( longidToMod longid', E' )
+		case longid'
+		  of O.ShortId(_, id') =>
+			if O.stamp id' = stamp_prebound E then
+			    error(i, "illegal use of pseudo structure")
+			else ( longidToMod longid', E' )
+		   | _ => ( longidToMod longid', E' )
 	   end
 
 	 | TRANSStrExp(i, strexp, sigexp) =>
@@ -1845,11 +1858,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		(* UNFINISHED *)
 		trSpec' (E,acc) spec
 
-	 | OVERLOADSpec(i, vid, tyvar, ty) =>
+	 | OVERLOADSpec(i, _, vid, tyvar, ty) =>
 	   (*UNFINISHED*)
 		acc
 
-	 | INSTANCESpec(i, vid, longtycon, longvid) =>
+	 | INSTANCESpec(i, _, vid, longtycon, longvid) =>
 	   (*UNFINISHED*)
 		acc
 

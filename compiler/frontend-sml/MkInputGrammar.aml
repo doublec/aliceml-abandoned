@@ -122,7 +122,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
     and Dec =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
-	| PRIMITIVEDec    of Info * VId * Ty * SCon
+	| PRIMITIVEDec    of Info * Op * VId * Ty * SCon
 	| TYPEDec         of Info * TypBind
 	| EQTYPEDec       of Info * TypBind
 	| EQEQTYPEDec     of Info * TypBind
@@ -137,8 +137,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
-	| OVERLOADDec     of Info * VId * TyVar * Ty
-	| INSTANCEDec     of Info * VId * LongTyCon * LongVId
+	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
+	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
 	| INFIXDec        of Info * int * VId
 	| INFIXRDec       of Info * int * VId
@@ -254,8 +254,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
-	| OVERLOADSpec     of Info * VId * TyVar * Ty
-	| INSTANCESpec     of Info * VId * LongTyCon * LongVId
+	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
+	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon
 	| INFIXSpec        of Info * int * VId
 	| INFIXRSpec       of Info * int * VId
@@ -347,7 +347,7 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
 
     fun infoDec(VALDec(I,_,_))				= I
       | infoDec(FUNDec(I,_,_))				= I
-      | infoDec(PRIMITIVEDec(I,_,_,_))			= I
+      | infoDec(PRIMITIVEDec(I,_,_,_,_))		= I
       | infoDec(TYPEDec(I,_))				= I
       | infoDec(EQTYPEDec(I,_))				= I
       | infoDec(EQEQTYPEDec(I,_))			= I
@@ -362,8 +362,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoDec(OPENDec(I,_))				= I
       | infoDec(EMPTYDec(I))				= I
       | infoDec(SEQDec(I,_,_))				= I
-      | infoDec(OVERLOADDec(I,_,_,_))			= I
-      | infoDec(INSTANCEDec(I,_,_,_))			= I
+      | infoDec(OVERLOADDec(I,_,_,_,_))			= I
+      | infoDec(INSTANCEDec(I,_,_,_,_))			= I
       | infoDec(INSTANCESCONDec(I,_,_))			= I
       | infoDec(INFIXDec(I,_,_))			= I
       | infoDec(INFIXRDec(I,_,_))			= I
@@ -449,8 +449,8 @@ functor MakeInputGrammar(type Info) :> INPUT_GRAMMAR where type Info = Info =
       | infoSpec(SHARINGTYPESpec(I,_,_))		= I
       | infoSpec(SHARINGSIGNATURESpec(I,_,_))		= I
       | infoSpec(SHARINGSpec(I,_,_))			= I
-      | infoSpec(OVERLOADSpec(I,_,_,_))			= I
-      | infoSpec(INSTANCESpec(I,_,_,_))			= I
+      | infoSpec(OVERLOADSpec(I,_,_,_,_))		= I
+      | infoSpec(INSTANCESpec(I,_,_,_,_))		= I
       | infoSpec(INSTANCESCONSpec(I,_,_))		= I
       | infoSpec(INFIXSpec(I,_,_))			= I
       | infoSpec(INFIXRSpec(I,_,_))			= I

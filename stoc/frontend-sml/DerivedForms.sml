@@ -4,6 +4,7 @@
  * Definition, Appendix A
  *
  * Extensions and modifications:
+ *   - predefined ids are taken out of a pseudo structure with empty name
  *   - recursive expressions:
  *	rec pat => exp     ==>     let val rec x as pat = exp in x end
  *     where x is a fresh identifier.
@@ -110,23 +111,29 @@ structure DerivedForms :> DERIVED_FORMS =
 
     (* Some helpers *)
 
-    fun vid_NIL(I)             = G.VId(I, VId.fromString "nil")
-    fun vid_CONS(I)            = G.VId(I, VId.fromString "::")
-    fun longvid_CONS(I)        = G.SHORTLong(I, vid_CONS I)
+    fun strid_PREBOUND(I)	= G.StrId(I, StrId.fromString "")
+    fun longstrid_PREBOUND(I)	= G.SHORTLong(I, strid_PREBOUND(I))
+    fun longvid(I, vid)		= G.DOTLong(I, longstrid_PREBOUND(I), vid)
 
-    fun LONGVIDExp(I, longvid) = G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,
-								 longvid))
-    fun LONGVIDPat(I, longvid) = G.ATPATPat(I, G.LONGVIDAtPat(I, G.WITHOp,
-								 longvid))
-    fun VIDExp(I, vid)         = LONGVIDExp(I, G.SHORTLong(I, vid))
-    fun VIDPat(I, vid)         = LONGVIDPat(I, G.SHORTLong(I, vid))
+    fun vid_NIL(I)		= G.VId(I, VId.fromString "nil")
+    fun vid_CONS(I)		= G.VId(I, VId.fromString "::")
+    fun longvid_NIL(I)		= longvid(I, vid_NIL(I))
+    fun longvid_CONS(I)		= longvid(I, vid_CONS(I))
 
-    fun NILExp(I)              = VIDExp(I, vid_NIL I)
-    fun CONSExp(I)             = VIDExp(I, vid_CONS I)
-    fun NILPat(I)              = VIDPat(I, vid_NIL I)
+    fun LONGVIDExp(I, longvid)	= G.ATEXPExp(I, G.LONGVIDAtExp(I, G.WITHOp,
+								  longvid))
+    fun LONGVIDPat(I, longvid)	= G.ATPATPat(I, G.LONGVIDAtPat(I, G.WITHOp,
+								  longvid))
+    fun VIDExp(I, vid)		= LONGVIDExp(I, G.SHORTLong(I, vid))
+    fun VIDPat(I, vid)		= LONGVIDPat(I, G.SHORTLong(I, vid))
 
-    fun tycon_EXN(I)           = G.TyCon(I, TyCon.fromString "exn")
-    fun longtycon_EXN(I)       = G.SHORTLong(I, tycon_EXN(I))
+    fun NILExp(I)		= LONGVIDExp(I, longvid_NIL(I))
+    fun CONSExp(I)		= LONGVIDExp(I, longvid_CONS(I))
+    fun NILPat(I)		= LONGVIDPat(I, longvid_NIL(I))
+    fun CONSPat(I)		= LONGVIDPat(I, longvid_CONS(I))
+
+    fun tycon_EXN(I)		= G.TyCon(I, TyCon.fromString "exn")
+    fun longtycon_EXN(I)	= G.SHORTLong(I, tycon_EXN(I))
 
 
     (* Functions to handle rewriting of withtype declarations *)
@@ -286,8 +293,7 @@ structure DerivedForms :> DERIVED_FORMS =
 	let
 	    fun toPatList []          = NILPat(I)
 	      | toPatList(pat::pats') =
-		G.APPPat(I, LONGVIDPat(I, longvid_CONS(I)),
-			    TUPLEAtPat(I, [pat,toPatList pats']))
+		G.APPPat(I, CONSPat(I), TUPLEAtPat(I, [pat,toPatList pats']))
 	in
 	    G.PARAtPat(I, toPatList pats)
 	end
@@ -543,11 +549,9 @@ structure DerivedForms :> DERIVED_FORMS =
 	    G.SEQSpec(I, G.NONFIXSpec(I,longvid), NONFIXMULTISpec(I,longvids))
 
 
-    val tycon_EXN = TyCon.fromString "exn"
-
     fun NEWExDesc(I, op_opt, vid, ty_opt, dcondesc_opt) =
 	    G.NEWDconDesc(I, op_opt, vid, ty_opt, G.Seq(I,[]),
-			  G.SHORTLong(I, G.TyCon(I, tycon_EXN)), dcondesc_opt)
+			  G.SHORTLong(I, tycon_EXN(I)), dcondesc_opt)
 
     fun SPECFunDesc(I, funid, spec, sigexp, fundesc_opt) =
 	let

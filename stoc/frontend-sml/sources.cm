@@ -13,6 +13,8 @@ Group
     structure FunId
     signature BIND_ENV
     structure BindEnv
+    signature BIND_ENV0
+    structure BindEnv0
     signature INPUT_GRAMMAR
     structure InputGrammar
 
@@ -54,11 +56,14 @@ is
     (* Abstract syntax *)
 
     ../frontend-common/abstract-grammar.cm
+    ../common/prebound.cm
 
     (* Translation into abstract syntax (binding analysis) *)
 
     BIND_ENV.sig
     BindEnv.sml
+    BIND_ENV0.sig
+    BindEnv0.sml
 
     INFIX.sig
     Infix.sml

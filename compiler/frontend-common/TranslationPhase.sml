@@ -48,15 +48,8 @@ UNFINISHED: obsolete after bootstrapping:
     fun trId(I.Id(i,z,I.InId))		= O.Id(i, z, O.InId)
       | trId(I.Id(i,z,I.ExId s))	= O.Id(i, z, O.ExId s)
 
-    fun trLongid'(I.ShortId(i,x))	= O.ShortId(i, trId x)
-      | trLongid'(I.LongId(i,y,a))	= O.LongId(i, trLongid' y, trLab a)
-
-    fun trLongid(y as I.LongId(i, I.ShortId(_,I.Id(_,z,I.ExId n)), I.Lab(_,a)))=
-	if z = Prebound.stamp_Prebound then
-	    O.ShortId(i, O.Id(i, Prebound.nameToStamp a, O.ExId n))
-	else trLongid' y
-
-      | trLongid y = trLongid' y
+    fun trLongid(I.ShortId(i,x))	= O.ShortId(i, trId x)
+      | trLongid(I.LongId(i,y,a))	= O.LongId(i, trLongid y, trLab a)
 
 
     (* Extract bound ids from declarations. *)

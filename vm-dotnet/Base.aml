@@ -12,6 +12,15 @@
  *   $Revision$
  *)
 
+(* Hardwired *)
+
+__prebound Prebound
+
+open Prebound
+
+type unit = {}
+
+
 (* Toplevel *)
 
 infix  7  * / div mod
@@ -21,21 +30,27 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
 
-(*--** val use = builtin "use" *)
+(*--** __primitive use : string -> unit = "use" *)
+
+__primitive op=  : ''a * ''a -> bool = "="
+__primitive op<> : ''a * ''a -> bool = "<>"
+
 
 (* Overloaded Identifiers *)
 
-val op~ = builtin "~"
-val op+ = builtin "+"
-val op- = builtin "-"
-val op* = builtin "*"
-val op div = builtin "div"
-val op mod = builtin "mod"
-val op< = builtin "<"
-val op> = builtin ">"
-val op<= = builtin "<="
-val op>= = builtin ">="
-val op<> = builtin "<>"
+__primitive op~ :	int -> int = "~"
+
+__primitive op+ :	int * int -> int = "+"
+__primitive op- :	int * int -> int = "-"
+__primitive op* :	int * int -> int = "*"
+__primitive op div :	int * int -> int = "div"
+__primitive op mod :	int * int -> int = "mod"
+
+__primitive op< :	int * int -> bool = "<"
+__primitive op> :	int * int -> bool = ">"
+__primitive op<= :	int * int -> bool = "<="
+__primitive op>= :	int * int -> bool = ">="
+
 
 (* General *)
 
@@ -296,18 +311,20 @@ structure ListPair =
 
   end
 
+
 (* Char *)
 
 structure Char =
     struct
-	type char = int   (*--** *)
+	type char = char
 
-	val ord = builtin "Char.ord"
-	val chr = builtin "Char.chr"
-	val isDigit = builtin "Char.isDigit"
-	val isHexDigit = builtin "Char.isHexDigit"
-	val isSpace = builtin "Char.isSpace"
-	val toCString = builtin "Char.toCString"
+	__primitive ord : char -> ord = "Char.ord"
+	__primitive chr : int -> char = "Char.chr"
+
+	__primitive isDigit :    char -> bool = "Char.isDigit"
+	__primitive isHexDigit : char -> bool = "Char.isHexDigit"
+	__primitive isSpace :    char -> bool = "Char.isSpace"
+	__primitive isCString :  char -> bool = "Char.isCString"
     end
 
 type char = Char.char
@@ -318,17 +335,17 @@ val chr = Char.chr
 
 structure String =
     struct
-	type string = int   (*--** *)
+	type string = string
 
 	(*--** Subscript exceptions are not raised *)
 
-	val op^ = builtin "String.^"
-	val toCString = builtin "String.toCString"
-	val str = builtin "String.str"
-	val size = builtin "String.size"
-	val substring = builtin "String.substring"
-	val sub = builtin "String.sub"
-	val explode = builtin "String.explode"
+	__primitive op^ : string * string -> string = "String.^"
+	__primitive toCString : string * string -> string = "String.toCString"
+	__primitive str : string * string -> string = "String.str"
+	__primitive size : string * string -> string = "String.size"
+	__primitive substring : string * string -> string = "String.substring"
+	__primitive sub : string * string -> string = "String.sub"
+	__primitive explode : string * string -> string = "String.explode"
 
 	fun extract (s, i, NONE) = substring (s, i, size s - i)
 	  | extract (s, i, SOME j) = substring (s, i, j)
@@ -339,7 +356,8 @@ structure String =
 
 	fun compare (s, t) =
 	    let
-		val i = builtin "String.compare'" (s, t)
+		__primitive compare' : string * string -> int = "String.compare'"
+		val i = compare' (s, t)
 	    in
 		if i = 0 then EQUAL else if i < 0 then LESS else GREATER
 	    end
@@ -433,7 +451,7 @@ signature INT =
 
 structure Int :> INT =
     struct
-	type int = int   (*--** *)
+	type int = int
 
 	open StringCvt
 
@@ -497,12 +515,13 @@ structure Int :> INT =
 	    end
 	fun compare (i, j) =
 	    let
-		val n = builtin "Int.compare'" (i, j)
+		__primitive compare' : int * int -> int = "Int.compare'"
+		val n = Int.compare' (i, j)
 	    in
 		if n = 0 then EQUAL else if n < 0 then LESS else GREATER
 	    end
 
-	val toString = builtin "Int.toString"
+	__primitive toString : int -> string = "Int.toString"
 
 	val fromString = scanString (scan DEC)   (*--** crashes *)
 
@@ -515,29 +534,30 @@ type int = Int.int
 
 structure LargeInt = Int
 
+
 (* Word *)
 
 structure Word =
     struct
-	type word = int   (*--** *)
+	type word = word
 
 	local
-	    val fromInt' = builtin "Word.fromInt'"
+	    __primitive fromInt' : int * int -> word = "Word.fromInt'"
 	in
 	    fun fromInt x = fromInt' (31, x)
 	end
 
-	val toInt = builtin "Word.toInt"
-	val toLargeInt = toInt
-	val toIntX = builtin "Word.toIntX"
-	val orb = builtin "Word.orb"
-	val xorb = builtin "Word.xorb"
-	val andb = builtin "Word.andb"
-	val notb = builtin "Word.notb"
-	val op<< = builtin "Word.<<"
-	val op>> = builtin "Word.>>"
-	val op~>> = builtin "Word.~>>"
-	val toString = builtin "Word.toString"
+	__primitive toInt : word -> int = "Word.toInt"
+	__primitive toLargeInt : word -> LargeInt.int = toInt
+	__primitive toIntX : word -> int = "Word.toIntX"
+	__primitive orb : word * word -> word = "Word.orb"
+	__primitive xorb : word * word -> word = "Word.xorb"
+	__primitive andb : word * word -> word = "Word.andb"
+	__primitive notb : word * word -> word = "Word.notb"
+	__primitive op<< : word * word -> word = "Word.<<"
+	__primitive op>> : word * word -> word = "Word.>>"
+	__primitive op~>> : word * word -> word = "Word.~>>"
+	__primitive toString : word -> string = "Word.toString"
 
 	local
 	    open StringCvt
@@ -607,13 +627,13 @@ structure LargeWord = Word
 
 structure Array =
     struct
-	type array = int   (*--** *)
+	__eqtype 'a array
 
-	val array = builtin "Array.array"
-	val fromList = builtin "Array.fromList"
-	val length = builtin "Array.length"
-	val sub = builtin "Array.sub"
-	val update = builtin "Array.update"
+	__primitive array : int * 'a -> 'a array = "Array.array"
+	__primitive fromList : 'a list -> 'a array = "Array.fromList"
+	__primitive length : 'a array -> int = "Array.length"
+	__primitive sub : 'a array * int -> 'a = "Array.sub"
+	__primitive update : 'a array * int * 'a -> unit = "Array.update"
 
 	fun copy {src, si, len, dst, di} =
 	    let
@@ -658,10 +678,10 @@ type array = Array.array
 
 structure Vector =
     struct
-	type 'a vector = 'a list   (*--** *)
+	eqtype 'a vector
 
-	val fromList = builtin "Vector.fromList"
-	val sub = builtin "Vector.sub"
+	__primitive fromList : 'a list -> 'a vector = "Vector.fromList"
+	__primitive sub : 'a vector * int -> 'a = "Vector.sub"
 
 	fun tabulate (n, f) = fromList (List.tabulate (n, f))
     end
@@ -672,22 +692,22 @@ val vector = Vector.fromList
 
 structure TextIO =
     struct
-	type instream = int   (*--** *)
-	type outstream = int   (*--** *)
+	type instream
+	type outstream
 
-	val stdIn = builtin "TextIO.stdIn"
-	val openIn = builtin "TextIO.openIn"
-	val inputAll = builtin "TextIO.inputAll"
-	val closeIn = builtin "TextIO.closeIn"
+	__primitive stdIn : instream = "TextIO.stdIn"
+	__primitive openIn : string -> instream = "TextIO.openIn"
+	__primitive inputAll : instream -> string = "TextIO.inputAll"
+	__primitive closeIn : instream -> unit = "TextIO.closeIn"
 
-	val stdOut = builtin "TextIO.stdOut"
-	val stdErr = builtin "TextIO.stdErr"
-	val openOut = builtin "TextIO.openOut"
-	val output = builtin "TextIO.output"
-	val output1 = builtin "TextIO.output1"
-	val closeOut = builtin "TextIO.closeOut"
+	__primitive stdOut : outstream = "TextIO.stdOut"
+	__primitive stdErr : outstream = "TextIO.stdErr"
+	__primitive openOut : string -> outstream = "TextIO.openOut"
+	__primitive output : outstream * string -> unit = "TextIO.output"
+	__primitive output1 : outstream * char -> unit = "TextIO.output1"
+	__primitive closeOut : outstream -> unit = "TextIO.closeOut"
 
-	val print = builtin "TextIO.print"
+	__primitive print : string -> unit = "TextIO.print"
     end
 
 val print = TextIO.print

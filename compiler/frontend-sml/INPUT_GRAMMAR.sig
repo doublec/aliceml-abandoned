@@ -122,7 +122,7 @@ signature INPUT_GRAMMAR =
     and Dec =
 	  VALDec          of Info * TyVarSeq * ValBind
 	| FUNDec          of Info * TyVarSeq * FvalBind
-	| PRIMITIVEDec    of Info * VId * Ty * SCon
+	| PRIMITIVEDec    of Info * Op * VId * Ty * SCon
 	| TYPEDec         of Info * TypBind
 	| EQTYPEDec       of Info * TypBind
 	| EQEQTYPEDec     of Info * TypBind
@@ -137,8 +137,8 @@ signature INPUT_GRAMMAR =
 	| OPENDec         of Info * LongStrId
 	| EMPTYDec        of Info
 	| SEQDec          of Info * Dec * Dec
-	| OVERLOADDec     of Info * VId * TyVar * Ty
-	| INSTANCEDec     of Info * VId * LongTyCon * LongVId
+	| OVERLOADDec     of Info * Op * VId * TyVar * Ty
+	| INSTANCEDec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONDec of Info * SCon * LongTyCon
 	| INFIXDec        of Info * int * VId
 	| INFIXRDec       of Info * int * VId
@@ -254,8 +254,8 @@ signature INPUT_GRAMMAR =
 	| SHARINGTYPESpec  of Info * Spec * LongTyCon list
 	| SHARINGSIGNATURESpec of Info * Spec * LongSigId list
 	| SHARINGSpec      of Info * Spec * LongStrId list
-	| OVERLOADSpec     of Info * VId * TyVar * Ty
-	| INSTANCESpec     of Info * VId * LongTyCon * LongVId
+	| OVERLOADSpec     of Info * Op * VId * TyVar * Ty
+	| INSTANCESpec     of Info * Op * VId * LongTyCon * LongVId
 	| INSTANCESCONSpec of Info * SCon * LongTyCon
 	| INFIXSpec        of Info * int * VId
 	| INFIXRSpec       of Info * int * VId
