@@ -1,6 +1,6 @@
 <?php include("macros.php3"); ?>
 
-<?php heading("Oz for Lightning - Extended Module System",
+<?php heading("Stockhausen Operette 1 - Extended Module System",
 		"extended <BR> module <BR> system") ?>
 
 
@@ -18,12 +18,12 @@
     <LI> <A href="#paramsig">parameterized signatures</A> (*) </LI>
     <LI> manifest structures and values (*) </LI>
     <LI> <A href="#fixity">fixity specifications</A> in signatures </LI>
-    <LI> some syntactic sugar <!--(eg. <A href="#wildcards">wildcards</A>)-->
+    <LI> some syntactic sugar (eg. <A href="#wildcards">wildcards</A>)
          and straightening </LI>
   </UL>
 
   <P>
-    Items marked with (*) are not fully implemented yet.
+    Items marked with (*) are not fully implemented in Operette 1.
   </P>
 
   <P>
@@ -258,11 +258,12 @@
   </PRE>
 
   <P class=note>
-    Caveat: parameterized signatures are not yet properly treated.
+    Caveat: parameterized signatures are not yet properly treated
+    in Operette 1.
   </P>
 
 
-<!--
+
 <?php section("wildcards", "wildcards") ?>
 
   <P>
@@ -301,7 +302,7 @@
   <PRE>
 	signature FF = fct(_ : A) -> B
   </PRE>
--->
+
 
 
 <?php section("fixity", "fixity") ?>
