@@ -53,7 +53,7 @@ signature TYPE_MANAGER =
 	                            -> string * TypeTree.ty * TypeTree.ty list
 
 	val checkItem :           TypeTree.decl -> bool
-	val checkStructMember :   TypeTree.struct_item -> bool
+	val checkStructMember :   string -> TypeTree.struct_item -> bool
 	val checkEnumMember :     TypeTree.enum_item -> bool
 
    end

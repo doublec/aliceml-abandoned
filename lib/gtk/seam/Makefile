@@ -25,6 +25,8 @@ INPUTFILE = gtkclean.c
 # temporary output directory
 OUTDIR = output
 
+PREPAREFILES = $(INPUTFILE) PositiveList.sml
+
 # support file indicating last generator build
 LASTGENERATE = lastgenerate
 
@@ -114,7 +116,7 @@ $(GENERATOR):
 	test -e $(GENERATOR) || exit 1
 
 
-$(INPUTFILE):
+$(PREPAREFILES):
 	( cd prepare && $(MAKE) )
 
 %-sig.aml: %-sig.tml %_UNSAFE-sig.aml %_ENUMS-sig.aml
@@ -183,7 +185,7 @@ distclean: veryclean
 	rm -f *~
 	rm -f Makefile.depend
 	find -type d | grep '/CM$$' | xargs rm -fr
-	rm -f $(INPUTFILE)
+	rm -f $(PREPAREFILES)
 	(cd prepare && $(MAKE) distclean )
 	(cd samples && $(MAKE) distclean )
 	(cd doc && $(MAKE) distclean )

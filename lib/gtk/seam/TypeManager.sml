@@ -316,12 +316,17 @@ struct
       | checkItem _ = true
 
     (* Removes struct/enum members for which no binding can be generated *)
-    fun checkStructMember (_,t) =
+    fun checkStructMember structName (s,t) =
 	(case removeTypeRefs t of
 	     FUNCTION _        => false
 	   | ARRAY _           => false
 	   | POINTER (_, ARRAY _) => false
-           | t'         => ((getAliceType t' ; true) handle _ => false))
+           | t'         => ((print ("cSM "^structName^"."^s^": ");
+                             if PositiveList.member (structName, s) then
+                                 print "ok\n"
+                             else print "no\n";
+                             PositiveList.member (structName, s) andalso
+                             (getAliceType t' ; true) handle _ => false)))
 
     fun checkEnumMember (_,v) = (LargeInt.toInt v ; true) handle _ => false
 

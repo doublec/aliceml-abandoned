@@ -1,0 +1,123 @@
+import structure Print from "x-alice:/lib/system/Print"
+
+structure DefParser =
+    struct
+
+    type collect = {name : string ref, fields : string list ref}
+
+    exception Error of string
+
+    fun parseCName file =
+        case TextIO.inputLine file of
+            NONE => raise Error "1"
+          | SOME l => if String.isPrefix ")" l
+                      then raise Error ("2"^l)
+                      else if String.isPrefix "  (c-name" l then
+                          case String.tokens (fn #"\"" => true | _ => false)
+                                             l of
+                              (_::name::_) => name
+                            | _ => raise Error ("3"^l)
+                      else parseCName file
+
+    fun closeBracket i l =
+        if i = size l then false
+        else if Char.isSpace (String.sub(l, i)) then closeBracket (i+1) l
+        else if String.sub(l,i) = #")" then true
+        else false
+
+    fun isComment i l =
+        if i = size l then false
+        else if Char.isSpace (String.sub(l, i)) then isComment (i+1) l
+        else if String.sub(l,i) = #";" then true
+        else false
+
+    fun parseFields' acc file =
+        case TextIO.inputLine file of
+            NONE => raise Error "4"
+          | SOME l => if String.isPrefix ")" l orelse
+                         closeBracket 0 l
+                      then acc else
+                      if isComment 0 l then parseFields' acc file
+                      else
+                          case String.tokens (fn #"\"" => true | _ => false)
+                               l of
+                              (_::_::_::f::_) => parseFields' (f::acc) file
+                            | ts => (Print.printVal ts; raise Error ("6"^l))
+
+    fun parseFields file =
+        case TextIO.inputLine file of
+            NONE => raise Error "8"
+          | SOME l => if String.isPrefix ")" l
+                      then nil
+                      else if String.isPrefix "  (fields" l then
+                          parseFields' nil file
+                      else parseFields file
+
+    fun parseBoxed out file =
+        let
+            val cname = parseCName file
+            val fields = parseFields file
+        in
+            TextIO.output(out, " {name = \""^cname^"\",\n");
+            TextIO.output(out, "  fields = [\n");
+            case fields of nil => ()
+                         | (f::fr) =>
+               (app (fn f =>
+                        TextIO.output(out, "              \""^f^"\",\n"))
+                fr;
+                TextIO.output(out, "              \""^f^"\"\n"));
+            TextIO.output(out, "           ]},\n")
+        end
+
+    fun parseLines out file =
+        case TextIO.inputLine file of
+            NONE => ()
+          | SOME l => if String.isPrefix "(define-object" l orelse
+                         String.isPrefix "(define-boxed" l then
+                          (parseBoxed out file;
+                           parseLines out file)
+                      else parseLines out file
+
+    fun parse out fileName =
+        let
+            val _ = print ("Parsing "^fileName^"\n")
+            val file = TextIO.openIn fileName
+        in
+            parseLines out file
+        end
+
+    val defFiles = ["gtk-types.defs", "gtk.defs",
+                    "gdk-types.defs", "gdk.defs",
+                    "pango-types.defs", "canvas.defs"]
+
+    val out = TextIO.openOut "PositiveList.sml"
+
+    val header = #[
+    "(* This file is generated. Don't edit! *)",
+    "(* Run DefParser again to re-generate *)",
+    "",
+    "structure PositiveList = struct",
+    "val positiveList = ["
+                   ]
+
+    val _ = Vector.app (fn s => TextIO.output(out, s^"\n")) header
+
+    val _ = app (parse out) defFiles
+        handle (Error s) => (print ("Error: "^s^"\n"))
+
+    val footer = #[
+    " {name = \"\", fields=nil}",
+    "]",
+    " fun member (s,t) =",
+    "    case List.find (fn {name=name,...} => ",
+    "                        name=s orelse \"_\"^name=s) positiveList of",
+    "    NONE => false",
+    "  | SOME {fields=fields,...}=> List.exists (fn f => f=t) fields",
+    "end",
+    "(* This file is generated. Don't edit! *)",
+    "(* Run DefParser again to re-generate *)"]
+
+    val _ = Vector.app (fn s => TextIO.output(out, s^"\n")) footer
+    val _ = TextIO.closeOut out
+    val _ = OS.Process.exit OS.Process.success
+    end

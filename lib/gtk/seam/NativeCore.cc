@@ -523,10 +523,13 @@ word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
     if (objectMap->IsMember(key)) {
       Tuple *object = Tuple::FromWordDirect(objectMap->Get(key));
       int objectType = Store::DirectWordToInt(object->Sel(1));
-      if ((type != objectType) && (objectType != TYPE_UNKNOWN)) {
+      if ((type != objectType) &&
+          (objectType != TYPE_UNKNOWN) &&
+          (type != TYPE_UNKNOWN) ) {
 	fprintf(stderr, "OBJECT_TO_WORD: type warning: old %s != new %s\n",
 		getObjectType(objectType), getObjectType(type));
 	fflush(stderr);
+        DumpCurrentTaskStack();
       }
       return object->ToWord();
     }
@@ -648,6 +651,9 @@ DEFINE0(NativeCore_forceGC) {
   StatusWord::SetStatus(Store::GCStatus());
   RETURN_UNIT;
 } END
+
+///////////////////////////////////////////////////////////////////////
+// CHARACTER SET CONVERSION FUNCTIONS
 
 DEFINE1(NativeCore_latin1ToUtf8) {
   DECLARE_STRING(str, x0);

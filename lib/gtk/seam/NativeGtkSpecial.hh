@@ -22,6 +22,13 @@ DEFINE0(NativeGtk_textIterNew) {
   RETURN(OBJECT_TO_WORD(iter,TYPE_OWN));
 } END
 
+DEFINE1(NativeGtk_textIterCopy) {
+  DECLARE_OBJECT(in0, x0);
+  GtkTextIter* ret =
+    (GtkTextIter*)gtk_text_iter_copy(((const GtkTextIter*)(in0)));
+  RETURN1(OBJECT_TO_WORD(ret, TYPE_OWN));
+} END
+
 DEFINE0(NativeGtk_treeIterNew) {
   GtkTreeIter *iter = new GtkTreeIter;
   RETURN(OBJECT_TO_WORD(iter,TYPE_OWN));
@@ -170,6 +177,28 @@ DEFINE2(NativeGtk_widgetUnsetFlags) {
   GtkWidget *w = static_cast<GtkWidget *>(t);
   GTK_WIDGET_UNSET_FLAGS(w,flags);
   RETURN_UNIT;
+} END
+
+DEFINE2(NativeGtk_objectGetObject) {
+  DECLARE_OBJECT(obj, x0);
+  DECLARE_STRING(property, x1);
+
+  GtkObject* ret;
+  g_object_get(obj, property->ExportC(),
+               &ret,
+               NULL);
+  RETURN(OBJECT_TO_WORD(ret, TYPE_GTK_OBJECT));
+} END
+
+DEFINE2(NativeGtk_objectGetDouble) {
+  DECLARE_OBJECT(obj, x0);
+  DECLARE_STRING(property, x1);
+
+  double ret;
+  g_object_get(obj, property->ExportC(),
+               &ret,
+               NULL);
+  RETURN_REAL(ret);
 } END
 
 #endif

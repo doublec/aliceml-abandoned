@@ -147,7 +147,9 @@ functor MkUnsafe(structure TypeManager : TYPE_MANAGER
 		    end
 		in
 		    List.concat 
-		        (map prepare (List.filter checkStructMember members))
+		        (map prepare (List.filter
+                                          (checkStructMember structName)
+                                          members))
 		end
 	    in
 		( List.concat (map (call sigEntry) [true,false]),

@@ -10,6 +10,8 @@ Group is
 
         TypeTree.sml
 
+        PositiveList.sml	
+
 	TYPE_MANAGER-sig.sml
 	TypeManager.sml
 
@@ -28,4 +30,4 @@ Group is
 	
 	GtkBinding.sml
 
-	
+

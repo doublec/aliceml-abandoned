@@ -74,7 +74,8 @@ functor MkNativeFields(structure TypeManager : TYPE_MANAGER
 	        fun call f get = 
 		    List.concat 
 		      (map (fn (mname, mtype) => f(structName,mname,mtype,get))
-		           (List.filter checkStructMember members))
+		           (List.filter (checkStructMember structName)
+                                        members))
 	    in
 	        ( List.concat (map (call fieldSigEntry) [true,false]),
 		  List.concat (map (call fieldWrapperEntry) [true,false]) )
@@ -96,7 +97,8 @@ functor MkNativeFields(structure TypeManager : TYPE_MANAGER
 					ret,
 					splitArgTypesNoOuts arglist,false)
 		    end
-		val members' = List.filter checkStructMember members
+		val members' = List.filter (checkStructMember structName)
+                                           members
 	    in
 		(map (fieldGetSetInit structName true)  members') @
 		(map (fieldGetSetInit structName false) members')

@@ -69,6 +69,8 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 			     "gtk_radio_menu_item_new_with_mnemonic",
                              "gtk_icon_theme_set_search_path",
                              "gtk_icon_theme_get_search_path",
+                             "gtk_text_iter_copy",
+                             "gtk_object_get",
 			     "_GtkSocket",
 			     "_GtkPlug"] (* not available for win32 *)
 	      | Util.GDK => ["gdk_init",
@@ -90,6 +92,14 @@ functor MkSpecial(val space : Util.spaces) :> SPECIAL =
 	    Util.GTK => 
 		[FUNC("gtk_text_iter_new", POINTER (false, STRUCTREF "_GtkTextIter"), 
 		      nil),
+                 FUNC("gtk_text_iter_copy", POINTER (false, STRUCTREF "_GtkTextIter"), 
+		      [POINTER (true, STRUCTREF "_GtkTextIter")]),
+                 FUNC("gtk_object_get_object", POINTER (false, STRUCTREF "_GtkObject"),
+                      [POINTER (false, VOID), STRING(false,false)]
+                      ),
+                 FUNC("gtk_object_get_double", NUMERIC (true,true, DOUBLE),
+                      [POINTER(false,VOID), STRING(false,false)]
+                      ),
 		 FUNC("gtk_tree_iter_new", POINTER (false, STRUCTREF "_GtkTreeIter"), 
 		      nil),
 		 FUNC("gtk_tree_store_new", POINTER (false, VOID), nil),
