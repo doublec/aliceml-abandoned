@@ -150,11 +150,11 @@ define
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
       'General.Subscript': {NewUniqueName 'General.Subscript'}
-      'Int.compare\'':
+      'Int.compare':
 	 fun {$ I#J}
-	    if I == J then 0
-	    elseif I < J then ~1
-	    else 1
+	    if I == J then 'EQUAL'
+	    elseif I < J then 'LESS'
+	    else 'GREATER'
 	    end
 	 end
       'Int.toString':
@@ -187,11 +187,11 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} '#'
 	    end
 	 end
-      'String.compare\'':
+      'String.compare':
 	 fun {$ S#T}
-	    if {StringLess S T} then ~1
-	    elseif {StringLess T S} then 1
-	    else 0
+	    if {StringLess S T} then 'LESS'
+	    elseif {StringLess T S} then 'GREATER'
+	    else 'EQUAL'
 	    end
 	 end
       'String.explode':
@@ -203,8 +203,13 @@ define
 	 end
       'Thread.getCurrent':
 	 fun {$ '#'} {Thread.this} end
-      'Thread.getState\'':
-	 fun {$ T} {ByteString.make {Thread.state T}} end
+      'Thread.getState':
+	 fun {$ T}
+	    case {Thread.state T} of runnable then 'RUNNABLE'
+	    [] blocked then 'BLOCKED'
+	    [] terminated then 'TERMINATED'
+	    end
+	 end
       'Thread.injectException':
 	 fun {$ T#E} {Thread.injectException T E} '#' end
       'Thread.isSuspended':
