@@ -182,7 +182,7 @@ structure Url :> URL =
 	fun setAuthority ({scheme, authority = _, device, absolute, path,
 			   query, fragment}: url, authority) =
 	    (if isSome authority then
-		 case split isStart (String.explode (valOf authority)) of
+		 case split isPath (String.explode (valOf authority)) of
 		     (_, NONE, _) => ()
 		   | (_, SOME _, _) => raise Malformed
 	     else ();
