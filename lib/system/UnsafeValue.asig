@@ -21,6 +21,7 @@ signature UNSAFE_VALUE_COMPONENT =
 	structure UnsafeValue:
 	    sig
 		val cast: 'a_value -> 'a
+		val same: 'a * 'a -> bool
 		val proj: 'prod_value * Label.t vector * int -> 'value
 		val tag: 'sum_value * Label.t vector -> Label.t
 		val projTagged: 'sum_value * Label.t vector * int -> 'value

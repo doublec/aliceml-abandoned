@@ -12,7 +12,7 @@
 
 functor
 import
-   System(printName)
+   System(eq printName)
 export
    'UnsafeValue$': Value
 define
@@ -24,6 +24,7 @@ define
 
    Value =
    'Value'('cast': fun {$ A} A end
+	   'same': System.eq
 	   'proj': Proj
 	   'tag': fun {$ Value _} 'ALPHA'({ByteString.make {Label Value}}) end
 	   'projTagged': Proj
