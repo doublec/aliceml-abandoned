@@ -21,7 +21,7 @@
   </P>
 
   <PRE>
-   fun Money () =
+   fun money () =
        let
 	   val V as #[S, E, N, D, M, O, R, Y] = vec(8, [0`#9])
        in
@@ -36,122 +36,48 @@
        end
 
    (* Interactive visual search *)
-   Explorer.exploreOne Money;
+   Explorer.exploreOne money;
 
    (* Show all possible solutions *)
-   inspect (Search.searchAll Money);
+   inspect (Search.searchAll money);
   </PRE>
 
-<?php section("posting constraints", "posting constraints") ?>
   <P>
-    Easy constraint creation is provided by the component shown below.
-  </P>
-  <UL>
-    <LI>
-      <TT><A name="post">structure</A> Constr
-      <BR>from "x-alice:/lib/constraints/Constr"</TT>
-    </LI>
-  </UL>
-
-  <PRE>
-         structure Constr :
-	 sig
-	     infix  7  `*
-	     infix  6  `+ `-
-             infix  5  `#
-	     infix  4  `= `<> `> `>= `< `<= `<->
-
-	     datatype domain_element =
-		 `` of int
-	       | `# of int * int
-
-	     type domain = domain_element list
-
-	     datatype term =
-		 fd of FD.fd
-	       | `  of int
-	       | `+ of term * term
-	       | `- of term * term
-	       | `* of term * term
-
-	     datatype rel =
-		 `<   of term * term
-	       | `<=  of term * term
-	       | `=   of term * term
-	       | `<>  of term * term
-	       | `>=  of term * term
-	       | `>   of term * term
-	       | `<-> of rel * term
-
-	     val var : domain option -> term
-	     val bin : unit -> term
-	     val vec : int * domain -> term vector
-
-	     val distribute : FD.dist_mode * term vector -> unit
-	     val distinct : term vector -> unit
-	     val post : rel -> unit
-	 end
-  </PRE>
-  <P>
-    To start posting constraints, it is necessary to open the structure <TT>Constr</TT>.
+    To learn more about constraint programming in general, we refer to the
+    <A href="http://www.mozart-oz.org/documentation/fdt/index.html">Mozart tutorial</A>.
   </P>
 
-<?php section("lowlevel api", "lowlevel api") ?>
+<?php section("api", "api") ?>
   
-  <P>The lowlevel constraint programming api is provided by the
-     following three components:
+  <P>The constraint programming api is provided by the following components:
   </P>
 
   <UL>
     <LI>
       <TT><A name="fd">structure</A>
-      <A href="http://www.mozart-oz.org/documentation/system/node14.html#chapter.fd">FD</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/fd.php3">FD</A>
       <BR>from "x-alice:/lib/constraints/FD"</TT>
     </LI>
     <LI>
       <TT><A name="fs">structure</A>
-      <A href="http://www.mozart-oz.org/documentation/system/node32.html#chapter.fs">FS</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/fs.php3">FS</A>
       <BR>from "x-alice:/lib/constaints/FS"</TT>
     </LI>
     <LI>
-      <TT><A name="search">structure</A>
-      <A href="http://www.mozart-oz.org/documentation/system/node44.html#chapter.space">Space</A>
+      <TT><A name="space">structure</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/space.php3">Space</A>
       <BR>from "x-alice:/lib/constaints/Space"</TT>
     </LI>
-  </UL>
-
-  <P>
-    Search currently supports only basic search mechanisms, such as single, best and
-    all solutions search.
-  </P>
-
-  <UL>
     <LI>
-      <TT><A name="search">structure</A> Search
-      <BR>from "x-alice:/lib/constraints/Search"</TT>
+      <TT><A name="search">structure</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/search.php3">Search</A>
+      <BR>from "x-alice:/lib/constaints/Search"</TT>
+    </LI>
+    <LI>
+      <TT><A name="linear">structure</A>
+      <A href="http://www.ps.uni-sb.de/alice/manual/library/linear.php3">Linear</A>
+      <BR>from "x-alice:/lib/constaints/Linear"</TT>
     </LI>
   </UL>
 
-  <PRE>
-         structure Search :
-         sig
-             type 'a pruner = 'a * 'a -> unit
-
-             val searchOne : (unit -> 'a) -> 'a option
-             val searchAll : (unit -> 'a) -> 'a list
-             val searchBest : (unit -> 'a) * 'a pruner -> 'a option
-         end
-  </PRE>
-
-  <P>
-    Search can also be performed interactively using the
-    <A href="explorer.php3">Alice Explorer</A>.
-  </P>
-
-  <P>
-    To learn more about constraint programming, we refer to the
-    <A href="http://www.mozart-oz.org/documentation/fdt/index.html">Mozart tutorial</A>.
-  </P>
-
 <?php footing() ?>
-
