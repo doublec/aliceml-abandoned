@@ -60,6 +60,9 @@ define
       [] recDec(Region IdExpList) then
 	 recDec(Region
 		{Map IdExpList fun {$ Id#Exp} Id#{ShareExp Exp ShareDict} end})
+      [] refAppDec(_ _ _) then Stm
+      [] tupDec(_ _ _) then Stm
+      [] rowDec(_ _ _) then Stm
       [] evalStm(Region Exp) then evalStm(Region {ShareExp Exp ShareDict})
       [] handleStm(Region Body1 Id Body2 Body3 Stamp) then
 	 handleStm(Region {ShareBody Body1 ShareDict} Id

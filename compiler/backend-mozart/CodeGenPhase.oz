@@ -78,8 +78,8 @@ define
 
    fun {TrArity Arity}
       case Arity of 'Unary' then unary
-      [] 'TupArity'(I) then tuple(I)
-      [] 'RecArity'(Labs) then record({Map Labs TrLab})
+      [] 'TupArity'(I) then tupArity(I)
+      [] 'RowArity'(Labs) then rowArity({Map Labs TrLab})
       end
    end
 
@@ -97,8 +97,8 @@ define
    fun {TrArgs Args}
       case Args of 'OneArg'(Id) then oneArg({TrId Id})
       [] 'TupArgs'(Ids) then tupArgs({Map Ids TrId})
-      [] 'RecArgs'(LabIdList) then
-	 recArgs({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
+      [] 'RowArgs'(LabIdList) then
+	 rowArgs({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
       end
    end
 
@@ -113,11 +113,6 @@ define
       [] 'StaticConTest'(Stamp) then staticConTest(Stamp)
       [] 'StaticConAppTest'(Stamp Args) then
 	 staticConAppTest(Stamp {TrArgs Args})
-      [] 'RefAppTest'(Id) then refAppTest({TrId Id})
-      [] 'TupTest'(Ids) then tupTest({Map Ids TrId})
-      [] 'RecTest'(LabIdList) then
-	 recTest({Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
-      [] 'LabTest'(Lab Id) then labTest({TrLab Lab} {TrId Id})
       [] 'VecTest'(Ids) then vecTest({Map Ids TrId})
       end
    end
@@ -129,6 +124,14 @@ define
 	 Hd = recDec({TrInfo Info}
 		     {Map IdExpList
 		      fun {$ Id#Exp} {TrId Id}#{TrExp Exp ShareDict} end})|Tl
+      [] 'RefAppDec'(Info Id1 Id2) then
+	 refAppDec({TrInfo Info} {TrId Id1} {TrId Id2})
+      [] 'TupDec'(Info Ids Id) then
+	 tupDec({TrInfo Info} {Map Ids TrId} {TrId Id})
+      [] 'RowDec'(Info LabIdList Id) then
+	 rowDec({TrInfo Info}
+		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end}
+		{TrId Id})
       [] 'EvalStm'(Info Exp) then
 	 Hd = evalStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
       [] 'RaiseStm'(Info Id) then
@@ -183,8 +186,8 @@ define
 	 staticConExp({TrInfo Info} Stamp {TrConArity ConArity})
       [] 'RefExp'(Info) then refExp({TrInfo Info})
       [] 'TupExp'(Info Ids) then tupExp({TrInfo Info} {Map Ids TrId})
-      [] 'RecExp'(Info LabIdList) then
-	 recExp({TrInfo Info}
+      [] 'RowExp'(Info LabIdList) then
+	 rowExp({TrInfo Info}
 		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
       [] 'SelExp'(Info Lab N) then selExp({TrInfo Info} {TrLab Lab} N)
       [] 'VecExp'(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
