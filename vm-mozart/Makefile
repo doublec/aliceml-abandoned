@@ -94,7 +94,9 @@ all: $(ALLFILES) backend-mozart/CodeGenPhase.ozf top/Main.ozf stoc.ozf stow.ozf
 
 bootstrap:
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
-	make STOC='$(PREFIX)/bin/stoc --noprintcomponentsig --nodefaultimport' all
+	make \
+	STOC='$(PREFIX)/bin/stoc --noprintcomponentsig --nodefaultimport' \
+	lib/Base.ozf all
 
 stoc.ozf: top/Main.ozf
 	OZ_LOAD=prefix=x-alice\\:/=./:prefix=http\\://www.mozart-oz.org/home-1.1.1/=$(OZHOME)/ \
