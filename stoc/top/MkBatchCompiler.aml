@@ -14,6 +14,8 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 			      where type Composer.Sig.t = Signature.t
 			  val executableHeader: string): BATCH_COMPILER =
     struct
+	val version = "Build " ^ Date.toString(Date.fromTimeLocal(Time.now()))
+
 	fun basename filename =
 	    let
 		fun cutPath ((#"/" | #"\\")::rest) = nil
@@ -70,6 +72,8 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\t--rtt-level=core\n\
 	      \\t\tDo only generate code for core runtime types.\n\
 	      \Debug options:\n\
+	      \\t--version\n\
+	      \\t\tPrint compiler version.\n\
 	      \\t--(no-)dryrun\n\
 	      \\t\tCompile standard input, not writing any output.\n\
 	      \\t--(no-)dump-phases\n\
@@ -156,7 +160,10 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	    else checkBooleanSwitches (s, rest)
 	  | checkBooleanSwitches (_, nil) = false
 
-	fun options ("--rtt-level=no"::rest) =
+	fun options ("--version"::rest) =
+	    (print (version ^ "\n");
+	     options rest)
+	  | options ("--rtt-level=no"::rest) =
 	    (Bootstrap.rttLevel := Bootstrap.NO_RTT;
 	     options rest)
 	  | options ("--rtt-level=core"::rest) =
