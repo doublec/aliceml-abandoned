@@ -590,10 +590,10 @@ public:
 #undef MKOP2
 
   void divMod(BigInt *b, BigInt *d, BigInt *m) {
-    mpz_fdiv_qr(big(), b->big(), d->big(), m->big());
+    mpz_fdiv_qr(d->big (), m->big (), big(), b->big());
   }
   void quotRem(BigInt *b, BigInt *q, BigInt *r) {
-    mpz_tdiv_qr(big(), b->big(), q->big(), r->big());
+    mpz_tdiv_qr(q->big (), r->big (), big(), b->big());
   }
 
   BigInt *pow(unsigned long int exp) {
