@@ -23,12 +23,14 @@ class Pickler {
 public:
   // Exceptions
   static word Sited;
+
+  // Pickler Static Constructor
+  static void Init();
+
   // Pickler Functions
   static Interpreter::Result Pack(word x, TaskStack *taskStack);
   static Interpreter::Result Save(Chunk *filename, word x,
 				  TaskStack *taskStack);
-  // Pickler Static Constructor
-  static void Init();
 };
 
 #endif
