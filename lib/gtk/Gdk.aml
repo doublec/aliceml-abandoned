@@ -1,0 +1,21 @@
+(*
+ * Authors:
+ *   Thorsten Brunklaus <brunklaus@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Thorsten Brunklaus, 2001
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure GtkTypes  from "GtkTypes"
+import structure UnsafeGDK from "UnsafeGDK"
+
+structure Gdk =
+    struct
+	open GtkTypes
+	open UnsafeGDK
+    end
