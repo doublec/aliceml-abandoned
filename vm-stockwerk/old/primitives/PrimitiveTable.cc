@@ -117,10 +117,7 @@ void Primitive::Register(const char *name, word value) {
 void Primitive::Register(const char *name, function value, u_int arity) {
   word abstractCode = Store::IntToWord(0); //--** this has to be revisited
   ConcreteCode *concreteCode =
-    ConcreteCode::New(abstractCode, new PrimitiveInterpreter(value, arity), 1);
-  //--** this reinterpret_cast breaks if sizeof(int) != sizeof(function):
-  concreteCode->
-    Init(0, Store::FunctionPointerToWord(reinterpret_cast<int>(value)));
+    ConcreteCode::New(abstractCode, new PrimitiveInterpreter(value, arity), 0);
   Closure *closure = Closure::New(concreteCode, 0);
   Register(name, closure->ToWord());
 }
