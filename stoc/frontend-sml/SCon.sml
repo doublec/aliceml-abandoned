@@ -2,10 +2,6 @@
  * Standard ML special constants
  *
  * Definition, section 2.2
- *
- * Note:
- *   I would like to use WideChar and WideString, but SML/NJ does not
- *   support it.
  *)
 
 
@@ -15,16 +11,16 @@ structure SCon :> SCON =
     datatype SCon =
 	  INT    of LargeInt.int
 	| WORD   of LargeWord.word
-	| STRING of String.string
-	| CHAR   of Char.char
-	| REAL   of string
+	| STRING of WideString.string
+	| CHAR   of WideChar.char
+	| REAL   of LargeReal.real
 
     type t = SCon
 
     fun toString(INT i)    = LargeInt.toString i
       | toString(WORD w)   = "0wx" ^ LargeWord.toString w
-      | toString(STRING s) = "\""  ^ String.toCString s ^ "\""
-      | toString(CHAR c)   = "\"#" ^ Char.toCString c   ^ "\""
-      | toString(REAL r)   = r
+      | toString(STRING s) = "\""  ^ WideString.toCString s ^ "\""
+      | toString(CHAR c)   = "\"#" ^ WideChar.toCString c   ^ "\""
+      | toString(REAL r)   = LargeReal.toString r
 
   end

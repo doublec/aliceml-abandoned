@@ -15,9 +15,9 @@ signature SCON =
     datatype SCon =
 	  INT    of LargeInt.int
 	| WORD   of LargeWord.word
-	| STRING of String.string
-	| CHAR   of Char.char
-	| REAL   of string
+	| STRING of WideString.string
+	| CHAR   of WideChar.char
+	| REAL   of LargeReal.real
 
     type t = SCon
 

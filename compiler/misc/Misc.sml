@@ -36,4 +36,9 @@ structure Misc :> MISC =
 							orelse iter(i+1)
 				  in iter 0 end
 
+    val Char_toWide	= WideChar.chr o Char.ord
+    val Char_fromWide	= Char.chr o WideChar.ord
+    val String_toWide	= WideString.implode o List.map Char_toWide o String.explode
+    val String_fromWide	= String.implode o List.map Char_fromWide o WideString.explode
+
   end

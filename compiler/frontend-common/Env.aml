@@ -49,7 +49,7 @@ structure Env :> ENV =
     fun foldInf f (x, INF y, a) = f(x,y,a) | foldInf f (_,_,a) = a
 
 
-    (* Actual operations *)
+    (* Operation wrappers *)
 
     exception Collision = Map.Collision
     exception Lookup    = Map.Lookup

@@ -19,7 +19,7 @@ structure Error :> ERROR =
         TextIO.output(TextIO.stdErr,
 		      Int.toString l ^ "-" ^ Int.toString r ^ ": " ^ s ^ "\n")
 
-    fun error(pos, message) = ( print(pos,message) ; raise Error(pos, message) )
-    fun warn (pos, message) =   print(pos, message)
+    fun error(pos, message) = ( print(pos,message) ; raise Error(pos,message) )
+    fun warn (pos, message) =   print(pos,message)
 
   end

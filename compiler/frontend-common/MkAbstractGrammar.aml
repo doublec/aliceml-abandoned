@@ -1,9 +1,3 @@
-(*
- * Note:
- *   I would like to use WideChar and WideString for literals, but SML/NJ
- *   does not support it.
- *)
-
 functor MakeAbstractGrammar(type info) :>
   ABSTRACT_GRAMMAR where type info = info =
   struct
@@ -17,9 +11,9 @@ functor MakeAbstractGrammar(type info) :>
     datatype lit =
 	  WordLit   of LargeWord.word		(* word *)
 	| IntLit    of LargeInt.int		(* integer *)
-	| CharLit   of Char.char		(* character *)
-	| StringLit of String.string		(* string *)
-	| RealLit   of string			(* floating point *)
+	| CharLit   of WideChar.char		(* character *)
+	| StringLit of WideString.string	(* string *)
+	| RealLit   of LargeReal.real		(* floating point *)
 
     (* Identifiers *)
 

@@ -5,6 +5,7 @@ Group
 
 is
 
+	../misc/sources.cm
 	../error/sources.cm
 	id-stamp.cm
 

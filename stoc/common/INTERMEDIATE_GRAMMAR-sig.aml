@@ -1,9 +1,3 @@
-(*
- * Note:
- *   I would like to use WideChar and WideString for literals, but SML/NJ
- *   does not support it.
- *)
-
 signature INTERMEDIATE_GRAMMAR =
   sig
 
@@ -16,9 +10,9 @@ signature INTERMEDIATE_GRAMMAR =
     datatype lit =	(* Add type name annotation later. *)
 	  WordLit   of LargeWord.word
 	| IntLit    of LargeInt.int
-	| CharLit   of Char.char
-	| StringLit of String.string
-	| RealLit   of string
+	| CharLit   of WideChar.char
+	| StringLit of WideString.string
+	| RealLit   of LargeReal.real
 
     (* Identifiers *)
 
@@ -113,5 +107,9 @@ signature INTERMEDIATE_GRAMMAR =
     val infoMatch :	match	-> info
     val infoPat :	pat	-> info
     val infoDec :	dec	-> info
+
+    (* This is obsolete after bootstrapping *)
+
+    val eqLit :		lit * lit -> bool
 
   end

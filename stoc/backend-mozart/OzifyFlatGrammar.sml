@@ -38,6 +38,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	fun outputInt (q, n) = output (q, Int.toString n)
 	fun outputLargeInt (q, n) = output (q, LargeInt.toString n)
 	fun outputLargeWord (q, w) = outputLargeInt (q, LargeWord.toLargeInt w)
+	fun outputLargeReal (q, x) = output (q, LargeReal.toString x)
 	fun outputAtom (q, s) =
 	    (output1 (q, #"'");
 	     output (q, String.toCString s);
@@ -82,7 +83,7 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputLit (q, StringLit s) =
 	    (f (q, "stringLit"); outputString (q, s); r q)
 	  | outputLit (q, RealLit x) =
-	    (f (q, "realLit"); output (q, x); r q)
+	    (f (q, "realLit"); outputLargeReal (q, x); r q)
 
 	fun outputLabString (q, s) =
 	    case Int.fromString s of

@@ -103,9 +103,6 @@
 (*   - ML-Yacc does not seem to like comments that stretch over several		*)
 (*     lines... Similarly, comments in semantic actions make it puke...		*)
 (*										*)
-(*   I would like to use WideChar and WideString for literals, but SML/NJ	*)
-(*   does not support it.							*)
-(*										*)
 
 
 
@@ -155,7 +152,8 @@
 	(* Special constants *)
 	| ZERO | DIGIT of int | NUMERIC of LargeInt.int
 	| INT of LargeInt.int | WORD of LargeWord.word
-	| REAL of string | STRING of String.string | CHAR of Char.char
+	| REAL of LargeReal.real
+	| STRING of WideString.string | CHAR of WideChar.char
 
 	(* Identifiers *)
 	| ALPHA of string | SYMBOL of string | STAR

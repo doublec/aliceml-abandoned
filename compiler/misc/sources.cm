@@ -2,6 +2,7 @@ Group is
 
     (* Utilities *)
 
+    Wide.sml
     MISC.sig
     Misc.sml
     STAMP.sig

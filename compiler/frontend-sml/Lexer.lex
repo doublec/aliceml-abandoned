@@ -26,12 +26,10 @@
  *
  *   The parser uses a global variable to recognise nested comments, so it is
  *   not reentrant.
- *
- *   I would like to use WideChar and WideString, but SML/NJ does not
- *   support it.
  *)
 
 
+    open Misc
     open Tokens
 
 
@@ -124,13 +122,15 @@
 			 handle Overflow =>
 				Error.error(i, "word constant too big")
 
-    fun toReal(s,i) = s
+    fun toReal(s,i)    = Option.valOf(StringCvt.scanString LargeReal.scan s)
+			 handle Overflow =>
+				Error.error(i, "real constant too big")
 
 
     fun toString(s,i) =
 	let
             fun base(s,b,m) =
-		Char.chr(Option.valOf(StringCvt.scanString (Int.scan b) s))
+		WideChar.chr(Option.valOf(StringCvt.scanString (Int.scan b) s))
 		handle (Chr | Overflow) =>
 			 Error.error(i, m ^ " escape character too big")
 
@@ -139,9 +139,9 @@
 
 	    fun convert(k,cs) =
 		case String.sub(s,k)
-		  of #"\"" => String.implode(List.rev cs)
+		  of #"\"" => WideString.implode(List.rev cs)
 		   | #"\\" => escape(k+1,cs)
-		   |   c   => convert(k+1, c::cs)
+		   |   c   => convert(k+1, Char_toWide(c)::cs)
 
 	    and escape(k,cs) =
 		case String.sub(s,k)
@@ -155,8 +155,8 @@
 		   | #"\"" => convert(k+1, #"\""::cs)
 		   | #"\\" => convert(k+1, #"\\"::cs)
 		   | #"^"  => let val c = String.sub(s,k+1) in
-				  convert(k+2, Char.chr(Char.ord c -
-							Char.ord #"0")::cs)
+				  convert(k+2, WideChar.chr(Char.ord c -
+							    Char.ord #"0")::cs)
 			      end
 
 		   | #"u"  => let val s' = String.extract(s, k+1, SOME 4) in
@@ -188,8 +188,8 @@
 	    val s'  = String.substring(s, 1, String.size s - 1)
 	    val ss' = toString(s', i)
 	in
-	    if String.size ss' = 1 then
-		String.sub(ss', 0)
+	    if WideString.size ss' = 1 then
+		WideString.sub(ss', 0)
 	    else if ss' = "" then
 		Error.error(i, "empty character constant")
 	    else
