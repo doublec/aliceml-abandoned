@@ -9,7 +9,7 @@
  *)
 
 
-functor Id(Stamp: STAMP) :> ID =
+functor MakeId(Stamp: STAMP) :> ID =
   struct
 
     type Id = string
