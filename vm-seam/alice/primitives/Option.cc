@@ -13,5 +13,5 @@
 #include "alice/Authoring.hh"
 
 void PrimitiveTable::RegisterOption() {
-  RegisterUniqueConstructor("Option.Option");
+  RegisterUniqueConstructor("Option", "Option.Option");
 }

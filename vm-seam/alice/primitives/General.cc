@@ -5,7 +5,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2000
-//   Leif Kornstaedt, 2000-2002
+//   Leif Kornstaedt, 2000-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -16,42 +16,46 @@
 
 DEFINE1(General_exnName) {
   DECLARE_BLOCK(conVal, x0);
+  String *name;
  retry:
   switch (conVal->GetLabel()) {
   case UNIQUESTRING_LABEL:
-    RETURN(UniqueString::FromWordDirect(conVal->ToWord())->
-	   ToString()->ToWord());
+    name = UniqueString::FromWordDirect(conVal->ToWord())->ToString();
+    break;
   case Alice::ConVal:
     conVal = ConVal::FromWordDirect(conVal->ToWord())->GetConstructor();
     goto retry;
   default:
-    RETURN(Constructor::FromWordDirect(conVal->ToWord())->GetName()->ToWord());
+    name = Constructor::FromWordDirect(conVal->ToWord())->GetName();
+    break;
   }
+  //--** drop prefix
+  RETURN(name->ToWord());
 } END
 
 void PrimitiveTable::RegisterGeneral() {
   PrimitiveTable::General_Chr =
-    UniqueConstructor::New(String::New("General.Chr"))->ToWord();
+    UniqueConstructor::New("Chr", "General.Chr")->ToWord();
   PrimitiveTable::General_Div =
-    UniqueConstructor::New(String::New("General.Div"))->ToWord();
+    UniqueConstructor::New("Div", "General.Div")->ToWord();
   PrimitiveTable::General_Domain =
-    UniqueConstructor::New(String::New("General.Domain"))->ToWord();
+    UniqueConstructor::New("Domain", "General.Domain")->ToWord();
   PrimitiveTable::General_Overflow =
-    UniqueConstructor::New(String::New("General.Overflow"))->ToWord();
+    UniqueConstructor::New("Overflow", "General.Overflow")->ToWord();
   PrimitiveTable::General_Size =
-    UniqueConstructor::New(String::New("General.Size"))->ToWord();
+    UniqueConstructor::New("Size", "General.Size")->ToWord();
   PrimitiveTable::General_Subscript =
-    UniqueConstructor::New(String::New("General.Subscript"))->ToWord();
+    UniqueConstructor::New("Subscript", "General.Subscript")->ToWord();
 
-  RegisterUniqueConstructor("General.Bind");
+  RegisterUniqueConstructor("Bind", "General.Bind");
   Register("General.Chr", PrimitiveTable::General_Chr);
   Register("General.Div", PrimitiveTable::General_Div);
   Register("General.Domain", PrimitiveTable::General_Domain);
-  RegisterUniqueConstructor("General.Fail");
-  RegisterUniqueConstructor("General.Match");
+  RegisterUniqueConstructor("Fail", "General.Fail");
+  RegisterUniqueConstructor("Match", "General.Match");
   Register("General.Overflow", PrimitiveTable::General_Overflow);
   Register("General.Size", PrimitiveTable::General_Size);
-  RegisterUniqueConstructor("General.Span");
+  RegisterUniqueConstructor("Span", "General.Span");
   Register("General.Subscript", PrimitiveTable::General_Subscript);
   Register("General.exnName", General_exnName, 1);
 }

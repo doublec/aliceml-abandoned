@@ -13,5 +13,5 @@
 #include "alice/Authoring.hh"
 
 void PrimitiveTable::RegisterList() {
-  RegisterUniqueConstructor("List.Empty");
+  RegisterUniqueConstructor("Empty", "List.Empty");
 }
