@@ -58,6 +58,7 @@ define
    LabelOffset  = 6
 
    fun {ApplyTransform F X}
+      %--** registration of transformers
       %--** implement using byneeds
       case F of 'Alice.primitive.value' then
 	 case X of tag(0 Name) then
