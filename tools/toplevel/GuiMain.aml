@@ -303,8 +303,6 @@ structure AliceIde =
             end
 
         fun search() = SearchDialog.search (Gtk.textViewGetBuffer (!curtextview))
-                       (* TODO: reconnect on page switch *)
-
 
         fun markSet (buf,_) =
             let
@@ -355,7 +353,9 @@ structure AliceIde =
                           else if Buffer.save (getCurrentPage()) then ()
                           else saveFileAs()
 
-        fun switchPage(cur,view) = (currentPage := cur; curtextview := view)
+        fun switchPage(cur,view) =
+            (currentPage := cur; curtextview := view;
+             SearchDialog.reconnect (Gtk.textViewGetBuffer view))
 
         fun reallyClose p =
             (removePage p;
