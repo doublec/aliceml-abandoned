@@ -124,7 +124,7 @@ case "$seam_cv_socket_flavor" in
 esac
 
 dnl
-dnl  Test for VirtualAlloc
+dnl  Test for Memory Allocation Mechanism
 dnl
 AC_CACHE_CHECK([which memory allocation mechanism to use],
 	       [seam_cv_alloc_flavor],
@@ -135,7 +135,7 @@ AC_CACHE_CHECK([which memory allocation mechanism to use],
 		     [[mmap(NULL, 16,
 			    PROT_READ | PROT_WRITE,
 			    MAP_PRIVATE | MAP_ANONYMOUS,
-			    -1, (off_t) 0) == MAP_FAILED]]),
+			    -1, (off_t) 0) == MAP_FAILED;]]),
 		     [seam_cv_alloc_flavor=mmap],
 		     [seam_cv_alloc_flavor=malloc])])])
 
@@ -150,6 +150,54 @@ case "$seam_cv_alloc_flavor" in
     malloc)
 	AC_DEFINE(HAVE_VIRTUALALLOC, 0)
 	AC_DEFINE(HAVE_MMAP, 0)
+	;;
+esac
+
+dnl
+dnl  Test for Signal and Friends
+dnl
+AC_CACHE_CHECK([for signal], [seam_cv_have_signal],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <signal.h>]],
+				  [[signal(SIGALRM, NULL);]]),
+		  [seam_cv_have_signal=yes],
+		  [seam_cv_have_signal=no])])
+
+case "$seam_cv_have_signal" in
+    no)
+	AC_DEFINE(HAVE_SIGNAL, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_SIGNAL, 1)
+	;;
+esac
+
+AC_CACHE_CHECK([for sig_atomic_t], [seam_cv_have_sig_atomic_t],
+  [AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[#include <signal.h>]],
+				     [[sig_atomic_t x;]]),
+		     [seam_cv_have_sig_atomic_t=yes],
+		     [seam_cv_have_sig_atomic_t=no])])
+
+case "$seam_cv_have_sig_atomic_t" in
+    no)
+	AC_DEFINE(HAVE_SIG_ATOMIC_T, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_SIG_ATOMIC_T, 1)
+	;;
+esac
+
+AC_CACHE_CHECK([for SetConsoleCtrlHandler], [seam_cv_have_consolectrl],
+  [AC_LINK_IFELSE(AC_LANG_PROGRAM([[#include <windows.h>]],
+				  [[SetConsoleCtrlHandler(NULL, TRUE);]]),
+		  [seam_cv_have_consolectrl=yes],
+		  [seam_cv_have_consolectrl=no])])
+
+case "$seam_cv_have_consolectrl" in
+    no)
+	AC_DEFINE(HAVE_CONSOLECTRL, 0)
+	;;
+    yes)
+	AC_DEFINE(HAVE_CONSOLECTRL, 1)
 	;;
 esac
 
