@@ -69,7 +69,7 @@ public:
  				fsArraySize(s.fsArraySize)
   {}
 
-  virtual Space* copy(void) {
+  virtual Space* copy(Space* home) {
     return new GecodeSpace(*this);
   }
 
