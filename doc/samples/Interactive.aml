@@ -21,7 +21,7 @@ inspect ({hello = "hello, world"}, 3 + 8);
 val rec infiniteList = 1::infiniteList;
 inspect infiniteList;
 
-inspect (alarm (Time.fromMilliseconds 2000));
+inspect (Future.alarm (Time.fromMilliseconds 2000));
 
 
 (***********************************************************************
@@ -43,7 +43,11 @@ Inspector.inspect fibs;
 
 val _ = List.take (fibs, 5)
 
-val f: int = byneed (fn () => raise (TextIO.print "hello, world\n"; Match));
+val f: int = byneed (fn () =>
+			(TextIO.print "hello, world\n";
+			 raise Match));
+
+inspect f;
 
 Future.await f handle e => (Inspector.inspect e; 1);
 
@@ -101,6 +105,9 @@ Inspector.inspect xs;
 Port.send (p, 17);
 
 Port.send (p, 7);
+
+
+inspect (Future.concur (fn () => Future.alarm (Time.fromMilliseconds 6000)));
 
 
 (***********************************************************************
@@ -173,27 +180,27 @@ val _ = print("length [1,2,1] = " ^ Int.toString(RealLength.f [1,2,1]) ^ "\n")
  * Packing a datatype.
  *)
 
-signature S =
+signature I =
 sig
     datatype t = A | B of int
     val x: t
 end
 
-structure S =
+structure Y =
 struct
     datatype t = A | B of int
     val x = B 5
 end
 
-structure P = Package.Pack(structure X = S
-			   signature S = S)
+structure P = Package.Pack(structure X = Y
+			   signature S = I)
 
 datatype t = A | B of int
 
-structure S' = Package.Unpack(val package = P.package
-			      signature S = sig val x: t end)
+structure Z = Package.Unpack(val package = P.package
+			     signature S = sig val x: t end)
 
-Inspector.inspect S'.x;
+Inspector.inspect Z.x;
 
 
 (***********************************************************************
