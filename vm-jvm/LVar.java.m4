@@ -8,7 +8,7 @@ public class DMLLVar implements DMLValue {
 	super();
     }
 
-    final public DMLValue getValue() { // gibt Wert zurück ohne blockieren
+    final synchronized public DMLValue getValue() { // gibt Wert zurück ohne blockieren
 	if (ref==null)
 	    return this;
 	else
@@ -16,7 +16,7 @@ public class DMLLVar implements DMLValue {
 	return ref;
     }
 
-    final public DMLValue request() { // gibt Wert zurück wenn verfügbar
+    synchronized public DMLValue request() { // gibt Wert zurück wenn verfügbar
 	if (ref==null)
 	    try {
 		this.wait();
@@ -25,15 +25,15 @@ public class DMLLVar implements DMLValue {
 	return ref;
     }
 
-    /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
-    final public boolean equals(Object val) {
-	return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
-    }
-
-    public DMLValue bind(DMLValue v) { // bindet Variable und startet Threads aus suspendVector-Liste
+    synchronized public DMLValue bind(DMLValue v) { // bindet Variable und startet Threads aus suspendVector-Liste
 	ref=v;
 	this.notifyAll();
 	return DMLConstants.dmlunit;
+    }
+
+    /** Gleichheit der referenzierten Werte, blockiert auf beiden Werten */
+    final public boolean equals(Object val) {
+	return (val instanceof DMLLVar) && this.request().equals(((DMLLVar) val).request());
     }
 
     public String toString() {
