@@ -30,33 +30,43 @@ struct
     fun checkEq(nil,nil)		= ()
       | checkEq(_,_)			= raise UnequalLengths
 
-    fun zip'(x::xs, y::ys, zs, g)	= zip'(xs, ys, (x,y)::zs, g)
-      | zip'( xs,    ys,   zs, g)	= (g(xs,ys); List.rev zs)
-    fun zip (xs1,xs2)			= zip'(xs1,xs2,nil,ignore)
-    fun zipEq (xs1,xs2)			= zip'(xs1,xs2,nil,checkEq)
+    fun zip'(x::xs, y::ys, g)		= (x,y) :: zip'(xs,ys,g)
+      | zip'( xs,    ys,   g)		= (g(xs,ys); nil)
+    fun zip (xs1,xs2)			= zip'(xs1,xs2,ignore)
+    fun zipEq (xs1,xs2)			= zip'(xs1,xs2,checkEq)
 
-    fun unzip zs			= unzip'(zs,nil,nil)
-    and unzip'((x,y)::zs, xs, ys)	= unzip'(zs, x::xs, y::ys)
-      | unzip'(     nil,  xs, ys)	= (List.rev xs, List.rev ys)
+    fun unzip((x,y)::xys)		= let val (xs,ys) = unzip xys
+					  in (x::xs, y::ys) end
+      | unzip     nil			= (nil, nil)
 
-    fun map'(f, x::xs, y::ys, zs, g)	= map'(f, xs, ys, f(x,y)::zs, g)
-      | map'(f,  xs,    ys,   zs, g)	= (g(xs,ys); List.rev zs)
-    fun map  f (xs,ys)			= map'(f,xs,ys,nil,ignore)
-    fun mapEq f (xs,ys)			= map'(f,xs,ys,nil,checkEq)
+    fun map'(f, x::xs, y::ys, g)	= f(x,y)::map'(f,xs,ys,g)
+      | map'(f,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun map  f (xs,ys)			= map'(f,xs,ys,ignore)
+    fun mapEq f (xs,ys)			= map'(f,xs,ys,checkEq)
 
-    fun mapi'(f, i, x::xs,y::ys, zs, g)	= mapi'(f,i+1,xs,ys,f(i,x,y)::zs,g)
-      | mapi'(f, i,  xs,   ys,   zs, g)	= (g(xs,ys); List.rev zs)
-    fun mapi  f (xs,ys)			= mapi'(f,0,xs,ys,nil,ignore)
-    fun mapiEq f (xs,ys)		= mapi'(f,0,xs,ys,nil,checkEq)
+    fun mapi'(f, i, x::xs,y::ys, g)	= f(i,x,y)::mapi'(f,i+1,xs,ys,g)
+      | mapi'(f, i,  xs,   ys,   g)	= (g(xs,ys); nil)
+    fun mapi  f (xs,ys)			= mapi'(f,0,xs,ys,ignore)
+    fun mapiEq f (xs,ys)		= mapi'(f,0,xs,ys,checkEq)
 
-    fun mapPartial'(f,x::xs,y::ys,zs,g)	= (case f(x,y)
-					   of NONE => mapPartial'(f,xs,ys,zs,g)
+    fun mapPartial'(f, x::xs, y::ys, g)	= (case f(x,y)
+					   of NONE   => mapPartial'(f,xs,ys,g)
 					    | SOME z =>
-						mapPartial'(f,xs,ys,z::zs,g)
+					      z::mapPartial'(f,xs,ys,g)
 					  )
-      | mapPartial'(f, xs,   ys, zs, g)	= (g(xs,ys); List.rev zs)
-    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys,nil,ignore)
-    fun mapPartialEq f (xs,ys)		= mapPartial'(f,xs,ys,nil,checkEq)
+      | mapPartial'(f, xs,     ys,   g)	= (g(xs,ys); nil)
+    fun mapPartial  f (xs,ys)		= mapPartial'(f,xs,ys,ignore)
+    fun mapPartialEq f (xs,ys)		= mapPartial'(f,xs,ys,checkEq)
+
+    fun mapiPartial'(f,i,x::xs,y::ys,g)	= (case f(i,x,y)
+					   of NONE =>
+					      mapiPartial'(f,i+1,xs,ys,g)
+					    | SOME z =>
+					      z::mapiPartial'(f,i+1,xs,ys,g)
+					  )
+      | mapiPartial'(f,i, xs,   ys,  g)	= (g(xs,ys); nil)
+    fun mapiPartial  f (xs,ys)		= mapiPartial'(f,0,xs,ys,ignore)
+    fun mapiPartialEq f (xs,ys)		= mapiPartial'(f,0,xs,ys,checkEq)
 
     fun app'(f, x::xs, y::ys, g)	= (f(x,y) ; app'(f,xs,ys,g))
       | app'(f,  xs,    ys,   g)	= g(xs,ys)
@@ -104,17 +114,41 @@ struct
     fun all  f (xs,ys)			= all'(f,xs,ys,true)
     fun allEq f (xs,ys)			= all'(f,xs,ys,false)
 
+    fun alli'(f, i, x::xs, y::ys, b)	= f(i,x,y) andalso alli'(f,i+1,xs,ys,b)
+      | alli'(f, i,  nil,   nil,  b)	= true
+      | alli'(f, i,   _,     _,   b)	= b
+    fun alli  f (xs,ys)			= alli'(f,0,xs,ys,true)
+    fun alliEq f (xs,ys)		= alli'(f,0,xs,ys,false)
+
     fun exists'(f, x::xs, y::ys) 	= f(x,y) orelse exists'(f,xs,ys)
       | exists'(f,   _,     _  ) 	= false
     fun exists  f (xs,ys)        	= exists'(f,xs,ys)
 
-    fun find'(f, x::xs, y::ys) where (f(x,y))	= SOME(x,y)
-      | find'(f, x::xs, y::ys) 			= find'(f,xs,ys)
-      | find'(f,   _,     _  )			= NONE
-    fun find f (xs,ys)				= find'(f,xs,ys)
+    fun existsi'(f, i, x::xs, y::ys) 	= f(i,x,y) orelse existsi'(f,i+1,xs,ys)
+      | existsi'(f, i,   _,     _  ) 	= false
+    fun existsi  f (xs,ys)        	= existsi'(f,0,xs,ys)
 
-    fun findi'(f,i,x::xs,y::ys) where (f(i,x,y))= SOME(i,x,y)
-      | findi'(f,i,x::xs,y::ys) 		= findi'(f,0,xs,ys)
-      | findi'(f,i,  _,    _  )			= NONE
-    fun findi f (xs,ys)				= findi'(f,0,xs,ys)
+    fun find'(f, x::xs, y::ys) 		= if f(x,y) then SOME (x,y)
+					  else find'(f,xs,ys)
+      | find'(f,   _,     _  )		= NONE
+    fun find f (xs,ys)			= find'(f,xs,ys)
+
+    fun findi'(f, i, x::xs, y::ys)	= if f(i,x,y) then SOME(i,x,y)
+					  else findi'(f,i+1,xs,ys)
+      | findi'(f, i,   _,     _  )	= NONE
+    fun findi f (xs,ys)			= findi'(f,0,xs,ys)
+
+    fun filter'(f, x::xs, y::ys, g)	= let val zs = filter'(f,xs,ys,g)
+					  in if f(x,y) then (x,y)::zs else zs
+					  end
+      | filter'(f,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun filter f (xs,ys)		= filter'(f,xs,ys,ignore)
+    fun filterEq f (xs,ys)		= filter'(f,xs,ys,checkEq)
+
+    fun filteri'(f, i, x::xs, y::ys, g)	= let val zs = filteri'(f,i+1,xs,ys,g)
+					  in if f(i,x,y) then(i,x,y)::zs else zs
+					  end
+      | filteri'(f, i,  xs,    ys,   g)	= (g(xs,ys); nil)
+    fun filteri f (xs,ys)		= filteri'(f,0,xs,ys,ignore)
+    fun filteriEq f (xs,ys)		= filteri'(f,0,xs,ys,checkEq)
 end
