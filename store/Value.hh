@@ -30,21 +30,18 @@ public:
     return HeaderOp::DecodeSize(this);
   }
   word GetArg(u_int f) {
-    AssertStore(f > INVALID_FIELD);
-    AssertStore(f <= GetSize());
-    return (word) ((u_int *) this)[f];
+    AssertStore(f < GetSize());
+    return ((word *) this)[f];
   }
   void InitArg(u_int f, word v) {
-    AssertStore(f > INVALID_FIELD);
-    AssertStore(f <= GetSize());
+    AssertStore(f < GetSize());
     ((word *) this)[f] = v;
   }
   void InitArg(u_int f, int v) {
     InitArg(f, Store::IntToWord(v));
   }
   void ReplaceArg(u_int f, word v) {
-    AssertStore(f > INVALID_FIELD);
-    AssertStore(f <= GetSize());
+    AssertStore(f < GetSize());
     if (!PointerOp::IsInt(v)) {
       u_int valgen = HeaderOp::DecodeGeneration(PointerOp::RemoveTag(v));
       u_int mygen  = HeaderOp::DecodeGeneration(this);
