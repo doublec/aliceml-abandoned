@@ -5,7 +5,7 @@
 ## 
 ## Copyright:
 ##   Thorsten Brunklaus, 2002
-##   Leif Kornstaedt, 2002
+##   Leif Kornstaedt, 2002-2003
 ## 
 ## Last change:
 ##   $Date$ by $Author$
@@ -31,8 +31,8 @@ PRIMITIVE_MODULES = \
 	List Math Option Real Ref Remote String Thread UniqueString Unsafe \
 	Vector Word8 Word8Array Word8Vector Word31
 LIB_SYSTEM_MODULES = \
-	Config IODesc OS CommandLine Component Debug Socket Rand Value Reflect \
-	Foreign
+	Config IODesc OS CommandLine Component Debug Socket Rand Value \
+	Reflect Foreign
 LIB_UTILITY_MODULES = ImpMap Cell Addr
 LIB_DISTRIBUTION_MODULES = Remote
 
@@ -48,18 +48,12 @@ SOURCES = \
 
 OBJS = $(SOURCES:%.cc=%.o)
 
-all: libalice.a
-
-libalice.a: $(OBJS)
-	-rm -f $@
-	ar rc $@ $(OBJS) || exit 1
-	ranlib $@
+all: $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(LIGHTNING_SOURCES0:%.cc=%.o)
 
 veryclean: clean
-	rm -f libalice.a
 
 distclean: veryclean
 	rm -f Makefile.depend
