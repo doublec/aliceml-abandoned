@@ -75,7 +75,6 @@ public:
 //
 // Interpreter Functions
 //
-word NativeCodeInterpreter::continuation[4];
 NativeCodeInterpreter *NativeCodeInterpreter::self;
 
 static inline StackFrame *MakeNativeFrame(NativeConcreteCode *concreteCode,

@@ -2406,15 +2406,18 @@ TagVal *NativeCodeJitter::InstrReturn(TagVal *pc) {
     }
     break;
   }
-  // Continuation expects current stack frame size in JIT_FP
-  u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
-  jit_movi_ui(JIT_FP, size * sizeof(word));
   NativeCodeFrame::GetContinuation(JIT_R0, JIT_V2);
-  jit_lshi_ui(JIT_R0, JIT_R0, 2);
-  jit_movi_p(JIT_V1, NativeCodeInterpreter::continuation);
-  jit_ldxr_p(JIT_R0, JIT_V1, JIT_R0);
-  jit_addi_p(JIT_R0, JIT_R0, 2 * sizeof(word));
-  jit_jmpr(JIT_R0);
+  u_int size = NativeCodeFrame::GetFrameSize(currentNLocals);
+  Generic::Scheduler::PopAndPushFrame(JIT_V2, size, 0);
+  jit_insn *no_cont = jit_beqi_ui(jit_forward(), JIT_R0, Store::IntToWord(0));
+  RestoreRegister();
+  NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
+  BranchToOffset(JIT_R0);
+  jit_patch(no_cont);
+  Assert((Worker::CONTINUE == 0) && (Worker::PREEMPT == 1));
+  JITStore::LoadStatus(JIT_R0);
+  jit_nei_i(JIT_R0, JIT_R0, 0);
+  RETURN();
   return INVALID_POINTER;
 }
 
@@ -2599,35 +2602,6 @@ void NativeCodeJitter::Init(u_int bufferSize) {
   // Compute Initial PC
   CompileProlog("Dummy Information");
   initialPC = Store::IntToWord(GetRelativePC());
-  // Compile Return Continuation
-  {
-    char *start = jit_set_ip(codeBuffer).ptr;
-    Generic::Scheduler::PopFrameReg(JIT_FP);
-    JITStore::LoadStatus(JIT_FP);
-    jit_movi_ui(JIT_R0, Worker::CONTINUE);
-    jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_FP, 0);
-    jit_movi_ui(JIT_R0, Worker::PREEMPT);
-    jit_patch(no_preempt);
-    RETURN();
-    NativeCodeInterpreter::continuation[1] = CopyCode(start)->ToWord();
-  }
-  // Compile Native Continuation
-  {
-    char *start = jit_set_ip(codeBuffer).ptr;
-    Generic::Scheduler::PopFrameReg(JIT_FP);
-    JITStore::LoadStatus(JIT_R0);
-    jit_insn *no_preempt = jit_beqi_ui(jit_forward(), JIT_R0, 0);
-    jit_movi_ui(JIT_R0, Worker::PREEMPT);
-    RETURN();
-    jit_patch(no_preempt);
-    Generic::Scheduler::GetFrame(JIT_V2);
-    RestoreRegister();
-    NativeCodeFrame::GetPC(JIT_R0, JIT_V2);
-    BranchToOffset(JIT_R0);
-    NativeCodeInterpreter::continuation[3] = CopyCode(start)->ToWord();
-  }
-  RootSet::Add(NativeCodeInterpreter::continuation[1]);
-  RootSet::Add(NativeCodeInterpreter::continuation[3]);
 }
 
 // Function of coord * value option vector * string vector *

@@ -24,8 +24,6 @@ typedef Worker::Result (*native_fun)(class NativeCodeFrame *);
 
 class AliceDll NativeCodeInterpreter : public Interpreter {
 public:
-  // Exported Code
-  static word continuation[4];
   // Exported NativeCodeInterpreter Instance
   static NativeCodeInterpreter *self;
   // NativeCodeInterpreter Constructor
