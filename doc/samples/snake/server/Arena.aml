@@ -22,22 +22,104 @@ struct
     type arena = P.field Array2.array (* MUTABLE *)
 
 
-    type config = {
-        dimensions: int * int,
-	players: int
-        (* MAGIC NUMBERs ... *)
-    }
+    type config = 
+	{
+	 dimensions: int * int,
+	 players: int
+	 (* MAGIC NUMBERs ... *)
+	 }
     
-    fun random {dimensions,players} =
+    fun random {dimensions : int * int, players} =
 	let
-	    
+	    val (maxR,maxC) = dimensions
+	    val arena = Array2.array(maxR,maxC,P.EMPTY)
+	    (* initialising an empty arena with dimensions [dimensions] *)
+
+	    fun setLimit () = (* set a wall round the level *)
+		let
+		    fun horizontal r = 
+			if r = maxR
+			    then (Array2.update(arena,maxR-1,0,P.WALL);
+				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			else (Array2.update(arena,r,0,P.WALL);
+			      Array2.update(arena,r,maxC-1,P.WALL);
+			      horizontal(r + 1))
+		    fun vertical c = 
+			if c = maxC 
+			    then (Array2.update(arena,0,maxC-1,P.WALL);
+				  Array2.update(arena,maxR-1,maxC-1,P.WALL))
+			else (Array2.update(arena,0,c,P.WALL);
+			      Array2.update(arena,maxR-1,c,P.WALL);
+			      vertical(c + 1))
+		in
+		    (horizontal (0); vertical (0))
+		end
+
+	    fun setWall   _   _ 0 = ()
+	      | setWall (r,c) d n = 
+		case d of
+		    P.UP    => (Array2.update(arena,r,c,P.WALL);
+				wall (Pos.above(r,c)) d (n-1))
+		  | P.DOWN  => (Array2.update(arena,r,c,P.WALL);
+				wall (Pos.below(r,c)) d (n-1))
+		  | P.LEFT  => (Array2.update(arena,r,c,P.WALL);
+				wall (Pos.left(r,c)) d (n-1))
+		  | P.RIGHT => (Array2.update(arena,r,c,P.WALL);
+				wall (Pos.right(r,c)) d (n-1))
+	    (* [wall (rs,cs) d s] sets a wall in direction [d]
+	       with length [s] and startposition [rs,cs] *)
+
+	    fun chooseWall () =
+		let
+		    val l_horizont = Random.int (maxC div 2) - 2
+		    val l_vertical = Random.int (maxR div 2) - 2
+		    fun wall 0 = setWall (,) P.UP l_vertical
+		      | wall 1 = setWall (,) P.DOWN l_vertical
+		      | wall 2 = setWall (,) P.LEFT l_horizontal
+		      | wall 3 = setWall (,) P.RIGHT l_horizontal
+		in
+		    wall (Random.int 4)
+		end
+
+	    fun setWalls n = if n = 0
+				 then ()
+			     else (chooseWall ();
+				   setWalls (n-1))
+
+	    fun startPointTest startlist = true (* TODO: implementation *)
+
+	    fun startpoints 0 xs = xs
+	      | startpoints p xs = 
+		let
+		    val (rs,cs) = (Random.int maxR,Random.int maxC)
+		    val d = case Random.int 4 of
+			         0 => P.UP
+			       | 1 => P.DOWN
+			       | 2 => P.LEFT
+			       | _ => P.RIGHT
+		in
+		    if startPointTest(rs,cs,d)
+			then startpoints (p-1) ((rs,cs,d)::xs)
+		    else startpoints p xs
+		end
+
+	    fun correctionTest a = true (* TODO: implementation *)
+		
 	in
-            raise Fail "not yet implemented"
+	    (setLimit ();
+	     setWalls (Random.int ((maxR + maxC) div 10));
+	     if correctionTest arena
+		 then (arena,startpoints players nil)
+	     else random {dimensions,players})
 	end
+
+    val pregamefield  = ref (Array2.array(0,0,P.EMPTY))
+    val postgamefield = ref (Array2.array(0,0,P.EMPTY))
 
     fun placeSnakes (a,snakes) =
 	let
-	    
+	    val _ = pregamefield := a
+	    val testsnakes = List.foldl (fn(s,xs) => s::xs) nil snakes
 	in
             raise Fail "not yet implemented"
 	end
@@ -66,9 +148,9 @@ struct
 		      then help (0, c + 1) xs
 		  else
 		      if Array2.sub (old, rows, cols) = 
-                            Array2.sub (new, rows, cols)
+			 Array2.sub (new, rows, cols)
 			  then help (r + 1, c) xs
-		      else help (r + 1, c) (((r, c), Array2.sub (new, r, c)) :: xs)
+		      else help (r+1, c) (((r,c),Array2.sub(new, r, c))::xs)
       in
 	  help (0,0) nil
       end

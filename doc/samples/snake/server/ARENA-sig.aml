@@ -22,7 +22,8 @@ sig
 
     type config = {
         dimensions: int * int,
-	players: int
+	players: int,
+	walls: int (* max amount of walls *)
         (* MAGIC NUMBERs ... *)
     }
     
