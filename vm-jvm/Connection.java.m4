@@ -1,14 +1,14 @@
 /*
- * Author: 
+ * Author:
  *      Daniel Simon, <dansim@ps.uni-sb.de>
- * 
+ *
  * Copyright:
  *      Daniel Simon, 1999
  *
  * Last change:
  *    $Date$ by $Author$
  * $Revision$
- * 
+ *
  */
 package de.uni_sb.ps.dml.runtime;
 
@@ -22,58 +22,65 @@ final public class Connection {
     static Exporter exp = null;
     static java.util.Random rand = null;
 
+    final static java.net.InetAddress thisHost;
+    static {
+	java.net.InetAddress i=null;
+	try {
+	    i = java.net.InetAddress.getLocalHost();
+	} catch (java.net.UnknownHostException u) {
+	    System.err.println(u);
+	    u.printStackTrace();
+	}
+	thisHost = i;
+    }
+
+    final private static void startServer() throws java.rmi.RemoteException {
+	java.util.Properties prop = System.getProperties();
+	Object o = prop.get("java.security.policy");
+	if (o == null) {
+	    java.lang.String name = (java.lang.String) prop.get("user.name");
+	    prop.put("java.security.policy",
+		     "http://"+thisHost.getHostName()+"/~"+name+"/codebase/policy");
+	}
+	if (System.getSecurityManager() == null) {
+	    System.out.println("starte security manager");
+	    try {
+		System.setSecurityManager(new RMISecurityManager());
+	    } catch (Exception e) {
+		System.err.println("could not install security manager");
+		System.err.println("Policy-file used: "+prop.get("java.security.policy"));
+	    }
+	}
+	export = new java.util.Hashtable();
+	exp = new Exporter(export);
+	rand = new java.util.Random(42);
+
+	// System.out.println("starte registry");
+	java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
+	try {
+	    // System.out.println("binde exporter in registry");
+	    Naming.rebind("//localhost/exporter",exp);
+	} catch (java.net.MalformedURLException m) {
+	    System.err.println(m);
+	    m.printStackTrace();
+	}
+    }
+
     _BUILTIN(Offer) {
-	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_BUILTTUP;
 	_APPLY(val) {
 	    // FROMSINGLE(args,val,1,"Connection.offer");
-	    java.net.InetAddress i=null;
-	    try {
-		i=java.net.InetAddress.getLocalHost();
-	    } catch (java.net.UnknownHostException u) {
-		System.err.println(u);
-		u.printStackTrace();
-		return null;
-	    }
-
-	    if (export==null) { // starten des Servers
-		java.util.Properties prop = System.getProperties();
-		java.lang.String home = (java.lang.String) prop.get("user.home");
-		java.lang.String name = (java.lang.String) prop.get("user.name");
-		// System.out.println("setze properties");
-		// prop.put("java.rmi.server.codebase",
-		// "http://"+i.getHostName()+"/~"+name+"/codebase/"); // der letzte / ist wichtig
-		prop.put("java.security.policy",
-			 "http://"+i.getHostName()+"/~"+name+"/codebase/policy");
-		// System.out.println("schreibe klassen");
-		// PickleClassLoader.loader.writeCodebase(home+"/public_html/codebase");
-
-		if (System.getSecurityManager() == null) {
-		    System.out.println("starte security manager");
-		    try {
-			System.setSecurityManager(new RMISecurityManager());
-		    } catch (Exception e) {
-			System.err.println("could not install security manager");
-			System.err.println("Policy-file used: "+prop.get("java.security.policy"));
-			return new STRING ("invalid ticket");
-		    }
-		}
-		export = new java.util.Hashtable();
-		exp = new Exporter(export);
-		rand = new java.util.Random(42);
-
-		// System.out.println("starte registry");
-		java.rmi.registry.LocateRegistry.createRegistry(1099); // am Standardport
+	    if (export == null) {
 		try {
-		    // System.out.println("binde exporter in registry");
-		    Naming.rebind("//localhost/exporter",exp);
-		} catch (java.net.MalformedURLException m) {
-		    System.err.println(m);
-		    m.printStackTrace();
+		    startServer();
+		} catch (java.rmi.RemoteException n) {
+		    System.err.println("Could not start server!");
+		    return new STRING ("invalid ticket");
 		}
 	    }
 	    java.lang.String ticket = Long.toString(rand.nextLong());
 	    export.put(ticket,val);
-	    return new STRING (i.getHostAddress()+"\\"+ticket);
+	    return new STRING (thisHost.getHostAddress()+"\\"+ticket);
 	}
     }
     /** val offer : value -> ticket */
@@ -82,10 +89,15 @@ final public class Connection {
     _BUILTIN(Take) {
 	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    // _FROMSINGLE(val,"Connection.take");
-	    if (!(val instanceof STRING)) {
-		_error("argument not String",val);
+	    if (export == null) {
+		try {
+		    startServer();
+		} catch (java.rmi.RemoteException n) {
+		    System.err.println("Could not start server!");
+		    return new STRING ("invalid ticket");
+		}
 	    }
+	    try {
 	    java.lang.String ti = ((STRING) val).value;
 	    // System.out.println("ti = "+ti);
 	    int indexofbackslash = ti.indexOf('\\');
@@ -108,6 +120,9 @@ final public class Connection {
 		return null;
 	    }
 	    return (DMLValue) exp.get(ticket);
+	    } catch (ClassCastException e) {
+		_RAISENAME(General.Match);
+	    }
 	}
     }
     /** val take : ticket -> value */
