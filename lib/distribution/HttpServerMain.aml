@@ -30,23 +30,23 @@ structure HttpServerMain :> HTTP_SERVER_MAIN =
 	    let
 		val relFile = Url.toString (Url.setQuery (#uri request, NONE))
 		val file = TextIO.openIn (documentRoot ^ relFile)
-		val content = TextIO.inputAll file
+		val body = TextIO.inputAll file
 	    in
 		TextIO.closeIn file;
 		Http.makeResponse
-		    {statusCode = 200, contentType = "text/plain", content}
+		    {statusCode = 200, contentType = "text/plain", body}
 	    end
 
 	fun debugHandler (request: Http.request) =
 	    Http.makeResponse
 		{statusCode = 200, contentType = "text/plain",
-		 content = (#method request ^ " " ^
-			    Url.toString (#uri request) ^ " " ^
-			    #protocol request ^ "\n" ^
-			    Http.StringMap.foldi
-				(fn (name, value, rest) =>
-				    name ^ ": " ^ value ^ "\n" ^ rest)
-				"" (#headers request))}
+		 body = (#method request ^ " " ^
+			 Url.toString (#uri request) ^ " " ^
+			 #protocol request ^ "\n" ^
+			 Http.StringMap.foldi
+			     (fn (name, value, rest) =>
+				 name ^ ": " ^ value ^ "\n" ^ rest)
+			     "" (#headers request))}
 
 	val blackHole: unit = Promise.future (Promise.promise ())
 

@@ -29,7 +29,7 @@ structure HttpServer :> HTTP_SERVER =
 	    Http.makeResponse
 		{statusCode = 404,
 		 contentType = "text/html",
-		 content =
+		 body =
 		 "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\"\n\
 		 \<HTML><HEAD>\n\
 		 \<TITLE>404 Not Found</TITLE>\n\
@@ -72,7 +72,7 @@ structure HttpServer :> HTTP_SERVER =
 		    handle _ =>
 			   Http.makeResponse
 			       {statusCode = 501, contentType = "text/plain",
-				content = "Internal server error"}
+				body = "Internal server error"}
 	    in
 		Http.writeResponse (socket, response);
 		Socket.close socket

@@ -40,7 +40,7 @@ structure HttpClientMain :> HTTP_CLIENT_MAIN =
 		    (fn (name, value) =>
 			TextIO.print (name ^ ": " ^ value ^ "\n"))
 		    (#headers response);
-		TextIO.print ("\n" ^ #content response ^ "\n");
+		TextIO.print ("\n" ^ #body response ^ "\n");
 		OS.Process.success
 	    end
 	  | main _ = usage ()

@@ -15,9 +15,11 @@ import structure Http from "Http"
 
 signature HTTP_CLIENT =
     sig
-	type document = {contentType: string, content: string}
+	type document = {contentType: string, body: string}
 
-	val request: Url.t * Http.request -> Http.response
-	val get: Url.t -> Http.response
-	val post: Url.t * document -> Http.response
+	exception Authority
+
+	val request: Url.t * Http.request -> Http.response  (* Authority *)
+	val get: Url.t -> Http.response                     (* Authority *)
+	val post: Url.t * document -> Http.response         (* Authority *)
     end

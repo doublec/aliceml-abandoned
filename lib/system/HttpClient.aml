@@ -17,7 +17,7 @@ import signature HTTP_CLIENT from "HTTP_CLIENT-sig"
 
 structure HttpClient :> HTTP_CLIENT =
     struct
-	type document = {contentType: string, content: string}
+	type document = {contentType: string, body: string}
 
 	exception Authority
 
@@ -69,10 +69,10 @@ structure HttpClient :> HTTP_CLIENT =
 		request (url, {method = "GET",
 			       uri = localUrl url,
 			       protocol = "HTTP/1.1",
-			       headers, content = ""})
+			       headers, body = ""})
 	    end
 
-	fun post (url, {contentType, content}) =
+	fun post (url, {contentType, body}) =
 	    let
 		val headers = Http.StringMap.new ()
 	    in
@@ -81,11 +81,11 @@ structure HttpClient :> HTTP_CLIENT =
 		Http.StringMap.insert (headers, "User-Agent", userAgent);
 		Http.StringMap.insert (headers, "Content-Type", contentType);
 		Http.StringMap.insert (headers, "Content-Length",
-				       Int.toString (String.size content));
+				       Int.toString (String.size body));
 		(*--** Date *)
 		request (url, {method = "POST",
 			       uri = localUrl url,
 			       protocol = "HTTP/1.1",
-			       headers, content = content})
+			       headers, body})
 	    end
     end

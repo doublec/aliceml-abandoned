@@ -20,15 +20,15 @@ structure Http :> HTTP =
     struct
 	structure StringMap = MkHashImpMap(StringHashKey)
 
-	type document = {contentType: string, content: string}
+	type document = {contentType: string, body: string}
 	type request =
 	     {method: string, uri: Url.t, protocol: string,
-	      headers: string StringMap.t, content: string}
+	      headers: string StringMap.t, body: string}
 	type response =
 	     {protocol: string, statusCode: int, reasonPhrase: string,
-	      headers: string StringMap.t, content: string}
+	      headers: string StringMap.t, body: string}
 	type simple_response =
-	     {statusCode: int, contentType: string, content: string}
+	     {statusCode: int, contentType: string, body: string}
 
 	exception Closed
 	exception Format
@@ -79,16 +79,16 @@ structure Http :> HTTP =
 			readHeaders' (socket, headers)
 		    end
 
-	fun readContent (socket, headers) =
+	fun readBody (socket, headers) =
 	    case StringMap.lookup (headers, "contentLength") of
 		SOME s =>
 		    ((case Int.fromString s of
 			  SOME n =>
 			      let
-				  val content = Socket.inputN (socket, n)
+				  val body = Socket.inputN (socket, n)
 			      in
-				  if String.size content <> n then raise Format
-				  else content
+				  if String.size body <> n then raise Format
+				  else body
 			      end
 			| NONE => raise Format)
 		     handle Overflow => raise Format)
@@ -105,13 +105,13 @@ structure Http :> HTTP =
 			    {method, uri = requestURI, protocol = "HTTP/1.0"}
 		      | _ => raise Format
 		val headers = readHeaders socket
-		val content = readContent (socket, headers)
+		val body = readBody (socket, headers)
 	    in
 		{method = #method rl,
 		 uri = Url.fromString (#uri rl)
 		       handle Url.Malformed => raise Format,
 		 protocol = #protocol rl,
-		 headers, content}
+		 headers, body}
 	    end
 
 	fun parseResponseLine s =
@@ -133,22 +133,22 @@ structure Http :> HTTP =
 		val {protocol, statusCode, reasonPhrase} =
 		    parseResponseLine (readLine socket)
 		val headers = readHeaders socket
-		val content = readContent (socket, headers)
+		val body = readBody (socket, headers)
 	    in
-		{protocol, statusCode, reasonPhrase, headers, content}
+		{protocol, statusCode, reasonPhrase, headers, body}
 	    end
 
-	fun writeRequest (socket, {method, uri, protocol, headers, content}) =
+	fun writeRequest (socket, {method, uri, protocol, headers, body}) =
 	    Socket.output
 		(socket,
 		 method ^ " " ^ Url.toString uri ^ " " ^ protocol ^ "\r\n" ^
 		 StringMap.foldi
 		     (fn (name, value, rest) =>
 			 name ^ ": " ^ value ^ "\r\n" ^ rest)
-		     ("\r\n" ^ content) headers)
+		     ("\r\n" ^ body) headers)
 
 	fun writeResponse (socket, {protocol, statusCode, reasonPhrase,
-				    headers, content}) =
+				    headers, body}) =
 	    Socket.output
 		(socket,
 		 protocol ^ " " ^ Int.toString statusCode ^ " " ^
@@ -156,7 +156,7 @@ structure Http :> HTTP =
 		 StringMap.foldi
 		     (fn (name, value, rest) =>
 			 name ^ ": " ^ value ^ "\r\n" ^ rest)
-		     ("\r\n" ^ content) headers)
+		     ("\r\n" ^ body) headers)
 
 	fun reasonPhrase statusCode =
 	    case statusCode of
@@ -202,15 +202,15 @@ structure Http :> HTTP =
 	      | 505 => "HTTP Version Not Supported"
 	      | _ => "Unknown"
 
-	fun makeResponse {statusCode, contentType, content} =
+	fun makeResponse {statusCode, contentType, body} =
 	    let
 		val headers = StringMap.new ()
 	    in
 		StringMap.insert (headers, "Content-Type", contentType);
 		StringMap.insert (headers, "Content-Length",
-				  Int.toString (String.size content));
+				  Int.toString (String.size body));
 		(*--** Date, Server *)
 		{protocol = "HTTP/1.1", statusCode,
-		 reasonPhrase = reasonPhrase statusCode, headers, content}
+		 reasonPhrase = reasonPhrase statusCode, headers, body}
 	    end
     end

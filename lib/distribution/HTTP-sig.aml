@@ -20,12 +20,12 @@ signature HTTP =
 
 	type request =
 	     {method: string, uri: Url.t, protocol: string,
-	      headers: string StringMap.t, content: string}
+	      headers: string StringMap.t, body: string}
 	type response =
 	     {protocol: string, statusCode: int, reasonPhrase: string,
-	      headers: string StringMap.t, content: string}
+	      headers: string StringMap.t, body: string}
 	type simple_response =
-	     {statusCode: int, contentType: string, content: string}
+	     {statusCode: int, contentType: string, body: string}
 
 	exception Closed
 	exception Format
