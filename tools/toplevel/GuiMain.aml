@@ -365,9 +365,18 @@ structure GuiMain =
 		    let
                 	val signalP = Promise.promise()
 			val signal = Promise.future signalP
+			val dir = OS.FileSys.getDir()
+			val srcDir' = OS.Path.getParent f
+				      handle OS.Path.Path => dir
+			val srcDir = if srcDir' = dir then NONE else SOME srcDir'
 		    in
                 	evalSignal := SOME signalP;
-			spawn (Evaluator.evalFile (f, signal);
+			spawn (Option.app OS.FileSys.chDir srcDir;
+			       Evaluator.evalFile (f, signal);
+                	       (* Hack: this fails when the feeded code cd'ed to
+		        	* its own directory... *)
+			       Option.app (fn dir' => if dir' <> OS.FileSys.getDir() then ()
+						      else OS.FileSys.chDir dir) srcDir;
 			       evalSignal := NONE)
 		    end
             end
