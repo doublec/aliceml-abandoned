@@ -22,7 +22,7 @@
     <LI> <A href="manual/modules.php3"><I>Higher-order modules</I></A>:
          a more powerful module language </LI>
     <LI> <A href="manual/components.php3"><I>Components</I></A>:
-         platform-independency and type-safe dynamic loading of modules </LI>
+         platform-independence and type-safe dynamic loading of modules </LI>
     <LI> <A href="manual/packages.php3"><I>Packages</I></A>:
 	 integrating static with dynamic typing and first class modules
     <LI> <A href="manual/pickling.php3"><I>Pickling</I></A>:
