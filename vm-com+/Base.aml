@@ -580,10 +580,8 @@ signature STRING =
 
     val map :		(Char.char -> Char.char) -> string -> string
     val translate :	(Char.char -> string) -> string -> string
-    val tokens :	(Char.char -> bool) -> string -> string list
-(*MISSING
     val fields :	(Char.char -> bool) -> string -> string list
-*)
+    val tokens :	(Char.char -> bool) -> string -> string list
 
     val op < :		string * string -> bool
     val op > :		string * string -> bool
@@ -664,17 +662,28 @@ structure String : STRING =
 	end
 
 
-    fun tokens  f   s                 = tokens'(f, explode s)
-    and tokens'(f,  nil )             = nil
-      | tokens'(f, c::cs) where (f c) = tokens'(f,cs)
-      | tokens'(f, c::cs)             = let val (cs1,cs2) = token'(f,cs) in
-					   implode(c::cs1) :: tokens'(f,cs2)
-					end
-    and token'(f,  nil )              = (nil,nil)
-      | token'(f, c::cs) where (f c)  = let val (cs1,cs2) = token'(f,cs) in
-					   (c::cs1, cs2)
-					end
-      | token'(f, c::cs)              = (nil,cs)
+    fun fields  f  s		= fields'(f, explode s, nil)
+    and fields'(f, nil, ss)	= List.rev ss
+      | fields'(f, cs,  ss)	= let val (cs1,cs2) = field'(f,cs,nil) in
+				      fields'(f, cs2, implode(cs1)::ss)
+				  end
+    and field'(f,  nil,  cs')	= (List.rev cs', nil)
+      | field'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | field'(f, c::cs, cs')	= field'(f, cs, c::cs')
+
+    fun tokens  f   s		= tokens'(f, explode s, nil)
+    and tokens'(f,  nil,  ss)	= List.rev ss
+      | tokens'(f, c::cs, ss) where (f c)
+      				= tokens'(f,cs,ss)
+      | tokens'(f, c::cs, ss)	= let val (cs1,cs2) = token'(f,cs,nil) in
+				      tokens'(f, cs2, implode(c::cs1)::ss)
+				  end
+    and token'(f,  nil,  cs')	= (List.rev cs', nil)
+      | token'(f, c::cs, cs') where (f c)
+      				= (List.rev cs', c::cs)
+      | token'(f, c::cs, cs')	= token'(f, cs, c::cs')
+
 
     fun toCString s =
 	List.foldr (fn(c,cs) => Char.toCString c ^ cs) "" (explode s)
@@ -1924,6 +1933,8 @@ signature FUTURE =
 
     val await :		'a -> 'a
     val awaitOne :	'a * 'b -> 'a
+
+    val isFuture :	'a -> unit
   end
 
 
@@ -1937,6 +1948,8 @@ structure Future : FUTURE =
 
     __primitive val await :	'a -> 'a		= "Transient.await"
     __primitive val awaitOne :	'a * 'b -> 'a		= "Transient.awaitOne"
+
+    __primitive val isFuture :	'a -> bool		= "Transient.isFuture"
   end
 
 
@@ -2135,3 +2148,6 @@ val round	= Real.round
 (*MISSING
 __primitive val use : string -> unit = "use"
 *)
+
+val byneed	= Future.byneed
+val concur	= Future.concur
