@@ -33,11 +33,11 @@ infix  0  before
 
 (* References *)
 
-__primitive val op := : 'a ref * 'a -> unit	= "General.:="
+__primitive val op := : 'a ref * 'a -> unit	= "Ref.:="
 
 fun !(ref v)					= v
 fun (r1 as ref x1) :=: (r2 as ref x2)		= (r1 := x2 ; r2 := x1)	(**)
-
+						  (*TODO: better be atomic *)
 
 (* Generic and overloaded Identifiers (but we don't overload them :-P) *)
 
