@@ -1,3 +1,4 @@
+use "test.aml";
 
 (* parser *)
 
@@ -12,7 +13,6 @@ rule exp =
   | LPAR, exp, RPAR  => (Br (exp,RPARleft))
 
 parser eval = exp
-
 
 
 
