@@ -18,12 +18,10 @@
 #endif
 
 #include <cstdio>
-#include "generic/Transform.hh"
-#include "generic/ConcreteCode.hh"
 #include "alice/Data.hh"
 #include "alice/AbstractCodeInterpreter.hh"
 
-class DllExport AliceConcreteCode: private ConcreteCode {
+class AliceDll AliceConcreteCode: private ConcreteCode {
 private:
   enum { ABSTRACT_CODE_POS, TRANSFORM_POS, SIZE };
 public:
