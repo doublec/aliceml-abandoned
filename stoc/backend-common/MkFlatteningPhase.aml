@@ -397,10 +397,11 @@ structure Simplify :> SIMPLIFY =
 	    let
 		val id' = freshId Source.nowhere
 		val dec' = S.ValDec (coord, id', simplifyExp exp)
-(*--**		val errExp' = RaiseExp (coord, VarExp (coord, longid))*)
+		val errExp = RaiseExp (Source.nowhere,
+				       VarExp (Source.nowhere, longid_Match))
 	    in
 		S.LetExp (Source.nowhere, [dec'],
-			  simplifyGraph (buildGraph (matches, exp),
+			  simplifyGraph (buildGraph (matches, errExp),
 					 [(nil, id')]))
 	    end
 	  | simplifyExp (RaiseExp (coord, exp)) =
