@@ -1,0 +1,16 @@
+Package: alice
+Version: 1.0.0
+Revision: 1
+Source: http://www.ps.uni-sb.de/~tack/%n-%v.tar.gz
+Maintainer: Guido Tack <tack@ps.uni-sb.de>
+HomePage: http://www.ps.uni-sb.de/alice
+License: BSD
+Description: Alice Language Layer for Seam
+Source-MD5: 2d8ae2958f236a2fd555b0e3bc1d919e
+ConfigureParams: --disable-lightning
+Depends: seam-shlibs (= %v-%r), seam
+#BuildDependsOnly: True
+#SplitOff: <<
+#  Package: seam-shlibs
+#  Files: lib/libseam*.dylib
+#<<
