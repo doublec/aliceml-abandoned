@@ -105,7 +105,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 
 	(* Annotate the `Use' set at each statement *)
 
-	fun scanBody (ValDec (i, id, exp, _)::stms, initial) =
+	fun scanBody (ValDec (i, id, exp)::stms, initial) =
 	    let
 		val lset = scanBody (stms, initial)
 		val set = lazyValOf (scanExp (exp, del (lset, id)))
@@ -113,7 +113,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody (RecDec (i, idExpList, _)::stms, initial) =
+	  | scanBody (RecDec (i, idExpList)::stms, initial) =
 	    let
 		val lset = scanBody (stms, initial)
 		val lset' =
@@ -155,7 +155,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    let
 		val lset3 = scanBody (body3, initial)
 		val lset2 = scanBody (body2, lset3)
-		val lset1 = scanBody (body1, lset2)
+		val lset1 = scanBody (body1, union (lset2, lazyValOf lset3))
 		val set = lazyValOf (del (lset1, id))
 	    in
 		setInfo (i, set);
@@ -168,11 +168,15 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		setInfo (i, set);
 		Orig set
 	    end
-	  | scanBody ([TestStm (i, id, test, body1, body2)], initial) =
+	  | scanBody ([TestStm (i, id, testBodyList, body)], initial) =
+	    (*--** was there any reason for the test to be scanned twice? *)
 	    let
 		val initial' = Orig (lazyValOf initial)
-		val lset1 = scanTest (test, scanBody (body1, initial'))
-		val lset2 = scanTest (test, scanBody (body2, initial'))
+		val lset1 =
+		    List.foldl (fn ((test, body), initial') =>
+				scanTest (test, scanBody (body, initial')))
+		    initial' testBodyList
+		val lset2 = scanBody (body, initial')
 		val lset1' = union (lset1, lazyValOf (ins (lset2, id)))
 		val set = lazyValOf lset1'
 	    in
@@ -241,15 +245,17 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    in
 		processArgs (args, union (lset, set), del)
 	    end
-	  | scanExp (AppExp (_, id, args), lset) =
+	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (VarAppExp (_, id, args), lset) =
 	    processArgs (args, ins (lset, id), ins)
-	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
 	  | scanExp (TagAppExp (_, _, args, _), lset) =
 	    processArgs (args, lset, ins)
 	  | scanExp (ConAppExp (_, id, args, _), lset) =
 	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (RefAppExp (_, id), lset) = ins (lset, id)
-	  | scanExp (PrimAppExp (_, _, ids), lset) = insList (lset, ids)
+	  | scanExp (SelAppExp (_, _, id), lset) = ins (lset, id)
+	  | scanExp (FunAppExp (_, id, _, args), lset) =
+	    processArgs (args, ins (lset, id), ins)
 	  | scanExp (AdjExp (_, id1, id2), lset) = ins (ins (lset, id1), id2)
 
 	(* Compute `Def' and `Kill' sets *)
@@ -278,9 +284,8 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | initTest (LabTest (_, id), set) = ins (set, id)
 	  | initTest (VecTest ids, set) = insList (set, ids)
 
-	fun initStm (ValDec (_, id, exp, _), set) =
-	    (ins (set, id); initExp exp)
-	  | initStm (RecDec (_, idExpList, _), set) =
+	fun initStm (ValDec (_, id, exp), set) = (ins (set, id); initExp exp)
+	  | initStm (RecDec (_, idExpList), set) =
 	    List.app (fn (id, exp) => (ins (set, id); initExp exp)) idExpList
 	  | initStm (EvalStm (_, exp), _) = initExp exp
 	  | initStm (RaiseStm (_, _), _) = ()
@@ -292,15 +297,18 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 		ins (set', id);
 		initBody (body1, StampSet.clone set);
 		initBody (body2, set');
+		(*--** is this correct? *)
 		initBody (body3, set)
 	    end
 	  | initStm (EndHandleStm (_, _), _) = ()
-	  | initStm (TestStm (_, _, test, body1, body2), set) =
+	  | initStm (TestStm (_, _, testBodyList, body), set) =
 	    let
 		val set' = StampSet.clone set
 	    in
-		initTest (test, set'); initBody (body1, set');
-		initBody (body2, set)
+		List.app (fn (test, body) =>
+			  (initTest (test, set'); initBody (body, set')))
+		testBodyList;
+		initBody (body, set)
 	    end
 	  | initStm (SharedStm ({liveness = ref (Kill _), ...}, _, _), _) = ()
 	  | initStm (SharedStm (_, body, _), set) = initBody (body, set)

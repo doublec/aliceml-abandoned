@@ -51,7 +51,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	fun share nil = nil
 	  | share (stms as [O.SharedStm (_, _, _)]) = stms
 	  | share stms =
-	    [O.SharedStm (stmInfo Source.nowhere, stms, ref 0)]
+	    [O.SharedStm (stmInfo Source.nowhere, stms, Stamp.new ())]
 
 	datatype continuation =
 	    Decs of dec list * continuation
@@ -67,12 +67,12 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    (*--** missing type for longid translation *)
 		val stm =
 		    O.ValDec (stmInfo (#region info), id',
-			      O.SelAppExp (info', label, id), false)
+			      O.SelAppExp (info', label, id))
 	    in
 		(stms @ [stm], id')
 	    end
 
-	fun decsToIdExpList (O.ValDec (_, id, exp', _)::rest, region) =
+	fun decsToIdExpList (O.ValDec (_, id, exp')::rest, region) =
 	    (id, exp')::decsToIdExpList (rest, region)
 	  | decsToIdExpList (O.IndirectStm (_, ref bodyOpt)::rest, region) =
 	    decsToIdExpList (valOf bodyOpt, region) @
@@ -83,10 +83,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stmInfo (#region info), id,
-			O.TagTest label_true, thenStms,
+			[(O.TagTest label_true, thenStms)],
 			[O.TestStm (stmInfo (#region info), id,
-				    O.TagTest label_false,
-				    elseStms, errStms)])]
+				    [(O.TagTest label_false, elseStms)],
+				    errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
@@ -101,8 +101,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateCont (Share (ref (SOME stms), _)) = stms
 	and translateDec (ValDec (info, VarPat (_, id), exp), cont) =
 	    let
-		fun declare exp' =
-		    O.ValDec (stmInfo (#region info), id, exp', false)
+		fun declare exp' = O.ValDec (stmInfo (#region info), id, exp')
 	    in
 		translateExp (exp, declare, cont)
 	    end
@@ -121,7 +120,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				  val toExp = O.VarExp (info, toId)
 			      in
 				  O.ValDec (stmInfo (#region (infoId fromId)),
-					    fromId, toExp, false)
+					    fromId, toExp)
 			      end) aliases
 		val subst = List.map (fn (id1, id2, _) => (id1, id2)) aliases
 		val decs' =
@@ -130,11 +129,11 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     translateExp (substExp (exp, subst),
 				   fn exp' =>
 				   O.ValDec (stmInfo (#region (infoExp exp)),
-					     id, exp', false),
+					     id, exp'),
 				   Goto decs)) nil idExpList
 		val idExpList' = decsToIdExpList (decs', #region info)
 		val rest =
-		    O.RecDec (stmInfo (#region info), idExpList', false)::
+		    O.RecDec (stmInfo (#region info), idExpList')::
 		    aliasDecs @ translateCont cont
 		val errStms =
 		    share [O.RaiseStm (stmInfo (#region info), id_Bind)]
@@ -148,7 +147,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     (*--** the following ConTest has wrong arity *)
 		     stms1 @ stms2 @
 		     [O.TestStm (stmInfo (#region info), id1,
-				 O.ConTest id2, rest, errStms)]
+				 [(O.ConTest id2, rest)], errStms)]
 		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
@@ -161,8 +160,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info = infoExp exp
 		val id' = freshId info
-		fun declare exp' =
-		    O.ValDec (stmInfo (#region info), id', exp', false)
+		fun declare exp' = O.ValDec (stmInfo (#region info), id', exp')
 		val stms = translateExp (exp, declare, cont)
 	    in
 		(stms, id')
@@ -303,6 +301,31 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		f (O.FunExp (info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
+(*--**DEBUG
+	  | translateExp (FunExp (info, matches), f, cont) =
+	    let
+		val region = #region (infoMatch (List.hd matches))
+		fun return exp' = O.ReturnStm (stmInfo region, exp')
+		val matches' =
+		    List.map (fn Match (_, pat, exp) =>
+			      (#region (infoExp exp), pat,
+			       translateExp (exp, return, Goto nil))) matches
+		val r = ref NONE
+		val errStms = [O.IndirectStm (stmInfo region, r)]
+		val (args, graph, mapping, consequents) =
+		    buildFunArgs (matches', errStms)
+		val body = translateGraph (graph, mapping)
+		val id = freshId info
+	    in
+		checkReachability consequents;
+		r := SOME [O.ValDec (stmInfo region, id,
+				     O.ConAppExp (info, id_Match,
+						  args, O.Unary)),
+			   O.RaiseStm (stmInfo region, id)];
+		f (O.FunExp (info, Stamp.new (), nil, args, body))::
+		translateCont cont
+	    end
+*)
 	  | translateExp (AppExp (info, TagExp (info', Lab (_, label), isNAry),
 				  exp2), f, cont) =
 	    let
@@ -355,7 +378,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms2, args) = unfoldArgs (exp2, rest, true)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
-		r := SOME (f (O.AppExp (info, id1, args))::
+		r := SOME (f (O.VarAppExp (info, id1, args))::
 			   translateCont cont);
 		stms1
 	    end
@@ -448,11 +471,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val info' = infoExp exp
 		val id' = freshId info'
-		val shared = ref 0
+		val stamp = Stamp.new ()
 		val cont' =
-		    Goto [O.EndHandleStm (stmInfo (#region info), shared)]
-		fun f' exp' =
-		    O.ValDec (stmInfo (#region info'), id', exp', false)
+		    Goto [O.EndHandleStm (stmInfo (#region info), stamp)]
+		fun f' exp' = O.ValDec (stmInfo (#region info'), id', exp')
 		val tryBody = translateExp (exp, f', cont')
 		val catchInfo = exp_info (#region info, PreboundType.typ_exn)
 		val catchId = freshId catchInfo
@@ -472,7 +494,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				   f, cont)
 	    in
 		[O.HandleStm (stmInfo (#region info), tryBody,
-			      catchId, catchBody, contBody, shared)]
+			      catchId, catchBody, contBody, stamp)]
 	    end
 	  | translateExp (LetExp (_, decs, exp), f, cont) =
 	    let
@@ -526,6 +548,26 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		checkReachability consequents;
 		stms
 	    end
+(*--**DEBUG
+	and simplifyCase (region, exp, matches, raiseId, isReraise) =
+	    let
+		val r = ref NONE
+		val rest = [O.IndirectStm (stmInfo region, r)]
+		val (stms, id) = unfoldTerm (exp, Goto rest)
+		val id' = freshId (infoExp exp)
+		val errStms =
+		    [O.ValDec (stmInfo region, id',
+			       O.ConAppExp (infoExp exp, raiseId,
+					    O.OneArg id, O.Unary)),
+		     if isReraise then O.ReraiseStm (stmInfo region, id')
+		     else O.RaiseStm (stmInfo region, id')]
+		val (graph, consequents) = buildGraph (matches, errStms)
+	    in
+		r := SOME (translateGraph (graph, [(nil, id)]));
+		checkReachability consequents;
+		stms
+	    end
+*)
 	and translateGraph (Node (pos, test, ref thenGraph, ref elseGraph,
 				  status as ref (Optimized (_, _))), mapping) =
 	    let
@@ -577,8 +619,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, test', mapping') =
 		    translateTest (test, pos, mapping)
 	    in
-		stms @ [O.TestStm (stmInfo Source.nowhere, id, test',
-				   translateGraph (thenGraph, mapping'),
+		stms @ [O.TestStm (stmInfo Source.nowhere, id,
+				   [(test',
+				     translateGraph (thenGraph, mapping'))],
 				   translateGraph (elseGraph, mapping'))]
 	    end
 	and translateTypArgs (O.OneArg typ, pos, mapping) =

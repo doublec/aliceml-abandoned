@@ -51,16 +51,9 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		format' f
 	    end
 
-	local
-	    val count = ref 0
-	in
-	    fun gen () =
-		let
-		    val n = !count + 1
-		in
-		    count := n; n
-		end
-	end
+	fun visit (stamp, shared) =
+	    not (StampSet.member (shared, stamp)) before
+	    StampSet.insert (shared, stamp)
 
 	fun insert (x, ys as (y::yr)): int list =
 	    if x < y then x::ys else y::insert (x, yr)
@@ -133,41 +126,42 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	  | outputTest (VecTest ids) =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 
-	fun outputStm (ValDec (_, id, exp, isToplevel)) =
-	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX,
-		 if isToplevel then CO "toplevel" else NULL]
-	  | outputStm (RecDec (_, idExpList, isToplevel)) =
-	    SEQ [S "rec", IN, if isToplevel then CO "toplevel" else NULL,
+	fun outputStm (ValDec (_, id, exp), _) =
+	    SEQ [S "val ", ID id, S " = ", IN, outputExp exp, EX]
+	  | outputStm (RecDec (_, idExpList), _) =
+	    SEQ [S "rec", IN,
 		 SEQ (List.map (fn (id, exp) =>
 				SEQ [NL, S "val ", ID id, S " = ",
 				     IN, outputExp exp, EX]) idExpList), EX]
-	  | outputStm (EvalStm (_, exp)) =
+	  | outputStm (EvalStm (_, exp), _) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
-	  | outputStm (HandleStm (_, body1, id, body2, body3, shared)) =
-	    (shared := gen ();
-	     SEQ [S "try", CO (Int.toString (!shared)), IN, NL,
-		  outputBody body1, EX, NL,
-		  S "catch ", ID id, IN, NL, outputBody body2, EX, NL,
-		  S "cont", IN, NL, outputBody body3, EX])
-	  | outputStm (EndHandleStm (_, ref i)) =
-	    S ("(* leave " ^ Int.toString i ^ " *)")
-	  | outputStm (TestStm (_, id, test, body1, body2)) =
-	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
-		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
-		 EX]
-	  | outputStm (RaiseStm (_, id)) = SEQ [S "raise ", ID id]
-	  | outputStm (ReraiseStm (_, id)) = SEQ [S "reraise ", ID id]
-	  | outputStm (SharedStm (_, body, shared as ref 0)) =
-	    (shared := gen ();
-	     SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,
-		  outputBody body])
-	  | outputStm (SharedStm (_, _, ref i)) =
-	    SEQ [S ("goto " ^ (Int.toString i))]
-	  | outputStm (ReturnStm (_, exp)) =
+	  | outputStm (HandleStm (_, body1, id, body2, body3, stamp), shared) =
+	    SEQ [S "try", CO (Stamp.toString stamp), IN, NL,
+		 outputBody (body1, shared), EX, NL,
+		 S "catch ", ID id, IN, NL, outputBody (body2, shared), EX, NL,
+		 S "cont", IN, NL, outputBody (body3, shared), EX]
+	  | outputStm (EndHandleStm (_, stamp), _) =
+	    S ("(* leave " ^ Stamp.toString stamp ^ " *)")
+	  | outputStm (TestStm (_, id, testBodyList, body), shared) =
+	    SEQ [S "case ", ID id, S " of", IN, NL,
+		 SEQ (List.map (fn (test, body) =>
+				SEQ [outputTest test, S " =>", IN, NL,
+				     outputBody (body, shared), EX, NL])
+		      testBodyList),
+		 S "else", IN, NL, outputBody (body, shared), EX]
+	  | outputStm (RaiseStm (_, id), _) = SEQ [S "raise ", ID id]
+	  | outputStm (ReraiseStm (_, id), _) = SEQ [S "reraise ", ID id]
+	  | outputStm (SharedStm (_, body, stamp), shared) =
+	    if visit (stamp, shared) then
+		SEQ [S ("label " ^ (Stamp.toString stamp) ^ ":"), NL,
+		     outputBody (body, shared)]
+	    else
+		SEQ [S ("goto " ^ (Stamp.toString stamp))]
+	  | outputStm (ReturnStm (_, exp), _) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
-	  | outputStm (IndirectStm (_, ref bodyOpt)) =
-	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt)]
-	  | outputStm (ExportStm (_, exp)) =
+	  | outputStm (IndirectStm (_, ref bodyOpt), shared) =
+	    SEQ [S "indirect", NL, outputBody (valOf bodyOpt, shared)]
+	  | outputStm (ExportStm (_, exp), _) =
 	    SEQ [S "export ", IN, outputExp exp, EX]
 	and outputExp (LitExp (_, lit)) = S (outputLit lit)
 	  | outputExp (PrimExp (_, s)) = S ("prim \"" ^ s ^ "\"")
@@ -192,11 +186,11 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "#[", SEP (S ", ", List.map ID ids), S "]"]
 	  | outputExp (FunExp (_, _, _, args, body)) =
 	    SEQ [NL, S "fn ", outputArgs args, S " =>",
-		 IN, NL, outputBody body, EX]
-	  | outputExp (AppExp (_, id, args)) =
+		 IN, NL, outputBody (body, StampSet.new ()), EX]
+	  | outputExp (PrimAppExp (_, s, ids)) =
+	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
+	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
-	  | outputExp (SelAppExp (_, label, id)) =
-	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
 	  | outputExp (TagAppExp (_, label, args, conArity)) =
 	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
 		 S ") ", outputArgs args]
@@ -205,19 +199,22 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 outputArgs args]
 	  | outputExp (RefAppExp (_, id)) =
 	    SEQ [S "ref ", ID id]
-	  | outputExp (PrimAppExp (_, s, ids)) =
-	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
+	  | outputExp (SelAppExp (_, label, id)) =
+	    SEQ [S ("#" ^ Label.toString label ^ " "), ID id]
 	  | outputExp (AdjExp (_, id1, id2)) =
 	    SEQ [S "adj ", ID id1, S ", ", ID id2]
-	and outputBody stms =
-	    SEP (NL,
-		 List.map (fn stm =>
-			   SEQ [outputInfo (infoStm stm), outputStm stm]) stms)
+	  | outputExp (FunAppExp (_, id, _, args)) =
+	    SEQ [ID id, S " ", outputArgs args]
+	and outputBody (stms, shared) =
+	    SEP (NL, List.map (fn stm =>
+			       SEQ [outputInfo (infoStm stm),
+				    outputStm (stm, shared)]) stms)
 
 	fun outputComponent (importList, (body, _)) =
 	    format (SEQ [SEQ (List.map
 			      (fn (id, _, url) =>
 			       SEQ [S "import ", ID id,
 				    S (" from " ^ Url.toString url ^ "\n")])
-			      importList), outputBody body, NL])
+			      importList), outputBody (body, StampSet.new ()),
+			 NL])
     end
