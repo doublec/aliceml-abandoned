@@ -22,7 +22,7 @@ public:
   virtual void PrepareForGC(Block *p) = 0;
 
   // returns INVALID_POINTER if there is none
-  virtual Block *GetAbstractRepresentation() = 0;
+  virtual Block *GetAbstractRepresentation(Block *blockWithHandler) = 0;
 };
 
 #endif
