@@ -23,7 +23,8 @@
 
   <P>
     Other important features of Stockhausen, like
-    <A href="futures.php3">futures</A> and 
+    <A href="laziness.php3">lazy evaluation</A>,
+    <A href="futures.php3">futures</A>, and 
     <A href="threads.php3">threads</A>, show up as
     <A href="library.php3">library</A> primitives only.
   </P>
