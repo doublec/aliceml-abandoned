@@ -1740,3 +1740,12 @@ Interpreter::Result ByteCodeInterpreter::Handle() {
   Scheduler::PopFrame();
   return Worker::RAISE;
 }
+
+const char *ByteCodeInterpreter::Identify() {
+  return "ByteCodeInterpreter";
+}
+
+void ByteCodeInterpreter::DumpFrame(word frame) {
+  //--** nicer output
+  std::fprintf(stderr, "Java method\n");
+}
