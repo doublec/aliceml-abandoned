@@ -111,7 +111,7 @@ ALICELINK0 = OZ_LOAD=pattern='?{x}'='?{x}'.ozf:cache=$(OZHOME)/cache/ ozl
 ALICELINK1 = STOCKHOME=build1/install build1/install/bin/alicelink
 ALICELINK2 = STOCKHOME=build2/install build2/install/bin/alicelink
 
-ALICELINK_OPTS = -z9
+ALICELINK_OPTS = -z9 --sequential
 
 ALICEDEP = sml @SMLload=$(BOOTSTRAPDIR)/alicedep
 
