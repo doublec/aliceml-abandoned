@@ -91,9 +91,17 @@ public:
     Assert((GetLabel() >= MIN_TRANSIENT_LABEL) &&
 	   (GetLabel() <= MAX_TRANSIENT_LABEL) &&
 	   (GetLabel() != REF_LABEL));
-    Assert((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
+    Assert(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
     HeaderOp::EncodeLabel(this, l);
     Block::ReplaceArg(REF_POS, w);
+  }
+  void Become(BlockLabel l, int i) {
+    Assert((GetLabel() >= MIN_TRANSIENT_LABEL) &&
+	   (GetLabel() <= MAX_TRANSIENT_LABEL) &&
+	   (GetLabel() != REF_LABEL));
+    Assert(l >= MIN_TRANSIENT_LABEL && l <= MAX_TRANSIENT_LABEL);
+    HeaderOp::EncodeLabel(this, l);
+    Block::ReplaceArg(REF_POS, i);
   }
 };
 
