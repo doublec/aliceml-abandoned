@@ -250,13 +250,19 @@ structure Resolver: RESOLVER =
 	fun new (name, handlers) = (name, handlers)
 
 	fun existsFile url =
-	    (TextIO.closeIn (TextIO.openIn (Url.toStringRaw url)); true)
-	    handle IO.Io _ => false
+	    let
+		val s = Url.toStringRaw url
+	    in
+		TextIO.closeIn (TextIO.openIn s);
+		trace ("[" ^ s ^ "] ...localize succeeded\n");
+		SOME s
+	    end handle IO.Io _ => NONE
 
 	fun exists url =
 	    (*--** we need something more general (also interpret scheme) *)
 	    case Url.getScheme url of
-		SOME "x-oz" => true   (*--** hack for the Mozart VM *)
+		SOME "x-oz" =>
+		    SOME (Url.toStringRaw url)   (*--** hack for Mozart VM *)
 	      | SOME "file" => existsFile (Url.setScheme (url, NONE))
 	      | _ => existsFile url
 
@@ -266,16 +272,11 @@ structure Resolver: RESOLVER =
 	and localize' (name, (name', f)::handlers, s) =
 	    (case f s of
 		 SOME url =>
-		     let
-			 val s' = Url.toStringRaw url
-		     in
-			 trace ("[" ^ name ^ "] ...[" ^ s' ^ "] (" ^
-				name' ^ ")\n");
-			 if exists url then
-			     (trace ("[" ^ name ^ "] ...localize succeeded\n");
-			      SOME s')
-			 else localize' (name, handlers, s)
-		     end
+		     (trace ("[" ^ name ^ "] ...[" ^ Url.toStringRaw url ^
+			     "] (" ^ name' ^ ")\n");
+		      case exists url of
+			  SOME s' => SOME s'
+			| NONE => localize' (name, handlers, s))
 	       | NONE =>
 		     (trace ("[" ^ name ^ "] ...[not applicable] (" ^
 			     name' ^ ")\n");
