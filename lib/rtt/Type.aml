@@ -1349,11 +1349,11 @@ val _ = checkMuFwd := checkMu
 		   | MU _	=> ()	(*ASSUME no holes under mu *)
 		   | t'		=> app1(t, lift, true)
 		)
-	    and liftRow(t, CONS, r) =
+	    and liftRow(t, cons, r) =
 		(case r
 		   of NAMED(fs,SOME n')	=>
 			if n' <= n then ()
-			else replace(t, CONS(NAMED(fs,SOME n)))
+			else replace(t, cons(NAMED(fs,SOME n)))
 		    | _			=> ();
 		 appRow1(r, lift)
 		)
