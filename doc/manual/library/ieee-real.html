@@ -35,6 +35,12 @@
 	 datatype rounding_mode = TO_NEAREST | TO_NEGINF | TO_POSINF | TO_ZERO
 	 type decimal_approx    = {kind : float_class, sign : bool, digits : int list,  exp : int}
     end
+
+	 val getRoundingMode : unit -> rounding_mode
+	 val setRoundingMode : rounding_mode -> unit
+
+	 val toString :        decimal_approx -> string
+	 val fromString :      string -> decimal_approx option
   </PRE>
 
 <?php section("description", "description") ?>
@@ -45,13 +51,12 @@
   </P>
 
   <P>
-    <I>Limitations:</I> The following standard functions are
+    <I>Limitations:</I> The following standard function is
     currently missing:
   </P>
 
   <UL>
-    <LI><TT>getRoundingMode</TT>, <TT>setRoundingMode</TT></LI>
-    <LI><TT>toString</TT>, <TT>fromString</TT></LI>
+    <LI><TT>scan</TT></LI>
   </UL>
 
   <DL>
