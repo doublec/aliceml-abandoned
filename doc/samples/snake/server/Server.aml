@@ -395,6 +395,9 @@ struct
                     (* move all snakes *)
                     val (res as { dead, grown, gateEntered, finished }) = 
                             Arena.moveSnakes (arena, !snakes, !snakesInGate)
+
+                    fun sendDead [] = ()
+                      | sendDead deads = invokeOnAll (#playersDied, deads)
                 in 
                     (* shall we place a goody ? *)
                     if !goodies < #goodie config andalso 
@@ -414,7 +417,7 @@ struct
                             pointsChanged := true;
                             PState.nameNColor state :: namesNColors
                         end) [] dead ++ 
-                    (fn names => invokeOnAll (#playersDied, names));
+                    sendDead;
                     
                     (* register grown snakes *)
                     List.app (fn grownSnake =>
@@ -454,12 +457,31 @@ struct
                             PState.finish (state, 1.0 - expiredTime);
                             pointsChanged := true
                         end) finished;
+                    
+                    (* timeout expired? *)
+                    if timeLeft = Time.fromMilliseconds 0 then
+                        (* kill all slow snakes! *)
+                        DynArray.foldl (fn (p as PDESC pdesc, deads) =>
+                            let val state   = #state pdesc
+                            in
+                                if PState.isPlaying state orelse
+                                    PState.hasEnteredGate state then 
+                                    (PState.die (state, #lives config);
+                                     pointsChanged := true;
+                                     PState.nameNColor state :: deads)
+                                else
+                                    deads
+                            end) [] partDescs ++
+                        sendDead
+                    else ();
 
                     sendTick (!pointsChanged, Arena.commit arena, timeLeft);
 
-                    (* are there still some snakes left on the arena ? *)
+                    (* are there still some snakes left on the arena ? 
+                       and is there still time left *)
                     List.length (!snakes) + List.length (!snakesInGate) 
-                        - List.length dead - List.length finished > 0
+                        - List.length dead - List.length finished > 0 
+                        andalso timeLeft <> (Time.fromMilliseconds 0)
                 end)
             
             (**
