@@ -202,11 +202,15 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    let
 		val initial' = Orig (lazyValOf initial)
 		val lset1 =
-		    List.foldl (fn ((test, body), initial') =>
-				scanTest (test, scanBody (body, initial')))
-		    initial' testBodyList
+		    List.foldl (fn ((test, body), lset) =>
+				let
+				    val lset' = scanBody (body, initial')
+				    val lset'' = scanTest (test, lset')
+				in
+				    union (lset, lazyValOf lset'')
+				end) initial' testBodyList
 		val lset2 = scanBody (body, initial')
-		val lset1' = union (lset1, lazyValOf (ins (lset2, id)))
+		val lset1' = ins (union (lset1, lazyValOf lset2), id)
 		val set = lazyValOf lset1'
 	    in
 		setInfo (i, set);
@@ -270,8 +274,7 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	  | scanExp (VecExp (_, ids), lset) = insList (lset, ids)
 	  | scanExp (FunExp (_, _, _, args, body), lset) =
 	    let
-		val set =
-		    lazyValOf (scanBody (body, Copy (StampSet.new ())))
+		val set = lazyValOf (scanBody (body, Copy (StampSet.new ())))
 	    in
 		processArgs (args, union (lset, set), del)
 	    end
