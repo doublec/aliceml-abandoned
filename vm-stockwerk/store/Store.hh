@@ -88,7 +88,7 @@ public:
   static void DoGC(word &root);
   static void SetGCParams(u_int mem_free, u_int mem_tolerance);
   static void AddToIntgenSet(Block *v);
-  static void RegisterWeakDict(WeakMap *v);
+  static DllExport void RegisterWeakDict(WeakMap *v);
   static u_int GCStatus() {
     return (1 << STORE_NEED_GC_STATUS);
   }
