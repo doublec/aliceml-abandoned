@@ -1,0 +1,81 @@
+ifndef SOURCES
+  SOURCES := foo.aml
+endif
+export SOURCES
+
+
+ifndef ROOT
+  ROOT := $(basename $(firstword $(SOURCES)))
+endif
+export ROOT
+
+ifndef EXT
+  EXT := ozf
+endif
+export EXT
+
+ifndef LINKED
+  LINKED := ${ROOT}-linked.${EXT}
+endif
+export LINKED
+
+ifndef ALICERUN
+  ALICERUN := alicerun
+endif
+export ALICERUN
+
+ifndef ALICEC
+  ALICEC := alicec
+endif
+export ALICEC
+
+ifndef ALICE
+  ALICE := alice
+endif
+
+ifndef ALICELINK
+  ALICELINK := alicelink
+endif
+
+ifndef ALICEDEP
+  ALICEDEP := alicedep
+endif
+
+.PHONY: .DELETE_ON_ERROR all components library depend clean
+.DELETE_ON_ERROR:
+
+
+FILTER_SOURCES := %.aml 
+export FILTER_SOURCES
+FILTERED_SOURCES := $(filter $(FILTER_SOURCES),$(SOURCES))
+export FILTERED_SOURCES
+COMPONENTS := $(addsuffix .$(EXT),$(basename $(FILTERED_SOURCES)))
+export COMPONENTS
+ROOT := $(addsuffix .$(EXT), $(ROOT))
+export ROOT
+
+all: components
+clean: clean
+
+depend: Makefile.depend
+
+Makefile.depend: $(FILTERED_SOURCES)
+	$(ALICEDEP) $(FILTERED_SOURCES) > Makefile.depend
+
+-include Makefile.depend
+
+components: Makefile.depend $(COMPONENTS)
+
+components: Makefile.depend $(COMPONENTS)
+
+library: components
+	$(ALICELINK) --include ./ ./$(ROOT) -o $(LINKED)
+
+%.$(EXT) : %-prepare.ozf
+	$(ALICERUN) $<
+
+%.$(EXT) : %.aml
+	$(ALICEC) $< -o $@
+
+clean: 
+	rm -f $(COMPONENTS) $(ROOT) Makefile.depend
