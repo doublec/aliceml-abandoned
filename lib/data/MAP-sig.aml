@@ -70,4 +70,5 @@ sig
     val partitioni :	(key * 'a -> bool) -> 'a map -> 'a map * 'a map
 
     val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
+    val submap :	('a * 'a -> bool) -> 'a map * 'a map -> bool
 end

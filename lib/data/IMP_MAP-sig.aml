@@ -68,4 +68,5 @@ sig
     val filteri :	(key * 'a -> bool) -> 'a map -> unit
 
     val equal :		('a * 'a -> bool) -> 'a map * 'a map -> bool
+    val submap :	('a * 'a -> bool) -> 'a map * 'a map -> bool
 end

@@ -287,6 +287,23 @@ functor MkRedBlackMap (Key : ORDERED) :> MAP where type key = Key.t =
 	    fn (MAP(_, m1), MAP(_, m2)) => cmp (start m1, start m2)
 	  end
 
+(* Return true if and only if the second map extends the first *)
+    fun submap eqRng = let
+	  fun cmp (t1, t2) = (case (next t1, next t2)
+		 of ((E, _), (E, _)) => true
+		  | ((E, _), _) => true
+		  | (_, (E, _)) => false
+		  | ((T(_, _, xk, x, _), r1), (T(_, _, yk, y, _), r2)) => (
+		      case Key.compare(xk, yk)
+		       of LESS => false
+			| EQUAL => eqRng (x, y) andalso cmp (r1, r2)
+			| GREATER => cmp (t1, r2)
+		      (* end case *))
+		(* end case *))
+	  in
+	    fn (MAP(_, m1), MAP(_, m2)) => cmp (start m1, start m2)
+	  end
+
 (*
   (* given an ordering on the map's range, return an ordering
    * on the map.
