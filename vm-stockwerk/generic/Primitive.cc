@@ -84,7 +84,7 @@ PrimitiveInterpreter::GetAbstractRepresentation(Block *blockWithHandler) {
 
 void PrimitiveInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   Assert(ConcreteCode::FromWord(closure->GetConcreteCode())->
-	 GetInterpreter() == this);
+	 GetInterpreter() == this); closure = closure;
   taskStack->PushFrame(PrimitiveFrame::New(this)->ToWord());
 }
 
