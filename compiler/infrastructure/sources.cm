@@ -10,5 +10,3 @@ Group is
 	MkHashScopedImpMap.aml
 	IntMap.aml
 	StringMap.aml
-	CHAR_BUFFER-sig.aml
-	CharBuffer.aml
