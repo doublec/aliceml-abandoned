@@ -205,7 +205,11 @@ struct
 			     Gtk.widgetSetSensitive (colorHBox, false);
 			     Gtk.widgetSetSensitive (spectatorCheckButton, 
 						     false);
-			     playersJoined [(name, color)];
+			     if Gtk.toggleButtonGetActive spectator
+				 then ()
+			     else playersJoined [(name, color)];
+			     Gtk.comboSetPopdownStrings (colorCombo, 
+						       [Color.toString color]);
 			     Promise.fulfill (state, game))
 		      | SND errorMsg => 
 			    (reset (SOME ("ERROR!!", errorMsg));
@@ -219,6 +223,7 @@ struct
 	    Gtk.windowSetModal (playerSettings, true);
 	    Gtk.windowSetTitle (playerSettings, "Player Settings");
 	    Gtk.windowSetPosition (playerSettings, Gtk.WIN_POS_CENTER);
+	    Gtk.textViewSetEditable (playerText, false);
 	    
 	    Gtk.signalConnect (playerSettings,
 			       "delete-event", 

@@ -45,11 +45,11 @@ fun highscoreToString score =
 
 	fun toString' ({name, color, points,
 			player, level}, str) =
-	    ("Player: "   ^ name                   ^
-             "\nColor: "  ^ (Color.toString color) ^ 
-             "  Points: " ^ (pToString points)  ^ 
+	    ("<span foreground='" ^ (Color.toHexStr color) ^ "'>" ^
+             "Player: " ^ name ^
+             "\nPoints: " ^ (pToString points)  ^ 
              "  Player: " ^ (pToString player)  ^ 
-             "  Level: "  ^ (pToString level)   ^ "\n\n" ^ str)
+             "  Level : " ^ (pToString level)   ^ "\n\n</span>" ^ str)
 
 	fun toString score = 
 	    case Highscore.foldl toString' "" score of

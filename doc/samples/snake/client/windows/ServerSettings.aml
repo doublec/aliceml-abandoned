@@ -334,9 +334,7 @@ struct
 			       fn _ => mainQuit ());
 
 	    insertColors ();
-            print "before setting values\n";
 	    setValues Config.defaultMulti;
-	    print "after them\n";
 	    
 	    Gtk.entrySetEditable (Gtk.comboGetFieldEntry colorCombo,false);
 	    Gtk.entrySetMaxLength (nameText, 12);

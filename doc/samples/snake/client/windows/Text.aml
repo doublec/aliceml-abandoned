@@ -33,6 +33,9 @@ struct
 	    Gtk.windowSetModal (textWindow, true);
 	    Gtk.windowSetPosition (textWindow, Gtk.WIN_POS_CENTER);
 	    Gtk.containerSetBorderWidth (textWindow , 10);
+	    if String.isPrefix "<" mode
+		then Gtk.labelSetMarkup (label, mode)
+	    else ();
 
 	    Gtk.signalConnect (textWindow , "delete-event", 
 			       fn _ => Gtk.widgetDestroy textWindow);
