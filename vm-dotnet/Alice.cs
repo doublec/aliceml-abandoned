@@ -2693,25 +2693,61 @@ namespace Alice {
 	class link : Procedure0 {
 	    private System.String Url;
 	    public link(System.String url) {
-		Url = url;
-	    }
-	    public override Object Apply() {
-		Module mod  = Assembly.LoadFrom(Url).GetModule(Url);
-		Type type   = mod.GetType("Execute");
-		if (mod == null) {
-		    Console.Write("Hmm, unable to obtain Module ");
-		    Console.WriteLine(Url);
-		    return null;
-		}
-		else if (type == null) {
-		    Console.WriteLine("Hmm, unable to obtain class Execute");
-		    return null;
+		if (url.StartsWith("x-alice:")) {
+		    Url = url.Remove(0, "x-alice:".Length);
 		}
 		else {
-		    MethodInfo minf = type.GetMethod("Main");
-		    Object[] args   = new Object[1];
-		    args[0] = Komponist.global_k;
-		    return minf.Invoke(null, args);
+		    Url = url;
+		}
+	    }
+	    public override Object Apply() {
+		Console.Write("Komponist: Loading Assembly: ");
+		Console.WriteLine(Url);
+		Module mod = Assembly.LoadFrom(Url).GetModule(Url);
+		if (mod == null) {
+		    Console.Write("Komponist: Error: loading of ");
+		    Console.Write(Url);
+		    Console.WriteLine(" failed.");
+		    return Prebound.unit;
+		}
+		else {
+		    Console.Write("Komponist: Fetching ");
+		    Console.Write(Url);
+		    Console.WriteLine("/class Execute");
+		    Type type = mod.GetType("Execute");
+		    if (type == null) {
+			Console.Write("Komponist: Error: Fetch of ");
+			Console.Write(Url);
+			Console.WriteLine("/class Execute failed.\n");
+			return Prebound.unit;
+		    }
+		    else {
+			Console.Write("Komponist: Fetching Method ");
+			Console.Write(Url);
+			Console.WriteLine("/class Execute::Main");
+			MethodInfo minf = type.GetMethod("Main");
+			Object[] args   = new Object[1];
+			args[0]         = Komponist.global_k;
+
+			if (minf == null) {
+			    Console.Write("Komponist: Error: Fetch of Method ");
+			    Console.Write(Url);
+			    Console.Write("/class Execute::Main failed.");
+			    return Prebound.unit;
+			}
+			else {
+			    Object val;
+
+			    Console.Write("Komponist: Inovking ");
+			    Console.Write(Url);
+			    Console.WriteLine("/class Execute::Main");
+			    val = minf.Invoke(null, args);
+			    Console.Write("Komponist: Finished ");
+			    Console.Write(Url);
+			    Console.WriteLine("/class Execute::Main");
+			    return val;
+			}
+		    }
 		}
 	    }
 	}
