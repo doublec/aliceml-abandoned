@@ -23,7 +23,18 @@ local
 	      | _ => args
 	end
 
-    fun main _ = OS.Process.exit (SMLToMozartBatchCompiler.stoc (getArgs ()))
+    fun stoc args = SMLToMozartBatchCompiler.stoc args
+		    handle Crash.Crash message =>
+			       (TextIO.output (TextIO.stdErr,
+					       "CRASH: " ^ message ^ "\n");
+				OS.Process.failure)
+			 | e =>   (*--**DEBUG*)
+			       (TextIO.output (TextIO.stdErr,
+					       "uncaught exception " ^
+					       exnName e ^ "\n");
+				OS.Process.failure)
+
+    fun main _ = OS.Process.exit (stoc (getArgs ()))
 in
     val _ = SMLofNJ.exportFn ("stoc-mozart", main)
 end;

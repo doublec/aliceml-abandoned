@@ -127,13 +127,4 @@ functor MkBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	fun stoc arguments =
 	    (defaults (); stoc' (OptionParser.parse arguments))
 	    handle Error.Error (_, _) => OS.Process.failure
-		 | Crash.Crash message =>
-		       (TextIO.output (TextIO.stdErr,
-				       "CRASH: " ^ message ^ "\n");
-			OS.Process.failure)
-		 | e =>   (*--**DEBUG*)
-		       (TextIO.output (TextIO.stdErr,
-				       "uncaught exception " ^
-				       exnName e ^ "\n");
-			OS.Process.failure)
     end
