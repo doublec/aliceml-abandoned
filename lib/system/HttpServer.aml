@@ -75,11 +75,15 @@ structure HttpServer :> HTTP_SERVER =
 			     (Http.parseFieldValue s)
 	      | NONE => nil
 
+	(*--**  Currently have to pass token stream as reference
+		in order to work around infamous thread space leak
+		(particularly under Mozart). *)
 	fun closeIdle (tokens, socket) =
-	    (Future.awaitEither (Future.alarm (!idleTime), tokens);
-	     if Future.isDetermined tokens then
-		 case tokens of
-		     ()::tokens => closeIdle (tokens, socket)
+	    (Future.awaitEither (Future.alarm (!idleTime), !tokens);
+	     if Future.isDetermined (!tokens) then
+		 case !tokens of
+		     ()::tokens' => (tokens := tokens';
+				     closeIdle (tokens, socket))
 		   | nil =>
 			(trace "explicitly closing connection\n";
 			 Socket.close socket)
@@ -92,7 +96,7 @@ structure HttpServer :> HTTP_SERVER =
 		val (stream, tokens) = Stream.stream ()
 	    in
 		spawn handleConnection' (socket, host, port, stream);
-		spawn closeIdle (tokens, socket)
+		spawn closeIdle (ref tokens, socket)
 	    end
 	and handleConnection' (socket, host, port, stream) =
 	    let
