@@ -1,0 +1,29 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+signature MK_DICTIONARY = 
+sig
+    type elemtyp
+    type dictionary
+
+    val default : elemtyp
+    val empty    : dictionary
+
+    val copy     : elemtyp array * elemtyp array * int  -> unit 
+    val insert'  : elemtyp * dictionary * int -> int  
+    val insert   : elemtyp * dictionary -> int 
+    val delete   : int  * dictionary -> unit
+    val return   : int  * dictionary -> elemtyp
+end 
