@@ -325,9 +325,16 @@ structure CodeGen =
 	and decListCode decs = List.concat (map decCode decs)
 
 	(* Codegenerierung für Deklarationen *)
-	and decCode (ValDec(_, id', exp',_)) =
+	and decCode (ValDec(_, id' as Id (_,stamp',_), exp',_)) =
 	    let
-		val loc = Local.assign(id', Local.nextFree())
+		val loc =
+		    let
+			val l=Local.get stamp'
+		    in
+			if l = 1
+			    then Local.assign(id', Local.nextFree())
+			else l
+		    end
 	    in
 		(Lambda.pushFun id';
 		 (expCode exp' @
