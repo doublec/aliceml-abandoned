@@ -13,4 +13,4 @@ is
     output-flat-grammar.cm
     engine.cm
 
-    BackendCommon.sml
+    MakeBackendCommon.sml
