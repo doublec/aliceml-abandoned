@@ -104,14 +104,14 @@ pkgdatadir = @datadir@/@PACKAGE@
 VPATH = $(SRCTOP)
 
 ALICEC0 = sml @SMLload=$(BOOTSTRAPDIR)/alicec-seam
-ALICEC1 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
-ALICEC2 = ALICE_HOME=build1/install build1/install/bin/alicec --seam
+ALICEC1 = ALICE_HOME=build1/install ${bindir}/alicec --seam
+ALICEC2 = ALICE_HOME=build1/install ${bindir}/alicec --seam
 
 ALICEC_EXTRA_OPTS = --no-warn-conventions
 ALICEC_OPTS = --check-intermediate --implicit-import-file - $(ALICEC_EXTRA_OPTS)
 
-ALICELINK1 = ALICE_HOME=build1/install build1/install/bin/alicelink
-ALICELINK2 = ALICE_HOME=build1/install build1/install/bin/alicelink
+ALICELINK1 = ALICE_HOME=build1/install ${bindir}/alicelink
+ALICELINK2 = ALICE_HOME=build1/install ${bindir}/alicelink
 
 ALICELINK_OPTS = -v
 
@@ -546,8 +546,8 @@ build1/install/compiler/CompilerMain.stc:
 	(cd build1 && tar cf - `find . -name '*.stc'`) | \
 	(cd build1/install && tar xvf -)
 
-build1/install/bin/%: bin/%
-	install -c -m 555 $< $@
+#build1/install/bin/%: bin/%
+#	install -c -m 555 $< $@
 
 ########################################################################
 ### BUILD 2
@@ -627,7 +627,7 @@ INSTALL3DIRS = \
 	build3/install/depend
 #---**
 INSTALL3TOPFILES = alicec.import alice.import COPYING
-INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
+#INSTALL3BINFILES = alicerun alice alicec alicelink alicedep alicetool
 INSTALL3LIBFILES = \
 	$(LIBSOURCES0:%.aml=%.stc) \
 	fundamental/Pervasive.stc fundamental/Core.stc \
@@ -639,7 +639,6 @@ INSTALL3LINKERFILES = Main.stc
 INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
-	$(INSTALL3BINFILES:%=build3/install/bin/%) \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%) \
@@ -743,8 +742,8 @@ build3/install/%.import: build3/%.import
 build3/install/COPYING: ../COPYING
 	install -c -m 444 $< $@
 
-build3/install/bin/%: bin/%
-	install -c -m 555 $< $@
+#build3/install/bin/%: bin/%
+#	install -c -m 555 $< $@
 
 build3/install/lib/fundamental/Pervasive.stc: \
 	build3/lib/fundamental/LinkedPervasive.stc
@@ -807,7 +806,6 @@ INSTALLDIRS = \
 	${pkgdatadir}/depend
 INSTALLFILES = \
 	$(INSTALL3TOPFILES:%=${pkgdatadir}/%) \
-	$(INSTALL3BINFILES:%=${bindir}/%) \
 	$(INSTALL3LIBFILES:%=${pkgdatadir}/lib/%) \
 	$(INSTALL3COMPILERFILES:%=${pkgdatadir}/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=${pkgdatadir}/compiler/top/%) \
@@ -822,8 +820,8 @@ $(INSTALLDIRS):
 $(INSTALL3TOPFILES:%=${pkgdatadir}/%): ${pkgdatadir}/%: build3/install/%
 	install -c -m 444 $< $@
 
-$(INSTALL3BINFILES:%=${bindir}/%): ${bindir}/%: build3/install/bin/%
-	install -c -m 555 $< $@
+#$(INSTALL3BINFILES:%=${bindir}/%): ${bindir}/%: build3/install/bin/%
+#	install -c -m 555 $< $@
 
 $(INSTALL3LIBFILES:%=${pkgdatadir}/lib/%): ${pkgdatadir}/%: build3/install/%
 	install -c -m 444 $< $@
