@@ -66,7 +66,8 @@ define
    I_function = 3
    I_name     = 4
 
-   %--** lots of IO exceptions are not handled below:
+   %--** lots of IO exceptions are not handled
+   %--** correctly model blocking
 
    TextIO =
    tuple(
