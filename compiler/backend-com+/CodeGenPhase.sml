@@ -62,7 +62,7 @@
  * unter sich hat, kann die Definitionen ihrer Hilfsprozeduren in ihrer
  * eigenen Klasse aufnehmen.
  *
- * Entsprechend dominierte Hilfsprozeduren sollen mit dem flag AuxiliaryOF
+ * Entsprechend dominierte Hilfsprozeduren sollen mit dem Flag AuxiliaryOf
  * annotiert werden.
  *)
 
@@ -151,7 +151,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTest (ConTest (id1, SOME id2), elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.ConVal);
 	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass StockWerk.ConVal); emit Dup;
+	     emit (Castclass StockWerk.ConVal); emit Dup;
 	     emit (Ldfld (StockWerk.ConVal, "Con", StockWerk.ConstructorTy));
 	     emitId id1; emit (B (NE_UN, elseLabel));
 	     emit (Ldfld (StockWerk.ConVal, "Val", StockWerk.StockWertTy));
@@ -159,18 +159,18 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTest (RefTest id, elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Ref);
 	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass StockWerk.Ref);
+	     emit (Castclass StockWerk.Ref);
 	     emit (Call (true, StockWerk.Ref, "Access", nil,
 			 StockWerk.StockWertTy));
 	     declareLocal id)
 	  | genTest (TupTest nil, elseLabel) =
 	    (emit Dup;
 	     emit (Ldsfld (StockWerk.Prebound, "unit", StockWerk.StockWertTy));
-	     emit (B (NE_UN, elseLabel)))
+	     emit (B (NE_UN, elseLabel)); emit Pop)
 	  | genTest (TupTest [id1, id2], elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Tuple2);
 	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass StockWerk.Tuple2); emit Dup;
+	     emit (Castclass StockWerk.Tuple2); emit Dup;
 	     emit (Ldfld (StockWerk.Tuple2, "Value1", StockWerk.StockWertTy));
 	     declareLocal id1;
 	     emit (Ldfld (StockWerk.Tuple2, "Value2", StockWerk.StockWertTy));
@@ -178,7 +178,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genTest (TupTest [id1, id2, id3], elseLabel) =
 	    (emit Dup; emit (Isinst StockWerk.Tuple3);
 	     emit (B (FALSE, elseLabel));
-	     emit Dup; emit (Castclass StockWerk.Tuple3); emit Dup;
+	     emit (Castclass StockWerk.Tuple3); emit Dup;
 	     emit (Ldfld (StockWerk.Tuple3, "Value1", StockWerk.StockWertTy));
 	     declareLocal id1; emit Dup;
 	     emit (Ldfld (StockWerk.Tuple3, "Value2", StockWerk.StockWertTy));
@@ -191,7 +191,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit Dup; emit (Isinst StockWerk.Tuple);
 		emit (B (FALSE, elseLabel));
-		emit Dup; emit (Castclass StockWerk.Tuple); emit Dup;
+		emit (Castclass StockWerk.Tuple); emit Dup;
 		emit (Ldfld (StockWerk.Tuple, "Values",
 			     ArrayTy StockWerk.StockWertTy));
 		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
@@ -207,7 +207,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit Dup; emit (Isinst StockWerk.Record);
 		emit (B (FALSE, elseLabel));
-		emit Dup; emit (Castclass StockWerk.Record); emit Dup;
+		emit (Castclass StockWerk.Record); emit Dup;
 		emit (Ldfld (StockWerk.Record, "RecordArity",
 			     StockWerk.RecordArityTy));
 		emitRecordArity (List.map #1 labIdList);
@@ -228,7 +228,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    in
 		emit Dup; emit (Isinst StockWerk.Vector);
 		emit (B (FALSE, elseLabel));
-		emit Dup; emit (Castclass StockWerk.Vector); emit Dup;
+		emit (Castclass StockWerk.Vector); emit Dup;
 		emit (Ldfld (StockWerk.Vector, "Values",
 			     ArrayTy StockWerk.StockWertTy));
 		emit Dup; emit Ldlen; emit (LdcI4 (List.length ids));
@@ -405,7 +405,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     appi (fn (i, id) =>
 		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef)) ids;
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
-	  | genExp (RecExp (_, labIdList), _) =
+	  | genExp (RecExp (_, labIdList), PREPARE) =
+	    (emitRecordArity (List.map #1 labIdList);
+	     emit (LdcI4 (List.length labIdList));
+	     emit (Newarr StockWerk.StockWertTy);
+	     emit (Newobj (StockWerk.Record, [StockWerk.RecordArityTy,
+					      ArrayTy StockWerk.StockWertTy])))
+	  | genExp (RecExp (_, labIdList), FILL) =
+	    (emit (Ldfld (StockWerk.Record, "Values",
+			  ArrayTy StockWerk.StockWertTy));
+	     appi (fn (i, (_, id)) =>
+		   (emit Dup; emit (LdcI4 i); emitId id; emit StelemRef))
+	     labIdList;
+	     emit Pop)
+	  | genExp (RecExp (_, labIdList), BOTH) =
 	    (emitRecordArity (List.map #1 labIdList);
 	     emit (LdcI4 (List.length labIdList));
 	     emit (Newarr StockWerk.StockWertTy);
@@ -465,7 +478,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
 			     [StockWerk.StockWertTy], StockWerk.StockWertTy)))
 	  | genExp (SelAppExp (_, s, id), BOTH) =
-	    (emit (Ldstr s);
+	    (emitId id; emit (Ldstr s);
 	     emit (Callvirt (StockWerk.StockWert, "Select", [System.StringTy],
 			     StockWerk.StockWertTy)))
 	  | genExp (ConAppExp (_, id, _), PREPARE) =
@@ -507,7 +520,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 			     genBody body; closeMethod ();
 			     (TupTest ids,
 			      fn () =>
-			      (emit Pop; emit (Ldarg 0); List.map emitId ids;
+			      (emit (Ldarg 0); List.map emitId ids;
 			       emit Tail;
 			       emit (Call (true, className stamp, name,
 					   List.map (fn _ =>
