@@ -220,8 +220,7 @@ public:
 CellMapInsertInterpreter *CellMapInsertInterpreter::self;
 
 void CellMapInsertInterpreter::PushFrame(CellMapEntry *entry) {
-  CellMapInsertFrame *frame = CellMapInsertFrame::New(self, entry);
-  Scheduler::PushFrame(frame->ToWord());
+  Scheduler::PushFrame(CellMapInsertFrame::New(self, entry)->ToWord());
 }
 
 Interpreter::Result CellMapInsertInterpreter::Run() {
@@ -239,7 +238,7 @@ const char *CellMapInsertInterpreter::Identify() {
 }
 
 void CellMapInsertInterpreter::DumpFrame(word) {
-  std::fprintf(stderr, "Cell.Map.insertWithi\n");
+  std::fprintf(stderr, "UnsafeCell.Map.insertWithi\n");
 }
 
 //
@@ -364,7 +363,7 @@ void CellMapIteratorInterpreter::DumpFrame(word wFrame) {
   default:
     Error("unknown CellMapIteratorInterpreter operation\n");
   }
-  std::fprintf(stderr, "Cell.Map.%s\n", name);
+  std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
 }
 
 //
@@ -441,7 +440,7 @@ Interpreter::Result CellMapFindInterpreter::Run() {
   CellMapEntry *entry = frame->GetEntry();
   word closure = frame->GetClosure();
   operation op = frame->GetOperation();
-  Assert(Scheduler::nArgs == 1);
+  Assert(Scheduler::nArgs == Scheduler::ONE_ARG);
   switch (Store::WordToInt(Scheduler::currentArgs[0])) {
   case 0: // false
     entry = entry->GetNext();
@@ -454,14 +453,14 @@ Interpreter::Result CellMapFindInterpreter::Run() {
 	break;
       case findi:
 	Scheduler::nArgs = 2;
-	Scheduler::currentArgs[1] = entry->GetKey()->ToWord();
-	Scheduler::currentArgs[0] = entry->GetValue();
+	Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
+	Scheduler::currentArgs[1] = entry->GetValue();
 	break;
       }
       return Scheduler::PushCall(closure);
     } else {
       Scheduler::PopFrame();
-      Scheduler::nArgs = 1;
+      Scheduler::nArgs = Scheduler::ONE_ARG;
       Scheduler::currentArgs[0] = Store::IntToWord(0); // NONE
       return Interpreter::CONTINUE;
     }
@@ -505,7 +504,7 @@ void CellMapFindInterpreter::DumpFrame(word wFrame) {
   default:
     Error("unknown CellMapFindInterpreter operation\n");
   }
-  std::fprintf(stderr, "Cell.Map.%s\n", name);
+  std::fprintf(stderr, "UnsafeCell.Map.%s\n", name);
 }
 
 //
@@ -550,8 +549,11 @@ DEFINE4(UnsafeCell_Map_insertWithi) {
   if (cellMap->Member(key)) {
     CellMapEntry *entry = cellMap->LookupEntry(key);
     CellMapInsertInterpreter::PushFrame(entry);
-    Scheduler::PushCall(closure);
-    RETURN3(key->ToWord(), entry->GetValue(), value);
+    Scheduler::nArgs = 3;
+    Scheduler::currentArgs[0] = key->ToWord();
+    Scheduler::currentArgs[1] = entry->GetValue();
+    Scheduler::currentArgs[2] = value;
+    return Scheduler::PushCall(closure);
   } else {
     cellMap->Insert(key, value);
     RETURN_UNIT;
@@ -566,8 +568,9 @@ DEFINE3(UnsafeCell_Map_deleteWith) {
     cellMap->Delete(key);
     RETURN_UNIT;
   } else {
-    Scheduler::PushCall(closure);
-    RETURN(key->ToWord());
+    Scheduler::nArgs = Scheduler::ONE_ARG;
+    Scheduler::currentArgs[0] = key->ToWord();
+    return Scheduler::PushCall(closure);
   }
 } END
 
@@ -658,8 +661,8 @@ DEFINE2(UnsafeCell_Map_findi) {
     CellMapFindInterpreter::PushFrame(entry, closure,
 				      CellMapFindInterpreter::findi);
     Scheduler::nArgs = 2;
-    Scheduler::currentArgs[1] = entry->GetKey()->ToWord();
-    Scheduler::currentArgs[0] = entry->GetValue();
+    Scheduler::currentArgs[0] = entry->GetKey()->ToWord();
+    Scheduler::currentArgs[1] = entry->GetValue();
     return Scheduler::PushCall(closure);
   } else {
     RETURN_INT(0); // NONE
