@@ -156,8 +156,8 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (SelAppExp (_, lab, id)) =
 	    SEQ [S ("#" ^ lab ^ " "), ID id]
-	  | outputExp (ConAppExp (_, id1, id2)) =
-	    SEQ [S "(con ", ID id1, S ") ", ID id2]
+	  | outputExp (ConAppExp (_, id, args)) =
+	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
 	  | outputExp (PrimAppExp (_, s, ids)) =
 	    SEQ [S (s ^ " "), SEP (S ", ", List.map ID ids)]
 	  | outputExp (AdjExp (_, id1, id2)) =

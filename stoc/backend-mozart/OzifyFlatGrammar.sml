@@ -210,9 +210,9 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputExp (q, SelAppExp (coord, lab, id)) =
 	    (f (q, "selAppExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); m q; outputId (q, id); r q)
-	  | outputExp (q, ConAppExp (coord, id1, id2)) =
+	  | outputExp (q, ConAppExp (coord, id, args)) =
 	    (f (q, "conAppExp"); outputCoord (q, coord); m q;
-	     outputId (q, id1); m q; outputId (q, id2); r q)
+	     outputId (q, id); m q; outputArgs outputId (q, args); r q)
 	  | outputExp (q, PrimAppExp (coord, string, ids)) =
 	    (f (q, "primAppExp"); outputCoord (q, coord); m q;
 	     outputAtom (q, string); m q; outputList outputId (q, ids); r q)

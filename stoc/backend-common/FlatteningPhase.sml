@@ -137,7 +137,8 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			      val id2' = freshId coord
 			  in
 			      [O.ValDec (coord, id1',
-					 O.ConAppExp (coord, id1, id1), false),
+					 O.ConAppExp (coord, id1,
+						      O.OneArg id1), false),
 			       O.TestStm (coord, id1,
 					  O.ConTest (id2, SOME id2'),
 					  rest, errStms)]
@@ -257,12 +258,14 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 			let
 			    val (stms1, id1) = translateLongid longid
 			in
-			    r := SOME (f (O.ConAppExp (coord, id1, id2))::
+			    r := SOME (f (O.ConAppExp (coord, id1,
+						       O.OneArg id2))::
 				       translateCont cont);
 			    stms1 @ stms2
 			end
 		  | RefExp _ =>
-			(r := SOME (f (O.ConAppExp (coord, id_ref, id2))::
+			(r := SOME (f (O.ConAppExp (coord, id_ref,
+						    O.OneArg id2))::
 				    translateCont cont);
 			 stms2)
 		  | SelExp (_, Lab (_, s)) =>

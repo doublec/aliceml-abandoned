@@ -76,7 +76,7 @@ structure ImperativeGrammar :> IMPERATIVE_GRAMMAR =
 	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * id * id args
 	  | SelAppExp of coord * lab * id
-	  | ConAppExp of coord * id * id
+	  | ConAppExp of coord * id * id args
 	  | PrimAppExp of coord * string * id list
 	  | AdjExp of coord * id * id
 	withtype body = stm list

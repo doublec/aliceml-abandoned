@@ -258,10 +258,10 @@ define
       [] selAppExp(Coord Lab Id) then
 	 VHd = vInlineDot(_ {GetReg Id State} Lab Reg false
 			  {TranslateCoord Coord} VTl)
-      [] conAppExp(Coord id(_ ref _) Id) then
+      [] conAppExp(Coord id(_ ref _) oneArg(Id)) then
 	 VHd = vCallBuiltin(_ 'Cell.new' [{GetReg Id State} Reg]
 			    {TranslateCoord Coord} VTl)
-      [] conAppExp(Coord Id1 Id2) then
+      [] conAppExp(Coord Id1 oneArg(Id2)) then
 	 Pos VInter1 NameReg TmpReg ResReg VInter2 VInter3
       in
 	 Pos = {TranslateCoord Coord}
