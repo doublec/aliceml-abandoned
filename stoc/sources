@@ -63,6 +63,8 @@
 ../frontend-common/Env.sml
 ../frontend-common/ENV0.sig
 ../frontend-common/Env0.sml
+../frontend-common/PP_PATH.sig
+../frontend-common/PPPath.sml
 ../frontend-common/PP_TYPE.sig
 ../frontend-common/PPType.sml
 ../frontend-common/ELABORATION_ERROR.sig
