@@ -118,7 +118,7 @@ Linked%.ozf: %.ozf
 
 .PHONY: all clean veryclean distclean binding
 
-all: $(TARGETS) binding
+all: $(TARGETS) binding $(COMPONENTS:%=Linked%)
 
 #---------------------------------------------------------------------
 # Read GTK C Sources
