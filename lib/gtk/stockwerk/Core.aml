@@ -150,41 +150,22 @@ struct
     end
 
     (* finalization handling *)
-    local
-        (* - all objects are (Gtk-)referenced automatically upon creation and
-	     added to the weak map (if there are not already there)
-           - the following "destroyEvent" function is registered automatically
-	     when a new object "enters" alice
-	   - Gtk calls "destroy" so that all owners of a reference
-	     to the object can release it
-	   - "destroyEvent" then removes all callback functions 
-	     (including itself) from the signal table and with it all
-	     alice references it is aware of
-	     (disconnecting is done automatically by Gtk)
-	   - when all alice references are lost, the finalizer (Gtk-)unrefs
-	     the object, telling Gtk that it may destroy the object completely
-        *)
-	fun destroyEvent (obj, _) = 
-                List.app NativeCore.signalMapRemove  
-		         (NativeCore.signalMapGetConnIds obj)
-
-	fun newObject obj =
-	    ( if NativeCore.hasSignals obj
-		  then doSignalConnect(obj,"destroy",destroyEvent,true)
-	          else 0 ;
-	      NativeCore.weakMapAdd obj ;
-	      obj )
-    in
-	fun addObject obj =
-	    if obj = NULL then obj else
-	    let
-		val obj' = NativeCore.weakMapCondGet(obj,NULL)
-	    in
-		if obj' = NULL 
-		    then newObject obj 
-		    else (NativeCore.unrefObject obj; obj')
-	    end 
-    end
+    (* - all objects are (Gtk-)referenced automatically upon creation and
+	 added to the weak map (if there are not already there)
+       - the following "destroyEvent" function is registered automatically
+	 when a new object "enters" alice
+       - Gtk calls "destroy" so that all owners of a reference
+	 to the object can release it
+       - "destroyEvent" then removes all callback functions 
+         (including itself) from the signal table and with it all
+         alice references it is aware of
+         (disconnecting is done automatically by Gtk)
+       - when all alice references are lost, the finalizer (Gtk-)unrefs
+         the object, telling Gtk that it may destroy the object completely
+    *)
+    fun destroyEvent (obj, _) = 
+        List.app NativeCore.signalMapRemove  
+		 (NativeCore.signalMapGetConnIds obj)
 
     (* debug functions *)
     val printObject = NativeCore.printObject
@@ -208,7 +189,7 @@ struct
     val _ =
 	let
 	    val eventStream : (int * object * arg list) list =
-		NativeCore.getEventStream()
+		NativeCore.getEventStream destroyEvent
 	in
 	    spawn (listener eventStream);
 	    spawn (mainLoop initPoll)

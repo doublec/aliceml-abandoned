@@ -110,6 +110,4 @@ sig
 
 (**)val printObject : object -> unit
 (**)val forceGC : unit -> unit
-
-(**)val addObject : object -> object
 end

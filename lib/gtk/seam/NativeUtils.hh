@@ -107,12 +107,10 @@ inline void __unrefObject(void *p, int type) {
 }
 
 // Convert a C pointer to an object tuple.
+static word (*OBJECT_TO_WORD_instance)(const void *p, int type);
+
 inline word OBJECT_TO_WORD(const void *p, int type) {
-  __refObject(const_cast<void*>(p), type);
-  Tuple *t = Tuple::New(2);
-  t->Init(0,Store::UnmanagedPointerToWord(const_cast<void*>(p)));
-  t->Init(1,Store::IntToWord(type));
-  return t->ToWord();
+  return (*OBJECT_TO_WORD_instance)(p, type);
 }
 
 inline word OBJECT_TO_WORD(const void *p) {
@@ -120,6 +118,15 @@ inline word OBJECT_TO_WORD(const void *p) {
 }
 
 #define FUNCTION_TO_WORD(f) OBJECT_TO_WORD((void*)f, TYPE_UNKNOWN)
+
+const char *Alice_Gtk_OBJECT_TO_WORD = "Alice.Gtk.OBJECT_TO_WORD";
+
+static void InitLocalInstance() {
+  word value = Broker::Lookup(String::New(Alice_Gtk_OBJECT_TO_WORD));
+  void *pointer = Store::DirectWordToUnmanagedPointer(value);
+  Assert(pointer != INVALID_POINTER);
+  OBJECT_TO_WORD_instance = (word (*)(const void *, int)) pointer;
+}
 
 /***********************************************************************/
 // MACROS FOR GLIST/GSLIST HANDLING

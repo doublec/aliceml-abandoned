@@ -210,7 +210,8 @@ functor MkNativeHelper(structure TypeManager : TYPE_MANAGER
 	    val header = 
 		["word InitComponent() {\n",
 		 wrIndent, "Record *record = Record::New(", 
-		   Int.toString ((length initLines)+addEntries), ");\n"] @
+		 Int.toString ((length initLines)+addEntries), ");\n",
+		 wrIndent, "InitLocalInstance();\n"] @
 		(if initFun = "" 
 		     then nil 
 		     else [wrIndent, initFun, "(record);\n"])@

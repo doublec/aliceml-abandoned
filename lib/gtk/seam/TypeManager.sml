@@ -153,8 +153,8 @@ struct
       | safeToUnsafe vname _                   = vname
 
     fun unsafeToSafe vname (ENUMREF ename)     = "IntTo"^ename^" "^vname
-      | unsafeToSafe vname (POINTER _)         = "Core.addObject "^vname
-      | unsafeToSafe vname (LIST(_,POINTER _)) = "map Core.addObject "^vname
+      | unsafeToSafe vname (POINTER _)         = vname (* OBJECT_TO_WORD *)
+      | unsafeToSafe vname (LIST(_,POINTER _)) = vname (* OBJECT_TO_WORD *)
       | unsafeToSafe vname _                   = vname
 
     (* Return the macro name for converting from and to a word; *)

@@ -21,24 +21,18 @@ sig
 	
         val signalConnect : 'object * string * bool -> int
         val signalDisconnect : 'object * int -> unit
-	val getEventStream : unit -> 'stream
+	val getEventStream : 'callback -> 'stream
 
 	val signalMapAdd : 'connid * 'callback * 'object -> unit
 	val signalMapRemove : 'connid -> unit
 	val signalMapCondGet : 'connid * 'callback -> 'callback
 	val signalMapGetConnIds : 'object -> 'connid list
 
-	val weakMapAdd : 'object -> unit
-        val weakMapIsMember : 'object -> bool
-        val weakMapCondGet : 'object * 'object -> 'object
-
 	val unrefObject : 'object -> unit
-	val hasSignals : 'object -> bool
 
 	val handlePendingEvents : unit -> bool
 
 	val printObject : 'object -> unit
 	val forceGC : unit -> unit
-
     end
 end

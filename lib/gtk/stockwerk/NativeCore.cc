@@ -27,6 +27,7 @@ static word weakDict;
 static word signalMap;
 static word signalMap2;
 static bool had_events;
+static word destroyCallback;
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -36,20 +37,6 @@ static word push_front(word list, word value) {
   cons->Init(0,value);
   cons->Init(1,list);
   return cons->ToWord();
-}
-
-// convert a pointer to an object, and add it to the weak map if necessary
-static inline word PointerToObjectRegister(void *p, int type) {
-  if (!p)
-    return OBJECT_TO_WORD(p);
-  WeakMap *wd = WeakMap::FromWordDirect(weakDict);
-  word w = Store::UnmanagedPointerToWord(p);
-  if (wd->IsMember(w))
-    return wd->Get(w);
-  //g_message("ptor adding %p (type %d)", p, type);
-  word obj = OBJECT_TO_WORD(p,type);
-  wd->Put(w,obj);
-  return obj;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -78,21 +65,21 @@ static inline word ExposeEvent(GdkEvent* event, int label) {
   t->Init(2, INT_TO_WORD((ev->area).x));
   t->Init(3, INT_TO_WORD((ev->area).y));
   t->Init(4, INT_TO_WORD(ev->count));
-  t->Init(5, PointerToObjectRegister(ev->region,TYPE_UNKNOWN));
+  t->Init(5, OBJECT_TO_WORD(ev->region,TYPE_UNKNOWN));
   t->Init(6, BOOL_TO_WORD(ev->send_event));
-  t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(7, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
 static inline word MotionEvent(GdkEvent* event, int label) {
   GdkEventMotion *ev = reinterpret_cast<GdkEventMotion*>(event);
   TagVal *t = TagVal::New(label, 10);
-  t->Init(0, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
+  t->Init(0, OBJECT_TO_WORD(ev->device,TYPE_G_OBJECT));
   t->Init(1, INT_TO_WORD(ev->is_hint));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
   t->Init(4, INT_TO_WORD(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));
   t->Init(8, REAL_TO_WORD(ev->y));
@@ -104,11 +91,11 @@ static inline word ButtonEvent(GdkEvent* event, int label) {
   GdkEventButton *ev = reinterpret_cast<GdkEventButton*>(event);
   TagVal *t = TagVal::New(label, 10);
   t->Init(0, INT_TO_WORD(ev->button));
-  t->Init(1, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
+  t->Init(1, OBJECT_TO_WORD(ev->device,TYPE_G_OBJECT));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
   t->Init(4, INT_TO_WORD(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));
   t->Init(8, REAL_TO_WORD(ev->y));
@@ -127,7 +114,7 @@ static inline word KeyEvent(GdkEvent* event, int label) {
   t->Init(5, INT_TO_WORD(ev->state));
   t->Init(6, STRING_TO_WORD(ev->string));
   t->Init(7, INT_TO_WORD(ev->time));
-  t->Init(8, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(8, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
@@ -139,9 +126,9 @@ static inline word CrossingEvent(GdkEvent* event, int label) {
   t->Init(2, INT_TO_WORD(ev->mode));
   t->Init(3, BOOL_TO_WORD(ev->send_event));
   t->Init(4, INT_TO_WORD(ev->state));
-  t->Init(5, PointerToObjectRegister(ev->subwindow,TYPE_G_OBJECT));
+  t->Init(5, OBJECT_TO_WORD(ev->subwindow,TYPE_G_OBJECT));
   t->Init(6, INT_TO_WORD(ev->time));
-  t->Init(7, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(7, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(8, REAL_TO_WORD(ev->x));
   t->Init(9, REAL_TO_WORD(ev->x_root));
   t->Init(10, REAL_TO_WORD(ev->y));
@@ -154,7 +141,7 @@ static inline word FocusEvent(GdkEvent* event, int label) {
   TagVal *t = TagVal::New(label, 3);
   t->Init(0, BOOL_TO_WORD(ev->in));
   t->Init(1, BOOL_TO_WORD(ev->send_event));
-  t->Init(2, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(2, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
@@ -164,7 +151,7 @@ static inline word ConfigureEvent(GdkEvent* event, int label) {
   t->Init(0, INT_TO_WORD(ev->height));
   t->Init(1, BOOL_TO_WORD(ev->send_event));
   t->Init(2, INT_TO_WORD(ev->width));
-  t->Init(3, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(3, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(4, INT_TO_WORD(ev->x));
   t->Init(5, INT_TO_WORD(ev->y));
   return t->ToWord();
@@ -175,14 +162,14 @@ static inline word VisibilityEvent(GdkEvent* event, int label) {
   TagVal *t = TagVal::New(label, 3);
   t->Init(0, BOOL_TO_WORD(ev->send_event));
   t->Init(1, INT_TO_WORD(ev->state));
-  t->Init(2, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(2, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   return t->ToWord();
 }
 
 static inline word NoExposeEvent(GdkEvent* event, int label) {
   GdkEventNoExpose *ev = reinterpret_cast<GdkEventNoExpose*>(event);
   TagVal *t = TagVal::New(label, 2);
-  t->Init(0, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));  
+  t->Init(0, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));  
   t->Init(1, BOOL_TO_WORD(ev->send_event));
   return t->ToWord();
 }
@@ -190,12 +177,12 @@ static inline word NoExposeEvent(GdkEvent* event, int label) {
 static inline word ScrollEvent(GdkEvent* event, int label) {
   GdkEventScroll *ev = reinterpret_cast<GdkEventScroll*>(event);    
   TagVal *t = TagVal::New(label, 10);
-  t->Init(0, PointerToObjectRegister(ev->device,TYPE_G_OBJECT));
+  t->Init(0, OBJECT_TO_WORD(ev->device,TYPE_G_OBJECT));
   t->Init(1, INT_TO_WORD(ev->direction));
   t->Init(2, BOOL_TO_WORD(ev->send_event));
   t->Init(3, INT_TO_WORD(ev->state));
   t->Init(4, INT_TO_WORD(ev->time));
-  t->Init(5, PointerToObjectRegister(ev->window,TYPE_G_OBJECT));
+  t->Init(5, OBJECT_TO_WORD(ev->window,TYPE_G_OBJECT));
   t->Init(6, REAL_TO_WORD(ev->x));
   t->Init(7, REAL_TO_WORD(ev->x_root));
   t->Init(8, REAL_TO_WORD(ev->y));
@@ -275,7 +262,7 @@ static word GdkEventToDatatype(GdkEvent *event) {
   case GDK_SETTING: return SimpleEvent(EVENT_SETTING);
   default:
     TagVal *tv = TagVal::New(EVENT_UNSUPPORTED, 1);
-    tv->Init(0, PointerToObjectRegister(event,TYPE_UNKNOWN));
+    tv->Init(0, OBJECT_TO_WORD(event,TYPE_UNKNOWN));
     return tv->ToWord();  
   }
 }
@@ -320,9 +307,9 @@ static word create_object(GType t, gpointer p) {
       }
       else
 	if (g_type_is_a(t, GTK_OBJECT_TYPE))
-	  value = PointerToObjectRegister(p, TYPE_GTK_OBJECT);
+	  value = OBJECT_TO_WORD(p, TYPE_GTK_OBJECT);
         else
-	  value = PointerToObjectRegister(p, (G_IS_OBJECT(p) ? TYPE_G_OBJECT 
+	  value = OBJECT_TO_WORD(p, (G_IS_OBJECT(p) ? TYPE_G_OBJECT 
 					                     : TYPE_UNKNOWN));
   return create_param(tag, value);
 }
@@ -400,7 +387,7 @@ sendArgsToStream(gint connid, guint n_param_values, const GValue *param_values) 
   
   Tuple *tup = Tuple::New(3);
   tup->Init(0,INT_TO_WORD(connid));
-  tup->Init(1,PointerToObjectRegister(widget,TYPE_GTK_OBJECT));
+  tup->Init(1,OBJECT_TO_WORD(widget,TYPE_GTK_OBJECT));
   tup->Init(2,paramlist);
   
   put_on_stream(&eventStream, tup->ToWord());
@@ -426,21 +413,22 @@ static void generic_marshaller(GClosure *closure, GValue *return_value,
 			(GPOINTER_TO_INT(closure->data) == 2) ? TRUE : FALSE);
 }
 
+static word SignalConnect(void *object, char *signalname, bool after) {
+  gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
+  GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
+  				     GINT_TO_POINTER(userData), NULL);
+  gulong connid = g_signal_connect_closure(G_OBJECT(object), signalname, 
+					   closure, after ? TRUE : FALSE); 
+  g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
+			     generic_marshaller);
+  return INT_TO_WORD(static_cast<int>(connid));
+}
+
 DEFINE3(NativeCore_signalConnect) {
   DECLARE_OBJECT(obj,x0);
   DECLARE_CSTRING(signalname,x1);
   DECLARE_BOOL(after,x2);
-
-  gint userData = (!strcmp(signalname, "delete-event") ? 2 : 1);
-
-  GClosure *closure = g_cclosure_new(G_CALLBACK(generic_marshaller),
-  				     GINT_TO_POINTER(userData), NULL);
-  gulong connid = g_signal_connect_closure(G_OBJECT(obj), signalname, 
-					closure, after ? TRUE : FALSE); 
-  g_closure_set_meta_marshal(closure,GINT_TO_POINTER(connid),
-			     generic_marshaller);
-
-  RETURN(INT_TO_WORD(static_cast<int>(connid)));
+  RETURN(SignalConnect(obj, signalname, after));
 } END
 
 DEFINE2(NativeCore_signalDisconnect) {
@@ -450,23 +438,26 @@ DEFINE2(NativeCore_signalDisconnect) {
   RETURN_UNIT;
 } END
 
-DEFINE0(NativeCore_getEventStream) {
+DEFINE1(NativeCore_getEventStream) {
+  destroyCallback = x0;
   RETURN(eventStream);
 } END
 
 ////////////////////////////////////////////////////////////////////////
 // SIGNAL MAP FUNCTIONS
 
-DEFINE3(NativeCore_signalMapAdd) {
-  // x0 = connid to add, x1 = callback-fn, x2 = object
-  //g_message("adding signal #%d", Store::WordToInt(x0));
-  Map::FromWordDirect(signalMap)->Put(x0,x1);
+static void AddToSignalMap(word connid, word callback, word key) {
+  Map::FromWordDirect(signalMap)->Put(connid, callback);
+  Map *signalMap2_ = Map::FromWordDirect(signalMap2);
+  word ids = signalMap2_->CondGet(key, INT_TO_WORD(Types::nil));
+  signalMap2_->Put(key, push_front(ids, connid));
+}
 
-  DECLARE_OBJECT(p,x2);
+DEFINE3(NativeCore_signalMapAdd) {
+  // x0 = connid, x1 = callback-fn
+  DECLARE_OBJECT(p, x2);
   word key = Store::UnmanagedPointerToWord(p);
-  Map* sm2 = Map::FromWordDirect(signalMap2);
-  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
-  sm2->Put(key, push_front(ids,x0));
+  AddToSignalMap(x0, x1, key);
   RETURN_UNIT;
 } END
 
@@ -532,15 +523,47 @@ DEFINE2(NativeCore_weakMapCondGet) {
 ///////////////////////////////////////////////////////////////////////
 // OBJECT HANDLING
 
+// convert a pointer to an object, and add it to the weak map if necessary
+word OBJECT_TO_WORD_implementation(const void *pointer, int type) {
+  void *pointer_ = const_cast<void *>(pointer);
+  word key = Store::UnmanagedPointerToWord(pointer_);
+  if (pointer == NULL) {
+    Tuple *object = Tuple::New(2);
+    object->Init(0, key);
+    object->Init(1, Store::IntToWord(type));
+    return object->ToWord();
+  } else {
+    WeakMap *objectMap = WeakMap::FromWordDirect(weakDict);
+    if (objectMap->IsMember(key)) {
+      Tuple *object = Tuple::FromWordDirect(objectMap->Get(key));
+      int objectType = Store::DirectWordToInt(object->Sel(1));
+      if ((type != objectType) && (type != TYPE_UNKNOWN)) {
+	fprintf(stderr, "OBJECT_TO_WORD: type warning: old %s != new %s\n",
+		getObjectType(objectType), getObjectType(type));
+	fflush(stderr);
+      }
+      return object->ToWord();
+    }
+    else {
+      Tuple *object = Tuple::New(2);
+      object->Init(0, key);
+      object->Init(1, Store::IntToWord(type));
+      objectMap->Put(key, object->ToWord());
+      __refObject(pointer_, type);
+      // Register default destroy event for gtk objects
+      if (type == TYPE_GTK_OBJECT) {
+	word connid = SignalConnect(pointer_, "destroy", true);
+	AddToSignalMap(connid, destroyCallback, key);
+      }
+      return object->ToWord();
+    }
+  }
+}
+
 DEFINE1(NativeCore_unrefObject) {
   DECLARE_OBJECT_WITH_TYPE(p,type,x0);
   __unrefObject(p,type);  
   RETURN_UNIT;
-} END
-
-DEFINE1(NativeCore_hasSignals) {
-  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  RETURN(BOOL_TO_WORD(type == TYPE_GTK_OBJECT));
 } END
 
 //////////////////////////////////////////////////////////////////////
@@ -550,7 +573,6 @@ static void __die(char *s) {
   g_warning(s);
   exit(0);
 }
-
 
 static void Init() {
   static const u_int INITIAL_MAP_SIZE = 256; // TODO: find appropriate size
@@ -564,7 +586,13 @@ static void Init() {
   signalMap2 = Map::New(INITIAL_MAP_SIZE)->ToWord();
   RootSet::Add(signalMap2);
   had_events = false;
-
+  destroyCallback = Store::IntToWord(0);
+  RootSet::Add(destroyCallback);
+  // We use the SEAM Broker to distribute the OBJECT_TO_WORD implementation
+  word wOBJECT_TO_WORD =
+    Store::UnmanagedPointerToWord((void *) OBJECT_TO_WORD_implementation);
+  OBJECT_TO_WORD_instance = OBJECT_TO_WORD_implementation;
+  Broker::Register(String::New(Alice_Gtk_OBJECT_TO_WORD), wOBJECT_TO_WORD);
   /*
    * On Windows, Gdk blocks on stdin during init if input redirection is used,
    * as for example within emacs.
@@ -621,7 +649,7 @@ DEFINE0(NativeCore_forceGC) {
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = Record::New(18);
+  Record *record = Record::New(14);
   Init();
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
@@ -635,7 +663,7 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
 		 NativeCore_signalDisconnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
-		 NativeCore_getEventStream, 0);
+		 NativeCore_getEventStream, 1);
 
   INIT_STRUCTURE(record, "NativeCore", "signalMapAdd",
 		 NativeCore_signalMapAdd, 3);
@@ -646,17 +674,8 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "signalMapGetConnIds",
 		 NativeCore_signalMapGetConnIds, 1);
 
-  INIT_STRUCTURE(record, "NativeCore", "weakMapAdd", 
-		 NativeCore_weakMapAdd, 1);
-  INIT_STRUCTURE(record, "NativeCore", "weakMapIsMember", 
-		 NativeCore_weakMapIsMember, 1);
-  INIT_STRUCTURE(record, "NativeCore", "weakMapCondGet", 
-		 NativeCore_weakMapCondGet, 2);
-
   INIT_STRUCTURE(record, "NativeCore", "unrefObject", 
 		 NativeCore_unrefObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "hasSignals", 
-		 NativeCore_hasSignals, 1);
 
   INIT_STRUCTURE(record, "NativeCore", "handlePendingEvents", 
 		 NativeCore_handlePendingEvents, 0);
