@@ -20,21 +20,31 @@ import structure Print     from "x-alice:/lib/system/Print"
 	
     fun testVerify s v f =
 	let
-	    fun dfe s =
-		case Space.status s of
-		    Space.FAILED => f ()
-		  | Space.SOLVED => assert (v s)
+	    fun dfe (s,d) =
+	    (
+(*
+		print "depth " ;
+		Print.printVal d ;
+	    print "\n";
+*)
+	    (
+		 case Space.status s of
+		    Space.FAILED => (f (); Space.discard s)
+		  | Space.SOLVED => (
+		  assert (v s); 
+		  Space.discard s)
 		  | Space.BRANCH =>
 		    let
 			val c = Space.clone s
 		    in
 			Space.commit(s, 1);
 			Space.commit(c, 2);
-			(dfe s);
-			(dfe c)
+			(dfe (s,d+1));
+			(dfe (c,d+1))
 		    end
+		 ))
 	in
-	    dfe (Space.clone s)
+	    dfe ((Space.clone s),0)
 	end
 
 	fun testVerifySimple s v = testVerify s v (fn () => assert false)	
@@ -50,7 +60,8 @@ import structure Print     from "x-alice:/lib/system/Print"
 		FS.subset (space, b, top);
 		FS.subset (space, c, top);				
 		FS.union (space, a, b, c);
-        FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN);
+(*        FS.setvarbranch(space, root, FS.FSB_NONE, FS.FSB_MIN); *)
+		FS.randomBranch(space, root, 1);
 		(root, space)
 	end
 	
