@@ -25,12 +25,7 @@ import val log              from "../../common/Log"
 structure ServerSettings =
 struct
 
-    val allColors = List.map Color.toString Color.all
 
-    val colorCombo  = Gtk.comboNew ()
-
-    fun insertColors () = 
-	Gtk.comboSetPopdownStrings (colorCombo, allColors)
 	
 	
     fun mkServerSettings ({startServer}, {reset, gameMode}) = 
@@ -79,6 +74,13 @@ struct
 	    val leftVBox           = Gtk.vboxNew (false, 10)
 	    val rightHBox          = Gtk.hboxNew (false, 10)
 	    val separator5         = Gtk.hseparatorNew ()
+
+	    val allColors = List.map Color.toString Color.all
+		
+	    val colorCombo  = Gtk.comboNew ()
+	
+	    fun insertColors () = 
+		Gtk.comboSetPopdownStrings (colorCombo, allColors)
 
 	    fun mkScale scaleNew (box, label, value, lower, upper) = 
 		let

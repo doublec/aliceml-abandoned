@@ -73,153 +73,154 @@ struct
     datatype mode = START | GAME
     val mode = ref START
 
-    (* initialising the canvas widget *)
-    val arena = ArenaWidget.initialize ()
-    val canvas = ArenaWidget.toObject arena
-
-    (* the menu bar items which sensitivity get 
-     changed some times *)
-    val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
-    val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
-
-    (* the points box items *)
-    val separator1  = Gtk.vseparatorNew ()
-    val pointsLabel = Gtk.labelNew ""
-
-    (* the countdown time label *)
-    val timeLabel = Gtk.labelNew ""
-
-    (* the box where time and points are in *)
-    val labelVBox      = Gtk.vboxNew (false, 10)
-    val rightHBox      = Gtk.hboxNew (false, 10)
-
-
-    (* one of the main procedures. resets the window
-      in START mode and also the sensitivity of the menubar *)
-    fun reset' () =
-	(Gtk.widgetSetSensitive (menuGiveUpItem, false);
-	 Gtk.widgetSetSensitive (menuMenuItem, true);
-	 Gtk.widgetHide canvas;
-	 Gtk.widgetHide rightHBox;
-	 mode := START)
-
-
-    (* resets window and also shows [msg] when needed *)
-    fun reset NONE = reset' ()
-      | reset (SOME (title, msg)) =
-	(Text.mkTextWindow (title, msg); reset' ())
-
-
-
-    (* initializing the procedures for modelGame *)
-    val turn'       = ref (fn d => ())
-    val changeView' = ref (fn h => ())
-    val giveUp'     = ref (fn () => ())
-    val disconnect' = ref (fn () => ())
-
-    (* calling the procedure gameMode turns main window in GAME mode,
-     by setting and fullfilling guiGame and updating functionality *)
-    fun gameMode ({disconnect}, {turn, changeView, giveUp},
-		   guiGameP) =
-	let
-	    fun gameFinished h = 
-		    (reset (SOME ("Highscore", highscoreToString h)))
-
-	    fun update difflist = ArenaWidget.update (arena, difflist)
-
-	    val oldNumber   = ref (Gtk.null ())
-	    val color       = Gdk.allocColor (65535, 65535, 65535)
-	    fun countdown 0 = if !oldNumber <> Gtk.null ()
-				  then Gtk.objectDestroy (!oldNumber)
-			      else ()
-	      | countdown n =
-		let
-		    val root   = GtkCanvas.root canvas
-		    val num    = Int.toString n
-		    val font   = "-*-times-bold-*-*-*-120-*-*-*-*-*-*-*"
-		    val  (x1, y1, x2, y2) = 
-			GtkCanvas.getScrollRegion (canvas, 0.0, 0.0, 0.0, 0.0)
-		    val x      = (x1 + x2) / 2.0
-		    val y      = (y1 + y2) / 2.0
-		    val anchor = Gtk.ANCHOR_CENTER
-		    val args   = [("text", GtkCanvas.STRING num),
-				  ("font", GtkCanvas.STRING font),
-				  ("x", GtkCanvas.DOUBLE x), 
-				  ("y", GtkCanvas.DOUBLE y),
-				  ("fill_color_gdk", GtkCanvas.OBJECT color),
-				  ("anchor", GtkCanvas.INT anchor)]
-
-		    val num    = GtkCanvas.itemNew (root, GtkCanvas.TEXT, args)
-
-		in
-		    if !oldNumber <> Gtk.null ()
-			then Gtk.objectDestroy (!oldNumber)
-		    else ();
-			oldNumber := num
-		end
-
-	    fun tick remainingTime =
-		let
-		    val timeStr = timeToString remainingTime
-		in
-		    Gtk.labelSetText (timeLabel, timeStr)
-		end
-
-	    (* updates the pointsLabel. different points are separated
-	     by newlines *)
-	    fun updatePoints plist =
-		let
-		    fun toString' (({name, 
-				    color, 
-				    points, 
-				    gamePoints},
-				    NONE), str) =
-			(str ^ name ^ ":  " 
-			 ^ (Int.toString points) ^ "  /  " 
-			 ^ (Int.toString gamePoints) ^ "\n\n")
-		      | toString' (({name, 
-				    color, 
-				    points, 
-				    gamePoints},
-				    SOME lives), str) =
-			(str ^ name ^ ":  " 
-			 ^ (Int.toString points) ^ "  /  " 
-			 ^ (Int.toString gamePoints)
-			 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
-		    fun toString () = List.foldl toString' "" plist
-		in
-		    Gtk.labelSetText (pointsLabel, toString ())
-		end
-
-	    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
-
-	    fun headPosition p = ArenaWidget.changeView (arena, p)
-
-	in
-	    mode := GAME;
-	    Gtk.widgetSetSensitive (menuGiveUpItem, true);
-	    Gtk.widgetSetSensitive (menuMenuItem, false);
-	    Gtk.widgetShow canvas;
-	    Gtk.widgetShow rightHBox;
-	    assert (Future.isFuture $ Promise.future guiGameP) 
-	    do Promise.fulfill (guiGameP, {startLevel, update, countdown, 
-					  updatePoints, headPosition,
-					  tick,
-					  gameFinished});
-	    (* update procedures *)
-	    turn' := turn;
-	    changeView' := changeView;
-	    giveUp' := giveUp;
-	    disconnect' := disconnect
-	end
-	 
 
     (* builds the mainWindow, starting in START mode *)
     fun mkMainWindow ({connect, startServer}, gui) = 
 	let
+			
+	    (* initialising the canvas widget *)
+	    val arena = ArenaWidget.initialize ()
+	    val canvas = ArenaWidget.toObject arena
 
+	    (* the menu bar items which sensitivity get 
+	     changed some times *)
+	    val menuMenuItem   = Gtk.menuItemNewWithLabel "Menu"
+	    val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
+		
+	    (* the points box items *)
+	    val separator1  = Gtk.vseparatorNew ()
+	    val pointsLabel = Gtk.labelNew ""
+		
+	    (* the countdown time label *)
+	    val timeLabel = Gtk.labelNew ""
+		
+	    (* the box where time and points are in *)
+	    val labelVBox      = Gtk.vboxNew (false, 10)
+	    val rightHBox      = Gtk.hboxNew (false, 10)
+
+	    (* one of the main procedures. resets the window
+	in START mode and also the sensitivity of the menubar *)
+	    fun reset' () =
+		(Gtk.widgetSetSensitive (menuGiveUpItem, false);
+		 Gtk.widgetSetSensitive (menuMenuItem, true);
+		 Gtk.widgetHide canvas;
+		 Gtk.widgetHide rightHBox;
+		 mode := START)
+		
+	    (* resets window and also shows [msg] when needed *)
+	    fun reset NONE = reset' ()
+	      | reset (SOME (title, msg)) =
+		(Text.mkTextWindow (title, msg); reset' ())
+		
 	    val _ = assert (Future.isFuture $ Promise.future gui) 
 		        do Promise.fulfill (gui, {reset})
+
+	    (* initializing the procedures for modelGame *)
+	    val turn'       = ref (fn d => ())
+	    val changeView' = ref (fn h => ())
+	    val giveUp'     = ref (fn () => ())
+	    val disconnect' = ref (fn () => ())
+		
+	    (* calling the procedure gameMode turns main window in GAME mode,
+	     by setting and fullfilling guiGame and updating functionality *)
+	    fun gameMode ({disconnect}, {turn, changeView, giveUp},
+			  guiGameP) =
+		let
+		    fun gameFinished h = 
+			(reset (SOME ("Highscore", highscoreToString h)))
+			
+		    fun update difflist = ArenaWidget.update (arena, difflist)
+			
+		    val oldNumber   = ref (Gtk.null ())
+		    val color       = Gdk.allocColor (65535, 65535, 65535)
+		    fun countdown 0 = if !oldNumber <> Gtk.null ()
+					  then Gtk.objectDestroy (!oldNumber)
+				      else ()
+		      | countdown n =
+			let
+			    val root   = GtkCanvas.root canvas
+			    val num    = Int.toString n
+			    val font   = 
+				"-*-times-bold-*-*-*-120-*-*-*-*-*-*-*"
+			    val  (x1, y1, x2, y2) = 
+				GtkCanvas.getScrollRegion (canvas, 0.0, 0.0, 
+							   0.0, 0.0)
+			    val x      = (x1 + x2) / 2.0
+			    val y      = (y1 + y2) / 2.0
+			    val anchor = Gtk.ANCHOR_CENTER
+			    val args   = [("text", GtkCanvas.STRING num),
+					  ("font", GtkCanvas.STRING font),
+					  ("x", GtkCanvas.DOUBLE x), 
+					  ("y", GtkCanvas.DOUBLE y),
+					  ("fill_color_gdk", 
+					   GtkCanvas.OBJECT color),
+					  ("anchor", GtkCanvas.INT anchor)]
+				
+			    val num    = GtkCanvas.itemNew (root, 
+							 GtkCanvas.TEXT, args)
+				
+			in
+			    if !oldNumber <> Gtk.null ()
+				then Gtk.objectDestroy (!oldNumber)
+			    else ();
+				oldNumber := num
+			end
+		    
+		    fun tick remainingTime =
+			let
+			    val timeStr = timeToString remainingTime
+			in
+			    Gtk.labelSetText (timeLabel, timeStr)
+			end
+		    
+		    (* updates the pointsLabel. different points are separated
+		     by newlines *)
+		    fun updatePoints plist =
+			let
+			    fun toString' (({name, 
+					     color, 
+					     points, 
+					     gamePoints},
+					    NONE), str) =
+				(str ^ name ^ ":  " 
+				 ^ (Int.toString points) ^ "  /  " 
+				 ^ (Int.toString gamePoints) ^ "\n\n")
+			      | toString' (({name, 
+					     color, 
+					     points, 
+					     gamePoints},
+					    SOME lives), str) =
+				(str ^ name ^ ":  " 
+				 ^ (Int.toString points) ^ "  /  " 
+				 ^ (Int.toString gamePoints)
+				 ^ " | lives: " ^ (Int.toString lives) ^ "\n\n")
+			    fun toString () = List.foldl toString' "" plist
+			in
+			    Gtk.labelSetText (pointsLabel, toString ())
+			end
+		    
+		    fun startLevel levinf = ArenaWidget.initLevel (arena, levinf)
+			
+		    fun headPosition p = ArenaWidget.changeView (arena, p)
+			
+		in
+		    mode := GAME;
+		    Gtk.widgetSetSensitive (menuGiveUpItem, true);
+		    Gtk.widgetSetSensitive (menuMenuItem, false);
+		    Gtk.widgetShow canvas;
+		    Gtk.widgetShow rightHBox;
+		    assert (Future.isFuture $ Promise.future guiGameP) 
+		    do Promise.fulfill (guiGameP, {startLevel, update, 
+						   countdown, 
+						   updatePoints, headPosition,
+						   tick,
+						   gameFinished});
+		    (* update procedures *)
+		    turn' := turn;
+		    changeView' := changeView;
+		    giveUp' := giveUp;
+		    disconnect' := disconnect
+		end
 
 	    (* the different behaviour by pressing the quit button *)
 	    fun mainQuit () = 
@@ -276,7 +277,8 @@ struct
 			    Promise.fulfill (guiJoinP, guiJoin);
 			    (case start () of
 				 FST (mGame, guiGame) => 
-				     gameMode ({disconnect}, mGame, guiGame)
+				     gameMode ({disconnect}, mGame, 
+					       guiGame)
 			       | SND   errorMsg       => 
 				     reset (SOME ("ERROR!!", errorMsg)))
 			end

@@ -20,19 +20,19 @@ import structure Wait       from "Wait"
 import structure Text       from "Text"
 
 
-fun colorToGdkColor c =
-    let
-	val (r, g, b) = Color.rgb c
-	fun conv n = Real.round (65535.0 * n)
-    in
-	Gdk.allocColor (conv r, conv g, conv b)
-    end
+
 
 
 structure PlayerSettings =
 struct
 
-
+    fun colorToGdkColor c =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	in
+	    Gdk.allocColor (conv r, conv g, conv b)
+	end
 
 
     fun mkPlayerSettings ({watch, play, disconnect}, guiJoin, 

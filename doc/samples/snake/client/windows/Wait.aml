@@ -23,17 +23,16 @@ import val log              from "../../common/Log"
 open Ctrl
 
 
-fun colorToGdkColor c =
-    let
-	val (r, g, b) = Color.rgb c
-	fun conv n = Real.round (65535.0 * n)
-    in
-	Gdk.allocColor (conv r, conv g, conv b)
-    end
-
-
 structure Wait =
 struct
+
+    fun colorToGdkColor c =
+	let
+	    val (r, g, b) = Color.rgb c
+	    fun conv n = Real.round (65535.0 * n)
+	in
+	    Gdk.allocColor (conv r, conv g, conv b)
+	end
 
     (* builds the waiting window *)
     fun mkWaitingWindow alternate = 
