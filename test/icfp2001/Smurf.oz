@@ -230,6 +230,7 @@ define
 	   attrReq:          RootAttrReq
 	   attrVal:          RootAttrVal
 	   sigma:            FS.value.empty
+	   scope:            {FS.value.make 1#NumberOfDataItems}
 	   familleNombreuse: {FD.int 0#1})
 
       %% Initialize element vertices
@@ -241,6 +242,7 @@ define
 	 AttrReq          = {MkAttrReq}
 	 AttrVal          = {MkAttrVal}
 	 Sigma            = {FS.var.upperBound 1#NumberOfDataItems}
+	 Scope            = {FS.var.upperBound 1#NumberOfDataItems}
 	 FamilleNombreuse = {FD.int 0#1}
 	 IsDataItemTag    = {FD.int 0#1}
 	 Tag              = {FD.int 1#MaxTag}
@@ -253,6 +255,7 @@ define
 		       attrReq:          AttrReq
 		       attrVal:          AttrVal
 		       sigma:            Sigma
+		       scope:            Scope
 		       familleNombreuse: FamilleNombreuse
 		       isDataItemTag:    IsDataItemTag
 		       tag:              Tag)
@@ -305,6 +308,10 @@ define
       {FS.value.make FirstVertexI#LastVertexI} =
       {Select.seqUnion [{FS.value.singl RootI} VPlus VMinus]}
 
+      Scopes = for I in FirstVertexI..LastVertexI collect: Collect do
+		  {Collect V.I.scope}
+	       end
+
       for I in FirstNonRootI..LastNonRootI do
 	 W = V.I
 	 IsInVPlus        = {FS.reified.isIn I VPlus}
@@ -320,6 +327,8 @@ define
 	 IsInVMinus =: (W.tag =: Epsilon)
 	 IsInVPlus =: (IsDownEmpty \=: IsSigmaEmpty)
 	 IsSigmaEmpty =<: IsNonDataItemTag
+	 W.scope = {FS.union {SeqUnion Scopes W.daughters} W.sigma}
+	 {FS.int.convex W.scope}
       end
 
       %% Attribute constraints
@@ -364,10 +373,10 @@ define
    in
       Res = V#Cost
 
-      {FS.cardRange NumberOfDataItems NumberOfVertices - 1 VPlus}
-      {FD.distribute naive [{FS.card VPlus}]}
+%      {FS.cardRange NumberOfDataItems NumberOfVertices - 1 VPlus}
+%      {FD.distribute naive [{FS.card VPlus}]}
 
-      {FD.distribute naive
+      {FD.distribute ff
        {Append
 	for I in 1..{Width V} collect: Collect do
 	   if I \= RootI then
