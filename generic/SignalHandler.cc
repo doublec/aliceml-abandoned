@@ -7,7 +7,7 @@
 //
 // Copyright:
 //   Thorsten Brunklaus, 2002
-//   Leif Kornstaedt, 2002
+//   Leif Kornstaedt, 2002-2003
 //
 // Last Change:
 //   $Date$ by $Author$
@@ -24,14 +24,19 @@
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
-typedef int atomic_int;
-#else
-#include <sys/types.h>
-#include <time.h>
+#if HAVE_SIGNAL
+#include <signal.h>
 #include <sys/time.h>
+#endif
+
+#if !HAVE_SIGNAL || HAVE_CONSOLECTRL
+#include <windows.h>
+#endif
+
+#if HAVE_SIG_ATOMIC_T
 typedef sig_atomic_t atomic_int;
+#else
+typedef int atomic_int;
 #endif
 
 //--** to be done: GetTime() wraps around every 71 weeks
@@ -50,37 +55,36 @@ struct SigHandler {
 #define SIGLAST -1
 
 static SigHandler sigHandlers[] =  {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_CONSOLECTRL
   { CTRL_C_EVENT, 0, Store::IntToWord(0) },
   { CTRL_BREAK_EVENT, 0, Store::IntToWord(0) },
   { CTRL_CLOSE_EVENT, 0, Store::IntToWord(0) },
   { CTRL_LOGOFF_EVENT, 0, Store::IntToWord(0) },
   { CTRL_SHUTDOWN_EVENT, 0, Store::IntToWord(0) },
-#else
-#ifdef SIGHUP
+#endif
+#if HAVE_SIGNAL && defined(SIGHUP)
   { SIGHUP, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGINT
+#if HAVE_SIGNAL && defined(SIGINT)
   { SIGINT, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGPIPE
+#if HAVE_SIGNAL && defined(SIGPIPE)
   { SIGPIPE, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGTERM
+#if HAVE_SIGNAL && defined(SIGTERM)
   { SIGTERM, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGCHLD
+#if HAVE_SIGNAL && defined(SIGCHLD)
   { SIGCHLD, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGWINCH
+#if HAVE_SIGNAL && defined(SIGWINCH)
   { SIGWINCH, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGUSR1
+#if HAVE_SIGNAL && defined(SIGUSR1)
   { SIGUSR1, 0, Store::IntToWord(0) },
 #endif
-#ifdef SIGUSR2
+#if HAVE_SIGNAL && defined(SIGUSR2)
   { SIGUSR2, 0, Store::IntToWord(0) },
-#endif
 #endif
   { SIGLAST, 0, Store::IntToWord(0) }
 };
@@ -148,7 +152,38 @@ public:
   }
 };
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_SIGNAL
+class Timer {
+private:
+  static volatile atomic_int time;
+
+  static void Update(int) {
+    time++;
+    StatusWord::SetStatus(Scheduler::PreemptStatus() |
+			  SignalHandler::SignalStatus());
+  }
+public:
+  static void Init() {
+    time = 0;
+    signal(SIGALRM, Update);
+
+    struct itimerval value;
+    int sec  = TIME_SLICE / 1000;
+    int usec = (TIME_SLICE % 1000) * 1000;
+    value.it_interval.tv_sec  = sec;
+    value.it_interval.tv_usec = usec;
+    value.it_value.tv_sec     = sec;
+    value.it_value.tv_usec    = usec;
+    if (setitimer(ITIMER_REAL, &value, NULL) < 0)
+      Error("setitimer failed");
+  }
+  static u_int GetTime() {
+    return time;
+  }
+};
+
+volatile atomic_int Timer::time;
+#else
 class Timer {
 private:
   static u_int time;
@@ -190,40 +225,9 @@ public:
 
 u_int Timer::time;
 HANDLE Timer::thread;
-#else
-class Timer {
-private:
-  static volatile atomic_int time;
-
-  static void Update(int) {
-    time++;
-    StatusWord::SetStatus(Scheduler::PreemptStatus() |
-			  SignalHandler::SignalStatus());
-  }
-public:
-  static void Init() {
-    time = 0;
-    signal(SIGALRM, Update);
-
-    struct itimerval value;
-    int sec  = TIME_SLICE / 1000;
-    int usec = (TIME_SLICE % 1000) * 1000;
-    value.it_interval.tv_sec  = sec;
-    value.it_interval.tv_usec = usec;
-    value.it_value.tv_sec     = sec;
-    value.it_value.tv_usec    = usec;
-    if (setitimer(ITIMER_REAL, &value, NULL) < 0)
-      Error("setitimer failed");
-  }
-  static u_int GetTime() {
-    return time;
-  }
-};
-
-volatile atomic_int Timer::time;
 #endif
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_CONSOLECTRL
 static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     if (static_cast<DWORD>(sigHandlers[i].signal) == signal &&
@@ -234,7 +238,9 @@ static BOOL CALLBACK MyConsoleCtrlHandler(DWORD signal) {
     }
   return FALSE;
 }
-#else
+#endif
+
+#if HAVE_SIGNAL
 static void MySignalHandler(int signal) {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     if (sigHandlers[i].signal == signal) {
@@ -246,22 +252,22 @@ static void MySignalHandler(int signal) {
 #endif
 
 static void BlockSignals() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  Timer::Suspend();
-#else
+#if HAVE_SIGNAL
   sigset_t set;
   sigfillset(&set);
   sigprocmask(SIG_SETMASK, &set, NULL);
+#else
+  Timer::Suspend();
 #endif
 }
 
 static void UnblockSignals() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  Timer::Resume();
-#else
+#if HAVE_SIGNAL
   sigset_t set;
   sigemptyset(&set);
   sigprocmask(SIG_SETMASK, &set, NULL);
+#else
+  Timer::Resume();
 #endif
 }
 
@@ -274,7 +280,7 @@ void SignalHandler::Init() {
   for (u_int i = 0; sigHandlers[i].signal != SIGLAST; i++)
     RootSet::Add(sigHandlers[i].handlers);
   Timer::Init();
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if HAVE_CONSOLECTRL
   SetConsoleCtrlHandler(MyConsoleCtrlHandler, TRUE);
 #endif
 }
@@ -289,7 +295,7 @@ static int FindSignal(int signal) {
 void SignalHandler::RegisterSignal(int _signal, word closure) {
   BlockSignals();
   u_int i = FindSignal(_signal);
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#if HAVE_SIGNAL
   if (sigHandlers[i].handlers == Store::IntToWord(0))
     signal(_signal, MySignalHandler);
 #endif
