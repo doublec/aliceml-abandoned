@@ -19,7 +19,7 @@ export
    Env
 define
    fun {ExnName N}
-      case {VirtualString.toString {Value.toVirtualString N 0 0}}
+      case {VirtualString.toString {Value.toVirtualString {Label N} 0 0}}
       of "<N>" then ""
       elseof &<|&N|&:|& |Rest then
 	 case {Reverse Rest} of &>|Rest then
@@ -35,8 +35,20 @@ define
       end
    end
 
-   fun {StringLess S1 S2}
-      {VirtualString.toAtom S1} < {VirtualString.toAtom S2}   %--** inefficient
+   local
+      fun {StringCompareSub S1 S2 L1 L2 N}
+	 if N >= L1 then 'LESS'
+	 elseif N >= L2 then 'GREATER'
+	 elsecase {NumberCompare {ByteString.get S1 N} {ByteString.get S2 N}}
+	 of 'EQUAL' then {StringCompareSub S1 S2 L1 L2 N + 1}
+	 elseof X then X
+	 end
+      end
+   in
+      fun {StringCompare S1 S2}
+	 {StringCompareSub S1 S2
+	  {ByteString.length S1} {ByteString.length S2} 0}
+      end
    end
 
    CStringTab =
@@ -56,15 +68,6 @@ define
       C mod 8 + &0
    end
 
-   fun {ToCString C}
-      case {CondSelect CStringTab C unit} of unit then
-	 if {Char.isPrint C} then [C]
-	 else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
-	 end
-      elseof S then S
-      end
-   end
-
    Hex = hex(&0 &1 &2 &3 &4 &5 &6 &7 &8 &9 &a &b &c &d &e &f)
 
    fun {ToHex X}
@@ -76,7 +79,12 @@ define
       '=': Value.'=='
       '<>': Value.'\\='
       'Array.array':
-	 fun {$ N Init} {Array.new 0 N - 1 Init} end
+	 fun {$ N Init}
+	    if 0 =< N andthen N < BuiltinTable.'Array.maxSize' then
+	       {Array.new 0 N - 1 Init}
+	    else {Exception.raiseError BuiltinTable.'General.Size'} unit
+	    end
+	 end
       'Array.fromList':
 	 fun {$ Xs} N A in
 	    N = {Length Xs}
@@ -86,6 +94,7 @@ define
 	 end
       'Array.length':
 	 fun {$ A} {Array.high A} + 1 end
+      'Array.maxSize': 0x7FFFFFF
       'Array.sub':
 	 fun {$ A I}
 	    try
@@ -103,7 +112,10 @@ define
 	    end
 	    unit
 	 end
-      'Char.<=': fun {$ X1 X2} X1 =< X2 end
+      'Char.<': Value.'<'
+      'Char.>': Value.'>'
+      'Char.<=': Value.'=<'
+      'Char.>=': Value.'>='
       'Char.ord': fun {$ C} C end
       'Char.chr':
 	 fun {$ C}
@@ -111,13 +123,29 @@ define
 	    else {Exception.raiseError BuiltinTable.'General.Chr'} unit
 	    end
 	 end
+      'Char.isAlpha': Char.isAlpha
       'Char.isAlphaNum': Char.isAlNum
+      'Char.isCntrl': Char.isCntrl
       'Char.isDigit': Char.isDigit
+      'Char.isGraph': Char.isGraph
       'Char.isHexDigit': Char.isXDigit
+      'Char.isLower': Char.isLower
+      'Char.isPrint': Char.isPrint
+      'Char.isPunct': Char.isPunct
       'Char.isSpace': Char.isSpace
+      'Char.isUpper': Char.isUpper
       'Char.toCString':
-	 fun {$ C} {ByteString.make {ToCString C}} end
+	 fun {$ C}
+	    {ByteString.make
+	     case {CondSelect CStringTab C unit} of unit then
+		if {Char.isPrint C} then [C]
+		else [&\\ {ToOct C div 64} {ToOct C div 8} {ToOct C}]
+		end
+	     elseof S then S
+	     end}
+	 end
       'Char.toLower': Char.toLower
+      'Char.toUpper': Char.toUpper
       'General.:=': fun {$ X Y} {Assign X Y} unit end
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
@@ -179,7 +207,14 @@ define
       'Real.+': Number.'+'
       'Real.-': Number.'-'
       'Real.*': Number.'*'
-      'Real./': Float.'/'
+      'Real./':
+	 fun {$ R1 R2}
+	    try
+	       R1 / R2
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
       'Real.<': Value.'<'
       'Real.>': Value.'>'
       'Real.<=': Value.'=<'
@@ -193,17 +228,18 @@ define
 	 end
       'String.^':
 	 fun {$ S1 S2} {ByteString.append S1 S2} end
-      'String.<': StringLess
+      'String.<':
+	 fun {$ S1 S2} {StringCompare S1 S2} == 'LESS' end
       'String.>':
-	 fun {$ X1 X2} {StringLess X2 X1} end
+	 fun {$ S1 S2} {StringCompare S1 S2} == 'GREATER' end
       'String.<=':
-	 fun {$ X1 X2} {Not {StringLess X2 X1}} end
+	 fun {$ S1 S2} {StringCompare S1 S2} \= 'GREATER' end
       'String.>=':
-	 fun {$ X1 X2} {Not {StringLess X1 X2}} end
-      'String.str':
-	 fun {$ C} {ByteString.make [C]} end
-      'String.size':
-	 fun {$ S} {ByteString.length S} end
+	 fun {$ S1 S2} {StringCompare S1 S2} \= 'LESS' end
+      'String.compare': StringCompare
+      'String.explode': ByteString.toString
+      'String.maxSize': 0x7FFFFFFF
+      'String.size': ByteString.length
       'String.sub':
 	 fun {$ S I}
 	    try
@@ -220,15 +256,8 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
-      'String.compare':
-	 fun {$ S T}
-	    if {StringLess S T} then 'LESS'
-	    elseif {StringLess T S} then 'GREATER'
-	    else 'EQUAL'
-	    end
-	 end
-      'String.explode':
-	 fun {$ S} {ByteString.toString S} end
+      'String.str':
+	 fun {$ C} {ByteString.make [C]} end
       'Thread.Terminate': kernel(terminate)
       'Thread.current':
 	 fun {$ unit} {Thread.this} end
@@ -271,7 +300,7 @@ define
 	 end
       'Transient.future':
 	 fun {$ P}
-	    if {IsFree P} then !!P
+	    if {IsFree P} andthen {Not {IsFuture P}} then !!P
 	    else
 	       {Exception.raiseError BuiltinTable.'Transient.Future'} unit
 	    end
@@ -282,7 +311,7 @@ define
 	 fun {$ unit} _ end
       'Unsafe.cast': fun {$ X} X end
       'Vector.fromList':
-	 fun {$ Xs} {List.toTuple vector Xs} end
+	 fun {$ Xs} {List.toTuple '#' Xs} end
       'Vector.length': Width
       'Vector.sub':
 	 fun {$ V I}
@@ -298,7 +327,22 @@ define
       'Word.+': BootWord.'+'
       'Word.-': BootWord.'-'
       'Word.*': BootWord.'*'
-      'Word.mod': BootWord.'mod'
+      'Word.div':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'div' W1 W2}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
+      'Word.mod':
+	 fun {$ W1 W2}
+	    try
+	       {BootWord.'mod' W1 W2}
+	    catch _ then
+	       {Exception.raiseError BuiltinTable.'General.Div'} unit
+	    end
+	 end
       'Word.orb': BootWord.'orb'
       'Word.xorb': BootWord.'xorb'
       'Word.andb': BootWord.'andb'
