@@ -1,4 +1,5 @@
 import structure Ant from "Ant"
+import structure Instructions from "Instructions"
 
 structure World =
   struct
@@ -13,8 +14,8 @@ structure World =
   val emptyCell = {rocky = false,
                    ant = NONE,
                    food = 0,
-                   redMarkers = #[],
-                   blackMarkers = #[],
+                   redMarkers = #[false,false,false,false,false,false],
+                   blackMarkers = #[false,false,false,false,false,false],
                    redHill = false,
                    blackHill = false}
 
@@ -34,7 +35,7 @@ structure World =
       Array.find f cells
 
   (* Cartography *)
-
+  fun rocky(world, pos) = #rocky (getCellAt(world, pos))
 
   (* Ant manipulation in the world*)
   fun someAntIsAt(world, pos) = #ant (getCellAt(world, pos)) <> NONE
@@ -65,5 +66,67 @@ structure World =
       #redHill (getCellAt(world, pos))
     | anthillAt(world, pos, Ant.Black) =
       #blackHill (getCellAt(world, pos))
+
+  (* Chemistry *)
+  fun changeMarkerAt(world, pos, Ant.Red, marker, flag) =
+      let
+          val newMarkers = Vector.update(#redMarkers (getCellAt(world, pos)),
+                                         marker, flag)
+      in
+          setCellAt(world, pos,
+                    {(getCellAt(world, pos)) where redMarkers=newMarkers})
+      end
+    | changeMarkerAt(world, pos, Ant.Black, marker, flag) =
+      let
+          val newMarkers = Vector.update(#blackMarkers (getCellAt(world, pos)),
+                                         marker, flag)
+      in
+          setCellAt(world, pos,
+                    {(getCellAt(world, pos)) where blackMarkers=newMarkers})
+      end
+
+  fun setMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,true)
+  fun clearMarkerAt(w,p,c,m) = changeMarkerAt(w,p,c,m,false)
+
+  fun checkMarkerAt(world, pos, Ant.Red, marker) =
+      Vector.sub(#redMarkers (getCellAt(world,pos)), marker)
+    | checkMarkerAt(world, pos, Ant.Black, marker) =
+      Vector.sub(#blackMarkers (getCellAt(world,pos)), marker)
+  fun checkAnyMarkerAt(world, pos, Ant.Red) =
+      Vector.exists (fn x => x)
+                    (#redMarkers (getCellAt(world,pos)))
+    | checkAnyMarkerAt(world, pos, Ant.Black) =
+      Vector.exists (fn x => x)
+                    (#blackMarkers (getCellAt(world,pos)))
+
+  (* Phenomenology *)
+  local
+      open Instructions
+  in
+  fun cellMatches(world, pos, Friend,         color) =
+      someAntIsAt(world,pos) andalso #color(antAt(world,pos))=color
+    | cellMatches(world, pos, Foe,            color) =
+      someAntIsAt(world,pos) andalso #color(antAt(world,pos))<>color
+    | cellMatches(world, pos, FriendWithFood, color) =
+      someAntIsAt(world,pos)
+      andalso #color(antAt(world,pos))=color
+      andalso #hasFood(antAt(world,pos))
+    | cellMatches(world, pos, FoeWithFood,    color) =
+      someAntIsAt(world,pos)
+      andalso #color(antAt(world,pos))<>color
+      andalso #hasFood(antAt(world,pos))
+    | cellMatches(world, pos, Food,           color) =
+      foodAt(world,pos) > 0
+    | cellMatches(world, pos, Rock,           _    ) = rocky(world,pos)
+    | cellMatches(world, pos, Marker m,       color) =
+      checkMarkerAt(world, pos, color, m)
+    | cellMatches(world, pos, FoeMarker,      color) =
+      checkAnyMarkerAt(world, pos, Ant.otherColor color)
+    | cellMatches(world, pos, Home,           color) =
+      anthillAt(world, pos, color)
+    | cellMatches(world, pos, FoeHome,        color) =
+      anthillAt(world, pos, Ant.otherColor color)
+
+  end
 
   end

@@ -17,6 +17,6 @@ structure Ant =
               state : Instructions.state,
               resting : int,
               direction : direction,
-              has_food : bool}
+              hasFood : bool}
 
   end
