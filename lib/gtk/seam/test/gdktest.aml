@@ -1,0 +1,9 @@
+import structure Gdk from "../Gdk"
+
+local
+    open Gdk
+in
+    val v = visualGetSystem()
+    val i = imageNew(IMAGE_NORMAL, v, 100, 100)
+    val _ = imagePutPixel(i,50,50,0)
+end
