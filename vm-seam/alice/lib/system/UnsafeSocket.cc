@@ -29,9 +29,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include "generic/RootSet.hh"
-#include "generic/IOHandler.hh"
-#include "generic/Transients.hh"
 #include "alice/Authoring.hh"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -286,7 +283,7 @@ DEFINE1(UnsafeSocket_close) {
   RETURN_UNIT;
 } END
 
-word UnsafeSocket() {
+AliceDll word UnsafeSocket() {
   //--** to be done: Windows Socket startup moved to UnsafeIO.cc
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
