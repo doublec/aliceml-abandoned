@@ -1,4 +1,8 @@
 import
+    structure Assert
+from "x-alice:/misc/Assert.ozf"
+
+import
     structure Crash
 from "x-alice:/infrastructure/Crash.ozf"
 
@@ -22,6 +26,10 @@ from "x-alice:/frontend-common/TypedGrammar.ozf"
 import
     structure IntermediateGrammar
 from "x-alice:/common/IntermediateGrammar.ozf"
+
+import
+    structure CheckIntermediate
+from "x-alice:/common/CheckIntermediate.ozf"
 
 import
     structure Name

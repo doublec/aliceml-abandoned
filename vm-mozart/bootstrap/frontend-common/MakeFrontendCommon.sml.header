@@ -15,8 +15,28 @@ import
 from "x-alice:/infrastructure/ComposePhases.ozf"
 
 import
+    functor MakeTracingPhase
+from "x-alice:/infrastructure/MakeTracingPhase.ozf"
+
+import
+    functor MakeDumpingPhase
+from "x-alice:/infrastructure/MakeDumpingPhase.ozf"
+
+import
+    structure TypedGrammar
+from "x-alice:/frontend-common/TypedGrammar.ozf"
+
+import
     structure Inf
 from "x-alice:/common/Inf.ozf"
+
+import
+    structure PPInf
+from "x-alice:/common/PPInf.ozf"
+
+import
+    structure PPIntermediateGrammar
+from "x-alice:/common/IntermediateGrammar.ozf"
 
 import
     structure MakeElaborationPhase

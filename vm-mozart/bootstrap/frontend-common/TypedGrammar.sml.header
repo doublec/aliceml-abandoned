@@ -3,6 +3,10 @@ import
 from "x-alice:/frontend-common/MakeAbstractGrammar.ozf"
 
 import
+    functor MakePPAbstractGrammar
+from "x-alice:/frontend-common/MakePPAbstractGrammar.ozf"
+
+import
     structure Source
 from "x-alice:/infrastructure/Source.ozf"
 

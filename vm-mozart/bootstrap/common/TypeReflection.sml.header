@@ -15,6 +15,10 @@ import
 from "x-alice:/common/Type.ozf"
 
 import
+    structure PervasiveType
+from "x-alice:/common/PervasiveType.ozf"
+
+import
     structure PathReflection
 from "x-alice:/common/PathReflection.ozf"
 

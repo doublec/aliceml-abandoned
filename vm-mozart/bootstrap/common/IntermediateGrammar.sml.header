@@ -13,3 +13,11 @@ from "x-alice:/common/Inf.ozf"
 import
     structure MakeIntermediateGrammar
 from "x-alice:/common/MakeIntermediateGrammar.ozf"
+
+import
+    structure MakePPIntermediateGrammar
+from "x-alice:/common/MakePPIntermediateGrammar.ozf"
+
+import
+    structure PrettyPrint
+from "x-alice:/misc/PrettyPrint.ozf"

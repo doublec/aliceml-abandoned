@@ -30,7 +30,8 @@ MISCFILES = $(MISCSOURCES:%=misc/%)
 INFRASTRUCTURESOURCES = \
 	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
 	SWITCHES.sig MakeSwitches.sml CONTEXT.sig REPRESENTATION.sig \
-	PHASE.sig PHASE_ERROR.sig ComposePhases.sml EmptyContext.sml \
+	PHASE.sig PHASE_ERROR.sig ComposePhases.sml MakeTracingPhase.sml \
+	MakeDumpingPhase.sml EmptyContext.sml \
 	SIGNATURE.sig COMPOSER.sig TARGET.sig
 INFRASTRUCTUREFILES = $(INFRASTRUCTURESOURCES:%=infrastructure/%)
 
@@ -39,7 +40,9 @@ COMMONSOURCES = \
 	Label.sml PATH.sig Path.sml PathSet.sml PathMap.sml TYPE.sig Type.sml \
 	PP_PATH.sig PPPath.sml PP_TYPE.sig PPType.sml FIXITY.sig Fixity.sml \
 	INF.sig Inf.sml PP_INF.sig PPInf.sml INTERMEDIATE_GRAMMAR.sig \
-	MakeIntermediateGrammar.sml IntermediateGrammar.sml \
+	MakeIntermediateGrammar.sml PP_INTERMEDIATE_GRAMMAR.sig \
+	MakePPIntermediateGrammar.sml IntermediateGrammar.sml \
+	CHECK_INTERMEDIATE.sig CheckIntermediate.sml \
 	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml \
 	LABEL_REFLECTION.sig LabelReflection.sml \
 	PATH_REFLECTION.sig PathReflection.sml \
@@ -48,6 +51,7 @@ COMMONFILES = $(COMMONSOURCES:%=common/%)
 
 FRONTENDCOMMONSOURCES = \
 	StringMap.sml ABSTRACT_GRAMMAR.sig MakeAbstractGrammar.sml \
+	PP_ABSTRACT_GRAMMAR.sig MakePPAbstractGrammar.sml \
 	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml \
 	ELABORATION_ERROR.sig ElaborationError.sml ELABORATION_PHASE.sig \
 	MakeElaborationPhase.sml TRANSLATION_PHASE.sig \

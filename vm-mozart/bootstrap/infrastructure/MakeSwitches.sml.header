@@ -1,3 +1,2 @@
-import
-    signature SWITCHES
-from "x-alice:/infrastructure/SWITCHES.ozf"
+import structure TextIO   from "x-alice:/lib/TextIO.ozf"
+import signature SWITCHES from "x-alice:/infrastructure/SWITCHES.ozf"
