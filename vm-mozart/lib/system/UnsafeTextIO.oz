@@ -80,7 +80,7 @@ define
       'output1':
 	 fun {$ F C} {F write(vs: [C])} unit end
       'flushOut':
-	 fun {$ F} {F flush()} end   %--** not supported for files?
+	 fun {$ F} /*{F flush()}*/ unit end   %--** not supported for files?
       'closeOut':
 	 fun {$ F} {F close()} unit end
       'print': Print)
