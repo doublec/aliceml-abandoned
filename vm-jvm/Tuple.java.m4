@@ -105,11 +105,23 @@ public class Tuple implements DMLTuple {
     }
 
     public DMLValue get(java.lang.String i) {
-	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	try {
+	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return null;
+	}
     }
 
     public DMLValue get(Label i) {
-	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	try {
+	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return null;
+	}
     }
 
     /** gibt die Stelligkeit des Tuples oder Records an */

@@ -25,7 +25,8 @@ public class Constructor implements DMLValue {
 	return this.name;
     }
 
-    final public DMLValue apply(DMLValue val) {
+    public DMLValue apply(DMLValue val)
+	throws java.rmi.RemoteException {
 	return new ConVal(this,val);
     }
 

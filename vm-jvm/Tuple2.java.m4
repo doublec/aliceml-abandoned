@@ -51,7 +51,7 @@ final public class Tuple2 implements DMLTuple {
     }
 
     /** gibt den i-ten Eintrag des Tuples oder Records*/
-    final public DMLValue get(int i){
+    final public DMLValue get(int i) {
 	switch (i) {
 	case 0: return fst;
 	case 1: return snd;
@@ -60,11 +60,23 @@ final public class Tuple2 implements DMLTuple {
     }
 
     final public DMLValue get(java.lang.String i) {
-	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	try {
+	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return null;
+	}
     }
 
     final public DMLValue get(Label i) {
-	_RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	try {
+	    _RAISE(runtimeError,new STRING ("no such label in tuple: "+i));
+	} catch (java.rmi.RemoteException r) {
+	    System.err.println(r);
+	    r.printStackTrace();
+	    return null;
+	}
     }
 
     /** gibt die Stelligkeit des Tuples oder Records an */

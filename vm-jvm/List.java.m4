@@ -8,7 +8,21 @@ package de.uni_sb.ps.dml.runtime;
 
 final public class List {
     final public static Name nil = new UniqueName("List.nil");
-    final public static Constructor cons = new UniqueConstructor("List.cons");
+
+    final public static class ConsConstructor extends UniqueConstructor {
+
+	public ConsConstructor(java.lang.String n) {
+	    super(n);
+	}
+
+	final public DMLValue apply(DMLValue val)
+	    throws java.rmi.RemoteException {
+	    _fromTuple(args,val,2,"List.cons");
+	    return new Cons(args[0],args[1]);
+	}
+    }
+    final public static Constructor cons = new ConsConstructor("List.cons");
+
     /** <code>exception Empty</code>*/
     final public static Name Empty = new UniqueName("List.Empty");
 
