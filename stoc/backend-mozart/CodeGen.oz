@@ -24,12 +24,19 @@ define
    fun {MakeRegDict CS ?RegDict}
       RegDict = {NewDictionary}
       {List.toRecord prebound
-       {Map {Arity Prebound.env}
-	fun {$ X} Reg in
-	   {CS newReg(Reg)}
-	   {Dictionary.put RegDict X Reg}
-	   Reg#Prebound.env.X
-	end}}
+       {FoldR {Arity Prebound.env}
+	fun {$ X Rest} Reg in
+	   case Prebound.env.X of v#Value then
+	      {CS newReg(Reg)}
+	      {Dictionary.put RegDict X Reg}
+	      Reg#Value|Rest
+	   [] c#Value#Name then Reg1 Reg2 in
+	      {CS newReg(Reg1)}   % value identifier
+	      {CS newReg(Reg2)}   % constructor name
+	      {Dictionary.put RegDict X Reg1#Reg2}
+	      Reg1#Value|Reg2#Name|Rest
+	   end
+	end nil}}
    end
 
    proc {MakeReg id(_ Stamp _) State ?Reg}
@@ -138,6 +145,12 @@ define
 	    VHd = vTestBuiltin(_ 'Value.\'==\''
 			       [Reg0 {GetReg Id State} {State.cs newReg($)}]
 			       ThenVInstr ElseVInstr VTl)
+	 [] conTest(id(Coord ref _) some(Id)) then ThenVInstr0 in
+	    VHd = vTestBuiltin(_ 'Cell.is' [Reg0 {State.cs newReg($)}]
+			       ThenVInstr0 ElseVInstr VTl)
+	    ThenVInstr0 = vCallBuiltin(_ 'Cell.access'
+				       [Reg0 {MakeReg Id State}]
+				       {TranslateCoord Coord} ThenVInstr)
 	 [] conTest(Id1 some(Id2)) then NameReg ThenVInstr0 in
 	    NameReg = {GetNameReg Id1 State}
 	    VHd = vTestBuiltin(_ 'Record.testLabel'
@@ -202,9 +215,7 @@ define
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] varExp(_ Id) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(_ Id true) then
-	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
-      [] conExp(_ Id false) then
+      [] conExp(_ Id _) then
 	 VHd = vUnify(_ Reg {GetReg Id State} VTl)
       [] tupExp(_ Ids) then
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
