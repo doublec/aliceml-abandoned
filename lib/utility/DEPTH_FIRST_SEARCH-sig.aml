@@ -12,7 +12,7 @@
 
 import
     signature IMP_MAP
-from "IMP_MAP-sig"
+from "../data/IMP_MAP-sig"
 
 signature DEPTH_FIRST_SEARCH =
     sig

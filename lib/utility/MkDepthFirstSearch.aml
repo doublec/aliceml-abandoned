@@ -17,12 +17,12 @@
  *)
 
 import structure Assert             from "Assert"
-import signature HASH_KEY           from "HASH_KEY-sig"
-import signature IMP_MAP            from "IMP_MAP-sig"
+import signature HASHABLE           from "../data/HASHABLE-sig"
+import signature IMP_MAP            from "../data/IMP_MAP-sig"
 import signature DEPTH_FIRST_SEARCH from "DEPTH_FIRST_SEARCH-sig"
 
 functor MkDepthFirstSearch
-    (structure Key: HASH_KEY
+    (structure Key: HASHABLE
      structure Map: IMP_MAP where type key = Key.t): DEPTH_FIRST_SEARCH =
     struct
 	structure Map = Map
@@ -37,7 +37,7 @@ functor MkDepthFirstSearch
 	fun newState maxId: state =
 	    {currentId = ref 0,
 	     stack = ref nil,
-	     done = Map.new (),
+	     done = Map.map (),
 	     sorted = ref nil,
 	     maxId = maxId}
 
