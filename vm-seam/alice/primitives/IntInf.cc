@@ -154,16 +154,20 @@ DEFINE1(IntInf_toInt) {
 } END
 
 // unary operators
-#define MKOP1(op, bigop, smallop) \
-DEFINE1(IntInf_ ## op) {          \
-  TEST_INTINF(i, x0);             \
-  if (i==INVALID_INT) {           \
-    DECLARE_INTINF(i, x0);        \
-    BigInt *res = i->bigop();     \
-    RETURN_INTINF(res);           \
-  } else {                        \
-    RETURN_INT(smallop(i));       \
-  }                               \
+#define MKOP1(op, bigop, smallop)                       \
+DEFINE1(IntInf_ ## op) {                                \
+  TEST_INTINF(i, x0);                                   \
+  if (i==INVALID_INT) {                                 \
+    DECLARE_INTINF(i, x0);                              \
+    BigInt *res = i->bigop();                           \
+    RETURN_INTINF(res);                                 \
+  } else {                                              \
+    int res = smallop(i);                               \
+    if (res>=MIN_VALID_INT && res <= MAX_VALID_INT) {   \
+      RETURN_INT(res); }                                \
+    MK_INTINF(w, BigInt::New(res));                     \
+    RETURN(w);                                          \
+  }                                                     \
 } END
 MKOP1(opnegate, negate, -);
 MKOP1(abs, abs, abs);

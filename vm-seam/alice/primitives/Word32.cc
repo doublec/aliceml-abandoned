@@ -139,7 +139,7 @@ DEFINE1(Word32_fromLargeInt) {
   if (i!=INVALID_INT)
     RETURN_WORD32(i);
   DECLARE_INTINF(ii, x0);
-  RETURN_WORD32(mpz_get_si(ii->big()));
+  RETURN_WORD32(mpz_get_ui(ii->big()));
 } END
 
 DEFINE1(Word32_toLargeInt) {

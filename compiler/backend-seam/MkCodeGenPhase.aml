@@ -51,12 +51,24 @@ functor MkCodeGenPhase(structure AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR
 	fun isNAry (TupArgs #[]) = false
 	  | isNAry _ = true
 
+        val maxFixedInt = Int.toLarge (valOf FixedInt.maxInt)
+        val fixedIntRange =
+            LargeInt.abs (Int.toLarge (valOf FixedInt.minInt)) +
+            maxFixedInt + Int.toLarge 1
+
 	fun translateLit (IntLit i) =
             (V.int (FixedInt.fromLarge i) (*--** IntInf? *)
              handle Overflow =>
                     raise Crash.Crash "CodeGenPhase.translateLit int")
 	  | translateLit (WordLit w) =
-            (V.int (FixedInt.fromLarge (LargeWord.toLargeInt w))
+            (let
+                 val li = LargeWord.toLargeInt w
+             in
+                 if li > maxFixedInt then
+                     V.int (FixedInt.fromLarge (li - fixedIntRange))
+                 else
+                     V.int (FixedInt.fromLarge li)
+             end
              handle Overflow =>
                     raise Crash.Crash "CodeGenPhase.translateLit word")
 	  | translateLit (CharLit c) = V.int (FixedInt.fromInt (Char.ord c))
