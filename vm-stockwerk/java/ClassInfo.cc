@@ -21,7 +21,7 @@ u_int FieldInfo::GetNumberOfRequiredSlots() {
   switch (descriptor->CharAt(0)) {
   case 'B': case 'C': case 'F':
   case 'I': case 'S': case 'Z':
-  case 'L':
+  case 'L': case '[':
     return 1;
   case 'J': case 'D':
     return 2;
