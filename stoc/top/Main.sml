@@ -12,8 +12,17 @@ structure Main :> MAIN =
 	    processString process source
 	end
 
+    fun toFile process name s =
+	let
+	    val file = TextIO.openOut name
+	in
+	    process file s handle x => ( TextIO.closeOut file ; raise x ) ;
+	    TextIO.closeOut file
+	end
+
     val parse      = ParsingPhase.parse
-    val abstract   = AbstractionPhase.translate BindEnv0.E0 o parse
+    fun abstract x = (AbstractionPhase.translate (BindEnv.copy BindEnv0.E0) o parse) x
+    fun elab x     = (ElaborationPhase.elab (Env.copy Env0.E0) o abstract) x
     val translate  = TranslationPhase.translate o abstract
     val imperatify = MatchCompilationPhase.translate o translate
     val ilify      = CodeGenPhase.genProgram o imperatify
@@ -26,28 +35,12 @@ structure Main :> MAIN =
 	    TextIO.output1(outstream, #"\n")
 	end
 
-    fun ozifyToFile name s =
-	let
-	    val file = TextIO.openOut name
-	in
-	    ozify file s handle x => ( TextIO.closeOut file ; raise x ) ;
-	    TextIO.closeOut file
-	end
-
     fun comify outstream s =
 	let
 	    val prog = ilify s
 	in
 	    IL.outputProgram(outstream, prog) ;
 	    TextIO.output1(outstream, #"\n")
-	end
-
-    fun comifyToFile name s =
-	let
-	    val file = TextIO.openOut name
-	in
-	    comify file s handle x => ( TextIO.closeOut file ; raise x ) ;
-	    TextIO.closeOut file
 	end
 
     fun debug s =
@@ -66,6 +59,9 @@ structure Main :> MAIN =
     val translateString		= processString translate
     val translateFile		= processFile translate
 
+    val elabString		= processString elab
+    val elabFile		= processFile elab
+
     val imperatifyString	= processString imperatify
     val imperatifyFile		= processFile imperatify
 
@@ -75,8 +71,8 @@ structure Main :> MAIN =
     val ozifyStringToStdOut	= processString (ozify TextIO.stdOut)
     val ozifyFileToStdOut	= processFile (ozify TextIO.stdOut)
 
-    fun ozifyStringToFile(s,n)	= processString (ozifyToFile n) s
-    fun ozifyFileToFile(n1,n2)	= processFile (ozifyToFile n2) n1
+    fun ozifyStringToFile(s,n)	= processString (toFile ozify n) s
+    fun ozifyFileToFile(n1,n2)	= processFile (toFile ozify n2) n1
 
     val debugString		= processString debug
     val debugFile		= processFile debug
@@ -84,7 +80,7 @@ structure Main :> MAIN =
     val comifyStringToStdOut	= processString (comify TextIO.stdOut)
     val comifyFileToStdOut	= processFile (comify TextIO.stdOut)
 
-    fun comifyStringToFile(s,n)	= processString (comifyToFile n) s
-    fun comifyFileToFile(n1,n2)	= processFile (comifyToFile n2) n1
+    fun comifyStringToFile(s,n)	= processString (toFile comify n) s
+    fun comifyFileToFile(n1,n2)	= processFile (toFile comify n2) n1
 
   end

@@ -1,4 +1,4 @@
-structure ElabError =
+structure ElaborationError :> ELABORATION_ERROR =
   struct
 
     type typ    = Type.t

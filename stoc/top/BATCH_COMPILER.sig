@@ -7,6 +7,9 @@ signature MAIN =
     val abstractString :	string -> AbstractGrammar.program
     val abstractFile :		string -> AbstractGrammar.program
 
+    val elabString :		string -> TypedGrammar.program
+    val elabFile :		string -> TypedGrammar.program
+
     val translateString :	string -> IntermediateGrammar.program
     val translateFile :		string -> IntermediateGrammar.program
 

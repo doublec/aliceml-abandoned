@@ -1,4 +1,4 @@
-signature ELAB =
+signature ELABORATION_PHASE =
   sig
 
     structure I : ABSTRACT_GRAMMAR = AbstractGrammar
@@ -6,6 +6,6 @@ signature ELAB =
 
     type env = Env.t
 
-    val elabProgram :	env * I.program -> O.program
+    val elab :	env -> I.program -> O.program
 
   end

@@ -19,10 +19,16 @@ is
 	ENV.sig
 	Env.sml
 
+	ENV0.sig
+	Env0.sml
+	PP_TYPE.sig
+	PPType.sml
+
 	TypedGrammar.sml
-	ElabError.sml
-	ELAB.sig
-	Elab.sml
+	ELABORATION_ERROR.sig
+	ElaborationError.sml
+	ELABORATION_PHASE.sig
+	ElaborationPhase.sml
 
 	TRANSLATION_PHASE.sig
 	TranslationPhase.sml

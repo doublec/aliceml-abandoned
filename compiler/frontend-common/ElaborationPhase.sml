@@ -5,21 +5,20 @@
  * table.
  *)
 
-structure Elab :> ELAB =
+structure ElaborationPhase :> ELABORATION_PHASE =
   struct
 
     structure I = AbstractGrammar
     structure O = TypedGrammar
+    structure E = ElaborationError
 
     open Env
 
     nonfix mod
 
+  (* Error *)
 
-  (* Errors *)
-
-    val error = ElabError.error
-
+    val error = E.error
 
   (* Until we are finished... *)
 
@@ -29,41 +28,19 @@ structure Elab :> ELAB =
 
   (* Predefined types *)
 
-    val wordPath    = Path.PLAIN(Prebound.stamp_word,   Name.InId)
-    val intPath     = Path.PLAIN(Prebound.stamp_int,    Name.InId)
-    val charPath    = Path.PLAIN(Prebound.stamp_char,   Name.InId)
-    val stringPath  = Path.PLAIN(Prebound.stamp_string, Name.InId)
-    val realPath    = Path.PLAIN(Prebound.stamp_real,   Name.InId)
-    val boolPath    = Path.PLAIN(Prebound.stamp_bool,   Name.InId)
-    val exnPath     = Path.PLAIN(Prebound.stamp_exn,    Name.InId)
-    val refPath     = Path.PLAIN(Prebound.stamp_ref,    Name.InId)
-    val vecPath     = Path.PLAIN(Prebound.stamp_vec,    Name.InId)
-    val listPath    = Path.PLAIN(Prebound.stamp_list,   Name.InId)
+    fun boolTyp E   = #2(lookupTyp(E, Prebound.stamp_bool))
+    fun exnTyp E    = #2(lookupTyp(E, Prebound.stamp_exn))
 
-    val wordCon     = (Type.STAR, Type.CLOSED, wordPath)
-    val intCon      = (Type.STAR, Type.CLOSED, intPath)
-    val charCon     = (Type.STAR, Type.CLOSED, charPath)
-    val stringCon   = (Type.STAR, Type.CLOSED, stringPath)
-    val realCon     = (Type.STAR, Type.CLOSED, realPath)
-    val boolCon     = (Type.STAR, Type.CLOSED, boolPath)
-    val exnCon      = (Type.STAR, Type.CLOSED, exnPath)
-    val refCon      = (Type.ARROW(Type.STAR, Type.STAR), Type.CLOSED, refPath)
-    val vecCon      = (Type.ARROW(Type.STAR, Type.STAR), Type.CLOSED, vecPath)
-    val listCon     = (Type.ARROW(Type.STAR, Type.STAR), Type.CLOSED, listPath)
+    (* UNFINISHED: overloading *)
+    fun wordTyp E   = #2(lookupTyp(E, Prebound.stamp_exn))
+    fun intTyp E    = #2(lookupTyp(E, Prebound.stamp_int))
+    fun charTyp E   = #2(lookupTyp(E, Prebound.stamp_char))
+    fun stringTyp E = #2(lookupTyp(E, Prebound.stamp_string))
+    fun realTyp E   = #2(lookupTyp(E, Prebound.stamp_real))
 
-    val unitTyp     = let val t = Type.inTuple []    in fn() => t end
-    val boolTyp     = let val t = Type.inCon boolCon in fn() => t end
-    val exnTyp      = let val t = Type.inCon exnCon  in fn() => t end
-
-    fun wordTyp()   = Type.inCon wordCon	(* UNFINISHED: overloading *)
-    fun intTyp()    = Type.inCon intCon		(* UNFINISHED: overloading *)
-    fun charTyp()   = Type.inCon charCon	(* UNFINISHED: overloading *)
-    fun stringTyp() = Type.inCon stringCon	(* UNFINISHED: overloading *)
-    fun realTyp()   = Type.inCon realCon	(* UNFINISHED: overloading *)
-
-    fun refTyp t    = Type.inApp(Type.inCon refCon, t)
-    fun vecTyp t    = Type.inApp(Type.inCon vecCon, t)
-    fun listTyp t   = Type.inApp(Type.inCon listCon, t)
+    fun refTyp(E,t) = Type.inApp(#2(lookupTyp(E, Prebound.stamp_tref)), t)
+    fun vecTyp(E,t) = Type.inApp(#2(lookupTyp(E, Prebound.stamp_vec)), t)
+    fun listTyp(E,t)= Type.inApp(#2(lookupTyp(E, Prebound.stamp_list)), t)
 
 
   (* Output info field *)
@@ -73,13 +50,40 @@ structure Elab :> ELAB =
     fun infInfo(i,j) = (i, TypedInfo.INF j)
 
 
+  (* Check value restriction *)
+
+    fun isValue( I.LitExp _
+	       | I.VarExp _
+	       | I.ConExp _
+	       | I.SelExp _
+	       | I.CompExp _
+	       | I.FunExp _ )			= true
+      | isValue( I.TupExp(_, exps)
+	       | I.VecExp(_, exps) )		= List.all isValue exps
+      | isValue( I.RowExp(_, exprow))		= isValueRow exprow
+      | isValue( I.AppExp(_, exp1, exp2))	= isConstr exp1 andalso
+						  isValue exp2
+      | isValue( I.IfExp (_, exp1, exp2, exp3))	= isValue exp1 andalso
+						  isValue exp2 andalso
+						  isValue exp3
+      | isValue( I.AnnExp(_, exp, _))		= isValue exp
+      | isValue  _				= false
+
+    and isValueRow(I.Row(_, fields, _))		= List.all isValueField fields
+    and isValueField(I.Field(_, _, exp))	= isValue exp
+
+    and isConstr( I.VarExp _
+		| I.FunExp _ )			= false
+      | isConstr  exp				= isValue exp
+
+
   (* Literals *)
 
-    fun elabLit(E, I.WordLit w)		= ( wordTyp(), O.WordLit w )
-      | elabLit(E, I.IntLit n)		= ( intTyp(), O.IntLit n )
-      | elabLit(E, I.CharLit c)		= ( charTyp(), O.CharLit c )
-      | elabLit(E, I.StringLit s)	= ( stringTyp(), O.StringLit s )
-      | elabLit(E, I.RealLit x)		= ( realTyp(), O.RealLit x )
+    fun elabLit(E, I.WordLit w)		= ( wordTyp E, O.WordLit w )
+      | elabLit(E, I.IntLit n)		= ( intTyp E, O.IntLit n )
+      | elabLit(E, I.CharLit c)		= ( charTyp E, O.CharLit c )
+      | elabLit(E, I.StringLit s)	= ( stringTyp E, O.StringLit s )
+      | elabLit(E, I.RealLit x)		= ( realTyp E, O.RealLit x )
 
 
   (* Elaborate kind of type (no higher kinds yet) *)
@@ -109,16 +113,16 @@ structure Elab :> ELAB =
 	    val (l,lab') = elabLab(E, lab)
 	    val (t,x')   = elabX(E, x)
 	in
-	    ( l, t, O.Field(nonInfo(i), lab', x') )
+	    ( l, [t], O.Field(nonInfo(i), lab', x') )
 	end
 
     and elabFields(elabX, E, r, fields) =
 	let
 	    fun elabField1(field, (r,fields')) =
 		let
-		    val (l,t,field') = elabField(elabX, E, field)
+		    val (l,ts,field') = elabField(elabX, E, field)
 		in
-		    ( Type.extendRow(l, t, r), field'::fields' )
+		    ( Type.extendRow(l, ts, r), field'::fields' )
 		end
 	in
 	    List.foldr elabField1 (r,[]) fields
@@ -130,11 +134,27 @@ structure Elab :> ELAB =
     fun elabValId(E, id as I.Id(i, stamp, name)) =
 	(* May be binding occurance *)
 	let
+(*(*DEBUG*)
+val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
+val _=print("lookup value " ^ x ^ ": ")
+val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupVal(E, stamp))), 600)
+;print "\n")
+handle Lookup _ => ()
+*)
 	    val t = Type.instance(#2(lookupVal(E, stamp)))
 		    handle Lookup _ =>
 			let val t = Type.unknown Type.STAR in
+(*(*DEBUG*)
+print "not found\n";
+*)
 			    insertVal(E, stamp, (id,t)) ; t
 			end
+(*(*DEBUG*)
+val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
+val _=print("instantiated " ^ x ^ ": ")
+val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600)
+;print "\n")
+*)
 	in
 	    ( t, O.Id(typInfo(i,t), stamp, name) )
 	end
@@ -188,7 +208,7 @@ structure Elab :> ELAB =
 
       | elabExp(E, I.RefExp(i)) =
 	let
-	    val t = refTyp(Type.unknown Type.STAR)
+	    val t = refTyp(E, Type.unknown Type.STAR)
 	in
 	    ( t, O.RefExp(typInfo(i,t)) )
 	end
@@ -211,7 +231,7 @@ structure Elab :> ELAB =
       | elabExp(E, I.SelExp(i, lab)) =
 	let
 	    val (l,lab') = elabLab(E, lab)
-	    val  r       = Type.extendRow(l, Type.unknown Type.STAR,
+	    val  r       = Type.extendRow(l, [Type.unknown Type.STAR],
 					     Type.unknownRow())
 	    val  t       = Type.inRow r
 	in
@@ -221,12 +241,11 @@ structure Elab :> ELAB =
       | elabExp(E, I.VecExp(i, exps)) =
 	let
 	    val (ts,exps') = elabExps(E, exps)
-	    val  t         = vecTyp(List.hd ts)
+	    val  t         = vecTyp(E, List.hd ts)
 	    val  _         = Type.unifyList ts
 			     handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoExp(List.nth(exps,n)),
-				      ElabError.VecExpUnify(t, List.nth(ts,n),
-							    t1, t2))
+				      E.VecExpUnify(t, List.nth(ts,n), t1, t2))
 	in
 	    ( t, O.VecExp(typInfo(i,t), exps') )
 	end
@@ -250,11 +269,24 @@ structure Elab :> ELAB =
 	    val  _         = Type.unify(t1',t1)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
-				      ElabError.AppExpFunUnify(t1', t1, t3, t4))
+				      E.AppExpFunUnify(t1', t1, t3, t4))
 	    val  _         = Type.unify(t11,t2)
 			     handle Type.Unify(t3,t4) =>
-				error(i,
-				      ElabError.AppExpArgUnify(t11, t2, t3, t4))
+((*DEBUG*)
+print "function domain:  ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t11, 600);
+print "\n";
+print "argument type:    ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t2, 600);
+print "\n";
+print "mismatch between: ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t3, 600);
+print "\n";
+print "and:              ";
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t4, 600);
+print "\n";
+				error(i, E.AppExpArgUnify(t11, t2, t3, t4))
+)
 	in
 	    ( t12, O.AppExp(typInfo(i,t12), exp1', exp2') )
 	end
@@ -274,15 +306,15 @@ structure Elab :> ELAB =
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  t         = boolTyp()
+	    val  t         = boolTyp E
 	    val  _         = Type.unify(t1,t)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
-				      ElabError.AndExpUnify(t1, t, t3, t4))
+				      E.AndExpUnify(t1, t, t3, t4))
 	    val  _         = Type.unify(t2,t)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp2,
-				      ElabError.AndExpUnify(t2, t, t3, t4))
+				      E.AndExpUnify(t2, t, t3, t4))
 	in
 	    ( t, O.AndExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -291,15 +323,15 @@ structure Elab :> ELAB =
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  t         = boolTyp()
+	    val  t         = boolTyp E
 	    val  _         = Type.unify(t1,t)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
-				      ElabError.OrExpUnify(t1, t, t3, t4))
+				      E.OrExpUnify(t1, t, t3, t4))
 	    val  _         = Type.unify(t2,t)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp2,
-				      ElabError.OrExpUnify(t2, t, t3, t4))
+				      E.OrExpUnify(t2, t, t3, t4))
 	in
 	    ( t, O.OrExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -309,15 +341,14 @@ structure Elab :> ELAB =
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
 	    val (t3,exp3') = elabExp(E, exp3)
-	    val  tb        = boolTyp()
+	    val  tb        = boolTyp E
 	    val  _         = Type.unify(t1,tb)
 			     handle Type.Unify(t4,t5) =>
 				error(I.infoExp exp1,
-				      ElabError.IfExpCondUnify(t1, tb, t4, t5))
+				      E.IfExpCondUnify(t1, tb, t4, t5))
 	    val  _         = Type.unify(t2,t3)
 			     handle Type.Unify(t4,t5) =>
-				error(i,
-				      ElabError.IfExpBranchUnify(t2,t3, t4, t5))
+				error(i, E.IfExpBranchUnify(t2, t3, t4, t5))
 	in
 	    ( t2, O.IfExp(typInfo(i,t2), exp1', exp2', exp3') )
 	end
@@ -326,12 +357,12 @@ structure Elab :> ELAB =
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  tb        = boolTyp()
-	    val  t         = unitTyp()
+	    val  tb        = boolTyp E
+	    val  t         = Type.inTuple[]
 	    val  _         = Type.unify(t1,tb)
 			     handle Type.Unify(t3,t4) =>
 				error(I.infoExp exp1,
-				      ElabError.WhileExpCondUnify(t1,tb, t3,t4))
+				      E.WhileExpCondUnify(t1, tb, t3, t4))
 	in
 	    ( t, O.WhileExp(typInfo(i,t), exp1', exp2') )
 	end
@@ -356,12 +387,12 @@ structure Elab :> ELAB =
       | elabExp(E, I.RaiseExp(i, exp)) =
 	let
 	    val (t1,exp') = elabExp(E, exp)
-	    val  te       = exnTyp()
+	    val  te       = exnTyp E
 	    val  t        = Type.unknown Type.STAR
 	    val  _        = Type.unify(t1,te)
 			    handle Type.Unify(t2,t3) =>
 				error(I.infoExp exp,
-				      ElabError.RaiseExpUnify(t1, te, t2, t3))
+				      E.RaiseExpUnify(t1, te, t2, t3))
 	in
 	    ( t, O.RaiseExp(typInfo(i,t), exp') )
 	end
@@ -370,10 +401,10 @@ structure Elab :> ELAB =
 	(* UNFINISHED: check for redundancy *)
 	let
 	    val (t1,exp')    = elabExp(E, exp)
-	    val (t2,matchs') = elabMatchs(E, exnTyp(), matchs)
+	    val (t2,matchs') = elabMatchs(E, exnTyp E, matchs)
 	    val  _           = Type.unify(t1,t2)
 			       handle Type.Unify(t3,t4) =>
-				error(i, ElabError.HandleExpUnify(t1,t2, t3,t4))
+				error(i, E.HandleExpUnify(t1, t2, t3, t4))
 	in
 	    ( t1, O.HandleExp(typInfo(i,t1), exp', matchs') )
 	end
@@ -384,7 +415,7 @@ structure Elab :> ELAB =
 	    val (t2,typ') = elabStarTyp(E, typ)
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
-				error(i, ElabError.AnnExpUnify(t1, t2, t3, t4))
+				error(i, E.AnnExpUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnExp(typInfo(i,t2), exp', typ') )
 	end
@@ -413,12 +444,12 @@ structure Elab :> ELAB =
 	    val  _        = Type.unify(t1,t3)
 			    handle Type.Unify(t5,t6) =>
 				error(I.infoPat pat,
-				      ElabError.MatchPatUnify(t1, t3, t5, t6))
+				      E.MatchPatUnify(t1, t3, t5, t6))
 	    val (t4,exp') = elabExp(E, exp)
 	    val  _        = Type.unify(t2,t4)
 			    handle Type.Unify(t5,t6) =>
 				error(I.infoExp exp,
-				      ElabError.MatchExpUnify(t2, t4, t5, t6))
+				      E.MatchExpUnify(t2, t4, t5, t6))
 	    val  _        = deleteScope E
 	in
 	    O.Match(nonInfo(i), pat', exp')
@@ -459,9 +490,9 @@ structure Elab :> ELAB =
 
       | elabPat(E, I.ConPat(i, longid, pats)) =
 	let
-	    fun elabArgs(t1,   []  ) =
+	    fun elabArgs(t1, []) =
 		if Type.isArrow t1 then
-		    error(i, ElabError.ConPatFewArgs(longid))
+		    error(i, E.ConPatFewArgs(longid))
 		else
 		    t1
 
@@ -472,17 +503,26 @@ structure Elab :> ELAB =
 		    val  t1'  = Type.inArrow(t11,t12)
 		    val  _    = Type.unify(t1',t1)
 				handle Type.Unify(t3,t4) =>
-				    error(i, ElabError.ConPatManyArgs(longid))
+				    error(i, E.ConPatManyArgs(longid))
 		    val  _    = Type.unify(t11,t2)
 				handle Type.Unify(t3,t4) =>
-				    error(i,
-					  ElabError.ConPatUnify(t11,t2, t3,t4))
+				    error(i, E.ConPatUnify(t11, t2, t3, t4))
 		in
-		    elabArgs(t1, ts)
+		    elabArgs(t12, ts)
 		end
 
 	    val (t1,longid') = elabValLongid(E, longid)
 	    val (ts,pats')   = elabPats(E, pats)
+(*(*DEBUG*)
+val _=print "con type = ";
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600);
+val _=print "\n";
+val _=if List.null ts then print "no args" else let
+val _=print "arg type = ";
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType(List.hd ts), 600);
+in () end;
+val _=print "\n";
+*)
 	    val  t           = elabArgs(t1,ts)
 	in
 	    ( t, O.ConPat(typInfo(i,t), longid', pats') )
@@ -491,7 +531,7 @@ structure Elab :> ELAB =
       | elabPat(E, I.RefPat(i, pat)) =
 	let
 	    val (t1,pat') = elabPat(E, pat)
-	    val  t        = refTyp t1
+	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefPat(typInfo(i,t), pat') )
 	end
@@ -514,12 +554,11 @@ structure Elab :> ELAB =
       | elabPat(E, I.VecPat(i, pats)) =
 	let
 	    val (ts,pats') = elabPats(E, pats)
-	    val  t         = vecTyp(List.hd ts)
+	    val  t         = vecTyp(E, List.hd ts)
 	    val  _         = Type.unifyList ts
 			     handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
-				      ElabError.VecPatUnify(t, List.nth(ts,n),
-							    t1, t2))
+				      E.VecPatUnify(t, List.nth(ts,n), t1, t2))
 	in
 	    ( t, O.VecPat(typInfo(i,t), pats') )
 	end
@@ -530,7 +569,7 @@ structure Elab :> ELAB =
 	    val (t2,pat2') = elabPat(E, pat2)
 	    val  _         = Type.unify(t1,t2)
 			     handle Type.Unify(t3,t4) =>
-				error(i, ElabError.AsPatUnify(t1, t2, t3, t4))
+				error(i, E.AsPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AsPat(typInfo(i,t2), pat1', pat2') )
 	end
@@ -542,8 +581,7 @@ structure Elab :> ELAB =
 	    val  _         = Type.unifyList ts
 			     handle Type.UnifyList(n,t1,t2) =>
 				error(I.infoPat(List.nth(pats,n)),
-				      ElabError.AltPatUnify(t, List.nth(ts,n),
-							    t1, t2))
+				      E.AltPatUnify(t, List.nth(ts,n), t1, t2))
 	in
 	    ( t, O.AltPat(typInfo(i,t), pats') )
 	end
@@ -559,10 +597,10 @@ structure Elab :> ELAB =
 	let
 	    val (t1,pat') = elabPat(E, pat)
 	    val (t2,exp') = elabExp(E, exp)
-	    val  tb       = boolTyp()
+	    val  tb       = boolTyp E
 	    val  _        = Type.unify(t2,tb)
 			    handle Type.Unify(t3,t4) =>
-				error(i, ElabError.GuardPatUnify(t2,tb, t3,t4))
+				error(i, E.GuardPatUnify(t2, tb, t3, t4))
 	in
 	    ( t1, O.GuardPat(typInfo(i,t1), pat', exp') )
 	end
@@ -573,7 +611,7 @@ structure Elab :> ELAB =
 	    val (t2,typ') = elabStarTyp(E, typ)
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
-				error(i, ElabError.AnnPatUnify(t1, t2, t3, t4))
+				error(i, E.AnnPatUnify(t1, t2, t3, t4))
 	in
 	    ( t2, O.AnnPat(typInfo(i,t2), pat', typ') )
 	end
@@ -609,9 +647,17 @@ structure Elab :> ELAB =
     and elabTypId(E, k, id as I.Id(i, stamp, name)) =
 	(* May be binding occurance *)
 	let
-	    val t = #2(lookupTyp(E, stamp))
+(*DEBUG*)
+val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString stamp | x => x
+val _=print("lookup value " ^ x ^ ": ")
+val _=(PrettyPrint.output(TextIO.stdOut, PPType.ppType(#2(lookupTyp(E, stamp))), 600)
+;print "\n")
+handle Lookup _ => ()
+	    val t = Type.instance(#2(lookupTyp(E, stamp)))
 		    handle Lookup _ =>
 			let val t = Type.unknown k in
+(*DEBUG*)
+print"not found\n";
 			    insertTyp(E, stamp, (id,t)) ; t
 			end
 	in
@@ -643,8 +689,11 @@ structure Elab :> ELAB =
 	in
 	    case Type.kind t
 	      of Type.STAR => ttyp'
-	       | k         => error(I.infoTyp typ, ElabError.StarTypKind(k))
+	       | k         => error(I.infoTyp typ, E.StarTypKind(k))
 	end
+
+    and elabStarTyps(E, typs) =
+	ListPair.unzip(List.map (fn typ => elabStarTyp(E, typ)) typs)
 
 
     and elabTyp(E, I.VarTyp(i, id)) =
@@ -679,10 +728,10 @@ structure Elab :> ELAB =
 	    val  k2        = Type.kind t2
 	    val  _         = case k1
 			       of Type.STAR =>
-					error(i, ElabError.AppTypFunKind(k1))
+					error(i, E.AppTypFunKind(k1))
 				| Type.ARROW(k11,k12) =>
 				    if k11 = k2 then () else
-					error(i,ElabError.AppTypArgKind(k11,k2))
+					error(i, E.AppTypArgKind(k11, k2))
 	    val  t         = Type.inApp(t1,t2)
 	in
 	    ( t, O.AppTyp(typInfo(i,t), typ1', typ2') )
@@ -692,8 +741,8 @@ structure Elab :> ELAB =
 	let
 	    val (t1,typ') = elabTyp(E, typ)
 	    val  _        = case Type.kind t1 of Type.STAR => () | k =>
-				error(I.infoTyp typ, ElabError.RefTypKind(k))
-	    val  t        = refTyp t1
+				error(I.infoTyp typ, E.RefTypKind(k))
+	    val  t        = refTyp(E, t1)
 	in
 	    ( t, O.RefTyp(typInfo(i,t), typ') )
 	end
@@ -757,32 +806,28 @@ structure Elab :> ELAB =
 	Crash.crash "Elab.elabTyp: SingTyp"
 
 
-    and elabStarTyps(E, typs) =
-	ListPair.unzip(List.map (fn typ => elabStarTyp(E, typ)) typs)
-
-
     and elabCon(E, I.Con(i, id, typs)) =
 	let
 	    val  l         = Lab.fromString(I.lab(I.idToLab id))
 	    val (t,id')    = elabValId(E, id)
-	(*UNFINISHED*)
 	    val (ts,typs') = elabStarTyps(E, typs)
 	in
-	    ( l, t, O.Con(nonInfo(i), id', typs') )
+	    ( l, ts, O.Con(nonInfo(i), id', typs') )
 	end
 
     and elabCons(E, cons) =
 	let
 	    fun elabCon1(con, (r,cons')) =
 		let
-		    val (l,t,con') = elabCon(E, con)
+		    val (l,ts,con') = elabCon(E, con)
 		in
-		    ( Type.extendRow(l,t,r), con'::cons' )
+		    ( Type.extendRow(l,ts,r), con'::cons' )
 		end
 
 	    val (r,cons') = List.foldr elabCon1 (Type.emptyRow(), []) cons
+	    val  t        = Type.inSum r
 	in
-	    ( Type.inRow r, cons' )
+	    ( t, cons' )
 	end
 
 
@@ -1091,11 +1136,36 @@ structure Elab :> ELAB =
 
     and elabDec(E, I.ValDec(i, pat, exp)) =
 	let
+	    val  _        = insertScope E
+	    val  _        = Type.enterLevel()
+	    val  _        = insertScope E
 	    val (t2,exp') = elabExp(E, exp)
+	    val  _        = deleteScope E
 	    val (t1,pat') = elabPat(E, pat)
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
-				error(i, ElabError.ValDecUnify(t1, t2, t3, t4))
+				error(i, E.ValDecUnify(t1, t2, t3, t4))
+	    val  _        = Type.exitLevel()
+(*DEBUG*)
+infix andthen
+fun a andthen b = b
+	    val  _        = if isValue exp then
+				appVals (fn(x,(id,t)) =>
+(*DEBUG*)
+(let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
+in print("val " ^ x ^ ": ") end;
+PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.close t), 600);
+print "\n") andthen
+					 insertVal(E, x, (id, Type.close t))
+					) (splitScope E)
+			    else
+(*DEBUG*)
+appVals (fn(x,(id,t)) =>
+(let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
+in print("val " ^ x ^ ": ") end;
+PrettyPrint.output(TextIO.stdOut, PPType.ppType t, 600);
+print " (not generalised)\n")) (copyScope E) andthen
+				mergeScope E
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
@@ -1114,13 +1184,20 @@ structure Elab :> ELAB =
 
       | elabDec(E, I.TypDec(i, id, typ)) =
 	let
+	    val  _        = Type.enterLevel()
 	    val  k        = elabTypKind(E, typ)
 	    val (t1,id')  = elabTypId(E, k, id)
 	    val (t2,typ') = elabTypRep(E, id', fn k => k, typ)
+	    val  _        = Type.exitLevel()
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
 				error(I.infoTyp typ,
-				      ElabError.TypDecUnify(t1, t2, t3, t4))
+				      E.TypDecUnify(t1, t2, t3, t4))
+(*DEBUG*)
+val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString(I.stamp id) | x => x
+val _= print("type " ^ x ^ " = ")
+val _=PrettyPrint.output(TextIO.stdOut, PPType.ppType t1, 600)
+val _=print "\n"
 	in
 	    O.TypDec(nonInfo(i), id', typ')
 	end
@@ -1147,8 +1224,25 @@ structure Elab :> ELAB =
 
       | elabDec(E, I.RecDec(i, decs)) =
 	let
+	    val _      = insertScope E
+	    val _      = Type.enterLevel()
 	    val tpats' = elabLHSRecDecs(E, decs)
+	    val _      = insertScope E
 	    val decs'  = elabRHSRecDecs(E, ref tpats', decs)
+	    val _      = deleteScope E
+	    val _      = Type.exitLevel()
+	    val E'     = splitScope E
+infix andthen
+fun a andthen b = b
+	    val _      = appTyps (fn(x,entry) => insertTyp(E, x, entry)) E'
+	    val _      = appVals (fn(x,(id,t)) =>
+(*DEBUG*)
+(let val x= case Name.toString(I.name id) of "?" => "?" ^ Stamp.toString x | x => x
+in print("val " ^ x ^ ": ") end;
+PrettyPrint.output(TextIO.stdOut, PPType.ppType(Type.close t), 600);
+print "\n") andthen
+					insertVal(E, x, (id, Type.close t))) E'
+
 	in
 	    O.RecDec(nonInfo(i), decs')
 	end
@@ -1214,7 +1308,7 @@ structure Elab :> ELAB =
 	    val  _        = r := tpats'
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
-				error(i, ElabError.ValDecUnify(t1, t2, t3, t4))
+				error(i, E.ValDecUnify(t1, t2, t3, t4))
 	in
 	    O.ValDec(nonInfo(i), pat', exp')
 	end
@@ -1264,7 +1358,7 @@ structure Elab :> ELAB =
 	    val  _        = Type.unify(t1,t2)
 			    handle Type.Unify(t3,t4) =>
 				error(I.infoTyp typ,
-				      ElabError.TypSpecUnify(t1, t2, t3, t4))
+				      E.TypSpecUnify(t1, t2, t3, t4))
 	in
 	    O.TypSpec(nonInfo(i), id', typ')
 	end
@@ -1358,7 +1452,7 @@ structure Elab :> ELAB =
 
   (* Programs *)
 
-    fun elabProgram(E,program) =
+    fun elab E program =
 	let
 	    val _     = insertScope E
 	    val decs' = elabDecs(E,program)

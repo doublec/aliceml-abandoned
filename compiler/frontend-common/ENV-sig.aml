@@ -23,6 +23,7 @@ signature ENV =
     val new :		unit -> env
     val copy :		env -> env
     val copyScope :	env -> env
+    val splitScope :	env -> env
     val insertScope :	env -> unit
     val deleteScope :	env -> unit
     val mergeScope :	env -> unit

@@ -78,7 +78,7 @@ signature TYPE =
     val kind :		typ   -> kind
     val kindVar :	alpha -> kind
 
-    val path :		typ -> path		(* Type *)
+    val path :		typ -> path			(* Type *)
     val pathCon :	con -> path
 
     val paths :		typ -> PathSet.t
@@ -89,16 +89,16 @@ signature TYPE =
 
     val unknownRow :	unit -> row
     val emptyRow :	unit -> row
-    val extendRow :	lab * typ * row -> row	(* Row *)
+    val extendRow :	lab * typ list * row -> row	(* Row *)
 
     (* Unification and closure *)
 
     exception Unify of typ * typ
     exception UnifyList of int * typ * typ
 
-    val unify :		typ * typ -> unit	(* Unify *)
-    val unifyList :	typ list -> unit	(* UnifyList *)
-    val close :		typ -> unit
+    val unify :		typ * typ -> unit		(* Unify *)
+    val unifyList :	typ list -> unit		(* UnifyList *)
+    val close :		typ -> typ
 
     (* Level management *)
 
