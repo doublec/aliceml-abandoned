@@ -22,14 +22,14 @@ typedef enum {
   TAG2      = 2,
   TAG3      = 3,
   TAG4      = 4,
-  MAX_LSIZE = HeaderDef::MAX_TAGSIZE - 7,
-  CHUNK     = HeaderDef::MAX_TAGSIZE - 6,
-  PROMISE   = HeaderDef::MAX_TAGSIZE - 5,
-  FUTURE    = HeaderDef::MAX_TAGSIZE - 4,
-  REF       = HeaderDef::MAX_TAGSIZE - 3,
-  CANCELLED = HeaderDef::MAX_TAGSIZE - 2,
-  BYNEED    = HeaderDef::MAX_TAGSIZE - 1,
-  STACK     = HeaderDef::MAX_TAGSIZE
+  STACK     = HeaderDef::MAX_TAGSIZE - 6,
+  MAX_LSIZE = HeaderDef::MAX_TAGSIZE - 6,
+  CHUNK     = HeaderDef::MAX_TAGSIZE - 5,
+  PROMISE   = HeaderDef::MAX_TAGSIZE - 4,
+  FUTURE    = HeaderDef::MAX_TAGSIZE - 3,
+  REF       = HeaderDef::MAX_TAGSIZE - 2,
+  CANCELLED = HeaderDef::MAX_TAGSIZE - 1,
+  BYNEED    = HeaderDef::MAX_TAGSIZE
 } t_label;
 
 // Pointer Tags
