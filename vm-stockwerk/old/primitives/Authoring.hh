@@ -36,29 +36,44 @@
     taskStack->PopFrame(3);
 #define END }
 
-#define RAISE(w) {							\
-  taskStack->PutWord(0, w);						\
-  return Interpreter::Result(Interpreter::Result::RAISE);		\
-}
-
 #define RETURN(w) {							\
   taskStack->PutWord(0, w);						\
   return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
 }
-#define RETURN_UNIT							\
+#define RETURN_UNIT {							\
   taskStack->PopFrame(1);						\
-  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
+  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);		\
+}
 #define RETURN_INT(i) {							\
   taskStack->PutInt(0, i);						\
   return Interpreter::Result(Interpreter::Result::CONTINUE, -1);	\
 }
 #define RETURN_BOOL(b) RETURN_INT(b);
 
+#define PREEMPT {							\
+  taskStack->PopFrame(1);						\
+  return Interpreter::Result(Interpreter::Result::PREEMPT, 0);		\
+}
+
+#define RAISE(w) {							\
+  taskStack->PutWord(0, w);						\
+  return Interpreter::Result(Interpreter::Result::RAISE);		\
+}
+
 #define REQUEST(w) {							\
   taskStack->PushFrame(1);						\
   taskStack->PutWord(0, w);						\
   return Interpreter::Result(Interpreter::Result::REQUEST, 1);		\
 }
+#define REQUEST2(w1, w2) {						\
+  taskStack->PushFrame(2);						\
+  taskStack->PutWord(0, w1);						\
+  taskStack->PutWord(1, w2);						\
+  return Interpreter::Result(Interpreter::Result::REQUEST, 2);		\
+}
+
+#define TERMINATE							\
+  return Interpreter::Result(Interpreter::Result::TERMINATE);
 
 #define DECLARE_INT(i, x)						\
   int i = Store::WordToInt(x);						\

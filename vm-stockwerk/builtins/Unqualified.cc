@@ -12,7 +12,6 @@
 //   $Revision$
 //
 
-#include "scheduler/Interpreter.hh"
 #include "builtins/Authoring.hh"
 
 static Interpreter::Result Compare(TaskStack *taskStack, word x0, word x1) {
@@ -76,7 +75,7 @@ DEFINE2(opeq) {
   return Compare(taskStack, x0, x1);
 } END
 
-DEFINE2(opnoteq) {
+DEFINE2(opnoteq) { // NON-ABSTRACT TASK STACK USE
   Interpreter::Result result = Compare(taskStack, x0, x1);
   if (result.code == Interpreter::Result::CONTINUE)
     taskStack->PutInt(0, !taskStack->GetInt(0));

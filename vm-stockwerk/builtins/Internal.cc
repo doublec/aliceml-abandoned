@@ -12,10 +12,11 @@
 
 #include "builtins/Authoring.hh"
 
-DEFINE1(Internal_applyUnit) {
+DEFINE1(Internal_applyUnit) { // NON-ABSTRACT TASK STACK USE
   DECLARE_CLOSURE(closure, x0);
+  taskStack->PopFrame(1); // pop the Interpreter
   taskStack->PushCall(closure);
-  RETURN_UNIT;
+  return Interpreter::Result(Interpreter::Result::CONTINUE, 0);
 } END
 
 DEFINE1(Internal_bind) {
@@ -37,7 +38,7 @@ DEFINE1(Internal_byneedHandler) {
 
 DEFINE1(Internal_defaultHandler) {
   //--** print out information about the unhandled exception
-  return Interpreter::Result(Interpreter::Result::TERMINATE);
+  TERMINATE;
 } END
 
 DEFINE1(Internal_popHandler) {
@@ -51,7 +52,7 @@ DEFINE1(Internal_raise) {
 } END
 
 DEFINE1(Internal_terminate) {
-  return Interpreter::Result(Interpreter::Result::TERMINATE);
+  TERMINATE;
 } END
 
 void Primitive::RegisterInternal() {

@@ -70,16 +70,14 @@ DEFINE1(Thread_suspend) {
   DECLARE_THREAD(thread, x0);
   Scheduler::SuspendThread(thread);
   if (thread == Scheduler::GetCurrentThread()) {
-    taskStack->PopFrame(1); // pop the Interpreter
-    return Interpreter::Result(Interpreter::Result::PREEMPT, 0);
+    PREEMPT;
   } else {
     RETURN_UNIT;
   }
 } END
 
 DEFINE0(Thread_yield) {
-  taskStack->PopFrame(1); // pop the Interpreter
-  return Interpreter::Result(Interpreter::Result::PREEMPT, 0);
+  PREEMPT;
 } END
 
 void Primitive::RegisterThread() {

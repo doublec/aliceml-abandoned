@@ -47,10 +47,7 @@ DEFINE2(Future_awaitOne) {
 	RemoveFromWaitQueue(Scheduler::GetCurrentThread());
     RETURN(x0);
   }
-  taskStack->PushFrame(2 - 1); // the Interpreter is still on the stack
-  taskStack->PutWord(0, transient1->ToWord());
-  taskStack->PutWord(1, transient2->ToWord());
-  return Interpreter::Result(Interpreter::Result::REQUEST, 2);
+  REQUEST2(x0, x1);
 } END
 
 DEFINE1(Future_byneed) {
