@@ -1673,9 +1673,6 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 			handle CollisionTy _ =>
 			errorTyCon("duplicate type constructor ", tycon,
 				   " in signature") ;
-		val _ = unionDisjoint(E,E') handle CollisionVal vid' =>
-			errorVId'("duplicate value or constructor ", E', vid',
-				 " in signature")
 	   in
 		O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
 		foldiVals (trOpenSpecVal (E,i,longido')) acc E'
@@ -1761,8 +1758,8 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    val typ'    = O.SingTyp(i, longid')
 	    val _       = insertDisjointVal(E, vid', (i,stamp,is))
 			  handle CollisionVal _ =>
-			  errorVId'("duplicate value or constructor ", E, vid',
-				    " in signature")
+			  error(i, "duplicate value or constructor " ^
+				   VId.toString vid' ^ " in signature")
 	in
 	    (case is
 	       of V => O.ValSpec(i, id', typ')
