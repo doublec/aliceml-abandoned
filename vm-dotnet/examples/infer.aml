@@ -4,7 +4,7 @@
  * See signature EXPRESSION for supported language constructs.
  *)
 
-import structure TextIO from "x-alice:TextIO.dll"
+import structure TextIO from "x-alice:/TextIO.dll"
 
 signature SYMBOL =
     sig
