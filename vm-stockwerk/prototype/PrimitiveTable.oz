@@ -145,9 +145,47 @@ define
       end
    end
 
+   fun {AllEqual X Y I N}
+      if I > N then true
+      else {Equals X.I Y.I} andthen {AllEqual X Y I + 1 N}
+      end
+   end
+
+   fun {Equals X0 Y0}
+      case {Deref X0} of Transient=transient(_) then
+	 request(Transient)
+      elseof X then
+	 case {Deref Y0} of Transient=transient(_) then
+	    request(Transient)
+	 elseof Y then
+	    if {IsTuple X} then
+	       {IsTuple Y} andthen
+	       {Label X} == {Label Y} andthen
+	       {Width X} == {Width Y} andthen
+	       {AllEqual X Y 1 {Width X}}
+	    else X == Y
+	    end
+	 end
+      end
+   end
+
    Primitives =
-   primitives('=': Value.'=='#rr_b   %--**
-	      '<>': Value.'\\='#rr_b   %--**
+   primitives('=':
+		 fun {$ X Y TaskStack}
+		    case {Equals X Y} of request(Transient) then
+		       request(Transient args(X Y) TaskStack.2)
+		    [] true then continue(arg(1) TaskStack.2)
+		    [] false then continue(arg(0) TaskStack.2)
+		    end
+		 end#ii_t
+	      '<>': 
+		 fun {$ X Y TaskStack}
+		    case {Equals X Y} of request(Transient) then
+		       request(Transient args(X Y) TaskStack.2)
+		    [] true then continue(arg(0) TaskStack.2)
+		    [] false then continue(arg(1) TaskStack.2)
+		    end
+		 end#ii_t
 	      'Array.array':
 		 fun {$ N X TaskStack}
 		    if 0 =< N andthen N < Table.'Array.maxLen' then
@@ -216,7 +254,7 @@ define
 	      'Future.byneed':
 		 fun {$ Closure}
 		    transient({NewCell byneed(Closure)})
-		 end#r_v   %--** or i_v?
+		 end#r_v
 	      'Future.concur':
 		 fun {$ Closure TaskStack} Transient TaskStack in
 		    Transient = transient({NewCell future(nil)})
@@ -225,7 +263,7 @@ define
 		    {Scheduler.object newThread(Closure args()
 						taskStack: TaskStack)}
 		    continue(arg(Transient) TaskStack)
-		 end#r_t   %--** or i_t?
+		 end#r_t
 	      'Future.isFailed': IsFailed#i_v
 	      'Future.isFuture':
 		 fun {$ X}
@@ -301,7 +339,7 @@ define
 		       end
 		    else exception(nil Table.'Hole.Hole' TaskStack.2)
 		    end
-		 end#ir_t   %--** or ii_t?
+		 end#ii_t
 	      'Hole.fill':
 		 fun {$ X Y TaskStack}
 		    case {Deref X} of Transient=transient(TransientState) then
