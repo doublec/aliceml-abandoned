@@ -280,14 +280,18 @@ Worker::Result ResolveInterpreter::Run() {
       ClassInfo *classInfo = theClass->GetClassInfo();
       Table *fields = classInfo->GetFields();
       u_int sIndex = 0, iIndex = 0, nFields = fields->GetCount();
+      word wSuper = classInfo->GetSuper();
+      if (wSuper != null)
+	iIndex = Class::FromWord(wSuper)->GetNumberOfInstanceFields();
       for (u_int i = 0; i < nFields; i++) {
 	FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
 	if (fieldInfo->IsTheField(name, descriptor)) {
+	  u_int nSlots = fieldInfo->GetNumberOfRequiredSlots();
 	  Scheduler::PopFrame();
 	  Scheduler::nArgs = Scheduler::ONE_ARG;
 	  Scheduler::currentArgs[0] = fieldInfo->IsStatic()?
-	    StaticFieldRef::New(theClass, sIndex)->ToWord():
-	    InstanceFieldRef::New(iIndex)->ToWord();
+	    StaticFieldRef::New(theClass, sIndex, nSlots)->ToWord():
+	    InstanceFieldRef::New(iIndex, nSlots)->ToWord();
 	  return CONTINUE;
 	} else {
 	  if (fieldInfo->IsStatic())
@@ -296,7 +300,6 @@ Worker::Result ResolveInterpreter::Run() {
 	    iIndex++;
 	}
       }
-      word wSuper = classInfo->GetSuper();
       if (wSuper == null) {
 	ThrowWorker::PushFrame(ThrowWorker::NoSuchFieldError, name);
 	Scheduler::nArgs = 0;

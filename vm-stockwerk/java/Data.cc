@@ -137,7 +137,9 @@ Class *Class::New(ClassInfo *classInfo) {
     INVALID_POINTER: Class::FromWord(wSuper);
   // Count number of static and instance fields:
   Table *fields = classInfo->GetFields();
-  u_int i, nStaticFields = 0, nInstanceFields = 0;
+  u_int nSuperInstanceFields = super == INVALID_POINTER? 0:
+    super->GetNumberOfInstanceFields();
+  u_int i, nStaticFields = 0, nInstanceFields = nSuperInstanceFields;
   u_int nFields = fields->GetCount();
   for (i = nFields; i--; ) {
     FieldInfo *fieldInfo = FieldInfo::FromWordDirect(fields->Get(i));
