@@ -1,3 +1,17 @@
+###
+### Author:
+###   Simon Pinkel <pinkel@ps.uni-sb.de>
+###
+### Copyright:
+###   Simon Pinkel, 2004
+###
+### Last change:
+###   $Date$ by $Author$
+###   $Revision$
+###
+
+# Makefile for alice mysql binding
+
 NATIVES = UnsafeMySQL
 
 SOURCES = UnsafeMySQL.cc
