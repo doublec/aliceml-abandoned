@@ -152,6 +152,7 @@ sig
   (* Signature construction *)
 
     val emptySig :	unit -> sign
+    val emptySig' :	sign -> sign			(* TODO: Hack! *)
 
     val extendFix :	sign * lab  * fix   -> unit	(* Path.Path *)
     val extendVal :	sign * lab  * typ   -> unit	(* Path.Path *)
