@@ -12,4 +12,4 @@
 
 #include "scheduler/Thread.hh"
 
-//--** method implementations missing
+//--** is this file needed?
