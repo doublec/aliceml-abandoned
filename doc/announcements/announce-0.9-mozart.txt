@@ -11,15 +11,15 @@ both worlds.
 
 From Standard ML it inherits:
 
-    Functional syntax
-	seemless higher-order functional programming in a
+    Functional core language
+	seamless higher-order functional programming in a
 	well-established syntax
     Polymorphic type system
 	strong static typing with automatic type inference
     Higher-order modules
 	parameterization and encapsulation via type abstraction
-    Orthogonality
-	high expressiveness based on few compositional language
+    Simplicity
+	high expressiveness with few orthogonal language
 	constructs
     Compatibility
 	access to a large pool of libraries and introductory
@@ -31,25 +31,27 @@ From Oz it inherits:
 	laziness and light-weight concurrency with implicit
 	dataflow synchronisation
     Components
-        platform-independence and dynamic linking
-    Pickling
-        higher-order and platform-independent persistence
+        platform-independent higher-order persistence and
+        lazy dynamic linking
     Distribution
-	mobility with network transparency and fault tolerance
+	network transparent mobility with fault tolerance
     Constraints
-	combinatorical problem solving with concurrent constraints
-	and programmable search
+	concurrent constraints and programmable search
+	for combinatorical problems
     Interactive tools
-	browsing data structures and search spaces
+	browsers for data structures and search spaces
     Interoperability
 	application development in mixed ML/Oz environment
 
 Alice also provides features not found in either language:
 
     Promises
-	directed form of "logic variables"
+	safer "logic variables" with separated read/write view
+    Runtime typing
+	type-safe linking, persistence and inter-process
+	communication
     Packages
-	runtime typing for type-safe pickling and linking
+	typeful modules as first-class values
 
 Alice is based on the Mozart system. Alice applications can hence
 import Oz components ("functors"), and vice versa. Interoperation
@@ -59,5 +61,6 @@ For more information, please visit the Alice project homepage:
 
         http://www.ps.uni-sb.de/alice/
 
+Enjoy,
 
-- The Alice Team
+	- The Alice Team
