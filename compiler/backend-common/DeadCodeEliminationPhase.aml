@@ -69,6 +69,7 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 	  | deadExp (ProdExp (_, _)) = NONE
 	  | deadExp (VecExp (_, _)) = NONE
 	  | deadExp (FunExp (_, _, _, _, _)) = NONE
+	  | deadExp (PrimAppExp (_, "Future.byneed", _)) = NONE
 	  | deadExp (LazySelAppExp (_, _, _, _, _)) = NONE
 	  | deadExp exp = SOME exp
 
