@@ -56,5 +56,6 @@ define
 	   'conName':
 	      fun {$ Value}
 		 'ExId'({ByteString.make {System.printName Value}})
-	      end)
+	      end
+	   'projPoly': Value.'.')
 end
