@@ -12,7 +12,6 @@ is
     flattening-phase.cm
     value-propagation-phase.cm
     liveness-analysis-phase.cm
-    dead-code-elimination-phase.cm
     engine.cm
 
     MkBackendCommon.aml
