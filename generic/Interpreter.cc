@@ -54,7 +54,7 @@ bool Interpreter::Deconstruct() {
 	Tuple *tuple = Tuple::FromWord(arg);
 	Assert(tuple != INVALID_POINTER);
 	Scheduler::nArgs = static_cast<Block *>(tuple)->GetSize(); //--**
-	Assert(Scheduler::nArgs < Scheduler::maxArgs);
+	Assert(Scheduler::nArgs <= Scheduler::maxArgs);
 	for (u_int i = Scheduler::nArgs; i--; )
 	  Scheduler::currentArgs[i] = tuple->Sel(i);
 	return false;
