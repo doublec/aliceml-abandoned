@@ -263,6 +263,10 @@ signature MY_S2 = sig type t1 = int type t2 = t1 type t3 type t4
                      signature MY_GTK
                  end 
 
+val pck = pack MyS :> MY_S
+
+val _ = Inspector.inspect pck
+
 structure _ = Inspector.Inspect (signature S = MY_S2
                                  structure X = MyS)
 

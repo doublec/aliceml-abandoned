@@ -1,5 +1,7 @@
 import structure Type          from "x-alice:/lib/rtt/Type"
 import structure Atom          from "x-alice:/lib/data/Atom"
+import structure Reflect       from "x-alice:/lib/system/Reflect"
+import structure Inf           from "x-alice:/lib/rtt/Inf"
 import structure Common        from "Common"
 import structure AbsTree       from "AbsTree"
 import structure Prefs         from "Prefs"
@@ -211,5 +213,24 @@ struct
 
   val vector = (genArray (vectorPrefix, arraySuffix, "#{||}", Vector.length,
                           AbsTree.makeVector) : _ type_mapper)
+
+  (*** PACKAGES ***)
+  val packPrefix = [("package", Prefs.consStyle), ("{|", Prefs.brackStyle)]
+  val packSuffix = [("|}", Prefs.brackStyle)]
+
+  fun package (depth, item, path, targs, value) =
+    let
+      val (modl, sign) = Reflect.reflectPackage value
+      val item' = AbsTree.Module (sign, modl, AbsTree.Noflag)
+      val sign = (assert Inf.isSig sign ; Inf.asSig sign)
+      val tree = Basic.module (depth - 1, item', sign, modl)
+      val kid = Concat {prefix = packPrefix,
+                        tree,
+                        suffix = packSuffix,
+                        orient = AbsTree.orientParent }
+      val kids = Array.array (1, kid)
+    in
+      Container {desc = item, limit = false, kids}
+    end
 
 end

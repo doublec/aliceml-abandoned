@@ -195,6 +195,7 @@ struct
 
       | TypItem => AbsTree.simpleText (Decl decl, "type ... not done",
                                        Prefs.labStyle)
+
       | ModItem (label, msig, mvalue) =>
         let
           val tree = AbsTree.simpleText (Decl decl, label, Prefs.labStyle)
@@ -221,8 +222,7 @@ struct
                             orient = AbsTree.orientSonStrict})
             end
 
-      | TypItem =>
-	SOME (AbsTree.simpleText (Decl TypItem, "type ... still not done", Prefs.labStyle))
+      | TypItem => NONE
 
       | ModItem (l, msig, mvalue) =>
         if Inf.isArrow msig then NONE else
@@ -235,8 +235,7 @@ struct
                           orient = AbsTree.orientSonStrict})
           end
 
-      | SigItem =>
-        SOME (AbsTree.simpleText (Decl SigItem, "signature ... still not done", Prefs.labStyle))
+      | SigItem => NONE
 
   fun addDecl (_, _, _, index, size, []) = (assert index = size ; [])
     | addDecl (modl, depth, kids, index, size, (el :: elems) as rest) =

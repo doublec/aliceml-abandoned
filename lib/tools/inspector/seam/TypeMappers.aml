@@ -182,5 +182,6 @@ struct
   val _ = register Builtin.time
   val _ = register Builtin.array
   val _ = register Builtin.vector
+  val _ = register Builtin.package
 
 end

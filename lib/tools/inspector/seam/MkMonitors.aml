@@ -153,7 +153,7 @@ struct
         (* Is is a reference or a future ? *)
 	val _ = case desc of
 		  AbsTree.NestedRow _ => ()
-		| AbsTree.TopLevel    => assert false
+		| AbsTree.TopLevel    => ()
                 | AbsTree.Struct      => ()
                 | AbsTree.Decl _      => ()
 		| AbsTree.Value (_, _, Reference)    => height := ~1
