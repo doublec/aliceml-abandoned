@@ -14,8 +14,10 @@ import structure Url               from "../utility/Url"
 import structure Label             from "../rtt/Label"
 import structure Inf               from "../rtt/Inf"
 import structure TextIO            from "TextIO"
+import structure IO                from "IO"
 import structure OS                from "OS"
 import structure Reflect           from "Reflect"
+import structure Resolver          from "Resolver"
 import structure UnsafeComponent   from "UnsafeComponent"
 import structure Signature         from "Signature"
 import structure UrlMap            from "UrlMap"
@@ -53,8 +55,29 @@ struct
 
     fun create (sign, str) = EVALUATED (sign, str)
 
-    fun load url = UnsafeComponent.load (Url.toStringRaw url)
-	(*--** use getLocalPath instead *)
+    val localize =
+	let
+	    val handlers =
+		case OS.Process.getEnv "ALICE_LOAD" of
+		    SOME s => Resolver.Handler.parse s
+		  | NONE => [Resolver.Handler.default]
+	    val resolver = Resolver.new ("load", handlers)
+	in
+	    Resolver.localize resolver
+	end
+
+    fun load url =
+	let
+	    val s = Url.toStringRaw url   (*--** use getLocalPath instead *)
+	in
+	    case localize s of
+		SOME s' => UnsafeComponent.load s'
+	      | NONE =>
+		    raise IO.Io {name = s,
+				 function = "load",
+				 cause = Option.Option}
+	end
+
     val save = UnsafeComponent.save
 
     fun sign (UNEVALUATED {sign, ...}) = sign
