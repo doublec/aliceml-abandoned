@@ -19,21 +19,24 @@ SMLFLAGS =
 OZSRCS   = FD.oz    \
            FS.oz    \
            Space.oz \
-           Explorer.oz
+           Explorer.oz \
+           Inspector.oz
 
 OZOBJS   = FD.ozf    \
            FS.ozf    \
            Space.ozf \
-           Explorer.ozf
+           Explorer.ozf \
+           Inspector.ozf
 
 SOURCES  = FD.ozf.sig       \
            FS.ozf.sig       \
            Space.ozf.sig    \
            Explorer.ozf.sig \
+           Inspector.ozf.sig \
            Search.sml       \
            SEARCH.sig
 
-PREFIX=/opt/stockhausen-devel
+PREFIX=/opt/stockhausen-devel0
 
 all: $(OZOBJS) $(SMLOBJS)
 

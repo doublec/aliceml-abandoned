@@ -15,10 +15,12 @@ SMLC     = stoc
 SMLFLAGS =
 
 SMLSRCS = Money.sml \
-          Photo.sml
+          Photo.sml \
+          Inspector.sml
 
 SMLOBJS = Money.ozf \
-          Photo.ozf
+          Photo.ozf \
+          Inspector.ozf
 
 all: $(SMLOBJS)
 
