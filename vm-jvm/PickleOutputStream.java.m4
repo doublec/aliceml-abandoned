@@ -13,33 +13,26 @@ import java.rmi.server.*;
 final public class PickleOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;
+    static {
+	try{
+	    fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
+	    // System.err.println("Class zum Vergleichen: "+fcn);
+	} catch (ClassNotFoundException e) {
+	    System.err.println("Function must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
+	    e.printStackTrace();
+	}
+    }
+
     boolean waitforbind = false;
     int objectcounter = 0;
 
     public PickleOutputStream() throws java.io.IOException {
 	super();
-	if (fcn==null)
-	    try{
-		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
-		System.err.println("Class zum Vergleichen: "+fcn);
-	    } catch (ClassNotFoundException e) {
-		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
-		e.printStackTrace();
-	    }
 	enableReplaceObject(true);
     }
 
     public PickleOutputStream(java.io.OutputStream out) throws java.io.IOException {
 	super(out);
-	//	System.out.println("HelloPickle");
-	if (fcn==null)
-	    try{
-		fcn=Class.forName("de.uni_sb.ps.dml.runtime.Function");
-		//		System.err.println("Class zum Vergleichen: "+fcn);
-	    } catch (ClassNotFoundException e) {
-		System.err.println("DMLFcnClosure must be accessable by the same ClassLoader as java.lang.ObjectOutputStream.");
-		e.printStackTrace();
-	    }
 	enableReplaceObject(true);
     }
 
@@ -62,11 +55,17 @@ final public class PickleOutputStream extends java.io.ObjectOutputStream {
 		// System.out.println("POS: annotateClass "+cls+" came from somewhere else");
 		java.io.InputStream in = null;
 		java.io.DataInputStream din = null;
+//  		java.io.OutputStream out = null;
+//  		java.io.DataOutputStream refout = null;
 		try {
 		    in = cl.getResourceAsStream(name+".class");
 		    din = new java.io.DataInputStream(in);
 		    bytes = new byte[din.available()];
-		    din.readFully(bytes);
+		    din.readFully(bytes); // NICHT: read
+//  		    out = new java.io.FileOutputStream("ref"+name);
+//  		    refout = new java.io.DataOutputStream(out);
+//  		    refout.write(bytes,0,bytes.length);
+//  		    refout.close();
 		}
 		catch (Exception e) {
 		    System.err.println("This should never happen.");

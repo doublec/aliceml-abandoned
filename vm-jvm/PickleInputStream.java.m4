@@ -21,13 +21,25 @@ final public class PickleInputStream extends java.io.ObjectInputStream {
 
     final protected Class resolveClass(java.io.ObjectStreamClass osc) throws java.io.IOException, ClassNotFoundException {
 	if (readBoolean()) {
+//   	    System.out.println("reading class from pickle");
 	    int length = readInt();
 	    byte[] bytes = new byte[length];
-	    read(bytes,0,length);
+	    readFully(bytes,0,length); // NICHT: read
+//  	    try {
+//  		java.io.OutputStream out = new java.io.FileOutputStream("in"+osc.getName());
+//  		java.io.DataOutputStream rout = new java.io.DataOutputStream(out);
+//  		out.write(bytes,0,length);
+//  	    } catch (Exception e) {
+//  		System.err.println("HUCH: "+e);
+//  	    }
+//  	    System.out.println("read "+length+" bytes of "+osc.getName());
 	    PickleClassLoader.loader.enter(osc.getName(),bytes);
-	    return PickleClassLoader.loader.loadClass(osc.getName());
+	    Class ret = PickleClassLoader.loader.loadClass(osc.getName());
+	    // System.out.println("Defined: "+ret);
+	    return ret;
 	}
-	else
+	else {
 	    return super.resolveClass(osc);
+	}
     }
 }

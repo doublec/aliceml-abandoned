@@ -14,20 +14,27 @@ import java.util.*;
  */
 final public class PickleClassLoader extends ClassLoader {
 
-    static public PickleClassLoader loader = new PickleClassLoader();
+    static final public PickleClassLoader loader = new PickleClassLoader();
     static java.lang.String path = null;
     static boolean write = false;
     java.util.Hashtable hash = new java.util.Hashtable();
 
-    public Class findClass(java.lang.String name) {
+    public Class findClass(java.lang.String name) throws ClassNotFoundException {
 	byte[] b = (byte[]) hash.get(name);
-	return defineClass(name, b, 0, b.length);
+	// System.out.print("Trying to define "+name);
+	if (b != null) {
+	    // System.out.println(". Class has "+b.length+" bytes");
+	    return defineClass(name, b, 0, b.length);
+	} else {
+	    return super.findClass(name);
+	}
     }
 
     public void enter(java.lang.String cl, byte[] b) throws java.rmi.RemoteException {
 	hash.put(cl,b);
-	if (write)
+	if (write) {
 	    writeClass(cl,b);
+	}
     }
 
     public byte[] getBytes(java.lang.String cl) {

@@ -66,4 +66,5 @@ AC_SUBST(platform)
 AC_SUBST(m4)
 AC_SUBST(javac)
 AC_SUBST(smlcm)
+
 AC_OUTPUT(Makefile benchmarks/Makefile java/Makefile java/src/Makefile java/src/runtime/Makefile java/src/tools/Makefile java/src/test/Makefile Compiler/Makefile Compiler/Backend/Makefile)
