@@ -1,0 +1,374 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestArraySlice :> TESTSUITE = (* the arrayslice test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    (* an equality function on the elements of the two given 
+       arrayslices and their lengths *)
+    fun equal' (a1, a2, i) = if i = ArraySlice.length a1 then true
+			     else if ArraySlice.sub (a1, i) = 
+				     ArraySlice.sub (a2, i) then
+				 equal' (a1, a2, i + 1) else false
+
+    fun equality (a1, a2) = (ArraySlice.length a1 = 
+			     ArraySlice.length a2 andalso equal' (a1, a2, 0))
+    (* starting the real testcases *)
+
+    fun testSlice () =
+	let
+	    fun t'' (a, i, asl, j) = 
+		if j = ArraySlice.length asl then true
+		else if Array.sub (a, i + j) = 
+			ArraySlice.sub (asl, j) then
+		    t'' (a, i, asl, j + 1) else false
+
+	    fun t' (a, i, NONE, asl)   = ArraySlice.length asl = 
+					 (Array.length a - i) andalso
+					 t'' (a, i, asl, 0)
+	      | t' (a, i, SOME j, asl) = ArraySlice.length asl = j andalso
+					 t'' (a, i, asl, 0)
+
+	    fun t (a, i, sz) = t' (a, i, sz, ArraySlice.slice (a, i, sz))
+			         handle Subscript => 
+					if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    Array.length a < i + (valOf sz)
+					else i < 0 orelse
+					     Array.length a < i
+	in
+	    Gen.try 1000 (Gen.triple (Gen.array Gen.int,
+				      Gen.int,
+				      Gen.option Gen.int)) (Test.test t)
+	end
+
+
+    fun testFull () =
+	let
+	    fun t a = ArraySlice.slice (a, 0, NONE)
+	in
+	    Gen.try 1000 (Gen.array Gen.int) 
+	      (Test.test (fn a => equality (ArraySlice.full a, t a)))
+	end
+
+    fun testLength () =
+	let
+	    fun t (a, i, NONE, j)   = ((Array.sub (a, i + j);
+				       t (a, i, NONE, j + 1)) 
+		                             handle Subscript => j)
+	      | t (a, i, SOME x, j) = x
+	in
+	    Gen.try 1000 (Gen.triple (Gen.array Gen.int,
+				      Gen.int, 
+				      Gen.option Gen.int))
+	      (Test.test (fn (a, i, sz) => 
+			     let
+				 val asl = SOME (ArraySlice.slice (a, i, sz)) 
+					     handle Subscript => NONE
+			     in
+				 if Option.isSome asl
+				 then t (a, i, sz, 0) = 
+				      ArraySlice.length (valOf asl)
+				 else if Option.isSome sz then 
+					    i < 0 orelse
+					    (valOf sz) < 0 orelse
+					    Array.length a < i + (valOf sz)
+					else i < 0 orelse
+					     Array.length a < i
+			     end))
+	end
+
+    fun testBase () =
+	let
+	    fun t (a, i, sz) = 
+		ArraySlice.base (ArraySlice.slice (a, i, sz)) = 
+		(a, i, ArraySlice.length (ArraySlice.slice (a, i, sz)))
+	in
+	    Gen.try 1000 (Gen.triple (Gen.array Gen.int, 
+				      Gen.int,
+				      Gen.option Gen.int))
+		    (Test.test (fn (a, i, sz) => t (a, i, sz)
+		                      handle Subscript =>
+					     if Option.isSome sz then 
+						 i < 0 orelse
+						 (valOf sz) < 0 orelse
+						 Array.length a < 
+						 i + (valOf sz)
+					     else i < 0 orelse
+						  Array.length a < i))
+	end
+
+    fun testSub () = 
+	let
+	    fun t (asl, i) = if i < 0 orelse ArraySlice.length asl <= i 
+			     then NONE
+			     else SOME (List.nth (ArraySlice.toList asl, i))
+	in
+	    Gen.try 1000 (Gen.pair (Gen.arraySlice Gen.int, Gen.int))
+	      (Test.test (fn x => let
+				    val r = SOME (ArraySlice.sub x)
+					      handle Subscript => NONE
+			          in
+				    r = t x
+			          end))
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (asl, i, a) = 
+		let
+		    val r = SOME (ArraySlice.update (asl, i, a))
+			     handle Subscript => NONE
+		in
+		    if Option.isSome r 
+		    then ArraySlice.sub (asl, i) = a
+		    else true
+		end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.arraySlice Gen.int,
+				      Gen.int, 
+				      Gen.int)) (Test.test t)
+	end
+
+    fun testSubslice () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testVector () = 
+	let
+	    fun t asl = Vector.tabulate (ArraySlice.length asl,
+					 fn i => ArraySlice.sub (asl, i))
+	in 
+	    Gen.try 1000 (Gen.arraySlice Gen.int) 
+		    (Test.test (fn asl => ArraySlice.vector asl = 
+					  t asl))
+	end 
+
+    fun testCopy () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testCopyVec () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsEmpty () = 
+	let
+	    fun t asl = #3 (ArraySlice.base asl) = 0 = 
+			ArraySlice.isEmpty asl
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testGetItem () = 
+	let
+	    fun t asl = if ArraySlice.isEmpty asl then NONE
+			else SOME (ArraySlice.sub (asl, 0), 
+				   ArraySlice.subslice (asl, 1, NONE))
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) 
+		   (Test.test (fn asl => t asl = ArraySlice.getItem asl))
+	end
+
+    fun testApp () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAppi () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAppr () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testAppri () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testModify () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testModifyi () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFoldl () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFoldli () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFoldr () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFoldri () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFind () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFindi () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testExists () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.exists f asl = 
+			List.exists f (ArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testAll () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.all f asl = 
+			List.all f (ArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testAlli () =
+	let
+	    fun f (i, x) = x > i
+
+	    fun t asl = ArraySlice.alli f asl = 
+			List.alli f (ArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testExistsi () =
+	let
+	    fun f (i, x) = x > 0
+
+	    fun t asl = ArraySlice.existsi f asl = 
+			List.existsi f (ArraySlice.toList asl)
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testCollate () = 
+	let
+	    fun t (asl1, asl2) = 
+		ArraySlice.collate Int.compare (asl1, asl2) = 
+		List.collate Int.compare (ArraySlice.toList asl1,
+					  ArraySlice.toList asl2)
+	in 
+	    Gen.try 100 (Gen.pair (Gen.arraySlice Gen.int,
+				   Gen.arraySlice Gen.int)) (Test.test t)
+	end
+
+    fun testToVector () = 
+	let
+	    fun t asl = ArraySlice.toVector asl =
+			ArraySlice.vector asl
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testToList () = 
+	let
+	    fun t asl = Vector.toList (ArraySlice.toVector asl)
+	in
+	    Gen.try 100 (Gen.arraySlice Gen.int) 
+	    (Test.test (fn asl => ArraySlice.toList asl = t asl))
+	end
+
+    fun testRev () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSwap () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTriml () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testTrimr () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSplitAt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSplitl () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSplitr () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testDropl  () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.dropl f asl =
+			#2(ArraySlice.splitl f asl)
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testDropr () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.dropr f asl =
+			#1(ArraySlice.splitr f asl)
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testTakel () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.takel f asl =
+			#1(ArraySlice.splitl f asl)
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testTaker () = 
+	let
+	    fun f x = x > 0
+
+	    fun t asl = ArraySlice.taker f asl =
+			#2(ArraySlice.splitr f asl)
+	in
+	    Gen.try 1000 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+		       
+    fun testContains () = 
+	let
+	    fun t asl = ArraySlice.contains asl 3= 
+			List.contains (ArraySlice.toList asl) 3
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testNotContains () = 
+	let
+	    fun t asl = ArraySlice.notContains asl 3 = 
+			Bool.not (ArraySlice.contains asl 3)
+	in 
+	    Gen.try 100 (Gen.arraySlice Gen.int) (Test.test t)
+	end
+
+    fun testEqual () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testIsSorted () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testSort () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+
+    val suite = ("ArraySlice", [("slice", testSlice),
+				("full", testFull),
+				("length", testLength),
+				("sub", testSub),
+				("update", testUpdate),
+				("base", testBase),
+				("vector", testVector),
+				("toVector", testToVector),
+				("isEmpty", testIsEmpty),
+				("getItem", testGetItem),
+				("toList", testToList),
+				("all", testAll),
+				("alli", testAlli),
+				("exists", testExists),
+				("existsi", testExistsi),
+				("contains", testContains),
+				("notContains", testNotContains),
+				("dropl", testDropl),
+				("dropr", testDropr),
+				("takel", testTakel),
+				("taker", testTaker),
+				("collate", testCollate)])
+end

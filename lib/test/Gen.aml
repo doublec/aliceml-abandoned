@@ -74,6 +74,10 @@ struct
     fun alt (ga, gb) n	= if bool 0 then FST (ga n) else SND (gb n)	
     fun vector gen n	= Vector.tabulate (Int.abs n, gen)
     fun array gen n	= Array.tabulate (Int.abs n, gen)
+    fun arraySlice gen n = ArraySlice.slice (array gen n, 
+					     int n,
+					     option int n) 
+			    handle Subscript => arraySlice gen n
     fun array2 gen n    = Array2.tabulate Array2.ColMajor 
 			                  (int (Int.abs n), 
 					   int (Int.abs n), 

@@ -60,7 +60,7 @@ struct
 		           | (e,        str) => SOME (FAIL_EXN e, str))
 		     |    e    => SOME (FAIL_EXN e,"")
 
-(*
+
     fun executeSepTC (cfg:config) tc = 
 	let
 	    structure Sep = MkSeparate (val host = "localhost" 
@@ -70,8 +70,6 @@ struct
 	in
 	    Sep.execute tc
 	end
-implemented at a later time
-*)	    
 
     fun combine (executeTC: test_case -> (failure * string) option) 
 		(tc, res:result) =
@@ -83,7 +81,7 @@ implemented at a later time
     fun run cfg (name, testcases) = 
         let 
 	    val res = List.foldl (combine (if #separate cfg 
-					   then executeTC(*exetuteSepTC*) cfg 
+					   then executeSepTC cfg 
 					   else executeTC cfg))
 					    { name = name, passed = 0, 
                                               failed = 0, failures = [] } 
