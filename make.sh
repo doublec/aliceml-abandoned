@@ -6,3 +6,4 @@ rm -f stoc/stoc-mozart.*
 (cd stoc && make) || exit 1
 (cd vm-mozart && make) || exit 1
 (cd vm-mozart/bootstrap && make) || exit 1
+# (cd vm-mozart/boostrap && make install clean bootstrap install)
