@@ -496,8 +496,8 @@ structure CodeGenPhase: CODE_GEN_PHASE =
 		      | NONE => ""
 		val imports' =
 		    Vector.map (fn (_, sign, url) =>
-				O.Tuple #[O.Sign sign,
-					  O.String (Url.toString url)]) imports
+				O.Tuple #[O.String (Url.toString url),
+					  O.Sign sign]) imports
 		val env = new filename
 		val _ = startFn env
 		val formalId = fresh env
