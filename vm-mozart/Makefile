@@ -143,14 +143,14 @@ LIBFUNDAMENTALSOURCES0 = \
 	IEEE_REAL-sig.aml INTEGER-sig.aml LIST-sig.aml LIST_PAIR-sig.aml \
 	LOCK-sig.aml MATH-sig.aml MONO_VECTOR-sig.aml OPTION-sig.aml \
 	PACK_REAL-sig.aml PAIR-sig.aml PROMISE-sig.aml REAL-sig.aml \
-	REF-sig.aml STRING-sig.aml STRING_CVT-sig.aml SUBSTRING-sig.aml \
-	THREAD-sig.aml TIME-sig.aml VECTOR-sig.aml VECTOR_PAIR-sig.aml \
-	WORD-sig.aml \
+	REF-sig.aml STREAM-sig.aml STRING-sig.aml STRING_CVT-sig.aml \
+	SUBSTRING-sig.aml THREAD-sig.aml TIME-sig.aml VECTOR-sig.aml \
+	VECTOR_PAIR-sig.aml WORD-sig.aml \
 	Alt.aml Array.aml Bool.aml Char.aml CharVector.aml Future.aml \
 	General.aml Hole.aml IEEEReal.aml Int.aml LargeInt.aml LargeReal.aml \
 	LargeWord.aml List.aml ListPair.aml Lock.aml Math.aml MkWord.aml \
 	Option.aml Pair.aml Position.aml Promise.aml Real.aml Ref.aml \
-	String.aml StringCvt.aml Substring.aml Thread.aml Time.aml \
+	Stream.aml String.aml StringCvt.aml Substring.aml Thread.aml Time.aml \
 	Toplevel.aml Vector.aml VectorPair.aml WideChar.aml WideString.aml \
 	Word.aml Word8.aml Word8Vector.aml PACKAGE-sig.aml Package.aml \
 	ByNeed.aml
