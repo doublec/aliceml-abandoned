@@ -867,9 +867,11 @@ TagVal *NativeCodeJitter::InstrPutNew(TagVal *pc) {
   PrintPC("PutNew\n");
   u_int i1 = ImmediateEnv::Register(pc->Sel(1));
   ImmediateSel(JIT_R0, JIT_V2, i1);
+  // DirectWordToBlock(JIT_R0) does nothing
   Prepare();
   jit_pushr_ui(JIT_R0);
-  void *ptr = (void *) static_cast<Constructor *(*)(word)>(&Constructor::New);
+  void *ptr = (void *) static_cast<Constructor *(*)(String *)>
+    (&Constructor::New);
   JITStore::Call(1, ptr); // Constructor resides in JIT_RET
   Finish();
   LocalEnvPut(JIT_V2, pc->Sel(0), JIT_RET);

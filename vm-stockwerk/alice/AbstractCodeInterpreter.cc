@@ -354,7 +354,8 @@ Interpreter::Result AbstractCodeInterpreter::Run(TaskStack *taskStack) {
       break;
     case AbstractCode::PutNew: // of id * string * instr
       {
-	Constructor *constructor = Constructor::New(pc->Sel(1));
+	Constructor *constructor =
+	  Constructor::New(String::FromWordDirect(pc->Sel(1)));
 	localEnv->Add(pc->Sel(0), constructor->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }

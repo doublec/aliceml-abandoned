@@ -140,10 +140,10 @@ public:
 
   static void Init();
 
-  static Constructor *New(word name, Block *guid);
-  static Constructor *New(word name) {
+  static Constructor *New(String *name, Block *guid);
+  static Constructor *New(String *name) {
     ConcreteRepresentation *b = ConcreteRepresentation::New(handler, SIZE);
-    b->Init(NAME_POS, name);
+    b->Init(NAME_POS, name->ToWord());
     b->Init(TRANSFORM_POS, Store::IntToWord(0)); // constructed lazily
     return static_cast<Constructor *>(b);
   }
@@ -158,6 +158,9 @@ public:
     return static_cast<Constructor *>(b);
   }
 
+  String *GetName() {
+    return String::FromWordDirect(Get(NAME_POS));
+  }
   Transform *GetTransform();
 };
 
@@ -268,7 +271,7 @@ class UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *id) {
     return static_cast<UniqueConstructor *>
-      (Constructor::New(id->ToWord(), static_cast<Block *>(id)));
+      (Constructor::New(id, static_cast<Block *>(id)));
   }
   static UniqueConstructor *FromWord(word x) {
     return static_cast<UniqueConstructor *>(Constructor::FromWord(x));

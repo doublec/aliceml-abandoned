@@ -57,8 +57,9 @@ static word AliceFunctionHandler(word x) {
 static word AliceConstructorHandler(word x) {
   Tuple *tuple = Tuple::FromWordDirect(x);
   tuple->AssertWidth(2);
-  Constructor *constructor =
-    Constructor::New(tuple->Sel(0), Store::DirectWordToBlock(tuple->Sel(1)));
+  String *name = String::FromWordDirect(tuple->Sel(0));
+  Block *guid = Store::DirectWordToBlock(tuple->Sel(1));
+  Constructor *constructor = Constructor::New(name, guid);
   return constructor->ToWord();
 }
 
