@@ -16,6 +16,10 @@
     sets of integers.
   </P>
 
+  <P>See also:
+    <A href="fd.php3"><TT>FD</TT></A>
+  </P>
+
 <?php section("import", "import"); ?>
 
   <PRE>
