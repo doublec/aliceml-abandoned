@@ -42,7 +42,7 @@ echo Trying to install Alice-on-Seam to $prefix...
 ##
 ## Build Seam
 ##
-(cd vm-seam && make WINDOWS=${WINDOWS}) || exit 1
+(cd vm-seam && make WINDOWS=${WINDOWS} SEAMTOOL=${SEAM_HOME}/bin/seamtool) || exit 1
 
 ##
 ## Compile the Bootstrap Compiler with SML/NJ
