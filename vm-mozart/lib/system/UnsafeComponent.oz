@@ -15,7 +15,7 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    OzURL(make toVirtualString) at 'x-oz://system/URL'
    Module(link)
-   Pickle(load saveWithCells)
+   Pickle(saveWithCells load packWithCells unpack)
    DefaultURL(functorExt ozScheme nameToUrl)
    Property(get)
    Resolve(trace)
@@ -179,5 +179,17 @@ define
 		  fun {$ U}
 		     {Trace 'component' 'load '#U}
 		     {Load U}
+		  end
+	       'pack_':
+		  fun {$ Component}
+		     try
+			{Pickle.packWithCells {ComponentToFunctor Component}}
+		     catch error(dp(generic 'pickle:nogoods' ...) ...)
+		     then {Exception.raiseError alice(SitedException)} unit
+		     end
+		  end
+	       'unpack_':
+		  fun {$ S}
+		     {FunctorToComponent {Pickle.unpack S}}
 		  end)
 end
