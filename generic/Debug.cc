@@ -57,6 +57,8 @@ static const char *TransLabel(BlockLabel l) {
     return "TRANSFORM";
   case ARGS_LABEL:
     return "ARGS";
+  case CONCRETE_LABEL:
+    return "CONCRETE";
   default:
     return "UNKNOWN";
   }
