@@ -1,0 +1,10 @@
+import structure Meaning from "Meaning"
+import structure Doc from "Doc"
+
+signature SMURF_COMPONENT =
+    sig
+	structure Smurf:
+	    sig
+		val smurf: Meaning.meaning * int -> Doc.doc
+	    end
+    end
