@@ -5,6 +5,7 @@
  *)
 
 import structure TextIO from "x-alice:/TextIO.dll"
+import structure OS from "x-alice:/OS.dll"
 
 signature SYMBOL =
     sig
@@ -159,9 +160,9 @@ structure Type :> TYPE =
 	    fun union (xs, ys) = List.foldr adjoin xs ys
 
 	    fun collect (r as ref (TVar _), rs) = adjoin (r, rs)
-	      | collect (r as ref (TCons (_, tys)), rs) =
+	      | collect (ref (TCons (_, tys)), rs) =
 		List.foldl collect rs tys
-	      | collect (r as ref (TPtr ty), rs) =
+	      | collect (ref (TPtr ty), rs) =
 		collect (ty, rs)
 	in
 	    fun toString ty =
@@ -416,3 +417,6 @@ in
 end
 
 val _ = print (Elab.elab (env, test6))
+
+val _ = TextIO.print "done\n"
+val _ = OS.Process.exit OS.Process.success
