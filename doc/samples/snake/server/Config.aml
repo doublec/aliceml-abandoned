@@ -44,7 +44,7 @@ struct
          gateTreshold   = 15
 	 }
 
-    val path = OS.Path.currentArc^"/config/config.cs"
+    val path = OS.Path.currentArc ^ "config.cs"
 
     fun load () = 
 	let

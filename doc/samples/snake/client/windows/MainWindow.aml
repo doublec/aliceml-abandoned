@@ -53,6 +53,19 @@ fun highscoreToString score =
 	toString ()
     end
 
+fun timeToString   NONE   = ""
+  | timeToString (SOME t) =
+    let
+	val time    = Time.toSeconds t
+	val hours   = time div 3600
+	val minutes = (time mod 3600) div 60
+	val seconds = (time mod 3600) mod 60
+    in
+	Int.toString hours   ^ " : " ^
+	Int.toString minutes ^ " : " ^
+	Int.toString seconds ^ " time left"
+    end
+
 
 
 structure MainWindow =
@@ -74,9 +87,15 @@ struct
     val menuGiveUpItem = Gtk.menuItemNewWithLabel "Give Up"
 
     (* the points box items *)
-    val pointsHBox  = Gtk.hboxNew (false,  5)
     val separator1  = Gtk.vseparatorNew ()
     val pointsLabel = ref (Gtk.labelNew "")
+
+    (* the remaining level time and it's box *)
+    val timeLabel = ref (Gtk.labelNew "")
+
+    (* the box where time and points are in *)
+    val labelVBox      = Gtk.vboxNew (false, 10)
+    val rightHBox      = Gtk.hboxNew (false, 10)
 
 
 	(* one of the main prcedures. resets the window
@@ -86,7 +105,7 @@ struct
 	 Gtk.widgetSetSensitive (menuMenuItem, true);
 	 Gtk.widgetSetSensitive (menuScoreItem, true);
 	 Gtk.widgetHide canvas;
-	 Gtk.widgetHide pointsHBox;
+	 Gtk.widgetHide rightHBox;
 	 pointsLabel := (Gtk.labelNew "");
 	 mode := START)
 
@@ -110,9 +129,17 @@ struct
 		   guiGame) =
 	let
 	    fun gameFinished h = 
-		    reset (SOME ("Highscore", highscoreToString h))
+		    (reset (SOME ("Highscore", highscoreToString h));
+		     HighscoreIO.save h)
 
 	    fun update difflist = ArenaWidget.update (arena, difflist)
+
+	    fun tick remainingTime =
+		let
+		    val timeStr = timeToString remainingTime
+		in
+		    Gtk.labelSetText (!timeLabel, timeStr)
+		end
 
 	    fun updatePoints plist = 
 		let
@@ -138,10 +165,11 @@ struct
 	    Gtk.widgetSetSensitive (menuMenuItem, false);
 	    Gtk.widgetSetSensitive (menuScoreItem, false);
 	    Gtk.widgetShow canvas;
-	    Gtk.widgetShow pointsHBox;
+	    Gtk.widgetShow rightHBox;
 	    assert (Future.isFuture $ Promise.future guiGame) 
 	    do Promise.fulfill (guiGame, {startLevel, update, 
 					  updatePoints, headPosition,
+					  tick,
 					  gameFinished});
 	    (* update procedures *)
 	    turn' := turn;
@@ -290,17 +318,19 @@ struct
 	    Gtk.menuItemSetSubmenu (menuQuitItem, menuLeave);
 
 	    Gtk.widgetSetSensitive (menuGiveUpItem, false);
-(*	    Gtk.widgetSetUsize (pointsHBox, 180, 500); *)
 
 	    Gtk.menuBarAppend (menuBar, menuMenuItem);
 	    Gtk.menuBarAppend (menuBar, menuScoreItem);
 	    Gtk.menuBarAppend (menuBar, menuQuitItem);
 	    
-	    Gtk.boxPackStart (pointsHBox,  separator1, true, true, 5);
-	    Gtk.boxPackStart (pointsHBox, !pointsLabel, true, true, 5);
+	    Gtk.boxPackStart (labelVBox, !timeLabel, false, false, 5);
+	    Gtk.boxPackStart (labelVBox, !pointsLabel, false, false, 5);
+	    
+	    Gtk.boxPackStart (rightHBox, separator1, true, true, 5);
+	    Gtk.boxPackStart (rightHBox, labelVBox, false, false, 5);
 
 	    Gtk.boxPackStart (dialogHBox, canvas, true, true, 0);
-	    Gtk.boxPackStart (dialogHBox, pointsHBox, false, false, 0);
+	    Gtk.boxPackStart (dialogHBox, rightHBox, false, false, 0);
 
 	    Gtk.boxPackStart (dialogVBox, menuBar, false, false, 0);
 	    Gtk.boxPackStart (dialogVBox, dialogHBox, true, true, 0);
@@ -310,7 +340,7 @@ struct
 	    Gtk.widgetShowAll mainWindow;
 
 	    Gtk.widgetHide canvas;
-	    Gtk.widgetHide pointsHBox
+	    Gtk.widgetHide rightHBox
 		
 	end
 end

@@ -33,7 +33,8 @@ sig
 	 update       : (Pos.pos * Protocol.field) list -> unit,
 	 updatePoints : Highscore.points list -> unit,
 	 headPosition : Pos.pos -> unit,
-	 gameFinished : Highscore.highscore -> unit
+	 gameFinished : Highscore.highscore -> unit,
+	 tick         : Time.time option -> unit
 	 }
 	
 	
