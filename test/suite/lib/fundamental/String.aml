@@ -356,7 +356,6 @@ struct
 
     fun testConcatWith () =
 	let
-	    (* TODO: guggen, wie das geht *)
 	    fun t (s, nil)      x = x
 	      | t (s, [s2])     x = x ^ s2
 	      | t (s, (s2::xs)) x = t (s, xs) (x ^ s2 ^ s)

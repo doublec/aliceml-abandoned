@@ -182,6 +182,17 @@ struct
 	      (Test.test t)
 	end
 
+    fun testToLargeInt () =
+	let
+	    fun t w = wordToIntInf w = Word8.toLargeInt w
+	in
+	    Gen.try 1000 Gen.word8 (Test.test t)
+	end
+
+    fun testToLargeIntX () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    fun testFromLargeInt () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
     fun testEqual () = 
 	let
 	    fun t (i, j) = IntInf.equal (wordToIntInf i,
@@ -245,6 +256,9 @@ struct
 			   ("toInt", testToInt),
 			   ("toIntX", testToIntX),
 			   ("fromInt", testFromInt),
+			   ("toLargeInt", testToLargeInt),
+			   ("toLargeIntX", testToLargeIntX),
+			   ("fromLargeInt", testFromLargeInt),
 			   ("andb", testAndB),
 			   ("orb", testOrB),
 			   ("xorb", testXorB),

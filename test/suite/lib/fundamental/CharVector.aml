@@ -1,0 +1,517 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestCharVector :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
+
+    fun testMaxLen () =
+	Test.test (fn x => 
+		   IntInf.toInt (IntInf.- (IntInf.pow (IntInf.fromInt 2, 26), 
+					   IntInf.fromInt 72)) = x) 
+	                                                    CharVector.maxLen
+
+    fun testSub () =
+	let
+	    val testVec = CharVector.fromList 
+			      (List.map fromInt [0,1,2,3,4,5])
+
+	    fun t (v, i) = if i < 0 orelse CharVector.length v <= i 
+			       then NONE 
+			   else SOME (List.nth (CharVector.toList v, i))
+			       
+	    fun t' x = let
+			   val r = t x
+		       in
+			   CharVector.sub x = valOf r
+			    handle Subscript => Option.isNone r
+		       end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charVector Gen.char, Gen.int)) 
+	       (Test.test t');
+	    Test.test (fn (x, i) => CharVector.sub (x, i) = fromInt i) 
+		                                                   (testVec, 3)
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (v, i, x) = 
+		if i < 0 orelse CharVector.length v <= i
+		    then NONE 
+		else SOME (CharVector.update (v, i, x))
+
+	    fun t' (v, i, x) = let
+				   val v' = t (v, i, x)
+			       in
+				   if Option.isSome v' 
+				       then CharVector.sub (valOf v', i) = x
+				   else CharVector.sub (v, i) = x
+				    handle Subscript => Option.isNone v'
+			       end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.charVector Gen.char, 
+				      Gen.int, Gen.char))
+	       (Test.test t')
+	end
+
+    fun testToList () =
+	let
+	    fun t' (v, i, xs) = if i >= CharVector.length v
+				  then List.rev xs
+			      else t' (v, i + 1, (CharVector.sub (v, i))::xs)
+
+	    fun t v = t' (v, 0, []) = CharVector.toList v
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t'' ([]   , v, i) = v
+	      | t'' (x::xs, v, i) = t'' (xs, CharVector.update (v, i, x), 
+					 i - 1)
+
+	    val null = fromInt 0
+	    fun t' xs = let
+			    val size = List.length xs
+			    val null = fromInt 0
+			in 
+			    if size > CharVector.maxLen 
+				then NONE
+			    else SOME (t'' (List.rev xs, 
+					    CharVector.fromList (
+					   List.tabulate (size, fn x => null)),
+					    size - 1))
+			end
+			    
+	    fun t xs = let
+			   val r = t' xs
+		       in
+		       CharVector.equal Char.equal (CharVector.fromList xs, 
+						      valOf (t' xs))
+			           handle Size => Option.isNone r
+		       end
+
+	    fun h xs = (CharVector.fromList xs; true)
+		         handle Size => List.length xs > CharVector.maxLen
+	in
+	    Gen.try 100 (Gen.list Gen.char) 
+	       (Test.test (fn l => h l andalso t l))
+	end
+
+    fun testConcat () =
+	Gen.try 100 (Gen.list (Gen.charVector Gen.char)) 
+	(Test.test (fn xs => List.concat (List.map CharVector.toList xs) =
+		             CharVector.toList (CharVector.concat xs)))
+
+    fun testLength () =
+	Gen.try 1000 (Gen.charVector Gen.char)
+	   (Test.test (fn v => List.length (CharVector.toList v) =
+		               CharVector.length v))
+	    
+    fun testTabulate () =
+	let
+	    fun t (n, f) = CharVector.toList (CharVector.tabulate (n, f)) =
+		           List.tabulate (n, f)
+			     handle Size => n < 0 orelse CharVector.maxLen < n
+
+	    fun t' x = fromInt (x + 1)
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn x => t (x, t')))
+	end
+
+    fun testContains () =
+	let
+	    fun t (v, x) = CharVector.contains Char.equal v x =
+		           List.contains (CharVector.toList v) x
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charVector Gen.char, 
+				    Gen.char)) (Test.test t)
+	end
+
+    fun testNotContains () =
+	let
+	    fun t (v, x) = CharVector.notContains Char.equal v x = 
+		           Bool.not (CharVector.contains Char.equal v x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charVector Gen.char, 
+				    Gen.char)) (Test.test t)
+	end
+
+    fun testSort () =
+	let
+	    fun t f v = List.sort f (CharVector.toList v) =
+		        CharVector.toList (CharVector.sort f v)
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) 
+	       (Test.test (fn v => t Char.compare v))
+	end
+
+    fun testIsSorted () =
+	let
+	    fun t f v = CharVector.isSorted f v =
+		        List.isSorted f (CharVector.toList v)
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) 
+	       (Test.test (fn v => t Char.compare v))
+	end
+
+    fun testCollate () =
+	let
+	    fun t f (v1, v2) = 
+		List.collate f (CharVector.toList v1, 
+				CharVector.toList v2) =
+		CharVector.collate f (v1, v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charVector Gen.char, 
+				    Gen.charVector Gen.char))
+	       (Test.test (fn x => t Char.compare x))
+	end
+
+    fun testEqual () =
+	let
+	    fun t f (v1, v2) = CharVector.equal f (v1, v2) =
+		               List.equal f (CharVector.toList v1, 
+					     CharVector.toList v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.charVector Gen.char, 
+				    Gen.charVector Gen.char))
+	        (Test.test (fn x => t Char.equal x))
+	end
+
+    fun testRev () =
+	let
+	    fun t v = List.rev (CharVector.toList v) =
+		      CharVector.toList (CharVector.rev v)
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) (Test.test t)
+	end
+
+    fun testAll () =
+	let
+	    fun t f v = List.all f (CharVector.toList v)
+
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) 
+	     (Test.test (fn v => CharVector.all f v = t f v))
+	end
+
+    fun testExists () =
+	let
+	    fun t f v = List.exists f (CharVector.toList v)
+		
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char)
+	     (Test.test (fn v => CharVector.exists f v = t f v))
+	end
+
+    fun testFind () =
+	let
+	    fun t f v = List.find f (CharVector.toList v)
+		
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char)
+	     (Test.test (fn v => CharVector.find f v = t f v))
+	end
+
+    fun testAlli () =
+	let
+	    fun t f v = List.alli f (CharVector.toList v)
+
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char) 
+	     (Test.test (fn v => CharVector.alli f v = t f v))
+	end
+
+    fun testExistsi () =
+	let
+	    fun t f v = List.existsi f (CharVector.toList v)
+		
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char)
+	     (Test.test (fn v => CharVector.existsi f v = t f v))
+	end
+
+    fun testFindi () =
+	let
+	    fun t f v = List.findi f (CharVector.toList v)
+		
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.charVector Gen.char)
+	     (Test.test (fn v => CharVector.findi f v = t f v))
+	end
+
+    fun testFoldl () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (a, b) = b@[a]
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = CharVector.fromList xs
+				in 
+				    CharVector.foldl List.:: nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.char) 
+	        (Test.test (fn xs => 
+			    let
+				val v = CharVector.fromList xs
+			    in 
+				CharVector.foldl f nil v =
+				List.foldl f nil xs
+			    end))
+	end
+
+    fun testFoldr () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = CharVector.fromList xs
+				in 
+				    CharVector.foldr List.:: nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.char) 
+	        (Test.test (fn xs => 
+			    let
+				val v = CharVector.fromList xs
+			    in 
+				CharVector.foldr List.:: nil v =
+				List.foldr List.:: nil xs
+			    end))
+	end
+
+    fun testFoldli () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = b@[fromInt (Char.ord a + i)]
+
+	    fun f' (i, a, b) = a::b
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = CharVector.fromList xs
+				in 
+				    CharVector.foldli f' nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.char) 
+	        (Test.test (fn xs => 
+			    let
+				val v = CharVector.fromList xs
+			    in 
+				CharVector.foldli f nil v =
+				List.foldli f nil xs
+			    end))
+	end
+
+    fun testFoldri () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = (fromInt (Char.ord a + i)) :: b
+
+	    fun f' (i, a, b) = a::b
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = CharVector.fromList xs
+				in 
+				    CharVector.foldri f' nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.char) 
+	        (Test.test (fn xs => 
+			    let
+				val v = CharVector.fromList xs
+			    in 
+				CharVector.foldri f nil v =
+				List.foldri f nil xs
+			    end))
+	end
+
+    fun testApp () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.charVector Gen.char)
+	      (Test.test (fn v => (List.app (f x1) (CharVector.toList v);
+				   CharVector.app (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppr () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.charVector Gen.char)
+	      (Test.test (fn v => (List.appr (f x1) (CharVector.toList v);
+				    CharVector.appr (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((fromInt (i + Char.ord x)) :: !y)
+	in
+	    Gen.try 10 (Gen.charVector Gen.char)
+	      (Test.test (fn v => (List.appi (f x1) (CharVector.toList v);
+				   CharVector.appi (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppri () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((fromInt (i + Char.ord x)) :: !y)
+	in
+	    Gen.try 10 (Gen.charVector Gen.char)
+	      (Test.test (fn v => (List.appri (f x1) (CharVector.toList v);
+				    CharVector.appri (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+
+    fun testMap () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x i = (x := i :: !x; fromInt (Char.ord i + 5))
+
+	in
+	    Gen.try 100 (Gen.charVector Gen.char) 
+	       (Test.test (fn v => (x1 := nil;
+				    x2 := nil;
+				    CharVector.toList 
+					(CharVector.map (t x1) v) =
+				    List.map (t x2) (CharVector.toList v) 
+				    andalso !x1 = !x2 andalso 
+				    !x1 = List.rev (CharVector.toList v))))
+	end
+
+    fun testMapi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x (i, a) = (x := a :: !x; fromInt (Char.ord a + i + 5))
+	in
+	    Gen.try 100 (Gen.charVector Gen.char) 
+	       (Test.test (fn v => (x1 := nil; x2 := nil;
+				    CharVector.toList 
+					(CharVector.mapi (t x1) v) =
+				    List.mapi (t x2) (CharVector.toList v)
+				    andalso !x1 = !x2 andalso
+				    !x2 = List.rev (CharVector.toList v))))
+	end
+
+    val suite = ("CharVector", [("maxLen", testMaxLen),
+				 ("sub", testSub),
+				 ("update", testUpdate),
+				 ("length", testLength),
+				 ("toList", testToList),
+				 ("fromList", testFromList),
+				 ("tabulate", testTabulate),
+				 ("concat", testConcat),
+				 ("contains", testContains),
+				 ("notContains", testNotContains),
+				 ("sort", testSort),
+				 ("isSorted", testIsSorted),
+				 ("equal", testEqual),
+				 ("collate", testCollate),
+				 ("rev", testRev),
+				 ("all", testAll),
+				 ("exists", testExists),
+				 ("find", testFind),
+				 ("alli", testAlli),
+				 ("existsi", testExistsi),
+				 ("findi", testFindi),
+				 ("foldl", testFoldl),
+				 ("foldr", testFoldr),
+				 ("foldri", testFoldri),
+				 ("foldli", testFoldli),
+				 ("map", testMap),
+				 ("mapi", testMapi),
+				 ("app", testApp),
+				 ("appr", testAppr),
+				 ("appi", testAppi),
+				 ("appri", testAppri)])
+end
+
+

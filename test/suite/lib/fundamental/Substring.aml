@@ -1,0 +1,26 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestSubstring :> TESTSUITE = (* the substring test suite *)
+struct
+
+    val randomize = Gen.randomize
+
+    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("Substring", [])
+end

@@ -1,0 +1,517 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../../src/TESTSUITE-sig"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+import structure Gen       from "x-alice:/lib/test/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestWideCharVector :> TESTSUITE =
+struct
+
+    val randomize = Gen.randomize
+
+    fun fromInt x = if x > 255 then Char.chr 255 else Char.chr x
+
+    fun testMaxLen () =
+	Test.test (fn x => 
+		   IntInf.toInt (IntInf.- (IntInf.pow (IntInf.fromInt 2, 26), 
+					   IntInf.fromInt 72)) = x) 
+	                                                    WideCharVector.maxLen
+
+    fun testSub () =
+	let
+	    val testVec = WideCharVector.fromList 
+			      (List.map fromInt [0,1,2,3,4,5])
+
+	    fun t (v, i) = if i < 0 orelse WideCharVector.length v <= i 
+			       then NONE 
+			   else SOME (List.nth (WideCharVector.toList v, i))
+			       
+	    fun t' x = let
+			   val r = t x
+		       in
+			   WideCharVector.sub x = valOf r
+			    handle Subscript => Option.isNone r
+		       end
+	in
+	    Gen.try 1000 (Gen.pair (Gen.wideCharVector Gen.wideChar, Gen.int)) 
+	       (Test.test t');
+	    Test.test (fn (x, i) => WideCharVector.sub (x, i) = fromInt i) 
+		                                                   (testVec, 3)
+	end
+
+    fun testUpdate () = 
+	let
+	    fun t (v, i, x) = 
+		if i < 0 orelse WideCharVector.length v <= i
+		    then NONE 
+		else SOME (WideCharVector.update (v, i, x))
+
+	    fun t' (v, i, x) = let
+				   val v' = t (v, i, x)
+			       in
+				   if Option.isSome v' 
+				       then WideCharVector.sub (valOf v', i) = x
+				   else WideCharVector.sub (v, i) = x
+				    handle Subscript => Option.isNone v'
+			       end
+	in
+	    Gen.try 1000 (Gen.triple (Gen.wideCharVector Gen.wideChar, 
+				      Gen.int, Gen.wideChar))
+	       (Test.test t')
+	end
+
+    fun testToList () =
+	let
+	    fun t' (v, i, xs) = if i >= WideCharVector.length v
+				  then List.rev xs
+			      else t' (v, i + 1, (WideCharVector.sub (v, i))::xs)
+
+	    fun t v = t' (v, 0, []) = WideCharVector.toList v
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) (Test.test t)
+	end
+
+    fun testFromList () =
+	let
+	    fun t'' ([]   , v, i) = v
+	      | t'' (x::xs, v, i) = t'' (xs, WideCharVector.update (v, i, x), 
+					 i - 1)
+
+	    val null = fromInt 0
+	    fun t' xs = let
+			    val size = List.length xs
+			    val null = fromInt 0
+			in 
+			    if size > WideCharVector.maxLen 
+				then NONE
+			    else SOME (t'' (List.rev xs, 
+					    WideCharVector.fromList (
+					   List.tabulate (size, fn x => null)),
+					    size - 1))
+			end
+			    
+	    fun t xs = let
+			   val r = t' xs
+		       in
+		       WideCharVector.equal Char.equal (WideCharVector.fromList xs, 
+						      valOf (t' xs))
+			           handle Size => Option.isNone r
+		       end
+
+	    fun h xs = (WideCharVector.fromList xs; true)
+		         handle Size => List.length xs > WideCharVector.maxLen
+	in
+	    Gen.try 100 (Gen.list Gen.wideChar) 
+	       (Test.test (fn l => h l andalso t l))
+	end
+
+    fun testConcat () =
+	Gen.try 100 (Gen.list (Gen.wideCharVector Gen.wideChar)) 
+	(Test.test (fn xs => List.concat (List.map WideCharVector.toList xs) =
+		             WideCharVector.toList (WideCharVector.concat xs)))
+
+    fun testLength () =
+	Gen.try 1000 (Gen.wideCharVector Gen.wideChar)
+	   (Test.test (fn v => List.length (WideCharVector.toList v) =
+		               WideCharVector.length v))
+	    
+    fun testTabulate () =
+	let
+	    fun t (n, f) = WideCharVector.toList (WideCharVector.tabulate (n, f)) =
+		           List.tabulate (n, f)
+			     handle Size => n < 0 orelse WideCharVector.maxLen < n
+
+	    fun t' x = fromInt (x + 1)
+	in
+	    Gen.try 1000 Gen.int (Test.test (fn x => t (x, t')))
+	end
+
+    fun testContains () =
+	let
+	    fun t (v, x) = WideCharVector.contains Char.equal v x =
+		           List.contains (WideCharVector.toList v) x
+	in
+	    Gen.try 1000 (Gen.pair (Gen.wideCharVector Gen.wideChar, 
+				    Gen.wideChar)) (Test.test t)
+	end
+
+    fun testNotContains () =
+	let
+	    fun t (v, x) = WideCharVector.notContains Char.equal v x = 
+		           Bool.not (WideCharVector.contains Char.equal v x)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.wideCharVector Gen.wideChar, 
+				    Gen.wideChar)) (Test.test t)
+	end
+
+    fun testSort () =
+	let
+	    fun t f v = List.sort f (WideCharVector.toList v) =
+		        WideCharVector.toList (WideCharVector.sort f v)
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) 
+	       (Test.test (fn v => t Char.compare v))
+	end
+
+    fun testIsSorted () =
+	let
+	    fun t f v = WideCharVector.isSorted f v =
+		        List.isSorted f (WideCharVector.toList v)
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) 
+	       (Test.test (fn v => t Char.compare v))
+	end
+
+    fun testCollate () =
+	let
+	    fun t f (v1, v2) = 
+		List.collate f (WideCharVector.toList v1, 
+				WideCharVector.toList v2) =
+		WideCharVector.collate f (v1, v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.wideCharVector Gen.wideChar, 
+				    Gen.wideCharVector Gen.wideChar))
+	       (Test.test (fn x => t Char.compare x))
+	end
+
+    fun testEqual () =
+	let
+	    fun t f (v1, v2) = WideCharVector.equal f (v1, v2) =
+		               List.equal f (WideCharVector.toList v1, 
+					     WideCharVector.toList v2)
+	in
+	    Gen.try 1000 (Gen.pair (Gen.wideCharVector Gen.wideChar, 
+				    Gen.wideCharVector Gen.wideChar))
+	        (Test.test (fn x => t Char.equal x))
+	end
+
+    fun testRev () =
+	let
+	    fun t v = List.rev (WideCharVector.toList v) =
+		      WideCharVector.toList (WideCharVector.rev v)
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) (Test.test t)
+	end
+
+    fun testAll () =
+	let
+	    fun t f v = List.all f (WideCharVector.toList v)
+
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) 
+	     (Test.test (fn v => WideCharVector.all f v = t f v))
+	end
+
+    fun testExists () =
+	let
+	    fun t f v = List.exists f (WideCharVector.toList v)
+		
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar)
+	     (Test.test (fn v => WideCharVector.exists f v = t f v))
+	end
+
+    fun testFind () =
+	let
+	    fun t f v = List.find f (WideCharVector.toList v)
+		
+	    fun f x = x > fromInt 0
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar)
+	     (Test.test (fn v => WideCharVector.find f v = t f v))
+	end
+
+    fun testAlli () =
+	let
+	    fun t f v = List.alli f (WideCharVector.toList v)
+
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar) 
+	     (Test.test (fn v => WideCharVector.alli f v = t f v))
+	end
+
+    fun testExistsi () =
+	let
+	    fun t f v = List.existsi f (WideCharVector.toList v)
+		
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar)
+	     (Test.test (fn v => WideCharVector.existsi f v = t f v))
+	end
+
+    fun testFindi () =
+	let
+	    fun t f v = List.findi f (WideCharVector.toList v)
+		
+	    fun f (i, x) = fromInt i = x
+	in
+	    Gen.try 1000 (Gen.wideCharVector Gen.wideChar)
+	     (Test.test (fn v => WideCharVector.findi f v = t f v))
+	end
+
+    fun testFoldl () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (a, b) = b@[a]
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = WideCharVector.fromList xs
+				in 
+				    WideCharVector.foldl List.:: nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.wideChar) 
+	        (Test.test (fn xs => 
+			    let
+				val v = WideCharVector.fromList xs
+			    in 
+				WideCharVector.foldl f nil v =
+				List.foldl f nil xs
+			    end))
+	end
+
+    fun testFoldr () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = WideCharVector.fromList xs
+				in 
+				    WideCharVector.foldr List.:: nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.wideChar) 
+	        (Test.test (fn xs => 
+			    let
+				val v = WideCharVector.fromList xs
+			    in 
+				WideCharVector.foldr List.:: nil v =
+				List.foldr List.:: nil xs
+			    end))
+	end
+
+    fun testFoldli () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = b@[fromInt (Char.ord a + i)]
+
+	    fun f' (i, a, b) = a::b
+
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = WideCharVector.fromList xs
+				in 
+				    WideCharVector.foldli f' nil v1 =
+				    List.rev xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.wideChar) 
+	        (Test.test (fn xs => 
+			    let
+				val v = WideCharVector.fromList xs
+			    in 
+				WideCharVector.foldli f nil v =
+				List.foldli f nil xs
+			    end))
+	end
+
+    fun testFoldri () =
+	let
+	    val test1 = List.map fromInt [0, 1, 2, 3]
+		
+	    fun t f b   nil   = b
+	      | t f b (x::xs) = t f (f (x, b)) xs
+
+	    fun f (i, a, b) = (fromInt (Char.ord a + i)) :: b
+
+	    fun f' (i, a, b) = a::b
+
+	in
+	    Test.test (fn xs => let
+				   val v1 = WideCharVector.fromList xs
+				in 
+				    WideCharVector.foldri f' nil v1 =
+				    xs
+				end) test1;
+	    Gen.try 100 (Gen.list Gen.wideChar) 
+	        (Test.test (fn xs => 
+			    let
+				val v = WideCharVector.fromList xs
+			    in 
+				WideCharVector.foldri f nil v =
+				List.foldri f nil xs
+			    end))
+	end
+
+    fun testApp () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.wideCharVector Gen.wideChar)
+	      (Test.test (fn v => (List.app (f x1) (WideCharVector.toList v);
+				   WideCharVector.app (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppr () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y x = y := (x :: !y)
+	in
+	    Gen.try 10 (Gen.wideCharVector Gen.wideChar)
+	      (Test.test (fn v => (List.appr (f x1) (WideCharVector.toList v);
+				    WideCharVector.appr (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((fromInt (i + Char.ord x)) :: !y)
+	in
+	    Gen.try 10 (Gen.wideCharVector Gen.wideChar)
+	      (Test.test (fn v => (List.appi (f x1) (WideCharVector.toList v);
+				   WideCharVector.appi (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+    fun testAppri () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun f y (i, x) = y := ((fromInt (i + Char.ord x)) :: !y)
+	in
+	    Gen.try 10 (Gen.wideCharVector Gen.wideChar)
+	      (Test.test (fn v => (List.appri (f x1) (WideCharVector.toList v);
+				    WideCharVector.appri (f x2) v;
+				    let
+					val b = !x1 = !x2
+				    in 
+					x1 := nil;
+					x2 := nil; b
+				    end)))
+	end
+
+
+    fun testMap () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x i = (x := i :: !x; fromInt (Char.ord i + 5))
+
+	in
+	    Gen.try 100 (Gen.wideCharVector Gen.wideChar) 
+	       (Test.test (fn v => (x1 := nil;
+				    x2 := nil;
+				    WideCharVector.toList 
+					(WideCharVector.map (t x1) v) =
+				    List.map (t x2) (WideCharVector.toList v) 
+				    andalso !x1 = !x2 andalso 
+				    !x1 = List.rev (WideCharVector.toList v))))
+	end
+
+    fun testMapi () =
+	let
+	    val x1 = ref nil
+	    val x2 = ref nil
+
+	    fun t x (i, a) = (x := a :: !x; fromInt (Char.ord a + i + 5))
+	in
+	    Gen.try 100 (Gen.wideCharVector Gen.wideChar) 
+	       (Test.test (fn v => (x1 := nil; x2 := nil;
+				    WideCharVector.toList 
+					(WideCharVector.mapi (t x1) v) =
+				    List.mapi (t x2) (WideCharVector.toList v)
+				    andalso !x1 = !x2 andalso
+				    !x2 = List.rev (WideCharVector.toList v))))
+	end
+
+    val suite = ("WideCharVector", [("maxLen", testMaxLen),
+				 ("sub", testSub),
+				 ("update", testUpdate),
+				 ("length", testLength),
+				 ("toList", testToList),
+				 ("fromList", testFromList),
+				 ("tabulate", testTabulate),
+				 ("concat", testConcat),
+				 ("contains", testContains),
+				 ("notContains", testNotContains),
+				 ("sort", testSort),
+				 ("isSorted", testIsSorted),
+				 ("equal", testEqual),
+				 ("collate", testCollate),
+				 ("rev", testRev),
+				 ("all", testAll),
+				 ("exists", testExists),
+				 ("find", testFind),
+				 ("alli", testAlli),
+				 ("existsi", testExistsi),
+				 ("findi", testFindi),
+				 ("foldl", testFoldl),
+				 ("foldr", testFoldr),
+				 ("foldri", testFoldri),
+				 ("foldli", testFoldli),
+				 ("map", testMap),
+				 ("mapi", testMapi),
+				 ("app", testApp),
+				 ("appr", testAppr),
+				 ("appi", testAppi),
+				 ("appri", testAppri)])
+end
+
+

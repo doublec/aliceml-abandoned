@@ -458,7 +458,7 @@ struct
 	    val x1 = ref nil
 	    val x2 = ref nil
 
-	    fun t x (a, i) = (x := i :: !x; a + i + 5)
+	    fun t x (i, a) = (x := a :: !x; a + i + 5)
 	in
 	    Gen.try 100 (Gen.vector Gen.int) 
 	       (Test.test (fn v => (x1 := nil; x2 := nil;

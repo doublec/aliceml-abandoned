@@ -229,7 +229,56 @@ struct
 	end
 
     fun testTabulate () = 
-	Test.test (fn _ => raise Test.NotYetImplemented) ()
+	let
+	    val xs = ref nil
+	    val ys = ref nil
+
+	    fun f a (x, y) =  (a := (x, y) :: !a; x + y)
+
+	    fun t' Array2.RowMajor x (r, c) = 
+		(let
+		    val a = Array2.array (r, c, 0)
+		    val fu = f x
+		    fun t'' (i, j) = 
+			if i = r then t'' (0, j + 1)
+			else if j = c then ()
+			else (Array2.update (a, i, j, fu (i, j));
+			      t'' (i + 1, j))
+		in
+		    t'' (0, 0); a
+		end)
+	      | t' Array2.ColMajor x (r, c) = 
+		(let
+		    val a = Array2.array (r, c, 0)
+		    val fu = f x
+		    fun t'' (i, j) = 
+			if i = r then ()
+			else if j = c then t'' (i + 1, 0)
+			else (Array2.update (a, i, j, fu (i, j));
+			      t'' (i, j + 1))
+		in
+		    t'' (0, 0); a
+		end)
+
+	    fun t (r, c) = 
+		let
+		    val trv = if Gen.bool 1 then Array2.RowMajor
+			      else Array2.ColMajor
+		in 
+		    if r < 0 orelse c < 0 orelse 
+		       r * c >= Array.maxLen
+		    then (Array2.tabulate trv (r, c, f ys); false) 
+			 handle Size => true
+		    else (Array2.equal trv Int.equal 
+			         (t' trv xs (r, c), 
+				  Array2.tabulate trv (r, c, f ys)))
+		end
+	in
+	    Gen.try 10 (Gen.pair (Gen.int, Gen.int)) 
+		    (Test.test (fn x => (xs := nil;
+				         ys := nil; t x)))
+	end
+
     fun testCopy () = 
 	Test.test (fn _ => raise Test.NotYetImplemented) ()
     fun testApp () = 

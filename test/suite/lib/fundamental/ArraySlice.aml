@@ -130,7 +130,7 @@ struct
 		in
 		    if Option.isSome r 
 		    then ArraySlice.sub (asl, i) = a
-		    else true
+		    else i < 0 orelse ArraySlice.length asl <= i
 		end
 	in
 	    Gen.try 1000 (Gen.triple (Gen.arraySlice Gen.int,

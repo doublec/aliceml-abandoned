@@ -18,6 +18,7 @@ import structure Time            from "x-alice:/lib/system/Time"
 
 import structure TestBool        from "lib/fundamental/Bool"
 import structure TestString      from "lib/fundamental/String"
+import structure TestSubstring   from "lib/fundamental/Substring"
 import structure TestGeneral     from "lib/fundamental/General"
 import structure TestOption      from "lib/fundamental/Option"
 import structure TestAlt         from "lib/fundamental/Alt"
@@ -33,10 +34,30 @@ import structure TestByte        from "lib/fundamental/Byte"
 import structure TestList        from "lib/fundamental/List"
 import structure TestListPair    from "lib/fundamental/ListPair"
 import structure TestArray       from "lib/fundamental/Array"
+import structure TestWord8Array  from "lib/fundamental/Word8Array"
+import structure TestCharArray   from "lib/fundamental/CharArray"
+import structure TestWideCharArray 
+		                 from "lib/fundamental/WideCharArray"
 import structure TestArraySlice  from "lib/fundamental/ArraySlice"
+import structure TestWord8ArraySlice 
+		                 from "lib/fundamental/Word8ArraySlice"
+import structure TestCharArraySlice 
+		                 from "lib/fundamental/CharArraySlice"
+import structure TestWideCharArraySlice 
+		                 from "lib/fundamental/WideCharArraySlice"
 import structure TestArray2      from "lib/fundamental/Array2"
 import structure TestVector      from "lib/fundamental/Vector"
+import structure TestWord8Vector from "lib/fundamental/Word8Vector"
+import structure TestCharVector  from "lib/fundamental/CharVector"
+import structure TestWideCharVector  
+		                 from "lib/fundamental/WideCharVector"
 import structure TestVectorSlice from "lib/fundamental/VectorSlice"
+import structure TestWord8VectorSlice
+		                 from "lib/fundamental/Word8VectorSlice"
+import structure TestCharVectorSlice
+		                 from "lib/fundamental/CharVectorSlice"
+import structure TestWideCharVectorSlice
+		                 from "lib/fundamental/WideCharVectorSlice"
 import structure TestVectorPair  from "lib/fundamental/VectorPair"
 import structure TestPair        from "lib/fundamental/Pair"
 import structure TestRef         from "lib/fundamental/Ref"
@@ -59,7 +80,20 @@ fun randomizeTests () =
 			TestVectorPair.randomize,
 			TestGeneral.randomize,
 			TestArraySlice.randomize,
+			TestWord8ArraySlice.randomize,
+			TestWideCharArraySlice.randomize,
+			TestCharArraySlice.randomize,
+			TestWord8Vector.randomize,
+			TestCharVector.randomize,
+			TestWord8VectorSlice.randomize,
+			TestCharVectorSlice.randomize,
+			TestWideCharVectorSlice.randomize,
+			TestWideCharVector.randomize,
 			TestOption.randomize, 
+			TestWord8Array.randomize,
+			TestWideCharArray.randomize,
+			TestCharArray.randomize,
+			TestSubstring.randomize,
 			TestString.randomize,
 			TestIEEEReal.randomize,
 			TestVectorSlice.randomize,
@@ -83,36 +117,49 @@ fun randomizeTests () =
 	List.app (fn x => x ()) allTests
     end
 
-val allTests = [TestRegressions.suite,
+val allTests = [(*TestRegressions.suite,
 		TestCompiler.suite,
 		TestPair.suite,
 		TestRef.suite,
 		TestAlt.suite,
 		TestBool.suite,
-		TestGeneral.suite,
+		TestGeneral.suite,*)
 		TestWord.suite,
 		TestWord8.suite,
-		TestWord32.suite,
+		TestWord32.suite,(*
 		TestReal.suite,
 		TestOption.suite, 
 		TestList.suite,
-		TestListPair.suite,
+		TestListPair.suite,*)
 		TestArray.suite,
+		TestWord8Array.suite,
+		TestCharArray.suite,
+		TestWideCharArray.suite,
 		TestArraySlice.suite,
-		TestArray2.suite,
+		TestWord8ArraySlice.suite,
+		TestCharArraySlice.suite,
+		TestWideCharArraySlice.suite,(*
+		TestArray2.suite,*)
 		TestVector.suite,
+		TestWord8Vector.suite,
+		TestCharVector.suite,
+		TestWideCharVector.suite,
 		TestVectorSlice.suite,
+		TestWord8VectorSlice.suite,
+		TestCharVectorSlice.suite,
+		TestWideCharVectorSlice.suite,(*
 		TestVectorPair.suite,
 		TestChar.suite,
-		TestString.suite,
+		TestString.suite,*)
+		TestSubstring.suite,(*
 		TestIEEEReal.suite,
 		TestInteger.suite,
 		TestIntInf.suite,
 		TestByte.suite,
 		TestConfig.suite,
 		TestOSPath.suite,
-		TestTimer.suite,
-		TestTime.suite]
+		TestTime.suite,*)
+		TestTimer.suite]
 
 val defaultConfig = {
 	    timeout = Time.fromSeconds (Int.toLarge 20),
