@@ -304,7 +304,7 @@ struct
 		else case stripCommonPrefix(arcs1, arcs2)
 		 of (arcs1' as (nil | ""::_), nil) =>
 		    toString{isAbs=false, vol=vol1, arcs = "."::arcs1'}
-		  | (arcs1', arcs2') =>
+		  | (arcs1', (""::arcs2' | "."::arcs2' | arcs2')) =>
 		    toString{isAbs=false, vol=vol1,
 			     arcs = List.map (fn _ => parentArc) arcs2' @ arcs1'}
 	    end
