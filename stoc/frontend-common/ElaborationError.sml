@@ -218,12 +218,12 @@ structure ElaborationError :> ELABORATION_ERROR =
 	    textpar["is","not","an","open","datatype"]
       | ppMismatch'(Inf.MismatchDom im) =
 	    break ^^
-	    textpar["functor","argument","signature","is","incompatible,",
-		"because"] ^^
+	    textpar["functor","argument","signature","is","too","restrictive,",
+		"because","in","the","argument","signature","matched,"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.MismatchRan im) =
 	    break ^^
-	    textpar["functor","result","signature","is","incompatible,",
+	    textpar["functor","result","signature","is","too","permissive,",
 		"because"] ^^
 	    ppMismatch' im
       | ppMismatch'(Inf.Incompatible(j1,j2)) =
