@@ -14,7 +14,7 @@
 import structure GtkTypes from "GtkTypes"
 
 local
-    type bool = int
+    type bool = bool
 in
     signature GTK =
 	sig
