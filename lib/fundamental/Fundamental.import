@@ -13,7 +13,7 @@
  *)
 
 (*
- *  This file is prepended to every file compiled by stoc.
+ *  This file is prepended to every file compiled.
  *)
 
 import "x-alice:/lib/fundamental/Fundamental"
