@@ -5,17 +5,38 @@ infix  4  = <> > >= < <=
 infix  3  := o
 infix  0  before
 
-val op~ = builtin "~"
-val op+ = builtin "+"
-val op- = builtin "-"
-val op* = builtin "*"
-val op div = builtin "div"
-val op mod = builtin "mod"
-val op< = builtin "<"
-val op> = builtin ">"
-val op<= = builtin "<="
-val op>= = builtin ">="
-val op<> = builtin "<>"
+__prebound Prebound
+
+type     unit   = {}
+datatype bool   = datatype Prebound.bool
+type     int    = Prebound.int
+type     word   = Prebound.word
+type     real   = Prebound.real
+type     string = Prebound.string
+type     char   = Prebound.char
+datatype list   = datatype Prebound.list
+datatype ref    = datatype Prebound.ref
+type     exn    = Prebound.exn
+
+exception Match = Prebound.Match
+exception Bind  = Prebound.Bind
+
+__primitive op=  : ''a * ''a -> bool = "="
+__primitive op<> : ''a * ''a -> bool = "<>"
+__primitive op:= : 'a ref * 'a -> unit = ":="
+
+__primitive op~ : int -> int = "~"
+
+__primitive op+ : int * int -> int = "+"
+__primitive op- : int * int -> int = "-"
+__primitive op* : int * int -> int = "*"
+__primitive op div : int * int -> int = "div"
+__primitive op mod : int * int -> int = "mod"
+
+__primitive op< : int * int -> bool = "<"
+__primitive op> : int * int -> bool = ">"
+__primitive op<= : int * int -> bool = "<="
+__primitive op>= : int * int -> bool = ">="
 
 structure General =
     struct
@@ -72,26 +93,26 @@ structure ListPair =
 
 structure String =
     struct
-	val op^ = builtin "String.^"
-	val str = builtin "String.str"
+	__primitive op^ : string * string -> string = "String.^"
+	__primitive str : string * string -> string = "String.str"
     end
 
 val op^ = String.^
 
 structure Int =
     struct
-	val toString = builtin "Int.toString"
+	__primitive toString : int -> string = "Int.toString"
     end
 
 structure Char =
     struct
-	val ord = builtin "Char.ord"
-	val chr = builtin "Char.chr"
+	__primitive ord : char -> int = "Char.ord"
+	__primitive chr : int -> char = "Char.chr"
     end
 
 structure TextIO =
     struct
-	val print = builtin "TextIO.print"
+	__primitive print : string -> unit = "TextIO.print"
     end
 
 (*--------------------------------------------------------------------*)
