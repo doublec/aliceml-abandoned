@@ -41,11 +41,9 @@
 ../common/PREBOUND.sig
 ../common/Prebound.sml
 ../frontend-common/StringMap.sml
+../frontend-common/StampMap.sml
 ../frontend-common/NAME.sig
 ../frontend-common/Name.sml
-../frontend-common/ABSTRACT_GRAMMAR.sig
-../frontend-common/MakeAbstractGrammar.sml
-../frontend-common/AbstractGrammar.sml
 ../frontend-common/LAB.sig
 ../frontend-common/Lab.sml
 ../frontend-common/PATH.sig
@@ -53,6 +51,13 @@
 ../frontend-common/PathSet.sml
 ../frontend-common/TYPE.sig
 ../frontend-common/Type.sml
+../frontend-common/SIGN.sig
+../frontend-common/Sign.sml
+../frontend-common/INF.sig
+../frontend-common/Inf.sml
+../frontend-common/ABSTRACT_GRAMMAR.sig
+../frontend-common/MakeAbstractGrammar.sml
+../frontend-common/AbstractGrammar.sml
 ../frontend-common/TypedGrammar.sml
 ../frontend-common/ENV.sig
 ../frontend-common/Env.sml
