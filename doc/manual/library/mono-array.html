@@ -91,6 +91,14 @@
     <A href="http://SML.sourceforge.net/Basis/mono-array.html"><TT>MONO_ARRAY</TT></A> signature.
   </P>
 
+  <P>
+    Note that, unlike polymorphic arrays, monomorphic arrays are strict in
+    their elements. I.e., all constructor and update functions taking individual
+    element values (<TT>array</TT>, <TT>fromList</TT>, <TT>tabulate</TT>,
+    <TT>update</TT>, <TT>modify</TT>, <TT>modifyi</TT>) will request
+    any potential futures immediately.
+  </P>
+
   <DL>
     <DT>
       <TT>type t = array</TT>

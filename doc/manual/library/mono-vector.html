@@ -84,6 +84,13 @@
     <A href="http://SML.sourceforge.net/Basis/mono-vector.html"><TT>MONO_VECTOR</TT></A> signature.
   </P>
 
+  <P>
+    Note that, unlike polymorphic vectors, monomorphic vectors are strict in
+    their elements. I.e., all constructor functions taking individual element
+    values (<TT>fromList</TT>, <TT>tabulate</TT>, <TT>replace</TT>) will request
+    any potential futures immediately.
+  </P>
+
   <DL>
     <DT>
       <TT>type t = vector</TT>
