@@ -26,6 +26,26 @@ in
 	    (* Introduce flat bindings *)
 	    open UnsafeFS
 
+	    (* Wrap constructors *)
+	    fun checkBounds i = if i >= inf
+				then if i <= sup then ()
+				     else raise Overflow
+				else raise Domain
+					   
+	    fun checkDomainElement (SINGLE i)    = checkBounds i
+	      | checkDomainElement (RANGE(l, h)) =
+		(checkBounds l; checkBounds h)
+	    fun checkDomain d = Vector.app checkDomainElement d
+
+	    fun fs NONE                = unsafeFS NONE
+	      | fs (r as SOME(d1, d2)) =
+		(checkDomain d1; checkDomain d2; unsafeFS r)
+
+	    fun fsVec (i, d1, d2) =
+		(checkDomain d1; checkDomain d2; unsafeFSVec(i, d1, d2))
+		 
+	    fun value d = (checkDomain d; unsafeValue d)
+
 	    (* Integer FS *)
 	    structure Int =
 		struct

@@ -16,9 +16,13 @@ signature UNSAFE_FS_COMPONENT =
     sig
 	structure UnsafeFS :
 	    sig
+	        (* Implementation dependent FS limits *)
+	        val inf : int
+		val sup : int
+
 		(* Allocation Function *)
-		val fs : 'a
-		val fsVec : 'a
+		val unsafeFS : 'a
+		val unsafeFSVec : 'a
 
 		(* Standard Propagators *)
 		val compl : 'a
@@ -43,7 +47,7 @@ signature UNSAFE_FS_COMPONENT =
 		val partition : 'a
 
 		(* Values *)
-		val value : 'a
+		val unsafeValue : 'a
 		val emptyValue : 'a
 		val singletonValue : 'a
 		val universalValue : 'a

@@ -21,6 +21,10 @@ in
 	sig
 	    type fs
 
+	    (* Implementation dependent fs limits *)
+	    val inf : int
+	    val sup : int
+
 	    (* Allocation Function *)
 	    val fs : (domain * domain) option -> fs
 	    val fsVec : int * domain * domain -> fs vector

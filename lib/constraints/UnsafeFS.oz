@@ -201,8 +201,10 @@ define
    
    %% Create Interface
    UnsafeFS = 'UnsafeFS'(
-		 'fs'                       : FsFun
-		 'fsVec'                    : FsVecFun
+		 'inf'                      : FS.inf
+		 'sup'                      : FS.sup
+		 'unsafeFS'                 : FsFun
+		 'unsafeFSVec'              : FsVecFun
 		 'compl'                    : ComplFun
 		 'complIn'                  : ComplInFun
 		 'incl'                     : InclFun
@@ -222,7 +224,7 @@ define
 		 'distinct'                 : DistinctFun
 		 'distinctN'                : DistinctNFun
 		 'partition'                : PartitionFun
-		 'value'                    : ValueFun
+		 'unsafeValue'              : ValueFun
 		 'emptyValue'               : EmptyValueFun
 		 'singletonValue'           : FS.value.singl
 		 'universalValue'           : UniversalValueFun
