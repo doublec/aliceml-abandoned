@@ -111,6 +111,9 @@ mlId       = "'"?[A-Za-z][A-Za-z0-9_'.]*;
 <INITIAL>"val"               => (Tokens.MLKEY(yytext,yypos,yypos+3));
 <INITIAL>"withtype"          => (Tokens.MLKEY(yytext,yypos,yypos+8));
 
+<INITIAL>"regexp"            => (Tokens.MLKEY(yytext,yypos,yypos+6));
+<INITIAL>"lexer"             => (Tokens.MLKEY(yytext,yypos,yypos+5));
+
 <INITIAL>","      => (Tokens.COMMA(yypos,yypos+1));
 <INITIAL>":"      => (Tokens.COLON(yypos,yypos+1));
 <INITIAL>"("      => (Tokens.LPAR(yypos,yypos+1));

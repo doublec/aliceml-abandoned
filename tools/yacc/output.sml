@@ -295,7 +295,12 @@ struct
 		    ^"end\n(* --- *)\n\n"
 		else ""
 
-	    val p = (A.MLCode (A.EXP [A.ATEXP errorDef, A.ATEXP hack])) ::p
+	    fun insertErrHack x ((y as (A.MLCode _))::ys) =
+		y :: insertErrHack x ys
+	      | insertErrHack x ys = x :: ys
+
+	    val p = insertErrHack (A.MLCode (A.EXP [A.ATEXP errorDef,
+						    A.ATEXP hack])) p
  
 	    fun absSynToString _ (A.TokenDec l) = tokenDecToString l
 	      | absSynToString _ (A.MLCode l) = A.expToString l
