@@ -1,0 +1,3 @@
+import
+    structure MakePervasiveType
+from "x-alice:/common/MakePervasiveType.ozf"

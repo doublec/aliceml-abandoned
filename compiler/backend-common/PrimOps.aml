@@ -60,10 +60,12 @@ structure PrimOps :> PRIM_OPS =
 		ins ("Future.isFailed", SOME Unary);
 		ins ("Future.isFuture", SOME Unary);
 		ins ("General.:=", SOME (TupArity 2));
+		ins ("General.Bind", NONE);
 		ins ("General.Chr", NONE);
 		ins ("General.Div", NONE);
 		ins ("General.Domain", NONE);
 		ins ("General.Fail", NONE);
+		ins ("General.Match", NONE);
 		ins ("General.Overflow", NONE);
 		ins ("General.Size", NONE);
 		ins ("General.Span", NONE);

@@ -1,3 +1,0 @@
-import
-    structure Env
-from "x-alice:/frontend-common/Env.ozf"

@@ -40,17 +40,16 @@ COMMONSOURCES = \
 	Label.sml PATH.sig Path.sml PathSet.sml PathMap.sml TYPE.sig Type.sml \
 	PP_PATH.sig PPPath.sml PP_TYPE.sig PPType.sml FIXITY.sig Fixity.sml \
 	INF.sig Inf.sml PP_INF.sig PPInf.sml INTERMEDIATE_GRAMMAR.sig \
-	MakeIntermediateGrammar.sml IntermediateGrammar.sml PREBOUND.sig \
-	MakePrebound.sml Prebound.sml PREBOUND_TYPE.sig PreboundType.sml
+	MakeIntermediateGrammar.sml IntermediateGrammar.sml \
+	PERVASIVE_TYPE.sig MakePervasiveType.sml PervasiveType.sml
 COMMONFILES = $(COMMONSOURCES:%=common/%)
 
 FRONTENDCOMMONSOURCES = \
 	StringMap.sml ABSTRACT_GRAMMAR.sig MakeAbstractGrammar.sml \
-	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml ENV0.sig \
-	Env0.sml ELABORATION_ERROR.sig ElaborationError.sml \
-	ELABORATION_PHASE.sig MakeElaborationPhase.sml TRANSLATION_PHASE.sig \
-	TranslationPhase.sml MakeFrontendCommon.sml \
-	FrontendCommonInitialContext.sml
+	AbstractGrammar.sml TypedGrammar.sml ENV.sig Env.sml \
+	ELABORATION_ERROR.sig ElaborationError.sml ELABORATION_PHASE.sig \
+	MakeElaborationPhase.sml TRANSLATION_PHASE.sig TranslationPhase.sml \
+	MakeFrontendCommon.sml FrontendCommonInitialContext.sml
 FRONTENDCOMMONFILES = $(FRONTENDCOMMONSOURCES:%=frontend-common/%)
 
 FRONTENDSMLSOURCES = \
@@ -62,8 +61,7 @@ FRONTENDSMLSOURCES = \
 	ABSTRACTION_PHASE.sig MakeAbstractionPhase.sml DERIVED_FORMS.sig \
 	PARSER.sig Parser.sml DerivedForms.sml LEXER_ERROR.sig \
 	LexerError.sml Lexer.lex.sml CountPosLexer.sml PARSING_PHASE.sig \
-	ParsingPhase.sml BIND_ENV0.sig BindEnv0.sml MakeFrontendSML.sml \
-	FrontendSMLInitialContext.sml
+	ParsingPhase.sml MakeFrontendSML.sml FrontendSMLInitialContext.sml
 FRONTENDSMLFILES = $(FRONTENDSMLSOURCES:%=frontend-sml/%)
 
 BACKENDCOMMONSOURCES = \

@@ -3,6 +3,10 @@ import
 from "x-alice:/common/Label.ozf"
 
 import
+    structure Name
+from "x-alice:/common/Name.ozf"
+
+import
     structure Path
 from "x-alice:/common/Path.ozf"
 
@@ -11,9 +15,5 @@ import
 from "x-alice:/common/Type.ozf"
 
 import
-    structure Prebound
-from "x-alice:/common/Prebound.ozf"
-
-import
-    signature PREBOUND_TYPE
-from "x-alice:/common/PREBOUND_TYPE.ozf"
+    signature PERVASIVE_TYPE
+from "x-alice:/common/PERVASIVE_TYPE.ozf"

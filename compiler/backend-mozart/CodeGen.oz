@@ -18,22 +18,11 @@ import
    Narrator('class')
    ErrorListener('class')
    CodeStore('class')
-   Prebound(builtinTable env)
+   Prebound(builtinTable: BuiltinTable)
    Assembler(assemble)
 export
    Translate
 define
-   fun {MakeRegDict CS ?RegDict}
-      RegDict = {NewDictionary}
-      {List.toRecord prebound
-       {Map {Arity Prebound.env}
-	fun {$ X} Reg in
-	   {CS newReg(Reg)}
-	   {Dictionary.put RegDict X Reg}
-	   Reg#Prebound.env.X
-	end}}
-   end
-
    proc {MakeReg id(_ Stamp _) State ?Reg}
       {State.cs newReg(?Reg)}
       {Dictionary.put State.regDict Stamp Reg}
@@ -309,7 +298,7 @@ define
       case Exp of litExp(_ Lit) then
 	 VHd = vEquateConstant(_ {TranslateLit Lit} Reg VTl)
       [] primExp(_ Builtinname) then
-	 VHd = vEquateConstant(_ Prebound.builtinTable.Builtinname Reg VTl)
+	 VHd = vEquateConstant(_ BuiltinTable.Builtinname Reg VTl)
       [] newExp(Region _) then
 	 VHd = vCallBuiltin(_ 'Name.new' [Reg]
 			    {TranslateRegion Region State} VTl)
@@ -444,7 +433,7 @@ define
 	 end
 	 {TranslateBody Body ?ThenVInstr nil State ResReg}
 	 {State.cs newReg(?MatchReg)}
-	 ElseVInstr = vEquateConstant(_ Prebound.env.'Match'
+	 ElseVInstr = vEquateConstant(_ BuiltinTable.'General.Match'
 				      MatchReg ElseVInter)
 	 ElseVInter = vCallBuiltin(_ 'Exception.raiseError' [MatchReg]
 				   {TranslateRegion Region State} nil)
@@ -452,7 +441,7 @@ define
 	  endDefinition(BodyVInstr FormalRegs nil ?GRegs ?Code ?NLiveRegs)}
 	 VHd = vDefinition(_ Reg PredId unit GRegs Code VTl)
       [] primAppExp(Region Builtinname Ids) then Value Regs in
-	 Value = Prebound.builtinTable.Builtinname
+	 Value = BuiltinTable.Builtinname
 	 Regs = {FoldR Ids fun {$ Id Regs} {GetReg Id State}|Regs end [Reg]}
 	 if {CompilerSupport.isBuiltin Value} then
 	    VHd = vCallBuiltin(_ {System.printName Value}
@@ -564,18 +553,17 @@ define
    end
 
    fun {Translate Filename Import#(Body#Sign)}
-      NarratorObject Reporter CS RegDict Prebound ImportReg ExportReg
-      State VInstr VInter GRegs Code NLiveRegs
+      NarratorObject Reporter CS ImportReg ExportReg
+      State VInstr VInter Code NLiveRegs
    in
       NarratorObject = {New Narrator.'class' init(?Reporter)}
       _ = {New ErrorListener.'class' init(NarratorObject)}
       CS = {New CodeStore.'class'
 	    init(proc {$ getSwitch(_ $)} false end Reporter)}
-      {MakeRegDict CS ?RegDict ?Prebound}
       {CS startDefinition()}
       {CS newReg(?ImportReg)}
       {CS newReg(?ExportReg)}
-      State = state(regDict: RegDict shareDict: {NewDictionary} cs: CS
+      State = state(regDict: {NewDictionary} shareDict: {NewDictionary} cs: CS
 		    filename: {VirtualString.toAtom Filename})
       {FoldL Import
        proc {$ VHd (Id=id(_ Stamp _))#_#_ VTl}
@@ -584,7 +572,7 @@ define
        end VInstr VInter}
       {TranslateBody Body ?VInter nil State ExportReg}
       {CS endDefinition(VInstr [ImportReg ExportReg] nil
-			?GRegs ?Code ?NLiveRegs)}
+			nil ?Code ?NLiveRegs)}
       case Code of Code1#Code2 then StartLabel EndLabel Res P VS in
 	 StartLabel = {NewName}
 	 EndLabel = {NewName}
@@ -593,11 +581,9 @@ define
 	   definition(x(0) EndLabel
 		      pid({VirtualString.toAtom 'Component '#Filename} 2
 			  pos(Filename 1 0) nil NLiveRegs)
-		      unit {List.mapInd GRegs fun {$ I _} g(I) end}
-		      Code1)|
+		      unit nil Code1)|
 	   endDefinition(StartLabel)|
-	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]})
-	  Res|{Map GRegs fun {$ Reg} Prebound.Reg end}
+	   {Append Code2 [lbl(EndLabel) unify(x(0) g(0)) return]}) [Res]
 	  switches ?P ?VS}
 	 {P}
 	 {Functor.new

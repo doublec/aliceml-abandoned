@@ -1,7 +1,0 @@
-import
-    structure Path
-from "x-alice:/common/Path.ozf"
-
-import
-    structure Type
-from "x-alice:/common/Type.ozf"

@@ -1,6 +1,6 @@
 import
-    structure Stamp
-from "x-alice:/common/Stamp.ozf"
+    structure Label
+from "x-alice:/common/Label.ozf"
 
 import
     structure Name
@@ -11,5 +11,5 @@ import
 from "x-alice:/common/Path.ozf"
 
 import
-    signature PREBOUND
-from "x-alice:/common/PREBOUND.ozf"
+    structure Type
+from "x-alice:/common/Type.ozf"

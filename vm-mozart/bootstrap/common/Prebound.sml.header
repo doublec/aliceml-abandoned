@@ -1,3 +1,0 @@
-import
-    structure MakePrebound
-from "x-alice:/common/MakePrebound.ozf"

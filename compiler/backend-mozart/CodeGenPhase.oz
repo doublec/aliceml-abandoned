@@ -16,7 +16,6 @@ import
    Property(get)
    Pickle(saveWithCells)
    Open(file)
-   PreboundComponent('$Prebound': Prebound) at 'x-alice:/common/Prebound.ozf'
    CodeGen(translate) at '../../../stoc/backend-mozart/CodeGen.ozf'
    UrlComponent('$Url': Url) at 'x-alice:/misc/Url.ozf'
 export
@@ -46,17 +45,7 @@ define
    end
 
    fun {TrId 'Id'(Info Stamp Name)}
-      id({TrInfo Info}
-	 if Stamp == Prebound.valstamp_false then 'false'
-	 elseif Stamp == Prebound.valstamp_true then 'true'
-	 elseif Stamp == Prebound.valstamp_nil then 'nil'
-	 elseif Stamp == Prebound.valstamp_cons then 'cons'
-	 elseif Stamp == Prebound.valstamp_ref then 'ref'
-	 elseif Stamp == Prebound.valstamp_match then 'Match'
-	 elseif Stamp == Prebound.valstamp_bind then 'Bind'
-	 else Stamp
-	 end
-	 {TrName Name})
+      id({TrInfo Info} Stamp {TrName Name})
    end
 
    fun {TrLab Lab}

@@ -20,25 +20,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	open IntermediateAux
 	open SimplifyMatch
 
-(*--** [Andreas] Prebound is gone, Match and Bind have to be realized via
-	PrimExps. Introduced a hack to compile - Leif, you've to repair it
-	properly.
-*)
-	val id_Match = Id ({region = Source.nowhere},
-			   Stamp.new(),
-			   PervasiveType.name_match)
-(* Old version:
-			   Prebound.valstamp_match,
-			   Prebound.valname_match)
-*)
-	val id_Bind = Id ({region = Source.nowhere},
-			  Stamp.new(),
-			  PervasiveType.name_bind)
-(* Old version:
-			  Prebound.valstamp_bind,
-			  Prebound.valname_bind)
-*)
-
 	fun lookup (pos, (pos', id)::mappingRest) =
 	    if pos = pos' then id
 	    else lookup (pos, mappingRest)
@@ -169,6 +150,15 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				    [(O.TagTest (PervasiveType.lab_false, 0),
 				      elseStms)], errStms)])]
 
+	fun raisePrim (region, name) =
+	    let
+		val info = {region = region}
+		val id = freshId info
+	    in
+		[O.ValDec (stm_info region, id, O.PrimExp (info, name)),
+		 O.RaiseStm (stm_info region, id)]
+	    end
+
 	fun translateCont (Decs (dec::decr, cont)) =
 	    translateDec (dec, Decs (decr, cont))
 	  | translateCont (Decs (nil, cont)) = translateCont cont
@@ -189,8 +179,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	  | translateDec (ValDec (info, pat, exp), cont) =
 	    let
 		val matches = [(#region info, pat, translateCont cont)]
+		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
-		simplifyCase (#region info, exp, matches, id_Bind, false)
+		simplifyCase (#region info, exp, matches,
+			      PrimExp (info, "General.Bin"), false)
 	    end
 	  | translateDec (RecDec (info, decs), cont) =
 	    let
@@ -216,8 +208,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val rest =
 		    O.RecDec (stm_info (#region info), idExpList')::
 		    aliasDecs @ translateCont cont
-		val errStms =
-		    share [O.RaiseStm (stm_info (#region info), id_Bind)]
+		val errStms = share (raisePrim (#region info, "General.Bind"))
 	    in
 		List.foldr
 		(fn ((longid1, longid2), rest) =>
@@ -387,7 +378,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				   translateExp (exp, return, Goto nil))
 			      end) matches
 		val region = #region (infoMatch (List.hd matches))
-		val errStms = [O.RaiseStm (stm_info region, id_Match)]
+		val errStms = raisePrim (region, "General.Match")
 		val (args, graph, mapping, consequents) =
 		    buildFunArgs (matches', errStms)
 		val body = translateGraph (graph, mapping)
@@ -396,31 +387,6 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
 		translateCont cont
 	    end
-(*--**DEBUG
-	  | translateExp (FunExp (info, matches), f, cont) =
-	    let
-		val region = #region (infoMatch (List.hd matches))
-		fun return exp' = O.ReturnStm (stm_info region, exp')
-		val matches' =
-		    List.map (fn Match (_, pat, exp) =>
-			      (#region (infoExp exp), pat,
-			       translateExp (exp, return, Goto nil))) matches
-		val r = ref NONE
-		val errStms = [O.IndirectStm (stm_info region, r)]
-		val (args, graph, mapping, consequents) =
-		    buildFunArgs (matches', errStms)
-		val body = translateGraph (graph, mapping)
-		val id = freshId info
-	    in
-		checkReachability consequents;
-		r := SOME [O.ValDec (stm_info region, id,
-				     O.ConAppExp (id_info info, id_Match,
-						  args)),
-			   O.RaiseStm (stm_info region, id)];
-		f (O.FunExp (id_info info, Stamp.new (), nil, args, body))::
-		translateCont cont
-	    end
-*)
 	  | translateExp (AppExp (info, TagExp (info', Lab (_, label), isNAry),
 				  exp2), f, cont) =
 	    let
@@ -569,8 +535,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val id = freshId (id_info info')
 		val trueBody = translateExp (exp2, eval, cont')
 		val falseBody = translateExp (TupExp (info, nil), f, cont)
-		val errorBody =
-		    [O.RaiseStm (stm_info (#region info'), id_Match)]
+		val errorBody = raisePrim (#region info', "General.Match")
 		val stms1 =
 		    translateIf (info', id, trueBody, falseBody, errorBody)
 		val stms2 =
@@ -607,8 +572,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    List.map (fn Match (_, pat, exp) =>
 			      (#region (infoExp exp), pat,
 			       translateExp (exp, f, cont'))) matches
+		val info = {region = #region info, typ = PervasiveType.typ_exn}
 	    in
-		simplifyCase (#region info, exp, matches', id_Match, false)
+		simplifyCase (#region info, exp, matches',
+			      PrimExp (info, "General.Match"), false)
 	    end
 	  | translateExp (RaiseExp (info, exp), _, _) =
 	    let
@@ -641,7 +608,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		    matches
 		val catchBody =
 		    simplifyCase (#region info, catchVarExp, matches',
-				  catchId, true)
+				  catchVarExp, true)
 		val contBody =
 		    translateExp (VarExp (info',
 					  ShortId (longid_info info', id')),
@@ -690,7 +657,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info (#region info), r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-		val errStms = [O.RaiseStm (stm_info (#region info), id_Match)]
+		val errStms = raisePrim (#region info, "General.Match")
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1;
@@ -701,18 +668,21 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		      if isSome bodyOpt then ()
 		      else Error.warn (region, "unreachable expression"))
 	    consequents
-	and simplifyCase (region, exp, matches, raiseId, isReraise) =
+	and simplifyCase (region, exp, matches, raiseExp, isReraise) =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stm_info region, r)]
 		val (stms, id) = unfoldTerm (exp, Goto rest)
-		val errStms =
-		    if isReraise then
-			[O.ReraiseStm (stm_info region, raiseId)]
-		    else [O.RaiseStm (stm_info region, raiseId)]
+
+		val r' = ref NONE
+		val rest' = [O.IndirectStm (stm_info region, r')]
+		val (errStms, raiseId) = unfoldTerm (raiseExp, Goto rest')
 		val (graph, consequents) = buildGraph (matches, errStms)
 	    in
 		r := SOME (translateGraph (graph, [(nil, id)]));
+		r' := SOME (if isReraise then
+				[O.ReraiseStm (stm_info region, raiseId)]
+			    else [O.RaiseStm (stm_info region, raiseId)]);
 		checkReachability consequents;
 		stms
 	    end
@@ -814,7 +784,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		val (stms, id) = unfoldTerm (substExp (exp, subst), Goto rest)
 		val thenStms = translateGraph (thenGraph, mapping)
 		val elseStms = translateGraph (elseGraph, mapping)
-		val errStms = [O.RaiseStm (stm_info (#region info), id_Match)]
+		val errStms = raisePrim (#region info, "General.Match")
 		val stms1 = translateIf (info, id, thenStms, elseStms, errStms)
 	    in
 		r := SOME stms1;

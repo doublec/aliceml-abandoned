@@ -18,7 +18,6 @@ import
    BootWord at 'x-oz://boot/Word'
 export
    BuiltinTable
-   Env
 define
    fun {NumberCompare I J}
       if I == J then 'EQUAL'
@@ -141,10 +140,12 @@ define
 	 end
       'Future.isFuture': IsFuture   %--** wrong for failed futures
       'General.:=': fun {$ X Y} {Assign X Y} unit end
+      'General.Bind': {NewUniqueName 'General.Bind'}
       'General.Chr': {NewUniqueName 'General.Chr'}
       'General.Div': {NewUniqueName 'General.Div'}
       'General.Domain': {NewUniqueName 'General.Domain'}
       'General.Fail': {NewUniqueName 'General.Fail'}
+      'General.Match': {NewUniqueName 'General.Match'}
       'General.Overflow': {NewUniqueName 'General.Overflow'}
       'General.Size': {NewUniqueName 'General.Size'}
       'General.Span': {NewUniqueName 'General.Span'}
@@ -429,12 +430,4 @@ define
       'Word.toString':
 	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
       'Word.wordSize': 31)
-
-   Env = env('false': false
-	     'true': true
-	     'nil': 'nil'
-	     'cons': '|'
-	     'ref': NewCell
-	     'Match': {NewUniqueName 'General.Match'}
-	     'Bind': {NewUniqueName 'General.Bind'})
 end
