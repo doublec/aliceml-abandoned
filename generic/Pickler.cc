@@ -438,9 +438,9 @@ Interpreter::Result PicklingInterpreter::Run() {
     break;
   case CONCRETE_LABEL:
     {
-      ConcreteRepresentationHandler *cr = (ConcreteRepresentationHandler *)
-	Store::DirectWordToUnmanagedPointer(v->GetArg(0));
-      Block *block = cr->GetAbstractRepresentation(v);
+      ConcreteRepresentationHandler *handler =
+	static_cast<ConcreteRepresentation *>(v)->GetHandler();
+      Block *block = handler->GetAbstractRepresentation(v);
       if (block == INVALID_POINTER) {
 	Scheduler::currentData      = Pickler::Sited;
 	Scheduler::currentBacktrace = Backtrace::New(frame->ToWord());
