@@ -70,19 +70,23 @@ structure Debug : DEBUG =
 	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
 	    ref (fn _ => raise Crash.Crash "Debug.f")
 
+	fun loadSign'(desc, url) = !f(desc, url)
+	val loadSign             = #2 o loadSign'
+
 	structure MozartTarget =
 	    MkMozartTarget(structure Switches = Switches
 			   structure Sig = Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(fun loadSign (desc, url) = !f (desc, url)
+	    MkFrontendSML(val loadSign = loadSign
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(fun loadSign (desc, url) = !f (desc, url)
+	    MkFrontendCommon(val loadSign = loadSign
 			     structure Switches = Switches)
 
-	structure BackendCommon = MkBackendCommon(Switches)
+	structure BackendCommon = MkBackendCommon(structure Switches = Switches
+						  val loadSign = loadSign')
 
 	structure BackendMozart =
 	    MkBackendMozart(structure Switches = Switches
@@ -118,8 +122,7 @@ structure Debug : DEBUG =
 	structure AbstractionPhase =
 	    MkTracingPhase(
 		  structure Phase    =
-		      MkAbstractionPhase(val loadSign =
-					     RecursiveCompiler.acquireSign
+		      MkAbstractionPhase(val loadSign = loadSign
 					 structure Switches = Switches)
 		  structure Switches = Switches
 		  val name = "Abstraction"
@@ -135,8 +138,7 @@ structure Debug : DEBUG =
 	structure ElaborationPhase =
 	    MkTracingPhase(
 		  structure Phase    =
-		      MkElaborationPhase(val loadSign =
-					     RecursiveCompiler.acquireSign)
+		      MkElaborationPhase(val loadSign = loadSign)
 		  structure Switches = Switches
 		  val name = "Elaboration"
 	    )
@@ -162,7 +164,6 @@ structure Debug : DEBUG =
 		  val pp     = PPIntermediateGrammar.ppComp
 		  val switch = Switches.Debug.dumpIntermediate
 	    )
-	structure BackendCommon = MkBackendCommon(Switches)
 
 	fun processString process source =
 	    RecursiveCompiler.processString process source
