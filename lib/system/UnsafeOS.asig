@@ -16,6 +16,8 @@ signature UNSAFE_OS_COMPONENT =
 	    sig
 		exception SysErr of string * int option
 
+		val errorMsg: int -> string
+
 		structure FileSys:
 		    sig
 			val chDir: string -> unit		(* OS.SysErr *)
