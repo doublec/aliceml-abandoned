@@ -17,7 +17,7 @@ functor MakeFrontendCommon(
 			val name = "Translation"
 		  )
 	structure Phase1' =
-		  MakeDumpingPhase(
+		  MakeResultDumpingPhase(
 			structure Phase    = Phase1
 			structure Switches = Switches
 			val header = "Component Signature"
@@ -25,7 +25,7 @@ functor MakeFrontendCommon(
 			val switch = Switches.Debug.dumpElaborationSig
 		  )
 	structure Phase2' =
-		  MakeDumpingPhase(
+		  MakeResultDumpingPhase(
 			structure Phase    = Phase2
 			structure Switches = Switches
 			val header = "Intermediate Syntax"

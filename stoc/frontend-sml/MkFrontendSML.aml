@@ -18,7 +18,7 @@ functor MakeFrontendSML(
 			val name = "Abstraction"
 		  )
 	structure Phase2' =
-		  MakeDumpingPhase(
+		  MakeResultDumpingPhase(
 			structure Phase    = Phase2
 			structure Switches = Switches
 			val header = "Abstract Syntax"

@@ -23,8 +23,8 @@ import
 from "../infrastructure/MakeTracingPhase"
 
 import
-    functor MakeDumpingPhase
-from "../infrastructure/MakeDumpingPhase"
+    functor MakeResultDumpingPhase
+from "../infrastructure/MakeResultDumpingPhase"
 
 import
     structure TypedGrammar

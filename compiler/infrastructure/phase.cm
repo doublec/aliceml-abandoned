@@ -15,4 +15,5 @@ Group is
 	PHASE_ERROR.sig
 	ComposePhases.sml
 	MakeTracingPhase.sml
-	MakeDumpingPhase.sml
+	MakeResultDumpingPhase.sml
+	MakeContextDumpingPhase.sml

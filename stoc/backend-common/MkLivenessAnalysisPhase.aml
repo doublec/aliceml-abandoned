@@ -360,28 +360,24 @@ functor MakeLivenessAnalysisPhase(Switches: SWITCHES) =
 			     structure Switches = Switches
 			     val name = "Liveness Analysis - Pass 1")
 	structure Phase1' =
-	    MakeDumpingPhase(structure Phase = Phase1
-			     structure Switches = Switches
-			     val header = "Live Syntax with `use' sets"
-			     val pp =
-				 PrettyPrint.text
-				 o OutputFlatGrammar.outputComponent
-			     val switch =
-				 Switches.Debug.dumpLivenessAnalysisIntermediate)
+	    MakeResultDumpingPhase(
+		structure Phase = Phase1
+		structure Switches = Switches
+		val header = "Live Syntax with `use' sets"
+		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val switch = Switches.Debug.dumpLivenessAnalysisIntermediate)
 
 	structure Phase2 =
 	    MakeTracingPhase(structure Phase = LivenessAnalysisPhase2
 			     structure Switches = Switches
 			     val name = "Liveness Analysis - Pass 2")
 	structure Phase2' =
-	    MakeDumpingPhase(structure Phase = Phase2
-			     structure Switches = Switches
-			     val header = "Live Syntax with `kill' sets"
-			     val pp =
-				 PrettyPrint.text
-				 o OutputFlatGrammar.outputComponent
-			     val switch =
-				 Switches.Debug.dumpLivenessAnalysisResult)
+	    MakeResultDumpingPhase(
+		structure Phase = Phase2
+		structure Switches = Switches
+		val header = "Live Syntax with `kill' sets"
+		val pp = PrettyPrint.text o OutputFlatGrammar.outputComponent
+		val switch = Switches.Debug.dumpLivenessAnalysisResult)
     in
 	ComposePhases'(structure Phase1 = Phase1'
 		       structure Phase2 = Phase2')

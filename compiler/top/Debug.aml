@@ -90,7 +90,7 @@ structure Debug :> DEBUG =
 		  val name = "Abstraction"
 	    )
 	structure AbstractionPhase =
-	    MakeDumpingPhase(
+	    MakeResultDumpingPhase(
 		  structure Phase    = AbstractionPhase
 		  structure Switches = Switches
 		  val header = "Abstract Syntax"
@@ -106,7 +106,7 @@ structure Debug :> DEBUG =
 		  val name = "Elaboration"
 	    )
 	structure ElaborationPhase =
-	    MakeDumpingPhase(
+	    MakeResultDumpingPhase(
 		  structure Phase    = ElaborationPhase
 		  structure Switches = Switches
 		  val header = "Component Signature"
@@ -120,7 +120,7 @@ structure Debug :> DEBUG =
 		  val name = "Translation"
 	    )
 	structure TranslationPhase =
-	    MakeDumpingPhase(
+	    MakeResultDumpingPhase(
 		  structure Phase    = TranslationPhase
 		  structure Switches = Switches
 		  val header = "Intermediate Syntax"

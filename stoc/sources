@@ -50,7 +50,8 @@ infrastructure/PHASE.sig
 infrastructure/PHASE_ERROR.sig
 infrastructure/ComposePhases.sml
 infrastructure/MakeTracingPhase.sml
-infrastructure/MakeDumpingPhase.sml
+infrastructure/MakeResultDumpingPhase.sml
+infrastructure/MakeContextDumpingPhase.sml
 infrastructure/EmptyContext.sml
 infrastructure/SIGNATURE.sig
 infrastructure/COMPOSER.sig

@@ -44,8 +44,8 @@ INFRASTRUCTURESOURCES = \
 	CRASH.sig Crash.sml SOURCE.sig Source.sml ERROR.sig Error.sml \
 	SWITCHES.sig MakeSwitches.sml CONTEXT.sig REPRESENTATION.sig \
 	PHASE.sig PHASE_ERROR.sig ComposePhases.sml MakeTracingPhase.sml \
-	MakeDumpingPhase.sml EmptyContext.sml \
-	SIGNATURE.sig COMPOSER.sig TARGET.sig
+	MakeResultDumpingPhase.sml MakeContextDumpingPhase.sml \
+	EmptyContext.sml SIGNATURE.sig COMPOSER.sig TARGET.sig
 INFRASTRUCTUREFILES = $(INFRASTRUCTURESOURCES:%=infrastructure/%)
 
 COMMONSOURCES = \

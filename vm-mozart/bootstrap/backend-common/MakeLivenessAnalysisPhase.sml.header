@@ -23,8 +23,8 @@ import
 from "../infrastructure/MakeTracingPhase"
 
 import
-    structure MakeDumpingPhase
-from "../infrastructure/MakeDumpingPhase"
+    structure MakeResultDumpingPhase
+from "../infrastructure/MakeResultDumpingPhase"
 
 import
     structure EmptyContext
