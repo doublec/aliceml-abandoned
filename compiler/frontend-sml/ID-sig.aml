@@ -1,4 +1,16 @@
 (*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+(*
  * Standard ML identifiers
  *
  * Definition, section 2.4
@@ -8,10 +20,8 @@
  *   for labels and tyvars).
  *)
 
-
 signature ID =
-  sig
-
+sig
     eqtype Id
     type t = Id
 
@@ -22,6 +32,4 @@ signature ID =
     val toString:	Id -> string
 
     val compare:	Id * Id -> order
-
-  end
-(*DEBUG*) where type Id = string
+end
