@@ -16,6 +16,7 @@ import structure Socket       from "Socket"
 import structure IO           from "IO"
 import signature HTTP         from "HTTP-sig"
 
+import "TextIO"
 structure Http :> HTTP =
     struct
 	structure StringMap = MkHashImpMap(String)
@@ -86,8 +87,8 @@ structure Http :> HTTP =
 		val (values, s) = readFoldedValue ([value], socket)
 		val value = trim (String.concat (List.rev values))
 	    in
-		if StringMap.member (headers, name) then raise Format
-		else StringMap.insertDisjoint (headers, name, value);
+		(*--** non-standard headers may occur multiple times *)
+		StringMap.insert (headers, name, value);
 		readHeaders' (s, socket, headers)
 	    end
 	and readFoldedValue (values, socket) =
@@ -164,13 +165,17 @@ structure Http :> HTTP =
 					  cause = Format}
 
 	fun writeRequest (socket, {method, uri, protocol, headers, body}) =
-	    Socket.output
-		(socket,
-		 method ^ " " ^ Url.toString uri ^ " " ^ protocol ^ "\r\n" ^
-		 StringMap.foldi
-		     (fn (name, value, rest) =>
-			 name ^ ": " ^ value ^ "\r\n" ^ rest)
-		     ("\r\n" ^ body) headers)
+	    let
+		val uriString = case Url.toString uri of "" => "/" | s => s
+	    in
+		Socket.output
+		    (socket,
+		     method ^ " " ^ uriString ^ " " ^ protocol ^ "\r\n" ^
+		     StringMap.foldi
+			 (fn (name, value, rest) =>
+			     name ^ ": " ^ value ^ "\r\n" ^ rest)
+			 ("\r\n" ^ body) headers)
+	    end
 
 	fun writeResponse (socket, {protocol, statusCode, reasonPhrase,
 				    headers, body}) =
