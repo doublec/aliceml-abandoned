@@ -418,8 +418,6 @@ define
       end
    in
       fun {ReflectDomainFun X}
-	 {Inspector.inspect X}
-	 {Inspector.inspect {FD.reflect.dom X}}
 	 {OzDomainToAliceDomain {FD.reflect.dom X}}
       end
       fun {DistFun M X}
