@@ -5,8 +5,8 @@
  *)
 
 
-import structure Syntax from "Syntax.ozf"
-import structure Env    from "Env.ozf"
+import structure Syntax from "Syntax"
+import structure Env    from "Env"
 
 
 signature TYPE =

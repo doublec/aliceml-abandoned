@@ -5,12 +5,12 @@
  *)
 
 
-import structure Type   from "Type.ozf"
-import structure Value  from "Value.ozf"
-import structure Lexer  from "Lexer.ozf"
-import structure Parser from "Parser.ozf"
-import structure Elab   from "Elab.ozf"
-import structure Eval   from "Eval.ozf"
+import structure Type   from "Type"
+import structure Value  from "Value"
+import structure Lexer  from "Lexer"
+import structure Parser from "Parser"
+import structure Elab   from "Elab"
+import structure Eval   from "Eval"
 
 
 structure Main =
