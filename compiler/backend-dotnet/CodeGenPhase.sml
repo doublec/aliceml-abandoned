@@ -126,7 +126,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	fun genTest (LitTest (WordLit w), elseLabel) =
 	    genTestIntLit (StockWerk.Word, LargeWord.toInt w, elseLabel)
 	  | genTest (LitTest (IntLit i), elseLabel) =
-	    genTestIntLit (StockWerk.Int, LargeInt.toInt i, elseLabel)
+	    genTestIntLit (StockWerk.Int, Int.fromLarge i, elseLabel)
 	  | genTest (LitTest (CharLit c), elseLabel) =
 	    genTestIntLit (StockWerk.Char, Char.ord c, elseLabel)
 	  | genTest (LitTest (StringLit s), elseLabel) =
@@ -243,7 +243,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    (emit (LdcI4 (LargeWord.toInt w));
 	     emit (Newobj (StockWerk.Word, [Int32Ty])))
 	  | genLit (IntLit i) =
-	    (emit (LdcI4 (LargeInt.toInt i));
+	    (emit (LdcI4 (Int.fromLarge i));
 	     emit (Newobj (StockWerk.Int, [Int32Ty])))
 	  | genLit (CharLit c) =
 	    (emit (LdcI4 (Char.ord c));
