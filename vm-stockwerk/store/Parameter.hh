@@ -64,7 +64,8 @@
     "TUPLE", \
     "CONCRETE", \
     "TRANSFORM", \
-    "ARGS" \
+    "ARGS", \
+    "IODESC" \
   }
 
 #endif
