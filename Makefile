@@ -169,9 +169,13 @@ libs-mozart:
 ##
 install-seam:
 	make TARGET=seam install-seam-rec
-install-seam-rec: install-common bootstrap-seam libs-seam
+install-seam-rec: install-common build-seam bootstrap-seam libs-seam
 
-bootstrap-seam: build-seam
+reinstall-seam:
+	make TARGET=seam reinstall-seam-rec
+reinstall-seam-rec: install-common bootstrap-seam libs-seam
+
+bootstrap-seam:
 	unset ALICE_HOME ;\
 	export TIMEDIR ;\
 	(cd vm-seam && make -f Makefile.bootstrap depend) || exit 1 ;\
