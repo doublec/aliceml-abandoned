@@ -11,13 +11,15 @@
  *)
 
 import structure Rand   from "../system/Rand"
+import structure Time   from "../system/Time"
 import signature RANDOM from "RANDOM-sig"
 
 (* Quick & dirty *)
 
 structure Random : RANDOM =
 struct
-    val  _         = Rand.srand 0
+    val seed       = Time.hash (Time.now ()) mod 100
+    val  _         = Rand.srand seed
     val (min,max)  = Rand.randLimits()
     val  range     = max - min
     val bigInt     = 536870912 (* 2 ^ 29 *)
