@@ -26,7 +26,7 @@ signature UNSAFE_VALUE_COMPONENT =
 		val proj: 'prod_value * Label.t vector * int -> 'value
 		val projTuple: 'tuple_value * int * int -> 'value
 
-		val tag: 'sum_value * Label.t vector -> Label.t
+		val tag: 'sum_value * Label.t vector -> int
 		val projTagged: 'sum_value * Label.t vector * int -> 'value
 		val projTaggedTuple: 'sum_value * int * int -> 'value
 
