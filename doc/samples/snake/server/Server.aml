@@ -412,10 +412,12 @@ struct
                     invokeSeveral (_file_, _line_) 
                         (Part.allConnected $ ! participants, #levelFinished, ());
 
-                    case levels of
-                        []  =>      (* no more levels -- tournament ended *)
+                    case (levels, allPossiblePlayers $ ! participants) of
+                        ( ([],_) | (_, []) )    =>      
+                        (* no more levels or no more players 
+                           --> tournament ended *)
                         finishTournament ()
-                    |   (arena, startPos) :: ls =>
+                    |   ((arena, startPos) :: ls, _) =>
                         startNextLevel (ls, arena, startPos)
                 end
                 
