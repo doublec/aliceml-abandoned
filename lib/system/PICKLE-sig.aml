@@ -12,13 +12,13 @@
 
 signature PICKLE =
 sig
-    exception Sited
-    exception Corrupt
+    val extension: string
 
-    val extension : string
+    functor Save(val file: string signature S structure X: S) : any (* Sited *)
+    functor Load(val file: string signature S) : S
+	    (* Corrupt, Inf.Mismatch *)
 
-    functor Save(val file: string signature S structure X: S) : any
-    functor Load(val file: string signature S) : S            (* Mismatch *)
-    functor SaveVal(val file: string type t val x: t) : any
-    functor LoadVal(val file: string type t) : (val x: t)     (* Mismatch *)
+    functor SaveVal(val file: string type t val x: t) : any         (* Sited *)
+    functor LoadVal(val file: string type t) : (val x: t)
+	    (* Corrupt, Inf.Mismatch *)
 end
