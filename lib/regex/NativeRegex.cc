@@ -22,6 +22,9 @@
 
 #include "regex.h"
 
+// In future releases, DECLARE_UNMANAGED_POINTER will be defined
+// in vm-stockwerk/alice/Authoring.hh.
+
 #ifndef DECLARE_UNMANAGED_POINTER
 #define DECLARE_UNMANAGED_POINTER(pointer, x)				\
   void *pointer = NULL;							\
@@ -29,43 +32,59 @@
   else { pointer = Store::WordToUnmanagedPointer(x); }     
 #endif
 
+// In order to make sure that compiled regexps cannot be pickled,
+// we register a new representation handler that will return an
+// INVALID_POINTER as soon as the abstract representation of
+// regex_t is requested.
+
 class RegexRepHandler : public ConcreteRepresentationHandler {
   Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c);
 };
 
 Transform *RegexRepHandler::GetAbstractRepresentation(ConcreteRepresentation *c) {
-  c = c;
+  c = c; // to omit compiler warnings
   return INVALID_POINTER;
 }
+
+static RegexRepHandler *regexRepHandler;
+
+// Memory allocated by compiled regular expressions need to be
+// freed as soon as references to them are removed.  For that, we
+// need a customised finalization set.
 
 class RegexFinalizationSet: public FinalizationSet {
 public:
   virtual void Finalize(word value);
 };
 
-static RegexFinalizationSet *regexFinalizationSet;
-static RegexRepHandler *regexRepHandler;
-
 void RegexFinalizationSet::Finalize(word value) {
   ConcreteRepresentation *cr = ConcreteRepresentation::FromWordDirect(value);
-  regex_t *r = (regex_t *) Store::WordToUnmanagedPointer(cr->Get(0));
+  regex_t* r = (regex_t*) Store::WordToUnmanagedPointer(cr->Get(0));
   regfree(r);
 }
 
+static RegexFinalizationSet *regexFinalizationSet;
+
+
+// regcomp : string -> 'regex_t
+//
+// compiles a string into a regular expression; returns SOME
+// compiled regular expression if compilation succeeds; NONE
+// otherwise.
 
 DEFINE1(regex_regcomp) {
   DECLARE_STRING(pattern, x0);
 
-  regex_t *compiled = (regex_t *) malloc(sizeof(regex_t));
-  int result;
+  regex_t *compiled = (regex_t*) malloc(sizeof(regex_t));
 
-  result = regcomp(compiled, pattern->ExportC(), 0);
+  int retval =
+    regcomp(compiled, pattern->ExportC(), 0);
 
-  if (result == 0) {
-    TagVal* tv = TagVal::New(1,1);
-    ConcreteRepresentation *cr = ConcreteRepresentation::New(regexRepHandler,1);
+  if (retval == 0) {
+    ConcreteRepresentation *cr = ConcreteRepresentation::New(regexRepHandler, 1);
     cr->Init(0, Store::UnmanagedPointerToWord(compiled));
     regexFinalizationSet->Register(cr->ToWord());
+    TagVal* tv = TagVal::New(1, 1);
     tv->Init(0, cr->ToWord());
     RETURN(tv->ToWord()); // SOME regex_t
   } else {
@@ -74,13 +93,13 @@ DEFINE1(regex_regcomp) {
 
 } END
 
-// The next function is a wrapper for the regexec function from the GNU C
-// Library.  While for the latter, the number of subgroups of a match must
-// be known, my_regexec computes this information itself and returns it in
-// the references nmatch (number of subgroups, including group 0, which
-// contains the complete match) and matchptr (array of indices into the
-// string to be matched against indicating the start/end of the subgroups).
-// It does so by trying increasingly larger values for these values.
+// The next function is a wrapper for the regexec function.
+// While for the latter, the number of subgroups of a match must
+// be known, my_regexec computes this information itself and
+// returns it in the references nmatch (number of subgroups
+// including group 0 that contains the complete match) and
+// matchptr (array of indices into the match string indicating
+// the start/end of the subgroups).
 
 int my_regexec (regex_t* compiled,
 		char* match_against,
@@ -88,8 +107,7 @@ int my_regexec (regex_t* compiled,
 		regmatch_t* & matchptr,
 		int eflags) {
 
-  size_t max_nmatch = 2;
-  int retval;
+  size_t max_nmatch = 2; // start with two subgroups
   bool needsupdate = true;
 
   nmatch = (size_t) 0;
@@ -97,43 +115,47 @@ int my_regexec (regex_t* compiled,
 
   while (needsupdate) {
     max_nmatch = max_nmatch * 3/2;
-    matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * max_nmatch);
+    matchptr = (regmatch_t*) malloc (sizeof(regmatch_t) * max_nmatch);
 
-    retval = regexec (compiled, match_against, max_nmatch, matchptr, eflags);
+    int retval =
+      regexec(compiled, match_against, max_nmatch, matchptr, eflags);
 
-    if (retval != 0) {
-      free (matchptr);
+    if (retval != 0) { // error
+      free(matchptr);
       return retval;
     } else {
-      while (needsupdate && (nmatch < (max_nmatch - 1))) {
-	if (matchptr[nmatch + 1].rm_so == -1) {
+      while (needsupdate && nmatch < (max_nmatch - 1)) {
+	if (matchptr[nmatch + 1].rm_so == -1) { // no subgroup
 	  needsupdate = false;
 	} else {
 	  nmatch++;
 	}
       }
-      free (matchptr);
+      free(matchptr);
     }
   }
 
   nmatch++;
-  matchptr = (regmatch_t*) malloc (sizeof (regmatch_t) * nmatch);
-  return (regexec (compiled, match_against, nmatch, matchptr, eflags));
+  matchptr = (regmatch_t*) malloc (sizeof(regmatch_t) * nmatch);
+  return (regexec(compiled, match_against, nmatch, matchptr, eflags));
 }
+
+// regexec : 'regex_t * string -> (int * int) vector option
+//
+// applies a compiled regular expression to a string; returns
+// SOME vector with the indices of the matched substrings in case
+// there was a match, NONE otherwise.
 
 DEFINE2(regex_regexec) {
   DECLARE_BLOCKTYPE(ConcreteRepresentation, cr, x0);
-  //  DECLARE_TUPLE(compiled_tup, x0);
   DECLARE_STRING(match_against, x1);
 
-  regex_t *compiled = (regex_t *) Store::WordToUnmanagedPointer(cr->Get(0));
-
+  regex_t* compiled = (regex_t*) Store::WordToUnmanagedPointer(cr->Get(0));
   size_t nmatch;
   regmatch_t* matchptr;
-  int retval;
 
-  retval =
-  my_regexec ((regex_t*) compiled, match_against->ExportC(), nmatch, matchptr, 0);
+  int retval =
+    my_regexec ((regex_t*) compiled, match_against->ExportC(), nmatch, matchptr, 0);
 
   if (retval == 0) {
     Vector* vec = Vector::New(nmatch);
@@ -143,13 +165,18 @@ DEFINE2(regex_regexec) {
       tup->Init(1, Store::IntToWord(matchptr[i].rm_eo));
       vec->Init(i, tup->ToWord());
     }
-    TagVal* tv = TagVal::New(1,1);
+    TagVal* tv = TagVal::New(1, 1);
     tv->Init(0, vec->ToWord());
     RETURN(tv->ToWord()); // SOME (int * int) vector
   } else {
     RETURN(Store::IntToWord(0)); // NONE
   }
+
 } END
+
+// Finally, initialise an Alice component providing the binding
+// (a record with one entry for every function) and register the
+// finalisation set and the representation handler.
 
 word InitComponent() {
   Record *record = Record::New(2);
