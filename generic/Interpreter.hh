@@ -42,6 +42,8 @@ public:
   // Runtime compilation
   //   returns INVALID_INT if unknown
   virtual u_int GetInArity(ConcreteCode *concreteCode) = 0;
+  //   returns INVALID_INT if unknown
+  virtual u_int GetOutArity(ConcreteCode *concreteCode) = 0;
   //   returns NULL if none
   virtual function GetCFunction();
 #if PROFILE

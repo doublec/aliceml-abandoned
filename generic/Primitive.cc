@@ -45,11 +45,12 @@ class PrimitiveInterpreter: public Interpreter {
 private:
   const char *name;
   Interpreter::function function;
-  u_int arity;
+  u_int inArity;
+  u_int outArity;
 public:
   PrimitiveInterpreter(const char *_name, Interpreter::function _function,
-		       u_int _arity):
-    name(_name), function(_function), arity(_arity) {}
+		       u_int _inArity, u_int _outArity):
+    name(_name), function(_function), inArity(_inArity), outArity(_outArity) {}
 
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
 
@@ -60,6 +61,7 @@ public:
   virtual void DumpFrame(StackFrame *sFrame);
 
   virtual u_int GetInArity(ConcreteCode *concreteCode);
+  virtual u_int GetOutArity(ConcreteCode *concreteCode);
   virtual Interpreter::function GetCFunction();
 
   static Result Run(PrimitiveInterpreter *interpreter);
@@ -74,7 +76,7 @@ public:
 //
 inline Worker::Result
 PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
-  switch (interpreter->arity) {
+  switch (interpreter->inArity) {
   case 0:
     if (Scheduler::nArgs == 1) {
       Transient *t = Store::WordToTransient(Scheduler::currentArgs[0]);
@@ -97,7 +99,7 @@ PrimitiveInterpreter::Run(PrimitiveInterpreter *interpreter) {
       // Deconstruct has set Scheduler::currentData as a side-effect
       return Worker::REQUEST;
     } else {
-      Assert(Scheduler::nArgs == interpreter->arity);
+      Assert(Scheduler::nArgs == interpreter->inArity);
       return interpreter->function();
     }
   }
@@ -138,7 +140,11 @@ void PrimitiveInterpreter::DumpFrame(StackFrame *) {
 }
 
 u_int PrimitiveInterpreter::GetInArity(ConcreteCode *) {
-  return arity;
+  return inArity;
+}
+
+u_int PrimitiveInterpreter::GetOutArity(ConcreteCode *) {
+  return outArity;
 }
 
 Interpreter::function PrimitiveInterpreter::GetCFunction() {
@@ -149,9 +155,10 @@ Interpreter::function PrimitiveInterpreter::GetCFunction() {
 // Primitive Functions
 //
 word Primitive::MakeFunction(const char *name, Interpreter::function function,
-			     u_int arity, Transform *abstract) {
+			     u_int inArity, u_int outArity,
+			     Transform *abstract) {
   PrimitiveInterpreter *interpreter =
-    new PrimitiveInterpreter(name, function, arity);
+    new PrimitiveInterpreter(name, function, inArity, outArity);
   ConcreteCode *concreteCode = ConcreteCode::New(interpreter, 1);
   if (abstract == INVALID_POINTER)
     concreteCode->Init(0, Store::IntToWord(0));
