@@ -1,5 +1,5 @@
 Name: alice
-Version: 0.9.1
+Version: 0.9.3
 Release: 1
 Copyright: X11
 Summary: The Alice Programming System
@@ -9,7 +9,7 @@ Vendor: The Alice Project
 URL: http://www.ps.uni-sb.de/alice/
 Patch: %{name}-%{version}-gnuify.diff
 Packager: Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
-Requires: mozart >= 1.2.5
+Requires: mozart >= 1.3.0
 BuildArchitectures: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}
 
@@ -55,4 +55,7 @@ rm -rf %{buildroot}
 - initial RPM release
 
 * Thu Feb 13 2002 Marco Kuhlmann <kuhlmann@ps.uni-sb.de>
+- new upstream version
+
+* Wed Apr 14 2004 Guido Tack <tack@ps.uni-sb.de>
 - new upstream version

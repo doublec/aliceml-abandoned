@@ -59,9 +59,11 @@ install-stamp: build-stamp
 	$(MAKE) -C $(DEB_BUILD_DIR) $(install_options) \
 		install DESTDIR=$(DEB_INSTALL_DIR)
 	echo > $@
-	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc/examples \
+	mkdir $(DEB_INSTALL_DIR)/usr/share/doc || true
+	mkdir $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart || true
+	mv $(DEB_INSTALL_DIR)/usr/share/alice-mozart/doc/examples \
 	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/examples
-	mv $(DEB_INSTALL_DIR)/usr/share/alice/doc \
+	mv $(DEB_INSTALL_DIR)/usr/share/alice-mozart/doc \
 	   $(DEB_INSTALL_DIR)/usr/share/doc/alice-mozart/html
 
 clean:
