@@ -4,8 +4,11 @@ Alice home page:
 
         http://www.ps.uni-sb.de/alice/
 
-This version is mainly a bug fix release. Please see the
-download page for a detailed list of changes.
+This version is mainly a bug fix release. It now runs with
+the official Mozart 1.2.5 release. For a detailed list of
+changes, see:
+
+        http://www.ps.uni-sb.de/alice/download/CHANGES
 
 Enjoy,
 
