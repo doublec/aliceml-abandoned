@@ -59,6 +59,7 @@ structure GtkSupport :> GTK_SUPPORT  =
 	val menuBarAppend = Gtk.menuBarAppend
 	val menuItemNewWithLabel = Gtk.menuItemNewWithLabel
 	val menuItemRightJustify = Gtk.menuItemRightJustify
+	val menuBarInsert = Gtk.menuBarInsert
 	    
 	(************ GtkCanvas Primitives ********************)
 	(************ GtkCanvas Instruktionen *****************)
@@ -353,13 +354,19 @@ structure GtkSupport :> GTK_SUPPORT  =
 	    end
 
 	(* Stop Button *)
-	val stopButton = let 
-			     val button = menuItemNewWithLabel("stop")
+	fun menuButton lab = let 
+			     val button = menuItemNewWithLabel(lab)
 			 in 
 			     (widgetSetSensitive(button,false);button)
 			 end
+
+	val stopButton = menuButton "stop"
+	val busyButton = menuButton "busy"
 		     
 	fun stopButtonSetActive b = widgetSetSensitive(stopButton,b)
+	fun busyButtonSetActive b = widgetSetSensitive(busyButton,b)
+
+			      
 
 	    (* Text Window *)
 
