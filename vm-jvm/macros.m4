@@ -93,6 +93,44 @@ define(_fromTuple,`
 	    _RAISENAME(General.Match);
 	}')))
 ')
+dnl man kann manchmal direkt sapply benutzen ...
+define(_sfromTuple,`
+	_REQUEST($2,$2);
+	DMLTuple t = null;
+	try {
+	t = (DMLTuple) $2;
+	} catch (ClassCastException c) {
+	    _RAISENAME(General.Match);
+	}
+	if (t.getArity()!=$3) {
+	    _RAISENAME(General.Match);
+	}
+	ifelse($3,`2',`DMLValue _1 = t.get(0);
+	DMLValue _2 = t.get(1);
+	return sapply2(_1,_2)',
+	ifelse($3,`3',`DMLValue _1 = t.get(0);
+	DMLValue _2 = t.get(1);
+	DMLValue _3 = t.get(2);
+	return sapply3(_1,_2,_3)',
+	ifelse($3,`4',`DMLValue _1 = t.get(0);
+	DMLValue _2 = t.get(1);
+	DMLValue _3 = t.get(2);
+	DMLValue _4 = t.get(3);
+	return sapply4(_1,_2,_3,_4)',`
+	DMLValue[] $1 = null;
+	if ($2 instanceof DMLTuple) {
+	  t = (DMLTuple) $2;
+	  if (t.getArity()==$3) {
+	    $1 = new DMLValue[$3];
+	    for(int i=0; i<$3; i++)
+		$1[i]=t.get(i);
+	  } else {
+	    _RAISENAME(General.Match);
+	  }
+	} else {
+	    _RAISENAME(General.Match);
+	}')))
+')
 dnl
 dnl General:
 dnl
@@ -100,7 +138,7 @@ define(_BINOP,`
     _BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.$2");
+	    _sfromTuple(args,val,2,"General.$2");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue number1,v1);
@@ -139,7 +177,7 @@ define(_COMPARE,`
     _BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"General.$2");
+	    _sfromTuple(args,val,2,"General.$2");
 	}
 	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue number1,v1);
@@ -197,7 +235,7 @@ define(_BINOPINT,`
 	_BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.$2");
+	    _sfromTuple(args,val,2,"Int.$2");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -218,7 +256,7 @@ define(_COMPAREINT,`
     _BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"Int.$2");
+	    _sfromTuple(args,val,2,"Int.$2");
 	}
 	_SAPPLY2(v) {
 	    try {
@@ -248,9 +286,9 @@ define(_COMPARESTRING,`
     _BUILTIN(capitalize($1)) {
 	_NOAPPLY0;_APPLY2;_NOAPPLY3;_NOAPPLY4;
 	_APPLY(val) {
-	    _fromTuple(args,val,2,"String.$2");
+	    _sfromTuple(args,val,2,"String.$2");
 	}
-	_SAPPLY2(v) { 
+	_SAPPLY2(v) {
 	    _REQUESTDEC(DMLValue v,v1);
 	    if (!(v instanceof STRING)) {
 		_RAISENAME(General.Match);
