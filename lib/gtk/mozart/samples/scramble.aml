@@ -167,10 +167,8 @@ local
 		     fun pieceEvent event = serve
 			 (fn () =>
 			  (case Gdk.getGdkEvent event of
-			       GDK_ENTER_NOTIFY _ =>
-				   Canvas.itemSet(text, "fill_color_gdk", white)
-			     | GDK_LEAVE_NOTIFY _ =>
-				   Canvas.itemSet(text, "fill_color_gdk", black)
+			       GDK_ENTER_NOTIFY _ => Canvas.itemSet(text, "fill_color_gdk", white)
+			     | GDK_LEAVE_NOTIFY _ => Canvas.itemSet(text, "fill_color_gdk", black)
 			     | GDK_BUTTON_PRESS _ =>
 				   let
 				       val pos                    = Array.sub(posArr, i)
@@ -201,7 +199,7 @@ local
 		      Gtk.signalConnect(group, "event", pieceEvent);
 		      fillBoard(board, (i + 1), parent))
 		 end)
-
+	     
     fun createBoard canvas =
 	let
 	    val posArr  = Array.array(16, 0)
@@ -210,9 +208,9 @@ local
 	in
 	    (fillBoard(board, 0, Canvas.root canvas); board)
 	end
-
+    
     val board = Hole.hole ()
-
+	
     fun findSpot (itemArr, i) =
 	(case Array.sub(itemArr, i) of
 	     NONE   => i
