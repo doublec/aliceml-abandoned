@@ -334,7 +334,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	    unguardedTyVarsPat E pat @ unguardedTyVarsFvalBind E fvalbind
 
     and unguardedTyVarsTy E (TYVARTy(_, tyvar as TyVar(i,tyvar'))) =
-	if isSome(lookupVar(E, tyvar')) then
+	if Option.isSome(lookupVar(E, tyvar')) then
 	    []
 	else
 	let
@@ -507,11 +507,21 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	       | R   => O.RefPat(i, O.JokPat(i)) (* BUG: a real hack! *)
 	       | V   =>
 		 let
-		    val (id',stamp) = trVId_bind E vid
-		    val _ = insertDisjointVal(E', vid', (i',stamp,V))
-			    handle CollisionVal _ =>
-				   errorVId("duplicate variable ", vid,
-					    " in pattern or binding group")
+		    (* If inside an alternative pattern then E' contains
+		     * an upper scope where the variable is already bound.
+		     * We have to reuse the stamp found there.
+		     *)
+		    val _ = if Option.isSome(lookupScopeVal(E', vid')) then
+			       errorVId("duplicate variable ", vid,
+					" in pattern or binding group")
+			    else ()
+		    val (id',stamp) =
+			case lookupVal(E', vid')
+			  of NONE            => trVId_bind E vid
+			   | SOME(_,stamp,_) => ( O.Id(i', stamp,
+						      O.ExId(VId.toString vid'))
+						, stamp )
+		    val _ = insertVal(E', vid', (i',stamp,V))
 		 in
 		    O.VarPat(i, id')
 		 end
@@ -535,17 +545,15 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 	 | TUPLEAtPat(i, pats)     => O.TupPat(i, trPats (E,E') pats)
 	 | VECTORAtPat(i, pats)    => O.VecPat(i, trPats (E,E') pats)
 	 | ALTAtPat(i, pats)       =>
-	   (* BUG: bindings not allowed *)
 	   let
 		val  _    = insertScope E'
-		val pats' = trPats (E,E') pats
+		val pat'  = trPat (E,E') (List.hd pats)
+		val pats' = trAltPats (E,E') (List.tl pats)
+		val  _    = mergeDisjointScope E' handle CollisionVal vid' =>
+				errorVId'("duplicate variable ", E',vid',
+					  " in pattern or binding group")
 	   in
-		if isEmptyValScope E' then
-		    ( deleteScope E'
-		    ; O.AltPat(i, pats')
-		    )
-		else
-		    error(i, "variables in alternative pattern")
+		O.AltPat(i, pat'::pats')
 	   end
 
 	 | PARAtPat(i, pat) => trPat (E,E') pat
@@ -662,6 +670,26 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trPats (E,E') = List.map(trPat (E,E'))
 
+    and trAltPats (E,E') = List.map(trAltPat (E,E'))
+
+    and trAltPat (E,E') pat =
+	let
+	    val _    = insertScope E'
+	    val pat' = trPat (E,E') pat
+	    val E''  = copyScope E'
+	    val _    = deleteScope E'
+	    val _    = if Env.sizeScope E' = Env.sizeScope E'' then () else
+			  error(infoPat pat, "inconsistent pattern alternative")
+	    val _    = Env.appiVals
+			    (fn(vid,_) =>
+				if Option.isSome(lookupVal(E'',vid)) then ()
+				else error(infoPat pat, "inconsistent pattern\
+							\ alternative")
+			    ) E'
+	in
+	    pat'
+	end
+
 
 
     (* Types *)
@@ -729,7 +757,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
     and trValTyVarSeq E (Seq(i, tyvars)) = List.map (trValSeqTyVar E) tyvars
 
     and trValSeqTyVar E (tyvar as TyVar(i, tyvar')) =
-	if isSome(lookupVar(E, tyvar')) then
+	if Option.isSome(lookupVar(E, tyvar')) then
 	    errorTyVar("duplicate or shadowing type variable ", tyvar, "")
 	else
 	let
@@ -744,7 +772,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 
     and trAllTy E =
 	fn TYVARTy(i, tyvar as TyVar(i',tyvar')) =>
-	   if isSome(lookupVar(E, tyvar')) then
+	   if Option.isSome(lookupVar(E, tyvar')) then
 		[]
 	   else
 	   let
@@ -838,7 +866,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val _            = insertTy(E, tycon', (i', stamp, E'))
 	   in
 		O.TypDec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldVals (trOpenDecVal (E,i,longido')) [] E'
+		foldiVals (trOpenDecVal (E,i,longido')) [] E'
 	   end
 
 	 | CONDec(i, dconbind) =>
@@ -894,11 +922,11 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 		val (longid', E') = trLongStrId E longstrid
 		val   _           = unionInf(E,E')
 	   in
-		(foldVals (trOpenDecVal(E,i,SOME longid')) 
-		(foldTys  (trOpenDecTy (E,i,longid'))
-		(foldStrs (trOpenDecStr(E,i,longid'))
-		(foldFuns (trOpenDecFun(E,i,longid'))
-		(foldSigs (trOpenDecSig(E,i,longid')) [] E') E') E') E') E')
+		(foldiVals (trOpenDecVal(E,i,SOME longid')) 
+		(foldiTys  (trOpenDecTy (E,i,longid'))
+		(foldiStrs (trOpenDecStr(E,i,longid'))
+		(foldiFuns (trOpenDecFun(E,i,longid'))
+		(foldiSigs (trOpenDecSig(E,i,longid')) [] E') E') E') E') E')
 	   end
 
 	 | EMPTYDec(i) =>
@@ -1594,7 +1622,7 @@ structure AbstractionPhase :> ABSTRACTION_PHASE =
 				 " in signature")
 	   in
 		O.TypSpec(i, id', O.ConTyp(infoLong longtycon, longid')) ::
-		foldVals (trOpenSpecVal (E,i,longido')) [] E'
+		foldiVals (trOpenSpecVal (E,i,longido')) [] E'
 	   end
 
 	 | CONSpec(i, dcondesc) =>

@@ -118,15 +118,22 @@ structure BindEnv :> BIND_ENV =
     fun new()				= ENV(Map.new())
     fun copy(ENV E)			= ENV(Map.copy E)
     fun copyScope(ENV E)		= ENV(Map.copyScope E)
+
     fun insertScope(ENV E)		= Map.insertScope E
     fun deleteScope(ENV E)		= Map.deleteScope E
     fun delete2ndScope(ENV E)		= Map.delete2ndScope E
     fun mergeScope(ENV E)		= Map.mergeScope E
+    fun mergeDisjointScope(ENV E)	= Map.mergeDisjointScope E
+					  handle Map.Collision coll =>
+						 transformCollision coll
 
     fun union(ENV E1, ENV E2)		= Map.union(E1,E2)
     fun unionDisjoint(ENV E1, ENV E2)	= Map.unionDisjoint(E1,E2)
 					  handle Map.Collision coll =>
 						 transformCollision coll
+
+    fun size(ENV E)			= Map.size E
+    fun sizeScope(ENV E)		= Map.sizeScope E
 
     fun insertInf(ENV E, id, x)		= Map.insert(E, INFIX id, INF x)
     fun insertFld(ENV E, id, x)		= Map.insert(E, LAB   id, FLD x)
@@ -180,29 +187,29 @@ structure BindEnv :> BIND_ENV =
     fun lookupScopeSig(ENV E, id)	= unSigo(Map.lookupScope(E, SIGID id))
     fun lookupScopeFun(ENV E, id)	= unFuno(Map.lookupScope(E, FUNID id))
 
-    fun appInfs f (ENV E)		= Map.appi (appInf f) E
-    fun appFlds f (ENV E)		= Map.appi (appFld f) E
-    fun appVars f (ENV E)		= Map.appi (appVar f) E
-    fun appVals f (ENV E)		= Map.appi (appVal f) E
-    fun appTys  f (ENV E)		= Map.appi (appTy  f) E
-    fun appStrs f (ENV E)		= Map.appi (appStr f) E
-    fun appSigs f (ENV E)		= Map.appi (appSig f) E
-    fun appFuns f (ENV E)		= Map.appi (appFun f) E
+    fun appiInfs f (ENV E)		= Map.appi (appInf f) E
+    fun appiFlds f (ENV E)		= Map.appi (appFld f) E
+    fun appiVars f (ENV E)		= Map.appi (appVar f) E
+    fun appiVals f (ENV E)		= Map.appi (appVal f) E
+    fun appiTys  f (ENV E)		= Map.appi (appTy  f) E
+    fun appiStrs f (ENV E)		= Map.appi (appStr f) E
+    fun appiSigs f (ENV E)		= Map.appi (appSig f) E
+    fun appiFuns f (ENV E)		= Map.appi (appFun f) E
 
-    fun foldInfs f a (ENV E)		= Map.foldi (foldInf f) a E
-    fun foldFlds f a (ENV E)		= Map.foldi (foldFld f) a E
-    fun foldVars f a (ENV E)		= Map.foldi (foldVar f) a E
-    fun foldVals f a (ENV E)		= Map.foldi (foldVal f) a E
-    fun foldTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
-    fun foldStrs f a (ENV E)		= Map.foldi (foldStr f) a E
-    fun foldSigs f a (ENV E)		= Map.foldi (foldSig f) a E
-    fun foldFuns f a (ENV E)		= Map.foldi (foldFun f) a E
+    fun foldiInfs f a (ENV E)		= Map.foldi (foldInf f) a E
+    fun foldiFlds f a (ENV E)		= Map.foldi (foldFld f) a E
+    fun foldiVars f a (ENV E)		= Map.foldi (foldVar f) a E
+    fun foldiVals f a (ENV E)		= Map.foldi (foldVal f) a E
+    fun foldiTys  f a (ENV E)		= Map.foldi (foldTy  f) a E
+    fun foldiStrs f a (ENV E)		= Map.foldi (foldStr f) a E
+    fun foldiSigs f a (ENV E)		= Map.foldi (foldSig f) a E
+    fun foldiFuns f a (ENV E)		= Map.foldi (foldFun f) a E
 
 
     fun isEmptyValScope(ENV E)		= Map.isEmptyScope E orelse
-					  foldVals (fn _ => false) true (ENV E)
+					  foldiVals (fn _ => false) true (ENV E)
 
-    fun unionInf(E1,E2)			= appInfs (fn(id,x) =>
+    fun unionInf(E1,E2)			= appiInfs (fn(id,x) =>
 						     insertInf(E1,id,x)) E2
 
     fun infEnv E vid			= case lookupInf(E, vid)

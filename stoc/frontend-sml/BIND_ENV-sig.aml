@@ -38,13 +38,18 @@ signature BIND_ENV =
 
 
     val new :			unit -> Env
+
+    val size :			Env -> int
+    val sizeScope :		Env -> int
+
     val copy :			Env -> Env
     val copyScope :		Env -> Env
 
     val insertScope :		Env -> unit
     val deleteScope :		Env -> unit
-    val mergeScope :		Env -> unit
     val delete2ndScope :	Env -> unit
+    val mergeScope :		Env -> unit
+    val mergeDisjointScope :	Env -> unit		(* Collision* *)
 
     val union :			Env * Env -> unit
     val unionDisjoint :		Env * Env -> unit	(* Collision* *)
@@ -84,25 +89,26 @@ signature BIND_ENV =
     val lookupScopeSig :	Env * SigId -> Sig option
     val lookupScopeFun :	Env * FunId -> Fun option
 
+    val appiInfs :		( VId  * Inf -> unit) -> Env -> unit
+    val appiFlds :		( Lab  * Fld -> unit) -> Env -> unit
+    val appiVars :		(TyVar * Var -> unit) -> Env -> unit
+    val appiVals :		( VId  * Val -> unit) -> Env -> unit
+    val appiTys :		(TyCon * Ty  -> unit) -> Env -> unit
+    val appiStrs :		(StrId * Str -> unit) -> Env -> unit
+    val appiSigs :		(SigId * Sig -> unit) -> Env -> unit
+    val appiFuns :		(FunId * Fun -> unit) -> Env -> unit
+
+    val foldiInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiFlds :		( Lab  * Fld * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiVars :		(TyVar * Var * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiVals :		( VId  * Val * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
+    val foldiFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a
+
     val isEmptyValScope :	Env -> bool
 
     val infEnv :		Env -> VId -> InfStatus
-
-    val appInfs :		( VId  * Inf -> unit) -> Env -> unit
-    val appFlds :		( Lab  * Fld -> unit) -> Env -> unit
-    val appVars :		(TyVar * Var -> unit) -> Env -> unit
-    val appVals :		( VId  * Val -> unit) -> Env -> unit
-    val appTys :		(TyCon * Ty  -> unit) -> Env -> unit
-    val appStrs :		(StrId * Str -> unit) -> Env -> unit
-    val appSigs :		(SigId * Sig -> unit) -> Env -> unit
-    val appFuns :		(FunId * Fun -> unit) -> Env -> unit
-    val foldInfs :		( VId  * Inf * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldFlds :		( Lab  * Fld * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldVars :		(TyVar * Var * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldVals :		( VId  * Val * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldTys :		(TyCon * Ty  * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldStrs :		(StrId * Str * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldSigs :		(SigId * Sig * 'a -> 'a) -> 'a -> Env -> 'a
-    val foldFuns :		(FunId * Fun * 'a -> 'a) -> 'a -> Env -> 'a
 
   end
