@@ -14,12 +14,13 @@
 
 structure DynMatch =
 struct
-    type module = unit
+    type module		= unit
     exception MatchDummy
-    fun dummy _ = raise MatchDummy
-    val match      = dummy
-    val strengthen = dummy
-    val match'     = dummy
-    val thin       = dummy
-    val seal       = dummy
+    fun dummy _		= raise MatchDummy
+    val match		= dummy
+    val matchWith	= dummy
+    val strengthen	= dummy
+    val strengthenWith	= dummy
+    val thin		= dummy
+    val seal		= dummy
 end

@@ -10,30 +10,42 @@
  *   $Revision$
  *)
 
+import structure Name    from "../rtt/Name"
+import structure Label   from "../rtt/Label"
 import structure Path    from "../rtt/Path"
 import structure PathMap from "../rtt/PathMap"
 import structure Type    from "../rtt/Type"
 import structure Inf     from "../rtt/Inf"
 import structure Reflect from "Reflect"
 import structure UnsafeValue from "UnsafeValue"
-import structure LabelTranslation from "../../compiler/frontend-common/LabelTranslation"
 import signature DYN_MATCH from "DYN_MATCH-sig"
 
 structure DynMatch : DYN_MATCH =
 struct
-    open LabelTranslation
-
     type module = Reflect.module
     exception Hidden
+
+    (* Keep in sync with compiler/frontend-common/NameTranslation! *)
+    fun trName f (Name.ExId s)	= Name.ExId(f s)
+      | trName f  n		= n
+    fun trValName  n		= n
+    val trTypName		= trName(fn s => "$" ^ s)
+    val trVarName		= trName(fn s => "$" ^ s)
+    val trModName		= trName(fn s => s ^ "$")
+    val trInfName		= trName(fn s => "$" ^ s ^ "$")
+    fun trValLab lab		= Label.fromName(trValName(Label.toName lab))
+    fun trTypLab lab		= Label.fromName(trTypName(Label.toName lab))
+    fun trModLab lab		= Label.fromName(trModName(Label.toName lab))
+    fun trInfLab lab		= Label.fromName(trInfName(Label.toName lab))
 
     fun match(m, j) =
 	let
 	    val rea = Inf.rea()
 	in
-	    match'(rea, m, j);
+	    matchWith(rea, m, j);
 	    rea
 	end
-    and match'(rea, m, j) =
+    and matchWith(rea, m, j) =
 	case Inf.inspect j
 	 of Inf.Sig s => matchSig(rea, m, Inf.items s)
 	  | (Inf.Top | Inf.Con _ | Inf.Apply _ | Inf.Arrow _ | Inf.Sing _) => ()
@@ -48,7 +60,7 @@ struct
 	  | Inf.TypItem(p,k) =>
 	    if Type.isSingKind k then () else
 	    let
-		val l = trTypLabel(Path.toLab p)
+		val l = trTypLab(Path.toLab p)
 		val t = lazy UnsafeValue.projPoly(m,l)
 	    in
 		PathMap.insert(#typ_rea rea, p, t);
@@ -57,16 +69,16 @@ struct
 	  | Inf.ModItem(p,j) =>
 	    if Inf.isSing j then () else
 	    let
-		val l  = trModLabel(Path.toLab p)
+		val l  = trModLab(Path.toLab p)
 		val m' = lazy UnsafeValue.projPoly(m,l)
 	    in
-		match'(rea,m',j);
+		matchWith(rea,m',j);
 		matchSig(rea, m, items)
 	    end
 	  | Inf.InfItem(p,k) =>
 	    if Inf.isSingKind k then () else
 	    let
-		val l = trInfLabel(Path.toLab p)
+		val l = trInfLab(Path.toLab p)
 		val j = lazy UnsafeValue.projPoly(m,l)
 	    in
 		PathMap.insert(#typ_rea rea, p, j);
@@ -75,15 +87,12 @@ struct
 	  | Inf.HiddenItem _ => raise Hidden
 
 
-    fun strengthen(m, j) =  strengthen'(m, NONE, j)
-    and strengthen'(m, po, j) =
-	let
-	    val rea = Inf.rea()
-	    val j'  = strengthen''(rea, m, po, j)
-	in
-	    Inf.realise(rea,j')
-	end
-    and strengthen''(rea, m, po, j) =
+    fun strengthen(m, j) = strengthen'(m, NONE, j)
+    and strengthen'(m, po, j) = strengthenWith'(Inf.rea(), m, po, j)
+    and strengthenWith(rea, m, j) = strengthenWith'(rea, m, NONE, j)
+    and strengthenWith'(rea, m, po, j) =
+	    Inf.realise(rea, strengthenWith''(rea, m, po, j))
+    and strengthenWith''(rea, m, po, j) =
 	case Inf.inspect j
 	 of Inf.Sig s =>
 	    let
@@ -118,7 +127,7 @@ struct
 		Inf.extendTyp(s',p,k)
 	    else
 		let
-		    val l' = trTypLabel(Path.toLab p)
+		    val l' = trTypLab(Path.toLab p)
 		    val t  = UnsafeValue.projPoly(m,l')
 		in
 		    PathMap.insert(#typ_rea rea, p, t);
@@ -133,9 +142,9 @@ struct
 	    else
 		let
 		    val _  = strengthenSig(rea, s', m, po, items);
-		    val l' = trModLabel(Path.toLab p)
+		    val l' = trModLab(Path.toLab p)
 		    val m' = UnsafeValue.projPoly(m,l')
-		    val j' = strengthen''(rea, m', SOME p, j)
+		    val j' = strengthenWith''(rea, m', SOME p, j)
 		in
 		    Inf.extendMod(s', p ,j');
 		    not(Inf.same(j,j'))
@@ -146,7 +155,7 @@ struct
 		Inf.extendInf(s',p,k)
 	    else
 		let
-		    val l' = trInfLabel(Path.toLab p)
+		    val l' = trInfLab(Path.toLab p)
 		    val j  = UnsafeValue.projPoly(m,l')
 		in
 		    PathMap.insert(#inf_rea rea, p, j);
@@ -186,28 +195,28 @@ struct
 	        thinSig(lvs, m, items)
 	  | Inf.ValItem(l,_) =>
 	    let
-		val l' = trValLabel l
+		val l' = trValLab l
 		val v  = UnsafeValue.projPoly(m,l')
 	    in
 	        thinSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.TypItem(p,k) =>
 	    let
-		val l' = trTypLabel(Path.toLab p)
+		val l' = trTypLab(Path.toLab p)
 		val v  = UnsafeValue.projPoly(m,l')
 	    in
 	        thinSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.ModItem(p,j) =>
 	    let
-		val l' = trModLabel(Path.toLab p)
+		val l' = trModLab(Path.toLab p)
 		val v  = UnsafeValue.cast(thin(UnsafeValue.projPoly(m,l'), j))
 	    in
 	        thinSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.InfItem(p,k) =>
 	    let
-		val l' = trInfLabel(Path.toLab p)
+		val l' = trInfLab(Path.toLab p)
 		val v  = UnsafeValue.projPoly(m,l')
 	    in
 	        thinSig((l',v)::lvs, m, items)
@@ -244,28 +253,28 @@ struct
 	        sealSig(lvs, m, items)
 	  | Inf.ValItem(l,_) =>
 	    let
-		val l' = trValLabel l
+		val l' = trValLab l
 		val v  = UnsafeValue.projPoly(m,l')
 	    in
 	        sealSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.TypItem(p,k) =>
 	    let
-		val l' = trTypLabel(Path.toLab p)
+		val l' = trTypLab(Path.toLab p)
 		val v  = UnsafeValue.cast(Type.con(p,k))
 	    in
 	        sealSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.ModItem(p,j) =>
 	    let
-		val l' = trModLabel(Path.toLab p)
+		val l' = trModLab(Path.toLab p)
 		val v  = UnsafeValue.cast(seal(UnsafeValue.projPoly(m,l'), j))
 	    in
 	        sealSig((l',v)::lvs, m, items)
 	    end
 	  | Inf.InfItem(p,k) =>
 	    let
-		val l' = trInfLabel(Path.toLab p)
+		val l' = trInfLab(Path.toLab p)
 		val v  = UnsafeValue.cast(Inf.con(p,k))
 	    in
 	        sealSig((l',v)::lvs, m, items)
