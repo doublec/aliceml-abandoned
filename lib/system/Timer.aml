@@ -1,0 +1,31 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+
+import signature TIMER           from "TIMER-sig"
+import structure Time            from "Time"
+
+
+structure Timer :> TIMER =
+struct
+    type real_timer = Time.time
+
+    fun startRealTimer () = Time.now ()
+
+    fun totalRealTimer () = Time.zeroTime
+
+    fun checkRealTimer t  = Time.- (Time.now (), t)
+end

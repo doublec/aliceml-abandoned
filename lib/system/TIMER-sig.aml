@@ -1,0 +1,24 @@
+(*
+ * Authors:
+ *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Benedikt Grundmann, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+
+(*
+ *  Items marked with (**) are extensions to the Standard Basis.
+ *)
+signature TIMER =
+sig
+    type real_timer
+
+    val startRealTimer :    unit -> real_timer
+    val checkRealTimer :    real_timer -> Time.time
+    val totalRealTimer :    unit -> real_timer
+end
