@@ -19,7 +19,6 @@
 #include <time.h>
 #endif
 
-#include "generic/Worker.hh"
 #include "java/ClassLoader.hh"
 #include "java/Authoring.hh"
 

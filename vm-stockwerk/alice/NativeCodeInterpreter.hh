@@ -17,11 +17,12 @@
 #pragma interface "alice/NativeCodeInterpreter.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
 typedef Worker::Result (*native_fun)(class NativeCodeFrame *);
 
-class DllExport NativeCodeInterpreter : public Interpreter {
+class AliceDll NativeCodeInterpreter : public Interpreter {
 public:
   // Exported Code
   static word continuation[4];

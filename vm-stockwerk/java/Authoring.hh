@@ -13,7 +13,6 @@
 #ifndef __JAVA__AUTHORING_HH__
 #define __JAVA__AUTHORING_HH__
 
-#include "generic/Authoring.hh"
 #include "java/Data.hh"
 #include "java/ThrowWorker.hh"
 #include "java/NativeMethodTable.hh"

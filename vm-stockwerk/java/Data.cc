@@ -16,9 +16,6 @@
 
 #include <cstdio>
 
-#include "generic/RootSet.hh"
-#include "generic/String.hh"
-#include "generic/Backtrace.hh"
 #include "java/ClassInfo.hh"
 #include "java/NativeMethodTable.hh"
 
@@ -219,12 +216,12 @@ static void FillInterfaceTable(Class *aClass, u_int &index,
 			       Table *virtualTable) {
   Table *interfaces = aClass->GetClassInfo()->GetInterfaces();
   for (u_int i = interfaces->GetCount(); i--; ) {
-    Class *interface = Class::FromWord(interfaces->Get(i));
-    Assert(interface != INVALID_POINTER);
-    Table *methods = interface->GetClassInfo()->GetMethods();
+    Class *theInterface = Class::FromWord(interfaces->Get(i));
+    Assert(theInterface != INVALID_POINTER);
+    Table *methods = theInterface->GetClassInfo()->GetMethods();
     u_int nMethods = methods->GetCount();
     Table *interfaceVirtualTable = Table::New(nMethods + 1);
-    interfaceVirtualTable->Init(0, interface->ToWord());
+    interfaceVirtualTable->Init(0, theInterface->ToWord());
     for (u_int j = nMethods; j--; ) {
       MethodInfo *methodInfo = MethodInfo::FromWordDirect(methods->Get(j));
       word wKey =
@@ -242,7 +239,7 @@ static void FillInterfaceTable(Class *aClass, u_int &index,
       interfaceVirtualTable->Init(j + 1, wClosure);
     }
     interfaceTable->Init(index++, interfaceVirtualTable->ToWord());
-    FillInterfaceTable(interface, index, interfaceTable,
+    FillInterfaceTable(theInterface, index, interfaceTable,
 		       methodHashTable, virtualTable);
   }
   Class *superClass = aClass->GetSuperClass();
@@ -477,11 +474,11 @@ Class *Class::GetSuperClass() {
   return super;
 }
 
-Closure *Class::GetInterfaceMethod(Class *interface, u_int index) {
+Closure *Class::GetInterfaceMethod(Class *theInterface, u_int index) {
   Table *interfaceTable = GetInterfaceTable();
   for (u_int i = interfaceTable->GetCount(); i--; ) {
     Table *virtualTable = Table::FromWordDirect(interfaceTable->Get(i));
-    if (Class::FromWord(virtualTable->Get(0)) == interface)
+    if (Class::FromWord(virtualTable->Get(0)) == theInterface)
       return Closure::FromWordDirect(virtualTable->Get(index + 1));
   }
   return INVALID_POINTER;

@@ -22,7 +22,7 @@ static inline s_int GetPlatform() {
 #endif
 }
 
-word UnsafeConfig() {
+AliceDll word UnsafeConfig() {
   Record *record = Record::New(2);
   record->Init("platform", Store::IntToWord(GetPlatform()));
   record->Init("vm", String::New("seam")->ToWord());

@@ -12,7 +12,6 @@
 
 #include <cstdio>
 
-#include "generic/RootSet.hh"
 #include "java/ClassLoader.hh"
 #include "java/ClassInfo.hh"
 #include "java/Authoring.hh"

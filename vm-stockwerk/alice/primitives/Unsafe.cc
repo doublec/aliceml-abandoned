@@ -12,8 +12,6 @@
 //   $Revision$
 //
 
-#include "generic/Tuple.hh"
-#include "generic/Closure.hh"
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/Authoring.hh"

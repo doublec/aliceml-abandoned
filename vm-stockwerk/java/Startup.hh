@@ -17,6 +17,8 @@
 #pragma interface "java/Startup.hh"
 #endif
 
-DllExport void Startup(int argc, char *argv[]);
+#include "java/Base.hh"
+
+JavaDll void Startup(int argc, char *argv[]);
 
 #endif

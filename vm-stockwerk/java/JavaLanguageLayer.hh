@@ -17,9 +17,9 @@
 #pragma interface "java/JavaLanguageLayer.hh"
 #endif
 
-#include "Base.hh"
+#include "java/Base.hh"
 
-class DllExport JavaLanguageLayer {
+class JavaDll JavaLanguageLayer {
 public:
   static void Init();
 };

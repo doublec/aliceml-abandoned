@@ -17,7 +17,6 @@
 #endif
 
 #include <cstdio>
-#include "generic/Scheduler.hh"
 #include "alice/Data.hh"
 #include "alice/LazySelInterpreter.hh"
 

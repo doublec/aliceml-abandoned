@@ -16,9 +16,10 @@
 #pragma interface "java/ByteCodeInterpreter.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "Seam.hh"
+#include "java/Base.hh"
 
-class DllExport ByteCodeInterpreter : public Interpreter {
+class JavaDll ByteCodeInterpreter : public Interpreter {
 private:
   ByteCodeInterpreter() : Interpreter() {}
 public:

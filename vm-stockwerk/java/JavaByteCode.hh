@@ -18,13 +18,12 @@
 #pragma interface "java/JavaByteCode.hh"
 #endif
 
-#include "generic/ConcreteCode.hh"
 #include "java/Data.hh"
 #include "java/ByteCodeInterpreter.hh"
 
 class MethodInfo;
 
-class DllExport ExceptionTableEntry: private Block {
+class JavaDll ExceptionTableEntry: private Block {
 protected:
   enum {
     START_PC_POS, // int
@@ -77,7 +76,7 @@ public:
   }
 };
 
-class DllExport JavaByteCode: private ConcreteCode {
+class JavaDll JavaByteCode: private ConcreteCode {
 protected:
   enum {
     METHOD_INFO_POS, // MethodInfo

@@ -12,7 +12,6 @@
 //   $Revision$
 //
 
-#include "generic/Debug.hh"
 #include "alice/Authoring.hh"
 
 DEFINE1(UnsafeDebug_print) {
@@ -24,7 +23,7 @@ DEFINE1(UnsafeDebug_unimplemented) {
   Error("UnsafeDebug: unimplemented");
 } END
 
-word UnsafeDebug() {
+AliceDll word UnsafeDebug() {
   Record *record = Record::New(9);
   INIT_STRUCTURE(record, "UnsafeDebug", "setPrintDepth",
 		 UnsafeDebug_unimplemented, 1);

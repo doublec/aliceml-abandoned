@@ -16,9 +16,6 @@
 
 #include <cstdio>
 
-#include "generic/String.hh"
-#include "generic/Worker.hh"
-#include "generic/Scheduler.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
 #include "java/Startup.hh"

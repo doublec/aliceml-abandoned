@@ -17,7 +17,6 @@
 #pragma interface "alice/NativeCodeJitter.hh"
 #endif
 
-#include "store/JITStore.hh"
 #include "alice/NativeConcreteCode.hh"
 
 class IntMap;

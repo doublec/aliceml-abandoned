@@ -22,7 +22,7 @@ DEFINE1(UnsafeAddr_addr) {
   RETURN_INT(Store::WordToInt(x0));
 } END
 
-word UnsafeAddr() {
+AliceDll word UnsafeAddr() {
   Record *record = Record::New(1);
   INIT_STRUCTURE(record, "UnsafeAddr", "addr",
 		 UnsafeAddr_addr, 1);

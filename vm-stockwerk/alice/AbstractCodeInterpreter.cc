@@ -17,12 +17,6 @@
 #endif
 
 #include <cstdio>
-#include "generic/RootSet.hh"
-#include "generic/Scheduler.hh"
-#include "generic/Backtrace.hh"
-#include "generic/Tuple.hh"
-#include "generic/Transients.hh"
-#include "generic/Closure.hh"
 #include "alice/Data.hh"
 #include "alice/Types.hh"
 #include "alice/AbstractCode.hh"
@@ -30,16 +24,11 @@
 #include "alice/AliceConcreteCode.hh"
 #include "alice/AliceLanguageLayer.hh"
 
-#if PROFILE
-#include "generic/Profiler.hh"
-#endif
-
 #ifdef DEBUG_CHECK
 static word dead;
 #endif
 
 #ifdef LIVENESS_DEBUG
-#include "generic/Debug.hh"
 static const BlockLabel DEAD_LABEL = HASHNODE_LABEL;
 #endif
 
@@ -249,6 +238,7 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   }
 }
 
+#undef REQUEST
 #define REQUEST(w) {				\
   Scheduler::PopFrame(frame->GetSize());        \
   PushState(pc, globalEnv, localEnv);		\

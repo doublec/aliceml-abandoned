@@ -17,10 +17,9 @@
 #pragma interface "java/ThrowWorker.hh"
 #endif
 
-#include "generic/Worker.hh"
 #include "java/Data.hh"
 
-class DllExport ThrowWorker: public Worker {
+class JavaDll ThrowWorker: public Worker {
 private:
   ThrowWorker() {}
 public:

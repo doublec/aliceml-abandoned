@@ -24,7 +24,7 @@ class ConstantPool;
 class ConstantPoolEntry;
 class ClassLoader;
 
-class DllExport ClassFile: private Chunk {
+class JavaDll ClassFile: private Chunk {
 private:
   struct SupportedVersion {
     static const u_int16 majorMin = 45;

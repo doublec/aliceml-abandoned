@@ -14,9 +14,6 @@
 #pragma implementation "alice/AliceLanguageLayer.hh"
 #endif
 
-#include "generic/RootSet.hh"
-#include "generic/Tuple.hh"
-#include "generic/Unpickler.hh"
 #include "alice/Types.hh"
 #include "alice/AliceLanguageLayer.hh"
 #include "alice/PrimitiveTable.hh"

@@ -14,7 +14,6 @@
 #pragma implementation "java/NativeMethodTable.hh"
 #endif
 
-#include "generic/Primitive.hh"
 #include "java/NativeMethodTable.hh"
 
 static word MakeKey(JavaString *className, JavaString *name,

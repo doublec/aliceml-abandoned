@@ -16,11 +16,6 @@
 
 #include <cstdio>
 #include <cmath>
-#include "generic/Scheduler.hh"
-#include "generic/Backtrace.hh"
-#include "generic/Closure.hh"
-#include "generic/ConcreteCode.hh"
-
 #include "java/Opcodes.hh"
 #include "java/Data.hh"
 #include "java/ThrowWorker.hh"
@@ -365,6 +360,7 @@ public:
   frame->Push(JavaLong::New(v)->ToWord()); \
   FILL_SLOT()
 
+#undef DECLARE_DOUBLE
 #define DECLARE_DOUBLE(v) \
   DROP_SLOT(); \
   double v = JavaDouble::FromWord(frame->Pop())->GetValue();
@@ -373,6 +369,7 @@ public:
   frame->Push(JavaDouble::ToWord(v)); \
   FILL_SLOT()
 
+#undef REQUEST
 #define REQUEST(w) {	      \
   frame->SetPC(pc);           \
   Scheduler::currentData = w; \

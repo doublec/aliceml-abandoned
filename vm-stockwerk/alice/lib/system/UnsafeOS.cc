@@ -31,9 +31,6 @@
 #define GetLastError() errno
 #endif
 
-#include "generic/RootSet.hh"
-#include "generic/Closure.hh"
-#include "generic/Profiler.hh"
 #if LIGHTNING && defined(INSTRUCTION_COUNTS)
 #include "alice/NativeCodeJitter.hh"
 #endif
@@ -343,7 +340,7 @@ DEFINE1(UnsafeOS_errorMsg) {
   RETURN(ErrorCodeToString(errorCode)->ToWord());
 } END
 
-word UnsafeOS() {
+AliceDll word UnsafeOS() {
   SysErrConstructor =
     UniqueConstructor::New("SysErr", "OS.SysErr")->ToWord();
   RootSet::Add(SysErrConstructor);

@@ -11,8 +11,6 @@
 //
 
 #include <cstdio>
-#include "store/Map.hh"
-#include "generic/Tuple.hh"
 #include "alice/Authoring.hh"
 
 static const BlockLabel ENTRY_LABEL = TUPLE_LABEL;
@@ -709,7 +707,7 @@ static word UnsafeCell_Map() {
   return record->ToWord();
 }
 
-word UnsafeCell() {
+AliceDll word UnsafeCell() {
   CellMapInsertWorker::Init();
   CellMapIteratorWorker::Init();
   CellMapFindWorker::Init();

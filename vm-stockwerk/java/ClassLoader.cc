@@ -16,14 +16,6 @@
 
 #include <cstdio>
 
-#include "adt/ChunkMap.hh"
-#include "generic/String.hh"
-#include "generic/Tuple.hh"
-#include "generic/RootSet.hh"
-#include "generic/Transients.hh"
-#include "generic/ConcreteCode.hh"
-#include "generic/Backtrace.hh"
-#include "generic/Interpreter.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassLoader.hh"
 #include "java/ClassFile.hh"

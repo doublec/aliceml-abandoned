@@ -17,9 +17,10 @@
 #pragma interface "alice/Guid.hh"
 #endif
 
-#include "generic/String.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
-class DllExport Guid: private String {
+class AliceDll Guid: private String {
 public:
   using Block::ToWord;
   using String::Hash;

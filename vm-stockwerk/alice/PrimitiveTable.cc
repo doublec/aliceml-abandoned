@@ -17,10 +17,6 @@
 #endif
 
 #include <cstdio>
-#include "adt/ChunkMap.hh"
-#include "generic/RootSet.hh"
-#include "generic/Transform.hh"
-#include "generic/Closure.hh"
 #include "alice/Data.hh"
 #include "alice/PrimitiveTable.hh"
 #include "alice/AliceLanguageLayer.hh"

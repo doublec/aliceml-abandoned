@@ -11,9 +11,6 @@
 //   $Revision$
 //
 
-#include "generic/Tuple.hh"
-#include "generic/Transients.hh"
-#include "generic/ConcreteCode.hh"
 #include "alice/Authoring.hh"
 
 //
@@ -305,7 +302,7 @@ DEFINE1(UnsafeValue_outArity) {
   RETURN_INT(-2); //--** try to do better
 } END
 
-word UnsafeValue() {
+AliceDll word UnsafeValue() {
   Record *record = Record::New(21);
   INIT_STRUCTURE(record, "UnsafeValue", "cast",
 		 UnsafeValue_cast, 1);

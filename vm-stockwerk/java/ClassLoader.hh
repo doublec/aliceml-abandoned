@@ -21,7 +21,7 @@
 
 class ClassTable;
 
-class DllExport ClassLoader: private Block {
+class JavaDll ClassLoader: private Block {
 protected:
   enum { CLASS_TABLE_POS, SIZE };
 private:

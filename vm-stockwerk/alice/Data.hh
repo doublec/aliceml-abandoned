@@ -20,13 +20,12 @@
 #endif
 
 #include <cstring>
-#include "generic/UniqueString.hh"
-#include "generic/ConcreteRepresentation.hh"
-#include "generic/Double.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
 class Transform;
 
-class DllExport Alice {
+class AliceDll Alice {
 public:
   static const BlockLabel Array   = MIN_DATA_LABEL;
   static const BlockLabel Cell    = (BlockLabel) (MIN_DATA_LABEL + 1);
@@ -49,7 +48,7 @@ public:
   }
 };
 
-class DllExport Array: private Block {
+class AliceDll Array: private Block {
 private:
   enum { LENGTH_POS, BASE_SIZE };
 public:
@@ -87,7 +86,7 @@ public:
   }
 };
 
-class DllExport Cell: private Block {
+class AliceDll Cell: private Block {
 protected:
   enum { VALUE_POS, SIZE };
 public:
@@ -128,7 +127,7 @@ public:
   }
 };
 
-class DllExport Constructor: private ConcreteRepresentation {
+class AliceDll Constructor: private ConcreteRepresentation {
 private:
   enum { NAME_POS, TRANSFORM_POS, SIZE };
   static ConcreteRepresentationHandler *handler;
@@ -161,7 +160,7 @@ public:
   Transform *GetTransform();
 };
 
-class DllExport ConVal: private Block {
+class AliceDll ConVal: private Block {
 protected:
   enum { CON_POS, BASE_SIZE };
 public:
@@ -208,7 +207,7 @@ public:
 
 #define Real Double
 
-class DllExport TagVal: private Block {
+class AliceDll TagVal: private Block {
 public:
   using Block::ToWord;
 
@@ -240,7 +239,7 @@ public:
   }
 };
 
-class DllExport UniqueConstructor: public Constructor {
+class AliceDll UniqueConstructor: public Constructor {
 public:
   static UniqueConstructor *New(String *name, String *id) {
     return static_cast<UniqueConstructor *>
@@ -259,7 +258,7 @@ public:
   }
 };
 
-class DllExport Vector: private Block {
+class AliceDll Vector: private Block {
 protected:
   enum { LENGTH_POS, BASE_SIZE };
 public:
@@ -299,7 +298,7 @@ public:
   }
 };
 
-class DllExport Word8Array: private String {
+class AliceDll Word8Array: private String {
   //--** deriving from String yields wrong equality (must be token equality)
 public:
   static const u_int maxLen = String::maxSize;
@@ -334,7 +333,7 @@ public:
   }
 };
 
-class DllExport Word8Vector: private String {
+class AliceDll Word8Vector: private String {
 public:
   static const u_int maxLen = String::maxSize;
 
@@ -369,7 +368,7 @@ public:
   }
 };
 
-class DllExport Record: private Block {
+class AliceDll Record: private Block {
 protected:
   enum { WIDTH_POS, BASE_SIZE };
 public:

@@ -16,8 +16,6 @@
 
 #include <cstdio>
 
-#include "generic/RootSet.hh"
-#include "generic/Backtrace.hh"
 #include "java/ThrowWorker.hh"
 #include "java/ClassInfo.hh"
 #include "java/ClassLoader.hh"

@@ -14,12 +14,6 @@
 #pragma implementation "alice/NativeConcreteCode.hh"
 #endif
 
-#include "generic/StackFrame.hh"
-#include "generic/Closure.hh"
-#include "generic/Transform.hh"
-#include "generic/RootSet.hh"
-#include "generic/Interpreter.hh"
-#include "generic/Transients.hh"
 #include "alice/AbstractCode.hh"
 #include "alice/NativeCodeJitter.hh"
 #include "alice/AliceLanguageLayer.hh"

@@ -22,7 +22,7 @@
 #include "java/JavaByteCode.hh"
 #include "java/ClassLoader.hh"
 
-class DllExport FieldInfo: private Block {
+class JavaDll FieldInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC    = 0x0001,
@@ -102,7 +102,7 @@ public:
   }
 };
 
-class DllExport MethodInfo: private Block {
+class JavaDll MethodInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC       = 0x0001,
@@ -187,7 +187,7 @@ public:
   }
 };
 
-class DllExport ClassInfo: private Block {
+class JavaDll ClassInfo: private Block {
 public:
   enum access_flags {
     ACC_PUBLIC    = 0x0001,

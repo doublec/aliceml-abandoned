@@ -19,12 +19,8 @@
 #endif
 
 #include <cstring>
-#include "adt/ChunkMap.hh"
-#include "generic/Closure.hh"
-#include "generic/Transients.hh"
-#include "generic/Worker.hh"
-#include "generic/Float.hh"
-#include "generic/Double.hh"
+#include "Seam.hh"
+#include "java/Base.hh"
 
 typedef u_char u_int8;
 typedef signed char s_int8;
@@ -70,7 +66,7 @@ public:
 
 static const word null = Store::IntToWord(0);
 
-class DllExport Table: private Block {
+class JavaDll Table: private Block {
 protected:
   enum {
     COUNT_POS, // int
@@ -112,7 +108,7 @@ public:
 //
 // Types
 //
-class DllExport Type: public Block {
+class JavaDll Type: public Block {
 public:
   static Type *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -133,7 +129,7 @@ public:
   class ClassObject *GetClassObject();
 };
 
-class DllExport Class: protected Type {
+class JavaDll Class: protected Type {
 public:
   enum instanceFieldType { t_int, t_long, t_float, t_double, t_object };
 protected:
@@ -229,7 +225,7 @@ public:
   }
 };
 
-class DllExport PrimitiveType: protected Type {
+class JavaDll PrimitiveType: protected Type {
 public:
   enum type { Boolean, Byte, Char, Double, Float, Int, Long, Short, Void };
 protected:
@@ -274,7 +270,7 @@ public:
   }
 };
 
-class DllExport ArrayType: protected Type {
+class JavaDll ArrayType: protected Type {
 protected:
   enum {
     ELEMENT_TYPE_POS, // Type
@@ -301,7 +297,7 @@ public:
 //
 //--** to be done: support boxed 32-bit integers (for compatibility)
 #if defined(JAVA_INT_32)
-class DllExport JavaInt {
+class JavaDll JavaInt {
 public:
   static word ToWord(s_int value) {
     Chunk *chunk = Store::AllocChunk(4);
@@ -316,7 +312,7 @@ public:
   }
 };
 #else
-class DllExport JavaInt {
+class JavaDll JavaInt {
 public:
   static word ToWord(s_int value) {
     s_int x = value * 2;
@@ -328,7 +324,7 @@ public:
 };
 #endif
 
-class DllExport JavaLong: public Chunk {
+class JavaDll JavaLong: public Chunk {
 public:
   static JavaLong *New(s_int32 high, s_int32 low) {
     Chunk *chunk = Store::AllocChunk(8);
@@ -369,7 +365,7 @@ public:
   }
 };
 
-class DllExport Lock: private Block {
+class JavaDll Lock: private Block {
 protected:
   enum { COUNT_POS, THREAD_POS, FUTURE_POS, SIZE };
 public:
@@ -438,7 +434,7 @@ public:
   }
 };
 
-class DllExport Object: private Block {
+class JavaDll Object: private Block {
   friend class Class;
 protected:
   enum {
@@ -529,7 +525,7 @@ public:
 };
 
 //--** arrays are objects
-class DllExport ObjectArray: private Block {
+class JavaDll ObjectArray: private Block {
 protected:
   enum {
     ELEMENT_TYPE_POS, // Type (!= PrimitiveType)
@@ -733,7 +729,7 @@ public:
   }
 };
 
-class DllExport ClassObject: public Object {
+class JavaDll ClassObject: public Object {
 private:
   static word wClass;
 public:
@@ -747,7 +743,7 @@ public:
   }
 };
 
-class DllExport JavaString: public Object {
+class JavaDll JavaString: public Object {
 protected:
   enum {
     VALUE_INDEX, // BaseArray(Char)
@@ -884,7 +880,7 @@ public:
   }
 };
 
-class DllExport StackTraceElement: public Object {
+class JavaDll StackTraceElement: public Object {
 public:
   enum {
     DECLARING_CLASS_INDEX, // JavaString
@@ -895,7 +891,7 @@ public:
   };
 };
 
-class DllExport Throwable: public Object {
+class JavaDll Throwable: public Object {
 public:
   enum {
     BACKTRACE_INDEX,
@@ -907,7 +903,7 @@ public:
 //
 // Runtime Constant Pool Entries
 //
-class DllExport RuntimeConstantPool: private Block {
+class JavaDll RuntimeConstantPool: private Block {
 public:
   using Block::ToWord;
 
@@ -929,7 +925,7 @@ public:
   }
 };
 
-class DllExport FieldRef: public Block {
+class JavaDll FieldRef: public Block {
 public:
   static FieldRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -940,7 +936,7 @@ public:
   }
 };
 
-class DllExport StaticFieldRef: private FieldRef {
+class JavaDll StaticFieldRef: private FieldRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_REQUIRED_SLOTS_POS, SIZE };
 public:
@@ -970,7 +966,7 @@ public:
   }
 };
 
-class DllExport InstanceFieldRef: private FieldRef {
+class JavaDll InstanceFieldRef: private FieldRef {
 protected:
   enum { INDEX_POS, NUMBER_OF_REQUIRED_SLOTS_POS, SIZE };
 public:
@@ -997,7 +993,7 @@ public:
   }
 };
 
-class DllExport MethodRef: public Block {
+class JavaDll MethodRef: public Block {
 public:
   static MethodRef *FromWord(word x) {
     Block *b = Store::WordToBlock(x);
@@ -1016,7 +1012,7 @@ public:
   }
 };
 
-class DllExport StaticMethodRef: private MethodRef {
+class JavaDll StaticMethodRef: private MethodRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:
@@ -1052,7 +1048,7 @@ public:
   }
 };
 
-class DllExport VirtualMethodRef: private MethodRef {
+class JavaDll VirtualMethodRef: private MethodRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:
@@ -1088,7 +1084,7 @@ public:
   }
 };
 
-class DllExport InterfaceMethodRef: private MethodRef {
+class JavaDll InterfaceMethodRef: private MethodRef {
 protected:
   enum { CLASS_POS, INDEX_POS, NUMBER_OF_ARGUMENTS_POS, SIZE };
 public:

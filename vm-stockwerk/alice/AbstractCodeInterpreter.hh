@@ -19,9 +19,10 @@
 #pragma interface "alice/AbstractCodeInterpreter.hh"
 #endif
 
-#include "generic/Interpreter.hh"
+#include "Seam.hh"
+#include "alice/Base.hh"
 
-class DllExport AbstractCodeInterpreter: public Interpreter {
+class AliceDll AbstractCodeInterpreter: public Interpreter {
 private:
   AbstractCodeInterpreter(): Interpreter() {}
 public:

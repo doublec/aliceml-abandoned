@@ -16,11 +16,6 @@
 #pragma implementation "alice/Data.hh"
 #endif
 
-#include "adt/ChunkMap.hh"
-#include "generic/RootSet.hh"
-#include "generic/Tuple.hh"
-#include "generic/Transform.hh"
-#include "generic/ConcreteRepresentationHandler.hh"
 #include "alice/Data.hh"
 #include "alice/Guid.hh"
 #include "alice/AliceLanguageLayer.hh"

@@ -17,13 +17,9 @@
 #pragma interface "java/NativeMethodTable.hh"
 #endif
 
-#include "adt/ChunkMap.hh"
-#include "generic/RootSet.hh"
-#include "generic/Interpreter.hh"
-#include "generic/Closure.hh"
 #include "java/Data.hh"
 
-class DllExport NativeMethodTable {
+class JavaDll NativeMethodTable {
 private:
   static const u_int initialSize = 19;
   static word wTable;
