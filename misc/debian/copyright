@@ -1,0 +1,9 @@
+This is the Debian prepackaged version of the Alice Programming
+System, version 0.9.  It has been put together by Marco Kuhlmann
+<kuhlmann@ps.uni-sb.de> using alice-0.9.tar.gz, which was
+obtained from http://www.ps.uni-sb.de/alice/.  Note that this
+package is not an official part of the Debian distribution.
+
+The Alice Programming System is distributed under the terms and
+conditions of the X11 License.  See the file
+/usr/share/doc/alice/COPYING for details.
