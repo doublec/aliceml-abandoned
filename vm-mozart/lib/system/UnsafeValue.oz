@@ -26,6 +26,14 @@ define
       Value.(I + 1)
    end
 
+   fun {OzLabelToAlice X}
+      case {Label X} of '|' then '::'
+      [] true then 'true'
+      [] false then 'false'
+      [] A then A
+      end
+   end
+
    fun {FindTag Tags Label I}
       case Tags.(I + 1) of 'ALPHA'(S) andthen {VirtualString.toAtom S} == Label
       then I
@@ -38,7 +46,8 @@ define
 	   'same': System.eq
 	   'proj': ProjRecord
 	   'projTuple': ProjTuple
-	   'tag': fun {$ Value Tags} {FindTag Tags {Label Value} 0} end
+	   'tag':
+	      fun {$ Value Tags} {FindTag Tags {OzLabelToAlice Value} 0} end
 	   'projTagged': ProjRecord
 	   'projTaggedTuple': ProjTuple
 	   'con': Label
