@@ -3,12 +3,48 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
+
+import
+    structure FromEqHashKey
+from "../../lib/utility/HASH_KEY-sig"
+
+import
+    structure MkHashScopedImpMap
+from "../../lib/utility/MkHashScopedImpMap"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Stamp
+from "../common/Stamp"
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import
+    structure FlatGrammar
+from "../backend-common/FlatGrammar"
+
+import
+    structure IL
+from "IL"
+
+import
+    structure System
+from "System"
+
+import
+    signature CODE_STORE
+from "CODE_STORE-sig"
 
 structure CodeStore :> CODE_STORE =
     struct

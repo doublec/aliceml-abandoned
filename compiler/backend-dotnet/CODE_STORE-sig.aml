@@ -3,7 +3,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 1999-2000
+ *   Leif Kornstaedt, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -28,6 +28,18 @@
  * invocation of defineClass.  All classes must have been defined
  * when calling close.
  *)
+
+import
+    structure FlatGrammar
+from "../../backend-common/FlatGrammar"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure IL
+from "IL"
 
 signature CODE_STORE =
     sig
