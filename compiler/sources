@@ -32,6 +32,8 @@ misc/PP_MISC.sig
 misc/PPMisc.sml
 misc/URL.sig
 misc/Url.sml
+misc/SORT.sig
+misc/MakeSort.sml
 misc/DEPTH_FIRST_SEARCH.sig
 misc/MakeDepthFirstSearch.sml
 infrastructure/CRASH.sig
@@ -154,6 +156,8 @@ backend-common/SIMPLIFY_REC.sig
 backend-common/SimplifyRec.sml
 backend-common/FLATTENING_PHASE.sig
 backend-common/FlatteningPhase.sml
+backend-common/PRIM_OPS.sig
+backend-common/PrimOps.sml
 backend-common/VALUE_PROPAGATION_PHASE.sig
 backend-common/ValuePropagationPhase.sml
 backend-common/LIVENESS_ANALYSIS_PHASE.sig
