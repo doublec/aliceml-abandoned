@@ -106,9 +106,10 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	fun outputDec (q, ValDec (coord, id, exp)) =
 	    (f (q, "valDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m(q); outputExp (q, exp); r q)
-	  | outputDec (q, ValRecDec (coord, ids, exp, _)) =
-	    (f (q, "valDec"); outputCoord (q, coord); m q;
-	     outputList outputId (q, ids); m q; outputExp (q, exp); r q)
+	  | outputDec (q, ValRecDec (coord, ids, exp, isRecursive)) =
+	    (f (q, "valRecDec"); outputCoord (q, coord); m q;
+	     outputList outputId (q, ids); m q; outputExp (q, exp); m q;
+	     outputBool (q, isRecursive); r q)
 	  | outputDec (q, ConDec (coord, id, hasArgs)) =
 	    (f (q, "conDec"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); r q)
@@ -152,6 +153,7 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputList outputExp (q, exps); r q)
 	  | outputExp (q, TestExp (coord, longid, test, exp1, exp2)) =
 	    (f (q, "testExp"); outputCoord (q, coord); m q;
+	     outputLongid (q, longid); m q;
 	     outputTest (q, test); m q; outputExp (q, exp1); m q;
 	     outputExp (q, exp2); r q)
 	  | outputExp (q, RaiseExp (coord, exp)) =
