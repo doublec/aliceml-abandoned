@@ -60,8 +60,14 @@ AC_PATH_SEAM
 case $host_os in
     darwin*)
        DEFS="${DEFS}${DEFS:+ }-D_BSD_SOCKLEN_T_"
+       alicedll=""
+       ;;
+    *)
+       alicedll="${seamlibdir}/alice.dll"
        ;;
 esac
+
+AC_SUBST(alicedll)
 
 AC_CHECK_SIZEOF(long)
 
