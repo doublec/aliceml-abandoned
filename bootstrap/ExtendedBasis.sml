@@ -8,6 +8,7 @@ signature GENERAL =
 
     val :=: :	'a ref * 'a ref -> unit
     val flip :	('a * 'b -> 'c) -> ('b * 'a -> 'c)
+    val inverse :	order -> order
   end
 
 
@@ -17,6 +18,9 @@ structure General : GENERAL =
 
     fun op :=: (r1 as ref x1, r2 as ref x2)	= (r1 := x2 ; r2 := x1)
     fun flip f (x,y)				= f(y,x)
+    fun inverse LESS				= GREATER
+      | inverse EQUAL				= EQUAL
+      | inverse GREATER				= LESS
   end
 
 
@@ -246,6 +250,9 @@ signature LIST =
 
     val contains :	''a list -> ''a -> bool
     val notContains :	''a list -> ''a -> bool
+
+    val isSorted :	('a * 'a -> order) -> 'a list -> bool
+    val sort :		('a * 'a -> order) -> 'a list -> 'a list
   end
 
 
@@ -291,6 +298,34 @@ structure List : LIST =
       | contains'(y, x::xs)	= y = x orelse contains'(y,xs)
 
     fun notContains xs y	= Bool.not(contains'(y,xs))
+
+    fun isSorted  compare xs	= isSorted'(compare, xs)
+    and isSorted'(compare,(nil|_::nil))
+				= true
+      | isSorted'(compare, x1::(xs as x2::_))
+				= compare(x1,x2) <> GREATER
+					  andalso isSorted'(compare, xs)
+
+    fun split nil		= (nil, nil)
+      | split(xs as _::nil)	= (xs, nil)
+      | split(x1::x2::xs)	= let val (xs1,xs2) = split xs
+				  in (x1::xs1, x2::xs2) end
+    fun sort compare		=
+    let
+	fun merge(xs, nil)	= xs
+	  | merge(nil, ys)	= ys
+	  | merge(xs as x::xs',
+		  ys as y::ys')	= case compare(x,y)
+				    of LESS    => x::merge(xs',ys)
+				     | EQUAL   => x::y::merge(xs',ys')
+				     | GREATER => y::merge(xs,ys')
+	fun sort nil		= nil
+	  | sort(xs as _::nil)	= xs
+	  | sort xs		= let val (ys,zs) = split xs
+				  in merge(sort ys, sort zs) end
+    in
+	sort
+    end
   end
 
 
@@ -712,6 +747,9 @@ signature VECTOR =
     val find :		('a -> bool) -> 'a vector -> 'a option
     val contains :	''a vector -> ''a -> bool
     val notContains :	''a vector -> ''a -> bool
+
+    val isSorted :	('a * 'a -> order) -> 'a vector -> bool
+    val sort :		('a * 'a -> order) -> 'a vector -> 'a vector
   end
 
 
@@ -766,6 +804,14 @@ structure Vector : VECTOR =
 				      if f x then SOME x
 					     else find'(f,v,i+1)
 				  end
+
+    fun sort compare		= sort'(List.sort compare)
+    and sort' sortList v	= fromList(sortList(toList v))
+
+    fun isSorted compare v	= isSorted'(compare,v,1)
+    and isSorted'(compare,v,i)	= i >= length v orelse
+				  compare(sub(v,i-1), sub(v,i)) <> GREATER
+				  andalso isSorted'(compare,v,i+1)
   end
 
 
@@ -914,6 +960,9 @@ signature ARRAY =
     val all :		('a -> bool) -> 'a array -> bool
     val exists :	('a -> bool) -> 'a array -> bool
     val find :		('a -> bool) -> 'a array -> 'a option
+
+    val isSorted :	('a * 'a -> order) -> 'a array -> bool
+    val sort :		('a * 'a -> order) -> 'a array -> unit
   end
 
 
@@ -968,6 +1017,41 @@ structure Array : ARRAY =
 				      if f x then SOME x
 					     else find'(f,a,i+1)
 				  end
+
+    fun isSorted compare a	= isSorted'(compare,a,1)
+    and isSorted'(compare,a,i)	= i >= length a orelse
+				  compare(sub(a,i-1), sub(a,i)) <> GREATER
+				  andalso isSorted'(compare,a,i+1)
+
+    fun sort compare a =
+    let
+	fun partition(i,j,p) =
+	    if i = j then j
+	    else if compare(sub(a,i),p) <> GREATER then partition(i+1,j,p)
+	    else if compare(p,sub(a,j-1)) = LESS   then partition(i,j-1,p)
+	    else (swap(a,i,j-1); partition(i+1,j-1,p))
+
+	fun sort(i,j) =
+	    if j-i <= 1 then ()
+	    else if j-i = 2 then
+		if compare(sub(a,i), sub(a,j-1)) <> GREATER
+		then ()
+		else swap(a,i,j-1)
+	    else let
+		val mid = (i+j) div 2
+		val _ = if compare(sub(a,i), sub(a,mid)) <> GREATER then ()
+			else swap(a,i,mid)
+		val _ = if compare(sub(a,mid), sub(a,j-1)) <> GREATER then ()
+			else (swap(a,mid,j-1);
+			      if compare(sub(a,i),sub(a,mid)) <> GREATER then ()
+			      else swap(a,i,mid))
+	  	val k = partition(i+1,j-1, sub(a,mid))
+	    in
+		sort(i,k); sort(k,j)
+	    end
+    in
+	sort(0, length a)
+    end
   end
 
 
