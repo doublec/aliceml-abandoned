@@ -452,7 +452,7 @@ and
   | Patvid (Shortvid vid) =>
 	(case vid of
 	     (_, Defining loc) => (loc := nextFreeLocal();
-				   [Astore (!loc), Aconst 1])
+				   [Astore (!loc), Iconst 1])
 	   | (_, Bound def) => (case !def of
 				    Shortvid (_,Defining loc) =>
 					[Aload (!loc),
@@ -482,7 +482,7 @@ and
 			[Goto endlabel,
 			 Label undef,
 			 Pop,
-			 Aconst 0,
+			 Iconst 0,
 			 Label endlabel]
 		    end
 	    val skiplabel = aNewLabel()
@@ -496,7 +496,7 @@ and
 	    prc @
 	    [Label skiplabel]
 	end
-  | (nil, _) => [Aconst 1]
+  | (nil, _) => [Iconst 1]
 
 and
     matchCode =
