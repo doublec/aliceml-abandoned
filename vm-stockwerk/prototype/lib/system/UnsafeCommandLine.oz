@@ -13,7 +13,6 @@
 functor
 import
    Property(get)
-   Application(getArgs)
 export
    module: CommandLineComponent
 define
@@ -29,7 +28,7 @@ define
    tuple(I_name: fun {$} {ByteString.make {Property.get 'root.url'}} end#n_v
 	 I_arguments:
 	    fun {$}   %--** incorrect
-	       {FoldR {Application.getArgs plain}
+	       {FoldR {Property.get 'stockwerk.args'}
 		fun {$ S In} tag(CONS {ByteString.make S} In) end NIL}
-	    end#r_v)
+	    end#n_v)
 end
