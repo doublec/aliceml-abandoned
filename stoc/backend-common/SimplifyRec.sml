@@ -139,12 +139,12 @@ structure SimplifyRec :> SIMPLIFY_REC =
 		 (expFields', FieldSort.Tup n) =>
 		     if length pats = n then
 			 ListPair.foldr
-			 (fn (pat, Field (_, lab, exp), (cr, idsExpr)) =>
+			 (fn (pat, Field (_, _, exp), (cr, idsExpr)) =>
 			  let
 			      val (cs, idsExps) = derec' (pat, exp)
 			  in
 			      (cs @ cr, idsExps @ idsExpr)
-			  end) (nil, nil) (pats, expFields)
+			  end) (nil, nil) (pats, expFields')
 		     else Error.error (coord, "pattern never matches")
 	       | (_, FieldSort.Rec) =>
 		     Error.error (coord, "pattern never matches"))
