@@ -1,17 +1,41 @@
+(*
+ * Authors:
+ *   Robert Grabowski <grabow@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Robert Grabowski, 2003
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+
+(* 
+ The TypeManager structure provides functions that operate on the TypeTree,
+ like converting a TypeTree into alice and C type names,
+ defining the names of the unsafe<->safe and word<->C conversion functions,
+ determining the name space a TypeTree.decl belongs to,
+ handling the in/out arguments of a function,
+ and much more.
+*)
 
 structure TypeManager :> TYPE_MANAGER =
 struct
+    exception EStruct
+    exception EUnion
+
     open TypeTree
 	
-    datatype argtype = IN | OUT
-    type arginfo = argtype * string * TypeTree.ty
-
+    (* Utility function to remove all TYPEREFs from a type (tree) *)
     fun removeTypeRefs (POINTER t)     = POINTER (removeTypeRefs t)
       | removeTypeRefs (ARRAY (x,t))   = ARRAY(x, removeTypeRefs t)
       | removeTypeRefs (LIST  (x,t))   = LIST (x, removeTypeRefs t)
       | removeTypeRefs (TYPEREF (_,t)) = removeTypeRefs t
       | removeTypeRefs t               = t
 
+    (* Checks whether certain references/declarations belong to a namespace *)
     fun isRefOfSpace space (ENUMREF n) =
 	Util.checkPrefix (Util.spaceName space) n
       | isRefOfSpace space (STRUCTREF n) =
@@ -27,10 +51,39 @@ struct
 	Util.checkPrefix (Util.spaceStructPrefix(space)) n
       | isItemOfSpace _ _ = false
 
-    fun getEnumSpace name = 
-	foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
-	       Util.GTK Util.allSpaces
+    (* Functions to build a class dependency list. This list is needed *)
+    (* to find out the type information of a struct pointer *)
+    (* (for creating objects) *)
+    local
+	val classes = ref nil
+	exception NoUnref
+	
+	fun buildClassList' (STRUCT (name,(_,t)::_)) =
+	    (case removeTypeRefs t of
+		 STRUCTREF sup => ( classes := ((sup,name)::(!classes)) )
+	       | _             => () 
+		     )
+	  | buildClassList' _ = ()
 
+	fun getParentClass name nil = raise NoUnref
+	  | getParentClass name ((sup, n)::cs) = 
+	        if n=name then sup else getParentClass name cs
+		
+	fun getUnrefFun' "_GObject"   = "TYPE_G_OBJECT"
+	  | getUnrefFun' "_GtkObject" = "TYPE_GTK_OBJECT"
+	  | getUnrefFun' name        = 
+	    getUnrefFun' (getParentClass name (!classes))
+    in
+	fun buildClassList tree = (classes := nil ; 
+				   List.app buildClassList' tree)
+	fun getTypeInfo t = 
+	    (case removeTypeRefs t of 
+		 STRUCTREF name => getUnrefFun' name
+	       | _              => raise NoUnref)
+	    handle _ => "TYPE_UNKNOWN"
+    end
+
+    (* Convert a TypeTree type into its C type name *)
     local
 	fun numericToCType sign kind =
 	    (if sign then "" else "unsigned ")^
@@ -65,30 +118,37 @@ struct
 	  | getCType (TYPEREF (name,_)) = name
     end
 
-    fun getAliceType VOID                  = "unit"
-      | getAliceType (ELLIPSES true)       = "Core.arg"
-      | getAliceType (ELLIPSES false)      = "Core.arg list"
-      | getAliceType BOOL                  = "bool"
-      | getAliceType (NUMERIC (_,false,_)) = "int"
-      | getAliceType (NUMERIC (_,true,_))  = "real"
-      | getAliceType (POINTER _)           = "Core.object"
-      | getAliceType (STRING _)            = "string"
-      | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " array"
-      | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
-      | getAliceType (FUNCTION _)          = "Core.object"
-      | getAliceType (STRUCTREF _)         = raise EStruct
-      | getAliceType (UNIONREF _)          = raise EUnion
-      | getAliceType (ENUMREF name)        = 
-		Util.spaceName(getEnumSpace name)^"Enums."^name
-      | getAliceType (TYPEREF (_,t))       = getAliceType t
+    (* Convert a TypeTree type into its alice type name *)
+    local
+	fun getEnumSpace name = 
+	    foldl (fn (s,e) => if isRefOfSpace s (ENUMREF name) then s else e)
+	          Util.GTK Util.allSpaces
+    in
+	fun getAliceType VOID                  = "unit"
+	  | getAliceType (ELLIPSES true)       = "Core.arg"
+	  | getAliceType (ELLIPSES false)      = "Core.arg list"
+	  | getAliceType BOOL                  = "bool"
+	  | getAliceType (NUMERIC (_,false,_)) = "int"
+	  | getAliceType (NUMERIC (_,true,_))  = "real"
+	  | getAliceType (POINTER _)           = "Core.object"
+	  | getAliceType (STRING _)            = "string"
+	  | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " array"
+	  | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
+	  | getAliceType (FUNCTION _)          = "Core.object"
+	  | getAliceType (STRUCTREF _)         = raise EStruct
+	  | getAliceType (UNIONREF _)          = raise EUnion
+	  | getAliceType (ENUMREF name)        = 
+	         Util.spaceName(getEnumSpace name)^"Enums."^name
+	  | getAliceType (TYPEREF (_,t))       = getAliceType t
 	 
-    fun getAliceNativeType t =
-	let 
-	    val s = getAliceType t
-	in  
-	    case removeTypeRefs t of (ENUMREF _) => "int" | _ => s
-	end
+	fun getAliceNativeType t =
+	    case removeTypeRefs t of 
+		(ENUMREF _) => "int" 
+	      | _ => getAliceType t
+    end
       
+    (* Return the conversion functions used before and after calling *)
+    (* a native function *)
     fun safeToUnsafe vname (ENUMREF ename)     = ename^"ToInt "^vname
       | safeToUnsafe vname _                   = vname
 
@@ -97,6 +157,49 @@ struct
       | unsafeToSafe vname (LIST(_,POINTER _)) = "map Core.addObject "^vname
       | unsafeToSafe vname _                   = vname
 
+    (* Return the macro name for converting from and to a word; *)
+    (* plus extra arguments for that macro *)
+    fun fromWord (NUMERIC(_,false,_)) = ("DECLARE_INT", nil)
+      | fromWord (NUMERIC(_,true, _)) = ("DECLARE_CDOUBLE", nil)
+      | fromWord (ELLIPSES true)      = ("DECLARE_ELLIPSES", nil)
+      | fromWord (ELLIPSES false)     = ("DECLARE_VALIST", nil)
+      | fromWord BOOL                 = ("DECLARE_BOOL", nil)
+      | fromWord (POINTER _)          = ("DECLARE_OBJECT", nil)
+      | fromWord (STRING _)           = ("DECLARE_CSTRING", nil)
+      | fromWord (ARRAY (_,t))        = ("DECLARE_CARRAY",
+					 [getCType t,#1(fromWord t)])
+      | fromWord (LIST("GList", t))   = ("DECLARE_GLIST", [#1(fromWord t)])
+      | fromWord (LIST("GSList", t))  = ("DECLARE_GSLIST",[#1(fromWord t)])
+      | fromWord (FUNCTION _)         = ("DECLARE_OBJECT", nil)
+      | fromWord (ENUMREF _)          = ("DECLARE_ENUM", nil)
+      | fromWord (TYPEREF (_,t))      = fromWord t
+      | fromWord _                    = ("DECLARE_UNKNOWN", nil)
+
+    fun toWord (NUMERIC(_,false,_))      = ("INT_TO_WORD", nil)
+      | toWord (NUMERIC(_,true ,_))      = ("REAL_TO_WORD", nil)
+      | toWord BOOL                      = ("BOOL_TO_WORD", nil)
+      | toWord (POINTER t)               = ("OBJECT_TO_WORD", [getTypeInfo t])
+      | toWord (STRING _)                = ("STRING_TO_WORD", nil)
+      | toWord (LIST("GList",STRING _))  = ("GLIST_STRING_TO_WORD", nil)
+      | toWord (LIST("GSList",STRING _)) = ("GSLIST_STRING_TO_WORD", nil)
+      | toWord (LIST("GList",_))         = ("GLIST_OBJECT_TO_WORD", nil)
+      | toWord (LIST("GSList",_))        = ("GSLIST_OBJECT_TO_WORD", nil)
+      | toWord (FUNCTION _)              = ("FUNCTION_TO_WORD", nil)
+      | toWord (TYPEREF(_,t))            = toWord t
+      | toWord (ENUMREF _)               = ("ENUM_TO_WORD", nil)
+      | toWord _                         = ("",nil)
+  
+    (* Define how "real" output arguments should be set before the *)
+    (* library function call *)
+    fun outInit (NUMERIC _)      = "= 4711"
+      | outInit BOOL             = "= true"
+      | outInit (TYPEREF (_,t))  = outInit t
+      | outInit _                = ""
+      
+    datatype argtype = IN | OUT
+    type arginfo = argtype * string * TypeTree.ty
+    (* arginfo: IN/OUT argument; name of the C variable; type *)
+
     local
 	fun isOutArg (t as (POINTER (NUMERIC _)))      = true
 	  | isOutArg (POINTER (POINTER (STRUCTREF _))) = true
@@ -104,8 +207,10 @@ struct
 	  | isOutArg (POINTER (STRING _))              = true
 	  | isOutArg _                                 = false
     in
-	(* splits arglist in inArgs and outArgs *)
-	(* where outArgs lose their POINTERs *)
+	(* Splits an list of TypeTree.ty's into inArgs and outArgs      *)
+	(* (arginfo lists), where outArgs lose their POINTERs           *)
+	(* example: [BOOL, POINTER (NUMERIC ...)] ->                    *)
+	(*      ( [(IN, "in0", BOOL)] , [(OUT, "out1", NUMERIC ...)] )  *)
 	fun splitArgTypes arglist =
 	let
 	    val arglist' = List.filter (fn VOID => false | _ => true) arglist
@@ -124,19 +229,23 @@ struct
 				  List.tabulate(length arglist',Int.toString))
 	end
 
-        (* declares all argumens as inArgs (needed for get/set field funs) *)
+        (* Converts all argumens into inArgs (needed for get/set field funs) *)
 	fun splitArgTypesNoOuts arglist =
 	    ListPair.map (fn (num,t) => (IN, "in"^num, t))
 	            (List.tabulate (length arglist,Int.toString), arglist)
     end
 
-    (* splits an arg list into an IN arg list and an OUT arg list *)
+    (* splits an arginfo list into an IN arginfo list and an OUT arginfo list*)
+    (* doinout = whether output arguments are also input arguments *)
     fun splitInOuts (l,doinout) =
 	(List.filter (fn (IN,_,_) => true | _ => doinout) l,
 	 List.filter (fn (IN,_,_) => false | _ => true) l)
+
+    (* returns the number of input/output arguments *)
     fun numIns (l,doinout) = length (#1 (splitInOuts (l,doinout)))
     fun numOuts (l,doinout) = length (#2 (splitInOuts (l,doinout)))
 
+    (* Return the C type name of a function *)
     fun getCFunType (funName, ret, arglist, mask) =
     let
 	fun getCType' (IN,_,t) = getCType t
@@ -147,6 +256,7 @@ struct
 	if mask then (Util.replaceChar (#"*","#") s) else s
     end
 
+    (* Return the Alice type name of a function *)
     fun getAliceFunType (funName, ret, arglist, doinout) convFun =
     let
 	val (ins,outs') = splitInOuts (arglist,doinout)
@@ -158,33 +268,7 @@ struct
 	(Util.makeTuple " * " "unit" (map (convFun o getType) outs))
     end
 
-
-(**)val wac = ref 0
-(**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
-(**)  | workAround s = isItemOfSpace Util.GDK s orelse
-                            (wac := (!wac) + 1 ; (!wac) < 200)
-
-    fun checkItem (FUNC (n,ret,arglist)) =
-    let
-	fun error s = ( print ("function "^n^" ignored: "^s^"\n") ; false )
-    in
-	( map getAliceType (ret::arglist) ; true )
-	handle
-	   EStruct   => error "struct in arglist or retval"
-	 | EUnion    => error "union in arglist or retval"
-    end		    
-(**)  | checkItem (s as (STRUCT _)) = workAround s
-      | checkItem _ = true
-
-    fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
-      | checkStructMember (_,t) =
-	(case removeTypeRefs t of
-	     FUNCTION _        => false
-	   | ARRAY _           => false
-	   | POINTER (ARRAY _) => false
-           | t'         => ((getAliceType t' ; true) handle _ => false))
-
-
+    (* Creates a FUNC declaration for a specific get/set function *)
     fun makeFieldFun space (sname, mname, mtype, get) =
     let
 	val sname' = (Util.spaceName space)^
@@ -195,5 +279,40 @@ struct
 	    then (sname'^"_get_field_"^mname, mtype, [stype])
   	    else (sname'^"_set_field_"^mname, VOID, [stype, mtype])
     end
+
+
+    local 
+	(* workaround needed because too many get/set functions *)
+	(* produce alice compiler crash *)
+	(**)val wac = ref 0    
+	(**)fun workAround (STRUCT ("_GtkFileSelection",_)) = true
+	(**)  | workAround s = isItemOfSpace Util.GDK s orelse
+                            (wac := (!wac) + 1 ; (!wac) < 200)
+    in
+        (* checks whether a binding can be generated for a declaration  *)
+	fun checkItem (FUNC (n,ret,arglist)) =
+	let
+	    fun error s = ( print ("function "^n^" ignored: "^s^"\n") ; false )
+	in
+	    ( map getAliceType (ret::arglist) ; true )
+	    handle
+  	        EStruct   => error "struct in arglist or retval"
+	      | EUnion    => error "union in arglist or retval"
+	end		    
+(**)	  | checkItem (s as (STRUCT _)) = workAround s
+	  | checkItem _ = true
+    end
+
+    (* Removes struct/enum members for which no binding can be generated *)
+    fun checkStructMember (_,TYPEREF ("gconstpointer", _)) = false
+      | checkStructMember (_,t) =
+	(case removeTypeRefs t of
+	     FUNCTION _        => false
+	   | ARRAY _           => false
+	   | POINTER (ARRAY _) => false
+           | t'         => ((getAliceType t' ; true) handle _ => false))
+
+    fun checkEnumMember (_,v) = (LargeInt.toInt v ; true) handle _ => false
+
 
 end
