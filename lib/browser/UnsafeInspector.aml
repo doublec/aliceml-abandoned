@@ -22,6 +22,7 @@ import structure Layout from "Layout"
 import structure WindowManager from "WindowManager"
 import structure DrawNodes from "DrawNodes"
 import structure Settings from "Settings"
+import structure WindowHelper from "WindowHelper"
 import signature UNSAFE_INSPECTOR from "UNSAFE_INSPECTOR-sig"
 
 open Types MkColorTable CreateDoc
@@ -33,18 +34,20 @@ struct
     fun inspect (v,t) = 
 	let 
 	    val n = NewNode.newNode(v,t)
+	    val w = WindowHelper.fontWidth(!Settings.font)
+	    val h = WindowHelper.fontHeight(!Settings.font)
 	in
 	    ( Layout.layout(n)
 	     ;  DrawNodes.draw(n,0,!WindowManager.act_line,DrawNodes.DRAW)
 	     ; WindowManager.incr_act_line
 	     (Layout.get_ydim(n) + 1)
-	     ; if Real.>(( Real.fromInt(8 * Layout.get_xdim(n))), 
+	     ; if Real.>(( Real.fromInt(w * Layout.get_xdim(n))), 
 			 (!(Settings.max_x))) 
-		   then Settings.max_x := Real.fromInt(8 * Layout.get_xdim(n))
+		   then Settings.max_x := Real.fromInt(w * Layout.get_xdim(n))
 	       else ()
 		   ; let
 			 val a =(!(Settings.max_y))
-			 val b = Real.fromInt(13*(Layout.get_ydim(n) +1))
+			 val b = Real.fromInt(h*(Layout.get_ydim(n) +1))
 			 val c = Real.+(a,b)
 		     in 
 			 Settings.max_y := c
