@@ -10,12 +10,18 @@
 //   $Revision$
 //
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#else
+#include <sys/times.h>
+#endif
+
 #include "Alice.hh"
 
 // to be done: proper platform support (non-windows)
 typedef long long verylong;
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
 static verylong fileTimeToMS(FILETIME *ft) {
   verylong x1 = ((verylong)(unsigned int)ft->dwHighDateTime)<<32;
   verylong x2 = x1 + (unsigned int)ft->dwLowDateTime;
@@ -30,6 +36,14 @@ static verylong GetTime() {
   SystemTimeToFileTime(&st,&ft);
   return fileTimeToMS(&ft);
 }
+#else
+static verylong GetTime() {
+  struct tms tms;
+  if (times(&tms) == (clock_t) -1)
+    Error("could not get time");
+  return tms.tms_utime + tms.tms_stime;
+}
+#endif
 
 static verylong startTime;
 
