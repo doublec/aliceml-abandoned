@@ -165,6 +165,7 @@ structure MainWindow :> MAINWINDOW =
                          refreshAfter=ref 1,
                          breakAfter=ref 0,
                          hideFailed=ref true,
+                         zoomFollows=ref false,
                          cancelSearch=ref false,
                          debug=ref false,
                          status={choice=ref 0,

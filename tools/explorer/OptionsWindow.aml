@@ -20,12 +20,13 @@ structure OptionsWindow =
         case !state of
             SOME {refreshAfter=refreshAfter,
                   breakAfter=breakAfter,
-                  hideFailed=hf,...} =>
+                  hideFailed=hf,
+                  zoomFollows=zf,...} =>
             let
                 val configure = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL)
                 val _ = Gtk.windowSetTitle(configure,"View options")
                 val _ = Gtk.windowSetModal(configure,true)
-                val table1 = Gtk.tableNew(3,2,false)
+                val table1 = Gtk.tableNew(4,2,false)
                 val _ = Gtk.widgetShow table1
                 val _ = Gtk.tableSetRowSpacings(table1,0)
                 val _ = Gtk.tableSetColSpacings(table1,0)
@@ -46,6 +47,9 @@ structure OptionsWindow =
                 val hideFailed =
                     Gtk.checkButtonNewWithMnemonic("Hide failed subtrees")
                 val _ = Gtk.toggleButtonSetActive(hideFailed, !hf)
+                val zoomFollows =
+                    Gtk.checkButtonNewWithMnemonic("Automatic zoom")
+                val _ = Gtk.toggleButtonSetActive(zoomFollows, !zf)
 
                 val _ = Gtk.tableAttach(table1,label1,0,1,0,1,
                                         Gtk.FILL,Gtk.FILL,0,0)
@@ -56,6 +60,8 @@ structure OptionsWindow =
                 val _ = Gtk.tableAttach(table1,solutions2,1,2,1,2,
                                         Gtk.FILL,Gtk.FILL,0,0)
                 val _ = Gtk.tableAttach(table1,hideFailed,0,2,2,3,
+                                        Gtk.FILL,Gtk.FILL,0,0)
+                val _ = Gtk.tableAttach(table1,zoomFollows,0,2,3,4,
                                         Gtk.FILL,Gtk.FILL,0,0)
                 val _ = Gtk.containerAdd(configure,table1)
                         
@@ -81,12 +87,19 @@ structure OptionsWindow =
                 val _ = Gtk.signalConnect(solutions2_adj, "value_changed",
                                           valueChangedHandler2)
 
-                fun toggledHandler _ =
+                fun hfToggledHandler _ =
                     serve (fn () =>
                               Types.setHideFailed state
                               (Gtk.toggleButtonGetActive hideFailed))
                 val _ = Gtk.signalConnect(hideFailed, "toggled",
-                                          toggledHandler)
+                                          hfToggledHandler)
+
+                fun zfToggledHandler _ =
+                    serve (fn () =>
+                              Types.setZoomFollows state
+                              (Gtk.toggleButtonGetActive zoomFollows))
+                val _ = Gtk.signalConnect(zoomFollows, "toggled",
+                                          zfToggledHandler)
             in
                 configure
             end

@@ -51,6 +51,7 @@ structure Types =
                          refreshAfter : int ref,
                          breakAfter : int ref,
                          hideFailed : bool ref,
+                         zoomFollows : bool ref,
                          cancelSearch : bool ref,
                          debug : bool ref,
                          status : {choice : int ref,
@@ -77,25 +78,32 @@ structure Types =
   fun getSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
                                  explorer_state))) =
       (!choice,!failed,!solved)
+    | getSearchState _ = raise Empty
+
   fun resetSearchState (ref (SOME ({status={choice,failed,solved,...},...}:
                                    explorer_state))) =
       (choice := 0; failed := 0; solved := 0)
+    | resetSearchState _ = ()
 
   fun addChoice (ref (SOME ({status={choice,...},...}:
                             explorer_state))) =
       (choice := (!choice) + 1)
+    | addChoice _ = ()
 
   fun addFailed (ref (SOME ({status={failed,...},...}:
                             explorer_state))) =
       (failed := (!failed) + 1)
+    | addFailed _ = ()
 
   fun addSolved (ref (SOME ({status={solved,...},...}:
                             explorer_state))) =
       (solved := (!solved) + 1)
+    | addSolved _ = ()
 
   fun cancelSearch (ref (SOME ({cancelSearch=cs,...}:
                                explorer_state))) =
       if !cs then (cs := false; true) else false
+    | cancelSearch _ = raise Empty
 
   fun setCancelSearch (ref (SOME ({cancelSearch=cs,...}:
                                explorer_state))) =
@@ -114,5 +122,13 @@ structure Types =
   fun setHideFailed (ref (SOME {hideFailed=hideFailed,...}:
                           explorer_state option)) hf = hideFailed:=hf
     | setHideFailed _ _ = ()
+
+  fun getZoomFollows (ref (SOME {zoomFollows=ref zoomFollows,...}:
+                          explorer_state option)) = zoomFollows
+    | getZoomFollows _ = false
+
+  fun setZoomFollows (ref (SOME {zoomFollows=zoomFollows,...}:
+                          explorer_state option)) zf = zoomFollows:=zf
+    | setZoomFollows _ _ = ()
 
   end

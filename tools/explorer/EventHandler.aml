@@ -127,6 +127,37 @@ structure EventHandler =
     | setBBox _ = ()
 
 
+  fun zoomToFit (state : Types.explorer_state option ref) =
+      case !state of
+          SOME {gtk={canvas,scale,...},
+                tree={tree=ref tree,...},
+                ...} =>
+          let
+              val shape = TreeNode.getShape tree
+	      val (minx, maxx, depth) = TreeNode.getBBox shape
+	      val xSize = Gtk.adjustmentGetFieldPageSize
+                              ExplorerGUI.scrolledwindow_xa
+	      val ySize = Gtk.adjustmentGetFieldPageSize
+                              ExplorerGUI.scrolledwindow_ya
+	      val xMin   = Real.round((itr minx)*(TreeNode.defScale))
+	      val xMax   = Real.round((itr maxx)*(TreeNode.defScale))
+	      val xDim   = itr (abs xMin + (abs xMax))
+	      val yDim   = (itr((depth+1)*TreeNode.verSpaceI) *
+			    TreeNode.defScale)
+                           
+              val xScale = ySize / yDim
+              val yScale = xSize / xDim
+                           
+              val scaleTo = Real.min(xScale,yScale)
+              val scaleTo = Real.max(0.1,scaleTo)
+              val scaleTo = Real.min(3.0,scaleTo)
+          in
+	      GnomeCanvas.setPixelsPerUnit(canvas, scaleTo);
+              Gtk.rangeSetValue(ExplorerGUI.scale,scaleTo);
+	      scale := scaleTo / Defaults.floatScaleBase
+          end
+        | _ => ()
+
 
   fun refresh (cmw, serve, state) =
       case !state of
@@ -154,7 +185,10 @@ structure EventHandler =
 		          end);
               Gtk.layoutThaw canvas;
               GnomeCanvas.setPixelsPerUnit(canvas,
-                                           (!scale)*Defaults.floatScaleBase)
+                                           (!scale)*Defaults.floatScaleBase);
+              if Types.getZoomFollows state then
+                  zoomToFit state
+              else ()
           end
         | NONE =>(state := !(cmw serve);
 		  refresh (cmw, serve, state))
@@ -261,34 +295,6 @@ structure EventHandler =
 
 
   fun zoomToFitHandler (serve, state : Types.explorer_state option ref) _ =
-      serve (fn () =>
-                case !state of
-                    SOME {gtk={canvas,scale,...},
-                          tree={tree=ref tree,...},
-                          ...} =>
-                    let
-                        val shape = TreeNode.getShape tree
-	                val (minx, maxx, depth) = TreeNode.getBBox shape
-	                val xSize = Gtk.adjustmentGetFieldPageSize
-                                        ExplorerGUI.scrolledwindow_xa
-	                val ySize = Gtk.adjustmentGetFieldPageSize
-                                        ExplorerGUI.scrolledwindow_ya
-	                val xMin   = Real.round((itr minx)*(TreeNode.defScale))
-	                val xMax   = Real.round((itr maxx)*(TreeNode.defScale))
-	                val xDim   = itr (abs xMin + (abs xMax))
-	                val yDim   = (itr((depth+1)*TreeNode.verSpaceI) *
-				      TreeNode.defScale)
+      serve (fn () => zoomToFit state)
 
-                        val xScale = ySize / yDim
-                        val yScale = xSize / xDim
-
-                        val scaleTo = Real.min(xScale,yScale)
-                        val scaleTo = Real.max(0.1,scaleTo)
-                        val scaleTo = Real.min(3.0,scaleTo)
-                    in
-		        GnomeCanvas.setPixelsPerUnit(canvas, scaleTo);
-                        Gtk.rangeSetValue(ExplorerGUI.scale,scaleTo);
-		        scale := scaleTo / Defaults.floatScaleBase
-                    end
-                  | _ => ())
 end
