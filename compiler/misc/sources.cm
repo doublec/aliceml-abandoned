@@ -26,3 +26,6 @@ Group is
     PrettyPrint.sml
     PP_MISC.sig
     PPMisc.sml
+
+    URL.sig
+    Url.sml
