@@ -1,5 +1,20 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature HASH_KEY from "HASH_KEY-sig"
+
+
 structure StringHashKey : HASH_KEY =
-  struct
+struct
     open Word
     infix << >> andb xorb
 
@@ -23,4 +38,4 @@ structure StringHashKey : HASH_KEY =
 	in
 	    toInt(iter(0,0w0))
 	end
-  end
+end
