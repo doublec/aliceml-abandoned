@@ -37,8 +37,15 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		  | format' IN = (indent := !indent + 1; "")
 		  | format' EX = (indent := !indent - 1; "")
 		  | format' NL =
-		    "\n" ^ String.concat (List.tabulate
-					  (!indent, fn _ => "  "))
+		    let
+			val n = !indent * 2
+			val ntabs = n div 8
+			val nspaces = n mod 8
+		    in
+			"\n" ^
+			String.concat (List.tabulate (ntabs, fn _ => "\t")) ^
+			String.concat (List.tabulate (nspaces, fn _ => " "))
+		    end
 		  | format' (ID (Id (_, stamp, Name.InId))) =
 		    "$" ^ Stamp.toString stamp
 		  | format' (ID (Id (_, stamp, Name.ExId s))) =
@@ -113,6 +120,10 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [S "con ", ID id]
 	  | outputTest (ConAppTest (id, args)) =
 	    SEQ [S "(con ", ID id, S ") ", outputArgs args]
+	  | outputTest (StaticConTest stamp) =
+	    SEQ [S "con ", S (Stamp.toString stamp)]
+	  | outputTest (StaticConAppTest (stamp, args)) =
+	    SEQ [S "(con ", S (Stamp.toString stamp), S ") ", outputArgs args]
 	  | outputTest (RefAppTest id) = SEQ [S "ref ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
@@ -150,7 +161,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 				SEQ [outputTest test, S " =>", IN, NL,
 				     outputBody (body, shared), EX, NL])
 		      testBodyList),
-		 S "else", IN, NL, outputBody (body, shared), EX]
+		 S "else", IN, NL, outputBody (body, shared), EX, EX]
 	  | outputStm (RaiseStm (_, id), _) = SEQ [S "raise ", ID id]
 	  | outputStm (ReraiseStm (_, id), _) = SEQ [S "reraise ", ID id]
 	  | outputStm (SharedStm (_, body, stamp), shared) =
@@ -193,7 +204,7 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 	    SEQ [NL, S "fn ", outputArgs args, S " =>",
 		 IN, NL, outputBody (body, StampSet.new ()), EX]
 	  | outputExp (PrimAppExp (_, name, ids)) =
-	    SEQ [S "prim\"", S name, S "\" ", SEP (S ", ", List.map ID ids)]
+	    SEQ [S "prim \"", S name, S "\" ", SEP (S ", ", List.map ID ids)]
 	  | outputExp (VarAppExp (_, id, args)) =
 	    SEQ [ID id, S " ", outputArgs args]
 	  | outputExp (TagAppExp (_, label, n, args)) =
