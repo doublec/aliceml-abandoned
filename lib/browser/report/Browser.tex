@@ -133,16 +133,6 @@ Die Transformation in
 die interne Beschreibung wird durch die 
 Typinformation der inspizierten Werte gesteuert. 
 
-%%% Bild: Wert, interne Darstellung, graphische Darstellung
-
- % 
-                                 % \big{\+} \\
-                                 % Typreflektion 
-                                 % \( \{eins: char, zwei: char\},
-                                 % \{drei: int, vier: int\} \)
-                                % \end{math}
-                                %
-
 \begin{center}
 \begin{picture}(360,470)
 \put(0,370){\framebox(360,100){\begin{math}
@@ -266,9 +256,61 @@ gleich dargestellt.
 
 \subsection{Zeichnen}
 
-\subsection{Inkrementalit\"at} 
-
 \subsection{Transientenverwaltung}
+
+\subsection{Inkrementalit\"at}
+
+Die Darstellung der inspizierten Alice-Werte auf 
+der graphischen Benutzeroberfl\"ache mu\ss \, 
+schnell an Ver\"anderungen der inspizierten 
+Werte angepasst werden k\"onnen. Dies 
+wird unter anderem dann erforderlich, wenn 
+eine Wertzuweisung an einen Transienten 
+erfolgt, so da\ss \, die Darstellung des 
+neuen Wertes die Darstellung des Transienten 
+auf der Benutzeroberl\"ache ersetzen soll. 
+Diese Ver\"anderungen erfolgen inkrementell, 
+d.h. ausgehend von der bereits bestehenden 
+Darstellung wird m\"oglichst wenig Berechnungsaufwand 
+getrieben, um zur neuen Darstellung zu gelangen.
+
+\begin{center}
+\epsfig{file = incr1.ps, width = 10cm}
+\newline
+\end{center}
+Abbildung ? \\[1cm]
+
+
+Abbildung ? stellt die interne 
+(baumartige) Beschreibung einer Datenstruktur 
+dar. Es wird angenommen, da\ss \, die Darstellung 
+des markierten Teilbaums ersetzt werden mu\ss .
+
+\begin{center}
+\epsfig{file = inkr2.ps, width = 10cm}
+\newline
+\end{center}
+Abbildung ? \\[1cm]
+
+
+Abbildung ? zeigt die n\"otigen Schritte, um zu einer 
+neuen Beschreibung und zu einer neuen Darstellung 
+auf der Benutzeroberfl\"ache zu gelangen. 
+Der betroffene Teilbaum selbst mu\ss vollkommen neu konstruiert, 
+angeordnet und dessen graphische Repr'\"asentation 
+gezeichnet werden. Da dies die Anordnung des 
+gesamten Knoten st\"{o}ren kann, mu\ss \, auf dem Pfad von 
+diesem Teilbaum zum 
+Wurzelknoten die Anordnung neu berechnet werden. Dies kann 
+zur Folge haben, da\ss  von der \"{A}nderung nicht direkt 
+betroffene Teilb\"{a}ume an neue Positionen verschoben 
+werden m\"{u}ssen. 
+
+Von diesen Positions\"{a}nderungen 
+abgesehen k\"{o}nnen diese Teilb\"{a}ume unver\"{a}ndert 
+beibehalten werden. Dies ist g\"{u}nstiger, als den gesamten 
+Baum neu zu konstruieren, anzuordnen und zu zeichnen.   
+ 
 
 \subsection{Module}
 
