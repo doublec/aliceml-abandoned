@@ -251,11 +251,13 @@ define
 	 VHd = vEquateRecord(_ '#' {Length Ids} Reg
 			     {Map Ids
 			      fun {$ Id} value({GetReg Id State}) end} VTl)
-      [] recExp(_ LabIdList) then Arity in
-	 Arity = {Map LabIdList fun {$ Lab#_} Lab end}
-	 VHd = vEquateRecord(_ '#' Arity Reg
-			     {Map LabIdList
-			      fun {$ _#Id} value({GetReg Id State}) end} VTl)
+      [] recExp(_ LabIdList) then Rec in
+	 %--** workaround for duplicate features
+	 Rec = {FoldL LabIdList
+		fun {$ Rec Lab#Id}
+		   {AdjoinAt Rec Lab value({GetReg Id State})}
+		end '#'}
+	 VHd = vEquateRecord(_ '#' {Arity Rec} Reg {Record.toList Rec} VTl)
       [] selExp(_ Lab) then
 	 VHd = vEquateConstant(_ fun {$ X} X.Lab end Reg VTl)
       [] funExp(Coord _ _ oneArg(Id)#Body|ArgsBodyList) then
