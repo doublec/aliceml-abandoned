@@ -1,3 +1,19 @@
+//
+// Author:
+//   Robert Grabowski <grabow@ps.uni-sb.de>
+//
+// Copyright:
+//   Robert Grabowski, 2003
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
+/*
+  The native core component. See Core.aml for the purpose of the core.
+*/
+
 #include "Alice.hh"
 #include "MyNativeAuthoring.hh"
 #include "NativeUtils.hh"
@@ -7,6 +23,9 @@ static word weakDict = 0;
 static word signalMap = 0;
 static word signalMap2 = 0;
 
+///////////////////////////////////////////////////////////////////////
+
+// push a word to the front of a list and return the new list
 word push_front(word list, word value) {
   TagVal *cons = TagVal::New(0,2);
   cons->Init(0,value);
@@ -14,21 +33,21 @@ word push_front(word list, word value) {
   return cons->ToWord();
 }
 
+// convert a pointer to an object, and add it to the weak map if necessary
 inline word PointerToObjectRegister(void *p, int type) {
-  word obj = PointerToObject(p,type);
+  word obj = OBJECT_TO_WORD(p,type);
   WeakMap *wd = WeakMap::FromWord(weakDict);
   word w = Store::UnmanagedPointerToWord(p);
-  if (p && (!wd->IsMember(w))) {
-    __refObject(p,type);
+  if (p && (!wd->IsMember(w)))
     wd->Put(w,obj);
-  }
   return obj;
 }
 
 ///////////////////////////////////////////////////////////////////////
+// GENERAL CONSTANTS
 
 DEFINE0(NativeCore_null) {
-  RETURN(PointerToObject(NULL,TYPE_UNKNOWN));
+  RETURN(OBJECT_TO_WORD(NULL));
 } END
 
 DEFINE0(NativeCore_gtkTrue) {
@@ -39,30 +58,8 @@ DEFINE0(NativeCore_gtkFalse) {
   RETURN(INT_TO_WORD(FALSE));
 } END
 
-DEFINE1(NativeCore_unrefObject) {
-  DECLARE_OBJECT_WITH_TYPE(p,type,x0);
-  //! g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
-  __unrefObject(p,type);  
-  RETURN(x0);
-} END
-
-DEFINE1(NativeCore_hasSignals) {
-  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  RETURN(BOOL_TO_WORD(type == TYPE_GTK_OBJECT));
-} END
-
-DEFINE1(NativeCore_printObject) {
-  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
-  g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
-  RETURN_UNIT;
-} END
-
-DEFINE0(NativeCore_forceGC) {
-  StatusWord::SetStatus(Store::GCStatus());
-  RETURN_UNIT;
-} END
-
 ///////////////////////////////////////////////////////////////////////
+// EVENT HANDLING FUNCTIONS
 
 static inline word ExposeEvent(GdkEvent* event, int label) {
   GdkEventExpose *ev = reinterpret_cast<GdkEventExpose*>(event);
@@ -274,6 +271,7 @@ word GdkEventToDatatype(GdkEvent *event) {
   }
 }
 
+// put a word on a stream
 inline void put_on_stream(word *stream, word value) {
   Future *f = static_cast<Future*>(Store::WordToTransient(*stream));
   *stream = (Future::New())->ToWord();  
@@ -281,12 +279,14 @@ inline void put_on_stream(word *stream, word value) {
   f->Become(REF_LABEL, push_front(*stream, value));
 }
 
+// construct an arg value
 inline word create_param(int tag, word value) {
   TagVal *param = TagVal::New(tag,1);
   param->Init(0, value);
   return param->ToWord();
 }
 
+// convert a pointer to an object with the correct type information
 word create_object(GType t, gpointer p) {
   static const GType G_LIST_TYPE = g_type_from_name("GList");
   static const GType G_SLIST_TYPE = g_type_from_name("GSList");
@@ -297,12 +297,12 @@ word create_object(GType t, gpointer p) {
   word value;
   if (g_type_is_a(t, G_LIST_TYPE)) {
     tag = LIST;
-    value = GListToObjectList(static_cast<GList*>(p));
+    value = GLIST_OBJECT_TO_WORD(static_cast<GList*>(p));
   }
   else
     if (g_type_is_a(t, G_SLIST_TYPE)) {
       tag = LIST;
-      value = GSListToObjectList(static_cast<GSList*>(p));
+      value = GSLIST_OBJECT_TO_WORD(static_cast<GSList*>(p));
     }
     else
       if (t == GDK_EVENT_TYPE) {
@@ -318,6 +318,7 @@ word create_object(GType t, gpointer p) {
   return create_param(tag, value);
 }
 
+// main function that puts arguments on event stream
 void sendArgsToStream(gint connid, guint n_param_values, 
 		      const GValue *param_values) {
 
@@ -399,6 +400,8 @@ void sendArgsToStream(gint connid, guint n_param_values,
   //  g_message("event has been put on stream");
 }
 
+// the generic_marshaller is attached to every GObject (instead of the
+// the alice callback function, which cannot be invoked in C)
 void generic_marshaller(GClosure *closure, GValue *return_value, 
 			guint n_param_values, const GValue *param_values, 
 			gpointer, gpointer marshal_data) {
@@ -447,7 +450,44 @@ DEFINE0(NativeCore_getEventStream) {
   RETURN(eventStream);
 } END
 
+////////////////////////////////////////////////////////////////////////
+// SIGNAL MAP FUNCTIONS
+
+DEFINE3(NativeCore_signalMapAdd) {
+  // x0 = connid to add, x1 = callback-fn, x2 = object
+  Map::FromWord(signalMap)->Put(x0,x1);
+
+  DECLARE_OBJECT(p,x2);
+  word key = Store::UnmanagedPointerToWord(p);
+  Map* sm2 = Map::FromWord(signalMap2);
+  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
+  sm2->Put(key, push_front(ids,x0));
+  RETURN_UNIT;
+} END
+
+DEFINE1(NativeCore_signalMapRemove) {
+  // x0 = connid to remove 
+  Map::FromWord(signalMap)->Remove(x0);
+  RETURN_UNIT;
+} END
+
+DEFINE2(NativeCore_signalMapCondGet) {
+  // x0 = connid to get, x1 = alternative
+  RETURN(Map::FromWord(signalMap)->CondGet(x0,x1));
+} END
+
+DEFINE1(NativeCore_signalMapGetConnIds) {
+  // x0 = object
+  DECLARE_OBJECT(p,x0);
+  word key = Store::UnmanagedPointerToWord(p);
+  Map* sm2 = Map::FromWord(signalMap2);
+  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
+  sm2->Remove(key);
+  RETURN(ids);
+} END
+
 //////////////////////////////////////////////////////////////////////
+// WEAK MAP FUNCTIONS
 
 class MyFinalization: public Finalization {
 public:
@@ -486,42 +526,23 @@ DEFINE2(NativeCore_weakMapCondGet) {
   RETURN(WeakMap::FromWord(weakDict)->CondGet(Tuple::FromWord(x0)->Sel(0),x1));
 } END
 
-////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+// OBJECT HANDLING
 
-DEFINE3(NativeCore_signalMapAdd) {
-  // x0 = connid to add, x1 = callback-fn, x2 = object
-  Map::FromWord(signalMap)->Put(x0,x1);
-
-  DECLARE_OBJECT(p,x2);
-  word key = Store::UnmanagedPointerToWord(p);
-  Map* sm2 = Map::FromWord(signalMap2);
-  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
-  sm2->Put(key, push_front(ids,x0));
-  RETURN_UNIT;
+DEFINE1(NativeCore_unrefObject) {
+  DECLARE_OBJECT_WITH_TYPE(p,type,x0);
+  //! g_message("unreffing: Tuple %d = (Pointer: %p, Type: %d)", x0, p, type);
+  __unrefObject(p,type);  
+  RETURN(x0);
 } END
 
-DEFINE1(NativeCore_signalMapRemove) {
-  // x0 = connid to remove 
-  Map::FromWord(signalMap)->Remove(x0);
-  RETURN_UNIT;
-} END
-
-DEFINE2(NativeCore_signalMapCondGet) {
-  // x0 = connid to get, x1 = alternative
-  RETURN(Map::FromWord(signalMap)->CondGet(x0,x1));
-} END
-
-DEFINE1(NativeCore_signalMapGetConnIds) {
-  // x0 = object
-  DECLARE_OBJECT(p,x0);
-  word key = Store::UnmanagedPointerToWord(p);
-  Map* sm2 = Map::FromWord(signalMap2);
-  word ids = sm2->CondGet(key, INT_TO_WORD(Types::nil));
-  sm2->Remove(key);
-  RETURN(ids);
+DEFINE1(NativeCore_hasSignals) {
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
+  RETURN(BOOL_TO_WORD(type == TYPE_GTK_OBJECT));
 } END
 
 //////////////////////////////////////////////////////////////////////
+// MAIN LOOP FUNCTIONS
 
 DEFINE0(NativeCore_isLoaded) {
   RETURN(BOOL_TO_WORD(signalMap != 0));
@@ -553,18 +574,24 @@ DEFINE0(NativeCore_mainIteration) {
   RETURN_UNIT;
 } END
 
+///////////////////////////////////////////////////////////////////////
+// DEBUG FUNCTIONS
+
+DEFINE1(NativeCore_printObject) {
+  DECLARE_OBJECT_WITH_TYPE(obj,type,x0);
+  g_print("printObject: Tuple %d = (Pointer: %p, Type: %d)\n", x0, obj, type);
+  RETURN_UNIT;
+} END
+
+DEFINE0(NativeCore_forceGC) {
+  StatusWord::SetStatus(Store::GCStatus());
+  RETURN_UNIT;
+} END
+
 ////////////////////////////////////////////////////////////////////////
 
 word InitComponent() {
-  Record *record = CreateRecord(21);
-  INIT_STRUCTURE(record, "NativeCore", "isLoaded",
-		 NativeCore_isLoaded, 0);
-  INIT_STRUCTURE(record, "NativeCore", "init", 
-		 NativeCore_init, 0);
-  INIT_STRUCTURE(record, "NativeCore", "eventsPending", 
-		 NativeCore_eventsPending, 0);
-  INIT_STRUCTURE(record, "NativeCore", "mainIteration", 
-		 NativeCore_mainIteration, 0);
+  Record *record = Record::New(21);
   INIT_STRUCTURE(record, "NativeCore", "null", 
 		 NativeCore_null, 0);
   INIT_STRUCTURE(record, "NativeCore", "gtkTrue", 
@@ -572,29 +599,12 @@ word InitComponent() {
   INIT_STRUCTURE(record, "NativeCore", "gtkFalse", 
 		 NativeCore_gtkFalse, 0);
 
-  INIT_STRUCTURE(record, "NativeCore", "unrefObject", 
-		 NativeCore_unrefObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "hasSignals", 
-		 NativeCore_hasSignals, 1);
-
-  INIT_STRUCTURE(record, "NativeCore", "printObject", 
-		 NativeCore_printObject, 1);
-  INIT_STRUCTURE(record, "NativeCore", "forceGC",
-		 NativeCore_forceGC, 0);
-
   INIT_STRUCTURE(record, "NativeCore", "signalConnect", 
 		 NativeCore_signalConnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "signalDisconnect", 
 		 NativeCore_signalDisconnect, 3);
   INIT_STRUCTURE(record, "NativeCore", "getEventStream", 
 		 NativeCore_getEventStream, 0);
-
-  INIT_STRUCTURE(record, "NativeCore", "weakMapAdd", 
-		 NativeCore_weakMapAdd, 1);
-  INIT_STRUCTURE(record, "NativeCore", "weakMapIsMember", 
-		 NativeCore_weakMapIsMember, 1);
-  INIT_STRUCTURE(record, "NativeCore", "weakMapCondGet", 
-		 NativeCore_weakMapCondGet, 2);
 
   INIT_STRUCTURE(record, "NativeCore", "signalMapAdd",
 		 NativeCore_signalMapAdd, 3);
@@ -604,6 +614,32 @@ word InitComponent() {
 		 NativeCore_signalMapCondGet, 2);
   INIT_STRUCTURE(record, "NativeCore", "signalMapGetConnIds",
 		 NativeCore_signalMapGetConnIds, 1);
+
+  INIT_STRUCTURE(record, "NativeCore", "weakMapAdd", 
+		 NativeCore_weakMapAdd, 1);
+  INIT_STRUCTURE(record, "NativeCore", "weakMapIsMember", 
+		 NativeCore_weakMapIsMember, 1);
+  INIT_STRUCTURE(record, "NativeCore", "weakMapCondGet", 
+		 NativeCore_weakMapCondGet, 2);
+
+  INIT_STRUCTURE(record, "NativeCore", "unrefObject", 
+		 NativeCore_unrefObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "hasSignals", 
+		 NativeCore_hasSignals, 1);
+
+  INIT_STRUCTURE(record, "NativeCore", "isLoaded",
+		 NativeCore_isLoaded, 0);
+  INIT_STRUCTURE(record, "NativeCore", "init", 
+		 NativeCore_init, 0);
+  INIT_STRUCTURE(record, "NativeCore", "eventsPending", 
+		 NativeCore_eventsPending, 0);
+  INIT_STRUCTURE(record, "NativeCore", "mainIteration", 
+		 NativeCore_mainIteration, 0);
+
+  INIT_STRUCTURE(record, "NativeCore", "printObject", 
+		 NativeCore_printObject, 1);
+  INIT_STRUCTURE(record, "NativeCore", "forceGC",
+		 NativeCore_forceGC, 0);
 
   RETURN_STRUCTURE("NativeCore$", record);
 }
