@@ -365,7 +365,7 @@ struct
 
     and infToRepTyp' j =
 	if Inf.isTop j then
-	    typ_unit
+	    typ_top
 	else if Inf.isCon j then
 	    let
 		val (k,p) = Inf.asCon j
@@ -397,7 +397,12 @@ struct
 
     and itemToRepRow(item,r) =
 	if Inf.isValItem item then
-	    r
+	    (*UNFINISHED: get rid of this, but how?*)
+	    let
+		val (a,t,d) = Inf.asValItem item
+	    in
+		Type.extendRow(trValLabel a, t, r)
+	    end
 	else if Inf.isTypItem item then
 	    let
 		val (a,k,d) = Inf.asTypItem item
@@ -525,7 +530,7 @@ struct
 
   (* Expressions *)
 
-    fun trIdExp' x'			= let val i' = O.infoId x'
+    fun idToExp x'			= let val i' = O.infoId x'
 					  in O.VarExp(i', O.ShortId(i',x')) end
 
     fun trExps es			= Vector.map trExp es
@@ -571,7 +576,7 @@ struct
 	    val i'' = nonInfo(#region i')
 	    val x'  = O.Id(i', Stamp.new(), Name.InId)
 	    val d'  = O.ValDec(i'', O.VarPat(i',x'), e')
-	    val r'' = trUpdExp'(Type.asProd'(#typ i'), i'', trIdExp' x', r',
+	    val r'' = trUpdExp'(Type.asProd'(#typ i'), i'', idToExp x', r',
 				Vector.toList r')
 	in
 	    O.LetExp(i, #[d'], O.ProdExp(i, r''))
@@ -595,7 +600,7 @@ struct
 
   (* Matches and Patterns *)
 
-    and trIdPat' x'			= O.VarPat(O.infoId x', x')
+    and idToPat x'			= O.VarPat(O.infoId x', x')
 
     and trMatchs ms			= Vector.map trMatch ms
     and trMatch(I.Match(i,p,e))		= O.Match(i, trPat p, trExp e)
@@ -631,11 +636,11 @@ struct
 	let
 	    val i' = nonInfo(#region i)
 	in
-	    O.Field(i', O.Lab(i', Label.fromName n), trIdExp' x')
+	    O.Field(i', O.Lab(i', Label.fromName n), idToExp x')
 	end
 
     and trMod(I.PrimMod(i,s,j))		= O.PrimExp(trModInfo i, s)
-      | trMod(I.VarMod(i,x))		= trIdExp'(trModid x)
+      | trMod(I.VarMod(i,x))		= idToExp(trModid x)
       | trMod(I.StrMod(i,ds))		= let val i'   = trModInfo i
 					      val ds'  = trDecs ds
 					      val ids' = ids ds
@@ -647,7 +652,7 @@ struct
 								trMod m)
       | trMod(I.FunMod(i,x,j,m))	= let val r  = #region(I.infoId x)
 					      val e' = trMod m
-					      val p' = trIdPat'(trModid x)
+					      val p' = idToPat(trModid x)
 					      val m' = O.Match(nonInfo r,p',e')
 					  in O.FunExp(trModInfo i, #[m'])
 					  end
@@ -771,7 +776,9 @@ struct
      *)
 
     and upInf(isOpaque, isntIdentity, x1,j1,x2,j2, r,t1,t2) =
-	if Inf.isSig j2 andalso Inf.isSig j1 then
+	if Inf.isTop j2 andalso Inf.isTop j1 then
+	    NONE
+	else if Inf.isSig j2 andalso Inf.isSig j1 then
 	    let
 		val s1 = Inf.asSig j1
 		val s2 = Inf.asSig j2
@@ -832,8 +839,8 @@ struct
 		     end
 		   | (NONE, NONE) => NONE
 	    end
-	else (* cast to Top *) (*UNFINISHED: what about abstract types?*)
-	    NONE (* is none really correct? shouldn't we replace with unit?*)
+	else (* j1 is sig or arrow, j2 is top *)
+	    SOME(O.TupExp(typInfo(r,typ_unit), #[]))
 
     and upItems(isOpaque, false, x1, s1, x2, [], r, fields) = NONE
       | upItems(isOpaque, true,  x1, s1, x2, [], r, fields) =
@@ -966,7 +973,7 @@ struct
 	let
 	    val x' = O.Id(typInfo(#region i, typ_var), z, trTypName n)
 	in
-	    typOp(lab_inVar, trIdExp' x')
+	    typOp(lab_inVar, idToExp x')
 	end
 
       | trTyp'(I.PrimTyp(i,s)) =
@@ -1102,10 +1109,10 @@ struct
 	let
 	    val r  = #region i
 	    val x' = trVarid x
-	    val d' = O.ValDec(nonInfo r, trIdPat' x',
+	    val d' = O.ValDec(nonInfo r, idToPat x',
 			      varOp(lab_var, trKind(r, k)))
 	    val e' = typOp(a, O.TupExp(typInfo(r,typ_vartyp),
-				       #[trIdExp' x', trTyp' t]))
+				       #[idToExp x', trTyp' t]))
 	in
 	    O.LetExp(O.infoExp e', #[d'], e')
 	end
@@ -1170,12 +1177,13 @@ struct
 	    val s'  = O.Id(i', Stamp.new(), Name.InId)
 	    val e0' = sigOp(lab_empty, trUnit r)
 	    val d'  = O.ValDec(nonInfo r, O.VarPat(i',s'), e0')
-	    val ss' = trSpecs(trIdExp' s', ss)
+	    val ss' = trSpecs(idToExp s', ss)
 
-	    val e1' = infOp(lab_inSig, trIdExp' s')
-	    val (fs',row) = trSpecsRep ss
-	    val e2' = O.ProdExp(typInfo(r, Type.inProd row), fs')
-	    val i'  = typInfo(r, Type.inTuple #[typ_inf, #typ(O.infoExp e2')])
+	    val e1' = infOp(lab_inSig, idToExp s')
+	    val fs' = trSpecsRep ss
+	    val t2  = infToRepTyp(#inf i)
+	    val e2' = O.ProdExp(typInfo(r,t2), fs')
+	    val i'  = typInfo(r, Type.inTuple #[typ_inf,t2])
 	    val e'  = O.TupExp(i', #[e1',e2'])
 	in
 	    O.LetExp(i', Vector.append(#[d'], ss'), e')
@@ -1279,7 +1287,7 @@ struct
 		    val d2' = O.ValDec(i', O.VarPat(i2',x'), ??)*)
 		    val e'  = ikindOp(lab_inDependent,
 				     O.TupExp(typInfo(#region i,typ_pathinfinf),
-					      #[trIdExp' p', trInf' j1, k']))
+					      #[idToExp p', trInf' j1, k']))
 		in
 		    mkKind(O.LetExp(O.infoExp e', #[d1'(*,d2'*)], e'))
 		end
@@ -1342,8 +1350,8 @@ struct
 	    val d2' = O.ValDec(i', p2', e2')
 
 	    val e1' = infOp(a, O.TupExp(typInfo(r,typ_pathinfinf),
-				#[trIdExp' x0', trIdExp' x1', trIdExp' x2']))
-	    val e2' = trIdExp' x3'
+				#[idToExp x0', idToExp x1', idToExp x2']))
+	    val e2' = idToExp x3'
 	    val e'  = O.TupExp(typInfo(r,Type.inTuple #[typ_inf,t2]),#[e1',e2'])
 	in
 	    O.LetExp(O.infoExp e', #[d0',d1',d2'], e')
@@ -1371,7 +1379,7 @@ struct
 			    labOp(lab_fromString,
 				  trString(r, Name.toString(I.name x))))
 	    val e' = trTypRep(p', t)
-	    val d' = O.ValDec(i, trIdPat'(trTypid x), e')
+	    val d' = O.ValDec(i, idToPat(trTypid x), e')
 	in
 	    d' :: ds'
 	end
@@ -1381,7 +1389,7 @@ struct
 	let
 	    val r  = #region(I.infoId x)
 	    val e' = trMod m
-	    val d' = O.ValDec(i, trIdPat'(trModid x), e')
+	    val d' = O.ValDec(i, idToPat(trModid x), e')
 	in
 	    d' :: ds'
 	end
@@ -1396,7 +1404,7 @@ struct
 			    labOp(lab_fromString,
 				  trString(r, Name.toString(I.name x))))
 	    val e' = trInfRep(p', j)
-	    val d' = O.ValDec(i, trIdPat'(trInfid x), e')
+	    val d' = O.ValDec(i, idToPat(trInfid x), e')
 	in
 	    d' :: ds'
 	end
@@ -1425,7 +1433,7 @@ struct
 		     then O.FailExp(typInfo(r, typ_typ))
 		     else typOp(lab_unknown,
 				trKind(r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, trIdPat'(trTypid x), e')
+	    val d' = O.ValDec(nonInfo r, idToPat(trTypid x), e')
 	in
 	    d' :: ds'
         end
@@ -1444,7 +1452,7 @@ struct
 	    val p'  = pathOp(lab_fromLab,
 			     labOp(lab_fromString,
 				   trString(r, Name.toString(I.name x))))
-	    val e1' = trIdExp'(trTypid x)
+	    val e1' = idToExp(trTypid x)
 	    val e2' = trTypRep(p', t)
 	    val e'  = unitTypOp(lab_fill,
 				O.TupExp(typInfo(r, typ_typtyp), #[e1',e2']))
@@ -1463,7 +1471,7 @@ struct
     and trSpecs'(s', ss, ds') = Vector.foldl (trSpec s') ds' ss
 
     and trSpec s' (I.ValSpec(i,x,t), ds') =
-	(* [val x : t]_s = val _  = Inf.extendVal(s,
+	(* [val x : t]_s = val _ = Inf.extendVal(s,
 	 *                                  Inf.newVal(s, Label.fromString[x]),
 	 *                                  [t], NONE)
 	 *)
@@ -1484,9 +1492,9 @@ struct
 	end
 
       | trSpec s' (I.TypSpec(i,x,t), ds') =
-	(* [type x = t]_s = val p  = Inf.newTyp(s, Label.fromString "x")
+	(* [type x = t]_s = val  p = Inf.newTyp(s, Label.fromString "x")
 	 *                  val $x = [t]_p
-	 *                  val _  = Inf.extendTyp(s, p, Type.kind $x, SOME $x)
+	 *                  val  _ = Inf.extendTyp(s, p, Type.kind $x, SOME $x)
 	 *)
 	let
 	    val r   = #region i
@@ -1494,19 +1502,19 @@ struct
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
-	    val pp' = trIdExp' p'
+	    val pp' = idToExp p'
 	    val a'  = labOp(lab_fromString,
 			    trString(r0, Name.toString(I.name x)))
 	    val e0' = pathInfOp(lab_newTyp,
 				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val d0' = O.ValDec(nonInfo r0, trIdPat' p', e0')
+	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
 	    val x'  = trTypid x
-	    val xx' = trIdExp' x'
+	    val xx' = idToExp x'
 	    val to' = trTypRep'(pp', t)
 	    val e1' = case to' of NONE    => trTyp' t
 			        | SOME t' => t'
-	    val d1' = O.ValDec(i', trIdPat' x', e1')
+	    val d1' = O.ValDec(i', idToPat x', e1')
 
 	    val k'  = kindOp(lab_kind, xx')
 	    val o'  = case to'
@@ -1524,7 +1532,7 @@ struct
       | trSpec s' (I.ModSpec(i,x,j), ds') =
 	(* [module x : j]_s = val (x1,$x) = [j]
 	 *                    val _  = Inf.extendMod(s,
-	 *                                  Inf.newMod(s, Label.fromString[x]),
+	 *                                  Inf.newMod(s, Label.fromString "x"),
 	 *                                  x1, NONE)
 	 *)
 	let
@@ -1544,7 +1552,7 @@ struct
 			    trString(r0, Name.toString(I.name x)))
 	    val p'  = pathInfOp(lab_newMod,
 				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val j'  = trIdExp' x1'
+	    val j'  = idToExp x1'
 	    val o'  = trTag(typInfo(r, typ_typOpt), lab_none)
 	    val e2' = unitInfOp(lab_extendMod,
 			O.TupExp(typInfo(r, typ_extendTyp), #[s',p',j',o']))
@@ -1554,7 +1562,7 @@ struct
 	end
 
       | trSpec s' (I.InfSpec(i,x,j), ds') =
-	(* [interface x = j]_s = val p  = Inf.newInf(s, Label.fromString[x])
+	(* [interface x = j]_s = val p  = Inf.newInf(s, Label.fromString "x")
 	 *                       val $x = [j]_p
 	 *                       val x2 = lazy #1($x())
 	 *                       val _  = Inf.extendInf(s, p,
@@ -1565,15 +1573,15 @@ struct
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
-	    val pp' = trIdExp' p'
+	    val pp' = idToExp p'
 	    val a'  = labOp(lab_fromString,
 			    trString(r0, Name.toString(I.name x)))
 	    val e0' = pathInfOp(lab_newInf,
 				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val d0' = O.ValDec(nonInfo r0, trIdPat' p', e0')
+	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
 	    val x'  = trInfid x
-	    val xx' = trIdExp' x'
+	    val xx' = idToExp x'
 	    val jo' = trInfRep'(fn k' => k', fn e' => e', pp', j)
 	    val j'  = case jo' of NONE    => trInf' j
 			        | SOME j' => j'
@@ -1582,12 +1590,12 @@ struct
 	    val m'  = O.Match(nonInfo r1, O.JokPat(typInfo(r,typ_unit)), j')
 	    val t1  = Type.inArrow(typ_unit, #typ i1')
 	    val e1' = O.FunExp(typInfo(r1,t1), #[m'])
-	    val d1' = O.ValDec(nonInfo r1, trIdPat' x', e1')
+	    val d1' = O.ValDec(nonInfo r1, idToPat x', e1')
 
 	    val r2  = r1
 	    val i2' = typInfo(r2,typ_inf)
 	    val x2' = O.Id(i2', Stamp.new(), Name.InId)
-	    val y2' = trIdExp' x2'
+	    val y2' = idToExp x2'
 	    val l'  = O.Lab(nonInfo r2, Label.fromInt 1)
 	    val e2' = O.AppExp(typInfo(r2, #typ i1'), xx', trUnit r2)
 	    val e2' = O.LazyExp(i2', O.SelExp(i2', l', e2'))
@@ -1640,7 +1648,7 @@ struct
 	    val r  = #region i
 	    val x' = trTypid x
 	    val e' = typOp(lab_unknown, trKind(r, Type.kind(#typ(I.infoTyp t))))
-	    val d' = O.ValDec(nonInfo r, O.VarPat(O.infoId x', x'), e')
+	    val d' = O.ValDec(nonInfo r, idToPat x', e')
 	in
 	    d' :: ds'
 	end
@@ -1651,7 +1659,7 @@ struct
     and trRHSRecSpecs'(s', ss, ds') = Vector.foldl (trRHSRecSpec s') ds' ss
     and trRHSRecSpec s' (I.TypSpec(i,x,t), ds') =
 	(* [type x = t]_s = val p = Inf.newTyp(s, Label.fromString[x])
-	 *                  val _ = Type.fill($x, [t](p))
+	 *                  val _ = Type.fill($x, [t]_p)
 	 *                  val _ = Inf.extendTyp(s, p, Type.kind $x, SOME $x)
 	 *)
 	let
@@ -1660,15 +1668,15 @@ struct
 
  	    val r0  = #region(I.infoId x)
 	    val p'  = O.Id(typInfo(r0,typ_path), Stamp.new(), Name.InId)
-	    val pp' = trIdExp' p'
+	    val pp' = idToExp p'
 	    val a'  = labOp(lab_fromString,
 			    trString(r0, Name.toString(I.name x)))
 	    val e0' = pathInfOp(lab_newTyp,
 				O.TupExp(typInfo(r0, typ_signlab), #[s',a']))
-	    val d0' = O.ValDec(nonInfo r0, O.VarPat(O.infoId p', p'), e0')
+	    val d0' = O.ValDec(nonInfo r0, idToPat p', e0')
 
 	    val x'  = trTypid x
-	    val xx' = trIdExp' x'
+	    val xx' = idToExp x'
 	    val a'  = labOp(lab_fromString,
 			 trString(#region(I.infoId x), Name.toString(I.name x)))
 	    val p'  = pathInfOp(lab_newTyp,
@@ -1699,73 +1707,66 @@ struct
 
   (* Signature structures *)
 
-    and trSpecsRep  ss =
+    and trSpecsRep ss = Vector.rev(Vector.fromList(trSpecsRep'(ss,[])))
+
+    and trSpecsRep'(ss, fs') = Vector.foldl trSpecRep fs' ss
+
+    and trSpecRep(I.ValSpec(i,x,t), fs') =
+	(*UNFINISHED: get rid of this, but how?*)
 	let
-	    val (fs',row) = trSpecsRep'(ss, [], Type.emptyRow())
+	    val i' = nonInfo(#region(I.infoId x))
+	    val x' = trValid x
+	    val a  = Label.fromName(O.name x')
 	in
-	    (Vector.rev(Vector.fromList fs'), row)
+	    O.Field(i', O.Lab(i',a), O.FailExp(O.infoId x')) :: fs'
 	end
 
-    and trSpecsRep'(ss, fs', row) = Vector.foldl trSpecRep (fs',row) ss
-
-    and trSpecRep(I.ValSpec(i,x,t), fs'row) = fs'row
-
-      | trSpecRep(I.TypSpec(_,x,t), (fs',row)) =
+      | trSpecRep(I.TypSpec(i,x,t), fs') =
 	let
-	    val r  = #region(I.infoId x)
-	    val i' = nonInfo r
+	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trTypid x
 	    val a  = Label.fromName(O.name x')
-	    val f' = O.Field(i', O.Lab(i', a), trIdExp' x')
 	in
-	    (f' :: fs', Type.extendRow(a, typ_typ, row))
+	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.ModSpec(i,x,j), (fs',row)) =
+      | trSpecRep(I.ModSpec(i,x,j), fs') =
 	let
-	    val r  = #region(I.infoId x)
-	    val i' = nonInfo r
+	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trModid x
 	    val a  = Label.fromName(O.name x')
-	    val f' = O.Field(i', O.Lab(i', a), trIdExp' x')
 	in
-	    (f' :: fs', Type.extendRow(a, #typ(O.infoId x'), row))
+	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.InfSpec(i,x,j), (fs',row)) =
+      | trSpecRep(I.InfSpec(i,x,j), fs') =
 	let
-	    val r  = #region(I.infoId x)
-	    val i' = nonInfo r
+	    val i' = nonInfo(#region(I.infoId x))
 	    val x' = trInfid x
 	    val a  = Label.fromName(O.name x')
-	    val f' = O.Field(i', O.Lab(i', a), trIdExp' x')
 	in
-	    (f' :: fs', Type.extendRow(a, typ_inf, row))
+	    O.Field(i', O.Lab(i',a), idToExp x') :: fs'
 	end
 
-      | trSpecRep(I.FixSpec(i,l,q), fs'row) =
-	fs'row
+      | trSpecRep(I.FixSpec(i,l,q), fs') =
+	fs'
 
-      | trSpecRep(I.RecSpec(i,ss), fs'row) =
-	Vector.foldl trSpecRep fs'row ss
+      | trSpecRep(I.RecSpec(i,ss), fs') =
+	trSpecsRep'(ss, fs')
 
-      | trSpecRep(I.ExtSpec(i,j), fs'row) =
+      | trSpecRep(I.ExtSpec(i,j), fs') =
 	unfinished (#region i) "trSpecRep" "signature extension"
 
 
   (* Imports and annotations *)
 
-    fun idToDec(x' as O.Id(i,_,n), y, tMod, tField) =
+    fun idToDec(x' as O.Id(i,_,n), y) =
 	let
-	    val r    = #region i
-	    val i'   = nonInfo r
-	    val tSel = Type.inArrow(tMod, tField)
+	    val i' = nonInfo(#region i)
 	in
-	    O.ValDec(i', O.VarPat(typInfo(r,tField), x'),
-			 O.LazyExp(typInfo(r,tSel),
-				   O.SelExp(typInfo(r,tSel),
-					    O.Lab(i', Label.fromName n),
-					    O.VarExp(typInfo(r,tMod), y))))
+	    O.ValDec(i', idToPat x',
+			 O.LazyExp(i, O.SelExp(i, O.Lab(i', Label.fromName n),
+						  O.VarExp(O.infoLongid y, y))))
 	end
 
     fun trAnns a_s =
@@ -1777,30 +1778,27 @@ struct
 	    ( xsus', ds'' )
 	end
 
-    and trAnn(I.ImpAnn(i,is,u),(xsus',ds')) =
+    and trAnn(I.ImpAnn(i,is,u), (xsus',ds')) =
 	let
 	    val r    = #region i
 	    val s    = #sign i
 	    val t    = infToTyp(Inf.inSig s)
-	    val x'   = O.Id(typInfo(r,t), Stamp.new(), Name.InId)
-	    val y'   = O.ShortId(typInfo(r,t), x')
-	    val ds'' = trImps(is, y', t, ds')
+	    val i'   = typInfo(r,t)
+	    val x'   = O.Id(i', Stamp.new(), Name.InId)
+	    val ds'' = trImps(is, O.ShortId(i',x'), ds')
 	    val _    = Inf.stripSig s
 	in
 	    ( (x',s,u)::xsus', ds'' )
 	end
 
-    and trImps(is, y, t, ds')		= Vector.foldl(trImp y t) ds' is
-    and trImp y t (I.ValImp(i,x,d),ds')	= idToDec(trValid x, y, t,
-						  #typ(I.infoDesc d)) :: ds'
-      | trImp y t (I.TypImp(i,x,d),ds')	= idToDec(trTypid x, y, t, typ_typ)::ds'
-      | trImp y t (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y, t,
-						  infToTyp(#inf(I.infoDesc d)))
-					  :: ds'
+    and trImps(is, y, ds')		= Vector.foldl (trImp y) ds' is
+    and trImp y (I.ValImp(i,x,d),ds')	= idToDec(trValid x, y) :: ds'
+      | trImp y (I.TypImp(i,x,d),ds')	= idToDec(trTypid x, y) :: ds'
+      | trImp y (I.ModImp(i,x,d),ds')	= idToDec(trModid x, y) :: ds'
 					  before updatePervasive x
-      | trImp y t (I.InfImp(i,x,d),ds')	= idToDec(trInfid x, y, t, typ_inf)::ds'
-      | trImp y t (I.FixImp(i,x,d),ds')	= ds'
-      | trImp y t (I.RecImp(i,is), ds')	= trImps(is, y, t, ds')
+      | trImp y (I.InfImp(i,x,d),ds')	= idToDec(trInfid x, y) :: ds'
+      | trImp y (I.FixImp(i,x,d),ds')	= ds'
+      | trImp y (I.RecImp(i,is), ds')	= trImps(is, y, ds')
 
 
   (* Components *)
