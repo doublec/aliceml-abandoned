@@ -20,6 +20,7 @@ import structure Crash                 from "../infrastructure/Crash"
 import structure EmptyContext          from "../infrastructure/EmptyContext"
 import structure Source                from "../infrastructure/Source"
 import structure IntMap                from "../infrastructure/IntMap"
+import structure StampMap              from "../common/StampMap"
 import structure FlatGrammar           from "../backend-common/FlatGrammar"
 import structure IntermediateAux       from "../backend-common/IntermediateAux"
 import signature ABSTRACT_CODE_GRAMMAR from "ABSTRACT_CODE_GRAMMAR-sig"
@@ -716,8 +717,9 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		else O.TagTest (idRef, nullaryTests, naryTests, elseInstr)
 	    end
 
-	fun translate context (desc, {imports, body, exports, sign}) =
+	fun translate (desc, context, {imports, body, exports, sign}) =
 	    let
+		val context' = StampMap.clone context
 		val filename =
 		    case Source.url desc of
 			SOME url => Url.toString url
@@ -726,7 +728,7 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map (fn (_, sign, url, _) =>
 				   V.tuple #[V.string (Url.toStringRaw url),
 					     V.sign (SOME sign)]) imports
-		val env = startTop (filename, context)
+		val env = startTop (filename, context')
 		val formalId = fresh env
 		val idDefs =
 		    Vector.map (fn (id, _, _, _) =>
@@ -747,17 +749,18 @@ functor MkCodeGenPhase(AbstractCodeGrammar: ABSTRACT_CODE_GRAMMAR):
 		    Vector.map (fn (label, Id (_, stamp, _)) => (stamp, label))
 			       exports
 	    in
-		(* This is an instance of the component type
-		 * defined in lib/system/Component.aml:
-		 *)
-		(V.taggedValue (#[Label.fromString "EVALUATED",
-				  Label.fromString "UNEVALUATED"], 1,
-				#[(Label.fromString "body",
-				   V.closure (abstractCode, #[])),
-				  (Label.fromString "imports",
-				   V.vector imports'),
-				  (Label.fromString "sign",
-				   V.sign (SOME sign))]),
-		 exports)
+		(context',
+		 (* This is an instance of the component type
+		  * defined in lib/system/Component.aml:
+		  *)
+		 (V.taggedValue (#[Label.fromString "EVALUATED",
+				   Label.fromString "UNEVALUATED"], 1,
+				 #[(Label.fromString "body",
+				    V.closure (abstractCode, #[])),
+				   (Label.fromString "imports",
+				    V.vector imports'),
+				   (Label.fromString "sign",
+				    V.sign (SOME sign))]),
+		  exports))
 	    end
     end
