@@ -28,11 +28,8 @@ struct
 
   (* Operations *)
 
-    type typ = Type.t
     type con = Type.con
 
-    val lab_typ_ref	= vallab "typ_ref"
-    val _		= PervasiveType.typ_ref : typ		(* verify *)
     val lab_lookup	= vallab "lookup"
     val _		= PervasiveType.lookup : string -> con	(* verify *)
 end
