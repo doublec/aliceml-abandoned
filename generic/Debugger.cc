@@ -43,18 +43,17 @@ void Debugger::GenerateMissingEvents() {
   }
 }
 
-static bool Exists(word wThread, word list){
-  if (list == Store::IntToWord(0)) {
-    return false;
+static bool Exists(word wThread, word list) {
+  while (list != Store::IntToWord(0)) {
+    Block *b = Store::WordToBlock(list);
+    if (b == INVALID_POINTER) {
+      Error("Invalid Thread List");
+    }
+    if (b->GetArg(HD_POS) == wThread)
+      return true;
+    list = b->GetArg(TL_POS);
   }
-  Block *b = Store::WordToBlock(list);
-  if (b == INVALID_POINTER) {
-    Error("Invalid Thread List");
-  }
-  if (b->GetArg(HD_POS) == wThread) {
-    return true;
-  }
-  return Exists(wThread, b->GetArg(TL_POS));
+  return false;
 }
 
 #define SetBreakpoint(thread) {                         \
@@ -127,7 +126,6 @@ void Debugger::SendEvent(word event) {
 void Debugger::Detach(Thread *thread) {
   thread->SetDebugMode(Thread::DETACH);
   Scheduler::ResumeThread(thread);
-
 }
 
 void Debugger::SingleStep(Thread *thread) {
