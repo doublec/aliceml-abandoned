@@ -296,25 +296,19 @@ prepare
       'Future.await':
 	 fun {$ X} {Wait X} X end
       'Future.byneed':
-	 fun {$ P}
-	    {ByNeed fun {$}
-		       try
-			  {P unit}
-		       catch error(AliceE=alice(...) ...) then
-			  {Value.byNeedFail error(AliceE)}
-		       [] error(InnerE ...) then
-			  {Value.byNeedFail error(InnerE)}
-		       end
-		    end}
+	 fun lazy {$ P}
+	    try
+	       {P unit}
+	    catch error(InnerE ...) then
+	       {Value.byNeedFail error(InnerE)}
+	    end
 	 end
       'Future.concur':
 	 fun {$ P}
 	    !!thread
 		 try
 		    {P unit}
-		 catch error(AliceE=alice(...) ...) then
-		    {Value.byNeedFail error(AliceE)}
-		 [] error(InnerE ...) then
+		 catch error(InnerE ...) then
 		    {Value.byNeedFail error(InnerE)}
 		 end
 	      end
