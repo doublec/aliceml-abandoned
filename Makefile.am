@@ -145,3 +145,6 @@ libseam_la_SOURCES = \
 nodist_libseam_la_SOURCES = \
 	store/StoreConfig.hh
 libseam_la_LDFLAGS = $(EXTRA_LDFLAGS)
+
+aclocaldir = $(datadir)/aclocal
+dist_aclocal_DATA = seam.m4
