@@ -20,7 +20,7 @@
 class VectorTabulateFrame : private StackFrame {
 private:
   static const u_int VECTOR_POS  = 0;
-  static const u_int FUN_POS     = 1;
+  static const u_int CLOSURE_POS = 1;
   static const u_int INDEX_POS   = 2;
   static const u_int NUMELEM_POS = 3;
   static const u_int SIZE        = 4;
@@ -31,7 +31,7 @@ public:
     return Vector::FromWord(StackFrame::GetArg(VECTOR_POS));
   }
   word GetClosure() {
-    return StackFrame::GetArg(FUN_POS);
+    return StackFrame::GetArg(CLOSURE_POS);
   }
   int GetIndex() {
     return Store::WordToInt(StackFrame::GetArg(INDEX_POS));
@@ -47,7 +47,7 @@ public:
     StackFrame *frame =
       StackFrame::New(VECTOR_TABULATE_FRAME, interpreter, SIZE);
     frame->InitArg(VECTOR_POS, vector->ToWord());
-    frame->InitArg(FUN_POS, closure);
+    frame->InitArg(CLOSURE_POS, closure);
     frame->InitArg(INDEX_POS, Store::IntToWord(index));
     frame->InitArg(NUMELEM_POS, Store::IntToWord(numelems));
     return static_cast<VectorTabulateFrame *>(frame);
@@ -64,16 +64,16 @@ public:
 class VectorTabulateInterpreter : public Interpreter {
 private:
   static VectorTabulateInterpreter *self;
-public:
   // VectorTabulateInterpreter Constructor
   VectorTabulateInterpreter() : Interpreter() {}
+public:
   // VectorTabulateInterpreter Static Constructor
   static void Init() {
     self = new VectorTabulateInterpreter();
   }
   // Frame Handling
   static void PushFrame(TaskStack *taskStack,
-			Vector *vector, word fun, int i, int n);
+			Vector *vector, word closure, int i, int n);
   // Execution
   virtual Result Run(TaskStack *taskStack);
   // Debugging
@@ -88,9 +88,9 @@ VectorTabulateInterpreter *VectorTabulateInterpreter::self;
 
 void VectorTabulateInterpreter::PushFrame(TaskStack *taskStack,
 					  Vector *vector,
-					  word fun, int i, int n) {
+					  word closure, int i, int n) {
   VectorTabulateFrame *frame =
-    VectorTabulateFrame::New(self, vector, fun, i, n);
+    VectorTabulateFrame::New(self, vector, closure, i, n);
   taskStack->PushFrame(frame->ToWord());
 }
 
@@ -99,7 +99,7 @@ VectorTabulateInterpreter::Run(TaskStack *taskStack) {
   VectorTabulateFrame *frame =
     VectorTabulateFrame::FromWordDirect(taskStack->GetFrame());
   Vector *vector = frame->GetVector();
-  word fun       = frame->GetClosure();
+  word closure   = frame->GetClosure();
   int i          = frame->GetIndex();
   int n          = frame->GetNumElems();
   Construct();
@@ -112,11 +112,11 @@ VectorTabulateInterpreter::Run(TaskStack *taskStack) {
   }
   else {
     VectorTabulateFrame *newFrame =
-      VectorTabulateFrame::New(this, vector, fun, i, n);
+      VectorTabulateFrame::New(this, vector, closure, i, n);
     taskStack->PushFrame(newFrame->ToWord());
     Scheduler::nArgs = Scheduler::ONE_ARG;
     Scheduler::currentArgs[0] = Store::IntToWord(i);
-    return taskStack->PushCall(fun);
+    return taskStack->PushCall(closure);
   }
 }
 
@@ -126,8 +126,8 @@ const char *VectorTabulateInterpreter::Identify() {
 
 void VectorTabulateInterpreter::DumpFrame(word frameWord) {
   VectorTabulateFrame *frame = VectorTabulateFrame::FromWordDirect(frameWord);
-  fprintf(stderr, "Vector Tabulate %d of %d\n",
-	  frame->GetIndex(), frame->GetNumElems());
+  std::fprintf(stderr, "Vector Tabulate %d of %d\n",
+	       frame->GetIndex(), frame->GetNumElems());
 }
 
 DEFINE1(Vector_fromList) {
@@ -158,6 +158,7 @@ DEFINE2(Vector_sub) {
 } END
 
 DEFINE2(Vector_tabulate) {
+  //--** should only request closure if vector not empty
   DECLARE_INT(length, x0);
   DECLARE_CLOSURE(closure, x1);
   if (length == 0) {
