@@ -159,20 +159,13 @@ define
 	 TaskStack = case Closure of unit then TaskStack0
 		     else pushCall(PushCallInterpreter Closure)|TaskStack0
 		     end
-	 Scheduler, Enqueue({New Thread init(args: Args stack: TaskStack)})
+	 Scheduler, enqueue({New Thread init(args: Args stack: TaskStack)})
       end
       meth wakeup(T)
 	 {T wakeup()}
-	 Scheduler, Enqueue(T)
+	 Scheduler, enqueue(T)
       end
-      meth condEnqueue(T)
-	 case {T getState($)} of runnable
-	    andthen {Not {QueueMember @QueueHd T}}
-	 then Scheduler, Enqueue(T)
-	 else skip
-	 end
-      end
-      meth Enqueue(T) Tl Rest in
+      meth enqueue(T) Tl Rest in
 	 Tl = (QueueTl <- Rest)
 	 Tl = T|Rest
       end
@@ -227,7 +220,7 @@ define
 	    Scheduler, Run(Args TaskStack)
 	 [] preempt(Args TaskStack) then
 	    {@CurrentThread setArgsAndTaskStack(Args TaskStack)}
-	    Scheduler, Enqueue(@CurrentThread)
+	    Scheduler, enqueue(@CurrentThread)
 	 [] exception(Debug Exn TaskStack) then
 	    Scheduler, Handle(Debug Exn TaskStack)
 	 [] request(Transient=transient(TransientState) Args TaskStack) then
