@@ -1,0 +1,54 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestBool :> TESTSUITE = (* the bool test suite *)
+struct
+
+    fun testNot () = 
+	(Test.test (fn x => Bool.not x = false) true;
+	 Test.test (fn x => Bool.not x = true) false)
+
+    fun testCompare () =
+        (Test.test (fn x => Bool.compare x = LESS)    (false, true);
+	 Test.test (fn x => Bool.compare x = GREATER) (true, false);
+	 Test.test (fn x => Bool.compare x = EQUAL)   (true, true);
+	 Test.test (fn x => Bool.compare x = EQUAL)   (false, false))
+
+    fun testEqual () =
+        (Test.test (fn x => Bool.equal x = true)  (true, true);
+	 Test.test (fn x => Bool.equal x = false) (true, false);
+	 Test.test (fn x => Bool.equal x = true)  (false, false);
+         Test.test (fn x => Bool.equal x = false) (false, true))
+
+    fun testToString () =
+	(Test.test (fn x => Bool.toString x = "true")  true;
+	 Test.test (fn x => Bool.toString x = "false") false)
+
+    fun testFromString () = 
+	(Test.test (fn x => Bool.fromString x = SOME true)  "true";
+	 Test.test (fn x => Bool.fromString x = SOME false) "false";
+         Gen.try 100 Gen.string (Test.test (fn x => Bool.fromString x = NONE)))
+
+    fun testScan () = Test.test (fn _ => raise Test.NotYetImplemented) ()
+
+    val suite = ("Bool", [("testNot", testNot), 
+                          ("testCompare", testCompare),
+                          ("testEqual", testEqual),
+                          ("testToString", testToString),
+ 			  ("testFromString", testFromString), 
+	                  ("testScan", testScan)])
+end

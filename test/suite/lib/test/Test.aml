@@ -1,0 +1,16 @@
+import structure Test        from "../../src/Test"
+
+import structure PrettyPrint from "x-alice:/lib/utility/PrettyPrint"
+import structure PPValue     from "x-alice:/lib/system/PPValue"
+
+
+exception NotYetImplemented
+
+val printWidth = ref 80
+
+fun argToStr t x = PrettyPrint.toString(PPValue.ppVal t x, !printWidth)
+
+fun test' t f arg = (assert f arg) 
+                      handle e => raise Test.Error (e, argToStr t arg)
+
+__overload 'a test: ('a -> bool) -> 'a -> unit = test'

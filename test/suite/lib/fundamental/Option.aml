@@ -1,0 +1,62 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestOption :> TESTSUITE =
+struct
+
+    fun testIsSome () =
+	(Test.test (fn x => Option.isSome x = true) (SOME 0);
+	 Test.test (fn x => Option.isSome x = false) NONE)
+
+    fun testIsNone () =
+	(Test.test (fn x => Option.isNone x = true) NONE;
+         Test.test (fn x => Option.isNone x = false) (SOME 0))
+
+    fun testValOf () =
+       (Test.test (fn x => Option.valOf x = 0) (SOME 0);
+	Test.test (fn x => (Option.valOf x handle Option.Option => true)) NONE)
+
+    fun testFilter () = assert raise Test.NotYetImplemented
+
+    fun testJoin () = 
+	(assert Option.join (SOME (SOME 0)) = (SOME 0);
+	 assert Option.join (SOME NONE) = NONE)
+
+    fun testApp () = (Thread.sleep (Time.fromSeconds (Int.toLarge 20)))
+
+    fun testMap () = assert raise Test.NotYetImplemented
+
+    fun testMapPart () = assert raise Test.NotYetImplemented
+
+    fun testFold () = assert raise Test.NotYetImplemented
+
+    fun testCompose () = assert raise Test.NotYetImplemented
+
+    fun testComposePart () = assert raise Test.NotYetImplemented
+
+    val suite = ("Option", [("testIsSome", testIsSome),
+			    ("testIsNone", testIsNone),
+			    ("testValOf", testValOf),
+			    ("testFilter", testFilter),
+			    ("testJoin", testJoin),
+			    ("testApp", testApp),
+			    ("testMap", testMap),
+			    ("testMapPart", testMapPart),
+			    ("testFold", testFold),
+			    ("testCompose", testCompose),
+			    ("testComposePart", testComposePart)])
+end

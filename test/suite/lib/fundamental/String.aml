@@ -1,0 +1,34 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../../src/Test"
+
+import structure Random    from "x-alice:/lib/utility/Random"
+
+structure TestString :> TESTSUITE =
+struct
+
+    fun strGen0 _ = Gen.string 1
+    fun strGen1 _ = Gen.string (Option.valOf Int.maxInt - 1)
+    fun strGen2 _ = Gen.string (Random.int (String.maxSize + 1))
+    val allGenString = [strGen0, strGen1, strGen2]
+    val allGenStrFreq = [(12,strGen0), (18,strGen1), (4,strGen2)]
+
+    fun testSize () =
+	Gen.try 10 (*Gen.oneOfFreq allGenStrFreq*) strGen2 
+	   (fn s => assert true)
+
+    val suite = ("String", [("testSize", testSize)])
+end

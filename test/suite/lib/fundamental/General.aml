@@ -1,0 +1,27 @@
+(*
+ * Authors:
+ *   Sebastian Germesin <germi@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Sebastian Germesin, 2004
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature TESTSUITE from "../TESTSUITE-sig"
+
+import structure Gen       from "../../src/Gen"
+import structure Test      from "../../src/Test"
+
+structure TestGeneral :> TESTSUITE =
+struct
+
+    fun testInverse () =
+	(assert General.inverse LESS = GREATER;
+	 assert General.inverse GREATER = LESS;
+	 assert General.inverse EQUAL = EQUAL)
+
+    val suite = ("General", [])
+end
