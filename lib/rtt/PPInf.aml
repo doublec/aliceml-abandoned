@@ -172,7 +172,7 @@ struct
 
     fun ppVars vs =
 	let
-	    val m     = Type.Map.new()
+	    val m     = Type.Map.map()
 	    val prec  = case vs of ([] | [_]) => 1 | _ => 0
 	    val ddocs = List.mapi (ppVar prec) vs
 	    val doc   = ppCommaList #2 ddocs
@@ -258,7 +258,7 @@ struct
 
     and ppSig s =
 	vbox(below(
-	    List.foldr (ppItem([], LabelSet.new())) empty (items s)
+	    List.foldr (ppItem([], LabelSet.set())) empty (items s)
 	))
 
     and ppSig'(ps,s) =
@@ -266,7 +266,7 @@ struct
 	    nest(
 		text "sig" ^/^
 		vbox(
-		    List.foldr (ppItem(ps, LabelSet.new())) empty (items s)
+		    List.foldr (ppItem(ps, LabelSet.set())) empty (items s)
 		)
 	    ) ^/^
 	    text "end"
@@ -326,7 +326,7 @@ struct
 			text "val " ^^
 			ppLab l ^/^
 			text ":" ^/^
-			PPType.ppTyp' (ps,0,Type.Map.new()) t
+			PPType.ppTyp' (ps,0,Type.Map.map()) t
 		    )))
 	    end
 	  | TypItem(p,k) =>

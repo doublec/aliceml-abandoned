@@ -77,7 +77,7 @@ struct
   (* Name management for holes *)
 
     val counter = ref 0
-    val holes   = Map.new() : int Map.t
+    val holes   = Map.map() : int Map.t
 
     fun holeIndex t =
 	case Map.lookup(holes, canonical t)
@@ -131,7 +131,7 @@ struct
 
   (* Types *)
 
-    fun ppTyp t = ppTyp'([], 0, Map.new(), rootPrec, t)
+    fun ppTyp t = ppTyp'([], 0, Map.map(), rootPrec, t)
     and ppTyp'(ps,i,m,prec,t) =
 	let
 	    val t' = canonical t
@@ -298,7 +298,7 @@ struct
 
   (* Kinds *)
 
-    and ppKind  k              = ppKind'([], 0, Map.new(), rootPrec, k)
+    and ppKind  k              = ppKind'([], 0, Map.map(), rootPrec, k)
     and ppKind'(ps,i,m,prec,k) =
 	case inspectKind k
 	 of StarKind =>
