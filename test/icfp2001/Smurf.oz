@@ -185,7 +185,21 @@ define
 		     down: {FS.value.make FirstNonRootI#LastNonRootI}
 		     eqdown: {FS.value.make FirstVertexI#LastVertexI}
 		     scope: {FS.value.make FirstDataItemI#LastDataItemI}
+		     depth: 0
 		     attributes: RootAttributes)
+
+      %% Initialize element vertices
+      for I in FirstElementI..LastElementI do
+	 V.I = element(mother: {FD.int [RootI FirstElementI#LastElementI]}
+		       daughters:
+			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
+		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
+		       depth: {FD.int 1#NumberOfElements}
+		       attributes: {MkElementAttributes}
+		       tag: {FD.int 1#MaxTag})
+      end
 
       %% Initialize data item vertices
       {List.forAllInd Meaning
@@ -196,21 +210,10 @@ define
 			 down: FS.value.empty
 			 eqdown: {FS.value.singl I}
 			 scope: {FS.value.singl I}
+			 depth: {FD.int 1#(NumberOfElements + 1)}
 			 attributes: {MkDataItemAttributes Property IsSpace}
 			 text: Text)
        end}
-
-      %% Initialize element vertices
-      for I in FirstElementI..LastElementI do
-	 V.I = element(mother: {FD.int [RootI FirstElementI#LastElementI]}
-		       daughters:
-			  {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       down: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       eqdown: {FS.var.upperBound FirstNonRootI#LastNonRootI}
-		       scope: {FS.var.upperBound FirstDataItemI#LastDataItemI}
-		       attributes: {MkElementAttributes}
-		       tag: {FD.int 1#MaxTag})
-      end
 
       %% Treeness Constraints
       for I in FirstElementI..LastElementI do
@@ -288,7 +291,20 @@ define
 	 IsEpsilon =<: (W.mother =: RootI)
       end
 
-      %--** Break symmetries
+      %% Break symmetries #1: Depth Method
+      Depths = for I in FirstVertexI..LastVertexI collect: Collect do
+		  {Collect V.I.depth}
+	       end
+
+      for I in FirstElementI..LastElementI do W MotherDepth in
+	 W = V.I
+	 MotherDepth = {Select.fd Depths W.mother}
+	 W.depth = {FD.plus MotherDepth 1}
+      end
+
+      for I in FirstElementI..LastElementI - 1 do
+	 V.I.depth =<: V.(I + 1).depth
+      end
 
       %% Cost function
       TagCosts = for I in 1..MaxTag collect: Collect do
@@ -405,6 +421,7 @@ define
    end
 \else
    fun {Smurf Meaning NumberOfElements} O Docs in
+      {Inspector.inspect {Reverse Meaning}}
 %      {Explorer.one {Script Meaning NumberOfElements}}
       {Explorer.best {Script Meaning NumberOfElements} Order}
       {Inspector.inspect {ToDoc {Search.base.best {Script Meaning NumberOfElements} Order}.1}}
