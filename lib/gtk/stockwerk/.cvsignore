@@ -35,6 +35,8 @@ GtkEnums.aml
 GtkEnums.stc
 GtkUnsafe.aml
 GtkUnsafe.stc
+GtkBuilder.stc
+GTK_BUILDER-sig.stc
 Makefile.depend
 NativeCore.dll
 NativeFieldsGdk.asig

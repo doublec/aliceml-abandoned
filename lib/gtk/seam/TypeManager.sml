@@ -103,6 +103,7 @@ struct
 	  | getCType BOOL                     = "gboolean"
 	  | getCType (NUMERIC (sign,_,kind))  = numericToCType sign kind
 	  | getCType (POINTER t)              = (getCType t)^"*"
+	  | getCType UNMANAGED                = (*(print "empty1\n" ; raise Empty)*)"void"
 	  | getCType (STRING false)           = "guchar*"
 	  | getCType (STRING true)            = "gchar*"
 	  | getCType (ARRAY (SOME i, t))      = 
@@ -131,6 +132,7 @@ struct
 	  | getAliceType (NUMERIC (_,false,_)) = "int"
 	  | getAliceType (NUMERIC (_,true,_))  = "real"
 	  | getAliceType (POINTER _)           = "Core.object"
+	  | getAliceType UNMANAGED             = (print "empty2\n"; raise Empty)
 	  | getAliceType (STRING _)            = "string"
 	  | getAliceType (ARRAY (_,t))         = (getAliceType t) ^ " vector"
 	  | getAliceType (LIST (_,t))          = (getAliceType t) ^ " list"
@@ -153,6 +155,7 @@ struct
       | safeToUnsafe vname _                   = vname
 
     fun unsafeToSafe vname (ENUMREF ename)     = "IntTo"^ename^" "^vname
+      | unsafeToSafe vname (POINTER UNMANAGED) = vname
       | unsafeToSafe vname (POINTER _)         = "Core.addObject "^vname
       | unsafeToSafe vname (LIST(_,POINTER _)) = "map Core.addObject "^vname
       | unsafeToSafe vname _                   = vname
@@ -164,6 +167,7 @@ struct
       | fromWord (ELLIPSES true)      = ("DECLARE_ELLIPSES", nil)
       | fromWord (ELLIPSES false)     = ("DECLARE_VALIST", nil)
       | fromWord BOOL                 = ("DECLARE_BOOL", nil)
+      | fromWord UNMANAGED            = (print "empty3\n" ; raise Empty)
       | fromWord (POINTER _)          = ("DECLARE_OBJECT", nil)
       | fromWord (STRING _)           = ("DECLARE_CSTRING", nil)
       | fromWord (ARRAY (_,t))        = ("DECLARE_CARRAY",
@@ -178,7 +182,9 @@ struct
     fun toWord (NUMERIC(_,false,_))      = ("INT_TO_WORD", nil)
       | toWord (NUMERIC(_,true ,_))      = ("REAL_TO_WORD", nil)
       | toWord BOOL                      = ("BOOL_TO_WORD", nil)
+      | toWord (POINTER UNMANAGED)       = (print "empty4\n"; raise Empty)
       | toWord (POINTER t)               = ("OBJECT_TO_WORD", [getTypeInfo t])
+      | toWord UNMANAGED                 = (print "empty5\n"; raise Empty)
       | toWord (STRING _)                = ("STRING_TO_WORD", nil)
       | toWord (LIST("GList",STRING _))  = ("GLIST_STRING_TO_WORD", nil)
       | toWord (LIST("GSList",STRING _)) = ("GSLIST_STRING_TO_WORD", nil)
