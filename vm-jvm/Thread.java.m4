@@ -1,6 +1,5 @@
 package de.uni_sb.ps.dml.runtime;
 
-import de.uni_sb.ps.dml.builtin.NoGood;
 /** Diese Klasse repräsentiert de.uni_sb.ps.dml.runtime.Threads.
  *  java.lang.Threads sind First-Class; indem das Interface <code>DMLValue</code>
  *  implementiert wird, können sie wie andere Werte in DML verwendet werden.
