@@ -74,6 +74,8 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	     output1 (q, #"#");
 	     output (q, Int.toString r))
 
+	fun outputInfo (q, (coord, _)) = outputCoord (q, coord)   (*--** *)
+
 	fun outputLit (q, WordLit w) =
 	    (f (q, "wordLit"); outputLargeWord (q, w); r q)
 	  | outputLit (q, IntLit n) =
@@ -136,53 +138,53 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	    (f (q, "recArgs");
 	     outputList (outputPair (outputLab, outputX)) (q, labIdList); r q)
 
-	fun outputStm (q, ValDec (coord, id, exp, isToplevel)) =
-	    (f (q, "valDec"); outputCoord (q, coord); m q;
+	fun outputStm (q, ValDec (info, id, exp, isToplevel)) =
+	    (f (q, "valDec"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputExp (q, exp); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, RecDec (coord, idExpList, isToplevel)) =
-	    (f (q, "recDec"); outputCoord (q, coord); m q;
+	  | outputStm (q, RecDec (info, idExpList, isToplevel)) =
+	    (f (q, "recDec"); outputInfo (q, info); m q;
 	     outputList (outputPair (outputId, outputExp)) (q, idExpList); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, ConDec (coord, id, hasArgs, isToplevel)) =
-	    (f (q, "conDec"); outputCoord (q, coord); m q;
+	  | outputStm (q, ConDec (info, id, hasArgs, isToplevel)) =
+	    (f (q, "conDec"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputBool (q, hasArgs); m q;
 	     outputBool (q, isToplevel); r q)
-	  | outputStm (q, EvalStm (coord, exp)) =
-	    (f (q, "evalStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, EvalStm (info, exp)) =
+	    (f (q, "evalStm"); outputInfo (q, info); m q;
 	     outputExp (q, exp); r q)
-	  | outputStm (q, HandleStm (coord, body1, id, body2, body3, shared)) =
+	  | outputStm (q, HandleStm (info, body1, id, body2, body3, shared)) =
 	    (shared := gen();
-	     f (q, "handleStm"); outputCoord (q, coord); m q;
+	     f (q, "handleStm"); outputInfo (q, info); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
 	     outputBody (q, body2); m q; outputBody (q, body3); m q;
 	     outputInt (q, !shared); r q)
-	  | outputStm (q, EndHandleStm (coord, ref i)) =
-	    (f (q, "endHandleStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, EndHandleStm (info, ref i)) =
+	    (f (q, "endHandleStm"); outputInfo (q, info); m q;
 	     outputInt (q, i); r q)
-	  | outputStm (q, TestStm (coord, id, test, body1, body2)) =
-	    (f (q, "testStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, TestStm (info, id, test, body1, body2)) =
+	    (f (q, "testStm"); outputInfo (q, info); m q;
 	     outputId (q, id); m q; outputTest (q, test); m q;
 	     outputBody (q, body1); m q; outputBody (q, body2); r q)
-	  | outputStm (q, RaiseStm (coord, id)) =
-	    (f (q, "raiseStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, RaiseStm (info, id)) =
+	    (f (q, "raiseStm"); outputInfo (q, info); m q;
 	     outputId (q, id); r q)
-	  | outputStm (q, SharedStm (coord, body, shared)) =
+	  | outputStm (q, SharedStm (info, body, shared)) =
 	    (if !shared = 0 then
 		 (shared := gen ();
-		  f (q, "sharedStm"); outputCoord (q, coord); m q;
+		  f (q, "sharedStm"); outputInfo (q, info); m q;
 		  outputBody (q, body); m q)
 	     else
 		 f (q, "refStm");
 	     outputInt (q, !shared); r q)
-	  | outputStm (q, ReturnStm (coord, exp)) =
-	    (f (q, "returnStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, ReturnStm (info, exp)) =
+	    (f (q, "returnStm"); outputInfo (q, info); m q;
 	     outputExp (q, exp); r q)
 	  | outputStm (q, IndirectStm (_, ref bodyOpt)) =
 	    (output (q, "/* indirect */");
 	     List.app (fn stm => (m q; outputStm (q, stm))) (valOf bodyOpt))
-	  | outputStm (q, ExportStm (coord, ids)) =
-	    (f (q, "exportStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, ExportStm (info, ids)) =
+	    (f (q, "exportStm"); outputInfo (q, info); m q;
 	     outputList outputId (q, ids); r q)
 	and outputExp (q, LitExp (coord, lit)) =
 	    (f (q, "litExp"); outputCoord (q, coord); m q;
