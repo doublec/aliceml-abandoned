@@ -1,2 +1,4 @@
 *.dll *.DLL
 *.exe *.EXE
+*.il
+*.pdb
