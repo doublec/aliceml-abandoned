@@ -524,7 +524,7 @@ final public class General {
     /** <code>val terminate : int -> unit</code>*/
     _FIELD(General,terminate);
 
-    _BUILTIN(Read) {
+    _BUILTIN(Readln) {
 	final public DMLValue apply0() throws java.rmi.RemoteException {
 	    java.lang.String s="";
 	    char ch;
@@ -551,6 +551,48 @@ final public class General {
 	    return new STRING (s);
 	}
     }
+    /** <code>val readln : unit -> string</code>*/
+    _FIELD(General,readln);
+
+    _BUILTIN(Read) {
+	final public DMLValue apply0() throws java.rmi.RemoteException {
+	    char ch = '0';
+	    try {
+		ch = (char) System.in.read();
+	    } catch (java.io.IOException i) {
+		System.err.println(i);
+	    }
+	    return new STRING (java.lang.String.valueOf(ch));
+	}
+	_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(_) {
+	    char ch = '0';
+	    try {
+		ch = (char) System.in.read();
+	    } catch (java.io.IOException i) {
+		System.err.println(i);
+	    }
+	    return new STRING (java.lang.String.valueOf(ch));
+	}
+    }
     /** <code>val read : unit -> string</code>*/
     _FIELD(General,read);
+
+    _BUILTIN(Rand) {
+	final static java.util.Random rand =
+	    new java.util.Random((new java.util.Date()).getTime());
+	_NOAPPLY0;_NOAPPLY2;_NOAPPLY3;_NOAPPLY4;
+	_APPLY(_) {
+	    _REQUEST(_,_);
+	    int max = 0;
+	    try {
+		max = ((Int) _).value;
+	    } catch (ClassCastException c) {
+		_RAISENAME(General.Match);
+	    }
+	    return new Int(rand.nextInt(max));
+	}
+    }
+    /** <code>val read : unit -> string</code>*/
+    _FIELD(General,rand);
 }
