@@ -36,7 +36,8 @@ structure Util :> UTIL =
 	    cutPrefix'(String.explode Xs, String.explode Ys)
 
 	fun firstLower'(X::Xr) = String.implode ((Char.toLower X)::Xr)
-	    
+	  | firstLower' nil    = ""
+
 	fun firstLower Xs = firstLower'(String.explode Xs)
 
 	fun firstUpper'(X::Xr) = String.implode ((Char.toUpper X)::Xr)
