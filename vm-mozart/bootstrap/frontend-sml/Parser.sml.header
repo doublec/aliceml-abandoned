@@ -1,6 +1,6 @@
 import
     signature TOKEN
-from "../lib/ml-yacc/base"
+from "../../lib/ml-yacc/base"
 
 import
     structure Source

@@ -225,7 +225,8 @@ functor MakeRecursiveCompiler(structure Composer: COMPOSER
 		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
 		  | NONE =>
-		case Pickle.loadSign url of (* this also looks for url ^ ext *)
+		case Pickle.loadSign (Url.toString url) of
+		    (* this also looks for url ^ ext *)
 		    SOME sign =>
 			(TextIO.print ("### loaded signature from " ^
 				       Url.toString url ^ "\n");

@@ -2,8 +2,8 @@
 
 signature PICKLE =
     sig
-	val loadSign: Url.t -> Signature.t option
-	val replaceSign: Url.t * Signature.t * string -> unit
+	val loadSign: string -> 'a option
+	val replaceSign: string * 'a * string -> unit
     end
 
 structure Pickle :> PICKLE =

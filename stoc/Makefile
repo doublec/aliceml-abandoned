@@ -6,6 +6,11 @@ SUBDIRS = backend-mozart
 all: stoc-mozart.$(PLATFORM)
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) || exit 1); done
 
+stodep.$(PLATFORM):
+	-rm -f $@
+	(cd top && echo 'use "make-stodep.sml";' | $(SML))
+	if [ ! -f $@ ]; then exit 1; fi
+
 stoc-mozart.$(PLATFORM):
 	-rm -f $@
 	(cd top && echo 'use "make-stoc-mozart.sml";' | $(SML))
@@ -22,4 +27,4 @@ stoc-com+.$(PLATFORM):
 	if [ ! -f $@ ]; then exit 1; fi
 
 clean:
-	rm -f stoc-mozart.* stoc-com+.*
+	rm -f stodep.* stoc-mozart.* stot-mozart.* stoc-com+.*

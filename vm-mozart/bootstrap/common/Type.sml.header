@@ -1,6 +1,6 @@
 import
     val print
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 import
     structure Assert

@@ -1,10 +1,10 @@
 import
     structure TextIO
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 import
     structure OS
-from "../lib/OS"
+from "../../lib/OS"
 
 import
     structure Error

@@ -16,7 +16,7 @@ import
    Property(put get)
    Module(manager)
    System(printError show)
-   MainComponent('Composer$': Composer) at 'top/Composer.ozf'
+   MainComponent('Composer$': Composer) at 'stoc/top/Composer.ozf'
 define
    fun {TypeCheck T1 T2}
       case T1#T2 of sig(unit)#_ then true

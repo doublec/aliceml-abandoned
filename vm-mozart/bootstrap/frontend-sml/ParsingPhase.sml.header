@@ -1,10 +1,10 @@
 import
     structure LrParser
-from "../lib/ml-yacc/parser2"
+from "../../lib/ml-yacc/parser2"
 
 import
     structure Join
-from "../lib/ml-yacc/join"
+from "../../lib/ml-yacc/join"
 
 import
     signature SOURCE

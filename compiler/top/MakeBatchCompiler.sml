@@ -110,7 +110,7 @@ functor MakeBatchCompiler(structure RecursiveCompiler: RECURSIVE_COMPILER
 	      \\t\tDump target code representation.\n")
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
-	    (Pickle.replaceSign (Url.fromString infile,
+	    (Pickle.replaceSign (infile,
 				 RecursiveCompiler.compileSign signfile,
 				 outfile);
 	     OS.Process.success)

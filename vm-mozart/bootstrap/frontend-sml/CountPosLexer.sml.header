@@ -1,14 +1,14 @@
 import
-    structure Source
-from "../infrastructure/Source"
-
-import
     signature LEXER
-from "../lib/ml-yacc/base"
+from "../../lib/ml-yacc/base"
 
 import
     structure LrParser
-from "../lib/ml-yacc/parser2"
+from "../../lib/ml-yacc/parser2"
+
+import
+    structure Source
+from "../infrastructure/Source"
 
 import
     signature LEXER_ERROR

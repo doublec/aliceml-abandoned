@@ -1,3 +1,7 @@
+import   (*--**DEBUG*)
+    structure TextIO
+from "../../lib/TextIO"
+
 import
     structure PrettyPrint
 from "../misc/PrettyPrint"
@@ -78,7 +82,3 @@ from "PrimOps"
 import
     signature VALUE_PROPAGATION_PHASE
 from "VALUE_PROPAGATION_PHASE"
-
-import   (*--**DEBUG*)
-    structure TextIO
-from "../lib/TextIO"

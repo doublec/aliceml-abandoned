@@ -1,6 +1,6 @@
 import
     structure TextIO
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 import
     signature PRETTY_PRINT

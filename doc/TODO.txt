@@ -34,38 +34,101 @@ steps 3 and 4):
          print savedline;
    }
 
-2. Use subdirectories for bootstrapping. (LK)
+2. Clean up the bootstrapping process in preparation of runtime types. (LK)
 
    Every bootstrapping pass uses its own local build and install
-   directories (for sources and linked components, respectively).
+   directories (for sources and linked components, respectively) as
+   described below.  make.sh is adapted to reflect the new build
+   procedure as seen from the top level.
+
    The directory structure within the build directories corresponds
-   to the source structure below stockhausen, including the stoc
-   directory.  Adapt make.sh to reflect new build procedure.
+   to the source structure below stockhausen (including the stoc
+   directory).  This has to be reflected by the relative paths used
+   in import announcements.  Component `Pickle' is hacked to remove
+   dependencies on other files (for now, needs a cleanup later).
+   Also, the *.oz files present below vm-mozart/bootstrap are moved
+   below the main `stoc' directory.
 
-   In order to enable pass 2 (below), clean up the way replacesign
-   is used.  Also, the *.oz files have to be part of BACKENDMOZARTSOURCES.
+   In order to enable pass 3, a simple stodep utility is provided as
+   file stoc/top/MakeDepend.sml for now.  The parser used will have
+   to be replaced by a correct one.
 
-   Documentation about the following passes should be added to the
+   Documentation about the build process is added to the
    vm-mozart/bootstrap/Makefile:
 
-   Pass 1:
-      Build a stoc using the hybrid SML/NJ+Mozart compiler.
-      Sources are copied to subdirectory build1;
-      files are installed to subdirectory build1/install.
-      (Corresponds to the current $(MINIMALINSTALL).
-
-   Pass 2:
-      Build versions of components Base.ozf and TextIO.ozf (et al.)
-      with export signatures.  Sources are copied to subdirectory build2;
-      files are installed to subdirectory build2/install.
-
-   Pass 3:
-      Build a bootstrapped version of /everything/ (including stot).
-      Sources are copied to subdirectory build3;
-      files are installed to subdirectory build3/install.
-
-   Install:
-      Install all files as found in subdirectory build3/install.
+   ##
+   ## Description of Externally Useful Targets
+   ## ========================================
+   ##
+   ## all:
+   ##    Identical to build3-install.
+   ## depend:
+   ##    Creates the file Makefile.depend, which contains the dependencies
+   ##    needed for Pass 3.
+   ## clean:
+   ##    Removes all files created by previous builds.
+   ## veryclean:
+   ##    Identical to clean.
+   ## distclean:
+   ##    Identical to veryclean.
+   ##
+   ## Pass 1
+   ## ------
+   ##
+   ## The goal is to build a stoc using the hybrid SML/NJ+Mozart compiler.
+   ## This is performed via the following targets.
+   ##
+   ## build1-all:
+   ##    A complete source tree is created in subdirectory build1.
+   ##    The native components are created using ozc.  The component
+   ##    stoc/top/StocMain.ozf (and all its imports, transitively)
+   ##    are built using the hybrid compiler via recursive invocation.
+   ## build1-install:
+   ##    A minimal but working system (only consisting of a compiler,
+   ##    without libraries) is installed to subdirectory build1/install.
+   ##
+   ## Pass 2
+   ## ------
+   ##
+   ## The outcome of this pass is a working system with libraries.
+   ## The components in the libraries carry export signatures.
+   ##
+   ## build2-all:
+   ##    A source tree for the libraries is created in subdirectory build2.
+   ##    The native components are assigned signatures via --replacesign.
+   ##    Libraries implemented in Alice are compiled using the system
+   ##    installed in Pass 1.
+   ## build2-install:
+   ##    A system with libraries (as far as they are needed to build
+   ##    a system with runtime type information) is installed to
+   ##    subdirectory build2/install.
+   ##
+   ## Pass 3
+   ## ------
+   ##
+   ## This pass finally builds bootstrapped versions of /everything/
+   ## (including stot), with runtime type information and a first-class
+   ## compiler.
+   ##
+   ## build3-all:
+   ##    A complete source tree is created in subdirectory build1.
+   ##    Every source file is compiled independently; no recursive
+   ##    invocation happens.
+   ## build3-install:
+   ##    A complete system with all libraries and tools, carrying
+   ##    runtime type information, is installed to subdirectory
+   ##    build3/install.
+   ##
+   ## Installation
+   ## ------------
+   ##
+   ## Globally install all files as found in subdirectory build3/install.
+   ## This is accomplished by the following target.
+   ##
+   ## install:
+   ##    Install the system found in build3/install to the global
+   ##    installation directory.
+   ##
 
 3. Move codebase to Alice. (AR)
 

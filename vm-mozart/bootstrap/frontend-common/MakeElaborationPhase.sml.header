@@ -1,7 +1,7 @@
 import (*DEBUG*)
     val print
     structure TextIO
-from "../lib/TextIO"
+from "../../lib/TextIO"
 
 import (*DEBUG*)
     structure PrettyPrint

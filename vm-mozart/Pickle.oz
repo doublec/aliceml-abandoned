@@ -13,7 +13,6 @@
 functor
 import
    Pickle(load saveWithCells)
-   UrlComponent('Url$': Url) at '../misc/Url.ozf'
 export
    'Pickle$': Pickle_Module
 define
@@ -21,7 +20,7 @@ define
    'Pickle'('loadSign':
 	       fun {$ U}
 		  try
-		     case {Pickle.load {Url.toString U}}.'export'
+		     case {Pickle.load U}.'export'
 		     of sig(unit) then 'NONE'
 		     elseof sig(Sig) then 'SOME'(Sig)
 		     else 'NONE'
@@ -31,7 +30,7 @@ define
 	       end
 	    'replaceSign':
 	       fun {$ U Sig Filename} F1 F2 in
-		  F1 = {Pickle.load {Url.toString U}}
+		  F1 = {Pickle.load U}
 		  F2 = {Functor.new F1.'import' sig(Sig) F1.'apply'}
 		  {Pickle.saveWithCells F2 Filename '' 0}
 		  unit
