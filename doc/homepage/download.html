@@ -35,35 +35,47 @@ requires approximately 30 MB of Harddisk space (including Mozart).</P>
 of the Alice programming system. All packages include the full <A
 href="manual/">manual</A> web pages.</P>
 
-<P>Windows:</P>
+<?php subsection("packages-windows", "Windows") ?>
+
+<P>As Windows Installer package (MSI):</P>
 
 <UL>
-  <LI><A href="download/alice-0.9.1-20030212.exe"><TT>alice-0.9.1-20030212.exe</TT></A></LI>
+  <LI><A href="download/alice-0.9.1.msi"><TT>alice-0.9.1.msi</TT></A></LI>
 </UL>
 
-<P>Red Hat:</P>
+<P>As self installing executable:</P>
+
+<UL>
+  <LI><A href="download/alice-0.9.1.exe"><TT>alice-0.9.1.exe</TT></A></LI>
+</UL>
+
+<?php subsection("packages-linux", "Linux") ?>
+
+<P>For Red Hat:</P>
 
 <UL>
   <LI><A href="download/alice-0.9.1-1.noarch.rpm"><TT>alice-0.9.1-1.noarch.rpm</TT></A></LI>
 </UL>
 
-<P>Debian <TT>testing</TT> (<I>sarge</I>):</P>
+<P>For Debian <TT>testing</TT> (<I>sarge</I>):</P>
 
 <UL>
-  <LI><A HREF="download/alice_0.9.1.20030212-1_i386.deb"><TT>alice_0.9.1.20030212-1_i386.deb</TT></A></LI>
+  <LI><A HREF="download/alice_0.9.1-1_all.deb"><TT>alice_0.9.1-1_all.deb</TT></A></LI>
 </UL>
 
-<P>Other Linuxes (binary tarballs):</P>
+<P>For other Linuxes (binary tarballs):</P>
 
 <UL>
-  <LI><A href="download/alice-0.9.1-20030212.tgz"><TT>alice-0.9.1-20030212.tgz</TT></A></LI>
+  <LI><A href="download/alice-0.9.1.tgz"><TT>alice-0.9.1.tgz</TT></A>
+
+      <P>After unpacking, please include the respective <TT>bin</TT>
+      directory into your <TT>PATH</TT>, e.g.</P>
+
+      <PRE class=code>
+      PATH=&lt;alice-directory&gt;/bin:$PATH</PRE>
+  </LI>
 </UL>
 
-<P>If you install the tarball, you have to include the respective <TT>bin</TT>
-directory into your <TT>PATH</TT>, e.g.</P>
-
-<PRE class=code>
-PATH=&lt;alice-directory&gt;/bin:$PATH</PRE>
 
 <?php subsection("license", "License") ?>
 
@@ -113,7 +125,7 @@ Password: anoncvs</PRE>
 <P>The tag for the current release branch is:</P>
 
 <PRE class=code>
-operette3</PRE>
+release-0.9.1</PRE>
 
 
 <?php subsection("cvs-example", "Example session") ?>
@@ -130,7 +142,7 @@ CVS password: anoncvs
 <P>From the CVS repository you can also access the released version:</P>
 
 <PRE class=code>
-% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r operette3 alice</PRE>
+% cvs -d :pserver:anoncvs@cvs.ps.uni-sb.de:/services/alice/CVS get -r release-0.9.1 alice</PRE>
 
 <P>You can likewise access the <A
 href="http://www.mozart-oz.org/download/cvs">Mozart CVS repository</A>.</P>
