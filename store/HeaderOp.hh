@@ -61,7 +61,7 @@ public:
   // Intgen Mark Access
   static void SetChildishFlag(Block *p) {
     AssertStore(p != INVALID_POINTER);
-    ((u_int *) p)[0] |= (1 << CHILDISH_SHIFT);
+    ((u_int *) p)[0] |= (1u << CHILDISH_SHIFT);
   }
   static void ClearChildishFlag(Block *p) {
     AssertStore(p != INVALID_POINTER);

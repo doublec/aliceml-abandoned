@@ -41,7 +41,7 @@ public:
       frame->UnsafeInitArg(i, p->GetArg(i));
   }
   // StackFrame Accessors
-  static const u_int GetBaseSize() {
+  static u_int GetBaseSize() {
     return BASE_SIZE;
   }
   u_int GetSize() {

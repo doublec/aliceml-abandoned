@@ -47,7 +47,7 @@ protected:
   static void FinalizeCheneyScan(HeapChunk *chunk, char *scan);
   static void HandleInterGenerationalPointers(const u_int gen);
   static void HandleWeakDictionaries(const u_int gen);
-  static char *Store::Alloc(const u_int g, const BlockLabel l, const u_int s) {
+  static char *Alloc(const u_int g, const BlockLabel l, const u_int s) {
     u_int header = HeaderOp::EncodeHeader(l, s,
 					  (g == STORE_GENERATION_NUM - 1) ?
 					  (STORE_GENERATION_NUM - 2) : g);
