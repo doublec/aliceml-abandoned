@@ -219,8 +219,37 @@
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$conc
       newobj instance void StockWerk.Builtins.String$str::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::String$str
+      newobj instance void StockWerk.Builtins.TextIO$closeIn::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$closeIn
+      newobj instance void StockWerk.Builtins.TextIO$closeOut::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$closeOut
+      newobj instance void StockWerk.Builtins.TextIO$inputAll::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$inputAll
+      newobj instance void StockWerk.Builtins.TextIO$openIn::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$openIn
+      newobj instance void StockWerk.Builtins.TextIO$openOut::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$openOut
+      newobj instance void StockWerk.Builtins.TextIO$output::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$output
+      newobj instance void StockWerk.Builtins.TextIO$output1::.ctor()
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$output1
       newobj instance void StockWerk.Builtins.TextIO$print::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$print
+      ldsfld class System.IO.TextWriter System.Console::Error
+      castclass System.IO.StreamWriter
+      callvirt instance class System.IO.Stream System.IO.StreamWriter::GetStream()
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$stdErr
+      ldsfld class System.IO.TextReader System.Console::In
+      castclass System.IO.StreamReader
+      callvirt instance class System.IO.Stream System.IO.StreamReader::GetStream()
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$stdIn
+      ldsfld class System.IO.TextWriter System.Console::Out
+      castclass System.IO.StreamWriter
+      callvirt instance class System.IO.Stream System.IO.StreamWriter::GetStream()
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      stsfld class StockWerk.StockWert StockWerk.Prebound::TextIO$stdOut
       newobj instance void StockWerk.Builtins.Thread$current::.ctor()
       stsfld class StockWerk.StockWert StockWerk.Prebound::Thread$current
       newobj instance void StockWerk.Builtins.Thread$sleep::.ctor()
@@ -2241,6 +2270,52 @@
 
   .class public sealed Vector extends StockWerk.StockWert {
   }
+
+  //
+  // Foreign Object
+  //
+
+  .class sealed ForeignObject extends StockWerk.StockWert {
+    .field public class System.Object Object
+    .method public void .ctor(class System.Object) {
+      ldarg.0
+      call instance void StockWerk.StockWert::.ctor()
+      ldarg.0
+      ldarg.1
+      stfld class System.Object StockWerk.ForeignObject::Object
+      ret
+    }
+    .method virtual public bool Equals(class System.Object) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      ldarg.0
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      tail. callvirt instance bool System.Object::Equals(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s retFalse
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    retFalse:
+      ldc.i4.0
+      ret
+    }
+    .method virtual public class System.String ToString() {
+      ldarg.0
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      tail. callvirt instance class System.String System.Object::ToString()
+      ret
+    }
+  }
 }
 
 //
@@ -2994,6 +3069,294 @@
       starg.s 1
       br.s retry
     raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$closeIn extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.IO.Stream
+      callvirt instance void System.IO.Stream::Close()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$closeOut extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.IO.Stream
+      callvirt instance void System.IO.Stream::Close()
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$inputAll extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+      .locals(class System.IO.Stream, class System.StringBuilder)
+    retry:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.IO.Stream
+      stloc.0
+      .try {
+	newobj instance void System.StringBuilder::.ctor()
+	stloc.1
+      loop:
+	ldloc.1
+	ldloc.0
+	callvirt instance wchar System.IO.Stream::ReadChar()
+	call instance class System.StringBuilder System.StringBuilder::Append(wchar)
+	pop
+	br.s loop
+      } catch System.IO.EOFException {
+	leave.s return
+      }
+    return:
+      ldloc.1
+      callvirt instance class System.String System.StringBuilder::ToString()
+      newobj instance void StockWerk.String::.ctor(class System.String)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$openIn extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldc.i4.3   // Open
+      ldc.i4.1   // Read
+      newobj instance void System.IO.FileStream::.ctor(class System.String, value class System.IO.FileMode, value class System.IO.FileAccess)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$openOut extends StockWerk.Procedure {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply(class StockWerk.StockWert) {
+    retry:
+      ldarg.1
+      isinst StockWerk.String
+      brfalse.s testTransient
+      ldarg.1
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      ldc.i4.2   // Create
+      ldc.i4.2   // Write
+      newobj instance void System.IO.FileStream::.ctor(class System.String, value class System.IO.FileMode, value class System.IO.FileAccess)
+      newobj instance void StockWerk.ForeignObject::.ctor(class System.Object)
+      ret
+    testTransient:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry
+    raise:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$output extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.String
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.IO.Stream
+      ldarg.2
+      castclass StockWerk.String
+      ldfld class System.String StockWerk.String::Value
+      callvirt instance void System.IO.Stream::WriteStringChars(class System.String)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise1
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise1:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise2
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise2:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    }
+  }
+
+  .class sealed TextIO$output1 extends StockWerk.Procedure2 {
+    .method public void .ctor() {
+      ldarg.0
+      /*tail.*/ call instance void StockWerk.Procedure2::.ctor()
+      ret
+    }
+    .method virtual public class StockWerk.StockWert Apply2(class StockWerk.StockWert, class StockWerk.StockWert) {
+    retry1:
+      ldarg.1
+      isinst StockWerk.ForeignObject
+      brfalse.s testTransient1
+    retry2:
+      ldarg.2
+      isinst StockWerk.Char
+      brfalse.s testTransient2
+      ldarg.1
+      castclass StockWerk.ForeignObject
+      ldfld class System.Object StockWerk.ForeignObject::Object
+      castclass System.IO.Stream
+      ldarg.2
+      castclass StockWerk.Char
+      ldfld int32 StockWerk.Char::Value
+      callvirt instance void System.IO.Stream::WriteChar(wchar)
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::unit
+      ret
+    testTransient1:
+      ldarg.1
+      isinst StockWerk.Transient
+      brfalse.s raise1
+      ldarg.1
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 1
+      br.s retry1
+    raise1:
+      ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
+      newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
+      throw
+    testTransient2:
+      ldarg.2
+      isinst StockWerk.Transient
+      brfalse.s raise2
+      ldarg.2
+      callvirt instance class StockWerk.StockWert StockWerk.StockWert::Await()
+      starg.s 2
+      br.s retry2
+    raise2:
       ldsfld class StockWerk.StockWert StockWerk.Prebound::TypeError
       newobj instance void StockWerk.ExceptionWrapper::.ctor(class StockWerk.StockWert)
       throw
