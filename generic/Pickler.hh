@@ -18,6 +18,7 @@
 #endif
 
 #include "generic/Interpreter.hh"
+#include "generic/String.hh"
 
 class Pickler {
 public:
@@ -30,7 +31,7 @@ public:
 
   // Pickler Functions
   static Interpreter::Result Pack(word x, TaskStack *taskStack);
-  static Interpreter::Result Save(Chunk *filename, word x,
+  static Interpreter::Result Save(String *filename, word x,
 				  TaskStack *taskStack);
 };
 
