@@ -37,7 +37,6 @@
 #endif
 #include "alice/AliceLanguageLayer.hh"
 
-extern word UnsafeBrowserSupport();
 extern word UnsafeConfig();
 extern word UnsafeIODesc();
 extern word UnsafeOS();
@@ -49,26 +48,27 @@ extern word UnsafeSocket();
 extern word UnsafeRand();
 extern word UnsafeValue();
 extern word UnsafeReflect();
+extern word UnsafeBrowserSupport();
 extern word UnsafeCell();
 extern word UnsafeAddr();
 extern word UnsafeRemote();
 
 static NativeComponent nativeComponents[] = {
+  {"lib/system/UnsafeConfig",         UnsafeConfig},
+  {"lib/system/UnsafeIODesc",         UnsafeIODesc},
+  {"lib/system/UnsafeOS",             UnsafeOS},
+//{"lib/system/UnsafeUnix",           UnsafeUnix}, //--** missing
+  {"lib/system/UnsafeCommandLine",    UnsafeCommandLine},
+  {"lib/system/UnsafeComponent",      UnsafeComponent},
+  {"lib/system/UnsafeDebug",          UnsafeDebug},
+  {"lib/system/UnsafeSocket",         UnsafeSocket},
+  {"lib/system/UnsafeRand",           UnsafeRand},
+  {"lib/system/UnsafeValue",          UnsafeValue},
+  {"lib/system/UnsafeReflect",        UnsafeReflect},
   {"lib/system/UnsafeBrowserSupport", UnsafeBrowserSupport},
-  {"lib/system/UnsafeConfig",       UnsafeConfig},
-  {"lib/system/UnsafeIODesc",       UnsafeIODesc},
-  {"lib/system/UnsafeOS",           UnsafeOS},
-//{"lib/system/UnsafeUnix",         UnsafeUnix}, //--** missing
-  {"lib/system/UnsafeCommandLine",  UnsafeCommandLine},
-  {"lib/system/UnsafeComponent",    UnsafeComponent},
-  {"lib/system/UnsafeDebug",        UnsafeDebug},
-  {"lib/system/UnsafeSocket",       UnsafeSocket},
-  {"lib/system/UnsafeRand",         UnsafeRand},
-  {"lib/system/UnsafeValue",        UnsafeValue},
-  {"lib/system/UnsafeReflect",      UnsafeReflect},
-  {"lib/utility/UnsafeCell",        UnsafeCell},
-  {"lib/utility/UnsafeAddr",        UnsafeAddr},
-  {"lib/distribution/UnsafeRemote", UnsafeRemote},
+  {"lib/utility/UnsafeCell",          UnsafeCell},
+  {"lib/utility/UnsafeAddr",          UnsafeAddr},
+  {"lib/distribution/UnsafeRemote",   UnsafeRemote},
   {NULL, NULL}
 };
 
