@@ -331,6 +331,30 @@ BootstrapInterpreter::Run(TaskStack *taskStack, int nargs) {
 	pc = TagVal::FromWord(pc->Sel(2));
       }
       break;
+    case Pickle::Try: // of instr * id * instr
+      {
+	TagVal *formalArgs = TagVal::New(Pickle::TupArgs, 1);
+	Vector *vector = Vector::New(1);
+	vector->Init(0, pc->Sel(1));
+	formalArgs->Init(0, vector->ToWord());
+	PushState(taskStack, this, TagVal::FromWord(pc->Sel(2)),
+		  globalEnv, localEnv, formalArgs);
+	taskStack->PushFrame(1);
+	taskStack->PutUnmanagedPointer(0, NULL);
+	pc = TagVal::FromWord(pc->Sel(0));
+      }
+      break;
+    case Pickle::EndTry: // of instr
+      {
+	taskStack->PopFrame(1);
+	pc = TagVal::FromWord(pc->Sel(0));
+      }
+      break;
+    case Pickle::EndHandle: // of instr
+      {
+	pc = TagVal::FromWord(pc->Sel(0));
+      }
+      break;
     case Pickle::IntTest: // of id * (int * instr) vector * instr
       {
 	word suspendWord = localEnv->Lookup(pc->Sel(0));
