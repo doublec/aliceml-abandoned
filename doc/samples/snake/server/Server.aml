@@ -431,7 +431,6 @@ struct
             fun finishLevel (levels) =
                 (* called when no players are left *)
                 let
-                    val _   = assert null (Part.allPlayers $ ! participants)
                 in
                     (* send level finished signal *)
                     invokeSeveral 
@@ -774,6 +773,8 @@ struct
             val package = pack (val connect = Remote.proxy connect) :> Protocol.SERVER_CONNECTOR
             val ticket  = Remote.offer package
         in
+	    startRPCHandler pc;
+
             (* return ticket and server interface *)
             (ticket, pc_server_interface)
         end
