@@ -14,7 +14,6 @@
  *)
 
 import structure TextIO   from "../lib/system/TextIO"
-import structure Assert   from "../lib/utility/Assert"
 import structure Url      from "../lib/utility/Url"
 import signature ANALYZER from "ANALYZER-sig"
 
@@ -45,14 +44,14 @@ functor MkAnalyzer(structure Parser: PARSER
 	fun parseUrl url =
 	    case (Url.getScheme url, Url.getAuthority url) of
 		(NONE, NONE) =>
-		    Url.toString url
+		    SOME(Url.toString url)
 	      | (SOME "file", NONE) =>
-		    Url.toString (Url.setScheme (url, NONE))
+		    SOME(Url.toString (Url.setScheme (url, NONE)))
 	      | (SOME "x-alice", NONE) =>
-		    stockhome () ^
-		    Url.toString (Url.setScheme (Url.makeRelativePath url,
-						 NONE))
-	      | _ => raise Assert.failure
+		    SOME(stockhome () ^
+			 Url.toString (Url.setScheme (Url.makeRelativePath url,
+						      NONE)))
+	      | _ => NONE
 
 	fun pathCeil filename =
 	    let
@@ -87,13 +86,19 @@ functor MkAnalyzer(structure Parser: PARSER
 		    case desc of
 			SOME base => Url.resolve base url
 		      | NONE => url
-		val targetFilename = parseUrl url
 	    in
-		pathFloor targetFilename ^ "." ^ extension
+		case parseUrl url of
+		    SOME targetFilename =>
+			SOME (pathFloor targetFilename ^ "." ^ extension)
+		  | NONE =>
+			(TextIO.output(TextIO.stdErr,
+				       "warning: ignoring URI " ^
+				       Url.toString url ^ "\n");
+			 NONE)
 	    end
 
 	fun analyze (desc, source) =
-	    List.map (fn s => analyzeImport (desc, Url.fromString s))
+	    List.mapPartial (fn s => analyzeImport (desc, Url.fromString s))
 	    (Parser.parse source)
 
 	fun readFile filename =
@@ -111,6 +116,10 @@ functor MkAnalyzer(structure Parser: PARSER
 	    let
 		val url = Url.fromString filename
 	    in
-		analyze (SOME url, readFile (parseUrl url))
+		analyze (SOME url, readFile (Option.valOf (parseUrl url)))
+		handle (Option.Option | IO.Io _) =>
+		    (TextIO.output(TextIO.stdErr,
+				   "unable to access file " ^ filename ^ "\n");
+		     nil)
 	    end
     end
