@@ -219,6 +219,13 @@ inline Block *Store::ForwardSet(Block *p) {
   return ((HeaderOp::DecodeGeneration(p) < dstGen) ? CloneBlock(p) : p);
 }
 
+inline s_int Store::CanFinalize(Block *p) {
+  BlockLabel l = p->GetLabel();
+  // Value is non Dict or empty Dict ?
+  return ((l != WEAK_DICT_LABEL) ||
+	  ((l == WEAK_DICT_LABEL) && ((WeakDictionary *) p)->GetCounter() == 0));
+}
+
 inline void Store::CheneyScan(MemChunk *chunk, Block *scan) {
   while (!chunk->IsAnchor()) {
     // Scan current MemChunk
@@ -379,7 +386,6 @@ inline void Store::HandleInterGenerationalPointers(u_int gen) {
   std::printf("new_intgen_size is %d\n", intgen_set->GetSize());
 #endif
 }
-
 inline Block *Store::HandleWeakDictionaries() {
   Set *wkdict_set = wkDictSet;
 #if defined(STORE_DEBUG)
@@ -443,34 +449,66 @@ inline Block *Store::HandleWeakDictionaries() {
 
   // Phase Two: Forward Dictionary Contents and record Finalize Candiates
   for (u_int i = rs_size; i >= 1; i--) {
+    // Save start anchor
     MemChunk *chunk      = curChunk;
     char *scan           = (curChunkMax + curChunkTop);
-
+    // Retrieve dict data
     WeakDictionary *dict = WeakDictionary::FromWordDirect(db_set->GetArg(i));
     Handler *h           = dict->GetHandler();
     Block *table         = dict->GetTable();
     u_int table_size     = table->GetSize();
+    // Phase 2.1: Check for integer or forwarded entries and handle them
     for (u_int k = table_size; k--;) {
       HashNode *node = HashNode::FromWord(table->GetArg(k));
 
       if (!node->IsEmpty()) {
 	word val = PointerOp::Deref(node->GetValue());
 
-	if (!PointerOp::IsInt(val)) {
+	// Store Integers and mark node as handled
+	if (PointerOp::IsInt(val)) {
+	  node->SetValue(val);
+	  node->MarkHandled();
+	}
+	// Store Forward ptr and mark node as handled; otherwise leave untouched
+	else {
 	  Block *valp = PointerOp::RemoveTag(val);
 
-	  // Value has been reached by root and must kept alive
 	  if (GCHelper::AlreadyMoved(valp)) {
 	    node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
 						PointerOp::DecodeTag(val)));
+	    node->MarkHandled();
+	  }
+	}
+      }
+    }
+    // Pase 2.2: Remove handled marks and collect finalisation data
+    for (u_int k = table_size; k--;) {
+      HashNode *node = HashNode::FromWord(table->GetArg(k));
+
+      if (!node->IsEmpty()) {
+	// Remove handled marks
+	if (node->IsHandled()) {
+	  node->MarkNormal();
+	}
+	// This node possibly contains finalisation data
+	// invariant: it is a block
+	else {
+	  word val    = PointerOp::Deref(node->GetValue());
+	  Block *valp = PointerOp::RemoveTag(val);
+	  
+	  // Value has been finalized or saved before
+	  if (GCHelper::AlreadyMoved(valp)) {
+	    if (Store::CanFinalize(valp)) {
+	      dict->RemoveEntry(node);
+	    }
+	    else {
+	      node->SetValue(PointerOp::EncodeTag(GCHelper::GetForwardPtr(valp),
+						  PointerOp::DecodeTag(val)));
+	    }
 	  }
 	  // Value might be finalized
 	  else if (HeaderOp::DecodeGeneration(valp) < dstGen) {
-	    BlockLabel l = valp->GetLabel();
-
-	    // Value is non Dict or empty Dict ?
-	    if ((l != WEAK_DICT_LABEL) ||
-		((l == WEAK_DICT_LABEL) && ((WeakDictionary *) valp)->GetCounter() == 0)) {
+	    if (Store::CanFinalize(valp)) {
 	      dict->RemoveEntry(node);
 	      finset = Store::AddToFinSet(finset, h, ForwardWord(val));
 	    }
@@ -479,10 +517,10 @@ inline Block *Store::HandleWeakDictionaries() {
 	      node->SetValue(ForwardWord(val));
 	    }
 	  }
-	}
-	// Save derefed integer (its arguable whether to allow or not integers as items)
-	else {
-	  node->SetValue(val);
+	  // Unable to decide; leave value untouched but derefed
+	  else {
+	    node->SetValue(val);
+	  }
 	}
       }
     }

@@ -49,16 +49,12 @@ private:
   static u_int BlockMemSize(u_int args) {
     return (u_int) ((args + 1) * sizeof(u_int));
   }
-  static void FillBlock(u_int *p, u_int size) {
-    for (;size--;) {
-      p[size] = HeaderOp::EncodeHeader(REF_LABEL, 0, 0);
-    }
-  }
 
   static void FreeMemChunks(MemChunk *chunk, const u_int threshold);
   static Block *CloneBlock(Block *p);
   static word ForwardWord(word p);
   static Block *ForwardSet(Block *p);
+  static s_int CanFinalize(Block *p);
   static void CheneyScan(MemChunk *chunk, Block *scan);
   static void HandleInterGenerationalPointers(u_int gen);
   static Block *HandleWeakDictionaries();
