@@ -17,7 +17,7 @@
 
 class Block;
 
-class ConcreteRepresentationHandler {
+class DllExport ConcreteRepresentationHandler {
 public:
   // returns INVALID_POINTER if there is none
   virtual Block *GetAbstractRepresentation(Block *blockWithHandler) = 0;
