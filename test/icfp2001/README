@@ -1,0 +1,38 @@
+Team Helikopter
+
+Denys Duchier, Leif Kornstaedt, Andreas Rossberg
+
+Our entry is hybrid Alice/Mozart program that uses a constraint programming
+approach to tackle the problem (unfortunately, constraint libraries for Alice
+are not fully complete yet).
+
+The idea is as follows: An SML/NG document essentially represents a tree with
+the tags being inner nodes and the actual text being its leafs. The root is a
+special node without a tag. All nodes can be annotated by a property record:
+the root's property is the initial context, an inner node's property is the
+context implied by its parents, and a leaf's property is determined by the
+document meaning. We can also assign a cost value to each inner nodes,
+corresponding to the textual length of its tag. The problem now is to find a
+tree with minimal total cost that has consistent property annotations. An upper
+bound for the cost (and thus the number of inner nodes) can be calculated from
+the input document.
+
+To find such a tree we create a set of constraint variables representing the
+nodes of the tree, their relations, and their properties and impose appropriate
+constraints ensuring properties like treeness, consistency of property
+annotation, and correct meaning. Additional constraints are needed to improve
+propagation and rule out unwanted symmetries in order to reduce the search
+space. A more formal description of our problem formulation can be found in the
+file readme.ps. We assume that redundant spaces already have been removed and
+input characters have been grouped into strings with equal properties (this is
+done by the parser).
+
+Since the size of the search space is polynomial in the cost of the input,
+large documents are split in several parts. For each part we concurrently
+search for a good solution until the timeout is reached. When we do not find
+any solution for some part we use the simple one with white space compression
+only which is constructed by the parser. Otherwise we use the best solution we
+found so far.
+
+We make use of the selection constraint library which are in the MOGUL archive
+for Mozart. The necessary components have been included into the submission.
