@@ -14,12 +14,12 @@
 #define __GENERIC__CONCRETE_CODE_HH__
 
 #if defined(INTERFACE)
-#pragma interface "emulator/ConcreteCode.hh"
+#pragma interface "generic/ConcreteCode.hh"
 #endif
 
-#include "emulator/Interpreter.hh"
+#include "generic/Interpreter.hh"
 
-class ConcreteCode : private Block {
+class ConcreteCode: private Block {
 private:
   static const u_int BASE_SIZE = 1;
 public:

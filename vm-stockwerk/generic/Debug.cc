@@ -11,12 +11,12 @@
 //
 
 #if defined(INTERFACE)
-#pragma implementation "emulator/Debug.hh"
+#pragma implementation "generic/Debug.hh"
 #endif
 
 #include <cstdio>
 #include "store/Store.hh"
-#include "emulator/Debug.hh"
+#include "generic/Debug.hh"
 
 typedef union {
   Transient *pt;
