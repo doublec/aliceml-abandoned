@@ -44,7 +44,7 @@ type model_join =
 
 type model_start =
     {
-     start : unit -> unit
+     start : unit -> (model_game * gui_game Promise.promise, error) alt
     }
 
 

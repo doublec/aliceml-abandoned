@@ -2,7 +2,26 @@ import structure Gui        from "Gui"
 import structure Client     from "Client"
 import structure Server     from "../server/Server"
 import structure Config     from "../server/Config"
+import structure Ctrl       from "x-alice:/lib/utility/Ctrl"
 
+open Ctrl
+
+fun proxyClient (c : Protocol.client_interface) : Protocol.client_interface =
+    {
+        playersJoined       = Remote.proxy $ #playersJoined c,
+        tournamentStarted   = Remote.proxy $ #tournamentStarted c,
+        levelStarted        = Remote.proxy $ #levelStarted c,
+        playerDisconnected  = Remote.proxy $ #playerDisconnected c,
+        abort               = Remote.proxy $ #abort c,
+        countdown           = Remote.proxy $ #countdown c,
+        update              = Remote.proxy $ #update c,
+        tick                = Remote.proxy $ #tick c,
+        playersDied         = Remote.proxy $ #playersDied c,
+        playersFinished     = Remote.proxy $ #playersFinished c,
+        levelFinished       = Remote.proxy $ #levelFinished c,
+        tournamentFinished  = Remote.proxy $ #tournamentFinished c,
+        updatePoints        = Remote.proxy $ #updatePoints c
+    }
 
 fun main () =
     let
@@ -16,10 +35,46 @@ fun main () =
         fun quit () = OS.Process.exit OS.Process.success
 
         (* called when user wants to connect to some existing server *) 
-        fun connect ticket = SND "connect not yet implemented"
+        fun connect ticket = 
+            let
+                (* make physical connection --> take the ticket *)
+                val package     = Remote.take         
+                (* unpack it.  Dynamic type check!
+                   may fail with Package.Mismatch exception
+                 *)
+                structure Conn  = unpack package : SERVER_CONNECTOR
+
+                val serverP     = Promise.promise ()
+                
+                (* start the actual client logic. returns
+                   more or less immediatly *) 
+                val (client, 
+                    model_join) = Client.startClient (gui_join, 
+                                            Promise.future serverP) 
+                (* register ourselves at the server *)
+                val (config, 
+                    server)     = Conn.connect (proxyClient client)  
+            in
+                Promise.fulfill (serverP, server);
+                FST (model_join, gui_join)
+            end handle Protocol.Protocol msg =>
+                (* highlevel snake game specific logical error *)
+                SND msg
+            |   Remote.Proxy e =>
+                (* lowlevel error.
+                   TODO: differentiate between different kinds *)
+                SND (exnName e)
+            |   IO.Io { name, function, cause } =>
+                (* lowlevel error at Remote.take *)
+                SND ("IO error " ^ name ^ " at " ^ function ^ " cause: " ^
+                        cause) 
+            |   Package.Mismatch _ =>
+                (* unpack failed! *)
+                SND ("Ticket invalid!  Most probably from a different alice application.")
+
 
         (* called when user wants to create own server *)
-        fun startServer config = 
+        fun startServer (player, config) = 
             let
                 (* both creation of client and creation of server
                    depends on each other, but Client.startClient
@@ -30,11 +85,31 @@ fun main () =
                 val server                  = Promise.promise ()
                 val (client, model_join)    = Client.startClient (gui_join, 
                                                 Promise.future server)
+
+                fun startGame res = 
+                    let
+                        val server = Promise.future server 
+                    in
+                        (* rpc call. TODO: error handling *)
+                        #startGame server ();
+                        res
+                    end
             in
                 (* TODO: error handling *)
                 Promise.fulfill (server, Server.startServer (config, client));
                 (* creation was successful return model and gui promise *)
-                FST (model_join, gui_join_p)
+                case player of
+                    NONE        =>  
+                        (* server does not want to play himself *)
+                        (* put him into spectator mode *)
+                    let val res = #watch model_join () in
+                        FST ({ start = startGame res}, gui_join_p)
+                    end
+                |   SOME p      =>
+                        (* server wants to play ;-) *)
+                    let val res = #play model_join p in
+                        FST ({ start = startGame res}, gui_join_p)
+                    end
             end
     in
         Gui.execute ({ connect, startServer }, gui_promise)
