@@ -18,7 +18,7 @@ import structure __pervasive                       from "Pervasive"
 import __primitive datatype bool and order and alt from "ToplevelTypes"
 import __primitive signature ALT                   from "ALT-sig"
 
-structure Alt :> ALT =							(**)
+structure Alt : ALT =							(**)
 struct
     datatype alt		= datatype alt
     type ('a,'b) t		= ('a,'b) alt

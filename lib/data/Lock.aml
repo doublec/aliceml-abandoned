@@ -22,7 +22,8 @@ import __primitive structure Promise      from "Promise"
 import __primitive structure Future       from "Future"
 import __primitive signature LOCK         from "LOCK-sig"
 
-structure Lock :> LOCK =					(**)
+local
+    structure Lock : LOCK =					(**)
     struct
 	type lock = unit ref
 	type t = lock
@@ -42,3 +43,10 @@ structure Lock :> LOCK =					(**)
 		handle e => (Promise.fulfill (p, ()); raise e)
 	    end
     end
+
+    __primitive eqtype lock = "Lock.lock"
+    __primitive functor Cast (structure X : LOCK signature S) : S = "Cast"
+in
+    structure Lock = Cast (signature S = LOCK where type lock = lock
+			   structure X = Lock)
+end

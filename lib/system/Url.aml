@@ -18,7 +18,7 @@ import signature URL    from "URL-sig"
  * which has been written Denys Duchier and Christian Schulte.
  *)
 
-structure Url :> URL =
+structure Url : URL =
     struct
 	type scheme = string option
 	type authority = string option

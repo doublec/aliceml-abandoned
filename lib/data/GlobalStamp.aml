@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -13,9 +13,9 @@
 import signature GLOBAL_STAMP from "GLOBAL_STAMP-sig"
 
 
-structure GlobalStamp :> GLOBAL_STAMP (*TODO: where __primitive ... *) =
+structure GlobalStamp : GLOBAL_STAMP =
 struct
-    eqtype stamp
+    __primitive eqtype stamp = "GlobalStamp.stamp"
     type t = stamp
 
     (*TODO: For Mozart it may be desirable to optimise by sharing

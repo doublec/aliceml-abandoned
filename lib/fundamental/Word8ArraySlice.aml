@@ -21,6 +21,7 @@ structure Word8ArraySlice = MkMonoArraySlice(
     type vector       = Word8Array.vector
     type array        = Word8Array.array
     type vector_slice = Word8VectorSlice.t
+    __primitive eqtype slice = "Word8ArraySlice.slice"
     __primitive val alength :   array -> int = "Word8Array.length"
     __primitive val asub :      array * int -> elem = "Word8Array.sub"
     __primitive val aupdate :   array * int * elem -> unit = "Word8Array.update"

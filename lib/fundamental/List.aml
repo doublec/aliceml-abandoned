@@ -25,7 +25,7 @@ import __primitive structure General               from "General"
 import __primitive structure Bool                  from "Bool"
 import __primitive signature LIST                  from "LIST-sig"
 
-structure List :> LIST =
+structure List : LIST =
 struct
     datatype list		= datatype list
     type  'a t			= 'a list				(**)

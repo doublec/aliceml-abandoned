@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2002
+ *   Andreas Rossberg, 2002-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -17,7 +17,7 @@ import functor MkMonoVectorSlice                        from "MkMonoVectorSlice"
 structure CharVectorSlice = MkMonoVectorSlice(
     type elem   = char
     type vector = string
-
+    __primitive eqtype slice = "CharVectorSlice.slice"
     __primitive val vlength :   vector -> int = "CharVector.length"
     __primitive val vsub :      vector * int -> elem = "CharVector.sub"
     __primitive val vextract :  vector * int * int -> vector = "CharVector.extract"

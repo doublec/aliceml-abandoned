@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2003
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,8 +20,8 @@ import signature REFLECT       from "REFLECT-sig"
 
 structure Reflect : REFLECT =
     struct
-	type value
-	type module
+	__primitive type value  = "Reflect.value"
+	__primitive type module = "Reflect.module"
 
 	val cast = UnsafeValue.cast
 	val realToVector = UnsafeReflect.realToVector

@@ -19,7 +19,7 @@ import __primitive datatype bool and order and option from "ToplevelTypes"
 import __primitive signature OPTION                   from "OPTION-sig"
 
 
-structure Option :> OPTION =
+structure Option : OPTION =
 struct
     datatype option		= datatype option
     type  'a t			= 'a option				(**)

@@ -47,9 +47,14 @@ import signature SWITCHES            from "../infrastructure/SWITCHES-sig"
 import signature TRANSLATION_PHASE   from "TRANSLATION_PHASE-sig"
 
 (*DEBUG
-import structure Source from "../infrastructure/Source"
-import val print structure TextIO from "../../lib/system/TextIO"
-import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure Source            from "../infrastructure/Source"
+import structure PrettyPrint       from "../../lib/utility/PrettyPrint"
+import structure PPMisc            from "../../lib/rtt/PPMisc"
+import structure PPPath            from "../../lib/rtt/PPPath"
+import structure PPType            from "../../lib/rtt/PPType"
+import structure PPInf             from "../../lib/rtt/PPInf"
+import structure TextIO            from "../../lib/system/TextIO"
+import structure TextIO val print  from "../../lib/system/TextIO"
 *)
 
 functor MkTranslationPhase(Switches: SWITCHES) : TRANSLATION_PHASE =
@@ -761,6 +766,47 @@ struct
 			       idExp id1')
 	in
 	    letExp(#[dec'], exp')
+	end
+
+      | trMod(env, I.PrimMod(i, "Cast", inf)) =
+	(* [prim "Cast" : (module lab1 : inf; interface lab2) -> lab2] =
+	 *   fun id -> seal __pervasive.DynMatch.seal(seal id1.lab1, id2.lab2)
+	 *)
+	if !Switches.Language.supportRtt then
+	let
+	    val  r        = #region i
+	    val  i'       = trModInfo(env,i)
+	    val (t1,t2)   = Type.asArrow(#typ i')
+	    val (l1,t11)  = findFld(NameTranslation.isModName, t1)
+	    val (l2,t12)  = findFld(NameTranslation.isInfName, t1)
+	    val  id'      = auxId(typInfo(r,t1))
+	    val  lab1'    = O.Lab(nonInfo r, l1)
+	    val  lab2'    = O.Lab(nonInfo r, l2)
+	    val  longid1' = O.LongId(typInfo(r,t11), shortId id', lab1')
+	    val  longid2' = O.LongId(typInfo(r,t12), shortId id', lab2')
+	    val  exp1'    = O.SealExp(typInfo(r, typ_module env),
+				      longidExp longid1')
+	    val  exp2'    = rttAppExp(env, r, modlab_dynmatch, lab_seal,
+				     tupExp(r, #[exp1', longidExp longid2']))
+	    val  exp'     = O.SealExp(typInfo(r,t2), exp2')
+	in
+	    O.FunExp(i', #[O.Mat(nonInfo r, idPat id', exp')])
+	end
+	else
+	(* [prim "Cast" : (module lab1 : inf; interface lab2) -> lab2] =
+	 *   fun id -> seal id.lab1
+	 *)
+	let
+	    val  r       = #region i
+	    val  i'      = trModInfo(env,i)
+	    val (t1,t2)  = Type.asArrow(#typ i')
+	    val (l1,t11) = findFld(NameTranslation.isModName, t1)
+	    val  id'     = auxId(typInfo(r,t1))
+	    val  lab'    = O.Lab(nonInfo r, l1)
+	    val  longid' = O.LongId(typInfo(r,t11), shortId id', lab')
+	    val  exp'    = O.SealExp(typInfo(r,t2), longidExp longid')
+	in
+	    O.FunExp(i', #[O.Mat(nonInfo r, idPat id', exp')])
 	end
 
       | trMod(env, I.PrimMod(i, "Reflect", inf)) =

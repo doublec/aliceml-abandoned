@@ -23,7 +23,7 @@ import __primitive structure General   from "General"
 import __primitive signature IEEE_REAL from "IEEE_REAL-sig"
 
 
-structure IEEEReal :> IEEE_REAL =
+structure IEEEReal : IEEE_REAL =
 struct
      exception Unordered	= General.Unordered
 

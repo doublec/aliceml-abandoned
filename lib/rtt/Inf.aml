@@ -464,9 +464,20 @@ struct
 	  | APPLY(j,m)		=> (paths'(f,b,j); pathsMod'(f,b,m))
 	  | ABBREV(j1,j2)	=> paths'(f,b,j2)
 
-    and pathsPath'(f,b,p)	= if PathSet.member(b,p) then () else
-				  PathSet.insert(f,p)
-    and pathsMod'(f,b,(p,j))	= (pathsPath'(f,b,p); paths'(f,b,j))
+    and pathsPath'(f,b,p) =
+	if PathSet.member(b,p) then () else PathSet.insert(f,p)
+
+    and pathsMod'(f,b,(p,j)) =
+	let
+	    val b' = PathSet.set()
+	in
+	    pathsPath'(f,b,p);
+	    paths'(f,b',j);
+	    PathSet.difference(f,b);
+	    PathSet.difference(b',b);
+	    PathSet.union(f,b'); (* for non-selfified paths! *)
+	    PathSet.union(b,b')
+	end
 
     and pathsSig'(f,b,s)           = List.appr (pathsItem'(f,b)) (items s)
     and pathsItem'(f,b) (FIX _)    = ()

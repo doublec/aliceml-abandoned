@@ -22,6 +22,7 @@ structure CharArraySlice = MkMonoArraySlice(
     type vector       = string
     type array        = CharArray.t
     type vector_slice = CharVectorSlice.t
+    __primitive eqtype slice = "CharArraySlice.slice"
     __primitive val alength :   array -> int = "CharArray.length"
     __primitive val asub :      array * int -> elem = "CharArray.sub"
     __primitive val aupdate :   array * int * elem -> unit = "CharArray.update"

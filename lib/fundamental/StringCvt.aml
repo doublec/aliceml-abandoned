@@ -4,7 +4,7 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg and Leif Kornstaedt, 1999-2002
+ *   Andreas Rossberg and Leif Kornstaedt, 1999-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -25,51 +25,59 @@ import __primitive
 import __primitive structure List           from "List"
 import __primitive signature STRING_CVT     from "STRING_CVT-sig"
 
-structure StringCvt :> STRING_CVT =
-struct
-    datatype radix		= BIN | OCT | DEC | HEX
-    datatype realfmt		= EXACT
+local
+    structure StringCvt : STRING_CVT =
+    struct
+	datatype radix		= BIN | OCT | DEC | HEX
+	datatype realfmt	= EXACT
 				| SCI of int option
 				| FIX of int option
 				| GEN of int option
 
-    type ('a,'b) reader		= 'b -> ('a * 'b) option
-    type cs			= int
+	type ('a,'b) reader	= 'b -> ('a * 'b) option
+	type cs			= int
 
-    infix 6 ^
-    __primitive val ^ :              string * string -> string = "String.^"
-    __primitive val string_size :    string -> int        = "CharVector.length"
-    __primitive val string_sub :     string * int -> char = "Unsafe.String.sub"
-    __primitive val string_implode : char list -> string
-						= "CharVector.fromList"
-    __primitive val string_tabulate : int * (int -> char) -> string
-						= "CharVector.tabulate"
-    __primitive val char_isSpace :   char -> bool         = "Char.isSpace"
+	infix 6 ^
+	__primitive val ^ : string * string -> string = "String.^"
+	__primitive val string_size : string -> int = "CharVector.length"
+	__primitive val string_sub : string * int -> char = "Unsafe.String.sub"
+	__primitive val string_implode : char list -> string
+						    = "CharVector.fromList"
+	__primitive val string_tabulate : int * (int -> char) -> string
+						    = "CharVector.tabulate"
+	__primitive val char_isSpace : char -> bool = "Char.isSpace"
 
-    fun padLeft c i s		= if i <= 0 then s else
+	fun padLeft c i s	= if i <= 0 then s else
 				  string_tabulate(i, fn _=> c) ^ s
-    fun padRight c i s		= if i <= 0 then s else
+	fun padRight c i s	= if i <= 0 then s else
 				  s ^ string_tabulate(i, fn _=> c)
 
-    fun splitl p f src		= splitl'(p, f, src, nil)
-    and splitl'(p, f, src, cs)	= case f src
- 				    of NONE =>
-				       (string_implode(List.rev cs), src)
-				     | SOME (c, src') =>
-				       if p c
-				       then splitl'(p, f, src', c::cs)
-				       else (string_implode(List.rev cs), src)
+	fun splitl p f src	= splitl'(p, f, src, nil)
+	and splitl'(p,f,src,cs)	= case f src
+ 				   of NONE =>
+				      (string_implode(List.rev cs), src)
+				    | SOME (c, src') =>
+				      if p c
+				      then splitl'(p, f, src', c::cs)
+				      else (string_implode(List.rev cs), src)
 
-    fun takel p f s		= #1(splitl p f s)
-    fun dropl p f s		= #2(splitl p f s)
-    fun skipWS f s		= dropl char_isSpace f s
+	fun takel p f s		= #1(splitl p f s)
+	fun dropl p f s		= #2(splitl p f s)
+	fun skipWS f s		= dropl char_isSpace f s
 
-    fun scanString scan s =
-	let
-	    fun get i where (i = string_size s) = NONE
-	      | get i                           = SOME(string_sub(s,i), i+1)
-	in
-	    case scan get 0 of NONE      => NONE
-			     | SOME(x,_) => SOME x
-	end
+	fun scanString scan s =
+	    let
+		fun get i where (i = string_size s) = NONE
+		  | get i                           = SOME(string_sub(s,i), i+1)
+	    in
+		case scan get 0 of NONE      => NONE
+				 | SOME(x,_) => SOME x
+	    end
+    end
+
+    __primitive type cs = "StringCvt.cs"
+    __primitive functor Cast (structure X : STRING_CVT signature S) : S = "Cast"
+in
+    structure StringCvt = Cast (signature S = STRING_CVT where type cs = cs
+				structure X = StringCvt)
 end

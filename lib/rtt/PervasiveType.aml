@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2002
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -31,4 +31,5 @@ structure PervasiveType = MkPervasiveType(val labid_false	= "false"
 					  val valid_match	= "Match"
 					  val valid_bind	= "Bind"
 					  val modid_pervasive	= "__pervasive"
+					  val prefix_arrow	= "'a "
 					 )

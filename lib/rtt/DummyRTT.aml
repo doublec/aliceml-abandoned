@@ -19,24 +19,124 @@ local
 	__primitive type 'a conarrow = "conarrow"
 	__primitive exttype exn      = "exn"
     end
+
+    exception DummyRTT
+    fun dummy _ = raise DummyRTT
 in
     structure __pervasive =
     struct
-	signature RTT =
-	sig
-	    structure Inf :		(* required by Package *)
-	    sig
-		type mismatch
-		exception Mismatch of mismatch
-	    end
-	end
-
 	structure RTT =
 	struct
-	    structure Inf =		(* required by Package *)
+	    structure Label =
 	    struct
+		type lab
+		val fromString = dummy
+	    end
+
+	    structure Path =
+	    struct
+		type path
+		val invent = dummy
+		val pervasive = dummy
+		val fromLab = dummy
+		val fromString = dummy
+	    end
+
+	    structure Type =
+	    struct
+		type var
+		type typ
+		type row 
+		type kind
+		__primitive type constraint = "int"
+		val Unconstrained = 3
+		val Intensional = 5
+		val Extensional = dummy
+		val starKind = dummy
+		val extKind = dummy
+		val singKind = dummy
+		val arrowKind = dummy
+		val unknown = dummy
+		val var = dummy
+		val con = dummy
+		val arrow = dummy
+		val tuple = dummy
+		val prod = dummy
+		val sum = dummy
+		val all = dummy
+		val exist = dummy
+		val lambda = dummy
+		val apply = dummy
+		val newVar = dummy
+		val kind = dummy
+		val unknownRow = dummy
+		val emptyRow = dummy
+		val extendRow = dummy
+		val fix = dummy
+	    end
+
+	    structure Fixity =
+	    struct
+		__primitive type fix = "int"
+		__primitive type assoc = "int"
+		val LEFT = 7
+		val RIGHT = 9
+		val NEITHER = 11
+		val NONFIX = 13
+		val PREFIX = dummy
+		val POSTFIX = dummy
+		val INFIX = dummy
+	    end
+
+	    structure Inf =
+	    struct
+		type mod
+		type inf
+		type sign
+		type kind 
+		type rea
 		type mismatch
-		exception Mismatch of mismatch
+		exception Mismatch of mismatch	(* required by Package *)
+		val emptySig = dummy
+		val extendFix = dummy
+		val extendVal = dummy
+		val extendTyp = dummy
+		val extendMod = dummy
+		val extendInf = dummy
+		val lookupMod = dummy
+		val lookupTyp' = dummy
+		val lookupInf' = dummy
+		val mod = dummy
+		val top = dummy
+		val con = dummy
+		val sign = dummy
+		val arrow = dummy
+		val sing = dummy
+		val lambda = dummy
+		val apply = dummy
+		val asSig = dummy
+		val asArrow = dummy
+		val groundKind = dummy
+		val depKind = dummy
+		val singKind = dummy
+		val kind = dummy
+		val instance = dummy
+		val match = dummy
+		val infimum = dummy
+	    end
+
+	    structure PervasiveType =
+	    struct
+		val lookup = dummy
+	    end
+
+	    structure DynMatch =
+	    struct
+		type module
+		val match = dummy
+		val strengthen = dummy
+		val thin = dummy
+		val seal = dummy
 	    end
 	end
     end

@@ -23,18 +23,21 @@ import structure UnsafeComponent   from "UnsafeComponent"
 import structure UrlMap            from "UrlMap"
 import signature COMPONENT         from "COMPONENT-sig"
 
-structure Component :> COMPONENT =
+structure Component : COMPONENT =
 struct
     nonfix mod
     type inf = Inf.t option
     type mod = Reflect.module
 
-    datatype component =
+    __primitive type component = "Component.component"
+    type t = component
+    datatype component' =
 	UNEVALUATED of { imports: (string * inf) vector,
 			 body:    mod vector -> mod,
 			 inf:     inf }
       | EVALUATED of { inf: inf, mod: mod }
-    type t = component
+
+    __primitive val cast : 'a -> 'b = "Unsafe.cast"
 
     exception Sited    = UnsafeComponent.Sited
     exception Corrupt  = UnsafeComponent.Corrupt
@@ -57,7 +60,7 @@ struct
 			      TextIO.stdErr))
 		   (OS.Process.getEnv "ALICE_TRACE_COMPONENT")
 
-    fun create (inf, mod) = EVALUATED {inf, mod}
+    fun create (inf, mod) = cast (EVALUATED {inf, mod})
 
     functor Create(signature S structure X: S) =
 	let
@@ -65,7 +68,7 @@ struct
 	    structure Mod = Reflect.Reflect(signature S = S
 					    structure X = X)
 	in
-	    (val component = EVALUATED {inf = SOME Sig.x, mod = Mod.x})
+	    (val component = create (SOME Sig.x, Mod.x))
 	end
 
     val defaultResolver =
@@ -105,12 +108,14 @@ struct
 	UnsafeComponent.save (name, component)
 	handle cause => raise IO.Io {name, function = "save", cause}
 
-    fun inf (UNEVALUATED {inf, ...}) = inf
-      | inf (EVALUATED {inf, ...}) = inf
+    fun inf component = inf' (cast component)
+    and inf' (UNEVALUATED {inf, ...}) = inf
+      | inf' (EVALUATED {inf, ...}) = inf
 
-    fun imports (UNEVALUATED {imports, ...}) =
+    fun imports component = imports' (cast component)
+    and imports' (UNEVALUATED {imports, ...}) =
 	Vector.map (Pair.mapFst Url.fromString) imports
-      | imports (EVALUATED _) = #[]
+      | imports' (EVALUATED _) = #[]
 
     val initialTable = lazy UnsafeComponent.getInitialTable ()
 
@@ -217,7 +222,8 @@ struct
 	    in
 		lazyTypeCheck (inf, importInf, mod, url, baseUrlOpt)
 	    end
-	and eval' (baseUrl, UNEVALUATED {imports, body, ...}) =
+	and eval' (baseUrl, component) = eval'' (baseUrl, cast component)
+	and eval'' (baseUrl, UNEVALUATED {imports, body, ...}) =
 	    let
 		fun resolve s =
 		    let
@@ -242,7 +248,7 @@ struct
 		before
 		trace (!logStream, "evaluated  " ^ Url.toString baseUrl)
 	    end
-	  | eval' (_, EVALUATED {mod, ...}) = Future.await mod
+	  | eval'' (_, EVALUATED {mod, ...}) = Future.await mod
 
 	fun validate url =
 	    let
@@ -305,7 +311,7 @@ struct
 
 	fun lookup url =
 	    case UrlMap.lookup (map, validate url) of
-		SOME (inf, mod) => SOME (EVALUATED {inf, mod})
+		SOME (inf, mod) => SOME (create (inf, mod))
 	      | NONE => NONE
 
 	fun start url' withval url = validate url' end =

@@ -18,7 +18,7 @@ import functor MkMonoVectorSlice         from "MkMonoVectorSlice"
 structure Word8VectorSlice = MkMonoVectorSlice(
     type elem   = Word8Vector.elem
     type vector = Word8Vector.vector
-
+    __primitive eqtype slice = "Word8VectorSlice.slice"
     __primitive val vlength :   vector -> int = "Word8Vector.length"
     __primitive val vsub :      vector * int -> elem = "Word8Vector.sub"
     __primitive val vextract :  vector * int * int -> vector = "Word8Vector.extract"

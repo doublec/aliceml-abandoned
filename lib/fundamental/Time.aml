@@ -25,34 +25,42 @@ import __primitive structure LargeReal         from "LargeReal"
 import __primitive structure IEEEReal          from "IEEEReal"
 import __primitive signature TIME              from "TIME-sig"
 
-structure Time :> TIME =
-struct
-    open LargeInt		(* +, -, <, >, <=, >=, compare *)
+local
+    structure Time : TIME =
+    struct
+	open LargeInt		(* +, -, <, >, <=, >=, compare *)
 
-    type time			= LargeInt.int	(* milliseconds *)
-    type t			= time					(**)
+	type time		= LargeInt.int	(* milliseconds *)
+	type t			= time					(**)
 
-    exception Time
+	exception Time
 
-    val thousand		= Int.toLarge 1_000
-    val million			= Int.toLarge 1_000_000
-    val realThousand		= Real.toLarge 1_000.0
+	val thousand		= Int.toLarge 1_000
+	val million		= Int.toLarge 1_000_000
+	val realThousand	= Real.toLarge 1_000.0
 
-    val zeroTime		= Int.toLarge 0
+	val zeroTime		= Int.toLarge 0
 
-    fun fromReal x		= LargeReal.toLargeInt IEEEReal.TO_NEAREST
-						  (LargeReal.*(x,realThousand))
-    fun toReal t		= LargeReal.fromLargeInt t / realThousand
+	fun fromReal x		= LargeReal.toLargeInt IEEEReal.TO_NEAREST
+						      (LargeReal.*(x,realThousand))
+	fun toReal t		= LargeReal.fromLargeInt t / realThousand
 
-    fun toSeconds t		= t div thousand
-    fun toMilliseconds t	= t
-    fun toMicroseconds t	= t * thousand
-    fun toNanoseconds t		= t * million
-    fun fromSeconds n		= n * thousand
-    fun fromMilliseconds n	= n
-    fun fromMicroseconds n	= n div thousand
-    fun fromNanoseconds n	= n div million
+	fun toSeconds t		= t div thousand
+	fun toMilliseconds t	= t
+	fun toMicroseconds t	= t * thousand
+	fun toNanoseconds t	= t * million
+	fun fromSeconds n	= n * thousand
+	fun fromMilliseconds n	= n
+	fun fromMicroseconds n	= n div thousand
+	fun fromNanoseconds n	= n div million
 
-    val equal			= op =
-    val hash			= LargeInt.hash
+	val equal		= op =
+	val hash		= LargeInt.hash
+    end
+
+    __primitive eqtype time = "Time.time"
+    __primitive functor Cast (structure X : TIME signature S) : S = "Cast"
+in
+    structure Time = Cast (signature S = TIME where type time = time
+			   structure X = Time)
 end

@@ -17,7 +17,7 @@ import functor MkMonoArray                    from "MkMonoArray"
 
 structure CharArray = MkMonoArray(
     structure Vector = CharVector
-    type array
+    __primitive eqtype array = "CharArray.array"
 
     __primitive val maxLen: int = "CharArray.maxLen"
 

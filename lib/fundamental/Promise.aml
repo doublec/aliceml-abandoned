@@ -21,7 +21,7 @@ import __primitive structure Hole    from "Hole"
 import __primitive signature PROMISE from "PROMISE-sig"
 
 (* For now we need a hack to make the Inspector properly display promises...
-structure Promise :> PROMISE =						(**)
+structure Promise : PROMISE =						(**)
 struct
     open Ref
 
@@ -55,35 +55,43 @@ struct
 end
 *)
 
-structure Promise :> PROMISE =						(**)
-struct
-    open Ref
+local
+    structure Promise : PROMISE =					(**)
+    struct
+	open Ref
 
-    datatype 'a promise	= Promise__ of bool ref * 'a
-    type 'a t		= 'a promise
+	datatype 'a promise	= Promise__ of bool ref * 'a
+	type 'a t		= 'a promise
 
-    exception Promise
+	exception Promise
 
-    fun promise()	= Promise__(ref false, Hole.hole())
-    fun future(Promise__(_,h))	= Hole.future h handle Hole.Hole => h
+	fun promise()	= Promise__(ref false, Hole.hole())
+	fun future(Promise__(_,h))	= Hole.future h handle Hole.Hole => h
 
-    fun fulfill(Promise__(r,h), x) =
-	let
-	    val b = Hole.hole()
-	in
-	    if exchange(r, Hole.future b)
-	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
-		  Hole.fill(b,true))
-	end
+	fun fulfill(Promise__(r,h), x) =
+	    let
+		val b = Hole.hole()
+	    in
+		if exchange(r, Hole.future b)
+		then (Hole.fill(b,true); raise Promise)
+		else (Hole.fill(h,x) handle e => (Hole.fill(b,false); raise e);
+		      Hole.fill(b,true))
+	    end
 
-    fun fail(Promise__(r,h), e) =
-	let
-	    val b = Hole.hole()
-	in
-	    if exchange(r, Hole.future b)
-	    then (Hole.fill(b,true); raise Promise)
-	    else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
-		  Hole.fill(b,true))
-	end
+	fun fail(Promise__(r,h), e) =
+	    let
+		val b = Hole.hole()
+	    in
+		if exchange(r, Hole.future b)
+		then (Hole.fill(b,true); raise Promise)
+		else (Hole.fail(h,e) handle e' => (Hole.fill(b,false); raise e');
+		      Hole.fill(b,true))
+	    end
+    end
+
+    __primitive __eqeqtype promise = "'a promise"
+    __primitive functor Cast (structure X : PROMISE signature S) : S = "Cast"
+in
+    structure Promise = Cast (signature S = PROMISE where type promise = promise
+			      structure X = Promise)
 end

@@ -22,7 +22,7 @@ import __primitive infix 4 = <= infix 6 +
        val op = and op +                  from "ToplevelValues"
 import __primitive signature BOOL         from "BOOL-sig"
 
-structure Bool :> BOOL =
+structure Bool : BOOL =
 struct
     datatype bool		= datatype bool
     type     t			= bool					(**)

@@ -21,7 +21,7 @@ import __primitive infix 3 :=
        val ! and op = and op := and op :=: from "ToplevelValues"
 import __primitive signature REF           from "REF-sig"
 
-structure Ref :> REF =							(**)
+structure Ref : REF =							(**)
   struct
     datatype ref			= datatype ref
     type  'a t				= 'a ref

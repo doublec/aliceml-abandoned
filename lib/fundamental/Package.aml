@@ -14,7 +14,7 @@ import structure __pervasive         from "Pervasive"
 import __primitive type package      from "ToplevelTypes"
 import __primitive signature PACKAGE from "PACKAGE-sig"
 
-structure Package :> PACKAGE where type package = package =
+structure Package : PACKAGE where type package = package =
 struct
     type package = package
     type t = package

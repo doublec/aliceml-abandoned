@@ -23,35 +23,50 @@ functor MkMonoArraySlice(type elem
 			 type vector
 			 type array
 			 type vector_slice
+			 type slice
 			 val alength :   array -> int
 			 val asub :      array * int -> elem
 			 val aupdate :   array * int * elem -> unit
 			 val aextract :  array * int * int -> vector
 			 val vtabulate : int * (int -> elem) -> vector
 			 val vsllength : vector_slice -> int
-			 val vslsub :    vector_slice * int -> elem)
-:> MONO_ARRAY_SLICE where type elem         = elem
-		      and type vector       = vector
-		      and type array        = array
-		      and type vector_slice = vector_slice =
-struct
-    structure ArraySlice = MkArraySlice(type 'a array        = array
-					type 'a vector       = vector
-					type 'a vector_slice = vector_slice
-					type 'a elem         = elem
-					val alength          = alength
-					val asub             = asub
-					val aupdate          = aupdate
-					val aextract         = aextract
-					val vtabulate        = vtabulate
-					val vsllength        = vsllength
-					val vslsub           = vslsub)
-    open ArraySlice
+			 val vslsub :    vector_slice * int -> elem) =
+let
+    structure MonoArraySlice =
+    struct
+	structure ArraySlice = MkArraySlice(
+	    type 'a array        = array
+	    type 'a vector       = vector
+	    type 'a vector_slice = vector_slice
+	    type 'a elem         = elem
+	    val alength          = alength
+	    val asub             = asub
+	    val aupdate          = aupdate
+	    val aextract         = aextract
+	    val vtabulate        = vtabulate
+	    val vsllength        = vsllength
+	    val vslsub           = vslsub
+	)
+	open ArraySlice
 
-    type elem         = elem
-    type vector       = vector
-    type array        = array
-    type vector_slice = vector_slice
-    type slice        = elem slice
-    type t            = slice
+	type elem         = elem
+	type vector       = vector
+	type array        = array
+	type vector_slice = vector_slice
+	type slice        = elem slice
+	type t            = slice
+    end
+
+    __primitive
+	functor Cast (structure X : MONO_ARRAY_SLICE signature S) : S = "Cast"
+in
+    Cast (
+	signature S = MONO_ARRAY_SLICE
+			where type elem         = elem
+			  and type vector       = vector
+			  and type array        = array
+			  and type vector_slice = vector_slice
+			  and type slice        = slice
+	structure X = MonoArraySlice
+    )
 end

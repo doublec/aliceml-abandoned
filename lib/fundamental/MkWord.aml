@@ -65,7 +65,7 @@ functor MkWord(BaseWord: sig
     val op > :   word * word -> bool
     val op <= :  word * word -> bool
     val op >= :  word * word -> bool
-end) :> WORD where type word = BaseWord.word =
+end) : WORD =
 struct
     open BaseWord
 

@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001-2003
+ *   Andreas Rossberg, 2001-2004
  *
  * Last change:
  *   $Date$ by $Author$
@@ -36,6 +36,7 @@ functor MkPervasiveType(val labid_false :	string
 			val valid_match :	string
 			val valid_bind :	string
 			val modid_pervasive :	string
+			val prefix_arrow :	string
 			) :> PERVASIVE_TYPE =
 struct
     type lab		= Label.t
@@ -132,5 +133,9 @@ struct
 	else if s = typid_strict then typ_strict
 	else if s = typid_conarrow then typ_conarrow
 	else if s = typid_package  then typ_package
-	else raise Lookup s
+	else
+	if String.isPrefix prefix_arrow s
+	then Type.con(Path.pervasive(String.extract(s, String.size prefix_arrow,
+						    NONE)), kind_arrow)
+	else Type.con(Path.pervasive s, kind_star)
 end
