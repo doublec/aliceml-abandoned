@@ -20,6 +20,7 @@
 #include "generic/Scheduler.hh"
 #include "generic/RootSet.hh"
 #include "generic/DebugWorker.hh"
+#include "generic/DebugFrame.hh"
 
 //
 // Debug Interpreter Functions

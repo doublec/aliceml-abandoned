@@ -21,8 +21,6 @@
 #include "generic/DebuggerEvent.hh"
 #include "store/Store.hh"
 
-class Thread;
-
 class SeamDll GenericEventAccessor : public EventAccessor {
 private:
   GenericEventAccessor(): EventAccessor() {}
@@ -71,11 +69,12 @@ public:
 
   static GenericDebuggerEvent *New(int type, word thread, word exn) {
     Block *event = Store::AllocBlock((BlockLabel)GENERIC_EVENT_LABEL, SIZE);
-    Block *b = Store::AllocBlock((BlockLabel)GENERIC_EVENT_LABEL,       BASE_SIZE);
+    Block *b = Store::AllocBlock((BlockLabel)GENERIC_EVENT_LABEL, BASE_SIZE);
     event->InitArg(THREAD_POS, thread);
     event->InitArg(TYPE_POS,   type);
     event->InitArg(EXN_POS,    exn);
-    b->InitArg(ACCESSOR_POS, Store::UnmanagedPointerToWord(GenericEventAccessor::self));
+    b->InitArg(ACCESSOR_POS, 
+	       Store::UnmanagedPointerToWord(GenericEventAccessor::self));
     b->InitArg(EVENT_POS,    event->ToWord());
 
     return STATIC_CAST(GenericDebuggerEvent *, b);

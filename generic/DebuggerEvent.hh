@@ -29,7 +29,7 @@ typedef enum {
 } EventLabel;
 
 
-class EventAccessor {
+class SeamDll EventAccessor {
 public:
   EventAccessor() {}
 
@@ -52,8 +52,8 @@ public:
   }
 
   EventAccessor *GetAccessor() {
-    return STATIC_CAST(EventAccessor *>
-      (Store::WordToUnmanagedPointer(Block::GetArg(ACCESSOR_POS)));
+    return STATIC_CAST(EventAccessor *, 
+      (Store::WordToUnmanagedPointer(Block::GetArg(ACCESSOR_POS))));
   }
 
   word GetEvent() {
