@@ -138,8 +138,7 @@ struct
 	    then String.substring(s, 0, 2)
 	    else ""
 
-	fun validVolume{isAbs, vol=""}	= true
-	  | validVolume{isAbs=true,vol}	= getVolume vol = vol
+	fun validVolume{isAbs, vol}	= getVolume vol = vol
 	  | validVolume _		= false
 
 	fun fromString s =
