@@ -76,23 +76,66 @@ struct
 	    ^"      "^(cases terms)
 	end
 
-    fun printPrelimString (name,terms,nonterms,stringToTerm) =
+    fun printActions stringToNonterm n ((r as (lhs,t,A.Transform(bnf,code)))::rs) = 
+	let fun mkPat rulenum rhs = 
+	    let fun prRhs first [] = "rest671"
+		  | prRhs first ((A.As(s,A.Symbol t))::rhs) =
+		"(_, (SValue."^t^"("^s^"), "
+		^(if first then s^"left, " else "_, ")
+		^(if List.length rhs = 0 then s^"right)) ::" else "_)) ::")
+		^(prRhs false rhs)
+	    in 
+		"("^(Int.toString rulenum)^", "
+		^(prRhs true rhs)^")\n" 
+	    end
+	    fun mkMatch [] = ""
+	      | mkMatch ((A.As(s,A.Symbol t))::rhs) =
+		(blank 44)^"val "^s^" = "^s^" ()\n"
+		^(mkMatch rhs)
+	    val A.Seq rhs = bnf
+	    val code = foldr (fn (s,r) => s^r) "" code
+	    val leftpos = let val A.As(name,_) = List.hd rhs 
+			  in name^"left" end
+	    val rightpos = let val A.As(name,_) = List.last rhs
+			   in name^"right" end
+	in
+	    (blank 8)^(mkPat n rhs)
+	    ^(blank 12)^"=> let val result =\n"
+	    ^(blank 20)^"SValue."^lhs^" (fn () => let\n"
+	    ^(mkMatch rhs)
+	    ^(blank 40)^"in ("^code^") end )\n"
+	    ^(blank 15)^"in "
+	    ^"(LrTable.NT "
+	    ^(Int.toString (case stringToNonterm lhs of LrTable.NT i => i))
+	    ^", (result, "^leftpos^", "^rightpos^"), rest671) end\n"
+	    ^(printActions stringToNonterm (n+1) rs) 
+	end
+      | printActions _ _ _ = ""
+
+    fun printPrelimString (name,terms,nonterms,stringToTerm,stringToNonterm,rules) =
 	"\n(* declarations for parser "^name^" *)\n"
 	^"local\nstructure Token = LrParser.Token\n"
 	^"structure SValue =\nstruct\n"
 	^(printSValue (terms,nonterms))
 	^"end\n"
 	^"\n"^(printToIntTokenFn (terms,stringToTerm))
-	^"in\n" (* HERE: insert parser fn *)
+	^"\n(* semantic actions *)\n"
+	^"structure SAction =\nstruct\n"
+	^"val actions =\n    fn (i392,defPos,stack,()) =>\n"
+	^"        case (i392,stack) of\n"
+	^(printActions stringToNonterm 0 rules)
+	^"end\n"
+	^"in\n(* HERE: insert parser fn *)\n" (* HERE: insert parser fn *)
 	^"end\n"
 
     (* to be done: code for parser *)
-    fun parserDecToString (terms,nonterms,stringToTerm) [] = ""
-      | parserDecToString (terms,nonterms,stringToTerm) ((name,ty,sr)::ds) =
+    fun parserDecToString (terms,nonterms,stringToTerm,stringToNonterm,rules) [] = ""
+      | parserDecToString (terms,nonterms,stringToTerm,stringToNonterm,rules) ((name,ty,sr)::ds) =
 	let val prefix = case ty of
 	    NONE => "val "^name^" "
 	  | SOME ty => "val "^name^" : lexer -> "^ty^" "
-		val decString = printPrelimString (name,terms,nonterms,stringToTerm)
+		val decString = printPrelimString 
+		    (name,terms,nonterms,stringToTerm,stringToNonterm,rules)
 	in
 	    cr (decString^prefix^" = fn lexer => lexer\n")
 	end
@@ -106,8 +149,8 @@ struct
 
     fun absSynToString _ _ (A.TokenDec l) = tokenDecToString l
       | absSynToString _ _ (A.MLCode l) = List.foldr (fn (x,r) => x^" "^r) "" l
-      | absSynToString (terms,nonterms,stringToTerm) _ (A.ParserDec l) = 
-	  parserDecToString (terms,nonterms,stringToTerm) l
+      | absSynToString (terms,nonterms,stringToTerm,stringToNonterm,rules) _ (A.ParserDec l) = 
+	  parserDecToString (terms,nonterms,stringToTerm,stringToNonterm,rules) l
       | absSynToString _ lrTable (A.RuleDec l) =
 	"\nlocal structure Table =\nstruct\nopen LrTable\n\n"
 	^lrTable
@@ -122,10 +165,15 @@ struct
     fun output filename = 
 	let val (r,print) = mkPrint ""
 	    val p = (NormalForm.toNormalForm (Parse.parse filename))
-	    val Translate.TRANSLATE {grammar,stringToTerm,stringToNonterm,termlist} = 
-		  Translate.translate p
-	    val Grammar.GRAMMAR{terms,nonterms,termToString,nontermToString,...} 
-		= grammar
+	    val Translate.TRANSLATE {grammar,
+				     stringToTerm,
+				     stringToNonterm,
+				     termlist,
+				     rules} = Translate.translate p
+	    val Grammar.GRAMMAR{terms,
+				nonterms,
+				termToString,
+				nontermToString,...} = grammar
 	    val nontermlist = map nontermToString 
 		(List.tabulate (nonterms, fn x => Grammar.NT x))
 	    val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
@@ -134,10 +182,15 @@ struct
 						   print=print,
 						   verbose=false}; !r)
 	    val code = List.map 
-		(absSynToString (termlist,nontermlist,stringToTerm) lrTable)
+		(absSynToString (termlist,nontermlist,stringToTerm,stringToNonterm,rules) lrTable)
 		(removeRuleDecs true p)
 	in
 	    List.foldr (fn (x,r) => x^" "^r) "\n" code
 	end
 
 end
+
+
+(* test environment 
+let val _ = Compiler.Control.Print.printDepth := 80 in () end
+*)

@@ -31,13 +31,14 @@ struct
 
   fun try filename =
       let val p = parse filename
-	  val Translate.TRANSLATE{grammar,...} = 
+	  val Translate.TRANSLATE{grammar,rules,...} = 
 	      Translate.translate (NormalForm.toNormalForm p)
 	  val (table,_,_,_) = MakeLrTable.mkTable (grammar,true)
-      in
-	  PrintStruct.makeStruct {table=table,
+	  val _ = PrintStruct.makeStruct {table=table,
 				  name="t1",
 				  print=print,
 				  verbose=false}
+      in 
+	  rules
       end
 end

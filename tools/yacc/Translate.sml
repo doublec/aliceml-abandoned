@@ -9,7 +9,8 @@ struct
     datatype translate = TRANSLATE of {grammar :G.grammar,
 				       stringToTerm :string -> G.term,
 				       stringToNonterm :string -> G.nonterm,
-				       termlist :(string * string option) list
+				       termlist :(string * string option) list,
+				       rules :A.rule list
 				       }
 
     val toNonterm = List.find 
@@ -21,8 +22,8 @@ struct
 	    fn () => (r:=(!r+1); s^"__"^Int.toString(!r-1))^"__"
 	end
 
-    val newTokenname = mkNewNamefunction "token" 0
-    val newRulename = mkNewNamefunction "startrule" 0
+    val newTokenname = mkNewNamefunction "TOKEN" 675
+    val newRulename = mkNewNamefunction "startrule" 675
 
     (* ML yacc assumes 
      - nonterms numbered 0,...,|nonterms|,
@@ -95,7 +96,7 @@ struct
 			     (A.Seq [A.As(tok,A.Symbol(tok)),
 				     A.As(stsym,A.Symbol(stsym)),
 				     A.As(N.eop,A.Symbol(N.eop))],
-			      [""]))::rules)
+			      [stsym]))::rules)
 		end
 	in
 	    toRule [] ps
@@ -128,9 +129,12 @@ struct
 	      | toRule i (r::rs) = 
 		(translateRule td ntd i r)::(toRule (i+1) rs)
 	in 
-	    toRule 0 rs
+	    (rs,toRule 0 rs)
 	end
-    
+
+    fun removePrec (A.Prec (bnf,_)) = removePrec bnf
+      | removePrec bnf = bnf
+
     fun translate y = 
 	let val (ts,x1) = mkParsers y
 	    val x = (A.RuleDec x1)::y
@@ -147,7 +151,9 @@ struct
 	    val stringToTerm = stringToTerm td
 	    val stringToNonterm = stringToNonterm ntd
 	    val termlist = map (fn (x,_) => x) td
-	    val rules = mkRules td ntd x
+	    val (origRules,rules) = mkRules td ntd x
+	    val origRules = map 
+		(fn (s,t,bnf) => (s,t,removePrec bnf)) origRules
 	    val precedence = fn t => NONE
 	    val grammar = G.GRAMMAR {rules=rules,
 				     terms=terms,
@@ -162,7 +168,8 @@ struct
 	in TRANSLATE {grammar=grammar, 
 		      stringToTerm = stringToTerm,
 		      stringToNonterm = stringToNonterm,
-		      termlist = termlist
+		      termlist = termlist,
+		      rules = origRules
 		      }
 	end
     

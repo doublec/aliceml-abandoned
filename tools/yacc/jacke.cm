@@ -25,6 +25,6 @@ mklrtable.sml
 shrink.sml
 mkprstruct.sml
 output.sml
-
+LrParser.sml
 jacke.sml
 
