@@ -161,15 +161,6 @@ inline void PushState(TagVal *pc, Closure *globalEnv, Environment *localEnv) {
   Scheduler::PushFrame(frame->ToWord());
 }
 
-inline word GetToplevel(Closure *closure, u_int index) {
-  AliceConcreteCode *concreteCode =
-    AliceConcreteCode::FromWord(closure->GetConcreteCode());
-  Assert(concreteCode != INVALID_POINTER);
-  TagVal *abstractCode = concreteCode->GetAbstractCode();
-  Vector *toplevels = Vector::FromWordDirect(abstractCode->Sel(1));
-  return toplevels->Sub(index);
-}
-
 inline word
 GetIdRefKill(word idRef, Closure *globalEnv, Environment *localEnv) {
   TagVal *tagVal = TagVal::FromWordDirect(idRef);
@@ -187,8 +178,6 @@ GetIdRefKill(word idRef, Closure *globalEnv, Environment *localEnv) {
     }
   case AbstractCode::Global:
     return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
-  case AbstractCode::Toplevel:
-    return GetToplevel(globalEnv, Store::WordToInt(tagVal->Sel(0)));
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
@@ -204,8 +193,6 @@ inline word GetIdRef(word idRef, Closure *globalEnv, Environment *localEnv) {
     return localEnv->Lookup(tagVal->Sel(0));
   case AbstractCode::Global:
     return globalEnv->Sub(Store::WordToInt(tagVal->Sel(0)));
-  case AbstractCode::Toplevel:
-    return GetToplevel(globalEnv, Store::WordToInt(tagVal->Sel(0)));
   default:
     Error("AbstractCodeInterpreter::GetIdRef: invalid idRef tag");
   }
@@ -244,7 +231,6 @@ void AbstractCodeInterpreter::PushCall(Closure *closure) {
   TagVal *abstractCode = concreteCode->GetAbstractCode();
   switch (AbstractCode::GetAbstractCode(abstractCode)) {
   case AbstractCode::Function:
-  case AbstractCode::Specialized:
     {
       abstractCode->AssertWidth(AbstractCode::functionWidth);
       Vector *localNames = Vector::FromWordDirect(abstractCode->Sel(2));
@@ -429,14 +415,33 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	pc = TagVal::FromWordDirect(pc->Sel(2));
       }
       break;
-    case AbstractCode::Close: // of id * idRef vector * value * instr
+    case AbstractCode::Close: // of id * idRef vector * template * instr
       {
 	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
 	u_int nGlobals = idRefs->GetLength();
 #if PROFILE
 	Profiler::IncClosures(pc->Sel(2));
 #endif
-	Closure *closure = Closure::New(pc->Sel(2), nGlobals);
+	// Instantiate the template into an abstract code:
+	TagVal *abstractCode =
+	  TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
+	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
+	template_->AssertWidth(AbstractCode::functionWidth);
+	abstractCode->Init(0, template_->Sel(0));
+	Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+	       nGlobals);
+	Vector *subst = Vector::New(nGlobals);
+	for (u_int i = nGlobals; i--; )
+	  subst->Init(0, Store::IntToWord(0)); // NONE
+	abstractCode->Init(1, subst->ToWord());
+	abstractCode->Init(2, template_->Sel(2));
+	abstractCode->Init(3, template_->Sel(3));
+	abstractCode->Init(4, template_->Sel(4));
+	abstractCode->Init(5, template_->Sel(5));
+	// Construct concrete code from abstract code:
+	word wConcreteCode =
+	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
+	Closure *closure = Closure::New(wConcreteCode, nGlobals);
 	for (u_int i = nGlobals; i--; )
 	  closure->Init(i, GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv));
 	localEnv->Add(pc->Sel(0), closure->ToWord());
@@ -446,24 +451,14 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
     case AbstractCode::Specialize: // of id * idRef vector * template * instr
       {
 	// Construct new abstract code by instantiating template:
-	TagVal *abstractCode = TagVal::New(AbstractCode::Specialized,
-					   AbstractCode::functionWidth);
+	TagVal *abstractCode =
+	  TagVal::New(AbstractCode::Function, AbstractCode::functionWidth);
 	TagVal *template_ = TagVal::FromWordDirect(pc->Sel(2));
 	template_->AssertWidth(AbstractCode::functionWidth);
 #if PROFILE
 	Profiler::IncInstances(template_);
 #endif
 	abstractCode->Init(0, template_->Sel(0));
-	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
-	u_int nToplevels = idRefs->GetLength();
-	Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
-	       nToplevels);
-	Vector *toplevels = Vector::New(nToplevels);
-	for (u_int i = nToplevels; i--; ) {
-	  word value = GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv);
-	  toplevels->Init(i, value);
-	}
-	abstractCode->Init(1, toplevels->ToWord());
 	abstractCode->Init(2, template_->Sel(2));
 	abstractCode->Init(3, template_->Sel(3));
 	abstractCode->Init(4, template_->Sel(4));
@@ -472,7 +467,20 @@ Interpreter::Result AbstractCodeInterpreter::Run() {
 	word wConcreteCode =
 	  AliceLanguageLayer::concreteCodeConstructor(abstractCode);
 	// Construct closure from concrete code:
-	Closure *closure = Closure::New(wConcreteCode, 0);
+	Vector *idRefs = Vector::FromWordDirect(pc->Sel(1));
+	u_int nGlobals = idRefs->GetLength();
+	Assert(static_cast<u_int>(Store::DirectWordToInt(template_->Sel(1))) ==
+	       nGlobals);
+	Vector *subst = Vector::New(nGlobals);
+	Closure *closure = Closure::New(wConcreteCode, nGlobals);
+	for (u_int i = nGlobals; i--; ) {
+	  word value = GetIdRefKill(idRefs->Sub(i), globalEnv, localEnv);
+	  TagVal *some = TagVal::New(1, 1); // SOME ...
+	  some->Init(0, value);
+	  subst->Init(i, some->ToWord());
+	  closure->Init(i, value);
+	}
+	abstractCode->Init(1, subst->ToWord());
 	localEnv->Add(pc->Sel(0), closure->ToWord());
 	pc = TagVal::FromWordDirect(pc->Sel(3));
       }
