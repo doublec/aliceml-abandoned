@@ -28,6 +28,6 @@ __primitive val byNeed: (unit -> 'a) -> 'a = "Transient.byNeed"
 
 __primitive val show: 'a -> unit = "show"
 
-val f = byNeed (fn () => raise Prebound.Match)
+val f: unit = byNeed (fn () => raise Prebound.Match)
 
 val _ = show (await f)
