@@ -165,12 +165,13 @@ structure Main :> MAIN =
 
     (* Tell the composer how to compile Alice source files *)
 
-    fun parseFileUrl url =
-	(case (Url.getScheme url, Url.getAuthority url) of
-	     ((NONE | SOME "file"), NONE) => ()
-	   | _ => raise Crash.Crash "Main.parseFileUrl";
-	 Url.setScheme (url, NONE);
-	 Url.toString url)
+    fun parseUrl url =
+	case (Url.getScheme url, Url.getAuthority url) of
+	    ((NONE | SOME "file"), NONE) =>
+		Url.toString (Url.setScheme (url, NONE))
+	  | (SOME "x-alice", NONE) =>
+		Url.toString (Url.setScheme (Url.makeRelativePath url, NONE))
+	  | _ => raise Crash.Crash "Main.parseUrl"
 
     fun existsFile filename =
 	(TextIO.closeIn (TextIO.openIn filename); true) handle IO.Io _ => false
@@ -209,7 +210,7 @@ structure Main :> MAIN =
 
     fun acquireSign url =
 	let
-	    val targetFilename = parseFileUrl url
+	    val targetFilename = parseUrl url
 	    val sigFilename = targetFilename ^ ".sig"
 	in
 	    if existsFile sigFilename then compileSign sigFilename
