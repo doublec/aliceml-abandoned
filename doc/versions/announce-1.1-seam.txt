@@ -39,34 +39,35 @@ The highlights of this release are:
 
   Graphical User Interface
      The Interactive Toplevel now comes with an optional GUI that
-     includes a simple editor.
+     includes a simple program editor.
   First-class Compilation
-     The library now enables runtime access to the compiler, and
-     includes a Lisp-style "eval" function.
+     The library now enables safe runtime access to the compiler,
+     including a type-safe Lisp-style "eval" function.
   Search Factory and Distributed Search
      A generic Search Factory enables programming of custom search
-     strategies for constraint programming, including a distributed
+     strategies for constraint programming, and includes a distributed
      search engine.
   Glade Interface Builder
-     The new aliceglade tool allows creation of Gtk interfaces with
-     the Glade interface builder. [glade.gnome.org]
+     The new aliceglade tool allows creation of Gtk interfaces for
+     Alice with the graphical Glade interface builder. [glade.gnome.org]
   SQL Library
      A binding to the SQLite library is now included in the
      distribution. [www.sqlite.org]
   XML Parser
-     The distribution also includes an XML parser based on the
+     The distribution also includes a simple XML parser based on the
      libxml2 library. [www.xmlsoft.org]
+  Mac OS Port
+     The system is now available for Mac OS X (without just-in-time
+     compilation).
   Bug Fixes
      Lots of bugs and problems fixed, particularly on Windows.
-  Mac OS Port and Debian Packages
-     Packages for Mac OS X and Debian are now available.
 
-For a detailed list of changes see:
+For a detailed list of changes please see:
 
      http://www.ps.uni-sb.de/alice/download/CHANGES
 
-Alice is open source under a BSD-style license. Binary packages
-are currently available for Linux and Windows.
+Alice is open source under a BSD-style license. Source and binary
+packages are currently available for Linux, Mac OS, and Windows.
 
 Enjoy,
 
