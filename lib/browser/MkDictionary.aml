@@ -111,7 +111,14 @@ struct
 			     end
 
     fun getHighestIndexAssigned (_,_,next_index) = (!next_index) -1
-    
+
+    fun dumpAll (a,fill_count,next_i) = let 
+					    val _ = a:= Array.array(5,[])
+					    val _ = fill_count := 0
+					    val _ = next_i := 0
+					in
+					    ()
+					end
 end;
 
 

@@ -16,6 +16,8 @@
 import signature MK_WINDOW from "MK_WINDOW-sig"
 import structure Settings from "Settings"
 import functor MkWindow from "MkWindow"
+import structure Dictionaries from "Dictionaries" (* to be verified *)
+import structure MainDictionary from "MainDictionary" (* to be verified *)
 import signature WINDOW_MANAGER from "WINDOW_MANAGER-sig"
 
 
@@ -47,6 +49,7 @@ structure WindowManager :> WINDOW_MANAGER =
 				  val _ = resize:= W.resize
 				  val _ = Settings.max_x :=0.0
 				  val _ = Settings.max_y :=0.0
+				  val _ = MainDictionary.dumpAll(Dictionaries.dict)
 			      in
 				  (incr_act_line (~(!act_line)) )
 			      end
