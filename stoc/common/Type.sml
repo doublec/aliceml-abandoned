@@ -796,7 +796,8 @@ if kind' t1' <> k2 then raise Assert.failure else
 			 recur unifyPair (tt1,tt2)
 
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 recur (ListPair.app unify) (ts1,ts2)
+			 (recur unifyList (ts1,ts2)
+			  handle Domain => raise Unify(t1,t2))
 
 		       | (TUPLE(ts), PROD(r)) =>
 			 recur unifyRow (t1, t2, tupToRow ts, r, PROD)
@@ -844,6 +845,11 @@ if kind' t1' <> k2 then raise Assert.failure else
 	    and unifyPair((t11,t12), (t21,t22)) =
 		( unify(t11,t21) ; unify(t12,t22) )
 
+	    and unifyList(  [],      []   ) = ()
+	      | unifyList(t1::ts1, t2::ts2) =
+		( unify(t1,t2) ; unifyList(ts1,ts2) )
+	      | unifyList _ = raise Domain
+
 	    and unifyRow(t1, t2, r1, r2, PRODorSUM) =
 		let
 (*DEBUG
@@ -864,7 +870,8 @@ val timer = Timer.startRealTimer()
 		      | loop(r1 as FIELD(l1,ts1,r1'), b1,
 			     r2 as FIELD(l2,ts2,r2'), b2) =
 			(case Label.compare(l1,l2)
-			   of EQUAL   => ( ListPair.app unify (ts1,ts2)
+			   of EQUAL   => ( unifyList(ts1,ts2)
+					   handle Domain => raise Unify(t1,t2)
 					 ; FIELD(l1,ts1, loop(r1',b1, r2',b2)) )
 			    | LESS    => if not b2 then raise Unify(t1,t2) else
 					 FIELD(l1,ts1, loop(r1',b1, r2,b2))
@@ -958,7 +965,7 @@ end*)
 			 recur equalsPair (tt1,tt2)
 
 		       | (TUPLE(ts1), TUPLE(ts2)) =>
-			 recur (ListPair.all equals) (ts1,ts2)
+			 recur equalsList (ts1,ts2)
 
 		       | ( (TUPLE(ts), PROD(r))
 			 | (PROD(r),   TUPLE(ts)) ) =>
@@ -988,16 +995,21 @@ end*)
 			 recurBinder(a1, a2, t11, t21)
 
 		       | (ABBREV(t11,t12), _) =>
-			 equals (t12,t2)
+			 equals(t12,t2)
 
 		       | (_, ABBREV(t21,t22)) =>
-			 equals (t1,t22)
+			 equals(t1,t22)
 
 		       | _ => false
 		end
 
 	    and equalsPair((t11,t12), (t21,t22)) =
 		equals(t11,t21) andalso equals (t12,t22)
+
+	    and equalsList(  [],      []   ) = true
+	      | equalsList(t1::ts1, t2::ts2) =
+		equals(t1,t2) andalso equalsList(ts1,ts2)
+	      | equalsList _ = false
 
 (*DEBUG
 and equalsRow rr =
@@ -1008,8 +1020,7 @@ fun f() = ()
 	    and equalsRow(NIL,              NIL)              = true
 	      | equalsRow(RHO(_,r1),        RHO(_,r2))        = equalsRow(r1,r2)
 	      | equalsRow(FIELD(l1,ts1,r1), FIELD(l2,ts2,r2)) =
-		l1 = l2 andalso ListPair.all equals (ts1,ts2)
-			andalso equalsRow(r1,r2)
+		l1 = l2 andalso equalsList(ts1,ts2) andalso equalsRow(r1,r2)
 	      | equalsRow _ = false
 (*in
 equalsRow rr
