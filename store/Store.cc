@@ -19,6 +19,7 @@
 #endif
 
 #if defined(INTERFACE)
+#pragma implementation "store/StatusWord.hh"
 #pragma implementation "store/HeaderOp.hh"
 #pragma implementation "store/PointerOp.hh"
 #pragma implementation "store/Store.hh"
@@ -27,10 +28,14 @@
 #pragma implementation "store/Set.hh"
 #endif
 
+#include "store/StatusWord.hh"
 #include "store/Store.hh"
 #include "store/Memory.hh"
 #include "store/GCHelper.hh"
 #include "store/Set.hh"
+
+// Status Word
+u_int StatusWord::status;
 
 //
 // Class Fields and Global Vars
@@ -49,9 +54,6 @@ u_int Store::dstGen;
 
 Set *Store::intgenSet = INVALID_POINTER;
 Set *Store::wkDictSet = INVALID_POINTER;
-u_int Store::needGC   = 0;
-u_int Store::allowGC  = 1;
-u_int Store::forceGC  = 0;
 
 #if defined(STORE_PROFILE)
 u_int Store::totalMem  = 0;
@@ -85,7 +87,8 @@ inline void Store::AllocNewMemChunk(u_int size, const u_int gen) {
   MemChunk *chunk = new MemChunk(roots[gen], alloc_size);
   roots[gen] = chunk;
   curChunk   = chunk;
-  needGC = (GetMemUsage(roots[gen]) > memMax[gen]);
+  if (GetMemUsage(roots[gen]) > memMax[gen])
+    StatusWord::SetStatus(GCStatus());
 }
 
 inline char *Store::GCAlloc(u_int size, u_int header) {
@@ -220,6 +223,7 @@ inline void Store::CheneyScan(MemChunk *chunk, char *scan) {
 
 void Store::InitStore(u_int mem_max[STORE_GENERATION_NUM],
   u_int mem_free, u_int mem_tolerance) {
+  StatusWord::Init();
   for (u_int i = STORE_GENERATION_NUM; i--;) {
     Store::roots[i]  = new MemChunk(NULL, STORE_MEMCHUNK_SIZE);
     Store::memMax[i] = mem_max[i];
@@ -578,8 +582,8 @@ inline void Store::DoGC(word &root, const u_int gen) {
     // Cut down shadow region
     Store::FreeMemChunks(roots[STORE_GENERATION_NUM - 1]);
   }
-  // Clear GC Flag and Calc Limits for next GC
-  needGC = 0;
+  // Clear GC Flag
+  StatusWord::ClearStatus(GCStatus());
   // Calc Limits for next GC
   //  u_int wanted = ((GetMemUsage(roots[hdrGen]) * 100) / (100 - memFree));
   u_int wanted;
