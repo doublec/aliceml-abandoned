@@ -226,10 +226,9 @@ define
 		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end})
       [] SelExp(Info Lab) then selExp({TrInfo Info} {TrLab Lab})
       [] VecExp(Info Ids) then vecExp({TrInfo Info} {Map Ids TrId})
-      [] FunExp(Info Stamp Flags ArgsBodyList) then
+      [] FunExp(Info Stamp Flags Args Body) then
 	 funExp({TrInfo Info} {TrStamp Stamp} {Map Flags TrFunFlag}
-		{Map ArgsBodyList
-		 fun {$ Args#Body} {TrArgs Args}#{TrBody Body} end})
+		{TrArgs Args} {TrBody Body})
       [] AppExp(Info Id Args) then
 	 appExp({TrInfo Info} {TrId Id} {TrArgs Args})
       [] SelAppExp(Info Lab Id) then
