@@ -1,8 +1,0 @@
-__prebound Prebound
-datatype bool = datatype Prebound.bool
-__primitive val show: 'a = "show"
-
-val _ = show 5
-val b = true
-val _ = (if b then raise Prebound.Match else 1) handle _ => 6
-val _ = show 7
