@@ -35,8 +35,11 @@ Library:
 * [CHG] Lock: sync is now re-entrant.
 * [CHG] Minimizer: removed, superseded by Store component.
 * [CHG] Http: ignore multiple headers; replace empty reguest URIs with "/".
-* [CHG] Remote: more error conditions distinguished by execute; uncaught
-        exceptions on the remote site are now propagated back to the caller.
+* [CHG] Remote: replaced execute/Execute by two function/functors eval/Eval and
+        run/Run: the former terminates after evaluation of the mobile component,
+        the latter keeps the process alive; more error conditions distinguished;
+        uncaught exceptions on the remote site are now propagated back to the
+        caller; optional logging of remote invocation.
 * [FIX] Promise: equality now works properly.
 * [FIX] IntInf: fixed handling of division by 0.
 * [FIX] Word[N]: fixed mod by 0 and conversion overflow checks.

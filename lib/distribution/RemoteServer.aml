@@ -1,10 +1,10 @@
 (*
  * Author:
- *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
+ *   Andreas Rossberg and Leif Kornstaedt, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -30,7 +30,7 @@ fun log s =
     case logfile of NONE => () | SOME file =>
     (TextIO.output (file, "-- " ^ s ^ "\n"); TextIO.flushOut file)
 
-fun main [ticket] =
+fun main ((flag as ("-x"|"-r"))::[ticket]) =
     (let
 	datatype reply = OK of package | EXN of exn
 
@@ -39,32 +39,58 @@ fun main [ticket] =
 	    unpack Remote.take ticket : (val component : Component.t
 					 val return : reply -> unit)
 
+	val returned = ref false
+	fun return (reply, message) =
+	    let
+		val p = Promise.promise ()
+	    in
+		if Ref.exchange (returned, Promise.future p)
+		then ()
+		else (log message; Query.return reply)
+		     handle e => (Promise.fulfill (p, false); raise e);
+		Promise.fulfill (p, true)
+	    end
+
+	val _ = OS.Process.atExit
+		(fn _ => (log "Exit called";
+			  return (EXN Remote.Exit, "Returning exception Exit")))
+
 	val _ = log ("Evaluating component")
 	val reply =
 	    OK (ComponentManager.eval (Url.fromString "", Query.component))
 	    handle exn => EXN exn
     in
-	log (case reply of OK _ => "Returning result"
-			 | EXN e => "Returning exception " ^ Exn.name e);
-	Query.return reply
+	return (reply, case reply of OK _ => "Returning result"
+				 | EXN e => "Returning exception " ^ Exn.name e)
 	handle Remote.Proxy Remote.SitedArgument =>
-	       (log ("Sited result");
-	        Query.return (EXN Remote.SitedResult))
+	       (return (EXN Remote.SitedResult, "Sited result");
+	        OS.Process.exit OS.Process.success)
 	     | Remote.Proxy e =>
-	       (log ("Exception Proxy(" ^ Exn.name e ^ ") raised while returning!");
-	        Query.return (EXN e))
+	       (return (EXN e, "Exception Proxy(" ^ Exn.name e ^
+						") raised while returning!");
+	        OS.Process.exit OS.Process.success)
 	     | e =>
-	       (log ("Exception " ^ Exn.name e ^ " raised while returning!");
-	        Query.return (EXN e));
-	OS.Process.success
+	       (return (EXN e, "Exception " ^ Exn.name e ^
+					  " raised while returning!");
+	        OS.Process.exit OS.Process.success);
+	case (flag, reply)
+	 of ("-r", OK _) => ()
+	  | (_, _)       => OS.Process.exit OS.Process.success
     end
     handle Remote.Ticket =>
-	(TextIO.output (TextIO.stdErr, "aliceremote: \
-					\invalid ticket " ^ ticket ^ "\n");
-	 log ("Ticket invalid!");
-	 OS.Process.failure))
+	   (TextIO.output (TextIO.stdErr, "aliceremote: \
+					  \invalid ticket " ^ ticket ^ "\n");
+	    log ("Ticket invalid!");
+	    OS.Process.exit OS.Process.failure)
+	 | e =>
+	   (TextIO.output (TextIO.stdErr, "aliceremote: \
+					  \could not return to caller, \
+					  \exception " ^ Exn.name e ^ "\n");
+	    log ("Return failed with exception " ^ Exn.name e ^ "!");
+	    OS.Process.exit OS.Process.failure)
+	)
   | main args =
-	(log ("Invalid arguments (" ^ Int.toString (List.length args) ^ ")");
-	 OS.Process.failure)
+	(log ("Invalid arguments: " ^ String.concatWith " " args);
+	 OS.Process.exit OS.Process.failure)
 
-val _ = OS.Process.exit (main (CommandLine.arguments ()))
+val _ = main (CommandLine.arguments ())

@@ -24,7 +24,7 @@ MkTreeNode.alc: \
 	MkSpaceNode.alc
 
 SEARCH-sig.alc: \
-	Path.alc \
+	Path.alc
 
 MkSearch.alc: \
 	Path.alc \

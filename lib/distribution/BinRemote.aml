@@ -367,6 +367,7 @@ struct
     exception SitedArgument = UnsafeRemote.SitedArgument
     exception SitedResult = UnsafeRemote.SitedResult
     exception Protocol = BinaryMessage.Protocol
+    exception Exit = UnsafeRemote.Exit
 
     val rootUrl =
 	lazy (Url.fromString

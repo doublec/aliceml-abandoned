@@ -92,8 +92,10 @@ Library:
 * Http: ignore multiple headers; replace empty reguest URIs with "/".
 * Remote:
   - Added functor Proxy to conveniently wrap a whole module into proxies.
-  - Added function execute, made the Execute functor a trivial wrapper.
-  - More error conditions distinguished by execute. Uncaught exceptions on the
+  - Replaced Execute functor by two function/functors eval/Eval and run/Run.
+    The former terminates after evaluation of the mobile component, the latter
+    keeps the process alive.
+  - More error conditions distinguished by eval/run. Uncaught exceptions on the
     remote site are now propagated back to the caller.
 * Gtk library: simplified structure, all types are now defined in GtkTypes.
 

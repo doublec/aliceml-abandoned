@@ -7,7 +7,7 @@
  *   Benedikt Grundmann <bgrund@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last change:
  *   $Date$ by $Author$
@@ -170,6 +170,7 @@ sig
     exception SitedArgument			(* only as proxy cause *)
     exception SitedResult			(* only as proxy cause *)
     exception Protocol of string		(* only as proxy cause *)
+    exception Exit				(* remote process exits *)
 
     val export: string -> ticket
     val download: ticket -> string
@@ -187,6 +188,7 @@ struct
     exception SitedArgument = RemotePort.SitedArgument
     exception SitedResult = RemotePort.SitedResult
     exception Protocol = RemotePort.Protocol
+    exception Exit = RemotePort.Exit
 
     (*--------------------------------------------------------------
      * Proxies and RPC
@@ -370,7 +372,7 @@ struct
 
     datatype reply = OK of package | EXN of exn
 
-    fun execute (host, component) =
+    fun execute (flag, host, component) =
 	let
             val p = Promise.promise ()
             val ticket =
@@ -390,19 +392,32 @@ struct
                 Unix.execute ("ssh",
                               [host, "aliceremote",
                                "x-alice:/lib/distribution/RemoteServer",
-                               ticket])
+                               flag, ticket])
 	in
 	    case Promise.future p of
 		OK package => package
 	      | EXN exn => raise exn
 	end
 
-    functor Execute (val host: string
-                     signature S
-                     functor F: COMPONENT_MANAGER -> S) =
+    fun eval (host, component) = execute ("-x", host, component)
+    fun run  (host, component) = execute ("-r", host, component)
+
+    functor Eval (val host: string
+                  signature S
+                  functor F: COMPONENT_MANAGER -> S) =
         let
 	    structure C = Component.Create (signature S = S structure F = F)
-	    val package = execute (host, C.component)
+	    val package = eval (host, C.component)
+        in
+	    unpack package : S
+	end
+
+    functor Run (val host: string
+                 signature S
+                 functor F: COMPONENT_MANAGER -> S) =
+        let
+	    structure C = Component.Create (signature S = S structure F = F)
+	    val package = run (host, C.component)
         in
 	    unpack package : S
 	end

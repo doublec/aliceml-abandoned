@@ -29,6 +29,7 @@ define
    SitedResultException = {NewUniqueName 'Remote.SitedResult'}
    ProxyException = {NewUniqueName 'Remote.Proxy'}
    ProtocolException = {NewUniqueName 'Remote.Protocol'}
+   ExitException = {NewUniqueName 'Remote.Exit'}
 
    Remote =
    'Remote'('SitedInternal': SitedInternalException
@@ -39,6 +40,8 @@ define
 	    '\'SitedArgument': SitedArgumentException
 	    'SitedResult': SitedResultException
 	    '\'SitedResult': SitedResultException
+	    'Exit': ExitException
+	    '\'Exit': ExitException
 	    'Proxy': fun {$ Exn} ProxyException(Exn) end
 	    '\'Proxy': ProxyException
 	    'Protocol': fun {$ S} ProtocolException(S) end

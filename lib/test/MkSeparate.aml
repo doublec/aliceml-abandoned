@@ -48,13 +48,13 @@ struct
 
     val _ = print "executing functor on remote site\n"
 
-    structure E = Remote.Execute (val host = host 
-                                  signature S = 
-				  sig 
-				    val execute: arg -> res 
-				    val shutdown: unit -> unit 
-				  end
-				  structure F = MkE)
+    structure E = Remote.Eval (val host = host 
+                               signature S = 
+			       sig 
+				 val execute: arg -> res 
+				 val shutdown: unit -> unit 
+			       end
+			       structure F = MkE)
 
     val _ = print "execution of functor on remote site done\n"
 

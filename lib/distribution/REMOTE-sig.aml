@@ -5,7 +5,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Thorsten Brunklaus and Leif Kornstaedt and Andreas Rossberg, 2001-2004
+ *   Thorsten Brunklaus and Leif Kornstaedt and Andreas Rossberg, 2001-2005
  *
  * Last Change:
  *   $Date$ by $Author$
@@ -25,18 +25,27 @@ signature REMOTE =
 	exception SitedArgument			(* only as proxy cause *)
 	exception SitedResult			(* only as proxy cause *)
 	exception Protocol of string		(* only as proxy cause *)
+	exception Exit
 
 	(*--** once-only offer and proxy are missing *)
 	val proxy: ('a -> 'b) -> 'a -> 'b
+
 	val offer: Package.package -> ticket              (* Sited *)
 	val take: ticket -> Package.package               (* Ticket *)
-	val execute: string * Component.t -> package
+
+	val eval: string * Component.t -> package
+	val run: string * Component.t -> package
 
 	functor Proxy(signature S structure X: S): S
+
 	functor Offer(signature S structure X: S): (val ticket: ticket)
 							  (* Sited *)
 	functor Take(val ticket: ticket signature S): S   (* Ticket *)
-	functor Execute(val host: string
-			signature S
-			functor F: COMPONENT_MANAGER -> S): S
+
+	functor Eval(val host: string
+		     signature S
+		     functor F: COMPONENT_MANAGER -> S): S
+	functor Run(val host: string
+		    signature S
+		    functor F: COMPONENT_MANAGER -> S): S
     end

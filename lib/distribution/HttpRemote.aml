@@ -29,6 +29,7 @@ structure HttpRemotePort :> REMOTE_PORT =
 	exception SitedArgument = UnsafeRemote.SitedArgument
 	exception SitedResult = UnsafeRemote.SitedResult
 	exception Protocol = UnsafeRemote.Protocol
+	exception Exit = UnsafeRemote.Exit
 
 	val pickleContentType = "application/x-alice-pickle"
 

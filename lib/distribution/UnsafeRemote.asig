@@ -20,6 +20,7 @@ signature UNSAFE_REMOTE_COMPONENT =
 		exception SitedResult
 		exception Proxy of exn
 		exception Protocol of string
+		exception Exit
 
 		val getLocalIP: unit -> string
 

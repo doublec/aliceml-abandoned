@@ -51,16 +51,25 @@
 	exception <A href="#SitedResult-exn">SitedResult</A>
 	exception <A href="#Protocol">Protocol</A> of string
 	exception <A href="#Ticket-exn">Ticket</A>
+	exception <A href="#Exit-exn">Exit</A>
 
 	val <A href="#proxy">proxy</A> : ('a -> 'b) -> ('a -> 'b)
+
 	val <A href="#offer">offer</A> : <A href="package.html#package">package</A> -> ticket
-	val <A href="#take">take</A> : ticket -> <A href="package.html#package">package</A>
-	val <A href="#execute">execute</A> : string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
+	val <A href="#take">take</A> :  ticket -> <A href="package.html#package">package</A>
+
+	val <A href="#eval">eval</A> : string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
+	val <A href="#run">run</A> :  string * <A href="component.html#t">Component.t</A> -> <A href="package.html#package">package</A>
 
 	functor <A href="#Proxy-fn">Proxy</A> (signature S  structure X : S) : S
+
 	functor <A href="#Offer-fn">Offer</A> (signature S  structure X : S) : (val ticket : ticket)
 	functor <A href="#Take-fn">Take</A> (val ticket : ticket  signature S) : S
-	functor <A href="#Execute">Execute</A> (val host : string
+
+	functor <A href="#Eval">Eval</A> (val host : string
+			 signature S
+			 functor F : <A href="component-manager.html">COMPONENT_MANAGER</A> -> S) : S
+	functor <A href="#Run">Run</A> (val host : string
 			 signature S
 			 functor F : <A href="component-manager.html">COMPONENT_MANAGER</A> -> S) : S
     end</PRE>
@@ -100,13 +109,23 @@
     </DT>
     <DD>
       <P>the former two exceptions indicate that the argument or result of
-      a call to a proxy, or to <TT><A href="execute">execute</A></TT>
+      a call to a proxy, or to <TT><A href="eval">eval</A></TT> or
+      <TT><A href="run">run</A></TT>
       contained a sited value. The third exception
       indicates an internal protocol error during execution of excute
       or a proxy call,
       where the string describes the error condition in text form.
       For proxy calls, these exceptions are never raised directly, but
       occur only as the argument of a <TT>Proxy</TT> exception.
+    </DD>
+
+    <DT>
+      <TT>exception <A name="Exit-exn">Exit</A></TT>
+    </DT>
+    <DD>
+      <P>indicates that a remote process has called
+      <TT><A href="os-process.html">OS.Process.exit</A></TT> before evaluation
+      of its root component has finished.</P>
     </DD>
 
     <DT>
@@ -161,7 +180,9 @@
 	<LI><P>An I/O problem occurs in the lower communication layers.
 	  In this case, <TT>Proxy(<A 
 	  href="io.html">Io</A> <I>args</I>)</TT> will be raised, with
-	  <TT><I>args</I></TT> carrying further information.</P>
+	  <TT><I>args</I></TT> carrying further information. Usually this
+	  means that the process that exported the proxy is no
+	  longer alive.</P>
       </UL>
       <P>Other causes for raising <TT>Proxy</TT> are possible.</P>
     </DD>
@@ -268,18 +289,23 @@
     </DD>
 
     <DT>
-      <TT><A name="execute">execute</A> (<I>host</I>, <I>component</I>)</TT>
+      <TT><A name="eval">eval</A> (<I>host</I>, <I>component</I>)</TT>
+      <TT><A name="run">run</A> (<I>host</I>, <I>component</I>)</TT>
     </DT>
     <DD>
-      <P>creates a new site on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>,
-	transfers a clone of <TT><I>component</I></TT> to the new site, on which
+      <P>create a new site on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>,
+	transfer a clone of <TT><I>component</I></TT> to the new site, on which
 	it is evaluated using the local component manager.  A clone of the
 	component's export module is transferred back to the caller as a
 	package. If evaluation of the component terminates with an
 	exception, that exception is re-raised in the caller's thread.</P>
 
-	<P>Like proxy calls, execute may fail for a number of reasons:</P>
+	<P>Like proxy calls, remote execution may fail for a number of reasons:</P>
       <UL>
+	<LI><P>The remote process called
+	  <TT><A href="os-process.html">OS.Process.exit</A></TT> before
+	  evaluation of the component was finished. In this case,
+	  <TT><A href="#Exit-exn">Exit</A></TT> is raised.</P>
 	<LI><P>The component contains a sited value. In that
 	  case, <TT><A
 	  href="#SitedArgument-exn">SitedArgument</A></TT> will be
@@ -301,6 +327,18 @@
 	  <TT><I>args</I></TT> carrying further information.</P>
       </UL>
 
+	<P>With <TT>eval</TT>, the remote process will exit after
+	evaluation of the component, regardless of any concurrent processes
+	that may have been spawned by evaluation.
+	With <TT>run</TT>, the remote process stays alive after the result is
+	returned to the caller,
+	i.e. the process is <I>not</I> terminated automatically. This
+	allows concurrent threads to continue running and enables returning
+	proxy functions to the caller. To terminate the process, an
+	explicit call to <TT><A href="os-process.html">OS.Process.exit</A></TT>
+	on the remote site is required. If evaluation of the component raises
+	an exception, the process is terminated in both cases.</P>
+
 	<P>Note that the <TT>ssh</TT> command must be available on the local
 	site, you must be able to login on the remote site via SSH without
 	entering a password (e.g. by using an SSH daemon),
@@ -313,26 +351,41 @@
 	sets paths appropriately and forwards its arguments to the
 	<TT><A href="../machine.html">alicerun</A></TT> command of the Alice
 	System.</P>
+
+	<P>If the environment variable <TT>ALICE_REMOTE_LOG</TT> is set on the
+	remote machine then its value will be interpreted as a file name and
+	some logging information about the remote execution will be written to
+	the file (without truncating it).</TT>
     </DD>
 
     <DT>
-      <TT><A name="Execute">Execute</A> (val host = <I>host</I>
+      <TT><A name="Eval">Eval</A> (val host = <I>host</I>
+	signature S = <I>S</I>
+	functor F = <I>F</I>)</TT>
+      <TT><A name="Run">Run</A> (val host = <I>host</I>
 	signature S = <I>S</I>
 	functor F = <I>F</I>)</TT>
     </DT>
     <DD>
-      <P>constructs a component with export signature <TT><I>S</I></TT> from
- 	 <TT><I>F</I></TT> and transfers a clone of it to a newly created site
+      <P>construct a component with export signature <TT><I>S</I></TT> from
+ 	 <TT><I>F</I></TT> and transfer a clone of it to a newly created site
 	 on <TT><I>host</I></TT> using <EMPH>SSH</EMPH>, on which it is evaluated
 	using the local component manager.  A clone of the resulting
 	structure is transferred back to the caller of and
 	returned as the resulting structure.
-	Equivalent to</P>
+	Equivalent, respectively, to</P>
         <PRE>
 	let
 	    structure C = Component.Create (signature S = S structure F = F)
 	in
-	    unpack (execute (host, C.component)) : S
+	    unpack (eval (host, C.component)) : S
+	end</PRE>
+	<P>and</P>
+        <PRE>
+	let
+	    structure C = Component.Create (signature S = S structure F = F)
+	in
+	    unpack (run (host, C.component)) : S
 	end</PRE>
     </DD>
   </DL>
@@ -367,9 +420,9 @@ struct
       (val content = TextIO.inputAll file before TextIO.closeIn file)
    end
 
-   structure Result = Remote.Execute (val host = hostname
-				      signature S = (val content : string)
-				      structure F = Comp)
+   structure Result = Remote.Eval (val host = hostname
+				   signature S = (val content : string)
+				   structure F = Comp)
 
    val _ = TextIO.print Result.content
    val _ = OS.Process.exit OS.Process.success

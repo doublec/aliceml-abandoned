@@ -30,5 +30,6 @@ RETCODE=$?
 
 if [ ! -z "$ALICE_REMOTE_LOG" ]
 then
-    echo Completed $RETCODE: `date` >>/tmp/aliceremote.log
+    echo return=$RETCODE >>/tmp/aliceremote.log
+    echo Completed: `date` >>/tmp/aliceremote.log
 fi

@@ -33,6 +33,7 @@ static word SitedArgumentConstructor;
 static word SitedResultConstructor;
 static word ProxyConstructor;
 static word ProtocolConstructor;
+static word ExitConstructor;
 
 DEFINE1(UnsafeComponent_Proxy) {
   ConVal *conVal =
@@ -103,6 +104,9 @@ AliceDll word UnsafeRemote() {
   SitedResultConstructor =
     UniqueConstructor::New("SitedResult", "Remote.SitedResult")->ToWord();
   RootSet::Add(SitedResultConstructor);
+  ExitConstructor =
+    UniqueConstructor::New("Exit", "Remote.Exit")->ToWord();
+  RootSet::Add(ExitConstructor);
   ProxyConstructor =
     UniqueConstructor::New("Proxy", "Remote.Proxy")->ToWord();
   RootSet::Add(ProxyConstructor);
@@ -110,7 +114,7 @@ AliceDll word UnsafeRemote() {
     UniqueConstructor::New("Protocol", "Remote.Protocol")->ToWord();
   RootSet::Add(ProtocolConstructor);
 
-  Record *record = Record::New(16);
+  Record *record = Record::New(18);
   record->Init("'SitedInternal", Pickler::Sited);
   record->Init("SitedInternal", Pickler::Sited);
   record->Init("'CorruptInternal", Unpickler::Corrupt);
@@ -119,6 +123,8 @@ AliceDll word UnsafeRemote() {
   record->Init("SitedArgument", SitedArgumentConstructor);
   record->Init("'SitedResult", SitedResultConstructor);
   record->Init("SitedResult", SitedResultConstructor);
+  record->Init("'Exit", ExitConstructor);
+  record->Init("Exit", ExitConstructor);
   record->Init("'Proxy", ProxyConstructor);
   INIT_STRUCTURE(record, "UnsafeComponent", "Proxy",
 		 UnsafeComponent_Proxy, 1);

@@ -176,9 +176,9 @@ Sited values.  In order to use these you would have to link them using
 <TT>ComponentManager.Link</TT> on the spawned site.</P>
 
 <PRE class=code>
-Execute : fct (val host : string
-	       signature S
-	       functor F : COMPONENT_MANAGER -> S) -> S</PRE>
+Run : fct (val host : string
+	   signature S
+	   functor F : COMPONENT_MANAGER -> S) -> S</PRE>
 
 <P>As an example, consider an application consisting of a manager and a number
 of identical worker sites, to parallelize a computation.  Say that the manager
@@ -241,9 +241,9 @@ val hosts = ["fry", "bender", "leela", "zoidberg", "amy"]
 val workers = List.map (fn oneHost =>
 			let
 			    structure Worker =
-				Execute (val host = oneHost
-					 signature S = WORKER
-					 structure Start = MkWorker)
+				Run (val host = oneHost
+				     signature S = WORKER
+				     structure Start = MkWorker)
 			in
 			    Worker.executeTask
 			end) hosts
