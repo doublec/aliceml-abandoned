@@ -714,6 +714,17 @@ if not(isVar a) then raise Assert.failure else
       | liftRow _		= ()
 
 
+  (* Filling *)
+
+    exception Fill
+
+    fun fill(t1 as ref(HOLE(k,n)), t2)	= 
+(*ASSERT		 		= assert k1 = kind' t2' =>*)
+if k <> kind t2 then raise Assert.failure else
+					  t1 := LINK t2
+      | fill    _			= raise Crash.Crash "Type.fill"
+
+
   (* Unification *)
 
     exception Unify of typ * typ

@@ -115,6 +115,7 @@ signature TYPE =
     exception UnifyList of int * typ * typ
     exception Intersect
 
+    val fill :		typ * typ -> unit
     val unify :		typ * typ -> unit		(* Unify *)
     val unifyList :	typ list  -> unit		(* UnifyList *)
     val intersect :	typ * typ -> unit

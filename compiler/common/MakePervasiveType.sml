@@ -51,19 +51,19 @@ functor MakePervasiveType(val labid_false :	string
     val name_match	= Name.ExId valid_match
     val name_bind	= Name.ExId valid_bind
 
-    val path_bool	= Path.pervasive name_bool
-    val path_list	= Path.pervasive name_list
-    val path_int	= Path.pervasive name_int
-    val path_word	= Path.pervasive name_word
-    val path_real	= Path.pervasive name_real
-    val path_char	= Path.pervasive name_char
-    val path_string	= Path.pervasive name_string
-    val path_vec	= Path.pervasive name_vec
-    val path_array	= Path.pervasive name_array
-    val path_ref	= Path.pervasive name_ref
-    val path_exn	= Path.pervasive name_exn
-    val path_time	= Path.pervasive name_time
-    val path_prom	= Path.pervasive name_prom
+    val path_bool	= Path.pervasive typid_bool
+    val path_list	= Path.pervasive typid_list
+    val path_int	= Path.pervasive typid_int
+    val path_word	= Path.pervasive typid_word
+    val path_real	= Path.pervasive typid_real
+    val path_char	= Path.pervasive typid_char
+    val path_string	= Path.pervasive typid_string
+    val path_vec	= Path.pervasive typid_vec
+    val path_array	= Path.pervasive typid_array
+    val path_ref	= Path.pervasive typid_ref
+    val path_exn	= Path.pervasive typid_exn
+    val path_time	= Path.pervasive typid_time
+    val path_prom	= Path.pervasive typid_prom
 
     val con_bool	= (STAR, CLOSED, path_bool)
     val con_list	= (ARROW(STAR,STAR), CLOSED, path_list)
@@ -103,7 +103,7 @@ functor MakePervasiveType(val labid_false :	string
     val typ_exn		= Type.inCon con_exn
     val typ_prom	= Type.inCon con_prom
     val typ_time	= Type.inCon con_time
-    val _		= Type.unify(typ_list,
+    val _		= Type.fill(typ_list,
 			    Type.inAbbrev(Type.inCon con_list,
 				Type.inMu(Type.inLambda(var_list,
 							Type.inSum row_list))))

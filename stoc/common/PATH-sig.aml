@@ -15,7 +15,7 @@ signature PATH =
   (* Operations *)
 
     val invent :	unit -> path
-    val pervasive :	name -> path
+    val pervasive :	string -> path
     val fromLab :	lab  -> path
     val toLab :		path -> lab
     val path :		path * lab * int -> path
