@@ -25,7 +25,8 @@ union Endianness {
   double d;
 };
 
-enum floatEndianness { littleEndian, bigEndian, badSize, nonIEC };
+enum floatEndianness { littleEndian, bigEndian, armEndian,
+		       badSize, nonIEC };
 
 static floatEndianness CheckFloatEndianness() {
   static unsigned char littleOne[4] =
@@ -48,6 +49,8 @@ static floatEndianness CheckDoubleEndianness() {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F };
   static unsigned char bigOne[8] =
     { 0x3F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  static unsigned char armOne[8] = 
+    { 0x00, 0x00, 0xF0, 0x3F, 0x00, 0x00, 0x00, 0x00 };
   Endianness x;
   x.d = 1.0;
   if (sizeof(double) != 8)
@@ -56,6 +59,8 @@ static floatEndianness CheckDoubleEndianness() {
     return littleEndian;
   if (!std::memcmp(bigOne, x.c, 8))
     return bigEndian;
+  if (!std::memcmp(armOne, x.c, 8))
+    return armEndian;
   return nonIEC;
 }
 
@@ -260,10 +265,17 @@ int main(int argc, char **argv) {
   case bigEndian:
     std::fprintf(f, "#define DOUBLE_BIG_ENDIAN 1\n");
     std::fprintf(f, "#define DOUBLE_LITTLE_ENDIAN 0\n\n");
+    std::fprintf(f, "#define DOUBLE_ARM_ENDIAN 0\n\n");
     break;
   case littleEndian:
     std::fprintf(f, "#define DOUBLE_BIG_ENDIAN 0\n");
     std::fprintf(f, "#define DOUBLE_LITTLE_ENDIAN 1\n\n");
+    std::fprintf(f, "#define DOUBLE_ARM_ENDIAN 0\n\n");
+    break;
+  case armEndian:
+    std::fprintf(f, "#define DOUBLE_BIG_ENDIAN 0\n");
+    std::fprintf(f, "#define DOUBLE_LITTLE_ENDIAN 0\n\n");
+    std::fprintf(f, "#define DOUBLE_ARM_ENDIAN 1\n\n");
     break;
   case badSize:
     std::fprintf(stderr, "%s: `double' type is not 8 bytes\n", argv[0]);

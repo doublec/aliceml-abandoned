@@ -29,6 +29,9 @@ public:
     char *to = chunk->GetBase(), *from = reinterpret_cast<char *>(&value);
 #if DOUBLE_LITTLE_ENDIAN
     for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#elif DOUBLE_ARM_ENDIAN
+    for (u_int i = sizeof(double)/2; i--; *to++ = from[i]);
+    for (u_int i = sizeof(double)/2; i--; *to++ = from[i+(sizeof(double)/2)]);
 #else
     std::memcpy(to, from, sizeof(double));
 #endif
@@ -55,6 +58,9 @@ public:
     char *to = reinterpret_cast<char *>(&result), *from = GetBase();
 #if DOUBLE_LITTLE_ENDIAN
     for (u_int i = sizeof(double); i--; *to++ = from[i]);
+#elif DOUBLE_ARM_ENDIAN
+    for (u_int i = sizeof(double)/2; i--; *to++ = from[i]);
+    for (u_int i = sizeof(double)/2; i--; *to++ = from[i+(sizeof(double)/2)]);
 #else
     std::memcpy(to, from, sizeof(double));
 #endif

@@ -26,6 +26,8 @@
 #define GetLastError() errno
 #endif
 
+#include <sys/time.h>
+
 #include "adt/Queue.hh"
 #include "generic/RootSet.hh"
 #include "generic/Transients.hh"
