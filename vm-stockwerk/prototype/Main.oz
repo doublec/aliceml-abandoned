@@ -16,9 +16,17 @@ import
    System(showError show)
    Property(get)
    Linker(link)
+   PrimitiveTable(table)
+   Scheduler(object)
 define
    case {Application.getArgs plain} of [ComponentName] then
-      {System.show {Linker.link ComponentName}}
+      Transient = {Linker.link ComponentName}
+      AwaitClosure = PrimitiveTable.table.'Future.await'
+      Res
+   in
+      {Scheduler.object newThread(AwaitClosure arg(Transient) ?Res)}
+      {Scheduler.object run()}
+      {System.show Res}
       {Application.exit 1}
    else
       {System.showError
