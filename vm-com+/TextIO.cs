@@ -67,7 +67,7 @@ class TextIO_inputLine : Procedure {
 	try {
 	    System.String line = r.ReadLine();
 
-	    if (line == "") {
+	    if (line == null) {
 		return line;
 	    }
 	    else {
