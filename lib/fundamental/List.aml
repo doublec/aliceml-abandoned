@@ -14,15 +14,16 @@
  *  Items marked with (**) are extensions to the Standard Basis.
  *)
 
-import structure __pervasive                         from "Pervasive"
-import datatype bool and order and option and list   from "ToplevelTypes"
-import infix 4 = <> < >= infixr 5 :: @ infix 6 + -
+import structure __pervasive                       from "Pervasive"
+import __primitive
+       datatype bool and order and option and list from "ToplevelTypes"
+import __primitive
+       infix 4 = <> < >= infixr 5 :: @ infix 6 + -
        val op = and op <> and op < and op >=
-       val op + and op -                             from "ToplevelValues"
-import structure General                             from "General"
-import structure Bool                                from "Bool"
-import signature LIST                                from "LIST-sig"
-
+       val op + and op -                           from "ToplevelValues"
+import __primitive structure General               from "General"
+import __primitive structure Bool                  from "Bool"
+import __primitive signature LIST                  from "LIST-sig"
 
 structure List :> LIST =
 struct
