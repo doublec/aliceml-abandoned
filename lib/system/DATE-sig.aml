@@ -28,7 +28,6 @@ sig
 
     exception Date
     
-    (*
     val date : {
                    year : int,
                    month : month,
@@ -38,7 +37,6 @@ sig
                    second : int,
                    offset : Time.time option
                  } -> date
-    *)
 
     val year    : date -> int
     val month   : date -> month
@@ -60,11 +58,10 @@ sig
     
     val fmt :       string -> date -> string
     val toString :  date -> string
-    (*
+
     val compare : date * date -> order
 
     val scan       : (char, 'a) StringCvt.reader
                        -> (date, 'a) StringCvt.reader
     val fromString : string -> date option
-    *)
 end

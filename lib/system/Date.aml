@@ -20,7 +20,9 @@
 import signature DATE           from "DATE-sig"
 import structure UnsafeDate     from "UnsafeDate"
 
-structure Date : DATE =
+import structure Time           from "Time"
+
+structure Date :> DATE =
 struct
     structure LInt  = LargeInt 
     
@@ -47,17 +49,16 @@ struct
     type t = date (**)
 
     fun year (DATE{year, ...}) = year
-	fun month (DATE{month, ...}) = month
-	fun day (DATE{day, ...}) = day
-	fun hour (DATE{hour, ...}) = hour
-	fun minute (DATE{minute, ...}) = minute
-	fun second (DATE{second, ...}) = second
-	fun weekDay (DATE{wday, ...}) = wday
-	fun yearDay (DATE{yday, ...}) = yday
-	fun isDst (DATE{isDst, ...}) = isDst
-	fun offset (DATE{offset,...}) = offset
+    fun month (DATE{month, ...}) = month
+    fun day (DATE{day, ...}) = day
+    fun hour (DATE{hour, ...}) = hour
+    fun minute (DATE{minute, ...}) = minute
+    fun second (DATE{second, ...}) = second
+    fun weekDay (DATE{wday, ...}) = wday
+    fun yearDay (DATE{yday, ...}) = yday
+    fun isDst (DATE{isDst, ...}) = isDst
+    fun offset (DATE{offset,...}) = offset
 
-    fun localOffset () = raise Fail "not yet implemented"
 
     fun weekDayToInt w =
         case w of
@@ -148,8 +149,241 @@ struct
     
     val toTime   = Time.fromSeconds o UnsafeDate.toTime o toTm
 
+    val dayTbl = #[Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    val monthTbl = #[Jan, Feb, Mar, Apr, May, Jun, Jul, 
+			 Aug, Sep, Oct, Nov, Dec]
+
+
+    fun fromTimeOffset (t, offset) =
+        let
+            val DATE d  = fromTimeUniv (Time.- (t, offset))
+        in
+            DATE { d where offset = SOME offset }
+        end
+
+    fun localOffset () = 
+        let
+            val t   = toTime (fromTimeUniv (Time.now ()))
+            val t2  = toTime (fromTimeLocal (Time.now ()))
+        in
+            Time.- (t2, t)
+        end
+
+    (* This code is taken from SML/NJ implementation which in turn 
+     * is taken from Reingold's paper
+     *)
+    local 
+        val quot = Int.quot
+        val not = Bool.not
+        fun sum (f,k,p) = 
+            let fun loop (f,i,p,acc) = if (not(p(i))) then acc
+                                       else loop(f,i+1,p,acc+f(i))
+            in
+                loop (f,k,p,0)
+            end
+        fun lastDayOfGregorianMonth (month,year) =
+            if ((month=1) andalso 
+                (Int.mod (year,4) = 0) andalso 
+                not (Int.mod (year,400) = 100) andalso
+                not (Int.mod (year,400) = 200) andalso
+                not (Int.mod (year,400) = 300))
+                then 29
+            else List.nth ([31,28,31,30,31,30,31,31,30,31,30,31],month)
+    in
+        fun toAbsolute (month, day, year) =
+            day  
+            + sum (fn (m) => lastDayOfGregorianMonth(m,year),0,
+                   fn (m) => (m<month)) 
+            + 365 * (year -1)
+            + quot (year-1,4)
+            - quot (year-1,100)
+            + quot (year-1,400)
+        fun fromAbsolute (abs) =
+            let val approx = quot (abs,366)
+                val year = (approx + sum(fn(_)=>1, approx, 
+                                         fn(y)=> (abs >= toAbsolute(0,1,y+1))))
+                val month = (sum (fn(_)=>1, 0,
+                                  fn(m)=> (abs > toAbsolute(m,lastDayOfGregorianMonth(m,year),year))))
+                val day = (abs - toAbsolute(month,1,year) + 1)
+            in
+                (month, day, year)
+            end
+        fun wday (month,day,year) =
+            let val abs = toAbsolute (month,day,year)
+            in
+                Vector.sub (dayTbl, Int.mod(abs,7))
+            end
+        fun yday (month, day, year) = 
+            let val abs = toAbsolute (month, day, year)
+                val daysPrior = 
+                    365 * (year -1)
+                    + quot (year-1,4)
+                    - quot (year-1,100)
+                    + quot (year-1,400)
+            in 
+                abs - daysPrior - 1    (* to conform to ISO standard *)
+            end
+    end
+
+    (*
+     * this function should also canonicalize the time (hours, etc...)
+     *)
+    fun canonicalizeDate (DATE d) = 
+        let val args = (monthToInt(#month d), #day d, #year d)
+            val (monthC,dayC,yearC) = fromAbsolute (toAbsolute (args))
+            val yday = yday (args)
+            val wday = wday (args)
+        in
+            DATE {year = yearC,
+                  month = Vector.sub (monthTbl,monthC),
+                  day = dayC,
+                  hour = #hour d,
+                  minute = #minute d,
+                  second = #second d,
+                  offset = #offset d,
+                  isDst = NONE,
+                  yday = yday,
+                  wday = wday}
+        end
+
+
+    fun date { year, month, day, hour, minute, second, offset } = 
+        let
+            val d = DATE { second = second,
+                           minute = minute,
+                           hour = hour,
+                           year = year,
+                           month = month, 
+                           day = day,
+                           offset = offset,
+                           isDst = NONE,
+                           yday = 0,
+                           wday = Mon }
+            val canonicalDate = canonicalizeDate d
+            fun internalDate () =
+                case offset of
+                    NONE => fromTimeLocal (toTime canonicalDate)
+                  | SOME off => fromTimeOffset (toTime canonicalDate, off)
+        in
+            internalDate () handle Date => d
+        end
+
+    fun scan getc s = let
+
+        fun getword s = StringCvt.splitl Char.isAlpha getc s
+
+        fun expect c s f =
+            case getc s of
+                NONE => NONE
+              | SOME (c', s') => if c = c' then f s' else NONE
+
+        fun getdig s =
+            case getc s of
+                NONE => NONE
+              | SOME (c, s') =>
+                  if Char.isDigit c then
+                      SOME (Char.ord c - Char.ord #"0", s')
+                  else NONE
+
+        fun get2dig s =
+            case getdig s of
+                SOME (c1, s') =>
+                  (case getdig s' of
+                       SOME (c2, s'') => SOME (10 * c1 + c2, s'')
+                     | NONE => NONE)
+              | NONE => NONE
+
+        fun year0 (wday, mon, d, hr, mn, sc) s =
+            case Int.scan StringCvt.DEC getc s of
+                NONE => NONE
+              | SOME (yr, s') =>
+                  (SOME (date { year = yr,
+                                month = mon,
+                                day = d, hour = hr,
+                                minute = mn, second = sc,
+                                offset = NONE },
+                         s')
+                   handle _ => NONE)
+
+        fun year args s = expect #" " s (year0 args)
+
+        fun second0 (wday, mon, d, hr, mn) s =
+            case get2dig s of
+                NONE => NONE
+              | SOME (sc, s') => year (wday, mon, d, hr, mn, sc) s'
+
+        fun second args s = expect #":" s (second0 args)
+
+        fun minute0 (wday, mon, d, hr) s =
+            case get2dig s of
+                NONE => NONE
+              | SOME (mn, s') => second (wday, mon, d, hr, mn) s'
+
+        fun minute args s = expect #":" s (minute0 args)
+
+        fun time0 (wday, mon, d) s =
+            case get2dig s of
+                NONE => NONE
+              | SOME (hr, s') => minute (wday, mon, d, hr) s'
+
+        fun time args s = expect #" " s (time0 args)
+
+        fun mday0 (wday, mon) s =
+            case get2dig s of
+                NONE => NONE
+              | SOME (d, s') => time (wday, mon, d) s'
+
+        fun mday args s = expect #" " s (mday0 args)
+
+        fun month0 wday s =
+            case getword s of
+                ("Jan", s') => mday (wday, Jan) s'
+              | ("Feb", s') => mday (wday, Feb) s'
+              | ("Mar", s') => mday (wday, Mar) s'
+              | ("Apr", s') => mday (wday, Apr) s'
+              | ("May", s') => mday (wday, May) s'
+              | ("Jun", s') => mday (wday, Jun) s'
+              | ("Jul", s') => mday (wday, Jul) s'
+              | ("Aug", s') => mday (wday, Aug) s'
+              | ("Sep", s') => mday (wday, Sep) s'
+              | ("Oct", s') => mday (wday, Oct) s'
+              | ("Nov", s') => mday (wday, Nov) s'
+              | ("Dec", s') => mday (wday, Dec) s'
+              | _ => NONE
+
+        fun month wday s = expect #" " s (month0 wday)
+
+        fun wday s =
+            case getword s of
+                ("Sun", s') => month Sun s'
+              | ("Mon", s') => month Mon s'
+              | ("Tue", s') => month Tue s'
+              | ("Wed", s') => month Wed s'
+              | ("Thu", s') => month Thu s'
+              | ("Fri", s') => month Fri s'
+              | ("Sat", s') => month Sat s'
+              | _ => NONE
+    in
+        wday s
+    end
+
+
+    fun fromString s = StringCvt.scanString scan s
+
+
     fun fmt fs d = UnsafeDate.fmt (fs, toTm d)
 
     val toString = UnsafeDate.toString o toTm
 
+
+    (* comparison does not take into account the offset
+     * thus, it does not compare dates in different time zones
+     *)
+    fun compare (d1, d2) = 
+        let
+            fun list (DATE { year, month, day, hour, minute, second, ... }) =
+                [year, monthToInt month, day, hour, minute, second]
+        in
+            List.collate Int.compare (list d1, list d2)
+        end
 end
