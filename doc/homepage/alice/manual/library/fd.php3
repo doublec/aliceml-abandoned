@@ -933,7 +933,7 @@
     </DD>
 
     <DT>
-      <TT>choose (<I>spec<I>, <I>v</I>)</TT>
+      <TT>choose (<I>spec</I>, <I>v</I>)</TT>
     </DT>
     <DD>
       <P>selects a element <I>e</i> from <I>v</I> according to the
