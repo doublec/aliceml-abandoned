@@ -60,8 +60,8 @@ public:
     InitArg(f, Store::IntToWord(v));
   }
   Handler *GetHandler() {
-    return (Handler *) ((GetLabel() != HANDLER_BLOCK_LABEL) ? INVALID_POINTER :
-			Store::DirectWordToUnmanagedPointer(GetArg(HANDLER_POS)));
+    return ((HeaderOp::HasHandlerMark(this)) ?
+	    PointerOp::DecodeHandler(this) : (Handler *) INVALID_POINTER);
   }
   word ToWord() {
     return PointerOp::EncodeBlock(this);

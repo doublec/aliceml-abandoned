@@ -19,10 +19,11 @@
 #include "store/Base.hh"
 #include "store/Types.hh"
 #include "store/HeaderOp.hh"
-#include "store/PointerOp.hh"
 #include "store/Handler.hh"
+#include "store/PointerOp.hh"
 
 class MemChunk;
+class Set;
 
 extern char *storeChunkTop;
 extern char *storeChunkMax;
@@ -34,6 +35,7 @@ private:
   static u_int memUsage[STORE_GENERATION_NUM];
   static u_int memLimits[STORE_GENERATION_NUM];
   static word intgenSet;
+  static word wkDictSet;
   static u_int needGC;
   static u_int gcGen;
 
@@ -42,7 +44,13 @@ private:
   static word ForwardBlock(word p, u_int dst_gen, u_int cpy_gen, u_int match_gen);
   static void ScanChunks(u_int dst_gen, u_int cpy_gen, u_int match_gen,
 			 MemChunk *anchor, char *scan);
+  static void HandleInterGenerationalPointers(Set *intgen_set, Set *new_intgen_set,
+					      u_int gcGen, u_int dst_gen, u_int cpy_gen);
+  static Block *HandleWeakDictionaries(Set *wkdict_set, Set *new_wkdict_set,
+				       u_int match_gen, u_int dst_gen, u_int cpy_gen);
   static char *GCAlloc(u_int s, u_int gen);
+  static Block *AllocFinSet(u_int size, u_int dst_gen, u_int cpy_gen);
+  static Block *PushToFinSet(Block *p, Handler *h, word value, u_int dst_gen, u_int cpy_gen);
   static void SwitchToNewChunk(MemChunk *chunk);
   static void AllocNewMemChunk(u_int size, u_int gen);
   
@@ -62,7 +70,7 @@ private:
     AssertStore(s > INVALID_BLOCKSIZE);
     AssertStore(s <= MAX_BLOCKSIZE);
 
-    Block *t = (Block *) Store::FastAlloc((s + 1) << 2);
+    Block *t = (Block *) Store::FastAlloc(((s + 1) * sizeof(u_int)));
     AssertStore(t != INVALID_POINTER);
     HeaderOp::EncodeHeader(t, l, s);
 
@@ -75,8 +83,10 @@ public:
 
   // GC Related Functions
   static word ResolveForwardPtr(word v);
-  static word DoGC(word root);
+  static void DoGC(word &root);
+  // To be determined
   static void AddToIntgenSet(Block *v);
+  static void RegisterWeakDict(WeakDictionary *v);
   static int NeedGC() {
     return needGC;
   }
@@ -99,11 +109,10 @@ public:
     AssertStore((l >= MIN_TRANSIENT_LABEL) && (l <= MAX_TRANSIENT_LABEL));
     return (Transient *) Store::InternalAllocBlock(l, 1);
   }
-  static Block *AllocBlockWithHandler(u_int s, Handler *h) {
-    Block *t = Store::InternalAllocBlock(HANDLER_BLOCK_LABEL, (s + 1));
-    AssertStore(t != INVALID_POINTER);
-    // ugly hack to avoid regrouping the items
-    ((word *) t)[1] = PointerOp::EncodeUnmanagedPointer((void *) h);
+  static Block *AllocBlockWithHandler(BlockLabel l, u_int s, Handler *h) {
+    Block *t = Store::AllocBlock(l, (s + 1));
+    HeaderOp::SetHandlerMark(t);
+    PointerOp::EncodeHandler(t, h);
     return t;
   }
   // Conversion Functions

@@ -28,6 +28,7 @@ public:
 
   void MakeEmpty() {
     InitArg(KEY_POS, -1);
+    InitArg(VAL_POS, 0);
   }
   int IsEmpty() {
     return (Store::WordToInt(GetArg(KEY_POS)) == - 1);
@@ -60,7 +61,7 @@ public:
     return (HashNode *) p;
   }
   static HashNode *FromWord(word x) {
-    Block *p = Store::WordToBlock(x);
+    Block *p = Store::DirectWordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == HASHNODE_LABEL));
     return (HashNode *) p;
@@ -78,16 +79,19 @@ public:
     return (u_int) Store::DirectWordToBlock(GetArg(TABLE_POS))->GetSize();
   }
 protected:
-  static const u_int SIZE        = 4;
-  static const u_int COUNTER_POS = 1;
-  static const u_int PERCENT_POS = 2;
-  static const u_int TYPE_POS    = 3;
-  static const u_int TABLE_POS   = 4;
+  static const u_int SIZE        = 5;
+  static const u_int HANDLER_POS = 1;
+  static const u_int COUNTER_POS = 2;
+  static const u_int PERCENT_POS = 3;
+  static const u_int TYPE_POS    = 4;
+  static const u_int TABLE_POS   = 5;
   //
   // Adjust these two values to optimize runtime behaviour
   //
   static const u_int INC_STEP    = 5;
   static const double FILL_RATIO = 0.75;
+
+  friend class Store;
 
   static u_int IncKey(u_int key, u_int size);
   static u_int NextPrime(u_int p);
@@ -98,27 +102,34 @@ protected:
   void Resize();
 
   u_int GetCounter() {
-    return (u_int) Store::WordToInt(GetArg(COUNTER_POS));
+    return (u_int) Store::DirectWordToInt(GetArg(COUNTER_POS));
   }
   void SetCounter(u_int counter) {
     InitArg(COUNTER_POS, counter);
   }
   u_int GetPercent() {
-    return (u_int) Store::WordToInt(GetArg(PERCENT_POS));
+    return (u_int) Store::DirectWordToInt(GetArg(PERCENT_POS));
   }
   void SetPercent(u_int percent) {
     InitArg(PERCENT_POS, percent);
   }
   hashkeytype GetKeyType() {
-    return (hashkeytype) Store::WordToInt(GetArg(TYPE_POS));
+    return (hashkeytype) Store::DirectWordToInt(GetArg(TYPE_POS));
   }
   Block *GetTable() {
     return Store::DirectWordToBlock(GetArg(TABLE_POS));
+  }
+  void SetTable(word t) {
+    InitArg(TABLE_POS, t);
   }
   HashNode *GetEntry(u_int i) {
     Assert(i >= 1);
     Assert(i <= GetTableSize());
     return HashNode::FromWord(GetTable()->GetArg(i));
+  }
+  void RemoveEntry(HashNode *node) {
+    node->MakeEmpty();
+    SetCounter(GetCounter() - 1);
   }
 
   void InsertItem(word key, word value);
@@ -127,8 +138,7 @@ protected:
   int IsMember(word key);
   word GetItem(word key); // must be member
 
-  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size);
-  static void RegisterWeakDict(WeakDictionary *dict);
+  static WeakDictionary *New(hashkeytype type, BlockLabel l, u_int size, word handler);
 public:
   using Block::ToWord;
 
@@ -158,14 +168,20 @@ public:
     }
   }
 
-  static WeakDictionary *New(u_int size) {
-    WeakDictionary *d = New(INT_KEY, WEAK_DICT_LABEL, size);
+  static WeakDictionary *New(u_int size, word handler) {
+    WeakDictionary *d = WeakDictionary::New(INT_KEY, WEAK_DICT_LABEL, size, handler);
 
-    RegisterWeakDict(d);
+    Store::RegisterWeakDict(d);
     return d;
   } 
   static WeakDictionary *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
+
+    Assert((p == INVALID_POINTER) || (p->GetLabel() == WEAK_DICT_LABEL));
+    return (WeakDictionary *) p;
+  }
+  static WeakDictionary *FromWordDirect(word x) {
+    Block *p = Store::DirectWordToBlock(x);
 
     Assert((p == INVALID_POINTER) || (p->GetLabel() == WEAK_DICT_LABEL));
     return (WeakDictionary *) p;

@@ -21,8 +21,6 @@
 #define INVALID_BLOCKSIZE 0
 #define INVALID_FIELD     0
 
-typedef unsigned int u_int;
-
 // Word Datatype
 typedef struct {
   unsigned int *dummy_entry;
@@ -45,5 +43,6 @@ typedef enum {
 
 class Block;
 class Transient;
+class WeakDictionary;
 
 #endif __STORE__TYPES_HH__
