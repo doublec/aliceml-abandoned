@@ -100,27 +100,30 @@ static word MakeSysErr(int errorCode, String *message) {
 #define x_iodesc x2
 #define x_sz x3
 
-#define DECLARE_BUF(DECLARE_X)						\
-  DECLARE_IODESC(ioDesc, x_iodesc);					\
-  DECLARE_X(x, x_buf);							\
-  DECLARE_INT(i, x_i);							\
-  u_int length = x->GetLength();					\
-  if (i < 0 || static_cast<u_int>(i) > length)				\
-    RAISE(PrimitiveTable::General_Subscript);				\
-  TagVal *tagVal = TagVal::FromWord(x_sz);				\
-  int sz;								\
-  if (tagVal == INVALID_POINTER) {					\
-    DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none;	\
-    sz = length - i;							\
-  } else {								\
-    DECLARE_INT(sz0, tagVal->Sel(0));					\
-    if (sz0 < 0) RAISE(PrimitiveTable::General_Size);			\
-    if (static_cast<u_int>(sz0) > length)				\
-      RAISE(PrimitiveTable::General_Subscript);				\
-    sz = sz0;								\
-  }									\
-  if (sz == 0) RAISE(PrimitiveTable::General_Domain);			\
-  u_char *buf = x->GetValue() + i;
+#define DECLARE_BUF(DECLARE_X)						 \
+  DECLARE_IODESC(ioDesc, x_iodesc);					 \
+  int sz;								 \
+  u_char *buf;								 \
+  {									 \
+    DECLARE_X(x, x_buf);						 \
+    DECLARE_INT(i, x_i);						 \
+    u_int length = x->GetLength();					 \
+    if (i < 0 || static_cast<u_int>(i) > length)			 \
+      RAISE(PrimitiveTable::General_Subscript);				 \
+    TagVal *tagVal = TagVal::FromWord(x_sz);				 \
+    if (tagVal == INVALID_POINTER) {					 \
+      DECLARE_INT(none, x_sz); Assert(none == Types::NONE); none = none; \
+      sz = length - i;							 \
+    } else {								 \
+      DECLARE_INT(sz0, tagVal->Sel(0));					 \
+      if (sz0 < 0) RAISE(PrimitiveTable::General_Size);			 \
+      if (static_cast<u_int>(i + sz0) > length)				 \
+        RAISE(PrimitiveTable::General_Subscript);			 \
+      sz = sz0;								 \
+    }									 \
+    if (sz == 0) RAISE(PrimitiveTable::General_Domain);			 \
+    buf = x->GetValue() + i;						 \
+  }
 
 DEFINE1(UnsafeIODesc_hash) {
   DECLARE_IODESC(ioDesc, x0);
@@ -473,9 +476,9 @@ word UnsafeIODesc() {
   INIT_STRUCTURE(record, "UnsafeIODesc", "canOutput",
 		 UnsafeIODesc_canOutput, 1, true);
   // creating tty iodescs
-  //--** record->Init("stdIn", IODesc::NewFromStdIn()->ToWord());
-  //--** record->Init("stdOut", IODesc::NewFromStdOut()->ToWord());
-  //--** record->Init("stdErr", IODesc::NewFromStdErr()->ToWord());
+  record->Init("stdIn", IODesc::NewFromStdIn()->ToWord());
+  record->Init("stdOut", IODesc::NewFromStdOut()->ToWord());
+  record->Init("stdErr", IODesc::NewFromStdErr()->ToWord());
   // creating file iodescs
   INIT_STRUCTURE(record, "UnsafeIODesc", "openIn",
 		 UnsafeIODesc_openIn, 1, true);
