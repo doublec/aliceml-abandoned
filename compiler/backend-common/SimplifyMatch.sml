@@ -28,8 +28,10 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * typ option * O.conArity
-	  | ConTest of I.longid * typ option * O.conArity
+	  | TagTest of Label.t
+	  | TagAppTest of Label.t * typ O.args * O.conArity
+	  | ConTest of I.longid
+	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list
@@ -97,47 +99,59 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 		end
 	end
 
+	fun makeAppArgs (TupPat (_, pats), true, pos) =
+	    (Misc.List_mapi (fn (i, pat) =>
+			     (LABEL (Label.fromInt (i + 1))::pos, pat)) pats,
+	     O.TupArgs (List.map typPat pats))
+	  | makeAppArgs (pat as RowPat (info, patFields), true, pos) =
+	    (case getRow (#typ info) of
+		 (_, _, true) => ([(pos, pat)], O.OneArg (#typ info))
+	       | (labelTypList, LabelSort.Tup _, false) =>
+		     (List.map (fn Field (_, Lab (_, label), pat) =>
+				(LABEL label::pos, pat)) patFields,
+		      O.TupArgs (List.map #2 labelTypList))
+	       | (labelTypList, LabelSort.Rec, false) =>
+		     (List.map (fn Field (_, Lab (_, label), pat) =>
+				(LABEL label::pos, pat)) patFields,
+		      O.RecArgs labelTypList))
+	  | makeAppArgs (pat, _, pos) = ([(pos, pat)], O.OneArg (typPat pat))
+
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
 	    (Test (pos, LitTest lit)::rest, mapping)
 	  | makeTestSeq (VarPat (_, id), pos, rest, mapping) =
 	    (rest, (pos, id)::mapping)
-	  | makeTestSeq (TagPat (info, Lab (_, label), isNAry),
-			 pos, rest, mapping) =
-	    let
-		val info' = exp_info (Source.nowhere, #typ info)
-		val conArity = makeConArity (info', isNAry)
-	    in
-		(Test (pos, TagTest (label, NONE, conArity))::rest, mapping)
-	    end
+	  | makeTestSeq (TagPat (_, Lab (_, label), _), pos, rest, mapping) =
+	    (Test (pos, TagTest label)::rest, mapping)
 	  | makeTestSeq (AppPat (_, TagPat (info, Lab (_, label), isNAry),
 				 pat), pos, rest, mapping) =
 	    let
+		val (posPatList, args) =
+		    makeAppArgs (pat, isNAry, LABEL label::pos)
 		val typ = Type.inArrow (typPat pat, #typ info)
 		val info' = exp_info (Source.nowhere, typ)
 		val conArity = makeConArity (info', isNAry)
 	    in
-		makeTestSeq (pat, LABEL label::pos,
-			     Test (pos, TagTest (label, SOME (typPat pat),
-						 conArity))::rest, mapping)
+		List.foldl (fn ((pos, pat), (rest, mapping)) =>
+			    makeTestSeq (pat, pos, rest, mapping))
+		(Test (pos, TagAppTest (label, args, conArity))::rest, mapping)
+		posPatList
 	    end
-	  | makeTestSeq (ConPat (info, longid, isNAry), pos, rest, mapping) =
-	    let
-		val info' = exp_info (Source.nowhere, #typ info)
-		val conArity = makeConArity (info', isNAry)
-	    in
-		(Test (pos, ConTest (longid, NONE, conArity))::rest, mapping)
-	    end
+	  | makeTestSeq (ConPat (_, longid, _), pos, rest, mapping) =
+	    (Test (pos, ConTest longid)::rest, mapping)
 	  | makeTestSeq (AppPat (_, ConPat (info, longid, isNAry), pat),
 			 pos, rest, mapping) =
 	    let
+		val (posPatList, args) =
+		    makeAppArgs (pat, isNAry, longidToSelector longid::pos)
 		val typ = Type.inArrow (typPat pat, #typ info)
 		val info' = exp_info (Source.nowhere, typ)
 		val conArity = makeConArity (info', isNAry)
 	    in
-		makeTestSeq (pat, longidToSelector longid::pos,
-			     Test (pos, ConTest (longid, SOME (typPat pat),
-						 conArity))::rest, mapping)
+		List.foldl (fn ((pos, pat), (rest, mapping)) =>
+			    makeTestSeq (pat, pos, rest, mapping))
+		(Test (pos, ConAppTest (longid, args, conArity))::rest,
+		 mapping) posPatList
 	    end
 	  | makeTestSeq (AppPat (_, RefPat _, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, LABEL (Label.fromString "ref")::pos,
@@ -229,9 +243,17 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	  | indent n = "  " ^ indent (n - 1)
 
 	fun testToString (LitTest _) = "lit"
-	  | testToString (TagTest (label, _, _)) =
+	  | testToString (TagTest label | TagAppTest (label, O.OneArg _, _)) =
 	    "tag " ^ Label.toString label
-	  | testToString (ConTest (_, _, _)) = "con"
+	  | testToString (TagAppTest (label, O.TupArgs typs, _)) =
+	    "tag tup " ^ Int.toString (List.length typs)
+	  | testToString (TagAppTest (label, O.RecArgs labelTypList, _)) =
+	    "tag rec"
+	  | testToString (ConTest _ | ConAppTest (_, O.OneArg _, _)) = "con"
+	  | testToString (ConAppTest (_, O.TupArgs typs, _)) =
+	    "con tup " ^ Int.toString (List.length typs)
+	  | testToString (ConAppTest (_, O.RecArgs labelTypList, _)) =
+	    "con rec"
 	  | testToString (RefAppTest _) = "ref"
 	  | testToString (TupTest typs) =
 	    "tup " ^ Int.toString (List.length typs)
@@ -276,13 +298,24 @@ structure SimplifyMatch :> SIMPLIFY_MATCH =
 	fun testSeqToString testSeq =
 	    "<seq>\n" ^ testSeqToString' testSeq ^ "</seq>\n"
 
-	(* Construction of Test Trees Needing Backtracking *)
+	(* Construction of Backtracking Test Trees *)
+
+	fun argsEq (O.OneArg _, O.OneArg _) = true
+	  | argsEq (O.TupArgs _, O.TupArgs _) = true
+	  | argsEq (O.RecArgs _, O.RecArgs _) = true
+	  | argsEq (_, _) = false
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (TagTest (label1, _, _), TagTest (label2, _, _)) =
-	    label1 = label2
-	  | testEq (ConTest (longid1, _, _), ConTest (longid2, _, _)) =
+	  | testEq (TagTest label1, TagTest label2) = label1 = label2
+	  | testEq (TagAppTest (label1, args1, _),
+		    TagAppTest (label2, args2, _)) =
+	    label1 = label2 andalso argsEq (args1, args2)
+	  | testEq (ConTest longid1, ConTest longid2) =
 	    longidToSelector longid1 = longidToSelector longid2
+	  | testEq (ConAppTest (longid1, args1, _),
+		    ConAppTest (longid2, args2, _)) =
+	    longidToSelector longid1 = longidToSelector longid2 andalso
+	    argsEq (args1, args2)
 	  | testEq (TupTest _, TupTest _) = true
 	  | testEq (RecTest _, RecTest _) = true
 	  | testEq (VecTest typs1, VecTest typs2) =

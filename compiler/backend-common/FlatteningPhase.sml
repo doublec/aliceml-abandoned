@@ -83,9 +83,9 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 
 	fun translateIf (info: exp_info, id, thenStms, elseStms, errStms) =
 	    [O.TestStm (stmInfo (#region info), id,
-			O.TagTest (label_true, NONE, O.Nullary), thenStms,
+			O.TagTest label_true, thenStms,
 			[O.TestStm (stmInfo (#region info), id,
-				    O.TagTest (label_false, NONE, O.Nullary),
+				    O.TagTest label_false,
 				    elseStms, errStms)])]
 
 	fun translateCont (Decs (dec::decr, cont)) =
@@ -145,10 +145,10 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		     val (stms1, id1) = translateLongid longid1
 		     val (stms2, id2) = translateLongid longid2
 		 in
+		     (*--** the following ConTest has wrong arity *)
 		     stms1 @ stms2 @
 		     [O.TestStm (stmInfo (#region info), id1,
-				 O.ConTest (id2, NONE, O.Nullary),
-				 rest, errStms)]
+				 O.ConTest id2, rest, errStms)]
 		 end) rest constraints
 	    end
 	and unfoldTerm (VarExp (_, longid), cont) =
@@ -167,7 +167,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, id')
 	    end
-	and unfoldArgs (TupExp (_, exps), rest) =
+	and unfoldArgs (TupExp (_, exps), rest, true) =
 	    let
 		val (stms, ids) =
 		    List.foldr (fn (exp, (stms, ids)) =>
@@ -180,7 +180,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    in
 		(stms, O.TupArgs ids)
 	    end
-	  | unfoldArgs (RowExp (_, expFields), rest) =
+	  | unfoldArgs (RowExp (_, expFields), rest, true) =
 	    let
 		val (stms, labelIdList) =
 		    List.foldr (fn (Field (_, Lab (_, label), exp),
@@ -198,7 +198,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 		  | (labelIdList', LabelSort.Rec) =>
 			(stms, O.RecArgs labelIdList')
 	    end
-	  | unfoldArgs (exp, rest) =
+	  | unfoldArgs (exp, rest, _) =
 	    let
 		val (stms, id) = unfoldTerm (exp, Goto rest)
 	    in
@@ -308,7 +308,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
-		val (stms, args) = unfoldArgs (exp2, rest)
+		val (stms, args) = unfoldArgs (exp2, rest, isNAry)
 		val conArity = makeConArity (info', isNAry)
 	    in
 		r := SOME (f (O.TagAppExp (info, label, args, conArity))::
@@ -320,7 +320,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
-		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms2, args) = unfoldArgs (exp2, rest, isNAry)
 		val (stms1, id1) = translateLongid longid
 		val conArity = makeConArity (info', isNAry)
 	    in
@@ -352,7 +352,7 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 	    let
 		val r = ref NONE
 		val rest = [O.IndirectStm (stmInfo (#region info), r)]
-		val (stms2, args) = unfoldArgs (exp2, rest)
+		val (stms2, args) = unfoldArgs (exp2, rest, true)
 		val (stms1, id1) = unfoldTerm (exp1, Goto stms2)
 	    in
 		r := SOME (f (O.AppExp (info, id1, args))::
@@ -581,31 +581,62 @@ structure FlatteningPhase :> FLATTENING_PHASE =
 				   translateGraph (thenGraph, mapping'),
 				   translateGraph (elseGraph, mapping'))]
 	    end
+	and translateTypArgs (O.OneArg typ, pos, mapping) =
+	    let
+		val id = freshId (exp_info (Source.nowhere, typ))
+	    in
+		(O.OneArg id, (pos, id)::mapping)
+	    end
+	  | translateTypArgs (O.TupArgs typs, pos, mapping) =
+	    let
+		val ids =
+		    List.map (fn typ =>
+			      freshId (exp_info (Source.nowhere, typ))) typs
+	    in
+		(O.TupArgs ids,
+		 Misc.List_foldri
+		 (fn (i, id, mapping) =>
+		  (LABEL (Label.fromInt (i + 1))::pos, id)::mapping)
+		 mapping ids)
+	    end
+	  | translateTypArgs (O.RecArgs labelTypList, pos, mapping) =
+	    let
+		val labelIdList =
+		    List.map
+		    (fn (label, typ) =>
+		     (label, freshId (exp_info (Source.nowhere, typ))))
+		    labelTypList
+	    in
+		(O.RecArgs labelIdList,
+		 List.foldr (fn ((label, id), mapping) =>
+			     (LABEL label::pos, id)::mapping)
+		 mapping labelIdList)
+	    end
 	and translateTest (LitTest lit, _, mapping) =
 	    (nil, O.LitTest lit, mapping)
-	  | translateTest (TagTest (label, NONE, conArity), _, mapping) =
-	    (nil, O.TagTest (label, NONE, conArity), mapping)
-	  | translateTest (TagTest (label, SOME typ, conArity), pos, mapping) =
+	  | translateTest (TagTest label, _, mapping) =
+	    (nil, O.TagTest label, mapping)
+	  | translateTest (TagAppTest (label, args, conArity), pos, mapping) =
 	    let
-		val id' = freshId (exp_info (Source.nowhere, typ))
-		val mapping' = (LABEL label::pos, id')::mapping
+		val (idArgs, mapping') =
+		    translateTypArgs (args, LABEL label::pos, mapping)
 	    in
-		(nil, O.TagTest (label, SOME id', conArity), mapping')
+		(nil, O.TagAppTest (label, idArgs, conArity), mapping')
 	    end
-	  | translateTest (ConTest (longid, NONE, conArity), _, mapping) =
+	  | translateTest (ConTest longid, _, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
 	    in
-		(stms, O.ConTest (id, NONE, conArity), mapping)
+		(stms, O.ConTest id, mapping)
 	    end
-	  | translateTest (ConTest (longid, SOME typ, conArity),
-			   pos, mapping) =
+	  | translateTest (ConAppTest (longid, args, conArity), pos, mapping) =
 	    let
 		val (stms, id) = translateLongid longid
-		val id' = freshId (exp_info (Source.nowhere, typ))
-		val mapping' = (longidToSelector longid::pos, id')::mapping
+		val (idArgs, mapping') =
+		    translateTypArgs (args, longidToSelector longid::pos,
+				      mapping)
 	    in
-		(stms, O.ConTest (id, SOME id', conArity), mapping')
+		(stms, O.ConAppTest (id, idArgs, conArity), mapping')
 	    end
 	  | translateTest (RefAppTest typ, pos, mapping) =
 	    let

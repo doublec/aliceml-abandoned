@@ -83,11 +83,12 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	    (StampSet.union (set, set'); lset)
 
 	fun scanTest (LitTest _, lset) = lset
-	  | scanTest (TagTest (_, NONE, _), lset) = lset
-	  | scanTest (TagTest (_, SOME id, _), lset) = del (lset, id)
-	  | scanTest (ConTest (id, NONE, _), lset) = ins (lset, id)
-	  | scanTest (ConTest (id1, SOME id2, _), lset) =
-	    del (ins (lset, id1), id2)
+	  | scanTest (TagTest _, lset) = lset
+	  | scanTest (TagAppTest (_, args, _), lset) =
+	    processArgs (args, lset, del)
+	  | scanTest (ConTest id, lset) = ins (lset, id)
+	  | scanTest (ConAppTest (id, args, _), lset) =
+	    processArgs (args, ins (lset, id), del)
 	  | scanTest (RefAppTest id, lset) = del (lset, id)
 	  | scanTest (TupTest ids, lset) = delList (lset, ids)
 	  | scanTest (RecTest labIdList, lset) =
@@ -264,10 +265,12 @@ structure LivenessAnalysisPhase :> LIVENESS_ANALYSIS_PHASE =
 	fun insList (set, ids) = List.app (fn id => ins (set, id)) ids
 
 	fun initTest (LitTest _, _) = ()
-	  | initTest (TagTest (_, NONE, _), _) = ()
-	  | initTest (TagTest (_, SOME id, _), set) = ins (set, id)
-	  | initTest (ConTest (_, NONE, _), _) = ()
-	  | initTest (ConTest (_, SOME id, _), set) = ins (set, id)
+	  | initTest (TagTest _, _) = ()
+	  | initTest (TagAppTest (_, args, _), set) =
+	    processArgs (args, set, ins)
+	  | initTest (ConTest _, _) = ()
+	  | initTest (ConAppTest (_, args, _), set) =
+	    processArgs (args, set, ins)
 	  | initTest (RefAppTest id, set) = ins (set, id)
 	  | initTest (TupTest ids, set) = insList (set, ids)
 	  | initTest (RecTest labIdList, set) =

@@ -23,8 +23,10 @@ signature SIMPLIFY_MATCH =
 
 	datatype test =
 	    LitTest of I.lit
-	  | TagTest of Label.t * typ option * O.conArity
-	  | ConTest of I.longid * typ option * O.conArity
+	  | TagTest of Label.t
+	  | TagAppTest of Label.t * typ O.args * O.conArity
+	  | ConTest of I.longid
+	  | ConAppTest of I.longid * typ O.args * O.conArity
 	  | RefAppTest of typ
 	  | TupTest of typ list
 	  | RecTest of (Label.t * typ) list

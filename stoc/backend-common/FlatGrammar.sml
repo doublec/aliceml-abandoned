@@ -61,8 +61,14 @@ structure FlatGrammar: FLAT_GRAMMAR =
 
 	datatype test =
 	    LitTest of lit
-	  | TagTest of label * id option * conArity
-	  | ConTest of id * id option * conArity
+	  | TagTest of label
+	  | TagAppTest of label * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
+	  | ConTest of id
+	  | ConAppTest of id * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
 	  | RefAppTest of id
 	  | TupTest of id list
 	  | RecTest of (label * id) list
@@ -102,7 +108,11 @@ structure FlatGrammar: FLAT_GRAMMAR =
 	  | AppExp of exp_info * id * id args
 	  | SelAppExp of exp_info * label * id
 	  | TagAppExp of exp_info * label * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
 	  | ConAppExp of exp_info * id * id args * conArity
+	    (* args may only be TupArgs if conArity is Tuple;
+	     * args may only be RecArgs if conArity is Record *)
 	  | RefAppExp of exp_info * id
 	  | PrimAppExp of exp_info * string * id list
 	  | AdjExp of exp_info * id * id

@@ -109,15 +109,16 @@ structure OutputFlatGrammar :> OUTPUT_FLAT_GRAMMAR =
 		 S "}"]
 
 	fun outputTest (LitTest lit) = S (outputLit lit)
-	  | outputTest (TagTest (label, NONE, conArity)) =
-	    SEQ [outputTag conArity, S " ", S (Label.toString label)]
-	  | outputTest (TagTest (label, SOME id, conArity)) =
+	  | outputTest (TagTest label) =
+	    SEQ [outputTag Nullary, S " ", S (Label.toString label)]
+	  | outputTest (TagAppTest (label, args, conArity)) =
 	    SEQ [S "(", outputTag conArity, S " ", S (Label.toString label),
-		 S ") ", ID id]
-	  | outputTest (ConTest (id, NONE, conArity)) =
-	    SEQ [outputCon conArity, S " ", ID id]
-	  | outputTest (ConTest (id1, SOME id2, conArity)) =
-	    SEQ [S "(", outputCon conArity, S " ", ID id1, S ") ", ID id2]
+		 S ") ", outputArgs args]
+	  | outputTest (ConTest id) =
+	    SEQ [outputCon Nullary, S " ", ID id]
+	  | outputTest (ConAppTest (id, args, conArity)) =
+	    SEQ [S "(", outputCon conArity, S " ", ID id, S ") ",
+		 outputArgs args]
 	  | outputTest (RefAppTest id) = SEQ [S "ref ", ID id]
 	  | outputTest (TupTest ids) =
 	    SEQ [S "(", SEP (S ", ", List.map ID ids), S ")"]
