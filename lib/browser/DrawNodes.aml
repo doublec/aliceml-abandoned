@@ -1,0 +1,209 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
+import structure Inspector from "x-alice:/lib/tools/Inspector"
+import structure TextIO from "x-alice:/lib/system/TextIO"
+import structure Services from "Services"
+import structure Types from "Types"
+import structure Helper from "Helper"
+import structure Layout from "Layout"
+import signature DRAW_NODES from "DRAW_NODES-sig"
+import structure ColorMap from "ColorMap"
+import structure WindowHelper from "WindowHelper"
+import structure Settings from "Settings"
+import structure MkColorTable from "MkColorTable"
+import structure Gtk from "x-alice:/lib/gtk/Gtk"
+import structure GtkCanvas from "x-alice:/lib/gtk/GtkCanvas"
+
+open Types Helper Layout 
+
+structure DrawNodes :> DRAW_NODES =
+struct
+
+    exception MissingColor
+    exception DrawError
+    exception NodeFound of int * int * node
+    	   
+    fun groupToPosition (node,x,y) = Services.moveGroup(getGroup(node),x,y)
+
+    (* atomDraw *)
+    fun atomDraw (node,x,y,f) = 
+	let 
+	    val color = case ColorMap.lookup(MkColorTable.colorTable,
+						 getColor(node)) of 
+		            SOME x => x
+			  | NONE   => raise MissingColor
+	    in
+		(Services.printXY (getRep(node),
+				    getGroup(node),
+				    0.0,
+				    0.0,
+				    color,
+				    !Settings.fontname)
+		 ;getStatus(node) := Types.CLEAN
+		 ;f(node,x,y)
+		 ;(x+String.length(getRep(node)),y))
+	    end
+
+    (* drawLimit *)
+    fun drawLimit (node,x,y,f) = 
+	let 
+	    val color = case ColorMap.lookup(MkColorTable.colorTable,
+					     LIMIT_COLOR) of 
+		SOME x => x
+	      | NONE   => raise MissingColor
+	    val limitsig = if getSort(node) = Types.DEPTH_LIMIT
+			       then "*" 
+			   else "@"
+	in
+	    (Services.printXY (limitsig,
+			       getGroup(node),
+			       0.0,
+			       0.0,
+			       color,
+			       !Settings.fontname)
+	     ;getStatus(node) := Types.CLEAN 
+	     ;f(node,x,y)
+	     ;(x+1,y))
+	end
+    
+    and concatHorFunct f  =  (fn (a,(x,y))  => draw(a,x,y,f)) 
+
+    (* drawConcat *) 
+    and drawConcat (n,x,y,f) = 
+	let 
+	       val (new_x,new_y) = 
+		   (Array.foldl (concatHorFunct f) (0,0) 
+		    (getKids(n))) 
+	   in 
+	       (f(n,x,y)
+		; getStatus(n) := Types.CLEAN
+		;(new_x+x,new_y+y))
+	   end
+
+    and containerHorFunct f =  (fn (a,(x,y,_))  => let
+						       val (new_x,new_y) 
+							   = draw(a,x,y,f)
+						   in (new_x,new_y,0)
+						   end)
+	
+    and containerVerFunct f = (fn (a,(x,y,_)) 
+				  => let
+					 val (x1,y1) = 
+					     draw(a,x,y,f)
+				     in
+				       (x,y1+1,x1)
+				     end)
+	   
+    (* drawContainer *)
+    and drawContainer(n,x,y,f) =  
+	let 
+	    val vertical = setsVertical(n)
+	    val funct = if vertical 
+			    then (containerVerFunct f)
+			else (containerHorFunct f)
+	    val (new_x',new_y',new_x2) = 
+		(Array.foldl funct (0,0,0) 
+		 (getKids(n))) 
+	    val (new_x,new_y) = if vertical 
+				    then (new_x2,new_y' -1)
+				else  (new_x',new_y') 
+	in
+	    (getStatus(n) := Types.CLEAN
+	     ;f(n,x,y)
+	     ;(new_x+x,new_y+y))
+	end 
+    
+    
+    (* drawRelNode *)
+    and drawRelNode (n,x,y,f) = case n of
+	RelNode(r) 
+	=> (let val _ = TextIO.print("Entering drawRelNode \n")
+	    in (f(n,x,y)
+	       ; if !(#counter(r)) = 1 orelse isSimple(!(#content(r)))
+		     then let
+			      val (new_x,new_y) = draw (!(#content(r)),0,0,f)
+			  in
+			      (x+new_x,y+new_y)
+			  end
+		 else let 
+			  val (new_x,_) = atomDraw 
+			      (n,0,0,(fn (n,x,y) => ()))
+			  val content = !(#content(r))
+			  val (x2,y2) = draw (content,
+					      new_x,0,f)
+		      in
+			  (x + String.length(#rep(r)) +   
+			   Layout.get_xdim(content),
+			   y + Layout.get_ydim(n)-1)
+		      end )
+	    end)
+      | _ => raise DrawError
+
+    and move'(n,x,y) = let
+			  val group = getGroup(n)
+			  val (old_x,
+			       old_y,
+			       old_x2,
+			       old_y2) = Services.getCoordinates group  
+			  val dx = x-old_x
+			  val dy = y-old_y
+			  val _ = TextIO.print("Moving from x:"
+					       ^ Int.toString(old_x)
+					       ^ " and y:"
+					       ^ Int.toString(old_y)
+					       ^ " to x:"
+					       ^ Int.toString(x)
+					       ^ " and y:"
+					       ^ Int.toString(y)
+					       ^", dx is "
+					       ^ Int.toString(dx)
+					       ^ " and dy is "
+					       ^ Int.toString(dy)
+					       ^ "\n")
+		      in
+		        Services.moveGroup(group,dx,dy) 
+		      end
+
+    and move(n,x,y) = (move'(n,x,y)
+		      ;(x+get_xdim(n),y+get_ydim(n)-1))
+
+  
+    (* draw *)
+    and draw (((Simple _ as n ) 
+	     | (RelRefNode _ as n)) ,x,y,f) = if !(getStatus(n)) = DIRTY  
+						  then atomDraw (n,x,y,f)
+					      else move(n,x,y)  	
+      | draw (Concat(_) as n,x,y,f) = if (!(getStatus(n))) = DIRTY  
+			 then drawConcat (n,x,y,f)
+			  else move(n,x,y)  
+      | draw (Container(_) as n,x,y,f) = if (!(getStatus(n))) = DIRTY  
+			    then drawContainer (n,x,y,f)
+				else move(n,x,y) 	     
+      | draw (Limit(_) as n,x,y,f) = if  (!(getStatus(n))) = DIRTY  
+			then drawLimit (n,x,y,f)
+			 else move(n,x,y) 
+      | draw (RelNode(r) as n,x,y,f) = if  !(#status(r)) = DIRTY 
+				 then drawRelNode (n,x,y,f)
+		      else ( move(n,x,y) 
+				   ;( case !(#counter(r)) of
+				   1 => (x+get_xdim(!(#content(r))),
+					 y+get_ydim(!(#content(r))))
+				 | _ => (x+get_xdim(n),y+get_ydim(n)) )) 
+       | draw  (Empty,x,y,f) =  (x,y)
+     
+
+end
+       
