@@ -174,7 +174,8 @@ local
 	in
 	    (Gtk.notebookRemovePage(note, 0);
 	     Gtk.widgetShowAll(align);
-	     Gtk.notebookAppendPage(note, align, label)
+	     Gtk.notebookAppendPage(note, align, label);
+             ()
 	    )
 	end
 
