@@ -16,13 +16,15 @@
 
 import structure __pervasive from "Pervasive"
 import datatype bool         from "ToplevelTypes"
+import val op =              from "ToplevelValues"
 import signature BOOL        from "BOOL-sig"
-
 
 structure Bool : BOOL =
 struct
     datatype bool	= datatype bool
-    type     t		= bool			(**)
+    type     t		= bool						(**)
+
+    val equal		= op =
 
     fun not true	= false
       | not false	= true

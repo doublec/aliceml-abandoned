@@ -23,7 +23,7 @@ signature CHAR =
 sig
     eqtype char
     eqtype string
-    type t = char					(**)
+    type t = char							(**)
 
     val minChar :	char
     val maxChar :	char
@@ -38,8 +38,10 @@ sig
     val op < :		char * char -> bool
     val op <= :		char * char -> bool
     val op > :		char * char -> bool
-    val op >= :		char * char -> bool
+    val op >= :		char * char -> bool				(**)
+    val equal :		char * char -> bool
     val compare :	char * char -> order
+    val hash :		char -> int					(**)
 
     val contains :	string -> char -> bool
     val notContains :	string -> char -> bool

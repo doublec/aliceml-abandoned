@@ -21,7 +21,9 @@ import type string           from "ToplevelTypes"
 signature BOOL =
 sig
     datatype bool = false | true
-    type     t    = bool			(**)
+    type     t    = bool						(**)
+
+    val equal :		bool * bool -> bool				(**)
 
     val not :		bool -> bool
 
