@@ -469,6 +469,14 @@ structure TypePrivate =
 	    loop(1,ts)
 	end
 
+    fun openRow NIL			= RHO(ref(!level))
+      | openRow(r as RHO _)		= r
+      | openRow(FLD(l,ts,r))		= FLD(l, ts, openRow r)
+
+    fun openRowType(ref(LINK t))	= openRowType t
+      | openRowType(t as ref(ROW r))	= t := ROW(openRow r)
+      | openRowType(t as ref(SUM r))	= t := SUM(openRow r)
+      | openRowType _			= raise Row
 
 
   (* Closure *)

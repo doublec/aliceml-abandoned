@@ -24,8 +24,6 @@ Missing from Standard Module Language:
 
 Missing from Extended Core Language:
 
-- Record update (not type-checked yet)
-  [simple update will be typable soon]
 - Structural datatypes
   [seems to require a form of higher-order unification]
 - Specifications as declarations
@@ -40,7 +38,7 @@ Missing from Extended Core Language:
   [deferred to be designed together with existential constructors]
 - Type classes
   [design not finished]
-- Polymorphic records
+- Polymorphic records, record composition
   [deferred until we have type classes]
 
 Missing from Extended Module Language:

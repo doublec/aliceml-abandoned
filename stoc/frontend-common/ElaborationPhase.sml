@@ -298,10 +298,13 @@ val _=print "\n"
 	let
 	    val (t1,exp1') = elabExp(E, exp1)
 	    val (t2,exp2') = elabExp(E, exp2)
-	    val  t         = Type.unknown Type.STAR
+	    val  _         = Type.openRowType t2 handle Type.Row =>
+				error(I.infoExp exp2, E.CompExpNoRow t2)
+	    val  _         = Type.unify(t1,t2)
+			     handle Type.Unify(t3,t4) =>
+				error(i, E.CompExpUnify(t2, t1, t4, t3))
 	in
-	    unfinished i "elabExp" "record composition";
-	    ( t, O.CompExp(typInfo(i,t), exp1', exp2') )
+	    ( t1, O.CompExp(typInfo(i,t1), exp1', exp2') )
 	end
 
       | elabExp(E, I.AndExp(i, exp1, exp2)) =

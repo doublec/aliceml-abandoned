@@ -17,6 +17,8 @@ signature ELABORATION_ERROR =
 	  VecExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
+	| CompExpNoRow		of typ
+	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error

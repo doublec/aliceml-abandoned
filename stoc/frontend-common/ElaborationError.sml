@@ -28,6 +28,8 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  VecExpUnify		of unify_error
 	| AppExpFunUnify	of unify_error
 	| AppExpArgUnify	of unify_error
+	| CompExpNoRow		of typ
+	| CompExpUnify		of unify_error
 	| AndExpUnify		of unify_error
 	| OrExpUnify		of unify_error
 	| IfExpCondUnify	of unify_error
@@ -206,6 +208,15 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["argument","type","mismatch:"],
 	  par["does","not","match","argument","type"], ue)
+      | ppError(CompExpNoRow t) =
+	vbox(
+	    par["specialization","type","is","not","a","record:"] ^^
+	    nest(break ^^ PPType.ppTyp t)
+	)
+      | ppError(CompExpUnify ue) =
+	ppUnify4(
+	  par["mismatch","on","record","update:"],
+	  par["does","not","match","type"], ue)
       | ppError(AndExpUnify ue) =
 	ppUnify2(
 	  par["operand","of","`andalso'","is","not","a","boolean:"],
@@ -238,6 +249,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["expression","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
+      (* Patterns *)
       | ppError(MatchPatUnify ue) =
 	ppUnify4(
 	  par["inconsistent","types","in","`case'","patterns:"],
@@ -274,6 +286,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	ppUnify4(
 	  par["pattern","does","not","match","annotation:"],
 	  par["does","not","match","type"], ue)
+      (* Types *)
       | ppError(StarTypKind k) =
 	  par["missing","arguments","in","type","expression"]
       | ppError(AppTypFunKind k) =
@@ -282,6 +295,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["missing","arguments","in","type","expression"]
       | ppError(RefTypKind k) =
 	  par["missing","arguments","in","type","expression"]
+      (* Declarations *)
       | ppError(ValDecUnify ue) =
 	ppUnify4(
 	  par["expression","does","not","match","pattern","type:"],
@@ -290,6 +304,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["could not generalize","type","of",ppId x,
 	      "due","to","value","restriction",
 	      "although","it","contains","explicit","type","variables"]
+      (* Modules *)
       | ppError(ModLongidInf(y,j)) =
 	  par["module",ppLongid y,"is","not","a","structure"]
       | ppError(StrModUnclosed lnt) =
@@ -307,6 +322,7 @@ structure ElaborationError :> ELABORATION_ERROR =
       | ppError(AnnModMismatch im) =
 	ppMismatch(
 	  par["module","expression","does","not","match","signature:"], im)
+      (* Interfaces *)
       | ppError(GroundInfKind k) =
 	  par["missing","arguments","in","signature","expression"]
       | ppError(CompInfMismatch im) =
@@ -314,6 +330,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	  par["inconsistency","at","signature","specialization:"], im)
       | ppError(SingInfPath) =
 	  par["module","expression","is","not","a","path"]
+      (* Components *)
       | ppError(CompUnclosed lnt) =
 	ppUnclosed(
 	  par["component","is","not","closed:"], lnt)
@@ -322,7 +339,7 @@ structure ElaborationError :> ELABORATION_ERROR =
 	vbox(
 	    par["type","of",ppId x,"cannot","be","generalized","due","to",
 		"value","restriction:"] ^^
-	    nest(break ^^ below(PPType.ppTyp t))
+	    nest(break ^^ PPType.ppTyp t)
 	)
 
   (* Export *)

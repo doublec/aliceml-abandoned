@@ -83,6 +83,8 @@ signature TYPE =
     val emptyRow :	unit -> row
     val extendRow :	lab * typ list * row -> row	(* Row *)
 
+    val openRowType :	typ -> unit			(* Row *)
+
   (* Copying and instantiation *)
 
     val instance :	typ -> typ

@@ -10,7 +10,6 @@ signature LRVALS =
     structure Tokens : TOKENS
     structure Data : DATA
     sharing type Data.Token.t = Tokens.t
-    (*sharing type Data.u = Tokens.u*)
   end
 
 
