@@ -83,7 +83,7 @@ fi
 ## Compile the Bootstrap Compiler with SML/NJ
 ##
 rm -f bootstrap/alicec-stockwerk.$SMLPLATFORM #bootstrap/alicedep.$SMLPLATFORM
-(cd bootstrap && make) || exit 1
+(cd bootstrap && make alicec-stockwerk.$SMLPLATFORM alicedep.$SMLPLATFORM) || exit 1
 
 ##
 ## Bootstrap Alice on the Stockwerk
