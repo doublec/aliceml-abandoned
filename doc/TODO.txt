@@ -192,10 +192,6 @@ steps 3 and 4):
    via ml-lex/ml-yacc (Lexer.aml, PARSER-sig.aml, Parser.sml) - these
    tools do not support our concept of imports.
 
-======
- TODO
-======
-
 5. Use fragmented library. (LK)
 
    The lib/fundamental directory becomes part of the source tree,
@@ -203,6 +199,10 @@ steps 3 and 4):
    the sources in build2 as well.  Base.import is replaced by
    lib/fundamental/Fundamental.import.  The component lib/fundamental/RTT
    is copied from RTTDummy for now.
+
+======
+ TODO
+======
 
 6. Compiler uses lib (utility/rtt). (LK)
 
