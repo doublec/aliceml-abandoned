@@ -44,7 +44,6 @@ struct
 		val w = WindowHelper.fontWidth(!Settings.font)
 		val h = WindowHelper.fontHeight(!Settings.font)
 		val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
-	 (*	val _ = Services.positionGroup(#group(r), rx , ry)  	*) 
 		val color = case ColorMap.lookup(MkColorTable.colorTable,
 						 #color(r)) of 
 		            SOME x => x
@@ -56,8 +55,6 @@ struct
 					  color,
 					  !Settings.font)
 		val _ = #status(r) := Types.CLEAN
-	(*	val _ = Inspector.inspect (GtkCanvas.itemGetBounds(#group(r),
-	 0.0 , 0.0 , 0.0 , 0.0)) *)
  	    in (x+String.length(#rep(r)),y)
 	    end )
       | Limit(r) 
@@ -65,7 +62,6 @@ struct
 		val w = WindowHelper.fontWidth(!Settings.font)
 		val h = WindowHelper.fontHeight(!Settings.font)
 	        val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
-	(*	val _ = Services.positionGroup(#group(r), rx , ry) *)
 		val color = case ColorMap.lookup(MkColorTable.colorTable,
 						 LIMIT_COLOR) of 
 		            SOME x => x
@@ -87,7 +83,6 @@ struct
 		  val w = WindowHelper.fontWidth(!Settings.font)
 		  val h = WindowHelper.fontHeight(!Settings.font)
 		  val (rx,ry) = (Real.fromInt(x* w),Real.fromInt(y*h)) 
-		 (* val _ = Services.positionGroup(#group(r), rx , ry) *) 
 		  val color = case ColorMap.lookup(MkColorTable.colorTable,
 						   #color(r)) of 
 		              SOME x => x
@@ -107,7 +102,6 @@ struct
 		 val h = WindowHelper.fontHeight(!Settings.font)
 		 val (rx,ry) =  (Real.fromInt(x* w),
 				 Real.fromInt(y*h))
-	(*	 val _ = Services.positionGroup(#group(r), rx , ry)  *)
 		 val color = case ColorMap.lookup(MkColorTable.colorTable,
 						  #color(r)) of 
 		             SOME x => x
@@ -136,29 +130,15 @@ struct
 	
     and atomSearch'(n,x,y,sx,sy,rep,desc) = 
 	let 
-	    val _ = TextIO.print(" entering atomSearch with " ^ rep ^ "\n")
 	    val in_bounding_box = sx >= x 
 		andalso sx < x + String.length(rep) 
 		andalso sy = y
-	    val _ = TextIO.print("Simple in bounding_box: "
-				    ^ Bool.toString(in_bounding_box)
-				    ^ " because sx ="
-				    ^ Int.toString(sx) 
-				    ^ " and sy ="
-				    ^ Int.toString(sy)
-				    ^ " and x ="
-				    ^ Int.toString(x)
-				    ^ " and y ="
-				     ^ Int.toString(y)
-				    ^ "\n")
 	    val interpunct = case desc of
 		INTERPUNCT => true
 	      | _ => false
 	    val toBeDisplayed = case n of 
 		(Limit _ | RelNode _ | RelRefNode _ ) => true
 	      | _ => false
-	    val _ =  TextIO.print(" Node fits in bounding_box:  " 
-				  ^ Bool.toString(in_bounding_box)  ^ "\n")
 	in
 	    if (in_bounding_box  andalso not(interpunct)) 
 		orelse (in_bounding_box  andalso getParent(n) = Empty) 
@@ -176,22 +156,19 @@ struct
 		
     (* drawSimple *)
     and drawSimple (n,x,y,intent) = 
-	let
-	    val _ = TextIO.print("Entering draw Simple \n ")
-	in
-	    case n of
+	case n of
 	    Simple(r) => (case intent of 
-			  DRAW => if !(#status(r)) = DIRTY
-				      then 
-					  let
-					      val (x2,y2) = atomDraw (n,x,y)
-					  in
-						      (x2,y2,NONE)
-					  end
-				  else (x+get_xdim(n),y+get_ydim(n),NONE)
-			| SEARCH _ => atomSearch (n,x,y,intent))
-      | _ => raise DrawError
-	end
+			      DRAW => if !(#status(r)) = DIRTY
+					  then 
+					      let
+						  val (x2,y2) = atomDraw (n,x,y)
+					      in
+						  (x2,y2,NONE)
+					      end
+				      else (x+get_xdim(n),y+get_ydim(n),NONE)
+			    | SEARCH _ => atomSearch (n,x,y,intent))
+	  | _ => raise DrawError
+		
     
     (* drawLimit *)
     and drawLimit (n,x,y,intent) = case n of
@@ -210,7 +187,7 @@ struct
     (* drawConcat *) 
     and drawConcat (n,x,y,intent) = case n of
 	Concat(r)
-	=> let val _ = TextIO.print("Concat: starting search" ^ "\n")
+	=> let 
 	       val (search,sx,sy) = case intent of
 		   DRAW => (false,0,0)
 		 | SEARCH(xs,ys) => (true,xs,ys)
@@ -218,17 +195,6 @@ struct
 		   andalso sx < x + !(#width(r))
 		   andalso sy >= y 
 		   andalso sy < y + !(#height(r))
-	       val _ = TextIO.print("Concat in bounding_box: "
-				    ^ Bool.toString(in_bounding_box)
-				    ^ " because sx ="
-				    ^ Int.toString(sx) 
-				    ^ " and sy ="
-				    ^ Int.toString(sy)
-				    ^ " and x ="
-				    ^ Int.toString(x)
-				    ^ " and y ="
-				     ^ Int.toString(y)
-				    ^ "\n")
 	   in
 	       if !(#status(r)) = DIRTY orelse search 
 		   then if Array.length(#kids(r)) = 0
@@ -249,30 +215,31 @@ struct
 				 if search andalso not(in_bounding_box) 
 				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE) 
 				 else
-				 let val (new_x,new_y,new_found) = 
-				     (Array.foldl hor_funct (x,y,NONE) 
-				      (#kids(r))) 
+				 let 
+				     val (new_x,new_y,new_found) = 
+					 (Array.foldl hor_funct (x,y,NONE) 
+					  (#kids(r))) 
 				     handle NodeFound (foundx,foundy,n) 
-				     => let val _ = TextIO.print(
-					       "Concat: found node!" ^ "\n")
-					in (foundx,foundy,SOME(n))
-					end
+				     => (foundx,foundy,SOME(n))
 				     val nothing_found = case new_found of
 					                 NONE => true
 						       | SOME _ => false
 				 in 
 				     if search then (* besserer Codeteil *)
 					 case new_found of 
-					     SOME(node_found) => (case #desc(r) of
-								      INTERPUNCT => if n = node_found
-											then  (x,y,SOME(getParent(n)))
-										    else (new_x,new_y,new_found)
-								    | _ => if n = node_found 
-									       then (x,y,SOME n)
-									   else (new_x,new_y,new_found))
+					     SOME(node_found) => 
+						 (case #desc(r) of
+						      INTERPUNCT => 
+							  if n = node_found
+							      then  (x,y,
+								     SOME(getParent(n)))
+							  else (new_x,new_y,new_found)
+						    | _ => if n = node_found 
+							       then (x,y,SOME n)
+							   else (new_x,new_y,new_found))
 					   | NONE => (new_x,new_y,new_found)
-						 else
-						      (new_x,new_y,NONE)
+				     else
+					 (new_x,new_y,NONE)
 				 end
 			 end)
 	       else (x+get_xdim(n),y+get_ydim(n),NONE)
@@ -283,7 +250,6 @@ struct
     and drawContainer(n,x,y,intent) =  case n of
 	Container(r) 
 	=> let
-	       val _ = TextIO.print("Container: starting search" ^ "\n")
 	       val (search,sx,sy) = case intent of
 		   DRAW => (false,0,0)
 		 | SEARCH(xs,ys) => (true,xs,ys)
@@ -326,21 +292,15 @@ struct
 			     val funct = if vertical 
 					     then ver_funct
 					 else hor_funct
-			     val _ = TextIO.print(
-				       "Container: setting vertical : " 
-				       ^ Bool.toString(setsVertical(n)) ^ "\n")
-			     in
+			 in
 				 if search andalso not(in_bounding_box) 
-				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE)  (* -1 *)
+				     then (x+get_xdim(n),y+get_ydim(n)-1,NONE)  
 				 else
 				 let val (new_x',new_y',new_x2,new_found) = 
 				     (Array.foldl funct (x,y,0,NONE) 
 				      (#kids(r))) 
 				     handle NodeFound (foundx,foundy,n) 
-				     => let val _ = TextIO.print(
-					       "Container: found node!" ^ "\n")
-					in (foundx,foundy,foundx,SOME(n))
-					end
+				     => (foundx,foundy,foundx,SOME(n))
 				     val nothing_found = case new_found of
 					                 NONE => true
 						       | SOME _ => false
@@ -354,32 +314,19 @@ struct
 				 in
 				      if search then (* besserer Codeteil *)
 					 case new_found of 
-					     SOME(node_found) => (case #desc(r) of
-								      INTERPUNCT => if n = node_found
-											then  (x,y,SOME(getParent(n)))
-										    else (new_x,new_y,new_found)
-								    | _ => if n = node_found 
-									       then (x,y,SOME n)
-									   else (new_x,new_y,new_found))
+					     SOME(node_found) => 
+						 (case #desc(r) of
+						      INTERPUNCT => 
+							  if n = node_found
+							      then  (x,y,
+								     SOME(getParent(n)))
+							  else (new_x,new_y,new_found)
+						    | _ => if n = node_found 
+							       then (x,y,SOME n)
+							   else (new_x,new_y,new_found))
 					   | NONE => (new_x,new_y,new_found)
 						 else
 						      (new_x,new_y,NONE)
-				     (* alter Code *)
-			(*	     if search then 
-					 case #desc(r) of
-					     INTERPUNCT => (case new_found of
-								SOME(node_found) => if n = node_found 
-											then (x,y,SOME(getParent(n)))
-										    else (new_x,new_y,new_found)
-							      | NONE => (new_x,new_y,NONE))
-					   | _ => (case new_found of
-						       SOME(node_found) => if n = node_found 
-									       then (x,y,SOME n)
-									   else (new_x,new_y,new_found)
-						     | NONE => (new_x,new_y,new_found))
-				     else
-					 (new_x,new_y,NONE)
-					 *)
 				 end
 			     end)
 	       else (x + get_xdim(n), y + get_ydim(n),NONE) 
