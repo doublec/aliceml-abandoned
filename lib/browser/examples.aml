@@ -1,3 +1,18 @@
+(*
+ * Authors:
+ *   Bernadette Blum <blum@ps.uni-sb.de>
+ *   Marvin Schiller <schiller@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Bernadette Blum, 2002
+ *   Marvin Schiller, 2002
+ *
+ * Last Change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *
+ *)
+
 import structure Type from "x-alice:/lib/rtt/Type"
 import structure Reflect from "x-alice:/lib/system/Reflect";
 import structure UnsafeValue from "x-alice:/lib/system/UnsafeValue";
@@ -151,24 +166,3 @@ structure Matrix = Reflect.ReflectType(type t = int vector vector);
 
 inspect(my_matrix,Matrix.x);
 
-(*****************************************************************************)
-
-(******************************** DEMO 5 *************************************)
-
-(* STREAMS *)
-
-structure IntList = Reflect.ReflectType (type t = int list);
-
-fun first i = Future.concur(fn () => ( Thread.sleep (Time.fromSeconds 1)
-                                      ; i::(first(i+1))));
-fun second i = Future.concur(fn () => ( Thread.sleep (Time.fromSeconds 2)
-				       ; i::(second(i+2))));
-    
-fun third (s1::xs,s2::ys) =  Future.concur(fn () => (s1+s2)::third(xs,ys));
-
-val a = first(0);
-val b = second(0);
-
-inspect(a, IntList.x);
-inspect (b, IntList.x);
-inspect (third(a,b), IntList.x);
