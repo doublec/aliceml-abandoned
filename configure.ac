@@ -19,6 +19,27 @@ AC_PROG_MAKE_SET
 AC_PROG_CXX
 
 dnl
+dnl  zlib
+dnl
+AC_MSG_CHECKING([whether to build with zlib])
+AC_ARG_WITH([zlib],
+	    AC_HELP_STRING([--with-zlib=DIR],
+			   [use the zlib file compression library
+			    (default: no)]),
+	    HAVE_ZLIB=1
+	    ZLIBINCLUDES="-I$with_zlib/include"
+	    ZLIBLIBS="-L$with_zlib/lib -lz"
+	    result=yes,
+	    HAVE_ZLIB=0
+	    ZLIBINCLUDES=""
+	    ZLIBLIBS=""
+	    result=no)
+AC_MSG_RESULT($result)
+AC_SUBST(HAVE_ZLIB)
+AC_SUBST(ZLIBINCLUDES)
+AC_SUBST(ZLIBLIBS)
+
+dnl
 dnl  GNU Lightning
 dnl
 AC_MSG_CHECKING([whether to build with GNU Lightning])
@@ -26,15 +47,15 @@ AC_ARG_WITH([lightning],
 	    AC_HELP_STRING([--with-lightning=DIR],
 			   [use GNU Lightning to enable run-time
 			    native code generation (default: no)]),
-	    LIGHTNING=1
-	    LIGHTNINGDIR="$with_lightning"
+	    HAVE_LIGHTNING=1
+	    LIGHTNINGINCLUDES="-I$with_lightning/include"
 	    result=yes,
-	    LIGHTNING=0
-	    LIGHTNINGDIR=""
+	    HAVE_LIGHTNING=0
+	    LIGHTNINGINCLUDES=""
 	    result=no)
 AC_MSG_RESULT($result)
-AC_SUBST(LIGHTNING)
-AC_SUBST(LIGHTNINGDIR)
+AC_SUBST(HAVE_LIGHTNING)
+AC_SUBST(LIGHTNINGINCLUDES)
 
 dnl
 dnl  Profiler

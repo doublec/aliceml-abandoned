@@ -13,7 +13,7 @@
 #ifndef __GENERIC__ZLIB_HH__
 #define __GENERIC__ZLIB_HH__
 
-#ifdef HAVE_ZLIB
+#if HAVE_ZLIB
 #include <zlib.h>
 #define COMPRESSIONLEVEL "9"
 #else
