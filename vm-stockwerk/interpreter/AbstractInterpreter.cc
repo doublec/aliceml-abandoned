@@ -57,8 +57,7 @@ void BootstrapInterpreter::PushCall(TaskStack *taskStack, Closure *closure) {
   Assert(concreteCode->GetInterpreter() == this);
   TagVal *function = TagVal::FromWord(concreteCode->GetAbstractCode());
   // datatype function = Function of int * idDef args * instr
-  Assert(Store::WordToInt(function->Sel(0)) ==
-	 closure->GetGlobalEnv()->GetLength());
+  Assert(Store::WordToInt(function->Sel(0)) == closure->GetSize());
   taskStack->PushFrame(FRAME_SIZE);
   taskStack->PutUnmanagedPointer(INTERPRETER_POS, this);
   taskStack->PutWord(PC_POS, function->Sel(2));
