@@ -27,7 +27,7 @@ private:
 
   static void Register(const char *name, word value);
   static void Register(const char *name,
-		       Primitive::function value, u_int arity);
+		       Interpreter::function value, u_int arity);
   static void RegisterUniqueConstructor(const char *name);
 
   static void RegisterUnqualified();
