@@ -1,59 +1,165 @@
-#ifndef _UNSAFE_UTILS_HH_
-#define _UNSAFE_UTILS_HH_
+//
+// Author:
+//   Robert Grabowski <grabow@ps.uni-sb.de>
+//
+// Copyright:
+//   Robert Grabowski, 2003
+//
+// Last Change:
+//   $Date$ by $Author$
+//   $Revision$
+//
+
+/*
+  This header file is included in every generated native source file.
+  It contains conversion macros that are specifically written for
+  the GTK+ binding.
+*/
+
+#ifndef _NATIVE_UTILS_HH_
+#define _NATIVE_UTILS_HH_
 
 #include "Alice.hh"
 #include "MyNativeAuthoring.hh"
 #include <gtk/gtk.h>
 #include <libgnomecanvas/libgnomecanvas.h>
 
-
-inline Record *CreateRecord(int size) {
-  return Record::New(size);
-}
-
-/*
-TYPE CHECKING HAS BEEN COMPLETELY DISABLED (SLOW; AND IS DONE BY GTK ANYWAY)
-
-static word TypeMismatchConstructor;
-
-  TypeMismatchConstructor =
-    UniqueConstructor::New(String::New("GtkTypes.TypeMismatch"))->ToWord();
-  RootSet::Add(TypeMismatchConstructor);
-
-word createExn(void *pointer, const gchar *tname, const gchar* funname, 
-	       int argno) {
-  char err[4000];
-  g_snprintf(err, 4000, 
-	     "%s: Type mismatch in argument %d: needed type %s, got type %s", 
-	     funname, argno+1, tname, G_OBJECT_TYPE_NAME(pointer));            
-  g_print("%s\n", err);                                       
-  ConVal *conVal =
-    ConVal::New(Constructor::FromWordDirect(TypeMismatchConstructor), 1);
-  conVal->Init(0, String::New(err)->ToWord());     
-  return conVal->ToWord();
-}
+enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
 
 
-#ifdef DEBUG
-#define CHECK_TYPE(pointer, tname, funname, argno) {                         \
-  if (G_IS_OBJECT(pointer) &&                                                \
-      g_type_is_a(G_OBJECT_TYPE(pointer), g_type_from_name(tname)) == FALSE) \
-      { RAISE(createExn(pointer,tname,funname,argno)); }                     \
-  }
-#else
+/***********************************************************************/
+// MACROS FOR OBJECT HANDLING
 
-#define CHECK_TYPE(pointer, tname, funname, argno) ;
-#endif
-*/
+// Note: all C pointers leaving the native level are put into an
+//       (pointer, typeinfo) tuple. These tuples are called "objects".
+//       When an object enters the native level, the C pointer is extracted.
+//       Using unmanged pointers directly as words in alice causes trouble with
+//       the garbage collection, thus the GTK+ binding does not make use of
+//       the DECLARE_UNMANAGED_POINTER and UNMANAGED_POINTER_TO_WORD macros.
 
 enum { TYPE_GTK_OBJECT, TYPE_G_OBJECT, TYPE_OWN, TYPE_UNKNOWN };
 
-/***********************************************************************/
+// Extract a C pointer from an object tuple.
+// The pointer itself cannot be a transient, as the object tuples are
+// always created by the native components
+#define DECLARE_OBJECT(pointer, x)                               \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
 
-enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
+// Extract C pointer and type information from object tuple.
+#define DECLARE_OBJECT_WITH_TYPE(pointer, type, x)               \
+  DECLARE_TUPLE(pointer##__tup,x);                               \
+  int type = Store::WordToInt(pointer##__tup->Sel(1));           \
+  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
+
+
+inline void print_type(char *s, void *obj) {
+  GObject *p = reinterpret_cast<GObject*>(obj);
+  GTypeQuery q;
+  memset(&q, 0, sizeof(q));
+  g_type_query(G_OBJECT_TYPE(p), &q);
+  g_message("%s: %p (type %s)", s, p, q.type_name);
+}
+
+// Increase reference count of a pointer, depending on type.
+inline void __refObject(void *p, int type) {
+  if (!p) return;
+  //g_message("reffing: %p (type %d)", p, type);
+  switch (type) {
+  case TYPE_GTK_OBJECT: 
+    g_object_ref(G_OBJECT(p));
+    gtk_object_sink(GTK_OBJECT(p)); 
+    //(see GTK documentation for purpose of gtk_object_sink)
+    //print_type("gtk-object-reffed", p);
+    break;
+  case TYPE_G_OBJECT: 
+    g_object_ref(p);
+    //print_type("gobject-reffed", p);
+    break;
+  }
+}
+
+// Decrease reference count of a pointer, depending on type.
+inline void __unrefObject(void *p, int type) {
+  if (!p) return;
+  switch (type) {
+  case TYPE_GTK_OBJECT: 
+  case TYPE_G_OBJECT: 
+    //print_type("about to unref", p);
+    //g_message("refcnt: %d", G_OBJECT(p)->ref_count);
+    g_object_unref(G_OBJECT(p));
+    // print_type("object-unreffed", p); // crashes if ref_count == 0
+    break;
+  case TYPE_OWN:
+    delete (int*)p;
+    //g_message("deleted: %p", p);
+    break;
+  }
+}
+
+// Convert a C pointer to an object tuple.
+inline word OBJECT_TO_WORD(void *p, int type) {
+  __refObject(p, type);
+  Tuple *t = Tuple::New(2);
+  t->Init(0,Store::UnmanagedPointerToWord(p));
+  t->Init(1,Store::IntToWord(type));
+  return t->ToWord();
+}
+
+inline word OBJECT_TO_WORD(void *p) {
+  OBJECT_TO_WORD(p, TYPE_UNKNOWN);
+}
+
+#define FUNCTION_TO_WORD(f) OBJECT_TO_WORD((void*)f, TYPE_UNKNOWN)
+
+/***********************************************************************/
+// MACROS FOR GLIST/GSLIST HANDLING
+
+#define DECLARE_GLIB_LIST(l, x, ltype, ltype2, F)           \
+  ltype *l = NULL;                                          \
+  {                                                         \
+    DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
+      { F(l##__value,l##__tagval->Sel(0));                  \
+        l = ltype2##_append(l, l##__value);                 \
+      } );                                                  \
+  }
+
+// Create a GList/GSList from an alice list,
+// and use F (can be DECLARE_INT,...) to convert each list member
+#define DECLARE_GLIST(l, x, F) DECLARE_GLIB_LIST(l, x, GList, g_list, F)
+#define DECLARE_GSLIST(l, x, F) DECLARE_GLIB_LIST(l, x, GSList, g_slist, F)
+
+#define __RETURN_GLIB_LIST(lname,ltype,convertfun)            \
+  word tail = Store::IntToWord(Types::nil);                 \
+  for (guint i = ltype##_length(lname); i > 0; i--) {       \
+    TagVal *cons = TagVal::New(0,2);                        \
+    cons->Init(0,convertfun(ltype##_nth_data(lname,i-1)));  \
+    cons->Init(1,tail);                                     \
+    tail = cons->ToWord();                                  \
+  }                                                         \
+  return tail;
+
+// Return a GList/GSList.
+inline word GLIST_OBJECT_TO_WORD(GList *list) {
+  __RETURN_GLIB_LIST(list, g_list, OBJECT_TO_WORD);
+}
+
+inline word GSLIST_OBJECT_TO_WORD(GSList *list) {
+  __RETURN_GLIB_LIST(list, g_slist, OBJECT_TO_WORD);
+}
+
+inline word GLIST_STRING_TO_WORD(GList *list) {
+  __RETURN_GLIB_LIST(list, g_list, STRING_TO_WORD);
+}
+
+inline word GSLIST_STRING_TO_WORD(GSList *list) {
+  __RETURN_GLIB_LIST(list, g_slist, STRING_TO_WORD);
+}
+
+/***********************************************************************/
+// MACROS FOR ELLIPSES/VA_LIST HANDLING
 
 #define VDATA_MAX_LEN 1024
-#define ELLIP_MAX_ARGS 1
 
 #define __PUT_VALUE(vtype, F, x, pos) {    \
   F(value, x);                             \
@@ -85,6 +191,16 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
       __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval->Sel(0)) ); \
   }                                                       
 
+#define DECLARE_ELLIPSES(l, x)            \
+  double l[2];                            \
+  memset(l, 0, sizeof(l));                \
+  {                                       \
+    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[1]); \
+    __PUT_VALIST_ITEM(l##__pos, l##__end, x);                 \
+  }                                                         
+
+// old version: ellipses with up to 20 args (highly platform-dependent)
+//#define ELLIP_MAX_ARGS 20
 //#define DECLARE_ELLIPSES(l, x)                              \
 //  int l[ELLIP_MAX_ARGS+1];                                  \
 //  memset(l, 0, sizeof(l));                                  \
@@ -94,115 +210,11 @@ enum { BOOL, EVENT, INT, LIST, OBJECT, REAL, STRING };
 //      __PUT_VALIST_ITEM(l##__pos, l##__end, l##__tagval) ); \
 //  }                                                         
 
-#define DECLARE_ELLIPSES(l, x)            \
-  double l[2];                            \
-  memset(l, 0, sizeof(l));                \
-  {                                       \
-    gint8 *l##__pos = (gint8*)l, *l##__end = (gint8*)&(l[1]); \
-    __PUT_VALIST_ITEM(l##__pos, l##__end, x);                 \
-  }                                                         
-
 /***********************************************************************/
+// MACROS FOR ENUM HANDLING
 
-// macros for extracting C pointer from an object tuple;
-// the pointer itself cannot be a transient, as the object tuples are
-// always created by the native components
-#define DECLARE_OBJECT(pointer, x)                               \
-  DECLARE_TUPLE(pointer##__tup,x);                               \
-  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
-
-#define DECLARE_OBJECT_WITH_TYPE(pointer, type, x)               \
-  DECLARE_TUPLE(pointer##__tup,x);                               \
-  int type = Store::WordToInt(pointer##__tup->Sel(1));           \
-  void *pointer = Store::WordToUnmanagedPointer(pointer##__tup->Sel(0));
-
-
-inline void print_type(char *s, void *obj) {
-  GObject *p = reinterpret_cast<GObject*>(obj);
-  GTypeQuery q;
-  memset(&q, 0, sizeof(q));
-  g_type_query(G_OBJECT_TYPE(p), &q);
-  g_message("%s: %p (type %s)", s, p, q.type_name);
-}
-
-inline void __refObject(void *p, int type) {
-  if (!p) return;
-  //g_message("reffing: %p (type %d)", p, type);
-  switch (type) {
-  case TYPE_GTK_OBJECT: 
-    g_object_ref(G_OBJECT(p));
-    gtk_object_sink(GTK_OBJECT(p));
-    //print_type("gtk-object-reffed", p);
-    break;
-  case TYPE_G_OBJECT: 
-    g_object_ref(p);
-    //print_type("gobject-reffed", p);
-    break;
-  }
-}
-
-inline void __unrefObject(void *p, int type) {
-  if (!p) return;
-  switch (type) {
-  case TYPE_GTK_OBJECT: 
-  case TYPE_G_OBJECT: 
-    //print_type("about to unref", p);
-    //g_message("refcnt: %d", G_OBJECT(p)->ref_count);
-    g_object_unref(G_OBJECT(p));
-    // print_type("object-unreffed", p); // crashes if ref_count == 0
-    break;
-  case TYPE_OWN:
-    delete (int*)p;
-    //g_message("deleted: %p", p);
-    break;
-  }
-}
-
-inline word PointerToObject(void *p, int type) {
-  __refObject(p, type);
-  Tuple *t = Tuple::New(2);
-  t->Init(0,Store::UnmanagedPointerToWord(p));
-  t->Init(1,Store::IntToWord(type));
-  return t->ToWord();
-}
-
-#define DECLARE_GLIST(l, x, ltype, ltype2, F)               \
-  ltype *l = NULL;                                          \
-  {                                                         \
-    DECLARE_LIST_ELEMS(l##__tagval, l##__length, x,         \
-      { F(l##__value,l##__tagval->Sel(0));                  \
-        l = ltype2##_append(l, l##__value);                 \
-      } );                                                  \
-  }
-
-#define __RETURN_LIST_HELP(lname,ltype,convertfun)          \
-  word tail = Store::IntToWord(Types::nil);                 \
-  for (guint i = ltype##_length(lname); i > 0; i--) {       \
-    TagVal *cons = TagVal::New(0,2);                        \
-    cons->Init(0,convertfun(ltype##_nth_data(lname,i-1)));  \
-    cons->Init(1,tail);                                     \
-    tail = cons->ToWord();                                  \
-  }                                                         \
-  return tail;
-
-#define __OBJECT_TO_WORD(p) \
-  PointerToObject(p, TYPE_UNKNOWN)
-
-inline word GListToObjectList(GList *list) {
-  __RETURN_LIST_HELP(list, g_list, __OBJECT_TO_WORD);
-}
-
-inline word GSListToObjectList(GSList *list) {
-  __RETURN_LIST_HELP(list, g_slist, __OBJECT_TO_WORD);
-}
-
-inline word GListToStringList(GList *list) {
-  __RETURN_LIST_HELP(list, g_list, STRING_TO_WORD);
-}
-
-inline word GSListToStringList(GSList *list) {
-  __RETURN_LIST_HELP(list, g_slist, STRING_TO_WORD);
-}
-
+#define DECLARE_ENUM DECLARE_INT
+#define ENUM_TO_WORD INT_TO_WORD
 
 #endif
+
