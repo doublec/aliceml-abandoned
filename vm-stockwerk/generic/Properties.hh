@@ -27,7 +27,8 @@ public:
   static word rootUrl;
   static word commandLineArguments;
   static word atExn;
-  static void Init();
+
+  static void Init(char *home, u_int argc, char *argv[]);
 };
 
 #endif
