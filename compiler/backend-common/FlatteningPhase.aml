@@ -397,21 +397,24 @@ structure MatchCompilationPhase :> MATCH_COMPILATION_PHASE =
 	    let
 		val coord' = infoExp exp
 		val id' = freshId coord'
-		val cont' = Share (ref NONE, cont)
-		val stms = f (O.VarExp (coord', id'))::translateCont cont'
-		val tryBody =
-		    translateDec (ValDec (coord', VarPat (coord', id'), exp),
-				  Goto [O.EndHandleStm (coord, stms)])
+		val shared = ref 0
+		val cont' = Goto [O.EndHandleStm (coord, shared)]
+		fun f' exp' = O.ValDec (coord', id', exp', false)
+		val tryBody = translateExp (exp, f', cont')
 		val catchId = freshId coord
 		val catchVarExp = VarExp (coord, ShortId (coord, catchId))
 		val matches' =
 		    List.map (fn Match (_, pat, exp) =>
-			      (infoExp exp, pat, translateExp (exp, f, cont')))
+			      (infoExp exp, pat, translateExp (exp, f', cont')))
 		    matches
+		val catchBody =
+		    simplifyCase (coord, catchVarExp, matches', catchId)
+		val contBody =
+		    translateExp  (VarExp (coord', ShortId (coord', id')),
+				   f, cont)
 	    in
-		[O.HandleStm (coord, tryBody, catchId,
-			      simplifyCase (coord, catchVarExp,
-					    matches', catchId))]
+		[O.HandleStm (coord, tryBody, catchId, catchBody,
+			      contBody, shared)]
 	    end
 	  | translateExp (LetExp (coord, decs, exp), f, cont) =
 	    let

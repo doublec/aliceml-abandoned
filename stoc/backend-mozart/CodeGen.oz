@@ -87,15 +87,17 @@ define
 			    {TranslateCoord Coord} VTl)
       [] evalStm(_ Exp) then
 	 {TranslateExp Exp {State.cs newReg($)} VHd VTl State}
-      [] handleStm(Coord Body1 Id Body2) then Reg TryVInstr CatchVInstr in
+      [] handleStm(Coord Body1 Id Body2 Body3 _) then
+	 Reg TryVInstr CatchVInstr VInter
+      in
 	 Reg = {MakeReg Id State}
 	 VHd = vExHandler(_ TryVInstr Reg CatchVInstr
-			  {TranslateCoord Coord} VTl _)
+			  {TranslateCoord Coord} VInter _)
 	 {TranslateBody Body1 ?TryVInstr nil State ReturnReg}
 	 {TranslateBody Body2 ?CatchVInstr nil State ReturnReg}
-      [] endHandleStm(Coord Body) then
-	 VHd = vPopEx(_ {TranslateCoord Coord}
-		      {TranslateBody Body $ VTl State ReturnReg})
+	 {TranslateBody Body3 ?VInter nil State ReturnReg}
+      [] endHandleStm(Coord _) then
+	 VHd = vPopEx(_ {TranslateCoord Coord} nil)
       [] testStm(Coord Id Test Body1 Body2) then Reg0 ThenVInstr ElseVInstr in
 	 %--** assemble several testStm into a single vMatch
 	 Reg0 = {GetReg Id State}

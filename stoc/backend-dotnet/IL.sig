@@ -103,6 +103,7 @@ signature IL =
 	  | CgtUn
 	  | Clt
 	  | CltUn
+	  | Comment of string
 	  | Div
 	  | DivUn
 	  | Dup
@@ -118,6 +119,7 @@ signature IL =
 	  | Ldnull
 	  | Ldsfld of dottedname * id * ty
 	  | Ldstr of string
+	  | Leave of label
 	  | Newarr of ty
 	  | Newobj of dottedname * ty list
 	  | Mul

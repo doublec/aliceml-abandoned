@@ -151,13 +151,15 @@ structure OzifyImperativeGrammar :> OZIFY_IMPERATIVE_GRAMMAR =
 	  | outputStm (q, EvalStm (coord, exp)) =
 	    (f (q, "evalStm"); outputCoord (q, coord); m q;
 	     outputExp (q, exp); r q)
-	  | outputStm (q, HandleStm (coord, body1, id, body2)) =
-	    (f (q, "handleStm"); outputCoord (q, coord); m q;
+	  | outputStm (q, HandleStm (coord, body1, id, body2, body3, shared)) =
+	    (shared := gen();
+	     f (q, "handleStm"); outputCoord (q, coord); m q;
 	     outputBody (q, body1); m q; outputId (q, id); m q;
-	     outputBody (q, body2); r q)
-	  | outputStm (q, EndHandleStm (coord, body)) =
+	     outputBody (q, body2); m q; outputBody (q, body3); m q;
+	     outputInt (q, !shared); r q)
+	  | outputStm (q, EndHandleStm (coord, ref i)) =
 	    (f (q, "endHandleStm"); outputCoord (q, coord); m q;
-	     outputBody (q, body); r q)
+	     outputInt (q, i); r q)
 	  | outputStm (q, TestStm (coord, id, test, body1, body2)) =
 	    (f (q, "testStm"); outputCoord (q, coord); m q;
 	     outputId (q, id); m q; outputTest (q, test); m q;

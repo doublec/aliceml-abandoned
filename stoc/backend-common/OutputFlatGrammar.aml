@@ -108,24 +108,26 @@ structure OutputImperativeGrammar :> OUTPUT_IMPERATIVE_GRAMMAR =
 	    SEQ [S "nam ", ID id, if isToplevel then CO "toplevel" else NULL]
 	  | outputStm (EvalStm (_, exp)) =
 	    SEQ [S "eval ", IN, outputExp exp, EX]
-	  | outputStm (HandleStm (_, body1, id, body2)) =
-	    SEQ [S "try", IN, NL, outputBody body1, EX, NL,
-		 S "catch ", ID id, IN, NL, outputBody body2, EX]
-	  | outputStm (EndHandleStm (_, body)) =
-	    SEQ [S "untry", IN, NL, outputBody body, EX]
+	  | outputStm (HandleStm (_, body1, id, body2, body3, shared)) =
+	    (shared := gen ();
+	     SEQ [S "try", CO (Int.toString (!shared)), IN, NL,
+		  outputBody body1, EX, NL,
+		  S "catch ", ID id, IN, NL, outputBody body2, EX, NL,
+		  S "cont", IN, NL, outputBody body3, EX])
+	  | outputStm (EndHandleStm (_, ref i)) =
+	    CO ("leave " ^ Int.toString i)
 	  | outputStm (TestStm (_, id, test, body1, body2)) =
 	    SEQ [S "case ", ID id, S " of ", IN, outputTest test, NL,
 		 outputBody body1, EX, NL, S "else", IN, NL, outputBody body2,
 		 EX]
 	  | outputStm (RaiseStm (_, id)) =
 	    SEQ [S "raise ", ID id]
-	  | outputStm (SharedStm (_, body, shared)) =
-	    if !shared = 0 then
-		(shared := gen ();
-		 SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,
-		      outputBody body])
-	    else
-		SEQ [S ("goto " ^ (Int.toString (!shared)))]
+	  | outputStm (SharedStm (_, body, shared as ref 0)) =
+	    (shared := gen ();
+	     SEQ [S ("label " ^ (Int.toString (!shared)) ^ ":"), NL,
+		  outputBody body])
+	  | outputStm (SharedStm (_, _, ref i)) =
+	    SEQ [S ("goto " ^ (Int.toString i))]
 	  | outputStm (ReturnStm (_, exp)) =
 	    SEQ [S "return ", IN, outputExp exp, EX]
 	  | outputStm (IndirectStm (_, ref bodyOpt)) =

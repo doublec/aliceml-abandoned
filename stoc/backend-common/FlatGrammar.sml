@@ -63,8 +63,8 @@ structure ImperativeGrammar: IMPERATIVE_GRAMMAR =
 	  | EvalStm of coord * exp
 	  | RaiseStm of coord * id
 	  (* the following must always be last *)
-	  | HandleStm of coord * body * id * body
-	  | EndHandleStm of coord * body
+	  | HandleStm of coord * body * id * body * body * shared
+	  | EndHandleStm of coord * shared
 	  | TestStm of coord * id * test * body * body
 	  | SharedStm of coord * body * shared   (* used at least twice *)
 	  | ReturnStm of coord * exp

@@ -196,10 +196,10 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	    end
 	  | genTest (RecTest labIdList, elseLabel) =
 	    (*--** *)
-	    Crash.crash "CodeGen.genTest: RecTest"
+	    Crash.crash "CodeGenPhase.genTest: RecTest"
 	  | genTest (LabTest (lab, id), elseLabel) =
 	    (*--** *)
-	    Crash.crash "CodeGen.genTest: LabTest"
+	    Crash.crash "CodeGenPhase.genTest: LabTest"
 	  | genTest (VecTest ids, elseLabel) =
 	    let
 		val thenLabel = newLabel ()
@@ -245,12 +245,20 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	  | genStm (ConDec (_, id, true, _)) =
 	    (emit (Newobj (StockWerk.Constructor, nil)); declareLocal id)
 	  | genStm (EvalStm (_, exp)) = (genExp (exp, BOTH); emit Pop)
-	  | genStm (HandleStm (_, tryBody, id, catchBody)) =
-	    (*--** *)
-	    Crash.crash "CodeGen.genStm: HandleStm"
-	  | genStm (EndHandleStm (_, body)) =
-	    (*--** *)
-	    Crash.crash "CodeGen.genStm: EndHandleStm"
+	  | genStm (HandleStm (_, tryBody, id, catchBody, contBody, shared)) =
+	    let
+		val label1 = newLabel ()
+		val label2 = newLabel ()
+		val label3 = newLabel ()
+	    in
+		shared := label3;
+		emit (Try (label1, label2, StockWerk.ExceptionWrapper,
+			   label2, label3));
+		emit (Label label1); genBody tryBody;
+		emit (Label label2); declareLocal id; genBody catchBody;
+		emit (Label label3); genBody contBody
+	    end
+	  | genStm (EndHandleStm (_, shared)) = emit (Leave (!shared))
 	  | genStm (stm as TestStm (_, id, _, _, _)) =
 	    let
 		val (testBodyList, elseBody) = gatherTests ([stm], id)
@@ -329,7 +337,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Newobj (StockWerk.Tuple, [ArrayTy StockWerk.StockWertTy])))
 	  | genExp (RecExp (_, labIdList), _) =
 	    (*--** compute arity statically *)
-	    Crash.crash "CodeGen.genExp: RecExp"
+	    Crash.crash "CodeGenPhase.genExp: RecExp"
 	  | genExp (SelExp (_, s), BOTH) =
 	    (emit (Ldstr s);
 	     emit (Newobj (StockWerk.Selector, [System.StringTy])))
@@ -347,7 +355,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		 (OneArg (id as Id (_, stamp, _)), _)::_ =>
 		     (emit (Newobj (className stamp, nil));
 		      defineClass (stamp, StockWerk.Procedure, nil))
-	       | _ => Crash.crash "CodeGen.genExp")
+	       | _ => Crash.crash "CodeGenPhase.genExp")
 	  | genExp (FunExp (_, _, argsBodyList), FILL) =
 	    (case argsBodyList of
 		 (OneArg (id as Id (_, stamp, _)), body)::_ =>
@@ -355,7 +363,7 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 		      genBody body;
 		      closeMethod ();
 		      emit Pop)
-	       | _ => Crash.crash "CodeGen.genExp")
+	       | _ => Crash.crash "CodeGenPhase.genExp")
 	  | genExp (AppExp (_, id1, OneArg id2), BOTH) =
 	    (emitId id1; emitId id2;
 	     emit (Callvirt (StockWerk.StockWert, "Apply",
@@ -385,12 +393,12 @@ structure CodeGenPhase :> CODE_GEN_PHASE =
 	     emit (Stfld (StockWerk.Ref, "Value", StockWerk.StockWertTy)))
 	  | genExp (PrimAppExp (_, name, ids), BOTH) =
 	    (*--** *)
-	    Crash.crash "CodeGen.genExp: PrimAppExp"
+	    Crash.crash "CodeGenPhase.genExp: PrimAppExp"
 	  | genExp (AdjExp (_, id1, id2), BOTH) =
 	    (*--** *)
-	    Crash.crash "CodeGen.genExp: AdjExp"
+	    Crash.crash "CodeGenPhase.genExp: AdjExp"
 	  | genExp (exp, PREPARE) =
-	    Crash.crash "CodeGen.genExp: not admissible"
+	    Crash.crash "CodeGenPhase.genExp: not admissible"
 	  | genExp (_, FILL) = emit Pop
 	  | genExp (exp, BOTH) =
 	    (genExp (exp, PREPARE); emit Dup; genExp (exp, FILL))

@@ -103,6 +103,7 @@ structure IL :> IL =
 	  | CgtUn
 	  | Clt
 	  | CltUn
+	  | Comment of string
 	  | Div
 	  | DivUn
 	  | Dup
@@ -118,6 +119,7 @@ structure IL :> IL =
 	  | Ldnull
 	  | Ldsfld of dottedname * id * ty
 	  | Ldstr of string
+	  | Leave of label
 	  | Newarr of ty
 	  | Newobj of dottedname * ty list
 	  | Mul
@@ -286,6 +288,7 @@ structure IL :> IL =
 	  | outputInstr (q, CgtUn) = output (q, "cgt.un")
 	  | outputInstr (q, Clt) = output (q, "clt")
 	  | outputInstr (q, CltUn) = output (q, "clt.un")
+	  | outputInstr (q, Comment s) = output (q, "// " ^ s)
 	  | outputInstr (q, Div) = output (q, "div")
 	  | outputInstr (q, DivUn) = output (q, "div.un")
 	  | outputInstr (q, Dup) = output (q, "dup")
@@ -330,6 +333,8 @@ structure IL :> IL =
 	  | outputInstr (q, Ldstr s) =
 	    (output (q, "ldstr \""); output (q, String.toCString s);
 	     output1 (q, #"\""))
+	  | outputInstr (q, Leave label) =   (*--** short form? *)
+	    (output (q, "leave "); outputLabel (q, label))
 	  | outputInstr (q, Newarr ty) =
 	    (output (q, "newarr "); outputTy (q, ty))
 	  | outputInstr (q, Newobj (dottedname, tys)) =
