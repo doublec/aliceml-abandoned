@@ -1,6 +1,6 @@
 (* Recompiling A breaks B *)
 
-import structure A : (type t val x : t val f : t -> string) from "a"
+import structure A : (type t val x : t val f : t -> string) from "recompile-a"
 
 val _ = A.f A.x
 val _ = OS.Process.exit OS.Process.success
