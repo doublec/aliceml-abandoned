@@ -123,7 +123,7 @@ M4 = m4
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-SEAMFILES = stow.exe stow.dll
+SEAMFILES = seam.dll alice.dll alice.exe
 
 LIBSYSTEMNATIVES0 = \
 	Config IODesc OS Unix CommandLine Component Debug Foreign Socket Rand \
@@ -360,7 +360,7 @@ TOPINCLUDES0 = \
 STOREINCLUDES0 = \
 	Base.hh Types.hh StoreConfig.hh HeaderOp.hh PointerOp.hh \
 	StatusWord.hh Value.hh Map.hh WeakMap.hh Store.hh BaseMap.hh \
-	BaseMap.cc MapNode.hh Heap.hh
+	BaseMap.cc MapNode.hh Heap.hh JITStore.hh
 ADTINCLUDES0 = \
 	IntMap.hh ChunkMap.hh Queue.hh Stack.hh
 GENERICINCLUDES0 = \
@@ -371,13 +371,12 @@ GENERICINCLUDES0 = \
 	TaskStack.hh IOHandler.hh IODesc.hh SignalHandler.hh \
 	Scheduler.hh Transients.hh Worker.hh Interpreter.hh Primitive.hh \
 	PushCallWorker.hh BindFutureWorker.hh Unpickler.hh Pickler.hh \
-	Profiler.hh Authoring.hh
+	Profiler.hh Authoring.hh JitterGenericData.hh
 ALICEINCLUDES0 = \
-	BootLinker.hh Guid.hh Data.hh Types.hh AbstractCode.hh \
+	Base.hh Guid.hh Data.hh Types.hh AbstractCode.hh \
 	AbstractCodeInterpreter.hh AliceConcreteCode.hh \
-	NativeCodeInterpreter.hh \
-	NativeConcreteCode.hh PrimitiveTable.hh AliceLanguageLayer.hh \
-	Authoring.hh
+	NativeCodeInterpreter.hh NativeConcreteCode.hh \
+	PrimitiveTable.hh AliceLanguageLayer.hh BootLinker.hh Authoring.hh
 INCLUDES = \
 	$(TOPINCLUDES0) \
 	$(STOREINCLUDES0:%=store/%) \
