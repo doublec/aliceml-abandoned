@@ -172,7 +172,8 @@ struct
 	in
 	    Vector.appi (fn(i,t) => Type.unify(t0,t)
 				    handle Type.Mismatch(t1,t2) =>
-					raise MismatchVec(i,t1,t2)) (ts,1,NONE)
+					raise MismatchVec(i,t1,t2)
+			) ts
 	end
 
 

@@ -251,11 +251,11 @@ struct
 		val w       = #width fm
 		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
 		val fm'     = elem fm
-		val docs'   = Vector.foldri
+		val docs'   = VectorSlice.foldri
 				(fn(i,t',docs) =>
 				    ppVal' t' fm' (unsafe_projTuple(x,n,i))
 				    :: docs
-				) ds (ts,0,SOME n')
+				) ds (VectorSlice.slice(ts,0,SOME n'))
 	    in
 		paren(
 		    ppCommaList id docs'
@@ -269,7 +269,7 @@ struct
 		val w       = #width fm
 		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
 		val fm'     = elem fm
-		val docs'   = Vector.foldli
+		val docs'   = VectorSlice.foldli
 				(fn(i,t',docs) =>
 				 let
 				    val l    = Vector.sub(ls,i)
@@ -281,7 +281,7 @@ struct
 					text " =" ^/^
 					doc'
 				    )) :: docs
-				 end) ds (ts,0,SOME n')
+				 end) ds (VectorSlice.slice(ts,0,SOME n'))
 	    in
 		brace(
 		    ppCommaList id docs'
@@ -371,7 +371,7 @@ struct
 		val (n,doc0) = if Vector.length x <= #width fm
 				then (Vector.length x, empty)
 				else (#width fm, text "," ^/^ ellDoc)
-		val xs = Vector.foldri (fn(_,x,xs) => x::xs) [] (x,0,SOME n)
+		val xs = VectorSlice.toList(VectorSlice.slice(x,0,SOME n))
 	    in
 		SOME(
 		    contain ("#[", "]") (
@@ -391,7 +391,7 @@ struct
 		val (n,doc0) = if Array.length x <= #width fm
 				then (Array.length x, empty)
 				else (#width fm, text "," ^/^ ellDoc)
-		val xs = Array.foldri (fn(_,x,xs) => x::xs) [] (x,0,SOME n)
+		val xs = ArraySlice.toList(ArraySlice.slice(x,0,SOME n))
 	    in
 		SOME(
 		    contain ("[|", "|]") (
