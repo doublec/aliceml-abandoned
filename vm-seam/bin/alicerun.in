@@ -41,10 +41,11 @@ ALICE_HOME=$(abs_path "$ALICE_HOME")
 
 case $(uname) in
     CYGWIN*)
-	PATH="${seamlibdir}:$PATH"
 	ALICE_HOME=`cygpath -m "$ALICE_HOME"`
+	ALICE_DLL_PATH=`cygpath -m "${seamlibdir}"/`
 	;;
     *)
+	ALICE_DLL_PATH="${seamlibdir}"/
 	;;
 esac
 
@@ -69,4 +70,6 @@ export ALICE_HOME ALICE_LOAD
 #(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run alice "$@"; cat) |
 #exec gdb seam
 
-exec seam "${seamlibdir}"/alice "$@"
+exec seam "${ALICE_DLL_PATH}"alice "$@"
+
+
