@@ -20,7 +20,6 @@ final public class PickleInputStream extends java.io.ObjectInputStream {
 
     public PickleInputStream() throws java.io.IOException {
 	super();
-	enableResolveObject(true);
     }
 
     public PickleInputStream(java.io.InputStream in)  throws java.io.IOException {
