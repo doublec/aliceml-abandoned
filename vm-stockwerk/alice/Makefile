@@ -26,7 +26,7 @@ LIB_UTILITY_MODULES = MkRefMap
 LIB_DISTRIBUTION_MODULES = Remote
 
 SOURCES = \
-	Outline.cc Data.cc Guid.cc PrimitiveTable.cc \
+	Data.cc Guid.cc AbstractCode.cc PrimitiveTable.cc \
 	$(PRIMITIVE_MODULES:%=primitives/%.cc) \
 	$(LIB_SYSTEM_MODULES:%=lib/system/Unsafe%.cc) \
 	$(LIB_UTILITY_MODULES:%=lib/utility/Unsafe%.cc) \
