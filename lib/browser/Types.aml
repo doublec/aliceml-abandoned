@@ -61,6 +61,7 @@ struct
      | Concat of {desc : desc, 
 		  parent : node,
 		  index : int,
+                  depth : int,
 		  kids : node array, 
 		  width : int ref,
 		  height : int ref,
