@@ -1,5 +1,6 @@
 import structure TextIO from "x-alice:TextIO.dll"
 import structure Tools  from "x-alice:Tools.dll"
+import structure OS     from "x-alice:OS.dll"
 
 
 open TextIO

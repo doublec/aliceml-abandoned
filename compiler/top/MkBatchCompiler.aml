@@ -223,19 +223,19 @@ functor MakeMain(structure Composer: COMPOSER'
 	    val translate     = translate' o elab
 	    val flatten       = flatten' o translate
 	in
-	    val parseString		= processString parse
-	    val parseFile		= processFile parse
+	    val parseString	= processString parse
+	    val parseFile	= processFile parse
 
 	    val abstractString	= processString abstract
 	    val abstractFile	= processFile abstract
 
-	    val elabString		= processString elab
-	    val elabFile		= processFile elab
+	    val elabString	= processString elab
+	    val elabFile	= processFile elab
 
 	    val translateString	= processString translate
 	    val translateFile	= processFile translate
 
 	    val flattenString	= processString flatten
-	    val flattenFile		= processFile flatten
+	    val flattenFile	= processFile flatten
 	end
     end
