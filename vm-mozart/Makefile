@@ -99,7 +99,7 @@ PREFIX = /opt/stockhausen-devel
 
 VPATH = $(SRCTOP)
 
-ALICEC0 = $(BOOTSTRAPDIR)/alicec
+ALICEC0 = $(BOOTSTRAPDIR)/alicec --profile
 ALICEC1 = STOCKHOME=build1/install build1/install/bin/alicec
 ALICEC2 = STOCKHOME=build2/install build2/install/bin/alicec
 
@@ -123,8 +123,13 @@ MLYACC = ml-yacc
 ## Enumerate All Files Making Up the Source Tree
 ##
 
-NATIVECOMPONENTS = \
+LIBSYSTEMNATIVES0 = \
 	Config IO TextIO OS Unix CommandLine Pickle Debug Socket
+LIBUTILITYNATIVES0 = \
+	MkRefMap
+LIBNATIVES = \
+	$(LIBSYSTEMNATIVES0:%=lib/system/Unsafe%.ozf) \
+	$(LIBUTILITYNATIVES0:%=lib/utility/Unsafe%.ozf)
 
 LIBFUNDAMENTALSOURCES0 = \
 	Pervasive.aml ToplevelTypes.aml ToplevelValues.aml \
@@ -142,20 +147,23 @@ LIBFUNDAMENTALSOURCES0 = \
 	Time.aml Toplevel.aml Vector.aml VectorPair.aml WideChar.aml \
 	WideString.aml Word.aml PACKAGE-sig.aml Package.aml ByNeed.aml
 LIBSYSTEMSOURCES0 = \
-	$(NATIVECOMPONENTS:%=Unsafe%.asig) \
+	$(LIBSYSTEMNATIVES0:%=Unsafe%.asig) \
 	CONFIG-sig.aml IO-sig.aml TEXT_IO-sig.aml OS_FILE_SYS-sig.aml \
 	OS_PROCESS-sig.aml OS-sig.aml UNIX-sig.aml COMMAND_LINE-sig.aml \
 	PICKLE-sig.aml DEBUG-sig.aml SOCKET-sig.aml \
-	$(NATIVECOMPONENTS:%=%.aml)
+	$(LIBSYSTEMNATIVES0:%=%.aml)
 LIBUTILITYSOURCES0 = \
+	$(LIBUTILITYNATIVES0:%=Unsafe%.asig) \
 	ASSERT-sig.aml Assert.aml STAMP-sig.aml MkStamp.aml \
 	GLOBAL_STAMP-sig.aml GlobalStamp.aml URL-sig.aml Url.aml \
 	HASH_KEY-sig.aml LargeIntHashKey.aml StringHashKey.aml \
 	IMP_SET-sig.aml MkHashImpSet.aml IMP_MAP-sig.aml MkHashImpMap.aml \
+	SIMPLE_IMP_MAP-sig.aml \
 	SCOPED_IMP_SET-sig.aml MkScopedImpSet.aml SCOPED_IMP_MAP-sig.aml \
 	MkScopedImpMap.aml LIST_SORT-sig.aml MkListSort.aml \
 	DEPTH_FIRST_SEARCH-sig.aml MkDepthFirstSearch.aml \
-	PRETTY_PRINT-sig.aml PrettyPrint.aml
+	PRETTY_PRINT-sig.aml PrettyPrint.aml \
+	$(LIBUTILITYNATIVES0:%=%.aml)
 LIBRTTSOURCES0 = \
 	NAME-sig.aml Name.aml LABEL-sig.aml Label.aml PATH-sig.aml Path.aml \
 	PathSet.aml PathMap.aml FIXITY-sig.aml Fixity.aml TYPE-sig.aml \
@@ -343,6 +351,9 @@ build1/%.oz: vm-mozart/%.oz
 build1/lib/system/%.asig: lib/system/%.asig Rel2.import
 	cat Rel2.import $< > $@
 
+build1/lib/utility/%.asig: lib/utility/%.asig Rel2.import
+	cat Rel2.import $< > $@
+
 build1/lib/%.aml: lib/%.aml Rel2.import
 	cat Rel2.import $< > $@
 
@@ -420,7 +431,7 @@ build1/%.ozf: build1/%.aml
 BUILD1OZSOURCES = $(filter %.oz, $(BUILD1SOURCES))
 BUILD1OZLINPUTS = \
 	$(BUILD1SOURCES) \
-	$(NATIVECOMPONENTS:%=build1/lib/system/Unsafe%.ozf) \
+	$(LIBNATIVES:%=build1/%) \
 	$(BUILD1OZSOURCES:%.oz=%.ozf) \
 	build1/compiler/CompilerMain.ozf
 
@@ -497,7 +508,10 @@ build2/LinkedVMMain.ozf build2/compiler/LinkedCompilerMain.ozf: build2/%: \
 build2/Default.import: lib/fundamental/Fundamental.import lib/Other.import
 	cat $^ > $@
 
-$(NATIVECOMPONENTS:%=build2/lib/system/Unsafe%.asig): build2/%: build1/%
+$(LIBNATIVES:%=build2/%): build2/%: build1/%
+	cp $< $@
+
+$(LIBNATIVES:%.ozf=build2/%.asig): build2/%: build1/%
 	cp $< $@
 
 ##
@@ -584,7 +598,7 @@ $(BUILD3SOURCES): build3/%: build1/%
 ##
 
 build3-all: build2-install $(BUILD3DIRS) $(BUILD3SOURCES) \
-	$(NATIVECOMPONENTS:%=build3/lib/system/Unsafe%.ozf) \
+	$(LIBNATIVES:%=build3/%) \
 	build3/lib/fundamental/LinkedFundamental.ozf \
 	build3/compiler/LinkedCompilerMain.ozf \
 	build3/compiler/LinkedToplevelMain.ozf \
@@ -598,8 +612,8 @@ build3/lib/fundamental/RTT.ozf: build2/lib/rtt/LinkedRTT.ozf
 build3/%.ozf: build3/%.oz
 	$(OZC) -c $< -o $@
 
-$(NATIVECOMPONENTS:%=build3/lib/system/Unsafe%.ozf): \
-	build3/lib/system/%.ozf: lib/system/%.oz
+$(LIBNATIVES:%=build3/%): \
+	build3/lib/%.ozf: lib/%.oz
 	$(OZC) -c $< -o $@
 
 build3/Default.import: lib/fundamental/Fundamental.import lib/Other.import
