@@ -59,6 +59,8 @@ struct
 
 	    fun updatePoints p = () (* TODO: implementation *)
 
+	    fun startLevel levinf = ArenaWidget.initLevel(arena, levelinf)
+
 	in
 	    Gtk.widgetSetSensitive (menu_gu_item, true);
 	    Gtk.widgetSetSensitive (menu_m_item, false);
@@ -66,7 +68,8 @@ struct
 	    Gtk.widgetShow canvas;
 	    mode := GAME;
 	    assert (Future.isFuture $ Promise.future guiGame) 
-	    do Promise.fulfill (guiGame, {update, updatePoints, gameFinished});
+	    do Promise.fulfill (guiGame, {startLevel, update, 
+					  updatePoints, gameFinished});
 	    turn' := turn;
 	    changeView' := changeView;
 	    giveUp' := giveUp
@@ -136,13 +139,13 @@ struct
 		  if !mode = GAME
 		      then
 			  case Gdk.keyvalName keyval of
-			      "Up"      => (!turn') Protocol.UP
-			    | "Down"    => (!turn') Protocol.DOWN
-			    | "Right"   => (!turn') Protocol.RIGHT
-			    | "Left"    => (!turn') Protocol.LEFT
-			    |  "q"      => (!changeView') Protocol.PREV
-			    |  "w"      => (!changeView') Protocol.NEXT
-			    |   _       => ()
+			        "Up"      => (!turn') Protocol.UP
+			    |   "Down"    => (!turn') Protocol.DOWN
+			    |   "Right"   => (!turn') Protocol.RIGHT
+			    |   "Left"    => (!turn') Protocol.LEFT
+			    | ("q" | "Q") => (!changeView') Protocol.PREV
+			    | ("w" | "W") => (!changeView') Protocol.NEXT
+			    |   _         => ()
 		  else ()
 
 

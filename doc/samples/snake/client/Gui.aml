@@ -44,6 +44,7 @@ struct
 	
     type gui_game = 
 	{
+	 startLevel   : Protocol.level_info -> unit,
 	 update       : (Pos.pos * Protocol.field) list -> unit,
 	 updatePoints : Highscore.points list -> unit,
 	 gameFinished : Highscore.highscore -> unit
