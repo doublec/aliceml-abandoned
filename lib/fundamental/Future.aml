@@ -59,7 +59,7 @@ struct
 		       Hole.fill (c, ()) handle Hole.Hole => ();
 		       raiseIn (t1, Terminate)
 			   handle (Hole.Hole|Terminated) => ());
-		await c; a
+		await (Hole.future c); a
 	    end
     end
 
