@@ -25,6 +25,10 @@ The emulator is the Stockwerker (hard at work), implementing
 the Stockwerk VM (the level below). The emulator can be invoked
 as stow (Eat my code!). Creating the symphony of a complete
 application is the job of the module/component manager: the Komponist.
+Stot invokes the interactive toplevel where you input your program piece
+by piece. And if you are a Depp not smart enough to work out the
+interdependences in your Stockhausen sources yourself you can invoke
+the stodep tool to extract them automatically.
 
 The several browsers will be called Hausers:
 * the Inspector:    Data Hauser (for easier house-keeping of your data)
