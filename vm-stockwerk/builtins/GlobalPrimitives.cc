@@ -15,6 +15,17 @@
 #include "builtins/Primitive.hh"
 #include "builtins/GlobalPrimitives.hh"
 
+word GlobalPrimitives::Future_Future;
+word GlobalPrimitives::Future_await;
+word GlobalPrimitives::General_Chr;
+word GlobalPrimitives::General_Div;
+word GlobalPrimitives::General_Overflow;
+word GlobalPrimitives::General_Size;
+word GlobalPrimitives::General_Subscript;
+word GlobalPrimitives::Hole_Cyclic;
+word GlobalPrimitives::Hole_Hole;
+word GlobalPrimitives::Internal_raise;
+
 void GlobalPrimitives::Init() {
   General_Chr = Primitive::Lookup("General.Chr");
   General_Div = Primitive::Lookup("General.Div");
