@@ -13,7 +13,8 @@
 functor
 import
    Explorer(object one best all)
-   Inspector(inspect) at 'x-alice:/lib/tools/Inspector'
+   InspectorComponent('Inspector$': Inspector)
+   at 'x-alice:/lib/tools/Inspector'
 export
    'Explorer$' : AliceExplorer
 define
@@ -77,7 +78,7 @@ define
    {Explorer.object delete(information all)}
    {Explorer.object add(information
 			proc {$ I X}
-			   {Inspector.inspect '#[]'(I X)}
+			   {Inspector.inspect '#[]'(I X) _}
 			end
 			label: 'Inspect')}
    
