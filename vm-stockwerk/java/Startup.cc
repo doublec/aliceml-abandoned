@@ -99,10 +99,10 @@ void Startup() {
 	       String::FromWordDirect(Properties::rootUrl)->ExportC());
   for (u_int i = std::strlen(buf); i--; )
     if (buf[i] == '.') buf[i] = '/';
-  JavaString *className = JavaString::New(buf);
+  word theClass = classLoader->ResolveClass(JavaString::New(buf));
   JavaString *name = JavaString::New("main");
   JavaString *descriptor = JavaString::New("([Ljava/lang/String;)V");
-  word methodRef = classLoader->ResolveMethodRef(className, name, descriptor);
+  word methodRef = classLoader->ResolveMethodRef(theClass, name, descriptor);
   Thread *thread = Scheduler::NewThread(0, Store::IntToWord(0));
   RunMainWorker::PushFrame(thread, methodRef);
 }

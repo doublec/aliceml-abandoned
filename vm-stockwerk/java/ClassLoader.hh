@@ -40,11 +40,11 @@ public:
 
   word ResolveClass(JavaString *name); // Class or Future
   word ResolveType(JavaString *name); // Type or Future
-  word ResolveFieldRef(JavaString *className, JavaString *name,
+  word ResolveFieldRef(word theClass, JavaString *name,
 		       JavaString *descriptor); // FieldRef or Future
-  word ResolveMethodRef(JavaString *className, JavaString *name,
+  word ResolveMethodRef(word theClass, JavaString *name,
 			JavaString *descriptor); // MethodRef or Future
-  word ResolveInterfaceMethodRef(JavaString *className, JavaString *name,
+  word ResolveInterfaceMethodRef(word theClass, JavaString *name,
 				 JavaString *descriptor);
     // InterfaceMethodRef or Future
 };
