@@ -43,6 +43,7 @@ functor MakeIntermediateGrammar(type info) :>
 	| RowExp    of info * exp field list
 			(* all labels distinct *)
 	| SelExp    of info * lab
+	| VecExp    of info * exp list
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
 	| AdjExp    of info * exp * exp
@@ -72,6 +73,7 @@ functor MakeIntermediateGrammar(type info) :>
 	| TupPat    of info * pat list
 	| RowPat    of info * pat field list * bool (* dots *)
 			(* all labels distinct *)
+	| VecPat    of info * pat list
 	| AsPat     of info * pat * pat
 	| AltPat    of info * pat list
 			(* all patterns bind same ids *)
@@ -115,6 +117,7 @@ functor MakeIntermediateGrammar(type info) :>
       | infoExp(TupExp(i,_))		= i
       | infoExp(RowExp(i,_))		= i
       | infoExp(SelExp(i,_))		= i
+      | infoExp(VecExp(i,_))		= i
       | infoExp(FunExp(i,_,_))		= i
       | infoExp(AppExp(i,_,_))		= i
       | infoExp(AdjExp(i,_,_))		= i
@@ -138,6 +141,7 @@ functor MakeIntermediateGrammar(type info) :>
       | infoPat(RefPat(i,_))		= i
       | infoPat(TupPat(i,_))		= i
       | infoPat(RowPat(i,_,_))		= i
+      | infoPat(VecPat(i,_))		= i
       | infoPat(AsPat(i,_,_))		= i
       | infoPat(AltPat(i,_))		= i
       | infoPat(NegPat(i,_))		= i

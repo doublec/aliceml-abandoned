@@ -42,6 +42,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| RowExp    of info * exp field list
 			(* all labels distinct *)
 	| SelExp    of info * lab
+	| VecExp    of info * exp list
 	| FunExp    of info * id * exp
 	| AppExp    of info * exp * exp
 	| AdjExp    of info * exp * exp
@@ -71,6 +72,7 @@ signature INTERMEDIATE_GRAMMAR =
 	| TupPat    of info * pat list
 	| RowPat    of info * pat field list * bool (* dots *)
 			(* all labels distinct *)
+	| VecPat    of info * pat list
 	| AsPat     of info * pat * pat
 	| AltPat    of info * pat list
 			(* all patterns bind same ids *)
