@@ -762,6 +762,7 @@ AbstractCodeInterpreter::Handle(word exn, Backtrace *trace,
   } else {
     taskStack->PopFrame();
     trace->Enqueue(frame->ToWord());
+    Scheduler::currentBacktrace = trace;
     Scheduler::currentData = exn;
     return Interpreter::RAISE;
   }
@@ -781,7 +782,8 @@ void AbstractCodeInterpreter::DumpFrame(word frameWord) {
   TagVal *function = TagVal::FromWord(concreteCode->Get(0));
   Tuple *coord = Tuple::FromWord(function->Sel(0));
   String *name = String::FromWord(coord->Sel(0));
-  fprintf(stderr, "Alice Function in file %.*s, line %d\n",
+  fprintf(stderr, "Alice %s %.*s, line %d\n",
+	  frame->IsHandlerFrame()? "handler": "function",
 	  (int) name->GetSize(), name->GetValue(),
 	  Store::WordToInt(coord->Sel(1)));
 }
