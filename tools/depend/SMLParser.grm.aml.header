@@ -1,2 +1,2 @@
-import signature TOKEN         from "../lib/ml-yacc/base-sig"
+import signature TOKEN         from "../../lib/ml-yacc/base-sig"
 import signature Parser_TOKENS from "SML_PARSER-sig"

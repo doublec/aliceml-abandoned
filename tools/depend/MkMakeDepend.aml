@@ -11,9 +11,9 @@
  *   $Revision$
  *)
 
-import structure OS          from "../lib/system/OS"
-import structure TextIO      from "../lib/system/TextIO"
-import structure Assert      from "../lib/utility/Assert"
+import structure OS          from "../../lib/system/OS"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure Assert      from "../../lib/utility/Assert"
 import structure Parser      from "SMLParser"
 import structure Error       from "SMLError"
 import functor   MkAnalyzer  from "MkAnalyzer"

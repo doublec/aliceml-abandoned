@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure TextIO from "../lib/system/TextIO"
+import structure TextIO from "../../lib/system/TextIO"
 import signature ERROR  from "SML_ERROR-sig"
 
 structure Error :> ERROR =

@@ -12,8 +12,8 @@
 
 import functor   MkLexer         from "SMLLexer"
 import functor   MkCountPosLexer from "MkCountPosLexer"
-import structure LrParser        from "../lib/ml-yacc/parser2"
-import functor   Join            from "../lib/ml-yacc/join"
+import structure LrParser        from "../../lib/ml-yacc/parser2"
+import functor   Join            from "../../lib/ml-yacc/join"
 import functor   MkLrVals        from "SMLParser.grm"
 import functor   MkLexerError    from "MkLexerError"
 import structure Error           from "SMLError"

@@ -10,9 +10,9 @@
  *   $Revision$
  *)
 
-import structure Config       from "../lib/system/Config"
-import structure OS           from "../lib/system/OS"
-import structure TextIO       from "../lib/system/TextIO"
+import structure Config       from "../../lib/system/Config"
+import structure OS           from "../../lib/system/OS"
+import structure TextIO       from "../../lib/system/TextIO"
 import structure MkMakeDepend from "MkMakeDepend"
 import signature MAKE_DEPEND  from "MAKE_DEPEND-sig"
 

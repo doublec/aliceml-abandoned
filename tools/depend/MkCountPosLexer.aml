@@ -12,8 +12,8 @@
 
 (* Convert a lexer into a lexer which counts soure position. *)
 
-import signature LEXER       from "../lib/ml-yacc/base-sig"
-import structure LrParser    from "../lib/ml-yacc/parser2"
+import signature LEXER       from "../../lib/ml-yacc/base-sig"
+import structure LrParser    from "../../lib/ml-yacc/parser2"
 import signature LEXER_ERROR from "LEXER_ERROR-sig"
 
 

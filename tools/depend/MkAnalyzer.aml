@@ -13,9 +13,9 @@
  *   $Revision$
  *)
 
-import structure IO       from "../lib/system/IO"
-import structure TextIO   from "../lib/system/TextIO"
-import structure Url      from "../lib/system/Url"
+import structure IO       from "../../lib/system/IO"
+import structure TextIO   from "../../lib/system/TextIO"
+import structure Url      from "../../lib/system/Url"
 import signature PARSER   from "PARSER-sig"
 import signature ANALYZER from "ANALYZER-sig"
 

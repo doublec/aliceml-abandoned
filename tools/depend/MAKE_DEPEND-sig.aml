@@ -10,7 +10,7 @@
  *   $Revision$
  *)
 
-import structure OS from "../lib/system/OS"
+import structure OS from "../../lib/system/OS"
 
 signature MAKE_DEPEND =
 sig

@@ -10,8 +10,8 @@
  *   $Revision$
  *)
 
-import structure OS          from "../lib/system/OS"
-import structure CommandLine from "../lib/system/CommandLine"
+import structure OS          from "../../lib/system/OS"
+import structure CommandLine from "../../lib/system/CommandLine"
 import structure MakeDepend  from "MakeDepend"
 
 val _ = OS.Process.exit (MakeDepend.depend (CommandLine.arguments ()))

@@ -11,15 +11,15 @@
  *   $Revision$
  *)
 
-import structure TextIO      from "../lib/system/TextIO"
-import structure IO          from "../lib/system/IO"
-import structure OS          from "../lib/system/OS"
-import structure CommandLine from "../lib/system/CommandLine"
-import structure Url         from "../lib/system/Url"
-import structure Resolver    from "../lib/system/Resolver"
-import structure PrettyPrint from "../lib/utility/PrettyPrint"
-import structure PPInf       from "../lib/rtt/PPInf"
-import structure Inf         from "../lib/rtt/Inf"
+import structure TextIO      from "../../lib/system/TextIO"
+import structure IO          from "../../lib/system/IO"
+import structure OS          from "../../lib/system/OS"
+import structure CommandLine from "../../lib/system/CommandLine"
+import structure Url         from "../../lib/system/Url"
+import structure Resolver    from "../../lib/system/Resolver"
+import structure PrettyPrint from "../../lib/utility/PrettyPrint"
+import structure PPInf       from "../../lib/rtt/PPInf"
+import structure Inf         from "../../lib/rtt/Inf"
 import structure MyComponent from "MyComponent"
 import structure Link        from "Link"
 

@@ -1,1 +1,1 @@
-import signature PARSER_DATA from "../lib/ml-yacc/base-sig"
+import signature PARSER_DATA from "../../lib/ml-yacc/base-sig"

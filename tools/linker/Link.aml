@@ -10,15 +10,15 @@
  *   $Revision$
  *)
 
-import structure Inf                from "../lib/rtt/Inf"
-import structure TextIO             from "../lib/system/TextIO"
-import structure OS                 from "../lib/system/OS"
-import structure IO                 from "../lib/system/IO"
-import structure Url                from "../lib/system/Url"
-import structure Resolver           from "../lib/system/Resolver"
-import structure FromEqHashable     from "../lib/data/HASHABLE-sig"
-import structure MkHashImpMap       from "../lib/data/MkHashImpMap"
-import structure MkDepthFirstSearch from "../lib/utility/MkDepthFirstSearch"
+import structure Inf                from "../../lib/rtt/Inf"
+import structure TextIO             from "../../lib/system/TextIO"
+import structure OS                 from "../../lib/system/OS"
+import structure IO                 from "../../lib/system/IO"
+import structure Url                from "../../lib/system/Url"
+import structure Resolver           from "../../lib/system/Resolver"
+import structure FromEqHashable     from "../../lib/data/HASHABLE-sig"
+import structure MkHashImpMap       from "../../lib/data/MkHashImpMap"
+import structure MkDepthFirstSearch from "../../lib/utility/MkDepthFirstSearch"
 import signature LINK               from "LINK-sig"
 import structure MyComponent        from "MyComponent"
 
