@@ -12,12 +12,12 @@
     display and inspect Alice data structures.
   </P>
   <P>
-    For example,
+    For example, the expression
     <PRE>Inspector.inspect x</PRE>
   </P>
   <P>
-    tells the inspector to show the value <TT>x</TT>.
-    The inspector will popup a window and pretty-print the value <TT>x</TT>.
+    tells the Inspector to show the value <TT>x</TT>.
+    The Inspector will popup a window and pretty-print the value <TT>x</TT>.
     Different types can be assigned different colors to
     make output more readable.
   </P>
