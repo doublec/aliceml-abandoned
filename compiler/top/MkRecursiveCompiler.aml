@@ -271,7 +271,10 @@ functor MakeMain(structure Composer: COMPOSER'
 	      \\t\tDump flat representation with liveness annotations.\n\
 	      \\t--(no-)dump-liveness-analysis-result\n\
 	      \\t\tDump flat representation after liveness analysis.\n\
-	      \\t--(no-)dump-target\n")
+	      \\t--(no-)dump-dead-code-elimination-result\n\
+	      \\t\tDump flat representation after dead code elimination.\n\
+	      \\t--(no-)dump-target\n\
+	      \\t\tDump target code representation.\n")
 
 	fun stoc' ["--replacesign", infile, signfile, outfile] =
 	    (Pickle.replaceSign (Url.fromString infile,
@@ -310,6 +313,8 @@ functor MakeMain(structure Composer: COMPOSER'
 	      Switches.Debug.dumpLivenessAnalysisIntermediate),
 	     ("dump-liveness-analysis-result",
 	      Switches.Debug.dumpLivenessAnalysisResult),
+	     ("dump-dead-code-elimination-result",
+	      Switches.Debug.dumpDeadCodeEliminationResult),
 	     ("dump-target",
 	      Switches.Debug.dumpTarget)]
 

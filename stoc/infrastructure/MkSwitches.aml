@@ -24,6 +24,7 @@ struct
 	val dumpValuePropagationResult		= ref false
 	val dumpLivenessAnalysisIntermediate	= ref false
 	val dumpLivenessAnalysisResult		= ref false
+	val dumpDeadCodeEliminationResult	= ref false
 	val dumpTarget				= ref false
     end
 

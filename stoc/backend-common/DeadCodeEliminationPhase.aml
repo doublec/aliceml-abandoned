@@ -18,122 +18,178 @@ structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
 
 	open I
 
-	fun killSet (stm::_) =
-	    (case infoStm stm of
-		 {liveness = ref (Kill set), ...} => set
-	       | _ => raise Crash.Crash "DeadCodeEliminationPhase.killSet 1")
-	  | killSet nil =
-	    raise Crash.Crash "DeadCodeEliminationPhase.killSet 2"
+	fun killSet body =
+	    case !(#liveness (infoStm (List.hd body))) of
+		Kill set => set
+	      | _ => raise Crash.Crash "DeadCodeEliminationPhase.killSet"
 
-	fun killId (Id (_, stamp, _), set) =
+	fun elim (info: stm_info, body) =
+	    case !(#liveness info) of
+		Kill fromSet =>
+		    let
+			val toSet = killSet body
+		    in
+			StampSet.app (fn stamp =>
+				      StampSet.insert (toSet, stamp)) fromSet
+		    end
+	      | _ => ()
+
+	fun killIdDef (idDef as IdDef (Id (_, stamp, _)), set) =
 	    if StampSet.member (set, stamp) then
-		(StampSet.delete (set, stamp); true)
-	    else false
+		(StampSet.delete (set, stamp); Wildcard)
+	    else idDef
+	  | killIdDef (Wildcard, _) = Wildcard
 
-	fun killIdOpt (idOpt as SOME id, set) =
-	    if killId (id, set) then NONE else idOpt
-	  | killIdOpt (NONE, set) = NONE
+	fun killArgs (OneArg idDef, set) = OneArg (killIdDef (idDef, set))
+	  | killArgs (TupArgs idDefs, set) =
+	    TupArgs (Vector.map (fn idDef => killIdDef (idDef, set)) idDefs)
+	  | killArgs (ProdArgs labelIdDefVec, set) =
+	    ProdArgs (Vector.map (fn (label, idDef) =>
+				  (label, killIdDef (idDef, set)))
+		      labelIdDefVec)
 
-	fun await (info, id) = PrimAppExp (info, "Future.await", [id])
+	fun killConArgs (SOME args, set) = SOME (killArgs (args, set))
+	  | killConArgs (NONE, _) = NONE
 
-	fun liveBody (ValDec (info, id, exp)::rest) =
+	fun deadExp (LitExp (_, _)) = NONE
+	  | deadExp (PrimExp (_, _)) = NONE
+	  | deadExp (NewExp _) = NONE
+	  | deadExp (VarExp (_, _)) = NONE
+	  | deadExp (TagExp (_, _, _)) = NONE
+	  | deadExp (TupExp (_, _)) = NONE
+	  | deadExp (ProdExp (_, _)) = NONE
+	  | deadExp (VecExp (_, _)) = NONE
+	  | deadExp (FunExp (_, _, _, _, _)) = NONE
+	  | deadExp (RefAppExp (_, _)) = NONE
+	  | deadExp exp = SOME exp
+
+	fun liveBody (ValDec (info, idDef, exp)::rest) =
 	    let
-		val set = killSet rest
+		val rest = liveBody rest
 	    in
-		if killId (id, set) then liveBody (EvalStm (info, exp)::rest)
-		else ValDec (info, id, liveExp exp)::liveBody rest
+		case killIdDef (idDef, killSet rest) of
+		    idDef as IdDef _ =>
+			ValDec (info, idDef, liveExp exp)::rest
+		  | Wildcard =>
+			(case deadExp exp of
+			     SOME exp =>
+				 ValDec (info, Wildcard, exp)::rest
+			   | NONE => (elim (info, rest); rest))
 	    end
-	  | liveBody (RecDec (info, idExpList)::rest) =
-	    RecDec (info, List.map (fn (id, exp) =>
-				    (id, liveExp exp)) idExpList)::
+	  | liveBody (RecDec (info, idDefExpVec)::rest) =
+	    RecDec (info, Vector.map (fn (idDef, exp) =>
+				      (idDef, liveExp exp)) idDefExpVec)::
 	    liveBody rest
-	  | liveBody ((stm as RefAppDec (info, id1, id2))::rest) =
-	    (if killId (id1, killSet rest) then await (info, id2) else stm)::
-	    liveBody rest
-	  | liveBody (TupDec (info, idOpts, id)::rest) =
+	  | liveBody (RefAppDec (info, idDef, id)::rest) =
 	    let
-		val set = killSet rest
-		val idOpts =
-		    List.map (fn idOpt => killIdOpt (set, idOpt)) idOpts
+		val rest = liveBody rest
 	    in
-		(if List.all Option.isNone isOpts then await (info, id)
-		 else TupDec (info, idOpts, id))::liveBody rest
+		RefAppDec (info, killIdDef (idDef, killSet rest), id)::rest
 	    end
-	  | liveBody (RowDec (info, labelIdOptList, id)::rest) =
+	  | liveBody (TupDec (info, idDefs, id)::rest) =
 	    let
+		val rest = liveBody rest
 		val set = killSet rest
-		val labelIdOptList =
-		    List.map (fn (label, idOpt) =>
-			      (label, killIdOpt (idOpt, set))) labelIdOptList
+		val idDefs =
+		    Vector.map (fn idDef => killIdDef (idDef, set)) idDefs
 	    in
-		(if List.all (fn (_, id) => Option.isNone id) isOpts then
-		     await (info, id)
-		 else RowDec (info, labelIdOptList, id))::liveBody rest
+		TupDec (info, idDefs, id)::rest
 	    end
-	  | liveBody (EvalStm (info, exp)::rest) =
-	    (case deadExp exp of
-		 SOME exp => EvalStm (info, exp)::liveBody rest
-	       | NONE => liveBody rest)
+	  | liveBody (ProdDec (info, labelIdDefVec, id)::rest) =
+	    let
+		val rest = liveBody rest
+		val set = killSet rest
+		val labelIdDefVec =
+		    Vector.map (fn (label, idDef) =>
+				(label, killIdDef (idDef, set))) labelIdDefVec
+	    in
+		ProdDec (info, labelIdDefVec, id)::rest
+	    end
 	  | liveBody (body as [RaiseStm (_, _)]) = body
 	  | liveBody (body as [ReraiseStm (_, _)]) = body
-	  | liveBody [HandleStm (info, body1, idOpt, body2, body3, stamp)] =
+	  | liveBody [TryStm (info, tryBody, idDef, handleBody)] =
+	    (case liveBody tryBody of
+		 [EndTryStm (_, body)] => body
+	       | tryBody =>
+		     let
+			 val handleBody = liveBody handleBody
+			 val idDef = killIdDef (idDef, killSet handleBody)
+		     in
+			 [TryStm (info, tryBody, idDef, handleBody)]
+		     end)
+	  | liveBody [EndTryStm (info, body)] =
+	    [EndTryStm (info, liveBody body)]
+	  | liveBody [EndHandleStm (info, body)] =
+	    [EndHandleStm (info, liveBody body)]
+	  | liveBody [TestStm (info, id, tests, body)] =
 	    let
-		val body1 = liveBody body1
-		val body2 = liveBody body2
-		val body3 = liveBody body3
-		val idOpt = killIdOpt (idOpt, killSet body2)
+		val tests =
+		    case tests of
+			LitTests tests =>
+			    LitTests (Vector.map
+				      (fn (lit, body) => (lit, liveBody body))
+				      tests)
+		      | TagTests tests =>
+			    TagTests (Vector.map
+				      (fn (label, tag, conArgs, body) =>
+				       let
+					   val body = liveBody body
+					   val set = killSet body
+					   val conArgs =
+					       killConArgs (conArgs, set)
+				       in
+					   (label, tag, conArgs, body)
+				       end) tests)
+		      | ConTests tests =>
+			    ConTests (Vector.map
+				      (fn (con, conArgs, body) =>
+				       let
+					   val body = liveBody body
+					   val set = killSet body
+					   val conArgs =
+					       killConArgs (conArgs, set)
+				       in
+					   (con, conArgs, body)
+				       end) tests)
+		      | VecTests tests =>
+			    VecTests (Vector.map
+				      (fn (idDefs, body) =>
+				       let
+					   val body = liveBody body
+					   val set = killSet body
+				       in
+					   (Vector.map (fn idDef =>
+							killIdDef (idDef, set))
+					    idDefs, body)
+				       end) tests)
+		val body = liveBody body
 	    in
-		case body1 of
-		    _::_ =>
-			[HandleStm (info, body1, idOpt, body2, body3, stamp)]
-		  | nil => body3
+		[TestStm (info, id, tests, body)]
 	    end
-	  | liveBody (body as [EndHandleStm (_, _)]) = body
-	  | liveBody [TestStm (info, id, testBodyList, body)] =
-
-
-	datatype test =
-	    LitTest of lit
-	  | TagTest of label * int
-	  | TagAppTest of label * int * id args
-	  | ConTest of id
-	  | ConAppTest of id * id args
-	  | StaticConTest of stamp
-	  | StaticConAppTest of stamp * id args
-	  | VecTest of id list
-
-	datatype stm =
-	    ...
-	  | TestStm of stm_info * id * (test * body) list * body
-	  | SharedStm of stm_info * body * stamp   (* used at least twice *)
-	  | ReturnStm of stm_info * exp
-	  | IndirectStm of stm_info * body option ref
-	  | ExportStm of stm_info * exp
-	and exp =
-	    LitExp of exp_info * lit
-	  | PrimExp of exp_info * string
-	  | NewExp of exp_info * conArity
-	  | VarExp of exp_info * id
-	  | TagExp of exp_info * label * int * conArity
-	  | ConExp of exp_info * id * conArity
-	  | StaticConExp of exp_info * stamp * conArity
-	  | RefExp of exp_info
-	  | TupExp of exp_info * id list
-	  | RowExp of exp_info * (label * id) list
-	    (* sorted, all labels distinct, no tuple *)
-	  | SelExp of exp_info * label * int
-	  | VecExp of exp_info * id list
-	  | FunExp of exp_info * stamp * funFlag list * id args * body
-	  | PrimAppExp of exp_info * string * id list
-	  | VarAppExp of exp_info * id * id args
-	  | TagAppExp of exp_info * label * int * id args
-	  | ConAppExp of exp_info * id * id args
-	  | StaticConAppExp of exp_info * stamp * id args
-	  | RefAppExp of exp_info * id
-	  | SelAppExp of exp_info * label * int * id
-	  | FunAppExp of exp_info * id * stamp * id args
-	withtype body = stm list
-
+	  | liveBody [SharedStm (info, body, stamp)] =
+	    [SharedStm (info, liveBody body, stamp)]
+	  | liveBody [ReturnStm (info, exp)] =
+	    [ReturnStm (info, liveExp exp)]
+	  | liveBody [IndirectStm (info, ref (SOME body))] =
+	    (elim (info, body); liveBody body)
+	  | liveBody [IndirectStm (_, ref NONE)] =
+	    raise Crash.Crash "DeadCodeEliminationPhase.liveBody 1"
+	  | liveBody [ExportStm (info, exp)] =
+	    [ExportStm (info, liveExp exp)]
+	  | liveBody ((RaiseStm (_, _) | ReraiseStm (_, _) |
+		       TryStm (_, _, _, _) | EndTryStm (_, _) |
+		       EndHandleStm (_, _) | TestStm (_, _, _, _) |
+		       SharedStm (_, _, _) | ReturnStm (_, _) |
+		       IndirectStm (_, _) | ExportStm (_, _))::_::_ | nil) =
+	    raise Crash.Crash "DeadCodeEliminationPhase.liveBody 2"
+	and liveExp (FunExp (info, stamp, funFlags, args, body)) =
+	    let
+		val body = liveBody body
+	    in
+		FunExp (info, stamp, funFlags, killArgs (args, killSet body),
+			body)
+	    end
+	  | liveExp exp = exp
 
 	fun translate () (_, component as (imports, (body, sign))) =
 	    (imports, (liveBody body, sign))

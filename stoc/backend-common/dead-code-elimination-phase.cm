@@ -8,7 +8,6 @@ is
     ../infrastructure/phase.cm
     ../misc/sources.cm
     ../common/id-stamp.cm
-    ../common/prebound.cm
     flat-grammar.cm
 
     DEAD_CODE_ELIMINATION_PHASE.sig

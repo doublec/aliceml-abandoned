@@ -47,10 +47,29 @@ functor MakeBackendCommon(Switches: SWITCHES) =
 			  fun context2 () = ())
 
 	structure Phase3 = MakeLivenessAnalysisPhase(Switches)
-
 	structure BackendCommon =
 	    ComposePhases(structure Phase1 = BackendCommon
 			  structure Phase2 = Phase3
+			  structure Context = EmptyContext
+			  fun context1 () = ()
+			  fun context2 () = ())
+
+	structure Phase4 =
+	    MakeTracingPhase(structure Phase = DeadCodeEliminationPhase
+			     structure Switches = Switches
+			     val name = "Dead Code Elimination")
+	structure Phase4' =
+	    MakeDumpingPhase(structure Phase = Phase4
+			     structure Switches = Switches
+			     val header = "Undead Syntax"
+			     val pp =
+				 PrettyPrint.text
+				 o OutputFlatGrammar.outputComponent
+			     val switch =
+				 Switches.Debug.dumpDeadCodeEliminationResult)
+	structure BackendCommon =
+	    ComposePhases(structure Phase1 = BackendCommon
+			  structure Phase2 = Phase4'
 			  structure Context = EmptyContext
 			  fun context1 () = ()
 			  fun context2 () = ())

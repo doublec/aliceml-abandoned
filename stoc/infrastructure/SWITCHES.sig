@@ -26,6 +26,7 @@ signature SWITCHES =
 	val dumpValuePropagationResult :	bool ref
 	val dumpLivenessAnalysisIntermediate :	bool ref
 	val dumpLivenessAnalysisResult :	bool ref
+	val dumpDeadCodeEliminationResult :	bool ref
 	val dumpTarget :			bool ref
       end
   end

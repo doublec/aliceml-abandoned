@@ -7,10 +7,11 @@ is
 
     ../infrastructure/phase.cm
     flat-grammar.cm
+    output-flat-grammar.cm
     flattening-phase.cm
     value-propagation-phase.cm
     liveness-analysis-phase.cm
-    output-flat-grammar.cm
+    dead-code-elimination-phase.cm
     engine.cm
 
     MakeBackendCommon.sml
