@@ -309,14 +309,23 @@ LINKERSOURCES0 = \
 	MY_COMPONENT-sig.aml MyComponent.aml LINK-sig.aml Link.aml Main.aml
 LINKERSOURCES = $(LINKERSOURCES0:%=linker/%)
 
-ALLSOURCES = $(VMSOURCES) $(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES)
+DEPENDSOURCES0 = \
+	LEXER_ERROR-sig.aml MkLexerError.aml SML_ERROR-sig.aml SMLError.aml \
+	SMLLexer.aml MkCountPosLexer.aml SMLParser.grm.aml SML_PARSER-sig.aml \
+	PARSER-sig.aml SMLParser.aml ANALYZER-sig.aml MkAnalyzer.aml \
+	MAKE_DEPEND-sig.aml MkMakeDepend.aml MakeDepend.aml Main.aml
+DEPENDSOURCES = $(DEPENDSOURCES0:%=depend/%)
+
+ALLSOURCES = \
+	$(VMSOURCES) \
+	$(LIBSOURCES) $(COMPILERSOURCES) $(LINKERSOURCES) $(DEPENDSOURCES)
 
 SOURCEDIRS = \
 	lib lib/fundamental lib/system lib/utility lib/rtt lib/ml-yacc \
 	lib/distribution compiler compiler/infrastructure compiler/common \
 	compiler/top compiler/frontend-common compiler/frontend-sml \
 	compiler/backend-common compiler/backend-mozart \
-	compiler/backend-dotnet compiler/backend-stockwerk linker
+	compiler/backend-dotnet compiler/backend-stockwerk linker depend
 
 ##
 ## Main Target and Generally Applicable Rules
@@ -327,7 +336,7 @@ SOURCEDIRS = \
 .PHONY: build2-all build2-install
 .PHONY: build3-all build3-install
 
-all: build3-all
+all: build3-install
 
 # Build anything using the compiler generated in pass 1
 alicec1-%: build1-install
@@ -461,6 +470,28 @@ build1/compiler/%.aml: compiler/%.aml Rel1.import
 build1/linker/%.aml: linker/%.aml Rel1.import
 	cat Rel1.import $< > $@
 
+build1/depend/%.aml: depend/%.aml Rel1.import
+	cat Rel1.import $< > $@
+
+build1/depend/SMLLexer.lex: depend/SMLLexer.lex
+	cp $< $@
+
+build1/depend/SMLLexer.aml: build1/depend/SMLLexer.lex.sml \
+	depend/SMLLexer.aml.header Rel1.import
+	cat Rel1.import $(SRCTOP)/depend/SMLLexer.aml.header $< > $@
+
+build1/depend/SMLParser.grm: depend/SMLParser.grm
+	cp $< $@
+
+build1/depend/SML_PARSER-sig.aml: build1/depend/SMLParser.grm.sig \
+	Rel1.import depend/SML_PARSER-sig.aml.header fixparser.awk
+	(cat Rel1.import $(SRCTOP)/depend/SML_PARSER-sig.aml.header && \
+	 awk -f $(SRCTOP)/fixparser.awk < $<) > $@ || rm $@
+
+build1/depend/SMLParser.grm.aml: build1/depend/SMLParser.grm.sml Rel1.import \
+	depend/SMLParser.grm.aml.header
+	cat Rel1.import $(SRCTOP)/depend/SMLParser.grm.aml.header $< > $@
+
 build1/%.oz: %.oz
 	cp $< $@
 
@@ -510,7 +541,7 @@ INSTALL2DIRS = build2/install build2/install/bin \
 	build2/install/lib/rtt build2/install/lib/ml-yacc \
 	build2/install/compiler
 INSTALL2TOPFILES = alicec.import
-INSTALL2BINFILES = alicerun alicec alicelink
+INSTALL2BINFILES = alicerun alicec alicelink alicedep
 INSTALL2LIBFILES = rtt/RTT.stc
 INSTALL2COMPILERFILES = 
 INSTALL2FILES = \
@@ -588,7 +619,7 @@ INSTALL3DIRS = build3/install build3/install/bin \
 	build3/install/lib/system build3/install/lib/utility \
 	build3/install/lib/rtt build3/install/lib/ml-yacc \
 	build3/install/compiler build3/install/compiler/top \
-	build3/install/linker
+	build3/install/linker build3/install/depend
 INSTALL3TOPFILES = $(INSTALL2TOPFILES) alice.import
 INSTALL3BINFILES = $(INSTALL2BINFILES) alice
 INSTALL3LIBFILES = \
@@ -599,6 +630,7 @@ INSTALL3COMPILERFILES = $(INSTALL2COMPILERFILES) \
 INSTALL3COMPILERTOPFILES = \
 	SMLToStockwerkRecursiveCompiler.stc
 INSTALL3LINKERFILES = Main.stc
+INSTALL3DEPENDFILES = Main.stc
 INSTALL3FILES = \
 	build3/install/stow.exe \
 	$(INSTALL3TOPFILES:%=build3/install/%) \
@@ -606,7 +638,8 @@ INSTALL3FILES = \
 	$(INSTALL3LIBFILES:%=build3/install/lib/%) \
 	$(INSTALL3COMPILERFILES:%=build3/install/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=build3/install/compiler/top/%) \
-	$(INSTALL3LINKERFILES:%=build3/install/linker/%)
+	$(INSTALL3LINKERFILES:%=build3/install/linker/%) \
+	$(INSTALL3DEPENDFILES:%=build3/install/depend/%)
 
 ##
 ## Creating the Source Tree for Build 3
@@ -673,10 +706,15 @@ build3/compiler/top/LinkedSMLToStockwerkRecursiveCompiler.stc: \
 	--include build3/compiler \
 	build3/compiler/top/SMLToStockwerkRecursiveCompiler -o $@
 
-build3/linker/LinkedMain.stc: build3/linker/Main.stc
+build3/linker/LinkedMain.stc: $(LINKERSOURCES:%.aml=build3/%.stc)
 	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
 	--include build3/linker \
 	build3/linker/Main -o $@
+
+build3/depend/LinkedMain.stc: $(DEPENDSOURCES:%.aml=build3/%.stc)
+	$(ALICELINK2) $(ALICELINK_OPTS) --rewrite build3/=../ \
+	--include build3/depend \
+	build3/depend/Main -o $@
 
 ##
 ## Installing Build 3
@@ -712,6 +750,9 @@ build3/install/compiler/top/%: build3/compiler/top/Linked%
 build3/install/linker/%: build3/linker/Linked%
 	install -c -m 444 $< $@
 
+build3/install/depend/%: build3/depend/Linked%
+	install -c -m 444 $< $@
+
 ########################################################################
 ### THINGS OF A GLOBAL NATURE
 ########################################################################
@@ -737,7 +778,7 @@ depend: $(BUILD1DIRS) $(BUILD2DIRS) $(BUILD3DIRS) \
 INSTALLDIRS = $(PREFIX) $(PREFIX)/bin $(PREFIX)/lib $(PREFIX)/lib/fundamental \
 	$(PREFIX)/lib/system $(PREFIX)/lib/utility $(PREFIX)/lib/rtt \
 	$(PREFIX)/lib/ml-yacc $(PREFIX)/compiler $(PREFIX)/compiler/top \
-	$(PREFIX)/linker
+	$(PREFIX)/linker $(PREFIX)/depend
 INSTALLFILES = \
 	$(PREFIX)/stow.exe \
 	$(INSTALL3TOPFILES:%=$(PREFIX)/%) \
@@ -745,7 +786,8 @@ INSTALLFILES = \
 	$(INSTALL3LIBFILES:%=$(PREFIX)/lib/%) \
 	$(INSTALL3COMPILERFILES:%=$(PREFIX)/compiler/%) \
 	$(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%) \
-	$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%)
+	$(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%) \
+	$(INSTALL3DEPENDFILES:%=$(PREFIX)/depend/%)
 
 install: build3-install $(INSTALLDIRS) $(INSTALLFILES)
 
@@ -772,6 +814,10 @@ $(INSTALL3COMPILERTOPFILES:%=$(PREFIX)/compiler/top/%): $(PREFIX)/%: \
 	install -c -m 444 $< $@
 
 $(INSTALL3LINKERFILES:%=$(PREFIX)/linker/%): $(PREFIX)/%: \
+	build3/install/%
+	install -c -m 444 $< $@
+
+$(INSTALL3DEPENDFILES:%=$(PREFIX)/depend/%): $(PREFIX)/%: \
 	build3/install/%
 	install -c -m 444 $< $@
 
