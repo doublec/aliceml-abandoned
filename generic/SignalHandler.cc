@@ -86,6 +86,9 @@ static SigHandler sigHandlers[] =  {
 #if HAVE_SIGNAL && defined(SIGUSR2)
   { SIGUSR2, 0, Store::IntToWord(0) },
 #endif
+#if HAVE_SIGNAL && defined(SIGTSTP)
+  { SIGTSTP, 0, Store::IntToWord(0) },
+#endif
   { SIGLAST, 0, Store::IntToWord(0) }
 };
 
