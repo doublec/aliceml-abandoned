@@ -76,7 +76,7 @@ structure CodeStore :> CODE_STORE =
 	fun defineClass (stamp, extends, implements) =
 	    let
 		val classAttr = SOME (extends, implements)
-		val constructor =
+		val ctor =
 		    Method (".ctor", (Public, Instance),
 			    nil, VoidTy, (nil, false),
 			    [Ldarg 0,
@@ -89,12 +89,12 @@ structure CodeStore :> CODE_STORE =
 			    Crash.crash "CodeStore.defineClass"
 			else
 			    (classAttrRef := classAttr;
-			     classDeclsRef := constructor::(!classDeclsRef))
+			     classDeclsRef := ctor::(!classDeclsRef))
 		  | NONE =>
 			Map.insertDisjoint (!classes, stamp,
 					    (ref classAttr,
 					     ScopedMap.copy preboundScope,
-					     ref [constructor]))
+					     ref [ctor]))
 	    end
 
 	fun defineMethod (stamp, id, args) =
