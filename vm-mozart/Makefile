@@ -576,7 +576,7 @@ $(NATIVECOMPONENTS:%=build3/lib/system/%.ozf): build3/%.ozf: \
 build3/lib/system/Unix.ozf: build3/lib/system/TextIO.ozf
 
 #--** --rtt-level=core is a problem for stoc/frontend-sml/MkParsingPhase.aml
-build3/lib/fundamental/%.ozf: build3/lib/%.aml
+build3/lib/fundamental/%.ozf: build3/lib/fundamental/%.aml
 	$(STOC2) $(STOC_OPTS) --rtt-level=full -c $< -o $@
 
 build3/%.ozf: build3/%.aml
