@@ -23,7 +23,6 @@ then
 else
    prefix=`pwd`/install
 fi
-echo Trying to install Alice-on-Seam to $prefix...
 
 case `uname -s` in
     CYGWIN*)
@@ -38,6 +37,9 @@ case `uname -s` in
 	CC=gcc
 	;;
 esac
+
+echo Trying to install Alice-on Seam to $prefix for platform $SUPPORTPLATFORM...
+
 
 ##
 ## Build Support Libraries: Lightning
