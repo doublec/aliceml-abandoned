@@ -254,6 +254,10 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "ProdExp", 2);
 	     outputVector (outputPair (outputLabel, outputIdRef))
 			  (q, labelIdRefVec); outputExpInfo (q, info))
+	  | outputExp (q, PolyProdExp (info, labelIdRefVec)) =
+	    (outputTuple (q, "PolyProdExp", 2);
+	     outputVector (outputPair (outputLabel, outputIdRef))
+			  (q, labelIdRefVec); outputExpInfo (q, info))
 	  | outputExp (q, VecExp (info, idRefs)) =
 	    (outputTuple (q, "VecExp", 2);
 	     outputVector outputIdRef (q, idRefs); outputExpInfo (q, info))
@@ -269,14 +273,13 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VarAppExp (info, idRef, args)) =
 	    (outputTuple (q, "VarAppExp", 3); outputArgs outputIdRef (q, args);
 	     outputIdRef (q, idRef); outputExpInfo (q, info))
-	  | outputExp (q, SelAppExp (info, prod, label, n, idRef)) =
-	    (outputTuple (q, "SelAppExp", 5); outputIdRef (q, idRef);
+	  | outputExp (q, SelExp (info, prod, label, n, idRef)) =
+	    (outputTuple (q, "SelExp", 5); outputIdRef (q, idRef);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
 	     outputExpInfo (q, info))
-	  | outputExp (q, LazySelAppExp (info, prod, label, n, idRef)) =
-	    (outputTuple (q, "LazySelAppExp", 5); outputIdRef (q, idRef);
-	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
-	     outputExpInfo (q, info))
+	  | outputExp (q, LazyPolySelExp (info, label, idRef)) =
+	    (outputTuple (q, "LazyPolySelExp", 3); outputIdRef (q, idRef);
+	     outputLabel (q, label); outputExpInfo (q, info))
 	  | outputExp (q, FunAppExp (info, idRef, stamp, args)) =
 	    (outputTuple (q, "FunAppExp", 4); outputArgs outputIdRef (q, args);
 	     outputStamp (q, stamp); outputIdRef (q, idRef);

@@ -166,6 +166,12 @@ define
 	 'ProdExp'(Info
 		   {Record.map LabelIdRefVec
 		    fun {$ Label#IdRef} {TrLabel Label}#{TrIdRef IdRef} end})
+      [] 'PolyProdExp'(Info LabelIdRefVec) then
+	 'PolyProdExp'(Info
+		       {Record.map LabelIdRefVec
+			fun {$ Label#IdRef}
+			   {TrLabel Label}#{TrIdRef IdRef}
+			end})
       [] 'VecExp'(Info IdRefs) then 'VecExp'(Info {Record.map IdRefs TrIdRef})
       [] 'FunExp'(Info Stamp Flags Args Body) then
 	 'FunExp'(Info Stamp {Map Flags TrFunFlag}
@@ -175,10 +181,10 @@ define
 		      {Record.map IdRefs TrIdRef})
       [] 'VarAppExp'(Info IdRef Args) then
 	 'VarAppExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
-      [] 'SelAppExp'(Info Prod Label N IdRef) then
-	 'SelAppExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
-      [] 'LazySelAppExp'(Info Prod Label N IdRef) then
-	 'LazySelAppExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
+      [] 'SelExp'(Info Prod Label N IdRef) then
+	 'SelExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
+      [] 'LazyPolySelExp'(Info Label IdRef) then
+	 'LazyPolySelExp'(Info {TrLabel Label} {TrIdRef IdRef})
       [] 'FunAppExp'(Info IdRef Stamp Args) then
 	 'FunAppExp'(Info {TrIdRef IdRef} Stamp {TrArgs Args TrIdRef})
       [] 'FailExp'(Info) then 'FailExp'(Info)
