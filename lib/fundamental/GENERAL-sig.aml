@@ -32,6 +32,7 @@ sig
     exception Size
     exception Span
     exception Subscript
+    exception Unordered						(**)
 
     val exnName :	exn -> string
     val exnMessage :	exn -> string
