@@ -16,9 +16,22 @@
 
 #include "java/Data.hh"
 
+ExceptionTableEntry *ExceptionTableEntry::New(u_int startPC, u_int endPC,
+					      u_int handlerPC,
+					      ClassInfo *catchType) {
+    ExceptionTableEntry *entry = NewInternal(startPC, endPC, handlerPC);
+    entry->InitArg(CATCH_TYPE_POS, catchType->ToWord());
+    return entry;
+}
+
 ClassInfo *ClassInfo::New(u_int accessFlags, JavaString *name,
 			  ClassInfo *super, Array *interfaces, Array *fields,
 			  Array *methods, ConstantPool *constantPool) {
+  Assert(((accessFlags & ACC_INTERFACE) == 0 &&
+	  ((accessFlags & ACC_FINAL) != 0) +
+	  ((accessFlags & ACC_ABSTRACT) != 0) <= 1) ||
+	 (accessFlags & ACC_ABSTRACT) != 0);
+  Assert(accessFlags & ACC_SUPER); // else not supported by this implementation
   Block *b = Store::AllocBlock(JavaLabel::ClassInfo, SIZE);
   b->InitArg(ACCESS_FLAGS_POS, accessFlags);
   b->InitArg(NAME_POS, name->ToWord());

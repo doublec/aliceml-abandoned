@@ -18,6 +18,7 @@
 #pragma interface "java/Data.hh"
 #endif
 
+#include <cstring>
 #include "generic/Closure.hh"
 
 typedef unsigned short u_wchar; //--**
@@ -39,6 +40,7 @@ public:
 
 static const word null = Store::IntToWord(0);
 
+class ClassInfo;
 class Class;
 class ConstantPool;
 
@@ -49,21 +51,41 @@ public:
   u_wchar *GetBase() {
     return reinterpret_cast<u_wchar *>(Chunk::GetBase());
   }
+  u_int GetLength() {
+    return GetSize() / sizeof(u_wchar);
+  }
 
   static JavaString *New(u_int length) {
     return static_cast<JavaString *>
       (Store::AllocChunk(sizeof(u_wchar) * length));
   }
-  static JavaString *New(u_wchar *s, u_int length) {
+  static JavaString *New(const u_wchar *s, u_int length) {
     JavaString *string = New(length);
     std::memcpy(string->GetBase(), s, length * sizeof(u_wchar));
     return string;
+  }
+  static JavaString *New(const char *s, u_int length) {
+    JavaString *string = New(length);
+    u_wchar *p = string->GetBase();
+    for (u_int i = 0; i < length; i++)
+      p[i] = s[i];
+    return string;
+  }
+  static JavaString *New(const char *s) {
+    return New(s, std::strlen(s));
   }
   static JavaString *FromWord(word x) {
     return static_cast<JavaString *>(Chunk::FromWord(x));
   }
   static JavaString *FromWordDirect(word x) {
     return static_cast<JavaString *>(Chunk::FromWordDirect(x));
+  }
+
+  bool Equals(JavaString *string) {
+    u_int length = GetLength();
+    if (string->GetLength() != length) return false;
+    return !std::memcmp(GetBase(), string->GetBase(), 
+			length * sizeof(u_wchar));
   }
 };
 
@@ -171,18 +193,39 @@ protected:
     ACCESS_FLAGS_POS, // access_flags
     NAME_POS, // JavaString
     DESCRIPTOR_POS, // JavaString
+    HAS_CONSTANT_VALUE_POS, // bool
+    CONSTANT_VALUE_POS, // word
     SIZE
   };
-public:
-  using Block::ToWord;
-
-  static FieldInfo *New(u_int accessFlags, JavaString *name,
-			JavaString *descriptor) {
+private:
+  static FieldInfo *NewInternal(u_int accessFlags, JavaString *name,
+				JavaString *descriptor) {
+    Assert(((accessFlags & ACC_PUBLIC) != 0) +
+	   ((accessFlags & ACC_PRIVATE) != 0) +
+	   ((accessFlags & ACC_PROTECTED) != 0) <= 1);
+    Assert(((accessFlags & ACC_FINAL) != 0) +
+	   ((accessFlags & ACC_VOLATILE) != 0) <= 1);
     Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
     b->InitArg(ACCESS_FLAGS_POS, accessFlags);
     b->InitArg(NAME_POS, name->ToWord());
     b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
     return static_cast<FieldInfo *>(b);
+  }
+public:
+  using Block::ToWord;
+
+  static FieldInfo *New(u_int accessFlags, JavaString *name,
+			JavaString *descriptor) {
+    FieldInfo *fieldInfo = NewInternal(accessFlags, name, descriptor);
+    fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, false);
+    return fieldInfo;
+  }
+  static FieldInfo *New(u_int accessFlags, JavaString *name,
+			JavaString *descriptor, word constantValue) {
+    FieldInfo *fieldInfo = NewInternal(accessFlags, name, descriptor);
+    fieldInfo->InitArg(HAS_CONSTANT_VALUE_POS, true);
+    fieldInfo->InitArg(CONSTANT_VALUE_POS, constantValue);
+    return fieldInfo;
   }
 };
 
@@ -195,6 +238,26 @@ protected:
     CATCH_TYPE_POS, // Class | int(0)
     SIZE
   };
+private:
+  static ExceptionTableEntry *NewInternal(u_int startPC, u_int endPC,
+					  u_int handlerPC) {
+    Block *b = Store::AllocBlock(JavaLabel::ExceptionTableEntry, SIZE);
+    b->InitArg(START_PC_POS, startPC);
+    b->InitArg(END_PC_POS, endPC);
+    b->InitArg(HANDLER_PC_POS, handlerPC);
+    return static_cast<ExceptionTableEntry *>(b);
+  }
+public:
+  using Block::ToWord;
+
+  static ExceptionTableEntry *New(u_int startPC, u_int endPC,
+				  u_int handlerPC) {
+    ExceptionTableEntry *entry = NewInternal(startPC, endPC, handlerPC);
+    entry->InitArg(CATCH_TYPE_POS, 0);
+    return entry;
+  }
+  static ExceptionTableEntry *New(u_int startPC, u_int endPC,
+				  u_int handlerPC, ClassInfo *catchType);
 };
 
 class DllExport JavaByteCode: private Block {
@@ -206,6 +269,18 @@ protected:
     EXCEPTION_TABLE_POS, // Array(ExceptionTableEntry)
     SIZE
   };
+public:
+  using Block::ToWord;
+
+  static JavaByteCode *New(u_int maxStack, u_int maxLocals, Chunk *code,
+			   Array *exceptionTable) {
+    Block *b = Store::AllocBlock(JavaLabel::JavaByteCode, SIZE);
+    b->InitArg(MAX_STACK_POS, maxStack);
+    b->InitArg(MAX_LOCALS_POS, maxLocals);
+    b->InitArg(CODE_POS, code->ToWord());
+    b->InitArg(EXCEPTION_TABLE_POS, exceptionTable->ToWord());
+    return static_cast<JavaByteCode *>(b);
+  }
 };
 
 class DllExport MethodInfo: private Block {
@@ -229,17 +304,35 @@ protected:
     BYTE_CODE_POS, // JavaByteCode | int(0)
     SIZE
   };
+private:
+  static MethodInfo *NewInternal(u_int accessFlags, JavaString *name,
+				 JavaString *descriptor) {
+    Assert(((accessFlags & ACC_PUBLIC) != 0) +
+	   ((accessFlags & ACC_PRIVATE) != 0) +
+	   ((accessFlags & ACC_PROTECTED) != 0) <= 1);
+    Assert((accessFlags & ACC_ABSTRACT) == 0 ||
+	   (accessFlags & (ACC_FINAL|ACC_NATIVE|ACC_PRIVATE|ACC_STATIC|
+			   ACC_STRICT|ACC_SYNCHRONIZED)) == 0);
+    Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
+    b->InitArg(ACCESS_FLAGS_POS, accessFlags);
+    b->InitArg(NAME_POS, name->ToWord());
+    b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
+    return static_cast<MethodInfo *>(b);
+  }
 public:
   using Block::ToWord;
 
   static MethodInfo *New(u_int accessFlags, JavaString *name,
 			 JavaString *descriptor) {
-    Block *b = Store::AllocBlock(JavaLabel::FieldInfo, SIZE);
-    b->InitArg(ACCESS_FLAGS_POS, accessFlags);
-    b->InitArg(NAME_POS, name->ToWord());
-    b->InitArg(DESCRIPTOR_POS, descriptor->ToWord());
-    b->InitArg(BYTE_CODE_POS, 0); //--**
-    return static_cast<MethodInfo *>(b);
+    MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
+    methodInfo->InitArg(BYTE_CODE_POS, 0);
+    return methodInfo;
+  }
+  static MethodInfo *New(u_int accessFlags, JavaString *name,
+			 JavaString *descriptor, JavaByteCode *byteCode) {
+    MethodInfo *methodInfo = NewInternal(accessFlags, name, descriptor);
+    methodInfo->InitArg(BYTE_CODE_POS, byteCode->ToWord());
+    return methodInfo;
   }
 };
 

@@ -57,8 +57,12 @@ private:
   Array *ParseInterfaces(u_int &offset, ConstantPool *constantPool);
   Array *ParseFields(u_int &offset, ConstantPool *constantPool);
   FieldInfo *ParseFieldInfo(u_int &offset, ConstantPool *constantPool);
+  bool ParseFieldAttributes(u_int &offset, ConstantPool *constantPool,
+			    word &constantValue);
   Array *ParseMethods(u_int &offset, ConstantPool *constantPool);
   MethodInfo *ParseMethodInfo(u_int &offset, ConstantPool *constantPool);
+  bool ParseMethodAttributes(u_int &offset, ConstantPool *constantPool,
+			     JavaByteCode *&byteCode);
   void SkipAttributes(u_int &offset);
 public:
   using Chunk::ToWord;
