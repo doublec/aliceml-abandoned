@@ -10,7 +10,7 @@
 #OPTS = $(COMPS:%=-D%_DISABLE_DEPRECATED)
 OPTS =
 
-PLATFORM := $(shell ./platform.sh smlnj)
+PLATFORM := $(shell ../platform.sh smlnj)
 ifeq ("$(PLATFORM)", "")
   $(error Unknown platform)
 endif
