@@ -34,6 +34,5 @@ signature UNSAFE_VALUE_COMPONENT =
 		val projConstructed: 'ext_value * Label.t vector * int -> 'value
 		val projConstructedTuple: 'ext_value * int * int -> 'value
 		val conName: 'con_value -> Name.t
-		val conType: 'con_value -> Type.t
 	    end
     end
