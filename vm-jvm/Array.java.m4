@@ -250,6 +250,9 @@ final public class Array implements DMLValue {
     }
     /** <code>val array : (int * 'a) -> 'a array </code>*/
     final public static ArraY array = new ArraY();
+    static {
+	Builtin.builtins.put("Array.array",array);
+    }
 
     _BUILTIN(FromList) {
 	_APPLY(val) {
