@@ -121,8 +121,8 @@ libs-mozart:
 	(cd lib/distribution && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd lib/gtk && autoconf && \
 	 ./configure --with-gtk-canvas-dir=/opt/gtk-canvas) || exit 1 ;\
-	#(cd lib/gtk && make depend) || exit 1
 	(cd lib/gtk && make all PREFIX=$(PREFIX) install) || exit 1
+	#(cd lib/gtk && make depend) || exit 1
 
 
 ################################################################################
