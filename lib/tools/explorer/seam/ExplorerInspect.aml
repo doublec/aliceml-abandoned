@@ -43,7 +43,9 @@ structure ExplorerInspect =
 				 Array.fromVector
 				 #[Inspector.simple(descr,
 						    (rep,
-						     Inspector.intStyle))])
+						     Inspector.intStyle)),
+				   Inspector.simple(descr,
+						    ("", Inspector.defaultStyle))])
         in 
 	    Inspector.concat{prefix=
 			     [("intvar{|",
