@@ -251,7 +251,7 @@ struct
 		val w       = #width fm
 		val (n',ds) = if n <= w then (n,[]) else (w,[ellDoc])
 		val fm'     = elem fm
-		val docs'   = Vector.foldli
+		val docs'   = Vector.foldri
 				(fn(i,t',docs) =>
 				    ppVal' t' fm' (unsafe_projTuple(x,n,i))
 				    :: docs
