@@ -183,6 +183,5 @@ void PrimitiveTable::XCONCAT(Register,WordN)() {
   Register(XSTRINGIFY(WordN)".orb", Word_orb, 2);
   Register(XSTRINGIFY(WordN)".toInt", Word_toInt, 1);
   Register(XSTRINGIFY(WordN)".toIntX", Word_toIntX, 1);
-  Register(XSTRINGIFY(WordN)".wordSize", Store::IntToWord(WORD_PRECISION));
   Register(XSTRINGIFY(WordN)".xorb", Word_xorb, 2);
 }
