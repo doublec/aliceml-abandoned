@@ -18,6 +18,10 @@ signature INSPECTOR_COMPONENT =
 		val inspect : 'a -> unit
 		val inspectN : int * 'a -> unit
 		val configure : 'a -> unit
+
+		functor InspectType(type t): any
+		functor InspectSig(signature S): any
+		functor Inspect(signature S structure X: S): any
 	    end
 
 	structure Inspector : INSPECTOR

@@ -235,7 +235,10 @@ define
    end
    
    %% Create Inspector Interface
-   AliceInspector = 'Inspector'('inspect'   : InspectFun
-				'inspectN'  : InspectNFun
-				'configure' : ConfigureFun)
+   AliceInspector = 'Inspector'('inspect'      : InspectFun
+				'inspectN'     : InspectNFun
+				'InspectType$' : InspectFun
+				'InspectSig$'  : InspectFun
+				'Inspect$'     : fun {$ S X} {InspectFun X} end
+				'configure'    : ConfigureFun)
 end
