@@ -103,6 +103,7 @@
 
 #define DECLARE_CLOSURE(closure, x) DECLARE_BLOCKTYPE(Closure, closure, x)
 #define DECLARE_TUPLE(tuple, x) DECLARE_BLOCKTYPE(Tuple, tuple, x)
+#define DECLARE_STRING(string, x) DECLARE_BLOCKTYPE(String, string, x)
 
 #define DECLARE_HASH_TABLE(hashtable, x) \
   DECLARE_BLOCKTYPE(HashTable, hashtable, x)
