@@ -26,7 +26,7 @@ struct
     val modlab_fixity	= modlab "Fixity"
     structure Fixity	= Fixity				(* verify *)
 
-    val typlab_fix	= typlab "t"
+    val typlab_fix	= typlab "fix"
     datatype fix	= datatype Fixity.fix			(* verify *)
     val typlab_assoc	= typlab "assoc"
     datatype assoc	= datatype Fixity.assoc			(* verify *)

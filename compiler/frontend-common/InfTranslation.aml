@@ -31,8 +31,8 @@ struct
 
     val typlab_kind	= typlab "kind"
     type kind		= Inf.kind				(* verify *)
-    val typlab_inf	= typlab "t"
-    type inf		= Inf.t					(* verify *)
+    val typlab_inf	= typlab "inf"
+    type inf		= Inf.inf				(* verify *)
     val typlab_sig	= typlab "sign"
     type sign		= Inf.sign				(* verify *)
     val typlab_mod	= typlab "mod"

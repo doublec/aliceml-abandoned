@@ -26,8 +26,8 @@ struct
     val modlab_path	= modlab "Path"
     structure Path	= Path					(* verify *)
 
-    val typlab_path	= typlab "t"
-    type path		= Path.t				(* verify *)
+    val typlab_path	= typlab "path"
+    type path		= Path.path				(* verify *)
 
   (* Operations *)
 
