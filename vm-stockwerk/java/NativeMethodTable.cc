@@ -32,13 +32,16 @@ void NativeMethodTable::Init() {
   java_lang_Object(JavaString::New("java/lang/Object"));
   java_lang_Throwable(JavaString::New("java/lang/Throwable"));
   java_lang_System(JavaString::New("java/lang/System"));
+  java_lang_ClassLoader(JavaString::New("java/lang/ClassLoader"));
   java_lang_Float(JavaString::New("java/lang/Float"));
   java_lang_Double(JavaString::New("java/lang/Double"));
   java_lang_StrictMath(JavaString::New("java/lang/StrictMath"));
   java_io_FileDescriptor(JavaString::New("java/io/FileDescriptor"));
   java_io_FileOutputStream(JavaString::New("java/io/FileOutputStream"));
+  java_io_ObjectStreamClass(JavaString::New("java/io/ObjectStreamClass"));
   java_security_AccessController
     (JavaString::New("java/security/AccessController"));
+  sun_reflect_Reflection(JavaString::New("sun/reflect/Reflection"));
 }
 
 void NativeMethodTable::Register(JavaString *className, JavaString *name,
