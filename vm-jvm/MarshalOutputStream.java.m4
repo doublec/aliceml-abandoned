@@ -3,6 +3,9 @@ package sun.rmi.server;
 import java.io.*;
 import java.rmi.Remote;
 import sun.rmi.transport.Utils;
+import java.rmi.server.RemoteStub;
+import sun.rmi.transport.ObjectTable;
+import sun.rmi.transport.Target;
 import java.util.Hashtable;
 
 import de.uni_sb.ps.dml.runtime.PickleClassLoader;
@@ -117,12 +120,15 @@ public class MarshalOutputStream extends ObjectOutputStream
      * that need to be serialized as proxy objects.  RemoteProxy.getProxy
      * is called to check for and find the stub.
      */
-//      protected Object replaceObject(Object obj) throws IOException {
-//  	if (obj instanceof Remote) {
-//  	    obj = RemoteProxy.getProxy((Remote)obj);
-//  	}
-//  	return obj;
-//      }
+    protected Object replaceObject(Object obj) throws IOException {
+	if ((obj instanceof Remote) && !(obj instanceof RemoteStub)) {
+	    Target target = ObjectTable.getTarget((Remote) obj);
+	    if (target != null) {
+		return target.getStub();
+	    }
+	}
+	return obj;
+    }
 
     /**
      * annotateClass is extended to serialize a location from which
