@@ -10,6 +10,34 @@
  *   $Revision$
  *)
 
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure StampMap
+from "../common/StampMap"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    signature DEAD_CODE_ELIMINATION_PHASE
+from "DEAD_CODE_ELIMINATION_PHASE-sig"
+
 structure DeadCodeEliminationPhase :> DEAD_CODE_ELIMINATION_PHASE =
     struct
 	structure C = EmptyContext

@@ -10,6 +10,26 @@
  *   $Revision$
  *)
 
+import
+    structure Source
+from "../infrastructure/Source"
+
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure EmptyContext
+from "../infrastructure/EmptyContext"
+
+import
+    signature FLAT_GRAMMAR
+from "FLAT_GRAMMAR-sig"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
 signature DEAD_CODE_ELIMINATION_PHASE =
     sig
 	structure C: CONTEXT = EmptyContext

@@ -10,6 +10,18 @@
  *   $Revision$
  *)
 
+import
+    signature CONTEXT
+from "../infrastructure/CONTEXT-sig"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
 signature ENGINE =
     sig
 	structure C: CONTEXT

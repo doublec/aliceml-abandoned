@@ -10,14 +10,29 @@
  *   $Revision$
  *)
 
-functor MakeLabelSort(type 'a t val get: 'a t -> Label.t) :> LABEL_SORT
-    where type 'a t = 'a t =
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure MkListSort
+from "../misc/MkListSort"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    signature LABEL_SORT
+from "LABEL_SORT-sort"
+
+functor MkLabelSort(type 'a t val get: 'a t -> Label.t) : LABEL_SORT =
     struct
 	type 'a t = 'a t
 
 	structure Sort =
-	    MakeSort (type 'a t = 'a t
-		      fun compare (x1, x2) = Label.compare (get x1, get x2))
+	    MkListSort (type 'a t = 'a t
+			fun compare (x1, x2) = Label.compare (get x1, get x2))
 
 	datatype arity =
 	    Tup of int

@@ -10,6 +10,59 @@
  *   $Revision$
  *)
 
+import
+    functor MkHashImpSet
+from "../misc/MkHashImpSet"
+
+import
+    structure Crash
+from "../infrastructure/Crash"
+
+import
+    structure Stamp
+from "../common/Stamp"
+
+import
+    structure StampSet
+from "../common/StampSet"
+
+import
+    structure Name
+from "../common/Name"
+
+import
+    structure Label
+from "../common/Label"
+
+import
+    structure Path
+from "../common/Path"
+
+import
+    structure Type
+from "../common/Type"
+
+import
+    structure IntermediateGrammar
+from "../common/IntermediateGrammar"
+
+import
+    structure PervasiveType
+from "../common/PervasiveType"
+
+import
+    structure Arity
+from "Arity"
+
+import
+    structure FlatGrammar
+from "FlatGrammar"
+
+import
+    signature INTERMEDIATE_AUX
+from "INTERMEDIATE_AUX-sig"
+
+
 structure IntermediateAux :> INTERMEDIATE_AUX =
     struct
 	structure I = IntermediateGrammar
@@ -255,10 +308,10 @@ structure IntermediateAux :> INTERMEDIATE_AUX =
 	    end
 
 	structure IdSet =
-	    MakeHashImpSet(type t = O.id
-			   fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
-			   fun equals (O.Id (_, stamp, _),
-				       O.Id (_, stamp', _)) = stamp = stamp')
+	    MkHashImpSet(type t = O.id
+			 fun hash (O.Id (_, stamp, _)) = Stamp.hash stamp
+			 fun equals (O.Id (_, stamp, _),
+				     O.Id (_, stamp', _)) = stamp = stamp')
 
 	fun usedVarsId (id, set, used) =
 	    if IdSet.member (set, id) then IdSet.insert (used, id) else ()
