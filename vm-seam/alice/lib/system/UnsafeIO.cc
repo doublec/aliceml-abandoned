@@ -43,6 +43,7 @@
 #include "alice/primitives/Authoring.hh"
 
 static word IoConstructor;
+static word ClosedStreamConstructor;
 
 //--** to be done: set cause to something sensible
 #define RAISE_IO(cause, function, name)					\
@@ -69,9 +70,16 @@ protected:
   static BlockLabel IOStreamTypeToBlockLabel(IOStreamType type) {
     return static_cast<BlockLabel>(static_cast<int>(type));
   }
+
+  static IOStream *New(IOStreamType type, std::FILE *file, String *name) {
+    Block *p = Store::AllocBlock(IOStreamTypeToBlockLabel(type), SIZE);
+    p->InitArg(STREAM_POS, Store::UnmanagedPointerToWord(file));
+    p->InitArg(NAME_POS, name->ToWord());
+    return static_cast<IOStream *>(p);
+  }
 public:
   using Block::ToWord;
-  // IOStream Accessors
+
   std::FILE *GetFile() {
     return static_cast<std::FILE *>
       (Store::DirectWordToUnmanagedPointer(GetArg(STREAM_POS)));
@@ -79,22 +87,22 @@ public:
   String *GetName() {
     return String::FromWordDirect(GetArg(NAME_POS));
   }
-  // IOStream Constructor
-  static IOStream *New(IOStreamType type, std::FILE *file, String *name) {
-    Block *p = Store::AllocBlock(IOStreamTypeToBlockLabel(type), SIZE);
-    p->InitArg(STREAM_POS, Store::UnmanagedPointerToWord(file));
-    p->InitArg(NAME_POS, name->ToWord());
-    return static_cast<IOStream *>(p);
+
+  void Close() {
+    FILE *file = GetFile();
+    if (file != NULL) {
+      std::fclose(file);
+      ReplaceArg(STREAM_POS, Store::UnmanagedPointerToWord(NULL));
+    }
   }
 };
 
 class InStream: public IOStream {
 public:
-  // InStream Constructor
   static InStream *New(std::FILE *file, String *name) {
     return static_cast<InStream *>(IOStream::New(IO_IN, file, name));
   }
-  // InStream Untagging
+
   static InStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER ||
@@ -105,11 +113,10 @@ public:
 
 class OutStream: public IOStream {
 public:
-  // OutStream Constructor
   static OutStream *New(std::FILE *file, String *name) {
     return static_cast<OutStream *>(IOStream::New(IO_OUT, file, name));
   }
-  // OutStream Untagging
+
   static OutStream *FromWord(word x) {
     Block *p = Store::WordToBlock(x);
     Assert(p == INVALID_POINTER ||
@@ -480,9 +487,9 @@ DEFINE3(UnsafeIO_Io) {
 } END
 
 DEFINE2(UnsafeIO_openIn) {
-  DECLARE_BOOL(binary, x0);
+  DECLARE_BOOL(isText, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary? "rb": "r");
+  const char *flags = (isText? "r": "rb");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(InStream::New(file, name)->ToWord());
@@ -493,14 +500,16 @@ DEFINE2(UnsafeIO_openIn) {
 
 DEFINE1(UnsafeIO_closeIn) {
   DECLARE_INSTREAM(stream, x0);
-  std::fclose(stream->GetFile());
+  stream->Close();
   RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeIO_inputAll) {
   DECLARE_INSTREAM(stream, x0);
   std::FILE *file = stream->GetFile();
-  if (file == stdin) {
+  if (file == NULL) { // already closed
+    RETURN(String::New(static_cast<u_int>(0))->ToWord());
+  } if (file == stdin) {
     FdInputFrame *frame =
       FdInputFrame::New(IOInterpreter::self, stdinWrapper, true);
     Scheduler::PushFrame(frame->ToWord());
@@ -522,7 +531,9 @@ DEFINE1(UnsafeIO_inputAll) {
 DEFINE1(UnsafeIO_inputLine) {
   DECLARE_INSTREAM(stream, x0);
   std::FILE *file = stream->GetFile();
-  if (file == stdin) {
+  if (file == NULL) { // already closed
+    RETURN(String::New(static_cast<u_int>(0))->ToWord());
+  } else if (file == stdin) {
     FdInputFrame *frame =
       FdInputFrame::New(IOInterpreter::self, stdinWrapper, false);
     Scheduler::PushFrame(frame->ToWord());
@@ -556,9 +567,9 @@ DEFINE1(UnsafeIO_inputLine) {
 } END
 
 DEFINE2(UnsafeIO_openOut) {
-  DECLARE_BOOL(binary, x0);
+  DECLARE_BOOL(isText, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary? "wb": "w");
+  const char *flags = (isText? "w": "wb");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
@@ -568,9 +579,9 @@ DEFINE2(UnsafeIO_openOut) {
 } END
 
 DEFINE2(UnsafeIO_openAppend) {
-  DECLARE_BOOL(binary, x0);
+  DECLARE_BOOL(isText, x0);
   DECLARE_STRING(name, x1);
-  const char *flags = (binary? "wab": "wa");
+  const char *flags = (isText? "wa": "wab");
   std::FILE *file = std::fopen(name->ExportC(), flags);
   if (file != NULL) {
     RETURN(OutStream::New(file, name)->ToWord());
@@ -581,32 +592,42 @@ DEFINE2(UnsafeIO_openAppend) {
 
 DEFINE1(UnsafeIO_closeOut) {
   DECLARE_OUTSTREAM(stream, x0);
-  std::fclose(stream->GetFile());
+  stream->Close();
   RETURN_UNIT;
 } END
 
 DEFINE1(UnsafeIO_flushOut) {
   DECLARE_OUTSTREAM(stream, x0);
-  std::fflush(stream->GetFile());
+  FILE *file = stream->GetFile();
+  if (file != NULL)
+    std::fflush(file);
   RETURN_UNIT;
 } END
 
 DEFINE2(UnsafeIO_output) {
   DECLARE_OUTSTREAM(stream, x0);
   DECLARE_STRING(s, x1);
-  u_int size = s->GetSize();
-  u_int nWritten = std::fwrite(s->GetValue(), 1, size, stream->GetFile());
-  if (nWritten == size) {
-    RETURN_UNIT;
+  FILE *file = stream->GetFile();
+  if (file == NULL) {
+    RAISE_IO(ClosedStreamConstructor, "output", stream->GetName());
   } else {
-    RAISE_IO(Store::IntToWord(0), "output", stream->GetName());
+    u_int size = s->GetSize();
+    u_int nWritten = std::fwrite(s->GetValue(), 1, size, file);
+    if (nWritten == size) {
+      RETURN_UNIT;
+    } else {
+      RAISE_IO(Store::IntToWord(0), "output", stream->GetName());
+    }
   }
 } END
 
 DEFINE2(UnsafeIO_output1) {
   DECLARE_OUTSTREAM(stream, x0);
   DECLARE_INT(c, x1);
-  if (std::fputc(c, stream->GetFile()) != EOF) {
+  FILE *file = stream->GetFile();
+  if (file == NULL) { // already closed
+    RAISE_IO(ClosedStreamConstructor, "output1", stream->GetName());
+  } else if (std::fputc(c, file) != EOF) {
     RETURN_UNIT;
   } else {
     RAISE_IO(Store::IntToWord(0), "output1", stream->GetName());
@@ -621,8 +642,12 @@ DEFINE1(UnsafeIO_print) {
 } END
 
 word UnsafeIO() {
-  IoConstructor = UniqueConstructor::New(String::New("IO.Io"))->ToWord();
+  IoConstructor =
+    UniqueConstructor::New(String::New("IO.Io"))->ToWord();
   RootSet::Add(IoConstructor);
+  ClosedStreamConstructor =
+    UniqueConstructor::New(String::New("IO.ClosedStream"))->ToWord();
+  RootSet::Add(ClosedStreamConstructor);
 
   IOInterpreter::Init();
   int handle;
@@ -656,10 +681,12 @@ word UnsafeIO() {
   stdinWrapper = new FdIO(handle); //--** also for stdout, stderr
   IOHandler::SetDefaultBlockFD(handle);
 
-  Record *record = Record::New(16);
+  Record *record = Record::New(18);
   record->Init("'Io", IoConstructor);
   INIT_STRUCTURE(record, "UnsafeIO", "Io",
 		 UnsafeIO_Io, 3, true);
+  record->Init("'ClosedStream", ClosedStreamConstructor);
+  record->Init("ClosedStream", ClosedStreamConstructor);
   record->Init("stdIn",
 	       InStream::New(stdin, String::New("stdin"))->ToWord());
   record->Init("stdOut",
