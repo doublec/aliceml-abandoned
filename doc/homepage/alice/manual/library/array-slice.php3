@@ -137,7 +137,7 @@
     <DD>
       <P>Swaps the <I>i</I>th and <I>j</I>th element of slice
       <TT><I>sl</I></TT>. If <I>i</I> &lt; 0 or |<I>sl</I>| &lt;= <I>i</I>,
-      or <I>j</I> &lt; 0 or |<I>arr</I>| &lt;= <I>j</I>,
+      or <I>j</I> &lt; 0 or |<I>sl</I>| &lt;= <I>j</I>,
       then the <TT>Subscript</TT> exception is raised.</P>
     </DD>
 
