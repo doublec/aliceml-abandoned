@@ -129,8 +129,14 @@ define
 
    SmurfModule = 'Smurf'(smurf: Smurf)
 
+   SampleProperty = '#'(b: false em: false i: false s: false tt: false
+			u: 0 size: ~1 color: 'UNKNOWN')
+   SampleMeaning = [[{ByteString.make 'a'}]#false#SampleProperty
+		    [{ByteString.make 'b'}]#false#SampleProperty
+		    [{ByteString.make 'c'}]#false#SampleProperty]
+
    {Explorer.one proc {$ V}
-		    V = {Constrain [1 2 3] 5}
+		    V = {Constrain SampleMeaning 5}
 		    {FS.distribute naive
 		     for I in 0..{Width V} - 1 collect: Collect do
 			{Collect V.I.daughters}
