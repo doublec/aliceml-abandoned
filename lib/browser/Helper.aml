@@ -41,14 +41,17 @@ struct
 				     [("x", Gtk.DOUBLE y), 
 				      ("y", Gtk.DOUBLE y)])
 
-
     fun setGroup pnode = case pnode of 
 	Simple(r)    => createGroupItem(#group(r),0.0,0.0) 
       | Container(r) => createGroupItem(#group(r),0.0,0.0) 
       | Concat(r)    => createGroupItem(#group(r),0.0,0.0) 
       | Limit(r)     => createGroupItem(#group(r),0.0,0.0) 
-      | Empty        => createGroupItem(!WindowManager.canvasroot,0.0,0.0)
-    
+      | Empty        => let 
+			    val _ = WindowManager.new()
+			in
+			    createGroupItem(!WindowManager.canvasroot,0.0,0.0)
+			end
+
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
 
