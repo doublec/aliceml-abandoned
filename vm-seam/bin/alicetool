@@ -1,0 +1,102 @@
+#!/bin/sh
+
+##
+## Configuration Section
+##
+
+LIGHTNING=1
+
+##
+## End of Configuration Section
+##
+
+howcalled=$0
+
+if test -z "${STOCKHOME}"; then
+  dir=`dirname $howcalled`
+  STOCKHOME=`(cd $dir; cd ..; /bin/pwd)`
+fi
+
+if [ $# -lt 1 ]; then
+    echo "usage: $0 [--verbose|-v] (cc|ld) <option> ..." >&2
+    exit 2
+fi
+
+case `uname -s` in
+    CYGWIN*)
+	platform=windows
+	;;
+    *)
+	platform=unix
+	;;
+esac
+
+mode=$1; shift
+
+case "$mode" in
+    --verbose|-v)
+	verbose=1
+	mode=$1; shift
+	;;
+    *)
+	verbose=0
+	;;
+esac
+
+cmd() {
+    if [ "$verbose" -ne 0 ]; then echo "$@"; fi
+    "$@" || exit $?
+}
+
+case "$mode" in
+    cc)
+	if [ "$platform" = windows ]; then
+	    cflags=-mno-cygwin
+	else
+	    cflags=""
+	fi
+	cmd gcc $cflags -DLIGHTNING=$LIGHTNING -I$STOCKHOME/include "$@"
+	;;
+    ld)
+	if [ "$platform" = windows ]; then
+	    outputfile=""
+	    ldflags="--target i386-mingw32 -mno-cygwin"
+	    libs=""
+	    fileargs=""
+	    while [ $# -gt 0 ]; do
+		case $1 in
+		    -o)
+			if [ -z "$outputfile" ]; then
+			    outputfile="$2"; shift; shift
+			else
+			    echo $0: option -o given more than once >&2
+			    exit 2
+			fi
+			;;
+		    -s)
+			ldflags="$ldflags $1"; shift
+			;;
+		    -l*|-L*)
+			libs="$libs $1"; shift
+			;;
+		    *)
+			fileargs="$fileargs $1"; shift
+			;;
+		esac
+	    done
+	    cmd dlltool --output-def $outputfile.def \
+		--dllname $outputfile $fileargs
+	    cmd dllwrap $ldflags -o $outputfile --def $outputfile.def \
+		$fileargs $libs $STOCKHOME/stow.dll
+	else
+	    echo $0: mode \`ld\' not implemented yet >&2
+	    exit 2
+	fi
+	;;
+    *)
+	echo $0: unknown mode \`$1\' >&2
+	exit 2
+	;;
+esac
+
+exit 0
