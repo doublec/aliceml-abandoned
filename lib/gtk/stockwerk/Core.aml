@@ -139,12 +139,12 @@ struct
 
     (* event stream listener *)
     local
-	fun runCallback(connid, obj, args) =
-	    NativeCore.signalMapCondGet(connid, fn _ => ()) (obj,args)
+        fun dummyHandler _ = ()
     in
 	fun listener nil                         = ()
 	  | listener ((connid,obj,args)::stream) =
-	    ( runCallback (connid, obj, args) ; listener stream )
+	    ( NativeCore.signalMapCondGet(connid, dummyHandler) (obj, args) ;
+	      listener stream )
     end
 
     (* finalization handling *)
@@ -162,7 +162,7 @@ struct
 	   - when all alice references are lost, the finalizer (Gtk-)unrefs
 	     the object, telling Gtk that it may destroy the object completely
         *)
-	fun destroyEvent obj = 
+	fun destroyEvent (obj, _) = 
                 List.app NativeCore.signalMapRemove  
 		         (NativeCore.signalMapGetConnIds obj)
 
