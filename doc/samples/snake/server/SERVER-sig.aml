@@ -14,7 +14,7 @@ import structure Protocol from "../common/Protocol"
 signature SERVER =
 sig
 
-    val startServer: Protocol.client_interface -> 
+    val startServer: Protocol.client_interface * Config.config -> 
                         Remote.ticket * Protocol.server_interface
     (** POST: isSome (#startGame server_interface) *)
 

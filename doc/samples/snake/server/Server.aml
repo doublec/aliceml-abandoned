@@ -102,9 +102,7 @@ struct
                 
             val lock        = Lock.lock ()
             
-            val timeout     = Time.fromMilliseconds 100
-            
-            (* RPC call.  
+	    (* RPC call.  
                - Synchronized so that there can always be
                  only one call to a given client.
                - If an exception is raised the RPC has failed
@@ -141,7 +139,7 @@ struct
                 List.app (fn c => spawn (invoke (c, f, a))) clients 
                
 
-            (* [withParticipand (procName, id, f) returns a function which 
+            (* [withParticipant def (procName, id, f) returns a function which 
                when invoked applies the participant with id [id]
                on f unless that participant is disconnected.
              *)
@@ -181,12 +179,7 @@ struct
                                         nextDir     = ref dir
                                     }
                                 val snake   = Snake.snake (color, pos, dir)
-                                val players = allParticipants 
-                                        (fn (_, (_,ref s)) => 
-                                            case s of 
-                                                Part.PLAYING _  => true
-                                            |   _               => false)
-
+                                val players = allPlayers () 
                                 fun getNameColor (_,ref (Part.PLAYING 
                                             ({ name, color, ...}, _))) = 
                                         (name, color)
@@ -216,12 +209,7 @@ struct
 
                     |   Part.CONNECTED  =>
                         let
-                            val players = allParticipants 
-                                        (fn (_, (_,ref s)) => 
-                                            case s of 
-                                                Part.PLAYING _  => true
-                                            |   _               => false)
-
+                            val players = allPlayers ()
                             fun getNameColor (_,ref (Part.PLAYING 
                                         ({ name, color, ...}, _))) = 
                                     (name, color)

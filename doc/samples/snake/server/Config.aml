@@ -9,23 +9,14 @@
 *
 *)
 
-import signature CONFIG from "CONFIG-sig"
+import signature CONFIG   from "CONFIG-sig"
+import structure Protocol from "../common/Protocol"
 
 
 structure Config :> CONFIG =
 struct
 
-    type config = {
-         tick :         Time.time,
-	 timeout :      Time.time,   (* after how many seconds a game has to end *)
-	 dimensions :   int * int, 
-		   (* the dimensions of the arenas created in the tounament *)
-	 goodie :       int, (* the average amount of appearing goodies *)
-	 lives :        int, (* the amount of lives a client has  in the tournament *)
-	 maxPlayer :    int, 
-	      (* how many clients can actively participate in the tournament *)
-	 goodieFrequency : int (* how often goodies appear *)
-}
+    type config = Protocol.config
 
     val defaultSingle = 
 	{
@@ -33,9 +24,10 @@ struct
 	 timeout        = Time.fromSeconds 100,
 	 dimensions     = (50,50),
 	 goodie         = 5,
-	 lives          = ~1,
+	 lives          = NONE,
 	 maxPlayer      = 1,
-	 goodieFrequency = 1
+	 goodieFrequency = 1,
+	 levels         = NONE
 	 }
 
     val defaultMulti = 
@@ -44,9 +36,10 @@ struct
 	 timeout        = Time.fromSeconds 100,
 	 dimensions     = (50,50),
 	 goodie         = 5,
-	 lives          = 5,
+	 lives          = SOME 5,
 	 maxPlayer      = 16,
-	 goodieFrequency = 3
+	 goodieFrequency = 3,
+	 levels         = SOME 6
 	 }
 
     val path = OS.Path.currentArc^"/config/config.cs"

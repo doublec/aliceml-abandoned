@@ -9,31 +9,12 @@
 *
 *)
 
-
+import structure Protocol from "../common/Protocol"
 
 signature CONFIG =
 sig
-    type config = {
-        tick :         Time.time,
-        (* time between a tick signal *)
 
-        timeout :      Time.time,   
-        (* timeout after that a level is ended *)
-        
-        dimensions :   int * int, 
-	(* the dimensions of the arenas created in the tounament *)
-	 
-        goodie :       int, 
-        (* the average amount of appearing goodies *)
-	 
-        lives :        int, 
-        (* the amount of lives a client has  in the tournament *)
-	 
-        maxPlayer :    int, 
-	(* how many clients can actively participate in the tournament *)
-	 
-        goodieFrequency : int (* how often goodies appear *)
-    }
+    type config = Protocol.config
 
     val defaultSingle : config
     (* the default configuration with

@@ -144,7 +144,7 @@ struct
 	end
     (** removes all snakes *)
 
-    fun diff (old,new) = 
+    fun diff (old,new) = (* TODO: schlangen auf old löschen *)
       let
 	  val (rows, cols) = Array2.dimensions old       (* dimensions *)
 	  fun help (r, c) xs = 

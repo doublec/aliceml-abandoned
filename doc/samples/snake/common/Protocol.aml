@@ -18,6 +18,30 @@ struct
 
     exception Protocol of string
 
+    type config = {
+        tick :         Time.time,
+        (* time between a tick signal *)
+
+        timeout :      Time.time,   
+        (* timeout after that a level is ended *)
+        
+        dimensions :   int * int, 
+	(* the dimensions of the arenas created in the tounament *)
+	 
+        goodie :       int, 
+        (* the average amount of appearing goodies *)
+	 
+        lives :        int option, 
+        (* the amount of lives a client has in the tournament *)
+	 
+        maxPlayer :    int, 
+	(* how many clients can actively participate in the tournament *)
+	 
+        goodieFrequency : int, (* how often goodies appear *)
+
+	levels :       int option
+    }
+
     (* absolute (i.e screen not snake relativ) *)
     datatype direction =
         UP
@@ -78,8 +102,12 @@ struct
             of available colors to choose from.
           *)
 
-        gameStarted :       int * int -> unit,
-	(** sends arena dimensions to client *)
+	tournamentStarted :  unit -> unit
+
+        levelStarted :       unit -> unit,
+	(** will be executed before each level, returns as soon as 
+	    the client is ready to process update signals *)
+
 
         (* GENERIC *)
         playerDisconnected : (string * Color.color) option -> unit,
@@ -88,14 +116,25 @@ struct
         (* PLAY MODE *)
         update :            (Pos.pos * field) list -> unit,
         tick :              Time.time -> unit,
+        (** [tick t] is called to notify the client that a new tick has
+	    started and he has to update the gui. [t] is the time left
+	    until level ends *)
 
-        gameFinished :      Highscore.highscore -> unit,
+        levelFinished :     unit -> unit
+	(** levelFinished is called when a level is finished *)
+
+	tournamentFinished : Highscore.highscore -> unit,
+	(** [tournamentFinished h] is called when the tournament 
+	    is finished, it's called after levelFinished. 
+	    [h] will be displayed. *)
+
         updatePoints :      Highscore.points list -> unit
     }
 
     signature SERVER_CONNECTOR =
     sig
-        val connect :       client_interface -> server_interface  (* Protocol *)
+        val connect :       client_interface -> 
+	                      config * server_interface  (* Protocol *)
     end
 
 end

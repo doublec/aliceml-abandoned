@@ -22,8 +22,7 @@ sig
 
     type config = {
         dimensions: int * int,
-	players: int,
-	walls: int (* max amount of walls *)
+	players: int
         (* MAGIC NUMBERs ... *)
     }
     
@@ -32,9 +31,9 @@ sig
     val emptyCopy : arena -> arena
 
     val placeSnakes : arena * Snake.snake list -> 
-            Snake.snake list * Snake.snake list
+            Snake.snake list * Snake.snake list * Snake.snake list
     (** places the snakes on the arena, returns all snakes
-       which died and all finished.
+       which died, half-finished and all totally finished.
        
        PRE: arena contains NO snakes 
        POST: arena contains NO snake which is contained
