@@ -36,6 +36,12 @@ functor MkTypeManager(val types :
 		if (getName t = typ) then t else searchType(typ, tr)
 	end
 
+	fun isStringType "gchar*"       = true
+	  | isStringType "char*"        = true
+	  | isStringType "const gchar*" = true
+	  | isStringType "const char*"  = true
+	  | isStringType _              = false
+
 	fun isCoreType "gboolean"     = true
 	  | isCoreType "gchar"        = true
 	  | isCoreType "guchar"       = true
@@ -86,9 +92,10 @@ functor MkTypeManager(val types :
 				  | "double*"   => OUT("double")
 				  | "gdouble*"  => OUT("double")
 				  | _           => IN(tStr))
-		    val conv = (if tStr = "GList*" then "glist" else
-				    if (isBasicType tStr) then "none"
-				    else "object")
+		    val conv = (if tStr = "GList*" then "glist"
+                     	        else if (isStringType tStr) then "string"
+				else if (isBasicType tStr) then "none"
+				else "object")
 		in
 		    (i, tTyp, conv)
 		end
