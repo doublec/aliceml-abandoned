@@ -51,7 +51,7 @@ structure Link :> LINK =
 		  | EXCLUDE s' => if String.isPrefix s' s then true
 				  else isExcluded' (s, boundary, i + 1, n)
 
-	fun collect boundary root =
+	fun collect (boundary, typeCheck) root =
 	    let
 		val componentMap = UrlMap.new ()
 		val includeMap = UrlMap.new ()
@@ -64,8 +64,10 @@ structure Link :> LINK =
 				UrlMap.lookupExistent (componentMap, url)
 			    val actualInf = MyComponent.inf component
 			in
-			    if infMatches (actualInf, expectedInf) then ()
-			    else raise Mismatch (url, parent)
+			    if typeCheck then
+				if infMatches (actualInf, expectedInf) then ()
+				else raise Mismatch (url, parent)
+			    else ()
 			end
 		    else if UrlMap.member (excludeMap, url) then
 			let
@@ -84,8 +86,11 @@ structure Link :> LINK =
 					    handle exn as IO.Io _ =>
 						raise Io (url, exn)
 			    val actualInf = MyComponent.inf component
-			    val _ = if infMatches (actualInf, expectedInf)
-				    then () else raise Mismatch (url, parent)
+			    val _ = if typeCheck then
+					if infMatches (actualInf, expectedInf)
+					then ()
+					else raise Mismatch (url, parent)
+				    else ()
 			    val component' =
 				if url = root then component
 				else MyComponent.stripImportInfs component
@@ -222,10 +227,10 @@ structure Link :> LINK =
 			      String.concat ss)
 	    end
 
-	fun link {root, verbose, boundary, rewrite = rewrites} =
+	fun link {root, verbose, typeCheck, boundary, rewrite = rewrites} =
 	    let
 		val {componentMap, includeMap, excludeMap} =
-		    collect boundary root
+		    collect (boundary, typeCheck) root
 		val rewrite = rewrite rewrites
 		val order = sort (includeMap, excludeMap)
 	    in

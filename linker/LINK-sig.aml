@@ -27,7 +27,7 @@ signature LINK =
 	exception Conflict of Url.t
 	exception Io of Url.t * exn
 
-	val collect: boundary vector -> Url.t ->
+	val collect: boundary vector * bool -> Url.t ->
 		     {componentMap: MyComponent.t UrlMap.t,
 		      includeMap: Url.t vector UrlMap.t,
 		      excludeMap: MyComponent.inf UrlMap.t}
@@ -39,6 +39,7 @@ signature LINK =
 
 	val link: {root: Url.t,
 		   verbose: bool,
+		   typeCheck: bool,
 		   boundary: boundary vector,
 		   rewrite: (string * string) vector} -> MyComponent.t
 		     (* Empty, Mismatch, Conflict, Io *)
