@@ -15,11 +15,12 @@ import
    BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    OzURL(make toVirtualString) at 'x-oz://system/URL'
    Module(link)
-   Pickle(load save) at '../../Pickle.ozf'
    DefaultURL(ozScheme nameToUrl)
    Property(get)
    Resolve(trace)
    System(printError)
+   Pickle(load save) at '../../Pickle.ozf'
+   Linker(getInitialTable) at '../../Linker.ozf'
 export
    module: ComponentComponent
 define
@@ -94,14 +95,15 @@ define
       end
    end
 
-   I_PrimeCorrupt = 1
-   I_PrimeSited   = 2
-   I_Corrupt      = 3
-   I_Sited        = 4
-   I_apply        = 5
-   I_extension    = 6
-   I_load         = 7
-   I_save         = 8
+   I_PrimeCorrupt    = 1
+   I_PrimeSited      = 2
+   I_Corrupt         = 3
+   I_Sited           = 4
+   I_apply           = 5
+   I_extension       = 6
+   I_getInitialTable = 7
+   I_load            = 8
+   I_save            = 9
 
    Component =
    tuple(I_Sited: value(SitedException)
@@ -109,6 +111,7 @@ define
 	 I_Corrupt: value(CorruptException)
 	 I_PrimeCorrupt: value(CorruptException)
 	 I_extension: value(Extension)
+	 I_getInitialTable: Linker.getInitialTable#n_v
 	 I_save: Pickle.save#ri_t
 	 I_load:
 	    fun {$ URL TaskStack}
