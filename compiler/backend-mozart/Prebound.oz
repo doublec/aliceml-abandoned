@@ -3,7 +3,7 @@
 %%%   Leif Kornstaedt <kornstae@ps.uni-sb.de>
 %%%
 %%% Copyright:
-%%%   Leif Kornstaedt, 1999
+%%%   Leif Kornstaedt, 1999-2000
 %%%
 %%% Last change:
 %%%   $Date$ by $Author$
@@ -398,12 +398,13 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Subscript'} unit
 	    end
 	 end
-      'Word.fromInt\'': BootWord.make
-      'Word.toInt': BootWord.toInt
-      'Word.toIntX': BootWord.toIntX
       'Word.+': BootWord.'+'
       'Word.-': BootWord.'-'
       'Word.*': BootWord.'*'
+      'Word.<<': BootWord.'<<'
+      'Word.>>': BootWord.'>>'
+      'Word.~>>': BootWord.'~>>'
+      'Word.andb': BootWord.'andb'
       'Word.div':
 	 fun {$ W1 W2}
 	    try
@@ -412,6 +413,7 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
+      'Word.fromInt\'': BootWord.make
       'Word.mod':
 	 fun {$ W1 W2}
 	    try
@@ -420,14 +422,12 @@ define
 	       {Exception.raiseError BuiltinTable.'General.Div'} unit
 	    end
 	 end
-      'Word.orb': BootWord.'orb'
-      'Word.xorb': BootWord.'xorb'
-      'Word.andb': BootWord.'andb'
       'Word.notb': BootWord.notb
-      'Word.<<': BootWord.'<<'
-      'Word.>>': BootWord.'>>'
-      'Word.~>>': BootWord.'~>>'
+      'Word.orb': BootWord.'orb'
+      'Word.toInt': BootWord.toInt
+      'Word.toIntX': BootWord.toIntX
       'Word.toString':
 	 fun {$ X} {ByteString.make {ToHex {BootWord.toInt X}}} end
+      'Word.xorb': BootWord.'xorb'
       'Word.wordSize': 31)
 end
