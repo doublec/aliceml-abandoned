@@ -29,7 +29,7 @@ signature RECURSIVE_COMPILER =
 
 	val extension: string
 
-	val compileFileToFile: string * string -> unit
+	val compileFileToFile: string * string -> unit     (* IO.Io *)
 	val acquireSig: Source.desc * Url.t -> Inf.sign
 	val acquireMod: Source.desc * Url.t -> Reflect.module
 
