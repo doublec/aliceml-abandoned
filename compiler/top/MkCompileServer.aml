@@ -1,0 +1,20 @@
+(*
+ * Authors:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import signature BATCH_COMPILER from "RECURSIVE_COMPILER-sig"
+import signature COMPILE_SERVER from "COMPILE_SERVER-sig"
+
+functor MkCompileServer(BatchCompiler : BATCH_COMPILER) : COMPILE_SERVER =
+struct
+    val compile     = BatchCompiler.main
+    fun terminate() = OS.Process.exit OS.Process.success
+end

@@ -1,0 +1,21 @@
+(*
+ * Author:
+ *   Andreas Rossberg <rossberg@ps.uni-sb.de>
+ *
+ * Copyright:
+ *   Andreas Rossberg, 2001
+ *
+ * Last change:
+ *   $Date$ by $Author$
+ *   $Revision$
+ *)
+
+import functor   MkBatchCompiler              from "MkBatchCompiler"
+import functor   MkCompileServer              from "MkCompileServer"
+import structure SMLToMozartRecursiveCompiler from "SMLToMozartRecursiveCompiler"
+
+structure SMLToMozartCompileServer =
+    MkCompileServer(MkBatchCompiler(structure RecursiveCompiler =
+					      SMLToMozartRecursiveCompiler
+				    val executableHeader =
+					"#!/bin/sh\nexec alicerun $0 \"$@\"\n"))
