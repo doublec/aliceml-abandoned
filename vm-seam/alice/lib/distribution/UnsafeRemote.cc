@@ -78,7 +78,7 @@ DEFINE1(UnsafeRemote_packValue) {
 DEFINE1(UnsafeRemote_unpackValue) {
   DECLARE_STRING(packedValue, x0);
   taskStack->PushFrame(prim_self);
-  return Unpickler::Unpack(static_cast<Chunk *>(packedValue), taskStack);
+  return Unpickler::Unpack(packedValue, taskStack);
 } END
 
 word UnsafeRemote(void) {

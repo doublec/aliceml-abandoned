@@ -23,7 +23,7 @@ DEFINE0(UnsafeComponent_getInitialTable) {
     Queue *keyQueue = BootLinker::GetKeyQueue();
     Vector *vector = Vector::New(numberOfEntries);
     while (numberOfEntries--) {
-      Chunk *key = Store::DirectWordToChunk(keyQueue->Dequeue());
+      String *key = String::FromWordDirect(keyQueue->Dequeue());
       Component *component = BootLinker::LookupComponent(key);
       Assert(component != INVALID_POINTER);
       Tuple *triple = Tuple::New(3);
@@ -39,15 +39,15 @@ DEFINE0(UnsafeComponent_getInitialTable) {
 } END
 
 DEFINE2(UnsafeComponent_save) {
-  DECLARE_STRING(s, x0);
+  DECLARE_STRING(filename, x0);
   taskStack->PushFrame(prim_self);
-  return Pickler::Save(static_cast<Chunk *>(s), x1, taskStack);
+  return Pickler::Save(filename, x1, taskStack);
 } END
 
 DEFINE1(UnsafeComponent_load) {
-  DECLARE_STRING(s, x0);
+  DECLARE_STRING(filename, x0);
   taskStack->PushFrame(prim_self);
-  return Unpickler::Load(static_cast<Chunk *>(s), taskStack);
+  return Unpickler::Load(filename, taskStack);
 } END
 
 DEFINE1(UnsafeComponent_pack_) {
@@ -56,9 +56,9 @@ DEFINE1(UnsafeComponent_pack_) {
 } END
 
 DEFINE1(UnsafeComponent_unpack_) {
-  DECLARE_STRING(s, x0);
+  DECLARE_STRING(string, x0);
   taskStack->PushFrame(prim_self);
-  return Unpickler::Unpack(static_cast<Chunk *>(s), taskStack);
+  return Unpickler::Unpack(string, taskStack);
 } END
 
 word UnsafeComponent(void) {
