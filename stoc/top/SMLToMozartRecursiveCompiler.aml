@@ -53,6 +53,10 @@ import
 from "../../lib/rtt/Inf"
 
 import
+    structure Error
+from "../infrastructure/Error"
+
+import
     structure Signature
 from "Signature"
 
@@ -68,17 +72,13 @@ import
     structure MkRecursiveCompiler
 from "MkRecursiveCompiler"
 
-import
-    structure Error
-from "../infrastructure/Error"
-
 structure SMLToMozartRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
 	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
 	    ref (fn _ => raise Crash.Crash
-				"SMLToMozartRecursiveCompiler.loadSignRef")
+				"SMLToMozartRecursiveCompiler.acquireSignRef")
 
 	fun loadSign(desc, url) = !acquireSignRef(desc, url)
 	fun loadPlainSign(desc, url) =

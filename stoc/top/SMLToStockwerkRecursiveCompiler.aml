@@ -16,7 +16,7 @@ from "../../lib/system/TextIO"
 
 import
     structure Url
-from "../misc/Url"
+from "../../lib/utility/Url"
 
 import
     structure Crash
@@ -48,6 +48,14 @@ import
 from "../backend-mozart/MkBackendStockwerk"
 
 import
+    structure Inf
+from "../../lib/rtt/Inf"
+
+import
+    structure Error
+from "../infrastructure/Error"
+
+import
     structure Signature
 from "Signature"
 
@@ -67,22 +75,31 @@ structure SMLToStockwerkRecursiveCompiler =
     let
 	structure Switches = MkSwitches(val logOut = TextIO.stdOut)
 
-	val f: (Source.desc * Url.t -> Composer.Sig.t) ref =
-	    ref (fn _ => raise Crash.Crash "SMLToStockwerkMain.f")
+	val acquireSignRef: (Source.desc * Url.t -> Composer.Sig.t) ref =
+	    ref (fn _ =>
+		 raise Crash.Crash
+			   "SMLToStockwerkRecursiveCompiler.acquireSignRef")
+
+	fun loadSign(desc, url) = !acquireSignRef(desc, url)
+	fun loadPlainSign(desc, url) =
+	    Inf.asSig(#2(loadSign(desc, url)))
+	    handle Inf.Interface =>
+		Error.error(Source.nowhere,
+			    "Pickle "^ Url.toString url ^" is not a component")
 
 	structure PickleTarget =
 	    MkPickleTarget(structure Sig = Signature)
 
 	structure FrontendSML =
-	    MkFrontendSML(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendSML(val loadSign = loadPlainSign
 			  structure Switches = Switches)
 
 	structure FrontendCommon =
-	    MkFrontendCommon(fun loadSign (desc, url) = #2 (!f (desc, url))
+	    MkFrontendCommon(val loadSign = loadPlainSign
 			     structure Switches = Switches)
 
 	structure BackendCommon =
-	    MkBackendCommon(fun loadSign (desc, url) = !f (desc, url)
+	    MkBackendCommon(val loadSign = loadSign
 			    structure Switches = Switches)
 
 	structure BackendStockwerk =
@@ -99,9 +116,9 @@ structure SMLToStockwerkRecursiveCompiler =
 	structure RecursiveCompiler =
 	    MkRecursiveCompiler(structure Composer = Composer
 				structure Compiler = Compiler
-				val extension = ".stc")
+				val extension = "stc")
 
-	val _ = f := RecursiveCompiler.acquireSign
+	val _ = acquireSignRef := RecursiveCompiler.acquireSign
     in
 	RecursiveCompiler
     end
