@@ -32,6 +32,8 @@ public:
   // NativeCodeInterpreter Static Constructor
   static void Init();
   static StackFrame *FastPushCall(Closure *closure);
+  static u_int GetInArity(TagVal *abstractCode);
+  static u_int GetOutArity(TagVal *abstractCode);
   // Handler Methods
   virtual Transform *GetAbstractRepresentation(ConcreteRepresentation *);
   // Frame Handling

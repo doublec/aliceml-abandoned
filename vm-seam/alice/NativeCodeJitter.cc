@@ -1379,10 +1379,11 @@ TagVal *NativeCodeJitter::Apply(TagVal *pc, word wClosure) {
 	    lazyCompileClosure->SetAssignment(assignment);
 	  }
 	  JIT_APPLY_COUNT(applyNativeRequest);
-	  info.mode    = NATIVE_REQUEST_CALL;
-	  info.nLocals = nLocals;
-	  info.closure = ImmediateEnv::Register(closure->ToWord());
-	  word instrPC = Store::IntToWord(GetRelativePC());
+	  info.mode     = NATIVE_REQUEST_CALL;
+	  info.nLocals  = nLocals;
+	  info.closure  = ImmediateEnv::Register(closure->ToWord());
+	  info.outArity = NativeCodeInterpreter::GetOutArity(abstractCode);
+	  word instrPC  = Store::IntToWord(GetRelativePC());
 	  ImmediateSel(JIT_R0, JIT_V2, info.closure);
 	  Closure_GetConcreteCode(JIT_V1, JIT_R0);
 	  Await(JIT_V1, instrPC);

@@ -102,6 +102,18 @@ StackFrame *NativeCodeInterpreter::FastPushCall(Closure *closure) {
   return MakeNativeFrame(concreteCode, closure);
 }
 
+u_int NativeCodeInterpreter::GetInArity(TagVal *abstractCode) {
+  Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
+  u_int nArgs = args->GetLength();
+  return nArgs;
+}
+
+u_int NativeCodeInterpreter::GetOutArity(TagVal *abstractCode) {
+  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
+  return ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
+	  Store::DirectWordToInt(outArityOpt->Sel(0)));
+}
+
 Transform *
 NativeCodeInterpreter::GetAbstractRepresentation(ConcreteRepresentation *b) {
   return STATIC_CAST(NativeConcreteCode *, b)->GetAbstractRepresentation();
@@ -148,9 +160,7 @@ u_int NativeCodeInterpreter::GetInArity(ConcreteCode *concreteCode) {
     STATIC_CAST(NativeConcreteCode *, concreteCode);
   Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  Vector *args = Vector::FromWordDirect(abstractCode->Sel(3));
-  u_int nArgs = args->GetLength();
-  return nArgs;
+  return GetInArity(abstractCode);
 }
 
 u_int NativeCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
@@ -159,9 +169,7 @@ u_int NativeCodeInterpreter::GetOutArity(ConcreteCode *concreteCode) {
     STATIC_CAST(NativeConcreteCode *, concreteCode);
   Transform *transform = nativeConcreteCode->GetAbstractRepresentation();
   TagVal *abstractCode = TagVal::FromWordDirect(transform->GetArgument());
-  TagVal *outArityOpt = TagVal::FromWord(abstractCode->Sel(4));
-  return ((outArityOpt == INVALID_POINTER) ? INVALID_INT :
-	  Store::DirectWordToInt(outArityOpt->Sel(0)));
+  return GetOutArity(abstractCode);
 }
 
 const char *NativeCodeInterpreter::Identify() {
