@@ -92,6 +92,8 @@ public:
     Block *a  = Store::DirectWordToBlock(GetArg(ARR_POS));
     u_int max = a->GetSize();
 
+    Assert(a->GetLabel() == STACKARRAY_LABEL);
+
     InitArg(TOP_POS, Store::IntToWord((top + 1)));
     if (top <= max) {
       a->ReplaceArg(top, v);
@@ -105,6 +107,8 @@ public:
     u_int top = Store::DirectWordToInt(GetArg(TOP_POS));
     Block *a  = Store::DirectWordToBlock(GetArg(ARR_POS));
     u_int max = a->GetSize();
+
+    Assert(a->GetLabel() == STACKARRAY_LABEL);
 
     InitArg(TOP_POS, Store::IntToWord((top + 1)));
     if (top <= max) {
@@ -142,8 +146,10 @@ public:
   }
   word Pop() {
     u_int top  = (Store::WordToInt(GetArg(TOP_POS)) - 1);
+    Block *a   = Store::DirectWordToBlock(GetArg(ARR_POS));
     Assert(top >= 1);
-    word value = Store::DirectWordToBlock(GetArg(ARR_POS))->GetArg(top);
+    Assert(a->GetLabel() == STACKARRAY_LABEL);
+    word value = a->GetArg(top);
 
     InitArg(TOP_POS, Store::IntToWord(top));
     return value;
