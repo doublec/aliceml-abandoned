@@ -496,6 +496,7 @@ public:
 }
 
 #define RAISE_EXCEPTION(exn) { \
+  Scheduler::PopFrame(); \
   Scheduler::currentData = exn; \
   Scheduler::currentBacktrace = Backtrace::New(frame->ToWord()); \
   return Worker::RAISE; \
@@ -545,7 +546,7 @@ class JavaDebug {
 public:
 #if defined(STORE_DEBUG)
   static void Print(const char *s) {
-    fprintf(stderr, "%s\n", s);
+    std::fprintf(stderr, "%s\n", s);
   }
 #else
   static void Print(const char *) {}
@@ -1076,23 +1077,33 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::D2F:
       {
-	Error("not implemented");
+	JavaDebug::Print("D2F");
+	DECLARE_DOUBLE(value);
+	frame->Push(Float::New(static_cast<float>(value))->ToWord());
+	pc += 1;
       }
       break;
     case Instr::D2I:
       {
+	JavaDebug::Print("D2I");
 	DECLARE_DOUBLE(value);
+	//--** to be checked: NaN etc.
 	frame->Push(JavaInt::ToWord(static_cast<s_int32>(value)));
 	pc += 1;
       }
       break;
     case Instr::D2L:
       {
-	Error("not implemented");
+	JavaDebug::Print("D2L");
+	DECLARE_DOUBLE(value);
+	//--** to be checked: NaN etc.
+	PUSH_LONG(static_cast<s_int64>(value));
+	pc += 1;
       }
       break;
     case Instr::DADD:
       {
+	JavaDebug::Print("DADD");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
 	PUSH_DOUBLE(v1 + v2);
@@ -1101,6 +1112,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DCMPG:
       {
+	JavaDebug::Print("DCMPG");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
 	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: 1));
@@ -1109,6 +1121,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DCMPL:
       {
+	JavaDebug::Print("DCMPL");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
 	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: -1));
@@ -1117,22 +1130,25 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DCONST_0:
       {
-	PUSH_DOUBLE(0.0);
+	JavaDebug::Print("DCONST_0");
+	PUSH_DOUBLE(0.0L);
 	pc += 1;
       }
       break;
     case Instr::DCONST_1:
       {
-	PUSH_DOUBLE(1.0);
+	JavaDebug::Print("DCONST_1");
+	PUSH_DOUBLE(1.0L);
 	pc += 1;
       }
       break;
     case Instr::DDIV:
       {
+	JavaDebug::Print("DDIV");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
-	if (v2 == 0.0) {
-	  PUSH_DOUBLE(0.0); // to be done: signed extended zero
+	if (v2 == 0.0L) {
+	  PUSH_DOUBLE(0.0L); // to be done: signed extended zero
 	}
 	else {
 	  PUSH_DOUBLE(v1 / v2);
@@ -1142,6 +1158,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DMUL:
       {
+	JavaDebug::Print("DMUL");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
 	PUSH_DOUBLE(v1 * v2);
@@ -1150,18 +1167,21 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DNEG:
       {
+	JavaDebug::Print("DNEG");
 	DECLARE_DOUBLE(v1);
-	PUSH_DOUBLE(0.0-v1);
+	PUSH_DOUBLE(-v1);
 	pc += 1;
       }
       break;
     case Instr::DREM:
       {
+	JavaDebug::Print("DREM");
 	Error("not implemented");
       }
       break;
     case Instr::DSUB:
       {
+	JavaDebug::Print("DSUB");
 	DECLARE_DOUBLE(v2);
 	DECLARE_DOUBLE(v1);
 	PUSH_DOUBLE(v1 - v2);
@@ -1232,7 +1252,7 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::DUP2_X2:
       {
-	JavaDebug::Print("DUP2_x2");
+	JavaDebug::Print("DUP2_X2");
 	// Always match form 1
 	word v1 = frame->Pop();
 	word v2 = frame->Pop();
@@ -1249,81 +1269,118 @@ Worker::Result ByteCodeInterpreter::Run() {
       break;
     case Instr::F2D:
       {
-	Error("not implemented");
+	JavaDebug::Print("F2D");
+	Float *f = JavaFloat::FromWord(frame->Pop());
+	PUSH_DOUBLE(static_cast<double>(f->GetValue()));
+	pc += 1;
       }
       break;
     case Instr::F2I:
       {
-	Error("not implemented");
+	JavaDebug::Print("F2I");
+	//--** to be done: NaN etc.
+	Float *f = JavaFloat::FromWord(frame->Pop());
+	frame->Push(JavaInt::ToWord(static_cast<s_int32>(f->GetValue())));
+	pc += 1;
       }
       break;
     case Instr::F2L:
       {
-	Error("not implemented");
+	JavaDebug::Print("F2L");
+	//--** to be done: NaN etc.
+	Float *f = JavaFloat::FromWord(frame->Pop());
+	PUSH_LONG(static_cast<s_int64>(f->GetValue()));
+	pc += 1;
       }
       break;
     case Instr::FADD:
       {
-	Error("not implemented");
+	JavaDebug::Print("FADD");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	frame->Push(Float::New(f1->GetValue() + f2->GetValue())->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FCMPG:
       {
-	Float *v2 = JavaFloat::FromWord(frame->Pop());
-	Float *v1 = JavaFloat::FromWord(frame->Pop());
+	JavaDebug::Print("FCMPG");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	float v2 = f2->GetValue();
+	float v1 = f1->GetValue();
 	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: 1));
 	pc += 1;
       }
       break;
     case Instr::FCMPL:
       {
-	Float *v2 = JavaFloat::FromWord(frame->Pop());
-	Float *v1 = JavaFloat::FromWord(frame->Pop());
+	JavaDebug::Print("FCMPL");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	float v2 = f2->GetValue();
+	float v1 = f1->GetValue();
 	frame->Push(JavaInt::ToWord(v1 > v2? 1: v1 == v2? 0: v1 < v2? -1: -1));
 	pc += 1;
       }
       break;
     case Instr::FCONST_0:
       {
+	JavaDebug::Print("FCONST_0");
 	frame->Push(Float::New(0.0)->ToWord());
 	pc += 1;
       }
       break;
     case Instr::FCONST_1:
       {
+	JavaDebug::Print("FCONST_1");
 	frame->Push(Float::New(1.0)->ToWord());
 	pc += 1;
       }
       break;
     case Instr::FCONST_2:
       {
+	JavaDebug::Print("FCONST_2");
 	frame->Push(Float::New(2.0)->ToWord());
 	pc += 1;
       }
       break;
     case Instr::FDIV:
       {
+	JavaDebug::Print("FDIV");
 	Error("not implemented");
       }
       break;
     case Instr::FMUL:
       {
-	Error("not implemented");
+	JavaDebug::Print("FMUL");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	frame->Push(Float::New(f1->GetValue() * f2->GetValue())->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FNEG:
       {
-	Error("not implemented");
+	JavaDebug::Print("FNEG");
+	Float *f = JavaFloat::FromWord(frame->Pop());
+	frame->Push(Float::New(-f->GetValue())->ToWord());
+	pc += 1;
       }
       break;
     case Instr::FREM:
       {
+	JavaDebug::Print("FREM");
 	Error("not implemented");
       }
       break;
     case Instr::FSUB:
       {
-	Error("not implemented");
+	JavaDebug::Print("FSUB");
+	Float *f2 = JavaFloat::FromWord(frame->Pop());
+	Float *f1 = JavaFloat::FromWord(frame->Pop());
+	frame->Push(Float::New(f1->GetValue() - f2->GetValue())->ToWord());
+	pc += 1;
       }
       break;
     case Instr::GETFIELD:
