@@ -217,6 +217,8 @@ libs-seam:
 	(cd lib/tools/inspector/seam && make all PREFIX=$(PREFIX) install) || exit 1 ;\
 	(cd tools/yacc && make depend) || exit 1 ;\
 	(cd tools/yacc && make all && make install) || exit 1 ;\
+	(cd tools/lex && make depend) || exit 1;\
+	(cd tools/lex && make all && make install) || exit 1 ;\
 	(cd lib/gecode && make depend GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/gecode && make all install GECODEDIR=$(GECODEDIR)) || exit ;\
 	(cd lib/postscript && make all install) || exit 1 ;\
