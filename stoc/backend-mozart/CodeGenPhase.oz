@@ -125,13 +125,13 @@ define
 		     {Map IdExpList
 		      fun {$ Id#Exp} {TrId Id}#{TrExp Exp ShareDict} end})|Tl
       [] 'RefAppDec'(Info Id1 Id2) then
-	 refAppDec({TrInfo Info} {TrId Id1} {TrId Id2})
+	 Hd = refAppDec({TrInfo Info} {TrId Id1} {TrId Id2})|Tl
       [] 'TupDec'(Info Ids Id) then
-	 tupDec({TrInfo Info} {Map Ids TrId} {TrId Id})
+	 Hd = tupDec({TrInfo Info} {Map Ids TrId} {TrId Id})|Tl
       [] 'RowDec'(Info LabIdList Id) then
-	 rowDec({TrInfo Info}
-		{Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end}
-		{TrId Id})
+	 Hd = rowDec({TrInfo Info}
+		     {Map LabIdList fun {$ Lab#Id} {TrLab Lab}#{TrId Id} end}
+		     {TrId Id})|Tl
       [] 'EvalStm'(Info Exp) then
 	 Hd = evalStm({TrInfo Info} {TrExp Exp ShareDict})|Tl
       [] 'RaiseStm'(Info Id) then
