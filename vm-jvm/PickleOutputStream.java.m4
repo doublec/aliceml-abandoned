@@ -1,6 +1,6 @@
 package de.uni_sb.ps.DML.DMLRuntime;
 
-final class DMLObjectOutputStream extends java.io.ObjectOutputStream {
+final public class DMLObjectOutputStream extends java.io.ObjectOutputStream {
 
     static Class fcn = null;
     boolean waitforbind = false;
