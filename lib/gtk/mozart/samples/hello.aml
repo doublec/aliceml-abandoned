@@ -11,7 +11,6 @@
  *
  *)
 
-import structure OS from "x-alice:/lib/system/OS"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure GTK from "x-alice:/lib/gtk/GTK"
 

@@ -1,4 +1,3 @@
-import structure OS from "x-alice:/lib/system/OS"
 import structure Inspector from "x-alice:/lib/tools/Inspector"
 import structure GTK from "x-alice:/lib/gtk/GTK"
 import structure GDK from "x-alice:/lib/gtk/GDK"
@@ -27,6 +26,7 @@ structure GtkBuilder :> GtkBuilder =
 	  | Text        of {xdim:real, ydim:real, text:string list}
 	  | Calendar    of GtkSignalHandler list
 	  | Notebook    of bool * ({label:string, note:GtkWidget} list)
+	  | Tree        of GtkTreeItem list
 	  | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	  | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	  | MenuBar     of {label:string, submenu:GtkMenuItem list} list
@@ -50,6 +50,9 @@ structure GtkBuilder :> GtkBuilder =
 	and GtkMenuItem =
 	    MenuItem of string * GtkSignalHandler list
 	  | SubMenu  of string * GtkMenuItem list
+	and GtkTreeItem =
+	    TreeItem of string
+	  | SubTree  of string * GtkTreeItem list
 	and GtkCursorType =
 	    X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP | BOAT | BOGOSITY |
 	    BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER | BOTTOM_SIDE | BOTTOM_TEE |
@@ -188,6 +191,7 @@ structure GtkBuilder :> GtkBuilder =
 		val white   = GDK.allocateGDKColor(65535, 65535, 65535)
 	    in
 		(GTK.textSetEditable(text, false);
+		 GTK.widgetSetUsize(text, Real.round xdim, Real.round ydim);
 		 GDK.colormapAllocColor(map, black, false, true);
 		 GDK.colormapAllocColor(map, white, false, true);
 		 MakeTextContents((text, font, black, white), ts))
@@ -212,6 +216,24 @@ structure GtkBuilder :> GtkBuilder =
 		val note = GTK.notebookNew ()
 	    in
 		(GTK.notebookSetShowTabs(note, showlabel); MakeNoteEntries(note, entries); note)
+	    end
+	and MakeTreeItems(tree, nil)                       = ()
+	  | MakeTreeItems(tree, (TreeItem title)::ir)      =
+	    (GTK.treeAppend(tree, GTK.treeItemNewWithLabel title); MakeTreeItems(tree, ir))
+	  | MakeTreeItems(tree, (SubTree(title, sub))::ir) =
+	    let
+		val item    = GTK.treeItemNewWithLabel title
+		val subtree = MakeTree sub
+	    in
+		(GTK.treeAppend(tree, item);
+		 GTK.treeItemSetSubtree(item, subtree);
+		 MakeTreeItems(tree, ir))
+	    end
+	and MakeTree entries =
+	    let
+		val tree = GTK.treeNew ()
+	    in
+		(MakeTreeItems(tree, entries); tree)
 	    end
 	and MakeButtonBoxEntries (box, nil)      = ()
 	  | MakeButtonBoxEntries (box, desc::br) =
@@ -278,6 +300,7 @@ structure GtkBuilder :> GtkBuilder =
 	  | MakeWidget (Text params)             = MakeTextWidget params
 	  | MakeWidget (Calendar params)         = MakeCalendar params
 	  | MakeWidget (Notebook params)         = MakeNotebook params
+	  | MakeWidget (Tree params)             = MakeTree params
 	  | MakeWidget (HButtonBox params)       = MakeButtonBox(GTK.hbuttonBoxNew, params)
 	  | MakeWidget (VButtonBox params)       = MakeButtonBox(GTK.vbuttonBoxNew, params)
 	  | MakeWidget (MenuBar params)          = MakeMenuBar params

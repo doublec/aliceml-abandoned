@@ -23,6 +23,7 @@ signature GtkBuilder =
 	  | Text        of {xdim:real, ydim:real, text:string list}
 	  | Calendar    of GtkSignalHandler list
 	  | Notebook    of bool * ({label:string, note:GtkWidget} list)
+	  | Tree        of GtkTreeItem list
 	  | HButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	  | VButtonBox  of GtkButtonBoxStyle * GtkWidget list
 	  | MenuBar     of {label:string, submenu:GtkMenuItem list} list
@@ -46,6 +47,9 @@ signature GtkBuilder =
 	and GtkMenuItem =
 	    MenuItem of string * GtkSignalHandler list
 	  | SubMenu  of string * GtkMenuItem list
+	and GtkTreeItem =
+	    TreeItem of string
+	  | SubTree  of string * GtkTreeItem list
 	and GtkCursorType =
 	    X_CURSOR | ARROW | BASED_ARROW_DOWN | BASED_ARROW_UP | BOAT | BOGOSITY |
 	    BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER | BOTTOM_SIDE | BOTTOM_TEE |
