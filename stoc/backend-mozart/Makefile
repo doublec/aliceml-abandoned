@@ -1,4 +1,4 @@
-SOURCES = Frontend.oz Builtins.oz CodeGen.oz Assembler.oz
+SOURCES = Frontend.oz Builtins.oz Prebound.oz CodeGen.oz Assembler.oz
 
 .PHONY: all clean
 

@@ -60,6 +60,7 @@ define
 	 {Share I ShareDict}
       [] returnStm(Coord Exp) then
 	 returnStm(Coord {ShareExp Exp ShareDict})
+      [] exportStm(_ _) then Stm
       end
    end
 

@@ -19,6 +19,7 @@ import
    Narrator('class')
    ErrorListener('class')
    Builtins(getInfo)
+   Prebound(env)
 export
    Translate
 define
@@ -27,17 +28,14 @@ define
 
    BuiltinTable = unit   %--** table mapping Stockhausen builtins to Mozart
 
-   Prebound = ['false' 'true' 'nil' 'cons' 'ref' 'Match' 'Bind' 'eq' 'assign'
-	       '<' '+' '*']
-
    fun {MakeRegDict CS ?RegDict}
       RegDict = {NewDictionary}
       {List.toRecord prebound
-       {Map Prebound
+       {Map {Arity Prebound.env}
 	fun {$ X} Reg in
 	   {CS newReg(Reg)}
 	   {Dictionary.put RegDict X Reg}
-	   Reg#X
+	   Reg#Prebound.env.X
 	end}}
    end
 
@@ -199,6 +197,8 @@ define
 	 else
 	    {TranslateExp Exp ReturnReg VHd VTl State}
 	 end
+      [] exportStm(_ _) then
+	 VHd = VTl   %--**
       end
    end
 
