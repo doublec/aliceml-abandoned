@@ -20,7 +20,6 @@ structure EventHandler : ALICEIDEGUISIGNALS_SIG =
         fun on_find_and_replace_activate _ = AliceIde.search()
         fun on_feedline_activate _ = AliceIde.feedLine()
         fun on_feedparagraph_activate _ = AliceIde.feedParagraph()
-        fun on_paragraphnewline_activate _ = AliceIde.feedParagraphNewline()
         fun on_feedselection_activate _ = AliceIde.feedSelection()
         fun on_feedfile_activate _ = AliceIde.feedFile()
         fun on_stop_activate _ = AliceIde.stopEval()

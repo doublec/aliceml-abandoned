@@ -26,7 +26,6 @@ signature ALICEIDEGUISIGNALS_SIG =
     val on_syntax_colouring_activate : Gtk.callback_function
     val on_feedline_activate : Gtk.callback_function
     val on_feedparagraph_activate : Gtk.callback_function
-    val on_paragraphnewline_activate : Gtk.callback_function
     val on_feedselection_activate : Gtk.callback_function
     val on_feedfile_activate : Gtk.callback_function
     val on_stop_activate : Gtk.callback_function
@@ -53,7 +52,6 @@ functor AliceIdeGUISignals(structure S : ALICEIDEGUISIGNALS_SIG) =
     val syntax_colouring_on_syntax_colouring_activate = Gtk.signalConnect(AliceIdeGUI.syntax_colouring, "activate",S.on_syntax_colouring_activate)
     val feedline_on_feedline_activate = Gtk.signalConnect(AliceIdeGUI.feedline, "activate",S.on_feedline_activate)
     val feedparagraph_on_feedparagraph_activate = Gtk.signalConnect(AliceIdeGUI.feedparagraph, "activate",S.on_feedparagraph_activate)
-    val paragraphnewline_on_paragraphnewline_activate = Gtk.signalConnect(AliceIdeGUI.paragraphnewline, "activate",S.on_paragraphnewline_activate)
     val feedselection_on_feedselection_activate = Gtk.signalConnect(AliceIdeGUI.feedselection, "activate",S.on_feedselection_activate)
     val feedfile_on_feedfile_activate = Gtk.signalConnect(AliceIdeGUI.feedfile, "activate",S.on_feedfile_activate)
     val stop_on_stop_activate = Gtk.signalConnect(AliceIdeGUI.stop, "activate",S.on_stop_activate)

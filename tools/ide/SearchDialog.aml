@@ -1,7 +1,6 @@
 import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure Key from "x-alice:/lib/gtk/Key"
-import structure AliceIdeGUI from "AliceIdeGUI"
 import structure Buffer from "Buffer"
 
 structure SearchDialog =
@@ -15,11 +14,11 @@ structure SearchDialog =
         val dialog_action_area1 = Gtk.hbuttonBoxNew()
         val _ = Gtk.widgetShow dialog_action_area1
         val _ = Gtk.buttonBoxSetLayout(dialog_action_area1,Gtk.BUTTONBOX_END)
-        val cancelbutton1 = Gtk.buttonNewFromStock("gtk-cancel")
+        val cancelbutton1 = Gtk.dialogAddButton(searchDialog,"Cancel",Gtk.GtkResponseTypeToInt Gtk.RESPONSE_CANCEL)
         val _ = Gtk.widgetShow cancelbutton1
-        val okbutton1 = Gtk.buttonNewFromStock("gtk-ok")
+        val okbutton1 = Gtk.dialogAddButton(searchDialog,"Ok",Gtk.GtkResponseTypeToInt Gtk.RESPONSE_OK)
         val _ = Gtk.widgetShow okbutton1
-        val _ = AliceIdeGUI.Helpers.containerAddList(dialog_action_area1,[cancelbutton1,okbutton1])
+        val _ = Gtk.dialogSetDefaultResponse(searchDialog, Gtk.GtkResponseTypeToInt Gtk.RESPONSE_OK)
         val vbox4 = Gtk.vboxNew(false,0)
         val _ = Gtk.widgetShow vbox4
         val hbox1 = Gtk.hboxNew(false,0)
@@ -65,11 +64,6 @@ structure SearchDialog =
         val _ = Gtk.signalConnect(searchDialog, "delete-event", closeCallback)
         val _ = Gtk.signalConnect(cancelbutton1, "clicked", closeCallback)
 
-        (* TODO: This doesn't work :-( *)
-        val _ = Gtk.widgetAddAccelerator(cancelbutton1, "clicked",
-                                         accelGroup,
-                                         Key.keyvalToInt Key.K_Escape,
-                                         Gdk.IntToGdkModifierType 0, Gtk.ACCEL_LOCKED)
         val _ = Gtk.widgetAddAccelerator(searchDialog, "close",
                                          accelGroup,
                                          Key.keyvalToInt Key.K_Escape,
@@ -77,27 +71,25 @@ structure SearchDialog =
         val _ = Gtk.windowAddAccelGroup(searchDialog,
                                         accelGroup);
 
-        fun doSearch buf _ =
+        fun doSearch id _ =
             let
-                val iter = Buffer.getCursorIter buf
-                val off = Gtk.textIterGetOffset iter
                 val txt = Gtk.entryGetText searchString
                 val caseSensitive = Gtk.toggleButtonGetActive checkbutton1
             in
                 print ("find "^txt^" "^
                        (if caseSensitive then "c" else "")^"\n");
-                Buffer.find buf iter off txt caseSensitive
+                Buffer.find id txt caseSensitive
             end
                 
         val searchSignal = ref NONE
-        fun reconnect buf =
+        fun reconnect id =
             case !searchSignal of
-                NONE => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch buf)))
-              | SOME s => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch buf));
+                NONE => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch id)))
+              | SOME s => (searchSignal := SOME (Gtk.signalConnect(okbutton1, "clicked", doSearch id));
                            Gtk.signalDisconnect(okbutton1, s))
 
-        fun search buf =
-            (reconnect buf;
+        fun search id =
+            (reconnect id;
              Gtk.widgetShowAll searchDialog;
              Gtk.widgetMap searchDialog)
     end

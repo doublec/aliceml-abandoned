@@ -3,10 +3,14 @@ import structure Gtk from "x-alice:/lib/gtk/Gtk"
 import structure Gdk from "x-alice:/lib/gtk/Gdk"
 import structure PangoEnums from "x-alice:/lib/gtk/PangoEnums"
 import structure Core from "x-alice:/lib/gtk/Core"
+import structure FileDialog from "FileDialog"
 
 structure Buffer =
    struct
       structure BufferMap = MkHashImpMap(Int)
+
+      datatype undo = INSERT of (int * int)
+                    | DELETE of (int * int)
 
       type tags = {err : Gtk.object,
                    std : Gtk.object,
@@ -22,7 +26,9 @@ structure Buffer =
                      fileLabel: Gtk.object,
                      view: Gtk.object,
                      buf: Gtk.object,
-                     tags: tags}
+                     tags: tags,
+                     undo: undo list ref,
+                     lastSearchPos: int ref}
 
       val bufferMap : buffer BufferMap.map = BufferMap.map()
 
@@ -88,14 +94,31 @@ structure Buffer =
                   Gtk.labelSetText(fileLabel, fileName)
           end
 
-      fun deleteRange id _ =
-          print ("changed "^Int.toString id^"\n")
+      fun deleteRange id (obj, [Gtk.OBJECT iter1, Gtk.OBJECT iter2]) = ()
+(*          let
+              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val del_start = 0 (*Gtk.textIterGetOffset iter1*)
+              val del_end = 0 (*Gtk.textIterGetOffset iter2*)
+          in
+              print ("delete "^
+                     Int.toString del_start^" "^
+                     Int.toString del_end^"\n");
+              undo := DELETE(del_start, del_end) :: (!undo)
+          end*)
+        | deleteRange _ _ = print "Gtk is crazy"
 
-      fun insertText id (buf,[Gtk.OBJECT iter, _, _]) =
-          ()
+      fun insertText id (buf,[Gtk.OBJECT iter, _, Gtk.INT length]) =
+          let
+              val {undo,...} = BufferMap.lookupExistent(bufferMap, id)
+              val cursor = getCursorIter buf
+              val newOff = Gtk.textIterGetOffset cursor
+              val oldOff = newOff - length
+          in
+              undo := INSERT(oldOff, newOff) :: (!undo)
+          end
         | insertText _ _ = print "Gtk is crazy"
 
-      fun buffer(parent,id,file) =
+      fun buffer {notebook,id,file,loadFile} =
           let
               val fileName = Option.getOpt(file, "New file "^Int.toString id)
               val scrolledwindow2_xa = Gtk.adjustmentNew(0.0,0.0,0.0,1.0,0.0,0.0)
@@ -120,18 +143,21 @@ structure Buffer =
               val _ = Gtk.containerAdd(scrolledwindow2,newSource)
               val label1 = Gtk.labelNew (shortName fileName)
               val _ = Gtk.widgetShow label1
-	      val _ = Gtk.notebookAppendPage(parent, scrolledwindow2, label1)
-              val page = Gtk.notebookGetCurrentPage parent
-              val _ = Gtk.notebookSetCurrentPage(parent, page)
+	      val _ = Gtk.notebookAppendPage(notebook, scrolledwindow2, label1)
+              val page = Gtk.notebookPageNum(notebook, scrolledwindow2)
+              val _ = Gtk.notebookSetCurrentPage(notebook, page)
 
               val ret = {id=id,file=ref file,
                          fileLabel=label1,
                          view=newSource,buf=buf,
-                         tags=makeTags buf}
+                         tags=makeTags buf,
+                         undo=ref nil,
+                         lastSearchPos=ref 0}
               val _ = Gtk.signalConnect(buf, "modified-changed", modifiedChanged id)
               val _ = Gtk.signalConnect(buf, "delete-range", deleteRange id)
               val _ = Gtk.signalConnect(buf, "insert-text", insertText id)
           in
+              if loadFile then
               case file of NONE => ()
                          | SOME f =>
                            let
@@ -141,7 +167,8 @@ structure Buffer =
                            in
                                Gtk.textBufferSetText(buf, text, ~1);
                                Gtk.textBufferSetModified(buf, false)
-                           end;
+                           end handle Io => FileDialog.message "IO error. Could not open file."
+              else ();
               BufferMap.insertDisjoint(bufferMap, id, ret);
               ret
           end
@@ -178,7 +205,7 @@ structure Buffer =
                                      TextIO.output(file, str);
                                      TextIO.closeOut file;
                                      Gtk.textBufferSetModified(buf, false)
-                                 end
+                                 end handle Io => FileDialog.message "IO Error. Could not save file."
                              else ();
                              true)
           end
@@ -216,15 +243,31 @@ structure Buffer =
           else (Gtk.textIterSetOffset(iter,back);
                 false)
 
-      fun find buf iter off txt caseSensitive =
-          if match iter off txt 0 caseSensitive then
-              let
-                  val iter' = Gtk.textIterCopy iter
-              in
-                  Gtk.textIterForwardChars(iter',size txt);
-                  selectRange(buf,iter,iter')
-              end
-          else if Gtk.textIterForwardChar iter then
-              find buf iter (off+1) txt caseSensitive
-          else print "not found\n"
+      fun find' iter off txt caseSensitive =
+          (match iter off txt 0 caseSensitive orelse
+           (Gtk.textIterForwardChar iter andalso
+            find' iter (off+1) txt caseSensitive))
+
+      fun find id txt caseSensitive =
+          let
+              val {view,buf,lastSearchPos,...} = BufferMap.lookupExistent(bufferMap, id)
+              val iter = getCursorIter buf
+              val off = Gtk.textIterGetOffset iter
+              val off = if (off = (!lastSearchPos)) andalso Gtk.textIterForwardChar iter
+                        then off + 1
+                        else off
+          in
+              if find' iter off txt caseSensitive then
+                  let
+                      val iter' = Gtk.textIterCopy iter
+                  in
+                      Gtk.textIterForwardChars(iter',size txt);
+                      lastSearchPos := Gtk.textIterGetOffset iter;
+                      selectRange(buf,iter,iter');
+                      Gtk.textViewScrollToMark(view,
+                                               Gtk.textBufferGetInsert buf,
+                                               0.0,false,0.0,0.0)
+                  end
+              else ()
+          end
    end

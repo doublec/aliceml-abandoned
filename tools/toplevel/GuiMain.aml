@@ -48,7 +48,7 @@ structure AliceIde =
 
         (* Buffers *)
 
-        val curtextview = ref AliceIdeGUI.scratchpad
+        val curtextview = ref Gtk.NULL
         val clipboard = Gtk.clipboardGet(Gdk.atomIntern("CLIPBOARD", false))
 
         val numberOfPages = ref 0
@@ -57,14 +57,14 @@ structure AliceIde =
         val pages = ref nil
         fun removePage i =
             let
-                val (pre,post) = List.split(!pages, i)
-                val (pre,[p]) = List.split(pre,i-1)
+                val (pre,post) = List.split(!pages, i+1)
+                val (pre,[p]) = List.split(pre,i)
             in
-                (pages := (List.take(pre,i-1)@post));
+                (pages := (List.take(pre,i)@post));
                 p
             end
         fun addPage p = pages := (!pages)@[p]
-        fun getPage i = List.nth (!pages, i-1)
+        fun getPage i = List.nth (!pages, i)
         fun getCurrentPage () = getPage (!currentPage)
 
         (* Evaluation *)
@@ -212,23 +212,6 @@ structure AliceIde =
             in
                 eval (str^"\n")
             end
-
-        fun feedParagraphNewline() =
-            let
-                val buf = Gtk.textViewGetBuffer (!curtextview)
-                val (startiter, enditer) = paragraphIters(buf)
-                val startline = 1 + Gtk.textIterGetLine startiter
-                val str = addNewlines(startline,
-                                      Core.utf8ToLatin1
-                                          (Gtk.textBufferGetText(buf, startiter, enditer, false)))
-                val _ = Gtk.textBufferPlaceCursor(buf, enditer)
-            in
-                case eolBeforeNonWS 0 enditer Gtk.textIterForwardChar of
-                    0 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
-                  | 2 => Gtk.textBufferInsertAtCursor(buf, "\n\n", 2)
-                  | _ => Gtk.textBufferPlaceCursor(buf, enditer);
-                eval (str^"\n")
-            end
             
         fun copy() =
             let
@@ -302,7 +285,7 @@ structure AliceIde =
                 app (colorRegion buf) regions
             end
 
-        fun search() = SearchDialog.search (Gtk.textViewGetBuffer (!curtextview))
+        fun search() = SearchDialog.search (getCurrentPage())
 
         fun markSet (buf,_) =
             let
@@ -315,10 +298,12 @@ structure AliceIde =
                              Gtk.textIterGetLineOffset iter))
             end
 
-        fun new() =
+        fun new' file =
             let
-                val {buf,view,...} = Buffer.buffer(AliceIdeGUI.notebook1,
-                                           !numberOfPages, NONE)
+                val {buf,view,...} = Buffer.buffer {notebook=AliceIdeGUI.notebook1,
+                                                    id=(!numberOfPages),
+                                                    file=file,
+                                                    loadFile=false}
             in
                 curtextview := view;
                 Gtk.widgetGrabFocus (!curtextview);
@@ -327,14 +312,17 @@ structure AliceIde =
                 addPage(!numberOfPages);
                 numberOfPages := (!numberOfPages) + 1
             end
+        fun new() = new' NONE
 
         fun openFile () =
             case FileDialog.openFile "Open file" of
                 NONE => ()
               | SOME f =>
                 let
-                    val {buf,view,...} = Buffer.buffer(AliceIdeGUI.notebook1,
-                                                       !numberOfPages, SOME f)
+                    val {buf,view,...} = Buffer.buffer {notebook=AliceIdeGUI.notebook1,
+                                                        id=(!numberOfPages),
+                                                        file=SOME f,
+                                                        loadFile=true}
                 in
                     curtextview := view;
                     Gtk.widgetGrabFocus (!curtextview);
@@ -355,7 +343,7 @@ structure AliceIde =
 
         fun switchPage(cur,view) =
             (currentPage := cur; curtextview := view;
-             SearchDialog.reconnect (Gtk.textViewGetBuffer view))
+             SearchDialog.reconnect (getCurrentPage()))
 
         fun reallyClose p =
             (removePage p;
@@ -381,16 +369,24 @@ structure AliceIde =
         fun jumpToError (row, col, row', col') _ =
             let
                 val buf = Gtk.textViewGetBuffer(!curtextview)
+                val lineCount = Gtk.textBufferGetLineCount buf
                 val startiter = Gtk.textIterNew()
                 val _ = Gtk.textBufferGetStartIter(buf, startiter)
                 val enditer = Gtk.textIterCopy startiter
             in
-                Gtk.textIterSetLine(startiter, row-1);
-                Gtk.textIterSetLine(enditer, row'-1);
-                Gtk.textIterSetLineOffset(startiter, col);
-                Gtk.textIterSetLineOffset(enditer, col');
-                Buffer.selectRange(buf, startiter, enditer);
-                Gtk.widgetGrabFocus (!curtextview)
+                if row <= lineCount andalso
+                   row' <= lineCount
+                then
+                    (Gtk.textIterSetLine(startiter, row-1);
+                     Gtk.textIterSetLine(enditer, row'-1);
+                     if col <= Gtk.textIterGetCharsInLine startiter andalso
+                        col' <= Gtk.textIterGetCharsInLine enditer then
+                         (Gtk.textIterSetLineOffset(startiter, col);
+                          Gtk.textIterSetLineOffset(enditer, col');
+                          Buffer.selectRange(buf, startiter, enditer);
+                          Gtk.widgetGrabFocus (!curtextview))
+                     else print "past offset")
+                else print "past lines"
             end
 
         fun findErrorStart iter tag =
@@ -457,30 +453,24 @@ structure AliceIde =
           | populatePopup _ = print "Gtk is crazy\n"
 
         fun init () =
-            let
-                val buf = Gtk.textViewGetBuffer AliceIdeGUI.scratchpad
-                val tags = Buffer.makeTags buf
-            in
-                Gtk.widgetGrabFocus (!curtextview);
-                Gtk.signalConnect(buf, "mark-set", markSet);
-                Gtk.signalConnect(buf, "insert-text", insertText buf);
-                Gtk.signalConnect(buf, "delete-range", deleteRange buf);
-                Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
-	        OutputWriters.makeWriters {inStream = inText,
-					   outStream = outText,
-					   errStream = errText,
-					   traceStream = traceText,
-					   stdOutStream = stdOutText,
-					   stdErrStream = stdErrText,
-                                           stdInStream = stdin,
-                                           rowColStream = rowColStream};
-                Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
-                                        AliceIdeGUI.Helpers.accelGroup);
-                Gtk.widgetAddAccelerator(AliceIdeGUI.paragraphnewline, "activate",
-                                         AliceIdeGUI.Helpers.accelGroup,
-                                         Key.keyvalToInt Key.K_Return,
-                                         Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED)
-            end
+            (Gtk.signalConnect(AliceIdeGUI.compilerout, "populate-popup", populatePopup);
+	     OutputWriters.makeWriters {inStream = inText,
+					outStream = outText,
+					errStream = errText,
+					traceStream = traceText,
+					stdOutStream = stdOutText,
+					stdErrStream = stdErrText,
+                                        stdInStream = stdin,
+                                        rowColStream = rowColStream};
+             Gtk.windowAddAccelGroup(AliceIdeGUI.mainwidget,
+                                     AliceIdeGUI.Helpers.accelGroup);
+             Gtk.widgetAddAccelerator(AliceIdeGUI.feedparagraph, "activate",
+                                      AliceIdeGUI.Helpers.accelGroup,
+                                      Key.keyvalToInt Key.K_Return,
+                                      Gdk.CONTROL_MASK, Gtk.ACCEL_LOCKED))
+
+        fun createScratchpad() = new' (SOME "Scratchpad")
+                                  
 
         fun quit () = if List.all Buffer.close (!pages) then
                           OS.Process.exit OS.Process.success
