@@ -25,6 +25,7 @@ import structure HighscoreIO    from "HighscoreIO"
 import signature SERVER         from "SERVER-sig"
 import structure MkHeap         from "../common/MkHeap"
 import structure Inspector      from "x-alice:/lib/tools/Inspector"
+import structure Stream         from "x-alice:/lib/data/Stream"
 
 (*
 import val dummyClient          from "DummyClient"
@@ -171,54 +172,50 @@ struct
                             where (isNone (#lives config) orelse
                             !deathCount < valOf (#lives config))=> true
                         |   _                                   => false) part
+            
+            type rpc    = unit -> unit
 
- 
-	    (* RPC call.  
-               - Synchronized so that there can always be
-                 only one call to a given client.
-               - If an exception is raised the RPC has failed
-                 and the client is removed from the connection 
-                 queue!
-               - Does nothing if the client is already disconnected.
+            fun actualInvoke (p, [])       = ()
+              | actualInvoke (p, r::rpcs)   =
+                if Part.isConnected p then 
+                    (r () handle e => Part.disconnect p;
+                     actualInvoke (p, rpcs))
+                else
+                    (* participant is not connected --> do not process
+                      rpcs to this client any more *)
+                    ()
+
+            val rpcs    = ref PMap.empty : rpc Stream.stream PMap.map ref
+           
+            fun startRPCHandler p =
+                let
+                    val (stream, l) = Stream.stream ()
+                in                
+                    ispawn (_file_, _line_) actualInvoke (p, l);
+                    rpcs := PMap.insertDisjoint (!rpcs, Part.id p, stream)
+                end 
+                 
+	    (* schedule an RPC call.  
              *)
             fun invoke (part, f, a) =
                 let
                     (* we use this promise as a lock *)
-                    val p       = Promise.promise () 
-                    val id      = Part.id part
-                    val _       = 
-                        log ("Server", ("invoke: aquiring lock on", id))
-                    val state   = Ref.exchange (Part.state part, 
-                                                    Promise.future p)
-                    val client  = Part.client_interface part
+                    val id          = Part.id part
+                    val client      = Part.client_interface part
+                    val rpcStream   = PMap.lookupExistent (!rpcs, id)
                 in
-                    ((case state of
-                        Part.DISCONNECTED   => 
-                            log ("Server", ("invoke: disconnected", id))
-                    |   _                   => 
-                        (log ("Server", ("invoke: calling", id));
-                         f client a;
-                         log ("Server", ("invoke: called", id))));
-                    (* call was successful. state hasn't changed.
-                       must fulfill the promise anyway to release
-                       the lock. *)
-                    log ("Server", ("releasing lock on", id));
-                    Promise.fulfill (p, state));
-                    log ("Server", ("lock released on", id))
-                handle e => (
-                    (* call failed! *)
-                    log ("Server", "RPC failed: " ^ exnName e);
-                    (* change state to disconnected *)
-                    Promise.fulfill (p, Part.DISCONNECTED))
+                    if Part.isConnected part then
+                        Stream.send (rpcStream, (fn () => f client a))
+                    else
+                        Stream.close rpcStream        
                 end 
                 
             (* Invoke f a on several clients simultaneously.
                Returns immediately -- without waiting for the
                calls to finish.
              *)
-            fun invokeSeveral loc (clients, f, a) = 
-                List.app (fn c => ispawn loc invoke (c, f, a)) 
-                    clients 
+            fun invokeSeveral (clients, f, a) = 
+                List.app (fn c => invoke (c, f, a)) clients 
                
 
             (* [withParticipant def (procName, id, f) returns a function which 
@@ -228,9 +225,10 @@ struct
             fun withParticipant default (procName, id, f) a =
                 let val p = PMap.lookupExistent (!participants, id)
                 in
-                    case !(Part.state p) of 
-                        Part.DISCONNECTED   => default
-                    |   _                   => f (p, a)
+                    if Part.isConnected p then
+                        f (p, a)
+                    else
+                        default
                 end handle PMap.Unknown id =>
                     raise P.Protocol (procName ^ ": unknown client " ^ 
                             Int.toString id)
@@ -276,8 +274,8 @@ struct
                         ({ name, color, points, gamePoints }, livesLeft)
                     end) (Part.allWithPoints (! participants) )
 
-            fun sendPoints p =
-                invokeSeveral p (Part.allConnected $ ! participants , 
+            fun sendPoints () =
+                invokeSeveral (Part.allConnected $ ! participants , 
                     #updatePoints, computePointsList ())
 
             fun play id = Lock.sync lock (
@@ -307,7 +305,7 @@ struct
                                 (Part.state part) := Part.PLAYING 
                                                         (playerState, snake);
                                 (* inform the other PLAYERs *)
-                                invokeSeveral (_file_, _line_) 
+                                invokeSeveral 
                                     (players, #playersJoined, [(name, color)]);
                                     true
                             end
@@ -360,7 +358,7 @@ struct
                         Part.PLAYING (state, _) =>
                         (kill id; 
                          (* TODO: send player finished signal *)
-                         sendPoints (_file_, _line_))
+                         sendPoints ())
                     |   _                       => ()
                 ))
 
@@ -373,9 +371,10 @@ struct
                     val highscore   = Highscore.merge (highscore, 
                                         List.map #1 $ computePointsList (), 0) (*FIXME*)
                 in
-                    invokeSeveral (_file_, _line_)
+                    invokeSeveral
                         (Part.allConnected $ ! participants, #tournamentFinished, 
                             highscore);
+                    rpcs := PMap.empty; 
                     raise TournamentFinished
                 end
 
@@ -414,16 +413,16 @@ struct
                         ) (p, startPos);
 
 		    log ("Server", "sending levelStarted");
-                    invokeSeveral (_file_, _line_) 
+                    invokeSeveral 
                         (Part.allConnected $ ! participants, #levelStarted,
                                 { dimensions = dims });
                     
 		    log ("Server", (">>>>sending initial Difflist<<<<<<", diffs));
-                    invokeSeveral (_file_, _line_) 
+                    invokeSeveral 
                         (Part.allConnected $ ! participants, #update, diffs);
                     
                     log ("Server", ("sending initial points"));
-                    sendPoints (_file_, _line_);
+                    sendPoints ();
 
                     {levels, oldArena, ticks = 0, newArena=arena, goodies = 0}
                 end
@@ -435,7 +434,7 @@ struct
                     val _   = assert null (Part.allPlayers $ ! participants)
                 in
                     (* send level finished signal *)
-                    invokeSeveral (_file_, _line_) 
+                    invokeSeveral 
                         (Part.allConnected $ ! participants, #levelFinished, ());
 
                     case (levels, allPossiblePlayers $ ! participants) of
@@ -567,7 +566,7 @@ struct
                 in
                     (* broadcast differences *)
                     log ("Server", "broadcasting differences");
-                    invokeSeveral (_file_, _line_) 
+                    invokeSeveral 
                         (Part.allConnected $ ! participants, #update, changes);
                     
                     (* change state of participants whose snake died to DEAD. *)
@@ -585,7 +584,7 @@ struct
                         end) deadSnakes ++
         
                     (* inform the snakes, if any corpses are around *)
-                    mayAppList (fn deads => invokeSeveral (_file_, _line_)
+                    mayAppList (fn deads => invokeSeveral
                         (Part.allConnected $ ! participants, #playersDied, deads));
                 
 		    (* inform snake about their new head positions *)
@@ -637,13 +636,13 @@ struct
                         
                     (* inform the snakes *)
                     mayAppList (fn namesNColors =>
-                        invokeSeveral (_file_, _line_)
+                        invokeSeveral
                             (Part.allConnected $ ! participants, 
                                 #playersFinished, namesNColors));
                     
                     (* send updated points list if necessary *)
                     if !pointsChanged then
-                        sendPoints (_file_, _line_)
+                        sendPoints ()
                     else ();
 
                     (* check for completely finished participants 
@@ -661,7 +660,7 @@ struct
                         
                     (* send tick signal *)
                     log ("Server", "send tick signal");
-                    invokeSeveral (_file_, _line_) 
+                    invokeSeveral 
                         (Part.allConnected $ ! participants, #tick, 
                             timeLeft);
   
@@ -711,7 +710,7 @@ struct
                 else raise P.Protocol "game already started";
                 
                 (* send startTournament signal *)
-                invokeSeveral (_file_, _line_)
+                invokeSeveral
                     (Part.allConnected $ ! participants, #tournamentStarted, ());
                 
                 (* start tick signal sender *)
@@ -731,6 +730,9 @@ struct
                 in
                     (* insert into participant map *)
                     participants := PMap.insertDisjoint (!participants, id, uc);
+                    (* start RPC handler and register it *)
+                    startRPCHandler uc;
+
                     (* inform the NEW player of the other 
                        already connected players *)
                     ispawn (_file_, _line_) 

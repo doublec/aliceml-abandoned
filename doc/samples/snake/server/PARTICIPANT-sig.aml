@@ -36,7 +36,7 @@ sig
       | FINISHED of player_info * id option ref
       | DEAD     of player_info * id option ref
       | WATCHING of id option ref
-      | DISCONNECTED    (* TODO: Do we need it? *)
+      | DISCONNECTED    
 
     
     type participant
@@ -51,6 +51,9 @@ sig
     
     val nameNColor :        participant -> string * Color.color
 
+    val isConnected :       participant -> bool
+
+    val disconnect :        participant -> unit
 
     (******* operations on a participant map *)
 

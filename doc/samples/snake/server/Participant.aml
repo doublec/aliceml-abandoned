@@ -28,27 +28,37 @@ struct
       | DISCONNECTED    (* TODO: Do we need it? *)
 
 
-    type participant = (id * Protocol.client_interface * state ref)
+    type participant = { 
+        id:             id,
+        interface:      Protocol.client_interface,
+        state:          state ref,
+        connected:      bool ref
+    }
 
     
     fun participant (id, interface) =
-        (id, interface, ref CONNECTED)
+        {id, interface, state = ref CONNECTED, 
+        connected = ref true }
 
-    fun playerInfo (_, _, ref (PLAYING (st, _)))        = st
-    |   playerInfo (_, _, ref (HALF_FINISHED (st, _)))  = st
-    |   playerInfo (_, _, ref (FINISHED (st, _)))       = st
-    |   playerInfo (_, _, ref (DEAD (st, _)))           = st
-    |   playerInfo _                                    = assert false
+    fun playerInfo (p: participant) =
+        case ! ( #state p ) of
+            PLAYING (st, _)         => st
+        |   HALF_FINISHED (st, _)   => st
+        |   FINISHED (st, _)        => st
+        |   DEAD (st, _)            => st
+        |   _                       => assert false
 
 
-    fun snake (_, _, ref (PLAYING (_, sn)))        = sn
-    |   snake _                                    = assert false
+    fun snake (p: participant) =
+        case ! ( #state p ) of
+            PLAYING (_, sn) => sn
+        |   _               => assert false
 
-    fun id (id, _, _) = id
+    fun id (p: participant) = #id p
 
-    fun client_interface (_, i, _)  = i
+    fun client_interface (p: participant) = #interface p
 
-    fun state (_, _, s) = s
+    fun state (p: participant) = #state p
 
     fun nameNColor p = 
         let
@@ -58,7 +68,10 @@ struct
         in
             (name, color)
         end
+    
+    fun disconnect (p: participant) = #connected p := false
 
+    fun isConnected (p: participant) = ! ( #connected p )
 
     structure Map = MkRedBlackMap (Int)
     
@@ -74,39 +87,40 @@ struct
      *)
     fun allPlayers p   = allParticipants 
             (fn p =>
-                case !(state p) of
-                    PLAYING _              => true
-                |   _                      => false) p
+                isConnected p andalso 
+                (case !(state p) of
+                    PLAYING _               => true
+                 |   _                      => false)) p
     
     fun allHalfFinished p  = allParticipants 
             (fn p => 
-                case !(state p) of 
-                    HALF_FINISHED _        => true
-                |   _                      => false) p
+                isConnected p andalso
+                (case !(state p) of 
+                     HALF_FINISHED _        => true
+                 |   _                      => false)) p
 
 
     fun allNonFinished p   = allParticipants 
             (fn p =>
-                case !(state p) of
-                    PLAYING _              => true
-                |   HALF_FINISHED _        => true
-                |   _                      => false) p
+                (isConnected p andalso 
+                (case !(state p) of
+                     PLAYING _              => true
+                 |   HALF_FINISHED _        => true
+                 |   _                      => false))) p
 
 
-    fun allConnected p = allParticipants
-            (fn p =>
-                case !(state p) of
-                    DISCONNECTED   => false
-                |   _              => true) p
+    fun allConnected p = allParticipants isConnected p
+
 
     fun allWithPoints p = allParticipants 
             (fn p =>
+                (isConnected p andalso
                 case !(state p) of
                     PLAYING _              => true
                 |   FINISHED _             => true
                 |   HALF_FINISHED _        => true
                 |   DEAD _                 => true
-                |   _                      => false) p
+                |   _                      => false)) p
 
  
 end
