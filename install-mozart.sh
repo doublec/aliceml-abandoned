@@ -38,7 +38,7 @@ rm -f bootstrap/alicec-mozart.$PLATFORM #bootstrap/alicedep.$PLATFORM
 (cd bootstrap && $MAKE) || exit 1
 (cd vm-mozart && $MAKE depend) || exit 1
 (cd vm-mozart && /usr/bin/time -po ${TIMEDIR}1 $MAKE ALICEC_EXTRA_OPTS="$OPTS1" build1-install) || exit 1
-(cd vm-mozart && $MAKE ALICEC_EXTRA_OPTS="$OPTS2" build2-install) || exit 1
+(cd vm-mozart && $MAKE ALICEC_EXTRA_OPTS="$OPTS2" build2-all) || exit 1
 (cd vm-mozart && /usr/bin/time -po ${TIMEDIR}3 $MAKE ALICEC_EXTRA_OPTS="$OPTS3" build3-install) || exit 1
 (cd vm-mozart && $MAKE PREFIX=$prefix install) || exit 1
 PATH=$prefix/bin:$PATH
