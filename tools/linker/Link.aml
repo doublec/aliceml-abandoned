@@ -244,9 +244,12 @@ structure Link :> LINK =
 			List.appr (fn url =>
 				      TextIO.print ("   " ^ Url.toString url ^
 						    "\n")) includes;
-			TextIO.print ("Imports (after rewrite):\n");
-			List.app (fn s => TextIO.print ("   " ^ s ^ "\n"))
-				 imports
+			if List.null imports then
+			    TextIO.print "No imports\n"
+			else
+			    (TextIO.print ("Imports (after rewrite):\n");
+			     List.app (fn s => TextIO.print ("   " ^ s ^ "\n"))
+				      imports)
 		    end
 		else ();
 		build (root, componentMap, includeMap, excludeMap, rewrite)
