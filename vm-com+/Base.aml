@@ -351,19 +351,9 @@ structure String =
 
 	fun map f s = implode (List.map f (explode s))
 
-	fun compare (s, t) =
-	    let
-		__primitive val compare' : string * string -> int =
-							"String.compare'"
-		val i = compare' (s, t)
-	    in
-		if i = 0 then EQUAL else if i < 0 then LESS else GREATER
-	    end
+	__primitive val compare : string * string -> order = "String.compare"
 
-	fun s < t =
-	    case compare (s, t) of
-		LESS => true
-	      | _ => false
+	fun s < t = compare (s, t) = LESS
     end
 
 
@@ -513,13 +503,7 @@ structure Int :> INTEGER =
 		sign (skipWSget getc source)
 	    end
 
-	fun compare (i, j) =
-	    let
-		__primitive val compare' : int * int -> int = "Int.compare'"
-		val n = compare' (i, j)
-	    in
-		if n = 0 then EQUAL else if n < 0 then LESS else GREATER
-	    end
+	__primitive val compare: int * int -> order = "Int.compare"
 
 	__primitive val toString : int -> string = "Int.toString"
 
