@@ -3,7 +3,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Andreas Rossberg, 2001
+ *   Andreas Rossberg, 2001-2002
  *
  * Last change:
  *   $Date$ by $Author$
@@ -20,11 +20,10 @@ sig
 
     type mismatch
     exception Mismatch of mismatch
-    exception MismatchVal
 
     functor Pack(signature S structure X : S) : (val package : package)
     functor Unpack(val package : package signature S) : S	(* Mismatch *)
     functor PackVal(type t val x : t) : (val package : val_package)
     functor UnpackVal(val package : val_package type t) : (val x : t)
-								(* MismatchVal*)
+								(* Mismatch *)
 end
