@@ -205,7 +205,7 @@ protected:
   void Await(u_int Ptr, word pc);
   u_int LoadIdRef(u_int Dest, word idRef, word pc);
   u_int ReloadIdRef(u_int Dest, word idRef);
-  void KillVariables();
+  void KillVariables(bool speculativePath = false);
   void BlockOnTransient(u_int Ptr, word pc);
   void LoadStatus(u_int Dest);
   void CheckPreempt(u_int pc);

@@ -994,14 +994,21 @@ u_int NativeCodeJitter::ReloadIdRef(u_int Dest, word idRef) {
   return Dest;
 }
 
-void NativeCodeJitter::KillVariables() {
+void NativeCodeJitter::KillVariables(bool speculativePath) {
   (void) jit_movi_p(JIT_R0, Store::IntToWord(4711));
-  for (u_int i = livenessTable->GetSize(); i--;) {
-    if (livenessTable->NeedsKill(i)) {
-      livenessTable->SetDead(i);
-      NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
+  if (speculativePath)
+    for (u_int i = livenessTable->GetSize(); i--;) {
+      if (livenessTable->NeedsKill(i)) {
+	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
+      }
     }
-  }
+  else
+    for (u_int i = livenessTable->GetSize(); i--;) {
+      if (livenessTable->NeedsKill(i)) {
+	livenessTable->SetDead(i);
+	NativeCodeFrame_PutEnv(JIT_V2, i, JIT_R0);
+      }
+    }
   SaveRegister();
 }
 
@@ -1011,7 +1018,7 @@ void NativeCodeJitter::BlockOnTransient(u_int Ptr, word pc) {
   Scheduler_SetCurrentData(Ptr);
   jit_movi_ui(JIT_R0, 0);
   Scheduler_PutNArgs(JIT_R0);
-  KillVariables();
+  KillVariables(true);
   jit_movi_ui(JIT_R0, Worker::REQUEST);
   RETURN();
 }
