@@ -280,7 +280,6 @@ struct
 	    val null       = TextIO.StreamIO.mkOutstream
 				(TextPrimIO.nullWr (), IO.NO_BUF)
 	in
-	    Global.traceComponentAccess := true;
 	    TextIO.setOutstream (traceStream, null);
 	    Debug.dumpPhases := false;
 	    Language.unsafeImport := true;
@@ -288,7 +287,8 @@ struct
 			     #1 (incremental' (SOME implicitImport)
 				 evalWith' (returnEvaluated, emptyEnv, "")));
 	    Language.unsafeImport := false;
-	    Debug.dumpPhases := dumpPhases
+	    Debug.dumpPhases := dumpPhases;
+	    Global.traceComponentAccess := true
 	end
 
     val _ = init ()
