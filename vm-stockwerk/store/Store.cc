@@ -341,8 +341,8 @@ inline Block *Store::HandleWeakDictionaries() {
   Set *wkdict_set = wkDictSet;
 #if defined(STORE_GC_DEBUG)
   std::printf("initial weakdict_size is %d\n", wkdict_set->GetSize()); 
+  std::fprintf(stderr, "Handling weak dictionaries\n");
 #endif
-  fprintf(stderr, "Handling weak dictionaries\n");
   // Allocate and initialize Finalisation Set
   Block *finset = INVALID_POINTER;
 
@@ -478,7 +478,9 @@ inline Block *Store::HandleWeakDictionaries() {
     }
   }
   // Now successivly forward the finalized tree
-  fprintf(stderr, "HandleWeakDictionaries: performing cheney scan\n");
+#if defined(STORE_GC_DEBUG)
+  std::fprintf(stderr, "HandleWeakDictionaries: performing cheney scan\n");
+#endif
   Store::CheneyScan(chunk, scan);
 #if defined(STORE_GC_DEBUG)
   std::printf("new_weakdict_size is %d\n", wkdict_set->GetSize());
