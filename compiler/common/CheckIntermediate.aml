@@ -291,17 +291,16 @@ end
 		t
 	   end
 
-	(* E |- exp : tt    t = conarrow (t1->t2)    t2 extensible
-	 * -------------------------------------------------------
-	 *                E |- new exp : t => t
+	(* t = conarrow (t1->t2)    t2 extensible
+	 * --------------------------------------
+	 *           E |- new : t => t
 	 *)
-	 | NewExp(i, exp) =>
+	 | NewExp(i) =>
 	   let
-		val  t       = #typ i
-		val  tt      = chExp E exp
-		val (t',t3)  = checked Type.asApply t
+		val  t      = #typ i
+		val (t',t3) = checked Type.asApply t
 			      (i, "NewExp application type", #[TYPE t])
-		val (t1,t2)  = checked Type.asArrow t3
+		val (t1,t2) = checked Type.asArrow t3
 			      (i, "NewExp type", #[TYPE t3])
 	   in
 		check (Type.equal(t', PervasiveType.typ_conarrow))

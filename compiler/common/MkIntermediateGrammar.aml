@@ -63,7 +63,7 @@ struct
 	  LitExp    of exp_info * lit			(* literal *)
 	| VarExp    of exp_info * longid		(* variable *)
 	| PrimExp   of exp_info * string		(* primitive value *)
-	| NewExp    of exp_info * exp			(* new constructor *)
+	| NewExp    of exp_info				(* new constructor *)
 	| TagExp    of exp_info * lab * exp		(* tagged value *)
 	| ConExp    of exp_info * longid * exp		(* constructed value *)
 	| RefExp    of exp_info	* exp			(* reference *)
@@ -150,7 +150,7 @@ struct
     fun infoExp(LitExp(i,_))		= i
       | infoExp(VarExp(i,_))		= i
       | infoExp(PrimExp(i,_))		= i
-      | infoExp(NewExp(i,_))		= i
+      | infoExp(NewExp(i))		= i
       | infoExp(TagExp(i,_,_))		= i
       | infoExp(ConExp(i,_,_))		= i
       | infoExp(RefExp(i,_))		= i

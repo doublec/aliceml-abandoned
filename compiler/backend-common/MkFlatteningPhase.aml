@@ -266,7 +266,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	  | translateCont (EndHandle (region, cont)) =
 	    [O.EndHandleStm (region, translateCont cont)]
 	and translateDec (ValDec (info, VarPat (_, id as Id (_, _, name)),
-				  NewExp (info', _(*--** *))), cont) =
+				  NewExp info'), cont) =
 	    O.ValDec (#region info, O.IdDef (translateId id),
 		      O.NewExp (#region info', name))::translateCont cont
 	  | translateDec (ValDec (info, VarPat (_, id), exp), cont) =
@@ -413,7 +413,7 @@ functor MkFlatteningPhase(structure Switches: SWITCHES) :> FLATTENING_PHASE =
 	    translateCont cont
 	  | translateExp (PrimExp (info, name), f, cont) =
 	    f (O.VarExp (#region info, O.Prim name))::translateCont cont
-	  | translateExp (NewExp (info, _(*--** *)), f, cont) =
+	  | translateExp (NewExp info, f, cont) =
 	    f (O.NewExp (#region info, Name.InId))::translateCont cont
 	  | translateExp (VarExp (info, longid), f, cont) =
 	    let
