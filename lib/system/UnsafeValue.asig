@@ -22,7 +22,7 @@ signature UNSAFE_VALUE_COMPONENT =
 
 		val cast: 'a_value -> 'a
 		val same: 'a * 'b -> bool
-		val awaitRequest : 'a -> 'a
+		val awaitRequest : 'a -> unit
 
 		(* Projections *)
 

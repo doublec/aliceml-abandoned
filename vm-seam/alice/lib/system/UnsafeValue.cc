@@ -82,7 +82,7 @@ Worker::Result RequestInterpreter::Run(StackFrame *sFrame) {
     Construct(); // TODO: Is this really necessary?
     Future *future = frame->GetFuture();
     future->ScheduleWaitingThreads();
-    future->Become(REF_LABEL, Scheduler::currentArgs[0]);
+    future->Become(REF_LABEL, Store::IntToWord(0));
     Scheduler::PopFrame(frame->GetSize());
     return Worker::CONTINUE;
   } else {
@@ -205,7 +205,9 @@ DEFINE2(UnsafeValue_same) {
 DEFINE1(UnsafeValue_awaitRequest) {
   Transient *transient = Store::WordToTransient(x0);
   if (transient == INVALID_POINTER)
-    RETURN(x0);
+{
+    RETURN_INT(0);
+}
   if (transient->GetLabel() == BYNEED_LABEL) {
     Closure *closure = STATIC_CAST(Byneed *, transient)->GetClosure();
     ConcreteCode *concreteCode =
@@ -224,10 +226,14 @@ DEFINE1(UnsafeValue_awaitRequest) {
       transient->ReplaceArg(requestClosure->ToWord());
     }
     Scheduler::nArgs          = 1;
-    Scheduler::currentArgs[0] = wFuture;
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
     REQUEST(wFuture);
   }
-  REQUEST(x0);
+  else {
+    Scheduler::nArgs          = 1;
+    Scheduler::currentArgs[0] = Store::IntToWord(0);
+    REQUEST(x0);
+  }
 } END
 
 DEFINE3(UnsafeValue_proj) {
@@ -362,7 +368,7 @@ DEFINE1(UnsafeValue_tuple) {
 } END
 
 // TagVal Template
-#define UNSAFE_VALUE_TAGGED(TAGVAL_TYPE) {					\
+#define RETURN_TAGGED(TAGVAL_TYPE) {						\
   TAGVAL_TYPE *tagVal = TAGVAL_TYPE::New(tag, length);				\
   for (u_int i = length; i--; ) {						\
     Tuple *labelValuePair = Tuple::FromWord(labelValueVec->Sub(i));		\
@@ -379,14 +385,14 @@ DEFINE3(UnsafeValue_tagged) {
   u_int length = labelValueVec->GetLength();
   if (length == 0) RETURN_INT(tag);
   if (Alice::IsBigTagVal(labels->GetLength())) {
-    UNSAFE_VALUE_TAGGED(BigTagVal);
+    RETURN_TAGGED(BigTagVal);
   } else {
-    UNSAFE_VALUE_TAGGED(TagVal);
+    RETURN_TAGGED(TagVal);
   }
 } END
 
 // TagVal Template
-#define UNSAFE_VALUE_TAGGED_TUPLE(TAGVAL_TYPE) {	\
+#define RETURN_TAGGED_TUPLE(TAGVAL_TYPE) {		\
   TAGVAL_TYPE *tagVal = TAGVAL_TYPE::New(tag, length);	\
   for (u_int i = length; i--; )				\
     tagVal->Init(i, values->Sub(i));			\
@@ -400,9 +406,9 @@ DEFINE3(UnsafeValue_taggedTuple) {
   u_int length = values->GetLength();
   if (length == 0) RETURN_INT(tag);
   if (Alice::IsBigTagVal(labels->GetLength())) {
-    UNSAFE_VALUE_TAGGED_TUPLE(BigTagVal);
+    RETURN_TAGGED_TUPLE(BigTagVal);
   } else {
-    UNSAFE_VALUE_TAGGED_TUPLE(TagVal);
+    RETURN_TAGGED_TUPLE(TagVal);
   }
 } END
 
