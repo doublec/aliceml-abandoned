@@ -52,6 +52,7 @@ define
       [] 'LastIdRef'(Id) then 'LastIdRef'({TrId Id})
       [] 'Lit'(_) then IdRef
       [] 'Prim'(String) then 'Prim'({VirtualString.toAtom String})
+      [] 'Value'(_) then IdRef
       end
    end
 
@@ -113,8 +114,8 @@ define
 				       end})
 			[] 'TagTests'(TagBodyVec) then
 			   'TagTests'({Record.map TagBodyVec
-				       fun {$ Label#N#Args#Body}
-					  {TrLabel Label}#N#
+				       fun {$ Labels#N#Args#Body}
+					  {Record.map Labels TrLabel}#N#
 					  {TrArgs Args TrIdDef}#
 					  {TrBody Body $ nil ShareDict}
 				       end})
@@ -156,8 +157,8 @@ define
    fun {TrExp Exp ShareDict}
       case Exp of 'NewExp'(Info Name) then 'NewExp'(Info {TrName Name})
       [] 'VarExp'(Info IdRef) then 'VarExp'(Info {TrIdRef IdRef})
-      [] 'TagExp'(Info Label N Args) then
-	 'TagExp'(Info {TrLabel Label} N {TrArgs Args TrIdRef})
+      [] 'TagExp'(Info Labels N Args) then
+	 'TagExp'(Info {Record.map Labels TrLabel} N {TrArgs Args TrIdRef})
       [] 'ConExp'(Info IdRef Args) then
 	 'ConExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
       [] 'RefExp'(Info IdRef) then 'RefExp'(Info {TrIdRef IdRef})
@@ -181,6 +182,8 @@ define
 		      {Record.map IdRefs TrIdRef})
       [] 'VarAppExp'(Info IdRef Args) then
 	 'VarAppExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
+      [] 'DirectAppExp'(Info IdRef Args) then
+	 'DirectAppExp'(Info {TrIdRef IdRef} {TrArgs Args TrIdRef})
       [] 'SelExp'(Info Prod Label N IdRef) then
 	 'SelExp'(Info {TrProd Prod} {TrLabel Label} N {TrIdRef IdRef})
       [] 'LazyPolySelExp'(Info Label IdRef) then

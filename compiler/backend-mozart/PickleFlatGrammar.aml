@@ -121,6 +121,8 @@ structure PickleFlatGrammar :> CODE
 	    (outputTuple (q, "Lit", 1); outputLit (q, lit))
 	  | outputIdRef (q, Prim name) =
 	    (outputTuple (q, "Prim", 1); ignore (outputAtom (q, name)))
+	  | outputIdRef (q, Value _) = 
+	    raise Crash.Crash "PickleFlatGrammar.outputIdRef"
 
 	fun outputFunFlag (q, PrintName s) =
 	    (outputTuple (q, "PrintName", 1); ignore (outputAtom (q, s)))
@@ -206,8 +208,8 @@ structure PickleFlatGrammar :> CODE
 	     outputVector (outputPair (outputLit, outputBody)) (q, litBodyVec))
 	  | outputTests (q, TagTests tagBodyVec) =
 	    (outputTuple (q, "TagTests", 1);
-	     outputVector (outputQuadruple (outputLabel, outputInt,
-					    outputArgs outputIdDef,
+	     outputVector (outputQuadruple (outputVector outputLabel,
+					    outputInt, outputArgs outputIdDef,
 					    outputBody)) (q, tagBodyVec))
 	  | outputTests (q, ConTests conBodyVec) =
 	    (outputTuple (q, "ConTests", 1);
@@ -223,9 +225,10 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VarExp (info, idRef)) =
 	    (outputTuple (q, "VarExp", 2); outputIdRef (q, idRef);
 	     outputExpInfo (q, info))
-	  | outputExp (q, TagExp (info, label, n, args)) =
+	  | outputExp (q, TagExp (info, labels, n, args)) =
 	    (outputTuple (q, "TagExp", 4); outputArgs outputIdRef (q, args);
-	     outputInt (q, n); outputLabel (q, label); outputExpInfo (q, info))
+	     outputInt (q, n); outputVector outputLabel (q, labels);
+	     outputExpInfo (q, info))
 	  | outputExp (q, ConExp (info, idRef, args)) =
 	    (outputTuple (q, "ConExp", 3); outputArgs outputIdRef (q, args);
 	     outputIdRef (q, idRef); outputExpInfo (q, info))
@@ -258,6 +261,10 @@ structure PickleFlatGrammar :> CODE
 	  | outputExp (q, VarAppExp (info, idRef, args)) =
 	    (outputTuple (q, "VarAppExp", 3); outputArgs outputIdRef (q, args);
 	     outputIdRef (q, idRef); outputExpInfo (q, info))
+	  | outputExp (q, DirectAppExp (info, idRef, args)) =
+	    (outputTuple (q, "DirectAppExp", 3);
+	     outputArgs outputIdRef (q, args); outputIdRef (q, idRef);
+	     outputExpInfo (q, info))
 	  | outputExp (q, SelExp (info, prod, label, n, idRef)) =
 	    (outputTuple (q, "SelExp", 5); outputIdRef (q, idRef);
 	     outputInt (q, n); outputLabel (q, label); outputProd (q, prod);
