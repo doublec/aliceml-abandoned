@@ -94,7 +94,7 @@ define
       meth ParsePickle($)
 	 case PickleParser, Next($)
 	 of !POSINT    then PickleParser, ParseUInt($)
-	 [] !NEGINT    then ~(PickleParser, ParseUInt($))
+	 [] !NEGINT    then ~(PickleParser, ParseUInt($) + 1)
 	 [] !CHUNK     then PickleParser, ParseChunk($)
 	 [] !BLOCK     then PickleParser, ParseBlock($)
 	 [] !TUPLE     then PickleParser, ParseTuple($)
