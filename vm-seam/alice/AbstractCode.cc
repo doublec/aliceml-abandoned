@@ -19,8 +19,8 @@
 static const char *opcodeNames[AbstractCode::nInstrs] = {
   "AppPrim", "AppVar", "Close", "CompactIntTest", "CompactTagTest", "ConTest",
   "DirectAppVar", "EndHandle", "EndTry", "GetRef", "GetTup", "IntTest", "Kill",
-  "LazyPolySel", "PutCon", "PutNew", "PutRef", "PutTag", "PutTup",
-  "PutPolyRec", "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
+  "LazyPolySel", "PutCon", "PutNew", "PutPolyRec", "PutRef", "PutTag", "PutTup",
+  "PutVar", "PutVec", "Raise", "RealTest", "Reraise",
   "Return", "Sel", "Shared", "Specialize", "StringTest", "TagTest",
   "Try", "VecTest"
 };
@@ -193,8 +193,9 @@ private:
   void Template(word w) {
     TagVal *templ = TagVal::FromWordDirect(w);
     std::fprintf(file, " Template(");
+    Value(templ->Sel(0));
     Int(templ->Sel(1));
-    Int(templ->Sel(2));
+    VECTOR(templ->Sel(2), Value);
     ARGS(templ->Sel(3), IdDef);
     Instr(templ->Sel(4));
     std::fprintf(file, " )");
