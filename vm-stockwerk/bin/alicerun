@@ -42,7 +42,12 @@ fi
 
 export STOCKHOME ALICE_LOAD
 
-#(echo "break Base.cc:22"; echo "break main"; echo run "$@"; cat) |
+## To use the GUI debugger on Windows/Cygwin:
+#echo run "$@"
+#exec gdb "$STOCKHOME"/stow.exe
+
+## To use the debugger on Unix:
+#(echo "break Base.cc:22"; echo "tty /dev/pts/4"; echo run "$@"; cat) |
 #exec gdb "$STOCKHOME"/stow.exe
 
 exec "$STOCKHOME"/stow.exe "$@"
