@@ -116,8 +116,20 @@ define
 	 @PendingSignalsTl = Id|NewTl
 	 PendingSignalsTl <- NewTl
       end
-      meth waitForSignal()
-	 {Wait @PendingSignalsHd}
+      meth waitForSignal(?HasSources) A in
+	 A = @SignalSources
+	 for I in 0..{Array.high A} break: Break do
+	    case A.I of unit then skip
+	    else
+	       HasSources = true
+	       {Break}
+	    end
+	 end
+	 if {IsFree HasSources} then
+	    HasSources = false
+	 else
+	    {Wait @PendingSignalsHd}
+	 end
       end
       meth processPendingSignals()
 	 if {IsFree @PendingSignalsHd} then skip
@@ -173,8 +185,9 @@ define
       meth run() Hd = @QueueHd in
 	 SignalManager, processPendingSignals()
 	 if {IsFree Hd} then
-	    SignalManager, waitForSignal()
-	    Scheduler, run()
+	    if SignalManager, waitForSignal($) then
+	       Scheduler, run()
+	    end
 	 elsecase Hd of T|Tr then
 	    QueueHd <- Tr
 	    if {Not {T isSuspended($)}} then
