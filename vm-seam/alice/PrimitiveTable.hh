@@ -54,6 +54,7 @@ private:
 public:
   static word General_Chr;
   static word General_Div;
+  static word General_Domain;
   static word General_Overflow;
   static word General_Size;
   static word General_Subscript;

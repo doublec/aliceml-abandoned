@@ -28,6 +28,7 @@ word PrimitiveTable::functionTable;
 
 word PrimitiveTable::General_Chr;
 word PrimitiveTable::General_Div;
+word PrimitiveTable::General_Domain;
 word PrimitiveTable::General_Overflow;
 word PrimitiveTable::General_Size;
 word PrimitiveTable::General_Subscript;
@@ -45,6 +46,7 @@ void PrimitiveTable::Init() {
   RootSet::Add(functionTable);
   RootSet::Add(PrimitiveTable::General_Chr);
   RootSet::Add(PrimitiveTable::General_Div);
+  RootSet::Add(PrimitiveTable::General_Domain);
   RootSet::Add(PrimitiveTable::General_Overflow);
   RootSet::Add(PrimitiveTable::General_Size);
   RootSet::Add(PrimitiveTable::General_Subscript);
