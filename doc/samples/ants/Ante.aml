@@ -185,20 +185,21 @@ struct
 	    end
 	  | Goto l =>
 	    (case E.lookup (e,l)
-	     of SOME p => (future p, [], n, e)
+	     of SOME (p,b) => (future p, [], n, e)
 	      | NONE =>
 		let
 		    val p = promise ()
 		in
-		    (future p, [], n, E.insert (e,l,p))
+		    (future p, [], n, E.insert (e,l,(p,false)))
 		end
 	    )
 	  | Label(l,i') =>
 	    let
-		val (p,e) = case E.lookup (e,l)
-			     of SOME p => (p,e)
-			      | NONE => let val p = promise ()
-					in (p, E.insert(e,l,p)) end
+		val p = case E.lookup (e,l)
+			 of SOME (p,true) => raise Malformed ("label " ^ l)
+			  | SOME (p,false) => p
+			  | NONE => promise ()
+		val e = E.insert(e,l,(p,true))
 		val result as (s',l',n',e') = traverse n e a i'
 	    in
 		if UnsafeValue.same (s', future p)
@@ -278,7 +279,7 @@ struct
 	    val (_,l,n,e) = traverse 0 E.empty () (f Fail)
 	in
 	    assert n <= 10_000 do
-	    assert E.all (Future.isDetermined o future) e do
+	    assert E.all (Future.isDetermined o future o #1) e do
 	    Vector.fromList l
 	end
 end
