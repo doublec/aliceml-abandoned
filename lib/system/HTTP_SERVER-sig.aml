@@ -10,13 +10,15 @@
  *   $Revision$
  *)
 
-import structure Url  from "Url"
-import structure Http from "Http"
+import structure TextIO from "TextIO"
+import structure Url    from "Url"
+import structure Http   from "Http"
 
 signature HTTP_SERVER =
     sig
 	type handler = Http.request -> Http.response
 
+	val logOut: TextIO.outstream option ref
 	val idleTime: Time.t ref
 
 	val start: int option -> int
