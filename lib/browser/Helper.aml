@@ -30,7 +30,7 @@ in
 structure Helper :> HELPER = 
 struct
 
-    exception copyArray_error
+(* Bestimmung und Zerlegung von "Apply"-Typen *)   
 
     fun isApply t = case t of Type.Apply(_,_) => true
                            | _ => false 
@@ -45,6 +45,8 @@ struct
              | _ => () ) ; (!t,!l))
 	 end
 
+(* Rows *)
+
     fun row2list row = case Type.inspectRow(row) of 
 	Type.EmptyRow => nil
       | Type.UnknownRow => nil
@@ -55,12 +57,14 @@ struct
 	Vector.tabulate ((List.length(ll)), 
 			 (fn i =>(#1( List.nth(ll,i))) ) )  
 
-    fun array_map' (funct,a,i) = 
+(* Arrays *)
+
+    fun array_map (funct,a) = array_map' (funct,a,0)
+
+    and array_map' (funct,a,i) = 
 	if i < Array.length(a) 
 	    then (funct(Array.sub(a,i));array_map' (funct,a,i+1)) 
 	else ()
-
-    fun array_map (funct,a) = array_map' (funct,a,0)
 
     fun copyArray' (a, b, i) = if i = Array.length(a) 
 				   then ()
@@ -69,12 +73,32 @@ struct
 				; copyArray' (a,b,i+1))
     
     fun copyArray (a,b) = if Array.length(a) > Array.length(b) 
-			      then raise copyArray_error 
+			      then raise Match 
 				  else copyArray'(a,b,0)
 
-    fun getKids n = case n of Concat(r) => #kids(r)
-                            | Container(r) => #kids(r)
-			    | _ => (Array.array(0,Empty))
+(* Strings *)
+
+    fun iterTake str = iterTake'(str,0,"")
+	
+    and iterTake' (str,i,a) = 
+	if i >= (String.size(str)) 
+	    then a
+	else
+	    let val test = String.sub(str,i) 
+	    in if Char.equal(#" ",test)
+		   then a
+	       else iterTake' (str,i+1, a ^ Char.toString(test))
+	    end  
+
+(* Zugriff auf bestimmte node-Felder *)
+
+    fun getDesc n = case n of Simple(r) => #desc(r)
+                            | Concat(r) => #desc(r)
+                            | Container(r) => #desc(r) 
+                            | Limit(r) => #desc(r)
+                            | RelNode(r) => #desc(r)
+                            | RelRefNode(r) => #desc(r)
+                            | Empty => INTERPUNCT	
 
     fun getParent n = case n of Concat(r) => #parent(r)
                               | Container(r) => #parent(r)
@@ -82,16 +106,7 @@ struct
                               | Limit(r) => #parent(r)
                               | RelNode(r) => #parent(r)
                               | RelRefNode(r) => #parent(r)
-                              | _ => raise Match
-
-    fun getGroup n = case n of Concat(r) => #group(r)
-                              | Container(r) => #group(r)
-                              | Simple(r) => #group(r) 
-                              | Limit(r) => #group(r)
-                              | RelNode(r) => #group(r)
-                              | RelRefNode(r) => #group(r)
-                              | _ => raise Match
-
+                              | _ => raise Match  
 
     fun getIndex n = case n of Concat(r) => #index(r)
                              | Container(r) => #index(r)
@@ -101,33 +116,6 @@ struct
                              | RelRefNode(r) => #index(r)
                              | _ => raise Match
 
-    fun getAncIndex n = if n = Empty 
-			    then raise Match
-			else if getParent n = Empty 
-				 then getIndex n
-			     else getAncIndex (getParent(n))
-
-    fun getDesc n = case n of Simple(r) => #desc(r)
-                            | Concat(r) => #desc(r)
-                            | Container(r) => #desc(r) 
-                            | Limit(r) => #desc(r)
-                            | RelNode(r) => #desc(r)
-                            | RelRefNode(r) => #desc(r)
-                            | Empty => INTERPUNCT
-
-    fun getValue desc = case desc of VALUE(r) => #value(r)
-                                   | _ => raise Match
-
-    fun getInfValue desc = case desc of I_VALUE(r) => #value(r)
-	                              | _ => raise Match
-
-    fun getTyp desc = case desc of VALUE(r) => #typ(r)
-                                 | _ => raise Match
-
-    fun getInf desc = case desc of I_VALUE(r) => #typ(r)
-                                 | _ => raise Match
-	                         
-
     fun getDepth n = case n of Limit(r) => #depth(r)
                              | Concat(r) => #depth(r)
                              | Container(r) => #depth(r)
@@ -136,19 +124,18 @@ struct
                              | RelRefNode(r) => #depth(r)
                              | _ => raise Match
 
-    fun getGroup n =  case n of Concat(r) => #group(r)
-                              | Container(r) => #group(r)
-                              | Simple(r) => #group(r) 
-                              | Limit(r) => #group(r)
-                              | RelNode(r) => #group(r)
-                              | RelRefNode(r) => #group(r)
-                              | _ => raise Match
-
     fun getRep (Simple(r))     = #rep(r)
       | getRep (RelNode(r))    = #rep(r)
       | getRep (RelRefNode(r)) =  #rep(r)
       | getRep _               = ""
-                             
+	
+    fun getKids n = case n of Concat(r) => #kids(r)
+                            | Container(r) => #kids(r)
+			    | _ => (Array.array(0,Empty))
+
+    fun getContent (RelNode(r)) = !(#content(r))
+      | getContent _ = raise Match
+
     fun getStatus (Concat(r))     = #status(r)
       | getStatus (Container(r))  = #status(r)
       | getStatus (Simple(r))     = #status(r) 
@@ -156,6 +143,14 @@ struct
       | getStatus (RelNode(r))    = #status(r)
       | getStatus (RelRefNode(r)) = #status(r)
       | getStatus  _ = raise Match
+
+    fun getGroup n = case n of Concat(r) => #group(r)
+                              | Container(r) => #group(r)
+                              | Simple(r) => #group(r) 
+                              | Limit(r) => #group(r)
+                              | RelNode(r) => #group(r)
+                              | RelRefNode(r) => #group(r)
+                              | _ => raise Match
 
     fun getColor (Simple(r))     = #color(r) 
       | getColor (RelNode(r))    = #color(r)
@@ -165,8 +160,7 @@ struct
     fun getSort (Limit(r)) = #sort(r)
       | getSort _  = raise Match
 
-    fun getContent (RelNode(r)) = !(#content(r))
-      | getContent _ = raise Match
+(* Zugriff auf bestimmte "Vorfahren" bzw. deren Felder *)   
 
     fun getValueAnc n = let val p = getParent(n) 
 			in if p = Empty 
@@ -178,10 +172,26 @@ struct
 
     fun getNoRelAnc n = let val p = getParent(n)
 			in case p of RelNode _ => getNoRelAnc p
-                                   | _ => p 
+		                   | _ => p 
 			end 
+
+    fun getAncIndex n = if n = Empty 
+			    then raise Match
+			else if getParent n = Empty 
+				 then getIndex n
+			     else getAncIndex (getParent(n))
+
+(* Test, ob Container vertikal anordnet *)
+
+    fun setsVertical n = case n of
+	Container(r) 
+        => checkContKids (#kids(r),0)
+	   orelse ( case Array.sub(#kids(r),0) of
+		    Simple(rr) => String.equal("struct",#rep(rr))
+		  | _ => false )
+      | _ => false
 	                  			 
-    fun checkContKids (a,i) = if i >=  Array.length(a) 
+    and checkContKids (a,i) = if i >=  Array.length(a) 
 				  then false
 			      else (case Array.sub(a,i) of
 				    Concat(r) 
@@ -213,13 +223,7 @@ struct
 				       | _ => checkConcKids (a,i+1) )
                                   | _ => checkConcKids (a,i+1) )
 
-   and setsVertical n = case n of
-       Container(r) 
-       => checkContKids (#kids(r),0)
-          orelse ( case Array.sub(#kids(r),0) of
-		   Simple(rr) => String.equal("struct",#rep(rr))
-		 | _ => false )
-     | _ => false
+(* Test, ob bestimmte node-Art vorliegt *)
 
     fun isSimple n = case n of
 	Simple _ => true
@@ -236,22 +240,9 @@ struct
     and isLimit n = case n of
 	Limit _ => true
       | _ => false
+
+(* RelNodes *)
 	    
-    fun inspectList(n,x) = inspectList'(n,x,[])
-
-    and inspectList'(n,x,xs) =
-	if not(Future.isDetermined x) 
-	    then Indet(List.rev xs, x) 
-	else
-	  if List.null x 
-	      then Det(List.rev xs, false) 
-	  else
-	    if n = 0 
-		then Det(List.rev xs, true) 
-	    else inspectList'(n-1, List.tl x, List.hd x :: xs)
-
-    fun castList value = UnsafeValue.cast value : 'a list
-
     fun setContent (n,c) = case n of RelNode(r) => #content(r) := c
                                    | _ => ()
                                         
@@ -259,18 +250,6 @@ struct
 	                          => (#counter(r) := !(#counter(r)) + 1; n)
                                 | _ => n	
 
-   fun iterTake str = iterTake'(str,0,"")
- 
-   and iterTake' (str,i,a) = 
-       if i >= (String.size(str)) 
-	   then a
-       else
-	   let val test = String.sub(str,i) 
-	   in if Char.equal(#" ",test)
-		  then a
-	      else iterTake' (str,i+1, a ^ Char.toString(test))
-	   end  
-
-end
+end (* struct *)
 
 end
