@@ -4,7 +4,7 @@
  *   Andreas Rossberg <rossberg@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt and Andreas Rossberg, 1999-2000
+ *   Leif Kornstaedt and Andreas Rossberg, 1999-2001
  *
  * Last change:
  *   $Date$ by $Author$
@@ -181,12 +181,17 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 		else filename
 	    end
 
-	fun urlCeil url = Url.fromString (pathCeil (Url.toString url))
+	fun urlCeil url =
+	    case List.rev (Url.getPath url) of
+		last::rest => Url.setPath (url, List.rev (pathCeil last::rest))
+	      | nil => url
 
 	(* Try to find a compiled component or source file - search order:
 	 *
-	 * A              compiled component, read signature
-	 * ceil(A)        compiled component, read signature
+	 * A              component known to composer, get signature
+	 * ceil(A)        component known to composer, get signature
+	 * A              pickled component, read signature from pickle
+	 * ceil(A)        pickled component, read signature from pickle
 	 * ceil(A).sig    compile as signature for native component
 	 * floor(A).aml   compile as new component, write to ceil(A)
 	 * floor(A).sml   compile as new component, write to ceil(A)
@@ -204,23 +209,20 @@ functor MakeBatchCompiler(structure Composer: COMPOSER
 			SOME base => Url.resolve base url
 		      | NONE => url
 	    in
-		case acquireCompiled url of
+		case Composer.sign url of
 		    SOME sign => sign
 		  | NONE =>
-		case acquireCompiled (urlCeil url) of
+		case Composer.sign (urlCeil url) of
 		    SOME sign => sign
+		  | NONE =>
+		case Pickle.loadSign url of (* this also looks for url ^ ext *)
+		    SOME sign =>
+			(TextIO.print ("### loaded signature from " ^
+				       Url.toString url ^ "\n");
+			 Composer.enterSign (urlCeil url, sign);
+			 sign)
 		  | NONE => acquireFromSource url
 	    end
-	and acquireCompiled url =
-	    case Composer.sign url of
-		SOME sign => SOME sign
-	      | NONE =>
-	    case Pickle.loadSign url of
-		SOME sign =>
-		    (Composer.enterSign (urlCeil url, sign);
-		     TextIO.print ("### loaded signature from " ^
-				   Url.toString url ^ "\n"); SOME sign)
-	      | NONE => NONE
 	and acquireFromSource url =
 	    let
 		val targetFilename = parseUrl url
