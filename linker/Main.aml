@@ -91,8 +91,10 @@ structure Main :> MAIN =
 						 "   " ^ Url.toString url ^
 						 "\n") urls))
 
+	(* Parse comma-separated lists *)
 	fun csl s = String.tokens (fn c => c = #",") s
 
+	(* Parse from-equals-to *)
 	fun fet s = fet' (s, 0, String.size s)
 	and fet' (s, i, n) =
 	    if i = n then raise Syntax
