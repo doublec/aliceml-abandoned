@@ -78,6 +78,7 @@ sig
 		   depth : int,
 		   kids : node array, 
 		   width : int ref,
+		   l_width: int ref,
 		   height : int ref,
 		   status : status ref,
 		   group : Gtk.object}

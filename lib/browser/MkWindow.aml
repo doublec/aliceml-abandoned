@@ -264,7 +264,7 @@ fun scrollY (y,scrolled,vadj) =
 		   reinspecthandler = r, forcehandler = f} = 
 	let 
 	    val reinspect_active = not(Helper.getDesc(n) = Types.INTERPUNCT)
-	    val force_active = Helper.isByneed n
+	    val force_active = (Helper.isByneed n) handle _ => false 
 	    val width_item_list = [EntryObj(LABEL("-5"),
 					      [Handler("activate",w(~5))],
 						       true),
@@ -542,7 +542,7 @@ struct
 				    val y2' = Real.fromInt(font_height 
 						  * (ydim-1))
 				    val lx =Real.fromInt(font_width 
-						  *  Layout.iterFindLX(n))
+				     *  Layout.get_l_xdim(n))
 				    val re =createRectangle(group,
 							    0.0,
 							    0.0,

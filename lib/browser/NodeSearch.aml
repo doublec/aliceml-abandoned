@@ -117,7 +117,7 @@ struct
 					   ,cury)
 					| Empty => (curx,cury)
 					| _ => 
-					    (curx - Layout.iterFindLX(a) (* was xdim *) 
+			     (curx - Layout.get_l_xdim(a) (* was xdim *) 
 					     ,cury- Layout.get_ydim(a) +1 ))
 						  end))
 			     val found = (Array.foldl hor_funct (x,y)	

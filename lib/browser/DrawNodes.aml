@@ -56,7 +56,7 @@ struct
 		       end
 
     fun move(n,x,y) = (move'(n,x,y)
-		       ;(x+ Layout.iterFindLX(n),
+		       ;(x+ Layout.get_l_xdim(n),
 			 y+get_ydim(n)-1)) (* maybe get_l_xdim 
 					    is 
 					    not sufficient ! *)
@@ -176,7 +176,7 @@ struct
 					      new_x,0,upd)
 		      in
 			  (x + String.size(#rep(r)) +   
-			   Layout.get_xdim(content),
+			   Layout.get_l_xdim(content),
 			   y + Layout.get_ydim(n)-1)
 		      end )
 	    end)

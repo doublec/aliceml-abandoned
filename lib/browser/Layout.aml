@@ -59,15 +59,19 @@ struct
                              | Empty => 0
                              | _ => 1
 
-    (* get_l_xdim *)
-    and get_l_xdim n = case n of Container(r) => !(#l_width(r))
-                               | _ => raise LayoutError
-
+  
     (* get_l_xdim_or_xdim *)
-    and get_l_xdim_or_xdim (Container(r)) = !(#l_width(r))
-      | get_l_xdim_or_xdim n = get_xdim n
+    and get_l_xdim (Container(r)) = !(#l_width(r))
+      | get_l_xdim (Concat(r))  =  !(#l_width(r))
+      | get_l_xdim (RelNode(r)) = (get_l_xdim(
+					    !(#content(r)))) + 
+				(if isSimple (!(#content(r)))
+				     orelse !(#counter(r)) = 1 
+				     then 0 
+				 else String.size(#rep(r)))
+      | get_l_xdim node = get_xdim node
 	
-    and iterFindLX n = case n of
+ (*   and iterFindLX n = case n of
         Container _ => get_l_xdim(n)
       | Concat(r) 
 	=> let
@@ -88,7 +92,7 @@ struct
 				     orelse !(#counter(r)) = 1 
 				     then 0 
 				 else String.size(#rep(r)))
-      | _ => get_xdim(n)
+      | _ => get_xdim(n) *)
 
     fun st (a,_,_) = a
     fun nd (_,b,_) = b
@@ -130,6 +134,7 @@ struct
 	in
 	    (#width(r) := xdim  
 	     ; #height(r) := ydim
+	     ; #l_width(r) := l_xdim
 	     ; if !(#status(r)) = DAZZLED 
 		   then #status(r) := DIRTY
 	       else ()

@@ -29,9 +29,8 @@ in
 		
 	    val get_xdim : node -> int
 	    val get_ydim : node -> int
-	    val iterFindLX: node -> int
+	  (*  val iterFindLX: node -> int *)
 	    val get_l_xdim : node -> int
-	    val get_l_xdim_or_xdim : node -> int
 		
 	    val layout : node -> int * int * int
 		

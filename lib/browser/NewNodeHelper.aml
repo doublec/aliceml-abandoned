@@ -94,6 +94,7 @@ struct
 						      depth = d,
 						      kids = na, 
 						      width  = ref ~1,
+						      l_width = ref ~1,
 						      height = ref ~1,
 						      status = ref DAZZLED,
 						      group = f(p)}
