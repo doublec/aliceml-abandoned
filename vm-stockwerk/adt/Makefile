@@ -16,7 +16,7 @@ TOPDIR = ..
 include $(TOPDIR)/Makefile.vars
 include $(TOPDIR)/Makefile.rules
 
-SRCS = Outline.cc
+SRCS = ChunkMap.cc Outline.cc
 OBJS = $(SRCS:%.cc=%.o)
 
 all: libadt.a
