@@ -48,7 +48,8 @@ structure Simplified :> SIMPLIFIED =
 	  | RecExp of coord * (lab * longid) list
 	    (* sorted, all labels distinct, no tuple *)
 	  | SelExp of coord * lab
-	  | FunExp of coord * string * id * exp
+	  | FunExp of coord * string * (id args * exp) list
+	    (* all arities distinct; always contains a single OneArg *)
 	  | AppExp of coord * exp * exp
 	  | AdjExp of coord * exp * exp
 	  | WhileExp of coord * exp * exp
@@ -61,8 +62,14 @@ structure Simplified :> SIMPLIFIED =
 	  | DecExp of coord * id list
 	and test =
 	    LitTest of lit
-	  | NameTest of longid
-	  | ConTest of longid * id
-	  | RecTest of (string * id) list   (* sorted, all labels distinct *)
+	  | ConTest of longid * id option
+	  | TupTest of id list
+	  | RecTest of (string * id) list
+	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string * id
+	and 'a args =
+	    OneArg of 'a
+	  | TupArgs of 'a list
+	  | RecArgs of (string * 'a) list
+	    (* sorted, all labels distinct, no tuple *)
     end

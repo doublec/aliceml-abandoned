@@ -139,10 +139,11 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	  | outputExp (q, SelExp (coord, lab)) =
 	    (f (q, "selExp"); outputCoord (q, coord); m q;
 	     outputLab (q, lab); r q)
-	  | outputExp (q, FunExp (coord, string, id, exp)) =
+	  | outputExp (q, FunExp (coord, string, argsExpList)) =
 	    (f (q, "funExp"); outputCoord (q, coord); m q;
-	     outputAtom (q, string); m q; outputId (q, id); m q;
-	     outputExp (q, exp); r q)
+	     outputAtom (q, string); m q;
+	     outputList (outputPair (outputArgs outputId, outputExp))
+	     (q, argsExpList); r q)
 	  | outputExp (q, AppExp (coord, exp1, exp2)) =
 	    (f (q, "appExp"); outputCoord (q, coord); m q;
 	     outputExp (q, exp1); m q; outputExp (q, exp2); r q)
@@ -174,7 +175,7 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	    (if !shared = 0 then
 		 (shared := gen ();
 		  f (q, "sharedExp"); outputCoord (q, coord); m q;
-		  outputExp (q, exp))
+		  outputExp (q, exp); m q)
 	     else
 		 f (q, "refExp");
 	     outputInt (q, !shared); r q)
@@ -183,11 +184,11 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	     outputList outputId (q, ids); r q)
 	and outputTest (q, LitTest lit) =
 	    (f (q, "litTest"); outputLit (q, lit); r q)
-	  | outputTest (q, NameTest longid) =
-	    (f (q, "nameTest"); outputLongid (q, longid); r q)
-	  | outputTest (q, ConTest (longid, id)) =
-	    (f (q, "nameTest"); outputLongid (q, longid); m q;
-	     outputId (q, id); r q)
+	  | outputTest (q, ConTest (longid, idOpt)) =
+	    (f (q, "conTest"); outputLongid (q, longid); m q;
+	     outputOption outputId (q, idOpt); r q)
+	  | outputTest (q, TupTest ids) =
+	    (f (q, "tupTest"); outputList outputId (q, ids); r q)
 	  | outputTest (q, RecTest stringIdList) =
 	    (f (q, "recTest");
 	     outputList (outputPair (outputLabString, outputId))
@@ -195,4 +196,12 @@ structure OzifySimplified :> OZIFYSIMPLIFIED =
 	  | outputTest (q, LabTest (string, id)) =
 	    (f (q, "labTest"); outputLabString (q, string); output1 (q, #"#");
 	     outputId (q, id); r q)
+	and outputArgs outputX (q, OneArg id) =
+	    (f (q, "OneArg"); outputX (q, id); r q)
+	  | outputArgs outputX (q, TupArgs ids) =
+	    (f (q, "TupArgs"); outputList outputX (q, ids); r q)
+	  | outputArgs outputX (q, RecArgs stringIdList) =
+	    (f (q, "RecArgs");
+	     outputList (outputPair (outputString, outputX))
+	     (q, stringIdList); r q)
     end

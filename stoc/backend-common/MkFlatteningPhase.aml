@@ -24,16 +24,14 @@ structure Simplify :> SIMPLIFY =
 
 	datatype test =
 	    LitTest of lit
-	  | NameTest of longid
-	  | ConTest of longid
+	  | ConTest of longid * bool   (* has args *)
 	  | RefTest
-	  | RecTest of arity
+	  | TupTest of int
+	  | RecTest of string list
+	    (* sorted, all labels distinct, no tuple *)
 	  | LabTest of string
 	  | GuardTest of mapping * exp
 	  | DecTest of mapping * S.coord * dec list
-	and arity =
-	    TupArity of int
-	  | RecArity of string list   (* sorted, no tuple *)
 	withtype mapping = (string list * id) list
 
 	(* Test Sequences *)
@@ -56,15 +54,8 @@ structure Simplify :> SIMPLIFY =
 	    fun foldlind f z xs = foldlind' (xs, f, z, 1)
 	end
 
-	local
-	    structure StringLabelSort =
-		LabelSort(type t = string fun get x = x)
-	in
-	    fun makeArity xs =
-		case StringLabelSort.sort xs of
-		    (_, StringLabelSort.Tup i) => TupArity i
-		  | (xs', StringLabelSort.Rec) => RecArity xs'
-	end
+	structure StringLabelSort =
+	    LabelSort(type t = string fun get x = x)
 
 	fun makeTestSeq (WildPat _, _, rest, mapping) = (rest, mapping)
 	  | makeTestSeq (LitPat (_, lit), pos, rest, mapping) =
@@ -73,16 +64,17 @@ structure Simplify :> SIMPLIFY =
 	    (rest, (pos, id)::mapping)
 	  | makeTestSeq (ConPat (_, longid, patOpt), pos, rest, mapping) =
 	    (case patOpt of
-		 SOME pat => makeTestSeq (pat, ""::pos,
-					  Test (pos, ConTest longid)::rest,
-					  mapping)
-	       | NONE => (Test (pos, NameTest longid)::rest, mapping))
+		 SOME pat =>
+		     makeTestSeq (pat, ""::pos,
+				  Test (pos, ConTest (longid, true))::rest,
+				  mapping)
+	       | NONE => (Test (pos, ConTest (longid, false))::rest, mapping))
 	  | makeTestSeq (RefPat (_, pat), pos, rest, mapping) =
 	    makeTestSeq (pat, ""::pos, Test (pos, RefTest)::rest, mapping)
 	  | makeTestSeq (TupPat (_, pats), pos, rest, mapping) =
 	    foldlind (fn (i, pat, (rest, mapping)) =>
 		      makeTestSeq (pat, Int.toString i::pos, rest, mapping))
-	    (Test (pos, RecTest (TupArity (List.length pats)))::rest, mapping)
+	    (Test (pos, TupTest (List.length pats))::rest, mapping)
 	    pats
 	  | makeTestSeq (RecPat (_, patFields, true), pos, rest, mapping) =
 	    List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
@@ -92,13 +84,16 @@ structure Simplify :> SIMPLIFY =
 	     mapping) patFields
 	  | makeTestSeq (RecPat (_, patFields, false), pos, rest, mapping) =
 	    let
-		val arity =
-		    makeArity (List.map (fn Field (_, Lab (_, s), _) => s)
-			       patFields)
+		val labs =
+		    List.map (fn Field (_, Lab (_, s), _) => s) patFields
+		val test =
+		    case StringLabelSort.sort labs of
+			(_, StringLabelSort.Tup i) => TupTest i
+		      | (labs', StringLabelSort.Rec) => RecTest labs
 	    in
 		List.foldl (fn (Field (_, Lab (_, s), pat), (rest, mapping)) =>
 			    makeTestSeq (pat, s::pos, rest, mapping))
-		(Test (pos, RecTest arity)::rest, mapping) patFields
+		(Test (pos, test)::rest, mapping) patFields
 	    end
 	  | makeTestSeq (AsPat (_, pat1, pat2), pos, rest, mapping) =
 	    let
@@ -121,13 +116,16 @@ structure Simplify :> SIMPLIFY =
 		(Neg (List.rev rest')::rest, mapping)
 	    end
 	  | makeTestSeq (GuardPat (_, pat, exp), pos, rest, mapping) =
-	    makeTestSeq (pat, pos, Test (pos, GuardTest (mapping, exp))::rest,
-			 mapping)
+	    let
+		val (rest', mapping') = makeTestSeq (pat, pos, rest, mapping)
+	    in
+		(Test (pos, GuardTest (mapping', exp))::rest', mapping')
+	    end
 	  | makeTestSeq (WithPat (coord, pat, decs), pos, rest, mapping) =
 	    let
 		val (rest', mapping') = makeTestSeq (pat, pos, rest, mapping)
 	    in
-		(Test (pos, DecTest (mapping, coord, decs))::rest', mapping')
+		(Test (pos, DecTest (mapping', coord, decs))::rest', mapping')
 	    end
 
 	(* Test Graphs *)
@@ -142,18 +140,22 @@ structure Simplify :> SIMPLIFY =
 	(* Construction of Test Trees Needing Backtracking *)
 
 	fun testEq (LitTest lit1, LitTest lit2) = lit1 = lit2
-	  | testEq (NameTest longid1, NameTest longid2) =
+	  | testEq (ConTest (longid1, hasArgs1), ConTest (longid2, hasArgs2)) =
 	    longidEq (longid1, longid2)   (*--** too restrictive *)
-	  | testEq (ConTest longid1, ConTest longid2) =
-	    longidEq (longid1, longid2)   (*--** too restrictive *)
-	  | testEq (RecTest arity1, RecTest arity2) = arity1 = arity2
+	    andalso hasArgs1 = hasArgs2
+	  | testEq (TupTest n1, TupTest n2) = n1 = n2
+	  | testEq (RecTest labs1, RecTest labs2) = labs1 = labs2
 	  | testEq (_, _) = false
 
 	fun areParallelTests (LitTest lit1, LitTest lit2) = lit1 <> lit2
+	  | areParallelTests (LitTest _, TupTest _) = true
+	  | areParallelTests (TupTest _, LitTest _) = true
 	  | areParallelTests (LitTest _, RecTest _) = true
 	  | areParallelTests (RecTest _, LitTest _) = true
-	  | areParallelTests (RecTest arity1, RecTest arity2) =
-	    arity1 <> arity2
+	  | areParallelTests (TupTest n1, TupTest n2) = n1 <> n2
+	  | areParallelTests (TupTest _, RecTest _) = true
+	  | areParallelTests (RecTest _, TupTest _) = true
+	  | areParallelTests (RecTest labs1, RecTest labs2) = labs1 <> labs2
 	  | areParallelTests (_, _) = false
 
 	local
@@ -334,7 +336,7 @@ structure Simplify :> SIMPLIFY =
 	  | lookup (pos, nil) = Crash.crash "Simplify.lookup"
 
 	fun mappingsToSubst (mapping0, mapping) =
-	    List.map (fn (pos, id) => (lookup (pos, mapping), id)) mapping0
+	    List.map (fn (pos, id) => (id, lookup (pos, mapping))) mapping0
 
 	fun makeRaise (coord, longid) =
 	    S.RaiseExp (coord, S.VarExp (coord, longid))
@@ -695,8 +697,8 @@ structure Simplify :> SIMPLIFY =
 	  | simplifyExp (SelExp (coord, lab)) =
 	    S.SelExp (coord, lab)
 	  | simplifyExp (FunExp (coord, id, exp)) =
-	    (*--** name propagation *)
-	    S.FunExp (coord, "", id, simplifyExp exp)
+	    (*--** name propagation, multiple argument optimization *)
+	    S.FunExp (coord, "", [(S.OneArg id, simplifyExp exp)])
 	  | simplifyExp (AppExp (coord, exp1, exp2)) =
 	    S.AppExp (coord, simplifyExp exp1, simplifyExp exp2)
 	  | simplifyExp (AdjExp (coord, exp1, exp2)) =
@@ -755,11 +757,12 @@ structure Simplify :> SIMPLIFY =
 		val coord = info_exp exp
 		val (decOpt, longid) = simplifyTerm exp
 		val errExp = makeRaise (coord, longid_Match)
-		val exp' = S.TestExp (coord, longid,
-				      S.NameTest longid_true, thenExp,
-				      S.TestExp (coord, longid,
-						 S.NameTest longid_false,
-						 elseExp, errExp))
+		val exp' =
+		    S.TestExp (coord, longid,
+			       S.ConTest (longid_true, NONE), thenExp,
+			       S.TestExp (coord, longid,
+					  S.ConTest (longid_false, NONE),
+					  elseExp, errExp))
 	    in
 		case decOpt of
 		    NONE => exp'
@@ -826,9 +829,9 @@ structure Simplify :> SIMPLIFY =
 	    in
 		S.LetExp (coord, [dec'],
 			  S.TestExp (coord, longid,
-				     S.NameTest longid_true, thenExp,
+				     S.ConTest (longid_true, NONE), thenExp,
 				     S.TestExp (coord, longid,
-						S.NameTest longid_false,
+						S.ConTest (longid_false, NONE),
 						elseExp, errExp)))
 	    end
 	  | simplifyNode (pos, DecTest (mapping0, coord, decs),
@@ -853,35 +856,40 @@ structure Simplify :> SIMPLIFY =
 	    end
 	and simplifyTest (LitTest lit, _, mapping) =
 	    (S.LitTest lit, mapping)
-	  | simplifyTest (NameTest longid, _, mapping) =
-	    (S.NameTest longid, mapping)
-	  | simplifyTest (ConTest longid, pos, mapping) =
+	  | simplifyTest (ConTest (longid, false), _, mapping) =
+	    (S.ConTest (longid, NONE), mapping)
+	  | simplifyTest (ConTest (longid, true), pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(S.ConTest (longid, id), mapping')
+		(S.ConTest (longid, SOME id), mapping')
 	    end
 	  | simplifyTest (RefTest, pos, mapping) =
 	    let
 		val id = freshId Source.nowhere
 		val mapping' = ((""::pos), id)::mapping
 	    in
-		(S.ConTest (longid_ref, id), mapping')
+		(S.ConTest (longid_ref, SOME id), mapping')
 	    end
-	  | simplifyTest (RecTest arity, pos, mapping) =
+	  | simplifyTest (TupTest n, pos, mapping) =
 	    let
-		val labels =
-		    case arity of
-			TupArity i =>
-			    List.tabulate (i, fn i => Int.toString (i + 1))
-		      | RecArity ss => ss
+		val ids = List.tabulate (n, fn _ => freshId Source.nowhere)
+		val labs = List.tabulate (n, fn i => Int.toString (i + 1))
+		val mapping' =
+		    foldlind (fn (i, id, mapping) =>
+			      (Int.toString i::pos, id)::mapping) mapping ids
+	    in
+		(S.TupTest ids, mapping')
+	    end
+	  | simplifyTest (RecTest labs, pos, mapping) =
+	    let
 		val stringIdList =
-		    List.map (fn s => (s, freshId Source.nowhere)) labels
+		    List.map (fn s => (s, freshId Source.nowhere)) labs
 		val mapping' =
 		    ListPair.foldr (fn (s, (_, i), mapping) =>
 				    (s::pos, i)::mapping)
-		    mapping (labels, stringIdList)
+		    mapping (labs, stringIdList)
 	    in
 		(S.RecTest stringIdList, mapping')
 	    end
