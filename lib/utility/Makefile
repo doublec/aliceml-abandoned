@@ -1,3 +1,16 @@
+## Author:
+##   Andreas Rossberg <rossberg@ps.uni-sb.de>
+## 
+## Copyright:
+##   Andreas Rossberg, 2001
+## 
+## Last change:
+##   $Date$ by $Author$
+##   $Revision$
+
+# This makefile is for local testing purposes only,
+# it is not required by the global build process.
+
 SHELL		= /bin/sh
 STOC		= stoc --implicit-import-file ../fundamental/Fundamental.import
 STOC_OPTS	= 
