@@ -3,16 +3,18 @@
  *   Leif Kornstaedt <kornstae@ps.uni-sb.de>
  *
  * Copyright:
- *   Leif Kornstaedt, 2000
+ *   Leif Kornstaedt, 2000-2001
  *
  * Last change:
  *   $Date$ by $Author$
  *   $Revision$
  *)
 
-import signature COMMAND_LINE from "COMMAND_LINE-sig"
-
-signature COMMAND_LINE_COMPONENT =
+signature UNSAFE_COMMAND_LINE_COMPONENT =
     sig
-	structure CommandLine: COMMAND_LINE
+	structure UnsafeCommandLine:
+	    sig
+		val name: unit -> string
+		val arguments: unit -> string list
+	    end
     end
