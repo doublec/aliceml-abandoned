@@ -12,7 +12,6 @@
 
 functor
 import
-   BootName(newUnique: NewUniqueName) at 'x-oz://boot/Name'
    Open(socket text)
    Property(get)
 export
