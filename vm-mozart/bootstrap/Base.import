@@ -1,0 +1,302 @@
+(* -*- sml -*- *)
+
+import
+
+type unit = {}
+datatype bool = true | false
+type int
+type word
+type real
+type string
+type char
+datatype 'a list = :: of 'a * 'a list | nil
+datatype 'a ref = ref of 'a
+datatype exn
+
+exception Match
+exception Bind
+
+infix  7  * / div mod
+infix  6  + - ^
+infixr 5  :: @
+infix  4  = <> > >= < <=
+infix  3  := o
+infix  0  before
+
+val op=  : ''a * ''a -> bool
+val op<> : ''a * ''a -> bool
+
+val op~ :	int -> int
+
+val op+ :	int * int -> int
+val op- :	int * int -> int
+val op* :	int * int -> int
+val op div :	int * int -> int
+val op mod :	int * int -> int
+
+val op< :	int * int -> bool
+val op> :	int * int -> bool
+val op<= :	int * int -> bool
+val op>= :	int * int -> bool
+
+structure General:
+    sig
+	type unit = {}
+	type exn = exn
+
+	exception Bind
+	exception Chr
+	exception Div
+	exception Domain
+	exception Fail of string
+	exception Match
+	exception Overflow
+	exception Size
+	exception Span
+	exception Subscript
+
+	datatype order = LESS | EQUAL | GREATER
+
+	val ! : 'a ref -> 'a
+	val op:= : 'a ref * 'a -> unit
+
+	val op o : ('a -> 'b) * ('c -> 'a) -> ('c -> 'b)
+	val op before : 'a * unit -> 'a
+	val ignore : 'a -> unit
+    end
+
+exception Chr
+exception Div
+exception Domain
+exception Fail of string
+
+exception Overflow
+exception Size
+exception Span
+exception Subscript
+
+datatype order = datatype General.order
+
+val ! : 'a ref -> 'a
+val op:= : 'a ref * 'a -> unit
+
+val op o: ('a -> 'b) * ('c -> 'a) -> ('c -> 'b)
+val op before: 'a * unit -> 'a
+val ignore: 'a -> unit
+
+structure Option:
+    sig
+	datatype 'a option = NONE | SOME of 'a
+
+	exception Option
+
+	val getOpt: 'a option * 'a -> 'a
+	val isSome: 'a option -> bool
+	val valOf: 'a option -> 'a
+	val filter: ('a -> bool) -> 'a -> 'a option
+	val join: 'a option option -> 'a option
+	val map: ('a -> 'b) -> 'a option -> 'b option
+	val mapPartial: ('a -> 'b option) -> 'a option -> 'b option
+	val compose: ('a -> 'c) * ('b -> 'a option) -> 'b -> 'c option
+	val composePartial:
+	    ('a -> 'c option) * ('b -> 'a option) -> 'b -> 'c option
+    end
+
+datatype option = datatype Option.option
+
+val getOpt: 'a option * 'a -> 'a
+val isSome: 'a option -> bool
+val valOf: 'a option -> 'a
+
+structure Bool:
+    sig
+	datatype bool = datatype bool
+
+	val not: bool -> bool
+	val toString: bool -> string
+    end
+
+val not: bool -> bool
+
+structure List:
+    sig
+	datatype list = datatype list
+
+	exception Empty
+
+	val null: 'a list -> bool
+	val length : 'a list -> int
+	val op@ : 'a list * 'a list -> 'a list
+	val hd : 'a list -> 'a
+	val tl : 'a list -> 'a list
+	val last : 'a list -> 'a
+	val getItem : 'a list -> ('a * 'a list) option
+	val nth : 'a list * int -> 'a
+	val rev : 'a list -> 'a list
+	val take : 'a list * int -> 'a list
+	val drop : 'a list * int -> 'a list
+	val concat : 'a list list -> 'a list
+	val revAppend : 'a list * 'a list -> 'a list
+	val app : ('a -> unit) -> 'a list -> unit
+	val map : ('a -> 'b) -> 'a list -> 'b list
+	val mapPartial : ('a -> 'b option) -> 'a list -> 'b list
+	val find : ('a -> bool) -> 'a list -> 'a option
+	val filter : ('a -> bool) -> 'a list -> 'a list
+	val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
+	val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+	val exists : ('a -> bool) -> 'a list -> bool
+	val all : ('a -> bool) -> 'a list -> bool
+	val tabulate : int * (int -> 'a) -> 'a list
+    end
+
+val null: 'a list -> bool
+val hd : 'a list -> 'a
+val tl : 'a list -> 'a list
+val length : 'a list -> int
+val rev : 'a list -> 'a list
+val op@ : 'a list * 'a list -> 'a list
+val app : ('a -> unit) -> 'a list -> unit
+val map : ('a -> 'b) -> 'a list -> 'b list
+val foldl : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+val foldr : ('a * 'b -> 'b) -> 'b -> 'a list -> 'b
+
+structure ListPair:
+    sig
+	val zip : 'a list * 'b list -> ('a * 'b) list
+	val unzip : ('a * 'b) list -> 'a list * 'b list
+	val map : ('a * 'b -> 'c) -> 'a list * 'b list -> 'c list
+	val app : ('a * 'b -> unit) -> 'a list * 'b list -> unit
+	val foldl : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val foldr : ('a * 'b * 'c -> 'c) -> 'c -> 'a list * 'b list -> 'c
+	val exists : ('a * 'b -> bool) -> 'a list * 'b list -> bool
+	val all : ('a * 'b -> bool) -> 'a list * 'b list -> bool
+    end
+
+structure Char:
+    sig
+	type char = char
+
+	val ord : char -> int
+	val chr : int -> char
+	val isDigit : char -> bool
+	val isHexDigit : char -> bool
+	val isSpace : char -> bool
+	val toCString : char -> bool
+    end
+
+val ord : char -> int
+val chr : int -> char
+
+structure String:
+    sig
+	type string = string
+
+	val op^ : string * string -> string
+	val toCString : string * string -> string
+	val str : string * string -> string
+	val size : string * string -> string
+	val substring : string * string -> string
+	val sub : string * string -> string
+	val explode : string * string -> string
+	val extract : string * int * int option -> string
+	val concat : string list -> string
+	val implode : char list -> string
+	val map : (char -> char) -> string -> string
+	val compare : string * string -> order
+	val op< : string * string -> bool
+    end
+
+val str : string * string -> string
+val size : string * string -> string
+val concat : string list -> string
+val explode : string * string -> string
+val implode : char list -> string
+val substring : string * string -> string
+val op^ : string * string -> string
+
+structure StringCvt:
+    sig
+	datatype radix = BIN | OCT | DEC | HEX
+	type ('a, 'b) reader = 'b -> ('a * 'b) option
+	type cs
+
+	val dropl: (char -> bool) -> (char, 'a) reader -> 'a -> 'a
+	val skipWS: (char, 'a) reader -> 'a -> 'a
+	val scanString:
+	    ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
+    end
+
+signature INTEGER =
+    sig
+	type int = int
+
+	val op+ : int * int -> int
+	val scan :
+	    StringCvt.radix -> (char, 'a) StringCvt.reader ->
+	    (int, 'a) StringCvt.reader
+	val compare : int * int -> order
+	val toString : int -> string
+	val >= : int * int -> bool
+	val < : int * int -> bool
+	val fromString : string -> int option
+	val max : int * int -> int
+	val fromLarge : int -> int
+	val toLarge : int -> int
+    end
+
+structure Int: INTEGER
+
+structure LargeInt:
+    sig
+	include INTEGER
+	val fromInt : int -> int
+    end
+
+signature REAL =
+    sig
+	type real = real
+
+	val scan : (char,'a) StringCvt.reader -> (real,'a) StringCvt.reader
+	val toString : real -> string
+	val fromString : string -> real option
+	val compare : real * real -> order
+	val trunc : real -> int
+	val op< : real * real -> bool
+    end
+
+structure Real: REAL
+
+structure LargeReal: REAL
+
+structure Array:
+    sig
+	eqtype 'a array
+
+	val array : int * 'a -> 'a array
+	val fromList : 'a list -> 'a array
+	val length : 'a array -> int
+	val sub : 'a array * int -> 'a
+	val update : 'a array * int * 'a -> unit
+	val copy :
+	    {di: int, dst: 'a array, len: int option, si: int, src: 'a array}
+	    -> unit
+	val foldl : ('a * 'b -> 'b) -> 'b -> 'a array -> 'b
+	val app : ('a -> unit) -> 'a array -> unit
+    end
+
+type array = Array.array
+
+structure Vector:
+    sig
+	eqtype 'a vector
+
+	val fromList : 'a list -> 'a vector
+	val sub : 'a vector * int -> 'a
+	val tabulate : int * (int -> 'a) -> 'a vector
+    end
+
+type 'a vector = 'a Vector.vector
+val vector : 'a list -> 'a vector
+
+from "Base.ozf"
