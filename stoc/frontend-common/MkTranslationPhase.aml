@@ -70,6 +70,12 @@ UNFINISHED: obsolete after bootstrapping:
 
     (* Extract bound ids from declarations. *)
 
+    fun idsId(x as I.Id(_,_,I.ExId _), xs)   = (trId x)::xs
+      | idsId(x, xs)			     = xs
+
+    fun idsId'(x as I.Id(_,_,I.ExId _), xs)  = (trId' x)::xs
+      | idsId'(x, xs)			     = xs
+
     fun idsRow    idsZ (I.Row(i,fs,_), xs')  = idsFields idsZ (fs, xs')
     and idsField  idsZ (I.Field(i,a,z), xs') = idsZ(z, xs')
     and idsFields idsZ (fs, xs')	     = List.foldr (idsField idsZ) xs' fs
@@ -78,7 +84,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsDec(I.ConDec(i,c,t), xs')	= idsCon(c, xs')
       | idsDec(I.TypDec(i,x,t), xs')	= xs'
       | idsDec(I.DatDec(i,x,t), xs')	= idsTyp(t, xs')
-      | idsDec(I.ModDec(i,x,m), xs')	= (trId' x)::xs'
+      | idsDec(I.ModDec(i,x,m), xs')	= idsId'(x, xs')
       | idsDec(I.InfDec(i,x,j), xs')	= xs'
       | idsDec(I.RecDec(i,ds), xs')	= idsDecs(ds, xs')
       | idsDec(I.TypvarDec(i,x,ds),xs')	= idsDecs(ds, xs')
@@ -87,7 +93,7 @@ UNFINISHED: obsolete after bootstrapping:
 
     and idsPat(I.JokPat(i), xs')	= xs'
       | idsPat(I.LitPat(i,l), xs')	= xs'
-      | idsPat(I.VarPat(i,x), xs')	= (trId x)::xs'
+      | idsPat(I.VarPat(i,x), xs')	= idsId(x, xs')
       | idsPat(I.ConPat(i,y,ps), xs')	= idsPats(ps, xs')
       | idsPat(I.RefPat(i,p), xs')	= idsPat(p, xs')
       | idsPat(I.TupPat(i,ps), xs')	= idsPats(ps, xs')
@@ -101,7 +107,7 @@ UNFINISHED: obsolete after bootstrapping:
       | idsPat(I.WithPat(i,p,ds), xs')	= idsPat(p, idsDecs(ds, xs'))
     and idsPats(ps, xs')		= List.foldr idsPat xs' ps
 
-    and idsCon(I.Con(i,x,ts), xs')	= (trId x)::xs'
+    and idsCon(I.Con(i,x,ts), xs')	= idsId(x, xs')
     and idsCons(cs, xs')		= List.foldr idsCon xs' cs
 
     and idsTyp(I.AbsTyp(i), xs')	= xs'
